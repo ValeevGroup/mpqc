@@ -65,7 +65,7 @@ class LocalTBGrad : public TBGrad<T> {
                 const RefGaussianBasisSet& bs, const RefMessageGrp& g,
                 double *tbg, double pm, double a, int nt = 1, int tn = 0) :
       TBGrad<T>(t),
-      tbgrad(tbg), pmax_(pm), accuracy_(a), nthread_(nt), threadno_(tn)
+      tbgrad(tbg), pmax_(pm), accuracy_(a), threadno_(tn), nthread_(nt)
     {
       grp_ = g.pointer();
       gbs_ = bs.pointer();

@@ -50,6 +50,9 @@ Molecule::clear_symmetry_info()
 void
 Molecule::init_symmetry_info(double tol)
 {
+  if (equiv_)
+    clear_symmetry_info();
+  
   if (natom() == 0) {
     nuniq_ = 0;
     equiv_ = 0;

@@ -63,6 +63,10 @@ Molecule::Molecule():
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
   geometry_units_ = new Units("bohr");
+  nuniq_ = 0;
+  equiv_ = 0;
+  nequiv_ = 0;
+  atom_to_uniq_ = 0;
   init_symmetry_info();
 }
 
@@ -569,6 +573,11 @@ Molecule::Molecule(StateIn& si):
           si.getstring(labels_[i]);
         }
     }
+
+  nuniq_ = 0;
+  equiv_ = 0;
+  nequiv_ = 0;
+  atom_to_uniq_ = 0;
   init_symmetry_info();
 }
 

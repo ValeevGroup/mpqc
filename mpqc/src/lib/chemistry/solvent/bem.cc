@@ -296,7 +296,7 @@ BEMSolvent::init_system_matrix()
               // The self term must not be included here.  This
               // case shouldn't occur for the usual integrators
               // so abort.
-              cerr << "BEMSolvent: integrator gave the self term" << endl;
+              ExEnv::err() << "BEMSolvent: integrator gave the self term" << endl;
               abort();
             }
           double denom = diff2*sqrt(diff2);

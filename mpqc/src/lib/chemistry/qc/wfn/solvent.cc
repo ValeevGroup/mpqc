@@ -207,7 +207,7 @@ BEMSolventH::init(const RefWavefunction& wfn)
       integrator->init(wfn_);
       integrator->integrate(functional);
       integrator->done();
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("N(e) in isosurf = %12.8f", integrator->value())
            << endl;
     }
@@ -399,37 +399,37 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
 
   if (!onebody_) escalar_ += eelecsurf_;
 
-  cout << incindent;
-  cout << node0 << indent
+  ExEnv::out() << incindent;
+  ExEnv::out() << node0 << indent
        << "Solvent: "
        << scprintf("q(e-enc)=%12.10f q(n-enc)=%12.10f", qeenc, qnenc)
        << endl;
-  cout << incindent;
+  ExEnv::out() << incindent;
   if (separate_surf_charges_) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("E(n-qn)=%10.8f ", enqn)
            << scprintf("E(n-qe)=%10.8f", enqe)
            << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("E(e-qn)=%10.8f ", eeqn)
            << scprintf("E(e-qe)=%10.8f", eeqe)
            << endl;
-      //cout << node0 << indent
+      //ExEnv::out() << node0 << indent
       //     << scprintf("DG = %12.8f ", 0.5*627.51*(enqn+enqe+eeqn+eeqe))
       //     << scprintf("DG(Y=J) = %12.8f", 0.5*627.51*(enqn+2*eeqn+eeqe))
       //     << endl;
     }
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf("E(c)=%10.8f ", ecavitation_)
        << scprintf("E(disp-rep)=%10.8f", edisprep_)
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf("E(n-s)=%10.8f ", enucsurf_)
        << scprintf("E(e-s)=%10.8f ", eelecsurf_)
        << scprintf("E(s-s)=%10.8f ", esurfsurf_)
        << endl;
-  cout << decindent;
-  cout << decindent;
+  ExEnv::out() << decindent;
+  ExEnv::out() << decindent;
 
   tim_exit("accum");
   tim_exit("solvent");
@@ -455,41 +455,41 @@ void
 BEMSolventH::print_summary()
 {
   RefUnits unit = new Units("kcal/mol");
-  cout << endl;
-  cout << "Summary of solvation calculation:" << endl;
-  cout << "_______________________________________________" << endl;
-  cout << endl;
-  cout.setf(ios::scientific,ios::floatfield); // use scientific format
-  cout.precision(5);
-  cout << node0 << indent << "E(nuc-surf):              " 
+  ExEnv::out() << endl;
+  ExEnv::out() << "Summary of solvation calculation:" << endl;
+  ExEnv::out() << "_______________________________________________" << endl;
+  ExEnv::out() << endl;
+  ExEnv::out().setf(ios::scientific,ios::floatfield); // use scientific format
+  ExEnv::out().precision(5);
+  ExEnv::out() << node0 << indent << "E(nuc-surf):              " 
        << setw(12) << setfill(' ')
        << enucsurf_*unit->from_atomic_units() << " kcal/mol" << endl; 
-  cout << node0 << indent << "E(elec-surf):             " 
+  ExEnv::out() << node0 << indent << "E(elec-surf):             " 
        << setw(12) << setfill(' ')
        << eelecsurf_*unit->from_atomic_units() << " kcal/mol" << endl; 
-  cout << node0 << indent << "E(surf-surf):             " 
+  ExEnv::out() << node0 << indent << "E(surf-surf):             " 
        << setw(12) << setfill(' ')
        << esurfsurf_*unit->from_atomic_units() << " kcal/mol" << endl; 
-  cout << node0 << indent << "Electrostatic energy:     " 
+  ExEnv::out() << node0 << indent << "Electrostatic energy:     " 
        << setw(12) << setfill(' ')
        << (enucsurf_+eelecsurf_+esurfsurf_)*unit->from_atomic_units()
        << " kcal/mol" << endl; 
-  cout << "_______________________________________________" << endl;
-  cout << endl;
-  cout << node0 << indent << "E(cav):                   " 
+  ExEnv::out() << "_______________________________________________" << endl;
+  ExEnv::out() << endl;
+  ExEnv::out() << node0 << indent << "E(cav):                   " 
        << setw(12) << setfill(' ')
        << ecavitation_*unit->from_atomic_units() << " kcal/mol" << endl; 
-  cout << node0 << indent << "E(disp):                  " 
+  ExEnv::out() << node0 << indent << "E(disp):                  " 
        << setw(12) << setfill(' ')
        << solvent_->disp()*unit->from_atomic_units() << " kcal/mol" << endl; 
-  cout << node0 << indent << "E(rep):                   " 
+  ExEnv::out() << node0 << indent << "E(rep):                   " 
        << setw(12) << setfill(' ')
        << solvent_->rep()*unit->from_atomic_units() << " kcal/mol" << endl; 
-  cout << node0 << indent << "Non-electrostatic energy: "
+  ExEnv::out() << node0 << indent << "Non-electrostatic energy: "
        << setw(12) << setfill(' ')
        << (ecavitation_+solvent_->disp()+solvent_->rep())
           *unit->from_atomic_units() << " kcal/mol" << endl; 
-  cout << "_______________________________________________" << endl;
+  ExEnv::out() << "_______________________________________________" << endl;
 
 }
 

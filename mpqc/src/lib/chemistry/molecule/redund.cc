@@ -85,9 +85,9 @@ RedundMolecularCoor::form_coordinates(int keep_variable)
 {
   if (!keep_variable) variable_ = all_;
 
-  if (form_print_simples_) print_simples(cout);
-  if (form_print_variable_) print_variable(cout);
-  if (form_print_constant_) print_constant(cout);
+  if (form_print_simples_) print_simples(ExEnv::out());
+  if (form_print_variable_) print_variable(ExEnv::out());
+  if (form_print_constant_) print_constant(ExEnv::out());
 }
 
 void

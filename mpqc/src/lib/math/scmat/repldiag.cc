@@ -137,7 +137,7 @@ ReplDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "ReplDiagSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "ReplDiagSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -212,7 +212,7 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp2& op,
       = ReplDiagSCMatrix::require_castdown(m,"ReplDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      cerr << indent << "ReplDiagSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "ReplDiagSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -238,7 +238,7 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = ReplDiagSCMatrix::require_castdown(n,"ReplDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      cerr << indent << "ReplDiagSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "ReplDiagSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -305,7 +305,7 @@ RefSCMatrixSubblockIter
 ReplDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << "ReplDiagSCMatrix::all_blocks: "
+      ExEnv::err() << "ReplDiagSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

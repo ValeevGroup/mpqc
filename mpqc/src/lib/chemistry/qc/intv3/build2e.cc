@@ -40,7 +40,7 @@
 static void
 stack_alignment_error(void *ptr, const char *where)
 {
-  cout << "UNALIGNED STACK: " << where << ": " << ptr << endl;
+  ExEnv::out() << "UNALIGNED STACK: " << where << ": " << ptr << endl;
 }
 static inline void
 stack_alignment_check(void *ptr, const char *where)
@@ -79,7 +79,7 @@ iswtch(int *i, int *j)
 static void
 fail()
 {
-  cerr << scprintf("failing module:\n%s",__FILE__) << endl;
+  ExEnv::err() << scprintf("failing module:\n%s",__FILE__) << endl;
   abort();
   }
 
@@ -161,8 +161,8 @@ Int2eV3::int_init_buildgc(int order,
   used_storage_build_ += contract_length.nbyte();
   used_storage_build_ += build.int_v_list.nbyte();
 #if CHECK_INTEGRAL_ALGORITHM
-  cout << "contract_length: " << contract_length.nbyte() << endl;
-  cout << "int_v_list: " << build.int_v_list.nbyte() << endl;
+  ExEnv::out() << "contract_length: " << contract_length.nbyte() << endl;
+  ExEnv::out() << "int_v_list: " << build.int_v_list.nbyte() << endl;
 #endif
 
   /* Set all slots to 0 */
@@ -200,7 +200,7 @@ Int2eV3::int_init_buildgc(int order,
   int_v0_buf = (double*) malloc(sizeof(double)*int_v_bufsize);
   used_storage_build_ += sizeof(double)*int_v_bufsize;
   if (!int_v0_buf) {
-    cerr << scprintf("couldn't allocate all integral intermediates\n");
+    ExEnv::err() << scprintf("couldn't allocate all integral intermediates\n");
     fail();
     }
   add_store(int_v0_buf);
@@ -248,14 +248,14 @@ Int2eV3::int_init_buildgc(int order,
     }
 
 #if CHECK_INTEGRAL_ALGORITHM
-  cout << "am12_for_con: " << am12_for_con << endl;
-  cout << "am34_for_con: " << am34_for_con << endl;
+  ExEnv::out() << "am12_for_con: " << am12_for_con << endl;
+  ExEnv::out() << "am34_for_con: " << am34_for_con << endl;
 #endif
 
   e0f0_con_ints_array[ci][cj][ck][cl].set_dim(am12+1,am34+1);
   used_storage_build_ += e0f0_con_ints_array[ci][cj][ck][cl].nbyte();
 #if CHECK_INTEGRAL_ALGORITHM
-  cout << "e0f0_con_ints_array: "
+  ExEnv::out() << "e0f0_con_ints_array: "
        << e0f0_con_ints_array[ci][cj][ck][cl].nbyte()
        << endl;
 #endif
@@ -275,10 +275,10 @@ Int2eV3::int_init_buildgc(int order,
   e0f0_con_int_buf = (double*) malloc(sizeof(double)*e0f0_con_int_bufsize);
   used_storage_build_ += e0f0_con_int_bufsize * sizeof(double);
 #if CHECK_INTEGRAL_ALGORITHM
-  cout << "e0f0_int_buf: " << e0f0_con_int_bufsize * sizeof(double) << endl;
+  ExEnv::out() << "e0f0_int_buf: " << e0f0_con_int_bufsize * sizeof(double) << endl;
 #endif
   if (!e0f0_con_int_buf) {
-    cerr << scprintf("couldn't allocate contracted integral storage\n");
+    ExEnv::err() << scprintf("couldn't allocate contracted integral storage\n");
     fail();
     }
   add_store(e0f0_con_int_buf);
@@ -408,7 +408,7 @@ Int2eV3::int_init_buildgc(int order,
 
   used_storage_ += used_storage_build_;
 #if CHECK_INTEGRAL_ALGORITHM
-  cout << "used_storage_build: " << used_storage_build_ << endl;
+  ExEnv::out() << "used_storage_build: " << used_storage_build_ << endl;
 #endif
   }
 
@@ -561,7 +561,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
   double *con_ints;
 
 #if 0
-  cout << scprintf("not_gcs: %d%d%d%d\n",
+  ExEnv::out() << scprintf("not_gcs: %d%d%d%d\n",
                    int_expweight1,
                    int_expweight2,
                    int_expweight3,
@@ -636,14 +636,14 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              [maxam12]
                              [minam3]
                              [maxam34][eAB]==&BuildIntV3::impossible_integral){
-              cerr << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
+              ExEnv::err() << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
             if (!(build.*build_routine[minam1]
                                       [maxam12]
                                       [minam3]
                                       [maxam34][eAB])()) {
-              cout << "build2e.cc: did not succeed in building all integrals"
+              ExEnv::out() << "build2e.cc: did not succeed in building all integrals"
                    << endl;
               abort();
               }
@@ -740,11 +740,11 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
           else if ((minam1<=MG)&&(minam3<=MG)&&(maxam12<=MG)&&(maxam34<=MG)) {
             intfunc brptr=build_routine[minam1][maxam12][minam3][maxam34][eAB];
             if (brptr == &BuildIntV3::impossible_integral) {
-              cerr << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
+              ExEnv::err() << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
             if (!(build.*brptr)()) {
-              cout << "build2e.cc: did not succeed in building all integrals"
+              ExEnv::out() << "build2e.cc: did not succeed in building all integrals"
                    << endl;
               abort();
               }

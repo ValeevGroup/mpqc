@@ -77,7 +77,7 @@ DistSCVector::block_to_block(int i) const
           return I.block();
     }
 
-  cerr << indent << "DistSCVector::block_to_block: internal error" << endl;
+  ExEnv::err() << indent << "DistSCVector::block_to_block: internal error" << endl;
   abort();
   return 0;
 }
@@ -169,7 +169,7 @@ DistSCVector::accumulate(const SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "DistSCVector::accumulate(SCVector*a): "
+      ExEnv::err() << indent << "DistSCVector::accumulate(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -180,7 +180,7 @@ DistSCVector::accumulate(const SCVector*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << indent << "DistSCVector::accumulate "
+          ExEnv::err() << indent << "DistSCVector::accumulate "
                << "mismatch: internal error" << endl;
           abort();
         }
@@ -202,7 +202,7 @@ DistSCVector::accumulate(const SCMatrix*a)
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
         || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
-      cerr << indent << "DistSCVector::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "DistSCVector::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -213,7 +213,7 @@ DistSCVector::accumulate(const SCMatrix*a)
        I++,J++) {
       int n = I.block()->ndat();
       if (n != J.block()->ndat()) {
-          cerr << indent << "DistSCVector::accumulate(SCMatrix*a): "
+          ExEnv::err() << indent << "DistSCVector::accumulate(SCMatrix*a): "
                << "block lists do not match" << endl;
           abort();
         }
@@ -232,7 +232,7 @@ DistSCVector::assign_v(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "DistSCVector::assign_v(SCVector*a): "
+      ExEnv::err() << indent << "DistSCVector::assign_v(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -243,7 +243,7 @@ DistSCVector::assign_v(SCVector*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << indent << "DistSCVector::assign "
+          ExEnv::err() << indent << "DistSCVector::assign "
                << "mismatch: internal error" << endl;
           abort();
         }
@@ -264,7 +264,7 @@ DistSCVector::assign_p(const double*a)
        I++) {
       RefSCVectorSimpleBlock b = SCVectorSimpleBlock::castdown(I.block());
       if (b.null()) {
-          cerr << indent << "DistSCVector::assign "
+          ExEnv::err() << indent << "DistSCVector::assign "
                << "mismatch: internal error" << endl;
           abort();
         }
@@ -286,7 +286,7 @@ DistSCVector::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "DistSCVector::scalar_product(SCVector*a): "
+      ExEnv::err() << indent << "DistSCVector::scalar_product(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -298,7 +298,7 @@ DistSCVector::scalar_product(SCVector*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << indent << "DistSCVector::scalar_product: block mismatch: "
+          ExEnv::err() << indent << "DistSCVector::scalar_product: block mismatch: "
                << "internal error" << endl;
           abort();
         }
@@ -330,7 +330,7 @@ DistSCVector::element_op(const RefSCElementOp2& op,
       = DistSCVector::require_castdown(m, "DistSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      cerr << indent << "DistSCVector: bad element_op\n";
+      ExEnv::err() << indent << "DistSCVector: bad element_op\n";
       abort();
     }
 
@@ -353,7 +353,7 @@ DistSCVector::element_op(const RefSCElementOp3& op,
       = DistSCVector::require_castdown(n, "DistSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      cerr << indent << "DistSCVector: bad element_op\n";
+      ExEnv::err() << indent << "DistSCVector: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -377,7 +377,7 @@ DistSCVector::accumulate_product_rv(SCMatrix *pa, SCVector *pb)
 
   // make sure that the dimensions match
   if (!dim()->equiv(a->rowdim()) || !a->coldim()->equiv(b->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "DistSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
@@ -506,7 +506,7 @@ DistSCVector::vprint(const char *title, ostream& os, int prec) const
 void
 DistSCVector::error(const char *msg)
 {
-  cerr << indent << "DistSCVector: error: " << msg << endl;
+  ExEnv::err() << indent << "DistSCVector: error: " << msg << endl;
 }
 
 RefDistSCMatrixKit

@@ -310,7 +310,7 @@ OneBodyIntOp::~OneBodyIntOp()
 void
 OneBodyIntOp::process(SCMatrixBlockIter& b)
 {
-  cerr << node0 << indent
+  ExEnv::err() << node0 << indent
        << "OneBodyIntOp::process: cannot handle generic case\n";
   abort();
 }
@@ -493,7 +493,7 @@ OneBody3IntOp::process(SCMatrixBlockIter&,
                        SCMatrixBlockIter&,
                        SCMatrixBlockIter&)
 {
-  cerr << node0 << indent
+  ExEnv::err() << node0 << indent
        << "OneBody3IntOp::process(SCMatrixBlockIter&): "
        << "cannot handle generic case\n";
   abort();

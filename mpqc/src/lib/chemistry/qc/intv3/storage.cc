@@ -75,7 +75,7 @@ IntegralLink::operator delete(void* ptr)
 void
 IntegralLink::print()
 {
-  cout << scprintf("(%d %d|%d %d)[%d%d%d]",
+  ExEnv::out() << scprintf("(%d %d|%d %d)[%d%d%d]",
          intlist.key.sh0(),
          intlist.key.sh1(),
          intlist.key.sh2(),
@@ -143,7 +143,7 @@ IntegralStorer::store(IntegralKey &key, const double *buf,
     }
 
 #if PRINT_STORED
-  cout << scprintf("+++++ %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+  ExEnv::out() << scprintf("+++++ %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
          key.sh0(),key.sh1(),key.sh2(),key.sh3(),
          key.p12(), key.p34(), key.p13p24(),
          link->size,link->costlist.key,link,link->hash()%table_size_);
@@ -162,7 +162,7 @@ IntegralStorer::store(IntegralKey &key, const double *buf,
       n_shellquart_--;
       n_integrals_ -= eliminate->size;
 #if PRINT_STORED
-      cout << scprintf("----- %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+      ExEnv::out() << scprintf("----- %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
              eliminate->intlist.key.sh0(),eliminate->intlist.key.sh1(),
              eliminate->intlist.key.sh2(),eliminate->intlist.key.sh3(),
              eliminate->intlist.key.p12(), eliminate->intlist.key.p34(),
@@ -246,23 +246,23 @@ void
 IntegralStorer::print_stats()
 {
   if (currentsize_ == 0) return;
-  cout << scprintf("IntegralStorer: n_integrals  = %d\n", n_integrals_);
-  cout << scprintf("IntegralStorer: n_shellquart = %d\n", n_shellquart_);
-  cout << scprintf("IntegralStorer: currentsize = %d\n", currentsize_);
-  cout << scprintf("IntegralStorer: maxsize     = %d\n", maxsize_);
+  ExEnv::out() << scprintf("IntegralStorer: n_integrals  = %d\n", n_integrals_);
+  ExEnv::out() << scprintf("IntegralStorer: n_shellquart = %d\n", n_shellquart_);
+  ExEnv::out() << scprintf("IntegralStorer: currentsize = %d\n", currentsize_);
+  ExEnv::out() << scprintf("IntegralStorer: maxsize     = %d\n", maxsize_);
 #if 0
-  cout << scprintf("IntegralStorer: hash table distribution:\n");
+  ExEnv::out() << scprintf("IntegralStorer: hash table distribution:\n");
   int tlength = 0;
   int i;
   for (i=0; i<table_size_; i++) {
       int length = table_[i].length();
       tlength += length;
-      cout << scprintf(" %5d", length);
-      if ((i+1)%13 == 0) cout << scprintf("\n");
+      ExEnv::out() << scprintf(" %5d", length);
+      if ((i+1)%13 == 0) ExEnv::out() << scprintf("\n");
     }
-  if (i%13 != 0) cout << scprintf("\n");
-  cout << scprintf("IntegralStorer: hash table length sum = %d\n", tlength);
-  cout << scprintf("IntegralStorer: cost list length      = %d\n", costlist.length());
+  if (i%13 != 0) ExEnv::out() << scprintf("\n");
+  ExEnv::out() << scprintf("IntegralStorer: hash table length sum = %d\n", tlength);
+  ExEnv::out() << scprintf("IntegralStorer: cost list length      = %d\n", costlist.length());
 #endif
 }
 

@@ -122,12 +122,12 @@ MBPT2::compute_hsos_v2_lb()
 
   me = msg_->me();
  
-  cout << node0 << indent << "Just entered OPT2 program (opt2v2lb)" << endl;
+  ExEnv::out() << node0 << indent << "Just entered OPT2 program (opt2v2lb)" << endl;
 
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
 
   nproc = msg_->n();
-  cout << node0 << indent << "nproc = " << nproc << endl;
+  ExEnv::out() << node0 << indent << "nproc = " << nproc << endl;
 
   ndocc = nsocc = 0;
   const double epsilon = 1.0e-4;
@@ -140,19 +140,19 @@ MBPT2::compute_hsos_v2_lb()
   // can be done (and appears to be meaningful!)
 
   if (ndocc == 0 && nsocc == 0) {
-    cerr << node0 << "There are no occupied orbitals; program exiting" << endl;
+    ExEnv::err() << node0 << "There are no occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzc > ndocc) {
-    cerr << node0
+    ExEnv::err() << node0
          << "The number of frozen core orbitals exceeds the number" << endl
          << "of doubly occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzv > nbasis - ndocc - nsocc) {
-    cerr << node0
+    ExEnv::err() << node0
          << "The number of frozen virtual orbitals exceeds the number" << endl
          << "of unoccupied orbitals; program exiting" << endl;
     abort();
@@ -202,13 +202,13 @@ MBPT2::compute_hsos_v2_lb()
     nbf[iproc] += shellsize[sorted_shells[i]];
     }
   if (me == 0) {
-    cout << indent << "Distribution of basis functions between nodes:" << endl;
+    ExEnv::out() << indent << "Distribution of basis functions between nodes:" << endl;
     for (i=0; i<nproc; i++) {
-      if (i%12 == 0) cout << indent;
-      cout << scprintf(" %4i",nbf[i]);
-      if ((i+1)%12 == 0) cout << endl;
+      if (i%12 == 0) ExEnv::out() << indent;
+      ExEnv::out() << scprintf(" %4i",nbf[i]);
+      if ((i+1)%12 == 0) ExEnv::out() << endl;
       }
-    cout << endl;
+    ExEnv::out() << endl;
     }
 
   // Determine which shells are to be processed by node me
@@ -243,7 +243,7 @@ MBPT2::compute_hsos_v2_lb()
   // Find the processor with the most/fewest basis functions
   findprocminmax(nbf,nproc,&procmin,&procmax,&minbf,&maxbf);
   if (maxbf > nbfav) {
-    cout << node0 << indent << "Redistributing basis functions" << endl;
+    ExEnv::out() << node0 << indent << "Redistributing basis functions" << endl;
     }
 
   while (maxbf > nbfav) {
@@ -295,14 +295,14 @@ MBPT2::compute_hsos_v2_lb()
     }
 
   if (me == 0) {
-    cout << indent
+    ExEnv::out() << indent
          << "New distribution of basis functions between nodes:" << endl;
     for (i=0; i<nproc; i++) {
-      if (i%12 == 0) cout << indent;
-      cout << scprintf(" %4i",nbf[i]);
-      if ((i+1)%12 == 0) cout << endl;
+      if (i%12 == 0) ExEnv::out() << indent;
+      ExEnv::out() << scprintf(" %4i",nbf[i]);
+      if ((i+1)%12 == 0) ExEnv::out() << endl;
       }
-    cout << endl;
+    ExEnv::out() << endl;
     }
 
 
@@ -341,16 +341,16 @@ MBPT2::compute_hsos_v2_lb()
   msg_->bcast(ni);
 
   if (ni < nsocc) {
-    cerr << node0 << "Not enough memory allocated" << endl;
+    ExEnv::err() << node0 << "Not enough memory allocated" << endl;
     abort();
     }
 
   if (ni < 1) {     // this applies only to a closed shell case
-    cerr << node0 << "Not enough memory allocated" << endl;
+    ExEnv::err() << node0 << "Not enough memory allocated" << endl;
     abort();
     }
 
-  cout << node0 << indent << "Computed batchsize: " << ni << endl;
+  ExEnv::out() << node0 << indent << "Computed batchsize: " << ni << endl;
 
   if (nocc == ni) {
     npass = 1;
@@ -363,13 +363,13 @@ MBPT2::compute_hsos_v2_lb()
     }
 
   if (me == 0) {
-    cout << indent << " npass  rest  nbasis  nshell  nfuncmax"
+    ExEnv::out() << indent << " npass  rest  nbasis  nshell  nfuncmax"
                      "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i"
                      "     %-3i    %-3i    %-3i    %-3i   %-3i\n",
              npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("Using %i bytes of memory",mem_alloc) << endl;
     }
 
@@ -377,12 +377,12 @@ MBPT2::compute_hsos_v2_lb()
   // Test that ni is OK
   //////////////////////
   if (me == 0) {
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("Memory allocated: %i", mem_alloc) << endl;
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("Memory used     : %lf", A*ni*ni+B*ni+C) << endl;
     if (A*ni*ni + B*ni +C > mem_alloc) {
-      cerr << "Problems with memory allocation: "
+      ExEnv::err() << "Problems with memory allocation: "
            << "Using more memory than allocated" << endl;
       abort();
       }
@@ -827,12 +827,12 @@ MBPT2::compute_hsos_v2_lb()
     if (nsocc == 0 && npass > 1 && pass < npass - 1) {
       double passe = ecorr_opt2;
       msg_->sum(passe);
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "Partial correlation energy for pass " << pass << ":" << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  restart_ecorr        = %14.10f", passe)
            << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  restart_orbital_v2lb = %d", ((pass+1) * ni))
            << endl;
       }
@@ -894,29 +894,29 @@ MBPT2::compute_hsos_v2_lb()
     ezapt2 = escf + ecorr_zapt2;
 
     // Print out various energies etc.
-    cout << indent
+    ExEnv::out() << indent
          << "Number of shell quartets for which AO integrals would" << endl
          << indent << "have been computed without bounds checking: "
          << npass*nshell*nshell*(nshell+1)*(nshell+1)/2 << endl;
-    cout << indent
+    ExEnv::out() << indent
          << "Number of shell quartets for which AO integrals" << endl
          << indent << "were computed: " << aoint_computed << endl;
             
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("ROHF energy [au]:                  %17.12lf\n", escf);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("OPT1 energy [au]:                  %17.12lf\n", eopt1);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("OPT2 second order correction [au]: %17.12lf\n",
                      ecorr_opt2);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("OPT2 energy [au]:                  %17.12lf\n", eopt2);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("ZAPT2 correlation energy [au]:     %17.12lf\n",
                      ecorr_zapt2);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("ZAPT2 energy [au]:                 %17.12lf\n", ezapt2);
-    cout.flush();
+    ExEnv::out().flush();
     }
 
   msg_->bcast(eopt1);
@@ -940,7 +940,7 @@ MBPT2::compute_hsos_v2_lb()
     }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }
     set_energy(ezapt2);

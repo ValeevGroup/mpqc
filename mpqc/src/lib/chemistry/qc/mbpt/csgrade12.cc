@@ -164,7 +164,7 @@ CSGradErep12Qtr::run()
 
   if (debug) {
     lock->lock();
-    cout << scprintf("%d:%d: starting get_task loop",me,mythread) << endl;
+    ExEnv::out() << scprintf("%d:%d: starting get_task loop",me,mythread) << endl;
     lock->unlock();
     }
 
@@ -183,14 +183,14 @@ CSGradErep12Qtr::run()
 
     if (debug > 1 && (print_index++)%print_interval == 0) {
       lock->lock();
-      cout << scprintf("%d:%d: (PQ|%d %d) %d%%",
+      ExEnv::out() << scprintf("%d:%d: (PQ|%d %d) %d%%",
                        me,mythread,R,S,(100*print_index)/work_per_thread)
            << endl;
       lock->unlock();
       }
     if (debug > 1 && (print_index)%time_interval == 0) {
       lock->lock();
-      cout << scprintf("timer for %d:%d:",me,mythread) << endl;
+      ExEnv::out() << scprintf("timer for %d:%d:",me,mythread) << endl;
       timer->print();
       lock->unlock();
       }
@@ -366,7 +366,7 @@ CSGradErep12Qtr::run()
 
   if (debug) {
     lock->lock();
-    cout << scprintf("%d:%d: done with get_task loop",me,mythread) << endl;
+    ExEnv::out() << scprintf("%d:%d: done with get_task loop",me,mythread) << endl;
     lock->unlock();
     }
 

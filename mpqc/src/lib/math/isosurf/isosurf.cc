@@ -100,7 +100,7 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   current = 0;
   _surf = 0;
   if (msg) {
-      cerr << "ImplicitSurfacePolygonizer::isosurface: failed: "
+      ExEnv::err() << "ImplicitSurfacePolygonizer::isosurface: failed: "
            << msg << endl;
       abort();
     }

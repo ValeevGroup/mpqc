@@ -67,7 +67,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
 
   handler_depth++;
   if (handler_depth != 1) {
-      cerr << "MIDMemoryGrp::handler: bad depth: " << handler_depth << endl;
+      ExEnv::err() << "MIDMemoryGrp::handler: bad depth: " << handler_depth << endl;
       abort();
     }
 
@@ -151,7 +151,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       dremain = dsize;
       if (offset < 0
           || offset+size > distsize_to_size(offsets_[me()+1]-offsets_[me()])) {
-          cerr << "MIDMemoryGrp::handler(): bad offset/size for DoubleSum:"
+          ExEnv::err() << "MIDMemoryGrp::handler(): bad offset/size for DoubleSum:"
                << " offset = " << offset
                << ", size = " << size
                << ", fence = " << offsets_[me()+1] << endl;
@@ -199,7 +199,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       if (msgid_arg) activate();
       break;
   default:
-      cerr << scprintf("%d: mid_memory_handler: bad request id\n", me_);
+      ExEnv::err() << scprintf("%d: mid_memory_handler: bad request id\n", me_);
       sleep(1);
       abort();
     }
@@ -339,7 +339,7 @@ MIDMemoryGrp::activate()
                                    -1,
                                    data_request_type_);
           if (data_request_mid_ == -1) {
-              cerr << scprintf("MIDMemoryGrp::activate(): bad mid\n");
+              ExEnv::err() << scprintf("MIDMemoryGrp::activate(): bad mid\n");
               abort();
             }
         }
@@ -359,7 +359,7 @@ MIDMemoryGrp::deactivate()
       if (debug_) ExEnv::out() << scprintf("%d: MIDMemoryGrp::deactivate()\n", me_);
       sync_act(0);
       if (active_) {
-          cerr << "MIDMemoryGrp::deactivate(): still active" << endl;
+          ExEnv::err() << "MIDMemoryGrp::deactivate(): still active" << endl;
           abort();
         }
     }
@@ -509,7 +509,7 @@ MIDMemoryGrp::sync_act(int reactivate)
                    << endl;
             }
           if (!active_) {
-              cerr << me_ << ": MIDMemoryGrp::sync(): not active (1)" << endl;
+              ExEnv::err() << me_ << ": MIDMemoryGrp::sync(): not active (1)" << endl;
             }
           mid = wait(data_request_mid_);
           if (debug_) {
@@ -523,7 +523,7 @@ MIDMemoryGrp::sync_act(int reactivate)
               if (nsync_ < n() - 1 || reactivate) activate();
             }
           else {
-              cerr << scprintf(
+              ExEnv::err() << scprintf(
                   "%d: WARNING: MIDMemoryGrp::sync(1): stray message id = %d",
                   me_, mid) << endl;
             }
@@ -571,7 +571,7 @@ MIDMemoryGrp::sync_act(int reactivate)
               if (reactivate || !nsync_) activate();
             }
           else if (tmpmid != mid) {
-              cerr << scprintf(
+              ExEnv::err() << scprintf(
                   "%d: MIDMemoryGrp::sync(2): stray message id = %d",
                   me_, tmpmid)
                    << endl;
@@ -584,7 +584,7 @@ MIDMemoryGrp::sync_act(int reactivate)
           if (debug_)
               ExEnv::out() << scprintf("%d: waiting for sync", me_) << endl;
           if (!active_) {
-              cerr << me_ << ": MIDMemoryGrp::sync(): not active (3)" << endl;
+              ExEnv::err() << me_ << ": MIDMemoryGrp::sync(): not active (3)" << endl;
             }
           mid = wait(data_request_mid_);
           if (debug_) 
@@ -595,7 +595,7 @@ MIDMemoryGrp::sync_act(int reactivate)
               if (reactivate || !nsync_) activate();
             }
           else {
-              cerr << scprintf(
+              ExEnv::err() << scprintf(
                   "%d: WARNING: MIDMemoryGrp::sync(3): stray message"
                   "id = %d", me_, mid) << endl;
             }
@@ -650,7 +650,7 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
       if (debug_) 
           ExEnv::out() << scprintf("%d: %s: wait: waiting\n", me_, msg);
       if (!active_) {
-          cerr << me_ << ": MIDMemoryGrp::do_wait(): not active" << endl;
+          ExEnv::err() << me_ << ": MIDMemoryGrp::do_wait(): not active" << endl;
         }
       tmpmid = wait(data_request_mid_, mid);
       if (tmpmid == data_request_mid_) {
@@ -660,7 +660,7 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
           // can skip reactivation.
           if (me() > data_request_buffer_.node()) {
               if (data_request_buffer_.request() == MemoryDataRequest::Sync) {
-                  cerr << me() << ": MIDMessageGrp: "
+                  ExEnv::err() << me() << ": MIDMessageGrp: "
                        << "how did I get a Sync in do_wait???"
                        << endl;
                   abort();
@@ -695,7 +695,7 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
             }
         }
       else if (tmpmid != mid) {
-          cerr << scprintf("%d: MIDMemoryGrp: %s: stray message id = %d\n",
+          ExEnv::err() << scprintf("%d: MIDMemoryGrp: %s: stray message id = %d\n",
                            me_, msg, tmpmid);
           sleep(1);
           abort();
@@ -753,7 +753,7 @@ MIDMemoryGrp::catchup()
 int
 MIDMemoryGrp::probe(long)
 {
-    cerr << "MIDMemoryGrp:: probe not implemeneted for " << class_name()
+    ExEnv::err() << "MIDMemoryGrp:: probe not implemeneted for " << class_name()
          << endl;
     abort();
     return 0;

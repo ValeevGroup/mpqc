@@ -115,7 +115,7 @@ IParagonMemoryGrp::probe(long type)
   int ret = iprobe((int)type);
 
   if (ret < 0) {
-      cerr << "IParagonMemoryGrp::probe() failed\n";
+      ExEnv::err() << "IParagonMemoryGrp::probe() failed\n";
       return 0;
     }
   
@@ -125,7 +125,7 @@ IParagonMemoryGrp::probe(long type)
 void
 IParagonMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
-  cerr << scprintf("IParagonMemoryGrp::postrecv: not implemented\n");
+  ExEnv::err() << scprintf("IParagonMemoryGrp::postrecv: not implemented\n");
   sleep(1);
   abort();
 }
@@ -141,7 +141,7 @@ IParagonMemoryGrp::wait(long mid1, long mid2)
     }
 
   if (mid1 == -1) {
-      cerr << me() << ": IParagonMemoryGrp::wait: mid1 == -1" << endl;
+      ExEnv::err() << me() << ": IParagonMemoryGrp::wait: mid1 == -1" << endl;
       sleep(1);
       abort();
     }

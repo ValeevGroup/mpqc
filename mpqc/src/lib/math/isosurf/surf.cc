@@ -409,7 +409,7 @@ TriangulatedSurface::add_vertex(const RefVertex&t)
       _index_to_vertex.push_back(t);
       _vertex_to_index[t] = i;
       if (_index_to_vertex.size() != _vertex_to_index.length()) {
-          cerr << "TriangulatedSurface::add_vertex: length mismatch" << endl;
+          ExEnv::err() << "TriangulatedSurface::add_vertex: length mismatch" << endl;
           abort();
         }
     }
@@ -424,7 +424,7 @@ TriangulatedSurface::add_edge(const RefEdge&t)
       _index_to_edge.push_back(t);
       _edge_to_index[t] = i;
       if (_index_to_edge.size() != _edge_to_index.length()) {
-          cerr << "TriangulatedSurface::add_edge: length mismatch" << endl;
+          ExEnv::err() << "TriangulatedSurface::add_edge: length mismatch" << endl;
           abort();
         }
     }
@@ -440,7 +440,7 @@ TriangulatedSurface::add_triangle(const RefTriangle&t)
       _index_to_triangle.push_back(t);
       _triangle_to_index[t] = i;
       if (_index_to_triangle.size() != _triangle_to_index.length()) {
-          cerr << "TriangulatedSurface::add_triangle: length mismatch" << endl;
+          ExEnv::err() << "TriangulatedSurface::add_triangle: length mismatch" << endl;
           abort();
         }
     }
@@ -880,7 +880,7 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval):
 
   vol_ = keyval->describedclassvalue("volume");
   if (keyval->error() != KeyVal::OK) {
-      cerr << "TriangulatedImplicitSurface(const RefKeyVal&keyval): "
+      ExEnv::err() << "TriangulatedImplicitSurface(const RefKeyVal&keyval): "
            << "requires \"volume\"" << endl;
       abort();
     }

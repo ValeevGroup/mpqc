@@ -436,7 +436,7 @@ void
 RegionTimer::exit(const char *name)
 {
   if (!current_ || (name && strcmp(name, current_->name()))) {
-      cerr << "TimeRegion::exit(\"" << name << "\"):"
+      ExEnv::err() << "TimeRegion::exit(\"" << name << "\"):"
            << " current region"
            << " (\"" << current_->name() << "\")"
            << " doesn't match name"
@@ -447,7 +447,7 @@ RegionTimer::exit(const char *name)
   if (wall_time_) current_->wall_exit(get_wall_time());
   if (flops_) current_->flops_exit(get_flops());
   if (! current_->up()) {
-      cerr << "RegionTimer::exit: already at top level" << endl;
+      ExEnv::err() << "RegionTimer::exit: already at top level" << endl;
       abort();
     }
   current_ = current_->up();
@@ -516,7 +516,7 @@ void
 RegionTimer::change(const char *newname, const char *oldname)
 {
   if (!current_ || (oldname && strcmp(oldname, current_->name()))) {
-      cerr << "RegionTimer::change("
+      ExEnv::err() << "RegionTimer::change("
            << "\"" << newname << "\","
            << "\"" << oldname << "\""
            << "):"
@@ -531,7 +531,7 @@ RegionTimer::change(const char *newname, const char *oldname)
   if (wall_time_) current_->wall_exit(wall = get_wall_time());
   if (flops_) current_->flops_exit(flops = get_flops());
   if (! current_->up()) {
-      cerr << "RegionTimer::change: already at top level" << endl;
+      ExEnv::err() << "RegionTimer::change: already at top level" << endl;
       abort();
     }
   current_ = current_->up();

@@ -177,7 +177,7 @@ Int2eV3::int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
   CmD[2] =  build.int_v_r32 - build.int_v_r42;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
-  cout << "generating ("
+  ExEnv::out() << "generating ("
        << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << ":" << endl;
 #endif
@@ -284,7 +284,7 @@ Int2eV3::shiftam_12(double *I0100, double *I1000, double *I0000,
   int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
-  cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
+  ExEnv::out() << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << " <- "
        << "(" << am1+1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
        << "(" << am1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
@@ -358,7 +358,7 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
   int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
-  cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
+  ExEnv::out() << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << " <- "
        << "(" << am1+1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
        << "(" << am1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
@@ -421,7 +421,7 @@ Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
   int size23p14m1,size3p14m1,size4m1,size234m1,size34m1;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
-  cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
+  ExEnv::out() << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << " <- "
        << "(" << am1 << "," << am2 << "," << am3+1 << "," << am4-1 << ")"
        << "(" << am1 << "," << am2 << "," << am3 << "," << am4-1 << ")"
@@ -501,7 +501,7 @@ Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
                          * CmD2;
 #if 0
    if (cartindex1234 == 4) {
-     cout << scprintf(" building with % f + % f * % f ",
+     ExEnv::out() << scprintf(" building with % f + % f * % f ",
                          I0010[  INT_CARTINDEX(am1,i1,j1) * size23p14m1
                                + INT_CARTINDEX(am2,i2,j2) * size3p14m1
                                + INT_CARTINDEX(am3+1,i3,j3) * size4m1
@@ -517,7 +517,7 @@ Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
 
 #if 0
                   if ((!am1) == (!am2) == am3 == am4) {
-                    cout << scprintf("assigned I0001[%d] = % f\n",
+                    ExEnv::out() << scprintf("assigned I0001[%d] = % f\n",
                            cartindex1234,
                            I0001[cartindex1234]);
                     }

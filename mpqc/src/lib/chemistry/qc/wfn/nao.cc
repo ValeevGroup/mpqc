@@ -81,7 +81,7 @@ nnmb_atom(int z, int l)
   else {
       return 0;
     }
-  cerr << "NAO: z too big" << endl;
+  ExEnv::err() << "NAO: z too big" << endl;
   abort();
   return 0;
 }
@@ -178,7 +178,7 @@ assemble(const RefSCDimension dim,
   int nr2 = (Nr2.null()?0:Nr2.ncol());
   int nb = dim.n();
   if (nb != nnmb + nr1 + nr2) {
-      cerr << "assemble: dim mismatch" << endl;
+      ExEnv::err() << "assemble: dim mismatch" << endl;
       abort();
     }
   RefSCMatrix N(Nm.rowdim(), Nm.rowdim(), Nm.kit());
@@ -186,21 +186,21 @@ assemble(const RefSCDimension dim,
   int i;
   for (i=0; i<nnmb; i++) {
       if (Nm_map[i] < 0 || Nm_map[i] >= nb) {
-          cerr << "assemble: bad Nm_map" << endl;
+          ExEnv::err() << "assemble: bad Nm_map" << endl;
           abort();
         }
       N.assign_column(Nm.get_column(i), Nm_map[i]);
     }
   for (i=0; i<nr1; i++) {
       if (Nr1_map[i] < 0 || Nr1_map[i] >= nb) {
-          cerr << "assemble: bad Nr1_map" << endl;
+          ExEnv::err() << "assemble: bad Nr1_map" << endl;
           abort();
         }
       N.assign_column(Nr1.get_column(i), Nr1_map[i]);
     }
   for (i=0; i<nr2; i++) {
       if (Nr2_map[i] < 0 || Nr2_map[i] >= nb) {
-          cerr << "assemble: bad Nr2_map" << endl;
+          ExEnv::err() << "assemble: bad Nr2_map" << endl;
           abort();
         }
       N.assign_column(Nr2.get_column(i), Nr2_map[i]);
@@ -271,7 +271,7 @@ form_nao(const RefSymmSCMatrix &P, const RefSymmSCMatrix &S,
               for (m=0; m<nfunc; m++) {
                   int ii = amoff_on_atom[i][j][k] + m;
 #                 ifdef DEBUG
-                  cout.form("W(%2d) = %12.8f\n", ii, elem);
+                  ExEnv::out().form("W(%2d) = %12.8f\n", ii, elem);
 #                 endif
                   W.set_element(ii, elem);
                 }
@@ -322,8 +322,8 @@ Wavefunction::nao(double *atom_charges)
   Ptmp->accumulate_transform(S, P);
 # ifdef DEBUG
   P.print("P");
-  cout << "nelec = " << (mhalf(S) * Ptmp * mhalf(S)).trace() << endl;
-  cout << "nelec(2) = " << (P * S).trace() << endl;
+  ExEnv::out() << "nelec = " << (mhalf(S) * Ptmp * mhalf(S)).trace() << endl;
+  ExEnv::out() << "nelec(2) = " << (P * S).trace() << endl;
 # endif
   P = Ptmp;
   Ptmp = 0;
@@ -334,9 +334,9 @@ Wavefunction::nao(double *atom_charges)
   int natom = molecule()->natom();
 
 # ifdef DEBUG
-  cout << "nb = " << nb << endl;
-  cout << "nsh = " << nsh << endl;
-  cout << "natom = " << natom << endl;
+  ExEnv::out() << "nb = " << nb << endl;
+  ExEnv::out() << "nsh = " << nsh << endl;
+  ExEnv::out() << "natom = " << natom << endl;
 # endif
 
   // Step 2a. Transform to solid harmonics.
@@ -374,7 +374,7 @@ Wavefunction::nao(double *atom_charges)
               delete sti;
             }
           else if (shell.am(j) > 2 && ! shell.is_pure(j)) {
-              cerr << "NAOs can only be computed for puream if am > 2" << endl;
+              ExEnv::err() << "NAOs can only be computed for puream if am > 2" << endl;
               abort();
             }
           off += shell.nfunction(j);
@@ -404,7 +404,7 @@ Wavefunction::nao(double *atom_charges)
   // Sdfp = Tdfp.t() * S * Tdfp
   Sdfg.assign(0.0); Sdfg.accumulate_transform(Tdfg, S);
 # ifdef DEBUG
-  cout << "nelec = " << (mhalf(Sdfg) * Pdfg * mhalf(Sdfg)).trace() << endl;
+  ExEnv::out() << "nelec = " << (mhalf(Sdfg) * Pdfg * mhalf(Sdfg)).trace() << endl;
 # endif
 
   // Step 2b. Partitioning and symmetry averaging of P and S
@@ -468,26 +468,26 @@ Wavefunction::nao(double *atom_charges)
     }
 
 # ifdef DEBUG
-  cout << indent << "Basis set partitioning:" << endl;
-  cout << incindent;
+  ExEnv::out() << indent << "Basis set partitioning:" << endl;
+  ExEnv::out() << incindent;
   for (i=0; i<natom; i++) {
-      cout << indent <<  "atom " << i
+      ExEnv::out() << indent <<  "atom " << i
            << " maxam = " << maxam_on_atom[i] << endl;
-      cout << incindent;
+      ExEnv::out() << incindent;
       for (j=0; j<=maxam_on_atom[i]; j++) {
-          cout << indent <<  "am = " << j
+          ExEnv::out() << indent <<  "am = " << j
                << " n = " << nam_on_atom[i][j] << endl;
-          cout << incindent;
-          cout << indent << "offsets =";
+          ExEnv::out() << incindent;
+          ExEnv::out() << indent << "offsets =";
           for (k=0; k<nam_on_atom[i][j]; k++) {
-              cout << " " << amoff_on_atom[i][j][k];
+              ExEnv::out() << " " << amoff_on_atom[i][j][k];
             }
-          cout << endl;
-          cout << decindent;
+          ExEnv::out() << endl;
+          ExEnv::out() << decindent;
         }
-      cout << decindent;
+      ExEnv::out() << decindent;
     }
-  cout << decindent;
+  ExEnv::out() << decindent;
 # endif
 
   // Symmetry averaging and Step 2c: Formation of pre-NAO's
@@ -498,7 +498,7 @@ Wavefunction::nao(double *atom_charges)
 # ifdef DEBUG
   N.print("N");
   W.print("W");
-  cout << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
+  ExEnv::out() << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
 # endif
 
   // Step 3a: selection of NMB orbitals
@@ -512,8 +512,8 @@ Wavefunction::nao(double *atom_charges)
   int nnrb = nb - nnmb;
 
 # ifdef DEBUG
-  cout << "nnmb = " << nnmb << endl;
-  cout << "nnrb = " << nnrb << endl;
+  ExEnv::out() << "nnmb = " << nnmb << endl;
+  ExEnv::out() << "nnrb = " << nnrb << endl;
 # endif
 
   RefSCDimension nmbdim = new SCDimension(nnmb);
@@ -554,14 +554,14 @@ Wavefunction::nao(double *atom_charges)
         }
     }
 # ifdef DEBUG
-  cout << "Nmmap:"; for (i=0;i<nnmb;i++) cout<<" "<<Nm_map[i]; cout<<endl;
-  cout << "Nrmap:"; for (i=0;i<nnrb;i++) cout<<" "<<Nr_map[i]; cout<<endl;
+  ExEnv::out() << "Nmmap:"; for (i=0;i<nnmb;i++) ExEnv::out()<<" "<<Nm_map[i]; ExEnv::out()<<endl;
+  ExEnv::out() << "Nrmap:"; for (i=0;i<nnrb;i++) ExEnv::out()<<" "<<Nr_map[i]; ExEnv::out()<<endl;
   Wm.print("Wm");
   Wr.print("Wr");
   Nm.print("Nm");
   Nr.print("Nr");
   (Nm.t() * Sdfg * Nr).print("3a Smr");
-  cout << "nelec = "
+  ExEnv::out() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr,Nr_map), Pdfg, Sdfg) << endl;
 # endif
 
@@ -605,7 +605,7 @@ Wavefunction::nao(double *atom_charges)
       for (j=0; j<=r_maxam_on_atom[i]; j++) {
           r_nam_on_atom[i][j] = nam_on_atom[i][j] - nnmb_atom(z,j);
           if (r_nam_on_atom[i][j] < 0) {
-              cerr << "NAO: < 0 rydberg orbitals of a given type" << endl;
+              ExEnv::err() << "NAO: < 0 rydberg orbitals of a given type" << endl;
               abort();
             }
         }
@@ -649,7 +649,7 @@ Wavefunction::nao(double *atom_charges)
   Sm.print("Sm before 4a");
   OWm.print("OWm");
   (OWm.t() * Sm * OWm).print("Sm after 4a");
-  cout << "nelec = "
+  ExEnv::out() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr,Nr_map), Pdfg, Sdfg) << endl;
 # endif
 
@@ -659,7 +659,7 @@ Wavefunction::nao(double *atom_charges)
 # ifdef DEBUG
   Nm.print("Nm after interatomic orthog");
   (Nm.t() * Sdfg * Nr).print("4a Smr before r orthog");
-  cout << "nelec = "
+  ExEnv::out() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr,Nr_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -694,13 +694,13 @@ Wavefunction::nao(double *atom_charges)
         }
     }
 # ifdef DEBUG
-  cout << "Nr1map:"; for (i=0;i<nr1;i++) cout<<" "<<Nr1_map[i]; cout<<endl;
-  cout << "Nr2map:"; for (i=0;i<nr2;i++) cout<<" "<<Nr2_map[i]; cout<<endl;
+  ExEnv::out() << "Nr1map:"; for (i=0;i<nr1;i++) ExEnv::out()<<" "<<Nr1_map[i]; ExEnv::out()<<endl;
+  ExEnv::out() << "Nr2map:"; for (i=0;i<nr2;i++) ExEnv::out()<<" "<<Nr2_map[i]; ExEnv::out()<<endl;
   Nr1.print("Nr1");
   Nr2.print("Nr2");
   (Nm.t() * Sdfg * Nr1).print("4a Smr1 before r orthog");
   (Nm.t() * Sdfg * Nr2).print("4a Smr2 before r orthog");
-  cout << "nelec = "
+  ExEnv::out() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -730,7 +730,7 @@ Wavefunction::nao(double *atom_charges)
   Nr2.print("Nr2 after orthogonalization to r1");
   (Nm.t() * Sdfg * Nr2).print("4a Smr2 after orthog of r2 to r1");
   (Nr1.t() * Sdfg * Nr2).print("4a Sr1r2 after orthog of r2 to r1");
-  cout << "nelec = "
+  ExEnv::out() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -748,7 +748,7 @@ Wavefunction::nao(double *atom_charges)
   Nr1 = Nr1 * OWr1;
 # ifdef DEBUG
   Nr1.print("Nr1 after weighted symmetric orthogonalization");
-  cout << "nelec = "
+  ExEnv::out() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -765,10 +765,10 @@ Wavefunction::nao(double *atom_charges)
   Nr2 = Nr2 * OWr2;
 # ifdef DEBUG
   Nr2.print("Nr2 after weighted symmetric orthogonalization");
-  cout << "nelec = "
+  ExEnv::out() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
-  cout << "nelec(o) = "
+  ExEnv::out() << "nelec(o) = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg)
        << endl;
 # endif
@@ -809,34 +809,34 @@ Wavefunction::nao(double *atom_charges)
 # ifdef DEBUG
   Nred.print("Nred");
   N.print("N after 4b");
-  cout << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
-  cout << "nelec(o) = " << ttrace(N, Pdfg) << endl;
+  ExEnv::out() << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
+  ExEnv::out() << "nelec(o) = " << ttrace(N, Pdfg) << endl;
   Pfinal.print("final P");
   (N.t() * Sdfg * N).print("final S");
-  cout.form("nelec = trace(final P) = %14.8f", (N.t() * Pdfg * N).trace());
+  ExEnv::out().form("nelec = trace(final P) = %14.8f", (N.t() * Pdfg * N).trace());
 
   (mhalf(Sdfg) * Pdfg * mhalf(Sdfg)).print("P in symm orth basis");
 # endif
 
 # ifdef DEBUG
-  cout << "nb   = " << nb << endl;
-  cout << "nnmb = " << nnmb << endl;
-  cout << "nnrb = " << nnrb << endl;
-  cout << "nr1  = " << nr1 << endl;
-  cout << "nr2  = " << nr2 << endl;
+  ExEnv::out() << "nb   = " << nb << endl;
+  ExEnv::out() << "nnmb = " << nnmb << endl;
+  ExEnv::out() << "nnrb = " << nnrb << endl;
+  ExEnv::out() << "nr1  = " << nr1 << endl;
+  ExEnv::out() << "nr2  = " << nr2 << endl;
 # endif
 
-  cout << node0 << indent << "Natural Population Analysis:" << endl;
-  cout << incindent;
-  cout << node0 << indent << " n   atom    charge ";
+  ExEnv::out() << node0 << indent << "Natural Population Analysis:" << endl;
+  ExEnv::out() << incindent;
+  ExEnv::out() << node0 << indent << " n   atom    charge ";
   for (i=0; i<=maxam; i++) {
       const char *am = "SPDFGH?";
       int index;
       if (i>6) index = 6;
       else index = i;
-      cout << node0 << "    ne(" << am[index] << ") ";
+      ExEnv::out() << node0 << "    ne(" << am[index] << ") ";
     }
-  cout << node0 << endl;
+  ExEnv::out() << node0 << endl;
   for (i=0; i<natom; i++) {
       double e = 0.0;
       for (j=0; j<=maxam_on_atom[i]; j++) {
@@ -847,7 +847,7 @@ Wavefunction::nao(double *atom_charges)
                 }
             }
         }
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("%3d   %2s   % 8.6f",i + 1,
                        AtomInfo::symbol(molecule()->Z(i)),
                        double(molecule()->Z(i)) - e);
@@ -862,12 +862,12 @@ Wavefunction::nao(double *atom_charges)
                                           amoff_on_atom[i][j][k] + l);
                 }
             }
-          cout << node0 << scprintf(" % 8.6f",e);
+          ExEnv::out() << node0 << scprintf(" % 8.6f",e);
         }
-      cout << node0 << endl;
+      ExEnv::out() << node0 << endl;
     }
-  cout << node0 << endl;
-  cout << decindent;
+  ExEnv::out() << node0 << endl;
+  ExEnv::out() << decindent;
 
   delete[] Nm_map;
   delete[] Nr_map;

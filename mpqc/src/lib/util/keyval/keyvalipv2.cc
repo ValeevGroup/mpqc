@@ -199,7 +199,7 @@ ParsedKeyVal::read(const char* name)
 {
   ifstream infp(name,ios::in);
   if (infp.bad()) {
-    cerr << "ParsedKeyVal couldn't open " << name << endl;
+    ExEnv::err() << "ParsedKeyVal couldn't open " << name << endl;
     exit(1);
     }
 
@@ -218,14 +218,14 @@ ParsedKeyVal::read(const char* name)
 void ParsedKeyVal::read(istream&infp)
 {
   nfp++;
-  ipv2->read(infp,cerr,"<stream>");
+  ipv2->read(infp,ExEnv::err(),"<stream>");
 }
 
 void
 ParsedKeyVal::parse_string(const char *str)
 {
   istrstream in(str);
-  ipv2->read(in,cerr,"<string>");
+  ipv2->read(in,ExEnv::err(),"<string>");
 }
 
 ParsedKeyVal::~ParsedKeyVal()

@@ -149,15 +149,15 @@ PetiteList::init()
 
       atom_map_[i][g] = mol.atom_at_position(np, 0.05);
       if (atom_map_[i][g] < 0) {
-        cout << "ERROR: Symmetry operation " << g << " did not map atom "
+        ExEnv::out() << "ERROR: Symmetry operation " << g << " did not map atom "
              << i+1 << " to another atom:" << endl;
-        cout << indent << "Molecule:" << endl;
-        cout << incindent;
+        ExEnv::out() << indent << "Molecule:" << endl;
+        ExEnv::out() << incindent;
         mol.print();
-        cout << decindent;
-        cout << indent << "attempted to find atom at" << endl;
-        cout << incindent;
-        cout << indent << np[0] << " " << np[1] << " " << np[2] << endl;
+        ExEnv::out() << decindent;
+        ExEnv::out() << indent << "attempted to find atom at" << endl;
+        ExEnv::out() << incindent;
+        ExEnv::out() << indent << np[0] << " " << np[1] << " " << np[2] << endl;
         abort();
       }
     }

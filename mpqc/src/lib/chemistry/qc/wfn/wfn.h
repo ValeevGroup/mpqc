@@ -204,7 +204,7 @@ class Wavefunction: public MolecularEnergy {
     /// Returns the orthogonalization method
     int orthog_method() { return symm_orthog_?Symmetric:Canonical; }
 
-    void print(ostream& = cout) const;
+    void print(ostream& = ExEnv::out()) const;
 };
 SavableState_REF_dec(Wavefunction);
 

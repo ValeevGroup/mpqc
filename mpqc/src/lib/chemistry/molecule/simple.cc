@@ -93,7 +93,7 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
             }
         }
       if (i != na) {
-          cerr << node0 << indent
+          ExEnv::err() << node0 << indent
                << scprintf(
                    "%s::%s(const RefKeyVal&): missing one of the atoms "
                    "or atom_labels (requires a molecule too) "
@@ -111,7 +111,7 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
       for (int i=0; i<na; i++) {
           atoms[i]=kv->intvalue(i+1);
           if (kv->error() != KeyVal::OK) {
-              cerr << node0 << indent
+              ExEnv::err() << node0 << indent
                    << scprintf("%s::%s(const RefKeyVal&): missing an atom\n",
                                class_name(),class_name());
               kv->errortrace();

@@ -150,7 +150,7 @@ void
 MemoryDataRequestQueue::push(MemoryDataRequest&r)
 {
   if (n_ == MaxDepth) {
-      cerr << scprintf("MemoryDataRequestQueue: MaxDepth exceeded\n");
+      ExEnv::err() << scprintf("MemoryDataRequestQueue: MaxDepth exceeded\n");
       abort();
     }
   q_[n_] = r;
@@ -161,7 +161,7 @@ void
 MemoryDataRequestQueue::pop(MemoryDataRequest&r)
 {
   if (n_ == 0) {
-      cerr << scprintf("MemoryDataRequestQueue: nothing to pop\n");
+      ExEnv::err() << scprintf("MemoryDataRequestQueue: nothing to pop\n");
       abort();
     }
   n_--;
@@ -393,14 +393,14 @@ void
 ActiveMsgMemoryGrp::send_lock_request(MemoryLockRequest::Request req,
                                       distsize_t offset, int size)
 {
-  cerr << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
+  ExEnv::err() << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
   abort();
 }
 
 void
 ActiveMsgMemoryGrp::wait_for_lock()
 {
-  cerr << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
+  ExEnv::err() << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
   abort();
 }
 

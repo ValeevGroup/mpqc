@@ -62,7 +62,7 @@ Int2eV3::int_init_bounds_nocomp()
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   used_storage_ += sizeof(int_bound_t)*nsht;
   if(int_Qvec==0) {
-    cerr << scprintf("int_init_bounds_nocomp: cannot malloc int_Qvec: %d",
+    ExEnv::err() << scprintf("int_init_bounds_nocomp: cannot malloc int_Qvec: %d",
                      nsht)
          << endl;
     exit(1);
@@ -89,7 +89,7 @@ Int2eV3::int_init_bounds_1der_nocomp()
   int nsht=nshell*(nshell+1)/2;
 
   if (!int_derivative_bounds) {
-    cerr << "requested der bounds but space not allocated" << endl;
+    ExEnv::err() << "requested der bounds but space not allocated" << endl;
     exit(1);
     }
 
@@ -100,7 +100,7 @@ Int2eV3::int_init_bounds_1der_nocomp()
   int_Rvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   used_storage_ += sizeof(int_bound_t)*nsht*2;
   if((int_Qvec==0) || (int_Rvec==0)) {
-    cerr << scprintf("int_init_bounds_1der_nocomp: cannot malloc int_{R,Q}vec: %d",nsht) << endl;
+    ExEnv::err() << scprintf("int_init_bounds_1der_nocomp: cannot malloc int_{R,Q}vec: %d",nsht) << endl;
     exit(1);
     }
 
@@ -183,7 +183,7 @@ int
 Int2eV3::int_erep_0bound_1der()
 {
 #if 0
-  cout << scprintf("int_erep_0bound_1der(): Q: %4d R: %4d\n", int_Q,int_R);
+  ExEnv::out() << scprintf("int_erep_0bound_1der(): Q: %4d R: %4d\n", int_Q,int_R);
 #endif
   return 1 + int_Q + int_R;
   }
@@ -199,7 +199,7 @@ Int2eV3::int_erep_2bound_1der(int s1, int s2)
   int b2 = int_Q + int_Rvec[ij];
 
 #if 0
-  cout << scprintf("int_erep_2bound_1der(%d,%d): Q: %4d R: %4d\n",s1,s2,
+  ExEnv::out() << scprintf("int_erep_2bound_1der(%d,%d): Q: %4d R: %4d\n",s1,s2,
                    int_Qvec[ij],int_Rvec[ij]);
 #endif
 
@@ -242,7 +242,7 @@ Int2eV3::erep_4bound_1der(int s1, int s2, int s3, int s4)
   int b2 = Qkl + Rij;
 
 #if 0
-  cout << scprintf("int_erep_4bound_1der(%d,%d,%d,%d): Q: %4d %4d R: %4d %4d\n",
+  ExEnv::out() << scprintf("int_erep_4bound_1der(%d,%d,%d,%d): Q: %4d %4d R: %4d %4d\n",
                    s1,s2,s3,s4,
                    int_Qvec[ij],int_Qvec[kl],int_Rvec[ij],int_Rvec[kl]);
 #endif
@@ -266,7 +266,7 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
   int sh1,sh2;
 
   if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
-    cerr << scprintf("bounds.compute_bounds: all centers must be the same")
+    ExEnv::err() << scprintf("bounds.compute_bounds: all centers must be the same")
          << endl;
     exit(1);
     }
@@ -312,7 +312,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
   set_redundant(1);
 
   if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
-    cerr << scprintf("bounds.compute_bounds: all centers must be the same")
+    ExEnv::err() << scprintf("bounds.compute_bounds: all centers must be the same")
          << endl;
     exit(1);
     }
@@ -332,7 +332,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
         nint = size[0]*size[1]*size[0]*size[1];
         max = find_max(int_buffer,nint);
 #if 0
-        cout << scprintf("max for %d %d (size %d) is %15.11f\n", sh1, sh2, nint, max);
+        ExEnv::out() << scprintf("max for %d %d (size %d) is %15.11f\n", sh1, sh2, nint, max);
 #endif
         }
       else if (flag == COMPUTE_R) {
@@ -340,19 +340,19 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
         int_erep_bound1der(0,sh1,sh2,&nint);
         max1 = find_max(int_buffer,nint);
 #if 0
-        cout << scprintf("bound(%d) for (%d,%d) is %12.8f int_buffer =",
+        ExEnv::out() << scprintf("bound(%d) for (%d,%d) is %12.8f int_buffer =",
                          flag,sh1,sh2,max1);
         for (i=0; (i<nint)&&(i<27); i++)
-          cout << scprintf(" %12.8f",int_buffer[i]);
-        if (nint > 27) cout << scprintf(" ...");
-        cout << scprintf("\n");
+          ExEnv::out() << scprintf(" %12.8f",int_buffer[i]);
+        if (nint > 27) ExEnv::out() << scprintf(" ...");
+        ExEnv::out() << scprintf("\n");
 #endif
         int_erep_bound1der(0,sh2,sh1,&nint);
         max2 = find_max(int_buffer,nint);
         max = (max1>max2)?max1:max2;
         }
       else {
-        cout << scprintf("bad bound flag\n"); exit(1);
+        ExEnv::out() << scprintf("bad bound flag\n"); exit(1);
         }
 
     /* Compute the partial bound value. */
@@ -370,11 +370,11 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
       if (flag == COMPUTE_R) vec[shellij]++;
       if (vec[shellij]>*overall) *overall = vec[shellij];
 #if 0
-      cout << scprintf("bound(%d) for (%d,%d) is %4d int_buffer =",
+      ExEnv::out() << scprintf("bound(%d) for (%d,%d) is %4d int_buffer =",
                        flag,sh1,sh2,vec[shellij]);
-      for (i=0; (i<nint)&&(i<27); i++) cout << scprintf(" %12.8f",int_buffer[i]);
-      if (nint > 27) cout << scprintf(" ...");
-      cout << scprintf("\n");
+      for (i=0; (i<nint)&&(i<27); i++) ExEnv::out() << scprintf(" %12.8f",int_buffer[i]);
+      if (nint > 27) ExEnv::out() << scprintf(" ...");
+      ExEnv::out() << scprintf("\n");
 #endif
   int_integral_storage = old_int_integral_storage;
 

@@ -593,7 +593,7 @@ RefSCMatrix::restore(StateIn&s)
       pointer()->restore(s);
     }
   else if (have_matrix) {
-      cerr << "RefSCMatrix::restore: matrix not properly initialized" << endl;
+      ExEnv::err() << "RefSCMatrix::restore: matrix not properly initialized" << endl;
       abort();
     }
   else {
@@ -1116,7 +1116,7 @@ RefSymmSCMatrix::restore(StateIn&s)
       pointer()->restore(s);
     }
   else if (have_matrix) {
-      cerr << "RefSymmSCMatrix::restore: "
+      ExEnv::err() << "RefSymmSCMatrix::restore: "
            << "matrix not properly initialized" << endl;
       abort();
     }
@@ -1429,7 +1429,7 @@ RefDiagSCMatrix::restore(StateIn&s)
       pointer()->restore(s);
     }
   else if (have_matrix) {
-      cerr << "RefDiagSCMatrix::restore: "
+      ExEnv::err() << "RefDiagSCMatrix::restore: "
            << "matrix not properly initialized" << endl;
       abort();
     }
@@ -1761,7 +1761,7 @@ RefSCVector::restore(StateIn&s)
       pointer()->restore(s);
     }
   else if (have_matrix) {
-      cerr << "RefSCVector::restore: vector not properly initialized" << endl;
+      ExEnv::err() << "RefSCVector::restore: vector not properly initialized" << endl;
       abort();
     }
   else {

@@ -21,7 +21,7 @@ typedef double (*V_FCT_PTR)(double);
 #define MAX(A,B) ((A) > (B) ? (A) : (B))
 
 // error handling macro
-#define V_ERROR(E) { cerr << E; exit(1); }
+#define V_ERROR(E) { ExEnv::err() << E; exit(1); }
 
 class vec2;
 class vec3;

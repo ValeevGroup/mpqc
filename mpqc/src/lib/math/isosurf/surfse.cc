@@ -233,12 +233,12 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                   RefEdge e2 = new_edge_map[v0];
                   RefEdge e3 = new_edge_map[v1];
                   if (e1.null() || e2.null() || e3.null()) {
-                      cerr << "TriangulatedSurface::remove_short_edges: "
+                      ExEnv::err() << "TriangulatedSurface::remove_short_edges: "
                            << "building new triangle but edges are null:"
                            << endl;
-                      if (e1.null()) cerr << "  e1" << endl;
-                      if (e2.null()) cerr << "  e2" << endl;
-                      if (e3.null()) cerr << "  e3" << endl;
+                      if (e1.null()) ExEnv::err() << "  e1" << endl;
+                      if (e2.null()) ExEnv::err() << "  e2" << endl;
+                      if (e3.null()) ExEnv::err() << "  e3" << endl;
                       abort();
                     }
                   // Compute the correct orientation of e1 within the new

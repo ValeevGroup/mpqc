@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream.h>
+#include <util/misc/exenv.h>
 extern "C" {
 int read_file11(int natom, int readto,
       char *label, char *theory, char *dertype,
@@ -27,7 +28,8 @@ FILE11::FILE11(int num)
   
  int errcod = read(num);
  if (!errcod)
-     cerr << "failed to read gradient #" << num <<  "from file11" << endl;
+     ExEnv::err()
+         << "failed to read gradient #" << num <<  "from file11" << endl;
 }
 FILE11::~FILE11()
 {

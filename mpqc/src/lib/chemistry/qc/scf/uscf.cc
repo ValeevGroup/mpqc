@@ -145,7 +145,7 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
   if (keyval->exists("multiplicity")) {
     int mult = keyval->intvalue("multiplicity");
     if (mult < 1) {
-      cerr << node0 << endl << indent
+      ExEnv::err() << node0 << endl << indent
            << "USCF::init: bad value for multiplicity: " << mult << endl
            << indent << "assuming singlet" << endl;
       mult=1;
@@ -154,7 +154,7 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
     // for singlet, triplet, etc. we need an even number of electrons
     // for doublet, quartet, etc. we need an odd number of electrons
     if ((mult%2 && nelectrons%2) || (!(mult%2) && !(nelectrons%2))) {
-      cerr << node0 << endl << indent
+      ExEnv::err() << node0 << endl << indent
            << "USCF::init: Warning, there's a leftover electron..."
            << " I'm going to get rid of it" << endl
            << incindent << indent << "total_charge = " << charge << endl
@@ -175,7 +175,7 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
 
   tnbeta_ = nelectrons-tnalpha_;
   
-  cout << node0 << endl << indent
+  ExEnv::out() << node0 << endl << indent
        << "USCF::init: total charge = " << Znuc-tnalpha_-tnbeta_
        << endl << endl;
 
@@ -200,15 +200,15 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
     set_occupations(0,0);
   }
 
-  cout << node0 << indent << "alpha = [";
+  ExEnv::out() << node0 << indent << "alpha = [";
   for (i=0; i < nirrep_; i++)
-    cout << node0 << " " << nalpha_[i];
-  cout << node0 << " ]\n";
+    ExEnv::out() << node0 << " " << nalpha_[i];
+  ExEnv::out() << node0 << " ]\n";
 
-  cout << node0 << indent << "beta  = [";
+  ExEnv::out() << node0 << indent << "beta  = [";
   for (i=0; i < nirrep_; i++)
-    cout << node0 << " " << nbeta_[i];
-  cout << node0 << " ]\n";
+    ExEnv::out() << node0 << " " << nbeta_[i];
+  ExEnv::out() << node0 << " ]\n";
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -347,7 +347,7 @@ RefSymmSCMatrix
 UnrestrictedSCF::fock(int n)
 {
   if (n > 1) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "USCF::fock: there are only two fock matrices, "
          << scprintf("but fock(%d) was requested\n",n);
     abort();
@@ -396,11 +396,11 @@ UnrestrictedSCF::initial_vector(int needv)
       // GaussianBasisSet
       if (guess_wfn_.nonnull()) {
         if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << "Using guess wavefunction as starting vector" << endl;
 
           // indent output of eigenvectors() call if there is any
-          cout << incindent << incindent;
+          ExEnv::out() << incindent << incindent;
           UnrestrictedSCF *ug =
             UnrestrictedSCF::castdown(guess_wfn_.pointer());
           if (!ug || compute_guess_) {
@@ -415,29 +415,29 @@ UnrestrictedSCF::initial_vector(int needv)
               = ug->oso_eigenvectors_beta_.result_noupdate().copy();
             eigenvalues_beta_ = ug->eigenvalues_beta_.result_noupdate().copy();
           }
-          cout << decindent << decindent;
+          ExEnv::out() << decindent << decindent;
         } else {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << "Projecting guess wavefunction into the present basis set"
                << endl;
 
           // indent output of projected_eigenvectors() call if there is any
-          cout << incindent << incindent;
+          ExEnv::out() << incindent << incindent;
           oso_eigenvectors_ = projected_eigenvectors(guess_wfn_, 1);
           eigenvalues_ = projected_eigenvalues(guess_wfn_, 1);
           oso_eigenvectors_beta_ = projected_eigenvectors(guess_wfn_, 0);
           eigenvalues_beta_ = projected_eigenvalues(guess_wfn_, 0);
-          cout << decindent << decindent;
+          ExEnv::out() << decindent << decindent;
         }
 
         // we should only have to do this once, so free up memory used
         // for the old wavefunction
         guess_wfn_=0;
 
-        cout << node0 << endl;
+        ExEnv::out() << node0 << endl;
       
       } else {
-        cout << node0 << indent << "Starting from core Hamiltonian guess\n"
+        ExEnv::out() << node0 << indent << "Starting from core Hamiltonian guess\n"
              << endl;
         oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
         oso_eigenvectors_beta_ = oso_eigenvectors_.result_noupdate().copy();
@@ -580,7 +580,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     // test to see if newocc is different from nalpha_
     for (i=0; i < nirrep_; i++) {
       if (nalpha_[i] != newalpha[i]) {
-        cerr << node0 << indent << "UnrestrictedSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err() << node0 << indent << "UnrestrictedSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << scprintf("occupations for irrep %d have changed\n",i+1)
              << indent
@@ -588,7 +588,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
              << endl << decindent;
       }
       if (nbeta_[i] != newbeta[i]) {
-        cerr << node0 << indent << "UnrestrictedSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err() << node0 << indent << "UnrestrictedSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << scprintf("occupations for irrep %d have changed\n",i+1)
              << indent
@@ -899,7 +899,7 @@ UnrestrictedSCF::compute_vector(double& eelec)
   
   // calculate the nuclear repulsion energy
   double nucrep = molecule()->nuclear_repulsion_energy();
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf("nuclear repulsion energy = %15.10f", nucrep)
        << endl << endl;
 
@@ -931,7 +931,7 @@ UnrestrictedSCF::compute_vector(double& eelec)
 
     // calculate the electronic energy
     eelec = scf_energy();
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << scprintf("iter %5d energy = %15.10f delta = %10.5e",
                      iter+1, eelec+nucrep, delta)
          << endl;
@@ -1040,7 +1040,7 @@ UnrestrictedSCF::compute_vector(double& eelec)
     S2real = S2real*(S2real+1);
     double S2 = S2real + tnbeta_ - s2;
 
-    cout << node0 << endl
+    ExEnv::out() << node0 << endl
          << indent << scprintf("<S^2>exact = %f", S2real) << endl
          << indent << scprintf("<S^2>      = %f", S2) << endl;
   }
@@ -1201,7 +1201,7 @@ UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
     if (threadgrp_->start_threads() < 0
         ||threadgrp_->wait_threads() < 0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "USCF: error running threads" << endl;
       abort();
     }
@@ -1219,7 +1219,7 @@ UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
   // for now quit
   else {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "USCF::two_body_deriv_hf: can't do gradient yet\n";
     abort();
   }

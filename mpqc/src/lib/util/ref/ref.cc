@@ -30,11 +30,12 @@
 #endif
 
 #include <util/ref/ref.h>
+#include <util/misc/exenv.h>
 
 void
 VRefCount::error(const char * w) const
 {
-  cerr << "VRefCount: ERROR: " << w << endl;
+  ExEnv::err() << "VRefCount: ERROR: " << w << endl;
   abort();
 }
 
@@ -81,7 +82,7 @@ VRefCount::~VRefCount()
 void
 RefBase::warn ( const char * msg) const
 {
-  cerr << "WARNING: " << msg << endl;
+  ExEnv::err() << "WARNING: " << msg << endl;
 }
 void
 RefBase::warn_ref_to_stack() const

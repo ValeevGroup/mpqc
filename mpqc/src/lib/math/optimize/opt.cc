@@ -103,8 +103,8 @@ Optimize::Optimize(const RefKeyVal&keyval)
 
   function_ = keyval->describedclassvalue("function");
   if (function_.null()) {
-      cerr << node0 << "Optimize requires a function keyword" << endl;
-      cerr << node0 << "which is an object of type Function" << endl;
+      ExEnv::err() << node0 << "Optimize requires a function keyword" << endl;
+      ExEnv::err() << node0 << "which is an object of type Function" << endl;
       abort();
     }
 

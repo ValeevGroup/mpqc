@@ -116,7 +116,7 @@ TriangulatedSurface::remove_slender_triangles(
           for (j=0; j<3; j++) {
               l[j] = tri->edge(j)->straight_length();
               if (l[j] <= 0.0) {
-                  cerr << "TriangulatedSurface::"
+                  ExEnv::err() << "TriangulatedSurface::"
                        << "remove_slender_triangles: bad edge length"
                        << endl;
                   abort();

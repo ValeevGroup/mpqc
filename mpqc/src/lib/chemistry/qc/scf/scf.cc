@@ -138,7 +138,7 @@ SCF::SCF(const RefKeyVal& keyval) :
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
-    cout << incindent << incindent;
+    ExEnv::out() << incindent << incindent;
     guess_wfn_ = keyval->describedclassvalue("guess_wavefunction");
     compute_guess_=1;
     if (guess_wfn_.null()) {
@@ -160,7 +160,7 @@ SCF::SCF(const RefKeyVal& keyval) :
         delete[] path;
       }
     }
-    cout << decindent << decindent;
+    ExEnv::out() << decindent << decindent;
   }
 }
 
@@ -232,7 +232,7 @@ SCF::compute()
 
   double delta;
   if (value_needed()) {
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("SCF::compute: energy accuracy = %10.7e\n",
                      desired_value_accuracy())
          << endl;
@@ -244,7 +244,7 @@ SCF::compute()
     double nucrep = molecule()->nuclear_repulsion_energy();
     double eother = 0.0;
     if (accumddh_.nonnull()) eother = accumddh_->e();
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("total scf energy = %15.10f", eelec+eother+nucrep)
          << endl;
 
@@ -258,7 +258,7 @@ SCF::compute()
   if (gradient_needed()) {
     RefSCVector gradient = matrixkit()->vector(moldim());
 
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("SCF::compute: gradient accuracy = %10.7e\n",
                      desired_gradient_accuracy())
          << endl;
@@ -273,7 +273,7 @@ SCF::compute()
   if (hessian_needed()) {
     RefSymmSCMatrix hessian = matrixkit()->symmmatrix(moldim());
     
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("SCF::compute: hessian accuracy = %10.7e\n",
                      desired_hessian_accuracy())
          << endl;
@@ -369,11 +369,11 @@ SCF::initial_vector(int needv)
       if (guess_wfn_.nonnull()) {
         if (basis()->equiv(guess_wfn_->basis())
             &&orthog_method() == guess_wfn_->orthog_method()) {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << "Using guess wavefunction as starting vector" << endl;
 
           // indent output of eigenvectors() call if there is any
-          cout << incindent << incindent;
+          ExEnv::out() << incindent << incindent;
           SCF *g = SCF::castdown(guess_wfn_.pointer());
           if (!g || compute_guess_) {
             oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
@@ -382,27 +382,27 @@ SCF::initial_vector(int needv)
             oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
             eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
           }
-          cout << decindent << decindent;
+          ExEnv::out() << decindent << decindent;
         } else {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << "Projecting guess wavefunction into the present basis set"
                << endl;
 
           // indent output of projected_eigenvectors() call if there is any
-          cout << incindent << incindent;
+          ExEnv::out() << incindent << incindent;
           oso_eigenvectors_ = projected_eigenvectors(guess_wfn_);
           eigenvalues_ = projected_eigenvalues(guess_wfn_);
-          cout << decindent << decindent;
+          ExEnv::out() << decindent << decindent;
         }
 
         // we should only have to do this once, so free up memory used
         // for the old wavefunction
         guess_wfn_=0;
 
-        cout << node0 << endl;
+        ExEnv::out() << node0 << endl;
       
       } else {
-        cout << node0 << indent << "Starting from core Hamiltonian guess\n"
+        ExEnv::out() << node0 << indent << "Starting from core Hamiltonian guess\n"
              << endl;
         oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
       }
@@ -589,7 +589,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
     // for now quit
     else {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "Cannot yet use anything but Local matrices"
            << endl;
       abort();
@@ -597,7 +597,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   }
 
   if (debug_ > 0) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << "Nelectron = " << 2.0 * (d * overlap()).trace() << endl;
   }
 
@@ -616,7 +616,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
     d2.assign(0.0);
     d2.accumulate_transform(vector, occ);
     d2.print("d2 density");
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << "d2 Nelectron = " << 2.0 * (d2 * overlap()).trace() << endl;
   }
 }
@@ -645,7 +645,7 @@ SCF::one_body_energy()
 void
 SCF::two_body_energy(double &ec, double &ex)
 {
-  cerr << class_name() << ": two_body_energy not implemented" << endl;
+  ExEnv::err() << class_name() << ": two_body_energy not implemented" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

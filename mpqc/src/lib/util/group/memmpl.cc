@@ -49,7 +49,7 @@ void
 MPLMemoryGrp::static_handler(int*msgid_arg)
 {
   if (!global_mpl_mem) {
-      cerr << scprintf("WARNING: Tried to call mpl_memory_handler"
+      ExEnv::err() << scprintf("WARNING: Tried to call mpl_memory_handler"
               " without global_mpl_mem\n");
     }
   else {
@@ -101,7 +101,7 @@ MPLMemoryGrp::get_mid(char info)
           if (info == 'P') {
               for (int ii=0; ii<max_mid; ii++) {
                   if (info_[ii] == 'P' && ii != i && !mid_ready_[i]) {
-                      cerr << "MPLMemoryGrp: double post" << endl;
+                      ExEnv::err() << "MPLMemoryGrp: double post" << endl;
                       abort();
                     }
                 }
@@ -110,7 +110,7 @@ MPLMemoryGrp::get_mid(char info)
         }
     }
 
-  cerr << "MPLMemoryGrp::get_mid(): ran out of mid's" << endl;
+  ExEnv::err() << "MPLMemoryGrp::get_mid(): ran out of mid's" << endl;
   abort();
   return 0;
 }
@@ -123,7 +123,7 @@ MPLMemoryGrp::grp_mid(int mpc_mid)
       if (!mid_ready_[i] && handles_[i] == mpc_mid) return i;
     }
 
-  cerr << "MPLMemoryGrp::grp_mid(): invalid mid: " << mpc_mid << endl;
+  ExEnv::err() << "MPLMemoryGrp::grp_mid(): invalid mid: " << mpc_mid << endl;
   for (i=0; i<max_mid; i++) {
       if (mid_ready_[i]) ExEnv::out() << "mid " << i << " is unused" << endl;
       else ExEnv::out() << "mid " << i << " has handle " << handles_[i] << endl;
@@ -137,7 +137,7 @@ MPLMemoryGrp::free_mid(long mid)
 {
   if (debug_) ExEnv::out() << "MPLMemoryGrp::free_mid(): freeing " << mid << endl;
   if (mid_ready_[mid]) {
-      cerr << "MPLMemoryGrp::free_mid(): mid not in use" << endl;
+      ExEnv::err() << "MPLMemoryGrp::free_mid(): mid not in use" << endl;
       abort();
     }
   mid_ready_[mid] = 1;
@@ -147,7 +147,7 @@ int &
 MPLMemoryGrp::mpc_mid(long mid)
 {
   if (mid_ready_[mid]) {
-      cerr << "MPLMemoryGrp::mpc_mid(" << mid << "): not in use" << endl;
+      ExEnv::err() << "MPLMemoryGrp::mpc_mid(" << mid << "): not in use" << endl;
     }
   return handles_[mid];
 }
@@ -208,7 +208,7 @@ MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
   global_mid = get_mid('P');
   data_request_mid_ = global_mid;
   if (data_request_mid_ == -1) {
-      cerr << scprintf("MPLMemoryGrp::activate(): bad mid\n");
+      ExEnv::err() << scprintf("MPLMemoryGrp::activate(): bad mid\n");
       abort();
     }
   mpc_rcvncall(data, nbytes,
@@ -240,7 +240,7 @@ MPLMemoryGrp::wait(long mid1, long mid2)
       ExEnv::out() << endl;
     }
   if (mpc_wait(&imid,&count)) {
-      cerr << scprintf("MPLMemoryGrp: mpc_wait failed\n");
+      ExEnv::err() << scprintf("MPLMemoryGrp: mpc_wait failed\n");
       sleep(1);
       abort();
     }
@@ -263,7 +263,7 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
   if (debug_) 
       ExEnv::out() << scprintf("MPLMemoryGrp entered\n");
   if (global_mpl_mem) {
-      cerr << scprintf("MPLMemoryGrp: only one allowed at a time\n");
+      ExEnv::err() << scprintf("MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
       abort();
     }
@@ -288,7 +288,7 @@ MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
   if (debug_) 
       ExEnv::out() << scprintf("MPLMemoryGrp KeyVal entered\n");
   if (global_mpl_mem) {
-      cerr << scprintf("MPLMemoryGrp: only one allowed at a time\n");
+      ExEnv::err() << scprintf("MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
       abort();
     }
@@ -298,7 +298,7 @@ MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
   init_mid();
 
   if (n() == 1) {
-      cerr << "MPLMemoryGrp: nproc = 1 not allowed" << endl;
+      ExEnv::err() << "MPLMemoryGrp: nproc = 1 not allowed" << endl;
       abort();
     }
 

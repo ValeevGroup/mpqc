@@ -150,7 +150,7 @@ MolecularHessian::cartesian_to_symmetry(const RefMolecule &mol,
   for (i=0; i<nmin; i++) {
       if (sigmaext(i) > epsilonext) rankext++;
     }
-  cout << node0 << indent << "The external rank is " << rankext << endl;
+  ExEnv::out() << node0 << indent << "The external rank is " << rankext << endl;
   // find the projection onto the externalbasis perp space
   if (rankext) {
       RefSCDimension drankext_tilde = new SCDimension(d3natom.n() - rankext);
@@ -182,7 +182,7 @@ MolecularHessian::cartesian_to_symmetry(const RefMolecule &mol,
             }
           atom_map[i][g] = mol->atom_at_position(np, 0.05);
           if (atom_map[i][g] < 0) {
-              cerr << node0 << indent
+              ExEnv::err() << node0 << indent
                    << "FinDispMolecularHessian: atom mapping bad" << endl;
               abort();
             }
@@ -350,36 +350,36 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
       char linebuf[nline];
       in.getline(linebuf, nline);
       if (strcmp(linebuf,"Hessian VT1")) {
-          cout << "MolecularHessian: not given a hessian file" << endl;
+          ExEnv::out() << "MolecularHessian: not given a hessian file" << endl;
           abort();
         }
       int natom;
       in >> natom;
       if (natom != mol->natom()) {
-          cout << "MolecularHessian: wrong number of atoms in hessianfile"
+          ExEnv::out() << "MolecularHessian: wrong number of atoms in hessianfile"
                << endl;
           abort();
         }
       in.getline(linebuf,nline);
-      //cout << "READ: should be atoms: " << linebuf << endl;
+      //ExEnv::out() << "READ: should be atoms: " << linebuf << endl;
       for (i=0; i<mol->natom(); i++) {
           int Z;
           double x, y, z;
           in >> Z >> x >> y >> z;
-          //cout << "READ: " << Z << " " << x << " " << y << " " << z << endl;
+          //ExEnv::out() << "READ: " << Z << " " << x << " " << y << " " << z << endl;
         }
       for (i=0; i<ntri; i++) {
           in >> hessv[i];
-          //cout << "READ: hess[" << i << "] = " << hessv[i] << endl;
+          //ExEnv::out() << "READ: hess[" << i << "] = " << hessv[i] << endl;
         }
       in.getline(linebuf, nline);
-      //cout << "READ: last line = " << linebuf << endl;
+      //ExEnv::out() << "READ: last line = " << linebuf << endl;
       if (strcmp(linebuf,"End Hessian")) {
           // try once more since there could be a left over new line
           in.getline(linebuf, nline);
           if (strcmp(linebuf,"End Hessian")) {
-              //cout << "READ: last line = " << linebuf << endl;
-              cout << "MolecularHessian: hessian file seems to be truncated"
+              //ExEnv::out() << "READ: last line = " << linebuf << endl;
+              ExEnv::out() << "MolecularHessian: hessian file seems to be truncated"
                    << endl;
               abort();
             }

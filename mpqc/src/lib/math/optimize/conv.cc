@@ -186,7 +186,7 @@ Convergence::converged()
                  graddisp_, pass, fail);
     }
   if (fail + pass == 0) {
-      cerr << "ERROR: Convergence::converged: no applicable convergence tests"
+      ExEnv::err() << "ERROR: Convergence::converged: no applicable convergence tests"
            << endl;
       abort();
     }

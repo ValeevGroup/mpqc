@@ -94,7 +94,7 @@ MBPT2::cs_cphf(double **scf_vector,
 
   // Debug print
   if (debug_)
-    cout << node0 << indent << "Entered cphf" << endl;
+    ExEnv::out() << node0 << indent << "Entered cphf" << endl;
   // End of debug print
 
   ////////////////////////////////////////////////////////////
@@ -147,27 +147,27 @@ MBPT2::cs_cphf(double **scf_vector,
     niter++;
     i++;
     if (debug_)
-      cout << node0 << indent << scprintf("niter: %i\n", niter);
+      ExEnv::out() << node0 << indent << scprintf("niter: %i\n", niter);
 
     // First expand AP_matrix_tot, alpha and P with an extra row
 
     AP_matrix_tmp = new double *[i+1];
     if (!AP_matrix_tmp) {
-      cerr << "Could not allocate AP_matrix_tmp" << endl;
+      ExEnv::err() << "Could not allocate AP_matrix_tmp" << endl;
       abort();
       }
 
     alpha_tmp = new double *[i+1];
 
     if (!alpha_tmp) {
-      cerr << "Could not allocate alpha_tmp" << endl;
+      ExEnv::err() << "Could not allocate alpha_tmp" << endl;
       abort();
       }
 
     P_tmp = new double *[i+1];
 
     if (!P_tmp) {
-      cerr << "Could not allocate P_tmp" << endl;
+      ExEnv::err() << "Could not allocate P_tmp" << endl;
       abort();
       }
 
@@ -179,7 +179,7 @@ MBPT2::cs_cphf(double **scf_vector,
 
     AP_matrix_tmp[i] = new double[dimP];
     if (!AP_matrix_tmp[i]) {
-      cerr << scprintf("Could not allocate AP_matrix_tmp[i], i = %i",i) << endl;
+      ExEnv::err() << scprintf("Could not allocate AP_matrix_tmp[i], i = %i",i) << endl;
       abort();
       }
     delete[] AP_matrix_tot;
@@ -187,7 +187,7 @@ MBPT2::cs_cphf(double **scf_vector,
 
     alpha_tmp[i] = new double[1];
     if (!alpha_tmp[i]) {
-      cerr << scprintf("Could not allocate alpha_tmp[i], i = %i",i) << endl;
+      ExEnv::err() << scprintf("Could not allocate alpha_tmp[i], i = %i",i) << endl;
       abort();
       }
     delete[] alpha;
@@ -195,7 +195,7 @@ MBPT2::cs_cphf(double **scf_vector,
 
     P_tmp[i] = new double[dimP];
     if (!P_tmp[i]) {
-      cerr << scprintf("Could not allocate P_tmp[i], i = %i",i) << endl;
+      ExEnv::err() << scprintf("Could not allocate P_tmp[i], i = %i",i) << endl;
       abort();
       }
     delete[] P;
@@ -261,10 +261,10 @@ MBPT2::cs_cphf(double **scf_vector,
        if (fabs(tmp_val2) > maxabs) maxabs = fabs(tmp_val2);
        }
     if (debug_) {
-      cout << node0 << indent << scprintf("RMS(P2aj_new-P2aj_old) = %12.10lf",
+      ExEnv::out() << node0 << indent << scprintf("RMS(P2aj_new-P2aj_old) = %12.10lf",
                                           sqrt((tmp_val1)/dimP))
            << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("max. abs. element of (P2aj_new-P2aj_old) = %12.10lf",
                        maxabs)
            << endl;
@@ -323,7 +323,7 @@ MBPT2::cs_cphf(double **scf_vector,
       }
     tmp_val1 = sqrt(tmp_val1);
     if (debug_)
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("norm(P[niter]) = %12.10lf", tmp_val1) << endl;
     if (tmp_val1 < epsilon) {  // Converged
       // if new vector is zero
@@ -331,7 +331,7 @@ MBPT2::cs_cphf(double **scf_vector,
       }
 
     if (niter >= warniter) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("CPHF: iter = %2d rms(P) = %12.10f eps = %12.10f",
                        niter, tmp_val1, epsilon)
            << endl;
@@ -343,7 +343,7 @@ MBPT2::cs_cphf(double **scf_vector,
   // If CPHF equations did not converge, exit with error message
   ///////////////////////////////////////////////////////////////
   if (niter == maxiter) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << "CPHF equations did not converge in " << maxiter << " iterations"
          << endl;
     abort();
@@ -363,7 +363,7 @@ MBPT2::cs_cphf(double **scf_vector,
 
   // Debug print
   if (debug_)
-    cout << node0 << indent << "Exiting cphf" << endl;
+    ExEnv::out() << node0 << indent << "Exiting cphf" << endl;
   // End of debug print
 
   // Deallocate various arrays

@@ -132,7 +132,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 	  if (argv[i] && !strcmp(argv[i], "-memorygrp")) {
               i++;
               if (i >= argc) {
-                  cerr << "-memorygrp must be following by an argument"
+                  ExEnv::err() << "-memorygrp must be following by an argument"
                        << endl;
                   abort();
                 }
@@ -169,12 +169,12 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       RefDescribedClass dc = strkv->describedclassvalue();
       grp = MemoryGrp::castdown(dc.pointer());
       if (dc.null()) {
-          cerr << "initial_memorygrp: couldn't find a MemoryGrp in "
+          ExEnv::err() << "initial_memorygrp: couldn't find a MemoryGrp in "
                << keyval_string << endl;
           abort();
         }
       else if (!grp) {
-          cerr << "initial_memorygrp: wanted MemoryGrp but got "
+          ExEnv::err() << "initial_memorygrp: wanted MemoryGrp but got "
                << dc->class_name() << endl;
           abort();
         }
@@ -190,7 +190,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 
   RefMessageGrp msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {
-      cerr << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
+      ExEnv::err() << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
       abort();
     }
 #ifdef HAVE_NX
@@ -233,13 +233,13 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       grp = new ProcMemoryGrp();
     }
   else {
-      cerr << scprintf("MemoryGrp::create_memorygrp: cannot create "
+      ExEnv::err() << scprintf("MemoryGrp::create_memorygrp: cannot create "
               "default for \"%s\"\n.", msg->class_name());
       abort();
     }
 
   if (!grp) {
-      cerr << scprintf("WARNING: MemoryGrp::initial_memorygrp(): failed\n");
+      ExEnv::err() << scprintf("WARNING: MemoryGrp::initial_memorygrp(): failed\n");
     }
 
   return grp;
@@ -289,7 +289,7 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
   int length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {
-      cerr << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
+      ExEnv::err() << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
       abort();
     }
 

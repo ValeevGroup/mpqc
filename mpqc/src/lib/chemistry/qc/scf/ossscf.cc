@@ -123,7 +123,7 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   } else {
     tndocc_ = (nelectrons-2)/2;
     if ((nelectrons-2)%2) {
-      cerr << node0 << endl << indent
+      ExEnv::err() << node0 << endl << indent
            << "OSSSCF::init: Warning, there's a leftover electron.\n"
            << incindent
            << indent << "total_charge = " << charge << endl
@@ -132,13 +132,13 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
     }
   }
 
-  cout << node0 << endl << indent << "OSSSCF::init: total charge = "
+  ExEnv::out() << node0 << endl << indent << "OSSSCF::init: total charge = "
        << Znuc-2*tndocc_-2 << endl << endl;
 
   nirrep_ = molecule()->point_group()->char_table().ncomp();
 
   if (nirrep_==1) {
-    cerr << node0 << indent << "OSSSCF::init: cannot do C1 symmetry\n";
+    ExEnv::err() << node0 << indent << "OSSSCF::init: cannot do C1 symmetry\n";
     abort();
   }
 
@@ -156,7 +156,7 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
       else if (nsi && osb_<0)
         osb_=i;
       else if (nsi) {
-        cerr << node0 << indent << "OSSSCF::init: too many open shells\n";
+        ExEnv::err() << node0 << indent << "OSSSCF::init: too many open shells\n";
         abort();
       }
     }
@@ -167,15 +167,15 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   }
 
   int i;
-  cout << node0 << indent << "docc = [";
+  ExEnv::out() << node0 << indent << "docc = [";
   for (i=0; i < nirrep_; i++)
-    cout << node0 << " " << ndocc_[i];
-  cout << node0 << " ]\n";
+    ExEnv::out() << node0 << " " << ndocc_[i];
+  ExEnv::out() << node0 << " ]\n";
 
-  cout << node0 << indent << "socc = [";
+  ExEnv::out() << node0 << indent << "socc = [";
   for (i=0; i < nirrep_; i++)
-    cout << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
-  cout << node0 << " ]\n";
+    ExEnv::out() << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
+  ExEnv::out() << node0 << " ]\n";
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -254,7 +254,7 @@ RefSymmSCMatrix
 OSSSCF::fock(int n)
 {
   if (n > 2) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "OSSSCF::fock: there are only three fock matrices, "
          << scprintf("but fock(%d) was requested\n", n);
     abort();
@@ -399,7 +399,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
       if (ndocc_[i] != newdocc[i]) {
-        cerr << node0 << indent << "OSSSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err() << node0 << indent << "OSSSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << scprintf("occupations for irrep %d have changed\n", i+1)
              << indent
@@ -407,7 +407,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
              << endl << decindent;
       }
       if ((osa != osa_ && osa != osb_) || (osb != osb_ && osb != osa_)) {
-        cerr << node0 << indent << "OSSSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err() << node0 << indent << "OSSSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << "open shell occupations have changed"
              << endl << decindent;

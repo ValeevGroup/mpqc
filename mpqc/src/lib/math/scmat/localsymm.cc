@@ -73,7 +73,7 @@ int
 LocalSymmSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d->n() || j>=d->n()) {
-      cerr << indent << "LocalSymmSCMatrix: index out of bounds\n";
+      ExEnv::err() << indent << "LocalSymmSCMatrix: index out of bounds\n";
       abort();
     }
   return ij_offset(i,j);
@@ -123,7 +123,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > n() || nscol > n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::get_subblock: trying to get too big a "
          << "subblock (" << nsrow << "," << nscol
          << ") from (" << n() << "," << n() << ")\n";
@@ -152,7 +152,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er)
   int nsrow = er-br+1;
 
   if (nsrow > n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::get_subblock: trying to get too big a "
          << "subblock (" << nsrow << "," << nsrow
          << ") from (" << n() << "," << n() << ")\n";
@@ -184,7 +184,7 @@ LocalSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > n() || nscol > n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::assign_subblock: trying to assign too big a "
          << "subblock (" << nsrow << "," << nscol
          << ") from (" << n() << "," << n() << ")\n";
@@ -205,7 +205,7 @@ LocalSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
   int nsrow = er-br+1;
 
   if (nsrow > n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::assign_subblock: trying to assign too big a "
          << "subblock (" << nsrow << "," << nsrow
          << ") from (" << n() << "," << n() << ")\n";
@@ -227,7 +227,7 @@ LocalSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int 
   int nscol = ec-bc+1;
 
   if (nsrow > n() || nscol > n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::accumulate_subblock: trying to "
          << "accumulate too big a "
          << "subblock (" << nsrow << "," << nscol
@@ -249,7 +249,7 @@ LocalSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
   int nsrow = er-br+1;
 
   if (nsrow > n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::accumulate_subblock: trying to "
          << "accumulate too big a "
          << "subblock (" << nsrow << "," << nsrow
@@ -266,7 +266,7 @@ SCVector *
 LocalSymmSCMatrix::get_row(int i)
 {
   if (i >= n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::get_row: trying to get invalid row "
          << i << " max " << n() << endl;
     abort();
@@ -287,14 +287,14 @@ void
 LocalSymmSCMatrix::assign_row(SCVector *v, int i)
 {
   if (i >= n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::assign_row: trying to assign invalid row "
          << i << " max " << n() << endl;
     abort();
   }
   
   if (v->n() != n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::assign_row: vector is wrong size "
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
@@ -311,7 +311,7 @@ void
 LocalSymmSCMatrix::accumulate_row(SCVector *v, int i)
 {
   if (i >= n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::accumulate_row: trying to "
          << "accumulate invalid row "
          << i << " max " << n() << endl;
@@ -319,7 +319,7 @@ LocalSymmSCMatrix::accumulate_row(SCVector *v, int i)
   }
   
   if (v->n() != n()) {
-    cerr << indent
+    ExEnv::err() << indent
          << "LocalSymmSCMatrix::accumulate_row: vector is wrong size"
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
@@ -341,7 +341,7 @@ LocalSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
@@ -379,7 +379,7 @@ LocalSymmSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::solve_this(SCVector*v): "
            << "dimensions don't match\n";
       abort();
@@ -423,7 +423,7 @@ LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 
   if (!dim()->equiv(la->dim()) ||
       !dim()->equiv(lb->coldim()) || !dim()->equiv(lb->rowdim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::"
            << "diagonalize(DiagSCMatrix*a,SCMatrix*b): bad dims";
       abort();
@@ -461,7 +461,7 @@ LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
                                           "accumulate_symmetric_product");
 
   if (!dim()->equiv(la->rowdim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::"
            << "accumulate_symmetric_product(SCMatrix*a): bad dim";
       abort();
@@ -480,7 +480,7 @@ LocalSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
                                           "accumulate_symmetric_sum");
 
   if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::"
            << "accumulate_symmetric_sum(SCMatrix*a): bad dim";
       abort();
@@ -505,7 +505,7 @@ LocalSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
                                       "accumulate_symmetric_outer_product");
 
   if (!dim()->equiv(la->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::"
            << "accumulate_symmetric_outer_product(SCMatrix*a): bad dim";
       abort();
@@ -535,17 +535,17 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
 
   // check the dimensions
   if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::accumulate_transform: bad dim" << endl;
-      cerr << indent << "this dimension:" << endl << incindent;
-      dim()->print(cerr);
-      cerr << decindent << indent
+      ExEnv::err() << indent << "this dimension:" << endl << incindent;
+      dim()->print(ExEnv::err());
+      ExEnv::err() << decindent << indent
            << "a row and col dimension:" << endl << incindent;
-      a->rowdim()->print(cerr);
-      a->coldim()->print(cerr);
-      cerr << decindent << indent << "b dimension:" << endl << incindent;
-      b->dim()->print(cerr);
-      cerr << decindent;
+      a->rowdim()->print(ExEnv::err());
+      a->coldim()->print(ExEnv::err());
+      ExEnv::err() << decindent << indent << "b dimension:" << endl << incindent;
+      b->dim()->print(ExEnv::err());
+      ExEnv::err() << decindent;
       abort();
     }
 
@@ -567,7 +567,7 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b,
 
   // check the dimensions
   if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::accumulate_transform: bad dim\n";
       abort();
     }
@@ -590,7 +590,7 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSCVector::scalar_product(SCVector*a): "
            << "dimensions don't match\n";
       abort();
@@ -622,7 +622,7 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp2& op,
       = LocalSymmSCMatrix::require_castdown(m,"LocalSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      cerr << indent << "LocalSymmSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "LocalSymmSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_ltri(block.pointer(), lm->block.pointer());
@@ -638,7 +638,7 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp3& op,
       = LocalSymmSCMatrix::require_castdown(n,"LocalSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      cerr << indent << "LocalSymmSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "LocalSymmSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_ltri(block.pointer(),
@@ -702,7 +702,7 @@ RefSCMatrixSubblockIter
 LocalSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSymmSCMatrix::local_blocks: not valid for local matrices"
            << endl;
       abort();
@@ -716,7 +716,7 @@ RefSCMatrixSubblockIter
 LocalSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << indent << "LocalSymmSCMatrix::all_blocks: "
+      ExEnv::err() << indent << "LocalSymmSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

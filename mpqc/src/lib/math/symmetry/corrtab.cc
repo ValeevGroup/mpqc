@@ -49,7 +49,7 @@ CorrelationTable::CorrelationTable(const RefPointGroup& group,
 {
   int rc = initialize_table(group,subgroup);
   if (rc != 0) {
-    cerr << node0
+    ExEnv::err() << node0
          << "ERROR: CorrelationTable: " << error(rc) << endl;
     abort();
     }

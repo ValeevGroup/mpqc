@@ -75,7 +75,7 @@ LocalSCVector::get_element(int i) const
 {
   int size = block->iend - block->istart;
   if (i < 0 || i >= size) {
-      cerr << indent << "LocalSCVector::get_element: bad index\n";
+      ExEnv::err() << indent << "LocalSCVector::get_element: bad index\n";
       abort();
     }
   return block->data[i];
@@ -86,7 +86,7 @@ LocalSCVector::set_element(int i,double a)
 {
   int size = block->iend - block->istart;
   if (i < 0 || i >= size) {
-      cerr << indent << "LocalSCVector::set_element: bad index\n";
+      ExEnv::err() << indent << "LocalSCVector::set_element: bad index\n";
       abort();
     }
   block->data[i] = a;
@@ -97,7 +97,7 @@ LocalSCVector::accumulate_element(int i,double a)
 {
   int size = block->iend - block->istart;
   if (i < 0 || i >= size) {
-      cerr << indent << "LocalSCVector::accumulate_element: bad index\n";
+      ExEnv::err() << indent << "LocalSCVector::accumulate_element: bad index\n";
       abort();
     }
   block->data[i] += a;
@@ -113,7 +113,7 @@ LocalSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSCVector:: accumulate_product(SCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
@@ -136,7 +136,7 @@ LocalSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSCVector:: accumulate_product(SymmSCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
@@ -169,7 +169,7 @@ LocalSCVector::accumulate(const SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "LocalSCVector::accumulate(SCVector*a): "
+      ExEnv::err() << indent << "LocalSCVector::accumulate(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -189,7 +189,7 @@ LocalSCVector::accumulate(const SCMatrix*a)
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
         || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
-      cerr << indent << "LocalSCVector::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "LocalSCVector::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -216,7 +216,7 @@ LocalSCVector::assign_v(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "LocalSCVector::assign_v(SCVector*a): "
+      ExEnv::err() << indent << "LocalSCVector::assign_v(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -243,7 +243,7 @@ LocalSCVector::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "LocalSCVector::scalar_product(SCVector*a): "
+      ExEnv::err() << indent << "LocalSCVector::scalar_product(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -269,7 +269,7 @@ LocalSCVector::element_op(const RefSCElementOp2& op,
       = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      cerr << indent << "LocalSCVector: bad element_op\n";
+      ExEnv::err() << indent << "LocalSCVector: bad element_op\n";
       abort();
     }
   op->process_spec_vsimp(block.pointer(), lm->block.pointer());
@@ -285,7 +285,7 @@ LocalSCVector::element_op(const RefSCElementOp3& op,
       = LocalSCVector::require_castdown(n, "LocalSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      cerr << indent << "LocalSCVector: bad element_op\n";
+      ExEnv::err() << indent << "LocalSCVector: bad element_op\n";
       abort();
     }
   op->process_spec_vsimp(block.pointer(),
@@ -327,7 +327,7 @@ RefSCMatrixSubblockIter
 LocalSCVector::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalSCVector::local_blocks: not valid for local matrices"
            << endl;
       abort();
@@ -341,7 +341,7 @@ RefSCMatrixSubblockIter
 LocalSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << indent << "LocalVectorSCMatrix::all_blocks: "
+      ExEnv::err() << indent << "LocalVectorSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/exenv.h>
 #include <chemistry/qc/basis/cartiter.h>
 
 ////////////////////////////////////////////////////////////////////////
@@ -85,7 +86,7 @@ void
 RedundantCartesianSubIter::start(int a, int b, int c)
 {
   if (l_ != a + b + c) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "RedundantCartesianSubIter::start: bad args\n";
     abort();
   }

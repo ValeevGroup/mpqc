@@ -90,7 +90,7 @@ int StateOutFile::open(const char *path)
   filebuf *fbuf = new filebuf();
   fbuf->open(path, ios::out);
   if (!fbuf->is_open()) {
-      cerr << "ERROR: StateOutFile: problems opening " << path << endl;
+      ExEnv::err() << "ERROR: StateOutFile: problems opening " << path << endl;
       abort();
     }
   buf_ = fbuf;
@@ -151,7 +151,7 @@ int StateInFile::open(const char *path)
   filebuf *fbuf = new filebuf();
   fbuf->open(path, ios::in);
   if (!fbuf->is_open()) {
-      cerr << "ERROR: StateInFile: problems opening " << path << endl;
+      ExEnv::err() << "ERROR: StateInFile: problems opening " << path << endl;
       abort();
     }
   buf_ = fbuf;

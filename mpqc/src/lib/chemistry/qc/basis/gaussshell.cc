@@ -175,16 +175,16 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
 {
   ncon = keyval->count("type");
   if (keyval->error() != KeyVal::OK) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "GaussianShell couldn't find the \"type\" array:\n";
-      keyval->dump(cerr);
+      keyval->dump(ExEnv::err());
       abort();
     }
   nprim = keyval->count("exp");
   if (keyval->error() != KeyVal::OK) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "GaussianShell couldn't find the \"exp\" array:\n";
-      keyval->dump(cerr);
+      keyval->dump(ExEnv::err());
       abort();
     }
   int normalized = keyval->booleanvalue("normalized");
@@ -199,10 +199,10 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
   for (i=0; i<nprim; i++) {
       exp[i] = keyval->doublevalue("exp",i);
       if (keyval->error() != KeyVal::OK) {
-          cerr << node0 << indent
+          ExEnv::err() << node0 << indent
                << scprintf("GaussianShell: error reading exp:%d: %s\n",
                            i,keyval->errormsg());
-          keyval->errortrace(cerr);
+          keyval->errortrace(ExEnv::err());
           exit(1);
         }
     }
@@ -211,10 +211,10 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
       coef[i] = new double[nprim];
       char* am = prefixkeyval->pcharvalue("am");
       if (prefixkeyval->error() != KeyVal::OK) {
-          cerr << node0 << indent
+          ExEnv::err() << node0 << indent
                << scprintf("GaussianShell: error reading am: \"%s\"\n",
                            prefixkeyval->errormsg());
-          prefixkeyval->errortrace(cerr);
+          prefixkeyval->errortrace(ExEnv::err());
           exit(1);
         }
       l[i] = -1;
@@ -222,10 +222,10 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
 	  if (amtypes[li] == am[0] || AMTYPES[li] == am[0]) { l[i] = li; break; }
 	}
       if (l[i] == -1 || strlen(am) != 1) {
-          cerr << node0 << indent
+          ExEnv::err() << node0 << indent
                << scprintf("GaussianShell: bad angular momentum: \"%s\"\n",
                            am);
-          prefixkeyval->errortrace(cerr);
+          prefixkeyval->errortrace(ExEnv::err());
           exit(1);
 	}
       if (l[i] <= 1) puream[i] = 0;
@@ -236,7 +236,7 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
           puream[i] = prefixkeyval->booleanvalue("puream");
           if (prefixkeyval->error() != KeyVal::OK) {
               puream[i] = 0;
-              //cerr << node0 << indent
+              //ExEnv::err() << node0 << indent
               //     << scprintf("GaussianShell: error reading puream: \"%s\"\n",
               //                 prefixkeyval->errormsg());
               //exit(1);
@@ -245,10 +245,10 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
       for (j=0; j<nprim; j++) {
         coef[i][j] = keyval->doublevalue("coef",i,j);
         if (keyval->error() != KeyVal::OK) {
-            cerr << node0 << indent
+            ExEnv::err() << node0 << indent
                  << scprintf("GaussianShell: error reading coef:%d:%d: %s\n",
                              i,j,keyval->errormsg());
-            keyval->errortrace(cerr);
+            keyval->errortrace(ExEnv::err());
             exit(1);
             }
         }
@@ -436,7 +436,7 @@ GaussianShell::relative_overlap(const RefIntegral& ints,
 {
   if (puream[con]) {
       // depends on how intv2 currently normalizes things
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "GaussianShell::relative_overlap "
            << "only implemented for Cartesians\n";
       abort();
@@ -538,8 +538,8 @@ GaussianShell::extent(double threshold) const
   double r1 = 3.0*r0;
   double b0 = monobound(r0);
   double b1 = monobound(r1);
-  //cout << "r0 = " << r0 << " b0 = " << b0 << endl;
-  //cout << "r1 = " << r0 << " b1 = " << b1 << endl;
+  //ExEnv::out() << "r0 = " << r0 << " b0 = " << b0 << endl;
+  //ExEnv::out() << "r1 = " << r0 << " b1 = " << b1 << endl;
   if (b0 <= threshold) {
       return r0;
     }
@@ -549,8 +549,8 @@ GaussianShell::extent(double threshold) const
       r1 = 3.0*r0;
       b0 = b1;
       b1 = monobound(r1);
-      //cout << "r0 = " << r0 << " b0 = " << b0 << endl;
-      //cout << "r1 = " << r0 << " b1 = " << b1 << endl;
+      //ExEnv::out() << "r0 = " << r0 << " b0 = " << b0 << endl;
+      //ExEnv::out() << "r1 = " << r0 << " b1 = " << b1 << endl;
     }
   while (r1 - r0 > 0.1) {
       double rtest = 0.5*(r0+r1);
@@ -558,12 +558,12 @@ GaussianShell::extent(double threshold) const
       if (btest <= threshold) {
           b1 = btest;
           r1 = rtest;
-          //cout << "r1 = " << r0 << " b1 = " << b0 << endl;
+          //ExEnv::out() << "r1 = " << r0 << " b1 = " << b0 << endl;
         }
       else {
           b0 = btest;
           r0 = rtest;
-          //cout << "r0 = " << r0 << " b0 = " << b0 << endl;
+          //ExEnv::out() << "r0 = " << r0 << " b0 = " << b0 << endl;
         }
     }
   return r1;

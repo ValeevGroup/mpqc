@@ -72,7 +72,7 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
   for (i=0; i<nirrep_; i++) {
     ncomp_[i] = ct.gamma(i).degeneracy();
     if (ncomp_[i] != 1) {
-      cout << node0
+      ExEnv::out() << node0
            << "WARNING: SOBasis not tested for degenerate point groups"
            << endl;
       }
@@ -121,7 +121,7 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
 
       int naofunc = basis_->shell(aoshell0).nfunction();
       if (naofunc_[soshell0] && (naofunc_[soshell0] != naofunc)) {
-        cerr << "ERROR: SOBasis: mismatch in naofunc" << endl;
+        ExEnv::err() << "ERROR: SOBasis: mismatch in naofunc" << endl;
         abort();
         }
       naofunc_[soshell0] = naofunc;
@@ -137,7 +137,7 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
         int soshell = aoshell_to_soshell[aoshell];
 
         if (soshell != soshell0) {
-          cout << "ERROR: SOBasis: shell changed" << endl;
+          ExEnv::out() << "ERROR: SOBasis: shell changed" << endl;
           abort();
           }
 
@@ -147,7 +147,7 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
     }
 
   if (nfuncall != basis_->nbasis()) {
-    cout << node0 << "ERROR: SOBasis: miscounted number of functions"
+    ExEnv::out() << node0 << "ERROR: SOBasis: miscounted number of functions"
          << endl;
     print();
     abort();
@@ -230,31 +230,31 @@ SOBasis::print(ostream &o) const
 {
   int i,j,k;
 
-  cout << node0
+  ExEnv::out() << node0
        << indent << "SOBasis:" << endl
        << incindent
        << basis_
        << indent << "nshell(SO) = " << nshell_ << endl
        << indent << "nirrep = " << nirrep_ << endl;
 
-  cout << node0 << indent << "ncomp = [";
-  for (i=0; i<nirrep_; i++) cout << node0 << " " << ncomp_[i];
-  cout << node0 << " ]" << endl;
+  ExEnv::out() << node0 << indent << "ncomp = [";
+  for (i=0; i<nirrep_; i++) ExEnv::out() << node0 << " " << ncomp_[i];
+  ExEnv::out() << node0 << " ]" << endl;
 
-  cout << node0 << indent << "nfunc:" << endl;
+  ExEnv::out() << node0 << indent << "nfunc:" << endl;
   for (i=0; i<nshell_; i++) {
-    cout << node0 << indent << "  " << i << ":";
-    for (j=0; j<nirrep_; j++) cout << node0 << " " << nfunc_[i][j];
-    cout << node0 << endl;
+    ExEnv::out() << node0 << indent << "  " << i << ":";
+    for (j=0; j<nirrep_; j++) ExEnv::out() << node0 << " " << nfunc_[i][j];
+    ExEnv::out() << node0 << endl;
     }
 
-  cout << node0 << indent << "transform:" << endl;
-  cout << node0 << incindent;
+  ExEnv::out() << node0 << indent << "transform:" << endl;
+  ExEnv::out() << node0 << incindent;
   for (i=0; i<nshell_; i++) {
-    if (i>0) cout << node0 << endl;
+    if (i>0) ExEnv::out() << node0 << endl;
     for (j=0; j<trans_[i].naoshell; j++) {
       for (k=0; k<trans_[i].aoshell[j].nfunc; k++) {
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << scprintf("SO(%3d %2d %d [%2d]) += % 12.8f * AO(%3d %2d)",
                          i,
                          trans_[i].aoshell[j].func[k].sofunc,
@@ -270,9 +270,9 @@ SOBasis::print(ostream &o) const
         }
       }
     }
-  cout << node0 << decindent;
+  ExEnv::out() << node0 << decindent;
 
-  cout << node0 << decindent;
+  ExEnv::out() << node0 << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -307,7 +307,7 @@ SOTransform::add_transform(int aoshellnum, int irrep,
     if (aoshell[i].aoshell == aoshellnum) break;
     }
   if (i>=naoshell_allocated) {
-    cout << "ERROR: SOTransform: add_transform allocation too small"
+    ExEnv::out() << "ERROR: SOTransform: add_transform allocation too small"
          << endl;
     abort();
     }

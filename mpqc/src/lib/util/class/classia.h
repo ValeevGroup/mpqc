@@ -135,7 +135,7 @@ CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
           void * tmp = casts[i];
           if (!tmp) continue;
           if (p && tmp != p) {
-              cerr << CLASSNAME::class_desc_.name()
+              ExEnv::err() << CLASSNAME::class_desc_.name()
                    << ": castdown to " << cd->name()
                    << " ambiguous (from "
                    << CLASSNAME::class_desc_.name() << ")" << endl;

@@ -59,7 +59,7 @@ SymRep::~SymRep()
 SymRep::operator SymmetryOperation() const
 {
   if (n != 3) {
-    cerr << node0 << indent << "SymRep::operator SymmetryOperation(): "
+    ExEnv::err() << node0 << indent << "SymRep::operator SymmetryOperation(): "
          << "trying to cast to symop when n == " << n << endl;
     abort();
   }
@@ -77,7 +77,7 @@ SymRep
 SymRep::operate(const SymRep& r) const
 {
   if (r.n != n) {
-    cerr << node0 << indent << "SymRep::operate(): dimensions don't match: "
+    ExEnv::err() << node0 << indent << "SymRep::operate(): dimensions don't match: "
          << r.n << " != " << n << endl;
     abort();
   }
@@ -102,7 +102,7 @@ SymRep::sim_transform(const SymRep& r) const
   int i,j,k;
 
   if (r.n != n) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "SymRep::sim_transform(): dimensions don't match: "
          << r.n << " != " << n << endl;
     abort();
@@ -232,7 +232,7 @@ SymRep::rotation(double theta)
     break;
 
   default:
-    cerr << node0 << indent << "SymRep::rotation(): n > 5 (" << n << ")\n";
+    ExEnv::err() << node0 << indent << "SymRep::rotation(): n > 5 (" << n << ")\n";
     abort();
   }
   

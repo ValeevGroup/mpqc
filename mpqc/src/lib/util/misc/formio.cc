@@ -26,6 +26,7 @@
 //
 
 #include <util/misc/formio.h>
+#include <util/misc/exenv.h>
 
 #include <stdio.h> // for vsprintf
 #include <stdlib.h>
@@ -328,7 +329,7 @@ scprintf::scprintf(const char *fmt, ...)
   // hopefully this won't overflow
   if (fmt && fmt[0]!='\0') {
     if (vsprintf(str, fmt, args) > 1023) {
-      cerr << indent << "scprintf overflow\n";
+      ExEnv::err() << indent << "scprintf overflow\n";
       abort();
     }
   }

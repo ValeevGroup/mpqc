@@ -124,7 +124,7 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
           ifstream is(path);
           if (is.good()) {
               int status = 1;
-              cout << indent << "Reading file " << path << "." << endl;
+              ExEnv::out() << indent << "Reading file " << path << "." << endl;
               grp->bcast(status);
               ostrstream ostrs;
               is >> ostrs.rdbuf();

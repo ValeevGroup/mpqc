@@ -56,7 +56,7 @@ TriangulatedSurface::fix_orientation()
               edge_to_triangle1[e_index] = tri;
             }
           else {
-              cerr << "TriangulatedSurface::fix_orientation:"
+              ExEnv::err() << "TriangulatedSurface::fix_orientation:"
                    << " more than two triangles to an edge" << endl;
               abort();
             }
@@ -91,7 +91,7 @@ TriangulatedSurface::fix_orientation()
                   if (othertri->edge(j) == e) break;
                 }
               if (j == 3) {
-                  cerr << "TriangulatedSurface::fix_orientation: "
+                  ExEnv::err() << "TriangulatedSurface::fix_orientation: "
                        << " edge_to_triangle wrong" << endl;
                   abort();
                 }
@@ -103,7 +103,7 @@ TriangulatedSurface::fix_orientation()
                       nflip++;
                     }
                   else {
-                      cerr << "TriangulatedSurface::fix_orientation:"
+                      ExEnv::err() << "TriangulatedSurface::fix_orientation:"
                            << " tried to flip a fixed triangle" << endl;
                       abort();
                     }

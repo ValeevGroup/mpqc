@@ -84,7 +84,7 @@ ElectronDensity::compute()
       set_actual_value_accuracy(desired_value_accuracy());
     }
   if (hessian_needed()) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "ElectronDensity::compute(): hessian isn't yet implemented\n";
       abort();
     }
@@ -185,7 +185,7 @@ DensityColorizer::colorize(const RefRenderedPolygons &poly)
           else scale = (1.0-base);
         }
 
-      cout << node0 << indent << "DensityColorizer:"
+      ExEnv::out() << node0 << indent << "DensityColorizer:"
            << scprintf(" reference=%6.5f", center)
            << scprintf(" scale=%8.4f",scale)
            << scprintf(" (%6.5f<=rho<=%6.5f)", max, min)
@@ -276,7 +276,7 @@ GradDensityColorizer::colorize(const RefRenderedPolygons &poly)
           else scale = (1.0-base);
         }
 
-      cout << node0 << indent << "GradDensityColorizer:"
+      ExEnv::out() << node0 << indent << "GradDensityColorizer:"
            << scprintf(" reference=%6.5f", center)
            << scprintf(" scale=%6.2f",scale)
            << scprintf(" (%6.5f<=rho<=%6.5f)", max, min)

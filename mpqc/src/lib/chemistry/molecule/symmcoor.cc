@@ -160,7 +160,7 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
         }
     }
 
-  cerr << node0 << indent
+  ExEnv::err() << node0 << indent
        << "WARNING: SymmCoorTransform::to_cartesian(RefSCVector&):"
        << " too many iterations in geometry update\n";
 
@@ -218,7 +218,7 @@ SymmCoorTransform::transform_hessian(const RefSymmSCMatrix& h)
       NonlinearTransform::transform_hessian(h);
     }
   else {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "WARNING: SymmCoorTransform::transform_hessian: "
            << "skipping hessian transform";
     }
@@ -317,13 +317,13 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   int nunique = n3 - 6; // need to detect linear
 
   if (nredundant < nunique) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "SymmMolecularCoor::form_coordinates: "
            << "found too few redundant coordinates\n"
            << indent << scprintf("nredundant = %d, 3n-6 = %d\n",
                                  nredundant, nunique)
            << indent << "  (the geometry is probably bad)\n";
-      molecule_->print(cerr);
+      molecule_->print(ExEnv::err());
       abort();
     }
 
@@ -374,7 +374,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
               RefIntCoor c = all_->coor(j);
               coordinate->add(c,K(j,i));
               if (debug_) {
-                  cout << "added redund coor "
+                  ExEnv::out() << "added redund coor "
                        << j << " to coor " << i << ":" << endl;
                   c->print();
                 }
@@ -400,7 +400,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   constant_->update_values(molecule_);
   variable_->update_values(molecule_);
 
-  cout << node0 << incindent << indent
+  ExEnv::out() << node0 << incindent << indent
        << "SymmMolecularCoor::form_variable_coordinates()\n" << incindent
        << indent << "expected " << nunique << " coordinates\n"
        << indent << "found " << variable_->n() << " variable coordinates\n"
@@ -411,9 +411,9 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   fixed_ = saved_fixed_;
 
   if (form_print_molecule_) molecule_->print();
-  if (form_print_simples_) print_simples(cout);
-  if (form_print_variable_) print_variable(cout);
-  if (form_print_constant_) print_constant(cout);
+  if (form_print_simples_) print_simples(ExEnv::out());
+  if (form_print_variable_) print_variable(ExEnv::out());
+  if (form_print_constant_) print_constant(ExEnv::out());
 }
 
 void
@@ -489,19 +489,19 @@ SymmMolecularCoor::change_coordinates()
   // the rank could get bigger if there is a fixed coordinate
   if (rank < dim_.n() || ((fixed_.null()
                            || fixed_->n() == 0) && rank != dim_.n())) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "SymmMolecularCoor::change_coordinates: "
            << "disallowed rank change\n";
       abort();
     }
   if (rank != dim_.n()) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "SymmMolecularCoor::change_coordinates: rank changed\n";
     }
 
   double kappa2 = sigma(0)/sigma(dim_.n()-1);
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf(
            "SymmMolecularCoor: condition number = %14.8f (max = %14.8f)\n",
            kappa2, max_kappa2_);

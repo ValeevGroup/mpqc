@@ -224,7 +224,7 @@ ShellRotation
 ShellRotation::operate(const ShellRotation& rot) const
 {
   if (n_ != rot.n_) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "ShellRotation::operate(): dimensions don't match" << endl
          << indent << scprintf("  %d != %d\n",rot.n_,n_);
     abort();
@@ -251,7 +251,7 @@ ShellRotation::sim_transform(const ShellRotation& rot) const
   int i,j,k;
 
   if (rot.n_ != n_) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "ShellRotation::sim_transform(): dimensions don't match" << endl
          << indent << scprintf("%d != %d\n",rot.n_,n_);
     abort();
@@ -295,11 +295,11 @@ void
 ShellRotation::print() const
 {
   for (int i=0; i < n_; i++) {
-    cout << node0 << indent << scprintf("%5d ",i+1);
+    ExEnv::out() << node0 << indent << scprintf("%5d ",i+1);
     for (int j=0; j < n_; j++) {
-      cout << node0 << scprintf(" %10.7f",r[i][j]);
+      ExEnv::out() << node0 << scprintf(" %10.7f",r[i][j]);
     }
-    cout << node0 << endl;
+    ExEnv::out() << node0 << endl;
   }
 }
 

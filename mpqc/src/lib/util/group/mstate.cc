@@ -221,7 +221,7 @@ MsgStateBufRecv::MsgStateBufRecv(const RefMessageGrp&grp_):
 MsgStateBufRecv::~MsgStateBufRecv()
 {
   if (ibuf && (nbuf != ibuf)) {
-      cerr << scprintf("MsgStateBufRecv::~MsgStateBufRecv(): buffer still has"
+      ExEnv::err() << scprintf("MsgStateBufRecv::~MsgStateBufRecv(): buffer still has"
               " %d bytes of data on %d\n", nbuf - ibuf, grp->me());
     }
   release_buffer(send_buffer);
@@ -231,7 +231,7 @@ void
 MsgStateBufRecv::set_buffer_size(int size)
 {
   if (ibuf && (nbuf != ibuf)) {
-      cerr << "MsgStateBufRecv::set_buffer_size(): old buffer has data"
+      ExEnv::err() << "MsgStateBufRecv::set_buffer_size(): old buffer has data"
            << endl;
     }
   obtain_buffer(nbuf_buffer, send_buffer, nheader, buffer, bufsize, size);
@@ -289,10 +289,10 @@ MsgStateRecv::get(const ClassDesc**cd)
   int r = StateIn::get(index);
   *cd = grp->index_to_classdesc(index);
   if (!*cd) {
-      cerr << "MsgStateRecvt::get(const ClassDesc**cd): "
+      ExEnv::err() << "MsgStateRecvt::get(const ClassDesc**cd): "
            << "class not available on this processor:"
            << endl;
-      cerr << " index = " << index << endl;
+      ExEnv::err() << " index = " << index << endl;
       abort();
     }
   return r;
@@ -450,7 +450,7 @@ void
 BcastStateRecv::source(int s)
 {
   if (s == grp->me()) {
-      cerr << scprintf("BcastStateRecv::source(%d): cannot receive my own"
+      ExEnv::err() << scprintf("BcastStateRecv::source(%d): cannot receive my own"
               " broadcast\n", s);
       abort();
     }
@@ -575,7 +575,7 @@ BcastStateInBin::BcastStateInBin(const RefKeyVal &keyval)
 {
   char *path = keyval->pcharvalue("file");
   if (!path) {
-      cerr << "StateInBin(const RefKeyVal&): no path given" << endl;
+      ExEnv::err() << "StateInBin(const RefKeyVal&): no path given" << endl;
     }
   opened_ = 0;
   open(path);
@@ -598,7 +598,7 @@ BcastStateInBin::next_buffer()
       *nbuf_buffer = buf_->xsgetn(buffer,bufsize);
 #endif
       if (*nbuf_buffer == 0) {
-          cerr << "BcastStateInBin: read failed" << endl;
+          ExEnv::err() << "BcastStateInBin: read failed" << endl;
           abort();
         }
       translate_->translator()->to_external(nbuf_buffer,1);
@@ -634,7 +634,7 @@ BcastStateInBin::open(const char *path)
       filebuf *fbuf = new filebuf();
       fbuf->open(path, ios::in);
       if (!fbuf->is_open()) {
-          cerr << "ERROR: BcastStateInBin: problems opening " << path << endl;
+          ExEnv::err() << "ERROR: BcastStateInBin: problems opening " << path << endl;
           abort();
         }
       buf_ = fbuf;

@@ -60,7 +60,7 @@ MsgMemoryGrp::MsgMemoryGrp(const RefKeyVal &keyval):
       msg = MessageGrp::get_default_messagegrp();
     }
   if (msg.null()) {
-      cerr << "MsgMemoryGrp(const RefKeyVal&): couldn't find MessageGrp"
+      ExEnv::err() << "MsgMemoryGrp(const RefKeyVal&): couldn't find MessageGrp"
            << endl;
       abort();
     }

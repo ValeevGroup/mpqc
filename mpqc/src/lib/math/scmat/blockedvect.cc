@@ -102,7 +102,7 @@ BlockedSCVector::assign_v(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    cerr << indent << "BlockedSCVector::assign(SCVector*a): "
+    ExEnv::err() << indent << "BlockedSCVector::assign(SCVector*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -125,7 +125,7 @@ BlockedSCVector::get_element(int i) const
 {
   int size = d->n();
   if (i < 0 || i >= size) {
-    cerr << indent << "BlockedSCVector::get_element: bad index\n";
+    ExEnv::err() << indent << "BlockedSCVector::get_element: bad index\n";
     abort();
   }
 
@@ -139,7 +139,7 @@ BlockedSCVector::set_element(int i,double a)
 {
   int size = d->n();
   if (i < 0 || i >= size) {
-    cerr << indent << "BlockedSCVector::set_element: bad index\n";
+    ExEnv::err() << indent << "BlockedSCVector::set_element: bad index\n";
     abort();
   }
 
@@ -153,7 +153,7 @@ BlockedSCVector::accumulate_element(int i,double a)
 {
   int size = d->n();
   if (i < 0 || i >= size) {
-    cerr << indent << "BlockedSCVector::accumulate_element: bad index\n";
+    ExEnv::err() << indent << "BlockedSCVector::accumulate_element: bad index\n";
     abort();
   }
 
@@ -172,7 +172,7 @@ BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
-    cerr << indent
+    ExEnv::err() << indent
          << "BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b): "
          << "dimensions don't match\n";
     abort();
@@ -193,7 +193,7 @@ BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
-    cerr << indent
+    ExEnv::err() << indent
          << "BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b): "
          << "dimensions don't match\n";
     abort();
@@ -213,7 +213,7 @@ BlockedSCVector::accumulate(const SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    cerr << indent << "BlockedSCVector::accumulate(SCVector*a): "
+    ExEnv::err() << indent << "BlockedSCVector::accumulate(SCVector*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -233,7 +233,7 @@ BlockedSCVector::accumulate(const SCMatrix*a)
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
         || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
-    cerr << indent << "BlockedSCVector::accumulate(SCMatrix*a): "
+    ExEnv::err() << indent << "BlockedSCVector::accumulate(SCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -252,7 +252,7 @@ BlockedSCVector::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    cerr << indent << "BlockedSCVector::scale_product(SCVector*a): "
+    ExEnv::err() << indent << "BlockedSCVector::scale_product(SCVector*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -292,7 +292,7 @@ BlockedSCVector::element_op(const RefSCElementOp2& op,
       = BlockedSCVector::require_castdown(m, "BlockedSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-    cerr << indent << "BlockedSCVector: bad element_op\n";
+    ExEnv::err() << indent << "BlockedSCVector: bad element_op\n";
     abort();
   }
 
@@ -321,7 +321,7 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
       = BlockedSCVector::require_castdown(n, "BlockedSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-    cerr << indent << "BlockedSCVector: bad element_op\n";
+    ExEnv::err() << indent << "BlockedSCVector: bad element_op\n";
     abort();
   }
 
@@ -424,7 +424,7 @@ BlockedSCVector::restore(StateIn&s)
   int ndimt, ndim = n();
   s.get(ndimt);
   if (ndimt != ndim) {
-      cerr << indent << "BlockedSCVector::restore(): bad dimension" << endl;
+      ExEnv::err() << indent << "BlockedSCVector::restore(): bad dimension" << endl;
       abort();
     }
   int has_subblocks;
@@ -433,7 +433,7 @@ BlockedSCVector::restore(StateIn&s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          cerr << indent
+          ExEnv::err() << indent
                << "BlockedSCVector::restore(): nblock differs\n" << endl;
           abort();
         }
@@ -442,7 +442,7 @@ BlockedSCVector::restore(StateIn&s)
         }
     }
   else {
-      cerr << indent
+      ExEnv::err() << indent
            << "BlockedSCVector::restore(): no subblocks--cannot restore"
            << endl;
       abort();

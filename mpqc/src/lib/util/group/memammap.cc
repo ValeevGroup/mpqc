@@ -56,7 +56,7 @@ class MmapHeap {
       data = mmap(0, msize, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS,
                   -1, 0);
       if (data == (void*) -1) {
-        cerr << "MmapHeap: mmap failed" << endl;
+        ExEnv::err() << "MmapHeap: mmap failed" << endl;
         abort();
       }
     }
@@ -125,13 +125,13 @@ AlphaMMapMemoryGrp::set_localsize(int localsize)
   // get the shared memory segments
   if (me() == 0) {
     if (size > mmap_heap.msize) {
-      cerr << "AlphaMMapMemoryGrp: request too large "
+      ExEnv::err() << "AlphaMMapMemoryGrp: request too large "
            << size << " > " << mmap_heap.msize
            << endl;
       abort();
     }
     if (mmap_heap.data == (void*) -1) {
-      cerr << "AlphaMMapMemoryGrp: mmap_heap not initialized" << endl;
+      ExEnv::err() << "AlphaMMapMemoryGrp: mmap_heap not initialized" << endl;
       abort();
     }
     memory_ = mmap_heap.data;
@@ -199,7 +199,7 @@ AlphaMMapMemoryGrp::set_localsize(int localsize)
 
   if (me() != 0) {
     if (mmap_heap.data != memory_) {
-      cerr << scprintf("%d: memory_ = 0x%x 0x%x\n",
+      ExEnv::err() << scprintf("%d: memory_ = 0x%x 0x%x\n",
                        me(), memory_, mmap_heap.data);
       abort();
     }
@@ -242,7 +242,7 @@ void *
 AlphaMMapMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
-    cerr << scprintf("AlphaMMapMemoryGrp::obtain_readwrite: arg out of range\n");
+    ExEnv::err() << scprintf("AlphaMMapMemoryGrp::obtain_readwrite: arg out of range\n");
     abort();
   }
 
@@ -291,7 +291,7 @@ void *
 AlphaMMapMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
-    cerr << "AlphaMMapMemoryGrp::obtain_readonly: arg out of range" << endl;
+    ExEnv::err() << "AlphaMMapMemoryGrp::obtain_readonly: arg out of range" << endl;
     abort();
   }
 
@@ -444,7 +444,7 @@ AlphaMMapMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
   int length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {
-    cerr << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
+    ExEnv::err() << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
     abort();
   }
 

@@ -184,7 +184,7 @@ Molecule::is_plane(SCVector3 &origin, SCVector3 &uperp, double tol) const
     if (atom < 0
         || Z(atom) != Z(i)
         || fabs(mass(atom)-mass(i)) > tol) {
-      //cout << "  is_plane: rejected (atom " << i << ")" << endl;
+      //ExEnv::out() << "  is_plane: rejected (atom " << i << ")" << endl;
       return 0;
       }
     }
@@ -206,7 +206,7 @@ Molecule::is_axis(SCVector3 &origin, SCVector3 &axis,
       if (atom < 0
           || Z(atom) != Z(i)
           || fabs(mass(atom)-mass(i)) > tol) {
-        //cout << "  is_axis: rejected (atom " << i << ")" << endl;
+        //ExEnv::out() << "  is_axis: rejected (atom " << i << ")" << endl;
         return 0;
         }
       }
@@ -474,7 +474,7 @@ Molecule::highest_point_group(double tol) const
         SCVector3 A = SCVector3(r(i))-com;
         double AdotA = A.dot(A);
         for (j=0; j<i; j++) {
-          //cout << "sigma atoms = " << i << ", " << j << endl;
+          //ExEnv::out() << "sigma atoms = " << i << ", " << j << endl;
           // the atoms must be identical
           if (Z(i) != Z(j) || fabs(mass(i)-mass(j)) > tol) continue;
           SCVector3 B = SCVector3(r(j))-com;
@@ -484,7 +484,7 @@ Molecule::highest_point_group(double tol) const
           SCVector3 perp = B-A;
           double norm_perp = perp.norm();
           if (norm_perp < tol) {
-            //cout << "  rejected (atoms at same point?)" << endl;
+            //ExEnv::out() << "  rejected (atoms at same point?)" << endl;
             continue;
             }
           perp *= 1.0/norm_perp;
@@ -516,7 +516,7 @@ Molecule::highest_point_group(double tol) const
     }
 
 #ifdef DEBUG
-  cout << node0
+  ExEnv::out() << node0
        << indent << "highest point group:" << endl
        << indent << "  linear          = " << linear << endl
        << indent << "  planar          = " << planar << endl
@@ -527,13 +527,13 @@ Molecule::highest_point_group(double tol) const
        << indent << "  have_sigma      = " << have_sigma << endl;
 
   if (have_c2axis)
-    cout << node0 << indent << "  c2axis      = " << c2axis << endl;
+    ExEnv::out() << node0 << indent << "  c2axis      = " << c2axis << endl;
   if (have_c2axisperp)
-    cout << node0 << indent << "  c2axisperp  = " << c2axisperp << endl;
+    ExEnv::out() << node0 << indent << "  c2axisperp  = " << c2axisperp << endl;
   if (have_sigmav)
-    cout << node0 << indent << "  sigmav      = " << sigmav << endl;
+    ExEnv::out() << node0 << indent << "  sigmav      = " << sigmav << endl;
   if (have_sigma)
-    cout << node0 << indent << "  sigma       = " << sigma << endl;
+    ExEnv::out() << node0 << indent << "  sigma       = " << sigma << endl;
 #endif
 
   // Find the three axes for the symmetry frame
@@ -561,9 +561,9 @@ Molecule::highest_point_group(double tol) const
   yaxis = - xaxis.cross(zaxis);
 
 #ifdef DEBUG
-  cout << "X: " << xaxis << endl;
-  cout << "Y: " << yaxis << endl;
-  cout << "Z: " << zaxis << endl;
+  ExEnv::out() << "X: " << xaxis << endl;
+  ExEnv::out() << "Y: " << yaxis << endl;
+  ExEnv::out() << "Z: " << zaxis << endl;
 #endif
 
   SymmetryOperation frame;
@@ -576,11 +576,11 @@ Molecule::highest_point_group(double tol) const
     }
 
 #ifdef DEBUG
-  cout << "frame:" << endl;
-  frame.print(cout << node0);
+  ExEnv::out() << "frame:" << endl;
+  frame.print(ExEnv::out() << node0);
 
-  cout << "origin:" << endl;
-  origin.print(cout << node0);
+  ExEnv::out() << "origin:" << endl;
+  origin.print(ExEnv::out() << node0);
 #endif
 
   RefPointGroup pg;

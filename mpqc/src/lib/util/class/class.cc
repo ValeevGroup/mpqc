@@ -288,7 +288,7 @@ ClassDesc::ClassDesc(const char* name, int version,
 
   // test the version number to see if it is valid
   if (version <= 0) {
-      cerr << "error in ClassDesc ctor: version <= 0" << endl;
+      ExEnv::err() << "error in ClassDesc ctor: version <= 0" << endl;
       exit(1);
     }
 
@@ -364,7 +364,7 @@ AVLMap<ClassKey,ClassDescP>&
 ClassDesc::all()
 {
   if (!all_) {
-      cerr << "ClassDesc::all(): all not initialized" << endl;
+      ExEnv::err() << "ClassDesc::all(): all not initialized" << endl;
       abort();
     }
   return *all_;
@@ -520,7 +520,7 @@ ClassDesc::load_class(const char* classname)
                       delete[] path;
                       // make sure it worked.
                       if (name_to_class_desc(classname) == 0) {
-                          cerr << "load of \"" << classname << "\" from \""
+                          ExEnv::err() << "load of \"" << classname << "\" from \""
                                << libname << "\" failed" << endl;
                           delete[] libname;
                           return -1;
@@ -618,7 +618,7 @@ void
 DCRefBase::require_nonnull() const
 {
   if (parentpointer() == 0) {
-      cerr << "RefDescribedClass: needed a nonnull pointer but got null"
+      ExEnv::err() << "RefDescribedClass: needed a nonnull pointer but got null"
            << endl;
       abort();
     }

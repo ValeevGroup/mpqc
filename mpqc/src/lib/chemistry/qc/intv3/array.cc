@@ -30,12 +30,13 @@
 #endif
 
 #include <stdlib.h>
+#include <util/misc/exenv.h>
 #include <chemistry/qc/intv3/array.h>
 
 static void
 no_storage(const char *msg)
 {
-  cerr << msg << ": ran out of memory" << endl;
+  ExEnv::err() << msg << ": ran out of memory" << endl;
   abort();
 }
 

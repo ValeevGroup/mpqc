@@ -390,9 +390,9 @@ class GaussianBasisSet: public SavableState
     int equiv(const RefGaussianBasisSet &b);
 
     /// Print a brief description of the basis set.
-    void print_brief(ostream& =cout) const;
+    void print_brief(ostream& =ExEnv::out()) const;
     /// Print a detailed description of the basis set.
-    void print(ostream& =cout) const;
+    void print(ostream& =ExEnv::out()) const;
 };
 
 SavableState_REF_dec(GaussianBasisSet);

@@ -52,8 +52,6 @@ class ExEnv {
     static int nproc_;
 
     static ostream *out_;
-
-    static void err();
   public:
     /// Set the argument count and vector.
     static void init(int &argcref, char **&argvref);
@@ -71,6 +69,7 @@ class ExEnv {
 
     static void set_out(ostream *o) { SCFormIO::init_ostream(*o); out_ = o; }
     static ostream &out() { if (!out_) set_out(&cout); return *out_; }
+    static ostream &err() { return out(); }
 
     /// The amount of memory on this node.
     static unsigned long memory() { if (!initialized_) err(); return mem_; }

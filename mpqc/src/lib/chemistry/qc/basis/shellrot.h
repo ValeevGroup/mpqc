@@ -84,7 +84,7 @@ class ShellRotation {
     /// Return the trace of the transformation.
     double trace() const;
     
-    /// Print the object to cout.
+    /// Print the object to ExEnv::out().
     void print() const;
 };
 

@@ -81,7 +81,7 @@ intMessageGrp::initialize(int me, int n, int nbits)
   // The remaining bits are for sequence information.
   seq_nbit = nbits - ctl_nbit - src_nbit;
   if (seq_nbit < 8) {
-      cerr << "intMessageGrp: not enough bits in underlying msgtype" << endl;
+      ExEnv::err() << "intMessageGrp: not enough bits in underlying msgtype" << endl;
       abort();
     }
 

@@ -158,14 +158,14 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
   }
   else oldP_so = owfn->density();
 
-  cout << node0 << endl << indent
+  ExEnv::out() << node0 << endl << indent
        << "Projecting the guess density.\n"
        << endl;
-  cout << incindent;
+  ExEnv::out() << incindent;
 
   // The old overlap
   RefSymmSCMatrix oldS = owfn->overlap();
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "The number of electrons in the guess density = "
        << (oldP_so*oldS).trace() << endl;
 
@@ -213,7 +213,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
   oldP_oso = 0;
   //newP_oso.print("projected orthoSO density");
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "The number of electrons in the projected density = "
        << newP_oso.trace() << endl;
 
@@ -241,7 +241,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
       so_to_oso.print("SO to ortho SO transformation");
     }
 
-  cout << decindent;
+  ExEnv::out() << decindent;
   return newvec_oso;
 }
 
@@ -447,7 +447,7 @@ OneBodyWavefunction::alpha_occupation(int irrep, int vectornum)
   if (!spin_polarized())
     return 0.5*occupation(irrep, vectornum);
   
-  cerr << class_name() << "::alpha_occupation not implemented" << endl;
+  ExEnv::err() << class_name() << "::alpha_occupation not implemented" << endl;
   abort();
   return 0;
 }
@@ -458,7 +458,7 @@ OneBodyWavefunction::beta_occupation(int irrep, int vectornum)
   if (!spin_polarized())
     return 0.5*occupation(irrep, vectornum);
   
-  cerr << class_name() << "::beta_occupation not implemented" << endl;
+  ExEnv::err() << class_name() << "::beta_occupation not implemented" << endl;
   abort();
   return 0;
 }
@@ -469,7 +469,7 @@ OneBodyWavefunction::oso_alpha_eigenvectors()
   if (!spin_unrestricted())
     return oso_eigenvectors().copy();
 
-  cerr << class_name() << "::oso_alpha_eigenvectors not implemented" << endl;
+  ExEnv::err() << class_name() << "::oso_alpha_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -480,7 +480,7 @@ OneBodyWavefunction::oso_beta_eigenvectors()
   if (!spin_unrestricted())
     return oso_eigenvectors().copy();
 
-  cerr << class_name() << "::oso_beta_eigenvectors not implemented" << endl;
+  ExEnv::err() << class_name() << "::oso_beta_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -491,7 +491,7 @@ OneBodyWavefunction::alpha_eigenvectors()
   if (!spin_unrestricted())
     return eigenvectors().copy();
 
-  cerr << class_name() << "::alpha_eigenvectors not implemented" << endl;
+  ExEnv::err() << class_name() << "::alpha_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -502,7 +502,7 @@ OneBodyWavefunction::beta_eigenvectors()
   if (!spin_unrestricted())
     return eigenvectors().copy();
 
-  cerr << class_name() << "::beta_eigenvectors not implemented" << endl;
+  ExEnv::err() << class_name() << "::beta_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -513,7 +513,7 @@ OneBodyWavefunction::alpha_eigenvalues()
   if (!spin_unrestricted())
     return eigenvalues().copy();
 
-  cerr << class_name() << "::alpha_eigenvalues not implemented" << endl;
+  ExEnv::err() << class_name() << "::alpha_eigenvalues not implemented" << endl;
   abort();
   return 0;
 }
@@ -524,7 +524,7 @@ OneBodyWavefunction::beta_eigenvalues()
   if (!spin_unrestricted())
     return eigenvalues().copy();
 
-  cerr << class_name() << "::beta_eigenvalues not implemented" << endl;
+  ExEnv::err() << class_name() << "::beta_eigenvalues not implemented" << endl;
   abort();
   return 0;
 }

@@ -37,10 +37,10 @@ main(int argc, char *argv[])
   int i;
 
   if (argc < 2) {
-    cerr << "usage: " << argv[0]
+    ExEnv::err() << "usage: " << argv[0]
          << " input_file { keyword { tolerance } }" << endl;
-    cerr << "  default keyword = \"molecule\"" << endl;
-    cerr << "  default tolerance = \"1.0e-4\"" << endl;
+    ExEnv::err() << "  default keyword = \"molecule\"" << endl;
+    ExEnv::err() << "  default tolerance = \"1.0e-4\"" << endl;
     return 1;
   }
 
@@ -53,35 +53,35 @@ main(int argc, char *argv[])
   const char *ctol = argc>3?argv[3]:"1.0e-4";
   double tol = atof(ctol);
 
-  cout << "Original molecule:" << endl;
+  ExEnv::out() << "Original molecule:" << endl;
   mol->print();
   
   RefPointGroup highestpg = mol->highest_point_group(tol);
-  cout << "Point Group is " << highestpg->symbol() << endl;
+  ExEnv::out() << "Point Group is " << highestpg->symbol() << endl;
 
   mol->set_point_group(highestpg, 10*tol);
 
-  cout << "Molecule at center of mass in highest point group:" << endl;
+  ExEnv::out() << "Molecule at center of mass in highest point group:" << endl;
   mol->print();
   
   //mol->transform_to_principal_axes(0);
-  //cout << "Molecule wrt principal axes:\n";
+  //ExEnv::out() << "Molecule wrt principal axes:\n";
   //mol->print();
   //mol->point_group()->symm_frame().print();
 
   mol->cleanup_molecule();
-  cout << "cleaned molecule\n";
+  ExEnv::out() << "cleaned molecule\n";
   mol->print();
   
   int nunique = mol->nunique();
 
   mol->transform_to_principal_axes();
-  cout << "cleaned molecule transformed to principle axes\n";
+  ExEnv::out() << "cleaned molecule transformed to principle axes\n";
   mol->print();
 
-  cout << scprintf("\nnunique=%d: ",nunique);
-  for (i=0; i < nunique; i++) cout << scprintf(" %d",mol->unique(i)+1);
-  cout << endl;
+  ExEnv::out() << scprintf("\nnunique=%d: ",nunique);
+  for (i=0; i < nunique; i++) ExEnv::out() << scprintf(" %d",mol->unique(i)+1);
+  ExEnv::out() << endl;
   
   return 0;
 }

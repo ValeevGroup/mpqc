@@ -95,7 +95,7 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
 
   mol_ = keyval->describedclassvalue("molecule");
   if (mol_.null()) {
-      cerr << indent << "MolecularEnergy(Keyval): no molecule found"
+      ExEnv::err() << indent << "MolecularEnergy(Keyval): no molecule found"
            << endl;
       abort();
     }
@@ -188,7 +188,7 @@ MolecularEnergy::save_data_state(StateOut&s)
 void
 MolecularEnergy::failure(const char * msg)
 {
-  cerr << node0 << indent << "MolecularEnergy::failure: " << msg << endl;
+  ExEnv::err() << node0 << indent << "MolecularEnergy::failure: " << msg << endl;
   abort();
 }
 
@@ -271,7 +271,7 @@ MolecularEnergy::set_x(const RefSCVector&v)
   Function::set_x(v);
   x_to_molecule();
   if (print_molecule_when_changed_) {
-      cout << node0 << endl << indent << class_name()
+      ExEnv::out() << node0 << endl << indent << class_name()
            << ": changing atomic coordinates:" << endl;
       molecule()->print();
     }
@@ -295,7 +295,7 @@ MolecularEnergy::get_cartesian_gradient()
 {
   gradient();
   if (cartesian_gradient_.null()) {
-      cerr << "MolecularEnergy::get_cartesian_gradient(): "
+      ExEnv::err() << "MolecularEnergy::get_cartesian_gradient(): "
            << "cartesian gradient not available"
            << endl;
       abort();
@@ -308,7 +308,7 @@ MolecularEnergy::get_cartesian_hessian()
 {
   hessian();
   if (cartesian_hessian_.null()) {
-      cerr << "MolecularEnergy::get_cartesian_hessian(): "
+      ExEnv::err() << "MolecularEnergy::get_cartesian_hessian(): "
            << "cartesian hessian not available"
            << endl;
       abort();
@@ -526,7 +526,7 @@ SumMolecularEnergy::SumMolecularEnergy(const RefKeyVal &keyval):
       coef_[i] = keyval->intvalue("coef",i);
       if (mole_[i].null()
           || mole_[i]->molecule()->natom() != molecule()->natom()) {
-          cerr << "SumMolecularEnergy: a mole is null or has a molecule"
+          ExEnv::err() << "SumMolecularEnergy: a mole is null or has a molecule"
                << " with the wrong number of atoms" << endl;
           abort();
         }
@@ -614,26 +614,26 @@ SumMolecularEnergy::compute()
   for (i=0; i<n_; i++)
       old_do_hessian[i] = mole_[i]->do_hessian(hessian_.compute());
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "SumMolecularEnergy: compute" << endl;
 
-  cout << incindent;
+  ExEnv::out() << incindent;
 
   if (value_needed()) {
       double val = 0.0;
       for (i=0; i<n_; i++) {
           val += coef_[i] * mole_[i]->value();
         }
-      cout << node0 << endl << indent
+      ExEnv::out() << node0 << endl << indent
            << "SumMolecularEnergy =" << endl;
       for (i=0; i<n_; i++) {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << scprintf("  %c % 16.12f * % 16.12f",
                            (i==0?' ':'+'),
                            coef_[i], mole_[i]->value())
                << endl;
         }
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  = % 16.12f", val) << endl;
       set_energy(val);
     }
@@ -652,7 +652,7 @@ SumMolecularEnergy::compute()
       set_hessian(hessianmat);
     }
 
-  cout << decindent;
+  ExEnv::out() << decindent;
 
   for (i=0; i<n_; i++) mole_[i]->do_value(old_do_value[i]);
   for (i=0; i<n_; i++) mole_[i]->do_gradient(old_do_gradient[i]);
@@ -700,7 +700,7 @@ MolEnergyConvergence::MolEnergyConvergence(const RefKeyVal&keyval)
 {
   mole_ = keyval->describedclassvalue("energy");
   if (mole_.null()) {
-      cerr << "MolEnergyConvergence(const RefKeyVal&keyval): "
+      ExEnv::err() << "MolEnergyConvergence(const RefKeyVal&keyval): "
            << "require an energy keyword of type MolecularEnergy"
            << endl;
       abort();

@@ -67,7 +67,7 @@ SCF::compute_vector(double& eelec)
   
   // calculate the nuclear repulsion energy
   double nucrep = molecule()->nuclear_repulsion_energy();
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf("nuclear repulsion energy = %15.10f", nucrep)
        << endl << endl;
 
@@ -100,7 +100,7 @@ SCF::compute_vector(double& eelec)
     eelec = scf_energy();
     double eother = 0.0;
     if (accumddh_.nonnull()) eother = accumddh_->e();
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << scprintf("iter %5d energy = %15.10f delta = %10.5e",
                      iter+1, eelec+eother+nucrep, delta)
          << endl;
@@ -196,16 +196,16 @@ SCF::compute_vector(double& eelec)
       }
 
       if (print_all_evals_ || print_occ_evals_) {
-        cout << node0 << endl
+        ExEnv::out() << node0 << endl
              << indent << ct.gamma(i).symbol() << endl << incindent;
         for (int m=0; m < nf; m++) {
           if (occupation(i,m) < 1e-8 && !print_all_evals_)
             break;
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << scprintf("%5d %10.5f %10.5f", m+1, vals[m], occupation(i,m))
                << endl;
         }
-        cout << node0 << decindent;
+        ExEnv::out() << node0 << decindent;
       }
 
       delete[] vals;
@@ -213,7 +213,7 @@ SCF::compute_vector(double& eelec)
   }
 
   if (homo_mo >= 0) {
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("HOMO is %5d %3s = %10.6f",
                      homo_mo+1, 
                      ct.gamma(homo_ir).symbol(),
@@ -221,7 +221,7 @@ SCF::compute_vector(double& eelec)
          << endl;
   }
   if (lumo_mo >= 0) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << scprintf("LUMO is %5d %3s = %10.6f",
                      lumo_mo+1, 
                      ct.gamma(lumo_ir).symbol(),

@@ -385,7 +385,7 @@ ConnollyShape::distance_to_surface(const SCVector3&r, SCVector3*grad) const
                   return inside;
                 }
               if (n_local_spheres == max_local_spheres) {
-                  cerr << node0 << indent
+                  ExEnv::err() << node0 << indent
                        << "ConnollyShape::distance_to_surface:"
                        << " max_local_spheres exceeded\n";
                   abort();
@@ -417,7 +417,7 @@ ConnollyShape::boundingbox(double valuemin,
 {
   int i,j;
   if (valuemin < -1.0 || valuemax > 1.0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "ConnollyShape::boundingbox: value out of range\n";
       abort();
     }
@@ -566,7 +566,7 @@ class interval
         }
 
         // Shouldn't get here!
-        cerr << node0 << indent
+        ExEnv::err() << node0 << indent
              << "Found no matching cases in interval::compact()\n";
         print();
         exit(1);
@@ -615,10 +615,10 @@ class interval
     // Print out the currect state of the interval
     void print()
     {
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << scprintf(" _nsegs=%d; _max_segs=%d\n",_nsegs, _max_segs);
         for (int i=0; i<_nsegs; i++)
-            cout << node0 << indent
+            ExEnv::out() << node0 << indent
                  << scprintf("min[%d]=%7.4lf, max[%d]=%7.4lf\n",
                              i,_min[i],i,_max[i]); 
     }

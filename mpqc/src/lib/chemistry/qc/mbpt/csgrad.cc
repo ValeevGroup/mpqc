@@ -241,13 +241,13 @@ MBPT2::compute_cs_grad()
   me = msg_->me();
 
   if (me == 0) {
-    cout << endl << indent
+    ExEnv::out() << endl << indent
          << "Entered memgrp based MP2 routine" << endl;
     }
   
   nproc = msg_->n();
   if (me == 0)
-    cout << indent << scprintf("nproc = %i", nproc) << endl;
+    ExEnv::out() << indent << scprintf("nproc = %i", nproc) << endl;
 
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
   dtol = 1.0e-10;
@@ -266,28 +266,28 @@ MBPT2::compute_cs_grad()
 
   if (nocc_act <= 0) {
     if (me == 0) {
-      cerr << "There are no active occupied orbitals; program exiting" << endl;
+      ExEnv::err() << "There are no active occupied orbitals; program exiting" << endl;
       }
     abort();
     }
 
   if (nvir_act <= 0) {
     if (me == 0) {
-      cerr << "There are no active virtual orbitals; program exiting" << endl;
+      ExEnv::err() << "There are no active virtual orbitals; program exiting" << endl;
       }
     abort();
     }
     
   if (restart_orbital_memgrp_) {
     if (!dograd && !do_d1_ && !do_d2_) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("Restarting at orbital %d with partial energy %18.14f",
                        restart_orbital_memgrp_, restart_ecorr_)
            << endl;
       ecorr_mp2 = restart_ecorr_;
       }
     else {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "Restart requested but not possible with gradients, D1, or D2"
            << endl;
       restart_ecorr_ = 0.0;
@@ -329,7 +329,7 @@ MBPT2::compute_cs_grad()
     }
 
   if (max_norb_ > 0 && ni > max_norb_) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "\"max_norb\" set: could have done "
            << ni << " orbitals per pass otherwise."
            << endl;
@@ -346,37 +346,37 @@ MBPT2::compute_cs_grad()
   if (mem_alloc <= (dyn_mem + mem_static)) mem_remaining = 0;
   else mem_remaining = mem_alloc - dyn_mem + mem_static;
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Memory available per node:      " << mem_alloc << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Static memory used per node:    " << mem_static << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Total memory used per node:     " << dyn_mem+mem_static << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Memory required for one pass:   "
        << compute_cs_dynamic_memory(nocc_act,nocc_act)+mem_static
        << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Minimum memory required:        "
        << compute_cs_dynamic_memory(1,nocc_act)+mem_static
        << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Batch size:                     " << ni
        << endl;
 
   if (ni == 0) {
-    cerr << node0 << "Batch size is 0: more memory or processors are needed"
+    ExEnv::err() << node0 << "Batch size is 0: more memory or processors are needed"
          << endl;
     abort();
     }
 
   if (dynamic_) {
-    cout << node0 << indent << "Using dynamic load balancing." << endl;
+    ExEnv::out() << node0 << indent << "Using dynamic load balancing." << endl;
     }
 
   if (ni == nocc_act-restart_orbital_memgrp_) {
@@ -390,15 +390,15 @@ MBPT2::compute_cs_grad()
     }
 
   if (me == 0) {
-    cout << indent
+    ExEnv::out() << indent
          << scprintf(" npass  rest  nbasis  nshell  nfuncmax") << endl;
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i",
                      npass,rest,nbasis,nshell,nfuncmax)
          << endl;
-    cout << indent
+    ExEnv::out() << indent
          << scprintf(" nocc   nvir   nfzc   nfzv") << endl;
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("  %-4i   %-4i   %-4i   %-4i",
                      nocc,nvir,nfzc,nfzv)
          << endl;
@@ -521,13 +521,13 @@ MBPT2::compute_cs_grad()
 
   if (debug_ > 2 && me == 0) {
     for (j=0; j<nbasis; j++) {
-      cout << indent
+      ExEnv::out() << indent
            << scprintf("eigenvalue[%3d] = %15.10lf", j, evals[j]);
-      if (j < nfzc) cout << " (frozen docc)";
-      else if (j < nocc_act + nfzc) cout << " (active docc)";
-      else if (j < nvir_act + nocc_act + nfzc) cout << " (active uocc)";
-      else cout << " (frozen uocc)";
-      cout << endl;
+      if (j < nfzc) ExEnv::out() << " (frozen docc)";
+      else if (j < nocc_act + nfzc) ExEnv::out() << " (active docc)";
+      else if (j < nvir_act + nocc_act + nfzc) ExEnv::out() << " (active uocc)";
+      else ExEnv::out() << " (frozen uocc)";
+      ExEnv::out() << endl;
       }
     }
 
@@ -537,7 +537,7 @@ MBPT2::compute_cs_grad()
 
   // debug print
   if (debug_ && me == 0) {
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("node %i, begin loop over i-batches",me) << endl;
     }
   // end of debug print
@@ -562,22 +562,22 @@ MBPT2::compute_cs_grad()
       tbint[i]->set_integral_storage(mem_integral_storage);
     }
 
-  cout << node0 << endl << indent
+  ExEnv::out() << node0 << endl << indent
        << scprintf("Memory used for integral intermediates: %i Bytes",
                    mem_integral_intermediates)
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf("Memory used for integral storage:       %i Bytes",
                    mem_integral_storage)
        << endl;
 
   if (mem.null()) {
-      cerr << "MBPT2: memory group not initialized" << endl;
+      ExEnv::err() << "MBPT2: memory group not initialized" << endl;
       abort();
     }
 
   mem->set_localsize(nijmax*nbasis*nbasis*sizeof(double));
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Size of global distributed array:       "
        << mem->totalsize()
        << " Bytes"
@@ -600,7 +600,7 @@ MBPT2::compute_cs_grad()
   for (pass=0; pass<npass; pass++) {
 
     if (debug_) {
-      cout << indent << me << " beginning pass " << pass << endl;
+      ExEnv::out() << indent << me << " beginning pass " << pass << endl;
       }
 
     i_offset = restart_orbital_memgrp_ + pass*ni + nfzc;
@@ -618,7 +618,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_)
-      cout << indent << "node " << me << ", nij = " << nij << endl;
+      ExEnv::out() << indent << "node " << me << ", nij = " << nij << endl;
     // end of debug print
 
     mem->sync(); // This must be here or gamma non-sep will be wrong when running
@@ -644,7 +644,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent
+      ExEnv::out() << indent
            << scprintf("Begin loop over shells (erep, 1.+2. qt)") << endl;
       }
     // end of debug print
@@ -662,7 +662,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "End of loop over shells" << endl;
+      ExEnv::out() << indent << "End of loop over shells" << endl;
       }
     // end of debug print
 
@@ -676,7 +676,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      cout << indent << "Begin 3. qt" << endl;
+      ExEnv::out() << indent << "Begin 3. qt" << endl;
       }
     // end of debug print
 
@@ -732,7 +732,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      cout << indent << "End of 3. qt" << endl;
+      ExEnv::out() << indent << "End of 3. qt" << endl;
       }
     // end of debug print
 
@@ -750,7 +750,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      cout << indent << "Begin 4. qt" << endl;
+      ExEnv::out() << indent << "Begin 4. qt" << endl;
       }
     // end of debug print
 
@@ -774,7 +774,7 @@ MBPT2::compute_cs_grad()
               biggest_ints_3.insert(tmpval,i+i_offset,j,s,a);
               if ((i+i_offset==105 && j == 2 && s == 170 && a == 3)
                   ||(i+i_offset==102 && j == 2 && s == 170 && a == 2)) {
-                cout << scprintf("3/4: %3d %3d %3d %3d: %16.10f",
+                ExEnv::out() << scprintf("3/4: %3d %3d %3d %3d: %16.10f",
                                  i+i_offset, j, s, x-nocc)
                      << endl;
                 }
@@ -828,7 +828,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      cout << indent << "End of 4. qt" << endl;
+      ExEnv::out() << indent << "End of 4. qt" << endl;
       }
     // end of debug print
 
@@ -875,10 +875,10 @@ MBPT2::compute_cs_grad()
 
 #if WRITE_DOUBLES
     if (nproc > 1 || npass > 1) {
-      cout << "csgrad.cc: WRITE_DOUBLES set but case not allowed" << endl;
+      ExEnv::out() << "csgrad.cc: WRITE_DOUBLES set but case not allowed" << endl;
       abort();
       }
-    cout << "csgrad.cc: WRITING DOUBLES: CHECK ORDER" << endl;
+    ExEnv::out() << "csgrad.cc: WRITING DOUBLES: CHECK ORDER" << endl;
     char *doutname = SCFormIO::fileext_to_filename(".mp2");
     FILE *dout = fopen(doutname,"w");
     delete[] doutname;
@@ -892,7 +892,7 @@ MBPT2::compute_cs_grad()
           fwrite(iajb_ptr, sizeof(double), nvir_act, dout);
           for (a=0; a<nvir_act; a++) {
             if (fabs(iajb_ptr[a])>1.0e-8) {
-              cout << scprintf(" Djbia(%2d %2d %2d %2d) = %12.8f",
+              ExEnv::out() << scprintf(" Djbia(%2d %2d %2d %2d) = %12.8f",
                                j+1-nfzc,b+1,i+1,a+1,iajb_ptr[a])
                    << endl;
               }
@@ -945,14 +945,14 @@ MBPT2::compute_cs_grad()
         if (debug_) {
           msg_->sum(ecorr_ij);
           ecorr_i += ecorr_ij;
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << scprintf("correlation energy for pair %3d %3d = %16.12f",
                            i+i_offset, j, ecorr_ij)
                << endl;
           }
         }         // exit j loop
       if (debug_) {
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << scprintf("correlation energy for orbital %3d = %16.12f",
                          i+i_offset, ecorr_i)
              << endl;
@@ -962,19 +962,19 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "End of ecorr" << endl;
+      ExEnv::out() << indent << "End of ecorr" << endl;
       }
     // end of debug print
 
     if (npass > 1 && pass < npass - 1) {
       double passe = ecorr_mp2;
       msg_->sum(passe);
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "Partial correlation energy for pass " << pass << ":" << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  restart_ecorr          = %18.14f", passe)
            << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  restart_orbital_memgrp = %d", ((pass+1) * ni))
            << endl;
       }
@@ -1050,7 +1050,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "End of Pkj and Wkj" << endl;
+      ExEnv::out() << indent << "End of Pkj and Wkj" << endl;
       }
     // end of debug print
 
@@ -1126,7 +1126,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "End of Pab and Wab" << endl;
+      ExEnv::out() << indent << "End of Pab and Wab" << endl;
       }
     // end of debug print
 
@@ -1203,7 +1203,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "End of Paj and Waj" << endl;
+      ExEnv::out() << indent << "End of Paj and Waj" << endl;
       }
     // end of debug print
 
@@ -1215,13 +1215,13 @@ MBPT2::compute_cs_grad()
 
     gamma_iajs_tmp = new double[nbasis*nvir_act];
     if (!gamma_iajs_tmp) {
-      cout << indent << "Could not allocate gamma_iajs_tmp" << endl;
+      ExEnv::out() << indent << "Could not allocate gamma_iajs_tmp" << endl;
       abort();
       }
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "Begin 1+2qbt\n" << endl;
+      ExEnv::out() << indent << "Begin 1+2qbt\n" << endl;
       }
     // end of debug print
 
@@ -1278,7 +1278,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "End 1. qbt" << endl;
+      ExEnv::out() << indent << "End 1. qbt" << endl;
       }
     // end of debug print
 
@@ -1294,12 +1294,12 @@ MBPT2::compute_cs_grad()
 
     gamma_iqjs_tmp = new double[nbasis];
     if (!gamma_iqjs_tmp) {
-      cerr << "Could not allocate gamma_iqjs_tmp" << endl;
+      ExEnv::err() << "Could not allocate gamma_iqjs_tmp" << endl;
       abort();
       }
 
     if (debug_ && me == 0) {
-      cout << indent << "Begin 2. qbt" << endl;
+      ExEnv::out() << indent << "Begin 2. qbt" << endl;
       }
 
     // Begin second quarter back-transformation
@@ -1345,7 +1345,7 @@ MBPT2::compute_cs_grad()
     // end of second quarter back-transformation
 
     if (debug_ && me == 0) {
-      cout << indent << "End 2. qbt" << endl;
+      ExEnv::out() << indent << "End 2. qbt" << endl;
       }
 
     gamma_iajs = 0;
@@ -1366,12 +1366,12 @@ MBPT2::compute_cs_grad()
     // Allocate various arrays
     gamma_iqrs = new double[ni*nbasis*nfuncmax*nfuncmax];
     if (!gamma_iqrs) {
-      cerr << "Could not allocate gamma_iqrs" << endl;
+      ExEnv::err() << "Could not allocate gamma_iqrs" << endl;
       abort();
       }
     gamma_pqrs = new double[nfuncmax*nfuncmax*nfuncmax*nfuncmax];
     if (!gamma_pqrs) {
-      cerr << "Could not allocate gamma_pqrs" << endl;
+      ExEnv::err() << "Could not allocate gamma_pqrs" << endl;
       abort();
       }
 
@@ -1379,7 +1379,7 @@ MBPT2::compute_cs_grad()
     bzerofast(Lpi,nbasis*ni);
 
     if (debug_ && me == 0) {
-      cout << indent << "Begin 3. and 4. qbt" << endl;
+      ExEnv::out() << indent << "Begin 3. and 4. qbt" << endl;
       }
 
     ////////////////////////////////////////////////////////
@@ -1654,7 +1654,7 @@ MBPT2::compute_cs_grad()
       }           // exit S loop
 
     if (debug_ && me == 0) {
-      cout << indent << "End 3. and 4. qbt" << endl;
+      ExEnv::out() << indent << "End 3. and 4. qbt" << endl;
       }
 
     mem->sync(); // Make sure all nodes are done before deleting arrays
@@ -1668,7 +1668,7 @@ MBPT2::compute_cs_grad()
       }
 
     if (debug_ && me == 0) {
-      cout << indent << "Back-transform Lpi" << endl;
+      ExEnv::out() << indent << "Back-transform Lpi" << endl;
       }
 
     // Back-transform Lpi to MO basis
@@ -1692,7 +1692,7 @@ MBPT2::compute_cs_grad()
     delete[] gamma_pqrs;
 
     if (debug_ && me == 0) {
-      cout << indent << "Done with pass " << pass << endl;
+      ExEnv::out() << indent << "Done with pass " << pass << endl;
       }
     }           // exit loop over i-batches (pass)
   tim_exit("mp2 passes");
@@ -1701,7 +1701,7 @@ MBPT2::compute_cs_grad()
 
   // debug print
   if (debug_ && me == 0) {
-    cout << indent << "Exited loop over i-batches" << endl;
+    ExEnv::out() << indent << "Exited loop over i-batches" << endl;
     }
   // end of debug print
 
@@ -1726,9 +1726,9 @@ MBPT2::compute_cs_grad()
     emp2 = escf + ecorr_mp2;
 
 #if PRINT_BIGGEST_INTS
-    cout << "biggest 1/4 transformed ints" << endl;
+    ExEnv::out() << "biggest 1/4 transformed ints" << endl;
     for (i=0; i<biggest_ints_1.ncontrib(); i++) {
-      cout << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_1.indices(i)[0],
                        biggest_ints_1.indices(i)[1],
                        biggest_ints_1.indices(i)[2],
@@ -1737,9 +1737,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    cout << "biggest 2/4 transformed ints" << endl;
+    ExEnv::out() << "biggest 2/4 transformed ints" << endl;
     for (i=0; i<biggest_ints_2.ncontrib(); i++) {
-      cout << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_2.indices(i)[0],
                        biggest_ints_2.indices(i)[1],
                        biggest_ints_2.indices(i)[2],
@@ -1748,9 +1748,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    cout << "restricted 2/4 transformed ints" << endl;
+    ExEnv::out() << "restricted 2/4 transformed ints" << endl;
     for (i=0; i<biggest_ints_2s.ncontrib(); i++) {
-      cout << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_2s.indices(i)[0],
                        biggest_ints_2s.indices(i)[1],
                        biggest_ints_2s.indices(i)[2],
@@ -1759,9 +1759,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    cout << "biggest 3/4 transformed ints (in 3.)" << endl;
+    ExEnv::out() << "biggest 3/4 transformed ints (in 3.)" << endl;
     for (i=0; i<biggest_ints_3a.ncontrib(); i++) {
-      cout << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_3a.indices(i)[0],
                        biggest_ints_3a.indices(i)[1],
                        biggest_ints_3a.indices(i)[2],
@@ -1770,9 +1770,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    cout << "biggest 3/4 transformed ints (in 4.)" << endl;
+    ExEnv::out() << "biggest 3/4 transformed ints (in 4.)" << endl;
     for (i=0; i<biggest_ints_3.ncontrib(); i++) {
-      cout << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_3.indices(i)[0],
                        biggest_ints_3.indices(i)[1],
                        biggest_ints_3.indices(i)[2],
@@ -1785,7 +1785,7 @@ MBPT2::compute_cs_grad()
 
     if (restart_orbital_memgrp_ == 0) {
       if (biggest_coefs.ncontrib()) {
-        cout << endl << indent
+        ExEnv::out() << endl << indent
              << "Largest first order coefficients (unique):"
              << endl;
         }
@@ -1795,7 +1795,7 @@ MBPT2::compute_cs_grad()
         int i2 = orbital_map[biggest_coefs.indices(i)[2] + nocc];
         int i3 = orbital_map[biggest_coefs.indices(i)[3] + nocc];
         int spincase = biggest_coefs.indices(i)[4];
-        cout << indent
+        ExEnv::out() << indent
              << scprintf("  %2d %12.8f %2d %3s %2d %3s -> %2d %3s %2d %3s (%s)",
                          i+1, biggest_coefs.val(i),
                          symorb_num_[i0]+1,
@@ -1815,34 +1815,34 @@ MBPT2::compute_cs_grad()
     // Print out various energies etc.
 
     if (debug_) {
-      cout << indent << "Number of shell quartets for which AO integrals\n"
+      ExEnv::out() << indent << "Number of shell quartets for which AO integrals\n"
            << indent << "(or integral derivatives) would have been computed\n"
            << indent << "without bounds checking: "
            << npass*nshell*nshell*(nshell+1)*(nshell+1)/2
            << endl;
 
-      cout << indent << "Number of shell quartets for which AO integrals\n"
+      ExEnv::out() << indent << "Number of shell quartets for which AO integrals\n"
            << indent << "were computed: " << aoint_computed
            << endl;
 
       if (dograd) {
-        cout << indent
+        ExEnv::out() << indent
              << "Number of shell quartets for which AO integral derivatives\n"
              << indent << "were computed: " << aointder_computed
              << endl;
         }
       }
 
-    cout<<endl<<indent
+    ExEnv::out()<<endl<<indent
         <<scprintf("RHF energy [au]:                   %17.12lf\n", escf);
-    cout<<indent
+    ExEnv::out()<<indent
         <<scprintf("MP2 correlation energy [au]:       %17.12lf\n", ecorr_mp2);
-    cout<<indent
+    ExEnv::out()<<indent
         <<scprintf("MP2 energy [au]:                   %17.12lf\n", emp2);
-    cout.flush();
+    ExEnv::out().flush();
     }
   if (method_ && strcmp(method_,"mp")) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << "MBPT2: bad method for closed shell case: " << method_
          << ", using mp" << endl;
     }
@@ -1898,8 +1898,8 @@ MBPT2::compute_cs_grad()
     double d1_diag = sqrt(D1_mat.eigvals().get_element(nocc_act-1));
     D1_mat = 0;
     // print the norms
-    cout <<node0<<endl;
-    cout <<node0
+    ExEnv::out() <<node0<<endl;
+    ExEnv::out() <<node0
          <<indent<<scprintf("D1(MP2)                = %12.8f", d1_diag)
          <<endl
          <<indent<<scprintf("S2 matrix 1-norm       = %12.8f", t1onenorm)
@@ -1909,13 +1909,13 @@ MBPT2::compute_cs_grad()
          <<indent<<scprintf("S2 diagnostic          = %12.8f", s2_diag)
          <<endl;
     if (biggest_t1.ncontrib()) {
-      cout << node0 << endl
+      ExEnv::out() << node0 << endl
            << indent << "Largest S2 values (unique determinants):" << endl;
       }
     for (i=0; i<biggest_t1.ncontrib(); i++) {
       int i0 = orbital_map[biggest_t1.indices(i)[0]];
       int i1 = orbital_map[biggest_t1.indices(i)[1] + nocc];
-      cout << node0
+      ExEnv::out() << node0
            << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
                                  i+1, biggest_t1.val(i),
                                  symorb_num_[i0]+1,
@@ -1983,7 +1983,7 @@ MBPT2::compute_cs_grad()
     d2o = sqrt(D2occ_mat.eigvals().get_element(nocc_act-1));
     d2v = sqrt(D2vir_mat.eigvals().get_element(nvir_act-1));
     d2_diag = (d2o > d2v ? d2o:d2v);
-    cout << node0 << endl
+    ExEnv::out() << node0 << endl
          << indent <<  scprintf("D2(MP1) = %12.8f", d2_diag) << endl << endl;
     delete[] d2occ_mat;
     delete[] d2vir_mat;
@@ -2395,7 +2395,7 @@ MBPT2::compute_cs_grad()
   // print out the gradient
   ////////////////////////////////////////////////////////
   if (debug_) {
-    cout << node0 << "Obtaining HF gradient" << endl;
+    ExEnv::out() << node0 << "Obtaining HF gradient" << endl;
     print_natom_3(ref()->gradient(),"HF gradient from HF");
     print_natom_3(hf_gradient,"Total HF gradient from MP2 [au]:");
     }

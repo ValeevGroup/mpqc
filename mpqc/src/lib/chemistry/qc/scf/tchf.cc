@@ -198,7 +198,7 @@ TCHF::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "TCHF: error starting threads" << endl;
       abort();
     }
@@ -206,7 +206,7 @@ TCHF::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "TCHF: error waiting for threads" << endl;
       abort();
     }
@@ -262,7 +262,7 @@ TCHF::ao_fock(double accuracy)
 
   // for now quit
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -314,7 +314,7 @@ TCHF::ao_fock(double accuracy)
 void
 TCHF::two_body_energy(double &ec, double &ex)
 {
-  cerr << node0 << indent
+  ExEnv::err() << node0 << indent
        << "TCHF:two_body_energy not implemented"
        << endl;
   abort();
@@ -386,7 +386,7 @@ TCHF::two_body_energy(double &ec, double &ex)
     
   }
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("tchf e2");
@@ -424,7 +424,7 @@ TCHF::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "TCHF::two_body_deriv: can't do gradient yet\n";
     abort();
   }

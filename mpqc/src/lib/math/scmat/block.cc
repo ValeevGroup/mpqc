@@ -80,7 +80,7 @@ SCMatrixBlock::~SCMatrixBlock()
 SCMatrixBlock *
 SCMatrixBlock::deepcopy() const
 {
-  cerr << "SCMatrixBlock of type " << class_name()
+  ExEnv::err() << "SCMatrixBlock of type " << class_name()
        << " cannot be deep copied" << endl;
   abort();
   return 0;
@@ -89,7 +89,7 @@ SCMatrixBlock::deepcopy() const
 double *
 SCMatrixBlock::dat()
 {
-  cerr << "SCMatrixBlock of type " << class_name()
+  ExEnv::err() << "SCMatrixBlock of type " << class_name()
        << " cannot provide internal data" << endl;
   abort();
   return 0;
@@ -98,7 +98,7 @@ SCMatrixBlock::dat()
 int
 SCMatrixBlock::ndat() const
 {
-  cerr << "SCMatrixBlock of type " << class_name()
+  ExEnv::err() << "SCMatrixBlock of type " << class_name()
        << " cannot provide size of internal data" << endl;
   abort();
   return 0;
@@ -1072,7 +1072,7 @@ SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
   if (niters_) access_ = iters_[0]->access();
   for (int i=0; i<niters_; i++) {
       if (iters_[i]->access() != access_) {
-          cerr << "SCMatrixCompositeSubblockIter: access not compatible"
+          ExEnv::err() << "SCMatrixCompositeSubblockIter: access not compatible"
                << endl;
           abort();
         }
@@ -1099,7 +1099,7 @@ SCMatrixCompositeSubblockIter::set_iter(int i,
 {
   iters_[i] = iter;
   if (iters_[i]->access() != access_) {
-      cerr << "SCMatrixCompositeSubblockIter: access not compatible"
+      ExEnv::err() << "SCMatrixCompositeSubblockIter: access not compatible"
            << endl;
       abort();
     }
@@ -1197,7 +1197,7 @@ SCMatrixJointSubblockIter::ready()
   else if (!nready)
     return 0;
 
-  cerr << "SCMatrixJointSubblockIter: incompatible iterators" << endl;
+  ExEnv::err() << "SCMatrixJointSubblockIter: incompatible iterators" << endl;
   abort();
   return 0;
 }

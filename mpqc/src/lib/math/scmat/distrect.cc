@@ -43,7 +43,7 @@
 static void
 fail(const char *m)
 {
-  cerr << indent << "distrect.cc: error: " << m << endl;
+  ExEnv::err() << indent << "distrect.cc: error: " << m << endl;
   abort();
 }
 
@@ -89,7 +89,7 @@ DistSCMatrix::block_to_block(int i, int j) const
           return I.block();
     }
 
-  cerr << indent << "DistSCMatrix::block_to_block: internal error" << endl;
+  ExEnv::err() << indent << "DistSCMatrix::block_to_block: internal error" << endl;
   abort();
   return 0;
 }
@@ -272,7 +272,7 @@ DistSCMatrix::accumulate(const SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-      cerr << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -283,7 +283,7 @@ DistSCMatrix::accumulate(const SCMatrix*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << indent
+          ExEnv::err() << indent
                << "DistSCMatrixListSubblockIter::accumulate block mismatch: "
                << "internal error" << endl;
           abort();
@@ -305,7 +305,7 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      cerr << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -373,7 +373,7 @@ DistSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      cerr << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -405,7 +405,7 @@ DistSCMatrix::accumulate(const SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-      cerr << indent << "DistSCMatrix::accumulate(SCVector*a): "
+      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -416,7 +416,7 @@ DistSCMatrix::accumulate(const SCVector*a)
        I++,J++) {
       int n = I.block()->ndat();
       if (n != J.block()->ndat()) {
-          cerr << indent << "DistSCMatrix::accumulate(SCVector*a): "
+          ExEnv::err() << indent << "DistSCMatrix::accumulate(SCVector*a): "
                << "block lists do not match" << endl;
           abort();
         }
@@ -437,7 +437,7 @@ DistSCMatrix::accumulate_product_rr(SCMatrix*pa,SCMatrix*pb)
   // make sure that the dimensions match
   if (!rowdim()->equiv(a->rowdim()) || !coldim()->equiv(b->coldim()) ||
       !a->coldim()->equiv(b->rowdim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "DistSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
            << "dimensions don't match\n";
       abort();
@@ -643,7 +643,7 @@ DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-      cerr << indent
+      ExEnv::err() << indent
            << "DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
@@ -714,7 +714,7 @@ double
 DistSCMatrix::invert_this()
 {
   if (nrow() != ncol()) {
-      cerr << indent << "DistSCMatrix::invert_this: matrix is not square\n";
+      ExEnv::err() << indent << "DistSCMatrix::invert_this: matrix is not square\n";
       abort();
     }
   RefSymmSCMatrix refs = kit()->symmmatrix(d1);
@@ -738,7 +738,7 @@ double
 DistSCMatrix::determ_this()
 {
   if (nrow() != ncol()) {
-    cerr << indent << "DistSCMatrix::determ_this: matrix is not square\n";
+    ExEnv::err() << indent << "DistSCMatrix::determ_this: matrix is not square\n";
     abort();
   }
   return invert_this();
@@ -748,7 +748,7 @@ double
 DistSCMatrix::trace()
 {
   if (nrow() != ncol()) {
-    cerr << indent << "DistSCMatrix::trace: matrix is not square\n";
+    ExEnv::err() << indent << "DistSCMatrix::trace: matrix is not square\n";
     abort();
   }
 
@@ -775,7 +775,7 @@ DistSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(v->dim())) {
-      cerr << indent << "DistSCMatrix::solve_this(SCVector*v): "
+      ExEnv::err() << indent << "DistSCMatrix::solve_this(SCVector*v): "
            << "dimensions don't match\n";
       abort();
     }
@@ -793,7 +793,7 @@ DistSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-      cerr << indent << "DistSCMatrix::schmidt_orthog(): "
+      ExEnv::err() << indent << "DistSCMatrix::schmidt_orthog(): "
            << "dimensions don't match\n";
       abort();
     }
@@ -819,7 +819,7 @@ DistSCMatrix::element_op(const RefSCElementOp2& op,
       = DistSCMatrix::require_castdown(m,"DistSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-      cerr << indent << "DistSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "DistSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j;
@@ -842,7 +842,7 @@ DistSCMatrix::element_op(const RefSCElementOp3& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-      cerr << indent << "DistSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "DistSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -936,7 +936,7 @@ DistSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 void
 DistSCMatrix::error(const char *msg)
 {
-  cerr << "DistSCMatrix: error: " << msg << endl;
+  ExEnv::err() << "DistSCMatrix: error: " << msg << endl;
 }
 
 RefDistSCMatrixKit

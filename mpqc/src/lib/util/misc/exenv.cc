@@ -59,13 +59,6 @@ char ExEnv::hostname_[256] = { '\0' };
 char ExEnv::username_[9] = { '\0' };
 ostream *ExEnv::out_ = 0;
 
-void
-ExEnv::err()
-{
-  ExEnv::out() << "ExEnv: attempted to use before initialized" << endl;
-  abort();
-}
-
 const char *
 ExEnv::program_name()
 {

@@ -146,7 +146,7 @@ PthreadThreadGrp::start_threads()
                                Thread::run_Thread_run,
                                (void*) threads_[i]);
       if (res) {
-        cerr << indent << "thread death " << res << endl;
+        ExEnv::err() << indent << "thread death " << res << endl;
         return -1;
       }
     }

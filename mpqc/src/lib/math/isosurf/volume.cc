@@ -144,7 +144,7 @@ Volume::solve(const SCVector3& start,
   double trialvalue;
   do {
       if (i>10) {
-          cerr << "Volume::solve: couldn't find end points" << endl;
+          ExEnv::err() << "Volume::solve: couldn't find end points" << endl;
           abort();
         }
       i++;
@@ -158,7 +158,7 @@ Volume::solve(const SCVector3& start,
 void
 Volume::failure(const char * msg)
 {
-  cerr << scprintf("Volume::failure: \"%s\"\n",msg);
+  ExEnv::err() << scprintf("Volume::failure: \"%s\"\n",msg);
   abort();
 }
 

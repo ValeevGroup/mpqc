@@ -46,7 +46,7 @@ class edge {
   public:
     void set(int i, int j) {
         if (i == j) {
-            cerr << "edge: bad nodes" << endl;
+            ExEnv::err() << "edge: bad nodes" << endl;
             abort();
           }
         vertex[0] = i; vertex[1] = j;
@@ -75,7 +75,7 @@ class triangle {
         if (  ((o0==0? E0.v(1): E0.v(0)) != (o1==0? E1.v(0): E1.v(1)))
             ||((o1==0? E1.v(1): E1.v(0)) != (o2==0? E2.v(0): E2.v(1)))
             ||((o2==0? E2.v(1): E2.v(0)) != (o0==0? E0.v(0): E0.v(1)))) {
-            cerr << "triangle: bad edges or orientations" << endl;
+            ExEnv::err() << "triangle: bad edges or orientations" << endl;
             abort();
           }
         edge_[0] = e0; orientation[0] = o0;
@@ -102,7 +102,7 @@ subdivide(int level, int maxlevel,
           int v1 = (triangles[i].o(0)==0? e0.v(1): e0.v(0));
           int v2 = (triangles[i].o(1)==0? e1.v(1): e1.v(0));
           if (v0 == v1 || v1 == v2 || v2 == v0) {
-              cerr << "bad triangle" << endl;
+              ExEnv::err() << "bad triangle" << endl;
               abort();
             }
           poly->set_face(i, v0, v1, v2);

@@ -157,9 +157,9 @@ DistShellPair::serve_tasks()
   // sort work
   iquicksort(cost, Ivec, ntri);
   if (debug_ > 1) {
-    cout << "costs of shell pairs" << endl;
+    ExEnv::out() << "costs of shell pairs" << endl;
     for (index=0; index<ntri; index++) {
-      cout << scprintf(" (%d %d):%d",Svec[Ivec[index]],Rvec[Ivec[index]],
+      ExEnv::out() << scprintf(" (%d %d):%d",Svec[Ivec[index]],Rvec[Ivec[index]],
                        cost[Ivec[index]])
            << endl;
       }
@@ -181,7 +181,7 @@ DistShellPair::serve_tasks()
       SR[1] = Rvec[Ivec[iwork]];
       iwork++;
       if (print_index++%print_interval == 0) {
-        cout << indent
+        ExEnv::out() << indent
              << scprintf("sending shell pair (%3d %3d) to %3d, %4.1f%% complete",
                          SR[0],SR[1],node,(double)(print_index*100)/nreq)
              << endl;
@@ -191,7 +191,7 @@ DistShellPair::serve_tasks()
       SR[0] = -1;
       SR[1] = -1;
       if (print_index++%print_interval == 0) {
-        cout << indent
+        ExEnv::out() << indent
              << scprintf("sending no more tasks message to %3d, %4.1f%% complete",
                          node,(double)(print_index*100)/nreq)
              << endl;
@@ -202,7 +202,7 @@ DistShellPair::serve_tasks()
     }
 
   if (debug_) {
-      cout << "all requests processed" << endl;
+      ExEnv::out() << "all requests processed" << endl;
     }
 
   delete[] cost;
@@ -245,7 +245,7 @@ DistShellPair::get_task(int &S, int &R)
       }
     if (print_index_++%print_interval_ == 0) {
       if (mythread_ == 0 && msg_->me() == 0) {
-        cout << indent
+        ExEnv::out() << indent
              << scprintf("working on shell pair (%3d %3d), %4.1f%% complete",
                          S,R,(double)(print_index_*100)/ntask_)
              << endl;

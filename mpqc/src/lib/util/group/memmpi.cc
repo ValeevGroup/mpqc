@@ -47,9 +47,9 @@ print_error_and_abort(int me, int mpierror)
   int size;
   MPI_Error_string(mpierror, msg, &size);
   msg[size] = '\0';
-  cerr << me << ": " << msg << endl;
+  ExEnv::err() << me << ": " << msg << endl;
   ExEnv::out().flush();
-  cerr.flush();
+  ExEnv::err().flush();
   MPI_Abort(MPI_COMM_WORLD, mpierror);
   abort();
 }
@@ -112,7 +112,7 @@ MPIMemoryGrp::get_mid()
         }
     }
 
-  cerr << "MPIMemoryGrp::get_mid(): ran out of mid's" << endl;
+  ExEnv::err() << "MPIMemoryGrp::get_mid(): ran out of mid's" << endl;
   abort();
   return 0;
 }
@@ -146,7 +146,7 @@ MPIMemoryGrp::send(void* data, int nbytes, int node, int type)
   int ret;
   if ((ret = MPI_Isend(data, nbytes, MPI_BYTE, node, type,
                        MPI_COMM_WORLD, &handles_[mid])) != MPI_SUCCESS) {
-      cerr << me() << ": MPIMemoryGrp::send(," << nbytes << "," << node
+      ExEnv::err() << me() << ": MPIMemoryGrp::send(," << nbytes << "," << node
            << "," << type << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
@@ -168,18 +168,18 @@ MPIMemoryGrp::recv(void* data, int nbytes, int node, int type)
   int ret;
   if ((ret = MPI_Irecv(data, nbytes, MPI_BYTE, n, t,
                        MPI_COMM_WORLD, &handles_[mid])) != MPI_SUCCESS) {
-      cerr << me() << ": MPIMemoryGrp::recv(," << nbytes << "," << node
+      ExEnv::err() << me() << ": MPIMemoryGrp::recv(," << nbytes << "," << node
            << "," << type << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
-  if (debug_) cerr << "MPIMemoryGrp:: recv mid = " << mid << endl;
+  if (debug_) ExEnv::err() << "MPIMemoryGrp:: recv mid = " << mid << endl;
   return mid;
 }
 
 void
 MPIMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
-  cerr << "MPIMemoryGrp::postrecv: active messages not supported\n" << endl;
+  ExEnv::err() << "MPIMemoryGrp::postrecv: active messages not supported\n" << endl;
   abort();
 }
 
@@ -196,14 +196,14 @@ MPIMemoryGrp::wait(long mid1, long mid2)
     }
 
   if (mid1 == -1) {
-      cerr << me() << ": MPIMemoryGrp::wait: mid1 == -1" << endl;
+      ExEnv::err() << me() << ": MPIMemoryGrp::wait: mid1 == -1" << endl;
       sleep(1);
       abort();
     }
   else if (mid2 == -1) {
       if (debug_) ExEnv::out() << ">>>> MPI_Wait for " << mid1 << endl;
       if ((ret = MPI_Wait(&handles_[mid1], &status)) != MPI_SUCCESS) {
-          cerr << me() << ": MPIMemoryGrp::wait("
+          ExEnv::err() << me() << ": MPIMemoryGrp::wait("
                << mid1 << ", "
                << mid2 << "): MPI_Wait: mpi error:"
                << endl;
@@ -220,7 +220,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
           //if (debug_) ExEnv::out() << ">>>> MPI_Test for " << mid1 << endl;
           if ((ret = MPI_Test(&handles_[mid1], &flag, &status))
               != MPI_SUCCESS) {
-              cerr << me() << ": MPIMemoryGrp::wait("
+              ExEnv::err() << me() << ": MPIMemoryGrp::wait("
                    << mid1 << ", "
                    << mid2 << "): MPI_Test (for mid1): mpi error:"
                    << endl;
@@ -236,7 +236,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
           //if (debug_) ExEnv::out() << ">>>> MPI_Test for " << mid2 << endl;
           if ((ret = MPI_Test(&handles_[mid2], &flag, &status))
               != MPI_SUCCESS) {
-              cerr << me() << ": MPIMemoryGrp::wait("
+              ExEnv::err() << me() << ": MPIMemoryGrp::wait("
                    << mid1 << ", "
                    << mid2 << "): MPI_Test (for mid2): mpi error"
                    << endl;
@@ -261,7 +261,7 @@ MPIMemoryGrp::probe(long mid)
   int flag;
   int ret;
   if ((ret = MPI_Test(&handles_[mid], &flag, &status)) != MPI_SUCCESS) {
-      cerr << me() << ": MPIMemoryGrp::probe("
+      ExEnv::err() << me() << ": MPIMemoryGrp::probe("
            << mid << "): MPI_Test: mpi error:"
            << endl;
       print_error_and_abort(me(), ret);
@@ -288,7 +288,7 @@ MPIMemoryGrp::deactivate()
       int ret;
 #ifndef __PUMAGON__
       if ((ret = MPI_Cancel(&handles_[data_request_mid_])) != MPI_SUCCESS) {
-          cerr << me()
+          ExEnv::err() << me()
                << ": MPIMemoryGrp::deactivate(): MPI_Cancel: mpi error"
                << endl;
           print_error_and_abort(me(), ret);
@@ -301,7 +301,7 @@ MPIMemoryGrp::deactivate()
 
 MPIMemoryGrp::~MPIMemoryGrp()
 {
-  if (debug_) cerr << "MPIMemoryGrp: in DTOR" << endl;
+  if (debug_) ExEnv::err() << "MPIMemoryGrp: in DTOR" << endl;
   deactivate();
 }
 

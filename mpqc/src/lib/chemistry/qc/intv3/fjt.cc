@@ -42,6 +42,7 @@
 #include <iostream.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/exenv.h>
 #include <chemistry/qc/intv3/fjt.h>
 
  /* Tablesize should always be at least 121. */
@@ -154,9 +155,13 @@ FJT::values(int J,double wval)
   int i, itable, irange;
 
   if (J>maxj) {
-    cerr << scprintf("the int_fjt routine has been incorrectly used\n");
-    cerr << scprintf("J = %d but maxj = %d\n",J,maxj);
-    exit(1);
+    ExEnv::err()
+      << scprintf("the int_fjt routine has been incorrectly used")
+      << endl;
+    ExEnv::err()
+      << scprintf("J = %d but maxj = %d",J,maxj)
+      << endl;
+    abort();
     }
 
   /* Compute an index into the table. */

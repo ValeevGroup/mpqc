@@ -38,7 +38,7 @@
 static void
 fail()
 {
-  cerr << scprintf("failing module:\n%s",__FILE__) << endl;
+  ExEnv::err() << scprintf("failing module:\n%s",__FILE__) << endl;
   abort();
 }
 
@@ -84,7 +84,7 @@ Int2eV3::int_initialize_erep(int storage, int order,
 
   /* See if the order of derivative needed is allowed. */
   if (order > 1) {
-    cerr << scprintf("int_initialize_erep cannot handle order>1, yet\n");
+    ExEnv::err() << scprintf("int_initialize_erep cannot handle order>1, yet\n");
     }
 
   if (order > 0) {
@@ -96,9 +96,9 @@ Int2eV3::int_initialize_erep(int storage, int order,
 
   /* A noncritical limitation for now. */
   if ((cs1 != cs2) || (cs2 != cs3) || (cs3 != cs4)) {
-    cerr << scprintf("libint: because the int_compute_erep routine\n");
-    cerr << scprintf("might permute centers around, different centers\n");
-    cerr << scprintf("cannot be given (but this can be easily fixed)\n");
+    ExEnv::err() << scprintf("libint: because the int_compute_erep routine\n");
+    ExEnv::err() << scprintf("might permute centers around, different centers\n");
+    ExEnv::err() << scprintf("cannot be given (but this can be easily fixed)\n");
     fail();
     }
 
@@ -153,13 +153,13 @@ Int2eV3::int_initialize_erep(int storage, int order,
     int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
     int_derint_buffer = (double *) malloc(sizeof(double) * nderint);
     if (!int_derint_buffer) {
-      cerr << scprintf("couldn't malloc intermed storage for derivative ints\n");
+      ExEnv::err() << scprintf("couldn't malloc intermed storage for derivative ints\n");
       fail();
       }
     }
 
   if (!int_buffer) {
-    cerr << scprintf("couldn't allocate integrals\n");
+    ExEnv::err() << scprintf("couldn't allocate integrals\n");
     fail();
     }
 
@@ -173,7 +173,7 @@ Int2eV3::int_initialize_erep(int storage, int order,
       used_storage_ += size_inter_1;
     }
   else {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << "Int2eV3: not storing O(N) intemediates due to lack of memory"
          << endl;
     int_store1 = 0;
@@ -186,14 +186,14 @@ Int2eV3::int_initialize_erep(int storage, int order,
       used_storage_ += size_inter_2;
     }
   else {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << "Int2eV3: not storing O(N^2) intermediates due to lack of memory"
          << endl;
     int_store2 = 0;
     }
 
   if (used_storage_ > storage || !int_store1 || !int_store2) {
-    cout << node0
+    ExEnv::out() << node0
          << indent << "Int2eV3: wanted more storage than given" << endl
          << indent << "  given  storage = " << storage << endl
          << indent << "  build  storage = " << used_storage_build_ << endl
@@ -304,9 +304,9 @@ Int2eV3::alloc_inter(int nprim,int nshell)
     int_shell_r.set_dim(nshell,3);
     int_shell_to_prim = new int[nshell];
     if (int_shell_to_prim == 0) {
-      cerr << "problem allocating O(n) integral intermediates for";
-      cerr << scprintf(" %d shells and %d primitives",nshell,nprim);
-      cerr << endl;
+      ExEnv::err() << "problem allocating O(n) integral intermediates for";
+      ExEnv::err() << scprintf(" %d shells and %d primitives",nshell,nprim);
+      ExEnv::err() << endl;
       fail();
       }
     }

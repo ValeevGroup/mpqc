@@ -263,8 +263,8 @@ class KeyVal: public VRefCount {
     /// Return a textual representation of the current error.
     const char*  errormsg();
 
-    virtual void errortrace(ostream&fp=cerr);
-    virtual void dump(ostream&fp=cerr);
+    virtual void errortrace(ostream&fp=ExEnv::err());
+    virtual void dump(ostream&fp=ExEnv::err());
 
     /// Print keywords that were never looked at, if possible.
     virtual void print_unseen(ostream&fp=ExEnv::out());
@@ -334,8 +334,8 @@ class StringKeyVal: public KeyVal {
     // references to the same object work in input files)
     virtual const char* truekeyword(const char*);
 
-    virtual void errortrace(ostream&fp=cerr);
-    virtual void dump(ostream&fp=cerr);
+    virtual void errortrace(ostream&fp=ExEnv::err());
+    virtual void dump(ostream&fp=ExEnv::err());
 };
 
 class AggregateKeyVal : public KeyVal {
@@ -357,8 +357,8 @@ class AggregateKeyVal : public KeyVal {
     AggregateKeyVal(const RefKeyVal&,const RefKeyVal&,const RefKeyVal&,
                     const RefKeyVal&);
     ~AggregateKeyVal();
-    void errortrace(ostream&fp=cerr);
-    void dump(ostream&fp=cerr);
+    void errortrace(ostream&fp=ExEnv::err());
+    void dump(ostream&fp=ExEnv::err());
 };
 
 class PrefixKeyVal : public KeyVal {
@@ -390,8 +390,8 @@ class PrefixKeyVal : public KeyVal {
     PrefixKeyVal(const char*,const RefKeyVal&,int,int,int);
     PrefixKeyVal(const char*,const RefKeyVal&,int,int,int,int);
     ~PrefixKeyVal();
-    void errortrace(ostream&fp=cerr);
-    void dump(ostream&fp=cerr);
+    void errortrace(ostream&fp=ExEnv::err());
+    void dump(ostream&fp=ExEnv::err());
 };
 
 class IPV2;
@@ -440,8 +440,8 @@ class ParsedKeyVal : public StringKeyVal {
     const char* stringvalue(const char*);
     const char* classname(const char*);
     const char* truekeyword(const char*);
-    void errortrace(ostream&fp=cerr);
-    void dump(ostream&fp=cerr);
+    void errortrace(ostream&fp=ExEnv::err());
+    void dump(ostream&fp=ExEnv::err());
     void print_unseen(ostream&fp=ExEnv::out());
     int have_unseen();
 };

@@ -139,13 +139,13 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
   point(id, od);
   memset(grad_f, 0, sizeof(double)*basis->molecule()->natom()*3);
 #if 0
-  cout << scprintf("gradient: rho_a= %12.8f rho_b= %12.8f need_gamma = %d",
+  ExEnv::out() << scprintf("gradient: rho_a= %12.8f rho_b= %12.8f need_gamma = %d",
                    id.a.rho, id.b.rho, need_gamma_terms) << endl;
-  cout << scprintf("  gamma_aa= %12.8f gamma_bb= %12.8f gamma_ab= % 12.8f",
+  ExEnv::out() << scprintf("  gamma_aa= %12.8f gamma_bb= %12.8f gamma_ab= % 12.8f",
                    id.a.gamma, id.b.gamma, id.gamma_ab) << endl;
-  cout << scprintf("  df_drho_a= % 12.8f df_drho_b= % 12.8f",
+  ExEnv::out() << scprintf("  df_drho_a= % 12.8f df_drho_b= % 12.8f",
                    od.df_drho_a, od.df_drho_b) << endl;
-  cout << scprintf("  df_dg_aa= % 12.8f df_dg_bb= % 12.8f df_dg_ab= % 12.8f",
+  ExEnv::out() << scprintf("  df_dg_aa= % 12.8f df_dg_bb= % 12.8f df_dg_ab= % 12.8f",
                    od.df_dgamma_aa,od.df_dgamma_bb,od.df_dgamma_ab) << endl;
 #endif
 
@@ -335,7 +335,7 @@ DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
   // fill in the energy at the initial density values
   point(id,od);
 
-  cout << scprintf("ra=%7.5f rb=%7.5f gaa=%7.5f gbb=%7.5f gab= % 9.7f",
+  ExEnv::out() << scprintf("ra=%7.5f rb=%7.5f gaa=%7.5f gbb=%7.5f gab= % 9.7f",
                    id.a.rho, id.b.rho, id.a.gamma, id.b.gamma, id.gamma_ab)
        << endl;
 
@@ -372,12 +372,12 @@ check(const char *name, double fd, double an, const char *class_name)
   if (fd == -135711.) return 0;
 
   double err = fabs(fd - an);
-  cout << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
+  ExEnv::out() << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
        << endl;
   if ((fabs(an) > 0.03 && err/fabs(an) > 0.03)
       || ((fabs(an) <= 0.03) && err > 0.03)
       || isnan(an)) {
-      cout << scprintf("Error: %12s: fd = % 12.8f an = % 12.8f (%s)",
+      ExEnv::out() << scprintf("Error: %12s: fd = % 12.8f an = % 12.8f (%s)",
                        name, fd, an, class_name)
            << endl;
       return 1;
@@ -422,7 +422,7 @@ DenFunctional::test()
 
   int ret = 0;
 
-  cout << "Testing with rho_a == rho_b" << endl;
+  ExEnv::out() << "Testing with rho_a == rho_b" << endl;
   for (i=0; testrho[i] != -1.0; i++) {
       if (testrho[i] == 0.0) continue;
       id.a.rho=testrho[i];
@@ -435,7 +435,7 @@ DenFunctional::test()
     }
 
   set_spin_polarized(1);
-  cout << "Testing with rho_a != rho_b" << endl;
+  ExEnv::out() << "Testing with rho_a != rho_b" << endl;
   for (i=0; testrho[i] != -1.0; i++) {
       id.a.rho=testrho[i];
       for (j=0; testrho[j] != -1.0; j++) {
@@ -567,7 +567,7 @@ SumDenFunctional::SumDenFunctional(const RefKeyVal& keyval):
   int ncoef = keyval->count("coefs");
   int nfunc = keyval->count("funcs");
   if (ncoef != nfunc && ncoef != 0) {
-      cout << "SumDenFunctional: number of coefs and funcs differ" << endl;
+      ExEnv::out() << "SumDenFunctional: number of coefs and funcs differ" << endl;
       abort();
     }
   
@@ -855,7 +855,7 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[1] = new PW91CFunctional;
         }
       else {
-          cout << "StdDenFunctional: bad name: " << name_ << endl;
+          ExEnv::out() << "StdDenFunctional: bad name: " << name_ << endl;
           abort();
         }
     }
@@ -4155,7 +4155,7 @@ mPW91XFunctional::mPW91XFunctional(const RefKeyVal& keyval):
           init_constants(mPW91);
         }
       else {
-          cout << "mPW91XFunctional: bad \"constants\": " << t << endl;
+          ExEnv::out() << "mPW91XFunctional: bad \"constants\": " << t << endl;
           abort();
         }
       delete[] t;

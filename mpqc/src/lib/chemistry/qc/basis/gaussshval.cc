@@ -31,7 +31,6 @@
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
-#include <math/topology/point.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/cartiter.h>
@@ -74,7 +73,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
 
   // check limitations
   if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "GaussianShell::grad_values: limit exceeded:\n"
            << indent
            << scprintf(
@@ -415,7 +414,7 @@ GaussianShell::test_monobound(double &r, double &bound) const
 
   // check limitations
   if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "GaussianShell::gaussshval: limit exceeded:\n"
            << indent
            << scprintf(
@@ -480,7 +479,7 @@ GaussianShell::test_monobound(double &r, double &bound) const
               double rold = r;
               r = sqrt(l[i]*precon[i]/(2.0*precon_w[i]));
               if (r<rold+0.01) r = rold+0.01;
-              //cout << "rejected at " << rold << " trying again at "
+              //ExEnv::out() << "rejected at " << rold << " trying again at "
               //     << r << endl;
               return 1;
             }

@@ -120,7 +120,7 @@ void
 ThreadGrp::add_thread(int i, Thread*t)
 {
   if (i >= nthread_) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "ThreadGrp::add_thread: trying to add too many threads"
          << endl;
   } else {
@@ -157,7 +157,7 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
       if (argv[i] && !strcmp(argv[i], "-threadgrp")) {
         i++;
         if (i >= argc) {
-          cerr << "-threadgrp must be following by an argument"
+          ExEnv::err() << "-threadgrp must be following by an argument"
                << endl;
           abort();
         }
@@ -194,11 +194,11 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
     RefDescribedClass dc = strkv->describedclassvalue();
     grp = ThreadGrp::castdown(dc.pointer());
     if (dc.null()) {
-      cerr << "initial_threadgrp: couldn't find a ThreadGrp in "
+      ExEnv::err() << "initial_threadgrp: couldn't find a ThreadGrp in "
            << keyval_string << endl;
       abort();
     } else if (!grp) {
-      cerr << "initial_threadgrp: wanted ThreadGrp but got "
+      ExEnv::err() << "initial_threadgrp: wanted ThreadGrp but got "
            << dc->class_name() << endl;
       abort();
     }

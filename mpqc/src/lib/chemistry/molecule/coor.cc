@@ -126,7 +126,7 @@ IntCoor::IntCoor(const RefKeyVal&keyval)
           value_ *= M_PI/180.0;
         }
       else {
-          cerr << node0 << indent
+          ExEnv::err() << node0 << indent
                << "IntCoor::IntCoor(KeyVal): unknown unit = \""
                << unit << "\"\n";
           abort();
@@ -220,7 +220,7 @@ SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
   RefIntCoorGen gen = keyval->describedclassvalue("generator");
 
   if (gen.null() && !n) {
-      cerr << node0 << indent << "SetIntCoor::SetIntCoor: bad input\n";
+      ExEnv::err() << node0 << indent << "SetIntCoor::SetIntCoor: bad input\n";
       abort();
     }
 
@@ -433,7 +433,7 @@ SumIntCoor::SumIntCoor(const RefKeyVal&keyval):
   int n = keyval->count(coor);
   int ncoef = keyval->count(coef);
   if (n != ncoef || !n) {
-      cerr << node0 << indent << "SumIntCoor::SumIntCoor: bad input\n";
+      ExEnv::err() << node0 << indent << "SumIntCoor::SumIntCoor: bad input\n";
       abort();
     }
 
@@ -632,7 +632,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
   molecule_ = keyval->describedclassvalue("molecule");
 
   if (molecule_.null()) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "MolecularCoor(const RefKeyVal&keyval): molecule not found\n";
       abort();
     }
@@ -646,7 +646,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 
   if (dnatom3_.null()) dnatom3_ = new SCDimension(3*molecule_->natom());
   else if (dnatom3_->n() != 3 * molecule_->natom()) {
-      cerr << node0 << indent << "MolecularCoor(KeyVal): bad dnatom3 value\n";
+      ExEnv::err() << node0 << indent << "MolecularCoor(KeyVal): bad dnatom3 value\n";
       abort();
     }
 }
@@ -756,7 +756,7 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
       for (int i=0; i<nextra_bonds_*2; i++) {
           extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
           if (keyval->error() != KeyVal::OK) {
-              cerr << node0 << indent
+              ExEnv::err() << node0 << indent
                    << "IntCoorGen:: keyval CTOR: problem reading "
                    << "\"extra_bonds:" << i << "\"\n";
               abort();
@@ -873,7 +873,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
     if (boundatoms.length() != m.natom()) {
       if (!warning_printed) {
         warning_printed = 1;
-        cout << node0
+        ExEnv::out() << node0
              << indent << "WARNING: two unbound groups of atoms" << endl
              << indent << "         consider using extra_bonds input" << endl
              << endl;
@@ -896,7 +896,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
           }
         }
       if (nearest_bound == -1) {
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << "ERROR: impossible error generating coordinates"
              << endl;
         abort();
@@ -909,7 +909,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
         SCVector3 r(m.r(*iatom));
         if (*iatom == nearest_bound
             || rnearest_unbound.dist(r) < 1.1 * nearest_dist) {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << "         adding bond between "
                << *iatom+1 << " and " << nearest_unbound+1 << endl;
           bonds.set(*iatom,nearest_unbound);
@@ -944,7 +944,7 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
   add_tors(sic,bonds,m);
   add_out(sic,bonds,m);
 
-  cout << node0 << endl << indent
+  ExEnv::out() << node0 << endl << indent
        << "IntCoorGen: generated " << sic->n() << " coordinates." << endl;
 }
 

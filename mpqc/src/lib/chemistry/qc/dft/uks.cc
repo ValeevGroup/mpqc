@@ -79,7 +79,7 @@ UKS::UKS(const RefKeyVal& keyval) :
 
   functional_ = keyval->describedclassvalue("functional");
   if (functional_.null()) {
-    cout << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
+    ExEnv::out() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
   }
 }
@@ -196,7 +196,7 @@ UKS::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::out() << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("uks e2");
@@ -271,7 +271,7 @@ UKS::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "UKS: error starting threads" << endl;
       abort();
     }
@@ -279,7 +279,7 @@ UKS::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "UKS: error waiting for threads" << endl;
       abort();
     }
@@ -325,7 +325,7 @@ UKS::ao_fock(double accuracy)
 
   // for now quit
   else {
-    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::out() << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   

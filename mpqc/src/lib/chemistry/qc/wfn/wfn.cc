@@ -361,7 +361,7 @@ Wavefunction::compute_overlap_eig()
   double minabs = maxabs;
   BlockedDiagSCMatrix *bm = BlockedDiagSCMatrix::castdown(m.pointer());
   if (bm == 0) {
-      cout << node0 << "Wfn: orthog: expected blocked overlap" << endl;
+      ExEnv::out() << node0 << "Wfn: orthog: expected blocked overlap" << endl;
     }
   int i, j;
   double *pm_sqrt = new double[bm->dim()->n()];
@@ -455,7 +455,7 @@ Wavefunction::compute_overlap_eig()
   delete[] pm_index;
   
   if (nlindep != 0) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "Wavefunction: orthog: WARNING: "
            << nlindep << " linearly dependent basis function"
            << (nlindep>1?"s":"")
@@ -465,7 +465,7 @@ Wavefunction::compute_overlap_eig()
            << endl;
     }
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf("independent overlap eigenvalue max/min = %12.8f/%12.8f",
                    maxabs, minabs)
        << endl;
@@ -579,7 +579,7 @@ Wavefunction::alpha_density()
     result.scale(0.5);
     return result;
   }
-  cerr << class_name() << "::alpha_density not implemented" << endl;
+  ExEnv::err() << class_name() << "::alpha_density not implemented" << endl;
   abort();
   return 0;
 }
@@ -592,7 +592,7 @@ Wavefunction::beta_density()
     result.scale(0.5);
     return result;
   }
-  cerr << class_name() << "::beta_density not implemented" << endl;
+  ExEnv::err() << class_name() << "::beta_density not implemented" << endl;
   abort();
   return 0;
 }

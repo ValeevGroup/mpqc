@@ -31,7 +31,6 @@
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
-#include <math/topology/point.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/gaussshell.h>
 
@@ -56,8 +55,9 @@ GaussianBasisSet::hessian_values(const SCVector3& r,
                                  double* basis_values) const
 {
     if (civec_ == 0) {
-        cerr << "GaussianBasisSet::grad_values called but set_integral not"
-             << endl;
+        ExEnv::err()
+            << "GaussianBasisSet::grad_values called but set_integral not"
+            << endl;
         abort();
       }
 
@@ -88,7 +88,7 @@ GaussianBasisSet::hessian_values(const SCVector3& r,
 	if (iflag)
 	{
 	    iflag--;
-	    cout << node0 << indent
+	    ExEnv::out() << node0 << indent
                  << scprintf("Center %d, (%lf,%lf,%lf)\n",
                              icenter,r_center(center,0),
                              r_center(center,1),r_center(center,2));
@@ -132,7 +132,7 @@ GaussianBasisSet::hessian_shell_values(const SCVector3& r, int sh,
                                        double* basis_values) const
 {
     if (civec_ == 0) {
-        cout << "GaussianBasisSet::hessian_shell_values"
+        ExEnv::out() << "GaussianBasisSet::hessian_shell_values"
              << " called but set_integral not"
              << endl;
         abort();

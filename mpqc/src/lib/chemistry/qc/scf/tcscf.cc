@@ -135,7 +135,7 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
   } else {
     tndocc_ = (nelectrons-2)/2;
     if ((nelectrons-2)%2) {
-      cerr << node0 << endl << indent
+      ExEnv::err() << node0 << endl << indent
            << "TCSCF::init: Warning, there's a leftover electron.\n"
            << incindent
            << indent << "total_charge = " << charge << endl
@@ -144,13 +144,13 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
     }
   }
 
-  cout << node0 << endl << indent << "TCSCF::init: total charge = "
+  ExEnv::out() << node0 << endl << indent << "TCSCF::init: total charge = "
        << Znuc-2*tndocc_-2 << endl << endl;
 
   nirrep_ = molecule()->point_group()->char_table().ncomp();
 
   if (nirrep_==1) {
-    cerr << node0 << indent << "TCSCF::init: cannot do C1 symmetry\n";
+    ExEnv::err() << node0 << indent << "TCSCF::init: cannot do C1 symmetry\n";
     abort();
   }
 
@@ -185,7 +185,7 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
       else if (nsi && osb_<0)
         osb_=i;
       else if (nsi) {
-        cerr << node0 << indent << "TCSCF::init: too many open shells\n";
+        ExEnv::err() << node0 << indent << "TCSCF::init: too many open shells\n";
         abort();
       }
     }
@@ -196,15 +196,15 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
   }
 
   int i;
-  cout << node0 << indent << "docc = [";
+  ExEnv::out() << node0 << indent << "docc = [";
   for (i=0; i < nirrep_; i++)
-    cout << node0 << " " << ndocc_[i];
-  cout << node0 << " ]\n";
+    ExEnv::out() << node0 << " " << ndocc_[i];
+  ExEnv::out() << node0 << " ]\n";
 
-  cout << node0 << indent << "socc = [";
+  ExEnv::out() << node0 << indent << "socc = [";
   for (i=0; i < nirrep_; i++)
-    cout << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
-  cout << node0 << " ]\n";
+    ExEnv::out() << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
+  ExEnv::out() << node0 << " ]\n";
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -297,7 +297,7 @@ RefSymmSCMatrix
 TCSCF::fock(int n)
 {
   if (n > 3) {
-    cerr << node0 << indent
+    ExEnv::err() << node0 << indent
          << "TCSCF::fock: there are only four fock matrices, "
          << scprintf("but fock(%d) was requested\n", n);
     abort();
@@ -454,7 +454,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
       if (ndocc_[i] != newdocc[i]) {
-        cerr << node0 << indent << "TCSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err() << node0 << indent << "TCSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << scprintf("occupations for irrep %d have changed\n", i+1)
              << indent
@@ -462,7 +462,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
              << endl << decindent;
       }
       if (((osa != osa_ && osa != osb_) || (osb != osb_ && osb != osa_))) {
-        cerr << node0 << indent << "TCSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err() << node0 << indent << "TCSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent << "open shell occupations have changed"
              << endl << decindent;
         osa_=osa;
@@ -741,8 +741,9 @@ TCSCF::scf_energy()
   ci2_ = hv.get_element(1,0);
   double c1c2 = ci1_*ci2_;
 
-  cout << node0 << indent << scprintf("c1 = %10.7f c2 = %10.7f", ci1_, ci2_)
-       << endl;
+  ExEnv::out() << node0 << indent
+               << scprintf("c1 = %10.7f c2 = %10.7f", ci1_, ci2_)
+               << endl;
   
   occa_ = 2*ci1_*ci1_;
   occb_ = 2*ci2_*ci2_;

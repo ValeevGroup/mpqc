@@ -59,8 +59,6 @@
 #include <util/state/stateio.h>
 #include <math/symmetry/pointgrp.h>
 
-#include <math/topology/point.h> // still needed to support old ckpt files
-
 ////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME PointGroup
@@ -145,9 +143,9 @@ PointGroup::PointGroup(StateIn& si) :
 {
   int i;
   if (si.version(static_class_desc()) < 2) {
-    Point *p = new Point(si);
-    for (i=0; i<3; i++) origin_[i] = p->operator[](i);
-    delete p;
+    ExEnv::err() << "PointGroup: checkpoint file is too old: cannot read"
+                 << endl;
+    abort();
   }
   else {
     for (i=0; i<3; i++) si.get(origin_[i]);

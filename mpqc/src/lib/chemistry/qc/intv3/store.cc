@@ -72,10 +72,10 @@ Int2eV3::int_have_stored_integral(int sh1,int sh2,int sh3,int sh4,
       ||p12 != integral->intlist.key.p12()
       ||p34 != integral->intlist.key.p34()
       ||p13p24 != integral->intlist.key.p13p24()) {
-      cout << scprintf("!!!!! SHELL INFO INCONSISTENCY\n");
+      ExEnv::out() << scprintf("!!!!! SHELL INFO INCONSISTENCY\n");
       abort();
     }
-  cout << scprintf("===== %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+  ExEnv::out() << scprintf("===== %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
          sh1, sh2, sh3, sh4,
          p12, p34, p13p24,
          integral->size, integral->costlist.key,

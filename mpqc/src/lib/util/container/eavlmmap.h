@@ -186,7 +186,7 @@ EAVLMMap<K,T>::remove(T* node)
       next(r);
 
       if (r == 0 || llink(r) != 0) {
-          cerr << "EAVLMMap::remove: inconsistency" << endl;
+          ExEnv::err() << "EAVLMMap::remove: inconsistency" << endl;
           abort();
         }
 
@@ -305,7 +305,7 @@ EAVLMMap<K,T>::check()
   for (node = start(); node; next(node)) {
       check_node(node);
       if (prev && compare(prev,node) > 0) {
-          cerr << "nodes out of order" << endl;
+          ExEnv::err() << "nodes out of order" << endl;
           abort();
         }
       prev = node;
@@ -313,16 +313,16 @@ EAVLMMap<K,T>::check()
     }
   for (node = start(); node; next(node)) {
       if (balance(node) != height(rlink(node)) - height(llink(node))) {
-          cerr << "balance inconsistency" << endl;
+          ExEnv::err() << "balance inconsistency" << endl;
           abort();
         }
       if (balance(node) < -1 || balance(node) > 1) {
-          cerr << "balance out of range" << endl;
+          ExEnv::err() << "balance out of range" << endl;
           abort();
         }
     }
   if (length_ != computed_length) {
-      cerr << "length error" << endl;
+      ExEnv::err() << "length error" << endl;
       abort();
     }
 }

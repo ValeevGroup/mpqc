@@ -49,7 +49,7 @@ ArrayExtentData &
 ShellExtent::data(int x, int y, int z)
 {
   if (x>=n_[0] || y>=n_[1] || z>= n_[2] || x<0 || y<0 || z<0) {
-      cout << "ShellExtent::data: out of bounds" << endl;
+      ExEnv::out() << "ShellExtent::data: out of bounds" << endl;
       abort();
     }
   return contributing_shells_[z + n_[2]*(y + n_[1]*x)];
@@ -111,8 +111,8 @@ ShellExtent::init(const RefGaussianBasisSet&gbs,
   contributing_shells_ = new ArrayExtentData[n_[0]*n_[1]*n_[2]];
 
   for (i=0; i<mol->natom(); i++) {
-      //cout << indent << "working on atom " << i << endl;
-      //cout << incindent;
+      //ExEnv::out() << indent << "working on atom " << i << endl;
+      //ExEnv::out() << incindent;
       for (j=0; j<gbs->nshell_on_center(i); j++) {
           int ishell = gbs->shell_on_center(i,j);
           const GaussianShell &shell = gbs->shell(ishell);
@@ -124,15 +124,15 @@ ShellExtent::init(const RefGaussianBasisSet&gbs,
               atom_block[l] = int((mol->r(i,l)-lower_[l])/resolution_);
             }
           int block[3];
-          //cout << indent << "working on shell " << ishell << endl;
-          //cout << incindent;
+          //ExEnv::out() << indent << "working on shell " << ishell << endl;
+          //ExEnv::out() << incindent;
           for (k=atom_block[0]-ir; k<=atom_block[0]+ir; k++) {
               block[0] = k;
               for (l=atom_block[1]-ir; l<=atom_block[1]+ir; l++) {
                   block[1] = l;
                   for (m=atom_block[2]-ir; m<=atom_block[2]+ir; m++) {
                       block[2] = m;
-                      //cout << indent
+                      //ExEnv::out() << indent
                       //     << "working on block " << block[0]
                       //     << " " << block[1]
                       //     << " " << block[2] << endl;
@@ -145,7 +145,7 @@ ShellExtent::init(const RefGaussianBasisSet&gbs,
                         }
                       dist = sqrt(dist);
                       double bound = shell.monobound(dist);
-                      //cout << indent
+                      //ExEnv::out() << indent
                       //     << "dist = " << dist
                       //     << " bound = " << bound << endl;
                       if (bound < tolerance) continue;
@@ -153,9 +153,9 @@ ShellExtent::init(const RefGaussianBasisSet&gbs,
                     }
                 }
             }
-          //cout << decindent;
+          //ExEnv::out() << decindent;
         }
-      //cout << decindent;
+      //ExEnv::out() << decindent;
     }
 }
 
@@ -202,10 +202,10 @@ ShellExtent::print(ostream &o)
           for (k=0; k<n_[2]; k++) {
               const ArrayExtentData &d = data(i,j,k);
               if (d.size()) {
-                  cout << node0 << indent
+                  ExEnv::out() << node0 << indent
                        << i << " " << j << " " << k << ":" << endl;
                   for (l=0; l<d.size(); l++) {
-                      cout << node0 << indent
+                      ExEnv::out() << node0 << indent
                            << "  " << d[l].shell << " " << d[l].bound << endl;
                     }
                 }

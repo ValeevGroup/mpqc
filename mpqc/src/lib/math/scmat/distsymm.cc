@@ -62,7 +62,7 @@ int
 DistSymmSCMatrix::block_to_node(int i, int j) const
 {
   if (j>i) {
-      cerr << indent << "DistSymmSCMatrix::block_to_node: j>i" << endl;
+      ExEnv::err() << indent << "DistSymmSCMatrix::block_to_node: j>i" << endl;
       abort();
     }
 
@@ -73,7 +73,7 @@ RefSCMatrixBlock
 DistSymmSCMatrix::block_to_block(int i, int j) const
 {
   if (j>i) {
-      cerr << indent << "DistSymmSCMatrix::block_to_block: j>i" << endl;
+      ExEnv::err() << indent << "DistSymmSCMatrix::block_to_block: j>i" << endl;
       abort();
     }
 
@@ -88,7 +88,7 @@ DistSymmSCMatrix::block_to_block(int i, int j) const
           return I.block();
     }
 
-  cerr << indent << "DistSymmSCMatrix::block_to_block: internal error" << endl;
+  ExEnv::err() << indent << "DistSymmSCMatrix::block_to_block: internal error" << endl;
   abort();
   return 0;
 }
@@ -273,7 +273,7 @@ DistSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "DistSymmSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "DistSymmSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -284,7 +284,7 @@ DistSymmSCMatrix::accumulate(const SymmSCMatrix*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << indent
+          ExEnv::err() << indent
                << "DistSymmSCMatrixListSubblockIter::accumulate block "
                << "mismatch: internal error" << endl;
           abort();
@@ -350,7 +350,7 @@ DistSymmSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
-      cerr << indent << "DistSymmSCMatrix::solve_this(SCVector*v): "
+      ExEnv::err() << indent << "DistSymmSCMatrix::solve_this(SCVector*v): "
            << "dimensions don't match\n";
       abort();
     }
@@ -418,7 +418,7 @@ DistSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
                                           "accumulate_symmetric_sum");
 
   if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
-      cerr << indent << "DistSymmSCMatrix::"
+      ExEnv::err() << indent << "DistSymmSCMatrix::"
            << "accumulate_symmetric_sum(SCMatrix*a): bad dim\n";
       abort();
     }
@@ -490,7 +490,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp2& op,
       = DistSymmSCMatrix::require_castdown(m,"DistSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      cerr << indent << "DistSymmSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "DistSymmSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j;
@@ -512,7 +512,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp3& op,
       = DistSymmSCMatrix::require_castdown(n,"DistSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      cerr << indent << "DistSymmSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "DistSymmSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -541,7 +541,7 @@ DistSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 void
 DistSymmSCMatrix::error(const char *msg)
 {
-  cerr << "DistSymmSCMatrix: error: " << msg << endl;
+  ExEnv::err() << "DistSymmSCMatrix: error: " << msg << endl;
 }
 
 RefDistSCMatrixKit

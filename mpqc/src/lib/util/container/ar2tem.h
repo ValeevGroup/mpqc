@@ -68,7 +68,7 @@ class Array2 {
       }
     Type& operator() (int i,int j) {
         if (i<0 || i>=_length0 || j<0 || j>=_length1) {
-            cerr << "Array2::operator()(" << i << "," << j << "): "
+            ExEnv::err() << "Array2::operator()(" << i << "," << j << "): "
                  << "out of range (" << _length0 << "," << _length1
                  << ",)" << endl;
             abort();
@@ -77,7 +77,7 @@ class Array2 {
       }
     const Type& operator() (int i,int j) const {
         if (i<0 || i>=_length0 || j<0 || j>=_length1) {
-            cerr << "Array2::operator()(" << i << "," << j << "): "
+            ExEnv::err() << "Array2::operator()(" << i << "," << j << "): "
                  << "out of range (" << _length0 << "," << _length1
                  << ",)" << endl;
             abort();

@@ -45,7 +45,7 @@
 SCMatrix3::SCMatrix3(const RefSCMatrix&x)
 {
   if (x.dim().n() != 3) {
-      cerr << indent "SCMatrix3::SCMatrix3(RefSCMatrix&): bad length\n";
+      ExEnv::err() << indent "SCMatrix3::SCMatrix3(RefSCMatrix&): bad length\n";
       abort();
     }
   _v[0] = x.get_element(0);

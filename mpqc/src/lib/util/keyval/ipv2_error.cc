@@ -62,9 +62,9 @@ IPV2::error_message(IPV2::Status errcod)
 void
 IPV2::error(const char *msg)
 {
-  cerr << "IPV2::error: ";
-  cerr << msg;
-  cerr << endl;
+  ExEnv::err() << "IPV2::error: ";
+  ExEnv::err() << msg;
+  ExEnv::err() << endl;
   showpos();
   exit(1);
 }
@@ -91,15 +91,15 @@ IPV2::warn(const char *msg)
       newmsg[poskey-msg] = '\0';
       strcat(newmsg,lastkeyword);
       strcat(newmsg,&poskey[2]);
-      cerr << "IPV2::warn: ";
-      cerr << newmsg;
-      cerr << endl;
+      ExEnv::err() << "IPV2::warn: ";
+      ExEnv::err() << newmsg;
+      ExEnv::err() << endl;
       if (poskey) free(newmsg);
     }
   else {
-      cerr << "IPV2::warn: ";
-      cerr << msg;
-      cerr << endl;
+      ExEnv::err() << "IPV2::warn: ";
+      ExEnv::err() << msg;
+      ExEnv::err() << endl;
     }
 }
 
@@ -121,7 +121,7 @@ IPV2::ip_lastkeyword_(ip_keyword_tree_t*kt)
 {
   if (kt->up) ip_lastkeyword_(kt->up);
   if (strlen(lastkeyword) + strlen(kt->keyword) + 2 > KEYWORD_LENGTH) {
-      cerr << "IPV2: keyword too big" << endl;
+      ExEnv::err() << "IPV2: keyword too big" << endl;
       abort();
     }
   strcat(lastkeyword,":");

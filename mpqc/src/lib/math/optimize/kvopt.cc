@@ -33,7 +33,7 @@ int
 main(int argc, char** argv)
 {
   if (argc != 3) {
-      cerr << scprintf("Usage: %s inputfile keyword\n", argv[0]);
+      ExEnv::err() << scprintf("Usage: %s inputfile keyword\n", argv[0]);
       exit(1);
     }
   char* inputfile = argv[1];
@@ -41,7 +41,7 @@ main(int argc, char** argv)
 
   FILE*fp = fopen(inputfile,"r");
   if (!fp) {
-      cerr << scprintf("%s: error opening input file \"%s\"\n",
+      ExEnv::err() << scprintf("%s: error opening input file \"%s\"\n",
                        argv[0], inputfile);
       perror("fopen");
       exit(1);
@@ -50,13 +50,13 @@ main(int argc, char** argv)
   RefParsedKeyVal keyval = new ParsedKeyVal(fp);
 
   if (!keyval->exists(keyword)) {
-      cerr << scprintf("%s: keyword \"%s\" doesn't exist in file \"%s\"\n",
+      ExEnv::err() << scprintf("%s: keyword \"%s\" doesn't exist in file \"%s\"\n",
                        argv[0], keyword, inputfile);
       exit(1);
     }
 
   if (!keyval->classname(keyword)) {
-      cerr << scprintf("%s: keyword \"%s\" in file \"%s\" is not an object\n",
+      ExEnv::err() << scprintf("%s: keyword \"%s\" in file \"%s\" is not an object\n",
                        argv[0], keyword, inputfile);
       exit(1);
     }
@@ -64,7 +64,7 @@ main(int argc, char** argv)
   RefDescribedClass dc = keyval->describedclassvalue(keyword);
 
   if (dc.null()) {
-      cerr << scprintf("%s: keyword \"%s\" in file \"%s\" could not be"
+      ExEnv::err() << scprintf("%s: keyword \"%s\" in file \"%s\" could not be"
                        " converted into a DescribedClass object\n",
                        argv[0], keyword, inputfile);
       exit(1);
@@ -73,7 +73,7 @@ main(int argc, char** argv)
   RefOptimize opt = dc;
 
   if (opt.null()) {
-      cerr << scprintf("%s: keyword \"%s\" in file \"%s\" could not be"
+      ExEnv::err() << scprintf("%s: keyword \"%s\" in file \"%s\" could not be"
                        " converted into an Optimize object\n",
                        argv[0], keyword, inputfile);
       exit(1);

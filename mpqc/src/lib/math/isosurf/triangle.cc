@@ -117,7 +117,7 @@ Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
        || e[1]->vertex(1-_orientation1) != e[2]->vertex(_orientation2)
        || e[2]->vertex(1-_orientation2) != e[0]->vertex(_orientation0))
     {
-      cerr << "Triangle: given edges that don't form a triangle" << endl;
+      ExEnv::err() << "Triangle: given edges that don't form a triangle" << endl;
       abort();
     }
 
@@ -266,7 +266,7 @@ void
 Triangle::set_order(int order, const RefVolume&vol, double isovalue)
 {
   if (order > max_order) {
-      cerr << scprintf("Triangle::set_order: max_order = %d but order = %d\n",
+      ExEnv::err() << scprintf("Triangle::set_order: max_order = %d but order = %d\n",
                        max_order, order);
       abort();
     }
@@ -276,7 +276,7 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
   if (edge(0)->order() != order
       ||edge(1)->order() != order
       ||edge(2)->order() != order) {
-      cerr << "Triangle::set_order: edge order doesn't match" << endl;
+      ExEnv::err() << "Triangle::set_order: edge order doesn't match" << endl;
       abort();
     }
 
@@ -561,7 +561,7 @@ GaussTriangleIntegrator::init_rw(int order)
       set_w(6, w(4));
     }
   else {
-      cerr << "GaussTriangleIntegrator: invalid order " << order << endl;
+      ExEnv::err() << "GaussTriangleIntegrator: invalid order " << order << endl;
       abort();
     }
 

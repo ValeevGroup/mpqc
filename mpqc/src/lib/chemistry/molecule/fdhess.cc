@@ -351,7 +351,7 @@ FinDispMolecularHessian::get_disp(int disp, int &irrep,
       }
     disp_offset += displacements(i).ncol();
     }
-  cerr << node0 << indent
+  ExEnv::err() << node0 << indent
        << "FinDispMolecularHessian::get_disp: bad disp number" << endl;
   abort();
 }
@@ -411,15 +411,15 @@ FinDispMolecularHessian::displace(int disp)
     }
 
 #ifdef DEBUG
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Displacement point group: " << endl
        << incindent << displacement_point_group_ << decindent;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Displaced molecule: " << endl
        << incindent << mol_ << decindent;
 #endif
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Displacement is "
        << displacement_point_group_->char_table().gamma(irrep).symbol()
        << " in " << displacement_point_group_->symbol()
@@ -548,7 +548,7 @@ FinDispMolecularHessian::cartesian_hessian()
   if (restart_) restart();
   else init();
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Computing molecular hessian from "
        << ndisplace() << " displacements:" << endl
        << indent << "Starting at displacement: "
@@ -557,7 +557,7 @@ FinDispMolecularHessian::cartesian_hessian()
   for (int i=ndisplacements_done(); i<ndisplace(); i++) {
     // This produces side-effects in mol and may even change
     // its symmetry.
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << "Beginning displacement " << i << ":" << endl;
     displace(i);
 

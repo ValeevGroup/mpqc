@@ -168,7 +168,7 @@ StateInBin::StateInBin(const RefKeyVal &keyval)
 {
   char *path = keyval->pcharvalue("file");
   if (!path) {
-      cerr << "StateInBin(const RefKeyVal&): no path given" << endl;
+      ExEnv::err() << "StateInBin(const RefKeyVal&): no path given" << endl;
     }
   open(path);
   delete[] path;
@@ -226,7 +226,7 @@ StateInBin::use_directory()
 int StateOutBin::put_array_void(const void*p,int size)
 {
   if (buf_->sputn((const char *)p,size) != size) {
-      cerr << "StateOutBin::put_array_void: failed" << endl;
+      ExEnv::err() << "StateOutBin::put_array_void: failed" << endl;
       abort();
     }
   file_position_ += size;
@@ -236,7 +236,7 @@ int StateOutBin::put_array_void(const void*p,int size)
 int StateInBin::get_array_void(void*p,int size)
 {
   if (buf_->sgetn((char*)p,size) != size) {
-      cerr << "StateInBin::get_array_void: failed" << endl;
+      ExEnv::err() << "StateInBin::get_array_void: failed" << endl;
       abort();
     }
 #if DEBUG

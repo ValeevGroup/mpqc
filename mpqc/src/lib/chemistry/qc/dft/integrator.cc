@@ -38,7 +38,7 @@
 
 #define MAX_DOUBLE 1e+14
 
-//#define CHECK_ALIGN(v) if(int(&v)&7)cout<<"Bad Alignment: "<< ## v <<endl;
+//#define CHECK_ALIGN(v) if(int(&v)&7)ExEnv::out()<<"Bad Alignment: "<< ## v <<endl;
 #define CHECK_ALIGN(v)
 
 ///////////////////////////////////////////////////////////////////////////
@@ -130,13 +130,13 @@ DenIntegrator::init(const RefWavefunction &wfn)
 {
   wfn_ = wfn;
   if (linear_scaling_) {
-      cout << node0 << indent << "Initializing ShellExtent" << endl;
+      ExEnv::out() << node0 << indent << "Initializing ShellExtent" << endl;
       extent_ = new ShellExtent;
       extent_->init(wfn_->basis());
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "  nshell = " << wfn_->basis()->nshell() << endl;
       int ncell = extent_->n(0)*extent_->n(1)*extent_->n(2);
-      cout << node0 << indent << "  ncell = " << ncell << endl;
+      ExEnv::out() << node0 << indent << "  ncell = " << ncell << endl;
       int maxval = 0;
       double ave = 0;
       for (int i=0; i<extent_->n(0); i++) {
@@ -151,8 +151,8 @@ DenIntegrator::init(const RefWavefunction &wfn)
             }
         }
       ave /= ncell;
-      cout << node0 << indent << "  ave nsh/cell = " << ave << endl;
-      cout << node0 << indent << "  max nsh/cell = " << maxval << endl;
+      ExEnv::out() << node0 << indent << "  ave nsh/cell = " << ave << endl;
+      ExEnv::out() << node0 << indent << "  max nsh/cell = " << maxval << endl;
     }
 }
 
@@ -489,7 +489,7 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
       for (i=0; i<nshell_; i++) contrib_[i] = i;
     }
   if (ncontrib_ > nshell_) {
-      cout << "DenIntegrator::do_point: ncontrib invalid" << endl;
+      ExEnv::out() << "DenIntegrator::do_point: ncontrib invalid" << endl;
       abort();
     }
   if (ncontrib_ == 0) { tim_exit("do_point"); return 0.0; }
@@ -710,7 +710,7 @@ IntegrationWeight::fd_w(int icenter, SCVector3 &point,
           dmol->r(i,j) += delta;
           if (icenter == i) point[j] += delta;
           fd_grad_w[i*3+j] = (w_plus-w_minus)/(2.0*delta);
-//            cout << scprintf("%d,%d %12.10f %12.10f %12.10f",
+//            ExEnv::out() << scprintf("%d,%d %12.10f %12.10f %12.10f",
 //                             i,j,w_plus,w_minus,fd_grad_w[i*3+j])
 //                 << endl;
         }
@@ -732,8 +732,8 @@ IntegrationWeight::test(int icenter, SCVector3 &point)
       sum_weight += weight;
     }
   if (fabs(1.0 - sum_weight) > DBL_EPSILON) {
-      cout << "IntegrationWeight::test: failed on weight" << endl;
-          cout << "sum_w = " << sum_weight << endl;
+      ExEnv::out() << "IntegrationWeight::test: failed on weight" << endl;
+          ExEnv::out() << "sum_w = " << sum_weight << endl;
     }
 
   // finite displacement tests of weight gradients
@@ -748,10 +748,10 @@ IntegrationWeight::test(int icenter, SCVector3 &point)
       if (mag > 0.00001 && err/mag > 0.01) bad = 1;
       else if (err > 0.00001) bad = 1;
       if (bad) {
-          cout << "iatom = " << i/3
+          ExEnv::out() << "iatom = " << i/3
                << " ixyx = " << i%3
                << " icenter = " << icenter << " point = " << point << endl;
-          cout << scprintf("dw/dx bad: fd_val=%16.13f an_val=%16.13f err=%16.13f",
+          ExEnv::out() << scprintf("dw/dx bad: fd_val=%16.13f an_val=%16.13f err=%16.13f",
                            fd_grad_w[i], an_grad_w[i],
                            fd_grad_w[i]-an_grad_w[i])
                << endl;
@@ -1058,11 +1058,11 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
       int i,j;
       for (i=0; i<ncenters*3; i++ ) w_gradient[i] = 0.0;
 //      fd_w(acenter, point, w_gradient);  // imbn commented out for debug
-//        cout << point << " ";
+//        ExEnv::out() << point << " ";
 //        for (int i=0; i<ncenters*3; i++) {
-//            cout << scprintf(" %10.6f", w_gradient[i]);
+//            ExEnv::out() << scprintf(" %10.6f", w_gradient[i]);
 //          }
-//        cout << endl;
+//        ExEnv::out() << endl;
 //      return w_a;  // imbn commented out for debug
       for (int ccenter = 0; ccenter < ncenters; ccenter++) {
           // NB: for ccenter==acenter, use translational invariance
@@ -1350,19 +1350,19 @@ LebedevLaikovIntegrator::nw(void) const
 void
 LebedevLaikovIntegrator::init(int n)
 {
-  // cout << " LebedevLaikovIntegrator::init -> before x_, y_, z_, and w_ malloc's " << endl;
-  // cout << " n = " << n << endl;
+  // ExEnv::out() << " LebedevLaikovIntegrator::init -> before x_, y_, z_, and w_ malloc's " << endl;
+  // ExEnv::out() << " n = " << n << endl;
   
   x_ = new double[n];
   y_ = new double[n];
   z_ = new double[n];
   w_ = new double[n];
 
-  // cout << " LebedevLaikovIntegrator::init -> nw_points = " << n << endl;
+  // ExEnv::out() << " LebedevLaikovIntegrator::init -> nw_points = " << n << endl;
   
   npoint_ = Lebedev_Laikov_sphere(n, x_, y_, z_, w_);
   if (npoint_ != n) {
-      cout << class_name() << ": bad number of points given: " << n << endl;
+      ExEnv::out() << class_name() << ": bad number of points given: " << n << endl;
       abort();
     }
 }
@@ -1718,16 +1718,16 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
       else if (!strcmp(grid,"fine"))   gridtype_ = 3;
       else if (!strcmp(grid,"xfine"))  gridtype_ = 4;
       else {
-          cout << " Grid type " << grid << " not recognized. " << endl;
-          cout << " Choices are: xcoarse, coarse, medium(default), fine, xfine. " << endl;
-          cout << " Using medium default grids. " << endl;
+          ExEnv::out() << " Grid type " << grid << " not recognized. " << endl;
+          ExEnv::out() << " Choices are: xcoarse, coarse, medium(default), fine, xfine. " << endl;
+          ExEnv::out() << " Using medium default grids. " << endl;
           gridtype_ = 2;
         }
 
     }
   else gridtype_ = 2;
 
-  // cout << " gridtype = " << gridtype_ << endl;
+  // ExEnv::out() << " gridtype = " << gridtype_ << endl;
   
   init_pruning_coefficients(keyval);
   
@@ -1765,27 +1765,27 @@ RadialAngularIntegrator::set_grids(void)
   int lvalue, offset_gridtype;
 
   offset_gridtype = angular_grid_offset(gridtype_);
-  // cout << " offset_gridtype = " << offset_gridtype << endl;
+  // ExEnv::out() << " offset_gridtype = " << offset_gridtype << endl;
 
   for (i=0; i<atomic_rows; i++) {
       lvalue = nw_lvalue_[i];
-      // cout << " i = " << i << " lvalue = " << lvalue << endl;
+      // ExEnv::out() << " i = " << i << " lvalue = " << lvalue << endl;
       for (j=0; j<=gridtype_; j++)
           radial_grid_[i][j] = new EulerMaclaurinRadialIntegrator(nr_points_[i][j]);
       
       for (j=0; j<npruned_partitions_; j++) {
-          // cout << "\t j = " << j << endl;
+          // ExEnv::out() << "\t j = " << j << endl;
           for (k=0; k<=gridtype_; k++) {
-              // cout << "i = " << i << " j = " << j << " k = " << k << " lvalue = " << lvalue << endl;
+              // ExEnv::out() << "i = " << i << " j = " << j << " k = " << k << " lvalue = " << lvalue << endl;
               //offset = angular_grid_offset(k);  // lvalue offset from reference xcoarse value
-              //cout << " offset = " << offset << endl;
+              //ExEnv::out() << " offset = " << offset << endl;
               if ( (lvalue+offset_gridtype)<29 && i<=1 ) {
                   // First row grid too small for pruning
                   double n = (prune_percentage[j]*(double)(lvalue+offset_gridtype));
                   int m = (int)n;
                   if ( (n-m) > 0.5 ) m++;
                   // int m = (int) (prune_percentage[j]*(double)(lvalue+offset_gridtype));
-                  // cout << " m = " << m << endl;
+                  // ExEnv::out() << " m = " << m << endl;
                   // int m = lvalue+offset_gridtype;
                   angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
                       Lebedev_Laikov_lvalue(m));
@@ -1838,7 +1838,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
   prune_grid_ = keyval->intvalue("prune_grid");
   if (keyval->error() != KeyVal::OK) prune_grid_ = 1;
 
-  // cout << "prune_grid = " << prune_grid_ << endl;
+  // ExEnv::out() << "prune_grid = " << prune_grid_ << endl;
   
   // Need to generalize this to parse input for any number of grids
   if (prune_grid_) {
@@ -1856,7 +1856,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
       int alpha_rows = keyval->count("alpha_coeffs");
       if (keyval->error() != KeyVal::OK) {
           if (npruned_partitions_ != 5) {
-              cout << " RadialAngularIntegrator:: Need to supply alpha coefficients "
+              ExEnv::out() << " RadialAngularIntegrator:: Need to supply alpha coefficients "
                    << "for the " << num_boundaries << " partition boundaries " << endl;
               abort();
             }
@@ -1874,7 +1874,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
           for (i=0; i<alpha_rows; i++) {
               check = keyval->count("alpha_coeffs", i);
               if (check != num_boundaries) {
-                  cout << "RadialAngularIntegrator:: Number of alpha coefficients does "
+                  ExEnv::out() << "RadialAngularIntegrator:: Number of alpha coefficients does "
                        << "not match the number of boundaries (" << check << " != "
                        << num_boundaries << ")" << endl;
                   abort;
@@ -1953,14 +1953,14 @@ RefRadialIntegrator
 RadialAngularIntegrator::get_radial_grid(int charge)
 {
   if (!user_defined_grids_) {
-      // cout << " get_radial_grid: gridtype = " << gridtype_ << endl;
+      // ExEnv::out() << " get_radial_grid: gridtype = " << gridtype_ << endl;
       if (charge<3) return radial_grid_[0][gridtype_];
       else if (charge<11) return radial_grid_[1][gridtype_];
       else if (charge<19) return radial_grid_[2][gridtype_];
       else if (charge<37) return radial_grid_[3][gridtype_];
       else if (charge<55) return radial_grid_[4][gridtype_];
       else {
-          cout << " No default radial grids for atomic charge " << charge << endl;
+          ExEnv::out() << " No default radial grids for atomic charge " << charge << endl;
           abort();
         }
     }
@@ -1979,7 +1979,7 @@ RadialAngularIntegrator::get_atomic_row(int i)
   else if (i<55) return 4;
   else if (i<87) return 5;
   else {
-      cout << " RadialAngularIntegrator::get_atomic_row - failed with int value " << i << endl;
+      ExEnv::out() << " RadialAngularIntegrator::get_atomic_row - failed with int value " << i << endl;
     }
 
 }
@@ -2003,7 +2003,7 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
       case 2: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
       case 3: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
       case 4: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
-      default: cout << " No default angular grids for atomic charge " << charge << endl;
+      default: ExEnv::out() << " No default angular grids for atomic charge " << charge << endl;
         }
     }
   else if (prune_grid_ && !user_defined_grids_) {  
@@ -2013,7 +2013,7 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
       else if (charge<11) Alpha = Alpha_coeffs_[1];
       else if (charge<19) Alpha = Alpha_coeffs_[2];
       else {
-          cout << " No partitioning parameters for atomic number " << charge << endl;
+          ExEnv::out() << " No partitioning parameters for atomic number " << charge << endl;
           exit(0);
         }
   
@@ -2026,7 +2026,7 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
     }
 
   else {
-      // cout << " get_angular_grid: returning angular_user_" << endl;
+      // ExEnv::out() << " get_angular_grid: returning angular_user_" << endl;
       return angular_user_;  // (user_defined_grids_=1) returning user defined angular grid
     }
 }
@@ -2103,7 +2103,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       center = centers[icenter];
       // get radial_ and nr[icenter] for current grid : depends on convergence threshold
       radial_ = get_radial_grid(mol->Z(icenter));
-      // cout << " Radial grid = " << radial_->nr() << " points for charge "
+      // ExEnv::out() << " Radial grid = " << radial_->nr() << " points for charge "
       //     << mol->Z(icenter) << endl;
       for (ir=0; ir < radial_->nr(); ir++) {
           double r = radial_->radial_value(ir, radial_->nr(),
@@ -2112,7 +2112,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
           // determine angular grid here
           // returns which lebedev grid to use for this radial point
           angular_ = get_angular_grid(r, bragg_radius[icenter], mol->Z(icenter));
-          // cout << " Angular grid = " << angular_->nw() << " points for charge "
+          // ExEnv::out() << " Angular grid = " << angular_->nw() << " points for charge "
           //       << mol->Z(icenter) << endl;
           nangular = angular_->num_angular_points(r/bragg_radius[icenter],ir);
           for (iangular=0; iangular<nangular; iangular++) {
@@ -2138,7 +2138,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   done_integration();
   weight_->done();
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Total integration points = " << point_count_total << endl;
 
   delete[] f_gradient;

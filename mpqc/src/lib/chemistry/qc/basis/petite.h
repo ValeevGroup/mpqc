@@ -133,7 +133,7 @@ class PetiteList : public VRefCount {
 
     int nblocks() const { return nblocks_; }
 
-    void print(ostream& =cout, int verbose=1);
+    void print(ostream& =ExEnv::out(), int verbose=1);
 
     // these return blocked dimensions
     RefSCDimension AO_basisdim();

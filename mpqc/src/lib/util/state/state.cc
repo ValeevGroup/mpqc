@@ -163,7 +163,7 @@ void
 SavableState::save_object_state_(StateOut&so, const ClassDesc *cd)
 {
   if (class_desc() != cd) {
-      cerr <<  "Warning:"
+      ExEnv::err() <<  "Warning:"
            << cd->name()
            << "::save_object_state: "
            << "exact type not known -- object not saved" << endl;
@@ -176,7 +176,7 @@ SavableState::save_object_state_(StateOut&so, const ClassDesc *cd)
 void
 SavableState::save_object_state(StateOut&)
 {
-  cerr << "SavableState::save_object_state(StateOut&):" << endl
+  ExEnv::err() << "SavableState::save_object_state(StateOut&):" << endl
        << " only can be used when exact type is known" << endl
        << " otherwise use save_state(StateOut&)" << endl
        << " (object not saved)" << endl;
@@ -213,7 +213,7 @@ SSRefBase::check_castdown_result(void* t, SavableState *ss,
                                  const ClassDesc *cd)
 {
   if (!t && ss) {
-      cerr << node0
+      ExEnv::err() << node0
            << "SSRef::restore_state() got type \"" << ss->class_name()
            << "\""
            << " but expected \""

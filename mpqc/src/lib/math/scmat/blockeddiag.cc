@@ -114,7 +114,7 @@ BlockedDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    cerr << indent << "BlockedDiagSCMatrix:: accumulate(SCMatrix*a): "
+    ExEnv::err() << indent << "BlockedDiagSCMatrix:: accumulate(SCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -193,7 +193,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp2& op,
   BlockedDiagSCMatrix *lm = BlockedDiagSCMatrix::require_castdown(m,
                                     "BlockedDiagSCMatrix::element_op");
   if (!dim()->equiv(lm->dim())) {
-    cerr << indent << "BlockedDiagSCMatrix: bad element_op\n";
+    ExEnv::err() << indent << "BlockedDiagSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -222,7 +222,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
                                       "BlockedDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-    cerr << indent << "BlockedDiagSCMatrix: bad element_op\n";
+    ExEnv::err() << indent << "BlockedDiagSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -325,7 +325,7 @@ BlockedDiagSCMatrix::restore(StateIn& s)
   int ndimt, ndim = n();
   s.get(ndimt);
   if (ndimt != ndim) {
-      cerr << indent
+      ExEnv::err() << indent
            << "BlockedDiagSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
@@ -335,7 +335,7 @@ BlockedDiagSCMatrix::restore(StateIn& s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          cerr << indent
+          ExEnv::err() << indent
                << "BlockedDiagSCMatrix::restore(): nblock differs\n" << endl;
           abort();
         }
@@ -344,7 +344,7 @@ BlockedDiagSCMatrix::restore(StateIn& s)
         }
     }
   else {
-      cerr << indent
+      ExEnv::err() << indent
            << "BlockedDiagSCMatrix::restore(): no subblocks--cannot restore"
            << endl;
       abort();

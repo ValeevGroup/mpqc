@@ -57,7 +57,7 @@ MP2BasisExtrap::MP2BasisExtrap(const RefKeyVal &keyval):
   SumMolecularEnergy(keyval)
 {
   if (n_ != 3) {
-      cout << node0 << "ERROR: MP2BasisExtrap: require exactly 3 energies"
+      ExEnv::out() << node0 << "ERROR: MP2BasisExtrap: require exactly 3 energies"
            << endl;
       abort();
     }
@@ -78,14 +78,14 @@ MP2BasisExtrap::MP2BasisExtrap(const RefKeyVal &keyval):
   if ((mbpt[0] = MBPT2::castdown(mole_[0].pointer())) == 0
       ||(mbpt[1] = MBPT2::castdown(mole_[1].pointer())) == 0
       ||(mbpt[2] = MBPT2::castdown(mole_[2].pointer())) == 0) {
-      cout << node0 << "ERROR: MP2BasisExtrap: need MBPT2 objects"
+      ExEnv::out() << node0 << "ERROR: MP2BasisExtrap: need MBPT2 objects"
            << endl;
       abort();
     }
   if (strcmp(mbpt[0]->basis()->name(),"cc-pVDZ")
       ||strcmp(mbpt[1]->basis()->name(),"cc-pVTZ")
       ||strcmp(mbpt[2]->basis()->name(),"cc-pVQZ")) {
-      cout << node0 << "WARNING: MP2BasisExtrap:" << endl
+      ExEnv::out() << node0 << "WARNING: MP2BasisExtrap:" << endl
            << "  given basis sets: "
            << mbpt[0]->basis()->name() << ", "
            << mbpt[1]->basis()->name() << ", "
@@ -130,10 +130,10 @@ MP2BasisExtrap::compute()
   for (i=0; i<n_; i++)
       old_do_hessian[i] = mole_[i]->do_hessian(hessian_.compute());
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "MP2BasisExtrap: compute" << endl;
 
-  cout << incindent;
+  ExEnv::out() << incindent;
 
   if (value_needed()) {
       double val = 0.0;
@@ -144,20 +144,20 @@ MP2BasisExtrap::compute()
               accuracy = mbpt2[i]->actual_value_accuracy();
         }
       val += mbpt2[2]->ref_energy();
-      cout << node0 << endl << indent
+      ExEnv::out() << node0 << endl << indent
            << "MP2BasisExtrap =" << endl;
       for (i=0; i<n_; i++) {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << scprintf("  %c % 16.12f * % 16.12f",
                            (i==0?' ':'+'),
                            coef_[i], mbpt2[i]->corr_energy())
                << endl;
         }
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  + % 16.12f",
                        mbpt2[2]->ref_energy())
            << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  = % 16.12f", val) << endl;
       set_energy(val);
       set_actual_value_accuracy(accuracy);
@@ -179,11 +179,12 @@ MP2BasisExtrap::compute()
       set_actual_gradient_accuracy(accuracy);
     }
   if (hessian_needed()) {
-    cout << node0 << "ERROR: MP2BasisExtrap: cannot do hessian" << endl;
+    ExEnv::out() << node0
+                 << "ERROR: MP2BasisExtrap: cannot do hessian" << endl;
     abort();
     }
 
-  cout << decindent;
+  ExEnv::out() << decindent;
 
   for (i=0; i<n_; i++) mole_[i]->do_value(old_do_value[i]);
   for (i=0; i<n_; i++) mole_[i]->do_gradient(old_do_gradient[i]);

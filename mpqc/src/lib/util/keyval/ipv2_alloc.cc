@@ -35,7 +35,7 @@ IPV2::ip_alloc_keyword_tree()
 
   result = (ip_keyword_tree_t *) malloc(sizeof(ip_keyword_tree_t));
   if (!result) {
-    cerr << "ip_alloc_keyword_tree: malloc failed";
+    ExEnv::err() << "ip_alloc_keyword_tree: malloc failed";
     error(0);
     }
 

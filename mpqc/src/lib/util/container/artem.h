@@ -76,7 +76,7 @@ class Array {
       }
     Type& operator[] (int i) const {
         if (i<0 || i>=_length) {
-            cerr << "Array::operator[](" << i << ") "
+            ExEnv::err() << "Array::operator[](" << i << ") "
                  << "out of range (" << _length << "0" << endl;
             abort();
           };
@@ -84,7 +84,7 @@ class Array {
       }
     Type& operator() (int i) const {
         if (i<0 || i>=_length) {
-            cerr << "Array::operator()(" << i << ") "
+            ExEnv::err() << "Array::operator()(" << i << ") "
                  << "out of range (" << _length << "0" << endl;
             abort();
           };

@@ -143,7 +143,7 @@ class Molecule: public SavableState
                   int have_charge = 0, double charge = 0.0);
 
     /// Print information about the molecule.
-    virtual void print(ostream& =cout) const;
+    virtual void print(ostream& =ExEnv::out()) const;
 
     /// Returns the number of atoms in the molcule.
     int natom() const { return natoms_; }
@@ -239,7 +239,7 @@ class Molecule: public SavableState
     void translate(const double *r);
     void move_to_com();
     void transform_to_principal_axes(int trans_frame=1);
-    void print_pdb(ostream& =cout, char *title =0) const;
+    void print_pdb(ostream& =ExEnv::out(), char *title =0) const;
 
     void read_pdb(const char *filename);
 

@@ -99,7 +99,7 @@ Shape::compute()
   get_x(r);
   if (gradient_needed()) {
       if (!gradient_implemented()) {
-          cerr << "Shape::compute: gradient not implemented" << endl;
+          ExEnv::err() << "Shape::compute: gradient not implemented" << endl;
           abort();
         }
       SCVector3 v;
@@ -113,7 +113,7 @@ Shape::compute()
       set_actual_value_accuracy(desired_value_accuracy());
     }
   if (hessian_needed()) {
-      cerr << "Shape::compute(): can't do hessian yet" << endl;
+      ExEnv::err() << "Shape::compute(): can't do hessian yet" << endl;
       abort();
     }
 }
@@ -525,7 +525,7 @@ ReentrantUncappedTorusHoleShape::ReentrantUncappedTorusHoleShape(double r,
       sb2m4ac = 0.0;
     }
   else {
-      cerr << "ReentrantUncappedTorusHoleShape:: imaginary point" << endl;
+      ExEnv::err() << "ReentrantUncappedTorusHoleShape:: imaginary point" << endl;
       abort();
     }
   double zA = (minus_b - sb2m4ac)/(2.0*a);

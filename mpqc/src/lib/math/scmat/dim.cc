@@ -40,7 +40,7 @@
 static void
 fail(const char *s)
 {
-  cerr << indent << "math/scmat/dim.cc: " << s << endl;
+  ExEnv::err() << indent << "math/scmat/dim.cc: " << s << endl;
   abort();
 }
 

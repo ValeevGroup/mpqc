@@ -160,7 +160,7 @@ SCMatrix::restore(StateIn& s)
   s.get(nrt);
   s.get(nct);
   if (nrt != nr || nct != nc) {
-      cerr << "SCMatrix::restore(): bad dimensions" << endl;
+      ExEnv::err() << "SCMatrix::restore(): bad dimensions" << endl;
       abort();
     }
   int has_subblocks;
@@ -175,7 +175,7 @@ SCMatrix::restore(StateIn& s)
         }
     }
   else {
-      cerr << "SCMatrix::restore(): matrix has subblocks--cannot restore"
+      ExEnv::err() << "SCMatrix::restore(): matrix has subblocks--cannot restore"
            << endl;
       abort();
     }
@@ -403,7 +403,7 @@ SCMatrix::gen_invert_this()
 void
 SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 {
-  cerr << indent << class_name() << ": SVD not implemented\n";
+  ExEnv::err() << indent << class_name() << ": SVD not implemented\n";
   abort();
 }
 
@@ -478,7 +478,7 @@ SymmSCMatrix::restore(StateIn& s)
   int nrt, nr = n();
   s.get(nrt);
   if (nrt != nr) {
-      cerr << "SymmSCMatrix::restore(): bad dimension" << endl;
+      ExEnv::err() << "SymmSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
   for (int i=0; i<nr; i++) {
@@ -843,7 +843,7 @@ DiagSCMatrix::restore(StateIn& s)
   int nrt, nr = n();
   s.get(nrt);
   if (nrt != nr) {
-      cerr << "DiagSCMatrix::restore(): bad dimension" << endl;
+      ExEnv::err() << "DiagSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
   for (int i=0; i<nr; i++) {
@@ -1006,7 +1006,7 @@ SCVector::restore(StateIn& s)
   int nrt, nr = n();
   s.get(nrt);
   if (nrt != nr) {
-      cerr << "SCVector::restore(): bad dimension" << endl;
+      ExEnv::err() << "SCVector::restore(): bad dimension" << endl;
       abort();
     }
   for (int i=0; i<nr; i++) {
@@ -1105,7 +1105,7 @@ SCVector::normalize()
   double norm = sqrt(scalar_product(this));
   if (norm > 1.e-20) norm = 1.0/norm;
   else {
-      cerr << indent
+      ExEnv::err() << indent
            << "SCVector::normalize: tried to normalize tiny vector\n";
       abort();
     }

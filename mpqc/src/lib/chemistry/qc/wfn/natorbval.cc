@@ -27,7 +27,6 @@
 
 #include <math/scmat/matrix.h>
 #include <util/keyval/keyval.h>
-#include <math/topology/point.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/wfn/wfn.h>

@@ -77,7 +77,7 @@ DistDiagSCMatrix::block_to_block(int i) const
           return I.block();
     }
 
-  cerr << indent
+  ExEnv::err() << indent
        << "DistDiagSCMatrix::block_to_block: internal error" << endl;
   abort();
   return 0;
@@ -101,7 +101,7 @@ DistDiagSCMatrix::find_element(int i) const
       if (DEBUG)
           ExEnv::out() << messagegrp()->me() << ": ndat = " << blk->ndat() << endl;
       if (oi >= blk->ndat()) {
-          cerr << messagegrp()->me() << ": DistDiagSCMatrix::find_element"
+          ExEnv::err() << messagegrp()->me() << ": DistDiagSCMatrix::find_element"
                << ": internal error" << endl;
           abort();
         }
@@ -188,7 +188,7 @@ DistDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "DistDiagSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "DistDiagSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -199,7 +199,7 @@ DistDiagSCMatrix::accumulate(const DiagSCMatrix*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << indent << "DistDiagSCMatrix::accumulate "
+          ExEnv::err() << indent << "DistDiagSCMatrix::accumulate "
                << "mismatch: internal error" << endl;
           abort();
         }
@@ -296,7 +296,7 @@ DistDiagSCMatrix::element_op(const RefSCElementOp2& op,
       = DistDiagSCMatrix::require_castdown(m,"DistDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      cerr << indent << "DistDiagSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "DistDiagSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j;
@@ -318,7 +318,7 @@ DistDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = DistDiagSCMatrix::require_castdown(n,"DistDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      cerr << indent << "DistDiagSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "DistDiagSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -347,7 +347,7 @@ DistDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 void
 DistDiagSCMatrix::error(const char *msg)
 {
-  cerr << indent << "DistDiagSCMatrix: error: " << msg << endl;
+  ExEnv::err() << indent << "DistDiagSCMatrix: error: " << msg << endl;
 }
 
 RefDistSCMatrixKit

@@ -82,7 +82,7 @@ HSOSKS::HSOSKS(const RefKeyVal& keyval) :
 
   functional_ = keyval->describedclassvalue("functional");
   if (functional_.null()) {
-    cout << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
+    ExEnv::out() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
   }
 }
@@ -284,7 +284,7 @@ HSOSKS::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "HSOSKS: error starting threads" << endl;
       abort();
     }
@@ -292,7 +292,7 @@ HSOSKS::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "HSOSKS: error waiting for threads" << endl;
       abort();
     }
@@ -338,7 +338,7 @@ HSOSKS::ao_fock(double accuracy)
 
   // for now quit
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
 
@@ -435,7 +435,7 @@ HSOSKS::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("hsoshf e2");

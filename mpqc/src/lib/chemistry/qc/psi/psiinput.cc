@@ -71,7 +71,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
     nvolume[n] = psifiles->intvalue("nvolume", n);
     tmp = psifiles->count("volumes", n);
     if (tmp != nvolume[n])
-        cerr << "bad nvolumes" << endl;
+        ExEnv::err() << "bad nvolumes" << endl;
     volumes[n] = new char*[tmp];
     for(int j=0; j<tmp; j++)
       volumes[n][j] = psifiles->pcharvalue("volumes", n, j);
@@ -96,7 +96,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
             }
         }
       else {
-          cerr << "change size of docc array or give obwfn" << endl;
+          ExEnv::err() << "change size of docc array or give obwfn" << endl;
           abort();
         }
     }
@@ -118,7 +118,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
             }
         }
       else {
-          cerr << "change size of socc array or give obwfn" << endl;
+          ExEnv::err() << "change size of socc array or give obwfn" << endl;
           abort();
         }
       }
@@ -141,7 +141,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
         if (tmp) {
             if (!strcmp(tmp,"auto") && obwfn.nonnull()) {
                 int nfzc = _mol->n_core_electrons()/2;
-                cout << node0 << indent
+                ExEnv::out() << node0 << indent
                      << "PSI: auto-freezing "<<nfzc<<" core orbitals" << endl;
                 RefDiagSCMatrix eigvals = obwfn->eigenvalues().copy();
                 for (i=0; i<nirrep; i++) frozen_docc[i] = 0;
@@ -167,13 +167,13 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
                   }
               }
             else {
-                cerr << "bad value for frozen_docc or missing obwfn" << endl;
+                ExEnv::err() << "bad value for frozen_docc or missing obwfn" << endl;
                 abort();
               }
             delete[] tmp;
           }
         else {
-            cerr << "change size of frozen_docc array" << endl;
+            ExEnv::err() << "change size of frozen_docc array" << endl;
             abort();
           }
       }
@@ -188,7 +188,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   if (keyval->exists("frozen_uocc")) {
     n = keyval->count("frozen_uocc");
     if (keyval->error() != KeyVal::OK || n != nirrep) {
-        cerr << "change size of frozen_uocc array" << endl;
+        ExEnv::err() << "change size of frozen_uocc array" << endl;
         abort();
       }
     for (i=0; i<nirrep; i++) 
@@ -200,21 +200,21 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   if (keyval->exists("ex_lvl")) ex_lvl = keyval->intvalue("ex_lvl");
   else ex_lvl = 0;
 
-  cout << node0 << indent << "docc = [";
-  for (i=0; i<nirrep; i++) cout << node0 << " " << docc[i];
-  cout << node0 << " ]" << endl;
+  ExEnv::out() << node0 << indent << "docc = [";
+  for (i=0; i<nirrep; i++) ExEnv::out() << node0 << " " << docc[i];
+  ExEnv::out() << node0 << " ]" << endl;
 
-  cout << node0 << indent << "socc = [";
-  for (i=0; i<nirrep; i++) cout << node0 << " " << socc[i];
-  cout << node0 << " ]" << endl;
+  ExEnv::out() << node0 << indent << "socc = [";
+  for (i=0; i<nirrep; i++) ExEnv::out() << node0 << " " << socc[i];
+  ExEnv::out() << node0 << " ]" << endl;
 
-  cout << node0 << indent << "frozen_docc = [";
-  for (i=0; i<nirrep; i++) cout << node0 << " " << frozen_docc[i];
-  cout << node0 << " ]" << endl;
+  ExEnv::out() << node0 << indent << "frozen_docc = [";
+  for (i=0; i<nirrep; i++) ExEnv::out() << node0 << " " << frozen_docc[i];
+  ExEnv::out() << node0 << " ]" << endl;
 
-  cout << node0 << indent << "frozen_uocc = [";
-  for (i=0; i<nirrep; i++) cout << node0 << " " << frozen_uocc[i];
-  cout << node0 << " ]" << endl;
+  ExEnv::out() << node0 << indent << "frozen_uocc = [";
+  for (i=0; i<nirrep; i++) ExEnv::out() << node0 << " " << frozen_uocc[i];
+  ExEnv::out() << node0 << " ]" << endl;
 }
 
 
@@ -244,7 +244,7 @@ PSI_Input::open(const char *fname)
 {
   fp = fopen(fname, "w");
   if (fp == NULL) {
-    cerr << "(PSI_Input_CI::write_input_file): Can't open "
+    ExEnv::err() << "(PSI_Input_CI::write_input_file): Can't open "
          << fname << endl;
     abort();
     }
@@ -449,7 +449,7 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    // PSI doesn't do d2 right. The X and Y axes are wrong and
    // sometimes intsth fails.  So d2 gets lowered to c2.
    if (!strcmp(_mol->point_group()->symbol(),"d2")) {
-       cout << node0 << indent
+       ExEnv::out() << node0 << indent
             << "DOING D2 calc in C2 because of bugs in PSI"
             << endl;
        RefPointGroup newgrp(new PointGroup("c2",
@@ -495,7 +495,7 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    CorrelationTable corrtab;
    int rc;
    if ((rc = corrtab.initialize_table(_origpg, _mol->point_group()))) {
-       cerr << node0
+       ExEnv::err() << node0
             << "ERROR: couldn't initialize correlation table:" << endl
             << "  " << corrtab.error(rc) << endl;
        abort();
@@ -580,7 +580,7 @@ PSI_Input::write_input_file(const char *dertype, const char *wavefn,
 
   fp = fopen(fname, "w");
   if (fp == NULL) {
-    cerr << "(PSI_Input::write_input_file): Can't open " << fname << endl;
+    ExEnv::err() << "(PSI_Input::write_input_file): Can't open " << fname << endl;
     abort();
     }
   write_defaults(dertype, wavefn);
@@ -615,7 +615,7 @@ PSI_Input::write_key_wq(const char *s, const char *t)
 {
    write_indent();
    if (fprintf(fp, "%s = \"%s\"\n", s, t) < 0) {
-      cerr << "(PSI_Input::write_key_wq): trouble writing"
+      ExEnv::err() << "(PSI_Input::write_key_wq): trouble writing"
            << s << "= \"" << t << "\"" << endl;
       return(0);
       }

@@ -110,7 +110,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
               KeyValError original_error = error();
               RefDescribedClass newdc(cd->create(pkv));
               if (newdc.null()) {
-                  cerr << "StringKeyVal::value: create failed for:" << endl
+                  ExEnv::err() << "StringKeyVal::value: create failed for:" << endl
                        << " keyword = \"" << tkw << "\" class = \"" << classn
                        << "\"" << endl
                        << " either the KeyVal create operator doesn't" << endl

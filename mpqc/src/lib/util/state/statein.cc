@@ -51,14 +51,14 @@ StateIn::_castdown(const ClassDesc*cd)
 
 StateIn::StateIn(const StateIn&)
 {
-  cerr << "StateIn: private copy ctor called???" << endl;
+  ExEnv::err() << "StateIn: private copy ctor called???" << endl;
   abort();
 }
 
 void
 StateIn::operator=(const StateIn&)
 {
-  cerr << "StateIn: private assignment called???" << endl;
+  ExEnv::err() << "StateIn: private assignment called???" << endl;
   abort();
 }
 
@@ -85,7 +85,7 @@ StateIn::push_key(const char *keyword)
 
   int length = strlen(keyword);
   if (keylength_ + length + 1 >= KeyVal::MaxKeywordLength) {
-      cerr << "StateIn: KeyVal::MaxKeywordLength exceeded" << endl;
+      ExEnv::err() << "StateIn: KeyVal::MaxKeywordLength exceeded" << endl;
       abort();
     }
   int old_keylength = keylength_;
@@ -239,7 +239,7 @@ StateIn::get(double&r, const char *keyword)
 int
 StateIn::get_array_void(void*p,int s)
 {
-  cerr << "StateIn::get_array_void(void*p,int s) "
+  ExEnv::err() << "StateIn::get_array_void(void*p,int s) "
        << "is a derived class responsiblility" << endl
        << "  exact type is \"" << class_name() << "\"" << endl;
   abort();
@@ -459,7 +459,7 @@ StateIn::get(const ClassDesc**cd)
   r += get(classid);
 
   if (!classdatamap_.contains(classid)) {
-      cerr << "ERROR: StateIn: couldn't find class descriptor for classid "
+      ExEnv::err() << "ERROR: StateIn: couldn't find class descriptor for classid "
            << classid << endl;
       abort();
     }
@@ -511,12 +511,12 @@ StateIn::dir_getobject(RefSavableState &p, const char *name)
   p = 0;
 
   if (!has_directory()) {
-      cerr << "ERROR: StateIn: no directory to get object from" << endl;
+      ExEnv::err() << "ERROR: StateIn: no directory to get object from" << endl;
       abort();
     }
 
   if (!seekable()) {
-      cerr << "ERROR: StateIn: cannot get object because cannot seek" << endl;
+      ExEnv::err() << "ERROR: StateIn: cannot get object because cannot seek" << endl;
       abort();
     }
 
@@ -538,7 +538,7 @@ StateIn::dir_getobject(RefSavableState &p, const char *name)
   if (classname) {
       cd = ClassDesc::name_to_class_desc(classname);
       if (!cd) {
-          cerr << "ERROR: StateIn: class " << classname << " unknown" << endl;
+          ExEnv::err() << "ERROR: StateIn: class " << classname << " unknown" << endl;
           abort();
         }
       delete[] classname;
@@ -592,7 +592,7 @@ StateIn::getobject(RefSavableState &p)
 #endif
       AVLMap<int,StateInData>::iterator ind = ps_.find(refnum);
       if (ind == ps_.end() && use_dir) {
-          cerr << "ERROR: StateIn: directory missing object number "
+          ExEnv::err() << "ERROR: StateIn: directory missing object number "
                << refnum << endl;
           abort();
         }
@@ -614,7 +614,7 @@ StateIn::getobject(RefSavableState &p)
                   int trefnum;
                   get(trefnum);
                   if (trefnum != refnum) {
-                      cerr << "StateIn: didn't find expected reference"<<endl;
+                      ExEnv::err() << "StateIn: didn't find expected reference"<<endl;
                       abort();
                     }
                 }
@@ -705,7 +705,7 @@ StateIn::get_header()
   get_array_char(tmp,6);
   tmp[6] = '\0';
   if (strcmp(tmp,magic)) {
-      cerr << "StateIn: bad magic number" << endl;
+      ExEnv::err() << "StateIn: bad magic number" << endl;
       abort();
     }
 
@@ -725,7 +725,7 @@ StateIn::get_header()
   // get the directory location
   get_array_int(&dir_loc_,1);
   if (dir_loc_ == -1) {
-      cerr << "ERROR: StateIn: directory corrupted" << endl;
+      ExEnv::err() << "ERROR: StateIn: directory corrupted" << endl;
       abort();
     }
 }

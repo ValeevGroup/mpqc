@@ -262,7 +262,7 @@ AtomInfo::load_library_values()
           if (stat(ainfo, &sb) != 0) {
               ainfo = SRC_SCLIBDIR "/atominfo.kv";
             }
-          cout << indent << "Reading file " << ainfo << "." << endl;
+          ExEnv::out() << indent << "Reading file " << ainfo << "." << endl;
           keyval = new ParsedKeyVal(ainfo);
         }
       RefKeyVal pkeyval = new PrefixKeyVal(keyval, "atominfo");
@@ -481,7 +481,7 @@ AtomInfo::string_to_Z(const char *name)
   // check to see if z value is OK, if not then the name must have been
   // invalid
   if (Z < 1 || Z > MaxZ) {
-      cerr << node0 << sprintf("AtomInfo: invalid name: %s\n",name);
+      ExEnv::err() << node0 << sprintf("AtomInfo: invalid name: %s\n",name);
       exit(1);
     }
 

@@ -86,7 +86,7 @@ NEXT_MESSAGE(msgbuf_t *m)
       ExEnv::out() << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
                        m->size,sizeof(msgbuf_t) + m->size + m->size%8);
       //debug_start("m->size < 0");
-      cerr << scprintf("messshm.cc: m->size < 0\n");
+      ExEnv::err() << scprintf("messshm.cc: m->size < 0\n");
       abort();
     }
   r = ((msgbuf_t*)(((char*)m) + ROUNDUPTOALIGN(sizeof(msgbuf_t) + m->size)));
@@ -401,7 +401,7 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
     }
 
   if (bytes < message->size) {
-      cerr << scprintf("messshm.cc: recv buffer too small\n");
+      ExEnv::err() << scprintf("messshm.cc: recv buffer too small\n");
       abort();
     }
   if (bytes < message->size) size = bytes;
@@ -451,7 +451,7 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
 
   if (dest>=n()) {
       //debug_start("bad destination");
-      cerr << scprintf("ShmMessageGrp::basic_send: bad destination\n");
+      ExEnv::err() << scprintf("ShmMessageGrp::basic_send: bad destination\n");
       abort();
     }
 
@@ -469,11 +469,11 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
       if (me() == dest) {
           // sending a message to myself and the buffer is full
           // --cannot recover
-          cerr << scprintf("commbuf size exceeded on %d\n",me());
-          cerr << scprintf(" availmsg = 0x%x\n",availmsg);
-          cerr << scprintf(" commbuf[%d] + sizeof(commbuf_t) = 0x%x\n",
+          ExEnv::err() << scprintf("commbuf size exceeded on %d\n",me());
+          ExEnv::err() << scprintf(" availmsg = 0x%x\n",availmsg);
+          ExEnv::err() << scprintf(" commbuf[%d] + sizeof(commbuf_t) = 0x%x\n",
                            dest,((char*)commbuf[dest]) + sizeof(commbuf_t));
-          cerr << scprintf(" size = %d\n",bytes);
+          ExEnv::err() << scprintf(" size = %d\n",bytes);
           abort();
         }
       else {

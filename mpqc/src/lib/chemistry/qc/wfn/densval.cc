@@ -27,7 +27,6 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
-#include <math/topology/point.h>
 #include <chemistry/qc/basis/basis.h>
 
 #include <chemistry/qc/wfn/wfn.h>
@@ -43,7 +42,7 @@ double Wavefunction::density(const SCVector3&r)
   basis()->values(r,bs_values);
 
   //for (int i=0; i<nbasis; i++)
-  //     cout << node0 << indent
+  //     ExEnv::out() << node0 << indent
   //          << scprintf("bs_values[%d] = %12.8f\n",i,bs_values[i]);
 
   // Assuming this will be called many times for the same wavefunction,
@@ -80,7 +79,7 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
   basis()->grad_values(r,bsg_values,bs_values);
 
   //for (int i=0; i<nbasis; i++)
-  //     cout << node0 << indent
+  //     ExEnv::out() << node0 << indent
   //          << scprintf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);
 
   // get the natural orbitals and density

@@ -97,7 +97,7 @@ LocalDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "LocalDiagSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::err() << indent << "LocalDiagSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -170,7 +170,7 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp2& op,
       = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      cerr << indent << "LocalDiagSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_diag(block.pointer(), lm->block.pointer());
@@ -186,7 +186,7 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = LocalDiagSCMatrix::require_castdown(n,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      cerr << indent << "LocalDiagSCMatrix: bad element_op\n";
+      ExEnv::err() << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_diag(block.pointer(),
@@ -228,7 +228,7 @@ RefSCMatrixSubblockIter
 LocalDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
-      cerr << indent
+      ExEnv::err() << indent
            << "LocalDiagSCMatrix::local_blocks: not valid for local matrices"
            << endl;
       abort();
@@ -242,7 +242,7 @@ RefSCMatrixSubblockIter
 LocalDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << indent << "LocalDiagSCMatrix::all_blocks: "
+      ExEnv::err() << indent << "LocalDiagSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

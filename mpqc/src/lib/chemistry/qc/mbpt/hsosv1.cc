@@ -130,12 +130,12 @@ MBPT2::compute_hsos_v1()
 
   me = msg_->me();
   
-  cout << node0 << indent << "Just entered OPT2 program (opt2_v1)" << endl;
+  ExEnv::out() << node0 << indent << "Just entered OPT2 program (opt2_v1)" << endl;
 
   tol = (int) (-10.0/log10(2.0));  /* discard ereps smaller than 10^-10 */
 
   nproc = msg_->n();
-  cout << node0 << indent << "nproc = " << nproc << endl;
+  ExEnv::out() << node0 << indent << "nproc = " << nproc << endl;
 
   ndocc = nsocc = 0;
   const double epsilon = 1.0e-4;
@@ -148,19 +148,19 @@ MBPT2::compute_hsos_v1()
    * can be done (and appears to be meaningful!)                     */
 
   if (ndocc == 0 && nsocc == 0) {
-    cerr << node0 << "There are no occupied orbitals; program exiting" << endl;
+    ExEnv::err() << node0 << "There are no occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzc > ndocc) {
-    cerr << node0
+    ExEnv::err() << node0
          << "The number of frozen core orbitals exceeds the number" << endl
          << "of doubly occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzv > nbasis - ndocc - nsocc) {
-    cerr << node0
+    ExEnv::err() << node0
          << "The number of frozen virtual orbitals exceeds the number" << endl
          << "of unoccupied orbitals; program exiting" << endl;
     abort();
@@ -180,7 +180,7 @@ MBPT2::compute_hsos_v1()
   if (me < a_rest) a_number++;
 
   if (me == 0 && a_number < nsocc) { 
-    cerr << "not enough memory allocated" << endl;
+    ExEnv::err() << "not enough memory allocated" << endl;
     /* must have all socc's on node 0 for computation of socc_sum*/
     abort();
     }
@@ -192,7 +192,7 @@ MBPT2::compute_hsos_v1()
 
   a_vector = (int*) malloc(nproc*sizeof(int));
   if (!a_vector) {
-    cerr << "could not allocate storage for a_vector" << endl;
+    ExEnv::err() << "could not allocate storage for a_vector" << endl;
     abort();
     }
   for (i=0; i<nproc; i++) {
@@ -207,7 +207,7 @@ MBPT2::compute_hsos_v1()
     restart_orbital_v1_ = 0;
     }
   else if (restart_orbital_v1_) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << scprintf("Restarting at orbital %d with partial energy %18.14f",
                      restart_orbital_v1_, restart_ecorr_)
          << endl;
@@ -239,38 +239,38 @@ MBPT2::compute_hsos_v1()
   msg_->min(ni);
   msg_->bcast(ni);
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Memory available per node:      " << mem_alloc << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Total memory used per node:     " << memused << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Memory required for one pass:   "
        << compute_v1_memory(nocc-restart_orbital_v1_,
                             nfuncmax, nbasis, a_number, nshell,
                             ndocc, nsocc, nvir, nfzc, nfzv, nproc)
        << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Minimum memory required:        "
        << compute_v1_memory(1,
                             nfuncmax, nbasis, a_number, nshell,
                             ndocc, nsocc, nvir, nfzc, nfzv, nproc)
        << " Bytes"
        << endl;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Batch size:                     " << ni
        << endl;
 
   if (ni < nsocc) {
-    cout << node0 << indent << "Not enough memory allocated to handle"
+    ExEnv::out() << node0 << indent << "Not enough memory allocated to handle"
          << " SOCC orbs in first pass" << endl;
     abort();
     }
 
   if (ni < 1) {
-    cout << node0 << indent << "Not enough memory allocated" << endl;
+    ExEnv::out() << node0 << indent << "Not enough memory allocated" << endl;
     abort();
     }
 
@@ -279,9 +279,9 @@ MBPT2::compute_hsos_v1()
   if (rest == 0) npass--;
 
   if (me == 0) {
-    cout << indent << " npass  rest  nbasis  nshell  nfuncmax"
+    ExEnv::out() << indent << " npass  rest  nbasis  nshell  nfuncmax"
          << "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
-    cout << indent << scprintf("   %-4i   %-3i   %-5i   %-4i     %-3i"
+    ExEnv::out() << indent << scprintf("   %-4i   %-3i   %-5i   %-4i     %-3i"
                      "     %-3i     %-3i   %-3i    %-3i   %-3i",
                      npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv)
          << endl;
@@ -299,7 +299,7 @@ MBPT2::compute_hsos_v1()
 
   evals_open = (double*) malloc((nbasis+nsocc-nfzc-nfzv)*sizeof(double));
   if (!evals_open) {
-    cerr << "could not allocate storage for evals_open" << endl;
+    ExEnv::err() << "could not allocate storage for evals_open" << endl;
     abort();
     }
 
@@ -308,7 +308,7 @@ MBPT2::compute_hsos_v1()
   RefSCMatrix Scf_Vec;
   eigen(evals, Scf_Vec, occ);
 
-  if (debug_>0) cout << node0 << indent << "eigvenvectors computed" << endl;
+  if (debug_>0) ExEnv::out() << node0 << indent << "eigvenvectors computed" << endl;
   if (debug_>1) evals.print("eigenvalues");
   if (debug_>2) Scf_Vec.print("eigenvectors");
 
@@ -341,7 +341,7 @@ MBPT2::compute_hsos_v1()
     }
 
   // need the transpose of the vector
-  if (debug_>0) cout << node0 << indent << "allocating scf_vector" << endl;
+  if (debug_>0) ExEnv::out() << node0 << indent << "allocating scf_vector" << endl;
   double **scf_vector = new double*[nbasis];
   double *scf_vector_dat = new double[(nocc+nvir)*nbasis];
   for (i=0; i<nbasis; i++) {
@@ -354,19 +354,19 @@ MBPT2::compute_hsos_v1()
   delete[] scf_vectort_dat;
 
   if (debug_>2) {
-    cout << node0 << indent << "Final eigenvalues and vectors" << endl;
+    ExEnv::out() << node0 << indent << "Final eigenvalues and vectors" << endl;
     for (i=0; i<nocc+nvir; i++) {
-      cout << node0 << indent << evals_open[i];
+      ExEnv::out() << node0 << indent << evals_open[i];
       for (j=0; j<nbasis; j++) {
-        cout << node0 << " " << scf_vector[j][i];
+        ExEnv::out() << node0 << " " << scf_vector[j][i];
         }
-      cout << node0<< endl;
+      ExEnv::out() << node0<< endl;
       }
-    cout << node0 << endl;
+    ExEnv::out() << node0 << endl;
     }
 
   /* allocate storage for integral arrays */
-  if (debug_>0) cout << node0 << indent << "allocating intermediates" << endl;
+  if (debug_>0) ExEnv::out() << node0 << indent << "allocating intermediates" << endl;
   dim_ij = nocc*ni - ni*(ni-1)/2;
 
   trans_int1 = (double*) malloc(nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
@@ -377,7 +377,7 @@ MBPT2::compute_hsos_v1()
   if (!(trans_int1 && trans_int2
         && (!a_number || trans_int3)
         && (!a_number || trans_int4_node) && trans_int4)){
-    cerr << "could not allocate storage for integral arrays" << endl;
+    ExEnv::err() << "could not allocate storage for integral arrays" << endl;
     abort();
     }
   if (nsocc) socc_sum  = (double*) malloc(nsocc*sizeof(double));
@@ -389,7 +389,7 @@ MBPT2::compute_hsos_v1()
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
   // create the integrals object
-  if (debug_>0) cout << node0 << indent << "allocating integrals" << endl;
+  if (debug_>0) ExEnv::out() << node0 << indent << "allocating integrals" << endl;
   integral()->set_storage(mem_remaining);
   RefTwoBodyInt *tbint = new RefTwoBodyInt[thr_->nthread()];
   for (ithread=0; ithread<thr_->nthread(); ithread++) {
@@ -405,7 +405,7 @@ MBPT2::compute_hsos_v1()
                                              scf_vector, tol, debug_);
     }
   
-  if (debug_>0) cout << node0 << indent << "beginning passes" << endl;
+  if (debug_>0) ExEnv::out() << node0 << indent << "beginning passes" << endl;
 
 /**************************************************************************
 *    begin opt2 loops                                                     *
@@ -418,7 +418,7 @@ MBPT2::compute_hsos_v1()
 
   for (pass=0; pass<npass; pass++) {
     if (debug_) {
-      cout << node0 << indent << "Beginning pass " << pass << endl;
+      ExEnv::out() << node0 << indent << "Beginning pass " << pass << endl;
       }
 
     int print_index = 0;
@@ -439,7 +439,7 @@ MBPT2::compute_hsos_v1()
 
         if (debug_ && (print_index++)%print_interval == 0) {
           lock->lock();
-          cout << scprintf("%d: (PQ|%d %d) %d%%",
+          ExEnv::out() << scprintf("%d: (PQ|%d %d) %d%%",
                            me,R,S,(100*print_index)/work)
                << endl;
           lock->unlock();
@@ -540,7 +540,7 @@ MBPT2::compute_hsos_v1()
      * the individual integrals are not saved here, only the sums are kept */
 
     if (debug_) {
-      cout << node0 << indent << "Beginning 4. quarter transform" << endl;
+      ExEnv::out() << node0 << indent << "Beginning 4. quarter transform" << endl;
       }
 
     tim_enter("4. quart. tr.");
@@ -721,12 +721,12 @@ MBPT2::compute_hsos_v1()
     if (nsocc == 0 && npass > 1 && pass < npass - 1) {
       double passe = ecorr_opt2;
       msg_->sum(passe);
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "Partial correlation energy for pass " << pass << ":" << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  restart_ecorr   = %18.14f", passe)
            << endl;
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("  restart_orbital_v1 = %d", ((pass+1) * ni))
            << endl;
       }
@@ -802,25 +802,25 @@ MBPT2::compute_hsos_v1()
 
     /* print out various energies etc.*/
 
-    cout << indent
+    ExEnv::out() << indent
          << "Number of shell quartets for which AO integrals would" << endl
          << indent
          << "have been computed without bounds checking: "
          << npass*nshell*nshell*(nshell+1)*(nshell+1)/4 << endl;
-    cout << indent
+    ExEnv::out() << indent
          << "Number of shell quartets for which AO integrals" << endl
          << indent << "were computed: " << aoint_computed << endl;
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("ROHF energy [au]:                  %17.12lf\n", escf);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("OPT1 energy [au]:                  %17.12lf\n", eopt1);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("OPT2 second order correction [au]: %17.12lf\n", ecorr_opt2);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("OPT2 energy [au]:                  %17.12lf\n", eopt2);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("ZAPT2 correlation energy [au]:     %17.12lf\n", ecorr_zapt2);
-    cout << indent
+    ExEnv::out() << indent
          << scprintf("ZAPT2 energy [au]:                 %17.12lf\n", ezapt2);
     }
   msg_->bcast(eopt1);
@@ -844,7 +844,7 @@ MBPT2::compute_hsos_v1()
     }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }
     set_energy(ezapt2);

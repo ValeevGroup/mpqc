@@ -59,7 +59,7 @@ PVMMessageGrp::PVMMessageGrp(const RefKeyVal&keyval):
 
   char* task = keyval->pcharvalue("executable");
   if (keyval->error() != KeyVal::OK) {
-      cerr << scprintf("PVMMessageGrp(KeyVal): \"executable\" not given\n");
+      ExEnv::err() << scprintf("PVMMessageGrp(KeyVal): \"executable\" not given\n");
       abort();
     }
 
@@ -110,10 +110,10 @@ PVMMessageGrp::PVMMessageGrp(const RefKeyVal&keyval):
     }
 
   if (numt < n_to_spawn) {
-      cerr << scprintf("PVMMessageGrp(KeyVal): failed to spawn all processes\n");
-      cerr << scprintf(" numt = %d, n_to_spawn = %d\n", numt, n_to_spawn);
+      ExEnv::err() << scprintf("PVMMessageGrp(KeyVal): failed to spawn all processes\n");
+      ExEnv::err() << scprintf(" numt = %d, n_to_spawn = %d\n", numt, n_to_spawn);
       for (i=0; i<nprocs; i++) {
-          cerr << scprintf("tids[%d] = %d\n", i, tids[i]);
+          ExEnv::err() << scprintf("tids[%d] = %d\n", i, tids[i]);
         }
       abort();
     }

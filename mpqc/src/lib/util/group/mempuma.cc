@@ -104,7 +104,7 @@ PumaMemoryGrp::set_localsize(int localsize)
 
   int r=MPI2_RMA_init(data_, localsize, MPI_BYTE, MPI_COMM_WORLD, &rma_comm_);
   if (r != MPI_SUCCESS) {
-    cerr << scprintf("PumaMemoryGrp::set_localsize(%d) failed on %d",
+    ExEnv::err() << scprintf("PumaMemoryGrp::set_localsize(%d) failed on %d",
                      localsize, me()) << endl;
     abort();
   }
@@ -119,7 +119,7 @@ PumaMemoryGrp::retrieve_data(void *data, int node, int offset, int size)
   int r = MPI2_Get(data, size, MPI_BYTE, node, offset, size, MPI_BYTE,
                    0, rma_comm_);
   if (r != MPI_SUCCESS) {
-    cerr << "PumaMemoryGrp::retrieve_data failed" << endl;
+    ExEnv::err() << "PumaMemoryGrp::retrieve_data failed" << endl;
     abort();
   }
 }
@@ -133,7 +133,7 @@ PumaMemoryGrp::replace_data(void *data, int node, int offset, int size)
   int r = MPI2_Put(data, size, MPI_BYTE, node, offset, size, MPI_BYTE,
                    0, rma_comm_);
   if (r != MPI_SUCCESS) {
-    cerr << "PumaMemoryGrp::replace_data failed" << endl;
+    ExEnv::err() << "PumaMemoryGrp::replace_data failed" << endl;
     abort();
   }
 }

@@ -149,7 +149,7 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
   // rotation axis (nt), and the number of irreps (nirrep_)
 
   if (!cpg) {
-    cerr << "CharacterTable::CharacterTable: null point group" << endl;
+    ExEnv::err() << "CharacterTable::CharacterTable: null point group" << endl;
     exit(1);
   }
 
@@ -159,13 +159,13 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
   symb[i] = '\0';
 
   if (parse_symbol() < 0) {
-    cerr << "CharacterTable::CharacterTable: invalid point group "
+    ExEnv::err() << "CharacterTable::CharacterTable: invalid point group "
          << cpg << endl;
     exit(1);
   }
 
   if (make_table() < 0) {
-    cerr << "CharacterTable::CharacterTable: could not make table" << endl;
+    ExEnv::err() << "CharacterTable::CharacterTable: could not make table" << endl;
     exit(1);
   }
 
@@ -182,7 +182,7 @@ CharacterTable::CharacterTable(const char *cpg)
   // rotation axis (nt), and the number of irreps (nirrep_)
 
   if (!cpg) {
-    cerr << "CharacterTable::CharacterTable: null point group" << endl;
+    ExEnv::err() << "CharacterTable::CharacterTable: null point group" << endl;
     exit(1);
   }
 
@@ -192,13 +192,13 @@ CharacterTable::CharacterTable(const char *cpg)
   symb[i] = '\0';
 
   if (parse_symbol() < 0) {
-    cerr << "CharacterTable::CharacterTable: invalid point group "
+    ExEnv::err() << "CharacterTable::CharacterTable: invalid point group "
          << cpg << endl;
     exit(1);
   }
 
   if (make_table() < 0) {
-    cerr << "CharacterTable::CharacterTable: could not make table" << endl;
+    ExEnv::err() << "CharacterTable::CharacterTable: could not make table" << endl;
     exit(1);
   }
 }

@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = linpackd scmat optimize topology isosurf symmetry
+SUBDIRS = linpackd scmat optimize isosurf symmetry
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

@@ -266,7 +266,7 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     double radial_value(int ir, int nr, double radii);
     double radial_multiplier(int nr);
 
-    void print(ostream & =cout) const;
+    void print(ostream & =ExEnv::out()) const;
 };
 
 /** An implementation of a Lebedev angular integrator.  It uses code
@@ -333,7 +333,7 @@ class LebedevLaikovIntegrator: public AngularIntegrator {
     int num_angular_points(double r_value, int ir);
     double angular_point_cartesian(int iangular, double r,
                                    SCVector3 &integration_point) const;
-    void print(ostream & =cout) const;
+    void print(ostream & =ExEnv::out()) const;
 };
 
 /** An implementation of an angular integrator using the Gauss-Legendre
@@ -379,7 +379,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     int num_angular_points(double r_value, int ir);
     double angular_point_cartesian(int iangular, double r,
         SCVector3 &integration_point) const;
-    void print(ostream & =cout) const;
+    void print(ostream & =ExEnv::out()) const;
 };
 
 /** An implementation of an integrator using any combination of
@@ -416,7 +416,7 @@ class RadialAngularIntegrator: public DenIntegrator {
                    const RefSymmSCMatrix& densa =0,
                    const RefSymmSCMatrix& densb =0,
                    double *nuclear_gradient = 0);
-    void print(ostream & =cout) const;
+    void print(ostream & =ExEnv::out()) const;
     RefAngularIntegrator get_angular_grid(double radius, double bragg_radius,
                                           int charge);
     RefRadialIntegrator get_radial_grid(int charge);

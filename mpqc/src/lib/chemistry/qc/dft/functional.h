@@ -176,7 +176,7 @@ class SumDenFunctional: public DenFunctional {
 
     void point(const PointInputData&, PointOutputData&);
 
-    void print(ostream& =cout) const;
+    void print(ostream& =ExEnv::out()) const;
 };
 
 /** The StdDenFunctional provides a shorthand method to construct
@@ -201,7 +201,7 @@ class StdDenFunctional: public SumDenFunctional {
     ~StdDenFunctional();
     void save_data_state(StateOut &);
 
-    void print(ostream& =cout) const;
+    void print(ostream& =ExEnv::out()) const;
 };
 
 /** An abstract base class for local correlation functionals. */
@@ -591,7 +591,7 @@ class XalphaFunctional: public DenFunctional {
 
     void point(const PointInputData&, PointOutputData&);
 
-    void print(ostream& =cout) const;
+    void print(ostream& =ExEnv::out()) const;
 };
 
 /** Implements Becke's 1988 exchange functional.

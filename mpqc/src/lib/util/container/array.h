@@ -36,6 +36,8 @@
 #include <iomanip.h>
 #include <stdlib.h>
 
+#include <util/misc/exenv.h>
+
 // Simple array template and macro classes.
 #include <util/container/artem.h>
 #include <util/container/armac.h>

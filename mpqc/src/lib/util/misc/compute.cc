@@ -84,7 +84,7 @@ ResultInfo::update() {
       _c->compute();
       compute() = oldcompute;
       if (!computed()) {
-          cerr << "ResultInfo::update: nothing was computed" << endl;
+          ExEnv::err() << "ResultInfo::update: nothing was computed" << endl;
           abort();
         }
     }

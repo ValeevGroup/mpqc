@@ -158,19 +158,19 @@ RangeLock::check()
   for (RangeLockItem* i = root_; i; i = i->next) {
       int bad = 0;
       if (i->next && i->next->prev != i) {
-          cerr << scprintf("i->next->prev bad\n");
+          ExEnv::err() << scprintf("i->next->prev bad\n");
           bad = 1;
         }
       if (i->prev && i->prev->next != i) {
-          cerr << scprintf("i->prev->next bad\n");
+          ExEnv::err() << scprintf("i->prev->next bad\n");
           bad = 1;
         }
       if (i->start >= i->fence) {
-          cerr << scprintf("start >= fence\n");
+          ExEnv::err() << scprintf("start >= fence\n");
           bad = 1;
         }
       if (i->next && i->fence > i->next->start) {
-          cerr << scprintf("fence > next start\n");
+          ExEnv::err() << scprintf("fence > next start\n");
           bad = 1;
         }
 #if VERBOSE
@@ -283,7 +283,7 @@ RangeLock::split_ranges(int start, int fence)
       // otherwise fence is after this block, continue
     }
 
-  cerr << scprintf("RangeLock::split_ranges(): got to end\n");
+  ExEnv::err() << scprintf("RangeLock::split_ranges(): got to end\n");
   abort();
 }
 

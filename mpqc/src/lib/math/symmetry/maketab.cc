@@ -1052,7 +1052,7 @@ int CharacterTable::make_table()
     }
 
     if (gj==g) {
-      cerr << node0 << indent
+      ExEnv::err() << node0 << indent
            << "make_table: uh oh, can't find inverse of " << gi << endl;
       abort();
     }

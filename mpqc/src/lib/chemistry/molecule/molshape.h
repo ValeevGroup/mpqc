@@ -129,7 +129,7 @@ class CS2Sphere
     double radius(void) const {return _radius;}
 
     void recenter(const SCVector3 &v) { _v -= v; }
-    void print(ostream& os=cout) const
+    void print(ostream& os=ExEnv::out()) const
     {
       os << node0 << indent
          << scprintf("Rad=%lf, Center=(%lf,%lf,%lf), From origin=%lf\n",
@@ -143,7 +143,7 @@ class CS2Sphere
     int intersect(CS2Sphere *s,
                   int n_spheres) const;
 
-    static void print_counts(ostream& = cout);
+    static void print_counts(ostream& = ExEnv::out());
 };
 
 #define CONNOLLYSHAPE_N_WITH_NSPHERE_DIM 10
@@ -189,7 +189,7 @@ class ConnollyShape: public Shape {
                      double valuemax,
                      SCVector3& p1, SCVector3& p2);
 
-    static void print_counts(ostream& = cout);
+    static void print_counts(ostream& = ExEnv::out());
 };
 
 #endif

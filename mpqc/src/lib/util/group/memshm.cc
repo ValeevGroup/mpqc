@@ -272,7 +272,7 @@ ShmMemoryGrp::set_localsize(int localsize)
           itry++;
         }
       if (itry == ntry) {
-          cerr << "ShmMemoryGrp: ntry exhausted on node 0" << endl;
+          ExEnv::err() << "ShmMemoryGrp: ntry exhausted on node 0" << endl;
           abort();
         }
       // detach again, since we all try together below
@@ -307,7 +307,7 @@ ShmMemoryGrp::set_localsize(int localsize)
       itry++;
     } while(fail && itry < ntry);
   if (itry == ntry) {
-      cerr << "ShmMemoryGrp: ntry exhausted on node " << me()
+      ExEnv::err() << "ShmMemoryGrp: ntry exhausted on node " << me()
            << " on joint attach phase" << endl;
       abort();
     }
@@ -379,7 +379,7 @@ void *
 ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
-      cerr << scprintf("ShmMemoryGrp::obtain_readwrite: arg out of range\n");
+      ExEnv::err() << scprintf("ShmMemoryGrp::obtain_readwrite: arg out of range\n");
       abort();
     }
 
@@ -428,7 +428,7 @@ void *
 ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
-      cerr << scprintf("ShmMemoryGrp::obtain_readonly: arg out of range\n");
+      ExEnv::err() << scprintf("ShmMemoryGrp::obtain_readonly: arg out of range\n");
       abort();
     }
 
@@ -581,7 +581,7 @@ ShmMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
   int length = dlength * sizeof(double);
 
   if (offset + length > distsize_to_size(totalsize())) {
-      cerr << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
+      ExEnv::err() << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
       abort();
     }
 

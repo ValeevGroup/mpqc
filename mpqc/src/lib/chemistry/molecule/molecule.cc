@@ -154,7 +154,7 @@ Molecule::Molecule(const RefKeyVal&input):
       // possible
       int natom = input->count("geometry");
       if (natom != input->count("atoms")) {
-          cerr << node0 << indent
+          ExEnv::err() << node0 << indent
                << "Molecule: size of \"geometry\" != size of \"atoms\"\n";
           abort();
         }
@@ -504,7 +504,7 @@ Molecule::Molecule(StateIn& si):
   natoms_(0), r_(0), Z_(0), mass_(0), labels_(0)
 {
   if (si.version(static_class_desc()) < 4) {
-      cerr << "Molecule: cannot restore from old molecules" << endl;
+      ExEnv::err() << "Molecule: cannot restore from old molecules" << endl;
       abort();
     }
   si.get(natoms_);
@@ -550,7 +550,7 @@ Molecule::Molecule(StateIn& si):
 void
 Molecule::set_point_group(const RefPointGroup&ppg, double tol)
 {
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Molecule: setting point group to " << ppg->symbol()
        << endl;
   pg_ = new PointGroup(*ppg.pointer());
@@ -745,7 +745,7 @@ Molecule::symmetrize(double tol)
       else {
         if (Z(i) != newmol->Z(atom)
             || fabs(mass(i)-newmol->mass(atom))>1.0e-10) {
-            cerr << node0 << "Molecule: symmetrize: atom mismatch" << endl;
+            ExEnv::err() << node0 << "Molecule: symmetrize: atom mismatch" << endl;
             abort();
         }
       }
@@ -924,11 +924,11 @@ Molecule::cleanup_molecule(double tol)
                 }
             }
           if (!found) {
-              cerr << node0
+              ExEnv::err() << node0
                    << "Molecule: cleanup: couldn't find atom at " << np << endl
                    << "  transforming uniq atom " << i << " at " << up << endl
                    << "  with symmetry op " << g << ":" << endl;
-              so.print(cerr << node0);
+              so.print(ExEnv::err() << node0);
               abort();
             }
         }
@@ -1013,7 +1013,7 @@ Molecule::n_core_electrons()
       if (z > 48) n += 10;
       if (z > 54) n += 8;
       if (z > 72) {
-          cerr << "Molecule::n_core_electrons: atomic number too large"
+          ExEnv::err() << "Molecule::n_core_electrons: atomic number too large"
                << endl;
           abort();
         }

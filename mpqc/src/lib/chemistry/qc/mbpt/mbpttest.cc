@@ -120,7 +120,7 @@ init_mp(const RefKeyVal& keyval)
   SCFormIO::set_messagegrp(grp);
   //SCFormIO::set_debug(1);
 
-  SCFormIO::setindent(cout, 2);
+  SCFormIO::setindent(ExEnv::out(), 2);
   SCFormIO::setindent(cerr, 2);
   
   return grp;
@@ -164,7 +164,7 @@ main(int argc, char**argv)
   tim->exit("input");
 
   if (mole.nonnull()) {
-    cout << node0 << indent << "energy: " << mole->energy() << endl;
+    ExEnv::out() << node0 << indent << "energy: " << mole->energy() << endl;
     if (do_gradient && mole->gradient_implemented()) {
       if (opt.nonnull()) {
         opt->optimize();
@@ -172,17 +172,17 @@ main(int argc, char**argv)
         mole->gradient().print("gradient");
       }
     } else if (mole->value_implemented()) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << scprintf("value of mole is %20.15f\n\n", mole->energy());
     }
 
-  mole->print(cout);
+  mole->print(ExEnv::out());
   }
 
   StateOutBin so("mbpttest.wfn");
   mole.save_state(so);
   
-  tim->print(cout);
+  tim->print(ExEnv::out());
 
   return 0;
 }

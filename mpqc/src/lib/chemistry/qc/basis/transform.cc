@@ -52,7 +52,7 @@ class SafeUInt {
     SafeUInt(): i_(0) {}
     SafeUInt(unsigned long i): i_(i) {}
     void error() const {
-      cerr << "SafeUInt: integer size exceeded" << endl;
+      ExEnv::err() << "SafeUInt: integer size exceeded" << endl;
       abort();
     }
     SafeUInt &operator ++ () { i_++; return *this; }
@@ -225,20 +225,20 @@ solidharmcontrib(int sign,
       double norm = sqrt(double(norm2num)/double(norm2den));
       coefmat->accumulate_element(icart(x,y,z), pureindex, coef*norm);
 #ifdef DEBUG
-      cout.form("    add(%d,%d,%d, % 4ld.0",
+      ExEnv::out().form("    add(%d,%d,%d, % 4ld.0",
                 x,y,z, sign*long(bin));
       if (den!=1) {
-          cout.form("/%-4.1f",double(den));
+          ExEnv::out().form("/%-4.1f",double(den));
         }
       else {
-          cout.form("     ");
+          ExEnv::out().form("     ");
         }
       if (norm2num != 1 || norm2den != 1) {
-          cout.form(" * sqrt(%ld.0/%ld.0)",
+          ExEnv::out().form(" * sqrt(%ld.0/%ld.0)",
                     long(norm2num), long(norm2den));
         }
-      cout.form(", i);");
-      cout << endl;
+      ExEnv::out().form(", i);");
+      ExEnv::out() << endl;
 #endif
     }
 }
@@ -274,8 +274,8 @@ solidharm(unsigned int l, int m, unsigned int r2, RefSCMatrix coefmat)
   reduce(norm2num,norm2den);
 
 #ifdef DEBUG
-  cout.form("    // l=%2d m=% 2d",l,m);
-  cout << endl;
+  ExEnv::out().form("    // l=%2d m=% 2d",l,m);
+  ExEnv::out() << endl;
 #endif
   for (unsigned int t=0; t <= (l - absm)/2; t++) {
       for (unsigned int u=0; u<=t; u++) {
@@ -301,7 +301,7 @@ solidharm(unsigned int l, int m, unsigned int r2, RefSCMatrix coefmat)
         }
     }
 #ifdef DEBUG
-  cout << "    i++;" << endl;
+  ExEnv::out() << "    i++;" << endl;
 #endif
 }
 
@@ -322,7 +322,7 @@ solidharm(int l, const RefSCMatrix &coefmat)
     }
 
 #ifdef DEBUG
-  cout << coefmat;
+  ExEnv::out() << coefmat;
 #endif
 }
 
@@ -337,7 +337,7 @@ SphericalTransform::init()
   solidharm(l_,coefmat);
 
 #ifdef DEBUG
-  cout << scprintf("---> generating l=%d subl=%d", l_, subl_) << endl;
+  ExEnv::out() << scprintf("---> generating l=%d subl=%d", l_, subl_) << endl;
 #endif
 
   int pureoffset = 0;
@@ -352,7 +352,7 @@ SphericalTransform::init()
         if (fabs(coef) > DBL_EPSILON) {
           add(a,b,c, coef, p);
 #ifdef DEBUG
-          cout << scprintf("---> add(%d,%d,%d, %12.8f, %d)",
+          ExEnv::out() << scprintf("---> add(%d,%d,%d, %12.8f, %d)",
                            a,b,c,coef,p) << endl;
 #endif
         }
@@ -412,7 +412,7 @@ ISphericalTransform::init()
   coefmat->transpose_this();
 
 #ifdef DEBUG
-  cout << scprintf("---> IST: generating l=%d subl=%d", l_, subl_) << endl;
+  ExEnv::out() << scprintf("---> IST: generating l=%d subl=%d", l_, subl_) << endl;
 #endif
 
   int pureoffset = 0;
@@ -427,7 +427,7 @@ ISphericalTransform::init()
         if (fabs(coef) > DBL_EPSILON) {
           add(a,b,c, coef, p);
 #ifdef DEBUG
-          cout << scprintf("---> IST: add(%d,%d,%d, %12.8f, %d)",
+          ExEnv::out() << scprintf("---> IST: add(%d,%d,%d, %12.8f, %d)",
                            a,b,c,coef,p) << endl;
 #endif
         }

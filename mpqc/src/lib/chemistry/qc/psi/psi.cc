@@ -75,11 +75,11 @@ PsiWfn::compute()
   if (!psi_in.test()){
       write_input((int)-log10(energy_acc));
       if (system("inputth")) {
-          cout << "PsiWfn: inputth failed" << endl;
+          ExEnv::out() << "PsiWfn: inputth failed" << endl;
           abort();
         }
       if (system("psi")) {
-          cout << "PsiWfn: psi failed" << endl;
+          ExEnv::out() << "PsiWfn: psi failed" << endl;
           abort();
         }
     }
@@ -103,13 +103,13 @@ PsiWfn::compute()
                 }
             }
           if (!gotj) {
-              cerr << "ERROR: Psi: atom "<<i<<" not found in file11" << endl;
+              ExEnv::err() << "ERROR: Psi: atom "<<i<<" not found in file11" << endl;
               abort();
             }
         }
-      cout << node0 << indent << " Psi<->MPQC atom reordering:";
-      for(i=0; i<molecule()->natom(); i++) cout << node0 << " " << reorder[i];
-      cout << node0 << endl;
+      ExEnv::out() << node0 << indent << " Psi<->MPQC atom reordering:";
+      for(i=0; i<molecule()->natom(); i++) ExEnv::out() << node0 << " " << reorder[i];
+      ExEnv::out() << node0 << endl;
 
       RefSCVector g(moldim(),matrixkit());
 
@@ -257,13 +257,13 @@ PsiCCSD::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"CCSD \" energy.dat > psitmp.energy")) {
-          cout << "PsiWfn: could not find CCSD energy in output file" << endl;
+          ExEnv::out() << "PsiWfn: could not find CCSD energy in output file" << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      cerr << "PsiCCSD::read_energy(): cannot open psitmp.energy" << endl;
+      ExEnv::err() << "PsiCCSD::read_energy(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -343,14 +343,14 @@ PsiCCSD_T::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"CCT \" energy.dat > psitmp.energy")) {
-          cout << "PsiWfn: could not find CCSD(T) energy in output file"
+          ExEnv::out() << "PsiWfn: could not find CCSD(T) energy in output file"
                << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      cerr << "PsiCCSD_T::read_energy(): cannot open psitmp.energy" << endl;
+      ExEnv::err() << "PsiCCSD_T::read_energy(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -430,14 +430,14 @@ PsiCCSDT::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"FSDT \" energy.dat > psitmp.energy")) {
-          cout << "PsiWfn: could not find CCSDT energy in output file"
+          ExEnv::out() << "PsiWfn: could not find CCSDT energy in output file"
                << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      cerr << "PsiCCSDT::read_energy(): cannot open psitmp.energy" << endl;
+      ExEnv::err() << "PsiCCSDT::read_energy(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -513,14 +513,14 @@ PsiCI::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"1 ECI \" output.dat > psitmp.energy")) {
-          cout << "PsiWfn: could not find CI energy in output file"
+          ExEnv::out() << "PsiWfn: could not find CI energy in output file"
                << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      cerr << "PsiCI::compute(): cannot open psitmp.energy" << endl;
+      ExEnv::err() << "PsiCI::compute(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -589,7 +589,7 @@ PsiHF::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"total energy *=\" output.dat > psitmp.energy")) {
-          cout << "PsiWfn: could not find Hartree-Fock energy in output file"
+          ExEnv::out() << "PsiWfn: could not find Hartree-Fock energy in output file"
                << endl;
           abort();
         }

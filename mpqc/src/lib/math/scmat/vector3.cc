@@ -52,7 +52,7 @@ SCVector3::SCVector3(const RefKeyVal&keyval)
 SCVector3::SCVector3(const RefSCVector&x)
 {
   if (x.dim().n() != 3) {
-      cerr << indent << "SCVector3::SCVector3(RefSCVEctor&): bad length\n";
+      ExEnv::err() << indent << "SCVector3::SCVector3(RefSCVEctor&): bad length\n";
       abort();
     }
   _v[0] = x.get_element(0);

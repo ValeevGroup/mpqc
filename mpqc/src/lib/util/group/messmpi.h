@@ -69,9 +69,17 @@ class MPIMessageGrp: public MessageGrp {
     struct p4_cluster * my_node_info(const char[], int&);
 #endif
     /// Not thread-safe due to race condition on nmpi_grps variable.
-    void init(int argc=-1, char **argv=0);
+    void init(MPI_Comm comm, int *argc=0, char ***argv=0);
   public:
     MPIMessageGrp();
+    /** Use an MPI communicator to create a MessageGrp.  The comm
+        argument could be a subset of MPI_COMM_WORLD, for example. */
+    MPIMessageGrp(MPI_Comm comm);
+    /** Use argc and argv to create a MPIMessageGrp.  This would
+        have to be used for implementations of MPI that have MPI_Init
+        fill in argc and argv. */
+    MPIMessageGrp(int *argc, char ***argv);
+    /** Construction MPIMessageGrp given a KeyVal input object. */
     MPIMessageGrp(const Ref<KeyVal>&);
     ~MPIMessageGrp();
 

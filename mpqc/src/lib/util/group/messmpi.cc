@@ -75,24 +75,34 @@ static ClassDesc MPIMessageGrp_cd(
 
 MPIMessageGrp::MPIMessageGrp()
 {
-  init();
+  init(MPI_COMM_WORLD);
+}
+
+MPIMessageGrp::MPIMessageGrp(MPI_Comm comm)
+{
+  init(comm);
+}
+
+MPIMessageGrp::MPIMessageGrp(int *argc, char ***argv)
+{
+  init(MPI_COMM_WORLD,argc,argv);
 }
 
 MPIMessageGrp::MPIMessageGrp(const Ref<KeyVal>& keyval):
   MessageGrp(keyval)
 {
-  int argc = -1;
-  char **argv = 0;
   if (keyval->exists("argv")) {
-      argc = keyval->count("argv");
-      argv = new char*[argc+1];
+      int argc = keyval->count("argv");
+      char **argv = new char*[argc+1];
       argv[argc] = 0;
       for (int arg=0; arg<argc; arg++) {
           argv[arg] = keyval->pcharvalue("argv",arg);
         }
+      init(MPI_COMM_WORLD, &argc, &argv);
     }
-
-  init(argc, argv);
+  else {
+      init(MPI_COMM_WORLD);
+    }
 
   if (keyval->booleanvalue("errors_return")) {
       if (me()==0)
@@ -100,14 +110,13 @@ MPIMessageGrp::MPIMessageGrp(const Ref<KeyVal>& keyval):
       MPI_Errhandler_set(commgrp, MPI_ERRORS_RETURN);
     }
 
-  SCFormIO::init_mp(me());
   if (debug_) {
       ExEnv::outn() << indent << "MPIMessageGrp: KeyVal CTOR: done" << endl;
     }
 }
 
 void
-MPIMessageGrp::init(int argc,char **argv)
+MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
 {
   int me, nproc;
 
@@ -118,14 +127,20 @@ MPIMessageGrp::init(int argc,char **argv)
   int flag;
   MPI_Initialized(&flag);
   if (!flag) {
-      if (argc < 0) {
-          argc = 1;
-          argv = new char*[argc+1];
-          // reduce the internal buffer since a user buffer is used
-          //argv[0] = "-mpiB4";
-          //argv[1] = 0;
-          argc = 0;
-          argv[0] = 0;
+      int tmp_argc;
+      char **tmp_argv;
+      int *inits_argc;
+      char ***inits_argv;
+      if (argc && argv) {
+          inits_argc = argc;
+          inits_argv = argv;
+        }
+      else {
+          tmp_argc = 0;
+          tmp_argv = new char*[tmp_argc+1];
+          tmp_argv[tmp_argc] = 0;
+          inits_argc = &tmp_argc;
+          inits_argv = &tmp_argv;
         }
       // This dot business is to work around problems with some MPI
       // implementations.
@@ -133,19 +148,19 @@ MPIMessageGrp::init(int argc,char **argv)
       if (debug_) {
           ExEnv::outn() << indent
                << "Calling MPI_Init with";
-          for (int i=0; i<argc; i++) {
-              ExEnv::outn() << " " << argv[i];
+          for (int i=0; i<*argc; i++) {
+              ExEnv::outn() << " " << *argv[i];
             }
           ExEnv::outn() << endl;
         }
-      MPI_Init(&argc, &argv);
+      MPI_Init(inits_argc, inits_argv);
 #ifdef HAVE_FCHDIR
       fchdir(dot);
 #endif
       close(dot);
     }
 
-  MPI_Comm_dup(MPI_COMM_WORLD, &commgrp);
+  MPI_Comm_dup(comm, &commgrp);
 
    if (!nmpi_grps) {
       threadgrp = ThreadGrp::get_default_threadgrp();
@@ -169,6 +184,8 @@ MPIMessageGrp::init(int argc,char **argv)
   if (debug_) {
       ExEnv::outn() << me << ": MPIMessageGrp::init: done" << endl;
     }
+
+  SCFormIO::init_mp(me);
 }
 
 MPIMessageGrp::~MPIMessageGrp()

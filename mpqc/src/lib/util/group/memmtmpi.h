@@ -70,7 +70,7 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     std::ofstream hout; // handler out
     std::ofstream mout; // main thread out
 
-    void init_mtmpimg(int nthreads);
+    void init_mtmpimg(MPI_Comm comm, int nthreads);
 
     // parent class pure virtuals
     void retrieve_data(void *, int node, int offset, int size, int lock);
@@ -79,7 +79,14 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
 
     friend class MTMPIThread;
   public:
-    MTMPIMemoryGrp(const Ref<MessageGrp>& msg, const Ref<ThreadGrp> &th);
+    /** Construct a MTMPIMemoryGrp given a MessageGrp, ThreadGrp, and
+        an MPI communicator.  The communicator can be a subset of
+        MPI_COMM_WORLD, in which case, the MessageGrp must refer to the
+        same subset. */
+    MTMPIMemoryGrp(const Ref<MessageGrp>& msg, const Ref<ThreadGrp> &th,
+                   MPI_Comm comm = MPI_COMM_WORLD);
+    /** Construct a MTMPIMemoryGrp given a KeyVal input object. A
+        fully thread safe MPI is needed (MPI_THREAD_MULTIPLE). */
     MTMPIMemoryGrp(const Ref<KeyVal> &);
     ~MTMPIMemoryGrp();
 

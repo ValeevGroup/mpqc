@@ -165,14 +165,15 @@ static ClassDesc MTMPIMemoryGrp_cd(
   0, create<MTMPIMemoryGrp>, 0);
 
 MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<MessageGrp>& msg,
-                               const Ref<ThreadGrp>& th):
+                               const Ref<ThreadGrp>& th,
+                               MPI_Comm comm):
   ActiveMsgMemoryGrp(msg)
 {
   if (debug_) ExEnv::outn() << "MTMPIMemoryGrp CTOR entered" << endl;
 
   th_ = th;
 
-  init_mtmpimg(th_->nthread());
+  init_mtmpimg(comm,th_->nthread());
 }
 
 MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<KeyVal>& keyval):
@@ -186,7 +187,7 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<KeyVal>& keyval):
   int nthread = keyval->intvalue("num_threads",nthreaddef);
   ExEnv::out0() << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
 
-  init_mtmpimg(nthread);
+  init_mtmpimg(MPI_COMM_WORLD,nthread);
 }
 
 MTMPIMemoryGrp::~MTMPIMemoryGrp()
@@ -201,7 +202,7 @@ MTMPIMemoryGrp::~MTMPIMemoryGrp()
 }
 
 void
-MTMPIMemoryGrp::init_mtmpimg(int nthread)
+MTMPIMemoryGrp::init_mtmpimg(MPI_Comm comm, int nthread)
 {
   int i;
   active_ = 0;
@@ -218,8 +219,8 @@ MTMPIMemoryGrp::init_mtmpimg(int nthread)
       mout.open(name);
     }
 
-  MPI_Comm_dup(MPI_COMM_WORLD, &comp_comm_);
-  MPI_Comm_dup(MPI_COMM_WORLD, &comm_comm_);
+  MPI_Comm_dup(comm, &comp_comm_);
+  MPI_Comm_dup(comm, &comm_comm_);
   
 
   serial_ = 0;

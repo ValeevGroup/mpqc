@@ -7,6 +7,14 @@
 
 #include <util/group/messshm.h>
 
+#if defined(OSF)
+union semun {
+  int val;
+  struct semid_ds *buf;
+  u_short *array;
+};
+#endif
+
 //#define DEBUG
 
 #ifndef SEM_A

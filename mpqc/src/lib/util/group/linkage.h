@@ -46,7 +46,7 @@ const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
     const ClassDesc &group_force_link_b_ = ParagonMessageGrp::class_desc_;
 # endif
 
-# ifdef HAVE_PTHREAD_H
+# if defined(HAVE_LIBPTHREAD) || defined(HAVE_LIBPTHREADS)
 #   include <util/group/thpthd.h>
     const ClassDesc &group_force_link_c_ = PthreadThreadGrp::class_desc_;
 # endif

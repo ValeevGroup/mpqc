@@ -9,7 +9,7 @@
 #include <util/state/state.h>
 #include <util/group/message.h>
 
-class MsgStateSend: public StateOutXDR {
+class MsgStateSend: public StateOutBinXDR {
   private:
     // do not allow copy constructor or assignment
     MsgStateSend(const MsgStateSend&);
@@ -47,7 +47,7 @@ class MsgStateSend: public StateOutXDR {
     int put(double*,int);
 };
 
-class MsgStateRecv: public StateInXDR {
+class MsgStateRecv: public StateInBinXDR {
   private:
     // do not allow copy constructor or assignment
     MsgStateRecv(const MsgStateRecv&);

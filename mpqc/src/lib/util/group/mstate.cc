@@ -87,55 +87,56 @@ int
 MsgStateSend::put(const ClassDesc*cd)
 {
   printf("putting ClassDesc index\n"); fflush(stdout);
-  return StateOutXDR::put(grp.classdesc_to_index(cd));
+  return StateOutBinXDR::put(grp.classdesc_to_index(cd));
 }
 
 int
 MsgStateSend::put(char d)
 {
-  return StateOutXDR::put(d);
+  return StateOutBinXDR::put(d);
 }
 
 int
 MsgStateSend::put(int d)
 {
-  return StateOutXDR::put(d);
+  return StateOutBinXDR::put(d);
 }
 
 int
 MsgStateSend::put(float d)
 {
-  return StateOutXDR::put(d);
+  return StateOutBinXDR::put(d);
 }
+
 
 int
 MsgStateSend::put(double d)
 {
-  return StateOutXDR::put(d);
+  return StateOutBinXDR::put(d);
 }
 
 int
 MsgStateSend::put(char* d, int n)
 {
-  return StateOutXDR::put(d, n);
+  return StateOutBinXDR::put(d, n);
 }
 
 int
 MsgStateSend::put(int* d, int n)
 {
-  return StateOutXDR::put(d, n);
+  return StateOutBinXDR::put(d, n);
 }
 
 int
 MsgStateSend::put(float* d, int n)
 {
-  return StateOutXDR::put(d, n);
+  return StateOutBinXDR::put(d, n);
 }
 
 int
 MsgStateSend::put(double* d, int n)
 {
-  return StateOutXDR::put(d, n);
+  return StateOutBinXDR::put(d, n);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -198,7 +199,7 @@ MsgStateRecv::get(const ClassDesc**cd)
 {
   int index;
   printf("getting ClassDesc index\n"); fflush(stdout);
-  int r = StateInXDR::get(index);
+  int r = StateInBinXDR::get(index);
   *cd = grp.index_to_classdesc(index);
   if (!*cd) {
       fprintf(stderr,"MsgStateRecvt::get(const ClassDesc**cd): "
@@ -211,49 +212,49 @@ MsgStateRecv::get(const ClassDesc**cd)
 int
 MsgStateRecv::get(char& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 int
 MsgStateRecv::get(int& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 int
 MsgStateRecv::get(float& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 int
 MsgStateRecv::get(double& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 int
 MsgStateRecv::get(char*& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 int
 MsgStateRecv::get(int*& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 int
 MsgStateRecv::get(float*& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 int
 MsgStateRecv::get(double*& d)
 {
-  return StateInXDR::get(d);
+  return StateInBinXDR::get(d);
 }
 
 ///////////////////////////////////////////////////////////////////////////

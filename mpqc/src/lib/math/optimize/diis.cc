@@ -56,26 +56,27 @@ DIIS::DIIS(StateIn& s) :
   // hack for old sgen stuff...this will go away soon
   s.get(btemp.n);
   allocbn_double_vector(&btemp,"n",btemp.n);
-  for (int i=0; i < btemp.n; i++)
+  int i;
+  for (i=0; i < btemp.n; i++)
     s.get(btemp.d[i]);
 
   s.get(bold.n1);
   s.get(bold.n2);
   allocbn_double_matrix(&bold,"n1 n2", bold.n1, bold.n2);
-  for (int i=0; i < bold.n1; i++)
+  for (i=0; i < bold.n1; i++)
     for (int j=0; j < bold.n2; j++)
       s.get(bold.d[i][j]);
   
   s.get(bmat.n1);
   s.get(bmat.n2);
   allocbn_double_matrix(&bmat,"n1 n2", bmat.n1, bmat.n2);
-  for (int i=0; i < bmat.n1; i++)
+  for (i=0; i < bmat.n1; i++)
     for (int j=0; j < bmat.n2; j++)
       s.get(bmat.d[i][j]);
   
   diism_data = new RefSCExtrapData[ndiis];
   diism_error = new RefSCExtrapError[ndiis];
-  for (int i=0; i < ndiis; i++) {
+  for (i=0; i < ndiis; i++) {
     diism_data[i].restore_state(s);
     diism_error[i].restore_state(s);
   }
@@ -119,22 +120,23 @@ DIIS::save_data_state(StateOut& s)
 
   // hack for old sgen stuff...this will go away soon
   s.put(btemp.n);
-  for (int i=0; i < btemp.n; i++)
+  int i;
+  for (i=0; i < btemp.n; i++)
     s.put(btemp.d[i]);
 
   s.put(bold.n1);
   s.put(bold.n2);
-  for (int i=0; i < bold.n1; i++)
+  for (i=0; i < bold.n1; i++)
     for (int j=0; j < bold.n2; j++)
       s.put(bold.d[i][j]);
   
   s.put(bmat.n1);
   s.put(bmat.n2);
-  for (int i=0; i < bmat.n1; i++)
+  for (i=0; i < bmat.n1; i++)
     for (int j=0; j < bmat.n2; j++)
       s.put(bmat.d[i][j]);
   
-  for (int i=0; i < ndiis; i++) {
+  for (i=0; i < ndiis; i++) {
     diism_data[i].save_state(s);
     diism_error[i].save_state(s);
   }

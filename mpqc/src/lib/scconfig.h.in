@@ -21,9 +21,6 @@
 /* Define if you don't have vprintf but do have _doprnt.  */
 #undef HAVE_DOPRNT
 
-/* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
-#undef HAVE_SYS_WAIT_H
-
 /* Define if you have <sys/stat.h>.  */
 #undef HAVE_SYS_STAT_H
 
@@ -41,9 +38,6 @@
 
 /* Define if you have the vprintf function.  */
 #undef HAVE_VPRINTF
-
-/* Define if you have the wait3 system call.  */
-#undef HAVE_WAIT3
 
 /* Define if you have the ios::fmtflags.  */
 #undef HAVE_IOS_FMTFLAGS
@@ -118,17 +112,11 @@
 /* Define if you have the <sys/time.h> header file.  */
 #undef HAVE_SYS_TIME_H
 
-/* Define if you have the <syslog.h> header file.  */
-#undef HAVE_SYSLOG_H
-
 /* Define if you have the <unistd.h> header file.  */
 #undef HAVE_UNISTD_H
 
 /* Define if you have the <pthread.h> header file.  */
 #undef HAVE_PTHREAD_H
-
-/* Define if you have the <cube.h> header file (Intel Gamma).  */
-#undef HAVE_CUBE_H
 
 /* Define if you have the <nx.h> header file and -lnx (Intel Paragon).  */
 #undef HAVE_NX

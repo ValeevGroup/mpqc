@@ -686,38 +686,80 @@ SC_C_BIGENDIAN
 dnl --------- Checks for libraries. ---------
 dnl -- libpthread should be linked in last
 if test "(" X$PARALLEL = Xyes -a X$THREADS != Xno ")" -o X$THREADS = Xyes; then
-  AC_CHECK_LIB(pthread,pthread_create)
-  AC_CHECK_LIB(pthreads,pthread_create)
+  dnl see if posix threads are automatically linked ...
+  AC_CHECK_HEADER(pthread,[
+    AC_CHECK_FUNC(pthread_create,HAVE_PTHREAD=yes,[
+      dnl ... otherwise see if posix threads are in -lpthread ...
+      AC_CHECK_LIB(pthread,pthread_create,HAVE_PTHREAD=yes,[
+        dnl ... otherwise see if posix threads are in -lpthreads
+        AC_CHECK_LIB(pthreads,pthread_create,HAVE_PTHREAD=yes)
+        ]
+      )
+      ]
+    )
+    ]
+  )
+fi
+if test X$HAVE_PTHREAD = Xyes; then
+  AC_DEFINE(HAVE_PTHREAD)
+  EXTRADEFINES="-D_REENTRANT $EXTRADEFINES"
 fi
 
 AC_CHECK_LIB(dl,exit)
 AC_CHECK_LIB(sun,exit)
 AC_CHECK_LIB(m,exit)
 AC_CHECK_LIB(fl,exit)
-AC_CHECK_LIB(perf,perf_set_config)
+AC_CHECK_HEADER(perf.h,[
+  AC_CHECK_LIB(perf,perf_set_config,[HAVE_PERF=yes;AC_DEFINE(HAVE_PERF)])
+  ]
+)
 
 if test X$PARALLEL = Xyes; then
 
-  AC_CHECK_LIB(mpi,exit)
-  AC_CHECK_LIB(mpi,mpc_rcvncall)
-  AC_CHECK_LIB(mpi,p4_initenv)
-  AC_CHECK_LIB(mpi,MPI2_RMA_init)
-  AC_CHECK_LIB(pvm,exit)
-  if test ! X$ac_cv_lib_mpi_exit = Xyes ; then
-    AC_CHECK_LIB(mpich,exit)
+  dnl ----- check for the mpi library
+  AC_CHECK_HEADER(mpi.h,[
+    AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,[
+      AC_CHECK_LIB(mpi,MPI_Init,HAVE_MPI=yes,[
+        AC_CHECK_LIB(mpich,MPI_Init,HAVE_MPI=yes)
+        ]
+      )]
+    )
+    dnl ----- check for functions that might be in an mpi library
+    AC_CHECK_FUNC(mpc_rcvncall,[HAVE_MPL=yes;AC_DEFINE(HAVE_MPL)])
+    AC_CHECK_FUNC(p4_initenv,[HAVE_P4=yes;AC_DEFINE(HAVE_P4)])
+    AC_CHECK_FUNC(mpi,MPI2_RMA_init,
+                 [HAVE_PUMA_MPI2=yes;AC_DEFINE(HAVE_PUMA_MPI2)])
+    ]
+  )
+  if test X$HAVE_MPI = Xyes; then
+    AC_DEFINE(HAVE_MPI)
   fi
 
-  AC_CHECK_LIB(nx,hrecv,[
-    HAVE_HRECV=yes
-    HAVE_LIBNX=yes
-  ])
+  dnl ----- check for the pvm library
+  AC_CHECK_HEADER(pvm.h,[
+    AC_CHECK_LIB(pvm,exit,HAVE_PVM=yes)
+    ]
+  )
+  if test X$HAVE_PVM = Xyes; then
+    AC_DEFINE(HAVE_PVM)
+  fi
 
-  if test X$ac_cv_lib_nx_hrecv = Xyes; then
+  dnl ----- check for the intel nx library
+  AC_CHECK_HEADER(nx.h,[
+    AC_CHECK_LIB(nx,hrecv,[
+      HAVE_HRECV=yes
+      HAVE_NX=yes
+      ],[
+      AC_CHECK_LIB(nx,exit,HAVE_NX=yes)
+      ]
+    )
+    ]
+  )
+  if test X$HAVE_NX = Xyes; then
+    AC_DEFINE(HAVE_NX)
+  fi
+  if test X$HAVE_HRECV = Xyes; then
     AC_DEFINE(HAVE_HRECV)
-  else
-    AC_CHECK_LIB(nx,exit,[
-      HAVE_LIBNX=yes
-    ])
   fi
 
 fi
@@ -730,82 +772,23 @@ AC_CHECK_LIB(sB_BLAS,sB_init,[
   AC_DEFINE(HAVE_SCALABLE_BLAS)
 ])
 
+AC_SUBST(HAVE_PERF)
+AC_SUBST(HAVE_MPL)
+AC_SUBST(HAVE_P4)
+AC_SUBST(HAVE_PUMA_MPI2)
+AC_SUBST(HAVE_MPI)
+AC_SUBST(HAVE_PVM)
+AC_SUBST(HAVE_NX)
 AC_SUBST(HAVE_HRECV)
+AC_SUBST(HAVE_PTHREAD)
+AC_SUBST(EXTRADEFINES)
 
 dnl ---------- Checks for header files. -----------
 
 AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(fcntl.h limits.h sys/ioctl.h sys/time.h syslog.h unistd.h)
+AC_CHECK_HEADERS(fcntl.h limits.h sys/ioctl.h sys/time.h unistd.h)
 AC_CHECK_HEADERS(sys/times.h sys/resource.h)
 AC_CHECK_HEADERS(termios.h sys/stat.h sys/types.h dlfcn.h)
-AC_CHECK_HEADERS(perf.h)
-if test X$PARALLEL = Xyes; then
-  AC_CHECK_HEADERS(cube.h nx.h mpi.h pvm.h pthread.h)
-fi
-
-dnl ---------- Make sure we got everything needed. -----------
-
-if test X$ac_cv_lib_perf_perf_set_config = Xyes -a X$ac_cv_header_perf_h = Xyes; then
-  HAVE_PERF=yes
-  AC_DEFINE(HAVE_PERF)
-fi
-AC_SUBST(HAVE_PERF)
-
-if test X$ac_cv_lib_mpi_exit = Xyes -a X$ac_cv_header_mpi_h = Xyes; then
-  HAVE_MPI=yes
-  AC_DEFINE(HAVE_MPI)
-fi
-if test X$ac_cv_lib_mpich_exit = Xyes -a X$ac_cv_header_mpi_h = Xyes; then
-  HAVE_MPI=yes
-  AC_DEFINE(HAVE_MPI)
-fi
-AC_SUBST(HAVE_MPI)
-
-if test X$ac_cv_lib_mpi_mpc_rcvncall = Xyes; then
-  HAVE_MPL=yes
-  AC_DEFINE(HAVE_MPL)
-fi
-AC_SUBST(HAVE_MPL)
-
-if test X$ac_cv_lib_mpi_p4_initenv = Xyes; then
-  HAVE_P4=yes
-  AC_DEFINE(HAVE_P4)
-fi
-AC_SUBST(HAVE_P4)
-
-if test X$ac_cv_lib_mpi_MPI2_RMA_init = Xyes; then
-  HAVE_PUMA_MPI2=yes
-  AC_DEFINE(HAVE_PUMA_MPI2)
-fi
-AC_SUBST(HAVE_PUMA_MPI2)
-
-if test X$ac_cv_lib_pthread_pthread_create = Xyes; then
-  EXTRADEFINES="-D_REENTRANT $EXTRADEFINES"
-  HAVE_PTHREAD=yes
-  AC_DEFINE(HAVE_PTHREAD)
-fi
-AC_SUBST(HAVE_PTHREAD)
-AC_SUBST(EXTRADEFINES)
-
-if test X$ac_cv_lib_pthreads_pthread_create = Xyes; then
-  EXTRADEFINES="-D_REENTRANT $EXTRADEFINES"
-  HAVE_PTHREADS=yes
-  AC_DEFINE(HAVE_PTHREADS)
-fi
-AC_SUBST(HAVE_PTHREADS)
-
-if test X$ac_cv_lib_pvm_exit = Xyes -a X$ac_cv_header_pvm_h = Xyes; then
-  HAVE_PVM=yes
-  AC_DEFINE(HAVE_PVM)
-fi
-AC_SUBST(HAVE_PVM)
-
-if test X$ac_cv_header_nx_h = Xyes; then
-  HAVE_NX=yes
-  AC_DEFINE(HAVE_NX)
-fi
-AC_SUBST(HAVE_NX)
 
 dnl -- Checks for typedefs, structures, and compiler characteristics. --
 AC_C_CONST
@@ -816,7 +799,6 @@ AC_STRUCT_TM
 dnl --------- Checks for library functions. ---------
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_FUNC_WAIT3
 AC_CHECK_FUNCS(strerror sigfillset signal system fchdir cuserid)
 
 dnl --------- Check for ios::fmtflags. ---------

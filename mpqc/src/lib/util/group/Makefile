@@ -68,9 +68,6 @@ endif
 ifeq ($(HAVE_PUMA_MPI2),yes)
   CXXSRC += mempuma.cc thpuma.cc
 endif
-ifeq ($(HAVE_PTHREADS),yes)
-  CXXSRC += thpthd.cc
-endif
 ifeq ($(HAVE_PTHREAD),yes)
   CXXSRC += thpthd.cc
 endif

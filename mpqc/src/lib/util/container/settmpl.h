@@ -23,7 +23,8 @@ class Set {
           || ((Type*)i<&element[0])
           || ((Type*)i>&element[nelement-1])) {
           fprintf(stderr,
-                  "Set::range_check(%ld): nelement=%d\n",(long)i,nelement);
+                  "Set::range_check(0x%p): start=0x%p nelement=%d size=%d\n",
+                  (void*)element,(void*)i,sizeof(Type),nelement);
           abort();
         }
     }

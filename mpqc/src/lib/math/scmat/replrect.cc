@@ -654,13 +654,6 @@ ReplSCMatrix::invert_this()
   return cmat_invert(rows,0,nrow());
 }
 
-void
-ReplSCMatrix::gen_invert_this()
-{
-  cerr << indent << "ReplSCMatrix::gen_invert_this: SVD not implemented yet";
-  abort();
-}
-
 double
 ReplSCMatrix::determ_this()
 {

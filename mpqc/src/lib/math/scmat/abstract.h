@@ -298,7 +298,7 @@ class SCMatrix: public DescribedClass {
     //. possibly destroying this.
     virtual void svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V);
     virtual double solve_this(SCVector*) = 0;
-    virtual void gen_invert_this() = 0;
+    virtual void gen_invert_this();
 
     //. Schmidt orthogonalize \srccd{this}.  \srccd{S} is the overlap matrix.
     //. \srccd{n} is the number of columns to orthogonalize.

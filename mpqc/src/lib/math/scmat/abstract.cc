@@ -366,6 +366,40 @@ SCMatrix::copy()
 }
 
 void
+SCMatrix::gen_invert_this()
+{
+  int i;
+
+  // Compute the singular value decomposition of this
+  RefSCMatrix U(rowdim(),rowdim(),kit());
+  RefSCMatrix V(coldim(),coldim(),kit());
+  RefSCDimension min;
+  if (coldim().n()<rowdim().n()) min = coldim();
+  else min = rowdim();
+  int nmin = min.n();
+  RefDiagSCMatrix sigma(min,kit());
+  svd_this(U.pointer(),sigma.pointer(),V.pointer());
+
+  // compute the epsilon rank of this
+  int rank = 0;
+  for (i=0; i<nmin; i++) {
+      if (fabs(sigma(i)) > 0.0000001) rank++;
+    }
+
+  RefSCDimension drank = new SCDimension(rank);
+  RefDiagSCMatrix sigma_i(drank,kit());
+  for (i=0; i<rank; i++) {
+      sigma_i(i) = 1.0/sigma(i);
+    }
+  RefSCMatrix Ur(rowdim(), drank, kit());
+  RefSCMatrix Vr(coldim(), drank, kit());
+  Ur.assign_subblock(U,0, rowdim().n()-1, 0, drank.n()-1, 0, 0);
+  Vr.assign_subblock(V,0, coldim().n()-1, 0, drank.n()-1, 0, 0);
+  assign((Vr * sigma_i * Ur.t()).t());
+  transpose_this();
+}
+
+void
 SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 {
   cerr << indent << class_name() << ": SVD not implemented\n";

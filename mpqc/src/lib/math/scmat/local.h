@@ -147,7 +147,6 @@ class LocalSCMatrix: public SCMatrix {
     double solve_this(SCVector*);
     double determ_this();
     double trace();
-    void gen_invert_this();
     void schmidt_orthog(SymmSCMatrix*,int);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,

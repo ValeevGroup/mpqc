@@ -630,13 +630,6 @@ LocalSCMatrix::invert_this()
   return cmat_invert(rows,0,nrow());
 }
 
-void
-LocalSCMatrix::gen_invert_this()
-{
-  cerr << indent << "LocalSCMatrix::gen_invert_this: not implemented yet\n";
-  abort();
-}
-
 double
 LocalSCMatrix::determ_this()
 {

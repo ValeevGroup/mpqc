@@ -367,6 +367,7 @@ checksymm2:
 	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}cs}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}c2v}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2nsscf$${b}auto,c2h2scf$${b}c1}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}ci}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}c2}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}cs}.out;\

@@ -119,6 +119,7 @@ sub process_file {
     init_var($test_vars, $parse, "docc", "auto");
     init_var($test_vars, $parse, "socc", "auto");
     init_var($test_vars, $parse, "multiplicity", 1);
+    init_var($test_vars, $parse, "gradient", "default");
     init_var($test_vars, $parse, "molecule", "molecule");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
@@ -126,6 +127,7 @@ sub process_file {
     my @molecule_docc = $parse->value_as_array("test_molecule_docc");
     my @molecule_socc = $parse->value_as_array("test_molecule_socc");
     my @molecule_mult = $parse->value_as_array("test_molecule_multiplicity");
+    my @molecule_gradient = $parse->value_as_array("test_molecule_gradient");
     my @molecule_followed = $parse->value_as_array("test_molecule_followed");
     my @molecule_fixed = $parse->value_as_array("test_molecule_fixed");
 
@@ -148,6 +150,7 @@ sub process_file {
         my $docc = $test_vars->{"docc"}->[$index->{"docc"}];
         my $socc = $test_vars->{"socc"}->[$index->{"socc"}];
         my $mult = $test_vars->{"multiplicity"}->[$index->{"multiplicity"}];
+        my $gradient = $test_vars->{"gradient"}->[$index->{"gradient"}];
         my $method = $test_vars->{"method"}->[$index->{"method"}];
         my $calc = $test_vars->{"calc"}->[$index->{"calc"}];
         my $symmetry = $test_vars->{"symmetry"}->[$index->{"symmetry"}];
@@ -181,6 +184,9 @@ sub process_file {
             }
             if ($#molecule_mult >= $molindex) {
                 $mult = $molecule_mult[$molindex];
+            }
+            if ($#molecule_gradient >= $molindex) {
+                $gradient = $molecule_gradient[$molindex];
             }
             # check for fixed coordinates
             $fixed = $molecule_fixed[$molindex];
@@ -239,6 +245,9 @@ sub process_file {
         $parse->set_value("docc", $docc);
         $parse->set_value("socc", $socc);
         $parse->set_value("state", $mult);
+        if ($gradient ne "default") {
+            $parse->set_value("gradient", $gradient);
+        }
         $parse->set_value("molecule", $parse->value($molecule));
         $parse->set_value("fixed", $parse->value($fixed));
         $parse->set_value("followed", $parse->value($followed));

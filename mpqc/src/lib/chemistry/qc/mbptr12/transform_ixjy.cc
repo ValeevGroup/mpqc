@@ -36,6 +36,11 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
+#include <chemistry/qc/mbptr12/r12ia_memgrp.h>
+#include <chemistry/qc/mbptr12/r12ia_node0file.h>
+#ifdef HAVE_MPIIO
+  #include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -49,11 +54,12 @@ static ClassDesc TwoBodyMOIntsTransform_ixjy_cd(
   typeid(TwoBodyMOIntsTransform_ixjy),"TwoBodyMOIntsTransform_ixjy",1,"public TwoBodyMOIntsTransform",
   0, 0, create<TwoBodyMOIntsTransform_ixjy>);
 
-TwoBodyMOIntsTransform_ixjy::TwoBodyMOIntsTransform_ixjy(const Ref<MOIntsTransformFactory>& factory,
+TwoBodyMOIntsTransform_ixjy::TwoBodyMOIntsTransform_ixjy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                                                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  TwoBodyMOIntsTransform(factory,space1,space2,space3,space4)
+  TwoBodyMOIntsTransform(name,factory,space1,space2,space3,space4)
 {
+  init_acc();
 }
 
 TwoBodyMOIntsTransform_ixjy::TwoBodyMOIntsTransform_ixjy(StateIn& si) : TwoBodyMOIntsTransform(si)
@@ -116,6 +122,56 @@ TwoBodyMOIntsTransform_ixjy::compute_transform_dynamic_memory_(int ni) const
 						     )
 				       );
   return memsize;
+}
+
+
+void
+TwoBodyMOIntsTransform_ixjy::init_acc()
+{
+  if (ints_acc_.nonnull())
+    return;
+
+  // R12IntsAcc cannot work yet in cases when i and j are different spaces
+  if (space1_ != space3_)
+    throw std::runtime_error("TwoBodyMOIntsTransform_ixjy::init_acc() -- space1_ must be the same as space3_");
+
+  switch (ints_method_) {
+
+  case MOIntsTransformFactory::mem_only:
+    if (npass_ > 1)
+      throw std::runtime_error("TwoBodyMOIntsTransform_ixjy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
+    ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space2_->rank(), space4_->rank(), space1_->rank(), 0);  // Hack to avoid using nfzc and nocc
+    break;
+
+  case MOIntsTransformFactory::mem_posix:
+    if (npass_ == 1) {
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space2_->rank(), space4_->rank(), space1_->rank(), 0);
+      break;
+    }
+    // else use the next case
+      
+  case MOIntsTransformFactory::posix:
+    ints_acc_ = new R12IntsAcc_Node0File(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
+                                         space2_->rank(), space4_->rank(), space1_->rank(), 0, false);
+    break;
+
+#if HAVE_MPIIO
+  case MOIntsTransformFactory::mem_mpi:
+    if (npass_ == 1) {
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space2_->rank(), space4_->rank(), space1_->rank(), 0);
+      break;
+    }
+    // else use the next case
+
+  case MOIntsTransformFactory::mpi:
+    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
+                                             space2_->rank(), space4_->rank(), space1_->rank(), 0, false);
+    break;
+#endif
+  
+  default:
+    throw std::runtime_error("TwoBodyMOIntsTransform_ixjy::init_acc() -- invalid integrals store method");
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

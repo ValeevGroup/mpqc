@@ -47,13 +47,16 @@ class TwoBodyMOIntsTransform_ixjy : public TwoBodyMOIntsTransform {
 
 protected:
 
+  // Initialize the MO integrals accumulator
+  void init_acc();
+
   // Compute required dynamic memory for a given batch size
   distsize_t compute_transform_dynamic_memory_(int ni) const;
 
 public:
 
   TwoBodyMOIntsTransform_ixjy(StateIn&);
-  TwoBodyMOIntsTransform_ixjy(const Ref<MOIntsTransformFactory>& factory,
+  TwoBodyMOIntsTransform_ixjy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                               const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                               const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   ~TwoBodyMOIntsTransform_ixjy();

@@ -74,13 +74,23 @@ protected:
   int debug_;
   MOIntsTransformFactory::StoreMethod ints_method_;
   std::string file_prefix_;
+
+  // These variables are never saved but computed every time in case environment
+  // has changed or it's a restart  
+  size_t mem_static_;
+  int batchsize_;
+  int npass_;
   
-  // Compute used static memory, batch size, etc.
-  void init();
+  // Compute used static memory and batch size
+  void init_vars();
+  // Construct the integrals accumulator object
+  virtual void init_acc() = 0;
+  // Re-construct the integrals accumulator object
+  void reinit_acc();
 
   // Compute batchsize given the amount of used static memory and
-  // the number of 2-e operator types
-  int compute_transform_batchsize_(size_t mem_static);
+  // the number of i-orbitals
+  int compute_transform_batchsize_(size_t mem_static, int rank_i);
   
   // Compute required dynamic memory for a given batch size
   // implementation depends on the particulars of the concrete type
@@ -89,7 +99,7 @@ protected:
 public:
 
   TwoBodyMOIntsTransform(StateIn&);
-  TwoBodyMOIntsTransform(const Ref<MOIntsTransformFactory>& factory,
+  TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   ~TwoBodyMOIntsTransform();

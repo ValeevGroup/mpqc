@@ -149,6 +149,9 @@ public:
   /// Returns the full-space index of the first orbital in each block
   vector<int> offsets() const;
 
+  /// Returns how much "significant" (i.e. O^2) memory this object uses
+  size_t memory_in_use() const;
+
   /// Prints out this
   void print(std::ostream&o=ExEnv::out0()) const;
 

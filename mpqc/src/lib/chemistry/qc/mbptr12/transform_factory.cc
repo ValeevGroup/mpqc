@@ -52,9 +52,10 @@ static ClassDesc MOIntsTransformFactory_cd(
   typeid(MOIntsTransformFactory),"MOIntsTransformFactory",1,"virtual public SavableState",
   0, 0, create<MOIntsTransformFactory>);
 
-MOIntsTransformFactory::MOIntsTransformFactory(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
+                                               const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  integral_(integral), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
   if (space2.null())
     space2_ = space1_;
@@ -78,6 +79,7 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<MOIndexSpace>& space1, 
 
 MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
 {
+  integral_ << SavableState::restore_state(si);
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   space3_ << SavableState::restore_state(si);
@@ -102,6 +104,7 @@ MOIntsTransformFactory::~MOIntsTransformFactory()
 void
 MOIntsTransformFactory::save_data_state(StateOut& so)
 {
+  SavableState::save_state(integral_.pointer(),so);
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   SavableState::save_state(space3_.pointer(),so);
@@ -116,19 +119,19 @@ MOIntsTransformFactory::save_data_state(StateOut& so)
 }
 
 Ref<TwoBodyMOIntsTransform>
-MOIntsTransformFactory::twobody_transform()
+MOIntsTransformFactory::twobody_transform(const std::string& name)
 {
   Ref<TwoBodyMOIntsTransform> result;
 
   
   if (space1_ == space2_) {
-    result = new TwoBodyMOIntsTransform_ijxy(this,space1_,space2_,space3_,space4_);
+    result = new TwoBodyMOIntsTransform_ijxy(name,this,space1_,space2_,space3_,space4_);
   }
   else if (space1_ == space3_ && space2_->rank() <= space3_->rank()) {
-    result = new TwoBodyMOIntsTransform_ikjy(this,space1_,space2_,space3_,space4_);
+    result = new TwoBodyMOIntsTransform_ikjy(name,this,space1_,space2_,space3_,space4_);
   }
   else if (space1_ == space3_) {
-    result = new TwoBodyMOIntsTransform_ixjy(this,space1_,space2_,space3_,space4_);
+    result = new TwoBodyMOIntsTransform_ixjy(name,this,space1_,space2_,space3_,space4_);
   }
   else
     throw std::runtime_error("MOIntsTransformFactory::twobody_transform() -- desired \

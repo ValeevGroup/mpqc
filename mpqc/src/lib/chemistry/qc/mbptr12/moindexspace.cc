@@ -354,6 +354,13 @@ MOIndexSpace::init()
 }
 
 
+size_t
+MOIndexSpace::memory_in_use() const
+{
+  size_t memory = (size_t)basis_->nbasis() * rank_ * sizeof(double);
+  return memory;
+}
+
 void
 MOIndexSpace::print(ostream&o) const
 {

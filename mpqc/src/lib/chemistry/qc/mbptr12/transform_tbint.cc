@@ -35,6 +35,7 @@
 #include <util/state/state_bin.h>
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
 using namespace std;
@@ -49,10 +50,10 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
   typeid(TwoBodyMOIntsTransform),"TwoBodyMOIntsTransform",1,"virtual public SavableState",
   0, 0, 0);
 
-TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const Ref<MOIntsTransformFactory>& factory,
+TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  factory_(factory), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  name_(name), factory_(factory), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
@@ -65,10 +66,16 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const Ref<MOIntsTransformFactory>
   print_percent_ = factory_->print_percent();
   ints_method_ = factory_->ints_method();
   file_prefix_ = factory_->file_prefix();
+  
+  init_vars();
 }
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 {
+  si.get(name_);
+  factory_ << SavableState::restore_state(si);
+  ints_acc_ << SavableState::restore_state(si);
+  
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   space3_ << SavableState::restore_state(si);
@@ -84,6 +91,8 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   si.get(print_percent_);
   int ints_method; si.get(ints_method); ints_method_ = (MOIntsTransformFactory::StoreMethod) ints_method;
   si.get(file_prefix_);
+
+  init_vars();
 }
 
 TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
@@ -93,6 +102,10 @@ TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
 void
 TwoBodyMOIntsTransform::save_data_state(StateOut& so)
 {
+  so.put(name_);
+  SavableState::save_state(factory_.pointer(),so);
+  SavableState::save_state(ints_acc_.pointer(),so);
+  
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   SavableState::save_state(space3_.pointer(),so);
@@ -114,7 +127,7 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
 // affect the batch size.
 ///////////////////////////////////////////////////////
 int
-TwoBodyMOIntsTransform::compute_transform_batchsize_(size_t mem_static)
+TwoBodyMOIntsTransform::compute_transform_batchsize_(size_t mem_static, int rank_i)
 {
   // Check is have enough for even static objects
   size_t mem_dyn = 0;
@@ -122,8 +135,6 @@ TwoBodyMOIntsTransform::compute_transform_batchsize_(size_t mem_static)
     return 0;
   else
     mem_dyn = memory_ - mem_static;
-
-  int rank_i = space1_->rank();
 
   // Determine if calculation is possible at all (i.e., if ni=1 possible)
   int ni = 1;
@@ -144,6 +155,57 @@ TwoBodyMOIntsTransform::compute_transform_batchsize_(size_t mem_static)
   if (ni > rank_i) ni = rank_i;
 
   return ni;
+}
+
+
+void
+TwoBodyMOIntsTransform::init_vars()
+{
+  int me = msg_->me();
+
+  int restart_orbital = ints_acc_.nonnull() ? ints_acc_->next_orbital() : 0;
+  int rank_i = space1_->rank() - restart_orbital;
+
+  mem_static_ = 0;
+  int ni = 0;
+  if (me == 0) {
+    // mem_static should include storage in MOIndexSpace
+    mem_static_ = space1_->memory_in_use() +
+                  space2_->memory_in_use() +
+                  space3_->memory_in_use() +
+                  space4_->memory_in_use(); // scf vector
+    int nthreads = thr_->nthread();
+    // ... plus the integrals evaluators
+    mem_static_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
+                                                            space3_->basis(),space4_->basis());
+    batchsize_ = compute_transform_batchsize_(mem_static_,rank_i); 
+  }
+
+  // Send value of ni and mem_static to other nodes
+  msg_->bcast(batchsize_);
+  double mem_static_double = (double) mem_static_;
+  msg_->bcast(mem_static_double);
+  mem_static_ = (size_t) mem_static_double;
+  
+  npass_ = 0;
+  int rest = 0;
+  if (batchsize_ == rank_i) {
+    npass_ = 1;
+    rest = 0;
+  }
+  else {
+    rest = rank_i%ni;
+    npass_ = (rank_i - rest)/ni + 1;
+    if (rest == 0) npass_--;
+  }
+}
+
+void
+TwoBodyMOIntsTransform::reinit_acc()
+{
+  if (ints_acc_.nonnull())
+    ints_acc_ = 0;
+  init_acc();
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -55,6 +55,7 @@ public:
 
 private:
 
+  Ref<Integral> integral_;
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
@@ -74,7 +75,8 @@ private:
 public:
 
   MOIntsTransformFactory(StateIn&);
-  MOIntsTransformFactory(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2 = 0,
+  MOIntsTransformFactory(const Ref<Integral>& integral,
+                         const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2 = 0,
                          const Ref<MOIndexSpace>& space3 = 0, const Ref<MOIndexSpace>& space4 = 0);
   ~MOIntsTransformFactory();
 
@@ -89,7 +91,10 @@ public:
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
   void set_memory(size_t nbytes) { memory_ = nbytes; }
 
-  /** Returns the method of storing transformed MO integrals. */
+  /// Returns the Integral factory
+  Ref<Integral> integral() const { return integral_; };
+
+  /// Returns the method of storing transformed MO integrals.
   const StoreMethod ints_method() const { return ints_method_; }
   /// Sets the name of the file to hold the integrals.
   const std::string file_prefix() const { return file_prefix_; }
@@ -108,7 +113,7 @@ public:
   Ref<MOIndexSpace> space4() const;
 
   /// Creates an TwoBodyMOIntsTransform object
-  Ref<TwoBodyMOIntsTransform> twobody_transform();
+  Ref<TwoBodyMOIntsTransform> twobody_transform(const std::string& id);
 	       
 };
 

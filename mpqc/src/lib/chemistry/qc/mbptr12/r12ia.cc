@@ -73,6 +73,7 @@ R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si)
 
 R12IntsAcc::~R12IntsAcc()
 {
+  deactivate();
 }
 
 void R12IntsAcc::save_data_state(StateOut& so)

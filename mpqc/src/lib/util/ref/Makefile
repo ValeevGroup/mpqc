@@ -59,7 +59,7 @@ reftest: reftest.$(OBJSUF) reftestx.$(OBJSUF) \
            libkeyval.$(LIBSUF) \
            libgroup.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) \
            libcontainer.$(LIBSUF) libref.$(LIBSUF) libmisc.$(LIBSUF)
-	$(LTLINK) $(CXX) $(LDFLAGS) -o reftest $^ $(LTLINKBINOPTS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o reftest $^ $(LTLINKBINOPTS) $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
@@ -68,5 +68,5 @@ targetclean::
 
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTCXX:%.cc=%.d)
 endif

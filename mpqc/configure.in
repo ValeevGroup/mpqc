@@ -400,10 +400,10 @@ changequote(<<, >>)dnl
   i[56]86-*)
 changequote([, ])dnl
     if test X$GCC = Xyes; then
-      COPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2 -malign-double"
+      COPTIONS_OPT="-O2"
     fi
     if test X$GXX = Xyes; then
-      CXXOPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2 -malign-double"
+      CXXOPTIONS_OPT="-O2"
     fi
     AC_MSG_RESULT("i586 or i686")
   ;;

@@ -33,6 +33,7 @@
 
 #include <util/misc/math.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
@@ -75,25 +76,24 @@ IntCoor::IntCoor(const Ref<KeyVal>&keyval)
   label_ = keyval->pcharvalue("label");
   value_ = keyval->doublevalue("value");
 
-  char* unit = keyval->pcharvalue("unit");
-  if (unit) {
-      if (!strcmp(unit, "bohr")) {
+  if (keyval->exists("unit")) {
+      std::string unit(keyval->stringvalue("unit"));
+      if (unit == "bohr") {
         }
-      else if (!strcmp(unit, "angstrom")) {
+      else if (unit == "angstrom") {
           value_ /= bohr_conv;
         }
-      else if (!strcmp(unit, "radian")) {
+      else if (unit == "radian") {
         }
-      else if (!strcmp(unit, "degree")) {
+      else if (unit == "degree") {
           value_ *= M_PI/180.0;
         }
       else {
-          ExEnv::err0() << indent
-               << "IntCoor::IntCoor(KeyVal): unknown unit = \""
-               << unit << "\"\n";
-          abort();
+        throw InputError("unrecognized unit value",
+                         __FILE__, __LINE__,
+                         "unit", unit.c_str(),
+                         this->class_desc());
         }
-      delete[] unit;
     }
 }
 
@@ -176,8 +176,10 @@ SetIntCoor::SetIntCoor(const Ref<KeyVal>& keyval)
   Ref<IntCoorGen> gen; gen << keyval->describedclassvalue("generator");
 
   if (gen.null() && !n) {
-      ExEnv::err0() << indent << "SetIntCoor::SetIntCoor: bad input\n";
-      abort();
+      throw InputError("not a vector and no generator given",
+                       __FILE__, __LINE__,
+                       0, 0,
+                       class_desc());
     }
 
   if (gen.nonnull()) {
@@ -385,9 +387,13 @@ SumIntCoor::SumIntCoor(const Ref<KeyVal>&keyval):
   static const char* coef = "coef";
   int n = keyval->count(coor);
   int ncoef = keyval->count(coef);
-  if (n != ncoef || !n) {
-      ExEnv::err0() << indent << "SumIntCoor::SumIntCoor: bad input\n";
-      abort();
+  if (n != ncoef) {
+    throw InputError("coor and coef do not have the same dimension",
+                     __FILE__, __LINE__, 0, 0, class_desc());
+    }
+  if (!n) {
+    throw InputError("coor and coef are zero length",
+                     __FILE__, __LINE__, 0, 0, class_desc());
     }
 
   for (int i=0; i<n; i++) {
@@ -579,9 +585,8 @@ MolecularCoor::MolecularCoor(const Ref<KeyVal>&keyval)
   molecule_ << keyval->describedclassvalue("molecule");
 
   if (molecule_.null()) {
-      ExEnv::err0() << indent
-           << "MolecularCoor(const Ref<KeyVal>&keyval): molecule not found\n";
-      abort();
+      throw InputError("missing input", __FILE__, __LINE__,
+                       "molecule", 0, class_desc());
     }
 
   debug_ = keyval->intvalue("debug");
@@ -593,8 +598,8 @@ MolecularCoor::MolecularCoor(const Ref<KeyVal>&keyval)
 
   if (dnatom3_.null()) dnatom3_ = new SCDimension(3*molecule_->natom());
   else if (dnatom3_->n() != 3 * molecule_->natom()) {
-      ExEnv::err0() << indent << "MolecularCoor(KeyVal): bad dnatom3 value\n";
-      abort();
+    throw InputError("natom3 given but not consistent with molecule",
+                     __FILE__, __LINE__, "natom3", 0, class_desc());
     }
 }
 
@@ -699,10 +704,9 @@ IntCoorGen::IntCoorGen(const Ref<KeyVal>& keyval)
       for (int i=0; i<nextra_bonds_*2; i++) {
           extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
           if (keyval->error() != KeyVal::OK) {
-              ExEnv::err0() << indent
-                   << "IntCoorGen:: keyval CTOR: problem reading "
-                   << "\"extra_bonds:" << i << "\"\n";
-              abort();
+            throw InputError("missing an expected integer value",
+                             __FILE__, __LINE__, "extra_bonds", 0,
+                             class_desc());
             }
         }
     }
@@ -853,10 +857,8 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
           }
         }
       if (nearest_bound == -1) {
-        ExEnv::out0() << indent
-             << "ERROR: impossible error generating coordinates"
-             << endl;
-        abort();
+        throw ProgrammingError("impossible error generating coordinates",
+                               __FILE__, __LINE__);
         }
       // add all bound atoms within a certain distance of nearest_unbound
       // --- should really do this for all atoms that nearest_unbound

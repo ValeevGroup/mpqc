@@ -27,6 +27,7 @@
 
 #include <math.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
@@ -221,9 +222,9 @@ IntMolecularCoor::read_keyval(const Ref<KeyVal>& keyval)
           for (int i=0; i<nextra_bonds*2; i++) {
               extra_bonds[i] = keyval->intvalue("extra_bonds",i);
               if (keyval->error() != KeyVal::OK) {
-                  ExEnv::err0() << indent << "IntMolecularCoor:: keyval CTOR: "
-                       << "problem reading \"extra_bonds:" << i << "\"\n";
-                  abort();
+                  throw InputError("missing an expected integer value",
+                                   __FILE__, __LINE__, "extra_bonds", 0,
+                                   class_desc());
                 }
             }
         }
@@ -596,10 +597,9 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
                            Ktmp,debug_);
       // require that the epsilon rank equal the number of fixed coordinates
       if (Ktmp.nrow() != dfixed.n()) {
-          ExEnv::err0() << indent
-               << scprintf("ERROR: IntMolecularCoor: nfixed = %d rank = %d\n",
-                           dfixed.n(), Ktmp.ncol());
-          abort();
+          throw AlgorithmException("nfixed != rank",
+                                   __FILE__, __LINE__,
+                                   class_desc());
         }
       // check that fixed coordinates be totally symmetric
       //if (Ktmp.nrow() != count_nonzero(totally_symmetric_fixed, ts_eps)) {
@@ -880,8 +880,8 @@ IntMolecularCoor::to_cartesian(const Ref<Molecule> &mol,
   if (new_internal.dim().n() != dim_.n()
       || dvc_.n() != variable_->n() + constant_->n()
       || new_internal.dim().n() != variable_->n()) {
-      ExEnv::err0() << indent << "to_cartesian: internal error in dim\n";
-      abort();
+      throw ProgrammingError("to_cartesian: internal error in dim",
+                             __FILE__, __LINE__, class_desc());
     }
 
   RefSCVector all_internal(dvc_,matrixkit_);
@@ -912,8 +912,8 @@ IntMolecularCoor::all_to_internal(const Ref<Molecule> &mol,RefSCVector&internal)
   if (internal.dim().n() != dvc_.n()
       || dim_.n() != variable_->n()
       || dvc_.n() != variable_->n() + constant_->n()) {
-      ExEnv::err0() << indent << "all_to_internal: internal error in dim\n";
-      abort();
+      throw ProgrammingError("all_to_internal: internal error in dim",
+                             __FILE__, __LINE__, class_desc());
     }
 
   variable_->update_values(mol);
@@ -937,8 +937,8 @@ IntMolecularCoor::to_internal(RefSCVector&internal)
 {
   if (internal.dim().n() != dim_.n()
       || dim_.n() != variable_->n()) {
-      ExEnv::err0() << indent << "to_internal: internal error in dim\n";
-      abort();
+      throw ProgrammingError("to_internal: internal error in dim",
+                             __FILE__, __LINE__, class_desc());
     }
 
   variable_->update_values(molecule_);

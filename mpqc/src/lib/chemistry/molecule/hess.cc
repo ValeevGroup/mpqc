@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <fstream>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <util/state/stateio.h>
@@ -175,9 +176,8 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
             }
           atom_map[i][g] = mol->atom_at_position(np, 0.05);
           if (atom_map[i][g] < 0) {
-              ExEnv::err0() << indent
-                   << "MolecularHessian: atom mapping bad" << endl;
-              abort();
+              throw ProgrammingError("atom mapping bad",
+                                     __FILE__, __LINE__);
             }
         }
     }
@@ -343,15 +343,16 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
       char linebuf[nline];
       in.getline(linebuf, nline);
       if (strcmp(linebuf,"Hessian VT1")) {
-          ExEnv::errn() << "MolecularHessian: not given a hessian file" << endl;
-          abort();
+          throw FileOperationFailed("not given a hessian file",
+                                    __FILE__, __LINE__, filename,
+                                    FileOperationFailed::Corrupt);
         }
       int natom;
       in >> natom;
       if (natom != mol->natom()) {
-          ExEnv::errn() << "MolecularHessian: wrong number of atoms in hessianfile"
-               << endl;
-          abort();
+          throw FileOperationFailed("wrong number of atoms in hessian file",
+                                    __FILE__, __LINE__, filename,
+                                    FileOperationFailed::Corrupt);
         }
       in.getline(linebuf,nline);
       //ExEnv::outn() << "READ: should be atoms: " << linebuf << endl;
@@ -372,9 +373,9 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
           in.getline(linebuf, nline);
           if (strcmp(linebuf,"End Hessian")) {
               //ExEnv::outn() << "READ: last line = " << linebuf << endl;
-              ExEnv::errn() << "MolecularHessian: hessian file seems to be truncated"
-                   << endl;
-              abort();
+              throw FileOperationFailed("hessian file seems to be truncated",
+                                        __FILE__, __LINE__, filename,
+                                        FileOperationFailed::Corrupt);
             }
         }
     }

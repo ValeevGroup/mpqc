@@ -27,6 +27,7 @@
 
 #include <math.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
@@ -102,7 +103,8 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
 
   RefSCMatrix internal_to_cart_disp;
   double maxabs_cart_diff = 0.0;
-  for (int step = 0; step < 100; step++) {
+  const int maxiter = 100;
+  for (int step = 0; step < maxiter; step++) {
       // compute the old internal coordinates
       oldintcoor_->update_values(molecule_);
       oldintcoor_->values_to_vector(old_internal);
@@ -165,15 +167,8 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
         }
     }
 
-  ExEnv::err0() << indent
-       << "WARNING: SymmCoorTransform::to_cartesian(RefSCVector&):"
-       << " too many iterations in geometry update\n";
-
-  new_internal.print("SymmCoorTransform: desired internal coordinates");
-  (new_internal
-   - old_internal).print("SymmCoorTransform: difference of desired and actual coordinates");
-
-  abort();
+  throw MaxIterExceeded("too many iterations in geometry update",
+                        __FILE__, __LINE__, maxiter);
 }
 
 void
@@ -312,14 +307,18 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   int nunique = n3 - 6; // need to detect linear
 
   if (nredundant < nunique) {
-      ExEnv::err0() << indent
-           << "SymmMolecularCoor::form_coordinates: "
-           << "found too few redundant coordinates\n"
-           << indent << scprintf("nredundant = %d, 3n-6 = %d\n",
-                                 nredundant, nunique)
-           << indent << "  (the geometry is probably bad)\n";
-      molecule_->print(ExEnv::err0());
-      abort();
+      AlgorithmException ex("found too few redundant coordinates",
+                            __FILE__, __LINE__, class_desc());
+      try {
+          ex.elaborate()
+              << scprintf("nredundant = %d, 3n-6 = %d",
+                          nredundant, nunique)
+              << std::endl
+              << "(the geometry is probably bad)"
+              << std::endl;
+        }
+      catch (...) {}
+      throw ex;
     }
 
   RefSCDimension dredundant = new SCDimension(nredundant, "Nredund");
@@ -484,10 +483,8 @@ SymmMolecularCoor::change_coordinates()
   // the rank could get bigger if there is a fixed coordinate
   if (rank < dim_.n() || ((fixed_.null()
                            || fixed_->n() == 0) && rank != dim_.n())) {
-      ExEnv::err0() << indent
-           << "SymmMolecularCoor::change_coordinates: "
-           << "disallowed rank change\n";
-      abort();
+      throw AlgorithmException("disallowed rank change",
+                               __FILE__, __LINE__, class_desc());
     }
   if (rank != dim_.n()) {
       ExEnv::out0() << indent

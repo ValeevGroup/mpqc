@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
@@ -126,14 +127,16 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(StateIn&s):
   SavableState(s),
   MolecularEnergy(s)
 {
-  abort();
+  throw ProgrammingError("cannot save state for this class",
+                         __FILE__, __LINE__, class_desc());
 }
 
 void
 TaylorMolecularEnergy::save_data_state(StateOut&s)
 {
   MolecularEnergy::save_data_state(s);
-  abort();
+  throw ProgrammingError("cannot save state for this class",
+                         __FILE__, __LINE__, class_desc());
 }
 
 void

@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/molecule/molecule.h>
@@ -151,9 +152,8 @@ Molecule::Molecule(const Ref<KeyVal>&input):
       // possible
       int natom = input->count("geometry");
       if (natom != input->count("atoms")) {
-          ExEnv::err0() << indent
-               << "Molecule: size of \"geometry\" != size of \"atoms\"\n";
-          abort();
+          throw InputError("size of \"geometry\" != size of \"atoms\"",
+                           __FILE__, __LINE__, 0, 0, class_desc());
         }
 
       int i;
@@ -534,8 +534,10 @@ Molecule::Molecule(StateIn& si):
   natoms_(0), r_(0), Z_(0), mass_(0), labels_(0)
 {
   if (si.version(::class_desc<Molecule>()) < 4) {
-      ExEnv::errn() << "Molecule: cannot restore from old molecules" << endl;
-      abort();
+      throw FileOperationFailed("cannot restore from old molecules",
+                                __FILE__, __LINE__, 0,
+                                FileOperationFailed::Corrupt,
+                                class_desc());
     }
   if (si.version(::class_desc<Molecule>()) < 6) {
     include_q_ = false;
@@ -899,8 +901,10 @@ Molecule::symmetrize(double tol)
       else {
         if (Z(i) != newmol->Z(atom)
             || fabs(mass(i)-newmol->mass(atom))>1.0e-10) {
-            ExEnv::err0() << "Molecule: symmetrize: atom mismatch" << endl;
-            abort();
+            throw ToleranceExceeded("symmetrize: atom mismatch",
+                                    __FILE__, __LINE__,
+                                    1.0e-10, fabs(mass(i)-newmol->mass(atom)),
+                                    class_desc());
         }
       }
     }
@@ -1115,12 +1119,17 @@ Molecule::cleanup_molecule(double tol)
                 }
             }
           if (!found) {
-              ExEnv::err0()
-                   << "Molecule: cleanup: couldn't find atom at " << np << endl
-                   << "  transforming uniq atom " << i << " at " << up << endl
-                   << "  with symmetry op " << g << ":" << endl;
-              so.print(ExEnv::err0());
-              abort();
+              SCException ex("cleanup: couldn't find atom",
+                             __FILE__, __LINE__, class_desc());
+              try {
+                  ex.elaborate()
+                      << "couldn't find atom at " << np << endl
+                      << "transforming uniq atom " << i << " at " << up << endl
+                      << "with symmetry op " << g << ":" << endl;
+                  so.print(ex.elaborate());
+                }
+              catch (...) {}
+              throw ex;
             }
         }
     }
@@ -1205,9 +1214,8 @@ Molecule::n_core_electrons()
       if (z > 48) n += 10;
       if (z > 54) n += 8;
       if (z > 72) {
-          ExEnv::errn() << "Molecule::n_core_electrons: atomic number too large"
-               << endl;
-          abort();
+          throw LimitExceeded<int>("n_core_electrons: atomic number too large",
+                                   __FILE__, __LINE__, 72, z, class_desc());
         }
     }
   return n;

@@ -31,6 +31,7 @@
 
 #include <math.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/render/sphere.h>
 #include <util/render/polygons.h>
@@ -58,9 +59,9 @@ RenderedMolecule::RenderedMolecule(const Ref<KeyVal>& keyval):
     }
 
   if (mol_.null()) {
-      ExEnv::err0() << indent
-           << "RenderedMolecule: no \"molecule\" in keyval\n";
-      abort();
+      throw InputError("missing required input of type Molecule",
+                       __FILE__, __LINE__, "molecule", 0,
+                       class_desc());
     }
 }
 

@@ -33,6 +33,7 @@
 #include <util/misc/math.h>
 #include <vector>
 
+#include <util/misc/scexception.h>
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/molecule/molecule.h>
 #include <math/scmat/matrix3.h>
@@ -362,10 +363,12 @@ ConnollyShape::distance_to_surface(const SCVector3&r, SCVector3*grad) const
                   return inside;
                 }
               if (n_local_spheres == max_local_spheres) {
-                  ExEnv::err0() << indent
-                       << "ConnollyShape::distance_to_surface:"
-                       << " max_local_spheres exceeded\n";
-                  abort();
+                  throw LimitExceeded<int>("distance_to_surface: "
+                                           "max_local_spheres exceeded",
+                                           __FILE__, __LINE__,
+                                           max_local_spheres,
+                                           n_local_spheres+1,
+                                           class_desc());
                 }
               local_sphere[n_local_spheres] = sphere[i];
               n_local_spheres++;
@@ -394,9 +397,10 @@ ConnollyShape::boundingbox(double valuemin,
 {
   int i,j;
   if (valuemin < -1.0 || valuemax > 1.0) {
-      ExEnv::err0() << indent
-           << "ConnollyShape::boundingbox: value out of range\n";
-      abort();
+      throw LimitExceeded<double>("boundingbox: value out of range",
+                                  __FILE__, __LINE__,
+                                  ((valuemin<0.0)?-1.0:1.0),
+                                  valuemin, class_desc());
     }
 
   if (n_spheres == 0) {

@@ -34,6 +34,7 @@
 #include <stdexcept>
 #include <util/misc/string.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
@@ -92,9 +93,9 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
 
   mol_ << keyval->describedclassvalue("molecule");
   if (mol_.null()) {
-      ExEnv::errn() << indent << "MolecularEnergy(Keyval): no molecule found"
-           << endl;
-      abort();
+      throw InputError("missing required input of type Molecule",
+                       __FILE__, __LINE__, "molecule", 0,
+                       class_desc());
     }
 
   initial_pg_ = new PointGroup(mol_->point_group());
@@ -262,8 +263,7 @@ MolecularEnergy::checkpoint_freq() const
 void
 MolecularEnergy::failure(const char * msg)
 {
-  ExEnv::err0() << indent << "MolecularEnergy::failure: " << msg << endl;
-  abort();
+  throw SCException(msg, __FILE__, __LINE__, class_desc());
 }
 
 void
@@ -370,10 +370,8 @@ MolecularEnergy::get_cartesian_gradient()
 {
   gradient();
   if (cartesian_gradient_.null()) {
-      ExEnv::errn() << "MolecularEnergy::get_cartesian_gradient(): "
-           << "cartesian gradient not available"
-           << endl;
-      abort();
+      throw ProgrammingError("get_cartesian_gradient(): not available",
+                             __FILE__, __LINE__, class_desc());
     }
   return cartesian_gradient_;
 }
@@ -383,10 +381,8 @@ MolecularEnergy::get_cartesian_hessian()
 {
   hessian();
   if (cartesian_hessian_.null()) {
-      ExEnv::errn() << "MolecularEnergy::get_cartesian_hessian(): "
-           << "cartesian hessian not available"
-           << endl;
-      abort();
+      throw ProgrammingError("get_cartesian_hessian(): not available",
+                             __FILE__, __LINE__, class_desc());
     }
   return cartesian_hessian_;
 }
@@ -590,11 +586,13 @@ SumMolecularEnergy::SumMolecularEnergy(const Ref<KeyVal> &keyval):
   for (int i=0; i<n_; i++) {
       mole_[i] << keyval->describedclassvalue("mole",i);
       coef_[i] = keyval->intvalue("coef",i);
-      if (mole_[i].null()
-          || mole_[i]->molecule()->natom() != molecule()->natom()) {
-          ExEnv::errn() << "SumMolecularEnergy: a mole is null or has a molecule"
-               << " with the wrong number of atoms" << endl;
-          abort();
+      if (mole_[i].null()) {
+          throw InputError("a mole is null",
+                           __FILE__, __LINE__, "mole", 0, class_desc());
+        }
+      else if (mole_[i]->molecule()->natom() != molecule()->natom()) {
+          throw InputError("a mole has the wrong number of atoms",
+                           __FILE__, __LINE__, "mole", 0, class_desc());
         }
     }
 }
@@ -755,10 +753,9 @@ MolEnergyConvergence::MolEnergyConvergence(const Ref<KeyVal>&keyval)
 {
   mole_ << keyval->describedclassvalue("energy");
   if (mole_.null()) {
-      ExEnv::errn() << "MolEnergyConvergence(const Ref<KeyVal>&keyval): "
-           << "require an energy keyword of type MolecularEnergy"
-           << endl;
-      abort();
+      throw InputError("required keyword missing",
+                       __FILE__, __LINE__, "energy", 0,
+                       class_desc());
     }
 
   cartesian_ = keyval->booleanvalue("cartesian");

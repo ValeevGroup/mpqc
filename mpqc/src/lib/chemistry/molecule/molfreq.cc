@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/math.h>
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/group/message.h>
@@ -52,9 +53,9 @@ MolecularFrequencies::MolecularFrequencies(const Ref<KeyVal>& keyval)
 {
   mol_ << keyval->describedclassvalue("molecule");
   if (mol_.null()) {
-      ExEnv::err0() << "MolecularFrequencies: KeyVal CTOR requires molecule"
-           << endl;
-      abort();
+      throw InputError("missing required input of type Molecule",
+                       __FILE__, __LINE__, "molecule", 0,
+                       class_desc());
     }
   KeyValValueRefDescribedClass def_pg(mol_->point_group().pointer());
   pg_ << keyval->describedclassvalue("point_group", def_pg);
@@ -81,8 +82,10 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
   int i;
 
   if (si.version(::class_desc<MolecularFrequencies>()) < 3) {
-      ExEnv::errn() << "MolecularFrequencies: cannot restore from old version" << endl;
-      abort();
+      throw FileOperationFailed("cannot restore from old version",
+                                __FILE__, __LINE__, 0,
+                                FileOperationFailed::Corrupt,
+                                class_desc());
     }
 
   mol_ << SavableState::restore_state(si);
@@ -180,12 +183,11 @@ MolecularFrequencies::do_freq_for_irrep(
   RefDiagSCMatrix bassigma(ddim, matrixkit());
   ncbasis.svd(basU, bassigma, basV);
   for (i=0; i<ddim.n(); i++) {
-      if (bassigma(i) < 1.e0-3) {
-          ExEnv::err0() << indent
-               << "MolecularFrequencies: displacements don't span"
-               << " normal coordinates"
-               << endl;
-          abort();
+      if (bassigma(i) < 1.e-3) {
+          throw ToleranceExceeded("singular value too small: "
+                                  "displacements don't span coordinates",
+                                  __FILE__, __LINE__, 1.e-3, bassigma(i),
+                                  class_desc());
         }
     }
   ncbasis.assign_subblock(basU, 0, d3natom_.n()-1, 0, ddim.n()-1, 0, 0);
@@ -293,10 +295,9 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
       else if (ct.symbol()[0] == 'C' ||
                ct.symbol()[0] == 'c') sigma = 1;
       else {
-          ExEnv::errn() << "MolecularFrequencies: For linear molecules"
-               << " the specified point group must be Cnv or Dnh"
-               << endl;
-          abort();
+          throw InputError("for linear molecules "
+                           " the specified point group must be Cnv or Dnh",
+                           __FILE__, __LINE__, 0, 0, class_desc());
           }
       }
   else if ((ct.symbol()[0] == 'C' ||

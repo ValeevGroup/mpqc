@@ -30,6 +30,7 @@
 #include <bstring.h>
 #endif
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/molecule/simple.h>
@@ -86,14 +87,15 @@ SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
             }
         }
       if (i != na) {
-          ExEnv::err0() << indent
-               << scprintf(
-                   "%s::%s(const Ref<KeyVal>&): missing one of the atoms "
-                   "or atom_labels (requires a molecule too) "
-                   "or an atom label was invalid\n",
-                   class_name(),class_name());
-          kv->errortrace();
-          abort();
+          InputError ex("KeyVal CTOR: missing one of the atoms "
+                        "or atom_labels (requires a molecule too) "
+                        "or an atom label was invalid",
+                        __FILE__, __LINE__, 0, 0, class_desc());
+          try {
+              kv->errortrace(ex.elaborate());
+            }
+          catch (...) {}
+          throw ex;
         }
     }
   else {
@@ -104,11 +106,13 @@ SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
       for (int i=0; i<na; i++) {
           atoms[i]=kv->intvalue(i+1);
           if (kv->error() != KeyVal::OK) {
-              ExEnv::err0() << indent
-                   << scprintf("%s::%s(const Ref<KeyVal>&): missing an atom\n",
-                               class_name(),class_name());
-              kv->errortrace();
-              abort();
+              InputError ex("KeyVal CTOR: missing an atom",
+                            __FILE__, __LINE__, 0, 0, class_desc());
+              try {
+                  kv->errortrace(ex.elaborate());
+                }
+              catch (...) {}
+              throw ex;
             }
         }
     }

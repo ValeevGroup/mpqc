@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
 #include <util/state/stateio.h>
@@ -345,9 +346,8 @@ FinDispMolecularHessian::get_disp(int disp, int &irrep,
       }
     disp_offset += displacements(i).ncol();
     }
-  ExEnv::err0() << indent
-       << "FinDispMolecularHessian::get_disp: bad disp number" << endl;
-  abort();
+  throw ProgrammingError("bad displacement number",
+                         __FILE__, __LINE__, class_desc());
 }
 
 int

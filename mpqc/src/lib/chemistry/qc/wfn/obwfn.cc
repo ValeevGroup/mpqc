@@ -30,6 +30,7 @@
 #endif
 
 #include <util/state/stateio.h>
+#include <util/misc/formio.h>
 
 #include <math/symmetry/corrtab.h>
 #include <math/scmat/local.h>
@@ -142,6 +143,107 @@ OneBodyWavefunction::save_data_state(StateOut&s)
   density_.result_noupdate().save(s);
 }
 
+#if 1
+RefSCMatrix
+OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
+                                            int alp)
+{
+  //............................................................
+  // first obtain the guess density matrix
+
+  // The old density in the old SO basis
+  RefSymmSCMatrix oldP_so;
+  if (owfn->spin_unrestricted()) {
+    if (alp) oldP_so = owfn->alpha_density();
+    else oldP_so = owfn->beta_density();
+  }
+  else oldP_so = owfn->density();
+
+  cout << node0 << endl << indent
+       << "Projecting the guess density.\n"
+       << endl;
+  cout << incindent;
+
+  // The old overlap
+  RefSymmSCMatrix oldS = owfn->overlap();
+  cout << node0 << indent
+       << "The number of electrons in the guess density = "
+       << (oldP_so*oldS).trace() << endl;
+
+  // Transform the old SO overlap into the orthogonal SO basis, oSO
+  RefSymmSCMatrix old_so_to_oso = owfn->so_to_orthog_so();
+  RefSymmSCMatrix oldP_oso = oldP_so->clone();
+  oldP_oso->assign(0.0);
+  oldP_oso->accumulate_transform(old_so_to_oso, oldP_so);
+
+  //............................................................
+  // transform the guess density into the current basis
+
+  // the transformation matrix is the new basis/old basis overlap
+  integral()->set_basis(owfn->basis(), basis());
+  RefSCMatrix old_to_new_ao(owfn->basis()->basisdim(), basis()->basisdim(),
+                            basis()->matrixkit());
+  RefSCElementOp op = new OneBodyIntOp(integral()->overlap());
+  old_to_new_ao.assign(0.0);
+  old_to_new_ao.element_op(op);
+  op = 0;
+  integral()->set_basis(basis());
+
+  // now must transform the transform into the SO basis
+  RefPetiteList pl = integral()->petite_list();
+  RefPetiteList oldpl = owfn->integral()->petite_list();
+  RefSCMatrix blocked_old_to_new_ao(oldpl->AO_basisdim(), pl->AO_basisdim(),
+                                    basis()->so_matrixkit());
+  blocked_old_to_new_ao->convert(old_to_new_ao);
+  RefSCMatrix old_to_new_so
+    = oldpl->sotoao() * blocked_old_to_new_ao * pl->aotoso();
+
+  // now must transform the transform into the orthogonal SO basis
+  RefSymmSCMatrix so_to_oso = so_to_orthog_so();
+  RefSCMatrix old_to_new_oso = old_so_to_oso.gi()
+                             * old_to_new_so
+                             * so_to_oso;
+  old_so_to_oso = 0;
+  old_to_new_so = 0;
+  
+  // The old density transformed to the new orthogonal SO basis
+  RefSymmSCMatrix newP_oso(basis_dimension(), basis_matrixkit());
+  newP_oso->assign(0.0);
+  newP_oso->accumulate_transform(old_to_new_oso.t(), oldP_oso);
+  old_to_new_oso = 0;
+  oldP_oso = 0;
+  //newP_oso.print("projected orthoSO density");
+
+  cout << node0 << indent
+       << "The number of electrons in the projected density = "
+       << newP_oso.trace() << endl;
+
+  //............................................................
+
+  // reverse the sign of the density so the eigenvectors will
+  // be ordered in the right way
+  newP_oso.scale(-1.0);
+
+  // use the guess density in the new basis to find the orbitals
+  // (the density should be diagonal in the MO basis--this proceedure
+  // will not give canonical orbitals, but they should at least give
+  // a decent density)
+  RefDiagSCMatrix newP_oso_vals(newP_oso.dim(), basis_matrixkit());
+  RefSCMatrix newP_oso_vecs(newP_oso.dim(), newP_oso.dim(), basis_matrixkit());
+  newP_oso.diagonalize(newP_oso_vals, newP_oso_vecs);
+  //newP_oso_vals.print("eigenvalues of projected density");
+
+  // Reordering of the vectors isn't needed because of the way
+  // the density was scaled above.
+  RefSCMatrix newvec_oso = newP_oso_vecs;
+
+  // transform the orbitals from the orthogonal to nonorthogonal SO basis
+  RefSCMatrix newvec_so = so_to_oso * newvec_oso;
+
+  cout << decindent;
+  return newvec_so;
+}
+#else
 // at some point this will have to check for zero eigenvalues and not
 // invert them
 static void
@@ -164,7 +266,6 @@ form_m_half(RefSymmSCMatrix& M)
   M.assign(0.0);
   M.accumulate_transform(U,m);
 }
-
 RefSCMatrix
 OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
                                             int alp)
@@ -320,6 +421,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
 
   return vec;
 }
+#endif
 
 // this is a hack for big basis sets where the core hamiltonian eigenvalues
 // are total garbage.  Use the old wavefunction's occupied eigenvalues, and
@@ -407,7 +509,7 @@ OneBodyWavefunction::hcore_guess()
   RefDiagSCMatrix val(basis_dimension(), basis_matrixkit());
   hcore.diagonalize(val,vec);
 
-  vec = ao_to_orthog_ao() * vec;
+  vec = so_to_orthog_so() * vec;
 
   return vec;
 }

@@ -362,12 +362,24 @@ EFCOpt::update()
        << indent << scprintf("taking step of size %f",tot) << endl;
                     
   function()->set_x(xnext);
+  RefNonlinearTransform t = function()->change_coordinates();
+  apply_transform(t);
 
   // make the next gradient computed more accurate, since it will
   // be smaller
   accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
   
   return converged;
+}
+
+void
+EFCOpt::apply_transform(const RefNonlinearTransform &t)
+{
+  if (t.null()) return;
+  Optimize::apply_transform(t);
+  if (last_mode_.nonnull()) t->transform_gradient(last_mode_);
+  if (hessian_.nonnull()) t->transform_hessian(hessian_);
+  if (update_.nonnull()) update_->apply_transform(t);
 }
 
 /////////////////////////////////////////////////////////////////////////////

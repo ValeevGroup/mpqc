@@ -709,7 +709,7 @@ MolecularCoor::nconstrained()
 RefNonlinearTransform
 MolecularCoor::change_coordinates()
 {
-  return new IdentityTransform;
+  return 0;
 }
 
 int

@@ -141,6 +141,7 @@ void
 DFPUpdate::apply_transform(const RefNonlinearTransform& trans)
 {
   if (trans.null()) return;
+  HessianUpdate::apply_transform(trans);
   trans->transform_coordinates(xprev);
   trans->transform_gradient(gprev);
 }

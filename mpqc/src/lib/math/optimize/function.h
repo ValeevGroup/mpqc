@@ -36,6 +36,7 @@
 #include <float.h>
 
 #include <util/state/state.h>
+#include <math/optimize/transform.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/result.h>
 
@@ -74,6 +75,7 @@ class Function: virtual_base public SavableState, public Compute {
     //. Get read/write access to the coordinates for modification.
     RefSCVector& get_x_reference() { obsolete(); return x_; }
 
+    void do_change_coordinates(const RefNonlinearTransform&);
   public:
     //. The standard constructors and destructor.
     Function();
@@ -149,6 +151,15 @@ class Function: virtual_base public SavableState, public Compute {
     virtual void set_x(const RefSCVector&);
     RefSCVector get_x() const { return x_.copy(); }
     const RefSCVector& get_x_no_copy() const { return x_; }
+
+    //. An optimizer can call change coordinates periodically
+    //to give the function an opportunity to change its coordinate
+    //system.  A return value of 0 means the coordinates were not
+    //changed.  Otherwise, a transform object to the new coordinate
+    //system is return.  The function object applies the transform
+    //to any objects it contains.  This will obsolete the function
+    //data.
+    virtual RefNonlinearTransform change_coordinates();
 
     //. Print information about the object.
     virtual void print(ostream& = cout);

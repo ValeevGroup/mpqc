@@ -398,6 +398,19 @@ Function::hessian_implemented()
   return 0;
 }
 
+RefNonlinearTransform
+Function::change_coordinates()
+{
+  return 0;
+}
+
+void
+Function::do_change_coordinates(const RefNonlinearTransform &t)
+{
+  t->transform_coordinates(x_);
+  obsolete();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

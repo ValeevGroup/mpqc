@@ -191,6 +191,11 @@ Optimize::optimize()
   return result;
 }
 
+void
+Optimize::apply_transform(const RefNonlinearTransform &t)
+{
+}
+
 /////////////////////////////////////////////////////////////////////////
 // LineOpt
 
@@ -234,6 +239,14 @@ void
 LineOpt::set_search_direction(RefSCVector&s)
 {
   search_direction_ = s.copy();
+}
+
+void
+LineOpt::apply_tranform(const RefNonlinearTransform &t)
+{
+  if (t.null()) return;
+  Optimize::apply_transform(t);
+  t->transform_gradient(search_direction_);
 }
 
 /////////////////////////////////////////////////////////////////////////////

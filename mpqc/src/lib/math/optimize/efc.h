@@ -66,6 +66,8 @@ class EFCOpt: public Optimize {
     ~EFCOpt();
     void save_data_state(StateOut&);
 
+    void apply_transform(const RefNonlinearTransform&);
+
     void init();
     int update();
 };

@@ -84,6 +84,8 @@ class Optimize: virtual_base public SavableState {
     //otherwise 0.
     virtual int update() = 0;
 
+    virtual void apply_transform(const RefNonlinearTransform&);
+
     //. Returns information about the \clsnmref{Function} being optimized.
     RefFunction function() const { return function_; }
     RefSCMatrixKit matrixkit() const { return function_->matrixkit(); }
@@ -103,6 +105,8 @@ class LineOpt: public Optimize {
     LineOpt(const RefKeyVal&);
     ~LineOpt();
     void save_data_state(StateOut&);
+
+    void apply_tranform(const RefNonlinearTransform&);
 
     void set_search_direction(RefSCVector&);
 };

@@ -273,6 +273,8 @@ QNewtonOpt::update()
        << scprintf("taking step of size %f", tot) << endl;
   
   function()->set_x(xnext);
+  RefNonlinearTransform t = function()->change_coordinates();
+  apply_transform(t);
 
   // do a line min step next time
   if (lineopt_.nonnull()) take_newton_step_ = 0;
@@ -282,6 +284,16 @@ QNewtonOpt::update()
   accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
   
   return converged;
+}
+
+void
+QNewtonOpt::apply_transform(const RefNonlinearTransform &t)
+{
+  if (t.null()) return;
+  Optimize::apply_transform(t);
+  if (lineopt_.nonnull()) lineopt_->apply_transform(t);
+  if (ihessian_.nonnull()) t->transform_ihessian(ihessian_);
+  if (update_.nonnull()) update_->apply_transform(t);
 }
 
 /////////////////////////////////////////////////////////////////////////////

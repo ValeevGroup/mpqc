@@ -111,6 +111,8 @@ class MolecularEnergy: public Function {
     //. Call this if you have changed the molecular symmetry of the
     // molecule contained by this MolecularEnergy
     virtual void symmetry_changed();
+
+    RefNonlinearTransform change_coordinates();
     
     //. Nicely print n x 3 data that are stored in a vector.
     void print_natom_3(const RefSCVector &, const char *t=0, ostream&o=cout);

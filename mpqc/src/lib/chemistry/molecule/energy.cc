@@ -371,6 +371,15 @@ MolecularEnergy::symmetry_changed()
 {
 }
 
+RefNonlinearTransform
+MolecularEnergy::change_coordinates()
+{
+  if (!mc_) return 0;
+  RefNonlinearTransform t = mc_->change_coordinates();
+  do_change_coordinates(t);
+  return t;
+}
+
 void
 MolecularEnergy::print_natom_3(const RefSCVector &v,
                                const char *title, ostream&o)

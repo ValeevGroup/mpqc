@@ -67,6 +67,8 @@ class QNewtonOpt: public Optimize {
     ~QNewtonOpt();
     void save_data_state(StateOut&);
 
+    void apply_transform(const RefNonlinearTransform&);
+
     void init();
     int update();
 };

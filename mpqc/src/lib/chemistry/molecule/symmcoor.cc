@@ -461,7 +461,7 @@ SymmMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
 RefNonlinearTransform
 SymmMolecularCoor::change_coordinates()
 {
-  if (dim_.n() == 0 || !change_coordinates_) return new IdentityTransform;
+  if (dim_.n() == 0 || !change_coordinates_) return 0;
 
   const double epsilon = 0.001;
 
@@ -521,7 +521,7 @@ SymmMolecularCoor::change_coordinates()
       return trans;
     }
 
-  return new IdentityTransform;
+  return 0;
 }
 
 void

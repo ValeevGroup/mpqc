@@ -7,9 +7,11 @@
 #include <chemistry/qc/integral/integralv2.h>
 
 int
-main(int, char**)
+main(int, char *argv[])
 {
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/btest.kv");
+  char *filename = (argv[1]) ? argv[1] : SRCDIR "/btest.kv";
+  
+  RefKeyVal keyval = new ParsedKeyVal(filename);
 
   for (int i=0; i<keyval->count("test"); i++) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);

@@ -10,14 +10,13 @@ extern "C" {
 #include <comm/picl/ext/piclext.h>
 
 #include <util/misc/libmisc.h>
-#include <math/array/math_lib.h>
 #include <math/dmt/matrix.h>
-
-#include <chemistry/qc/intv2/int_libv2.h>
 }
 
 #include <util/keyval/keyval.h>
 
+#include <math/array/math_lib.h>
+#include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 
@@ -62,7 +61,7 @@ init_dmt(centers_t *centers)
 }
 
 int
-main()
+main(int argc, char *argv[])
 {
   int errcod;
   int save_vector=1;
@@ -74,13 +73,15 @@ main()
 
   dmt_matrix Scf_Vec, Fock, FockO;
 
+  char *filename = (argv[1]) ? argv[1] : "mpqc.in";
+  
   init_mp();
 
   RefKeyVal keyval;
 
   if (mynode0() == 0) {
    // initialize keyval
-    RefKeyVal pkv(new ParsedKeyVal("mpqc.in"));
+    RefKeyVal pkv(new ParsedKeyVal(filename));
     RefKeyVal ppkv(new PrefixKeyVal(":scf :default",*pkv.pointer()));
     pkv = new ParsedKeyVal("input",*ppkv.pointer());
     keyval = new AggregateKeyVal(*ppkv.pointer(),*pkv.pointer());

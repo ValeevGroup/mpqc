@@ -144,32 +144,30 @@ extern "C" void * sbrk(ssize_t);
 
 typedef unsigned long refcount_t;
 
-//. \srccd{VRefCount} is the base class for all reference counted
-//. objects.  If multiple inheritance is used, \srccd{VRefCount}
-//. must be virtually inherited from, otherwise references to
-//. invalid memory will likely result.
-//.
-//. Reference counting information is usually maintained by smart
-//. pointer classes (\clsnm{Ref}), however this mechanism can be
-//. supplemented or replaced by directly using the public
-//. interface to \srccd{VRefCount}.
-//.
-//. The \srccd{unmanage()} member is only needed for special cases where
-//. memory management must be turned off.  For example, if a reference
-//. counted object is created on the stack, memory management
-//. mechanisms based on reference counting must be prohibited from deleting it.
-//. The \srccd{unmanage()} member accomplishes this, but a better solution
-//. would be to allocate the object on the heap with \srccd{new} and let
-//. a class declared using the \srccd{REF\_dec} macro manage the memory for
-//. the object.
-//. 
-//. When using a debugger to look at reference counted objects the
-//. count is maintained in the \srccd{\_reference\_count\_} member.
-//. However, this member is encoded so that memory overwrites can be
-//. sometimes detected.  Thus, interpretation of
-//. \srccd{\_reference\_count\_} is not straightforward and will change
-//. as the implementation of \srccd{VRefCount} becomes more
-//. sophisticated.
+/** The base class for all reference counted objects.  If multiple
+    inheritance is used, VRefCount must be virtually inherited from,
+    otherwise references to invalid memory will likely result.
+
+    Reference counting information is usually maintained by smart
+    pointer classes Ref, however this mechanism can be
+    supplemented or replaced by directly using the public
+    interface to VRefCount.
+
+    The unmanage() member is only needed for special cases where memory
+    management must be turned off.  For example, if a reference counted
+    object is created on the stack, memory management mechanisms based on
+    reference counting must be prohibited from deleting it.  The unmanage()
+    member accomplishes this, but a better solution would be to allocate
+    the object on the heap with new and let a smart pointer manage the
+    memory for the object.
+
+    When using a debugger to look at reference counted objects the count is
+    maintained in the _reference_count_ member.  However, this member is
+    encoded so that memory overwrites can be sometimes detected.  Thus,
+    interpretation of _reference_count_ is not always straightforward.
+
+*/
+
 class VRefCount: public Identity {
   private:
 #if REF_CHECKSUM
@@ -226,7 +224,7 @@ class VRefCount: public Identity {
   public:
     virtual ~VRefCount();
 
-    //. Return the reference count.
+    /// Return the reference count.
     refcount_t nreference() const {
 #       if REF_MANAGE
         if (!managed()) return 1;
@@ -237,7 +235,7 @@ class VRefCount: public Identity {
         return _reference_count_;
       }
 
-    //. Increment the reference count and return the new count.
+    /// Increment the reference count and return the new count.
     refcount_t reference() {
 #       if REF_MANAGE
         if (!managed()) return 1;
@@ -255,7 +253,7 @@ class VRefCount: public Identity {
         return _reference_count_;
       }
 
-    //. Decrement the reference count and return the new count.
+    /// Decrement the reference count and return the new count.
     refcount_t dereference() {
 #       if REF_MANAGE
         if (!managed()) return 1;
@@ -280,11 +278,11 @@ class VRefCount: public Identity {
 #       endif // REF_CHECKSUM
         return _reference_count_ != REF_MANAGED_CODE;
       }
-    //. Turn off the reference counting mechanism for this object.
-    //. The value returned by \srccd{nreference()} will always be
-    //. 1 after this is called.  The ability to \srccd{unmanage()}
-    //. objects must be turned on at compile time by defining
-    //. \srccd{REF\_MANAGE}.  There is a slight performance penalty.
+    /** Turn off the reference counting mechanism for this object.
+        The value returned by nreference() will always be
+        1 after this is called.  The ability to unmanage()
+        objects must be turned on at compile time by defining
+        REF_MANAGE.  There is a slight performance penalty. */
     void unmanage() {
         _reference_count_ = REF_MANAGED_CODE;
 #       if REF_CHECKSUM
@@ -292,20 +290,25 @@ class VRefCount: public Identity {
 #       endif // REF_CHECKSUM
       }
 #else // REF_MANAGE
-    //. Return 1 if the object is managed.  Otherwise return 0.
+    /// Return 1 if the object is managed.  Otherwise return 0.
     int managed() const { return 1; }
 #endif // REF_MANAGE
 };
 
-//. \clsnm{RefBase} provide a few utility routines common to all
-//. \clsnmref{Ref} template instantiations.
+/** Provides a few utility routines common to all
+    Ref template instantiations.
+*/
 class RefBase {
   public:
-    //. Reference utility routines.
+    /// Print a warning message.
     void warn ( const char * msg) const;
+    /// Called when stack data is referenced.
     void warn_ref_to_stack() const;
+    /// Called when the deletion of stack data is skipped.
     void warn_skip_stack_delete() const;
+    /// Called when the reference count is corrupted.
     void warn_bad_ref_count() const;
+    /// Print information about the reference.
     void ref_info(VRefCount*p,ostream& os) const;
 };
 
@@ -321,6 +324,8 @@ class RefBase {
 // The macro reference declaration.
 #ifdef USE_REF_MACROS
 #include <util/ref/refmacr.h>
+/** This macro declares a smart pointer type.  If the class name is T, the
+    smart pointer type will be RefT.  */
 #define REF_dec(T) Ref_declare(T)
 #else
 #define REF_dec(T) typedef class Ref<T> Ref ## T;
@@ -329,6 +334,7 @@ class RefBase {
 
 // This does forward declarations of REF classes.
 #ifdef USE_REF_MACROS
+/** This macro forward declares a type that is a smart pointer to type T.  */
 #define REF_fwddec(T) class Ref ## T;
 #else
 #define REF_fwddec(T) class T; typedef class Ref<T> Ref ## T;
@@ -336,7 +342,7 @@ class RefBase {
 
 #endif
 
-/////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

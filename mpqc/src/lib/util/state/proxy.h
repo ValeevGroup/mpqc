@@ -35,13 +35,19 @@
 #include <util/class/proxy.h>
 #include <util/state/state.h>
 
+/** Create a proxy for a SavableState object.
+    This can be used to include an object that has been saved with
+    SavableState in an input file for ParsedKeyVal.
+*/
 class SavableStateProxy: public DescribedClassProxy {
 #   define CLASSNAME SavableStateProxy
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
     RefSavableState object_;
   public:
+    /// Return the object referred to by this proxy.
     RefDescribedClass object();
+    /// Create the proxy with a Ref to a KeyVal object.
     SavableStateProxy(const RefKeyVal &);
 };
 

@@ -29,25 +29,27 @@
 #pragma interface
 #endif
 
-//. The \clsnm{Ref} template class maintains references counts.
-//.
-//. Several of these operations can cause a reference to an object to be
-//. replaced by a reference to a different object.  If a reference to a
-//. nonnull object is eliminated, the object's reference count is
-//. decremented and the object is deleted if the reference count becomes
-//. zero.
-//.
-//. There also may be a to \srccd{operator T*()}, some compilers have
-//. bugs that prevent it's use.  The \srccd{pointer()} member
-//. works everywhere.
+/** A template class that maintains references counts.
+
+    Several of these operations can cause a reference to an object to be
+    replaced by a reference to a different object.  If a reference to a
+    nonnull object is eliminated, the object's reference count is
+    decremented and the object is deleted if the reference count becomes
+    zero.
+
+    There also may be a to convert to T*, where T is the type of the object
+    which Ref references.  Some compilers have bugs that prevent the use of
+    operator T*().  The pointer() member should be used instead.
+ 
+*/
 template <class T>
 class  Ref  : private RefBase {
   private:
     T* p;
   public:
-    //. Create a reference to a null object.
+    /// Create a reference to a null object.
     Ref(): p(0) {}
-    //. Create a reference to the object \vrbl{a}.
+    /// Create a reference to the object a.
     Ref(T*a): p(a)
     {
       if (p) {
@@ -58,34 +60,34 @@ class  Ref  : private RefBase {
           p->reference();
         }
     }
-    //. Create a reference to the object referred to by \vrbl{a}.
+    /// Create a reference to the object referred to by a.
     Ref(const Ref<T> &a): p(a.p)
     {
       if (p) p->reference();
     }
-    //. Delete this reference to the object.  Decrement the object's reference
-    //. count and delete the object if the count is zero.
+    /** Delete this reference to the object.  Decrement the object's reference
+        count and delete the object if the count is zero. */
     ~ Ref ()
     {
       clear();
     }
-    //. Returns the reference counted object.  The behaviour is undefined if
-    //. the object is null.
+    /** Returns the reference counted object.  The behaviour is undefined if
+        the object is null. */
     T* operator->() const { return p; }
-    //. Returns a pointer the reference counted object.
+    /// Returns a pointer the reference counted object.
     T* pointer() const { return p; }
 
     REF_TYPE_CAST_DEC(T);
-    //. Returns a C++ reference to the reference counted object.
-    //. The behaviour is undefined if the object is null.
+    /** Returns a C++ reference to the reference counted object.
+        The behaviour is undefined if the object is null. */
     T& operator *() const { return *p; };
-    //. Return 1 if this is a reference to a null object.  Otherwise
-    //. return 0.
+    /** Return 1 if this is a reference to a null object.  Otherwise
+        return 0. */
     int null() const { return p == 0; }
-    //. Return \srccd{!null()}.
+    /// Return !null().
     int nonnull() const { return p != 0; }
-    //. Ordering relations are provided using the \clsnmref{Identity}
-    //. class.
+    /** A variety of ordering and equivalence operators are provided using
+        the Identity class. */
     int operator!=(const  T * a) const { return ne(p,a); }
     int operator==(const  T * a) const { return eq(p,a); }
     int operator==(const Ref<T> &a) const { return eq(p,a.p); }
@@ -94,10 +96,12 @@ class  Ref  : private RefBase {
     int operator>(const  Ref<T> &a) const { return gt(p,a.p); }
     int operator<(const  Ref<T> &a) const { return lt(p,a.p); }
     int operator!=(const Ref<T> &a) const { return ne(p,a.p); }
+    /** Compare two objects returning -1, 0, or 1. Similar
+        to the C library routine strcmp. */
     int compare(const Ref<T> &a) const {
       return eq(p,a.p)?0:((lt(p,a.p)?-1:1));
     }
-    //. Refer to the null object.
+    /// Refer to the null object.
     void clear()
     {
       if (p && p->dereference()<=0) {
@@ -105,7 +109,7 @@ class  Ref  : private RefBase {
         }
       p = 0;
     }
-    //. Assignment operators.
+    /// Assignment to c.
     Ref<T>& operator=(const Ref<T> & c)
     {
       if (c.p) c.p->reference();
@@ -113,11 +117,13 @@ class  Ref  : private RefBase {
       p=c.p;
       return *this;
     }
+    /// Assignment to cr.
     Ref<T>& operator=(T* cr)
     {
       assign_pointer(cr);
       return *this;
     }
+    /// Assignment to cr.
     void assign_pointer(T* cr)
     {
       if (cr) {
@@ -130,21 +136,23 @@ class  Ref  : private RefBase {
       clear();
       p = cr;
     }
-    //. Miscellaneous members.
+    /// Check the validity of the pointer.
     void check_pointer() const
     {
       if (p && p->nreference() <= 0) {
           warn_bad_ref_count();
         }
     }
+    /// Print information about the reference to os.
     void ref_info(ostream& os) const
     {
       RefBase::ref_info(p,os);
     }
+    /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
 };
 
-/////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

@@ -32,20 +32,20 @@
 #ifndef _util_misc_exenv_h
 #define _util_misc_exenv_h
 
-//. The \clsnm{ExEnv} class is used to find out about how
-//the program is being run.
+/** The ExEnv class is used to find out about how
+    the program is being run. */
 class ExEnv {
   protected:
     static int *argc_;
     static char ***argv_;
   public:
-    //. Set the argument count and vector.
+    /// Set the argument count and vector.
     static void set_args(int &argcref, char **&argvref);
-    //. Return an reference to the argument count.
+    /// Return an reference to the argument count.
     static int &argc() { return *argc_; }
-    //. Return an reference to the argument vector.
+    /// Return an reference to the argument vector.
     static char **&argv() { return *argv_; }
-    //. Return argv[0] with the path removed.
+    /// Return argv[0] with the path removed.
     static const char *program_name();
 };
 

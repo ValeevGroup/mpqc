@@ -29,86 +29,94 @@
 #pragma interface
 #endif
 
-//. \clsnm{DCRef} is similar to the \clsnmref{Ref} class
-//. template, however it provides new implementations of
-//. constructor and assignment operators that take advantage
-//. of the castdown ability of \clsnmref{DescribedClass}.  The
-//. standard reference classes allows only assignment to
-//. references or pointers to objects of the same exact type
-//. as the contained object.  \clsnm{DCRef} has constructor
-//. and assignment operators that take generic
-//. \clsnmref{DescribedClass} references and pointers as
-//. arguments.  They use the contained type's static
-//. \srccd{castdown} operator to convert the target
-//. \clsnmref{DescribedClass} object into an object of the
-//. appropriate exact type.  If the cast fails a reference to
-//. null is assigned.
+/** A smart pointer to DescribedClass objects.
+ DCRef is similar to the Ref class
+ template, however it provides new implementations of
+ constructor and assignment operators that take advantage
+ of the castdown ability of DescribedClass.  The
+ standard reference classes allows only assignment to
+ references or pointers to objects of the same exact type
+ as the contained object.  DCRef has constructor
+ and assignment operators that take generic
+ DescribedClass references and pointers as
+ arguments.  They use the contained type's static
+ castdown operator to convert the target
+ DescribedClass object into an object of the
+ appropriate exact type.  If the cast fails a reference to
+ null is assigned.
+*/
 template <class T>
 class DCRef : public DCRefBase {
   protected:
     T* p;
   public:
-    //. Implementation of \srccd{\clsnmref{DCRefBase}::parentpointer()}.
+    /// Implementation of DCRefBase::parentpointer().
     DescribedClass* parentpointer() const { return p; }
-    //. Create a reference to a null object.
+    /// Create a reference to a null object.
     DCRef(): p(0) {}
-    //. Create a reference to the object \vrbl{a}.
+    /// Create a reference to the object a.
     DCRef(T*a): p(a)
     {
       reference(p);
     }
-    //. Create a reference to the object \vrbl{a}.
+    /// Create a reference to the object a.
     DCRef(const DCRef<T> &a): p(a.p)
     {
       reference(p);
     }
-    //. Create a reference to the object \vrbl{a}.  Do a safe
-    //. \srccd{castdown} to convert \vrbl{a} to the appropiate type.
+    /** Create a reference to the object a.  Do a safe
+        castdown to convert a to the appropiate type. */
     DCRef(const DCRefBase&a) {
         p = T::castdown(a.parentpointer());
         reference(p);
       }
-    //. Delete this reference to the object.  Decrement the object's reference
-    //. count and delete the object if the count is zero.
+    /** Delete this reference to the object.  Decrement the object's reference
+        count and delete the object if the count is zero. */
     ~ DCRef ()
     {
       clear();
     }
-    //. Returns the reference counted object.  The behaviour is undefined if
-    //. the object is null.
+    /** Returns the reference counted object.  The behaviour is undefined if
+        the object is null. */
     T* operator->() const { return p; }
-    //. Returns a pointer the reference counted object.
+    /** Returns a pointer the reference counted object. */
     T* pointer() const { return p; }
 
     REF_TYPE_CAST_DEC(T);
 
-    //. Returns a C++ reference to the reference counted object.
-    //. The behaviour is undefined if the object is null.
+    /** Returns a C++ reference to the reference counted object.
+        The behaviour is undefined if the object is null. */
     T& operator *() const { return *p; };
-    //. Return 1 if this is a reference to a null object.  Otherwise
-    //. return 0.
+    /** Return 1 if this is a reference to a null object.  Otherwise
+        return 0. */
     int null() const { return p == 0; }
-    //. Return \srccd{!null()}.
+    /** Return !null(). */
     int nonnull() const { return p != 0; }
-    //. Ordering relations are provided using the \clsnmref{Identity}
-    //. class.
+    /** Compare the two pointers.  Returns -1, 0, or 1, like
+        the C library function strcmp. */
     int compare(const DCRef<T> &a) const {
         return (eq(p,a.p)?0:(lt(p,a.p)?-1:1));
       }
+    /// Equal.
     int operator==(const DCRef<T> &a) const { return eq(p,a.p); }
+    /// Not equal.
     int operator!=(const DCRef<T> &a) const { return ne(p,a.p); }
+    /// Greater than or equal.
     int operator>=(const DCRef<T> &a) const { return ge(p,a.p); }
+    /// Less than or equal.
     int operator<=(const DCRef<T> &a) const { return le(p,a.p); }
+    /// Greater than.
     int operator> (const DCRef<T> &a) const { return gt(p,a.p); }
+    /// Less than.
     int operator< (const DCRef<T> &a) const { return lt(p,a.p); }
-    //. Delete this reference to the object.  Decrement the object's reference
-    //. count and delete the object if the count is zero.
+    /** Delete this reference to the object.  Decrement the object's reference
+        count and delete the object if the count is zero. */
     void clear()
     {
       dereference(p);
       p = 0;
     }
-    //. Assigment operators.
+    /// Assignment to c.
     DCRef<T>& operator=(const DCRef<T> & c)
     {
       reference(c.p);
@@ -116,11 +124,13 @@ class DCRef : public DCRefBase {
       p=c.p;
       return *this;
     }
+    /// Assignment to cr.
     DCRef<T>& operator=(T* cr)
     {
       assign_pointer(cr);
       return *this;
     }
+    /// Assignment to the object that a references.
     DCRef<T>& operator=(const DCRefBase&a) {
         T* cr = T::castdown(a.parentpointer());
         reference(cr);
@@ -128,6 +138,7 @@ class DCRef : public DCRefBase {
         p = cr;
         return *this;
       }
+    /// Assignment to cr.
     void assign_pointer(T* cr)
     {
       reference(cr);
@@ -136,7 +147,7 @@ class DCRef : public DCRefBase {
     }
 };
 
-/////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

@@ -29,27 +29,41 @@
 #pragma interface
 #endif
 
-//. \clsnm{SSRef} is similar to the \clsnmref{DCRef} class
-//. template, however it provides members to save and restore
-//. the state of contained objects.  Null references are
-//. saved and restored correctly as well.
+/** A smart reference to a SavableState object.
+
+    SSRef is similar to the DCRef class
+    template, however it provides members to save and restore
+    the state of contained objects.  Null references are
+    saved and restored correctly as well.
+*/
 template <class T>
 class SSRef: public DCRef<T>, public SSRefBase {
   public:
+    /// Make a reference to null.
     SSRef() {}
+    /// Make a reference to the object held by o.
     SSRef (const SSRef<T> & o): DCRef<T> (o) {}
+    /// Make a reference to o.
     SSRef (T * o): DCRef<T> (o) {}
+    /// Make a reference to the object held by o.
     SSRef (const DCRefBase&o): DCRef<T> (o) {}
+    /// Release the reference, possible freeing the object.
     ~SSRef () {}
+    /// Refer to cr.
     SSRef<T>& operator=(T* cr) {
         DCRef<T>::operator=(cr); return *this; }
+    /// Make a reference to the object held by c.
     SSRef<T>& operator=(const DCRefBase & c) {
         DCRef<T>::operator=(c); return *this; }
+    /// Make a reference to the object held by c.
     SSRef<T>& operator=(const SSRef<T>&c) {
         DCRef<T>::operator=(c); return *this; }
+    /// Restore the object held in s.
     SSRef (StateIn&s) { restore_state(s); }
+    /// Return a SavableState pointer to the contained object.
     SavableState *sspointer() { return p; }
-    //. Restore the state of the reference.
+    /** Restore the state of the reference from a StateIn
+        with an object directory. */
     void dir_restore_state(StateIn& si, const char *objectname,
                            const char *keyword = 0) {
       SavableState* ss
@@ -60,7 +74,7 @@ class SSRef: public DCRef<T>, public SSRefBase {
     };
 };
 
-/////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

@@ -44,34 +44,40 @@
 
 class Identity;
 
-//. Identifier's are used to distinguish and order objects.  On
-//. many architectures a pointer to the object will suffice, but
-//. the C++ standard only guarantees that this works for two pointers
-//. pointing within the same structure or array.  Classes need to
-//. inherit from Identity to use this mechanism.  Identity,
-//. Identifier, and the shorthand boolean operations may have to
-//. be modified for some different architectures.
+/** Identifier's are used to distinguish and order objects.  On many
+    architectures a pointer to the object will suffice, but the C++
+    standard only guarantees that this works for two pointers pointing
+    within the same structure or array.  Classes need to inherit from
+    Identity to use this mechanism.  Identity, Identifier, and the
+    shorthand boolean operations may have to be modified for certain
+    architectures.  */
 class Identifier {
   private:
     const void* id;
   public:
-    //. Create an \clsnm{Identifier} for a null object.
+    /// Create an Identifier for a null object.
     Identifier(): id(0) {}
-    //. Create an \clsnm{Identifier} for the given object.
+    /// Create an Identifier for the given object.
     Identifier(const Identity* i): id((void*)i) {}
+    /// Create an Identifier for the given object.
     Identifier(const Identifier& i): id(i.id) {}
-    //. The destructor does nothing.
+    /// The destructor does nothing.
     ~Identifier() {}
 
-    //. Assign to the given \clsnm{Identifier}.
+    /// Assign to the given Identifier.
     void operator = (const Identifier& i) { id = i.id; }
 
-    //. Ordering relationships for objects.
+    /// Less than.
     int operator < (const Identifier&i) const { return id < i.id; }
+    /// Greater than.
     int operator > (const Identifier&i) const { return id > i.id; }
+    /// Equal.
     int operator == (const Identifier&i) const { return id == i.id; }
+    /// Less than or equal.
     int operator <= (const Identifier&i) const { return id <= i.id; }
+    /// Greater than or equal.
     int operator >= (const Identifier&i) const { return id >= i.id; }
+    /// Not equal.
     int operator != (const Identifier&i) const { return id != i.id; }
 
     void print(ostream&) const;
@@ -79,27 +85,34 @@ class Identifier {
 
 ostream & operator << (ostream &o, const Identifier &i);
 
-//. \clsnm{Identity} gives derivative objects the ability to have
-//. a unique identity and ordering relationship to all other
-//. objects.
-//. Normally \clsnm{Identity} must be inherited from virtually if multiple
-//. inheritance is to be used.  This breaks certain compilers so
-//. \srccd{NO\_VIRTUAL\_BASES} must be defined in these cases.  Not
-//. everything will work under these circumstances.
+/** Identity gives objects a unique identity and ordering relationship
+ relative to all other objects.
+
+ Normally Identity must be virtually inherited if multiple inheritance is
+ to be used.  This breaks certain compilers so NO_VIRTUAL_BASES must be
+ defined in these cases.  Not everything will work under these
+ circumstances.  */
 class Identity {
   public:
     virtual ~Identity();
-    //. Return the \clsnmref{Identifier} for this argument.
-    //. Usually this is just the pointer to the object.
+    /** Return the Identifier for this argument.
+        Usually this is just the pointer to the object. */
     Identifier identifier() { return this; }
 };
-//. Shorthand boolean operation for pointer arguments
+/// Less than for two Identity pointers.
 inline int lt(const Identity*i, const Identity*j) { return i < j; }
+/// Greater than for two Identity pointers.
 inline int gt(const Identity*i, const Identity*j) { return i > j; }
+/// Less than or equal for two Identity pointers.
 inline int le(const Identity*i, const Identity*j) { return i <= j; }
+/// Greater than or equal for two Identity pointers.
 inline int ge(const Identity*i, const Identity*j) { return i >= j; }
+/// Equal for two Identity pointers.
 inline int eq(const Identity*i, const Identity*j) { return i == j; }
+/// Not equal for two Identity pointers.
 inline int ne(const Identity*i, const Identity*j) { return i != j; }
+/** Compare for two Identity pointers.  Returns -1, 0, or 1, like
+    the C library function strcmp. */
 inline int cmp(const Identity*i, const Identity*j)
 {
   return (i==j)?0:((i<j)?-1:1);

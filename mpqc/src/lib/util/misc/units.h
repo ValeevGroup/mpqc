@@ -38,7 +38,7 @@
 
 SavableState_REF_fwddec(Units);
 
-//. The \clsnm{Units} class is used to perform unit converions.
+/// The Units class is used to perform unit converions.
 class Units: public SavableState {
 #define CLASSNAME Units
 #define HAVE_STATEIN_CTOR
@@ -52,20 +52,32 @@ class Units: public SavableState {
   public:
     enum Storage { Steal, Copy };
 
+    /// Create using a string representation, like "kcal/mol".
     Units(const char *strrep);
+    /** Create using a string representation, like "kcal/mol".
+        if Units::Steal is given is the second argment, the new
+        Units object will delete the strrep argument when it is
+        destroyed. */
     Units(char *strrep, Units::Storage = Units::Copy);
-    Units(StateIn&);
+    /// Restore the state of a Units object from s.
+    Units(StateIn& s);
     ~Units();
 
-    double to(const RefUnits &) const;
-    double from(const RefUnits &) const;
+    /// The conversion factor from this to u.
+    double to(const RefUnits &u) const;
+    /// The conversion factor from u to this.
+    double from(const RefUnits &u) const;
 
+    /// The conversion factor from this to atomic units.
     double to_atomic_units() const;
+    /// The conversion factor from atom units to this.
     double from_atomic_units() const;
 
+    /// The string representation of the units.
     const char *string_rep() const;
 
-    void save_data_state(StateOut&);
+    /// Save the state of the Units object to s.
+    void save_data_state(StateOut&s);
 };
 SavableState_REF_dec(Units);
 

@@ -66,27 +66,28 @@ class KeyValKeyword {
 
 REF_fwddec(KeyValValue);
 
-//.
-// The \clsnm{KeyVal} class is designed to simplify the process of allowing
-// a user to specify keyword/value associations to a C++ program.  A
-// flexible input style and ease of use for the programmer is achieved with
-// this method.  Keywords are represented by null terminated character arrays.
-// The keywords are organized hierarchially, in a manner similar to the way
-// that many file systems are organized.  One character is special,
-// '\srccd{:}', which is used to separate the various hierarchial labels,
-// which are referred to as ``segments'', in the keyword.
-//
-// A convention for specifying arrays is provided by \clsnm{KeyVal}.  Each
-// index of the array is given by appending a segment containing the
-// character representation of the index.  Thus, \srccd{array:3:4} would be
-// a the keyword corresponding to third row and fourth column of
-// \srccd{array}.
-//
-// To allow the \clsnm{KeyVal} class to have associations that can represent
-// data for classes, the keyword can be associated with a class as well as
-// a value.  This permits polymorphic data to be unambiguously represented
-// by keyword/value associations.  Most use of \clsnm{KeyVal} need not be
-// concerned with this.
+/**
+ The KeyVal class is designed to simplify the process of allowing
+ a user to specify keyword/value associations to a C++ program.  A
+ flexible input style and ease of use for the programmer is achieved with
+ this method.  Keywords are represented by null terminated character arrays.
+ The keywords are organized hierarchially, in a manner similar to the way
+ that many file systems are organized.  One character is special,
+ ":", which is used to separate the various hierarchial labels,
+ which are referred to as "segments", in the keyword.
+
+ A convention for specifying arrays is provided by KeyVal.  Each
+ index of the array is given by appending a segment containing the
+ character representation of the index.  Thus, "array:3:4" would be
+ a the keyword corresponding to fourth row and fifth column of
+ "array", since indexing starts at zero.
+
+ To allow the KeyVal class to have associations that can represent
+ data for classes, the keyword can be associated with a class as well as
+ a value.  This permits polymorphic data to be unambiguously represented
+ by keyword/value associations.  Most use of KeyVal need not be
+ concerned with this.
+*/
 class KeyVal: public VRefCount {
     // these classes need to directly access the key_value member
     friend class AggregateKeyVal;
@@ -105,30 +106,31 @@ class KeyVal: public VRefCount {
 
     KeyVal();
 
-    //. Set the current error condition.
+    /// Set the current error condition.
     void seterror(KeyValError err);
+    /// Set the current error condition.
     void seterror(KeyValValue::KeyValValueError err);
 
-    //. Ultimately called by \srccd{exists}.
+    /// Ultimately called by exists.
     virtual int    key_exists(const char*) = 0;
-    //. Ultimately called by \srccd{count}.
+    /// Ultimately called by count.
     virtual int    key_count(const char* =0);
-    //. Ultimately called by \srccd{value}.
+    /// Ultimately called by value.
     virtual RefKeyValValue key_value(const char*,
                                      const KeyValValue& def) = 0;
-    //. Ultimately called by \srccd{booleanvalue}.
+    /// Ultimately called by booleanvalue.
     virtual int    key_booleanvalue(const char*,const KeyValValue& def);
-    //. Ultimately called by \srccd{doublevalue}.
+    /// Ultimately called by doublevalue.
     virtual double key_doublevalue(const char* key,const KeyValValue& def);
-    //. Ultimately called by \srccd{floatvalue}.
+    /// Ultimately called by floatvalue.
     virtual float  key_floatvalue(const char* key,const KeyValValue& def);
-    //. Ultimately called by \srccd{charvalue}.
+    /// Ultimately called by charvalue.
     virtual char   key_charvalue(const char* key,const KeyValValue& def);
-    //. Ultimately called by \srccd{intvalue}.
+    /// Ultimately called by intvalue.
     virtual int    key_intvalue(const char* key,const KeyValValue& def);
-    //. Ultimately called by \srccd{pcharvalue}.
+    /// Ultimately called by pcharvalue.
     virtual char*  key_pcharvalue(const char* key,const KeyValValue& def);
-    //. Ultimately called by \srccd{describedclassvalue}.
+    /// Ultimately called by describedclassvalue.
     virtual RefDescribedClass key_describedclassvalue(const char* key,
                                                       const KeyValValue& def);
 
@@ -139,38 +141,37 @@ class KeyVal: public VRefCount {
     // then the overloaded functions will be hidden.  The key_... functions
     // should be overridden instead.
 
-    //. This takes as its only argument a keyword.
-    // Returns 1 if the keyword has a value and 0 otherwise.
+    /** This takes as its only argument a keyword.
+        Returns 1 if the keyword has a value and 0 otherwise. */
     int    exists(const char*);
-    //. If the value of a keyword is an array, then return its length.
-    // If no arguments are given then the top level will be checked to
-    // see if it is an array and, if so, the number of elements will be
-    // counted.
+    /** If the value of a keyword is an array, then return its length.
+        If no arguments are given then the top level will be checked to
+        see if it is an array and, if so, the number of elements will be
+        counted. */
     int    count(const char* =0);
-    //. Return the value associated with the keyword.
+    /// Return the value associated with the keyword.
     RefKeyValValue value(const char* = 0,
                          const KeyValValue& def=KeyValValue());
-    //. Returns the boolean value (0 = false, 1 = true) of \vrbl{key}.
+    /// Returns the boolean value (0 = false, 1 = true) of key.
     int    booleanvalue(const char* key = 0,
                         const KeyValValue& def=KeyValValueboolean());
-    //. Returns the double value of \vrbl{key}.
+    /// Returns the double value of key.
     double doublevalue(const char* key = 0,
                        const KeyValValue& def=KeyValValuedouble());
-    //. Returns the float value of \vrbl{key}.
+    /// Returns the float value of key.
     float  floatvalue(const char* key = 0,
                       const KeyValValue& def=KeyValValuefloat());
-    //. Returns the char value of \vrbl{key}.
+    /// Returns the char value of key.
     char   charvalue(const char* key = 0,
                      const KeyValValue& def=KeyValValuechar());
-    //. Returns the int value of \vrbl{key}.
+    /// Returns the int value of key.
     int    intvalue(const char* key = 0,
                     const KeyValValue& def=KeyValValueint());
-    //. Returns a copy of the string representation of the \vrbl{key}'s
-    // value. Storage for the copy is obtained with new.
+    /** Returns a copy of the string representation of the key's
+        value. Storage for the copy is obtained with new. */
     char*  pcharvalue(const char* key = 0,
                       const KeyValValue& def=KeyValValuepchar());
-    //. Returns a reference to an object of type DescribedClass
-    // (@pxref{The DescribedClass Class}).
+    /// Returns a reference to an object of type DescribedClass.
     RefDescribedClass describedclassvalue(const char* key = 0,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
@@ -255,26 +256,26 @@ class KeyVal: public VRefCount {
     char*  Va_pcharvalue(const char* key,int,...);
     RefDescribedClass Va_describedclassvalue(const char* key,int,...);
 
-    //. Return the current error condition.
+    /// Return the current error condition.
     KeyValError error();
-    //. Return a textual representation of \vrbl{err}.  The current error
-    // condition will be used if the argument is omitted.
+    /// Return a textual representation of err.
     char*  errormsg(KeyValError err);
-    //. Return a textual representation of the current error.
+    /// Return a textual representation of the current error.
     char*  errormsg();
 
     virtual void errortrace(ostream&fp=cerr);
     virtual void dump(ostream&fp=cerr);
 
-    //. Print keywords that were never looked at, if possible.
+    /// Print keywords that were never looked at, if possible.
     virtual void print_unseen(ostream&fp=cout);
-    //. Return 1 if there were unseen keywords, 0 if there are
-    //none, or -1 this keyval doesn't keep track of unseen
-    //keywords.
+    /** Return 1 if there were unseen keywords, 0 if there are
+        none, or -1 this keyval doesn't keep track of unseen
+        keywords. */
     virtual int have_unseen();
 
-    //. Control printing of assignments.
+    /// Control printing of assignments.
     void verbose(int v) { verbose_ = v; }
+    /// Returns nonzero if assignments are printed.
     int verbose() const { return verbose_; }
 };
 
@@ -394,9 +395,8 @@ class PrefixKeyVal : public KeyVal {
 };
 
 class IPV2;
-//. The \clsnm{ParsedKeyVal} class converts textual information into
-//keyword/value assocations.  The parsing is done with an \clsnm{IPV2}
-//object, which is the encapsulation of the ipv2 C library.
+/** Converts textual information into keyword/value assocations.  The
+    parsing is done with an IPV2 object */
 class ParsedKeyVal : public StringKeyVal {
   private:
     int nfile;
@@ -407,34 +407,36 @@ class ParsedKeyVal : public StringKeyVal {
     ParsedKeyVal(const ParsedKeyVal&);
     void operator=(const ParsedKeyVal&);
   public:
-    //. Create an empty \clsnm{ParsedKeyVal}.
+    /// Create an empty ParsedKeyVal.
     ParsedKeyVal();
-    //. Parse the given input file.
-    ParsedKeyVal(const char*);
-    //. Read input from the given \clsnm{istream}.
-    ParsedKeyVal(istream&);
-    //. Use the given \clsnm{IPV2*} object.  The new \clsnm{ParsedKeyVal}
-    //takes wnership of the passed \clsnm{IPV2} object.
+    /// Parse the given input file.
+    ParsedKeyVal(const char*file);
+    /// Read input from s.
+    ParsedKeyVal(istream&s);
+    /** Use the given IPV2* object.  The new ParsedKeyVal
+        takes wnership of the passed IPV2 object. */
     ParsedKeyVal(IPV2*);
-    //. This ctor is given a string which is used to form keywords
-    // that are sought in the keyval argument.  The associated values
-    // are used to construct file names that are used to initialize
-    // the parsedkeyval.  The keywords sought are string'dir' for the
-    // directory prefix and string'files' for an array of file names.
+    /** This ctor is given a string which is used to form keywords
+        that are sought in the keyval argument.  The associated values
+        are used to construct file names that are used to initialize
+        the ParsedKeyVal.  The keywords sought are string'dir' for the
+        directory prefix and string'files' for an array of file names. */
     ParsedKeyVal(const char*,const RefKeyVal&);
-    //. Cleanup, deleting the \clsnm{IPV2} object.
+    /// Cleanup, deleting the IPV2 object.
     ~ParsedKeyVal();
 
-    //. This is like the \srccd{ParsedKeyVal(const char*,const RefKeyVal&)}
-    // ctor, but writes the contents of the files to the given ostream.
+    /** This is like the ParsedKeyVal(const char*,const RefKeyVal&)
+        ctor, but writes the contents of the files to the given ostream. */
     static void cat_files(const char*,const RefKeyVal&,ostream &o);
 
-    //. Read input data from the given filename, stream, or string.
+    /// Read input data from the given filename
     void read(const char*);
+    /// Read input data from the given stream.
     void read(istream&);
+    /// Read input data from the given string.
     void parse_string(const char *);
 
-    //. Overrides of parent members.
+    // Overrides of parent members.
     const char* stringvalue(const char*);
     const char* classname(const char*);
     const char* truekeyword(const char*);

@@ -34,7 +34,8 @@
 
 #include <util/state/state_file.h>
 
-//. \clsnm{StateOutBin} is used to write binary files.
+/** Save state to a binary file.
+ */
 class StateOutBin: public StateOutFile {
 #   define CLASSNAME StateOutBin
 #   include <util/class/classd.h>
@@ -43,9 +44,9 @@ class StateOutBin: public StateOutFile {
     // do not allow copy constructor or assignment
     StateOutBin(const StateOutBin&);
     void operator=(const StateOutBin&);
-    //. This cannot be overridden, since it is called
-    //by this classes ctor (implicitly, through put_header()).
-    //This goes for some other members too.
+    /** This cannot be overridden, since it is called
+        by this classes ctor (implicitly, through put_header()).
+        This goes for some other members too. */
     int put_array_void(const void*,int);
   public:
     StateOutBin();
@@ -63,8 +64,8 @@ class StateOutBin: public StateOutFile {
     int seekable();
   };
 
-//. \clsnm{StateInBin} is used to read objects written with
-//. \clsnm{StateOutBin}.
+/** Read objects written with StateOutBin.
+ */
 class StateInBin: public StateInFile {
 #   define CLASSNAME StateInBin
 #   define HAVE_KEYVAL_CTOR
@@ -74,9 +75,9 @@ class StateInBin: public StateInFile {
     // do not allow copy constructor or assignment
     StateInBin(const StateInBin&);
     void operator=(const StateInBin&);
-    //. These cannot be overridden, since they are called
-    //by this classes ctor (implicitly, through get_header()).
-    //This goes for other some members too.
+    /** These cannot be overridden, since they are called
+        by this classes ctor (implicitly, through get_header()).
+        This goes for other some members too. */
     int get_array_void(void*,int);
   public:
     StateInBin();

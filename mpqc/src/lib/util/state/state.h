@@ -34,7 +34,16 @@
 
 #include <util/class/class.h>
 
+/** This macro declares a smart pointer type with savable state
+    capabilities.  If the class name is T, the smart pointer type will be
+    RefT.  */
+
 #define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
+
+/** This macro gives the class definition a smart pointer type with savable
+    state capabilities.  If the class name is T, the smart pointer type
+    will be RefT.  */
+
 #define SavableState_REF_def(T) SavableState_named_REF_def(Ref ## T,T)
 
 #ifdef USE_REF_MACROS
@@ -75,8 +84,8 @@ class TranslateDataOut;
 #  define maybe_SavableState_alone(s) :SavableState(s)
 #endif
 
-//. \clsnm{SavableState} give objects of derivative classes the
-//. ability to save and restore their state or to send their state.
+/** Base class for objects that can save/restore state.
+ */
 class SavableState: public DescribedClass {
 #   define CLASSNAME SavableState
 #   include <util/class/classda.h>
@@ -92,51 +101,50 @@ class SavableState: public DescribedClass {
   public:
     virtual ~SavableState();
 
-    //// save functions
+    // save functions
 
-    //. Save the state of the object as specified by the
-    //. \clsnmref{StateOut} object.  This routine saves the state
-    //. of the object (which includes the nonvirtual bases),
-    //. the virtual bases, and type information.  The default
-    //. implementation should be adequate.
+    /** Save the state of the object as specified by the
+        StateOut object.  This routine saves the state
+        of the object (which includes the nonvirtual bases),
+        the virtual bases, and type information.  The default
+        implementation should be adequate. */
     void save_state(StateOut&);
 
     // Like save_state(StateOut&), but will handle null pointers correctly.
     static void save_state(SavableState*s, StateOut&);
 
-    //. This can be used for saving state when the exact type of
-    //. the object is known for both the save and the restore.  To
-    //. restore objects saved in this way the user must directly
-    //. invoke the object's \srccd{\clsnmref{StateIn}\&} constructor.
+    /** This can be used for saving state when the exact type of
+        the object is known for both the save and the restore.  To
+        restore objects saved in this way the user must directly
+        invoke the object's StateIn& constructor. */
     void save_object_state(StateOut&);
 
-    //. Save the virtual bases for the object.
-    //. This must be done in the same order that the ctor
-    //. initializes the virtual bases.  This does not include
-    //. the DescribedClass and SavableState virtual base classes.
-    //. This must be implemented by the user if the class has other
-    //. virtual bases.  (These virtual bases must come after
-    //. \clsnm{SavableState}, if \clsnm{SavableState} is virtual.)
+    /** Save the virtual bases for the object.
+        This must be done in the same order that the ctor
+        initializes the virtual bases.  This does not include
+        the DescribedClass and SavableState virtual base classes.
+        This must be implemented by the user if the class has other
+        virtual bases.  (These virtual bases must come after
+        SavableState, if SavableState is virtual.) */
     virtual void save_vbase_state(StateOut&);
 
-    //. Save the base classes (with \srccd{save\_data\_state})
-    //. and the members
-    //. in the same order that the \clsnmref{StateIn} CTOR
-    //. initializes them.  This must be implemented by the derived
-    //. class if the class has data.
+    /** Save the base classes (with save_data_state) and the members in the
+        same order that the StateIn CTOR initializes them.  This must be
+        implemented by the derived class if the class has data. */
     virtual void save_data_state(StateOut&);
 
-    //// restore functions
+    // restore functions
 
-    //. These restores objects saved with \srccd{save\_state}.  The
-    //. exact type of the next object in \srccd{si} can be any
-    //. type publically derived from the \clsnm{SavableState}.
-    //. Derived classes implement a similar static function that
-    //. returns a pointer to the derived class.  If the objectname is
-    //. given the directory will be consulted to find and restore
-    //. that object.  If the keyword is given it is used to override
-    //. values while restoring.
+    /** Restores objects saved with save_state.  The
+        exact type of the next object in si can be any
+        type publically derived from the SavableState.
+        Derived classes implement a similar static function that
+        returns a pointer to the derived class.  If the objectname is
+        given the directory will be consulted to find and restore
+        that object. */
     static SavableState* restore_state(StateIn& si);
+    /** Like restore_state, but keyword is used to override
+        values while restoring. */
     static SavableState* key_restore_state(StateIn& si,
                                            const char *keyword);
     static SavableState* dir_restore_state(StateIn& si,
@@ -145,13 +153,10 @@ class SavableState: public DescribedClass {
 
   protected:
 
-    //. Each derived class \clsnmref{StateIn} CTOR handles the
-    //. restore corresponding to calling \srccd{save\_object\_state},
-    //. \srccd{save\_vbase\_state}, and \srccd{save\_data\_state}
-    //. listed above.  All derived class
-    //. \srccd{\clsnmref{StateIn}\&} constructors must invoke the
-    //. \srccd{\clsnm{SavableState}(\srccd{StateIn}\&)}
-    //. constructor.
+    /** Each derived class StateIn CTOR handles the restore corresponding
+        to calling save_object_state, save_vbase_state, and save_data_state
+        listed above.  All derived class StateIn& constructors must invoke
+        the SavableState(StateIn&) constructor. */
     SavableState(StateIn&);
   };
 
@@ -159,10 +164,10 @@ class SavableState: public DescribedClass {
 // yet declared.
 SavableState_REF_fwddec(SavableState);
 
-////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////
 
-//. \clsnm{SSRefBase} provides a few utility routines common to all
-//. \clsnmref{SSRef} template instantiations.
+/** Provides a few utility routines common to all SSRef instantiations.
+ */
 class SSRefBase {
   protected:
     void check_castdown_result(void*, SavableState *, const ClassDesc *);
@@ -177,7 +182,7 @@ class SSRefBase {
       dir_restore_state(si,0,0);
     }
     void save_data_state(StateOut&);
-    //. Save the state of the reference.
+    /// Save the state of the reference.
     void save_state(StateOut&);
 };
 
@@ -189,7 +194,7 @@ class SSRefBase {
 
 SavableState_REF_dec(SavableState);
 
-////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////
 
 #ifndef __GNUC__
 static SavableState * att_hack_job(StateIn&si)

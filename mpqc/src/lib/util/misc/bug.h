@@ -38,10 +38,10 @@
 
 SavableState_REF_fwddec(Debugger);
 
-//. The \clsnm{Debugger} class assists programmers in finding
-// bugs in applications.  It can (sometimes) fork a debugger
-// and print a traceback when a signal is received or at the
-// request of the programmer.
+/** The Debugger class assists programmers in finding
+    bugs in applications.  It can (sometimes) fork a debugger
+    and print a traceback when a signal is received or at the
+    request of the programmer. */
 class Debugger: public SavableState {
 #define CLASSNAME Debugger
 #define HAVE_STATEIN_CTOR
@@ -71,62 +71,55 @@ class Debugger: public SavableState {
     Debugger(StateIn&);
     ~Debugger();
 
-    //. The \srccd{debug} member attempts to start a debugger
-    // running on the current process.
+    /** The debug member attempts to start a debugger
+        running on the current process. */
     virtual void debug(const char *reason = 0);
-    //. The \srccd{traceback} member attempts a stack traceback
-    // for the current process.  A symbol table must be saved for
-    // the executable if any sense is to be made of the traceback.
-    // Tracebacks are currently available only for a limited number
-    // of architectures.
+    /** The traceback member attempts a stack traceback
+     for the current process.  A symbol table must be saved for
+     the executable if any sense is to be made of the traceback.
+     Tracebacks are currently available only for a limited number
+     of architectures. */
     virtual void traceback(const char *reason = 0);
-    //. These set up the desired behavior upon receipt of a signal.
-    // The default is that debug and traceback are both on.  Pass
-    // these routines a zero to turn off these features.
+    /// Turn on or off debugging on a signel.  The default is on.
     virtual void set_debug_on_signal(int);
+    /// Turn on or off traceback on a signel.  The default is on.
     virtual void set_traceback_on_signal(int);
-    //. After a signal is processed the default action is to
-    // exit the program.  This can be changed by calling
-    // \srccd{set\_exit\_on\_signal} with a nonzero argument.
+    /// Turn on or off exit after a signel.  The default is on.
     virtual void set_exit_on_signal(int);
-    //. After the debugger is started the default is to wait
-    // in a infinite loop.  Call this if with a nonzero argument
-    // if you don't want to enter this loop.
+    /** Turn on or off running an infinite loop after the debugger is started.
+        This loop gives the debugger a chance to attack to the process.
+        The default is on. */
     virtual void set_wait_for_debugger(int);
 
-    //. The debugger should start a debugger when signal @var{sig}
-    // is caught.
+    /// The Debugger will be actived when sig is caught.
     virtual void handle(int sig);
-    //. This calls \srccd{handle} with all of the major signals.
+    /// This calls handle(int) with all of the major signals.
     virtual void handle_defaults();
 
-    //. This sets a prefix which preceeds all messages printing
-    // by \clsnm{Debugger}.
+    /// This sets a prefix which preceeds all messages printing by Debugger.
     virtual void set_prefix(const char *p);
-    //. Set the prefix to the decimal represention of @var{p}
-    // followed by a ``: ''.
+    /// Set the prefix to the decimal represention of p followed by a ": ".
     virtual void set_prefix(int p);
 
-    //. Sets the command to be exectuted with \srccd{debug} is called.
-    // The character sequence ``\$(EXEC)'' is replaced by the executable
-    // name (see \srccd{set\_exec}), ``\$(PID)'' is replaced by the
-    // current process id, and ``\$(PREFIX)'' is replaced by the
-    // prefix.
+    /** Sets the command to be exectuted when debug is called.
+        The character sequence "$(EXEC)" is replaced by the executable
+        name (see set_exec), "$(PID)" is replaced by the
+        current process id, and "$(PREFIX)" is replaced by the
+        prefix. */
     virtual void set_cmd(const char *);
-    //. Calls \srccd{set\_cmd} with a hopefully suitable default.
+    /// Calls set_cmd with a hopefully suitable default.
     virtual void default_cmd();
-    //. Set the name of the exectuble for the current process.
-    // It is up to the programmer to set this, even if the \clsnm{Debugger}
-    // is initialized with the \clsnmref{KeyVal} constructor.
+    /** Set the name of the exectuble for the current process.
+        It is up to the programmer to set this, even if the Debugger
+        is initialized with the KeyVal constructor. */
     virtual void set_exec(const char *);
 
-    //. Called with signal @var{sig} is received.  This will call
-    // \srccd{debug}.  This is mainly for internal use.
+    /// Called with signal sig is received.  This is mainly for internal use.
     virtual void got_signal(int sig);
 
-    //. Set the global default debugger.  The initial value is null.
+    /// Set the global default debugger.  The initial value is null.
     static void set_default_debugger(const RefDebugger &);
-    //. Return the global default debugger.
+    /// Return the global default debugger.
     static Debugger *default_debugger();
 
     void save_data_state(StateOut&);

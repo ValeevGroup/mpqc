@@ -38,21 +38,25 @@
 #define BIGENDIAN 0
 #endif
 
-//. This does generic data translation.
+/** Generic data translation.
+ */
 class TranslateData {
   public:
     TranslateData();
     virtual ~TranslateData();
 
-    //. Returns a code for the type of format for the external data.
+    /// Returns a code for the type of format for the external data.
     virtual char format_code();
 
-    //. A virtual constructor that choses a specialization based on
-    //the format code.
+    /** A virtual constructor that choses a specialization based on
+        the format code. */
     static TranslateData *vctor(char code);
 
-    //. The in-place translation routines.
+    /** Translates to native format in-place.
+        Similar routines exist for all the basic types. */
     virtual void to_native  (char *,   int n);
+    /** Translates to external format in-place.
+        Similar routines exist for all the basic types. */
     virtual void to_external(char *,   int n);
     virtual void to_native  (short *,  int n);
     virtual void to_external(short *,  int n);
@@ -67,9 +71,12 @@ class TranslateData {
     virtual void to_native  (double *, int n);
     virtual void to_external(double *, int n);
 
-    //. The buffered translation routines.
-    virtual void to_native  (char *,   const void *,   int n);
-    virtual void to_external(void *,   const char *,   int n);
+    /** Translates to native format.
+        Similar routines exist for all the basic types. */
+    virtual void to_native  (char *target,   const void *source,   int n);
+    /** Translates to external format.
+        Similar routines exist for all the basic types. */
+    virtual void to_external(void *target,   const char *source,   int n);
     virtual void to_native  (short *,  const void *,   int n);
     virtual void to_external(void *,   const short *,  int n);
     virtual void to_native  (unsigned int *,    const void *,   int n);
@@ -84,18 +91,19 @@ class TranslateData {
     virtual void to_external(void *,   const double *, int n);
 };
 
-//. This does data translation to an external representation with
-//bytes swapped.
+/** Data translation to an external representation with bytes swapped.
+ */
 class TranslateDataByteSwap: public TranslateData {
   public:
     TranslateDataByteSwap();
     virtual ~TranslateDataByteSwap();
 
-    //. Returns a code for the type of format for the external data.
+    /// Returns a code for the type of format for the external data.
     virtual char format_code();
 
-    //. The in-place translation routines.
+    /// Overridden translation routines exist for all the basic types.
     virtual void to_native  (char *,   int n);
+    /// Overridden translation routines exist for all the basic types.
     virtual void to_external(char *,   int n);
     virtual void to_native  (short *,  int n);
     virtual void to_external(short *,  int n);
@@ -110,8 +118,9 @@ class TranslateDataByteSwap: public TranslateData {
     virtual void to_native  (double *, int n);
     virtual void to_external(double *, int n);
 
-    //. The buffered translation routines.
+    /// Overridden translation routines exist for all the basic types.
     virtual void to_native  (char *,   const void *,   int n);
+    /// Overridden translation routines exist for all the basic types.
     virtual void to_external(void *,   const char *,   int n);
     virtual void to_native  (short *,  const void *,   int n);
     virtual void to_external(void *,   const short *,  int n);
@@ -137,8 +146,9 @@ typedef TranslateData TranslateDataLittleEndian;
 
 class StateOut;
 
-//. \clsnm{TranslateDataOut} is used to convert data to other formats
-//and injected into the StateOut given to the constructor.
+/** Convert data to other formats.
+    The generated data is inserted into a StateOut object.
+ */
 class TranslateDataOut {
   private:
     StateOut *so_;
@@ -149,11 +159,13 @@ class TranslateDataOut {
   protected:
     int putv(const void*d,int s);
   public:
-    //. The t argument will be deleted by this.
-    TranslateDataOut(StateOut*, TranslateData*t);
+    /** Write to s using the translation defined by t.
+        The t argument will be deleted by this. */
+    TranslateDataOut(StateOut*s, TranslateData*t);
     virtual ~TranslateDataOut();
 
-    //. These members to translate and write the data.
+    /** Translate and write the data. A similar member exists for
+        each basic type. */
     virtual int put(const char*,int);
     virtual int put(const short*,int);
     virtual int put(const unsigned int*,int);
@@ -162,13 +174,15 @@ class TranslateDataOut {
     virtual int put(const float*,int);
     virtual int put(const double*,int);
 
+    /// Returns the translator.
     TranslateData *translator() { return translate_; }
 };
 
 class StateIn;
 
-//. \clsnm{TranslateDataIn} is used to convert data from other formats
-//and injected into the StateIn given to the constructor.
+/** Convert data from other formats.
+    The data is taken from a StateIn object.
+ */
 class TranslateDataIn {
   private:
     StateIn *si_;
@@ -176,11 +190,13 @@ class TranslateDataIn {
   protected:
     int getv(void*d,int s);
   public:
-    //. The t argument will be deleted by this.
-    TranslateDataIn(StateIn*, TranslateData *t);
+    /** Input data will come from s.  The t argument will be deleted by this.
+     */
+    TranslateDataIn(StateIn*s, TranslateData *t);
     virtual ~TranslateDataIn();
 
-    //. These members read and translate.
+    /** Read and translate data.  A similar member exists for each basic
+        type. */
     virtual int get(char*,int);
     virtual int get(short*,int);
     virtual int get(unsigned int*,int);
@@ -189,6 +205,7 @@ class TranslateDataIn {
     virtual int get(float*,int);
     virtual int get(double*,int);
 
+    /// Return the translator.
     TranslateData *translator() { return translate_; }
 };
 

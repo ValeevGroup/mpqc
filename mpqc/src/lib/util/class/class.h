@@ -116,15 +116,16 @@ class ParentClasses
 REF_fwddec(KeyVal);
 class StateIn;
 
-//. This class is used to contain information about classes.
-//. Each \clsnmref{DescribedClass} type has a static \clsnm{ClassDesc}
-//. member.  This member has lists of the parents, children
-//. and virtual parents for each class.  The
-//. \clsnm{ClassDesc} class also has a static member that is
-//. a list of all described classes in the system.  These
-//. lists are constructed as the constructors for the static
-//. \clsnm{ClassDesc} members for each class are called and
-//. are completed before \clsnm{main} is entered.
+/** This class is used to contain information about classes.
+ Each DescribedClass type has a static ClassDesc
+ member.  This member has lists of the parents, children
+ and virtual parents for each class.  The
+ ClassDesc class also has a static member that is
+ a list of all described classes in the system.  These
+ lists are constructed as the constructors for the static
+ ClassDesc members for each class are called and
+ are completed before main is entered.
+*/
 class ClassDesc: public Identity {
     friend class ParentClasses;
   private:
@@ -155,54 +156,49 @@ class ClassDesc: public Identity {
     static AVLMap<ClassKey,ClassDescP>& all();
     const ParentClasses& parents() const { return parents_; }
 
-    //. Writes a list of all of the classes to \srccd{stdout}.
+    /// Writes a list of all of the classes to cout.
     static void list_all_classes();
-    //. Given the name of the class, return a pointer to the
-    //. class descriptor.
+    /** Given the name of the class, return a pointer to the
+        class descriptor. */
     static ClassDesc* name_to_class_desc(const char*);
-    //. Returns the name of the class.
+    /// Returns the name of the class.
     const char* name() const { return classname_; }
-    //. Returns the version number of the class.
+    /// Returns the version number of the class.
     int version() const { return version_; }
-    //. This member has been replaced by \srccd{create()}.
+    /// This member has been replaced by create().
     DescribedClass* create_described_class() const;
-    //. Create an instance of \clsnmref{DescribedClass} with
-    //. exact type equal to the class to which this class
-    //. descriptor belongs.  The constructor which takes no
-    //. arguments is used.  If this constructor doesn't exist or
-    //. a static function that calls it with \srccd{new} wasn't
-    //. given to this \clsnm{ClassDesc} when it was created, then
-    //. 0 will be returned.
+    /** Create an instance of DescribedClass with
+        exact type equal to the class to which this class
+        descriptor belongs.  The constructor which takes no
+        arguments is used.  If this constructor doesn't exist or
+        a static function that calls it with new wasn't
+        given to this ClassDesc when it was created, then
+        0 will be returned. */
     virtual DescribedClass* create() const;
-    //. Create an instance of \clsnmref{DescribedClass} with
-    //. exact type equal to the class to which this class
-    //. descriptor belongs.  The \clsnmref{KeyVal}\srccd{\&}
-    //. constructor is used.  If this constructor doesn't exist
-    //. or a static function that calls it with \srccd{new}
-    //. wasn't passed to this \clsnm{ClassDesc}, then 0 will be
-    //. returned.
+    /** Create an instance of DescribedClass with exact type equal to the
+        class to which this class descriptor belongs.  The KeyVal&
+        constructor is used.  If this constructor doesn't exist or a static
+        function that calls it with new wasn't passed to this ClassDesc,
+        then 0 will be returned. */
     virtual DescribedClass* create(const RefKeyVal&) const;
-    //. Create an instance of \clsnmref{DescribedClass} with exact
-    //. type equal to the class to which this class descriptor
-    //. belongs.  The \clsnmref{StateIn}\srccd{\&} constructor is used.
-    //. If this constructor doesn't
-    //. exist or a static function that calls it with \srccd{new}
-    //. wasn't passed to this \clsnm{ClassDesc}, then 0
-    //. will be returned.
+    /** Create an instance of DescribedClass with exact type equal to the
+        class to which this class descriptor belongs.  The StateIn&
+        constructor is used.  If this constructor doesn't exist or a static
+        function that calls it with new wasn't passed to this ClassDesc,
+        then 0 will be returned. */
     virtual DescribedClass* create(StateIn&) const;
 
-    //. Attempt to dynamically load the shared object file for
-    //. \vrbl{classname}
+    /** Attempt to dynamically load the shared object file for
+        classname. */
     static int load_class(const char* classname);
 };
 
-//. Classes which need runtime information about themselves and
-//. their relationship to other classes can virtually inherit
-//. from \clsnm{DescribedClass}.  This will provide the class
-//. with the ability to query its name, query its version, and
-//. perform safe castdown operations.  Furthermore, the class's
-//. static \clsnmref{ClassDesc} can be obtained which permits
-//. several other operations.
+/** Classes which need runtime information about themselves and their
+    relationship to other classes can virtually inherit from
+    DescribedClass.  This will provide the class with the ability to query
+    its name, query its version, and perform safe castdown operations.
+    Furthermore, the class's static ClassDesc can be obtained
+    which permits several other operations. */
 class DescribedClass : public VRefCount {
   private:
     static ClassDesc class_desc_;
@@ -211,40 +207,37 @@ class DescribedClass : public VRefCount {
     DescribedClass(const DescribedClass&);
     DescribedClass& operator=(const DescribedClass&);
     virtual ~DescribedClass();
-    //. Returns the argument.  This member is more interesting
-    //. for types that derive from \clsnm{DescribedClass}.
-    //. In this case the \srccd{castdown} member converts a
-    //. \clsnm{DescribedClass} pointer to the derived type.
-    //. If the type of the pointer is not the same as or
-    //. (perhaps indirectly) derived from the type whose
-    //. \srccd{castdown} member is being called, then 0 is return.
-    //. The return type for derived class is a pointer to the
-    //. derived class.  This member is implemented by the
-    //. include files for derived types.
+    /** Returns the argument.  This member is more interesting for types
+        that derive from DescribedClass.  In this case the castdown member
+        converts a DescribedClass pointer to the derived type.  If the type
+        of the pointer is not the same as or (perhaps indirectly) derived
+        from the type whose castdown member is being called, then 0 is
+        return.  The return type for derived class is a pointer to the
+        derived class.  This member is implemented by the include files for
+        derived types. */
     static DescribedClass* castdown(DescribedClass*);
-    //. Returns a pointer to the \clsnmref{ClassDesc} for the
-    //. \clsnm{DescribedClass}.  Similar static members are
-    //. implemented for derivatives of \clsnm{DescribedClass}
-    //. by the provided include files.
+    /** Returns a pointer to the ClassDesc for the DescribedClass.  Similar
+        static members are implemented for derivatives of DescribedClass by
+        the provided include files. */
     static const ClassDesc* static_class_desc();
-    //. This returns the unique pointer to the
-    //. \clsnmref{ClassDesc} for the object.  For derived types,
-    //. this is declared and implemented for the programmer
-    //. by the provided include files.
+    /** This returns the unique pointer to the ClassDesc for the object.
+        For derived types, this is declared and implemented for the
+        programmer by the provided include files. */
     virtual const ClassDesc* class_desc() const;
-    //. Return the name of the object's exact type.
+    /// Return the name of the object's exact type.
     const char* class_name() const;
-    //. Return the version of the class.
+    /// Return the version of the class.
     int class_version() const;
-    //. This is a helper function that the programmer must override
-    //. for derived types.
+    /** This is a helper function that the programmer must override
+        for derived types. */
     virtual void* _castdown(const ClassDesc*);
-    //. These print the object.
+    /// Print the object.
     virtual void print(ostream& =cout) const;
   };
 
-//. \clsnm{DCRefBase} provides a few utility routines common to all
-//. \clsnmref{DCRef} template instantiations.
+/** DCRefBase provides a few utility routines common to all
+    DCRef template instantiations.
+*/
 class DCRefBase: private RefBase {
   protected:
     void reference(VRefCount *p);
@@ -252,14 +245,12 @@ class DCRefBase: private RefBase {
   public:
     DCRefBase() {}
     virtual ~DCRefBase();
-    //. Returns the \clsnmref{DescribedClass} pointer for the
-    //. contained object.
+    /// Returns the DescribedClass pointer for the contained object.
     virtual DescribedClass* parentpointer() const = 0;
-    //. Requires that a nonnull reference is held.  If not,
-    //. the program will abort.
+    /** Requires that a nonnull reference is held.  If not,
+        the program will abort. */
     void require_nonnull() const;
-    //. Ordering relations are provided using the \clsnmref{Identity}
-    //. class.
+    // Ordering relationships.
     int operator==(const DescribedClass*a) const;
     int operator!=(const DescribedClass*a) const;
     int operator>=(const DescribedClass*a) const;
@@ -272,7 +263,7 @@ class DCRefBase: private RefBase {
     int operator<=(const DCRefBase &a) const;
     int operator> (const DCRefBase &a) const;
     int operator< (const DCRefBase &a) const;
-    //. Miscellaneous utility functions.
+    // Miscellaneous utility functions.
     void warn(const char * msg) const;
     void warn_ref_to_stack() const;
     void warn_skip_stack_delete() const;

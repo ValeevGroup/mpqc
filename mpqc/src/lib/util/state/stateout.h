@@ -46,11 +46,13 @@ class StateOutData {
     StateOutData(): num(0), size(0), type(0), offset(0) {}
 };
 
-//. The \clsnm{StateOut} class serializes objects of types
-//. that derive from \clsnmref{SavableState}.  It keeps track
-//. of pointers to data so that two references to the same
-//. piece of data do not result in that data being sent to the
-//. output device two times.
+/** Serializes objects that derive from SavableState.
+
+    StateOut keeps track
+    of pointers to data so that two references to the same
+    piece of data do not result in that data being sent to the
+    output device two times.
+ */
 class StateOut: public DescribedClass {
 #   define CLASSNAME StateOut
 #   include <util/class/classda.h>
@@ -80,77 +82,76 @@ class StateOut: public DescribedClass {
     void have_classdesc() { have_cd_ = 1; }
     int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return !tmp; }
 
-    //. This will prepare \clsnm{StateOut} to output a pointer to
-    //. data.  It first checks to see if the data has already been
-    //. saved.  If it has, then a reference to this data is saved.
-    //. Otherwise the object is written out.
+    /** This will prepare StateOut to output a pointer to data.  It first
+        checks to see if the data has already been saved.  If it has, then
+        a reference to this data is saved.  Otherwise the object is written
+        out. */
     virtual int putobject(const RefSavableState &);
 
-    //. Write out information about the given \clsnmref{ClassDesc}.
+    /// Write out information about the given ClassDesc.
     virtual int put(const ClassDesc*);
   public:
     StateOut();
     virtual ~StateOut();
 
-    //. Write out header information.
+    /// Write out header information.
     virtual void put_header();
 
-    //. This is like \srccd{put} except the length of the \srccd{char}
-    //. array is determined by interpreting the character array as
-    //. a character string.
+    /** This is like put except the length of the char array is determined
+        by interpreting the character array as a character string. */
     virtual int putstring(const char*);
 
-    //. Write the given datum.
+    /// Write the given datum.
     virtual int put(char r);
     virtual int put(unsigned int r);
     virtual int put(int r);
     virtual int put(float r);
     virtual int put(double r);
-    //. Write the given array data.  Size information is also saved.  The
-    //data is allocated and read by the \srccd{get(T*&)} routines.
+    /** Write the given array data.  Size information is also saved.  The
+        data is allocated and read by the get(T*&) routines. */
     virtual int put(const char*,int);
     virtual int put(const unsigned int*,int);
     virtual int put(const int*,int);
     virtual int put(const float*,int);
     virtual int put(const double*,int);
-    //. Put arrays of data.  No size information is stored.  This
-    //data is read by the \srccd{get\_array\_T} routines.
+    /** Put arrays of data.  No size information is stored.  This
+        data is read by the get_array_T routines. */
     virtual int put_array_char(const char*p,int size);
     virtual int put_array_uint(const unsigned int*p,int size);
     virtual int put_array_int(const int*p,int size);
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);
 
-    //. Don't keep track of pointers to objects.  Calling this
-    //. causes duplicated references to objects to be copied.
-    //. The directory will not contain the forgotten objects.
+    /** Don't keep track of pointers to objects.  Calling this
+        causes duplicated references to objects to be copied.
+        The directory will not contain the forgotten objects. */
     void forget_references();
-    //. If a reference to an object that has already been written
-    //. is encountered, copy it instead of generating a reference
-    //. to the first object.
-    //. The directory will not be updated with new objects.
+    /** If a reference to an object that has already been written
+        is encountered, copy it instead of generating a reference
+        to the first object.
+        The directory will not be updated with new objects. */
     void copy_references();
 
-    //. Returns true if this object uses a directory.
+    /// Returns true if this object uses a directory.
     virtual int use_directory();
 
-    //. Flush out any remaining data.
+    /// Flush out any remaining data.
     virtual void flush();
 
-    //. True if this is a node to node save/restore.  This is
-    //necessary for classes that try to avoid saving databases
-    //to files that can otherwise be read in, but want to avoid
-    //reading the database from disk on all nodes.
+    /** True if this is a node to node save/restore.  This is
+        necessary for classes that try to avoid saving databases
+        to files that can otherwise be read in, but want to avoid
+        reading the database from disk on all nodes. */
     int node_to_node() const { return node_to_node_; }
 
-    //. Returns the current position in the file.  The default
-    //implementation returns 0.
+    /** Returns the current position in the file.  The default
+        implementation returns 0. */
     virtual int tell();
-    //. Set the current position in the file.  The default implementation
-    //does nothing.
+    /** Set the current position in the file.  The default implementation
+        does nothing. */
     virtual void seek(int loc);
-    //. Return non-zero if tell and seek do anything sensible.  The
-    //default implementation returns 0.
+    /** Return non-zero if tell and seek do anything sensible.  The
+        default implementation returns 0. */
     virtual int seekable();
   };
 DescribedClass_REF_dec(StateOut);

@@ -40,14 +40,8 @@
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 
-//. The \clsnmref{StateOutFile} provides a \clsnmref{StateOut}
-//. which writes to files.  It is still abstract---one of its
-//. derived classes, \clsnmref{StateOutFileText} or
-//. \clsnmref{StateOutFileBin}, must be used to obtain a
-//. \clsnmref{StateOut} object.  The
-//. \clsnmref{StateOutFileText} class writes in a text format
-//. and the \clsnmref{StateOutFileBin} writes in a binary
-//. format.
+/** Writes state information to files.
+ */
 class StateOutFile: public StateOut {
 #   define CLASSNAME StateOutFile
 #   include <util/class/classda.h>
@@ -59,29 +53,25 @@ class StateOutFile: public StateOut {
     int opened_;
     streambuf *buf_;
   public:
-    //. State information will be written to \srccd{stdout}.
+    /// State information will be written to cout.
     StateOutFile();
-    //. State information will be written to \vrbl{fp}.
+    /// State information will be written to s.
     StateOutFile(ostream& s);
-    //. State information will be written to \filnm{name}.
+    /// State information will be written to name.
     StateOutFile(const char *name);
 
     ~StateOutFile();
 
-    //. State information will be written to \filnm{name}.
+    /// State information will be written to name.
     virtual int open(const char *name);
-    //. Miscellaneous file operations.
+    /// Flush the output stream.
     virtual void flush();
+    /// Close the output stream.
     virtual void close();
   };
 
-//. The \clsnm{StateInFile} provides a \clsnmref{StateIn} which
-//. reads from files.  It is still abstract---one of its
-//. derived classes, \clsnmref{StateInFileText} or
-//. \clsnmref{StateInFileBin}, must be used to obtain a
-//. \clsnmref{StateIn} object.  The \clsnmref{StateInFileText} class
-//. reads with a text format and the \clsnmref{StateInFileBin}
-//. reads with a binary format.
+/** Reads state information from a file.
+ */
 class StateInFile: public StateIn {
 #   define CLASSNAME StateInFile
 #   include <util/class/classda.h>
@@ -93,18 +83,18 @@ class StateInFile: public StateIn {
     int opened_;
     streambuf *buf_;
   public:
-    //. State information will be obtained from \srccd{stdin}.
+    /// State information will be obtained from cin.
     StateInFile();
-    //. State information will be obtained from \vrbl{fp}.
+    /// State information will be obtained from fp.
     StateInFile(istream& s);
-    //. State information will be obtained from \filnm{name}.
+    /// State information will be obtained from name.
     StateInFile(const char *name);
 
     ~StateInFile();
 
-    //. State information will be obtained from \filnm{name}.
+    /// State information will be obtained from name.
     virtual int open(const char *name);
-    //. Miscellaneous file operations.
+    /// Close the output file.
     virtual void close();
   };
 

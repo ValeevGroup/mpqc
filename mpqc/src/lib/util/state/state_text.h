@@ -34,10 +34,11 @@
 
 #include <util/state/state_file.h>
 
-//. \clsnm{StateOutText} writes out state information in an
-//. almost human readable format.  It is intended for debugging
-//. only.  The state information can read in again with
-//. \clsnmref{StateInText}.
+/** Writes out state information in an almost human readable format.
+
+ StateOutText is intended for debugging only.  The state information can
+ read in again with StateInText.
+ */
 class StateOutText: public StateOutFile {
 #   define CLASSNAME StateOutText
 #   include <util/class/classd.h>
@@ -79,8 +80,8 @@ class StateOutText: public StateOutFile {
     int put(const double*,int);
   };
 
-//. \clsnm{StateInText} reads state information written
-//. with \clsnm{StateOutText}.
+/** Reads state information written with StateOutText.
+ */
 class StateInText: public StateInFile {
 #   define CLASSNAME StateInText
 #   define HAVE_KEYVAL_CTOR

@@ -127,7 +127,7 @@ MBPT2::compute_cs_grad()
   int derset, xyz;
   int natom = molecule()->natom();     // the number of atoms
   int int_index;
-  int mem_static;    // static memory in bytes
+  int mem_static = 0;    // static memory in bytes
   int qp, sr;
   int factor_pqrs;
   int ij_proc;          // the processor which has ij pair
@@ -279,9 +279,17 @@ MBPT2::compute_cs_grad()
   //
   ////////////////////////////////////////////////////////
   if (me == 0) {
-    mem_static = sizeof(double)*(nbasis*nbasis + 6*natom + nocc*(nocc+1)/2
-                               + nvir*(nvir+1)/2 + nocc*nocc + nvir*nvir
-                               + 2*nocc*nvir + 2+nbasis*nfuncmax);
+    mem_static = nbasis*nbasis; // scf vector
+    mem_static += 2*nbasis*nfuncmax; // iqjs & iqjr
+    if (dograd) {
+      mem_static += 6*natom; // gradient & ginter
+      mem_static += (nocc*(nocc+1))/2; // Pkj
+      mem_static += (nvir*(nvir+1))/2; // Pab
+      mem_static += nocc*nocc; // Wkj
+      mem_static += nvir*nvir; // Wab
+      mem_static += 2*nocc*nvir; // Waj & Laj
+      }
+    mem_static *= sizeof(double);
     ni = compute_cs_batchsize(mem_static, nocc_act); 
     }
 

@@ -235,72 +235,15 @@ struct lin_comb {
     }
 };
 
-#if 0
-struct shell_overlap {
-    int nf;
-    double **c;
-
-    void init(GaussianShell& gs) {
-      int i,j;
-
-      if (c) {
-        for (i=0; i < nf; i++)
-          if (c[i]) delete[] c[i];
-        delete[] c;
-      }
-
-      nf = gs.nfunction();
-      c = new double*[nf];
-      for (i=0; i < nf; i++) {
-        c[i] = new double[nf];
-        memset(c[i],0,sizeof(double)*nf);
-      }
-
-      i=j=0;
-      for (int n=0; n < gs.ncontraction(); n++) {
-        for (int fi=0; fi < gs.nfunction(n); fi++)
-          for (int fj=0; fj < gs.nfunction(n); fj++)
-            c[i+fi][j+fj] = gs.relative_overlap(n,fi,fj);
-        i += gs.nfunction(n);
-        j += gs.nfunction(n);
-      }
-    }
-
-    shell_overlap() : nf(0), c(0) {}
-
-    shell_overlap(GaussianShell& gs) : nf(0), c(0) {
-      init(gs);
-    }
-
-    ~shell_overlap() {
-      if (c) {
-        for (int i=0; i < nf; i++)
-          if (c[i]) delete[] c[i];
-        delete[] c;
-        c=0;
-      }
-    }
-
-    void print() const {
-      for (int fi=0; fi < nf; fi++) {
-        printf(" %2d ",fi+1);
-        for (int fj=0; fj < nf; fj++)
-          printf(" %10.7f",c[fi][fj]);
-        printf("\n");
-      }
-    }
-};
-#endif
-
-
 ////////////////////////////////////////////////////////////////////////////
 
 SO_block *
-PetiteList::aotoso()
+PetiteList::aotoso_info()
 {
   int i, d, ii, jj, g, fn, s, c, ir, f;
 
-  Molecule& mol = *gbs_.molecule().pointer();
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  Molecule& mol = *gbs.molecule().pointer();
 
   // create the character table for the point group
   CharacterTable ct = mol.point_group().char_table();
@@ -335,15 +278,13 @@ PetiteList::aotoso()
     SOs[i].set_length(len);
   }
   
-  double *blc = new double[gbs_.nbasis()];
+  double *blc = new double[gbs.nbasis()];
   lin_comb **lc = new lin_comb*[ng_];
-
-  //shell_overlap sov;
 
   // loop over all unique shells
   for (i=0; i < natom_; i++) {
-    for (s=0; s < gbs_.nshell_on_center(i); s++) {
-      int shell_i = gbs_.shell_on_center(i,s);
+    for (s=0; s < gbs.nshell_on_center(i); s++) {
+      int shell_i = gbs.shell_on_center(i,s);
       
       // here I'm looking for the first shell in a group of equivalent
       // shells
@@ -363,10 +304,9 @@ PetiteList::aotoso()
       // test to see if there are any high am cartesian functions in this
       // shell
       int cartfunc=0;
-      for (c=0; c < gbs_(i,s).ncontraction(); c++) {
-        if (gbs_(i,s).am(c) > 1 && gbs_(i,s).is_cartesian(c)) {
+      for (c=0; c < gbs(i,s).ncontraction(); c++) {
+        if (gbs(i,s).am(c) > 1 && gbs(i,s).is_cartesian(c)) {
           cartfunc=1;
-          //sov.init(gbs_(i,s));
           break;
         }
       }
@@ -383,30 +323,30 @@ PetiteList::aotoso()
         so = ct.symm_operation(g);
         int j = atom_map_[i][g];
 
-        int func_i = gbs_.shell_to_function(gbs_.shell_on_center(i,s));
-        int func_j = gbs_.shell_to_function(gbs_.shell_on_center(j,s));
+        int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
+        int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
 
-        lc[g] = new lin_comb(gbs_(i,s).nfunction(),func_i,func_j);
+        lc[g] = new lin_comb(gbs(i,s).nfunction(),func_i,func_j);
         lin_comb& lcg = *lc[g];
         
         int fi=0;
-        for (c=0; c < gbs_(i,s).ncontraction(); c++) {
-          int am=gbs_(i,s).am(c);
+        for (c=0; c < gbs(i,s).ncontraction(); c++) {
+          int am=gbs(i,s).am(c);
 
           if (am==0) {
             lcg.c[fi][fi] = 1.0;
           } else {
             ShellRotation rr =
-              ints_->shell_rotation(am,so,gbs_(i,s).is_pure(c));
+              ints_->shell_rotation(am,so,gbs(i,s).is_pure(c));
             for (ii=0; ii < rr.dim(); ii++) {
               for (jj=0; jj < rr.dim(); jj++)
                 lcg.c[fi+ii][fi+jj] = rr(ii,jj);
             }
           }
 
-          fi += gbs_(i,s).nfunction(c);
-          func_i += gbs_(i,s).nfunction(c);
-          func_j += gbs_(i,s).nfunction(c);
+          fi += gbs(i,s).nfunction(c);
+          func_i += gbs(i,s).nfunction(c);
+          func_j += gbs(i,s).nfunction(c);
         }
       }
 
@@ -416,7 +356,7 @@ PetiteList::aotoso()
       for (ir=0; ir < ct.nirrep(); ir++) {
         int cmplx = (ct.complex() && ct.gamma(ir).complex());
         
-        for (fn=0; fn < gbs_(i,s).nfunction(); fn++) {
+        for (fn=0; fn < gbs(i,s).nfunction(); fn++) {
           for (d=0; d < ct.gamma(ir).degeneracy(); d++) {
             // if this is a point group with a complex E representation,
             // then only do the first set of projections for E
@@ -426,7 +366,7 @@ PetiteList::aotoso()
             for (int comp=0; comp < ct.gamma(ir).degeneracy(); comp++) {
 
               // form the projection for this irrep
-              memset(blc,0,sizeof(double)*gbs_.nbasis());
+              memset(blc,0,sizeof(double)*gbs.nbasis());
 
               for (g=0; g < ng_; g++) {
                 double ccdg = ct.gamma(ir).p(comp,d,g);
@@ -444,7 +384,7 @@ PetiteList::aotoso()
               // find out how many nonzero elements there are
               int nonzero=0;
               double *blcp = blc;
-              for (ii=gbs_.nbasis(); ii; ii--,blcp++)
+              for (ii=gbs.nbasis(); ii; ii--,blcp++)
                 if ((*blcp* *blcp) > 0.0009)
                   nonzero++;
 
@@ -455,7 +395,7 @@ PetiteList::aotoso()
               SO tso;
               tso.set_length(nonzero);
               ii=jj=0; blcp = blc;
-              for (int iii=gbs_.nbasis(); iii; iii--, ii++, blcp++) {
+              for (int iii=gbs.nbasis(); iii; iii--, ii++, blcp++) {
                 if ((*blcp* *blcp) > 0.0009) {
                   tso.cont[jj].bfn = ii;
                   tso.cont[jj].coef = *blcp;
@@ -559,6 +499,83 @@ PetiteList::aotoso()
   return SOs;
 }
 
+RefSCMatrix
+PetiteList::aotoso()
+{
+  RefSCMatrix aoso(AO_basisdim(), SO_basisdim(), gbs_->so_matrixkit());
+  aoso.assign(0.0);
+  
+  SO_block *sos = aotoso_info();
+  
+  RefSCMatrixCompositeSubblockIter iter = (SCMatrixCompositeSubblockIter*)
+    aoso->local_blocks(SCMatrixSubblockIter::Write).pointer();
+
+  for (iter->begin(); iter->ready(); iter->next()) {
+    SO_block& sob = sos[iter->current_block()];
+
+    SCMatrixRectBlock *blk =
+      SCMatrixRectBlock::require_castdown(iter->block(),
+                                          "PetiteList::aotoso:blk");
+
+    int jlen = blk->jend-blk->jstart;
+    
+    for (int j=0; j < sob.len; j++) {
+      if (j < blk->jstart || j >= blk->jend)
+        continue;
+      
+      SO& soj = sob.so[j];
+      
+      for (int i=0; i < soj.len; i++) {
+        int ii=soj.cont[i].bfn;
+        
+        if (ii < blk->istart || ii >= blk->iend)
+          continue;
+
+        blk->data[(ii-blk->istart)*jlen+(j-blk->jstart)] = soj.cont[i].coef;
+      }
+    }
+  }
+  
+  return aoso;
+}
+
+RefSCMatrix
+PetiteList::sotoao()
+{
+  return aotoso().i();
+}
+
+RefSymmSCMatrix
+PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
+{
+  RefSymmSCMatrix aomatrix = BlockedSymmSCMatrix::castdown(a);
+  if (aomatrix.null) {
+    aomatrix = gbs_->so_matrixkit()->symmmatrix(AO_basisdim());
+    aomatrix->convert(a);
+  }
+
+  RefSymmSCMatrix somatrix(SO_basisdim(), gbs_->so_matrixkit());
+  somatrix.assign(0.0);
+  somatrix->accumulate_transform(aotoso().t(), aomatrix);
+
+  return somatrix;
+}
+
+RefSymmSCMatrix
+PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
+{
+  RefSymmSCMatrix aomatrix(AO_basisdim(), gbs_->so_matrixkit());
+  aomatrix.assign(0.0);
+  aomatrix->accumulate_transform(sotoao().t(), somatrix);
+
+  RefSymmSCMatrix aom(gbs_->basisdim(), gbs_->matrixkit());
+  aom->convert(aomatrix);
+
+  return aom;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 static void
 do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
              const GaussianBasisSet& gbs_, PetiteList& pl,
@@ -569,7 +586,7 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
   BlockedSymmSCMatrix *lsym = BlockedSymmSCMatrix::castdown(sym.pointer());
   BlockedSymmSCMatrix *lskl = BlockedSymmSCMatrix::castdown(skel.pointer());
 
-  SO_block *sos = pl.aotoso();
+  SO_block *sos = pl.aotoso_info();
 
   SCMatrixLTriBlock *sklblk, *symblk;
   SCMatrixLTriSubBlock *symsblk;
@@ -800,12 +817,13 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
 {
   int b,c;
 
-  CharacterTable ct = gbs_.molecule()->point_group().char_table();
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  CharacterTable ct = gbs.molecule()->point_group().char_table();
 
 #if 0
 
   RefSCMatrix aotoso(AO_basisdim(), SO_basisdim());
-  RefSCElementOp sotrans = new AOSO_Transformation(gbs_);
+  RefSCElementOp sotrans = new AOSO_Transformation(gbs);
   aotoso.element_op(sotrans);
   sotrans=0;
 
@@ -826,7 +844,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   sym.accumulate_transform(aotoso.t(),skel);
 
 #else
-  do_transform(skel,sym,gbs_,*this,ct);
+  do_transform(skel,sym,gbs,*this,ct);
 #endif
 
   BlockedSymmSCMatrix *la = BlockedSymmSCMatrix::castdown(sym.pointer());

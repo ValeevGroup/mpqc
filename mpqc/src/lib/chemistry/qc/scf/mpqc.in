@@ -9,7 +9,7 @@
 mole<CLSCF>: (
   root = 2
 
-  % NLP... input
+  % Function
   value_accuracy = 1e-9
   gradient_accuracy = 1e-7
 

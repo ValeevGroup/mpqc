@@ -68,10 +68,16 @@ class HSOSSCF: public SCF {
     RefSymmSCMatrix fock(int);
     RefSymmSCMatrix effective_fock();
 
+    void two_body_energy(double &ec, double &ex);
+
     int value_implemented();
     int gradient_implemented();
     int hessian_implemented();
 
+    // returns 1
+    int spin_polarized();
+    RefSymmSCMatrix alpha_density();
+    RefSymmSCMatrix beta_density();
   protected:
     // these are temporary data, so they should not be checkpointed
     RefTwoBodyInt tbi_;

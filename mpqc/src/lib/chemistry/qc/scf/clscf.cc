@@ -231,6 +231,12 @@ CLSCF::hessian_implemented()
   return 0;
 }
 
+int
+CLSCF::spin_polarized()
+{
+  return 0;
+}
+
 void
 CLSCF::print(ostream&o)
 {

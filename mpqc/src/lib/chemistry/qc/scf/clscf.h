@@ -71,6 +71,8 @@ class CLSCF: public SCF {
     int gradient_implemented();
     int hessian_implemented();
 
+    // returns 0
+    int spin_polarized();
   protected:
     // these are temporary data, so they should not be checkpointed
     RefTwoBodyInt tbi_;

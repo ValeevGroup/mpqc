@@ -280,6 +280,50 @@ HSOSSCF::hessian_implemented()
 }
 
 void
+HSOSSCF::two_body_energy(double &ec, double &ex)
+{
+  cerr << "HSOSSCF::two_body_energy: not implemented" << endl;
+  abort();
+}
+
+int
+HSOSSCF::spin_polarized()
+{
+  return 1;
+}
+
+RefSymmSCMatrix
+HSOSSCF::alpha_density()
+{
+  RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens2(basis_dimension(), basis_matrixkit());
+
+  dens1.assign(0.0);
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  dens1.element_op(op);
+  dens1.scale(1.0);
+
+  dens2.assign(0.0);
+  op = new SCFDensity(this, scf_vector_, 1.0);
+  dens2.element_op(op);
+
+  return dens1 + dens2;
+}
+
+RefSymmSCMatrix
+HSOSSCF::beta_density()
+{
+  RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+
+  dens.assign(0.0);
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  dens.element_op(op);
+  dens.scale(1.0);
+
+  return dens;
+}
+
+void
 HSOSSCF::print(ostream&o)
 {
   int i;

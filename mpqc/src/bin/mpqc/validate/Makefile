@@ -73,11 +73,26 @@ HSOSSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(HSOSSCF
 HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
 
 CKPTINPUTS = \
- ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_2mp2.in \
+ ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_mp2.in \
  ckpt_0efcopt.in    ckpt_1clscf.in     ckpt_1qnewtopt.in  ckpt_2qnewtopt.in \
- ckpt_0hsosscf.in   ckpt_1efcopt.in    ckpt_2clscf.in     ckpt_efcopt.in \
+ ckpt_0hsosscf.in   ckpt_1efcopt.in    ckpt_clscf.in      ckpt_efcopt.in \
  ckpt_0mp2.in       ckpt_1hsosscf.in   ckpt_2efcopt.in    ckpt_qnewtopt.in \
- ckpt_0zapt2.in     ckpt_1mp2.in       ckpt_2hsosscf.in
+ ckpt_0zapt2.in     ckpt_1mp2.in       ckpt_hsosscf.in \
+ ckpt_0clksb3lyp.in     ckpt_1clksb3lyp.in     ckpt_clksb3lyp.in \
+ ckpt_0clksbp86.in      ckpt_1clksbp86.in      ckpt_clksbp86.in \
+ ckpt_0clkshfg96.in     ckpt_1clkshfg96.in     ckpt_clkshfg96.in \
+ ckpt_0clksmpwpw91.in   ckpt_1clksmpwpw91.in   ckpt_clksmpwpw91.in \
+ ckpt_0clkspbe.in       ckpt_1clkspbe.in       ckpt_clkspbe.in \
+ ckpt_0clkspw91.in      ckpt_1clkspw91.in      ckpt_clkspw91.in \
+ ckpt_0clksspz81.in     ckpt_1clksspz81.in     ckpt_clksspz81.in \
+ ckpt_0clkssvwn1.in     ckpt_1clkssvwn1.in     ckpt_clkssvwn1.in \
+ ckpt_0clkssvwn1rpa.in  ckpt_1clkssvwn1rpa.in  ckpt_clkssvwn1rpa.in \
+ ckpt_0clkssvwn2.in     ckpt_1clkssvwn2.in     ckpt_clkssvwn2.in \
+ ckpt_0clkssvwn3.in     ckpt_1clkssvwn3.in     ckpt_clkssvwn3.in \
+ ckpt_0clkssvwn4.in     ckpt_1clkssvwn4.in     ckpt_clkssvwn4.in \
+ ckpt_0clkssvwn5.in     ckpt_1clkssvwn5.in     ckpt_clkssvwn5.in \
+ ckpt_0clksxalpha.in    ckpt_1clksxalpha.in    ckpt_clksxalpha.in
+
 CKPTINPUTS := $(CKPTINPUTS:%=run/%)
 CKPTOUTPUTS = $(CKPTINPUTS:%.$(INSUF)=%.out)
 
@@ -245,12 +260,26 @@ checkh2ofrq:
 .PHONY: checkckpt
 checkckpt:
 	@echo Consistency checks on checkpoint tests:
-	@$(CHECKOUT) $(RUN)/ckpt_1hsosscf.out $(RUN)/ckpt_2hsosscf.out
-	@$(CHECKOUT) $(RUN)/ckpt_1clscf.out $(RUN)/ckpt_2clscf.out
-	@$(CHECKOUT) $(RUN)/ckpt_1mp2.out $(RUN)/ckpt_2mp2.out
+	@$(CHECKOUT) $(RUN)/ckpt_1hsosscf.out $(RUN)/ckpt_hsosscf.out
+	@$(CHECKOUT) $(RUN)/ckpt_1clscf.out $(RUN)/ckpt_clscf.out
+	@$(CHECKOUT) $(RUN)/ckpt_1mp2.out $(RUN)/ckpt_mp2.out
 	@$(CHECKOUT) $(RUN)/ckpt_qnewtopt.out $(RUN)/ckpt_2qnewtopt.out
 	@$(CHECKOUT) $(RUN)/ckpt_efcopt.out $(RUN)/ckpt_2efcopt.out
 	@$(CHECKOUT) $(RUN)/ckpt_0zapt2.out $(RUN)/ckpt_1zapt2.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksxalpha.out $(RUN)/ckpt_1clksxalpha.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksb3lyp.out $(RUN)/ckpt_1clksb3lyp.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksbp86.out $(RUN)/ckpt_1clksbp86.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkshfg96.out $(RUN)/ckpt_1clkshfg96.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksmpwpw91.out $(RUN)/ckpt_1clksmpwpw91.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkspbe.out $(RUN)/ckpt_1clkspbe.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkspw91.out $(RUN)/ckpt_1clkspw91.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksspz81.out $(RUN)/ckpt_1clksspz81.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn1.out $(RUN)/ckpt_1clkssvwn1.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn1rpa.out $(RUN)/ckpt_1clkssvwn1rpa.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn2.out $(RUN)/ckpt_1clkssvwn2.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn3.out $(RUN)/ckpt_1clkssvwn3.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn4.out $(RUN)/ckpt_1clkssvwn4.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn5.out $(RUN)/ckpt_1clkssvwn5.out
 
 .PHONY: checkmbpt
 checkmbpt:
@@ -344,6 +373,18 @@ $(RUN):
 	mkdir -p $(RUN)
 
 $(RUN)/ckpt_%.in: ckpt/ckpt_%.in
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_0clks%.qci: ckpt/energy.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_1clks%.qci: ckpt/gradient.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_clks%.qci: ckpt/gradient.qci
 	@mkdir -p $(RUN)
 	/bin/cp $< $@
 

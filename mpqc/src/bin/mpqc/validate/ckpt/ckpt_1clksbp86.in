@@ -1,7 +1,7 @@
 mpqc: (
-  savestate = no
+  savestate = yes
   restart = yes
-  restart_file = "ckpt_1mp2.wfn"
+  restart_file = "ckpt_0clksbp86.wfn"
   do_energy = yes
   do_gradient = yes
 )

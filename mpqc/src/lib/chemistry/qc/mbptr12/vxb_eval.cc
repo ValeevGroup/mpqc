@@ -229,6 +229,12 @@ void R12IntEval::compute()
   int me = r12info()->msg()->me();
   MolecularEnergy* mole = r12info()->mole();
 
+  if (me == 0 && mole->if_to_checkpoint()) {
+    StateOutBin stateout(mole->checkpoint_file());
+    SavableState::save_state(mole,stateout);
+    ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
+  }
+
   eval_sbs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
   
   if (r12info_->basis() != r12info_->basis_aux()) {

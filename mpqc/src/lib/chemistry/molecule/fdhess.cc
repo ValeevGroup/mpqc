@@ -90,7 +90,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(const RefKeyVal&keyval):
 
   displacement_point_group_ = keyval->describedclassvalue("point_group");
 
-  disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-3));
+  disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));
 
   KeyValValueboolean def_restart(DEFAULT_RESTART);
   KeyValValueboolean def_checkpoint(DEFAULT_CHECKPOINT);

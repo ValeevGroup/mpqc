@@ -44,10 +44,10 @@ class GaussianBasisSet: virtual public SavableState
 
     // pix replacments (using center numbers instead of center pixes):
     int ncenter_;
-    Arrayint shell_to_center_;
-    Arrayint center_to_shell_;
-    Array2double center_to_r_;
-    Arrayint center_to_nshell_;
+    SSBArrayint shell_to_center_;
+    SSBArrayint center_to_shell_;
+    SSBArray2double center_to_r_;
+    SSBArrayint center_to_nshell_;
 
     int nshell_;
     int nbasis_;

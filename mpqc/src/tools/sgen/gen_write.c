@@ -5,8 +5,11 @@
  * code. */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:56  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:03:51  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:57  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/07/20  18:37:35  seidl
  * add support for string arrays
@@ -41,8 +44,6 @@
  * Initial revision
  * */
 
-static char *rcsid = "$Id$";
-
 /* a blatant copy of clj's print.c hacked to do binary writes */
 
 /* The old log from bwrite.c:
@@ -64,6 +65,7 @@ static char *rcsid = "$Id$";
  * */
 
 #include <stdio.h>
+#include <string.h>
 #include <tmpl.h>
 #include "types.h"
 #include "global.h"
@@ -72,6 +74,7 @@ static char *rcsid = "$Id$";
 #include "gen_write.lcl"
 
 #include "sgen_util.gbl"
+#include "error.gbl"
 
 GLOBAL_FUNCTION VOID
 general_write_gen(suffix,writename,basicname,

@@ -5,7 +5,10 @@
  * code. */
 
 /* $Log$
- * Revision 1.2  1994/10/14 18:28:28  etseidl
+ * Revision 1.3  1994/10/18 23:03:49  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.2  1994/10/14  18:28:28  etseidl
  * replace bzero with memset
  *
  * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
@@ -70,8 +73,6 @@
  * Initial revision
  * */
 
-static char *rcsid = "$Id$";
-
 #include <stdio.h>
 #include <string.h>
 #include <tmpl.h>
@@ -82,6 +83,7 @@ static char *rcsid = "$Id$";
 #include "gen_read.lcl"
 
 #include "sgen_util.gbl"
+#include "error.gbl"
 
 GLOBAL_FUNCTION VOID
 general_read_gen(suffix,readname,basicname,
@@ -255,7 +257,7 @@ char *structname;
       stars[strlen(stars)-1]='\0';
       fprintf(output," %s)*%s);\n",stars,
                                  index_dimension(structname,&I->index));
-      fprintf(output,"%s  memset(%s%s,'\0',sizeof(%s",spaces,
+      fprintf(output,"%s  memset(%s%s,'\\0',sizeof(%s",spaces,
         member_name(structname,member),
         indices,member->type);
       fprintf(output," %s)*%s);\n",stars,
@@ -268,7 +270,7 @@ char *structname;
       stars[strlen(stars)-1]='\0';
       fprintf(output," %s)*%s);\n",stars,
                                  index_dimension(structname,&I->index));
-      fprintf(output,"%s  memset(%s%s,'\0',sizeof(%s_t",spaces,
+      fprintf(output,"%s  memset(%s%s,'\\0',sizeof(%s_t",spaces,
         member_name(structname,member),
         indices,member->type);
       fprintf(output," %s)*%s);\n",stars,

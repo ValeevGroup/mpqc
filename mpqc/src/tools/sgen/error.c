@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:56  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:03:47  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:57  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.1.1.1  1992/03/17  18:10:14  seidl
  * Struct GENerator 2.0
@@ -24,7 +27,6 @@
  * Revision 1.1  91/06/15  21:13:57  janssen
  * Initial revision
  *  */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #if !defined(SUN)

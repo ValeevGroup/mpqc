@@ -2,8 +2,11 @@
  * routine assign_x will return set x1 equal to x2 */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:56  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:03:42  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:57  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.6  1992/07/20  18:37:30  seidl
  * add support for string arrays
@@ -31,8 +34,6 @@
  * Initial revision
  * */
  
-static char rcsid[] = "$Id$";
-
 #include <stdio.h>
 #include <tmpl.h>
 #include <string.h>
@@ -42,6 +43,7 @@ static char rcsid[] = "$Id$";
 #include "assign.gbl"
 #include "assign.lcl"
 
+#include "error.gbl"
 #include "sgen_util.gbl"
 
 GLOBAL_FUNCTION VOID
@@ -78,10 +80,10 @@ assign_gen()
 
   /* Include the following files. */
   fprintf(output,"\n");
-  fprintf(output,"#include <stdio.h>\n",BaseName);
-  fprintf(output,"#include <stdlib.h>\n",BaseName);
-  fprintf(output,"#include <string.h>\n",BaseName);
-  fprintf(output,"#include <util/sgen/sgen.h>\n",BaseName);
+  fprintf(output,"#include <stdio.h>\n");
+  fprintf(output,"#include <stdlib.h>\n");
+  fprintf(output,"#include <string.h>\n");
+  fprintf(output,"#include <util/sgen/sgen.h>\n");
   fprintf(output,"#include \"%s.h\"\n",BaseName);
   fprintf(output,"#include \"%sasgn.h\"\n",BaseName);
 

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1994/06/08 01:14:15  cljanss
+ * Revision 1.3  1994/10/18 23:04:01  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.2  1994/06/08  01:14:15  cljanss
  * Many changes.  These include: newmat7 and nihmatrix -> scmat
  * and mpqcic -> MPSCF and updated optimize stuff.
  *
@@ -49,17 +52,19 @@
  * Revision 1.1  1991/06/15  21:13:57  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
-#include <tmpl.h>
 #include <string.h>
+#include <stdlib.h>
+#include <tmpl.h>
 #include "types.h"
 #define  _ALLOCATE_GLOBAL_
 #include "global.h"
 
 #include "sgen.gbl"
 #include "sgen.lcl"
+
+#include "sgen_util.gbl"
 
 int
 main(argc,argv)
@@ -70,7 +75,7 @@ char **argv;
   int i;
   char *ch;
   int ifndef;
-  char* ifndefname;
+  char *ifndefname;
   int first = 1;
 
   progname = argv[0];

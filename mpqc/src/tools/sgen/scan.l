@@ -1,8 +1,11 @@
 %{
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:04:01  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.4  1992/10/09  19:38:00  seidl
  * add support for enums
@@ -32,9 +35,9 @@
  * Revision 1.1  1991/06/15  21:14:16  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <tmpl.h>
+#include <unistd.h>
 #include "types.h"
 #define IN_SCANNER
 #include "global.h"

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1994/06/08 01:14:14  cljanss
+ * Revision 1.3  1994/10/18 23:03:54  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.2  1994/06/08  01:14:14  cljanss
  * Many changes.  These include: newmat7 and nihmatrix -> scmat
  * and mpqcic -> MPSCF and updated optimize stuff.
  *
@@ -36,9 +39,9 @@
  * Revision 1.1  1991/06/15  21:13:57  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
+#include <string.h>
 #include <tmpl.h>
 #include "types.h"
 #include "global.h"
@@ -47,6 +50,7 @@ static char *rcsid = "$Id$";
 #include "ip.lcl"
 
 #include "sgen_util.gbl"
+#include "error.gbl"
 
 #define F fprintf
 #define O output
@@ -296,11 +300,8 @@ ip_member(member,structname)
 member_t *member;
 char *structname;
 {
-  char indiceskey[STRING_LENGTH];
   char indices[STRING_LENGTH];
   char spaces[STRING_LENGTH];
-  char pointer[STRING_LENGTH];
-  char pointermalloc[STRING_LENGTH];
   index_list_t *I;
   int i;
   int n_indices;
@@ -382,7 +383,6 @@ char *indices;
 int n_indices;
 {
   int i;
-  char *conv;
   char pointer[STRING_LENGTH];
   char pointermalloc[STRING_LENGTH];
 

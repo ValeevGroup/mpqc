@@ -1,7 +1,10 @@
 %{
 
 /* $Log$
- * Revision 1.2  1994/02/23 02:05:49  cljanss
+ * Revision 1.3  1994/10/18 23:03:57  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.2  1994/02/23  02:05:49  cljanss
  * Added a yyerror declaration.
  *
  * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
@@ -25,13 +28,13 @@
  * Revision 1.1  1991/06/15  21:14:16  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <tmpl.h>
 #include "types.h"
 #include "global.h"
 #include "sgen_read.gbl"
+#include "error.gbl"
 
 void yyerror(char*);
 %}

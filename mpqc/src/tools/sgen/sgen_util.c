@@ -2,8 +2,11 @@
 /* Some convenient functions are provided here. */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:58  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:04:04  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:59  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/06/17  23:07:47  jannsen
  * modified to generate clean code
@@ -33,15 +36,17 @@
  * Revision 1.1  1991/06/15  21:13:57  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
+#include <string.h>
 #include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
 #include "sgen_util.gbl"
 #include "sgen_util.lcl"
+
+#include "error.gbl"
 
 /* Convert an index and a structure name to a dimension name. */
 GLOBAL_FUNCTION char *
@@ -346,7 +351,6 @@ member_t *member;
 member_list_t *members;
 {
   member_list_t *I;
-  index_list_t *J;
 
   for (I=members; I!=NULL; I=I->p) {
     if (I->member->uselname && (!strcmp(member->name,I->member->uselname)))

@@ -2,7 +2,10 @@
  * routine zero_x will zero out arrays in x */
 
 /* $Log$
- * Revision 1.2  1994/10/14 18:28:32  etseidl
+ * Revision 1.3  1994/10/18 23:04:07  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.2  1994/10/14  18:28:32  etseidl
  * replace bzero with memset
  *
  * Revision 1.1.1.1  1993/12/29  12:53:59  etseidl
@@ -27,8 +30,6 @@
  * Initial revision
  * */
  
-static char rcsid[] = "$Id$";
-
 #include <stdio.h>
 #include <tmpl.h>
 #include <string.h>
@@ -36,6 +37,7 @@ static char rcsid[] = "$Id$";
 #include "global.h"
 
 #include "sgen_util.gbl"
+#include "error.gbl"
 
 #include "zero.gbl"
 #include "zero.lcl"
@@ -74,8 +76,8 @@ zero_gen()
 
   /* Include the following files. */
   fprintf(output,"\n");
-  fprintf(output,"#include <stdio.h>\n",BaseName);
-  fprintf(output,"#include <string.h>\n",BaseName);
+  fprintf(output,"#include <stdio.h>\n");
+  fprintf(output,"#include <string.h>\n");
   fprintf(output,"#include <util/sgen/sgen.h>\n");
   fprintf(output,"#include \"%s.h\"\n",BaseName);
   fprintf(output,"#include \"%szero.h\"\n",BaseName);
@@ -88,7 +90,7 @@ zero_gen()
     fprintf(include,"  void zero_%s();\n",I->name);
     fprintf(include,"#else\n");
     fprintf(include,"  void zero_%s(%s_t *%s);\n",
-            I->name,I->name,I->name,I->name,I->name);
+            I->name,I->name,I->name);
     fprintf(include,"#endif\n");
 
     if (is_excluded("zero",I)) continue;
@@ -201,7 +203,7 @@ char *range;
 
   if (basic_type(member->type) && !member->pointer) {
     if(array_type) {
-      fprintf(output,"%s  memset(%s%s,'\0',sizeof(%s)*%s);\n",
+      fprintf(output,"%s  memset(%s%s,'\\0',sizeof(%s)*%s);\n",
         spaces,member_name(structname,member),indices,member->type,range);
       }
     }

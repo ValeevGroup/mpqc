@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:03:59  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.4  1992/07/20  18:37:45  seidl
  * add support for string arrays
@@ -27,15 +30,16 @@
  * Initial revision
  * */
 
-static char *rcsid = "$Id:";
-
 #include <stdio.h>
 #include <tmpl.h>
 
+#include "types.h"
 #include "sbcast0.gbl"
 #include "sbcast0.lcl"
 
 #include "gen_read.gbl"
+#include "gen_write.gbl"
+#include "sgen_util.gbl"
 
 GLOBAL_FUNCTION VOID
 sbcast0_gen()

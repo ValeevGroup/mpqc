@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:03:58  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/06/17  23:07:33  jannsen
  * modified to generate clean code
@@ -24,15 +27,18 @@
  * Revision 1.1  1991/06/15  21:13:57  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
+#include <string.h>
 #include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
 #include "print.gbl"
 #include "print.lcl"
+
+#include "error.gbl"
+#include "sgen_util.gbl"
 
 GLOBAL_FUNCTION VOID
 print_gen()
@@ -72,8 +78,8 @@ print_gen()
   fprintf(output,"#include <util/sgen/sgen.h>\n");
   fprintf(output,"#include \"%s.h\"\n",BaseName);
   fprintf(output,"#include \"%sprnt.h\"\n",BaseName);
-  fprintf(output,"extern int sgen_print_nindent;\n",BaseName);
-  fprintf(output,"#define SPI sgen_print_indent(fp)\n",BaseName);
+  fprintf(output,"extern int sgen_print_nindent;\n");
+  fprintf(output,"#define SPI sgen_print_indent(fp)\n");
 
   /* Go thru the list of declarations and generate the print functions
    * for the data. */

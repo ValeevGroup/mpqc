@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/18 23:03:52  etseidl
+ * fix many warnings, use memset rather than bzero
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/06/17  23:07:27  jannsen
  * modified to generate clean code
@@ -20,9 +23,9 @@
  * Revision 1.1  91/06/15  21:13:57  janssen
  * Initial revision
  *  */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
+#include <string.h>
 #include <tmpl.h>
 #include "types.h"
 #include "global.h"
@@ -31,6 +34,7 @@ static char *rcsid = "$Id$";
 #include "init.lcl"
 
 #include "sgen_util.gbl"
+#include "error.gbl"
 
 GLOBAL_FUNCTION VOID
 init_gen()

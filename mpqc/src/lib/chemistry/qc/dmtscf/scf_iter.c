@@ -505,6 +505,10 @@ int iter;
   if (scf_info->print_flg&1024) {
     printf("AO Fock");
     dmt_printf("%15.7f ",Fock);
+    if (scf_info->iopen) {
+      printf("AO Focko");
+      dmt_printf("%15.7f ",FockO);
+    }
   }
   
   if (scf_info->iopen) {
@@ -592,6 +596,12 @@ dmt_matrix SScr2;
     dmt_printf("%15.7f ",Hcore);
     printf("G matrix");
     dmt_printf("%15.7f ",SScr1);
+    if (scf_info->iopen) {
+      printf("Skel GO matrix");
+      dmt_printf("%15.7f ",GmatO);
+      printf("GO matrix");
+      dmt_printf("%15.7f ",SScr2);
+    }
   }
   
  /* F = H + G

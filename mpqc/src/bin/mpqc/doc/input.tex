@@ -65,6 +65,12 @@ several chapters that follow.
         \exenm{mpqc} will attempt to restart the calculation.  If the
         checkpoint file is not found, the calculation will continue as if
         the value were false. The default is true.
+\item[\keywd{restart\_file}] This gives the name of a file from which
+        restart information is read.  If the file name ends in
+        \filnm{.wfn} the \keywd{mole} object will be restored.  Otherwise,
+        the \keywd{opt} object will be restored.  The default file name
+        is formed by appending \filnm{.ckpt} to the input file name
+        with the extension removed.
 \item[\keywd{do\_energy}] The value of this keyword is boolean.  If
         true a single point energy calculation will be done for the
         \clsnmref{MolecularEnergy} object given with the \keywd{mole}

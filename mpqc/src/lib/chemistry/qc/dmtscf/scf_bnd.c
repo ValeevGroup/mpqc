@@ -1,6 +1,9 @@
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:14  etseidl
- * Initial revision
+ * Revision 1.2  1994/04/11 16:57:24  etseidl
+ * parallelize the initialization of the bounds information
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:15  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.6  1992/06/17  21:54:03  jannsen
  * cleaned up for saber-c
@@ -35,6 +38,7 @@ static char rcsid[]="$Id$";
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
+#include <comm/picl/picl.h>
 
 #include "scf_bnd.gbl"
 #include "scf_bnd.lcl"
@@ -55,7 +59,11 @@ double *intbuf;
     exit(1);
     }
 
+  bzero(Qvec,sizeof(signed char)*nsht);
+
   compute_Q(cs1,intbuf);
+
+  gsum0(Qvec,nsht,0,mtype_get(),0);
   }
 
 GLOBAL_FUNCTION VOID
@@ -93,11 +101,15 @@ double *intbuf;
   double loginv = 1.0/log(2.0);
   double integral;
   int i,j;
+  int me=mynode0();
+  int nproc=numnodes0();
 
   shellij=0;
   for(sh1=0; sh1 < cs1->nshell ; sh1++) {
     shells[0]=shells[2]=sh1;
     for(sh2=0; sh2 <= sh1 ; sh2++,shellij++) {
+      if (shellij%nproc != me) continue;
+
       shells[1]=shells[3]=sh2;
 
       int_erep_v(INT_EREP|INT_REDUND|INT_NOPERM|INT_NOBCHK,shells,size);

@@ -1,4 +1,7 @@
 
+#ifndef _math_dmt_matrix_h
+#define _math_dmt_matrix_h
+
 typedef int dmt_matrix;
 typedef int mdescr;
 typedef int bool;
@@ -48,3 +51,5 @@ struct dmt_block_info {
 };
 typedef struct dmt_block_info dmt_cost_t;
 
+
+#endif

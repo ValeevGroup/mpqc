@@ -72,7 +72,7 @@ OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
 {
   double acc = keyval->doublevalue("eigenvector_accuracy");
   if (keyval->error() != KeyVal::OK)
-    acc = 1.0e-7;
+    acc = value_.desired_accuracy();
   
   eigenvectors_.set_desired_accuracy(acc);
   eigenvalues_.set_desired_accuracy(acc);

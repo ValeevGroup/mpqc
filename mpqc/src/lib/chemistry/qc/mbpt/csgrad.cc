@@ -508,8 +508,10 @@ MBPT2::compute_cs_grad()
   integral()->set_storage(mem_remaining);
   tbint_ = integral()->electron_repulsion();
   intbuf = tbint_->buffer();
-  tbintder_ = integral()->electron_repulsion_deriv();
-  intderbuf = tbintder_->buffer();
+  if (dograd) {
+    tbintder_ = integral()->electron_repulsion_deriv();
+    intderbuf = tbintder_->buffer();
+    }
 
   int mem_integral_intermediates = integral()->storage_used();
   int mem_integral_storage = mem_remaining - mem_integral_intermediates;

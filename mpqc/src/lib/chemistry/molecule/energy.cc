@@ -62,7 +62,11 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
   assignedkeyval->assign("matrixkit", dc);
   RefKeyVal asskeyval(assignedkeyval.pointer());
   RefKeyVal aggkeyval = new AggregateKeyVal(asskeyval, keyval);
-  mc_  = aggkeyval->describedclassvalue("coor");
+
+  // Don't bother with internal coordinates if there is only 1 atom
+  if (mol_->natom() > 1) {
+      mc_  = aggkeyval->describedclassvalue("coor");
+    }
 
   RefSCDimension dim;
   if (mc_.null()) {

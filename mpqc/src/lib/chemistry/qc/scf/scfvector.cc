@@ -26,6 +26,7 @@
 //
 
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
@@ -68,16 +69,20 @@ void
 SCF::savestate_iter(int iter)
 {
   char *ckptfile=0, *oldckptfile=0;
-  const char *devnull=0, *filename=0;
+  const char *devnull=0;
+  const char *filename=0;
+ 
+  bool savestate = if_to_checkpoint();
+  int savestate_freq = checkpoint_freq();
   
-  if (savestate_iter_ && ( (iter+1)%savestate_frequency_==0) ) {
+  if (savestate && ( (iter+1)%savestate_freq==0) ) {
     devnull = "/dev/null";
-    filename = SCFormIO::default_basename();
+    filename = checkpoint_file();
     if (scf_grp_->me() == 0) {
       ckptfile = new char[strlen(filename)+10];
       sprintf(ckptfile,"%s.%d.tmp",filename,iter+1);
       oldckptfile = new char[strlen(filename)+10];
-      sprintf(oldckptfile,"%s.%d.tmp",filename,(iter+1-savestate_frequency_));
+      sprintf(oldckptfile,"%s.%d.tmp",filename,(iter+1-savestate_freq));
     }
     else {
       ckptfile = new char[strlen(devnull)+1];
@@ -87,7 +92,7 @@ SCF::savestate_iter(int iter)
     StateOutBin so(ckptfile);
     save_state(this,so);
     if (scf_grp_->me() == 0) {
-      if (oldckptfile != NULL && (iter+1-savestate_frequency_)>=savestate_frequency_ ) {
+      if (oldckptfile != NULL && (iter+1-savestate_freq)>=savestate_freq) {
         if (unlink(oldckptfile)) 
           ExEnv::out0() << " SCF::compute_vector() Temporary "
                         << "checkpoint file failed to delete. " << endl;
@@ -96,6 +101,7 @@ SCF::savestate_iter(int iter)
     }
     delete [] ckptfile;
     so.close();
+    free((void*)filename);
   }
 
 }

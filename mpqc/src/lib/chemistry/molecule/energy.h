@@ -56,9 +56,13 @@ class MolecularEnergy: public Function {
     RefSCVector cartesian_gradient_;
     RefSymmSCMatrix cartesian_hessian_;
 
-    int ckpt_;
+    /// Whether to do intermediate theckpointing of this object
+    bool ckpt_;
+    /// Name of the file into which to checkpoint this object
     char *ckpt_file_;
-
+    /// How often this object should be checkpointed (only matters in iterative methods)
+    int ckpt_freq_;
+    
   protected:
     Ref<PointGroup> initial_pg_;
 
@@ -101,7 +105,20 @@ class MolecularEnergy: public Function {
         the molecule's coordinates are updated they will be printed.  The
         default is true.
 
-        </dl> */
+	<dt><tt>checkpoint</tt><dd> If true, then this object will be
+	checkpointed during its evaluation. Not all implementations
+	of <tt>MolecularEnergy</tt> support checkpointing.
+	The default is false.
+
+	<dt><tt>checkpoint_file</tt><dd> Specifies the name of the file
+	into which this object will be checkpointed. Default is
+	"<inpubasename>.ckpt", where "<inputbasename>" is the name of the input
+	file without ".in".
+
+	<dt><tt>checkpoint_freq</tt><dd> Specifies how often this object to
+	be checkpointed. Only matters for objects which are computed
+	iteratively. Default is 1.
+	</dl> */
     MolecularEnergy(const Ref<KeyVal>&);
     MolecularEnergy(StateIn&);
     ~MolecularEnergy();
@@ -111,9 +128,11 @@ class MolecularEnergy: public Function {
     /// Set up checkpointing
     void set_checkpoint();
     void set_checkpoint_file(const char*);
+    void set_checkpoint_freq(int freq);
     /// Check if need to checkpoint
     bool if_to_checkpoint() const;
     const char* checkpoint_file() const;
+    int checkpoint_freq() const;
     
     MolecularEnergy & operator=(const MolecularEnergy&);
     

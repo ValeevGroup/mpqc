@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <stdexcept>
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
@@ -45,7 +46,7 @@ using namespace sc;
 // MolecularEnergy
 
 static ClassDesc MolecularEnergy_cd(
-  typeid(MolecularEnergy),"MolecularEnergy",5,"public Function",
+  typeid(MolecularEnergy),"MolecularEnergy",6,"public Function",
   0, 0, 0);
 
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
@@ -58,6 +59,7 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   initial_pg_ = new PointGroup(mol_->point_group());
   ckpt_ = mole.ckpt_;
   ckpt_file_ = strdup(mole.ckpt_file_);
+  ckpt_freq_ = mole.ckpt_freq_;
 }
 
 MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
@@ -127,12 +129,18 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
   set_dimension(dim);
 
   ckpt_ = keyval->booleanvalue("checkpoint");
-  if (keyval->error() != KeyVal::OK) ckpt_ = 0;
+  if (keyval->error() != KeyVal::OK) ckpt_ = false;
   ckpt_file_ = keyval->pcharvalue("checkpoint_file");
   if (keyval->error() != KeyVal::OK) {
-    ckpt_file_ = strdup("mole_ckpt.dat");
+    char* filename = SCFormIO::fileext_to_filename(".wfn.ckpt");
+    ckpt_file_ = strdup(filename);
+    delete[] filename;
   }
-
+  ckpt_freq_ = keyval->intvalue("checkpoint_freq");
+  if (keyval->error() != KeyVal::OK) {
+    ckpt_freq_ = 1;
+  }
+  
   do_value(1);
   do_gradient(0);
   do_hessian(0);
@@ -164,14 +172,19 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
       initial_pg_ << SavableState::restore_state(s);
   else initial_pg_ = new PointGroup(mol_->point_group());
   if (s.version(::class_desc<MolecularEnergy>()) >= 5) {
-    s.get(ckpt_,"checkpoint");
+    int ckpt; s.get(ckpt); ckpt_ = (bool)ckpt;
     s.getstring(ckpt_file_);
   }
   else {
-    ckpt_ = 0;
-    ckpt_file_ = strdup("mole_ckpt.dat");
+    ckpt_ = false;
+    char* filename = SCFormIO::fileext_to_filename(".wfn.ckpt");
+    ckpt_file_ = strdup(filename);
+    delete[] filename;
   }
-
+  if (s.version(::class_desc<MolecularEnergy>()) >= 6)
+    s.get(ckpt_freq_);
+  else
+    ckpt_freq_ = 1;
 }
 
 MolecularEnergy&
@@ -197,14 +210,15 @@ MolecularEnergy::save_data_state(StateOut&s)
   SavableState::save_state(hess_.pointer(),s);
   SavableState::save_state(guesshess_.pointer(),s);
   SavableState::save_state(initial_pg_.pointer(),s);
-  s.put(ckpt_);
+  s.put((int)ckpt_);
   s.putstring(ckpt_file_);
+  s.put(ckpt_freq_);
 }
 
 void
 MolecularEnergy::set_checkpoint()
 {
-  ckpt_ = 1;
+  ckpt_ = true;
 }
 
 void
@@ -217,16 +231,31 @@ MolecularEnergy::set_checkpoint_file(const char *path)
     ckpt_file_ = 0;
 }
 
+void
+MolecularEnergy::set_checkpoint_freq(int freq)
+{
+  if (freq >= 1)
+    ckpt_freq_ = freq;
+  else
+    throw std::runtime_error("MolecularEnergy::set_checkpoint_freq() -- invalid checkpointing frequency");
+}
+
 bool
 MolecularEnergy::if_to_checkpoint() const
 {
-  return (ckpt_ == 1);
+  return ckpt_;
 }
 
 const char*
 MolecularEnergy::checkpoint_file() const
 {
-  return ckpt_file_;
+  return strdup(ckpt_file_);
+}
+
+int
+MolecularEnergy::checkpoint_freq() const
+{
+  return ckpt_freq_;
 }
 
 void

@@ -69,9 +69,6 @@ class SCF: public OneBodyWavefunction {
     int print_all_evals_;
     int print_occ_evals_;
 
-    int savestate_iter_;
-    int savestate_frequency_;
-    
     double level_shift_;
 
     Ref<MessageGrp> scf_grp_;
@@ -97,7 +94,7 @@ class SCF: public OneBodyWavefunction {
     // calculate the scf hessian
     virtual void compute_hessian(const RefSymmSCMatrix&);
     
-    // saves state and restart information after every savestate_frequency
+    // saves state and restart information after every checkpoint_freq()
     // SCF iteration
     virtual void savestate_iter(int);
     
@@ -144,14 +141,6 @@ class SCF: public OneBodyWavefunction {
         for molecules with higher than \f$C_1\f$ symmetry.  The default is
         false.
 
-        <dt><tt>savestate_iter</tt><dd> If this is true, the SCF object
-        is checkpointed every savestate_frequency iterations. The
-        default is no.
-
-        <dt><tt>savestate_frequency</tt><dd> If savestate_iter is true
-        savestate_frequency specifies the number of iterations between
-        writting the checkpoint file.  The default is 1.
-        
         <dt><tt>level_shift</tt><dd> The default is 0.
 
         <dt><tt>extrap</tt><dd> This specifies an object of type

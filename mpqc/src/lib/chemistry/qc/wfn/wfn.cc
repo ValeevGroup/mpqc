@@ -469,6 +469,8 @@ Wavefunction::compute_overlap_eig()
        << scprintf("independent overlap eigenvalue max/min = %12.8f/%12.8f",
                    maxabs, minabs)
        << endl;
+  max_overlap_eigval_ = maxabs;
+  min_overlap_eigval_ = minabs;
 
   if (debug_ > 1) {
     overlap_eigvec_.result_noupdate().print("S eigvec");

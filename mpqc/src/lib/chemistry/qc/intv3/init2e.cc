@@ -88,9 +88,10 @@ Int2eV3::int_initialize_erep(int storage, int order,
     }
 
   if (order > 0) {
-      // a little bit less storage is used if int_derivative_bounds is 0
-      // but for now it'll always be 1
-      int_derivative_bounds = 1;
+    int_derivative_bounds = 1;
+    }
+  else {
+    int_derivative_bounds = 0;
     }
 
   /* A noncritical limitation for now. */

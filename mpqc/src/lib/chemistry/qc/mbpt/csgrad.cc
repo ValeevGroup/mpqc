@@ -1940,6 +1940,7 @@ MBPT2::compute_cs_grad()
     delete[] scf_vector;
     delete[] scf_vector_dat;
     delete[] evals;
+    delete[] orbital_map;
     tim_exit("mp2-mem");
     return;
     }

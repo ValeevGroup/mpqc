@@ -336,8 +336,8 @@ void
 Int2eV3::source_space(int nsource)
 {
   if (nsourcemax < nsource) {
-      if (source) free(source);
-      source = (double*) malloc(sizeof(double)*nsource*3);
+      delete[] source;
+      source = new double[nsource*3];
       target = &source[nsource];
       scratch = &source[nsource*2];
       nsourcemax = nsource;
@@ -363,8 +363,8 @@ void
 Int1eV3::source_space(int nsource)
 {
   if (nsourcemax < nsource) {
-      if (source) free(source);
-      source = (double*) malloc(sizeof(double)*nsource);
+      delete[] source;
+      source = new double[nsource];
       nsourcemax = nsource;
     }
 }

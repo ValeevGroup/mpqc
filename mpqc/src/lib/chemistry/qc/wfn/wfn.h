@@ -60,6 +60,8 @@ class Wavefunction: public MolecularEnergy {
     ResultRefSCMatrix overlap_eigvec_;
     ResultRefDiagSCMatrix overlap_isqrt_eigval_;
     ResultRefDiagSCMatrix overlap_sqrt_eigval_;
+    double min_overlap_eigval_;
+    double max_overlap_eigval_;
     
     ResultRefSymmSCMatrix overlap_;
     ResultRefSymmSCMatrix hcore_;
@@ -87,6 +89,9 @@ class Wavefunction: public MolecularEnergy {
   protected:
 
     int debug_;
+
+    double min_overlap_eigval() const { return min_overlap_eigval_; }
+    double max_overlap_eigval() const { return max_overlap_eigval_; }
     
   public:
     Wavefunction(StateIn&);

@@ -139,7 +139,7 @@ TimedRegion::TimedRegion(const char *name)
 
 TimedRegion::~TimedRegion()
 {
-  delete name_;
+  delete[] name_;
   if (subregions_) while (subregions_->prev_) subregions_ = subregions_->prev_;
   delete subregions_;
   delete next_;

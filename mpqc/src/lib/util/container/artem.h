@@ -36,10 +36,10 @@ class Array {
     int _managed;
     Type * _array;
   public:
-    Array():_length(0),_array(0) {}
-    Array(const Array<Type>&a):_length(0),_array(0) { operator=(a); }
+    Array():_length(0),_managed(0),_array(0) {}
+    Array(const Array<Type>&a):_length(0),_managed(0),_array(0) {operator=(a);}
     Array(Type* data,int size):_length(size),_managed(0),_array(data){}
-    Array(int size):_length(0),_array(0) { set_length(size); }
+    Array(int size):_length(0),_managed(0),_array(0) { set_length(size); }
     ~Array() { clear(); }
     //int length() const { return _length; };
     int size() const { return _length; };

@@ -53,6 +53,7 @@ class AtomInfo: public SavableState {
     double  bragg_radius_[MaxZ];
     double  maxprob_radius_[MaxZ];
     double  rgb_[MaxZ][3];
+    double  ip_[MaxZ];
     double  atomic_radius_scale_;
     double  vdw_radius_scale_;
     double  bragg_radius_scale_;
@@ -81,6 +82,9 @@ class AtomInfo: public SavableState {
     double bragg_radius(int Z) const { return bragg_radius_[Z]*bragg_radius_scale_; }
     double atomic_radius(int Z) const { return atomic_radius_[Z]*atomic_radius_scale_; }
     double maxprob_radius(int Z) const { return maxprob_radius_[Z]*maxprob_radius_scale_; }
+
+    /// Returns the atomization potential for atomic number Z.
+    double ip(int Z) const { return ip_[Z]; }
 
     /// Return the scale factor for the VdW radii.
     double vdw_radius_scale() const { return vdw_radius_scale_; }

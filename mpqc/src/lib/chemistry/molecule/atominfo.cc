@@ -155,7 +155,7 @@ AtomInfo::names_[MaxZ] =
   };
 
 static ClassDesc AtomInfo_cd(
-  typeid(AtomInfo),"AtomInfo",2,"public SavableState",
+  typeid(AtomInfo),"AtomInfo",3,"public SavableState",
   0, create<AtomInfo>, create<AtomInfo>);
 
 AtomInfo::AtomInfo()
@@ -182,6 +182,9 @@ AtomInfo::AtomInfo(StateIn& s):
       s.get_array_double(maxprob_radius_,MaxZ);
       for (int i=0; i<MaxZ; i++) s.get_array_double(rgb_[i],3);
       s.getstring(overridden_values_);
+      if (s.version(::class_desc<AtomInfo>()) >= 3) {
+          s.get_array_double(ip_,MaxZ);
+        }
     }
   else {
       overridden_values_ = 0;
@@ -224,6 +227,7 @@ AtomInfo::save_data_state(StateOut& s)
       s.put_array_double(bragg_radius_,MaxZ);
       s.put_array_double(maxprob_radius_,MaxZ);
       for (int i=0; i<MaxZ; i++) s.put_array_double(rgb_[i],3);
+      s.put_array_double(ip_,MaxZ);
       s.putstring(overridden_values_);
     }
   else {
@@ -276,6 +280,7 @@ AtomInfo::load_library_values()
   grp->bcast(bragg_radius_scale_);
   grp->bcast(maxprob_radius_scale_);
   for (int i=0; i<MaxZ; i++) grp->bcast(rgb_[i],3);
+  grp->bcast(ip_,MaxZ);
 }
 
 void
@@ -289,6 +294,7 @@ AtomInfo::load_values(const Ref<KeyVal>& keyval, int override)
 {
   Ref<Units> amu = new Units("amu");
   Ref<Units> bohr = new Units("bohr");
+  Ref<Units> hartree = new Units("hartree");
 
   load_values(mass_, 0, "mass", keyval, override, amu);
   load_values(atomic_radius_, &atomic_radius_scale_, "atomic_radius",
@@ -300,6 +306,7 @@ AtomInfo::load_values(const Ref<KeyVal>& keyval, int override)
   load_values(maxprob_radius_, &maxprob_radius_scale_,
               "maxprob_radius", keyval, override, bohr);
   load_values(rgb_, "rgb", keyval, override);
+  load_values(ip_, 0, "ip", keyval, override, hartree);
 }
 
 void

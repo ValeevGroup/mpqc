@@ -56,11 +56,11 @@ class B: B_parents {
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
-    int i;
+    int b_;
   public:
     B();
     B(KeyVal&keyval);
-    inline int& b() { return i; };
+    inline int& b() { return b_; };
     virtual void print (ostream&s = cout)
     {
       A::print(s);
@@ -70,12 +70,12 @@ class B: B_parents {
 DescribedClass_REF_dec(B);
 DescribedClass_REF_def(B);
 B::B():
-  i(2)
+  b_(2)
 {
 }
 B::B(KeyVal&keyval):
   A(PrefixKeyVal("A",keyval)),
-  i(keyval.intvalue("b"))
+  b_(keyval.intvalue("b"))
 {
 }
 
@@ -140,21 +140,21 @@ class D: D_parents {
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
-    int i;
-    RefA _a;
-    RefB _b;
+    int d_;
+    RefA d_a_;
+    RefB d_b_;
   public:
     D();
     D(KeyVal&keyval);
-    inline int& d() { return i; }
-    inline RefA da() { return _a; }
-    inline RefB db() { return _b; }
+    inline int& d() { return d_; }
+    inline RefA da() { return d_a_; }
+    inline RefB db() { return d_b_; }
     virtual void print (ostream&s = cout)
     {
       B::print(s);
       C::print(s);
       s << "D::a:\n";  da()->print(s);
-      if ( _a == A::castdown(db().pointer()) ) {
+      if ( (A*)d_a_.pointer() == A::castdown(db().pointer()) ) {
           cout << "a == b\n";
         }
       else {
@@ -166,15 +166,15 @@ class D: D_parents {
 DescribedClass_REF_dec(D);
 DescribedClass_REF_def(D);
 D::D():
-  i(4)
+  d_(4)
 {
 }
 D::D(KeyVal&keyval):
   B(PrefixKeyVal("B",keyval)),
   C(PrefixKeyVal("C",keyval)),
-  i(keyval.intvalue("d")),
-  _a(A::castdown(keyval.describedclassvalue("a"))),
-  _b(B::castdown(keyval.describedclassvalue("b")))
+  d_(keyval.intvalue("d")),
+  d_a_(A::castdown(keyval.describedclassvalue("a"))),
+  d_b_(B::castdown(keyval.describedclassvalue("b")))
 {
 }
 

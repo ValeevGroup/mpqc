@@ -292,14 +292,14 @@ R12IntEval::init_intermeds_()
 void
 R12IntEval::r2_contrib_to_X_()
 {
-  /*-----------------------------------------------
-    Compute dipole and quadrupole moment integrals
-   -----------------------------------------------*/
-  RefSymmSCMatrix MX, MY, MZ, MXX, MYY, MZZ;
-  r12info_->compute_multipole_ints(MX,MY,MZ,MXX,MYY,MZZ);
+  /*---------------------------------------------------------------
+    Compute dipole and quadrupole moment integrals in act MO basis
+   ---------------------------------------------------------------*/
+  RefSCMatrix MX, MY, MZ, MXX, MYY, MZZ;
+  r12info_->compute_multipole_ints(r12info_->act_occ_space(),r12info_->act_occ_space(),MX,MY,MZ,MXX,MYY,MZZ);
   if (debug_)
     ExEnv::out0() << indent << "Computed multipole moment integrals" << endl;
-    
+
   const int nproc = r12info_->msg()->n();
   const int me = r12info_->msg()->me();
 

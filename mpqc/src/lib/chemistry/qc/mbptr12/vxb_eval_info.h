@@ -197,13 +197,19 @@ public:
   /// Returns the MOIntsTransformFactory object
   Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
 
-  /// Compute dipole and quadrupole moment matrices in active MO basis
-  void compute_multipole_ints(RefSymmSCMatrix& MX,
-			      RefSymmSCMatrix& MY,
-			      RefSymmSCMatrix& MZ,
-			      RefSymmSCMatrix& MXX,
-			      RefSymmSCMatrix& MYY,
-			      RefSymmSCMatrix& MZZ);
+  /// Compute overlap matrices in the basis of space1 and space2
+  void compute_overlap_ints(const Ref<MOIndexSpace>& space1,
+                            const Ref<MOIndexSpace>& space2,
+                            RefSCMatrix& S);
+  /// Compute electric dipole and quadrupole moment matrices in the basis of space1 and space2
+  void compute_multipole_ints(const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              RefSCMatrix& MX,
+                              RefSCMatrix& MY,
+                              RefSCMatrix& MZ,
+                              RefSCMatrix& MXX,
+                              RefSCMatrix& MYY,
+                              RefSCMatrix& MZZ);
 			      
 };
 

@@ -56,27 +56,12 @@ VDWShape::~VDWShape()
 }
 
 ////////////////////////////////////////////////////////////////////////
-// static data and functions for ConnollyShape and ConnollyShape2
-
-static const char* atom_type[] = {"H","C","N","O","S","F","Cl","Br","I",
-                                  "Si","Fe","Cu","Ca","Zn","Na","P","Gd","Xx"};
-   // the atom sizes used by msurf (before scaling by 1.1):
-static const double atom_size[] = {
-    1.0800,      1.5400,      1.4800,      1.3600,      1.7000,
-    1.3000,      1.6500,      1.8000,      2.0000,      2.1000,
-    1.1650,      1.1700,      1.7400,      1.2500,      1.5700,
-    1.8000,      1.6100,      1.0000};
+// static functions for ConnollyShape and ConnollyShape2
 
 static double
-find_atom_size(ChemicalElement&element)
+find_atom_size(const RefAtomInfo& a, ChemicalElement&element)
 {
-  const char** type = atom_type;
-  const double* size = atom_size;
-  while(strcmp(*type, element.symbol()) && strcmp(*type,"Xx")) {
-      type++;
-      size++;
-    }
-  return *size * 1.1 * ANGSTROMS_TO_AU;
+  return a->radius(element);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -95,11 +80,6 @@ ConnollyShape::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ConnollyShape::ConnollyShape(const RefMolecule&mol,double probe_radius)
-{
-  initialize(mol,probe_radius);
-}
-
 ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
 {
   RefMolecule mol = keyval->describedclassvalue("molecule");
@@ -107,6 +87,7 @@ ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) {
       probe_radius = 2.6456173;
     }
+  atominfo_ = keyval->describedclassvalue("atominfo");
   initialize(mol,probe_radius);
 }
 
@@ -120,7 +101,8 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
       for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
       RefSphereShape
         sphere(
-            new SphereShape(r,find_atom_size(mol->operator[](i).element()))
+            new SphereShape(r,find_atom_size(atominfo_,
+                                             mol->operator[](i).element()))
             );
       add_shape(sphere.pointer());
       spheres.add(sphere);
@@ -175,14 +157,6 @@ ConnollyShape2::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ConnollyShape2::ConnollyShape2(const RefMolecule&mol,double probe_radius)
-{
-  sphere = 0;
-  probe_r = probe_radius;
-  angular_res = M_PI/180.0;
-  initialize(mol,probe_radius);
-}
-
 ConnollyShape2::ConnollyShape2(const RefKeyVal&keyval)
 {
   sphere = 0;
@@ -191,10 +165,7 @@ ConnollyShape2::ConnollyShape2(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) {
       probe_r = 2.6456173;
     }
-  angular_res = keyval->doublevalue("angular_resolution");
-  if (keyval->error() != KeyVal::OK) {
-      angular_res = M_PI/180.0;
-    }
+  atominfo_ = keyval->describedclassvalue("atominfo");
   initialize(mol,probe_r);
 }
 
@@ -234,7 +205,8 @@ ConnollyShape2::initialize(const RefMolecule&mol,double probe_radius)
   for (int i=0; i<n_spheres; i++) {
       SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
-      sphere[i].initialize(r,find_atom_size(mol->operator[](i).element())
+      sphere[i].initialize(r,find_atom_size(atominfo_,
+                                            mol->operator[](i).element())
                               + probe_r);
     }
 }
@@ -298,7 +270,7 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, double*grad) const
     }
 #endif
 
-  if (probe_centers.intersect(local_sphere,n_local_spheres,angular_res)
+  if (probe_centers.intersect(local_sphere,n_local_spheres)
       == 1) return inside;
   return outside;
 }
@@ -523,7 +495,7 @@ int CS2Sphere::n_probe_enclosed_by_a_sphere_ = 0;
 int CS2Sphere::n_probe_center_not_enclosed_ = 0;
 int CS2Sphere::n_surface_of_s0_not_covered_ = 0;
 int CS2Sphere::n_plane_totally_covered_ = 0;
-int CS2Sphere::n_point_was_not_in_a_sphere_ = 0;
+int CS2Sphere::n_internal_edge_not_covered_ = 0;
 int CS2Sphere::n_totally_covered_ = 0;
 #endif
 
@@ -542,8 +514,8 @@ CS2Sphere::print_counts(FILE*fp)
           n_surface_of_s0_not_covered_);
   fprintf(fp,"  n_plane_totally_covered_ = %d\n",
           n_plane_totally_covered_);
-  fprintf(fp,"  n_point_was_not_in_a_sphere = %d\n",
-          n_point_was_not_in_a_sphere_);
+  fprintf(fp,"  n_internal_edge_not_covered = %d\n",
+          n_internal_edge_not_covered_);
   fprintf(fp,"  n_totally_covered = %d\n",
           n_totally_covered_);
 #else
@@ -635,33 +607,11 @@ print_spheres(const CS2Sphere& s0, CS2Sphere* s, int n_spheres)
 }
 #endif
 
-// These tables are used to speed up cos and sin calls
-static double table_angular_res = 0.0;
-static double* table_sin = 0;
-static double* table_cos = 0;
-
 // Function to determine if there is any portion of s0 that 
 // is not inside one or more of the spheres in s[]
 int
-CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
+CS2Sphere::intersect(CS2Sphere *s, int n_spheres) const
 {
-  if (angular_res < M_PI/1800.0) {
-      fprintf(stderr,"CS2Sphere::intersect: angular_res too small\n");
-      abort();
-    }
-  if (table_angular_res != angular_res) {
-      table_angular_res = angular_res;
-      if (table_sin) delete[] table_sin;
-      if (table_cos) delete[] table_cos;
-      int table_size = 2 + (int) (2.0 * M_PI/angular_res);
-      table_sin = new double[table_size];
-      table_cos = new double[table_size];
-      double angle = 0.0;
-      for (int i=0; i<table_size; i++, angle+=angular_res) {
-          table_sin[i] = sin(angle);
-          table_cos[i] = cos(angle);
-        }
-    }
     if (n_spheres == 0) {
         n_no_spheres_++;
         return 0;
@@ -698,13 +648,15 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
     // included in spheres in s[], by making sure that all the
     // circles describing the intersections of every sphere with
     // s0 are included in at least one other sphere.
+    double epsilon=1.e-8;
+    int surface_not_covered=0;
     for (i=0; i<n_spheres; i++)
     {
         // calculate radius of the intersection of s0 and s[i]
         double cr = s0.common_radius(s[i]);
         if (cr == 0.0) {
             continue;
-          }
+        }
         
         // We're chosing that the intersection of s[i] and s0 
         // occurs parallel to the x-y plane, so we'll need to rotate the
@@ -718,7 +670,7 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
         // s0 and s[i]
         double d=s0.distance(s[i]);
         double z_plane;
-        if (s[i].radius()*s[i].radius() < d*d)
+        if (s[i].radius()*s[i].radius() < d*d+s0.radius()*s0.radius())
             z_plane=sqrt(s0.radius()*s0.radius()-cr*cr);
         else
             z_plane=-sqrt(s0.radius()*s0.radius()-cr*cr);
@@ -736,7 +688,7 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
                 double x0=rcent.x();
                 double y0=rcent.y();
                 double z0=rcent.z();
-
+                
                 // Does this sphere even reach the plane where
                 // the intersection of s0 and s[i] occurs?
                 // If not, let's go to the next sphere
@@ -744,24 +696,24 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
                     (z0-z_plane)*(z0-z_plane);
                 if (z_dist < 0.0)
                     continue;
-
+                
                 // Calculate radius of circular projection of s[j]
                 // onto s0-s[i] intersection plane
-                double r=sqrt(z_dist);
+                double r_2=z_dist;
                 
                 // Precalculate a bunch of factors 
-                double cr_2=cr*cr;  double r_2=r*r; 
+                double cr_2=cr*cr;
                 double x0_2=x0*x0; double y0_2=y0*y0;
                 double dist=sqrt(x0_2+y0_2);
                 
                 // If the projection of s[j] on x-y doesn't reach the
                 // intersection of s[i] and s0, continue.
-                if (r < dist-cr)
+                if (r_2 < (dist-cr)*(dist-cr))
                     continue;
                 
                 // If the projection of s[j] on x-y engulfs the intersection
                 // of s[i] and s0, cover interval and continue
-                if (r > dist+cr)
+                if (r_2 > (dist+cr)*(dist+cr))
                 {
                     intvl.add(0, 2.*M_PI);
                     continue;
@@ -778,7 +730,7 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
                 // Check to see if there's any intersection at all
                 // I.e. if one circle is inside the other  (Note that
                 // we've already checked to see if s[j] engulfs
-                // the intersection of s0 and s[i]
+                // the intersection of s0 and s[i])
                 if (radical <= 0.0) continue;
                 
                 // Okay, go ahead and calculate the intersection points
@@ -807,34 +759,21 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
                     theta1=theta2;
                     theta2=tmptheta;
                 }
-
+                
                 // Determine which of the two possible chords 
                 // is inside s[j]
-                double chord_width=
-                    ((x_0-x_1)*(x_0-x_1)+(y_0-y_1)*(y_0-y_1))/4.;
-                if (dist*dist > r*r-chord_width)   // it's the short chord
+                double dor=(x0-cr)*(x0-cr)+y0*y0;
+                if (dor < r_2)
                 {
-                    if (theta2-theta1 < M_PI)
-                        intvl.add(theta1, theta2);
-                    else
-                    {
-                        intvl.add(0, theta1);
-                        intvl.add(theta2, 2.*M_PI);
-                    }
+                    intvl.add(0, theta1);
+                    intvl.add(theta2, 2.*M_PI);
                 }
-                else            // it's the long chord
+                else            
                 {
-                    if (theta2-theta1 > M_PI)
-                        intvl.add(theta1, theta2);
-                    else
-                    {
-                        intvl.add(0, theta1);
-                        intvl.add(theta2, 2.*M_PI);
-                    }
+                    intvl.add(theta1, theta2);
                 }
-
+                
                 // Now test to see if the range is covered
-                double epsilon=0.000001;
                 if (intvl.test_interval(epsilon, 2.*M_PI-epsilon))
                 {
                     // No need to keep testing, move on to next i
@@ -844,11 +783,11 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
             }
         // If the intersection wasn't totally covered, the sphere
         // intersection is incomplete
-        double epsilon=0.000001;
         if (!intvl.test_interval(epsilon, 2.*M_PI-epsilon)) {
             n_surface_of_s0_not_covered_++;
+            // goto next_test;
             return 0;
-          }
+        }
     }
 
     // for the special case of all sphere's centers on one side of
@@ -862,107 +801,289 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
     // As a final test of the surface coverage, make sure that all
     // of the intersection surfaces between s0 and s[] are included 
     // inside more than one sphere.
-    // NOTE THAT THE ORIENTATION OF THE s0->s[] VECTOR HAS
-    // CHANGED FROM THAT USED ABOVE
-    
-    // Make a new array of 3Vects to store rotated orientations
-    // of spheres
-    static int rspheres_dim = 0;
-    static SCVector3 *rspheres = 0;
-    if (rspheres_dim < n_spheres) {
-        if (rspheres) delete[] rspheres;
-        rspheres = new SCVector3[n_spheres];
-        rspheres_dim = n_spheres;
-      }
-    
+    int angle_segs;
+    double max_angle[2], min_angle[2];
     for (i=0; i<n_spheres; i++)
     {
-        // calculate common radius of the two spheres
-        double cr = s0.common_radius(s[i]);
-        if (cr == 0.0) {
-            continue;
-          }
+        // For my own sanity, let's put s[i] at the origin 
+        for (int k=0; k<n_spheres; k++)
+            if (k != i)
+                s[k].recenter(s[i].center());
+        s0.recenter(s[i].center());
+        s[i].recenter(s[i].center());
         
-        // calculate the angle subtending the intersection 
-        // as seen from the center of s[i]
-        double inter_angle=asin(cr/s[i].radius());
-        
-        // We're assuming that the intersection of s[i] and s0 
-        // occurs in the x-y plane, so we'll need to rotate the
-        // center of s[j] appropriately.  
-        // Create a rotation matrix that take the vector from 
-        // the centers of s0 to s[i] and puts it on the 
-        // Negative z axis
-        static const SCVector3 Zaxis(0.0, 0.0, -1.0);
-        SCMatrix3 rot = rotation_mat(s0.center_vec(s[i]),Zaxis);
-        
-        // Pre-rotate all sphere to this orientation
-        for (int j=0; j<n_spheres; j++)
-            rspheres[j] = rot*s0.center_vec(s[j]);
-        
-        // Loop over concentric rings on the surface of sphere 
-        // s[i], which are inside s0.  Use the defined
-        // value angular_res.
-        double ring_distance=angular_res*s[i].radius();
-        double theta=0.0;
-        int itheta = 0;
-        double s_i_r = s[i].radius();
-        while (theta < inter_angle)
+        for (int j=0; j<i; j++)
         {
-            double r_cos_theta = s_i_r*table_cos[itheta];
-            // calculate a delta phi commensurate with the 
-            // angular resolution for this theta (i.e. the
-            // distance between successive points around the
-            // ring should be the same as the distance between
-            // the rings)
-            double ring_radius=s_i_r*table_sin[itheta];
-            double delta_phi=2.0*M_PI;
-            if (ring_radius > 0.0)
-                delta_phi=ring_distance/ring_radius;
+
+            // calculate radius of the intersection of s[i] and s[j]
+            double cr = s[i].common_radius(s[j]);
+            if (cr == 0.0) {
+                continue;                   // s[i] and s[j] don't intersect
+            }
+
+            // We're chosing that the intersection of s[i] and s[j]
+            // occurs parallel to the x-y plane, so we'll need to rotate the
+            // center of all s[]'s and s0 appropriately.  
+            // Create a rotation matrix that take the vector from 
+            // the centers of s0 to s[i] and puts it on the z axis
+            static const SCVector3 Zaxis(0.0, 0.0, 1.0);
+            SCMatrix3 rot = rotation_mat(s[i].center_vec(s[j]),Zaxis);
             
-            double phi=0.0;
-            // round off delta_phi to a value that we can find in
-            // the tables
-            int iphi = 0;
-            int iphi_delta = (int) (delta_phi/angular_res);
-            if (iphi_delta == 0) iphi_delta = 1;
-            delta_phi = angular_res * iphi_delta;
-            while (phi <= 2.*M_PI)
+            // Now calculate the Z position of the intersection of 
+            // s[i] and s[j]
+            double d=s[i].distance(s[j]);
+            double z_plane;
+            if (s[j].radius()*s[j].radius() < s[i].radius()*s[i].radius()+d*d)
+                z_plane=sqrt(s[i].radius()*s[i].radius()-cr*cr);
+            else
+                z_plane=-sqrt(s[i].radius()*s[i].radius()-cr*cr);
+            
+            // Determine which part of the this intersection
+            // occurs within s0
+            // Rotate the center of s0 to appropriate refence frame
+            SCVector3 rcent = rot*s[i].center_vec(s0);
+            
+            double x0=rcent.x();
+            double y0=rcent.y();
+            double z0=rcent.z();
+            
+            // Does this s0 even reach the plane where
+            // the intersection of s[i] and s[j] occurs?
+            // If not, let's go to the next sphere j
+            double z_dist=s0.radius()*s0.radius()-
+                (z0-z_plane)*(z0-z_plane);
+            if (z_dist < 0.0)
+                continue;
+            
+            // Calculate radius of circular projection of s0
+            // onto s[i]-s[j] intersection plane
+            double r_2=z_dist;
+            
+            // Precalculate a bunch of factors 
+            double cr_2=cr*cr;
+            double x0_2=x0*x0; double y0_2=y0*y0;
+            double dist=sqrt(x0_2+y0_2);
+            
+            // If the projection of s[j] on x-y doesn't reach the
+            // intersection of s[i] and s0, continue.
+            if (r_2 < (dist-cr)*(dist-cr))
+                continue;
+            
+            // If the projection of s0 on x-y engulfs the intersection
+            // of s[i] and s[j], the intersection interval is 0 to 2pi
+            if (r_2 > (dist+cr)*(dist+cr))
             {
-                // check to see if the point defined by
-                // spherical coordinates (phi, theta, s[i].radius())
-                // is contained inside another intersecting sphere
-                SCVector3 point(ring_radius*table_cos[iphi],
-                                ring_radius*table_sin[iphi],
-                                r_cos_theta);
-                point=point+rspheres[i];
-                
-                // loop over the other spheres
-                for (int j=0; j<n_spheres; j++) {
-                    if (i != j) {
-                        double s_j_r = s[j].radius();
-                        double s_j_r_2 = s_j_r*s_j_r;
-                        SCVector3 x(point - rspheres[j]);
-                        if (x.dot(x) < s_j_r_2)
-                            goto found_overlap;
-                      }
-                  }
-
-                // If we reach this line, then the "point" is not
-                // included in another sphere in s[].
-#if PRINT_SPECIAL_CASES
-                print_spheres(s0,s,n_spheres);
-#endif
-                n_point_was_not_in_a_sphere_++;
-                return 0;
-
-              found_overlap:
-                phi+=delta_phi;
-                iphi += iphi_delta;
+                angle_segs=1;
+                min_angle[0]=0.0;
+                max_angle[0]=2.*M_PI;
             }
             
-            theta+=angular_res;
-            itheta++;
+            // Calculation the radical in the quadratic equation
+            // determining the overlap of the two circles
+            double radical=x0_2*(-cr_2*cr_2 + 2*cr_2*r_2 - 
+                                 r_2*r_2 + 2*cr_2*x0_2 + 
+                                 2*r_2*x0_2 - x0_2*x0_2 + 
+                                 2*cr_2*y0_2 + 2*r_2*y0_2 - 
+                                 2*x0_2*y0_2 - y0_2*y0_2);
+            
+            // Check to see if there's any intersection at all
+            // I.e. if one circle is inside the other  (Note that
+            // we've already checked to see if s0 engulfs
+            // the intersection of s[i] and s[j]), so this
+            // must mean that the intersection of s[i] and s[j]
+            // occurs outside s0
+            if (radical <= 0.0) continue;
+
+            // Okay, go ahead and calculate the intersection points
+            double x_numer = cr_2*x0_2 - r_2*x0_2 + x0_2*x0_2 + x0_2*y0_2;
+            double x_denom = 2*x0*x0_2 + 2*x0*y0_2;
+            double y_numer = cr_2*y0 - r_2*y0 + x0_2*y0 + y0*y0_2;
+            double y_denom = 2*(x0_2 + y0_2);
+            
+            double sqrt_radical = sqrt(radical);
+            
+            double x_0=(x_numer - y0*sqrt_radical)/x_denom;
+            double y_0=(y_numer + sqrt_radical)/y_denom;
+            double x_1=(x_numer + y0*sqrt_radical)/x_denom;
+            double y_1=(y_numer - sqrt_radical)/y_denom;
+            
+            // Now calculate the angular range of these ordered
+            // points and place them on the first Riemann sheet.
+            // and sort their order
+            double theta1=atan2(y_0, x_0);
+            double theta2=atan2(y_1, x_1);
+            if (theta1 < 0.0) theta1+=2.*M_PI;
+            if (theta2 < 0.0) theta2+=2.*M_PI;
+            if (theta1 > theta2)
+            {
+                double tmptheta=theta1;
+                theta1=theta2;
+                theta2=tmptheta;
+            }
+            //printf("theta1=%lf, theta2=%lf\n",theta1,theta2);
+
+            // Determine which of the two possible chords 
+            // is inside s0
+
+            // But first see if s0 is inside this intersection:
+            double origin_dist=((x0-cr)*(x0-cr)+(y0*y0));
+            if (origin_dist < r_2) // it's the angle containing
+                                       // the origin
+            {
+                angle_segs=2;
+                min_angle[0]=0.0;
+                max_angle[0]=theta1;
+                min_angle[1]=theta2;
+                max_angle[1]=2.*M_PI;
+            }
+            else            // it's the angle not including the origin
+            {
+                angle_segs=1;
+                min_angle[0]=theta1;
+                max_angle[0]=theta2;
+            }
+
+            double jx0=x0;
+            double jy0=y0;
+            double jz0=z0;
+            
+            // Initialize the interval object
+            intvl.clear();
+            
+            // Loop over the other spheres
+            for (k=0; k<n_spheres; k++)
+            {
+                if (k != i && k != j)
+                {
+                    // Rotate the center of s[k] to appropriate reference frame
+                    rcent = rot*s[i].center_vec(s[k]);
+                    
+                    double x0=rcent.x();
+                    double y0=rcent.y();
+                    double z0=rcent.z();
+                    
+                    // Does this sphere even reach the plane where
+                    // the intersection of s[i] and s[j] occurs?
+                    // If not, let's go to the next sphere
+                    double z_dist=s[k].radius()*s[k].radius()-
+                        (z0-z_plane)*(z0-z_plane);
+                    if (z_dist < 0.0)
+                        continue;
+                    
+                    // Calculate radius of circular projection of s[k]
+                    // onto s[i]-s[j] intersection plane
+                    double r_2=z_dist;
+                    
+                    // Precalculate a bunch of factors 
+                    double cr_2=cr*cr;
+                    double x0_2=x0*x0; double y0_2=y0*y0;
+                    double dist=sqrt(x0_2+y0_2);
+                    
+                    // If the projection of s[k] on x-y doesn't reach the
+                    // intersection of s[i] and s[j], continue.
+                    if (r_2 < (dist-cr)*(dist-cr))
+                        continue;
+                    
+                    // If the projection of s[k] on x-y engulfs the intersection
+                    // of s[i] and s0, cover interval and continue
+                    if (r_2 > (dist+cr)*(dist+cr))
+                    {
+                        intvl.add(0, 2.*M_PI);
+                        continue;
+                    }
+                    
+                    // Calculation the radical in the quadratic equation
+                    // determining the overlap of the two circles
+                    radical=x0_2*(-cr_2*cr_2 + 2*cr_2*r_2 - 
+                                  r_2*r_2 + 2*cr_2*x0_2 + 
+                                  2*r_2*x0_2 - x0_2*x0_2 + 
+                                  2*cr_2*y0_2 + 2*r_2*y0_2 - 
+                                  2*x0_2*y0_2 - y0_2*y0_2);
+                    
+                    // Check to see if there's any intersection at all
+                    // I.e. if one circle is inside the other  (Note that
+                    // we've already checked to see if s[k] engulfs
+                    // the intersection of s[i] and s[j])
+                    if (radical <= 0.0) continue;
+                    
+                    // Okay, go ahead and calculate the intersection points
+                    x_numer = cr_2*x0_2 - r_2*x0_2 + x0_2*x0_2 + x0_2*y0_2;
+                    x_denom = 2*x0*x0_2 + 2*x0*y0_2;
+                    y_numer = cr_2*y0 - r_2*y0 + x0_2*y0 + y0*y0_2;
+                    y_denom = 2*(x0_2 + y0_2);
+                    
+                    sqrt_radical = sqrt(radical);
+                    
+                    double x_0=(x_numer - y0*sqrt_radical)/x_denom;
+                    double y_0=(y_numer + sqrt_radical)/y_denom;
+                    double x_1=(x_numer + y0*sqrt_radical)/x_denom;
+                    double y_1=(y_numer - sqrt_radical)/y_denom;
+
+                    // Now calculate the angular range of these ordered
+                    // points and place them on the first Riemann sheet.
+                    // and sort their order
+                    theta1=atan2(y_0, x_0);
+                    theta2=atan2(y_1, x_1);
+                    if (theta1 < 0.0) theta1+=2.*M_PI;
+                    if (theta2 < 0.0) theta2+=2.*M_PI;
+                    if (theta1 > theta2)
+                    {
+                        double tmptheta=theta1;
+                        theta1=theta2;
+                        theta2=tmptheta;
+                    }
+                    //printf("In k loop, k=%d, theta1=%lf, theta2=%lf\n",
+                    //       k,theta1, theta2);
+                    // Determine which of the two possible chords 
+                    // is inside s[k]
+                    double origin_dist=((x0-cr)*(x0-cr)+(y0*y0));
+                    if (origin_dist < r_2) // it's got the origin
+                    {
+                        intvl.add(0, theta1);
+                        intvl.add(theta2, 2.*M_PI);
+                    }
+                    else        // it doesn't have the origin
+                    {
+                        intvl.add(theta1, theta2);
+                    }
+
+                    // Now test to see if the range is covered
+                    if (intvl.test_interval(min_angle[0]+epsilon,
+                                            max_angle[0]-epsilon) &&
+                        (angle_segs!=2 ||
+                         intvl.test_interval(min_angle[1]+epsilon,
+                                             max_angle[1]-epsilon)))
+                    {
+                        goto next_j;
+                    }
+                }
+            }
+            if (!intvl.test_interval(min_angle[0]+epsilon,
+                                     max_angle[0]-epsilon))
+            {
+                // No need to keep testing, return 0
+                n_internal_edge_not_covered_++;
+                return 0;
+                //printf(" Non-internal coverage(1)\n");
+                //goto next_test;
+            }
+            if (angle_segs==2)
+            {
+                if  (!intvl.test_interval(min_angle[1]+epsilon,
+                                          max_angle[1]-epsilon))
+                {
+                    n_internal_edge_not_covered_++;
+                    return 0;
+                    //printf(" Non-internal coverage(2)\n");
+                    //goto next_test;
+                }
+                else
+                {
+                    goto next_j;
+                }
+            }
+          next_j:
+            continue;
         }
     }
     

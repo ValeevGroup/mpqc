@@ -7,6 +7,7 @@
 #endif
 
 #include <math/isosurf/shape.h>
+#include <chemistry/molecule/molinfo.h>
 #include <chemistry/molecule/molecule.h>
 
 class VDWShape: public UnionShape {
@@ -26,8 +27,9 @@ class ConnollyShape: public UnionShape {
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
+  private:
+    RefAtomInfo atominfo_;
  public:
-    ConnollyShape(const RefMolecule&,double probe_radius = 2.6456173);
     ConnollyShape(const RefKeyVal&);
     ~ConnollyShape();
     void initialize(const RefMolecule&,double probe_radius);
@@ -50,7 +52,7 @@ class CS2Sphere
     static int n_probe_center_not_enclosed_;
     static int n_surface_of_s0_not_covered_;
     static int n_plane_totally_covered_;
-    static int n_point_was_not_in_a_sphere_;
+    static int n_internal_edge_not_covered_;
     static int n_totally_covered_;
 #endif
 
@@ -99,8 +101,7 @@ class CS2Sphere
     // 1 if the intersection is empty, otherwise 0 is returned.
     // Warning: the spheres in s are modified.
     int intersect(CS2Sphere *s,
-                  int n_spheres,
-                  double angular_res = M_PI/180.0) const;
+                  int n_spheres) const;
 
     static void print_counts(FILE*fp = stdout);
 };
@@ -113,8 +114,8 @@ class ConnollyShape2: public Shape {
   private:
     CS2Sphere* sphere;
     double probe_r;
-    double angular_res;
     int n_spheres;
+    RefAtomInfo atominfo_;
 
 #if COUNT_CONNOLLY2
     static int n_total_;
@@ -124,7 +125,6 @@ class ConnollyShape2: public Shape {
 #endif
 
   public:
-    ConnollyShape2(const RefMolecule&,double probe_radius = 2.6456173);
     ConnollyShape2(const RefKeyVal&);
     ~ConnollyShape2();
     void initialize(const RefMolecule&,double probe_radius);

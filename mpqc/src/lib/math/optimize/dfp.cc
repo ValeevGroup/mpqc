@@ -47,8 +47,13 @@ DFPUpdate::DFPUpdate(StateIn&s):
   HessianUpdate(s)
   maybe_SavableState(s)
 {
-  xprev.restore_state(s);
-  gprev.restore_state(s);
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+  xprev = k->vector(dim);
+  gprev = k->vector(dim);
+  xprev.restore(s);
+  gprev.restore(s);
 }
 
 DFPUpdate::~DFPUpdate()
@@ -59,13 +64,14 @@ void
 DFPUpdate::save_data_state(StateOut&s)
 {
   HessianUpdate::save_data_state(s);
-  xprev.save_state(s);
-  gprev.save_state(s);
+  xprev.dim().save_state(s);
+  xprev.save(s);
+  gprev.save(s);
 }
 
 void
-DFPUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
-                  RefSCVector&xn,RefSCVector&gn)
+DFPUpdate::update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
+                  const RefSCVector&xn,const RefSCVector&gn)
 {
   RefSCVector xnew, gnew;
 
@@ -142,8 +148,8 @@ BFGSUpdate::save_data_state(StateOut&s)
 }
 
 void
-BFGSUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
-                   RefSCVector&xn,RefSCVector&gn)
+BFGSUpdate::update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
+                   const RefSCVector&xn,const RefSCVector&gn)
 {
   RefSCVector xnew, gnew;
 

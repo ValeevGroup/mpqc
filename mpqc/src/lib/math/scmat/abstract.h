@@ -7,6 +7,7 @@
 #endif
 
 #include <util/state/state.h>
+#include <math/scmat/dim.h>
 #include <math/scmat/block.h>
 #include <iostream.h>
 
@@ -26,52 +27,61 @@ typedef class SSRefSCElementOp3 RefSCElementOp3;
 
 class RefSCDimension;
 
-//texi The @code{SCDimension} class is used to determine the size and
-// blocking of matrices.
-class SCDimension: public SavableState {
-#   define CLASSNAME SCDimension
-#   include <util/state/stated.h>
+DescribedClass_REF_fwddec(SCMatrixKit);
+
+//texi The @code{SCMatrixKit} class produces specialized matrices and
+// dimensions.
+class SCMatrixKit: public DescribedClass {
+#   define CLASSNAME SCMatrixKit
 #   include <util/class/classda.h>
-  private:
-    char *name_;
   public:
-    //texi Create a dimension with an optional name.  The
-    // name is a copy of the @code{'\0'} terminated string @var{name}.
-    SCDimension(const char* name = 0);
+    SCMatrixKit();
+    SCMatrixKit(const RefKeyVal&);
+    ~SCMatrixKit();
 
-    SCDimension(StateIn&s);
-    virtual ~SCDimension();
-    void save_data_state(StateOut&);
+    // these members are default in local.cc
+    //texi This returns a @code{LocalSCMatrixKit}, unless the
+    // default has been changed with @code{set_default_matrixkit}.
+    static SCMatrixKit* default_matrixkit();
+    static void set_default_matrixkit(const RefSCMatrixKit &);
 
-    //texi Test to see if two dimensions are equivalent.
-    virtual int equiv(SCDimension*) const = 0;
-    
-    //texi Return the dimension.
-    virtual int n() = 0;
-    //texi Create matrices or vectors.
-    virtual SCMatrix* create_matrix(SCDimension*) = 0;
-    SCMatrix* create_matrix(const RefSCDimension&);
-    virtual SymmSCMatrix* create_symmmatrix() = 0;
-    virtual DiagSCMatrix* create_diagmatrix() = 0;
-    virtual SCVector* create_vector() = 0;
-    //texi Return the name of the dimension.  If no name was given
-    // to the constructor, then return @code{0}.
-    const char* name() { return name_; }
+    //texi Given the dimensions, create matrices or vectors.
+    virtual SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&) = 0;
+    virtual SymmSCMatrix* symmmatrix(const RefSCDimension&) = 0;
+    virtual DiagSCMatrix* diagmatrix(const RefSCDimension&) = 0;
+    virtual SCVector* vector(const RefSCDimension&) = 0;
+
+    //texi Given the dimensions and a @code{StateIn} object,
+    // restore matrices or vectors.
+    SCMatrix* restore_matrix(StateIn&,
+                             const RefSCDimension&,
+                             const RefSCDimension&);
+    SymmSCMatrix* restore_symmmatrix(StateIn&,
+                                     const RefSCDimension&);
+    DiagSCMatrix* restore_diagmatrix(StateIn&,             
+                                     const RefSCDimension&);
+    SCVector* restore_vector(StateIn&,
+                             const RefSCDimension&);
 };
+DescribedClass_REF_dec(SCMatrixKit);
 
 //texi The @code{SCVector} class is the abstract base class for
 // @code{double} valued vectors.
-class SCVector: public SavableState {
+class SCVector: public DescribedClass {
 #   define CLASSNAME SCVector
-#   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  protected:
+    RefSCDimension d;
+    RefSCMatrixKit kit_;
   public:
-    SCVector();
-    SCVector(StateIn&);
+    SCVector(const RefSCDimension&, SCMatrixKit *);
 
     //texi Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
+
+    //texi Return the @code{SCMatrixKit} used to create this object.
+    RefSCMatrixKit kit() const { return kit_; }
 
     // concrete functions (some can be overridden)
     //texi Return a vector with the same dimension and same elements.
@@ -80,9 +90,8 @@ class SCVector: public SavableState {
     virtual SCVector* clone();
 
     virtual ~SCVector();
-    void save_data_state(StateOut&);
     //texi Return the length of the vector.
-    virtual int n();
+    int n() { return d->n(); }
     //texi Return the maximum absolute value element of this vector.
     virtual double maxabs();
     //texi Normalize this.
@@ -102,7 +111,7 @@ class SCVector: public SavableState {
     virtual void scale(double val);
 
     //texi Return the @code{RefSCDimension} corresponding to this vector.
-    virtual RefSCDimension dim() = 0;
+    RefSCDimension dim() const { return d; }
     //texi Set element @var{i} to @var{val}.
     virtual void set_element(int,double) = 0;
     //texi Add @var{val} to element @var{i}.
@@ -142,25 +151,27 @@ class SCVector: public SavableState {
 // @code{double} valued n by m matrices.
 // For symmetric matrices use @code{SymmSCMatrix} and for
 // diagonal matrices use @code{DiagSCMatrix}.
-class SCMatrix: public SavableState {
+class SCMatrix: public DescribedClass {
 #   define CLASSNAME SCMatrix
-#   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  protected:
+    RefSCDimension d1,d2;
+    RefSCMatrixKit kit_;
   public:
-
     // concrete functions (some can be overridden)
-    SCMatrix();
-    SCMatrix(StateIn&);
+    SCMatrix(const RefSCDimension&, const RefSCDimension&, SCMatrixKit *);
     virtual ~SCMatrix();
-    void save_data_state(StateOut&);
 
     //texi Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
 
+    //texi Return the @code{SCMatrixKit} used to create this object.
+    RefSCMatrixKit kit() const { return kit_; }
+
     //texi Return the number of rows or columns.
-    virtual int nrow();
-    virtual int ncol();
+    int nrow() const { return d1->n(); }
+    int ncol() const { return d2->n(); }
     //texi Return the maximum absolute value element.
     virtual double maxabs();
     //texi Assign each element to a random number between -1 and 1
@@ -194,8 +205,8 @@ class SCMatrix: public SavableState {
 
     // pure virtual functions
     //texi Return the row or column dimension.
-    virtual RefSCDimension rowdim() = 0;
-    virtual RefSCDimension coldim() = 0;
+    RefSCDimension rowdim() const { return d1; }
+    RefSCDimension coldim() const { return d2; }
     //texi Return or modify an element.
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
@@ -276,14 +287,17 @@ class SCMatrix: public SavableState {
 
 //texi The @code{SymmSCMatrix} class is the abstract base class for symmetric
 // @code{double} valued matrices.
-class SymmSCMatrix: public SavableState {
+class SymmSCMatrix: public DescribedClass {
 #   define CLASSNAME SymmSCMatrix
-#   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  protected:
+    RefSCDimension d;
+    RefSCMatrixKit kit_;
   public:
-    SymmSCMatrix();
-    SymmSCMatrix(StateIn&);
-    void save_data_state(StateOut&);
+    SymmSCMatrix(const RefSCDimension&, SCMatrixKit *);
+
+    //texi Return the @code{SCMatrixKit} object that created this object.
+    RefSCMatrixKit kit() const { return kit_; }
 
     //texi Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
@@ -315,7 +329,7 @@ class SymmSCMatrix: public SavableState {
     //texi Make @code{this} equal to the unit matrix.
     virtual void unit();
     //texi Return the dimension.
-    virtual int n();
+    int n() { return d->n(); }
     //texi Return a matrix with the same dimension and same elements.
     virtual SymmSCMatrix* copy();
     //texi Return a matrix with the same dimension but uninitialized memory.
@@ -323,7 +337,7 @@ class SymmSCMatrix: public SavableState {
 
     // pure virtual functions
     //texi Return the dimension.
-    virtual RefSCDimension dim() = 0;
+    RefSCDimension dim() const { return d; }
     //texi Return or modify an element.
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
@@ -398,14 +412,17 @@ class SymmSCMatrix: public SavableState {
 
 //texi The @code{SymmSCMatrix} class is the abstract base class for diagonal
 // @code{double} valued matrices.
-class DiagSCMatrix: public SavableState {
+class DiagSCMatrix: public DescribedClass {
 #   define CLASSNAME DiagSCMatrix
-#   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  protected:
+    RefSCDimension d;
+    RefSCMatrixKit kit_;
   public:
-    DiagSCMatrix();
-    DiagSCMatrix(StateIn&);
-    void save_data_state(StateOut&);
+    DiagSCMatrix(const RefSCDimension&, SCMatrixKit *);
+
+    //texi Return the @code{SCMatrixKit} used to create this object.
+    RefSCMatrixKit kit() const { return kit_; }
 
     //texi Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
@@ -429,7 +446,7 @@ class DiagSCMatrix: public SavableState {
     //texi Multiply all elements by @var{val}.
     virtual void scale(double);
     //texi Return the dimension.
-    virtual int n();
+    int n() const { return d->n(); }
     //texi Return a matrix with the same dimension and same elements.
     virtual DiagSCMatrix* copy();
     //texi Return a matrix with the same dimension but uninitialized memory.
@@ -437,7 +454,7 @@ class DiagSCMatrix: public SavableState {
 
     // pure virtual functions
     //texi Return the dimension.
-    virtual RefSCDimension dim() = 0;
+    RefSCDimension dim() const { return d; }
     //texi Return or modify an element.
     virtual double get_element(int) = 0;
     virtual void set_element(int,double) = 0;
@@ -469,46 +486,6 @@ class DiagSCMatrix: public SavableState {
     //texi Returns iterators for the all blocks used in this matrix.
     virtual RefSCMatrixSubblockIter all_blocks(
         SCMatrixSubblockIter::Access) = 0;
-};
-
-//texi The @code{SCMatrixKit} class produces specialized matrices and
-// dimensions.
-class SCMatrixKit: public SavableState {
-#   define CLASSNAME SCMatrixKit
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
-  public:
-    SCMatrixKit();
-    SCMatrixKit(const RefKeyVal&);
-    SCMatrixKit(StateIn&);
-    ~SCMatrixKit();
-    void save_data_state(StateOut&);
-
-    // this member is default in local.cc
-    //texi This returns a @code{LocalSCMatrixKit}.
-    static SCMatrixKit* default_matrixkit();
-
-    //texi Return a dimension with length @code{n} and, optionally,
-    // name @var{name}.
-    virtual SCDimension* dimension(int n, const char* name = 0) = 0;
-
-    //texi Given the dimensions, create matrices or vectors.
-    SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
-    SymmSCMatrix* symmmatrix(const RefSCDimension&);
-    DiagSCMatrix* diagmatrix(const RefSCDimension&);
-    SCVector* vector(const RefSCDimension&);
-
-    //texi Given the dimensions and a @code{StateIn} object,
-    // restore matrices or vectors.
-    SCMatrix* restore_matrix(StateIn&,
-                             const RefSCDimension&,
-                             const RefSCDimension&);
-    SymmSCMatrix* restore_symmmatrix(StateIn&,
-                                     const RefSCDimension&);
-    DiagSCMatrix* restore_diagmatrix(StateIn&,             
-                                     const RefSCDimension&);
-    SCVector* restore_vector(StateIn&,
-                             const RefSCDimension&);
 };
 
 #endif

@@ -11,10 +11,6 @@
 
 #define CLASSNAME BlockedDiagSCMatrix
 #define PARENTS public DiagSCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 BlockedDiagSCMatrix::_castdown(const ClassDesc*cd)
@@ -25,7 +21,7 @@ BlockedDiagSCMatrix::_castdown(const ClassDesc*cd)
 }
 
 void
-BlockedDiagSCMatrix::resize(BlockedSCDimension *a)
+BlockedDiagSCMatrix::resize(SCDimension *a)
 {
   if (mats_) {
     delete[] mats_;
@@ -34,44 +30,19 @@ BlockedDiagSCMatrix::resize(BlockedSCDimension *a)
 
   d = a;
 
-  mats_ = new RefDiagSCMatrix[d->nblocks()];
-  for (int i=0; i < d->nblocks(); i++)
-    if (d->n(i))
-      mats_[i] = d->dim(i)->create_diagmatrix();
+  mats_ = new RefDiagSCMatrix[d->blocks()->nblock()];
+  for (int i=0; i < d->blocks()->nblock(); i++)
+    if (d->blocks()->size(i))
+      mats_[i] = subkit->diagmatrix(d->blocks()->subdim(i));
 }
 
-BlockedDiagSCMatrix::BlockedDiagSCMatrix() :
-  mats_(0)
-{
-}
-
-BlockedDiagSCMatrix::BlockedDiagSCMatrix(BlockedSCDimension*a) :
+BlockedDiagSCMatrix::BlockedDiagSCMatrix(const RefSCDimension&a,
+                                         BlockedSCMatrixKit*k):
+  DiagSCMatrix(a,k),
+  subkit(k->subkit()),
   mats_(0)
 {
   resize(a);
-}
-
-BlockedDiagSCMatrix::BlockedDiagSCMatrix(StateIn&s):
-  DiagSCMatrix(s)
-{
-  d.restore_state(s);
-  mats_ = new RefDiagSCMatrix[d->nblocks()];
-  for (int i=0; i < d->nblocks(); i++)
-    mats_[i].restore_state(s);
-}
-
-BlockedDiagSCMatrix::BlockedDiagSCMatrix(const RefKeyVal&keyval)
-{
-  abort();
-}
-
-void
-BlockedDiagSCMatrix::save_data_state(StateOut&s)
-{
-  DiagSCMatrix::save_data_state(s);
-  d.save_state(s);
-  for (int i=0; i < d->nblocks(); i++)
-    mats_[i].save_state(s);
 }
 
 BlockedDiagSCMatrix::~BlockedDiagSCMatrix()
@@ -82,35 +53,28 @@ BlockedDiagSCMatrix::~BlockedDiagSCMatrix()
   }
 }
 
-RefSCDimension
-BlockedDiagSCMatrix::dim()
-{
-  return d;
-}
-
 double
 BlockedDiagSCMatrix::get_element(int i)
 {
-  int block_i = d->block(i);
-  int elem_i = i - d->first(block_i);
-  
-  return mats_[block_i]->get_element(elem_i);
+  int bi, bo;
+  d->blocks()->elem_to_block(i,bi,bo);
+  return mats_[bi]->get_element(bo);
 }
 
 void
 BlockedDiagSCMatrix::set_element(int i,double a)
 {
-  int block_i = d->block(i);
-  int elem_i = i - d->first(block_i);
-  mats_[block_i]->set_element(elem_i,a);
+  int bi, bo;
+  d->blocks()->elem_to_block(i,bi,bo);
+  mats_[bi]->set_element(bo,a);
 }
 
 void
 BlockedDiagSCMatrix::accumulate_element(int i,double a)
 {
-  int block_i = d->block(i);
-  int elem_i = i - d->first(block_i);
-  mats_[block_i]->accumulate_element(elem_i,a);
+  int bi, bo;
+  d->blocks()->elem_to_block(i,bi,bo);
+  mats_[bi]->accumulate_element(bo,a);
 }
 
 void
@@ -127,7 +91,7 @@ BlockedDiagSCMatrix::accumulate(DiagSCMatrix*a)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       mats_[i]->accumulate(la->mats_[i].pointer());
 }
@@ -137,7 +101,7 @@ BlockedDiagSCMatrix::invert_this()
 {
   double det = 1.0;
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       det *= mats_[i]->invert_this();
   
@@ -149,7 +113,7 @@ BlockedDiagSCMatrix::determ_this()
 {
   double det = 1.0;
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       det *= mats_[i]->determ_this();
   
@@ -161,7 +125,7 @@ BlockedDiagSCMatrix::trace()
 {
   double det = 0;
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       det += mats_[i]->trace();
   
@@ -171,7 +135,7 @@ BlockedDiagSCMatrix::trace()
 void
 BlockedDiagSCMatrix::gen_invert_this()
 {
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       mats_[i]->gen_invert_this();
 }
@@ -181,7 +145,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp& op)
 {
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
@@ -202,7 +166,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp2& op,
 
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
@@ -226,7 +190,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
 
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
@@ -240,7 +204,7 @@ BlockedDiagSCMatrix::print(const char *title, ostream& os, int prec)
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (mats_[i].null())
       continue;
     
@@ -254,13 +218,13 @@ BlockedDiagSCMatrix::print(const char *title, ostream& os, int prec)
 RefSCDimension
 BlockedDiagSCMatrix::dim(int i)
 {
-  return d->dim(i);
+  return d->blocks()->subdim(i);
 }
 
 int
 BlockedDiagSCMatrix::nblocks() const
 {
-  return d->nblocks();
+  return d->blocks()->nblock();
 }
 
 RefDiagSCMatrix
@@ -291,4 +255,46 @@ BlockedDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
     }
   RefSCMatrixSubblockIter ret = iter.pointer();
   return ret;
+}
+
+void
+BlockedDiagSCMatrix::save(StateOut&s)
+{
+  int ndim = n();
+  s.put(ndim);
+  int has_subblocks = 1;
+  s.put(has_subblocks);
+  s.put(nblocks());
+  for (int i=0; i<nblocks(); i++) {
+      block(i)->save(s);
+    }
+}
+
+void
+BlockedDiagSCMatrix::restore(StateIn& s)
+{
+  int ndimt, ndim = n();
+  s.get(ndimt);
+  if (ndimt != ndim) {
+      cerr << "BlockedDiagSCMatrix::restore(): bad dimension" << endl;
+      abort();
+    }
+  int has_subblocks;
+  s.get(has_subblocks);
+  if (has_subblocks) {
+      int nblock;
+      s.get(nblock);
+      if (nblock != nblocks()) {
+          cerr << "BlockedDiagSCMatrix::restore(): nblock differs\n" << endl;
+          abort();
+        }
+      for (int i=0; i<nblocks(); i++) {
+          block(i)->restore(s);
+        }
+    }
+  else {
+      cerr << "BlockedDiagSCMatrix::restore(): no subblocks--cannot restore"
+           << endl;
+      abort();
+    }
 }

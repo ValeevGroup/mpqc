@@ -24,8 +24,8 @@ DistSymmSCMatrix::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-DistSymmSCMatrix::DistSymmSCMatrix(DistSCDimension*a):
-  d(a)
+DistSymmSCMatrix::DistSymmSCMatrix(const RefSCDimension&a,DistSCMatrixKit*k):
+  SymmSCMatrix(a,k)
 {
   int n = d->n();
 
@@ -146,12 +146,6 @@ DistSymmSCMatrix::init_blocklist()
 
 DistSymmSCMatrix::~DistSymmSCMatrix()
 {
-}
-
-RefSCDimension
-DistSymmSCMatrix::dim()
-{
-  return d;
 }
 
 double
@@ -279,20 +273,18 @@ DistSymmSCMatrix::accumulate(SymmSCMatrix*a)
 double
 DistSymmSCMatrix::invert_this()
 {
-  DistDiagSCMatrix *a = new DistDiagSCMatrix(d.pointer());
-  DistSCMatrix *b = new DistSCMatrix(d.pointer(),d.pointer());
-  RefDiagSCMatrix refa = (a = new DistDiagSCMatrix(d.pointer()));
-  RefSCMatrix refb = (b = new DistSCMatrix(d.pointer(),d.pointer()));
-  diagonalize(a,b);
+  RefDiagSCMatrix refa = kit()->diagmatrix(d);
+  RefSCMatrix refb = kit()->matrix(d,d);
+  diagonalize(refa.pointer(),refb.pointer());
   double determ = 1.0;
   for (int i=0; i<dim()->n(); i++) {
-      double val = a->get_element(i);
+      double val = refa->get_element(i);
       determ *= val;
     }
   RefSCElementOp op = new SCElementInvert(1.0e-12);
-  a->element_op(op.pointer());
+  refa->element_op(op.pointer());
   assign(0.0);
-  accumulate_transform(b, a);
+  accumulate_transform(refb.pointer(), refa.pointer());
   return determ;
 }
 
@@ -359,7 +351,7 @@ DistSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   int me = messagegrp()->me();
   int nproc = messagegrp()->n();
 
-  RefSCMatrix arect = dim()->create_matrix(dim());
+  RefSCMatrix arect = kit()->matrix(dim(),dim());
   DistSCMatrix *rect = DistSCMatrix::castdown(arect.pointer());
   rect->assign(0.0);
   rect->accumulate(this);
@@ -520,4 +512,16 @@ void
 DistSymmSCMatrix::error(const char *msg)
 {
   cerr << "DistSymmSCMatrix: error: " << msg << endl;
+}
+
+RefDistSCMatrixKit
+DistSymmSCMatrix::skit()
+{
+  return DistSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+DistSymmSCMatrix::messagegrp()
+{
+  return skit()->messagegrp();
 }

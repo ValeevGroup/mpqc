@@ -45,6 +45,7 @@ Optimize::Optimize(StateIn&s):
   s.getstring(ckpt_file);
   s.get(max_iterations_);
   n_iterations_ = 0;
+  function_.restore_state(s);
 }
 
 Optimize::Optimize(const RefKeyVal&keyval)
@@ -59,6 +60,7 @@ Optimize::Optimize(const RefKeyVal&keyval)
   max_iterations_ = keyval->intvalue("max_iterations");
   if (keyval->error() != KeyVal::OK) max_iterations_ = 10;
   n_iterations_ = 0;
+  function_ = keyval->describedclassvalue("function");
 }
 
 Optimize::~Optimize()
@@ -73,6 +75,7 @@ Optimize::save_data_state(StateOut&s)
   s.put(ckpt_);
   s.putstring(ckpt_file);
   s.put(max_iterations_);
+  function_.save_state(s);
 }
 
 void
@@ -142,7 +145,8 @@ LineOpt::LineOpt(StateIn&s):
   Optimize(s)
   maybe_SavableState(s)
 {
-  search_direction_.restore_state(s);
+  search_direction_ = matrixkit()->vector(dimension());
+  search_direction_.restore(s);
 }
 
 LineOpt::LineOpt(const RefKeyVal&keyval):
@@ -158,7 +162,7 @@ void
 LineOpt::save_data_state(StateOut&s)
 {
   Optimize::save_data_state(s);
-  search_direction_.save_state(s);
+  search_direction_.save(s);
 }
 
 void

@@ -1,5 +1,6 @@
 
 #include <util/keyval/keyval.h>
+#include <math/scmat/local.h>
 #include <math/scmat/blocked.h>
 
 void matrixtest(RefSCMatrixKit, RefKeyVal,
@@ -12,7 +13,8 @@ main()
   int *blks1, *blks2, *blks3;
 
   RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
-  RefBlockedSCMatrixKit kit = new BlockedSCMatrixKit;
+  RefSCMatrixKit subkit = new LocalSCMatrixKit;
+  RefBlockedSCMatrixKit kit = new BlockedSCMatrixKit(subkit);
 
   nblks = keyval->intvalue("nblocks");
   if (!nblks)
@@ -22,21 +24,29 @@ main()
   blks2 = new int[nblks];
   blks3 = new int[nblks];
   
-  for (i=0; i < nblks; i++) {
-    blks1[i] = keyval->intvalue("n1");
-    blks2[i] = keyval->intvalue("n2");
-    blks3[i] = keyval->intvalue("n3");
-  }
+  RefSCDimension sd1(keyval->describedclassvalue("d1"));
+  RefSCDimension sd2(keyval->describedclassvalue("d2"));
+  RefSCDimension sd3(keyval->describedclassvalue("d2"));
   
-  RefSCDimension d1(kit->dimension(nblks,blks1));
-  RefSCDimension d2(kit->dimension(nblks,blks2));
-  RefSCDimension d3(kit->dimension(nblks,blks3));
+  RefSCDimension d1(new SCDimension(sd1.n()*nblks,nblks));
+  RefSCDimension d2(new SCDimension(sd2.n()*nblks,nblks));
+  RefSCDimension d3(new SCDimension(sd3.n()*nblks,nblks));
+
+  for (i=0; i < nblks; i++) {
+    d1->blocks()->set_subdim(i,sd1);
+    d2->blocks()->set_subdim(i,sd2);
+    d3->blocks()->set_subdim(i,sd3);
+  }
 
   matrixtest(kit,keyval,d1,d2,d3);
+  
+  d1 = new SCDimension(sd1.n(),1);
+  d2 = new SCDimension(sd2.n(),1);
+  d3 = new SCDimension(sd3.n(),1);
 
-  d1 = kit->dimension(blks1[0]);
-  d2 = kit->dimension(blks2[0]);
-  d3 = kit->dimension(blks3[0]);
+  d1->blocks()->set_subdim(0,sd1);
+  d2->blocks()->set_subdim(0,sd2);
+  d3->blocks()->set_subdim(0,sd3);
 
   matrixtest(kit,keyval,d1,d2,d3);
   d1=0;

@@ -29,8 +29,8 @@ init_symm_rows(double *data, int n)
   return r;
 }
 
-ReplSymmSCMatrix::ReplSymmSCMatrix(ReplSCDimension*a):
-  d(a),
+ReplSymmSCMatrix::ReplSymmSCMatrix(const RefSCDimension&a,ReplSCMatrixKit*k):
+  SymmSCMatrix(a,k),
   rows(0)
 {
   int n = d->n();
@@ -48,12 +48,12 @@ ReplSymmSCMatrix::before_elemop()
   int i, j, index;
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
-  for (i=0, index=0; i<d->nblock(); i++) {
+  for (i=0, index=0; i<d->blocks()->nblock(); i++) {
       for (j=0; j<=i; j++, index++) {
           if (index%nproc == me) continue;
-          for (int ii=d->blockstart(i); ii<d->blockfence(i); ii++) {
-              for (int jj=d->blockstart(j);
-                   jj < d->blockfence(j) && jj <= ii;
+          for (int ii=d->blocks()->start(i); ii<d->blocks()->fence(i); ii++) {
+              for (int jj=d->blocks()->start(j);
+                   jj < d->blocks()->fence(j) && jj <= ii;
                    jj++) {
                   matrix[(ii*(ii+1)>>1) + jj] = 0.0;
                 }
@@ -75,14 +75,15 @@ ReplSymmSCMatrix::init_blocklist()
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   blocklist = new SCMatrixBlockList;
-  for (i=0, index=0; i<d->nblock(); i++) {
+  for (i=0, index=0; i<d->blocks()->nblock(); i++) {
       for (j=0; j<=i; j++, index++) {
           if (index%nproc != me) continue;
-          blocklist->insert(new SCMatrixLTriSubBlock(d->blockstart(i),
-                                                     d->blockfence(i),
-                                                     d->blockstart(j),
-                                                     d->blockfence(j),
-                                                     matrix));
+          blocklist->insert(
+              new SCMatrixLTriSubBlock(d->blocks()->start(i),
+                                       d->blocks()->fence(i),
+                                       d->blocks()->start(j),
+                                       d->blocks()->fence(j),
+                                       matrix));
         }
     }
 }
@@ -104,12 +105,6 @@ ReplSymmSCMatrix::compute_offset(int i,int j)
       int tmp = j; j=i; i=tmp;
     }
   return (i*(i+1))/2 + j;
-}
-
-RefSCDimension
-ReplSymmSCMatrix::dim()
-{
-  return d;
 }
 
 double
@@ -142,10 +137,10 @@ ReplSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
     abort();
   }
   
-  RefReplSCDimension dnrow = new ReplSCDimension(nsrow,messagegrp());
-  RefReplSCDimension dncol = new ReplSCDimension(nscol,messagegrp());
+  RefSCDimension dnrow = new SCDimension(nsrow);
+  RefSCDimension dncol = new SCDimension(nscol);
 
-  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);
 
   ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
@@ -169,9 +164,9 @@ ReplSymmSCMatrix::get_subblock(int br, int er)
     abort();
   }
   
-  RefReplSCDimension dnrow = new ReplSCDimension(nsrow,messagegrp());
+  RefSCDimension dnrow = new SCDimension(nsrow);
 
-  SymmSCMatrix * sb = dnrow->create_symmmatrix();
+  SymmSCMatrix * sb = kit()->symmmatrix(dnrow);
   sb->assign(0.0);
 
   ReplSymmSCMatrix *lsb = ReplSymmSCMatrix::require_castdown(sb,
@@ -275,7 +270,7 @@ ReplSymmSCMatrix::get_row(int i)
     abort();
   }
   
-  SCVector * v = dim()->create_vector();
+  SCVector * v = kit()->vector(dim());
 
   ReplSCVector *lv = ReplSCVector::require_castdown(v,
                                                "ReplSymmSCMatrix::get_row");
@@ -715,4 +710,16 @@ ReplSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
   return new ReplSCMatrixListSubblockIter(access, allblocklist,
                                           messagegrp(),
                                           matrix, (d->n()*(d->n()+1))/2);
+}
+
+RefReplSCMatrixKit
+ReplSymmSCMatrix::skit()
+{
+  return ReplSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+ReplSymmSCMatrix::messagegrp()
+{
+  return skit()->messagegrp();
 }

@@ -9,7 +9,7 @@
 #include <util/state/state.h>
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>
-#include <math/optimize/nlp.h>
+#include <math/optimize/function.h>
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -22,6 +22,7 @@ class Optimize: virtual_base public SavableState {
     int n_iterations_;
     int ckpt_;
     char *ckpt_file;
+    RefFunction function_;
   public:
     Optimize();
     Optimize(StateIn&);
@@ -42,7 +43,9 @@ class Optimize: virtual_base public SavableState {
     virtual int update() = 0;
 
     // returns the problem being optimized
-    virtual RefNLP0 nlp() = 0;
+    RefFunction function() const { return function_; }
+    RefSCMatrixKit matrixkit() const { return function_->matrixkit(); }
+    RefSCMatrixKit dimension() const { return function_->dimension(); }
 };
 SavableState_REF_dec(Optimize);
 

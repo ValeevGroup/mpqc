@@ -14,10 +14,6 @@
 
 #define CLASSNAME BlockedSCMatrix
 #define PARENTS public SCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 BlockedSCMatrix::_castdown(const ClassDesc*cd)
@@ -28,7 +24,7 @@ BlockedSCMatrix::_castdown(const ClassDesc*cd)
 }
 
 void
-BlockedSCMatrix::resize(BlockedSCDimension *a, BlockedSCDimension *b)
+BlockedSCMatrix::resize(SCDimension *a, SCDimension *b)
 {
   if (mats_) {
     delete[] mats_;
@@ -38,29 +34,32 @@ BlockedSCMatrix::resize(BlockedSCDimension *a, BlockedSCDimension *b)
   d1 = a;
   d2 = b;
   
-  if (!a || !b || !a->nblocks() || !b->nblocks())
+  if (!a || !b || !a->blocks()->nblock() || !b->blocks()->nblock())
     return;
 
-  if (a->nblocks() > 1 && b->nblocks() == 1) {
-    nblocks_ = d1->nblocks();
-    mats_ = new RefSCMatrix[d1->nblocks()];
-    for (int i=0; i < d1->nblocks(); i++)
-      if (d1->n(i) && d2->n(0))
-        mats_[i] = d1->dim(i)->create_matrix(d2->dim(0));
+  if (a->blocks()->nblock() > 1 && b->blocks()->nblock() == 1) {
+    nblocks_ = d1->blocks()->nblock();
+    mats_ = new RefSCMatrix[d1->blocks()->nblock()];
+    for (int i=0; i < d1->blocks()->nblock(); i++)
+      if (d1->blocks()->size(i) && d2->blocks()->size(0))
+        mats_[i] = subkit->matrix(d1->blocks()->subdim(i),
+                                  d2->blocks()->subdim(0));
 
-  } else if (a->nblocks() == 1 && b->nblocks() > 1) {
-    nblocks_ = d2->nblocks();
-    mats_ = new RefSCMatrix[d2->nblocks()];
-    for (int i=0; i < d2->nblocks(); i++)
-      if (d2->n(i) && d1->n(0))
-        mats_[i] = d1->dim(0)->create_matrix(d2->dim(i));
+  } else if (a->blocks()->nblock() == 1 && b->blocks()->nblock() > 1) {
+    nblocks_ = d2->blocks()->nblock();
+    mats_ = new RefSCMatrix[d2->blocks()->nblock()];
+    for (int i=0; i < d2->blocks()->nblock(); i++)
+      if (d2->blocks()->size(i) && d1->blocks()->size(0))
+        mats_[i] = subkit->matrix(d1->blocks()->subdim(0),
+                                  d2->blocks()->subdim(i));
 
-  } else if (a->nblocks() == b->nblocks()) {
-    nblocks_ = d2->nblocks();
-    mats_ = new RefSCMatrix[d1->nblocks()];
-    for (int i=0; i < d1->nblocks(); i++)
-      if (d2->n(i) && d1->n(i))
-        mats_[i] = d1->dim(i)->create_matrix(d2->dim(i).pointer());
+  } else if (a->blocks()->nblock() == b->blocks()->nblock()) {
+    nblocks_ = d2->blocks()->nblock();
+    mats_ = new RefSCMatrix[d1->blocks()->nblock()];
+    for (int i=0; i < d1->blocks()->nblock(); i++)
+      if (d2->blocks()->size(i) && d1->blocks()->size(i))
+        mats_[i] = subkit->matrix(d1->blocks()->subdim(i),
+                                  d2->blocks()->subdim(i));
 
   } else {
     fprintf(stderr,"BlockedSCMatrix::resize: wrong number of blocks\n");
@@ -69,43 +68,14 @@ BlockedSCMatrix::resize(BlockedSCDimension *a, BlockedSCDimension *b)
 
 }
 
-
-BlockedSCMatrix::BlockedSCMatrix() :
-  mats_(0), nblocks_(0)
-{
-}
-
-BlockedSCMatrix::BlockedSCMatrix(BlockedSCDimension*a,BlockedSCDimension*b):
+BlockedSCMatrix::BlockedSCMatrix(const RefSCDimension&a,
+                                 const RefSCDimension&b,
+                                 BlockedSCMatrixKit*k):
+  SCMatrix(a,b,k),
+  subkit(k->subkit()),
   mats_(0), nblocks_(0)
 {
   resize(a,b);
-}
-
-BlockedSCMatrix::BlockedSCMatrix(StateIn&s):
-  SCMatrix(s)
-{
-  d1.restore_state(s);
-  d2.restore_state(s);
-  s.get(nblocks_);
-  mats_ = new RefSCMatrix[nblocks_];
-  for (int i=0; i < nblocks_; i++)
-    mats_[i].restore_state(s);
-}
-
-BlockedSCMatrix::BlockedSCMatrix(const RefKeyVal&keyval)
-{
-  abort();
-}
-
-void
-BlockedSCMatrix::save_data_state(StateOut&s)
-{
-  SCMatrix::save_data_state(s);
-  d1.save_state(s);
-  d2.save_state(s);
-  s.put(nblocks_);
-  for (int i=0; i < nblocks_; i++)
-    mats_[i].save_state(s);
 }
 
 BlockedSCMatrix::~BlockedSCMatrix()
@@ -115,18 +85,6 @@ BlockedSCMatrix::~BlockedSCMatrix()
     mats_=0;
   }
   nblocks_=0;
-}
-
-RefSCDimension
-BlockedSCMatrix::rowdim()
-{
-  return d1;
-}
-
-RefSCDimension
-BlockedSCMatrix::coldim()
-{
-  return d2;
 }
 
 void
@@ -140,17 +98,17 @@ BlockedSCMatrix::assign(double v)
 double
 BlockedSCMatrix::get_element(int i,int j)
 {
-  int block_i = d1->block(i);
-  int block_j = d2->block(j);
+  int block_i, block_j;
+  int elem_i, elem_j;
 
-  int elem_i = i - d1->first(block_i);
-  int elem_j = j - d2->first(block_j);
+  d1->blocks()->elem_to_block(i,block_i,elem_i);
+  d2->blocks()->elem_to_block(j,block_j,elem_j);
 
-  if (d1->nblocks() == 1 && d2->nblocks() > 1) {
+  if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     return mats_[block_j]->get_element(elem_i,elem_j);
 
-  } else if (d1->nblocks() > 1 && d2->nblocks() == 1 ||
-             d1->nblocks() == d2->nblocks()) {
+  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1 ||
+             d1->blocks()->nblock() == d2->blocks()->nblock()) {
     return mats_[block_i]->get_element(elem_i,elem_j);
 
   } else {
@@ -161,17 +119,17 @@ BlockedSCMatrix::get_element(int i,int j)
 void
 BlockedSCMatrix::set_element(int i,int j,double a)
 {
-  int block_i = d1->block(i);
-  int block_j = d2->block(j);
+  int block_i, block_j;
+  int elem_i, elem_j;
 
-  int elem_i = i - d1->first(block_i);
-  int elem_j = j - d2->first(block_j);
+  d1->blocks()->elem_to_block(i,block_i,elem_i);
+  d2->blocks()->elem_to_block(j,block_j,elem_j);
   
-  if (d1->nblocks() == 1 && d2->nblocks() > 1) {
+  if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     mats_[block_j]->set_element(elem_i,elem_j,a);
 
-  } else if (d1->nblocks() > 1 && d2->nblocks() == 1 ||
-             d1->nblocks() == d2->nblocks()) {
+  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1 ||
+             d1->blocks()->nblock() == d2->blocks()->nblock()) {
     mats_[block_i]->set_element(elem_i,elem_j,a);
   }
 }
@@ -179,17 +137,17 @@ BlockedSCMatrix::set_element(int i,int j,double a)
 void
 BlockedSCMatrix::accumulate_element(int i,int j,double a)
 {
-  int block_i = d1->block(i);
-  int block_j = d2->block(j);
+  int block_i, block_j;
+  int elem_i, elem_j;
 
-  int elem_i = i - d1->first(block_i);
-  int elem_j = j - d2->first(block_j);
+  d1->blocks()->elem_to_block(i,block_i,elem_i);
+  d2->blocks()->elem_to_block(j,block_j,elem_j);
   
-  if (d1->nblocks() == 1 && d2->nblocks() > 1) {
+  if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     mats_[block_j]->accumulate_element(elem_i,elem_j,a);
 
-  } else if (d1->nblocks() > 1 && d2->nblocks() == 1 ||
-             d1->nblocks() == d2->nblocks()) {
+  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1 ||
+             d1->blocks()->nblock() == d2->blocks()->nblock()) {
     mats_[block_i]->accumulate_element(elem_i,elem_j,a);
   }
 }
@@ -211,8 +169,9 @@ BlockedSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
 }
 
 void
-BlockedSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
-                                   int source_br, int source_bc)
+BlockedSCMatrix::accumulate_subblock(SCMatrix*sb,
+                                     int br, int er, int bc, int ec,
+                                     int source_br, int source_bc)
 {
   fprintf(stderr,"BlockedSCMatrix::accumulate_subblock:"
           " cannot accumulate subblock\n");
@@ -283,7 +242,7 @@ BlockedSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
     abort();
   }
 
-  for (int i=0; i < d1->nblocks(); i++)
+  for (int i=0; i < d1->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
       mats_[i]->accumulate_outer_product(la->vecs_[i], lb->vecs_[i]);
 }
@@ -310,10 +269,10 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   // find out the number of blocks we need to process.
   int mxnb = (nblocks_ > la->nblocks_) ? nblocks_ : la->nblocks_;
   
-  int nrba = la->d1->nblocks();
-  int ncba = la->d2->nblocks();
-  int nrbb = lb->d1->nblocks();
-  int ncbb = lb->d2->nblocks();
+  int nrba = la->d1->blocks()->nblock();
+  int ncba = la->d2->blocks()->nblock();
+  int nrbb = lb->d1->blocks()->nblock();
+  int ncbb = lb->d2->blocks()->nblock();
   
   int &mi = (nrba==1 && ncba > 1 && nrbb > 1 && ncbb==1) ? zero : i;
   int &ai = (nrba==1 && ncba==1) ? zero : i;
@@ -345,7 +304,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
     abort();
   }
 
-  int &bi = (lb->d->nblocks()==1) ? zero : i;
+  int &bi = (lb->d->blocks()->nblock()==1) ? zero : i;
   
   for (i=0; i < nblocks_; i++) {
     if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
@@ -374,7 +333,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
     abort();
   }
 
-  int &bi = (lb->d->nblocks()==1) ? zero : i;
+  int &bi = (lb->d->blocks()->nblock()==1) ? zero : i;
   
   for (i=0; i < nblocks_; i++) {
     if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
@@ -467,7 +426,7 @@ BlockedSCMatrix::transpose_this()
     if (mats_[i].nonnull())
       mats_[i]->transpose_this();
   
-  RefBlockedSCDimension tmp = d1;
+  RefSCDimension tmp = d1;
   d1 = d2;
   d2 = tmp;
 }
@@ -480,7 +439,7 @@ BlockedSCMatrix::invert_this()
   double res=1;
 
   // if this matrix is block diagonal, then give a normal inversion a shot
-  if (d1->nblocks() == d2->nblocks()) {
+  if (d1->blocks()->nblock() == d2->blocks()->nblock()) {
     for (i=0; i < nblocks_; i++)
       res *= mats_[i]->invert_this();
     return res;
@@ -492,39 +451,44 @@ BlockedSCMatrix::invert_this()
     abort();
   }
 
-  if (d1->nblocks() == 1) {
-    RefSCMatrix tdim = d1->dim(0)->create_matrix(d1->dim(0));
+  if (d1->blocks()->nblock() == 1) {
+    RefSCMatrix tdim = subkit->matrix(d1->blocks()->subdim(0),
+                                      d1->blocks()->subdim(0));
 
-    for (i=0; i < d2->nblocks(); i++)
+    for (i=0; i < d2->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
         tdim.assign_subblock(mats_[i], 0, d1->n()-1,
-                                     d2->first(i), d2->last(i)-1);
+                             d2->blocks()->start(i),
+                             d2->blocks()->fence(i)-1);
 
     res = tdim->invert_this();
     transpose_this();
 
-    for (i=0; i < d1->nblocks(); i++)
+    for (i=0; i < d1->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
-        mats_[i].assign(tdim.get_subblock(d1->first(i), d1->last(i)-1,
-                                        0, d2->n()-1));
+        mats_[i].assign(tdim.get_subblock(d1->blocks()->start(i),
+                                          d1->blocks()->fence(i)-1,
+                                          0, d2->n()-1));
     
     return res;
 
-  } else if (d2->nblocks() == 1) {
-    RefSCMatrix tdim = d2->dim(0)->create_matrix(d2->dim(0));
+  } else if (d2->blocks()->nblock() == 1) {
+    RefSCMatrix tdim = subkit->matrix(d2->blocks()->subdim(0),
+                                      d2->blocks()->subdim(0));
 
-    for (i=0; i < d1->nblocks(); i++)
+    for (i=0; i < d1->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
-        tdim.assign_subblock(mats_[i], d1->first(i), d1->last(i)-1,
-                                     0, d2->n()-1);
+        tdim.assign_subblock(mats_[i], d1->blocks()->start(i), d1->blocks()->fence(i)-1,
+                             0, d2->n()-1);
 
     res = tdim->invert_this();
     transpose_this();
 
-    for (i=0; i < d2->nblocks(); i++)
+    for (i=0; i < d2->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
         mats_[i].assign(tdim.get_subblock(0, d1->n()-1,
-                                        d2->first(i), d2->last(i)-1));
+                                          d2->blocks()->start(i),
+                                          d2->blocks()->fence(i)-1));
     
     return res;
 
@@ -618,7 +582,8 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 
   for (int i=0; i < nblocks_; i++)
     if (mats_[i].nonnull())
-      mats_[i]->schmidt_orthog(lS->mats_[i].pointer(), lS->dim(i).n());
+      mats_[i]->schmidt_orthog(lS->mats_[i].pointer(),
+                               lS->dim()->blocks()->subdim(i).n());
 }
 
 void
@@ -702,13 +667,13 @@ BlockedSCMatrix::print(const char *title, ostream& os, int prec)
 RefSCDimension
 BlockedSCMatrix::rowdim(int i)
 {
-  return d1->dim(i);
+  return d1->blocks()->subdim(i);
 }
 
 RefSCDimension
 BlockedSCMatrix::coldim(int i)
 {
-  return d2->dim(i);
+  return d2->blocks()->subdim(i);
 }
 
 int
@@ -745,4 +710,50 @@ BlockedSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
     }
   RefSCMatrixSubblockIter ret = iter.pointer();
   return ret;
+}
+
+void
+BlockedSCMatrix::save(StateOut&s)
+{
+  int nr = nrow();
+  int nc = ncol();
+  s.put(nr);
+  s.put(nc);
+  int has_subblocks = 1;
+  s.put(has_subblocks);
+  s.put(nblocks());
+  for (int i=0; i<nblocks(); i++) {
+      block(i)->save(s);
+    }
+}
+
+void
+BlockedSCMatrix::restore(StateIn& s)
+{
+  int nrt, nr = nrow();
+  int nct, nc = ncol();
+  s.get(nrt);
+  s.get(nct);
+  if (nrt != nr || nct != nc) {
+      cerr << "BlockedSCMatrix::restore(): bad dimensions" << endl;
+      abort();
+    }
+  int has_subblocks;
+  s.get(has_subblocks);
+  if (has_subblocks) {
+      int nblock;
+      s.get(nblock);
+      if (nblock != nblocks()) {
+          cerr << "BlockedSCMatrix::restore(): nblock differs\n" << endl;
+          abort();
+        }
+      for (int i=0; i<nblocks(); i++) {
+          block(i)->restore(s);
+        }
+    }
+  else {
+      cerr << "BlockedSCMatrix::restore(): no subblocks--cannot restore"
+           << endl;
+      abort();
+    }
 }

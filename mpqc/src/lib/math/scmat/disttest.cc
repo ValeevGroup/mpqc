@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <math.h>
 #include <util/misc/bug.h>
 #include <util/group/messshm.h>
 #include <math/scmat/dist.h>
@@ -58,9 +59,16 @@ main(int argc, char** argv)
     }
 
   RefSCMatrixKit kit = new DistSCMatrixKit;
-  RefSCDimension d1(kit->dimension(keyval->intvalue("n1")));
-  RefSCDimension d2(kit->dimension(keyval->intvalue("n2")));
-  RefSCDimension d3(kit->dimension(keyval->intvalue("n3")));
+  RefSCDimension d1(keyval->describedclassvalue("d1"));
+  RefSCDimension d2(keyval->describedclassvalue("d2"));
+  RefSCDimension d3(keyval->describedclassvalue("d3"));
+
+  int nblocks = (int)sqrt(msg->n());
+
+  // replace dimensions with dimensions that have subblocks
+  d1 = new SCDimension(d1.n(), nblocks);
+  d2 = new SCDimension(d2.n(), nblocks);
+  d3 = new SCDimension(d3.n(), nblocks);
 
   matrixtest(kit,keyval,d1,d2,d3);
 

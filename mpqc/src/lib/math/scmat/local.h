@@ -1,65 +1,53 @@
 
-#ifndef _math_scmat_local_h
-#define _math_scmat_local_h
-
 #ifdef __GNUC__
 #pragma interface
 #endif
+
+#ifndef _math_scmat_local_h
+#define _math_scmat_local_h
 
 #include <math/scmat/block.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
-class LocalSCDimension: public SCDimension {
-#   define CLASSNAME LocalSCDimension
+class LocalSCMatrixKit;
+class LocalSCVector;
+class LocalSCMatrix;
+class LocalSymmSCMatrix;
+class LocalDiagSCMatrix;
+
+class LocalSCMatrixKit: public SCMatrixKit {
+#   define CLASSNAME LocalSCMatrixKit
 #   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
-    int n_;
   public:
-    LocalSCDimension(int n, const char* name = 0);
-    LocalSCDimension(const RefKeyVal&);
-    LocalSCDimension(StateIn&);
-    ~LocalSCDimension();
-    void save_data_state(StateOut&);
-    int equiv(SCDimension*) const;
-    int n();
-    SCMatrix* create_matrix(SCDimension*);
-    SymmSCMatrix* create_symmmatrix();
-    DiagSCMatrix* create_diagmatrix();
-    SCVector* create_vector();
+    LocalSCMatrixKit();
+    LocalSCMatrixKit(const RefKeyVal&);
+    ~LocalSCMatrixKit();
+    SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
+    SymmSCMatrix* symmmatrix(const RefSCDimension&);
+    DiagSCMatrix* diagmatrix(const RefSCDimension&);
+    SCVector* vector(const RefSCDimension&);
 };
-SavableState_REF_dec(LocalSCDimension);
 
 class LocalSCVector: public SCVector {
     friend class LocalSCMatrix;
     friend class LocalSymmSCMatrix;
     friend class LocalDiagSCMatrix;
 #   define CLASSNAME LocalSCVector
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d;
     RefSCVectorSimpleBlock block;
 
     void resize(int);
   public:
     LocalSCVector();
-    LocalSCVector(LocalSCDimension*);
-    LocalSCVector(const RefKeyVal&);
-    LocalSCVector(StateIn&);
+    LocalSCVector(const RefSCDimension&,LocalSCMatrixKit*);
     ~LocalSCVector();
-    void save_data_state(StateOut&);
     void assign(double);
     void assign(SCVector*);
     void assign(const double*);
 
-    RefSCDimension dim();
     void set_element(int,double);
     void accumulate_element(int,double);
     double get_element(int);
@@ -84,14 +72,8 @@ class LocalSCMatrix: public SCMatrix {
     friend class LocalDiagSCMatrix;
     friend LocalSCVector;
 #   define CLASSNAME LocalSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d1;
-    RefLocalSCDimension d2;
     RefSCMatrixRectBlock block;
     double** rows;
   private:
@@ -99,17 +81,12 @@ class LocalSCMatrix: public SCMatrix {
     int compute_offset(int,int);
     void resize(int,int);
   public:
-    LocalSCMatrix();
-    LocalSCMatrix(const RefKeyVal&);
-    LocalSCMatrix(StateIn&);
-    LocalSCMatrix(LocalSCDimension*,LocalSCDimension*);
+    LocalSCMatrix(const RefSCDimension&,const RefSCDimension&,
+                  LocalSCMatrixKit*);
     ~LocalSCMatrix();
 
     // implementations and overrides of virtual functions
     void assign(double);
-    void save_data_state(StateOut&);
-    RefSCDimension rowdim();
-    RefSCDimension coldim();
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -154,13 +131,8 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     friend class LocalDiagSCMatrix;
     friend LocalSCVector;
 #   define CLASSNAME LocalSymmSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d;
     RefSCMatrixLTriBlock block;
     double** rows;
   private:
@@ -168,15 +140,10 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     int compute_offset(int,int);
     void resize(int n);
   public:
-    LocalSymmSCMatrix();
-    LocalSymmSCMatrix(const RefKeyVal&);
-    LocalSymmSCMatrix(StateIn&);
-    LocalSymmSCMatrix(LocalSCDimension*);
+    LocalSymmSCMatrix(const RefSCDimension&, LocalSCMatrixKit*);
     ~LocalSymmSCMatrix();
 
     // implementations and overrides of virtual functions
-    void save_data_state(StateOut&);
-    RefSCDimension dim();
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -223,25 +190,16 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     friend LocalSymmSCMatrix;
     friend LocalSCVector;
 #   define CLASSNAME LocalDiagSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d;
     RefSCMatrixDiagBlock block;
     void resize(int n);
   public:
-    LocalDiagSCMatrix();
-    LocalDiagSCMatrix(const RefKeyVal&);
-    LocalDiagSCMatrix(StateIn&);
-    LocalDiagSCMatrix(LocalSCDimension*);
+    LocalDiagSCMatrix(const RefSCDimension&, LocalSCMatrixKit*);
     ~LocalDiagSCMatrix();
 
     // implementations and overrides of virtual functions
     void save_data_state(StateOut&);
-    RefSCDimension dim();
     double get_element(int);
     void set_element(int,double);
     void accumulate_element(int,double);
@@ -260,22 +218,6 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
-};
-
-class LocalSCMatrixKit: public SCMatrixKit {
-#   define CLASSNAME LocalSCMatrixKit
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    LocalSCMatrixKit();
-    LocalSCMatrixKit(const RefKeyVal&);
-    LocalSCMatrixKit(StateIn&);
-    ~LocalSCMatrixKit();
-    void save_data_state(StateOut&);
-
-    SCDimension* dimension(int n, const char* name=0);
 };
 
 #endif

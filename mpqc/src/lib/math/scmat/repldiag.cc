@@ -21,8 +21,8 @@ ReplDiagSCMatrix::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ReplDiagSCMatrix::ReplDiagSCMatrix(ReplSCDimension*a):
-  d(a)
+ReplDiagSCMatrix::ReplDiagSCMatrix(const RefSCDimension&a,ReplSCMatrixKit*k):
+  DiagSCMatrix(a,k)
 {
   matrix = new double[a->n()];
   init_blocklist();
@@ -35,10 +35,11 @@ ReplDiagSCMatrix::before_elemop()
   int i;
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
-  for (i=0; i<d->nblock(); i++) {
+  for (i=0; i<d->blocks()->nblock(); i++) {
       if (i%nproc == me) continue;
-      memset(&matrix[d->blockstart(i)], 0,
-             sizeof(double)*(d->blockfence(i) - d->blockstart(i)));
+      memset(&matrix[d->blocks()->start(i)], 0,
+             sizeof(double)*(d->blocks()->fence(i)
+                             - d->blocks()->start(i)));
     }
 }
 
@@ -55,23 +56,18 @@ ReplDiagSCMatrix::init_blocklist()
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   blocklist = new SCMatrixBlockList;
-  for (i=0; i<d->nblock(); i++) {
+  for (i=0; i<d->blocks()->nblock(); i++) {
       if (i%nproc != me) continue;
-      blocklist->insert(new SCMatrixDiagSubBlock(d->blockstart(i),
-                                                 d->blockfence(i),
-                                                 d->blockstart(i),
-                                                 matrix));
+      blocklist->insert(
+          new SCMatrixDiagSubBlock(d->blocks()->start(i),
+                                   d->blocks()->fence(i),
+                                   d->blocks()->start(i),
+                                   matrix));
     }
 }
 
 ReplDiagSCMatrix::~ReplDiagSCMatrix()
 {
-}
-
-RefSCDimension
-ReplDiagSCMatrix::dim()
-{
-  return d;
 }
 
 double
@@ -282,4 +278,16 @@ ReplDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
   return new ReplSCMatrixListSubblockIter(access, allblocklist,
                                           messagegrp(),
                                           matrix, d->n());
+}
+
+RefReplSCMatrixKit
+ReplDiagSCMatrix::skit()
+{
+  return ReplSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+ReplDiagSCMatrix::messagegrp()
+{
+  return skit()->messagegrp();
 }

@@ -1,10 +1,10 @@
 
-#ifndef _math_scmat_dist_h
-#define _math_scmat_dist_h
-
 #ifdef __GNUC__
 #pragma interface
 #endif
+
+#ifndef _math_scmat_dist_h
+#define _math_scmat_dist_h
 
 #include <util/group/message.h>
 #include <util/group/mstate.h>
@@ -17,7 +17,6 @@ class DistSCMatrixKit: public SCMatrixKit {
 #   define CLASSNAME DistSCMatrixKit
 #   define HAVE_CTOR
 #   define HAVE_KEYVAL_CTOR
-//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
     RefMessageGrp grp_;
@@ -25,71 +24,21 @@ class DistSCMatrixKit: public SCMatrixKit {
     DistSCMatrixKit(const RefMessageGrp &grp = 0);
     DistSCMatrixKit(const RefKeyVal&);
     ~DistSCMatrixKit();
-
+    SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
+    SymmSCMatrix* symmmatrix(const RefSCDimension&);
+    DiagSCMatrix* diagmatrix(const RefSCDimension&);
+    SCVector* vector(const RefSCDimension&);
     RefMessageGrp messagegrp() const { return grp_; }
-
-    SCDimension* dimension(int n, const char* name=0);
-    SCDimension* dimension(int n, int nblocks, const int *blocksizes,
-                           const char* name=0);
 };
-SavableState_REF_dec(DistSCMatrixKit);
-
-class SCBlockInfo: public VRefCount {
-  private:
-    int n_;
-    int nblocks_;
-    int *start_;
-    int *size_;
-  public:
-    SCBlockInfo(int n_, int nblocks = 0, const int *blocksizes_ = 0);
-    ~SCBlockInfo();
-    int equiv(SCBlockInfo *);
-    int nelem() const { return n_; }
-    int nblock() const { return nblocks_; }
-    int start(int i) const { return start_[i]; }
-    int size(int i) const { return size_[i]; }
-    int fence(int i) const { return start_[i] + size_[i]; }
-    void elem_to_block(int i, int &block, int &offset);
-};
-REF_dec(SCBlockInfo);
-
-class DistSCDimension: public SCDimension {
-#   define CLASSNAME DistSCDimension
-//#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  protected:
-    int n_;
-    RefSCBlockInfo blocks_;
-    RefDistSCMatrixKit kit_;
-  public:
-    DistSCDimension(int n, const RefDistSCMatrixKit&,
-                    const char* name = 0);
-    DistSCDimension(int n, const RefDistSCMatrixKit&,
-                    int nblocks, const int *blocksizes,
-                    const char* name = 0);
-    ~DistSCDimension();
-    int equiv(SCDimension*) const;
-    int n();
-    SCMatrix* create_matrix(SCDimension*);
-    SymmSCMatrix* create_symmmatrix();
-    DiagSCMatrix* create_diagmatrix();
-    SCVector* create_vector();
-
-    RefMessageGrp messagegrp() { return kit_->messagegrp(); }
-
-    RefSCBlockInfo blocks() { return blocks_; }
-};
-SavableState_REF_dec(DistSCDimension);
+DescribedClass_REF_dec(DistSCMatrixKit);
 
 class DistSCVector: public SCVector {
     friend class DistSCMatrix;
     friend class DistSymmSCMatrix;
     friend class DistDiagSCMatrix;
 #   define CLASSNAME DistSCVector
-//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    RefDistSCDimension d;
     RefSCMatrixBlockList blocklist;
 
     void init_blocklist();
@@ -99,13 +48,12 @@ class DistSCVector: public SCVector {
     RefSCMatrixBlock block_to_block(int);
     void error(const char *);
   public:
-    DistSCVector(DistSCDimension*);
+    DistSCVector(const RefSCDimension&, DistSCMatrixKit*);
     ~DistSCVector();
     void assign(SCVector*);
     void assign(const double*);
     void convert(double* v);
 
-    RefSCDimension dim();
     void set_element(int,double);
     void accumulate_element(int,double);
     double get_element(int);
@@ -120,10 +68,11 @@ class DistSCVector: public SCVector {
                     SCVector*,SCVector*);
     void print(const char* title=0,ostream& out=cout, int =10);
 
-    RefMessageGrp messagegrp() { return d->messagegrp(); }
-
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+
+    RefDistSCMatrixKit skit();
+    RefMessageGrp messagegrp();
 };
 
 class DistSCMatrix: public SCMatrix {
@@ -131,11 +80,8 @@ class DistSCMatrix: public SCMatrix {
     friend class DistDiagSCMatrix;
     friend DistSCVector;
 #   define CLASSNAME DistSCMatrix
-//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    RefDistSCDimension d1;
-    RefDistSCDimension d2;
     RefSCMatrixBlockList blocklist;
 
     int vecoff;
@@ -159,12 +105,11 @@ class DistSCMatrix: public SCMatrix {
     void vecform_op(VecOp op, int *ivec = 0);
     void vecform_zero();
   public:
-    DistSCMatrix(DistSCDimension*,DistSCDimension*);
+    DistSCMatrix(const RefSCDimension&, const RefSCDimension&,
+                 DistSCMatrixKit*);
     ~DistSCMatrix();
 
     // implementations and overrides of virtual functions
-    RefSCDimension rowdim();
-    RefSCDimension coldim();
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -198,10 +143,11 @@ class DistSCMatrix: public SCMatrix {
                     SCMatrix*,SCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
 
-    RefMessageGrp messagegrp() { return d1->messagegrp(); }
-
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+
+    RefDistSCMatrixKit skit();
+    RefMessageGrp messagegrp();
 };
 
 class DistSymmSCMatrix: public SymmSCMatrix {
@@ -209,10 +155,8 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     friend class DistDiagSCMatrix;
     friend DistSCVector;
 #   define CLASSNAME DistSymmSCMatrix
-//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    RefDistSCDimension d;
     RefSCMatrixBlockList blocklist;
   protected:
     // utility functions
@@ -224,11 +168,10 @@ class DistSymmSCMatrix: public SymmSCMatrix {
 
     void error(const char *msg);
   public:
-    DistSymmSCMatrix(DistSCDimension*);
+    DistSymmSCMatrix(const RefSCDimension&, DistSCMatrixKit*);
     ~DistSymmSCMatrix();
 
     // implementations and overrides of virtual functions
-    RefSCDimension dim();
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -259,10 +202,11 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
 
-    RefMessageGrp messagegrp() { return d->messagegrp(); }
-
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+
+    RefDistSCMatrixKit skit();
+    RefMessageGrp messagegrp();
 };
 
 class DistDiagSCMatrix: public DiagSCMatrix {
@@ -270,10 +214,8 @@ class DistDiagSCMatrix: public DiagSCMatrix {
     friend DistSymmSCMatrix;
     friend DistSCVector;
 #   define CLASSNAME DistDiagSCMatrix
-//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    RefDistSCDimension d;
     RefSCMatrixBlockList blocklist;
 
     void init_blocklist();
@@ -283,11 +225,10 @@ class DistDiagSCMatrix: public DiagSCMatrix {
     RefSCMatrixBlock block_to_block(int);
     void error(const char *msg);
   public:
-    DistDiagSCMatrix(DistSCDimension*);
+    DistDiagSCMatrix(const RefSCDimension&, DistSCMatrixKit*);
     ~DistDiagSCMatrix();
 
     // implementations and overrides of virtual functions
-    RefSCDimension dim();
     double get_element(int);
     void set_element(int,double);
     void accumulate_element(int,double);
@@ -303,10 +244,11 @@ class DistDiagSCMatrix: public DiagSCMatrix {
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
 
-    RefMessageGrp messagegrp() { return d->messagegrp(); }
-
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+
+    RefDistSCMatrixKit skit();
+    RefMessageGrp messagegrp();
 };
 
 class DistSCMatrixListSubblockIter: public SCMatrixListSubblockIter {

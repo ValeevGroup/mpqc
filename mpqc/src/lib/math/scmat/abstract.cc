@@ -16,14 +16,13 @@
 // SCMatrixKit members
 
 #define CLASSNAME SCMatrixKit
-#define PARENTS public SavableState
-#include <util/state/statei.h>
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
 void *
 SCMatrixKit::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
+  casts[0] = DescribedClass::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -33,40 +32,6 @@ SCMatrixKit::SCMatrixKit()
 
 SCMatrixKit::SCMatrixKit(const RefKeyVal&)
 {
-}
-
-SCMatrixKit::SCMatrixKit(StateIn&s):
-  SavableState(s)
-{
-}
-
-void
-SCMatrixKit::save_data_state(StateOut&s)
-{
-}
-
-SCMatrix*
-SCMatrixKit::matrix(const RefSCDimension&d1, const RefSCDimension&d2)
-{
-  return d1->create_matrix(d2.pointer());
-}
-
-SymmSCMatrix*
-SCMatrixKit::symmmatrix(const RefSCDimension&d)
-{
-  return d->create_symmmatrix();
-}
-
-DiagSCMatrix*
-SCMatrixKit::diagmatrix(const RefSCDimension&d)
-{
-  return d->create_diagmatrix();
-}
-
-SCVector*
-SCMatrixKit::vector(const RefSCDimension&d)
-{
-  return d->create_vector();
 }
 
 SCMatrixKit::~SCMatrixKit()
@@ -108,73 +73,28 @@ SCMatrixKit::restore_vector(StateIn& s, const RefSCDimension& d)
 }
 
 /////////////////////////////////////////////////////////////////////////
-// SCDimension members
-
-#define CLASSNAME SCDimension
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-SCDimension::SCDimension(const char* name)
-{
-  if (name) name_ = strcpy(new char[strlen(name)+1], name);
-  else name_ = 0;
-}
-
-SCDimension::SCDimension(StateIn&s):
-  SavableState(s)
-{
-  s.getstring(name_);
-}
-
-void
-SCDimension::save_data_state(StateOut&s)
-{
-  s.putstring(name_);
-}
-
-void *
-SCDimension::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-SCMatrix*
-SCDimension::create_matrix(const RefSCDimension&d)
-{
-  return create_matrix(d.pointer());
-}
-
-SCDimension::~SCDimension()
-{
-  if (name_) delete[] name_;
-}
-
-/////////////////////////////////////////////////////////////////////////
 // SCMatrix members
 
 #define CLASSNAME SCMatrix
-#define PARENTS public SavableState
-#include <util/state/statei.h>
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
+void *
+SCMatrix::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
 
-SCMatrix::SCMatrix()
+SCMatrix::SCMatrix(const RefSCDimension&a1, const RefSCDimension&a2,
+                   SCMatrixKit*kit):
+  d1(a1),
+  d2(a2),
+  kit_(kit)
 {
 }
 
 SCMatrix::~SCMatrix()
-{
-}
-
-SCMatrix::SCMatrix(StateIn&s):
-  SavableState(s)
-{
-}
-
-void
-SCMatrix::save_data_state(StateOut&s)
 {
 }
 
@@ -185,6 +105,8 @@ SCMatrix::save(StateOut&s)
   int nc = ncol();
   s.put(nr);
   s.put(nc);
+  int has_subblocks = 0;
+  s.put(has_subblocks);
   for (int i=0; i<nr; i++) {
       for (int j=0; j<nc; j++) {
           s.put(get_element(i,j));
@@ -203,35 +125,22 @@ SCMatrix::restore(StateIn& s)
       cerr << "SCMatrix::restore(): bad dimensions" << endl;
       abort();
     }
-  for (int i=0; i<nr; i++) {
-      for (int j=0; j<nc; j++) {
-          double tmp;
-          s.get(tmp);
-          set_element(i,j, tmp);
+  int has_subblocks;
+  s.get(has_subblocks);
+  if (!has_subblocks) {
+      for (int i=0; i<nr; i++) {
+          for (int j=0; j<nc; j++) {
+              double tmp;
+              s.get(tmp);
+              set_element(i,j, tmp);
+            }
         }
     }
-}
-
-void *
-SCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-int
-SCMatrix::nrow()
-{
-  int result = rowdim()->n();
-  return result;
-}
-
-int
-SCMatrix::ncol()
-{
-  int result = coldim()->n();
-  return result;
+  else {
+      cerr << "SCMatrix::restore(): matrix has subblocks--cannot restore"
+           << endl;
+      abort();
+    }
 }
 
 double
@@ -387,7 +296,7 @@ SCMatrix::print(ostream&o)
 SCMatrix*
 SCMatrix::clone()
 {
-  return rowdim()->create_matrix(coldim().pointer());
+  return kit()->matrix(rowdim(),coldim());
 }
 
 SCMatrix*
@@ -408,7 +317,7 @@ SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 void
 SCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 {
-  SCMatrix *brect = b->dim()->create_matrix(b->dim());
+  SCMatrix *brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
   brect->accumulate(b);
   accumulate_product(a,brect);
@@ -418,7 +327,7 @@ SCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 void
 SCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
 {
-  SCMatrix *brect = b->dim()->create_matrix(b->dim());
+  SCMatrix *brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
   brect->accumulate(b);
   accumulate_product(a,brect);
@@ -429,21 +338,12 @@ SCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
 // SymmSCMatrix member functions
 
 #define CLASSNAME SymmSCMatrix
-#define PARENTS public SavableState
-#include <util/state/statei.h>
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
 
-SymmSCMatrix::SymmSCMatrix()
-{
-}
-
-SymmSCMatrix::SymmSCMatrix(StateIn&s):
-  SavableState(s)
-{
-}
-
-void
-SymmSCMatrix::save_data_state(StateOut&s)
+SymmSCMatrix::SymmSCMatrix(const RefSCDimension&a, SCMatrixKit *kit):
+  d(a),
+  kit_(kit)
 {
 }
 
@@ -481,15 +381,8 @@ void *
 SymmSCMatrix::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
+  casts[0] = DescribedClass::_castdown(cd);
   return do_castdowns(casts,cd);
-}
-
-int
-SymmSCMatrix::n()
-{
-  int result = dim()->n();
-  return result;
 }
 
 double
@@ -620,7 +513,7 @@ SymmSCMatrix::print(ostream&o)
 void
 SymmSCMatrix::print(const char* title, ostream& out, int i)
 {
-  RefSCMatrix m = dim()->create_matrix(dim());
+  RefSCMatrix m = kit()->matrix(dim(),dim());
   m->assign(0.0);
   m->accumulate(this);
   m->print(title, out, i);
@@ -629,7 +522,7 @@ SymmSCMatrix::print(const char* title, ostream& out, int i)
 SymmSCMatrix*
 SymmSCMatrix::clone()
 {
-  return dim()->create_symmmatrix();
+  return kit()->symmmatrix(dim());
 }
 
 SymmSCMatrix*
@@ -645,7 +538,7 @@ SymmSCMatrix::accumulate_symmetric_product(SCMatrix *a)
 {
   RefSCMatrix at = a->copy();
   at->transpose_this();
-  RefSCMatrix m = a->rowdim()->create_matrix(a->rowdim());
+  RefSCMatrix m = kit()->matrix(a->rowdim(),a->rowdim());
   m->assign(0.0);
   m->accumulate_product(a, at.pointer());
   scale(2.0);
@@ -656,8 +549,8 @@ SymmSCMatrix::accumulate_symmetric_product(SCMatrix *a)
 void
 SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
 {
-  RefSCMatrix m = a->rowdim()->create_matrix(a->rowdim());
-  RefSCMatrix brect = b->dim()->create_matrix(b->dim());
+  RefSCMatrix m = kit()->matrix(a->rowdim(),a->rowdim());
+  RefSCMatrix brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
   brect->accumulate(b);
 
@@ -670,7 +563,7 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
   at->assign(0.0);
   at->transpose_this();
 
-  RefSCMatrix res = dim()->create_matrix(dim());
+  RefSCMatrix res = kit()->matrix(dim(),dim());
   res->assign(0.0);
   res->accumulate_product(tmp.pointer(), at.pointer());
   tmp = 0;
@@ -684,8 +577,8 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
 void
 SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
 {
-  RefSCMatrix m = a->rowdim()->create_matrix(a->rowdim());
-  RefSCMatrix brect = b->dim()->create_matrix(b->dim());
+  RefSCMatrix m = kit()->matrix(a->rowdim(),a->rowdim());
+  RefSCMatrix brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
   brect->accumulate(b);
 
@@ -697,7 +590,7 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
   RefSCMatrix at = a->copy();
   at->transpose_this();
 
-  RefSCMatrix res = dim()->create_matrix(dim());
+  RefSCMatrix res = kit()->matrix(dim(),dim());
   res->assign(0.0);
   res->accumulate_product(tmp.pointer(), at.pointer());
   tmp = 0;
@@ -711,7 +604,7 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
 void
 SymmSCMatrix::accumulate_transform(SymmSCMatrix *a, SymmSCMatrix *b)
 {
-  RefSCMatrix m = a->dim()->create_matrix(a->dim());
+  RefSCMatrix m = kit()->matrix(a->dim(),a->dim());
   m->assign(0.0);
   m->accumulate(a);
   accumulate_transform(m.pointer(),b);
@@ -720,7 +613,7 @@ SymmSCMatrix::accumulate_transform(SymmSCMatrix *a, SymmSCMatrix *b)
 void
 SymmSCMatrix::accumulate_symmetric_outer_product(SCVector *v)
 {
-  RefSCMatrix m = dim()->create_matrix(dim());
+  RefSCMatrix m = kit()->matrix(dim(),dim());
   m->assign(0.0);
   m->accumulate_outer_product(v,v);
 
@@ -732,7 +625,7 @@ SymmSCMatrix::accumulate_symmetric_outer_product(SCVector *v)
 double
 SymmSCMatrix::scalar_product(SCVector *v)
 {
-  RefSCVector v2 = dim()->create_vector();
+  RefSCVector v2 = kit()->vector(dim());
   v2->assign(0.0);
   v2->accumulate_product(this,v);
   return v2->scalar_product(v);
@@ -742,21 +635,20 @@ SymmSCMatrix::scalar_product(SCVector *v)
 // DiagSCMatrix member functions
 
 #define CLASSNAME DiagSCMatrix
-#define PARENTS public SavableState
-#include <util/state/statei.h>
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
 
-DiagSCMatrix::DiagSCMatrix()
+void *
+DiagSCMatrix::_castdown(const ClassDesc*cd)
 {
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
 }
 
-DiagSCMatrix::DiagSCMatrix(StateIn&s):
-  SavableState(s)
-{
-}
-
-void
-DiagSCMatrix::save_data_state(StateOut&s)
+DiagSCMatrix::DiagSCMatrix(const RefSCDimension&a, SCMatrixKit *kit):
+  d(a),
+  kit_(kit)
 {
 }
 
@@ -784,21 +676,6 @@ DiagSCMatrix::restore(StateIn& s)
       s.get(tmp);
       set_element(i, tmp);
     }
-}
-
-void *
-DiagSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-int
-DiagSCMatrix::n()
-{
-  int result = dim()->n();
-  return result;
 }
 
 double
@@ -867,7 +744,7 @@ DiagSCMatrix::print(ostream&o)
 void
 DiagSCMatrix::print(const char* title, ostream& out, int i)
 {
-  RefSCMatrix m = dim()->create_matrix(dim());
+  RefSCMatrix m = kit()->matrix(dim(),dim());
   m->assign(0.0);
   m->accumulate(this);
   m->print(title, out, i);
@@ -876,7 +753,7 @@ DiagSCMatrix::print(const char* title, ostream& out, int i)
 DiagSCMatrix*
 DiagSCMatrix::clone()
 {
-  return dim()->create_diagmatrix();
+  return kit()->diagmatrix(dim());
 }
 
 DiagSCMatrix*
@@ -892,25 +769,23 @@ DiagSCMatrix::copy()
 /////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME SCVector
-#define PARENTS public SavableState
-#include <util/state/statei.h>
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
+void *
+SCVector::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
 
-SCVector::SCVector()
+SCVector::SCVector(const RefSCDimension&a, SCMatrixKit *kit):
+  d(a),
+  kit_(kit)
 {
 }
 
 SCVector::~SCVector()
-{
-}
-
-SCVector::SCVector(StateIn&s):
-  SavableState(s)
-{
-}
-
-void
-SCVector::save_data_state(StateOut&s)
 {
 }
 
@@ -938,21 +813,6 @@ SCVector::restore(StateIn& s)
       s.get(tmp);
       set_element(i, tmp);
     }
-}
-
-void *
-SCVector::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-int
-SCVector::n()
-{
-  int result = dim()->n();
-  return result;
 }
 
 double
@@ -1033,7 +893,7 @@ SCVector::normalize()
 SCVector*
 SCVector::clone()
 {
-  return dim()->create_vector();
+  return kit()->vector(dim());
 }
 
 SCVector*
@@ -1047,7 +907,7 @@ SCVector::copy()
 void
 SCVector::accumulate_product(SymmSCMatrix *m, SCVector *v)
 {
-  RefSCMatrix mrect = m->dim()->create_matrix(m->dim());
+  RefSCMatrix mrect = kit()->matrix(m->dim(),m->dim());
   mrect->assign(0.0);
   mrect->accumulate(m);
   accumulate_product(mrect.pointer(), v);

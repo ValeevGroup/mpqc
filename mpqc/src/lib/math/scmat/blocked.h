@@ -1,111 +1,60 @@
 
-#ifndef _math_scmat_blocked_h
-#define _math_scmat_blocked_h
-
 #ifdef __GNUC__
 #pragma interface
 #endif
+
+#ifndef _math_scmat_blocked_h
+#define _math_scmat_blocked_h
 
 #include <math/scmat/block.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
+class BlockedSCMatrixKit;
+class BlockedSCVector;
+class BlockedSCMatrix;
+class BlockedSymmSCMatrix;
+class BlockedDiagSCMatrix;
+
 class BlockedSCMatrixKit: public SCMatrixKit {
 #   define CLASSNAME BlockedSCMatrixKit
 #   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    BlockedSCMatrixKit();
-    BlockedSCMatrixKit(const RefKeyVal&);
-    BlockedSCMatrixKit(StateIn&);
-    ~BlockedSCMatrixKit();
-    void save_data_state(StateOut&);
-
-    SCDimension* dimension(int n, const char* name=0);
-    SCDimension* dimension(int n, int *nelem, const char* name=0);
-
-    SCDimension* dimension(const RefSCMatrixKit&, int n, const char* name=0);
-    SCDimension* dimension(const RefSCMatrixKit&, int n, int *nelem,
-                           const char* name=0);
-};
-SavableState_REF_dec(BlockedSCMatrixKit);
-
-class BlockedSCDimension: public SCDimension {
-#   define CLASSNAME BlockedSCDimension
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    int n_;
-    int nblocks_;
-    RefSCDimension *dims_;
-    
-    int *first_;
-    int *last_;
-
-    void init(const RefSCMatrixKit&, int *, const char *name=0);
-    
+    RefSCMatrixKit subkit_;
   public:
-    BlockedSCDimension(const RefSCMatrixKit&,
-                       int n, int *nelem, const char* name = 0);
-    BlockedSCDimension(const RefSCMatrixKit&,
-                       int n, const char* name = 0);
-    BlockedSCDimension(const RefKeyVal&);
-    BlockedSCDimension(StateIn&);
-    ~BlockedSCDimension();
+    BlockedSCMatrixKit(const RefSCMatrixKit& subkit);
+    BlockedSCMatrixKit(const RefKeyVal&);
+    ~BlockedSCMatrixKit();
+    SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
+    SymmSCMatrix* symmmatrix(const RefSCDimension&);
+    DiagSCMatrix* diagmatrix(const RefSCDimension&);
+    SCVector* vector(const RefSCDimension&);
 
-    void save_data_state(StateOut&);
-
-    int equiv(SCDimension*) const;
-    
-    int n();
-    int n(int) const;
-    int nblocks() const;
-    
-    int first(int i) const;
-    int last(int i) const;
-    
-    int block(int i) const;
-    
-    RefSCDimension dim(int i) const;
-    
-    SCMatrix* create_matrix(SCDimension*);
-    SymmSCMatrix* create_symmmatrix();
-    DiagSCMatrix* create_diagmatrix();
-    SCVector* create_vector();
+    RefSCMatrixKit subkit() { return subkit_; }
 };
-SavableState_REF_dec(BlockedSCDimension);
+DescribedClass_REF_dec(BlockedSCMatrixKit);
 
 class BlockedSCVector: public SCVector {
     friend class BlockedSCMatrix;
     friend class BlockedSymmSCMatrix;
     friend class BlockedDiagSCMatrix;
 #   define CLASSNAME BlockedSCVector
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefBlockedSCDimension d;
+    RefSCMatrixKit subkit;
     RefSCVector *vecs_;
 
-    void resize(BlockedSCDimension*);
+    void resize(SCDimension*);
 
   public:
-    BlockedSCVector();
-    BlockedSCVector(BlockedSCDimension*);
-    BlockedSCVector(const RefKeyVal&);
-    BlockedSCVector(StateIn&);
+    BlockedSCVector(const RefSCDimension&, BlockedSCMatrixKit*);
     ~BlockedSCVector();
 
-    void save_data_state(StateOut&);
-
-    RefSCDimension dim();
+    //texi Save and restore this in an implementation independent way.
+    void save(StateOut&);
+    void restore(StateIn&);
 
     void assign(double);
     void assign(SCVector*);
@@ -130,6 +79,7 @@ class BlockedSCVector: public SCVector {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     // BlockedSCVector specific functions
+    RefSCDimension dim() { return d; }
     RefSCDimension dim(int);
     int nblocks() const;
     RefSCVector block(int);
@@ -143,31 +93,22 @@ class BlockedSCMatrix: public SCMatrix {
     friend class BlockedDiagSCMatrix;
     friend BlockedSCVector;
 #   define CLASSNAME BlockedSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefBlockedSCDimension d1;
-    RefBlockedSCDimension d2;
+    RefSCMatrixKit subkit;
     RefSCMatrix *mats_;
     int nblocks_;
     
-    void resize(BlockedSCDimension*, BlockedSCDimension*);
+    void resize(SCDimension*, SCDimension*);
 
   public:
-    BlockedSCMatrix();
-    BlockedSCMatrix(const RefKeyVal&);
-    BlockedSCMatrix(StateIn&);
-    BlockedSCMatrix(BlockedSCDimension*,BlockedSCDimension*);
+    BlockedSCMatrix(const RefSCDimension&, const RefSCDimension&,
+                    BlockedSCMatrixKit*);
     ~BlockedSCMatrix();
 
-    void save_data_state(StateOut&);
-
-    // implementations and overrides of virtual functions
-    RefSCDimension rowdim();
-    RefSCDimension coldim();
+    //texi Save and restore this in an implementation independent way.
+    void save(StateOut&);
+    void restore(StateIn&);
 
     void assign(double);
     double get_element(int,int);
@@ -212,6 +153,8 @@ class BlockedSCMatrix: public SCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     // BlockedSCMatrix specific functions
+    RefSCDimension rowdim() { return d1; }
+    RefSCDimension coldim() { return d2; }
     RefSCDimension rowdim(int);
     RefSCDimension coldim(int);
     int nblocks() const;
@@ -226,28 +169,20 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     friend class BlockedDiagSCMatrix;
     friend BlockedSCVector;
 #   define CLASSNAME BlockedSymmSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefBlockedSCDimension d;
+    RefSCMatrixKit subkit;
     RefSymmSCMatrix *mats_;
 
-    void resize(BlockedSCDimension*);
+    void resize(SCDimension*);
 
   public:
-    BlockedSymmSCMatrix();
-    BlockedSymmSCMatrix(StateIn&);
-    BlockedSymmSCMatrix(const RefKeyVal&);
-    BlockedSymmSCMatrix(BlockedSCDimension*);
+    BlockedSymmSCMatrix(const RefSCDimension&,BlockedSCMatrixKit*);
     ~BlockedSymmSCMatrix();
 
-    // implementations and overrides of virtual functions
-    void save_data_state(StateOut&);
-
-    RefSCDimension dim();
+    //texi Save and restore this in an implementation independent way.
+    void save(StateOut&);
+    void restore(StateIn&);
 
     double get_element(int,int);
     void set_element(int,int,double);
@@ -289,6 +224,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     // BlockedSymmSCMatrix specific functions
+    RefSCDimension dim() { return d; }
     RefSCDimension dim(int);
     int nblocks() const;
     RefSymmSCMatrix block(int);
@@ -302,28 +238,20 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     friend BlockedSymmSCMatrix;
     friend BlockedSCVector;
 #   define CLASSNAME BlockedDiagSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefBlockedSCDimension d;
+    RefSCMatrixKit subkit;
     RefDiagSCMatrix *mats_;
 
-    void resize(BlockedSCDimension*);
+    void resize(SCDimension*);
 
   public:
-    BlockedDiagSCMatrix();
-    BlockedDiagSCMatrix(const RefKeyVal&);
-    BlockedDiagSCMatrix(StateIn&);
-    BlockedDiagSCMatrix(BlockedSCDimension*);
+    BlockedDiagSCMatrix(const RefSCDimension&,BlockedSCMatrixKit*);
     ~BlockedDiagSCMatrix();
 
-    // implementations and overrides of virtual functions
-    void save_data_state(StateOut&);
-
-    RefSCDimension dim();
+    //texi Save and restore this in an implementation independent way.
+    void save(StateOut&);
+    void restore(StateIn&);
 
     double get_element(int);
     void set_element(int,double);
@@ -343,6 +271,7 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     // BlockedDiagSCMatrix specific functions
+    RefSCDimension dim() { return d; }
     RefSCDimension dim(int);
     int nblocks() const;
     RefDiagSCMatrix block(int);

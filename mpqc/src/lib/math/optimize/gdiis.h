@@ -9,7 +9,7 @@
 #include <util/state/state.h>
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>
-#include <math/optimize/nlp.h>
+#include <math/optimize/function.h>
 #include <math/optimize/opt.h>
 #include <math/optimize/update.h>
 
@@ -30,12 +30,10 @@ class GDIISOpt: public Optimize {
     double convergence_;
     double accuracy_;
 
-    RefSCDimension dim_;
     RefSCVector *coords_;
     RefSCVector *grad_;
     RefSCVector *error_;
 
-    RefNLP2 nlp_;
     RefSymmSCMatrix ihessian_;
     RefHessianUpdate update_;
 
@@ -47,7 +45,6 @@ class GDIISOpt: public Optimize {
 
     void init();
     int update();
-    RefNLP0 nlp();
 };
 
 #endif

@@ -8,13 +8,14 @@
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>
 
-SSAccResult_dec(RefSCMatrix);
-SSAccResult_dec(RefSymmSCMatrix);
-SSAccResult_dec(RefDiagSCMatrix);
-SSAccResult_dec(RefSCVector);
+typedef AccResult<RefSCMatrix> AccResultRefSCMatrix;
+typedef AccResult<RefSymmSCMatrix> AccResultRefSymmSCMatrix;
+typedef AccResult<RefDiagSCMatrix> AccResultRefDiagSCMatrix;
+typedef AccResult<RefSCVector> AccResultRefSCVector;
 
-typedef AccResultRefSCMatrix ResultRefSCMatrix;
-typedef AccResultRefSymmSCMatrix ResultRefSymmSCMatrix;
-typedef AccResultRefDiagSCMatrix ResultRefDiagSCMatrix;
-typedef AccResultRefSCVector ResultRefSCVector;
+typedef AccResult<RefSCMatrix> ResultRefSCMatrix;
+typedef AccResult<RefSymmSCMatrix> ResultRefSymmSCMatrix;
+typedef AccResult<RefDiagSCMatrix> ResultRefDiagSCMatrix;
+typedef AccResult<RefSCVector> ResultRefSCVector;
+
 #endif

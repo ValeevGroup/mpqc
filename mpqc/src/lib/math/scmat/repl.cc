@@ -34,7 +34,7 @@ ReplSCMatrixKit::ReplSCMatrixKit()
 ReplSCMatrixKit::ReplSCMatrixKit(const RefKeyVal& keyval):
   SCMatrixKit(keyval)
 {
-  grp_ = keyval->describedclassvalue("MessageGrp");
+  grp_ = keyval->describedclassvalue("messagegrp");
   if (grp_.null()) grp_ = MessageGrp::get_default_messagegrp();
 }
 
@@ -42,101 +42,30 @@ ReplSCMatrixKit::~ReplSCMatrixKit()
 {
 }
 
-SCDimension*
-ReplSCMatrixKit::dimension(int n, const char* name)
-{
-  return new ReplSCDimension(n, grp_, name);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// ReplSCDimension member functions
-
-#define CLASSNAME ReplSCDimension
-#define PARENTS public SCDimension
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ReplSCDimension::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCDimension::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-ReplSCDimension::ReplSCDimension(int n, const RefMessageGrp& grp,
-                                 const char* name):
-  SCDimension(name),
-  grp_(grp),
-  n_(n)
-{
-  int nproc = messagegrp()->n();
-  int nperproc = n_/nproc;
-  int nleftover = n_%nproc;
-
-  if (nperproc) nblocks_ = nproc;
-  else nblocks_ = nleftover;
-
-  blocks_ = new int[nblocks_+1];
-  int i;
-  blocks_[0] = 0;
-  for (i=1; i<=nproc; i++) {
-      if (nperproc) blocks_[i] = blocks_[i-1] + nperproc;
-      if (i<=nleftover) blocks_[i]++;
-    }
-}
-
-ReplSCDimension::~ReplSCDimension()
-{
-  delete[] blocks_;
-}
-
-int
-ReplSCDimension::equiv(SCDimension *a) const
-{
-  ReplSCDimension *ra = ReplSCDimension::castdown(a);
-
-  if (!ra)
-    return 0;
-
-  if (n_ != ra->n_ || nblocks_ != ra->nblocks_)
-    return 0;
-
-  for (int i=0; i < nblocks_; i++)
-    if (blocks_[i] != ra->blocks_[i])
-      return 0;
-
-  return grp_==ra->grp_;
-}
-
-int
-ReplSCDimension::n()
-{
-  return n_;
-}
 SCMatrix*
-ReplSCDimension::create_matrix(SCDimension*a)
+ReplSCMatrixKit::matrix(const RefSCDimension&d1, const RefSCDimension&d2)
 {
-  ReplSCDimension*coldim
-    = ReplSCDimension::require_castdown(a,"ReplSCDimension::create_matrix");
-  return new ReplSCMatrix(this,coldim);
-}
-SymmSCMatrix*
-ReplSCDimension::create_symmmatrix()
-{
-  return new ReplSymmSCMatrix(this);
-}
-DiagSCMatrix*
-ReplSCDimension::create_diagmatrix()
-{
-  return new ReplDiagSCMatrix(this);
-}
-SCVector*
-ReplSCDimension::create_vector()
-{
-  return new ReplSCVector(this);
+  return new ReplSCMatrix(d1,d2,this);
 }
 
-SavableState_REF_def(ReplSCDimension);
+SymmSCMatrix*
+ReplSCMatrixKit::symmmatrix(const RefSCDimension&d)
+{
+  return new ReplSymmSCMatrix(d,this);
+}
+
+DiagSCMatrix*
+ReplSCMatrixKit::diagmatrix(const RefSCDimension&d)
+{
+  return new ReplDiagSCMatrix(d,this);
+}
+
+SCVector*
+ReplSCMatrixKit::vector(const RefSCDimension&d)
+{
+  return new ReplSCVector(d,this);
+
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCMatrixKit member functions

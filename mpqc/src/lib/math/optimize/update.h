@@ -9,7 +9,7 @@
 #include <util/state/state.h>
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>
-#include <math/optimize/nlp.h>
+#include <math/optimize/function.h>
 
 class RefNonlinearTransform;
 
@@ -30,8 +30,8 @@ class HessianUpdate: virtual_base public SavableState {
     HessianUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     virtual ~HessianUpdate();
-    virtual void update(RefSymmSCMatrix&hessian,RefNLP2&nlp,
-                        RefSCVector&xnew,RefSCVector&gnew) = 0;
+    virtual void update(const RefSymmSCMatrix&hessian,const RefFunction&,
+                        const RefSCVector&xnew,const RefSCVector&gnew) = 0;
     void set_inverse();
     virtual void apply_transform(const RefNonlinearTransform&);
 };
@@ -53,8 +53,8 @@ class DFPUpdate: public HessianUpdate {
     DFPUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     ~DFPUpdate();
-    void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
-                RefSCVector&xnew,RefSCVector&gnew);
+    void update(const RefSymmSCMatrix&ihessian,const RefFunction&,
+                const RefSCVector&xnew,const RefSCVector&gnew);
     void apply_transform(const RefNonlinearTransform&);
 };
 
@@ -71,8 +71,8 @@ class BFGSUpdate: public DFPUpdate {
     BFGSUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     ~BFGSUpdate();
-    void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
-                RefSCVector&xnew,RefSCVector&gnew);
+    void update(const RefSymmSCMatrix&ihessian,const RefFunction&,
+                const RefSCVector&xnew,const RefSCVector&gnew);
 };
 
 class PowellUpdate: public HessianUpdate {
@@ -91,8 +91,8 @@ class PowellUpdate: public HessianUpdate {
     PowellUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     ~PowellUpdate();
-    void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
-                RefSCVector&xnew,RefSCVector&gnew);
+    void update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
+                const RefSCVector&xnew,const RefSCVector&gnew);
     void apply_transform(const RefNonlinearTransform&);
 };
 

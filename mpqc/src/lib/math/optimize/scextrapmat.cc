@@ -17,7 +17,11 @@ SymmSCMatrixSCExtrapData::_castdown(const ClassDesc*cd)
 SymmSCMatrixSCExtrapData::SymmSCMatrixSCExtrapData(StateIn& s) :
   SCExtrapData(s)
 {
-  m.restore_state(s);
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+  m = k->symmmatrix(dim);
+  m.restore(s);
 }
 
 SymmSCMatrixSCExtrapData::SymmSCMatrixSCExtrapData(const RefSymmSCMatrix& mat)
@@ -29,7 +33,8 @@ void
 SymmSCMatrixSCExtrapData::save_data_state(StateOut& s)
 {
   SCExtrapData::save_data_state(s);
-  m.save_state(s);
+  m.dim().save_state(s);
+  m.save(s);
 }
 
 void
@@ -74,8 +79,13 @@ SymmSCMatrix2SCExtrapData::_castdown(const ClassDesc*cd)
 SymmSCMatrix2SCExtrapData::SymmSCMatrix2SCExtrapData(StateIn&s) :
   SCExtrapData(s)
 {
-  m1.restore_state(s);
-  m2.restore_state(s);
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+  m1 = k->symmmatrix(dim);
+  m2 = k->symmmatrix(dim);
+  m1.restore(s);
+  m2.restore(s);
 }
 
 SymmSCMatrix2SCExtrapData::SymmSCMatrix2SCExtrapData(
@@ -90,8 +100,9 @@ void
 SymmSCMatrix2SCExtrapData::save_data_state(StateOut& s)
 {
   SCExtrapData::save_data_state(s);
-  m1.save_state(s);
-  m2.save_state(s);
+  m1.dim().save_state(s);
+  m1.save(s);
+  m2.save(s);
 }
 
 void
@@ -142,7 +153,11 @@ SymmSCMatrixSCExtrapError::_castdown(const ClassDesc*cd)
 SymmSCMatrixSCExtrapError::SymmSCMatrixSCExtrapError(StateIn& s) :
   SCExtrapError(s)
 {
-  m.restore_state(s);
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+  m = k->symmmatrix(dim);
+  m.restore(s);
 }
 
 SymmSCMatrixSCExtrapError::SymmSCMatrixSCExtrapError(
@@ -155,7 +170,8 @@ void
 SymmSCMatrixSCExtrapError::save_data_state(StateOut& s)
 {
   SCExtrapError::save_data_state(s);
-  m.save_state(s);
+  m.dim().save_state(s);
+  m.save(s);
 }
 
 double

@@ -33,7 +33,6 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
   Optimize(keyval),
   maxabs_gradient(-1.0)
 {
-  nlp_ = keyval->describedclassvalue("function");
   update_ = keyval->describedclassvalue("update");
   
   convergence_ = keyval->doublevalue("convergence");
@@ -52,9 +51,9 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
     printf("\n  performing a transition state search\n\n");
   }
   
-  RefSymmSCMatrix hessian(nlp_->dimension());
-  // get a guess hessian from nlp
-  nlp_->guess_hessian(hessian);
+  RefSymmSCMatrix hessian(dimension(),matrixkit());
+  // get a guess hessian from function
+  function()->guess_hessian(hessian);
   
   // see if any hessian matrix elements have been given in the input
   if (keyval->exists("hessian")) {
@@ -78,10 +77,11 @@ EFCOpt::EFCOpt(StateIn&s):
 {
   s.get(tstate);
   s.get(modef);
-  nlp_.restore_state(s);
-  hessian_.restore_state(s);
+  hessian_ = matrixkit()->symmmatrix(dimension());
+  hessian_.restore(s);
   update_.restore_state(s);
-  last_mode_.restore_state(s);
+  last_mode_ = matrixkit()->vector(dimension());
+  last_mode_.restore(s);
   s.get(convergence_);
   s.get(accuracy_);
   s.get(maxabs_gradient);
@@ -97,10 +97,9 @@ EFCOpt::save_data_state(StateOut&s)
   Optimize::save_data_state(s);
   s.put(tstate);
   s.put(modef);
-  nlp_.save_state(s);
-  hessian_.save_state(s);
+  hessian_.save(s);
   update_.save_state(s);
-  last_mode_.save_state(s);
+  last_mode_.save(s);
   s.put(convergence_);
   s.put(accuracy_);
   s.put(maxabs_gradient);
@@ -136,10 +135,10 @@ EFCOpt::update()
   int accurate_enough;
   do {
     // compute the current point
-    nlp_->set_desired_gradient_accuracy(accuracy_);
+    function()->set_desired_gradient_accuracy(accuracy_);
     
-    xcurrent = nlp_->get_x().copy();
-    gcurrent = nlp_->gradient().copy();
+    xcurrent = function()->get_x().copy();
+    gcurrent = function()->gradient().copy();
 
     // compute the gradient convergence criterion now so i can see if
     // the accuracy needs to be tighter
@@ -151,13 +150,13 @@ EFCOpt::update()
     // the current gcurrent.maxabs() a bit smaller than the previous,
     // which would make the current required accuracy less than the
     // gradient's actual accuracy and cause everything to be recomputed.
-    accurate_enough = (nlp_->actual_gradient_accuracy() <=
+    accurate_enough = (function()->actual_gradient_accuracy() <=
                        accuracy_*roundoff_error_factor);
 
     if (!accurate_enough) {
-      printf("NOTICE: nlp_->actual_gradient_accuracy() > accuracy_:\n");
-      printf("  nlp_->actual_gradient_accuracy() = %15.8f\n",
-             nlp_->actual_gradient_accuracy());
+      printf("NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n");
+      printf("  function()->actual_gradient_accuracy() = %15.8f\n",
+             function()->actual_gradient_accuracy());
       printf("  accuracy_ = %15.8f\n", accuracy_);
       fflush(stdout);
     }
@@ -175,13 +174,13 @@ EFCOpt::update()
   
   // update the hessian
   if (update_.nonnull()) {
-    update_->update(hessian_,nlp_,xcurrent,gcurrent);
+    update_->update(hessian_,function(),xcurrent,gcurrent);
   }
 
   // begin efc junk
   // first diagonalize hessian
-  RefSCMatrix evecs(hessian_.dim(),hessian_.dim());
-  RefDiagSCMatrix evals(hessian_.dim());
+  RefSCMatrix evecs(dimension(),dimension(),matrixkit());
+  RefDiagSCMatrix evals(dimension(),matrixkit());
 
   hessian_.diagonalize(evals,evecs);
   evals.print("hessian eigenvalues");
@@ -199,7 +198,7 @@ EFCOpt::update()
     else nneg++;
   }
 
-  RefSCVector xdisp(hessian_.dim());
+  RefSCVector xdisp(dimension(),matrixkit());
   xdisp.assign(0.0);
   
   // for now, we always take the P-RFO for tstate (could take NR if
@@ -224,7 +223,7 @@ EFCOpt::update()
           }
         }
       } else {
-        last_mode_ = hessian_.dim()->create_vector();
+        last_mode_ = matrixkit()->vector(dimension());
       
         // find mode with max component = coord 0 which should be the
         // mode being followed
@@ -320,7 +319,7 @@ EFCOpt::update()
   // try steepest descent
   // RefSCVector xdisp = -1.0*gcurrent;
   RefSCVector xnext = xcurrent + xdisp;
-  nlp_->set_x(xnext);
+  function()->set_x(xnext);
     
   // compute the convergence criteria
   double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
@@ -330,10 +329,4 @@ EFCOpt::update()
   return ((con_crit1 <= convergence_)
           && (con_crit2 <= convergence_)
           && (con_crit3 <= convergence_));
-}
-
-RefNLP0
-EFCOpt::nlp()
-{
-  return nlp_;
 }

@@ -53,13 +53,20 @@ randomize(RefSCVector&m)
 
 // test abstract matrices
 void
-matrixtest(
-    RefSCMatrixKit kit, RefKeyVal keyval,
-    RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
+matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
+           RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
 {
   // The tim_enter routines require PICL
   int numproc, me, host;
   open0(&numproc, &me, &host);
+
+  if (d1.null()) d1 = keyval->describedclassvalue("d1");
+  if (d2.null()) d2 = keyval->describedclassvalue("d2");
+  if (d3.null()) d3 = keyval->describedclassvalue("d3");
+
+  d1.print();
+  d2.print();
+  d3.print();
 
   tim_enter("matrixtest");
   int i;
@@ -68,11 +75,11 @@ matrixtest(
   // seed the random number generator
   srand48(0);
 
-  RefSCMatrix a(d1,d2);
-  RefSCMatrix a2(d1,d2);
-  RefSCMatrix a3(d1,d2);
-  RefSCMatrix b(d2,d3);
-  RefSCMatrix c(d1,d3);
+  RefSCMatrix a(d1,d2,kit);
+  RefSCMatrix a2(d1,d2,kit);
+  RefSCMatrix a3(d1,d2,kit);
+  RefSCMatrix b(d2,d3,kit);
+  RefSCMatrix c(d1,d3,kit);
 
   cout << "a(" << a.nrow() << "," << a.ncol() << ")\n";
 
@@ -87,9 +94,9 @@ matrixtest(
 
   /////////////////////////////////
   
-  RefSymmSCMatrix sa(d3);
-  RefSymmSCMatrix sa2(d3);
-  RefSymmSCMatrix sa3(d3);
+  RefSymmSCMatrix sa(d3,kit);
+  RefSymmSCMatrix sa2(d3,kit);
+  RefSymmSCMatrix sa3(d3,kit);
 
   sa.assign(7.0);
   sa2.assign(5.0);
@@ -101,9 +108,9 @@ matrixtest(
 
   /////////////////////////////////
   
-  RefDiagSCMatrix da(d3);
-  RefDiagSCMatrix da2(d3);
-  RefDiagSCMatrix da3(d3);
+  RefDiagSCMatrix da(d3,kit);
+  RefDiagSCMatrix da2(d3,kit);
+  RefDiagSCMatrix da3(d3,kit);
 
   da.assign(7.0);
   da2.assign(5.0);
@@ -115,9 +122,9 @@ matrixtest(
 
   /////////////////////////////////
   
-  RefSCVector vva(d3);
-  RefSCVector vva2(d3);
-  RefSCVector vva3(d3);
+  RefSCVector vva(d3,kit);
+  RefSCVector vva2(d3,kit);
+  RefSCVector vva3(d3,kit);
 
   vva.assign(7.0);
   vva2.assign(5.0);
@@ -143,12 +150,12 @@ matrixtest(
 
   d.print("d");
 
-  int nd4 = keyval->intvalue("n4");
-  if (!nd4) nd4 = 1;
+  RefSCDimension d4 = keyval->describedclassvalue("d4");
+  int nd4 = d4->n();
   cout << "n4 = " << nd4 << endl;
-  RefSCDimension d4 = kit->dimension(nd4);
-  RefSCMatrix aaa(d4,d4);
-  RefSCMatrix bbb(d4,d4);
+  d4.print();
+  RefSCMatrix aaa(d4,d4,kit);
+  RefSCMatrix bbb(d4,d4,kit);
   aaa.assign(1.0);
   bbb.assign(2.0);
   tim_enter("mxm2");
@@ -157,14 +164,14 @@ matrixtest(
 
   d.print("d later");
 
-  RefSymmSCMatrix e(d3);
+  RefSymmSCMatrix e(d3,kit);
 
   e.assign(1.0);
   e.print("e");
   e.eigvals().print("e.eigvals()");
   e.eigvecs().print("e.eigvecs()");
 
-  RefSymmSCMatrix f(d3);
+  RefSymmSCMatrix f(d3,kit);
   for (i=0; i<d3.n(); i++) {
       for (j=0; j<=i; j++) {
           f(i,j) = i + sqrt((double)j);
@@ -174,7 +181,7 @@ matrixtest(
   f.eigvals().print("f.eigvals()");
   f.i().print("f.i()");
 
-  RefSymmSCMatrix h(d3);
+  RefSymmSCMatrix h(d3,kit);
   for (i=0; i<d3.n(); i++) {
     for (j=0; j<=i; j++) {
       h(i,j) = f(i,j);
@@ -182,7 +189,7 @@ matrixtest(
   }
   h.print("h should be equal to f");
 
-  RefSCMatrix g(d3,d3);
+  RefSCMatrix g(d3,d3,kit);
   for (i=0; i<d3.n(); i++) {
       for (j=0; j<d3.n(); j++) {
           if (i>j) g(i,j) = i + sqrt((double)j);
@@ -193,14 +200,14 @@ matrixtest(
   g.i().print("g.i()");
   (g * g.i()).print("g * g.i()");
 
-  RefSCVector v(d3);
+  RefSCVector v(d3,kit);
   for (i=0; i<d3.n(); i++) {
       v(i) = 1.0/(i+1);
     }
   v.print("Vector v");
 
-  RefSCVector wa(d3);
-  RefSCMatrix ma(d1,d3);
+  RefSCVector wa(d3,kit);
+  RefSCMatrix ma(d1,d3,kit);
   randomize(ma);
   randomize(wa);
   RefSCVector va = ma * wa;
@@ -208,8 +215,8 @@ matrixtest(
   va.print("Vector va");
   wa.print("Vector wa");
 
-  RefSCVector wb(d1);
-  RefSCMatrix mb(d3,d1);
+  RefSCVector wb(d1,kit);
+  RefSCMatrix mb(d3,d1,kit);
   randomize(mb);
   randomize(wb);
   RefSCVector vb = mb * wb;
@@ -217,21 +224,20 @@ matrixtest(
   va.print("Vector vb");
   wa.print("Vector wb");
 
-  RefSymmSCMatrix bmbt(d3);
-  RefSCMatrix redundant_ortho(d2,d3);
-  RefSymmSCMatrix bmbt_fixed(d2);
-  RefSCMatrix bmbt_fix_red(d2,d3);
+  RefSymmSCMatrix bmbt(d3,kit);
+  RefSCMatrix redundant_ortho(d2,d3,kit);
+  RefSymmSCMatrix bmbt_fixed(d2,kit);
+  RefSCMatrix bmbt_fix_red(d2,d3,kit);
   bmbt.assign(0.0);
   randomize(redundant_ortho);
   randomize(bmbt_fixed);
   randomize(bmbt_fix_red);
   bmbt.accumulate_transform(redundant_ortho.t(), bmbt_fixed);
   bmbt.accumulate_symmetric_sum(redundant_ortho.t() * bmbt_fix_red);
-  cout << "bmbt:\n";
-  bmbt.print();
+  bmbt.print("bmbt");
 
   RefSCMatrix bmbt_test;
-  RefSCMatrix bmbt_fixed_test(d2,d2);
+  RefSCMatrix bmbt_fixed_test(d2,d2,kit);
   for (i=0; i<d2.n(); i++) {
       for (j=0; j<=i; j++) {
           bmbt_fixed_test(i,j) = bmbt_fixed(i,j);
@@ -241,8 +247,7 @@ matrixtest(
   RefSCMatrix tmp = redundant_ortho.t() * bmbt_fix_red;
   bmbt_test =  redundant_ortho.t() * bmbt_fixed_test * redundant_ortho
              + tmp + tmp.t();
-  cout << "bmbt_test\n";
-  bmbt_test.print();
+  bmbt_test.print("bmbt_test");
 
   tim_exit("matrixtest");
   tim_print(0);

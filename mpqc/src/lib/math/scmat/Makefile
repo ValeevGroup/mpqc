@@ -12,16 +12,18 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libscmat.so
 endif
 
-CXXSRC = \
-	 disthql.cc \
+CXXSRC = dim.cc \
+         abstract.cc   matrix.cc     matrix_i.cc \
+         block.cc      blkiter.cc    elemop.cc     result.cc \
+         local.cc      localrect.cc  localdiag.cc  localsymm.cc  localvect.cc \
+         disthql.cc \
          dist.cc       distrect.cc   distdiag.cc   distsymm.cc   distvect.cc \
          repl.cc       replrect.cc   repldiag.cc   replsymm.cc   replvect.cc \
-         local.cc      localrect.cc  localdiag.cc  localsymm.cc  localvect.cc \
-         abstract.cc   matrix.cc     matrix_i.cc    blocked.cc \
+         blocked.cc \
          blockedvect.cc blockedrect.cc blockeddiag.cc blockedsymm.cc \
-         block.cc      blkiter.cc    elemop.cc     result.cc \
          matrix3.cc    vector3.cc    vector3_i.cc
 
+TESTSRC = disttest.cc localtest.cc repltest.cc blockedtest.cc
 
 CSRC = cmatrix.c svd.c
 
@@ -29,7 +31,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
 INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
        result.h vector3.h vector3_i.h block.h matrix3.h elemop.h repl.h \
-       blocked.h disthql.h
+       blocked.h disthql.h dim.h
 
 GENINC =
 
@@ -38,9 +40,7 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libscmat
 
-TESTSRC = localtest.cc repltest.cc matrixtest.cc
 TESTOBJ = matrixtest.o
-TESTFILES = # localtest.in
 
 DISTFILES = $(CXXSRC) $(INC) scmat.h $(WEBSRC) Makefile LIBS.h \
             $(TESTSRC) $(TESTFILES)

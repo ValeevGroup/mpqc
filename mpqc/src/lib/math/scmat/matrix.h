@@ -8,7 +8,6 @@
 #include <iostream.h>
 #include <util/container/array.h>
 #include <util/container/set.h>
-#include <util/state/state.h>
 
 #include <math/scmat/abstract.h>
 
@@ -23,52 +22,18 @@ class SCMatrixLTriBlock;
 class SCMatrixDiagBlock;
 class SCVectorSimpleBlock;
 
-DCRef_declare(SCDimension);
-SSRef_declare(SCDimension);
-//texi
-//  The @code{RefSCDimension} class is a smart pointer to an
-//   @code{SCDimension} specialization.
-class RefSCDimension: public SSRefSCDimension {
-    // standard overrides
-  public:
-    //texi Initializes the dimension pointer to @code{0}.  The
-    // reference must be initialized before it is used.
-    RefSCDimension();
-    //texi Make this and @var{d} refer to the same @code{SCDimension}.
-    RefSCDimension(const RefSCDimension& d);
-    //texi Make this refer to @var{d}.
-    RefSCDimension(SCDimension *d);
-
-    RefSCDimension(const DCRefBase&);
-    ~RefSCDimension();
-    //texi Make this refer to @var{d}.
-    RefSCDimension& operator=(SCDimension* d);
-
-    RefSCDimension& operator=(const DCRefBase & c);
-    //texi Make this and @var{d} refer to the same @code{SCDimension}.
-    RefSCDimension& operator=(const RefSCDimension & d);
-
-    // dimension specific functions
-  public:
-    //texi Return the dimension.
-    operator int() const;
-    int n() const;
-};
-
 class RefSCMatrix;
 class RefSymmSCMatrix;
-SavableState_named_REF_dec(RefSSSCVector,SCVector);
+DescribedClass_named_REF_dec(RefDCSCVector,SCVector);
 //texi
 //  The @code{RefSCVector} class is a smart pointer to an @code{SCVector}
 //  specialization.  Valid indices range from @code{0} to @code{n-1}.
-class RefSCVector: public RefSSSCVector {
+class RefSCVector: public RefDCSCVector {
     // standard overrides
   public:
     //texi Initializes the vector pointer to @code{0}.  The reference must
     // be initialized before it is used.
     RefSCVector();
-    //texi Restore the vector's state.
-    RefSCVector(StateIn&);
     //texi Make this and @var{v} refer to the same @code{SCVector}.
     RefSCVector(const RefSCVector& v);
     //texi Make this refer to @var{v}.
@@ -85,7 +50,7 @@ class RefSCVector: public RefSSSCVector {
   public:
     //texi Create a vector with dimension @var{dim}.  The data values
     // are undefined.
-    RefSCVector(const RefSCDimension& dim);
+    RefSCVector(const RefSCDimension& dim,const RefSCMatrixKit&);
 
     //texi Return an l-value that can be used to assign or retrieve an element.
     SCVectordouble operator()(int) const;
@@ -108,6 +73,7 @@ class RefSCVector: public RefSSSCVector {
     double get_element(int) const;
     int n() const;
     RefSCDimension dim() const;
+    RefSCMatrixKit kit() const;
     RefSCVector clone() const;
     RefSCVector copy() const;
     double maxabs() const;
@@ -131,6 +97,8 @@ class RefSCVector: public RefSSSCVector {
                     const RefSCVector&) const;
     void print(ostream&out) const;
     void print(const char*title=0, ostream&out=cout, int precision=10) const;
+    void save(StateOut&);
+    void restore(StateIn&);
 };
 RefSCVector operator*(double,const RefSCVector&);
 ARRAY_dec(RefSCVector);
@@ -138,18 +106,16 @@ SET_dec(RefSCVector);
 
 class RefSymmSCMatrix;
 class RefDiagSCMatrix;
-SavableState_named_REF_dec(RefSSSCMatrix,SCMatrix);
+DescribedClass_named_REF_dec(RefDCSCMatrix,SCMatrix);
 //texi
 //  The @code{RefSCMatrix} class is a smart pointer to an @code{SCMatrix}
 //  specialization.
-class RefSCMatrix: public RefSSSCMatrix {
+class RefSCMatrix: public RefDCSCMatrix {
     // standard overrides
   public:
     //texi Initializes the matrix pointer to @var{0}.  The reference must
     // be initialized before it is used.
     RefSCMatrix();
-    //texi Restore the matrix's state.
-    RefSCMatrix(StateIn&);
     //texi Make this and @var{m} refer to the same @code{SCMatrix}.
     RefSCMatrix(const RefSCMatrix& m);
     //texi Make this refer to @var{m}.
@@ -164,7 +130,8 @@ class RefSCMatrix: public RefSSSCMatrix {
   public:
     //texi Create a vector with dimension @var{d1} by @var{d2}.
     // The data values are undefined.
-    RefSCMatrix(const RefSCDimension& d1,const RefSCDimension& d2);
+    RefSCMatrix(const RefSCDimension& d1,const RefSCDimension& d2,
+                const RefSCMatrixKit&);
 
     //texi Multiply this by a vector and return a vector.
     RefSCVector operator*(const RefSCVector&) const;
@@ -226,12 +193,15 @@ class RefSCMatrix: public RefSSSCMatrix {
     int ncol() const;
     RefSCDimension rowdim() const;
     RefSCDimension coldim() const;
+    RefSCMatrixKit kit() const;
     void set_element(int,int,double) const;
     void accumulate_element(int,int,double) const;
     double get_element(int,int) const;
     void print(ostream&) const;
     void print(const char*title=0,ostream&out=cout, int =10) const;
     double trace() const;
+    void save(StateOut&);
+    void restore(StateIn&);
 
     //texi Compute the singular value decomposition.
     // @code{this} = @var{U} @var{sigma} @var{V}@code{.t()}.
@@ -252,18 +222,16 @@ class RefSCMatrix: public RefSSSCMatrix {
 //texi Allow multiplication with a scalar on the left.
 RefSCMatrix operator*(double,const RefSCMatrix&);
 
-SavableState_named_REF_dec(RefSSSymmSCMatrix,SymmSCMatrix);
+DescribedClass_named_REF_dec(RefDCSymmSCMatrix,SymmSCMatrix);
 //texi
 //  The @code{RefSymmSCMatrix} class is a smart pointer to an
 //   @code{SCSymmSCMatrix} specialization.
-class RefSymmSCMatrix: public RefSSSymmSCMatrix {
+class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     // standard overrides
   public:
     //texi Initializes the matrix pointer to @var{0}.  The reference must
     // be initialized before it is used.
     RefSymmSCMatrix();
-    //texi Restore the matrix's state.
-    RefSymmSCMatrix(StateIn&);
     //texi Make this and @var{m} refer to the same @code{SCMatrix}.
     RefSymmSCMatrix(const RefSymmSCMatrix& m);
     //texi Make this refer to @var{m}.
@@ -278,7 +246,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
   public:
     //texi Create a vector with dimension @var{d} by @var{d}.
     // The data values are undefined.
-    RefSymmSCMatrix(const RefSCDimension& d);
+    RefSymmSCMatrix(const RefSCDimension& d,const RefSCMatrixKit&);
     //texi Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     //texi Multiply this by a vector and return a vector.
@@ -334,8 +302,11 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     double trace() const;
     int n() const;
     RefSCDimension dim() const;
+    RefSCMatrixKit kit() const;
     void print(ostream&) const;
     void print(const char*title=0,ostream&out=cout, int =10) const;
+    void save(StateOut&);
+    void restore(StateIn&);
 
     //texi Solves @code{this} @var{x} = @var{v}.  Overwrites
     // @var{v} with @var{x}.
@@ -356,18 +327,16 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
 //texi Allow multiplication with a scalar on the left.
 RefSymmSCMatrix operator*(double,const RefSymmSCMatrix&);
 
-SavableState_named_REF_dec(RefSSDiagSCMatrix,DiagSCMatrix);
+DescribedClass_named_REF_dec(RefDCDiagSCMatrix,DiagSCMatrix);
 //texi
 //  The @code{RefDiagSCMatrix} class is a smart pointer to an
 //  @code{DiagSCMatrix} specialization.
-class RefDiagSCMatrix: public RefSSDiagSCMatrix {
+class RefDiagSCMatrix: public RefDCDiagSCMatrix {
     // standard overrides
   public:
     //texi Initializes the matrix pointer to @var{0}.  The reference must
     // be initialized before it is used.
     RefDiagSCMatrix();
-    //texi Restore the matrix's state.
-    RefDiagSCMatrix(StateIn&);
     //texi Make this and @var{m} refer to the same @code{SCMatrix}.
     RefDiagSCMatrix(const RefDiagSCMatrix& m);
     //texi Make this refer to @var{m}.
@@ -382,7 +351,7 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
   public:
     //texi Create a vector with dimension @var{d} by @var{d}.
     // The data values are undefined.
-    RefDiagSCMatrix(const RefSCDimension&);
+    RefDiagSCMatrix(const RefSCDimension&,const RefSCMatrixKit&);
     //texi Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     RefDiagSCMatrix operator*(double) const;
@@ -415,9 +384,12 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
                     const RefDiagSCMatrix&) const;
     int n() const;
     RefSCDimension dim() const;
+    RefSCMatrixKit kit() const;
     double trace() const;
     void print(ostream&) const;
     void print(const char*title=0,ostream&out=cout, int =10) const;
+    void save(StateOut&);
+    void restore(StateIn&);
     //texi Returns the determinant of the referenced matrix.
     double determ() const;
     //texi Assign and examine matrix elements.
@@ -425,8 +397,6 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
 };
 //texi Allow multiplication with a scalar on the left.
 RefDiagSCMatrix operator*(double,const RefDiagSCMatrix&);
-
-SavableState_REF_dec(SCMatrixKit);
 
 class SCVectordouble {
    friend class RefSCVector;

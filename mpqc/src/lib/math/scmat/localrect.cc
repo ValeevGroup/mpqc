@@ -17,10 +17,6 @@ extern "C" {
 
 #define CLASSNAME LocalSCMatrix
 #define PARENTS public SCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 LocalSCMatrix::_castdown(const ClassDesc*cd)
@@ -39,50 +35,12 @@ init_rect_rows(double *data, int ni,int nj)
   return r;
 }
 
-LocalSCMatrix::LocalSCMatrix(): rows(0)
-{
-}
-
-LocalSCMatrix::LocalSCMatrix(LocalSCDimension*a,LocalSCDimension*b):
-  d1(a),
-  d2(b),
+LocalSCMatrix::LocalSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
+                             LocalSCMatrixKit*kit):
+  SCMatrix(a,b,kit),
   rows(0)
 {
   resize(a->n(),b->n());
-}
-
-LocalSCMatrix::LocalSCMatrix(StateIn&s):
-  SCMatrix(s)
-{
-  d1.restore_state(s);
-  d2.restore_state(s);
-  block.restore_state(s);
-  rows = init_rect_rows(block->data,d1->n(),d2->n());
-}
-
-LocalSCMatrix::LocalSCMatrix(const RefKeyVal&keyval)
-{
-  int i, j;
-  d1 = keyval->describedclassvalue("rowdim");
-  d2 = keyval->describedclassvalue("coldim");
-  d1.require_nonnull();
-  d2.require_nonnull();
-  block = new SCMatrixRectBlock(0,d1->n(),0,d2->n());
-  rows = init_rect_rows(block->data,d1->n(),d2->n());
-  for (i=0; i<nrow(); i++) {
-      for (j=0; j<ncol(); j++) {
-          set_element(i,j,keyval->doublevalue("data",i,j));
-        }
-    }
-}
-
-void
-LocalSCMatrix::save_data_state(StateOut&s)
-{
-  SCMatrix::save_data_state(s);
-  d1.save_state(s);
-  d2.save_state(s);
-  block.save_state(s);
 }
 
 LocalSCMatrix::~LocalSCMatrix()
@@ -106,18 +64,6 @@ LocalSCMatrix::resize(int nr, int nc)
   block = new SCMatrixRectBlock(0,nr,0,nc);
   if (rows) delete[] rows;
   rows = init_rect_rows(block->data,nr,nc);
-}
-
-RefSCDimension
-LocalSCMatrix::rowdim()
-{
-  return d1;
-}
-
-RefSCDimension
-LocalSCMatrix::coldim()
-{
-  return d2;
 }
 
 double
@@ -153,10 +99,10 @@ LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
     abort();
   }
   
-  RefLocalSCDimension dnrow = new LocalSCDimension(nsrow);
-  RefLocalSCDimension dncol = new LocalSCDimension(nscol);
+  RefSCDimension dnrow = new SCDimension(nsrow);
+  RefSCDimension dncol = new SCDimension(nscol);
 
-  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);
 
   LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
@@ -221,7 +167,7 @@ LocalSCMatrix::get_row(int i)
     abort();
   }
   
-  SCVector * v = coldim()->create_vector();
+  SCVector * v = kit()->vector(coldim());
 
   LocalSCVector *lv = LocalSCVector::require_castdown(v,
                                                "LocalSCMatrix::get_row");
@@ -285,7 +231,7 @@ LocalSCMatrix::get_column(int i)
     abort();
   }
   
-  SCVector * v = rowdim()->create_vector();
+  SCVector * v = kit()->vector(rowdim());
 
   LocalSCVector *lv = LocalSCVector::require_castdown(v,
                                                "LocalSCMatrix::get_column");
@@ -567,7 +513,7 @@ LocalSCMatrix::transpose_this()
   delete[] rows;
   rows = new double*[ncol()];
   cmat_matrix_pointers(rows,block->data,ncol(),nrow());
-  RefLocalSCDimension tmp = d1;
+  RefSCDimension tmp = d1;
   d1 = d2;
   d2 = tmp;
 }
@@ -585,7 +531,7 @@ LocalSCMatrix::invert_this()
 void
 LocalSCMatrix::gen_invert_this()
 {
-  fprintf(stderr,"LocalSCMatrix::gen_invert_this: SVD not implemented yet");
+  fprintf(stderr,"LocalSCMatrix::gen_invert_this: not implemented yet");
   abort();
 }
 

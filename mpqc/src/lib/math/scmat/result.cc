@@ -6,7 +6,9 @@
 #include <math/scmat/result.h>
 #include <util/state/state.h>
 
-SSAccResult_def(RefSCMatrix);
-SSAccResult_def(RefSymmSCMatrix);
-SSAccResult_def(RefDiagSCMatrix);
-SSAccResult_def(RefSCVector);
+#ifdef __GNUC__
+template class AccResult<RefSCMatrix>;
+template class AccResult<RefSymmSCMatrix>;
+template class AccResult<RefDiagSCMatrix>;
+template class AccResult<RefSCVector>;
+#endif

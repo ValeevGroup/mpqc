@@ -21,8 +21,8 @@ DistSCVector::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-DistSCVector::DistSCVector(DistSCDimension*a):
-  d(a)
+DistSCVector::DistSCVector(const RefSCDimension&a, DistSCMatrixKit*k):
+  SCVector(a,k)
 {
   init_blocklist();
 }
@@ -58,7 +58,7 @@ DistSCVector::find_element(int i)
   int bi, oi;
   d->blocks()->elem_to_block(i, bi, oi);
 
-  RefSCMatrixDiagBlock blk = block_to_block(bi);
+  RefSCVectorSimpleBlock blk = block_to_block(bi);
   if (blk.nonnull()) {
       return &blk->dat()[oi];
     }
@@ -95,12 +95,6 @@ DistSCVector::init_blocklist()
 
 DistSCVector::~DistSCVector()
 {
-}
-
-RefSCDimension
-DistSCVector::dim()
-{
-  return d;
 }
 
 double
@@ -408,10 +402,10 @@ DistSCVector::convert(double *res)
   for (I->begin(); I->ready(); I->next()) {
       RefSCVectorSimpleBlock blk
           = SCVectorSimpleBlock::castdown(I->block());
-      int n = blk->iend - blk->istart;
+      int ni = blk->iend - blk->istart;
       int ioff = blk->istart;
       double *data = blk->data;
-      for (int i=0; i<n; i++) {
+      for (int i=0; i<ni; i++) {
           res[i+ioff] = data[i];
         }
     }
@@ -449,25 +443,39 @@ DistSCVector::print(const char *title, ostream& os, int prec)
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);
 
-  if(title) os << "\n" << title << "\n";
-  else os << "\n";
+  if (messagegrp()->me() == 0) {
+      if(title) os << "\n" << title << "\n";
+      else os << "\n";
 
-  if(n()==0) { os << " empty vector\n"; return; }
+      if(n()==0) { os << " empty vector\n"; return; }
 
-  for (i=0; i<n(); i++) {
-      os.width(5); os << i+1;
-      os.width(lwidth); os << data[i];
+      for (i=0; i<n(); i++) {
+          os.width(5); os << i+1;
+          os.width(lwidth); os << data[i];
+          os << "\n";
+        }
       os << "\n";
+
+      os.flush();
     }
-  os << "\n";
 
   delete[] data;
-
-  os.flush();
 }
 
 void
 DistSCVector::error(const char *msg)
 {
   cerr << "DistSCVector: error: " << msg << endl;
+}
+
+RefDistSCMatrixKit
+DistSCVector::skit()
+{
+  return DistSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+DistSCVector::messagegrp()
+{
+  return skit()->messagegrp();
 }

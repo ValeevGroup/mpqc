@@ -11,10 +11,6 @@
 
 #define CLASSNAME LocalDiagSCMatrix
 #define PARENTS public DiagSCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 LocalDiagSCMatrix::_castdown(const ClassDesc*cd)
@@ -24,39 +20,11 @@ LocalDiagSCMatrix::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-LocalDiagSCMatrix::LocalDiagSCMatrix()
-{
-}
-
-LocalDiagSCMatrix::LocalDiagSCMatrix(LocalSCDimension*a):
-  d(a)
+LocalDiagSCMatrix::LocalDiagSCMatrix(const RefSCDimension&a,
+                                     LocalSCMatrixKit *kit):
+  DiagSCMatrix(a,kit)
 {
   resize(a->n());
-}
-
-LocalDiagSCMatrix::LocalDiagSCMatrix(StateIn&s):
-  DiagSCMatrix(s)
-{
-  d.restore_state(s);
-  block.restore_state(s);
-}
-
-LocalDiagSCMatrix::LocalDiagSCMatrix(const RefKeyVal&keyval)
-{
-  d = keyval->describedclassvalue("dim");
-  d.require_nonnull();
-  block = new SCMatrixDiagBlock(0,d->n());
-  for (int i=0; i<n(); i++) {
-      set_element(i,keyval->doublevalue("data",i));
-    }
-}
-
-void
-LocalDiagSCMatrix::save_data_state(StateOut&s)
-{
-  DiagSCMatrix::save_data_state(s);
-  d.save_state(s);
-  block.save_state(s);
 }
 
 LocalDiagSCMatrix::~LocalDiagSCMatrix()
@@ -67,12 +35,6 @@ void
 LocalDiagSCMatrix::resize(int n)
 {
   block = new SCMatrixDiagBlock(0,n);
-}
-
-RefSCDimension
-LocalDiagSCMatrix::dim()
-{
-  return d;
 }
 
 double

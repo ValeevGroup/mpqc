@@ -1,12 +1,12 @@
 
 #include <iostream.h>
-#include <math/optimize/nlp.h>
+#include <math/optimize/function.h>
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <math/scmat/matrix.h>
 
-class Quadratic: public NLP2
+class Quadratic: public Function
 {
 #   define CLASSNAME Quadratic
 #   define HAVE_KEYVAL_CTOR
@@ -26,14 +26,14 @@ class Quadratic: public NLP2
     void guess_hessian(RefSymmSCMatrix&);
 };
 #define CLASSNAME Quadratic
-#define PARENTS public NLP2
+#define PARENTS public Function
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 Quadratic::Quadratic(StateIn&s):
   SavableState(s,class_desc_),
-  NLP2(s)
+  Function(s)
 {
   x0.restore_state(s);
   g0.restore_state(s);
@@ -42,7 +42,7 @@ Quadratic::Quadratic(StateIn&s):
 void
 Quadratic::save_data_state(StateOut&s)
 {
-  NLP2::save_data_state(s);
+  Function::save_data_state(s);
   x0.save_state(s);
   g0.save_state(s);
   h0.save_state(s);
@@ -50,11 +50,11 @@ Quadratic::save_data_state(StateOut&s)
 void *
 Quadratic::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { NLP2::_castdown(cd) };
+  void* casts[] =  { Function::_castdown(cd) };
   return do_castdowns(casts,cd);
 }
 Quadratic::Quadratic(const RefKeyVal&keyval):
-  NLP2(new LocalSCDimension(keyval->count("x0")))
+  Function(new LocalSCDimension(keyval->count("x0")))
 {
   x0 = dimension()->create_vector();
   g0 = dimension()->create_vector();
@@ -122,10 +122,10 @@ main()
   for (int i=0; i<pkv->count(); i++) {
       RefOptimize opt(pkv->describedclassvalue(i));
       if (opt.nonnull()) {
-          RefSCVector oldx = opt->nlp()->get_x().copy();
+          RefSCVector oldx = opt->function()->get_x().copy();
           opt->optimize();
           // restore the orginal x, in case the function is used again
-          opt->nlp()->set_x(oldx);
+          opt->function()->set_x(oldx);
         }
     }
 }

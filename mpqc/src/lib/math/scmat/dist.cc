@@ -16,7 +16,6 @@
 #define CLASSNAME DistSCMatrixKit
 #define PARENTS public SCMatrixKit
 #define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 DistSCMatrixKit::_castdown(const ClassDesc*cd)
@@ -35,7 +34,7 @@ DistSCMatrixKit::DistSCMatrixKit(const RefMessageGrp &grp)
 DistSCMatrixKit::DistSCMatrixKit(const RefKeyVal& keyval):
   SCMatrixKit(keyval)
 {
-  grp_ = keyval->describedclassvalue("MessageGrp");
+  grp_ = keyval->describedclassvalue("messagegrp");
   if (grp_.null()) grp_ = MessageGrp::get_default_messagegrp();
 }
 
@@ -43,174 +42,29 @@ DistSCMatrixKit::~DistSCMatrixKit()
 {
 }
 
-SCDimension*
-DistSCMatrixKit::dimension(int n, const char* name)
-{
-  return new DistSCDimension(n, this, name);
-}
-
-SCDimension*
-DistSCMatrixKit::dimension(int n, int nblocks,
-                           const int *blocksizes,
-                           const char* name)
-{
-  return new DistSCDimension(n, this, nblocks, blocksizes, name);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// DistSCDimension member functions
-
-#define CLASSNAME DistSCDimension
-#define PARENTS public SCDimension
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-DistSCDimension::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCDimension::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-DistSCDimension::DistSCDimension(int n, const RefDistSCMatrixKit& kit,
-                                 const char* name):
-  SCDimension(name),
-  kit_(kit),
-  n_(n)
-{
-  blocks_ = new SCBlockInfo(n, (int)sqrt(2.0*kit->messagegrp()->n()));
-}
-
-DistSCDimension::DistSCDimension(int n, const RefDistSCMatrixKit& kit,
-                                 int nblocks, const int *blocksizes,
-                                 const char* name):
-  SCDimension(name),
-  kit_(kit),
-  n_(n)
-{
-  blocks_ = new SCBlockInfo(n, nblocks, blocksizes);
-}
-
-DistSCDimension::~DistSCDimension()
-{
-}
-
-int
-DistSCDimension::equiv(SCDimension *a) const
-{
-  DistSCDimension *ra = DistSCDimension::castdown(a);
-
-  if (n_ != ra->n_) return 0;
-
-  if (!blocks_->equiv(ra->blocks_)) return 0;
-
-  return kit_==ra->kit_;
-}
-
-int
-DistSCDimension::n()
-{
-  return n_;
-}
 SCMatrix*
-DistSCDimension::create_matrix(SCDimension*a)
+DistSCMatrixKit::matrix(const RefSCDimension&d1, const RefSCDimension&d2)
 {
-  DistSCDimension*coldim
-    = DistSCDimension::require_castdown(a,"DistSCDimension::create_matrix");
-  return new DistSCMatrix(this,coldim);
+  return new DistSCMatrix(d1,d2,this);
 }
+
 SymmSCMatrix*
-DistSCDimension::create_symmmatrix()
+DistSCMatrixKit::symmmatrix(const RefSCDimension&d)
 {
-  return new DistSymmSCMatrix(this);
+  return new DistSymmSCMatrix(d,this);
 }
+
 DiagSCMatrix*
-DistSCDimension::create_diagmatrix()
+DistSCMatrixKit::diagmatrix(const RefSCDimension&d)
 {
-  return new DistDiagSCMatrix(this);
+  return new DistDiagSCMatrix(d,this);
 }
+
 SCVector*
-DistSCDimension::create_vector()
+DistSCMatrixKit::vector(const RefSCDimension&d)
 {
-  return new DistSCVector(this);
-}
+  return new DistSCVector(d,this);
 
-SavableState_REF_def(DistSCDimension);
-
-/////////////////////////////////////////////////////////////////////////////
-// SCBlockInfo member functions
-
-SCBlockInfo::SCBlockInfo(int n, int nblocks, const int *blocksizes)
-{
-  n_ = n;
-  nblocks_ = nblocks;
-
-  if (n_ == 0) nblocks_ = 0;
-
-  if (n_ != 0 && nblocks_ == 0) {
-      nblocks_ = 1;
-      start_ = new int[1];
-      size_ = new int[1];
-      start_[0] = 0;
-      size_[0] = n;
-    }
-  else if (nblocks_ == 0) {
-      start_ = 0;
-      size_ = 0;
-    }
-  else {
-      int i;
-      start_ = new int[nblocks_];
-      size_ = new int[nblocks_];
-      start_[0] = 0;
-      if (blocksizes) {
-          for (i=0; i<nblocks_; i++) {
-              size_[i] = blocksizes[i];
-              if (i+1<nblocks_) start_[i+1] = start_[i] + size_[i];
-            }
-        }
-      else {
-          int nper = n/nblocks;
-          int nleft = n%nblocks;
-          for (i=0; i<nblocks_; i++) {
-              size_[i] = nper;
-              if (i<nleft) size_[i]++;
-              if (i+1<nblocks_) start_[i+1] = start_[i] + size_[i];
-            }
-        }
-    }
-}
-
-int
-SCBlockInfo::equiv(SCBlockInfo *bi)
-{
-  if (bi == 0) return 0;
-  if (n_ != bi->n_) return 0;
-  if (nblocks_ != bi->nblocks_) return 0;
-  int i;
-  for (i=0; i<nblocks_; i++) {
-      if (start_[i] != bi->start_[i]) return 0;
-    }
-  return 1;
-}
-
-void
-SCBlockInfo::elem_to_block(int elem, int &block, int &offset)
-{
-  for (int i=nblocks_-1; i>=0; i--) {
-      if (start_[i] <= elem) {
-          block = i;
-          offset = elem-start_[i];
-          return;
-        }
-    }
-  cerr << "SCBlockInfo::elem_to_block: couldn't find block" << endl;
-}
-
-SCBlockInfo::~SCBlockInfo()
-{
-  delete[] start_;
-  delete[] size_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

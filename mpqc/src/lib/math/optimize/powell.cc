@@ -39,8 +39,13 @@ PowellUpdate::PowellUpdate(StateIn&s):
   HessianUpdate(s)
   maybe_SavableState(s)
 {
-  xprev.restore_state(s);
-  gprev.restore_state(s);
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+  xprev = k->vector(dim);
+  gprev = k->vector(dim);
+  xprev.restore(s);
+  gprev.restore(s);
 }
 
 PowellUpdate::~PowellUpdate()
@@ -51,13 +56,14 @@ void
 PowellUpdate::save_data_state(StateOut&s)
 {
   HessianUpdate::save_data_state(s);
-  xprev.save_state(s);
-  gprev.save_state(s);
+  xprev.dim().save_state(s);
+  xprev.save(s);
+  gprev.save(s);
 }
 
 void
-PowellUpdate::update(RefSymmSCMatrix&hessian,RefNLP2&nlp,
-                  RefSCVector&xn,RefSCVector&gn)
+PowellUpdate::update(const RefSymmSCMatrix&hessian,const RefFunction&func,
+                     const RefSCVector&xn,const RefSCVector&gn)
 {
   RefSCVector xnew, gnew;
 

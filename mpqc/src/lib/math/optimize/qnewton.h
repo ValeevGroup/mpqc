@@ -9,7 +9,7 @@
 #include <util/state/state.h>
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>
-#include <math/optimize/nlp.h>
+#include <math/optimize/function.h>
 #include <math/optimize/opt.h>
 #include <math/optimize/update.h>
 
@@ -27,7 +27,6 @@ class QNewtonOpt: public Optimize {
     double convergence_;
     double accuracy_;
 
-    RefNLP2 nlp_;
     RefSymmSCMatrix ihessian_;
     RefHessianUpdate update_;
     RefLineOpt lineopt_;
@@ -41,7 +40,6 @@ class QNewtonOpt: public Optimize {
 
     void init();
     int update();
-    RefNLP0 nlp();
 };
 
 #endif

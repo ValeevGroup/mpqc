@@ -30,20 +30,12 @@ init_rect_rows(double *data, int ni,int nj)
   return r;
 }
 
-ReplSCMatrix::ReplSCMatrix(ReplSCDimension*a,ReplSCDimension*b):
-  d1(a),
-  d2(b)
+ReplSCMatrix::ReplSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
+                           ReplSCMatrixKit*k):
+  SCMatrix(a,b,k)
 {
-  if (a->messagegrp() != b->messagegrp()) {
-      fprintf(stderr, "ReplSCMatrix: incompatible messagegrps\n");
-      abort();
-    }
-
   int nr = a->n();
   int nc = b->n();
-
-  int nproc = a->messagegrp()->n();
-  int me = a->messagegrp()->me();
 
   matrix = new double[nr*nc];
 
@@ -60,11 +52,13 @@ ReplSCMatrix::before_elemop()
   int nc = d2->n();
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
-  for (i=0, index=0; i<d1->nblock(); i++) {
-      for (j=0; j<d2->nblock(); j++, index++) {
+  for (i=0, index=0; i<d1->blocks()->nblock(); i++) {
+      for (j=0; j<d2->blocks()->nblock(); j++, index++) {
           if (index%nproc == me) continue;
-          for (int ii=d1->blockstart(i); ii<d1->blockfence(i); ii++) {
-              for (int jj=d2->blockstart(j); jj<d2->blockfence(j); jj++) {
+          for (int ii=d1->blocks()->start(i);
+               ii<d1->blocks()->fence(i); ii++) {
+              for (int jj=d2->blocks()->start(j);
+                   jj<d2->blocks()->fence(j); jj++) {
                   matrix[ii*nc + jj] = 0.0;
                 }
             }
@@ -86,15 +80,16 @@ ReplSCMatrix::init_blocklist()
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   blocklist = new SCMatrixBlockList;
-  for (i=0, index=0; i<d1->nblock(); i++) {
-      for (j=0; j<d2->nblock(); j++, index++) {
+  for (i=0, index=0; i<d1->blocks()->nblock(); i++) {
+      for (j=0; j<d2->blocks()->nblock(); j++, index++) {
           if (index%nproc == me) {
-              blocklist->insert(new SCMatrixRectSubBlock(d1->blockstart(i),
-                                                         d1->blockfence(i),
-                                                         nc,
-                                                         d2->blockstart(j),
-                                                         d2->blockfence(j),
-                                                         matrix));
+              blocklist->insert(
+                  new SCMatrixRectSubBlock(d1->blocks()->start(i),
+                                           d1->blocks()->fence(i),
+                                           nc,
+                                           d2->blocks()->start(j),
+                                           d2->blocks()->fence(j),
+                                           matrix));
             }
         }
     }
@@ -114,18 +109,6 @@ ReplSCMatrix::compute_offset(int i,int j)
       abort();
     }
   return i*(d2->n()) + j;
-}
-
-RefSCDimension
-ReplSCMatrix::rowdim()
-{
-  return d1;
-}
-
-RefSCDimension
-ReplSCMatrix::coldim()
-{
-  return d2;
 }
 
 double
@@ -161,10 +144,10 @@ ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
     abort();
   }
   
-  RefReplSCDimension dnrow = new ReplSCDimension(nsrow,messagegrp());
-  RefReplSCDimension dncol = new ReplSCDimension(nscol,messagegrp());
+  RefSCDimension dnrow = new SCDimension(nsrow);
+  RefSCDimension dncol = new SCDimension(nscol);
 
-  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);
 
   ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
@@ -229,7 +212,7 @@ ReplSCMatrix::get_row(int i)
     abort();
   }
   
-  SCVector * v = coldim()->create_vector();
+  SCVector * v = kit()->vector(coldim());
 
   ReplSCVector *lv = ReplSCVector::require_castdown(v,
                                                "ReplSCMatrix::get_row");
@@ -293,7 +276,7 @@ ReplSCMatrix::get_column(int i)
     abort();
   }
   
-  SCVector * v = rowdim()->create_vector();
+  SCVector * v = kit()->vector(rowdim());
 
   ReplSCVector *lv = ReplSCVector::require_castdown(v,
                                                "ReplSCMatrix::get_column");
@@ -580,7 +563,7 @@ ReplSCMatrix::transpose_this()
   delete[] rows;
   rows = new double*[ncol()];
   cmat_matrix_pointers(rows,matrix,ncol(),nrow());
-  RefReplSCDimension tmp = d1;
+  RefSCDimension tmp = d1;
   d1 = d2;
   d2 = tmp;
   init_blocklist();
@@ -791,4 +774,16 @@ ReplSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
   return new ReplSCMatrixListSubblockIter(access, allblocklist,
                                           messagegrp(),
                                           matrix, d1->n()*d2->n());
+}
+
+RefReplSCMatrixKit
+ReplSCMatrix::skit()
+{
+  return ReplSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+ReplSCMatrix::messagegrp()
+{
+  return skit()->messagegrp();
 }

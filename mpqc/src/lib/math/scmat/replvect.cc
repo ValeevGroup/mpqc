@@ -21,8 +21,8 @@ ReplSCVector::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ReplSCVector::ReplSCVector(ReplSCDimension*a):
-  d(a)
+ReplSCVector::ReplSCVector(const RefSCDimension&a,ReplSCMatrixKit*k):
+  SCVector(a,k)
 {
   vector = new double[a->n()];
   init_blocklist();
@@ -35,10 +35,11 @@ ReplSCVector::before_elemop()
   int i;
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
-  for (i=0; i<d->nblock(); i++) {
+  for (i=0; i<d->blocks()->nblock(); i++) {
       if (i%nproc == me) continue;
-      memset(&vector[d->blockstart(i)], 0,
-             sizeof(double)*(d->blockfence(i) - d->blockstart(i)));
+      memset(&vector[d->blocks()->start(i)], 0,
+             sizeof(double)*(d->blocks()->fence(i)
+                             - d->blocks()->start(i)));
     }
 }
 
@@ -55,23 +56,18 @@ ReplSCVector::init_blocklist()
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   blocklist = new SCMatrixBlockList;
-  for (i=0; i<d->nblock(); i++) {
+  for (i=0; i<d->blocks()->nblock(); i++) {
       if (i%nproc != me) continue;
-      blocklist->insert(new SCVectorSimpleSubBlock(d->blockstart(i),
-                                                   d->blockfence(i),
-                                                   d->blockstart(i),
-                                                   vector));
+      blocklist->insert(
+          new SCVectorSimpleSubBlock(d->blocks()->start(i),
+                                     d->blocks()->fence(i),
+                                     d->blocks()->start(i),
+                                     vector));
     }
 }
 
 ReplSCVector::~ReplSCVector()
 {
-}
-
-RefSCDimension
-ReplSCVector::dim()
-{
-  return d;
 }
 
 double
@@ -362,4 +358,16 @@ ReplSCVector::all_blocks(SCMatrixSubblockIter::Access access)
   return new ReplSCMatrixListSubblockIter(access, allblocklist,
                                           messagegrp(),
                                           vector, d->n());
+}
+
+RefReplSCMatrixKit
+ReplSCVector::skit()
+{
+  return ReplSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+ReplSCVector::messagegrp()
+{
+  return skit()->messagegrp();
 }

@@ -29,9 +29,9 @@ main(int argc, char** argv)
   MessageGrp::set_default_messagegrp(msg);
 
   RefSCMatrixKit kit = new ReplSCMatrixKit;
-  RefSCDimension d1(kit->dimension(keyval->intvalue("n1")));
-  RefSCDimension d2(kit->dimension(keyval->intvalue("n2")));
-  RefSCDimension d3(kit->dimension(keyval->intvalue("n3")));
+  RefSCDimension d1(keyval->describedclassvalue("d1"));
+  RefSCDimension d2(keyval->describedclassvalue("d2"));
+  RefSCDimension d3(keyval->describedclassvalue("d3"));
 
   matrixtest(kit,keyval,d1,d2,d3);
 

@@ -10,11 +10,11 @@
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrix reference base class member functions
 
-SavableState_named_REF_def(RefSSSCDimension,SCDimension);
-SavableState_named_REF_def(RefSSSCVector,SCVector);
-SavableState_named_REF_def(RefSSSCMatrix,SCMatrix);
-SavableState_named_REF_def(RefSSSymmSCMatrix,SymmSCMatrix);
-SavableState_named_REF_def(RefSSDiagSCMatrix,DiagSCMatrix);
+DescribedClass_named_REF_def(RefDCSCDimension,SCDimension);
+DescribedClass_named_REF_def(RefDCSCVector,SCVector);
+DescribedClass_named_REF_def(RefDCSCMatrix,SCMatrix);
+DescribedClass_named_REF_def(RefDCSymmSCMatrix,SymmSCMatrix);
+DescribedClass_named_REF_def(RefDCDiagSCMatrix,DiagSCMatrix);
 
 /////////////////////////////////////////////////////////////////////////////
 // SCDimension reference member functions
@@ -71,33 +71,30 @@ RefSCDimension::operator int() const
 // SCMatrix reference member functions
 RefSCMatrix::RefSCMatrix() {}
              
-RefSCMatrix::RefSCMatrix (const RefSCMatrix & o): RefSSSCMatrix (o) {}
+RefSCMatrix::RefSCMatrix (const RefSCMatrix & o): RefDCSCMatrix (o) {}
              
-RefSCMatrix::RefSCMatrix (StateIn & o): RefSSSCMatrix (o) {}
-             
-RefSCMatrix::RefSCMatrix (SCMatrix * o): RefSSSCMatrix (o) {}
+RefSCMatrix::RefSCMatrix (SCMatrix * o): RefDCSCMatrix (o) {}
 
 RefSCMatrix::~RefSCMatrix () {}
 
 RefSCMatrix&
 RefSCMatrix::operator=(SCMatrix* cr)
 {
-  RefSSSCMatrix::operator=(cr);
+  RefDCSCMatrix::operator=(cr);
   return *this;
 }
 
 RefSCMatrix&
 RefSCMatrix::operator=(const RefSCMatrix & c)
 {
-  RefSSSCMatrix::operator=(c);
+  RefDCSCMatrix::operator=(c);
   return *this;
 }
 
-RefSCMatrix::RefSCMatrix(const RefSCDimension&a,const RefSCDimension&b)
+RefSCMatrix::RefSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
+                         const RefSCMatrixKit&k)
 {
-  a.require_nonnull();
-  b.require_nonnull();
-  assign_pointer(a->create_matrix(b.pointer()));
+  assign_pointer(k->matrix(a,b));
 }
 
 void
@@ -127,7 +124,7 @@ RefSCMatrix::operator*(const RefSCVector&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCVector r = rowdim()->create_vector();
+  RefSCVector r = kit()->vector(rowdim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -139,7 +136,7 @@ RefSCMatrix::operator*(const RefSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCMatrix r = rowdim()->create_matrix(a->coldim());
+  RefSCMatrix r = kit()->matrix(rowdim(),a->coldim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -151,7 +148,7 @@ RefSCMatrix::operator*(const RefSymmSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCMatrix r = rowdim()->create_matrix(a->dim());
+  RefSCMatrix r = kit()->matrix(rowdim(),a->dim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -163,7 +160,7 @@ RefSCMatrix::operator*(const RefDiagSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCMatrix r = rowdim()->create_matrix(a->dim());
+  RefSCMatrix r = kit()->matrix(rowdim(),a->dim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -175,7 +172,7 @@ RefSCMatrix::operator+(const RefSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCMatrix ret(rowdim(),coldim());
+  RefSCMatrix ret(rowdim(),coldim(),kit());
   
   ret->assign(pointer());
   ret->accumulate(a.pointer());
@@ -189,7 +186,7 @@ RefSCMatrix::operator-(const RefSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCMatrix ret(rowdim(),coldim());
+  RefSCMatrix ret(rowdim(),coldim(),kit());
   
   ret->assign(a.pointer());
   ret->scale(-1.0);
@@ -262,6 +259,13 @@ RefSCMatrix::coldim() const
   else return pointer()->coldim();
 }
 
+RefSCMatrixKit
+RefSCMatrix::kit() const
+{
+  if (null()) return 0;
+  else return pointer()->kit();
+}
+
 SCMatrixdouble
 RefSCMatrix::operator()(int i,int j)  const
 {
@@ -271,7 +275,7 @@ RefSCMatrix::operator()(int i,int j)  const
 RefSCMatrix
 RefSCMatrix::clone() const
 {
-  RefSCMatrix r = rowdim()->create_matrix(coldim());
+  RefSCMatrix r = kit()->matrix(rowdim(),coldim());
   return r;
 }
 
@@ -364,7 +368,7 @@ RefSCMatrix
 RefSCMatrix::copy() const
 {
   if (null()) return 0;
-  RefSCMatrix v = rowdim()->create_matrix(coldim());
+  RefSCMatrix v = kit()->matrix(rowdim(),coldim());
   v.assign(*this);
   return v;
 }
@@ -529,6 +533,33 @@ RefSCMatrix::accumulate_outer_product(const RefSCVector& v1,
   pointer()->accumulate_outer_product(v1.pointer(),v2.pointer());
 }
 
+void
+RefSCMatrix::save(StateOut&s)
+{
+  if (null()) s.put(0);
+  else {
+      s.put(1);
+      pointer()->save(s);
+    }
+}
+
+void
+RefSCMatrix::restore(StateIn&s)
+{
+  int have_matrix;
+  s.get(have_matrix);
+  if (have_matrix && nonnull()) {
+      pointer()->restore(s);
+    }
+  else if (have_matrix) {
+      cerr << "RefSCMatrix::restore: matrix not properly initialized" << endl;
+      abort();
+    }
+  else {
+      clear();
+    }
+}
+
 ///////////////////////////////////////////////////////////////////
 // RefSymmSCMatrix members
 
@@ -536,18 +567,13 @@ RefSymmSCMatrix::RefSymmSCMatrix()
 {
 }
              
-RefSymmSCMatrix::RefSymmSCMatrix (StateIn & o):
-  RefSSSymmSCMatrix (o)
-{
-}
-             
 RefSymmSCMatrix::RefSymmSCMatrix (const RefSymmSCMatrix & o):
-  RefSSSymmSCMatrix (o)
+  RefDCSymmSCMatrix (o)
 {
 }
              
 RefSymmSCMatrix::RefSymmSCMatrix (SymmSCMatrix * o):
-  RefSSSymmSCMatrix (o)
+  RefDCSymmSCMatrix (o)
 {
 }
 
@@ -558,21 +584,21 @@ RefSymmSCMatrix::~RefSymmSCMatrix ()
 RefSymmSCMatrix&
 RefSymmSCMatrix::operator=(SymmSCMatrix* cr)
 {
-  RefSSSymmSCMatrix::operator=(cr);
+  RefDCSymmSCMatrix::operator=(cr);
   return *this;
 }
 
 RefSymmSCMatrix&
 RefSymmSCMatrix::operator=(const RefSymmSCMatrix & c)
 {
-  RefSSSymmSCMatrix::operator=(c);
+  RefDCSymmSCMatrix::operator=(c);
   return *this;
 }
 
-RefSymmSCMatrix::RefSymmSCMatrix(const RefSCDimension&a)
+RefSymmSCMatrix::RefSymmSCMatrix(const RefSCDimension&a,
+                                 const RefSCMatrixKit&k)
 {
-  a.require_nonnull();
-  assign_pointer(a->create_symmmatrix());
+  assign_pointer(k->symmmatrix(a));
 }
 
 void
@@ -717,7 +743,7 @@ RefSymmSCMatrix::operator+(const RefSymmSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSymmSCMatrix ret(dim());
+  RefSymmSCMatrix ret(dim(),kit());
   
   ret->assign(pointer());
   ret->accumulate(a.pointer());
@@ -731,7 +757,7 @@ RefSymmSCMatrix::operator-(const RefSymmSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSymmSCMatrix ret(dim());
+  RefSymmSCMatrix ret(dim(),kit());
   
   ret->assign(a.pointer());
   ret->scale(-1.0);
@@ -778,6 +804,13 @@ RefSymmSCMatrix::dim() const
   else return pointer()->dim();
 }
 
+RefSCMatrixKit
+RefSymmSCMatrix::kit() const
+{
+  if (null()) return 0;
+  else return pointer()->kit();
+}
+
 SymmSCMatrixdouble
 RefSymmSCMatrix::operator()(int i,int j) const
 {
@@ -787,7 +820,7 @@ RefSymmSCMatrix::operator()(int i,int j) const
 RefSymmSCMatrix
 RefSymmSCMatrix::clone() const
 {
-  RefSymmSCMatrix r = dim()->create_symmmatrix();
+  RefSymmSCMatrix r = kit()->symmmatrix(dim());
   return r;
 }
 
@@ -795,8 +828,8 @@ RefDiagSCMatrix
 RefSymmSCMatrix::eigvals() const
 {
   if (null()) return 0;
-  RefDiagSCMatrix vals = dim()->create_diagmatrix();
-  RefSCMatrix vecs = dim()->create_matrix(dim());
+  RefDiagSCMatrix vals = kit()->diagmatrix(dim());
+  RefSCMatrix vecs = kit()->matrix(dim(),dim());
   diagonalize(vals,vecs);
   return vals;
 }
@@ -805,8 +838,8 @@ RefSCMatrix
 RefSymmSCMatrix::eigvecs() const
 {
   if (null()) return 0;
-  RefDiagSCMatrix vals = dim()->create_diagmatrix();
-  RefSCMatrix vecs = dim()->create_matrix(dim());
+  RefDiagSCMatrix vals = kit()->diagmatrix(dim());
+  RefSCMatrix vecs = kit()->matrix(dim(),dim());
   diagonalize(vals,vecs);
   return vecs;
 }
@@ -850,7 +883,7 @@ RefSymmSCMatrix
 RefSymmSCMatrix::copy() const
 {
   if (null()) return 0;
-  RefSymmSCMatrix v = dim()->create_symmmatrix();
+  RefSymmSCMatrix v = kit()->symmmatrix(dim());
   v.assign(*this);
   return v;
 }
@@ -963,7 +996,7 @@ RefSymmSCMatrix::operator*(const RefSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCMatrix r = dim()->create_matrix(a->coldim());
+  RefSCMatrix r = kit()->matrix(dim(),a->coldim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -975,7 +1008,7 @@ RefSymmSCMatrix::operator*(const RefSCVector&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCVector r = dim()->create_vector();
+  RefSCVector r = kit()->vector(dim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -1009,6 +1042,34 @@ RefSymmSCMatrix::scalar_product(const RefSCVector&v) const
   return pointer()->scalar_product(v.pointer());
 }
 
+void
+RefSymmSCMatrix::save(StateOut&s)
+{
+  if (null()) s.put(0);
+  else {
+      s.put(1);
+      pointer()->save(s);
+    }
+}
+
+void
+RefSymmSCMatrix::restore(StateIn&s)
+{
+  int have_matrix;
+  s.get(have_matrix);
+  if (have_matrix && nonnull()) {
+      pointer()->restore(s);
+    }
+  else if (have_matrix) {
+      cerr << "RefSymmSCMatrix::restore: "
+           << "matrix not properly initialized" << endl;
+      abort();
+    }
+  else {
+      clear();
+    }
+}
+
 ///////////////////////////////////////////////////////////////////
 // RefDiagSCMatrix members
 
@@ -1016,18 +1077,13 @@ RefDiagSCMatrix::RefDiagSCMatrix()
 {
 }
              
-RefDiagSCMatrix::RefDiagSCMatrix (StateIn & o):
-  RefSSDiagSCMatrix (o)
-{
-}
-             
 RefDiagSCMatrix::RefDiagSCMatrix (const RefDiagSCMatrix & o):
-  RefSSDiagSCMatrix (o)
+  RefDCDiagSCMatrix (o)
 {
 }
              
 RefDiagSCMatrix::RefDiagSCMatrix (DiagSCMatrix * o):
-  RefSSDiagSCMatrix (o)
+  RefDCDiagSCMatrix (o)
 {
 }
 
@@ -1038,21 +1094,22 @@ RefDiagSCMatrix::~RefDiagSCMatrix ()
 RefDiagSCMatrix&
 RefDiagSCMatrix::operator=(DiagSCMatrix* cr)
 {
-  RefSSDiagSCMatrix::operator=(cr);
+  RefDCDiagSCMatrix::operator=(cr);
   return *this;
 }
 
 RefDiagSCMatrix&
 RefDiagSCMatrix::operator=(const RefDiagSCMatrix & c)
 {
-  RefSSDiagSCMatrix::operator=(c);
+  RefDCDiagSCMatrix::operator=(c);
   return *this;
 }
 
-RefDiagSCMatrix::RefDiagSCMatrix(const RefSCDimension&a)
+RefDiagSCMatrix::RefDiagSCMatrix(const RefSCDimension&a,
+                                 const RefSCMatrixKit&k)
 {
   a.require_nonnull();
-  assign_pointer(a->create_diagmatrix());
+  assign_pointer(k->diagmatrix(a));
 }
 
 void
@@ -1082,7 +1139,7 @@ RefDiagSCMatrix::operator*(const RefSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCMatrix r = dim()->create_matrix(a->coldim());
+  RefSCMatrix r = kit()->matrix(dim(),a->coldim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -1094,7 +1151,7 @@ RefDiagSCMatrix::operator+(const RefDiagSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefDiagSCMatrix ret(dim());
+  RefDiagSCMatrix ret(dim(),kit());
   
   ret->assign(pointer());
   ret->accumulate(a.pointer());
@@ -1108,7 +1165,7 @@ RefDiagSCMatrix::operator-(const RefDiagSCMatrix&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefDiagSCMatrix ret(dim());
+  RefDiagSCMatrix ret(dim(),kit());
   
   ret->assign(a.pointer());
   ret->scale(-1.0);
@@ -1155,6 +1212,13 @@ RefDiagSCMatrix::dim() const
   else return pointer()->dim();
 }
 
+RefSCMatrixKit
+RefDiagSCMatrix::kit() const
+{
+  if (null()) return 0;
+  else return pointer()->kit();
+}
+
 DiagSCMatrixdouble
 RefDiagSCMatrix::operator()(int i) const
 {
@@ -1164,7 +1228,7 @@ RefDiagSCMatrix::operator()(int i) const
 RefDiagSCMatrix
 RefDiagSCMatrix::clone() const
 {
-  RefDiagSCMatrix r = dim()->create_diagmatrix();
+  RefDiagSCMatrix r = kit()->diagmatrix(dim());
   return r;
 }
 
@@ -1172,7 +1236,7 @@ RefDiagSCMatrix
 RefDiagSCMatrix::copy() const
 {
   if (null()) return 0;
-  RefDiagSCMatrix v = dim()->create_diagmatrix();
+  RefDiagSCMatrix v = kit()->diagmatrix(dim());
   v.assign(*this);
   return v;
 }
@@ -1291,6 +1355,34 @@ operator *(double a, const RefDiagSCMatrix& v)
   return v*a;
 }
 
+void
+RefDiagSCMatrix::save(StateOut&s)
+{
+  if (null()) s.put(0);
+  else {
+      s.put(1);
+      pointer()->save(s);
+    }
+}
+
+void
+RefDiagSCMatrix::restore(StateIn&s)
+{
+  int have_matrix;
+  s.get(have_matrix);
+  if (have_matrix && nonnull()) {
+      pointer()->restore(s);
+    }
+  else if (have_matrix) {
+      cerr << "RefDiagSCMatrix::restore: "
+           << "matrix not properly initialized" << endl;
+      abort();
+    }
+  else {
+      clear();
+    }
+}
+
 ///////////////////////////////////////////////////////////////////
 // RefSCVector members
 
@@ -1301,18 +1393,13 @@ RefSCVector::RefSCVector()
 {
 }
              
-RefSCVector::RefSCVector (StateIn & o):
-  RefSSSCVector (o)
-{
-}
-             
 RefSCVector::RefSCVector (const RefSCVector & o):
-  RefSSSCVector (o)
+  RefDCSCVector (o)
 {
 }
              
 RefSCVector::RefSCVector (SCVector * o):
-  RefSSSCVector (o)
+  RefDCSCVector (o)
 {
 }
 
@@ -1323,21 +1410,22 @@ RefSCVector::~RefSCVector ()
 RefSCVector&
 RefSCVector::operator=(SCVector* cr)
 {
-  RefSSSCVector::operator=(cr);
+  RefDCSCVector::operator=(cr);
   return *this;
 }
 
 RefSCVector&
 RefSCVector::operator=(const RefSCVector & c)
 {
-  RefSSSCVector::operator=(c);
+  RefDCSCVector::operator=(c);
   return *this;
 }
 
-RefSCVector::RefSCVector(const RefSCDimension&a)
+RefSCVector::RefSCVector(const RefSCDimension&a,
+                         const RefSCMatrixKit&k)
 {
   a.require_nonnull();
-  assign_pointer(a->create_vector());
+  assign_pointer(k->vector(a));
 }
 
 void
@@ -1367,7 +1455,7 @@ RefSCVector::operator+(const RefSCVector&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCVector ret(dim());
+  RefSCVector ret(dim(),kit());
   
   ret->assign(pointer());
   ret->accumulate(a.pointer());
@@ -1381,7 +1469,7 @@ RefSCVector::operator-(const RefSCVector&a) const
   require_nonnull();
   a.require_nonnull();
 
-  RefSCVector ret(dim());
+  RefSCVector ret(dim(),kit());
   
   ret->assign(a.pointer());
   ret->scale(-1.0);
@@ -1404,6 +1492,13 @@ RefSCVector::dim() const
   else return pointer()->dim();
 }
 
+RefSCMatrixKit
+RefSCVector::kit() const
+{
+  if (null()) return 0;
+  else return pointer()->kit();
+}
+
 SCVectordouble
 RefSCVector::operator()(int i) const
 {
@@ -1419,7 +1514,7 @@ RefSCVector::operator[](int i) const
 RefSCVector
 RefSCVector::clone() const
 {
-  RefSCVector r = dim()->create_vector();
+  RefSCVector r = kit()->vector(dim());
   return r;
 }
 
@@ -1427,7 +1522,7 @@ RefSCVector
 RefSCVector::copy() const
 {
   if (null()) return 0;
-  RefSCVector v = dim()->create_vector();
+  RefSCVector v = kit()->vector(dim());
   v.assign(*this);
   return v;
 }
@@ -1572,7 +1667,7 @@ RefSCVector::normalize() const
 RefSymmSCMatrix
 RefSCVector::symmetric_outer_product() const
 {
-  RefSymmSCMatrix result(dim());
+  RefSymmSCMatrix result(dim(),kit());
   result.assign(0.0);
   result.accumulate_symmetric_outer_product(pointer());
   return result;
@@ -1581,7 +1676,7 @@ RefSCVector::symmetric_outer_product() const
 RefSCMatrix
 RefSCVector::outer_product(const RefSCVector&v) const
 {
-  RefSCMatrix result(dim(),v.dim());
+  RefSCMatrix result(dim(),v.dim(),kit());
   result.assign(0.0);
   result.accumulate_outer_product(*this,v);
   return result;
@@ -1594,3 +1689,30 @@ RefSCVector::maxabs() const
   return pointer()->maxabs();
 }
 
+
+void
+RefSCVector::save(StateOut&s)
+{
+  if (null()) s.put(0);
+  else {
+      s.put(1);
+      pointer()->save(s);
+    }
+}
+
+void
+RefSCVector::restore(StateIn&s)
+{
+  int have_matrix;
+  s.get(have_matrix);
+  if (have_matrix && nonnull()) {
+      pointer()->restore(s);
+    }
+  else if (have_matrix) {
+      cerr << "RefSCVector::restore: vector not properly initialized" << endl;
+      abort();
+    }
+  else {
+      clear();
+    }
+}

@@ -11,10 +11,6 @@
 
 #define CLASSNAME LocalSymmSCMatrix
 #define PARENTS public SymmSCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 LocalSymmSCMatrix::_castdown(const ClassDesc*cd)
@@ -32,45 +28,12 @@ init_symm_rows(double *data, int n)
   return r;
 }
 
-LocalSymmSCMatrix::LocalSymmSCMatrix(): rows(0)
-{
-}
-
-LocalSymmSCMatrix::LocalSymmSCMatrix(LocalSCDimension*a):
-  d(a),
+LocalSymmSCMatrix::LocalSymmSCMatrix(const RefSCDimension&a,
+                                     LocalSCMatrixKit *kit):
+  SymmSCMatrix(a,kit),
   rows(0)
 {
   resize(a->n());
-}
-
-LocalSymmSCMatrix::LocalSymmSCMatrix(StateIn&s):
-  SymmSCMatrix(s)
-{
-  d.restore_state(s);
-  block.restore_state(s);
-  // if (rows) delete[] rows;
-  rows = init_symm_rows(block->data,d->n());
-}
-
-LocalSymmSCMatrix::LocalSymmSCMatrix(const RefKeyVal&keyval)
-{
-  d = keyval->describedclassvalue("dim");
-  d.require_nonnull();
-  block = new SCMatrixLTriBlock(0,d->n());
-  rows = init_symm_rows(block->data,d->n());
-  for (int i=0; i<n(); i++) {
-      for (int j=0; j<=i; j++) {
-          set_element(i,j,keyval->doublevalue("data",i,j));
-        }
-    }
-}
-
-void
-LocalSymmSCMatrix::save_data_state(StateOut&s)
-{
-  SymmSCMatrix::save_data_state(s);
-  d.save_state(s);
-  block.save_state(s);
 }
 
 LocalSymmSCMatrix::~LocalSymmSCMatrix()
@@ -96,12 +59,6 @@ LocalSymmSCMatrix::resize(int n)
 {
   block = new SCMatrixLTriBlock(0,n);
   rows = init_symm_rows(block->data,n);
-}
-
-RefSCDimension
-LocalSymmSCMatrix::dim()
-{
-  return d;
 }
 
 double
@@ -134,10 +91,10 @@ LocalSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
     abort();
   }
   
-  RefLocalSCDimension dnrow = new LocalSCDimension(nsrow);
-  RefLocalSCDimension dncol = new LocalSCDimension(nscol);
+  RefSCDimension dnrow = new SCDimension(nsrow);
+  RefSCDimension dncol = new SCDimension(nscol);
 
-  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);
 
   LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
@@ -161,9 +118,9 @@ LocalSymmSCMatrix::get_subblock(int br, int er)
     abort();
   }
   
-  RefLocalSCDimension dnrow = new LocalSCDimension(nsrow);
+  RefSCDimension dnrow = new SCDimension(nsrow);
 
-  SymmSCMatrix * sb = dnrow->create_symmmatrix();
+  SymmSCMatrix * sb = kit()->symmmatrix(dnrow);
   sb->assign(0.0);
 
   LocalSymmSCMatrix *lsb = LocalSymmSCMatrix::require_castdown(sb,
@@ -267,7 +224,7 @@ LocalSymmSCMatrix::get_row(int i)
     abort();
   }
   
-  SCVector * v = dim()->create_vector();
+  SCVector * v = kit()->vector(dim());
 
   LocalSCVector *lv = LocalSCVector::require_castdown(v,
                                                "LocalSymmSCMatrix::get_row");

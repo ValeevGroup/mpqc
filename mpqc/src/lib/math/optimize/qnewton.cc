@@ -32,7 +32,6 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
   Optimize(keyval),
   maxabs_gradient(-1.0)
 {
-  nlp_ = keyval->describedclassvalue("function");
   update_ = keyval->describedclassvalue("update");
   if (update_.nonnull()) update_->set_inverse();
   convergence_ = keyval->doublevalue("convergence");
@@ -41,9 +40,9 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
 
-  RefSymmSCMatrix hessian(nlp_->dimension());
-  // get a guess hessian from nlp
-  nlp_->guess_hessian(hessian);
+  RefSymmSCMatrix hessian(dimension(),matrixkit());
+  // get a guess hessian from the function
+  function()->guess_hessian(hessian);
   
   // see if any hessian matrix elements have been given in the input
   if (keyval->exists("hessian")) {
@@ -57,15 +56,15 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
             }
         }
     }
-  ihessian_ = nlp_->inverse_hessian(hessian);
+  ihessian_ = function()->inverse_hessian(hessian);
 }
 
 QNewtonOpt::QNewtonOpt(StateIn&s):
   Optimize(s)
   maybe_SavableState(s)
 {
-  nlp_.restore_state(s);
-  ihessian_.restore_state(s);
+  ihessian_ = matrixkit()->symmmatrix(dimension());
+  ihessian_.restore(s);
   update_.restore_state(s);
   s.get(convergence_);
   s.get(accuracy_);
@@ -82,8 +81,7 @@ void
 QNewtonOpt::save_data_state(StateOut&s)
 {
   Optimize::save_data_state(s);
-  nlp_.save_state(s);
-  ihessian_.save_state(s);
+  ihessian_.save(s);
   update_.save_state(s);
   s.put(convergence_);
   s.put(accuracy_);
@@ -121,10 +119,10 @@ QNewtonOpt::update()
   int accurate_enough;
   do {
       // compute the current point
-      nlp_->set_desired_gradient_accuracy(accuracy_);
+      function()->set_desired_gradient_accuracy(accuracy_);
 
-      xcurrent = nlp_->get_x().copy();
-      gcurrent = nlp_->gradient().copy();
+      xcurrent = function()->get_x().copy();
+      gcurrent = function()->gradient().copy();
 
       // compute the gradient convergence criterion now so i can see if
       // the accuracy needs to be tighter
@@ -137,12 +135,13 @@ QNewtonOpt::update()
       // which would make the current required accuracy less than the
       // gradient's actual accuracy and cause everything to be recomputed.
       accurate_enough = (
-        nlp_->actual_gradient_accuracy() <= accuracy_*roundoff_error_factor);
+          function()->actual_gradient_accuracy()
+          <= accuracy_*roundoff_error_factor);
 
       if (!accurate_enough) {
-          printf("NOTICE: nlp_->actual_gradient_accuracy() > accuracy_:\n");
-          printf("  nlp_->actual_gradient_accuracy() = %15.8f\n",
-                 nlp_->actual_gradient_accuracy());
+          printf("NOTICE: func->actual_gradient_accuracy() > accuracy_:\n");
+          printf("  func->actual_gradient_accuracy() = %15.8f\n",
+                 function()->actual_gradient_accuracy());
           printf("  accuracy_ = %15.8f\n", accuracy_);
           fflush(stdout);
         }
@@ -168,7 +167,7 @@ QNewtonOpt::update()
 
   // update the hessian
   if (update_.nonnull()) {
-      update_->update(ihessian_,nlp_,xcurrent,gcurrent);
+      update_->update(ihessian_,function(),xcurrent,gcurrent);
     }
 
   // take the step
@@ -186,7 +185,7 @@ QNewtonOpt::update()
   fflush(stdout);
   
   RefSCVector xnext = xcurrent + xdisp;
-  nlp_->set_x(xnext);
+  function()->set_x(xnext);
 
   // do a line min step next time
   if (lineopt_.nonnull()) take_newton_step_ = 0;
@@ -199,10 +198,4 @@ QNewtonOpt::update()
   return   (con_crit1 <= convergence_)
             && (con_crit2 <= convergence_)
             && (con_crit3 <= convergence_);
-}
-
-RefNLP0
-QNewtonOpt::nlp()
-{
-  return nlp_;
 }

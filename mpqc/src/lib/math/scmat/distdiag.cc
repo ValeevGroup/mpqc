@@ -23,8 +23,8 @@ DistDiagSCMatrix::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-DistDiagSCMatrix::DistDiagSCMatrix(DistSCDimension*a):
-  d(a)
+DistDiagSCMatrix::DistDiagSCMatrix(const RefSCDimension&a,DistSCMatrixKit*k):
+  DiagSCMatrix(a,k)
 {
   init_blocklist();
 }
@@ -114,12 +114,6 @@ DistDiagSCMatrix::init_blocklist()
 
 DistDiagSCMatrix::~DistDiagSCMatrix()
 {
-}
-
-RefSCDimension
-DistDiagSCMatrix::dim()
-{
-  return d;
 }
 
 double
@@ -322,4 +316,16 @@ void
 DistDiagSCMatrix::error(const char *msg)
 {
   cerr << "DistDiagSCMatrix: error: " << msg << endl;
+}
+
+RefDistSCMatrixKit
+DistDiagSCMatrix::skit()
+{
+  return DistSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+DistDiagSCMatrix::messagegrp()
+{
+  return skit()->messagegrp();
 }

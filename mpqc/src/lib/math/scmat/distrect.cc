@@ -2,6 +2,7 @@
 #include <iostream.h>
 #include <iomanip.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/dist.h>
@@ -34,15 +35,10 @@ DistSCMatrix::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-DistSCMatrix::DistSCMatrix(DistSCDimension*a,DistSCDimension*b):
-  d1(a),
-  d2(b)
+DistSCMatrix::DistSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
+                           DistSCMatrixKit*k):
+  SCMatrix(a,b,k)
 {
-  if (a->messagegrp() != b->messagegrp()) {
-      fprintf(stderr, "DistSCMatrix: incompatible messagegrps\n");
-      abort();
-    }
-
   init_blocklist();
 }
 
@@ -127,18 +123,6 @@ DistSCMatrix::init_blocklist()
 
 DistSCMatrix::~DistSCMatrix()
 {
-}
-
-RefSCDimension
-DistSCMatrix::rowdim()
-{
-  return d1;
-}
-
-RefSCDimension
-DistSCMatrix::coldim()
-{
-  return d2;
 }
 
 double
@@ -539,7 +523,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
           end = b1end > vecoff+nvec ? vecoff+nvec : b1end;
         }
       double *dat = b->data;
-      int off = (start - b1start) - b1start;
+      int off = -b1start;
       for (int j=start; j<end; j++) {
           double *vecj;
           if (ivec) {
@@ -646,7 +630,7 @@ DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 void
 DistSCMatrix::transpose_this()
 {
-  RefDistSCDimension tmp = d1;
+  RefSCDimension tmp = d1;
   d1 = d2;
   d2 = tmp;
 
@@ -685,7 +669,7 @@ DistSCMatrix::invert_this()
       fprintf(stderr,"DistSCMatrix::invert_this: matrix is not square\n");
       abort();
     }
-  RefSymmSCMatrix refs = new DistSymmSCMatrix(d1.pointer());
+  RefSymmSCMatrix refs = kit()->symmmatrix(d1);
   refs->assign(0.0);
   refs->accumulate_symmetric_product(this);
   double determ2 = refs->invert_this();
@@ -894,4 +878,16 @@ void
 DistSCMatrix::error(const char *msg)
 {
   cerr << "DistSCMatrix: error: " << msg << endl;
+}
+
+RefDistSCMatrixKit
+DistSCMatrix::skit()
+{
+  return DistSCMatrixKit::castdown(kit().pointer());
+}
+
+RefMessageGrp
+DistSCMatrix::messagegrp()
+{
+  return skit()->messagegrp();
 }

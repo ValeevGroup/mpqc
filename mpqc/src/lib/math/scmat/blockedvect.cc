@@ -11,10 +11,6 @@
 
 #define CLASSNAME BlockedSCVector
 #define PARENTS public SCVector
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 BlockedSCVector::_castdown(const ClassDesc*cd)
@@ -25,7 +21,7 @@ BlockedSCVector::_castdown(const ClassDesc*cd)
 }
 
 void
-BlockedSCVector::resize(BlockedSCDimension *bsd)
+BlockedSCVector::resize(SCDimension *bsd)
 {
   if (vecs_) {
     delete[] vecs_;
@@ -34,51 +30,23 @@ BlockedSCVector::resize(BlockedSCDimension *bsd)
 
   d = bsd;
   
-  if (!bsd || !bsd->nblocks())
+  if (!bsd || !bsd->blocks()->nblock())
     return;
   
-  vecs_ = new RefSCVector[d->nblocks()];
+  vecs_ = new RefSCVector[d->blocks()->nblock()];
 
-  for (int i=0; i < d->nblocks(); i++)
-    if (d->n(i))
-      vecs_[i] = d->dim(i)->create_vector();
+  for (int i=0; i < d->blocks()->nblock(); i++)
+    if (d->blocks()->size(i))
+      vecs_[i] = subkit->vector(d->blocks()->subdim(i));
 }
 
-BlockedSCVector::BlockedSCVector() :
-  vecs_(0)
-{
-}
-
-BlockedSCVector::BlockedSCVector(BlockedSCDimension*a) :
+BlockedSCVector::BlockedSCVector(const RefSCDimension&a,
+                                 BlockedSCMatrixKit*k):
+  SCVector(a,k),
+  subkit(k->subkit()),
   vecs_(0)
 {
   resize(a);
-}
-
-BlockedSCVector::BlockedSCVector(const RefKeyVal&keyval)
-{
-  abort();
-}
-
-BlockedSCVector::BlockedSCVector(StateIn&s):
-  SCVector(s)
-{
-  d.restore_state(s);
-
-  int nb = d->nblocks();
-  vecs_ = new RefSCVector[nb];
-  
-  for (int i=0; i < nb; i++)
-    vecs_[i].restore_state(s);
-}
-
-void
-BlockedSCVector::save_data_state(StateOut&s)
-{
-  SCVector::save_data_state(s);
-  d.save_state(s);
-  for (int i=0; i < d->nblocks(); i++)
-    vecs_[i].save_state(s);
 }
 
 BlockedSCVector::~BlockedSCVector()
@@ -89,16 +57,10 @@ BlockedSCVector::~BlockedSCVector()
   }
 }
 
-RefSCDimension
-BlockedSCVector::dim()
-{
-  return d;
-}
-
 void
 BlockedSCVector::assign(double a)
 {
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
       vecs_[i]->assign(a);
 }
@@ -117,7 +79,7 @@ BlockedSCVector::assign(SCVector*a)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
       vecs_[i]->assign(la->vecs_[i]);
 }
@@ -125,9 +87,9 @@ BlockedSCVector::assign(SCVector*a)
 void
 BlockedSCVector::assign(const double*a)
 {
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
-      vecs_[i]->assign(a+d->first(i));
+      vecs_[i]->assign(a+d->blocks()->start(i));
 }
 
 double
@@ -139,8 +101,9 @@ BlockedSCVector::get_element(int i)
     abort();
   }
 
-  int bi = d->block(i);
-  return vecs_[bi].get_element(i-d->first(bi));
+  int bi, bo;
+  d->blocks()->elem_to_block(i,bi,bo);
+  return vecs_[bi].get_element(bo);
 }
 
 void
@@ -152,8 +115,9 @@ BlockedSCVector::set_element(int i,double a)
     abort();
   }
 
-  int bi = d->block(i);
-  vecs_[bi].set_element(i-d->first(bi),a);
+  int bi, bo;
+  d->blocks()->elem_to_block(i,bi,bo);
+  vecs_[bi].set_element(bo,a);
 }
 
 void
@@ -165,8 +129,9 @@ BlockedSCVector::accumulate_element(int i,double a)
     abort();
   }
 
-  int bi = d->block(i);
-  vecs_[bi].accumulate_element(i-d->first(bi),a);
+  int bi, bo;
+  d->blocks()->elem_to_block(i,bi,bo);
+  vecs_[bi].accumulate_element(bo,a);
 }
 
 void
@@ -185,7 +150,7 @@ BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
       vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
 }
@@ -206,7 +171,7 @@ BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
       vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
 }
@@ -225,7 +190,7 @@ BlockedSCVector::accumulate(SCVector*a)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
       vecs_[i]->accumulate(la->vecs_[i]);
 }
@@ -245,7 +210,7 @@ BlockedSCVector::accumulate(SCMatrix*a)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
       vecs_[i]->accumulate(la->mats_[i]);
 }
@@ -266,7 +231,7 @@ BlockedSCVector::scalar_product(SCVector*a)
 
   double result=0;
 
-  for (int i=0; i < d->nblocks(); i++)
+  for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
       result += vecs_[i]->scalar_product(la->vecs_[i]);
   
@@ -278,7 +243,7 @@ BlockedSCVector::element_op(const RefSCElementOp& op)
 {
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (bop)
       bop->working_on(i);
     if (vecs_[i].nonnull())
@@ -300,7 +265,7 @@ BlockedSCVector::element_op(const RefSCElementOp2& op,
 
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (bop)
       bop->working_on(i);
     if (vecs_[i].nonnull())
@@ -324,7 +289,7 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
 
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (bop)
       bop->working_on(i);
     if (vecs_[i].nonnull())
@@ -338,7 +303,7 @@ BlockedSCVector::print(const char *title, ostream& os, int prec)
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];
 
-  for (int i=0; i < d->nblocks(); i++) {
+  for (int i=0; i < d->blocks()->nblock(); i++) {
     if (vecs_[i].null())
       continue;
     
@@ -352,13 +317,13 @@ BlockedSCVector::print(const char *title, ostream& os, int prec)
 RefSCDimension
 BlockedSCVector::dim(int i)
 {
-  return d->dim(i);
+  return d->blocks()->subdim(i);
 }
 
 int
 BlockedSCVector::nblocks() const
 {
-  return d->nblocks();
+  return d->blocks()->nblock();
 }
 
 RefSCVector
@@ -389,4 +354,46 @@ BlockedSCVector::all_blocks(SCMatrixSubblockIter::Access access)
     }
   RefSCMatrixSubblockIter ret = iter.pointer();
   return ret;
+}
+
+void
+BlockedSCVector::save(StateOut&s)
+{
+  int ndim = n();
+  s.put(ndim);
+  int has_subblocks = 1;
+  s.put(has_subblocks);
+  s.put(nblocks());
+  for (int i=0; i<nblocks(); i++) {
+      block(i)->save(s);
+    }
+}
+
+void
+BlockedSCVector::restore(StateIn&s)
+{
+  int ndimt, ndim = n();
+  s.get(ndimt);
+  if (ndimt != ndim) {
+      cerr << "BlockedSCVector::restore(): bad dimension" << endl;
+      abort();
+    }
+  int has_subblocks;
+  s.get(has_subblocks);
+  if (has_subblocks) {
+      int nblock;
+      s.get(nblock);
+      if (nblock != nblocks()) {
+          cerr << "BlockedSCVector::restore(): nblock differs\n" << endl;
+          abort();
+        }
+      for (int i=0; i<nblocks(); i++) {
+          block(i)->restore(s);
+        }
+    }
+  else {
+      cerr << "BlockedSCVector::restore(): no subblocks--cannot restore"
+           << endl;
+      abort();
+    }
 }

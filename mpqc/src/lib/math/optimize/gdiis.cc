@@ -37,7 +37,6 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
   nsave = keyval->intvalue("ngdiis");
   if (keyval->error() != KeyVal::OK) nsave = 5;
   
-  nlp_ = keyval->describedclassvalue("function");
   update_ = keyval->describedclassvalue("update");
   update_->set_inverse();
   
@@ -47,9 +46,9 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
 
-  RefSymmSCMatrix hessian(nlp_->dimension());
-  // get a guess hessian from nlp
-  nlp_->guess_hessian(hessian);
+  RefSymmSCMatrix hessian(dimension(),matrixkit());
+  // get a guess hessian from the function
+  function()->guess_hessian(hessian);
   
   // see if any hessian matrix elements have been given in the input
   if (keyval->exists("hessian")) {
@@ -63,17 +62,16 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
       }
     }
   }
-  ihessian_ = nlp_->inverse_hessian(hessian);
+  ihessian_ = function()->inverse_hessian(hessian);
 
-  dim_ = nlp_->dimension();
   coords_ = new RefSCVector[nsave];
   grad_ = new RefSCVector[nsave];
   error_ = new RefSCVector[nsave];
 
   for (int i=0; i < nsave; i++) {
-    coords_[i] = dim_->create_vector(); coords_[i]->assign(0.0);
-    grad_[i] = dim_->create_vector(); grad_[i]->assign(0.0);
-    error_[i] = dim_->create_vector(); error_[i]->assign(0.0);
+    coords_[i] = matrixkit()->vector(dimension()); coords_[i]->assign(0.0);
+    grad_[i] = matrixkit()->vector(dimension()); grad_[i]->assign(0.0);
+    error_[i] = matrixkit()->vector(dimension()); error_[i]->assign(0.0);
   }
 }
 
@@ -83,9 +81,8 @@ GDIISOpt::GDIISOpt(StateIn&s):
 {
   s.get(nsave);
   s.get(diis_iter);
-  dim_.restore_state(s);
-  nlp_.restore_state(s);
-  ihessian_.restore_state(s);
+  ihessian_ = matrixkit()->symmmatrix(dimension());
+  ihessian_.restore(s);
   update_.restore_state(s);
   s.get(convergence_);
   s.get(accuracy_);
@@ -94,9 +91,12 @@ GDIISOpt::GDIISOpt(StateIn&s):
   grad_ = new RefSCVector[nsave];
   error_ = new RefSCVector[nsave];
   for (int i=0; i < nsave; i++) {
-    coords_[i].restore_state(s);
-    grad_[i].restore_state(s);
-    error_[i].restore_state(s);
+    coords_[i] = matrixkit()->vector(dimension());
+    grad_[i] = matrixkit()->vector(dimension());
+    error_[i] = matrixkit()->vector(dimension());
+    coords_[i].restore(s);
+    grad_[i].restore(s);
+    error_[i].restore(s);
   }
 }
 
@@ -110,17 +110,15 @@ GDIISOpt::save_data_state(StateOut&s)
   Optimize::save_data_state(s);
   s.put(nsave);
   s.put(diis_iter);
-  dim_.save_state(s);
-  nlp_.save_state(s);
-  ihessian_.save_state(s);
+  ihessian_.save(s);
   update_.save_state(s);
   s.put(convergence_);
   s.put(accuracy_);
   s.put(maxabs_gradient);
   for (int i=0; i < nsave; i++) {
-    coords_[i].save_state(s);
-    grad_[i].save_state(s);
-    error_[i].save_state(s);
+    coords_[i].save(s);
+    grad_[i].save(s);
+    error_[i].save(s);
   }
 }
 
@@ -154,10 +152,10 @@ GDIISOpt::update()
   int accurate_enough;
   do {
     // compute the current point
-    nlp_->set_desired_gradient_accuracy(accuracy_);
+    function()->set_desired_gradient_accuracy(accuracy_);
     
-    xcurrent = nlp_->get_x().copy();
-    gcurrent = nlp_->gradient().copy();
+    xcurrent = function()->get_x().copy();
+    gcurrent = function()->gradient().copy();
 
     // compute the gradient convergence criterion now so i can see if
     // the accuracy needs to be tighter
@@ -169,13 +167,13 @@ GDIISOpt::update()
     // the current gcurrent.maxabs() a bit smaller than the previous,
     // which would make the current required accuracy less than the
     // gradient's actual accuracy and cause everything to be recomputed.
-    accurate_enough = (nlp_->actual_gradient_accuracy() <=
+    accurate_enough = (function()->actual_gradient_accuracy() <=
                        accuracy_*roundoff_error_factor);
 
     if (!accurate_enough) {
-      printf("NOTICE: nlp_->actual_gradient_accuracy() > accuracy_:\n");
-      printf("  nlp_->actual_gradient_accuracy() = %15.8f\n",
-             nlp_->actual_gradient_accuracy());
+      printf("NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n");
+      printf("  function()->actual_gradient_accuracy() = %15.8f\n",
+             function()->actual_gradient_accuracy());
       printf("  accuracy_ = %15.8f\n", accuracy_);
       fflush(stdout);
     }
@@ -193,7 +191,7 @@ GDIISOpt::update()
   
   // update the hessian
   if (update_.nonnull()) {
-    update_->update(ihessian_,nlp_,xcurrent,gcurrent);
+    update_->update(ihessian_,function(),xcurrent,gcurrent);
   }
 
   diis_iter++;
@@ -232,7 +230,7 @@ GDIISOpt::update()
     fflush(stdout);
     
     RefSCVector xnext = xcurrent + xdisp;
-    nlp_->set_x(xnext);
+    function()->set_x(xnext);
     
     // compute the convergence criteria
     double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
@@ -256,9 +254,10 @@ GDIISOpt::update()
   do {
     int num = howmany-ntry;
 
-    RefLocalSCDimension size = new LocalSCDimension(num+1);
-    A = new LocalSCMatrix(size.pointer(),size.pointer());
-    coeff = new LocalSCVector(size.pointer());
+    RefSCDimension size = new SCDimension(num+1);
+    RefSCMatrixKit lkit = new LocalSCMatrixKit;
+    A = lkit->matrix(size,size);
+    coeff = lkit->vector(size);
 
     for (ii=0, i=ntry; i < howmany; i++,ii++) {
       coeff(ii) = 0;
@@ -280,8 +279,8 @@ GDIISOpt::update()
 
   } while (fabs(A.solve_lin(coeff)) < 1.0e-12);
 
-  RefSCVector xstar = xcurrent.dim()->create_vector();
-  RefSCVector delstar = gcurrent.dim()->create_vector();
+  RefSCVector xstar = matrixkit()->vector(dimension());
+  RefSCVector delstar = matrixkit()->vector(dimension());
 
   xstar.assign(0.0);
   delstar.assign(0.0);
@@ -307,7 +306,7 @@ GDIISOpt::update()
   fflush(stdout);
   
   RefSCVector xnext = xcurrent + xdisp;
-  nlp_->set_x(xnext);
+  function()->set_x(xnext);
   
   // compute the convergence criteria
   double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
@@ -317,10 +316,4 @@ GDIISOpt::update()
   return   (con_crit1 <= convergence_)
             && (con_crit2 <= convergence_)
             && (con_crit3 <= convergence_);
-}
-
-RefNLP0
-GDIISOpt::nlp()
-{
-  return nlp_;
 }

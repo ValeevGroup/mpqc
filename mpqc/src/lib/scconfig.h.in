@@ -48,6 +48,12 @@
 /* Define if you have the ios::fmtflags.  */
 #undef HAVE_IOS_FMTFLAGS
 
+/* Define if you have streambuf::pubseekoff (you should).  */
+#undef HAVE_PUBSEEKOFF
+
+/* Define if you have a public streambuf::seekoff.  */
+#undef HAVE_SEEKOFF
+
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE
 

@@ -810,12 +810,45 @@ AC_MSG_CHECKING([ios::fmtflags])
 AC_TRY_COMPILE([#include <iostream.h>],[
 ios::fmtflags flags;
 ],[HAVE_IOS_FMTFLAGS=yes
+AC_DEFINE(HAVE_IOS_FMTFLAGS)
 AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 HAVE_IOS_FMTFLAGS=no
 ])
 AC_LANG_RESTORE
 AC_SUBST(HAVE_IOS_FMTFLAGS)
+
+dnl --------- Check for pubseekoff. ---------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING([pubseekoff])
+AC_TRY_COMPILE([#include <iostream.h>],[
+cout.rdbuf()->pubseekoff(0,ios::beg,ios::out);
+],[HAVE_PUBSEEKOFF=yes
+AC_DEFINE(HAVE_PUBSEEKOFF)
+AC_MSG_RESULT(yes)],[
+AC_MSG_RESULT(no)
+HAVE_PUBSEEKOFF=no
+])
+AC_LANG_RESTORE
+AC_SUBST(HAVE_PUBSEEKOFF)
+
+dnl --------- Check for seekoff. ---------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING([seekoff])
+AC_TRY_COMPILE([#include <iostream.h>],[
+cout.rdbuf()->seekoff(0,ios::beg,ios::out);
+],[HAVE_SEEKOFF=yes
+AC_DEFINE(HAVE_SEEKOFF)
+AC_MSG_RESULT(yes)],[
+AC_MSG_RESULT(no)
+HAVE_SEEKOFF=no
+])
+AC_LANG_RESTORE
+AC_SUBST(HAVE_SEEKOFF)
 
 dnl --------- Check for signal handler argument lists. ---------
 

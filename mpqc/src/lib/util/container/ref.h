@@ -23,6 +23,18 @@ extern "C" void * sbrk(int);
 #define DO_REF_CHECK_STACK(p) (0)
 #endif
 
+#ifdef __GNUC__
+#undef const1
+#undef const2
+#define const1 const
+#define const2
+#else
+#undef const1
+#undef const2
+#define const1
+#define const2 const
+#endif
+
 // The macro version of the reference counting class
 #define REF_dec_custom(T,custom)					      \
 class  Ref ## T  {							      \
@@ -34,7 +46,7 @@ class  Ref ## T  {							      \
     T* pointer();							      \
     const T* pointer() const;						      \
     operator T*();							      \
-    operator const T*() const;						      \
+    const1 operator const2 T*() const;					      \
     T& operator *();							      \
     const T& operator *() const;					      \
     Ref ## T ();							      \
@@ -67,7 +79,7 @@ const T* Ref ## T :: operator->() const { return p; }			      \
 T* Ref ## T :: pointer() { return p; }					      \
 const T* Ref ## T :: pointer() const { return p; }			      \
 Ref ## T :: operator T*() { return p; };				      \
-Ref ## T :: operator const T*() const { return p; };			      \
+Ref ## T :: const1 operator const2 T*() const { return p; };		      \
 T& Ref ## T :: operator *() { return *p; };				      \
 const T& Ref ## T :: operator *() const { return *p; };			      \
 int Ref ## T :: null() { return p == 0; }				      \

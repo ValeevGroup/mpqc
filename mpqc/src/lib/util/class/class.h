@@ -148,6 +148,18 @@ class  RefDescribedClassBase {
     int operator<( RefDescribedClassBase &a);
 };
 
+#ifdef __GNUC__
+#undef const1
+#undef const2
+#define const1 const
+#define const2
+#else
+#undef const1
+#undef const2
+#define const1
+#define const2 const
+#endif
+
 // this uses macros from util/container/ref.h
 #define DescribedClass_named_REF_dec(refname,T)				      \
 class  refname : public RefDescribedClassBase  {			      \
@@ -160,7 +172,7 @@ class  refname : public RefDescribedClassBase  {			      \
     T* pointer();							      \
     const T* pointer() const;						      \
     operator T*();							      \
-    operator const T*() const;						      \
+    const1 operator const2 T*() const;					      \
     T& operator *();							      \
     const T& operator *() const;					      \
     refname ();								      \
@@ -186,7 +198,7 @@ const T* refname :: operator->() const { return p; };			      \
 T* refname :: pointer() { return p; };					      \
 const T* refname :: pointer() const { return p; };			      \
 refname :: operator T*() { return p; };					      \
-refname :: operator const T*() const { return p; };			      \
+refname :: const1 operator const2 T*() const { return p; };		      \
 T& refname :: operator *() { return *p; };				      \
 const T& refname :: operator *() const { return *p; };			      \
 int refname :: null() { return p == 0; };				      \

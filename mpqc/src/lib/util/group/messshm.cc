@@ -235,9 +235,10 @@ void ShmMessageGrp::initialize(int nprocs)
   intMessageGrp::initialize(mynodeid, nprocs, 30);
 }
 
-Ref<MessageGrp> ShmMessageGrp::clone(void)
+Ref<MessageGrp>
+ShmMessageGrp::clone(void)
 {
-  Ref<MessageGrp> smgrp = new ShmMessageGrp;
+  Ref<MessageGrp> smgrp = new ShmMessageGrp(n());
   return smgrp;
 }
 

@@ -1,6 +1,6 @@
-define([sc_mmm_version],[2.1.0])
+define([sc_mmm_version],[2.2.0])
 define([sc_buildid],[alpha])
-define([sc_so_version],[3:0:0])
+define([sc_so_version],[4:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -1076,7 +1076,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
 AC_CHECK_FUNCS(gethostname time ctime ieee_set_fp_control ieee_get_fp_control)
-AC_CHECK_FUNCS(setrlimit)
+AC_CHECK_FUNCS(setrlimit setenv)
 
 dnl --------- Checks for a C++ linkable fchdir. ---------
 AC_LANG_SAVE

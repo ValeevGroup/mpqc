@@ -133,6 +133,8 @@ class MessageGrp: public DescribedClass {
     /// Returns my processor number.  In the range [0,n()).
     int me() { return me_; }
 
+    /** Returns a copy of this MessageGrp specialization that provides
+        an independent communication context. */
     virtual Ref<MessageGrp> clone(void)=0;
     
     /** The default message group contains the primary message group to

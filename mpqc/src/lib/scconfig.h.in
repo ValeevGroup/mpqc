@@ -87,6 +87,9 @@
 /* Define if you have the strerror function.  */
 #undef HAVE_STRERROR
 
+/* Define if you have the setenv function.  */
+#undef HAVE_SETENV
+
 /* Define if you have the sigfillset function (and company).  */
 #undef HAVE_SIGFILLSET
 

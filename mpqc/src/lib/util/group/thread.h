@@ -79,8 +79,11 @@ class ThreadGrp: public DescribedClass {
 
     /** Assigns a Thread object to each thread.  If 0 is assigned to
         a thread, then that thread will be skipped. */
-    virtual void add_thread(int, Thread*);
-    virtual void add_thread(int, Thread*, int);
+    virtual void add_thread(int threadnum, Thread* thread);
+    /** Like add_thread(threadnum, thread), but assign a priority that the
+        thread is to use.  The member is primarily for experimentation, the
+        priority argument is currently not well defined and ignored.  */
+    virtual void add_thread(int threadnum, Thread* thread, int priority);
     /// The number of threads that will be run by start_thread.
     int nthread() const { return nthread_; }
 
@@ -118,8 +121,6 @@ class ProcThreadGrp: public ThreadGrp {
 
     int start_threads();
     int wait_threads();
-//    void add_thread(int, Thread*);
-    void add_thread(int i, Thread*t, int sched, int priority) { ThreadGrp::add_thread(i,t); }
     
     Ref<ThreadLock> new_lock();
 

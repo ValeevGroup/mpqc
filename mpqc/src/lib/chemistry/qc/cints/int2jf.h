@@ -6,6 +6,23 @@
 
 #include <chemistry/qc/basis/basis.h>
 
+struct iclass {
+    int am[5];       // the 5th one is for m
+    int m;           // so I screwed up...
+    int operands[5];
+    double *Val;
+    int type;        // 0 for HRR build, n for number of operands in VRR build
+    int done;
+};
+
+struct base_eri{
+    int i;
+    int j;
+    int  k;
+    int  l;
+    double val;
+};
+
 class FJTable {
   private:
     int maxj;
@@ -31,6 +48,9 @@ class TwoBodyIntJF
 {
   protected:
     RefGaussianBasisSet gbs_;
+    
+    iclass *Classes;
+    base_eri *tot_data;
     
     char *V_done;
     char *H_done;

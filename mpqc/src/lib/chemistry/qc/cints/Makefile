@@ -12,7 +12,7 @@ TARGET_TO_MAKE = libcints
 BIN_OR_LIB = LIB
 
 SRCS = nucrep.cc integraljf.cc ovlp.cc kei.cc pei.cc \
-       fjtable.cc
+       fjtable.cc twoei.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

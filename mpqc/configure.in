@@ -1165,6 +1165,20 @@ dnl --------- Check for the glibc extensions to C99 fenv.h. ---------
 AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_FUNCS(feenableexcept fedisableexcept)
 
+dnl ---------- Check for isnan in C++ (which can be a macro) ----------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING([isnan])
+AC_TRY_COMPILE([#include <math.h>],[
+isnan(0.0);
+],[
+AC_DEFINE(HAVE_ISNAN)
+AC_MSG_RESULT(yes)],[
+AC_MSG_RESULT(no)
+])
+AC_LANG_RESTORE
+
 dnl --------- Checks for a C++ linkable fchdir. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS

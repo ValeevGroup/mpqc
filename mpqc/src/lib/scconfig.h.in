@@ -111,6 +111,9 @@
 /* Define if you have the drand48 function.  */
 #undef HAVE_DRAND48
 
+/* Define if you have the isnan function.  */
+#undef HAVE_ISNAN
+
 /* Define if you have the fchdir function.  */
 #undef HAVE_FCHDIR
 

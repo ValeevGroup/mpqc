@@ -523,7 +523,7 @@ class DiagSCMatrix: public DescribedClass {
     void assign(const double*p) { assign_p(p); }
     /** Make this have the same elements as m.  The dimensions must
         match. */
-    void assign(DiagSCMatrix*d) { assign_d(d); }
+    void assign(DiagSCMatrix*d_a) { assign_d(d_a); }
     /// Overridden to implement the assign members.
     virtual void assign_val(double val);
     virtual void assign_p(const double*);

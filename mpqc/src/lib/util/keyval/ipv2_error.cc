@@ -36,16 +36,16 @@
 const char*
 IPV2::error_message(IPV2::Status errcod)
 {
-  static char *ipe_ok = "No problem has been detected.";
-  static char *ipe_key_not_found = "No match was found for the given keyword.";
-  static char *ipe_out_of_bounds = "An array index is out of bounds.";
-  static char *ipe_malloc = "Memory allocation failed.";
-  static char *ipe_not_an_array = "An index was given for a scalar quantity.";
-  static char *ipe_not_a_scalar = "Expected a scalar, but found an array.";
-  static char *ipe_type = "The datum is not of the appropiate type.";
-  static char *ipe_has_no_value = "The keyword has no value.";
-  static char *ipe_val_not_expd = "A value was not expected for the keyword.";
-  static char *huh = "The nature of the problem is unknown.";
+  const char *ipe_ok = "No problem has been detected.";
+  const char *ipe_key_not_found = "No match was found for the given keyword.";
+  const char *ipe_out_of_bounds = "An array index is out of bounds.";
+  const char *ipe_malloc = "Memory allocation failed.";
+  const char *ipe_not_an_array = "An index was given for a scalar quantity.";
+  const char *ipe_not_a_scalar = "Expected a scalar, but found an array.";
+  const char *ipe_type = "The datum is not of the appropiate type.";
+  const char *ipe_has_no_value = "The keyword has no value.";
+  const char *ipe_val_not_expd = "A value was not expected for the keyword.";
+  const char *huh = "The nature of the problem is unknown.";
   
   if (errcod == OK) return ipe_ok;
   if (errcod == KeyNotFound) return ipe_key_not_found;

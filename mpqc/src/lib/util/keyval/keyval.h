@@ -259,9 +259,9 @@ class KeyVal: public VRefCount {
     /// Return the current error condition.
     KeyValError error();
     /// Return a textual representation of err.
-    char*  errormsg(KeyValError err);
+    const char*  errormsg(KeyValError err);
     /// Return a textual representation of the current error.
-    char*  errormsg();
+    const char*  errormsg();
 
     virtual void errortrace(ostream&fp=cerr);
     virtual void dump(ostream&fp=cerr);

@@ -147,7 +147,7 @@ class ClassDesc: public Identity {
     ClassDesc(const ClassDesc&);
     void operator=(const ClassDesc&);
   public:
-    ClassDesc(char*,int=1,char* p=0,
+    ClassDesc(const char*,int=1,const char* p=0,
               DescribedClass* (*ctor)()=0,
               DescribedClass* (*keyvalctor)(const RefKeyVal&)=0,
               DescribedClass* (*stateinctor)(StateIn&)=0);

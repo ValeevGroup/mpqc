@@ -244,6 +244,9 @@
 /* Set to the FORTRAN 77 dgemm name.  */
 #undef F77_DGEMM_SYMBOL
 
+/* Set to true if "using namespace std" needed to access ostream, etc.  */
+#undef USING_NAMESPACE_STD
+
 #endif /* _CONFIG_H */
 
 /* 

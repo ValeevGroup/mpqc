@@ -86,12 +86,21 @@ ipv2_parse.cc ipv2_parse.h: ipv2_parse.yy
 	-@rm -f ipv2_parse.output
 
 ipv2_scan.cc: ipv2_scan.ll
+	echo "#ifdef HAVE_CONFIG_H"  > ipv2_scan.cc
+	echo "#include <scconfig.h>" >> ipv2_scan.cc
+	echo "#endif" >> ipv2_scan.cc
+	echo "#ifdef USING_NAMESPACE_STD" >> ipv2_scan.cc
+	echo "#include <iostream.h>" >> ipv2_scan.cc
+	echo "using namespace std;" >> ipv2_scan.cc
+	echo "#endif" >> ipv2_scan.cc
 	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \
 	                | grep -v "static int yy_get_next_buffer.*;" \
+	                | grep -v "static int yy_get_next_buffer.*;" \
+	                | grep -v "class istream;" \
 	                | sed "s/static int yy_get_next_buffer/int yy_get_next_buffer/" \
 	                | grep -v "static void yyunput.*;" \
 	                | sed "s/static void yyunput/void yyunput/" \
 	                | grep -v "static int yyinput.*;" \
 	                | sed "s/static int yyinput/int yyinput/" \
-	                > ipv2_scan.cc
+	                >> ipv2_scan.cc
 

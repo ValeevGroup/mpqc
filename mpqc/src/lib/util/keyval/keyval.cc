@@ -55,14 +55,14 @@ KeyVal::~KeyVal()
 {
 }
 
-char* KeyVal::errormsg(KeyValError err)
+const char* KeyVal::errormsg(KeyValError err)
   {
-  char* msg1 = "No problem.";
-  char* msg2 = "The keyword was not found.";
-  char* msg3 = "The requested operation failed.";
-  char* msg4 = "The datum is not of the appropiate type.";
-  char* msg5 = "The keyword has no value.";
-  char* invalid = "The KeyValError is invalid.";
+  const char* msg1 = "No problem.";
+  const char* msg2 = "The keyword was not found.";
+  const char* msg3 = "The requested operation failed.";
+  const char* msg4 = "The datum is not of the appropiate type.";
+  const char* msg5 = "The keyword has no value.";
+  const char* invalid = "The KeyValError is invalid.";
   if      (err == OK             ) return msg1;
   else if (err == UnknownKeyword ) return msg2;
   else if (err == OperationFailed) return msg3;
@@ -610,7 +610,7 @@ KeyVal::error()
   return errcod;
 }
 
-char*
+const char*
 KeyVal::errormsg()
 {
   return errormsg(errcod);

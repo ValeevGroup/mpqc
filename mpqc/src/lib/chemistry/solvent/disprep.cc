@@ -1,6 +1,16 @@
+
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
+
+#include <fstream.h>
+
+#ifdef USING_NAMESPACE_STD
+using namespace std;
+#endif
+
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
-#include <fstream.h>
 #include <chemistry/qc/wfn/solvent.h>
 #include <chemistry/molecule/formula.h>
 

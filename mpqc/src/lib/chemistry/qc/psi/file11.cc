@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stream.h>
+#include <iostream.h>
 extern "C" {
 int read_file11(int natom, int readto,
       char *label, char *theory, char *dertype,

@@ -447,6 +447,14 @@ dnl -- special architecture options --
 
 AC_MSG_CHECKING([for special architecture options])
 case $target in
+  *-solaris2*)
+  if test X$GCC != Xyes; then
+    CCDEPENDFLAGS="-xM"
+  fi
+  if test X$GXX != Xyes; then
+    CXXDEPENDFLAGS="-xM"
+  fi
+  ;;
   rs6000-* | powerpc-*)
     if test X$GCC != Xyes; then
       LDFLAGS="$LDFLAGS -bmaxdata:0x70000000"
@@ -555,6 +563,25 @@ AC_TRY_LINK([
   f(g);
 ],[
 AC_DEFINE(HAVE_TYPENAME)
+AC_MSG_RESULT("yes")
+],
+AC_MSG_RESULT("no")
+);
+AC_LANG_RESTORE
+
+dnl ----------- check for namespace std ---------------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING("checking for namespace std")
+AC_TRY_LINK([
+#include <iostream.h>
+using namespace std;
+],[
+  ostream &o = cout;
+  o << endl;
+],[
+AC_DEFINE(USING_NAMESPACE_STD)
 AC_MSG_RESULT("yes")
 ],
 AC_MSG_RESULT("no")
@@ -911,7 +938,7 @@ dnl --------- Check for sgetn. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([sgetn])
-AC_TRY_COMPILE([#include <streambuf.h>],[
+AC_TRY_COMPILE([#include <iostream.h>],[
 char *c=0;
 streambuf *s=0; s->sgetn(c,0);
 ],[HAVE_SGETN=yes
@@ -1105,6 +1132,13 @@ case $target in
       CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
       LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
       AC_MSG_RESULT("*-dec-osf*")
+    fi
+  ;;
+  *-solaris*)
+    if test ! X$GXX = Xyes; then
+      CXXFLAGS="$CXXFLAGS -instances=explicit"
+      AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
+      AC_MSG_RESULT("*-solaris*")
     fi
   ;;
   i860-intel-puma*)

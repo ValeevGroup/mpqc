@@ -9,7 +9,7 @@
 #ifndef _util_misc_algebra_h
 #define _util_misc_algebra_h
 
-#include <stream.h>
+#include <iostream.h>
 #include <stdlib.h>
 
 // this line defines a new type: pointer to a function which returns a

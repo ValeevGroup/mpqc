@@ -252,9 +252,9 @@ PoolData::PoolData(size_t size):
 }
 
 inline void
-PoolData::set_magic(int magic)
+PoolData::set_magic(int magic_a)
 {
-  magic_ = magic;
+  magic_ = magic_a;
 }
 
 // ////////////////////////////////////////////////////////////////////////////

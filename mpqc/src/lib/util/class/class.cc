@@ -254,8 +254,8 @@ ParentClasses::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
 
 ////////////////////////////////////////////////////////////////////////
 
-ClassDesc::ClassDesc(char* name, int version,
-                     char* parents,
+ClassDesc::ClassDesc(const char* name, int version,
+                     const char* parents,
                      DescribedClass* (*ctor)(),
                      DescribedClass* (*keyvalctor)(const RefKeyVal&),
                      DescribedClass* (*stateinctor)(StateIn&)

@@ -39,6 +39,10 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
+#ifdef USING_NAMESPACE_STD
+using namespace std;
+#endif
+
 //. The \clsnm{NElFunctional} computes the number of electrons.
 //. It is primarily for testing the integrator.
 class NElInShapeFunctional: public DenFunctional {

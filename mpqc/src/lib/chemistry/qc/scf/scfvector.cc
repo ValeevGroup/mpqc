@@ -123,16 +123,17 @@ SCF::compute_vector(double& eelec)
     eff.element_op(level_shift);
 
     if (debug_>1) {
-      eff.print("effective 1 body hamiltonian");
+      eff.print("effective 1 body hamiltonian in current mo basis");
     }
-    
-    eff.diagonalize(evals,nvector);
-    tim_exit("evals");
 
-    if (debug_>1) {
-      scf_vector_.print("old scf vector");
-      nvector.print("nvector");
-    }
+    // transform eff to the oso basis to diagonalize it
+    RefSymmSCMatrix oso_eff(oso_dimension(), basis_matrixkit());
+    oso_eff.assign(0.0);
+    oso_eff.accumulate_transform(oso_scf_vector_,eff);
+    eff = 0;
+    oso_eff.diagonalize(evals, oso_scf_vector_);
+
+    tim_exit("evals");
 
     // now un-level shift eigenvalues
     level_shift->set_shift(-level_shift_);
@@ -143,21 +144,8 @@ SCF::compute_vector(double& eelec)
 
     eff=0;
     
-    // transform MO vector to AO basis
-    scf_vector_ = scf_vector_ * nvector;
-    nvector=0;
-
     if (debug_>1) {
-      scf_vector_.print("AO basis scf vector");
-    }
-
-    // and orthogonalize vector
-    tim_enter("orthog");
-    orthog_vector(scf_vector_, overlap());
-    tim_exit("orthog");
-
-    if (debug_>1) {
-      scf_vector_.print("orthogonalized AO basis scf vector");
+      oso_scf_vector_.print("orthogonalized AO basis scf vector");
     }
   }
       
@@ -235,9 +223,9 @@ SCF::compute_vector(double& eelec)
   // free up evals
   evals = 0;
   
-  eigenvectors_ = scf_vector_;
-  eigenvectors_.computed() = 1;
-  eigenvectors_.set_actual_accuracy(delta);
+  oso_eigenvectors_ = oso_scf_vector_;
+  oso_eigenvectors_.computed() = 1;
+  oso_eigenvectors_.set_actual_accuracy(delta);
 
   // now clean up
   done_vector();
@@ -286,7 +274,7 @@ SCF::extrap_error()
   
   RefSymmSCMatrix aoerror(so_dimension(), basis_matrixkit());
   aoerror.assign(0.0);
-  aoerror.accumulate_transform(scf_vector_,mofock);
+  aoerror.accumulate_transform(so_to_orthog_so().t()*oso_scf_vector_, mofock);
   mofock=0;
 
   RefSCExtrapError error = new SymmSCMatrixSCExtrapError(aoerror);

@@ -185,9 +185,9 @@ SCF::save_data_state(StateOut& s)
 }
 
 RefSCMatrix
-SCF::eigenvectors()
+SCF::oso_eigenvectors()
 {
-  return eigenvectors_.result();
+  return oso_eigenvectors_.result();
 }
 
 RefDiagSCMatrix
@@ -361,7 +361,7 @@ void
 SCF::initial_vector(int needv)
 {
   if (need_vec_) {
-    if (eigenvectors_.result_noupdate().null()) {
+    if (oso_eigenvectors_.result_noupdate().null()) {
       // if guess_wfn_ is non-null then try to get a guess vector from it.
       // First check that the same basis is used...if not, then project the
       // guess vector into the present basis.
@@ -376,13 +376,11 @@ SCF::initial_vector(int needv)
           cout << incindent << incindent;
           SCF *g = SCF::castdown(guess_wfn_.pointer());
           if (!g || compute_guess_) {
-            eigenvectors_ = guess_wfn_->eigenvectors().copy();
+            oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
             eigenvalues_ = guess_wfn_->eigenvalues().copy();
           } else {
-            eigenvectors_ = g->eigenvectors_.result_noupdate().copy();
+            oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
             eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
-            eigenvectors_.result_noupdate()->schmidt_orthog(
-              overlap().pointer(), basis()->nbasis());
           }
           cout << decindent << decindent;
         } else {
@@ -392,7 +390,7 @@ SCF::initial_vector(int needv)
 
           // indent output of projected_eigenvectors() call if there is any
           cout << incindent << incindent;
-          eigenvectors_ = projected_eigenvectors(guess_wfn_);
+          oso_eigenvectors_ = projected_eigenvectors(guess_wfn_);
           eigenvalues_ = projected_eigenvalues(guess_wfn_);
           cout << decindent << decindent;
         }
@@ -406,13 +404,10 @@ SCF::initial_vector(int needv)
       } else {
         cout << node0 << indent << "Starting from core Hamiltonian guess\n"
              << endl;
-        eigenvectors_ = hcore_guess();
-        eigenvalues_ = core_hamiltonian().eigvals();
+        oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
       }
     } else {
-      // this is just an old vector, so orthogonalize it
-      eigenvectors_.result_noupdate()->schmidt_orthog(overlap().pointer(),
-                                                      basis()->nbasis());
+      // this is just an old vector
     }
   }
 
@@ -462,10 +457,14 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   d->assign(0.0);
   
   RefSCMatrix vector;
-  if (alp || !uhf)
-    vector = scf_vector_;
-  else
-    vector = scf_vectorb_;
+  if (alp || !uhf) {
+    if (oso_scf_vector_.nonnull())
+      vector = so_to_orthog_so().t() * oso_scf_vector_;
+  }
+  else {
+    if (oso_scf_vector_beta_.nonnull())
+      vector = so_to_orthog_so().t() * oso_scf_vector_beta_;
+  }
       
   if (vector.null()) {
     if (uhf) {

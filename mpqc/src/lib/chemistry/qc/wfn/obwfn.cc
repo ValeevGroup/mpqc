@@ -64,7 +64,7 @@ OneBodyWavefunction::_castdown(const ClassDesc*cd)
 OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   Wavefunction(keyval),
   density_(this),
-  eigenvectors_(this),
+  oso_eigenvectors_(this),
   eigenvalues_(this),
   nirrep_(0),
   nvecperirrep_(0),
@@ -76,11 +76,11 @@ OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   if (keyval->error() != KeyVal::OK)
     acc = value_.desired_accuracy();
   
-  eigenvectors_.set_desired_accuracy(acc);
+  oso_eigenvectors_.set_desired_accuracy(acc);
   eigenvalues_.set_desired_accuracy(acc);
 
-  if (eigenvectors_.desired_accuracy() < DBL_EPSILON) {
-    eigenvectors_.set_desired_accuracy(DBL_EPSILON);
+  if (oso_eigenvectors_.desired_accuracy() < DBL_EPSILON) {
+    oso_eigenvectors_.set_desired_accuracy(DBL_EPSILON);
     eigenvalues_.set_desired_accuracy(DBL_EPSILON);
   }
 }
@@ -89,7 +89,7 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   maybe_SavableState(s)
   Wavefunction(s),
   density_(this),
-  eigenvectors_(this),
+  oso_eigenvectors_(this),
   eigenvalues_(this),
   nirrep_(0),
   nvecperirrep_(0),
@@ -97,10 +97,10 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   alpha_occupations_(0),
   beta_occupations_(0)
 {
-  eigenvectors_.result_noupdate() =
-    basis_matrixkit()->matrix(so_dimension(), oso_dimension());
-  eigenvectors_.restore_state(s);
-  eigenvectors_.result_noupdate().restore(s);
+  oso_eigenvectors_.result_noupdate() =
+    basis_matrixkit()->matrix(oso_dimension(), oso_dimension());
+  oso_eigenvectors_.restore_state(s);
+  oso_eigenvectors_.result_noupdate().restore(s);
 
   eigenvalues_.result_noupdate() =
     basis_matrixkit()->diagmatrix(oso_dimension());
@@ -133,8 +133,8 @@ OneBodyWavefunction::save_data_state(StateOut&s)
 {
   Wavefunction::save_data_state(s);
 
-  eigenvectors_.save_data_state(s);
-  eigenvectors_.result_noupdate().save(s);
+  oso_eigenvectors_.save_data_state(s);
+  oso_eigenvectors_.result_noupdate().save(s);
 
   eigenvalues_.save_data_state(s);
   eigenvalues_.result_noupdate().save(s);
@@ -143,7 +143,6 @@ OneBodyWavefunction::save_data_state(StateOut&s)
   density_.result_noupdate().save(s);
 }
 
-#if 1
 RefSCMatrix
 OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
                                             int alp)
@@ -237,197 +236,14 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
   // the density was scaled above.
   RefSCMatrix newvec_oso = newP_oso_vecs;
 
-  // transform the orbitals from the orthogonal to nonorthogonal SO basis
-  RefSCMatrix newvec_so = so_to_oso.t() * newvec_oso;
-
   if (debug_ >= 2) {
       newvec_oso.print("projected ortho SO vector");
       so_to_oso.print("SO to ortho SO transformation");
-      newvec_so.print("projected SO vector");
     }
 
   cout << decindent;
-  return newvec_so;
+  return newvec_oso;
 }
-#else
-// at some point this will have to check for zero eigenvalues and not
-// invert them
-static void
-form_m_half(RefSymmSCMatrix& M)
-{
-  // Diagonalize M to get m and U
-  RefSCMatrix U(M.dim(), M.dim(), M.kit());
-  RefDiagSCMatrix m(M.dim(), M.kit());
-  M.diagonalize(m,U);
-
-  // take square root of all elements of m
-  RefSCElementOp op = new SCElementSquareRoot;
-  m.element_op(op);
-
-  // invert m
-  op = new SCElementInvert;
-  m.element_op(op);
-
-  // back transform m^-1/2 to get M^-1/2 ( U*m^-1/2*U~ = M^-1/2)
-  M.assign(0.0);
-  M.accumulate_transform(U,m);
-}
-RefSCMatrix
-OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
-                                            int alp)
-{
-  // first let's calculate the overlap between the new and old basis set
-  integral()->set_basis(basis(), owfn->basis());
-  RefSCMatrix s2(basis()->basisdim(), owfn->basis()->basisdim(),
-                 basis()->matrixkit());
-
-  RefSCElementOp op = new OneBodyIntOp(integral()->overlap());
-  s2.assign(0.0);
-  s2.element_op(op);
-  op = 0;
-
-  integral()->set_basis(basis());
-
-  // now transform the AO s2 to the SO basis. this probably doesn't really
-  // work.
-  RefPetiteList pl = integral()->petite_list();
-  RefPetiteList plo = integral()->petite_list(owfn->basis());
-  RefSCMatrix s2b(pl->AO_basisdim(), plo->AO_basisdim(),
-                  basis()->so_matrixkit());
-  s2b->convert(s2);
-  s2 = pl->aotoso().t() * s2b * plo->aotoso();
-
-  //s2.print("overlap between new basis and old");
-  s2b=0;
-
-  BlockedSCMatrix *s2p = BlockedSCMatrix::require_castdown(s2.pointer(),
-    "OneBodyWavefunction::projected_eigenvectors: s2p"
-    );
-  
-  // now get the old eigenvectors and the new core hamiltonian guess
-  RefSCMatrix ovec;
-  if (owfn->spin_unrestricted()) {
-    if (alp)
-      ovec = owfn->alpha_eigenvectors();
-    else
-      ovec = owfn->beta_eigenvectors();
-  }
-  else
-    ovec = owfn->eigenvectors();
-    
-  BlockedSCMatrix *ovecp = BlockedSCMatrix::require_castdown(ovec.pointer(),
-    "OneBodyWavefunction::projected_eigenvectors: ovec"
-    );
-#if DEBUG
-  ovec.print("old wavefunction");
-#endif
-
-  RefSCMatrix vec = hcore_guess();
-  BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(vec.pointer(),
-    "OneBodyWavefunction::projected_eigenvectors: vec"
-    );
-#if DEBUG
-  vec.print("hcore guess wavefunction");
-#endif
-
-  // we'll need the inverse of S eventually
-  RefSymmSCMatrix s = overlap();
-  BlockedSymmSCMatrix *sp = BlockedSymmSCMatrix::require_castdown(
-    s.pointer(),
-    "OneBodyWavefunction::projected_eigenvectors: s"
-    );
-
-  RefSymmSCMatrix sinv = s.i();
-  BlockedSymmSCMatrix *sinvp = BlockedSymmSCMatrix::require_castdown(
-    sinv.pointer(),
-    "OneBodyWavefunction::projected_eigenvectors: sinv"
-    );
-#if DEBUG
-  sinv.print("Sinv");
-#endif
-
-  for (int irrep=0; irrep < vecp->nblocks(); irrep++) {
-    // find out how many occupied orbitals there should be
-    int nocc = 0;
-    if (owfn->spin_unrestricted()) {
-      if (alp)
-        while (owfn->alpha_occupation(irrep,nocc) &&
-               nocc < plo->nfunction(irrep)) nocc++;
-      else
-        while (owfn->beta_occupation(irrep,nocc) &&
-               nocc < plo->nfunction(irrep)) nocc++;
-    } else
-      while (owfn->occupation(irrep,nocc) &&
-             nocc < plo->nfunction(irrep)) nocc++;
-  
-    if (!nocc)
-      continue;
-    
-    // get subblock of old vector
-    RefSCMatrix ovecsb = ovecp->block(irrep).get_subblock(
-      0, plo->nfunction(irrep)-1, 0, nocc-1);
-#if DEBUG
-    ovecsb.print("old vec subblock");
-#endif
-
-    // form C' = S2 * Cold
-    RefSCMatrix cprime = s2p->block(irrep) * ovecsb;
-#if DEBUG
-    cprime.print("C' matrix");
-#endif
-
-    // we're done with ovecsb, free up some memory
-    ovecsb=0;
-  
-    // now we need a matrix D = S^-1 * C' 
-    RefSCMatrix D = sinvp->block(irrep) * cprime;
-#if DEBUG
-    D.print("D matrix");
-#endif
-
-    // we also need X = C'~ * S^-1 * C'
-    RefSymmSCMatrix X(cprime.coldim(),basis()->matrixkit());
-    X.assign(0.0);
-    X.accumulate_transform(cprime,sinvp->block(irrep),
-                           SCMatrix::TransposeTransform);
-#if DEBUG
-    X.print("X matrix");
-#endif
-
-    // we're done with cprime, free up some memory
-    cprime=0;
-
-    // now form X^-1/2
-    form_m_half(X);
-#if DEBUG
-    X.print("X^-1/2 matrix");
-#endif
-
-    // and form C'' = D * X^-1/2
-    RefSCMatrix Cpp = D * X;
-#if DEBUG
-    Cpp.print("new vector (occupied bits)");
-#endif
-  
-    // we're done with X, free up some memory
-    X=0;
-    D=0;
-  
-    // stuff the projected bit into guess vector
-    vecp->block(irrep).assign_subblock(Cpp,0,Cpp.nrow()-1,0,nocc-1);
-    vecp->block(irrep)->schmidt_orthog(sp->block(irrep).pointer(),
-                                       pl->nfunction(irrep));
-
-    Cpp=0;
-  }
-
-#if DEBUG
-  vec.print("projected vectors");
-#endif
-
-  return vec;
-}
-#endif
 
 // this is a hack for big basis sets where the core hamiltonian eigenvalues
 // are total garbage.  Use the old wavefunction's occupied eigenvalues, and
@@ -508,17 +324,28 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
 }
 
 RefSCMatrix
+OneBodyWavefunction::eigenvectors()
+{
+  return so_to_orthog_so().t() * oso_eigenvectors();
+}
+
+RefSCMatrix
 OneBodyWavefunction::hcore_guess()
+{
+  RefDiagSCMatrix val;
+  return hcore_guess(val);
+}
+
+RefSCMatrix
+OneBodyWavefunction::hcore_guess(RefDiagSCMatrix &val)
 {
   RefSymmSCMatrix hcore_oso(oso_dimension(), basis_matrixkit());
   hcore_oso->assign(0.0);
   hcore_oso->accumulate_transform(so_to_orthog_so(), core_hamiltonian());
 
   RefSCMatrix vec(oso_dimension(), oso_dimension(), basis_matrixkit());
-  RefDiagSCMatrix val(oso_dimension(), basis_matrixkit());
+  val = basis_matrixkit()->diagmatrix(oso_dimension());
   hcore_oso.diagonalize(val,vec);
-
-  vec = so_to_orthog_so().t() * vec;
 
   return vec;
 }
@@ -614,6 +441,28 @@ OneBodyWavefunction::beta_occupation(int irrep, int vectornum)
 }
 
 RefSCMatrix
+OneBodyWavefunction::oso_alpha_eigenvectors()
+{
+  if (!spin_unrestricted())
+    return oso_eigenvectors().copy();
+
+  cerr << class_name() << "::oso_alpha_eigenvectors not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefSCMatrix
+OneBodyWavefunction::oso_beta_eigenvectors()
+{
+  if (!spin_unrestricted())
+    return oso_eigenvectors().copy();
+
+  cerr << class_name() << "::oso_beta_eigenvectors not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefSCMatrix
 OneBodyWavefunction::alpha_eigenvectors()
 {
   if (!spin_unrestricted())
@@ -693,7 +542,7 @@ OneBodyWavefunction::symmetry_changed()
   
   // for now, delete old eigenvectors...later we'll transform to new
   // pointgroup
-  eigenvectors_.result_noupdate() = 0;
+  oso_eigenvectors_.result_noupdate() = 0;
 }
 
 int

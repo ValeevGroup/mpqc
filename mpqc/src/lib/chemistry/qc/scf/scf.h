@@ -111,12 +111,6 @@ class SCF: public OneBodyWavefunction {
     
     void so_density(const RefSymmSCMatrix& d, double occ, int alp=1);
 
-    // if needed, adjust C so that C.t()*S*C = 1 (with perhaps some
-    // zero elements on the diagonal for linearly dependent basis sets)
-    void orthog_vector(RefSCMatrix &C, const RefSymmSCMatrix &S,
-                       double diag_one_tolerance=1.0e-10,
-                       double offdiag_tolerance=1.0e-10,
-                       double diag_zero_tolerance=1.0e-10);
   public:
     SCF(StateIn&);
     /** @memo The KeyVal constructor.
@@ -160,7 +154,7 @@ class SCF: public OneBodyWavefunction {
 
     void save_data_state(StateOut&);
 
-    RefSCMatrix eigenvectors();
+    RefSCMatrix oso_eigenvectors();
     RefDiagSCMatrix eigenvalues();
 
     int spin_unrestricted(); // return 0
@@ -181,8 +175,8 @@ class SCF: public OneBodyWavefunction {
 
   protected:
     // the following are scratch and are not checkpointed
-    RefSCMatrix scf_vector_;
-    RefSCMatrix scf_vectorb_; // only used if !spin_restricted
+    RefSCMatrix oso_scf_vector_;
+    RefSCMatrix oso_scf_vector_beta_; // only used if !spin_restricted
     RefSymmSCMatrix hcore_;
 
     // //////////////////////////////////////////////////////////////////////

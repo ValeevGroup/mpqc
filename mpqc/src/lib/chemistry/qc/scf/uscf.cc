@@ -71,23 +71,23 @@ UnrestrictedSCF::_castdown(const ClassDesc*cd)
 UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
   maybe_SavableState(s)
   SCF(s),
-  cb_(this),
-  eb_(this),
+  oso_eigenvectors_beta_(this),
+  eigenvalues_beta_(this),
   focka_(this),
   fockb_(this)
 {
   need_vec_ = 1;
   compute_guess_ = 0;
 
-  cb_.result_noupdate() =
+  oso_eigenvectors_beta_.result_noupdate() =
     basis_matrixkit()->matrix(so_dimension(), oso_dimension());
-  cb_.restore_state(s);
-  cb_.result_noupdate().restore(s);
+  oso_eigenvectors_beta_.restore_state(s);
+  oso_eigenvectors_beta_.result_noupdate().restore(s);
 
-  eb_.result_noupdate() =
+  eigenvalues_beta_.result_noupdate() =
     basis_matrixkit()->diagmatrix(oso_dimension());
-  eb_.restore_state(s);
-  eb_.result_noupdate().restore(s);
+  eigenvalues_beta_.restore_state(s);
+  eigenvalues_beta_.result_noupdate().restore(s);
 
   focka_.result_noupdate() =
     basis_matrixkit()->symmmatrix(so_dimension());
@@ -111,20 +111,20 @@ UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
 
 UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
   SCF(keyval),
-  cb_(this),
-  eb_(this),
+  oso_eigenvectors_beta_(this),
+  eigenvalues_beta_(this),
   focka_(this),
   fockb_(this)
 {
   int i;
   
-  double acc = eigenvectors_.desired_accuracy();
-  cb_.set_desired_accuracy(acc);
-  eb_.set_desired_accuracy(acc);
+  double acc = oso_eigenvectors_.desired_accuracy();
+  oso_eigenvectors_beta_.set_desired_accuracy(acc);
+  eigenvalues_beta_.set_desired_accuracy(acc);
 
-  if (cb_.desired_accuracy() < DBL_EPSILON) {
-    cb_.set_desired_accuracy(DBL_EPSILON);
-    eb_.set_desired_accuracy(DBL_EPSILON);
+  if (oso_eigenvectors_beta_.desired_accuracy() < DBL_EPSILON) {
+    oso_eigenvectors_beta_.set_desired_accuracy(DBL_EPSILON);
+    eigenvalues_beta_.set_desired_accuracy(DBL_EPSILON);
   }
 
   focka_.compute()=0;
@@ -235,10 +235,10 @@ void
 UnrestrictedSCF::save_data_state(StateOut& s)
 {
   SCF::save_data_state(s);
-  cb_.save_data_state(s);
-  cb_.result_noupdate().save(s);
-  eb_.save_data_state(s);
-  eb_.result_noupdate().save(s);
+  oso_eigenvectors_beta_.save_data_state(s);
+  oso_eigenvectors_beta_.result_noupdate().save(s);
+  eigenvalues_beta_.save_data_state(s);
+  eigenvalues_beta_.result_noupdate().save(s);
   focka_.save_data_state(s);
   focka_.result_noupdate().save(s);
   fockb_.save_data_state(s);
@@ -288,9 +288,15 @@ UnrestrictedSCF::eigenvalues()
 }
 
 RefSCMatrix
+UnrestrictedSCF::oso_alpha_eigenvectors()
+{
+  return oso_eigenvectors_.result();
+}
+
+RefSCMatrix
 UnrestrictedSCF::alpha_eigenvectors()
 {
-  return eigenvectors_.result();
+  return so_to_orthog_so().t() * oso_eigenvectors_.result();
 }
 
 RefDiagSCMatrix
@@ -300,15 +306,21 @@ UnrestrictedSCF::alpha_eigenvalues()
 }
 
 RefSCMatrix
+UnrestrictedSCF::oso_beta_eigenvectors()
+{
+  return oso_eigenvectors_beta_.result();
+}
+
+RefSCMatrix
 UnrestrictedSCF::beta_eigenvectors()
 {
-  return cb_.result();
+  return so_to_orthog_so().t() * oso_eigenvectors_beta_.result();
 }
 
 RefDiagSCMatrix
 UnrestrictedSCF::beta_eigenvalues()
 {
-  return eb_.result();
+  return eigenvalues_beta_.result();
 }
 
 int
@@ -374,7 +386,7 @@ void
 UnrestrictedSCF::initial_vector(int needv)
 {
   if (need_vec_) {
-    if (eigenvectors_.result_noupdate().null()) {
+    if (oso_eigenvectors_.result_noupdate().null()) {
       // if guess_wfn_ is non-null then try to get a guess vector from it.
       // First check that the same basis is used...if not, then project the
       // guess vector into the present basis.
@@ -390,19 +402,16 @@ UnrestrictedSCF::initial_vector(int needv)
           UnrestrictedSCF *ug =
             UnrestrictedSCF::castdown(guess_wfn_.pointer());
           if (!ug || compute_guess_) {
-            eigenvectors_ = guess_wfn_->alpha_eigenvectors().copy();
+            oso_eigenvectors_ = guess_wfn_->oso_alpha_eigenvectors().copy();
             eigenvalues_ = guess_wfn_->alpha_eigenvalues().copy();
-            cb_ = guess_wfn_->beta_eigenvectors().copy();
-            eb_ = guess_wfn_->beta_eigenvalues().copy();
+            oso_eigenvectors_beta_ = guess_wfn_->oso_beta_eigenvectors().copy();
+            eigenvalues_beta_ = guess_wfn_->beta_eigenvalues().copy();
           } else if (ug) {
-            eigenvectors_ = ug->eigenvectors_.result_noupdate().copy();
+            oso_eigenvectors_ = ug->oso_eigenvectors_.result_noupdate().copy();
             eigenvalues_ = ug->eigenvalues_.result_noupdate().copy();
-            cb_ = ug->cb_.result_noupdate().copy();
-            eb_ = ug->eb_.result_noupdate().copy();
-            eigenvectors_.result_noupdate()->schmidt_orthog(
-              overlap().pointer(), basis()->nbasis());
-            cb_.result_noupdate()->schmidt_orthog(
-              overlap().pointer(), basis()->nbasis());
+            oso_eigenvectors_beta_
+              = ug->oso_eigenvectors_beta_.result_noupdate().copy();
+            eigenvalues_beta_ = ug->eigenvalues_beta_.result_noupdate().copy();
           }
           cout << decindent << decindent;
         } else {
@@ -412,10 +421,10 @@ UnrestrictedSCF::initial_vector(int needv)
 
           // indent output of projected_eigenvectors() call if there is any
           cout << incindent << incindent;
-          eigenvectors_ = projected_eigenvectors(guess_wfn_, 1);
+          oso_eigenvectors_ = projected_eigenvectors(guess_wfn_, 1);
           eigenvalues_ = projected_eigenvalues(guess_wfn_, 1);
-          cb_ = projected_eigenvectors(guess_wfn_, 0);
-          eb_ = projected_eigenvalues(guess_wfn_, 0);
+          oso_eigenvectors_beta_ = projected_eigenvectors(guess_wfn_, 0);
+          eigenvalues_beta_ = projected_eigenvalues(guess_wfn_, 0);
           cout << decindent << decindent;
         }
 
@@ -428,17 +437,12 @@ UnrestrictedSCF::initial_vector(int needv)
       } else {
         cout << node0 << indent << "Starting from core Hamiltonian guess\n"
              << endl;
-        eigenvectors_ = hcore_guess();
-        eigenvalues_ = core_hamiltonian().eigvals();
-        cb_ = eigenvectors_.result_noupdate().copy();
-        eb_ = eigenvalues_.result_noupdate().copy();
+        oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
+        oso_eigenvectors_beta_ = oso_eigenvectors_.result_noupdate().copy();
+        eigenvalues_beta_ = eigenvalues_.result_noupdate().copy();
       }
     } else {
-      // this is just an old vector, so orthogonalize it
-      eigenvectors_.result_noupdate()->schmidt_orthog(overlap().pointer(),
-                                                      basis()->nbasis());
-      cb_.result_noupdate()->schmidt_orthog(overlap().pointer(),
-                                                      basis()->nbasis());
+      // this is just an old vector
     }
   }
 
@@ -479,7 +483,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
   if (eva.null()) {
     initial_vector(0);
     evalsa = eigenvalues_.result_noupdate();
-    evalsb = eb_.result_noupdate();
+    evalsb = eigenvalues_beta_.result_noupdate();
   }
   else {
     evalsa = eva;
@@ -642,8 +646,8 @@ UnrestrictedSCF::init_vector()
   // set up trial vector
   initial_vector(1);
     
-  scf_vector_ = eigenvectors_.result_noupdate();
-  scf_vectorb_ = cb_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
+  oso_scf_vector_beta_ = oso_eigenvectors_beta_.result_noupdate();
 }
 
 void
@@ -659,8 +663,8 @@ UnrestrictedSCF::done_vector()
   densb_ = 0;
   diff_densb_ = 0;
 
-  scf_vector_ = 0;
-  scf_vectorb_ = 0;
+  oso_scf_vector_ = 0;
+  oso_scf_vector_beta_ = 0;
 }
 
 RefSymmSCMatrix
@@ -828,11 +832,14 @@ UnrestrictedSCF::extrap_data()
 RefSCExtrapError
 UnrestrictedSCF::extrap_error()
 {
+  RefSCMatrix so_to_ortho_so_tr = so_to_orthog_so().t();
+
   // form Error_a
   RefSymmSCMatrix moa(oso_dimension(), basis_matrixkit());
   moa.assign(0.0);
-  moa.accumulate_transform(scf_vector_, focka_.result_noupdate(),
-                              SCMatrix::TransposeTransform);
+  moa.accumulate_transform(so_to_ortho_so_tr * oso_scf_vector_,
+                           focka_.result_noupdate(),
+                           SCMatrix::TransposeTransform);
   
   RefSCElementOp op = new UAExtrapErrorOp(this);
   moa.element_op(op);
@@ -840,20 +847,21 @@ UnrestrictedSCF::extrap_error()
   // form Error_b
   RefSymmSCMatrix mob(oso_dimension(), basis_matrixkit());
   mob.assign(0.0);
-  mob.accumulate_transform(scf_vectorb_, fockb_.result_noupdate(),
-                              SCMatrix::TransposeTransform);
+  mob.accumulate_transform(so_to_ortho_so_tr * oso_scf_vector_beta_,
+                           fockb_.result_noupdate(),
+                           SCMatrix::TransposeTransform);
   
   op = new UBExtrapErrorOp(this);
   mob.element_op(op);
 
   RefSymmSCMatrix aoa(so_dimension(), basis_matrixkit());
   aoa.assign(0.0);
-  aoa.accumulate_transform(scf_vector_, moa);
+  aoa.accumulate_transform(so_to_ortho_so_tr * oso_scf_vector_, moa);
   moa = 0;
 
   RefSymmSCMatrix aob(so_dimension(), basis_matrixkit());
   aob.assign(0.0);
-  aob.accumulate_transform(scf_vectorb_,mob);
+  aob.accumulate_transform(so_to_ortho_so_tr * oso_scf_vector_beta_,mob);
   mob=0;
 
   aoa.accumulate(aob);
@@ -940,29 +948,44 @@ UnrestrictedSCF::compute_vector(double& eelec)
     // diagonalize effective MO fock to get MO vector
     tim_enter("evals");
 
+    RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
+
     RefSymmSCMatrix moa(oso_dimension(), basis_matrixkit());
     moa.assign(0.0);
-    moa.accumulate_transform(scf_vector_, focka_.result_noupdate(),
+    moa.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
+                             focka_.result_noupdate(),
                              SCMatrix::TransposeTransform);
     
     RefSymmSCMatrix mob(oso_dimension(), basis_matrixkit());
     mob.assign(0.0);
-    mob.accumulate_transform(scf_vectorb_, fockb_.result_noupdate(),
+    mob.accumulate_transform(so_to_oso_tr * oso_scf_vector_beta_,
+                             fockb_.result_noupdate(),
                              SCMatrix::TransposeTransform);
     
     RefSCMatrix nvectora(oso_dimension(), oso_dimension(), basis_matrixkit());
     RefSCMatrix nvectorb(oso_dimension(), oso_dimension(), basis_matrixkit());
   
-    // level shift effective fock
+    // level shift effective fock in the mo basis
     alevel_shift->set_shift(level_shift_);
     moa.element_op(alevel_shift);
     blevel_shift->set_shift(level_shift_);
     mob.element_op(blevel_shift);
-    
-    moa.diagonalize(evalsa,nvectora);
-    mob.diagonalize(evalsb,nvectorb);
-    moa=0;
-    mob=0;
+
+    // transform back to the oso basis to do the diagonalization
+    RefSymmSCMatrix osoa(oso_dimension(), basis_matrixkit());
+    osoa.assign(0.0);
+    osoa.accumulate_transform(oso_scf_vector_,moa);
+    moa = 0;
+    osoa.diagonalize(evalsa,oso_scf_vector_);
+    osoa = 0;
+
+    RefSymmSCMatrix osob(oso_dimension(), basis_matrixkit());
+    osob.assign(0.0);
+    osob.accumulate_transform(oso_scf_vector_beta_,mob);
+    mob = 0;
+    osob.diagonalize(evalsb,oso_scf_vector_beta_);
+    osob = 0;
+
     tim_exit("evals");
 
     // now un-level shift eigenvalues
@@ -974,17 +997,6 @@ UnrestrictedSCF::compute_vector(double& eelec)
     if (reset_occ_)
       set_occupations(evalsa, evalsb);
 
-    // transform MO vector to AO basis
-    scf_vector_ = scf_vector_ * nvectora;
-    scf_vectorb_ = scf_vectorb_ * nvectorb;
-    nvectora=0;
-    nvectorb=0;
-    
-    // and orthogonalize vector
-    tim_enter("schmidt");
-    scf_vector_->schmidt_orthog(overlap().pointer(),basis()->nbasis());
-    scf_vectorb_->schmidt_orthog(overlap().pointer(),basis()->nbasis());
-    tim_exit("schmidt");
   }
       
   eigenvalues_ = evalsa;
@@ -992,22 +1004,26 @@ UnrestrictedSCF::compute_vector(double& eelec)
   eigenvalues_.set_actual_accuracy(delta);
   evalsa = 0;
   
-  eigenvectors_ = scf_vector_;
-  eigenvectors_.computed() = 1;
-  eigenvectors_.set_actual_accuracy(delta);
+  oso_eigenvectors_ = oso_scf_vector_;
+  oso_eigenvectors_.computed() = 1;
+  oso_eigenvectors_.set_actual_accuracy(delta);
   
-  cb_ = scf_vectorb_;
-  cb_.computed() = 1;
-  cb_.set_actual_accuracy(delta);
+  oso_eigenvectors_beta_ = oso_scf_vector_beta_;
+  oso_eigenvectors_beta_.computed() = 1;
+  oso_eigenvectors_beta_.set_actual_accuracy(delta);
 
-  eb_ = evalsb;
-  eb_.computed() = 1;
-  eb_.set_actual_accuracy(delta);
+  eigenvalues_beta_ = evalsb;
+  eigenvalues_beta_.computed() = 1;
+  eigenvalues_beta_.set_actual_accuracy(delta);
   evalsb = 0;
   
   {
     // compute spin contamination
-    RefSCMatrix Sab = scf_vector_.t() * overlap() * scf_vectorb_;
+    RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
+    RefSCMatrix Sab
+      = (so_to_oso_tr * oso_scf_vector_).t()
+      * overlap()
+      * (so_to_oso_tr * oso_scf_vector_beta_);
     //Sab.print("Sab");
     BlockedSCMatrix *pSab = BlockedSCMatrix::castdown(Sab.pointer());
     double s2=0;
@@ -1050,8 +1066,8 @@ UnrestrictedSCF::init_gradient()
 {
   // presumably the eigenvectors have already been computed by the time
   // we get here
-  scf_vector_ = eigenvectors_.result_noupdate();
-  scf_vectorb_ = cb_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
+  oso_scf_vector_beta_ = oso_eigenvectors_beta_.result_noupdate();
 }
 
 void
@@ -1059,8 +1075,8 @@ UnrestrictedSCF::done_gradient()
 {
   densa_=0;
   densb_=0;
-  scf_vector_ = 0;
-  scf_vectorb_ = 0;
+  oso_scf_vector_ = 0;
+  oso_scf_vector_beta_ = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1068,6 +1084,8 @@ UnrestrictedSCF::done_gradient()
 RefSymmSCMatrix
 UnrestrictedSCF::lagrangian()
 {
+  RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
+
   RefDiagSCMatrix ea = alpha_eigenvalues().copy();
   RefDiagSCMatrix eb = beta_eigenvalues().copy();
   
@@ -1092,11 +1110,11 @@ UnrestrictedSCF::lagrangian()
   
   RefSymmSCMatrix la = basis_matrixkit()->symmmatrix(so_dimension());
   la.assign(0.0);
-  la.accumulate_transform(scf_vector_, ea);
+  la.accumulate_transform(so_to_oso_tr * oso_scf_vector_, ea);
 
   RefSymmSCMatrix lb = la.clone();
   lb.assign(0.0);
-  lb.accumulate_transform(scf_vectorb_, eb);
+  lb.accumulate_transform(so_to_oso_tr * oso_scf_vector_beta_, eb);
 
   la.accumulate(lb);
   

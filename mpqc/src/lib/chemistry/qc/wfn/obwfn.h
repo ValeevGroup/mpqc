@@ -43,7 +43,7 @@ class OneBodyWavefunction: public Wavefunction {
 #   include <util/class/classda.h>
  protected:
     ResultRefSymmSCMatrix density_;
-    AccResultRefSCMatrix eigenvectors_;
+    AccResultRefSCMatrix oso_eigenvectors_;
     AccResultRefDiagSCMatrix eigenvalues_;
     int nirrep_;
     int *nvecperirrep_;
@@ -79,23 +79,38 @@ class OneBodyWavefunction: public Wavefunction {
     int nelectron();
 
     /** Returns the SO to MO transformation matrix.  The
-        row index is the SO number and the col index is the MO number.
-    */
-    virtual RefSCMatrix eigenvectors() = 0;
+        row index is the SO number and the col index is the MO number. */
+    RefSCMatrix eigenvectors();
+    /** Returns the orthogonal SO to MO transformation matrix.  The
+        row index is the SO number and the col index is the MO number. */
+    virtual RefSCMatrix oso_eigenvectors() = 0;
+    /** Returns the MO basis eigenvalues. */
     virtual RefDiagSCMatrix eigenvalues() = 0;
+    /** Returns the occupation.  The irreducible representation and the
+        vector number within that representation are given as arguments. */
     virtual double occupation(int irrep, int vectornum) = 0;
+    /** Returns the occupation. The vector number is given as an argument. */
     double occupation(int vectornum);
 
-    // Return 1 if the alpha orbitals are not equal to the beta orbitals.
+    /// Return 1 if the alpha orbitals are not equal to the beta orbitals.
     virtual int spin_unrestricted() = 0;
 
-    // return alpha and beta occupations
+    /** Returns the alpha occupation.  The irreducible representation and the
+        vector number within that representation are given as arguments. */
     virtual double alpha_occupation(int irrep, int vectornum);
+    /** Returns the beta occupation.  The irreducible representation and the
+        vector number within that representation are given as arguments. */
     virtual double beta_occupation(int irrep, int vectornum);
+    /** Returns the alpha occupation. The vector number is given as an
+        argument. */
     double alpha_occupation(int vectornum);
+    /** Returns the beta occupation. The vector number is given as an
+        argument. */
     double beta_occupation(int vectornum);
     
     // Return alpha and beta electron densities
+    virtual RefSCMatrix oso_alpha_eigenvectors();
+    virtual RefSCMatrix oso_beta_eigenvectors();
     virtual RefSCMatrix alpha_eigenvectors();
     virtual RefSCMatrix beta_eigenvectors();
     virtual RefDiagSCMatrix alpha_eigenvalues();
@@ -103,9 +118,17 @@ class OneBodyWavefunction: public Wavefunction {
 
     virtual RefDiagSCMatrix
       projected_eigenvalues(const RefOneBodyWavefunction&, int alp=1);
+    /** Projects the density into the current basis set.  Returns an
+        orthogonalized SO to MO transformation with the orbitals. */
     virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&,
                                                int alp=1);
+    /** Return a guess vector.  The guess transforms the orthogonal SO
+        basis to the MO basis. */
     virtual RefSCMatrix hcore_guess();
+    /** Return a guess vector and the eigenvalues.  The guess ransforms the
+        orthogonal SO basis to the MO basis. Storage for the eigenvalues
+        will be allocated. */
+    virtual RefSCMatrix hcore_guess(RefDiagSCMatrix &val);
 
     void symmetry_changed();
     
@@ -138,7 +161,7 @@ class HCoreWfn: public OneBodyWavefunction {
 
     double occupation(int irrep, int vectornum);
 
-    RefSCMatrix eigenvectors();
+    RefSCMatrix oso_eigenvectors();
     RefDiagSCMatrix eigenvalues();
     RefSymmSCMatrix density();
     int spin_polarized();

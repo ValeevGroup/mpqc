@@ -390,7 +390,7 @@ CLSCF::init_vector()
   // set up trial vector
   initial_vector(1);
 
-  scf_vector_ = eigenvectors_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 
   if (accumddh_.nonnull()) accumddh_->init(this);
 }
@@ -409,7 +409,7 @@ CLSCF::done_vector()
   cl_dens_ = 0;
   cl_dens_diff_ = 0;
 
-  scf_vector_ = 0;
+  oso_scf_vector_ = 0;
 }
 
 void
@@ -499,11 +499,12 @@ CLSCF::effective_fock()
   mofock.assign(0.0);
 
   // use eigenvectors if scf_vector_ is null
-  if (scf_vector_.null())
+  if (oso_scf_vector_.null())
     mofock.accumulate_transform(eigenvectors(), fock(0),
                                 SCMatrix::TransposeTransform);
   else
-    mofock.accumulate_transform(scf_vector_, fock(0),
+    mofock.accumulate_transform(so_to_orthog_so().t() * oso_scf_vector_,
+                                fock(0),
                                 SCMatrix::TransposeTransform);
 
   return mofock;
@@ -516,14 +517,14 @@ CLSCF::init_gradient()
 {
   // presumably the eigenvectors have already been computed by the time
   // we get here
-  scf_vector_ = eigenvectors_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
 
 void
 CLSCF::done_gradient()
 {
   cl_dens_=0;
-  scf_vector_ = 0;
+  oso_scf_vector_ = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -562,7 +563,7 @@ CLSCF::lagrangian()
   // transform MO lagrangian to SO basis
   RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
-  so_lag.accumulate_transform(scf_vector_, mofock);
+  so_lag.accumulate_transform(so_to_orthog_so().t() * oso_scf_vector_, mofock);
   
   // and then from SO to AO
   RefPetiteList pl = integral()->petite_list();

@@ -550,7 +550,7 @@ TCSCF::init_vector()
   // set up trial vector
   initial_vector(1);
 
-  scf_vector_ = eigenvectors_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
 
 void
@@ -570,7 +570,7 @@ TCSCF::done_vector()
   ao_ka_ = 0;
   ao_kb_ = 0;
 
-  scf_vector_ = 0;
+  oso_scf_vector_ = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -788,26 +788,21 @@ TCSCF::effective_fock()
   RefSymmSCMatrix mokb = mofocka.clone();
   mokb.assign(0.0);
 
-  // use eigenvectors if scf_vector_ is null
-  if (scf_vector_.null()) {
-    mofocka.accumulate_transform(eigenvectors(), fock(0),
-                                 SCMatrix::TransposeTransform);
-    mofockb.accumulate_transform(eigenvectors(), fock(1),
-                                 SCMatrix::TransposeTransform);
-    moka.accumulate_transform(eigenvectors(), fock(2),
-                              SCMatrix::TransposeTransform);
-    mokb.accumulate_transform(eigenvectors(), fock(3),
-                              SCMatrix::TransposeTransform);
+  // use eigenvectors if oso_scf_vector_ is null
+  RefSCMatrix vec;
+  if (oso_scf_vector_.null()) {
+    vec = eigenvectors();
   } else {
-    mofocka.accumulate_transform(scf_vector_, fock(0),
-                                 SCMatrix::TransposeTransform);
-    mofockb.accumulate_transform(scf_vector_, fock(1),
-                                 SCMatrix::TransposeTransform);
-    moka.accumulate_transform(scf_vector_, fock(2),
-                              SCMatrix::TransposeTransform);
-    mokb.accumulate_transform(scf_vector_, fock(3),
-                              SCMatrix::TransposeTransform);
+    vec = so_to_orthog_so().t() * oso_scf_vector_;
   }
+  mofocka.accumulate_transform(vec, fock(0),
+                               SCMatrix::TransposeTransform);
+  mofockb.accumulate_transform(vec, fock(1),
+                               SCMatrix::TransposeTransform);
+  moka.accumulate_transform(vec, fock(2),
+                            SCMatrix::TransposeTransform);
+  mokb.accumulate_transform(vec, fock(3),
+                            SCMatrix::TransposeTransform);
   
   mofocka.scale(ci1_*ci1_);
   mofockb.scale(ci2_*ci2_);
@@ -875,7 +870,7 @@ TCSCF::init_gradient()
 {
   // presumably the eigenvectors have already been computed by the time
   // we get here
-  scf_vector_ = eigenvectors_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
 
 void
@@ -884,7 +879,7 @@ TCSCF::done_gradient()
   cl_dens_=0;
   op_densa_=0;
   op_densb_=0;
-  scf_vector_ = 0;
+  oso_scf_vector_ = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -900,22 +895,24 @@ TCSCF::done_gradient()
 RefSymmSCMatrix
 TCSCF::lagrangian()
 {
+  RefSCMatrix vec = so_to_orthog_so().t() * oso_scf_vector_;
+
   RefSymmSCMatrix mofocka = focka_.result_noupdate().clone();
   mofocka.assign(0.0);
-  mofocka.accumulate_transform(scf_vector_, focka_.result_noupdate(),
+  mofocka.accumulate_transform(vec, focka_.result_noupdate(),
                                SCMatrix::TransposeTransform);
   mofocka.scale(ci1_*ci1_);
 
   RefSymmSCMatrix mofockb = mofocka.clone();
   mofockb.assign(0.0);
-  mofockb.accumulate_transform(scf_vector_, fockb_.result_noupdate(),
+  mofockb.accumulate_transform(vec, fockb_.result_noupdate(),
                                SCMatrix::TransposeTransform);
   mofockb.scale(ci2_*ci2_);
 
   // FOa = c1^2*Fa + c1c2*Kb
   RefSymmSCMatrix moka = mofocka.clone();
   moka.assign(0.0);
-  moka.accumulate_transform(scf_vector_, kb_.result_noupdate(),
+  moka.accumulate_transform(vec, kb_.result_noupdate(),
                             SCMatrix::TransposeTransform);
   moka.scale(ci1_*ci2_);
   moka.accumulate(mofocka);
@@ -923,7 +920,7 @@ TCSCF::lagrangian()
   // FOb = c1^2*Fb + c1c2*Ka
   RefSymmSCMatrix mokb = mofocka.clone();
   mokb.assign(0.0);
-  mokb.accumulate_transform(scf_vector_, ka_.result_noupdate(),
+  mokb.accumulate_transform(vec, ka_.result_noupdate(),
                             SCMatrix::TransposeTransform);
   mokb.scale(ci1_*ci2_);
   mokb.accumulate(mofockb);
@@ -946,7 +943,7 @@ TCSCF::lagrangian()
   // transform MO lagrangian to SO basis
   RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
-  so_lag.accumulate_transform(scf_vector_, mofocka);
+  so_lag.accumulate_transform(vec, mofocka);
   
   // and then from SO to AO
   RefPetiteList pl = integral()->petite_list();

@@ -134,11 +134,11 @@ CLKS::effective_fock()
   mofock.assign(0.0);
 
   // use eigenvectors if scf_vector_ is null
-  if (scf_vector_.null())
+  if (oso_scf_vector_.null())
     mofock.accumulate_transform(eigenvectors(), fa,
                                 SCMatrix::TransposeTransform);
   else
-    mofock.accumulate_transform(scf_vector_, fa,
+    mofock.accumulate_transform(so_to_orthog_so().t() * oso_scf_vector_, fa,
                                 SCMatrix::TransposeTransform);
 
   return mofock;

@@ -48,8 +48,8 @@ class UnrestrictedSCF: public SCF {
     int *nalpha_;
     int *nbeta_;
     
-    AccResultRefSCMatrix cb_;
-    AccResultRefDiagSCMatrix eb_;
+    AccResultRefSCMatrix oso_eigenvectors_beta_;
+    AccResultRefDiagSCMatrix eigenvalues_beta_;
     ResultRefSymmSCMatrix focka_;
     ResultRefSymmSCMatrix fockb_;
 
@@ -69,8 +69,10 @@ class UnrestrictedSCF: public SCF {
     RefSCMatrix eigenvectors();
     RefDiagSCMatrix eigenvalues();
 
+    RefSCMatrix oso_alpha_eigenvectors();
     RefSCMatrix alpha_eigenvectors();
     RefDiagSCMatrix alpha_eigenvalues();
+    RefSCMatrix oso_beta_eigenvectors();
     RefSCMatrix beta_eigenvectors();
     RefDiagSCMatrix beta_eigenvalues();
 

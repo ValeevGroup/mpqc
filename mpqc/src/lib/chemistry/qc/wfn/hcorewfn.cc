@@ -101,14 +101,14 @@ HCoreWfn::save_data_state(StateOut&s)
 }
 
 RefSCMatrix
-HCoreWfn::eigenvectors()
+HCoreWfn::oso_eigenvectors()
 {
-  if (!eigenvectors_.computed()) {
-    eigenvectors_=hcore_guess();
-    eigenvectors_.computed() = 1;
+  if (!oso_eigenvectors_.computed()) {
+    oso_eigenvectors_=hcore_guess();
+    oso_eigenvectors_.computed() = 1;
   }
   
-  return eigenvectors_.result_noupdate();
+  return oso_eigenvectors_.result_noupdate();
 }
 
 RefDiagSCMatrix

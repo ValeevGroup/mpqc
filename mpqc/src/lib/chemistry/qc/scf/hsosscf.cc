@@ -528,7 +528,7 @@ HSOSSCF::init_vector()
   // set up trial vector
   initial_vector(1);
     
-  scf_vector_ = eigenvectors_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
 
 void
@@ -543,7 +543,7 @@ HSOSSCF::done_vector()
   op_dens_ = 0;
   op_dens_diff_ = 0;
 
-  scf_vector_ = 0;
+  oso_scf_vector_ = 0;
 }
 
 RefSymmSCMatrix
@@ -677,16 +677,17 @@ HSOSSCF::effective_fock()
   RefSymmSCMatrix mofocko(oso_dimension(), basis_matrixkit());
   mofocko.assign(0.0);
 
-  // use eigenvectors if scf_vector_ is null
-  if (scf_vector_.null()) {
+  // use eigenvectors if oso_scf_vector_ is null
+  if (oso_scf_vector_.null()) {
     mofock.accumulate_transform(eigenvectors(), fock(0),
                                 SCMatrix::TransposeTransform);
     mofocko.accumulate_transform(eigenvectors(), fock(1),
                                  SCMatrix::TransposeTransform);
   } else {
-    mofock.accumulate_transform(scf_vector_, fock(0),
+    RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
+    mofock.accumulate_transform(so_to_oso_tr * oso_scf_vector_, fock(0),
                                 SCMatrix::TransposeTransform);
-    mofocko.accumulate_transform(scf_vector_, fock(1),
+    mofocko.accumulate_transform(so_to_oso_tr * oso_scf_vector_, fock(1),
                                  SCMatrix::TransposeTransform);
   }
 
@@ -703,7 +704,7 @@ HSOSSCF::init_gradient()
 {
   // presumably the eigenvectors have already been computed by the time
   // we get here
-  scf_vector_ = eigenvectors_.result_noupdate();
+  oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 }
 
 void
@@ -711,7 +712,7 @@ HSOSSCF::done_gradient()
 {
   cl_dens_=0;
   op_dens_=0;
-  scf_vector_ = 0;
+  oso_scf_vector_ = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -727,14 +728,18 @@ HSOSSCF::done_gradient()
 RefSymmSCMatrix
 HSOSSCF::lagrangian()
 {
+  RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
+
   RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
   mofock.assign(0.0);
-  mofock.accumulate_transform(scf_vector_, cl_fock_.result_noupdate(),
+  mofock.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
+                              cl_fock_.result_noupdate(),
                               SCMatrix::TransposeTransform);
 
   RefSymmSCMatrix mofocko(oso_dimension(), basis_matrixkit());
   mofocko.assign(0.0);
-  mofocko.accumulate_transform(scf_vector_, op_fock_.result_noupdate(),
+  mofocko.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
+                               op_fock_.result_noupdate(),
                                SCMatrix::TransposeTransform);
 
   mofock.scale(2.0);
@@ -746,7 +751,7 @@ HSOSSCF::lagrangian()
   // transform MO lagrangian to SO basis
   RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
-  so_lag.accumulate_transform(scf_vector_, mofock);
+  so_lag.accumulate_transform(so_to_oso_tr * oso_scf_vector_, mofock);
   
   // and then from SO to AO
   RefPetiteList pl = integral()->petite_list();

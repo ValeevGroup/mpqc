@@ -2528,6 +2528,7 @@ PBECFunctional::need_density_gradient()
 void
 PBECFunctional::set_spin_polarized(int a)
 {
+  spin_polarized_ = a;
   local_->set_spin_polarized(a);
 }
 
@@ -2711,6 +2712,7 @@ PW91CFunctional::need_density_gradient()
 void
 PW91CFunctional::set_spin_polarized(int a)
 {
+  spin_polarized_ = a;
   local_->set_spin_polarized(a);
 }
 

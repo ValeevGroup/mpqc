@@ -183,7 +183,11 @@ RefSymmSCMatrix
 HCoreWfn::density()
 {
   if (!density_.computed()) {
-    RefSCMatrix mo_to_so = this->mo_to_so();
+    // Make sure the eigenvectors are computed before
+    // the MO density is computed, otherwise, docc and
+    // socc might not have been initialized.
+    oso_eigenvectors();
+
     RefDiagSCMatrix mo_density(oso_dimension(), basis_matrixkit());
     BlockedDiagSCMatrix *modens
       = dynamic_cast<BlockedDiagSCMatrix*>(mo_density.pointer());
@@ -203,11 +207,10 @@ HCoreWfn::density()
         modens_ib->set_element(i, 1.0);
     }
 
-    if (debug_ > 1) mo_density.print("MO Density");
-
     RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
     dens->assign(0.0);
-    dens->accumulate_transform(mo_to_so, mo_density);
+    dens->accumulate_transform(so_to_orthog_so().t() * mo_to_orthog_so(),
+                               mo_density);
 
     if (debug_ > 1) {
       mo_density.print("MO Density");
@@ -216,7 +219,7 @@ HCoreWfn::density()
                    << indent << "Nelectron(MO) = " << mo_density.trace()
                    << endl
                    << indent << "Nelectron(SO) = "
-                   << (overlap().gi()*dens).trace()
+                   << (overlap()*dens).trace()
                    << endl;
     }
 
@@ -253,28 +256,7 @@ HCoreWfn::spin_unrestricted()
 void
 HCoreWfn::compute()
 {
-  RefSymmSCMatrix h_oso(oso_dimension(), basis_matrixkit());
-  h_oso.assign(0.0);
-  h_oso.accumulate_transform(so_to_orthog_so(),core_hamiltonian());
-  RefSymmSCMatrix p_oso(oso_dimension(), basis_matrixkit());
-  p_oso.assign(0.0);
-  p_oso.accumulate_transform(so_to_orthog_so(), density());
-  if (debug_ > 1) p_oso.print("OSO Density");
-  if (debug_ > 1) h_oso.print("OSO Hamiltonian");
-  double e = (h_oso*p_oso).trace();
-  if (debug_ > 0) {
-    ExEnv::out0() << indent << "HCoreWfn: e(OSO) = " << e << endl;
-    RefSymmSCMatrix h_so(core_hamiltonian());
-    RefSymmSCMatrix p_so(density());
-    RefSymmSCMatrix s_so(overlap());
-    double e2 = (s_so.gi()*h_so*s_so.gi()*p_so).trace();
-    ExEnv::out0() << indent << "HCoreWfn: e(SO)  = " << e2 << endl;
-    RefSymmSCMatrix h_ao(integral()->petite_list()->to_AO_basis(h_so));
-    RefSymmSCMatrix p_ao(integral()->petite_list()->to_AO_basis(p_so));
-    RefSymmSCMatrix s_ao(integral()->petite_list()->to_AO_basis(s_so));
-    double e3 = (s_ao.gi()*h_ao*s_ao.gi()*p_ao).trace();
-    ExEnv::out0() << indent << "HCoreWfn: e(AO)  = " << e3 << endl;
-  }
+  double e = (density()*core_hamiltonian()).trace();
   set_energy(e);
   set_actual_value_accuracy(desired_value_accuracy());
   return;

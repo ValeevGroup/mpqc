@@ -176,7 +176,7 @@ ExtendedHuckelWfn::h_eht_oso()
   // Compute H in the OSO basis
   RefSymmSCMatrix h_oso(oso_dimension(), basis_matrixkit());
   h_oso->assign(0.0);
-  h_oso->accumulate_transform(so_to_orthog_so(), h_so);
+  h_oso->accumulate_transform(so_to_orthog_so(),h_so);
 
   return h_oso;
 }
@@ -239,7 +239,11 @@ RefSymmSCMatrix
 ExtendedHuckelWfn::density()
 {
   if (!density_.computed()) {
-    RefSCMatrix mo_to_so = this->mo_to_so();
+    // Make sure the eigenvectors are computed before
+    // the MO density is computed, otherwise, docc and
+    // socc might not have been initialized.
+    oso_eigenvectors();
+
     RefDiagSCMatrix mo_density(oso_dimension(), basis_matrixkit());
     BlockedDiagSCMatrix *modens
       = dynamic_cast<BlockedDiagSCMatrix*>(mo_density.pointer());
@@ -263,7 +267,8 @@ ExtendedHuckelWfn::density()
 
     RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
     dens->assign(0.0);
-    dens->accumulate_transform(mo_to_so, mo_density);
+    dens->accumulate_transform(so_to_orthog_so().t() * mo_to_orthog_so(),
+                               mo_density);
 
     if (debug_ > 1) {
       mo_density.print("MO Density");
@@ -272,7 +277,7 @@ ExtendedHuckelWfn::density()
                    << indent << "Nelectron(MO) = " << mo_density.trace()
                    << endl
                    << indent << "Nelectron(SO) = "
-                   << (overlap().gi()*dens).trace()
+                   << (overlap()*dens).trace()
                    << endl;
     }
 
@@ -309,13 +314,7 @@ ExtendedHuckelWfn::spin_unrestricted()
 void
 ExtendedHuckelWfn::compute()
 {
-  RefSymmSCMatrix h_oso = h_eht_oso();
-  RefSymmSCMatrix p_oso(oso_dimension(), basis_matrixkit());
-  p_oso.assign(0.0);
-  p_oso.accumulate_transform(so_to_orthog_so(), density());
-  if (debug_ > 1) p_oso.print("OSO Density");
-  if (debug_ > 1) h_oso.print("OSO Hamiltonian");
-  double e = (h_oso*p_oso).trace();
+  double e = (density()*core_hamiltonian()).trace();
   set_energy(e);
   set_actual_value_accuracy(desired_value_accuracy());
   return;

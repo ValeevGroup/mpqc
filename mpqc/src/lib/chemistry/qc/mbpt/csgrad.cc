@@ -1775,6 +1775,20 @@ MBPT2::compute_cs_grad()
   RefSCDimension nvir_dim(new SCDimension(nvir));
   RefSCDimension nbasis_dim(new SCDimension(nbasis));
 
+  if (me == 0) {
+    // compute the S2 norm
+    double s2norm = 0.0;
+    laj_ptr = Laj;
+    for (j=0; j<nocc; j++) {
+      for (a=0; a<nvir; a++) {
+        tmpval = *laj_ptr++/(evals[a+nocc]-evals[j]);
+        s2norm += tmpval*tmpval;
+        }
+      }
+    s2norm = sqrt(s2norm/(2*nocc_act));
+    cout << indent << "S2 norm = " << s2norm << endl;
+    }
+
 
   // Finish computation of Wab
   tim_enter("Pab and Wab");

@@ -46,6 +46,9 @@ CXXSRC := $(REQUIREDCXXSRC)
 ifeq ($(HAVE_SYSV_IPC),yes)
   CXXSRC += messshm.cc memshm.cc globcnt.cc
 endif
+ifeq ($(HAVE_ALPHA_MMAP),yes)
+  CXXSRC += memammap.cc
+endif
 ifeq ($(HAVE_NX),yes)
   CXXSRC += messpgon.cc memipgon.cc
 ifeq ($(HAVE_HRECV),yes)

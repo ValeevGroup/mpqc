@@ -46,6 +46,9 @@
 #ifdef HAVE_SYSV_IPC
 #  include <util/group/messshm.h>
 #  include <util/group/memshm.h>
+#  ifdef HAVE_ALPHA_MMAP
+#    include <util/group/memammap.h>
+#  endif
 #endif
 
 #if defined(HAVE_MPL)
@@ -206,6 +209,8 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
   else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
 #if defined(HAVE_PUMA_MPI2)
       grp = new PumaMemoryGrp(msg);
+#elif defined(HAVE_ALPHA_MMAP)
+      grp = new AlphaMMapMemoryGrp(msg);
 #else
       grp = new MPIMemoryGrp(msg);
 #endif
@@ -213,7 +218,11 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 #endif
 #ifdef HAVE_SYSV_IPC
   else if (msg->class_desc() == ShmMessageGrp::static_class_desc()) {
+#ifdef HAVE_ALPHA_MMAP
+      grp = new AlphaMMapMemoryGrp(msg);
+#else
       grp = new ShmMemoryGrp(msg);
+#endif
     }
 #endif
   else if (msg->n() == 1) {

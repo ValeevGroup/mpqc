@@ -145,7 +145,7 @@ MBPT2::cs_cphf(double **scf_vector,
   niter = 0;
 
   const int maxiter = 30;
-  const int warniter = 20;
+  const int warniter = 1;
   while (niter < maxiter) { // Allow max maxiter iterations
 
     niter++;

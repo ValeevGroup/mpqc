@@ -205,6 +205,8 @@ class RefSCMatrix: public RefDCSCMatrix {
     void convert(double*) const;
     void convert(double**) const;
     void accumulate(const RefSCMatrix&) const;
+    void accumulate(const RefSymmSCMatrix&) const;
+    void accumulate(const RefDiagSCMatrix&) const;
     void element_op(const RefSCElementOp&) const;
     void element_op(const RefSCElementOp2&,
                     const RefSCMatrix&) const;

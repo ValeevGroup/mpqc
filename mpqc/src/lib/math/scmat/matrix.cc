@@ -464,6 +464,20 @@ RefSCMatrix::accumulate(const RefSCMatrix&a) const
 }
 
 void
+RefSCMatrix::accumulate(const RefSymmSCMatrix&a) const
+{
+  require_nonnull();
+  pointer()->accumulate(a.pointer());
+}
+
+void
+RefSCMatrix::accumulate(const RefDiagSCMatrix&a) const
+{
+  require_nonnull();
+  pointer()->accumulate(a.pointer());
+}
+
+void
 RefSCMatrix::element_op(const RefSCElementOp&op) const
 {
   if (nonnull()) pointer()->element_op(op);

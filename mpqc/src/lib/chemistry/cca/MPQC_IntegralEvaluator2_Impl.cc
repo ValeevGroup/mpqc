@@ -18,6 +18,33 @@
 using namespace std;
 
 Ref<GaussianBasisSet> basis_cca_to_sc(Molecular&);
+
+// same as cints, but cints might not be compiled
+class CartesianIterCCA : public CartesianIter {
+  int *avec, *bvec, *cvec;
+  public:
+    CartesianIterCCA(int l) : CartesianIter(l) {}
+    void start() {
+      bfn_=b_=c_=0;
+      a_=l_;
+    }
+    void next() {
+      if (c_ < l_ - a_) {
+        b_--;
+        c_++;
+      }
+      else {
+        a_--;
+        c_ = 0;
+        b_ = l_ - a_;
+      }
+      bfn_++;
+    }
+    operator int() {
+      return (a_ >= 0);
+    }
+};
+
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._includes)
 
 // user defined constructor
@@ -77,8 +104,10 @@ throw ()
   
   std::cout << "  initializing " << package_ << " " << evaluator_label_
             << " integral evaluator\n";
-  if ( package_ == "intv3" ) 
+  if ( package_ == "intv3" ) { 
     integral_ = new IntegralV3( bs1_, bs2_ );
+    initialize_reorder_intv3();
+  }
 #ifdef HAVE_CINTS
   else if ( package_ == "cints" )
     integral_ = new IntegralCints( bs1_, bs2_ );
@@ -214,10 +243,21 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute)
 
-  if( int_type_ == one_body )
+  if( int_type_ == one_body ) {
     eval_->compute_shell( (int) shellnum1,  (int) shellnum2 );
+    if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
+  }
   else 
     abort();
+
+  sc::GaussianShell &s1 = bs1_->shell(shellnum1);
+  sc::GaussianShell &s2 = bs2_->shell(shellnum2);
+  int nfunc = s1.nfunction() * s2.nfunction();
+  std::cout << "cca buffer:\n";
+  for( int i=0; i<nfunc; ++i) {
+    std::cout << sc_buffer_[i] << std::endl;
+  }
+  std::cout << endl;
  
   /* deriv wrt what center?  interface needs work
   else if( int_type_ == one_body_deriv ) {
@@ -261,6 +301,121 @@ throw ()
 
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._misc)
-// Put miscellaneous code here
+
+void
+MPQC::IntegralEvaluator2_impl::initialize_reorder_intv3() 
+{
+
+  int maxam = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
+  std::cout << "Max am: " << maxam << std::endl;
+
+  reorder_ = new int*[maxam+1];
+  reorder_[0] = new int[1];
+  reorder_[0][0] = 0;
+  if(maxam==0) return;
+
+  for( int i=1; i<=maxam; ++i) {
+
+    sc::CartesianIter *v3iter = integral_->new_cartesian_iter(i);
+    CartesianIterCCA iter(i);
+    CartesianIterCCA *ccaiter = &iter;
+    ccaiter->start();
+    int ncf = ccaiter->n();
+    
+    reorder_[i] = new int[ncf];
+    ccaiter->start();
+    for( int j=0; j<ncf; ++j) {
+      v3iter->start();
+      for( int k=0; k<ncf; ++k) {
+        if( v3iter->a() == ccaiter->a() &&
+            v3iter->b() == ccaiter->b() &&
+            v3iter->c() == ccaiter->c() ) {
+          reorder_[i][j] = k;
+          k=ncf; //break k loop
+        }
+        else v3iter->next();
+      }
+      ccaiter->next();
+    }
+
+    std::cout << "Reorder info for am=" << i << std::endl;
+    for( int j=0; j<ncf; ++j )
+      std::cout << reorder_[i][j] << " ";
+    std::cout << endl;
+
+    delete v3iter;
+  }
+
+}
+
+void
+MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2) 
+{
+
+  double *buf = const_cast<double*>( sc_buffer_ );
+
+  sc::GaussianShell &s1 = bs1_->shell(shellnum1);
+  sc::GaussianShell &s2 = bs2_->shell(shellnum2);
+  int nc1 = s1.ncontraction();
+  int nc2 = s2.ncontraction();
+
+  // copy buffer into temp space
+  int nfunc = s1.nfunction() * s2.nfunction();
+  double *temp_buffer = new double[nfunc];
+  std::cout << "intv3 buffer:\n";
+  for( int i=0; i<nfunc; ++i) { 
+    temp_buffer[i] = sc_buffer_[i]; 
+    std::cout << sc_buffer_[i] << std::endl;
+  }
+  std::cout << endl;
+   
+  int index=0, con_offset=0, local_offset, c1_base, c2_base;
+
+  for( int c2=0; c2<nc2; ++c2 )
+    con_offset += s2.nfunction(c2);
+
+  for( int c1=0; c1<nc1; ++c1 ) {
+    c1_base = index;
+    std::cout << "reordering con1=" << c1 << " (am="
+              << s1.am(c1) << ")\n";
+    std::cout << "c1 is_cartesian = " << s1.is_cartesian(c1) << std::endl;
+           
+
+    for( int fc1=0; fc1<s1.nfunction(c1); ++fc1 ) {
+
+      for( int c2=0; c2<nc2; ++c2 ) {
+        std::cout << "reordering con2=" << c2 << " (am=" 
+                  << s2.am(c2) << ")\n";
+        std::cout << "c2 is_cartesian = " << s2.is_cartesian(c2) << std::endl;
+
+        if( c2==0 ) local_offset = 0;
+        else local_offset += s2.nfunction(c2-1);
+
+        if( s1.is_cartesian(c1) ) {
+          //c2_base = c1_base + reorder_[s1.am(c1)][fc1] * s2.nfunction(c2);
+          c2_base = c1_base + reorder_[s1.am(c1)][fc1] * con_offset;
+        }
+        else
+          c2_base = c1_base + fc1 * con_offset;
+
+
+        for( int fc2=0; fc2<s2.nfunction(c2); ++fc2 ) {
+          if( s2.is_cartesian(c2) )
+            buf[index] = temp_buffer[c2_base + reorder_[s2.am(c2)][fc2] 
+                                     + local_offset];
+          else
+            buf[index] = temp_buffer[c2_base + fc2 + local_offset];
+          std::cout << "index:" << index << " assigned to c2_base:" << c2_base
+                    << " fc2:" << fc2 << " local_offset:" << local_offset
+                    << std::endl;
+          ++index;
+
+        }
+      }
+    }
+  }
+
+}
+
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._misc)
 

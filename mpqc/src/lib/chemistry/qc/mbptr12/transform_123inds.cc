@@ -29,7 +29,9 @@
 #pragma implementation
 #endif
 
-#include <math.h>
+#include <cmath>
+#include <ostream>
+#include <string>
 #include <stdexcept>
 
 #include <util/misc/formio.h>
@@ -205,6 +207,7 @@ TwoBodyMOIntsTransform_123Inds::run()
 
   int R = 0;
   int S = 0;
+  int RS_count = 0;
   while (shellpairs.get_task(S,R)) {
     // if bs3_eq_bs4 then S >= R always (see sc::exp::DistShellPair)
     int nr = bs3->shell(R).nfunction();
@@ -347,7 +350,14 @@ TwoBodyMOIntsTransform_123Inds::run()
 
 #if PRINT1Q
     {
+      if ( me == 0 ) {
         lock_->lock();
+        string filename = tform_->type() + "." + tform_->name() + ".1q.dat";
+        ios_base::openmode mode = ios_base::app;
+        if (RS_count == 0)
+          mode = ios_base::trunc;
+        ofstream ints_file(filename.c_str(),mode);
+
         for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
           for (int i = 0; i<ni; i++) {
             for (int q = 0; q<nbasis2; q++) {
@@ -356,14 +366,16 @@ TwoBodyMOIntsTransform_123Inds::run()
                 for (int s = 0; s<ns; s++) {
                   int ss = s+s_offset;
                   double value = rsiq_ints[te_type][q+nbasis2*(i+ni*(s+ns*r))];
-                  printf("1Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+i_offset_,q,rr,ss,value);
+                  ints_file << scprintf("1Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                                        te_type,i+i_offset_,q,rr,ss,value);
                 }
               }
             }
           }
         }
+        ints_file.close();
         lock_->unlock();
+      }
     }
 #endif
 
@@ -403,7 +415,14 @@ TwoBodyMOIntsTransform_123Inds::run()
 
 #if PRINT2Q
     {
+      if ( me == 0 ) {
         lock_->lock();
+        string filename = tform_->type() + "." + tform_->name() + ".2q.dat";
+        ios_base::openmode mode = ios_base::app;
+        if (RS_count == 0)
+          mode = ios_base::trunc;
+        ofstream ints_file(filename.c_str(),mode);
+
         for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
           for (int i = 0; i<ni; i++) {
             for (int x = 0; x<rank2; x++) {
@@ -412,14 +431,16 @@ TwoBodyMOIntsTransform_123Inds::run()
                 for (int s = 0; s<ns; s++) {
                   int ss = s+s_offset;
                   double value = rsix_ints[te_type][x+rank2*(i+ni*(s+ns*r))];
-                  printf("2Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+i_offset_,x,rr,ss,value);
+                  ints_file << scprintf("2Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                                        te_type,i+i_offset_,x,rr,ss,value);
                 }
               }
             }
           }
         }
+        ints_file.close();
         lock_->unlock();
+      }
     }
 #endif    
     
@@ -526,7 +547,7 @@ TwoBodyMOIntsTransform_123Inds::run()
     }  // endif te_type
     timer_->exit("3. q.t.");
           
-	  
+    ++RS_count;  
   }         // exit while get_task
 
   if (debug_) {

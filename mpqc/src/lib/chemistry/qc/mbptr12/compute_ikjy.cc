@@ -210,25 +210,31 @@ TwoBodyMOIntsTransform_ikjy::compute()
     integral_ijsx = (double*) mem_->localdata();
 
 #if PRINT3Q
-    {
+    if ( me == 0 ) {
+      string filename = type() + "." + name_ + ".3q.dat";
+      ios_base::openmode mode = ios_base::trunc;
+      if (pass > 0)
+        mode = ios_base::app;
+      ofstream ints_file(filename.c_str(),mode);
       for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
         for (int i = 0; i<ni; i++) {
-          for (int x = 0; x<rank2; x++) {
-            for (int j = 0; j<rank3; j++) {
-              int ij = i*rank3+j;
-              int ij_local = ij/nproc;
-              if (ij%nproc == me) {
-                const double* ijsx_ints = (const double*)((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
-                for (int s = 0; s<nbasis4; s++) {
-                  double value = ijsx_ints[s*rank2+x];
-                  printf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+i_offset,x,j,s,value);
-                }
+          for (int j = 0; j<rank3; j++) {
+            int ij = i*rank3+j;
+            int ij_local = ij/nproc;
+            if (ij%nproc != me)
+              continue;
+            for (int x = 0; x<rank2; x++) {
+              const double* ijsx_ints = (const double*)((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              for (int s = 0; s<nbasis4; s++) {
+                double value = ijsx_ints[s*rank2+x];
+                ints_file << scprintf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                                      te_type,i+i_offset,x,j,s,value);
               }
             }
           }
         }
       }
+      ints_file.close();
     }
 #endif
 
@@ -295,7 +301,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
     }    
 
 #if PRINT4Q
-    {
+    if ( me == 0 ) {
       string filename = type() + "." + name_ + ".4q.dat";
       ios_base::openmode mode = ios_base::trunc;
       if (pass > 0)
@@ -303,17 +309,17 @@ TwoBodyMOIntsTransform_ikjy::compute()
       ofstream ints_file(filename.c_str(),mode);
       for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
         for (int i = 0; i<ni; i++) {
-          for (int x = 0; x<rank2; x++) {
-            for (int j = 0; j<rank3; j++) {
-              int ij = i*rank3+j;
-              int ij_local = ij/nproc;
-              if (ij%nproc == me) {
-                const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
-                for (int y = 0; y<rank4; y++) {
-                  double value = ijxy_ints[x*rank4+y];
-                  ints_file << scprintf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                                        te_type,i+i_offset,x,j,y,value);
-                }
+          for (int j = 0; j<rank3; j++) {
+            int ij = i*rank3+j;
+            int ij_local = ij/nproc;
+            if (ij%nproc != me)
+              continue;
+            for (int x = 0; x<rank2; x++) {
+              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              for (int y = 0; y<rank4; y++) {
+                double value = ijxy_ints[x*rank4+y];
+                ints_file << scprintf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                                      te_type,i+i_offset,x,j,y,value);
               }
             }
           }

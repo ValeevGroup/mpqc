@@ -189,7 +189,6 @@ R12IntEval::compute_T2_()
   emp2pair_ab.scale(-1.0);
   emp2pair_aa.print("Alpha-alpha MP2 energies");
   emp2pair_ab.print("Alpha-beta MP2 energies");
-  abort();
 #endif
 
   ExEnv::out0() << decindent;
@@ -364,7 +363,8 @@ R12IntEval::compute_A_simple_()
   // create the new Fock-weighted space
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
   RefSCMatrix F_ri_v = fock_(r12info_->occ_space(),ribs_space,act_vir_space);
-  F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
+  if (debug_ > 1)
+    F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
   Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("Fock-weighted active unoccupied MOs sorted by energy",
                                                       act_vir_space, ribs_space->coefs()*F_ri_v, ribs_space->basis());
 
@@ -484,8 +484,10 @@ R12IntEval::AT2_contrib_to_V_()
 {
   if (evaluated_)
     return;
-  Vaa_.accumulate(Aaa_*T2aa_.t());
-  Vab_.accumulate(Aab_*T2ab_.t());  
+  if (r12info_->msg()->me() == 0) {
+    Vaa_.accumulate(Aaa_*T2aa_.t());
+    Vab_.accumulate(Aab_*T2ab_.t());  
+  }
 }
 
 void
@@ -493,10 +495,12 @@ R12IntEval::AR_contrib_to_B_()
 {
   if (evaluated_)
     return;
-  RefSCMatrix AR_aa = Aaa_*Raa_.t();
-  RefSCMatrix AR_ab = Aab_*Rab_.t();
-  AR_aa.scale(-1.0); Baa_.accumulate(AR_aa); Baa_.accumulate(AR_aa.t());
-  AR_ab.scale(-1.0); Bab_.accumulate(AR_ab); Bab_.accumulate(AR_ab.t());
+  if (r12info_->msg()->me() == 0) {
+    RefSCMatrix AR_aa = Aaa_*Raa_.t();
+    RefSCMatrix AR_ab = Aab_*Rab_.t();
+    AR_aa.scale(-1.0); Baa_.accumulate(AR_aa); Baa_.accumulate(AR_aa.t());
+    AR_ab.scale(-1.0); Bab_.accumulate(AR_ab); Bab_.accumulate(AR_ab.t());
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -255,7 +255,13 @@ void MP2R12Energy::compute()
   //
   // Alpha-alpha pairs
   //
-  
+  if (debug_ > 1) {
+    Vaa.print("Alpha-alpha V matrix");
+    Baa.print("Alpha-alpha MP2-R12/A B matrix");
+    if (ebc == false)
+      Aaa.print("Alpha-alpha A matrix");
+  }
+
   // Allocate the B matrix:
   // 1) in MP2-R12/A the B matrix is the same for all pairs
   // 2) int MP2-R12/A' the B matrix is pair-specific
@@ -335,6 +341,12 @@ void MP2R12Energy::compute()
   //
   // Alpha-beta pairs
   //
+  if (debug_ > 1) {
+    Vab.print("Alpha-beta V matrix");
+    Bab.print("Alpha-beta MP2-R12/A B matrix");
+    if (ebc == false)
+      Aab.print("Alpha-beta A matrix");
+  }
 
   RefSCMatrix Bab_ij = Bab.clone();
   // In MP2-R12/A the B matrix is the same for all pairs

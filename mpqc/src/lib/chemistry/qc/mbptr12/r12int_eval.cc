@@ -52,7 +52,9 @@ static ClassDesc R12IntEval_cd(
   0, 0, 0);
 
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info) :
-  r12info_(r12info)
+  r12info_(r12info), gbc_(true), ebc_(true), abs_method_(LinearR12::ABS_CABSPlus),
+  stdapprox_(LinearR12::StdApprox_Ap), spinadapted_(true), evaluated_(false),
+  debug_(0)
 {
     int nocc_act = r12info_->nocc_act();
     int nvir_act = r12info_->nvir_act();
@@ -78,18 +80,9 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info) :
     Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
     emp2pair_aa_ = local_matrix_kit->vector(dim_ij_aa_);
     emp2pair_ab_ = local_matrix_kit->vector(dim_ij_ab_);
+    
     init_intermeds_();
     init_tforms_();
-    
-    // Default values
-    gbc_ = true;
-    ebc_ = true;
-    abs_method_ = LinearR12::ABS_CABSPlus;
-    stdapprox_ = LinearR12::StdApprox_Ap;
-    spinadapted_ = true;
-    evaluated_ = false;
-    debug_ = 0;
-
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -143,8 +136,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
     tform_map_[tform_name] = tform;
   }
 
-  init_tforms_();
-
   int gbc; si.get(gbc); gbc_ = (bool) gbc;
   int ebc; si.get(ebc); ebc_ = (bool) ebc;
   int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
@@ -152,6 +143,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
   int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
   si.get(debug_);
+
+  init_tforms_();
 }
 
 R12IntEval::~R12IntEval()
@@ -752,6 +745,19 @@ R12IntEval::compute()
     RefSCMatrix F = fock_(r12info_->occ_space(),r12info_->obs_space(),r12info_->obs_space());
     F.print("Fock matrix in OBS");
     r12info_->obs_space()->evals().print("OBS eigenvalues");
+
+    r12info_->ribs_space()->coefs().print("Orthonormal RI-BS");
+    RefSCMatrix S_ri;
+    r12info_->compute_overlap_ints(r12info_->ribs_space(),r12info_->ribs_space(),S_ri);
+    S_ri.print("Overlap in RI-BS");
+    RefSCMatrix F_ri = fock_(r12info_->occ_space(),r12info_->ribs_space(),r12info_->ribs_space());
+    F_ri.print("Fock matrix in RI-BS");
+    RefSymmSCMatrix F_ri_symm = F_ri.kit()->symmmatrix(F_ri.rowdim());
+    int nrow = F_ri.rowdim().n();
+    for(int r=0; r<nrow; r++)
+      for(int c=0; c<nrow; c++)
+        F_ri_symm.set_element(r,c,F_ri.get_element(r,c));
+    F_ri_symm.eigvals().print("Eigenvalues of the Fock matrix (RI-BS)");
 
     RefSCMatrix F_obs_ri = fock_(r12info_->occ_space(),r12info_->obs_space(),r12info_->ribs_space());
     F_obs_ri.print("Fock matrix in OBS/RI-BS");

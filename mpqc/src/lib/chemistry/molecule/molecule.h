@@ -4,7 +4,9 @@
 
 #include <stdio.h>
 #include <Pix.h>
+#ifdef __GNUC__
 #include <ostream.h>
+#endif
 #include <util/misc/scostream.h>
 #include <util/class/class.h>
 #include <util/state/state.h>

@@ -123,6 +123,9 @@ main(int argc, char **argv)
 
   char *infile = new char[strlen(SRCDIR)+strlen("/inttest.in")+1];
   sprintf(infile,SRCDIR "/inttest.in");
+  if (argc == 2) {
+    infile = argv[1];
+    }
 
   RefKeyVal pkv(new ParsedKeyVal(infile));
   RefKeyVal tkeyval(new PrefixKeyVal(":test", pkv));
@@ -137,6 +140,7 @@ main(int argc, char **argv)
   if (me == tproc) cout << "testing on processor " << tproc << endl;
 
   int storage = tkeyval->intvalue("storage");
+  cout << "storage = " << storage << endl;
   RefIntegral intgrl = new IntegralV3(basis,basis,basis,basis);
   RefInt1eV3 int1ev3 = new Int1eV3(intgrl.pointer(),basis,basis,1);
   RefInt2eV3 int2ev3 = new Int2eV3(intgrl.pointer(),basis,basis,basis,basis,

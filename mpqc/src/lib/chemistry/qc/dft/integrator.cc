@@ -166,7 +166,10 @@ DenIntegratorThread::DenIntegratorThread(int ithread, int nthread,
       integrator->wavefunction()->basis(),
       integrator->wavefunction()->integral());
 
-  if (need_nuclear_gradient) nuclear_gradient_ = new double[3*natom_];
+  if (need_nuclear_gradient) {
+      nuclear_gradient_ = new double[3*natom_];
+      memset(nuclear_gradient_, 0, 3*natom_*sizeof(double));
+    }
   else nuclear_gradient_ = 0;
 
   contrib_ = new int[nshell_];
@@ -2446,6 +2449,13 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
           if (spin_polarized_) {
               double *beta_vmat_i = threads[i]->beta_vmat();
               for (int j=0; j<ntri; j++) beta_vmat_[j] += beta_vmat_i[j];
+            }
+        }
+      if (nuclear_gradient != 0) {
+          int natom3 = 3 * wavefunction()->molecule()->natom();
+          double *th_nuclear_gradient = threads[i]->nuclear_gradient();
+          for (int j=0; j<natom3; j++) {
+              nuclear_gradient[j] += th_nuclear_gradient[j];
             }
         }
     }

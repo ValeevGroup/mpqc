@@ -66,6 +66,9 @@ class MolecularFrequencies: public SavableState {
     RefSCMatrix *displacements_;
     RefSCVector *gradients_;
 
+    // the accuracy to which to compute the gradients
+    double accuracy_;
+    
     // the number of external degrees of freedom
     int nexternal_;
 
@@ -94,6 +97,7 @@ class MolecularFrequencies: public SavableState {
     ~MolecularFrequencies();
     void save_data_state(StateOut&);
 
+    void compute_gradients(const char *ckptfile);
     void compute_displacements();
     void compute_frequencies_from_gradients();
     int ndisplace() const;

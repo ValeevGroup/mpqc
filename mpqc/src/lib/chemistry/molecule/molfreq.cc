@@ -31,6 +31,7 @@
 
 #include <math.h>
 #include <util/misc/formio.h>
+#include <util/state/state_bin.h>
 #include <math/symmetry/corrtab.h>
 #include <math/scmat/local.h>
 #include <math/scmat/blocked.h>
@@ -40,7 +41,7 @@
 #undef DEBUG
 
 #define CLASSNAME MolecularFrequencies
-#define VERSION 2
+#define VERSION 3
 #define PARENTS public SavableState
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -60,6 +61,10 @@ MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
 
   debug_ = keyval->booleanvalue("debug");
 
+  accuracy_ = 1e-10;
+  if (keyval->exists("gradient_accuracy"))
+      accuracy_ = keyval->doublevalue("gradient_accuracy");
+  
   if (mole_.null()) {
       mol_ = keyval->describedclassvalue("molecule");
       kit_ = SCMatrixKit::default_matrixkit();
@@ -137,6 +142,10 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
   bd3natom_->blocks()->set_subdim(0,d3natom_);
   symkit_ = new BlockedSCMatrixKit(kit_);
 
+  if (si.version(static_class_desc()) >= 3) {
+      si.get(accuracy_);
+    }
+
   si.get(disp_);
   si.get(ndisp_);
   si.get(nirrep_);
@@ -178,6 +187,7 @@ MolecularFrequencies::save_data_state(StateOut& so)
   displacement_point_group_.save_state(so);
   mol_.save_state(so);
   mole_.save_state(so);
+  so.put(accuracy_);
   so.put(disp_);
   so.put(ndisp_);
   so.put(nirrep_);
@@ -255,6 +265,33 @@ MolecularFrequencies::checkpoint_displacements(StateOut& so)
 
   original_geometry_.save(so);
   disym_.save_state(so);
+}
+
+void
+MolecularFrequencies::compute_gradients(const char *ckptfile)
+{
+  int i;
+  const char *freqckptfile =
+    (MessageGrp::get_default_messagegrp()->me()==0) ? ckptfile : "/dev/null";
+  
+  for (i=ndisplacements_done(); i < ndisplace(); i++) {
+    // This produces side-effects in mol and may even change
+    // its symmetry.
+    cout << node0 << endl << indent
+         << "Beginning displacement " << i << ":" << endl;
+    displace(i);
+
+    mole_->obsolete();
+    mole_->set_desired_gradient_accuracy(accuracy_);
+
+    RefSCVector gradv = mole_->get_cartesian_gradient();
+    set_gradient(i, gradv);
+
+    StateOutBin so(freqckptfile);
+    checkpoint_displacements(so);
+  }
+
+  original_geometry();
 }
 
 void

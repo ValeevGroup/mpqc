@@ -322,7 +322,10 @@ OneBodyWavefunction::projected_eigenvalues(const Ref<OneBodyWavefunction>& owfn,
 RefSCMatrix
 OneBodyWavefunction::so_to_mo()
 {
+  // works for transforming H, S, etc (covariant)
   return orthog_so_to_mo() * so_to_orthog_so();
+  // works for transforming the Density (contravariant)
+  //return orthog_so_to_mo() * so_to_orthog_so_inverse().t();
 }
 
 RefSCMatrix
@@ -334,7 +337,10 @@ OneBodyWavefunction::orthog_so_to_mo()
 RefSCMatrix
 OneBodyWavefunction::mo_to_so()
 {
+  // works for transforming H, S, etc (covariant)
   return so_to_orthog_so_inverse() * mo_to_orthog_so();
+  // works for transforming the Density (contravariant)
+  //return so_to_orthog_so().t() * mo_to_orthog_so();
 }
 
 RefSCMatrix

@@ -76,6 +76,37 @@ class OneBodyWavefunction: public Wavefunction {
 
     int nelectron();
 
+    // Following is a proposed interface to make the meaning of
+    // the various transformation matrices less confusing.
+//     /** These members give metrics and basis transformations
+//         using the covariant/contravariant tensor notation. */
+//     //@{
+//     /** Returns the transformation matrix that converts
+//         a contravariant SO tensor index to a contravariant
+//         MO tensor index.
+//      */
+//     RefSCMatrix t_mo_so_I_J();
+//     /** Returns the transformation matrix that converts a covariant SO
+//         tensor index to a covariant MO tensor index.
+//      */
+//     RefSCMatrix t_mo_so_i_j();
+//     /** Returns the transformation matrix that converts
+//         a contravariant MO tensor index to a contravariant
+//         SO tensor index.
+//      */
+//     RefSCMatrix t_mo_so_I_J();
+//     /** Returns the transformation matrix that converts a covariant MO
+//         tensor index to a covariant SO tensor index.
+//      */
+//     RefSCMatrix t_mo_so_i_j();
+//     /** Returns the metric for converting a covariant SO index into
+//         a contravariant one. */
+//     RefSCMatrix g_so_I_j();
+//     /** Returns the metric for converting a contravariant SO index into
+//         a covariant one. */
+//     RefSCMatrix g_so_i_J();
+//     //@}
+
     /// Returns the SO to MO transformation matrix.
     RefSCMatrix so_to_mo();
     /// Returns the orthogonal-SO to MO transformation matrix.
@@ -88,7 +119,8 @@ class OneBodyWavefunction: public Wavefunction {
 
     /** Deprecated.  Use so_to_mo().t() instead. */
     RefSCMatrix eigenvectors();
-    /** Returns the orthogonal MO to orthogonal-SO transformation matrix. */
+    /** Returns the orthogonal MO (columns) to orthogonal-SO (rows) transformation
+        matrix. */
     virtual RefSCMatrix oso_eigenvectors() = 0;
     /** Returns the MO basis eigenvalues. */
     virtual RefDiagSCMatrix eigenvalues() = 0;

@@ -694,11 +694,6 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[0] = new PBEXFunctional;
           funcs_[1] = new PBECFunctional;
         }
-      else if (!strcmp(name_,"PW91")) {
-          init_arrays(2);
-          funcs_[0] = new PW91XFunctional;
-          funcs_[1] = new PW91CFunctional;
-        }
       else {
           cout << "StdDenFunctional: bad name: " << name_ << endl;
           abort();
@@ -1170,8 +1165,33 @@ VWNLCFunctional::VWNLCFunctional(StateIn& s):
   SavableState(s), LSDACFunctional(s)
 {
 }
+
 VWNLCFunctional::VWNLCFunctional()
 {
+  Ap_ = 0.0310907;
+  Af_ = 0.01554535;
+  A_alpha_ = -1./(6.*M_PI*M_PI);
+
+  x0p_mc_ = -0.10498;
+  bp_mc_  = 3.72744;
+  cp_mc_  = 12.9352;
+  x0f_mc_ = -0.32500;
+  bf_mc_  = 7.06042;
+  cf_mc_  = 18.0578;
+  x0_alpha_mc_ = -0.00475840;
+  b_alpha_mc_  = 1.13107;
+  c_alpha_mc_  = 13.0045;
+  
+  x0p_rpa_ = -0.409286;
+  bp_rpa_  = 13.0720;
+  cp_rpa_  = 42.7198;
+  x0f_rpa_ = -0.743294;
+  bf_rpa_  = 20.1231;
+  cf_rpa_  = 101.578;
+  x0_alpha_rpa_ = -0.228344;
+  b_alpha_rpa_  = 1.06835;
+  c_alpha_rpa_  = 11.4813;
+  
 }
 
 VWNLCFunctional::~VWNLCFunctional()
@@ -1181,6 +1201,30 @@ VWNLCFunctional::~VWNLCFunctional()
 VWNLCFunctional::VWNLCFunctional(const RefKeyVal& keyval):
   LSDACFunctional(keyval)
 {
+    Ap_  = keyval->doublevalue("Ap", KeyValValuedouble(0.0310907));
+    Af_  = keyval->doublevalue("Af", KeyValValuedouble(0.01554535));
+    A_alpha_  = keyval->doublevalue("A_alpha", KeyValValuedouble(-1./(6.*M_PI*M_PI)));
+ 
+    x0p_mc_  = keyval->doublevalue("x0p_mc", KeyValValuedouble(-0.10498));
+    bp_mc_   = keyval->doublevalue("bp_mc", KeyValValuedouble(3.72744));
+    cp_mc_   = keyval->doublevalue("cp_mc", KeyValValuedouble(12.9352));
+    x0f_mc_  = keyval->doublevalue("x0f_mc", KeyValValuedouble(-0.32500));
+    bf_mc_   = keyval->doublevalue("bf_mc", KeyValValuedouble(7.06042));
+    cf_mc_   = keyval->doublevalue("cf_mc", KeyValValuedouble(18.0578));
+    x0_alpha_mc_ = keyval->doublevalue("x0_alpha_mc", KeyValValuedouble(-0.00475840));
+    b_alpha_mc_  = keyval->doublevalue("b_alpha_mc", KeyValValuedouble(1.13107));
+    c_alpha_mc_  = keyval->doublevalue("c_alpha_mc", KeyValValuedouble(13.0045));
+
+    x0p_rpa_ = keyval->doublevalue("x0p_rpa", KeyValValuedouble(-0.409286));
+    bp_rpa_  = keyval->doublevalue("bp_rpa", KeyValValuedouble(13.0720));
+    cp_rpa_  = keyval->doublevalue("cp_rpa", KeyValValuedouble(42.7198));
+    x0f_rpa_ = keyval->doublevalue("x0f_rpa", KeyValValuedouble(-0.743294));
+    bf_rpa_  = keyval->doublevalue("bf_rpa", KeyValValuedouble(20.1231));
+    cf_rpa_  = keyval->doublevalue("cf_rpa", KeyValValuedouble(101.578));
+    x0_alpha_rpa_ = keyval->doublevalue("x0_alpha_rpa", KeyValValuedouble(-0.228344));
+    b_alpha_rpa_  = keyval->doublevalue("b_alpha_rpa", KeyValValuedouble(1.06835));
+    c_alpha_rpa_  = keyval->doublevalue("c_alpha_rpa", KeyValValuedouble(11.4813));
+   
 }
 void
 VWNLCFunctional::save_data_state(StateOut& s)
@@ -1814,83 +1858,32 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 #define CLASSNAME VWNTestLCFunctional
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
-#define PARENTS public LSDACFunctional
+#define PARENTS public VWNLCFunctional
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
 VWNTestLCFunctional::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = LSDACFunctional::_castdown(cd);
+  casts[0] = VWNLCFunctional::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
 VWNTestLCFunctional::VWNTestLCFunctional(StateIn& s):
   SavableState(s),
-  LSDACFunctional(s)
+  VWNLCFunctional(s)
 {
 }
 
 VWNTestLCFunctional::VWNTestLCFunctional()
 {
   monte_carlo_prefactor_ = 0;
-  
-  Ap_ = 0.0310907;
-  Af_ = 0.01554535;
-  A_alpha_ = -1./(6.*M_PI*M_PI);
-
-  x0p_mc_ = -0.10498;
-  bp_mc_  = 3.72744;
-  cp_mc_  = 12.9352;
-  x0f_mc_ = -0.32500;
-  bf_mc_  = 7.06042;
-  cf_mc_  = 18.0578;
-
-  x0p_rpa_ = -0.409286;
-  bp_rpa_  = 13.0720;
-  cp_rpa_  = 42.7198;
-  x0f_rpa_ = -0.743294;
-  bf_rpa_  = 20.1231;
-  cf_rpa_  = 101.578;
-
-  x0_alpha_mc_ = -0.00475840;
-  b_alpha_mc_  = 1.13107;
-  c_alpha_mc_  = 13.0045;
-
-  x0_alpha_rpa_ = -0.228344;
-  b_alpha_rpa_  = 1.06835;
-  c_alpha_rpa_  = 11.4813;
-
 }
 
 VWNTestLCFunctional::VWNTestLCFunctional(const RefKeyVal& keyval):
-  LSDACFunctional(keyval)
+  VWNLCFunctional(keyval)
 {
     monte_carlo_prefactor_ = keyval->intvalue("monte_carlo_prefactor", KeyValValueint(0));
-    Ap_  = keyval->doublevalue("Ap", KeyValValuedouble(0.0310907));
-    Af_  = keyval->doublevalue("Af", KeyValValuedouble(0.01554535));
-    A_alpha_  = keyval->doublevalue("A_alpha", KeyValValuedouble(-1./(6.*M_PI*M_PI)));
-
-    x0p_mc_  = keyval->doublevalue("x0p_mc", KeyValValuedouble(-0.10498));
-    bp_mc_   = keyval->doublevalue("bp_mc", KeyValValuedouble(3.72744));
-    cp_mc_   = keyval->doublevalue("cp_mc", KeyValValuedouble(12.9352));
-    x0f_mc_  = keyval->doublevalue("x0f_mc", KeyValValuedouble(-0.32500));
-    bf_mc_   = keyval->doublevalue("bf_mc", KeyValValuedouble(7.06042));
-    cf_mc_   = keyval->doublevalue("cf_mc", KeyValValuedouble(18.0578));
-    x0_alpha_mc_ = keyval->doublevalue("x0_alpha_mc", KeyValValuedouble(-0.00475840));
-    b_alpha_mc_  = keyval->doublevalue("b_alpha_mc", KeyValValuedouble(1.13107));
-    c_alpha_mc_  = keyval->doublevalue("c_alpha_mc", KeyValValuedouble(13.0045));
-
-    x0p_rpa_ = keyval->doublevalue("x0p_rpa", KeyValValuedouble(-0.409286));
-    bp_rpa_  = keyval->doublevalue("bp_rpa", KeyValValuedouble(13.0720));
-    cp_rpa_  = keyval->doublevalue("cp_rpa", KeyValValuedouble(42.7198));
-    x0f_rpa_ = keyval->doublevalue("x0f_rpa", KeyValValuedouble(-0.743294));
-    bf_rpa_  = keyval->doublevalue("bf_rpa", KeyValValuedouble(20.1231));
-    cf_rpa_  = keyval->doublevalue("cf_rpa", KeyValValuedouble(101.578));
-    x0_alpha_rpa_ = keyval->doublevalue("x0_alpha_rpa", KeyValValuedouble(-0.228344));
-    b_alpha_rpa_  = keyval->doublevalue("b_alpha_rpa", KeyValValuedouble(1.06835));
-    c_alpha_rpa_  = keyval->doublevalue("c_alpha_rpa", KeyValValuedouble(11.4813));
-
 }
 
 VWNTestLCFunctional::~VWNTestLCFunctional()
@@ -1902,37 +1895,6 @@ VWNTestLCFunctional::save_data_state(StateOut& s)
 {
   cout << "VWNTestLCFunctional: cannot save state" << endl;
   abort();
-}
-
-double
-VWNTestLCFunctional::F(double x, double A, double x0, double b, double c)
-{
-  double x2 = x*x;
-  double x02 = x0*x0;
-  double Xx = x2 + b*x + c;
-  double Xx0 = x02 + b*x0 + c;
-  double Q = sqrt(4.*c-b*b);
-  double res
-      = A * ( log(x2/Xx)
-              + 2.*b/Q * atan(Q/(2.*x+b))
-              - b*x0/Xx0 * ( log((x-x0)*(x-x0)/Xx)
-                           + 2.*(b+2.*x0)/Q * atan(Q/(2.*x+b)) ) );
-  return res;
-}
-
-double
-VWNTestLCFunctional::dFdr_s(double x, double A, double x0, double b, double c)
-{
-  double x2 = x*x;
-  double x02 = x0*x0;
-  double Xx = x2 + b*x +c;
-  double Xx0 = x02 + b*x0 + c;
-  double Q = sqrt(4.*c-b*b);
-  double res
-      = A * ( 1./x2 - 1./Xx - b/(2.*Xx*x)
-          + ((x0*(2.*x0+b))/Xx0 - 1) * (2.*b)/(x*(Q*Q+(2.*x+b)*(2.*x+b)))
-          - (b*x0)/(x*(x-x0)*Xx0) + (b*x0*(1+(b/(2.*x))))/(Xx0*Xx) );
-  return res;
 }
 
 // based on the equations given on a NIST WWW site
@@ -1957,12 +1919,9 @@ VWNTestLCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double efc1_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
   double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
   // RPA fitting parameters
-  //double epc0_rpa    = F(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
-  //double efc1_rpa    = F(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
+  double epc0_rpa    = F(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
+  double efc1_rpa    = F(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
   double alphac_rpa = F(x, A_alpha_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_);
-  //double alphac_rpa = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
-  double efc1_rpa    = F(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
-  double epc0_rpa    = F(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
    
   double g = 9./8.* ( pow(1.+zeta, four_thirds) + pow(1.-zeta, four_thirds) - 2. );
   double zeta2 = zeta*zeta;
@@ -3245,7 +3204,7 @@ PW91CFunctional::point(const PointInputData &id,
   double t4 = t2*t2;
   double alpha = 0.09;
   double Cc0 = 0.004235;
-  double Cx = -0.001667212;
+  double Cx = -0.001667;
   double nu = 16./M_PI * pow( (3.*M_PI*M_PI), (1./3.) );
   double beta = nu*Cc0;
   double beta2 = beta*beta;
@@ -3275,7 +3234,7 @@ PW91CFunctional::point(const PointInputData &id,
   //double Hpw91 = kf;
   double ec = rho * Hpw91;
 
-  od.energy += ec;
+  od.energy = ec;
 
   double rs2 = rs*rs;
   double rs3 = rs2*rs;
@@ -3323,7 +3282,7 @@ PW91CFunctional::point(const PointInputData &id,
       double dHpw91_drhoa = dH0pw91_drhoa + dH1pw91_drhoa;
       double dfpw91_drhoa = Hpw91 + rho*dHpw91_drhoa;
       if (gamma_total < MIN_DENSITY || id.a.rho < MIN_DENSITY) dfpw91_drhoa = 0.;
-      od.df_drho_a += dfpw91_drhoa;
+      od.df_drho_a = dfpw91_drhoa;
           
       if (spin_polarized_) {
         // d_drhob part
@@ -3335,7 +3294,6 @@ PW91CFunctional::point(const PointInputData &id,
         double dg_drhob = 1./3. * dzeta_drhob * (q3 - q3p);
         double dg3_drhob = 3.*g2*dg_drhob;
         double dkf_drhob = pow( M_PI/kf, 2.);
-        // double dkf_drhob = -9.*M_PI/4. * drs_drhob/rs2;
         double dks_drhob = 2./(M_PI*ks)*dkf_drhob;
         double dt_drhob = -t/(2.*g*ks*rho) *
                           (2.*dg_drhob*ks*rho + 2.*g*dks_drhob*rho + 2.*g*ks);
@@ -3365,7 +3323,7 @@ PW91CFunctional::point(const PointInputData &id,
         double dHpw91_drhob = dH0pw91_drhob + dH1pw91_drhob;
         double dfpw91_drhob = Hpw91 + rho*dHpw91_drhob;
         if (gamma_total < MIN_DENSITY || id.b.rho < MIN_DENSITY) dfpw91_drhob = 0.;
-        od.df_drho_b += dfpw91_drhob;
+        od.df_drho_b = dfpw91_drhob;
         }      
       else od.df_drho_b = od.df_drho_a;
       
@@ -3571,7 +3529,7 @@ PW91XFunctional::PW91XFunctional()
   a1_ = 0.19645;
   a2_ = 7.7956;
   a3_ = 0.2743;
-  a4_ = -0.15084;
+  a4_ = -0.1508;
   a5_ = 0.004;
   b_ = 100.;
 }
@@ -3582,7 +3540,7 @@ PW91XFunctional::PW91XFunctional(const RefKeyVal& keyval):
   a1_ = keyval->doublevalue("a1", KeyValValuedouble(0.19645));
   a2_ = keyval->doublevalue("a2", KeyValValuedouble(7.7956));
   a3_ = keyval->doublevalue("a3", KeyValValuedouble(0.2743));
-  a4_ = keyval->doublevalue("a4", KeyValValuedouble(-0.15084));
+  a4_ = keyval->doublevalue("a4", KeyValValuedouble(-0.1508));
   a5_ = keyval->doublevalue("a5", KeyValValuedouble(0.004));
   b_  = keyval->doublevalue("b", KeyValValuedouble(100.));
 }

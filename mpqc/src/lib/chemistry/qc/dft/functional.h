@@ -343,6 +343,26 @@ class VWNLCFunctional: public LSDACFunctional {
     ~VWNLCFunctional();
     void save_data_state(StateOut &);
 
+    virtual
+      void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
+};
+/** The VWNTestLCFunctional computes energies and densities using the
+    VWNTest local correlation term (from Vosko, Wilk, and Nusair). */
+class VWNTestLCFunctional: public VWNLCFunctional {
+#   define CLASSNAME VWNTestLCFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    int monte_carlo_prefactor_;
+  public:
+    VWNTestLCFunctional();
+    VWNTestLCFunctional(const RefKeyVal &);
+    VWNTestLCFunctional(StateIn &);
+    ~VWNTestLCFunctional();
+    void save_data_state(StateOut &);
+
     void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
     
@@ -415,32 +435,6 @@ class VWN3LCFunctional: public LSDACFunctional {
     VWN3LCFunctional(const RefKeyVal &);
     VWN3LCFunctional(StateIn &);
     ~VWN3LCFunctional();
-    void save_data_state(StateOut &);
-
-    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
-};
-
-/** The VWNTestLCFunctional computes energies and densities using the
-    VWNTest local correlation term (from Vosko, Wilk, and Nusair). */
-class VWNTestLCFunctional: public LSDACFunctional {
-#   define CLASSNAME VWNTestLCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  protected:
-    int monte_carlo_prefactor_;
-    double Ap_, Af_, A_alpha_;
-    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
-    double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
-    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
-    double F(double x, double A, double x0, double b, double c);
-    double dFdr_s(double x, double A, double x0, double b, double c);
-  public:
-    VWNTestLCFunctional();
-    VWNTestLCFunctional(const RefKeyVal &);
-    VWNTestLCFunctional(StateIn &);
-    ~VWNTestLCFunctional();
     void save_data_state(StateOut &);
 
     void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);

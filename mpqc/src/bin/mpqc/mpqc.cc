@@ -1,3 +1,29 @@
+//
+// mpqc.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Edward Seidl <seidl@janed.com>
+// Maintainer: LPS
+//
+// This file is part of MPQC.
+//
+// MPQC is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// MPQC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -36,7 +62,6 @@ clean_up(void)
   MessageGrp::set_default_messagegrp(0);
   SCMatrixKit::set_default_matrixkit(0);
   RegionTimer::set_default_regiontimer(0);
-  SCFormIO::set_messagegrp(0);
 }
 
 int
@@ -44,10 +69,6 @@ main(int argc, char *argv[])
 {
   atexit(clean_up);
   
-  // first thing, set up output classes
-  SCFormIO::setindent(cout, 2);
-  SCFormIO::setindent(cerr, 2);
-
   // parse commandline options
   GetLongOpt options;
 
@@ -63,26 +84,6 @@ main(int argc, char *argv[])
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
 
   options.parse(argc, argv);
-
-  if (options.retrieve("h")) {
-    cout << node0 << endl
-         << indent << "MPQC version 1.0" << endl << endl;
-    options.usage(cout);
-    exit(0);
-  }
-  
-  if (options.retrieve("v")) {
-    cout << node0 << endl
-         << indent << "MPQC version 1.0" << endl << endl;
-    exit(0);
-  }
-  
-  if (options.retrieve("w")) {
-    cout << node0 << endl
-         << indent << "MPQC version 1.0" << endl << endl;
-    print_disclaimer(cout);
-    exit(0);
-  }
 
   // open keyval input
   const char *input = options.retrieve("f");
@@ -115,13 +116,39 @@ main(int argc, char *argv[])
   else
     grp = MessageGrp::get_default_messagegrp();
 
+  // set up output classes
+  SCFormIO::setindent(cout, 2);
+  SCFormIO::setindent(cerr, 2);
+
   SCFormIO::set_printnode(0);
-  SCFormIO::set_messagegrp(grp);
+  if (grp->n() > 1)
+    SCFormIO::init_mp(grp->me());
+
   if (options.retrieve("d"))
     SCFormIO::set_debug(1);
 
+  if (options.retrieve("h")) {
+    cout << node0 << endl
+         << indent << "MPQC version 1.0" << endl << endl;
+    options.usage(cout);
+    exit(0);
+  }
+  
+  if (options.retrieve("v")) {
+    cout << node0 << endl
+         << indent << "MPQC version 1.0" << endl << endl;
+    exit(0);
+  }
+  
+  if (options.retrieve("w")) {
+    cout << node0 << endl
+         << indent << "MPQC version 1.0" << endl << endl;
+    print_disclaimer(cout);
+    exit(0);
+  }
+
   // initialize timing for mpqc
-  RefRegionTimer tim = new ParallelRegionTimer(grp,"mpqc",1,0);
+  RefRegionTimer tim = new ParallelRegionTimer(grp,"mpqc",1,1);
   RegionTimer::set_default_regiontimer(tim);
 
   tim->enter("input");

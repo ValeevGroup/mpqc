@@ -58,7 +58,7 @@ class MemoryDataRequest {
 
 class MemoryDataRequestQueue {
   public:
-    enum { MaxDepth = 20 };
+    enum { MaxDepth = 1024 };
   private:
     MemoryDataRequest q_[MaxDepth];
     int n_;

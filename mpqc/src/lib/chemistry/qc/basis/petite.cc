@@ -221,8 +221,6 @@ PetiteList::init(const RefGaussianBasisSet &gb)
       t += ct[i][g]*red_rep[g];
 
     _nbf_in_ir[i] = ((int) (t+0.5))/_ng;
-    if (!ct.complex())
-      _nbf_in_ir[i] *= (int)(ct[i].degeneracy()+0.5);
   }
 
   delete[] red_rep;
@@ -509,12 +507,46 @@ PetiteList::aotoso()
           if (neqs==1 || ct[ir].degeneracy() < 1.5)
             continue;
           
-          // find a symop which doesn't map i into itself
-          int g=0;
-          while (_atom_map[i][g]==i) g++;
-          int j=_atom_map[i][g];
+          memset(blc,0,sizeof(double)*gbs.nbasis());
+          for (int g=0; g < _ng; g++) {
+            lin_comb& lcg = *lc[g];
+
+            for (int f=0; f < gbs.nbasis(); f++)
+              blc[f] += ct[ir](1,g)*lcg.coef(fn,f);
+          }
+
+          c1=0;
+          for (int ii=0; ii < gbs.nbasis(); ii++)
+            c1 += blc[ii]*blc[ii];
+
+          if (c1 < 1.0e-3)
+            continue;
           
-          saoelem[ir]++;
+          c1 = 1.0/sqrt(c1);
+          
+          for (int ii=0; ii < gbs.nbasis(); ii++)
+            blc[ii] *= c1;
+
+          // check to see if we already have this SO (it happens sometimes,
+          // so sue me).
+          break_this=0;
+          for (int jj=0;  jj < saoelem[ir]; jj++) {
+            double t=0;
+            for (int ii=0; ii < gbs.nbasis(); ii++)
+              t += blc[ii]*ret.get_element(ii,jj);
+            if (fabs(t) > .9) {
+              break_this=1;
+              break;
+            }
+          }
+
+          if (break_this)
+            break;
+
+          for (int ii=0; ii < gbs.nbasis(); ii++) {
+            ret.set_element(ii,saoelem[ir]+_nbf_in_ir[ir],blc[ii]);
+          }
+          //saoelem[ir]++;
 #if 0
           printf("  %d",lc[0]->bfnum(fn));
           for (int ii=0; ii < gbs.nbasis(); ii++)

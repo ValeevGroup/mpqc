@@ -39,14 +39,26 @@ SYSLIBS = -lm -lfl
 ELF = yes
 
 ifeq ($(ELF),yes)
-LD = g++
-SH_LD = ld
+LD = $(CXX)
 
 LIBSUF = so
 
+ifeq ($(CXX),CC)
+SH_LD = ld
 SH_LDFLAGS = -elf -shared -rdata_shared -rpath $(LIBDIR) \
+             -quickstart_info -update_registry $(LIBDIR)/so_locations \
              -soname $(TARGET_TO_MAKE).so.$(ELF_MAJOR)
+LDFLAGS += -rpath $(LIBDIR)
+else
+SH_LD = g++
+SH_LDFLAGS = -elf -shared \
+      -Wl,-quickstart_info \
+      -Wl,-update_registry -Wl,$(LIBDIR)/so_locations \
+      -Wl,-rdata_shared \
+      -Wl,-rpath -Wl,$(LIBDIR) \
+      -Wl,-soname -Wl,$(TARGET_TO_MAKE).so.$(ELF_MAJOR)
 LDFLAGS += -Wl,-rpath -Wl,$(LIBDIR)
+endif
 
 COPTIONS += -KPIC
 COPTIONS_NOOPT += -KPIC

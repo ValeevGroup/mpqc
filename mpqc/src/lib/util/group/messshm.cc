@@ -7,6 +7,11 @@
 
 #include <util/group/message.h>
 
+#ifdef L486
+#  define SEM_A 0200
+#  define SEM_R 0400
+#endif
+
 /* Set the maximum number of processors (including the host). */
 #define MAXPROCS 17
 
@@ -82,7 +87,11 @@ ShmMessageGrp::~ShmMessageGrp(int release)
 {
   static struct sembuf semndec;
 
+#ifdef L486
+  shmdt((char*)sharedmem);
+#else
   shmdt(sharedmem);
+#endif
 
   // sync the nodes
   sync();
@@ -102,13 +111,29 @@ ShmMessageGrp::~ShmMessageGrp(int release)
 
   // Release resources.
   if (me() == 0) {
+#ifdef L486
+      semun junk;
+      junk.val = 0;
+      shmctl(shmid,IPC_RMID,0);
+      semctl(sync_semid,0,IPC_RMID,junk);
+      semctl(sync2_semid,0,IPC_RMID,junk);
+#else
       shmctl(shmid,IPC_RMID);
       semctl(sync_semid,0,IPC_RMID);
       semctl(sync2_semid,0,IPC_RMID);
+#endif
     }
+#ifdef L486
+  semun junk;
+  junk.val = 0;
+  semctl(semid,me(),IPC_RMID,junk);
+  semctl(send_semid,me(),IPC_RMID,junk);
+  semctl(recv_semid,me(),IPC_RMID,junk);
+#else
   semctl(semid,me(),IPC_RMID);
   semctl(send_semid,me(),IPC_RMID);
   semctl(recv_semid,me(),IPC_RMID);
+#endif
 }
 
 ShmMessageGrp::ShmMessageGrp()
@@ -147,13 +172,18 @@ ShmMessageGrp::initialize(int nprocs)
   // Attach the shared segment.
   nextbuf = sharedmem = shmat(shmid,NULL,0);
 
+  semun semzero;
+  semzero.val = 0;
+  semun semone;
+  semone.val = 1;
+
   // This is used for node synchronization.
   sync_semid = semget(IPC_PRIVATE,1,IPC_CREAT | SEM_R | SEM_A );
   if (sync_semid == -1) {
       perror("semget");
       exit(-1);
     }
-  if (semctl(sync_semid,0,SETVAL,0) == -1) {
+  if (semctl(sync_semid,0,SETVAL,semzero) == -1) {
       perror("semctl");
       exit(-1);
     }
@@ -162,7 +192,7 @@ ShmMessageGrp::initialize(int nprocs)
       perror("semget");
       exit(-1);
     }
-  if (semctl(sync2_semid,0,SETVAL,0) == -1) {
+  if (semctl(sync2_semid,0,SETVAL,semzero) == -1) {
       perror("semctl");
       exit(-1);
     }
@@ -189,17 +219,17 @@ ShmMessageGrp::initialize(int nprocs)
   for (i=0; i<nprocs; i++) {
 
       // Mark all of the segments as available for writing.
-      if (semctl(semid,i,SETVAL,1) == -1) {
+      if (semctl(semid,i,SETVAL,semone) == -1) {
           perror("semctl");
           exit(-1);
         }
 
-      if (semctl(recv_semid,i,SETVAL,0) == -1) {
+      if (semctl(recv_semid,i,SETVAL,semzero) == -1) {
           perror("semctl");
           exit(-1);
         }
 
-      if (semctl(send_semid,i,SETVAL,0) == -1) {
+      if (semctl(send_semid,i,SETVAL,semzero) == -1) {
           perror("semctl");
           exit(-1);
         }
@@ -227,7 +257,9 @@ ShmMessageGrp::initialize(int nprocs)
 
 static void reset_recv(int node)
 {
-  semctl(recv_semid,node,SETVAL,0);
+  semun semzero;
+  semzero.val = 0;
+  semctl(recv_semid,node,SETVAL,semzero);
 }
 
 static void get_recv(int node)
@@ -246,7 +278,9 @@ static void put_recv(int node)
 
 static void reset_send(int node)
 {
-  semctl(send_semid,node,SETVAL,0);
+  semun semzero;
+  semzero.val = 0;
+  semctl(send_semid,node,SETVAL,semzero);
 }
 
 static void get_send(int node)

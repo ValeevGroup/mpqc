@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
 #include <limits.h>
 
 #include <scconfig.h>

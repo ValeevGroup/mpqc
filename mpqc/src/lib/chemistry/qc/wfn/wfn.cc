@@ -92,7 +92,7 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 
   print_nao_ = keyval->booleanvalue("print_nao");
   print_npa_ = keyval->booleanvalue("print_npa");
-  KeyValValuedouble lindep_tol_def(1.e-6);
+  KeyValValuedouble lindep_tol_def(1.e-8);
   lindep_tol_ = keyval->doublevalue("lindep_tol", lindep_tol_def);
   symm_orthog_ = keyval->booleanvalue("symm_orthog",
                                       KeyValValueboolean(1));

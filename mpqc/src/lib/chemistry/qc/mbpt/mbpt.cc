@@ -585,6 +585,7 @@ MBPT2::init_variables()
 void
 MBPT2::symmetry_changed()
 {
+  Wavefunction::symmetry_changed();
   reference_->symmetry_changed();
 }
 

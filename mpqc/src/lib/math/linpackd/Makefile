@@ -8,33 +8,19 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = linpackd
 BIN_OR_LIB = LIB
 
-FSRC = linpackd.f
-CSRC = upper.c lower.c
+CSRC = linpackd.c
 
-LIBSRC = $(FSRC)
+LIBSRC = $(CSRC)
 
-ifeq ($(MAP_C_F),upper)
-  LIBSRC += upper.c
-endif
-ifeq ($(MAP_C_F),lower)
-  LIBSRC += lower.c
-endif
+DISTFILES = $(CSRC) Makefile LIBS.h
 
-DISTFILES = $(FSRC) $(CSRC) Makefile LIBS.h
-
-ifeq ($(FC),f2c)
-GENSRC = $(FSRC:%.f=%.c) $(FSRC:%.f=%.c.c)
-endif
-
-LIBOBJ = $(LIBSRC:%.f=%.$(OBJSUF))
-LIBOBJ := $(LIBOBJ:%.c=%.$(OBJSUF))
+LIBOBJ := $(LIBSRC:%.c=%.$(OBJSUF))
 
 default:: linpackd.a
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-DFILES := $(LIBSRC:%.f=)
-DFILES := $(DFILES:.c=.d)
+DFILES := $(LIBSRC:.c=.d)
 ifneq ($(DODEPEND),no)
 ifneq ($(DFILES),)
 include $(DFILES)

@@ -314,3 +314,5 @@
 )
 
 (define-key c-mode-map "\C-ci" 'insert-copyleft)
+(define-key c++-mode-map "\C-ci" 'insert-copyleft)
+(define-key java-mode-map "\C-ci" 'insert-copyleft)

@@ -36,6 +36,7 @@
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/mbpt.h>
@@ -101,7 +102,7 @@ MBPT2::compute_cs_grad()
   // New version of MP2 gradient program which uses the full
   // permutational symmetry of the two-electron integral derivatives
 
-  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> kit = basis()->matrixkit();
 
   int do_d2_ = 1;  // if true, compute d2 diagnostic
 
@@ -192,7 +193,6 @@ MBPT2::compute_cs_grad()
   double *mo_intbuf;          // buffer used for sending mo integrals
   double *grad_ptr1, *grad_ptr2;
   double tmpval, tmpval1;
-  double *Dmat;
   double *P2AO, *W2AO;
   double *p2ao_ptr, *w2ao_ptr;
   double *PHF, *WHF;
@@ -546,11 +546,11 @@ MBPT2::compute_cs_grad()
 
   // Initialize the integrals
   integral()->set_storage(mem_remaining);
-  Ref<TwoBodyInt> *tbint = new Ref<TwoBodyInt>[thr_->nthread()];
+  tbints_ = new Ref<TwoBodyInt>[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
-      tbint[i] = integral()->electron_repulsion();
+      tbints_[i] = integral()->electron_repulsion();
     }
-  tbint_ = tbint[0];
+  tbint_ = tbints_[0];
   intbuf = tbint_->buffer();
   if (dograd) {
     tbintder_ = integral()->electron_repulsion_deriv();
@@ -561,7 +561,7 @@ MBPT2::compute_cs_grad()
   int mem_integral_storage = (mem_remaining - mem_integral_intermediates) / thr_->nthread();
   if (mem_integral_storage<0) mem_integral_storage = 0;
   for (i=0; i<thr_->nthread(); i++) {
-      tbint[i]->set_integral_storage(mem_integral_storage);
+      tbints_[i]->set_integral_storage(mem_integral_storage);
     }
 
   ExEnv::out() << node0 << endl << indent
@@ -593,7 +593,7 @@ MBPT2::compute_cs_grad()
   CSGradErep12Qtr** e12thread = new CSGradErep12Qtr*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
       e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
-                                         mem, msg_, lock, basis(), tbint[i],
+                                         mem, msg_, lock, basis(), tbints_[i],
                                          ni, nocc, scf_vector, tol, debug_,
                                          dynamic_);
     }
@@ -678,7 +678,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      ExEnv::out() << indent << "Begin 3. qt" << endl;
+      ExEnv::out() << indent << "Begin third q.t." << endl;
       }
     // end of debug print
 
@@ -734,7 +734,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      ExEnv::out() << indent << "End of 3. qt" << endl;
+      ExEnv::out() << indent << "End of third q.t." << endl;
       }
     // end of debug print
 
@@ -752,7 +752,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      ExEnv::out() << indent << "Begin 4. qt" << endl;
+      ExEnv::out() << indent << "Begin fourth q.t." << endl;
       }
     // end of debug print
 
@@ -830,7 +830,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (me == 0) {
-      ExEnv::out() << indent << "End of 4. qt" << endl;
+      ExEnv::out() << indent << "End of fourth q.t." << endl;
       }
     // end of debug print
 
@@ -1223,7 +1223,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      ExEnv::out() << indent << "Begin 1+2qbt\n" << endl;
+      ExEnv::out() << indent << "Begin first and second q.b.t." << endl;
       }
     // end of debug print
 
@@ -1280,7 +1280,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      ExEnv::out() << indent << "End 1. qbt" << endl;
+      ExEnv::out() << indent << "End of first q.b.t." << endl;
       }
     // end of debug print
 
@@ -1301,7 +1301,7 @@ MBPT2::compute_cs_grad()
       }
 
     if (debug_ && me == 0) {
-      ExEnv::out() << indent << "Begin 2. qbt" << endl;
+      ExEnv::out() << indent << "Begin second q.b.t." << endl;
       }
 
     // Begin second quarter back-transformation
@@ -1347,7 +1347,7 @@ MBPT2::compute_cs_grad()
     // end of second quarter back-transformation
 
     if (debug_ && me == 0) {
-      ExEnv::out() << indent << "End 2. qbt" << endl;
+      ExEnv::out() << indent << "End of second q.b.t." << endl;
       }
 
     gamma_iajs = 0;
@@ -1381,7 +1381,7 @@ MBPT2::compute_cs_grad()
     bzerofast(Lpi,nbasis*ni);
 
     if (debug_ && me == 0) {
-      ExEnv::out() << indent << "Begin 3. and 4. qbt" << endl;
+      ExEnv::out() << indent << "Begin third and fourth q.b.t." << endl;
       }
 
     ////////////////////////////////////////////////////////
@@ -1656,14 +1656,16 @@ MBPT2::compute_cs_grad()
       }           // exit S loop
 
     if (debug_ && me == 0) {
-      ExEnv::out() << indent << "End 3. and 4. qbt" << endl;
+      ExEnv::out() << indent << "End of third and fourth q.b.t." << endl;
       }
 
     mem->sync(); // Make sure all nodes are done before deleting arrays
 
     if (debug_ > 1) {
-      RefSCDimension ni_dim(new SCDimension(ni));
-      RefSCDimension nbasis_dim(new SCDimension(nbasis));
+      RefSCDimension ni_dim(new SCDimension(ni,1));
+      ni_dim->blocks()->set_subdim(0, new SCDimension(ni));
+      RefSCDimension nbasis_dim(new SCDimension(nbasis,1));
+      nbasis_dim->blocks()->set_subdim(0, new SCDimension(nbasis));
       RefSCMatrix Lpi_mat(nbasis_dim, ni_dim, kit);
       Lpi_mat->assign(Lpi);
       Lpi_mat.print("Lpi");
@@ -1852,11 +1854,15 @@ MBPT2::compute_cs_grad()
   set_actual_value_accuracy(reference_->actual_value_accuracy()
                             *ref_to_mp2_acc);
 
-  RefSCDimension nocc_act_dim(new SCDimension(nocc_act));
-  RefSCDimension nvir_act_dim(new SCDimension(nvir_act));
-  RefSCDimension nocc_dim(new SCDimension(nocc));
-  RefSCDimension nvir_dim(new SCDimension(nvir));
-  RefSCDimension nbasis_dim(new SCDimension(nbasis));
+  RefSCDimension nocc_act_dim(new SCDimension(nocc_act,1));
+  nocc_act_dim->blocks()->set_subdim(0, new SCDimension(nocc_act));
+  RefSCDimension nvir_act_dim(new SCDimension(nvir_act,1));
+  nvir_act_dim->blocks()->set_subdim(0, new SCDimension(nvir_act));
+  RefSCDimension nocc_dim(new SCDimension(nocc,1));
+  nocc_dim->blocks()->set_subdim(0, new SCDimension(nocc));
+  RefSCDimension nvir_dim(new SCDimension(nvir,1));
+  nvir_dim->blocks()->set_subdim(0, new SCDimension(nvir));
+  RefSCDimension nbasis_dim = ao_dimension()->blocks()->subdim(0);
 
   if (dograd || do_d1_) {
     msg_->sum(Laj,nvir*nocc);
@@ -1930,14 +1936,13 @@ MBPT2::compute_cs_grad()
     } // if (dograd || do_d1_)
 
   for (i=0; i<thr_->nthread(); i++) {
-      tbint[i] = 0;
       delete e12thread[i];
     }
   delete[] e12thread;
-  delete[] tbint;
 
   // quit here if only the energy is needed
   if (!dograd) {
+    delete[] tbints_; tbints_ = 0;
     if (do_d1_) delete[] Laj;
     delete[] scf_vector;
     delete[] scf_vector_dat;
@@ -2075,25 +2080,26 @@ MBPT2::compute_cs_grad()
       }
     }
 
-  // Compute the density-like matrix Dmat_matrix
+  // Compute the density-like Dmat_matrix
+  // (Cv*Pab_matrix*Cv.t() + Co*Pkj_matrix*Co.t())
   RefSymmSCMatrix Pab_matrix(nvir_dim,kit);
   RefSymmSCMatrix Pkj_matrix(nocc_dim,kit);
-  RefSCMatrix Dmat_matrix(nbasis_dim,nbasis_dim,kit);
+  RefSymmSCMatrix Dmat_matrix(nbasis_dim,kit);
   Pab_matrix->assign(Pab); // fill in elements of Pab_matrix from Pab
   free(Pab);
   Pkj_matrix->assign(Pkj); // fill in elements of Pkj_matrix from Pkj
   free(Pkj);
-  Dmat_matrix = Cv*Pab_matrix*Cv.t() + Co*Pkj_matrix*Co.t();
+  Dmat_matrix.assign(0.0);
+  Dmat_matrix.accumulate_transform(Cv,Pab_matrix);
+  Dmat_matrix.accumulate_transform(Co,Pkj_matrix);
   // We now have the density-like matrix Dmat_matrix
 
   // Compute the G matrix
-  Dmat = new double[nbasis*nbasis];
-  Dmat_matrix->convert(Dmat); // convert Dmat_matrix to Dmat (double*)
 
   RefSymmSCMatrix Gmat(nbasis_dim,kit);
   init_cs_gmat();
   tim_enter("make_gmat for Laj");
-  make_cs_gmat(Gmat, Dmat);
+  make_cs_gmat_new(Gmat, Dmat_matrix); 
   if (debug_ > 1) {
     Dmat_matrix.print("Dmat");
     Gmat.print("Gmat");
@@ -2141,23 +2147,24 @@ MBPT2::compute_cs_grad()
 
   // Finish computation of Wkj
   tim_enter("Pkj and Wkj");
-  Dmat_matrix = Co*(Pkj_matrix*Co.t() + Paj_matrix.t()*Cv.t()) +
-                Cv*(Paj_matrix*Co.t() + Pab_matrix*Cv.t());
-  Dmat_matrix->convert(Dmat); // convert Dmat_matrix to Dmat (double*)
+  // Compute Dmat_matrix =
+  // Co*Pkj_matrix*Co.t() + Co*Paj_matrix.t()*Cv.t()
+  // + Cv*Paj_matrix*Co.t() + Cv*Pab_matrix*Cv.t();
+  Dmat_matrix.assign(0.0);
+  Dmat_matrix.accumulate_symmetric_sum(Cv*Paj_matrix*Co.t());
+  Dmat_matrix.accumulate_transform(Co,Pkj_matrix);
+  Dmat_matrix.accumulate_transform(Cv,Pab_matrix);
   tim_enter("make_gmat for Wkj");
-  make_cs_gmat(Gmat, Dmat);
+  make_cs_gmat_new(Gmat, Dmat_matrix);
   tim_exit("make_gmat for Wkj");
   done_cs_gmat();
+  delete[] tbints_; tbints_ = 0;
   RefSCMatrix Wkj_matrix(nocc_dim, nocc_dim, kit);
   Wkj_matrix->assign(Wkj);
   Wkj_matrix = Wkj_matrix - 2*Co.t()*Gmat*Co;
   free(Wkj);
   // Wkj is now complete - not as Wkj but as Wkj_matrix
   tim_exit("Pkj and Wkj");
-
-  delete[] Dmat;
-
-//scf_done_bounds(); // must be called after last call to make_gmat
 
   ////////////////////////////////////////////////////////////////
   // We now have the matrices Pkj_matrix, Paj_matrix, Pab_matrix,
@@ -2267,7 +2274,7 @@ MBPT2::compute_cs_grad()
   delete[] W2AO;
 
   if (debug_ > 1) {
-    RefSCMatrix tmpmat(basis()->basisdim(), basis()->basisdim(), kit);
+    RefSCMatrix tmpmat(ao_dimension(), ao_dimension(), kit);
     tmpmat->assign(PMP2);
     tmpmat.print("PMP2");
     tmpmat->assign(P2AO);

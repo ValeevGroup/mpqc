@@ -143,8 +143,6 @@ CSGradErep12Qtr::run()
   int i,j;
   double *iqjs_contrib;  // local contributions to integral_iqjs
   double *iqjr_contrib;  // local contributions to integral_iqjr
-  const int catchup_mask = 3;
-  int catchup_ctr = 0;
 
   const double *intbuf = tbint->buffer();
 
@@ -215,8 +213,6 @@ CSGradErep12Qtr::run()
         timer->enter("erep");
         tbint->compute_shell(P,Q,R,S);
         timer->exit("erep");
-
-        lock->lock(); mem->catchup(); lock->unlock();
 
         timer->enter("1. q.t.");
         // Begin first quarter transformation;
@@ -337,8 +333,6 @@ CSGradErep12Qtr::run()
               iqjr_ptr++;
               iqrs_ptr += ns;
               } // exit q loop
-            // every so often process outstanding messages
-            if ((catchup_ctr++ & catchup_mask) == 0) { lock->lock(); mem->catchup(); lock->unlock(); }
             }   // exit bf2 loop
           }     // exit bf1 loop
 
@@ -350,14 +344,12 @@ CSGradErep12Qtr::run()
 
         // Sum the iqjs_contrib to the appropriate place
         int ij_offset = nbasis*(s_offset + nbasis*ij_index);
-        lock->lock();
         mem->sum_reduction_on_node(iqjs_contrib,
                                    ij_offset, ns*nbasis, ij_proc);
 
         ij_offset = nbasis*(r_offset + nbasis*ij_index);
         mem->sum_reduction_on_node(iqjr_contrib,
                                    ij_offset, nr*nbasis, ij_proc);
-        lock->unlock();
 
         }     // exit j loop
       }       // exit i loop

@@ -78,6 +78,7 @@ ProcMemoryGrp::localdata()
 void *
 ProcMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
+  obtain_local_lock(offset-localoffset(), offset-localoffset()+size);
   return &data_[distsize_to_size(offset)];
 }
 
@@ -95,6 +96,7 @@ ProcMemoryGrp::release_read(void *data, distsize_t offset, int size)
 void
 ProcMemoryGrp::release_write(void *data, distsize_t offset, int size)
 {
+  release_local_lock(offset-localoffset(), offset-localoffset()+size);
 }
 
 void

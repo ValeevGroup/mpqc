@@ -28,10 +28,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 #include <util/misc/timer.h>
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/local.h>
+#include <math/scmat/repl.h>
 #include <chemistry/qc/mbpt/mbpt.h>
+#include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/scf/lgbuild.h>
+#include <chemistry/qc/scf/clhftmpl.h>
 
 #define ioff(i) (((i)*((i)+1))>>1)
 #define IOFF(a,b) (((a)>(b))?(ioff(a)+(b)):(ioff(b)+(a)))
@@ -42,6 +49,75 @@
 #define INT_MAX4(e13e24,e34,i,j,k,n4) \
   ((e34)?(((e13e24)&&((k)==(i)))?(j):(k)) \
         :((e13e24)&&((k)==(i)))?(j):(n4)-1)
+
+enum Access { Read, Write, Accum };
+static RefSymmSCMatrix
+get_local_data(const RefSymmSCMatrix& m, double*& p,
+               const Ref<MessageGrp> &msg, Access access)
+{
+  RefSymmSCMatrix l = m;
+  
+  if (!dynamic_cast<LocalSymmSCMatrix*>(l.pointer())
+      && !dynamic_cast<ReplSymmSCMatrix*>(l.pointer())) {
+    Ref<SCMatrixKit> k = new ReplSCMatrixKit;
+    l = k->symmmatrix(m.dim());
+    l->convert(m);
+
+    if (access == Accum)
+      l->assign(0.0);
+  } else if (msg->n() > 1 && access==Accum) {
+    l = m.clone();
+    l.assign(0.0);
+  }
+
+  if (dynamic_cast<ReplSymmSCMatrix*>(l.pointer()))
+    p = dynamic_cast<ReplSymmSCMatrix*>(l.pointer())->get_data();
+  else
+    p = dynamic_cast<LocalSymmSCMatrix*>(l.pointer())->get_data();
+
+  return l;
+}
+
+static signed char *
+init_pmax(double *pmat_data, const Ref<GaussianBasisSet> &basis)
+{
+  double l2inv = 1.0/log(2.0);
+  double tol = pow(2.0,-126.0);
+  
+  GaussianBasisSet& gbs = *basis.pointer();
+  
+  signed char * pmax = new signed char[ioff(gbs.nshell())];
+
+  int ish, jsh, ij;
+  for (ish=ij=0; ish < gbs.nshell(); ish++) {
+    int istart = gbs.shell_to_function(ish);
+    int iend = istart + gbs(ish).nfunction();
+    
+    for (jsh=0; jsh <= ish; jsh++,ij++) {
+      int jstart = gbs.shell_to_function(jsh);
+      int jend = jstart + gbs(jsh).nfunction();
+      
+      double maxp=0, tmp;
+
+      for (int i=istart; i < iend; i++) {
+        int ijoff = ioff(i) + jstart;
+        for (int j=jstart; j < ((ish==jsh) ? i+1 : jend); j++,ijoff++)
+          if ((tmp=::fabs(pmat_data[ijoff])) > maxp)
+            maxp=tmp;
+      }
+
+      if (maxp <= tol)
+        maxp=tol;
+
+      long power = long(log(maxp)*l2inv);
+      if (power < SCHAR_MIN) pmax[ij] = SCHAR_MIN;
+      else if (power > SCHAR_MAX) pmax[ij] = SCHAR_MAX;
+      else pmax[ij] = (signed char) power;
+    }
+  }
+
+  return pmax;
+}
 
 /**************************************************************************
  *
@@ -57,6 +133,132 @@
  *
  * return 0 on success and -1 on failure
  */
+
+int
+MBPT2::make_cs_gmat_new(RefSymmSCMatrix& Gmat,
+                        const RefSymmSCMatrix& DPmat)
+{
+  int i;
+  int nthread = thr_->nthread();
+
+  tim_enter("gmat");
+
+  Ref<PetiteList> pl = integral()->petite_list(basis());
+
+  Gmat.assign(0.0); 
+
+  // scale the off-diagonal elements of DPmat by 2.0
+  DPmat->scale(2.0);
+  DPmat->scale_diagonal(0.5);
+
+  // now try to figure out the matrix specialization we're dealing with
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert G and P to local matrices
+
+  if (debug_>1) {
+    DPmat.print("DPmat before build");
+  }
+
+  // grab the data pointers from the G and P matrices
+  double *gmat, *pmat;
+  RefSymmSCMatrix gtmp = get_local_data(Gmat, gmat, msg_, Accum);
+  RefSymmSCMatrix ptmp = get_local_data(DPmat, pmat, msg_, Read);
+
+  signed char * pmax = init_pmax(pmat, basis());
+  
+  LocalGBuild<LocalCLHFContribution> **gblds =
+    new LocalGBuild<LocalCLHFContribution>*[nthread];
+  LocalCLHFContribution **conts = new LocalCLHFContribution*[nthread];
+
+  double **gmats = new double*[nthread];
+  gmats[0] = gmat;
+    
+  Ref<GaussianBasisSet> bs = basis();
+  int ntri = ioff(bs->nbasis());
+
+  for (i=0; i < nthread; i++) {
+    if (i) {
+      gmats[i] = new double[ntri];
+      memset(gmats[i], 0, sizeof(double)*ntri);
+      }
+    conts[i] = new LocalCLHFContribution(gmats[i], pmat);
+    gblds[i] = new LocalGBuild<LocalCLHFContribution>(*conts[i], tbints_[i],
+         pl, bs, msg_, pmax, cphf_epsilon_/1000.0, nthread, i
+      );
+    
+    thr_->add_thread(i, gblds[i]);
+    }
+
+  if (thr_->start_threads() < 0) {
+    ExEnv::err() << node0 << indent
+         << "MBPT: csgmat: error starting threads" << std::endl;
+    abort();
+    }
+
+  if (thr_->wait_threads() < 0) {
+    ExEnv::err() << node0 << indent
+         << "MBPT: csgmat: error waiting for threads" << std::endl;
+    abort();
+    }
+      
+  double tnint=0;
+  for (i=0; i < nthread; i++) {
+    tnint += gblds[i]->tnint;
+
+    if (i) {
+      for (int j=0; j < ntri; j++)
+        gmat[j] += gmats[i][j];
+      delete[] gmats[i];
+      }
+
+    delete gblds[i];
+    delete conts[i];
+    }
+
+  delete[] gmats;
+  delete[] gblds;
+  delete[] conts;
+  delete[] pmax;
+      
+  msg_->sum(&tnint, 1, 0, 0);
+  ExEnv::out() << node0 << indent << scprintf("%20.0f integrals\n", tnint);
+
+  // if we're running on multiple processors, then sum the G matrix
+  if (msg_->n() > 1)
+      msg_->sum(gmat, ioff(basis()->nbasis()));
+
+  // if we're running on multiple processors, or we don't have local
+  // matrices, then accumulate gtmp back into G
+  int local = (dynamic_cast<LocalSCMatrixKit*>(basis()->matrixkit().pointer()) ||
+            dynamic_cast<ReplSCMatrixKit*>(basis()->matrixkit().pointer())) ? 1:0;
+  if (!local || msg_->n() > 1)
+    Gmat->convert_accumulate(gtmp);
+
+  // now symmetrize the skeleton G matrix, placing the result in dd
+  Gmat.scale(1.0/(double)pl->order());
+  RefSymmSCMatrix Gmat_so(so_dimension(), basis_matrixkit());
+  if (debug_>1) {
+    Gmat.print("skeleton Gmat before symmetrize");
+  }
+  pl->symmetrize(Gmat,Gmat_so);
+  if (debug_>1) {
+    Gmat_so.print("Gmat in SO basis");
+  }
+  Gmat = pl->to_AO_basis(Gmat_so);
+  if (debug_>1) {
+    Gmat.print("Gmat in AO basis");
+  }
+  BlockedSymmSCMatrix *blocked_Gmat = dynamic_cast<BlockedSymmSCMatrix*>(Gmat.pointer());
+  if (!blocked_Gmat || blocked_Gmat->nblocks() != 1) {
+    ExEnv::out() << "csgmat.cc: Gmat is wrong type" << std::endl;
+    abort();
+    }
+  Gmat = blocked_Gmat->block(0);
+
+  tim_exit("gmat");
+
+  return 0;
+}
 
 int
 MBPT2::make_cs_gmat(RefSymmSCMatrix& Gmat, double *DPmat)
@@ -266,9 +468,6 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
             if((tmax=maxp[IOFF(j,l)]-2)>cpmax) cpmax=tmax;
 
             if(cpmax+imax < inttol) {
-        //    /* If we are trying to save integrals on this node, then
-        //     * int_index must be incremented now. */
-        //    if (scf_info->int_store) int_index++;
               kl++;
               continue;
               }

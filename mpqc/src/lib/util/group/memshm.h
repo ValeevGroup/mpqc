@@ -40,6 +40,7 @@
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>
 
+#include <util/group/rnglock.h>
 
 /** The ShmMemoryGrp concrete class provides an implementation of
 MsgMemoryGrp.  It uses SYSV IPC to provided shared memory in a system that

@@ -36,7 +36,7 @@
 
 #include <scconfig.h>
 #include <util/class/class.h>
-#include <util/group/rnglock.h>
+#include <util/group/thread.h>
 
 #if 0 // this can be used to catch accidental conversions to int
 class distsize_t {
@@ -170,7 +170,11 @@ matching set of criteria are found.
 */
 class MemoryGrp: public DescribedClass {
   private:
-    RangeLock locks_;
+    Ref<ThreadLock> *locks_;
+    int nlock_;
+ 
+    void init_locks();
+
 
   protected:
     // derived classes must fill in all these
@@ -184,6 +188,8 @@ class MemoryGrp: public DescribedClass {
     // set to nonzero for debugging information
     int debug_;
 
+    void obtain_local_lock(size_t start, size_t fence);
+    void release_local_lock(size_t start, size_t fence);
   public:
     MemoryGrp();
     MemoryGrp(const Ref<KeyVal>&);
@@ -199,7 +205,7 @@ class MemoryGrp: public DescribedClass {
         starts at node 0 and proceeds up to node n() - 1. */
     virtual void set_localsize(int) = 0;
     /// Returns the amount of memory residing locally on me().
-    int localsize() { return distsize_to_size(offsets_[me_+1]-offsets_[me_]); }
+    size_t localsize() { return distsize_to_size(offsets_[me_+1]-offsets_[me_]); }
     /// Returns a pointer to the local data.
     virtual void *localdata() = 0;
     /// Returns the global offset to this node's memory.

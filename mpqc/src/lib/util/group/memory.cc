@@ -92,6 +92,8 @@ MemoryGrp::MemoryGrp()
   debug_ = 0;
 
   offsets_ = 0;
+
+  init_locks();
 }
 
 MemoryGrp::MemoryGrp(const Ref<KeyVal>& keyval)
@@ -100,11 +102,23 @@ MemoryGrp::MemoryGrp(const Ref<KeyVal>& keyval)
   debug_ = keyval->intvalue("debug");
 
   offsets_ = 0;
+
+  init_locks();
 }
 
 MemoryGrp::~MemoryGrp()
 {
   delete[] offsets_;
+  delete[] locks_;
+}
+
+void
+MemoryGrp::init_locks()
+{
+  Ref<ThreadGrp> thgrp = ThreadGrp::get_default_threadgrp();
+  nlock_ = 2 * thgrp->nthread();
+  locks_ = new Ref<ThreadLock>[nlock_];
+  for (int i=0; i<nlock_; i++) locks_[i] = thgrp->new_lock();
 }
 
 MemoryGrp *
@@ -264,7 +278,6 @@ void
 MemoryGrp::print(ostream&o) const
 {
   o << scprintf("MemoryGrp (node %d):\n", me());
-  locks_.print(o);
   o << scprintf("%d: n = %d\n", me(), n());
   for (int i=0; i<=n_; i++) {
       o << scprintf("%d: offset[%d] = %5d\n", me(), i, offsets_[i]);
@@ -311,6 +324,28 @@ void
 MemoryGrp::catchup()
 {
   return;
+}
+
+void
+MemoryGrp::obtain_local_lock(size_t start, size_t fence)
+{
+  distsize_t locked_region_size = 1 + localsize()/nlock_;
+  int lstart = start/locked_region_size;
+  int llast = fence/locked_region_size;
+  for (int i=lstart; i<=llast; i++) {
+      locks_[i]->lock();
+    }
+}
+
+void
+MemoryGrp::release_local_lock(size_t start, size_t fence)
+{
+  distsize_t locked_region_size = 1 + localsize()/nlock_;
+  int lstart = start/locked_region_size;
+  int llast = fence/locked_region_size;
+  for (int i=lstart; i<=llast; i++) {
+      locks_[i]->unlock();
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -65,11 +65,13 @@ MBPT2::cs_cphf(double **scf_vector,
   int niter;
   int dimP = nocc*nvir;
 
-  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> kit = basis()->matrixkit();
 
-  RefSCDimension nbasis_dim(new SCDimension(nbasis));
-  RefSCDimension nvir_dim(new SCDimension(nvir));
-  RefSCDimension nocc_dim(new SCDimension(nocc));
+  RefSCDimension nbasis_dim = ao_dimension()->blocks()->subdim(0);
+  RefSCDimension nvir_dim(new SCDimension(nvir,1));
+  nvir_dim->blocks()->set_subdim(0, new SCDimension(nvir));
+  RefSCDimension nocc_dim(new SCDimension(nocc,1));
+  nocc_dim->blocks()->set_subdim(0, new SCDimension(nocc));
 
   RefSCMatrix Cv(nbasis_dim,nvir_dim,kit);
   RefSCMatrix Co(nbasis_dim,nocc_dim,kit);
@@ -217,9 +219,16 @@ MBPT2::cs_cphf(double **scf_vector,
         }
       }
     D_matrix = Cv*P_matrix*Co.t();
+#if 0
     D_matrix = D_matrix + D_matrix.t();
     D_matrix->convert(D);  // Convert D_matrix to double* D
     make_cs_gmat(G, D);
+#else
+    RefSymmSCMatrix sD(D_matrix.rowdim(), kit);
+    sD.assign(0.0);
+    sD.accumulate_symmetric_sum(D_matrix);
+    make_cs_gmat_new(G, sD);
+#endif
     AP_matrix = 2*Cv.t()*G*Co;
 
     ptr1 = AP_matrix_tot[i-1];

@@ -195,6 +195,11 @@ MTMPIMemoryGrp::init_mtmpimg(int nthread)
       ExEnv::out() << "MTMPIMemoryGrp didn't get enough threads" << endl;
       abort();
     }
+  if (nthread > 2) {
+      ExEnv::out() << "MTMPIMemoryGrp can currently only use 2 threads"
+                   << endl;
+      abort();
+    }
 
   if (debug_) {
       char name[256];

@@ -56,6 +56,7 @@ class MBPT2: public Wavefunction {
     int eliminate_in_gmat_;
     const double *intbuf_;
     Ref<TwoBodyInt> tbint_;
+    Ref<TwoBodyInt> *tbints_;
     Ref<TwoBodyDerivInt> tbintder_;
     int nbasis;
     Ref<MessageGrp> msg_;
@@ -120,6 +121,7 @@ class MBPT2: public Wavefunction {
     // estimated by starting the calculation on a single processor
     distsize_t compute_cs_dynamic_memory(int ni, int nocc_act);
     int make_cs_gmat(RefSymmSCMatrix& Gmat, double *DPmat);
+    int make_cs_gmat_new(RefSymmSCMatrix& Gmat, const RefSymmSCMatrix& DPmat);
     void form_max_dens(double *DPmat, signed char *maxp);
     int init_cs_gmat();
     void done_cs_gmat();

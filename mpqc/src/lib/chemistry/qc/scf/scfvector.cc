@@ -1,4 +1,6 @@
 
+#include <util/misc/timer.h>
+
 #include <math/scmat/offset.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
@@ -41,7 +43,7 @@ SCF::compute_vector(double& eelec)
     // calculate the electronic energy
     eelec = scf_energy();
     printf("  iter %5d energy = %20.15f delta = %15.10g\n",
-           iter,eelec+nucrep,delta);
+           iter+1,eelec+nucrep,delta);
 
     // now extrapolate the fock matrix
     RefSCExtrapData data = extrap_data();
@@ -83,12 +85,17 @@ SCF::ao_gmat()
 {
   double tnint=0;
   
+  tim_enter("ao_gmat");
+  
   SymmTwoBodyIntIter tbii(tbi,integral()->petite_list(basis()));
   tbi->set_redundant(0);
 
   for (tbii.start(); tbii.ready(); tbii.next()) {
+    //tim_enter("quartet");
     ShellQuartetIter& q = tbii.current_quartet();
+    //tim_exit("quartet");
 
+    //tim_change("contributions");
     int i=tbii.ishell();
     int j=tbii.jshell();
     int k=tbii.kshell();
@@ -123,7 +130,7 @@ SCF::ao_gmat()
             lkl=i_offset(kk)+ll;
             pkval = (lij==lkl) ? 0.5*pki_int: pki_int;
 
-            make_contribution(ii, jj, kk, ll, pkval, 5);
+            make_contribution(lij, lkl, pkval, 5);
 
           } else {
             /*
@@ -137,7 +144,7 @@ SCF::ao_gmat()
             lkl=i_offset(kk)+ll;
             pkval = (lij==lkl) ? 0.5*pki_int: pki_int;
             
-            make_contribution(ii, jj, kk, ll, pkval, 4);
+            make_contribution(lij, lkl, pkval, 4);
 
             /*
              * this integral also contributes to K1 and K2 of
@@ -146,11 +153,11 @@ SCF::ao_gmat()
              * pkval = -0.25 * ((ijkl)+(ikjl))
              *       = -0.5 * (ijkl)
              */
-            lij=i_offset(ii)+ll;
+            lij=ij_offset(ii,ll);
             lkl=ij_offset(kk,jj);
             pkval = (lij==lkl) ? 0.5*pki_int: pki_int;
             
-            make_contribution(ii, ll, kk, jj, pkval, 3);
+            make_contribution(lij, lkl, pkval, 3);
           }
         } else if (ii == kk || jj == ll) {
           /*
@@ -164,7 +171,7 @@ SCF::ao_gmat()
           lkl=i_offset(kk)+ll;
           pkval = (lij==lkl) ? 0.5*pki_int: pki_int;
 
-          make_contribution(ii, jj, kk, ll, pkval, 4);
+          make_contribution(lij, lkl, pkval, 4);
 
           /*
            * this integral also contributes to K1 and K2 of
@@ -173,11 +180,11 @@ SCF::ao_gmat()
            * pkval = -0.25 * ((ijkl)+(ilkj))
            *       = -0.5 * (ijkl)
            */
-          lij=i_offset(ii)+kk;
+          lij=ij_offset(ii,kk);
           lkl=ij_offset(jj,ll);
           pkval = (lij==lkl) ? 0.5*pki_int: pki_int;
 
-          make_contribution(ii, kk, jj, ll, pkval, 3);
+          make_contribution(lij, lkl, pkval, 3);
 
         } else {
           /*
@@ -189,18 +196,18 @@ SCF::ao_gmat()
           lkl=i_offset(kk)+ll;
           pkval = (lij==lkl) ? 0.5*pki_int: pki_int;
 
-          make_contribution(ii, jj, kk, ll, pkval, 1);
+          make_contribution(lij, lkl, pkval, 1);
 
           /*
            * and to K1 of G(ik)
            *
            * pkval = -0.25 * (ijkl)
            */
-          lij=i_offset(ii)+kk;
+          lij=ij_offset(ii,kk);
           lkl=ij_offset(jj,ll);
           pkval = (lij==lkl) ? 0.5*pki_int: pki_int;
 
-          make_contribution(ii, kk, jj, ll, pkval, 2);
+          make_contribution(lij, lkl, pkval, 2);
 
           if ((ii != jj) && (kk != ll)) {
             /*
@@ -212,10 +219,10 @@ SCF::ao_gmat()
              * note: if we get here, then ik can't equal jl,
              * so pkval wasn't multiplied by 0.5 above.
              */
-            lij=i_offset(ii)+ll;
+            lij=ij_offset(ii,ll);
             lkl=ij_offset(kk,jj);
 
-            make_contribution(ii, ll, kk, jj, pkval, 2);
+            make_contribution(lij, lkl, pkval, 2);
           }
         }
       } else {
@@ -232,7 +239,7 @@ SCF::ao_gmat()
           lij=i_offset(ii)+jj;
           lkl=i_offset(kk)+ll;
 
-          make_contribution(ii, jj, kk, ll, pki_int, 4);
+          make_contribution(lij, lkl, pki_int, 4);
 
           /*
            * this integral also contributes to K1 and K2 of
@@ -241,10 +248,10 @@ SCF::ao_gmat()
            * pkval = -0.25 * ((ijkl)+(ikjl))
            *       = -0.5 * (ijkl)
            */
-          lij=i_offset(ii)+ll;
+          lij=ij_offset(ii,ll);
           lkl=ij_offset(kk,jj);
 
-          make_contribution(ii, ll, kk, jj, pki_int, 3);
+          make_contribution(lij, lkl, pki_int, 3);
 
         } else if (ii == kk || jj == ll) {
           /*
@@ -257,7 +264,7 @@ SCF::ao_gmat()
           lij=i_offset(ii)+jj;
           lkl=i_offset(kk)+ll;
 
-          make_contribution(ii, jj, kk, ll, pki_int, 4);
+          make_contribution(lij, lkl, pki_int, 4);
 
           /*
            * this integral also contributes to K1 and K2 of
@@ -266,10 +273,10 @@ SCF::ao_gmat()
            * pkval = -0.25 * ((ijkl)+(ilkj))
            *       = -0.5 * (ijkl)
            */
-          lij=i_offset(ii)+kk;
+          lij=ij_offset(ii,kk);
           lkl=ij_offset(jj,ll);
 
-          make_contribution(ii, kk, jj, ll, pki_int, 3);
+          make_contribution(lij, lkl, pki_int, 3);
 
         } else {
           /*
@@ -280,33 +287,36 @@ SCF::ao_gmat()
           lij=i_offset(ii)+jj;
           lkl=i_offset(kk)+ll;
 
-          make_contribution(ii, jj, kk, ll, pki_int, 1);
+          make_contribution(lij, lkl, pki_int, 1);
 
           /*
            * and to K1 of G(ik)
            *
            * pkval = -0.25 * (ijkl)
            */
-          lij=i_offset(ii)+kk;
+          lij=ij_offset(ii,kk);
           lkl=ij_offset(jj,ll);
           
-          make_contribution(ii, kk, jj, ll, pki_int, 2);
+          make_contribution(lij, lkl, pki_int, 2);
 
           /*
            * and to K2 of G(il)
            *
            * pkval = -0.25 * (ijkl)
            */
-          lij=i_offset(ii)+ll;
+          lij=ij_offset(ii,ll);
           lkl=ij_offset(kk,jj);
 
-          make_contribution(ii, ll, kk, jj, pki_int, 2);
+          make_contribution(lij, lkl, pki_int, 2);
         }
       }
     }
 
     tnint += (double) q.nint();
+    //tim_exit("contributions");
   }
 
   printf("%20.0f integrals\n",tnint);
+
+  tim_exit("ao_gmat");
 }

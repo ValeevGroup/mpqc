@@ -15,11 +15,7 @@
 #define DISABLE do { fflush(stdout); } while(0)
 #define ENABLE do { fflush(stdout); } while(0)
 
-
-#define ACK 0
-
 #define DEBUG 0
-#define DEBREQ 0
 
 #if DEBUG
 #  undef PRINTF
@@ -42,7 +38,13 @@ static void
 mpl_memory_handler(int*msgid_arg)
 {
   long lmid = *msgid_arg;
-  global_mpl_mem->handler(&lmid);
+  if (!global_mpl_mem) {
+      fprintf(stderr,"WARNING: Tried to call mpl_memory_handler"
+              " without global_mpl_mem\n");
+    }
+  else {
+      global_mpl_mem->handler(&lmid);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -71,7 +73,7 @@ void
 MPLMemoryGrp::unlock(long oldvalue)
 {
   int old = oldvalue;
-  mpc_lockrnc(0, &old);
+  mpc_lockrnc(old, &old);
 }
 
 long
@@ -91,18 +93,19 @@ MPLMemoryGrp::recv(void* data, int nbytes, int node, int type)
   int t = type;
   int mid;
   mpc_recv(data, nbytes, &n, &t, &mid);
+  PRINTF(("MPLMemoryGrp:: recv mid = %d\n", mid));
   return mid;
 }
 
 long
 MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
-  int global_source;
-  int global_type;
-  int global_mid;
+  global_type = type;
+  global_source = DONTCARE; 
   mpc_rcvncall(data, nbytes,
-               &global_source, &global_type, &global_mid,
+               (int*)&global_source, (int*)&global_type, (int*)&global_mid,
                mpl_memory_handler);
+  PRINTF(("MPLMemoryGrp:: postrecv mid = %d\n", global_mid));
   return global_mid;
 }
 
@@ -113,14 +116,22 @@ MPLMemoryGrp::wait(long mid1, long mid2)
   if (mid2 == -1) imid = (int)mid1;
   else imid = DONTCARE;
   size_t count;
-  mpc_wait(&imid,&count);
-  return imid;
+  PRINTF(("MPLMemoryGrp: waiting on %d\n", imid));
+  if (mpc_wait(&imid,&count)) {
+      fprintf(stderr, "MPLMemoryGrp: mpc_wait failed\n");
+      sleep(1);
+      abort();
+    }
+  PRINTF(("MPLMemoryGrp: imid = %d, global_mid = %d DONTCARE = %d count = %d\n",
+          imid, global_mid, DONTCARE, count));
+  return (long)imid;
 }
 
 MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg,
                            int localsize):
   MIDMemoryGrp(msg, localsize)
 {
+  PRINTF(("MPLMemoryGrp entered\n"));
   if (global_mpl_mem) {
       fprintf(stderr, "MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
@@ -132,11 +143,19 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg,
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
 
+  PRINTF(("MPLMemoryGrp activating\n"));
   activate();
+  PRINTF(("MPLMemoryGrp done\n"));
 }
 
 MPLMemoryGrp::~MPLMemoryGrp()
 {
+  PRINTF(("MPLMemoryGrp: in DTOR\n"));
+  deactivate();
+
+  int oldlock = lock();
+  global_mpl_mem = 0;
+  unlock(oldlock);
 }
 
 void

@@ -64,6 +64,7 @@ MemoryGrp::~MemoryGrp()
 MemoryGrp *
 MemoryGrp::create_memorygrp(int localsize)
 {
+  printf("entered create memorygrp\n");
   MemoryGrp *ret = 0;
   RefMessageGrp msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {
@@ -77,6 +78,7 @@ MemoryGrp::create_memorygrp(int localsize)
 #endif
 #if defined(HAVE_MPL) && defined(HAVE_MPI)
   else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
+      printf("creating mplmemorygrp\n");
       ret = new MPLMemoryGrp(msg, localsize);
     }
 #endif
@@ -92,6 +94,10 @@ MemoryGrp::create_memorygrp(int localsize)
       fprintf(stderr, "MemoryGrp::create_memorygrp: cannot create "
               "default for \"%s\"\n.", msg->class_name());
       abort();
+    }
+
+  if (!ret) {
+      fprintf(stderr, "WARNING: MemoryGrp::create_memorygrp(): failed\n");
     }
 
   return ret;

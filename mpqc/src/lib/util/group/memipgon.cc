@@ -57,6 +57,7 @@ IParagonMemoryGrp::IParagonMemoryGrp(const RefMessageGrp& msg,
 
 IParagonMemoryGrp::~IParagonMemoryGrp()
 {
+  deactivate();
 }
 
 long

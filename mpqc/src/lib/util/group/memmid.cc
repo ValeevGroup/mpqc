@@ -142,22 +142,18 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg,
                                    int localsize):
   ActiveMsgMemoryGrp(msg, localsize)
 {
+  PRINTF(("MIDMemoryGrp CTOR\n", me()));
   data_request_type_ = 113;
   data_type_to_handler_ = 114;
   data_type_from_handler_ = 115;
   nsync_ = 0;
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
-
-  activate();
-
-  PRINTF(("%d: data_ = 0x%x\n", me(), data_));
 }
 
 MIDMemoryGrp::~MIDMemoryGrp()
 {
   PRINTF(("%d: ~MIDMemoryGrp\n", me()));
-  deactivate();
 }
 
 void
@@ -292,10 +288,10 @@ MIDMemoryGrp::sync()
       // keep processing requests until all nodes have sent a
       // sync request
       PRINTF(("outside while loop nsync_ = %d, n() = %d\n", nsync_, n()));
-      PRINTF(("outside while 2\n"));
       while (nsync_ < n() - 1) {
-          PRINTF(("waiting for sync or other msg\n"));
-          wait(data_request_mid_);
+          PRINTF(("waiting for sync or other msg data_request_mid = %d\n",
+                  data_request_mid_));
+          mid = wait(data_request_mid_);
           PRINTF(("got mid = %d (data_request_mid_ = %d)\n", mid,
                   data_request_mid_));
           if (mid == data_request_mid_) {
@@ -308,14 +304,14 @@ MIDMemoryGrp::sync()
         }
       nsync_ = 0;
 
-      PRINTF(("notifying nodes that sync is comidete\n"));
+      PRINTF(("notifying nodes that sync is complete\n"));
       // tell all nodes that they can proceed
       MemoryDataRequest buf(MemoryDataRequest::Sync, me());
       for (i=1; i<n(); i++) {
           if (DEBREQ) print_memreq(buf, "sync:", i);
           mid = send(buf.data(), buf.nbytes(), i, data_request_type_);
           PRINTF(("node %d can proceed (mid = %d)\n", i, mid));
-          wait(mid);
+          mid = wait(mid);
           PRINTF(("node %d got proceed message\n", i, mid));
         }
     }
@@ -397,7 +393,7 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
           abort();
         }
       else {
-          PRINTF(("%s: wait: wait comidete\n", msg));
+          PRINTF(("%s: wait: wait complete\n", msg));
         }
     } while (tmpmid != mid);
 

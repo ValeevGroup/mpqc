@@ -1,5 +1,8 @@
 
-\documentclass{report}
+\documentclass[letterpaper]{report}
+
+\tolerance=1500
+\hbadness=1500
 
 \usepackage{html}
 \usepackage{verbatim}
@@ -27,6 +30,7 @@ The Massively Parallel Quantum Chemistry program (MPQC) computes
 the properties of molecules, {\it ab initio}, on a wide variety
 of computer architectures.
 
+\begin{sloppypar}
 MPQC can compute closed shell and general restricted open shell
 Hartree-Fock energies and gradients, second order open shell
 perturbation theory (OPT2[2]) and Z-averaged perturbation theory
@@ -34,9 +38,10 @@ perturbation theory (OPT2[2]) and Z-averaged perturbation theory
 perturbation theory energies and gradients.  It also includes a
 robust internal coordinate geometry optimizer that efficiently
 optimizes molecules with many degrees of freedom.
+\end{sloppypar}
 
-MPQC runs on Unix compatible workstations (Intel/Linux, R8000,
-RS/6000), symmetric multi-processors (SGI Power Challenge), and
+MPQC runs on Unix compatible workstations (Intel/Linux, SGI R8000,
+IBM RS/6000), symmetric multi-processors (SGI Power Challenge), and
 massively parallel computers (IBM SP2, Intel Paragon).
 \end{abstract}
 
@@ -97,6 +102,8 @@ those in need.
 \input{chemistry/qc/wfn/doc/wfnkv.tex}
 \input{chemistry/qc/basis/doc/basiskv.tex}
 \input{chemistry/qc/intv3/doc/intv3kv.tex}
+\input{chemistry/qc/scf/doc/scfkv.tex}
+\input{chemistry/qc/mbpt/doc/mbptkv.tex}
 
 \chapter*{Glossary}
 \label{glossary}

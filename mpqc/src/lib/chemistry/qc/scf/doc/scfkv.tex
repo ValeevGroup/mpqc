@@ -1,0 +1,117 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SCF} Class}
+\label{SCF}\index{SCF}
+
+The \clsnm{SCF} abstract class derives from \clsnmref{OneBodyWavefunction}.
+\clsnm{SCF} objects read the following input:
+
+\begin{description}
+  \item[\keywd{maxiter}]  This integer specifies the maximum number of
+     SCF iterations.  The default is 40.
+
+  \item[\keywd{density\_reset\_frequency}] This integer specifies how
+     often, in term of SCF iterations, $\Delta D$ will be reset to $D$.
+     The default is 10.
+
+  \item[\keywd{reset\_occuptions}] Reassign the occupations after each
+     iteration based on the eigenvalues.  This only has an effect for
+     molecules with higher than $C_1$ symmetry.  The default is false.
+
+  \item[\keywd{level\_shift}] The default is 0.
+
+  \item[\keywd{extrap}] This specifies an object of type
+     \clsnmref{SelfConsistentExtrapolation}.  The default is a
+     \clsnmref{DIIS} object.
+
+  \item[\keywd{memory}] The amount of memory that each processor may use.
+     The default is 0 (minimal memory use).
+
+  \item[\keywd{debug}] This integer can be used to produce output for
+     debugging.  The default is 0.
+
+  \item[\keywd{local\_density}] If this is true, a local copy of the
+     density and $G$ matrix will be made on all nodes, even if a
+     distributed matrix specialization is used.  The default is true.
+
+  \item[\keywd{guess\_wavefunction}] This specifies the initial guess for
+     the solution to the SCF equations.  This can be either a
+     \clsnmref{OneBodyWavefunction} object or the name of file that
+     contains the saved state of a \clsnmref{OneBodyWavefunction} object.
+     By default the one-electron hamiltonian will be diagonalized to obtain
+     the initial guess.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{CLSCF} Class}
+\label{CLSCF}\index{CLSCF}
+
+The \clsnm{CLSCF} class derives from \clsnmref{SCF}.  It is used to compute
+the Hartree-Fock energies of closed-shell molecules.  In addition to the
+input for the \clsnmref{SCF} parent class, \clsnm{CLSCF} objects read the
+following input:
+
+\begin{description}
+  \item[\keywd{docc}] This vector of integers gives the total number of
+     doubly occupied orbitals of each irreducible representation.  By
+     default, this will be chosen to make the molecule uncharged and the
+     electrons will be distributed among the irreducible representations
+     according to the orbital energies.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{HSOSSCF} Class}
+\label{HSOSSCF}\index{HSOSSCF}
+
+The \clsnm{HSOSSCF} class derives from \clsnmref{SCF}.  It is used to
+compute the Hartree-Fock energies of high-spin open-shell molecules.  In
+addition to the input for the \clsnmref{SCF} parent class, \clsnm{HSOSSCF}
+objects read the following input:
+
+\begin{description}
+  \item[\keywd{total\_charge}] This integer gives the total charge, $c$, of
+     the molecule.  The default is 0.
+
+  \item[\keywd{nsocc}] This integer gives the total number of singly
+     occupied orbitals, $n_\mathrm{socc}$.  If this is not given, then
+     \keywd{multiplicity} will be read.
+
+  \item[\keywd{multiplicity}] This integer gives the multiplicity, $m$, of
+     the molecule.  The number of singly occupied orbitals is then
+     $n_\mathrm{socc} = m - 1$.  If neither \keywd{nsocc} nor
+     \keywd{multiplicity} is given, then if, in consideration of
+     \clsnmref{total\_charge}, the number of electrons is even, the default
+     $n_\mathrm{socc}$ is 2.  Otherwise, it is 1.
+
+  \item[\keywd{ndocc}] This integer gives the total number of doubly
+     occupied orbitals $n_\mathrm{docc}$.  The default $n_\mathrm{docc} =
+     (c - n_\mathrm{socc})/2$.
+
+  \item[\keywd{socc}] This vector of integers gives the total number of
+     singly occupied orbitals of each irreducible representation.  By
+     default, the $n_\mathrm{socc}$ singly occupied orbitals will be
+     distributed according to orbital eigenvalues.  If \keywd{socc} is
+     given, then \keywd{docc} must be given and they override
+     \keywd{nsocc}, \keywd{multiplicity}, \keywd{ndocc}, and
+     \keywd{total\_charge}.
+
+  \item[\keywd{docc}] This vector of integers gives the total number of
+     doubly occupied orbitals of each irreducible representation.  By
+     default, the $n_\mathrm{docc}$ singly occupied orbitals will be
+     distributed according to orbital eigenvalues.  If \keywd{docc} is
+     given, then \keywd{socc} must be given and they override
+     \keywd{nsocc}, \keywd{multiplicity}, \keywd{ndocc}, and
+     \keywd{total\_charge}.
+
+  \item[\keywd{maxiter}] This has the same meaning as in the parent
+     class, \clsnmref{SCF}; however, the default value is 100.
+
+  \item[\keywd{level\_shift}] This has the same meaning as in the parent
+     class, \clsnmref{SCF}; however, the default value is 1.0.
+
+\end{description}

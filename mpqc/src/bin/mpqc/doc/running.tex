@@ -68,10 +68,10 @@ Now MPQC should be ready to run.
 \index{computers, shared memory}
 \index{shared memory}
 
-By default, MPQC will run on only one CPU.  To specify more, associate
-a \clsnmref{ShmMessageGrp} object with the \verb|message|
-keyword.  For example, putting the following at the top of your input file
-would run MPQC on four processors:
+By default, MPQC will run on only one CPU.  To specify more, associate a
+\clsnmref{ShmMessageGrp} object with the \keywd{message} keyword.  For
+example, putting the following at the top of your input file would run MPQC
+on four processors:
 
 \begin{alltt}
 message<\clsnmref{ShmMessageGrp}>:(n = 4)
@@ -80,13 +80,13 @@ message<\clsnmref{ShmMessageGrp}>:(n = 4)
 
 To run MPQC, type:
 \begin{alltt}
-{\itshape mpqc_executable} {\ttfamily -f} {\itshape input_file}
+\exenm{mpqc} {\ttfamily -f} {\itshape input_file}
 \end{alltt}
 
   Alternately, you can give the \clsnm{MessageGrp} object on
 the command line instead of in the input file:
 \begin{alltt}
-{\itshape mpqc_executable} {\ttfamily -messagegrp "message<\clsnmref{ShmMessageGrp}>:(n = 4)" -f} {\itshape input_file}
+\exenm{mpqc} {\ttfamily -messagegrp "<\clsnmref{ShmMessageGrp}>:(n = 4)" -f} {\itshape input_file}
 \end{alltt}
 
 If MPQC should unexpectedly die, shared memory segments and
@@ -122,7 +122,7 @@ ipcrm -s 391
 
 To run interactively type:
 \begin{alltt}
-{\itshape mpqc_executable} -sz {\itshape n_node} -f {\itshape input_file}
+\exenm{mpqc} -sz {\itshape n_node} -f {\itshape input_file}
 \end{alltt}
 
 \section{Running MPQC on the IBM SP2}
@@ -167,7 +167,10 @@ MPQC:
 
 \begin{alltt}
 #!/bin/sh
-#@ environment = MessageGrp=MPIMessageGrp;MP_LANG=En_US;MP_LABELIO=YES;MP_INFOLEVEL=1;MP_PGMMODEL=spmd;MP_RESD=YES;MP_CSS_INTERRUPT=YES;MP_EUILIB=us
+#@ environment = MessageGrp=MPIMessageGrp;\\
+   MP_LANG=En_US;MP_LABELIO=YES;MP_INFOLEVEL=1;\\
+   MP_PGMMODEL=spmd;MP_RESD=YES;MP_CSS_INTERRUPT=YES;\\
+   MP_EUILIB=us
 #@ input = /dev/null
 #@ output = mpqc.out.$(Cluster).$(Process)
 #@ error = mpqc.err.$(Cluster).$(Process)
@@ -197,7 +200,7 @@ Table~\ref{running:spvariables} explains the meaning of the variables:
   CLASS & queue name & small\_short \\
   MINPROC & minimum number of nodes & 4 \\
   MAXPROC & maximum number of nodes & 8 \\
-  EMAIL & your email address & cljanss@munin.ca.sandia.gov \\
+  EMAIL & your email address & ynh@ude.edu \\
   CPULIMIT & maximum CPU time (hour:min:sec) & 1:0:0 \\
   MEMORY & maximum amount of memory (MBytes) & 64 \\
   EXECUTABLE & path to the executable & mpqc \\

@@ -21,10 +21,10 @@ associates keywords and logical groupings of keywords with
 values.  The values can be scalars, arrays, or objects.
 
 The keywords recognized by \exenm{mpqc} begin with either an
-{\ttfamily mpqc}
-or {\ttfamily default} prefix.  That is, they
-must be nested between an {\ttfamily mpqc:(} and a {\ttfamily )}.
-Alternately, each keyword can be prefixed by {\ttfamily mpqc:}.
+\keywd{mpqc}
+or \keywd{default} prefix.  That is, they
+must be nested between an \keywd{mpqc:(} and a \keywd{)}.
+Alternately, each keyword can be prefixed by \keywd{mpqc:}.
 The primary keywords are given below.  Some of the keywords
 specify objects, in which case the object will require more
 \clsnmref{KeyVal} input.  These objects are created from the
@@ -38,35 +38,39 @@ several chapters that follow.
 \end{htmlonly}
 
 \begin{description}
-\item[{\ttfamily mole}] This is the most important keyword for
+\item[\keywd{mole}] This is the most important keyword for
         \exenm{mpqc}.  It specifies the \clsnmref{MolecularEnergy} object.
         This is an object that knows how to compute the energy of a
-        molecule.
-\item[{\ttfamily opt}] This keyword must be specified for optimizations.
-        It specifies an \clsnmref{Optimizer} object.
-\item[{\ttfamily freq}] This keyword must be specified to compute frequencies.
-        It specifies an \clsnmref{MolecularFrequency} object.
-\item[{\ttfamily checkpoint}] The value of this keyword is boolean.  If
+        molecule.  The specializations of \clsnmref{MolecularEnergy} that
+        are most commonly used here are \clsnmref{CLSCF},
+        \clsnmref{HSOSSCF}, and \clsnmref{MBPT2}.
+\item[\keywd{opt}] This keyword must be specified for optimizations.
+        It specifies an \clsnmref{Optimize} object.  Usually,
+        \clsnmref{QNewtonOpt} is best for finding minima and
+        \clsnmref{EFCOpt} is best for transition states.
+\item[\keywd{freq}] This keyword must be specified to compute frequencies.
+        It specifies an \clsnmref{MolecularFrequencies} object.
+\item[\keywd{checkpoint}] The value of this keyword is boolean.  If
         true the calculation will be checkpointed.  The default is to
         checkpoint.
-\item[{\ttfamily restart}] The value of this keyword is boolean.  If true
+\item[\keywd{restart}] The value of this keyword is boolean.  If true
         \exenm{mpqc} will attempt to restart the calculation.  If the
         checkpoint file is not found, the calculation will continue as if
         the value were false. The default is true.
-\item[{\ttfamily do\_energy}] The value of this keyword is boolean.  If
+\item[\keywd{do\_energy}] The value of this keyword is boolean.  If
         true a single point energy calculation will be done for the
-        \clsnmref{MolecularEnergy} object given with the \ttfamily{mole}
+        \clsnmref{MolecularEnergy} object given with the \keywd{mole}
         keyword.  The default is true.
-\item[{\ttfamily do\_gradient}] The value of this keyword is boolean.  If
+\item[\keywd{do\_gradient}] The value of this keyword is boolean.  If
         true a single point gradient calculation will be done for the
-        \clsnmref{MolecularEnergy} object given with the \ttfamily{mole}
+        \clsnmref{MolecularEnergy} object given with the \keywd{mole}
         keyword.  The default is false.
-\item[{\ttfamily optimize}] The value of this keyword is boolean.  If
-        true and the \ttfamily{opt} keyword was set to a valid value,
+\item[\keywd{optimize}] The value of this keyword is boolean.  If
+        true and the \keywd{opt} keyword was set to a valid value,
         then an optimization will be performed.  The default is true.
-\item[{\ttfamily write\_pdb}] The value of this keyword is boolean.  If
+\item[\keywd{write\_pdb}] The value of this keyword is boolean.  If
         true a PDB file with the molecular coordinates will be written.
-\item[{\ttfamily filename}] The value of this keyword is a string that
+\item[\keywd{filename}] The value of this keyword is a string that
         gives a name from which checkpoint and other filenames are
         constructed.  The default is the basename of the input file.
 \end{description}
@@ -74,7 +78,7 @@ several chapters that follow.
 There also some utility keywords that tell mpqc some technical
 details about how to do the calculation:
 \begin{description}
-\item[{\ttfamily message}]
+\item[\keywd{message}]
         This optional keyword gives a \clsnmref{MessageGrp} object
         that sets up MPQC for parallel processing.  The default
         is a \clsnmref{ProcMessageGrp} that runs MPQC on a single
@@ -86,11 +90,11 @@ details about how to do the calculation:
                      {}
                      {running mpqc}
         for other ways to specify the \clsnmref{MessageGrp} object.
-\item[{\ttfamily debug}]
+\item[\keywd{debug}]
         This optional keyword gives a \clsnmref{Debugger} object
         which can used to help find the problem if MPQC encounters
         a catastrophic error.
-\item[{\ttfamily matrixkit}]
+\item[\keywd{matrixkit}]
         This optional keyword gives a \clsnmref{SCMatrixKit} specialization
         which is used to produce matrices of the desired type.
         The default is a \clsnmref{ReplSCMatrixKit} which replicates

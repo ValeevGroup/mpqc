@@ -37,7 +37,7 @@ the following information:
      The default is false.
 
   \item[\keywd{checkpoint\_file}] The name of the checkpoint file.
-     The default is \filnm{opt\_ckpt.dat}.
+     The name defaults to \filnm{opt\_ckpt.dat}.
 
   \item[\keywd{max\_iterations}] The maximum number of interations.
      The default is 10.
@@ -208,7 +208,9 @@ This hessian update method is the recommended method for use with
 \section{The \clsnm{PowellUpdate} Class}\label{PowellUpdate}\index{PowellUpdate}
 
 The \clsnm{PowellUpdate} class is derived from \clsnmref{HessianUpdate}
-used to specify a Powell hessian update.
+used to specify a Powell hessian update.  This hessian update method is the
+recommended method for use with transition state searches (the
+\clsnmref{EFCOpt} class can be used for transition state searches).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -217,3 +219,35 @@ used to specify a Powell hessian update.
 The \clsnm{LineOpt} abstract class derives from \clsnmref{Optimize} and is
 used to perform one dimensional optimizations.  However, there are
 currently no implementations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SelfConsistentExtrapolation} Class}
+\label{SelfConsistentExtrapolation}\index{SelfConsistentExtrapolation}
+
+The \clsnm{SelfConsistentExtrapolation} abstract class is used
+to iteratively solve equations requiring a self consistent solution,
+such as,
+\[ \bar{x}' = f(\bar{x}) \]
+The only input parameter is \keywd{tolerance}, which is usually not needed
+since the objects using \clsnm{SelfConsistentExtrapolation} should set the
+tolerances as needed.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{DIIS} Class}
+\label{DIIS}\index{DIIS}
+
+The \clsnm{DIIS} class derives from \clsnmref{SelfConsistentExtrapolation}
+and provides DIIS extrapolation.  The following keywords are recognized.
+
+\begin{description}
+  \item[\keywd{n}] This integer maximum number of data sets to retain.
+     The default is 5.
+
+  \item[\keywd{start}] The DIIS extrapolation will begin on the iteration
+     given by this integer.  The default is 1.
+
+  \item[\keywd{damping\_factor}] This nonnegative floating point number is
+     used to dampen the DIIS extrapolation.  The default is 0.0.
+
+\end{description}

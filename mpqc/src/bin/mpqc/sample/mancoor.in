@@ -31,7 +31,7 @@ mpqc: (
       molecule = $:molecule
       extra_bonds = [ 2 5 ]
     )
-    % rather than automatically generate variable coordinates, use these
+    % use these instead of generated coordinates
     variable<SetIntCoor>: [
       <StreSimpleCo>:( atoms = [ 2 5 ] )
       <BendSimpleCo>:( atoms = [ 2 5 4 ] )
@@ -54,7 +54,6 @@ mpqc: (
       <BendSimpleCo>:( atoms = [ 5 4 6 ] )
     ]
     % these are fixed by symmetry anyway,
-    % but this will avoid round-off problems
     fixed<SetIntCoor>: [
       <SumIntCoor>: (
         coor: [
@@ -70,9 +69,9 @@ mpqc: (
           ]
         coef = [ 1.0 -1.0 ]
         )
-      <TorsSimpleCo>:( value = 180.0 unit = "degree" atoms = [ 2 5 4 6] )
-      <OutSimpleCo>:( value =  52.26 unit = "degree" atoms = [ 3 2 6 4 ] )
-      <OutSimpleCo>:( value = -52.26 unit = "degree" atoms = [ 1 2 6 4 ] )
+      <TorsSimpleCo>:( atoms = [ 2 5 4 6] )
+      <OutSimpleCo>:( atoms = [ 3 2 6 4 ] )
+      <OutSimpleCo>:( atoms = [ 1 2 6 4 ] )
     ]
   )
   % optimizer object for the molecular geometry
@@ -82,7 +81,7 @@ mpqc: (
     convergence<MolEnergyConvergence>: (
       cartesian = yes
     )
-    % give a partial guess hessian in internal, variable coordinates
+    % give a partial guess hessian in internal coordinates
     % the missing elements will be filled in automatically
     hessian = [
         [  0.0109261670 ]

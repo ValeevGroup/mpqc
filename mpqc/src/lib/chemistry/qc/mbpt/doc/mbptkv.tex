@@ -1,0 +1,73 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MBPT2} Class}
+\label{MBPT2}\index{MBPT2}
+
+The \clsnm{MBPT2} class derives from \clsnmref{Wavefunction}.
+\clsnm{MBPT2} objects read the following input:
+
+\begin{description}
+  \item[\keywd{reference}] This gives the reference wavefunction.  It must
+     be an object of type \clsnmref{CLSCF} for closed-shell molecules and
+     \clsnmref{HSOSSCF} for open-shell molecules.  The is no default.
+
+  \item[\keywd{nfzc}] The number of frozen core orbitals.  The default
+     is 0.
+
+  \item[\keywd{nfzv}] The number of frozen virtual orbitals.  The default
+     is 0.
+
+  \item[\keywd{memory}] The amount of memory that each processor may use.
+
+  \item[\keywd{method}] This gives a string that must take on one of the
+     values below.  The default is \keywd{mp} for closed-shell systems
+     and \keywd{zapt} for open-shell systems.
+
+      \begin{description}
+
+        \item[\keywd{mp}] Use M\o{}ller-Plesset perturbation theory.  This
+           is only valid for closed-shell systems.  Energies and
+           gradients can be computed with this method.
+
+        \item[\keywd{opt1}] Use the OPT1 variant of open-shell perturbation
+           theory.  Only energies can be computed for open-shell systems.
+
+        \item[\keywd{opt2}] Use the OPT2 variant of open-shell perturbation
+           theory.  Only energies can be computed for open-shell systems.
+
+        \item[\keywd{zapt}] Use the ZAPT variant of open-shell perturbation
+           theory.  Only energies can be computed for open-shell systems.
+
+     \end{description}
+
+  \item[\keywd{algorithm}] This gives a string that must take on one of the
+     values given below.  The default is \keywd{memgrp} for closed-shell
+     systems.  For open-shell systems \keywd{v1} is used for a small number
+     of processors and \keywd{v2} is used otherwise.
+
+     \begin{description}
+
+        \item[\keywd{memgrp}] Use the distributed shared memory algorithm
+          (which uses a \clsnmref{MemoryGrp} object).  This is only valid
+          for MP2 energies and gradients.
+
+        \item[\keywd{v1}] Use algorithm V1.
+
+        \item[\keywd{v2}] Use algorithm V2.
+
+        \item[\keywd{v2lb}] Use a modified V2 algorithm that may compute a
+           few more two electron integrals, but may get better load balance
+           on the $O(n_\mathrm{basis}^5)$ part of the calculation.
+
+     \end{description}
+
+  \item[\keywd{memorygrp}] A \clsnmref{MemoryGrp} object that is used by
+     the \type{memgrp} algorithm.  If this is not given the program will
+     try to find an appropriate default.
+
+  \item[\keywd{debug}] If this is nonzero, extra information is written to
+     the output.  The default is 0.
+
+\end{description}
+

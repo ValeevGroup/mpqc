@@ -267,14 +267,14 @@ coordinates for a molecule.
       radii, then a bond is placed between the two atoms for the purpose of
       finding internal coordinates.  The default is 1.1.
 
-  \item[\keywd{linear\_bend\_threshold}] A bend angle greater than 180 -
-      \keywd{linear\_tors\_threshold} degrees is considered a linear
-      bend. The default is 5.0.
+  \item[\keywd{linear\_bend\_threshold}] A bend angle in degress greater
+      than 180 minus this keyword's floating point value is considered a
+      linear bend. The default is 5.0.
 
-  \item[\keywd{linear\_tors\_threshold}] The angles formed by atoms a-b-c and
-      b-c-d are checked for near linearity.  An angle greater than 180 -
-      \keywd{linear\_tors\_threshold} degrees the torsion is classified
-      as a linear torsion. The default is 5.0.
+  \item[\keywd{linear\_tors\_threshold}] The angles formed by atoms a-b-c
+      and b-c-d are checked for near linearity.  If an angle in degrees is
+      greater than 180 minus this keyword's floating point value, then the
+      torsion is classified as a linear torsion. The default is 5.0.
 
   \item[\keywd{linear\_bend}] Generate \clsnmref{BendSimpleCo} objects
       to describe linear bends.  The default is false.
@@ -521,7 +521,28 @@ value of the coordinate, $\tau_s$, is given by
 \section{The \clsnm{SumIntCoor} Class}\label{SumIntCoor}\index{SumIntCoor}
 
 The \clsnm{SumIntCoor} class specifies a linear combination of
-\clsnmref{IntCoor} objects.
+\clsnmref{IntCoor} objects.  The following keywords are recognized:
+
+\begin{description}
+  \item[\keywd{coor}] A vector of \clsnmref{IntCoor} objects that define
+    the summed coordinates.
+
+  \item[\keywd{coef}] A vector of floating point numbers that gives the
+    coefficients of the summed coordinates.
+
+\end{description}
+
+The following is a sample \clsnmref{ParsedKeyVal} input for
+a \clsnmref{SumIntCoor} object.
+\begin{alltt}
+  sumintcoor<\clsnmref{SumIntCoor}>: (
+    coor: [
+      <\clsnmref{StreSimpleCo}>:( atoms = [ 1 2 ] )
+      <\clsnmref{StreSimpleCo}>:( atoms = [ 2 3 ] )
+      ]
+    coef = [ 1.0 1.0 ]
+    )
+\end{alltt}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -540,8 +561,8 @@ coordinates can be explicity given.  Internal coordinate classes include:
   \item[\keywd{generator}] A \clsnmref{IntCoorGen} object that will be
     used to generate the internal coordinates.
 
-  \item[\vrbl{i}] A sequence of integer keywords, all $i$ for 0 $\leq$
-    \vrbl{i} $<$ $n$, can be assign to \clsnmref{IntCoor} objects.
+  \item[\vrbl{i}] A sequence of integer keywords, all $i$ for $0 \leq i <
+    n$, can be assign to \clsnmref{IntCoor} objects.
 
 \end{description}
 

@@ -239,6 +239,10 @@ class PW91Functional: public DenFunctional {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    void CORPW91(double RS, double ZET, double G, double T,
+                 double UU, double VV, double WW,
+                 double EC, double ECRS, double ECZET,
+                 double& H, double& DVCUP, double& DVCDN);
     void CORLSD(double RS,double ZET,
                 double &EC,
                 double &VCUP,double &VCDN,

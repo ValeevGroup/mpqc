@@ -236,7 +236,7 @@ SumDenFunctional::point(const PointInputData &id,
       od.energy += coefs_[i] * tmpod.energy;
       if (compute_potential_) {
           od.alpha_pot += coefs_[i] * tmpod.alpha_pot;
-          od.beta_pot += coefs_[i] * tmpod.alpha_pot;
+          od.beta_pot += coefs_[i] * tmpod.beta_pot;
         }
     }
 }
@@ -735,6 +735,7 @@ PW91Functional::point(const PointInputData &id,
                       PointOutputData &od)
 {
   double EC, VCUP, VCDN, ECRS, ECZET, ALFC;
+  double H, DVCUP, DVCDN;
 
   double rho = id.dens_alpha + id.dens_beta;
   double zeta = (id.dens_alpha - id.dens_beta)/rho;
@@ -744,6 +745,23 @@ PW91Functional::point(const PointInputData &id,
 
   od.energy = EC * rho;
 
+  double thrd = 1./3.;
+  double thrd2 = 2*thrd;
+  double alpha = pow(9*M_PI/4., thrd);
+  double pi32 = 3.*M_PI*M_PI;
+  double g = 0.5*(pow(1.+zeta, thrd2) + pow(1.-zeta, thrd2));
+  double fk = pow(pi32*rho, thrd);
+  double sk = sqrt(4.*fk/M_PI);
+  double twoksg = 2.*sk*g;
+  double agr = sqrt(id.dens_grad_alpha*id.dens_grad_alpha +
+                    id.dens_grad_beta*id.dens_grad_beta);
+  double t = agr/(twoksg*rho);
+  double uu,vv,ww; // only for potential
+
+  CORPW91(rs, zeta, g, t, uu, vv, ww, EC, ECRS, ECZET, H, DVCUP, DVCDN);
+
+  od.energy += H * rho;
+  
   if (compute_potential_) {
       // not true, really, but abort anyway
       cerr << class_name() << ": cannot compute potential" << endl;
@@ -807,6 +825,58 @@ PW91Functional::GCOR(double A,double A1,
   GG = Q0*Q2;
   double Q3 = A*(B1/RS12+2.*B2+3.*B3*RS12+2.*B4*P1*RSP);
   GGRS = -2.*A*A1*Q2-Q0*Q3/(Q1*Q1+Q1);
+}
+
+//  GGA91 CORRELATION
+//  INPUT RS: SEITZ RADIUS
+//  INPUT ZET: RELATIVE SPIN POLARIZATION
+//  INPUT T: ABS(GRAD D)/(D*2.*KS*G)
+//  INPUT UU: (GRAD D)*GRAD(ABS(GRAD D))/(D**2 * (2*KS*G)**3)
+//  INPUT VV: (LAPLACIAN D)/(D * (2*KS*G)**2)
+//  INPUT WW:  (GRAD D)*(GRAD ZET)/(D * (2*KS*G)**2
+//  OUTPUT H: NONLOCAL PART OF CORRELATION ENERGY PER ELECTRON
+//  OUTPUT DVCUP,DVCDN:  NONLOCAL PARTS OF CORRELATION POTENTIALS
+void
+PW91Functional::CORPW91(double RS, double ZET, double G, double T,
+                        double UU, double VV, double WW,
+                        double EC, double ECRS, double ECZET,
+                        double& H, double& DVCUP, double& DVCDN)
+{
+  H=0;
+  if (fabs(EC) < 1e-14)
+    return;
+
+  double XNU=15.75592, CC0=0.004235, CX=-0.001667212;
+  double ALF=0.09;
+  double C1=0.002568, C2=0.023266, C3=7.389e-6, C4=8.723;
+  double C5=0.472, C6=7.389e-2, A4=100.;
+  double THRDM=1./3., THRD2=2./3.;
+
+  double BET = XNU*CC0;
+  double DELT = 2.*ALF/BET;
+  double G3 = G*G*G;
+  double G4 = G3*G;
+  double PON = -DELT*EC/(G3*BET);
+  double B = DELT/(exp(PON)-1.);
+  double B2 = B*B;
+  double T2 = T*T;
+  double T4 = T2*T2;
+  double T6 = T4*T2;
+  double RS2 = RS*RS;
+  double RS3 = RS2*RS;
+  double Q4 = 1.+B*T2;
+  double Q5 = 1.+B*T2+B2*T4;
+  double Q6 = C1+C2*RS+C3*RS2;
+  double Q7 = 1.+C4*RS+C5*RS2+C6*RS3;
+  double CC = -CX + Q6/Q7;
+  double R0 = 0.663436444*RS;
+  double R1 = A4*R0*G4;
+  double COEFF = CC-CC0-3.*CX/7.;
+  double R2 = XNU*COEFF*G3;
+  double R3 = exp(-R1*T2);
+  double H0 = G3*(BET/DELT)*log(1.+DELT*Q4*T2/Q5);
+  double H1 = R3*R2*T2;
+  H = H0+H1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

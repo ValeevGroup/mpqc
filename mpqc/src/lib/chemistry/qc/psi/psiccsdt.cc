@@ -66,9 +66,15 @@ PSI_CCSDT::compute()
 
   //molecule()->transform_to_principal_axes();
 
+  double energy_acc = desired_value_accuracy();
+  double grad_acc = desired_gradient_accuracy();
+  if (energy_acc > 1.0e-6) energy_acc = 1.0e-6;
+  if (grad_acc > 1.0e-7) grad_acc = 1.0e-7;
+  if (do_gradient() && energy_acc > grad_acc/10.0) energy_acc = grad_acc/10.0;
+
   if (!psi_in.test()){
     psi_in.write_input_file(do_gradient() ? "FIRST" : "NONE", "CCSDT",
-      (int)-log10(desired_value_accuracy()), "input.dat");
+      (int)-log10(energy_acc), "input.dat");
 
     system("inputth");
     system("psi");
@@ -98,7 +104,7 @@ PSI_CCSDT::compute()
         }
       }
     set_gradient(g);
-    set_actual_gradient_accuracy(desired_gradient_accuracy());
+    set_actual_gradient_accuracy(grad_acc);
     set_energy(file11.energy());
     }
   else {
@@ -118,6 +124,7 @@ PSI_CCSDT::compute()
       set_energy(r);
       fclose(in);
     }
+  set_actual_value_accuracy(energy_acc);
 }
 
 double

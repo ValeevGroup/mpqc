@@ -113,7 +113,8 @@ main(int argc, char **argv)
       StateOutBin so(ostrs);
       atominfo.save_state(so);
       atominfo = 0;
-      so.flush();
+      so.close();
+      ostrs.flush();
       istream istrs(ostrs.rdbuf());
       StateInBin si(istrs);
       atominfo.restore_state(si);
@@ -162,7 +163,8 @@ main(int argc, char **argv)
       cout << "saveing ..." << endl;
       mol.save_state(so);
       mol = 0;
-      so.flush();
+      so.close();
+      ostrs.flush();
       istream istrs(ostrs.rdbuf());
       StateInBin si(istrs);
       cout << "restoring ..." << endl;

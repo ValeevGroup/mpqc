@@ -334,6 +334,32 @@ class CharacterTable {
     //texi Returns the index of the symop which is the inverse of symop[i].
     int inverse(int i) const { return _inv[i]; }
     
+    //texi Returns sum_ir degen(ir);
+    int ncomp() const {
+      int ret=0;
+      for (int i=0; i < nirrep_; i++)
+        ret + gamma_[i].degeneracy();
+      return ret;
+    }
+
+    //texi Returns the irrep component i belongs to.
+    int which_irrep(int i) {
+      for (int ir=0, cn=0; ir < nirrep_; ir++)
+        for (int c=0; c < gamma_[ir].degen; c++,cn++)
+          if (cn==i)
+            return ir;
+      return -1;
+    }
+
+    //texi Returns the which compenent i is.
+    int which_comp(int i) {
+      for (int ir=0, cn=0; ir < nirrep_; ir++)
+        for (int c=0; c < gamma_[ir].degen; c++,cn++)
+          if (cn==i)
+            return c;
+      return -1;
+    }
+    
     //texi 
     // This prints the irrep to the given file, or stdout if none is given.
     // The second argument is an optional string of spaces to offset by.

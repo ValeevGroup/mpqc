@@ -7,6 +7,7 @@
 
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
+#include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/basis.h>
@@ -241,17 +242,8 @@ OneBodyIntOp::~OneBodyIntOp()
 void
 OneBodyIntOp::process(SCMatrixBlockIter& b)
 {
-  // figure out istart, iend, jstart, jend
-  b.reset();
-  int istart = b.i();
-  int jstart = b.j();
-
-  while (b) b++;
-
-  int iend = b.i();
-  int jend = b.j();
-  
-  exit(0);
+  fprintf(stderr,"OneBodyIntOp::process: cannot handle generic case\n");
+  abort();
 }
 
 void
@@ -326,11 +318,9 @@ OneBodyIntOp::process_spec(SCMatrixLTriBlock* b)
       int ioff = ifn-fnstart;
       int joff = jfn-fnstart;
       
-      int data_index = (ioff*(ioff+1)>>1)+joff;
+      int data_index = i_offset(ioff)+joff;
       
-      //printf("%d %d %f\n",ifn,jfn,spi.val());
       b->data[data_index] += spi.val();
-      data_index++;
     }
   }
 }
@@ -342,16 +332,18 @@ OneBodyIntOp::process_spec(SCMatrixRectSubBlock* b)
   RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
   
   // convert basis function indices into shell indices
-  int ishstart = bs1->function_to_shell(b->istart);
-  int jshstart = bs2->function_to_shell(b->jstart);
+  int istart = b->istart;
+  int jstart = b->jstart;
+  int iend = b->iend;
+  int jend = b->jend;
 
-  int b1end = b->iend;
-  int ishend = (b1end?bs1->function_to_shell(b1end-1) + 1 : 0);
+  int ishstart = bs1->function_to_shell(istart);
+  int jshstart = bs2->function_to_shell(jstart);
 
-  int b2end = b->jend;
-  int jshend = (b2end?bs2->function_to_shell(b2end-1) + 1 : 0);
+  int ishend = (iend ? bs1->function_to_shell(iend-1) + 1 : 0);
+  int jshend = (jend ? bs2->function_to_shell(jend-1) + 1 : 0);
 
-  int njdata = b->jend - b->jstart;
+  int njdata = jend - jstart;
 
   iter->set_redundant(0);
 
@@ -366,11 +358,10 @@ OneBodyIntOp::process_spec(SCMatrixRectSubBlock* b)
       int ifn = spi.i();
       int jfn = spi.j();
       
-      if (ifn < b->istart || ifn >= b->iend ||
-          jfn < b->jstart || jfn >= b->jend)
+      if (ifn < istart || ifn >= iend || jfn < jstart || jfn >= jend)
         continue;
       
-      int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
+      int data_index = ifn*njdata + jfn;
       b->data[data_index] += spi.val();
     }
   }
@@ -382,15 +373,23 @@ OneBodyIntOp::process_spec(SCMatrixLTriSubBlock* b)
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
 
   // convert basis function indices into shell indices
-  int fnstart = b->istart;
-  int fnend = b->iend;
-  int shstart = bs1->function_to_shell(fnstart);
-  int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
+  int istart = b->istart;
+  int iend = b->iend;
+
+  int jstart = b->jstart;
+  int jend = b->jend;
+
+  int ishstart = bs1->function_to_shell(istart);
+  int jshstart = bs1->function_to_shell(jstart);
+
+  int ishend = (iend ? bs1->function_to_shell(iend-1) + 1 : 0);
+  int jshend = (jend ? bs1->function_to_shell(jend-1) + 1 : 0);
 
   iter->set_redundant(1);
 
   // loop over all needed shells
-  for (iter->start(shstart,shstart,shend,shend); iter->ready(); iter->next()) {
+  for (iter->start(ishstart,jshstart,ishend,jshend);
+       iter->ready(); iter->next()) {
     int ish=iter->ishell();
     int jsh=iter->jshell();
 
@@ -401,17 +400,11 @@ OneBodyIntOp::process_spec(SCMatrixLTriSubBlock* b)
       int ifn = spi.i();
       int jfn = spi.j();
       
-      if (ifn < fnstart || ifn >= fnend)
+      if (ifn < istart || ifn >= iend || jfn < jstart || jfn >= jend)
         continue;
       
-      int ioff = ifn-fnstart;
-      int joff = jfn-fnstart;
-      
-      int data_index = (ioff*(ioff+1)>>1)+joff;
-      
-      //printf("%d %d %f\n",ifn,jfn,spi.val());
+      int data_index = i_offset(ifn)+jfn;
       b->data[data_index] += spi.val();
-      data_index++;
     }
   }
 }

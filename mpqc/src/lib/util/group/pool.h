@@ -152,7 +152,7 @@ PoolData::next(PoolData*p)
   next_ = p;
 #ifdef DEBUG_POOL
   if (next_ && prev_ && (next_ < prev_)) {
-      ExEnv::err() << "PoolData::next(PoolData*): next < prev" << endl;
+      ExEnv::errn() << "PoolData::next(PoolData*): next < prev" << endl;
       abort();
     }
 #endif
@@ -164,7 +164,7 @@ PoolData::prev(PoolData*p)
   prev_ = p;
 #ifdef DEBUG_POOL
   if (next_ && prev_ && (next_ < prev_)) {
-      ExEnv::err() << "PoolData::prev(PoolData*): next < prev" << endl;
+      ExEnv::errn() << "PoolData::prev(PoolData*): next < prev" << endl;
       abort();
     }
 #endif
@@ -177,7 +177,7 @@ PoolData::prev_next(PoolData*p,PoolData*n)
   next_ = n;
 #ifdef DEBUG_POOL
   if (next_ && prev_ && (next_ < prev_)) {
-      ExEnv::err() << "PoolData::prev_next: next < prev" << endl;
+      ExEnv::errn() << "PoolData::prev_next: next < prev" << endl;
       abort();
     }
 #endif
@@ -190,7 +190,7 @@ PoolData::next_free()
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      ExEnv::err() << "PoolData::next_free(): datum is not free" << endl;
+      ExEnv::errn() << "PoolData::next_free(): datum is not free" << endl;
       abort();
     }
 #endif
@@ -202,7 +202,7 @@ PoolData::prev_free()
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      ExEnv::err() << "PoolData::prev_free(): datum is not free" << endl;
+      ExEnv::errn() << "PoolData::prev_free(): datum is not free" << endl;
       abort();
     }
 #endif
@@ -214,7 +214,7 @@ PoolData::next_free(PoolData*p)
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      ExEnv::err() << "PoolData::next_free(PoolData*): datum is not free" << endl;
+      ExEnv::errn() << "PoolData::next_free(PoolData*): datum is not free" << endl;
       abort();
     }
 #endif
@@ -226,7 +226,7 @@ PoolData::prev_free(PoolData*p)
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      ExEnv::err() << "PoolData::prev_free(PoolData*): datum is not free" << endl;
+      ExEnv::errn() << "PoolData::prev_free(PoolData*): datum is not free" << endl;
       abort();
     }
 #endif
@@ -238,7 +238,7 @@ PoolData::prev_next_free(PoolData*p,PoolData*n)
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      ExEnv::err() << "PoolData::prev_next_free: datum is not free" << endl;
+      ExEnv::errn() << "PoolData::prev_next_free: datum is not free" << endl;
       abort();
     }
 #endif

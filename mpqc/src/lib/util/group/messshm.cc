@@ -268,7 +268,7 @@ void ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   msgbuf_t *message,*lastmessage;
 
 #ifdef DEBUG
-  ExEnv::out() << "ShmGrp: basic_recv: "
+  ExEnv::outn() << "ShmGrp: basic_recv: "
        << "type = " << type << ' '
        << "buf = " << buf << ' '
        << "bytes = " << bytes << ' '
@@ -328,7 +328,7 @@ void ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
   msgbuf_t *availmsg;
 
 #ifdef DEBUG
-  ExEnv::out() << "ShmGrp: basic_send: "
+  ExEnv::outn() << "ShmGrp: basic_send: "
        << "dest = " << dest << ' '
        << "type = " << type << ' '
        << "buf = " << buf << ' '
@@ -440,16 +440,16 @@ void ShmMessageGrp::print_buffer(int node, int me)
   msgbuf_t *message;
   message = (msgbuf_t*)commbuf[node]->buf;
 
-  ExEnv::out() << scprintf("Printing buffer for node %d on node %d\n",node,me);
+  ExEnv::outn() << scprintf("Printing buffer for node %d on node %d\n",node,me);
   for (i=0; i<commbuf[node]->nmsg; i++) {
-      ExEnv::out() <<
+      ExEnv::outn() <<
           scprintf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
                    me,
                    node,
                    message->size,
                    message->type,
                    message->from);
-      ExEnv::out().flush();
+      ExEnv::outn().flush();
       message = NEXT_MESSAGE(message);
     }
 

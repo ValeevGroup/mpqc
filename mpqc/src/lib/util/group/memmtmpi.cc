@@ -101,7 +101,7 @@ MTMPIThread::run_one()
       if (req.offset()+req.size() > mem_->localsize()) {
           mem_->print_lock_->lock();
           req.print("BAD RECV");
-          ExEnv::out() << "mem_->localsize() = " << mem_->localsize() << endl;
+          ExEnv::outn() << "mem_->localsize() = " << mem_->localsize() << endl;
           mem_->print_lock_->lock();
         }
       assert(req.offset()+req.size() <= mem_->localsize());
@@ -147,7 +147,7 @@ MTMPIThread::run_one()
       break;
   default:
       mem_->print_lock_->lock();
-      ExEnv::out() << "MTMPIThread: bad memory data request" << endl;
+      ExEnv::outn() << "MTMPIThread: bad memory data request" << endl;
       mem_->print_lock_->unlock();
       abort();
     }
@@ -165,7 +165,7 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<MessageGrp>& msg,
                                const Ref<ThreadGrp>& th):
   ActiveMsgMemoryGrp(msg)
 {
-  if (debug_) ExEnv::out() << "MTMPIMemoryGrp CTOR entered" << endl;
+  if (debug_) ExEnv::outn() << "MTMPIMemoryGrp CTOR entered" << endl;
 
   th_ = th;
 
@@ -175,13 +175,13 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<MessageGrp>& msg,
 MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<KeyVal>& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
-  if (debug_) ExEnv::out() << "MTMPIMemoryGrp keyval CTOR entered" << endl;
+  if (debug_) ExEnv::outn() << "MTMPIMemoryGrp keyval CTOR entered" << endl;
 
   th_ = ThreadGrp::get_default_threadgrp();
 
   KeyValValueint nthreaddef(th_->nthread());
   int nthread = keyval->intvalue("num_threads",nthreaddef);
-  ExEnv::out() << node0 << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
+  ExEnv::out0() << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
 
   init_mtmpimg(nthread);
 }
@@ -334,7 +334,7 @@ MTMPIMemoryGrp::activate()
   if (n() == 1) return;
 
   if (th_->nthread() < 2) {
-      ExEnv::out() << "MTMPIMemoryGrp didn't get enough threads" << endl;
+      ExEnv::outn() << "MTMPIMemoryGrp didn't get enough threads" << endl;
       abort();
     }
 

@@ -121,7 +121,7 @@ ShmMemoryGrp::attach_memory(void *ataddress, int size)
       if (attach_address_[i] == 0
           || attach_address_[i] == (void*) -1
           || ataddress && attach_address_[i] != ataddress) {
-          //ExEnv::out() << "ShmMemoryGrp: shmat: problem attaching using address: "
+          //ExEnv::outn() << "ShmMemoryGrp: shmat: problem attaching using address: "
           //     << " " << (void*) ataddress
           //     << ": got address: "
           //     << (void*) attach_address_[i]
@@ -208,9 +208,9 @@ ShmMemoryGrp::set_localsize(size_t localsize)
       msg_->bcast(&length, 1);
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      ExEnv::out() << scprintf("%d: sent initialize string of \"%s\" (%d)\n",
+      ExEnv::outn() << scprintf("%d: sent initialize string of \"%s\" (%d)\n",
                        me(), stringrep, length);
-      ExEnv::out().flush();
+      ExEnv::outn().flush();
 #endif // DEBUG
       delete[] stringrep;
       for (i=0; i<n(); i++) {
@@ -220,9 +220,9 @@ ShmMemoryGrp::set_localsize(size_t localsize)
           msg_->bcast(&length, 1);
           msg_->bcast(stringrep, length);
 #ifdef DEBUG
-          ExEnv::out() << scprintf("%d: sent initialize string of \"%s\" (%d) for %d\n",
+          ExEnv::outn() << scprintf("%d: sent initialize string of \"%s\" (%d) for %d\n",
                            me(), stringrep, length, i);
-          ExEnv::out().flush();
+          ExEnv::outn().flush();
 #endif // DEBUG
           delete[] stringrep;
         }
@@ -233,9 +233,9 @@ ShmMemoryGrp::set_localsize(size_t localsize)
       char * stringrep = new char[length];
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      ExEnv::out() << scprintf("%d: got initialize string of \"%s\" (%d)\n",
+      ExEnv::outn() << scprintf("%d: got initialize string of \"%s\" (%d)\n",
                        me(), stringrep, length);
-      ExEnv::out().flush();
+      ExEnv::outn().flush();
 #endif // DEBUG
       lock_.initialize(stringrep);
       delete[] stringrep;
@@ -244,9 +244,9 @@ ShmMemoryGrp::set_localsize(size_t localsize)
           stringrep = new char[length];
           msg_->bcast(stringrep, length);
 #ifdef DEBUG
-          ExEnv::out() << scprintf("%d: got initialize string of \"%s\" (%d) for %d\n",
+          ExEnv::outn() << scprintf("%d: got initialize string of \"%s\" (%d) for %d\n",
                            me(), stringrep, length, i);
-          ExEnv::out().flush();
+          ExEnv::outn().flush();
 #endif // DEBUG
           update_[i].initialize(stringrep);
           delete[] stringrep;
@@ -351,8 +351,8 @@ ShmMemoryGrp::~ShmMemoryGrp()
   cleanup();
 
 #ifdef DEBUG
-  ExEnv::out() << scprintf("msg_->nreference() = %d\n", msg_->nreference());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("msg_->nreference() = %d\n", msg_->nreference());
+  ExEnv::outn().flush();
 #endif // DEBUG
   msg_ = 0;
 }
@@ -369,23 +369,23 @@ ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
   obtain_lock();
 #else // SIMPLE_LOCK
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: clear_release_count\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: clear_release_count\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
   clear_release_count();
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: obtain_lock\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: obtain_lock\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
   obtain_lock();
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: checkeq\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: checkeq\n", me());
+  ExEnv::outn().flush();
 #endif
   while (!rangelock_->checkeq(offset, offset + size, 0)) {
 #ifdef DEBUG
-      ExEnv::out() << scprintf("%d: range not zero -- waiting for release\n", me());
-      ExEnv::out().flush();
+      ExEnv::outn() << scprintf("%d: range not zero -- waiting for release\n", me());
+      ExEnv::outn().flush();
 #endif // DEBUG
       //rangelock_->print();
       release_lock();
@@ -394,8 +394,8 @@ ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
     }
   rangelock_->decrement(offset, offset + size);
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: after obtain write\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: after obtain write\n", me());
+  ExEnv::outn().flush();
   //rangelock_->print();
 #endif // DEBUG
   release_lock();
@@ -446,9 +446,9 @@ ShmMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
   rangelock_->increment(offset, offset + size);
   note_release();
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: after release write\n", me());
+  ExEnv::outn() << scprintf("%d: after release write\n", me());
   //rangelock_->print();
-  ExEnv::out().flush();
+  ExEnv::outn().flush();
 #endif // DEBUG
   release_lock();
 #endif // SIMPLE_LOCK
@@ -458,13 +458,13 @@ void
 ShmMemoryGrp::obtain_lock()
 {
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: lock val = %d\n", me(), lock_.val());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: lock val = %d\n", me(), lock_.val());
+  ExEnv::outn().flush();
 #endif // DEBUG
   lock_--;
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: lock decremented\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: lock decremented\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
 }
 
@@ -473,8 +473,8 @@ ShmMemoryGrp::release_lock()
 {
   lock_++;
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: incremented lock\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: incremented lock\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
 }
 
@@ -485,8 +485,8 @@ ShmMemoryGrp::note_release()
       update_[i]++;
     }
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: incremented release flags\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: incremented release flags\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
 }
 
@@ -494,13 +494,13 @@ void
 ShmMemoryGrp::wait_for_release()
 {
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: decrementing release flag\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: decrementing release flag\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
   update_[me()]--;
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: decremented release flag\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: decremented release flag\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
 }
 
@@ -509,8 +509,8 @@ ShmMemoryGrp::clear_release_count()
 {
   update_[me()] = 0;
 #ifdef DEBUG
-  ExEnv::out() << scprintf("%d: clearing release count\n", me());
-  ExEnv::out().flush();
+  ExEnv::outn() << scprintf("%d: clearing release count\n", me());
+  ExEnv::outn().flush();
 #endif // DEBUG
 }
 

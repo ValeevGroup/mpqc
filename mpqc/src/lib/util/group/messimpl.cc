@@ -137,7 +137,7 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   // create it.
   if (keyval_string) {
       if (keyval_string[0] == '\0') return 0;
-      //ExEnv::out() << "Creating MessageGrp from \"" << keyval_string << "\"" << endl;
+      //ExEnv::outn() << "Creating MessageGrp from \"" << keyval_string << "\"" << endl;
       Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
       strkv->parse_string(keyval_string);
       Ref<DescribedClass> dc = strkv->describedclassvalue();
@@ -229,7 +229,7 @@ MessageGrp::initialize(int me, int n)
                   classdesc_to_index_[J.data()] = iclass;
                   iclass++;
 #ifdef DEBUG
-                  ExEnv::out() << scprintf("node %d adding class %d = \"%s\"\n",
+                  ExEnv::outn() << scprintf("node %d adding class %d = \"%s\"\n",
                                    me, iclass, J.data()->name());
 #endif
                   strcpy(currentbuffer,J.data()->name());
@@ -237,11 +237,11 @@ MessageGrp::initialize(int me, int n)
                 }
             }
 #ifdef DEBUG
-          ExEnv::out() << scprintf("node %d bcast n_new_class = %d\n",me,n_new_class);
+          ExEnv::outn() << scprintf("node %d bcast n_new_class = %d\n",me,n_new_class);
 #endif
           bcast(&n_new_class,1,i);
 #ifdef DEBUG
-          ExEnv::out() << scprintf("node %d finished bcast\n",me);
+          ExEnv::outn() << scprintf("node %d finished bcast\n",me);
 #endif
           if (n_new_class) {
               bcast(&buffer_size,1,i);
@@ -254,11 +254,11 @@ MessageGrp::initialize(int me, int n)
           // Get new classnames and indices from node i.
           int n_new_class;
 #ifdef DEBUG
-          ExEnv::out() << scprintf("node %d begin recv bcast\n",me);
+          ExEnv::outn() << scprintf("node %d begin recv bcast\n",me);
 #endif
           bcast(&n_new_class,1,i);
 #ifdef DEBUG
-          ExEnv::out() << scprintf("node %d recv bcast n_new_class = %d\n",
+          ExEnv::outn() << scprintf("node %d recv bcast n_new_class = %d\n",
                            me,n_new_class);
 #endif
           if (n_new_class) {
@@ -271,14 +271,14 @@ MessageGrp::initialize(int me, int n)
                   ClassDescP cd = ClassDesc::name_to_class_desc(currentbuffer);
                   if (cd) {
 #ifdef DEBUG
-                      ExEnv::out() << scprintf("node %d adding \"%s\"\n",
+                      ExEnv::outn() << scprintf("node %d adding \"%s\"\n",
                                        me, currentbuffer);
 #endif
                       classdesc_to_index_[cd] = iclass;
                     }
 #ifdef DEBUG
                   else {
-                      ExEnv::out() << scprintf("node %d failed to add \"%s\"\n",
+                      ExEnv::outn() << scprintf("node %d failed to add \"%s\"\n",
                                        me, currentbuffer);
                     }
 #endif

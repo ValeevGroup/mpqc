@@ -155,7 +155,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
   // if keyval input for a memory group was found, then
   // create it.
   if (keyval_string) {
-      //ExEnv::out() << "Creating MemoryGrp from \"" << keyval_string << "\"" << endl;
+      //ExEnv::outn() << "Creating MemoryGrp from \"" << keyval_string << "\"" << endl;
       Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
       strkv->parse_string(keyval_string);
       Ref<DescribedClass> dc = strkv->describedclassvalue();

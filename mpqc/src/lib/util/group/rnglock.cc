@@ -163,7 +163,7 @@ RangeLock::check()
           bad = 1;
         }
 #if VERBOSE
-      ExEnv::out()
+      ExEnv::outn()
           << scprintf("i = 0x%08x, n = 0x%08x, p = 0x%08x, [%3d, %3d), %5d\n",
                       i, i->next, i->prev, i->start, i->fence, i->value);
 #endif

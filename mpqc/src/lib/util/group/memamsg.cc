@@ -40,19 +40,19 @@
 using namespace std;
 
 #ifdef HAVE_HRECV
-#  define DISABLE do { masktrap(1); ExEnv::out().flush(); } while(0)
-#  define ENABLE do { ExEnv::out().flush(); masktrap(0); } while(0)
+#  define DISABLE do { masktrap(1); ExEnv::outn().flush(); } while(0)
+#  define ENABLE do { ExEnv::outn().flush(); masktrap(0); } while(0)
    extern "C" {
        long masktrap(long state);
      }
 #else
-#  define DISABLE ExEnv::out().flush()
-#  define ENABLE ExEnv::out().flush()
+#  define DISABLE ExEnv::outn().flush()
+#  define ENABLE ExEnv::outn().flush()
 #endif
 
 #define PRINTF(args) do { DISABLE; \
-                          ExEnv::out() << scprintf args ; \
-                          ExEnv::out().flush(); \
+                          ExEnv::outn() << scprintf args ; \
+                          ExEnv::outn().flush(); \
                           ENABLE; \
                          } while(0)
 

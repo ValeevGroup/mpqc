@@ -87,7 +87,7 @@ MPI2MemoryGrp::activate()
   MPI_Info_free(&info);
 
   if (r != MPI_SUCCESS) {
-    ExEnv::err() << "MPI2MemoryGrp::set_localsize("
+    ExEnv::errn() << "MPI2MemoryGrp::set_localsize("
                  << localsize() << ") failed on "
                  << me() << endl;
     abort();
@@ -108,7 +108,7 @@ MPI2MemoryGrp::retrieve_data(void *data, int node, int offset, int size)
   int r = MPI_Get(data, size, MPI_BYTE,
                   node, offset, size, MPI_BYTE, rma_win_);
   if (r != MPI_SUCCESS) {
-    ExEnv::err() << "MPI2MemoryGrp::retrieve_data failed" << endl;
+    ExEnv::errn() << "MPI2MemoryGrp::retrieve_data failed" << endl;
     abort();
   }
 }
@@ -119,7 +119,7 @@ MPI2MemoryGrp::replace_data(void *data, int node, int offset, int size)
   int r = MPI_Put(data, size, MPI_BYTE,
                   node, offset, size, MPI_BYTE, rma_win_);
   if (r != MPI_SUCCESS) {
-    ExEnv::err() << "MPI2MemoryGrp::replace_data failed" << endl;
+    ExEnv::errn() << "MPI2MemoryGrp::replace_data failed" << endl;
     abort();
   }
 }
@@ -134,7 +134,7 @@ MPI2MemoryGrp::sum_data(double *data, int node, int offset, int size)
                          node, doffset, dsize, MPI_DOUBLE,
                          MPI_SUM, rma_win_);
   if (r != MPI_SUCCESS) {
-    ExEnv::err() << "MPI2MemoryGrp::sum_data failed" << endl;
+    ExEnv::errn() << "MPI2MemoryGrp::sum_data failed" << endl;
     abort();
   }
 }
@@ -152,7 +152,7 @@ MPI2MemoryGrp::obtain_readwrite(distsize_t offset, int size)
   static int warn = 1;
   if (warn) {
     warn = 0;
-    ExEnv::err() << "MPI2MemoryGrp: readwrite doesn't properly lock"
+    ExEnv::errn() << "MPI2MemoryGrp: readwrite doesn't properly lock"
                  << endl;
   }
   void *data = (void *) new char[size];

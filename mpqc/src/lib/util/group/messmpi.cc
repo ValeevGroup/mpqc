@@ -60,8 +60,8 @@ print_error_and_abort(int me, int mpierror)
   int size;
   MPI_Error_string(mpierror, msg, &size);
   msg[size] = '\0';
-  ExEnv::out() << me << ": " << msg << endl;
-  ExEnv::out().flush();
+  ExEnv::outn() << me << ": " << msg << endl;
+  ExEnv::outn().flush();
   //MPI_Abort(MPI_COMM_WORLD, mpierror);
 }
 
@@ -95,13 +95,13 @@ MPIMessageGrp::MPIMessageGrp(const Ref<KeyVal>& keyval):
 
   if (keyval->booleanvalue("errors_return")) {
       if (me()==0)
-          ExEnv::out() << indent << "MPIMessageGrp: errors_return is true" << endl;
+          ExEnv::outn() << indent << "MPIMessageGrp: errors_return is true" << endl;
       MPI_Errhandler_set(commgrp, MPI_ERRORS_RETURN);
     }
 
   SCFormIO::init_mp(me());
   if (debug_) {
-      ExEnv::out() << indent << "MPIMessageGrp: KeyVal CTOR: done" << endl;
+      ExEnv::outn() << indent << "MPIMessageGrp: KeyVal CTOR: done" << endl;
     }
 }
 
@@ -111,7 +111,7 @@ MPIMessageGrp::init(int argc,char **argv)
   int me, nproc;
 
   if (debug_) {
-      ExEnv::out() << "MPIMessageGrp::init: entered" << endl;
+      ExEnv::outn() << "MPIMessageGrp::init: entered" << endl;
     }
 
   int flag;
@@ -130,12 +130,12 @@ MPIMessageGrp::init(int argc,char **argv)
       // implementations.
       int dot = open(".",O_RDONLY);
       if (debug_) {
-          ExEnv::out() << indent
+          ExEnv::outn() << indent
                << "Calling MPI_Init with";
           for (int i=0; i<argc; i++) {
-              ExEnv::out() << " " << argv[i];
+              ExEnv::outn() << " " << argv[i];
             }
-          ExEnv::out() << endl;
+          ExEnv::outn() << endl;
         }
       MPI_Init(&argc, &argv);
 #ifdef HAVE_FCHDIR
@@ -166,7 +166,7 @@ MPIMessageGrp::init(int argc,char **argv)
   //MPIL_Trace_on();
 
   if (debug_) {
-      ExEnv::out() << me << ": MPIMessageGrp::init: done" << endl;
+      ExEnv::outn() << me << ": MPIMessageGrp::init: done" << endl;
     }
 }
 
@@ -193,7 +193,7 @@ void
 MPIMessageGrp::raw_send(int target, void* data, int nbyte)
 {
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
+      ExEnv::outn() << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
                        "(0x%08x, %5d, MPI_BYTE, %3d, 0, commgrp)",
                        me(), data, nbyte, target)
            << endl;
@@ -201,11 +201,11 @@ MPIMessageGrp::raw_send(int target, void* data, int nbyte)
   int ret;
   if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,0,commgrp))
       != MPI_SUCCESS) {
-      ExEnv::out() << me() << ": MPIMessageGrp::raw_send("
+      ExEnv::outn() << me() << ": MPIMessageGrp::raw_send("
           << target << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
-  if (debug_) ExEnv::out() << scprintf("%3d: sent\n", me()) << endl;
+  if (debug_) ExEnv::outn() << scprintf("%3d: sent\n", me()) << endl;
 }
 
 void
@@ -214,7 +214,7 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
   MPI_Status status;
   if (sender == -1) sender = MPI_ANY_SOURCE;
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: MPI_Recv"
+      ExEnv::outn() << scprintf("%3d: MPI_Recv"
                        "(0x%08x, %5d, MPI_BYTE, %3d, 0, commgrp,)",
                        me(), data, nbyte, sender)
            << endl;
@@ -222,14 +222,14 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
   int ret;
   if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,0,commgrp,&status))
       != MPI_SUCCESS) {
-      ExEnv::out() << me() << ": MPIMessageGrp::raw_recv("
+      ExEnv::outn() << me() << ": MPIMessageGrp::raw_recv("
           << sender << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
   rlen = nbyte;
-  if (debug_) ExEnv::out() << scprintf("%3d: recvd %d bytes\n", me(), rlen) << endl;
+  if (debug_) ExEnv::outn() << scprintf("%3d: recvd %d bytes\n", me(), rlen) << endl;
 }
 
 void
@@ -237,7 +237,7 @@ MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
 {
   type = (type<<1) + 1;
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
+      ExEnv::outn() << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
                        "(0x%08x, %5d, MPI_BYTE, %3d, %5d, commgrp)",
                        me(), data, nbyte, target, type)
            << endl;
@@ -245,11 +245,11 @@ MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
   int ret;
   if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,type,commgrp))
       != MPI_SUCCESS) {
-      ExEnv::out() << me() << ": MPIMessageGrp::raw_sendt("
+      ExEnv::outn() << me() << ": MPIMessageGrp::raw_sendt("
           << target << "," << type << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
-  if (debug_) ExEnv::out() << scprintf("%3d: sent\n", me()) << endl;
+  if (debug_) ExEnv::outn() << scprintf("%3d: sent\n", me()) << endl;
 }
 
 void
@@ -259,7 +259,7 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
   if (type == -1) type = MPI_ANY_TAG;
   else type = (type<<1) + 1;
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: MPI_Recv(0x%08x, %5d, MPI_BYTE, "
+      ExEnv::outn() << scprintf("%3d: MPI_Recv(0x%08x, %5d, MPI_BYTE, "
                        "MPI_ANY_SOURCE, %5d, commgrp,)",
                        me(), data, nbyte, type)
            << endl;
@@ -267,7 +267,7 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
   int ret;
   if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,
                       type,commgrp,&status)) != MPI_SUCCESS) {
-      ExEnv::out() << me() << ": MPIMessageGrp::raw_recvt("
+      ExEnv::outn() << me() << ": MPIMessageGrp::raw_recvt("
           << type << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
@@ -275,7 +275,7 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
   rtag = status.MPI_TAG;
   rlen = nbyte;
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: recvd %d bytes from %d with tag %d\n",
+      ExEnv::outn() << scprintf("%3d: recvd %d bytes from %d with tag %d\n",
                        me(), rlen, rnode, rtag) << endl;
     }
 }
@@ -290,13 +290,13 @@ MPIMessageGrp::probet(int type)
   else type = (type<<1) + 1;
   int ret;
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: MPI_Iprobe(MPI_ANY_SOURCE, %5d, commgrp, "
+      ExEnv::outn() << scprintf("%3d: MPI_Iprobe(MPI_ANY_SOURCE, %5d, commgrp, "
                        "&flag, &status)", me(), type)
            << endl;
     }
   if ((ret = MPI_Iprobe(MPI_ANY_SOURCE,type,commgrp,&flag,&status))
       != MPI_SUCCESS ) {
-      ExEnv::out() << me() << ": MPIMessageGrp::probet("
+      ExEnv::outn() << me() << ": MPIMessageGrp::probet("
           << type << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
@@ -318,10 +318,10 @@ MPIMessageGrp::sync()
 {
   int ret;
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: MPI_Barrier(commgrp)", me()) << endl;
+      ExEnv::outn() << scprintf("%3d: MPI_Barrier(commgrp)", me()) << endl;
     }
   if ((ret = MPI_Barrier(commgrp)) != MPI_SUCCESS) {
-      ExEnv::out() << me() << ": MPIMessageGrp::sync(): mpi error:" << endl;
+      ExEnv::outn() << me() << ": MPIMessageGrp::sync(): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
 }
@@ -350,29 +350,29 @@ MPIMessageGrp::reduce(type*d, int n, GrpReduce<type>&r, \
  \
   if (target == -1) { \
       if (debug_) { \
-          ExEnv::out() << scprintf("%3d: MPI_Allreduce" \
+          ExEnv::outn() << scprintf("%3d: MPI_Allreduce" \
           "(0x%08x, 0x%08x, %5d, %3d, op, commgrp)", \
           me(), d, work, n, mpitype) \
                << endl; \
         } \
       ret = MPI_Allreduce(d, work, n, mpitype, op, commgrp); \
       if (debug_) \
-        ExEnv::out() << scprintf("%3d: done with Allreduce", me()) << endl; \
+        ExEnv::outn() << scprintf("%3d: done with Allreduce", me()) << endl; \
     } \
   else { \
       if (debug_) { \
-          ExEnv::out() << scprintf("%3d: MPI_Reduce" \
+          ExEnv::outn() << scprintf("%3d: MPI_Reduce" \
           "(0x%08x, 0x%08x, %5d, %3d, op, %3d, commgrp)", \
           me(), d, work, n, mpitype, target) \
                << endl; \
         } \
       ret = MPI_Reduce(d, work, n, mpitype, op, target, commgrp); \
       if (debug_) \
-        ExEnv::out() << scprintf("%3d: done with Reduce", me()) << endl; \
+        ExEnv::outn() << scprintf("%3d: done with Reduce", me()) << endl; \
     } \
  \
   if (ret != MPI_SUCCESS) { \
-      ExEnv::out() << me() << ": MPIMessageGrp::reduce(," \
+      ExEnv::outn() << me() << ": MPIMessageGrp::reduce(," \
           << n << ",,," << target << "): mpi error:" << endl; \
       print_error_and_abort(me(), ret); \
     } \
@@ -411,7 +411,7 @@ MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)
   if (n() == 1) return;
 
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: MPI_Bcast("
+      ExEnv::outn() << scprintf("%3d: MPI_Bcast("
                        "0x%08x, %5d, MPI_BYTE, %3d, commgrp)",
                        me(), data, nbyte, from)
            << endl;
@@ -419,12 +419,12 @@ MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)
   int ret;
   if ((ret = MPI_Bcast(data, nbyte, MPI_BYTE, from, commgrp))
       != MPI_SUCCESS) {
-      ExEnv::out() << me() << ": MPIMessageGrp::raw_bcast(,"
+      ExEnv::outn() << me() << ": MPIMessageGrp::raw_bcast(,"
           << nbyte << "," << from << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
   if (debug_) {
-      ExEnv::out() << scprintf("%3d: done with bcast", me()) << endl;
+      ExEnv::outn() << scprintf("%3d: done with bcast", me()) << endl;
     }
 }
 

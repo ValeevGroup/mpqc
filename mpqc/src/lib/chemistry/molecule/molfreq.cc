@@ -87,6 +87,7 @@ MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
 
   nfreq_ = 0;
   freq_ = 0;
+  ndisp_ = 0;
 }
 
 MolecularFrequencies::~MolecularFrequencies()
@@ -136,6 +137,7 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
   si.get(disp_);
   si.get(ndisp_);
   si.get(nirrep_);
+  si.get(nexternal_);
   displacements_ = new RefSCMatrix[nirrep_];
 
   for (i=0; i < nirrep_; i++) {
@@ -148,12 +150,26 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
 
   freq_ = 0;
   nfreq_ = 0;
-  gradients_ = 0;
+  debug_ = 0;
+
+  gradients_ = new RefSCVector[ndisplace()];
+  for (i=0; i < ndisp_; i++) {
+      int ndisp;
+      si.get(ndisp);
+      RefSCDimension ddisp = new SCDimension(ndisp);
+      gradients_[i] = matrixkit()->vector(ddisp);
+      gradients_[i].restore(si);
+    }
+
+  original_geometry_ = matrixkit()->vector(d3natom_);
+  original_geometry_.restore(si);
+  disym_.restore_state(si);
 }
 
 void
 MolecularFrequencies::save_data_state(StateOut& so)
 {
+  int i;
   original_point_group_.save_state(so);
 
   displacement_point_group_.save_state(so);
@@ -162,10 +178,19 @@ MolecularFrequencies::save_data_state(StateOut& so)
   so.put(disp_);
   so.put(ndisp_);
   so.put(nirrep_);
-  for (int i=0; i < nirrep_; i++) {
+  so.put(nexternal_);
+  for (i=0; i < nirrep_; i++) {
       so.put(displacements_[i].ncol());
       displacements_[i].save(so);
     }
+
+  for (i=0; i < ndisp_; i++) {
+      so.put(gradients_[i].n());
+      gradients_[i].save(so);
+    }
+
+  original_geometry_.save(so);
+  disym_.save_state(so);
 }
 
 void
@@ -441,6 +466,13 @@ MolecularFrequencies::original_geometry()
 }
 
 void
+MolecularFrequencies::set_energy(const RefMolecularEnergy &mole)
+{
+  mole_ = mole;
+  mol_ = mole_->molecule();
+}
+
+void
 MolecularFrequencies::set_gradient(int disp, const RefSCVector &grad)
 {
   int irrep, index;
@@ -453,6 +485,8 @@ MolecularFrequencies::set_gradient(int disp, const RefSCVector &grad)
       grad.print("cartesian gradient");
       gradients_[disp].print("internal gradient");
     }
+
+  ndisp_++;
 }
 
 void

@@ -97,9 +97,12 @@ class MolecularFrequencies: public SavableState {
     void compute_displacements();
     void compute_frequencies_from_gradients();
     int ndisplace() const;
+    int ndisplacements_done() const { return ndisp_; }
+    int displacements_computed() const { return displacements_[0].nonnull(); }
     void displace(int disp);
     void original_geometry();
     void set_gradient(int disp, const RefSCVector &grad);
+    void set_energy(const RefMolecularEnergy& mole);
 
     void thermochemistry(int degeneracy, double temp=298.15, double pres=1.0);
 

@@ -320,6 +320,15 @@ scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
   scf_info.int_store = keyval->intvalue("integral_storage");
 
  //
+ // these control whether or not the O(N) and O(N^2) integral
+ // intermediates are stored.  the default is true
+ //
+  scf_info.int_store1 = keyval->intvalue("int_store1");
+  if (keyval->error() != KeyVal::OK) scf_info.int_store1 = 1;
+  scf_info.int_store2 = keyval->intvalue("int_store2");
+  if (keyval->error() != KeyVal::OK) scf_info.int_store2 = 1;
+
+ //
  // the number of error matrices to store in the DIIS procedure.
  // 6 is good for closed-shell, 4 for open-shell
  //
@@ -464,6 +473,8 @@ scf_print_options(FILE* outfile, scf_struct_t& scf_info)
   fprintf(outfile,"    diis             = %s\n",PBOOL(scf_info.diis_flg));
   fprintf(outfile,"    ckpt_del         = %s\n",PBOOL(scf_info.ckpt_del));
   fprintf(outfile,"    local_P          = %s\n",PBOOL(scf_info.local_p));
+  fprintf(outfile,"    int_store1       = %s\n",PBOOL(scf_info.int_store1));
+  fprintf(outfile,"    int_store2       = %s\n",PBOOL(scf_info.int_store2));
   fprintf(outfile,"    eliminate        = %s\n",PBOOL(scf_info.eliminate));
   fprintf(outfile,"    exchange         = %s\n",PBOOL(scf_info.exchange));
   fprintf(outfile,"    load_balance_gmat= %s\n",PBOOL(scf_info.load_bal));

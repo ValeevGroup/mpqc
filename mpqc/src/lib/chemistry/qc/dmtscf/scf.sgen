@@ -32,6 +32,8 @@ scf_struct {
   int maxiter;        //     maxiter: maximum number of iterations in scf
   int intcut;         //      intcut: cutoff for not calculating int batch
   int int_store;      //   int_store: the number of integrals to keep in core
+  boolean int_store1; //  int_store1: store the O(N) integral intermediates
+  boolean int_store2; //  int_store2: store the O(N^2) integral intermediates
   int p_reset_freq;   // p_reset_freq: redo full fock matrix this often
   int ndiis;          //       ndiis: number of error matrices to use with diis
   int it_diis;        //     it_diis: iteration to begin diis extrapolation

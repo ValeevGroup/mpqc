@@ -74,7 +74,9 @@ dmt_matrix Scf_Vec;
   /* initialize the integrals routines */
   int_initialize_offsets2(centers,centers,centers,centers);
 
-  flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+  flags = INT_EREP|INT_NOSTRB;
+  if (!scf_info->int_store1) flags |= INT_NOSTR1;
+  if (!scf_info->int_store2) flags |= INT_NOSTR2;
   buf = int_initialize_erep(flags,0,centers,centers,centers,centers);
 
   loop = dmt_ngl_create("%m",Pmat);

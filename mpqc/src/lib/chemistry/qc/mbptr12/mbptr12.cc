@@ -89,9 +89,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     aux_basis_ = basis();
 
   // Default method is MBPT2-R12/A
-  stdapprox_ = LinearR12::StdApprox_A;
-  char* sa_string = 0;
-  sa_string = keyval->pcharvalue("stdapprox");
+  char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A"));
+  if (sa_string == NULL)
+    sa_string = strdup("");
   if ( !strcmp(sa_string,"A") ||
        !strcmp(sa_string,"a") ) {
     stdapprox_ = LinearR12::StdApprox_A;

@@ -15,6 +15,12 @@ clean::
 	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) clean); \
 	  done
 
+oclean::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) oclean); \
+	  done
+
 dclean::
 	for dir in $(SUBDIRS); \
 	  do \

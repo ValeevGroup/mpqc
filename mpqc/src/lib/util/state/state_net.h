@@ -247,5 +247,5 @@ class StateIOUnixDGram : public StateInUnixDGram, public StateOutUnixDGram {
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

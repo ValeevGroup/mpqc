@@ -138,5 +138,5 @@ SavableState_REF_dec(XSCF);
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

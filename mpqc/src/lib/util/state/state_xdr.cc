@@ -138,5 +138,5 @@ int StateInBinXDR::get_array_double(double *p, int size)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

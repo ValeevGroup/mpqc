@@ -57,5 +57,5 @@ get_tri_block(SCMatrixBlock* blk,
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

@@ -71,5 +71,5 @@ class SymmTwoBodyIntIter : public TwoBodyIntIter {
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

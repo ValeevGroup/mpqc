@@ -1067,5 +1067,5 @@ int CharacterTable::make_table()
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

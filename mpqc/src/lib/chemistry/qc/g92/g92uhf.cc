@@ -104,5 +104,5 @@ Gaussian92UHF::save_data_state(StateOut&s)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

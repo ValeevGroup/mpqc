@@ -234,5 +234,5 @@ BFGSUpdate::update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

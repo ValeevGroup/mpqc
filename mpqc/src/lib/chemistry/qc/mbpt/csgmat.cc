@@ -3,7 +3,7 @@
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
-// Author: Ida Nielsen <ibniels@ca.sandia.gov>
+// Author: Ida Nielsen <ida@kemi.aau.dk>
 // Maintainer: LPS
 //
 // This file is part of the SC Toolkit.
@@ -499,5 +499,5 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ-CONDENSED")
+// c-file-style: "CLJ-CONDENSED"
 // End:

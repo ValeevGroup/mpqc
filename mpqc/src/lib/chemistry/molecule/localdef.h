@@ -160,5 +160,5 @@ normal(const double a[], const double b[], double w[])
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

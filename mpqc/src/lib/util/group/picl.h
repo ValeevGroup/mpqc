@@ -3,7 +3,7 @@
 
  Copyright (C) 1996 Limit Point Systems, Inc.
 
- Author: Curtis Janssen <cljanss@ca.sandia.gov>
+ Author: Curtis Janssen <cljanss@limitpt.com>
  Maintainer: LPS
 
  This file is part of the SC Toolkit.
@@ -135,6 +135,6 @@ void gdcomb(ARGS5(int,double*,double*,int,int));
 /*
  Local Variables:
  mode: c++
- eval: (c-set-style "CLJ")
+ c-file-style: "CLJ"
  End:
 */

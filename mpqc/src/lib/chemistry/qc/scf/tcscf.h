@@ -130,5 +130,5 @@ SavableState_REF_dec(TCSCF);
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

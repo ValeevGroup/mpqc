@@ -266,5 +266,5 @@ main(int, char *argv[])
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// c-file-style: "CLJ"
 // End:

@@ -3,7 +3,7 @@
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
-// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
 //
 // This file is part of the SC Toolkit.
@@ -1733,5 +1733,5 @@ Int1eV3::comp_prim_dipole(int im, int jm, int km,
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ-CONDENSED")
+// c-file-style: "CLJ-CONDENSED"
 // End:

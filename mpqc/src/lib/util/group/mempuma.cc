@@ -164,5 +164,5 @@ PumaMemoryGrp::sum_data(double *data, int node, int offset, int size)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

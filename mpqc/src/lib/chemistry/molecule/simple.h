@@ -443,5 +443,5 @@ typedef LinOPSimpleCo LinOP;
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// c-file-style: "CLJ"
 // End:

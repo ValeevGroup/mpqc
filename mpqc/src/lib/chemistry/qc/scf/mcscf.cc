@@ -632,5 +632,5 @@ MCSCF::do_vector(double& eelec, double& nucrep)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "ETS")
+// c-file-style: "ETS"
 // End:

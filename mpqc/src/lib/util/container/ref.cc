@@ -3,150 +3,77 @@
 #pragma implementation
 #endif
 
-#include "ref.h"
+#include <util/container/ref.h>
 
-#define BAD_REF 1
-
-static void unmanage(int&);
-static int managed(int);
-
-// The reference count is coded in such way that a bad references
-// can be detected.
-static int nreference(int rc)
+void
+VRefCount::error(const char * w) const
 {
-  if (!managed(rc)) return 1;
-  int nref1 = rc&0x7fff;
-  int nref2 = (rc>>16)&0x7fff;
-  if (nref1 != nref2) {
-      fprintf(stderr,"WARNING: ::nreference: bad reference count\n");
-      return -1;
-    }
-  return nref1;
-}
-static int refcount(int nref)
-{
-  if (nref > 0x7fff) {
-      fprintf(stderr,"WARNING: ::refcount: too many references to object\n");
-      nref = 0x7fff;
-    }
-  int rc = nref | (nref<<16);
-  return rc;
-}
-static int reference(const int& constrc)
-{
-  // cast away the constness:
-  int& rc = (int&) constrc;
-  if (!managed(rc)) return 1;
-  int nref = nreference(rc);
-  nref++;
-  rc = refcount(nref);
-  return nref;
-}
-static int dereference(int& rc)
-{
-  if (!managed(rc)) return 1;
-  int nref = nreference(rc);
-  nref--;
-  if (nref < 0) {
-      fprintf(stderr,"ref.cc:dereference: attempted to delete a reference"
-              " to an unreferenced object\n");
-    }
-  rc = refcount(nref);
-  return nref;
-}
-static void
-unmanage(int&rc)
-{
-  if (!managed(rc)) return;
-  if (nreference(rc)) {
-      fprintf(stderr,"[V]RefCount::unmanage: cannot unmanage a managed"
-              " object with a nonzero nreference\n");
-      abort();
-    }
-  rc = 0x7fffffff;
-}
-int
-managed(int rc)
-{
-  return rc != 0x7fffffff;
+  fprintf(stderr,"VRefCount: ERROR: %s\n",w);
+  abort();
 }
 
-int
-VRefCount::nreference() const
+void
+VRefCount::too_many_refs() const
 {
-  return ::nreference(_reference_count_);
-}
-int
-VRefCount::reference() const
-{
-  return ::reference(_reference_count_);
-}
-int
-VRefCount::dereference()
-{
-  return ::dereference(_reference_count_);
-}
-int
-VRefCount::managed() const
-{
-  return ::managed(_reference_count_);
+  error("Too many refs.");
 }
 void
-VRefCount::unmanage()
+VRefCount::not_enough_refs() const
 {
-  ::unmanage(_reference_count_);
+  error("Ref count dropped below zero.");
 }
 
-int
-RefCount::nreference() const
-{
-  return ::nreference(_reference_count_);
-}
-int
-RefCount::reference() const
-{
-  return ::reference(_reference_count_);
-}
-int
-RefCount::dereference()
-{
-  return ::dereference(_reference_count_);
-}
-int
-RefCount::managed() const
-{
-  return ::managed(_reference_count_);
-}
+#if REF_CHECKSUM
 void
-RefCount::unmanage()
+VRefCount::bad_checksum() const
 {
-  ::unmanage(_reference_count_);
+  error("Bad checksum.");
 }
-
-// The DTORs try to catch bugs by setting the ref count to BAD_REF.  In
-// principle, then, the Ref class and the RefCount classes can try
-// to detect multiple deletes and warn the user.  Unfortunately,
-// with at least the L486 arch, the BAD_REF get blasted away right after
-// the DTOR is called.
+#endif
 
 VRefCount::~VRefCount()
 {
-  if (_reference_count_ == BAD_REF) {
-      fprintf(stderr,"WARNING: VRefCount: deleting a deleted object\n");
+#if REF_CHECKSUM
+  if (_reference_count_ == 0 && _checksum_ == 0) {
+      error("Deleting a deleted or overwritten object.");
     }
-  else if (managed() && nreference()) {
-      fprintf(stderr,"WARNING: VRefCount: deleting a referenced object\n");
+#endif
+#if REF_MANAGE
+  if (managed() && nreference()) {
+      error("Deleting a referenced object.");
     }
-  _reference_count_ = BAD_REF;
+#endif
+#if REF_CHECKSUM
+  _reference_count_ = 0;
+  _checksum_ = 0;
+#endif
 }
 
-RefCount::~RefCount()
+///////////////////////////////////////////////////////////////////////
+
+void
+RefBase::warn ( const char * msg) const
 {
-  if (_reference_count_ == BAD_REF) {
-      fprintf(stderr,"WARNING: RefCount: deleting a deleted object\n");
-    }
-  else if (managed() && nreference()) {
-      fprintf(stderr,"WARNING: RefCount: deleting a referenced object\n");
-    }
-  _reference_count_ = BAD_REF;
+  fprintf(stderr,"WARNING: %s\n",msg);
+}
+void
+RefBase::warn_ref_to_stack() const
+{
+  warn("Ref: creating a reference to stack data");
+}
+void
+RefBase::warn_skip_stack_delete() const
+{
+  warn("Ref: skipping delete of object on the stack");
+}
+void
+RefBase::warn_bad_ref_count() const
+{
+  warn("Ref: bad reference count in referenced object\n");
+}
+void
+RefBase::ref_info(VRefCount*p,FILE*fp) const
+{
+  if (p) fprintf(fp,"nreference() = %d\n",p->nreference());
+  else fprintf(fp,"reference is null\n");
 }

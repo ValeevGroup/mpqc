@@ -11,19 +11,19 @@ MAPIMPL = RAVL
 GENCXXSRC = pixvpMap.cc pixvp$(MAPIMPL)Map.cc \
             voidptrSet.cc voidptr$(SETIMPL)Set.cc
 
-REALCXXSRC = array.cc set.cc ref.cc ref_i.cc voidptr.cc
+REALCXXSRC = array.cc set.cc ref.cc voidptr.cc
 
 GENSRC = $(GENCXXSRC)
 
 CXXSRC = $(GENCXXSRC) $(REALCXXSRC)
-TESTCXX = settest.cc settestt.cc
+TESTCXX = settest.cc settestt.cc reftest.cc reftestx.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
-      set.h array.h ref.h ref_i.h
+      set.h array.h ref.h reftestx.h
 
-GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h
+GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h refmacr.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
@@ -41,11 +41,17 @@ setmacr.h: settmpl.h $(TMPL2MACDEP)
 asetmacr.h: asettmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > asetmacr.h
 
+refmacr.h: reftmpl.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > refmacr.h
+
 settest: settest.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o settest $^
 
 settestt: settestt.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o settestt $^
+
+reftest: reftest.o reftestx.o libcontainer.a
+	$(CXX) $(CXXFLAGS) -o reftest $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

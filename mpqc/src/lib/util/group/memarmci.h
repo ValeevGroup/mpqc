@@ -46,6 +46,7 @@ class ARMCIMemoryGrp: public RDMAMemoryGrp {
     void **all_data_;
     void init();
     void finalize();
+    Ref<ThreadLock> armci_lock_;
   public:
     ARMCIMemoryGrp(const Ref<MessageGrp>& msg);
     ARMCIMemoryGrp(const Ref<KeyVal>&);

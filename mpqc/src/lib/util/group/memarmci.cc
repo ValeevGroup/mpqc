@@ -61,6 +61,7 @@ ARMCIMemoryGrp::ARMCIMemoryGrp(const Ref<KeyVal>& keyval):
 void
 ARMCIMemoryGrp::init()
 {
+  armci_lock_ = ThreadGrp::get_default_threadgrp()->new_lock();
   //debug_ = 1;
   all_data_ = 0;
   ARMCI_Init();
@@ -110,19 +111,23 @@ void
 ARMCIMemoryGrp::retrieve_data(void *data, int node, int offset,
                               int size, int lock)
 {
+  if (armci_lock_.nonnull()) armci_lock_->lock();
   if (lock) ARMCI_Lock(0, node);
   ARMCI_Get(reinterpret_cast<char*>(all_data_[node])+offset, data, size, node);
+  if (armci_lock_.nonnull()) armci_lock_->unlock();
 }
 
 void
 ARMCIMemoryGrp::replace_data(void *data, int node, int offset,
                              int size, int unlock)
 {
+  if (armci_lock_.nonnull()) armci_lock_->lock();
   ARMCI_Put(data, reinterpret_cast<char*>(all_data_[node])+offset, size, node);
   if (unlock) {
       ARMCI_Fence(node);
       ARMCI_Unlock(0, node);
     }
+  if (armci_lock_.nonnull()) armci_lock_->unlock();
 }
 
 void
@@ -161,7 +166,9 @@ ARMCIMemoryGrp::sum_data(double *data, int node, int offset, int size)
 //          }
     }
 
+  if (armci_lock_.nonnull()) armci_lock_->lock();
   ARMCI_AccV(ARMCI_ACC_DBL, &scale, &acc_dat, 1, node);
+  if (armci_lock_.nonnull()) armci_lock_->unlock();
 }
 
 void

@@ -25,7 +25,7 @@
   { return atom_info[Z_].property * unit_conversion; }
 
 							      
-static const double ang_to_au = 1.0/0.52917706;
+const double ang_to_au = 1.0/0.52917706;
 
 class ChemicalElement :
   virtual public SavableState

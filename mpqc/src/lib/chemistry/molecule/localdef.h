@@ -36,16 +36,16 @@ delta(double u[], const double a[], const double b[])
 static inline double
 dist(Point& a, Point& b)
 {
-  return (sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])+
-               (a[2]-b[2])*(a[2]-b[2])));
-  }
+  double x,y,z;
+  return (sqrt((x=a[0]-b[0])*x + (y=a[1]-b[1])*y + (z=a[2]-b[2])*z));
+}
 
 static inline double
 dist(const double a[], const double b[])
 {
-  return (sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])+
-               (a[2]-b[2])*(a[2]-b[2])));
-  }
+  double x,y,z;
+  return (sqrt((x=a[0]-b[0])*x + (y=a[1]-b[1])*y + (z=a[2]-b[2])*z));
+}
 
 ///////////////////////////////////////////////////////////
 

@@ -127,7 +127,7 @@ MBPT2::compute_cs_grad()
   int derset, xyz;
   int natom = molecule()->natom();     // the number of atoms
   int int_index;
-  int mem_static = 0;    // static memory in bytes
+  int mem_static;    // static memory in bytes
   int qp, sr;
   int factor_pqrs;
   int ij_proc;          // the processor which has ij pair
@@ -293,8 +293,9 @@ MBPT2::compute_cs_grad()
     ni = compute_cs_batchsize(mem_static, nocc_act); 
     }
 
-  // Send value of ni to other nodes
+  // Send value of ni and mem_static to other nodes
   msg_->bcast(ni);
+  msg_->bcast(mem_static);
 
   if (ni == nocc_act) {
     npass = 1;

@@ -70,7 +70,7 @@ MOPairIter_SD::~MOPairIter_SD()
 MOPairIter_SD_neq::MOPairIter_SD_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2) :
 MOPairIter(space1,space2)
 {
-  if (space1 != space2)
+  if (space1 == space2)
     throw std::runtime_error("MOPairIter_SD_neq::MOPairIter_SD_neq() -- space1 == space2");
   nij_ = ni_*nj_;
   ij_ = 0;
@@ -79,6 +79,38 @@ MOPairIter(space1,space2)
 
 MOPairIter_SD_neq::~MOPairIter_SD_neq()
 {
+}
+
+
+Ref<MOPairIter>
+MOPairIterFactory::mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
+{
+  if (space1 == space2)
+    return new MOPairIter_SD(space1);
+  else
+    return new MOPairIter_SD_neq(space1, space2);
+}
+
+RefSCDimension
+MOPairIterFactory::scdim_aa(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
+{
+  if (space1 == space2)
+    return scdim_ab(space1,space2);
+  else {
+    const int n = space1->rank();
+    const int npair_aa = n*(n-1)/2;
+    std::string name = "Alpha-alpha pair (" + space1->name() + "," + space1->name() + ")";
+    return new SCDimension(npair_aa,name.c_str());
+  }
+}
+
+RefSCDimension
+MOPairIterFactory::scdim_ab(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
+{
+  Ref<MOPairIter> piter = mopairiter(space1,space2);
+  int npair_ab = space1->rank() * space2->rank();
+  std::string name = "Alpha-beta pair (" + space1->name() + "," + space2->name() + ")";
+  return new SCDimension(npair_ab,name.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -38,7 +38,7 @@
 namespace sc {
 
 /** MOPairIter gives the ordering of orbital pairs */
-class MOPairIter {
+class MOPairIter : public RefCount {
 
   protected:
     bool i_eq_j_;
@@ -241,6 +241,22 @@ public:
   int ij_ba() { return IJ_; }
 };
 
+
+  /** This class produces MOPairIter objects */
+
+class MOPairIterFactory {
+
+public:
+  MOPairIterFactory() {}
+  ~MOPairIterFactory() {}
+
+  /// Constructs an appropriate MOPairIter object
+  Ref<MOPairIter> mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  /// Constructs an appropriate RefSCDimension object for same-spin pair
+  RefSCDimension scdim_aa(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  /// Constructs an appropriate RefSCDimension object for different-spin pair
+  RefSCDimension scdim_ab(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+};
 
 }
   

@@ -56,6 +56,7 @@ using namespace std;
 using namespace sc;
 
 #ifdef HAVE_MPI
+#define MPICH_SKIP_MPICXX
 #include <mpi.h>
 #endif
 

@@ -118,6 +118,17 @@ pbe<SumDenFunctional>: (
     ]
 )
 
+pw91x<PW91XFunctional>: ()
+pw91c<PW91CFunctional>: ()
+
+pw91<SumDenFunctional>: (
+  coefs = [ 1.0 1.0 ]
+  funcs: [
+     <PW91XFunctional>: ()
+     <PW91CFunctional>: ()
+    ]
+)
+
 pbecnl<SumDenFunctional>: (
   coefs = [ 1.0 -1.0 ]
   funcs: [
@@ -126,7 +137,7 @@ pbecnl<SumDenFunctional>: (
     ]
 )
 
-valtest = $:pbe
+valtest = [ $:pbe $:pw91 ]
 
 basis<GaussianBasisSet>: (
   %name = test

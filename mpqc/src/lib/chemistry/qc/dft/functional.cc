@@ -694,6 +694,11 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[0] = new PBEXFunctional;
           funcs_[1] = new PBECFunctional;
         }
+      else if (!strcmp(name_,"PW91")) {
+          init_arrays(2);
+          funcs_[0] = new PW91XFunctional;
+          funcs_[1] = new PW91CFunctional;
+        }
       else {
           cout << "StdDenFunctional: bad name: " << name_ << endl;
           abort();
@@ -3240,7 +3245,7 @@ PW91CFunctional::point(const PointInputData &id,
   double t4 = t2*t2;
   double alpha = 0.09;
   double Cc0 = 0.004235;
-  double Cx = -0.001667;
+  double Cx = -0.001667212;
   double nu = 16./M_PI * pow( (3.*M_PI*M_PI), (1./3.) );
   double beta = nu*Cc0;
   double beta2 = beta*beta;
@@ -3270,7 +3275,7 @@ PW91CFunctional::point(const PointInputData &id,
   //double Hpw91 = kf;
   double ec = rho * Hpw91;
 
-  od.energy = ec;
+  od.energy += ec;
 
   double rs2 = rs*rs;
   double rs3 = rs2*rs;
@@ -3318,7 +3323,7 @@ PW91CFunctional::point(const PointInputData &id,
       double dHpw91_drhoa = dH0pw91_drhoa + dH1pw91_drhoa;
       double dfpw91_drhoa = Hpw91 + rho*dHpw91_drhoa;
       if (gamma_total < MIN_DENSITY || id.a.rho < MIN_DENSITY) dfpw91_drhoa = 0.;
-      od.df_drho_a = dfpw91_drhoa;
+      od.df_drho_a += dfpw91_drhoa;
           
       if (spin_polarized_) {
         // d_drhob part
@@ -3360,7 +3365,7 @@ PW91CFunctional::point(const PointInputData &id,
         double dHpw91_drhob = dH0pw91_drhob + dH1pw91_drhob;
         double dfpw91_drhob = Hpw91 + rho*dHpw91_drhob;
         if (gamma_total < MIN_DENSITY || id.b.rho < MIN_DENSITY) dfpw91_drhob = 0.;
-        od.df_drho_b = dfpw91_drhob;
+        od.df_drho_b += dfpw91_drhob;
         }      
       else od.df_drho_b = od.df_drho_a;
       
@@ -3566,7 +3571,7 @@ PW91XFunctional::PW91XFunctional()
   a1_ = 0.19645;
   a2_ = 7.7956;
   a3_ = 0.2743;
-  a4_ = -0.1508;
+  a4_ = -0.15084;
   a5_ = 0.004;
   b_ = 100.;
 }
@@ -3577,7 +3582,7 @@ PW91XFunctional::PW91XFunctional(const RefKeyVal& keyval):
   a1_ = keyval->doublevalue("a1", KeyValValuedouble(0.19645));
   a2_ = keyval->doublevalue("a2", KeyValValuedouble(7.7956));
   a3_ = keyval->doublevalue("a3", KeyValValuedouble(0.2743));
-  a4_ = keyval->doublevalue("a4", KeyValValuedouble(-0.1508));
+  a4_ = keyval->doublevalue("a4", KeyValValuedouble(-0.15084));
   a5_ = keyval->doublevalue("a5", KeyValValuedouble(0.004));
   b_  = keyval->doublevalue("b", KeyValValuedouble(100.));
 }

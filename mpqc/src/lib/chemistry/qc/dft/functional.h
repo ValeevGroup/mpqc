@@ -192,7 +192,7 @@ class StdDenFunctional: public SumDenFunctional {
     /** This KeyVal CTOR does not call the parent's KeyVal CTOR.  The
         "name" keyword is read from the input and is used to initialize the
         functional.  The name must be one of HFK, XALPHA, HFS, HFB, HFG96,
-        BLYP, B3LYP, or PBE. */
+        BLYP, B3LYP, PW91, or PBE. */
     StdDenFunctional(const RefKeyVal &);
     StdDenFunctional(StateIn &);
     ~StdDenFunctional();

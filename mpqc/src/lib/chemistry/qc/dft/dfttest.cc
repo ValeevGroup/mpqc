@@ -474,8 +474,11 @@ main(int argc, char**argv)
   RefKeyVal keyval(new ParsedKeyVal(input));
 
   cout << "=========== Value f Tests ===========" << endl;
-  RefDenFunctional valtest = keyval->describedclassvalue("valtest");
-  do_valtest(valtest);
+  int nvaltest = keyval->count("valtest");
+  for (i=0; i<nvaltest; i++) {
+    RefDenFunctional valtest = keyval->describedclassvalue("valtest", i);
+    do_valtest(valtest);
+    }
 
   RefWavefunction  dft        = keyval->describedclassvalue("dft");
   if (dft.nonnull()) {

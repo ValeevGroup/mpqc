@@ -8,7 +8,7 @@ optimization of water using density functional theory with the B3LYP
 exchange-correlation functional:
 
 <pre>
-% B3LYP optimization of water
+\% B3LYP optimization of water
 optimize: yes
 method: KS (xc = B3LYP)
 basis: 3-21G*
@@ -17,6 +17,7 @@ molecule:
     H    0.745   0.000   0.754
     H    0.745   0.000  -0.754
 </pre>
+<br>
 
 Comments begin with a <tt>%</tt> and continue to the end of the line.
 Basis set names containing special characters, such as a space

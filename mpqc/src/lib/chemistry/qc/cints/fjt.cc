@@ -37,7 +37,7 @@
  */
 
 #include <stdlib.h>
-#include <math.h>
+#include <util/misc/math.h>
 
 #include <iostream>
 #include <chemistry/qc/cints/fjt.h>

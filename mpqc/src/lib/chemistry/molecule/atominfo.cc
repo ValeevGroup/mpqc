@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <util/misc/string.h>
 #include <ctype.h>
 #include <sys/stat.h>
 

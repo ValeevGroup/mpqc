@@ -122,16 +122,16 @@ class MBPT2_R12: public MBPT2 {
 
         <dl>
 
-          <dt><tt>A</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
+          <dt><tt>A</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation A (MP2-R12/A).
           Only energies can be computed with the MP2-R12/A method.
 
-          <dt><tt>A'</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
+          <dt><tt>A'</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation A' (MP2-R12/A').
           This will cause MP2-R12/A energies to be computed also.
           Only energies can be computed with the MP2-R12/A' method.
 
-          <dt><tt>B</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
+          <dt><tt>B</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation B. 
 	  This method is not implemented yet.
 

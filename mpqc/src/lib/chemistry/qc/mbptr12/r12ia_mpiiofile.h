@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#define MPICH_SKIP_MPICXX
 #include <mpi.h>
 #include <util/ref/ref.h>
 #include <util/group/memory.h>

@@ -23,6 +23,6 @@ extern "C" {
                       double size, int bounds,
                       double x, double y, double z,
                       int(*triproc)(int,int,int,VERTICES), int mode);
-};
+}
 
 #endif

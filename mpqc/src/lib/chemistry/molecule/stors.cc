@@ -26,7 +26,7 @@
 //
 
 #include <string.h>
-#include <math.h>
+#include <util/misc/math.h>
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>

@@ -428,7 +428,7 @@ class AggregateKeyVal : public KeyVal {
     In order to let the sub-object read the correct keywords from the
     KeyVal, without knowledge of the containing objects keyword prefix,
     a PrefixKeyVal can be constructed.  For example, the code
-    <pre>
+    \code
     class A: public DescribedClass {
        double f0_;
       public:
@@ -443,12 +443,12 @@ class AggregateKeyVal : public KeyVal {
          a_(new PrefixKeyVal(keyval,"a"))
        {}
     };
-    </pre>
+    \endcode
     can be used to read ParsedKeyVal input that looks like
     <pre>
-    b<B>: (
+    b\<B>: (
       f1 = 1.0
-      a<A>: (
+      a\<A>: (
         f0 = 2.0
       )
     )

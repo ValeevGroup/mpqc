@@ -17,6 +17,7 @@
 #include <iostream>
 #include <math.h>
 
+#include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <math/symmetry/corrtab.h>
 #include <chemistry/qc/wfn/obwfn.h>

@@ -31,6 +31,7 @@
 #include <util/group/message.h>
 #include <util/group/thread.h>
 
+#define MPICH_SKIP_MPICXX
 #include <mpi.h>
 
 namespace sc {

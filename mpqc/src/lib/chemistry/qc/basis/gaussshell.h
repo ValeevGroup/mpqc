@@ -78,18 +78,18 @@ class GaussianShell: public SavableState
         Users of GaussianShell must pass pointers to newed memory that is kept
         by GaussianShell and deleted by the destructor.
         The arguments for the following ctor are:
-        \begin{itemize}
-          \item ncn is the number of contracted functions
+        <ul>
+          <li> ncn is the number of contracted functions
              (1 except for SP and gen. con.)
-          \item nprm is the number of primitives
-          \item e gives the exponents (length nprm)
-          \item am gives the angular momentum (length ncn)
-          \item pure is 1 for pure am and 0 for cartesian (length ncn)
-          \item c are the contraction coefficients (length ncn by nprm)
-          \item pt describes whether the primitive functions are to be
+          <li> nprm is the number of primitives
+          <li> e gives the exponents (length nprm)
+          <li> am gives the angular momentum (length ncn)
+          <li> pure is 1 for pure am and 0 for cartesian (length ncn)
+          <li> c are the contraction coefficients (length ncn by nprm)
+          <li> pt describes whether the primitive functions are to be
             considered normalized or unnormalized.  This effects whether
             or not c is manipulated to give the correct normalization.
-        \end{itemize}
+        </ul>
     */
     GaussianShell(
                   int ncn,

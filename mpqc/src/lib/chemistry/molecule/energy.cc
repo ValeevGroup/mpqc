@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdexcept>
+#include <util/misc/string.h>
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
@@ -319,6 +320,7 @@ MolecularEnergy::x_to_molecule()
   } else {
     mc_->to_cartesian(get_x_no_copy());
   }
+  mol_->cleanup_molecule(0.000001);
 }
 
 void

@@ -29,6 +29,7 @@
 #include <unistd.h> // for fchdir etc.
 #include <fcntl.h> // for open on AIX
 
+#define MPICH_SKIP_MPICXX
 #include <mpi.h>
 extern int MPI_Initialized(int *); // missing in mpi.h
 
@@ -416,7 +417,7 @@ MPIMessageGrp::sync()
 
 #define REDUCEMEMBER(name, type, mpitype) \
 static GrpReduce<type>* name ## reduceobject; \
-static void \
+extern "C" void \
 name ## reduce(void*b, void*a, int*len, MPI_Datatype*datatype) \
 { \
   name ## reduceobject->reduce((type*)a, (type*)b, *len); \

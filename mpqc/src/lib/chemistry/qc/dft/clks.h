@@ -40,6 +40,9 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+/**
+   This provides a Kohn-Sham implementation for closed-shell systems.
+ */
 class CLKS: public CLSCF {
   protected:
     Ref<DenIntegrator> integrator_;
@@ -48,6 +51,20 @@ class CLKS: public CLSCF {
     
   public:
     CLKS(StateIn&);
+    /**
+       This KeyVal constructor reads the following keywords:
+        <dl>
+
+       <dt><tt>integrator</tt><dd>Specifies the DenIntegrator that will be
+       used to integrate the density functional.  The default is
+       RadialAngularIntegrator.
+
+       <dt><tt>functional</tt><dd>Specifies the DenFunctional that will be
+       used to compute the exchange/correlation contribution.  This is no
+       default.
+
+       </dl>
+    */
     CLKS(const Ref<KeyVal>&);
     ~CLKS();
 

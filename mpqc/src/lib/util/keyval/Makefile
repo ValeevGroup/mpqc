@@ -27,10 +27,15 @@
 
 TOPDIR=../../../..
 ifndef SRCDIR
+  BUILDING_IN_SRCDIR=yes
   SRCDIR=$(shell pwd)
 endif
 
+LOCALMAKEFILE_OPTIONAL = yes
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+
+ifeq ($(LOCALMAKEFILE_FOUND),yes)
+
 LD = $(CXX)
 
 CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
@@ -79,10 +84,56 @@ ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.$(OBJSUF)=.d) $(OTHEROBJ:.$(OBJSUF)=.d)
 endif
 
+ifneq ($(BUILDING_IN_SRCDIR),yes)
+ifeq ($(wildcard ipv2_parse.cc),ipv2_parse.cc)
+$(error "ipv2_parse.cc exists in an object directory.  This is now longer necessary or allowed.  Delete the file to continue.")
+endif
+ifeq ($(wildcard ipv2_scan.cc),ipv2_scan.cc)
+$(error "ipv2_scan.cc exists in an object directory.  This is now longer necessary or allowed.  Delete the file to continue.")
+endif
+ifeq ($(wildcard ipv2_parse.h),ipv2_parse.h)
+$(error "ipv2_parse.h exists in an object directory.  This is now longer necessary or allowed.  Delete the file to continue.")
+endif
+endif
+
+$(SRCDIR)/ipv2_parse.cc: $(SRCDIR)/ipv2_parse.yy
+	@echo WARNING: The file $@ is out of date.
+	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
+
+$(SRCDIR)/ipv2_parse.h: $(SRCDIR)/ipv2_parse.yy
+	@echo WARNING: The file $@ is out of date.
+	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
+
+$(SRCDIR)/ipv2_scan.cc: $(SRCDIR)/ipv2_scan.ll
+	@echo WARNING: The file $@ is out of date.
+	@echo It can be built by running \"make scanner DODEPEND=no\" in the source directory.
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
+
+endif
+
+ifndef FLEX
+FLEX=flex
+endif
+
+ifndef BISON
+BISON=bison
+endif
+
+notobjdir_default:
+	@echo "Building in an unconfigured source directory."
+	@echo "The following make targets are available:"
+	@echo "  make FLEX=<flex> scanner"
+	@echo "  make BISON=<bison> parser"
+	@echo "Be sure to replace FlexLexer.h in the include"
+	@echo "directory with the correct version."
+
 #### yacc and lex ####
 # (only works with bison and flex)
-ipv2_parse.cc: ipv2_parse.yy
-	$(BISON) -v -d -o ipv2_parse.tmp.cc $^
+.PHONY: parser
+parser::
+	$(BISON) -v -d -o ipv2_parse.tmp.cc $^ ipv2_parse.yy
 	sed "s/^int yyparse.*;$$//" < ipv2_parse.tmp.cc \
 		| sed "s/^YYPARSE_RETURN_TYPE yyparse.*;$$//" \
 		| sed "s/__attribute__ ((__unused__))//" \
@@ -98,7 +149,8 @@ ipv2_parse.cc: ipv2_parse.yy
 	fi
 	-@rm -f ipv2_parse.tmp*
 
-ipv2_scan.cc: ipv2_scan.ll
+.PHONY: scanner
+scanner::
 	echo "#ifdef HAVE_CONFIG_H"  > ipv2_scan.cc
 	echo "#include <scconfig.h>" >> ipv2_scan.cc
 	echo "#endif" >> ipv2_scan.cc
@@ -106,7 +158,7 @@ ipv2_scan.cc: ipv2_scan.ll
 	echo "#ifdef USING_NAMESPACE_STD" >> ipv2_scan.cc
 	echo "using namespace std;" >> ipv2_scan.cc
 	echo "#endif" >> ipv2_scan.cc
-	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \
+	$(FLEX) -L -t ipv2_scan.ll | grep -v "extern FILE .yyin" \
 	                | grep -v "static int yy_get_next_buffer.*;" \
 	                | grep -v "static int yy_get_next_buffer.*;" \
 	                | grep -v "class istream;" \
@@ -117,8 +169,3 @@ ipv2_scan.cc: ipv2_scan.ll
 	                | grep -v "extern.*isatty" \
 	                | sed "s/static int yyinput/int yyinput/" \
 	                >> ipv2_scan.cc
-
-ipv2_parse.h: ipv2_parse.cc
-
-ipv2_scan.d: ipv2_parse.h
-

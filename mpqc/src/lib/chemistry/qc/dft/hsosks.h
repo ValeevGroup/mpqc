@@ -41,6 +41,10 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+/**
+   This provides a Kohn-Sham implementation for restricted-orbital
+   high-spin open-shell systems.
+ */
 class HSOSKS: public HSOSSCF {
   protected:
     Ref<DenIntegrator> integrator_;
@@ -53,6 +57,20 @@ class HSOSKS: public HSOSSCF {
     
   public:
     HSOSKS(StateIn&);
+    /**
+       This KeyVal constructor reads the following keywords:
+        <dl>
+
+       <dt><tt>integrator</tt><dd>Specifies the DenIntegrator that will be
+       used to integrate the density functional.  The default is
+       RadialAngularIntegrator.
+
+       <dt><tt>functional</tt><dd>Specifies the DenFunctional that will be
+       used to compute the exchange/correlation contribution.  This is no
+       default.
+
+       </dl>
+    */
     HSOSKS(const Ref<KeyVal>&);
     ~HSOSKS();
 

@@ -33,6 +33,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
 #include <util/ref/ref.h>

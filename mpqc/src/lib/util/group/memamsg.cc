@@ -187,7 +187,7 @@ ActiveMsgMemoryGrp::set_localsize(size_t localsize)
   if (debug_) {
       ExEnv::out0() << "ActiveMsgMemoryGrp::set_localsize done: offsets:";
       for (int i=0; i<=n(); i++) {
-          ExEnv::out0() << " " << offset(i);
+          ExEnv::out0() << " " << double(offset(i));
         }
       ExEnv::out0() << endl;
     }

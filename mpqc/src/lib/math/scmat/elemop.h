@@ -263,6 +263,7 @@ class SCElementInvert: public SCElementOp {
     int has_collect();
     void defer_collect(int);
     void collect(const Ref<MessageGrp>&);
+    void collect(const Ref<SCElementOp>&);
     int result() { return nbelowthreshold_; }
 };
 
@@ -304,6 +305,7 @@ class SCElementMaxAbs: public SCElementOp {
     int has_collect();
     void defer_collect(int);
     void collect(const Ref<MessageGrp>&);
+    void collect(const Ref<SCElementOp>&);
     double result();
 };
 
@@ -322,6 +324,7 @@ class SCElementMinAbs: public SCElementOp {
     int has_collect();
     void defer_collect(int);
     void collect(const Ref<MessageGrp>&);
+    void collect(const Ref<SCElementOp>&);
     double result();
 };
 
@@ -339,6 +342,7 @@ class SCElementSumAbs: public SCElementOp {
     int has_collect();
     void defer_collect(int);
     void collect(const Ref<MessageGrp>&);
+    void collect(const Ref<SCElementOp>&);
     double result();
     void init() { r = 0.0; }
 };

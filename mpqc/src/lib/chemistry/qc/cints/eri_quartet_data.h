@@ -28,7 +28,7 @@
 #ifndef _chemistry_qc_cints_eriquartetdata_h
 #define _chemistry_qc_cints_eriquartetdata_h
 
-#include <math.h>
+#include <util/misc/math.h>
 
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives

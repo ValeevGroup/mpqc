@@ -39,6 +39,7 @@
 #include <util/group/messmpi.h>
 #include <util/group/memmtmpi.h>
 
+#define MPICH_SKIP_MPICXX
 #include <mpi.h>
 
 using namespace std;

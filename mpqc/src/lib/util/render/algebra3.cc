@@ -1,4 +1,4 @@
-#include <math.h>
+#include <util/misc/math.h>
 #include <util/render/algebra3.h>
 #include <util/misc/exenv.h>
 #include <ctype.h>

@@ -3,6 +3,17 @@
 
 Following is a brief summary of changes made in each release of MPQC.
 
+  * 2004-12-18: MPQC-2.2.3
+     o Documention errors and omissions corrected.
+     o Command man pages generated automatically.
+     o bison and flex are no longer required.
+     o Will now compile with MPICH2.
+     o Maintain symmetry in optimizations of large molecules.
+     o Improved ease of builds within the source directory.
+     o Fixed density value computations.
+     o Port to Cray X1 (correctness of results not checked).
+     o Port to G5/OS X (correctness of results not checked).
+
   * 2004-04-28: MPQC-2.2.2
      o Can now compile with GCC 3.4.0.
      o Switched from ieee_{set,get}_fp_control to fenv functions.
@@ -60,7 +71,7 @@ Following is a brief summary of changes made in each release of MPQC.
   * 2002-04-18: MPQC-2.1.0
      o Everything is now in the "sc" namespace.
      o Fixed a problem causing redundant output lines with gcc3.
-     o Added extended H?ckel theory guesses.
+     o Added extended Huckel theory guesses.
      o Added configure options:
        + --enable-always-use-mpi
        + --with-default-parallel={mpi2,mtmpi}

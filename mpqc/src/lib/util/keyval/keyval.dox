@@ -89,7 +89,7 @@ unique section.
 
 Input for an array is specified in the input by forming a keyword
 group.  The name of the group is the name of the array and the
-grouped keywords are the integers $i$, such that $0 \leq i < n$, where $n$
+grouped keywords are the integers \f$i\f$, such that \f$0 \leq i < n\f$, where \f$n\f$
 is the number of elements in the array.  For example, an array, called
 <tt>array</tt>, of length 3 could be given as follows:
 <pre>

@@ -216,9 +216,9 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 
   if (offset + length > totalsize()) {
       ExEnv::errn() << "MemoryGrp::sum_reduction: arg out of range:"
-                    << " offset = " << offset
+                    << " offset = " << double(offset)
                     << " length = " << length
-                    << " totalsize() = " << totalsize()
+                    << " totalsize() = " << double(totalsize())
                     << endl;
       abort();
     }

@@ -26,7 +26,7 @@
 //
 
 #include <stdio.h>
-#include <math.h>
+#include <util/misc/math.h>
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
 #include <math/scmat/matrix.h>

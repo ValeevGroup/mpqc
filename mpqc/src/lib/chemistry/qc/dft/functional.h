@@ -249,8 +249,9 @@ class StdDenFunctional: public SumDenFunctional {
     void init_arrays(int n);
   public:
     StdDenFunctional();
-    /** The "name" keyword is read from the input and is used to initialize
-        the functional.  All other keywords will be ignored.
+    /** The <tt>name</tt> keyword is read from the input and is used to
+        initialize the functional.  See the general StdDenFunctional
+        description for a list of valid values for <tt>name</tt>.
     */
     StdDenFunctional(const Ref<KeyVal> &);
     StdDenFunctional(StateIn &);

@@ -1,9 +1,14 @@
 TOPDIR=../../..
 ifndef SRCDIR
+  BUILDING_IN_SRCDIR=yes
   SRCDIR=$(shell pwd)
 endif
 
+LOCALMAKEFILE_OPTIONAL = yes
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+
+ifeq ($(LOCALMAKEFILE_FOUND),yes)
+
 include $(TOPDIR)/lib/Makedirlist
 INCLUDE += -I. -I$(SRCDIR)
 CXXINCLUDE += -I. -I$(SRCDIR)
@@ -93,9 +98,62 @@ distclean::
 	/bin/rm -f parse.tmp*
 	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output
 
+ifneq ($(BUILDING_IN_SRCDIR),yes)
+ifeq ($(wildcard parse.cc),parse.cc)
+$(error "parse.cc exists in an object directory.  This is now longer necessary or allowed.  Delete the file to continue.")
+endif
+ifeq ($(wildcard scan.cc),scan.cc)
+$(error "scan.cc exists in an object directory.  This is now longer necessary or allowed.  Delete the file to continue.")
+endif
+ifeq ($(wildcard parse.h),parse.h)
+$(error "parse.h exists in an object directory.  This is now longer necessary or allowed.  Delete the file to continue.")
+endif
+endif
+
+$(SRCDIR)/parse.cc: $(SRCDIR)/parse.yy
+	@echo WARNING: The file $@ is out of date.
+	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
+
+$(SRCDIR)/parse.h: $(SRCDIR)/parse.yy
+	@echo WARNING: The file $@ is out of date.
+	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
+
+$(SRCDIR)/scan.cc: $(SRCDIR)/scan.ll
+	@echo WARNING: The file $@ is out of date.
+	@echo It can be built by running \"make scanner DODEPEND=no\" in the source directory.
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
+
+#################################################################
+
+$(BINOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(BINOBJ:.$(OBJSUF)=.d)
+endif
+
+endif
+
+ifndef FLEX
+FLEX=flex
+endif
+
+ifndef BISON
+BISON=bison
+endif
+
+notobjdir_default:
+	@echo "Building in an unconfigured source directory."
+	@echo "The following make targets are available:"
+	@echo "  make FLEX=<flex> scanner"
+	@echo "  make BISON=<bison> parser"
+	@echo "Be sure to replace FlexLexer.h in the include"
+	@echo "directory with the correct version."
+
 # (only works with bison and flex)
-parse.cc: parse.yy
-	$(BISON) -v -d -o parse.tmp.cc $^
+.PHONY: parser
+parser:
+	$(BISON) -v -d -o parse.tmp.cc parse.yy
 	cat parse.tmp.cc \
 		| sed "s/^int yyparse.*;$$//" \
 		| sed "s/^YYPARSE_RETURN_TYPE yyparse.*;$$//" \
@@ -112,7 +170,8 @@ parse.cc: parse.yy
 	fi
 	#-@rm -f parse.tmp*
 
-scan.cc: scan.ll
+.PHONY: scanner
+scanner:
 	echo "#ifdef HAVE_CONFIG_H"  > scan.cc
 	echo "#include <scconfig.h>" >> scan.cc
 	echo "#endif" >> scan.cc
@@ -120,7 +179,7 @@ scan.cc: scan.ll
 	echo "#ifdef USING_NAMESPACE_STD" >> scan.cc
 	echo "using namespace std;" >> scan.cc
 	echo "#endif" >> scan.cc
-	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \
+	$(FLEX) -L -t scan.ll | grep -v "extern FILE .yyin" \
 	                | grep -v "static int yy_get_next_buffer.*;" \
 	                | grep -v "class istream;" \
 	                | sed "s/static int yy_get_next_buffer/int yy_get_next_buffer/" \
@@ -131,14 +190,3 @@ scan.cc: scan.ll
 	                | sed "s/static int yyinput/int yyinput/" \
 			| sed "s/yylval/MPQCInylval/g" \
 	                >> scan.cc
-
-parse.h: parse.cc
-
-scan.d: parse.h
-
-#################################################################
-
-$(BINOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
-ifneq ($(DODEPEND),no)
-include $(BINOBJ:.$(OBJSUF)=.d)
-endif

@@ -38,6 +38,25 @@
 using namespace std;
 using namespace sc;
 
+// This static datum is used to interface to the implicit.c routine
+// provided in Graphics Gems IV.
+ImplicitSurfacePolygonizer* ImplicitSurfacePolygonizer::current = 0;
+
+// These functions are used to interface to the implicit.c routine provided
+// in Graphics Gems IV.
+extern "C" int
+ImplicitSurfacePolygonizer_add_triangle_to_current(int i1, int i2, int i3,
+                                                   VERTICES v)
+{
+  return ImplicitSurfacePolygonizer::add_triangle_to_current(i1, i2, i3, v);
+}
+
+extern "C" double
+ImplicitSurfacePolygonizer_value_of_current(double x,double y,double z)
+{
+  return ImplicitSurfacePolygonizer::value_of_current(x,y,z);
+}
+
 ////////////////////////////////////////////////////////////////////////////
 // IsosurfaceGen members
 
@@ -69,8 +88,6 @@ ImplicitSurfacePolygonizer::~ImplicitSurfacePolygonizer()
 {
 }
 
-ImplicitSurfacePolygonizer* ImplicitSurfacePolygonizer::current = 0;
-
 static SCVector3 current_x;
 void
 ImplicitSurfacePolygonizer::isosurface(double value,
@@ -98,9 +115,10 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   _surf = &surf;
   _value = value;
   // Find the polygons.
-  char *msg = polygonize(value_of_current, _resolution, bounds,
+  char *msg = polygonize(ImplicitSurfacePolygonizer_value_of_current, _resolution, bounds,
                          midpoint[0], midpoint[1], midpoint[2],
-                         add_triangle_to_current, NOTET);
+                         ImplicitSurfacePolygonizer_add_triangle_to_current,
+                         NOTET);
   current = 0;
   _surf = 0;
   if (msg) {
@@ -191,7 +209,7 @@ ImplicitSurfacePolygonizer::value_of_current(double x,double y,double z)
 
 int
 ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
-                                                   VERTICES v)
+                                                    VERTICES v)
 {
   int oldlength = current->_tmp_vertices.size();
   current->_tmp_vertices.resize(v.count);

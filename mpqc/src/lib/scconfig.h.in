@@ -99,6 +99,9 @@
 /* Define if you have the setenv function.  */
 #undef HAVE_SETENV
 
+/* Define if isnan is available from C++.  */
+#undef HAVE_ISNAN
+
 /* Define if you have the sigfillset function (and company).  */
 #undef HAVE_SIGFILLSET
 
@@ -220,7 +223,7 @@
 /* Define if MTMPIMemoryGrp should be used by default. */
 #undef DEFAULT_MTMPI
 
-/* Define if MTMPIMemoryGrp should be used by default. */
+/* Define if ARMCIMemoryGrp should be used by default. */
 #undef DEFAULT_ARMCI
 
 /* Define if is MPI is always used (needed if MPI_Init is used to

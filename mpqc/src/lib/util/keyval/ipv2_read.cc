@@ -28,7 +28,7 @@
 /* This file provides the routines to do the initial parse of the input
  * file. */
 
-#include <string.h>
+#include <util/misc/string.h>
 #ifdef DEC
 #include <math.h>
 #else

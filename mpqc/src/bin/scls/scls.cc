@@ -43,6 +43,7 @@
 #include <util/state/linkage.h>
 
 #ifdef HAVE_MPI
+#define MPICH_SKIP_MPICXX
 #include <mpi.h>
 #endif
 

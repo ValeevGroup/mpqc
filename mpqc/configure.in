@@ -282,6 +282,26 @@ esac
 )
 AC_SUBST(DOXYGEN_MAN)
 
+AC_ARG_ENABLE(sourceforge,
+[  --enable-sourceforge    Enable SourceForge web page generation],
+[
+case $enableval in
+  yes)
+    FOOTER_HTML=sf_footer.html
+  ;;
+  no)
+    FOOTER_HTML=footer.html
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-sourceforge ($enableval)])
+  ;;
+esac
+],[
+    FOOTER_HTML=footer.html
+]
+)
+AC_SUBST(FOOTER_HTML)
+
 BUILDID="sc_buildid"
 AC_ARG_WITH(build-id,
 [  --with-build-id         Gives an identifier for the build.],
@@ -420,7 +440,7 @@ dnl --------- Want absolute path for srcdir, not relative. ---------
 
 if test X$ac_srcdir_defaulted = Xyes; then
   case $srcdir in
-    ../*)
+    .|./*|../*)
       srcdir=`(cd $srcdir; pwd)`
       #srcdir=`(cd $srcdir; echo $PWD)`
       ;;
@@ -447,25 +467,11 @@ AC_PROG_CPP
 AC_PROG_CXXCPP
 AC_CHECK_PROG(AR,ar,ar)
 AC_CHECK_PROG(PERL,perl,perl)
-AC_CHECK_PROG(BISON,bison,bison)
-AC_CHECK_PROG(FLEX,flex,flex)
 AC_CHECK_PROG(WISH,wish,/usr/bin/wish)
 
 dnl The lack of certain tools is a show stopper
 
 changequote(<<, >>)dnl
-
-if [ X$BISON = X ]; then
-  echo "Could not find the program bison.  It can be obtained at"
-  echo "ftp://prep.ai.mit.edu/pub/gnu"
-  exit 1
-fi
-
-if [ X$FLEX = X ]; then
-  echo "Could not find the program flex.  It can be obtained at"
-  echo "ftp://prep.ai.mit.edu/pub/gnu"
-  exit 1
-fi
 
 if [ X$PERL = X ]; then
   echo "Could not find the program perl.  It can be obtained at"
@@ -488,14 +494,6 @@ else
 fi
 AC_SUBST(DOT_PATH)
 AC_SUBST(HAVE_DOT)
-
-dnl --------- This is at the top since its likely to cause problems. ---------
-
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
-AC_TRY_COMPILE([#include <FlexLexer.h>],[],[echo -n
-],AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include; also make sure you are using the patched flex]))
-AC_LANG_RESTORE
 
 dnl -------- Checks for cross compiling. ----------
 
@@ -553,6 +551,21 @@ if test -f depcheck.u; then
   CXXDEPENDFLAGS="-M -E"
 fi
 /bin/rm -f depcheck.u depcheck.c depcheck.o
+
+dnl -- special misc options --
+
+AC_MSG_CHECKING([for miscellaneous flags])
+case $target in
+  *-cray-unicos*)
+    if test ! X$GXX = Xyes; then
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -h new_for_init"
+    fi
+    AC_MSG_RESULT(cray)
+  ;;
+  *)
+    AC_MSG_RESULT(none)
+  ;;
+esac
 
 dnl -- special optimization options --
 
@@ -925,7 +938,7 @@ dnl AC_CHECK_SIZEOF(void*)
 
 dnl This version works on more machines without the need to run
 dnl a test program.
-AC_DEFUN(SC_C_BIGENDIAN,
+AC_DEFUN([SC_C_BIGENDIAN],
 [AC_CHECK_HEADERS(fp.h endian.h machine/endian.h sys/endian.h sys/machine.h)
 AC_CACHE_CHECK(whether byte ordering is bigendian, sc_cv_c_bigendian,
 [sc_cv_c_bigendian=unknown
@@ -1056,7 +1069,8 @@ if test X$HAVE_PTHREAD = Xyes; then
 fi
 
 AC_CHECK_LIB(dl,main)
-AC_CHECK_LIB(sun,main)
+dnl commented out for Cray X1 (-lsun falsely detected)
+dnl AC_CHECK_LIB(sun,main)
 AC_CHECK_LIB(m,main)
 AC_CHECK_LIB(fl,main)
 AC_CHECK_HEADER(perf.h,[
@@ -1160,24 +1174,26 @@ AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
 AC_CHECK_FUNCS(gethostname time ctime)
 AC_CHECK_FUNCS(setrlimit setenv)
 
+dnl --------- Check for an isnan and make sure it can be used
+dnl           with iostream (it can't on OS X)
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING(isnan and iostream)
+AC_LINK_IFELSE([
+  #include <iostream>
+  #include <math.h>
+  int main(int,char**) { isnan(1.0); return 0; }
+  ],
+  AC_DEFINE(HAVE_ISNAN)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_LANG_RESTORE
+
 dnl --------- Check for the glibc extensions to C99 fenv.h. ---------
 
 AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_FUNCS(feenableexcept fedisableexcept)
-
-dnl ---------- Check for isnan in C++ (which can be a macro) ----------
-
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING([isnan])
-AC_TRY_COMPILE([#include <math.h>],[
-isnan(0.0);
-],[
-AC_DEFINE(HAVE_ISNAN)
-AC_MSG_RESULT(yes)],[
-AC_MSG_RESULT(no)
-])
-AC_LANG_RESTORE
 
 dnl --------- Checks for a C++ linkable fchdir. ---------
 AC_LANG_SAVE
@@ -1297,7 +1313,10 @@ AC_LANG_RESTORE
 
 dnl --------- Checks for rand functions ---------
 
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(drand48)
+AC_LANG_RESTORE
 
 dnl --------- Checks for SYSV IPC. ---------
 
@@ -1542,22 +1561,30 @@ case $target in
     if test ! X$GXX = Xyes; then
       TMPLREPO=cxx_repository
       TMPLINLIB=yes
-      AC_MSG_RESULT("alpha* non-GNU C++")
     fi
+    AC_MSG_RESULT("alpha* non-GNU C++")
+  ;;
+  *-cray-unicos*)
+    if test ! X$GXX = Xyes; then
+      # This is to quickly get things running.
+      # A more sophisticated template instantiation model would be better.
+      CXXFLAGS="$CXXFLAGS -h simple_templates"
+    fi
+    AC_MSG_RESULT(cray)
   ;;
   *-dec-osf*)
     if test ! X$GXX = Xyes; then
       TMPLREPO=cxx_repository
       TMPLINLIB=yes
-      AC_MSG_RESULT("*-dec-osf* non-GNU C++")
     fi
+    AC_MSG_RESULT("*-dec-osf* non-GNU C++")
   ;;
   *-solaris*)
     if test ! X$GXX = Xyes; then
       CXXFLAGS="$CXXFLAGS -instances=explicit"
       AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
-      AC_MSG_RESULT("*-solaris*")
     fi
+    AC_MSG_RESULT("*-solaris*")
   ;;
   i860-intel-puma*)
     LDFLAGS="$LDFLAGS -mpuma -mnoieee"
@@ -1640,5 +1667,5 @@ dnl --------- Create the stub Makefiles. ---------
 
 $PERL $srcdir/bin/objectdir.pl $EXCLUDED_DIRS $srcdir
 
-AC_OUTPUT(lib/LocalMakefile bin/sc-config bin/mkf77sym.pl doc/doxygen.cfg)
+AC_OUTPUT(lib/LocalMakefile bin/sc-config bin/mkf77sym.pl doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
 chmod +x bin/sc-config

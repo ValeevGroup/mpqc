@@ -16,6 +16,9 @@ SC_VERSION = @SC_VERSION@
 SC_SO_VERSION = @SC_SO_VERSION@
 BUILDID = @BUILDID@
 
+# set to 'YES' if doxygen man pages are to be built by default
+DOXYGEN_MAN=@DOXYGEN_MAN@
+
 # The template repository
 TMPLREPO = @TMPLREPO@
 
@@ -85,8 +88,6 @@ datadir=@datadir@
 scdatadir=@scdatadir@
 
 WISH = @WISH@
-FLEX = @FLEX@
-BISON = @BISON@
 RANLIB = @RANLIB@
 PERL = @PERL@
 NIAMACFG = @NIAMACFG@

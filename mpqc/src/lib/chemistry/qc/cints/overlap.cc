@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <util/misc/math.h>
+
 #include <chemistry/qc/cints/int1e.h>
 #include <chemistry/qc/cints/macros.h>
 

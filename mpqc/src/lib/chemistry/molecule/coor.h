@@ -108,10 +108,10 @@ coordinates.
 
 The following is a sample ParsedKeyVal input for a SumIntCoor object:
 <pre>
-  sumintcoor<SumIntCoor>: (
+  sumintcoor\<SumIntCoor>: (
     coor: [
-      <StreSimpleCo>:( atoms = [ 1 2 ] )
-      <StreSimpleCo>:( atoms = [ 2 3 ] )
+      \<StreSimpleCo>:( atoms = [ 1 2 ] )
+      \<StreSimpleCo>:( atoms = [ 2 3 ] )
       ]
     coef = [ 1.0 1.0 ]
     )
@@ -175,14 +175,14 @@ The following is a sample ParsedKeyVal input for
 a SetIntCoor object.
 <pre>
   setintcoor<SetIntCoor>: [
-    <SumIntCoor>: (
+    \<SumIntCoor>: (
       coor: [
-        <StreSimpleCo>:( atoms = [ 1 2 ] )
-        <StreSimpleCo>:( atoms = [ 2 3 ] )
+        \<StreSimpleCo>:( atoms = [ 1 2 ] )
+        \<StreSimpleCo>:( atoms = [ 2 3 ] )
         ]
       coef = [ 1.0 1.0 ]
       )
-    <BendSimpleCo>:( atoms = [ 1 2 3 ] )
+    \<BendSimpleCo>:( atoms = [ 1 2 3 ] )
   ]
 </pre>
 */

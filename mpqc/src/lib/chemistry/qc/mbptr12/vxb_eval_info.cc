@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/ref/ref.h>
+#include <util/misc/string.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>

@@ -8,6 +8,8 @@ intuitive and easier to learn.  New users are advised to start with the
 simplified format.  MPQC can be used to convert the simplified format to
 the full object-oriented format with the <tt>-i</tt> option.
 
+   Each of these input formats is described in the following two chapters:
+
 <ul>
   <li> \ref mpqcsimp
   <li> \ref mpqcoo

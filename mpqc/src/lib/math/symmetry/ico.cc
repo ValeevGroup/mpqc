@@ -25,14 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <math.h>
+#include <util/misc/math.h>
 #include <string.h>
 
 #include <math/symmetry/pointgrp.h>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 using namespace sc;
 

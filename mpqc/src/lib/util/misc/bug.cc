@@ -53,6 +53,11 @@
 #include <util/misc/bug.h>
 #include <util/state/stateio.h>
 
+// usually in signal.h, but not always.
+#ifndef NSIG
+#  define NSIG 100
+#endif
+
 using namespace std;
 using namespace sc;
 

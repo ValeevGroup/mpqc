@@ -32,6 +32,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/state/stateio.h>
+#include <math/scmat/blocked.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 
@@ -464,6 +465,28 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   // allocate storage for symmetry information
   if (!symorb_irrep_) symorb_irrep_ = new int[nbasis];
   if (!symorb_num_) symorb_num_ = new int[nbasis];
+  // Check for degenerate eigenvalues.  Use unsorted eigenvalues since it
+  // only matters if the degeneracies occur within a given irrep.
+  BlockedDiagSCMatrix *bvals = BlockedDiagSCMatrix::castdown(vals.pointer());
+  for (i=0; i<bvals->nblocks(); i++) {
+      int done = 0;
+      RefDiagSCMatrix valsi = bvals->block(i);
+      for (j=1; j<valsi.n(); j++) {
+          if (fabs(valsi(j)-valsi(j-1)) < 1.0e-7) {
+              cout << node0 << indent
+                   << "NOTE: There are degenerate orbitals within an irrep."
+                   << "  This will make"
+                   << endl
+                   << indent
+                   << "      some diagnostics, such as the largest amplitude,"
+                   << " nonunique."
+                   << endl;
+              done = 1;
+              break;
+            }
+          if (done) break;
+        }
+    }
   // sort the eigenvectors and values if symmetry is not c1
   if (molecule()->point_group()->char_table().order() != 1) {
       if (debug_) cout << node0 << indent << "sorting eigenvectors" << endl;

@@ -27,30 +27,12 @@ extern "C" void * sbrk(int);
 #define DO_REF_CHECK_STACK(p) (0)
 #endif
 
-#ifdef __GNUC__
-#undef const1
-#undef const2
-#define const1 const
-#define const2
-#else
-#undef const1
-#undef const2
-#define const1
-#define const2 const
-#endif
-
 #ifdef TYPE_CONV_BUG
 #  define REF_TYPE_CAST_DEC(T)
 #  define REF_TYPE_CAST_DEF(T)
-#  define REF_CONST_TYPE_CAST_DEC(T)
-#  define REF_CONST_TYPE_CAST_DEF(T)
 #else
-#  define REF_TYPE_CAST_DEC(T) operator T*()
-#  define REF_TYPE_CAST_DEF(T) Ref ## T :: operator T*() { return p; }
-#  define REF_CONST_TYPE_CAST_DEC(T) \
-     const1 operator const2 T*() const
-#  define REF_CONST_TYPE_CAST_DEF(T) \
-     Ref ## T :: const1 operator const2 T*() const { return p; }
+#  define REF_TYPE_CAST_DEC(T) operator T*() const
+#  define REF_TYPE_CAST_DEF(T) Ref ## T :: operator T*() const { return p; }
 #endif
 
 // The macro version of the reference counting class
@@ -62,7 +44,6 @@ class  Ref ## T  {							      \
     T* operator->() const;					      \
     T* pointer() const;						      \
     REF_TYPE_CAST_DEC(T);			\
-    REF_CONST_TYPE_CAST_DEC(T);			\
     T& operator *() const;					      \
     Ref ## T ();							      \
     Ref ## T (T*a);							      \
@@ -94,7 +75,6 @@ class  Ref ## T  {							      \
 T* Ref ## T :: operator->() const { return p; }			      \
 T* Ref ## T :: pointer() const { return p; }			      \
 REF_TYPE_CAST_DEF(T);				\
-REF_CONST_TYPE_CAST_DEF(T);				\
 T& Ref ## T :: operator *() const { return *p; };			      \
 int Ref ## T :: null() const { return p == 0; }				      \
 int Ref ## T :: nonnull() const { return p != 0; }			      \

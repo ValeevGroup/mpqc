@@ -153,30 +153,13 @@ class  RefDescribedClassBase {
     int operator<( const RefDescribedClassBase &a) const;
 };
 
-#if defined(SWITCH_CONST_CAST)
-#undef const1
-#undef const2
-#define const1 const
-#define const2
-#else
-#undef const1
-#undef const2
-#define const1
-#define const2 const
-#endif
-
 #ifdef TYPE_CONV_BUG
 #  define DCREF_TYPE_CAST_DEC(refname,T)
 #  define DCREF_TYPE_CAST_DEF(refname,T)
-#  define DCREF_CONST_TYPE_CAST_DEC(refname,T)
-#  define DCREF_CONST_TYPE_CAST_DEF(refname,T)
 #else
-#  define DCREF_TYPE_CAST_DEC(refname,T) operator T*()
-#  define DCREF_TYPE_CAST_DEF(refname,T) refname :: operator T*() { return p; }
-#  define DCREF_CONST_TYPE_CAST_DEC(refname,T) \
-     const1 operator const2 T*() const
-#  define DCREF_CONST_TYPE_CAST_DEF(refname,T) \
-     refname :: const1 operator const2 T*() const { return p; }
+#  define DCREF_TYPE_CAST_DEC(refname,T) operator T*() const
+#  define DCREF_TYPE_CAST_DEF(refname,T) \
+    refname :: operator T*() const { return p; }
 #endif
 
 
@@ -190,7 +173,6 @@ class  refname : public RefDescribedClassBase  {			      \
     T* operator->() const;					      \
     T* pointer() const;						      \
     DCREF_TYPE_CAST_DEC(refname,T);			\
-    DCREF_CONST_TYPE_CAST_DEC(refname,T);			\
     T& operator *() const;					      \
     refname ();								      \
     refname (T*a);							      \
@@ -204,7 +186,7 @@ class  refname : public RefDescribedClassBase  {			      \
     refname& operator=(const RefDescribedClassBase & c);		      \
     refname& operator=(const refname & c);				      \
     void assign_pointer(T* cr);						      \
-    void  ref_info(FILE*fp=stdout) const;				      \
+    void ref_info(FILE*fp=stdout) const;				      \
     void warn(const char *) const;					      \
     void clear();							      \
     void check_pointer() const;						      \
@@ -213,7 +195,6 @@ class  refname : public RefDescribedClassBase  {			      \
 T* refname :: operator->() const { return p; };			      \
 T* refname :: pointer() const { return p; };			      \
 DCREF_TYPE_CAST_DEF(refname,T);				\
-DCREF_CONST_TYPE_CAST_DEF(refname,T);				\
 T& refname :: operator *() const { return *p; };			      \
 int refname :: null() const { return p == 0; };				      \
 int refname :: nonnull() const { return p != 0; };			      \

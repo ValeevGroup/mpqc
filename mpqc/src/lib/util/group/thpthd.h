@@ -43,7 +43,9 @@ class PthreadThreadGrp: public ThreadGrp {
 #include <util/class/classd.h>
   private:
     pthread_t *pthreads_;
-    
+    pthread_attr_t *attr_;
+
+    void init_attr();
   public:
     PthreadThreadGrp();
     PthreadThreadGrp(const PthreadThreadGrp&, int nthread = -1);

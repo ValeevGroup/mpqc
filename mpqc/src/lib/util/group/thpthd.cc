@@ -88,6 +88,7 @@ PthreadThreadGrp::PthreadThreadGrp()
   : ThreadGrp()
 {
   pthreads_ = new pthread_t[nthread_];
+  init_attr();
 }
 
 
@@ -95,12 +96,14 @@ PthreadThreadGrp::PthreadThreadGrp(const PthreadThreadGrp &tg,int nthread):
   ThreadGrp(tg, nthread)
 {
   pthreads_ = new pthread_t[nthread_];
+  init_attr();
 }
 
 PthreadThreadGrp::PthreadThreadGrp(const RefKeyVal& keyval)
   : ThreadGrp(keyval)
 {
   pthreads_ = new pthread_t[nthread_];
+  init_attr();
 }
 
 PthreadThreadGrp::~PthreadThreadGrp()
@@ -109,13 +112,26 @@ PthreadThreadGrp::~PthreadThreadGrp()
     delete[] pthreads_;
     pthreads_ = 0;
   }
+  delete attr_;
+}
+
+void
+PthreadThreadGrp::init_attr()
+{
+  attr_ = new pthread_attr_t;
+  pthread_attr_init(attr_);
+#if defined(PTHREAD_CREATE_UNDETACHED)
+  pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_UNDETACHED);
+#elif defined(PTHREAD_CREATE_JOINABLE)
+  pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_UNDETACHED);
+#endif
 }
 
 int
 PthreadThreadGrp::start_threads()
 {
   for (int i=1; i < nthread_; i++) {
-    int res = pthread_create(&pthreads_[i], 0,
+    int res = pthread_create(&pthreads_[i], attr_,
                              Thread::run_Thread_run,
                              (void*) threads_[i]);
     if (res) {
@@ -137,6 +153,7 @@ PthreadThreadGrp::wait_threads()
       if (pthread_join(pthreads_[i], (void**)&tn)) {
         cout << "PthreadThreadGrp::wait_threads(): error joining thread"
              << endl;
+        abort();
       }
     }
   }

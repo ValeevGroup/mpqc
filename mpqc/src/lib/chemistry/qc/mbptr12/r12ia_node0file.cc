@@ -87,10 +87,10 @@ R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
       }
     }
   delete[] pairblk_;
-  delete[] filename_;
       
   // Destroy the file
   unlink(filename_);
+  delete[] filename_;
 }
 
 void

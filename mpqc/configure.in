@@ -534,10 +534,28 @@ esac
 
 dnl -- other options --
 
+AC_MSG_CHECKING([GNU c++ library/template flags])
 if test X$GXX = Xyes; then
   CXXOPTIONS_MISC="$CXXOPTIONS_MISC -fno-implicit-templates"
+  AC_MSG_RESULT("GNU")
 else
   CPPFLAGS="$CPPFLAGS -I$srcdir/include/libg++-stub"
+  case $target in
+changequote(<<, >>)dnl
+    mips4-sgi-irix6.[01]* | r8000-sgi-irix6.[01]* | r10000-sgi-irix6.[01]*)
+changequote([, ])dnl
+      AC_MSG_RESULT("old mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
+    ;;
+    mips4-sgi-irix* | r*-sgi-irix*)
+      if test X$CXX = XCC; then
+        CXXOPTIONS_MISC="$CXXOPTIONS_MISC -ptused"
+      fi
+      AC_MSG_RESULT("mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
+      ;;
+    *)
+      AC_MSG_RESULT("generic non GNU")
+      ;;
+    esac
 fi
 
 if test $DEBUG = yes; then
@@ -863,12 +881,6 @@ changequote([, ])dnl
       CXX="\$(SRCTOPDIR)/bin/CCfix CC"
     fi
     AC_MSG_RESULT("old mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
-  ;;
-  mips4-sgi-irix* | r*-sgi-irix*)
-    if test X$CXX = XCC; then
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -ptused"
-    fi
-    AC_MSG_RESULT("mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
   ;;
   rs6000-*)
     if test X$CXX = XmpCC; then

@@ -565,6 +565,9 @@ sub input_string() {
     $opt = "$opt\n  opt<QNewtonOpt>: (";
     $opt = "$opt\n    function = \$..:mole";
     $opt = "$opt\n    update<BFGSUpdate>: ()";
+    $opt = "$opt\n    convergence<MolEnergyConvergence>: (";
+    $opt = "$opt\n      cartesian = yes";
+    $opt = "$opt\n    )";
     $opt = "$opt\n  )\n";
 
     my $freq = "";

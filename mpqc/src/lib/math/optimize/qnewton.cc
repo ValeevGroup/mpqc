@@ -192,19 +192,35 @@ QNewtonOpt::update()
        << scprintf("taking step of size %f", tot) << endl;
   
   RefSCVector xnext = xcurrent + xdisp;
+
+  if (conv_.nonnull()) {
+    conv_->reset();
+    conv_->get_grad(function());
+    conv_->get_x(function());
+  }
+
   function()->set_x(xnext);
+
+  if (conv_.nonnull()) {
+    conv_->get_nextx(function());
+  }
 
   // do a line min step next time
   if (lineopt_.nonnull()) take_newton_step_ = 0;
 
-  // compute the convergence criteria
-  double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
-  double con_crit2 = maxabs_gradient;
-  double con_crit3 = xdisp.maxabs();
+  if (conv_.null()) {
+    // compute the convergence criteria
+    double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
+    double con_crit2 = maxabs_gradient;
+    double con_crit3 = xdisp.maxabs();
 
-  return   (con_crit1 <= convergence_)
-            && (con_crit2 <= convergence_)
-            && (con_crit3 <= convergence_);
+    return   (con_crit1 <= convergence_)
+              && (con_crit2 <= convergence_)
+              && (con_crit3 <= convergence_);
+  }
+  else {
+    return conv_->converged();
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -10,6 +10,7 @@
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>
 #include <math/optimize/function.h>
+#include <math/optimize/conv.h>
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -25,6 +26,7 @@ class Optimize: virtual_base public SavableState {
     int ckpt_;
     char *ckpt_file;
     RefFunction function_;
+    RefConvergence conv_;
   public:
     //. Standard constructors and destructor.
     Optimize();

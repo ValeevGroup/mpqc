@@ -59,6 +59,7 @@ Optimize::Optimize(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) max_iterations_ = 10;
   n_iterations_ = 0;
   function_ = keyval->describedclassvalue("function");
+  conv_ = keyval->describedclassvalue("convergence");
 }
 
 Optimize::~Optimize()

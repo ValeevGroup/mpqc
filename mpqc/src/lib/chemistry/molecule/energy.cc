@@ -11,6 +11,9 @@
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/energy.h>
 
+/////////////////////////////////////////////////////////////////
+// MolecularEnergy
+
 SavableState_REF_def(MolecularEnergy);
 
 #define CLASSNAME MolecularEnergy
@@ -131,6 +134,7 @@ MolecularEnergy::energy()
 void
 MolecularEnergy::set_gradient(RefSCVector&g)
 {
+  cartesian_gradient_ = g.copy();
   if (mc_.null()) {
     Function::set_gradient(g);
   } else {
@@ -194,6 +198,32 @@ MolecularEnergy::set_x(const RefSCVector&v)
   x_to_molecule();
 }
 
+RefSCVector
+MolecularEnergy::get_cartesian_x()
+{
+  RefSCVector cartesian(moldim(),matrixkit());
+  int c = 0;
+  for (int i=0; i < mol_->natom(); i++) {
+      cartesian(c) = mol_->operator[](i)[0]; c++;
+      cartesian(c) = mol_->operator[](i)[1]; c++;
+      cartesian(c) = mol_->operator[](i)[2]; c++;
+    }
+  return cartesian;
+}
+
+RefSCVector
+MolecularEnergy::get_cartesian_gradient()
+{
+  gradient();
+  if (cartesian_gradient_.null()) {
+      cerr << "MolecularEnergy::get_cartesian_gradient(): "
+           << "cartesian gradient not available"
+           << endl;
+      abort();
+    }
+  return cartesian_gradient_;
+}
+
 RefSCDimension
 MolecularEnergy::moldim()
 {
@@ -242,6 +272,122 @@ MolecularEnergy::print(ostream&o)
       mol_->print(o);
       o << node0 << decindent << endl;
     }
+}
+
+/////////////////////////////////////////////////////////////////
+// MolEnergyConvergence
+
+SavableState_REF_def(MolEnergyConvergence);
+#define CLASSNAME MolEnergyConvergence
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public Convergence
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+void *
+MolEnergyConvergence::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = Convergence::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+MolEnergyConvergence::MolEnergyConvergence()
+{
+  set_defaults();
+}
+
+MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
+  Convergence(s)
+{
+}
+
+MolEnergyConvergence::MolEnergyConvergence(const RefKeyVal&keyval)
+{
+  cartesian_ = keyval->booleanvalue("cartesian");
+
+  use_max_disp_ = keyval->exists("max_disp");
+  use_max_grad_ = keyval->exists("max_grad");
+  use_rms_disp_ = keyval->exists("rms_disp");
+  use_rms_grad_ = keyval->exists("rms_grad");
+  use_graddisp_ = keyval->exists("graddisp");
+  if (use_max_disp_) max_disp_ = keyval->doublevalue("max_disp");
+  if (use_max_grad_) max_grad_ = keyval->doublevalue("max_grad");
+  if (use_rms_disp_) rms_disp_ = keyval->doublevalue("rms_disp");
+  if (use_rms_grad_) rms_grad_ = keyval->doublevalue("rms_grad");
+  if (use_graddisp_) graddisp_ = keyval->doublevalue("graddisp");
+
+  if (!use_max_disp_ && !use_max_grad_
+      && !use_rms_disp_ && !use_rms_grad_
+      && !use_graddisp_) {
+      set_defaults();
+    }
+}
+
+MolEnergyConvergence::~MolEnergyConvergence()
+{
+}
+
+void
+MolEnergyConvergence::save_data_state(StateOut&s)
+{
+  Convergence::save_data_state(s);
+}
+
+void
+MolEnergyConvergence::set_defaults()
+{
+  use_max_disp_ = 1;
+  use_max_grad_ = 1;
+  use_rms_disp_ = 0;
+  use_rms_grad_ = 0;
+  use_graddisp_ = 1;
+  max_disp_ = 1.0e-4;
+  max_grad_ = 1.0e-4;
+  graddisp_ = 1.0e-4;
+}
+
+void
+MolEnergyConvergence::get_x(const RefFunction &f)
+{
+  RefMolecularEnergy m(f);
+  if (m.nonnull() && cartesian_) {
+      x_ = m->get_cartesian_x();
+    }
+  else {
+      x_ = f->get_x();
+    }
+}
+
+void
+MolEnergyConvergence::get_nextx(const RefFunction &f)
+{
+  RefMolecularEnergy m(f);
+  if (m.nonnull() && cartesian_) {
+      nextx_ = m->get_cartesian_x();
+    }
+  else {
+      nextx_ = f->get_x();
+    }
+}
+
+void
+MolEnergyConvergence::get_grad(const RefFunction &f)
+{
+  RefMolecularEnergy m(f);
+  if (m.nonnull() && cartesian_) {
+      grad_ = m->get_cartesian_gradient();
+    }
+  else {
+      grad_ = f->gradient();
+    }
+}
+
+int
+MolEnergyConvergence::converged()
+{
+  return Convergence::converged();
 }
 
 /////////////////////////////////////////////////////////////////////////////

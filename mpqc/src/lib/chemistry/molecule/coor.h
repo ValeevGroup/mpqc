@@ -301,16 +301,16 @@ class MolecularCoor: public SavableState
     // variable internal coordinates.
     virtual int to_internal(RefSCVector&internal) = 0;
 
-    //. Convert the Cartesian coordinate gradients in ``cartesian'' to
-    // internal coordinates and copy these internal coordinate gradients
-    // to ``internal''.  Only the variable internal coordinate gradients
-    // are calculated.
-    virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal) = 0;
-
     //. Convert the internal coordinate gradients in ``internal'' to
     // Cartesian coordinates and copy these Cartesian coordinate gradients
     // to ``cartesian''. Only the variable internal coordinate gradients
     // are transformed.
+    virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal) = 0;
+
+    //. Convert the Cartesian coordinate gradients in ``cartesian'' to
+    // internal coordinates and copy these internal coordinate gradients
+    // to ``internal''.  Only the variable internal coordinate gradients
+    // are calculated.
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian) = 0;
 
     //. Convert the internal coordinate Hessian ``internal'' to Cartesian

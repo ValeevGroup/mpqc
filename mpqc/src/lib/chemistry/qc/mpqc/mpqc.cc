@@ -187,9 +187,9 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
  // initialize force and geometry routines
   if (me==0) fprintf(outfile,"\n");
   if (scf_info.iopen)
-    dmt_force_osscf_keyval_init(keyval,outfile);
+    dmt_force_osscf_keyval_init(keyval.pointer(),outfile);
   else
-    dmt_force_csscf_keyval_init(keyval,outfile);
+    dmt_force_csscf_keyval_init(keyval.pointer(),outfile);
   if (me==0) fprintf(outfile,"\n");
 
  // set the throttle for libdmt loops

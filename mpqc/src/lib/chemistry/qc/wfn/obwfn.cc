@@ -259,11 +259,12 @@ OneBodyWavefunction::form_density(const RefSCMatrix& vec,
     for (int i=0; i < nbasis; i++) {
       for (int j=0; j <= i; j++) {
         double pt=0;
-        for (int k=0; k < ndocc; k++)
+        int k;
+        for (k=0; k < ndocc; k++)
           pt += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
 
         double pto=0;
-        for (int k=ndocc; k < ndocc+nsocc; k++)
+        for (k=ndocc; k < ndocc+nsocc; k++)
           pto += lvec->get_element(i,k)*lvec->get_element(j,k);
 
         if (lodens) {
@@ -281,11 +282,12 @@ OneBodyWavefunction::form_density(const RefSCMatrix& vec,
     open_density.assign(0.0);
     for (int i=0; i < nbasis; i++) {
       for (int j=0; j <= i; j++) {
-        for (int k=0; k < ndocc; k++) {
+        int k;
+        for (k=0; k < ndocc; k++) {
           density.set_element(i,j, density.get_element(i,j)
                               + 2.0*vec.get_element(i,k)*vec.get_element(j,k));
         }
-        for (int k=ndocc; k < ndocc+nsocc; k++) {
+        for (k=ndocc; k < ndocc+nsocc; k++) {
           open_density.set_element(i,j, open_density.get_element(i,j)
                               + vec.get_element(i,k)*vec.get_element(j,k));
         }

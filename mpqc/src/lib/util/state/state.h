@@ -9,6 +9,75 @@
 #include <util/state/qc_xdr.h>
 #include <util/container/array.h>
 
+#define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
+#define SavableState_REF_def(T) SavableState_named_REF_def(Ref ## T,T)
+
+#define SavableState_named_REF_dec(refname,T)				      \
+DescribedClass_named_REF_dec(RefDC ## T, T);				      \
+class refname: public RefDC ## T {					      \
+  public:								      \
+    refname();								      \
+    refname(refname&);							      \
+    refname(T *);							      \
+    refname(RefDescribedClassBase&);					      \
+    refname& operator=(T* cr);						      \
+    refname& operator=( RefDescribedClassBase & c);			      \
+    refname& operator=( refname & c);					      \
+    ~refname();								      \
+    void save_state(StateOut&);						      \
+    void restore_state(StateIn&);					      \
+};
+#define SavableState_named_REF_def(refname,T)				      \
+DescribedClass_named_REF_def(RefDC ## T, T)				      \
+refname :: refname() {}							      \
+refname :: refname (refname & o): RefDC ## T (o) {}			      \
+refname :: refname (T * o): RefDC ## T (o) {}				      \
+refname :: refname (RefDescribedClassBase&o): RefDC ## T (o) {}		      \
+refname :: ~refname () {}						      \
+refname& refname :: operator=(T* cr)					      \
+{									      \
+  RefDC ## T::operator=(cr);						      \
+  return *this;								      \
+}									      \
+refname& refname :: operator=( RefDescribedClassBase & c)		      \
+{									      \
+  RefDC ## T::operator=(c);						      \
+  return *this;								      \
+}									      \
+refname& refname :: operator=( refname & c)				      \
+{									      \
+  RefDC ## T::operator=(c);						      \
+  return *this;								      \
+}									      \
+void refname :: save_state(StateOut&so)					      \
+{									      \
+  if (so.putpointer(pointer())) {					      \
+      so.put(pointer()->class_desc());					      \
+      pointer()->save_vbase_state(so);					      \
+      pointer()->save_data_state(so);					      \
+    }									      \
+}									      \
+void refname::restore_state(StateIn&si)					      \
+{									      \
+  SavableState* ss;							      \
+  int objnum = si.getpointer((void**)&ss);				      \
+  if (objnum) {								      \
+      const ClassDesc* cd;						      \
+      si.get(&cd);							      \
+      si.nextobject(objnum);						      \
+      DescribedClass* dc = cd->create(si);				      \
+      ss = SavableState::castdown(dc);					      \
+    }									      \
+  T* t = T::castdown(ss);						      \
+  if (!t && ss) {							      \
+      fprintf(stderr,							      \
+           "Ref" # T "::restore_state() got type \"%s\"\n",ss->class_name()); \
+      abort();								      \
+    }									      \
+  assign_pointer(t);							      \
+}
+
+
 class StateIn;
 class StateOut;
 
@@ -102,6 +171,7 @@ class StateOut: virtual public DescribedClass {
     virtual int put_array_double(const double*p,int size);
     //virtual int put(SavableState&ss);
     //virtual int put(SavableState*);
+    void forget();
   };
 DescribedClass_REF_dec(StateOut);
 

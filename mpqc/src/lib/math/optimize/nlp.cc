@@ -29,7 +29,7 @@ NLP0::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-NLP0::NLP0(RefSCDimension&dim):
+NLP0::NLP0(const RefSCDimension&dim):
   _value(this),
   _dim(dim),
   _x(dim)
@@ -94,7 +94,7 @@ NLP0::do_value(int f)
 }
 
 void
-NLP0::set_x(RefSCVector&v)
+NLP0::set_x(const RefSCVector&v)
 {
   _x.assign(v);
   obsolete();
@@ -154,7 +154,7 @@ NLP1::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-NLP1::NLP1(RefSCDimension&dim):
+NLP1::NLP1(const RefSCDimension&dim):
   NLP0(dim),
   _gradient(this)
 {
@@ -263,7 +263,7 @@ NLP2::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-NLP2::NLP2(RefSCDimension&dim):
+NLP2::NLP2(const RefSCDimension&dim):
   NLP1(dim),
   _hessian(this)
 {

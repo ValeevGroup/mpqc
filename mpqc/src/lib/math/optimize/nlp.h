@@ -21,7 +21,7 @@ class NLP0: virtual public SavableState, public Compute {
     AccResultdouble   _value;// value of function at _x
     virtual void set_value(double);
   public:
-    NLP0(RefSCDimension&);
+    NLP0(const RefSCDimension&);
     NLP0(StateIn&);
     NLP0(KeyVal&);
     virtual ~NLP0();
@@ -34,7 +34,7 @@ class NLP0: virtual public SavableState, public Compute {
     int do_value(int);
     int do_value();
 
-    virtual void set_x(RefSCVector&);
+    virtual void set_x(const RefSCVector&);
     virtual RefSCVector get_x();
 
     virtual void set_desired_value_accuracy(double);
@@ -60,7 +60,7 @@ class NLP1: public NLP0 {
     AccResultRefSCVector _gradient; // gradient at _x
     virtual void set_gradient(RefSCVector&);
   public:
-    NLP1(RefSCDimension&);
+    NLP1(const RefSCDimension&);
     NLP1(StateIn&);
     NLP1(KeyVal&);
     virtual ~NLP1();
@@ -90,7 +90,7 @@ class NLP2: public NLP1 {
     AccResultRefSymmSCMatrix _hessian;
     virtual void set_hessian(RefSymmSCMatrix&);
   public:
-    NLP2(RefSCDimension&);
+    NLP2(const RefSCDimension&);
     NLP2(StateIn&);
     NLP2(KeyVal&);
     virtual ~NLP2();

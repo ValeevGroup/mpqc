@@ -7,7 +7,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 LD=$(CXX)
 
-CXXSRC = nlp.cc opt.cc
+CXXSRC = nlp.cc opt.cc update.cc qnewton.cc
 CSRC = 
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)

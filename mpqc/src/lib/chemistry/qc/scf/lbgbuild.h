@@ -41,12 +41,12 @@ class LocalLBGBuild : public GBuild<T> {
     RefTwoBodyInt tbi_;
     RefIntegral integral_;
     RefGaussianBasisSet gbs_;
-    char *pmax;
+    signed char *pmax;
     
   public:
     LocalLBGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral& ints,
                 const RefGaussianBasisSet& bs, const RefMessageGrp& g,
-                char *pm) :
+                signed char *pm) :
       GBuild<T>(t), grp_(g), tbi_(tbi), integral_(ints), gbs_(bs), pmax(pm) {}
     ~LocalLBGBuild() {}
 

@@ -846,8 +846,8 @@ TCSCF::ao_fock()
     RefSymmSCMatrix kbtmp = get_local_data(ao_kb_, kmatb, SCF::Accum);
     RefSymmSCMatrix opbtmp = get_local_data(odb, opmatb, SCF::Read);
     
-    char * pmax = init_pmax(pmata);
-    char * pmaxb = init_pmax(pmatb);
+    signed char * pmax = init_pmax(pmata);
+    signed char * pmaxb = init_pmax(pmatb);
   
     int i;
     for (i=0; i < i_offset(basis()->nshell()); i++) {

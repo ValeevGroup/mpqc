@@ -254,7 +254,7 @@ SCF::compute()
 
 //////////////////////////////////////////////////////////////////////////////
 
-char *
+signed char *
 SCF::init_pmax(double *pmat_data)
 {
   double l2inv = 1.0/log(2.0);
@@ -262,7 +262,7 @@ SCF::init_pmax(double *pmat_data)
   
   GaussianBasisSet& gbs = *basis().pointer();
   
-  char * pmax = new char[i_offset(gbs.nshell())];
+  signed char * pmax = new signed char[i_offset(gbs.nshell())];
 
   int ish, jsh, ij;
   for (ish=ij=0; ish < gbs.nshell(); ish++) {

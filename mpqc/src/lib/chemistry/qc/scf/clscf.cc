@@ -493,7 +493,7 @@ CLSCF::ao_fock()
     tim_exit("local data");
 
     tim_enter("init pmax");
-    char * pmax = init_pmax(pmat);
+    signed char * pmax = init_pmax(pmat);
     tim_exit("init pmax");
   
     LocalCLContribution lclc(gmat, pmat);

@@ -699,7 +699,7 @@ OSSSCF::ao_fock()
     RefSymmSCMatrix gbtmp = get_local_data(op_gmatb_, gmatb, SCF::Accum);
     RefSymmSCMatrix pbtmp = get_local_data(op_densb_diff_, pmatb, SCF::Read);
     
-    char * pmax = init_pmax(pmat);
+    signed char * pmax = init_pmax(pmat);
   
     LocalOSSContribution lclc(gmat, pmat, gmata, pmata, gmatb, pmatb);
     LocalGBuild<LocalOSSContribution>

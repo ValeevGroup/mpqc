@@ -633,7 +633,7 @@ HSOSSCF::ao_fock()
     RefSymmSCMatrix gotmp = get_local_data(op_gmat_, gmato, SCF::Accum);
     RefSymmSCMatrix potmp = get_local_data(op_dens_diff_, pmato, SCF::Read);
 
-    char * pmax = init_pmax(pmat);
+    signed char * pmax = init_pmax(pmat);
   
     LocalHSOSContribution lclc(gmat, pmat, gmato, pmato);
     LocalGBuild<LocalHSOSContribution>

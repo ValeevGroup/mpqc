@@ -5,6 +5,41 @@
 MPQC runs on Linux workstations, Silicon Graphics computers,
 and more.
 
+\section{Command Line Options}
+
+\section{Environmental Variables}
+
+By default, MPQC tries to find basis set library files in
+the source code distribution.  If the executable or source
+code is moved, MPQC can be notified with the environmental
+variable \verb|SCLIBDIR|.  In the source code distribution
+this directory is \verb|SC/lib|.
+
+For example if you need to run MPQC on a machine that doesn't
+have the source code distribution in the same place as the
+machine on which MPQC is compiled you must do the following
+on the machine with the source code:
+
+\begin{alltt}
+cd SC/lib
+tar cvf ../sclib.tar .
+\end{alltt}
+
+Then transfer \verb|sclib.tar| to the machine that you want to run
+MPQC on and do something like
+
+\begin{alltt}
+mkdir ~/sclib
+cd ~/sclib
+tar xvf ../sclib.tar
+setenv SCLIBDIR ~/sclib
+\end{alltt}
+
+The setenv command is specific to the C-shell.  You will need to
+do what is appropriate for your shell.
+
+Now MPQC should be ready to run.
+
 \section{Running MPQC on a Shared Memory Multiprocessor}
 \index{computers, shared memory}
 \index{shared memory}

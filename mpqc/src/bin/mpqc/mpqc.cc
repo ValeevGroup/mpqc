@@ -242,7 +242,7 @@ main(int argc, char *argv[])
 
   int do_opt = keyval->booleanvalue("optimize");
   if (keyval->error() != KeyVal::OK)
-    do_opt=0;
+    do_opt=1;
   
   int ready_for_freq = 1;
   if (mole.nonnull()) {

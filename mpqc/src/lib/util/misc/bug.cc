@@ -117,6 +117,9 @@ Debugger::Debugger(const RefKeyVal &keyval)
   exit_on_signal_ = keyval->booleanvalue("exit");
   if (keyval->error() != KeyVal::OK) exit_on_signal_ = 1;
 
+  sleep_ = keyval->intvalue("sleep");
+  if (keyval->error() != KeyVal::OK) sleep_ = 0;
+
   wait_for_debugger_ = keyval->booleanvalue("wait_for_debugger");
   if (keyval->error() != KeyVal::OK) wait_for_debugger_ = 1;
 
@@ -154,6 +157,7 @@ Debugger::Debugger(StateIn&s):
   s.getstring(prefix_);
   s.getstring(exec_);
   s.getstring(cmd_);
+  s.get(sleep_);
   s.get(debug_);
   s.get(traceback_);
   s.get(exit_on_signal_);
@@ -173,6 +177,7 @@ Debugger::save_data_state(StateOut&s)
   s.putstring(prefix_);
   s.putstring(exec_);
   s.putstring(cmd_);
+  s.put(sleep_);
   s.put(debug_);
   s.put(traceback_);
   s.put(exit_on_signal_);
@@ -190,6 +195,7 @@ Debugger::init()
   exec_ = 0;
   prefix_ = 0;
   cmd_ = 0;
+  sleep_ = 0;
 
   exit_on_signal_ = 1;
   traceback_ = 1;
@@ -334,6 +340,11 @@ Debugger::debug(const char *reason)
       system(cmd);
       delete[] cmd;
       // wait until the debugger is ready
+      if (sleep_) {
+          cout << "Sleeping " << sleep_
+               << " seconds to wait for debugger ..." << endl;
+          sleep(sleep_);
+      }
       if (wait_for_debugger_) while(!debugger_ready_);
     }
 #endif

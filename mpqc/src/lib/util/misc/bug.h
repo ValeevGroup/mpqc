@@ -30,6 +30,7 @@ class Debugger: public SavableState {
     int debug_;
     int traceback_;
     int exit_on_signal_;
+    int sleep_;
     int wait_for_debugger_;
     int *mysigs_;
 

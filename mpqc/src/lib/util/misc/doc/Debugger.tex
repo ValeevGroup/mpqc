@@ -33,8 +33,12 @@ for \clsnm{Debugger}.
         & \verb|yes| \\
  \verb|wait_for_debugger|
         & When starting a debugger go into an infinite loop
-        to give the debugger a change to attach to the process.
+        to give the debugger a chance to attach to the process.
         & \verb|yes| \\
+ \verb|sleep|
+        & When starting a debugger wait this many seconds
+        to give the debugger a chance to attach to the process.
+        & \verb|0| \\
  \verb|handle_defaults|
         & Handle a standard set of signals such as SIGBUS, SIGSEGV, etc.
         & \verb|yes| \\

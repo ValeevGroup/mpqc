@@ -118,6 +118,53 @@ AccumDDH::done()
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// AccumDDH
+
+#define CLASSNAME AccumNullDDH
+#define PARENTS public AccumDDH
+#define HAVE_CTOR
+#define HAVE_STATEIN_CTOR
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+
+void *
+AccumNullDDH::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = AccumDDH::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+AccumNullDDH::AccumNullDDH()
+{
+}
+
+AccumNullDDH::AccumNullDDH(StateIn&s) :
+  AccumDDH(s)
+{
+}
+
+AccumNullDDH::AccumNullDDH(const RefKeyVal& keyval) :
+  AccumDDH(keyval)
+{
+}
+
+AccumNullDDH::~AccumNullDDH()
+{
+}
+
+void
+AccumNullDDH::save_data_state(StateOut& s)
+{
+  AccumDDH::save_data_state(s);
+}
+
+void
+AccumNullDDH::accum(const RefSymmSCMatrix& h, const RefSymmSCMatrix& h_open)
+{
+}
+
+///////////////////////////////////////////////////////////////////////////
 // AccumEffectiveH
 
 #define CLASSNAME AccumEffectiveH

@@ -61,6 +61,26 @@ class AccumDDH: public SavableState {
 };
 SavableState_REF_dec(AccumDDH);
 
+class AccumNullDDH: public AccumDDH {
+#   define CLASSNAME AccumNullDDH
+#   define HAVE_CTOR
+#   define HAVE_STATEIN_CTOR
+#   define HAVE_KEYVAL_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    AccumNullDDH();
+    AccumNullDDH(StateIn&);
+    AccumNullDDH(const RefKeyVal&);
+    ~AccumNullDDH();
+
+    void save_data_state(StateOut&);
+    
+    void accum(const RefSymmSCMatrix& h, const RefSymmSCMatrix& h_open);
+};
+
+SavableState_REF_dec(AccumNullDDH);
+
 ////////////////////////////////////////////////////////////////////////////
 
 class AccumEffectiveH: public SCElementOp2 {

@@ -58,7 +58,7 @@ INCINSTALL=$(SRCDIR)/$(TOPDIR)/bin/incinstall
 
 # The library locator
 #LISTLIBS=$(SRCDIR)/$(TOPDIR)/bin/listlibs.sh
-LISTLIBS=$(TOPDIR)/bin/listlibs
+LISTLIBS=listlibs
 
 # The object directory maker
 OBJECTDIR=$(SRCDIR)/$(TOPDIR)/bin/objectdir

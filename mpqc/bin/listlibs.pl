@@ -121,7 +121,7 @@ sub find_libraries {
         exit 1;
     }
     $current_includes{$filename} = 1;
-    foreach $line (reverse(get_lines($read_files{$filename}))) {
+    foreach $line (reverse(&get_lines($read_files{$filename}))) {
         if ($line =~ /^\#\s*include\s*<(.+)>/) {
             local($newfile) = $1;
             if ($known_includes{$newfile} != 1) {

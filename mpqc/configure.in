@@ -566,6 +566,27 @@ changequote([, ])dnl
   ;;
 esac
 
+dnl ----------- check for C++ typename ---------------
+dnl This is done before template flags are set to avoid
+dnl undefined symbol problems.
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING("checking for C++ typename keyword ... ")
+AC_TRY_LINK([
+  class X { public: typedef int t; X(){} };
+  template <class T> void f(T i) {typename T::t x;}
+],[
+  X g;
+  f(g);
+],[
+AC_DEFINE(HAVE_TYPENAME)
+AC_MSG_RESULT("yes")
+],
+AC_MSG_RESULT("no")
+);
+AC_LANG_RESTORE
+
 dnl -- other options --
 
 AC_MSG_CHECKING([GNU c++ library/template flags])

@@ -186,6 +186,9 @@ TwoBodyMOIntsTransform::init_vars()
   double mem_static_double = (double) mem_static_;
   msg_->bcast(mem_static_double);
   mem_static_ = (size_t) mem_static_double;
+
+  if (batchsize_ == 0)
+    throw std::runtime_error("TwoBodyMOIntsTransform::init_vars() -- batch size is 0: more memory or processors are needed");
   
   npass_ = 0;
   int rest = 0;

@@ -54,6 +54,7 @@ protected:
   std::string name_;
   Ref<MOIntsTransformFactory> factory_;
 
+  Ref<MolecularEnergy> top_mole_;   // Top-level molecular energy to enable checkpointing
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
@@ -66,7 +67,7 @@ protected:
   Ref<MOIndexSpace> space4_;
 
   // Other cases will be handled later
-  static const int num_te_types_ = 4;
+  static const int num_te_types_ = 3;
 
   size_t memory_;
   bool dynamic_;
@@ -105,6 +106,9 @@ public:
   ~TwoBodyMOIntsTransform();
 
   void save_data_state(StateOut&);
+
+  /// Specifies the top-level MolecularEnergy object to use for checkpointing
+  void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
 
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }

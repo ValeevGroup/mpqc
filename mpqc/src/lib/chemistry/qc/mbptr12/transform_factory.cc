@@ -136,6 +136,9 @@ MOIntsTransformFactory::twobody_transform(const std::string& name)
   else
     throw std::runtime_error("MOIntsTransformFactory::twobody_transform() -- desired \
 TwoBodyMOIntsTransform hasn't been implemented yet");
+
+  if (top_mole_.nonnull())
+    result->set_top_mole(top_mole_);
   
   return result;
 }

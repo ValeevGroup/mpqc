@@ -54,6 +54,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     int to_type_;
     int fr_type_;
 
+    int active_;
+
     Thread *thread_;
     RefThreadLock mem_lock_;
     RefThreadLock print_lock_; // needed for debugging only
@@ -76,6 +78,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     long lockcomm();
     void unlockcomm(long oldvalue);
 
+    void activate();
+    void deactivate();
 };
 
 #endif

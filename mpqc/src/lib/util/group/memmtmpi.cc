@@ -162,24 +162,15 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefKeyVal& keyval):
 
 MTMPIMemoryGrp::~MTMPIMemoryGrp()
 {
-  // send a shutdown message
-  MemoryDataRequest req(MemoryDataRequest::Deactivate);
-  if (debug_) {
-      print_lock_->lock();
-      req.print("SEND",mout);
-      print_lock_->unlock();
-    }
-  MPI_Send(req.data(),req.nbytes(),MPI_BYTE,me(),req_type_,MPI_COMM_WORLD);
-
-  // wait on the thread to shutdown
-  th_->wait_threads();
-
+  deactivate();
   delete thread_;
 }
 
 void
 MTMPIMemoryGrp::init_mtmpimg()
 {
+  active_ = 0;
+
   th_ = th_->clone(2);
   if (th_->nthread() != 2) {
       cout << "MTMPIMemoryGrp didn't get the right number of threads" << endl;
@@ -203,7 +194,6 @@ MTMPIMemoryGrp::init_mtmpimg()
   print_lock_ = th_->new_lock();
   th_->add_thread(0,0);
   th_->add_thread(1,thread_);
-  th_->start_threads();
 }
 
 long
@@ -294,6 +284,34 @@ MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
 
   // wait for the ack message
   MPI_Recv(&junk,1,MPI_BYTE,node,fr_type_,MPI_COMM_WORLD,&status);
+}
+
+void
+MTMPIMemoryGrp::activate()
+{
+  if (active_) return;
+  active_ = 1;
+
+  th_->start_threads();
+}
+
+void
+MTMPIMemoryGrp::deactivate()
+{
+  if (!active_) return;
+  active_ = 0;
+
+  // send a shutdown message
+  MemoryDataRequest req(MemoryDataRequest::Deactivate);
+  if (debug_) {
+      print_lock_->lock();
+      req.print("SEND",mout);
+      print_lock_->unlock();
+    }
+  MPI_Send(req.data(),req.nbytes(),MPI_BYTE,me(),req_type_,MPI_COMM_WORLD);
+
+  // wait on the thread to shutdown
+  th_->wait_threads();
 }
 
 #endif

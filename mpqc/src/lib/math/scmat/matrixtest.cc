@@ -28,7 +28,6 @@
 #include <iostream>
 #include <math.h>
 #include <util/misc/libmisc.h>
-#include <util/group/picl.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
@@ -81,15 +80,12 @@ randomize(RefSCVector&m)
 // test abstract matrices
 void
 matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
-           RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
+           RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
+           bool have_svd)
 {
-  // The tim_enter routines require PICL
-  int numproc, me, host;
-  open0(&numproc, &me, &host);
-
-  if (d1.null()) d1 = keyval->describedclassvalue("d1");
-  if (d2.null()) d2 = keyval->describedclassvalue("d2");
-  if (d3.null()) d3 = keyval->describedclassvalue("d3");
+  if (d1.null()) d1 << keyval->describedclassvalue("d1");
+  if (d2.null()) d2 << keyval->describedclassvalue("d2");
+  if (d3.null()) d3 << keyval->describedclassvalue("d3");
 
   d1.print();
   d2.print();
@@ -113,7 +109,7 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   a.assign(7.0);
   a2.assign(5.0);
   a3.assign(3.0);
-  RefSCElementOp3 op3 = new Prod3;
+  Ref<SCElementOp3> op3 = new Prod3;
   a.element_op(op3,a2,a3);
   a.print("a");
   a2.print("a2");
@@ -177,7 +173,7 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
 
   d.print("d");
 
-  RefSCDimension d4 = keyval->describedclassvalue("d4");
+  RefSCDimension d4; d4 << keyval->describedclassvalue("d4");
   int nd4 = d4->n();
   cout << "n4 = " << nd4 << endl;
   d4.print();
@@ -227,11 +223,11 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   g.i().print("g.i()");
   (g * g.i()).print("g * g.i()");
 
-#ifndef NO_SVD
-  g.gi().print("g.gi()");
-  (g * g.gi()).print("g * g.gi()");
-  (g.gi() * g).print("g.gi() * g");
-#endif
+  if (have_svd) {
+      g.gi().print("g.gi()");
+      (g * g.gi()).print("g * g.gi()");
+      (g.gi() * g).print("g.gi() * g");
+    }
 
   RefSCVector v(d3,kit);
   for (i=0; i<d3.n(); i++) {
@@ -248,11 +244,11 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   va.print("Vector va");
   wa.print("Vector wa");
 
-#ifndef NO_SVD
-  ma.gi().print("ma.gi()");
-  (ma * ma.gi()).print("ma * ma.gi()");
-  (ma.gi() * ma).print("ma.gi() * ma");
-#endif
+  if (have_svd) {
+      ma.gi().print("ma.gi()");
+      (ma * ma.gi()).print("ma * ma.gi()");
+      (ma.gi() * ma).print("ma.gi() * ma");
+    }
 
   RefSCVector wb(d1,kit);
   RefSCMatrix mb(d3,d1,kit);
@@ -263,11 +259,11 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   va.print("Vector vb");
   wa.print("Vector wb");
 
-#ifndef NO_SVD
-  mb.gi().print("mb.gi()");
-  (mb * mb.gi()).print("mb * mb.gi()");
-  (mb.gi() * mb).print("mb.gi() * mb");
-#endif
+  if (have_svd) {
+      mb.gi().print("mb.gi()");
+      (mb * mb.gi()).print("mb * mb.gi()");
+      (mb.gi() * mb).print("mb.gi() * mb");
+    }
 
   RefSymmSCMatrix bmbt(d3,kit);
   RefSCMatrix redundant_ortho(d2,d3,kit);
@@ -278,8 +274,15 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
   randomize(bmbt_fixed);
   randomize(bmbt_fix_red);
   bmbt.accumulate_transform(redundant_ortho.t(), bmbt_fixed);
-  bmbt.accumulate_symmetric_sum(redundant_ortho.t() * bmbt_fix_red);
   bmbt.print("bmbt");
+
+  bmbt.assign(0.0);
+  bmbt.accumulate_transform(redundant_ortho, bmbt_fixed,
+                            SCMatrix::TransposeTransform);
+  bmbt.print("bmbt (2)");
+
+  bmbt.accumulate_symmetric_sum(redundant_ortho.t() * bmbt_fix_red);
+  bmbt.print("bmbt (symmetric_sum)");
 
   RefSCMatrix bmbt_test;
   RefSCMatrix bmbt_fixed_test(d2,d2,kit);
@@ -296,8 +299,6 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
 
   tim_exit("matrixtest");
   tim_print(0);
-
-  close0(0);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -33,14 +33,11 @@
 #include <util/group/messshm.h>
 #include <math/scmat/dist.h>
 
-ClassDesc* f0 = &ShmMessageGrp::class_desc_;
-#ifdef HAVE_MPI
-#include <util/group/messmpi.h>
-ClassDesc* f1 = &MPIMessageGrp::class_desc_;
-#endif
+#include <util/group/linkage.h>
 
 void matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
-                RefSCDimension d1,RefSCDimension d2,RefSCDimension d3);
+                RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
+                bool have_svd);
 
 main(int argc, char** argv)
 {
@@ -49,7 +46,7 @@ main(int argc, char** argv)
   Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
 
   if (msg.null()) {
-      msg = keyval->describedclassvalue("messagegrp");
+      msg << keyval->describedclassvalue("messagegrp");
 
       if (msg.null()) {
           cerr << indent << "Couldn't initialize MessageGrp\n";
@@ -59,7 +56,7 @@ main(int argc, char** argv)
 
   MessageGrp::set_default_messagegrp(msg);
 
-  Ref<Debugger> d = keyval->describedclassvalue("debugger");
+  Ref<Debugger> d; d << keyval->describedclassvalue("debugger");
   if (d.nonnull()) {
       d->set_prefix(msg->me());
       d->set_exec(argv[0]);
@@ -75,21 +72,20 @@ main(int argc, char** argv)
           StateSend out(msg);
           out.target(1);
           out.copy_references();
-          l.save_state(out);
+          SavableState::save_state(l.pointer(), out);
           out.flush();
         }
       else if (msg->me() == 1) {
           StateRecv in(msg);
           in.source(0);
-          in.copy_references();
-          l.restore_state(in);
+          l << SavableState::restore_state(in);
         }
     }
 
   Ref<SCMatrixKit> kit = new DistSCMatrixKit;
-  RefSCDimension d1(keyval->describedclassvalue("d1"));
-  RefSCDimension d2(keyval->describedclassvalue("d2"));
-  RefSCDimension d3(keyval->describedclassvalue("d3"));
+  RefSCDimension d1; d1 << keyval->describedclassvalue("d1");
+  RefSCDimension d2; d2 << keyval->describedclassvalue("d2");
+  RefSCDimension d3; d3 << keyval->describedclassvalue("d3");
 
   int nblocks = (int)sqrt(msg->n());
 
@@ -98,7 +94,7 @@ main(int argc, char** argv)
   d2 = new SCDimension(d2.n(), nblocks);
   d3 = new SCDimension(d3.n(), nblocks);
 
-  matrixtest(kit,keyval,d1,d2,d3);
+  matrixtest(kit,keyval,d1,d2,d3,false);
 
   return 0;
 }

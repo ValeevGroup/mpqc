@@ -434,6 +434,18 @@ DistSCMatrix::accumulate_product_rr(SCMatrix*pa,SCMatrix*pb)
       ExEnv::err() << indent
            << "DistSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
            << "dimensions don't match\n";
+      ExEnv::err() << node0 << indent << "rowdim():" << endl;
+      rowdim().print();
+      ExEnv::err() << node0 << indent << "coldim():" << endl;
+      coldim().print();
+      ExEnv::err() << node0 << indent << "a->rowdim():" << endl;
+      a->rowdim().print();
+      ExEnv::err() << node0 << indent << "a->coldim():" << endl;
+      a->coldim().print();
+      ExEnv::err() << node0 << indent << "b->rowdim():" << endl;
+      b->rowdim().print();
+      ExEnv::err() << node0 << indent << "b->coldim():" << endl;
+      b->coldim().print();
       abort();
     }
 

@@ -667,14 +667,14 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b,
   brect->assign(0.0);
   brect->accumulate(b);
 
-  RefSCMatrix tmp = a->clone();
-  tmp->assign(0.0);
-
   RefSCMatrix res;
 
   if (t == SCMatrix::TransposeTransform) {
       RefSCMatrix at = a->copy();
       at->transpose_this();
+
+      RefSCMatrix tmp = at->clone();
+      tmp->assign(0.0);
 
       tmp->accumulate_product(at.pointer(), brect.pointer());
       brect = 0;
@@ -685,6 +685,9 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b,
       res->accumulate_product(tmp.pointer(), a);
     }
   else {
+      RefSCMatrix tmp = a->clone();
+      tmp->assign(0.0);
+
       tmp->accumulate_product(a,brect);
       brect = 0;
 
@@ -696,8 +699,6 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b,
       res->accumulate_product(tmp.pointer(), at.pointer());
       at = 0;
     }
-
-  tmp = 0;
 
   scale(2.0);
   accumulate_symmetric_sum(res.pointer());

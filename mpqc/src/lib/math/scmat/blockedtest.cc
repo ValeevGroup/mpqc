@@ -30,7 +30,8 @@
 #include <math/scmat/blocked.h>
 
 void matrixtest(Ref<SCMatrixKit>, Ref<KeyVal>,
-                RefSCDimension d1,RefSCDimension d2,RefSCDimension d3);
+                RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
+                bool have_svd);
 
 main()
 {
@@ -50,9 +51,9 @@ main()
   blks2 = new int[nblks];
   blks3 = new int[nblks];
   
-  RefSCDimension sd1(keyval->describedclassvalue("d1"));
-  RefSCDimension sd2(keyval->describedclassvalue("d2"));
-  RefSCDimension sd3(keyval->describedclassvalue("d2"));
+  RefSCDimension sd1; sd1 << keyval->describedclassvalue("d1");
+  RefSCDimension sd2; sd2 << keyval->describedclassvalue("d2");
+  RefSCDimension sd3; sd3 << keyval->describedclassvalue("d2");
   
   RefSCDimension d1(new SCDimension(sd1.n()*nblks,nblks));
   RefSCDimension d2(new SCDimension(sd2.n()*nblks,nblks));
@@ -64,7 +65,7 @@ main()
     d3->blocks()->set_subdim(i,sd3);
   }
 
-  matrixtest(kit,keyval,d1,d2,d3);
+  matrixtest(kit,keyval,d1,d2,d3,true);
   
   d1 = new SCDimension(sd1.n(),1);
   d2 = new SCDimension(sd2.n(),1);
@@ -74,7 +75,7 @@ main()
   d2->blocks()->set_subdim(0,sd2);
   d3->blocks()->set_subdim(0,sd3);
 
-  matrixtest(kit,keyval,d1,d2,d3);
+  matrixtest(kit,keyval,d1,d2,d3,true);
   d1=0;
 
   return 0;

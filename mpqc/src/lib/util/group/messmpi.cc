@@ -33,10 +33,6 @@
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 
-#if HAVE_P4
-#include <netdb.h>
-#endif
-
 //#define MPI_SEND_ROUTINE MPI_Ssend // hangs
 //#define MPI_SEND_ROUTINE MPI_Send // hangs
 #define MPI_SEND_ROUTINE MPI_Bsend // works requires the attach and detach
@@ -113,7 +109,7 @@ MPIMessageGrp::init()
     }
 
 #ifndef HAVE_P4
-  MPI_Init(argcp_, &argvp_);
+  MPI_Init(&argc, &argv);
 #endif
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);

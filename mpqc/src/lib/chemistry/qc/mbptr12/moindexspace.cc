@@ -115,6 +115,7 @@ MOIndexSpace::MOIndexSpace(StateIn& si) : SavableState(si)
   si.get(nblocks_);
   si.get(offsets_);
   si.get(nmo_);
+  si.get(map_to_full_space_);
 
   int moorder; si.get(moorder); moorder = (int) moorder_;
   
@@ -141,6 +142,7 @@ MOIndexSpace::save_data_state(StateOut& so)
   so.put(nblocks_);
   so.put(offsets_);
   so.put(nmo_);
+  so.put(map_to_full_space_);
 
   so.put((int)moorder_);
 }
@@ -177,6 +179,9 @@ MOIndexSpace::nmo() const { return nmo_; }
 
 vector<int>
 MOIndexSpace::offsets() const { return offsets_; }
+
+int
+MOIndexSpace::to_full_space(const int i) const { return map_to_full_space_.at(i); }
 
 void
 MOIndexSpace::check_mosym() const
@@ -344,6 +349,12 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
     evals_.assign(0.0);
 
   nblocks_ = modim_->blocks()->nblock();
+
+  // Compute the map to the full space
+  map_to_full_space_.resize(rank_);
+  for (int i=0; i<rank_; i++) {
+    map_to_full_space_[i] = blocked_subindex_to_full_index[index_map[i]];
+  }
 
   delete[] index_map;  
 }

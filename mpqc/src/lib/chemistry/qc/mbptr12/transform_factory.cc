@@ -124,14 +124,14 @@ MOIntsTransformFactory::twobody_transform(const std::string& name)
   Ref<TwoBodyMOIntsTransform> result;
 
   
-  if (space1_ == space2_) {
-    result = new TwoBodyMOIntsTransform_ijxy(name,this,space1_,space2_,space3_,space4_);
-  }
-  else if (space1_ == space3_ && space2_->rank() <= space3_->rank()) {
+  if (space1_ == space3_ && space2_->rank() <= space3_->rank()) {
     result = new TwoBodyMOIntsTransform_ikjy(name,this,space1_,space2_,space3_,space4_);
   }
   else if (space1_ == space3_) {
     result = new TwoBodyMOIntsTransform_ixjy(name,this,space1_,space2_,space3_,space4_);
+  }
+  else if (space1_ == space2_) {
+    result = new TwoBodyMOIntsTransform_ijxy(name,this,space1_,space2_,space3_,space4_);
   }
   else
     throw std::runtime_error("MOIntsTransformFactory::twobody_transform() -- desired \

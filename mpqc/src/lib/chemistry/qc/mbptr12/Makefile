@@ -45,7 +45,8 @@ CXXSRCS = mbptr12.cc trans12_grt.cc \
   multipole_ints.cc ri_basis.cc \
   moindexspace.cc \
   transform_factory.cc transform_tbint.cc \
-  transform_ijxy.cc transform_ixjy.cc transform_ikjy.cc
+  transform_ijxy.cc transform_ixjy.cc transform_ikjy.cc \
+  transform_123inds.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc
@@ -69,3 +70,12 @@ mbptr12test:: mbptr12test.$(OBJSUF) $(LIBS)
 
 mbptr12test.$(OBJSUF): mbptr12test.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+
+transform_123inds.$(OBJSUF) transform_123inds.d: f77sym.h
+
+f77sym.h: f77sym.in
+	$(MKF77SYM) $< $@
+
+distclean::
+	/bin/rm -f f77sym.h

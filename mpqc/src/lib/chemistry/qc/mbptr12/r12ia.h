@@ -89,6 +89,8 @@ class R12IntsAcc: virtual public SavableState {
 
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };
+    /// Size of each block of the integrals of the same type, in double words
+    size_t blocksize() const { return nbasis__2_; };
     /// The index of the first orbital in the next integrals batch to be stored
     int next_orbital() const;
 

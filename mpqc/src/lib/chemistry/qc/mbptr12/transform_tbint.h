@@ -115,14 +115,12 @@ public:
 
   void save_data_state(StateOut&);
 
-  /// Specifies the top-level MolecularEnergy object to use for checkpointing
-  void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
-
-  void set_memory(const size_t memory);
-  void set_debug(int debug) { debug_ = debug; }
-  void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
-  void set_print_percent(double print_percent) { print_percent_ = print_percent; }
-
+  /// Returns the MemoryGrp object
+  Ref<MemoryGrp> mem() const;
+  /// Returns the MessageGrp object
+  Ref<MessageGrp> msg() const;
+  /// Returns the integrals accumulator object
+  Ref<R12IntsAcc> ints_acc() const;
   /// Returns MOIndexSpace object 1
   Ref<MOIndexSpace> space1() const;
   /// Returns MOIndexSpace object 2
@@ -131,6 +129,25 @@ public:
   Ref<MOIndexSpace> space3() const;
   /// Returns MOIndexSpace object 4
   Ref<MOIndexSpace> space4() const;
+
+  /// Returns the update print frequency
+  double print_percent() const;
+  /// Returns the batchsize for each pass of the transformation
+  int batchsize() const;
+  /// Returns the debug level
+  int debug() const;
+  /// Returns whether to use dynamic load balancing
+  bool dynamic() const;
+  /// Returns the number of types of two body integrals computed
+  int num_te_types() const;
+
+  /// Specifies the top-level MolecularEnergy object to use for checkpointing
+  void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
+
+  void set_memory(const size_t memory);
+  void set_debug(int debug) { debug_ = debug; }
+  void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
+  void set_print_percent(double print_percent) { print_percent_ = print_percent; }
 
   /// Computes transformed integrals
   virtual void compute() = 0;

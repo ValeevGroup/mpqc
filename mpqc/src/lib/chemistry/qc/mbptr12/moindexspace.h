@@ -74,6 +74,7 @@ private:
   int nblocks_;       // Number of blocks
   vector<int> nmo_;        // Number of MOs in each block
   vector<int> offsets_;    // Full-space index of the first MO in each block
+  vector<int> map_to_full_space_;  // Full-space index
 
   IndexOrder moorder_;
 
@@ -148,6 +149,8 @@ public:
   vector<int> nmo() const;
   /// Returns the full-space index of the first orbital in each block
   vector<int> offsets() const;
+  /// Returns the full-space index
+  int to_full_space(const int i) const;
 
   /// Returns how much "significant" (i.e. O^2) memory this object uses
   size_t memory_in_use() const;

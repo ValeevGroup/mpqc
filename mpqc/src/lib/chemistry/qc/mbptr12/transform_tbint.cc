@@ -122,6 +122,43 @@ TwoBodyMOIntsTransform::set_memory(const size_t memory)
   init_vars();
 }
 
+Ref<MemoryGrp>
+TwoBodyMOIntsTransform::mem() const {return mem_; }
+
+Ref<MessageGrp>
+TwoBodyMOIntsTransform::msg() const {return  msg_; }
+
+Ref<R12IntsAcc>
+TwoBodyMOIntsTransform::ints_acc() const {return ints_acc_; }
+
+Ref<MOIndexSpace>
+TwoBodyMOIntsTransform::space1() const {return space1_;}
+
+Ref<MOIndexSpace>
+TwoBodyMOIntsTransform::space2() const {return space2_;}
+
+Ref<MOIndexSpace>
+TwoBodyMOIntsTransform::space3() const {return space3_;}
+
+Ref<MOIndexSpace>
+TwoBodyMOIntsTransform::space4() const {return space4_;}
+
+double
+TwoBodyMOIntsTransform::print_percent() const {return print_percent_; }
+
+int
+TwoBodyMOIntsTransform::batchsize() const {return batchsize_; }
+
+int
+TwoBodyMOIntsTransform::debug() const {return debug_; }
+
+bool
+TwoBodyMOIntsTransform::dynamic() const {return dynamic_; }
+
+int
+TwoBodyMOIntsTransform::num_te_types() const { return num_te_types_; }
+
+
 ///////////////////////////////////////////////////////
 // Compute the batchsize for the transformation
 //

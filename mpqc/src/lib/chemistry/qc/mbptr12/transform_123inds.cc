@@ -49,11 +49,9 @@ const double*, const int*, const double*, double*, const int*);
 using namespace std;
 using namespace sc;
 
-extern BiggestContribs biggest_ints_1;
-
 #define PRINT1Q 0
+#define PRINT2Q 0
 #define PRINT_NUM_TE_TYPES 1
-#define PRINT_BIGGEST_INTS_NUM_TE_TYPES 1
 
 // The FAST_BUT_WRONG flags is useful for exercising the communications
 // layer.  It causes the first and second quarter transformation to be
@@ -109,11 +107,7 @@ TwoBodyMOIntsTransform_123Inds::run()
   Ref<GaussianBasisSet> bs3 = space3->basis();
   Ref<GaussianBasisSet> bs4 = space4->basis();
   bool bs1_eq_bs2 = (bs1 == bs2);
-  if (!bs1_eq_bs2)
-    throw std::runtime_error("TwoBodyMOIntsTransform_ixjy_12Qtr::run() -- bs1 != bs2");
   bool bs3_eq_bs4 = (bs3 == bs4);
-  if (!bs3_eq_bs4)
-    throw std::runtime_error("TwoBodyMOIntsTransform_ixjy_12Qtr::run() -- bs3 != bs4");
 
   bool dynamic = tform_->dynamic();
   double print_percent = tform_->print_percent();
@@ -199,11 +193,8 @@ TwoBodyMOIntsTransform_123Inds::run()
     lock_->unlock();
   }
 
-  // Assuming all basis sets are the same (bs1_eq_bs2 and bs3_eq_bs4)
-  // I don't know yet how to overcome the static type problem here
-  canonical_aaaa c4(bs1,bs2,bs3,bs4);
-  Ref<GPetite4<canonical_aaaa> > p4list
-    = new GPetite4<canonical_aaaa>(bs1,bs2,bs3,bs4,c4);
+  Ref<GenPetite4> p4list
+    = construct_gpetite(bs1,bs2,bs3,bs4);
 
 #if FAST_BUT_WRONG
   for(int te_type=0;te_type<num_te_types;te_type++) {
@@ -216,7 +207,7 @@ TwoBodyMOIntsTransform_123Inds::run()
 
   int R = 0;
   int S = 0;
-  while (shellpairs.get_task(S,R)) {
+  while (shellpairs.get_task(R,S)) {
     // if bs3_eq_bs4 then S >= R always (see sc::exp::DistShellPair)
     int nr = bs3->shell(R).nfunction();
     int r_offset = bs3->shell_to_function(R);
@@ -287,7 +278,7 @@ TwoBodyMOIntsTransform_123Inds::run()
 	      int q = q_offset + bf2;
 
 	      for (int bf3 = 0; bf3 < nr; bf3++) {
-                int smin = (bs3_eq_bs4 && R == S) ? 0 : bf3;
+                int smin = (bs3_eq_bs4 && R == S) ? bf3 : 0;
                 pqrs_ptr += smin;
 
 		for (int bf4 = smin; bf4 <ns; bf4++) {
@@ -295,13 +286,13 @@ TwoBodyMOIntsTransform_123Inds::run()
                   // Only transform integrals larger than the threshold
 		  if (fabs(*pqrs_ptr) > dtol) {
 
-		    double* rsiq_ptr = &rsiq_ints[te_type][q + ni_*(bf4 + ns*bf3)];
+		    double* rsiq_ptr = &rsiq_ints[te_type][q + nbasis2*(0 + ni_*(bf4 + ns*bf3))];
 		    const double* c_pi = vector1[p] + i_offset_;
 
                     double* rsip_ptr;
 		    const double* c_qi;
                     if (bs1_eq_bs2) {
-		      rsip_ptr = &rsiq_ints[te_type][p + ni_*(bf4 + ns*bf3)];
+		      rsip_ptr = &rsiq_ints[te_type][p + nbasis2*(0 + ni_*(bf4 + ns*bf3))];
 		      c_qi = vector1[q] + i_offset_;
                     }
                     
@@ -357,43 +348,25 @@ TwoBodyMOIntsTransform_123Inds::run()
 #endif // !FAST_BUT_WRONG
 
 #if PRINT1Q
-      {
-      lock_->lock();
-      for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
-	double *tmp = rsiq_ints[te_type];
-        for (int r = 0; r<nr; r++) {
-          for (int s = 0; s<ns; s++) {
-            for (int i = 0; i<ni_; i++) {
-              for (int q = 0; q<nbasis2; q++) {
-		printf("1Q: (%d %d|%d %d) = %12.8f\n",
-		       i+i_offset_, q, bf3+r_offset, bf4+s_offset, *tmp);
-		tmp++;
+    {
+        lock_->lock();
+        for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+          for (int i = 0; i<ni_; i++) {
+            for (int q = 0; q<nbasis2; q++) {
+              for (int r = 0; r<nr; r++) {
+                int rr = r+r_offset;
+                for (int s = 0; s<ns; s++) {
+                  int ss = s+s_offset;
+                  double value = rsiq_ints[te_type][q+nbasis2*(i+ni_*(s+ns*r))];
+                  printf("1Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                         te_type,i+i_offset_,q,rr,ss,value);
+                }
               }
             }
           }
         }
-      }
-      lock_->unlock();
-      }
-#endif
-#if PRINT_BIGGEST_INTS
-      {
-      lock_->lock();
-      for(te_type=0; te_type<PRINT_BIGGEST_INTS_NUM_TE_TYPES; te_type++) {
-	double *tmp = integral_iqrs[te_type];
-	for (int i = 0; i<ni_; i++) {
-	  for (int r = 0; r<nr; r++) {
-	    for (int q = 0; q<nbasis2; q++) {
-	      for (int s = 0; s<ns; s++) {
-		biggest_ints_1.insert(*tmp,i+i_offset,q,r+r_offset,s+s_offset);
-		tmp++;
-              }
-            }
-          }
-        }
-      }
-      lock_->unlock();
-      }
+        lock_->unlock();
+    }
 #endif
 
     timer_->enter("2. q.t.");
@@ -405,7 +378,7 @@ TwoBodyMOIntsTransform_123Inds::run()
       double *rsix_ptr = rsix_ints[te_type];
 
       for (int bf3 = 0; bf3 < nr; bf3++) {
-        int smin = (bs3_eq_bs4 && R == S) ? 0 : bf3;
+        int smin = (bs3_eq_bs4 && R == S) ? bf3 : 0;
         rsiq_ptr += smin*ni_*nbasis2;
         rsix_ptr += smin*ni_*rank2;
 
@@ -416,7 +389,7 @@ TwoBodyMOIntsTransform_123Inds::run()
           const char notransp = 'n';
           const double one = 1.0;
           const double zero = 0.0;
-          F77_DGEMM(&notransp,&notransp,&rank2,&ni_,&nbasis2,&one,vector2[0],&nbasis2,
+          F77_DGEMM(&notransp,&notransp,&rank2,&ni_,&nbasis2,&one,vector2[0],&rank2,
                     rsiq_ptr,&nbasis2,&zero,rsix_ptr,&rank2);
 
           rsiq_ptr += ni_*nbasis2;
@@ -427,14 +400,33 @@ TwoBodyMOIntsTransform_123Inds::run()
     }
     timer_->exit("2. q.t.");
 
+#if PRINT2Q
+    {
+        lock_->lock();
+        for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+          for (int i = 0; i<ni_; i++) {
+            for (int x = 0; x<rank2; x++) {
+              for (int r = 0; r<nr; r++) {
+                int rr = r+r_offset;
+                for (int s = 0; s<ns; s++) {
+                  int ss = s+s_offset;
+                  double value = rsix_ints[te_type][x+rank2*(i+ni_*(s+ns*r))];
+                  printf("2Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                         te_type,i+i_offset_,x,rr,ss,value);
+                }
+              }
+            }
+          }
+        }
+        lock_->unlock();
+    }
+#endif    
     
     timer_->enter("3. q.t.");
     // Begin third quarter transformation;
     // generate (ix|js) stored as ijsx (also generate (ix|jr), if needed)
 
     for(int te_type=0; te_type<num_te_types; te_type++) {
-      const double *rsix_ptr = rsix_ints[te_type];
-
       for (int i=0; i<ni_; i++) {
         for (int j=0; j<rank3; j++) {
 
@@ -446,12 +438,13 @@ TwoBodyMOIntsTransform_123Inds::run()
           int ij_proc =  (i*rank3 + j)%nproc;
           int ij_index = (i*rank3 + j)/nproc;
           const size_t ijqx_start = (size_t)(num_te_types*ij_index + te_type) * ints_acc->blocksize();
+          const double *rsix_ptr = rsix_ints[te_type];
 
           if (bs3_eq_bs4) {
 
             for (int bf3 = 0; bf3 < nr; bf3++) {
               int r = r_offset + bf3;
-              int smin = (bs3_eq_bs4 && R == S) ? 0 : bf3;
+              int smin = (bs3_eq_bs4 && R == S) ? bf3 : 0;
               rsix_ptr += smin*ni_*rank2;
 
               for (int bf4 = smin; bf4 <ns; bf4++) {

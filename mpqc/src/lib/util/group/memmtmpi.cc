@@ -374,7 +374,7 @@ MTMPIMemoryGrp::sync()
         }
       int n_outstanding = nreq_sent_buf_[me()] - nreq_recd;
       for (int i=0; i<n_outstanding; i++) {
-          thread_[i]->run_one();
+          thread_[0]->run_one();
         }
       memset(nreq_sent_, 0, sizeof(unsigned int)*n());
       // Make sure processing of all outstanding requests is finished

@@ -91,7 +91,8 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
       int ndisp;
       si.get(ndisp);
       RefSCDimension ddisp = new SCDimension(ndisp);
-      displacements_[i] = matrixkit()->restore_matrix(si,d3natom_,ddisp);
+      displacements_[i] = matrixkit()->matrix(d3natom_,ddisp);
+      displacements_[i].restore(si);
     }
 
   freq_ = 0;

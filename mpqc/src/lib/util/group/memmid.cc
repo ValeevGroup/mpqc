@@ -38,6 +38,8 @@
 #include <util/misc/formio.h>
 #include <util/group/memmid.h>
 
+using namespace std;
+
 #define dbufsize 8192
 
 ///////////////////////////////////////////////////////////////////////

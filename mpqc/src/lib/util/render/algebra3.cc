@@ -3,6 +3,8 @@
 #include <util/misc/exenv.h>
 #include <ctype.h>
 
+using namespace std;
+
 /****************************************************************
 *								*
 *		    vec2 Member functions			*

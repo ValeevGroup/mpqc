@@ -34,6 +34,8 @@
 #include <util/misc/units.h>
 #include <util/state/stateio.h>
 
+using namespace std;
+
 //////////////////////////////////////////////////////////////////////
 // Utility functions
 

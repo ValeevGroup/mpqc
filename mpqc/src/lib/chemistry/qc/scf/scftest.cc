@@ -33,7 +33,7 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
-#include <new.h>
+#include <new>
 
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>

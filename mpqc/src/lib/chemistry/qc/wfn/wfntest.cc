@@ -30,6 +30,8 @@
 
 #include <chemistry/qc/wfn/obwfn.h>
 
+using namespace std;
+
 // Force linkages:
 const ClassDesc &fl0 = HCoreWfn::class_desc_;
 

@@ -35,6 +35,8 @@
 #include <string.h>
 #include <util/keyval/ipv2.h>
 
+using namespace std;
+
 /* This sets up the current working keyword path to the declaration
  * list. */
 void

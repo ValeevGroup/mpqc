@@ -37,6 +37,8 @@
 #include <util/group/message.h>
 #include <chemistry/molecule/atominfo.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 // AtomInfo
 

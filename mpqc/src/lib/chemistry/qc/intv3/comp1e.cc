@@ -35,6 +35,8 @@
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/tformv3.h>
 
+using namespace std;
+
 #define IN(i,j) ((i)==(j)?1:0)
 #define SELECT(x1,x2,x3,s) (((s)==0)?x1:(((s)==1)?(x2):(x3)))
 

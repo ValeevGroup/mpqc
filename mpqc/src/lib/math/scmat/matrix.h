@@ -31,7 +31,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 #include <util/container/array.h>
 
 #include <math/scmat/abstract.h>
@@ -118,8 +118,9 @@ class RefSCVector: public RefDCSCVector {
     void element_op(const RefSCElementOp3&,
                     const RefSCVector&,
                     const RefSCVector&) const;
-    void print(ostream&out) const;
-    void print(const char*title=0, ostream&out=ExEnv::out(), int precision=10) const;
+    void print(std::ostream&out) const;
+    void print(const char*title=0,
+               std::ostream&out=ExEnv::out(), int precision=10) const;
     void save(StateOut&);
     void restore(StateIn&);
 };
@@ -221,8 +222,9 @@ class RefSCMatrix: public RefDCSCMatrix {
     void set_element(int,int,double) const;
     void accumulate_element(int,int,double) const;
     double get_element(int,int) const;
-    void print(ostream&) const;
-    void print(const char*title=0,ostream&out=ExEnv::out(), int =10) const;
+    void print(std::ostream&) const;
+    void print(const char*title=0,
+               std::ostream&out=ExEnv::out(), int =10) const;
     double trace() const;
     void save(StateOut&);
     void restore(StateIn&);
@@ -330,8 +332,9 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     int n() const;
     RefSCDimension dim() const;
     RefSCMatrixKit kit() const;
-    void print(ostream&) const;
-    void print(const char*title=0,ostream&out=ExEnv::out(), int =10) const;
+    void print(std::ostream&) const;
+    void print(const char*title=0,
+               std::ostream&out=ExEnv::out(), int =10) const;
     void save(StateOut&);
     void restore(StateIn&);
 
@@ -411,8 +414,9 @@ class RefDiagSCMatrix: public RefDCDiagSCMatrix {
     RefSCDimension dim() const;
     RefSCMatrixKit kit() const;
     double trace() const;
-    void print(ostream&) const;
-    void print(const char*title=0,ostream&out=ExEnv::out(), int =10) const;
+    void print(std::ostream&) const;
+    void print(const char*title=0,
+               std::ostream&out=ExEnv::out(), int =10) const;
     void save(StateOut&);
     void restore(StateIn&);
     /// Returns the determinant of the referenced matrix.

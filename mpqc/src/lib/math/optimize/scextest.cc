@@ -32,6 +32,8 @@
 #include <math/optimize/scextrap.h>
 #include <math/optimize/scextrapmat.h>
 
+using namespace std;
+
 // Force linkages:
 #ifndef __PIC__
 const ClassDesc &fl0 = DIIS::class_desc_;

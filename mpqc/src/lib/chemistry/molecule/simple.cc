@@ -37,6 +37,8 @@
 
 #include <util/container/bitarray.h>
 
+using namespace std;
+
 //////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(SimpleCo);

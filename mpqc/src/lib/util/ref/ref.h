@@ -74,7 +74,7 @@
 #ifndef _util_ref_ref_h
 #define _util_ref_ref_h
 
-#include <iostream.h>
+#include <iostream>
 #include <stdlib.h>
 
 #include <util/ref/identity.h>
@@ -310,7 +310,7 @@ class RefBase {
     /// Called when the reference count is corrupted.
     void warn_bad_ref_count() const;
     /// Print information about the reference.
-    void ref_info(VRefCount*p,ostream& os) const;
+    void ref_info(VRefCount*p,std::ostream& os) const;
 };
 
 #ifdef TYPE_CONV_BUG

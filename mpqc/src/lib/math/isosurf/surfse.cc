@@ -30,6 +30,8 @@
 #include <math/scmat/matrix.h>
 #include <math/isosurf/surf.h>
 
+using namespace std;
+
 void
 TriangulatedSurface::remove_short_edges(double length_cutoff,
                                         const RefVolume &vol, double isoval)

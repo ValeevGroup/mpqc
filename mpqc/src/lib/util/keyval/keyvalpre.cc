@@ -33,6 +33,8 @@ extern "C" {
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
+using namespace std;
+
 //////////////////////////////////////////////////////////////////////
 // utility functions
 

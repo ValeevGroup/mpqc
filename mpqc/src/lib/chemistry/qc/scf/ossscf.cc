@@ -48,6 +48,8 @@
 #include <chemistry/qc/scf/effh.h>
 #include <chemistry/qc/scf/ossscf.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // OSSSCF
 

@@ -34,6 +34,8 @@
 #include <util/render/render.h>
 #include <util/render/object.h>
 
+using namespace std;
+
 DescribedClass_REF_def(RenderedObject);
 
 #define CLASSNAME RenderedObject

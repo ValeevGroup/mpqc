@@ -47,6 +47,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/scf.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // SCF
 

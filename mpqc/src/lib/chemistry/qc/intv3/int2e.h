@@ -190,25 +190,25 @@ class Int2eV3: public VRefCount {
 
     // globals from print2e.cc
   protected:
-    void int_offset_print(ostream &,
+    void int_offset_print(std::ostream &,
                           double *buffer,
                           RefGaussianBasisSet c1, int s1,
                           RefGaussianBasisSet c2, int s2,
                           RefGaussianBasisSet c3, int s3,
                           RefGaussianBasisSet c4, int s4);
-    void int_offset_print_n(ostream &, double *buffer,
+    void int_offset_print_n(std::ostream &, double *buffer,
                             int n1, int n2, int n3, int n4,
                             int o1, int o2, int o3, int o4,
                             int e12, int e13e24, int e34);
-    void int_print(ostream &, double *buffer,
+    void int_print(std::ostream &, double *buffer,
                    RefGaussianBasisSet c1, int s1,
                    RefGaussianBasisSet c2, int s2,
                    RefGaussianBasisSet c3, int s3,
                    RefGaussianBasisSet c4, int s4);
-    void int_print_n(ostream &, double *buffer,
+    void int_print_n(std::ostream &, double *buffer,
                      int n1, int n2, int n3, int n4,
                      int e12, int e13e24, int e34);
-    void int_print_intermediates(ostream &);
+    void int_print_intermediates(std::ostream &);
 
     // locals from hrr.cc
   protected:

@@ -35,6 +35,8 @@
 #include <util/state/stateio.h>
 #include <chemistry/qc/dft/functional.h>
 
+using namespace std;
+
 #define MIN_DENSITY 1.e-14
 #define MIN_GAMMA 1.e-24
 #define MIN_SQRTGAMMA 1.e-12

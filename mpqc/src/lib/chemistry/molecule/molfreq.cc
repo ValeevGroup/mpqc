@@ -39,6 +39,8 @@
 #include <chemistry/molecule/molfreq.h>
 #include <chemistry/molecule/molrender.h>
 
+using namespace std;
+
 #undef DEBUG
 
 SavableState_REF_def(MolecularFrequencies);

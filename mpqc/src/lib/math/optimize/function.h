@@ -190,7 +190,7 @@ class Function: virtual public SavableState, public Compute {
     virtual RefNonlinearTransform change_coordinates();
 
     /// Print information about the object.
-    virtual void print(ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out()) const;
 };
 SavableState_REF_dec(Function);
 

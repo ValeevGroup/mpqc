@@ -36,6 +36,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////
 // Function dquicksort performs a quick sort (smaller -> larger) 
 // of the double data in item by the integer indices in index;

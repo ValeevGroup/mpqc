@@ -50,7 +50,7 @@ class CLHF: public CLSCF {
 
     void save_data_state(StateOut&);
 
-    void print(ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out()) const;
 
     void two_body_energy(double &ec, double &ex);
 

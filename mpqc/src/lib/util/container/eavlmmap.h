@@ -31,7 +31,7 @@
 #ifdef HAVE_CONFIG_H
 #  include <scconfig.h>
 #endif
-#include <iostream.h>
+#include <iostream>
 #include <util/misc/exenv.h>
 #include <util/container/compare.h>
 #include <unistd.h> // for size_t on solaris
@@ -197,7 +197,7 @@ EAVLMMap<K,T>::remove(T* node)
       next(r);
 
       if (r == 0 || llink(r) != 0) {
-          ExEnv::err() << "EAVLMMap::remove: inconsistency" << endl;
+          ExEnv::err() << "EAVLMMap::remove: inconsistency" << std::endl;
           abort();
         }
 
@@ -253,10 +253,10 @@ EAVLMMap<K,T>::print()
   for (T*n=start(); n; next(n)) {
       int d = depth(n) + 1;
       for (int i=0; i<d; i++) ExEnv::out() << "     ";
-      if (balance(n) == 1) ExEnv::out() << " (+)" << endl;
-      else if (balance(n) == -1) ExEnv::out() << " (-)" << endl;
-      else if (balance(n) == 0) ExEnv::out() << " (.)" << endl;
-      else ExEnv::out() << " (" << balance(n) << ")" << endl;
+      if (balance(n) == 1) ExEnv::out() << " (+)" << std::endl;
+      else if (balance(n) == -1) ExEnv::out() << " (-)" << std::endl;
+      else if (balance(n) == 0) ExEnv::out() << " (.)" << std::endl;
+      else ExEnv::out() << " (" << balance(n) << ")" << std::endl;
     }
 }
 
@@ -316,7 +316,7 @@ EAVLMMap<K,T>::check()
   for (node = start(); node; next(node)) {
       check_node(node);
       if (prev && compare(prev,node) > 0) {
-          ExEnv::err() << "nodes out of order" << endl;
+          ExEnv::err() << "nodes out of order" << std::endl;
           abort();
         }
       prev = node;
@@ -324,16 +324,16 @@ EAVLMMap<K,T>::check()
     }
   for (node = start(); node; next(node)) {
       if (balance(node) != height(rlink(node)) - height(llink(node))) {
-          ExEnv::err() << "balance inconsistency" << endl;
+          ExEnv::err() << "balance inconsistency" << std::endl;
           abort();
         }
       if (balance(node) < -1 || balance(node) > 1) {
-          ExEnv::err() << "balance out of range" << endl;
+          ExEnv::err() << "balance out of range" << std::endl;
           abort();
         }
     }
   if (length_ != computed_length) {
-      ExEnv::err() << "length error" << endl;
+      ExEnv::err() << "length error" << std::endl;
       abort();
     }
 }

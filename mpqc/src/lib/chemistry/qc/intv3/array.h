@@ -32,7 +32,7 @@
 #ifndef _chemistry_qc_intv3_array_h
 #define _chemistry_qc_intv3_array_h
 
-#include <iostream.h>
+#include <iostream>
 
 class IntV3Arraydouble2 {
   private:
@@ -43,7 +43,7 @@ class IntV3Arraydouble2 {
     ~IntV3Arraydouble2();
     void set_dim(int n1, int n2);
     double &operator()(int i,int j) { return data_[i][j]; }
-    void print(ostream &);
+    void print(std::ostream &);
     int nbyte() const;
 };
 
@@ -57,7 +57,7 @@ class IntV3Arraydouble3 {
     void set_dim(int n1, int n2, int n3);
     double *operator()(int i,int j) { return data_[i][j]; }
     double &operator()(int i,int j,int k) { return data_[i][j][k]; }
-    void print(ostream &);
+    void print(std::ostream &);
     int nbyte() const;
 };
 
@@ -70,7 +70,7 @@ class IntV3Arraydoublep2 {
     ~IntV3Arraydoublep2();
     void set_dim(int n1, int n2);
     double *&operator()(int i,int j) { return data_[i][j]; }
-    void print(ostream &);
+    void print(std::ostream &);
     int nbyte() const;
 };
 
@@ -89,7 +89,7 @@ class IntV3Arraydoublep3 {
     double *&operator()(int i,int j,int k) { return data_[i][j][k]; }
     double **operator()(int i,int j) { return data_[i][j]; }
     double ***operator()(int i) { return data_[i]; }
-    void print(ostream &);
+    void print(std::ostream &);
     int nbyte() const;
 };
 
@@ -102,7 +102,7 @@ class IntV3Arraydoublep4 {
     ~IntV3Arraydoublep4();
     void set_dim(int n1, int n2, int n3, int n4);
     double *&operator()(int i,int j,int k,int l) { return data_[i][j][k][l]; }
-    void print(ostream &);
+    void print(std::ostream &);
     int nbyte() const;
     double *****data() { return data_; }
 };
@@ -118,7 +118,7 @@ class IntV3Arrayint3 {
     int &operator()(int i,int j,int k) { return data_[i][j][k]; }
     int *operator()(int i,int j) { return data_[i][j]; }
     int **operator()(int i) { return data_[i]; }
-    void print(ostream &);
+    void print(std::ostream &);
     int nbyte() const;
 };
 
@@ -131,7 +131,7 @@ class IntV3Arrayint4 {
     ~IntV3Arrayint4();
     void set_dim(int n1, int n2, int n3, int n4);
     int &operator()(int i,int j,int k,int l) { return data_[i][j][k][l]; }
-    void print(ostream &);
+    void print(std::ostream &);
     int nbyte() const;
 };
 

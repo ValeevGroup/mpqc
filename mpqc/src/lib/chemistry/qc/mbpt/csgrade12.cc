@@ -40,6 +40,8 @@
 #include <chemistry/qc/mbpt/util.h>
 extern BiggestContribs biggest_ints_1;
 
+using namespace std;
+
 #define PRINT1Q 0
 
 /////////////////////////////////////////////////////////////////

@@ -32,7 +32,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 
 #include <chemistry/molecule/hess.h>
 #include <chemistry/molecule/energy.h>

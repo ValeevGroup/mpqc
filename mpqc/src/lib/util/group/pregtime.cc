@@ -33,11 +33,13 @@
 #  include <scconfig.h>
 #endif
 
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 
 #include <util/misc/formio.h>
 #include <util/group/pregtime.h>
+
+using namespace std;
 
 #define CLASSNAME ParallelRegionTimer
 #define PARENTS public RegionTimer

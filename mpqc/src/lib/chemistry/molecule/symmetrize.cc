@@ -25,11 +25,13 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #include <string.h>
 
 #include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
+
+using namespace std;
 
 int
 main(int argc, char *argv[])

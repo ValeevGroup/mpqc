@@ -32,7 +32,7 @@
 #ifndef _util_group_pregtime_h
 #define _util_group_pregtime_h
 
-#include <iostream.h>
+#include <iostream>
 #include <util/misc/regtime.h>
 #include <util/group/message.h>
 
@@ -49,7 +49,7 @@ class ParallelRegionTimer: public RegionTimer {
     ParallelRegionTimer(const RefKeyVal&);
     ~ParallelRegionTimer();
 
-    void print(ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out()) const;
 };
 
 #endif

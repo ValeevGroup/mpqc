@@ -42,12 +42,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <iostream.h>
+#include <iostream>
 #include <signal.h>
 
 #include <util/keyval/keyval.h>
 #include <util/misc/bug.h>
 #include <util/state/stateio.h>
+
+using namespace std;
 
 //////////////////////////////////////////////////////////////////////
 // static variables

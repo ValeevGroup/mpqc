@@ -30,6 +30,8 @@
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 
+using namespace std;
+
 int
 main()
 {

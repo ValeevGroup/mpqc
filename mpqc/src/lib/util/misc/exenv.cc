@@ -31,7 +31,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 
 #include <scconfig.h>
 
@@ -49,6 +49,8 @@
 #include <niama.h>
 #include <niama_impl.h>
 #endif
+
+using namespace std;
 
 int ExEnv::initialized_ = 0;
 unsigned long ExEnv::mem_ = 0;

@@ -32,7 +32,7 @@
 #ifndef _util_group_memory_h
 #define _util_group_memory_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <scconfig.h>
 #include <util/class/class.h>
@@ -249,7 +249,7 @@ class MemoryGrp: public DescribedClass {
     virtual void catchup();
 
     /// Prints out information about the object.
-    virtual void print(ostream &o = ExEnv::out()) const;
+    virtual void print(std::ostream &o = ExEnv::out()) const;
 
     /** Create a memory group.  This routine looks for a -memorygrp
         argument, then the environmental variable MEMORYGRP, and, finally,

@@ -72,7 +72,7 @@ class CLSCF: public SCF {
 
     void save_data_state(StateOut&);
 
-    void print(ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out()) const;
 
     double occupation(int irrep, int vectornum);
 

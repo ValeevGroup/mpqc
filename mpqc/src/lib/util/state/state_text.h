@@ -58,7 +58,7 @@ class StateOutText: public StateOutFile {
     int putparents(const ClassDesc*);
   public:
     StateOutText();
-    StateOutText(ostream& s);
+    StateOutText(std::ostream& s);
     StateOutText(const char *);
     ~StateOutText();
     int putstring(const char*);
@@ -110,7 +110,7 @@ class StateInText: public StateInFile {
     void abort();
   public:
     StateInText();
-    StateInText(istream& s);
+    StateInText(std::istream& s);
     StateInText(const char *);
     StateInText(const RefKeyVal &);
     ~StateInText();

@@ -34,6 +34,8 @@
 #include <math/scmat/elemop.h>
 #include <math/scmat/offset.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 // LocalSymmSCMatrix member functions
 

@@ -29,6 +29,8 @@
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+using namespace std;
+
 //#undef CHECK_INTEGRAL_ALGORITHM
 //#define CHECK_INTEGRAL_ALGORITHM 1
 

@@ -32,6 +32,8 @@
 #include <util/ref/ref.h>
 #include <util/misc/exenv.h>
 
+using namespace std;
+
 void
 VRefCount::error(const char * w) const
 {

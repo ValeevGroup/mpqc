@@ -32,7 +32,7 @@
 #ifndef _chemistry_molecule_molfreq_h
 #define _chemistry_molecule_molfreq_h
 
-#include <iostream.h>
+#include <iostream>
 #include <math/scmat/matrix.h>
 #include <util/render/animate.h>
 #include <chemistry/molecule/energy.h>

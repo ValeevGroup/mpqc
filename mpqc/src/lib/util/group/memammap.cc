@@ -38,6 +38,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////////
 
 #define MMAPSIZE 1024

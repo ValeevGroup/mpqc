@@ -5,6 +5,8 @@
 #include <util/misc/units.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 //////////////////////////////////////////////////////////////////////
 // Unit conversion test program 
 

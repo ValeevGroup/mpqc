@@ -28,7 +28,7 @@
 #ifndef _util_render_oogl_h
 #define _util_render_oogl_h
 
-#include <iostream.h>
+#include <iostream>
 #include <util/render/render.h>
 
 class OOGLRender: public FileRender {
@@ -39,7 +39,7 @@ class OOGLRender: public FileRender {
     int oogl_spheres_;
   public:
     OOGLRender(const char * filename);
-    OOGLRender(ostream &o = ExEnv::out());
+    OOGLRender(std::ostream &o = ExEnv::out());
     OOGLRender(const RefKeyVal&);
     virtual ~OOGLRender();
 

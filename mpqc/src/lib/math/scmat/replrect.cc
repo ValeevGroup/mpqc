@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 
 #include <math.h>
 
@@ -36,6 +36,8 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/mops.h>
+
+using namespace std;
 
 extern "C" {
     int sing_(double *q, int *lq, int *iq, double *s, double *p,

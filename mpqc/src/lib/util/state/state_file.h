@@ -33,8 +33,8 @@
 #endif
 
 #include <stdlib.h>
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 
 #include <util/state/state.h>
 #include <util/state/statein.h>
@@ -51,12 +51,12 @@ class StateOutFile: public StateOut {
     void operator=(const StateOutFile&);
   protected:
     int opened_;
-    streambuf *buf_;
+    std::streambuf *buf_;
   public:
     /// State information will be written to ExEnv::out().
     StateOutFile();
     /// State information will be written to s.
-    StateOutFile(ostream& s);
+    StateOutFile(std::ostream& s);
     /// State information will be written to name.
     StateOutFile(const char *name);
 
@@ -81,12 +81,12 @@ class StateInFile: public StateIn {
     void operator=(const StateInFile&);
   protected:
     int opened_;
-    streambuf *buf_;
+    std::streambuf *buf_;
   public:
     /// State information will be obtained from cin.
     StateInFile();
     /// State information will be obtained from fp.
-    StateInFile(istream& s);
+    StateInFile(std::istream& s);
     /// State information will be obtained from name.
     StateInFile(const char *name);
 

@@ -1,9 +1,16 @@
 
-#include <strstream.h>
+#include <scconfig.h>
+#ifdef HAVE_SSTREAM
+#  include <sstream>
+#else
+#  include <strstream.h>
+#endif
 #include <stdlib.h>
 
 #include <util/misc/formio.h>
 #include <util/container/array.h>
+
+using namespace std;
 
 #undef yyFlexLexer
 #define yyFlexLexer MPQCInFlexLexer
@@ -315,7 +322,11 @@ int
 MPQCIn::check_string(const char *s)
 {
   checking_ = 1;
+#ifdef HAVE_SSTREAM
+  istringstream in(s);
+#else
   istrstream in(s);
+#endif
   lexer_->switch_streams(&in, &ExEnv::out());
   int token;
   while ((token = ylex())) {
@@ -329,12 +340,20 @@ char *
 MPQCIn::parse_string(const char *s)
 {
   // read in easy input
+#ifdef HAVE_SSTREAM
+  istringstream in(s);
+#else
   istrstream in(s);
+#endif
   lexer_->switch_streams(&in, &ExEnv::out());
   yparse();
 
   // form the oo input
+#ifdef HAVE_SSTREAM
+  ostringstream ostrs;
+#else
   ostrstream ostrs;
+#endif
   SCFormIO::init_ostream(ostrs);
   ostrs << decindent;
   if (mol_.null()) error("no molecule given");
@@ -392,7 +411,12 @@ MPQCIn::parse_string(const char *s)
   ostrs << indent << ")" << endl;
   ostrs << ends;
 
+#ifdef HAVE_SSTREAM
+  int n = 1 + strlen(ostrs.str().c_str());
+  char *in_char_array = strcpy(new char[n],ostrs.str().c_str());
+#else
   char *in_char_array = ostrs.str();
+#endif
   return in_char_array;
 }
 

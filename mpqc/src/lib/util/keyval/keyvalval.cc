@@ -35,6 +35,8 @@
 
 #include <util/keyval/keyvalval.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////
 
 REF_def(KeyValValue)

@@ -30,6 +30,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/transform.h>
 
+using namespace std;
+
 #undef DEBUG
 
 static RefSCMatrix

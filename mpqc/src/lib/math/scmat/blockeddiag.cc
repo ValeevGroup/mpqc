@@ -34,6 +34,8 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 // BlockedDiagSCMatrix member functions
 

@@ -41,6 +41,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+using namespace std;
+
 #define DEBUG 0
 
 #ifndef DBL_EPSILON

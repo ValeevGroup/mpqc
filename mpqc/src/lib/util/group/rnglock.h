@@ -32,7 +32,7 @@
 #ifndef _util_group_rnglock_h
 #define _util_group_rnglock_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/exenv.h>
 
@@ -82,7 +82,7 @@ class RangeLock {
     int checkgr(int start, int fence, int value);
 
     void check();
-    void print(ostream &o = ExEnv::out()) const;
+    void print(std::ostream &o = ExEnv::out()) const;
 
     int lockvalue(int i);
 };

@@ -40,6 +40,8 @@
 #include <chemistry/molecule/localdef.h>
 #include <math/scmat/cmatrix.h>
 
+using namespace std;
+
 //////////////////////////////////////////////////////////////////////////
 // Molecule
 

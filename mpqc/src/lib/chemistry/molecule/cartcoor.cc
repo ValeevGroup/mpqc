@@ -33,6 +33,8 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/simple.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // members of CartMolecularCoor
 

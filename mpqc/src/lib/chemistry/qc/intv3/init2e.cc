@@ -35,6 +35,8 @@
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/utils.h>
 
+using namespace std;
+
 static void
 fail()
 {

@@ -36,6 +36,8 @@
 #include <chemistry/molecule/molecule.h>
 #include <math/scmat/matrix3.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 // VDWShape
 

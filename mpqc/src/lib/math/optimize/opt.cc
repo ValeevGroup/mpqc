@@ -38,6 +38,8 @@
 #include <util/state/stateio.h>
 #include <util/state/state_bin.h>
 
+using namespace std;
+
 SavableState_REF_def(Optimize);
 #define CLASSNAME Optimize
 #define VERSION 2

@@ -30,7 +30,7 @@
 #endif
 
 #include <stdlib.h>
-#include <fstream.h>
+#include <fstream>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -38,6 +38,8 @@
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/hess.h>
 #include <chemistry/molecule/molfreq.h>
+
+using namespace std;
 
 /////////////////////////////////////////////////////////////////
 // MolecularHessian

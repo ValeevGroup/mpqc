@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif

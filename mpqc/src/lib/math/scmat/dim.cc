@@ -35,7 +35,9 @@
 #include <math/scmat/dim.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
-#include <iomanip.h>
+#include <iomanip>
+
+using namespace std;
 
 static void
 fail(const char *s)

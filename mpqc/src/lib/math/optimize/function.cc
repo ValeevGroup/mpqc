@@ -41,6 +41,8 @@
 
 #include <math/optimize/function.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(Function);

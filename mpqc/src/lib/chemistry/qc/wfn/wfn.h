@@ -32,7 +32,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>
@@ -205,7 +205,7 @@ class Wavefunction: public MolecularEnergy {
     /// Returns the orthogonalization method
     int orthog_method() { return symm_orthog_?Symmetric:Canonical; }
 
-    void print(ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out()) const;
 };
 SavableState_REF_dec(Wavefunction);
 

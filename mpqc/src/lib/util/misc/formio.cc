@@ -33,6 +33,8 @@
 #include <string.h>
 #include <stdarg.h>
 
+using namespace std;
+
 char *SCFormIO::default_basename_ = 0;
 int  SCFormIO::ready_ = 0;
 int  SCFormIO::xalloc_inited_ = 0;

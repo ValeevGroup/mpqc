@@ -28,8 +28,8 @@
 #ifndef _util_misc_formio_h
 #define _util_misc_formio_h
 
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 
 /** This utility class is used to print only on node 0 and to
     provide attractive indentation of output. */
@@ -46,19 +46,19 @@ class SCFormIO {
     static int debug_;
     static int parallel_;
     static int me_;
-    static ofstream nullstream_;
+    static std::ofstream nullstream_;
     static void init();
   public:
-    static ios& indent(ios&o);
-    static ios& decindent(ios&o);
-    static ios& incindent(ios&o);
-    static ios& skipnextindent(ios&o);
-    static ostream& node0(ostream&o);
+    static std::ios& indent(std::ios&o);
+    static std::ios& decindent(std::ios&o);
+    static std::ios& incindent(std::ios&o);
+    static std::ios& skipnextindent(std::ios&o);
+    static std::ostream& node0(std::ostream&o);
 
-    static void setverbose(ios&o, long v);
-    static long getverbose(ios&o);
-    static void setindent(ios&o, long column);
-    static long getindent(ios&o);
+    static void setverbose(std::ios&o, long v);
+    static long getverbose(std::ios&o);
+    static void setindent(std::ios&o, long column);
+    static long getindent(std::ios&o);
     static int  set_printnode(int);
     static void set_debug(int);
     static void init_mp(int me);
@@ -67,22 +67,22 @@ class SCFormIO {
     static const char *default_basename();
     static char *fileext_to_filename(const char *extension);
 
-    static void init_ostream(ostream &);
+    static void init_ostream(std::ostream &);
 
-    static ostream& license(ostream&);
-    static ostream& warranty(ostream&);
-    static ostream& copyright(ostream&);
+    static std::ostream& license(std::ostream&);
+    static std::ostream& warranty(std::ostream&);
+    static std::ostream& copyright(std::ostream&);
 };
 
-ios& indent(ios&);
+std::ios& indent(std::ios&);
 
-ios& decindent(ios&);
+std::ios& decindent(std::ios&);
 
-ios& incindent(ios&);
+std::ios& incindent(std::ios&);
 
-ios& skipnextindent(ios&);
+std::ios& skipnextindent(std::ios&);
 
-ostream& node0(ostream&);
+std::ostream& node0(std::ostream&);
 
 // ///////////////////////////////////////////////////////////////////////////
 
@@ -94,10 +94,10 @@ class scprintf {
 
   public:
     scprintf(const char*,...);
-    friend ostream& operator<<(ostream&, const scprintf&);
+    friend std::ostream& operator<<(std::ostream&, const scprintf&);
 };
 
-ostream& operator<<(ostream&, const scprintf&);
+std::ostream& operator<<(std::ostream&, const scprintf&);
 
 #endif
 

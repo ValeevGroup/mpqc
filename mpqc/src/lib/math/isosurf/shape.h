@@ -83,7 +83,7 @@ class SphereShape: public Shape {
     double radius() const { return _radius; }
     const SCVector3& origin() const { return _origin; }
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
-    void print(ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out()) const;
 
     // these are used to update the parameters describing the sphere
     double radius(double r);
@@ -133,7 +133,7 @@ class UncappedTorusHoleShape: public Shape
     inline const SCVector3 A() const { SCVector3 v(_s1.origin()); return v; }
     inline const SCVector3 B() const { SCVector3 v(_s2.origin()); return v; }
     inline double radius() const { return _r; };
-    void print(ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out()) const;
     void boundingbox(double valuemin, double valuemax,
                      SCVector3& p1, SCVector3&p2);
 

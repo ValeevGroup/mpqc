@@ -30,7 +30,7 @@
 #endif
 
 #include <unistd.h>
-#include <new.h>
+#include <new>
 
 #include <util/misc/exenv.h>
 #include <util/misc/formio.h>
@@ -45,6 +45,8 @@
 #include <chemistry/qc/mbpt/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
+
+using namespace std;
 
 #ifdef HAVE_MPI
 #include <mpi.h>

@@ -32,6 +32,8 @@
 #include <math/isosurf/triangle.h>
 #include <math/isosurf/edge.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////
 // Edge
 

@@ -36,6 +36,8 @@
 #include <chemistry/qc/basis/cartiter.h>
 #include <chemistry/qc/basis/transform.h>
 
+using namespace std;
+
 #define MAX_NPRIM 20
 #define MAX_NCON  10
 #define MAX_AM    8

@@ -37,8 +37,10 @@
 #include <util/keyval/ipv2.h>
 
 #include <stdio.h>
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
+
+using namespace std;
 
 /* Initialize the ip routines.  This involves parsing the entire file and
  * converting it into an internal representation. */

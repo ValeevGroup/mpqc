@@ -16,6 +16,8 @@
 #include <chemistry/qc/psi/psi.h>
 #include <chemistry/qc/psi/file11.h>
 
+using namespace std;
+
 //////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME PsiWfn

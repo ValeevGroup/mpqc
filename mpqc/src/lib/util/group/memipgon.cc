@@ -41,6 +41,8 @@ extern "C" {
 void msgwait(long);
 }
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////
 // The IParagonMemoryGrp class
 

@@ -9,6 +9,8 @@
 #include <util/misc/formio.h>
 #include <chemistry/qc/basis/extent.h>
 
+using namespace std;
+
 ARRAY_def(ExtentData);
 
 ShellExtent::ShellExtent()

@@ -45,6 +45,8 @@
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////
 // SteepestDescentOpt
 

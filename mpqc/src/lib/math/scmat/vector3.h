@@ -31,7 +31,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 
 #include <util/misc/exenv.h>
@@ -131,10 +131,10 @@ class SCVector3
     const double& r() const { return _v[0]; }
     const double& theta() const { return _v[1]; }
     const double& phi() const { return _v[2]; }
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 SCVector3 operator*(double,const SCVector3&);
-ostream &operator<<(ostream&, const SCVector3 &);
+std::ostream &operator<<(std::ostream&, const SCVector3 &);
 
 #ifdef INLINE_FUNCTIONS
 #include <math/scmat/vector3_i.h>

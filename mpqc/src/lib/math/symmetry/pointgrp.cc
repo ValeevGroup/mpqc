@@ -59,6 +59,8 @@
 #include <util/state/stateio.h>
 #include <math/symmetry/pointgrp.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(PointGroup);

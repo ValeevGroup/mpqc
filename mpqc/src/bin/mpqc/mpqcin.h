@@ -2,7 +2,7 @@
 #ifndef _mpqcin_h
 #define _mpqcin_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
@@ -50,10 +50,12 @@ class MPQCIn {
 
     int nirrep_;
 
-    void write_energy_object(ostream&, const char *keyword, const char *method,
+    void write_energy_object(std::ostream&, const char *keyword,
+                             const char *method,
                              const char *basis, int coor);
-    void write_basis_object(ostream&, const char *keyword, const char *basis);
-    void write_vector(ostream &ostrs,
+    void write_basis_object(std::ostream&, const char *keyword,
+                            const char *basis);
+    void write_vector(std::ostream &ostrs,
                       const char *keyvalname,
                       const char *name,
                       MPQCInDatum<Arrayint *>&vec,

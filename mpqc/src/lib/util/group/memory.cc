@@ -67,6 +67,8 @@
 #  include <util/group/mempuma.h>
 #endif
 
+using namespace std;
+
 //////////////////////////////////////////////////////////////////////
 // MemoryGrpBuf template instantiations
 

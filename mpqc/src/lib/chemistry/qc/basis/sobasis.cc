@@ -36,6 +36,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/sobasis.h>
 
+using namespace std;
+
 REF_def(SOBasis);
 
 SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)

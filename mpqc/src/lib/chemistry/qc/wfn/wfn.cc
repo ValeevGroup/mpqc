@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/keyval/keyval.h>
 #include <util/misc/timer.h>
@@ -43,6 +43,8 @@
 #include <chemistry/qc/intv3/intv3.h>
 
 #include <chemistry/qc/wfn/wfn.h>
+
+using namespace std;
 
 #define CHECK_SYMMETRIZED_INTEGRALS 0
 

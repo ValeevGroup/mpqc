@@ -1,5 +1,5 @@
 
-#include <iostream.h>
+#include <iostream>
 
 #include <math.h>
 
@@ -10,6 +10,8 @@
 #include <math/linpackd/linpackd.h>
 
 #include <math/scmat/f77sym.h>
+
+using namespace std;
 
 extern "C" {
   void F77_PDSTEQR(int *n, double *d, double *e,

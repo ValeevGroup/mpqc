@@ -179,7 +179,7 @@ class SumDenFunctional: public DenFunctional {
 
     void point(const PointInputData&, PointOutputData&);
 
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 /** The StdDenFunctional class is used to construct the standard density
@@ -273,7 +273,7 @@ class StdDenFunctional: public SumDenFunctional {
     ~StdDenFunctional();
     void save_data_state(StateOut &);
 
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 /** An abstract base class for local correlation functionals. */
@@ -676,7 +676,7 @@ class XalphaFunctional: public DenFunctional {
 
     void point(const PointInputData&, PointOutputData&);
 
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 /** Implements Becke's 1988 exchange functional.

@@ -27,11 +27,13 @@
 // This is loosely based on a program by Jon Leech.
 
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 
 #include <util/render/polysphere.h>
 #include <util/render/polygons.h>
+
+using namespace std;
 
 static inline void
 switch2(int& i, int& j)

@@ -36,6 +36,8 @@
 #include <chemistry/qc/basis/cartiter.h>
 #include <chemistry/qc/basis/transform.h>
 
+using namespace std;
+
 void
 ShellRotation::done() {
   if (r) {

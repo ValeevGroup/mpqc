@@ -29,7 +29,7 @@
 #include <scconfig.h>
 #endif
 
-#include <new.h>
+#include <new>
 #include <unistd.h>
 
 #include <util/misc/exenv.h>
@@ -45,6 +45,8 @@
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+
+using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
 

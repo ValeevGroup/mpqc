@@ -25,6 +25,7 @@ extern "C" {
 #include <math.h>
 }
 
+using namespace std;
 
 PSI_Input::PSI_Input()
 {

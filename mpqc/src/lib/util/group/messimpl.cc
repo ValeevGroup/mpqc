@@ -41,6 +41,8 @@
 #  include <util/group/messmpi.h>
 #endif
 
+using namespace std;
+
 DescribedClass_REF_def(MessageGrp);
 
 #define CLASSNAME MessageGrp

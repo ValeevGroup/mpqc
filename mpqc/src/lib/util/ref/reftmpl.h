@@ -144,7 +144,7 @@ class  Ref  : private RefBase {
         }
     }
     /// Print information about the reference to os.
-    void ref_info(ostream& os) const
+    void ref_info(std::ostream& os) const
     {
       RefBase::ref_info(p,os);
     }

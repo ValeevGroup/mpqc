@@ -28,7 +28,7 @@
 #ifndef _util_render_stack_h
 #define _util_render_stack_h
 
-#include <iostream.h>
+#include <iostream>
 
 #define STACK_MAX_STACK_SIZE 20
 template <class T>
@@ -40,14 +40,14 @@ class Stack {
     Stack(): nobjects(0) {}
     void push(const T&a) {
         if (nobjects >= STACK_MAX_STACK_SIZE) {
-            ExEnv::err() << "Stack: overflow" << endl;
+            ExEnv::err() << "Stack: overflow" << std::endl;
             abort();
           }
         objects[nobjects++] = a;
       }
     T pop() {
         if (!nobjects) {
-            ExEnv::err() << "Stack: underflow" << endl;
+            ExEnv::err() << "Stack: underflow" << std::endl;
             abort();
           }
         nobjects -= 1;
@@ -55,17 +55,17 @@ class Stack {
       }
     T top() const {
         if (!nobjects) {
-            ExEnv::err() << "Stack: underflow" << endl;
+            ExEnv::err() << "Stack: underflow" << std::endl;
             abort();
           }
         return objects[nobjects - 1];
       }
     int n() const { return nobjects; }
     T operator[](int i) { return objects[i]; }
-    void print(ostream& os = ExEnv::out()) {
-        os << "Stack (depth = " << nobjects << "):" << endl;
+    void print(std::ostream& os = ExEnv::out()) {
+        os << "Stack (depth = " << nobjects << "):" << std::endl;
         for (int i=0; i<nobjects; i++) {
-            os << "  object " << i << ":" << endl;
+            os << "  object " << i << ":" << std::endl;
             objects[i]->print(os);
           }
       }

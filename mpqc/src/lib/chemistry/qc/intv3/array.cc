@@ -33,6 +33,8 @@
 #include <util/misc/exenv.h>
 #include <chemistry/qc/intv3/array.h>
 
+using namespace std;
+
 static void
 no_storage(const char *msg)
 {

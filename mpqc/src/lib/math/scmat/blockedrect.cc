@@ -37,6 +37,8 @@
 #include <math/scmat/local.h>
 #include <math/scmat/repl.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSCMatrix member functions
 

@@ -39,11 +39,13 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <chemistry/qc/intv3/fjt.h>
+
+using namespace std;
 
  /* Tablesize should always be at least 121. */
 #define TABLESIZE 121

@@ -32,7 +32,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 
 #include <scconfig.h>
 
@@ -74,10 +74,10 @@ class Identifier {
     /// Not equal.
     int operator != (const Identifier&i) const { return id != i.id; }
 
-    void print(ostream&) const;
+    void print(std::ostream&) const;
 };
 
-ostream & operator << (ostream &o, const Identifier &i);
+std::ostream & operator << (std::ostream &o, const Identifier &i);
 
 /** Identity gives objects a unique identity and ordering relationship
  relative to all other objects.

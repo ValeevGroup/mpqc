@@ -29,11 +29,13 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
+#include <iostream>
 
 #include <math/isosurf/isosurf.h>
 #include <math/isosurf/implicit.h>
 #include <math/scmat/vector3.h>
+
+using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////
 // IsosurfaceGen members

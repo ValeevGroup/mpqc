@@ -32,7 +32,7 @@
 #ifndef _util_misc_regtime_h
 #define _util_misc_regtime_h
 
-#include <iostream.h>
+#include <iostream>
 #include <util/class/class.h>
 
 class TimedRegion;
@@ -65,7 +65,7 @@ class RegionTimer: public DescribedClass {
     void unset_default();
     void enter_default();
     void exit_default();
-    virtual void print(ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out()) const;
 
     void update_top() const;
 

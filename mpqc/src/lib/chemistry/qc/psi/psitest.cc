@@ -3,7 +3,9 @@
 #include <chemistry/qc/psi/psi.h>
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
-#include <new.h>
+#include <new>
+
+using namespace std;
 
 void die()
 {

@@ -39,6 +39,8 @@
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
+using namespace std;
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Result<int>;
 template class Result<double>;

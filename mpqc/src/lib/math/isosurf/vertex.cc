@@ -32,6 +32,7 @@
 #include <util/misc/formio.h>
 #include <math/isosurf/vertex.h>
 
+using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 // Vertex (a point and a gradient)

@@ -41,6 +41,8 @@
 #include <chemistry/qc/scf/lgbuild.h>
 #include <chemistry/qc/scf/uhftmpl.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // UHF
 

@@ -28,7 +28,7 @@
 #ifndef _util_render_appearance_h
 #define _util_render_appearance_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
@@ -46,7 +46,7 @@ class Appearance: public DescribedClass {
     ~Appearance();
     Parameter<int>& level() { return level_; }
 
-    void print(ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out()) const;
 };
 DescribedClass_REF_dec(Appearance);
 

@@ -2,7 +2,7 @@
 #include "molecule.h"
 #include "energy.h"
 #include "optimize.h"
-#include <iostream.h>
+#include <iostream>
 #include <stdlib.h>
 
 void try_energy(const char *);

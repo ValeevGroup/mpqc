@@ -32,7 +32,7 @@
 #ifndef _math_symmetry_corrtab_h
 #define _math_symmetry_corrtab_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <math/symmetry/pointgrp.h>
 
@@ -90,7 +90,7 @@ class CorrelationTable: public VRefCount {
         high order group can be reduced to. */
     int gamma(int igamma, int i) const { return gamma_[igamma][i]; }
 
-    void print(ostream &o=ExEnv::out()) const;
+    void print(std::ostream &o=ExEnv::out()) const;
 };
 REF_dec(CorrelationTable);
 

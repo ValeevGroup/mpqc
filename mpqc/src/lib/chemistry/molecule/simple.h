@@ -27,7 +27,7 @@
 #endif
 
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
@@ -128,7 +128,8 @@ class SimpleCo : public IntCoor {
     virtual double calc_intco(Molecule&, double* =0, double =1) = 0;
 
     /// Print the coordinate.
-    void print_details(const RefMolecule &, ostream& = ExEnv::out()) const;
+    void print_details(const RefMolecule &,
+                       std::ostream& = ExEnv::out()) const;
     
     /** Tests to see if two coordinates are equivalent to each other.
         This is false if the atoms don't match. */

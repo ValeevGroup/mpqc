@@ -49,11 +49,14 @@
 #include <util/container/bitarray.h>
 #include <util/misc/exenv.h>
 
+using namespace std;
+
 BitArrayLTri::BitArrayLTri(int i, int j)
   : a(0), n(0), nm(0), na(0)
 {
   if (i!=j) {
-    ExEnv::err() << node0 << indent << "BitArrayLTri(int,int): i != j" << endl;
+    ExEnv::err() << node0 << indent << "BitArrayLTri(int,int): i != j"
+                 << endl;
     abort();
   }
   int sz = i*(i+1)/2;

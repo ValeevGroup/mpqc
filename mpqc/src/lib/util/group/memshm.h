@@ -35,7 +35,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <iostream.h>
+#include <iostream>
 
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>
@@ -83,7 +83,7 @@ class ShmMemoryGrp: public MsgMemoryGrp {
 
     virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
 
-    void print(ostream &o = ExEnv::out()) const;
+    void print(std::ostream &o = ExEnv::out()) const;
 };
 
 #endif

@@ -1,6 +1,6 @@
 
 #include <strstream.h>
-#include <iostream.h>
+#include <iostream>
 #include "keyvali.h"
 
 #include <util/class/class.h>

@@ -274,7 +274,7 @@ class BcastStateInBin: public MsgStateBufRecv {
   protected:
     int opened_;
     int file_position_;
-    streambuf *buf_;
+    std::streambuf *buf_;
 
     void next_buffer();
     int get_array_void(void*, int);

@@ -28,7 +28,7 @@
 #ifndef _util_render_transform_h
 #define _util_render_transform_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
@@ -49,7 +49,7 @@ class Transform: public DescribedClass {
     void translate(const vec3&);
     void rotate(const vec3&, double angle_degrees);
     void scale(double);
-    void print(ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out()) const;
 };
 DescribedClass_REF_dec(Transform);
 

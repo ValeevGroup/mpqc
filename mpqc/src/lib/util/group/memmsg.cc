@@ -34,6 +34,8 @@
 
 #include <util/group/memmsg.h>
 
+using namespace std;
+
 #define CLASSNAME MsgMemoryGrp
 #define PARENTS public MemoryGrp
 #include <util/class/classia.h>

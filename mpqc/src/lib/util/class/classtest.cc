@@ -27,10 +27,12 @@
 
 // a simple program to test the class stuff
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/formio.h>
 #include <util/class/class.h>
+
+using namespace std;
 
 #undef SIMPLE_TEST
 

@@ -41,7 +41,7 @@ class ShellExtent: public VRefCount {
     const ArrayExtentData &contributing_shells(int x, int y, int z)
         { return data(x,y,z); }
     const ArrayExtentData &contributing_shells(double x, double y, double z);
-    void print(ostream &o = ExEnv::out());
+    void print(std::ostream &o = ExEnv::out());
     const int *n() const { return n_; }
     int n(int ixyz) const { return n_[ixyz]; }
     double lower(int ixyz) const { return lower_[ixyz]; }

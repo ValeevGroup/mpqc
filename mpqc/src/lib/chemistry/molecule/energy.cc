@@ -38,6 +38,8 @@
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/energy.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////
 // MolecularEnergy
 

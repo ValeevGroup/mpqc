@@ -34,6 +34,8 @@
 #include <math/scmat/local.h>
 #include <chemistry/molecule/taylor.h>
 
+using namespace std;
+
 #define CLASSNAME TaylorMolecularEnergy
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR

@@ -29,11 +29,13 @@
 #pragma implementation
 #endif
 
-#include <new.h>
+#include <new>
 
 #include <util/misc/formio.h>
 #include <util/group/rnglock.h>
 #include <util/group/pool.h>
+
+using namespace std;
 
 #define CHECK 0
 

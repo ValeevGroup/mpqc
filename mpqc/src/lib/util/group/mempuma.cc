@@ -35,6 +35,8 @@
 #include <util/group/mempuma.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 extern "C" {
 #include <nx.h>
 

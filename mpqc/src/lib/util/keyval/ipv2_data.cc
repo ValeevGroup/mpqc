@@ -31,6 +31,8 @@
 #include <string.h>
 #include <util/keyval/ipv2.h>
 
+using namespace std;
+
 IPV2::Status
 IPV2::boolean(const char *keyword,int *boolean,int n,...)
 {

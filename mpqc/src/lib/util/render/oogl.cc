@@ -35,6 +35,8 @@
 #include <util/render/material.h>
 #include <util/render/animate.h>
 
+using namespace std;
+
 #define CLASSNAME OOGLRender
 #define PARENTS public FileRender
 #define HAVE_KEYVAL_CTOR

@@ -35,6 +35,8 @@
 
 #include <util/state/translate.h>
 
+using namespace std;
+
 #define DEBUG 0
 
 // This sets up a communication buffer.  It is made up of a of

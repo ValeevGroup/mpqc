@@ -29,13 +29,15 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 #include <math.h>
 
 #include <util/misc/formio.h>
 #include <math/scmat/matrix3.h>
 #include <math/scmat/vector3.h>
+
+using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
 // DMatrix3

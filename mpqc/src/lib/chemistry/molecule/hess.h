@@ -32,7 +32,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>

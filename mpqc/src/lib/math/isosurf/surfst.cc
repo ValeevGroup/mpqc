@@ -33,6 +33,8 @@
 #include <math/scmat/matrix.h>
 #include <math/isosurf/surf.h>
 
+using namespace std;
+
 #ifndef WRITE_OOGL // this is useful for debugging this routine
 #define WRITE_OOGL 1
 #endif

@@ -3,10 +3,12 @@
 #endif
 
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/exenv.h>
 #include <chemistry/qc/oint3/build.h>
+
+using namespace std;
 
 BuildIntV3::BuildIntV3()
 {

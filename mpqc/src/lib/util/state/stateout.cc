@@ -46,6 +46,8 @@
 #include <util/state/translate.h>
 #include <util/state/stateout.h>
 
+using namespace std;
+
 DescribedClass_REF_def(StateOut);
 
 #define CLASSNAME StateOut

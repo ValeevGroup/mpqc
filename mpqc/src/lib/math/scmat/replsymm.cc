@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 
 #include <math.h>
 
@@ -38,6 +38,8 @@
 #include <math/scmat/disthql.h>
 #include <math/scmat/offset.h>
 #include <math/scmat/mops.h>
+
+using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // ReplSymmSCMatrix member functions

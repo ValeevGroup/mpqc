@@ -34,8 +34,10 @@
 #endif
 
 #include <math.h>
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
 
 // getrusage and gettimeofday don't exit under SUNMOS
 // so if NX is being used call dclock() instead.

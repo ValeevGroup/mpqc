@@ -43,6 +43,8 @@
 
 #include <util/class/class.h>
 
+using namespace std;
+
 AVLMap<ClassKey,ClassDescP>* ClassDesc::all_ = 0;
 char * ClassDesc::classlib_search_path_ = 0;
 AVLSet<ClassKey>* ClassDesc::unresolved_parents_ = 0;

@@ -30,6 +30,8 @@
 #include <math/scmat/matrix.h>
 #include <math/isosurf/surf.h>
 
+using namespace std;
+
 void
 TriangulatedSurface::fix_orientation()
 {

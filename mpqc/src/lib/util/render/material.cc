@@ -27,6 +27,8 @@
 
 #include <util/render/material.h>
 
+using namespace std;
+
 DescribedClass_REF_def(Material);
 #define CLASSNAME Material
 #define HAVE_KEYVAL_CTOR

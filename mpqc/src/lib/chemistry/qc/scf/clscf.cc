@@ -50,6 +50,8 @@
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/clhftmpl.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // CLSCF
 

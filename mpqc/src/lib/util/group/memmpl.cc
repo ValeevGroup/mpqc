@@ -39,6 +39,8 @@
 #include <mpi.h>
 #include <mpproto.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////
 // The handler function and its data
 

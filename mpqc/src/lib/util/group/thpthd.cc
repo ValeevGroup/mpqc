@@ -41,6 +41,8 @@
 #include <util/group/thpthd.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 // PthreadThreadLock class
 

@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -33,6 +33,8 @@
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+
+using namespace std;
 
 #define DEBUG 0
 

@@ -77,7 +77,7 @@ class Array {
     Type& operator[] (int i) const {
         if (i<0 || i>=_length) {
             ExEnv::err() << "Array::operator[](" << i << ") "
-                 << "out of range (" << _length << "0" << endl;
+                 << "out of range (" << _length << "0" << std::endl;
             abort();
           };
         return _array[i];
@@ -85,7 +85,7 @@ class Array {
     Type& operator() (int i) const {
         if (i<0 || i>=_length) {
             ExEnv::err() << "Array::operator()(" << i << ") "
-                 << "out of range (" << _length << "0" << endl;
+                 << "out of range (" << _length << "0" << std::endl;
             abort();
           };
         return _array[i];

@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -37,6 +37,8 @@
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+
+using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // DistSCMatrixKit member functions

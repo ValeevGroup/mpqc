@@ -37,6 +37,8 @@
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/intv3.h>
 
+using namespace std;
+
 void test_int_shell_1e(const RefKeyVal&, const RefInt1eV3 &int1ev3,
                        void (Int1eV3::*int_shell_1e)(int,int),
                        int permute);

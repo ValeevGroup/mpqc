@@ -40,6 +40,8 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/cartiter.h>
 
+using namespace std;
+
 const char* GaussianShell::amtypes = "spdfghiklmn";
 const char* GaussianShell::AMTYPES = "SPDFGHIKLMN";
 

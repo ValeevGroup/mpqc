@@ -39,6 +39,8 @@
 #include <math/scmat/repl.h>
 #include <chemistry/qc/basis/transform.h>
 
+using namespace std;
+
 #undef DEBUG
 
 ////////////////////////////////////////////////////////////////////////////

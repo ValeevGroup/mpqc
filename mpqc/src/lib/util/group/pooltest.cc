@@ -31,6 +31,8 @@
 #include <util/group/pool.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 class Double {
   private:
     static Pool* pool_;

@@ -34,6 +34,8 @@
 #include <math/scmat/local.h>
 #include <chemistry/solvent/bem.h>
 
+using namespace std;
+
 DescribedClass_REF_def(BEMSolvent);
 
 #define CLASSNAME BEMSolvent

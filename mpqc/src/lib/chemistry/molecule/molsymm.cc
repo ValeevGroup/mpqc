@@ -30,6 +30,8 @@
 #include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
 
+using namespace std;
+
 #undef DEBUG
 
 void

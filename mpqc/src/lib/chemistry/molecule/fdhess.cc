@@ -42,6 +42,8 @@
 #include <math/symmetry/corrtab.h>
 #include <chemistry/molecule/fdhess.h>
 
+using namespace std;
+
 #define DEFAULT_CHECKPOINT  1
 #define DEFAULT_RESTART     1
 

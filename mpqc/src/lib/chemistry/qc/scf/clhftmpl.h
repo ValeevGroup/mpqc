@@ -26,21 +26,21 @@ class LocalCLHFContribution {
         {
           int bad = 0;
           if ( 1.000001 * ibound_ < (ival > 0 ? ival : -ival)) {
-              ExEnv::err() << "BAD INTEGRAL BOUND" << endl;
-              ExEnv::err() << " bound = " << ibound_ << endl;
-              ExEnv::err() << " value = " << ival << endl;
+              ExEnv::err() << "BAD INTEGRAL BOUND" << std::endl;
+              ExEnv::err() << " bound = " << ibound_ << std::endl;
+              ExEnv::err() << " value = " << ival << std::endl;
               bad = 1;
             }
           if ( 1.000001 * pbound_ < (pval > 0 ? pval : -pval)) {
-              ExEnv::err() << "BAD DENSITY BOUND" << endl;
-              ExEnv::err() << " bound = " << pbound_ << endl;
-              ExEnv::err() << " value = " << pval << endl;
+              ExEnv::err() << "BAD DENSITY BOUND" << std::endl;
+              ExEnv::err() << " bound = " << pbound_ << std::endl;
+              ExEnv::err() << " value = " << pval << std::endl;
               bad = 1;
             }
           if (bad) {
-              ExEnv::err() << " ij    = " << ij << endl;
-              ExEnv::err() << " kl    = " << kl << endl;
-              ExEnv::err() << " cont  = " << contrib << endl;
+              ExEnv::err() << " ij    = " << ij << std::endl;
+              ExEnv::err() << " kl    = " << kl << std::endl;
+              ExEnv::err() << " cont  = " << contrib << std::endl;
               abort();
             }
         }

@@ -37,6 +37,8 @@
 #include <util/group/memiter.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////
 // The MPI2MemoryGrp class
 

@@ -33,7 +33,7 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
-#include <new.h>
+#include <new>
 
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
@@ -57,6 +57,8 @@
 #include <chemistry/qc/scf/hsoshf.h>
 
 #include <chemistry/qc/mbpt/mbpt.h>
+
+using namespace std;
 
 // Force linkages:
 #ifndef __PIC__

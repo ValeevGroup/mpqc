@@ -53,7 +53,7 @@
 #ifndef _math_symmetry_pointgrp_h
 #define _math_symmetry_pointgrp_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
@@ -130,7 +130,7 @@ class SymmetryOperation {
     void transpose();
 
     /// print the matrix 
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 // //////////////////////////////////////////////////////////////////
@@ -210,7 +210,7 @@ class SymRep {
     void c2_y();
 
     /// print the matrix 
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 inline double
@@ -302,7 +302,7 @@ class IrreducibleRepresentation {
     /** This prints the irrep to the given file, or stdout if none is
      given.  The second argument is an optional string of spaces to offset
      by. */
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 // ///////////////////////////////////////////////////////////
@@ -413,7 +413,7 @@ class CharacterTable {
     }
     
     /// This prints the irrep to the given file, or stdout if none is given.
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 // ///////////////////////////////////////////////////////////
@@ -513,7 +513,7 @@ class PointGroup: public SavableState {
 
     void save_data_state(StateOut& so);
 
-    void print(ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out()) const;
 };
 SavableState_REF_dec(PointGroup);
 

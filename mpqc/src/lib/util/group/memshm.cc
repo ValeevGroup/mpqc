@@ -38,6 +38,8 @@
 #include <limits.h>
 #include <errno.h>
 
+using namespace std;
+
 #ifndef SHMMAX
 // glibc 2.0.3 isn't defining SHMMAX so make set it here
 #  ifdef __linux__

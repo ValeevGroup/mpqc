@@ -70,7 +70,7 @@ class Array2 {
         if (i<0 || i>=_length0 || j<0 || j>=_length1) {
             ExEnv::err() << "Array2::operator()(" << i << "," << j << "): "
                  << "out of range (" << _length0 << "," << _length1
-                 << ",)" << endl;
+                 << ",)" << std::endl;
             abort();
           };
         return _array[i*_length1+j];
@@ -79,7 +79,7 @@ class Array2 {
         if (i<0 || i>=_length0 || j<0 || j>=_length1) {
             ExEnv::err() << "Array2::operator()(" << i << "," << j << "): "
                  << "out of range (" << _length0 << "," << _length1
-                 << ",)" << endl;
+                 << ",)" << std::endl;
             abort();
           };
         return _array[i*_length1+j];

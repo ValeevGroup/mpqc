@@ -39,6 +39,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/shellrot.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////////
 
 PetiteList::PetiteList(const RefGaussianBasisSet &gbs,

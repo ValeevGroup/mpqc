@@ -56,6 +56,8 @@
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/uhftmpl.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // UnrestrictedSCF
 

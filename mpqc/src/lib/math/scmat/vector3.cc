@@ -29,8 +29,8 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
@@ -38,6 +38,8 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+
+using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
 // DVector3

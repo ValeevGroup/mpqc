@@ -37,6 +37,8 @@
 #include <util/container/carray.h>
 #include <chemistry/qc/dft/integrator.h>
 
+using namespace std;
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template void delete_c_array2<RefRadialIntegrator>(RefRadialIntegrator**);
 template RefRadialIntegrator**

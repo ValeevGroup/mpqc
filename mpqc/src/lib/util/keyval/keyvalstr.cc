@@ -30,12 +30,13 @@ extern "C" {
 #include <stdlib.h>
 }
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <util/class/proxy.h>
 
+using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
 // StringKeyVal

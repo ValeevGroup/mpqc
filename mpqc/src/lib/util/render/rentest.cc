@@ -25,12 +25,14 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/keyval/keyval.h>
 #include <util/render/oogl.h>
 #include <util/render/object.h>
 #include <util/render/sphere.h>
+
+using namespace std;
 
 int
 main()

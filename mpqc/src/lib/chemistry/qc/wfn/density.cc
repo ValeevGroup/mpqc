@@ -36,6 +36,8 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/wfn/density.h>
 
+using namespace std;
+
 #define CLASSNAME ElectronDensity
 #define PARENTS public Volume
 #define HAVE_KEYVAL_CTOR

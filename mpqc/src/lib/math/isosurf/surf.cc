@@ -37,6 +37,8 @@
 #include <math/isosurf/isosurf.h>
 #include <util/render/polygons.h>
 
+using namespace std;
+
 #ifndef WRITE_OOGL
 #define WRITE_OOGL 1
 #endif

@@ -32,7 +32,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/keyval/keyval.h>
 #include <util/render/material.h>
@@ -64,7 +64,7 @@ class RenderedObject: public DescribedClass {
     void appearance(const RefAppearance&a) { appearance_ = a; }
     void transform(const RefTransform&t) { transform_ = t; }
 
-    virtual void print(ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out()) const;
 
     // to be called only by derivatives of Render
     virtual void render(const RefRender&) = 0;

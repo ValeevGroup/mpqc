@@ -8,7 +8,7 @@
 #ifndef _GetLongOpt_h_
 #define _GetLongOpt_h_
 
-#include <iostream.h>
+#include <iostream>
 #include <string.h>
 
 class GetLongOpt {
@@ -49,7 +49,7 @@ public:
       const char * const desc, const char * const val);
    const char *retrieve(const char * const opt) const;
 
-   void usage(ostream &outfile = cout) const;
+   void usage(std::ostream &outfile = std::cout) const;
    void usage(const char *str)		{ ustring = str; }
 };
 

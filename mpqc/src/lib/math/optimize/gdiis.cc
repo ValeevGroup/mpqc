@@ -37,6 +37,8 @@
 #include <math/scmat/local.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 #define CLASSNAME GDIISOpt
 #define PARENTS public Optimize
 #define HAVE_KEYVAL_CTOR

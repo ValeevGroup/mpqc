@@ -32,6 +32,8 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(HCoreWfn);

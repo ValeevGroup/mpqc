@@ -41,6 +41,8 @@
 
 #include <mpi.h>
 
+using namespace std;
+
 static const int dbufsize = 32768;
 
 ///////////////////////////////////////////////////////////////////////

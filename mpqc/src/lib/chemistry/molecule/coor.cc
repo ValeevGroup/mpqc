@@ -42,6 +42,8 @@
 #include <util/container/bitarray.h>
 #include <util/container/avlset.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME IntCoor

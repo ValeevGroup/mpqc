@@ -4,6 +4,8 @@
 #include <chemistry/qc/intv3/fjt.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 // this should only be used for x < a + 1
 static double
 mgamma_small_x(double a, double x)

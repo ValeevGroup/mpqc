@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 
 #include <math.h>
 
@@ -35,6 +35,8 @@
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+
+using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // ReplDiagSCMatrix member functions

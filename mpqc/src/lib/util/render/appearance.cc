@@ -27,6 +27,8 @@
 
 #include <util/render/appearance.h>
 
+using namespace std;
+
 DescribedClass_REF_def(Appearance);
 #define CLASSNAME Appearance
 #define HAVE_KEYVAL_CTOR

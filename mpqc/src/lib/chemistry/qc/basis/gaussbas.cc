@@ -30,7 +30,13 @@
 #endif
 
 #include <stdio.h>
-#include <strstream.h>
+
+#include <scconfig.h>
+#ifdef HAVE_SSTREAM
+#  include <sstream>
+#else
+#  include <strstream.h>
+#endif
 
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
@@ -44,6 +50,8 @@
 #include <chemistry/qc/basis/cartiter.h>
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/basis/integral.h>
+
+using namespace std;
 
 SavableState_REF_def(GaussianBasisSet);
 
@@ -84,14 +92,23 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
       RefParsedKeyVal parsedkv = new ParsedKeyVal();
       char *in_char_array;
       if (grp->me() == 0) {
+#ifdef HAVE_SSTREAM
+          ostringstream ostrs;
+#else
           ostrstream ostrs;
+#endif
           // Look at the basisdir and basisfiles variables to find out what
           // basis set files are to be read in.  The files are read on node
           // 0 only.
           ParsedKeyVal::cat_files("basis",topkeyval,ostrs);
+#ifdef HAVE_SSTREAM
+          int n = 1 + strlen(ostrs.str().c_str());
+          in_char_array = strcpy(new char[n],ostrs.str().c_str());
+#else
           ostrs << ends;
           in_char_array = ostrs.str();
           int n = ostrs.pcount();
+#endif
           grp->bcast(n);
           grp->bcast(in_char_array, n);
         }

@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -34,6 +34,8 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/disthql.h>
+
+using namespace std;
 
 extern "C" { int DBmalloc_chain_check(const char *, int, int); }
 

@@ -37,6 +37,8 @@
 #include <math/scmat/local.h>
 #include <math/isosurf/volume.h>
 
+using namespace std;
+
 #define CLASSNAME Volume
 #define PARENTS public Function
 #include <util/state/statei.h>

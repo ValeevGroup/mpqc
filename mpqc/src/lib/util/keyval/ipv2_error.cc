@@ -32,6 +32,8 @@
 #include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
 
+using namespace std;
+
 /* Returns some text for an errcod. */
 const char*
 IPV2::error_message(IPV2::Status errcod)

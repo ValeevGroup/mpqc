@@ -35,8 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 #include <util/ref/ref.h>
 #include <util/container/avlset.h>
 #include <util/container/avlmap.h>
@@ -238,7 +238,7 @@ class DescribedClass : public VRefCount {
         for derived types. */
     virtual void* _castdown(const ClassDesc*);
     /// Print the object.
-    virtual void print(ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out()) const;
   };
 
 /** DCRefBase provides a few utility routines common to all
@@ -274,11 +274,11 @@ class DCRefBase: private RefBase {
     void warn_ref_to_stack() const;
     void warn_skip_stack_delete() const;
     void warn_bad_ref_count() const;
-    void ref_info(VRefCount*p, ostream& os) const;
-    void ref_info(ostream& os) const;
+    void ref_info(VRefCount*p, std::ostream& os) const;
+    void ref_info(std::ostream& os) const;
     void check_pointer() const;
 };
-ostream &operator<<(ostream&,const DCRefBase&);
+std::ostream &operator<<(std::ostream&,const DCRefBase&);
 
 inline void
 DCRefBase::reference(VRefCount *p)

@@ -25,9 +25,14 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
-#include <strstream.h>
-#include <fstream.h>
+#include <scconfig.h>
+#include <iostream>
+#ifdef HAVE_SSTREAM
+#  include <sstream>
+#else
+#  include <strstream.h>
+#endif
+#include <fstream>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -35,6 +40,8 @@
 #include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
+
+using namespace std;
 
 ParsedKeyVal::ParsedKeyVal(IPV2*i):
 nfile(0),
@@ -224,7 +231,11 @@ void ParsedKeyVal::read(istream&infp)
 void
 ParsedKeyVal::parse_string(const char *str)
 {
+#ifdef HAVE_SSTREAM
+  istringstream in(str);
+#else
   istrstream in(str);
+#endif
   ipv2->read(in,ExEnv::err(),"<string>");
 }
 

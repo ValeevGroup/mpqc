@@ -27,6 +27,8 @@
 
 #include <util/misc/formio.h>
 
+using namespace std;
+
 int
 main()
 {

@@ -32,7 +32,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 #include <util/keyval/keyval.h>
@@ -209,7 +209,7 @@ class GaussianShell: public SavableState
         decreasing as a function of r. */
     double monobound(double r) const;
 
-    void print(ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out()) const;
 };
 
 SavableState_REF_dec(GaussianShell);

@@ -53,6 +53,8 @@
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/formio.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////
 
 IrreducibleRepresentation::IrreducibleRepresentation() :

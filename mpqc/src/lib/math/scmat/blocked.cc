@@ -37,6 +37,8 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSCMatrixKit member functions
 

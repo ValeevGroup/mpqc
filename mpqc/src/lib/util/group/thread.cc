@@ -34,6 +34,8 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 
 ThreadLock::ThreadLock()

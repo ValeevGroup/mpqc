@@ -33,6 +33,8 @@
 #include <util/misc/formio.h>
 #include <chemistry/qc/mbpt/distsh.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////
 // Function iquicksort performs a quick sort (larger -> smaller) 
 // of the integer data in item by the integer indices in index;

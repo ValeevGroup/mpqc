@@ -50,7 +50,7 @@ class StateOutBin: public StateOutFile {
     int put_array_void(const void*,int);
   public:
     StateOutBin();
-    StateOutBin(ostream&);
+    StateOutBin(std::ostream&);
     StateOutBin(const char *);
     ~StateOutBin();
 
@@ -82,7 +82,7 @@ class StateInBin: public StateInFile {
   public:
     StateInBin();
     StateInBin(const RefKeyVal &);
-    StateInBin(istream&);
+    StateInBin(std::istream&);
     StateInBin(const char *);
     ~StateInBin();
 

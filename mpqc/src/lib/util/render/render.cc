@@ -38,6 +38,8 @@
 #include <util/render/polygons.h>
 #include <util/render/polysphere.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 // Render
 

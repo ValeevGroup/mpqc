@@ -52,6 +52,8 @@
 #include <util/misc/newstring.h>
 #include <math/symmetry/pointgrp.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 
 CharacterTable::CharacterTable()

@@ -25,13 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 #include <util/misc/libmisc.h>
 #include <util/group/picl.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
+
+using namespace std;
 
 class Prod3: public SCElementOp3 {
   private:

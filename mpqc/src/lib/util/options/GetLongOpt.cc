@@ -7,6 +7,8 @@
 
 #include <util/options/GetLongOpt.h>
 
+using namespace std;
+
 GetLongOpt::GetLongOpt(const char optmark)
 {
    table = last = 0;

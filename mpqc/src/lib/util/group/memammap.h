@@ -35,7 +35,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <iostream.h>
+#include <iostream>
 
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>

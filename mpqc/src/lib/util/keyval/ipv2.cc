@@ -35,6 +35,8 @@
 #include <util/keyval/ipv2.h>
 #include <util/keyval/ipv2_parse.h>
 
+using namespace std;
+
 IPV2::IPV2():
 filename_(0),
 table_keywords(0),

@@ -28,6 +28,8 @@
 #include <util/ref/ref.h>
 #include <util/ref/reftestx.h>
 
+using namespace std;
+
 //template class Ref<X>;
 
 int

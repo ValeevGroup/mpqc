@@ -34,6 +34,8 @@
 #include <util/state/translate.h>
 #include <util/state/statein.h>
 
+using namespace std;
+
 #define DEBUG 0
 
 DescribedClass_REF_def(StateIn);

@@ -3,7 +3,7 @@
 #include <scconfig.h>
 #endif
 
-#include <fstream.h>
+#include <fstream>
 
 #ifdef USING_NAMESPACE_STD
 using namespace std;

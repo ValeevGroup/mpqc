@@ -35,6 +35,8 @@
 #include <chemistry/qc/intv3/utils.h>
 #include <chemistry/qc/intv3/tformv3.h>
 
+using namespace std;
+
 #undef DER_TIMING
 #undef EREP_TIMING
 

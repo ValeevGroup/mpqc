@@ -190,14 +190,14 @@ class TriangulatedSurface: public DescribedClass {
     virtual double volume();
 
     // output of the surface
-    virtual void print(ostream&o=ExEnv::out()) const;
-    virtual void print_vertices_and_triangles(ostream&o=ExEnv::out()) const;
-    virtual void print_geomview_format(ostream&o=ExEnv::out()) const;
+    virtual void print(std::ostream&o=ExEnv::out()) const;
+    virtual void print_vertices_and_triangles(std::ostream&o=ExEnv::out()) const;
+    virtual void print_geomview_format(std::ostream&o=ExEnv::out()) const;
     virtual void render(const RefRender &render);
 
     // print information about the topology
-    void topology_info(ostream&o=ExEnv::out());
-    void topology_info(int nvertex, int nedge, int ntri, ostream&o=ExEnv::out());
+    void topology_info(std::ostream&o=ExEnv::out());
+    void topology_info(int nvertex, int nedge, int ntri, std::ostream&o=ExEnv::out());
 };
 DescribedClass_REF_dec(TriangulatedSurface);
 

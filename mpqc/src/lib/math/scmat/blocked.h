@@ -102,7 +102,8 @@ class BlockedSCVector: public SCVector {
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    void vprint(const char* title=0,
+                std::ostream& out=ExEnv::out(), int =10) const;
 
     // BlockedSCVector specific functions
     RefSCDimension dim() const { return d; }
@@ -176,7 +177,8 @@ class BlockedSCMatrix: public SCMatrix {
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
 
-    void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    void vprint(const char* title=0,
+                std::ostream& out=ExEnv::out(), int =10) const;
 
     // BlockedSCMatrix specific functions
     RefSCDimension rowdim() const { return d1; }
@@ -254,7 +256,8 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
 
-    void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    void vprint(const char* title=0,
+                std::ostream& out=ExEnv::out(), int =10) const;
 
     // BlockedSymmSCMatrix specific functions
     RefSCDimension dim() const { return d; }
@@ -301,7 +304,8 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
                     DiagSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
-    void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    void vprint(const char* title=0,
+                std::ostream& out=ExEnv::out(), int =10) const;
 
     // BlockedDiagSCMatrix specific functions
     RefSCDimension dim() const { return d; }

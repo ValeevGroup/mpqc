@@ -31,6 +31,8 @@
 #include <util/misc/bug.h>
 #include <util/group/thread.h>
 
+using namespace std;
+
 // Force linkages:
 //#ifndef __PIC__
 #ifdef PUMAGON

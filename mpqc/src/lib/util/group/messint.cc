@@ -28,6 +28,8 @@
 #include <util/misc/formio.h>
 #include <util/group/message.h>
 
+using namespace std;
+
 #define CLASSNAME intMessageGrp
 #define PARENTS public MessageGrp
 #include <util/class/classia.h>

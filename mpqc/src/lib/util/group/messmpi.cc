@@ -37,6 +37,8 @@ extern int MPI_Initialized(int *); // missing in mpi.h
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 
+using namespace std;
+
 //#define MPI_SEND_ROUTINE MPI_Ssend // hangs
 #define MPI_SEND_ROUTINE MPI_Send // hangs in old MPI implementations
 //#define MPI_SEND_ROUTINE MPI_Bsend // works requires the attach and detach

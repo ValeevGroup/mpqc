@@ -26,7 +26,7 @@ Let's take a walk through the usage.
 
 
 #include <util/options/GetLongOpt.h>
-#include <iostream.h>
+#include <iostream>
 #include <stdlib.h>
 
 int debug_index = 0;

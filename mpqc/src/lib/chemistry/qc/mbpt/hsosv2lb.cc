@@ -33,6 +33,8 @@
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 
+using namespace std;
+
 static void iqs(int *item,int *index,int left,int right);
 static void iquicksort(int *item,int *index,int n);
 static void findprocminmax(int *nbf, int nproc,

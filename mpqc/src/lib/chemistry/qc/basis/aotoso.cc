@@ -35,6 +35,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/f77sym.h>
 
+using namespace std;
+
 extern "C" {
   void
   F77_DGESVD(const char * JOBU, const char *JOBVT,

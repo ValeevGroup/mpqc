@@ -32,6 +32,8 @@
 #include <util/misc/formio.h>
 #include <chemistry/qc/basis/sointegral.h>
 
+using namespace std;
+
 #define DEBUG 0
 
 /////////////////////////////////////////////////////////////////////////////

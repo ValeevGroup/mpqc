@@ -52,6 +52,8 @@
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/hsoshftmpl.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // HSOSSCF
 

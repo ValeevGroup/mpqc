@@ -36,6 +36,8 @@
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
 
+using namespace std;
+
 static const double shape_infinity = 1.0e23;
 
 // given a vector X find which of the points in the vector of

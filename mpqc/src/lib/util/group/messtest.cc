@@ -34,6 +34,8 @@
 #include <util/group/mstate.h>
 #include <util/group/hcube.h>
 
+using namespace std;
+
 // Force linkages:
 //#ifndef __PIC__
 #ifndef PUMAGON

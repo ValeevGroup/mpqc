@@ -35,6 +35,8 @@
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
 
+using namespace std;
+
 inline static double
 norm(double v[3])
 {

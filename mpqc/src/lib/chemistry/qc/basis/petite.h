@@ -32,7 +32,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/scint.h>
 #include <util/ref/ref.h>
@@ -148,7 +148,7 @@ class PetiteList : public VRefCount {
 
     int nblocks() const { return nblocks_; }
 
-    void print(ostream& =ExEnv::out(), int verbose=1);
+    void print(std::ostream& =ExEnv::out(), int verbose=1);
 
     // these return blocked dimensions
     RefSCDimension AO_basisdim();

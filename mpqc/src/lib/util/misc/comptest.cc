@@ -25,11 +25,13 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iomanip.h>
+#include <iomanip>
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
 #include <util/misc/compute.h>
+
+using namespace std;
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class NCResult<int>;

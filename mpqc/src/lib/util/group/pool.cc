@@ -32,6 +32,8 @@
 #include <util/misc/formio.h>
 #include <util/group/pool.h>
 
+using namespace std;
+
 void
 PoolData::check(void* lower_bound, void* upper_bound)
 {

@@ -38,6 +38,8 @@
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
+using namespace std;
+
 #define DEBUG 0
 
 /////////////////////////////////////////////////////////////////

@@ -41,6 +41,8 @@
 #include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/scflocal.h>
 
+using namespace std;
+
 #undef GENERALIZED_EIGENSOLVER
 
 ///////////////////////////////////////////////////////////////////////////

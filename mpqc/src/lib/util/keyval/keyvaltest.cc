@@ -27,13 +27,15 @@
 
 // a simple program to test the class stuff
 
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 
 #include <util/misc/formio.h>
 #include <util/class/class.h>
 #include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
+
+using namespace std;
 
 #define A_parents virtual public DescribedClass
 class A: A_parents {

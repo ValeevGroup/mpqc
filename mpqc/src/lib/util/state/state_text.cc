@@ -34,6 +34,8 @@
 
 #include <util/state/state_text.h>
 
+using namespace std;
+
 #define CLASSNAME StateOutText
 #define PARENTS public StateOutFile
 #include <util/class/classi.h>

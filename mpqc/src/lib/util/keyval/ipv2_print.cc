@@ -25,9 +25,11 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
+
+using namespace std;
 
 void
 IPV2::print_keyword(ostream&fp,ip_keyword_tree_t*st)

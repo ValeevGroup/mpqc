@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 #include <stdlib.h>
 
@@ -35,6 +35,8 @@
 #include <util/container/eavlmmap.h>
 #include <util/container/avlmap.h>
 #include <util/container/avlset.h>
+
+using namespace std;
 
 class Data {
   public:

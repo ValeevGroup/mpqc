@@ -55,7 +55,7 @@ class Vertex: public VRefCount {
     void set_normal(const SCVector3&p);
     operator SCVector3&();
 
-    void print(ostream&o=ExEnv::out());
+    void print(std::ostream&o=ExEnv::out());
 };
 
 REF_dec(Vertex);

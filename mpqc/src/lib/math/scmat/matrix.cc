@@ -34,6 +34,8 @@
 #include <math/scmat/blkiter.h>
 #include <math/scmat/matrix.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrix reference base class member functions
 

@@ -25,8 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <scconfig.h>
+
 #include <math.h>
-#include <strstream.h>
+
+#ifdef HAVE_SSTREAM
+#  include <sstream>
+#else
+#  include <strstream.h>
+#endif
 
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
@@ -39,6 +46,8 @@
 #include <util/render/oogl.h>
 #include <util/misc/formio.h>
 #include <chemistry/molecule/formula.h>
+
+using namespace std;
 
 // force linkage 
 #include <chemistry/molecule/linkage.h>
@@ -113,7 +122,11 @@ main(int argc, char **argv)
       cout << node0<< "-------------- testing atominfo --------------" << endl;
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
       cout << node0 << "saving/restoring atominfo" << endl;
+#ifdef HAVE_SSTREAM
+      ostringstream ostrs;
+#else
       ostrstream ostrs;
+#endif
       StateOutBin so(ostrs);
       atominfo.save_state(so);
       atominfo = 0;
@@ -162,7 +175,11 @@ main(int argc, char **argv)
 
       cout << "---------- testing molecule save/restore ----------" << endl;
 
+#if HAVE_SSTREAM
+      ostringstream ostrs;
+#else
       ostrstream ostrs;
+#endif
       StateOutBin so(ostrs);
       cout << "saveing ..." << endl;
       mol.save_state(so);

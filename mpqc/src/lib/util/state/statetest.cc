@@ -27,8 +27,8 @@
 
 // a simple program to test the state stuff
 
-#include <new.h>
-#include <iostream.h>
+#include <new>
+#include <iostream>
 
 #include <util/misc/formio.h>
 
@@ -37,6 +37,8 @@
 #include <util/state/state.h>
 
 #include <util/state/linkage.h>
+
+using namespace std;
 
 #ifdef __GNUG__
 #pragma implementation "stattmpl"

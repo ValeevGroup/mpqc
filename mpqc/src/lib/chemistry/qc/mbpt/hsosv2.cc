@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -35,6 +35,8 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
+
+using namespace std;
 
 static void iqs(int *item,int *index,int left,int right);
 static void iquicksort(int *item,int *index,int n);

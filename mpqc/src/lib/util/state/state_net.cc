@@ -23,7 +23,7 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
+#include <iostream>
 #include <string.h>
 #include <util/unix/cct_cprot.h>
 #include <util/class/class.h>

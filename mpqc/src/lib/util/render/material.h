@@ -28,7 +28,7 @@
 #ifndef _util_render_material_h
 #define _util_render_material_h
 
-#include <iostream.h>
+#include <iostream>
 
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
@@ -48,7 +48,7 @@ class Material: public DescribedClass {
     ~Material();
     Parameter<Color>& diffuse() { return diffuse_; }
     Parameter<Color>& ambient() { return ambient_; }
-    void print(ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out()) const;
 };
 DescribedClass_REF_dec(Material);
 

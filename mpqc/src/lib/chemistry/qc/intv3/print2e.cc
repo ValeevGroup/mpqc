@@ -29,6 +29,8 @@
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+using namespace std;
+
 /* Prints out an integral buffer given
  * fp = where to print
  * buffer = the integrals (>>> nonredundant <<<)

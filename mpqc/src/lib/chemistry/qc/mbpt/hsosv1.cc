@@ -42,6 +42,8 @@ typedef int dmt_matrix;
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/hsosv1e1.h>
 
+using namespace std;
+
 static distsize_t
 compute_v1_memory(int ni,
                   int nfuncmax, int nbasis,

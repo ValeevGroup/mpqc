@@ -73,7 +73,7 @@ scan.cc: scan.ll
 	echo "#ifdef HAVE_CONFIG_H"  > scan.cc
 	echo "#include <scconfig.h>" >> scan.cc
 	echo "#endif" >> scan.cc
-	echo "#include <iostream.h>" >> scan.cc
+	echo "#include <iostream>" >> scan.cc
 	echo "#ifdef USING_NAMESPACE_STD" >> scan.cc
 	echo "using namespace std;" >> scan.cc
 	echo "#endif" >> scan.cc
@@ -84,6 +84,7 @@ scan.cc: scan.ll
 	                | grep -v "static void yyunput.*;" \
 	                | sed "s/static void yyunput/void yyunput/" \
 	                | grep -v "static int yyinput.*;" \
+	                | grep -v "extern.*isatty" \
 	                | sed "s/static int yyinput/int yyinput/" \
 			| sed "s/yylval/MPQCInylval/g" \
 	                >> scan.cc

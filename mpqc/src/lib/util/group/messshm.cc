@@ -35,6 +35,8 @@
 #include <util/misc/formio.h>
 #include <util/group/messshm.h>
 
+using namespace std;
+
 //#define DEBUG
 
 #ifndef SEM_A

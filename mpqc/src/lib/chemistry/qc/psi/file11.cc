@@ -1,6 +1,9 @@
 #include <stdio.h>
-#include <iostream.h>
+#include <iostream>
 #include <util/misc/exenv.h>
+
+using namespace std;
+
 extern "C" {
 int read_file11(int natom, int readto,
       char *label, char *theory, char *dertype,

@@ -32,6 +32,8 @@
 #include <scconfig.h>
 #include <util/state/state_bin.h>
 
+using namespace std;
+
 #define DEBUG 0
 
 #define CLASSNAME StateOutBin

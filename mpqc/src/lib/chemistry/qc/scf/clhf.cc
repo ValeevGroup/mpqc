@@ -41,6 +41,8 @@
 #include <chemistry/qc/scf/lgbuild.h>
 #include <chemistry/qc/scf/clhftmpl.h>
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 // CLHF
 

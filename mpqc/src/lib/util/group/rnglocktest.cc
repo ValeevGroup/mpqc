@@ -32,6 +32,8 @@
 #include <util/misc/formio.h>
 #include <util/group/rnglock.h>
 
+using namespace std;
+
 main()
 {
   const int size = 10000;

@@ -36,6 +36,8 @@
 #include <util/state/stateio.h>
 #include <math/optimize/conv.h>
 
+using namespace std;
+
 /////////////////////////////////////////////////////////////////////////
 // Convergence
 

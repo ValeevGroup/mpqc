@@ -41,6 +41,8 @@ extern "C" {
 #include <math/isosurf/surf.h>
 #include <math/isosurf/isosurf.h>
 
+using namespace std;
+
 // Force linkages:
 #ifndef __PIC__
 const ClassDesc &fl0 = SphereShape::class_desc_;

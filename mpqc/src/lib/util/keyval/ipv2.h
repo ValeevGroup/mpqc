@@ -31,7 +31,7 @@
 #pragma interface
 #endif
 
-#include <iostream.h>
+#include <iostream>
 #include <util/misc/exenv.h>
 #include <util/keyval/ipv2_scan.h>
 

@@ -33,8 +33,8 @@
 #define _util_group_pool_h
 
 #include <stdlib.h>
-#include <new.h>
-#include <iostream.h>
+#include <new>
+#include <iostream>
 
 #include <util/misc/exenv.h>
 
@@ -289,7 +289,7 @@ class Pool {
     void release(double*d);
     int* allocate_int(size_t n);
     void release(int*d);
-    void print(ostream&o=ExEnv::out());
+    void print(std::ostream&o=ExEnv::out());
     void check();
 };
 

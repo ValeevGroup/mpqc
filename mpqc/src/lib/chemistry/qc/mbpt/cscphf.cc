@@ -27,7 +27,7 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -35,6 +35,8 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/mbpt/mbpt.h>
+
+using namespace std;
 
 static void
 compute_alpha(int dim, double **AP, double **alpha,

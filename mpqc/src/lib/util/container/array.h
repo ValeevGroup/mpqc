@@ -32,8 +32,8 @@
 #ifndef _util_container_array_h
 #define _util_container_array_h
 
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 #include <stdlib.h>
 
 #include <util/misc/exenv.h>

@@ -28,13 +28,22 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
-#include <fstream.h>
-#include <strstream.h>
+#include <fstream>
+
+#include <scconfig.h>
+#ifdef HAVE_SSTREAM
+#  include <sstream>
+#else
+#  include <strstream.h>
+#endif
+
 #include <sys/stat.h>
 
 #include <util/misc/formio.h>
 #include <util/group/message.h>
 #include <chemistry/qc/basis/files.h>
+
+using namespace std;
 
 BasisFileSet::BasisFileSet(const RefKeyVal& keyval)
 {
@@ -126,11 +135,20 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
               int status = 1;
               ExEnv::out() << indent << "Reading file " << path << "." << endl;
               grp->bcast(status);
+#ifdef HAVE_SSTREAM
+              ostringstream ostrs;
+#else
               ostrstream ostrs;
+#endif
               is >> ostrs.rdbuf();
+#ifdef HAVE_SSTREAM
+              int n = 1 + strlen(ostrs.str().c_str());
+              char *in_char_array = strcpy(new char[n],ostrs.str().c_str());
+#else
               ostrs << ends;
               char *in_char_array = ostrs.str();
               int n = ostrs.pcount();
+#endif
               grp->bcast(n);
               grp->bcast(in_char_array, n);
               RefParsedKeyVal parsedkv = new ParsedKeyVal;

@@ -43,6 +43,8 @@
 #include <chemistry/qc/mbpt/csgrade12.h>
 #include <chemistry/qc/mbpt/csgrads2pdm.h>
 
+using namespace std;
+
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);
 #endif
@@ -161,7 +163,7 @@ MBPT2::compute_cs_grad()
   double ecorr_mp2 = 0.0;
   double escf;
   double emp2=0.0;
-  double tol;                 // log2 of the erep tolerance
+  int tol;                    // log2 of the erep tolerance
                               // (erep < 2^tol => discard)
   double dtol;                // non-log2 version of the above
   double *Wkj=0,*Wab=0,*Waj=0;// occ-occ, vir-vir and vir-occ parts of 

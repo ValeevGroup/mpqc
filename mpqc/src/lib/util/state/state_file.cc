@@ -29,9 +29,11 @@
 #pragma implementation
 #endif
 
-#include <fstream.h>
+#include <fstream>
 
 #include <util/state/state_file.h>
+
+using namespace std;
 
 #define CLASSNAME StateOutFile
 #define PARENTS public StateOut

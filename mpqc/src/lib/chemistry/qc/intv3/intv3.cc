@@ -32,6 +32,8 @@
 #include <chemistry/qc/intv3/obintv3.h>
 #include <chemistry/qc/intv3/tbintv3.h>
 
+using namespace std;
+
 #define CLASSNAME IntegralV3
 #define PARENTS public Integral
 #define HAVE_KEYVAL_CTOR

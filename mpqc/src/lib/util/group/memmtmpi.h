@@ -33,7 +33,7 @@
 #ifndef _util_group_memmtmpi_h
 #define _util_group_memmtmpi_h
 
-#include <fstream.h>
+#include <fstream>
 
 #include <util/group/message.h>
 #include <util/group/memamsg.h>
@@ -59,8 +59,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     Thread **thread_;
     RefThreadLock mem_lock_;
     RefThreadLock print_lock_; // needed for debugging only
-    ofstream hout; // handler out
-    ofstream mout; // main thread out
+    std::ofstream hout; // handler out
+    std::ofstream mout; // main thread out
 
     void init_mtmpimg(int nthreads);
 

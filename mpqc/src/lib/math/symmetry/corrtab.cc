@@ -32,6 +32,8 @@
 #include <util/misc/formio.h>
 #include <math/symmetry/corrtab.h>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 
 CorrelationTable::CorrelationTable():

@@ -60,9 +60,9 @@ namespace sc {
         C     F77
        ---    ---
         A      A^t
-        V      U^t
-        Sigma  Sigma^t
-        U      Vt^t
+        V      U
+        Sigma  Sigma
+        U      Vt
 
       */
       int m = A.nrow();
@@ -108,7 +108,6 @@ namespace sc {
       }
       if (V) {
         V.assign(v_data);
-        V = V.t();
       }
       
       delete[] work;
@@ -262,6 +261,7 @@ namespace sc {
     }
 
   };
+  
 };
 
 /////////////////////////////////////////////////////////////////////////////

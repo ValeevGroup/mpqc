@@ -40,7 +40,7 @@ BIN_OR_LIB = LIB
 CXXSRC = gaussbas.cc gaussshell.cc files.cc \
          gaussbaval.cc gaussshval.cc cartiter.cc cartiter_i.cc \
          transform.cc shellrot.cc integral.cc obint.cc petite.cc aotoso.cc \
-         symmint.cc ortho.cc tbint.cc dercent.cc \
+         symmint.cc tbint.cc dercent.cc \
          sobasis.cc sointegral.cc
 
 INC = basis.h gaussbas.h guassshell.h files.h \

@@ -337,11 +337,6 @@ class GaussianBasisSet: public SavableState
     // iterators that know the basis function order
     void set_integral(const RefIntegral&);
 
-    // fill in matrix with a matrix that orthogonalizes the basis functions
-    void ortho(const RefIntegral&, const RefSCMatrix&ortho);
-    void ortho(const RefIntegral&,
-               const RefSCMatrix&ortho, const RefSCMatrix&ortho_inverse);
-
     void print_brief(ostream& =cout) const;
     void print(ostream& =cout) const;
 };

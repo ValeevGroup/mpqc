@@ -56,8 +56,21 @@ HSOSSCF::_castdown(const ClassDesc*cd)
 }
 
 HSOSSCF::HSOSSCF(StateIn& s) :
-  SCF(s)
+  SCF(s),
+  cl_fock_(this),
+  op_fock_(this)
+  maybe_SavableState(s)
 {
+  cl_fock_.result_noupdate() =
+    basis_matrixkit()->symmmatrix(basis_dimension());
+  cl_fock_.restore_state(s);
+  cl_fock_.result_noupdate().restore(s);
+  
+  op_fock_.result_noupdate() =
+    basis_matrixkit()->symmmatrix(basis_dimension());
+  op_fock_.restore_state(s);
+  op_fock_.result_noupdate().restore(s);
+  
   s.get(user_occupations_);
   s.get(tndocc_);
   s.get(tnsocc_);
@@ -67,8 +80,16 @@ HSOSSCF::HSOSSCF(StateIn& s) :
 }
 
 HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
-  SCF(keyval)
+  SCF(keyval),
+  cl_fock_(this),
+  op_fock_(this)
 {
+  cl_fock_.compute()=0;
+  cl_fock_.computed()=0;
+  
+  op_fock_.compute()=0;
+  op_fock_.computed()=0;
+  
   // calculate the total nuclear charge
   int Znuc=0;
   PointBag_double *z = molecule()->charges();
@@ -161,6 +182,13 @@ void
 HSOSSCF::save_data_state(StateOut& s)
 {
   SCF::save_data_state(s);
+
+  cl_fock_.save_data_state(s);
+  cl_fock_.result_noupdate().save(s);
+  
+  op_fock_.save_data_state(s);
+  op_fock_.result_noupdate().save(s);
+  
   s.put(user_occupations_);
   s.put(tndocc_);
   s.put(tnsocc_);
@@ -175,6 +203,26 @@ HSOSSCF::occupation(int ir, int i)
   if (i < ndocc_[ir]) return 2.0;
   else if (i < ndocc_[ir] + nsocc_[ir]) return 1.0;
   return 0.0;
+}
+
+int
+HSOSSCF::n_fock_matrices() const
+{
+  return 2;
+}
+
+RefSymmSCMatrix
+HSOSSCF::fock(int n)
+{
+  if (n > 1) {
+    fprintf(stderr,"HSOSSCF::fock: there are only 2 fock matrices %d\n",n);
+    abort();
+  }
+
+  if (n==0)
+    return cl_fock_.result();
+  else
+    return op_fock_.result();
 }
 
 int
@@ -339,18 +387,12 @@ HSOSSCF::init_vector()
   cl_dens_diff_ = cl_hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
-  cl_fock_ = cl_hcore_.clone();
-  cl_fock_.assign(0.0);
-  
   op_dens_ = cl_hcore_.clone();
   op_dens_.assign(0.0);
   
   op_dens_diff_ = cl_hcore_.clone();
   op_dens_diff_.assign(0.0);
 
-  op_fock_ = cl_hcore_.clone();
-  op_fock_.assign(0.0);
-  
   // gmat is in AO basis
   cl_gmat_ = basis()->matrixkit()->symmmatrix(basis()->basisdim());
   cl_gmat_.assign(0.0);
@@ -359,8 +401,13 @@ HSOSSCF::init_vector()
   op_gmat_.assign(0.0);
 
   // test to see if we need a guess vector
-  if (eigenvectors_.result_noupdate().null())
+  if (eigenvectors_.result_noupdate().null()) {
     eigenvectors_ = hcore_guess();
+    cl_fock_ = cl_hcore_.clone();
+    cl_fock_.result_noupdate().assign(0.0);
+    op_fock_ = cl_hcore_.clone();
+    op_fock_.result_noupdate().assign(0.0);
+  }
 
   scf_vector_ = eigenvectors_.result_noupdate();
 
@@ -372,12 +419,6 @@ HSOSSCF::done_vector()
 {
   tbi_=0;
   
-  // save these if we're doing the gradient or hessian
-  if (!gradient_needed() && !hessian_needed()) {
-    cl_fock_ = 0;
-    op_fock_ = 0;
-  }
-
   cl_hcore_ = 0;
   cl_gmat_ = 0;
   cl_dens_ = 0;
@@ -436,10 +477,10 @@ HSOSSCF::new_density()
 double
 HSOSSCF::scf_energy()
 {
-  RefSymmSCMatrix t = cl_fock_.copy();
+  RefSymmSCMatrix t = cl_fock_.result_noupdate().copy();
   t.accumulate(cl_hcore_);
 
-  RefSymmSCMatrix go = op_fock_.copy();
+  RefSymmSCMatrix go = op_fock_.result_noupdate().copy();
   go.scale(-1.0);
   go.accumulate(cl_fock_);
   
@@ -464,20 +505,24 @@ HSOSSCF::scf_energy()
 RefSCExtrapData
 HSOSSCF::extrap_data()
 {
-  RefSCExtrapData data = new SymmSCMatrix2SCExtrapData(cl_fock_,op_fock_);
+  RefSCExtrapData data =
+    new SymmSCMatrix2SCExtrapData(cl_fock_.result_noupdate(),
+                                  op_fock_.result_noupdate());
   return data;
 }
 
 RefSymmSCMatrix
 HSOSSCF::effective_fock()
 {
-  RefSymmSCMatrix mofock = cl_fock_.clone();
+  // use fock() instead of cl_fock_ just in case this is called from
+  // someplace outside SCF::compute_vector()
+  RefSymmSCMatrix mofock = fock(0).clone();
   mofock.assign(0.0);
-  mofock.accumulate_transform(scf_vector_.t(), cl_fock_);
+  mofock.accumulate_transform(scf_vector_.t(), fock(0));
 
-  RefSymmSCMatrix mofocko = op_fock_.clone();
+  RefSymmSCMatrix mofocko = fock(1).clone();
   mofocko.assign(0.0);
-  mofocko.accumulate_transform(scf_vector_.t(), op_fock_);
+  mofocko.accumulate_transform(scf_vector_.t(), fock(1));
 
   RefSCElementOp2 op = new GSGeneralEffH(this);
   mofock.element_op(op, mofocko);
@@ -610,12 +655,17 @@ HSOSSCF::ao_fock()
   skel_gmat.scale(1.0/(double)pl->order());
   pl->symmetrize(skel_gmat,ddo);
   
-  cl_fock_.assign(cl_hcore_);
-  cl_fock_.accumulate(dd);
+  // F = H+G
+  cl_fock_.result_noupdate().assign(cl_hcore_);
+  cl_fock_.result_noupdate().accumulate(dd);
 
-  op_fock_.assign(cl_fock_);
+  // Fo = H+G-Go
+  op_fock_.result_noupdate().assign(cl_fock_.result_noupdate());
   ddo.scale(-1.0);
-  op_fock_.accumulate(ddo);
+  op_fock_.result_noupdate().accumulate(ddo);
+
+  cl_fock_.computed()=1;
+  op_fock_.computed()=1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -633,11 +683,6 @@ HSOSSCF::init_gradient()
 void
 HSOSSCF::done_gradient()
 {
-  // save these if we're doing the hessian
-  if (!hessian_needed()) {
-    cl_fock_=0;
-  }
-
   cl_dens_=0;
   op_dens_=0;
   scf_vector_ = 0;
@@ -681,13 +726,13 @@ class HSOSLag : public BlockedSCElementOp2 {
 RefSymmSCMatrix
 HSOSSCF::lagrangian()
 {
-  RefSymmSCMatrix mofock = cl_fock_.clone();
+  RefSymmSCMatrix mofock = cl_fock_.result_noupdate().clone();
   mofock.assign(0.0);
-  mofock.accumulate_transform(scf_vector_.t(), cl_fock_);
+  mofock.accumulate_transform(scf_vector_.t(), cl_fock_.result_noupdate());
 
-  RefSymmSCMatrix mofocko = op_fock_.clone();
+  RefSymmSCMatrix mofocko = op_fock_.result_noupdate().clone();
   mofocko.assign(0.0);
-  mofocko.accumulate_transform(scf_vector_.t(), op_fock_);
+  mofocko.accumulate_transform(scf_vector_.t(), op_fock_.result_noupdate());
 
   mofock.scale(2.0);
   

@@ -25,6 +25,9 @@ class HSOSSCF: public SCF {
     int *nsocc_;
     int local_;
 
+    ResultRefSymmSCMatrix cl_fock_;
+    ResultRefSymmSCMatrix op_fock_;
+
   public:
     HSOSSCF(StateIn&);
     HSOSSCF(const RefKeyVal&);
@@ -36,6 +39,10 @@ class HSOSSCF: public SCF {
 
     double occupation(int irrep, int vectornum);
 
+    int n_fock_matrices() const;
+    RefSymmSCMatrix fock(int);
+    RefSymmSCMatrix effective_fock();
+
     int value_implemented();
     int gradient_implemented();
     int hessian_implemented();
@@ -44,11 +51,9 @@ class HSOSSCF: public SCF {
     // these are temporary data, so they should not be checkpointed
     RefTwoBodyInt tbi_;
     
-    RefSymmSCMatrix cl_fock_;
     RefSymmSCMatrix cl_dens_;
     RefSymmSCMatrix cl_dens_diff_;
     RefSymmSCMatrix cl_gmat_;
-    RefSymmSCMatrix op_fock_;
     RefSymmSCMatrix op_dens_;
     RefSymmSCMatrix op_dens_diff_;
     RefSymmSCMatrix op_gmat_;
@@ -67,7 +72,6 @@ class HSOSSCF: public SCF {
     void ao_fock();
 
     RefSCExtrapData extrap_data();
-    RefSymmSCMatrix effective_fock();
     
     // gradient things
     void init_gradient();

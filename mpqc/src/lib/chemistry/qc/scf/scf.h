@@ -55,6 +55,15 @@ class SCF: public OneBodyWavefunction {
 
     RefSCMatrix eigenvectors();
 
+    // return the number of AO Fock matrices needed
+    virtual int n_fock_matrices() const =0;
+
+    // returns the n'th AO Fock matrix
+    virtual RefSymmSCMatrix fock(int) =0;
+
+    // return the effective MO fock matrix
+    virtual RefSymmSCMatrix effective_fock() =0;
+    
     void print(ostream&o=cout);
 
   protected:
@@ -80,9 +89,6 @@ class SCF: public OneBodyWavefunction {
     
     // return the DIIS data matrices
     virtual RefSCExtrapData extrap_data() =0;
-    
-    // return the effective MO fock matrix
-    virtual RefSymmSCMatrix effective_fock() =0;
     
     // form the AO basis fock matrices
     virtual void ao_fock() =0;

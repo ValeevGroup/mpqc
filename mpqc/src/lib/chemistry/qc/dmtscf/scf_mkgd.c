@@ -138,7 +138,7 @@ FILE *outfile;
             pmaxijk=pmaxjk;
         }
 
-        tim_enter("l loop");
+        /*tim_enter("l loop");*/
         for (l=0; l<=(k==i?j:k); l++) {
           if (use_symmetry) {
             ijkl=ioff(ij)+kl;
@@ -179,7 +179,7 @@ FILE *outfile;
             }
           }
 
-          tim_enter("ints");
+          /*tim_enter("ints");*/
           s1 = i; s2 = j; s3 = k; s4 = l;
 
           tim_enter("gd_erep");
@@ -551,12 +551,12 @@ FILE *outfile;
             }
           }
           tnint += (double) (n1*n2*n3*n4);
-          tim_exit("ints");
+          /*tim_exit("ints");*/
 
           kl++;
           int_index++;
         }
-        tim_exit("l loop");
+        /*tim_exit("l loop");*/
       }
     }
   }

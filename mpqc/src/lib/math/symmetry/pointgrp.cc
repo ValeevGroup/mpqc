@@ -262,12 +262,12 @@ int CharacterTable::parse_symbol()
   if (!strcmp(symb,"ci")) {
     g = 2; pg = CI; nirrep_ = 2; nt = 2;
     return 0;
-    }
+  }
 
   if(!strcmp(symb,"cs")) {
     g = 2; pg = CS; nirrep_ = 2; nt = 0;
     return 0;
-    }
+  }
 
   if (symb[0] == 'c') {
     int nab,ne;
@@ -278,112 +278,107 @@ int CharacterTable::parse_symbol()
     ne = (nt%2) ? nt/2 : nt/2-1;
     nab = (nt%2) ? 1 : 2;
 
-    if (symb[2] != '\0') {
-      if(symb[2] == 'v') {
+    char *vhd = &symb[1];
+    while (*vhd && isdigit(*vhd))
+      vhd++;
+    
+    if (*vhd) {
+      if (*vhd == 'v') {
         g  = 2*nt; pg = CNV; nirrep_ = 2*nab + ne;
-	}
-      else if (symb[2] == 'h') {
+      } else if (*vhd == 'h') {
         g  = 2*nt; pg = CNH; nirrep_ = 2*(nab+ne);
-	}
-      else {
+      } else {
         return -1;
-	}
       }
-    else {
+    } else {
       g = nt; pg = CN; nirrep_ = nab+ne;
-      }
+    }
 
     return 0;
-    }
+  }
 
   if (symb[0] == 'd') {
     int nab,ne;
 
-    if(symb[1] == '\0') return -1;
+    if (symb[1] == '\0') return -1;
 
     nt = atoi(&symb[1]);
     ne = (nt%2) ? nt/2 : nt/2-1;
     nab = (nt%2) ? 1 : 2;
 
-    if (symb[2] != '\0') {
-      if (symb[2] == 'd') {
+    char *vhd = &symb[1];
+    while (*vhd && isdigit(*vhd))
+      vhd++;
+    
+    if (*vhd) {
+      if (*vhd == 'd') {
         g = 4*nt; pg = DND; nirrep_ = nt+3;
-        }
-      else if (symb[2] == 'h') {
+      } else if (*vhd == 'h') {
         g = 4*nt; pg = DNH; nirrep_ = 4*nab + 2*ne;
-        }
-      else {
+      } else {
         return -1;
-        }
       }
-    else {
+    } else {
       g = 2*nt; pg = DN; nirrep_ = 2*nab + ne;
-      }
+    }
 
     return 0;
-    }
+  }
 
   if (symb[0] == 's') {
     if (symb[1] == '\0') return -1;
 
     nt = atoi(&symb[1]);
 
-   // only S2n groups make sense */
-    if(nt%2) return -1;
+    // only S2n groups make sense
+    if (nt%2) return -1;
 
     g = nt; pg = SN; nirrep_ = nt/2+1;
 
     return 0;
-    }
+  }
 
   if (symb[0] == 't') {
     if (symb[1] != '\0') {
       if (symb[1] == 'd') {
         g = 24; pg = TD; nirrep_ = 5;
-        }
-      else if(symb[1] == 'h') {
+      } else if(symb[1] == 'h') {
         g = 24; pg = TH; nirrep_ = 6;
-        }
-      else {
+      } else {
         return -1;
-        }
       }
-    else {
+    } else {
       g = 12; pg = T; nirrep_ = 3;
-      }
+    }
 
     return 0;
-    }
+  }
 
   if (symb[0] == 'o') {
     if (symb[1] != '\0') {
       if (symb[1] == 'h') {
         pg = OH; g = 48; nirrep_ = 10;
-        }
-      else {
+      } else {
         return -1;
-        }
       }
-    else {
+    } else {
       g = 24; pg = O; nirrep_ = 5;
-      }
+    }
 
     return 0;
-    }
+  }
 
   if (symb[0] == 'i') {
     if (symb[1] != '\0') {
       if (symb[1] == 'h') {
         g = 120; pg = IH; nirrep_ = 10;
-        }
-      else {
+      } else {
         return -1;
-        }
       }
-    else {
+    } else {
       g = 60; pg = I; nirrep_ = 5;
-      }
     }
+  }
 
   return -1;
 }

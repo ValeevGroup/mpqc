@@ -45,8 +45,9 @@ bugtest: bugtest.cc $(TOPDIR)/lib/libmisc.a \
 	$(TOPDIR)/lib/libcontainer.a $(TOPDIR)/lib/libref.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest
 
-formiot: formiot.cc libmisc.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o formiot
+formiot: formiot.cc libmisc.a libgroup.a libkeyval.a libstate.a libclass.a \
+        libcontainer.a libref.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o formiot $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -24,5 +24,7 @@ main()
   cout << indent << "l1" << endl;
   cout << decindent;
   cout << indent << "l0" << endl;
+
+  cout << node0 << indent << scprintf("%3d %10.5f",10,3.14) << endl;
 }
 

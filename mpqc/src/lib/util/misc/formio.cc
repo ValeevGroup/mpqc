@@ -1,12 +1,20 @@
 
 #include <util/misc/formio.h>
+#include <util/group/message.h>
+
+#include <stdio.h> // for vsprintf
 #include <string.h>
+#include <stdarg.h>
 
 char *SCFormIO::default_basename_ = 0;
 int  SCFormIO::ready_ = 0;
 long SCFormIO::nindent_ = 0;
 long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
+int SCFormIO::node_to_print_ = 0;
+int SCFormIO::debug_ = 0;
+ofstream SCFormIO::nullstream_;
+RefMessageGrp SCFormIO::grp_;
 
 char *
 SCFormIO::fileext_to_filename(const char *ext)
@@ -41,18 +49,47 @@ SCFormIO::default_basename()
 }
 
 void
+SCFormIO::set_printnode(int n)
+{
+  node_to_print_ = n;
+}
+
+void
+SCFormIO::set_debug(int n)
+{
+  debug_ = n;
+}
+
+void
+SCFormIO::set_messagegrp(const RefMessageGrp& g)
+{
+  grp_ = g;
+}
+  
+void
 SCFormIO::init()
 {
   ready_ = 1;
   nindent_ = ios::xalloc();
   indent_size_ = ios::xalloc();
   skip_indent_ = ios::xalloc();
+
+  if (grp_.null())
+    set_messagegrp(MessageGrp::get_default_messagegrp());
+
+  if (nullstream_.bad() || nullstream_.fail())
+    nullstream_.open("/dev/null");
 }
 
 ios&
 SCFormIO::indent(ios&o)
 {
   if (!ready_) init();
+  if (debug_) {
+      char nn[24];
+      sprintf(nn,"node %5d:",grp_->me());
+      for (int i=0; i < strlen(nn); i++) o.rdbuf()->sputc(nn[i]);
+    }
   long &skip = o.iword(skip_indent_);
   if (skip) {
       skip--;
@@ -110,6 +147,17 @@ SCFormIO::skipnextindent(ios&o)
   return o;
 }
 
+ostream&
+SCFormIO::node0(ostream& o)
+{
+  if (!ready_) init();
+  
+  if (!debug_ && node_to_print_ >= 0 && node_to_print_ != grp_->me())
+    return nullstream_;
+
+  return o;
+}
+
 ios&
 indent(ios& o)
 {
@@ -134,3 +182,36 @@ skipnextindent(ios& o)
   return SCFormIO::skipnextindent(o);
 }
 
+ostream&
+node0(ostream& o)
+{
+  return SCFormIO::node0(o);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+scprintf::scprintf(const char *fmt, ...)
+{
+  va_list args;
+  
+  va_start(args, fmt);
+
+  str[0] = '\0';
+  
+  // hopefully this won't overflow
+  if (fmt && fmt[0]!='\0') {
+    if (vsprintf(str, fmt, args) > 1023) {
+      cerr << indent << "scprintf overflow\n";
+      abort();
+    }
+  }
+
+  va_end(args);
+}
+
+ostream&
+operator<<(ostream& o, const scprintf& s)
+{
+  o << s.str << flush;
+  return o;
+}

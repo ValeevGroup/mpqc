@@ -32,12 +32,19 @@ class SCfilebuf: public filebuf {
     streamsize do_system_write(const char*, streamsize);
   public:
     SCfilebuf(int);
+    SCfilebuf(filebuf*);
     ~SCfilebuf();
     int get_column();
 };
 
 SCfilebuf::SCfilebuf(int fd):
   filebuf(fd),
+  _column(0)
+{
+}
+
+SCfilebuf::SCfilebuf(filebuf * fb):
+  filebuf(*fb),
   _column(0)
 {
 }
@@ -98,7 +105,11 @@ SCostream::SCostream(int fd):
   indentation_increment(2),
   indentation_maximum(20)
 {
+#ifdef linux
+  init(new filebuf(fd));
+#else
   init(new SCfilebuf(fd));
+#endif
 }
 
 // this causes very strange problems

@@ -26,8 +26,6 @@ sym_struct_from_pg(const PointGroup& pg, centers_t& centers,
 {
   double_array3_t trans;
 
-  CharacterTable ct = pg.char_table();
-
   if (sym_make_sym_struct(&centers,&sym_info,pg.symbol(),&trans) < 0) {
     fprintf(stderr,"sym_struct_from_pg: sym_make_sym_struct failed\n");
     return -1;

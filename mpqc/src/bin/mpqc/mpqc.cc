@@ -632,6 +632,8 @@ main(int argc, char *argv[])
   delete[] molname;
   SCFormIO::set_default_basename(0);
 
+  clean_up();
+
   return 0;
 }
 

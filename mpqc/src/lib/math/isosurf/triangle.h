@@ -113,6 +113,7 @@ class TriangleIntegrator: public DescribedClass {
     void set_s(int i,double s);
     void set_w(int i,double w);
     void init_coef();
+    void clear_coef();
   public:
     TriangleIntegrator(const RefKeyVal&);
     TriangleIntegrator(int n);

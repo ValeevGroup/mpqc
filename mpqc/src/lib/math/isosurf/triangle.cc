@@ -333,6 +333,7 @@ TriangleIntegrator::TriangleIntegrator(int order):
   _r = new double [_n];
   _s = new double [_n];
   _w = new double [_n];
+  coef_ = 0;
 }
 
 TriangleIntegrator::TriangleIntegrator(const RefKeyVal& keyval)
@@ -344,6 +345,7 @@ TriangleIntegrator::TriangleIntegrator(const RefKeyVal& keyval)
   _r = new double [_n];
   _s = new double [_n];
   _w = new double [_n];
+  coef_ = 0;
 }
 
 TriangleIntegrator::~TriangleIntegrator()
@@ -351,6 +353,7 @@ TriangleIntegrator::~TriangleIntegrator()
   delete[] _r;
   delete[] _s;
   delete[] _w;
+  clear_coef();
 }
 
 void
@@ -363,6 +366,7 @@ TriangleIntegrator::set_n(int n)
   _r = new double [_n];
   _s = new double [_n];
   _w = new double [_n];
+  clear_coef();
 }
 
 void
@@ -387,7 +391,9 @@ void
 TriangleIntegrator::init_coef()
 {
   int i, j;
-  
+
+  clear_coef();
+
   coef_ = new RefTriInterpCoef*[Triangle::max_order];
   for (i=0; i<Triangle::max_order; i++) {
       coef_[i] = new RefTriInterpCoef[_n];
@@ -396,6 +402,23 @@ TriangleIntegrator::init_coef()
           coef_[i][j] = new TriInterpCoef(key);
         }
     }
+}
+
+void
+TriangleIntegrator::clear_coef()
+{
+  int i, j;
+
+  if (coef_) {
+      for (i=0; i<Triangle::max_order; i++) {
+          for (j=0; j<_n; j++) {
+              coef_[i][j] = 0;
+            }
+          delete[] coef_[i];
+        }
+    }
+  delete[] coef_;
+  coef_ = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////

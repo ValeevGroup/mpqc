@@ -337,7 +337,7 @@ if test X$SHARED_LIBS = Xyes; then
                      -soname \$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
       fi
     ;;
-    *-linux)
+    *-linux*)
       ELF=yes
       LIBSUF=so
       SH_LD="\$(CXX)"

@@ -169,8 +169,14 @@ MessageGrp::initial_messagegrp(int &argc, char** &argv)
 
 #if defined(HAVE_MPI)
   int mpiinited;
+#ifdef ALWAYS_USE_MPI
+  bool always_use_mpi = true;
+#else
+  bool always_use_mpi = false;
+#endif
   MPI_Initialized(&mpiinited);
   if (mpiinited
+      || always_use_mpi
       || (ExEnv::initialized() && !strcmp(ExEnv::program_name(),"mpqc-mpi"))) {
       grp = new MPIMessageGrp(&argc,&argv);
       return grp;

@@ -96,11 +96,22 @@ Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;
 
 static Ref<MessageGrp>
-init_mp(const Ref<KeyVal>& keyval)
+init_mp(const Ref<KeyVal>& keyval, int &argc, char **&argv)
 {
-  // if we are on a paragon then use a ParagonMessageGrp
-  // otherwise read the message group from the input file
   grp << keyval->describedclassvalue("message");
+
+  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
+
+  if (grp.null()) {
+      grp << keyval->describedclassvalue("messagegrp");
+
+      if (grp.null()) {
+          std::cerr << indent << "Couldn't initialize MessageGrp\n";
+          abort();
+        }
+    }
+
+  MessageGrp::set_default_messagegrp(grp);
 
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
@@ -135,7 +146,7 @@ main(int argc, char**argv)
   // open keyval input
   Ref<KeyVal> rpkv(new ParsedKeyVal(input));
 
-  init_mp(rpkv);
+  init_mp(rpkv, argc, argv);
 
   tim->enter("input");
   

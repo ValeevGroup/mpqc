@@ -189,7 +189,7 @@ distmatrixkit<DistSCMatrixKit>: (
 xdebug<Debugger>: (
 )
 
-message1<ProcMessageGrp>: ()
+%message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (
   n = $:nproc

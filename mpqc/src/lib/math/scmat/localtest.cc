@@ -45,7 +45,18 @@ main(int argc, char *argv[])
 
   Ref<KeyVal> keyval = new ParsedKeyVal(infile);
 
-  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
+
+  if (msg.null()) {
+      msg << keyval->describedclassvalue("messagegrp");
+
+      if (msg.null()) {
+          std::cerr << indent << "Couldn't initialize MessageGrp\n";
+          abort();
+        }
+    }
+
+  MessageGrp::set_default_messagegrp(msg);
 
   Ref<RegionTimer> tim = new ParallelRegionTimer(msg,"matrixtest",1,1);
   RegionTimer::set_default_regiontimer(tim);

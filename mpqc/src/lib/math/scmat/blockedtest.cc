@@ -35,13 +35,27 @@ void matrixtest(Ref<SCMatrixKit>, Ref<KeyVal>,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
                 bool have_svd);
 
-main()
+main(int argc, char **argv)
 {
   int i;
   int nblks;
   int *blks1, *blks2, *blks3;
 
   Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
+
+  Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
+
+  if (msg.null()) {
+      msg << keyval->describedclassvalue("messagegrp");
+
+      if (msg.null()) {
+          std::cerr << indent << "Couldn't initialize MessageGrp\n";
+          abort();
+        }
+    }
+
+  MessageGrp::set_default_messagegrp(msg);
+
   Ref<SCMatrixKit> subkit = new LocalSCMatrixKit;
   Ref<BlockedSCMatrixKit> kit = new BlockedSCMatrixKit(subkit);
 

@@ -42,8 +42,9 @@ This chapter explains how to run mpqc in a variety of environments.
 
 /**@name Command Line Options
 
-  MPQC can be given options following by an optional simple input file
-name.  The following command line options are recognized:
+  MPQC can be given options followed by an optional input file
+name.  If the input file name is not given, it will default to
+"mpqc.in".  The following command line options are recognized:
 
 \begin{description}
 \item[{\tt -o}] Gives the name of the output file.  The default is the
@@ -51,8 +52,8 @@ name.  The following command line options are recognized:
 \item[{\tt -i}] Convert a simple input file to an object oriented input file
                 and write the result to the ouput.  No calculations are done.
 \item[{\tt -f}] The name of an object-oriented input file.  The default is
-                {\tt mpqc.in}.  This cannot be used if a simple file is
-                specified.
+                {\tt mpqc.in}.  This cannot be used if another input file is
+                specified.  This option is deprecated.
 \item[{\tt -messagegrp}] A \Ref{ParsedKeyVal} specification of a
                       \Ref{MessageGrp} object.
                       The default depends on how MPQC was compiled.

@@ -43,6 +43,7 @@ class PthreadThreadGrp: public ThreadGrp {
     pthread_attr_t *attr_;
 
     void init_attr();
+    void init_priority(int, int);
   public:
     PthreadThreadGrp();
     PthreadThreadGrp(const PthreadThreadGrp&, int nthread = -1);
@@ -51,6 +52,9 @@ class PthreadThreadGrp: public ThreadGrp {
 
     int start_threads();
     int wait_threads();
+    void add_thread(int i, Thread* t) { ThreadGrp::add_thread(i,t); }
+    void add_thread(int i, Thread* t, int priority);
+    
     Ref<ThreadLock> new_lock();
 
     ThreadGrp* clone(int nthread = -1);

@@ -105,40 +105,97 @@ PthreadThreadGrp::~PthreadThreadGrp()
   if (pthreads_) {
     delete[] pthreads_;
     pthreads_ = 0;
-  }
-  delete attr_;
+    delete[] attr_;
+ }
+//  delete attr_;
 }
 
 void
 PthreadThreadGrp::init_attr()
 {
-  attr_ = new pthread_attr_t;
-  pthread_attr_init(attr_);
+  attr_ = new pthread_attr_t[nthread_];
+
+  for (int i=0; i<nthread_; i++) {
+    pthread_attr_init(&attr_[i]);
 #if defined(PTHREAD_CREATE_UNDETACHED)
-  pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_UNDETACHED);
+    pthread_attr_setdetachstate(&attr_[i], PTHREAD_CREATE_UNDETACHED);
 #elif defined(PTHREAD_CREATE_JOINABLE)
-  pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_JOINABLE);
+    pthread_attr_setdetachstate(&attr_[i], PTHREAD_CREATE_JOINABLE);
 #endif
 #ifdef HAVE_PTHREAD_ATTR_GETSTACKSIZE
-  size_t defstacksize;
-  pthread_attr_getstacksize(attr_, &defstacksize);
+    size_t defstacksize;
+    pthread_attr_getstacksize(&attr_[i], &defstacksize);
 #elif HAVE_PTHREAD_ATTR_SETSTACKSIZE
-  size_t defstacksize = 1;
+    size_t defstacksize = 1;
 #endif
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
-  size_t minstacksize = 2097152;
-  if (defstacksize < minstacksize) {
-    pthread_attr_setstacksize(attr_, minstacksize);
-  }
+    size_t minstacksize = 2097152;
+    if (defstacksize < minstacksize) {
+      pthread_attr_setstacksize(attr_[i], minstacksize);
+    }
 #endif
+  }
 }
 
+void PthreadThreadGrp::add_thread(int ithread, Thread* t, int priority)
+{
+  if (ithread >= nthread_) {
+    ExEnv::err() << node0 << indent
+                 << "PthreadThreadGrp::add_thread(int, Thread*, int, int): trying to"
+                 << "add too many threads" << endl;
+  }
+  else {
+    threads_[ithread] = t;
+    init_priority(ithread, priority);
+  }
+  
+}
+
+void PthreadThreadGrp::init_priority(int ithread, int priority)
+{
+  struct sched_param param, low_param, high_param;
+  int rc, selected_sched, set_params;
+
+  set_params=0;
+  
+  // Check priority settings for various schedulers and select which to use
+  selected_sched=-1;
+  low_param.sched_priority = sched_get_priority_min(SCHED_OTHER);
+  high_param.sched_priority = sched_get_priority_max(SCHED_OTHER);
+  if (high_param.sched_priority > low_param.sched_priority) {
+    selected_sched = SCHED_OTHER;
+    set_params=1;
+  }
+  else if (selected_sched==-1) {
+    low_param.sched_priority = sched_get_priority_min(SCHED_RR);
+    high_param.sched_priority = sched_get_priority_max(SCHED_RR);
+    if (high_param.sched_priority > low_param.sched_priority) {
+      selected_sched=SCHED_RR; set_params=1;
+    }
+  }
+  else if (selected_sched==-1) {
+    low_param.sched_priority = sched_get_priority_min(SCHED_FIFO);
+    high_param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    if (high_param.sched_priority > low_param.sched_priority) {
+      selected_sched=SCHED_RR; set_params=1;
+    }
+  }
+
+  pthread_attr_setscope(&attr_[ithread],PTHREAD_SCOPE_SYSTEM);
+  if (set_params) {  
+    pthread_attr_setinheritsched(&attr_[ithread],PTHREAD_EXPLICIT_SCHED);
+    pthread_attr_setschedpolicy(&attr_[ithread], selected_sched);
+    param.sched_priority = ( sched_get_priority_min(selected_sched) + priority );
+    pthread_attr_setschedparam(&attr_[ithread],&param);
+  }
+  
+}
 int
 PthreadThreadGrp::start_threads()
 {
   for (int i=1; i < nthread_; i++) {
     if (threads_[i]) {
-      int res = pthread_create(&pthreads_[i], attr_,
+      int res = pthread_create(&pthreads_[i], &attr_[i],
                                Thread__run_Thread_run,
                                (void*) threads_[i]);
       if (res) {

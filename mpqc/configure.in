@@ -874,6 +874,14 @@ if test X$HAVE_PTHREAD = Xyes; then
   EXTRADEFINES="-D_REENTRANT $EXTRADEFINES"
   AC_CHECK_FUNC(pthread_attr_getstacksize)
   AC_CHECK_FUNC(pthread_attr_setstacksize)
+  AC_CHECK_FUNC(pthread_attr_setscope)
+  AC_CHECK_FUNC(pthread_attr_getscope)
+  AC_CHECK_FUNC(pthread_attr_setinheritsched)
+  AC_CHECK_FUNC(pthread_attr_getinheritsched)
+  AC_CHECK_FUNC(pthread_attr_setschedpolicy)
+  AC_CHECK_FUNC(pthread_attr_getschedpolicy)
+  AC_CHECK_FUNC(pthread_attr_setschedparam)
+  AC_CHECK_FUNC(pthread_attr_getschedparam)
 fi
 
 AC_CHECK_LIB(dl,exit)

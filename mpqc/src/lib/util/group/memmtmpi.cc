@@ -333,6 +333,10 @@ MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
 void
 MTMPIMemoryGrp::activate()
 {
+  // Only remote requests require the handler.  There are only remote
+  // requests if there is more than one node.
+  if (n() == 1) return;
+
   if (active_) return;
   active_ = 1;
 

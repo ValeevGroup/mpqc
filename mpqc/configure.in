@@ -1,6 +1,6 @@
-define([sc_mmm_version],[2.2.1])
+define([sc_mmm_version],[2.2.2])
 define([sc_buildid],[])
-define([sc_so_version],[5:1:0])
+define([sc_so_version],[6:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in

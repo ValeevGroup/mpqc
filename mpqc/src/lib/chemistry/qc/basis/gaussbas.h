@@ -100,6 +100,9 @@ class GaussianBasisSet: virtual public SavableState
     // If the molecule is 0 then fake molecule information is included--
     // this is useful in computing the overlap, for example.
     centers_t* convert_to_centers_t(const Molecule*) const;
+    centers_t* convert_to_centers_t(const RefMolecule&mol) const {
+        convert_to_centers_t(mol.pointer());
+      }
     //operator struct struct_centers*();
 
     // compute the value for this basis set at position r
@@ -108,8 +111,9 @@ class GaussianBasisSet: virtual public SavableState
 
     // fill in matrix with a matrix that orthogonalizes the basis functions
     // note: this member is provided in the integrals library
-    void ortho(RefSCMatrix&ortho) const;
-    void ortho(RefSCMatrix&ortho,RefSCMatrix&ortho_inverse) const;
+    void ortho(const RefSCMatrix&ortho);
+    void ortho(const RefSCMatrix&ortho,
+               const RefSCMatrix&ortho_inverse);
 
     void print(FILE*fp=stdout) const;
 };

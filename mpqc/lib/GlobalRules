@@ -29,10 +29,6 @@
 #
 # LIBS
 #
-# SGENFILE
-# SGENSRC
-# SGENINC
-#
 # SABER_FILES
 #
 #################################################
@@ -107,24 +103,6 @@ doc::
 	    done \
 	fi
 
-ifdef SGENFILE
-SGENINC := $(SGENINC) $(SGENFILE:%.sgen=%.h)
-$(SGENSRC) $(SGENINC): $(SGENFILE)
-	$(SGEN) $(SGENFLAGS) $<
-endif
-
-# The test is needed to cause tmpl to be run only when
-# the target is in the current directory.  This is needed
-# because make tries to rebuild out of date files in other
-# directories that were not rebuilt because the interface
-# didn't change.  This action would result in unused .gbl
-# and .lcl files in the current directory.
-%.lcl %.gbl: %.c
-#	@echo target=$@ dir=$(dir $@)
-#	@if [ $(dir $@) = "" ]; then echo null dir: $@ $<; fi
-#	@if [ $(dir $@) != "" ]; then echo nonnull dir: $@ $<; fi
-	@if [ $(dir $@) = "./" ]; then $(TMPL) $<; fi
-
 %.$(OBJSUF): %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< $(OUTPUT_OPTION)
 
@@ -152,7 +130,7 @@ endif
 #
 clean:: oclean targetclean
 
-distclean:: iclean oclean sgenclean targetclean dclean genclean rclean
+distclean:: iclean oclean targetclean dclean genclean rclean
 
 iclean::
 	-rm -f *.gbl *.lcl
@@ -169,11 +147,6 @@ ifdef GENINC
 endif
 ifdef GENSRC
 	-rm -f $(GENSRC)
-endif
-
-sgenclean::
-ifdef SGENFILE
-	-rm -f $(SGENSRC) $(SGENINC)
 endif
 
 targetclean::
@@ -240,7 +213,7 @@ endif
 #
 # remote stuff
 #
-FILES = $(TRUESRC) $(TRUEINCLUDES) Makefile $(OTHERFILES) $(SGENFILE)
+FILES = $(TRUESRC) $(TRUEINCLUDES) Makefile $(OTHERFILES)
 
 REMOTEFILES=$(FILES:%=REMOTE/$(HOST).%)
 
@@ -288,8 +261,6 @@ values::
 	@echo VPATH=$(VPATH)
 	@echo BIN_OR_LIB=$(BIN_OR_LIB)
 	@echo TARGET_TO_MAKE=$(TARGET_TO_MAKE)
-	@echo TMPL=$(TMPL)
-	@echo SGEN=$(SGEN)
 ifdef LIBS
 	@echo LIBS=$(LIBS)
 endif
@@ -299,9 +270,3 @@ endif
 ifeq ($(BIN_OR_LIB),BIN)
 	@echo BINOBJ=$(BINOBJ)
 endif
-ifdef SGENFILE
-	@echo SGENFILE=$(SGENFILE)
-	@echo SGENSRC=$(SGENSRC)
-	@echo SGENINC=$(SGENINC)
-endif
-

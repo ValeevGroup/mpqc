@@ -46,9 +46,7 @@ TMPL2MACDEP = $(SRCDIR)/$(TOPDIR)/bin/tmpl2mac.pl
 TMPL2MAC = $(PERL) $(TMPL2MACDEP)
 COMPRESS = gzip
 UNCOMPRESS = gzip -d
-SGEN=@SGEN@
 LISTLIBS=@LISTLIBS@ -DLIBSUF=$(LIBSUF)
-TMPL=@TMPL@
 
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory

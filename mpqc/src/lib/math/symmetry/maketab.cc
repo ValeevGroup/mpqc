@@ -787,5 +787,8 @@ int CharacterTable::make_table()
       }
     }
 
+  delete[] rot;
+  delete[] trans;
+  
   return 0;
 }

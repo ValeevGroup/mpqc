@@ -60,6 +60,7 @@ sym_struct_from_pg(const PointGroup& pg, centers_t& centers,
   }
 
   free(pgrp);
+  free_double_array3(&trans);
 
   return 0;
 }

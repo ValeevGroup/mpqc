@@ -1,6 +1,6 @@
 
 #include <math/array/math_lib.h>
-#include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/intv2/integralv2.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clscf.h>
@@ -44,6 +44,9 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   for (i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
+#define SYM 0
+#define ELIM 0
+#if ELIM  
   signed char *pmax = new signed char[ioff(centers->nshell)];
   for (i=0; i < centers->nshell; i++) {
     int ij=ioff(i);
@@ -51,34 +54,47 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
       pmax[ij] = max_den(centers,_gr_dens_diff,i,j);
     }
   }
+#endif
   
   double tnint=0;
   
-  PetiteList pl(basis());
+#if SYM
+  RefPetiteList rpl = integral()->petite_list(basis()).pointer();
+  PetiteList& pl = *rpl.pointer();
+#endif
   
   for (i=0; i < centers->nshell; i++) {
+#if SYM
     if (!pl.in_p1(i))
       continue;
+#endif
     
     for (int j=0; j <= i; j++) {
+#if SYM
       int ij=ioff(i)+j;
       if (!pl.lambda(ij))
         continue;
+#endif
       
+#if ELIM
       int ijbnd = int_Qvec[ij];
       int ijpmx = pmax[ij];
+#endif
 
       for (int k=0; k <= i; k++) {
+#if ELIM
         int ijkpmx=ijpmx;
         if (pmax[(ioff(i)+k)]-2 > ijkpmx)
           ijkpmx = pmax[(ioff(i)+k)]-2;
 
         if (pmax[IOFF(j,k)]-2 > ijkpmx)
           ijkpmx = pmax[IOFF(j,k)]-2;
+#endif
         
         for (int l=0; l <= ((k==i)?j:k); l++) {
+          int qijkl=1;
+#if ELIM
           int kl = ioff(k)+l;
-          int qijkl;
 
           int klbnd = int_Qvec[kl];
           int ijklpmx = (pmax[kl]>ijkpmx) ? pmax[kl] : ijkpmx;
@@ -91,9 +107,12 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
 
           if (ijklpmx+ijbnd+klbnd < inttol)
             continue;
+#endif
 
+#if SYM
           if (!(qijkl=pl.in_p4(ij,kl,i,j,k,l)))
             continue;
+#endif
           
           int s1=i, s2=j, s3=k, s4=l;
 
@@ -415,8 +434,11 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   printf("%20.0f integrals\n",tnint);
 
   delete[] shnfunc;
+#if ELIM
   delete[] pmax;
+#endif
 
+#if SYM
   RefSymmSCMatrix gmat = _gr_gmat.copy();
   
   for (int g=1; g < _mol->point_group().char_table().order(); g++) {
@@ -426,7 +448,10 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   gmat.scale(1.0/_mol->point_group().char_table().order());
 
   _fock.assign(gmat);
-  _fock.accumulate(_gr_hcore);
   gmat = 0;
+#else
+  _fock.assign(_gr_gmat);
+#endif  
+  _fock.accumulate(_gr_hcore);
 
 }

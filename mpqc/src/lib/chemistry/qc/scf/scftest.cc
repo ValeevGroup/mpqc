@@ -10,18 +10,22 @@
 #include <new.h>
 
 #include <util/keyval/keyval.h>
+#include <util/group/message.h>
 
-#include <chemistry/qc/scf/fock.h>
-#include <chemistry/molecule/coor.h>
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
 #include <math/optimize/efc.h>
 #include <math/optimize/update.h>
-#include <util/group/message.h>
+
+#include <chemistry/molecule/coor.h>
+#include <chemistry/molecule/energy.h>
+
+#include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/scf/clscf.h>
 
 // Force linkages:
 #ifndef __PIC__
-//const ClassDesc &fl0  = CLSCF::class_desc_;
+const ClassDesc &fl0  = CLSCF::class_desc_;
 const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
 const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
 const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
@@ -72,15 +76,14 @@ main(int argc, char**argv)
 
   init_mp(input);
 
-#if 0
   struct stat sb;
   RefMolecularEnergy mole;
   RefOptimize opt;
 
-  if (stat("mpqctest.ckpt",&sb)==0 && sb.st_size) {
-    StateInBinXDR si("mpqctest.ckpt");
+  if (stat("scftest.ckpt",&sb)==0 && sb.st_size) {
+    StateInBinXDR si("scftest.ckpt");
     opt.restore_state(si);
-    mole = opt->nlp();
+    mole = opt->function();
   } else {
     // open keyval input
     RefKeyVal rpkv(new ParsedKeyVal(input));
@@ -88,7 +91,7 @@ main(int argc, char**argv)
     mole = rpkv->describedclassvalue(keyword);
     opt = rpkv->describedclassvalue(optkeyword);
     // opt->set_checkpoint();
-    // opt->set_checkpoint_file("mpqctest.ckpt");
+    // opt->set_checkpoint_file("scftest.ckpt");
   }
 
   if (mole.nonnull()) {
@@ -107,12 +110,6 @@ main(int argc, char**argv)
 
     mole->print(o);
   }
-#else
-
-  RefKeyVal rpkv(new ParsedKeyVal(input));
-  RefOccupation occ = rpkv->describedclassvalue("occupation");
-  
-#endif
 
   return 0;
 }

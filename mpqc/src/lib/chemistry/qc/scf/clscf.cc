@@ -3,9 +3,12 @@
 #pragma implementation
 #endif
 
-#include <util/misc/newstring.h>
+#include <math.h>
+
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
+
+#include <chemistry/qc/wfn/hcore.h>
 #include <chemistry/qc/scf/clscf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -14,174 +17,66 @@
 #define CLASSNAME CLSCF
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
-#define PARENTS public OneBodyWavefunction
+#define PARENTS public SCF
 #include <util/class/classi.h>
 void *
 CLSCF::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = OneBodyWavefunction::_castdown(cd);
+  casts[0] = SCF::_castdown(cd);
   return do_castdowns(casts,cd);
-}
-
-static void
-occ(PointBag_double *z, int &nd)
-{
-  int Z=0;
-  for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
-
-  nd = Z/2;
-  if (Z%2) {
-    fprintf(stderr,"CLSCF::occ: Warning, there's a leftover electron.\n");
-    fprintf(stderr,"  total nuclear charge = %d, %d closed shells\n",Z,nd);
-    fprintf(stderr,"  total charge = %d\n\n",Z-2*nd);
-  }
 }
 
 void
 CLSCF::init()
 {
-  occ(_mol->charges(),_ndocc);
-  _density_reset_freq = 10;
-  _maxiter = 100;
-  _eliminate = 1;
-  ckptdir = new_string("./");
-  fname = new_string("this_here_thing");
 }
 
 CLSCF::CLSCF(StateIn& s) :
-  OneBodyWavefunction(s)
+  SCF(s)
 {
-  _extrap.restore_state(s);
-  _data.restore_state(s);
-  _error.restore_state(s);
-
-  _accumdih.restore_state(s);
-  _accumddh.restore_state(s);
-  _accumeffh.restore_state(s);
-
-  s.get(_ndocc);
-  s.get(_density_reset_freq);
-  s.get(_maxiter);
-  s.get(_eliminate);
-
-  s.getstring(ckptdir);
-  s.getstring(fname);
+  s.get(ndocc_);
 }
 
 CLSCF::CLSCF(const RefKeyVal& keyval) :
-  OneBodyWavefunction(keyval)
+  SCF(keyval)
 {
-  init();
+  if (keyval->exists("ndocc")) {
+    ndocc_ = keyval->intvalue("ndocc");
+  } else {
+    int Z=0;
+    PointBag_double *z = _mol->charges();
   
-  _extrap = keyval->describedclassvalue("extrap");
-  if (_extrap.null()) {
-    _extrap = new DIIS;
+    for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
+
+    ndocc_ = Z/2;
+    if (Z%2) {
+      fprintf(stderr,"CLSCF::init: Warning, there's a leftover electron.\n");
+      fprintf(stderr,"  total nuclear charge = %d, %d closed shells\n",
+              Z, ndocc_);
+      fprintf(stderr,"  total charge = %d\n\n",Z-2*ndocc_);
+    }
   }
 
-  _accumdih = keyval->describedclassvalue("accumdih");
-  if (_accumdih.null()) {
-    _accumdih = new AccumHCore;
-  }
-  _accumdih->init(basis(),molecule());
-  
-  _accumddh = keyval->describedclassvalue("accumddh");
-  if (_accumddh.null()) {
-    _accumddh = new AccumNullDDH;
-  }
-  _accumddh->init(basis(),molecule());
-  
-  _accumeffh = keyval->describedclassvalue("accumeffh");
-  if (_accumeffh.null()) {
-    _accumeffh = new GSGeneralEffH;
-  }
-  
-  if (keyval->exists("ndocc"))
-    _ndocc = keyval->intvalue("ndocc");
-
-  if (keyval->exists("density_reset_freq"))
-    _density_reset_freq = keyval->intvalue("density_reset_freq");
-
-  if (keyval->exists("maxiter"))
-    _maxiter = keyval->intvalue("maxiter");
-
-  if (keyval->exists("eliminate"))
-    _maxiter = keyval->booleanvalue("eliminate");
-
-  if (keyval->exists("ckpt_dir")) {
-    delete[] ckptdir;
-    ckptdir = keyval->pcharvalue("ckpt_dir");
-  }
-
-  if (keyval->exists("filename")) {
-    delete[] fname;
-    fname = keyval->pcharvalue("filename");
-  }
-}
-
-CLSCF::CLSCF(const OneBodyWavefunction& obwfn) :
-  OneBodyWavefunction(obwfn)
-{
-  init();
-  _accumeffh = new GSGeneralEffH;
-  _accumddh = new AccumNullDDH;
-  _accumdih = new AccumHCore;
-  _accumdih->init(basis(),molecule());
-  _extrap = new DIIS;
-}
-
-CLSCF::CLSCF(const CLSCF& clscf) :
-  OneBodyWavefunction(clscf)
-{
-  _extrap = clscf._extrap;
-  _data = clscf._data;
-  _error = clscf._error;
-  _accumdih = clscf._accumdih;
-  _accumddh = clscf._accumddh;
-  _accumeffh = clscf._accumeffh;
-  _ndocc = clscf._ndocc;
-  _density_reset_freq = clscf._density_reset_freq;
-  _maxiter = clscf._maxiter;
-  _eliminate = clscf._eliminate;
-
-  ckptdir = new_string(clscf.ckptdir);
-  fname = new_string(clscf.fname);
+  // check to see if this was done in SCF(keyval)
+  if (!keyval->exists("maxiter"))
+    maxiter_ = 40;
 }
 
 CLSCF::~CLSCF()
 {
 }
 
-RefSCMatrix
-CLSCF::eigenvectors()
-{
-  return _eigenvectors;
-}
-
 void
 CLSCF::save_data_state(StateOut& s)
 {
-  _extrap.save_state(s);
-  _data.save_state(s);
-  _error.save_state(s);
-
-  _accumdih.save_state(s);
-  _accumddh.save_state(s);
-  _accumeffh.save_state(s);
-
-  s.put(_ndocc);
-  s.put(_density_reset_freq);
-  s.put(_maxiter);
-  s.put(_eliminate);
-
-  s.putstring(ckptdir);
-  s.putstring(fname);
+  s.put(ndocc_);
 }
 
 double
 CLSCF::occupation(int i)
 {
-  if (i < _ndocc) return 2.0;
+  if (i < ndocc_) return 2.0;
   return 0.0;
 }
 
@@ -194,7 +89,7 @@ CLSCF::value_implemented()
 int
 CLSCF::gradient_implemented()
 {
-  return 1;
+  return 0;
 }
 
 int
@@ -209,236 +104,229 @@ CLSCF::print(ostream&o)
   OneBodyWavefunction::print(o);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
 void
-CLSCF::compute()
+CLSCF::init_vector()
 {
-  // hack!!!!  need a way to make sure that the basis geometry is the
-  // same as that in the molecule
-  _extrap=new DIIS;
-    
-  if (_hessian.needed())
-    set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
+  // calculate the core Hamiltonian
+  RefAccumHCore hc = new AccumHCore();
+  hc->init(basis(), integral());
 
-  if (_gradient.needed())
-    set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
-
-  if (_energy.needed()) {
-    if (_eigenvectors.result_noupdate().null()) {
-      // start from core guess
-      HCoreWfn hcwfn(*this);
-      RefSCMatrix vec = hcwfn.eigenvectors();
-
-      _eigenvectors = vec;
-    }
-
-    // schmidt orthogonalize the vector
-    _eigenvectors.result_noupdate()->schmidt_orthog(overlap().pointer(),
-                                                    _ndocc);
-
-    if (_fock.null())
-      _fock = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
-    
-    if (_fock_evals.null())
-      _fock_evals = _fock->dim()->create_diagmatrix();
-    
-    printf("\n  CLSCF::compute: energy accuracy = %g\n\n",
-           _energy.desired_accuracy());
-
-    double eelec,nucrep;
-    do_vector(eelec,nucrep);
-      
-    // this will be done elsewhere eventually
-    printf("  total scf energy = %20.15f\n",eelec+nucrep);
-
-    set_energy(eelec+nucrep);
-    _energy.set_actual_accuracy(_energy.desired_accuracy());
-  }
-
-  if (_gradient.needed()) {
-    RefSCVector gradient = _moldim->create_vector();
-
-    printf("\n  CLSCF::compute: gradient accuracy = %g\n\n",
-           _gradient.desired_accuracy());
-
-    do_gradient(gradient);
-    gradient.print("cartesian gradient");
-    set_gradient(gradient);
-
-    _gradient.set_actual_accuracy(_gradient.desired_accuracy());
-  }
+  cl_hcore_ = matrixkit()->symmmatrix(basis_dimension());
+  hc->accum(cl_hcore_);
+  hc=0;
   
-  if (_hessian.needed()) {
-    fprintf(stderr,"CLSCF::compute: gradient not implemented\n");
-    abort();
-  }
+  // allocate storage for other temp matrices
+  cl_dens_ = cl_hcore_.clone();
+  cl_dens_.assign(0.0);
   
+  cl_dens_diff_ = cl_hcore_.clone();
+  cl_dens_diff_.assign(0.0);
+
+  cl_gmat_ = cl_hcore_.clone();
+  cl_gmat_.assign(0.0);
+
+  cl_fock_ = cl_hcore_.clone();
+  cl_fock_.assign(0.0);
+  
+  // test to see if we need a guess vector
+  if (_eigenvectors.result_noupdate().null()) {
+    RefSCMatrix vec(basis_dimension(), basis_dimension(), matrixkit());
+    RefDiagSCMatrix val(basis_dimension(), matrixkit());
+    cl_hcore_.diagonalize(val,vec);
+
+    // transform to S**(-1/2) basis
+    vec = ao_to_orthog_ao() * vec;
+    
+    vec->schmidt_orthog(overlap().pointer(), ndocc_);
+    
+    _eigenvectors = vec;
+  }
+
+  scf_vector_ = _eigenvectors.result_noupdate();
 }
 
+void
+CLSCF::done_vector()
+{
+  cl_hcore_ = 0;
+  cl_fock_ = 0;
+  cl_gmat_ = 0;
+  cl_dens_ = 0;
+  cl_dens_diff_ = 0;
+
+  scf_vector_ = 0;
+}
 
 void
-CLSCF::do_vector(double& eelec, double& nucrep)
+CLSCF::reset_density()
 {
-  int i;
-  
-  _gr_vector = _eigenvectors.result_noupdate();
-  
-  // allocate storage for the temp arrays
-  RefSCMatrix nvector = _gr_vector.clone();
-  
-  _gr_dens = _fock.clone();
-  _gr_dens.assign(0.0);
-  
-  _gr_dens_diff = _gr_dens->clone();
-  _gr_dens_diff.assign(0.0);
-  
-  _gr_gmat = _gr_dens->clone();
-  _gr_gmat.assign(0.0);
+  cl_gmat_.assign(0.0);
+  cl_dens_diff_.assign(cl_dens_);
+}
 
-  _gr_hcore = _gr_dens->clone();
+double
+CLSCF::new_density()
+{
+  int nbasis = basis()->nbasis();
 
-  // form Hcore
-  _gr_hcore.assign(0.0);
-  _accumdih->accum(_gr_hcore);
+  double delta=0;
+  
+  // find out what type of matrices we're dealing with
+  int ij=0;
+  for (int i=0; i < nbasis; i++) {
+    for (int j=0; j <= i; j++,ij++) {
+      double pt=0;
+      int k;
+      for (k=0; k < ndocc_; k++)
+        pt += 2.0*scf_vector_->get_element(i,k)*scf_vector_->get_element(j,k);
 
-  // initialize some junk
-  centers_t *centers = basis()->convert_to_centers_t();
-  if (!centers) {
-    fprintf(stderr,"hoot man!  no centers\n");
-    abort();
+      double dlt = pt-cl_dens_->get_element(i,j);
+      delta += dlt*dlt;
+      
+      cl_dens_diff_->set_element(i,j,dlt);
+      cl_dens_->set_element(i,j,pt);
+    }
   }
 
-  int_initialize_offsets2(centers,centers,centers,centers);
-
-  nucrep = int_nuclear_repulsion(centers,centers);
-  
-  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
-  double *intbuf = 
-    int_initialize_erep(flags,0,centers,centers,centers,centers);
-
-#ifdef SGI
-  int_storage(12500000);
-#else
-  int_storage(1000000);
-#endif
-
-  int_init_bounds();
-
-  for (int iter=0; iter < _maxiter; iter++) {
-    // form the density from the current vector 
-    form_density(_gr_vector,_gr_dens,_gr_dens_diff,0,0);
-    
-    // check convergence
-    int ij=0;
-    double delta=0;
-    for (i=0; i < _gr_dens_diff->n(); i++)
-      for (int j=0; j <= i; j++,ij++)
-        delta += _gr_dens_diff.get_element(i,j)*_gr_dens_diff.get_element(i,j);
-    delta = sqrt(delta/ij);
-
-    if (delta < _energy.desired_accuracy()) break;
-
-    // reset the density from time to time
-    if (iter && !(iter%10)) {
-      _gr_gmat.assign(0.0);
-      _gr_dens_diff.assign(_gr_dens);
-    }
-      
-    // scale the off-diagonal elements of the density matrix
-    _gr_dens_diff->scale(2.0);
-    _gr_dens_diff->scale_diagonal(0.5);
-    
-    // form the AO basis fock matrix
-    form_ao_fock(centers,intbuf);
-
-    // unscale the off-diagonal elements of the density matrix
-    _gr_dens_diff->scale(0.5);
-    _gr_dens_diff->scale_diagonal(2.0);
-
-    // calculate the electronic energy
-    eelec = scf_energy();
-    printf("iter %5d energy = %20.15f delta = %15.10g\n",
-           iter,eelec+nucrep,delta);
-
-    // now extrapolate the fock matrix
-    // first we form the error matrix which is the offdiagonal blocks of
-    // the MO fock matrix
-    RefSymmSCMatrix mo_error = _fock.clone();
-
-    mo_error.assign(0.0);
-    mo_error.accumulate_transform(_gr_vector.t(),_fock);
-
-    for (i=0; i < mo_error->n(); i++) {
-      double occi = occupation(i);
-      for (int j=0; j <= i; j++) {
-        double occj = occupation(j);
-        if (occi == occj)
-          mo_error.set_element(i,j,0.0);
-      }
-    }
-    
-    // now transform MO error to the AO basis
-    RefSymmSCMatrix ao_error = mo_error.clone();
-    ao_error.assign(0.0);
-    ao_error.accumulate_transform(_gr_vector,mo_error);
-    mo_error = 0;
-    
-    // and do the DIIS extrapolation
-    _data = new SymmSCMatrixSCExtrapData(_fock);
-    _error = new SymmSCMatrixSCExtrapError(ao_error);
-    _extrap->extrapolate(_data,_error);
-    _data=0;
-    _error=0;
-    ao_error=0;
-
-    // now transform extrapolated fock to MO basis
-    RefSymmSCMatrix mofock = _fock.clone();
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
-
-    // diagonalize MO fock to get MO vector
-    mofock.diagonalize(_fock_evals,nvector);
-    mofock=0;
-
-    // transform MO vector to AO basis
-    _gr_vector = _gr_vector * nvector;
-    
-    // and orthogonalize vector
-    _gr_vector->schmidt_orthog(overlap().pointer(),basis()->nbasis());
-  }
-      
-  _gr_vector.print("converged vector");
-  _fock_evals.print("evals");
-  
-  _eigenvectors = _gr_vector;
-  _eigenvectors.computed() = 1;
-  
-  int_done_bounds();
-  int_done_erep();
-  int_done_offsets2(centers,centers,centers,centers);
-  int_done_storage();
-  free_centers(centers);
-  free(centers);
-
-  _gr_dens = 0;
-  _gr_dens_diff = 0;
-  _gr_gmat = 0;
-  _gr_hcore = 0;
-  _gr_vector = 0;
-  nvector = 0;
+  delta = sqrt(delta/ij);
+  return delta;
 }
 
 double
 CLSCF::scf_energy()
 {
-  RefSymmSCMatrix t = _fock.copy();
-  t.accumulate(_gr_hcore);
+  RefSymmSCMatrix t = cl_fock_.copy();
+  t.accumulate(cl_hcore_);
 
   double eelec=0;
   for (int i=0; i < t->n(); i++) {
     for (int j=0; j < i; j++) {
-      eelec += _gr_dens.get_element(i,j)*t.get_element(i,j);
+      eelec += cl_dens_.get_element(i,j)*t.get_element(i,j);
     }
-    eelec += 0.5*_gr_dens.get_element(i,i)*t.get_element(i,i);
+    eelec += 0.5*cl_dens_.get_element(i,i)*t.get_element(i,i);
   }
+
   return eelec;
 }
+
+void
+CLSCF::ao_fock()
+{
+  // calculate G
+  cl_dens_diff_->scale(2.0);
+  cl_dens_diff_->scale_diagonal(0.5);
+  ao_gmat();
+  cl_dens_diff_->scale(0.5);
+  cl_dens_diff_->scale_diagonal(2.0);
+  
+  cl_fock_.assign(cl_hcore_);
+  cl_fock_.accumulate(cl_gmat_);
+}
+
+void
+CLSCF::make_contribution(int i, int j, int k, int l, double val, int type)
+{
+  SymmSCMatrix& gmat = *cl_gmat_.pointer();
+  SymmSCMatrix& pmat = *cl_dens_diff_.pointer();
+  
+  switch(type) {
+  case 1:
+    gmat.accumulate_element(i, j, val*pmat.get_element(k,l));
+    gmat.accumulate_element(k, l, val*pmat.get_element(i,j));
+    break;
+    
+  case 2:
+    gmat.accumulate_element(i, j, -0.25*val*pmat.get_element(k,l));
+    gmat.accumulate_element(k, l, -0.25*val*pmat.get_element(i,j));
+    break;
+    
+  case 3:
+    gmat.accumulate_element(i, j, -0.5*val*pmat.get_element(k,l));
+    gmat.accumulate_element(k, l, -0.5*val*pmat.get_element(i,j));
+    break;
+    
+  case 4:
+    gmat.accumulate_element(i, j, 0.75*val*pmat.get_element(k,l));
+    gmat.accumulate_element(k, l, 0.75*val*pmat.get_element(i,j));
+    break;
+    
+  case 5:
+    gmat.accumulate_element(i, j, 0.5*val*pmat.get_element(k,l));
+    gmat.accumulate_element(k, l, 0.5*val*pmat.get_element(i,j));
+    break;
+    
+  default:
+    fprintf(stderr,"CLSCF::make_contribution: invalid type %d\n",type);
+    abort();
+  }
+
+}
+
+RefSCExtrapError
+CLSCF::extrap_error()
+{
+  RefSymmSCMatrix moerror = effective_fock();
+
+  for (int i=0; i < moerror->n(); i++) {
+    double occi = occupation(i);
+
+    for (int j=0; j <= i; j++) {
+      double occj = occupation(j);
+      if (occi==occj)
+        moerror.set_element(i,j,0.0);
+    }
+  }
+
+  RefSymmSCMatrix aoerror = moerror.clone();
+  aoerror.assign(0.0);
+  aoerror.accumulate_transform(scf_vector_,moerror);
+  moerror=0;
+
+  RefSCExtrapError error = new SymmSCMatrixSCExtrapError(aoerror);
+  aoerror=0;
+
+  return error;
+}
+
+RefSCExtrapData
+CLSCF::extrap_data()
+{
+  RefSCExtrapData data = new SymmSCMatrixSCExtrapData(cl_fock_);
+  return data;
+}
+
+RefSymmSCMatrix
+CLSCF::effective_fock()
+{
+  // just return MO fock matrix
+  RefSymmSCMatrix mofock = cl_fock_.clone();
+  mofock.assign(0.0);
+  mofock.accumulate_transform(scf_vector_.t(), cl_fock_);
+  return mofock;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+CLSCF::init_gradient()
+{
+}
+
+void
+CLSCF::done_gradient()
+{
+}
+
+void
+CLSCF::init_hessian()
+{
+}
+
+void
+CLSCF::done_hessian()
+{
+}
+

@@ -6,74 +6,59 @@
 #pragma interface
 #endif
 
-#include <math/scmat/elemop.h>
-#include <math/scmat/block.h>
-#include <math/scmat/blkiter.h>
-#include <math/optimize/scextrap.h>
-#include <chemistry/qc/wfn/obwfn.h>
-#include <chemistry/qc/wfn/effh.h>
-
-#include <math/array/math_lib.h>
-#include <chemistry/qc/intv2/int_libv2.h>
+#include <chemistry/qc/scf/scf.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
-class CLSCF: public OneBodyWavefunction
-{
+class CLSCF: public SCF {
 #   define CLASSNAME CLSCF
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
- protected:
-    RefSelfConsistentExtrapolation _extrap;
-    RefSCExtrapData _data;
-    RefSCExtrapError _error;
-
-    RefAccumDIH _accumdih;
-    RefAccumDDH _accumddh;
-    RefAccumEffectiveH _accumeffh;
-
-    RefSymmSCMatrix _fock;
-    RefDiagSCMatrix _fock_evals;
-    
-    int _ndocc;
-    int _density_reset_freq;
-
-    int _maxiter;
-    int _eliminate;
-
-    char *ckptdir;
-    char *fname;
-
-    // these are temporary data, so they should not be checkpointed
-    RefSymmSCMatrix _gr_dens;
-    RefSymmSCMatrix _gr_dens_diff;
-    RefSymmSCMatrix _gr_gmat;
-    RefSymmSCMatrix _gr_hcore;
-    RefSCMatrix _gr_vector;
-    
+  private:
     void init();
-    virtual void compute();
-    virtual void do_vector(double&,double&);
-    virtual void form_ao_fock(centers_t *, double*);
-    virtual double scf_energy();
-    virtual void do_gradient(const RefSCVector&);
+    
+  protected:
+    int ndocc_;
+
+    // scf things
+    void init_vector();
+    void done_vector();
+    void reset_density();
+    double new_density();
+    double scf_energy();
+
+    void ao_fock();
+    void make_contribution(int,int,int,int,double,int);
+
+    RefSCExtrapError extrap_error();
+    RefSCExtrapData extrap_data();
+    RefSymmSCMatrix effective_fock();
+    
+    // gradient things
+    void init_gradient();
+    void done_gradient();
+
+    // hessian things
+    void init_hessian();
+    void done_hessian();
+    
+    // these are temporary data, so they should not be checkpointed
+    RefSymmSCMatrix cl_fock_;
+    RefSymmSCMatrix cl_dens_;
+    RefSymmSCMatrix cl_dens_diff_;
+    RefSymmSCMatrix cl_gmat_;
+    RefSymmSCMatrix cl_hcore_;
     
   public:
     CLSCF(StateIn&);
-    CLSCF(const CLSCF&);
     CLSCF(const RefKeyVal&);
-    CLSCF(const OneBodyWavefunction&);
     ~CLSCF();
 
-    CLSCF& operator=(const CLSCF&);
-    
     void save_data_state(StateOut&);
 
     void print(ostream&o=cout);
-
-    RefSCMatrix eigenvectors();
 
     double occupation(int vectornum);
 

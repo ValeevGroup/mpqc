@@ -1,8 +1,4 @@
 
-occupation<Occupation>: (
-  basis = $:gbasis
-)
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % molecular energy
@@ -10,11 +6,11 @@ occupation<Occupation>: (
 % can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
 %
 
-mole<XSCF>: (
+mole<CLSCF>: (
   root = 2
 
   % NLP... input
-  value_accuracy = 1e-14
+  value_accuracy = 1e-9
   gradient_accuracy = 1e-7
 
   % MolecularEnergy input
@@ -28,7 +24,7 @@ mole<XSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
-  maxiter=20
+  maxiter=3
 
   extrap<DIIS>: (
     start = 5
@@ -37,7 +33,7 @@ mole<XSCF>: (
   )
 )
 
-molecule = $:mikes
+molecule = $:silethc1
 
 coor = $:symcoor
 message = $:message1
@@ -55,13 +51,12 @@ xopt<QNewtonOpt>: (
 % basis sets
 %
 
-gbasis<SymmGaussianBasisSet>: (
+gbasis<GaussianBasisSet>: (
   molecule = $:molecule
-  %name = "6-31G*"
-  name = "STO-3G"
+  name = "6-31G*"
+  %name = "STO-3G"
   %name = "aug-cc-pVTZ"
-
-  puream=yes
+  %puream=yes
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -187,17 +182,17 @@ h3op<Molecule>: (
 water_c1<Molecule>: (
   symmetry=c1
   { atoms geometry } = {
+      O    [  0.0000000000    0.0000000000    0.0000000000 ]
       H    [  1.5000000000    0.0000000000    1.0000000000 ]
       H    [ -1.5000000000    0.0000000000    1.0000000000 ]
-      O    [  0.0000000000    0.0000000000    0.0000000000 ]
   }
 )
 
 water<Molecule>: (
   symmetry=c2v
   { atoms geometry } = {
-      H    [  1.5000000000    0.0000000000    1.0000000000 ]
       O    [  0.0000000000    0.0000000000    0.0000000000 ]
+      H    [  1.5000000000    0.0000000000    1.0000000000 ]
   }
 )
 
@@ -230,6 +225,34 @@ he<Molecule>: (
   symmetry=c1
   { atoms geometry } = {
      he [ 0 0 0 ]
+  }
+)
+
+silethc1<Molecule>: (
+  symmetry = c1
+  { atoms geometry } = {
+    si  [-2.50929705  0.00000000  0.00000000]
+    si  [ 2.50929705  0.00000000  0.00000000]
+    c   [ 0.00000000 -2.57103777  0.00000000]
+    c   [ 0.00000000  2.57103777  0.00000000]
+    h   [ 0.00000000 -3.78418965  1.65770850]
+    h   [ 0.00000000  3.78418965 -1.65770850]
+    h   [ 0.00000000  3.78418965  1.65770850]
+    h   [ 0.00000000 -3.78418965 -1.65770850]
+    h   [-4.13743057  0.00000000  2.26831382]
+    h   [ 4.13743057  0.00000000 -2.26831382]
+    h   [ 4.13743057  0.00000000  2.26831382]
+    h   [-4.13743057  0.00000000 -2.26831382]
+  }
+)
+
+sileth<Molecule>: (
+  symmetry = d2h
+  { atoms geometry } = {
+    si  [-2.50929705  0.00000000  0.00000000]
+    c   [ 0.00000000 -2.57103777  0.00000000]
+    h   [ 0.00000000 -3.78418965  1.65770850]
+    h   [-4.13743057  0.00000000  2.26831382]
   }
 )
 

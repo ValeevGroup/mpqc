@@ -84,7 +84,7 @@ CLSCF::do_gradient(const RefSCVector& gradient)
   gradient.assign(0.0);
 
   // grab the centers struct
-  centers_t *centers = basis()->convert_to_centers_t();
+  centers_t *centers = int_centers_from_gbs(basis());
     
   // calculate nuclear repulsion contribution to the gradient
   double_vector_t dv;
@@ -217,7 +217,8 @@ CLSCF::do_gradient(const RefSCVector& gradient)
   
   double tnint=0;
 
-  PetiteList pl(basis());
+  RefPetiteList rpl = integral()->petite_list(basis());
+  PetiteList& pl = *rpl.pointer();
 
   for (int i=0; i < centers->nshell; i++) {
     if (!pl.in_p1(i))

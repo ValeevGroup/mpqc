@@ -8,9 +8,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
-SRCS = fock.cc
+SRCS = scf.cc scfcompute.cc clscf.cc
 
-CLASSES = Fock
+CLASSES = SCF
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
@@ -29,7 +29,7 @@ scftest:: scftest.o $(LIBS)
 	$(CXX) $(LDFLAGS) -o scftest $^ $(SYSLIBS)
 
 scftest.o: scftest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

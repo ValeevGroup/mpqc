@@ -305,9 +305,16 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
-      fprintf(stderr,"LocalSCMatrix::"
-              "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << "LocalSCMatrix::accumulate_product: bad dim" << endl;
+      cerr << "this row and col dimension:" << endl;
+      rowdim()->print(cerr);
+      coldim()->print(cerr);
+      cerr << "a row and col dimension:" << endl;
+      a->rowdim()->print(cerr);
+      a->coldim()->print(cerr);
+      cerr << "b row and col dimension:" << endl;
+      b->rowdim()->print(cerr);
+      b->coldim()->print(cerr);
       abort();
     }
 

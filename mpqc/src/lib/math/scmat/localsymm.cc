@@ -473,7 +473,14 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
 
   // check the dimensions
   if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-      fprintf(stderr,"LocalSymmSCMatrix::accumulate_transform: bad dim\n");
+      cerr << "LocalSymmSCMatrix::accumulate_transform: bad dim" << endl;
+      cerr << "this dimension:" << endl;
+      dim()->print(cerr);
+      cerr << "a row and col dimension:" << endl;
+      a->rowdim()->print(cerr);
+      a->coldim()->print(cerr);
+      cerr << "b dimension:" << endl;
+      b->dim()->print(cerr);
       abort();
     }
 

@@ -24,7 +24,7 @@ the \clsnmref{MessageGrp} class.
 
 The \clsnm{ShmMessageGrp} class is an implementation of
 \clsnmref{MessageGrp} that allows multiple process to be
-started that communication with shared memory.  This
+started that communicate with shared memory.  This
 only provides improved performance if you have multiple
 CPU's in a symmetric multiprocessor configuration.  Nonetheless,
 it is quite useful on a single CPU for tracking down bugs.
@@ -39,11 +39,191 @@ message<\clsnm{ShmMessageGrp}>: n = 4
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\section{The \clsnm{ParagonMessageGrp} Class}
+\label{ParagonMessageGrp}\index{ParagonMessageGrp}
+
+The \clsnm{ParagonMessageGrp} class is an concrete implementation of
+\clsnmref{MessageGrp} that uses the NX library, available on Intel
+Paragons.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MPIMessageGrp} Class}
+\label{MPIMessageGrp}\index{MPIMessageGrp}
+
+The \clsnm{MPIMessageGrp} class is an concrete implementation of
+\clsnmref{MessageGrp} that uses the MPI 1 library.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{The \clsnm{MemoryGrp} Class}
 \label{MemoryGrp}\index{MemoryGrp}
 
 The \clsnm{MessageGrp} abstract class provides a way of accessing
-distributed memory in a parallel machine.
+distributed memory in a parallel machine.  Several specializations are
+available.  For one processor, \clsnmref{ProcMemoryGrp} provides a simple
+stub implementation.  Otherwise, the specializations that work well are
+\clsnmref{ShmMemoryGrp}, \clsnmref{ParagonMemoryGrp}, and
+\clsnmref{MPLMemoryGrp}.  If your parallel operation system and libraries
+do not directly support active messages or global shared memory you can try
+\clsnmref{IParagonMemoryGrp} or \clsnmref{MPIMemoryGrp}, as is appropriate.
+However, these latter specializations do not always work and perform
+poorly.
+
+If a \clsnm{MemoryGrp} is not given to the program, then one will be
+automatically chosen depending on which \clsnmref{MessageGrp} is used by
+default, the type of machine on which the code was compiled, and what
+options were given at configuration time.  The following rules are applied
+until the first matching set of criteria are found.
+
+\begin{itemize}
+
+% ParagonMessageGrp
+
+   \item If a \clsnmref{ParagonMessageGrp} is used then:
+
+     \begin{itemize}
+
+        \item If the machine supports the full NX library (that is, it
+           includes the hrecv function), then \clsnmref{ParagonMemoryGrp}
+           will be used.  The NX library is typically found on Intel
+           Paragons and IPSC machines.
+
+        \item If the machine is an Intel Paragon running the Puma OS and
+           it supports MPI2 one-sided communication, then
+           \clsnmref{PumaMemoryGrp} will be used.
+
+        \item If the machine supports the NX library subset without hrecv,
+           then \clsnmref{IParagonMemoryGrp} is used.
+
+     \end{itemize}
+
+% MPIMemoryGrp
+
+   \item If an \clsnmref{MPIMessageGrp} is used then:
+
+     \begin{itemize}
+
+        \item If the has the Message Passing Library then
+           \clsnmref{MPLMemoryGrp} is used.
+
+        \item Otherwise, \clsnmref{MPIMemoryGrp} is used.
+
+     \end{itemize}
+
+% ShmMemoryGrp
+
+   \item If an \clsnmref{ShmMessageGrp} is used, then a
+      \clsnmref{ShmMemoryGrp} is used.
+
+% n == 1
+
+   \item If there is only one processor, then \clsnmref{ProcMemoryGrp} is
+       used.
+
+   \item Otherwise, no memory group can be created.
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ProcMemoryGrp} Class}
+\label{ProcMemoryGrp}\index{ProcMemoryGrp}
+
+The \clsnm{ProcMessageGrp} concrete class provides an implementation of
+\clsnmref{MemoryGrp} for a single processor.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MsgMemoryGrp} Class}
+\label{MsgMemoryGrp}\index{MsgMemoryGrp}
+
+The \clsnm{MemoryGrp} abstract class specializes the \clsnmref{MemoryGrp}
+class.  It uses a \clsnmref{MessageGrp} to initialize.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ShmMemoryGrp} Class}
+\label{ShmMemoryGrp}\index{ShmMemoryGrp}
+
+The \clsnm{ShmMessageGrp} concrete class provides an implementation of
+\clsnmref{MsgMemoryGrp}.  It uses SYSV IPC to provided shared memory in a
+system that provide shared memory in hardware.  It is very fast and
+reliable.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ActiveMsgMemoryGrp} Class}
+\label{ActiveMsgMemoryGrp}\index{ActiveMsgMemoryGrp}
+
+The \clsnm{ActiveMsgMemoryGrp} abstract class specializes the
+\clsnmref{MsgMemoryGrp} class.  It uses active messages to implement global
+shared memory.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{PumaMemoryGrp} Class}
+\label{PumaMemoryGrp}\index{PumaMemoryGrp}
+
+The \clsnm{PumaMemoryGrp} concrete class specializes the
+\clsnmref{ActiveMsgMemoryGrp} class for the Intel Paragon running the Puma
+OS.  Only one such machine exists and it doesn't work well even on that.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ParagonMemoryGrp} Class}
+\label{ParagonMemoryGrp}\index{ParagonMemoryGrp}
+
+The \clsnm{ParagonMemoryGrp} concrete class specializes the
+\clsnmref{ActiveMsgMemoryGrp} class for machines that implement the full NX
+library, which is typically the case on Intel Paragon machines.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MIDMemoryGrp} Class}
+\label{MIDMemoryGrp}\index{MIDMemoryGrp}
+
+The \clsnm{MIDMemoryGrp} abstract class specializes the
+\clsnmref{ActiveMsgMemoryGrp} class.  This is for active message systems
+that manipulate messages in terms of long int message identifiers.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{IParagonMemoryGrp} Class}
+\label{IParagonMemoryGrp}\index{IParagonMemoryGrp}
+
+The \clsnm{IParagonMemoryGrp} is a concrete implementation of
+\clsnmref{MIDMemoryGrp} that uses NX library calls (omitting hrecv) to
+provide simulated active messages, which are in turn used by the
+\clsnmref{ActiveMsgMemoryGrp} base class to implement global shared memory.
+The NX library is typically the case on Intel Paragon machines.  Most
+Paragons implement the full NX library and on these machines
+\clsnmref{ParagonMemoryGrp} should be used instead.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MPIMemoryGrp} Class}
+\label{MPIMemoryGrp}\index{MPIMemoryGrp}
+
+The \clsnm{MPIMemoryGrp} is a concrete implementation of
+\clsnmref{MIDMemoryGrp} that uses MPI 1 calls to provide simulated active
+messages, which are in turn used by the \clsnmref{ActiveMsgMemoryGrp} base
+class to implement global shared memory.  Unfortunately, this class
+interacts badly with most MPI implementions, so you will probably have
+very limited success using it.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MPLMemoryGrp} Class}
+\label{MPLMemoryGrp}\index{MPLMemoryGrp}
+
+The \clsnm{MPLMemoryGrp} is a concrete implementation of
+\clsnmref{MIDMemoryGrp} that uses MPI 1.1 calls plus the mp\_recvncall
+routine in the IBM SP Message Passing Library to implement active messages.
+It provides good performance.  and works most of the time, however,
+occasionally glitches arise when using it.  For example, the
+\clsnmref{MBPT2} \keywd{memgrp} algorithm will occasionally, randomly
+produce wrong energies and/or gradients.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

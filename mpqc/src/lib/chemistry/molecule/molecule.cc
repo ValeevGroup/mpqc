@@ -224,7 +224,7 @@ Molecule::add_atom(int i,AtomicCenter& ac)
 void
 Molecule::print(ostream& os)
 {
-  os << node0 << indent << "Molecule:" << endl << indent
+  os << node0 << indent
      << "  n  atom  label          x               y               z"
      << "          mass\n";
 

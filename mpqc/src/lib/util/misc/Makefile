@@ -16,7 +16,7 @@ WEBFILES = debug.web pathfopen.web rdmatrix.web timer.web
 CSRC = ieee.c prober.c assert.c machtype.c checkalloc.c mtype.c
 GENSRC = $(WEBFILES:%.web=%.c)
 
-CXXSRC = compute.cc compute_i.cc error.cc scostream.cc
+CXXSRC = compute.cc compute_i.cc error.cc scostream.cc identity.cc
 
 TESTSRC = comptest.cc scotest.cc
 

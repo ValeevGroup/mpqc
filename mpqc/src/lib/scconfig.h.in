@@ -171,11 +171,14 @@
 /* Define if you have the <armci.h> header file and library.  */
 #undef HAVE_ARMCI
 
-/* Define if you have the PSI int header file and library.  */
-#undef HAVE_PSI_INT
+/* Define if you have the libint header file and library.  */
+#undef HAVE_LIBINT
 
-/* Define if you have the PSI r12 header file and library.  */
-#undef HAVE_PSI_R12
+/* Define if you have the libr12 header file and library.  */
+#undef HAVE_LIBR12
+
+/* Define if you have the libderiv header file and library.  */
+#undef HAVE_LIBDERIV
 
 /* Define if your MPI implementation has MPI-IO functions */
 #undef HAVE_MPIIO

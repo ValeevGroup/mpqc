@@ -1258,7 +1258,7 @@ if test X$HAVE_LAPACK != Xyes; then
   AC_MSG_ERROR([LAPACK is required to complete the build])
 fi
 
-LIBS="$LIBSSAV $LIBLAPACK $LIBBLAS"
+FLIBS="$LIBLAPACK $LIBBLAS $FLIBS"
 AC_LANG_RESTORE
 
 dnl ----------- check for Scalable BLAS library --------------
@@ -1303,47 +1303,51 @@ AC_TRY_LINK([
 fi
 AC_LANG_RESTORE
 
-dnl ----------- libPSI_int library checks --------------
-
-LIBSSAV="$LIBS"
-LIBS="$LIBSSAV $FLIBS"
+dnl ----------- libint library checks --------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_CHECK_HEADER(libint/libint.h,[
-    AC_CHECK_LIB(PSI_int,init_libint_base,[HAVE_PSI_INT=yes;LIBSSAV="-lPSI_int $LIBS"])
-])
+AC_CHECK_HEADERS(libint/libint.h,
+  AC_CHECK_LIB(int,init_libint_base,
+    HAVE_LIBINT=yes
+    AC_DEFINE(HAVE_LIBINT)
+    AC_SUBST(HAVE_LIBINT)
+    LIBS="-lint $LIBS"
+    )
+  )
 AC_LANG_RESTORE
 
-if test X$HAVE_PSI_INT = Xyes; then
-  AC_DEFINE(HAVE_PSI_INT)
-  AC_SUBST(HAVE_PSI_INT)
-fi
-
-LIBS="$LIBSSAV"
-
-dnl ----------- libPSI_r12 library checks --------------
-
-LIBSSAV="$LIBS"
-LIBS="$LIBSSAV $FLIBS"
+dnl ----------- libr12 library checks --------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_CHECK_HEADER(libr12/libr12.h,[
-    AC_CHECK_LIB(PSI_r12,init_libr12_base,[HAVE_PSI_R12=yes;LIBSSAV="-lPSI_r12 $LIBS"])
-])
+AC_CHECK_HEADERS(libr12/libr12.h,
+  AC_CHECK_LIB(r12,init_libr12_base,
+    HAVE_LIBR12=yes
+    AC_DEFINE(HAVE_LIBR12)
+    AC_SUBST(HAVE_LIBR12)
+    LIBS="-lr12 $LIBS"
+    )
+  )
 AC_LANG_RESTORE
 
-if test X$HAVE_PSI_R12 = Xyes; then
-  AC_DEFINE(HAVE_PSI_R12)
-  AC_SUBST(HAVE_PSI_R12)
-fi
+dnl ----------- libderiv library checks --------------
 
-LIBS="$LIBSSAV"
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(libderiv/libderiv.h,
+  AC_CHECK_LIB(deriv,init_libderiv_base,
+    HAVE_LIBDERIV=yes
+    AC_DEFINE(HAVE_LIBDERIV)
+    AC_SUBST(HAVE_LIBDERIV)
+    LIBS="-lderiv $LIBS"
+    )
+  )
+AC_LANG_RESTORE
 
 dnl ----------- make sure we have everything for cints and mbptr12 ----------
 
-if test ! X$HAVE_PSI_R12 = Xyes -o ! X$HAVE_PSI_INT = Xyes; then
+if test ! X$HAVE_LIBR12 = Xyes -o ! X$HAVE_LIBINT = Xyes; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS -x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
 fi
 

@@ -59,7 +59,10 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
   double *source_data;
   double *data;
 
-  if (msgid_arg) wait(*msgid_arg);
+  if (msgid_arg) {
+      wait(*msgid_arg);
+      got_data_request_mid();
+    }
 
   const char *request_name = buffer.request_string();
   MemoryDataRequest::Request request = buffer.request();
@@ -68,6 +71,8 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
   int node = buffer.node();
   int from_type = data_type_from_handler_;
   int to_type = data_type_to_handler_;
+  // for Sync requests the node really tells us whether or not to reactivate
+  int reactivate = node;
 
   const char *handlerstr;
   if (msgid_arg) handlerstr = "====:";
@@ -81,12 +86,12 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
 
   switch (request) {
   case MemoryDataRequest::Deactivate:
-      mid = send(&junk, sizeof(junk), me(), from_type);
-      wait(mid);
       break;
   case MemoryDataRequest::Sync:
       nsync_++;
-      if (msgid_arg) activate();
+      if (msgid_arg) {
+          if ((me() == 0 && nsync_ < n() - 2) || reactivate) activate();
+        }
       break;
   case MemoryDataRequest::Retrieve:
       mid = send(&data_[offset], size, node, from_type);
@@ -250,8 +255,11 @@ MIDMemoryGrp::deactivate()
 {
   if (active_) {
       if (debug_) cout << scprintf("%d: MIDMemoryGrp::deactivate()\n", me_);
-      sync();
-      active_ = 0;
+      sync_act(0);
+      if (active_) {
+          cerr << "MIDMemoryGrp::deactivate(): still active" << endl;
+          abort();
+        }
     }
 }
 
@@ -337,6 +345,12 @@ MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
 void
 MIDMemoryGrp::sync()
 {
+  sync_act(1);
+}
+
+void
+MIDMemoryGrp::sync_act(int reactivate)
+{
   int i;
   int mid;
 
@@ -344,7 +358,8 @@ MIDMemoryGrp::sync()
 
   if (debug_) {
       cout << scprintf(
-          "%d: MIDMemoryGrp::sync() entered, active = %d\n", me_, active_);
+          "%d: MIDMemoryGrp::sync() entered, active = %d, reactivate = %d\n",
+          me_, active_, reactivate);
     }
 
   if (me() == 0) {
@@ -371,7 +386,7 @@ MIDMemoryGrp::sync()
           if (mid == data_request_mid_) {
               got_data_request_mid();
               handler();
-              activate();
+              if (nsync_ < n() - 1 || reactivate) activate();
             }
           else {
               cerr << scprintf(
@@ -384,7 +399,7 @@ MIDMemoryGrp::sync()
       if (debug_)
           cout << scprintf("%d: notifying nodes that sync is complete\n", me_);
       // tell all nodes that they can proceed
-      MemoryDataRequest buf(MemoryDataRequest::Sync, me());
+      MemoryDataRequest buf(MemoryDataRequest::Sync, me(), reactivate);
       for (i=1; i<n(); i++) {
           if (debug_) print_memreq(buf, "sync:", i);
           mid = send(buf.data(), buf.nbytes(), i, data_request_type_);
@@ -397,7 +412,7 @@ MIDMemoryGrp::sync()
     }
   else {
       // let node 0 know that i'm done
-      MemoryDataRequest buf(MemoryDataRequest::Sync, me());
+      MemoryDataRequest buf(MemoryDataRequest::Sync, me(), reactivate);
       if (debug_) print_memreq(buf, "sync:", 0);
       mid = send(buf.data(), buf.nbytes(), 0, data_request_type_);
       if (debug_) 
@@ -415,7 +430,7 @@ MIDMemoryGrp::sync()
                                    data_request_buffer_.serial_number());
               got_data_request_mid();
               handler();
-              activate();
+              if (reactivate || !nsync_) activate();
             }
           else if (tmpmid != mid) {
               cerr << scprintf(
@@ -438,7 +453,7 @@ MIDMemoryGrp::sync()
           if (mid == data_request_mid_) {
               got_data_request_mid();
               handler();
-              activate();
+              if (reactivate) activate();
             }
           else {
               cerr << scprintf(

@@ -82,6 +82,9 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
     virtual int probe(long);
 
     virtual void got_data_request_mid();
+
+    // this sync can optionally not reactivate the hander
+    void sync_act(int reactivate);
   public:
     MemoryDataRequest &data_request_buffer() { return data_request_buffer_; }
 

@@ -57,6 +57,7 @@ class GaussianBasisSet: public SavableState
     void init2();
     
   protected:
+    GaussianBasisSet(const GaussianBasisSet&);
     virtual void set_matrixkit(const RefSCMatrixKit&);
     
   public:

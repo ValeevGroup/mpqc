@@ -23,6 +23,11 @@ SymmGaussianBasisSet::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+SymmGaussianBasisSet::SymmGaussianBasisSet(const GaussianBasisSet& gbs)
+  : GaussianBasisSet(gbs), pl(*this)
+{
+}
+
 SymmGaussianBasisSet::SymmGaussianBasisSet(const RefKeyVal&topkeyval)
   : GaussianBasisSet(topkeyval), pl(*this)
 {

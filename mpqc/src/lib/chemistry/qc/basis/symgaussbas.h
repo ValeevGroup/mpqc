@@ -19,6 +19,7 @@ class SymmGaussianBasisSet: public GaussianBasisSet {
     PetiteList pl;
     
   public:
+    SymmGaussianBasisSet(const GaussianBasisSet&);
     SymmGaussianBasisSet(const RefKeyVal&);
     SymmGaussianBasisSet(StateIn&);
     ~SymmGaussianBasisSet();

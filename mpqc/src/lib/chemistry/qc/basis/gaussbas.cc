@@ -4,6 +4,7 @@
 #endif
 
 #include <util/keyval/keyval.h>
+#include <util/misc/newstring.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
@@ -57,6 +58,51 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
   // names to file names.
   BasisFileSet bases(keyval);
   init(molecule_,keyval,bases,1,pure);
+}
+
+GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
+  nshell_(gbs.nshell_),
+  ncenter_(gbs.ncenter_),
+  molecule_(gbs.molecule_),
+  matrixkit_(gbs.matrixkit_),
+  basisdim_(gbs.basisdim_)
+{
+  int i,j;
+  
+  name_ = new_string(gbs.name_);
+
+  center_to_nshell_.set_length(ncenter_);
+  for (i=0; i < ncenter_; i++)
+      center_to_nshell_(i) = gbs.center_to_nshell_(i);
+  
+  shell = new GaussianShell*[nshell_];
+  for (i=0; i<nshell_; i++) {
+      const GaussianShell& gsi = gbs(i);
+
+      int nc=gsi.ncontraction();
+      int np=gsi.nprimitive();
+      
+      int *ams = new int[nc];
+      int *pure = new int[nc];
+      double *exps = new double[np];
+      double **coefs = new double*[nc];
+
+      for (j=0; j < nc; j++) {
+          ams[j] = gsi.am(j);
+          pure[j] = gsi.is_pure(j);
+          coefs[j] = new double[np];
+          for (int k=0; k < np; k++)
+              coefs[j][k] = gsi.coefficient_unnorm(j,k);
+        }
+
+      for (j=0; j < np; j++)
+          exps[j] = gsi.exponent(j);
+      
+      shell[i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
+                                   GaussianShell::Unnormalized);
+    }
+
+  init2();
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):

@@ -64,7 +64,6 @@ MemoryGrp::~MemoryGrp()
 MemoryGrp *
 MemoryGrp::create_memorygrp(int localsize)
 {
-  printf("entered create memorygrp\n");
   MemoryGrp *ret = 0;
   RefMessageGrp msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {

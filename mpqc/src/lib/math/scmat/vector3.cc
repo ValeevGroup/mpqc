@@ -49,17 +49,88 @@ SCVector3 SCVector3::operator-(const SCVector3&v) const
   return result;
 }
 
-double SCVector3::dot(const SCVector3&v) const
-{
-  return _v[0]*v[0] + _v[1]*v[1] + _v[2]*v[2];
-}
-
 SCVector3 SCVector3::cross(const SCVector3&v) const
 {
   SCVector3 result(_v[1]*v._v[2]-_v[2]*v._v[1],
                 _v[2]*v._v[0]-_v[0]*v._v[2],
                 _v[0]*v._v[1]-_v[1]*v._v[0]);
   return result;
+}
+
+SCVector3 SCVector3::perp_unit(const SCVector3&v) const
+{
+  // try the cross product
+  SCVector3 result(_v[1]*v._v[2]-_v[2]*v._v[1],
+                   _v[2]*v._v[0]-_v[0]*v._v[2],
+                   _v[0]*v._v[1]-_v[1]*v._v[0]);
+  double resultdotresult = result.dot(result);
+  if (resultdotresult < 1.e-16) {
+      // the cross product is too small to normalize
+
+      // find the largest of this and v
+      double dotprodt = this->dot(*this);
+      double dotprodv = v.dot(v);
+      const SCVector3 *d;
+      double dotprodd;
+      if (dotprodt < dotprodv) {
+          d = &v;
+          dotprodd = dotprodv;
+        }
+      else {
+          d = this;
+          dotprodd = dotprodt;
+        }
+      // see if d is big enough
+      if (dotprodd < 1.e-16) {
+          // choose an arbitrary vector, since the biggest vector is small
+          result[0] = 1.0;
+          result[1] = 0.0;
+          result[2] = 0.0;
+          return result;
+        }
+      else {
+          // choose a vector perpendicular to d
+          // choose it in one of the planes xy, xz, yz
+          // choose the plane to be that which contains the two largest
+          // components of d
+          double absd[3];
+          absd[0] = fabs(d->_v[0]);
+          absd[1] = fabs(d->_v[1]);
+          absd[2] = fabs(d->_v[2]);
+          int axis0, axis1;
+          if (absd[0] < absd[1]) {
+              axis0 = 1;
+              if (absd[0] < absd[2]) {
+                  axis1 = 2;
+                }
+              else {
+                  axis1 = 0;
+                }
+            }
+          else {
+              axis0 = 0;
+              if (absd[1] < absd[2]) {
+                  axis1 = 2;
+                }
+              else {
+                  axis1 = 1;
+                }
+            }
+          result[0] = 0.0;
+          result[1] = 0.0;
+          result[2] = 0.0;
+          // do the pi/2 rotation in the plane
+          result[axis0] = d->_v[axis1];
+          result[axis1] = -d->_v[axis0];
+        }
+      result.normalize();
+      return result;
+    }
+  else {
+      // normalize the cross product and return the result
+      result *= 1.0/sqrt(resultdotresult);
+      return result;
+    }
 }
 
 void SCVector3::rotate(double theta,SCVector3&axis)
@@ -73,8 +144,7 @@ void SCVector3::rotate(double theta,SCVector3&axis)
   SCVector3 perpendicular = (*this) - parallel;
 
   // form a unit vector perpendicular to parallel and perpendicular
-  SCVector3 third_axis = axis.cross(perpendicular);
-  third_axis.normalize();
+  SCVector3 third_axis = axis.perp_unit(perpendicular);
   third_axis = third_axis * perpendicular.norm();
 
   result = parallel + cos(theta) * perpendicular + sin(theta) * third_axis;

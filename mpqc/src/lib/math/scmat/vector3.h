@@ -22,12 +22,20 @@ class SCVector3
     SCVector3(const RefSCVector&);
     void normalize();
     SCVector3 operator*(double) const;
+    void operator *= (double m) { _v[0] *= m; _v[1] *= m; _v[2] *= m; }
     SCVector3 operator+(const SCVector3&) const;
     SCVector3 operator-(const SCVector3&) const;
-    double dot(const SCVector3&) const;
+    double dot(const SCVector3&v) const {
+        return _v[0]*v[0] + _v[1]*v[1] + _v[2]*v[2]; }
     SCVector3 cross(const SCVector3&) const;
+    // returns a unit vector that is perpendicular to the two vectors
+    SCVector3 perp_unit(const SCVector3&) const;
+    void spherical_coord(double theta, double phi, 
+                         double r);
+    // this returns the length of the difference vector
+    double dist(const SCVector3&) const;
     void rotate(double theta,SCVector3 &v);
-    double norm() const;
+    double norm() const { return sqrt(this->dot(*this)); }
     double& elem(int xyz) { return _v[xyz]; }
     const double& elem(int xyz) const { return _v[xyz]; }
     double& operator [] (int i) { return _v[i]; }

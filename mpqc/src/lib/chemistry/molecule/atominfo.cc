@@ -153,6 +153,7 @@ AtomInfo::names_[MaxZ] =
   };
 
 #define CLASSNAME AtomInfo
+#define VERSION 2
 #define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -202,6 +203,16 @@ AtomInfo::AtomInfo(StateIn& s):
           delete[] overrides;
         }
     }
+  if (s.version(static_class_desc()) < 2) {
+      atomic_radius_scale_ = 1.0;
+      vdw_radius_scale_ = 1.0;
+      bragg_radius_scale_ = 1.0;
+    }
+  else {
+      s.get(atomic_radius_scale_);
+      s.get(vdw_radius_scale_);
+      s.get(bragg_radius_scale_);
+    }
 }
 
 AtomInfo::~AtomInfo()
@@ -223,6 +234,9 @@ AtomInfo::save_data_state(StateOut& s)
   else {
       s.putstring(overridden_values_);
     }
+  s.put(atomic_radius_scale_);
+  s.put(vdw_radius_scale_);
+  s.put(bragg_radius_scale_);
 }
 
 void
@@ -258,6 +272,9 @@ AtomInfo::load_library_values()
   grp->bcast(atomic_radius_,MaxZ);
   grp->bcast(vdw_radius_,MaxZ);
   grp->bcast(bragg_radius_,MaxZ);
+  grp->bcast(atomic_radius_scale_);
+  grp->bcast(vdw_radius_scale_);
+  grp->bcast(bragg_radius_scale_);
   for (int i=0; i<MaxZ; i++) grp->bcast(rgb_[i],3);
 }
 

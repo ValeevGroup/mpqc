@@ -432,7 +432,7 @@ class SCVectordouble {
     double operator=(double a);
     double operator=(const SCVectordouble&);
     operator double();
-    double val();
+    double val() const;
 };
 
 class SCMatrixdouble {
@@ -449,7 +449,7 @@ class SCMatrixdouble {
     double operator=(double a);
     double operator=(const SCMatrixdouble&);
     operator double();
-    double val();
+    double val() const;
 };
 
 class SymmSCMatrixdouble {
@@ -466,7 +466,7 @@ class SymmSCMatrixdouble {
     double operator=(double a);
     double operator=(const SymmSCMatrixdouble&);
     operator double();
-    double val();
+    double val() const;
 };
 
 class DiagSCMatrixdouble {
@@ -483,7 +483,7 @@ class DiagSCMatrixdouble {
     double operator=(double a);
     double operator=(const DiagSCMatrixdouble&);
     operator double();
-    double val();
+    double val() const;
 };
 
 #ifdef INLINE_FUNCTIONS

@@ -39,8 +39,8 @@ AtomicCenter::AtomicCenter(const AtomicCenter&ac) :
 
 AtomicCenter::AtomicCenter(const char*symbol,double x,double y,double z, 
                            const char *lab) :
-  element_(symbol),
   p(x,y,z),
+  element_(symbol),
   label_(0)
 {
   if (lab) {

@@ -54,9 +54,9 @@ MPSCF::_castdown(const ClassDesc*cd)
 
 MPSCF::MPSCF(KeyVal&keyval):
   OneBodyWavefunction(keyval),
+  _scf(this),
   _exchange_energy(this),
-  _eigenvectors(this),
-  _scf(this)
+  _eigenvectors(this)
 {
   RefGaussianBasisSet gbs = keyval.describedclassvalue("basis");
   centers_t *tcenters = gbs->convert_to_centers_t(_mol.pointer());
@@ -240,9 +240,9 @@ MPSCF::~MPSCF()
 MPSCF::MPSCF(StateIn&s):
   SavableState(s,MPSCF::class_desc_),
   OneBodyWavefunction(s),
+  _scf(this),
   _exchange_energy(this),
-  _eigenvectors(this),
-  _scf(this)
+  _eigenvectors(this)
 {
   // make sure only one MPSCF object exists
   if (active) {

@@ -48,7 +48,7 @@ Molecule::~Molecule()
 }
 
 Molecule::Molecule(KeyVal&input) :
-  atoms(0), natoms(0), pg(input)
+  pg(input), atoms(0), natoms(0)
 {
   const double ang_to_bohr = 1.0/0.52917706;
 

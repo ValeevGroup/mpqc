@@ -80,9 +80,9 @@ MolecularEnergy::MolecularEnergy(KeyVal&keyval):
 
 MolecularEnergy::MolecularEnergy(RefMolecule&mol):
   NLP2(mol->dim_natom3()),
-  _mol(mol),
   _mc(0),
-  _energy(_value)
+  _energy(_value),
+  _mol(mol)
 {
   _moldim = mol->dim_natom3();
   
@@ -95,9 +95,9 @@ MolecularEnergy::MolecularEnergy(RefMolecule&mol):
 
 MolecularEnergy::MolecularEnergy(RefMolecule&mol,RefMolecularCoor&mc):
   NLP2(mc->dim()),
-  _mol(mol),
   _mc(mc),
-  _energy(_value)
+  _energy(_value),
+  _mol(mol)
 {
   _moldim = new LocalSCDimension(mol->natom()*3);
   

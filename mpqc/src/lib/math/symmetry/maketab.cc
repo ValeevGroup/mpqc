@@ -20,9 +20,7 @@
  */
 
 #include <math.h>
-#if defined(SGI)
-#include <bstring.h>
-#endif
+#include <string.h>
 
 #include <math/symmetry/pointgrp.h>
 
@@ -57,11 +55,11 @@ int CharacterTable::make_table()
 
  // this array forms a reducible representation for rotations about x,y,z
   double *rot = new double[g];
-  bzero(rot,sizeof(double)*g);
+  memset(rot,'\0',sizeof(double)*g);
 
  // this array forms a reducible representation for translations along x,y,z
   double *trans = new double[g];
-  bzero(trans,sizeof(double)*g);
+  memset(trans,'\0',sizeof(double)*g);
 
  // the angle to rotate about the principal axis
   double theta = (nt) ? 2.0*M_PI/nt : 2.0*M_PI;

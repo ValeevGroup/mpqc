@@ -458,7 +458,7 @@ typedef OutSimpleCo Out;
 /** The LinIPSimpleCo class describes an in-plane component of a linear
 bend internal coordinate of a molecule.  The input is described in the
 documentation of its parent class SimpleCo.  A vector, $\bar{u}$, given as
-the keyword \keywd{u}, that is not colinear with either $\bar{r}_a -
+the keyword u, that is not colinear with either $\bar{r}_a -
 \bar{r}_b$ or $\bar{r}_b - \bar{r}_c$ must be provided, where $\bar{r}_a$,
 $\bar{r}_b$, and $\bar{r}_c$ are the positions of the first, second, and
 third atoms, respectively.

@@ -629,7 +629,7 @@ class IntMolecularCoor: public MolecularCoor
         coordinate displacements to cartesian displacements.  The default
         is 1.0e-12.
                
-        \item[\keywd{form:print_simple}] Print the simple internal
+        \item[form:print_simple] Print the simple internal
         coordinates.  The default is false.
                
         \item[form:print_variable] Print the variable internal coordinates.

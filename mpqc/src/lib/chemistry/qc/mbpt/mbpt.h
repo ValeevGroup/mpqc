@@ -67,6 +67,8 @@ class MBPT2: public Wavefunction {
 
     char *method_;
     char *algorithm_;
+    // if dos2_ is true, s2 will be computed even if the gradient is not
+    int dos2_;
 
     int nfuncmax;
 
@@ -125,6 +127,8 @@ class MBPT2: public Wavefunction {
 
     int gradient_implemented();
     int value_implemented();
+
+    void symmetry_changed();
 
     // override compute's obsolete so we can call the reference's obsolete
     void obsolete();

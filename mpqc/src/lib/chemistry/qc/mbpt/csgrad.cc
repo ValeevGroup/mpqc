@@ -284,6 +284,9 @@ MBPT2::compute_cs_grad()
       mem_static += nvir*nvir; // Wab
       mem_static += 2*nocc*nvir; // Waj & Laj
       }
+    else if (dos2_) {
+      mem_static += nocc*nvir; // partial Laj
+      }
     mem_static *= sizeof(double);
     ni = compute_cs_batchsize(mem_static, nocc_act); 
     }
@@ -414,7 +417,6 @@ MBPT2::compute_cs_grad()
     Wkj            = (double*) malloc(nocc*nocc*sizeof(double));
     Wab            = (double*) malloc(nvir*nvir*sizeof(double));
     Waj            = (double*) malloc(nvir*nocc*sizeof(double));
-    Laj            = (double*) malloc(nvir*nocc*sizeof(double));
 
     gradient_dat = new double[natom*3];
     gradient = new double*[natom];
@@ -437,7 +439,6 @@ MBPT2::compute_cs_grad()
     bzerofast(Pab,nvir*(nvir+1)/2);
     bzerofast(Wab,nvir*nvir);
     bzerofast(Waj,nvir*nocc);
-    bzerofast(Laj,nvir*nocc);
 
     if (me == 0) zero_gradients(gradient, natom, 3);
     }
@@ -452,6 +453,11 @@ MBPT2::compute_cs_grad()
     gradient_dat = 0;
     gradient = 0;
     ginter = 0;
+    }
+
+  if (dograd || dos2_) {
+    Laj = (double*) malloc(nvir*nocc*sizeof(double));
+    bzerofast(Laj,nvir*nocc);
     }
 
   if (debug_ && me == 0) {
@@ -879,7 +885,7 @@ MBPT2::compute_cs_grad()
             }   // exit a loop
 
           // this is only needed for gradients
-          if (dograd && j >= nfzc) {
+          if ((dograd || dos2_) && j >= nfzc) {
             for (k=0; k<nocc; k++) {
               bzerofast(integral_ikja, nvir_act);
               ikjs_ptr = &integral_ixjs[k + nbasis*nbasis*ij_index];
@@ -1014,14 +1020,16 @@ MBPT2::compute_cs_grad()
            << endl;
       }
 
-    // don't go beyond this point if only the energy is needed
-    if (!dograd) continue;
-
     integral_iqjs = 0;
     membuf.release();
     mem->sync(); // Make sure MO integrals are complete on all nodes before continuing
 
+    // don't go beyond this point if only the energy is needed
+    if (!dograd && !dos2_) continue;
+
     mo_int = (double*) membuf.readonly_on_node(0, nij*nbasis*nbasis);
+
+    if (!dograd) goto compute_L;
 
     // Update the matrices Pkj and Wkj with
     // contributions from (occ vir|occ vir) integrals
@@ -1148,6 +1156,8 @@ MBPT2::compute_cs_grad()
       }
     // end of debug print
 
+    compute_L:
+
     ///////////////////////////////////////
     // Update Waj and Laj with contrib. 
     // from (oo|ov) and (ov|oo) integrals;
@@ -1168,12 +1178,12 @@ MBPT2::compute_cs_grad()
               for (b=0; b<nvir_act; b++) {
                 ibka_ptr = &mo_int[b+nocc + offset];
                 ijkb_ptr = &mo_int[j + nbasis*b + offset];
-                waj_ptr = &Waj[j*nvir]; // order as j*nvir+a to make loops more efficient
+                if (dograd) waj_ptr = &Waj[j*nvir]; // order as j*nvir+a to make loops more efficient
                 laj_ptr = &Laj[j*nvir];
                 for (a=0; a<nvir_act; a++) {
                   tmpval = 2**ibka_ptr * *ijkb_ptr;
                   ibka_ptr += nbasis;
-                  *waj_ptr++ += tmpval;
+                  if (dograd) *waj_ptr++ += tmpval;
                   *laj_ptr++ -= tmpval; // This term had the wrong sign in Frisch's paper
                   } // exit a loop
                 }   // exit b loop
@@ -1196,12 +1206,12 @@ MBPT2::compute_cs_grad()
               for (j=0; j<nocc; j++) {
                 ibkj_ptr = &mo_int[offset + b + j*nbasis];
                 ibka_ptr = &mo_int[offset + b + nocc*nbasis];
-                waj_ptr = &Waj[j*nvir];
+                if (dograd) waj_ptr = &Waj[j*nvir];
                 laj_ptr = &Laj[j*nvir];
                 for (a=0; a<nvir_act; a++) {
                   tmpval = 4 * *ibka_ptr * *ibkj_ptr;
                   ibka_ptr += nbasis;
-                  *waj_ptr++ -= tmpval;
+                  if (dograd) *waj_ptr++ -= tmpval;
                   *laj_ptr++ += tmpval; // This term had the wrong sign in Frisch's paper
                   } // exit a loop
                 }   // exit j loop
@@ -1568,6 +1578,8 @@ MBPT2::compute_cs_grad()
             tim_exit("(ov|vv) contrib to Laj");
             }                 // endif
 
+          if (!dograd) continue;
+
           if (tbintder_->log2_shell_bound(R,S) >= tol) {
 
             for (Q=0; Q<=S; Q++) {
@@ -1800,8 +1812,85 @@ MBPT2::compute_cs_grad()
     }
   set_energy(emp2);
 
+  RefSCDimension nocc_act_dim(new SCDimension(nocc_act));
+  RefSCDimension nvir_act_dim(new SCDimension(nvir_act));
+  RefSCDimension nocc_dim(new SCDimension(nocc));
+  RefSCDimension nvir_dim(new SCDimension(nvir));
+  RefSCDimension nbasis_dim(new SCDimension(nbasis));
+
+  if (dograd || dos2_) {
+    msg_->sum(Laj,nvir*nocc);
+
+    RefSCMatrix s2(nocc_act_dim, nvir_act_dim, kit);
+    BiggestContribs biggest_s2(2,10);
+    // compute the S2 norm
+    double s2norm = 0.0;
+    for (j=nfzc; j<nocc; j++) {
+      laj_ptr = &Laj[j*nvir];
+      for (a=0; a<nvir_act; a++) {
+        tmpval = 0.5**laj_ptr++/(evals[a+nocc]-evals[j]);
+        s2.set_element(j-nfzc,a,tmpval);
+        biggest_s2.insert(tmpval,j,a);
+        s2norm += tmpval*tmpval;
+        }
+      }
+    // compute the S2 matrix 1-norm
+    double s2onenorm = 0.0;
+    RefSCElementSumAbs sumabs = new SCElementSumAbs;
+    RefSCElementOp genop = sumabs.pointer();
+    for (a=0; a < nvir_act; a++) {
+      sumabs->init();
+      s2.get_column(a).element_op(genop);
+      if (s2onenorm < sumabs->result()) s2onenorm = sumabs->result();
+      }
+    // compute the S2 matrix inf-norm
+    double s2infnorm = 0.0;
+    for (j=0; j < nocc_act; j++) {
+      sumabs->init();
+      s2.get_row(j).element_op(genop);
+      if (s2infnorm < sumabs->result()) s2infnorm = sumabs->result();
+      }
+    // compute the S2 matrix 2-norm
+    RefSymmSCMatrix s2s2(nocc_act_dim,kit);
+    s2s2.assign(0.0);
+    s2s2.accumulate_symmetric_product(s2);
+    s2 = 0;
+    double s2twonorm = sqrt(s2s2.eigvals().get_element(nocc_act-1));
+    s2s2 = 0;
+    // compute the S2 norm
+    s2norm = sqrt(s2norm/(2*nocc_act));
+    // print the norms
+    cout <<node0
+         <<indent<<scprintf("S2(ov) matrix 1-norm   = %12.8f", s2onenorm)
+         <<endl
+         <<indent<<scprintf("S2 matrix 2-norm       = %12.8f", s2twonorm)
+         <<endl
+         <<indent<<scprintf("S2(ov) matrix inf-norm = %12.8f", s2infnorm)
+         <<endl
+         <<indent<<scprintf("S2 norm                = %12.8f", s2norm)
+         <<endl;
+    if (biggest_s2.ncontrib()) {
+      cout << node0 << endl
+           << indent << "Largest S2 values (unique determinants):" << endl;
+      }
+    for (i=0; i<biggest_s2.ncontrib(); i++) {
+      int i0 = orbital_map[biggest_s2.indices(i)[0]];
+      int i1 = orbital_map[biggest_s2.indices(i)[1] + nocc];
+      cout << node0
+           << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
+                                 i+1, biggest_s2.val(i),
+                                 symorb_num_[i0]+1,
+                                 ct.gamma(symorb_irrep_[i0]).symbol(),
+                                 symorb_num_[i1]+1,
+                                 ct.gamma(symorb_irrep_[i1]).symbol())
+           << endl;
+      }
+
+    } // if (dograd || dos2_)
+
   // quit here if only the energy is needed
   if (!dograd) {
+    if (dos2_) delete[] Laj;
     delete[] scf_vector;
     delete[] scf_vector_dat;
     delete[] evals;
@@ -1833,80 +1922,12 @@ MBPT2::compute_cs_grad()
   ////////////////////////////////////////////////////////
   tmpint = (nvir > nocc ? nvir:nocc);
   double *tmpmat = new double[tmpint*tmpint];
-  msg_->sum(Laj,nvir*nocc,tmpmat);
   msg_->sum(Pkj,nocc*(nocc+1)/2,tmpmat); // Pkj is now complete
   msg_->sum(Pab,nvir*(nvir+1)/2,tmpmat); // Pab is now complete
   msg_->sum(Wab,nvir*nvir,tmpmat);
   msg_->sum(Wkj,nocc*nocc,tmpmat);
   msg_->sum(Waj,nvir*nocc,tmpmat);
   delete[] tmpmat;
-
-  RefSCDimension nocc_act_dim(new SCDimension(nocc_act));
-  RefSCDimension nvir_act_dim(new SCDimension(nvir_act));
-  RefSCDimension nocc_dim(new SCDimension(nocc));
-  RefSCDimension nvir_dim(new SCDimension(nvir));
-  RefSCDimension nbasis_dim(new SCDimension(nbasis));
-
-  RefSCMatrix s2(nocc_act_dim, nvir_act_dim, kit);
-  BiggestContribs biggest_s2(2,10);
-  // compute the S2 norm
-  double s2norm = 0.0;
-  for (j=nfzc; j<nocc; j++) {
-    laj_ptr = &Laj[j*nvir];
-    for (a=0; a<nvir_act; a++) {
-      tmpval = 0.5**laj_ptr++/(evals[a+nocc]-evals[j]);
-      s2.set_element(j-nfzc,a,tmpval);
-      biggest_s2.insert(tmpval,j,a);
-      s2norm += tmpval*tmpval;
-      }
-    }
-  // compute the S2 matrix 1-norm
-  double s2onenorm = 0.0;
-  RefSCElementSumAbs sumabs = new SCElementSumAbs;
-  RefSCElementOp genop = sumabs.pointer();
-  for (a=0; a < nvir_act; a++) {
-    sumabs->init();
-    s2.get_column(a).element_op(genop);
-    if (s2onenorm < sumabs->result()) s2onenorm = sumabs->result();
-    }
-  // compute the S2 matrix inf-norm
-  double s2infnorm = 0.0;
-  for (j=0; j < nocc_act; j++) {
-    sumabs->init();
-    s2.get_row(j).element_op(genop);
-    if (s2infnorm < sumabs->result()) s2infnorm = sumabs->result();
-    }
-  // compute the S2 matrix 2-norm
-  RefSymmSCMatrix s2s2(nocc_act_dim,kit);
-  s2s2.assign(0.0);
-  s2s2.accumulate_symmetric_product(s2);
-  s2 = 0;
-  double s2twonorm = sqrt(s2s2.eigvals().get_element(nocc_act-1));
-  s2s2 = 0;
-  // compute the S2 norm
-  s2norm = sqrt(s2norm/(2*nocc_act));
-  // print the norms
-  cout <<node0
-       <<indent<<scprintf("S2(ov) matrix 1-norm   = %12.8f", s2onenorm) <<endl
-       <<indent<<scprintf("S2 matrix 2-norm       = %12.8f", s2twonorm) <<endl
-       <<indent<<scprintf("S2(ov) matrix inf-norm = %12.8f", s2infnorm) <<endl
-       <<indent<<scprintf("S2 norm                = %12.8f", s2norm) <<endl;
-  if (biggest_s2.ncontrib()) {
-    cout << node0 << endl
-         << indent << "Largest S2 values (unique determinants):" << endl;
-    }
-  for (i=0; i<biggest_s2.ncontrib(); i++) {
-    int i0 = orbital_map[biggest_s2.indices(i)[0]];
-    int i1 = orbital_map[biggest_s2.indices(i)[1] + nocc];
-    cout << node0 << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
-                                        i+1, biggest_s2.val(i),
-                                        symorb_num_[i0]+1,
-                                        ct.gamma(symorb_irrep_[i0]).symbol(),
-                                        symorb_num_[i1]+1,
-                                        ct.gamma(symorb_irrep_[i1]).symbol())
-         << endl;
-    }
-
 
   // Finish computation of Wab
   tim_enter("Pab and Wab");

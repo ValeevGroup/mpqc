@@ -79,6 +79,7 @@ dquicksort(double *item,int *index,int n)
 ///////////////////////////////////////////////////////////////////////////
 // MBPT2
 
+#define VERSION 2
 #define CLASSNAME MBPT2
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -104,6 +105,13 @@ MBPT2::MBPT2(StateIn& s):
   s.getstring(method_);
   s.getstring(algorithm_);
   s.get(debug_);
+
+  if (s.version(static_class_desc()) >= 2) {
+      s.get(dos2_);
+    }
+  else {
+      dos2_ = 0;
+    }
 
   symorb_irrep_ = 0;
   symorb_num_ = 0;
@@ -150,6 +158,8 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
 
   algorithm_ = keyval->pcharvalue("algorithm");
 
+  dos2_ = keyval->booleanvalue("compute_s2");
+
   debug_ = keyval->booleanvalue("debug");
   if (keyval->error() == KeyVal::WrongType)
       debug_ = keyval->intvalue("debug");
@@ -179,6 +189,7 @@ MBPT2::save_data_state(StateOut& s)
   s.putstring(method_);
   s.putstring(algorithm_);
   s.put(debug_);
+  s.put(dos2_);
 }
 
 void
@@ -470,6 +481,14 @@ MBPT2::init_variables()
     else if (reference_->occupation(i) == 1.0) nsocc++;
     else nvir++;
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+MBPT2::symmetry_changed()
+{
+  reference_->symmetry_changed();
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -12,9 +12,12 @@ BIN_OR_LIB = LIB
 
 SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc
 
+CLASSES = ElectronDensity OneBodyWavefunction Wavefunction
+
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
+default:: dlinfo
 default:: $(TOPDIR)/lib/libwfn.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libwfn.so

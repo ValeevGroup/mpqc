@@ -5,12 +5,12 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-#CXXFLAGS = $(CXXFLAGS_DEBUG)
-
 TARGET_TO_MAKE = libmpqc
 BIN_OR_LIB = LIB
 
 SRCS = mpqc.cc
+
+CLASSES = MPSCF
 
 TESTSRCS = mpqctest.cc
 
@@ -26,6 +26,7 @@ ifeq ($(ARCH),SUNMOS)
 endif
 
 default:: $(DEPENDINCLUDE)
+default:: dlinfo
 default:: $(TOPDIR)/lib/libmpqc.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libmpqc.so

@@ -11,6 +11,15 @@ CXXSRC = atomcent.cc chemelem.cc molecule.cc \
          energy.cc coor.cc \
          molshape.cc chmelm_i.cc imcoor.cc taylor.cc
 
+CLASSES = Molecule \
+          AtomicCenter ChemicalElement \
+          IntCoor SumIntCoor SetIntCoor \
+          MolecularCoor IntMolecularCoor \
+          MolecularEnergy  TaylorMolecularEnergy \
+          VDWShape ConnollyShape \
+          SimpleCo StreSimpleCo BendSimpleCo TorsSimpleCo \
+          OutSimpleCo LinIPSimpleCo LinOPSimpleCo
+
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
@@ -29,6 +38,7 @@ TESTFILES = moltest.in
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)
+default:: dlinfo
 default:: $(TOPDIR)/lib/libmolecule.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libmolecule.so

@@ -20,6 +20,10 @@ CXXSRC = volume.cc shape.cc volume_i.cc \
          vertex.cc edge.cc triangle.cc isosurf.cc
 CSRC = implicit.c
 
+CLASSES = Volume Shape UnionShape SphereShape \
+          UncappedTorusHoleShape NonreentrantUncappedTorusHoleShape \
+          ReentrantUncappedTorusHoleShape Uncapped5SphereExclusionShape
+
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) $(GENCXXSRC:%.cc=%.o)
 
 INC = volume.h shape.h volume_i.h implicit.h
@@ -32,6 +36,7 @@ TARGET_TO_MAKE = isosurf
 DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
+default:: dlinfo
 default:: $(TOPDIR)/lib/isosurf.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/isosurf.so

@@ -269,10 +269,10 @@ main(int argc, char *argv[])
       int result = opt->optimize();
       if (result) {
         cout << node0 << indent
-             << "The optimization has converged." << endl;
+             << "The optimization has converged." << endl << endl;
       } else {
         cout << node0 << indent
-             << "The optimization has NOT converged." << endl;
+             << "The optimization has NOT converged." << endl << endl;
         ready_for_freq = 0;
       }
     } else if (do_grad && mole->gradient_implemented()) {

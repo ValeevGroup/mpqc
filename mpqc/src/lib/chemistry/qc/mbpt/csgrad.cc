@@ -225,12 +225,13 @@ MBPT2::compute_cs_grad()
   me = msg_->me();
 
   if (me == 0) {
-    cout << indent
+    cout << endl << indent
          << "Entered memgrp based MP2 routine" << endl;
     }
   
   nproc = msg_->n();
-  if (me == 0) cout << indent << scprintf("nproc = %i", nproc) << endl;
+  if (me == 0)
+    cout << indent << scprintf("nproc = %i", nproc) << endl;
 
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
   dtol = 1.0e-10;
@@ -434,7 +435,7 @@ MBPT2::compute_cs_grad()
     ginter = 0;
     }
 
-  if (me == 0) {
+  if (debug_ && me == 0) {
     for (j=0; j<nbasis; j++) {
       cout << indent
            << scprintf("eigenvalue[%3d] = %15.10lf", j, evals[j]);
@@ -471,7 +472,7 @@ MBPT2::compute_cs_grad()
   if (mem_integral_storage<0) mem_integral_storage = 0;
   tbint_->set_integral_storage(mem_integral_storage);
 
-  cout << node0 << indent
+  cout << node0 << endl << indent
        << scprintf("Memory used for integral intermediates: %i Bytes",
                    mem_integral_intermediates)
        << endl;
@@ -1694,21 +1695,26 @@ MBPT2::compute_cs_grad()
 
     // Print out various energies etc.
 
-    cout<<indent
-        <<scprintf("Number of shell quartets for which AO integrals \n"
-                   "(or integral derivatives) would have been computed\n"
-                   "without bounds checking: %i\n",
-                   npass*nshell*nshell*(nshell+1)*(nshell+1)/2);
-    cout<<indent
-        <<scprintf("Number of shell quartets for which AO integrals\n"
-                   "were computed: %i\n",aoint_computed);
-    if (dograd) {
-      cout<<indent
-          <<scprintf("Number of shell quartets for which AO integral derivatives\n"
-                     "were computed: %i\n",aointder_computed);
+    if (debug_) {
+      cout << indent << "Number of shell quartets for which AO integrals\n"
+           << indent << "(or integral derivatives) would have been computed\n"
+           << indent << "without bounds checking: "
+           << npass*nshell*nshell*(nshell+1)*(nshell+1)/2
+           << endl;
+
+      cout << indent << "Number of shell quartets for which AO integrals\n"
+           << indent << "were computed: " << aoint_computed
+           << endl;
+
+      if (dograd) {
+        cout << indent
+             << "Number of shell quartets for which AO integral derivatives\n"
+             << "were computed: " << aointder_computed
+             << endl;
+        }
       }
 
-    cout<<indent
+    cout<<endl<<indent
         <<scprintf("RHF energy [au]:                   %13.8lf\n", escf);
     cout<<indent
         <<scprintf("MP2 correlation energy [au]:       %13.8lf\n", ecorr_mp2);
@@ -1740,7 +1746,7 @@ MBPT2::compute_cs_grad()
     accum_gradients(gradient, ginter, natom, 3);
 
   // Print out contribution to the gradient from non-sep. 2PDM
-  if (me == 0) {
+  if (debug_ && me == 0) {
     cout << indent
          << "Contribution to MP2 gradient from non-separable 2PDM [au]:"
          << endl;
@@ -2075,7 +2081,7 @@ MBPT2::compute_cs_grad()
     accum_gradients(gradient, ginter, natom, 3);
     }
   // Print out the contribution to the gradient from sep. 2PDM
-  if (me == 0) {
+  if (debug_ && me == 0) {
     cout <<indent
          << "Contribution from separable 2PDM to MP2 gradient [au]:" << endl;
     for (i=0; i<natom; i++) {
@@ -2103,7 +2109,7 @@ MBPT2::compute_cs_grad()
     accum_gradients(gradient, ginter, natom, 3);
     }
   // Print out the contribution to the gradient from hcore
-  if (me == 0) {
+  if (debug_ && me == 0) {
     cout << indent << "Contribution to MP2 gradient from hcore [au]:" << endl;
     for (i=0; i<natom; i++) {
       cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
@@ -2122,7 +2128,7 @@ MBPT2::compute_cs_grad()
     accum_gradients(gradient, ginter, natom, 3);
     }
   // Print out the overlap contribution to the gradient
-  if (me == 0) {
+  if (debug_ && me == 0) {
     cout << indent << "Overlap contribution to MP2 gradient [au]:" << endl;
     for (i=0; i<natom; i++) {
       cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
@@ -2142,11 +2148,13 @@ MBPT2::compute_cs_grad()
     accum_gradients(gradient, ginter, natom, 3);
 
     // Print out the nuclear contribution to the gradient
-    cout << indent
-         << scprintf("Nuclear contribution to MP2 gradient [au]:") << endl;
-    for (i=0; i<natom; i++) {
-      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                                 ginter[i][0], ginter[i][1], ginter[i][2]);
+    if (debug_) {
+      cout << indent
+           << scprintf("Nuclear contribution to MP2 gradient [au]:") << endl;
+      for (i=0; i<natom; i++) {
+        cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
+                                   ginter[i][0], ginter[i][1], ginter[i][2]);
+        }
       }
     }
 
@@ -2156,7 +2164,7 @@ MBPT2::compute_cs_grad()
   // print out the gradient
   ////////////////////////////////////////////////////////
   if (me == 0) {
-    cout << indent << "Total MP2 gradient [au]:" << endl;
+    cout << endl << indent << "Total MP2 gradient [au]:" << endl;
     for (i=0; i<natom; i++) {
       cout << indent
            << scprintf("%15.10lf  %15.10lf  %15.10lf\n",

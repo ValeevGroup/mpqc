@@ -242,7 +242,7 @@ MolecularEnergy::set_x(const RefSCVector&v)
   Function::set_x(v);
   x_to_molecule();
   if (print_molecule_when_changed_) {
-      cout << node0 << indent << class_name()
+      cout << node0 << endl << indent << class_name()
            << ": changing atomic coordinates:" << endl;
       molecule()->print();
     }

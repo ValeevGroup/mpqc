@@ -1,5 +1,6 @@
 
 #include <util/misc/scexception.h>
+#include <stdexcept>
 
 using namespace sc;
 
@@ -15,6 +16,43 @@ class X: public DescribedClass {
 };
 
 static ClassDesc X_cd(typeid(X),"X",1,"public DescribedClass");
+
+class NestedException: public SCException {
+  public:
+    NestedException(
+        const char *description = 0,
+        const char *file = 0,
+        int line = 0,
+        const ClassDesc *class_desc = 0,
+        const char *exception_type = "NestedException") throw():
+      SCException(description, file, line, class_desc, exception_type)
+        {
+          try {
+              if (description) throw NestedException();
+              throw std::runtime_error("ctor");
+            }
+          catch (...) {}
+        }
+  
+    NestedException(const NestedException& ref) throw():
+      SCException(ref)
+        {
+          try {
+              if (description()) throw NestedException();
+              throw std::runtime_error("ctor");
+            }
+          catch (...) {}
+        }
+
+    ~NestedException() throw()
+        {
+          try {
+              if (description()) throw NestedException();
+              throw std::runtime_error("ctor");
+            }
+          catch (...) {}
+        }
+};
 
 void
 f()
@@ -106,6 +144,26 @@ o()
                       __LINE__,
                       "xyz",
                       10);
+}
+
+void
+ex_on_stack()
+{
+  ProgrammingError ex("programming error in ex_on_stack()",
+                      __FILE__, __LINE__);
+  try {
+      ex.elaborate() << "more info about the problem" << std::endl;
+      throw std::runtime_error("whoops");
+    }
+  catch (...) {}
+  throw ex;
+}
+
+void
+nested()
+{
+  throw NestedException("nested exception test",
+                        __FILE__, __LINE__);
 }
 
 main()
@@ -207,6 +265,24 @@ main()
     }
   catch (SCException &e) {
       std::cout << "EXPECTED: got an x.x() exception" << std::endl;
+      std::cout << e.what() << std::endl;
+    }
+
+  try {
+      ex_on_stack();
+      std::cout << "ERROR: ex_on_stack() ran OK" << std::endl;
+    }
+  catch (SCException &e) {
+      std::cout << "EXPECTED: got an ex_on_stack() exception" << std::endl;
+      std::cout << e.what() << std::endl;
+    }
+
+  try {
+      nested();
+      std::cout << "ERROR: nested() ran OK" << std::endl;
+    }
+  catch (SCException &e) {
+      std::cout << "EXPECTED: got an nested() exception" << std::endl;
       std::cout << e.what() << std::endl;
     }
 

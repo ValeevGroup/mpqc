@@ -213,7 +213,7 @@ RefSCDimension
 PetiteList::AO_basisdim()
 {
   RefSCDimension dim = new SCDimension(gbs_->nbasis(),1);
-  dim->blocks()->set_subdim(0, new SCDimension(gbs_->nbasis()));
+  dim->blocks()->set_subdim(0, gbs_->basisdim());
   return dim;
 }
 

@@ -96,10 +96,8 @@ class TimedRegion {
     double wall_time_;
     double cpu_enter_;
     double wall_enter_;
-#if HAVE_FLOPS
     double flops_;
     double flops_enter_;
-#endif
 
     TimedRegion *insert_after(const char *name);
     TimedRegion *insert_before(const char *name);

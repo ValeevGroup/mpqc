@@ -517,25 +517,49 @@ PetiteList::aotoso()
   for (iter->begin(); iter->ready(); iter->next()) {
     SO_block& sob = sos[iter->current_block()];
 
-    SCMatrixRectBlock *blk =
-      SCMatrixRectBlock::require_castdown(iter->block(),
+    if (SCMatrixRectBlock::castdown(iter->block())) {
+      SCMatrixRectBlock *blk =
+        SCMatrixRectBlock::require_castdown(iter->block(),
                                           "PetiteList::aotoso:blk");
 
-    int jlen = blk->jend-blk->jstart;
+      int jlen = blk->jend-blk->jstart;
     
-    for (int j=0; j < sob.len; j++) {
-      if (j < blk->jstart || j >= blk->jend)
-        continue;
-      
-      SO& soj = sob.so[j];
-      
-      for (int i=0; i < soj.len; i++) {
-        int ii=soj.cont[i].bfn;
-        
-        if (ii < blk->istart || ii >= blk->iend)
+      for (int j=0; j < sob.len; j++) {
+        if (j < blk->jstart || j >= blk->jend)
           continue;
+      
+        SO& soj = sob.so[j];
+      
+        for (int i=0; i < soj.len; i++) {
+          int ii=soj.cont[i].bfn;
+        
+          if (ii < blk->istart || ii >= blk->iend)
+            continue;
 
-        blk->data[(ii-blk->istart)*jlen+(j-blk->jstart)] = soj.cont[i].coef;
+          blk->data[(ii-blk->istart)*jlen+(j-blk->jstart)] = soj.cont[i].coef;
+        }
+      }
+    } else {
+      SCMatrixRectSubBlock *blk =
+        SCMatrixRectSubBlock::require_castdown(iter->block(),
+                                          "PetiteList::aotoso:blk");
+
+      int jlen = blk->jend-blk->jstart;
+    
+      for (int j=0; j < sob.len; j++) {
+        if (j < blk->jstart || j >= blk->jend)
+          continue;
+      
+        SO& soj = sob.so[j];
+      
+        for (int i=0; i < soj.len; i++) {
+          int ii=soj.cont[i].bfn;
+        
+          if (ii < blk->istart || ii >= blk->iend)
+            continue;
+
+          blk->data[(ii-blk->istart)*jlen+(j-blk->jstart)] = soj.cont[i].coef;
+        }
       }
     }
   }
@@ -770,7 +794,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   GaussianBasisSet& gbs = *gbs_.pointer();
   CharacterTable ct = gbs.molecule()->point_group().char_table();
 
-#if 0
+#if 1
   RefSymmSCMatrix bskel = BlockedSymmSCMatrix::castdown(skel);
   if (bskel.null()) {
     bskel = gbs.so_matrixkit()->symmmatrix(AO_basisdim());

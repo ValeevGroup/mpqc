@@ -24,7 +24,7 @@ DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 default:: $(DEPENDINCLUDE)
 default:: isosurf.a
 
-isotest: isotest.o isosurf.a \
+isotest: isotest.o isosurf.a util/options/liboptions.a \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o isotest $^ $(SYSLIBS)
 

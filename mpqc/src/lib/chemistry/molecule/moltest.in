@@ -5,7 +5,7 @@ atominfo<AtomInfo>: (
     molinfofiles = [ molinfo.ipv2 ]
   )
 
-molecule<Molecule>: (
+big_molecule<Molecule>: (
     angstrom = yes
     %symmetry=d2h
     %redundant_atoms=yes
@@ -102,18 +102,101 @@ molecule<Molecule>: (
     }
   )
 
-molcoor<IntMolecularCoor>: (
-  molecule = $:molecule
+small_molecule<Molecule>: (
+    angstrom = no
+    { atoms                  geometry                } =
+    {
+       O   [       0.000000    0.000000    0.000000 ]
+       H   [       0.000000    1.000000    1.000000 ]
+       H   [       0.000000   -1.000000    1.000000 ]
+       }
+  )
+
+molecule = $:small_molecule
+
+big_molcoor<SymmMolecularCoor>: (
+  molecule = $:big_molecule
   scale_bonds = 16.0
   scale_bends = 4.0
   simple_tolerance = 0.05
   update_bmatrix = yes
-  xfixed<SetIntCoor>: [
-    <StreSimpleCo> = [ "r(OH)" 1 2 ]
+  given_fixed_values = yes
+  fixed<SetIntCoor>: [
+    <StreSimpleCo>: ( atoms = [ 1 2 ] label = "r(OH)" value = 1.0 )
+    %<StreSimpleCo> = [ "r(OH)" 1 2 ]
     %<BendSimpleCo> = [ "a(HOH)" 2 1 3 ]
     ]
   extra_bonds = [ 1 3  2 4  1 4 ]
   )
+
+small_molcoor<SymmMolecularCoor>: (
+  molecule = $:small_molecule
+  scale_bonds = 16.0
+  scale_bends = 4.0
+  simple_tolerance = 0.05
+  update_bmatrix = yes
+  have_fixed_values = yes
+  max_update_steps = 100
+  max_update_disp = 100.0
+  fixed<SetIntCoor>: [
+    <StreSimpleCo>: ( atoms = [ 2 3 ] label = "r(HH)" value = 1.5 )
+    %<StreSimpleCo>: ( atoms = [ 1 3 ] label = "r(OH)" value = 2.2 )
+    ]
+  )
+
+medium_molcoor<SymmMolecularCoor>: (
+  molecule<Molecule>: (
+      angstrom = yes
+      { atoms                  geometry                } =
+      {
+            C      [    -1.481978    1.137918    0.053920]
+            C      [    -2.377552   -0.058848    0.015422]
+            N      [    -0.256358    0.721189    0.007050]
+            H      [    -1.754455    2.190795    0.079781]
+            C      [    -0.326866   -0.730249   -0.014562]
+            C      [     1.043217    1.561636   -0.056035]
+            N      [    -1.671068   -1.129599   -0.036351]
+            H      [    -3.465237   -0.021159    0.023663]
+            H      [     1.063541    2.111989    0.901108]
+            H      [     0.887902    2.255657   -0.891111]
+            N      [     0.656762   -1.486673    0.005244]
+            H      [     2.056209    0.795245   -0.136829]
+            H      [     0.425921   -2.467905   -0.021317]
+            H      [     1.917997   -1.027989    0.094573]
+            O      [     2.866992   -0.212573   -0.043377]
+            H      [     3.685907   -0.333218    0.473075]
+         }
+    )
+  scale_bonds = 16.0
+  scale_bends = 4.0
+  simple_tolerance = 0.05
+  update_bmatrix = yes
+  max_update_steps = 200
+  max_update_disp = 0.5
+  have_fixed_values = yes
+  fixed<SetIntCoor>: [
+    <SumIntCoor>: (
+        unit = bohr
+        value = 0.1
+        label = "Reaction Coordinate"
+        coor: [
+            <StreSimpleCo>: (atoms = [ 6 12] label = "r(CH)")
+            <StreSimpleCo>: (atoms = [12 15] label = "r(HO)")
+            <StreSimpleCo>: (atoms = [15 14] label = "r(OH)")
+            <StreSimpleCo>: (atoms = [14 11] label = "r(HN)")
+          ]
+        coef = [
+             1.0
+            -1.0
+             1.0
+            -1.0
+          ]
+      )
+    ]
+  extra_bonds = [ 12 6  12 15  14 15  11 14 ]
+  )
+
+molcoor = $:medium_molcoor
 
 simp<SetIntCoor>: [
     <StreSimpleCo> = [ "st____1" 1 2 ]
@@ -153,67 +236,11 @@ bmat_test<SetIntCoor>: [
        )
   ]
 
-streOH1<StreSimpleCo> = [ "roh1" 1 3 ]
-streOH2<StreSimpleCo> = [ "roh2" 2 4 ]
-bendOOH1<BendSimpleCo> = [ "bOOH1" 1 4 2 ]
-bendOOH2<BendSimpleCo> = [ "bOOH2" 3 1 4 ]
-
-energy<TaylorMolecularEnergy>: (
-  coordinates<SetIntCoor>: [
-    <SumIntCoor>: (
-        label = "symstre"
-        value = 1.1
-        { coef  coor } = {
-          1.0   $:streOH1
-          1.0   $:streOH2
-         }
-       )
-    <SumIntCoor>: (
-        label = "symbend"
-        value = 1.1
-        { coef  coor } = {
-          1.0   $:bendOOH1
-          1.0   $:bendOOH2
-         }
-       )
-    <StreSimpleCo> = [ "roo"  2 4 ]
-    <TorsSimpleCo> = [ "thooh" 2 4 1 3 ]
-    <SumIntCoor>: (
-        label = "asymstre"
-        value = 1.1
-        { coef  coor } = {
-          1.0   $:streOH1
-         -1.0   $:streOH2
-         }
-       )
-    <SumIntCoor>: (
-        label = "asymbend"
-        value = 1.1
-        { coef  coor } = {
-          1.0   $:bendOOH1
-         -1.0   $:bendOOH2
-         }
-       )
-    ]
-  molecule = $:molecule
-  { force_constant_index  force_constant_value } = {
-    [ 1 ]                       0.0
-    [ 2 ]                       0.0
-    [ 3 ]                       0.0
-    [ 4 ]                       0.0
-    [ 1 1 ]                     1.0
-    [ 2 2 ]                     1.0
-    [ 3 3 ]                     1.0
-    [ 4 4 ]                     1.0
-    [ 1 2 2 ]                   5.0
-    }
-  )
-
 renderer<OOGLRender>: (
     filename = "moltest.oogl"
   )
 
-renderedmolecule<RenderedMolecule>: (
+xrenderedmolecule<RenderedMolecule>: (
     appearance<Appearance>: (
         level = 3
       )

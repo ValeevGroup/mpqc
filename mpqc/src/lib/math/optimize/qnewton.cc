@@ -60,6 +60,10 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   print_x_ = keyval->booleanvalue("print_x");
   print_hessian_ = keyval->booleanvalue("print_hessian");
   print_gradient_ = keyval->booleanvalue("print_gradient");
+  linear_ = keyval->booleanvalue("linear");
+  if (keyval->error() != KeyVal::OK) linear_ = 0;
+  restrict_ = keyval->booleanvalue("restrict");
+  if  (keyval->error() != KeyVal::OK) restrict_ = 1;
 
   RefSymmSCMatrix hessian(dimension(),matrixkit());
   // get a guess hessian from the function
@@ -235,17 +239,32 @@ QNewtonOpt::update()
     ExEnv::out0() << " ]" << endl;
   }
 
-  // take the step
+  // compute the quadratic step
   RefSCVector xdisp = -1.0*(ihessian_ * gcurrent);
+
+  if( linear_ ) {
+    // compute overlap of quadratic and linear steps
+    // negative overlap is very bad, just take linear step
+    double overlap = xdisp.scalar_product(-1.0 * gcurrent);
+    if( overlap < 0.0 ) xdisp = -1.0 * gcurrent;
+  }
+
   // scale the displacement vector if it's too large
   double tot = sqrt(xdisp.scalar_product(xdisp));
-  if (tot > max_stepsize_) {
-    double scal = max_stepsize_/tot;
-    ExEnv::out0() << endl << indent
-         << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
-         << endl;
-    xdisp.scale(scal);
-    tot *= scal;
+  if ( tot > max_stepsize_ ) {
+    if( restrict_ ) {
+      double scal = max_stepsize_/tot;
+      ExEnv::out0() << endl << indent
+           << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
+           << endl;
+      xdisp.scale(scal);
+      tot *= scal;
+    }
+    else {
+      ExEnv::out0() << endl << indent
+           << scprintf("stepsize of %f is too big, but scaling is disabled",tot)
+           << endl;
+    }
   }
 
   RefSCVector xnext = xcurrent + xdisp;

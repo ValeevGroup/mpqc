@@ -54,13 +54,16 @@ The \clsnm{MBPT2} class derives from \clsnmref{Wavefunction}.
           (which uses a \clsnmref{MemoryGrp} object).  This is only valid
           for MP2 energies and gradients.
 
-        \item[\keywd{v1}] Use algorithm V1.
+        \item[\keywd{v1}] Use algorithm V1.  Only energies can be
+          computed.
 
-        \item[\keywd{v2}] Use algorithm V2.
+        \item[\keywd{v2}] Use algorithm V2.  Only energies can be
+          computed.
 
         \item[\keywd{v2lb}] Use a modified V2 algorithm that may compute a
            few more two electron integrals, but may get better load balance
-           on the $O(n_\mathrm{basis}^5)$ part of the calculation.
+           on the $O(n_\mathrm{basis}^5)$ part of the calculation.  Only
+           energies can be computed.
 
      \end{description}
 

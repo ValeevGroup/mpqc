@@ -30,10 +30,11 @@ GaussianBasisSet::_castdown(const ClassDesc*cd)
 
 GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
 {
-  molecule_ =
-    Molecule::require_castdown(topkeyval
-                               ->describedclassvalue("molecule").pointer(),
-                               "molecule of wrong type");
+  molecule_ = topkeyval->describedclassvalue("molecule");
+  if (molecule_.null()) {
+      fprintf(stderr, "GaussianBasisSet: no \"molecule\"\n");
+      abort();
+    }
 
   // see if the user requests pure am or cartesian functions
   int pure;

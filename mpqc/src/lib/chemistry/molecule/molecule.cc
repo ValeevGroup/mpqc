@@ -40,6 +40,9 @@
 #include <chemistry/molecule/localdef.h>
 #include <math/scmat/cmatrix.h>
 
+//////////////////////////////////////////////////////////////////////////
+// Molecule
+
 SavableState_REF_def(Molecule);
 
 #define CLASSNAME Molecule
@@ -114,52 +117,18 @@ Molecule::clear()
 Molecule::Molecule(const RefKeyVal&input):
  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
 {
+  nuniq_ = 0;
+  equiv_ = 0;
+  nequiv_ = 0;
+  atom_to_uniq_ = 0;
+
   atominfo_ = input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
   if (input->exists("pdb_file")) {
       geometry_units_ = new Units("angstrom");
-      double ang_to_bohr = geometry_units_->to_atomic_units();
-      const int LineLength = 85;
-      char line[LineLength];
       char* filename = input->pcharvalue("pdb_file");
-      FILE*fp = fopen(filename,"r");
-      if (!fp) {
-          cerr << node0 << indent
-               << "Molecule::Molecule(const RefKeyVal&input): "
-               << scprintf("pdb file not found: \"%s\"\n", filename);
-          abort();
-        }
-      while(fgets(line,LineLength,fp)) {
-          if (!strncmp(line,"HETA",4) || !strncmp(line,"ATOM",4)) {
-              char atomsym[3];
-              // find the atomic symbol
-              int symletter=0, offset;
-              for (offset=12; offset<16 && symletter<2; offset++) {
-                  if (line[offset] != ' '
-                      && (line[offset] < '0' || line[offset] > '9')) {
-                      atomsym[symletter] = line[offset];
-                      symletter++;
-                    }
-                }
-              atomsym[symletter] = '\0';
-              // skip dummy atoms
-              if (!strcmp(atomsym,"Q")) continue;
-              char position[9];
-              position[8] = '\0';
-              // x
-              strncpy(position,&line[30],8);
-              double x = atof(position);
-              // y
-              strncpy(position,&line[38],8);
-              double y = atof(position);
-              // z
-              strncpy(position,&line[46],8);
-              double z = atof(position);
-              add_atom(AtomInfo::string_to_Z(atomsym),
-                       x*ang_to_bohr, y*ang_to_bohr, z*ang_to_bohr);
-            }
-        }
-      fclose(fp);
+      read_pdb(filename);
+      delete[] filename;
     }
   else {
       // check for old style units input first
@@ -1041,6 +1010,104 @@ Molecule::max_z()
       if (z>maxz) maxz = z;
     }
   return maxz;
+}
+
+void
+Molecule::read_pdb(const char *filename)
+{
+  clear();
+  ifstream in(filename);
+  RefUnits units = new Units("angstrom");
+  while (in.good()) {
+      const int max_line = 80;
+      char line[max_line];
+      in.getline(line,max_line);
+      char *endofline = (char*) memchr(line, 0, max_line);
+      if (endofline) memset(endofline, ' ', &line[max_line-1] - endofline);
+      if (!in.good()) break;
+      if (strncmp(line,"ATOM  ",6) == 0
+          ||strncmp(line,"HETATM",6) == 0) {
+
+          char element[3];
+          strncpy(element,&line[76],2); element[2] = '\0';
+          char name[5];
+          strncpy(name,&line[12],4); name[4] = '\0';
+          if (element[0]==' '&&element[1]==' ') {
+              // no element was given so get the element from the atom name
+              if (name[0]!=' '&&name[3]!=' ') {
+                  // some of the atom label may have been
+                  // pushed over into the element fields
+                  // so check the residue
+                  char resName[4];
+                  strncpy(resName,&line[17],3); resName[3] = '\0';
+                  if (strncmp(line,"ATOM  ",6)==0&&(0
+                      ||strcmp(resName,"ALA")==0||strcmp(resName,"A  ")==0
+                      ||strcmp(resName,"ARG")==0||strcmp(resName,"R  ")==0
+                      ||strcmp(resName,"ASN")==0||strcmp(resName,"N  ")==0
+                      ||strcmp(resName,"ASP")==0||strcmp(resName,"D  ")==0
+                      ||strcmp(resName,"ASX")==0||strcmp(resName,"B  ")==0
+                      ||strcmp(resName,"CYS")==0||strcmp(resName,"C  ")==0
+                      ||strcmp(resName,"GLN")==0||strcmp(resName,"Q  ")==0
+                      ||strcmp(resName,"GLU")==0||strcmp(resName,"E  ")==0
+                      ||strcmp(resName,"GLX")==0||strcmp(resName,"Z  ")==0
+                      ||strcmp(resName,"GLY")==0||strcmp(resName,"G  ")==0
+                      ||strcmp(resName,"HIS")==0||strcmp(resName,"H  ")==0
+                      ||strcmp(resName,"ILE")==0||strcmp(resName,"I  ")==0
+                      ||strcmp(resName,"LEU")==0||strcmp(resName,"L  ")==0
+                      ||strcmp(resName,"LYS")==0||strcmp(resName,"K  ")==0
+                      ||strcmp(resName,"MET")==0||strcmp(resName,"M  ")==0
+                      ||strcmp(resName,"PHE")==0||strcmp(resName,"F  ")==0
+                      ||strcmp(resName,"PRO")==0||strcmp(resName,"P  ")==0
+                      ||strcmp(resName,"SER")==0||strcmp(resName,"S  ")==0
+                      ||strcmp(resName,"THR")==0||strcmp(resName,"T  ")==0
+                      ||strcmp(resName,"TRP")==0||strcmp(resName,"W  ")==0
+                      ||strcmp(resName,"TYR")==0||strcmp(resName,"Y  ")==0
+                      ||strcmp(resName,"VAL")==0||strcmp(resName,"V  ")==0
+                      ||strcmp(resName,"A  ")==0
+                      ||strcmp(resName,"+A ")==0
+                      ||strcmp(resName,"C  ")==0
+                      ||strcmp(resName,"+C ")==0
+                      ||strcmp(resName,"G  ")==0
+                      ||strcmp(resName,"+G ")==0
+                      ||strcmp(resName,"I  ")==0
+                      ||strcmp(resName,"+I ")==0
+                      ||strcmp(resName,"T  ")==0
+                      ||strcmp(resName,"+T ")==0
+                      ||strcmp(resName,"U  ")==0
+                      ||strcmp(resName,"+U ")==0
+                      )) {
+                      // there no two letter elements for these cases
+                      element[0] = name[0];
+                      element[1] = '\0';
+                    }
+                }
+              else {
+                  strncpy(element,name,2); element[2] = '\0';
+                }
+            }
+          if (element[0] == ' ') {
+              element[0] = element[1];
+              element[1] = '\0';
+            }
+
+          int Z = AtomInfo::string_to_Z(element);
+
+          char field[9];
+          strncpy(field,&line[30],8); field[8] = '\0';
+          double x = atof(field);
+          strncpy(field,&line[38],8); field[8] = '\0';
+          double y = atof(field);
+          strncpy(field,&line[46],8); field[8] = '\0';
+          double z = atof(field);
+          add_atom(Z,
+                   x*units->to_atomic_units(),
+                   y*units->to_atomic_units(),
+                   z*units->to_atomic_units());
+        }
+      else {
+        // skip to next record
+        }
+    }
 }
 
 void

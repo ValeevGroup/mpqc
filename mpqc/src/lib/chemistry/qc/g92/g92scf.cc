@@ -25,11 +25,11 @@ Gaussian92SCF::emethod()
 
   // closed shell
   if (multiplicity_==1)
-    sprintf(method,"rhf scf=(direct,conv=%d)",conv);
+    sprintf(method,"rhf scf=direct scfcon=%d",conv);
 
   // open shell
   else
-    sprintf(method,"rohf scf=(direct,conv=%d)",conv);
+    sprintf(method,"rohf scf=direct scfcon=%d",conv);
 
   return method;
 }
@@ -42,11 +42,11 @@ Gaussian92SCF::gmethod()
   
   // closed shell
   if (multiplicity_==1)
-    sprintf(method,"rhf force scf=(direct,conv=%d)",conv);
+    sprintf(method,"rhf force scf=direct scfcon=%d",conv);
 
   // open shell
   else
-    sprintf(method,"rohf force scf=(direct,conv=%d)",conv);
+    sprintf(method,"rohf force scf=direct scfcon=%d",conv);
 
   return method;
 }
@@ -60,11 +60,11 @@ Gaussian92SCF::hmethod()
   
   // closed shell
   if (multiplicity_==1)
-    sprintf(method,"rhf freq scf=(direct,conv=%d) cphf=conv=%d",conv,hconv);
+    sprintf(method,"rhf freq scf=direct scfcon=%d cphf=conv=%d",conv,hconv);
   
   // open shell
   else
-    sprintf(method,"rohf freq scf=(direct,conv=%d) cphf=conv=%d",conv,hconv);
+    sprintf(method,"rohf freq scf=direct scfcon=%d cphf=conv=%d",conv,hconv);
 
   return method;
 }

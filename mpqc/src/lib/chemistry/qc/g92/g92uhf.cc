@@ -21,7 +21,7 @@ Gaussian92UHF::emethod()
   static char method[32];
   int conv = (int) -log10(desired_value_accuracy());
 
-  sprintf(method,"uhf scf=(direct,conv=%d)",conv);
+  sprintf(method,"uhf scf=direct scfcon=%d",conv);
 
   return method;
 }
@@ -32,7 +32,7 @@ Gaussian92UHF::gmethod()
   static char method[36];
   int conv = (int) -log10(desired_value_accuracy());
   
-  sprintf(method,"uhf force scf=(direct,conv=%d)",conv);
+  sprintf(method,"uhf force scf=direct scfcon=%d",conv);
 
   return method;
 }
@@ -44,7 +44,7 @@ Gaussian92UHF::hmethod()
   int conv = (int) -log10(desired_value_accuracy());
   int hconv = (int) -log10(desired_hessian_accuracy());
   
-  sprintf(method,"uhf freq scf=(direct,conv=%d) cphf=conv=%d",conv,hconv);
+  sprintf(method,"uhf freq scf=direct scfcon=%d cphf=conv=%d",conv,hconv);
 
   return method;
 }

@@ -1,3 +1,4 @@
+# emacs should use -*- Makefile -*- mode.
 
 # JOBS can be set to "-j n" to do parallel makes in subdirectories
 default::

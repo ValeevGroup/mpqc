@@ -474,6 +474,9 @@ MPQCIn::write_energy_object(ostream &ostrs,
   ostrs << incindent;
   ostrs << indent << "total_charge = " << charge_.val() << endl;
   ostrs << indent << "molecule = $:molecule" << endl;
+  if (!strcmp(keyword, "mole") && !reference_method) {
+      ostrs << indent << "print_npa = 1" << endl;
+    }
   if (reference_method) {
       write_vector(ostrs, "nfzc", "frozen_docc", frozen_docc_, 0);
       write_vector(ostrs, "nfzv", "frozen_uocc", frozen_uocc_, 0);

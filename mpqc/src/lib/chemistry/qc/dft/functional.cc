@@ -139,13 +139,13 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
   point(id, od);
   memset(grad_f, 0, sizeof(double)*basis->ncenter()*3);
 #if 0
-  ExEnv::out() << scprintf("gradient: rho_a= %12.8f rho_b= %12.8f need_gamma = %d",
+  ExEnv::outn() << scprintf("gradient: rho_a= %12.8f rho_b= %12.8f need_gamma = %d",
                    id.a.rho, id.b.rho, need_gamma_terms) << endl;
-  ExEnv::out() << scprintf("  gamma_aa= %12.8f gamma_bb= %12.8f gamma_ab= % 12.8f",
+  ExEnv::outn() << scprintf("  gamma_aa= %12.8f gamma_bb= %12.8f gamma_ab= % 12.8f",
                    id.a.gamma, id.b.gamma, id.gamma_ab) << endl;
-  ExEnv::out() << scprintf("  df_drho_a= % 12.8f df_drho_b= % 12.8f",
+  ExEnv::outn() << scprintf("  df_drho_a= % 12.8f df_drho_b= % 12.8f",
                    od.df_drho_a, od.df_drho_b) << endl;
-  ExEnv::out() << scprintf("  df_dg_aa= % 12.8f df_dg_bb= % 12.8f df_dg_ab= % 12.8f",
+  ExEnv::outn() << scprintf("  df_dg_aa= % 12.8f df_dg_bb= % 12.8f df_dg_ab= % 12.8f",
                    od.df_dgamma_aa,od.df_dgamma_bb,od.df_dgamma_ab) << endl;
 #endif
 

@@ -481,7 +481,7 @@ GaussianShell::test_monobound(double &r, double &bound) const
               double rold = r;
               r = sqrt(l[i]*precon[i]/(2.0*precon_w[i]));
               if (r<rold+0.01) r = rold+0.01;
-              //ExEnv::out() << "rejected at " << rold << " trying again at "
+              //ExEnv::outn() << "rejected at " << rold << " trying again at "
               //     << r << endl;
               return 1;
             }

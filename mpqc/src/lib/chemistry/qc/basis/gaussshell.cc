@@ -526,8 +526,8 @@ GaussianShell::extent(double threshold) const
   double r1 = 3.0*r0;
   double b0 = monobound(r0);
   double b1 = monobound(r1);
-  //ExEnv::out() << "r0 = " << r0 << " b0 = " << b0 << endl;
-  //ExEnv::out() << "r1 = " << r0 << " b1 = " << b1 << endl;
+  //ExEnv::outn() << "r0 = " << r0 << " b0 = " << b0 << endl;
+  //ExEnv::outn() << "r1 = " << r0 << " b1 = " << b1 << endl;
   if (b0 <= threshold) {
       return r0;
     }
@@ -537,8 +537,8 @@ GaussianShell::extent(double threshold) const
       r1 = 3.0*r0;
       b0 = b1;
       b1 = monobound(r1);
-      //ExEnv::out() << "r0 = " << r0 << " b0 = " << b0 << endl;
-      //ExEnv::out() << "r1 = " << r0 << " b1 = " << b1 << endl;
+      //ExEnv::outn() << "r0 = " << r0 << " b0 = " << b0 << endl;
+      //ExEnv::outn() << "r1 = " << r0 << " b1 = " << b1 << endl;
     }
   while (r1 - r0 > 0.1) {
       double rtest = 0.5*(r0+r1);
@@ -546,12 +546,12 @@ GaussianShell::extent(double threshold) const
       if (btest <= threshold) {
           b1 = btest;
           r1 = rtest;
-          //ExEnv::out() << "r1 = " << r0 << " b1 = " << b0 << endl;
+          //ExEnv::outn() << "r1 = " << r0 << " b1 = " << b0 << endl;
         }
       else {
           b0 = btest;
           r0 = rtest;
-          //ExEnv::out() << "r0 = " << r0 << " b0 = " << b0 << endl;
+          //ExEnv::outn() << "r0 = " << r0 << " b0 = " << b0 << endl;
         }
     }
   return r1;

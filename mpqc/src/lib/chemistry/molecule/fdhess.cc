@@ -404,10 +404,10 @@ FinDispMolecularHessian::displace(int disp)
     }
 
 #ifdef DEBUG
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Displacement point group: " << endl
        << incindent << displacement_point_group_ << decindent;
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Displaced molecule: " << endl
        << incindent << mol_ << decindent;
 #endif

@@ -55,7 +55,7 @@ template Ref<AngularIntegrator>***
   new_c_array3<Ref<AngularIntegrator> >(int,int,int,Ref<AngularIntegrator>);
 #endif
 
-//#define CHECK_ALIGN(v) if(int(&v)&7)ExEnv::out()<<"Bad Alignment: "<< ## v <<endl;
+//#define CHECK_ALIGN(v) if(int(&v)&7)ExEnv::outn()<<"Bad Alignment: "<< ## v <<endl;
 #define CHECK_ALIGN(v)
 
 ///////////////////////////////////////////////////////////////////////////
@@ -833,7 +833,7 @@ IntegrationWeight::fd_w(int icenter, SCVector3 &point,
           dmol->r(i,j) += delta;
           if (icenter == i) point[j] += delta;
           fd_grad_w[i*3+j] = (w_plus-w_minus)/(2.0*delta);
-//            ExEnv::out() << scprintf("%d,%d %12.10f %12.10f %12.10f",
+//            ExEnv::outn() << scprintf("%d,%d %12.10f %12.10f %12.10f",
 //                             i,j,w_plus,w_minus,fd_grad_w[i*3+j])
 //                 << endl;
         }
@@ -1172,11 +1172,11 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
       int i,j;
       for (i=0; i<ncenters*3; i++ ) w_gradient[i] = 0.0;
 //      fd_w(acenter, point, w_gradient);  // imbn commented out for debug
-//        ExEnv::out() << point << " ";
+//        ExEnv::outn() << point << " ";
 //        for (int i=0; i<ncenters*3; i++) {
-//            ExEnv::out() << scprintf(" %10.6f", w_gradient[i]);
+//            ExEnv::outn() << scprintf(" %10.6f", w_gradient[i]);
 //          }
-//        ExEnv::out() << endl;
+//        ExEnv::outn() << endl;
 //      return w_a;  // imbn commented out for debug
       for (int ccenter = 0; ccenter < ncenters; ccenter++) {
           // NB: for ccenter==acenter, use translational invariance
@@ -1395,15 +1395,15 @@ LebedevLaikovIntegrator::nw(void) const
 void
 LebedevLaikovIntegrator::init(int n)
 {
-  // ExEnv::out() << " LebedevLaikovIntegrator::init -> before x_, y_, z_, and w_ malloc's " << endl;
-  // ExEnv::out() << " n = " << n << endl;
+  // ExEnv::outn() << " LebedevLaikovIntegrator::init -> before x_, y_, z_, and w_ malloc's " << endl;
+  // ExEnv::outn() << " n = " << n << endl;
   
   x_ = new double[n];
   y_ = new double[n];
   z_ = new double[n];
   w_ = new double[n];
 
-  // ExEnv::out() << " LebedevLaikovIntegrator::init -> nw_points = " << n << endl;
+  // ExEnv::outn() << " LebedevLaikovIntegrator::init -> nw_points = " << n << endl;
   
   npoint_ = Lebedev_Laikov_sphere(n, x_, y_, z_, w_);
   if (npoint_ != n) {
@@ -1819,15 +1819,15 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   s.get(npruned_partitions_);
   s.get(dynamic_grids_);
 
-//  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
-//  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
-//  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
-//  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
-//  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
-//  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
+//  ExEnv::outn() << "natomic_rows_ = " << natomic_rows_ << endl;
+//  ExEnv::outn() << "max_gridtype_ = " << max_gridtype_ << endl;
+//  ExEnv::outn() << "prune_grid_ = " << prune_grid_ << endl;
+//  ExEnv::outn() << "gridtype_ = " << gridtype_ << endl;
+//  ExEnv::outn() << "npruned_partitions_ = " << npruned_partitions_ << endl;
+//  ExEnv::outn() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
 
-//  ExEnv::out() << "In StateIn Constructor!" << endl;
+//  ExEnv::outn() << "In StateIn Constructor!" << endl;
   weight_ = new BeckeIntegrationWeight;
 
   int i;
@@ -1866,7 +1866,7 @@ RadialAngularIntegrator::RadialAngularIntegrator(const Ref<KeyVal>& keyval):
 
   weight_ << keyval->describedclassvalue("weight");
   if (weight_.null()) weight_ = new BeckeIntegrationWeight;
-//  ExEnv::out() << "In Ref<KeyVal> Constructor" << endl;
+//  ExEnv::outn() << "In Ref<KeyVal> Constructor" << endl;
   
   init_parameters(keyval);
   init_default_grids();
@@ -1898,12 +1898,12 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
   s.put(dynamic_grids_);
   s.put_array_double(Alpha_coeffs_[0],natomic_rows_*(npruned_partitions_-1));
   
-//  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
-//  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
-//  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
-//  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
-//  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
-//  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
+//  ExEnv::outn() << "natomic_rows_ = " << natomic_rows_ << endl;
+//  ExEnv::outn() << "max_gridtype_ = " << max_gridtype_ << endl;
+//  ExEnv::outn() << "prune_grid_ = " << prune_grid_ << endl;
+//  ExEnv::outn() << "gridtype_ = " << gridtype_ << endl;
+//  ExEnv::outn() << "npruned_partitions_ = " << npruned_partitions_ << endl;
+//  ExEnv::outn() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
   SavableState::save_state(radial_user_.pointer(),s);
   SavableState::save_state(angular_user_.pointer(),s);
@@ -1927,7 +1927,7 @@ RadialAngularIntegrator::init_parameters(void)
     
   init_pruning_coefficients();
 
-  // ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
+  // ExEnv::outn() << "gridtype_ = " << gridtype_ << endl;
   
 }
 
@@ -1969,12 +1969,12 @@ RadialAngularIntegrator::init_parameters(const Ref<KeyVal>& keyval)
 
 
   
-  //ExEnv::out() << " gridtype = " << gridtype_ << endl;
-  //ExEnv::out() << " max_gridtype = " << max_gridtype_ << endl;
+  //ExEnv::outn() << " gridtype = " << gridtype_ << endl;
+  //ExEnv::outn() << " max_gridtype = " << max_gridtype_ << endl;
   dynamic_grids_ = keyval->intvalue("dynamic");
   if (keyval->error() != KeyVal::OK) dynamic_grids_ = 1;
   grid_accuracy_ = new double[max_gridtype_];
-  //ExEnv::out() << "init_parameters:: max_gridtype_ = " << max_gridtype_;
+  //ExEnv::outn() << "init_parameters:: max_gridtype_ = " << max_gridtype_;
   
   int i;
   grid_accuracy_[0] = 1e-4;
@@ -2037,7 +2037,7 @@ RadialAngularIntegrator::set_grids(void)
 
               angular_grid_[i][j][k]
                   = new LebedevLaikovIntegrator(Lebedev_Laikov_npoint(use_l));
-//                ExEnv::out() << " angular_grid_["
+//                ExEnv::outn() << " angular_grid_["
 //                             << i << "]["
 //                             << j << "]["
 //                             << k
@@ -2056,8 +2056,8 @@ void
 RadialAngularIntegrator::init_pruning_coefficients(void)
 {
   // Set up Alpha arrays for pruning
-  //ExEnv::out() << "npruned_partitions = " << npruned_partitions_ << endl;
-  //ExEnv::out() << "natomic_rows = " << natomic_rows_ << endl;
+  //ExEnv::outn() << "npruned_partitions = " << npruned_partitions_ << endl;
+  //ExEnv::outn() << "natomic_rows = " << natomic_rows_ << endl;
   int num_boundaries = npruned_partitions_-1;
   Alpha_coeffs_ = new_zero_c_array2(natomic_rows_, num_boundaries,
                                             double(0));
@@ -2075,7 +2075,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const Ref<KeyVal>& keyval)
   prune_grid_ = keyval->booleanvalue("prune_grid");
   if (keyval->error() != KeyVal::OK) prune_grid_ = 1;
 
-  // ExEnv::out() << "prune_grid = " << prune_grid_ << endl;
+  // ExEnv::outn() << "prune_grid = " << prune_grid_ << endl;
   
   // Need to generalize this to parse input for any number of grids
   if (prune_grid_) {
@@ -2317,7 +2317,7 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
     }
 
   //for (i=0; i<nthread; i++) {
-  //    ExEnv::out() << "Intial Thread " << i
+  //    ExEnv::outn() << "Intial Thread " << i
   //                 << ": point count = " << threads[i]->point_count()
   //                 << " total density = " << threads[i]->total_density()
   //                 << " value = " << threads[i]->value()
@@ -2337,7 +2337,7 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
   double total_density = 0.0;
   value_ = 0.0;
   for (i=0; i<nthread; i++) {
-      //ExEnv::out() << "Thread " << i
+      //ExEnv::outn() << "Thread " << i
       //             << ": point count = " << threads[i]->point_count()
       //             << " total density = " << threads[i]->total_density()
       //             << " value = " << threads[i]->value()

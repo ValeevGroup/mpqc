@@ -796,7 +796,7 @@ TriangulatedSurfaceIntegrator::update()
   static double cum;
   if (_irs == 0) cum = 0.0;
   cum += _surface_element * _weight;
-  //ExEnv::out() << scprintf("%2d dA = %12.8f, w = %12.8f, Sum wdA = %12.8f",
+  //ExEnv::outn() << scprintf("%2d dA = %12.8f, w = %12.8f, Sum wdA = %12.8f",
   //                 _irs, _surface_element, _weight, cum)
   //     << endl;
 

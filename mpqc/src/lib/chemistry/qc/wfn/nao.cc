@@ -273,7 +273,7 @@ form_nao(const RefSymmSCMatrix &P, const RefSymmSCMatrix &S,
               for (m=0; m<nfunc; m++) {
                   int ii = amoff_on_atom[i][j][k] + m;
 #                 ifdef DEBUG
-                  ExEnv::out().form("W(%2d) = %12.8f\n", ii, elem);
+                  ExEnv::outn().form("W(%2d) = %12.8f\n", ii, elem);
 #                 endif
                   W.set_element(ii, elem);
                 }
@@ -324,8 +324,8 @@ Wavefunction::nao(double *atom_charges)
   Ptmp->accumulate_transform(S, P);
 # ifdef DEBUG
   P.print("P");
-  ExEnv::out() << "nelec = " << (mhalf(S) * Ptmp * mhalf(S)).trace() << endl;
-  ExEnv::out() << "nelec(2) = " << (P * S).trace() << endl;
+  ExEnv::out0() << "nelec = " << (mhalf(S) * Ptmp * mhalf(S)).trace() << endl;
+  ExEnv::out0() << "nelec(2) = " << (P * S).trace() << endl;
 # endif
   P = Ptmp;
   Ptmp = 0;
@@ -336,9 +336,9 @@ Wavefunction::nao(double *atom_charges)
   int natom = molecule()->natom();
 
 # ifdef DEBUG
-  ExEnv::out() << "nb = " << nb << endl;
-  ExEnv::out() << "nsh = " << nsh << endl;
-  ExEnv::out() << "natom = " << natom << endl;
+  ExEnv::out0() << "nb = " << nb << endl;
+  ExEnv::out0() << "nsh = " << nsh << endl;
+  ExEnv::out0() << "natom = " << natom << endl;
 # endif
 
   // Step 2a. Transform to solid harmonics.
@@ -406,7 +406,7 @@ Wavefunction::nao(double *atom_charges)
   // Sdfp = Tdfp.t() * S * Tdfp
   Sdfg.assign(0.0); Sdfg.accumulate_transform(Tdfg, S);
 # ifdef DEBUG
-  ExEnv::out() << "nelec = " << (mhalf(Sdfg) * Pdfg * mhalf(Sdfg)).trace() << endl;
+  ExEnv::out0() << "nelec = " << (mhalf(Sdfg) * Pdfg * mhalf(Sdfg)).trace() << endl;
 # endif
 
   // Step 2b. Partitioning and symmetry averaging of P and S
@@ -470,26 +470,26 @@ Wavefunction::nao(double *atom_charges)
     }
 
 # ifdef DEBUG
-  ExEnv::out() << indent << "Basis set partitioning:" << endl;
-  ExEnv::out() << incindent;
+  ExEnv::out0() << indent << "Basis set partitioning:" << endl;
+  ExEnv::out0() << incindent;
   for (i=0; i<natom; i++) {
-      ExEnv::out() << indent <<  "atom " << i
+      ExEnv::out0() << indent <<  "atom " << i
            << " maxam = " << maxam_on_atom[i] << endl;
-      ExEnv::out() << incindent;
+      ExEnv::out0() << incindent;
       for (j=0; j<=maxam_on_atom[i]; j++) {
-          ExEnv::out() << indent <<  "am = " << j
+          ExEnv::out0() << indent <<  "am = " << j
                << " n = " << nam_on_atom[i][j] << endl;
-          ExEnv::out() << incindent;
-          ExEnv::out() << indent << "offsets =";
+          ExEnv::out0() << incindent;
+          ExEnv::out0() << indent << "offsets =";
           for (k=0; k<nam_on_atom[i][j]; k++) {
-              ExEnv::out() << " " << amoff_on_atom[i][j][k];
+              ExEnv::out0() << " " << amoff_on_atom[i][j][k];
             }
-          ExEnv::out() << endl;
-          ExEnv::out() << decindent;
+          ExEnv::out0() << endl;
+          ExEnv::out0() << decindent;
         }
-      ExEnv::out() << decindent;
+      ExEnv::out0() << decindent;
     }
-  ExEnv::out() << decindent;
+  ExEnv::out0() << decindent;
 # endif
 
   // Symmetry averaging and Step 2c: Formation of pre-NAO's
@@ -500,7 +500,7 @@ Wavefunction::nao(double *atom_charges)
 # ifdef DEBUG
   N.print("N");
   W.print("W");
-  ExEnv::out() << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
+  ExEnv::out0() << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
 # endif
 
   // Step 3a: selection of NMB orbitals
@@ -514,8 +514,8 @@ Wavefunction::nao(double *atom_charges)
   int nnrb = nb - nnmb;
 
 # ifdef DEBUG
-  ExEnv::out() << "nnmb = " << nnmb << endl;
-  ExEnv::out() << "nnrb = " << nnrb << endl;
+  ExEnv::out0() << "nnmb = " << nnmb << endl;
+  ExEnv::out0() << "nnrb = " << nnrb << endl;
 # endif
 
   RefSCDimension nmbdim = new SCDimension(nnmb);
@@ -556,14 +556,14 @@ Wavefunction::nao(double *atom_charges)
         }
     }
 # ifdef DEBUG
-  ExEnv::out() << "Nmmap:"; for (i=0;i<nnmb;i++) ExEnv::out()<<" "<<Nm_map[i]; ExEnv::out()<<endl;
-  ExEnv::out() << "Nrmap:"; for (i=0;i<nnrb;i++) ExEnv::out()<<" "<<Nr_map[i]; ExEnv::out()<<endl;
+  ExEnv::out0() << "Nmmap:"; for (i=0;i<nnmb;i++) ExEnv::out0()<<" "<<Nm_map[i]; ExEnv::out0()<<endl;
+  ExEnv::out0() << "Nrmap:"; for (i=0;i<nnrb;i++) ExEnv::out0()<<" "<<Nr_map[i]; ExEnv::out0()<<endl;
   Wm.print("Wm");
   Wr.print("Wr");
   Nm.print("Nm");
   Nr.print("Nr");
   (Nm.t() * Sdfg * Nr).print("3a Smr");
-  ExEnv::out() << "nelec = "
+  ExEnv::out0() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr,Nr_map), Pdfg, Sdfg) << endl;
 # endif
 
@@ -651,7 +651,7 @@ Wavefunction::nao(double *atom_charges)
   Sm.print("Sm before 4a");
   OWm.print("OWm");
   (OWm.t() * Sm * OWm).print("Sm after 4a");
-  ExEnv::out() << "nelec = "
+  ExEnv::out0() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr,Nr_map), Pdfg, Sdfg) << endl;
 # endif
 
@@ -661,7 +661,7 @@ Wavefunction::nao(double *atom_charges)
 # ifdef DEBUG
   Nm.print("Nm after interatomic orthog");
   (Nm.t() * Sdfg * Nr).print("4a Smr before r orthog");
-  ExEnv::out() << "nelec = "
+  ExEnv::out0() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr,Nr_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -696,13 +696,13 @@ Wavefunction::nao(double *atom_charges)
         }
     }
 # ifdef DEBUG
-  ExEnv::out() << "Nr1map:"; for (i=0;i<nr1;i++) ExEnv::out()<<" "<<Nr1_map[i]; ExEnv::out()<<endl;
-  ExEnv::out() << "Nr2map:"; for (i=0;i<nr2;i++) ExEnv::out()<<" "<<Nr2_map[i]; ExEnv::out()<<endl;
+  ExEnv::out0() << "Nr1map:"; for (i=0;i<nr1;i++) ExEnv::out0()<<" "<<Nr1_map[i]; ExEnv::out0()<<endl;
+  ExEnv::out0() << "Nr2map:"; for (i=0;i<nr2;i++) ExEnv::out0()<<" "<<Nr2_map[i]; ExEnv::out0()<<endl;
   Nr1.print("Nr1");
   Nr2.print("Nr2");
   (Nm.t() * Sdfg * Nr1).print("4a Smr1 before r orthog");
   (Nm.t() * Sdfg * Nr2).print("4a Smr2 before r orthog");
-  ExEnv::out() << "nelec = "
+  ExEnv::out0() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -732,7 +732,7 @@ Wavefunction::nao(double *atom_charges)
   Nr2.print("Nr2 after orthogonalization to r1");
   (Nm.t() * Sdfg * Nr2).print("4a Smr2 after orthog of r2 to r1");
   (Nr1.t() * Sdfg * Nr2).print("4a Sr1r2 after orthog of r2 to r1");
-  ExEnv::out() << "nelec = "
+  ExEnv::out0() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -750,7 +750,7 @@ Wavefunction::nao(double *atom_charges)
   Nr1 = Nr1 * OWr1;
 # ifdef DEBUG
   Nr1.print("Nr1 after weighted symmetric orthogonalization");
-  ExEnv::out() << "nelec = "
+  ExEnv::out0() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
 # endif
@@ -767,10 +767,10 @@ Wavefunction::nao(double *atom_charges)
   Nr2 = Nr2 * OWr2;
 # ifdef DEBUG
   Nr2.print("Nr2 after weighted symmetric orthogonalization");
-  ExEnv::out() << "nelec = "
+  ExEnv::out0() << "nelec = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg, Sdfg)
        << endl;
-  ExEnv::out() << "nelec(o) = "
+  ExEnv::out0() << "nelec(o) = "
        << ttrace(assemble(aodim,Nm,Nm_map,Nr1,Nr1_map,Nr2,Nr2_map), Pdfg)
        << endl;
 # endif
@@ -811,21 +811,21 @@ Wavefunction::nao(double *atom_charges)
 # ifdef DEBUG
   Nred.print("Nred");
   N.print("N after 4b");
-  ExEnv::out() << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
-  ExEnv::out() << "nelec(o) = " << ttrace(N, Pdfg) << endl;
+  ExEnv::out0() << "nelec = " << ttrace(N, Pdfg, Sdfg) << endl;
+  ExEnv::out0() << "nelec(o) = " << ttrace(N, Pdfg) << endl;
   Pfinal.print("final P");
   (N.t() * Sdfg * N).print("final S");
-  ExEnv::out().form("nelec = trace(final P) = %14.8f", (N.t() * Pdfg * N).trace());
+  ExEnv::out0().form("nelec = trace(final P) = %14.8f", (N.t() * Pdfg * N).trace());
 
   (mhalf(Sdfg) * Pdfg * mhalf(Sdfg)).print("P in symm orth basis");
 # endif
 
 # ifdef DEBUG
-  ExEnv::out() << "nb   = " << nb << endl;
-  ExEnv::out() << "nnmb = " << nnmb << endl;
-  ExEnv::out() << "nnrb = " << nnrb << endl;
-  ExEnv::out() << "nr1  = " << nr1 << endl;
-  ExEnv::out() << "nr2  = " << nr2 << endl;
+  ExEnv::out0() << "nb   = " << nb << endl;
+  ExEnv::out0() << "nnmb = " << nnmb << endl;
+  ExEnv::out0() << "nnrb = " << nnrb << endl;
+  ExEnv::out0() << "nr1  = " << nr1 << endl;
+  ExEnv::out0() << "nr2  = " << nr2 << endl;
 # endif
 
   ExEnv::out0() << indent << "Natural Population Analysis:" << endl;

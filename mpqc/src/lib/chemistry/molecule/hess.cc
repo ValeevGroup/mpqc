@@ -353,24 +353,24 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
           abort();
         }
       in.getline(linebuf,nline);
-      //ExEnv::out() << "READ: should be atoms: " << linebuf << endl;
+      //ExEnv::outn() << "READ: should be atoms: " << linebuf << endl;
       for (i=0; i<mol->natom(); i++) {
           int Z;
           double x, y, z;
           in >> Z >> x >> y >> z;
-          //ExEnv::out() << "READ: " << Z << " " << x << " " << y << " " << z << endl;
+          //ExEnv::outn() << "READ: " << Z << " " << x << " " << y << " " << z << endl;
         }
       for (i=0; i<ntri; i++) {
           in >> hessv[i];
-          //ExEnv::out() << "READ: hess[" << i << "] = " << hessv[i] << endl;
+          //ExEnv::outn() << "READ: hess[" << i << "] = " << hessv[i] << endl;
         }
       in.getline(linebuf, nline);
-      //ExEnv::out() << "READ: last line = " << linebuf << endl;
+      //ExEnv::outn() << "READ: last line = " << linebuf << endl;
       if (strcmp(linebuf,"End Hessian")) {
           // try once more since there could be a left over new line
           in.getline(linebuf, nline);
           if (strcmp(linebuf,"End Hessian")) {
-              //ExEnv::out() << "READ: last line = " << linebuf << endl;
+              //ExEnv::outn() << "READ: last line = " << linebuf << endl;
               ExEnv::errn() << "MolecularHessian: hessian file seems to be truncated"
                    << endl;
               abort();

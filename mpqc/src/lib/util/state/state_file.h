@@ -51,7 +51,7 @@ class StateOutFile: public StateOut {
     int opened_;
     std::streambuf *buf_;
   public:
-    /// State information will be written to ExEnv::out().
+    /// State information will be written to ExEnv::outn().
     StateOutFile();
     /// State information will be written to s.
     StateOutFile(std::ostream& s);

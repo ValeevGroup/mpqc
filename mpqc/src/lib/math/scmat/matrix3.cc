@@ -47,7 +47,7 @@ using namespace std;
 SCMatrix3::SCMatrix3(const RefSCMatrix&x)
 {
   if (x.dim().n() != 3) {
-      ExEnv::err() << indent "SCMatrix3::SCMatrix3(RefSCMatrix&): bad length\n";
+      ExEnv::errn() << indent "SCMatrix3::SCMatrix3(RefSCMatrix&): bad length\n";
       abort();
     }
   _v[0] = x.get_element(0);

@@ -107,7 +107,7 @@ CorrelationTable::initialize_table(const Ref<PointGroup>& group,
       }
       if (sumsquare < 1.0e-12) {
         found++;
-        //ExEnv::out() << scprintf("symmop %d in %s is %d in %s",
+        //ExEnv::outn() << scprintf("symmop %d in %s is %d in %s",
         //                 i,ct.symbol(),j,subct.symbol()) << endl;
         so_to_subso[i] = j;
         subso_to_so[j] = i;

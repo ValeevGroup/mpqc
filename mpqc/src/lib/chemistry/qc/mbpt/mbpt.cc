@@ -583,7 +583,7 @@ MBPT2::init_variables()
   nbasis = so_dimension()->n();
   noso = oso_dimension()->n();
 //    if (nbasis != noso) {
-//        ExEnv::out() << "MBPT2: Noso != Nbasis: MBPT2 not checked for this case" << endl;
+//        ExEnv::outn() << "MBPT2: Noso != Nbasis: MBPT2 not checked for this case" << endl;
 //        abort();
 //      }
   nocc = nvir = nsocc = 0;

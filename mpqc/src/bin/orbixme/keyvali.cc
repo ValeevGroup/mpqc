@@ -20,7 +20,7 @@ C_KeyValCreatableImpl::C_KeyValCreatableImpl(DescribedClass *dc)
 void
 C_KeyValCreatableImpl::keyval_create(const char *s, CORBA_Environment &IT_env)
 {
-  ExEnv::out() << "create: " << s << endl;
+  ExEnv::outn() << "create: " << s << endl;
 
   istrstream in(s);
 
@@ -28,11 +28,11 @@ C_KeyValCreatableImpl::keyval_create(const char *s, CORBA_Environment &IT_env)
 
   Ref<DescribedClass> dc = keyval->describedclassvalue("object");
   if (dc.null()) {
-      ExEnv::out() << "create failed" << endl;
+      ExEnv::outn() << "create failed" << endl;
       return;
     }
   else {
-      ExEnv::out() << "created a \"" << dc->class_name() << "\"" << endl;
+      ExEnv::outn() << "created a \"" << dc->class_name() << "\"" << endl;
     }
 
   set_dc(dc.pointer());
@@ -67,7 +67,7 @@ unsigned char
 C_KeyValCreatableImpl::has_object(CORBA_Environment &)
 {
   unsigned char result = (dc_ != 0);
-  ExEnv::out() << "has_object will return " << result << endl;
+  ExEnv::outn() << "has_object will return " << result << endl;
   return result;
 }
 

@@ -226,11 +226,11 @@ int StateInBin::get_array_void(void*p,int size)
       abort();
     }
 #if DEBUG
-  ExEnv::out() << "Read " << size << " bytes: ";
+  ExEnv::outn() << "Read " << size << " bytes: ";
   for (int i=0; i<size; i++) {
-      ExEnv::out() << ((unsigned char*)p)[i];
+      ExEnv::outn() << ((unsigned char*)p)[i];
     }
-  ExEnv::out() << endl;
+  ExEnv::outn() << endl;
 #endif
   file_position_ += size;
   return size;

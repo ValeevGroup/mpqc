@@ -761,7 +761,7 @@ MBPT2::compute_cs_grad()
               biggest_ints_3.insert(tmpval,i+i_offset,j,s,a);
               if ((i+i_offset==105 && j == 2 && s == 170 && a == 3)
                   ||(i+i_offset==102 && j == 2 && s == 170 && a == 2)) {
-                ExEnv::out() << scprintf("3/4: %3d %3d %3d %3d: %16.10f",
+                ExEnv::outn() << scprintf("3/4: %3d %3d %3d %3d: %16.10f",
                                  i+i_offset, j, s, x-nocc)
                      << endl;
                 }
@@ -860,10 +860,10 @@ MBPT2::compute_cs_grad()
 
 #if WRITE_DOUBLES
     if (nproc > 1 || npass > 1) {
-      ExEnv::out() << "csgrad.cc: WRITE_DOUBLES set but case not allowed" << endl;
+      ExEnv::outn() << "csgrad.cc: WRITE_DOUBLES set but case not allowed" << endl;
       abort();
       }
-    ExEnv::out() << "csgrad.cc: WRITING DOUBLES: CHECK ORDER" << endl;
+    ExEnv::outn() << "csgrad.cc: WRITING DOUBLES: CHECK ORDER" << endl;
     char *doutname = SCFormIO::fileext_to_filename(".mp2");
     FILE *dout = fopen(doutname,"w");
     delete[] doutname;
@@ -877,7 +877,7 @@ MBPT2::compute_cs_grad()
           fwrite(iajb_ptr, sizeof(double), nvir_act, dout);
           for (a=0; a<nvir_act; a++) {
             if (fabs(iajb_ptr[a])>1.0e-8) {
-              ExEnv::out() << scprintf(" Djbia(%2d %2d %2d %2d) = %12.8f",
+              ExEnv::outn() << scprintf(" Djbia(%2d %2d %2d %2d) = %12.8f",
                                j+1-nfzc,b+1,i+1,a+1,iajb_ptr[a])
                    << endl;
               }
@@ -1468,7 +1468,7 @@ MBPT2::compute_cs_grad()
 #if PRINT_BIGGEST_INTS
     ExEnv::out0() << "biggest 1/4 transformed ints" << endl;
     for (i=0; i<biggest_ints_1.ncontrib(); i++) {
-      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_1.indices(i)[0],
                        biggest_ints_1.indices(i)[1],
                        biggest_ints_1.indices(i)[2],
@@ -1477,9 +1477,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    ExEnv::out() << "biggest 2/4 transformed ints" << endl;
+    ExEnv::outn() << "biggest 2/4 transformed ints" << endl;
     for (i=0; i<biggest_ints_2.ncontrib(); i++) {
-      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_2.indices(i)[0],
                        biggest_ints_2.indices(i)[1],
                        biggest_ints_2.indices(i)[2],
@@ -1488,9 +1488,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    ExEnv::out() << "restricted 2/4 transformed ints" << endl;
+    ExEnv::outn() << "restricted 2/4 transformed ints" << endl;
     for (i=0; i<biggest_ints_2s.ncontrib(); i++) {
-      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_2s.indices(i)[0],
                        biggest_ints_2s.indices(i)[1],
                        biggest_ints_2s.indices(i)[2],
@@ -1499,9 +1499,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    ExEnv::out() << "biggest 3/4 transformed ints (in 3.)" << endl;
+    ExEnv::outn() << "biggest 3/4 transformed ints (in 3.)" << endl;
     for (i=0; i<biggest_ints_3a.ncontrib(); i++) {
-      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_3a.indices(i)[0],
                        biggest_ints_3a.indices(i)[1],
                        biggest_ints_3a.indices(i)[2],
@@ -1510,9 +1510,9 @@ MBPT2::compute_cs_grad()
                        )
            << endl;
       }
-    ExEnv::out() << "biggest 3/4 transformed ints (in 4.)" << endl;
+    ExEnv::outn() << "biggest 3/4 transformed ints (in 4.)" << endl;
     for (i=0; i<biggest_ints_3.ncontrib(); i++) {
-      ExEnv::out() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
                        biggest_ints_3.indices(i)[0],
                        biggest_ints_3.indices(i)[1],
                        biggest_ints_3.indices(i)[2],

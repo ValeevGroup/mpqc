@@ -42,7 +42,7 @@ using namespace std;
 static void
 stack_alignment_error(void *ptr, const char *where)
 {
-  ExEnv::out() << "UNALIGNED STACK: " << where << ": " << ptr << endl;
+  ExEnv::outn() << "UNALIGNED STACK: " << where << ": " << ptr << endl;
 }
 static inline void
 stack_alignment_check(void *ptr, const char *where)
@@ -152,8 +152,8 @@ Int2eV3::int_init_buildgc(int order,
   used_storage_build_ += contract_length.nbyte();
   used_storage_build_ += build.int_v_list.nbyte();
 #if CHECK_INTEGRAL_ALGORITHM
-  ExEnv::out() << "contract_length: " << contract_length.nbyte() << endl;
-  ExEnv::out() << "int_v_list: " << build.int_v_list.nbyte() << endl;
+  ExEnv::outn() << "contract_length: " << contract_length.nbyte() << endl;
+  ExEnv::outn() << "int_v_list: " << build.int_v_list.nbyte() << endl;
 #endif
 
   /* Set all slots to 0 */
@@ -239,14 +239,14 @@ Int2eV3::int_init_buildgc(int order,
     }
 
 #if CHECK_INTEGRAL_ALGORITHM
-  ExEnv::out() << "am12_for_con: " << am12_for_con << endl;
-  ExEnv::out() << "am34_for_con: " << am34_for_con << endl;
+  ExEnv::outn() << "am12_for_con: " << am12_for_con << endl;
+  ExEnv::outn() << "am34_for_con: " << am34_for_con << endl;
 #endif
 
   e0f0_con_ints_array[ci][cj][ck][cl].set_dim(am12+1,am34+1);
   used_storage_build_ += e0f0_con_ints_array[ci][cj][ck][cl].nbyte();
 #if CHECK_INTEGRAL_ALGORITHM
-  ExEnv::out() << "e0f0_con_ints_array: "
+  ExEnv::outn() << "e0f0_con_ints_array: "
        << e0f0_con_ints_array[ci][cj][ck][cl].nbyte()
        << endl;
 #endif
@@ -266,7 +266,7 @@ Int2eV3::int_init_buildgc(int order,
   e0f0_con_int_buf = (double*) malloc(sizeof(double)*e0f0_con_int_bufsize);
   used_storage_build_ += e0f0_con_int_bufsize * sizeof(double);
 #if CHECK_INTEGRAL_ALGORITHM
-  ExEnv::out() << "e0f0_int_buf: " << e0f0_con_int_bufsize * sizeof(double) << endl;
+  ExEnv::outn() << "e0f0_int_buf: " << e0f0_con_int_bufsize * sizeof(double) << endl;
 #endif
   if (!e0f0_con_int_buf) {
     ExEnv::errn() << scprintf("couldn't allocate contracted integral storage\n");
@@ -399,7 +399,7 @@ Int2eV3::int_init_buildgc(int order,
 
   used_storage_ += used_storage_build_;
 #if CHECK_INTEGRAL_ALGORITHM
-  ExEnv::out() << "used_storage_build: " << used_storage_build_ << endl;
+  ExEnv::outn() << "used_storage_build: " << used_storage_build_ << endl;
 #endif
   }
 
@@ -550,7 +550,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
   double *con_ints;
 
 #if 0
-  ExEnv::out() << scprintf("not_gcs: %d%d%d%d\n",
+  ExEnv::outn() << scprintf("not_gcs: %d%d%d%d\n",
                    int_expweight1,
                    int_expweight2,
                    int_expweight3,

@@ -67,7 +67,7 @@ main(int argc, char *argv[])
   mol->print();
   
   //mol->transform_to_principal_axes(0);
-  //ExEnv::out() << "Molecule wrt principal axes:\n";
+  //ExEnv::out0() << "Molecule wrt principal axes:\n";
   //mol->print();
   //mol->point_group()->symm_frame().print();
 

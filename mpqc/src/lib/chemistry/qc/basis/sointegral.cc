@@ -117,7 +117,7 @@ OneBodySOInt::compute_shell(int ish, int jsh)
           buffer_[jsooff] += jcoef * aobuf[jaooff];
 #if DEBUG
           if (fabs(aobuf[jaooff]*jcoef) > 1.0e-10) {
-            ExEnv::out() <<"("<<isofunc
+            ExEnv::outn() <<"("<<isofunc
                  <<"|"<<jsofunc
                  <<") += "<<scprintf("%8.5f",jcoef)<<" * "
                  <<"("<<iaofunc
@@ -276,7 +276,7 @@ TwoBodySOInt::compute_shell(int ish, int jsh, int ksh, int lsh)
                   buffer_[lsooff] += lcoef * aobuf[laooff];
 #if DEBUG
                   if (fabs(aobuf[laooff]*lcoef) > 1.0e-10) {
-                      ExEnv::out() <<"("<<isofunc<<jsofunc
+                      ExEnv::outn() <<"("<<isofunc<<jsofunc
                            <<"|"<<ksofunc<<lsofunc
                            <<") += "<<scprintf("%8.5f",lcoef)<<" * "
                            <<"("<<iaofunc<<jaofunc

@@ -245,12 +245,12 @@ StateIn::get_directory()
 
   // read the type information
 #if DEBUG
-  ExEnv::out() << "Directory length location = " << tell() << endl;
+  ExEnv::outn() << "Directory length location = " << tell() << endl;
 #endif
   get(length);
 #if DEBUG
-  ExEnv::out() << "Directory length = " << length << endl;
-  ExEnv::out() << "Directory entries location = " << tell() << endl;
+  ExEnv::outn() << "Directory length = " << length << endl;
+  ExEnv::outn() << "Directory entries location = " << tell() << endl;
 #endif
   for (i=0; i<length; i++) {
       char *name;
@@ -259,7 +259,7 @@ StateIn::get_directory()
       get(version);
       get(classid);
 #if DEBUG
-      ExEnv::out() << "GET CLASS:"
+      ExEnv::outn() << "GET CLASS:"
                    << " NAME = " << name
                    << " VERSION = " << version
                    << " ID = " << classid << endl;
@@ -281,7 +281,7 @@ StateIn::get_directory()
       get(num.offset);
       get(num.size);
 #if DEBUG
-      ExEnv::out() << "GET OBJECT:"
+      ExEnv::outn() << "GET OBJECT:"
                    << " NUM=" << setw(2) << n
                    << " OFF=" << setw(5) << num.offset
                    << " SZ=" << setw(4) << num.size
@@ -301,7 +301,7 @@ StateIn::find_and_get_directory()
       int original_loc = tell();
       seek(directory_location());
 #if DEBUG
-      ExEnv::out() << "Getting directory from " << tell() << endl;
+      ExEnv::outn() << "Getting directory from " << tell() << endl;
 #endif
       get_directory();
       seek(original_loc);
@@ -314,15 +314,15 @@ StateIn::getstring(char*&s)
   int r=0;
   int size;
 #if DEBUG
-  ExEnv::out() << "String length location = " << tell() << endl;
+  ExEnv::outn() << "String length location = " << tell() << endl;
 #endif
   r += get(size);
 #if DEBUG
-  ExEnv::out() << "String length = " << size << endl;
+  ExEnv::outn() << "String length = " << size << endl;
 #endif
   if (size) {
 #if DEBUG
-      ExEnv::out() << "String location = " << tell() << endl;
+      ExEnv::outn() << "String location = " << tell() << endl;
 #endif
       s = new char[size];
       r += get_array_char(s,size-1);
@@ -572,15 +572,15 @@ StateIn::getobject(Ref<SavableState> &p)
   if (refnum == 0) {
       // reference to null
 #if DEBUG
-      ExEnv::out() << indent << "getting null object" << endl;
+      ExEnv::outn() << indent << "getting null object" << endl;
 #endif
       p = 0;
     }
   else {
 #if DEBUG
-      ExEnv::out() << indent << "getting object number " << setw(2)
+      ExEnv::outn() << indent << "getting object number " << setw(2)
                    << refnum << endl;
-      ExEnv::out() << incindent;
+      ExEnv::outn() << incindent;
 #endif
       AVLMap<int,StateInData>::iterator ind = ps_.find(refnum);
       if (ind == ps_.end() && use_dir) {
@@ -590,7 +590,7 @@ StateIn::getobject(Ref<SavableState> &p)
         }
       if (ind == ps_.end() || ind.data().ptr.null()) {
 #if DEBUG
-          ExEnv::out() << indent << "reading object" << endl;
+          ExEnv::outn() << indent << "reading object" << endl;
 #endif
           // object has not yet been read in
           int need_seek = 0;
@@ -599,7 +599,7 @@ StateIn::getobject(Ref<SavableState> &p)
                   need_seek = 1;
                   original_loc = tell();
 #if DEBUG
-                  ExEnv::out() << indent << "seeking to"
+                  ExEnv::outn() << indent << "seeking to"
                        << setw(5) << ind.data().offset << endl;
 #endif
                   seek(ind.data().offset);
@@ -622,7 +622,7 @@ StateIn::getobject(Ref<SavableState> &p)
               if (need_seek) seek(original_loc);
             }
 #if DEBUG
-          ExEnv::out() << indent << "got object with type = "
+          ExEnv::outn() << indent << "got object with type = "
                << p->class_name() << endl;
 #endif
         }
@@ -630,9 +630,9 @@ StateIn::getobject(Ref<SavableState> &p)
           // object already exists
           p = ind.data().ptr;
 #if DEBUG
-          ExEnv::out() << indent << "object already existed, type = "
+          ExEnv::outn() << indent << "object already existed, type = "
                << p->class_name() << endl;
-          ExEnv::out() << indent
+          ExEnv::outn() << indent
                << "  use_dir = " << use_dir
                << " tell() = " << setw(5) << tell()
                << " offset = " << setw(5) << ind.data().offset
@@ -642,14 +642,14 @@ StateIn::getobject(Ref<SavableState> &p)
           if (use_dir && tell() - size_refnum == ind.data().offset) {
               seek(tell() - size_refnum + ind.data().size);
 #if DEBUG
-              ExEnv::out() << indent << "  seeking to "
+              ExEnv::outn() << indent << "  seeking to "
                    << tell() - size_refnum + ind.data().offset
                    << endl;
 #endif
             }
         }
 #if DEBUG
-      ExEnv::out() << decindent;
+      ExEnv::outn() << decindent;
 #endif
     }
   return r;
@@ -677,13 +677,13 @@ StateIn::haveobject(int objnum,const Ref<SavableState> &p)
   if (ind == ps_.end()) {
       ps_[objnum].ptr = p;
 #if DEBUG
-      ExEnv::out() << indent << "have object adding number " << objnum << endl;
+      ExEnv::outn() << indent << "have object adding number " << objnum << endl;
 #endif
     }
   else {
       ind.data().ptr = p;
 #if DEBUG
-      ExEnv::out() << indent << "have object updating number " << objnum
+      ExEnv::outn() << indent << "have object updating number " << objnum
                    << endl;
 #endif
     }

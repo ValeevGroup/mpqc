@@ -153,7 +153,7 @@ SCF::compute_vector(double& eelec)
     BlockedSCMatrix *bvec
       = dynamic_cast<BlockedSCMatrix*>(oso_scf_vector_.pointer());
 
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
                  << "solving generalized eigenvalue problem" << endl;
 
     for (int iblock=0; iblock<bfmat->nblocks(); iblock++) {
@@ -186,7 +186,7 @@ SCF::compute_vector(double& eelec)
       dsygv_(&itype,"V","U",&nbasis,fso,&nbasis,sso,&nbasis,
              epsilon,&optlwork,&lwork,&info);
       if (info) {
-        ExEnv::out() << "dsygv could not determine work size: info = "
+        ExEnv::outn() << "dsygv could not determine work size: info = "
                      << info << endl;
         abort();
       }
@@ -195,7 +195,7 @@ SCF::compute_vector(double& eelec)
       dsygv_(&itype,"V","U",&nbasis,fso,&nbasis,sso,&nbasis,
              epsilon,work,&lwork,&info);
       if (info) {
-        ExEnv::out() << "dsygv could not diagonalize matrix: info = "
+        ExEnv::outn() << "dsygv could not diagonalize matrix: info = "
                      << info << endl;
         abort();
       }

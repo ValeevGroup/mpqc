@@ -82,7 +82,7 @@ GaussianBasisSet::hessian_values(const SCVector3& r, ValueData *v,
 	if (iflag)
 	{
 	    iflag--;
-	    ExEnv::out() << node0 << indent
+	    ExEnv::out0() << indent
                  << scprintf("Center %d, (%lf,%lf,%lf)\n",
                              icenter,r_center(center,0),
                              r_center(center,1),r_center(center,2));

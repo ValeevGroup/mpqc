@@ -158,22 +158,22 @@ void sigfpe_handler(int)
   unsigned long fp_control = ieee_get_fp_control();
   int fatal = 0;
   if (fp_control & IEEE_STATUS_INV) {
-      ExEnv::out() << "SGIFPE: invalid operation" << endl;;
+      ExEnv::outn() << "SGIFPE: invalid operation" << endl;;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_DZE) {
-      ExEnv::out() << "SGIFPE: divide by zero" << endl;;
+      ExEnv::outn() << "SGIFPE: divide by zero" << endl;;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_OVF) {
-      ExEnv::out() << "SGIFPE: overflow" << endl;;
+      ExEnv::outn() << "SGIFPE: overflow" << endl;;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_UNF) {
-      //ExEnv::out() << "SGIFPE: underflow" << endl;;
+      //ExEnv::outn() << "SGIFPE: underflow" << endl;;
     }
   if (fp_control & IEEE_STATUS_INE) {
-      //ExEnv::out() << "SGIFPE: inexact" << endl;;
+      //ExEnv::outn() << "SGIFPE: inexact" << endl;;
     }
   if (fatal) abort();
 }

@@ -367,7 +367,7 @@ class LocalLBGBuild : public GBuild<T> {
       }
 
       grp_->sum(&tnint, 1, 0, 0);
-      ExEnv::out() << node0 << indent << scprintf("%20.0f integrals\n", tnint);
+      ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
 
       tim_exit("ao_gmat");
     }

@@ -86,14 +86,14 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
   // input will effectively be done by reference
   // check to see if the datum is a described class
   const char* tkw = truekeyword(key);
-  //ExEnv::out() << "truekeyword = "<< tkw << '\n';
+  //ExEnv::outn() << "truekeyword = "<< tkw << '\n';
   if (!tkw) {
       result = 0;
     }
   else {
       // if a classname exists then read in the datum as an object
       const char* classn = classname(tkw);
-      //ExEnv::out() << "classname = " << classn << '\n';
+      //ExEnv::outn() << "classname = " << classn << '\n';
       if (classn) {
           KeyValKeyword truekey(tkw);
           if (_map.contains(truekey)) {

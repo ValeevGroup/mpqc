@@ -44,7 +44,7 @@ double Wavefunction::density(const SCVector3&r)
   delete valdat;
 
   //for (int i=0; i<nbasis; i++)
-  //     ExEnv::out() << node0 << indent
+  //     ExEnv::out0() << indent
   //          << scprintf("bs_values[%d] = %12.8f\n",i,bs_values[i]);
 
   // Assuming this will be called many times for the same wavefunction,
@@ -83,7 +83,7 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
   delete valdat;
 
   //for (int i=0; i<nbasis; i++)
-  //     ExEnv::out() << node0 << indent
+  //     ExEnv::out0() << indent
   //          << scprintf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);
 
   // get the natural orbitals and density

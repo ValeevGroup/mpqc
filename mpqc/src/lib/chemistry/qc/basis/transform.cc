@@ -227,20 +227,20 @@ solidharmcontrib(int sign,
       double norm = sqrt(double(norm2num)/double(norm2den));
       coefmat->accumulate_element(icart(x,y,z), pureindex, coef*norm);
 #ifdef DEBUG
-      ExEnv::out().form("    add(%d,%d,%d, % 4ld.0",
+      ExEnv::outn().form("    add(%d,%d,%d, % 4ld.0",
                 x,y,z, sign*long(bin));
       if (den!=1) {
-          ExEnv::out().form("/%-4.1f",double(den));
+          ExEnv::outn().form("/%-4.1f",double(den));
         }
       else {
-          ExEnv::out().form("     ");
+          ExEnv::outn().form("     ");
         }
       if (norm2num != 1 || norm2den != 1) {
-          ExEnv::out().form(" * sqrt(%ld.0/%ld.0)",
+          ExEnv::outn().form(" * sqrt(%ld.0/%ld.0)",
                     long(norm2num), long(norm2den));
         }
-      ExEnv::out().form(", i);");
-      ExEnv::out() << endl;
+      ExEnv::outn().form(", i);");
+      ExEnv::outn() << endl;
 #endif
     }
 }
@@ -276,8 +276,8 @@ solidharm(unsigned int l, int m, unsigned int r2, RefSCMatrix coefmat)
   reduce(norm2num,norm2den);
 
 #ifdef DEBUG
-  ExEnv::out().form("    // l=%2d m=% 2d",l,m);
-  ExEnv::out() << endl;
+  ExEnv::outn().form("    // l=%2d m=% 2d",l,m);
+  ExEnv::outn() << endl;
 #endif
   for (unsigned int t=0; t <= (l - absm)/2; t++) {
       for (unsigned int u=0; u<=t; u++) {
@@ -303,7 +303,7 @@ solidharm(unsigned int l, int m, unsigned int r2, RefSCMatrix coefmat)
         }
     }
 #ifdef DEBUG
-  ExEnv::out() << "    i++;" << endl;
+  ExEnv::outn() << "    i++;" << endl;
 #endif
 }
 
@@ -324,7 +324,7 @@ solidharm(int l, const RefSCMatrix &coefmat)
     }
 
 #ifdef DEBUG
-  ExEnv::out() << coefmat;
+  ExEnv::outn() << coefmat;
 #endif
 }
 
@@ -339,7 +339,7 @@ SphericalTransform::init()
   solidharm(l_,coefmat);
 
 #ifdef DEBUG
-  ExEnv::out() << scprintf("---> generating l=%d subl=%d", l_, subl_) << endl;
+  ExEnv::outn() << scprintf("---> generating l=%d subl=%d", l_, subl_) << endl;
 #endif
 
   int pureoffset = 0;
@@ -354,7 +354,7 @@ SphericalTransform::init()
         if (fabs(coef) > DBL_EPSILON) {
           add(a,b,c, coef, p);
 #ifdef DEBUG
-          ExEnv::out() << scprintf("---> add(%d,%d,%d, %12.8f, %d)",
+          ExEnv::outn() << scprintf("---> add(%d,%d,%d, %12.8f, %d)",
                            a,b,c,coef,p) << endl;
 #endif
         }
@@ -414,7 +414,7 @@ ISphericalTransform::init()
   coefmat->transpose_this();
 
 #ifdef DEBUG
-  ExEnv::out() << scprintf("---> IST: generating l=%d subl=%d", l_, subl_) << endl;
+  ExEnv::outn() << scprintf("---> IST: generating l=%d subl=%d", l_, subl_) << endl;
 #endif
 
   int pureoffset = 0;
@@ -429,7 +429,7 @@ ISphericalTransform::init()
         if (fabs(coef) > DBL_EPSILON) {
           add(a,b,c, coef, p);
 #ifdef DEBUG
-          ExEnv::out() << scprintf("---> IST: add(%d,%d,%d, %12.8f, %d)",
+          ExEnv::outn() << scprintf("---> IST: add(%d,%d,%d, %12.8f, %d)",
                            a,b,c,coef,p) << endl;
 #endif
         }

@@ -206,7 +206,7 @@ class ClassDesc: public Identity {
     static AVLMap<ClassKey,ClassDescP>& all();
     const ParentClasses& parents() const { return parents_; }
 
-    /// Writes a list of all of the classes to ExEnv::out().
+    /// Writes a list of all of the classes to ExEnv::out0().
     static void list_all_classes();
     /** Given the name of the class, return a pointer to the
         class descriptor. */

@@ -126,7 +126,7 @@ ExEnv::init(int &argcref, char **&argvref)
   CORBA::BOA_var boa = orb->BOA_init(*argc_, *argv_, "mico-local-boa");
   CORBA::Object_var obj = orb->bind("IDL:NIAMA/Machine:1.0");
   if (CORBA::is_nil (obj)) {
-      ExEnv::out() << "could not bind to NIAMA server ... giving up" << endl;
+      ExEnv::outn() << "could not bind to NIAMA server ... giving up" << endl;
       return;
     }
   Machine_var machine = Machine::_narrow (obj);
@@ -137,8 +137,8 @@ ExEnv::init(int &argcref, char **&argvref)
   nproc_ = machine->n_processor();
   mem_ = machine->memory();
 
-  ExEnv::out() << "ExEnv::init: NIAMA: nproc = " << nproc_ << endl;
-  ExEnv::out() << "ExEnv::init: NIAMA: memory = " << mem_ << endl;
+  ExEnv::outn() << "ExEnv::init: NIAMA: nproc = " << nproc_ << endl;
+  ExEnv::outn() << "ExEnv::init: NIAMA: memory = " << mem_ << endl;
 #else
   using namespace NIAMA;
   // init ORB

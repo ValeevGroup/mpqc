@@ -138,7 +138,7 @@ IntegralStorer::store(IntegralKey &key, const double *buf,
     }
 
 #if PRINT_STORED
-  ExEnv::out() << scprintf("+++++ %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+  ExEnv::outn() << scprintf("+++++ %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
          key.sh0(),key.sh1(),key.sh2(),key.sh3(),
          key.p12(), key.p34(), key.p13p24(),
          link->size,link->costlist.key,link,link->hash()%table_size_);
@@ -157,7 +157,7 @@ IntegralStorer::store(IntegralKey &key, const double *buf,
       n_shellquart_--;
       n_integrals_ -= eliminate->size;
 #if PRINT_STORED
-      ExEnv::out() << scprintf("----- %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
+      ExEnv::outn() << scprintf("----- %d %d %d %d, %d %d %d size %5d cost %7d at 0x%x slot %5d\n",
              eliminate->intlist.key.sh0(),eliminate->intlist.key.sh1(),
              eliminate->intlist.key.sh2(),eliminate->intlist.key.sh3(),
              eliminate->intlist.key.p12(), eliminate->intlist.key.p34(),
@@ -256,8 +256,8 @@ IntegralStorer::print_stats()
       if ((i+1)%13 == 0) ExEnv::outn() << scprintf("\n");
     }
   if (i%13 != 0) ExEnv::outn() << scprintf("\n");
-  ExEnv::out() << scprintf("IntegralStorer: hash table length sum = %d\n", tlength);
-  ExEnv::out() << scprintf("IntegralStorer: cost list length      = %d\n", costlist.length());
+  ExEnv::outn() << scprintf("IntegralStorer: hash table length sum = %d\n", tlength);
+  ExEnv::outn() << scprintf("IntegralStorer: cost list length      = %d\n", costlist.length());
 #endif
 }
 

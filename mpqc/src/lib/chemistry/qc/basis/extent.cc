@@ -90,8 +90,8 @@ ShellExtent::init(const Ref<GaussianBasisSet>&gbs,
   contributing_shells_ = new ArrayExtentData[n_[0]*n_[1]*n_[2]];
 
   for (i=0; i<mol->natom(); i++) {
-      //ExEnv::out() << indent << "working on atom " << i << endl;
-      //ExEnv::out() << incindent;
+      //ExEnv::outn() << indent << "working on atom " << i << endl;
+      //ExEnv::outn() << incindent;
       for (j=0; j<gbs->nshell_on_center(i); j++) {
           int ishell = gbs->shell_on_center(i,j);
           const GaussianShell &shell = gbs->shell(ishell);
@@ -103,15 +103,15 @@ ShellExtent::init(const Ref<GaussianBasisSet>&gbs,
               atom_block[l] = int((mol->r(i,l)-lower_[l])/resolution_);
             }
           int block[3];
-          //ExEnv::out() << indent << "working on shell " << ishell << endl;
-          //ExEnv::out() << incindent;
+          //ExEnv::outn() << indent << "working on shell " << ishell << endl;
+          //ExEnv::outn() << incindent;
           for (k=atom_block[0]-ir; k<=atom_block[0]+ir; k++) {
               block[0] = k;
               for (l=atom_block[1]-ir; l<=atom_block[1]+ir; l++) {
                   block[1] = l;
                   for (m=atom_block[2]-ir; m<=atom_block[2]+ir; m++) {
                       block[2] = m;
-                      //ExEnv::out() << indent
+                      //ExEnv::outn() << indent
                       //     << "working on block " << block[0]
                       //     << " " << block[1]
                       //     << " " << block[2] << endl;
@@ -124,7 +124,7 @@ ShellExtent::init(const Ref<GaussianBasisSet>&gbs,
                         }
                       dist = sqrt(dist);
                       double bound = shell.monobound(dist);
-                      //ExEnv::out() << indent
+                      //ExEnv::outn() << indent
                       //     << "dist = " << dist
                       //     << " bound = " << bound << endl;
                       if (bound < tolerance) continue;
@@ -132,9 +132,9 @@ ShellExtent::init(const Ref<GaussianBasisSet>&gbs,
                     }
                 }
             }
-          //ExEnv::out() << decindent;
+          //ExEnv::outn() << decindent;
         }
-      //ExEnv::out() << decindent;
+      //ExEnv::outn() << decindent;
     }
 }
 

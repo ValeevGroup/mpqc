@@ -316,7 +316,7 @@ Wavefunction::overlap()
 
     overlap_ = sb;
 #else
-    ExEnv::out() << "Checking symmetrized overlap" << endl;
+    ExEnv::out0() << "Checking symmetrized overlap" << endl;
 
     RefSymmSCMatrix s(basis()->basisdim(), basis()->matrixkit());
     Ref<SCElementOp> ov =
@@ -352,7 +352,7 @@ Wavefunction::overlap()
         double val2 = spl.get_element(i,j);
         if (me == 0) {
           if (fabs(val1-val2) > 1.0e-6) {
-            ExEnv::out() << "bad overlap vals for " << i << " " << j
+            ExEnv::out0() << "bad overlap vals for " << i << " " << j
                          << ": " << val1 << " " << val2 << endl;
           }
         }
@@ -395,7 +395,7 @@ Wavefunction::core_hamiltonian()
 
     hcore_ = h;
 #else
-    ExEnv::out() << "Checking symmetrized hcore" << endl;
+    ExEnv::out0() << "Checking symmetrized hcore" << endl;
 
     RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
     hao.assign(0.0);
@@ -443,7 +443,7 @@ Wavefunction::core_hamiltonian()
         double val2 = h.get_element(i,j);
         if (me == 0) {
           if (fabs(val1-val2) > 1.0e-6) {
-            ExEnv::out() << "bad hcore vals for " << i << " " << j
+            ExEnv::outn() << "bad hcore vals for " << i << " " << j
                          << ": " << val1 << " " << val2 << endl;
           }
         }

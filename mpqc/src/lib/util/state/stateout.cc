@@ -230,7 +230,7 @@ StateOut::put_directory()
       put(cd->version());
       put(classid);
 #if DEBUG
-      ExEnv::out() << "PUT CLASS:"
+      ExEnv::outn() << "PUT CLASS:"
                    << " NAME = " << cd->name()
                    << " VERSION = " << cd->version()
                    << " ID = " << classid << endl;
@@ -246,7 +246,7 @@ StateOut::put_directory()
       put(ptr.offset);
       put(ptr.size);
 #if DEBUG
-      ExEnv::out() << "PUT OBJECT:"
+      ExEnv::outn() << "PUT OBJECT:"
                    << " NUM = " << ptr.num
                    << " TYPE = " << ptr.type
                    << " OFFSET = " << ptr.offset

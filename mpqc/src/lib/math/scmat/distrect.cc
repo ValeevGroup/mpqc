@@ -807,7 +807,7 @@ DistSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   SCMatrixBlockListIter i;
   for (i = blocklist->begin(); i != blocklist->end(); i++) {
-//       ExEnv::out() << "rect elemop processing a block of type "
+//       ExEnv::outn() << "rect elemop processing a block of type "
 //            << i.block()->class_name() << endl;
       op->process_base(i.block());
     }

@@ -259,7 +259,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                   Ref<Triangle> newtri(newTriangle(e1,e2,e3,orientation));
                   new_triangles.insert(newtri);
                 }
-              //ExEnv::out() << "WARNING: only one short edge removed" << endl;
+              //ExEnv::outn() << "WARNING: only one short edge removed" << endl;
               //break;
             }
         }
@@ -277,7 +277,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
         }
 
       deleted_edges_length = deleted_edges.length();
-      //ExEnv::out() << "WARNING: one pass short edge removal" << endl;
+      //ExEnv::outn() << "WARNING: one pass short edge removal" << endl;
       //deleted_edges_length = 0; // do one pass
     } while(deleted_edges_length != 0);
 

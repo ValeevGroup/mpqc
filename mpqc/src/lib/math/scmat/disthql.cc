@@ -109,7 +109,7 @@ dist_diagonalize_(int n, int m, double *a, double *d, double *e,
 #if 0
   pimtql2_(d,e,&n,z,&m,&info);
   if (info != 0) {
-      ExEnv::out() << "dist_diagonalize: node "
+      ExEnv::outn() << "dist_diagonalize: node "
            << grp->me() << ": nonzero ierr from pimtql2" << endl;
       abort();
     }

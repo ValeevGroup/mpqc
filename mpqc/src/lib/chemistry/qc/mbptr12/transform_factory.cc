@@ -118,16 +118,29 @@ MOIntsTransformFactory::save_data_state(StateOut& so)
   so.put(file_prefix_);
 }
 
+void
+MOIntsTransformFactory::set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                                   const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4)
+{
+  space1_ = space1;
+  if (space2.null())
+    space2_ = space1_;
+  if (space3.null())
+    space3_ = space2_;
+  if (space4.null())
+    space4_ = space3_;
+}
+
 Ref<TwoBodyMOIntsTransform>
 MOIntsTransformFactory::twobody_transform(const std::string& name)
 {
   Ref<TwoBodyMOIntsTransform> result;
 
   
-  /*if (space1_ == space3_ && space2_->rank() <= space2_->basis()->nbasis()) {
+  if (space1_ == space3_ && space2_->rank() <= space2_->basis()->nbasis()) {
     result = new TwoBodyMOIntsTransform_ikjy(name,this,space1_,space2_,space3_,space4_);
   }
-  else */if (space1_ == space3_) {
+  else if (space1_ == space3_) {
     result = new TwoBodyMOIntsTransform_ixjy(name,this,space1_,space2_,space3_,space4_);
   }
   else if (space1_ == space2_) {

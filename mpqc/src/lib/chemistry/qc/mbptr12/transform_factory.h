@@ -84,9 +84,12 @@ public:
 
   void save_data_state(StateOut&);
 
+  /// Sets the orbital spaces
+  void set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2 = 0,
+                  const Ref<MOIndexSpace>& space3 = 0, const Ref<MOIndexSpace>& space4 = 0);
+
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
-
   /// Sets the method of storing transformed MO integrals. Default method is mem_posix.
   void set_ints_method(const StoreMethod method) { ints_method_ = method; }
   /// Sets the name of the file to hold the integrals.
@@ -98,7 +101,6 @@ public:
 
   /// Returns the Integral factory
   Ref<Integral> integral() const { return integral_; };
-
   /// Returns the method of storing transformed MO integrals.
   const StoreMethod ints_method() const { return ints_method_; }
   /// Sets the name of the file to hold the integrals.

@@ -1,6 +1,11 @@
 
 /* $Log$
- * Revision 1.5  1995/03/17 01:49:31  cljanss
+ * Revision 1.6  1995/08/21 19:36:20  cljanss
+ * 1) New integral storage scheme using AVL trees.
+ * 2) Updated bounds routines so the SCF program could use them.
+ * 3) Got inttest working again.
+ *
+ * Revision 1.5  1995/03/17  01:49:31  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -181,7 +186,6 @@ centers_t *cs4;
    * accordingly. */
   int_store1 = !(flags&INT_NOSTR1);
   int_store2 = !(flags&INT_NOSTR2);
-  int_store_bounds = !(flags&INT_NOSTRB);
 
   /* Allocate storage for the intermediates. */
   alloc_inter(cs4->prim_offset + cs4->nprim, cs4->shell_offset + cs4->nshell);
@@ -305,33 +309,6 @@ centers_t *cs4;
     fail();
     }
 
-  /* Compute the Q(M,N) which are used to compute the maximum
-   * value of a integrals in shell quartets. */
-  if (int_store_bounds) {
-    compute_Q(cs1,cs1);
-    if (cs2 != cs1) {
-      compute_Q(cs1,cs2);
-      compute_Q(cs2,cs1);
-      compute_Q(cs2,cs2);
-      }
-    if (cs3 != cs2 && cs3 != cs1) {
-      compute_Q(cs1,cs3);
-      compute_Q(cs3,cs1);
-      compute_Q(cs2,cs3);
-      compute_Q(cs3,cs2);
-      compute_Q(cs3,cs3);
-      }
-    if (cs4 != cs3 && cs4 != cs2 && cs4 != cs1) {
-      compute_Q(cs1,cs4);
-      compute_Q(cs4,cs1);
-      compute_Q(cs2,cs4);
-      compute_Q(cs4,cs2);
-      compute_Q(cs3,cs4);
-      compute_Q(cs4,cs3);
-      compute_Q(cs4,cs4);
-      }
-    }
-
   return int_buffer;
   }
 
@@ -352,10 +329,10 @@ int_done_erep()
     free_double_array3(&int_prim_p);
     free_double_matrix(&int_prim_k);
     }
-  if (int_store_bounds) {
-    free_double_matrix(&int_shell_Q);
-    }
   int_maxsize = 0;
+  int_done_storage();
+  int_done_bounds();
+  int_done_bounds_1der();
   int_done_buildgc();
   int_done_shiftgc();
   int_done_fjt();
@@ -385,13 +362,6 @@ int nshell;
         ) {
       fprintf(stderr,"problem allocating O(n^2) integral intermediates for");
       fprintf(stderr," %d shells and %d primitives\n",nshell,nprim);
-      fail();
-      }
-    }
-  if (int_store_bounds) {
-    if (allocbn_double_matrix(&int_shell_Q, "n1 n2", nshell, nshell)) {
-      fprintf(stderr,"problem allocating O(n^2) integral bounds array");
-      fprintf(stderr," %d shells\n",nshell);
       fail();
       }
     }
@@ -536,66 +506,4 @@ fail()
 {
   fprintf(stderr,"failing module:\n%s\n",__FILE__);
   exit(1);
-  }
-
-LOCAL_FUNCTION VOID
-compute_Q(cs1,cs2)
-centers_t *cs1;
-centers_t *cs2;
-{
-  int i1,j1;
-  int i2,j2;
-  int offset1,offset2;
-  int shell1,shell2;
-  int sh1,sh2,sh3,sh4;
-  int nfunc1,nfunc2;
-  double max;
-  double integral;
-  int i,j;
-
-  offset1 = cs1->shell_offset;
-  shell1 = 0;
-  for (i1=0; i1<cs1->n; i1++) {
-    for (j1=0; j1<cs1->center[i1].basis.n; j1++) {
-      nfunc1 = cs1->center[i1].basis.shell[j1].nfunc;
-
-      offset2 = cs2->shell_offset;
-      shell2 = 0;
-      for (i2=0; i2<cs2->n; i2++) {
-        for (j2=0; j2<cs2->center[i2].basis.n; j2++) {
-          nfunc2 = cs2->center[i2].basis.shell[j2].nfunc;
-
-          sh1 = shell1;
-          sh2 = shell2;
-          sh3 = shell1;
-          sh4 = shell2;
-
-          int_erep(INT_EREP|INT_REDUND|INT_NOPERM|INT_NOBCHK,
-                   &sh1,&sh2,&sh3,&sh4);
-
-          /* Find the biggest (ij|ij) integral. */
-          max = 0.0;
-          for (i=0; i<nfunc1; i++) {
-            for (j=0; j<nfunc2; j++) {
-              int index = i * nfunc2 * nfunc1 * nfunc2
-                        + j * nfunc1 * nfunc2
-                        + i * nfunc2
-                        + j;
-              integral = int_buffer[ index ];
-              if (fabs(integral) > max) max = fabs(integral);
-              }
-            }
-
-          /* Compute the Q value. */
-          int_shell_Q.d[offset1][offset2] = sqrt(max);
-
-          offset2++;
-          shell2++;
-          }
-        }
-
-      offset1++;
-      shell1++;
-      }
-    }
   }

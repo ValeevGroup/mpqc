@@ -1,6 +1,11 @@
 
 /* $Log$
- * Revision 1.5  1995/03/17 01:49:21  cljanss
+ * Revision 1.6  1995/08/21 19:36:19  cljanss
+ * 1) New integral storage scheme using AVL trees.
+ * 2) Updated bounds routines so the SCF program could use them.
+ * 3) Got inttest working again.
+ *
+ * Revision 1.5  1995/03/17  01:49:21  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -76,19 +81,31 @@
 #define COMPUTE_R 2
 
 GLOBAL_FUNCTION VOID
-int_init_bounds()
+int_init_bounds_nocomp()
 {
+  int i;
   int nshell=int_cs1->nshell;
   int nsht=nshell*(nshell+1)/2;
+
+  if (int_Qvec) free(int_Qvec);
   
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   if(int_Qvec==NULL) {
-    fprintf(stderr,"int_init_bounds: cannot malloc int_Qvec: %d\n",nsht);
+    fprintf(stderr,"int_init_bounds_nocomp: cannot malloc int_Qvec: %d\n",
+            nsht);
     exit(1);
     }
 
   int_Rvec = NULL;
 
+  int_Q = -126;
+  for (i=0; i<nsht; i++) int_Qvec[i] = 0;
+}
+
+GLOBAL_FUNCTION VOID
+int_init_bounds()
+{
+  int_init_bounds_nocomp();
   compute_bounds(&int_Q,int_Qvec,COMPUTE_Q);
   }
 
@@ -103,6 +120,9 @@ int_init_bounds_1der_nocomp()
     printf("requested der bounds but space not allocated\n");
     exit(1);
     }
+
+  if (int_Qvec) free(int_Qvec);
+  if (int_Rvec) free(int_Rvec);
   
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   int_Rvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
@@ -117,6 +137,14 @@ int_init_bounds_1der_nocomp()
   }
 
 GLOBAL_FUNCTION VOID
+int_bounds_comp(s1,s2)
+int s1;
+int s2;
+{
+  compute_bounds_shell(&int_Q,int_Qvec,COMPUTE_Q,s1,s2);
+  }
+
+GLOBAL_FUNCTION VOID
 int_bounds_1der_comp(s1,s2)
 int s1;
 int s2;
@@ -128,21 +156,7 @@ int s2;
 GLOBAL_FUNCTION VOID
 int_init_bounds_1der()
 {
-  int nshell=int_cs1->nshell;
-  int nsht=nshell*(nshell+1)/2;
-
-  if (!int_derivative_bounds) {
-    printf("requested der bounds but space not allocated\n");
-    exit(1);
-    }
-  
-  int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
-  int_Rvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
-  if((int_Qvec==NULL) || (int_Rvec==NULL)) {
-    fprintf(stderr,"int_init_bounds_1der: cannot malloc int_{R,Q}vec: %d\n",nsht);
-    exit(1);
-    }
-
+  int_init_bounds_1der_nocomp();
   compute_bounds(&int_Q,int_Qvec,COMPUTE_Q);
   compute_bounds(&int_R,int_Rvec,COMPUTE_R);
   }
@@ -150,14 +164,17 @@ int_init_bounds_1der()
 GLOBAL_FUNCTION VOID
 int_done_bounds()
 {
-  free(int_Qvec);
+  if (int_Qvec) free(int_Qvec);
+  int_Qvec = 0;
   }
 
 GLOBAL_FUNCTION VOID
 int_done_bounds_1der()
 {
-  free(int_Qvec);
-  free(int_Rvec);
+  if (int_Qvec) free(int_Qvec);
+  if (int_Rvec) free(int_Rvec);
+  int_Qvec = 0;
+  int_Rvec = 0;
   }
 
 GLOBAL_FUNCTION int
@@ -250,6 +267,8 @@ int flag;
   double loginv = 1.0/log(2.0);
   centers_t *cs1;
   int erep_flags = INT_EREP|INT_REDUND|INT_NOPERM|INT_NOBCHK;
+  int old_int_integral_storage = int_integral_storage;
+  int_integral_storage = 0;
 
   cs1 = int_cs1;
   if ((cs1 != int_cs2)&&(cs1 != int_cs3)&&(cs1 != int_cs4)) {
@@ -311,6 +330,7 @@ int flag;
 #endif
       }
     }
+  int_integral_storage = old_int_integral_storage;
   }
 
 /* Compute the partial bound arrays, either Q or R can be computed
@@ -331,6 +351,8 @@ int sh2;
   double loginv = 1.0/log(2.0);
   centers_t *cs1;
   int erep_flags = INT_EREP|INT_REDUND|INT_NOPERM|INT_NOBCHK;
+  int old_int_integral_storage = int_integral_storage;
+  int_integral_storage = 0;
 
   cs1 = int_cs1;
   if ((cs1 != int_cs2)&&(cs1 != int_cs3)&&(cs1 != int_cs4)) {
@@ -393,6 +415,7 @@ int sh2;
       if (nint > 27) printf(" ...");
       printf("\n");
 #endif
+  int_integral_storage = old_int_integral_storage;
   }
 
 /* This function is used to convert a double to its log base 2 rep

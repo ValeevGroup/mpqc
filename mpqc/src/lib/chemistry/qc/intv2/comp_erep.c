@@ -3,7 +3,12 @@
  */
 
 /* $Log$
- * Revision 1.6  1995/03/17 01:49:28  cljanss
+ * Revision 1.7  1995/08/21 19:36:20  cljanss
+ * 1) New integral storage scheme using AVL trees.
+ * 2) Updated bounds routines so the SCF program could use them.
+ * 3) Got inttest working again.
+ *
+ * Revision 1.6  1995/03/17  01:49:28  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -101,40 +106,14 @@
 
 #include <chemistry/qc/intv2/inter.h>
 
+#include <chemistry/qc/intv2/storage.h>
+
 #include <chemistry/qc/intv2/comp_erep.gbl>
 #include <chemistry/qc/intv2/comp_erep.lcl>
 
 #include <chemistry/qc/intv2/buildgc.gbl>
 #include <chemistry/qc/intv2/shiftgc.gbl>
-#include <chemistry/qc/intv2/storage.gbl>
 #include <chemistry/qc/intv2/utils.gbl>
-
-/* This returns a quick upperbound for an integral in the given
- * shell quartet. */
-GLOBAL_FUNCTION double
-int_erep_bound(flags,sh1,sh2,sh3,sh4)
-int flags;
-int sh1;
-int sh2;
-int sh3;
-int sh4;
-{
-  int osh1,osh2,osh3,osh4;
-
-  if (!int_store_bounds) {
-    fprintf(stderr,"int_erep_bound: bounds not available\n");
-    fail();
-    }
-
-  /* Compute the offset shell numbers. */
-  osh1 = sh1 + int_cs1->shell_offset;
-  osh2 = sh2 + int_cs2->shell_offset;
-  osh3 = sh3 + int_cs3->shell_offset;
-  osh4 = sh4 + int_cs4->shell_offset;
-
-  return int_shell_Q.d[osh1][osh2] * int_shell_Q.d[osh3][osh4];
-  }
-
 
 /* This computes the 2erep integrals for a shell quartet
  * specified by psh1, psh2, psh3, psh4.
@@ -244,30 +223,6 @@ int dam4;
             sh3,int_cs3->nshell-1,
             sh4,int_cs4->nshell-1);
     fail();
-    }
-
-  /* If bounds checking is not turned off, get an upper bound for
-   * an integral from the shell quartet and zero out the integral
-   * buffer and return if this bound is small. */
-  if (!(flags|INT_NOBCHK)) {
-#if defined(NCUBE_V2)
-    printf("bounds checking is turned off on the NCUBE_V2\n");
-    printf("because a compiler limitation won't allow a\n");
-    printf("tiny bit of code to compile correctly\n");
-    printf("exiting");
-    exit(1);
-#else
-    double bound = int_erep_bound(flags,sh1,sh2,sh3,sh4);
-    if (!INT_NONZERO(bound)) {
-      int i,bufsize;
-      bufsize = INT_SH(int_cs1,sh1).nfunc
-              * (int_unit2?1:INT_SH(int_cs2,sh2).nfunc)
-              * INT_SH(int_cs3,sh3).nfunc
-              * (int_unit4?1:INT_SH(int_cs4,sh4).nfunc);
-      for (i=0; i<bufsize; i++) int_buffer[i] = 0.0;
-      return;
-      }
-#endif
     }
 
   /* Set up pointers to the current shells. */
@@ -512,7 +467,7 @@ int dam4;
     size4 += INT_NCART(int_shell4->type[ii].am+dam4);
   size = size1*size2*size3*size4;
 
-  if (int_integral_storage && (size >= int_storage_threshold)) {
+  if (int_integral_storage) {
     if (dam1 || dam2 || dam3 || dam4) {
       fprintf(stderr,"cannot use integral storage and dam\n");
       fail();
@@ -760,11 +715,8 @@ int dam4;
 
   if (   !int_unit2
       && !int_unit4
-      && int_integral_storage
-      && (size >= int_storage_threshold)) {
-    if (int_integral_storage>=size+int_used_integral_storage) {
+      && int_integral_storage) {
       int_store_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24,size);
-      }
     }
 
   /* We branch here if an integral was precomputed and the int_buffer

@@ -23,6 +23,7 @@ main()
 
   RefKeyVal pkv(new ParsedKeyVal(infile));
   RefKeyVal keyval(new PrefixKeyVal(":centers :basis",pkv));
+  RefKeyVal tkeyval(new PrefixKeyVal(":test", pkv));
 
   centers_t centers;
 
@@ -31,11 +32,10 @@ main()
   int_normalize_centers(&centers);
   int_initialize_offsets2(&centers,&centers,&centers,&centers);
   
-  if (keyval->booleanvalue(":test:print")) print_centers(stdout,&centers);
-
-  if (keyval->booleanvalue(":test:3")) test_3_center(keyval, centers);
-  if (keyval->booleanvalue(":test:4")) test_4_center(keyval, centers);
-  if (keyval->booleanvalue(":test:4der")) test_4der_center(keyval, centers);
+  if (tkeyval->booleanvalue("print_centers")) print_centers(stdout,&centers);
+  if (tkeyval->booleanvalue("3")) test_3_center(tkeyval, centers);
+  if (tkeyval->booleanvalue("4")) test_4_center(tkeyval, centers);
+  if (tkeyval->booleanvalue("4der")) test_4der_center(tkeyval, centers);
 
   int_done_offsets2(&centers,&centers,&centers,&centers);
 
@@ -98,13 +98,12 @@ test_3_center(const RefKeyVal& keyval, centers_t& centers)
 }
 
 void
-test_4_center(const RefKeyVal& keyval, centers_t& centers)
+do_4_center_test(int flags, double* buffer,
+                 const RefKeyVal& keyval, centers_t& centers)
 {
   int ii,jj,kk,ll, i,j,k,l, ibuf;
 
-  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2|INT_NOPERM|INT_REDUND;
-  double *buffer =
-    int_initialize_erep(flags,0,&centers,&centers,&centers,&centers);
+  int print = keyval->intvalue("print");
 
   for (i=0; i<centers.nshell; i++) {
       for (j=0; j<centers.nshell; j++) {
@@ -121,7 +120,7 @@ test_4_center(const RefKeyVal& keyval, centers_t& centers)
                       for (jj=0; jj<sizes[1]; jj++) {
                           for (kk=0; kk<sizes[2]; kk++) {
                               for (ll=0; ll<sizes[3]; ll++) {
-                                  if (INT_NONZERO(buffer[ibuf])) {
+                                  if (print && INT_NONZERO(buffer[ibuf])) {
                                       printf(" ((%d %d)(%d %d)|(%d %d)(%d %d))"
                                              " = %15.11f\n",
                                              sh[0],ii,
@@ -139,6 +138,30 @@ test_4_center(const RefKeyVal& keyval, centers_t& centers)
             }
         }
     }
+}
+
+void
+test_4_center(const RefKeyVal& keyval, centers_t& centers)
+{
+  int i;
+
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2|INT_NOPERM|INT_REDUND;
+  double *buffer =
+    int_initialize_erep(flags,0,&centers,&centers,&centers,&centers);
+
+  int storage = keyval->intvalue("storage");
+  int niter = keyval->intvalue("niter");
+  if (niter == 0) niter = 1;
+
+  int_init_bounds();
+
+  int_storage(storage);
+
+  for (i=0; i<niter; i++) do_4_center_test(flags, buffer, keyval, centers);
+
+  int_done_storage();
+
+  int_done_bounds();
 
   int_done_erep();
 }

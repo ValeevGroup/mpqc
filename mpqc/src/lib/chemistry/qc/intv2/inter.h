@@ -1,6 +1,11 @@
 
 /* $Log$
- * Revision 1.3  1994/05/27 23:51:23  cljanss
+ * Revision 1.4  1995/08/21 19:36:22  cljanss
+ * 1) New integral storage scheme using AVL trees.
+ * 2) Updated bounds routines so the SCF program could use them.
+ * 3) Got inttest working again.
+ *
+ * Revision 1.3  1994/05/27  23:51:23  cljanss
  * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
  *
  * Revision 1.2  1993/12/30  13:32:55  etseidl
@@ -56,16 +61,12 @@
 #endif
 
 EXTERN int int_derivative_bounds;
-EXTERN int int_storage_threshold;
-EXTERN int INITIALIZE(int_maxsize,0);
 EXTERN int int_integral_storage;
-EXTERN int int_used_integral_storage;
+EXTERN int INITIALIZE(int_maxsize,0);
 EXTERN int int_store1;
 EXTERN int int_store2;
-EXTERN int int_store_bounds;
 EXTERN int_vector_t int_shell_to_prim;
 EXTERN doublep_vector_t int_shell_r;
-EXTERN double_matrix_t int_shell_Q;
 EXTERN double_matrix_t int_prim_zeta;
 EXTERN double_matrix_t int_prim_k;
 EXTERN double_matrix_t int_prim_oo2zeta;

@@ -28,11 +28,11 @@ endif
 
 TESTCSRC = inttest.cc
 
-CSRC = bounds.c storage.c  buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
+CSRC = bounds.c buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
        offsets.c int_fjt.c  init2e.c  atominfo.c  basis.c  comp_erep.c  \
        shiftgc.c int_print.c utils.c comp_erep23.c
 
-CXXSRC = basisk.cc
+CXXSRC = basisk.cc storage.cc
 
 XCSRC = shellprnt.c  shellrbc0.c  shellrcv0.c  shellsbc0.c  shellsnd0.c  \
         shellasgn.c  shellzero.c
@@ -46,7 +46,7 @@ SGENSRC = \
   atomsrcv0.c atomszero.c
 
 INC = bounds.h buildinter.h fjttable.h genbuild.h \
-               int_flags.h int_libv2.h int_macros.h int_types.h inter.h
+      storage.h int_flags.h int_libv2.h int_macros.h int_types.h inter.h
 SGENINC = $(SGENSRC:%.c=%.h)
 GENINC = MG.h $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)
 
@@ -87,3 +87,6 @@ endif
 
 MG.h:
 	echo '#define MG $(MG)' > MG.h
+
+#buildgc.o: buildgc.c
+#	$(CC) $(CFLAGS) $(HIGHOPT_CFLAGS) $(NOALIAS_CFLAGS) -c $<

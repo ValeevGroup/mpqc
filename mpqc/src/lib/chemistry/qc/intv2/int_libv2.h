@@ -1,6 +1,11 @@
 
 /* $Log$
- * Revision 1.8  1994/10/31 21:30:10  cljanss
+ * Revision 1.9  1995/08/21 19:36:21  cljanss
+ * 1) New integral storage scheme using AVL trees.
+ * 2) Updated bounds routines so the SCF program could use them.
+ * 3) Got inttest working again.
+ *
+ * Revision 1.8  1994/10/31  21:30:10  cljanss
  * Switch KeyVal& args to const RefKeyVal&.
  *
  * Revision 1.7  1994/08/26  22:45:36  etseidl
@@ -60,6 +65,8 @@
 #ifndef _chemistry_qc_intv2_int_libv2_h
 #define _chemistry_qc_intv2_int_libv2_h
 
+#include <chemistry/qc/intv2/storage.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -85,7 +92,6 @@ extern "C" {
 #include <chemistry/qc/intv2/offsets.gbl>
 #include <chemistry/qc/intv2/comp_0e.gbl>
 #include <chemistry/qc/intv2/comp_1e.gbl>
-#include <chemistry/qc/intv2/storage.gbl>
 #include <chemistry/qc/intv2/bounds.gbl>
 #include <chemistry/qc/intv2/bounds.h>
 #include <chemistry/qc/intv2/normalize.gbl>

@@ -9,10 +9,13 @@ centers: (
  )
 
 test: (
-   print = yes
+   print_centers = yes
    3 = no
-   4 = no
-   4der = yes
+   4 = yes
+   4der = no
+   print = no
+   niter = 2
+   storage = 10000
  )
 
 % a few basis sets for convenience

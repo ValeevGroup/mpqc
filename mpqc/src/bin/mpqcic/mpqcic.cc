@@ -772,6 +772,8 @@ main(int argc, char *argv[])
   fflush(outfile);
 
   clean_and_exit(grp);
+
+  return 0;
 }
 
 

@@ -506,7 +506,15 @@ int i, j, k, face, c1, c2, c3, c4;
     if ((old->corners[c2]->value > 0) == pos &&
 	(old->corners[c3]->value > 0) == pos &&
 	(old->corners[c4]->value > 0) == pos) return;
-    if (abs(i) > p->bounds || abs(j) > p->bounds || abs(k) > p->bounds) return;
+    if (abs(i) > p->bounds || abs(j) > p->bounds || abs(k) > p->bounds) {
+        static int have_been_warned = 0;
+        if (!have_been_warned) {
+            fprintf(stderr,"WARNING: testface: cube out of bounds\n");
+            have_been_warned = 1;
+          }
+        /* abort(); */
+        return;
+      }
     if (setcenter(p->centers, i, j, k)) return;
 
     /* create new cube: */

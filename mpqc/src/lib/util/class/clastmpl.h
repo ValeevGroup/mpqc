@@ -27,32 +27,32 @@ class DCRef : public RefDescribedClassBase {
     int null() const { return p == 0; }
     int nonnull() const { return p != 0; }
     int compare(const DCRef<T> &a) const {
-        return ((p==a.p)?0:((p<a.p)?-1:1));
+        return (eq(p,a.p)?0:(lt(p,a.p)?-1:1));
       }
-    int operator==(const DCRef<T> &a) const { return p == a.p; }
-    int operator!=(const DCRef<T> &a) const { return p != a.p; }
-    int operator>=(const DCRef<T> &a) const { return p >= a.p; }
-    int operator<=(const DCRef<T> &a) const { return p <= a.p; }
-    int operator> (const DCRef<T> &a) const { return p >  a.p; }
-    int operator< (const DCRef<T> &a) const { return p <  a.p; }
-    int operator==(const DescribedClass*a) const {return parentpointer() == a;}
-    int operator!=(const DescribedClass*a) const {return parentpointer() != a;}
-    int operator>=(const DescribedClass*a) const {return parentpointer() >= a;}
-    int operator<=(const DescribedClass*a) const {return parentpointer() <= a;}
-    int operator> (const DescribedClass*a) const {return parentpointer() >  a;}
-    int operator< (const DescribedClass*a) const {return parentpointer() <  a;}
+    int operator==(const DCRef<T> &a) const { return eq(p,a.p); }
+    int operator!=(const DCRef<T> &a) const { return ne(p,a.p); }
+    int operator>=(const DCRef<T> &a) const { return ge(p,a.p); }
+    int operator<=(const DCRef<T> &a) const { return le(p,a.p); }
+    int operator> (const DCRef<T> &a) const { return gt(p,a.p); }
+    int operator< (const DCRef<T> &a) const { return lt(p,a.p); }
+    int operator==(const DescribedClass*a) const{return eq(parentpointer(),a);}
+    int operator!=(const DescribedClass*a) const{return ne(parentpointer(),a);}
+    int operator>=(const DescribedClass*a) const{return ge(parentpointer(),a);}
+    int operator<=(const DescribedClass*a) const{return le(parentpointer(),a);}
+    int operator> (const DescribedClass*a) const{return gt(parentpointer(),a);}
+    int operator< (const DescribedClass*a) const{return lt(parentpointer(),a);}
     int operator==(const RefDescribedClassBase &a) const {
-        return parentpointer() == a.parentpointer(); }
+        return eq(parentpointer(),a.parentpointer()); }
     int operator!=(const RefDescribedClassBase &a) const {
-        return parentpointer() != a.parentpointer(); }
+        return ne(parentpointer(),a.parentpointer()); }
     int operator>=(const RefDescribedClassBase &a) const {
-        return parentpointer() >= a.parentpointer(); }
+        return ge(parentpointer(),a.parentpointer()); }
     int operator<=(const RefDescribedClassBase &a) const {
-        return parentpointer() <= a.parentpointer(); }
+        return le(parentpointer(),a.parentpointer()); }
     int operator> (const RefDescribedClassBase &a) const {
-        return parentpointer() >  a.parentpointer(); }
+        return gt(parentpointer(),a.parentpointer()); }
     int operator< (const RefDescribedClassBase &a) const {
-        return parentpointer() <  a.parentpointer(); }
+        return lt(parentpointer(),a.parentpointer()); }
     DCRef(): p(0) {}
     DCRef(T*a): p(a)
     {

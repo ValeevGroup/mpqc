@@ -14,7 +14,7 @@
 #include "classkeySet.h"
 #include "classkeyImplSet.h"
 
-static ClassKeyClassDescPMap* all_;
+ClassKeyClassDescPMap* ClassDesc::all_ = 0;
 
 /////////////////////////////////////////////////////////////////
 
@@ -133,12 +133,8 @@ ParentClasses::ParentClasses(const char* parents):
   _n(0),
   _classes(0)
 {
-
-  // if this the first ParentClasses to be initialized all_ will
-  // be zero and I must initialize it.
-  if (!all_) {
-      all_ = new MAPCTOR;
-    }
+  // The first ParentClasses CTOR call initializes the set of all ClassDesc's
+  if (!ClassDesc::all_) ClassDesc::all_ = new MAPCTOR;
 
   // if parents is empty then we are done
   if (!parents || strlen(parents) == 0) return;
@@ -168,10 +164,10 @@ ParentClasses::ParentClasses(const char* parents):
           // if the parents class desc does not exist create a temporary
           // the temporary will be incorrect,because it does not have the
           // parent's parents   ' for braindead compiler
-          if (!(*all_)[parentkey]) {
-              (*all_)[parentkey] = new ClassDesc(token);
+          if (!ClassDesc::all()[parentkey]) {
+              ClassDesc::all()[parentkey] = new ClassDesc(token);
             }
-          ParentClass* p = new ParentClass((*all_)[parentkey],
+          ParentClass* p = new ParentClass(ClassDesc::all()[parentkey],
                                            access,
                                            is_virtual);
           add(p);
@@ -277,6 +273,16 @@ ClassDesc::~ClassDesc()
 {
   delete[] classname_;
   if (children_) delete children_;
+}
+
+ClassKeyClassDescPMap&
+ClassDesc::all()
+{
+  if (!all_) {
+      fprintf(stderr,"ClassDesc::all(): all not initialized\n");
+      abort();
+    }
+  return *all_;
 }
 
 ClassDesc*

@@ -43,7 +43,7 @@ clasmacr.h: clastmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > clasmacr.h
 
 # a test program
-classtest: classtest.o libclass.a ../container/libcontainer.a
+classtest: classtest.o libclass.a ../misc/libmisc.a ../container/libcontainer.a
 	$(CXX) $(CXXFLAGS) -o classtest $^ $(SYSLIBS)
 bug: bug.cc
 	$(CXX) $(CXXFLAGS) -o bug $^
@@ -59,11 +59,15 @@ endif
 
 classMap.cc classMap.h:
 	$(GENCLASS) -2 ClassKey val ClassDescP val Map class
-	prepend-header classMap.h "#include \"class.h\""
+	prepend-header classMap.h "#include <util/class/class.h>"
+	prepend-header classMap.h "#include <util/class/classdefs.h>"
+	/bin/mv classMap.h tmp.classMap.h
+	grep -v "#include \"classdefs.h\"" < tmp.classMap.h > classMap.h
+	/bin/rm tmp.classMap.h
 
 class$(MAPIMPL)Map.cc class$(MAPIMPL)Map.h:
 	$(GENCLASS) -2 ClassKey val ClassDescP val $(MAPIMPL)Map class
-	prepend-header class$(MAPIMPL)Map.h "#include \"class.h\""
+	prepend-header class$(MAPIMPL)Map.h "#include <util/class/class.h>"
 
 classImplMap.h:
 	echo "#include "\"class$(MAPIMPL)Map.h\" > classImplMap.h

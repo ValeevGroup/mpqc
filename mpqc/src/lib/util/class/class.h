@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <util/misc/identity.h>
 #include <util/container/ref.h>
 #include <util/container/array.h>
 #include <util/container/set.h>
@@ -78,8 +79,11 @@ class ParentClasses
 class RefKeyVal;
 class StateIn;
 
-class ClassDesc {
+class ClassDesc: public Identity {
+    friend class ParentClasses; // ParentClasses initializes all_
   private:
+    static ClassKeyClassDescPMap* all_;
+
     char* classname_;
     int version_;
     ParentClasses parents_;
@@ -100,6 +104,7 @@ class ClassDesc {
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
     static void list_all_classes();
+    static ClassKeyClassDescPMap& all();
     static ClassDesc* name_to_class_desc(const char*);
     const ParentClasses& parents() const { return parents_; }
     const char* name() const { return classname_; }

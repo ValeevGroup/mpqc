@@ -192,6 +192,7 @@ class StateOut: public DescribedClass {
     StateDataPtrSet* ps_;
     ClassDescPintMap* _classidmap;
     int _nextclassid;
+    int node_to_node_;
     virtual int put_array_void(const void*,int);
     virtual void putparents(const ClassDesc*);
   public:
@@ -254,6 +255,12 @@ class StateOut: public DescribedClass {
 
     //. Flush out any remaining data.
     virtual void flush();
+
+    //. True if this is a node to node save/restore.  This is
+    //necessary for classes that try to avoid saving databases
+    //to files that can otherwise be read in, but want to avoid
+    //reading the database from disk on all nodes.
+    int node_to_node() const { return node_to_node_; }
   };
 DescribedClass_REF_dec(StateOut);
 
@@ -272,6 +279,7 @@ class StateIn: public DescribedClass {
     int _nextobject;
     ArraysetCClassDescP _cd;
     Arrayint _version;
+    int node_to_node_;
     virtual int get_array_void(void*,int);
   public:
     StateIn();
@@ -347,6 +355,12 @@ class StateIn: public DescribedClass {
     //. is encountered, copy it instead of generating a reference
     //. to the first object.
     void copy_references();
+
+    //. True if this is a node to node save/restore.  This is
+    //necessary for classes that try to avoid saving databases
+    //to files that can otherwise be read in, but want to avoid
+    //reading the database from disk on all nodes.
+    int node_to_node() const { return node_to_node_; }
   };
 DescribedClass_REF_dec(StateIn);
 

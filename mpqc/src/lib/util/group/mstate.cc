@@ -73,6 +73,7 @@ MsgStateSend::MsgStateSend(const RefMessageGrp&grp_):
   nbuf = 0;
   bufsize = 0;
   send_buffer = 0;
+  node_to_node_ = 1;
   obtain_buffer(nbuf_buffer,send_buffer,nheader,buffer,bufsize,8192);
 }
 
@@ -168,9 +169,9 @@ MsgStateSend::put(double* d, int n)
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// MsgStateRecv member functions
+// MsgStateBufRecv member functions
 
-MsgStateRecv::MsgStateRecv(const RefMessageGrp&grp_):
+MsgStateBufRecv::MsgStateBufRecv(const RefMessageGrp&grp_):
   grp(grp_)
 {
   nbuf = 0;
@@ -180,33 +181,27 @@ MsgStateRecv::MsgStateRecv(const RefMessageGrp&grp_):
   obtain_buffer(nbuf_buffer,send_buffer,nheader,buffer,bufsize,8192);
 }
 
-MsgStateRecv::~MsgStateRecv()
+MsgStateBufRecv::~MsgStateBufRecv()
 {
   if (ibuf && (nbuf != ibuf)) {
-      cerr << scprintf("MsgStateRecv::~MsgStateRecv(): buffer still has"
-              " %d bytes of data\n", nbuf - ibuf);
+      cerr << scprintf("MsgStateBufRecv::~MsgStateBufRecv(): buffer still has"
+              " %d bytes of data on %d\n", nbuf - ibuf, grp->me());
     }
   release_buffer(send_buffer);
 }
 
-int
-MsgStateRecv::version(const ClassDesc* cd)
-{
-  if (!cd) return -1;
-  return cd->version();
-}
-
 void
-MsgStateRecv::set_buffer_size(int size)
+MsgStateBufRecv::set_buffer_size(int size)
 {
   if (ibuf && (nbuf != ibuf)) {
-      cerr << scprintf("MsgStateRecv::set_buffer_size(): old buffer has data\n");
+      cerr << "MsgStateBufRecv::set_buffer_size(): old buffer has data"
+           << endl;
     }
   obtain_buffer(nbuf_buffer, send_buffer, nheader, buffer, bufsize, size);
 }
 
 int
-MsgStateRecv::get_array_void(void* vd, int n)
+MsgStateBufRecv::get_array_void(void* vd, int n)
 {
   char* d = (char*) vd;
 
@@ -228,6 +223,26 @@ MsgStateRecv::get_array_void(void* vd, int n)
     }
 
   return n;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// MsgStateRecv member functions
+
+MsgStateRecv::MsgStateRecv(const RefMessageGrp&grp_):
+  MsgStateBufRecv(grp_)
+{
+  node_to_node_ = 1;
+}
+
+MsgStateRecv::~MsgStateRecv()
+{
+}
+
+int
+MsgStateRecv::version(const ClassDesc* cd)
+{
+  if (!cd) return -1;
+  return cd->version();
 }
 
 int
@@ -483,6 +498,45 @@ BcastState::forget_references()
 {
   if (send_) send_->forget_references();
   if (recv_) recv_->forget_references();
+}
+
+///////////////////////////////////////////////////////////////////////////
+// BcastStateRecv member functions
+
+BcastStateInBinXDR::BcastStateInBinXDR(const RefMessageGrp&grp_,
+                                       const char *filename):
+  MsgStateBufRecv(grp_)
+{
+  if (grp->me() == 0) {
+      filebuf *fbuf = new filebuf;
+      fbuf->open(filename, ios::in);
+      buf_ = fbuf;
+    }
+}
+
+BcastStateInBinXDR::~BcastStateInBinXDR()
+{
+  if (grp->me() == 0) {
+      delete buf_;
+    }
+}
+
+void
+BcastStateInBinXDR::next_buffer()
+{
+  if (grp->me() == 0) {
+      // fill the buffer
+      *nbuf_buffer = buf_->xsgetn(buffer,bufsize);
+      if (*nbuf_buffer == 0) {
+          cerr << "BcastStateInBinXDR: read failed" << endl;
+          abort();
+        }
+      translate(nbuf_buffer);
+    }
+  grp->raw_bcast(send_buffer, bufsize+nheader);
+  translate(nbuf_buffer);
+  nbuf = *nbuf_buffer;
+  ibuf = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -176,7 +176,8 @@ StateOut::StateOut() :
   ps_(new StateDataPtr_CTOR),
   _classidmap(new ClassDescPintMap_CTOR),
   _nextclassid(0),
-  have_cd_(0)
+  have_cd_(0),
+  node_to_node_(0)
 {
 }
 
@@ -248,7 +249,8 @@ StateIn::operator=(const StateIn&)
 StateIn::StateIn() :
   ps_(new StateDataNum_CTOR),
   _nextobject(0),
-  have_cd_(0)
+  have_cd_(0),
+  node_to_node_(0)
 {
 }
 

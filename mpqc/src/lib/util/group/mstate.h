@@ -76,13 +76,13 @@ class MsgStateSend: public StateOutBinXDR {
     int put(double*,int);
 };
 
-//. The \clsnm{MsgStateSend} is an abstract base class that receives
-//objects from nodes in a \clsnmref{MessageGrp}.
-class MsgStateRecv: public StateInBinXDR {
+//. The \clsnm{MsgStateBufRecv} is an abstract base class that
+//buffers objects sent through a \clsnm{MessageGrp}.
+class MsgStateBufRecv: public StateInBinXDR {
   private:
     // do not allow copy constructor or assignment
-    MsgStateRecv(const MsgStateRecv&);
-    void operator=(const MsgStateRecv&);
+    MsgStateBufRecv(const MsgStateBufRecv&);
+    void operator=(const MsgStateBufRecv&);
   protected:
     RefMessageGrp grp;
     int nbuf; // the number of bytes used in the buffer
@@ -98,6 +98,25 @@ class MsgStateRecv: public StateInBinXDR {
     //. Specializations must implement \srccd{next\_buffer()}.
     virtual void next_buffer() = 0;
   public:
+    //. \clsnm{MsgStateBufRecv} must be initialized with a
+    //\clsnmref{MessageGrp}.
+    MsgStateBufRecv(const RefMessageGrp&);
+
+    virtual ~MsgStateBufRecv();
+
+    //. The buffer size of statein and stateout objects that communicate
+    //with each other must match.
+    void set_buffer_size(int);
+};
+
+//. The \clsnm{MsgStateRecv} is an abstract base class that receives
+//objects from nodes in a \clsnmref{MessageGrp}.
+class MsgStateRecv: public MsgStateBufRecv {
+  private:
+    // do not allow copy constructor or assignment
+    MsgStateRecv(const MsgStateRecv&);
+    void operator=(const MsgStateRecv&);
+  public:
     //. \clsnm{MsgStateRecv} must be initialized with a \clsnmref{MessageGrp}.
     MsgStateRecv(const RefMessageGrp&);
 
@@ -107,10 +126,6 @@ class MsgStateRecv: public StateInBinXDR {
     // the version of the remote class is the same as that of
     // the local class.
     int version(const ClassDesc*);
-
-    //. The buffer size of statein and stateout objects that communicate
-    //with each other must match.
-    void set_buffer_size(int);
 
     //. I only need to override \srccd{get(ClassDesc**)} but C++ will hide
     //all of the other put's so I must override everything.
@@ -235,6 +250,23 @@ class BcastState {
     //. Controls the amount of data that is buffered before it is
     // sent.
     void set_buffer_size(int);
+};
+
+//.  \clsnm{BcastStateBinXDR} reads a file in written by
+//StateInBinXDR on node 0 and broadcasts it to all nodes
+//so state can be simultaneously restored on all nodes.
+class BcastStateInBinXDR: public MsgStateBufRecv {
+  private:
+    // do not allow copy constructor or assignment
+    BcastStateInBinXDR(const BcastStateRecv&);
+    void operator=(const BcastStateRecv&);
+  protected:
+    void next_buffer();
+  public:
+    //. Create the \clsnm{BcastStateRecv}.
+    BcastStateInBinXDR(const RefMessageGrp&, const char *filename);
+
+    ~BcastStateInBinXDR();
 };
 
 #endif

@@ -101,6 +101,20 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
   init();
 }*/
 
+MOIndexSpace::MOIndexSpace(std::string name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
+                           const Ref<GaussianBasisSet>& new_basis) :
+  name_(name), mosym_(orig_space->mosym_), evals_(orig_space->evals_),
+  rank_(orig_space->rank_), full_rank_(orig_space->full_rank_), nblocks_(orig_space->nblocks_),
+  offsets_(orig_space->offsets_), nmo_(orig_space->nmo_), map_to_full_space_(orig_space->map_to_full_space_),
+  moorder_(orig_space->moorder_)
+{
+  if (rank_ != new_coefs.coldim()->n())
+    throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- new_coefs have different number of orbitals");
+  coefs_ = new_coefs;
+  basis_ = new_basis;
+  init();
+}
+
 MOIndexSpace::MOIndexSpace(StateIn& si) : SavableState(si)
 {
   si.get(name_);

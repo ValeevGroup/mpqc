@@ -78,7 +78,8 @@ class MBPT2_R12: public MBPT2 {
     LinearR12::ABSMethod abs_method_;
     R12IntEvalInfo::StoreMethod r12ints_method_;
     char* r12ints_file_;
-    bool gebc_;
+    bool gbc_;
+    bool ebc_;
     bool spinadapted_;
 
     void init_variables_();
@@ -99,10 +100,14 @@ class MBPT2_R12: public MBPT2 {
     /** The KeyVal constructor.
         <dl>
 
-        <dt><tt>gebc</tt><dd> This boolean specifies whether Generalized and Extended Brillouin
-        Conditions (GBC and EBC, respectively) are assumed to hold. The default is "true".
-        <tt>gebc=false</tt> has not been implemented yet.
+        <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
+        Condition (GBC) is assumed to hold. The default is "true".
+        <tt>gbc=false</tt> has not been implemented yet.
 
+        <dt><tt>ebc</tt><dd> This boolean specifies whether Extended Brillouin
+        Condition (EBC) is assumed to hold. The default is "true".
+        <tt>ebc=false</tt> has not been implemented yet.
+      
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
         of the values below.  The default is A.
 
@@ -193,7 +198,8 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     Ref<GaussianBasisSet> aux_basis() const;
-    bool gebc() const;
+    const bool gbc() const;
+    const bool ebc() const;
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
     bool spinadapted() const;

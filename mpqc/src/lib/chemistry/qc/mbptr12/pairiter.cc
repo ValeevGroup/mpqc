@@ -67,6 +67,20 @@ MOPairIter_SD::~MOPairIter_SD()
 {
 }
 
+MOPairIter_SD_neq::MOPairIter_SD_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2) :
+MOPairIter(space1,space2)
+{
+  if (space1 != space2)
+    throw std::runtime_error("MOPairIter_SD_neq::MOPairIter_SD_neq() -- space1 == space2");
+  nij_ = ni_*nj_;
+  ij_ = 0;
+  IJ_ = 0;
+}
+
+MOPairIter_SD_neq::~MOPairIter_SD_neq()
+{
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

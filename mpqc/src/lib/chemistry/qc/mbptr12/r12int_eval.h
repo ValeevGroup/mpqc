@@ -49,11 +49,14 @@ class R12IntEval : virtual public SavableState {
   // Calculation information (number of basis functions, R12 approximation, etc.)
   Ref<R12IntEvalInfo> r12info_;
 
-  RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_, Aaa_, Aab_;
+  RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_, Aaa_, Aab_, T2aa_, T2ab_;
+  RefSCMatrix Raa_, Rab_;    // Not sure if I'll compute and keep these explicitly later
   RefSCVector emp2pair_aa_, emp2pair_ab_;
-  RefSCDimension dim_aa_, dim_ab_, dim_s_, dim_t_;
+  RefSCDimension dim_ij_aa_, dim_ij_ab_, dim_ij_s_, dim_ij_t_;
+  RefSCDimension dim_ab_aa_, dim_ab_ab_;
 
-  bool gebc_;
+  bool gbc_;
+  bool ebc_;
   LinearR12::ABSMethod abs_method_;
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
@@ -93,6 +96,21 @@ class R12IntEval : virtual public SavableState {
 
   /// Compute 1-ABS contribution to V, X, and B (these contributions are independent of the method)
   void abs1_contrib_to_VXB_gebc_();
+
+  /// Compute A using the "simple" formula obtained using direct substitution alpha'->a'
+  void compute_A_simple_();
+
+  /// Compute MP2 T2
+  void compute_T2_();
+
+  /// Compute R "intermediate" (r12 integrals in occ-pair/vir-pair basis)
+  void compute_R_();
+
+  /// Compute A*T2 contribution to V (needed if EBC is not assumed)
+  void AT2_contrib_to_V_();
+
+  /// Compute -2*A*R contribution to B (needed if EBC is not assumed)
+  void AR_contrib_to_B_();
   
   /** Sum contributions to the intermediates from all nodes and broadcast so
       every node has the correct matrices */
@@ -106,7 +124,8 @@ public:
   void save_data_state(StateOut&);
   virtual void obsolete();
 
-  void set_gebc(bool gebc);
+  void set_gbc(const bool gbc);
+  void set_ebc(const bool ebc);
   void set_absmethod(LinearR12::ABSMethod abs_method);
   void set_stdapprox(LinearR12::StandardApproximation stdapprox);
   void set_spinadapted(bool spinadapted);
@@ -115,11 +134,17 @@ public:
   void set_print_percent(double print_percent);
   void set_memory(size_t nbytes);
 
+  const bool gbc() const { return gbc_; }
+  const bool ebc() const { return ebc_; }
+  const LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
+
   Ref<R12IntEvalInfo> r12info() const;
-  RefSCDimension dim_aa() const;
-  RefSCDimension dim_ab() const;
-  RefSCDimension dim_s() const;
-  RefSCDimension dim_t() const;
+  RefSCDimension dim_oo_aa() const;
+  RefSCDimension dim_oo_ab() const;
+  RefSCDimension dim_oo_s() const;
+  RefSCDimension dim_oo_t() const;
+  RefSCDimension dim_vv_aa() const;
+  RefSCDimension dim_vv_ab() const;
 
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
@@ -132,6 +157,8 @@ public:
   RefSCMatrix B_aa();
   /// Returns alpha-alpha block of the A intermediate matrix.
   RefSCMatrix A_aa();
+  /// Returns alpha-alpha block of the MP2 T2 matrix.
+  RefSCMatrix T2_aa();
   /// Returns alpha-beta block of the V intermediate matrix.
   RefSCMatrix V_ab();
   /// Returns alpha-beta block of the X intermediate matrix.
@@ -140,6 +167,8 @@ public:
   RefSCMatrix B_ab();
   /// Returns alpha-beta block of the A intermediate matrix.
   RefSCMatrix A_ab();
+  /// Returns alpha-beta block of the MP2 T2 matrix.
+  RefSCMatrix T2_ab();
   /// Returns alpha-alpha MP2 pair energies.
   RefSCVector emp2_aa();
   /// Returns alpha-beta MP2 pair energies.

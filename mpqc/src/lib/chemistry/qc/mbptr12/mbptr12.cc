@@ -49,7 +49,7 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc MBPT2_R12_cd(
-  typeid(MBPT2_R12),"MBPT2_R12",2,"public MBPT2",
+  typeid(MBPT2_R12),"MBPT2_R12",3,"public MBPT2",
   0, create<MBPT2_R12>, create<MBPT2_R12>);
 
 MBPT2_R12::MBPT2_R12(StateIn& s):
@@ -60,7 +60,10 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12ap_energy_ << SavableState::restore_state(s);
   r12b_energy_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
-  int gebc; s.get(gebc); gebc_ = (bool)gebc;
+  if (s.version(::class_desc<MBPT2_R12>()) >= 3) {
+    int gbc; s.get(gbc); gbc_ = (bool)gbc;
+    int ebc; s.get(ebc); ebc_ = (bool)ebc;
+  }
   if (s.version(::class_desc<MBPT2_R12>()) >= 2) {
     int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
   }
@@ -92,11 +95,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (aux_basis_.pointer() == NULL)
     aux_basis_ = basis();
 
-  // Default is to assume GBC and EBC
-  gebc_ = keyval->booleanvalue("gebc",KeyValValueboolean((int)true));
-  if (gebc_ == false)
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12: gebc=false has not been implemented yet");
-
+  // Default is to assume GBC
+  gbc_ = keyval->booleanvalue("gbc",KeyValValueboolean((int)true));
+  // Default is to assume EBC
+  ebc_ = keyval->booleanvalue("ebc",KeyValValueboolean((int)true));
+  
   // For now the default is to use the old ABS method, of Klopper and Samson
   char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("ABS"));
   if ( !strcmp(abs_method_str,"KS") ||
@@ -144,15 +147,23 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   else if ( !strcmp(sa_string,"B") ||
 	    !strcmp(sa_string,"b") ) {
     delete[] sa_string;
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- MP2-R12/B energy is not implemented yet");
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- MP2-R12/B energy is not implemented yet");
   }
   else {
     delete[] sa_string;
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- unrecognized value for stdapprox");
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
   }
 
   // Default is to use spin-adapted algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
+
+  // Klopper and Samson's ABS method is only implemented for certain "old" methods
+  // Make sure that the ABS method is available for the requested MP2-R12 energy
+  const bool must_use_cabs = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B);
+  if (must_use_cabs &&
+      (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
+    
 
   // Determine how to store MO integrals
   char *r12ints_str = keyval->pcharvalue("r12ints",KeyValValuepchar("mem-posix"));
@@ -185,9 +196,18 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   delete[] r12ints_str;
 
   // Make sure that integrals storage method is compatible with standard approximation
-  // i.e. is stdapprox = B cannot use mem.
-  if ((!gebc_ || (gebc_ && stdapprox_ == LinearR12::StdApprox_B)) && r12ints_method_ == R12IntEvalInfo::mem_only)
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' methods");
+  // If it's a MP2-R12/B calculation or EBC or GBC are not assumed then must use disk
+  const bool must_use_disk = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B);
+  if (must_use_disk && r12ints_method_ == R12IntEvalInfo::mem_only)
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' (GBC+EBC) methods");
+  if (must_use_disk) {
+    if (r12ints_method_ == R12IntEvalInfo::mem_posix)
+      r12ints_method_ = R12IntEvalInfo::posix;
+#if HAVE_MPIIO
+    if (r12ints_method_ == R12IntEvalInfo::mem_mpi)
+      r12ints_method_ = R12IntEvalInfo::mpi;
+#endif
+  }
 
   // Get the filename to store the integrals
   r12ints_file_ = 0;
@@ -226,7 +246,8 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12ap_energy_.pointer(),s);
   SavableState::save_state(r12b_energy_.pointer(),s);
   SavableState::save_state(aux_basis_.pointer(),s);
-  s.put((int)gebc_);
+  s.put((int)gbc_);
+  s.put((int)ebc_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);
@@ -242,7 +263,8 @@ MBPT2_R12::print(ostream&o) const
 {
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
-  o << indent << "GBC and EBC assumed: " << (gebc_ ? "true" : "false") << endl;
+  o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
+  o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   switch(abs_method_) {
   case LinearR12::ABS_ABS :
     o << indent << "ABS method variant: ABS  (Klopper and Samson)" << endl;
@@ -355,10 +377,18 @@ MBPT2_R12::aux_basis() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool
-MBPT2_R12::gebc() const
+const bool
+MBPT2_R12::gbc() const
 {
-  return gebc_;
+  return gbc_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+const bool
+MBPT2_R12::ebc() const
+{
+  return ebc_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

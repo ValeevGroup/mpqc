@@ -95,21 +95,14 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& b
     }
   }
 
-  // and clean up a bit
-  h_ints = 0;
-
   // Symmetrize matrices, if necessary
   if (bs1_eq_bs2) {
-
     const int nbasis = bs1->nbasis();
-    
     for(int bf1=0; bf1<nbasis; bf1++)
       for(int bf2=0; bf2<=bf1; bf2++) {
         h(bf2,bf1) = h(bf1,bf2);
       }
-
   }
-      
 
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
@@ -121,6 +114,7 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& b
   K.scale(-1.0); F.accumulate(K); K = 0;
   
   // and clean up a bit
+  h_ints = 0;
   h = 0;
 
   if (debug_ > 1) {

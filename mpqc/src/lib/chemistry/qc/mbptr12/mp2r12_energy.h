@@ -45,6 +45,7 @@ class MP2R12Energy : virtual public SavableState {
 
   Ref<R12IntEval> r12eval_;
   LinearR12::StandardApproximation stdapprox_;
+  bool ebc_;
   int debug_;
   bool evaluated_;
   
@@ -68,6 +69,7 @@ public:
 
   Ref<R12IntEval> r12eval() const;
   LinearR12::StandardApproximation stdapp() const;
+  const bool ebc() const;
   void set_debug(int debug);
   int get_debug() const;
   

@@ -98,31 +98,34 @@ private:
 
 public:
   MOIndexSpace(StateIn&);
-  /** This constructor should be used when the MOIndexSpace objects is a subspace of a full orbital space.
+  /** This constructor should be used when the MOIndexSpace object is a subspace of a full orbital space.
       This function constructs an MOIndexSpace object using a symmetry-blocked transformation coefficient matrix
       (AO by MO) for the full space,
       basis set, block offsets and sizes. If moorder == energy then evals will be used to sort the vectors. */
   MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
                const vector<int>& offsets, const vector<int>& nmopi, IndexOrder moorder = symmetry,
                const RefDiagSCMatrix& evals = 0);
-  /** This constructor should be used when the MOIndexSpace objects is a subspace of a full orbital space.
+  /** This constructor should be used when the MOIndexSpace object is a subspace of a full orbital space.
       Similarly to the previous constructor, it constructs an MOIndexSpace object using a symmetry-blocked
       transformation coefficient matrix (AO by MO) for the full space,
       basis set, "eigenvalues" and the number of orbitals with lowest (nfzc) and highest (nfzv) eigenvalues
-      to be dropped. */
+      to be dropped. The orbitals in the constructed space are ordered by energy. */
   MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
                const RefDiagSCMatrix& evals, int nfzc, int nfzv);
-    /** This constructor should be used when the MOIndexSpace objects is the full orbital space.
-        The orbitals will be symmetry-blocked. */
+  /** This constructor should be used when the MOIndexSpace object is the full orbital space.
+      The orbitals will be symmetry-blocked. */
   MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis);
 
-  /* This constructor should be used when the MOIndexSpace objects is the full orbital space.
-      Constructs an MOIndexSpace object using a non-blocked transformation coefficient matrix
-      (AO by MO) for this space,
-      basis set, and optional order info and MO irreps. */
+  /* This constructor should be used when the MOIndexSpace object is the full orbital space.
+     Constructs an MOIndexSpace object using a non-blocked transformation coefficient matrix
+     (AO by MO) for this space, basis set, and optional order info and MO irreps. */
   /*MOIndexSpace(std::string name, const RefSCMatrix& coefs, const Ref<GaussianBasisSet> basis,
                IndexOrder moorder = undefined, const vector<int>& mosym = 0,
                const RefDiagSCMatrix& evals = 0);*/
+  /** This constructor is a true hack introduced because I have no idea how to construct what I need.
+      It will copy orig_space but replace it's coefs with new_coefs, and it's basis with new_basis. */
+  MOIndexSpace(std::string name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
+               const Ref<GaussianBasisSet>& new_basis);
   ~MOIndexSpace();
 
   void save_data_state(StateOut&);

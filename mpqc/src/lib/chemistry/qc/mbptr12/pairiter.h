@@ -170,6 +170,78 @@ public:
 };
 
 
+/** MOPairIter_SD_neq gives the ordering of pairs of orbitals from different spaces.
+It iterates over all ij combinations (total of ni_*nj_ pairs). */
+class MOPairIter_SD_neq : public MOPairIter {
+
+  int IJ_;
+
+  void init_ij(const int ij) {
+
+    if (ij<0)
+      throw std::runtime_error("MOPairIter_SD_neq::start() -- argument ij out of range");
+
+    IJ_ = 0;
+    const int renorm_ij = ij%nij_;
+
+    i_ = renorm_ij/nj_;
+    j_ = renorm_ij - i_*nj_;
+
+    IJ_ = i_*nj_ + j_;
+
+  };
+
+  void inc_ij() {
+    ij_++;
+    IJ_++;
+    if (IJ_ == nij_) {
+      i_ = 0;
+      j_ = 0;
+      IJ_ = 0;
+    }
+    else {
+      if (j_ == nj_-1) {
+        i_++;
+        j_ = 0;
+      }
+      else {
+        j_++;
+      }
+    }
+  };
+
+public:
+  /// Initialize an iterator for the given MO spaces.
+  MOPairIter_SD_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space1);
+  ~MOPairIter_SD_neq();
+
+  /// Initialize the iterator assuming that iteration will start with pair ij_offset
+  void start(const int ij_offset=0)
+  {
+    ij_ = 0;
+    init_ij(ij_offset);
+  };
+
+  /// Move to the next pair.
+  void next() {
+    inc_ij();
+  };
+  /// Returns nonzero if the iterator currently hold valid data.
+  operator int() { return (nij_ > ij_);};
+
+  /// Returns the number of functions in alpha-alpha space.
+  int nij_aa() { return nij_; }
+  /// Returns the number of functions in alpha-beta space.
+  int nij_ab() { return nij_; }
+  /// Returns compound index ij for alpha-alpha case
+  int ij_aa() { return IJ_; }
+  /// Returns compound index ij for alpha-beta case
+  int ij_ab() { return IJ_; }
+  /// Returns compound index ij for beta-alpha case
+  int ij_ba() { return IJ_; }
+};
+
+
 }
   
 #endif

@@ -47,7 +47,7 @@ CXXSRCS = mbptr12.cc trans12_grt.cc \
   transform_123inds.cc transform_13inds.cc transform_12inds.cc \
   compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc \
   r12int_eval.cc compute_a_gebc.cc compute_a_gebc_abs1.cc \
-  coulomb.cc exchange.cc fock.cc
+  coulomb.cc exchange.cc fock.cc ebc_contribs.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

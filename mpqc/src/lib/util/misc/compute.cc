@@ -82,6 +82,13 @@ ResultInfo::ResultInfo(const ResultInfo&r, Compute*c) :
 }
 
 void
+ResultInfo::restore_state(StateIn&s)
+{
+  s.get(_compute);
+  s.get(_computed);
+}
+
+void
 ResultInfo::save_data_state(StateOut&s)
 {
   s.put(_compute);
@@ -154,6 +161,14 @@ AccResultInfo::AccResultInfo(const AccResultInfo&a, Compute*c) :
 {
   _actual_accuracy=a._actual_accuracy;
   _desired_accuracy=a._desired_accuracy;
+}
+
+void
+AccResultInfo::restore_state(StateIn&s)
+{
+  ResultInfo::restore_state(s);
+  s.get(_actual_accuracy);
+  s.get(_desired_accuracy);
 }
 
 void

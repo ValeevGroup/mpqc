@@ -53,6 +53,9 @@ class AccResult: public AccResultInfo {
     void operator=(const T& a) { _result = a; }
     void operator=(const AccResult<T> &r)
        { AccResultInfo::operator=(r); _result = r._result; };
+    void restore_state(StateIn&s) {
+      AccResultInfo::restore_state(s);
+    }
     void save_data_state(StateOut&s)
     {
       AccResultInfo::save_data_state(s);
@@ -77,6 +80,10 @@ class SSAccResult: public AccResultInfo {
     void operator=(const T& a) { _result = a; }
     void operator=(const SSAccResult<T> &r)
        { AccResultInfo::operator=(r); _result = r._result; };
+    void restore_state(StateIn&s) {
+      AccResultInfo::restore_state(s);
+      _result.restore_state(s);
+    }
     void save_data_state(StateOut&s)
     {
       AccResultInfo::save_data_state(s);
@@ -101,6 +108,10 @@ class NCAccResult: public AccResultInfo {
     void operator=(const T& a) { _result = a; }
     void operator=(const NCAccResult<T> &r)
        { AccResultInfo::operator=(r); _result = r._result; };
+    void restore_state(StateIn&s) {
+      AccResultInfo::restore_state(s);
+      s.get(_result);
+    }
     void save_data_state(StateOut&s)
     {
       AccResultInfo::save_data_state(s);

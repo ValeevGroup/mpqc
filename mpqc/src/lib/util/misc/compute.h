@@ -61,6 +61,7 @@ class ResultInfo
     ResultInfo(StateIn&,Compute*);
     ResultInfo(const ResultInfo&,Compute*);
     virtual void save_data_state(StateOut&);
+    virtual void restore_state(StateIn&);
     ResultInfo& operator=(const ResultInfo&);
   public:
     ResultInfo(Compute*c);
@@ -83,6 +84,7 @@ class AccResultInfo: public ResultInfo
     AccResultInfo(StateIn&,Compute*);
     AccResultInfo(const AccResultInfo&,Compute*);
     virtual void save_data_state(StateOut&);
+    virtual void restore_state(StateIn&);
     AccResultInfo& operator=(const AccResultInfo&);
   public:
     AccResultInfo(Compute*c);

@@ -62,6 +62,7 @@ class R12IntEval : virtual public SavableState {
   LinearR12::ABSMethod abs_method_;
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
+  bool include_mp1_;
   int debug_;
 
   // Map to TwoBodyMOIntsTransform objects that have been computed previously
@@ -208,6 +209,7 @@ public:
   void set_absmethod(LinearR12::ABSMethod abs_method);
   void set_stdapprox(LinearR12::StandardApproximation stdapprox);
   void set_spinadapted(bool spinadapted);
+  void include_mp1(bool include_mp1);
   void set_debug(int debug);
   void set_dynamic(bool dynamic);
   void set_print_percent(double print_percent);

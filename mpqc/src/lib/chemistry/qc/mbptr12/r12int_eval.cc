@@ -53,7 +53,7 @@ static ClassDesc R12IntEval_cd(
 
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info) :
   r12info_(r12info), gbc_(true), ebc_(true), abs_method_(LinearR12::ABS_CABSPlus),
-  stdapprox_(LinearR12::StdApprox_Ap), spinadapted_(true), evaluated_(false),
+  stdapprox_(LinearR12::StdApprox_Ap), spinadapted_(true), include_mp1_(false), evaluated_(false),
   debug_(0)
 {
     int nocc_act = r12info_->nocc_act();
@@ -222,6 +222,7 @@ void R12IntEval::set_ebc(const bool ebc) { ebc_ = ebc; };
 void R12IntEval::set_absmethod(LinearR12::ABSMethod abs_method) { abs_method_ = abs_method; };
 void R12IntEval::set_stdapprox(LinearR12::StandardApproximation stdapprox) { stdapprox_ = stdapprox; };
 void R12IntEval::set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted; };
+void R12IntEval::include_mp1(bool include_mp1) { include_mp1_ = include_mp1; };
 void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
 void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
 void R12IntEval::set_print_percent(double pp) { r12info_->set_print_percent(pp); };
@@ -738,7 +739,8 @@ R12IntEval::compute()
   else {
     contrib_to_VXB_gebc_vbsneqobs_();
     compute_dualEmp2_();
-    compute_dualEmp1_();
+    if (include_mp1_)
+      compute_dualEmp1_();
   }
 
   

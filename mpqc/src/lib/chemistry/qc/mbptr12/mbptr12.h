@@ -86,6 +86,7 @@ class MBPT2_R12: public MBPT2 {
     bool gbc_;
     bool ebc_;
     bool spinadapted_;
+    bool include_mp1_;
 
     void init_variables_();
 
@@ -146,6 +147,12 @@ class MBPT2_R12: public MBPT2 {
 
 	<dt><tt>vir_basis</tt><dd> This specifies the basis to be used for the virtual orbitals.
 	Default is to use the same basis as for the orbital expansion.
+
+        <dt><tt>include_mp1</tt><dd> This specifies whether to compute MP1 correction to
+        the MP2 and MP2-R12 energies. This option only has effect if vir_basis is not the same as basis.
+        MP1 correction is a perturbative estimate of the difference between the HF energy computed
+        in vir_basis and basis. Usually, it is a very poor estimate -- therefore this keyword should
+        be avoided by non-experts. Default is false.
 
         <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
         by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.

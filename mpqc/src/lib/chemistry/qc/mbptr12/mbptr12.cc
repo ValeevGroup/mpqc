@@ -50,7 +50,7 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc MBPT2_R12_cd(
-  typeid(MBPT2_R12),"MBPT2_R12",3,"public MBPT2",
+  typeid(MBPT2_R12),"MBPT2_R12",4,"public MBPT2",
   0, create<MBPT2_R12>, create<MBPT2_R12>);
 
 MBPT2_R12::MBPT2_R12(StateIn& s):
@@ -71,6 +71,9 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   }
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
+  if (s.version(::class_desc<MBPT2_R12>()) >= 4) {
+    int include_mp1; s.get(include_mp1); include_mp1_ = static_cast<bool>(include_mp1);
+  }
   int r12ints_method; s.get(r12ints_method); r12ints_method_ = (R12IntEvalInfo::StoreMethod) r12ints_method;
   s.getstring(r12ints_file_);
   s.get(mp2_corr_energy_);
@@ -165,6 +168,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Default is to use spin-adapted algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
+
+  // Default is to not compute MP1 energy
+  include_mp1_ = keyval->booleanvalue("include_mp1",KeyValValueboolean((int)false));
 
   // Klopper and Samson's ABS method is only implemented for certain "old" methods
   // Make sure that the ABS method is available for the requested MP2-R12 energy
@@ -271,6 +277,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);
+  s.put((int)include_mp1_);
   s.put((int)r12ints_method_);
   s.putstring(r12ints_file_);
 
@@ -310,7 +317,11 @@ MBPT2_R12::print(ostream&o) const
       o << indent << "Standard Approximation: B" << endl;
     break;
   }
+
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
+  if (!vir_basis_->equiv(basis()))
+    o << indent << "Compute MP1 energy: " << (include_mp1_ ? "true" : "false") << endl;
+
   char* r12ints_str;
   switch (r12ints_method_) {
   case R12IntEvalInfo::mem_only:

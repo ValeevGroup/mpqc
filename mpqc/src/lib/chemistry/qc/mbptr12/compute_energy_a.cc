@@ -53,6 +53,7 @@ MBPT2_R12::compute_energy_a_()
     r12eval_->set_absmethod(abs_method_);
     r12eval_->set_ebc(ebc_);
     r12eval_->set_gbc(gbc_);
+    r12eval_->include_mp1(include_mp1_);
     r12eval_->set_debug(debug_);
   }
   // This will actually compute the intermediates

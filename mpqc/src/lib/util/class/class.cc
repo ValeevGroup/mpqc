@@ -204,8 +204,9 @@ ParentClasses::init(const char* parents)
           // if the parents class desc does not exist create a temporary
           // the temporary will be incorrect,because it does not have the
           // parent's parents   ' for braindead compiler
-          if (!ClassDesc::all()[parentkey]) {
-              ClassDesc::all()[parentkey] = new ClassDesc(token);
+          if (ClassDesc::all().find(parentkey) == ClassDesc::all().end()) {
+              ClassDesc *tmp_classdesc = new ClassDesc(token);
+              ClassDesc::all()[parentkey] = tmp_classdesc;
               if (ClassDesc::unresolved_parents_ == 0) {
                   ClassDesc::unresolved_parents_ = new AVLSet<ClassKey>;
                 }
@@ -304,7 +305,7 @@ ClassDesc::ClassDesc(char* name, int version,
 
   // if this class is aleady in all_, then it was put there by a child
   // preserve children info, destroy the old entry, and put this there
-  if ((*all_)[key]) {
+  if (all_->find(key) != all_->end()) {
       children_ = (*all_)[key]->children_;
       (*all_)[key]->children_ = 0;
 
@@ -372,6 +373,7 @@ ClassDesc*
 ClassDesc::name_to_class_desc(const char* name)
 {
   ClassKey key(name);
+  if (all_->find(key) == all_->end()) return 0;
   return (*all_)[key];
 }
 

@@ -35,8 +35,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libintv3
 BIN_OR_LIB = LIB
 
-SGENFLAGS = -ifndef _chemistry_qc_intv3_libint_h
-
 TESTCSRC = inttest.cc
 
 CXXSRC = fjt.cc offsets.cc tformv3.cc \
@@ -50,7 +48,7 @@ CXXSRC = fjt.cc offsets.cc tformv3.cc \
 INC = fjt.h int1e.h int2e.h utils.h tformv3.h \
       tbintv3.h obintv3.h intv3.h cartitv3.h
 
-LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC) $(SGENSRC)
+LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
 LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
 

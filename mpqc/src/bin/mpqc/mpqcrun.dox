@@ -18,6 +18,7 @@ different environments:
   <li> \ref mpqcpthr
   <li> \ref mpqcmpi
   <li> \ref mpqcmp2
+  <li> \ref mpqcmp2r12
 </ul>
 
 \section mpqccomline Command Line Options

@@ -54,8 +54,15 @@ ifeq ($(HAVE_LIBDERIV),yes)
   XLIBS += -lderiv
 endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB) -R$(libdir)/cca
+  ifeq ($(ENABLESHARED),yes)
+    LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB) -R$(libdir)/cca -lSCchemistry
+  else
+    XLIBS += -L$(CCA_CHEM_LIB) -lccachem_cxx_server -lccachem_cxx_client \
+             -L$(BABELLIB) -lsidl -L$(CCAFE_LIB) -lccafeCore -L../../../lib/cca -lSCchemistry \
+	     -lsidl -lcca -lccafeCore -lxml2 -lz 
+  endif
   DEFINES += -DHAVE_CHEMISTRY_CCA
+  CPPFLAGS += -I../../lib/chemistry/cca
 endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)

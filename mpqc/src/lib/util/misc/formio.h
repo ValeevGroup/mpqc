@@ -6,7 +6,7 @@
 
 class SCFormIO {
   private:
-    static const char *default_basename_;
+    static char *default_basename_;
     static int  ready_;
     static long nindent_;
     static long indent_size_;

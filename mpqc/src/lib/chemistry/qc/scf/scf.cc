@@ -66,7 +66,6 @@ SCF::SCF(StateIn& s) :
   maybe_SavableState(s)
   OneBodyWavefunction(s)
 {
-  debug_ = 0;
   need_vec_ = 1;
   compute_guess_ = 0;
 
@@ -125,8 +124,6 @@ SCF::SCF(const RefKeyVal& keyval) :
     accumddh_ = new AccumHNull;
   
   storage_ = keyval->intvalue("memory");
-
-  debug_ = keyval->intvalue("debug");
   
   if (keyval->exists("local_density"))
     local_dens_ = keyval->booleanvalue("local_density");

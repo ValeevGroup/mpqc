@@ -72,8 +72,6 @@ class SCF: public OneBodyWavefunction {
     RefMessageGrp scf_grp_;
     RefThreadGrp threadgrp_;
     int local_;
-
-    int debug_;
     
   protected:
     // implement the Compute::compute() function
@@ -143,9 +141,6 @@ class SCF: public OneBodyWavefunction {
 
         \item[memory] The amount of memory that each processor may use.
         The default is 0 (minimal memory use).
-
-        \item[debug] This integer can be used to produce output for
-        debugging.  The default is 0.
 
         \item[local_density] If this is true, a local copy of the density
         and $G$ matrix will be made on all nodes, even if a distributed

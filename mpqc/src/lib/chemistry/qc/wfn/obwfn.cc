@@ -240,6 +240,12 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
   // transform the orbitals from the orthogonal to nonorthogonal SO basis
   RefSCMatrix newvec_so = so_to_oso * newvec_oso;
 
+  if (debug_ >= 2) {
+      newvec_oso.print("projected ortho SO vector");
+      so_to_oso.print("SO to ortho SO transformation");
+      newvec_so.print("projected SO vector");
+    }
+
   cout << decindent;
   return newvec_so;
 }

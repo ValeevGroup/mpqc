@@ -81,7 +81,7 @@ dquicksort(double *item,int *index,int n)
 ///////////////////////////////////////////////////////////////////////////
 // MBPT2
 
-#define VERSION 6
+#define VERSION 7
 #define CLASSNAME MBPT2
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -106,7 +106,11 @@ MBPT2::MBPT2(StateIn& s):
   s.get(mem_alloc);
   s.getstring(method_);
   s.getstring(algorithm_);
-  s.get(debug_);
+
+  if (s.version(static_class_desc()) <= 6) {
+      int debug_old;
+      s.get(debug_old);
+    }
 
   if (s.version(static_class_desc()) >= 2) {
       s.get(do_d1_);
@@ -203,10 +207,6 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   do_d1_ = keyval->booleanvalue("compute_d1");
   do_d2_ = keyval->booleanvalue("compute_d2",KeyValValueboolean(1));
 
-  debug_ = keyval->booleanvalue("debug");
-  if (keyval->error() == KeyVal::WrongType)
-      debug_ = keyval->intvalue("debug");
-
   restart_ecorr_ = keyval->doublevalue("restart_ecorr");
   restart_orbital_v1_ = keyval->intvalue("restart_orbital_v1");
   restart_orbital_memgrp_ = keyval->intvalue("restart_orbital_memgrp");
@@ -244,7 +244,6 @@ MBPT2::save_data_state(StateOut& s)
   s.put(mem_alloc);
   s.putstring(method_);
   s.putstring(algorithm_);
-  s.put(debug_);
   s.put(do_d1_);
   s.put(dynamic_);
   s.put(cphf_epsilon_);

@@ -67,6 +67,10 @@ class Wavefunction: public MolecularEnergy {
 
     int print_nao_;
     int print_npa_;
+
+  protected:
+
+    int debug_;
     
   public:
     Wavefunction(StateIn&);
@@ -88,6 +92,9 @@ class Wavefunction: public MolecularEnergy {
         natural population analysis will be printed.  Not all wavefunction
         will be able to do this.  The default is true if print_nao is true,
         otherwise it is false.
+
+        \item[debug] This integer can be used to produce output for
+        debugging.  The default is 0.
 
         \end{description}
      */

@@ -86,6 +86,8 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   KeyValValuedouble lindep_tol_def(1.e-6);
   lindep_tol_ = keyval->doublevalue("lindep_tol", lindep_tol_def);
 
+  debug_ = keyval->intvalue("debug");
+
   gbs_ = GaussianBasisSet::require_castdown(
     keyval->describedclassvalue("basis").pointer(),
     "Wavefunction::Wavefunction\n"
@@ -112,6 +114,8 @@ Wavefunction::Wavefunction(StateIn&s):
   bs_values(0),
   bsg_values(0)
 {
+  debug_ = 0;
+
   overlap_.compute() = 0;
   hcore_.compute() = 0;
   natural_orbitals_.compute() = 0;

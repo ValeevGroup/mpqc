@@ -52,7 +52,6 @@ class MBPT2: public Wavefunction {
   protected:
 #define ref_to_mp2_acc 100.0
 
-    int debug_;
     RefSCF reference_;
     RefMemoryGrp mem;
     int nfzc, nfzv;
@@ -218,9 +217,6 @@ class MBPT2: public Wavefunction {
         \item[memorygrp] A MemoryGrp object is used by the memgrp
         algorithm.  If this is not given the program will try to find an
         appropriate default.
-
-        \item[debug] If this is nonzero, extra information is written to
-        the output.  The default is 0.
 
         \end{description} */
     MBPT2(const RefKeyVal&);

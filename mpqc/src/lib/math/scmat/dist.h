@@ -204,6 +204,8 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
 
+    virtual void convert_accumulate(SymmSCMatrix*);
+
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 

@@ -202,8 +202,28 @@ DistSCMatrix::accumulate_row(SCVector *v, int i)
 SCVector *
 DistSCMatrix::get_column(int i)
 {
-  error("get_column");
-  return 0;
+  double *col = new double[nrow()];
+  
+  RefSCMatrixSubblockIter iter = local_blocks(SCMatrixSubblockIter::Read);
+  for (iter->begin(); iter->ready(); iter->next()) {
+    SCMatrixRectBlock *b = SCMatrixRectBlock::castdown(iter->block());
+    if (b->jstart > i || b->jend <= i)
+      continue;
+
+    int joff = i-b->jstart;
+    int jlen = b->jend-b->jstart;
+    int ist = 0;
+    
+    for (int ii=b->istart; ii < b->iend; ii++,ist++)
+      col[ii] = b->data[ist*jlen+joff];
+  }
+  
+  SCVector * rcol = kit_->vector(rowdim());
+  rcol->assign(col);
+
+  delete[] col;
+
+  return rcol;
 }
 
 void

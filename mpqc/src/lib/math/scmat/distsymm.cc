@@ -525,3 +525,20 @@ DistSymmSCMatrix::skit()
 {
   return DistSCMatrixKit::castdown(kit().pointer());
 }
+
+void
+DistSymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
+{
+  SymmSCMatrix::convert_accumulate(a);
+
+#if 0
+  DistSymmSCMatrix *d = DistSymmSCMatrix::require_castdown(a,
+                                 "DistSymmSCMatrix::convert_accumulate");
+
+  SCMatrixBlockListIter i, j;
+  for (i = blocklist->begin(), j = d->blocklist->begin();
+       i != blocklist->end();
+       i++, j++) {
+    }
+#endif
+}

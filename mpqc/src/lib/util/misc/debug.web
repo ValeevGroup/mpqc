@@ -24,7 +24,10 @@ private int debug_node;
 @c
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 
 @* Debugger control.  This package can arrange to start
 up the debugger over the calling process.  You must
@@ -33,10 +36,6 @@ invoked {\it via} the entry |debug_start|.
 |debug_init| also arranges to catch bus errors and
 segmentation violations, and will start up the debugger
 when one is caught.
-
-Here is a banner giving the version number.
-@c 
-private char *rcsid = "$Id$";
 
 @ Here is how this is to be used from |C|.  You must
 call |debug_init| somewhere in your main program,
@@ -120,7 +119,7 @@ Finally, |debug_init| checks the environment variable
 debugger at this point.
 
 @<Public...@>= 
-public debug_init(nm)
+public void debug_init(nm)
 char *nm; 
 {
     char *strcpy();
@@ -146,7 +145,7 @@ This is the default as set up by |debug_init|.  This routine
 must be called after |debug_init|.
 
 @<Public...@>=
-public debug_on_node(node_number)
+public void debug_on_node(node_number)
 int node_number;
 {
   debug_node = node_number;
@@ -165,7 +164,7 @@ Ironically, in {\sc Fortran}, we could
 dispense with the required argument, since we can
 get |argv[0]| with the |getarg| routine. 
 @<Public...@>=
-public debug_init_(n)
+public void debug_init_(n)
 char *n;
 {
   char *src = n;
@@ -183,7 +182,7 @@ has set a breakpoint if we are run from the debugger.  After
 already running.
 
 @<Public...@>=
-public debug_start(s) char *s; {
+public void debug_start(s) char *s; {
     breakpoint();
     if ((local_node == debug_node) || (debug_node == -1)) {
       if (!debugger_running) debug_fork(s);
@@ -195,7 +194,7 @@ public debug_start(s) char *s; {
 }
 @ A {\sc Fortran} callable version.
 @<Public...@>=
-public debug_start_(s) char *s; {
+public void debug_start_(s) char *s; {
     debug_start(s);
 }
 
@@ -321,6 +320,8 @@ private void handler(sig)
 int sig;
 #endif
 {
+    void debug_start();
+
     Printf ("\n\nOoops, "); (void) fflush(stdout);
     @.Ooops,@>
     Printf ("signal %d -", sig); (void) fflush(stdout);

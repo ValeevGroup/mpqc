@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 

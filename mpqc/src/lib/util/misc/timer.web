@@ -36,12 +36,12 @@ was, in fact, a count of some event.  Handy.
 @ Here is the outline of the package.
 
 @c 
-static char *rcsid = "$Id$";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tmpl.h>
 #include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 #define UTIL_ASSERT
 #include "assert.h"
 #define TIMING
@@ -141,8 +141,9 @@ char *name;
   timing_active = 0;
 
   if (!current_region) {
-    fprintf(stderr,
-       "tim_exit: tried to leave \"%s\" while there is no current region\n");
+    fprintf(stderr,"tim_exit: " 
+                   "tried to leave \"%s\" while there is no current region\n",
+                   name);
     tim_traceback();
     exit(1);
     }
@@ -250,7 +251,7 @@ int node_timings;
 
     tree_action(region_tree->down,get_node_data);
     if (me == 0) {
-      fprintf(fp,"Minimum, maximum, and average times:\n",me);
+      fprintf(fp,"Minimum, maximum, and average times:\n");
       tree_action(region_tree->down,summarize);
       }
     }
@@ -367,6 +368,7 @@ LOCAL_FUNCTION void
 get_node_data(r)
 region_t *r;
 {
+  extern int mtype_get();
   r->max_time = r->total_time;
   r->min_time = r->total_time;
   r->sum_time = r->total_time;

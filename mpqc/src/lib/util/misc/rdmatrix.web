@@ -28,7 +28,7 @@ a pointer to a location to receive the array.
 
 @<The |read_matrix| routine.@>=
 
-read_matrix (fname, n, d)
+void read_matrix (fname, n, d)
 char *fname;
 int n;   
 double *d;

@@ -8,6 +8,8 @@
 #include <ctype.h>
 #include "chemelem.h"
 
+DescribedClass_REF_def(ChemicalElement);
+
 #define CLASSNAME ChemicalElement
 #define PARENTS virtual public SavableState
 #define HAVE_STATEIN_CTOR

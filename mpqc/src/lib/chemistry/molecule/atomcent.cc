@@ -7,6 +7,8 @@
 
 #include "atomcent.h"
 
+DescribedClass_REF_def(AtomicCenter);
+
 #define CLASSNAME AtomicCenter
 #define PARENTS virtual public SavableState
 #define HAVE_CTOR

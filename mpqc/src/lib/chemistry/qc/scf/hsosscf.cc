@@ -522,7 +522,7 @@ HSOSSCF::scf_energy()
 
   RefSymmSCMatrix go = op_fock_.result_noupdate().copy();
   go.scale(-1.0);
-  go.accumulate(cl_fock_);
+  go.accumulate(cl_fock_.result_noupdate());
   
   SCFEnergy *eop = new SCFEnergy;
   eop->reference();

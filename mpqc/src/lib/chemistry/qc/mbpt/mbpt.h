@@ -59,6 +59,7 @@ class MBPT2: public Wavefunction {
 
     // calculate the closed shell mp2 energy and gradient
     int compute_cs_batchsize(int mem_static, int nocc_act);
+    int compute_cs_dynamic_memory(int ni, int nocc_act);
     int make_cs_gmat(RefSymmSCMatrix& Gmat, double *DPmat);
     void form_max_dens(double *DPmat, signed char *maxp);
     int init_cs_gmat();

@@ -390,8 +390,27 @@ MBPT2::compute_cs_grad()
     }
 
   // Compute the storage remaining for the integral routines
-  int mem_remaining = mem_alloc - (nijmax*nbasis*nbasis + mem_static);
+  int dyn_mem = compute_cs_dynamic_memory(ni,nocc_act);
+  int mem_remaining = mem_alloc - (dyn_mem + mem_static);
   if (mem_remaining < 0) mem_remaining = 0;
+
+  cout << indent
+       << scprintf("Memory available per node:      %i Bytes",mem_alloc)
+       << endl;
+  cout << indent
+       << scprintf("Static memory used per node:    %i Bytes",mem_static)
+       << endl;
+  cout << indent
+       << scprintf("Total memory used per node:     %i Bytes",
+                   dyn_mem+mem_static)
+       << endl;
+  cout << indent
+       << scprintf("Memory required for one pass:   %i Bytes",
+                   compute_cs_dynamic_memory(nocc_act,nocc_act)+mem_static)
+       << endl;
+  cout << indent
+       << scprintf("Batch size:                     %i", ni)
+       << endl;
 
   // Initialize the integrals
   integral()->set_storage(mem_remaining);
@@ -399,6 +418,20 @@ MBPT2::compute_cs_grad()
   intbuf = tbint_->buffer();
   tbintder_ = integral()->electron_repulsion_deriv();
   intderbuf = tbintder_->buffer();
+
+  int mem_integral_intermediates = integral()->storage_used();
+  int mem_integral_storage = mem_remaining - mem_integral_intermediates;
+  if (mem_integral_storage<0) mem_integral_storage = 0;
+  tbint_->set_integral_storage(mem_integral_storage);
+
+  cout << indent
+       << scprintf("Memory used for integral intermediates: %i Bytes",
+                   mem_integral_intermediates)
+       << endl;
+  cout << indent
+       << scprintf("Memory used for integral storage:       %i Bytes",
+                   mem_integral_storage)
+       << endl;
 
   if (mem.null()) {
       cerr << "MBPT2: memory group not initialized" << endl;
@@ -2434,8 +2467,7 @@ accum_gradients(double **g, double **f, int n1, int n2)
 }
 
 /////////////////////////////////////
-// Compute required (dynamic) memory
-// for a given batch size
+// Compute the batchsize
 //
 // Only arrays allocated before exiting the loop over
 // i-batches are included here  - only these arrays
@@ -2449,7 +2481,6 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
   int mem_dyn;   // dynamic memory available
   int maxdyn;
   int tmp;
-  int dyn_used;  // dynamic memory actually used;
   int i, j;
   int ni;
   int nij_local; // (local to this function; the variable nij is static)
@@ -2467,6 +2498,56 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
   // First determine if calculation is possible at all (i.e., if ni=1 possible)
 
   ni = 1;
+  maxdyn = compute_cs_dynamic_memory(ni, nocc_act);
+
+  if (maxdyn > mem_dyn) {
+    cerr << scprintf("At least %i bytes required (for batch size 1)\n"
+                     "but only %i bytes allocated; program exits\n",
+                     maxdyn+mem_static, mem_alloc);
+    abort();
+    }
+
+  ni = 2;
+  while (ni<=nocc_act) {
+    maxdyn = compute_cs_dynamic_memory(ni, nocc_act);
+    if (maxdyn >= mem_dyn) {
+      ni--;
+      break;
+      }
+    ni++;
+    }
+  if (ni > nocc_act) ni = nocc_act;
+
+  return ni;
+}
+
+/////////////////////////////////////
+// Compute required (dynamic) memory
+// for a given batch size
+//
+// Only arrays allocated before exiting the loop over
+// i-batches are included here  - only these arrays
+// affect the batch size.
+/////////////////////////////////////
+int
+MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
+{
+  int index;
+  int mem1, mem2, mem3;
+  int mem_dyn;   // dynamic memory available
+  int maxdyn;
+  int tmp;
+  int i, j;
+  int nij_local; // (local to this function; the variable nij is static)
+  int nproc = msg_->n();
+
+  ///////////////////////////////////////
+  // the largest memory requirement will
+  // either occur just before the end of
+  // the 1. q.b.t. (mem1) or just before
+  // the end of the i-batch loop (mem2)
+  ///////////////////////////////////////
+
   // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
   index = 0;
   nij_local = 0;
@@ -2484,52 +2565,7 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
   tmp = (mem2>mem3 ? mem2:mem3);
   maxdyn = (mem1>tmp ? mem1:tmp);
 
-  if (maxdyn > mem_dyn) {
-    cerr << scprintf("At least %i bytes required (for batch size 1)\n"
-                     "but only %i bytes allocated; program exits\n",
-                     maxdyn+mem_static, mem_alloc);
-    abort();
-    }
-
-  ni = 2;
-  dyn_used = maxdyn;
-  while (ni<=nocc_act) {
-    // compute nij
-    nij_local = 0;
-    index = 0;
-    for (i=0; i<ni; i++) {
-      for (j=0; j<nocc; j++) {
-        if (index++ % nproc == 0) nij_local++;
-        }
-      }
-    // compute max memory required for this ni
-    mem1 = sizeof(double)*(nij_local*nbasis*nbasis + nbasis*nvir);
-    mem2 = sizeof(double)*(ni*nbasis*nfuncmax*nfuncmax + nij_local*nbasis*nbasis
-                           + ni*nbasis + nbasis*nfuncmax
-                           + nfuncmax*nfuncmax*nfuncmax*nfuncmax);
-    mem3 = sizeof(double)*(ni*nbasis*nfuncmax*nfuncmax + nij_local*nbasis*nbasis
-                           + 2*(2 + nbasis*nfuncmax));
-    tmp = (mem2>mem3 ? mem2:mem3);
-    maxdyn = (mem1>tmp? mem1:tmp);
-    if (maxdyn >= mem_dyn) {
-      ni--;
-      break;
-      }
-    else dyn_used = maxdyn;
-    ni++;
-    }
-  if (ni > nocc_act) ni = nocc_act;
-
-  cout << indent
-       << scprintf("Memory available per node:   %i Bytes\n",mem_alloc);
-  cout << indent
-       << scprintf("Static memory used per node: %i Bytes\n",mem_static);
-  cout << indent
-       << scprintf("Total memory used per node:  %i Bytes\n",dyn_used+mem_static);
-  cout << indent
-       << scprintf("Batch size:                  %i\n", ni);
-
-  return ni;
+  return maxdyn;
 }
 
 // Local Variables:

@@ -156,18 +156,6 @@ SCMatrix3 SCMatrix3::operator*(const SCMatrix3& v) const
   return result;
 }
 
-SCVector3 SCMatrix3::operator*(const SCVector3& v) const
-{
-  SCVector3 result;
-  for (int i=0; i<3; i++)
-  {
-      result(i) = 0;
-      for (int k=0; k<3; k++)
-          result(i)+=operator()(i,k)*v(k);
-  }
-  return result;
-}
-
 SCMatrix3
 operator*(double d, const SCMatrix3& v)
 {

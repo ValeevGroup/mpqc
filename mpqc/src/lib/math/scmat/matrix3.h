@@ -26,7 +26,13 @@ class SCMatrix3
     SCMatrix3& operator=(const SCMatrix3&);
     SCMatrix3 operator*(double) const;
     SCMatrix3 operator*(const SCMatrix3&) const;
-    SCVector3 operator*(const SCVector3&) const;
+    SCVector3 operator*(const SCVector3&v) const {
+        SCVector3 result;
+        result._v[0] = _m[0+3*0]*v._v[0]+_m[0+3*1]*v._v[1]+_m[0+3*2]*v._v[2];
+        result._v[1] = _m[1+3*0]*v._v[0]+_m[1+3*1]*v._v[1]+_m[1+3*2]*v._v[2];
+        result._v[2] = _m[2+3*0]*v._v[0]+_m[2+3*1]*v._v[1]+_m[2+3*2]*v._v[2];
+        return result;
+      }
     SCMatrix3 operator+(const SCMatrix3&) const;
     SCMatrix3 operator-(const SCMatrix3&) const;
     double& elem(int i, int j) { return _m[i+3*j]; }

@@ -35,20 +35,6 @@ SCVector3 SCVector3::operator*(double d) const
   return d*(*this);
 }
 
-SCVector3 SCVector3::operator+(const SCVector3&v) const
-{
-  SCVector3 result;
-  for (int i=0; i<3; i++) result[i] = _v[i] + v[i];
-  return result;
-}
-
-SCVector3 SCVector3::operator-(const SCVector3&v) const
-{
-  SCVector3 result;
-  for (int i=0; i<3; i++) result[i] = _v[i] - v[i];
-  return result;
-}
-
 SCVector3 SCVector3::cross(const SCVector3&v) const
 {
   SCVector3 result(_v[1]*v._v[2]-_v[2]*v._v[1],

@@ -66,7 +66,6 @@ Result::Result(StateIn&s,Compute*c):
 void
 Result::save_data_state(StateOut&s)
 {
-  Result::save_data_state(s);
   s.put(_compute);
   s.put(_computed);
 }

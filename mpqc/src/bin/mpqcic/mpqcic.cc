@@ -687,9 +687,13 @@ main(int argc, char *argv[])
     SCR3 = dmt_create("opt2:scr3",scf_info.nbfao,COLUMNS);
 
     if (!do_scf) {
-
-      if(mynode0()==0) fprintf(stderr,"Must do scf before opt2. Program exits\n");
-      clean_and_exit(grp);
+        char filename[512];
+        sprintf(filename,"%s.fock",scf_info.fname);
+        dmt_read(filename, Fock);
+        if (scf_info.iopen) {
+            sprintf(filename,"%s.focko",scf_info.fname);
+            dmt_read(filename,FockO);
+          }
       }
 
     tim_enter("opt2");

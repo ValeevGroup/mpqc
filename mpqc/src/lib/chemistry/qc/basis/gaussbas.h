@@ -90,7 +90,7 @@ class GaussianBasisSet: public SavableState
               BasisFileSet&,
               int have_userkeyval,
               int pure);
-    void init2();
+    void init2(int skip_ghosts=0);
     
   protected:
     GaussianBasisSet(const GaussianBasisSet&);

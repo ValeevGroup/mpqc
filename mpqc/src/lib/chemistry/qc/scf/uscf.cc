@@ -131,11 +131,11 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
   fockb_.computed()=0;
 
   // calculate the total nuclear charge
-  int Znuc=molecule()->nuclear_charge();
+  double Znuc=molecule()->nuclear_charge();
 
   // check to see if this is to be a charged molecule
-  int charge = keyval->intvalue("total_charge");
-  int nelectrons = Znuc-charge;
+  double charge = keyval->doublevalue("total_charge");
+  int nelectrons = (int)(Znuc-charge+1.0e-4);
 
   // first let's try to figure out how many open shells there are
   if (keyval->exists("multiplicity")) {

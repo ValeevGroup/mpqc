@@ -341,6 +341,170 @@ MolecularEnergy::print(ostream&o)
 }
 
 /////////////////////////////////////////////////////////////////
+// SumMolecularEnergy
+
+SavableState_REF_def(SumMolecularEnergy);
+#define CLASSNAME SumMolecularEnergy
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public MolecularEnergy
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+void *
+SumMolecularEnergy::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = MolecularEnergy::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SumMolecularEnergy::SumMolecularEnergy(const RefKeyVal &keyval):
+  MolecularEnergy(keyval)
+{
+  n_ = keyval->count("mole");
+  mole_ = new RefMolecularEnergy[n_];
+  coef_ = new double[n_];
+  for (int i=0; i<n_; i++) {
+      mole_[i] = keyval->describedclassvalue("mole",i);
+      coef_[i] = keyval->intvalue("coef",i);
+      if (mole_[i].null()
+          || mole_[i]->molecule()->natom() != molecule()->natom()) {
+          cerr << "SumMolecularEnergy: a mole is null or has a molecule"
+               << " with the wrong number of atoms" << endl;
+          abort();
+        }
+    }
+}
+
+SumMolecularEnergy::SumMolecularEnergy(StateIn&s):
+  MolecularEnergy(s)
+{
+  s.get(n_);
+  coef_ = new double[n_];
+  mole_ = new RefMolecularEnergy[n_];
+  s.get_array_double(coef_,n_);
+  for (int i=0; i<n_; i++) {
+      mole_[i].restore_state(s);
+    }
+}
+
+void
+SumMolecularEnergy::save_data_state(StateOut&s)
+{
+  MolecularEnergy::save_data_state(s);
+  s.put(n_);
+  s.put_array_double(coef_,n_);
+  for (int i=0; i<n_; i++) {
+      mole_[i].save_state(s);
+    }
+}
+
+SumMolecularEnergy::~SumMolecularEnergy()
+{
+  delete[] mole_;
+  delete[] coef_;
+}
+
+int
+SumMolecularEnergy::value_implemented()
+{
+  for (int i=0; i<n_; i++) {
+      if (!mole_[i]->value_implemented()) return 0;
+    }
+  return 1;
+}
+
+int
+SumMolecularEnergy::gradient_implemented()
+{
+  for (int i=0; i<n_; i++) {
+      if (!mole_[i]->gradient_implemented()) return 0;
+    }
+  return 1;
+}
+
+int
+SumMolecularEnergy::hessian_implemented()
+{
+  for (int i=0; i<n_; i++) {
+      if (!mole_[i]->hessian_implemented()) return 0;
+    }
+  return 1;
+}
+
+void
+SumMolecularEnergy::set_x(const RefSCVector&v)
+{
+  MolecularEnergy::set_x(v);
+  for (int i=0; i<n_; i++) {
+      mole_[i]->set_x(v);
+    }
+}
+
+void
+SumMolecularEnergy::compute()
+{
+  int i;
+
+  int *old_do_value = new int[n_];
+  int *old_do_gradient = new int[n_];
+  int *old_do_hessian = new int[n_];
+
+  for (i=0; i<n_; i++) old_do_value[i] = mole_[i]->do_value(do_value());
+  for (i=0; i<n_; i++) old_do_gradient[i]=mole_[i]->do_gradient(do_gradient());
+  for (i=0; i<n_; i++) old_do_hessian[i] = mole_[i]->do_hessian(do_hessian());
+
+  cout << node0 << indent
+       << "SumMolecularEnergy: compute" << endl;
+
+  cout << incindent;
+
+  if (do_value()) {
+      double val = 0.0;
+      for (i=0; i<n_; i++) {
+          val += coef_[i] * mole_[i]->value();
+        }
+      cout << node0 << endl << indent
+           << "SumMolecularEnergy =" << endl;
+      for (i=0; i<n_; i++) {
+          cout << node0 << indent
+               << scprintf("  %c % 16.12f * % 16.12f",
+                           (i==0?' ':'+'),
+                           coef_[i], mole_[i]->value())
+               << endl;
+        }
+      cout << node0 << indent
+           << scprintf("  = % 16.12f", val) << endl;
+      set_energy(val);
+    }
+  if (do_gradient()) {
+      RefSCVector gradientvec = matrixkit()->vector(moldim());
+      gradientvec->assign(0.0);
+      for (i=0; i<n_; i++)
+          gradientvec.accumulate(coef_[i] * mole_[i]->gradient());
+      set_gradient(gradientvec);
+    }
+  if (do_hessian()) {
+      RefSymmSCMatrix hessianmat = matrixkit()->symmmatrix(moldim());
+      hessianmat->assign(0.0);
+      for (i=0; i<n_; i++)
+          hessianmat.accumulate(coef_[i] * mole_[i]->hessian());
+      set_hessian(hessianmat);
+    }
+
+  cout << decindent;
+
+  for (i=0; i<n_; i++) mole_[i]->do_value(old_do_value[i]);
+  for (i=0; i<n_; i++) mole_[i]->do_gradient(old_do_gradient[i]);
+  for (i=0; i<n_; i++) mole_[i]->do_hessian(old_do_hessian[i]);
+
+  delete[] old_do_value;
+  delete[] old_do_gradient;
+  delete[] old_do_hessian;
+}
+
+/////////////////////////////////////////////////////////////////
 // MolEnergyConvergence
 
 SavableState_REF_def(MolEnergyConvergence);

@@ -91,17 +91,19 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   cl_fock_.computed()=0;
   
   // calculate the total nuclear charge
-  int Znuc=molecule()->nuclear_charge();
+  double Znuc=molecule()->nuclear_charge();
 
   // check to see if this is to be a charged molecule
-  int charge = keyval->intvalue("total_charge");
+  double charge = keyval->intvalue("total_charge");
+
+  int nelectron = (int)((Znuc-charge+1.0e-4));
   
   // now see if ndocc was specified
   if (keyval->exists("ndocc")) {
     tndocc_ = keyval->intvalue("ndocc");
   } else {
-    tndocc_ = (Znuc-charge)/2;
-    if ((Znuc-charge)%2 && me==0) {
+    tndocc_ = nelectron/2;
+    if (nelectron%2 && me==0) {
       cerr << node0 << endl
            << indent << "CLSCF::init: Warning, there's a leftover electron.\n"
            << incindent << indent << "total_charge = " << charge << endl

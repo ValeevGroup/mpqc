@@ -216,6 +216,8 @@ GaussianBasisSet::init(RefMolecule&molecule,
       havepure = 1;
     }
 
+  int skip_ghosts = keyval->booleanvalue("skip_ghosts");
+
   name_ = keyval->pcharvalue("name");
   int have_custom, nelement;
 
@@ -240,6 +242,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
   ncenter_ = molecule->natom();
   int iatom;
   for (iatom=0; iatom < ncenter_; iatom++) {
+      if (skip_ghosts && molecule->charge(iatom) == 0.0) continue;
       int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
@@ -277,6 +280,10 @@ GaussianBasisSet::init(RefMolecule&molecule,
   ishell = 0;
   center_to_nshell_.set_length(ncenter_);
   for (iatom=0; iatom<ncenter_; iatom++) {
+      if (skip_ghosts && molecule->charge(iatom) == 0.0) {
+          center_to_nshell_[iatom] = 0;
+          continue;
+        }
       int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
@@ -323,7 +330,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
 
   // finish with the initialization steps that don't require any
   // external information
-  init2();
+  init2(skip_ghosts);
 }
 
 double
@@ -333,7 +340,7 @@ GaussianBasisSet::r(int icenter, int xyz) const
 }
 
 void
-GaussianBasisSet::init2()
+GaussianBasisSet::init2(int skip_ghosts)
 {
   // center_to_shell_ and shell_to_center_
   shell_to_center_.set_length(nshell_);
@@ -341,6 +348,11 @@ GaussianBasisSet::init2()
   center_to_nbasis_.set_length(ncenter_);
   int ishell = 0;
   for (int icenter=0; icenter<ncenter_; icenter++) {
+      if (skip_ghosts && molecule()->charge(icenter) == 0.0) {
+          center_to_shell_[icenter] = -1;
+          center_to_nbasis_[icenter] = 0;
+          continue;
+        }
       int j;
       center_to_shell_[icenter] = ishell;
       center_to_nbasis_[icenter] = 0;

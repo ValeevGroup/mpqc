@@ -164,7 +164,7 @@ Wavefunction::save_data_state(StateOut&s)
   integral_.save_state(s);
 }
 
-int
+double
 Wavefunction::charge()
 {
   return molecule()->nuclear_charge() - nelectron();

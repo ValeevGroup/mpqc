@@ -42,7 +42,7 @@
 SavableState_REF_def(Molecule);
 
 #define CLASSNAME Molecule
-#define VERSION 4
+#define VERSION 5
 #define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -58,7 +58,7 @@ Molecule::_castdown(const ClassDesc*cd)
 }
 
 Molecule::Molecule():
-  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0)
+  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
 {
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
@@ -66,7 +66,7 @@ Molecule::Molecule():
 }
 
 Molecule::Molecule(Molecule& mol):
- r_(0), natoms_(0), Z_(0), mass_(0), labels_(0)
+ r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
 {
   *this=mol;
 }
@@ -91,6 +91,8 @@ Molecule::clear()
       delete[] labels_;
       labels_ = 0;
     }
+  delete[] charges_;
+  charges_ = 0;
   delete[] mass_;
   mass_ = 0;
   delete[] Z_;
@@ -98,7 +100,7 @@ Molecule::clear()
 }
 
 Molecule::Molecule(const RefKeyVal&input):
- r_(0), natoms_(0), Z_(0), mass_(0), labels_(0)
+ r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
 {
   pg_ = new PointGroup(input);
   atominfo_ = input->describedclassvalue("atominfo");
@@ -180,11 +182,20 @@ Molecule::Molecule(const RefKeyVal&input):
       int i;
       for (i=0; i<natom; i++) {
           char *name, *label;
+          int ghost = input->booleanvalue("ghost",i);
+          double charge = input->doublevalue("charge",i);
+          int have_charge = input->error() == KeyVal::OK;
+          if (ghost) {
+              have_charge = 1;
+              charge = 0.0;
+            }
           add_atom(AtomInfo::string_to_Z(name = input->pcharvalue("atoms",i)),
                    input->doublevalue("geometry",i,0)*conv,
                    input->doublevalue("geometry",i,1)*conv,
                    input->doublevalue("geometry",i,2)*conv,
-                   label = input->pcharvalue("atom_labels",i)
+                   label = input->pcharvalue("atom_labels",i),
+                   0.0,
+                   have_charge, charge
               );
           delete[] name;
           delete[] label;
@@ -213,6 +224,10 @@ Molecule::operator=(Molecule& mol)
           mass_ = new double[natoms_];
           memcpy(mass_,mol.mass_,natoms_*sizeof(double));
         }
+      if (mol.charges_) {
+          charges_ = new double[natoms_];
+          memcpy(charges_,mol.charges_,natoms_*sizeof(double));
+        }
       if (mol.labels_) {
           labels_ = new char *[natoms_];
           for (int i=0; i<natoms_; i++) {
@@ -238,8 +253,11 @@ Molecule::operator=(Molecule& mol)
 
 void
 Molecule::add_atom(int Z,double x,double y,double z,
-                   const char *label,double mass)
+                   const char *label,double mass,
+                   int have_charge, double charge)
 {
+  int i;
+
   // allocate new arrays
   int *newZ = new int[natoms_+1];
   double **newr = new double*[natoms_+1];
@@ -248,13 +266,17 @@ Molecule::add_atom(int Z,double x,double y,double z,
   if (label || labels_) {
       newlabels = new char*[natoms_+1];
     }
+  double *newcharges = 0;
+  if (have_charge || charges_) {
+      newcharges = new double[natoms_+1];
+    }
   double *newmass = 0;
   if (mass_ || mass != 0.0) {
       newmass = new double[natoms_+1];
     }
 
   // setup the r_ pointers
-  for (int i=0; i<=natoms_; i++) {
+  for (i=0; i<=natoms_; i++) {
       newr[i] = &(newr0[i*3]);
     }
 
@@ -267,6 +289,12 @@ Molecule::add_atom(int Z,double x,double y,double z,
         }
       else if (newlabels) {
           memset(newlabels,0,sizeof(char*)*natoms_);
+        }
+      if (charges_) {
+          memcpy(newcharges,charges_,sizeof(double)*natoms_);
+        }
+      else if (newcharges) {
+          for (i=0; i<natoms_; i++) newcharges[i] = Z_[i];
         }
       if (mass_) {
           memcpy(newmass,mass_,sizeof(double)*natoms_);
@@ -283,12 +311,14 @@ Molecule::add_atom(int Z,double x,double y,double z,
       delete[] r_;
     }
   delete[] labels_;
+  delete[] charges_;
   delete[] mass_;
 
   // setup new pointers
   Z_ = newZ;
   r_ = newr;
   labels_ = newlabels;
+  charges_ = newcharges;
   mass_ = newmass;
 
   // copy info for this atom into arrays
@@ -302,6 +332,12 @@ Molecule::add_atom(int Z,double x,double y,double z,
     }
   else if (labels_) {
       labels_[natoms_] = 0;
+    }
+  if (have_charge) {
+      charges_[natoms_] = charge;
+    }
+  else if (charges_) {
+      charges_[natoms_] = Z;
     }
 
   natoms_++;
@@ -336,6 +372,16 @@ Molecule::print(ostream& os)
      << scprintf("{%3s", "n")
      << scprintf(" %5s", "atoms");
   if (labels_) os << node0 << scprintf(" %11s", "atom_labels");
+  int int_charges = 1;
+  if (charges_) {
+      for (i=0;i<natom();i++) if (charges_[i]!=(int)charges_[i]) int_charges=0;
+      if (int_charges) {
+          os << node0 << scprintf(" %7s", "charges");
+        }
+      else {
+          os << node0 << scprintf(" %17s", "charges");
+        }
+    }
   os << node0
      << scprintf("  %16s", "")
      << scprintf(" %16s", "geometry   ")
@@ -355,6 +401,10 @@ Molecule::print(ostream& os)
           os << node0
              << scprintf(" %11s",qlab);
           delete[] qlab;
+        }
+      if (charges_) {
+          if (int_charges) os << node0 << scprintf(" %7.4f", charges_[i]);
+          else os << node0 << scprintf(" %17.15f", charges_[i]);
         }
       os << node0
          << scprintf(" [% 16.10f", conv * r(i,0))
@@ -390,19 +440,29 @@ double*
 Molecule::charges() const
 {
   double*result = new double[natoms_];
-  int i;
-  for (i=0; i<natom(); i++) {
-      result[i] = Z_[i];
+  if (charges_) {
+      memcpy(result, charges_, sizeof(double)*natom());
+    }
+  else {
+      for (int i=0; i<natom(); i++) result[i] = Z_[i];
     }
   return result;
 }
 
-int
+double
+Molecule::charge(int iatom) const
+{
+  if (charges_) return charges_[iatom];
+  return Z_[iatom];
+}
+
+double
 Molecule::nuclear_charge() const
 {
-  int i, c = 0;
+  int i;
+  double c = 0.0;
   for (i=0; i<natom(); i++) {
-      c += Z_[i];
+      c += charge(i);
     }
   return c;
 }
@@ -416,6 +476,7 @@ void Molecule::save_data_state(StateOut& so)
   if (natoms_) {
       so.put(Z_, natoms_);
       so.put_array_double(r_[0], natoms_*3);
+      so.put(charges_,natoms_);
     }
   if (mass_) {
       so.put(1);
@@ -454,6 +515,12 @@ Molecule::Molecule(StateIn& si):
       si.get_array_double(r_[0],natoms_*3);
       for (int i=1; i<natoms_; i++) {
           r_[i] = &(r_[0][i*3]);
+        }
+      if (si.version(static_class_desc()) > 4) {
+          si.get(charges_);
+        }
+      else {
+          charges_ = 0;
         }
     }
   int test;
@@ -512,11 +579,11 @@ Molecule::nuclear_repulsion_energy()
 
   for (i=1; i < natoms_; i++) {
     SCVector3 ai(r(i));
-    double Zi = Z_[i];
+    double Zi = charge(i);
     
     for (j=0; j < i; j++) {
         SCVector3 aj(r(j));
-        e += Zi * double(Z_[j]) / ai.dist(aj);
+        e += Zi * charge(j) / ai.dist(aj);
       }
     }
 
@@ -535,7 +602,7 @@ Molecule::nuclear_repulsion_1der(int center, double xyz[3])
   xyz[2] = 0.0;
   for (i=0; i < natoms_; i++) {
       SCVector3 ai(r(i));
-      double Zi = Z_[i];
+      double Zi = charge(i);
 
       for (j=0; j < i; j++) {
           if (center==i || center==j) {
@@ -547,7 +614,7 @@ Molecule::nuclear_repulsion_1der(int center, double xyz[3])
                   r2 += rd[k]*rd[k];
                 }
         
-              factor = - Zi * Z_[j] * pow(r2,-1.5);
+              factor = - Zi * charge(j) * pow(r2,-1.5);
               if (center==j) factor = -factor;
               for (k=0; k<3; k++) {
                   xyz[k] += factor * rd[k];
@@ -573,7 +640,7 @@ Molecule::nuclear_efield(const double *position, double *efield)
           rd[j] = position[j] - a[j];
           tmp += rd[j]*rd[j];
         }
-      tmp = double(Z_[i])/(tmp*sqrt(tmp));
+      tmp = charge(i)/(tmp*sqrt(tmp));
       for (j=0; j<3; j++) {
           efield[j] +=  rd[j] * tmp;
         }

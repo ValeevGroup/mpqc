@@ -97,6 +97,33 @@ class MolecularEnergy: public Function {
 };
 SavableState_REF_dec(MolecularEnergy);
 
+class SumMolecularEnergy: public MolecularEnergy {
+#   define CLASSNAME SumMolecularEnergy
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    int n_;
+    RefMolecularEnergy *mole_;
+    double *coef_;
+  protected:
+    void compute();
+  public:
+    SumMolecularEnergy(const RefKeyVal &);
+    SumMolecularEnergy(StateIn&);
+    ~SumMolecularEnergy();
+
+    void save_data_state(StateOut&);
+
+    int value_implemented();
+    int gradient_implemented();
+    int hessian_implemented();
+
+    void set_x(const RefSCVector&);
+};
+SavableState_REF_dec(SumMolecularEnergy);
+
 class MolEnergyConvergence: public Convergence {
 #   define CLASSNAME MolEnergyConvergence
 #   define HAVE_KEYVAL_CTOR

@@ -112,11 +112,11 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   op_fockb_.computed()=0;
   
   // calculate the total nuclear charge
-  int Znuc=molecule()->nuclear_charge();
+  double Znuc=molecule()->nuclear_charge();
 
   // check to see if this is to be a charged molecule
-  int charge = keyval->intvalue("total_charge");
-  int nelectrons = Znuc-charge;
+  double charge = keyval->doublevalue("total_charge");
+  int nelectrons = (int)(Znuc-charge+1.0e-4);
 
   // figure out how many doubly occupied shells there are
   if (keyval->exists("ndocc")) {

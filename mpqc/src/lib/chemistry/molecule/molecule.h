@@ -67,6 +67,7 @@ class Molecule: public SavableState
     RefUnits geometry_units_;
     double **r_;
     int *Z_;
+    double *charges_;
 
     // these are optional
     double *mass_;
@@ -86,7 +87,8 @@ class Molecule: public SavableState
 
     //. Add an \clsnmref{AtomicCenter} to the \clsnm{Molecule}.
     void add_atom(int Z,double x,double y,double z,
-                  const char * = 0, double mass = 0.0);
+                  const char * = 0, double mass = 0.0,
+                  int have_charge = 0, double charge = 0.0);
 
     //. Print information about the molecule.
     virtual void print(ostream& =cout);
@@ -111,12 +113,15 @@ class Molecule: public SavableState
     int atom_label_to_index(const char *label) const;
 
     //. Returns a \srccd{double*} containing the nuclear
-    //charges of the atoms.  The caller is responible for
+    //charges of the atoms.  The caller is responsible for
     //freeing the return value.
     double *charges() const;
 
+    //. Return the charge of the atom.
+    double charge(int iatom) const;
+
     //. Returns the total nuclear charge.
-    int nuclear_charge() const;
+    double nuclear_charge() const;
 
     //. Sets the \clsnmref{PointGroup} of the molecule.
     void set_point_group(const RefPointGroup&);

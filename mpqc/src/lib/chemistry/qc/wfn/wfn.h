@@ -82,7 +82,7 @@ class Wavefunction: public MolecularEnergy {
                            const RefSCMatrix& orbs,
                            double* orbval = 0);
 
-    int charge();
+    double charge();
     virtual int nelectron() = 0;
 
     // returns the so density

@@ -93,6 +93,10 @@ main(int argc, char** argv)
       tmpkv->assign("atominfo", atominfo);
       RefDescribedClass volume = new ConnollyShape2(tmpkv.pointer());
       tmpkv->clear();
+      tmpkv->assignboolean("verbose", !quiet);
+      RefDescribedClass trisurf = new TriangulatedSurface(tmpkv);
+      tmpkv->clear();
+      tmpkv->assign("surface", trisurf);
       tmpkv->assign("volume", volume);
       tmpkv->assign("resolution", 1.0);
       tmpkv->assignboolean("remove_short_edges", 0);

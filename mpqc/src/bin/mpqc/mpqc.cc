@@ -80,6 +80,7 @@ clean_up(void)
 int
 main(int argc, char *argv[])
 {
+  int i;
   const char *devnull = "/dev/null";
   atexit(clean_up);
 
@@ -238,11 +239,18 @@ main(int argc, char *argv[])
       keyval->describedclassvalue("matrixkit"));
   
   // announce ourselves
-  cout << node0 << endl
-       << indent << "       MPQC: Massively Parallel Quantum Chemistry" << endl
-       << indent << "                      Version " << MPQC_VERSION << endl
-       << endl
-       << indent
+  const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
+  int ntitle1 = sizeof(title1);
+  const char title2[] = "Version " MPQC_VERSION;
+  int ntitle2 = sizeof(title2);
+  cout << node0 << endl;
+  cout << node0 << indent;
+  for (i=0; i<(80-ntitle1)/2; i++) cout << node0 << ' ';
+  cout << node0 << title1 << endl;
+  cout << node0 << indent;
+  for (i=0; i<(80-ntitle2)/2; i++) cout << node0 << ' ';
+  cout << node0 << title2 << endl << endl;
+  cout << node0 << indent
        << scprintf("Running on a %s with %d nodes.", TARGET_ARCH, grp->n())
        << endl << endl;
 
@@ -403,7 +411,7 @@ main(int argc, char *argv[])
          << "Computing molecular frequencies from "
          << molfreq->ndisplace() << " displacements:" << endl;
 
-    for (int i=0; i<molfreq->ndisplace(); i++) {
+    for (i=0; i<molfreq->ndisplace(); i++) {
       // This produces side-effects in mol and may even change
       // its symmetry.
       cout << node0

@@ -36,6 +36,8 @@ class IntegralV3 : public Integral {
 
     RefOneBodyInt nuclear();
 
+    RefOneBodyInt hcore();
+
     RefOneBodyInt efield_dot_vector(const RefEfieldDotVectorData& =0);
 
     RefOneBodyInt dipole(const RefDipoleData& =0);

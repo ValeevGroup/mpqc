@@ -86,6 +86,12 @@ IntegralV3::nuclear()
 }
 
 RefOneBodyInt
+IntegralV3::hcore()
+{
+  return new OneBodyIntV3(bs1_, bs2_, Int1eV3::hcore);
+}
+
+RefOneBodyInt
 IntegralV3::point_charge(const RefPointChargeData& dat)
 {
   return new PointChargeIntV3(bs1_, bs2_, dat);

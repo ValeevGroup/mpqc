@@ -909,11 +909,17 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval):
   remove_slender_triangles_ = keyval->booleanvalue("remove_slender_triangles");
   if (keyval->error() != KeyVal::OK) remove_slender_triangles_ = 0;
 
+  remove_small_triangles_ = keyval->booleanvalue("remove_small_triangles");
+  if (keyval->error() != KeyVal::OK) remove_small_triangles_ = 0;
+
   short_edge_factor_ = keyval->doublevalue("short_edge_factor");
   if (keyval->error() != KeyVal::OK) short_edge_factor_ = 0.4;
 
   slender_triangle_factor_ = keyval->doublevalue("slender_triangle_factor");
   if (keyval->error() != KeyVal::OK) slender_triangle_factor_ = 0.2;
+
+  small_triangle_factor_ = keyval->doublevalue("small_triangle_factor");
+  if (keyval->error() != KeyVal::OK) small_triangle_factor_ = 0.2;
 
   resolution_ = keyval->doublevalue("resolution");
   if (keyval->error() != KeyVal::OK) resolution_ = 1.0;
@@ -948,13 +954,17 @@ TriangulatedImplicitSurface::init()
 #endif
   if (remove_short_edges_) {
       if (_verbose) cout << "TriangulatedImplicitSurface: short edges" << endl;
-      remove_short_edges(short_edge_factor_*resolution_);
+      remove_short_edges(short_edge_factor_*resolution_,vol_,isovalue_);
       if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
       if (fix_orientation_) fix_orientation();
     }
-  if (remove_slender_triangles_) {
+  if (remove_slender_triangles_ || remove_small_triangles_) {
       if (_verbose) cout << "TriangulatedImplicitSurface: slender" << endl;
-      remove_slender_triangles(slender_triangle_factor_);
+      double height_cutoff = slender_triangle_factor_ * resolution_;
+      double area_cutoff = small_triangle_factor_*resolution_*resolution_*0.5;
+      remove_slender_triangles(remove_slender_triangles_, height_cutoff,
+                               remove_small_triangles_, area_cutoff,
+                               vol_,isovalue_);
       if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
       if (fix_orientation_) fix_orientation();
     }

@@ -71,6 +71,26 @@ main(int argc,char** argv)
   cout << scprintf("surf->area() = %f\n", surf->area());
   cout << scprintf("surf->volume() = %f\n", surf->volume());
 
+  for (int order=1; order<4; order++) { 
+      cout << scprintf("order = %d", order) << endl;
+      int nir = 4;
+      for (int ir=0; ir<nir; ir++) {
+          double r = double(ir)/(nir-1);
+          double s = 1.0 - r;
+          cout << scprintf("  r = %6.4f, s = %6.4f", r, s) << endl;
+          TriInterpCoefKey key(order, r, s);
+          RefTriInterpCoef coef = new TriInterpCoef(key);
+          for (int i=0; i<=order; i++) {
+              for (int j=0; j+i<=order; j++) {
+                  int k = order - i - j;
+                  cout << scprintf("    coef(%d,%d,%d) = %12.8f",
+                                   i,j,k,coef->coef(i,j,k))
+                       << endl;
+                }
+            }
+        }
+    }
+
   return 0;
 }
 

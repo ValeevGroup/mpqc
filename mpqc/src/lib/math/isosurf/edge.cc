@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <math/isosurf/triangle.h>
 #include <math/isosurf/edge.h>
 
 /////////////////////////////////////////////////////////////////////////
@@ -111,6 +112,62 @@ Edge::set_order(int order, const RefVolume&vol,double isovalue)
       _vertices[i] = new Vertex(newpoint,interpnorm);
     }
 
+}
+
+int
+Edge::interpolate(double r, SCVector3&point, SCVector3&norm)
+{
+  int i;
+  double s = 1.0 - r;
+  double rcoef[Triangle::max_order+1];
+  double scoef[Triangle::max_order+1];
+  double spacing = 1.0/_order;
+  rcoef[0] = 1.0;
+  scoef[0] = 1.0;
+  for (i=1; i<=_order; i++) {
+      rcoef[i] = rcoef[i-1]*(r-(i-1)*spacing)/(i*spacing);
+      scoef[i] = scoef[i-1]*(s-(i-1)*spacing)/(i*spacing);
+    }
+  int has_norm = 1;
+  for (i=0; i<=_order; i++) {
+      if ((has_norm = (has_norm && _vertices[i]->has_normal()))) break;
+    }
+  point = 0.0;
+  norm = 0.0;
+  for (i=0; i<=_order; i++) {
+      int j=_order-i;
+      double coef = rcoef[i]*scoef[j];
+      point += coef * _vertices[i]->point();
+      if (has_norm) norm += coef * _vertices[i]->normal();
+    }
+  if (has_norm) norm.normalize();
+  return has_norm;
+}
+
+int
+Edge::interpolate(double r, SCVector3&point, SCVector3&norm,
+                  const RefVolume &vol, double isovalue)
+{
+  // first guess
+  int has_norm = interpolate(r,point,norm);
+
+  if (!has_norm) {
+      cerr << "Edge::interpolate with volume requires norm"
+           << endl;
+      abort();
+    }
+
+  // refine guess
+  SCVector3 newpoint;
+  vol->solve(point,norm,isovalue,newpoint);
+  // compute the true normal
+  vol->set_x(newpoint);
+  if (vol->gradient_implemented()) {
+      vol->get_gradient(norm);
+      norm.normalize();
+    }
+
+  return has_norm || vol->gradient_implemented();
 }
 
 /////////////////////////////////////////////////////////////////////////////

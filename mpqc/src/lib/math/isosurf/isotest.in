@@ -13,7 +13,7 @@ surf<TriangulatedImplicitSurface>: (
       )
     resolution = 0.25
     remove_short_edges = yes
-    remove_slender_triangles = no
+    remove_slender_triangles = yes
     short_edge_factor = 0.4
     slender_triangle_factor = 0.2
     order = 3

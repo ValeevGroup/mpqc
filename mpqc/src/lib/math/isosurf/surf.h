@@ -133,8 +133,12 @@ class TriangulatedSurface: public DescribedClass {
     virtual void complete_surface();
 
     // clean up the surface
-    virtual void remove_short_edges(double cutoff_length = 1.0e-6);
-    virtual void remove_slender_triangles(double heigth_cutoff = 1.0e-6);
+    virtual void remove_short_edges(double cutoff_length = 1.0e-6,
+                                    const RefVolume &vol=0, double isoval=0.0);
+    virtual void remove_slender_triangles(
+                                    int remove_slender, double height_cutoff,
+                                    int remove_small, double area_cutoff,
+                                    const RefVolume &vol=0, double isoval=0.0);
     virtual void fix_orientation();
     virtual void clear();
 
@@ -253,12 +257,17 @@ class TriangulatedImplicitSurface: public TriangulatedSurface {
     double short_edge_factor_;
     int remove_slender_triangles_;
     double slender_triangle_factor_;
+    int remove_small_triangles_;
+    double small_triangle_factor_;
     double resolution_;
 
     int order_;
   public:
     TriangulatedImplicitSurface(const RefKeyVal&);
     ~TriangulatedImplicitSurface();
+
+    RefVolume volume() const { return vol_; }
+    double isovalue() const { return isovalue_; }
 
     void init();
 };

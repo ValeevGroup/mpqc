@@ -39,7 +39,7 @@
 #include <math/isosurf/vertexAVLSet.h>
 
 #ifndef WRITE_OOGL // this is useful for debugging this routine
-#define WRITE_OOGL 0
+#define WRITE_OOGL 1
 #endif
 
 #if WRITE_OOGL
@@ -49,7 +49,10 @@
 #endif
 
 void
-TriangulatedSurface::remove_slender_triangles(double height_cutoff)
+TriangulatedSurface::remove_slender_triangles(
+    int remove_slender, double height_cutoff,
+    int remove_small, double area_cutoff,
+    const RefVolume &vol, double isoval)
 {
   int i,j,k;
   Pix I,J,K;
@@ -144,7 +147,7 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
           if (h[2] < h[hmin]) hmin = 2;
 
           // see if the shortest height is below the cutoff
-          if (h[hmin] < height_cutoff) {
+          if (remove_slender && h[hmin] < height_cutoff) {
               // find the vertex that gets eliminated
               RefVertex vertex;
               for (j=0; j<3; j++) {

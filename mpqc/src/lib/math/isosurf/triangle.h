@@ -74,6 +74,8 @@ class Triangle: public VRefCount {
     void interpolate(const RefTriInterpCoef&,
                      double r,double s,const RefVertex&v, SCVector3& dA);
     void interpolate(double r,double s,const RefVertex&v, SCVector3& dA);
+    void interpolate(double r,double s,const RefVertex&v, SCVector3& dA,
+                     const RefVolume &vol, double isovalue);
 
     // returns a corner vertex from the triangle
     // i = 0 is the (0,0) vertex (or L1 = 1, L2 = 0, L3 = 0)

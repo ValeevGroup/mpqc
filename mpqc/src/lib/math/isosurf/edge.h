@@ -69,6 +69,11 @@ class Edge: public VRefCount {
     // add the endpoints to the set
     void add_vertices(SetRefVertex&);
     void set_order(int order, const RefVolume&vol,double isovalue);
+    // find the position of a point on the edge
+    int interpolate(double location, SCVector3&point, SCVector3&norm);
+    // find the true position of a point using the isosurface
+    int interpolate(double location, SCVector3&point, SCVector3&norm,
+                     const RefVolume &vol, double isovalue);
 };
 
 REF_dec(Edge);

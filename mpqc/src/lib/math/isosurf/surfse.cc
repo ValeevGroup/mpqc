@@ -36,7 +36,8 @@
 #include <math/isosurf/vertexAVLSet.h>
 
 void
-TriangulatedSurface::remove_short_edges(double length_cutoff)
+TriangulatedSurface::remove_short_edges(double length_cutoff,
+                                        const RefVolume &vol, double isoval)
 {
   int j,k;
   Pix I,J,K;
@@ -206,6 +207,14 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
               // (for now use one of the original, since it must lie on the
               // analytic surface)
               RefVertex replacement_vertex = edge->vertex(0);
+              // however, if we have a volume, find a new vertex on
+              // the analytic surface near the center of the edge
+              if (vol.nonnull()) {
+                  SCVector3 point, norm;
+                  int hn = edge->interpolate(0.5,point,norm,vol,isoval);
+                  replacement_vertex = new Vertex(point);
+                  if (hn) replacement_vertex->set_normal(norm);
+                }
               new_vertices.add(replacement_vertex);
               // for each vertex on the perimeter form a new edge to the
               // replacement vertex

@@ -231,6 +231,33 @@ Triangle::interpolate(const RefTriInterpCoef& coef,
 }
 
 void
+Triangle::interpolate(double r, double s,
+                      const RefVertex&result, SCVector3&dA,
+                      const RefVolume &vol, double isoval)
+{
+  // set up an initial dummy norm
+  SCVector3 norm(0.0);
+  result->set_normal(norm);
+
+  // initial guess
+  interpolate(r,s,result,dA);
+
+  // now refine that guess
+  SCVector3 trialpoint = result->point();
+  SCVector3 trialnorm = result->normal();
+  SCVector3 newpoint;
+  vol->solve(trialpoint,trialnorm,isoval,newpoint);
+  // compute the true normal
+  vol->set_x(newpoint);
+  if (vol->gradient_implemented()) {
+      vol->get_gradient(trialnorm);
+    }
+  trialnorm.normalize();
+  result->set_point(newpoint);
+  result->set_normal(trialnorm);
+}
+
+void
 Triangle::flip()
 {
   _orientation0 = _orientation0?0:1;

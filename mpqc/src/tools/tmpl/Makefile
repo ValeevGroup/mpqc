@@ -25,7 +25,10 @@ install_inc::
 	$(INCINSTALL) tmpl.h $(SRCDIR)/$(TOPDIR)/include
 
 tmpllex.c: tmpllex.l
-	lex -t $^ > tmpllex.c
+	$(LEX) -t $^ > tmpllex.c
+
+clean::
+	/bin/rm -f tmpllex.c
 
 tmplparse.c: tmplparse.y
 	yacc -d -v $^

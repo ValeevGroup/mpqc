@@ -7,9 +7,17 @@
 #include "matrix.h"
 #include "vector3.h"
 #include <math.h>
+#include <util/keyval/keyval.h>
 
 ////////////////////////////////////////////////////////////////////////
 // DVector3
+
+SCVector3::SCVector3(const RefKeyVal&keyval)
+{
+  _v[0] = keyval->doublevalue(0);
+  _v[1] = keyval->doublevalue(1);
+  _v[2] = keyval->doublevalue(2);
+}
 
 SCVector3::SCVector3(const RefSCVector&x)
 {

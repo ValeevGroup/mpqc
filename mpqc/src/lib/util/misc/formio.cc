@@ -113,7 +113,7 @@ SCFormIO::init_ostream(ostream &o)
 
   o.iword(skip_indent_) = 0;
   o.iword(indent_size_) = 0;
-  o.iword(nindent_) = 0;
+  o.iword(nindent_) = 2;
   o.iword(verbose_) = 0;
 }
 
@@ -122,16 +122,12 @@ SCFormIO::init()
 {
   ready_ = 1;
 
-  init_ostream(cout);
-  init_ostream(cerr);
-
   if (nullstream_.bad() || nullstream_.fail())
     nullstream_.open("/dev/null");
 
-  nullstream_.iword(skip_indent_) = 0;
-  nullstream_.iword(indent_size_) = 0;
-  nullstream_.iword(nindent_) = 0;
-  nullstream_.iword(verbose_) = 0;
+  init_ostream(cout);
+  init_ostream(cerr);
+  init_ostream(nullstream_);
 }
 
 ios&

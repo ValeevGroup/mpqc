@@ -30,6 +30,7 @@
 #endif
 
 #include <math.h>
+#include <float.h>
 
 #include <math/optimize/efc.h>
 #include <util/misc/formio.h>

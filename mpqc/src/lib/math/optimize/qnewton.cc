@@ -30,6 +30,7 @@
 #endif
 
 #include <math.h>
+#include <float.h>
 
 #include <math/optimize/qnewton.h>
 #include <util/keyval/keyval.h>

@@ -121,7 +121,7 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
     }
   nfzc = keyval->intvalue("nfzc");
   char *nfzc_charval = keyval->pcharvalue("nfzc");
-  if (!strcmp(nfzc_charval, "auto")) {
+  if (nfzc_charval && !strcmp(nfzc_charval, "auto")) {
       if (molecule()->max_z() > 30) {
           cerr << node0
                << "MBPT2: cannot use \"nfzc = auto\" for Z > 30" << endl;

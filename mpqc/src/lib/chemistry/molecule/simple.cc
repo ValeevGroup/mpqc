@@ -46,7 +46,7 @@ extern "C" void bzero(void*,int);
 
 //////////////////////////////////////////////////////////////////////
 
-DescribedClass_REF_def(SimpleCo);
+SavableState_REF_def(SimpleCo);
 
 #define CLASSNAME SimpleCo
 #define PARENTS virtual public SavableState

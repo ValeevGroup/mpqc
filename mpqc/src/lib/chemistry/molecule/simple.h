@@ -91,7 +91,7 @@ class SimpleCo : V_BASE {
 
     friend ostream& operator<<(ostream&,SimpleCo&);
   };
-DescribedClass_REF_dec(SimpleCo);
+SavableState_REF_dec(SimpleCo);
 
 
 /////////////////////////////////////////////////////////////////////////

@@ -320,6 +320,12 @@ ActiveMsgMemoryGrp::set_localsize(int localsize)
     }
 }
 
+void *
+ActiveMsgMemoryGrp::localdata()
+{
+  return data_;
+}
+
 ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()
 {
   deactivate();

@@ -289,6 +289,18 @@ ShmMemoryGrp::set_localsize(int localsize)
       fail = attach_memory(address,size);
       msg_->max(fail);
       if (fail) {
+
+
+
+
+
+
+
+
+
+
+
+
           detach_memory();
         }
       address = (void*) &((char*)address)[0x1000000];
@@ -315,6 +327,12 @@ ShmMemoryGrp::set_localsize(int localsize)
     }
 
   data_ = (void *) &((char*)memory_)[poolallocation];
+}
+
+void *
+ShmMemoryGrp::localdata()
+{
+  return &((char*)data_)[distsize_to_size(localoffset())];
 }
 
 void

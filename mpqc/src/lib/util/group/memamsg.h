@@ -125,6 +125,7 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     ~ActiveMsgMemoryGrp();
 
     void set_localsize(int);
+    void *localdata();
 
     virtual long lockcomm();
     virtual void unlockcomm(long oldvalue);

@@ -146,6 +146,8 @@ class MemoryGrp: public DescribedClass {
     virtual void set_localsize(int) = 0;
     //. Returns the amount of memory residing locally on \srccd{me()};
     int localsize() { return distsize_to_size(offsets_[me_+1]-offsets_[me_]); }
+    //. Returns a pointer to the local data.
+    virtual void *localdata() = 0;
     //. Returns the global offset to this node's memory.
     distsize_t localoffset() { return offsets_[me_]; }
     //. Returns the amount of memory residing on \vrbl{node}.

@@ -78,6 +78,12 @@ ProcMemoryGrp::set_localsize(int localsize)
 }
 
 void *
+ProcMemoryGrp::localdata()
+{
+  return data_;
+}
+
+void *
 ProcMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   return &data_[distsize_to_size(offset)];

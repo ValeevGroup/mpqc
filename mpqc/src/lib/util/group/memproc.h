@@ -48,6 +48,7 @@ class ProcMemoryGrp: public MemoryGrp {
     ~ProcMemoryGrp();
 
     void set_localsize(int);
+    void *localdata();
 
     void *obtain_readwrite(distsize_t offset, int size);
     void *obtain_readonly(distsize_t offset, int size);

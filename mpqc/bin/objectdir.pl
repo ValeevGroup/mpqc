@@ -84,7 +84,7 @@ sub dodir {
             }
             &dodir("$dir/$file", "$objdir/$file", $nexttop);
         }
-        elsif ("$file" eq "Makefile" && isobjectdirmake("$dir/file")) {
+        elsif ("$file" eq "Makefile" && isobjectdirmake("$dir/$file")) {
             #print "Found $dir/Makefile\n";
             local($nextdir);
             &domake("$topdir$dir", "$objdir/$file");

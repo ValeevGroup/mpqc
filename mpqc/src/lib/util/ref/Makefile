@@ -42,7 +42,7 @@ TESTCXX = reftest.cc reftestx.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
-INC = ref.h reftestx.h reftmpl.h identity.h
+INC = ref.h reftestx.h identity.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 

@@ -40,7 +40,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC =  LIBS.h state.h statein.h stateout.h \
        translate.h array.h \
-       stattmpl.h state_bin.h state_file.h state_text.h
+       state_bin.h state_file.h state_text.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 

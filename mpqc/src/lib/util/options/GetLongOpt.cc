@@ -221,7 +221,7 @@ GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, char *name)
 	 cerr << optmarker << c->option << "\n";
 	 return -1;	/* unsolicited value specification */
       }
-      c->value = 0;
+      c->value = 1;
       return 0;
    case GetLongOpt::OptionalValue :
       if ( *valtoken == '=' ) {

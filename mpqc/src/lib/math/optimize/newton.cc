@@ -56,9 +56,10 @@ NewtonOpt::_castdown(const ClassDesc*cd)
 }
 
 NewtonOpt::NewtonOpt(const RefKeyVal&keyval):
-  Optimize(keyval),
-  maxabs_gradient(-1.0)
+  Optimize(keyval)
 {
+  init();
+
   accuracy_ = keyval->doublevalue("accuracy",KeyValValuedouble(0.0001));
   print_x_ = keyval->booleanvalue("print_x");
   print_hessian_ = keyval->booleanvalue("print_hessian");

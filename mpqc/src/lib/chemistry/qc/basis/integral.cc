@@ -63,6 +63,7 @@ Integral::Integral(const RefGaussianBasisSet &b1,
 Integral::Integral(StateIn& s) :
   SavableState(s)
 {
+  storage_used_ = 0;
   bs1_.restore_state(s);
   bs2_.restore_state(s);
   bs3_.restore_state(s);
@@ -73,6 +74,7 @@ Integral::Integral(StateIn& s) :
 
 Integral::Integral(const RefKeyVal&)
 {
+  storage_used_ = 0;
   storage_ = 0;
   grp_ = MessageGrp::get_default_messagegrp();
 }

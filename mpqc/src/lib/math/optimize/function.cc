@@ -368,8 +368,11 @@ Function::set_dimension(const RefSCDimension& dim)
 {
   dim_ = dim;
   x_ = matrixkit_->vector(dim);
+  x_.assign(0.0);
   gradient_ = matrixkit()->vector(dim);
+  gradient_.result_noupdate().assign(0.0);
   hessian_ = matrixkit()->symmmatrix(dim);
+  hessian_.result_noupdate().assign(0.0);
 }
 
 int

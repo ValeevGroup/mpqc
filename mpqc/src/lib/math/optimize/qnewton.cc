@@ -57,9 +57,10 @@ QNewtonOpt::_castdown(const ClassDesc*cd)
 }
 
 QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
-  Optimize(keyval),
-  maxabs_gradient(-1.0)
+  Optimize(keyval)
 {
+  init();
+
   update_ = keyval->describedclassvalue("update");
   if (update_.nonnull()) update_->set_inverse();
   lineopt_ = keyval->describedclassvalue("lineopt");

@@ -50,15 +50,17 @@ OOGLRender::OOGLRender(const char * filename)
 {
   filename_ = strcpy(new char[strlen(filename)+1], filename);
   oogl_spheres_ = 0;
-  fp_ = 0;
+  sbuf_ = 0;
+  delete_sbuf_ = 0;
   clear();
 }
 
-OOGLRender::OOGLRender(FILE * fp)
+OOGLRender::OOGLRender(ostream &o)
 {
   oogl_spheres_ = 0;
   filename_ = 0;
-  fp_ = fp;
+  sbuf_ = o.rdbuf();
+  delete_sbuf_ = 0;
   clear();
 }
 
@@ -67,89 +69,100 @@ OOGLRender::OOGLRender(const RefKeyVal& keyval):
 {
   filename_ = keyval->pcharvalue("filename");
   oogl_spheres_ = keyval->booleanvalue("oogl_spheres");
-  if (!filename_) fp_ = stdout;
-  else fp_ = 0;
+  if (filename_) {
+      sbuf_ = 0;
+      delete_sbuf_ = 0;
+    }
+  else {
+      sbuf_ = cout.rdbuf();
+      delete_sbuf_ = 0;
+    }
   clear();
 }
 
 OOGLRender::~OOGLRender()
 {
-  if (filename_) {
-      delete[] filename_;
-      if (fp_) fclose(fp_);
-    }
+  delete[] filename_;
+  if (delete_sbuf_) delete sbuf_;
 }
 
 void
 OOGLRender::clear()
 {
   if (filename_) {
-      if (fp_) {
-          fclose(fp_);
+      if (delete_sbuf_) {
+          delete sbuf_;
         }
-      fp_ = fopen(filename_, "w");
-      if (!fp_) {
+      filebuf *fbuf = new filebuf();
+      fbuf->open(filename_,ios::out);
+      if (!fbuf->is_open()) {
           cerr << scprintf("OOGLRender: couldn't open \"%s\"\n", filename_);
           abort();
         }
+      sbuf_ = fbuf;
+      delete_sbuf_ = 1;
     }
 }
 
 void
 OOGLRender::render(const RefRenderedObject& object)
 {
-  fprintf(fp_, "{\n");
+  ostream o(sbuf_);
+  o << "{" << endl;
   if (object->name()) {
-      fprintf(fp_, "define %s\n", object->name());
+      o << "define " << object->name() << endl;
     }
   if (object->transform().nonnull()) {
-      fprintf(fp_, "= INST\n");
-      fprintf(fp_, "transform {\n");
+      o << "= INST" << endl;
+      o << "transform {" << endl;
       for (int i=0; i<4; i++) {
           for (int j=0; j<4; j++) {
-              fprintf(fp_, " %10.4f", object->transform()->transform()[j][i]);
+              o << scprintf(" %10.4f", object->transform()->transform()[j][i]);
             }
-          fprintf(fp_,"\n");
+          o << endl;
         }
-      fprintf(fp_,"}\n");
-      fprintf(fp_,"geom {\n");
+      o << "}" << endl;
+      o << "geom {" << endl;
     }
   if (object->material().nonnull()
       ||object->appearance().nonnull()) {
-      fprintf(fp_, "appearance {\n");
+      o << "appearance {" << endl;
       if (object->material().nonnull()) {
-          fprintf(fp_, "material {\n");
+          o << "material {" << endl;
           if (object->material()->ambient().is_set()) {
-              if (object->material()->ambient().overrides()) fprintf(fp_, "*");
-              fprintf(fp_, "ambient %10.4f %10.4f %10.4f\n",
-                      object->material()->ambient().value().red(),
-                      object->material()->ambient().value().green(),
-                      object->material()->ambient().value().blue());
+              if (object->material()->ambient().overrides()) o << "*";
+              o << scprintf("ambient %10.4f %10.4f %10.4f",
+                            object->material()->ambient().value().red(),
+                            object->material()->ambient().value().green(),
+                            object->material()->ambient().value().blue())
+                << endl;
             }
           if (object->material()->diffuse().is_set()) {
-              if (object->material()->diffuse().overrides()) fprintf(fp_, "*");
-              fprintf(fp_, "diffuse %10.4f %10.4f %10.4f\n",
-                      object->material()->diffuse().value().red(),
-                      object->material()->diffuse().value().green(),
-                      object->material()->diffuse().value().blue());
+              if (object->material()->diffuse().overrides()) o << "*";
+              o << scprintf("diffuse %10.4f %10.4f %10.4f",
+                            object->material()->diffuse().value().red(),
+                            object->material()->diffuse().value().green(),
+                            object->material()->diffuse().value().blue())
+                << endl;
             }
-          fprintf(fp_, "}\n");
+          o << "}" << endl;
         }
-      fprintf(fp_, "}\n");
+      o << "}" << endl;
     }
 
   Render::render(object);
 
   if (object->transform().nonnull()) {
-      fprintf(fp_,"}\n");
+      o << "}" << endl;
     }
-  fprintf(fp_, "}\n");
+  o << "}" << endl;
 }
 
 void
 OOGLRender::set(const RefRenderedObjectSet& set)
 {
-  fprintf(fp_,"LIST\n");
+  ostream o(sbuf_);
+  o << "LIST" << endl;
   for (int i=0; i<set->n(); i++) {
       render(set->element(i));
     }
@@ -159,7 +172,8 @@ void
 OOGLRender::sphere(const RefRenderedSphere& sphere)
 {
   if (oogl_spheres_) {
-      fprintf(fp_," = SPHERE 1.0 0.0 0.0 0.0\n");
+      ostream o(sbuf_);
+      o << " = SPHERE 1.0 0.0 0.0 0.0" << endl;
     }
   else {
       Render::sphere(sphere);
@@ -169,34 +183,36 @@ OOGLRender::sphere(const RefRenderedSphere& sphere)
 void
 OOGLRender::polygons(const RefRenderedPolygons& poly)
 {
+  ostream o(sbuf_);
   if (poly->have_vertex_rgb()) {
-      fprintf(fp_, " = COFF\n");
+      o << " = COFF" << endl;
     }
   else {
-      fprintf(fp_," = OFF\n");
+      o << " = OFF" << endl;
     }
-  fprintf(fp_, "%d %d 0\n", poly->nvertex(), poly->nface());
+  o << poly->nvertex() << " "
+    << poly->nface() << " 0" << endl;
   int i;
   for (i=0; i<poly->nvertex(); i++) {
-      fprintf(fp_, " %10.4f %10.4f %10.4f",
-              poly->vertex(i,0),
-              poly->vertex(i,1),
-              poly->vertex(i,2));
+      o << scprintf(" %10.4f %10.4f %10.4f",
+                    poly->vertex(i,0),
+                    poly->vertex(i,1),
+                    poly->vertex(i,2));
       if (poly->have_vertex_rgb()) {
           // The 1.0 is alpha
-          fprintf(fp_, " %10.4f %10.4f %10.4f 1.0",
-                  poly->vertex_rgb(i,0),
-                  poly->vertex_rgb(i,1),
-                  poly->vertex_rgb(i,2));
+          o << scprintf(" %10.4f %10.4f %10.4f 1.0",
+                        poly->vertex_rgb(i,0),
+                        poly->vertex_rgb(i,1),
+                        poly->vertex_rgb(i,2));
         }
-      fprintf(fp_, "\n");
+      o << endl;
     }
   for (i=0; i<poly->nface(); i++) {
-      fprintf(fp_, " %d", poly->nvertex_in_face(i));
+      o << " " << poly->nvertex_in_face(i);
       for (int j=0; j<poly->nvertex_in_face(i); j++) {
-          fprintf(fp_, " %d", poly->face(i,j));
+          o << " " << poly->face(i,j);
         }
-      fprintf(fp_, "\n");
+      o << endl;
     }
 }
 
@@ -204,50 +220,51 @@ void
 OOGLRender::polylines(const RefRenderedPolylines& poly)
 {
   int i;
+  ostream o(sbuf_);
 
   int nvertex= 0;
   for (i=0; i<poly->npolyline(); i++) nvertex += poly->nvertex_in_polyline(i);
-  fprintf(fp_, " = VECT\n");
-  fprintf(fp_, "%d %d %d\n",
-          poly->npolyline(),
-          nvertex,
-          (poly->have_vertex_rgb()? nvertex:0));
+  o << " = VECT" << endl;
+  o << poly->npolyline()
+    << nvertex
+    << (poly->have_vertex_rgb()? nvertex:0)
+    << endl;
   for (i=0; i<poly->npolyline(); i++) {
-      fprintf(fp_, " %d", poly->nvertex_in_polyline(i));
+      o << " " << poly->nvertex_in_polyline(i);
     }
-  fprintf(fp_, "\n");
+  o << endl;
   if (poly->have_vertex_rgb()) {
       for (i=0; i<poly->npolyline(); i++) {
-          fprintf(fp_, " %d", poly->nvertex_in_polyline(i));
+          o << " " << poly->nvertex_in_polyline(i);
         }
     }
   else {
       for (i=0; i<poly->npolyline(); i++) {
-          fprintf(fp_, " 0");
+          o << " 0";
         }
     }
-  fprintf(fp_, "\n");
+  o << endl;
   for (i=0; i<poly->npolyline(); i++) {
       for (int j=0; j<poly->nvertex_in_polyline(i); j++) {
           int ivertex = poly->polyline(i,j);
-          fprintf(fp_, " %10.4f %10.4f %10.4f",
-                  poly->vertex(ivertex,0),
-                  poly->vertex(ivertex,1),
-                  poly->vertex(ivertex,2));
+          o << scprintf(" %10.4f %10.4f %10.4f",
+                        poly->vertex(ivertex,0),
+                        poly->vertex(ivertex,1),
+                        poly->vertex(ivertex,2));
         }
     }
-  fprintf(fp_, "\n");
+  o << endl;
   if (poly->have_vertex_rgb()) {
       for (i=0; i<poly->npolyline(); i++) {
           for (int j=0; j<poly->nvertex_in_polyline(i); j++) {
               int ivertex = poly->polyline(i,j);
-              fprintf(fp_, " %10.4f %10.4f %10.4f 1.0",
-                      poly->vertex_rgb(ivertex,0),
-                      poly->vertex_rgb(ivertex,1),
-                      poly->vertex_rgb(ivertex,2));
+              o << scprintf(" %10.4f %10.4f %10.4f 1.0",
+                            poly->vertex_rgb(ivertex,0),
+                            poly->vertex_rgb(ivertex,1),
+                            poly->vertex_rgb(ivertex,2));
             }
         }
-      fprintf(fp_, "\n");
+      o << endl;
     }
 }
 

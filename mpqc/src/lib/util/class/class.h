@@ -248,8 +248,8 @@ class DescribedClass : public RefCount {
     DescribedClass& operator=(const DescribedClass&);
     virtual ~DescribedClass();
     /** This returns the unique pointer to the ClassDesc corresponding
-        to the given type_info object. */
-    ClassDesc* class_desc() const;
+        to the given type_info object.  Null is returned if it fails. */
+    ClassDesc* class_desc() const throw();
     /// Return the name of the object's exact type.
     const char* class_name() const;
     /// Return the version of the class.

@@ -627,9 +627,16 @@ DescribedClass::~DescribedClass()
 }
 
 ClassDesc*
-DescribedClass::class_desc() const
+DescribedClass::class_desc() const throw()
 {
-  return ClassDesc::class_desc(typeid(*this));
+  ClassDesc *cd;
+  try {
+      cd = ClassDesc::class_desc(typeid(*this));
+    }
+  catch (...) {
+      cd = 0;
+    }
+  return cd;
 }
 
 const char* DescribedClass::class_name() const

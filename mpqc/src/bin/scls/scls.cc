@@ -32,6 +32,7 @@
 #include <new>
 #include <unistd.h>
 
+#include <util/misc/scexception.h>
 #include <util/misc/exenv.h>
 #include <util/misc/formio.h>
 #include <util/group/mstate.h>
@@ -51,6 +52,11 @@ using namespace std;
 using namespace sc;
 
 //////////////////////////////////////////////////////////////////////////
+
+// This forces the exception classes to be linked in.  Otherwise they won't
+// for single pass linkage of static libraries.  This is because of library
+// ordering and interdependency issues.
+static SCException ex;
 
 static void
 clean_up(void)

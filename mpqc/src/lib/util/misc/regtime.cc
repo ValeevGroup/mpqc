@@ -87,6 +87,7 @@ int getrusage (
 #include <util/keyval/keyval.h>
 #include <util/misc/regtime.h>
 #include <util/misc/timer.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;
@@ -397,12 +398,8 @@ RegionTimer::exit(const char *name, bool do_not_throw)
           return;
         }
       else {
-          ExEnv::errn() << "TimeRegion::exit(\"" << name << "\"):"
-                        << " current region"
-                        << " (\"" << current_->name() << "\")"
-                        << " doesn't match name"
-                        << endl;
-          throw std::runtime_error("RegionTimer: region mismatch");
+          throw ProgrammingError("region mismatch",
+                                 __FILE__, __LINE__, this->class_desc());
         }
     }
   if (cpu_time_) current_->cpu_exit(get_cpu_time());
@@ -414,8 +411,8 @@ RegionTimer::exit(const char *name, bool do_not_throw)
           return;
         }
       else {
-          ExEnv::errn() << "RegionTimer::exit: already at top level" << endl;
-          throw std::runtime_error("RegionTimer: tried to exit top level");
+          throw ProgrammingError("tried to exit top level",
+                                 __FILE__, __LINE__, this->class_desc());
         }
     }
   current_ = current_->up();

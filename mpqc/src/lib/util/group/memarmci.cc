@@ -40,6 +40,7 @@ extern "C" {
 #include <stdexcept>
 
 #include <util/misc/formio.h>
+#include <util/misc/scexception.h>
 #include <util/group/memarmci.h>
 
 using namespace sc;
@@ -208,7 +209,8 @@ ARMCIMemoryGrp::malloc_local(size_t nbyte)
 {
   void* buf = ARMCI_Malloc_local(nbyte);
   if (buf == NULL)
-    throw std::runtime_error("ARMCIMemoryGrp::malloc_local -- failed to allocate memory");
+    throw MemAllocFailed("malloc_local -- failed to allocate memory",
+                         __FILE__, __LINE__, nbyte, this->class_desc());
   return buf;
 }
 

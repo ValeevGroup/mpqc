@@ -36,7 +36,9 @@
 #include <scconfig.h>
 #endif
 
+
 #include <util/misc/formio.h>
+#include <util/misc/scexception.h>
 #include <util/group/file.h>
 
 #include <util/group/fileproc.h>
@@ -92,9 +94,8 @@ FileGrp::open()
     datafile_ = open(filename_, O_RDWR);
   }
   else {
-    ostringstream errmsg;
-    errsmg << "FileGrp::open() called but filename has not been set" << ends;
-    throw runtime_error(errmsg.str());
+    throw ProgrammingError("open() called but filename has not been set",
+                           __FILE__, __LINE__, class_desc());
   }
 }
 
@@ -108,9 +109,8 @@ void
 FileGrp::set_filename(char *name)
 {
   if (filename_) {
-    ostringstream errmsg;
-    errsmg << "FileGrp::set_filename() called but filename has been set already" << ends;
-    throw runtime_error(errmsg.str());
+    throw ProgrammingError("set_filename() called but filename has been set already",
+                           __FILE__, __LINE__, class_desc());
   }
   else
     filename_ = strdup(name);

@@ -43,20 +43,24 @@ using namespace sc;
 SCException::SCException(const char *description,
                          const char *file,
                          int line,
-                         const ClassDesc *class_desc) throw():
+                         const ClassDesc *class_desc,
+                         const char *exception_type) throw():
   description_(description),
   file_(file),
   line_(line),
-  class_desc_(class_desc)
+  class_desc_(class_desc),
+  exception_type_(exception_type)
 {
   try {
       elaboration_ = new ostringstream;
-      elaborate() << "exception: " << description
+      elaborate() << "exception:   " << exception_type_
                   << std::endl
-                  << "location: " << file << ":" << line
+                  << "description: " << description
+                  << std::endl
+                  << "location:    " << file << ":" << line
                   << std::endl;
       if (class_desc_) {
-          elaborate() << "throwing class: " << class_desc_->name()
+          elaborate() << "class:       " << class_desc_->name()
                       << std::endl;
         }
     }
@@ -113,14 +117,121 @@ SCException::elaborate()
 }
 
 ////////////////////////////////////////////////////////////////////////
+// InputError
+
+InputError::InputError(
+    const char *description,
+    const char *file,
+    int line,
+    const char *keyword,
+    const ClassDesc *class_desc,
+    const char *exception_type) throw():
+  SCException(description, file, line, class_desc, exception_type),
+  keyword_(keyword)
+{
+  if (keyword_) {
+      try {
+          elaborate() << "keyword:     " << keyword_ << std::endl;
+        }
+      catch (...) {
+        }
+    }
+}
+  
+InputError::InputError(const InputError& ref) throw():
+  SCException(ref),
+  keyword_(ref.keyword_)
+{
+}
+
+InputError::~InputError() throw()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+// ProgrammingError
+
+ProgrammingError::ProgrammingError(
+    const char *description,
+    const char *file,
+    int line,
+    const ClassDesc *class_desc,
+    const char *exception_type) throw():
+  SCException(description, file, line, class_desc, exception_type)
+{
+}
+  
+ProgrammingError::ProgrammingError(const ProgrammingError& ref) throw():
+  SCException(ref)
+{
+}
+
+ProgrammingError::~ProgrammingError() throw()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+// SystemException
+
+SystemException::SystemException(
+    const char *description,
+    const char *file,
+    int line,
+    const ClassDesc *class_desc,
+    const char *exception_type) throw():
+  SCException(description, file, line, class_desc, exception_type)
+{
+}
+  
+SystemException::SystemException(const SystemException& ref) throw():
+  SCException(ref)
+{
+}
+
+SystemException::~SystemException() throw()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+// MemAllocFailure
+
+MemAllocFailed::MemAllocFailed(const char *description,
+                               const char *file,
+                               int line,
+                               size_t nbyte,
+                               const ClassDesc *class_desc,
+                               const char *exception_type) throw():
+  SystemException(description, file, line, class_desc, exception_type),
+  nbyte_(nbyte)
+{ 
+  try {
+      elaborate() << "nbyte:       "
+                  << nbyte
+                  << std::endl;
+    }
+  catch(...) {
+    }
+}
+
+MemAllocFailed::MemAllocFailed(const MemAllocFailed& ref) throw():
+  SystemException(ref), nbyte_(ref.nbyte_)
+{ 
+}
+
+MemAllocFailed::~MemAllocFailed() throw()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
 // AlgorithmException
 
 AlgorithmException::AlgorithmException(
     const char *description,
     const char *file,
     int line,
-    const ClassDesc *class_desc) throw():
-  SCException(description, file, line, class_desc)
+    const ClassDesc *class_desc,
+    const char *exception_type) throw():
+  SCException(description, file, line, class_desc, exception_type)
 {
 }
   
@@ -140,12 +251,13 @@ MaxIterExceeded::MaxIterExceeded(const char *description,
                                  const char *file,
                                  int line,
                                  int maxiter,
-                                 const ClassDesc *class_desc) throw():
-  AlgorithmException(description, file, line, class_desc),
+                                 const ClassDesc *class_desc,
+                                 const char *exception_type) throw():
+  AlgorithmException(description, file, line, class_desc, exception_type),
   max_iter_(maxiter)
 { 
   try {
-      elaborate() << "exceeded maximum number of iterations: max_iter = "
+      elaborate() << "max_iter:    "
                   << maxiter
                   << std::endl;
     }
@@ -170,13 +282,15 @@ ToleranceExceeded::ToleranceExceeded(const char *description,
                                      int line,
                                      double tol,
                                      double val,
-                                     const ClassDesc *class_desc) throw():
-  AlgorithmException(description, file, line, class_desc),
+                                     const ClassDesc *class_desc,
+                                     const char *exception_type) throw():
+  AlgorithmException(description, file, line, class_desc, exception_type),
   tolerance_(tol), value_(val)
 {
   try {
-      elaborate() << "exceeded tolerance: value = " << value_
-                  << " tolerance = " << tolerance_
+      elaborate() << "value:       " << value_
+                  << std::endl
+                  << "tolerance:   " << tolerance_
                   << std::endl;
     }
   catch(...) {

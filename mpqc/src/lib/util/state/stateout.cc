@@ -29,7 +29,6 @@
 #pragma implementation
 #endif
 
-#include <stdexcept>
 #include <limits.h>
 
 #include <scconfig.h>
@@ -46,6 +45,7 @@
 #include <sys/types.h>
 #endif
 
+#include <util/misc/scexception.h>
 #include <util/state/translate.h>
 #include <util/state/stateout.h>
 
@@ -150,7 +150,9 @@ int StateOut::put(double r) { return put_array_double(&r,1); }
 int StateOut::put(unsigned long r)
 {
   if (r > INT_MAX) {
-      throw std::runtime_error("StateOut::put max allowed size exceeded");
+      throw LimitExceeded<unsigned long>(
+          "StateOut::put max allowed size exceeded",
+          __FILE__, __LINE__, INT_MAX, r);
     }
   return put(int(r));
 }

@@ -51,13 +51,15 @@ class SCException: public std::exception {
     const char *file_;
     int line_;
     const ClassDesc* class_desc_;
+    const char *exception_type_;
     std::ostringstream *elaboration_;
 
   public:
     SCException(const char *description = 0,
                 const char *file = 0,
                 int line = 0,
-                const ClassDesc *class_desc = 0) throw();
+                const ClassDesc *class_desc = 0,
+                const char *exception_type = "SCException") throw();
     SCException(const SCException&) throw();
     ~SCException() throw();
 
@@ -69,6 +71,7 @@ class SCException: public std::exception {
     const char *file() const throw() { return file_; }
     int line() const throw() { return line_; }
     const ClassDesc *class_desc() const throw() { return class_desc_; }
+    const char *exception_type() const throw() { return exception_type_; }
 
     /** Returns a stream where addition information about the exception can
         be written.  This will throw if it is impossible to elaborate
@@ -76,12 +79,85 @@ class SCException: public std::exception {
     std::ostream &elaborate();
 };
 
-/////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////
+// Programming Error Exceptions
+
+/** This is thrown when a situations arises that should be impossible.
+ */
+class ProgrammingError: public SCException {
+
+  public:
+    ProgrammingError(const char *description = 0,
+                     const char *file = 0,
+                     int line = 0,
+                     const ClassDesc *class_desc = 0,
+                     const char *exception_type = "ProgrammingError") throw();
+    ProgrammingError(const ProgrammingError&) throw();
+    ~ProgrammingError() throw();
+};
+
+// ///////////////////////////////////////////////////////////////////////
+// Input Error Exceptions
+
+/** This is thrown when invalid input is provided.  Note that sometimes
+    input can be internally generated, so what logically would be a
+    ProgrammingError could result in an InputError being thrown.
+ */
+class InputError: public SCException {
+    const char *keyword_;
+
+  public:
+    InputError(const char *description = 0,
+               const char *file = 0,
+               int line = 0,
+               const char *keyword = 0,
+               const ClassDesc *class_desc = 0,
+               const char *exception_type = "InputError") throw();
+    InputError(const InputError&) throw();
+    ~InputError() throw();
+    const char *keyword() const throw() { return keyword_; }
+};
+
+// ///////////////////////////////////////////////////////////////////////
+// System Exceptions
+
+/** This is thrown when a system problem occurs.
+ */
+class SystemException: public SCException {
+
+  public:
+    SystemException(const char *description = 0,
+                    const char *file = 0,
+                    int line = 0,
+                    const ClassDesc *class_desc = 0,
+                    const char *exception_type = "SystemException") throw();
+    SystemException(const SystemException&) throw();
+    ~SystemException() throw();
+};
+
+/** This is thrown when a memory allocation fails.
+ */
+class MemAllocFailed: public SystemException {
+    size_t nbyte_;
+
+  public:
+    MemAllocFailed(const char *description = 0,
+                   const char *file = 0,
+                   int line = 0,
+                   size_t nbyte = 0,
+                   const ClassDesc *class_desc = 0,
+                   const char *exception_type = "MemAllocFailed") throw();
+    MemAllocFailed(const MemAllocFailed&) throw();
+    ~MemAllocFailed() throw();
+
+    size_t nbyte() const throw() { return nbyte_; }
+};
+
+// ///////////////////////////////////////////////////////////////////////
 // Algorithm Exceptions
 
 /** This exception is thrown whenever a problem with an algorithm is
-    encountered.  Usually, a class derived from this is thrown, such as
-    MaxIterExceeded or ToleranceExeeded.
+    encountered.
 */
 class AlgorithmException: public SCException {
 
@@ -89,7 +165,9 @@ class AlgorithmException: public SCException {
     AlgorithmException(const char *description = 0,
                        const char *file = 0,
                        int line = 0,
-                       const ClassDesc *class_desc = 0) throw();
+                       const ClassDesc *class_desc = 0,
+                       const char *exception_type = "AlgorithmException")
+        throw();
     AlgorithmException(const AlgorithmException&) throw();
     ~AlgorithmException() throw();
 };
@@ -105,7 +183,8 @@ class MaxIterExceeded: public AlgorithmException {
                     const char *file = 0,
                     int line = 0,
                     int maxiter = 0,
-                    const ClassDesc *class_desc = 0) throw();
+                    const ClassDesc *class_desc = 0,
+                    const char *exception_type = "MaxIterExceeded") throw();
     MaxIterExceeded(const MaxIterExceeded&) throw();
     ~MaxIterExceeded() throw();
 
@@ -115,8 +194,8 @@ class MaxIterExceeded: public AlgorithmException {
 /** This is thrown when when some tolerance is exceeded.
  */
 class ToleranceExceeded: public AlgorithmException {
-    const double tolerance_;
-    const double value_;
+    double tolerance_;
+    double value_;
 
 public:
     ToleranceExceeded(const char *description = 0,
@@ -124,11 +203,54 @@ public:
                       int line = 0,
                       double tol=0,
                       double val=0,
-                      const ClassDesc *class_desc = 0) throw();
+                      const ClassDesc *class_desc = 0,
+                      const char *exception_type = "ToleranceExceeded") throw();
     ToleranceExceeded(const ToleranceExceeded&) throw();
     ~ToleranceExceeded() throw();
     double tolerance() throw() { return tolerance_; }
     double value() throw() { return value_; }
+};
+
+// ///////////////////////////////////////////////////////////////////////
+// Limit Exceeded Exceptions
+
+/** This is thrown when a limit is exceeded.  It is more general than
+    ToleranceExceeded.  For problems that are numerical in nature and use
+    double types, then ToleranceExceeded should be used instead.
+*/
+template <class T>
+class LimitExceeded: public SCException {
+    T limit_;
+    T value_;
+
+public:
+    LimitExceeded(const char *description,
+                  const char *file,
+                  int line,
+                  T lim,
+                  T val,
+                  const ClassDesc *class_desc = 0,
+                  const char *exception_type = "LimitExceeded") throw():
+      SCException(description, file, line, class_desc, exception_type),
+      limit_(lim), value_(val)
+        {
+          try {
+              elaborate() << "value:       " << value_
+                          << std::endl
+                          << "limit:       " << limit_
+                          << std::endl;
+            }
+          catch(...) {
+            }
+        }
+    LimitExceeded(const LimitExceeded&ref) throw():
+      SCException(ref),
+      limit_(ref.limit_), value_(ref.value_)
+        {
+        }
+    ~LimitExceeded() throw() {}
+    T tolerance() throw() { return limit_; }
+    T value() throw() { return value_; }
 };
 
 }

@@ -33,6 +33,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/group/pool.h>
 #include <util/group/memrdma.h>
@@ -112,7 +113,8 @@ RDMAMemoryGrp::free_region(void*data)
           return;
         }
     }
-  throw std::runtime_error("could not find data to release in a Pool");
+  throw ProgrammingError("could not find data to release in a Pool",
+                         __FILE__, __LINE__, this->class_desc());
 }
 
 void

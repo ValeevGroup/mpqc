@@ -77,6 +77,8 @@ main(int argc, char **argv)
       for (i=0; i < nunique; i++) cout << " " << unique_atoms[i]+1;
       cout << endl;
 
+      delete[] unique_atoms;
+
       mol->point_group().char_table().print();
     }
 

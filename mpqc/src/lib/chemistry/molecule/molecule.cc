@@ -630,16 +630,16 @@ Molecule::transform_to_principal_axes(int trans_frame)
 
   // mol_move_to_com(mol);
 
-  double *inert[3], *evecs[3];
+  double *inert[3], inert_dat[9], *evecs[3], evecs_dat[9];
   double evals[3];
 
   int i;
   for (i=0; i < 3; i++) {
-    inert[i] = new double[3];
-    evecs[i] = new double[3];
-    memset(inert[i],'\0',sizeof(double)*3);
-    memset(evecs[i],'\0',sizeof(double)*3);
+    inert[i] = &inert_dat[i*3];
+    evecs[i] = &evecs_dat[i*3];
   }
+  memset(inert_dat,'\0',sizeof(double)*9);
+  memset(evecs_dat,'\0',sizeof(double)*9);
 
   AtomicCenter ac;
   for (i=0; i < natom(); i++) {

@@ -82,7 +82,7 @@ KeyValValue::intvalue(int& val)
 }
 
 KeyVal::KeyValError
-KeyValValue::pcharvalue(char*& val)
+KeyValValue::pcharvalue(const char*& val)
 {
   val = KeyVal::Defaultpchar();
   return KeyVal::WrongType;
@@ -203,7 +203,7 @@ KeyValValuepchar::~KeyValValuepchar()
   delete[] _val;
 }
 KeyVal::KeyValError
-KeyValValuepchar::pcharvalue(char*&val)
+KeyValValuepchar::pcharvalue(const char*&val)
 {
   val = _val;
   return KeyVal::OK;
@@ -287,9 +287,9 @@ KeyValValueString::intvalue(int&val)
   return KeyVal::OK;
 }
 KeyVal::KeyValError
-KeyValValueString::pcharvalue(char*&val)
+KeyValValueString::pcharvalue(const char*&val)
 {
-  val = strcpy(new char[strlen(_val)+1],_val);
+  val = _val;
   return KeyVal::OK;
 }
 

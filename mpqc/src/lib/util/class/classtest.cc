@@ -168,6 +168,7 @@ main()
 
 #ifndef NO_VIRTUAL_BASES
   D* dtst = D::castdown(ClassDesc::name_to_class_desc("D")->create());
+  delete dtst;
 
   // check the compiler's handling of virtual inheritance
   D* dt = new D;
@@ -190,6 +191,12 @@ main()
        << ' ' << ct->nreference()
        << ' ' << bt->nreference() << endl;
   cout << "done with virtual inheritance test:" << endl;
+  dt->dereference();
+  if (dt->nreference() == 0) delete dt;
+  ct->dereference();
+  if (ct->nreference() == 0) delete ct;
+  bt->dereference();
+  if (bt->nreference() == 0) delete bt;
 
 #ifndef SIMPLE_TEST
   D d;

@@ -203,6 +203,9 @@ ParentClasses::init(const char* parents)
           // parent's parents   ' for braindead compiler
           if (!ClassDesc::all()[parentkey]) {
               ClassDesc::all()[parentkey] = new ClassDesc(token);
+              if (ClassDesc::unresolved_parents_ == 0) {
+                  ClassDesc::unresolved_parents_ = new SETCTOR;
+                }
               ClassDesc::unresolved_parents_->add(token);
             }
           ParentClass* p = new ParentClass(ClassDesc::all()[parentkey],
@@ -271,7 +274,6 @@ ClassDesc::ClassDesc(char* name, int version,
   // make sure that the static members have been initialized
   if (!all_) {
       all_ = new MAPCTOR;
-      unresolved_parents_ = new SETCTOR;
       const char* tmp = getenv("LD_LIBRARY_PATH");
       if (tmp) {
           // Needed for misbehaving getenv's.
@@ -330,12 +332,36 @@ ClassDesc::ClassDesc(char* name, int version,
 
       delete (*all_)[key];
       unresolved_parents_->del(key);
+      if (unresolved_parents_->length() == 0) {
+          delete unresolved_parents_;
+          unresolved_parents_ = 0;
+        }
     }
   (*all_)[key] = this;
 }
 
 ClassDesc::~ClassDesc()
 {
+  // remove references to this class descriptor
+  if (children_) {
+      for (Pix i=children_->first(); i; children_->next(i)) {
+          if (all_->contains(children_->operator()(i))) {
+              (*all_)[children_->operator()(i)]->change_parent(this,0);
+            }
+        }
+    }
+  // delete this ClassDesc from the list of all ClassDesc's
+  ClassKey key(classname_);
+  all_->del(key);
+  // if the list of all ClassDesc's is empty, delete it
+  if (all_->length() == 0) {
+      delete all_;
+      all_ = 0;
+      delete[] classlib_search_path_;
+      classlib_search_path_ = 0;
+    }
+
+  // delete local data
   delete[] classname_;
   if (children_) delete children_;
 }
@@ -488,7 +514,8 @@ ClassDesc::load_class(const char* classname)
                       dlopen(libname, RTLD_LAZY);
 
                       // load code for parents
-                      while (unresolved_parents_->length()) {
+                      while (unresolved_parents_
+                             && unresolved_parents_->length()) {
                           load_class(unresolved_parents_->operator()
                                      (unresolved_parents_->first()).name());
                         }

@@ -240,7 +240,7 @@ class KeyValValue: public VRefCount {
     virtual KeyVal::KeyValError floatvalue(float&);
     virtual KeyVal::KeyValError charvalue(char&);
     virtual KeyVal::KeyValError intvalue(int&);
-    virtual KeyVal::KeyValError pcharvalue(char*&);
+    virtual KeyVal::KeyValError pcharvalue(const char*&);
     virtual KeyVal::KeyValError describedclassvalue(RefDescribedClass&);
 };
 
@@ -303,7 +303,7 @@ class KeyValValuepchar: public KeyValValue {
     KeyValValuepchar(const char*);
     KeyValValuepchar(const KeyValValuepchar&);
     ~KeyValValuepchar();
-    KeyVal::KeyValError pcharvalue(char*&);
+    KeyVal::KeyValError pcharvalue(const char*&);
 };
 
 class KeyValValueRefDescribedClass: public KeyValValue {
@@ -328,7 +328,7 @@ class KeyValValueString: public KeyValValue {
     KeyVal::KeyValError floatvalue(float&);
     KeyVal::KeyValError charvalue(char&);
     KeyVal::KeyValError intvalue(int&);
-    KeyVal::KeyValError pcharvalue(char*&);
+    KeyVal::KeyValError pcharvalue(const char*&);
 };
 
 // this class allows keyval associations to be set up by the program,

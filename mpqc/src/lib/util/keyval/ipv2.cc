@@ -64,6 +64,7 @@ IPV2::~IPV2()
   ip_tree = 0;
   delete lexer;
   delete[] filename_;
+  free_keyword_tree_list(ip_cwk);
 }
 
 void IPV2::read(istream&in,ostream&out,const char *filename)

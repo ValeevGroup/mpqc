@@ -432,8 +432,7 @@ IPV2::ip_assign_variable(char* variable)
   if (table_keywords) ip_next_table_entry();
 
   /* Note that the subtree is really a reference to another subtree. */
-  sub_tree->variable = (char*)malloc(strlen(variable)+1);
-  strcpy(sub_tree->variable,variable);
+  sub_tree->variable = variable;
 }
 
 char *
@@ -566,6 +565,8 @@ IPV2::ip_append_keystrings(char*s1,char*s2)
   if (s1) strcat(r,s1);
   strcat(r,":");
   strcat(r,s2);
+  if (s1) free(s1);
+  free(s2);
   return r;
 }
 

@@ -196,6 +196,7 @@ StateOut::operator=(const StateOut&)
 StateOut::~StateOut()
 {
   if(ps_) delete ps_; ps_=0;
+  delete _classidmap;
 }
 
 void

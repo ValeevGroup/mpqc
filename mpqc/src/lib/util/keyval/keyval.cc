@@ -136,10 +136,10 @@ KeyVal::key_pcharvalue(const char* key)
 {
   RefKeyValValue val(value(key));
   if (val.nonnull()) {
-      char* result;
+      const char* result;
       seterror(val->pcharvalue(result));
-      if (result) result = strcpy(new char[strlen(result)+1], result);
-      return result;
+      if (result) return strcpy(new char[strlen(result)+1], result);
+      return 0;
     }
   return Defaultpchar();
 }

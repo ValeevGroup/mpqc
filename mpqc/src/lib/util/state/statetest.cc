@@ -54,6 +54,7 @@ class A: A_parents {
     A();
     A(const RefKeyVal&);
     A(StateIn&);
+    ~A();
     void save_data_state(StateOut&);
     inline int& a() { return ia; };
     virtual void print (ostream&s = cout)
@@ -101,6 +102,10 @@ A::A(StateIn&s):
   s.getstring(junk);
   delete[] junk;
   s.get(array);
+}
+A::~A()
+{
+  delete[] array;
 }
 void
 A::save_data_state(StateOut&s)
@@ -354,6 +359,7 @@ D::_castdown(const ClassDesc*cd)
 #  define StateInType StateInBinXDR
 #endif
 
+int
 main()
 {
   RefA ra;
@@ -456,4 +462,6 @@ main()
   ra2.restore_state(si);
   if (ra.nonnull()) { ra->print(); cout << endl; }
   cout << "ra2.nonnull() = " << ra2.nonnull() << "(should be 0)\n";
+
+  return 0;
 }

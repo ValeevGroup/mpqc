@@ -97,11 +97,11 @@ class RedundantCartesianIter {
     operator int() { return !done_; }
 
     /// The current exponent of x.
-    int a() { return l(0); }
+    int a();
     /// The current exponent of y.
-    int b() { return l(1); }
+    int b();
     /// The current exponent of z.
-    int c() { return l(2); }
+    int c();
     /// The angular momentum.
     int l() { return l_; }
     /// Returns a() if i==0, b() if i==1, and c() if i==2.
@@ -143,6 +143,24 @@ RedundantCartesianIter::l(int axis)
   int r = 0;
   for (i=0; i<l_; i++) if (axis_[i]==axis) r++;
   return r;
+}
+
+inline int
+RedundantCartesianIter::a()
+{
+  return l(0);
+}
+
+inline int
+RedundantCartesianIter::b()
+{
+  return l(1);
+}
+
+inline int
+RedundantCartesianIter::c()
+{
+  return l(2);
 }
 
 /** Like RedundantCartesianIter, except a, b, and c are fixed to a given

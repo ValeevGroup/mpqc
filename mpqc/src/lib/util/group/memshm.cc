@@ -587,9 +587,13 @@ ShmMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 
   double *source_data = (double*) obtain_readwrite(offset, length);
 
+  // if locks are not being in obtain_readwrite used we must still be sure
+  // to use locks here, since we have direct access to global memory
+  if (!use_locks_) obtain_lock();
   for (int i=0; i<dlength; i++) {
       source_data[i] += data[i];
     }
+  if (!use_locks_) release_lock();
 
   release_write((void*) source_data, offset, length);
 }

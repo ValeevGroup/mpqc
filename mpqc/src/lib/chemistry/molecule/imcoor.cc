@@ -576,7 +576,7 @@ IntMolecularCoor::dim()
   return dim_;
 }
 
-void
+int
 IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 {
   // get a reference to Molecule for convenience
@@ -584,8 +584,6 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 
   // convergence parameters
   const int maxstep = 100;
-  // need to convergence tightly in case a tight optimization is being run
-  // const double cartesian_tolerance = 1.0e-12;
   // don't bother updating the bmatrix when the error is less than this
   const double update_tolerance = 1.0e-6;
 
@@ -612,7 +610,7 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
       RefSCElementOp op = maxabs;
       displacement.element_op(op);
       if (maxabs->result() < cartesian_tolerance_) {
-          return;
+          return 0;
         }
 
       if ((update_bmat_ && (maxabs->result()>update_tolerance)) || step == 0) {
@@ -643,10 +641,11 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
   fprintf(stderr,"IntMolecularCoor"
           "::to_cartesian(RefSCVector&new_internal):"
           " too many iterations in geometry update\n");
-  abort();
+
+  return -1;
 }
 
-void
+int
 IntMolecularCoor::to_internal(RefSCVector&internal)
 {
   variable_->update_values(molecule_);
@@ -655,18 +654,20 @@ IntMolecularCoor::to_internal(RefSCVector&internal)
   for (int i=0; i<n; i++) {
       internal(i) = variable_->coor(i)->value();
     }
+
+  return 0;
 }
 
-void
+int
 IntMolecularCoor::to_cartesian(RefSCVector&gradient,RefSCVector&internal)
 {
   fprintf(stderr, "IntMolecularCoor::to_cartesian(RefSCVector&,RefSCVector&):"
           " not available\n");
-  abort();
+  return -1;
 }
 
 // converts the gradient in cartesian coordinates to internal coordinates
-void
+int
 IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
 {
   RefSCMatrix bmat(dvc_,gradient.dim());
@@ -692,22 +693,24 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
   for (int i=0; i<n; i++) {
       internal.set_element(i,all_internal.get_element(i));
     }
+
+  return 0;
 }
 
-void
+int
 IntMolecularCoor::to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal)
 {
   fprintf(stderr, "IntMolecularCoor::"
           "to_cartesian(RefSymmSCMatrix&,RefSymmSCMatrix&): not available\n");
-  abort();
+  return -1;
 }
 
-void
+int
 IntMolecularCoor::to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart)
 {
   fprintf(stderr, "IntMolecularCoor::"
           "to_internal(RefSymmSCMatrix&,RefSymmSCMatrix&): not ready\n");
-  abort();
+  return -1;
 }
 
 ///////////////////////////////////////////////////////////////////////////

@@ -140,15 +140,15 @@ class MolecularCoor: virtual public SavableState
     virtual void print_simples(SCostream& =SCostream::cout) = 0;
     virtual RefSCDimension dim() = 0;
     // convert molecular coordinates to and from cartesians
-    virtual void to_cartesian(RefSCVector&internal) = 0;
-    virtual void to_internal(RefSCVector&internal) = 0;
+    virtual int to_cartesian(RefSCVector&internal) = 0;
+    virtual int to_internal(RefSCVector&internal) = 0;
     // convert the gradients
-    virtual void to_cartesian(RefSCVector&cartesian,RefSCVector&internal) = 0;
-    virtual void to_internal(RefSCVector&internal,RefSCVector&cartesian) = 0;
+    virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal) = 0;
+    virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian) = 0;
     // convert the hessian
-    virtual void to_cartesian(RefSymmSCMatrix&cartesian,
+    virtual int to_cartesian(RefSymmSCMatrix&cartesian,
                               RefSymmSCMatrix&internal) =0;
-    virtual void to_internal(RefSymmSCMatrix&cartesian,
+    virtual int to_internal(RefSymmSCMatrix&cartesian,
                              RefSymmSCMatrix&hessian) = 0;
     virtual void guess_hessian(RefSymmSCMatrix&hessian) = 0;
 };
@@ -213,12 +213,12 @@ class IntMolecularCoor: public MolecularCoor
     void save_data_state(StateOut&);
     virtual void form_coordinates();
     virtual RefSCDimension dim();
-    virtual void to_cartesian(RefSCVector&internal);
-    virtual void to_internal(RefSCVector&internal);
-    virtual void to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
-    virtual void to_internal(RefSCVector&internal,RefSCVector&cartesian);
-    virtual void to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
-    virtual void to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
+    virtual int to_cartesian(RefSCVector&internal);
+    virtual int to_internal(RefSCVector&internal);
+    virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
+    virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
+    virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
+    virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
     virtual void print(SCostream& =SCostream::cout);
     virtual void print_simples(SCostream& =SCostream::cout);
     void guess_hessian(RefSymmSCMatrix&hessian);

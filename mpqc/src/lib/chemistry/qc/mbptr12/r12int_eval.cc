@@ -479,6 +479,10 @@ R12IntEval::compute()
     AR_contrib_to_B_();
   }
 
+  if (!gbc_) {
+    compute_B_gbc_1_();
+  }
+
   evaluated_ = true;
 }
 

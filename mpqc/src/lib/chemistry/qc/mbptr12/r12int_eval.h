@@ -111,6 +111,9 @@ class R12IntEval : virtual public SavableState {
 
   /// Compute -2*A*R contribution to B (needed if EBC is not assumed)
   void AR_contrib_to_B_();
+
+  /// Compute the first contribution to B that vanishes under GBC
+  void compute_B_gbc_1_();
   
   /** Sum contributions to the intermediates from all nodes and broadcast so
       every node has the correct matrices */

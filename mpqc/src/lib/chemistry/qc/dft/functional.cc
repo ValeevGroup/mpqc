@@ -45,7 +45,7 @@
 // PointInputData
 
 void
-PointInputData::compute_derived(int spin_polarized)
+PointInputData::compute_derived(int spin_polarized, int need_gradient)
 {
   a.rho_13 = pow(a.rho, 1.0/3.0);
   if (spin_polarized) {
@@ -53,7 +53,7 @@ PointInputData::compute_derived(int spin_polarized)
     }
   else {
       b = a;
-      gamma_ab = a.gamma;
+      if (need_gradient) gamma_ab = a.gamma;
     }
 }
 
@@ -282,36 +282,36 @@ DenFunctional::do_fd_point(PointInputData&id,
 
   if (insave-delta>=lower_bound && insave+delta<=upper_bound) {
       in = insave+delta;
-      id.compute_derived(1);
+      id.compute_derived(1, need_density_gradient());
       point(id,tod);
       double plus = tod.energy;
 
       in = insave-delta;
-      id.compute_derived(1);
+      id.compute_derived(1, need_density_gradient());
       point(id,tod);
       double minu = tod.energy;
       out = 0.5*(plus-minu)/delta;
     }
   else if (insave+2*delta<=upper_bound) {
       in = insave+delta;
-      id.compute_derived(1);
+      id.compute_derived(1, need_density_gradient());
       point(id,tod);
       double plus = tod.energy;
 
       in = insave+2*delta;
-      id.compute_derived(1);
+      id.compute_derived(1, need_density_gradient());
       point(id,tod);
       double plus2 = tod.energy;
       out = 0.5*(4.0*plus-plus2-3.0*outsave)/delta;
     }
   else if (insave-2*delta>=lower_bound) {
       in = insave-delta;
-      id.compute_derived(1);
+      id.compute_derived(1, need_density_gradient());
       point(id,tod);
       double minu = tod.energy;
 
       in = insave-2*delta;
-      id.compute_derived(1);
+      id.compute_derived(1, need_density_gradient());
       point(id,tod);
       double minu2 = tod.energy;
       out = -0.5*(4.0*minu-minu2-3.0*outsave)/delta;
@@ -321,7 +321,7 @@ DenFunctional::do_fd_point(PointInputData&id,
       out = -135711.;
     }
   in = insave;
-  id.compute_derived(1);
+  id.compute_derived(1, need_density_gradient());
 
   set_spin_polarized(spin_polarized_save);
 }
@@ -429,7 +429,7 @@ DenFunctional::test()
       for (j=0; testgamma[j] != -1.0; j++) {
           if (testgamma[j] > testrho[i]) continue;
           id.a.gamma = testgamma[j];
-          id.compute_derived(0);
+          id.compute_derived(0, need_density_gradient());
           ret += test(id);
         }
     }
@@ -462,7 +462,7 @@ DenFunctional::test()
                       if (id.gamma_ab < -sqrt_gamma_a*sqrt_gamma_b) {
                           id.gamma_ab = -sqrt_gamma_a*sqrt_gamma_b;
                         }
-                      id.compute_derived(1);
+                      id.compute_derived(1, need_density_gradient());
                       ret += test(id);
                     }
                 }
@@ -763,11 +763,6 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN3LCFunctional;
         }
-      else if (!strcmp(name_,"SVWN3RPA")) {
-          init_arrays(2);
-          funcs_[0] = new SlaterXFunctional;
-          funcs_[1] = new VWN3LCFunctional(0,0);
-        }
       else if (!strcmp(name_,"SVWN4")) {
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
@@ -813,18 +808,6 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[2] = new VWN1LCFunctional(1);
           funcs_[3] = new LYPCFunctional;
         }
-      else if (!strcmp(name_,"B3LYP(VWN5)")) {
-          init_arrays(4);
-          a0_ = 0.2;
-          coefs_[0] = 0.8;
-          coefs_[1] = 0.72;
-          coefs_[2] = 0.19;
-          coefs_[3] = 0.81;
-          funcs_[0] = new SlaterXFunctional;
-          funcs_[1] = new Becke88XFunctional;
-          funcs_[2] = new VWN5LCFunctional;
-          funcs_[3] = new LYPCFunctional;
-        }
       else if (!strcmp(name_,"B3PW91")) {
           init_arrays(4);
           a0_ = 0.2;
@@ -866,6 +849,14 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
         }
       else if (!strcmp(name_,"mPWPW91")) {
           init_arrays(2);
+          funcs_[0] = new mPW91XFunctional(mPW91XFunctional::mPW91);
+          funcs_[1] = new PW91CFunctional;
+        }
+      else if (!strcmp(name_,"mPW1PW91")) {
+          init_arrays(2);
+          a0_ = 0.16;
+          coefs_[0] = 0.84;
+          coefs_[1] = 1.0;
           funcs_[0] = new mPW91XFunctional(mPW91XFunctional::mPW91);
           funcs_[1] = new PW91CFunctional;
         }
@@ -1567,22 +1558,30 @@ VWN1LCFunctional::VWN1LCFunctional(int use_rpa)
 VWN1LCFunctional::VWN1LCFunctional(const RefKeyVal& keyval):
   VWNLCFunctional(keyval)
 {
-    x0p_ = keyval->doublevalue("x0p", KeyValValuedouble(x0p_mc_));
-    bp_ = keyval->doublevalue("bp", KeyValValuedouble(bp_mc_));
-    cp_ = keyval->doublevalue("cp", KeyValValuedouble(cp_mc_));
-    x0f_ = keyval->doublevalue("x0f", KeyValValuedouble(x0f_mc_));
-    bf_ = keyval->doublevalue("bf", KeyValValuedouble(bf_mc_));
-    cf_ = keyval->doublevalue("cf", KeyValValuedouble(cf_mc_));
+  int vwn1rpa = keyval->booleanvalue("rpa", KeyValValueboolean(0));
+  if (vwn1rpa) {
+      x0p_ = x0p_rpa_;
+      bp_  = bp_rpa_;
+      cp_  = cp_rpa_;
+      x0f_ = x0f_rpa_;
+      bf_  = bf_rpa_;
+      cf_  = cf_rpa_;
+    }
+  else {
+      x0p_ = x0p_mc_;
+      bp_  = bp_mc_;
+      cp_  = cp_mc_;
+      x0f_ = x0f_mc_;
+      bf_  = bf_mc_;
+      cf_  = cf_mc_;
+    }
 
-    int vwn1rpa = keyval->booleanvalue("rpa", KeyValValueboolean(0));
-    if (vwn1rpa) {
-        x0p_ = x0p_rpa_;
-        bp_  = bp_rpa_;
-        cp_  = cp_rpa_;
-        x0f_ = x0f_rpa_;
-        bf_  = bf_rpa_;
-        cf_  = cf_rpa_ ;
-      }
+  x0p_ = keyval->doublevalue("x0p", KeyValValuedouble(x0p_));
+  bp_ = keyval->doublevalue("bp", KeyValValuedouble(bp_));
+  cp_ = keyval->doublevalue("cp", KeyValValuedouble(cp_));
+  x0f_ = keyval->doublevalue("x0f", KeyValValuedouble(x0f_));
+  bf_ = keyval->doublevalue("bf", KeyValValuedouble(bf_));
+  cf_ = keyval->doublevalue("cf", KeyValValuedouble(cf_));
 }
 
 VWN1LCFunctional::~VWN1LCFunctional()

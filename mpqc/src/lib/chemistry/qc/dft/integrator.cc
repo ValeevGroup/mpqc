@@ -540,7 +540,7 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
                       + id.a.del_rho[2]*id.b.del_rho[2];
         }
     }
-  id.compute_derived(spin_polarized_);
+  id.compute_derived(spin_polarized_, need_gradient_);
 
   PointOutputData od;
   if ( (id.a.rho + id.b.rho) > 1e2*DBL_EPSILON) {

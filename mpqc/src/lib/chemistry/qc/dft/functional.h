@@ -62,7 +62,7 @@ struct PointInputData {
     const SCVector3 &r;
 
     // fill in derived quantities
-    void compute_derived(int spin_polarized);
+    void compute_derived(int spin_polarized, int need_gradient);
 
     PointInputData(const SCVector3& r_): r(r_) {}
 };
@@ -179,8 +179,83 @@ class SumDenFunctional: public DenFunctional {
     void print(ostream& =ExEnv::out()) const;
 };
 
-/** The StdDenFunctional provides a shorthand method to construct
-    the standard density functionals.  */
+/** The StdDenFunctional class is used to construct the standard density
+    functionals.
+
+    The table below lists the functional names and the equivalent
+    functionals in other packages.  The Name column gives the name as it is
+    given in the input file (this is case sensitive).  Functional names
+    with non-alpha-numeric names should be given in double quotes.  The
+    description column gives the classes used to build up the functional
+    and its coefficient, if it is other than one.  The G98 column lists the
+    equivalent functional in Gaussian 98 A.6.  The NWChem column lists the
+    equivalent functional in NWChem 3.3.1.
+
+\begin{tabular}{llll}
+Name   & Description             & G98    & NWChem  \\
+XALPHA & \Ref{XalphaFunctional}  & XALPHA &         \\
+HFS    & \Ref{SlaterXFunctional} & HFS    & slater  \\
+HFB    & \Ref{Becke88XFunctional}& HFB    & becke88 \\
+HFG96  & \Ref{G96XFunctional}    &        &         \\
+G96LYP & \Ref{G96XFunctional}                      
+        +\Ref{LYPCFunctional}    & G96LYP &         \\
+BLYP   &  \Ref{SlaterXFunctional}                  
+          +\Ref{Becke88XFunctional}                
+          +\Ref{LYPCFunctional}   & BLYP   &        \\
+SVWN1  &  \Ref{SlaterXFunctional}
+          +\Ref{VWN1LCFunctional} &        & slater vwn_1 \\
+SVWN1RPA& \Ref{SlaterXFunctional}
+          +\Ref{VWN1LCFunctional}(1)&      & slater vwn_1_rpa \\
+SVWN2  &  \Ref{SlaterXFunctional}
+          +\Ref{VWN2LCFunctional} &        & slater vwn_2 \\
+SVWN3  &  \Ref{SlaterXFunctional}
+          +\Ref{VWN2LCFunctional} &        & slater vwn_3 \\
+SVWN4  &  \Ref{SlaterXFunctional}
+          +\Ref{VWN4LCFunctional} &        & slater vwn_4 \\
+SVWN5  &  \Ref{SlaterXFunctional}
+          +\Ref{VWN5LCFunctional} & SVWN5  & slater vwn_5 \\
+SPZ81  &  \Ref{SlaterXFunctional}
+          +\Ref{PZ81LCFunctional} & SPL    &         \\
+SPW92  &  \Ref{SlaterXFunctional}
+          +\Ref{PW92LCFunctional} &        & slater pw91lda \\
+BP86   &  \Ref{SlaterXFunctional}
+          \Ref{Becke88XFunctional}
+          +\Ref{P86CFunctional}
+          +\Ref{PZ81LCFunctional} &        & becke88 perdue86 \\
+B3LYP&
+          0.2 HF-Exchange
+          + 0.8  \Ref{SlaterXFunctional}
+          + 0.72 \Ref{Becke88XFunctional}
+          + 0.19 \Ref{VWN1LCFunctional}(1)
+          + 0.81 \Ref{LYPCFunctional} &  B3LYP   &   b3lyp \\
+B3PW91&
+          0.2 HF-Exchange
+          + 0.8  \Ref{SlaterXFunctional}
+          + 0.72 \Ref{Becke88XFunctional}
+          + 0.19 \Ref{PW91CFunctional}
+          + 0.81 \Ref{PW92LCFunctional} & B3PW91  &        \\
+B3P86&
+          0.2 HF-Exchange
+          + 0.8  \Ref{SlaterXFunctional}
+          + 0.72 \Ref{Becke88XFunctional}
+          + 0.19 \Ref{P86CFunctional}
+          + 0.81 \Ref{VWN1LCFunctional(1)} &     &          \\
+PBE&      \Ref{PBEXFunctional}
+         +\Ref{PBECFunctional}             &      & xpbe96 cpbe96 \\
+PW91&     \Ref{PW91XFunctional}
+         +\Ref{PW91CFunctional}          &      &           \\
+mPW(PW91)PW91&
+          \Ref{mPW91XFunctional}(PW91)
+          +\Ref{PW91CFunctional}         & PW91PW91 &       \\
+mPWPW91&
+          \Ref{mPW91XFunctional}(mPW91)
+          +\Ref{PW91CFunctional}         &      &           \\
+mPW1PW91&
+           0.16 HF-Exchange
+          + 0.84 \Ref{mPW91XFunctional}(mPW91)
+          +\Ref{PW91CFunctional}         &      &           \\
+
+\end{tabular} */
 class StdDenFunctional: public SumDenFunctional {
 #   define CLASSNAME StdDenFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -192,10 +267,9 @@ class StdDenFunctional: public SumDenFunctional {
     void init_arrays(int n);
   public:
     StdDenFunctional();
-    /** This KeyVal CTOR does not call the parent's KeyVal CTOR.  The
-        "name" keyword is read from the input and is used to initialize the
-        functional.  The name must be one of HFK, XALPHA, HFS, HFB, HFG96,
-        BLYP, B3LYP, PW91, or PBE. */
+    /** The "name" keyword is read from the input and is used to initialize
+        the functional.  All other keywords will be ignored.
+    */
     StdDenFunctional(const RefKeyVal &);
     StdDenFunctional(StateIn &);
     ~StdDenFunctional();
@@ -367,7 +441,9 @@ class NewP86CFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-// Implements the Slater exchange functional.
+/**
+   Implements the Slater exchange functional.
+*/
 class SlaterXFunctional: public DenFunctional {
 #   define CLASSNAME SlaterXFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -429,8 +505,15 @@ class VWN1LCFunctional: public VWNLCFunctional {
   protected:
     double x0p_, bp_, cp_, x0f_, bf_, cf_;
   public:
+    /// Construct a VWN1 functional using Monte-Carlo parameters.
     VWN1LCFunctional();
+    /// Construct a VWN1 functional using the RPA parameters.
     VWN1LCFunctional(int use_rpa);
+    /** Construct a VWN1 functional using the Monte-Carlo parameters by
+        default.  If rpa is set to true, then load the RPA paramenters.
+        Furthermore, each value can be overridden by assigning to
+        x0p, bp, cp, x0f, bf, and/or cf.
+    */
     VWN1LCFunctional(const RefKeyVal &);
     VWN1LCFunctional(StateIn &);
     ~VWN1LCFunctional();
@@ -450,7 +533,9 @@ class VWN2LCFunctional: public VWNLCFunctional {
 #   include <util/class/classd.h>
   protected:
   public:
+    /// Construct a VWN2 functional.
     VWN2LCFunctional();
+    /// Construct a VWN2 functional.
     VWN2LCFunctional(const RefKeyVal &);
     VWN2LCFunctional(StateIn &);
     ~VWN2LCFunctional();
@@ -520,9 +605,11 @@ class VWN5LCFunctional: public VWNLCFunctional {
     void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
-/** Implements the PW92 local (LSDA) correlation term from J. P. Perdew and
-    Y. Wang.  Phys. Rev. B, 45, 13244, 1992.  This local correlation
-    functional is used in PW91 and PBE.  */
+/** Implements the PW92 local (LSDA) correlation term.  This local
+    correlation functional is used in PW91 and PBE.
+
+    J. P. Perdew and Y. Wang.  Phys. Rev. B, 45, 13244, 1992.
+*/
 class PW92LCFunctional: public LSDACFunctional {
 #   define CLASSNAME PW92LCFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -544,7 +631,7 @@ class PW92LCFunctional: public LSDACFunctional {
     void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
-/* Implements the PZ81 local (LSDA) correlation functional.  This local
+/** Implements the PZ81 local (LSDA) correlation functional.  This local
    correlation functional is used in P86.
 
    J. P. Perdew and A. Zunger, Phys. Rev. B, 23, pp. 5048-5079, 1981.
@@ -621,7 +708,7 @@ class Becke88XFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-/** Implements theLee, Yang, and Parr functional.
+/** Implements the Lee, Yang, and Parr functional.
 
     B. Miehlich, A. Savin, H. Stoll and H. Preuss, Chem. Phys. Lett.,
     157(3), pp. 200-206, 1989.
@@ -780,8 +867,29 @@ class mPW91XFunctional: public DenFunctional {
   public:
     enum Func { B88, PW91, mPW91 };
 
+    /// Construct an mPW exchange functional.
     mPW91XFunctional();
-    mPW91XFunctional(Func);
+    /** Construct an mPW form exchange functional using the given
+        functional variant.  The variant can be B88, PW91, or mPW91. */
+    mPW91XFunctional(Func variant);
+    /** Construct an mPW form exchange functional.
+        The following keywords are recognized:
+        \begin{description}
+
+          \item[constants] This can be B88 to give the Becke88 exchange
+            functional; PW91, to give results similar to the PW91 exchange
+            functional; or mPW91, to give the new functional developed by
+            Adamo and Barone.
+
+          \item[b]
+          \item[beta]
+          \item[c] 
+          \item[d]
+          \item[x_d_coef]  The coefficient of $x^d$, where $x$ is the
+                           reduced gradient.
+        \end{description}
+
+    */
     mPW91XFunctional(const RefKeyVal &);
     mPW91XFunctional(StateIn &);
     ~mPW91XFunctional();

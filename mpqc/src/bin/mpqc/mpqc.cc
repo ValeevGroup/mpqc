@@ -63,6 +63,7 @@
 #endif
 
 #include <util/options/GetLongOpt.h>
+#include <util/misc/scexception.h>
 #include <util/misc/newstring.h>
 #include <util/keyval/keyval.h>
 #include <util/state/state_bin.h>
@@ -947,6 +948,13 @@ main(int argc, char *argv[])
 {
   try {
     try_main(argc, argv);
+  }
+  catch (SCException &e) {
+    cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl
+         << e.what()
+         << endl;
+    clean_up();
+    throw;
   }
   catch (bad_alloc &e) {
     cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl

@@ -87,6 +87,7 @@ private:
   int nlindep_aux_;
   RefSymmSCMatrix overlap_aux_;
   RefSCMatrix orthog_ri_;
+  RefSCMatrix orthog_ri_so_;
   int nlindep_ri_;
   RefSymmSCMatrix overlap_ri_;
 
@@ -98,6 +99,8 @@ private:
   void construct_ri_basis_evplus_(bool safe);
   // Uses ri_basis to construct a basis that spans the orthogonal complement to the OBS
   void construct_ortho_comp_();
+  // Same as above, except for this function uses Curt's approach
+  void construct_ortho_comp_jv_();
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
   // Construct eigenvector and eigenvalues sorted by energy

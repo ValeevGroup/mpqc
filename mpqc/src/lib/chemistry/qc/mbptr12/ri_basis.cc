@@ -98,7 +98,7 @@ R12IntEvalInfo::construct_ri_basis_ev_(bool safe)
     if (safe)
       throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ev_ -- auxiliary basis is not safe to use with the given orbital basis");
   }
-  construct_ortho_comp_();
+  construct_ortho_comp_jv_();
 }
 
 void
@@ -106,7 +106,7 @@ R12IntEvalInfo::construct_ri_basis_evplus_(bool safe)
 {
   GaussianBasisSet& abs = *(bs_aux_.pointer());
   bs_ri_ = abs + bs_;
-  construct_ortho_comp_();
+  construct_ortho_comp_jv_();
 }
 
 void
@@ -159,15 +159,16 @@ R12IntEvalInfo::construct_orthog_aux_()
   RefSCMatrix orthog_aux_so = orthog.basis_to_orthog_basis();
   orthog_aux_so = orthog_aux_so.t();
   orthog_aux_ = plist2->evecs_to_AO_basis(orthog_aux_so);
-  orthog_aux_so = 0;
   overlap_aux_ = overlap_aux;
   ExEnv::out0() << decindent;
 
   if (bs_aux_ == bs_ri_) {
     orthog_ri_ = orthog_aux_;
+    orthog_ri_so_ = orthog_aux_so;
     nlindep_ri_ = nlindep_aux_;
     overlap_ri_ = overlap_aux_;
   }
+  orthog_aux_so = 0;
 }
 
 void
@@ -223,6 +224,7 @@ R12IntEvalInfo::construct_orthog_ri_()
   nlindep_ri_ = orthog.nlindep();
   RefSCMatrix orthog_ri_so = orthog.basis_to_orthog_basis();
   orthog_ri_so = orthog_ri_so.t();
+  orthog_ri_so_ = orthog_ri_so;
   orthog_ri_ = plist3->evecs_to_AO_basis(orthog_ri_so);
   orthog_ri_so = 0;
   overlap_ri_ = overlap_ri;
@@ -419,6 +421,88 @@ R12IntEvalInfo::construct_ortho_comp_()
    if (debug_ > 1) (orthog_ri_.t() * plist_ri->to_AO_basis(overlap_ri_) * orthog_ri_).print("Ut * S(RI-BS/RI-BS) * U");
 
    ExEnv::out0() << decindent;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+R12IntEvalInfo::construct_ortho_comp_jv_()
+{
+  construct_orthog_ri_();
+
+  //
+  // Compute OBS/RI-BS overlap matrix
+  //
+  Ref<Integral> integral_aux = integral()->clone();
+  integral_aux->set_basis(bs_ri_);
+  Ref<GaussianBasisSet> obs = bs_;
+  Ref<GaussianBasisSet> ri_bs = bs_ri_;
+  Ref<SCMatrixKit> ao_matrixkit = bs_ri_->matrixkit();
+  Ref<SCMatrixKit> so_matrixkit = bs_ri_->so_matrixkit();
+  integral_aux->set_basis(obs,ri_bs);
+  Ref<OneBodyInt> ov_12_engine = integral_aux->overlap();
+  
+  // form AO s matrix
+  RefSCMatrix s12(obs->basisdim(), ri_bs->basisdim(), ao_matrixkit);
+  Ref<SCElementOp> ov_op12 =
+    new OneBodyIntOp(new OneBodyIntIter(ov_12_engine));
+    
+  s12.assign(0.0);
+  s12.element_op(ov_op12);
+  ov_op12=0;
+  if (debug_ > 1) s12.print("AO overlap (OBS/RI-BS)");
+
+  // get MOs
+  RefSCMatrix scf_vec = ref_->eigenvectors();
+  RefSCMatrix so_ao = integral_aux->petite_list()->sotoao();
+  scf_vec = scf_vec.t() * so_ao;
+    
+  // Convert blocked overlap into a nonblocked overlap
+  integral_aux->set_basis(ri_bs);
+  Ref<PetiteList> plist_ri = integral_aux->petite_list();
+  RefSCMatrix ao2so_ri = plist_ri->aotoso();
+  RefSCMatrix s12_nb(scf_vec.coldim(),ao2so_ri->rowdim(), so_matrixkit);
+  s12_nb->convert(s12);
+  s12 = 0;
+
+  // C2 = C1 * S12
+  RefSCMatrix scf_vec_ri_bm = scf_vec * s12_nb;
+
+  // Transform MOs into the auxiliary SO basis
+  RefSCMatrix scf_vec_ri = scf_vec_ri_bm * ao2so_ri;
+  scf_vec_ri = scf_vec_ri.t();
+
+  // Compute S22 -= C2 * C2^t
+  RefSymmSCMatrix overlap_ri(overlap_ri_.dim(),so_matrixkit);
+  overlap_ri.assign(overlap_ri_);
+  RefSymmSCMatrix negI(scf_vec_ri.coldim(), so_matrixkit);
+  negI.assign(0.0);
+  int nmo = negI.dim().n();
+  for(int i=0; i<nmo; i++)
+    negI.set_element(i,i,-1.0);
+  overlap_ri.accumulate_transform(scf_vec_ri,negI);
+
+  // Compute S22 * X2 * X2^t
+  RefSCMatrix XS = overlap_ri * orthog_ri_so_ * orthog_ri_so_.t();
+  overlap_ri.assign(0.0);
+  overlap_ri.accumulate_transform(XS,overlap_ri_);
+
+  //
+  // Compute orthogonalizer for the auxiliary basis
+  //
+  ExEnv::out0() << indent << "Orthogonalizing RI-BS:" << endl << incindent;
+  OverlapOrthog orthog(ref_->orthog_method(),
+		       overlap_ri,
+		       so_matrixkit,
+		       ref_->lindep_tol(),
+		       0);
+  RefSCMatrix orthog_ri_so = orthog.basis_to_orthog_basis() * XS;
+  orthog_ri_so = orthog_ri_so.t();
+  orthog_ri_ = plist_ri->evecs_to_AO_basis(orthog_ri_so);
+  orthog_ri_so = 0;
+  ExEnv::out0() << decindent;
+
+  if (debug_ > 1) (scf_vec_ri_bm * orthog_ri_).print("C * S(OBS/RI-BS) * U");
 }
 
 /////////////////////////////////////////////////////////////////////////////

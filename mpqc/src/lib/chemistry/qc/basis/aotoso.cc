@@ -20,11 +20,11 @@ contribution::contribution(int b, double c) : bfn(b), coef(c)
 
 ////////////////////////////////////////////////////////////////////////////
 
-SO::SO() : cont(0), len(0)
+SO::SO() : cont(0), len(0), length(0)
 {
 }
 
-SO::SO(int l) : cont(0), len(0)
+SO::SO(int l) : cont(0), len(0), length(0)
 {
   set_length(l);
 }
@@ -38,7 +38,8 @@ SO&
 SO::operator=(const SO& so)
 {
   set_length(so.len);
-  for (int i=0; i < len; i++)
+  length = so.length;
+  for (int i=0; i < length; i++)
     cont[i] = so.cont[i];
   return *this;
 }
@@ -47,6 +48,7 @@ void
 SO::set_length(int l)
 {
   len=l;
+  length=l;
   if (cont) {
     delete[] cont;
     cont=0;
@@ -59,6 +61,8 @@ SO::set_length(int l)
 void
 SO::reset_length(int l)
 {
+  length=l;
+
   if (l <= len)
     return;
   
@@ -82,11 +86,11 @@ SO::equiv(const SO& so)
 {
   int i;
       
-  if (so.len != len)
+  if (so.length != length)
     return 0;
 
   double c=0;
-  for (i=0; i < len; i++) {
+  for (i=0; i < length; i++) {
     if (cont[i].bfn != so.cont[i].bfn)
       return 0;
     c += cont[i].coef*so.cont[i].coef;
@@ -167,10 +171,10 @@ SO_block::print(const char *title)
   printf("SO block %s\n",title);
   for (i=0; i < len; i++) {
     printf("SO %d\n",i+1);
-    for (j=0; j < so[i].len; j++)
+    for (j=0; j < so[i].length; j++)
       printf(" %10d",so[i].cont[j].bfn);
     printf("\n");
-    for (j=0; j < so[i].len; j++)
+    for (j=0; j < so[i].length; j++)
       printf(" %10.7f",so[i].cont[j].coef);
     printf("\n");
   }
@@ -405,12 +409,12 @@ PetiteList::aotoso_info()
 
               // normalize the linear combination
               double c1=0;
-              for (ii=0; ii < tso.len; ii++)
+              for (ii=0; ii < tso.length; ii++)
                 c1 += tso.cont[ii].coef*tso.cont[ii].coef;
 
               c1 = 1.0/sqrt(c1);
               
-              for (ii=0; ii < tso.len; ii++)
+              for (ii=0; ii < tso.length; ii++)
                 tso.cont[ii].coef *= c1;
 
               // add this SO to the appropriate block
@@ -627,7 +631,6 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
     skel->all_blocks(SCMatrixSubblockIter::Read);
   RefSCMatrixSubblockIter symiter;
 
-#if 1
   //printf("\n sizeof sos:\n");
   //soblock_length(sos, lsym->nblocks());
   
@@ -655,7 +658,7 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
         SO& soj = sob.so[j];
         SO& suj = sub.so[j];
         
-        int sojl = soj.len;
+        int sojl = soj.length;
         contribution *coj = soj.cont;
 
         int kk=0, dk=0, idk=0;
@@ -718,11 +721,11 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
         int ij=0;
         for (i=symblk->start; i < symblk->end; i++) {
           contribution *ci = sob.so[i].cont;
-          int cilen = sob.so[i].len;
+          int cilen = sob.so[i].length;
 
           for (j=symblk->start; j <= i; j++,ij++) {
             contribution *cj = sub.so[j].cont;
-            int cjlen = sub.so[j].len;
+            int cjlen = sub.so[j].length;
 
             if (!cjlen)
               continue;
@@ -756,91 +759,6 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
       }
     }
   }
-
-#else
-
-  sym.assign(0.0);
-  for (skliter->begin(); skliter->ready(); skliter->next()) {
-    sklblk = SCMatrixLTriBlock::castdown(skliter->block());
-
-    int kstart = sklblk->start;
-    int kend = sklblk->end;
-    
-    for (b=0; b < lsym->nblocks(); b++) {
-      if (lsym->block(b).null())
-        continue;
-      int ir = ct.which_irrep(b);
-      double skal = (double)ct.order()/(double)ct.gamma(ir).degeneracy();
-
-      symiter = lsym->block(b)->local_blocks();
-
-      SO_block& sob = sos.sos_[b];
-
-      for (symiter->begin(); symiter->ready(); symiter->next()) {
-        // symblk can either be an LTri block or an LTriSub block
-        SCMatrixBlock* blk = symiter->block();
-        
-        if (symblk = SCMatrixLTriBlock::castdown(blk)) {
-          int isize = symblk->end - symblk->start;
-          int jsize = isize;
-          int ij=0;
-
-          for (i=symblk->start; i < symblk->end; i++) {
-            SO& soi = sob.so[i];
-            contribution *ci = soi.cont;
-
-            for (j=symblk->start; j <= i; j++,ij++) {
-              SO& soj = sob.so[j];
-              contribution *cj = soj.cont;
-              double tij = 0;
-
-              contribution *cit = ci;
-              
-              int kk;
-              for (kk=0; kk < soi.len; kk++,cit++)
-                if ((*cit).bfn >= kstart)
-                  break;
-              
-              for (; kk < soi.len && (k=(*cit).bfn) < kend; kk++,cit++) {
-                
-                int dk = k - kstart;
-                int idk = (dk*(dk+1))>>1;
-                
-                double *skdata = sklblk->data+dk;
-                double *skidata = sklblk->data+idk;
-                
-                double cik = skal*(*cit).coef;
-                double ttij=0;
-                
-                contribution *cjt = cj;
-                
-                int ll;
-                for (ll=soj.len; ll ; ll--,cjt++)
-                  if ((*cjt).bfn >= kstart)
-                    break;
-                
-                int dl;
-                for (; ll && (l=(*cjt).bfn) < kend && (dl=l-kstart) <= dk;
-                       ll--,cjt++) {
-                  ttij += (*cjt).coef*skidata[dl];
-                }
-
-                for (; ll && (l=(*cjt).bfn) < kend; ll--,cjt++) {
-                  dl = l-kstart;
-                  ttij += (*cjt).coef*skdata[(dl*(dl+1))>>1];
-                }
-
-                tij += cik*ttij;
-              }
-
-              symblk->data[ij] += tij;
-            }
-          }
-        }
-      }
-    }
-  }
-#endif
 }
 
 void
@@ -853,13 +771,14 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   CharacterTable ct = gbs.molecule()->point_group().char_table();
 
 #if 0
-
-  RefSCMatrix aotoso(AO_basisdim(), SO_basisdim());
-  RefSCElementOp sotrans = new AOSO_Transformation(gbs);
-  aotoso.element_op(sotrans);
-  sotrans=0;
-
-  BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aotoso);
+  RefSymmSCMatrix bskel = BlockedSymmSCMatrix::castdown(skel);
+  if (bskel.null()) {
+    bskel = gbs.so_matrixkit()->symmmatrix(AO_basisdim());
+    bskel->convert(skel);
+  }
+  
+  RefSCMatrix aoso = aotoso();
+  BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aoso);
 
   for (b=0; b < lu->nblocks(); b++) {
     if (lu->block(b).null())
@@ -873,8 +792,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   }
 
   sym.assign(0.0);
-  sym.accumulate_transform(aotoso.t(),skel);
-
+  sym.accumulate_transform(aoso.t(),bskel);
 #else
   do_transform(skel,sym,gbs,*this,ct);
 #endif

@@ -275,6 +275,9 @@ main(int argc, char *argv[])
     }
     scfkv=0;
 
+    cout << "  number of atoms = " << mol->natom() << endl;
+    cout << "  number of basis functions = " << gbs->nbasis() << endl;
+
    // read input, and initialize various structs
 
     do_grad=0;
@@ -483,11 +486,14 @@ main(int argc, char *argv[])
       check = 1;
     }
 
+  if (gbs->nbasis() == 0) {
+      cout << endl << "  Exiting because there are no basis functions" << endl;
+      clean_mp(msg);
+      return 0;
+    }
+
   if (check) {
-      if (msg->me() == 0) {
-          cout << "There are " << mol->natom() << " atoms" << endl;
-          cout << "and " << gbs->nbasis() << " basis functions." << endl;
-        }
+      cout << "  Exiting since the check option is on." << endl;
       clean_mp(msg);
       return 0;
     }
@@ -843,9 +849,9 @@ main(int argc, char *argv[])
 
   if (molfreq.nonnull()) {
       tim->enter("frequencies");
+      molfreq->compute_displacements();
       cout << "Computing molecular frequencies from "
            << molfreq->ndisplace() << " displacements:" << endl;
-      molfreq->compute_displacements();
       for (int i=0; i<molfreq->ndisplace(); i++) {
           // This produces side-effects in mol and may even change
           // its symmetry.

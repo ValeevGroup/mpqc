@@ -59,6 +59,26 @@
         (- c-basic-offset c-basic-half-offset))
       )))
 
+(defun clj-condensed-adaptive-statement-block-intro (langelem)
+  ;; this lines up the first statement in a block by a full basic
+  ;; offset, unless we are lining up to a "{" which is already
+  ;; indented
+  (save-excursion
+    (progn
+      (goto-char (cdr langelem))
+      (if (/= (following-char) ?{)
+          ;; next char is not a "{"
+          c-basic-offset
+        ;; we're already indendted
+        0)
+      )))
+
+(defun clj-condensed-adaptive-block-close (langelem)
+  ;; these closes blocks in a way that is consistent with the way
+  ;; clj-condensed-adaptive-statement-block-intro indents the first statement
+  (clj-condensed-adaptive-statement-block-intro langelem)
+)
+
 ;;
 ;; this is the style to use when editting Ed's files
 ;;
@@ -85,6 +105,24 @@
         (block-close . clj-adaptive-block-close)
         (member-init-intro . 2)
         )
+    ))
+)
+
+;;
+;; Curt's other style
+;;
+(c-add-style "CLJ-CONDENSED" '(
+    (c-echo-syntactic-information-p . t)
+    (c-basic-offset . 2)
+    (c-offsets-alist . (
+       (statement-block-intro . clj-condensed-adaptive-statement-block-intro)
+       (statement-cont . c-lineup-math)
+       (inclass . ++)
+       (access-label . -)
+       (block-close . clj-condensed-adaptive-statement-block-intro)
+       (substatement-open . +)
+       (block-open . +)
+       )
     ))
 )
 

@@ -13,16 +13,36 @@
 #include "scf_oeis.gbl"
 #include "scf_oeis.lcl"
 
+/*************************************************************************
+ *
+ * given a centers struct and four scattered matrices, calculate the
+ * one electron integral
+ *
+ * input:
+ *   scf_info = pointer to initialized scf struct
+ *   centers  = pointer to initialized centers struct
+ *   S, T, V, H = scattered dmt matrices
+ *   outfile  = FILE pointer to output (may be null)
+ *
+ * on return:
+ *   scf_info contains nuclear repulsion energy
+ *   S contains overlap integrals
+ *   T contains kinetic energy integrals
+ *   V contains potential energy (nucl-elect attrac) integrals
+ *   H contains core hamiltonian (T+V)
+ *
+ * return 0 on success, -1 on failure
+ */
+
 GLOBAL_FUNCTION int
-scf_oeis(_scf_info,_sym_info,_centers,S,T,V,H,_outfile)
-scf_struct_t *_scf_info;
-sym_struct_t *_sym_info;
-centers_t *_centers;
+scf_oeis(scf_info, centers, S, T, V, H, outfile)
+scf_struct_t *scf_info;
+centers_t *centers;
 dmt_matrix S;
 dmt_matrix T;
 dmt_matrix V;
 dmt_matrix H;
-FILE *_outfile;
+FILE *outfile;
 {
   int i;
   int nlocal,li,lj;
@@ -30,45 +50,44 @@ FILE *_outfile;
 
 /* initialize _centers struct */
 
-  int_initialize_1e(0,0,_centers,_centers);
-  int_initialize_offsets1(_centers,_centers);
+  int_initialize_1e(0,0,centers,centers);
+  int_initialize_offsets1(centers,centers);
 
 /* calculate nuclear repulsion energy */
 
-  _scf_info->nuc_rep = (double) int_nuclear_repulsion(_centers,_centers);
-  if(mynode0()==0) {
-    fprintf(_outfile,"\n  nuclear repulsion energy         = %f\n",
-                                                     _scf_info->nuc_rep);
-    fflush(_outfile);
-    }
+  scf_info->nuc_rep = (double) int_nuclear_repulsion(centers,centers);
+  if (mynode0()==0 && outfile) {
+    fprintf(outfile,"\n  nuclear repulsion energy         = %f\n",
+            scf_info->nuc_rep);
+    fflush(outfile);
+  }
 
 
-/* calculate one-electron integrals */
-
+ /* calculate one-electron integrals */
   nlocal = dmt_nlocal(S);
 
-  for(i=0; i < nlocal ; i++) {
+  for (i=0; i < nlocal ; i++) {
     dmt_get_block(S,i,&li,&lj,&data);
-    int_shell_overlap(_centers,_centers,data,li,lj);
-    }
+    int_shell_overlap(centers,centers,data,li,lj);
+  }
 
-  for(i=0; i < nlocal ; i++) {
+  for (i=0; i < nlocal ; i++) {
     dmt_get_block(T,i,&li,&lj,&data);
-    int_shell_kinetic(_centers,_centers,data,li,lj);
-    }
+    int_shell_kinetic(centers,centers,data,li,lj);
+  }
 
-  for(i=0; i < nlocal ; i++) {
+  for (i=0; i < nlocal ; i++) {
     dmt_get_block(V,i,&li,&lj,&data);
-    int_shell_nuclear(_centers,_centers,data,li,lj);
-    }
+    int_shell_nuclear(centers,centers,data,li,lj);
+  }
 
   dmt_copy(V,H);
   dmt_sum(T,H);
 
  /* deallocate one-electron integral stuff */
 
-  int_done_offsets1(_centers,_centers);
+  int_done_offsets1(centers,centers);
   int_done_1e();
 
   return(0);
-  }
+}

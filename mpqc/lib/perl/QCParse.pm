@@ -662,6 +662,9 @@ sub input_string() {
     $mole = "$mole\n    basis = \$:basis";
     $mole = "$mole\n    coor = \$..:coor";
     $mole = "$mole\n    memory = $memory";
+    if ($methodmap{uc($qcinput->method())} eq "SCF") {
+        $mole = "$mole\n    print_npa = yes";
+    }
     if ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
         my $fzv = $qcinput->fzv();

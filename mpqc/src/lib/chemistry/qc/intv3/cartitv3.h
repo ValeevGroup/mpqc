@@ -54,3 +54,7 @@ class RedundantCartesianSubIterV3 : public RedundantCartesianSubIter {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

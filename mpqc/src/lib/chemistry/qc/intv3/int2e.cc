@@ -41,3 +41,9 @@ Int2eV3::~Int2eV3()
     done_bounds_1der();
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

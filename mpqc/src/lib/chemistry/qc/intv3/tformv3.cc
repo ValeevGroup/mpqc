@@ -240,17 +240,6 @@ source_space(int nsource)
     }
 }
 
-/* Compute the number of cartesian functions in a shell. */
-static int
-have_pure(shell_t *sh)
-{
-  int i;
-  for (i=0; i<sh->ncon; i++) {
-      if (sh->type[i].puream) return 1;
-    }
-  return 0;
-}
-
 static void
 copy_to_source(double *integrals, int nsource)
 {
@@ -645,3 +634,9 @@ intv3_transform_2e(double *integrals, double *target,
       memmove(target, integrals, sizeof(double)*nint);
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

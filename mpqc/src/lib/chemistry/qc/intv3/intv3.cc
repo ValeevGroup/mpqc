@@ -140,3 +140,9 @@ IntegralV3::electron_repulsion_deriv()
 {
   return new TwoBodyDerivIntV3(bs1_, bs2_, bs3_, bs4_, storage_);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

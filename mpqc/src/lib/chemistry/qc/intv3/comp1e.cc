@@ -11,10 +11,6 @@
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/tformv3.h>
 
-extern "C" {
-#include <chemistry/qc/intv2/atoms.h>
-}
-
 #define IN(i,j) ((i)==(j)?1:0)
 #define SELECT(x1,x2,x3,s) (((s)==0)?x1:(((s)==1)?(x2):(x3)))
 
@@ -209,6 +205,7 @@ Int1eV3::comp_shell_overlap(int gc1, int i1, int j1, int k1,
   }
 
 /* Compute the overlap between two primitive functions. */
+#if 0
 double
 Int1eV3::int_prim_overlap(shell_t *pshell1, shell_t *pshell2,
                           double *pA, double *pB,
@@ -239,6 +236,7 @@ Int1eV3::int_prim_overlap(shell_t *pshell1, shell_t *pshell2,
              * gshell2->exponent(prim2) * AmB2);
   return comp_prim_overlap(i1,j1,k1,i2,j2,k2);
   }
+#endif
 
 double
 Int1eV3::comp_prim_overlap(int i1, int j1, int k1,

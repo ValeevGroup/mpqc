@@ -5,13 +5,11 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/types.h>
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/utils.h>
-#include <chemistry/qc/intv2/atomsallc.h>
 
 static void
 fail()

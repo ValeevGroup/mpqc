@@ -7,12 +7,11 @@
 #include <stdlib.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/types.h>
 
-#include <chemistry/qc/intv2/storage.h>
+#include <chemistry/qc/intv3/storage.h>
 #include <chemistry/qc/intv3/int2e.h>
 
 void
@@ -98,3 +97,9 @@ Int2eV3::int_store_integral(int sh1,int sh2,int sh3,int sh4,
       storer->store(key,int_buffer,size,cost,actualsize);
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

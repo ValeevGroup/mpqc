@@ -9,10 +9,6 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/intv3/fjt.h>
 
-extern "C" {
-#include <chemistry/qc/intv2/atoms.h>
-}
-
 class Int1eV3: public VRefCount {
   protected:
     RefGaussianBasisSet bs1_;
@@ -91,11 +87,13 @@ class Int1eV3: public VRefCount {
                                       int centernum);
     void int_done_1e();
     void int_initialize_1e(int flags, int order);
+#if 0
     double int_prim_overlap(shell_t *pshell1, shell_t *pshell2,
                             double *pA, double *pB,
                             int prim1, int prim2,
                             int i1, int j1, int k1,
                             int i2, int j2, int k2);
+#endif
     void int_accum_shell_kinetic(int ish, int jsh);
     void int_accum_shell_kinetic_1der(int ish, int jsh,
                                       RefGaussianBasisSet dercs,
@@ -166,3 +164,7 @@ REF_dec(Int1eV3);
 
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -1,7 +1,6 @@
 
 #include <stdio.h>
 
-#include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/macros.h>
 
 #include <chemistry/qc/intv3/int2e.h>
@@ -441,3 +440,9 @@ Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
     }
   }
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

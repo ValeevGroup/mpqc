@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include <chemistry/qc/intv2/atoms.h>
-#include <chemistry/qc/intv2/atomsprnt.h>
 #include <chemistry/qc/intv3/macros.h>
 
 #include <chemistry/qc/intv3/int2e.h>
@@ -161,3 +159,9 @@ Int2eV3::int_print_intermediates(FILE *fp)
   print_int_vector(fp,&int_shell_to_prim);
 
   }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

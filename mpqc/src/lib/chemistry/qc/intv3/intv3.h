@@ -55,3 +55,7 @@ class IntegralV3 : public Integral {
 
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

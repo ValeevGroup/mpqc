@@ -5,11 +5,6 @@
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/utils.h>
 
-extern "C" {
-#include <chemistry/qc/intv2/atoms.h>
-#include <chemistry/qc/intv2/atomsfree.h>
-}
-
 Int1eV3::Int1eV3(const RefGaussianBasisSet&b1,
                  const RefGaussianBasisSet&b2,
                  int order)
@@ -34,3 +29,9 @@ Int1eV3::~Int1eV3()
   int_done_1e();
   int_done_offsets1();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

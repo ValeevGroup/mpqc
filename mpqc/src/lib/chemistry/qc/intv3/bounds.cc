@@ -5,7 +5,6 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/types.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/int2e.h>
@@ -348,3 +347,9 @@ Int2eV3::logbound_to_bound(int value)
 {
   return pow(2.0,(double)value);
   }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -641,3 +641,9 @@ test_4der_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
 
   if (bounds) int2ev3->done_bounds_1der();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

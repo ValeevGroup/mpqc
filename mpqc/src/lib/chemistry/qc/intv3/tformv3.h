@@ -10,10 +10,6 @@
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/intv3/macros.h>
 
-extern "C" {
-#include <chemistry/qc/intv2/atoms.h>
-}
-
 /* integrals and target may overlap */
 void intv3_transform_1e(double *integrals, double *target,
                         GaussianShell *sh1, GaussianShell *sh2);
@@ -81,3 +77,7 @@ class SphericalTransformIterV3 : public SphericalTransformIter {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

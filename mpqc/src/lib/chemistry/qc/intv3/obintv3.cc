@@ -1,11 +1,6 @@
 
 #include <stdio.h>
 
-extern "C" {
-#include <chemistry/qc/intv2/atoms.h>
-#include <chemistry/qc/intv2/atomsfree.h>
-}
-
 #include <chemistry/qc/intv3/obintv3.h>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -192,3 +187,9 @@ OneBodyDerivIntV3::compute_shell(int i, int j, int c)
 {
   (int1ev3_->*intfunc_)(i,j,0,c);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

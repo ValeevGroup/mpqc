@@ -6,7 +6,6 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/macros.h>
 
 #include <chemistry/qc/intv3/fjt.h>
@@ -1589,3 +1588,9 @@ Int2eV3::choose_center(int am12, int am34, int m)
   if (need1 <= need3) return 1;
   return 3;
   }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -1,11 +1,6 @@
 
 #include <stdio.h>
 
-extern "C" {
-#include <chemistry/qc/intv2/atoms.h>
-#include <chemistry/qc/intv2/atomsfree.h>
-}
-
 #include <chemistry/qc/intv3/tbintv3.h>
 
 TwoBodyIntV3::TwoBodyIntV3(const RefGaussianBasisSet& b1,
@@ -86,3 +81,9 @@ TwoBodyDerivIntV3::log2_shell_bound(int is, int js, int ks, int ls)
 {
   return int2ev3_->erep_4bound_1der(is,js,ks,ls);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

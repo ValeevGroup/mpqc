@@ -9,9 +9,8 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/oint3/build.h>
 #include <chemistry/qc/intv3/fjt.h>
-#include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/types.h>
-#include <chemistry/qc/intv2/storage.h>
+#include <chemistry/qc/intv3/storage.h>
 
 class Int2eV3: public VRefCount {
   protected:
@@ -351,3 +350,7 @@ class Int2eV3: public VRefCount {
 REF_dec(Int2eV3);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

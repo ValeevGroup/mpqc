@@ -7,7 +7,6 @@
 #include <math.h>
 #include <math/array/math_lib.h>
 
-#include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/types.h>
@@ -105,3 +104,9 @@ Int2eV3::erep_3center(int *shells, int  *sizes)
       sizes[2] = bs4_->shell(shells[2]).nfunction();
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -17,3 +17,7 @@ class der_centersv3_t {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -6,122 +6,6 @@
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/int2e.h>
 
-extern "C" {
-#include <chemistry/qc/intv2/atoms.h>
-#include <chemistry/qc/intv2/atomsprnt.h>
-}
-
-/////////////////////////////////////////////////////////////////////////
-
-/* Compute the number of shells, the shell offset for these centers,
- * and the arrays which map the number of the shell to the number
- * of the center and the number of the shell on that center. */
-static int
-shell_offset(centers_t *cs, int off)
-{
-  int ishell;
-  int i,j;
-
-  /* Set up the offset for the basis functions on this center. */
-  cs->shell_offset = off;
-
-  /* Compute the number of shells on this center. */
-  cs->nshell = 0;
-  for (i=0; i<cs->n; i++) {
-    cs->nshell += cs->center[i].basis.n;
-    }
-
-  if (cs->center_num || cs->shell_num) {
-    fprintf(stderr,"libint:shell_offset:center_num or shell_num is nonnull\n");
-    print_centers(stderr,cs);
-    exit(1);
-    }
-
-  /* Allocate storage for center_num and shell_num. */
-  cs->center_num = (int *) malloc(sizeof(int)*cs->nshell);
-  cs->shell_num = (int *) malloc(sizeof(int)*cs->nshell);
-  if (!(cs->center_num && cs->shell_num)) {
-    fprintf(stderr,"libint:shell_offset:problem allocating 3*%d integers\n",
-            cs->nshell);
-    exit(1);
-    }
-
-  /* Compute the center_num and shell_num arrays. */
-  ishell = 0;
-  for (i=0; i<cs->n; i++) {
-    for (j=0; j<cs->center[i].basis.n; j++) {
-      cs->center_num[ishell] = i;
-      cs->shell_num[ishell] = j;
-      ishell++;
-      }
-    }
-
-  return off + cs->nshell;
-  }
-
-/* Compute function number array and the function offset
- * and the arrays which map the number of the shell to the number
- * of the first basis function in that that shell on that center. */
-static int
-func_offset(centers_t *cs, int off)
-{
-  int ishell;
-  int i,j;
-
-  /* Set up the offset for the basis functions on this center. */
-  cs->func_offset = off;
-
-  if (cs->func_num) {
-    fprintf(stderr,"libint:func_offset:func_num is nonnull\n");
-    print_centers(stderr,cs);
-    exit(1);
-    }
-
-  /* Allocate storage for func_num. */
-  cs->func_num = (int *) malloc(sizeof(int)*cs->nshell);
-  if (!(cs->func_num)) {
-    fprintf(stderr,"libint:shell_offset:problem allocating 3*%d integers\n",
-            cs->nshell);
-    exit(1);
-    }
-
-  if (!cs->nshell) return off;
-
-  /* Compute the func_num array. */
-  ishell = 0;
-  cs->nfunc = 0;
-  for (i=0; i<cs->n; i++) {
-    for (j=0; j<cs->center[i].basis.n; j++) {
-      shell_t *shell=&(cs->center[i].basis.shell[j]);
-      cs->func_num[ishell] = cs->nfunc;
-      cs->nfunc += shell->nfunc;
-      ishell++;
-      }
-    }
-
-  return off + cs->nfunc;
-  }
-
-/* Compute the primitive offsets. */
-static int
-prim_offset(centers_t *cs, int off)
-{
-  int i,j;
-
-  /* Set up the offset for the basis functions on this center. */
-  cs->prim_offset = off;
-
-  /* Compute the number of primitives on this center. */
-  cs->nprim = 0;
-  for (i=0; i<cs->n; i++) {
-    for (j=0; j<cs->center[i].basis.n; j++) {
-      cs->nprim += cs->center[i].basis.shell[j].nprim;
-      }
-    }
-
-  return off + cs->nprim;
-  }
-
 /* Compute the shell offset. */
 static int
 shell_offset(RefGaussianBasisSet cs, int off)
@@ -142,24 +26,6 @@ func_offset(RefGaussianBasisSet cs, int off)
 {
   return off + cs->nbasis();
 }
-
-/* Free storage for the offset arrays. */
-static void
-free_offsets(centers_t *cs)
-{
-  free(cs->center_num);
-  free(cs->shell_num);
-  free(cs->func_num);
-  cs->center_num = NULL;
-  cs->shell_num = NULL;
-  cs->func_num = NULL;
-  cs->shell_offset = 0;
-  cs->prim_offset = 0;
-  cs->func_offset = 0;
-  cs->nshell = 0;
-  cs->nprim = 0;
-  cs->nfunc = 0;
-  }
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -363,3 +229,9 @@ void
 Int2eV3::int_done_offsets2()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -9,4 +9,4 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install::
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)/texinputs
-	$(INSTALL) $(INSTALLLIBOPT) $(wildcard $(SRCDIR)/scdoc.*) $(libdir)/texinputs
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/scdoc.* $(libdir)/texinputs

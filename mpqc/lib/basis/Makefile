@@ -9,4 +9,4 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install::
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)/basis
-	$(INSTALL) $(INSTALLLIBOPT) $(wildcard $(SRCDIR)/*.kv) $(libdir)/basis
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.kv $(libdir)/basis

@@ -9,4 +9,4 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install::
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)/perl
-	$(INSTALL) $(INSTALLLIBOPT) $(wildcard $(SRCDIR)/*.pm) $(libdir)/perl
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.pm $(libdir)/perl

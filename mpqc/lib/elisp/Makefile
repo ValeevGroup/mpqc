@@ -9,4 +9,4 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install::
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)/elisp
-	$(INSTALL) $(INSTALLLIBOPT) $(wildcard $(SRCDIR)/*.el) $(libdir)/elisp
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.el $(libdir)/elisp

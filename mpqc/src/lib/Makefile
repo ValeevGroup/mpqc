@@ -13,4 +13,5 @@ install:: install_inc
 
 install_inc::
 	$(INSTALL) $(INSTALLDIROPT) $(includedir)
-	$(INSTALL) $(INSTALLLIBOPT) $(wildcard *.h) $(wildcard $(SRCDIR)/*.h) $(includedir)
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(includedir)
+	-$(INSTALL) $(INSTALLLIBOPT) *.h $(includedir)

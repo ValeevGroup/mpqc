@@ -78,7 +78,8 @@ install: install_inc install_target
 
 install_inc::
 	$(INSTALL) $(INSTALLDIROPT) $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
-	$(INSTALL) $(INSTALLLIBOPT) $(wildcard *.h) $(wildcard $(SRCDIR)/*.h) $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	-$(INSTALL) $(INSTALLLIBOPT) *.h $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 
 install_target:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).$(LIBSUF)
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)

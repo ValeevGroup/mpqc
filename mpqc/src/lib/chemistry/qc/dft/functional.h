@@ -174,6 +174,31 @@ class SumDenFunctional: public DenFunctional {
     void print(ostream& =cout) const;
 };
 
+/** The StdDenFunctional provides a shorthand method to construct
+    the standard density functionals.  */
+class StdDenFunctional: public SumDenFunctional {
+#   define CLASSNAME StdDenFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    char *name_;
+    void init_arrays(int n);
+  public:
+    StdDenFunctional();
+    /** This KeyVal CTOR does not call the parent's KeyVal CTOR.  The
+        "name" keyword is read from the input and is used to initialize the
+        functional.  The name must be one of HFK, XALPHA, HFS, HFB, HFG96,
+        BLYP, B3LYP, or PBE. */
+    StdDenFunctional(const RefKeyVal &);
+    StdDenFunctional(StateIn &);
+    ~StdDenFunctional();
+    void save_data_state(StateOut &);
+
+    void print(ostream& =cout) const;
+};
+
 // The LSDACFunctional computes energies and densities
 //    using the designated local correlation functional.
 class LSDACFunctional: public DenFunctional {

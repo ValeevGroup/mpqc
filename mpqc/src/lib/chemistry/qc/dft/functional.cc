@@ -608,6 +608,121 @@ SumDenFunctional::print(ostream& o) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// StdDenFunctional
+
+#define CLASSNAME StdDenFunctional
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public SumDenFunctional
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+StdDenFunctional::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SumDenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+StdDenFunctional::StdDenFunctional(StateIn& s):
+  SavableState(s),
+  SumDenFunctional(s),
+  name_(0)
+{
+  s.getstring(name_);
+}
+
+StdDenFunctional::StdDenFunctional():
+  name_(0)
+{
+}
+
+void
+StdDenFunctional::init_arrays(int n)
+{
+  n_ = n;
+  funcs_ = new RefDenFunctional[n_];
+  coefs_ = new double[n_];
+  for (int i=0; i<n_; i++) coefs_[i] = 1.0;
+}
+
+StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
+{
+  name_ = keyval->pcharvalue("name");
+  if (name_) {
+      if (!strcmp(name_,"HFK")) {
+          n_ = 0;
+          a0_ = 1.0;
+        }
+      else if (!strcmp(name_,"XALPHA")) {
+          init_arrays(1);
+          funcs_[0] = new XalphaFunctional;
+        }
+      else if (!strcmp(name_,"HFS")) {
+          init_arrays(1);
+          funcs_[0] = new SlaterXFunctional;
+        }
+      else if (!strcmp(name_,"HFB")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+        }
+      else if (!strcmp(name_,"HFG96")) {
+          init_arrays(1);
+          funcs_[0] = new G96XFunctional;
+        }
+      else if (!strcmp(name_,"BLYP")) {
+          init_arrays(3);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new LYPCFunctional;
+        }
+      else if (!strcmp(name_,"B3LYP")) {
+          init_arrays(4);
+          a0_ = 0.2;
+          coefs_[0] = 0.8;
+          coefs_[1] = 0.72;
+          coefs_[2] = 0.19;
+          coefs_[3] = 0.81;
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new VWN3LCFunctional;
+          funcs_[3] = new LYPCFunctional;
+        }
+      else if (!strcmp(name_,"PBE")) {
+          init_arrays(2);
+          funcs_[0] = new PBEXFunctional;
+          funcs_[1] = new PBECFunctional;
+        }
+      else {
+          cout << "StdDenFunctional: bad name: " << name_ << endl;
+          abort();
+        }
+    }
+}
+
+StdDenFunctional::~StdDenFunctional()
+{
+  delete[] name_;
+}
+
+void
+StdDenFunctional::save_data_state(StateOut& s)
+{
+  s.putstring(name_);
+}
+
+void
+StdDenFunctional::print(ostream& o) const
+{
+  const char *n = name_;
+  if (!n) n = "Null";
+
+  o << node0
+    << indent << "Standard Density Functional: " << n << endl;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // LSDACFunctional: All local correlation functional inherit from this class.
 // Coded by Matt Leininger
 #define CLASSNAME LSDACFunctional

@@ -7,12 +7,12 @@
 #include "classdImplMap.h"
 
 StateOutFile::StateOutFile() :
-  fp_(stdout), opened_(0)
+  opened_(0), fp_(stdout)
 {
 }
 
 StateOutFile::StateOutFile(FILE* fp) :
-  fp_(fp), opened_(0)
+  opened_(0), fp_(fp)
 {
 }
 
@@ -55,12 +55,12 @@ int StateOutFile::open(const char *path, const char * mode)
 ////////////////////////////////////
 
 StateInFile::StateInFile() :
-  fp_(stdin), opened_(0)
+  opened_(0), fp_(stdin)
 {
 }
 
 StateInFile::StateInFile(FILE* fp) :
-  fp_(fp), opened_(0)
+  opened_(0), fp_(fp)
 {
 }
 

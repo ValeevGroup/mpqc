@@ -64,11 +64,6 @@ ifeq ($(ARCH),I860)
   DEFINES += -DLINPACKD=-lkmath
 endif
 
-ifeq ($(ARCH),SGI)
-  CC = $(GCC)
-  COPTIONS = $(GCOPTIONS_DEBUG)
-endif
-
 DISTFILES = Makefile mpqcnode.c compdate.c includes.h disclaimer.h
 
 install:: install_$(DEFAULT)
@@ -97,7 +92,7 @@ install_mpqc:: mpqc
 	$(INSTALL) $(INSTALLBINOPTS) $< $(BINDIR)
 mpqc: mpqcnode.$(OBJSUF) compdate.$(OBJSUF) \
 	 $(shell $(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(CC) $(CFLAGS) -o $@ $^ $(SYSLIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 endif
 
 compdate.o: compdate.c always_needs_made

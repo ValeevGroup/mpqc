@@ -344,7 +344,7 @@ SetIntCoor::bmat(RefMolecule& mol, RefSCMatrix& bmat)
   for (i=0; i<ncoor; i++) {
       bmatrow.assign(0.0);
       coor_[i]->bmat(mol,bmatrow);
-      for (int j=0; j<ncart; j++) bmat(i,j) = bmatrow(j);
+      bmat.assign_row(bmatrow,i);
     }
 }
 
@@ -866,6 +866,9 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
   add_bends(sic,bonds,m);
   add_tors(sic,bonds,m);
   add_out(sic,bonds,m);
+
+  cout << indent
+       << "IntCoorGen: generated " << sic->n() << " coordinates." << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////

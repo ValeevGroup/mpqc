@@ -77,6 +77,22 @@ case $enableval in
 esac
 ])
 
+enableproduction=no
+AC_ARG_ENABLE(production,
+[  --enable-production     Prepare for a production install.],
+[
+case $enableval in
+  yes)
+    enableproduction=yes
+  ;;
+  no)
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-production ($enableval)])
+  ;;
+esac
+])
+
 AC_ARG_ENABLE(parallel,
 [  --disable-parallel      Compile for serial execution.],
 [
@@ -1323,7 +1339,9 @@ AC_SUBST(SCLIBS)
 
 dnl --------- Defined the library directory macros. ---------
 
+if test "$enableproduction" == "no"; then
 AC_DEFINE_UNQUOTED(SRC_SCLIBDIR, "$srcdir/lib")
+fi
 AC_DEFINE_UNQUOTED(INSTALLED_SCLIBDIR, "$prefix/lib")
 
 dnl --------- Create the stub Makefiles. ---------

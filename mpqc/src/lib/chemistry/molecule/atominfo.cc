@@ -255,9 +255,11 @@ AtomInfo::load_library_values()
       else {
           struct stat sb;
           const char *ainfo = INSTALLED_SCLIBDIR "/atominfo.kv";
+#ifdef SRC_SCLIBDIR
           if (stat(ainfo, &sb) != 0) {
               ainfo = SRC_SCLIBDIR "/atominfo.kv";
             }
+#endif
           ExEnv::out() << indent << "Reading file " << ainfo << "." << endl;
           keyval = new ParsedKeyVal(ainfo);
         }

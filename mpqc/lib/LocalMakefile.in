@@ -78,7 +78,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 libdir=@libdir@
-includedir=@includedir@
+includedir=@scincludedir@
 datadir=@datadir@
 scdatadir=@scdatadir@
 

@@ -90,6 +90,8 @@ class GaussianShell: public SavableState
     char amchar(int con) const;
     int nfunction(int con) const;
     int ncartesian() const;
+    // this is given a shift for all of the angular momentums
+    int ncartesian_with_aminc(int aminc) const;
     int ncartesian(int con) const;
     int is_cartesian(int con) const;
     int is_pure(int con) const;

@@ -270,6 +270,15 @@ int GaussianShell::ncartesian() const
   return ret;
 }
 
+int GaussianShell::ncartesian_with_aminc(int aminc) const
+{
+  int ret = 0;
+  for (int i=0; i<ncontraction(); i++) {
+      ret += (((l[i]+2+aminc)*(l[i]+1+aminc))>>1);
+    }
+  return ret;
+}
+
 int GaussianShell::has_pure() const
 {
   for (int i=0; i<ncontraction(); i++) {

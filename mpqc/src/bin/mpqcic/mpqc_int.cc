@@ -76,7 +76,7 @@ static int modef=0;
 static double conv_crit=1.0e-6;
 static double conv_rmsf=1.0e-5;
 static double conv_maxf=4.0e-5;
-static double maxstepsize=0.3;
+static double maxstepsize=0.6;
 
 static double cart_tol=1.0e-10;
 

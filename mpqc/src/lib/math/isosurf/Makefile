@@ -40,10 +40,6 @@ CXXSRC = volume.cc shape.cc volume_i.cc \
          tricoef.cc tmplinst.cc
 CSRC = implicit.c
 
-CLASSES = Volume Shape UnionShape SphereShape \
-          UncappedTorusHoleShape NonreentrantUncappedTorusHoleShape \
-          ReentrantUncappedTorusHoleShape Uncapped5SphereExclusionShape
-
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
 INC = volume.h shape.h volume_i.h implicit.h tricoef.h

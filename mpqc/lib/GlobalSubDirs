@@ -11,12 +11,6 @@ ifndef DODEPEND
 DODEPENDOPT = "DODEPEND=no"
 endif
 
-interface::
-	for dir in $(SUBDIRS); \
-	  do \
-	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) interface) || exit 1; \
-	  done
-
 install::
 	for dir in $(SUBDIRS); \
 	  do \

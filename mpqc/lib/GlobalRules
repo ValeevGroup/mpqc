@@ -48,35 +48,7 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
-.PHONY:	dlinfo
-dlinfo::
-ifneq ($(CLASSES),none)
-#dlinfo:: # $(TOPDIR)/lib/$(TARGET_TO_MAKE).dep
-#	$(MKCLASSES) $(TOPDIR)/lib/classes $(TARGET_TO_MAKE).so $(CLASSES)
-
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
-else
 default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).a
-endif
-
-#$(TOPDIR)/lib/$(TARGET_TO_MAKE).dep: LIBS.h
-#	/bin/rm -f $@
-#	echo $(shell $(LISTLIBS) $(DEFINES) $(INCLUDE) $(SRCDIR)/LIBS.h) \
-#                > $@
-endif
-
-$(TOPDIR)/lib/$(TARGET_TO_MAKE).so: $(LIBOBJ)
-	$(SH_LD) $(SH_LDFLAGS) \
-          -o $(TOPDIR)/lib/$(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) $^
-	rm -f $(TOPDIR)/lib/$(TARGET_TO_MAKE).so.$(ELF_MAJOR)
-	ln -s \
-          $(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) \
-          $(TOPDIR)/lib/$(TARGET_TO_MAKE).so.$(ELF_MAJOR)
-	rm -f $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
-	ln -s \
-          $(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) \
-          $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
 
 install_devel:: install_inc install_target
 
@@ -107,15 +79,6 @@ install_target:: $(TARGET_TO_MAKE)
 	$(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(bindir)
 
 endif
-
-.PHONY: doc
-doc::
-	if test -d doc; then \
-	  for i in $(SRCDIR)/*.h; \
-	    do \
-	      ($(CLASS2TEX) $(CLASS2TEXFLAGS) $${i}); \
-	    done \
-	fi
 
 %.$(OBJSUF): %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< $(OUTPUT_OPTION)
@@ -174,12 +137,6 @@ ifdef TARGET_TO_MAKE
 endif
 
 #
-# If a makefile generates include files, these should be targets of interface.
-#
-.PHONY: interface
-interface::
-
-#
 # dependencies
 #
 
@@ -220,51 +177,6 @@ endif
 
 %.ii: %.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -E $< -o $@
-
-#
-# remote stuff
-#
-FILES = $(TRUESRC) $(TRUEINCLUDES) Makefile $(OTHERFILES)
-
-REMOTEFILES=$(FILES:%=REMOTE/$(HOST).%)
-
-remote: REMOTE $(REMOTEDIR)/$(HOST) uncompress_tar $(REMOTEFILES)
-	$(COMPRESS) $(REMOTEDIR)/$(HOST)/$(TARGET_TO_MAKE).tar
-
-$(REMOTEDIR)/$(HOST):
-	@if [ ! -d $@ ] ; then mkdir $@; fi
-
-REMOTE:
-	@if [ ! -d $@ ] ; then mkdir $@; fi
-
-uncompress_tar:
-	-$(UNCOMPRESS) $(REMOTEDIR)/$(HOST)/$(TARGET_TO_MAKE).tar
-
-REMOTE/$(HOST).%: %
-	@tar rvf $(REMOTEDIR)/$(HOST)/$(TARGET_TO_MAKE).tar $< || tar cvf $(REMOTEDIR)/$(HOST)/$(TARGET_TO_MAKE).tar $<
-	@touch $@
-
-extract:
-	chmod u+w $(FILES)
-	zcat $(REMOTEDIR)/$(TARGET_TO_MAKE).tar | tar xvf -
-
-CWDIR = $(shell pwd)
-saber: $(SABER_FILES)
-	#setopt path $(CWDIR)
-	#load $(INCLUDE) $(DEFINES) $(SABER_FILES)
-
-tar: $(TARGET_TO_MAKE).tar.Z
-
-$(TARGET_TO_MAKE).tar.Z: $(FILES)
-	tar cvf - $(FILES) | compress > $(@F)
-
-$(TARGET_TO_MAKE)_pl%:
-	@if [ !-d $(@F) ]; then mkdir $(@F) ; fi
-	/bin/cp $(FILES) $(@F)
-
-$(TARGET_TO_MAKE).patch%: $(TARGET_TO_MAKE)_pl%
-	@-FOO=`echo $*-1|bc`; diff -cr $(TARGET_TO_MAKE)_pl$${FOO} $< > $(@F);\
-    echo " " > /dev/null
 
 values::
 	@echo TOPDIR=$(TOPDIR)

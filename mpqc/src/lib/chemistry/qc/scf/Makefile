@@ -40,9 +40,6 @@ SRCS = scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
        uscf.cc uhf.cc \
        tmplinst.cc
 
-CLASSES = SCF CLSCF HSOSSCF OSSSCF TCSCF UnrestrictedSCF \
-          CLHF HSOSHF OSSHF TCHF UHF
-
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)

@@ -35,7 +35,6 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
 LD = $(CXX)
 CXXSRC = bem.cc disprep.cc
-CLASSES = BEMSolvent
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 

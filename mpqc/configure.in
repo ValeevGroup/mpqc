@@ -164,25 +164,6 @@ case $enableval in
 esac
 ])
 
-AC_ARG_ENABLE(shared-libs,
-[  --enable-shared-libs    Use shared libraries.],
-[
-case $enableval in
-  yes)
-    SHARED_LIBS=yes
-  ;;
-  no)
-    SHARED_LIBS=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --enable-shared-libs ($enableval)])
-  ;;
-esac
-],[
-SHARED_LIBS=no
-]
-)
-
 AC_ARG_WITH(cc,
 [  --with-cc               Gives the name of the C compiler to use.],
 CC=$withval
@@ -228,12 +209,10 @@ echo Using extra libraries: $withval
 
 LDFLAGS=
 LIBDIRS=
-SH_LDFLAGS=
 AC_ARG_WITH(libdirs,
 [  --with-libdirs          Specifies library directories (-Ldir1 -Ldir2).],
 LIBDIRS=$withval
 LDFLAGS=$withval
-SH_LDFLAGS=$withval
 echo Using extra library directories: $withval
 )
 
@@ -335,58 +314,6 @@ CCDEPENDSUF=none
 CXXDEPENDSUF=none
 CCDEPENDFLAGS=-M
 CXXDEPENDFLAGS=-M
-
-SH_LD=ld
-ELF=no
-ELF_MAJOR=1
-ELF_MINOR=0.1
-
-dnl -- does machine use elf format --
-
-changequote(<<, >>)dnl
-if test X$SHARED_LIBS = Xyes; then
-  case $target in
-    mips*-sgi-irix[5-6]*)
-      ELF=yes
-      LIBSUF=so
-      if test X$GXX = Xyes; then
-        SH_LD="\$(CXX)"
-        LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(LIBDIR)"
-        SH_LDFLAGS="$SH_LDFLAGS -elf -shared \
-          -Wl,-update_registry -Wl,\$(LIBDIR)/so_locations \
-          -Wl,-rdata_shared \
-          -Wl,-rpath -Wl,\$(LIBDIR) \
-          -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
-      else
-        LDFLAGS="$LDFLAGS -rpath \$(LIBDIR)"
-        SH_LDFLAGS="$SH_LDFLAGS -elf -shared -rdata_shared -rpath \$(LIBDIR) \
-                     -update_registry \$(LIBDIR)/so_locations \
-                     -soname \$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
-      fi
-    ;;
-    *-linux*)
-      ELF=yes
-      LIBSUF=so
-      SH_LD="\$(CXX)"
-      SH_LDFLAGS="$SH_LDFLAGS -shared -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
-      LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(LIBDIR)"
-    ;;
-  esac
-fi
-changequote([, ])dnl
-
-if test X$ELF = Xyes; then
-  if test X$GCC = Xyes; then
-    COPTIONS_MISC="$COPTIONS_MISC -fPIC"
-  else
-    COPTIONS_MISC="$COPTIONS_MISC -KPIC"
-  fi
-  if test X$GXX = Xyes; then
-    CXXOPTIONS_MISC="$CXXOPTIONS_MISC -fPIC"
-  else
-    CXXOPTIONS_MISC="$CXXOPTIONS_MISC -KPIC"
-  fi
-fi
 
 dnl -- special optimization options --
 
@@ -666,11 +593,6 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 
 AC_SUBST(LDFLAGS)
-AC_SUBST(ELF)
-AC_SUBST(ELF_MAJOR)
-AC_SUBST(ELF_MINOR)
-AC_SUBST(SH_LD)
-AC_SUBST(SH_LDFLAGS)
 AC_SUBST(LIBDIRS)
 
 AC_SUBST(OBJSUF)

@@ -39,10 +39,6 @@ CXXSRC = function.cc opt.cc update.cc qnewton.cc newton.cc \
          scextrap.cc scextrapmat.cc diis.cc transform.cc conv.cc
 CSRC = 
 
-CLASSES = Optimize QNewtonOpt GDIISOpt LineOpt EFCOpt \
-          Function \
-          HessianUpdate DFPUpdate BFGSUpdate PowellUpdate
-
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
 INC = function.h opt.h gdiis.h efc.h update.h qnewton.h newton.h \

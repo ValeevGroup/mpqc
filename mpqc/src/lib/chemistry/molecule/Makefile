@@ -39,17 +39,6 @@ CXXSRC = molecule.cc molsymm.cc \
          molshape.cc taylor.cc hess.cc fdhess.cc \
          molrender.cc atominfo.cc molfreq.cc formula.cc
 
-CLASSES = Molecule \
-          IntCoor SumIntCoor SetIntCoor \
-          MolecularCoor IntMolecularCoor \
-          MolecularEnergy  TaylorMolecularEnergy \
-          VDWShape ConnollyShape \
-          SimpleCo StreSimpleCo BendSimpleCo TorsSimpleCo \
-          OutSimpleCo LinIPSimpleCo LinOPSimpleCo \
-          AtomInfo \
-          RenderedMolecule RenderedStickMolecule RenderedBallMolecule \
-          RenderedMolecularSurface MolecularFormula
-
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = molecule.h \

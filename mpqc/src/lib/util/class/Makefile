@@ -35,8 +35,6 @@ CXXSRC = class.cc proxy.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 
-CLASSES = DescribedClass DescribedClassProxy
-
 INC = class.h proxy.h
 GENINC = clasmacr.h
 
@@ -49,7 +47,6 @@ TESTCXXSRC = classtest.cc
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
 
 interface:: $(DEPENDINCLUDE)
 

@@ -38,8 +38,6 @@ BIN_OR_LIB = LIB
 SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc hcorewfn.cc \
        accum.cc nao.cc orbital.cc solvent.cc 
 
-CLASSES = ElectronDensity OneBodyWavefunction Wavefunction
-
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)

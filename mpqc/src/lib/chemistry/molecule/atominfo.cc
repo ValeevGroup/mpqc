@@ -273,15 +273,18 @@ AtomInfo::load_values(const RefKeyVal& keyval, int override)
   RefUnits amu = new Units("amu");
   RefUnits bohr = new Units("bohr");
 
-  load_values(mass_, "mass", keyval, override, amu);
-  load_values(atomic_radius_, "atomic_radius", keyval, override, bohr);
-  load_values(vdw_radius_, "vdw_radius", keyval, override, bohr);
-  load_values(bragg_radius_, "bragg_radius", keyval, override, bohr);
+  load_values(mass_, 0, "mass", keyval, override, amu);
+  load_values(atomic_radius_, &atomic_radius_scale_, "atomic_radius",
+              keyval, override, bohr);
+  load_values(vdw_radius_, &vdw_radius_scale_, "vdw_radius",
+              keyval, override, bohr);
+  load_values(bragg_radius_, &bragg_radius_scale_,
+              "bragg_radius", keyval, override, bohr);
   load_values(rgb_, "rgb", keyval, override);
 }
 
 void
-AtomInfo::load_values(double *array, const char *keyword,
+AtomInfo::load_values(double *array, double *scale, const char *keyword,
                       const RefKeyVal &keyval, int override,
                       const RefUnits &units)
 {
@@ -323,6 +326,26 @@ AtomInfo::load_values(double *array, const char *keyword,
               char *strval = pkeyval->pcharvalue(names_[i].symbol);
               char assignment[256];
               sprintf(assignment,"%s%s=%s", prefix, names_[i].symbol, strval);
+              delete[] strval;
+              add_overridden_value(assignment);
+            }
+        }
+    }
+  if (scale) {
+      KeyValValuedouble kvvscale(1.0);
+      *scale = pkeyval->doublevalue("scale_factor", kvvscale);
+      if (pkeyval->error() == KeyVal::OK) {
+          if (override) {
+              const char *prefix = " ";
+              if (!have_overridden) {
+                  add_overridden_value(keyword);
+                  add_overridden_value(":(");
+                  have_overridden = 1;
+                  prefix = "";
+                }
+              char *strval = pkeyval->pcharvalue("scale_factor");
+              char assignment[256];
+              sprintf(assignment,"%sscale_factor=%s", prefix, strval);
               delete[] strval;
               add_overridden_value(assignment);
             }

@@ -57,13 +57,16 @@ class AtomInfo: public SavableState {
     double  vdw_radius_[MaxZ];
     double  bragg_radius_[MaxZ];
     double  rgb_[MaxZ][3];
+    double  atomic_radius_scale_;
+    double  vdw_radius_scale_;
+    double  bragg_radius_scale_;
 
     char *overridden_values_;
 
     void load_library_values();
     void override_library_values(const RefKeyVal &keyval);
     void load_values(const RefKeyVal& keyval, int override);
-    void load_values(double *array, const char *keyword,
+    void load_values(double *array, double *scale, const char *keyword,
                      const RefKeyVal &keyval, int override,
                      const RefUnits &);
     void load_values(double array[][3], const char *keyword,
@@ -77,9 +80,16 @@ class AtomInfo: public SavableState {
     void save_data_state(StateOut& s);
 
     /// These return various measures of the atom's radius.
-    double vdw_radius(int Z) const { return vdw_radius_[Z]; }
-    double bragg_radius(int Z) const { return bragg_radius_[Z]; }
-    double atomic_radius(int Z) const { return atomic_radius_[Z]; }
+    double vdw_radius(int Z) const { return vdw_radius_[Z]*vdw_radius_scale_; }
+    double bragg_radius(int Z) const { return bragg_radius_[Z]*bragg_radius_scale_; }
+    double atomic_radius(int Z) const { return atomic_radius_[Z]*atomic_radius_scale_; }
+
+    /// Return the scale factor for the VdW radii.
+    double vdw_radius_scale() const { return vdw_radius_scale_; }
+    /// Return the scale factor for the Bragg radii.
+    double bragg_radius_scale() const { return bragg_radius_scale_; }
+    /// Return the scale factor for the atomic radii.
+    double atomic_radius_scale() const { return atomic_radius_scale_; }
 
     /** These return information about the color of the atom
         for visualization programs. */

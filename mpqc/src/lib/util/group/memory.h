@@ -34,14 +34,81 @@
 
 #include <iostream.h>
 
+#include <scconfig.h>
 #include <util/class/class.h>
 #include <util/group/rnglock.h>
 
-#ifdef __GNUC__
+#if 0 // this can be used to catch accidental conversions to int
+class distsize_t {
+    friend size_t distsize_to_size(const distsize_t &a);
+    friend distsize_t operator *(const int &a,const distsize_t &b);
+    friend distsize_t operator +(const int &a,const distsize_t &b);
+    friend distsize_t operator -(const int &a,const distsize_t &b);
+    friend distsize_t operator /(const int &a,const distsize_t &b);
+    friend distsize_t operator %(const int &a,const distsize_t &b);
+    friend ostream& operator <<(ostream& o, const distsize_t &s);
+  private:
+    unsigned long long s;
+  public:
+    distsize_t(): s(999999999999999LL) {}
+    distsize_t(int a): s(a) {}
+    distsize_t(unsigned int a): s(a) {}
+    distsize_t(unsigned long long a): s(a) {}
+    distsize_t &operator =(const distsize_t &a)
+        { s=a.s; return *this; }
+    distsize_t &operator +=(const distsize_t &a)
+        { s+=a.s; return *this; }
+    distsize_t operator *(const distsize_t &a) const
+        { return s*a.s; }
+    distsize_t operator +(const distsize_t &a) const
+        { return s+a.s; }
+    distsize_t operator -(const distsize_t &a) const
+        { return s-a.s; }
+    distsize_t operator /(const distsize_t &a) const
+        { return s/a.s; }
+    distsize_t operator %(const distsize_t &a) const
+        { return s%a.s; }
+    bool operator <(const distsize_t &a) const
+        { return s<a.s; }
+    bool operator <=(const distsize_t &a) const
+        { return s<=a.s; }
+    bool operator >(const distsize_t &a) const
+        { return s>a.s; }
+    bool operator >=(const distsize_t &a) const
+        { return s>=a.s; }
+    bool operator ==(const distsize_t &a) const
+        { return s==a.s; }
+    distsize_t operator *(const int &a) const
+        { return s*a; }
+    distsize_t operator +(const int &a) const
+        { return s+a; }
+    distsize_t operator -(const int &a) const
+        { return s-a; }
+    distsize_t operator /(const int &a) const
+        { return s/a; }
+    distsize_t operator %(const int &a) const
+        { return s%a; }
+};
+inline distsize_t operator *(const int &a,const distsize_t &b)
+{ return a*b.s; }
+inline distsize_t operator +(const int &a,const distsize_t &b)
+{ return a+b.s; }
+inline distsize_t operator -(const int &a,const distsize_t &b)
+{ return a-b.s; }
+inline distsize_t operator /(const int &a,const distsize_t &b)
+{ return a/b.s; }
+inline distsize_t operator %(const int &a,const distsize_t &b)
+{ return a%b.s; }
+inline ostream& operator <<(ostream& o, const distsize_t &s) { return o<<s.s; }
+inline size_t distsize_to_size(const distsize_t &a) {return a.s;}
+#elif defined(HAVE_LONG_LONG)
 typedef unsigned long long distsize_t;
+typedef long long distssize_t;
+inline size_t distsize_to_size(const distsize_t &a) {return a;}
 #else
-typedef unsigned long long distsize_t;
-//typedef unsigned long distsize_t;
+typedef unsigned long distsize_t;
+typedef long distssize_t;
+inline size_t distsize_to_size(const distsize_t &a) {return a;}
 #endif
 
 //. The \clsnm{MemoryGrp} abstract class provides the appearance of global
@@ -58,15 +125,6 @@ class MemoryGrp: public DescribedClass {
     int me_;
     int n_;
     distsize_t *offsets_; // offsets_[n_] is the fence for all data
-
-    // release locks to the local memory
-    void release_read_(distsize_t offset, int size);
-    void release_write_(distsize_t offset, int size);
-
-    // obtains locks to the local memory
-    // return 1 if the lock was obtained, otherwise 0
-    int obtain_read_(distsize_t offset, int size);
-    int obtain_write_(distsize_t offset, int size);
 
     int use_locks_;
 
@@ -87,11 +145,12 @@ class MemoryGrp: public DescribedClass {
     //. starts at node 0 and proceeds up to node \srccd{n()} - 1.
     virtual void set_localsize(int) = 0;
     //. Returns the amount of memory residing locally on \srccd{me()};
-    int localsize() { return offsets_[me_+1] - offsets_[me_]; }
+    int localsize() { return distsize_to_size(offsets_[me_+1]-offsets_[me_]); }
     //. Returns the global offset to this node's memory.
     distsize_t localoffset() { return offsets_[me_]; }
     //. Returns the amount of memory residing on \vrbl{node}.
-    int size(int node) { return offsets_[node+1] - offsets_[node]; }
+    int size(int node)
+        { return distsize_to_size(offsets_[node+1] - offsets_[node]); }
     //. Returns the global offset to \vrbl{node}'s memory.
     distsize_t offset(int node) { return offsets_[node]; }
     //. Returns the sum of all memory allocated on all nodes.
@@ -157,7 +216,7 @@ class MemoryGrpBuf {
     enum LockType { None, Read, Write };
     LockType locktype_;
     data_t *data_;
-    int offset_;
+    distsize_t offset_;
     int length_;
   public:
     //. Creates a new \clsnm{MemoryGrpBuf} given a \clsnmref{MemoryGrp}

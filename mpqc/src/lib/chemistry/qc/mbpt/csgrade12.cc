@@ -235,8 +235,6 @@ CSGradErep12Qtr::run_task_runner()
   int np,nq,nr,ns;
   int bf1,bf2,bf3,bf4;
   int p_offset,q_offset,r_offset,s_offset;
-  int index = 0;
-  int thindex = 0;
   int offset;
   int nfuncmax = basis->max_nfunction_in_shell();
   int nshell = basis->nshell();

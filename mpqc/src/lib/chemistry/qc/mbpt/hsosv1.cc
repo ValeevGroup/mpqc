@@ -43,21 +43,21 @@ typedef int dmt_matrix;
 #include <chemistry/qc/mbpt/hsosv1e1.h>
 
 static distsize_t
-compute_v1_memory(distsize_t ni,
-                  distsize_t nfuncmax, distsize_t nbasis,
-                  distsize_t a_number, distsize_t nshell,
-                  distsize_t ndocc, distsize_t nsocc, distsize_t nvir,
-                  distsize_t nfzc, distsize_t nfzv,
-                  distsize_t nproc)
+compute_v1_memory(int ni,
+                  int nfuncmax, int nbasis,
+                  int a_number, int nshell,
+                  int ndocc, int nsocc, int nvir,
+                  int nfzc, int nfzv,
+                  int nproc)
 {
   distsize_t mem = 0;
-  distsize_t nocc = ndocc + nsocc;
-  distsize_t dim_ij = nocc*ni - (ni*(ni-1))/2;
+  int nocc = ndocc + nsocc;
+  int dim_ij = nocc*ni - (ni*(ni-1))/2;
   mem += nproc*sizeof(int);
   mem += (nbasis+nsocc-nfzc-nfzv)*sizeof(double);
   mem += nfuncmax*nfuncmax*nbasis*ni*sizeof(double);
   mem += nfuncmax*nfuncmax*nbasis*ni*sizeof(double);
-  mem += nbasis*a_number*dim_ij*sizeof(double);
+  mem += (distsize_t)nbasis*a_number*dim_ij*sizeof(double);
   mem += nvir*a_number*sizeof(double);
   mem += nvir*nvir*sizeof(double);
   if (nsocc) {
@@ -86,11 +86,9 @@ MBPT2::compute_hsos_v1()
   int npass, pass;
   int ni;             /* batch size */
   int nr, ns; 
-  int P, Q, R, S;
-  int p, q, r, s;
+  int R, S;
+  int q, r, s;
   int bf3,bf4;
-  int index;
-  int col_index;
   int docc_index, socc_index, vir_index;
   int me;
   int nproc;
@@ -104,7 +102,6 @@ MBPT2::compute_hsos_v1()
   int dim_ij;
   int nshell;
   double *evals_open;    /* reordered scf eigenvalues                      */
-  const double *intbuf;  /* 2-electron AO integral buffer                  */
   double *trans_int1;    /* partially transformed integrals                */
   double *trans_int2;    /* partially transformed integrals                */
   double *trans_int3;    /* partially transformed integrals                */
@@ -113,12 +110,11 @@ MBPT2::compute_hsos_v1()
   double *mo_int_do_so_vir=0;/*mo integral (is|sa); i:d.o.,s:s.o.,a:vir     */
   double *mo_int_tmp=0;  /* scratch array used in global summations        */
   double *socc_sum=0;    /* sum of 2-el integrals involving only s.o.'s    */
-  double *iqrs, *iprs;
+  double *iqrs;
   double *iars_ptr, *iajs_ptr, *iajr_ptr;
   double iajr;
   double iars;
   double *iajb;
-  double pqrs;
   double *c_qa;
   double *c_rb, *c_rj, *c_sj;
   double delta_ijab;
@@ -225,7 +221,7 @@ MBPT2::compute_hsos_v1()
    * (which is >= all other a_numbers) and broadcast ni afterwords        */
 
   nshell = basis()->nshell();
-  distsize_t memused = 0;
+  size_t memused = 0;
   ni = 0;
   for (i=1; i<=nocc-restart_orbital_v1_; i++) {
     distsize_t tmpmem = compute_v1_memory(i,
@@ -234,10 +230,10 @@ MBPT2::compute_hsos_v1()
                                           nfzc, nfzv, nproc);
     if (tmpmem > mem_alloc) break;
     ni = i;
-    memused = tmpmem;
+    memused = distsize_to_size(tmpmem);
     }
 
-  distsize_t mem_remaining = mem_alloc - memused;
+  size_t mem_remaining = mem_alloc - memused;
 
   /* set ni equal to the smallest batch size for any node */
   msg_->min(ni);
@@ -394,7 +390,7 @@ MBPT2::compute_hsos_v1()
 
   // create the integrals object
   if (debug_>0) cout << node0 << indent << "allocating integrals" << endl;
-  integral()->set_storage((int)mem_remaining);
+  integral()->set_storage(mem_remaining);
   RefTwoBodyInt *tbint = new RefTwoBodyInt[thr_->nthread()];
   for (ithread=0; ithread<thr_->nthread(); ithread++) {
       tbint[ithread] = integral()->electron_repulsion();
@@ -417,7 +413,6 @@ MBPT2::compute_hsos_v1()
 
   int work = ((nshell*(nshell+1))/2);
   int print_interval = work/100;
-  int time_interval = work/10;
   if (print_interval == 0) print_interval = 1;
   if (work == 0) work = 1;
 

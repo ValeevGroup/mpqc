@@ -334,7 +334,7 @@ MBPT2::compute_hsos_v2_lb()
       max = mem_alloc;
       }
 
-  distsize_t mem_remaining = mem_alloc - (distsize_t)max;
+  size_t mem_remaining = mem_alloc - (size_t)max;
 
   // Set ni equal to the smallest batch size for any node
   msg_->min(ni);
@@ -471,7 +471,7 @@ MBPT2::compute_hsos_v2_lb()
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
   // create the integrals object
-  integral()->set_storage((int)mem_remaining);
+  integral()->set_storage(mem_remaining);
   tbint_ = integral()->electron_repulsion();
   intbuf = tbint_->buffer();
 

@@ -225,7 +225,7 @@ MBPT2::compute_hsos_v2()
    * and the following arrays of type int: myshells, shellsize,           *
    * sorted_shells, nbf, and proc                                         */
     
-  distsize_t memused = 0;
+  size_t memused = 0;
   ni = 0;
   for (i=1; i<=nocc; i++) {
     distsize_t tmpmem = compute_v2_memory(i,
@@ -233,10 +233,10 @@ MBPT2::compute_hsos_v2()
                                           ndocc, nsocc, nvir, nproc);
     if (tmpmem > mem_alloc) break;
     ni = i;
-    memused = tmpmem;
+    memused = distsize_to_size(tmpmem);
     }
 
-  distsize_t mem_remaining = mem_alloc - memused;
+  size_t mem_remaining = mem_alloc - memused;
 
   /* set ni equal to the smallest batch size for any node */
   msg_->min(ni);
@@ -384,7 +384,7 @@ MBPT2::compute_hsos_v2()
 
 
   // create the integrals object
-  integral()->set_storage((int)mem_remaining);
+  integral()->set_storage(mem_remaining);
   tbint_ = integral()->electron_repulsion();
   intbuf = tbint_->buffer();
 

@@ -149,7 +149,8 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       dsize = size/sizeof(double);
       remain = size;
       dremain = dsize;
-      if (offset < 0 || offset+size > offsets_[me()+1]) {
+      if (offset < 0
+          || offset+size > distsize_to_size(offsets_[me()+1]-offsets_[me()])) {
           cerr << "MIDMemoryGrp::handler(): bad offset/size for DoubleSum:"
                << " offset = " << offset
                << ", size = " << size

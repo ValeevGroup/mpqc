@@ -175,7 +175,7 @@ ShmMemoryGrp::set_localsize(int localsize)
   update_ = new GlobalCounter[n()];
 
   // allocate memory both the data and the Pool
-  int size = poolallocation + totalsize();
+  int size = poolallocation + distsize_to_size(totalsize());
   // compute the number of shared memory regions that will be needed
   nregion_ = size/SHMMAX;
   if (size%SHMMAX) nregion_++;
@@ -403,7 +403,7 @@ ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 #endif // SIMPLE_LOCK
     }
 
-  return &((char*)data_)[offset];
+  return &((char*)data_)[distsize_to_size(offset)];
 }
 
 void *
@@ -440,7 +440,7 @@ ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
 #endif // SIMPLE_LOCK
     }
 
-  return &((char*)data_)[offset];
+  return &((char*)data_)[distsize_to_size(offset)];
 }
 
 void
@@ -559,10 +559,10 @@ ShmMemoryGrp::print(ostream &o) const
 void
 ShmMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 {
-  int offset = doffset * sizeof(double);
+  int offset = distsize_to_size(doffset) * sizeof(double);
   int length = dlength * sizeof(double);
 
-  if (offset + length > totalsize()) {
+  if (offset + length > distsize_to_size(totalsize())) {
       cerr << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
       abort();
     }

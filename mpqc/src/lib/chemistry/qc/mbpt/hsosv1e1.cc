@@ -98,7 +98,7 @@ void
 HSOSV1Erep1Qtr::run()
 {
   int i;
-  int P, Q, np, nq;
+  int P, Q;
   int bf1,bf2,bf3,bf4;
   int p,q;
   double *c_pi,*c_qi;

@@ -249,60 +249,6 @@ MemoryGrp::lock(int b)
 }
 
 void
-MemoryGrp::release_read_(distsize_t offset, int size)
-{
-  if (offset < offsets_[me_]
-      || offset + size > offsets_[me_+1]) {
-      cerr << scprintf("MemoryGrp::release_read_: bad args\n");
-      abort();
-    }
-
-  locks_.decrement(offset, offset + size);
-}
-
-void
-MemoryGrp::release_write_(distsize_t offset, int size)
-{
-  if (offset < offsets_[me_]
-      || offset + size > offsets_[me_+1]) {
-      cerr << scprintf("MemoryGrp::release_write_: bad args\n");
-      abort();
-    }
-
-  locks_.increment(offset, offset + size);
-}
-
-// return 1 if the lock was obtained, otherwise 0
-int
-MemoryGrp::obtain_read_(distsize_t offset, int size)
-{
-  if (offset < offsets_[me_]
-      || offset + size > offsets_[me_+1]) {
-      cerr << scprintf("MemoryGrp::obtain_read_: bad args\n");
-      abort();
-    }
-
-  if (!locks_.checkgr(offset, offset + size, -1)) return 0;
-  locks_.increment(offset, offset + size);
-  return 1;
-}
-
-// return 1 if the lock was obtained, otherwise 0
-int
-MemoryGrp::obtain_write_(distsize_t offset, int size)
-{
-  if (offset < offsets_[me_]
-      || offset + size > offsets_[me_+1]) {
-      cerr << scprintf("MemoryGrp::obtain_write_: bad args\n");
-      abort();
-    }
-
-  if (!locks_.checkeq(offset, offset + size, 0)) return 0;
-  locks_.decrement(offset, offset + size);
-  return 1;
-}
-
-void
 MemoryGrp::activate()
 {
 }
@@ -332,7 +278,7 @@ MemoryGrp::obtain_writeonly(distsize_t offset, int size)
 void
 MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 {
-  int offset = doffset * sizeof(double);
+  distsize_t offset = doffset * sizeof(double);
   int length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {

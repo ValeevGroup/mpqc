@@ -135,7 +135,6 @@ MBPT2::compute_cs_grad()
                         // (i.e., ij_index < nij)
   int ik_proc;          // the processor which has ik pair
   int ik_index;
-  int ij_offset;
   int jloop, kloop;
 
   int ni;
@@ -291,10 +290,10 @@ MBPT2::compute_cs_grad()
   msg_->bcast(mem_static);
 
   // Compute the storage remaining for the integral routines
-  distsize_t dyn_mem = compute_cs_dynamic_memory(ni,nocc_act);
+  size_t dyn_mem = distsize_to_size(compute_cs_dynamic_memory(ni,nocc_act));
   int mem_remaining;
   if (mem_alloc <= (dyn_mem + mem_static)) mem_remaining = 0;
-  else mem_remaining = mem_alloc - (int)(dyn_mem + mem_static);
+  else mem_remaining = mem_alloc - dyn_mem + mem_static;
 
   cout << node0 << indent
        << "Memory available per node:      " << mem_alloc << " Bytes"
@@ -2720,15 +2719,15 @@ MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
       if (index++ % nproc == 0) nij++;
       }
     }
-  mem1 = sizeof(double)*(nij*(distsize_t)nbasis*(distsize_t)nbasis
-                         + nbasis*(distsize_t)nvir);
-  mem2 = sizeof(double)*(thr_->nthread()*ni*nbasis*nfuncmax*(distsize_t)nfuncmax
-                         + nij*(distsize_t)nbasis*(distsize_t)nbasis
-                         + ni*(distsize_t)nbasis + nbasis*(distsize_t)nfuncmax
-                         + 2*nfuncmax*nfuncmax*nfuncmax*(distsize_t)nfuncmax);
-  mem3 = sizeof(double)*(ni*nbasis*nfuncmax*(distsize_t)nfuncmax
-                         + nij*(distsize_t)nbasis*(distsize_t)nbasis
-                         + 2*(2 + nbasis*(distsize_t)nfuncmax));
+  mem1 = sizeof(double)*((distsize_t)nij*nbasis*nbasis
+                         + nbasis*nvir);
+  mem2 = sizeof(double)*((distsize_t)thr_->nthread()*ni*nbasis*nfuncmax*nfuncmax
+                         + nij*nbasis*nbasis
+                         + ni*nbasis + nbasis*nfuncmax
+                         + 2*nfuncmax*nfuncmax*nfuncmax*nfuncmax);
+  mem3 = sizeof(double)*((distsize_t)ni*nbasis*nfuncmax*nfuncmax
+                         + nij*nbasis*nbasis
+                         + 2*(2 + nbasis*nfuncmax));
   tmp = (mem2>mem3 ? mem2:mem3);
   maxdyn = (mem1>tmp ? mem1:tmp);
 

@@ -201,11 +201,11 @@ class ActiveMsgMemoryIter {
     int size() { return current_size_; }
 
     // returns true if all data is local to node
-    int local(int offset, int size, int node);
+    int local(distsize_t offset, int size, int node);
 };
 
 int
-ActiveMsgMemoryIter::local(int offset, int size, int node)
+ActiveMsgMemoryIter::local(distsize_t offset, int size, int node)
 {
   if (offset >= offsets_[node] && offset + size <= offsets_[node+1])
       return 1;
@@ -234,12 +234,12 @@ ActiveMsgMemoryIter::begin(distsize_t offset, int size)
 
   for (node_ = 0; node_ < n_; node_++) {
       if (offset_ < offsets_[node_ + 1]) {
-          current_offset_ = offset_ - offsets_[node_];
+          current_offset_ = distsize_to_size(offset_ - offsets_[node_]);
           if (fence <= offsets_[node_ + 1]) {
               current_size_ = size_;
             }
           else {
-              current_size_ = offsets_[node_ + 1] - offset_;
+              current_size_ = distsize_to_size(offsets_[node_ + 1] - offset_);
             }
           ready_ = 1;
           return;
@@ -263,10 +263,10 @@ ActiveMsgMemoryIter::next()
       node_++;
       current_data_ += current_size_;
       if (fence <= offsets_[node_ + 1]) {
-          current_size_ = size_ - (offsets_[node_] - offset_);
+          current_size_ = size_ - distsize_to_size(offsets_[node_] - offset_);
         }
       else {
-          current_size_ = offsets_[node_ + 1] - offsets_[node_];
+          current_size_ = distsize_to_size(offsets_[node_+1]-offsets_[node_]);
         }
       current_offset_ = 0;
     }
@@ -397,7 +397,7 @@ ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
 void
 ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 {
-  int offset = doffset * sizeof(double);
+  distsize_t offset = doffset * sizeof(double);
   int size = dsize * sizeof(double);
   // Locks are usually implicit, assuming that only one active message
   // handler is active at a time.

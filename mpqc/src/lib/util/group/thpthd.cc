@@ -51,22 +51,26 @@ class PthreadThreadLock : public ThreadLock {
     
   public:
     PthreadThreadLock() {
-#if HAVE_LIB_PTHREAD
-      pthread_mutexattr_init(&attr_);
-      pthread_mutexattr_setkind_np(&attr_, PTHREAD_MUTEX_FAST_NP);
-      pthread_mutex_init(&mutex_, &attr_);
-#elif HAVE_LIB_PTHREADS
+#if HAVE_LIBPTHREADS
       pthread_mutexattr_create(&attr_);
       pthread_mutexattr_setkind_np(&attr_, MUTEX_FAST_NP);
       pthread_mutex_init(&mutex_, attr_);
+#else
+      pthread_mutexattr_init(&attr_);
+#  if defined(PTHREAD_MUTEX_FAST_NP)
+      pthread_mutexattr_setkind_np(&attr_, PTHREAD_MUTEX_FAST_NP);
+#  elif defined(MUTEX_FAST_NP)
+      pthread_mutexattr_setkind_np(&attr_, MUTEX_FAST_NP);
+#  endif
+      pthread_mutex_init(&mutex_, &attr_);
 #endif
     }
 
     ~PthreadThreadLock() {
-#if HAVE_LIB_PTHREAD
-      pthread_mutexattr_destroy(&attr_);
-#elif HAVE_LIB_PTHREADS
+#if HAVE_LIBPTHREADS
       pthread_mutexattr_delete(&attr_);
+#else
+      pthread_mutexattr_destroy(&attr_);
 #endif
       pthread_mutex_destroy(&mutex_);
     }
@@ -139,7 +143,7 @@ PthreadThreadGrp::wait_threads()
 {
   for (int i=1; i < nthread_; i++) {
     int tn;
-    pthread_join(pthreads_[i], (void**)&tn);
+    if (threads_[i]) pthread_join(pthreads_[i], (void**)&tn);
   }
     
   return 0;

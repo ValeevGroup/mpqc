@@ -52,6 +52,7 @@ class MTMPIThread: public Thread {
     int req_type_;
     int to_type_;
     int fr_type_;
+    double chunk[dbufsize];
   public:
     MTMPIThread(MTMPIMemoryGrp *, int reqtype, int totype, int fromtype);
     void run();
@@ -76,7 +77,6 @@ MTMPIThread::run()
   long l;
   MemoryDataRequest req;
   MPI_Status status;
-  double chunk[dbufsize];
   char junk;
   while (1) {
       MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
@@ -162,7 +162,7 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefMessageGrp& msg,
 
   th_ = th;
 
-  init_mtmpimg(th_->nthread() + 1);
+  init_mtmpimg(th_->nthread());
 }
 
 MTMPIMemoryGrp::MTMPIMemoryGrp(const RefKeyVal& keyval):
@@ -172,7 +172,7 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefKeyVal& keyval):
 
   th_ = ThreadGrp::get_default_threadgrp();
 
-  KeyValValueint nthreaddef(th_->nthread() + 1);
+  KeyValValueint nthreaddef(th_->nthread());
   int nthread = keyval->intvalue("num_threads",nthreaddef);
   cout << node0 << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
 
@@ -194,6 +194,7 @@ MTMPIMemoryGrp::init_mtmpimg(int nthread)
   int i;
   active_ = 0;
 
+  if (nthread < 2) nthread = 2;
   th_ = th_->clone(nthread);
   nthread = th_->nthread();
   if (nthread < 2) {

@@ -471,8 +471,13 @@ RefSCMatrix::print(ostream& out) const
 void
 RefSCMatrix::print(const char*title,ostream&out, int precision) const
 {
-  require_nonnull();
-  pointer()->print(title,out,precision);
+  if (nonnull()) {
+      pointer()->print(title,out,precision);
+    }
+  else {
+      if (title) out << endl << title << endl;
+      out << "null matrix" << endl;
+    }
 }
 
 RefSCMatrix
@@ -956,8 +961,13 @@ RefSymmSCMatrix::print(ostream& out) const
 void
 RefSymmSCMatrix::print(const char*title,ostream&out, int precision) const
 {
-  require_nonnull();
-  pointer()->print(title,out,precision);
+  if (nonnull()) {
+      pointer()->print(title,out,precision);
+    }
+  else {
+      if (title) out << endl << title << endl;
+      out << "null matrix" << endl;
+    }
 }
 
 RefSCMatrix
@@ -1283,8 +1293,13 @@ RefDiagSCMatrix::print(ostream& out) const
 void
 RefDiagSCMatrix::print(const char*title,ostream&out, int precision) const
 {
-  require_nonnull();
-  pointer()->print(title,out,precision);
+  if (nonnull()) {
+      pointer()->print(title,out,precision);
+    }
+  else {
+      if (title) out << endl << title << endl;
+      out << "null matrix" << endl;
+    }
 }
 
 RefDiagSCMatrix
@@ -1561,8 +1576,13 @@ RefSCVector::print(ostream& out) const
 void
 RefSCVector::print(const char*title,ostream&out, int precision) const
 {
-  require_nonnull();
-  pointer()->print(title,out,precision);
+  if (nonnull()) {
+      pointer()->print(title,out,precision);
+    }
+  else {
+      if (title) out << endl << title << endl;
+      out << "null matrix" << endl;
+    }
 }
 
 RefSCVector

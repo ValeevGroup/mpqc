@@ -89,6 +89,12 @@ Integral::save_data_state(StateOut&o)
   o.put(dstorage);
 }
 
+int
+Integral::equiv(const Ref<Integral> &integral)
+{
+  return eq(class_desc(),integral->class_desc());
+}
+
 Ref<PetiteList>
 Integral::petite_list()
 {

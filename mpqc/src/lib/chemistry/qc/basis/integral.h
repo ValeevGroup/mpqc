@@ -80,6 +80,10 @@ class Integral : public SavableState {
     
     void save_data_state(StateOut&);
 
+    /** Returns nonzero if this and the given Integral object have the same
+        integral ordering, normalization conventions, etc.  */
+    virtual int equiv(const Ref<Integral> &);
+
     /// Sets the total amount of storage, in bytes, that is available.
     void set_storage(size_t i) { storage_=i; };
     /// Returns how much storage has been used.

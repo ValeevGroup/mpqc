@@ -53,6 +53,11 @@ ifneq ($(CLASSES),none)
 dlinfo:: # $(TOPDIR)/lib/$(TARGET_TO_MAKE).dep
 	$(MKCLASSES) $(TOPDIR)/lib/classes $(TARGET_TO_MAKE).so $(CLASSES)
 
+default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
+endif
+
 #$(TOPDIR)/lib/$(TARGET_TO_MAKE).dep: LIBS.h
 #	/bin/rm -f $@
 #	echo $(shell $(LISTLIBS) $(DEFINES) $(INCLUDE) $(SRCDIR)/LIBS.h) \

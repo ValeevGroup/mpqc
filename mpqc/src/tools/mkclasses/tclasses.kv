@@ -1,0 +1,47 @@
+% Emacs should use -*- KeyVal -*- mode, even though this is a subset of keyval.
+
+files: (
+  unique_name = "_bootstrap_tclasses_h"
+  source_includes = [ "tclasses.h" ]
+  header_includes = [ "tmkclass.h" ]
+  )
+
+classes: [
+  ( name = "ParentX"
+    parents = [ "virtual" ## " public " ## "DescribedClass" ]
+    )
+  ( name = "ParentY"
+    parents = [ "virtual public DescribedClass" ]
+    )
+  ( name = "ParentZ"
+    parents = [ "virtual public DescribedClass" ]
+    )
+  ( name = "A"
+    version = 2
+    parents = [ "public ParentX" "public ParentY" "private ParentZ" ]
+    description =  "The A class"
+                 ## " is a class."
+    options: (
+      castdown = yes
+      require_castdown = yes
+      static_class_desc = yes
+      )
+    ctors: (
+      void = yes
+      keyval = yes
+      statein = yes
+      )
+    member_data: [
+          ( name = "x"
+            long_name = "The X Variable"
+            description = "The X Variable is the value of the x variable."
+            type = "double"
+           )
+          ( name = "y"
+            long_name = "The Y Variable"
+            description = "The X Variable is the value of the x variable."
+            type = "int"
+           )
+      ]
+    )
+  ]

@@ -1,88 +1,139 @@
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <strings.h>
-#include <errno.h>
+#ifdef __GNUG__
+#pragma implementation
+#endif
 
-int
-main(int argc, char** argv)
+#include <mkclasses.h>
+
+MkClasses::MkClasses(const MkClassesOptions &options):
+  options_(options)
 {
-  int i;
+  nerror_ = 0;
+  nwarning_ = 0;
+  lexer_ = new MkClassesFlexLexer;
+}
 
-  // process the command line
-  char* dbname;
-  char* libname;
-  char* classes;
-  int classes_length;
+MkClasses::~MkClasses()
+{
+  delete lexer_;
+}
 
-  if (argc < 4) {
-      fprintf(stderr,"Usage: %s dbfile libname class1 ...\n",argv[0]);
-      return 1;
-    }
-  dbname = argv[1];
-  libname = argv[2];
+void
+MkClasses::process(istream &input)
+{
+  lexer_->switch_streams(&input, &cout);
+  yparse();
 
-  classes_length = 1;
-  for (i=3; i<argc; i++) {
-      classes_length += strlen(argv[i]) + 1;
-    }
-  classes = new char[classes_length];
-  classes[0] = '\0';
-  for (i=3; i<argc; i++) {
-      strcat(classes,argv[i]);
-      strcat(classes," ");
-    }
-  classes[classes_length-1] = '\0';
-
-  // open the old database
-  FILE* db;
-  db = fopen(dbname, "r");
-  if (!db && errno != ENOENT) {
-      fprintf(stderr,"%s: couldn't open dbfile \"%s\"\n", argv[0], dbname);
-      perror("fopen");
-      exit(1);
+  if (nerror_ || nwarning_) {
+      cerr << "MkClasses: " << nerror_ << " error(s) and "
+           << nwarning_ << " warning(s)" << endl;
+      if (nerror_) {
+          exit(1);
+        }
     }
 
-  // open the new database (a temporary file)
-  char* dbnewname = new char[strlen(dbname)+4+1];
-  strcpy(dbnewname, dbname);
-  strcat(dbnewname, ".tmp");
-  FILE* dbnew = fopen(dbnewname,"w");
-  if (!dbnew) {
-      fprintf(stderr,"%s: couldn't open dbfile tmp file \"%s\"\n",
-              argv[0], dbnewname);
-      perror("fopen");
-      exit(1);
+  if (options_.geninc()) {
+      open(options_.hdrname());
+      write_header();
+      close();
     }
 
-  // copy the old database to the new data base, making necessary
-  // changes.
-  const int bufsize = 10000;
-  char buf[bufsize];
-  int ncharlibname = strlen(libname);
-  fprintf(dbnew, "%s %s\n", libname, classes);
-  if (db) {
-      while(fgets(buf, bufsize, db)) {
-          if (buf[0] != '\0' && buf[strlen(buf)-1] == '\n') {
-              buf[strlen(buf)-1] = '\0';
+  if (options_.gensrc()) {
+      open(options_.srcname());
+      write_source();
+      close();
+    }
+
+  writedb();
+}
+
+void
+MkClasses::write_header()
+{
+  p("#ifndef %s\n", unique_name().c_str());
+  p("#define %s\n", unique_name().c_str());
+
+  p("#include <util/class/class.h>");
+
+  vector<string>::iterator i;
+  for (i=header_includes_.begin(); i != header_includes_.end();  i++) {
+      const char *inc = (*i).c_str();
+      if (inc) {
+          if (*inc == '<') {
+              p("#include %s", inc);
             }
-          if (strncmp(libname,buf,ncharlibname) == 0
-              && buf[ncharlibname] == ' ') {
-              // skip output, this library's classes have already been written
-            }
-          else if (buf[0] != '\0' && buf[0] != '\n') {
-              fprintf(dbnew, "%s\n", buf);
+          else {
+              p("#include \"%s\"", inc);
             }
         }
     }
 
-  // update the file
-  if (rename(dbnewname, dbname)) {
-      fprintf(stderr,"%s: couldn't rename dbfile\n", argv[0]);
-      perror("rename");
-      exit(1);
+  for (vector<Class>::iterator ci = classes_.begin();
+       ci != classes_.end();
+       ci++) {
+      (*ci).write_declaration(p);
     }
 
-  return 0;
+  p("#endif");
+}
+
+void
+MkClasses::write_source()
+{
+  vector<string>::iterator i;
+  for (i=header_includes_.begin(); i != header_includes_.end();  i++) {
+      const char *inc = (*i).c_str();
+      if (inc) {
+          if (*inc == '<') {
+              p("#include %s", inc);
+            }
+          else {
+              p("#include \"%s\"", inc);
+            }
+        }
+    }
+
+  for (vector<Class>::iterator ci = classes_.begin();
+       ci != classes_.end();
+       ci++) {
+      (*ci).write_ctor(p);
+      (*ci).write_members(p);
+      (*ci).write_keyvalin(p);
+      (*ci).write_keyvalout(p);
+      (*ci).write_statein(p);
+      (*ci).write_stateout(p);
+    }
+}
+
+void
+MkClasses::yerror(const char* s)
+{
+  cerr << "MkClasses: "
+       << s << ": line number "
+       << (lexer_->lineno() - 1) << endl;
+  nerror_++;
+  if (nerror_ > 10) {
+      cerr << "MkClasses: too many errors" << endl;
+      exit(1);
+    }
+}
+
+void
+MkClasses::start_class()
+{
+  Class c;
+  current_class_ = classes_.insert(classes_.end(), c);
+}
+
+void
+MkClasses::end_class()
+{
+}
+
+extern "C" {
+  int
+  MkClasseswrap()
+  {
+   return 1;
+  }
 }

@@ -321,22 +321,23 @@ MBPT2::compute_hsos_v2()
   double** scf_vectort = new double*[nocc + nvir];
 
   int idoc = 0, ivir = 0, isoc = 0;
+  const double epsilon = 1.0e-4;
   for (i=0; i<nbasis; i++) {
-    if (occ(i) == 2.0) {
+    if (occ(i) >= 2.0 - epsilon) {
       if (idoc >= nfzc) {
         evals_open[idoc-nfzc+nsocc] = evals(i);
         scf_vectort[idoc-nfzc+nsocc] = &scf_vectort_dat[i*nbasis];
         }
       idoc++;
       }
-    else if (occ(i) == 1.0) {
+    else if (occ(i) >= 1.0 - epsilon) {
       evals_open[isoc] = evals(i);
       scf_vectort[isoc] = &scf_vectort_dat[i*nbasis];
       evals_open[isoc+nocc] = evals(i);
       scf_vectort[isoc+nocc] = &scf_vectort_dat[i*nbasis];
       isoc++;
       }
-    else if (occ(i) == 0.0) {
+    else {
       if (ivir < nvir) {
         evals_open[ivir+nocc+nsocc] = evals(i);
         scf_vectort[ivir+nocc+nsocc] = &scf_vectort_dat[i*nbasis];

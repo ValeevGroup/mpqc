@@ -95,17 +95,58 @@ T& Result ## T::result() { update(); return _result; };			      \
 T& Result ## T::result_noupdate() { return _result; };			      \
 void Result ## T::operator=(T& a) { _result = a; };
 
+// these are for builtin types like int, double, etc since the ARM says
+// operator->() must return a class object
+#define Result_inline_dec_nc(T)						      \
+class Result ## T: public Result {					      \
+  private:								      \
+    T _result;								      \
+  public:								      \
+    inline Result ## T (Compute*c):Result(c) {};			      \
+    inline operator T&() { update(); return _result; };			      \
+    inline T* pointer() { update(); return &_result; };		              \
+    inline T& result() { update(); return _result; };			      \
+    inline T& result_noupdate() { return _result; };			      \
+    inline void operator=(T& a) { _result = a; };			      \
+}
+
+#define Result_dec_nc(T)						      \
+class Result ## T: public Result {					      \
+  private:								      \
+    T _result;								      \
+  public:								      \
+    Result ## T (Compute*c);						      \
+    operator T&();							      \
+    T* pointer();							      \
+    T& result();							      \
+    T& result_noupdate();						      \
+    void operator=(T& a);						      \
+}
+
+#define Result_def_nc(T)						      \
+Result ## T::Result ## T (Compute*c):Result(c) {};			      \
+Result ## T::operator T&() { update(); return _result; };		      \
+T* Result ## T::pointer() { update(); return &_result; };		      \
+T& Result ## T::result() { update(); return _result; };			      \
+T& Result ## T::result_noupdate() { return _result; };			      \
+void Result ## T::operator=(T& a) { _result = a; };
+
 #ifdef INLINE_FUNCTIONS
 #include <util/misc/compute_i.h>
 #undef Result_def
 #undef Result_dec
 #define Result_def(T)
 #define Result_dec(T) Result_inline_dec(T)
+
+#undef Result_def_nc
+#undef Result_dec_nc
+#define Result_def_nc(T)
+#define Result_dec_nc(T) Result_inline_dec_nc(T)
 #endif
 
 // Results for some common types
-Result_dec(int);
-Result_dec(float);
-Result_dec(double);
+Result_dec_nc(int);
+Result_dec_nc(float);
+Result_dec_nc(double);
 
 #endif

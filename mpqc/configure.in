@@ -924,10 +924,10 @@ case $target in
     AC_MSG_RESULT(yes)
     ;;
   *)
-    HAVE_ALPHA_MMAP=no
     AC_MSG_RESULT(no)
     ;;
 esac
+AC_SUBST(HAVE_ALPHA_MMAP)
 
 dnl --------- Checks that must be done last. ---------
 

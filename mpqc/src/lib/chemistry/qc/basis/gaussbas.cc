@@ -629,6 +629,8 @@ void
 GaussianBasisSet::print(ostream& os) const
 {
   print_brief(os);
+  if (!SCFormIO::getverbose(os)) return;
+
   os << incindent;
 
   // Loop over centers

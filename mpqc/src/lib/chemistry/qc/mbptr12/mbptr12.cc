@@ -55,6 +55,7 @@ static ClassDesc MBPT2_R12_cd(
 MBPT2_R12::MBPT2_R12(StateIn& s):
   MBPT2(s)
 {
+  r12eval_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
@@ -119,6 +120,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
 MBPT2_R12::~MBPT2_R12()
 {
+  // Since r12eval_ referes to this object, need to break the circular list
+
+
   delete[] r12ints_file_;
 }
 
@@ -126,6 +130,7 @@ void
 MBPT2_R12::save_data_state(StateOut& s)
 {
   MBPT2::save_data_state(s);
+  SavableState::save_state(r12eval_.pointer(),s);
   SavableState::save_state(aux_basis_.pointer(),s);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);

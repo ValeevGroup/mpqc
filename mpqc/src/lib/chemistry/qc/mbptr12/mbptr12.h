@@ -41,6 +41,7 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/vxb_eval.h>
 
 namespace sc {
 
@@ -49,6 +50,8 @@ namespace sc {
 /** The MBPT2_R12 class implements several linear R12 second-order perturbation theory
 methods. */
 class MBPT2_R12: public MBPT2 {
+
+    Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
 
     Ref<GaussianBasisSet> aux_basis_;
     Ref<SCVector> epair_0_, epair_1_;   // Singlet/triplet pair energies if spin-adapted

@@ -50,6 +50,7 @@ static ClassDesc R12IntEvalInfo_cd(
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12& mbptr12)
 {
+  mole_ = &mbptr12;
   ref_ = mbptr12.ref();
   integral_ = mbptr12.integral();
   bs_ = mbptr12.basis();
@@ -74,8 +75,6 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12& mbptr12)
 
   // Default values
   ints_file_ = strdup("/tmp/r12ints.dat");
-  to_checkpoint_ = false;
-  checkpoint_file_ = 0;
   memory_ = 8000000;
   debug_ = 0;
   dynamic_ = 0;
@@ -86,6 +85,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12& mbptr12)
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 {
+  mole_ << SavableState::restore_state(si);
   ref_ << SavableState::restore_state(si);
   integral_ << SavableState::restore_state(si);
   bs_ << SavableState::restore_state(si);
@@ -103,10 +103,6 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   si.get(noso_);
 
   si.getstring(ints_file_);
-  int chkpt = 0;
-  si.get(chkpt);
-  to_checkpoint_ = (bool)chkpt;
-  si.getstring(checkpoint_file_);
 
   // Default values
   memory_ = 8000000;
@@ -136,8 +132,6 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(noso_);
 
   so.putstring(ints_file_);
-  so.put((int)to_checkpoint_);
-  so.putstring(checkpoint_file_);
 }
 
 

@@ -41,6 +41,10 @@
 
 namespace sc {
 
+class MBPT2_R12;
+class R12IntEvalInfo;
+class R12IntEval_sbs_A;
+class R12IntEval_abs_A;
 
   /** Class R12IntEval is the top-level R12 intermediate evaluator */
 
@@ -65,20 +69,18 @@ public:
 
   void save_data_state(StateOut&);
 
-  void set_stdapprox(LinearR12::StandardApproximation stdapprox) { stdapprox_ = stdapprox; };
-  void set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted; };
-  void set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
-  void set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
-  void set_checkpoint(bool chkpt) { r12info_->set_checkpoint(chkpt); };
-  void set_checkpoint_file(const char* filename) { r12info_->set_checkpoint_file(filename); };
-  void set_memory(size_t nbytes) { r12info_->set_memory(nbytes); };
-  void set_ints_file(const char* filename) { r12info_->set_ints_file(filename); };
+  void set_stdapprox(LinearR12::StandardApproximation stdapprox);
+  void set_spinadapted(bool spinadapted);
+  void set_debug(int debug);
+  void set_dynamic(bool dynamic);
+  void set_memory(size_t nbytes);
+  void set_ints_file(const char* filename);
 
-  Ref<R12IntEvalInfo> r12info() const { return r12info_; };
-  RefSCDimension dim_aa() const { return dim_aa_; };
-  RefSCDimension dim_ab() const { return dim_ab_; };
-  RefSCDimension dim_s() const { return dim_s_; };
-  RefSCDimension dim_t() const { return dim_t_; };
+  Ref<R12IntEvalInfo> r12info() const;
+  RefSCDimension dim_aa() const;
+  RefSCDimension dim_ab() const;
+  RefSCDimension dim_s() const;
+  RefSCDimension dim_t() const;
 
   void compute(RefSCMatrix& Vaa,
 	       RefSCMatrix& Xaa,
@@ -88,7 +90,7 @@ public:
 	       RefSCMatrix& Bab,
 	       RefSCVector& emp2pair_aa,
 	       RefSCVector& emp2pair_ab);
-  RefDiagSCMatrix evals() const { return r12info_->evals(); };
+  RefDiagSCMatrix evals() const;
 	       
 };
 

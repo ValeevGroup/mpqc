@@ -73,6 +73,7 @@ void R12IntEval_sbs_A::save_data_state(StateOut& so)
   so.put(current_orbital_);
 }
 
+Ref<R12IntEvalInfo> R12IntEval_sbs_A::r12info() const { return r12info_; };
 
 
 

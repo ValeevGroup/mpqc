@@ -37,6 +37,7 @@
 
 namespace sc {
 
+class R12IntEvalInfo;
 
   /** Class R12IntEval_sbs_A evaluates R12 intermediates for one-basis or the small-basis part of
       the two-basis MP2-R12 theory in standard approximations A and A' */
@@ -68,7 +69,7 @@ public:
 	       RefSCVector& emp2_aa,
 	       RefSCVector& emp2_ab);
 
-  Ref<R12IntEvalInfo> r12info() const { return r12info_; };
+  Ref<R12IntEvalInfo> r12info() const;
 };
 
 }

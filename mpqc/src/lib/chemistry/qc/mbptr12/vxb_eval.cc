@@ -109,6 +109,19 @@ void R12IntEval::save_data_state(StateOut& so)
   so.put(stdapprox_);
 }
 
+void R12IntEval::set_stdapprox(LinearR12::StandardApproximation stdapprox) { stdapprox_ = stdapprox; };
+void R12IntEval::set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted; };
+void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
+void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
+void R12IntEval::set_memory(size_t nbytes) { r12info_->set_memory(nbytes); };
+void R12IntEval::set_ints_file(const char* filename) { r12info_->set_ints_file(filename); };
+
+Ref<R12IntEvalInfo> R12IntEval::r12info() const { return r12info_; };
+RefSCDimension R12IntEval::dim_aa() const { return dim_aa_; };
+RefSCDimension R12IntEval::dim_ab() const { return dim_ab_; };
+RefSCDimension R12IntEval::dim_s() const { return dim_s_; };
+RefSCDimension R12IntEval::dim_t() const { return dim_t_; };
+RefDiagSCMatrix R12IntEval::evals() const { return r12info_->evals(); };
 
 void R12IntEval::compute(RefSCMatrix& Vaa,
 			 RefSCMatrix& Xaa,

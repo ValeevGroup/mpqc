@@ -34,16 +34,19 @@
 
 #include <util/ref/ref.h>
 #include <math/scmat/abstract.h>
+#include <chemistry/molecule/energy.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 
 namespace sc {
 
+class MBPT2_R12;
 
   /** Class R12IntEvalInfo contains information necessary for R12 intermediate
       evaluators */
 
 class R12IntEvalInfo : virtual public SavableState {
 
+  Ref<MolecularEnergy> mole_;     // MolecularEnergy that owns this
   Ref<SCF> ref_;
   Ref<Integral> integral_;
   Ref<GaussianBasisSet> bs_;
@@ -62,8 +65,6 @@ class R12IntEvalInfo : virtual public SavableState {
   bool dynamic_;
   int debug_;
   char* ints_file_;
-  bool to_checkpoint_;
-  char* checkpoint_file_;
   size_t memory_;
 
   RefSCMatrix scf_vec_;
@@ -82,12 +83,11 @@ public:
 
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; };
   void set_debug_level(int debug) { debug_ = debug; };
-  void set_checkpoint_file(const char* filename) { checkpoint_file_ = strdup(filename); };
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
-  void set_checkpoint(bool chkpt) { to_checkpoint_ = chkpt; };
   void set_memory(size_t nbytes) { if (nbytes >= 0) memory_ = nbytes; };
 
-  Ref<SCF> ref() const {return ref_; };
+  Ref<MolecularEnergy> mole() const { return mole_; };
+  Ref<SCF> ref() const { return ref_; };
   Ref<Integral> integral() const { return integral_; };
   Ref<GaussianBasisSet> basis() const { return bs_; };
   Ref<GaussianBasisSet> basis_aux() const { return bs_aux_; };
@@ -99,8 +99,6 @@ public:
   bool dynamic() const { return dynamic_; };
   int debug_level() const { return debug_; };
   const char* ints_file() const { return ints_file_; }
-  bool if_to_checkpoint() const {return to_checkpoint_; };
-  const char* checkpoint_file() const { return checkpoint_file_; };
   const size_t memory() const { return memory_; };
 
   const int nocc() const { return nocc_;};

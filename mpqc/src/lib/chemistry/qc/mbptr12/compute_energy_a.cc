@@ -62,21 +62,21 @@ MBPT2_R12::compute_energy_a_()
   int me = msg_->me();
   if (me == 0) {
 
-    Ref<R12IntEval> r12eval = new R12IntEval(*this);
-    r12eval->set_stdapprox(stdapprox_);
+    r12eval_ = new R12IntEval(*this);
+    r12eval_->set_stdapprox(stdapprox_);
     // will spin-adapt the energies rather than the intermediates
-    r12eval->set_spinadapted(false);
-    r12eval->set_ints_file(r12ints_file_);
-    r12eval->set_debug(debug_);
-    r12eval->set_dynamic(dynamic_);
-    r12eval->set_memory(mem_alloc);
+    r12eval_->set_spinadapted(false);
+    r12eval_->set_ints_file(r12ints_file_);
+    r12eval_->set_debug(debug_);
+    r12eval_->set_dynamic(dynamic_);
+    r12eval_->set_memory(mem_alloc);
 
     RefSCMatrix Vaa, Xaa, Baa, Vab, Xab, Bab;
     RefSCVector emp2_aa, emp2_ab;
-    r12eval->compute(Vaa,Xaa,Baa,Vab,Xab,Bab,emp2_aa,emp2_ab);
+    r12eval_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab,emp2_aa,emp2_ab);
 
     // Need eigenvalues
-    RefDiagSCMatrix evalmat = r12eval->evals();
+    RefDiagSCMatrix evalmat = r12eval_->evals();
     double* evals = new double[nocc_act];
     for(int i=nfzc; i<nocc; i++)
       evals[i-nfzc] = evalmat(i);
@@ -86,8 +86,8 @@ MBPT2_R12::compute_energy_a_()
     // Evaluate pair energies
     //
     Ref<SCMatrixKit> localkit = Vaa.kit();
-    RefSCDimension dim_aa = r12eval->dim_aa();
-    RefSCDimension dim_ab = r12eval->dim_ab();
+    RefSCDimension dim_aa = r12eval_->dim_aa();
+    RefSCDimension dim_ab = r12eval_->dim_ab();
     RefSCVector epair_aa = localkit->vector(dim_aa);
     RefSCVector epair_ab = localkit->vector(dim_ab);
     RefSCVector er12_aa = localkit->vector(dim_aa);
@@ -208,12 +208,12 @@ MBPT2_R12::compute_energy_a_()
 	}
     }
     else {
-      epair_0_ = localkit->vector(r12eval->dim_s());
-      epair_1_ = localkit->vector(r12eval->dim_t());
-      RefSCVector emp2_0 = localkit->vector(r12eval->dim_s());
-      RefSCVector emp2_1 = localkit->vector(r12eval->dim_t());
-      RefSCVector er12_0 = localkit->vector(r12eval->dim_s());
-      RefSCVector er12_1 = localkit->vector(r12eval->dim_t());
+      epair_0_ = localkit->vector(r12eval_->dim_s());
+      epair_1_ = localkit->vector(r12eval_->dim_t());
+      RefSCVector emp2_0 = localkit->vector(r12eval_->dim_s());
+      RefSCVector emp2_1 = localkit->vector(r12eval_->dim_t());
+      RefSCVector er12_0 = localkit->vector(r12eval_->dim_s());
+      RefSCVector er12_1 = localkit->vector(r12eval_->dim_t());
 
       // Triplet pairs are easy
       epair_1_->assign(epair_aa);
@@ -257,8 +257,8 @@ MBPT2_R12::compute_energy_a_()
 	}
 
       // compute total singlet and triplet energies
-      RefSCVector unit_0 = localkit->vector(r12eval->dim_s());
-      RefSCVector unit_1 = localkit->vector(r12eval->dim_t());
+      RefSCVector unit_0 = localkit->vector(r12eval_->dim_s());
+      RefSCVector unit_1 = localkit->vector(r12eval_->dim_t());
       unit_0->assign(1.0);
       unit_1->assign(1.0);
       emp2tot_0 = emp2_0.dot(unit_0);

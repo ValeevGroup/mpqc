@@ -25,9 +25,6 @@ extern "C" {
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/molecule/molecule.h>
-#if defined(PARAGON)
-#  include <util/group/messpgon.h>
-#endif
 
 extern "C" {
 #include "scf_ffo.gbl"
@@ -44,8 +41,9 @@ extern "C" {
     const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
     const ClassDesc &fl1 = ProcMessageGrp::class_desc_;
 # endif
-# ifdef PARAGON
-    const ClassDesc &fl2 = ParagonMessageGrp::class_desc_;
+# ifdef HAVE_PVM
+#   include <util/group/messpvm.h>
+    const ClassDesc &fl2 = PVMMessageGrp::class_desc_;
 # endif
 #endif
 
@@ -57,11 +55,13 @@ static void mkcostvec(centers_t*, sym_struct_t*, dmt_cost_t*);
 ///////////////////////////////////////////////////////////////////////////
 
 static void
-clean_and_exit()
+clean_and_exit(RefMessageGrp& grp)
 {
   picl_prober();
 
   close0(0);
+  grp = 0;
+  MessageGrp::set_default_messagegrp(grp);
   exit(0);
 }
 
@@ -72,20 +72,17 @@ init_mp(const char *inputfile)
   int top,ord,dir;
   RefMessageGrp grp;
 
-  // if we are on a paragon then use a ParagonMessageGrp
-  // otherwise read the message group from the input file
-#if defined(PARAGON)
-  grp = new ParagonMessageGrp;
-#else
-  RefKeyVal keyval = new ParsedKeyVal(inputfile);
-  grp = keyval->describedclassvalue("message");
-  keyval = 0;
-#endif
+  grp = MessageGrp::initial_messagegrp();
+  if (grp.null()) {
+      RefKeyVal keyval = new ParsedKeyVal(inputfile);
+      grp = keyval->describedclassvalue("message");
+      keyval = 0;
+    }
 
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
 
-  open0(&nproc,&me,&host);
+  open0_messagegrp(&nproc,&me,&host,grp);
   setarc0(&nproc,&top,&ord,&dir);
 
   return grp;
@@ -421,7 +418,7 @@ main(int argc, char *argv[])
 
     if (geom_code==GEOM_ABORT || geom_code==GEOM_DONE) {
       fprintf(outfile,"mpqcnode: geom_code says you are done or in trouble\n");
-      clean_and_exit();
+      clean_and_exit(grp);
     }
   }
 
@@ -474,7 +471,7 @@ main(int argc, char *argv[])
 
       if (errcod != 0) {
         fprintf(outfile,"trouble forming scf vector\n");
-        clean_and_exit();
+        clean_and_exit(grp);
       }
     
       scf_info.restart=1;
@@ -680,7 +677,7 @@ main(int argc, char *argv[])
     if (!do_scf) {
 
       if(mynode0()==0) fprintf(stderr,"Must do scf before opt2. Program exits\n");
-      clean_and_exit();
+      clean_and_exit(grp);
       }
 
     tim_enter("opt2");
@@ -754,7 +751,7 @@ main(int argc, char *argv[])
 
   fflush(outfile);
 
-  clean_and_exit();
+  clean_and_exit(grp);
 }
 
 

@@ -46,12 +46,11 @@ int CharacterTable::make_table()
   for (i=0; i < nirrep_; i++)
     gamma_[i].init();
 
-  symop = new DMatrix[g];
+  symop = new SymmetryOperation[g];
 
-  for (i=0; i < g; i++) {
-    symop[i].resize(3,3);
-    symop[i].zero();
-    }
+  //for (i=0; i < g; i++) {
+  //  symop[i].zero();
+  //  }
 
  // this array forms a reducible representation for rotations about x,y,z
   double *rot = new double[g];

@@ -171,23 +171,28 @@ void CharacterTable::print(FILE *fp, const char *off)
   for(i=0; i < g; i++) symop[i].print();
 }
 
+// given matrix R in so and E in frame, perform similarity transform
+// R' = ~E * R * E
+
 static void
 sim_transform(SymmetryOperation& so, SymmetryOperation& frame)
-  return foo;
 {
   SymmetryOperation foo;
 
+ // foo = ~E*R 
   for (int i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
       double t=0;
-      for (int k=0; k < 3; k++) t += frame(i,k)*so(k,j);
+      for (int k=0; k < 3; k++) t += frame(k,i)*so(k,j);
       foo(i,j) = t;
     }
   }
+
+ // R' = ~E*R*E = foo*E
   for (i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
       double t=0;
-      for (int k=0; k < 3; k++) t += foo(i,k)*frame(j,k);
+      for (int k=0; k < 3; k++) t += foo(i,k)*frame(k,j);
       so(i,j) = t;
     }
   }

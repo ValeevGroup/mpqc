@@ -55,9 +55,9 @@ swtch(GaussianBasisSet* &i,GaussianBasisSet* &j)
 }
 
 static inline void
-pswtch(void**i,void**j)
+sswtch(GaussianShell**i,GaussianShell**j)
 {
-  void*tmp;
+  GaussianShell*tmp;
   tmp = *i;
   *i = *j;
   *j = tmp;
@@ -216,7 +216,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&am1,&am2);iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
     iswtch(&dam1,&dam2);
     iswtch(&minam1,&minam2);
-    pswtch((void**)&int_shell1,(void**)&int_shell2);
+    sswtch(&int_shell1,&int_shell2);
     swtch(pbs1,pbs2);
     }
   if (am4 > am3) {
@@ -224,7 +224,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
     iswtch(&dam3,&dam4);
     iswtch(&minam3,&minam4);
-    pswtch((void**)&int_shell3,(void**)&int_shell4);
+    sswtch(&int_shell3,&int_shell4);
     swtch(pbs3,pbs4);
     }
   if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
@@ -235,7 +235,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
       iswtch(&dam3,&dam4);
       iswtch(&minam3,&minam4);
-      pswtch((void**)&int_shell3,(void**)&int_shell4);
+      sswtch(&int_shell3,&int_shell4);
       swtch(pbs3,pbs4);
       }
     }
@@ -247,11 +247,11 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
-    pswtch((void**)&int_shell1,(void**)&int_shell3);
+    sswtch(&int_shell1,&int_shell3);
     swtch(pbs1,pbs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
-    pswtch((void**)&int_shell2,(void**)&int_shell4);
+    sswtch(&int_shell2,&int_shell4);
     swtch(pbs2,pbs4);
     }
   /* This tries to make centers A and B equivalent, if possible. */
@@ -270,11 +270,11 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
-    pswtch((void**)&int_shell1,(void**)&int_shell3);
+    sswtch(&int_shell1,&int_shell3);
     swtch(pbs1,pbs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
-    pswtch((void**)&int_shell2,(void**)&int_shell4);
+    sswtch(&int_shell2,&int_shell4);
     swtch(pbs2,pbs4);
     }
 
@@ -574,9 +574,9 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       iswtch(&am1,&am3);
       iswtch(&am2,&am4);
       iswtch(&am12,&am34);
-      pswtch((void**)&int_shell1,(void**)&int_shell3);
+      sswtch(&int_shell1,&int_shell3);
       swtch(pbs1,pbs3);
-      pswtch((void**)&int_shell2,(void**)&int_shell4);
+      sswtch(&int_shell2,&int_shell4);
       swtch(pbs2,pbs4);
       iswtch(&int_expweight1,&int_expweight3);
       iswtch(&int_expweight2,&int_expweight4);
@@ -584,14 +584,14 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     if (p34) {
       iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
       iswtch(&am3,&am4);
-      pswtch((void**)&int_shell3,(void**)&int_shell4);
+      sswtch(&int_shell3,&int_shell4);
       swtch(pbs3,pbs4);
       iswtch(&int_expweight3,&int_expweight4);
       }
     if (p12) {
       iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
       iswtch(&am1,&am2);
-      pswtch((void**)&int_shell1,(void**)&int_shell2);
+      sswtch(&int_shell1,&int_shell2);
       swtch(pbs1,pbs2);
       iswtch(&int_expweight1,&int_expweight2);
       }

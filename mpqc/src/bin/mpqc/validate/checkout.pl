@@ -193,7 +193,11 @@ sub check {
                 }
             }
             else {
-                printf " cannot compare since one calc failed";
+                if (($result->exists() && $cresult->exists())
+                    ||($result->exists() && !$result->ok())
+                    ||($cresult->exists() && !$cresult->ok())) {
+                    printf " cannot compare since one calc failed";
+                }
             }
         }
         else {

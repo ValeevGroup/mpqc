@@ -465,7 +465,7 @@ FinDispMolecularHessian::compute_hessian_from_gradients()
   RefSymmSCMatrix xhessian = matrixkit()->symmmatrix(d3natom());
   xhessian.assign(0.0);
 
-  // start with the totally symmetric frequencies
+  // start with the totally symmetric displacments
   int offset = 0;
   if (do_null_displacement_) offset++;
   RefSCMatrix dtrans = displacements(0);
@@ -542,7 +542,7 @@ FinDispMolecularHessian::cartesian_hessian()
   else init();
 
   cout << node0 << indent
-       << "Computing molecular frequencies from "
+       << "Computing molecular hessian from "
        << ndisplace() << " displacements:" << endl
        << indent << "Starting at displacement: "
        << ndisplacements_done() << endl;
@@ -567,14 +567,14 @@ FinDispMolecularHessian::cartesian_hessian()
     set_gradient(i, gradv);
 
     if (checkpoint_) {
-      const char *freqckptfile;
+      const char *hessckptfile;
       if (MessageGrp::get_default_messagegrp()->me() == 0) {
-        freqckptfile = checkpoint_file_;
+        hessckptfile = checkpoint_file_;
         }
       else {
-        freqckptfile = "/dev/null";
+        hessckptfile = "/dev/null";
         }
-      StateOutBin so(freqckptfile);
+      StateOutBin so(hessckptfile);
       checkpoint_displacements(so);
       }
     }

@@ -110,7 +110,7 @@ OneBodyInt::process(SCMatrixRectBlock* b)
                   int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
                   for (int j=0; j<njsh; j++,jfn++) {
                       if (jfn >= b->jstart && jfn < b->jend) {
-                          b->data[data_index] = *tmp;
+                          b->data[data_index] += *tmp;
                           data_index++;
                         }
                       tmp++;
@@ -156,7 +156,7 @@ OneBodyInt::process(SCMatrixLTriBlock* b)
                   for (int j=0; j<njsh; j++,jfn++) {
                       // skip over basis functions that are not needed
                       if (jfn <= ifn && jfn >= fnstart) {
-                          b->data[data_index] = *tmp;
+                          b->data[data_index] += *tmp;
                           data_index++;
                         }
                       tmp++;
@@ -282,9 +282,9 @@ OneBody3Int::process(SCMatrixRectBlock* a,
                   int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
                   for (int j=0; j<njsh; j++,jfn++) {
                       if (jfn >= b->jstart && jfn < b->jend) {
-                          a->data[data_index] = tmp[0];
-                          b->data[data_index] = tmp[1];
-                          b->data[data_index] = tmp[2];
+                          a->data[data_index] += tmp[0];
+                          b->data[data_index] += tmp[1];
+                          c->data[data_index] += tmp[2];
                           data_index++;
                         }
                       tmp += 3;
@@ -332,9 +332,9 @@ OneBody3Int::process(SCMatrixLTriBlock* a,
                   for (int j=0; j<njsh; j++,jfn++) {
                       // skip over basis functions that are not needed
                       if (jfn <= ifn && jfn >= fnstart) {
-                          a->data[data_index] = tmp[0];
-                          b->data[data_index] = tmp[1];
-                          c->data[data_index] = tmp[2];
+                          a->data[data_index] += tmp[0];
+                          b->data[data_index] += tmp[1];
+                          c->data[data_index] += tmp[2];
                           data_index++;
                         }
                       tmp += 3;

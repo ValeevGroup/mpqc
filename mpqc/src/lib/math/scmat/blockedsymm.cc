@@ -715,7 +715,7 @@ BlockedSymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
     } else {
       ExEnv::err() << indent
            << "BlockedSymmSCMatrix::convert_accumulate: "
-           << "I can't do that"
+           << "can't convert from BlockedSymmSCMatrix with different nblock"
            << endl;
       abort();
     }
@@ -726,7 +726,7 @@ BlockedSymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
     } else {
       ExEnv::err() << indent
            << "BlockedSymmSCMatrix::convert_accumulate: "
-           << "I can't do that either"
+           << "can't convert from SymmSCMatrix when nblocks != 1"
            << endl;
       abort();
     }

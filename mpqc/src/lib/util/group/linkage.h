@@ -48,7 +48,7 @@ const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
     const ClassDesc &group_force_link_b1_ = IParagonMemoryGrp::class_desc_;
 # endif
 
-# if defined(HAVE_LIBPTHREAD) || defined(HAVE_LIBPTHREADS)
+# if defined(HAVE_PTHREAD)
 #   include <util/group/thpthd.h>
     const ClassDesc &group_force_link_c_ = PthreadThreadGrp::class_desc_;
 # endif

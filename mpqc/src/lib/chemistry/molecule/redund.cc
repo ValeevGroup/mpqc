@@ -103,19 +103,35 @@ RedundMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
 {
   RefSCDimension dredun = hessian.dim();
   
+  // form bmat for variable coordinates (ie all the simples)
   RefSCMatrix bmat(dredun,molecule_->dim_natom3());
   variable_->bmat(molecule_,bmat);
   
+  // and form G = (B*B+)
   RefSymmSCMatrix bmbt(dredun);
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);
-  RefSymmSCMatrix bmbt_i = bmbt.gi();
 
-  bmat = dredun->create_matrix(dredun);
-  bmat.assign(0.0);
+  // free bmat, and allocate storage for the projection matrix p
+  bmat = 0;
+
+  RefSCMatrix p(dredun,dredun);
+  p.assign(0.0);
+
+  // form p = G- * G
   for (int i=0; i < dredun->n(); i++)
-    bmat.set_element(i,i,1.0);
-  bmat = bmbt * bmat;
-  bmat = bmbt_i*bmat;
-  return bmat * (bmat*hessian*bmat).gi() * bmat;
+    p.set_element(i,i,1.0);
+  p = bmbt * p;
+  p = bmbt.gi()*p;
+  
+  // accumulate (p*hessian*p).gi() into bmbt
+  bmbt.assign(0.0);
+  bmbt.accumulate_transform(p,hessian);
+  bmbt = bmbt.gi();
+  
+  // finally return hinv = p*(p*h*p)-*p
+  RefSymmSCMatrix thess = hessian.clone();
+  thess.assign(0.0);
+  thess.accumulate_transform(p,bmbt);
+  return thess;
 }

@@ -54,7 +54,7 @@ using namespace sc;
 // SCF
 
 static ClassDesc SCF_cd(
-  typeid(SCF),"SCF",5,"public OneBodyWavefunction",
+  typeid(SCF),"SCF",6,"public OneBodyWavefunction",
   0, 0, 0);
 
 SCF::SCF(StateIn& s) :
@@ -92,6 +92,10 @@ SCF::SCF(StateIn& s) :
     guess_wfn_ << SavableState::restore_state(s);
   }
   else keep_guess_wfn_ = 0;
+  if (s.version(::class_desc<SCF>()) >= 6) {
+    s.get(always_use_guess_wfn_);
+  }
+  else always_use_guess_wfn_ = 0;
 
   extrap_ << SavableState::restore_state(s);
   accumdih_ << SavableState::restore_state(s);
@@ -150,6 +154,9 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   
   keep_guess_wfn_ = keyval->booleanvalue("keep_guess_wavefunction");
 
+  always_use_guess_wfn_
+    = keyval->booleanvalue("always_use_guess_wavefunction");
+
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
@@ -198,6 +205,7 @@ SCF::save_data_state(StateOut& s)
   s.put(level_shift_);
   s.put(keep_guess_wfn_);
   SavableState::save_state(guess_wfn_.pointer(),s);
+  s.put(always_use_guess_wfn_);
   SavableState::save_state(extrap_.pointer(),s);
   SavableState::save_state(accumdih_.pointer(),s);
   SavableState::save_state(accumddh_.pointer(),s);
@@ -389,7 +397,7 @@ void
 SCF::initial_vector(int needv)
 {
   if (need_vec_) {
-    if (oso_eigenvectors_.result_noupdate().null()) {
+    if (always_use_guess_wfn_ || oso_eigenvectors_.result_noupdate().null()) {
       // if guess_wfn_ is non-null then try to get a guess vector from it.
       // First check that the same basis is used...if not, then project the
       // guess vector into the present basis.
@@ -733,6 +741,13 @@ SCF::read_occ(const Ref<KeyVal> &keyval, const char *name, int nirrep)
     }
   }
   return occ;
+}
+
+void
+SCF::obsolete()
+{
+  OneBodyWavefunction::obsolete();
+  if (guess_wfn_.nonnull()) guess_wfn_->obsolete();
 }
 
 /////////////////////////////////////////////////////////////////////////////

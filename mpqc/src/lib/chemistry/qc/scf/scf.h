@@ -53,6 +53,8 @@ class SCF: public OneBodyWavefunction {
 
     int keep_guess_wfn_;
     Ref<OneBodyWavefunction> guess_wfn_;
+
+    int always_use_guess_wfn_;
     
     Ref<SelfConsistentExtrapolation> extrap_;
     
@@ -161,6 +163,15 @@ class SCF: public OneBodyWavefunction {
         displacements, because the wavefunction is lost whenever the
         molecule is displaced into lower symmetry.
 
+        <dt><tt>always_use_guess_wavefunction</tt><dd> If the orbitals must
+        be recomputed after they have already been computed once, then the
+        old orbitals are used as the initial guess by default.  However, if
+        this option is true, then the guess wavefunction will be used, if
+        available.  If a guess wavefunction is not available, then a core
+        Hamiltonian guess will be used.  If this option is set to true,
+        then keep_guess_wavefunction should also be set to true.
+
+
         </dl> */
     SCF(const Ref<KeyVal>&);
     ~SCF();
@@ -185,6 +196,8 @@ class SCF: public OneBodyWavefunction {
     virtual void two_body_energy(double &ec, double &ex);
 
     void symmetry_changed();
+
+    void obsolete();
 
     void print(std::ostream&o=ExEnv::out0()) const;
 

@@ -413,7 +413,7 @@ void
 UnrestrictedSCF::initial_vector(int needv)
 {
   if (need_vec_) {
-    if (oso_eigenvectors_.result_noupdate().null()) {
+    if (always_use_guess_wfn_ || oso_eigenvectors_.result_noupdate().null()) {
       // if guess_wfn_ is non-null then try to get a guess vector from it.
       // First check that the same basis is used...if not, then project the
       // guess vector into the present basis.

@@ -52,6 +52,31 @@ class RedundantCartesianIter {
     int axis(int i) { return axis_[i]; }
 };
 
+// Like RedundantCartesianIter, except a, b, and c are fixed to a given value
+class RedundantCartesianSubIter {
+  private:
+    int done_;
+    int l_;
+    int e_[3];
+    int *axis_;
+
+    void advance();
+    int valid();
+  public:
+    RedundantCartesianSubIter(int l);
+    ~RedundantCartesianSubIter();
+    void start(int a, int b, int c);
+    void next();
+    operator int();
+    int bfn();
+    int l(int i) { return e_[i]; }
+    int l() { return l_; }
+    int a() { return e_[0]; }
+    int b() { return e_[1]; }
+    int c() { return e_[2]; }
+    int axis(int i) { return axis_[i]; }
+};
+
 class RefKeyVal;
 class GaussianShell: public SavableState
 {

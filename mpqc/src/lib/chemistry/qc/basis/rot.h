@@ -2,9 +2,9 @@
 #ifndef _chemistry_qc_basis_rot_h
 #define _chemistry_qc_basis_rot_h
 
-//#ifdef __GNUC__
-//#pragma interface
-//#endif
+#ifdef __GNUC__
+#pragma interface
+#endif
 
 #include <math/symmetry/pointgrp.h>
 #include <chemistry/qc/basis/gaussshell.h>
@@ -28,8 +28,9 @@ class Rotation {
 
   public:
     inline void init(int a, SymmetryOperation&so);
+    void init_pure(int a, SymmetryOperation&so);
     
-    Rotation(int a, SymmetryOperation& so) : _am(0), _n(0), r(0) { init(a,so);}
+    Rotation(int a, SymmetryOperation& so, int pure = 0);
     ~Rotation() { done(); }
 
     int am() const { return _am; }

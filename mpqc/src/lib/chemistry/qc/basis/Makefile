@@ -13,10 +13,10 @@ TARGET_TO_MAKE = libbasis
 BIN_OR_LIB = LIB
 
 CXXSRC = gaussbas.cc gaussshell.cc gaussshval.cc gaussbaval.cc \
-       gaussbas_i.cc gaussshe_i.cc files.cc petite.cc
+       gaussbas_i.cc gaussshe_i.cc files.cc petite.cc rot.cc
 
 INC = gaussbas.h gaussshe_i.h basis.h gaussbas_i.h gaussshell.h files.h \
-      petite.h
+      petite.h rot.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.o)

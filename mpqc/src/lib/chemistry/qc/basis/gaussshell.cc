@@ -447,3 +447,88 @@ RedundantCartesianIter::next()
     }
   done_ = 1;
 }
+
+////////////////////////////////////////////////////////////////////////
+// RedundantCartianIter
+
+RedundantCartesianSubIter::RedundantCartesianSubIter(int l)
+{
+  l_ = l;
+  axis_ = new int[l_];
+}
+
+RedundantCartesianSubIter::~RedundantCartesianSubIter()
+{
+  delete[] axis_;
+}
+
+int
+RedundantCartesianSubIter::bfn()
+{
+  int i = a();
+  int j = b();
+  int am = l();
+  return (((((((am)+1)<<1)-(i))*((i)+1))>>1)-(j)-1);
+}
+
+RedundantCartesianSubIter::operator int()
+{
+  return !done_;
+}
+
+void
+RedundantCartesianSubIter::start(int a, int b, int c)
+{
+  if (l_ != a + b + c) {
+      fprintf(stderr, "RedundantCartesianSubIter::start: bad args\n");
+      abort();
+    }
+  if (l_==0) {
+      done_ = 1;
+      return;
+    }
+  else {
+      done_ = 0;
+    }
+  e_[0] = a;
+  e_[1] = b;
+  e_[2] = c;
+  int i;
+  for (i=0; i<l_; i++) {
+      axis_[i] = 0;
+    }
+  while (!done_ && !valid()) { advance(); }
+}
+
+void
+RedundantCartesianSubIter::next()
+{
+  advance();
+  while (!done_ && !valid()) { advance(); }
+}
+
+void
+RedundantCartesianSubIter::advance()
+{
+  int i;
+  for (i=0; i<l_; i++) {
+      if (axis_[i] == 2) axis_[i] = 0;
+      else {
+          axis_[i]++;
+          return;
+        }
+    }
+  done_ = 1;
+}
+
+int
+RedundantCartesianSubIter::valid()
+{
+  int t[3];
+  int i;
+
+  for (i=0; i<3; i++) t[i] = 0;
+  for (i=0; i<l_; i++) t[axis_[i]]++;
+
+  return t[0] == e_[0] && t[1] == e_[1] && t[2] == e_[2];
+}

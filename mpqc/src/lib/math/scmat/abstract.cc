@@ -695,7 +695,6 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
   brect = 0;
 
   RefSCMatrix at = a->copy();
-  at->assign(0.0);
   at->transpose_this();
 
   RefSCMatrix res = dim()->create_matrix(dim());

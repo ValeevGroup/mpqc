@@ -389,6 +389,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
           // when coordinates with small coefficients are eliminated
           // since they can then acquire symmetric components.
           // constant_->add(coordinate);
+          delete coordinate;
         }
       else {
           if (!keep_variable) variable_->add(coordinate);

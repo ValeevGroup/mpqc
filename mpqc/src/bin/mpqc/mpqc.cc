@@ -494,6 +494,8 @@ main(int argc, char *argv[])
     tim->print(cout);
 
   delete[] basename;
+  delete[] molname;
+  SCFormIO::set_default_basename(0);
 
   return 0;
 }

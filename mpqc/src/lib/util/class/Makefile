@@ -31,7 +31,7 @@ ifndef SRCDIR
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXSRC = class.cc proxy.cc
+CXXSRC = class.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
 

@@ -170,6 +170,7 @@ class ClassDesc: public Identity {
     DescribedClass* (*ctor_)();
     DescribedClass* (*keyvalctor_)(const Ref<KeyVal>&);
     DescribedClass* (*stateinctor_)(StateIn&);
+    const std::type_info *ti_;
 
     void change_parent(ClassDesc*oldcd,ClassDesc*newcd);
 
@@ -180,6 +181,7 @@ class ClassDesc: public Identity {
     // this is used for temporary parent class descriptors
     ClassDesc(const char*);
     void init(const char*,int=1,const char* p=0,
+              const std::type_info *ti=0,
               DescribedClass* (*ctor)()=0,
               DescribedClass* (*keyvalctor)(const Ref<KeyVal>&)=0,
               DescribedClass* (*stateinctor)(StateIn&)=0);

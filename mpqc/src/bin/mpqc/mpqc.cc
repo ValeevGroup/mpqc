@@ -606,6 +606,7 @@ try_main(int argc, char *argv[])
       mole->set_checkpoint_freq(checkpoint_freq);
     }
   }
+  delete[] mole_ckpt_file;
 
   if (checkpoint && opt.nonnull()) {
     opt->set_checkpoint();
@@ -779,9 +780,9 @@ try_main(int argc, char *argv[])
       SavableState::save_state(mole.pointer(),so);
       so.close();
 
-      delete[] wfn_file;
     }
   }
+  delete[] wfn_file;
 
   // Frequency calculation.
   if (ready_for_freq && molfreq.nonnull()) {

@@ -44,6 +44,7 @@
 #include <util/misc/formio.h>
 
 #include <util/class/class.h>
+#include <util/class/proxy.h>
 
 using namespace std;
 using namespace sc;
@@ -52,6 +53,11 @@ std::map<std::string,ClassDescP>* ClassDesc::all_ = 0;
 std::map<type_info_key,ClassDescP>* ClassDesc::type_info_all_ = 0;
 char * ClassDesc::classlib_search_path_ = 0;
 std::set<std::string>* ClassDesc::unresolved_parents_ = 0;
+
+/////////////////////////////////////////////////////////////////
+
+static sc::ClassDesc DescribedClassProxy_cd(
+    typeid(sc::DescribedClassProxy), "DescribedClassProxy",1,"public DescribedClass");
 
 /////////////////////////////////////////////////////////////////
 
@@ -232,7 +238,12 @@ ClassDesc::ClassDesc(const type_info &ti,
       abort();
     }
   else {
-      (*type_info_all_)[key] = this;
+      if (type_info_all_->find(key) == type_info_all_->end()) {
+          (*type_info_all_)[key] = this;
+        }
+      else {
+          // this should never happen
+        }
     }
 
   // test the version number to see if it is valid
@@ -241,7 +252,7 @@ ClassDesc::ClassDesc(const type_info &ti,
       exit(1);
     }
 
-  init(name,version,parents,ctor,keyvalctor,stateinctor);
+  init(name,version,parents,&ti,ctor,keyvalctor,stateinctor);
 }
 
 ClassDesc::ClassDesc(const char* name)
@@ -252,6 +263,7 @@ ClassDesc::ClassDesc(const char* name)
 void
 ClassDesc::init(const char* name, int version,
                 const char* parents,
+                const type_info *ti,
                 DescribedClass* (*ctor)(),
                 DescribedClass* (*keyvalctor)(const Ref<KeyVal>&),
                 DescribedClass* (*stateinctor)(StateIn&))
@@ -262,6 +274,7 @@ ClassDesc::init(const char* name, int version,
   ctor_ = ctor;
   keyvalctor_ = keyvalctor;
   stateinctor_ = stateinctor;
+  ti_ = ti;
 
   // make sure that the static members have been initialized
   if (!all_) {
@@ -362,12 +375,23 @@ ClassDesc::~ClassDesc()
   // delete this ClassDesc from the list of all ClassDesc's
   std::string key(classname_);
   all_->erase(key);
+
   // if the list of all ClassDesc's is empty, delete it
   if (all_->size() == 0) {
       delete all_;
       all_ = 0;
       delete[] classlib_search_path_;
       classlib_search_path_ = 0;
+    }
+
+  // delete this ClassDesc entry from the type_info map
+  if (ti_ != 0) {
+      type_info_key key(ti_);
+      type_info_all_->erase(key);
+      if (type_info_all_->size() == 0) {
+          delete type_info_all_;
+          type_info_all_ = 0;
+        }
     }
 
   // delete local data

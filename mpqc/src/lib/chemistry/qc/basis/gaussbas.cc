@@ -937,6 +937,7 @@ GaussianBasisSet::
 GaussianBasisSet::~GaussianBasisSet()
 {
   delete[] name_;
+  delete[] label_;
 
   int ii;
   for (ii=0; ii<nshell_; ii++) {

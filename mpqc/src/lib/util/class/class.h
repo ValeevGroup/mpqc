@@ -248,6 +248,7 @@ class DescribedClass : public VRefCount {
     //. This is a helper function that the programmer must override
     //. for derived types.
     virtual void* _castdown(const ClassDesc*);
+    //. These print the object.
     virtual void print(ostream& =cout) const;
     virtual void print(ostream& =cout);
   };

@@ -64,9 +64,6 @@ using namespace sc;
 #define PRINT4Q_MP2 0
 #define PRINT_NUM_TE_TYPES 4
 #define PRINT_R12_INTERMED 0
-#define LINDEP_TOL 1.e-6
-
-#define USE_GLOBAL_ORTHOG 1
 
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);
@@ -127,6 +124,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   int debug_ = r12info()->debug_level();
 
   MolecularEnergy* mole = r12info()->mole();
+  Ref<SCF> reference = r12info()->ref();
   Ref<Integral> integral = r12info()->integral();
   Ref<GaussianBasisSet> bs = r12info()->basis();
   Ref<GaussianBasisSet> bs_aux = r12info()->basis_aux();
@@ -373,10 +371,10 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   // Compute orthogonalizer for the auxiliary basis
   //
   ExEnv::out0() << indent << "Orthogonalizing ABS:" << endl << incindent;
-  OverlapOrthog orthog(OverlapOrthog::Canonical,
+  OverlapOrthog orthog(reference->orthog_method(),
 		       overlap_aux,
 		       so_matrixkit_aux,
-		       LINDEP_TOL,
+		       reference->lindep_tol(),
 		       0);
   
   RefSCMatrix orthog_aux_so = orthog.basis_to_orthog_basis();
@@ -533,10 +531,10 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     RefSymmSCMatrix UtSU(oso_aux.rowdim(), so_matrixkit_aux);
     UtSU.assign(0.0);
     UtSU.accumulate_transform(oso_aux, overlap_aux);
-    OverlapOrthog svdorthog(OverlapOrthog::Canonical,
+    OverlapOrthog svdorthog(reference->orthog_method(),
 			    UtSU,
 			    so_matrixkit_aux,
-			    LINDEP_TOL,
+			    reference->lindep_tol(),
 			    0);
     
     oso_aux = svdorthog.basis_to_orthog_basis() * oso_aux;

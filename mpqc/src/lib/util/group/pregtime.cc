@@ -70,7 +70,7 @@ ParallelRegionTimer::~ParallelRegionTimer()
 }
 
 void
-ParallelRegionTimer::print(ostream &o)
+ParallelRegionTimer::print(ostream &o) const
 {
   int i,j;
 

@@ -49,7 +49,7 @@ class ParallelRegionTimer: public RegionTimer {
     ParallelRegionTimer(const RefKeyVal&);
     ~ParallelRegionTimer();
 
-    void print(ostream& = cout);
+    void print(ostream& = cout) const;
 };
 
 #endif

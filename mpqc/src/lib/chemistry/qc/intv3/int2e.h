@@ -39,6 +39,38 @@
 #include <chemistry/qc/intv3/types.h>
 #include <chemistry/qc/intv3/storage.h>
 #include <chemistry/qc/intv3/array.h>
+#include <chemistry/qc/intv3/macros.h>
+
+#define CHECK_INTEGRAL_ALGORITHM 0
+
+class ShiftIntermediates {
+  private:
+    double *data_;
+    int ndata_;
+    int nused_;
+    IntV3Arraydoublep4 shell_;
+    int l1_,l2_,l3_,l4_;
+
+    void out_of_memory(int,int,int,int);
+  public:
+    ShiftIntermediates();
+    ~ShiftIntermediates();
+    // marks all data as unused
+    void clear();
+    // allocates the memory
+    void set_l(int,int,int,int);
+    // the amount of memory used
+    int nbyte();
+
+    double *operator() (int i,int j,int k,int l) {
+      if (i>l1_+l2_||j>l2_||k>l3_+l4_||l>l4_) {
+          cerr << "out of bounds" << endl;
+          abort();
+        }
+      return shell_(i,j,k,l);
+    }
+    double *allocate(int i,int j,int k,int l);
+};
 
 class Int2eV3: public VRefCount {
   protected:
@@ -95,10 +127,8 @@ class Int2eV3: public VRefCount {
     double AmB[3];
     /* C[] - D[] */
     double CmD[3];
-    /* Boolean array which gives whether or not a set of integrals has been
-     * computed. */
-    IntV3Arrayint4 shiftinthave;
     int eAB;
+    ShiftIntermediates shiftinter_;
 
     int redundant_;
     int permute_;
@@ -126,8 +156,7 @@ class Int2eV3: public VRefCount {
     GaussianShell *int_shell3;
     GaussianShell *int_shell4;
 
-    IntV3Arraydoublep4 *int_con_ints;
-    IntV3Arraydoublep4 ****int_con_ints_array;  /* The contr. int. inter. */
+    IntV3Arraydoublep2 ****e0f0_con_ints_array;  /* The contr. int. inter. */
 
     int int_expweight1; // For exponent weighted contractions.
     int int_expweight2; // For exponent weighted contractions.
@@ -206,7 +235,6 @@ class Int2eV3: public VRefCount {
 
     // locals from hrr.cc
   protected:
-    void init_shiftinthave(int am1, int am2, int am3, int am);
     double * shiftint(int am1, int am2, int am3, int am4);
     int choose_shift(int am1, int am2, int am3, int am4);
     void shiftam_12(double *I0100, int am1, int am2, int am3, int am4);
@@ -217,8 +245,8 @@ class Int2eV3: public VRefCount {
   protected:
     void int_init_shiftgc(int order, int am1, int am2, int am3, int am4);
     void int_done_shiftgc();
-    void int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
-                       int tam1, int tam2, int tam3, int tam4, int peAB);
+    double *int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
+                          int tam1, int tam2, int tam3, int tam4, int peAB);
 
     // locals from init2e.cc
   protected:
@@ -232,10 +260,10 @@ class Int2eV3: public VRefCount {
     // globals from init2e.cc
   protected:
     double *int_initialize_erep(int storage, int order,
-                                RefGaussianBasisSet cs1,
-                                RefGaussianBasisSet cs2,
-                                RefGaussianBasisSet cs3,
-                                RefGaussianBasisSet cs4);
+                                const RefGaussianBasisSet &cs1,
+                                const RefGaussianBasisSet &cs2,
+                                const RefGaussianBasisSet &cs3,
+                                const RefGaussianBasisSet &cs4);
     void int_done_erep();
 
     // locals from comp2e.cc
@@ -301,6 +329,7 @@ class Int2eV3: public VRefCount {
   protected:
     int used_storage_;
     int used_storage_build_;
+    int used_storage_shift_;
 
   public:
     Int2eV3(const RefGaussianBasisSet&,

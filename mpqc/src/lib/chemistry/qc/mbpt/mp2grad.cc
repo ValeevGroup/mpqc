@@ -129,7 +129,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int_initialize_offsets2(centers,centers,centers,centers);
 
   int i, j, k;
-  int y;
+  int x, y;
   int isize, jsize;
   int a, b, c;
   int nshell;
@@ -176,7 +176,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   double pqrs;
   double *c_sa, c_rj;
   double *c_qk, *c_pi, *c_qi, *c_sj;
-  double *c_qa, *c_sb, *c_pa, *c_pq, *c_sy;
+  double *c_qx, *c_qa, *c_sb, *c_pa, *c_pq, *c_sy;
   double delta_ijab, delta_ijbc, delta_ijac;
   double ecorr_mp2 = 0.0;
   double escf;
@@ -215,8 +215,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   double *pmp2_ptr, *wmp2_ptr;
 
   double *integral_iqrs; // quarter transformed two-el integrals
-  double *integral_iajs; // three-quarter transformed two-el integrals
-  double *integral_ikjs; // three-quarter transformed two-el integrals
+  double *ixjs_tmp;      // three-quarter transformed two-el integrals
   double *integral_ixjs;  // all three-quarter transformed two-el integrals
   double *integral_iajy; // mo integrals (y = any MO)
   double *integral_ikja; // mo integrals
@@ -224,6 +223,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   double *iqjr_contrib;  // local contributions to integral_iqjr
   double *integral_iqjs_ptr;
   double *iajy_ptr;
+  double *ixjs_ptr;
   double *ikja_ptr;
   double *iajs_ptr, *ikjs_ptr;
   double *iqrs_ptr, *iprs_ptr;
@@ -707,8 +707,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     delete[] iqjr_contrib;
 
     // Allocate and initialize some arrays
-    integral_iajs = new double[nvir];
-    integral_ikjs = new double[nocc];
+    ixjs_tmp = new double[nbasis];
 
     // debug print
     if (me == 0) {
@@ -727,34 +726,23 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
           for (s=0; s<nbasis; s++) {
 
-            bzerofast(integral_iajs, nvir);
-            bzerofast(integral_ikjs, nocc);
+            bzerofast(ixjs_tmp, nbasis);
             for (q=0; q<nbasis; q++) {
               integral_iqjs_ptr = &integral_iqjs[q + nbasis*(s + nbasis*ij_index)];
-              iajs_ptr = integral_iajs;
-              c_qa = &scf_vector[q][nocc];
-              for (a=0; a<nvir; a++) {
-                *iajs_ptr++ += *c_qa++ * *integral_iqjs_ptr;
-                }
-              ikjs_ptr = integral_ikjs;
-              c_qk = scf_vector[q];
-              for (k=0; k<nocc; k++) {
-                *ikjs_ptr++ += *c_qk++ **integral_iqjs_ptr;
+              ixjs_ptr = ixjs_tmp;
+              c_qx = scf_vector[q];
+              for (x=0; x<nbasis; x++) {
+                *ixjs_ptr++ += *c_qx++ * *integral_iqjs_ptr;
                 }
               }   // exit q loop
 
-            // Put iajs and ikjs into integral_iqjs, while overwriting what was there
-            // i.e., integral_iqjs will now contain three-quarter transformed integrals
-            // iajs and ikjs
-            integral_iqjs_ptr = &integral_iqjs[nocc + nbasis*(s + nbasis*ij_index)];
-            iajs_ptr = integral_iajs;
-            for (a=0; a<nvir; a++) {
-              *integral_iqjs_ptr++ = *iajs_ptr++;
-              }
+            // Put ixjs into integral_iqjs, while overwriting what was there;
+            // i.e., integral_iqjs will now contain three-quarter transformed
+            // integrals ixjs
             integral_iqjs_ptr = &integral_iqjs[nbasis*(s + nbasis*ij_index)];
-            ikjs_ptr = integral_ikjs;
-            for (k=0; k<nocc; k++) {
-              *integral_iqjs_ptr++ = *ikjs_ptr++;
+            ixjs_ptr = ixjs_tmp;
+            for (x=0; x<nbasis; x++) {
+              *integral_iqjs_ptr++ = *ixjs_ptr++;
               }
             }   // exit s loop
           ij_index++;
@@ -771,8 +759,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       }
     // end of debug print
 
-    delete[] integral_iajs;
-    delete[] integral_ikjs;
+    delete[] ixjs_tmp;
 
     // The array of half-transformed integrals integral_iqjs has now
     // been overwritten by three-quarter transformed integrals iajs,

@@ -17,24 +17,16 @@ ifeq ($(ARCH),NCUBE_V2)
   FFLAGS := $(FFLAGS_DEBUG)
 endif
 
-CSRC = hql.c upper.c lower.c ptred.c
-FSRC = svdsln.f
+CSRC = hql.c ptred.c
 
 INC = libdmt.h matrix.h
 
-DISTFILES = matrix.web $(CSRC) $(FSRC) $(INC) LIBS.h
+DISTFILES = matrix.web $(CSRC) $(INC) LIBS.h
 
 GENSRC = matrix.c
 GENINC = matrix.gbl
 
 LIBCSRC = $(GENSRC) hql.c ptred.c
-
-ifeq ($(MAP_C_F),upper)
-  LIBCSRC += upper.c
-endif
-ifeq ($(MAP_C_F),lower)
-  LIBCSRC += lower.c
-endif
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 

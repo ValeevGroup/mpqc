@@ -12,10 +12,11 @@ molecule<Molecule>: (
 mpqc: (
   checkpoint = no
   savestate = no
+  do_gradient = yes
   mole<UKS>: (
     molecule = $:molecule
     multiplicity = 3
-    functional<LSDAXFunctional>: ()
+    functional<SlaterXFunctional>: ()
     basis<GaussianBasisSet>: (
       name = "6-311G**"
       molecule = $:molecule

@@ -12,14 +12,15 @@ molecule<Molecule>: (
 mpqc: (
   checkpoint = no
   savestate = no
+  do_gradient = yes
   mole<UKS>: (
     molecule = $:molecule
     multiplicity = 3
     functional<SumDenFunctional>: (
      coefs = [ 1.0 1.0 ]
      funcs: [
-        <LSDAXFunctional>: ()
-        <Becke88Functional>: ()
+        <SlaterXFunctional>: ()
+        <Becke88XFunctional>: ()
        ]
      )
     basis<GaussianBasisSet>: (

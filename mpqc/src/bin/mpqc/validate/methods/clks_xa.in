@@ -12,6 +12,7 @@ molecule<Molecule>: (
 mpqc: (
   checkpoint = no
   savestate = no
+  do_gradient = yes
   mole<CLKS>: (
     molecule = $:molecule
     basis<GaussianBasisSet>: (

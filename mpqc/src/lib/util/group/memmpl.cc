@@ -12,22 +12,6 @@
 #include <mpi.h>
 #include <mpproto.h>
 
-#define DISABLE do { fflush(stdout); } while(0)
-#define ENABLE do { fflush(stdout); } while(0)
-
-#define DEBUG 0
-
-#if DEBUG
-#  undef PRINTF
-#  define PRINTF(args) do { DISABLE; \
-                            printf args; \
-                            ENABLE; \
-                           } while(0)
-#else
-#  undef PRINTF
-#  define PRINTF(args)
-#endif
-
 ///////////////////////////////////////////////////////////////////////
 // The handler function and its data
 
@@ -94,7 +78,7 @@ MPLMemoryGrp::recv(void* data, int nbytes, int node, int type)
   int t = type;
   int mid;
   mpc_recv(data, nbytes, &n, &t, &mid);
-  PRINTF(("MPLMemoryGrp:: recv mid = %d\n", mid));
+  if (debug_) printf("MPLMemoryGrp:: recv mid = %d\n", mid);
   return mid;
 }
 
@@ -106,7 +90,7 @@ MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
   mpc_rcvncall(data, nbytes,
                (int*)&global_source, (int*)&global_type, (int*)&global_mid,
                mpl_memory_handler);
-  PRINTF(("MPLMemoryGrp:: postrecv mid = %d\n", global_mid));
+  if (debug_) printf("MPLMemoryGrp:: postrecv mid = %d\n", global_mid);
   return global_mid;
 }
 
@@ -117,21 +101,22 @@ MPLMemoryGrp::wait(long mid1, long mid2)
   if (mid2 == -1) imid = (int)mid1;
   else imid = DONTCARE;
   size_t count;
-  PRINTF(("MPLMemoryGrp: waiting on %d\n", imid));
+  if (debug_) printf("MPLMemoryGrp: waiting on %d\n", imid);
   if (mpc_wait(&imid,&count)) {
       fprintf(stderr, "MPLMemoryGrp: mpc_wait failed\n");
       sleep(1);
       abort();
     }
-  PRINTF(("MPLMemoryGrp: imid = %d, global_mid = %d DONTCARE = %d count = %d\n",
-          imid, global_mid, DONTCARE, count));
+  if (debug_) printf("MPLMemoryGrp: imid = %d, global_mid = %d "
+                     "DONTCARE = %d count = %d\n",
+                     imid, global_mid, DONTCARE, count);
   return (long)imid;
 }
 
 MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
   MIDMemoryGrp(msg)
 {
-  PRINTF(("MPLMemoryGrp entered\n"));
+  if (debug_) printf("MPLMemoryGrp entered\n");
   if (global_mpl_mem) {
       fprintf(stderr, "MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
@@ -143,15 +128,15 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
 
-  PRINTF(("MPLMemoryGrp activating\n"));
+  if (debug_) printf("MPLMemoryGrp activating\n");
   activate();
-  PRINTF(("MPLMemoryGrp done\n"));
+  if (debug_) printf("MPLMemoryGrp done\n");
 }
 
 MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
   MIDMemoryGrp(keyval)
 {
-  PRINTF(("MPLMemoryGrp KeyVal entered\n"));
+  if (debug_) printf("MPLMemoryGrp KeyVal entered\n");
   if (global_mpl_mem) {
       fprintf(stderr, "MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
@@ -160,14 +145,14 @@ MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
 
   global_mpl_mem = this;
 
-  PRINTF(("MPLMemoryGrp activating\n"));
+  if (debug_) printf("MPLMemoryGrp activating\n");
   activate();
-  PRINTF(("MPLMemoryGrp done\n"));
+  if (debug_) printf("MPLMemoryGrp done\n");
 }
 
 MPLMemoryGrp::~MPLMemoryGrp()
 {
-  PRINTF(("MPLMemoryGrp: in DTOR\n"));
+  if (debug_) printf("MPLMemoryGrp: in DTOR\n");
   deactivate();
 
   int oldlock = lock();

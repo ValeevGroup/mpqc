@@ -303,6 +303,9 @@ MIDMemoryGrp::sync()
           if (debug_)
               printf("%d: waiting for sync or other msg data_req_mid = %d\n",
                      me_, data_request_mid_);
+          if (!active_) {
+              cerr << me_ << ": MIDMemoryGrp::sync(): not active (1)" << endl;
+            }
           mid = wait(data_request_mid_);
           if (debug_) printf("%d: got mid = %d (data_request_mid_ = %d)\n",
                              me_, mid, data_request_mid_);
@@ -337,6 +340,9 @@ MIDMemoryGrp::sync()
       if (debug_) printf("%d: sending sync (mid = %d)\n", me_, mid);
       int tmpmid;
       do {
+          if (!active_) {
+              cerr << me_ << ": MIDMemoryGrp::sync(): not active (2)" << endl;
+            }
           tmpmid = wait(mid, data_request_mid_);
           if (tmpmid == data_request_mid_) {
               if (debug_) printf("%d: sync: wait: handling request %d-%d\n",
@@ -356,6 +362,9 @@ MIDMemoryGrp::sync()
       // watch for the done message from 0 or request messages
       while (!nsync_) {
           if (debug_) printf("%d: waiting for sync\n", me_);
+          if (!active_) {
+              cerr << me_ << ": MIDMemoryGrp::sync(): not active (3)" << endl;
+            }
           mid = wait(data_request_mid_);
           if (debug_) printf("%d: in sync got mid = %d\n", me_, mid);
           if (mid == data_request_mid_) {
@@ -385,6 +394,9 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
   int tmpmid;
   do {
       if (debug_) printf("%d: %s: wait: waiting\n", me_, msg);
+      if (!active_) {
+          cerr << me_ << ": MIDMemoryGrp::do_wait(): not active" << endl;
+        }
       tmpmid = wait(data_request_mid_, mid);
       if (tmpmid == data_request_mid_) {
           got_data_request_mid();

@@ -381,16 +381,15 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
       // form Xk
       double Fkobkl = F(mode)/(evals(mode)-lambda_p);
       for (j=0; j < F.n(); j++)
-        xdisp(j) = xdisp(j) - evecs(j,mode) * Fkobkl;
+        xdisp.accumulate_element(j, -(evecs.get_element(j,mode) * Fkobkl));
     
       // form displacement x = sum -Fi*Vi/(bi-lam)
       for (i=0; i < F.n(); i++) {
         if (i==mode) continue;
       
         double Fiobil = F(i) / (evals(i)-lambda_n);
-        for (j=0; j < F.n(); j++) {
-          xdisp(j) = xdisp(j) - evecs(j,i) * Fiobil;
-        }
+        for (j=0; j < F.n(); j++)
+          xdisp.accumulate_element(j, -(evecs.get_element(j,i) * Fiobil));
       }
     
     // minimum search
@@ -411,9 +410,8 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
       // form displacement x = sum -Fi*Vi/(bi-lam)
       for (i=0; i < F.n(); i++) {
         double Fiobil = F(i) / (evals(i)-lambda);
-        for (j=0; j < F.n(); j++) {
-          xdisp(j) = xdisp(j) - evecs(j,i) * Fiobil;
-        }
+        for (j=0; j < F.n(); j++)
+          xdisp.accumulate_element(j, -(evecs.get_element(j,i) * Fiobil));
       }
     }
   }
@@ -478,7 +476,7 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
     // that failed, try steepest descent and get out of here
     fprintf(stderr,"\n  trying cartesian steepest descent..."
                    "cross your fingers\n");
-    for (int i=0; i < cart_grad.n(); i++)
+    for (i=0; i < cart_grad.n(); i++)
       (*mol.pointer())[i/3][i%3] = foo_save[i/3][i%3]-cart_grad[i];
   }
 

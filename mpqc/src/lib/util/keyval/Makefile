@@ -89,8 +89,8 @@ ipv2_scan.cc: ipv2_scan.ll
 	echo "#ifdef HAVE_CONFIG_H"  > ipv2_scan.cc
 	echo "#include <scconfig.h>" >> ipv2_scan.cc
 	echo "#endif" >> ipv2_scan.cc
-	echo "#ifdef USING_NAMESPACE_STD" >> ipv2_scan.cc
 	echo "#include <iostream.h>" >> ipv2_scan.cc
+	echo "#ifdef USING_NAMESPACE_STD" >> ipv2_scan.cc
 	echo "using namespace std;" >> ipv2_scan.cc
 	echo "#endif" >> ipv2_scan.cc
 	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \

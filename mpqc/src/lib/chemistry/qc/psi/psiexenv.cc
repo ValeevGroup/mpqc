@@ -128,7 +128,7 @@ void PsiExEnv::add_to_path(const string& dir)
 #else
     string putenvstr("PATH=");
     putenvstr += newpath;
-    char *putenvcstr = strcpy(new char[putenvstr.size()+1], petenvstr.c_str());
+    char *putenvcstr = strcpy(new char[putenvstr.size()+1], putenvstr.c_str());
     putenv(putenvcstr);
 #endif
     delete[] newpath;

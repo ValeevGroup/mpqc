@@ -1,5 +1,5 @@
 
-#ifdef __GNUC__
+#ifdef __GNUG__
 #pragma interface
 #endif
 

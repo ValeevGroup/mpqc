@@ -14,10 +14,6 @@
 #define stringize2(arg) stringize_((arg))
 #define stringize(arg) stringize_(arg)
 
-//#define POINTER_TO_CASTDOWN__(arg1,arg2) arg1 ## arg2
-//#define POINTER_TO_CASTDOWN_(arg1,arg2) POINTER_TO_CASTDOWN__(arg1,arg2)
-//#define POINTER_TO_CASTDOWN POINTER_TO_CASTDOWN_(CLASSNAME,pointer_to_castdown)
-
 ClassDesc CLASSNAME::class_desc_(stringize(CLASSNAME),
                                  VERSION,
                                  stringize2(PARENTS),
@@ -75,7 +71,6 @@ CLASSNAME::castdown(RefDescribedClass&p)
   return (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
 }
 void *
-//CLASSNAME::do_castdowns(POINTER_TO_CASTDOWN*casts,const ClassDesc*cd)
 CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
 {
   if (cd == &CLASSNAME::class_desc_) {
@@ -85,7 +80,6 @@ CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
   for (int i=0; i<CLASSNAME::class_desc_.parents().n(); i++) {
       if (!CLASSNAME::class_desc_.parents()[i].access()
           == ParentClass::Private) {
-          //void * tmp = casts[i](cd);
           void * tmp = casts[i];
           if (!tmp) continue;
           if (p && tmp != p) {
@@ -100,23 +94,14 @@ CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
     }
   return p;
 }
-#ifdef HAVE_CTOR
-#undef HAVE_CTOR
-#endif
-#ifdef HAVE_KEYVAL_CTOR
-#undef HAVE_KEYVAL_CTOR
-#endif
-#ifdef HAVE_STATEIN_CTOR
-#undef HAVE_STATEIN_CTOR
-#endif
 
 #undef CLASSNAME
 #undef PARENTS
 #undef VERSION
+#undef HAVE_CTOR
+#undef HAVE_KEYVAL_CTOR
+#undef HAVE_STATEIN_CTOR
 
 #undef stringize_
+#undef stringize2
 #undef stringize
-
-//#undef POINTER_TO_CASTDOWN__
-//#undef POINTER_TO_CASTDOWN_
-//#undef POINTER_TO_CASTDOWN

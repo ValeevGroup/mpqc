@@ -32,7 +32,11 @@
 
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/taylor.h>
+#include <chemistry/molecule/molfreq.h>
+#include <chemistry/molecule/molrender.h>
+#include <chemistry/molecule/molshape.h>
 
+#include <util/render/linkage.h>
 #include <math/scmat/linkage.h>
 #include <math/optimize/linkage.h>
 
@@ -40,6 +44,13 @@ const ClassDesc &molecule_force_link_a_ = RedundMolecularCoor::class_desc_;
 const ClassDesc &molecule_force_link_b_ = CartMolecularCoor::class_desc_;
 const ClassDesc &molecule_force_link_c_ = SymmMolecularCoor::class_desc_;
 const ClassDesc &molecule_force_link_d_ = TaylorMolecularEnergy::class_desc_;
+const ClassDesc &molecule_force_link_e_ = MolecularFrequencies::class_desc_;
+const ClassDesc &molecule_force_link_f_ = RenderedStickMolecule::class_desc_;
+const ClassDesc &molecule_force_link_g_ = RenderedBallMolecule::class_desc_;
+const ClassDesc &molecule_force_link_h_ =RenderedMolecularSurface::class_desc_;
+const ClassDesc &molecule_force_link_i_ = VDWShape::class_desc_;
+const ClassDesc &molecule_force_link_j_ = ConnollyShape::class_desc_;
+const ClassDesc &molecule_force_link_k_ = ConnollyShape2::class_desc_;
 
 #endif /* __PIC__ */
 

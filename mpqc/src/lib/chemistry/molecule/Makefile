@@ -55,7 +55,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
       simple.h localdef.h \
-      coor.h energy.h molshape.h chmelm_i.h taylor.h taylor_f.h \
+      coor.h energy.h molshape.h chmelm_i.h taylor.h \
       molrender.h molinfo.h molfreq.h formula.h
 
 DEPENDINCLUDE = $(INC)

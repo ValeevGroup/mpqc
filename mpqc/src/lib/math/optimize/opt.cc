@@ -88,7 +88,7 @@ Optimize::Optimize(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) max_iterations_ = 10;
   n_iterations_ = 0;
 
-  max_stepsize_ = keyval->intvalue("max_stepsize");
+  max_stepsize_ = keyval->doublevalue("max_stepsize");
   if (keyval->error() != KeyVal::OK) max_stepsize_ = 0.6;
 
   function_ = keyval->describedclassvalue("function");

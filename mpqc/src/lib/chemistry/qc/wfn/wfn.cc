@@ -451,11 +451,15 @@ Wavefunction::compute_overlap_eig()
            << "Wavefunction: orthog: WARNING: "
            << nlindep << " linearly dependent basis function"
            << (nlindep>1?"s":"")
+           << endl
+           << indent
+           << scprintf("  tolerance = %12.8f * max", lindep_tol_)
            << endl;
     }
 
   cout << node0 << indent
-       << "overlap eigenvalue max/min = " << maxabs/minabs
+       << scprintf("independent overlap eigenvalue max/min = %12.8f/%12.8f",
+                   maxabs, minabs)
        << endl;
 
   if (debug_ > 1) {

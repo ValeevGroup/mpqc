@@ -19,6 +19,7 @@ class ClassKeySet;
 class DescribedClass;
 class ClassDesc;
 typedef ClassDesc* ClassDescP;
+typedef const ClassDesc* CClassDescP;
 
 class ClassKey {
   private:
@@ -129,6 +130,10 @@ class ClassDesc: public Identity {
 ARRAY_dec(ClassDescP);
 SET_dec(ClassDescP);
 ARRAYSET_dec(ClassDescP);
+
+ARRAY_dec(CClassDescP);
+SET_dec(CClassDescP);
+ARRAYSET_dec(CClassDescP);
 
 // This makes info about the class available.
 class DescribedClass : public VRefCount {

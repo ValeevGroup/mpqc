@@ -222,6 +222,10 @@ ARRAY_def(ClassDescP);
 SET_def(ClassDescP);
 ARRAYSET_def(ClassDescP);
 
+ARRAY_def(CClassDescP);
+SET_def(CClassDescP);
+ARRAYSET_def(CClassDescP);
+
 ClassDesc::ClassDesc(char* name, int version,
                      char* parents,
                      DescribedClass* (*ctor)(),

@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <scconfig.h>
 
 #ifdef NO_VIRTUAL_BASES
 #  define virtual_base

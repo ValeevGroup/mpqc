@@ -37,6 +37,14 @@ ClassDesc CLASSNAME::class_desc_(stringize(CLASSNAME),
                                  0
 #endif
                                  );
+const ClassDesc* CLASSNAME::static_class_desc()
+{
+  return &CLASSNAME::class_desc_;
+}
+const ClassDesc* CLASSNAME::class_desc() const
+{
+    return &class_desc_;
+}
 CLASSNAME*
 CLASSNAME::castdown(DescribedClass*p)
 {

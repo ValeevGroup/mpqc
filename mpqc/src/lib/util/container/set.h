@@ -6,7 +6,43 @@
 #include <stdlib.h>
 #include <util/container/array.h>
 
+#define SET_dec(Type)							      \
+class Set ## Type							      \
+{									      \
+ protected:								      \
+  int nelement;								      \
+  int array_length;							      \
+  enum { array_incr=100 };						      \
+  Array ## Type element;						      \
+  int range_check(int i) const;						      \
+  Pix index_to_pix(int i) const;					      \
+  int pix_to_index_nocheck(Pix i) const;				      \
+  int pix_to_index(Pix i) const;					      \
+ public:								      \
+  Set ## Type ();							      \
+  Set ## Type (const Set ## Type & s);					      \
+  Set ## Type& operator = (const Set ## Type & s);			      \
+  ~Set ## Type ();							      \
+  int length() const;							      \
+  void clear();								      \
+  Pix add( Type & e);							      \
+  Type & operator()(Pix i) const;					      \
+  Set ## Type & operator += (const Set ## Type&s);			      \
+  Pix seek( Type &item);						      \
+  int contains( Type &item);						      \
+  int owns(Pix i);							      \
+  Pix first();								      \
+  void next(Pix&i);							      \
+}
+
 #define SET_def(Type)							      \
+Pix Set ## Type :: index_to_pix(int i) const				      \
+{ return (Pix)(range_check(i)+1); }					      \
+int Set ## Type :: pix_to_index_nocheck(Pix i) const			      \
+{ return ((int)i)-1; }							      \
+int Set ## Type :: pix_to_index(Pix i) const				      \
+{ return range_check(((int)i)-1); }					      \
+int Set ## Type :: length() const { return nelement; };			      \
 int Set ## Type :: range_check(int i) const				      \
 {									      \
   if ((i<0) || (i >= nelement)) {					      \
@@ -16,11 +52,11 @@ int Set ## Type :: range_check(int i) const				      \
   return i;								      \
 }									      \
 Set ## Type :: Set ## Type ():nelement(0),element(array_incr) {}	      \
-Set ## Type :: Set ## Type (Set ## Type & s)				      \
+Set ## Type :: Set ## Type (const Set ## Type & s)			      \
 {									      \
   this->operator = (s);							      \
 }									      \
-Set ## Type& Set ## Type :: operator = (Set ## Type & s)		      \
+Set ## Type& Set ## Type :: operator = (const Set ## Type & s)		      \
 {									      \
   nelement = s.nelement;						      \
   element.set_length(s.element.length());				      \
@@ -61,7 +97,7 @@ Type & Set ## Type :: operator()(Pix i) const				      \
     };									      \
   return element[pix_to_index(i)];					      \
 }									      \
-Set ## Type & Set ## Type :: operator += (Set ## Type&s)		      \
+Set ## Type & Set ## Type :: operator += (const Set ## Type&s)		      \
 {									      \
   for (int i=0; i<s.nelement; i++) {					      \
       add(s.element[i]);						      \
@@ -100,6 +136,8 @@ void Set ## Type :: next(Pix&i)						      \
 class Arrayset ## Type : public Set ## Type				      \
 {									      \
  public:								      \
+  Arrayset ## Type ();							      \
+  Arrayset ## Type (const Arrayset ## Type&);				      \
   Type & operator[](int i);						      \
   const Type & operator[](int i) const;					      \
   int iseek( Type &item);						      \
@@ -107,6 +145,13 @@ class Arrayset ## Type : public Set ## Type				      \
 }
 
 #define ARRAYSET_def(Type)						      \
+Arrayset ## Type :: Arrayset ## Type ()					      \
+{									      \
+}									      \
+Arrayset ## Type :: Arrayset ## Type (const Arrayset ## Type&a):	      \
+Set ## Type(a)								      \
+{									      \
+}									      \
 Type & Arrayset ## Type :: operator[](int i)				      \
 {									      \
   if (i<0 || i>=nelement) {						      \
@@ -134,35 +179,6 @@ int Arrayset ## Type :: iseek( Type &item)				      \
 }									      \
 Arrayset ## Type ::~Arrayset ## Type ()					      \
 {									      \
-}
-
-#define SET_dec(Type)							      \
-class Set ## Type							      \
-{									      \
- protected:								      \
-  int nelement;								      \
-  int array_length;							      \
-  enum { array_incr=100 };						      \
-  Array ## Type element;						      \
-  int range_check(int i) const;						      \
-  inline Pix index_to_pix(int i) const { return (Pix)(range_check(i)+1); }    \
-  inline int pix_to_index_nocheck(Pix i) const { return ((int)i)-1; }	      \
-  inline int pix_to_index(Pix i) const { return range_check(((int)i)-1); }    \
- public:								      \
-  Set ## Type ();							      \
-  Set ## Type (Set ## Type & s);					      \
-  Set ## Type& operator = (Set ## Type & s);				      \
-  ~Set ## Type ();							      \
-  inline int length() const { return nelement; };			      \
-  void clear();								      \
-  Pix add( Type & e);							      \
-  Type & operator()(Pix i) const;					      \
-  Set ## Type & operator += (Set ## Type&s);				      \
-  Pix seek( Type &item);						      \
-  int contains( Type &item);						      \
-  int owns(Pix i);							      \
-  Pix first();								      \
-  void next(Pix&i);							      \
 }
 
 // declare sets for the basic types

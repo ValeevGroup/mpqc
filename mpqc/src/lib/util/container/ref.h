@@ -5,72 +5,144 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern "C" void * sbrk(int);
+
 // The macro version of the reference counting class
 #define REF_dec_custom(T,custom)					      \
 class  Ref ## T  {							      \
   private:								      \
     T* p;								      \
   public:								      \
-    inline T* operator->() { return p; }				      \
-    inline const T* operator->() const { return p; }			      \
-    inline T* pointer() { return p; }					      \
-    inline const T* pointer() const { return p; }			      \
-    inline operator T*() { return p; };					      \
-    inline const operator T*() const { return p; };			      \
-    inline T& operator *() { return *p; };				      \
-    inline const T& operator *() const { return *p; };			      \
+    T* operator->();							      \
+    const T* operator->() const;					      \
+    T* pointer();							      \
+    const T* pointer() const;						      \
+    operator T*();							      \
+    const operator T*() const;						      \
+    T& operator *();							      \
+    const T& operator *() const;					      \
     Ref ## T ();							      \
     Ref ## T (T*a);							      \
     Ref ## T ( Ref ## T &a);						      \
     ~Ref ## T ();							      \
-    inline int null() { return p == 0; }				      \
-    inline int nonnull() { return p != 0; }				      \
+    int null();								      \
+    int nonnull();							      \
     Ref ## T  operator=( Ref ## T & c);					      \
     Ref ## T  operator=(T* cr);						      \
     void assign_pointer(T* cr);						      \
-    inline int operator==( Ref ## T &a) { return p == a.p; }		      \
-    inline int operator==( T * a) { return p == a; }			      \
-    inline int operator>=( Ref ## T &a) { return p >= a.p; }		      \
-    inline int operator<=( Ref ## T &a) { return p <= a.p; }		      \
-    inline int operator>( Ref ## T &a) { return p > a.p; }		      \
-    inline int operator<( Ref ## T &a) { return p < a.p; }		      \
+    int operator==( Ref ## T &a);					      \
+    int operator==( T * a);						      \
+    int operator>=( Ref ## T &a);					      \
+    int operator<=( Ref ## T &a);					      \
+    int operator>( Ref ## T &a);					      \
+    int operator<( Ref ## T &a);					      \
     void  ref_info(FILE*fp=stdout);					      \
+    void warn(const char *);						      \
+    void clear();							      \
+    void check_pointer();						      \
     custom								      \
 }
 
 #define REF_dec(T) REF_dec_custom(T,)
 
+#ifndef REF_CHECK_POINTER
+#define REF_CHECK_POINTER 1
+#endif
+
+#ifndef REF_CHECK_STACK
+#define REF_CHECK_STACK 1
+#endif
+
+#if REF_CHECK_STACK
+#include <unistd.h>
+#endif
+
 #define REF_def(T)							      \
+T* Ref ## T :: operator->() { return p; }				      \
+const T* Ref ## T :: operator->() const { return p; }			      \
+T* Ref ## T :: pointer() { return p; }					      \
+const T* Ref ## T :: pointer() const { return p; }			      \
+Ref ## T :: operator T*() { return p; };				      \
+Ref ## T :: const operator T*() const { return p; };			      \
+T& Ref ## T :: operator *() { return *p; };				      \
+const T& Ref ## T :: operator *() const { return *p; };			      \
+int Ref ## T :: null() { return p == 0; }				      \
+int Ref ## T :: nonnull() { return p != 0; }				      \
+int Ref ## T :: operator==( Ref ## T &a) { return p == a.p; }		      \
+int Ref ## T :: operator==( T * a) { return p == a; }			      \
+int Ref ## T :: operator>=( Ref ## T &a) { return p >= a.p; }		      \
+int Ref ## T :: operator<=( Ref ## T &a) { return p <= a.p; }		      \
+int Ref ## T :: operator>( Ref ## T &a) { return p > a.p; }		      \
+int Ref ## T :: operator<( Ref ## T &a) { return p < a.p; }		      \
 Ref ## T :: Ref ## T (): p(0) {}					      \
-Ref ## T :: Ref ## T (T*a): p(a) { if (p) p->count++; }			      \
-Ref ## T :: Ref ## T ( Ref ## T &a): p(a.p) { if (p) p->count++; }	      \
-Ref ## T :: ~Ref ## T () { if (p && --p->count<=0) delete p; }		      \
+Ref ## T :: Ref ## T (T*a): p(a)					      \
+{									      \
+  if (REF_CHECK_STACK && (void*) p > sbrk(0)) {				      \
+      warn("Ref" # T ": creating a reference to stack data");		      \
+    }									      \
+  if (p) p->reference();						      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+}									      \
+Ref ## T :: Ref ## T ( Ref ## T &a): p(a.p)				      \
+{									      \
+  if (p) p->reference();						      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+}									      \
+Ref ## T :: ~Ref ## T ()						      \
+{									      \
+  clear();								      \
+}									      \
+void									      \
+Ref ## T :: clear()							      \
+{									      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+  if (p && p->dereference()<=0) {					      \
+      if (REF_CHECK_STACK && (void*) p > sbrk(0)) {			      \
+          warn("Ref" # T ": skipping delete of object on the stack");	      \
+        }								      \
+      else {								      \
+           delete p;							      \
+         }								      \
+    }									      \
+  p = 0;								      \
+}									      \
+void									      \
+Ref ## T :: warn ( const char * msg)					      \
+{									      \
+  fprintf(stderr,"WARNING: %s\n",msg);					      \
+}									      \
 Ref ## T  Ref ## T :: operator=( Ref ## T & c)				      \
 {									      \
-  if (   p								      \
-         && --p->count <= 0						      \
-         && p != c.p)							      \
-    delete p;								      \
+  if (c.p) c.p->reference();						      \
+  clear();								      \
   p=c.p;								      \
-  if (p) p->count++;							      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
 Ref ## T  Ref ## T :: operator=(T* cr)					      \
 {									      \
-  if (p && --p->count <= 0 && p != cr) delete p;			      \
-  p=cr;									      \
-  if (p) p->count++;							      \
+  if (cr) cr->reference();						      \
+  clear();								      \
+  p = cr;								      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
 void Ref ## T :: assign_pointer(T* cr)					      \
 {									      \
-  if (p && --p->count <= 0 && p != cr) delete p;			      \
-  p=cr;									      \
-  if (p) p->count++;							      \
+  if (cr) cr->reference();						      \
+  clear();								      \
+  p = cr;								      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+}									      \
+void Ref ## T :: check_pointer()					      \
+{									      \
+  if (p && p->nreference() <= 0) {					      \
+      warn("Ref" # T ": bad reference count in referenced object\n");	      \
+    }									      \
 }									      \
 void Ref ## T :: ref_info(FILE*fp=stdout)				      \
 {									      \
-  if (nonnull()) fprintf(fp,"count = %d\n",p->count);			      \
+  if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
   else fprintf(fp,"reference is null\n");				      \
 }
 
@@ -78,22 +150,32 @@ void Ref ## T :: ref_info(FILE*fp=stdout)				      \
 class RefCount {
     //template <class T> friend class Ref;
   public: // should be private, but template friends don't work
-    int count;
+    int _reference_count_;
   protected:
-    inline RefCount():count(0) {};
+    RefCount();
+    RefCount(const RefCount&);
+    RefCount& operator=(const RefCount&);
   public:
-    inline ~RefCount() {};
+    ~RefCount();
+    int reference();
+    int nreference();
+    int dereference();
 };
 
 //template <class T> class Ref;
 class VRefCount {
     //template <class T> friend class Ref;
   public: // should be private, but template friends don't work
-    int count;
+    int _reference_count_;
   protected:
-    inline VRefCount():count(0) {};
+    VRefCount();
+    VRefCount(const VRefCount&);
+    VRefCount& operator=(const VRefCount&);
   public:
     virtual ~VRefCount();
+    int reference();
+    int nreference();
+    int dereference();
 };
 
 // template <class T>
@@ -161,6 +243,10 @@ class VRefCount {
 //     // Ref<GuiCascadeButton> cb;
 //     // Ref<GuiObject> o = Ref<GuiObject>((GuiCascadeButton*)cb);
 //   };
+
+#ifdef INLINE_FUNCTIONS
+#include <util/container/ref_i.h>
+#endif
 
 #endif
 

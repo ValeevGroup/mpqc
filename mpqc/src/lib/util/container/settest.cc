@@ -46,6 +46,19 @@ REF_def(B);
 
 main()
 {
+  A aa;
+  RefA aar(&aa);
+  aar = 0;
+
+  A* aap = new A;
+  printf("0x%08x ref count = %d\n",aap,aap->_reference_count_);
+//   delete aap;
+//   printf("0x%08x ref count = %d\n",aap,aap->_reference_count_);
+  aar = aap;
+//   delete aap;
+//   printf("0x%08x ref count = %d\n",aap,aap->_reference_count_);
+  aar = 0;
+  
   RefB b;
   //RefA a(b); // illegal
   RefA a((A*)b);

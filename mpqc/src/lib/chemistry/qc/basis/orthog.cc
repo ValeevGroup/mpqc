@@ -74,9 +74,10 @@ OverlapOrthog::OverlapOrthog(StateIn& si):
   int i_orthog_method;
   si.get(i_orthog_method);
   orthog_method_ = OrthogMethod(i_orthog_method);
-  orthog_trans_ = kit->matrix(dim_, orthog_dim_);
+
+  orthog_trans_ = kit->matrix(orthog_dim_, dim_);
   orthog_trans_.restore(si);
-  orthog_trans_inverse_ = kit->matrix(orthog_dim_, dim_);
+  orthog_trans_inverse_ = kit->matrix(dim_, orthog_dim_);
   orthog_trans_inverse_.restore(si);
   si.get(min_orthog_res_);
   si.get(max_orthog_res_);
@@ -95,6 +96,7 @@ OverlapOrthog::save_data_state(StateOut& so)
   SavableState::save_state(orthog_dim_.pointer(), so);
   so.put(lindep_tol_);
   so.put(int(orthog_method_));
+
   orthog_trans_.save(so);
   orthog_trans_inverse_.save(so);
   so.put(min_orthog_res_);

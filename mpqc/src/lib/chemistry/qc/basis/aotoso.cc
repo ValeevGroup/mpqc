@@ -140,6 +140,49 @@ SymmetryOrbitals::SO_basisdim()
   
 ////////////////////////////////////////////////////////////////////////////
 
+AOSO_Transformation::AOSO_Transformation(
+  const RefGaussianBasisSet& gbs)
+  : sos(gbs)
+{
+}
+
+void
+AOSO_Transformation::process(SCMatrixBlockIter&)
+{
+  fprintf(stderr,"AOSO_Transformation::process(SCMatrixBlockIter&):"
+          " can only handle RectBlocks\n");
+  abort();
+}
+
+void
+AOSO_Transformation::process(SCMatrixRectBlock* blk)
+{
+  SO_block& sob = sos.sos_[current_block()];
+
+  if (blk->jend > sob.so.length()) {
+    fprintf(stderr,"AOSO_Transformation::process(SCMatrixRectBlock*):"
+            " blk is wrong size\n");
+    abort();
+  }
+  
+  int isize = blk->iend - blk->istart;
+  int jsize = blk->jend - blk->jstart;
+  
+  memset(blk->data,0,isize*jsize*sizeof(double));
+
+  for (int j=blk->jstart; j < blk->jend; j++) {
+    Arraycontribution& tc = sob.so[j].cont;
+
+    for (int i=0; i < tc.length(); i++) {
+      int bfn = tc[i].bfn;
+      if (bfn >= blk->istart && bfn < blk->iend)
+        blk->data[(bfn-blk->istart)*jsize+j] = tc[i].coef;
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 struct lin_comb {
     int ns;
     int f0;

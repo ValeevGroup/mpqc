@@ -110,6 +110,8 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
 ////////////////////////////////////////////////////////////////////////////
 
 class SymmetryOrbitals {
+    friend class AOSO_Transformation;
+    
   private:
     SO_block *sos_;
     SO_block **som_;
@@ -124,6 +126,17 @@ class SymmetryOrbitals {
 
     RefBlockedSCDimension AO_basisdim();
     RefBlockedSCDimension SO_basisdim();
+};
+
+class AOSO_Transformation : public BlockedSCElementOp {
+  private:
+    SymmetryOrbitals sos;
+
+  public:
+    AOSO_Transformation(const RefGaussianBasisSet&);
+
+    void process(SCMatrixBlockIter&);
+    void process(SCMatrixRectBlock*);
 };
 
 #endif

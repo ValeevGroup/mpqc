@@ -386,6 +386,20 @@ MolecularFrequencies::displace(int disp)
 }
 
 void
+MolecularFrequencies::original_geometry()
+{
+  if (mole_.nonnull()) mole_->obsolete();
+
+  for (int i=0, coor=0; i<mol_->natom(); i++) {
+      for (int j=0; j<3; j++, coor++) {
+          mol_->atom(i)[j] = original_geometry_(coor);
+        }
+    }
+
+  mol_->set_point_group(original_point_group_);
+}
+
+void
 MolecularFrequencies::set_gradient(int disp, const RefSCVector &grad)
 {
   int irrep, index;

@@ -407,7 +407,7 @@ main(int argc, char *argv[])
       RefSCVector gradv = mole->get_cartesian_gradient();
       molfreq->set_gradient(i, gradv);
     }
-
+    molfreq->original_geometry();
     molfreq->compute_frequencies_from_gradients();
     //molfreq->thermochemistry(scf_info.nopen+1);
     molfreq->thermochemistry(1);

@@ -81,6 +81,7 @@ class MolecularFrequencies: public SavableState {
     void compute_frequencies_from_gradients();
     int ndisplace() const;
     void displace(int disp);
+    void original_geometry();
     void set_gradient(int disp, const RefSCVector &grad);
 
     void thermochemistry(int degeneracy, double temp=298.15, double pres=1.0);

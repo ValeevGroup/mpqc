@@ -8,6 +8,8 @@ extern "C" {
 
 #include <math/dmt/libdmt.h>
 
+#include <chemistry/qc/intv2/atoms.h>
+
 #include <chemistry/qc/dmtsym/symm.h>
 #include <chemistry/qc/dmtsym/symm_mac.h>
 #include <chemistry/qc/dmtsym/symminit.h>

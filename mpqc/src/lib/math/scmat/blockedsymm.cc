@@ -402,9 +402,22 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->accumulate_transform(la->mats_[i].pointer(),
-                                   lb->mats_[i].pointer());
+  if (lb->d->nblocks() == 1 && d->nblocks() > 1) {
+    for (int i=0; i < d->nblocks(); i++)
+      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
+                                     lb->mats_[0].pointer());
+
+  } else if (lb->d->nblocks() > 1 && d->nblocks() == 1) {
+    for (int i=0; i < lb->d->nblocks(); i++)
+      mats_[0]->accumulate_transform(la->mats_[i].pointer(),
+                                     lb->mats_[i].pointer());
+
+  } else if (lb->d->nblocks() == d->nblocks()) {
+    for (int i=0; i < d->nblocks(); i++)
+      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
+                                     lb->mats_[i].pointer());
+  }
+
 }
 
 // this += a * b * transpose(a)
@@ -425,9 +438,21 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->accumulate_transform(la->mats_[i].pointer(),
-                                   lb->mats_[i].pointer());
+  if (lb->d->nblocks() == 1 && d->nblocks() > 1) {
+    for (int i=0; i < d->nblocks(); i++)
+      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
+                                     lb->mats_[0].pointer());
+
+  } else if (lb->d->nblocks() > 1 && d->nblocks() == 1) {
+    for (int i=0; i < lb->d->nblocks(); i++)
+      mats_[0]->accumulate_transform(la->mats_[i].pointer(),
+                                     lb->mats_[i].pointer());
+
+  } else if (lb->d->nblocks() == d->nblocks()) {
+    for (int i=0; i < d->nblocks(); i++)
+      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
+                                     lb->mats_[i].pointer());
+  }
 }
 
 void

@@ -138,6 +138,9 @@ class BlockedSCVector: public SCVector {
 };
 
 class BlockedSCMatrix: public SCMatrix {
+    // this is in chemistry/qc/basis/petite.h.
+    // one day this will be unnecessary
+    friend class PetiteList;
     friend class BlockedSymmSCMatrix;
     friend class BlockedDiagSCMatrix;
     friend BlockedSCVector;
@@ -151,6 +154,7 @@ class BlockedSCMatrix: public SCMatrix {
     RefBlockedSCDimension d1;
     RefBlockedSCDimension d2;
     RefSCMatrix *mats_;
+    int nblocks_;
     
     void resize(BlockedSCDimension*, BlockedSCDimension*);
 
@@ -207,6 +211,10 @@ class BlockedSCMatrix: public SCMatrix {
                     SCMatrix*,SCMatrix*);
 
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    // BlockedSCMatrix specific functions
+    RefSCMatrix unblock() const;
+    void block(const RefSCMatrix&);
 };
 
 class BlockedSymmSCMatrix: public SymmSCMatrix {

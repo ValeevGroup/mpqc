@@ -112,6 +112,10 @@ SCFormIO::init()
 
   if (nullstream_.bad() || nullstream_.fail())
     nullstream_.open("/dev/null");
+
+  nullstream_.iword(skip_indent_) = 0;
+  nullstream_.iword(indent_size_) = 0;
+  nullstream_.iword(nindent_) = 0;
 }
 
 ios&

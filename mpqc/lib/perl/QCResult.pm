@@ -278,20 +278,13 @@ sub parse_mpqc {
             $ngrad = 0;
         }
         elsif (/^\s+Frequencies .*:\s*$/) {
-            # read the irrep
-            $_ = <$out>;
-            if (! /\s*A\s*/) {
-                print "More than one freq irrep: need to modify QCResult.pm\n";
-                exit 1;
-            }
-            $freq = [];
             # read the frequencies
             while (<$out>) {
                 if (/^\s+\d+\s+$fltrx\s*$/) {
                     $freq->[$ifreq] = $1;
                     $ifreq++;
                 }
-                else {
+                elsif (/THERMODYNAMIC ANALYSIS/) {
                     last;
                 }
             }

@@ -592,7 +592,12 @@ sub input_string() {
     my $symmetry = $qcinput->symmetry();
     my $mol = "% molecule specification";
     $mol = "$mol\nmolecule<Molecule>: (";
-    $mol = "$mol\n  symmetry = $symmetry";
+    if ($qcinput->frequencies()) {
+        $mol = "$mol\n  symmetry = C1";
+    }
+    else {
+        $mol = "$mol\n  symmetry = $symmetry";
+    }
     $mol = "$mol\n  angstroms = yes";
     $mol = "$mol\n  { atoms geometry } = {";
     printf "MPQCInputWriter: natom = %d\n", $qcinput->n_atom() if ($debug);
@@ -748,6 +753,9 @@ sub input_string() {
     if ($qcinput->frequencies()) {
         $freq = "% vibrational frequency input";
         $freq = "$freq\n  freq<MolecularFrequencies>: (";
+        if ($symmetry ne "C1") {
+            $freq = "$freq\n    point_group<PointGroup>: symmetry = $symmetry";
+        }
         $freq = "$freq\n    molecule = \$:molecule";
         $freq = "$freq\n  )\n";
     }

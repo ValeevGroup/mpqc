@@ -137,14 +137,14 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   // if certain libraries have been compiled in, use those message groups
 #if defined(HAVE_NX)
   grp = new ParagonMessageGrp;
-  if (grp->n() == 1) delete grp;
+  if (grp->n() == 1) return new ProcMessageGrp;
   else return grp;
 #elif defined(HAVE_MPI)
   grp = new MPIMessageGrp;
-  if (grp->n() == 1) delete grp;
+  if (grp->n() == 1) return new ProcMessageGrp;
   else return grp;
 #endif
-  return new ProcMessageGrp;
+  return 0;
 }
 
 void

@@ -3,7 +3,7 @@ molecule = $:water
 
 basis<SymmGaussianBasisSet>: (
   molecule = $:molecule
-  %name = "STO-3G"
+  name = "STO-3G"
   %name = "6-31G"
   %name = "DZ (Dunning)"
   %name = "6-31G*"
@@ -13,7 +13,7 @@ basis<SymmGaussianBasisSet>: (
   %name = "cc-pVTZ"
   %name = "cc-pVQZ"
   %name = "aug-cc-pVDZ"
-  name = "aug-cc-pVTZ"
+  %name = "aug-cc-pVTZ"
   %name = "aug-cc-pVQZ"
 )
 
@@ -21,7 +21,7 @@ water<Molecule>: (
   symmetry = c2v
   { atoms geometry } = {
       o    [   0.0  0.0   0.0 ]
-      o    [   1.5  0.0   1.0 ]
+      h    [   1.5  0.0   1.0 ]
   }
 )
 

@@ -15,13 +15,6 @@ TwoBodyIntJF::TwoBodyIntJF(const RefGaussianBasisSet& gbs) :
   memset(H_done,0,MAXCLASS);
   memset(V_done,0,MAXCLASS);
 
-  int dum = ioff(MAXAM);
-  dum *= dum;
-  dum *= dum;
-     
-  tot_data = new base_eri[dum];
-  memset(tot_data,0,sizeof(base_eri)*dum);
- 
   // use Size to count how much room needs to be allocated to the stack
   int sz = 0;
   int i;
@@ -50,181 +43,260 @@ TwoBodyIntJF::~TwoBodyIntJF()
     H_done=0;
   }
 
-  if (tot_data) {
-    delete[] tot_data;
-    tot_data=0;
-  }
-
   if (DP) {
     delete[] DP;
     DP=0;
   }
 }
 
+static void
+swap(shell_stuff*& a, shell_stuff*& b)
+{
+  shell_stuff *t = a;
+  a = b;
+  b = t;
+}
+
 void
 TwoBodyIntJF::compute_shell(int sii, int sjj, int skk, int sll, double *buf)
 {
+  const double F0[20] = {1.0,  1.0/3.0,  1.0/5.0,  1.0/7.0,  1.0/9.0,
+                  1.0/11.0, 1.0/13.0, 1.0/15.0, 1.0/17.0, 1.0/19.0,
+                  1.0/21.0, 1.0/23.0, 1.0/25.0, 1.0/27.0, 1.0/29.0,
+                  1.0/31.0, 1.0/33.0, 1.0/35.0, 1.0/37.0, 1.0/39.0};
 
-  double *dp_use = DP;
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  Molecule& mol = *gbs.molecule().pointer();
 
-  int ioffset, joffset, koffset, loffset;
-  int slmax ;
-  struct am_str L ;
-  struct iclass *Classes;
-  struct iclass *H_Cl;
-  struct iclass *V_Cl;
-  double AB2, CD2;
-  struct coordinates P, PA, PB, AB;
-  struct coordinates Q, QC, QD, CD;
-  int count ;
-  int dum;
-  struct base_eri *tot_data; /* accum. for contracted fn's */
-  double *data;
-  int n;
-  int num;  /* number of base_eri's returned by shell_eri */
-  double inorm, jnorm, knorm, lnorm ;
-  struct coordinates ericent[4];
-  int total_am;
-  int n_hrr = 0;
-  int orig_am[4];
-  int first_vrr, last_vrr;
-  int class_it;
-
+  GaussianShell& gsi = gbs(sii);
+  GaussianShell& gsj = gbs(sjj);
+  GaussianShell& gsk = gbs(skk);
+  GaussianShell& gsl = gbs(sll);
   
-  // need to decide if we even need to calculate this one... odd am=no?
-  total_am = shells[sii].am+shells[sjj].am+shells[skk].am+shells[sll].am;
-  if (!(total_am%2)||
-      (shells[sii].center!=shells[sjj].center)||
-      (shells[sjj].center!=shells[skk].center)||
-      (shells[skk].center!=shells[sll].center)){
-
-    /* si, sj, sk, sl refer to shell numbers here */
-    /* place in "descending" angular mom-
-       my simple way of optimizing PHG recursion (VRR) */
-    si = sii; sj = sjj; sk = skk; sl = sll;
-    if (shells[si].am < shells[sj].am){
-      dum = si;
-      si = sj;
-      sj = dum;
-    }
-    if(shells[sk].am < shells[sl].am){
-      dum = sk;
-      sk = sl;
-      sl = dum;
-    }
-    if(shells[si].am < shells[sk].am){
-      dum = si;
-      si = sk;
-      sk = dum;
-      dum = sj;
-      sj = sl;
-      sl = dum;
-    }
-    /* for numbering the AO's */
-    ioffset = joffset = koffset = loffset = 0;
-    for(i=0;i<si;i++) ioffset += ioff[shells[i].am];
-    for(i=0;i<sj;i++) joffset += ioff[shells[i].am];
-    for(i=0;i<sk;i++) koffset += ioff[shells[i].am];
-    for(i=0;i<sl;i++) loffset += ioff[shells[i].am];
-
-
-    ericent[0].x = centers[shells[si].center-1].x;
-    ericent[0].y = centers[shells[si].center-1].y;
-    ericent[0].z = centers[shells[si].center-1].z;
-    ericent[0].Z_nuc = centers[shells[si].center-1].Z_nuc;
-    ericent[1].x = centers[shells[sj].center-1].x;
-    ericent[1].y = centers[shells[sj].center-1].y;
-    ericent[1].z = centers[shells[sj].center-1].z;
-    ericent[1].Z_nuc = centers[shells[sj].center-1].Z_nuc;
-    ericent[2].x = centers[shells[sk].center-1].x;
-    ericent[2].y = centers[shells[sk].center-1].y;
-    ericent[2].z = centers[shells[sk].center-1].z;
-    ericent[2].Z_nuc = centers[shells[sk].center-1].Z_nuc;
-    ericent[3].x = centers[shells[sl].center-1].x;
-    ericent[3].y = centers[shells[sl].center-1].y;
-    ericent[3].z = centers[shells[sl].center-1].z;
-    ericent[3].Z_nuc = centers[shells[sl].center-1].Z_nuc;
-
-    AB.x = ericent[0].x-ericent[1].x;
-    AB.y = ericent[0].y-ericent[1].y;
-    AB.z = ericent[0].z-ericent[1].z;
-    CD.x = ericent[2].x-ericent[3].x;
-    CD.y = ericent[2].y-ericent[3].y;
-    CD.z = ericent[2].z-ericent[3].z;
-  
-    AB2 = AB.x*AB.x+AB.y*AB.y+AB.z*AB.z;
-    CD2 = CD.x*CD.x+CD.y*CD.y+CD.z*CD.z;
-
-    orig_am[0] = shells[si].am-1;
-    orig_am[1] = shells[sj].am-1;
-    orig_am[2] = shells[sk].am-1;
-    orig_am[3] = shells[sl].am-1;
+  for (int ci=0; ci < gsi.ncontraction(); ci++) {
+    shell_stuff shli(gbs,sii,ci);
     
-    /* usr HRR to get all classes needed to build (ab|cd) - 
-       i.e. all (e0|f0) classes.  push onto stack of classes. */
+    for (int cj=0; cj < gsj.ncontraction(); cj++) {
+      shell_stuff shlj(gbs,sjj,cj);
 
-    /*printf("\n\nBegining new Shell Quartet:\n");*/
-    dp_use = DP;
-    n_hrr = 0;
-    H_Cl = Classes;
+      if ((shli.center==shlj.center) && (cj > ci))
+        break;
 
-    /* recursively list (and allocate room for) HRR generated intermediates */
-    dum = List_HRR(H_Cl, orig_am, &n_hrr, &dp_use);
+      for (int ck=0; ck < gsk.ncontraction(); ck++) {
+        shell_stuff shlk(gbs,skk,ck);
+    
+        if ((shli.center==shlk.center) && (ck > ci))
+          break;
 
-    first_vrr = 1;
-    last_vrr = 1;
+        for (int cl=0; cl < gsl.ncontraction(); cl++) {
+          shell_stuff shll(gbs,sll,cl);
+    
+          if (((shli.center==shlk.center) && (shlj.center==shll.center) &&
+               (cl > cj)) ||
+              (shlk.center==shll.center) && (cl > ck))
+            break;
 
-    /* set V_Cl to after end of hrr generated intermediates */
-    V_Cl = &(Classes[n_hrr]);
+          // need to decide if we even need to calculate this one... odd am=no?
+          int total_am = shli.am + shlj.am + shlk.am + shll.am;
 
-    /* zero flags for HRR generated intermediates */
-    bzero(H_done,n_hrr*sizeof(char));
+          if ((total_am%2) && (shli.center==shlj.center) &&
+              (shlj.center==shlk.center) && (shlk.center==shll.center))
+            continue;
 
-    /* now loop over all elements in Classes (e0|f0) -
-       apply vrr to push all those classes onto stack of classes */
-    for(class_it = 0; class_it < n_hrr; class_it++){
-      if(H_Cl[class_it].type != 0){
-        Top_VRR(class_it, H_Cl, V_Cl, &last_vrr, &dp_use);
-      }
-    }
+          // place in "descending" angular mom-
+          // my simple way of optimizing PHG recursion (VRR)
+          shell_stuff *shpi = &shli;
+          shell_stuff *shpj = &shlj;
+          shell_stuff *shpk = &shlk;
+          shell_stuff *shpl = &shll;
+          
+          if (shpi->am < shpj->am)
+            swap(shpi,shpj);
 
-    /* contract by primitives out here */
-    for (pi = 0; pi < shells[si].n_prims; pi++){
-      for (pj = 0; pj < shells[sj].n_prims; pj++){
-        for (pk = 0; pk < shells[sk].n_prims; pk++){
-          for (pl = 0; pl < shells[sl].n_prims; pl++){
+          if (shpk->am < shpl->am)
+            swap(shpk,shpl);
+
+          if (shpi->am < shpk->am){
+            swap(shpi,shpk);
+            swap(shpj,shpl);
+          }
+
+          int ni = shpi->gs.nfunction(ci);
+          int nj = shpj->gs.nfunction(cj);
+          int nk = shpk->gs.nfunction(ck);
+          int nl = shpl->gs.nfunction(cl);
+          int len = ni*nj*nk*nl;
+          
+          double ab[3], cd[3];
+          
+          ab[0] = shpi->ac[0] - shpj->ac[0];
+          ab[1] = shpi->ac[1] - shpj->ac[1];
+          ab[2] = shpi->ac[2] - shpj->ac[2];
+          cd[0] = shpk->ac[0] - shpl->ac[0];
+          cd[1] = shpk->ac[1] - shpl->ac[1];
+          cd[2] = shpk->ac[2] - shpl->ac[2];
+  
+          double ab2 = ab[0]*ab[0] + ab[1]*ab[1] + ab[2]*ab[2];
+          double cd2 = cd[0]*cd[0] + cd[1]*cd[1] + cd[2]*cd[2];
+
+          int orig_am[5];
+          orig_am[0] = shpi->am;
+          orig_am[1] = shpj->am;
+          orig_am[2] = shpk->am;
+          orig_am[3] = shpl->am;
+    
+          // usr HRR to get all classes needed to build (ab|cd) - 
+          // i.e. all (e0|f0) classes.  push onto stack of classes.
+
+          double *dp_use = DP;
+          int n_hrr = 0;
+          iclass *H_Cl = Classes;
+
+          // recursively list (and allocate room for) HRR generated
+          // intermediates
+          List_HRR(H_Cl, orig_am, n_hrr, dp_use);
+
+          int first_vrr = 1;
+          int last_vrr = 1;
+
+          // set V_Cl to after end of hrr generated intermediates
+          iclass *V_Cl = &(Classes[n_hrr]);
+
+          // zero flags for HRR generated intermediates
+          memset(H_done,0,n_hrr*sizeof(char));
+
+          // now loop over all elements in Classes (e0|f0) -
+          // apply vrr to push all those classes onto stack of classes
+          for (int class_it = 0; class_it < n_hrr; class_it++)
+            if (H_Cl[class_it].type != 0)
+              Top_VRR(class_it, H_Cl, V_Cl, last_vrr, dp_use);
+
+          // contract by primitives out here
+          for (int pi = 0; pi < shpi->gs.nprimitive(); pi++) {
+            inorm = shpi->coef(pi);
+            expi = shpi->gs.exponent(pi);
+            
+            for (int pj = 0; pj < shpj->gs.nprimitive(); pj++) {
+              jnorm = shpj->coef(pj);
+              expj = shpj->gs.exponent(pj);
+              zeta = expi+expj;
+              oo2z = 1.0/zeta;
+
+              double Sovlp1 =
+                inorm*jnorm*exp(-expi*expj*ab2*oo2z)*pow(M_PI*oo2z,1.5);
+
+              double Px = (shpi->ac[0] * expi + shpj->ac[0] * expj) * oo2z;
+              double Py = (shpi->ac[1] * expi + shpj->ac[1] * expj) * oo2z;
+              double Pz = (shpi->ac[2] * expi + shpj->ac[2] * expj) * oo2z;
+
+              oo2z *= 0.5;
+              
+              U[0][0] = Px - shpi->ac[0];
+              U[0][1] = Py - shpi->ac[1];
+              U[0][2] = Pz - shpi->ac[2];
+              U[1][0] = Px - shpj->ac[0];
+              U[1][1] = Py - shpj->ac[1];
+              U[1][2] = Pz - shpj->ac[2];
+
+              for (int pk = 0; pk < shpk->gs.nprimitive(); pk++) {
+                knorm = shpk->coef(pk);
+                expk = shpk->gs.exponent(pk);
+
+                for (int pl = 0; pl < shpl->gs.nprimitive(); pl++) {
+                  lnorm = shpl->coef(pl);
+                  expl = shpl->gs.exponent(pl);
+                  eta = expk + expl;
+                  oo2n = 1.0/eta;
+
+                  double Sovlp2 =
+                    knorm*lnorm*exp(-expk*expl*cd2*oo2n)*pow(M_PI*oo2n,1.5);
+
+                  double Qx = (shpk->ac[0] * expk + shpl->ac[0] * expl) * oo2n;
+                  double Qy = (shpk->ac[1] * expk + shpl->ac[1] * expl) * oo2n;
+                  double Qz = (shpk->ac[2] * expk + shpl->ac[2] * expl) * oo2n;
+
+                  oo2n *= 0.5;
+                  
+                  U[2][0] = Qx - shpk->ac[0];
+                  U[2][1] = Qy - shpk->ac[1];
+                  U[2][2] = Qz - shpk->ac[2];
+                  U[3][0] = Qx - shpl->ac[0];
+                  U[3][1] = Qy - shpl->ac[1];
+                  U[3][2] = Qz - shpl->ac[2];
+
+                  double PQx = Px - Qx;
+                  double PQy = Py - Qy;
+                  double PQz = Pz - Qz;
+
+                  double Wx = (Px*zeta + Qx*eta)/(zeta+eta);
+                  double Wy = (Py*zeta + Qy*eta)/(zeta+eta);
+                  double Wz = (Pz*zeta + Qz*eta)/(zeta+eta);
+
+                  U[4][0] = Wx - Px;
+                  U[4][1] = Wy - Py;
+                  U[4][2] = Wz - Pz;
+                  U[5][0] = Wx - Qx;
+                  U[5][1] = Wy - Qy;
+                  U[5][2] = Wz - Qz;
+
+                  oo2zn = 0.5/(zeta+eta);
+                  rho = zeta*eta / (zeta+eta);
+                  poz = rho/zeta;
+                  pon = rho/eta;
          
-            /* zero flags for vrr generated intermediates */
-            bzero(V_done,last_vrr*sizeof(char));
+                  double coef1 = 2.0 * sqrt(rho/M_PI) * Sovlp1 * Sovlp2;
 
-            pii = pi + shells[si].fprim-1;
-            pjj = pj + shells[sj].fprim-1;
-            pkk = pk + shells[sk].fprim-1;
-            pll = pl + shells[sl].fprim-1;
+                  double pq2 = PQx*PQx + PQy*PQy + PQz*PQz;
+                  
+                  if (fabs(pq2) < 1.0e-15) {
+                    for (int i=0; i <= total_am; i++)
+                      F[i] = F0[i]*coef1;
+                  } else {
+                    fjt.fjt(total_am, rho*pq2);
+                    for (int i=0; i <= total_am; i++)
+                      F[i] = fjt.table_value(i) * coef1;
+                  }
+                      
+                  // zero flags for vrr generated intermediates
+                  memset(V_done, 0, last_vrr*sizeof(char));
 
-            Shell_init(AB2, CD2, ericent, shells,
-                       si, sj, sk, sl, pii, pjj, pkk, pll, cgtos);
-
-            /* call function to begin build by VRR of top classes */
-            for(class_it = 0; class_it < n_hrr; class_it++){
-              if(H_Cl[class_it].type != 0){
-                Init_VRR(H_Cl, V_Cl, class_it);
+                  /* call function to begin build by VRR of top classes */
+                  for (int class_it = 0; class_it < n_hrr; class_it++)
+                    if (H_Cl[class_it].type != 0)
+                      Init_VRR(H_Cl, V_Cl, class_it);
+                }
               }
             }
- 
+          } // end getting unique primitive set
+
+          // call a function to accumulate all the HRR generated classes
+          double *data = HRR_build(Classes, 0, ab, cd);
+          //int num = Fill_data(Classes, 0);
+
+          int index=0;
+          for (int fi = 0; fi < ioff(Classes[0].am[0]+1); fi++) {
+            int bfi = fi+shpi->func0;
+            
+            for (int fj = 0; fj < ioff(Classes[0].am[1]+1); fj++) {
+              int bfj = fj+shpj->func0;
+
+              for (int fk = 0; fk < ioff(Classes[0].am[2]+1); fk++) {
+                int bfk = fk+shpk->func0;
+
+                for (int fl = 0; fl < ioff(Classes[0].am[3]+1); fl++) {
+                  int bfl = fl+shpl->func0;
+                  double v = Classes[0].Val[index];
+
+                  if (fabs(v) > 1.0e-12)
+                    printf("%5d %5d %5d %5d %20.15f\n",bfi,bfj,bfk,bfl,v);
+
+                  index++;
+                }
+              }
+            }
           }
         }
       }
-    } /* end getting unique primitive set */
-
-    /*  call a function to accumulate all the HRR generated classes */
-    data = HRR_build(Classes, 0, &AB, &CD);
-    num = Fill_data(Classes, 0, tot_data, ioffset, joffset, 
-                    koffset, loffset, intfile);
-
-    /* write out shell info */
-    /*fprintf(eriout, "shell %2d %2d %2d %2d\n", si, sj, sk, sl);*/
-    sz = sizeof(struct tebuf);
-
-  } /* end if we need to do this shell block */
+    }
+  }
 }

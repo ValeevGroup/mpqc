@@ -54,7 +54,8 @@ FJTable::FJTable() :
 {
 }
 
-FJTable::FJTable(int max)
+FJTable::FJTable(int max) :
+  maxj(0), gtable(0), denomarray(0), int_fjttable(0)
 {
   reset(max);
 }

@@ -7,6 +7,7 @@
 #include <chemistry/qc/basis/symgaussbas.h>
 #include <chemistry/qc/cints/cints.h>
 #include <chemistry/qc/cints/integraljf.h>
+#include <chemistry/qc/cints/int2jf.h>
 #include <chemistry/qc/integral/integralv2.h>
 
 // force linkage...this MUST be fixed
@@ -62,6 +63,7 @@ main(int argc, char *argv[])
 
   ///////////////////////////////////////////////////////////////////////
   
+#if 1
   s.assign(0.0);
 
   tim_enter("intv2 ke");
@@ -93,6 +95,7 @@ main(int argc, char *argv[])
   printf("\n  sum of evals of hcore = %20.15f\n\n",sum);
   
   tim_print(0);
+#endif
   
   ///////////////////////////////////////////////////////////////////////
 
@@ -116,6 +119,7 @@ main(int argc, char *argv[])
   if (argc > 1)
     s.print("hcore jf");
 
+#if 1
   s.diagonalize(vals,vecs);
 
   sum=0;
@@ -123,8 +127,30 @@ main(int argc, char *argv[])
     sum += vals.get_element(i);
   
   printf("\n  sum of evals of hcore = %20.15f\n\n",sum);
+#endif
 
   tim_print(0);
   
+  ///////////////////////////////////////////////////////////////////////
+  tim_enter("2ei");
+
+  tim_enter("init");
+  TwoBodyIntJF twos(gbs);
+  tim_exit("init");
+
+  for (i=0; i < gbs->nshell(); i++) {
+    for (int j=0; j <= i; j++) {
+      for (int k=0; k <= i; k++) {
+        for (int l=0; l <= ((i==k) ? j : k); l++) {
+          twos.compute_shell(i,j,k,l,0);
+        }
+      }
+    }
+  }
+  
+  tim_exit("2ei");
+
+  tim_print(0);
+
   return 0;
 }

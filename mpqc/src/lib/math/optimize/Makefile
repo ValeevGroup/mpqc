@@ -23,15 +23,15 @@ INC = nlp.h opt.h gdiis.h efc.h update.h qnewton.h \
 DEPENDINCLUDE =
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = optimize
+TARGET_TO_MAKE = liboptimize
 
 DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
 default:: dlinfo
-default:: $(TOPDIR)/lib/optimize.a
+default:: $(TOPDIR)/lib/liboptimize.a
 ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/optimize.so
+default:: $(TOPDIR)/lib/liboptimize.so
 endif
 
 opttest: opttest.o optimize.a util/options/liboptions.a \

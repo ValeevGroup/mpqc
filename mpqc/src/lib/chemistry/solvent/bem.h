@@ -20,6 +20,7 @@ class BEMSolvent: public DescribedClass {
   private:
     RefMolecule solute_;
     double dielectric_constant_;
+    RefSCMatrixKit matrixkit_;
     RefSCMatrix system_matrix_i_;
     double f_;
 
@@ -88,6 +89,8 @@ class BEMSolvent: public DescribedClass {
 
     // this never needs to be called explicitly, but is here now for debugging
     void init_system_matrix();
+
+    RefSCMatrixKit matrixkit() { return matrixkit_; }
 };
 DescribedClass_REF_dec(BEMSolvent);
 

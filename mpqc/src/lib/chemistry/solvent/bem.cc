@@ -22,6 +22,8 @@ BEMSolvent::_castdown(const ClassDesc*cd)
 BEMSolvent::BEMSolvent(const RefKeyVal& keyval)
 {
   vertex_area_ = 0;
+
+  matrixkit_ = new LocalSCMatrixKit;
   
   solute_ = keyval->describedclassvalue("solute");
 
@@ -206,8 +208,8 @@ BEMSolvent::init_system_matrix()
   int ntri = surf_->ntriangle();
   int n = ncharge();
 
-  RefSCDimension d = new LocalSCDimension(n);
-  RefSCMatrix system_matrix(d,d);
+  RefSCDimension d = new SCDimension(n);
+  RefSCMatrix system_matrix(d,d,matrixkit());
   system_matrix.assign(0.0);
 
   // integrate over the surface
@@ -305,7 +307,7 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
   printf("BEMSolvent:compute_charges: enclosed nuc + elec q = %20.15f\n", q);
   // END DEBUG
 
-  RefSCVector edotn(system_matrix_i_.coldim());
+  RefSCVector edotn(system_matrix_i_.coldim(),matrixkit());
   edotn.assign(efield_dot_normals);
   //edotn.print("E dot normals");
   edotn.scale(f_);

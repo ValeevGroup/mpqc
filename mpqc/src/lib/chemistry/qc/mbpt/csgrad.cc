@@ -830,12 +830,14 @@ MBPT2::compute_cs_grad()
                 delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
                 // only include determinants with unique coefficients
                 if (a>=b && i_offset+i>=j) {
-                  // aaaa or bbbb
                   if (a>b && i_offset+i>j) {
+                    // aaaa or bbbb
                     biggest_coefs.insert(*iajb_ptr - *ibja_ptr,
                                          i_offset+i,j,a,b,1111);
+                    // aabb or bbaa or abba or baab
+                    biggest_coefs.insert(*ibja_ptr,i_offset+i,j,b,a,1212);
                     }
-                  // abab or baba or abba or baab
+                  // aabb or bbaa or abba or baab
                   biggest_coefs.insert(*iajb_ptr,i_offset+i,j,a,b,1212);
                   }
 
@@ -1600,7 +1602,7 @@ MBPT2::compute_cs_grad()
 
     if (biggest_coefs.ncontrib()) {
       cout << endl << indent
-           << "Largest first order coefficients (unique determinants):"
+           << "Largest first order coefficients (unique):"
            << endl;
       }
     for (i=0; i<biggest_coefs.ncontrib(); i++) {

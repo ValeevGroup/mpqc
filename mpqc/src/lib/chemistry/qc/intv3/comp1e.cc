@@ -80,9 +80,9 @@ Int1eV3::int_initialize_1e(int flags, int order)
     exit(1);
     }
 
-  buff = (double *) malloc(scratchsize*sizeof(double));
-  cartesianbuffer = (double *) malloc(scratchsize*sizeof(double));
-  cartesianbuffer_scratch = (double *) malloc(scratchsize*sizeof(double));
+  buff = new double[scratchsize];
+  cartesianbuffer = new double[scratchsize];
+  cartesianbuffer_scratch = new double[scratchsize];
 
   inter.set_dim(jmax1+order+1,jmax2+order+1,jmax+2*order+1);
   efield_inter.set_dim(jmax1+order+1,jmax2+order+1,jmax+2*order+1);
@@ -108,9 +108,9 @@ void
 Int1eV3::int_done_1e()
 {
   init_order = -1;
-  free(buff);
-  free(cartesianbuffer);
-  free(cartesianbuffer_scratch);
+  delete[] buff;
+  delete[] cartesianbuffer;
+  delete[] cartesianbuffer_scratch;
   buff = 0;
   cartesianbuffer = 0;
   inter.delete_data();
@@ -547,6 +547,12 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
       }
     }
 
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
+  int gcsize1 = gshell1->ncartesian();
+  int gcsize2 = gshell2->ncartesian();
+  memset(cartesianbuffer,0,sizeof(double)*gcsize1*gcsize2*3);
+
   if (!docenter1 && !docenter2) return;
 
   double coef;
@@ -559,11 +565,6 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
       A[xyz] = bs1_->r(c1,xyz);
       B[xyz] = bs2_->r(c2,xyz);
     }
-  gshell1 = &bs1_->shell(ish);
-  gshell2 = &bs2_->shell(jsh);
-  int gcsize1 = gshell1->ncartesian();
-  int gcsize2 = gshell2->ncartesian();
-  memset(cartesianbuffer,0,sizeof(double)*gcsize1*gcsize2*3);
   int gcoff1 = 0;
   for (gc1=0; gc1<gshell1->ncontraction(); gc1++) {
     int a = gshell1->am(gc1);
@@ -587,9 +588,11 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
         FOR_CART(i1,j1,k1,a) {
           index2=0;
           FOR_CART(i2,j2,k2,b) {
-            double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+            double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2
+                                             +index2+gcoff2)*3];
             for (i=0; i<3; i++) {
-              *ctmp++ += 2.0*cartesianbuffer_scratch[INT_CARTINDEX(a+1,i1+IN(i,0),j1+IN(i,1))*sizeb+index2];
+              int ind = INT_CARTINDEX(a+1,i1+IN(i,0),j1+IN(i,1));
+              *ctmp++ += 2.0*cartesianbuffer_scratch[ind*sizeb+index2];
               }
             index2++;
             } END_FOR_CART;
@@ -606,10 +609,14 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
           FOR_CART(i1,j1,k1,a) {
             index2=0;
             FOR_CART(i2,j2,k2,b) {
-              double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+              double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2
+                                               +index2+gcoff2)*3];
               for (i=0; i<3; i++) {
-                *ctmp++ -= SELECT(i1,j1,k1,i)
-                           * cartesianbuffer_scratch[INT_CARTINDEX(a-1,i1-IN(i,0),j1-IN(i,1))*sizeb+index2];
+                int sel = SELECT(i1,j1,k1,i);
+                if (sel) {
+                  int ind = INT_CARTINDEX(a-1,i1-IN(i,0),j1-IN(i,1));
+                  ctmp[i] -= sel * cartesianbuffer_scratch[ind*sizeb+index2];
+                  }
                 }
               index2++;
               } END_FOR_CART;
@@ -628,9 +635,11 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
         FOR_CART(i1,j1,k1,a) {
           index2=0;
           FOR_CART(i2,j2,k2,b) {
-            double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+            double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2
+                                             +index2+gcoff2)*3];
             for (i=0; i<3; i++) {
-              *ctmp++ += 2.0*cartesianbuffer_scratch[index1*sizebp1+INT_CARTINDEX(b+1,i2+IN(i,0),j2+IN(i,1))];
+              int ind = INT_CARTINDEX(b+1,i2+IN(i,0),j2+IN(i,1));
+              *ctmp++ += 2.0*cartesianbuffer_scratch[index1*sizebp1+ind];
               }
             index2++;
             } END_FOR_CART;
@@ -647,10 +656,14 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
           FOR_CART(i1,j1,k1,a) {
             index2=0;
             FOR_CART(i2,j2,k2,b) {
-              double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+              double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2
+                                               +index2+gcoff2)*3];
               for (i=0; i<3; i++) {
-                *ctmp++ -= SELECT(i2,j2,k2,i)
-                           * cartesianbuffer_scratch[index1*sizebm1+INT_CARTINDEX(b-1,i2-IN(i,0),j2-IN(i,1))];
+                int sel = SELECT(i2,j2,k2,i);
+                if (sel) {
+                  int ind = INT_CARTINDEX(b-1,i2-IN(i,0),j2-IN(i,1));
+                  ctmp[i] -= sel * cartesianbuffer_scratch[index1*sizebm1+ind];
+                  }
                 }
               index2++;
               } END_FOR_CART;
@@ -880,6 +893,7 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
     for (int xyz=0; xyz<3; xyz++) {
         C[xyz] = bs1_->r(centernum,xyz);
       }
+    //accum_shell_efield(buff,ish,jsh);
     accum_shell_block_efield(buff,ish,jsh);
     scale_shell_result = 0;
     }
@@ -889,6 +903,7 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
     for (int xyz=0; xyz<3; xyz++) {
         C[xyz] = bs2_->r(centernum,xyz);
       }
+    //accum_shell_efield(buff,ish,jsh);
     accum_shell_block_efield(buff,ish,jsh);
     scale_shell_result = 0;
     }

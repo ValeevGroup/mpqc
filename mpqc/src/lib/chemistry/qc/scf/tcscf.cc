@@ -49,6 +49,10 @@ TCSCF::init()
   _eliminate = 1;
   ckptdir = new_string("./");
   fname = new_string("this_here_thing");
+
+  ci1 = ci2 = 1.0/sqrt(2.0);
+  occa = 1.0;
+  occb = 1.0;
 }
 
 TCSCF::TCSCF(StateIn& s) :
@@ -98,6 +102,20 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
     _accumeffh = new GSGeneralEffH;
   }
   
+  if (keyval->exists("ci1")) {
+    ci1 = keyval->doublevalue("ci1");
+    ci2 = keyval->doublevalue("ci2");
+    occa = 2.0*ci1*ci1;
+    occb = 2.0*ci2*ci2;
+  }
+
+  if (keyval->exists("occa")) {
+    occa = keyval->doublevalue("occa");
+    ci1 = sqrt(occa/2.0);
+    ci2 = sqrt(1.0 - ci1*ci1);
+    occb = 2.0*ci2*ci2;
+  }
+
   if (keyval->exists("ndocc"))
     _ndocc = keyval->intvalue("ndocc");
 
@@ -180,7 +198,7 @@ TCSCF::occupation(int i)
 {
   if (i < _ndocc) return 2.0;
   if (i < _ndocc + 1) return occa;
-  if (i < _ndocc + 2) return occb;
+  if (i < _ndocc + 1) return occb;
   return 0.0;
 }
 
@@ -193,7 +211,7 @@ TCSCF::value_implemented()
 int
 TCSCF::gradient_implemented()
 {
-  return 0;
+  return 1;
 }
 
 int
@@ -243,17 +261,20 @@ TCSCF::compute()
     _eigenvectors.result_noupdate()->schmidt_orthog(overlap().pointer(),
                                                     _ndocc+2);
 
-    if (_fock.null())
-      _fock = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
+    if (_focka.null())
+      _focka = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
     
-    if (_opa_fock.null())
-      _opa_fock = _fock.clone();
+    if (_fockb.null())
+      _fockb = _focka.clone();
     
-    if (_opb_fock.null())
-      _opb_fock = _fock.clone();
+    if (_ka.null())
+      _ka = _focka.clone();
+    
+    if (_kb.null())
+      _kb = _focka.clone();
     
     if (_fock_evals.null())
-      _fock_evals = _fock->dim()->create_diagmatrix();
+      _fock_evals = _focka->dim()->create_diagmatrix();
     
     printf("\n  TCSCF::compute: energy accuracy = %g\n\n",
            _energy.desired_accuracy());
@@ -297,39 +318,15 @@ TCSCF::do_vector(double& eelec, double& nucrep)
   // allocate storage for the temp arrays
   RefSCMatrix nvector = _gr_vector.clone();
   
-  _gr_dens = _fock.clone();
+  _gr_dens = _focka.clone();
   _gr_dens.assign(0.0);
   
-  _gr_dens_diff = _gr_dens->clone();
-  _gr_dens_diff.assign(0.0);
-  
-  _gr_gmat = _gr_dens->clone();
-  _gr_gmat.assign(0.0);
-
-  _gr_opa_dens = _fock.clone();
+  _gr_opa_dens = _focka.clone();
   _gr_opa_dens.assign(0.0);
   
-  _gr_opa_dens_diff = _gr_dens->clone();
-  _gr_opa_dens_diff.assign(0.0);
-  
-  _gr_opa_gmat = _gr_dens->clone();
-  _gr_opa_gmat.assign(0.0);
-
-  _gr_opb_dens = _fock.clone();
+  _gr_opb_dens = _focka.clone();
   _gr_opb_dens.assign(0.0);
   
-  _gr_opb_dens_diff = _gr_dens->clone();
-  _gr_opb_dens_diff.assign(0.0);
-  
-  _gr_opb_gmat = _gr_dens->clone();
-  _gr_opb_gmat.assign(0.0);
-
-  _gr_op1_dens = _fock.clone();
-  _gr_op1_dens.assign(0.0);
-
-  _gr_op2_dens = _fock.clone();
-  _gr_op2_dens.assign(0.0);
-
   _gr_hcore = _gr_dens->clone();
 
   // form Hcore
@@ -356,133 +353,68 @@ TCSCF::do_vector(double& eelec, double& nucrep)
 
   int_init_bounds();
 
-  for (int iter=0; iter < _maxiter; iter++) {
-    if (!iter)
-      new_coeff(centers,intbuf);
-    
-    // form the density from the current vector 
-    form_density(_gr_vector,
-                 _gr_dens,_gr_dens_diff,
-                 _gr_opa_dens,_gr_opa_dens_diff,
-                 _gr_opb_dens,_gr_opb_dens_diff);
-
-    // check convergence
-    int ij=0;
-    double delta=0;
-    for (int i=0; i < _gr_dens_diff->n(); i++)
-      for (int j=0; j <= i; j++,ij++)
-        delta += _gr_dens_diff.get_element(i,j)*_gr_dens_diff.get_element(i,j);
-    delta = sqrt(delta/ij);
-
-    if (delta < _energy.desired_accuracy()) break;
-
-    // reset the density from time to time
-    if (iter && !iter%10) {
-      _gr_gmat.assign(0.0);
-      _gr_dens_diff.assign(_gr_dens);
-      _gr_opa_gmat.assign(0.0);
-      _gr_opa_dens_diff.assign(_gr_opa_dens);
-      _gr_opb_gmat.assign(0.0);
-      _gr_opb_dens_diff.assign(_gr_opb_dens);
-    }
-      
-    // scale the off-diagonal elements of the density matrix
-    _gr_dens_diff->scale(2.0);
-    _gr_dens_diff->scale_diagonal(0.5);
-    _gr_opa_dens_diff->scale(2.0);
-    _gr_opa_dens_diff->scale_diagonal(0.5);
-    _gr_opb_dens_diff->scale(2.0);
-    _gr_opb_dens_diff->scale_diagonal(0.5);
-    
+  eelec=0;
+  for (int iter=0; ; iter++) {
     // form the AO basis fock matrix
-    form_ao_fock(centers,intbuf);
+    double olde=eelec;
+    form_ao_fock(centers,intbuf,eelec);
 
-    // unscale the off-diagonal elements of the density matrix
-    _gr_dens_diff->scale(0.5);
-    _gr_dens_diff->scale_diagonal(2.0);
-    _gr_opa_dens_diff->scale(0.5);
-    _gr_opa_dens_diff->scale_diagonal(2.0);
-    _gr_opb_dens_diff->scale(0.5);
-    _gr_opb_dens_diff->scale_diagonal(2.0);
+    if (fabs(olde-eelec) < 1.0e-9)
+      break;
 
-    // calculate the electronic energy
-    eelec = scf_energy();
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
-           iter,eelec+nucrep,delta);
+           iter,eelec+nucrep,olde-eelec);
 
-#if 0
     // now extrapolate the fock matrix
     // first we form the error matrix which is the offdiagonal blocks of
     // the MO fock matrix
-    RefSymmSCMatrix mofock = _fock.clone();
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
+    
+    _focka.scale(ci1*ci1);
+    RefSymmSCMatrix mofocka = _focka.clone();
+    mofocka.assign(0.0);
+    mofocka.accumulate_transform(_gr_vector.t(),_focka);
 
-    RefSymmSCMatrix moofock = _op_fock.clone();
-    moofock.assign(0.0);
-    moofock.accumulate_transform(_gr_vector.t(),_op_fock);
+    _fockb.scale(ci2*ci2);
+    RefSymmSCMatrix mofockb = _fockb.clone();
+    mofockb.assign(0.0);
+    mofockb.accumulate_transform(_gr_vector.t(),_fockb);
 
-    mofock.element_op(_accumeffh,moofock);
+    _ka.scale(ci1*ci2);
+    RefSymmSCMatrix moka = _ka.clone();
+    moka.assign(0.0);
+    moka.accumulate_transform(_gr_vector.t(),_ka);
 
-    for (int i=0; i < mofock->n(); i++) {
-      double occi = occupation(i);
-      for (int j=0; j <= i; j++) {
-        double occj = occupation(j);
-        if (occi == occj)
-          mofock.set_element(i,j,0.0);
-      }
+    _kb.scale(ci1*ci2);
+    RefSymmSCMatrix mokb = _kb.clone();
+    mokb.assign(0.0);
+    mokb.accumulate_transform(_gr_vector.t(),_kb);
+
+    RefSymmSCMatrix efff = mofocka.copy();
+    efff.accumulate(mofockb);
+    
+    for (int i=0; i < _ndocc; i++) {
+      efff.set_element(_ndocc,i,
+           mofockb.get_element(_ndocc,i)-mokb.get_element(_ndocc,i));
+      efff.set_element(_ndocc+1,i,
+           mofocka.get_element(_ndocc+1,i)-moka.get_element(_ndocc+1,i));
+    }
+                       
+    efff.set_element(_ndocc+1,_ndocc,
+                     mofocka.get_element(_ndocc+1,_ndocc)-
+                     mofockb.get_element(_ndocc+1,_ndocc)+
+                     mokb.get_element(_ndocc+1,_ndocc)-
+                     moka.get_element(_ndocc+1,_ndocc));
+    
+    for (int i=_ndocc+2; i < basis()->nbasis(); i++) {
+      efff.set_element(i,_ndocc,
+           mofocka.get_element(i,_ndocc)+mokb.get_element(i,_ndocc));
+      efff.set_element(i,_ndocc+1,
+           mofockb.get_element(i,_ndocc+1)+moka.get_element(i,_ndocc+1));
     }
     
-    // now transform MO error to the AO basis
-    RefSymmSCMatrix ao_error = mofock.clone();
-    ao_error.assign(0.0);
-    ao_error.accumulate_transform(_gr_vector,mofock);
-    
-    // and do the DIIS extrapolation
-    _data = new SymmSCMatrix2SCExtrapData(_fock,_op_fock);
-    _error = new SymmSCMatrixSCExtrapError(ao_error);
-    _extrap->extrapolate(_data,_error);
-    _data=0;
-    _error=0;
-    ao_error=0;
-
-    // now transform extrapolated fock to MO basis
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
-
-    moofock.assign(0.0);
-    moofock.accumulate_transform(_gr_vector.t(),_op_fock);
-
-    mofock.element_op(_accumeffh,moofock);
-    moofock=0;
-
     // diagonalize MO fock to get MO vector
-    mofock.diagonalize(_fock_evals,nvector);
-    mofock=0;
-#else
-    RefSymmSCMatrix mofock = _fock.clone();
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
-
-    RefSymmSCMatrix mooafock = _opa_fock.clone();
-    mooafock.assign(0.0);
-    mooafock.accumulate_transform(_gr_vector.t(),_opa_fock);
-
-    RefSymmSCMatrix moobfock = _opb_fock.clone();
-    moobfock.assign(0.0);
-    moobfock.accumulate_transform(_gr_vector.t(),_opb_fock);
-
-    int bvec=_ndocc+2-1;
-    for (int i=0; i < _ndocc; i++)
-      mooafock.set_element(bvec,i,moobfock.get_element(bvec,i));
-    
-    for (int i=_ndocc+2; i < basis()->nbasis(); i++) 
-      mooafock.set_element(i,bvec,moobfock.get_element(i,bvec));
-
-    mofock.element_op(_accumeffh,mooafock);
-
-    mofock.diagonalize(_fock_evals,nvector);
-#endif
+    efff.diagonalize(_fock_evals,nvector);
+    efff=0;
 
     // transform MO vector to AO basis
     _gr_vector = _gr_vector * nvector;
@@ -501,38 +433,9 @@ TCSCF::do_vector(double& eelec, double& nucrep)
   free(centers);
 
   _gr_dens = 0;
-  _gr_dens_diff = 0;
-  _gr_gmat = 0;
   _gr_opa_dens = 0;
-  _gr_opa_dens_diff = 0;
-  _gr_opa_gmat = 0;
   _gr_opb_dens = 0;
-  _gr_opb_dens_diff = 0;
-  _gr_opb_gmat = 0;
-  _gr_op1_dens = 0;
-  _gr_op2_dens = 0;
   _gr_hcore = 0;
   _gr_vector = 0;
   nvector = 0;
-}
-
-double
-TCSCF::scf_energy()
-{
-  RefSymmSCMatrix t = _fock.copy();
-  t.accumulate(_gr_hcore);
-
-  double eelec=0;
-  for (int i=0; i < t->n(); i++) {
-    for (int j=0; j < i; j++) {
-      eelec += _gr_dens.get_element(i,j)*t.get_element(i,j)
-               - _gr_opa_dens.get_element(i,j)*_gr_opa_gmat.get_element(i,j)
-               - _gr_opb_dens.get_element(i,j)*_gr_opb_gmat.get_element(i,j);
-    }
-    eelec += 0.5*(_gr_dens.get_element(i,i)*t.get_element(i,i)
-               - _gr_opa_dens.get_element(i,i)*_gr_opa_gmat.get_element(i,i)
-               - _gr_opb_dens.get_element(i,i)*_gr_opb_gmat.get_element(i,i)
-      );
-  }
-  return eelec;
 }

@@ -23,8 +23,15 @@ water<Molecule>: (
   }
 )
 
+he<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+     he [ 0 0 0 ]
+  }
+)
+
 molecule = $:ch2
-mole = $:opbmole
+mole = $:tcmole
 
 clmole<CLSCF>: (
   % NLP... input
@@ -44,7 +51,7 @@ clmole<CLSCF>: (
     basisdir = "/net/midway/usr/people/etseidl/basis/"
     basisfiles = [ v2g90.ipv2 ]
     molecule = $:molecule
-    name = 631gss
+    name = sto3g
   )
 
   % OneBodyWavefunction input
@@ -142,13 +149,23 @@ tcmole<TCSCF>: (
 
 opt<QNewtonOpt>: (
   convergence = 1.0e-5
-  max_iterations = 20
+  max_iterations = 1
   function = $:mole
   transition_state=no
   update<BFGSUpdate>:()
 )
 
 basis:(
+  helium: foo: [
+    (type: [am = s]
+            {exp               coef:0} = {
+       3.425250914e+00   1.543289673e-01
+       })
+    (type: [am = p]
+            {exp               coef:0} = {
+       3.425250914e+00   1.543289673e-01
+       })
+    ]
   hydrogen: sto3g: [
     (type: [am = s]
             {exp               coef:0} = {

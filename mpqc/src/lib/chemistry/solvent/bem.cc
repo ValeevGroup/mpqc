@@ -212,8 +212,10 @@ BEMSolvent::init_system_matrix()
 
   // integrate over the surface
   double A = 0.0;
+  double V = 0.0;
   TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
+      V += triint.weight()*triint.dA()[2]*triint.current()->point()[2];
       const SCVector3& surfpv = triint.current()->point();
       int j0 = triint.vertex_number(0);
       int j1 = triint.vertex_number(1);
@@ -255,6 +257,7 @@ BEMSolvent::init_system_matrix()
     }
 
   printf("BEMSolvent: Surface Area = %20.15f\n", A);
+  printf("BEMSolvent: Volume       = %20.15f\n", V);
 
   // Add I to the system matrix.
   system_matrix->shift_diagonal(1.0);

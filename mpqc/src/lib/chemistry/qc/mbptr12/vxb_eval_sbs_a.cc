@@ -49,6 +49,7 @@ static ClassDesc R12IntEval_sbs_A_cd(
 R12IntEval_sbs_A::R12IntEval_sbs_A(Ref<R12IntEvalInfo>& r12info) :
   r12info_(r12info)
 {
+  evaluated_ = false;
   current_orbital_ = 0;
   restart_orbital_ = 0;
 }
@@ -57,6 +58,7 @@ R12IntEval_sbs_A::R12IntEval_sbs_A(StateIn& si) : SavableState(si)
 {
   r12info_ << SavableState::restore_state(si);
 
+  int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
   si.get(current_orbital_);
   restart_orbital_ = current_orbital_;
 }
@@ -69,8 +71,14 @@ R12IntEval_sbs_A::~R12IntEval_sbs_A()
 void R12IntEval_sbs_A::save_data_state(StateOut& so)
 {
   SavableState::save_state(r12info_.pointer(),so);
-  
+
+  so.put((int)evaluated_);
   so.put(current_orbital_);
+}
+
+void R12IntEval_sbs_A::obsolete()
+{
+  evaluated_ = false;
 }
 
 Ref<R12IntEvalInfo> R12IntEval_sbs_A::r12info() const { return r12info_; };

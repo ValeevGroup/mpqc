@@ -46,6 +46,7 @@ class R12IntEval_sbs_A : virtual public SavableState {
 
   Ref<R12IntEvalInfo> r12info_;
 
+  bool evaluated_;
   int current_orbital_;
   int restart_orbital_;
 
@@ -59,6 +60,7 @@ public:
   ~R12IntEval_sbs_A();
 
   void save_data_state(StateOut&);
+  void obsolete();
 
   void compute(RefSCMatrix& Vaa,
 	       RefSCMatrix& Xaa,

@@ -42,16 +42,26 @@
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/vxb_eval.h>
+#include <chemistry/qc/mbptr12/mp2r12_energy.h>
 
 namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+class R12IntEval;
+  class MP2R12Energy;
+  
 /** The MBPT2_R12 class implements several linear R12 second-order perturbation theory
 methods. */
 class MBPT2_R12: public MBPT2 {
 
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
+
+    /** These are MP2-R12 energy objects for each MP2-R12 method, since several different energies
+        can be evaluated with the same set of intermediates */
+    Ref<MP2R12Energy> r12a_energy_;
+    Ref<MP2R12Energy> r12ap_energy_;
+    Ref<MP2R12Energy> r12b_energy_;
 
     Ref<GaussianBasisSet> aux_basis_;
     Ref<SCVector> epair_0_, epair_1_;   // Singlet/triplet pair energies if spin-adapted
@@ -89,12 +99,13 @@ class MBPT2_R12: public MBPT2 {
         <dl>
 
           <dt><tt>A</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
-	  with linear R12 terms in standard approximation A.
-          Only energies can be computed with this method.
+	  with linear R12 terms in standard approximation A (MP2-R12/A).
+          Only energies can be computed with the MP2-R12/A method.
 
           <dt><tt>A'</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
-	  with linear R12 terms in standard approximation A'.
-          Only energies can be computed with this method.
+	  with linear R12 terms in standard approximation A' (MP2-R12/A').
+          This will cause MP2-R12/A energies to be computed also.
+          Only energies can be computed with the MP2-R12/A' method.
 
           <dt><tt>B</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation B. 

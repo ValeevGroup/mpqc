@@ -50,6 +50,9 @@ class R12IntEval_abs_A;
 
 class R12IntEval : virtual public SavableState {
 
+  /// This describes the state of the evaluator - whether it's been evaluated or not
+  bool evaluated_;
+  
   Ref<R12IntEvalInfo> r12info_;
 
   Ref<R12IntEval_sbs_A> eval_sbs_a_;
@@ -70,7 +73,9 @@ public:
   ~R12IntEval();
 
   void save_data_state(StateOut&);
-
+  /// Makes the evaluator obsolete, the next call to compute() will cause the intermediates to be recomputed
+  void obsolete();
+  
   void set_stdapprox(LinearR12::StandardApproximation stdapprox);
   void set_spinadapted(bool spinadapted);
   void set_debug(int debug);
@@ -84,14 +89,16 @@ public:
   RefSCDimension dim_s() const;
   RefSCDimension dim_t() const;
 
-  void compute(RefSCMatrix& Vaa,
-	       RefSCMatrix& Xaa,
-	       RefSCMatrix& Baa,
-	       RefSCMatrix& Vab,
-	       RefSCMatrix& Xab,
-	       RefSCMatrix& Bab,
-	       RefSCVector& emp2pair_aa,
-	       RefSCVector& emp2pair_ab);
+  RefSCMatrix V_aa();
+  RefSCMatrix X_aa();
+  RefSCMatrix B_aa();
+  RefSCMatrix V_ab();
+  RefSCMatrix X_ab();
+  RefSCMatrix B_ab();
+  RefSCVector emp2_aa();
+  RefSCVector emp2_ab();
+  
+  void compute();
   RefDiagSCMatrix evals() const;
 	       
 };

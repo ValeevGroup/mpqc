@@ -32,6 +32,7 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
+#include <util/state/state_bin.h>
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
@@ -76,6 +77,7 @@ R12IntEval::R12IntEval(MBPT2_R12* mbptr12)
 
   // Default values
   stdapprox_ = LinearR12::StdApprox_Ap;
+  evaluated_ = false;
   debug_ = 0;
 }
 
@@ -102,6 +104,9 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   int stdapprox;
   si.get(stdapprox);
   stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+  int evaluated;
+  si.get(evaluated);
+  evaluated_ = (bool) evaluated;
   spinadapted_ = false;
   debug_ = 0;
 }
@@ -138,7 +143,13 @@ void R12IntEval::save_data_state(StateOut& so)
   emp2pair_aa_.save(so);
   emp2pair_ab_.save(so);
 
-  so.put(stdapprox_);
+  so.put((int)stdapprox_);
+  so.put((int)evaluated_);
+}
+
+void R12IntEval::obsolete()
+{
+  evaluated_ = false;
 }
 
 void R12IntEval::set_stdapprox(LinearR12::StandardApproximation stdapprox) { stdapprox_ = stdapprox; };
@@ -155,15 +166,51 @@ RefSCDimension R12IntEval::dim_s() const { return dim_s_; };
 RefSCDimension R12IntEval::dim_t() const { return dim_t_; };
 RefDiagSCMatrix R12IntEval::evals() const { return r12info_->evals(); };
 
-void R12IntEval::compute(RefSCMatrix& Vaa,
-			 RefSCMatrix& Xaa,
-			 RefSCMatrix& Baa,
-			 RefSCMatrix& Vab,
-			 RefSCMatrix& Xab,
-			 RefSCMatrix& Bab,
-			 RefSCVector& emp2pair_aa,
-			 RefSCVector& emp2pair_ab)
+RefSCMatrix R12IntEval::V_aa() {
+  compute();
+  return Vaa_;
+}
+
+RefSCMatrix R12IntEval::X_aa() {
+  compute();
+  return Xaa_;
+}
+
+RefSCMatrix R12IntEval::B_aa() {
+  compute();
+  return Baa_;
+}
+
+RefSCMatrix R12IntEval::V_ab() {
+  compute();
+  return Vab_;
+}
+
+RefSCMatrix R12IntEval::X_ab() {
+  compute();
+  return Xab_;
+}
+
+RefSCMatrix R12IntEval::B_ab() {
+  compute();
+  return Bab_;
+}
+
+RefSCVector R12IntEval::emp2_aa() {
+  compute();
+  return emp2pair_aa_;
+}
+
+RefSCVector R12IntEval::emp2_ab() {
+  compute();
+  return emp2pair_ab_;
+}
+
+void R12IntEval::compute()
 {
+  if (evaluated_)
+    return;
+  
   if (spinadapted_)
     throw std::runtime_error("R12IntEval::compute: spin-adapted R12 intermediates have not been implemented yet");
 
@@ -171,18 +218,10 @@ void R12IntEval::compute(RefSCMatrix& Vaa,
   int naa = nocc_act*(nocc_act-1)/2;
   int nab = nocc_act*nocc_act;
   int me = r12info()->msg()->me();
-
-  Vaa_->unit();
-  Vab_->unit();
-  Baa_->unit();
-  Bab_->unit();
-  Xaa_.assign(0.0);
-  Xab_.assign(0.0);
-  emp2pair_aa_.assign(0.0);
-  emp2pair_ab_.assign(0.0);
+  MolecularEnergy* mole = r12info()->mole();
 
   eval_sbs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
-
+  
   if (r12info_->basis() != r12info_->basis_aux()) {
     if (me == 0 && debug_ > 1) {
       Vaa_.print("Alpha-alpha SBS V matrix");
@@ -222,14 +261,13 @@ void R12IntEval::compute(RefSCMatrix& Vaa,
 		<< "-Tr(V)/Tr(B) for alpha-beta pairs:" << indent <<
     scprintf("%10.6lf",(-1.0)*traceV_ab/traceB_ab) << endl;
 
-  Vaa = Vaa_;
-  Vab = Vab_;
-  Xaa = Xaa_;
-  Xab = Xab_;
-  Baa = Baa_; 
-  Bab = Bab_;
-  emp2pair_aa = emp2pair_aa_;
-  emp2pair_ab = emp2pair_ab_;
+  evaluated_ = true;
+
+  if (me == 0 && mole->if_to_checkpoint()) {
+    StateOutBin stateout(mole->checkpoint_file());
+    SavableState::save_state(mole,stateout);
+    ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
+  }
 }
 			 
 

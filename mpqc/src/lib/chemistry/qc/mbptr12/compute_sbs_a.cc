@@ -118,6 +118,9 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 			  RefSCMatrix& Vab, RefSCMatrix& Xab, RefSCMatrix& Bab,
 			  RefSCVector& emp2_aa, RefSCVector& emp2_ab)
 {
+  if (evaluated_)
+    return;
+  
   int debug_ = r12info()->debug_level();
 
   MolecularEnergy* mole = r12info()->mole();
@@ -1091,6 +1094,14 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   
   if (debug_)
     ExEnv::out0() << indent << "Gathered intermediates V, X, and T and MP2 pair energies" << endl;
+
+  // Initialize global intermediates
+  Vaa->unit();
+  Vab->unit();
+  Baa->unit();
+  Bab->unit();
+  Xaa.assign(0.0);
+  Xab.assign(0.0);
   
   // Add intermediates contribution to their global values
   for(int ij=0;ij<naa;ij++)
@@ -1135,12 +1146,6 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
       Bab->set_element(kl,ij,belem);
     }
   msg->sum(aoint_computed);
-
-  if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
-    ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
-  }
 
 #if PRINT_BIGGEST_INTS
   biggest_ints_1.combine(msg);
@@ -1242,6 +1247,15 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   delete[] scf_vector_dat;
   delete[] evals;
   tim_exit("r12a-sbs-mem");
+
+  evaluated_ = true;
+
+  if (me == 0 && mole->if_to_checkpoint()) {
+    StateOutBin stateout(mole->checkpoint_file());
+    SavableState::save_state(mole,stateout);
+    ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
+  }
+  
   return;
 }
 

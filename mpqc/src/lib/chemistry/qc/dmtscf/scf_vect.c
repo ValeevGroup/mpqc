@@ -87,7 +87,7 @@ FILE *outfile;
   V = dmt_create("dmtscf potential matrix",nbasis,SCATTERED);
   Hcore = dmt_create("dmtscf hcore matrix",nbasis,SCATTERED);
 
-  if (scf_oeis(scf_info,sym_info,centers,S,T,V,Hcore,outfile) < 0) {
+  if (scf_oeis(scf_info,centers,S,T,V,Hcore,outfile) < 0) {
     fprintf(stderr,"scf_vector:  trouble forming one-electron integrals\n");
     return -1;
   }

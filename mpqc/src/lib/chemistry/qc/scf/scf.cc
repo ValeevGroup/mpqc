@@ -63,8 +63,8 @@ SCF::_castdown(const ClassDesc*cd)
 }
 
 SCF::SCF(StateIn& s) :
-  OneBodyWavefunction(s)
   maybe_SavableState(s)
+  OneBodyWavefunction(s)
 {
   debug_ = 0;
   need_vec_ = 1;
@@ -93,11 +93,11 @@ SCF::SCF(const RefKeyVal& keyval) :
   need_vec_(1),
   compute_guess_(0),
   maxiter_(40),
-  level_shift_(0),
+  dens_reset_freq_(10),
   reset_occ_(0),
   local_dens_(1),
   storage_(0),
-  dens_reset_freq_(10)
+  level_shift_(0)
 {
   if (keyval->exists("maxiter"))
     maxiter_ = keyval->intvalue("maxiter");
@@ -219,8 +219,6 @@ SCF::print(ostream&o)
 void
 SCF::compute()
 {
-  int me=scf_grp_->me();
-  
   local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer()) ||
             ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) ? 1:0;
   

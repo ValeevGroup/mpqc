@@ -58,7 +58,7 @@ RenderedPolylines::RenderedPolylines(const RefKeyVal& keyval):
 {
   int nvertex = keyval->count("vertices");
   int nline = keyval->count("lines");
-  Coloring coloring;
+  Coloring coloring = None;
   if (keyval->count("vertex_color_list")) {
       coloring = Vertex;
     }

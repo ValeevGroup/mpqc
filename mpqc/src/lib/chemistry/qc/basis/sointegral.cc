@@ -90,7 +90,6 @@ OneBodySOInt::compute_shell(int ish, int jsh)
 
   memset(buffer_, 0, nso1*nso2*sizeof(double));
 
-  int nao1 = b1_->naofunction(ish);
   int nao2 = b2_->naofunction(jsh);
 
   // loop through the AO shells that make up this SO shell
@@ -226,7 +225,6 @@ TwoBodySOInt::compute_shell(int ish, int jsh, int ksh, int lsh)
 
   memset(buffer_, 0, nso1*nso2*nso3*nso4*sizeof(double));
 
-  int nao1 = b1_->naofunction(ish);
   int nao2 = b2_->naofunction(jsh);
   int nao3 = b3_->naofunction(ksh);
   int nao4 = b4_->naofunction(lsh);

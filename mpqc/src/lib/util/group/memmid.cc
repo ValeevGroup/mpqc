@@ -64,7 +64,6 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
   int dremain;
   int junk;
   double *source_data;
-  double *data;
 
   handler_depth++;
   if (handler_depth != 1) {
@@ -87,7 +86,6 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       got_data_request_mid();
     }
 
-  const char *request_name = buffer.request_string();
   MemoryDataRequest::Request request = buffer.request();
   int offset = buffer.offset();
   int size = buffer.size();

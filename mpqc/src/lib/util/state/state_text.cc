@@ -518,7 +518,6 @@ int StateInText::getstring(char*&s)
   if (size) {
       s = new char[size+1];
       s[size] = '\0';
-      int result = 0;
       if (size) {
           r += get_array_char(s,size);
         }

@@ -57,8 +57,8 @@ GDIISOpt::_castdown(const ClassDesc*cd)
 
 GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
   Optimize(keyval),
-  maxabs_gradient(-1.0),
-  diis_iter(0)
+  diis_iter(0),
+  maxabs_gradient(-1.0)
 {
   nsave = keyval->intvalue("ngdiis");
   if (keyval->error() != KeyVal::OK) nsave = 5;
@@ -102,8 +102,8 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
 }
 
 GDIISOpt::GDIISOpt(StateIn&s):
-  Optimize(s)
   maybe_SavableState(s)
+  Optimize(s)
 {
   s.get(nsave);
   s.get(diis_iter);

@@ -62,8 +62,8 @@ UKS::_castdown(const ClassDesc*cd)
 }
 
 UKS::UKS(StateIn& s) :
-  UnrestrictedSCF(s)
   maybe_SavableState(s)
+  UnrestrictedSCF(s)
 {
   exc_=0;
   integrator_ = new Murray93Integrator();

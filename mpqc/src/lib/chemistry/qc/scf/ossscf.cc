@@ -63,11 +63,11 @@ OSSSCF::_castdown(const ClassDesc*cd)
 }
 
 OSSSCF::OSSSCF(StateIn& s) :
+  maybe_SavableState(s)
   SCF(s),
   cl_fock_(this),
   op_focka_(this),
   op_fockb_(this)
-  maybe_SavableState(s)
 {
   cl_fock_.result_noupdate() =
     basis_matrixkit()->symmmatrix(basis_dimension());
@@ -101,8 +101,6 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   op_focka_(this),
   op_fockb_(this)
 {
-  int me = scf_grp_->me();
-  
   cl_fock_.compute()=0;
   cl_fock_.computed()=0;
   
@@ -154,9 +152,9 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
       ndocc_[i] = keyval->intvalue("docc",i);
       int nsi = keyval->intvalue("socc",i);
       if (nsi && osa_<0)
-        osa_==i;
+        osa_=i;
       else if (nsi && osb_<0)
-        osb_==i;
+        osb_=i;
       else if (nsi) {
         cerr << node0 << indent << "OSSSCF::init: too many open shells\n";
         abort();
@@ -338,7 +336,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   for (i=0; i < tndocc_; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
@@ -361,7 +359,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
   
   for (i=0; i < 2; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {

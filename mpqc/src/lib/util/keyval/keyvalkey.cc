@@ -76,7 +76,7 @@ int
 KeyValKeyword::hash() const
 {
   int r=0;
-  int i;
+  size_t i;
 
   // Even numbered bytes make up the lower part of the hash index
   for (i=0; i < ::strlen(keyword_); i+=2) {

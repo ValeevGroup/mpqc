@@ -161,7 +161,7 @@ CharacterTable::t()
   // t_ops gives us all the symmetry operations we need
   t_ops(symop);
 
-  int i,j,k;
+  int i;
 
   gamma_[0].init(g,1,"A");
   for (i=0; i < g; i++)
@@ -204,7 +204,7 @@ CharacterTable::t()
 void
 CharacterTable::th()
 {
-  int i,j,k;
+  int i,j;
 
   SymmetryOperation so;
   so.i();
@@ -287,7 +287,7 @@ CharacterTable::td()
   t_ops(symop);
   td_ops(&symop[12]);
   
-  int i,j,k;
+  int i;
   
   gamma_[0].init(g,1,"A1");
   gamma_[1].init(g,1,"A2");
@@ -360,7 +360,7 @@ CharacterTable::td()
 void
 CharacterTable::o()
 {
-  int i,j,k;
+  int i;
   
   // first get the T operations, then the O operations
   t_ops(symop);
@@ -441,7 +441,7 @@ CharacterTable::o()
 
 void CharacterTable::oh()
 {
-  int i,j,k;
+  int i,j;
   
   SymmetryOperation so;
   so.i();

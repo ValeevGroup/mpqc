@@ -104,7 +104,6 @@ EfieldDotVectorIntV3::compute_shell(int i,int j)
   int nbfi = basis1()->shell(i).nfunction();
   int nbfj = basis2()->shell(j).nfunction();
   int nint = nbfi*nbfj;
-  int nint3 = nint*3;
   double *tmp;
   int ii,jj;
 

@@ -65,12 +65,12 @@ TCSCF::_castdown(const ClassDesc*cd)
 }
 
 TCSCF::TCSCF(StateIn& s) :
+  maybe_SavableState(s)
   SCF(s),
   focka_(this),
   fockb_(this),
   ka_(this),
   kb_(this)
-  maybe_SavableState(s)
 {
   focka_.result_noupdate() = basis_matrixkit()->symmmatrix(basis_dimension());
   focka_.restore_state(s);
@@ -385,7 +385,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   for (i=0; i < tndocc_; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
@@ -408,7 +408,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
   
   for (i=0; i < 2; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
@@ -715,10 +715,10 @@ TCSCF::scf_energy()
   t.element_op(op, d);
   double h22 = eop->result();
 
-  t = ka_.result_noupdate();
-  eop->reset();
-  t.element_op(op, op_densb_);
-  double h21 = eop->result();
+  //t = ka_.result_noupdate();
+  //eop->reset();
+  //t.element_op(op, op_densb_);
+  //double h21 = eop->result();
 
   t = kb_.result_noupdate();
   eop->reset();
@@ -852,8 +852,6 @@ TCSCF::effective_fock()
       RefSymmSCMatrix ka = Ka->block(b);
 
       int i,j;
-
-      double scale=1.0/(ci2_*ci2_ + 0.05);
 
       i=ndocc_[b];
       for (j=0; j < ndocc_[b]; j++) 

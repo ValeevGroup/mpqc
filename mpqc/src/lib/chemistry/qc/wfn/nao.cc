@@ -302,9 +302,6 @@ Wavefunction::nao()
   RefGaussianBasisSet b = basis();
   RefPetiteList pl = integral()->petite_list();
 
-  // sym is 1 if not C1 symmetry, 0 otherwise
-  int sym = (molecule()->point_group()->char_table().nirrep()==1?0:1);
-
   // compute S, the ao basis overlap
   RefSymmSCMatrix blockedS = pl->to_AO_basis(overlap());
   RefSymmSCMatrix S

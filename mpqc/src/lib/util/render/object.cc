@@ -46,16 +46,16 @@ RenderedObject::_castdown(const ClassDesc*cd)
 }
 
 RenderedObject::RenderedObject(const RefMaterial& material):
-  material_(material),
-  name_(0)
+  name_(0),
+  material_(material)
 {
 }
 
 RenderedObject::RenderedObject(const RefKeyVal& keyval):
+  name_(keyval->pcharvalue("name")),
   material_(keyval->describedclassvalue("material")),
-  transform_(keyval->describedclassvalue("transform")),
   appearance_(keyval->describedclassvalue("appearance")),
-  name_(keyval->pcharvalue("name"))
+  transform_(keyval->describedclassvalue("transform"))
 {
 }
 

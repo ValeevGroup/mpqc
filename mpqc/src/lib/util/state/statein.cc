@@ -61,11 +61,11 @@ StateIn::operator=(const StateIn&)
 }
 
 StateIn::StateIn() :
-  expected_object_num_(0),
   have_cd_(0),
-  node_to_node_(0),
+  translate_(new TranslateDataIn(this, new TranslateDataBigEndian)),
+  expected_object_num_(0),
   nextclassid_(0),
-  translate_(new TranslateDataIn(this, new TranslateDataBigEndian))
+  node_to_node_(0)
 {
   key_[0] = '\0';
   keylength_ = 0;
@@ -126,6 +126,12 @@ StateIn::get_array_char(char*p,int size)
 }
 
 int
+StateIn::get_array_uint(unsigned int*p,int size)
+{
+  return translate_->get(p,size);
+}
+
+int
 StateIn::get_array_int(int*p,int size)
 {
   return translate_->get(p,size);
@@ -150,6 +156,23 @@ StateIn::get(char&r, const char *keyword)
   if (keyword && override().nonnull()) {
       int p = push_key(keyword);
       char roverride = override()->charvalue(key());
+      if (override()->error() == KeyVal::OK) {
+          cout << node0 << indent << "overriding \"" << key()
+               << "\": " << r << " -> " << roverride << endl;
+          r = roverride;
+        }
+      pop_key(p);
+    }
+  return n;
+}
+
+int
+StateIn::get(unsigned int&r, const char *keyword)
+{
+  int n = get_array_uint(&r,1);
+  if (keyword && override().nonnull()) {
+      int p = push_key(keyword);
+      int roverride = override()->intvalue(key());
       if (override()->error() == KeyVal::OK) {
           cout << node0 << indent << "overriding \"" << key()
                << "\": " << r << " -> " << roverride << endl;
@@ -307,6 +330,22 @@ StateIn::get(char*&s)
   if (size) {
       s = new char[size];
       r += get_array_char(s,size);
+    }
+  else {
+      s = 0;
+    }
+  return r;
+}
+
+int
+StateIn::get(unsigned int*&s)
+{
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
+      s = new unsigned int[size];
+      r += get_array_uint(s,size);
     }
   else {
       s = 0;
@@ -508,7 +547,7 @@ StateIn::getobject(RefSavableState &p)
   int use_dir = use_directory();
   int r=0;
   int refnum;
-  int original_loc;
+  int original_loc=0;
   if (use_dir) original_loc = tell();
   int size_refnum;
   r += (size_refnum = get(refnum));

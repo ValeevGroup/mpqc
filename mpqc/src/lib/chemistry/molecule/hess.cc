@@ -416,8 +416,8 @@ ReadMolecularHessian::ReadMolecularHessian(const RefKeyVal&keyval):
 }
 
 ReadMolecularHessian::ReadMolecularHessian(StateIn&s):
-  MolecularHessian(s)
   maybe_SavableState(s)
+  MolecularHessian(s)
 {
   s.getstring(filename_);
 }
@@ -467,8 +467,8 @@ GuessMolecularHessian::GuessMolecularHessian(const RefKeyVal&keyval):
 }
 
 GuessMolecularHessian::GuessMolecularHessian(StateIn&s):
-  MolecularHessian(s)
   maybe_SavableState(s)
+  MolecularHessian(s)
 {
   coor_.restore_state(s);
 }
@@ -518,8 +518,8 @@ DiagMolecularHessian::DiagMolecularHessian(const RefKeyVal&keyval):
 }
 
 DiagMolecularHessian::DiagMolecularHessian(StateIn&s):
-  MolecularHessian(s)
   maybe_SavableState(s)
+  MolecularHessian(s)
 {
   s.get(diag_);
 }

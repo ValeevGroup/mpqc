@@ -231,7 +231,7 @@ AtomInfo::load_library_values()
   if (grp->me() == 0) {
       const char* libdir;
       RefKeyVal keyval;
-      if (libdir = getenv("SCLIBDIR")) {
+      if ((libdir = getenv("SCLIBDIR")) != 0) {
           const char* atominfo = "/atominfo.kv";
           const char *eq = strchr(libdir,'=');
           if (eq) libdir = eq + 1;
@@ -263,8 +263,6 @@ AtomInfo::override_library_values(const RefKeyVal &keyval)
 void
 AtomInfo::load_values(const RefKeyVal& keyval, int override)
 {
-  int i;
-
   RefUnits amu = new Units("amu");
   RefUnits bohr = new Units("bohr");
 
@@ -286,7 +284,7 @@ AtomInfo::load_values(double *array, const char *keyword,
   if (fileunits.nonnull() && units.nonnull()) {
       f = fileunits->to(units);
     }
-  double def;
+  double def = 0.0;
   if (!override) {
       def = pkeyval->doublevalue("default");
       array[0] = def;
@@ -390,7 +388,7 @@ AtomInfo::add_overridden_value(const char *assignment)
 int
 AtomInfo::string_to_Z(const char *name)
 {
-  int i,j;
+  unsigned int i,j;
   int Z;
 
   // see if the name is a atomic number

@@ -69,12 +69,12 @@ UnrestrictedSCF::_castdown(const ClassDesc*cd)
 }
 
 UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
+  maybe_SavableState(s)
   SCF(s),
   cb_(this),
   eb_(this),
   focka_(this),
   fockb_(this)
-  maybe_SavableState(s)
 {
   need_vec_ = 1;
   compute_guess_ = 0;
@@ -516,7 +516,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
 
   for (i=0; i < tnalpha_; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
@@ -540,7 +540,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
 
   for (i=0; i < tnbeta_; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {

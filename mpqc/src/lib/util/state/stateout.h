@@ -102,18 +102,21 @@ class StateOut: public DescribedClass {
 
     //. Write the given datum.
     virtual int put(char r);
+    virtual int put(unsigned int r);
     virtual int put(int r);
     virtual int put(float r);
     virtual int put(double r);
     //. Write the given array data.  Size information is also saved.  The
     //data is allocated and read by the \srccd{get(T*&)} routines.
     virtual int put(const char*,int);
+    virtual int put(const unsigned int*,int);
     virtual int put(const int*,int);
     virtual int put(const float*,int);
     virtual int put(const double*,int);
     //. Put arrays of data.  No size information is stored.  This
     //data is read by the \srccd{get\_array\_T} routines.
     virtual int put_array_char(const char*p,int size);
+    virtual int put_array_uint(const unsigned int*p,int size);
     virtual int put_array_int(const int*p,int size);
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);

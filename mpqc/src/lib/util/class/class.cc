@@ -100,7 +100,7 @@ int
 ClassKey::hash() const
 {
   int r=0;
-  int i;
+  size_t i;
 
   // Even numbered bytes make up the lower part of the hash index
   for (i=0; i < ::strlen(classname_); i+=2) {

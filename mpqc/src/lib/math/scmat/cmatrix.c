@@ -230,7 +230,7 @@ cmat_invert(double**a, int sym, int dim)
 static void
 ludcmp(double** a, int n, int *indx, double *d)
 {
-  int i,imax,j,k;
+  int i,imax=0,j,k;
   double big,dum,sum,temp;
 
   double* vv = (double*) malloc(sizeof(double)*n);
@@ -293,7 +293,7 @@ ludcmp(double** a, int n, int *indx, double *d)
 static void
 lubksb(double** a, int n, int *indx, double* b)
 {
-  int i,ii,ip,j;
+  int i,ii=0,ip,j;
   int t=0;
   double sum;
 
@@ -338,8 +338,8 @@ lubksb(double** a, int n, int *indx, double* b)
 static void
 symm_lu_decomp(double** a, int n, double *d)
 {
-  int i,imax,j,k;
-  double big,dum,sum,tmp;
+  int i,j,k;
+  double tmp;
 
   double* v = (double*) malloc(sizeof(double)*n);
   memset(v,0,sizeof(double)*n);
@@ -756,14 +756,7 @@ cmat_diag(double**a, double*evals, double**evecs, int n,
   free(fv1);
   }
 
-#ifndef __GNUC__
-static double dsign(double a, double b)
-#else
-inline static double dsign(double a, double b)
-#endif
-{
-  return (b >= 0.0) ? fabs(a) : -fabs(a);
-}
+#define dsign(a,b) (((b) >= 0.0) ? fabs(a) : -fabs(a))
 
 static void
 tred2(int n,double** a,double* d,double* e,int matz)

@@ -97,10 +97,10 @@ MBPT2::compute_hsos_v2_lb()
   double *trans_int3;    // partially transformed integrals
   double *trans_int4;    // fully transformed integrals
   double *trans_int4_tmp; // scratch array
-  double *mo_int_do_so_vir; //mo integral (is|sa); i:d.o.,s:s.o.,a:vir
-  double *mo_int_tmp;    // scratch array used in global summations
-  double *socc_sum;      // sum of 2-el integrals involving only s.o.'s
-  double *socc_sum_tmp;  // scratch array
+  double *mo_int_do_so_vir=0;//mo integral (is|sa); i:d.o.,s:s.o.,a:vir
+  double *mo_int_tmp=0;  // scratch array used in global summations
+  double *socc_sum=0;    // sum of 2-el integrals involving only s.o.'s
+  double *socc_sum_tmp=0;// scratch array
   double *iqrs, *iprs;
   double *iars_ptr;
   double iars;

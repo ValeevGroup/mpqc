@@ -65,10 +65,10 @@ HSOSSCF::_castdown(const ClassDesc*cd)
 }
 
 HSOSSCF::HSOSSCF(StateIn& s) :
+  maybe_SavableState(s)
   SCF(s),
   cl_fock_(this),
   op_fock_(this)
-  maybe_SavableState(s)
 {
   cl_fock_.result_noupdate() =
     basis_matrixkit()->symmmatrix(basis_dimension());
@@ -107,7 +107,6 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
   op_fock_(this)
 {
   int i;
-  int me = scf_grp_->me();
   
   cl_fock_.compute()=0;
   cl_fock_.computed()=0;
@@ -380,7 +379,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   for (i=0; i < tndocc_; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
@@ -404,7 +403,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   for (i=0; i < tnsocc_; i++) {
     // find lowest eigenvalue
-    int lir,ln;
+    int lir=0,ln=0;
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {

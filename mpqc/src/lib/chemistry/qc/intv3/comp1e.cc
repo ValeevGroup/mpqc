@@ -52,7 +52,7 @@ void
 Int1eV3::int_initialize_1e(int flags, int order)
 {
   int jmax1,jmax2,jmax;
-  int scratchsize,nshell2;
+  int scratchsize=0,nshell2;
 
   /* The efield routines look like derivatives so bump up order if
    * it is zero to allow efield integrals to be computed.
@@ -128,7 +128,7 @@ Int1eV3::int_done_1e()
 void
 Int1eV3::overlap(int ish, int jsh)
 {
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int gc1,gc2;
   int index,index1,index2;
 
@@ -159,7 +159,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
                       int idercs, int centernum)
 {
   int i;
-  int c1,s1,c2,s2;
+  int c1,c2;
   int ni,nj;
 
   if (!(init_order >= 0)) {
@@ -344,7 +344,7 @@ Int1eV3::comp_prim_overlap(int i1, int j1, int k1,
 void
 Int1eV3::kinetic(int ish, int jsh)
 {
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int cart1,cart2;
   int index;
   int gc1,gc2;
@@ -371,7 +371,7 @@ Int1eV3::kinetic(int ish, int jsh)
 void
 Int1eV3::int_accum_shell_kinetic(int ish, int jsh)
 {
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int cart1,cart2;
   int index;
   int gc1,gc2;
@@ -420,7 +420,7 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
 {
   int i;
   int gc1,gc2;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int index1,index2;
   double tmp[3];
   double *ctmp = cartesianbuffer;
@@ -525,8 +525,8 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
 {
   int i;
   int gc1,gc2;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
-  int index1,index2,index12;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
+  int index1,index2;
 
   c1 = bs1_->shell_to_center(ish);
   c2 = bs2_->shell_to_center(jsh);
@@ -981,7 +981,7 @@ void
 Int1eV3::accum_shell_efield(double *buff, int ish, int jsh)
 {
   int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   double efield[3];
   int gc1,gc2;
   int index1,index2;
@@ -1024,12 +1024,8 @@ Int1eV3::accum_shell_efield(double *buff, int ish, int jsh)
 void
 Int1eV3::accum_shell_block_efield(double *buff, int ish, int jsh)
 {
-  int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
-  double efield[3];
+  int c1,c2;
   int gc1,gc2;
-  int index1,index2;
-  double *tmp = cartesianbuffer;
 
   if (!(init_order >= 1)) {
     cerr << scprintf("accum_shell_efield: one electron routines are not init'ed\n");
@@ -1087,7 +1083,7 @@ Int1eV3::efield(int ish, int jsh, double *position)
     }
 
   int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   double efield[3];
   int gc1,gc2;
   int index1,index2;
@@ -1128,7 +1124,7 @@ void
 Int1eV3::nuclear_slow(int ish, int jsh)
 {
   int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int index;
   int gc1,gc2;
   int cart1,cart2;
@@ -1183,8 +1179,7 @@ void
 Int1eV3::nuclear(int ish, int jsh)
 {
   int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
-  int index;
+  int c1,c2;
   int gc1,gc2;
 
   if (!(init_order >= 0)) {
@@ -1274,7 +1269,7 @@ Int1eV3::int_accum_shell_point_charge(int ish, int jsh,
                                       const double*const* position)
 {
   int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int index;
   int gc1,gc2;
   int cart1,cart2;
@@ -1325,7 +1320,7 @@ Int1eV3::point_charge(int ish, int jsh,
                       const double* charge, const double*const* position)
 {
   int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int index;
   int gc1,gc2;
   int cart1,cart2;
@@ -1372,7 +1367,7 @@ void
 Int1eV3::hcore(int ish, int jsh)
 {
   int i;
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int index;
   int cart1,cart2;
   int gc1,gc2;
@@ -1429,7 +1424,7 @@ Int1eV3::hcore_1der(int ish, int jsh,
                     int idercs, int centernum)
 {
   int i;
-  int c1,s1,c2,s2;
+  int c1,c2;
   int ni,nj;
 
   if (!(init_order >= 0)) {
@@ -1469,7 +1464,7 @@ Int1eV3::kinetic_1der(int ish, int jsh,
                       int idercs, int centernum)
 {
   int i;
-  int c1,s1,c2,s2;
+  int c1,c2;
   int ni,nj;
 
   if (!(init_order >= 0)) {
@@ -1507,7 +1502,7 @@ void
 Int1eV3::nuclear_1der(int ish, int jsh, int idercs, int centernum)
 {
   int i;
-  int c1,s1,c2,s2;
+  int c1,c2;
   int ni,nj;
 
   if (!(init_order >= 0)) {
@@ -1547,7 +1542,7 @@ Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
                                    RefGaussianBasisSet dercs, int centernum)
 {
   int i;
-  int c1,s1,c2,s2;
+  int c1,c2;
   int ni,nj;
 
   if (!(init_order >= 0)) {
@@ -1583,7 +1578,7 @@ Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
                                       RefGaussianBasisSet dercs, int centernum)
 {
   int i;
-  int c1,s1,c2,s2;
+  int c1,c2;
   int ni,nj;
 
   if (!(init_order >= 0)) {
@@ -1818,7 +1813,7 @@ Int1eV3::comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
 void
 Int1eV3::comp_prim_block_nuclear(int a, int b)
 {
-  int im, ia, ib, iab;
+  int im, ia, ib;
   int l = a + b;
 
   // fill in the ia+ib=0 integrals
@@ -2231,7 +2226,7 @@ void
 Int1eV3::comp_prim_block_efield(int a, int b)
 {
   int  xyz;
-  int im, ia, ib, iab;
+  int im, ia, ib;
   int l = a + b;
 
   // Fill in the nuclear integrals which are needed as intermediates.
@@ -2592,8 +2587,7 @@ void
 Int1eV3::int_accum_shell_dipole(int ish, int jsh,
                                 double *com)
 {
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
-  int im,jm,km;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int gc1,gc2;
   int index,index1,index2;
   double dipole[3];
@@ -2631,8 +2625,7 @@ Int1eV3::int_accum_shell_dipole(int ish, int jsh,
 void
 Int1eV3::dipole(int ish, int jsh, double *com)
 {
-  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
-  int im,jm,km;
+  int c1,i1,j1,k1,c2,i2,j2,k2;
   int gc1,gc2;
   int index,index1,index2;
   double dipole[3];

@@ -15,8 +15,8 @@ class LocalTCContribution {
   public:
     LocalTCContribution(double *ga, double *pa, double *gb, double *pb,
                         double *ka, double *opa, double *kb, double *opb) :
-      gmata(ga), pmata(pa), gmatb(gb), pmatb(pb),
-      kmata(ka), opmata(opa), kmatb(kb), opmatb(opb) {}
+      gmata(ga), gmatb(gb), kmata(ka), kmatb(kb),
+      pmata(pa), pmatb(pb), opmata(opa), opmatb(opb) {}
     ~LocalTCContribution() {}
 
     void set_bound(double b) { bound = b; }

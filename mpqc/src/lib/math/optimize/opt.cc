@@ -178,7 +178,7 @@ Optimize::set_function(const RefFunction& f)
 int
 Optimize::optimize()
 {
-  int result;
+  int result=0;
   while((n_iterations_ < max_iterations_) && (!(result = update()))) {
       n_iterations_++;
       if (ckpt_) {
@@ -213,8 +213,8 @@ LineOpt::LineOpt()
 }
 
 LineOpt::LineOpt(StateIn&s):
-  Optimize(s)
   maybe_SavableState(s)
+  Optimize(s)
 {
   search_direction_ = matrixkit()->vector(dimension());
   search_direction_.restore(s);

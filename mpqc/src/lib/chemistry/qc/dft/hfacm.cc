@@ -56,8 +56,8 @@ HFACM::_castdown(const ClassDesc*cd)
 }
 
 HFACM::HFACM(StateIn& s):
-  Wavefunction(s)
   maybe_SavableState(s)
+  Wavefunction(s)
 {
   abort();
 }

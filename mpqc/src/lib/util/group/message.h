@@ -151,6 +151,7 @@ class MessageGrp: public DescribedClass {
 
     //. Send messages sequentially to the target processor.
     virtual void send(int target, double* data, int ndata);
+    virtual void send(int target, unsigned int* data, int ndata);
     virtual void send(int target, int* data, int ndata);
     virtual void send(int target, char* data, int nbyte);
     virtual void send(int target, unsigned char* data, int nbyte);
@@ -164,6 +165,7 @@ class MessageGrp: public DescribedClass {
 
     //. Send typed messages to the target processor.
     virtual void sendt(int target, int type, double* data, int ndata);
+    virtual void sendt(int target, int type, unsigned int* data, int ndata);
     virtual void sendt(int target, int type, int* data, int ndata);
     virtual void sendt(int target, int type, char* data, int nbyte);
     virtual void sendt(int target, int type, unsigned char* data, int nbyte);
@@ -177,6 +179,7 @@ class MessageGrp: public DescribedClass {
 
     //. Receive messages sent sequentually from the sender.
     virtual void recv(int sender, double* data, int ndata);
+    virtual void recv(int sender, unsigned int* data, int ndata);
     virtual void recv(int sender, int* data, int ndata);
     virtual void recv(int sender, char* data, int nbyte);
     virtual void recv(int sender, unsigned char* data, int nbyte);
@@ -190,6 +193,7 @@ class MessageGrp: public DescribedClass {
 
     //. Receive messages sent by type.
     virtual void recvt(int type, double* data, int ndata);
+    virtual void recvt(int type, unsigned int* data, int ndata);
     virtual void recvt(int type, int* data, int ndata);
     virtual void recvt(int type, char* data, int nbyte);
     virtual void recvt(int type, unsigned char* data, int nbyte);
@@ -206,6 +210,7 @@ class MessageGrp: public DescribedClass {
 
     //. Do broadcasts of various types of data.
     virtual void bcast(double* data, int ndata, int from = 0);
+    virtual void bcast(unsigned int* data, int ndata, int from = 0);
     virtual void bcast(int* data, int ndata, int from = 0);
     virtual void bcast(char* data, int nbyte, int from = 0);
     virtual void bcast(unsigned char* data, int nbyte, int from = 0);
@@ -225,6 +230,7 @@ class MessageGrp: public DescribedClass {
 
     //. Do various global reduction operations.
     virtual void sum(double* data, int n, double* = 0, int target = -1);
+    virtual void sum(unsigned int* data, int n, unsigned int* = 0, int target = -1);
     virtual void sum(int* data, int n, int* = 0, int target = -1);
     virtual void sum(char* data, int n, char* = 0, int target = -1);
     virtual void sum(unsigned char* data, int n,
@@ -235,6 +241,7 @@ class MessageGrp: public DescribedClass {
     void sum(int& data) { sum(&data, 1); }
     virtual void max(double* data, int n, double* = 0, int target = -1);
     virtual void max(int* data, int n, int* = 0, int target = -1);
+    virtual void max(unsigned int* data, int n, unsigned int* = 0, int target = -1);
     virtual void max(char* data, int n, char* = 0, int target = -1);
     virtual void max(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
@@ -244,6 +251,7 @@ class MessageGrp: public DescribedClass {
     void max(int& data) { max(&data, 1); }
     virtual void min(double* data, int n, double* = 0, int target = -1);
     virtual void min(int* data, int n, int* = 0, int target = -1);
+    virtual void min(unsigned int* data, int n, unsigned int* = 0, int target = -1);
     virtual void min(char* data, int n, char* = 0, int target = -1);
     virtual void min(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
@@ -255,6 +263,8 @@ class MessageGrp: public DescribedClass {
                         double*scratch = 0, int target = -1);
     virtual void reduce(int*, int n, GrpReduce<int>&,
                         int*scratch = 0, int target = -1);
+    virtual void reduce(unsigned int*, int n, GrpReduce<unsigned int>&,
+                        unsigned int*scratch = 0, int target = -1);
     virtual void reduce(char*, int n, GrpReduce<char>&,
                         char*scratch = 0, int target = -1);
     virtual void reduce(unsigned char*, int n, GrpReduce<unsigned char>&,

@@ -59,8 +59,6 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
             const RefSymmSCMatrix& density, const RefGaussianBasisSet& gbs_,
             const RefMessageGrp& grp)
 {
-  int me=grp->me();
-  int nproc=grp->n();
   int gsh=0;
   
   GaussianBasisSet& gbs = *gbs_.pointer();
@@ -91,9 +89,6 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
 
     int jshstart = gbs.function_to_shell(jstart);
     int jshend = (jend) ? gbs.function_to_shell(jend-1) : 0;
-    
-    int ilen = iend-istart;
-    int jlen = jend-jstart;
     
     for (int ish=ishstart; ish <= ishend; ish++) {
       GaussianShell& gsi = gbs(ish);

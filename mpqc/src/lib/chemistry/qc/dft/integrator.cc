@@ -300,7 +300,7 @@ DenIntegrator::do_point(const SCVector3 &r,
                                   od.df_dgamab*id.del_rho_b[1]);
           gradsa[2] = weight*(2.0*od.df_dgamaa*id.del_rho_a[2] +
                                   od.df_dgamab*id.del_rho_b[2]);
-          double drhoa = weight*od.df_drho_a, drhob;
+          double drhoa = weight*od.df_drho_a, drhob=0.0;
           if (spin_polarized_) {
               drhob = weight*od.df_drho_b;
               gradsb[0] = weight*(2.0*od.df_dgambb*id.del_rho_b[0] +
@@ -317,7 +317,7 @@ DenIntegrator::do_point(const SCVector3 &r,
               double dfdga_phi_m = gradsa[0]*bsg_values_[j*3+0] +
                                    gradsa[1]*bsg_values_[j*3+1] +
                                    gradsa[2]*bsg_values_[j*3+2];
-              double vamu = dfdra_phi_m + dfdga_phi_m, vbmu;
+              double vamu = dfdra_phi_m + dfdga_phi_m, vbmu=0.0;
               double dfdrb_phi_m, dfdgb_phi_m;
               if (spin_polarized_) {
                   dfdrb_phi_m = drhob*bs_values_[j];
@@ -426,7 +426,7 @@ calc_w(int this_center, SCVector3 &point, int ncenters,
        SCVector3 *centers, double *bragg_radius)
 {
   int icenter, jcenter;
-  double p_sum=0, p_point, p_tmp;
+  double p_sum=0.0, p_point=0.0, p_tmp;
     
   for (icenter=0; icenter<ncenters; icenter++) {
       double ra = point.dist(centers[icenter]);
@@ -473,8 +473,8 @@ Murray93Integrator::_castdown(const ClassDesc*cd)
 }
 
 Murray93Integrator::Murray93Integrator(StateIn& s):
-  DenIntegrator(s)
   maybe_SavableState(s)
+  DenIntegrator(s)
 {
   abort();
 }

@@ -59,8 +59,8 @@ HSOSHF::_castdown(const ClassDesc*cd)
 }
 
 HSOSHF::HSOSHF(StateIn& s) :
-  HSOSSCF(s)
   maybe_SavableState(s)
+  HSOSSCF(s)
 {
 }
 

@@ -156,7 +156,7 @@ SCF::compute_vector(double& eelec)
   RefPetiteList pl = integral()->petite_list(basis());
   CharacterTable ct = molecule()->point_group()->char_table();
   
-  int homo_ir, lumo_ir;
+  int homo_ir=0, lumo_ir=0;
   int homo_mo = -1, lumo_mo = -1;
   double homo=-1e99, lumo=1e99;
   for (i=0; i < pl->nirrep(); i++) {

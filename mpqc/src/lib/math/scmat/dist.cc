@@ -104,11 +104,11 @@ DistSCMatrixListSubblockIter::DistSCMatrixListSubblockIter(
     const RefMessageGrp &grp
     ):
   SCMatrixListSubblockIter(access, list->deepcopy()),
-  locallist_(list),
   grp_(grp),
-  step_(0),
   out_(grp),
-  in_(grp)
+  in_(grp),
+  step_(0),
+  locallist_(list)
 {
   if (access == Write) {
       cerr << indent

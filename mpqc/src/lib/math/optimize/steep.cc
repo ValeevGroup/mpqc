@@ -68,8 +68,8 @@ SteepestDescentOpt::SteepestDescentOpt(const RefKeyVal&keyval):
 }
 
 SteepestDescentOpt::SteepestDescentOpt(StateIn&s):
-  Optimize(s)
   maybe_SavableState(s)
+  Optimize(s)
 {
   s.get(accuracy_);
   s.get(take_newton_step_);

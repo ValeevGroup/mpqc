@@ -319,7 +319,7 @@ static void
 ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
              double *d,double *e,double *z,double *work)
 {
-   double  alpha, beta, gamma, alpha2; 
+   double  alpha=0.0, beta, gamma, alpha2; 
    double  oobeta;
    int     i,j,k,l,ld,r;
    int     slda, sn, sm, sp, sid, q, inc=1;
@@ -473,7 +473,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
   int i, j, k, l, ld, r, dpsize = sizeof(double);
   int kp1l;
   int slda, sn, sm, sp, sid, q, inc = 1;
-  double alpha, beta, gamma, alpha2;
+  double alpha=0.0, beta=0.0, gamma, alpha2;
   double oobeta, atemp;
 
   /* extract parameters and get  cube information */

@@ -61,9 +61,9 @@ OneBodyWavefunction::_castdown(const ClassDesc*cd)
 
 OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   Wavefunction(keyval),
+  density_(this),
   eigenvectors_(this),
   eigenvalues_(this),
-  density_(this),
   nirrep_(0),
   nvecperirrep_(0),
   occupations_(0),
@@ -84,16 +84,16 @@ OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
 }
 
 OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
+  maybe_SavableState(s)
   Wavefunction(s),
+  density_(this),
   eigenvectors_(this),
   eigenvalues_(this),
-  density_(this),
   nirrep_(0),
   nvecperirrep_(0),
   occupations_(0),
   alpha_occupations_(0),
   beta_occupations_(0)
-  maybe_SavableState(s)
 {
   eigenvectors_.result_noupdate() =
     basis_matrixkit()->matrix(basis_dimension(), basis_dimension());
@@ -353,23 +353,20 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
     double *vals = new double[pl->nfunction(irrep)];
     valp->block(irrep)->convert(vals);
 
-    double *ovals;
+    int i;
     if (nfo) {
-      ovals = new double[plo->nfunction(irrep)];
+      double *ovals = new double[plo->nfunction(irrep)];
       ovalp->block(irrep)->convert(ovals);
+      for (i=0; i < nocc; i++) vals[i] = ovals[i];
+      delete[] ovals;
     }
     
-    int i;
-    for (i=0; i < nocc; i++)
-      vals[i] = ovals[i];
     for (i=nocc; i < pl->nfunction(irrep); i++)
       vals[i] = 99.0;
 
     valp->block(irrep)->assign(vals);
 
     delete[] vals;
-    if (nfo)
-      delete[] ovals;
   }
 
   return val;

@@ -42,14 +42,6 @@ iswtch(int *i, int *j)
   *j = tmp;
 }
 
-
-static void
-fail()
-{
-  cerr << scprintf("failing module:\n%s",__FILE__) << endl;
-  abort();
-  }
-
 /* This initializes the shift routines.  It is called by int_initialize_erep.
  * It is passed the maximum am to be found on each center.
  */
@@ -289,7 +281,6 @@ Int2eV3::shiftam_12(double *I0100, double *I1000, double *I0000,
 {
   int i;
   int i1,j1,k1;
-  int i2,j2,k2;
   int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
@@ -364,7 +355,6 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
 {
   int i;
   int i1,j1,k1;
-  int i2,j2,k2;
   int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
@@ -382,10 +372,6 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
   int size_zcontrib = am2*size34;
   int size_xcontrib = (size2-(am2+1))*size34;
 
-  double AmB0 = AmB[0];
-  double AmB1 = AmB[1];
-  double AmB2 = AmB[2];
-
   /* Loop over the target integrals. */
   double *I0100i=I0100;
   int cartindex1 = 0;
@@ -399,7 +385,6 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
       //ci1x1 = INT_CARTINDEX(am1+1,i1+1,j1) * size2m134;
       //ci1y1 = INT_CARTINDEX(am1+1,i1,j1+1) * size2m134;
       //ci1z1 = INT_CARTINDEX(am1+1,i1,j1) * size2m134;
-      int ci1 = cartindex1 * size2m134;
       // i2 == 0, k2 == 0, j2 == am2 (>0)
       double *I1000i=&I1000[ci1y1];
       for (i=0; i<size34; i++) {

@@ -433,7 +433,7 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   delete[] btrans;
 #else
   int i,j,k;
-  int ii,jj,kk;
+  int ii,jj;
 
   int nr = la->nrow();
   int nc = lb->ncol();
@@ -859,8 +859,6 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   double *cm = new double[nr];
 
   double **sblock = cmat_new_square_matrix(D1);
-  
-  double *s = lS->matrix;
   
   int mod = nc%nproc;
   int ncoli = nc/nproc + (mod <= me ? 0 : 1);

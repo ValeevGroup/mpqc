@@ -26,6 +26,7 @@
  * any and all purposes, provided that this notice appears in all copies. */
 
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -499,8 +500,9 @@ int i, j, k, face, c1, c2, c3, c4;
     CUBE new;
     CUBES *oldcubes = p->cubes;
     CORNER *setcorner();
-    static int facebit[6] = {2, 2, 1, 1, 0, 0};
-    int n, pos = old->corners[c1]->value > 0.0 ? 1 : 0, bit = facebit[face];
+    int n, pos = old->corners[c1]->value > 0.0 ? 1 : 0;
+    /* static int facebit[6] = {2, 2, 1, 1, 0, 0}; */
+    /* int bit = facebit[face]; */
 
     /* test if no surface crossing, cube out of bounds, or already visited: */
     if ((old->corners[c2]->value > 0) == pos &&
@@ -612,11 +614,11 @@ PROCESS *p;
     CORNER *b = cube->corners[c2];
     CORNER *c = cube->corners[c3];
     CORNER *d = cube->corners[c4];
-    int index = 0, apos, bpos, cpos, dpos, e1, e2, e3, e4, e5, e6;
-    if (apos = (a->value > 0.0)) index += 8;
-    if (bpos = (b->value > 0.0)) index += 4;
-    if (cpos = (c->value > 0.0)) index += 2;
-    if (dpos = (d->value > 0.0)) index += 1;
+    int index = 0, apos, bpos, cpos, dpos, e1=0, e2=0, e3=0, e4=0, e5=0, e6=0;
+    if ((apos = (a->value > 0.0))) index += 8;
+    if ((bpos = (b->value > 0.0))) index += 4;
+    if ((cpos = (c->value > 0.0))) index += 2;
+    if ((dpos = (d->value > 0.0))) index += 1;
     /* index is now 4-bit number representing one of the 16 possible cases */
     if (apos != bpos) e1 = vertid(a, b, p);
     if (apos != cpos) e2 = vertid(a, c, p);

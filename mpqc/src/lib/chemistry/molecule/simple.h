@@ -193,7 +193,7 @@ typedef StreSimpleCo Stre;
 
 /////////////////////////////////////////////////////////////////////////
 
-static double rtd = 180.0/3.14159265358979323846;
+static const double rtd = 180.0/3.14159265358979323846;
 
 //.
 // \clsnm{BendSimpleCo} is used to describe the angle abc formed by three atoms

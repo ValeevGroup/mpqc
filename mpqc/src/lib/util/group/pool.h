@@ -246,8 +246,8 @@ PoolData::prev_next_free(PoolData*p,PoolData*n)
 
 inline
 PoolData::PoolData(size_t size):
-  size_(size-PoolData_aligned_size),
-  magic_(magic)
+  magic_(magic),
+  size_(size-PoolData_aligned_size)
 {
 }
 

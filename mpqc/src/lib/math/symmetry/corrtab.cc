@@ -199,6 +199,7 @@ CorrelationTable::error(int rc)
   else if (rc != 0) {
     return "unknown error";
     }
+  return "no error";
 }
 
 int

@@ -295,23 +295,10 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   }
 }
 
-// this gives us the operations in Ih which come from ixI (ie, the inverse
-// operating on all the symmetry operations from I).
-static void
-ih_ops(SymmetryOperation *symop)
-{
-  //i_ops(symop);
-
-  for (int i=0; i < 60; i++)
-    for (int j=0; j < 3; j++)
-      for (int k=0; k < 3; k++)
-        symop[i][j][k] *= -1.0;
-}
-
 void
 CharacterTable::i()
 {
-  int i,j,k;
+  int i;
 
   IrreducibleRepresentation& ira = gamma_[0];
   IrreducibleRepresentation& ir1 = gamma_[1];
@@ -340,7 +327,7 @@ CharacterTable::i()
 
 void CharacterTable::ih()
 {
-  int i,j,k;
+  int i;
 
   IrreducibleRepresentation& irag = gamma_[0];
   IrreducibleRepresentation& ir1g = gamma_[1];

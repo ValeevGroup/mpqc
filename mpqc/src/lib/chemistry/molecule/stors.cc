@@ -106,7 +106,6 @@ ScaledTorsSimpleCo::operator=(const ScaledTorsSimpleCo& s)
 double
 ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
-  int i;
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
   SCVector3 u1,u2,u3,z1,z2;
 

@@ -51,8 +51,8 @@ HCoreWfn::_castdown(const ClassDesc*cd)
 }
 
 HCoreWfn::HCoreWfn(StateIn& s) :
-  OneBodyWavefunction(s)
   maybe_SavableState(s)
+  OneBodyWavefunction(s)
 {
   s.get(nirrep_);
   s.get(docc);

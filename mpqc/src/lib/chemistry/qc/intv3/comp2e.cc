@@ -135,10 +135,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   int minam1,minam2,minam3,minam4;
   int redundant_index;
   int e12,e13e24,e34;
-  int i1,j1,k1;
-  int i2,j2,k2;
-  int i3,j3,k3;
-  int i4,j4,k4;
   int p12,p34,p13p24;
   int eAB;
 
@@ -388,11 +384,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   /* Place the integrals in the integral buffer. */
   /* If permute_ is not set, then repack the integrals while copying. */
   if ((!permute_)&&(p12||p34||p13p24)) {
-    int newindex,pam1,pam2,pam3,pam4;
-    int pi1,pj1,pk1;
-    int pi2,pj2,pk2;
-    int pi3,pj3,pk3;
-    int pi4,pj4,pk4;
+    int pam1,pam2,pam3,pam4;
     int psize234,psize34;
     int pogc1,pogc2,pogc3,pogc4;
     int psize1,psize2,psize3,psize4;
@@ -490,7 +482,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       }
     }
   else {
-    int newindex;
     int size34 =  size3 * size4;
     int size234 = size2 * size34;
     double* redund_ints = shiftbuffer;
@@ -862,10 +853,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
                            int *psh1, int *psh2, int *psh3, int *psh4,
                            int dercenter)
 {
-  int oc1,oc2,oc3,oc4;
   int ii;
-  int c1,c2,c3,c4;
-  int i[4],j[4],k[4],am[4];
   int index;
   int size1,size2,size3,size4,size1234;
   int sizem234,sizem34,sizem2,sizem3,sizem4;
@@ -1733,7 +1721,6 @@ Int2eV3::nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
                            int n1, int n2, int n3, int n4,
                            int *red_off, int *nonred_off)
 {
-  int redundant_index;
   int nonredundant_index;
   int i,j,k,l;
 

@@ -60,8 +60,8 @@ TCHF::_castdown(const ClassDesc*cd)
 }
 
 TCHF::TCHF(StateIn& s) :
-  TCSCF(s)
   maybe_SavableState(s)
+  TCSCF(s)
 {
 }
 

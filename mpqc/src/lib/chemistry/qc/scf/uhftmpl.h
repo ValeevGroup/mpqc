@@ -8,7 +8,7 @@ class LocalUHFContribution {
 
   public:
     LocalUHFContribution(double *ga, double *pa, double *gb, double *pb) :
-      gmata(ga), pmata(pa), gmatb(gb), pmatb(pb) {}
+      gmata(ga), gmatb(gb), pmata(pa), pmatb(pb) {}
     ~LocalUHFContribution() {}
 
     inline void cont1(int ij, int kl, double val) {

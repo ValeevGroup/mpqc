@@ -69,8 +69,10 @@ class TranslateDataOut;
 // CTOR.  s is the StateIn
 #ifdef NO_VIRTUAL_BASES
 #  define maybe_SavableState(s)
+#  define maybe_SavableState_alone(s)
 #else
-#  define maybe_SavableState(s) ,SavableState(s)
+#  define maybe_SavableState(s) SavableState(s),
+#  define maybe_SavableState_alone(s) :SavableState(s)
 #endif
 
 //. \clsnm{SavableState} give objects of derivative classes the

@@ -94,7 +94,7 @@ Molecule::init_symmetry_info(double tol)
   for (i=1; i < natom(); i++) {
     ac = r(i);
     int i_is_unique=1;
-    int i_equiv;
+    int i_equiv=0;
 
     // apply all symmetry ops in the group to the atom
     for (int g=0; g < ct.order(); g++) {
@@ -245,7 +245,7 @@ like_world_axis(SCVector3 &axis,
 RefPointGroup
 Molecule::highest_point_group(double tol) const
 {
-  int i,j,k;
+  int i,j;
 
   SCVector3 com = center_of_mass();
 
@@ -312,7 +312,7 @@ Molecule::highest_point_group(double tol) const
     }
   found_c2axis:
 
-  AxisName c2like;
+  AxisName c2like = ZAxis;
   if (have_c2axis) {
     // try to make the sign of the axis correspond to one of the world axes
     c2like = like_world_axis(c2axis,worldxaxis,worldyaxis,worldzaxis);

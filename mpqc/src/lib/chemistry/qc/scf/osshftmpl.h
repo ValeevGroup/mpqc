@@ -13,7 +13,7 @@ class LocalOSSContribution {
   public:
     LocalOSSContribution(double *g, double *p, double *ga, double *pa,
                          double *gb, double *pb) :
-      gmat(g), pmat(p), gmata(ga), pmata(pa), gmatb(gb), pmatb(pb),
+      gmat(g), gmata(ga), gmatb(gb), pmat(p), pmata(pa), pmatb(pb),
       bound(0.0) {}
     ~LocalOSSContribution() {}
 

@@ -304,8 +304,8 @@ int
 PSI_Input::write_keyword(const char *s, double t)
 {
    write_indent();
-   if (fprintf(fp, "%s = %lf\n", s, t) < 0) {
-      fprintf(stderr,"(PSI_Input::write_keyword): trouble writing %s = %lf\n",
+   if (fprintf(fp, "%s = %f\n", s, t) < 0) {
+      fprintf(stderr,"(PSI_Input::write_keyword): trouble writing %s = %f\n",
          s, t);
       return(0);
       }
@@ -339,7 +339,7 @@ int errcod=0;
    write_indent(); 
    fprintf(fp, "%s = (", s);
    for (int i=0; i<num; i++) {
-      if (fprintf(fp, "%lf ", t[i]) < 0) errcod=1;
+      if (fprintf(fp, "%f ", t[i]) < 0) errcod=1;
       }
    fprintf(fp, ")\n");
    if (errcod) {
@@ -353,7 +353,7 @@ int errcod=0;
 int
 PSI_Input::write_geom()
 {
-int i,errcod;
+int i;
 char ts[133];
 
     write_string("% original MPQC geometry:\n");
@@ -374,8 +374,7 @@ char ts[133];
         write_string(ts);
         } 
     write_string("    )\n");
-    if (errcod) return(0);
-    else return(1);
+    return 0;
 }
 
 
@@ -418,6 +417,7 @@ PSI_Input::write_basis(void)
     write_string("  )\n");
     }
   end_section();
+  return 0;
 }
 
 void
@@ -495,7 +495,7 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    // make sure that the occupation vectors are still correct
    CorrelationTable corrtab;
    int rc;
-   if (rc = corrtab.initialize_table(_origpg, _mol->point_group())) {
+   if ((rc = corrtab.initialize_table(_origpg, _mol->point_group()))) {
        cerr << node0
             << "ERROR: couldn't initialize correlation table:" << endl
             << "  " << corrtab.error(rc) << endl;
@@ -520,6 +520,7 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
      }
    end_section();
    end_section(); 
+   return 0;
 }
 
 
@@ -592,7 +593,6 @@ void
 PSI_Input::write_input(void)
 {
   int i;
-  int *unique ;
   char t1[133];
   char t2[133];
 

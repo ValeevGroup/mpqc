@@ -337,9 +337,6 @@ OneBodyIntOp::process_spec_rect(SCMatrixRectBlock* b)
 
   for (iter->start(ishstart,jshstart,ishend,jshend);
        iter->ready(); iter->next()) {
-    int ish=iter->ishell();
-    int jsh=iter->jshell();
-
     ShellPairIter& spi = iter->current_pair();
 
     for (spi.start(); spi.ready(); spi.next()) {
@@ -371,9 +368,6 @@ OneBodyIntOp::process_spec_ltri(SCMatrixLTriBlock* b)
 
   // loop over all needed shells
   for (iter->start(shstart,shstart,shend,shend); iter->ready(); iter->next()) {
-    int ish=iter->ishell();
-    int jsh=iter->jshell();
-
     ShellPairIter& spi = iter->current_pair();
 
     // compute a set of shell integrals
@@ -418,9 +412,6 @@ OneBodyIntOp::process_spec_rectsub(SCMatrixRectSubBlock* b)
 
   for (iter->start(ishstart,jshstart,ishend,jshend);
        iter->ready(); iter->next()) {
-    int ish=iter->ishell();
-    int jsh=iter->jshell();
-
     ShellPairIter& spi = iter->current_pair();
 
     for (spi.start(); spi.ready(); spi.next()) {
@@ -459,9 +450,6 @@ OneBodyIntOp::process_spec_ltrisub(SCMatrixLTriSubBlock* b)
   // loop over all needed shells
   for (iter->start(ishstart,jshstart,ishend,jshend);
        iter->ready(); iter->next()) {
-    int ish=iter->ishell();
-    int jsh=iter->jshell();
-
     ShellPairIter& spi = iter->current_pair();
 
     // compute a set of shell integrals
@@ -526,15 +514,10 @@ OneBody3IntOp::process_spec_rect(SCMatrixRectBlock* a,
   int ishend = bs1->function_to_shell(b->iend);
   int jshend = bs2->function_to_shell(b->jend);
 
-  int njdata = b->jend - b->jstart;
-
   iter->set_redundant(0);
 
   for (iter->start(ishstart,jshstart,ishend,jshend);
        iter->ready(); iter->next()) {
-    int ish=iter->ishell();
-    int jsh=iter->jshell();
-
     // compute a set of shell integrals
     ShellPairIter& spi = iter->current_pair();
 
@@ -546,8 +529,6 @@ OneBody3IntOp::process_spec_rect(SCMatrixRectBlock* a,
           jfn < b->jstart || jfn >= b->jend)
         continue;
       
-      int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
-
 #if 0
       for (int i=0; i<nish; i++,ifn++) {
           if (ifn < b->istart || ifn >= b->iend) {

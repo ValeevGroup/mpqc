@@ -469,7 +469,7 @@ SCElementScalarProduct::_castdown(const ClassDesc*cd)
 }
 
 SCElementScalarProduct::SCElementScalarProduct():
-  product(0.0), deferred_(0)
+  deferred_(0), product(0.0)
 {
 }
 
@@ -659,7 +659,7 @@ SavableState_REF_def(SCElementMaxAbs);
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
-SCElementMaxAbs::SCElementMaxAbs():r(0.0), deferred_(0) {}
+SCElementMaxAbs::SCElementMaxAbs():deferred_(0), r(0.0) {}
 SCElementMaxAbs::SCElementMaxAbs(StateIn&s):
   SCElementOp(s)
 {
@@ -719,7 +719,7 @@ SavableState_REF_def(SCElementSumAbs);
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
-SCElementSumAbs::SCElementSumAbs():r(0.0), deferred_(0) {}
+SCElementSumAbs::SCElementSumAbs():deferred_(0), r(0.0) {}
 SCElementSumAbs::SCElementSumAbs(StateIn&s):
   SCElementOp(s)
 {

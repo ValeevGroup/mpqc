@@ -60,8 +60,8 @@ Orbital::Orbital(const RefKeyVal &keyval):
 
 Orbital::Orbital(const RefOneBodyWavefunction& wfn, int orbital):
   Volume(),
-  orbital_(orbital),
-  wfn_(wfn)
+  wfn_(wfn),
+  orbital_(orbital)
 {
 }
 

@@ -50,7 +50,7 @@ MolecularFormula::MolecularFormula(const RefMolecule& m)
 
   int ntype=0;
   int maxcount=0;
-  int maxsym=0;
+  unsigned int maxsym=0;
   for (int a=0; a < mol.natom(); a++) {
     int i=0;
     while(symbols[i]) {
@@ -76,7 +76,7 @@ MolecularFormula::MolecularFormula(const RefMolecule& m)
   
   int c;
   for (int i=0; i < nelem_; i++) {
-    if (c=count_[i]) {
+    if ((c=count_[i])) {
       char *temp = new char[ndigits+maxsym+1];
       if (c > 1)
         sprintf(temp, "%s%d", symbols[i], count_[i]);

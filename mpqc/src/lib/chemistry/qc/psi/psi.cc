@@ -43,8 +43,8 @@ PsiWfn::~PsiWfn()
 }
 
 PsiWfn::PsiWfn(StateIn&s):
-  Wavefunction(s)
   maybe_SavableState(s)
+  Wavefunction(s)
 {
   abort();
 }
@@ -65,11 +65,6 @@ PsiWfn::print(ostream&o)
 void
 PsiWfn::compute()
 {  
-  int i;
-  int ni = molecule()->point_group()->char_table().nirrep();
-
-  //molecule()->transform_to_principal_axes();
-
   double energy_acc = desired_value_accuracy();
   double grad_acc = desired_gradient_accuracy();
   if (energy_acc > 1.0e-6) energy_acc = 1.0e-6;
@@ -92,9 +87,8 @@ PsiWfn::compute()
   // read output
   if (gradient_needed()) {
       int i, j, ii;
-      int *reorder;
+      int *reorder = new int[molecule()->natom()];
       double tol = 1e-6;
-      reorder = new int[molecule()->natom()];
       for (i=0; i<molecule()->natom(); i++) reorder[i] = -1;
       FILE11 file11(0);
       for(i=0; i<molecule()->natom(); i++) {
@@ -218,8 +212,8 @@ PsiCCSD::~PsiCCSD()
 }
 
 PsiCCSD::PsiCCSD(StateIn&s):
-  PsiWfn(s)
   maybe_SavableState(s)
+  PsiWfn(s)
 {
   abort();
 }
@@ -304,8 +298,8 @@ PsiCCSD_T::~PsiCCSD_T()
 }
 
 PsiCCSD_T::PsiCCSD_T(StateIn&s):
-  PsiWfn(s)
   maybe_SavableState(s)
+  PsiWfn(s)
 {
   abort();
 }
@@ -391,8 +385,8 @@ PsiCCSDT::~PsiCCSDT()
 }
 
 PsiCCSDT::PsiCCSDT(StateIn&s):
-  PsiWfn(s)
   maybe_SavableState(s)
+  PsiWfn(s)
 {
   abort();
 }
@@ -484,8 +478,8 @@ PsiCI::~PsiCI()
 }
 
 PsiCI::PsiCI(StateIn&s):
-  PsiWfn(s)
   maybe_SavableState(s)
+  PsiWfn(s)
 {
   abort();
 }
@@ -560,8 +554,8 @@ PsiHF::~PsiHF()
 }
 
 PsiHF::PsiHF(StateIn&s):
-  PsiWfn(s)
   maybe_SavableState(s)
+  PsiWfn(s)
 {
   abort();
 }

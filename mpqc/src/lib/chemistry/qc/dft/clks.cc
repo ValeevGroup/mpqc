@@ -62,8 +62,8 @@ CLKS::_castdown(const ClassDesc*cd)
 }
 
 CLKS::CLKS(StateIn& s) :
-  CLSCF(s)
   maybe_SavableState(s)
+  CLSCF(s)
 {
   exc_=0;
   integrator_ = new Murray93Integrator();

@@ -130,8 +130,8 @@ TaylorMolecularEnergy::~TaylorMolecularEnergy()
 }
 
 TaylorMolecularEnergy::TaylorMolecularEnergy(StateIn&s):
-  MolecularEnergy(s)
   maybe_SavableState(s)
+  MolecularEnergy(s)
 {
   abort();
 }

@@ -49,8 +49,8 @@ ShellRotation::done() {
 }
 
 ShellRotation::ShellRotation(int n) :
-  am_(0),
   n_(n),
+  am_(0),
   r(0)
 {
   if (n_) {
@@ -61,8 +61,8 @@ ShellRotation::ShellRotation(int n) :
 }
 
 ShellRotation::ShellRotation(const ShellRotation& rot) :
-  am_(0),
   n_(0),
+  am_(0),
   r(0)
 {
   *this = rot;
@@ -71,8 +71,8 @@ ShellRotation::ShellRotation(const ShellRotation& rot) :
 ShellRotation::ShellRotation(int a, SymmetryOperation& so,
                              const RefIntegral& ints,
                              int pure) :
-  am_(0),
   n_(0),
+  am_(0),
   r(0)
 {
   if (pure)

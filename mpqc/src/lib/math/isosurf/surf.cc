@@ -63,12 +63,12 @@ TriangulatedSurface::_castdown(const ClassDesc*cd)
 }
 
 TriangulatedSurface::TriangulatedSurface():
+  _verbose(0),
+  _debug(0),
   _triangle_vertex(0),
   _triangle_edge(0),
   _edge_vertex(0),
-  _integrator(new GaussTriangleIntegrator(1)),
-  _verbose(0),
-  _debug(0)
+  _integrator(new GaussTriangleIntegrator(1))
 {
   clear();
 }
@@ -677,10 +677,6 @@ TriangulatedSurface::recompute_index_maps()
   _index_to_vertex.clear();
   _index_to_edge.clear();
   _index_to_triangle.clear();
-
-  int ne = _edges.length();
-  int nv = _vertices.length();
-  int nt = _triangles.length();
 
   for (i=0, iv = _vertices.begin(); iv != _vertices.end(); i++, iv++) {
       _vertex_to_index[*iv] = i;

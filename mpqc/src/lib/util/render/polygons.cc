@@ -59,7 +59,7 @@ RenderedPolygons::RenderedPolygons(const RefKeyVal& keyval):
 {
   int nvertex = keyval->count("vertices");
   int nface = keyval->count("faces");
-  Coloring coloring;
+  Coloring coloring = None;
   if (keyval->count("vertex_color_list")) {
       coloring = Vertex;
     }

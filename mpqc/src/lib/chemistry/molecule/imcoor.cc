@@ -68,11 +68,11 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   scale_bends_(1.0),
   scale_tors_(1.0),
   scale_outs_(1.0),
-  max_update_steps_(100),
-  max_update_disp_(0.5),
   given_fixed_values_(0),
   decouple_bonds_(0),
   decouple_bends_(0),
+  max_update_steps_(100),
+  max_update_disp_(0.5),
   form_print_simples_(0),
   form_print_variable_(0),
   form_print_constant_(0),
@@ -617,8 +617,6 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
 
   cout << node0 << indent << "Forming optimization coordinates:" << endl;
 
-#define DECOUPLE 1
-#if DECOUPLE
   int n_total = 0;
 
   RefSCVector totally_symmetric_bond;
@@ -647,7 +645,6 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
   // I hope the IntCoorSet keeps the ordering
   form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
                  projection, totally_symmetric_all, Kall, debug_);
-  int n_totally_symmetric_all = count_nonzero(totally_symmetric_all, ts_eps);
   if (Kall.nonnull()) n_total += Kall.ncol();
 
   // This requires that all_ coordinates is made up of first bonds,
@@ -699,18 +696,6 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
           else is_totally_symmetric[j] = 0;
         }
     }
-#else
-  RefSCVector totally_symmetric_all;
-  form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
-                 projection, totally_symmetric_all, K, debug_);
-  int n_totally_symmetric_all = count_nonzero(totally_symmetric_all, ts_eps);
-
-  is_totally_symmetric = new int[K.ncol()];
-  for (i=0; i<K.ncol(); i++) {
-      if (fabs(totally_symmetric_all(i)) > ts_eps) is_totally_symmetric[i] = 1;
-      else is_totally_symmetric[i] = 0;
-    }
-#endif
 }
 
 IntMolecularCoor::~IntMolecularCoor()

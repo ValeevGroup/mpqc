@@ -61,8 +61,8 @@ class Quadratic: public Function
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 Quadratic::Quadratic(StateIn&s):
-  Function(s)
   maybe_SavableState(s)
+  Function(s)
 {
   x0 = matrixkit_->vector(dim_);
   x0.restore(s);

@@ -306,9 +306,9 @@ UncappedTorusHoleShape::_castdown(const ClassDesc*cd)
 UncappedTorusHoleShape::UncappedTorusHoleShape(double r,
                                const SphereShape& s1,
                                const SphereShape& s2):
-_r(r),
 _s1(s1),
-_s2(s2)
+_s2(s2),
+_r(r)
 {
 }
 
@@ -365,8 +365,6 @@ UncappedTorusHoleShape::in_plane_sphere(
   // a = (((r(A)+_r)^2 - (r(B)+_r)^2 )/(2 r(AB)^2)) + 1/2
   // b^2 = (r(A)+r)^2 - a^2 r(AB)^2
 
-  double r_a = _s1.radius();
-  double r_b = _s2.radius();
   SCVector3 A = _s1.origin();
   SCVector3 B = _s2.origin();
   SCVector3 N = n;
@@ -711,10 +709,10 @@ Uncapped5SphereExclusionShape::
                                 const SphereShape&s1,
                                 const SphereShape&s2,
                                 const SphereShape&s3):
-  _r(radius),
   _s1(s1),
   _s2(s2),
-  _s3(s3)
+  _s3(s3),
+  _r(radius)
 {
   double rAr = rA() + r();
   double rAr2 = rAr*rAr;

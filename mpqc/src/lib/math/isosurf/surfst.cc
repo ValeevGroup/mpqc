@@ -51,7 +51,7 @@ TriangulatedSurface::remove_slender_triangles(
   int i,j,k;
   AVLSet<RefTriangle>::iterator it,jt,kt;
   AVLSet<RefEdge>::iterator ie,je,ke;
-  AVLSet<RefVertex>::iterator iv,jv,kv;
+  AVLSet<RefVertex>::iterator iv,jv;
 
   int surface_was_completed = _completed_surface;
 
@@ -65,10 +65,6 @@ TriangulatedSurface::remove_slender_triangles(
   _have_values = 0;
   _values.clear();
   
-  int nvertex = _vertices.length();
-  int nedge = _edges.length();
-  int ntriangle = _triangles.length();
-
   if (_verbose) {
       cout << "TriangulatedSurface::remove_slender_triangles:" << endl
            << "initial: ";
@@ -436,10 +432,6 @@ TriangulatedSurface::remove_slender_triangles(
   _index_to_vertex.clear();
   _index_to_edge.clear();
   _index_to_triangle.clear();
-
-  int ne = _edges.length();
-  int nv = _vertices.length();
-  int nt = _triangles.length();
 
   for (i=0, iv = _vertices.begin(); iv != _vertices.end(); i++, iv++) {
       _vertex_to_index[*iv] = i;

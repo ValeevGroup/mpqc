@@ -128,9 +128,9 @@ Gaussian92::~Gaussian92()
 }
 
 Gaussian92::Gaussian92(StateIn&s):
+  maybe_SavableState(s)
   OneBodyWavefunction(s),
   _eigenvectors(this)
-  maybe_SavableState(s)
 {
   s.get(charge_);
   s.get(multiplicity_);

@@ -129,7 +129,6 @@ void
 DistSCMatrix::init_blocklist()
 {
   int i, j, index;
-  int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   blocklist = new SCMatrixBlockList;
   for (i=0, index=0; i<d1->blocks()->nblock(); i++) {
@@ -506,7 +505,7 @@ DistSCMatrix::create_vecform(Form f, int nvectors)
   form = f;
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
-  int n1, n2;
+  int n1=0, n2=0;
   if (form == Row) { n1 = nrow(); n2 = ncol(); }
   if (form == Col) { n1 = ncol(); n2 = nrow(); }
   if (nvectors == -1) {
@@ -538,7 +537,7 @@ DistSCMatrix::create_vecform(Form f, int nvectors)
 void
 DistSCMatrix::vecform_zero()
 {
-  int n;
+  int n=0;
   if (form == Row) { n = nvec * ncol(); }
   if (form == Col) { n = nvec * nrow(); }
 

@@ -50,12 +50,12 @@ StateOut::_castdown(const ClassDesc*cd)
 }
 
 StateOut::StateOut() :
-  next_object_number_(1),
-  copy_references_(0),
-  nextclassid_(0),
   have_cd_(0),
-  node_to_node_(0),
-  translate_(new TranslateDataOut(this, new TranslateDataBigEndian))
+  translate_(new TranslateDataOut(this, new TranslateDataBigEndian)),
+  copy_references_(0),
+  next_object_number_(1),
+  nextclassid_(0),
+  node_to_node_(0)
 {
 }
 
@@ -112,6 +112,12 @@ StateOut::put_array_char(const char*p,int size)
 }
 
 int
+StateOut::put_array_uint(const unsigned int*p,int size)
+{
+  return translate_->put(p,size);
+}
+
+int
 StateOut::put_array_int(const int*p,int size)
 {
   return translate_->put(p,size);
@@ -129,10 +135,11 @@ StateOut::put_array_double(const double*p,int size)
   return translate_->put(p,size);
 }
 
-int StateOut::put(char r) { return put_array_char((char*)&r,1); }
-int StateOut::put(int r) { return put_array_int((int*)&r,1); }
-int StateOut::put(float r) { return put_array_float((float*)&r,1); }
-int StateOut::put(double r) { return put_array_double((double*)&r,1); }
+int StateOut::put(char r) { return put_array_char(&r,1); }
+int StateOut::put(unsigned int r) { return put_array_uint(&r,1); }
+int StateOut::put(int r) { return put_array_int(&r,1); }
+int StateOut::put(float r) { return put_array_float(&r,1); }
+int StateOut::put(double r) { return put_array_double(&r,1); }
 
 // This deletes all references to objects, so if they are output
 // again, they will be written in their entirety.
@@ -267,6 +274,20 @@ StateOut::put(const char*s,int size)
   if (s) {
       r += put(size);
       r += put_array_char(s,size);
+    }
+  else {
+      r += put((int)0);
+    }
+  return r;
+}
+
+int
+StateOut::put(const unsigned int*s,int size)
+{
+  int r=0;
+  if (s) {
+      r += put(size);
+      r += put_array_uint(s,size);
     }
   else {
       r += put((int)0);

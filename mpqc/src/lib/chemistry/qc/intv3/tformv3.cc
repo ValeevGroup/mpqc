@@ -639,6 +639,10 @@ Int2eV3::do_gencon_sparse_transform_2e(Integral*integ,
       shell = sh4;
       tgencon = &l;
       break;
+  default:
+      shell = 0;
+      tgencon = 0;
+      break;
     }
 
 #if PRINT
@@ -875,7 +879,6 @@ do_sparse_transform2_4new(double *source, double *target,
     double coef = trans.coef();
     int pure = trans.pureindex();
     int cart = trans.cartindex();
-    int off1 = 0;
     int offtarget4 = pure;
     int offsource4 = cart;
     for (int i123=0; i123<n123; i123++) {

@@ -74,7 +74,7 @@ ThreadGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ThreadGrp::ThreadGrp() : nthread_(1), threads_(0)
+ThreadGrp::ThreadGrp() : threads_(0),  nthread_(1)
 {
   threads_ = new Thread*[nthread_];
 }

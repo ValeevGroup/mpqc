@@ -97,13 +97,11 @@ MBPT2::compute_cs_grad()
                   // (and these integrals divided by
                   // orbital energy denominators)
   double *integral_iqjs; // half-transformed integrals
-  double *iqjs_buf;
 
   int nocc_act, nvir_act;
   int i, j, k;
   int ii, bb;
   int x, y;
-  int isize, jsize;
   int a, b, c;
   int nshell;
   int offset;
@@ -116,7 +114,6 @@ MBPT2::compute_cs_grad()
   int p, q, r, s;
   int bf1, bf2, bf3, bf4;
   int index;
-  int flags;
   int me;
   int nproc;
   int rest;
@@ -137,36 +134,35 @@ MBPT2::compute_cs_grad()
   int ik_index;
   int ij_offset;
   int jloop, kloop;
-  int ntri;
 
   int ni;
 
   double *evals;              // scf eigenvalues
   const double *intbuf;       // 2-electron AO integral buffer
-  const double *intderbuf;    // 2-electron AO integral derivative buffer
+  const double *intderbuf=0;  // 2-electron AO integral derivative buffer
   double *iajb_ptr, *ibja_ptr, *iakb_ptr, *ibka_ptr;
   double *iajc_ptr, *ibjc_ptr, *icjb_ptr, *icja_ptr;
   double *ijkb_ptr, *ibkj_ptr;
   double pqrs;
   double *c_sa, c_rj;
-  double *c_qk, *c_pi, *c_qi, *c_sj;
+  double *c_pi, *c_qi, *c_sj;
   double *c_qx, *c_qa, *c_sb, *c_pa, *c_pq, *c_sy;
   double delta_ijab, delta_ijbc, delta_ijac;
   double ecorr_mp2 = 0.0;
   double escf;
-  double emp2;
+  double emp2=0.0;
   double tol;                 // log2 of the erep tolerance
                               // (erep < 2^tol => discard)
   double dtol;                // non-log2 version of the above
-  double *Wkj,*Wab,*Waj;      // occ-occ, vir-vir and vir-occ parts of 
+  double *Wkj=0,*Wab=0,*Waj=0;// occ-occ, vir-vir and vir-occ parts of 
                               // second order correction to MP2
                               // energy weighted density matrix
-  double *Pkj,*Pab;           // occ-occ and vir-vir parts of second order
+  double *Pkj=0,*Pab=0;       // occ-occ and vir-vir parts of second order
                               // correction to MP2 density matrix
-  double *Laj;                // MP2 Lagrangian
+  double *Laj=0;              // MP2 Lagrangian
   double *Lpi;                // contrib to MP2 Lagrangian partially in AO basis
-  double *pkj_ptr, *pab_ptr;
-  double *wkj_ptr, *wjk_ptr, *wab_ptr, *wba_ptr, *waj_ptr;
+  double *pkj_ptr=0, *pab_ptr;
+  double *wkj_ptr, *wjk_ptr, *wab_ptr, *wba_ptr, *waj_ptr=0;
   double *laj_ptr, *lpi_ptr, *lqi_ptr;
   double *gamma_iajs, *gamma_iajs_tmp, *gamma_iqrs; 
                               // partially back-transformed non-sep 2PDM's
@@ -205,10 +201,10 @@ MBPT2::compute_cs_grad()
   double *iqjs_ptr, *iqjr_ptr;
   const double *pqrs_ptr;
 
-  double **gradient, *gradient_dat;  // The MP2 gradient
-  double **hf_gradient, *hf_gradient_dat;  // The HF gradient
-  double **ginter;    // Intermediates for the MP2 gradient
-  double **hf_ginter;    // Intermediates for the HF gradient
+  double **gradient=0, *gradient_dat=0;  // The MP2 gradient
+  double **hf_gradient=0, *hf_gradient_dat=0;  // The HF gradient
+  double **ginter=0;    // Intermediates for the MP2 gradient
+  double **hf_ginter=0;    // Intermediates for the HF gradient
 
   BiggestContribs biggest_coefs(5,10);
   CharacterTable ct = molecule()->point_group()->char_table();
@@ -216,7 +212,7 @@ MBPT2::compute_cs_grad()
   int dograd = gradient_needed();
 
   // this controls how often mem->catchup is called
-  int catchup_ctr;
+  int catchup_ctr=0;
   const int catchup_mask = 3;
 
   tim_enter("mp2-mem");
@@ -271,7 +267,7 @@ MBPT2::compute_cs_grad()
   // Compute batch size ni for mp2 loops;
   //
   // The following arrays are kept throughout (all of type double):
-  //   scf_vector, gradient, ginter, Pkj, Pab, Wkj, Wab, Waj, Laj, iqjs_buf
+  //   scf_vector, gradient, ginter, Pkj, Pab, Wkj, Wab, Waj, Laj
   // and memory allocated for these arrays is called mem_static
   //
   ////////////////////////////////////////////////////////
@@ -458,21 +454,6 @@ MBPT2::compute_cs_grad()
     if (me == 0) zero_gradients(gradient, natom, 3);
     if (me == 0) zero_gradients(hf_gradient, natom, 3);
     }
-  else {
-    Pkj = 0;
-    Pab = 0;
-    Wkj = 0;
-    Wab = 0;
-    Waj = 0;
-    Laj = 0;
-
-    gradient_dat = 0;
-    gradient = 0;
-    hf_gradient_dat = 0;
-    hf_gradient = 0;
-    ginter = 0;
-    hf_ginter = 0;
-    }
 
   if (dograd || dos2_) {
     Laj = (double*) malloc(nvir*nocc*sizeof(double));
@@ -490,8 +471,6 @@ MBPT2::compute_cs_grad()
       cout << endl;
       }
     }
-
-  if (nproc > 1) iqjs_buf = new double[2 + nfuncmax*nbasis];
 
   /////////////////////////////////////
   //  Begin MP2 loops
@@ -1749,8 +1728,6 @@ MBPT2::compute_cs_grad()
 
   mem->set_localsize(0);
 
-  if (nproc > 1) delete[] iqjs_buf;
-
   // debug print
   if (debug_ && me == 0) {
     cout << indent << "Exited loop over i-batches" << endl;
@@ -2570,7 +2547,6 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
   int derset;
   int nshell = basis()->nshell();
   int nbasis = basis()->nbasis();
-  int flags;
   int nproc = msg_->n();
   int me = msg_->me();
 
@@ -2781,14 +2757,9 @@ accum_gradients(double **g, double **f, int n1, int n2)
 int
 MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
 {
-  int index;
-  int mem1, mem2, mem3;
-  int mem_dyn;   // dynamic memory available
+  unsigned int mem_dyn;   // dynamic memory available
   distsize_t maxdyn;
-  int tmp;
-  int i, j;
   int ni;
-  int nproc = msg_->n();
 
   ///////////////////////////////////////
   // the largest memory requirement will

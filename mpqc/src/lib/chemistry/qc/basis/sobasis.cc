@@ -112,13 +112,11 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
   int nfuncall = 0;
   for (i=0; i<nblocks; i++) {
     int irrep = ct.which_irrep(i);
-    int comp = ct.which_comp(i);
     for (j=0; j<soblocks[i].len; j++) {
       if (soblocks[i].so[j].length == 0) continue;
       int bfn0 = soblocks[i].so[j].cont[0].bfn;
       int aoshell0 = basis_->function_to_shell(bfn0);
       int soshell0 = aoshell_to_soshell[aoshell0];
-      int atom0 = basis_->shell_to_center(aoshell0);
       int sofunc = nfunc_[soshell0][irrep];
 
       int naofunc = basis_->shell(aoshell0).nfunction();
@@ -137,7 +135,6 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
         int aoshell = basis_->function_to_shell(bfn);
         int aoshellfunc = bfn - basis_->shell_to_function(aoshell);
         int soshell = aoshell_to_soshell[aoshell];
-        int atom = basis_->shell_to_center(aoshell);
 
         if (soshell != soshell0) {
           cout << "ERROR: SOBasis: shell changed" << endl;
@@ -180,7 +177,6 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
       }
     int ibasis_ = 0;
     for (i=0; i<nshell_; i++) {
-      int nfunci = nfunction(i);
       for (j=0; j<nirrep_; j++) {
         for (k=0; k<nfunc_[i][j]; k++,ibasis_++) {
           irrep_[ibasis_] = j;
@@ -213,7 +209,6 @@ SOBasis::max_nfunction_in_shell() const
 {
   int maxn = 0;
   for (int i=0; i<nshell_; i++) {
-    int *nfunci = nfunc_[i];
     int n = nfunction(i);
     if (n > maxn) maxn = n;
     }

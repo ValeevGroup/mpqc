@@ -116,11 +116,11 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
 }
 
 GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
-  nshell_(gbs.nshell_),
-  ncenter_(gbs.ncenter_),
   molecule_(gbs.molecule_),
   matrixkit_(gbs.matrixkit_),
-  basisdim_(gbs.basisdim_)
+  basisdim_(gbs.basisdim_),
+  ncenter_(gbs.ncenter_),
+  nshell_(gbs.nshell_)
 {
   int i,j;
   

@@ -36,7 +36,7 @@ class AVLMapNode {
     T data;
     EAVLMMapNode<K,AVLMapNode<K, T> > node;
   public:
-    AVLMapNode(const K& k, const T& d): node(k), data(d) {};
+    AVLMapNode(const K& k, const T& d): data(d), node(k) {};
 };
 
 template <class K, class T>

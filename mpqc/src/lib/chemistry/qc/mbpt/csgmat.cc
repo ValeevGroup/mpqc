@@ -141,8 +141,8 @@ int
 MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
                     double *DPmat, const double *mgdbuff)
 {
-  int tmax,imax,cpmax,pmaxijk;
-  int pmaxik,pmaxjk,pmaxij;
+  int tmax,imax,cpmax,pmaxijk=0;
+  int pmaxik,pmaxjk,pmaxij=0;
   int i,j,k,l;
   int ij,kl;
   int n1,n2,n3,n4;
@@ -159,7 +159,6 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
   int me=msg_->me();
   int s1,s2,s3,s4;
   int inttol = (int) (-10.0/log10(2.0));
-  int nshellt;
   int nbatri = (nbasis*(nbasis+1))/2;
 
 
@@ -185,7 +184,7 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
 
   // Allocate and assign maxp
   if (eliminate_in_gmat_) {
-    nshellt = basis()->nshell()*(basis()->nshell()+1)/2;
+    int nshellt = basis()->nshell()*(basis()->nshell()+1)/2;
     maxp = (signed char*) malloc(sizeof(signed char)*nshellt);
     if (!(maxp)) {
       fprintf(stderr,"mkgdlb: could not malloc maxp\n");

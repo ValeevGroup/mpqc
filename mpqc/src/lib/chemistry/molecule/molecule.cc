@@ -59,7 +59,7 @@ Molecule::_castdown(const ClassDesc*cd)
 }
 
 Molecule::Molecule():
-  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
+  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
 {
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
@@ -72,7 +72,7 @@ Molecule::Molecule():
 }
 
 Molecule::Molecule(const Molecule& mol):
- r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
+ natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -112,7 +112,7 @@ Molecule::clear()
 }
 
 Molecule::Molecule(const RefKeyVal&input):
- r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
+ natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
 {
   atominfo_ = input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
@@ -535,8 +535,8 @@ void Molecule::save_data_state(StateOut& so)
 }
 
 Molecule::Molecule(StateIn& si):
-  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0),
-  SavableState(si)
+  SavableState(si),
+  natoms_(0), r_(0), Z_(0), mass_(0), labels_(0)
 {
   if (si.version(static_class_desc()) < 4) {
       cerr << "Molecule: cannot restore from old molecules" << endl;

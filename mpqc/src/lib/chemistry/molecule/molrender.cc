@@ -55,8 +55,8 @@ RenderedMolecule::_castdown(const ClassDesc*cd)
 
 RenderedMolecule::RenderedMolecule(const RefKeyVal& keyval):
   RenderedObject(keyval),
-  atominfo_(keyval->describedclassvalue("atominfo")),
-  mol_(keyval->describedclassvalue("molecule"))
+  mol_(keyval->describedclassvalue("molecule")),
+  atominfo_(keyval->describedclassvalue("atominfo"))
 {
   if (atominfo_.null()) {
       atominfo_ = new AtomInfo();

@@ -321,6 +321,11 @@ MessageGrp::send(int target, float* data, int ndata)
   raw_send(target, data, ndata*sizeof(float));
 }
 void
+MessageGrp::send(int target, unsigned int* data, int ndata)
+{
+  raw_send(target, data, ndata*sizeof(int));
+}
+void
 MessageGrp::send(int target, int* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(int));
@@ -362,6 +367,11 @@ void
 MessageGrp::recv(int sender, float* data, int ndata)
 {
   raw_recv(sender, data, ndata*sizeof(float));
+}
+void
+MessageGrp::recv(int sender, unsigned int* data, int ndata)
+{
+  raw_recv(sender, data, ndata*sizeof(int));
 }
 void
 MessageGrp::recv(int sender, int* data, int ndata)
@@ -407,6 +417,11 @@ MessageGrp::sendt(int target, int type, float* data, int ndata)
   raw_sendt(target, type, data, ndata*sizeof(float));
 }
 void
+MessageGrp::sendt(int target, int type, unsigned int* data, int ndata)
+{
+  raw_sendt(target, type, data, ndata*sizeof(int));
+}
+void
 MessageGrp::sendt(int target, int type, int* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(int));
@@ -450,6 +465,11 @@ MessageGrp::recvt(int type, float* data, int ndata)
   raw_recvt(type, data, ndata*sizeof(float));
 }
 void
+MessageGrp::recvt(int type, unsigned int* data, int ndata)
+{
+  raw_recvt(type, data, ndata*sizeof(int));
+}
+void
 MessageGrp::recvt(int type, int* data, int ndata)
 {
   raw_recvt(type, data, ndata*sizeof(int));
@@ -491,6 +511,11 @@ void
 MessageGrp::bcast(float*data, int ndata, int from)
 {
   raw_bcast(data, ndata*sizeof(float), from);
+}
+void
+MessageGrp::bcast(unsigned int*data, int ndata, int from)
+{
+  raw_bcast(data, ndata*sizeof(int), from);
 }
 void
 MessageGrp::bcast(int*data, int ndata, int from)

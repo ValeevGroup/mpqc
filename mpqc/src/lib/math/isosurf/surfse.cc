@@ -50,10 +50,6 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
   _have_values = 0;
   _values.clear();
   
-  int nvertex = _vertices.length();
-  int nedge = _edges.length();
-  int ntriangle = _triangles.length();
-
   if (_verbose) {
       cout << "TriangulatedSurface::remove_short_edges:" << endl
            << "initial: ";

@@ -667,17 +667,6 @@ ReplSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
         }
     }
 }
-
-static void
-print_mat(double **m, int nr, int nc)
-{
-  int i,j;
-  
-  for (i=0; i < nr; i++) {
-    for (j=0; j < nc; j++) printf("%11.5f ",m[i][j]);
-    printf("\n");
-  }
-}
     
 // this += a * b * transpose(a)
 void
@@ -685,7 +674,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
                                        SCMatrix::Transform t)
 {
   int i,j,k;
-  int ii,jj,kk;
+  int ii,jj;
   int nc, nr;
 
   // do the necessary castdowns

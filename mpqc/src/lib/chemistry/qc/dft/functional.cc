@@ -118,8 +118,8 @@ NElFunctional::_castdown(const ClassDesc*cd)
 }
 
 NElFunctional::NElFunctional(StateIn& s):
-  DenFunctional(s)
   maybe_SavableState(s)
+  DenFunctional(s)
 {
 }
 
@@ -163,11 +163,11 @@ SumDenFunctional::_castdown(const ClassDesc*cd)
 }
 
 SumDenFunctional::SumDenFunctional(StateIn& s):
+  maybe_SavableState(s)
   DenFunctional(s),
   n_(0),
   funcs_(0),
   coefs_(0)
-  maybe_SavableState(s)
 {
   s.get(n_);
   if (n_) {
@@ -299,8 +299,8 @@ LSDAXFunctional::_castdown(const ClassDesc*cd)
 }
 
 LSDAXFunctional::LSDAXFunctional(StateIn& s):
-  DenFunctional(s)
   maybe_SavableState(s)
+  DenFunctional(s)
 {
 }
 
@@ -368,8 +368,8 @@ LSDACFunctional::_castdown(const ClassDesc*cd)
 }
 
 LSDACFunctional::LSDACFunctional(StateIn& s):
-  DenFunctional(s)
   maybe_SavableState(s)
+  DenFunctional(s)
 {
 }
 
@@ -460,8 +460,8 @@ XalphaFunctional::_castdown(const ClassDesc*cd)
 }
 
 XalphaFunctional::XalphaFunctional(StateIn& s):
-  DenFunctional(s)
   maybe_SavableState(s)
+  DenFunctional(s)
 {
 }
 
@@ -535,8 +535,8 @@ Becke88Functional::_castdown(const ClassDesc*cd)
 }
 
 Becke88Functional::Becke88Functional(StateIn& s):
-  DenFunctional(s)
   maybe_SavableState(s)
+  DenFunctional(s)
 {
 }
 
@@ -576,7 +576,6 @@ Becke88Functional::point(const PointInputData &id,
   // Preset terms from Murray's paper
   const double beta=0.0042;
   const double beta6=0.0252;
-  const double beta2=0.00001764;
   const double beta26=0.00010584;
 
   // Use simplified formula
@@ -641,8 +640,8 @@ LYPFunctional::_castdown(const ClassDesc*cd)
 }
 
 LYPFunctional::LYPFunctional(StateIn& s):
-  DenFunctional(s)
   maybe_SavableState(s)
+  DenFunctional(s)
 {
 }
 
@@ -753,8 +752,8 @@ PW91Functional::_castdown(const ClassDesc*cd)
 }
 
 PW91Functional::PW91Functional(StateIn& s):
-  DenFunctional(s)
   maybe_SavableState(s)
+  DenFunctional(s)
 {
 }
 

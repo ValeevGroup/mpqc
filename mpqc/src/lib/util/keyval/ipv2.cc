@@ -39,6 +39,7 @@
 IPV2* IPV2::global_ = 0;
 
 IPV2::IPV2():
+filename_(0),
 table_keywords(0),
 current_table_keyword(0),
 table_sub_tree(0),
@@ -51,8 +52,7 @@ ip_in(0),
 ip_out(0),
 ip_tree(0),
 ip_cwk(0),
-ip_keyword(0),
-filename_(0)
+ip_keyword(0)
 {
   lastkeyword[0] = '\0';
   lexer = new IPV2FlexLexer;

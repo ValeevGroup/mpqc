@@ -140,8 +140,8 @@ PointGroup::PointGroup(const RefKeyVal& kv)
 }
 
 PointGroup::PointGroup(StateIn& si) :
-  symb(0),
-  SavableState(si)
+  SavableState(si),
+  symb(0)
 {
   int i;
   if (si.version(static_class_desc()) < 2) {

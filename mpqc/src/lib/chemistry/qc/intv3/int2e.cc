@@ -39,8 +39,11 @@ Int2eV3::Int2eV3(Integral *integral,
                  const RefGaussianBasisSet& b3,
                  const RefGaussianBasisSet& b4,
                  int order, int storage) :
-  integral_(integral), store(0), int_Qvec(0), int_Rvec(0),
-  grp_(integral->messagegrp())
+  integral_(integral),
+  grp_(integral->messagegrp()),
+  store(0),
+  int_Qvec(0),
+  int_Rvec(0)
 {
   bs1_ = b1;
   bs2_ = b2;

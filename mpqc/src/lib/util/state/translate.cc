@@ -204,18 +204,21 @@ static inline void byte_swap(void*d,const T*e,int n) \
 }
 
 BSVT(short);
+BSVT(unsigned int);
 BSVT(int);
 BSVT(long);
 BSVT(float);
 BSVT(double);
 
 BSTV(short);
+BSTV(unsigned int);
 BSTV(int);
 BSTV(long);
 BSTV(float);
 BSTV(double);
 
 BST(short);
+BST(unsigned int);
 BST(int);
 BST(long);
 BST(float);
@@ -241,12 +244,15 @@ TranslateData::vctor(char code)
 {
   if (code == 'b') return new TranslateDataBigEndian;
   if (code == 'l') return new TranslateDataLittleEndian;
+  return 0;
 }
 
 void TranslateData::to_native  (char *,   int n) {}
 void TranslateData::to_external(char *,   int n) {}
 void TranslateData::to_native  (short *,  int n) {}
 void TranslateData::to_external(short *,  int n) {}
+void TranslateData::to_native  (unsigned int *, int n) {}
+void TranslateData::to_external(unsigned int *, int n) {}
 void TranslateData::to_native  (int *,    int n) {}
 void TranslateData::to_external(int *,    int n) {}
 void TranslateData::to_native  (long *,   int n) {}
@@ -263,6 +269,10 @@ void TranslateData::to_native  (short *d,  const void *s,   int n)
 { memcpy(d,s,n*sizeof(short)); }
 void TranslateData::to_external(void *d,   const short *s,  int n)
 { memcpy(d,s,n*sizeof(short)); }
+void TranslateData::to_native  (unsigned int *d, const void *s, int n)
+{ memcpy(d,s,n*sizeof(unsigned int)); }
+void TranslateData::to_external(void *d, const unsigned int *s, int n)
+{ memcpy(d,s,n*sizeof(unsigned int)); }
 void TranslateData::to_native  (int *d,    const void *s,   int n)
 { memcpy(d,s,n*sizeof(int)); }
 void TranslateData::to_external(void *d,   const int *s,    int n)
@@ -299,6 +309,10 @@ void TranslateDataByteSwap::to_native  (char *d,   int n) {}
 void TranslateDataByteSwap::to_external(char *d,   int n) {}
 void TranslateDataByteSwap::to_native  (short *d,  int n) { byte_swap(d,n); }
 void TranslateDataByteSwap::to_external(short *d,  int n) { byte_swap(d,n); }
+void TranslateDataByteSwap::to_native  (unsigned int *d,    int n)
+{ byte_swap(d,n); }
+void TranslateDataByteSwap::to_external(unsigned int *d,    int n)
+{ byte_swap(d,n); }
 void TranslateDataByteSwap::to_native  (int *d,    int n) { byte_swap(d,n); }
 void TranslateDataByteSwap::to_external(int *d,    int n) { byte_swap(d,n); }
 void TranslateDataByteSwap::to_native  (long *d,   int n) { byte_swap(d,n); }
@@ -314,6 +328,10 @@ void TranslateDataByteSwap::to_external(void *d,   const char *s,   int n)
 void TranslateDataByteSwap::to_native  (short *d,  const void *s,   int n)
 { byte_swap(d,s,n); }
 void TranslateDataByteSwap::to_external(void *d,   const short *s,  int n)
+{ byte_swap(d,s,n); }
+void TranslateDataByteSwap::to_native  (unsigned int *d, const void *s, int n)
+{ byte_swap(d,s,n); }
+void TranslateDataByteSwap::to_external(void *d, const unsigned int *s, int n)
 { byte_swap(d,s,n); }
 void TranslateDataByteSwap::to_native  (int *d,    const void *s,   int n)
 { byte_swap(d,s,n); }
@@ -368,6 +386,21 @@ TranslateDataOut::put(const char*d,int s)
 
 int
 TranslateDataOut::put(const short*d,int s)
+{
+  const int bsize = bufsize/sizeof(*d);
+  int o=0,r=0;
+  while (s) {
+      int l = (s>bsize?bsize:s);
+      translate_->to_external(buf_,&d[o],l);
+      r += putv(buf_,l*sizeof(*d));
+      s-=l;
+      o+=l;
+    }
+  return r;
+}
+
+int
+TranslateDataOut::put(const unsigned int*d,int s)
 {
   const int bsize = bufsize/sizeof(*d);
   int o=0,r=0;
@@ -472,6 +505,14 @@ int
 TranslateDataIn::get(short*d,int s)
 {
   int r = getv(d,s*sizeof(short));
+  translate_->to_native(d,s);
+  return r;
+}
+
+int
+TranslateDataIn::get(unsigned int*d,int s)
+{
+  int r = getv(d,s*sizeof(unsigned int));
   translate_->to_native(d,s);
   return r;
 }

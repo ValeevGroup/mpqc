@@ -89,8 +89,8 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
 }
 
 QNewtonOpt::QNewtonOpt(StateIn&s):
-  Optimize(s)
   maybe_SavableState(s)
+  Optimize(s)
 {
   ihessian_ = matrixkit()->symmmatrix(dimension());
   ihessian_.restore(s);

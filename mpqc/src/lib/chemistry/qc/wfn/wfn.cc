@@ -100,6 +100,7 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 }
 
 Wavefunction::Wavefunction(StateIn&s):
+  maybe_SavableState(s)
   MolecularEnergy(s),
   overlap_(this),
   hcore_(this),
@@ -107,7 +108,6 @@ Wavefunction::Wavefunction(StateIn&s):
   natural_density_(this),
   bs_values(0),
   bsg_values(0)
-  maybe_SavableState(s)
 {
   overlap_.compute() = 0;
   hcore_.compute() = 0;

@@ -71,8 +71,6 @@ CartMolecularCoor::CartMolecularCoor(StateIn& s):
 void
 CartMolecularCoor::init()
 {
-  Molecule& m = *molecule_.pointer();
-
   // compute needed dimensions
   dim_ = dnatom3_;
 }

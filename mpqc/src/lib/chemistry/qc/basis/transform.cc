@@ -58,17 +58,17 @@ class SafeUInt {
     SafeUInt &operator ++ () { i_++; return *this; }
     SafeUInt &operator ++ (int) { i_++; return *this; }
     operator double() const { return i_; }
-    operator long() const { return i_; }
+    operator unsigned long() const { return i_; }
     int operator > (const SafeUInt& i) const { return i_>i.i_; }
     int operator >= (const SafeUInt& i) const { return i_>=i.i_; }
     int operator < (const SafeUInt& i) const { return i_<i.i_; }
     int operator <= (const SafeUInt& i) const { return i_<=i.i_; }
     int operator == (const SafeUInt& i) const { return i_==i.i_; }
-    int operator == (int i) const { return i_==i; }
+    int operator == (unsigned long i) const { return i_==i; }
     int operator != (const SafeUInt& i) const { return i_!=i.i_; }
     SafeUInt operator / (const SafeUInt& i) const { return SafeUInt(i_/i.i_); }
     SafeUInt operator % (const SafeUInt& i) const { return SafeUInt(i_%i.i_); }
-    SafeUInt operator * (long i) const
+    SafeUInt operator * (unsigned long i) const
     {
       unsigned long tmp = i_*i;
       if (tmp/i != i_ || tmp%i != 0) {
@@ -80,9 +80,9 @@ class SafeUInt {
     {
       return this->operator*(i.i_);
     }
-    SafeUInt &operator = (long i) { i_ = i; return *this; }
-    SafeUInt &operator *= (long i) { *this = *this * i; return *this; }
-    SafeUInt &operator /= (long i) { i_ /= i; return *this; }
+    SafeUInt &operator = (unsigned long i) { i_ = i; return *this; }
+    SafeUInt &operator *= (unsigned long i) { *this = *this*i; return *this; }
+    SafeUInt &operator /= (unsigned long i) { i_ /= i; return *this; }
 };
 
 // there ordering here is arbitrary and doesn't have to match the
@@ -159,7 +159,7 @@ reduce(SafeUInt &num, SafeUInt &den)
 {
   if (num > den) {
       for (SafeUInt i=2; i<=den;) {
-          if (num%i == 0 && den%i == 0) {
+          if (num%i == 0UL && den%i == 0UL) {
               num /= i;
               den /= i;
             }
@@ -168,7 +168,7 @@ reduce(SafeUInt &num, SafeUInt &den)
     }
   else {
       for (SafeUInt i=2; i<=num;) {
-          if (num%i == 0 && den%i == 0) {
+          if (num%i == 0UL && den%i == 0UL) {
               num /= i;
               den /= i;
             }
@@ -178,10 +178,10 @@ reduce(SafeUInt &num, SafeUInt &den)
 }
 
 SafeUInt
-powll(SafeUInt n, int p)
+powll(SafeUInt n, unsigned long p)
 {
   SafeUInt result = 1;
-  for (int i=0; i<p; i++) result *= n;
+  for (unsigned long i=0; i<p; i++) result *= n;
   return result;
 }
 
@@ -246,12 +246,12 @@ solidharmcontrib(int sign,
 // m is the z component
 // r2 is the number of factors of r^2 that are included
 static void
-solidharm(int l, int m, int r2, RefSCMatrix coefmat)
+solidharm(unsigned int l, int m, unsigned int r2, RefSCMatrix coefmat)
 {
   int pureindex = ipure(l,m);
-  for (int i=1; i<=r2; i++) pureindex += npure(l+2*i);
+  for (unsigned int i=1; i<=r2; i++) pureindex += npure(l+2*i);
   
-  int absm = local_abs(m);
+  unsigned int absm = local_abs(m);
 
   // the original norm2num and norm2den computation overflows 32bits for l=7
   //SafeUInt norm2num = factoverfact(l+absm,l-absm);
@@ -276,12 +276,12 @@ solidharm(int l, int m, int r2, RefSCMatrix coefmat)
   cout.form("    // l=%2d m=% 2d",l,m);
   cout << endl;
 #endif
-  for (int t=0; t <= (l - absm)/2; t++) {
-      for (int u=0; u<=t; u++) {
+  for (unsigned int t=0; t <= (l - absm)/2; t++) {
+      for (unsigned int u=0; u<=t; u++) {
           int v2m;
           if (m >= 0) v2m = 0;
           else v2m = 1;
-          for (int v2 = v2m; v2 <= absm; v2+=2) {
+          for (unsigned int v2 = v2m; v2 <= absm; v2+=2) {
               int x = 2*t + absm - 2*u - v2;
               int y = 2*u + v2;
               int z = l - x - y;

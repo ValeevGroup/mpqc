@@ -357,7 +357,7 @@ SetIntCoor::bmat(const RefMolecule& mol, RefSCMatrix& bmat)
 {
   bmat.assign(0.0);
 
-  int i, ncoor = n(), ncart = bmat.coldim().n();
+  int i, ncoor = n();
 
   RefSCVector bmatrow(bmat.coldim(),bmat.kit());
   // send the rows of the b matrix to each of the coordinates

@@ -10,7 +10,7 @@ class LocalUKSContribution {
   public:
     LocalUKSContribution(double *ga, double *pa, double *gb, double *pb,
                          double a) :
-      gmata(ga), pmata(pa), gmatb(gb), pmatb(pb), a0(a) {}
+      gmata(ga), gmatb(gb), pmata(pa), pmatb(pb), a0(a) {}
     ~LocalUKSContribution() {}
 
     inline void cont1(int ij, int kl, double val) {

@@ -325,9 +325,9 @@ SCMatrixRectSubBlock::SCMatrixRectSubBlock(int is, int ie, int istr,
                                            int js, int je, double* d):
   istart(is),
   jstart(js),
-  istride(istr),
   iend(ie),
   jend(je),
+  istride(istr),
   data(d)
 {
 }

@@ -93,7 +93,7 @@ DIIS::DIIS(StateIn& s) :
   SelfConsistentExtrapolation(s),
   btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
-  int i, j;
+  int i;
 
   s.get(start);
   s.get(ndiis);
@@ -204,7 +204,7 @@ DIIS::~DIIS()
 void
 DIIS::save_data_state(StateOut& s)
 {
-  int i, j;
+  int i;
 
   SelfConsistentExtrapolation::save_data_state(s);
   s.put(start);

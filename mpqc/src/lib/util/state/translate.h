@@ -56,6 +56,8 @@ class TranslateData {
     virtual void to_external(char *,   int n);
     virtual void to_native  (short *,  int n);
     virtual void to_external(short *,  int n);
+    virtual void to_native  (unsigned int *, int n);
+    virtual void to_external(unsigned int *, int n);
     virtual void to_native  (int *,    int n);
     virtual void to_external(int *,    int n);
     virtual void to_native  (long *,   int n);
@@ -70,6 +72,8 @@ class TranslateData {
     virtual void to_external(void *,   const char *,   int n);
     virtual void to_native  (short *,  const void *,   int n);
     virtual void to_external(void *,   const short *,  int n);
+    virtual void to_native  (unsigned int *,    const void *,   int n);
+    virtual void to_external(void *,   const unsigned int *,    int n);
     virtual void to_native  (int *,    const void *,   int n);
     virtual void to_external(void *,   const int *,    int n);
     virtual void to_native  (long *,   const void *,   int n);
@@ -95,6 +99,8 @@ class TranslateDataByteSwap: public TranslateData {
     virtual void to_external(char *,   int n);
     virtual void to_native  (short *,  int n);
     virtual void to_external(short *,  int n);
+    virtual void to_native  (unsigned int *, int n);
+    virtual void to_external(unsigned int *, int n);
     virtual void to_native  (int *,    int n);
     virtual void to_external(int *,    int n);
     virtual void to_native  (long *,   int n);
@@ -109,6 +115,8 @@ class TranslateDataByteSwap: public TranslateData {
     virtual void to_external(void *,   const char *,   int n);
     virtual void to_native  (short *,  const void *,   int n);
     virtual void to_external(void *,   const short *,  int n);
+    virtual void to_native  (unsigned int *,    const void *,   int n);
+    virtual void to_external(void *,   const unsigned int *,    int n);
     virtual void to_native  (int *,    const void *,   int n);
     virtual void to_external(void *,   const int *,    int n);
     virtual void to_native  (long *,   const void *,   int n);
@@ -148,6 +156,7 @@ class TranslateDataOut {
     //. These members to translate and write the data.
     virtual int put(const char*,int);
     virtual int put(const short*,int);
+    virtual int put(const unsigned int*,int);
     virtual int put(const int*,int);
     virtual int put(const long*,int);
     virtual int put(const float*,int);
@@ -174,6 +183,7 @@ class TranslateDataIn {
     //. These members read and translate.
     virtual int get(char*,int);
     virtual int get(short*,int);
+    virtual int get(unsigned int*,int);
     virtual int get(int*,int);
     virtual int get(long*,int);
     virtual int get(float*,int);

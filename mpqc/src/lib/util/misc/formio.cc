@@ -137,7 +137,7 @@ SCFormIO::indent(ios&o)
   if (debug_ && parallel_) {
       char nn[24];
       sprintf(nn,"node %5d:",me_);
-      for (int i=0; i < strlen(nn); i++) o.rdbuf()->sputc(nn[i]);
+      for (size_t i=0; i < strlen(nn); i++) o.rdbuf()->sputc(nn[i]);
     }
   long n = o.iword(nindent_);
   for (int i=0; i<n; i++) o.rdbuf()->sputc(' ');

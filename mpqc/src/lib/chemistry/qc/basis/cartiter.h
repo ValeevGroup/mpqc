@@ -94,7 +94,7 @@ class RedundantCartesianSubIter {
 
   public:
     RedundantCartesianSubIter(int l);
-    ~RedundantCartesianSubIter();
+    virtual ~RedundantCartesianSubIter();
 
     virtual int bfn() =0;
 

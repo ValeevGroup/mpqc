@@ -72,7 +72,7 @@ compute_v1_memory(distsize_t ni,
 void
 MBPT2::compute_hsos_v1()
 {
-  int i, j, k;
+  int i, j;
   int s1, s2;
   int a, b;
   int isocc, asocc;   /* indices running over singly occupied orbitals */
@@ -111,9 +111,9 @@ MBPT2::compute_hsos_v1()
   double *trans_int3;    /* partially transformed integrals                */
   double *trans_int4_node;/* each node's subset of fully transf. integrals */
   double *trans_int4;    /* fully transformed integrals                    */
-  double *mo_int_do_so_vir; /*mo integral (is|sa); i:d.o.,s:s.o.,a:vir     */
-  double *mo_int_tmp;    /* scratch array used in global summations        */
-  double *socc_sum;      /* sum of 2-el integrals involving only s.o.'s    */
+  double *mo_int_do_so_vir=0;/*mo integral (is|sa); i:d.o.,s:s.o.,a:vir     */
+  double *mo_int_tmp=0;  /* scratch array used in global summations        */
+  double *socc_sum=0;    /* sum of 2-el integrals involving only s.o.'s    */
   double *iqrs, *iprs;
   double *iars_ptr, *iajs_ptr, *iajr_ptr;
   double iajr;
@@ -224,6 +224,7 @@ MBPT2::compute_hsos_v1()
    * since a_number is not the same on all nodes, use node 0's a_number   *
    * (which is >= all other a_numbers) and broadcast ni afterwords        */
 
+  nshell = basis()->nshell();
   distsize_t memused = 0;
   ni = 0;
   for (i=1; i<=nocc-restart_orbital_v1_; i++) {
@@ -281,7 +282,6 @@ MBPT2::compute_hsos_v1()
   npass = (nocc - restart_orbital_v1_ - rest)/ni + 1;
   if (rest == 0) npass--;
 
-  nshell = basis()->nshell();
   if (me == 0) {
     cout << indent << " npass  rest  nbasis  nshell  nfuncmax"
          << "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;

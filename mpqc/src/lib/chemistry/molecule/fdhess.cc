@@ -118,8 +118,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(const RefKeyVal&keyval):
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
-  MolecularHessian(s)
   maybe_SavableState(s)
+  MolecularHessian(s)
 {
   mole_.restore_state(s);
   s.get(checkpoint_);
@@ -466,7 +466,7 @@ FinDispMolecularHessian::set_gradient(int disp, const RefSCVector &grad)
 RefSymmSCMatrix
 FinDispMolecularHessian::compute_hessian_from_gradients()
 {
-  int i, coor;
+  int i;
 
   RefSymmSCMatrix dhessian;
 
@@ -530,7 +530,6 @@ FinDispMolecularHessian::do_hess_for_irrep(int irrep,
                                         const RefSymmSCMatrix &dhessian,
                                         const RefSymmSCMatrix &xhessian)
 {
-  int i;
   RefSCMatrix dtrans = displacements(irrep);
   RefSCDimension ddim = dtrans.coldim();
   if (ddim.n() == 0) return;

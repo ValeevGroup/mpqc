@@ -36,34 +36,34 @@
 
 /////////////////////////////////////////////////////////////////////////
 // Triangle
-
-// Here is the layout of the vertices and edges in the triangles:
-//
-//                       vertex(1) (r=0, s=1)
-//                          +
-//                         / \  _edges[1].vertex(_orientation1)
-//                        /   \
-//                       /     \
-//                      /       \
-//                     /         \
-//                    /           \
-//         _edges[0] /             \  _edges[1]
-//          (r = 0) /               \   (1-r-s = 0)
-//                 /                 \
-//                /                   \
-//               /                     \
-//              /                       \ _edges[1].vertex(!_orientation1)
-//             /                         \
-//   vertex(0)+---------------------------+
-// (r=0, s=0)        _edges[2] (s = 0)      vertex(2) (r=1, s=0)
-//
-//  Zienkiewicz and Taylor, "The Finite Element Method", 4th Ed, Vol 1,
-//  use
-//      L1 = 1 - r - s
-//      L2 = r,
-//      L3 = s.
-//  I also use these below.
-//
+///////////////////////////////////////////////////////////////////////////
+// Here is the layout of the vertices and edges in the triangles:         |
+//                                                                        |
+//                       vertex(1) (r=0, s=1)                             |
+//                          +                                             |
+//                         / \  _edges[1].vertex(_orientation1)           |
+//                        /   \                                           |
+//                       /     \                                          |
+//                      /       \                                         |
+//                     /         \                                        |
+//                    /           \                                       |
+//         _edges[0] /             \  _edges[1]                           |
+//          (r = 0) /               \   (1-r-s = 0)                       |
+//                 /                 \                                    |
+//                /                   \                                   |
+//               /                     \                                  |
+//              /                       \ _edges[1].vertex(!_orientation1)|
+//             /                         \                                |
+//   vertex(0)+---------------------------+                               |
+// (r=0, s=0)        _edges[2] (s = 0)      vertex(2) (r=1, s=0)          |
+//                                                                        |
+//  Zienkiewicz and Taylor, "The Finite Element Method", 4th Ed, Vol 1,   |
+//  use                                                                   |
+//      L1 = 1 - r - s                                                    |
+//      L2 = r,                                                           |
+//      L3 = s.                                                           |
+//  I also use these below.                                               |
+///////////////////////////////////////////////////////////////////////////
 
 REF_def(Triangle);
 
@@ -192,7 +192,7 @@ Triangle::interpolate(const RefTriInterpCoef& coef,
                       double r, double s,
                       const RefVertex&result, SCVector3&dA)
 {
-  int i, j, k;
+  unsigned int i, j, k;
 
   //double L1 = 1 - r - s;
   //double L2 = r;
@@ -271,7 +271,7 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
       abort();
     }
 
-  int i, j, k;
+  unsigned int i, j, k;
 
   if (edge(0)->order() != order
       ||edge(1)->order() != order

@@ -55,12 +55,12 @@
 ////////////////////////////////////////////////////////////////////////
 
 CharacterTable::CharacterTable()
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), _inv(0), symb(0)
 {
 }
 
 CharacterTable::CharacterTable(const CharacterTable& ct)
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), _inv(0), symb(0)
 {
   *this = ct;
 }
@@ -142,7 +142,7 @@ CharacterTable::print(ostream& os) const
 }
 
 CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), _inv(0), symb(0)
 {
   // first parse the point group symbol, this will give us the order of the
   // point group(g), the type of point group (pg), the order of the principle
@@ -154,7 +154,7 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
   }
 
   symb = new char[strlen(cpg)+1];
-  int i;
+  size_t i;
   for (i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
   symb[i] = '\0';
 
@@ -169,12 +169,13 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
     exit(1);
   }
 
-  for (i=0; i < g; i++)
-    symop[i] = symop[i].sim_transform(frame);
+  int ig;
+  for (ig=0; ig < g; ig++)
+    symop[ig] = symop[ig].sim_transform(frame);
 }
 
 CharacterTable::CharacterTable(const char *cpg)
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), _inv(0), symb(0)
 {
   // first parse the point group symbol, this will give us the order of the
   // point group(g), the type of point group (pg), the order of the principle
@@ -186,7 +187,7 @@ CharacterTable::CharacterTable(const char *cpg)
   }
 
   symb = new char[strlen(cpg)+1];
-  int i;
+  size_t i;
   for (i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
   symb[i] = '\0';
 

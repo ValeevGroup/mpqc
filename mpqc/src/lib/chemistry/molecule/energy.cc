@@ -124,8 +124,8 @@ MolecularEnergy::~MolecularEnergy()
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
-  Function(s)
   maybe_SavableState(s)
+  Function(s)
 {
   mc_.restore_state(s);
   moldim_.restore_state(s);
@@ -418,7 +418,7 @@ MolecularEnergy::print_natom_3(double **vn3,
     o << node0 << indent << title << endl;
     o << node0 << incindent;
   }
-  for (int i=0,ii=0; i<n; i++) {
+  for (int i=0; i<n; i++) {
     o << node0 << indent
       << scprintf("%4d %3s",
                   i+1,AtomInfo::symbol(molecule()->Z(i)));
@@ -642,8 +642,8 @@ MolEnergyConvergence::MolEnergyConvergence()
 }
 
 MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
-  Convergence(s)
   maybe_SavableState(s)
+  Convergence(s)
 {
   if (s.version(static_class_desc()) >= 2) s.get(cartesian_);
   if (s.version(static_class_desc()) >= 3) mole_.restore_state(s);

@@ -66,8 +66,8 @@ NewtonOpt::NewtonOpt(const RefKeyVal&keyval):
 }
 
 NewtonOpt::NewtonOpt(StateIn&s):
-  Optimize(s)
   maybe_SavableState(s)
+  Optimize(s)
 {
   s.get(accuracy_);
   s.get(maxabs_gradient);

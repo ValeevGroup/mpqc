@@ -54,7 +54,7 @@ class StateClassData {
     int ninstance;
   public:
     StateClassData(int v=-1, const ClassDesc *c=0, char *name=0):
-      version(v), classdesc(c), name(name), ninstance(0) {}
+      version(v), name(name), classdesc(c), ninstance(0) {}
     StateClassData(const StateClassData &d) { operator=(d); }
     ~StateClassData();
     StateClassData &operator=(const StateClassData &d);
@@ -149,18 +149,21 @@ class StateIn:  public DescribedClass {
     //. These restore data saved with \clsnmref{StateOut}'s \srccd{put}.
     //members.
     virtual int get(char&r, const char *keyword = 0);
+    virtual int get(unsigned int&r, const char *keyword = 0);
     virtual int get(int&r, const char *keyword = 0);
     virtual int get(float&r, const char *keyword = 0);
     virtual int get(double&r, const char *keyword = 0);
     //. These restore data saved with \clsnmref{StateOut}'s \srccd{put}.
     //members.  The data is allocated by StateIn.
     virtual int get(char*&);
+    virtual int get(unsigned int*&);
     virtual int get(int*&);
     virtual int get(float*&);
     virtual int get(double*&);
     //. These restore data saved with \clsnmref{StateOut}'s \srccd{put}.
     //members.  The data must be preallocated by the user.
     virtual int get_array_char(char*p,int size);
+    virtual int get_array_uint(unsigned int*p,int size);
     virtual int get_array_int(int*p,int size);
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);

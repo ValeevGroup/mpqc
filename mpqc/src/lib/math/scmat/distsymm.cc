@@ -55,8 +55,6 @@ DistSymmSCMatrix::_castdown(const ClassDesc*cd)
 DistSymmSCMatrix::DistSymmSCMatrix(const RefSCDimension&a,DistSCMatrixKit*k):
   SymmSCMatrix(a,k)
 {
-  int n = d->n();
-
   init_blocklist();
 }
 
@@ -373,7 +371,7 @@ DistSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 {
   const char* name = "DistSymmSCMatrix::diagonalize";
   // make sure that the argument are of the correct type
-  DistDiagSCMatrix* la = DistDiagSCMatrix::require_castdown(a,name);
+  DistDiagSCMatrix::require_castdown(a,name);
   DistSCMatrix* lb = DistSCMatrix::require_castdown(b,name);
 
   int n = dim()->n();

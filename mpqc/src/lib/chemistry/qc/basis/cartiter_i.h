@@ -161,36 +161,42 @@ RedundantCartesianSubIter::operator int()
 }
 
 INLINE
+int
 RedundantCartesianSubIter::l()
 {
   return l_;
 }
 
 INLINE
+int
 RedundantCartesianSubIter::a()
 {
   return e_[0];
 }
 
 INLINE
+int
 RedundantCartesianSubIter::b()
 {
   return e_[1];
 }
 
 INLINE
+int
 RedundantCartesianSubIter::c()
 {
   return e_[2];
 }
 
 INLINE
+int
 RedundantCartesianSubIter::l(int i)
 {
   return e_[i];
 }
 
 INLINE
+int
 RedundantCartesianSubIter::axis(int i)
 {
   return axis_[i];

@@ -203,8 +203,8 @@ B::B(const RefKeyVal&keyval):
 {
 }
 B::B(StateIn&s):
-  A(s)
   maybe_SavableState(s)
+  A(s)
 {
   s.get(ib);
 }
@@ -366,9 +366,9 @@ D::D(const RefKeyVal&keyval):
   ddat[0]=(ddat[1]=(ddat[2]=(ddat[3]=1.0)+1)+1)+1;
 }
 D::D(StateIn&s):
+  maybe_SavableState(s)
   B(s),
   C(s)
-  maybe_SavableState(s)
 {
   s.get(id,"di");
   s.get(cd,"dc");

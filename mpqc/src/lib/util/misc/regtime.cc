@@ -358,8 +358,8 @@ RegionTimer::RegionTimer(const RefKeyVal &keyval)
 }
 
 RegionTimer::RegionTimer(const char *topname, int cpu_time, int wall_time):
-  cpu_time_(0),
   wall_time_(0),
+  cpu_time_(0),
   flops_(0),
   default_(0)
 {
@@ -414,7 +414,6 @@ RegionTimer::get_flops()
 #if !HAVE_FLOPS
   return 0.0;
 #else
-  int config;
   unsigned long long counter;
   perf_read(0,&counter);
   return (double)counter;
@@ -493,7 +492,7 @@ RegionTimer::change(const char *newname, const char *oldname)
            << endl;
       abort();
     }
-  double cpu, wall, flops;
+  double cpu=0.0, wall=0.0, flops=0.0;
   if (cpu_time_) current_->cpu_exit(cpu = get_cpu_time());
   if (wall_time_) current_->wall_exit(wall = get_wall_time());
   if (flops_) current_->flops_exit(flops = get_flops());
@@ -612,13 +611,13 @@ RegionTimer::print(ostream& o)
       if (flops_ && flops[i] > maxflops) maxflops = flops[i];
     }
 
-  int maxwallwidth = 4;
+  size_t maxwallwidth = 4;
   while (maxwalltime >= 10.0) { maxwalltime/=10.0; maxwallwidth++; }
 
-  int maxcpuwidth = 4;
+  size_t maxcpuwidth = 4;
   while (maxcputime >= 10.0) { maxcputime/=10.0; maxcpuwidth++; }
 
-  int maxflopswidth = 4;
+  size_t maxflopswidth = 4;
   if (flops_) {
     while (maxflops >= 10.0) { maxflops/=10.0; maxflopswidth++; }
     if (maxflopswidth < strlen(flops_name)) maxflopswidth = strlen(flops_name);

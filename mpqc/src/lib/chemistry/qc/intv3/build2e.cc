@@ -415,8 +415,7 @@ Int2eV3::int_init_buildgc(int order,
 void
 Int2eV3::int_done_buildgc()
 {
-  int i,j,k;
-  int ci,cj,ck,cl;
+  int ci,cj,ck;
 
   used_storage_ -= used_storage_build_;
   used_storage_build_ = 0;
@@ -556,7 +555,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              int dam1, int dam2, int dam3, int dam4, int eAB)
 {
   FIX_STACK;
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int ci,cj,ck,cl;
   double *bufferprim;
   double *con_ints;
@@ -702,10 +701,8 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
                          int dam1, int dam2, int dam3, int dam4, int eAB)
 {
   FIX_STACK;
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int ci,cj,ck,cl;
-  int ist1,ist3;
-  int nm3;
   int maxam1234=maxam12+maxam34;
   double coef0,coef1,coef2,coef3;
   double ishl1expi=1.0, ishl2expj=1.0, ishl3expk=1.0;
@@ -1123,7 +1120,7 @@ Int2eV3::blockbuildprim(int minam1,int maxam12,int minam3,int maxam34)
 {
   FIX_STACK;
 
-  int m, a, b;
+  int m, b;
   int l=maxam12+maxam34;
 
   // the (0,0,m) integrals have already been initialized
@@ -1436,7 +1433,7 @@ Int2eV3::blockbuildprim_3(int bmin,int bmax,int m)
   double *I21; /* = [a0|c-1 0](m+1) */
   int ci34m1,ci34m2;
   int size34,size34m1,size34m2;
-  int i34, j34, k34;
+  int i34, k34;
 
   // These temporaries point to subblocks within the integrals arrays.
   double *I10o,*I11o,*I20o,*I21o;
@@ -1484,7 +1481,6 @@ Int2eV3::blockbuildprim_3(int bmin,int bmax,int m)
     double W2_m_p342 = build.int_v_W2 - build.int_v_p342;
     double oo2zeta34 = build.int_v_oo2zeta34;
     double zeta12_ooze = build.int_v_zeta12 * build.int_v_ooze;
-    double half_ooze = 0.5 * build.int_v_ooze;
 
     stack_alignment_check(&p340_m_r30, "buildprim_3: p340_m_r30");
 

@@ -215,9 +215,9 @@ ActiveMsgMemoryIter::local(int offset, int size, int node)
 ActiveMsgMemoryIter::ActiveMsgMemoryIter(void *data,
                                          int *offsets,
                                          int n):
-  data_(data),
   offsets_(offsets),
   n_(n),
+  data_(data),
   ready_(0)
 {
 }
@@ -408,7 +408,6 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, int doffset, int dsize)
   ActiveMsgMemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
-          int chunkdoffset = i.offset()/sizeof(double);
           int chunkdsize = i.size()/sizeof(double);
           double *chunkdata = (double*) &data_[i.offset()];
           double *tmp = (double*) i.data();

@@ -113,7 +113,7 @@ LinOPSimpleCo::operator=(const LinOPSimpleCo& s)
 double
 LinOPSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
-  int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
+  int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1;
   SCVector3 u1,u3,z1;
 
   SCVector3 ra(m.r(a));

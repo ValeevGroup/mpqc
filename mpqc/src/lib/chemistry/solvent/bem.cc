@@ -203,7 +203,6 @@ void
 BEMSolvent::init_system_matrix()
 {
   int i, j;
-  int ntri = surf_->ntriangle();
   int n = ncharge();
 
   RefSCDimension d = new SCDimension(n);

@@ -8,7 +8,7 @@ class LocalHSOSContribution {
 
   public:
     LocalHSOSContribution(double *g, double *p, double *go, double *po) :
-      gmat(g), pmat(p), gmato(go), pmato(po) {}
+      gmat(g), gmato(go), pmat(p), pmato(po) {}
     ~LocalHSOSContribution() {}
 
     inline void cont1(int ij, int kl, double val) {

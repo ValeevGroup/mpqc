@@ -111,8 +111,8 @@ Gaussian92SCF::~Gaussian92SCF()
 }
 
 Gaussian92SCF::Gaussian92SCF(StateIn&s) :
-  Gaussian92(s)
   maybe_SavableState(s)
+  Gaussian92(s)
 {
 }
 

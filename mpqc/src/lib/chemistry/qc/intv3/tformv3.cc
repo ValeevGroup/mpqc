@@ -33,13 +33,10 @@
 #include <string.h>
 #include <math.h>
 
-#include <util/group/thread.h>
 #include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/tformv3.h>
 #include <chemistry/qc/intv3/utils.h>
-
-static RefThreadLock lock;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -73,8 +70,10 @@ SphericalTransformIterV3::SphericalTransformIterV3(int l, int inverse)
 
 #define PRINT 0
 
+#ifndef _REENTRANT
 static double *source = 0;
 static int nsourcemax = 0;
+#endif
 
 static void
 do_copy1(double *source, double *target, int chunk,
@@ -251,6 +250,7 @@ do_sparse_transform2(double *source, double *target,
     }
 }
 
+#ifndef _REENTRANT
 /* make sure enough space exists for the source integrals */
 static void
 source_space(int nsource)
@@ -275,6 +275,7 @@ copy_to_source(double *integrals, int nsource)
   tmp2 = integrals;
   for (i=0; i<nsource; i++) *tmp++ = *tmp2++;
 }
+#endif
 
 static void
 do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
@@ -294,10 +295,19 @@ do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
 
   if (!pure1 && !pure2) return;
 
+#ifdef _REENTRANT
+  int nsource=ncart1*ncart2*chunk;
+  double *source = new double[ncart1*ncart2*chunk];
+#endif
+  
   /* Loop through the generalized general contractions,
    * transforming the first index. */
   if (pure1) {
+#ifdef _REENTRANT
+      memmove(source, integrals, sizeof(double)*nsource);
+#else      
       copy_to_source(integrals, ncart1*ncart2*chunk);
+#endif
       memset(integrals, 0, sizeof(double)*sh1->nfunction()*ncart2*chunk);
 
       ogc1 = 0;
@@ -331,7 +341,11 @@ do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
     }
 
   if (pure2) {
+#ifdef _REENTRANT
+      memmove(source, integrals, sizeof(double)*nfunc1*ncart2*chunk);
+#else      
       copy_to_source(integrals, nfunc1*ncart2*chunk);
+#endif
       memset(integrals, 0,
              sizeof(double)*sh1->nfunction()*sh2->nfunction()*chunk);
 
@@ -364,6 +378,9 @@ do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
           ogc1 += INT_NPURE(am1);
         }
     }
+#ifdef _REENTRANT
+  delete[] source;
+#endif  
 }
 
 /* it is ok for integrals and target to overlap */
@@ -425,7 +442,8 @@ intv3_accum_transform_1e_xyz(double *integrals, double *target,
 }
 
 static void
-do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
+do_gencon_sparse_transform_2e(double *integrals, double *target,
+                              int index,
                               GaussianShell *sh1, GaussianShell *sh2,
                               GaussianShell *sh3, GaussianShell *sh4)
 {
@@ -542,9 +560,13 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
     }
 #endif
 
-  lock->lock();
-
+#ifdef _REENTRANT
+  int nsource = nsource1*nsource2*nsource3*nsource4;
+  double *source = new double[nsource];
+  memmove(source, integrals, sizeof(double)*nsource);
+#else  
   copy_to_source(integrals, nsource1*nsource2*nsource3*nsource4);
+#endif
   memset(target, 0, sizeof(double)*ntarget1*ntarget2*ntarget3*ntarget4);
 
   ogccart[0] = 0;
@@ -604,8 +626,10 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
       ogcfunc[0] += nfunci;
     }
 
-  lock->unlock();
-
+#ifdef _REENTRANT
+  delete[] source;
+#endif
+  
 #if PRINT
     {
       double *tmp = integrals;
@@ -637,10 +661,6 @@ intv3_transform_2e(double *integrals, double *target,
   int pure3 = sh3->has_pure();
   int pure4 = sh4->has_pure();
 
-  if (lock.null()) {
-      lock = ThreadGrp::get_default_threadgrp()->new_lock();
-    }
-  
   if (pure1) {
       do_gencon_sparse_transform_2e(integrals, target, 0, sh1, sh2, sh3, sh4);
       integrals = target;

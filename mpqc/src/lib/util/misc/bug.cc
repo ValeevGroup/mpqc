@@ -30,7 +30,7 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <scconfig.h>
 #endif
 
 #include <fcntl.h>

@@ -31,7 +31,7 @@
 #define _libQC_xdr_h
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <scconfig.h>
 #endif
 
 extern "C" {

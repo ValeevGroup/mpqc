@@ -31,7 +31,7 @@
 #ifndef __PIC__
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <scconfig.h>
 #endif
 
 # ifdef HAVE_SYSV_IPC

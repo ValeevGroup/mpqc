@@ -57,11 +57,19 @@ class EAVLList {
     T *start_;
     EAVLNode<T,K> T::* node_;
   private:
+#if defined(__GNUC__) && defined(__alpha__)
+    T*& rlink(T* n) const { T*& r = (n->*node_).rt; return r; }
+    T*& llink(T* n) const { T*& r = (n->*node_).lt; return r; }
+    T*& uplink(T* n) const { T*& r = (n->*node_).up; return r; }
+    int& balance(T* n) const { int& r = (n->*node_).balance; return r; }
+    K& key(T* n) const { K& r = (n->*node_).key; return r; }
+#else    
     T*& rlink(T* n) const { return (n->*node_).rt; }
     T*& llink(T* n) const { return (n->*node_).lt; }
     T*& uplink(T* n) const { return (n->*node_).up; }
     int& balance(T* n) const { return (n->*node_).balance; }
     K& key(T* n) const { return (n->*node_).key; }
+#endif
     int compare(T*n,T*m) const { return ::compare(key(n), key(m)); }
     int compare(T*n,const K&m) const { return ::compare(key(n), m); }
 

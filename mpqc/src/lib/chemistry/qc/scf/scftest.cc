@@ -151,6 +151,9 @@ main(int argc, char**argv)
 
   mole->print(cout);
 
+  StateOutBinXDR so("scftest.wfn");
+  mole.save_state(so);
+  
   tim->print(cout);
 
   return 0;

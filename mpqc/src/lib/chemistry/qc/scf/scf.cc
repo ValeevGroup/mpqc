@@ -6,6 +6,7 @@
 #include <iostream.h>
 #include <iomanip.h>
 #include <math.h>
+#include <sys/stat.h>
 
 #include <util/misc/formio.h>
 
@@ -37,6 +38,7 @@ SCF::SCF(StateIn& s) :
   s.get(maxiter_);
   s.get(int_store_);
   s.get(dens_reset_freq_);
+  s.get(reset_occ_);
   s.get(level_shift_);
 
   extrap_.restore_state(s);
@@ -50,6 +52,7 @@ SCF::SCF(const RefKeyVal& keyval) :
   maxiter_(40),
   int_store_(0),
   level_shift_(0),
+  reset_occ_(0),
   dens_reset_freq_(10)
 {
   if (keyval->exists("maxiter"))
@@ -61,6 +64,9 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (keyval->exists("integral_storage"))
     int_store_ = keyval->intvalue("integral_storage");
 
+  if (keyval->exists("reset_occupations"))
+    reset_occ_ = keyval->booleanvalue("reset_occupations");
+
   if (keyval->exists("level_shift"))
     level_shift_ = keyval->doublevalue("level_shift");
 
@@ -68,7 +74,20 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (extrap_.null())
     extrap_ = new DIIS;
   
-  guess_wfn_ = keyval->describedclassvalue("guess_wavefunction");
+  // first see if guess_wavefunction is a wavefunction, then check to
+  // see if it's a string.
+  if (keyval->exists("guess_wavefunction")) {
+    guess_wfn_ = keyval->describedclassvalue("guess_wavefunction");
+    if (guess_wfn_.null()) {
+      char *path = keyval->pcharvalue("guess_wavefunction");
+      struct stat sb;
+      if (path && stat(path, &sb)==0 && sb.st_size) {
+        StateInBinXDR s(path);
+        guess_wfn_.restore_state(s);
+        delete[] path;
+      }
+    }
+  }
   
   integral()->set_storage(int_store_);
 
@@ -86,6 +105,7 @@ SCF::save_data_state(StateOut& s)
   s.put(maxiter_);
   s.put(int_store_);
   s.put(dens_reset_freq_);
+  s.put(reset_occ_);
   s.put(level_shift_);
   extrap_.save_state(s);
 }
@@ -255,7 +275,7 @@ SCF::initial_vector()
     if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
       if (me==0) {
         cout << indent
-             << "Projecting guess wavefunction into the present basis set\n";
+             << "Using guess_wavefunction as starting vector\n";
       }
       cout << incindent << incindent;
       eigenvectors_ = guess_wfn_->eigenvectors();
@@ -263,7 +283,7 @@ SCF::initial_vector()
     } else {
       if (me==0) {
         cout << indent
-             << "Using guess wavefunction as starting vector\n";
+             << "Projecting guess_wavefunction into the present basis set\n";
       }
       cout << incindent << incindent;
       eigenvectors_ = projected_eigenvectors(guess_wfn_);

@@ -62,8 +62,10 @@ SCF::compute_vector(double& eelec)
     if (scf_grp_->me()==0) {
       cout.setf(ios::fixed);
       cout << indent << "iter " << setw(5) << iter+1 <<
-        " energy = " << setw(20) << setprecision(15) << eelec+nucrep <<
-        " delta = " << setw(20) << setprecision(15) << delta << endl;
+        " energy = " << setw(20) << setprecision(15) << eelec+nucrep;
+      cout.unsetf(ios::fixed);
+      cout.setf(ios::scientific);
+      cout << " delta = " << setw(20) << setprecision(15) << delta << endl;
     }
 
     // now extrapolate the fock matrix
@@ -93,7 +95,8 @@ SCF::compute_vector(double& eelec)
     level_shift->set_shift(-level_shift_);
     evals.element_op(level_shift);
     
-    set_occupations(evals);
+    if (reset_occ_)
+      set_occupations(evals);
 
     eff=0;
     evals=0;

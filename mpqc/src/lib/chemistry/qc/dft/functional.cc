@@ -342,8 +342,8 @@ void
 LSDAXFunctional::point(const PointInputData &id,
                        PointOutputData &od)
 {
-  const double mcx2rthird = -1.5*(3./(pow((4.*M_PI),(1./3.))));
-  const double dmcx2rthird = -2.*(pow((3./(4.*M_PI)),(1./3.)));
+  const double mcx2rthird = -0.9305257363491; // -1.5*(3/4pi)^1/3
+  const double dmcx2rthird = -1.2407009817988; // 2*(3/4pi)^1/3
 
   if (!spin_polarized_) {
       od.energy = mcx2rthird * 2.0 * id.rho_a * id.rho_a_13;

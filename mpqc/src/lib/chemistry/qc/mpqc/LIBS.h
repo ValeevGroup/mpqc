@@ -1,5 +1,5 @@
 libmpqc.LIBSUF
-#include <chemistry/qc/integral/LIBS.h>
+#include <chemistry/qc/basis/LIBS.h>
 #include <chemistry/qc/wfn/LIBS.h>
 #include <chemistry/qc/dmtscf/LIBS.h>
 #include <chemistry/qc/force/LIBS.h>

@@ -48,7 +48,6 @@ default:: $(TOPDIR)/lib/libmolecule.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libmolecule.so
 endif
-default:: libs
 
 interface:: $(DEPENDINCLUDE)
 

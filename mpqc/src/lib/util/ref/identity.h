@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <iostream.h>
+
 #include <scconfig.h>
 
 #ifdef NO_VIRTUAL_BASES
@@ -71,7 +73,11 @@ class Identifier {
     int operator <= (const Identifier&i) const { return id <= i.id; }
     int operator >= (const Identifier&i) const { return id >= i.id; }
     int operator != (const Identifier&i) const { return id != i.id; }
+
+    void print(ostream&) const;
 };
+
+ostream & operator << (ostream &o, const Identifier &i);
 
 //. \clsnm{Identity} gives derivative objects the ability to have
 //. a unique identity and ordering relationship to all other

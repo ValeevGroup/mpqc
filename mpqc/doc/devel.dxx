@@ -53,6 +53,14 @@ the \Ref{ExEnv} init member.
   ExEnv::init(argc, argv);
 \end{verbatim}
 
+By default, all output will go to the console stream, cout.  To change
+this, use the following code:
+
+\begin{verbatim}
+  ostream *outstream = new ofstream(outputfilename);
+  ExEnv::set_out(outstream);
+\end{verbatim}
+
 MPI is allowed wait until MPI_Init to fill in argc and argv, so we may have
 to call MPI_Init before we even know that we ready to construct
 MPIMessageGrp.  So if an MPIMessageGrp is needed, it is up to the developer

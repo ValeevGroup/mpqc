@@ -3,9 +3,13 @@
 #include "molecule.h"
 #include "energy.h"
 #include "coor.h"
+#include <util/render/object.h>
+#include <util/render/oogl.h>
 
 // force linkage of the taylor expansion energy evaluator
 #include "taylor_f.h"
+// and of the renderer
+#include "molrender.h"
 
 __builtin_delete(void*ptr)
 {
@@ -38,6 +42,10 @@ main()
   printf("\n");
 
   mol->point_group().char_table().print();
+
+  RefRender ren = kv->describedclassvalue("renderer");
+  RefRenderedObject renmol = kv->describedclassvalue("renderedmolecule");
+  ren->render(renmol);
 exit(0);
 
   printf("getting simp:\n");

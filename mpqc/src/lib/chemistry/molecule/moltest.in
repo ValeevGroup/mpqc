@@ -1,3 +1,9 @@
+% Emacs should use -*- keyval -*- mode.
+
+atominfo<AtomInfo>: (
+    molinfodir = /net/munin/usr/people/cljanss/src/SC/lib/
+    molinfofiles = [ molinfo.ipv2 ]
+  )
 
 molecule<Molecule>: (
     angstrom = yes
@@ -201,4 +207,17 @@ energy<TaylorMolecularEnergy>: (
     [ 4 4 ]                     1.0
     [ 1 2 2 ]                   5.0
     }
+  )
+
+renderer<OOGLRender>: (
+    filename = "moltest.oogl"
+  )
+
+renderedmolecule<RenderedMolecule>: (
+    appearance<Appearance>: (
+        level = 3
+      )
+    molecule = $..:molecule
+    atominfo = $..:atominfo
+    model = ball
   )

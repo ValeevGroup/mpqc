@@ -174,7 +174,9 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
   int i;
 
  // create a new keyval which adds :intco to the search list 
-  RefKeyVal keyval = new PrefixKeyVal(":intco :default",topkeyval);
+  RefKeyVal keyval = new AggregateKeyVal(
+      new PrefixKeyVal(":intco",topkeyval),
+      new PrefixKeyVal(":default",topkeyval));
   
   get_input(keyval);
 

@@ -37,6 +37,14 @@
 #include <math/isosurf/isosurf.h>
 #include <util/render/polygons.h>
 
+#ifndef WRITE_OOGL
+#define WRITE_OOGL 0
+#endif
+
+#if WRITE_OOGL
+#include <util/render/oogl.h>
+#endif
+
 /////////////////////////////////////////////////////////////////////////
 // TriangulatedSurface
 
@@ -861,8 +869,18 @@ TriangulatedImplicitSurface::init()
 
   if (_verbose) cout << "TriangulatedImplicitSurface: isosurface" << endl;
   isogen.isosurface(isovalue_,*this);
+#if WRITE_OOGL
+  if (_debug) {
+      render(new OOGLRender("surfiso.oogl"));
+    }
+#endif
   if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
   fix_orientation();
+#if WRITE_OOGL
+  if (_debug) {
+      render(new OOGLRender("surffix.oogl"));
+    }
+#endif
   if (remove_short_edges_) {
       if (_verbose) cout << "TriangulatedImplicitSurface: short edges" << endl;
       remove_short_edges(short_edge_factor_*resolution_);

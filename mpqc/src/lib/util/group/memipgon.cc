@@ -9,7 +9,10 @@
 #include <unistd.h>
 #include <util/group/memipgon.h>
 
+extern "C" {
 #include <nx.h>
+void msgwait(long);
+}
 
 #define DISABLE do { fflush(stdout); } while(0)
 #define ENABLE do { fflush(stdout); } while(0)

@@ -161,6 +161,102 @@ SymmSCMatrix2SCExtrapData::accumulate_scaled(double scale,
 
 ///////////////////////////////////////////////////////////////////////////
 
+#define CLASSNAME SymmSCMatrixNSCExtrapData
+#define PARENTS public SCExtrapData
+#define HAVE_STATEIN_CTOR
+#include <util/class/classi.h>
+void *
+SymmSCMatrixNSCExtrapData::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCExtrapData::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SymmSCMatrixNSCExtrapData::SymmSCMatrixNSCExtrapData(StateIn&s) :
+  SCExtrapData(s)
+{
+  s.get(n_);
+  
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+
+  int blocked;
+  s.get(blocked);
+  
+  if (blocked)
+    k = new BlockedSCMatrixKit(SCMatrixKit::default_matrixkit());
+  
+  m = new RefSymmSCMatrix[n_];
+  
+  for (int i=0; i < n_; i++) {
+    m[i] = k->symmmatrix(dim);
+    m[i].restore(s);
+  }
+}
+
+SymmSCMatrixNSCExtrapData::SymmSCMatrixNSCExtrapData(int n,
+                                                     RefSymmSCMatrix *mats)
+{
+  n_=n;
+  m = new RefSymmSCMatrix[n_];
+  for (int i=0; i < n_; i++)
+    m[i] = mats[i];
+}
+
+void
+SymmSCMatrixNSCExtrapData::save_data_state(StateOut& s)
+{
+  SCExtrapData::save_data_state(s);
+
+  s.put(n_);
+  m[0].dim().save_state(s);
+
+  int blocked = (BlockedSymmSCMatrix::castdown(m[0])) ? 1 : 0;
+  s.put(blocked);
+  
+  for (int i=0; i < n_; i++)
+    m[i].save(s);
+}
+
+void
+SymmSCMatrixNSCExtrapData::zero()
+{
+  for (int i=0; i < n_; i++)
+    m[i].assign(0.0);
+}
+
+SCExtrapData*
+SymmSCMatrixNSCExtrapData::copy()
+{
+  RefSymmSCMatrix *m2 = new RefSymmSCMatrix[n_];
+  for (int i=0; i < n_; i++)
+    m2[i] = m[i].copy();
+  
+  SCExtrapData *ret = new SymmSCMatrixNSCExtrapData(n_, m2);
+  delete[] m2;
+
+  return ret;
+}
+
+void
+SymmSCMatrixNSCExtrapData::accumulate_scaled(double scale,
+                                             const RefSCExtrapData& data)
+{
+  SymmSCMatrixNSCExtrapData* a
+      = SymmSCMatrixNSCExtrapData::require_castdown(
+          data.pointer(), "SymmSCMatrixNSCExtrapData::accumulate_scaled");
+
+  for (int i=0; i < n_; i++) {
+    RefSymmSCMatrix am = a->m[i].copy();
+    am.scale(scale);
+    m[i].accumulate(am);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////
+
 #define CLASSNAME SymmSCMatrixSCExtrapError
 #define PARENTS public SCExtrapError
 #define HAVE_STATEIN_CTOR

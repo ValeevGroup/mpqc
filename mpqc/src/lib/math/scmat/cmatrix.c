@@ -900,3 +900,57 @@ eigsort(int n, double* d, double** v)
       }
     }
   }
+
+void
+cmat_schmidt(double **C, double *S, int nrow, int nc)
+{
+  int i,j,ij;
+  int m;
+  double vtmp;
+  double *v = (double*) malloc(sizeof(double)*nrow);
+
+  if (!v) {
+    fprintf(stderr,"cmat_schmidt: could not malloc v(%d)\n",nrow);
+    abort();
+  }
+  
+  for (m=0; m < nc; m++) {
+    v[0] = C[0][m] * S[0];
+
+    for (i=ij=1; i < nrow; i++) {
+      for (j=0,vtmp=0.0; j < i; j++,ij++) {
+        vtmp += C[j][m]*S[ij];
+        v[j] += C[i][m]*S[ij];
+      }
+      v[i] = vtmp + C[i][m]*S[ij];
+      ij++;
+    }
+
+    for (i=0,vtmp=0.0; i < nrow; i++)
+      vtmp += v[i]*C[i][m];
+
+    if (!vtmp) {
+      fprintf(stderr,"cmat_schmidt: bogus\n");
+      abort();
+    }
+
+    if (vtmp < 1.0e-15)
+      vtmp = 1.0e-15;
+
+    vtmp = 1.0/sqrt(vtmp);
+    
+    for (i=0; i < nrow; i++) {
+      v[i] *= vtmp;
+      C[i][m] *= vtmp;
+    }
+
+    if (m < nc-1) {
+      for (i=m+1,vtmp=0.0; i < nc; i++) {
+        for (j=0,vtmp=0.0; j < nrow; j++)
+          vtmp += v[j] * C[j][i];
+        for (j=0; j < nrow; j++)
+          C[j][i] -= vtmp * C[j][m];
+      }
+    }
+  }
+}

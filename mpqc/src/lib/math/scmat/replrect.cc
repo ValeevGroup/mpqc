@@ -211,6 +211,134 @@ ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
       rows[i+br][j+bc] += lsb->rows[i][j]; 
 }
 
+SCVector *
+ReplSCMatrix::get_row(int i)
+{
+  if (i >= nrow()) {
+    fprintf(stderr,"ReplSCMatrix::get_row: trying to get invalid row"
+            "%d max %d\n",i,nrow());
+    abort();
+  }
+  
+  SCVector * v = coldim()->create_vector();
+
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                               "ReplSCMatrix::get_row");
+
+  for (int j=0; j < ncol(); j++)
+    lv->set_element(j,rows[i][j]);
+      
+  return v;
+}
+
+void
+ReplSCMatrix::assign_row(SCVector *v, int i)
+{
+  if (i >= nrow()) {
+    fprintf(stderr,"ReplSCMatrix::assign_row: trying to assign invalid row"
+            "%d max %d\n",i,nrow());
+    abort();
+  }
+  
+  if (v->n() != ncol()) {
+    fprintf(stderr,"ReplSCMatrix::assign_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),ncol());
+    abort();
+  }
+  
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                               "ReplSCMatrix::assign_row");
+
+  for (int j=0; j < ncol(); j++)
+    rows[i][j] = lv->get_element(j);
+}
+
+void
+ReplSCMatrix::accumulate_row(SCVector *v, int i)
+{
+  if (i >= nrow()) {
+    fprintf(stderr,"ReplSCMatrix::accumulate_row: trying to assign invalid "
+                   "row %d max %d\n",i,nrow());
+    abort();
+  }
+  
+  if (v->n() != ncol()) {
+    fprintf(stderr,"ReplSCMatrix::accumulate_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),ncol());
+    abort();
+  }
+  
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                            "ReplSCMatrix::accumulate_row");
+
+  for (int j=0; j < ncol(); j++)
+    rows[i][j] += lv->get_element(j);
+}
+
+SCVector *
+ReplSCMatrix::get_column(int i)
+{
+  if (i >= ncol()) {
+    fprintf(stderr,"ReplSCMatrix::get_column: trying to get invalid column"
+            "%d max %d\n",i,ncol());
+    abort();
+  }
+  
+  SCVector * v = rowdim()->create_vector();
+
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                               "ReplSCMatrix::get_column");
+
+  for (int j=0; j < nrow(); j++)
+    lv->set_element(j,rows[j][i]);
+      
+  return v;
+}
+
+void
+ReplSCMatrix::assign_column(SCVector *v, int i)
+{
+  if (i >= ncol()) {
+    fprintf(stderr,"ReplSCMatrix::assign_column: trying to assign invalid "
+            "column %d max %d\n",i,ncol());
+    abort();
+  }
+  
+  if (v->n() != nrow()) {
+    fprintf(stderr,"ReplSCMatrix::assign_column: vector is wrong size"
+            "is %d, should be %d\n",v->n(),nrow());
+    abort();
+  }
+  
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                               "ReplSCMatrix::assign_column");
+
+  for (int j=0; j < nrow(); j++)
+    rows[j][i] = lv->get_element(j);
+}
+
+void
+ReplSCMatrix::accumulate_column(SCVector *v, int i)
+{
+  if (i >= ncol()) {
+    fprintf(stderr,"ReplSCMatrix::accumulate_column: trying to assign invalid"
+            " column %d max %d\n",i,ncol());
+    abort();
+  }
+  
+  if (v->n() != nrow()) {
+    fprintf(stderr,"ReplSCMatrix::accumulate_column: vector is wrong size"
+            "is %d, should be %d\n",v->n(),nrow());
+    abort();
+  }
+  
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                     "ReplSCMatrix::accumulate_column");
+
+  for (int j=0; j < nrow(); j++)
+    rows[j][i] += lv->get_element(j);
+}
+
 void
 ReplSCMatrix::assign(double a)
 {
@@ -437,6 +565,22 @@ ReplSCMatrix::solve_this(SCVector*v)
     }
 
   return cmat_solve_lin(rows,0,lv->vector,nrow());
+}
+
+void
+ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
+{
+  ReplSymmSCMatrix* lS =
+    ReplSymmSCMatrix::require_castdown(S,"ReplSCMatrix::schmidt_orthog");
+  
+  // make sure that the dimensions match
+  if (!(this->rowdim() == S->dim())) {
+      fprintf(stderr,"ReplSCMatrix::schmidt_orthog():\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  cmat_schmidt(rows,lS->matrix,nrow(),nc);
 }
 
 void

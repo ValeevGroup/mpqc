@@ -36,6 +36,7 @@ extern "C" {
     void cmat_matrix_pointers(double**ptrs,double*matrix,int nrow, int ncol);
     void cmat_diag(double**symm_a, double*evals, double**evecs, int n,
                    int matz, double tol);
+    void cmat_schmidt(double **rows, double *S, int nrow, int nc);
 
 
 #ifdef __cplusplus

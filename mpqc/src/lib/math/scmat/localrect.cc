@@ -135,7 +135,7 @@ LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-    fprintf(stderr,"LocalSCMatrix::get_subblock: trying to get too big a"
+    fprintf(stderr,"LocalSCMatrix::get_subblock: trying to get too big a "
             "subblock (%d,%d) from (%d,%d)\n",nsrow,nscol,nrow(),ncol());
     abort();
   }
@@ -195,6 +195,134 @@ LocalSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
       rows[i+br][j+bc] += lsb->rows[i][j]; 
+}
+
+SCVector *
+LocalSCMatrix::get_row(int i)
+{
+  if (i >= nrow()) {
+    fprintf(stderr,"LocalSCMatrix::get_row: trying to get invalid row"
+            "%d max %d\n",i,nrow());
+    abort();
+  }
+  
+  SCVector * v = coldim()->create_vector();
+
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                               "LocalSCMatrix::get_row");
+
+  for (int j=0; j < ncol(); j++)
+    lv->set_element(j,rows[i][j]);
+      
+  return v;
+}
+
+void
+LocalSCMatrix::assign_row(SCVector *v, int i)
+{
+  if (i >= nrow()) {
+    fprintf(stderr,"LocalSCMatrix::assign_row: trying to assign invalid row"
+            "%d max %d\n",i,nrow());
+    abort();
+  }
+  
+  if (v->n() != ncol()) {
+    fprintf(stderr,"LocalSCMatrix::assign_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),ncol());
+    abort();
+  }
+  
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                               "LocalSCMatrix::assign_row");
+
+  for (int j=0; j < ncol(); j++)
+    rows[i][j] = lv->get_element(j);
+}
+
+void
+LocalSCMatrix::accumulate_row(SCVector *v, int i)
+{
+  if (i >= nrow()) {
+    fprintf(stderr,"LocalSCMatrix::accumulate_row: trying to assign invalid "
+                   "row %d max %d\n",i,nrow());
+    abort();
+  }
+  
+  if (v->n() != ncol()) {
+    fprintf(stderr,"LocalSCMatrix::accumulate_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),ncol());
+    abort();
+  }
+  
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                            "LocalSCMatrix::accumulate_row");
+
+  for (int j=0; j < ncol(); j++)
+    rows[i][j] += lv->get_element(j);
+}
+
+SCVector *
+LocalSCMatrix::get_column(int i)
+{
+  if (i >= ncol()) {
+    fprintf(stderr,"LocalSCMatrix::get_column: trying to get invalid column"
+            "%d max %d\n",i,ncol());
+    abort();
+  }
+  
+  SCVector * v = rowdim()->create_vector();
+
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                               "LocalSCMatrix::get_column");
+
+  for (int j=0; j < nrow(); j++)
+    lv->set_element(j,rows[j][i]);
+      
+  return v;
+}
+
+void
+LocalSCMatrix::assign_column(SCVector *v, int i)
+{
+  if (i >= ncol()) {
+    fprintf(stderr,"LocalSCMatrix::assign_column: trying to assign invalid "
+            "column %d max %d\n",i,ncol());
+    abort();
+  }
+  
+  if (v->n() != nrow()) {
+    fprintf(stderr,"LocalSCMatrix::assign_column: vector is wrong size"
+            "is %d, should be %d\n",v->n(),nrow());
+    abort();
+  }
+  
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                               "LocalSCMatrix::assign_column");
+
+  for (int j=0; j < nrow(); j++)
+    rows[j][i] = lv->get_element(j);
+}
+
+void
+LocalSCMatrix::accumulate_column(SCVector *v, int i)
+{
+  if (i >= ncol()) {
+    fprintf(stderr,"LocalSCMatrix::accumulate_column: trying to assign invalid"
+            " column %d max %d\n",i,ncol());
+    abort();
+  }
+  
+  if (v->n() != nrow()) {
+    fprintf(stderr,"LocalSCMatrix::accumulate_column: vector is wrong size"
+            "is %d, should be %d\n",v->n(),nrow());
+    abort();
+  }
+  
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                     "LocalSCMatrix::accumulate_column");
+
+  for (int j=0; j < nrow(); j++)
+    rows[j][i] += lv->get_element(j);
 }
 
 void
@@ -417,6 +545,22 @@ LocalSCMatrix::solve_this(SCVector*v)
     }
 
   return cmat_solve_lin(rows,0,lv->block->data,nrow());
+}
+
+void
+LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
+{
+  LocalSymmSCMatrix* lS =
+    LocalSymmSCMatrix::require_castdown(S,"LocalSCMatrix::schmidt_orthog");
+  
+  // make sure that the dimensions match
+  if (!(this->rowdim() == S->dim())) {
+      fprintf(stderr,"LocalSCMatrix::schmidt_orthog():\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  cmat_schmidt(rows,lS->block->data,nrow(),nc);
 }
 
 void

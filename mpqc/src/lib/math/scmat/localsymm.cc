@@ -116,6 +116,206 @@ LocalSymmSCMatrix::set_element(int i,int j,double a)
   block->data[compute_offset(i,j)] = a;
 }
 
+SCMatrix *
+LocalSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
+{
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > n() || nscol > n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::get_subblock: trying to get too big a "
+            "subblock (%d,%d) from (%d,%d)\n",nsrow,nscol,n(),n());
+    abort();
+  }
+  
+  RefLocalSCDimension dnrow = new LocalSCDimension(nsrow);
+  RefLocalSCDimension dncol = new LocalSCDimension(nscol);
+
+  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  sb->assign(0.0);
+
+  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+                                      "LocalSymmSCMatrix::get_subblock");
+
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      lsb->rows[i][j] = get_element(i+br,j+bc);
+      
+  return sb;
+}
+
+SymmSCMatrix *
+LocalSymmSCMatrix::get_subblock(int br, int er)
+{
+  int nsrow = er-br+1;
+
+  if (nsrow > n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::get_subblock: trying to get too big a "
+            "subblock (%d,%d) from (%d,%d)\n",nsrow,nsrow,n(),n());
+    abort();
+  }
+  
+  RefLocalSCDimension dnrow = new LocalSCDimension(nsrow);
+
+  SymmSCMatrix * sb = dnrow->create_symmmatrix();
+  sb->assign(0.0);
+
+  LocalSymmSCMatrix *lsb = LocalSymmSCMatrix::require_castdown(sb,
+                                      "LocalSymmSCMatrix::get_subblock");
+
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j <= i; j++)
+      lsb->rows[i][j] = get_element(i+br,j+br);
+      
+  return sb;
+}
+
+void
+LocalSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+                                      "LocalSCMatrix::assign_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > n() || nscol > n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::assign_subblock: "
+            "trying to assign too big a "
+            "subblock (%d,%d) to (%d,%d)\n",nsrow,nscol,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      set_element(i+br,j+bc,lsb->rows[i][j]);
+}
+
+void
+LocalSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
+{
+  LocalSymmSCMatrix *lsb = LocalSymmSCMatrix::require_castdown(sb,
+                                      "LocalSymmSCMatrix::assign_subblock");
+
+  int nsrow = er-br+1;
+
+  if (nsrow > n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::assign_subblock: "
+            "trying to assign too big a "
+            "subblock (%d,%d) to (%d,%d)\n",nsrow,nsrow,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j <= i; j++)
+      set_element(i+br,j+br,lsb->rows[i][j]);
+}
+
+void
+LocalSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+                                  "LocalSymmSCMatrix::accumulate_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > n() || nscol > n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::accumulate_subblock: trying to "
+            "accumulate too big a subblock (%d,%d) to (%d,%d)\n",
+            nsrow,nscol,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
+}
+
+void
+LocalSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
+{
+  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+                                  "LocalSymmSCMatrix::accumulate_subblock");
+
+  int nsrow = er-br+1;
+
+  if (nsrow > n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::accumulate_subblock: trying to "
+            "accumulate too big a subblock (%d,%d) to (%d,%d)\n",
+            nsrow,nsrow,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j <= i; j++)
+      set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
+}
+
+SCVector *
+LocalSymmSCMatrix::get_row(int i)
+{
+  if (i >= n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::get_row: trying to get invalid row"
+            "%d max %d\n",i,n());
+    abort();
+  }
+  
+  SCVector * v = dim()->create_vector();
+
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                               "LocalSymmSCMatrix::get_row");
+
+  for (int j=0; j < n(); j++)
+    lv->set_element(j,get_element(i,j));
+      
+  return v;
+}
+
+void
+LocalSymmSCMatrix::assign_row(SCVector *v, int i)
+{
+  if (i >= n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::assign_row: trying to assign invalid "
+            "row %d max %d\n",i,n());
+    abort();
+  }
+  
+  if (v->n() != n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::assign_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),n());
+    abort();
+  }
+  
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                          "LocalSymmSCMatrix::assign_row");
+
+  for (int j=0; j < n(); j++)
+    set_element(i,j,lv->get_element(j));
+}
+
+void
+LocalSymmSCMatrix::accumulate_row(SCVector *v, int i)
+{
+  if (i >= n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::accumulate_row: trying to assign "
+                   "invalid row %d max %d\n",i,n());
+    abort();
+  }
+  
+  if (v->n() != n()) {
+    fprintf(stderr,"LocalSymmSCMatrix::accumulate_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),n());
+    abort();
+  }
+  
+  LocalSCVector *lv = LocalSCVector::require_castdown(v,
+                                        "LocalSymmSCMatrix::accumulate_row");
+
+  for (int j=0; j < n(); j++)
+    set_element(i,j,get_element(i,j)+lv->get_element(j));
+}
+
 void
 LocalSymmSCMatrix::accumulate(SymmSCMatrix*a)
 {

@@ -124,6 +124,206 @@ ReplSymmSCMatrix::set_element(int i,int j,double a)
   matrix[compute_offset(i,j)] = a;
 }
 
+SCMatrix *
+ReplSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
+{
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > n() || nscol > n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::get_subblock: trying to get too big a "
+            "subblock (%d,%d) from (%d,%d)\n",nsrow,nscol,n(),n());
+    abort();
+  }
+  
+  RefReplSCDimension dnrow = new ReplSCDimension(nsrow,messagegrp());
+  RefReplSCDimension dncol = new ReplSCDimension(nscol,messagegrp());
+
+  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  sb->assign(0.0);
+
+  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+                                      "ReplSymmSCMatrix::get_subblock");
+
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      lsb->rows[i][j] = get_element(i+br,j+bc);
+      
+  return sb;
+}
+
+SymmSCMatrix *
+ReplSymmSCMatrix::get_subblock(int br, int er)
+{
+  int nsrow = er-br+1;
+
+  if (nsrow > n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::get_subblock: trying to get too big a "
+            "subblock (%d,%d) from (%d,%d)\n",nsrow,nsrow,n(),n());
+    abort();
+  }
+  
+  RefReplSCDimension dnrow = new ReplSCDimension(nsrow,messagegrp());
+
+  SymmSCMatrix * sb = dnrow->create_symmmatrix();
+  sb->assign(0.0);
+
+  ReplSymmSCMatrix *lsb = ReplSymmSCMatrix::require_castdown(sb,
+                                      "ReplSymmSCMatrix::get_subblock");
+
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j <= i; j++)
+      lsb->rows[i][j] = get_element(i+br,j+br);
+      
+  return sb;
+}
+
+void
+ReplSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+                                      "ReplSCMatrix::assign_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > n() || nscol > n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::assign_subblock: "
+            "trying to assign too big a "
+            "subblock (%d,%d) to (%d,%d)\n",nsrow,nscol,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      set_element(i+br,j+bc,lsb->rows[i][j]);
+}
+
+void
+ReplSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
+{
+  ReplSymmSCMatrix *lsb = ReplSymmSCMatrix::require_castdown(sb,
+                                      "ReplSymmSCMatrix::assign_subblock");
+
+  int nsrow = er-br+1;
+
+  if (nsrow > n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::assign_subblock: "
+            "trying to assign too big a "
+            "subblock (%d,%d) to (%d,%d)\n",nsrow,nsrow,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j <= i; j++)
+      set_element(i+br,j+br,lsb->rows[i][j]);
+}
+
+void
+ReplSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+                                  "ReplSymmSCMatrix::accumulate_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > n() || nscol > n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::accumulate_subblock: trying to "
+            "accumulate too big a subblock (%d,%d) to (%d,%d)\n",
+            nsrow,nscol,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
+}
+
+void
+ReplSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
+{
+  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+                                  "ReplSymmSCMatrix::accumulate_subblock");
+
+  int nsrow = er-br+1;
+
+  if (nsrow > n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::accumulate_subblock: trying to "
+            "accumulate too big a subblock (%d,%d) to (%d,%d)\n",
+            nsrow,nsrow,n(),n());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j <= i; j++)
+      set_element(i+br,j+br,get_element(i+br,j+br)+lsb->rows[i][j]);
+}
+
+SCVector *
+ReplSymmSCMatrix::get_row(int i)
+{
+  if (i >= n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::get_row: trying to get invalid row"
+            "%d max %d\n",i,n());
+    abort();
+  }
+  
+  SCVector * v = dim()->create_vector();
+
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                               "ReplSymmSCMatrix::get_row");
+
+  for (int j=0; j < n(); j++)
+    lv->set_element(j,get_element(i,j));
+      
+  return v;
+}
+
+void
+ReplSymmSCMatrix::assign_row(SCVector *v, int i)
+{
+  if (i >= n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::assign_row: trying to assign invalid "
+            "row %d max %d\n",i,n());
+    abort();
+  }
+  
+  if (v->n() != n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::assign_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),n());
+    abort();
+  }
+  
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                          "ReplSymmSCMatrix::assign_row");
+
+  for (int j=0; j < n(); j++)
+    set_element(i,j,lv->get_element(j));
+}
+
+void
+ReplSymmSCMatrix::accumulate_row(SCVector *v, int i)
+{
+  if (i >= n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::accumulate_row: trying to assign "
+                   "invalid row %d max %d\n",i,n());
+    abort();
+  }
+  
+  if (v->n() != n()) {
+    fprintf(stderr,"ReplSymmSCMatrix::accumulate_row: vector is wrong size"
+            "is %d, should be %d\n",v->n(),n());
+    abort();
+  }
+  
+  ReplSCVector *lv = ReplSCVector::require_castdown(v,
+                                        "ReplSymmSCMatrix::accumulate_row");
+
+  for (int j=0; j < n(); j++)
+    set_element(i,j,get_element(i,j)+lv->get_element(j));
+}
+
 void
 ReplSymmSCMatrix::assign(double val)
 {

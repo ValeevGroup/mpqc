@@ -304,6 +304,56 @@ RefSCMatrix::accumulate_subblock(const RefSCMatrix& sb,
   pointer()->accumulate_subblock(sb.pointer(),br,er,bc,ec);
 }
 
+RefSCVector
+RefSCMatrix::get_row(int i)
+{
+  require_nonnull();
+  
+  RefSCVector ret = pointer()->get_row(i);
+  return ret;
+}
+
+RefSCVector
+RefSCMatrix::get_column(int i)
+{
+  require_nonnull();
+  
+  RefSCVector ret = pointer()->get_column(i);
+  return ret;
+}
+
+void
+RefSCMatrix::assign_row(const RefSCVector& v, int i)
+{
+  require_nonnull();
+  v.require_nonnull();
+  pointer()->assign_row(v.pointer(),i);
+}
+
+void
+RefSCMatrix::assign_column(const RefSCVector& v, int i)
+{
+  require_nonnull();
+  v.require_nonnull();
+  pointer()->assign_row(v.pointer(),i);
+}
+
+void
+RefSCMatrix::accumulate_row(const RefSCVector& v, int i)
+{
+  require_nonnull();
+  v.require_nonnull();
+  pointer()->accumulate_row(v.pointer(),i);
+}
+
+void
+RefSCMatrix::accumulate_column(const RefSCVector& v, int i)
+{
+  require_nonnull();
+  v.require_nonnull();
+  pointer()->accumulate_row(v.pointer(),i);
+}
+
 void
 RefSCMatrix::accumulate_product(const RefSCMatrix&a,const RefSCMatrix&b) const
 {
@@ -527,6 +577,83 @@ RefSymmSCMatrix::get_element(int i, int j) const
 {
   require_nonnull();
   return pointer()->get_element(i,j);
+}
+
+RefSCMatrix
+RefSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
+{
+  require_nonnull();
+  
+  RefSCMatrix ret = pointer()->get_subblock(br,er,bc,ec);
+  return ret;
+}
+
+RefSymmSCMatrix
+RefSymmSCMatrix::get_subblock(int br, int er)
+{
+  require_nonnull();
+  
+  RefSymmSCMatrix ret = pointer()->get_subblock(br,er);
+  return ret;
+}
+
+void
+RefSymmSCMatrix::assign_subblock(const RefSCMatrix& sb,
+                                 int br, int er, int bc, int ec)
+{
+  require_nonnull();
+  sb.require_nonnull();
+  pointer()->assign_subblock(sb.pointer(),br,er,bc,ec);
+}
+
+void
+RefSymmSCMatrix::assign_subblock(const RefSymmSCMatrix& sb, int br, int er)
+{
+  require_nonnull();
+  sb.require_nonnull();
+  pointer()->assign_subblock(sb.pointer(),br,er);
+}
+
+void
+RefSymmSCMatrix::accumulate_subblock(const RefSCMatrix& sb,
+                                     int br, int er, int bc, int ec)
+{
+  require_nonnull();
+  sb.require_nonnull();
+  pointer()->accumulate_subblock(sb.pointer(),br,er,bc,ec);
+}
+
+void
+RefSymmSCMatrix::accumulate_subblock(const RefSymmSCMatrix& sb, int br, int er)
+{
+  require_nonnull();
+  sb.require_nonnull();
+  pointer()->accumulate_subblock(sb.pointer(),br,er);
+}
+
+RefSCVector
+RefSymmSCMatrix::get_row(int i)
+{
+  require_nonnull();
+  
+  RefSCVector ret = pointer()->get_row(i);
+  return ret;
+}
+
+void
+RefSymmSCMatrix::assign_row(const RefSCVector& v, int i)
+{
+  require_nonnull();
+  v.require_nonnull();
+  pointer()->assign_row(v.pointer(),i);
+}
+
+void
+RefSymmSCMatrix::accumulate_row(const RefSCVector& v, int i)
+{
+  require_nonnull();
+  v.require_nonnull();
+  pointer()->accumulate_row(v.pointer(),i);
 }
 
 void

@@ -180,6 +180,18 @@ class SCMatrix: public SavableState {
     //texi Sum @code{m} into a subblock of @code{this}.
     virtual void accumulate_subblock(SCMatrix *m, int, int, int, int) =0;
     
+    //texi Return a row or column of @code{this}.
+    virtual SCVector * get_row(int i) =0;
+    virtual SCVector * get_column(int i) =0;
+
+    //texi Assign @code{v} to a row or column of @code{this}.
+    virtual void assign_row(SCVector *v, int i) =0;
+    virtual void assign_column(SCVector *v, int i) =0;
+    
+    //texi Sum @code{v} to a row or column of @code{this}.
+    virtual void accumulate_row(SCVector *v, int i) =0;
+    virtual void accumulate_column(SCVector *v, int i) =0;
+    
     //texi Sum @var{m} into this.
     virtual void accumulate(SCMatrix* m) = 0;
     //texi Sum into @code{this} the products of various vectors or matrices.
@@ -200,6 +212,11 @@ class SCMatrix: public SavableState {
 
     virtual double solve_this(SCVector*) = 0;
     virtual void gen_invert_this() = 0;
+
+    //texi Schmidt orthogonalize @code{this}.  @code{S} is the overlap matrix.
+    // @code{n} is the number of columns to orthogonalize.
+    virtual void schmidt_orthog(SymmSCMatrix*, int n) =0;
+    
     //texi Perform the element operation @var{op} on each element of this.
     virtual void element_op(const RefSCElementOp&) = 0;
     virtual void element_op(const RefSCElementOp2&,
@@ -256,6 +273,30 @@ class SymmSCMatrix: public SavableState {
     //texi Return or modify an element.
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
+
+    //texi Return a subblock of @code{this}.  The subblock is defined as
+    // the rows starting at @code{br} and ending at @code{er}, and the
+    // columns beginning at @code{bc} and ending at @code{ec}.
+    virtual SCMatrix * get_subblock(int br, int er, int bc, int ec) =0;
+    virtual SymmSCMatrix * get_subblock(int br, int er) =0;
+
+    //texi Assign @code{m} to a subblock of @code{this}.
+    virtual void assign_subblock(SCMatrix *m, int, int, int, int) =0;
+    virtual void assign_subblock(SymmSCMatrix *m, int, int) =0;
+
+    //texi Sum @code{m} into a subblock of @code{this}.
+    virtual void accumulate_subblock(SCMatrix *m, int, int, int, int) =0;
+    virtual void accumulate_subblock(SymmSCMatrix *m, int, int) =0;
+
+    //texi Return a row of @code{this}.
+    virtual SCVector * get_row(int i) =0;
+
+    //texi Assign @code{v} to a row of @code{this}.
+    virtual void assign_row(SCVector *v, int i) =0;
+    
+    //texi Sum @code{v} to a row of @code{this}.
+    virtual void accumulate_row(SCVector *v, int i) =0;
+
     //texi Diagonalize @code{this}, placing the eigenvalues in @var{d}
     // and the eigenvectors in @var{m}.
     virtual void diagonalize(DiagSCMatrix*d,SCMatrix*m) = 0;
@@ -279,6 +320,7 @@ class SymmSCMatrix: public SavableState {
 
     virtual double solve_this(SCVector*) = 0;
     virtual void gen_invert_this() = 0;
+
     //texi Perform the element operation @var{op} on each element of this.
     virtual void element_op(const RefSCElementOp&) = 0;
     virtual void element_op(const RefSCElementOp2&,

@@ -132,6 +132,13 @@ class ReplSCMatrix: public SCMatrix {
     SCMatrix * get_subblock(int,int,int,int);
     void assign_subblock(SCMatrix*, int,int,int,int);
     void accumulate_subblock(SCMatrix*, int,int,int,int);
+    SCVector * get_row(int i);
+    SCVector * get_column(int i);
+    void assign_row(SCVector *v, int i);
+    void assign_column(SCVector *v, int i);
+    void accumulate_row(SCVector *v, int i);
+    void accumulate_column(SCVector *v, int i);
+
     void accumulate_outer_product(SCVector*,SCVector*);
     void accumulate_product(SCMatrix*,SCMatrix*);
     void accumulate_product(SCMatrix*,SymmSCMatrix*);
@@ -143,6 +150,7 @@ class ReplSCMatrix: public SCMatrix {
     double determ_this();
     double trace();
     void gen_invert_this();
+    void schmidt_orthog(SymmSCMatrix*,int);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SCMatrix*);
@@ -181,6 +189,17 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     RefSCDimension dim();
     double get_element(int,int);
     void set_element(int,int,double);
+
+    SCMatrix * get_subblock(int,int,int,int);
+    SymmSCMatrix * get_subblock(int,int);
+    void assign_subblock(SCMatrix*, int,int,int,int);
+    void assign_subblock(SymmSCMatrix*, int,int);
+    void accumulate_subblock(SCMatrix*, int,int,int,int);
+    void accumulate_subblock(SymmSCMatrix*, int,int);
+    SCVector * get_row(int i);
+    void assign_row(SCVector *v, int i);
+    void accumulate_row(SCVector *v, int i);
+
     void accumulate_product(SCMatrix*,SCMatrix*);
     void accumulate(SymmSCMatrix*);
     double invert_this();

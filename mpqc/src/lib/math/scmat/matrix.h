@@ -194,9 +194,17 @@ class RefSCMatrix: public RefSSSCMatrix {
     // after checking for references to @code{0}.
     RefSCMatrix clone() const;
     RefSCMatrix copy() const;
+
     RefSCMatrix get_subblock(int br, int er, int bc, int ec);
     void assign_subblock(const RefSCMatrix&, int br, int er, int bc, int ec);
     void accumulate_subblock(const RefSCMatrix&, int, int, int, int);
+    RefSCVector get_row(int);
+    RefSCVector get_column(int);
+    void assign_row(const RefSCVector&, int);
+    void assign_column(const RefSCVector&, int);
+    void accumulate_row(const RefSCVector&, int);
+    void accumulate_column(const RefSCVector&, int);
+
     void accumulate_outer_product(const RefSCVector&,const RefSCVector&) const;
     void accumulate_product(const RefSCMatrix&,const RefSCMatrix&) const;
     void assign(const RefSCMatrix&) const;
@@ -281,6 +289,17 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     RefSymmSCMatrix copy() const;
     void set_element(int,int,double) const;
     double get_element(int,int) const;
+
+    RefSCMatrix get_subblock(int br, int er, int bc, int ec);
+    RefSymmSCMatrix get_subblock(int br, int er);
+    void assign_subblock(const RefSCMatrix&, int br, int er, int bc, int ec);
+    void assign_subblock(const RefSymmSCMatrix&, int br, int er);
+    void accumulate_subblock(const RefSCMatrix&, int, int, int, int);
+    void accumulate_subblock(const RefSymmSCMatrix&, int, int);
+    RefSCVector get_row(int);
+    void assign_row(const RefSCVector&, int);
+    void accumulate_row(const RefSCVector&, int);
+
     void accumulate_symmetric_outer_product(const RefSCVector&) const;
     double scalar_product(const RefSCVector&) const;
     void accumulate_symmetric_product(const RefSCMatrix&) const;

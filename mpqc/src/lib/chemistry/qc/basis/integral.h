@@ -217,7 +217,8 @@ class Integral : public SavableState {
 
     /** Return a TwoBodyInt that computes two-electron integrals specific to linear R12 methods.
         According to the convention in the literature, "g" stands for electron repulsion integral,
-	"r" for the integral of r12 operator, and "t" for the commutator integrals */
+	"r" for the integral of r12 operator, and "t" for the commutator integrals. Implementation
+        for this kind of TwoBodyInt is optional. */
     virtual Ref<TwoBodyInt> grt();
     
     /// Return the MessageGrp used by the integrals objects.

@@ -18,8 +18,9 @@ void do_displacement(RefMolecularCoor&mc,int i);
 main()
 {
   RefKeyVal kv(new ParsedKeyVal(SRCDIR "/moltest.in"));
+  RefKeyVal pkv(new PrefixKeyVal("molecule",kv));
 
-  RefMolecule mol = new Molecule(PrefixKeyVal("molecule",*kv.pointer()));
+  RefMolecule mol = new Molecule(pkv);
 
   mol_cleanup_molecule(*mol);
   printf("Clean Molecule:\n");
@@ -40,13 +41,15 @@ main()
 exit(0);
 
   printf("getting simp:\n");
-  SetIntCoor simp(PrefixKeyVal("simp",*kv.pointer()));
+  RefKeyVal ppkv = new PrefixKeyVal("simp",kv);
+  SetIntCoor simp(ppkv);
   simp.update_values(mol);
   printf("simp:\n");
   simp.print(mol);
 
   // compare the analytic bmatrix to the finite displacement bmatrix
-  SetIntCoor bmat_test(PrefixKeyVal("bmat_test",*kv.pointer()));
+  RefKeyVal pppkv = new PrefixKeyVal("bmat_test",kv);
+  SetIntCoor bmat_test(pppkv);
   RefSCDimension dnc(new LocalSCDimension(bmat_test.n()));
   RefSCDimension dn3(new LocalSCDimension(mol->natom()*3));
   RefSCMatrix bmatrix(dnc,dn3);

@@ -3,6 +3,10 @@
 #pragma implementation
 #endif
 
+#include <math/scmat/local.h>
+#include <math/scmat/repl.h>
+#include <math/scmat/dist.h>
+
 #include <chemistry/qc/scf/scf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -28,6 +32,17 @@ SCF::SCF(StateIn& s) :
   s.get(dens_reset_freq_);
 
   integral()->set_storage(int_store_);
+
+  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
+    scf_grp_ = MessageGrp::get_default_messagegrp();
+  } else if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
+    scf_grp_ = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+  } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
+    scf_grp_ = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+  } else {
+    fprintf(stderr,"SCF::SCF: cannot figure out which message group to use\n");
+    abort();
+  }
 }
 
 SCF::SCF(const RefKeyVal& keyval) :
@@ -46,6 +61,17 @@ SCF::SCF(const RefKeyVal& keyval) :
     int_store_ = keyval->intvalue("integral_storage");
 
   integral()->set_storage(int_store_);
+
+  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
+    scf_grp_ = MessageGrp::get_default_messagegrp();
+  } else if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
+    scf_grp_ = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+  } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
+    scf_grp_ = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+  } else {
+    fprintf(stderr,"SCF::SCF: cannot figure out which message group to use\n");
+    abort();
+  }
 }
 
 SCF::~SCF()

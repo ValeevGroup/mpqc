@@ -26,7 +26,7 @@ mole<HSOSSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
-  maxiter=10
+  %maxiter=10
 
   extrap<DIIS>: (
     start = 5
@@ -38,9 +38,9 @@ mole<HSOSSCF>: (
 molecule = $:ch2
 
 coor = $:symcoor
-message = $:message1
+message = $:messageShm
 
-opt<QNewtonOpt>: (
+xopt<QNewtonOpt>: (
   convergence = 1.0e-6
   max_iterations = 19
   function = $:mole
@@ -61,9 +61,9 @@ gbasis<GaussianBasisSet>: (
   name = "STO-3G"
   %name = "aug-cc-pVTZ"
   %puream=yes
-  %matrixkit<ReplSCMatrixKit>: (
-  %  messagegrp = $:message
-  %)
+  matrixkit<ReplSCMatrixKit>: (
+    messagegrp = $:message
+  )
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,7 +77,7 @@ xdebug<Debugger>: (
 message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (
-  n = 1
+  n = 2
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

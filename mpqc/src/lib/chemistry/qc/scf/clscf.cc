@@ -456,10 +456,9 @@ CLSCF::ao_fock()
     double *pmat_data = pblock->data;
     char * pmax = init_pmax(pmat_data);
   
-    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
     LocalCLContribution lclc(gmat_data, pmat_data);
     LocalGBuild<LocalCLContribution>
-      gb(lclc, tbi_, integral(), basis(), grp, pmax);
+      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
     gb.build_gmat(desired_value_accuracy()/100.0);
 
     delete[] pmax;
@@ -474,16 +473,6 @@ CLSCF::ao_fock()
 
     gtmp->assign(0.0);
     ptmp->convert(cl_dens_diff_);
-    
-    RefMessageGrp grp;
-    if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else {
-      fprintf(stderr,"don't know the matrix kit\n");
-      abort();
-    }
     
     // create block iterators for the G and P matrices
     RefSCMatrixSubblockIter giter =
@@ -502,10 +491,10 @@ CLSCF::ao_fock()
   
     LocalCLContribution lclc(gmat_data, pmat_data);
     LocalGBuild<LocalCLContribution>
-      gb(lclc, tbi_, integral(), basis(), grp, pmax);
+      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
     gb.build_gmat(desired_value_accuracy()/100.0);
 
-    grp->sum(gmat_data, i_offset(basis()->nbasis()));
+    scf_grp_->sum(gmat_data, i_offset(basis()->nbasis()));
     cl_gmat_->convert_accumulate(gtmp);
     
     delete[] pmax;
@@ -669,7 +658,7 @@ CLSCF::gradient_density()
 }
 
 void
-CLSCF::two_body_deriv(const RefSCVector& tbgrad)
+CLSCF::two_body_deriv(double * tbgrad)
 {
   RefSCElementMaxAbs m = new SCElementMaxAbs();
   cl_dens_.element_op(m);
@@ -684,10 +673,9 @@ CLSCF::two_body_deriv(const RefSCVector& tbgrad)
     SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
 
     double *pmat_data = pblock->data;
-  
-    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
-    LocalCLGradContribution lclc(pmat_data);
-    LocalTBGrad<LocalCLGradContribution> tb(lclc, integral(), basis(), grp);
+
+    LocalCLGradContribution l(pmat_data);
+    LocalTBGrad<LocalCLGradContribution> tb(l, integral(), basis(), scf_grp_);
     tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
   }
 
@@ -699,15 +687,7 @@ CLSCF::two_body_deriv(const RefSCVector& tbgrad)
 
     ptmp->convert(cl_dens_);
     
-    RefMessageGrp grp;
-    if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else {
-      fprintf(stderr,"don't know the matrix kit\n");
-      abort();
-    }
+    RefMessageGrp grp = scf_grp_;
     
     // create block iterators for the G and P matrices
     RefSCMatrixSubblockIter piter =
@@ -717,9 +697,15 @@ CLSCF::two_body_deriv(const RefSCVector& tbgrad)
 
     double *pmat_data = pblock->data;
   
-    LocalCLGradContribution lclc(pmat_data);
-    LocalTBGrad<LocalCLGradContribution> tb(lclc, integral(), basis(), grp);
+    LocalCLGradContribution l(pmat_data);
+    LocalTBGrad<LocalCLGradContribution> tb(l, integral(), basis(), scf_grp_);
     tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+  }
+
+  // for now quit
+  else {
+    fprintf(stderr,"can't do gradient yet\n");
+    abort();
   }
 }
 

@@ -15,7 +15,7 @@ class TBGrad {
     TBGrad(T&t) : contribution(t) {}
     virtual ~TBGrad() {}
 
-    virtual void build_tbgrad(const RefSCVector&, double, double accuracy) =0;
+    virtual void build_tbgrad(double *, double, double) =0;
 
     inline void set_scale(double& coulombscale, double& exchangescale,
                           int i, int j, int k, int l) const

@@ -902,7 +902,7 @@ HSOSSCF::gradient_density()
 }
 
 void
-HSOSSCF::two_body_deriv(const RefSCVector& tbgrad)
+HSOSSCF::two_body_deriv(double * tbgrad)
 {
   RefSCElementMaxAbs m = new SCElementMaxAbs();
   cl_dens_.element_op(m);

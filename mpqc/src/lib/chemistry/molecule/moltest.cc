@@ -46,6 +46,8 @@
 #include <util/render/oogl.h>
 #include <util/misc/formio.h>
 #include <chemistry/molecule/formula.h>
+#include <chemistry/molecule/molfreq.h>
+#include <util/group/mstate.h>
 
 using namespace std;
 using namespace sc;

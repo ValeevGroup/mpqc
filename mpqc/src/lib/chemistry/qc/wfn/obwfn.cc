@@ -8,7 +8,8 @@
 void *
 OneBodyWavefunction::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Wavefunction::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Wavefunction::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -42,7 +43,7 @@ double OneBodyWavefunction::density(cart_point&c)
   return Wavefunction::density(c);
 }
 
-const RefSymmSCMatrix
+RefSymmSCMatrix
 OneBodyWavefunction::density()
 {
 

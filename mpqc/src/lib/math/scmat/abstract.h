@@ -7,6 +7,7 @@
 #endif
 
 #include <util/state/state.h>
+#include <math/scmat/block.h>
 #include <iostream.h>
 
 class SCMatrix;
@@ -68,6 +69,10 @@ class SCVector: public SavableState {
     SCVector();
     SCVector(StateIn&);
 
+    //texi Save and restore this in an implementation independent way.
+    virtual void save(StateOut&);
+    virtual void restore(StateIn&);
+
     // concrete functions (some can be overridden)
     //texi Return a vector with the same dimension and same elements.
     virtual SCVector* copy();
@@ -120,6 +125,12 @@ class SCVector: public SavableState {
     //texi Print out the vector.
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+
+    //texi Returns iterators for the local (rapidly accessible)
+    // blocks used in this vector.
+    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    //texi Returns iterators for the all blocks used in this vector.
+    virtual RefSCMatrixSubblockIter all_blocks() = 0;
 };
 
 //texi The @code{SCMatrix} class is the abstract base class for general
@@ -137,6 +148,10 @@ class SCMatrix: public SavableState {
     SCMatrix(StateIn&);
     virtual ~SCMatrix();
     void save_data_state(StateOut&);
+
+    //texi Save and restore this in an implementation independent way.
+    virtual void save(StateOut&);
+    virtual void restore(StateIn&);
 
     //texi Return the number of rows or columns.
     virtual int nrow();
@@ -241,6 +256,12 @@ class SCMatrix: public SavableState {
     //texi Print out the matrix.
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+
+    //texi Returns iterators for the local (rapidly accessible)
+    // blocks used in this matrix.
+    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    //texi Returns iterators for the all blocks used in this matrix.
+    virtual RefSCMatrixSubblockIter all_blocks() = 0;
 };
 
 //texi The @code{SymmSCMatrix} class is the abstract base class for symmetric
@@ -253,6 +274,10 @@ class SymmSCMatrix: public SavableState {
     SymmSCMatrix();
     SymmSCMatrix(StateIn&);
     void save_data_state(StateOut&);
+
+    //texi Save and restore this in an implementation independent way.
+    virtual void save(StateOut&);
+    virtual void restore(StateIn&);
     //texi Return the maximum absolute value element of this vector.
     virtual double maxabs();
     //texi Assign each element to a random number between -1 and 1
@@ -350,6 +375,12 @@ class SymmSCMatrix: public SavableState {
     //texi Print out the matrix.
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+
+    //texi Returns iterators for the local (rapidly accessible)
+    // blocks used in this matrix.
+    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    //texi Returns iterators for the all blocks used in this matrix.
+    virtual RefSCMatrixSubblockIter all_blocks() = 0;
 };
 
 //texi The @code{SymmSCMatrix} class is the abstract base class for diagonal
@@ -362,6 +393,10 @@ class DiagSCMatrix: public SavableState {
     DiagSCMatrix();
     DiagSCMatrix(StateIn&);
     void save_data_state(StateOut&);
+
+    //texi Save and restore this in an implementation independent way.
+    virtual void save(StateOut&);
+    virtual void restore(StateIn&);
 
     //texi Return the maximum absolute value element of this vector.
     virtual double maxabs();
@@ -413,6 +448,12 @@ class DiagSCMatrix: public SavableState {
     //texi Print out the matrix.
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+
+    //texi Returns iterators for the local (rapidly accessible)
+    // blocks used in this matrix.
+    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    //texi Returns iterators for the all blocks used in this matrix.
+    virtual RefSCMatrixSubblockIter all_blocks() = 0;
 };
 
 //texi The @code{SCMatrixKit} class produces specialized matrices and
@@ -444,15 +485,15 @@ class SCMatrixKit: public SavableState {
 
     //texi Given the dimensions and a @code{StateIn} object,
     // restore matrices or vectors.
-    virtual SCMatrix* restore_matrix(StateIn&,
-                                     const RefSCDimension&,
-                                     const RefSCDimension&) = 0;
-    virtual SymmSCMatrix* restore_symmmatrix(StateIn&,
-                                             const RefSCDimension&) = 0;
-    virtual DiagSCMatrix* restore_diagmatrix(StateIn&,
-                                             const RefSCDimension&) = 0;
-    virtual SCVector* restore_vector(StateIn&,
-                                     const RefSCDimension&) = 0;
+    SCMatrix* restore_matrix(StateIn&,
+                             const RefSCDimension&,
+                             const RefSCDimension&);
+    SymmSCMatrix* restore_symmmatrix(StateIn&,
+                                     const RefSCDimension&);
+    DiagSCMatrix* restore_diagmatrix(StateIn&,             
+                                     const RefSCDimension&);
+    SCVector* restore_vector(StateIn&,
+                             const RefSCDimension&);
 };
 
 #endif

@@ -227,3 +227,17 @@ LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
 
   os.flush();
 }
+
+RefSCMatrixSubblockIter
+LocalDiagSCMatrix::local_blocks()
+{
+  RefSCMatrixSubblockIter iter
+      = new SCMatrixSimpleSubblockIter(block.pointer());
+  return iter;
+}
+
+RefSCMatrixSubblockIter
+LocalDiagSCMatrix::all_blocks()
+{
+  return local_blocks();
+}

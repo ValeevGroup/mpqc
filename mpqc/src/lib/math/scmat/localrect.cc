@@ -726,3 +726,17 @@ LocalSCMatrix::print(const char *title, ostream& os, int prec)
     ii=kk;
     }
 }
+
+RefSCMatrixSubblockIter
+LocalSCMatrix::local_blocks()
+{
+  RefSCMatrixSubblockIter iter
+      = new SCMatrixSimpleSubblockIter(block.pointer());
+  return iter;
+}
+
+RefSCMatrixSubblockIter
+LocalSCMatrix::all_blocks()
+{
+  return local_blocks();
+}

@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <iostream.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
@@ -760,4 +761,244 @@ SCVectorSimpleSubBlock::process(SCElementOp3*op,
   SCVectorSimpleSubBlockIter j((SCVectorSimpleSubBlock*)b1);
   SCVectorSimpleSubBlockIter k((SCVectorSimpleSubBlock*)b2);
   op->process(i,j,k);
+}
+
+///////////////////////////////////////////////////////////////////////
+// SCMatrixSimpleSubblockIter
+
+SCMatrixSimpleSubblockIter::SCMatrixSimpleSubblockIter(
+    const RefSCMatrixBlock &b)
+{
+  block_ = b;
+}
+
+void
+SCMatrixSimpleSubblockIter::begin()
+{
+  if (block_.nonnull()) ready_ = 1;
+  else ready_ = 0;
+}
+
+int
+SCMatrixSimpleSubblockIter::ready()
+{
+  return ready_;
+}
+
+void
+SCMatrixSimpleSubblockIter::next()
+{
+  ready_ = 0;
+}
+
+SCMatrixBlock *
+SCMatrixSimpleSubblockIter::block()
+{
+  return block_.pointer();
+}
+
+///////////////////////////////////////////////////////////////////////
+// SCMatrixListSubblockIter
+
+SCMatrixListSubblockIter::SCMatrixListSubblockIter(
+    const RefSCMatrixBlockList &list
+    ):
+  list_(list)
+{
+}
+
+void
+SCMatrixListSubblockIter::begin()
+{
+  iter_ = list_->begin();
+}
+
+int
+SCMatrixListSubblockIter::ready()
+{
+  iter_ != list_->end();
+}
+
+void
+SCMatrixListSubblockIter::next()
+{
+  iter_++;
+}
+
+SCMatrixBlock *
+SCMatrixListSubblockIter::block()
+{
+  return iter_.block();
+}
+
+///////////////////////////////////////////////////////////////////////
+// SCMatrixNullSubblockIter
+
+void
+SCMatrixNullSubblockIter::begin()
+{
+}
+
+int
+SCMatrixNullSubblockIter::ready()
+{
+  return 0;
+}
+
+void
+SCMatrixNullSubblockIter::next()
+{
+}
+
+SCMatrixBlock *
+SCMatrixNullSubblockIter::block()
+{
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+// SCMatrixCompositeSubblockIter
+
+SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
+    RefSCMatrixSubblockIter& i1,
+    RefSCMatrixSubblockIter& i2)
+{
+  niters_ = 0;
+  if (i1.nonnull()) { niters_++; }
+  if (i2.nonnull()) { niters_++; }
+  iters_ = new RefSCMatrixSubblockIter[niters_];
+  iiter_ = 0;
+  if (i1.nonnull()) { iters_[iiter_] = i1; iiter_++; }
+  if (i2.nonnull()) { iters_[iiter_] = i2; iiter_++; }
+}
+
+SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
+    int niters)
+{
+  niters_ = niters;
+  iters_ = new RefSCMatrixSubblockIter[niters_];
+}
+
+SCMatrixCompositeSubblockIter::~SCMatrixCompositeSubblockIter()
+{
+  delete[] iters_;
+}
+
+void
+SCMatrixCompositeSubblockIter::set_iter(int i,
+                                        const RefSCMatrixSubblockIter& iter)
+{
+  iters_[i] = iter;
+}
+
+void
+SCMatrixCompositeSubblockIter::begin()
+{
+  if (niters_ == 0) return;
+  iiter_ = 0;
+  iters_[iiter_]->begin();
+  while (!iters_[iiter_]->ready()) {
+      if (iiter_ < niters_-1) {
+          iiter_++;
+          iters_[iiter_]->begin();
+        }
+      else break;
+    }
+}
+
+int
+SCMatrixCompositeSubblockIter::ready()
+{
+  return iters_[iiter_]->ready();
+}
+
+void
+SCMatrixCompositeSubblockIter::next()
+{
+  iters_[iiter_]->next();
+  while (!iters_[iiter_]->ready()) {
+      if (iiter_ < niters_-1) {
+          iiter_++;
+          iters_[iiter_]->begin();
+        }
+      else break;
+    }
+}
+
+SCMatrixBlock *
+SCMatrixCompositeSubblockIter::block()
+{
+  return iters_[iiter_]->block();
+}
+
+///////////////////////////////////////////////////////////////////////
+// SCMatrixJointSubblockIter
+
+SCMatrixJointSubblockIter::SCMatrixJointSubblockIter(
+    RefSCMatrixSubblockIter& i1,
+    RefSCMatrixSubblockIter& i2,
+    RefSCMatrixSubblockIter& i3,
+    RefSCMatrixSubblockIter& i4,
+    RefSCMatrixSubblockIter& i5)
+{
+  niters_ = 0;
+  if (i1.nonnull()) { niters_++; }
+  if (i2.nonnull()) { niters_++; }
+  if (i3.nonnull()) { niters_++; }
+  if (i4.nonnull()) { niters_++; }
+  if (i5.nonnull()) { niters_++; }
+  iters_ = new RefSCMatrixSubblockIter[niters_];
+  int i = 0;
+  if (i1.nonnull()) { iters_[i] = i1; i++; }
+  if (i2.nonnull()) { iters_[i] = i2; i++; }
+  if (i3.nonnull()) { iters_[i] = i3; i++; }
+  if (i4.nonnull()) { iters_[i] = i4; i++; }
+  if (i5.nonnull()) { iters_[i] = i5; i++; }
+}
+
+SCMatrixJointSubblockIter::~SCMatrixJointSubblockIter()
+{
+  delete[] iters_;
+}
+
+void
+SCMatrixJointSubblockIter::begin()
+{
+  for (int i=0; i<niters_; i++) {
+      iters_[i]->begin();
+    }
+}
+
+int
+SCMatrixJointSubblockIter::ready()
+{
+  int nready = 0;
+  for (int i=0; i<niters_; i++) {
+      nready += (iters_[i]->ready()?1:0);
+    }
+  if (nready == niters_) return 1;
+  else {
+      cerr << "SCMatrixJointSubblockIter: incompatible iterators" << endl;
+      abort();
+    }
+}
+
+void
+SCMatrixJointSubblockIter::next()
+{
+  for (int i=0; i<niters_; i++) {
+      iters_[i]->next();
+    }
+}
+
+SCMatrixBlock *
+SCMatrixJointSubblockIter::block()
+{
+  return block(0);
+}
+
+SCMatrixBlock *
+SCMatrixJointSubblockIter::block(int b)
+{
+  return iters_[b]->block();
 }

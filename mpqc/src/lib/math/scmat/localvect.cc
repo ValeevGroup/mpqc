@@ -307,3 +307,17 @@ LocalSCVector::print(const char *title, ostream& os, int prec)
 
   os.flush();
 }
+
+RefSCMatrixSubblockIter
+LocalSCVector::local_blocks()
+{
+  RefSCMatrixSubblockIter iter
+      = new SCMatrixSimpleSubblockIter(block.pointer());
+  return iter;
+}
+
+RefSCMatrixSubblockIter
+LocalSCVector::all_blocks()
+{
+  return local_blocks();
+}

@@ -257,4 +257,85 @@ class SCMatrixDiagSubBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixDiagSubBlock);
 
+////////////////////////////////////////////////////////////////////
+// Classes that iterate through the blocks of a matrix.
+
+class SCMatrixSubblockIter: public VRefCount {
+  public:
+    virtual void begin() = 0;
+    virtual int ready() = 0;
+    virtual void next() = 0;
+    virtual SCMatrixBlock *block() = 0;
+};
+REF_dec(SCMatrixSubblockIter);
+
+class SCMatrixSimpleSubblockIter: public SCMatrixSubblockIter {
+  private:
+    RefSCMatrixBlock block_;
+    int ready_;
+  public:
+    SCMatrixSimpleSubblockIter(const RefSCMatrixBlock &b);
+    void begin();
+    int ready();
+    void next();
+    SCMatrixBlock *block();
+};
+
+class SCMatrixListSubblockIter: public SCMatrixSubblockIter {
+  private:
+    RefSCMatrixBlockList list_;
+    SCMatrixBlockListIter iter_;
+  public:
+    SCMatrixListSubblockIter(const RefSCMatrixBlockList &list);
+    void begin();
+    int ready();
+    void next();
+    SCMatrixBlock *block();
+};
+
+class SCMatrixNullSubblockIter: public SCMatrixSubblockIter {
+  public:
+    void begin();
+    int ready();
+    void next();
+    SCMatrixBlock *block();
+};
+
+class SCMatrixCompositeSubblockIter: public SCMatrixSubblockIter {
+  protected:
+    int niters_;
+    RefSCMatrixSubblockIter *iters_;
+    int iiter_;
+  public:
+    SCMatrixCompositeSubblockIter(int niter);
+    SCMatrixCompositeSubblockIter(RefSCMatrixSubblockIter&,
+                                  RefSCMatrixSubblockIter&);
+    ~SCMatrixCompositeSubblockIter();
+    void set_iter(int i, const RefSCMatrixSubblockIter &);
+    void begin();
+    int ready();
+    void next();
+    SCMatrixBlock *block();
+};
+REF_dec(SCMatrixCompositeSubblockIter);
+
+class SCMatrixJointSubblockIter: public SCMatrixSubblockIter {
+  protected:
+    int niters_;
+    RefSCMatrixSubblockIter *iters_;
+  public:
+    SCMatrixJointSubblockIter(RefSCMatrixSubblockIter&,
+                              RefSCMatrixSubblockIter&,
+                              RefSCMatrixSubblockIter& = 0,
+                              RefSCMatrixSubblockIter& = 0,
+                              RefSCMatrixSubblockIter& = 0);
+    ~SCMatrixJointSubblockIter();
+    void begin();
+    int ready();
+    void next();
+    SCMatrixBlock *block();
+    SCMatrixBlock *block(int i);
+};
+REF_dec(SCMatrixJointSubblockIter);
+
 #endif

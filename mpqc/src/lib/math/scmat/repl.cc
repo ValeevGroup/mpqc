@@ -48,32 +48,6 @@ ReplSCMatrixKit::dimension(int n, const char* name)
   return new ReplSCDimension(n, grp_, name);
 }
 
-SCMatrix*
-ReplSCMatrixKit::restore_matrix(StateIn& s,
-                                const RefSCDimension& d1,
-                                const RefSCDimension& d2)
-{
-  abort();
-}
-
-SymmSCMatrix*
-ReplSCMatrixKit::restore_symmmatrix(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
-DiagSCMatrix*
-ReplSCMatrixKit::restore_diagmatrix(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
-SCVector*
-ReplSCMatrixKit::restore_vector(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCDimension member functions
 

@@ -28,12 +28,6 @@ class ReplSCMatrixKit: public SCMatrixKit {
     RefMessageGrp messagegrp() const { return grp_; }
 
     SCDimension* dimension(int n, const char* name=0);
-
-    SCMatrix* restore_matrix(StateIn&,
-                             const RefSCDimension&,const RefSCDimension&);
-    SymmSCMatrix* restore_symmmatrix(StateIn&, const RefSCDimension&);
-    DiagSCMatrix* restore_diagmatrix(StateIn&, const RefSCDimension&);
-    SCVector* restore_vector(StateIn&, const RefSCDimension&);
 };
 
 class ReplSCDimension: public SCDimension {
@@ -99,6 +93,9 @@ class ReplSCVector: public SCVector {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     RefMessageGrp messagegrp() { return d->messagegrp(); }
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class ReplSCMatrix: public SCMatrix {
@@ -162,6 +159,9 @@ class ReplSCMatrix: public SCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     RefMessageGrp messagegrp() { return d1->messagegrp(); }
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class ReplSymmSCMatrix: public SymmSCMatrix {
@@ -227,6 +227,9 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     RefMessageGrp messagegrp() { return d->messagegrp(); }
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class ReplDiagSCMatrix: public DiagSCMatrix {
@@ -268,6 +271,9 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     RefMessageGrp messagegrp() { return d->messagegrp(); }
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 #endif

@@ -30,12 +30,6 @@ class BlockedSCMatrixKit: public SCMatrixKit {
     SCDimension* dimension(const RefSCMatrixKit&, int n, const char* name=0);
     SCDimension* dimension(const RefSCMatrixKit&, int n, int *nelem,
                            const char* name=0);
-
-    SCMatrix* restore_matrix(StateIn&,
-                             const RefSCDimension&,const RefSCDimension&);
-    SymmSCMatrix* restore_symmmatrix(StateIn&, const RefSCDimension&);
-    DiagSCMatrix* restore_diagmatrix(StateIn&, const RefSCDimension&);
-    SCVector* restore_vector(StateIn&, const RefSCDimension&);
 };
 SavableState_REF_dec(BlockedSCMatrixKit);
 
@@ -138,6 +132,9 @@ class BlockedSCVector: public SCVector {
     RefSCDimension dim(int);
     int nblocks() const;
     RefSCVector block(int);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class BlockedSCMatrix: public SCMatrix {
@@ -215,6 +212,9 @@ class BlockedSCMatrix: public SCMatrix {
     RefSCDimension coldim(int);
     int nblocks() const;
     RefSCMatrix block(int);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class BlockedSymmSCMatrix: public SymmSCMatrix {
@@ -287,6 +287,9 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     RefSCDimension dim(int);
     int nblocks() const;
     RefSymmSCMatrix block(int);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class BlockedDiagSCMatrix: public DiagSCMatrix {
@@ -338,6 +341,9 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     RefSCDimension dim(int);
     int nblocks() const;
     RefDiagSCMatrix block(int);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class BlockedSCElementOp : public SCElementOp {

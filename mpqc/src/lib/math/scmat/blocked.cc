@@ -77,33 +77,6 @@ BlockedSCMatrixKit::dimension(const RefSCMatrixKit& mk,
   return new BlockedSCDimension(mk, n, nelem, name);
 }
 
-
-SCMatrix*
-BlockedSCMatrixKit::restore_matrix(StateIn& s,
-                                const RefSCDimension& d1,
-                                const RefSCDimension& d2)
-{
-  abort();
-}
-
-SymmSCMatrix*
-BlockedSCMatrixKit::restore_symmmatrix(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
-DiagSCMatrix*
-BlockedSCMatrixKit::restore_diagmatrix(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
-SCVector*
-BlockedSCMatrixKit::restore_vector(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
 SavableState_REF_def(BlockedSCMatrixKit);
 
 /////////////////////////////////////////////////////////////////////////////

@@ -650,3 +650,17 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
     ii=kk;
     }
 }
+
+RefSCMatrixSubblockIter
+LocalSymmSCMatrix::local_blocks()
+{
+  RefSCMatrixSubblockIter iter
+      = new SCMatrixSimpleSubblockIter(block.pointer());
+  return iter;
+}
+
+RefSCMatrixSubblockIter
+LocalSymmSCMatrix::all_blocks()
+{
+  return local_blocks();
+}

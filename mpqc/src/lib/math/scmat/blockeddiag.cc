@@ -268,3 +268,27 @@ BlockedDiagSCMatrix::block(int i)
 {
   return mats_[i];
 }
+
+RefSCMatrixSubblockIter
+BlockedDiagSCMatrix::local_blocks()
+{
+  RefSCMatrixCompositeSubblockIter iter
+      = new SCMatrixCompositeSubblockIter(nblocks());
+  for (int i=0; i<nblocks(); i++) {
+      iter->set_iter(i, block(i)->local_blocks());
+    }
+  RefSCMatrixSubblockIter ret = iter.pointer();
+  return ret;
+}
+
+RefSCMatrixSubblockIter
+BlockedDiagSCMatrix::all_blocks()
+{
+  RefSCMatrixCompositeSubblockIter iter
+      = new SCMatrixCompositeSubblockIter(nblocks());
+  for (int i=0; i<nblocks(); i++) {
+      iter->set_iter(i, block(i)->all_blocks());
+    }
+  RefSCMatrixSubblockIter ret = iter.pointer();
+  return ret;
+}

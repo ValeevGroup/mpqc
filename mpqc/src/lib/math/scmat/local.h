@@ -73,6 +73,9 @@ class LocalSCVector: public SCVector {
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class LocalSCMatrix: public SCMatrix {
@@ -137,6 +140,9 @@ class LocalSCMatrix: public SCMatrix {
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class LocalSymmSCMatrix: public SymmSCMatrix {
@@ -202,6 +208,9 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class LocalDiagSCMatrix: public DiagSCMatrix {
@@ -243,6 +252,9 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    RefSCMatrixSubblockIter local_blocks();
+    RefSCMatrixSubblockIter all_blocks();
 };
 
 class LocalSCMatrixKit: public SCMatrixKit {
@@ -259,12 +271,6 @@ class LocalSCMatrixKit: public SCMatrixKit {
     void save_data_state(StateOut&);
 
     SCDimension* dimension(int n, const char* name=0);
-
-    SCMatrix* restore_matrix(StateIn&,
-                             const RefSCDimension&,const RefSCDimension&);
-    SymmSCMatrix* restore_symmmatrix(StateIn&, const RefSCDimension&);
-    DiagSCMatrix* restore_diagmatrix(StateIn&, const RefSCDimension&);
-    SCVector* restore_vector(StateIn&, const RefSCDimension&);
 };
 
 #endif

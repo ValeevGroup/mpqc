@@ -63,32 +63,6 @@ SCMatrixKit::default_matrixkit()
   return new LocalSCMatrixKit;
 }
 
-SCMatrix*
-LocalSCMatrixKit::restore_matrix(StateIn& s,
-                                const RefSCDimension& d1,
-                                const RefSCDimension& d2)
-{
-  abort();
-}
-
-SymmSCMatrix*
-LocalSCMatrixKit::restore_symmmatrix(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
-DiagSCMatrix*
-LocalSCMatrixKit::restore_diagmatrix(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
-SCVector*
-LocalSCMatrixKit::restore_vector(StateIn& s, const RefSCDimension& d)
-{
-  abort();
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCDimension member functions
 

@@ -73,6 +73,40 @@ SCMatrixKit::~SCMatrixKit()
 {
 }
 
+SCMatrix*
+SCMatrixKit::restore_matrix(StateIn& s,
+                            const RefSCDimension& d1,
+                            const RefSCDimension& d2)
+{
+  SCMatrix *r = matrix(d1,d2);
+  r->restore(s);
+  return r;
+}
+
+SymmSCMatrix*
+SCMatrixKit::restore_symmmatrix(StateIn& s, const RefSCDimension& d)
+{
+  SymmSCMatrix *r = symmmatrix(d);
+  r->restore(s);
+  return r;
+}
+
+DiagSCMatrix*
+SCMatrixKit::restore_diagmatrix(StateIn& s, const RefSCDimension& d)
+{
+  DiagSCMatrix *r = diagmatrix(d);
+  r->restore(s);
+  return r;
+}
+
+SCVector*
+SCMatrixKit::restore_vector(StateIn& s, const RefSCDimension& d)
+{
+  SCVector *r = vector(d);
+  r->restore(s);
+  return r;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // SCDimension members
 
@@ -142,6 +176,40 @@ SCMatrix::SCMatrix(StateIn&s):
 void
 SCMatrix::save_data_state(StateOut&s)
 {
+}
+
+void
+SCMatrix::save(StateOut&s)
+{
+  int nr = nrow();
+  int nc = ncol();
+  s.put(nr);
+  s.put(nc);
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<nc; j++) {
+          s.put(get_element(i,j));
+        }
+    }
+}
+
+void
+SCMatrix::restore(StateIn& s)
+{
+  int nrt, nr = nrow();
+  int nct, nc = ncol();
+  s.get(nrt);
+  s.get(nct);
+  if (nrt != nr || nct != nc) {
+      cerr << "SCMatrix::restore(): bad dimensions" << endl;
+      abort();
+    }
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<nc; j++) {
+          double tmp;
+          s.get(tmp);
+          set_element(i,j, tmp);
+        }
+    }
 }
 
 void *
@@ -359,6 +427,36 @@ SymmSCMatrix::save_data_state(StateOut&s)
 {
 }
 
+void
+SymmSCMatrix::save(StateOut&s)
+{
+  int nr = n();
+  s.put(nr);
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<=i; j++) {
+          s.put(get_element(i,j));
+        }
+    }
+}
+
+void
+SymmSCMatrix::restore(StateIn& s)
+{
+  int nrt, nr = n();
+  s.get(nrt);
+  if (nrt != nr) {
+      cerr << "SymmSCMatrix::restore(): bad dimension" << endl;
+      abort();
+    }
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<=i; j++) {
+          double tmp;
+          s.get(tmp);
+          set_element(i,j, tmp);
+        }
+    }
+}
+
 void *
 SymmSCMatrix::_castdown(const ClassDesc*cd)
 {
@@ -535,6 +633,32 @@ DiagSCMatrix::save_data_state(StateOut&s)
 {
 }
 
+void
+DiagSCMatrix::save(StateOut&s)
+{
+  int nr = n();
+  s.put(nr);
+  for (int i=0; i<nr; i++) {
+      s.put(get_element(i));
+    }
+}
+
+void
+DiagSCMatrix::restore(StateIn& s)
+{
+  int nrt, nr = n();
+  s.get(nrt);
+  if (nrt != nr) {
+      cerr << "DiagSCMatrix::restore(): bad dimension" << endl;
+      abort();
+    }
+  for (int i=0; i<nr; i++) {
+      double tmp;
+      s.get(tmp);
+      set_element(i, tmp);
+    }
+}
+
 void *
 DiagSCMatrix::_castdown(const ClassDesc*cd)
 {
@@ -652,6 +776,32 @@ SCVector::SCVector(StateIn&s):
 void
 SCVector::save_data_state(StateOut&s)
 {
+}
+
+void
+SCVector::save(StateOut&s)
+{
+  int nr = n();
+  s.put(nr);
+  for (int i=0; i<nr; i++) {
+      s.put(get_element(i));
+    }
+}
+
+void
+SCVector::restore(StateIn& s)
+{
+  int nrt, nr = n();
+  s.get(nrt);
+  if (nrt != nr) {
+      cerr << "SCVector::restore(): bad dimension" << endl;
+      abort();
+    }
+  for (int i=0; i<nr; i++) {
+      double tmp;
+      s.get(tmp);
+      set_element(i, tmp);
+    }
 }
 
 void *

@@ -1021,6 +1021,7 @@ StateClassData::operator=(const StateClassData &d)
   ninstance = d.ninstance;
   if (d.name) name = strcpy(new char[strlen(d.name)+1], d.name);
   else name = 0;
+  return *this;
 }
 
 /////////////////////////////////////////////////////////////////////////////

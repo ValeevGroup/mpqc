@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <scconfig.h>
 #include <util/state/state_bin.h>
 
 #define CLASSNAME StateOutBin
@@ -102,19 +103,27 @@ void
 StateOutBin::seek(int loc)
 {
   file_position_ = loc;
+#if defined(HAS_PUBSEEKOFF)
   buf_->pubseekoff(loc,ios::beg,ios::out);
+#elif defined(HAS_SEEKOFF)
+  buf_->seekoff(loc,ios::beg,ios::out);
+#endif
 }
 
 int
 StateOutBin::seekable()
 {
+#if defined(HAS_PUBSEEKOFF) || defined(HAS_SEEKOFF)
   return 1;
+#else
+  return 0;
+#endif
 }
 
 int
 StateOutBin::use_directory()
 {
-  return 1;
+  return seekable();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -187,19 +196,27 @@ void
 StateInBin::seek(int loc)
 {
   file_position_ = loc;
+#if defined(HAS_PUBSEEKOFF)
   buf_->pubseekoff(loc,ios::beg,ios::in);
+#elif defined(HAS_SEEKOFF)
+  buf_->seekoff(loc,ios::beg,ios::in);
+#endif
 }
 
 int
 StateInBin::seekable()
 {
+#if defined(HAS_PUBSEEKOFF) || defined(HAS_SEEKOFF)
   return 1;
+#else
+  return 0;
+#endif
 }
 
 int
 StateInBin::use_directory()
 {
-  return 1;
+  return seekable();
 }
 
 ////////////////////////////////////////////////////////////////

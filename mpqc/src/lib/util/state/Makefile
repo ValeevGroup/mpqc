@@ -47,7 +47,7 @@ statmacr.h: stattmpl.h $(TMPL2MACDEP)
 statetest.o: statetest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-statetest: statetest.o libstate.$(LIBSUF) libkeyval.$(LIBSUF) libclass.$(LIBSUF) libcontainer.$(LIBSUF)
+statetest: statetest.o libstate.$(LIBSUF) libkeyval.$(LIBSUF) libclass.$(LIBSUF) libcontainer.$(LIBSUF) libmisc.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o statetest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

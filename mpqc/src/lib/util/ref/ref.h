@@ -129,7 +129,7 @@
 #if REF_CHECK_STACK
 #include <unistd.h>
 #ifndef HAVE_SBRK_DEC
-extern "C" void * sbrk(int);
+extern "C" void * sbrk(ssize_t);
 #endif
 #define DO_REF_CHECK_STACK(p) (((void*) (p) > sbrk(0)) && (p)->managed())
 #else // REF_CHECK_STACK
@@ -319,9 +319,20 @@ class RefBase {
 #include <util/ref/reftmpl.h>
 
 // The macro reference declaration.
+#ifdef USE_REF_MACROS
 #include <util/ref/refmacr.h>
 #define REF_dec(T) Ref_declare(T)
+#else
+#define REF_dec(T) typedef class Ref<T> Ref ## T;
+#endif
 #define REF_def(T)
+
+// This does forward declarations of REF classes.
+#ifdef USE_REF_MACROS
+#define REF_fwddec(T) class Ref ## T;
+#else
+#define REF_fwddec(T) class T; typedef class Ref<T> Ref ## T;
+#endif
 
 #endif
 

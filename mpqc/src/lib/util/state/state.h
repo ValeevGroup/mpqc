@@ -44,14 +44,23 @@
 #define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
 #define SavableState_REF_def(T) SavableState_named_REF_def(Ref ## T,T)
 
+#ifdef USE_REF_MACROS
 #define SavableState_named_REF_dec(refname,T)				      \
    DCRef_declare(T); SSRef_declare(T); typedef class SSRef ## T refname;
-//#define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;
+#else
+#define SSRef_declare(T) typedef class SSRef<T> SSRef ## T;
+#define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;
+#endif
 #define SavableState_named_REF_def(refname,T)
 
 // This does forward declarations of REF classes.
+#ifdef USE_REF_MACROS
 #define SavableState_REF_fwddec(T) class SSRef ## T; \
                                    typedef class SSRef ## T Ref ## T;
+#else
+#define SavableState_REF_fwddec(T) class T; \
+                                   typedef class SSRef<T> Ref ## T;
+#endif
 
 class StateIn;
 class StateOut;
@@ -154,7 +163,9 @@ class SSRefBase {
 
 // Include the smart pointer to SavableState templates and macros.
 #include <util/state/stattmpl.h>
+#ifdef USE_REF_MACROS
 #include <util/state/statmacr.h>
+#endif
 
 ////////////////////////////////////////////////////////////////////
 

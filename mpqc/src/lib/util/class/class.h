@@ -114,7 +114,7 @@ class ParentClasses
 };
     
 
-class RefKeyVal;
+REF_fwddec(KeyVal);
 class StateIn;
 
 //. This class is used to contain information about classes.
@@ -292,10 +292,17 @@ class DCRefBase: private RefBase {
 // These files declare template and macro smart pointer classes for
 // DescribedClass objects.  They use macros from util/ref/ref.h.
 #include <util/class/clastmpl.h>
+#ifdef USE_REF_MACROS
 #include <util/class/clasmacr.h>
+#endif
 
+#ifdef USE_REF_MACROS
 #define DescribedClass_named_REF_dec(name,T) DCRef_declare(T); \
                                              typedef class DCRef ## T name;
+#else
+#define DCRef_declare(T) typedef class DCRef<T> DCRef ## T;
+#define DescribedClass_named_REF_dec(name,T) typedef class DCRef<T> name;
+#endif
 #define DescribedClass_named_REF_def(name,T)
 
 // These macros choose a default name for the reference class formed from
@@ -304,8 +311,12 @@ class DCRefBase: private RefBase {
 #define DescribedClass_REF_def(T) DescribedClass_named_REF_def(Ref ## T,T)
 
 // This does forward declarations of REF classes.
+#ifdef USE_REF_MACROS
 #define DescribedClass_REF_fwddec(T) class DCRef ## T; \
                                      typedef class DCRef ## T Ref ## T;
+#else
+#define DescribedClass_REF_fwddec(T) class T; typedef class DCRef<T> Ref ## T;
+#endif
 
 DescribedClass_REF_dec(DescribedClass);
 ARRAY_dec(RefDescribedClass);

@@ -642,7 +642,6 @@ THERE:
     free_double_vector(&dipole);
     free_double_matrix(&bond_indx);
     free_double_matrix(&bond_pops);
-    for(i=0; i < mulpts.n; i++) free_exmul(&mulpts.p[i]);
     free_expts(&mulpts);
     tim_exit("properties");
     }

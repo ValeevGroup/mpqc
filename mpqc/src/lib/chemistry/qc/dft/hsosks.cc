@@ -126,16 +126,36 @@ HSOSKS::print(ostream&o) const
 double
 HSOSKS::scf_energy()
 {
+  RefSymmSCMatrix total_vxc = vxc_a_ + vxc_b_;
+  total_vxc.scale(-1.0);
+  cl_fock_.result_noupdate().accumulate(total_vxc);
+  op_fock_.result_noupdate().accumulate(total_vxc);
+
   double ehf = HSOSSCF::scf_energy();
+
+  hcore_.print("Hcore");
+  alpha_ao_density().print("Da AO");
+  beta_ao_density().print("Db AO");
+  alpha_density().print("Da");
+  beta_density().print("Db");
+  vxc_a_.print("VAXC");
+  vxc_b_.print("VBXC");
+  cl_fock_.result_noupdate().print("Cl Fock");
+  op_fock_.result_noupdate().print("Op Fock");
+  cout << indent << scprintf("E(HSOSSCF) = %12.8f", ehf) << endl;
+  cout << indent << scprintf("E(X-C)     = %12.8f", exc_) << endl;
+  cout << indent << scprintf("E(TOTAL)   = %12.8f", ehf+exc_) << endl;
+
+  total_vxc.scale(-1.0);
+  cl_fock_.result_noupdate().accumulate(total_vxc);
+  op_fock_.result_noupdate().accumulate(total_vxc);
+
   return ehf+exc_;
 }
 
 RefSymmSCMatrix
 HSOSKS::effective_fock()
 {
-  RefSymmSCMatrix vxc_cl = vxc_a_ + vxc_b_;
-  RefSymmSCMatrix vxc_op = vxc_a_ - vxc_b_;
-
   RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
   mofock.assign(0.0);
 
@@ -144,17 +164,17 @@ HSOSKS::effective_fock()
 
   // use eigenvectors if oso_scf_vector_ is null
   if (oso_scf_vector_.null()) {
-    mofock.accumulate_transform(eigenvectors(), fock(0)+vxc_cl,
+    mofock.accumulate_transform(eigenvectors(), fock(0),
                                 SCMatrix::TransposeTransform);
-    mofocko.accumulate_transform(eigenvectors(), fock(1)+vxc_op,
+    mofocko.accumulate_transform(eigenvectors(), fock(1),
                                  SCMatrix::TransposeTransform);
   } else {
     RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
     mofock.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
-                                fock(0)+vxc_cl,
+                                fock(0),
                                 SCMatrix::TransposeTransform);
     mofocko.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
-                                 fock(1)+vxc_op,
+                                 fock(1),
                                  SCMatrix::TransposeTransform);
   }
 
@@ -235,18 +255,19 @@ HSOSKS::ao_fock()
   }
 
   tim_enter("integrate");
-  RefSymmSCMatrix dens_a = alpha_density();
-  RefSymmSCMatrix dens_b = beta_density();
+  RefSymmSCMatrix dens_a = alpha_ao_density();
+  RefSymmSCMatrix dens_b = beta_ao_density();
   integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(1);
   integrator_->integrate(functional_, dens_a, dens_b);
   exc_ = integrator_->value();
+  cout << indent << scprintf("E(X-C) = %12.8f", exc_) << endl;
   vxc_a_ = dens_a.clone();
   vxc_a_->assign((double*)integrator_->alpha_vmat());
   vxc_a_ = pl->to_SO_basis(vxc_a_);
-  vxc_b_ = vxc_a_.clone();
+  vxc_b_ = dens_b.clone();
   vxc_b_->assign((double*)integrator_->beta_vmat());
-  vxc_b_ = pl->to_SO_basis(vxc_a_);
+  vxc_b_ = pl->to_SO_basis(vxc_b_);
   // must unset the wavefunction so we don't have a circular list that
   // will not be freed with the reference counting memory manager
   integrator_->set_wavefunction(0);
@@ -271,6 +292,9 @@ HSOSKS::ao_fock()
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
   cl_fock_.result_noupdate().accumulate(dd);
+
+  cl_fock_.result_noupdate().accumulate(vxc_a_);
+  cl_fock_.result_noupdate().accumulate(vxc_b_);
 
   // Fo = H+G-Go
   op_fock_.result_noupdate().assign(cl_fock_.result_noupdate());
@@ -360,11 +384,11 @@ HSOSKS::two_body_deriv(double * tbgrad)
   memset(dftgrad,0,sizeof(double)*natom3);
   tim_enter("integration");
   RefPetiteList pl = integral()->petite_list(basis());
-  RefSymmSCMatrix aodens = gradient_density();
-  aodens.scale(0.5);
+  RefSymmSCMatrix dens_a = alpha_ao_density();
+  RefSymmSCMatrix dens_b = beta_ao_density();
   integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(0);
-  integrator_->integrate(functional_, aodens, aodens, dftgrad);
+  integrator_->integrate(functional_, dens_a, dens_b, dftgrad);
   // must unset the wavefunction so we don't have a circular list that
   // will not be freed with the reference counting memory manager
   integrator_->set_wavefunction(0);

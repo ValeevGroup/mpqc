@@ -45,12 +45,11 @@ class LocalHSOSKSContribution {
     }
     
     inline void cont5(int ij, int kl, double val) {
-      val *= 1.0 - 0.5*a0;
-      gmat[ij] += val*pmat[kl];
-      gmat[kl] += val*pmat[ij];
+      gmat[ij] += (1.0 - 0.5*a0)*val*pmat[kl];
+      gmat[kl] += (1.0 - 0.5*a0)*val*pmat[ij];
 
-      gmato[ij] += val*pmato[kl];
-      gmato[kl] += val*pmato[ij];
+      gmato[ij] += 0.5*a0*val*pmato[kl];
+      gmato[kl] += 0.5*a0*val*pmato[ij];
     }
 };
 

@@ -83,8 +83,8 @@ SCF::compute_vector(double& eelec)
     tim_exit("density");
     
     // check convergence
-    if (delta < desired_value_accuracy())
-      break;
+    if (delta < desired_value_accuracy()
+        && accuracy < desired_value_accuracy()) break;
 
     // reset the density from time to time
     if (iter_since_reset && !(iter_since_reset%dens_reset_freq_)) {
@@ -94,7 +94,10 @@ SCF::compute_vector(double& eelec)
       
     // form the AO basis fock matrix & add density dependant H
     tim_enter("fock");
-    double new_accuracy = 0.01 * delta;
+    double base_accuracy = delta;
+    if (base_accuracy < desired_value_accuracy())
+      base_accuracy = desired_value_accuracy();
+    double new_accuracy = 0.01 * base_accuracy;
     if (new_accuracy > 0.001) new_accuracy = 0.001;
     if (iter == 0) accuracy = new_accuracy;
     else if (new_accuracy < accuracy) {
@@ -172,7 +175,7 @@ SCF::compute_vector(double& eelec)
       
   eigenvalues_ = evals;
   eigenvalues_.computed() = 1;
-  eigenvalues_.set_actual_accuracy(delta);
+  eigenvalues_.set_actual_accuracy(accuracy<delta?delta:accuracy);
 
   // search for HOMO and LUMO
   // first convert evals to something we can deal with easily

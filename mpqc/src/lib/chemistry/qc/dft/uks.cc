@@ -259,6 +259,9 @@ UKS::ao_fock(double accuracy)
     RefGaussianBasisSet bs = basis();
     int ntri = i_offset(bs->nbasis());
 
+    double gmat_accuracy = accuracy;
+    if (min_overlap_eigval() < 1.0) { gmat_accuracy *= min_overlap_eigval(); }
+
     for (i=0; i < nthread; i++) {
       if (i) {
         gmats[i] = new double[ntri];
@@ -269,7 +272,7 @@ UKS::ao_fock(double accuracy)
       conts[i] = new LocalUKSContribution(gmats[i], pmat, gmatos[i], pmato,
                                           functional_->a0());
       gblds[i] = new LocalGBuild<LocalUKSContribution>(*conts[i], tbis_[i],
-        pl, bs, scf_grp_, pmax, desired_value_accuracy()/100.0, nthread, i
+        pl, bs, scf_grp_, pmax, gmat_accuracy, nthread, i
         );
 
       threadgrp_->add_thread(i, gblds[i]);

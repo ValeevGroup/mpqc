@@ -147,7 +147,7 @@ CLHF::ao_fock(double accuracy)
     RefGaussianBasisSet bs = basis();
     int ntri = i_offset(bs->nbasis());
 
-    double gmat_accuracy = desired_value_accuracy() / 10.0;
+    double gmat_accuracy = accuracy;
     if (min_overlap_eigval() < 1.0) { gmat_accuracy *= min_overlap_eigval(); }
 
     for (i=0; i < nthread; i++) {

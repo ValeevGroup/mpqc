@@ -958,7 +958,7 @@ sub input_string() {
         $mole = "$mole\n      molecule = \$:molecule";
         $mole = "$mole\n    )\n";
         $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
-                                 $lindep_tol,$docc,$socc);
+                                 $lindep_tol,$docc,$socc,1,"DZ (Dunning)");
     }
     elsif ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
@@ -979,7 +979,7 @@ sub input_string() {
             $refmethod = "HSOSHF";
         }
         $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
-                                 $lindep_tol,$docc,$socc);
+                                 $lindep_tol,$docc,$socc,0,"STO-3G");
     }
     elsif (! ($basis =~ /^STO/
               || $basis =~ /^MI/
@@ -1151,12 +1151,17 @@ sub append_reference {
     my $lindep_tol = shift;
     my $docc = shift;
     my $socc = shift;
+    my $use_cints = shift;
+    my $guessbasis = shift;
     $mole = "$mole\n    reference<$refmethod>: (";
     $mole = "$mole\n      molecule = \$:molecule";
     $mole = "$mole\n      basis = \$:basis";
     $mole = "$mole\n      total_charge = $charge";
     $mole = "$mole\n      multiplicity = $mult";
     $mole = "$mole\n      memory = $memory";
+    if ($use_cints) {
+        $mole = "$mole\n      integrals<IntegralCints>: ()";
+    }
     if ($orthog_method ne "" ) {
         $mole = "$mole\n      orthog_method = $orthog_method";
     }
@@ -1169,6 +1174,9 @@ sub append_reference {
            || $basis =~ /^MI/
            || $basis =~ /^\d-\d1G$/)) {
         $mole = "$mole\n      guess_wavefunction<$refmethod>: (";
+        if ($use_cints) {
+            $mole = "$mole\n        integrals<IntegralCints>: ()";
+        }
         $mole = "$mole\n        molecule = \$:molecule";
         $mole = "$mole\n        total_charge = $charge";
         $mole = "$mole\n        multiplicity = $mult";
@@ -1176,7 +1184,7 @@ sub append_reference {
         if ($socc ne "") {$mole = "$mole\n        $socc";}
         $mole = "$mole\n        basis<GaussianBasisSet>: (";
         $mole = "$mole\n          molecule = \$:molecule";
-        $mole = "$mole\n          name = \"STO-3G\"";
+        $mole = "$mole\n          name = \"$guessbasis\"";
         $mole = "$mole\n        )";
         $mole = "$mole\n        memory = $memory";
         $mole = "$mole\n      )";

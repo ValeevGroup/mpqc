@@ -3,6 +3,13 @@
 #include <util/container/array.h>
 #include <util/state/state.h>
 
+#ifdef __GNUG__
+template class Array<int>;
+template class SSBArray<int>;
+template class Array2<int>;
+template class SSBArray2<int>;
+#endif
+
 main()
 {
   int i;

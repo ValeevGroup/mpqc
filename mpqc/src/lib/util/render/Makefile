@@ -7,7 +7,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 CXXSRC = render.cc oogl.cc object.cc polygons.cc polysphere.cc \
          transform.cc appearance.cc material.cc sphere.cc algebra3.cc \
-         color.cc polylines.cc
+         color.cc polylines.cc tempinst.cc
 
 CLASSES = Render OOGLRender \
           Transform Appearance Material \
@@ -46,7 +46,7 @@ rentest: $(TESTOBJ) \
 	$(LD) $(LDFLAGS) -o rentest $^ $(SYSLIBS)
 
 rentest.o: rentest.cc
-	$(CXX) -DSRCDIR=\"$(SRCDIR)\" $(CXXFLAGS) -c $<
+	$(CXX) -DSRCDIR=\"$(SRCDIR)\" $(CPPFLAGS) $(CXXFLAGS) -c $<
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -444,8 +444,40 @@ DenIntegrator::do_point(const SCVector3 &r,
   if (nuclear_gradient != 0) {
       // the contribution to the potential integrals
       if (need_gradient_) {
-          cout << "no grad grad" << endl;
-          abort();
+          RefGaussianBasisSet basis = wavefunction()->basis();
+          int jk=0;
+          double drhoa = weight*od.df_drho_a;
+          double drhob = weight*od.df_drho_b;
+          for (int nu=0; nu < nbasis_; nu++) {
+              double dfa_phi_nu = drhoa * bs_values_[nu];
+              double dfb_phi_nu = drhob * bs_values_[nu];
+              for (int mu=0; mu<nbasis_; mu++) {
+                  int atom3
+                      = 3*basis->shell_to_center(basis->function_to_shell(mu));
+                  int numu = (nu>mu?((nu*(nu+1))/2+mu):((mu*(mu+1))/2+nu));
+                  double rho_b, rho_a = alpha_dmat_[numu];
+                  if (spin_polarized_) rho_b = beta_dmat_[numu];
+                  else rho_b = rho_a;
+                  int ixyz;
+                  double xnumu = 0.0;
+                  int iixyz = 0;
+                  for (ixyz=0; ixyz<3; ixyz++) {
+                      xnumu += bsg_values_[nu*3+ixyz]*bsg_values_[mu*3+ixyz]
+                             + bs_values_[nu]*bsh_values_[mu*6+iixyz];
+                      iixyz += ixyz+2;
+                    }
+                  xnumu *= weight;
+                  for (ixyz=0; ixyz<3; ixyz++) {
+       nuclear_gradient[atom3+ixyz]
+           -= 2.0 * (rho_a * (dfa_phi_nu*bsg_values_[mu*3+ixyz]
+                              -xnumu*(2.0*od.df_dgamma_aa * id.a.del_rho[ixyz]
+                                      +od.df_dgamma_ab * id.b.del_rho[ixyz]))
+                    +rho_b * (dfb_phi_nu*bsg_values_[mu*3+ixyz]
+                              -xnumu*(2.0*od.df_dgamma_bb * id.b.del_rho[ixyz]
+                                +od.df_dgamma_ab * id.a.del_rho[ixyz])));
+                    }
+                }
+            }
         }
       else {
           RefGaussianBasisSet basis = wavefunction()->basis();

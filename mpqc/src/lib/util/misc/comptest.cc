@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <util/misc/compute.h>
 
-//Result_dec(int);
+#ifdef __GNUC__
+template class NCResult<int>;
+#endif
 
 class A: public Compute {
   public:

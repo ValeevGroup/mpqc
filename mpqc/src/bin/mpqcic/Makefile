@@ -101,6 +101,9 @@ install_mpqcic:: mpqcic
 mpqcic: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
+g92: g92.o run_g92.o mpqc_int.o $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+
 writeavs: writeavs.o $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 

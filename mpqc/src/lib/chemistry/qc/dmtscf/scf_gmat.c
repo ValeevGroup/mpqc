@@ -226,6 +226,8 @@ int elim;
   *lp = (double *) malloc(sizeof(double)*scf_info->nbatri);
   if (!(*lp)) {
     fprintf(stderr,"scf_make_local_pmat:  could not malloc lp\n");
+    fprintf(stderr,"node %d, size = %d (%d)\n",mynode0(),scf_info->nbatri,
+            scf_info->nbatri*sizeof(double));
     return -1;
   }
 
@@ -233,6 +235,7 @@ int elim;
     *maxp = (signed char *) malloc(sizeof(signed char)*nsht);
     if (!(*maxp)) {
       fprintf(stderr,"scf_make_local_pmat: could not malloc maxp\n");
+      fprintf(stderr,"node %d, size = %d (%d)\n",mynode0(),nsht,nsht);
       free (*lp);
       return -1;
     }
@@ -376,6 +379,8 @@ double **gmato;
   (*gmat) = (double *) malloc(sizeof(double)*scf_info->nbatri);
   if (!(*gmat)) {
     fprintf(stderr,"scf_init_direct_gmat:  could not malloc gmat\n");
+    fprintf(stderr,"node %d, size = %d (%d)\n",mynode0(),scf_info->nbatri,
+            scf_info->nbatri*sizeof(double));
 
     free(*dpmat);
     if (*maxp) free(*maxp);
@@ -390,6 +395,8 @@ double **gmato;
     (*gmato) = (double *) malloc(sizeof(double)*scf_info->nbatri);
     if (!(*gmato)) {
       fprintf(stderr,"scf_init_direct_gmat:  could not malloc gmato\n");
+      fprintf(stderr,"node %d, size = %d (%d)\n",mynode0(),scf_info->nbatri,
+            scf_info->nbatri*sizeof(double));
 
       free(*gmat);
       free(*dpmat);

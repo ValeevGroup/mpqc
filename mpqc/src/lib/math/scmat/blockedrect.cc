@@ -645,17 +645,15 @@ BlockedSCMatrix::element_op(const RefSCElementOp& op)
 {
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
+  op->defer_collect(1);
   for (int i=0; i < nblocks_; i++) {
-    if (i < nblocks_-1)
-      op->defer_collect(1);
-    else
-      op->defer_collect(0);
-        
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
       mats_[i]->element_op(op);
   }
+  op->defer_collect(0);
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -672,17 +670,15 @@ BlockedSCMatrix::element_op(const RefSCElementOp2& op,
 
   BlockedSCElementOp2 *bop = BlockedSCElementOp2::castdown(op.pointer());
 
+  op->defer_collect(1);
   for (int i=0; i < nblocks_; i++) {
-    if (i < nblocks_-1)
-      op->defer_collect(1);
-    else
-      op->defer_collect(0);
-        
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
       mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
+  op->defer_collect(0);
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -702,18 +698,16 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
 
   BlockedSCElementOp3 *bop = BlockedSCElementOp3::castdown(op.pointer());
 
+  op->defer_collect(1);
   for (int i=0; i < nblocks_; i++) {
-    if (i < nblocks_-1)
-      op->defer_collect(1);
-    else
-      op->defer_collect(0);
-        
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
       mats_[i]->element_op(op,lm->mats_[i].pointer(),
                               ln->mats_[i].pointer());
   }
+  op->defer_collect(0);
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void

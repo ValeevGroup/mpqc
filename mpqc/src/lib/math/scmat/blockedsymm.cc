@@ -476,17 +476,15 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp& op)
 
   int nb = d->blocks()->nblock();
   
+  op->defer_collect(1);
   for (int i=0; i < nb; i++) {
-    if (i < nb-1)
-      op->defer_collect(1);
-    else
-      op->defer_collect(0);
-    
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
       mats_[i]->element_op(op);
   }
+  op->defer_collect(0);
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -504,17 +502,15 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
 
   int nb = d->blocks()->nblock();
   
+  op->defer_collect(1);
   for (int i=0; i < nb; i++) {
-    if (i < nb-1)
-      op->defer_collect(1);
-    else
-      op->defer_collect(0);
-
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
       mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
+  op->defer_collect(0);
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -535,18 +531,16 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
 
   int nb = d->blocks()->nblock();
   
+  op->defer_collect(1);
   for (int i=0; i < nb; i++) {
-    if (i < nb-1)
-      op->defer_collect(1);
-    else
-      op->defer_collect(0);
-
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
       mats_[i]->element_op(op,lm->mats_[i].pointer(),
                             ln->mats_[i].pointer());
   }
+  op->defer_collect(0);
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void

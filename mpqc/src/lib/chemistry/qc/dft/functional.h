@@ -35,13 +35,21 @@
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 #include <chemistry/qc/wfn/wfn.h>
+#include <chemistry/qc/wfn/density.h>
 
 namespace sc {
 
 /** Contains data needed at each point by a DenFunctional. */
 struct PointInputData {
-    enum {X=0, Y=1, Z=2};
-    enum {XX=0, YX=1, YY=2, ZX=3, ZY=4, ZZ=5};
+    enum {X=BatchElectronDensity::X,
+          Y=BatchElectronDensity::Y,
+          Z=BatchElectronDensity::Z};
+    enum {XX=BatchElectronDensity::XX,
+          YX=BatchElectronDensity::YX,
+          YY=BatchElectronDensity::YY,
+          ZX=BatchElectronDensity::ZX,
+          ZY=BatchElectronDensity::ZY,
+          ZZ=BatchElectronDensity::ZZ};
     struct SpinData {
         double rho;
         // rho^(1/3)
@@ -64,7 +72,9 @@ struct PointInputData {
     const SCVector3 &r;
 
     // fill in derived quantities
-    void compute_derived(int spin_polarized, int need_gradient);
+    void compute_derived(int spin_polarized,
+                         int need_gradient,
+                         int need_hessian);
 
     PointInputData(const SCVector3& r_): r(r_) {}
 };
@@ -122,8 +132,8 @@ class DenFunctional: virtual public SavableState {
                   double *gradient, int acenter,
                   GaussianBasisSet *basis,
                   const double *dmat_a, const double *dmat_b,
-                  int ncontrib_, const int *contrib_,
-                  int ncontrib_bf_, const int *contrib_bf_,
+                  int ncontrib, const int *contrib,
+                  int ncontrib_bf, const int *contrib_bf,
                   const double *bs_values, const double *bsg_values,
                   const double *bsh_values);
 

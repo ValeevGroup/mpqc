@@ -36,6 +36,7 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/dft/functional.h>
 #include <chemistry/qc/basis/extent.h>
+#include <chemistry/qc/wfn/density.h>
 
 namespace sc {
 
@@ -43,7 +44,8 @@ namespace sc {
 class DenIntegrator: virtual public SavableState {
   protected:
     Ref<Wavefunction> wfn_;
-    Ref<ShellExtent> extent_;
+//clj    Ref<ShellExtent> extent_;
+    Ref<BatchElectronDensity> den_;
 
     Ref<ThreadGrp> threadgrp_;
     Ref<MessageGrp> messagegrp_;
@@ -54,9 +56,9 @@ class DenIntegrator: virtual public SavableState {
     double *alpha_vmat_;
     double *beta_vmat_;
 
-    double *alpha_dmat_;
-    double *beta_dmat_;
-    double *dmat_bound_;
+//clj    double *alpha_dmat_;
+//clj    double *beta_dmat_;
+//clj    double *dmat_bound_;
 
     int spin_polarized_;
 
@@ -93,7 +95,7 @@ class DenIntegrator: virtual public SavableState {
     double value() const { return value_; }
 
     /// Sets the accuracy to use in the integration.
-    void set_accuracy(double a) { accuracy_ = a; }
+    void set_accuracy(double a);
     double get_accuracy(void) {return accuracy_; }
     /** Call with non zero if the potential integrals are to be computed.
         They can be returned with the vmat() member. */

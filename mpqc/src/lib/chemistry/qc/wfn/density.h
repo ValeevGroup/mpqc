@@ -89,6 +89,7 @@ class BatchElectronDensity: public Volume {
     int use_dmat_bound_;
 
     bool need_hessian_, need_gradient_;
+    bool need_basis_hessian_, need_basis_gradient_;
 
     bool using_shared_data_;
 
@@ -110,7 +111,7 @@ class BatchElectronDensity: public Volume {
     enum {XX=0, YX=1, YY=2, ZX=3, ZY=4, ZZ=5};
 
     BatchElectronDensity(const Ref<KeyVal>&);
-    BatchElectronDensity(const Ref<Wavefunction>&);
+    BatchElectronDensity(const Ref<Wavefunction>&, double accuracy=DBL_EPSILON);
     /** This will construct copies of this.  If reference_parent_data is
         true, then data that do not change, such as the density matrices
         and shell extent, are referenced rather than copied.  In this case,
@@ -164,6 +165,9 @@ class BatchElectronDensity: public Volume {
         delayed until the next time init() is called. */
     void set_linear_scaling(bool b) { linear_scaling_ = b; }
 
+    /** Sets the accuracy.  */
+    void set_accuracy(double a) { accuracy_ = a; }
+
     /** Turn use of density matrix bounds on/off. */
     void set_use_dmat_bound(bool b) { use_dmat_bound_ = b; }
 
@@ -183,6 +187,10 @@ class BatchElectronDensity: public Volume {
     double *bs_values() { return bs_values_; }
     double *bsg_values() { return bsg_values_; }
     double *bsh_values() { return bsh_values_; }
+    /** To ensure that that the basis functions gradients are computed,
+        use this. */
+    void set_need_basis_gradient(bool b) { need_basis_gradient_ = b; }
+    void set_need_basis_hessian(bool b) { need_basis_hessian_ = b; }
     //@}
 };
 

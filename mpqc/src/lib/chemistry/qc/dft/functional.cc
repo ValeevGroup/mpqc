@@ -49,20 +49,60 @@ using namespace sc;
 #define MIN_ZETA -(1.-1.e-12)
 
 ///////////////////////////////////////////////////////////////////////////
+// utility functions
+
+inline static double
+norm(double v[3])
+{
+  double x,y,z;
+  return sqrt((x=v[0])*x + (y=v[1])*y + (z=v[2])*z);
+}
+
+inline static double
+dot(double v[3], double w[3])
+{
+  return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
+}
+
+///////////////////////////////////////////////////////////////////////////
 // PointInputData
 
 void
-PointInputData::compute_derived(int spin_polarized, int need_gradient)
+PointInputData::compute_derived(int spin_polarized,
+                                int need_gradient,
+                                int need_hessian)
 {
   a.rho_13 = pow(a.rho, 1.0/3.0);
+  if (need_gradient) {
+      a.gamma = dot(a.del_rho,a.del_rho);
+    }
+  if (need_hessian) {
+      a.lap_rho = a.hes_rho[XX] + a.hes_rho[YY] + a.hes_rho[ZZ];
+    }
+
+
   if (spin_polarized) {
       b.rho_13 = pow(b.rho, 1.0/3.0);
+      if (need_gradient) {
+          b.gamma = dot(b.del_rho,b.del_rho);
+        }
+      if (need_hessian) {
+          b.lap_rho = b.hes_rho[XX] + b.hes_rho[YY] + b.hes_rho[ZZ];
+        }
     }
   else {
       b = a;
       if (need_gradient) gamma_ab = a.gamma;
     }
+
+  if (spin_polarized && need_gradient) {
+      gamma_ab = a.del_rho[0]*b.del_rho[0]
+               + a.del_rho[1]*b.del_rho[1] 
+               + a.del_rho[2]*b.del_rho[2];
+    }
+
 }
+
 
 ///////////////////////////////////////////////////////////////////////////
 // DenFunctional
@@ -136,7 +176,7 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
                         GaussianBasisSet *basis,
                         const double *dmat_a, const double *dmat_b,
                         int ncontrib, const int *contrib,
-                        int ncontrib_bf_, const int *contrib_bf_,
+                        int ncontrib_bf, const int *contrib_bf,
                         const double *bs, const double *bsg,
                         const double *bsh)
 {
@@ -157,13 +197,13 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
   if (need_gamma_terms) {
       double drhoa = od.df_drho_a;
       double drhob = od.df_drho_b;
-      for (int nu=0; nu<ncontrib_bf_; nu++) {
-          int nut = contrib_bf_[nu];
+      for (int nu=0; nu<ncontrib_bf; nu++) {
+          int nut = contrib_bf[nu];
           int nuatom = basis->shell_to_center(basis->function_to_shell(nut));
           double dfa_phi_nu = drhoa * bs[nu];
           double dfb_phi_nu = drhob * bs[nu];
-          for (int mu=0; mu<ncontrib_bf_; mu++) {
-              int mut = contrib_bf_[mu];
+          for (int mu=0; mu<ncontrib_bf; mu++) {
+              int mut = contrib_bf[mu];
               int muatom
                   = basis->shell_to_center(basis->function_to_shell(mut));
               if (muatom!=acenter) {
@@ -243,13 +283,13 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
   else {
       double drhoa = od.df_drho_a;
       double drhob = od.df_drho_b;
-      for (int nu=0; nu<ncontrib_bf_; nu++) {
-          int nut = contrib_bf_[nu];
+      for (int nu=0; nu<ncontrib_bf; nu++) {
+          int nut = contrib_bf[nu];
           int nuatom = basis->shell_to_center(basis->function_to_shell(nut));
           double dfa_phi_nu = drhoa * bs[nu];
           double dfb_phi_nu = drhob * bs[nu];
-          for (int mu=0; mu<ncontrib_bf_; mu++) {
-              int mut = contrib_bf_[mu];
+          for (int mu=0; mu<ncontrib_bf; mu++) {
+              int mut = contrib_bf[mu];
               int muatom
                   = basis->shell_to_center(basis->function_to_shell(mut));
               if (muatom!=acenter) {
@@ -259,6 +299,16 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
                   double rho_b = dmat_b[nutmut];
                   int ixyz;
                   for (ixyz=0; ixyz<3; ixyz++) {
+//                       std::cout << "bsg[mu*3+ixyz] = " << bsg[mu*3+ixyz]
+//                                 << std::endl;
+//                       std::cout << "rho_a = " << rho_a
+//                                 << std::endl;
+//                       std::cout << "rho_b = " << rho_b
+//                                 << std::endl;
+//                       std::cout << "dfa_phi_nu = " << dfa_phi_nu
+//                                 << std::endl;
+//                       std::cout << "dfb_phi_nu = " << dfb_phi_nu
+//                                 << std::endl;
                       double contrib = -2.0*bsg[mu*3+ixyz]
                                      * (rho_a*dfa_phi_nu + rho_b*dfb_phi_nu);
                       grad_f[3*muatom+ixyz] += contrib;
@@ -287,36 +337,36 @@ DenFunctional::do_fd_point(PointInputData&id,
 
   if (insave-delta>=lower_bound && insave+delta<=upper_bound) {
       in = insave+delta;
-      id.compute_derived(1, need_density_gradient());
+      id.compute_derived(1, need_density_gradient(), false);
       point(id,tod);
       double plus = tod.energy;
 
       in = insave-delta;
-      id.compute_derived(1, need_density_gradient());
+      id.compute_derived(1, need_density_gradient(), false);
       point(id,tod);
       double minu = tod.energy;
       out = 0.5*(plus-minu)/delta;
     }
   else if (insave+2*delta<=upper_bound) {
       in = insave+delta;
-      id.compute_derived(1, need_density_gradient());
+      id.compute_derived(1, need_density_gradient(), false);
       point(id,tod);
       double plus = tod.energy;
 
       in = insave+2*delta;
-      id.compute_derived(1, need_density_gradient());
+      id.compute_derived(1, need_density_gradient(), false);
       point(id,tod);
       double plus2 = tod.energy;
       out = 0.5*(4.0*plus-plus2-3.0*outsave)/delta;
     }
   else if (insave-2*delta>=lower_bound) {
       in = insave-delta;
-      id.compute_derived(1, need_density_gradient());
+      id.compute_derived(1, need_density_gradient(), false);
       point(id,tod);
       double minu = tod.energy;
 
       in = insave-2*delta;
-      id.compute_derived(1, need_density_gradient());
+      id.compute_derived(1, need_density_gradient(), false);
       point(id,tod);
       double minu2 = tod.energy;
       out = -0.5*(4.0*minu-minu2-3.0*outsave)/delta;
@@ -326,7 +376,7 @@ DenFunctional::do_fd_point(PointInputData&id,
       out = -135711.;
     }
   in = insave;
-  id.compute_derived(1, need_density_gradient());
+  id.compute_derived(1, need_density_gradient(), false);
 
   set_spin_polarized(spin_polarized_save);
 }
@@ -436,7 +486,7 @@ DenFunctional::test()
       for (j=0; testgamma[j] != -1.0; j++) {
           if (testgamma[j] > testrho[i]) continue;
           id.a.gamma = testgamma[j];
-          id.compute_derived(0, need_density_gradient());
+          id.compute_derived(0, need_density_gradient(), false);
           ret += test(id);
         }
     }
@@ -469,7 +519,7 @@ DenFunctional::test()
                       if (id.gamma_ab < -sqrt_gamma_a*sqrt_gamma_b) {
                           id.gamma_ab = -sqrt_gamma_a*sqrt_gamma_b;
                         }
-                      id.compute_derived(1, need_density_gradient());
+                      id.compute_derived(1, need_density_gradient(), false);
                       ret += test(id);
                     }
                 }
@@ -3047,6 +3097,20 @@ PBECFunctional::point(const PointInputData &id,
     }
 
   od.energy += pbec;
+
+//   cout << scprintf("id.a.del_rho = %12.8f %12.8f %12.8f", id.a.del_rho[0],
+//                    id.a.del_rho[1], id.a.del_rho[2])
+//        << endl;
+//   cout << scprintf("id.b.del_rho = %12.8f %12.8f %12.8f", id.b.del_rho[0],
+//                    id.b.del_rho[1], id.b.del_rho[2])
+//        << endl;
+//   cout << "id.a.gamma = " << id.a.gamma << endl;
+//   cout << "id.b.gamma = " << id.b.gamma << endl;
+//   cout << "od.df_drho_a = " << od.df_drho_a << endl;
+//   cout << "od.df_drho_b = " << od.df_drho_b << endl;
+//   cout << "od.df_dgamma_aa = " << od.df_dgamma_aa << endl;
+//   cout << "od.df_dgamma_ab = " << od.df_dgamma_ab << endl;
+//   cout << "od.df_dgamma_bb = " << od.df_dgamma_bb << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

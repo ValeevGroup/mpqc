@@ -159,7 +159,7 @@ fd_test_do_point(const SCVector3 &point,
 {
   PointInputData id(point);
   get_density(id.a, point, wfn, frozen_dmat);
-  id.compute_derived(0,func->need_density_gradient());
+  id.compute_derived(0,func->need_density_gradient(),false);
   PointOutputData od;
   if ( (id.a.rho + id.b.rho) > 1e2*DBL_EPSILON) func->point(id, od);
   else return 0.0;
@@ -207,7 +207,7 @@ fd_test_point(int acenter, const SCVector3 &tpoint,
 
   PointInputData id(point);
   get_density(id.a, point, wfn);
-  id.compute_derived(0,functional->need_density_gradient());
+  id.compute_derived(0,functional->need_density_gradient(),false);
 
   PointOutputData od;
   functional->set_compute_potential(1);
@@ -462,7 +462,7 @@ do_valtest(const Ref<DenFunctional> &valtest)
           id.gamma_ab = -sqrt(id.a.gamma*id.b.gamma);
         if (id.gamma_ab < -0.5*(id.a.gamma*id.b.gamma))
           id.gamma_ab = -0.5*(id.a.gamma*id.b.gamma);
-        id.compute_derived(1, valtest->need_density_gradient());
+        id.compute_derived(1, valtest->need_density_gradient(),false);
         valtest->point(id,od);
         mpqc_sumexc += od.energy*wt;
 #endif

@@ -106,7 +106,7 @@ class LocalTBGrad : public TBGrad<T> {
 
               int indijkl=0;
               int nx=cent.n();
-              if (cent.has_omitted_center()) nx--;
+              //if (cent.has_omitted_center()) nx--;
               for (int x=0; x < nx; x++) {
                 int ix=cent.atom(x);
                 int io=cent.omitted_atom();

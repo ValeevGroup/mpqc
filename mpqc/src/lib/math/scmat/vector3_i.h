@@ -68,6 +68,18 @@ SCVector3::operator [] (int i) const
   return _v[i];
 }
 
+INLINE const double&
+SCVector3::operator () (int i) const
+{
+  return _v[i];
+}
+
+INLINE double&
+SCVector3::operator () (int i)
+{
+  return _v[i];
+}
+
 INLINE const double*
 SCVector3::data() const
 {             

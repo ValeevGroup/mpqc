@@ -1,4 +1,10 @@
 
+molecule = $:ch2
+coor = $:symcoor
+
+matrixkit = $:localmatrixkit
+message = $:messageShm
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % molecular energy
@@ -7,70 +13,63 @@
 %
 
 mole<TCSCF>: (
-  level_shift=0.0
-  root = 2
+  level_shift = 0.5
   integral_storage=32000000
 
   % Function
   value_accuracy = 1e-9
-  gradient_accuracy = 1e-12
+  gradient_accuracy = 1e-7
 
   % MolecularEnergy input
   molecule = $:molecule
-  basis = $:gbasis
+  basis<GaussianBasisSet>: (
+    molecule = $:molecule
+    %name = "6-311G**"
+    name = "6-31G*"
+    %name = "6-31G"
+    %name = "STO-3G"
+    %name = "aug-cc-pVTZ"
+    %puream=yes
+    matrixkit = $:matrixkit
+  )
 
   % comment out coor if molecule is an atom
   coor = $:coor
 
   % SCF input
   %total_charge = 1
-  density_reset_freq = 5
-  ckpt_dir = "./"
-  filename = "test"
   %maxiter=2
 
-  extrap<DIIS>: (
-    start = 5
-    damping_factor = 0.02
-    n = 4
+  guess_wavefunction = $:guess
+)
+
+guess<TCSCF>: (
+  integral_storage=32000000
+  value_accuracy = 1e-9
+  molecule = $:molecule
+  coor = $:coor
+
+  xbasis = $:mole:basis
+  basis<GaussianBasisSet>: (
+    molecule = $:molecule
+    name = "STO-3G"
   )
 )
 
-molecule = $:ch2
-
-coor = $:symcoor
-
 xopt<QNewtonOpt>: (
   convergence = 1.0e-6
-  max_iterations = 20
+  max_iterations = 2
   function = $:mole
   transition_state=no
   update<BFGSUpdate>:()
   matrixkit = $:matrixkit
 )
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% basis sets
-%
-
-gbasis<GaussianBasisSet>: (
-  molecule = $:molecule
-  %name = "6-311G**"
-  %name = "6-31G*"
-  %name = "6-31G"
-  name = "STO-3G"
-  %name = "aug-cc-pVTZ"
-  %puream=yes
-  matrixkit = $:matrixkit
-)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % matrix kits
 %
-matrixkit = $:localmatrixkit
-
 localmatrixkit<LocalSCMatrixKit>: (
   messagegrp = $:message
 )
@@ -91,7 +90,6 @@ distmatrixkit<DistSCMatrixKit>: (
 xdebug<Debugger>: (
 )
 
-message = $:message1
 message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (

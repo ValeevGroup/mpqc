@@ -26,6 +26,7 @@
 //
 
 #include <iostream.h>
+#include <string.h>
 
 #include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
@@ -41,13 +42,16 @@ main(int argc, char *argv[])
   char *keyword = argc>2?argv[2]:"molecule";
   RefMolecule mol = kv->describedclassvalue(keyword);
 
+  char *ctol = argc>3?argv[3]:"1.0e-4";
+  double tol = atof(ctol);
+
   cout << "Original molecule:" << endl;
   mol->print();
   
-  RefPointGroup highestpg = mol->highest_point_group(1.0e-4);
+  RefPointGroup highestpg = mol->highest_point_group(tol);
   cout << "Point Group is " << highestpg->symbol() << endl;
 
-  mol->set_point_group(highestpg, 1.0e-3);
+  mol->set_point_group(highestpg, 10*tol);
 
   cout << "Molecule at center of mass in highest point group:" << endl;
   mol->print();
@@ -62,6 +66,10 @@ main(int argc, char *argv[])
   mol->print();
   
   int nunique = mol->nunique();
+
+  mol->transform_to_principal_axes();
+  cout << "cleaned molecule transformed to principle axis\n";
+  mol->print();
 
   cout << scprintf("\nnunique=%d: ",nunique);
   for (i=0; i < nunique; i++) cout << scprintf(" %d",mol->unique(i)+1);

@@ -26,10 +26,12 @@ class Set ## Type							      \
   int length() const;							      \
   void clear();								      \
   Pix add( Type & e);							      \
-  Type & operator()(Pix i) const;					      \
+  Type & operator()(Pix i);					              \
+  const Type & operator()(const Pix i) const;				      \
   Set ## Type & operator += (const Set ## Type&s);			      \
   Pix seek( Type &item);						      \
-  int contains( Type &item);						      \
+  const Pix seek(const Type &item);					      \
+  int contains(const Type &item);					      \
   void del( Type &item);						      \
   int owns(Pix i);							      \
   Pix first();								      \
@@ -103,7 +105,16 @@ void Set ## Type :: del( Type & e)					      \
         }								      \
     }									      \
 }									      \
-Type & Set ## Type :: operator()(Pix i) const				      \
+Type & Set ## Type :: operator()(Pix i)	   			              \
+{									      \
+  if (pix_to_index(i)<0 || pix_to_index(i)>=nelement) {			      \
+      fprintf(stderr,"Set::operator() out of range: %d (nelement = %d)\n",    \
+              pix_to_index(i),nelement);				      \
+      abort();								      \
+    };									      \
+  return element[pix_to_index(i)];					      \
+}									      \
+const Type & Set ## Type :: operator()(const Pix i) const		      \
 {									      \
   if (pix_to_index(i)<0 || pix_to_index(i)>=nelement) {			      \
       fprintf(stderr,"Set::operator() out of range: %d (nelement = %d)\n",    \
@@ -126,7 +137,14 @@ Pix Set ## Type :: seek( Type &item)					      \
     }									      \
   return 0;								      \
 }									      \
-int Set ## Type :: contains( Type &item) { return (int) seek(item); };	      \
+const Pix Set ## Type :: seek(const Type &item)				      \
+{									      \
+  for (int i=0; i<nelement; i++) {					      \
+      if (item == element[i]) return index_to_pix(i);			      \
+    }									      \
+  return 0;								      \
+}									      \
+int Set ## Type :: contains(const Type &item) { return (int) seek(item); };   \
 int Set ## Type :: owns(Pix i)						      \
 {									      \
   if (pix_to_index(i) >=0 && pix_to_index(i) < nelement) return 1;	      \

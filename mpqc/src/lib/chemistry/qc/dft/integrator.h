@@ -367,8 +367,8 @@ class RadialAngularIntegrator: public DenIntegrator {
                    double *nuclear_gradient = 0);
     void print(std::ostream & =ExEnv::out0()) const;
     AngularIntegrator *get_angular_grid(double radius, double atomic_radius,
-                                        int charge);
-    RadialIntegrator *get_radial_grid(int charge);
+                                        int charge, int deriv_order);
+    RadialIntegrator *get_radial_grid(int charge, int deriv_order);
     void init_default_grids(void);
     int angular_grid_offset(int i);
     void set_grids(void);

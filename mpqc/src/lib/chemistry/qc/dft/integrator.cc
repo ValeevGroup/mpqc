@@ -1719,6 +1719,7 @@ RadialAngularIntegratorThread
 {
   int icenter;
   ra_integrator_ = integrator;
+  int deriv_order = (need_nuclear_gradient==0?0:1);
 
   mol_ = integrator_->wavefunction()->molecule().pointer();
 
@@ -1727,7 +1728,8 @@ RadialAngularIntegratorThread
   nr_ = new int[natom_];
   
   for (icenter=0; icenter<natom_; icenter++)
-      nr_[icenter] = ra_integrator_->get_radial_grid(mol_->Z(icenter))->nr();
+      nr_[icenter]
+	= ra_integrator_->get_radial_grid(mol_->Z(icenter),deriv_order)->nr();
 
   centers_ = new SCVector3[natom_];
   for (icenter=0; icenter<natom_; icenter++) {
@@ -1766,6 +1768,7 @@ RadialAngularIntegratorThread::run()
   SCVector3 integration_point;
 
   double w,radial_multiplier,angular_multiplier;
+  int deriv_order = (nuclear_gradient_==0?0:1);
         
   int parallel_counter = 0;
 
@@ -1774,7 +1777,7 @@ RadialAngularIntegratorThread::run()
       center = centers_[icenter];
       // get current radial grid: depends on convergence threshold
       RadialIntegrator *radial
-          = ra_integrator_->get_radial_grid(mol_->Z(icenter));
+          = ra_integrator_->get_radial_grid(mol_->Z(icenter), deriv_order);
       nr = radial->nr();
       for (ir=0; ir < nr; ir++) {
           if (! (parallel_counter++%nthread_ == ithread_)) continue;
@@ -1783,7 +1786,8 @@ RadialAngularIntegratorThread::run()
           // get current angular grid: depends on radial point and threshold
           AngularIntegrator *angular
               = ra_integrator_->get_angular_grid(r, atomic_radius_[icenter],
-                                                 mol_->Z(icenter));
+                                                 mol_->Z(icenter),
+						 deriv_order);
           nangular = angular->num_angular_points(r/atomic_radius_[icenter],ir);
           for (iangular=0; iangular<nangular; iangular++) {
               angular_multiplier
@@ -2184,13 +2188,14 @@ RadialAngularIntegrator::angular_grid_offset(int gridtype)
 }
 
 RadialIntegrator *
-RadialAngularIntegrator::get_radial_grid(int charge)
+RadialAngularIntegrator::get_radial_grid(int charge, int deriv_order)
 {
   if (radial_user_.null()) {
 
       int select_grid;
       
-      if (dynamic_grids_) select_grid = select_dynamic_grid();
+      if (dynamic_grids_ && deriv_order == 0)
+	  select_grid = select_dynamic_grid();
       else select_grid = gridtype_;
       //ExEnv::out << "RAI::get_radial_grid -> select_grid = " << select_grid;
       
@@ -2247,12 +2252,12 @@ RadialAngularIntegrator::get_atomic_row(int i)
 
 AngularIntegrator *
 RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
-                                          int Z)
+                                          int Z, int deriv_order)
 {
   int atomic_row, i;
 
   int select_grid;
-  if (dynamic_grids_) select_grid = select_dynamic_grid();
+  if (dynamic_grids_ && deriv_order == 0) select_grid = select_dynamic_grid();
   else select_grid = gridtype_;
 
   //ExEnv::out << "RAI::get_angular_grid -> select_grid = " << select_grid;

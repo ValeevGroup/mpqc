@@ -170,14 +170,16 @@ Convergence::converged()
     }
   if (use_rms_grad_ && grad_.nonnull()) {
       check_conv("RMS Gradient     ",
-                 sqrt(grad_.scalar_product(grad_)), rms_grad_, pass, fail);
+                 sqrt(grad_.scalar_product(grad_)/grad_.n()),
+                 rms_grad_, pass, fail);
     }
   if (use_max_disp_ && disp.nonnull()) {
       check_conv("Max Displacement ", disp.maxabs(), max_disp_, pass, fail);
     }
   if (use_rms_disp_ && disp.nonnull()) {
       check_conv("RMS Displacement ",
-                 sqrt(disp.scalar_product(disp)), rms_disp_, pass, fail);
+                 sqrt(disp.scalar_product(disp)/disp.n()),
+                 rms_disp_, pass, fail);
     }
   if (use_graddisp_ && disp.nonnull() && grad_.nonnull()) {
       check_conv("Gradient*Displace", fabs(disp.scalar_product(grad_)),

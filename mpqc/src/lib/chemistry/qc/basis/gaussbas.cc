@@ -100,9 +100,6 @@ GaussianBasisSet::init(RefMolecule&molecule,
                        int have_userkeyval,
                        int pur)
 {
-
-  char keyword[KeyVal::MaxKeywordLength],prefix[KeyVal::MaxKeywordLength];
-
   int pure, havepure;
   pure = pur;
   if (pur == -1) {
@@ -347,8 +344,6 @@ GaussianBasisSet::convert_to_centers_t(const Molecule*mol) const
             = operator()(icenter,ishell).nprimitive();
           int ncon = shell[ishell].ncon
             = operator()(icenter,ishell).ncontraction();
-          int nfunc = shell[ishell].nfunc
-            = operator()(icenter,ishell).nfunction();
           shell[ishell].exp = (double*)malloc(sizeof(double)*nprim);
           shell[ishell].type
             = (shell_type_t*)malloc(sizeof(shell_type_t)*ncon);
@@ -382,7 +377,6 @@ void GaussianBasisSet::print(FILE*fp) const
 
   // Loop over centers
   int icenter = 0;
-  int ishell = 0;
   int ioshell = 0;
   for (icenter=0; icenter < ncenter_; icenter++) {
       fprintf(fp,"center %d: %12.8f %12.8f %12.8f, nshell = %d, shellnum = %d\n",

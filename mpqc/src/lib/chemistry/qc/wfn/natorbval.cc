@@ -27,7 +27,6 @@ double Wavefunction::orbital(cart_point& r,
                              int iorb,
                              RefSCMatrix& orbs)
 {
-    double *result;
     int nbasis = basis()->nbasis();
     if (!bs_values) bs_values=new double[nbasis];
 

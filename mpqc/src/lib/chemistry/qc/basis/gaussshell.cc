@@ -157,13 +157,13 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
   ncon = keyval->count("type");
   if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"GaussianShell couldn't find the \"type\" array:\n");
-      keyval->dump(stderr);
+      keyval->dump(cerr);
       abort();
     }
   nprim = keyval->count("exp");
   if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"GaussianShell couldn't find the \"exp\" array:\n");
-      keyval->dump(stderr);
+      keyval->dump(cerr);
       abort();
     }
   int normalized = keyval->booleanvalue("normalized");
@@ -180,7 +180,7 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
       if (keyval->error() != KeyVal::OK) {
           fprintf(stderr,"GaussianShell: error reading exp:%d: %s\n",
                   i,keyval->errormsg());
-          keyval->errortrace(stderr);
+          keyval->errortrace(cerr);
           exit(1);
         }
     }
@@ -191,7 +191,7 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
       if (prefixkeyval->error() != KeyVal::OK) {
           fprintf(stderr,"GaussianShell: error reading am: \"%s\"\n",
                   prefixkeyval->errormsg());
-          prefixkeyval->errortrace(stderr);
+          prefixkeyval->errortrace(cerr);
           exit(1);
         }
       l[i] = -1;
@@ -200,7 +200,7 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
 	}
       if (l[i] == -1 || strlen(am) != 1) {
           fprintf(stderr,"GaussianShell: bad angular momentum: \"%s\"\n", am);
-          prefixkeyval->errortrace(stderr);
+          prefixkeyval->errortrace(cerr);
           exit(1);
 	}
       if (havepure) puream[i] = pure;
@@ -218,7 +218,7 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
         if (keyval->error() != KeyVal::OK) {
             fprintf(stderr,"GaussianShell: error reading coef:%d:%d: %s\n",
                     i,j,keyval->errormsg());
-            keyval->errortrace(stderr);
+            keyval->errortrace(cerr);
             exit(1);
             }
         }

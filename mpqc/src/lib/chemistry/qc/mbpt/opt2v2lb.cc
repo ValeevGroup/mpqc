@@ -72,7 +72,6 @@ mbpt_opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int i_offset; 
   int npass, pass;
   long ni;
-  long tmpint;
   int np, nq, nr, ns; 
   int P, Q, R, S;
   int p, q, r, s;
@@ -92,10 +91,7 @@ mbpt_opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int nproc;
   int procmin, procmax; // processor with most/fewest basis functions
   int rest;
-  int node;
   int r_offset;
-  int sum;
-  int nfunc;
   int min;
   int iproc;
   int nRshell;

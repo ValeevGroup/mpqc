@@ -75,24 +75,26 @@ AggregateKeyVal::key_exists(const char* key)
 }
 
 void
-AggregateKeyVal::errortrace(FILE*fp,int n)
+AggregateKeyVal::errortrace(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"AggregateKeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n);
+  fp << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
   for (int i = 0; i<4; i++) {
       if (kv[i].nonnull()) {
-          offset(fp,n); fprintf(fp,"  KeyVal #%d:\n",i);
+          offset(fp,n); fp << "  KeyVal #" << i << ":" << endl;
           kv[i]->errortrace(fp,n+OffsetDelta);
         }
     }
 }
 
 void
-AggregateKeyVal::dump(FILE*fp,int n)
+AggregateKeyVal::dump(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"AggregateKeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n);
+  fp << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
   for (int i = 0; i<4; i++) {
       if (kv[i].nonnull()) {
-          offset(fp,n); fprintf(fp,"  KeyVal #%d:\n",i);
+          offset(fp,n); fp << "  KeyVal #" << i << ":" << endl;
           kv[i]->dump(fp,n+OffsetDelta);
         }
     }

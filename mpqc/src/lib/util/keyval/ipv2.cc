@@ -23,19 +23,20 @@ ip_in(0),
 ip_out(0),
 ip_tree(0),
 ip_cwk(0),
-ip_uppercase(0),
 ip_keyword(0)
 {
   lastkeyword[0] = '\0';
+  lexer = new IPV2FlexLexer;
 }
 
 IPV2::~IPV2()
 {
   if (ip_tree) ip_free_keyword_tree(ip_tree);
   ip_tree = 0;
+  delete lexer;
 }
 
-void IPV2::read(FILE*in,FILE*out)
+void IPV2::read(istream&in,ostream&out)
 {
   if (ip_initialized) {
     ip_append(in,out);
@@ -49,11 +50,6 @@ void IPV2::read(FILE*in,FILE*out)
 void IPV2::yerror(const char* s)
 {
   error(s);
-}
-
-int IPV2::ywrap()
-{
-  return 1;
 }
 
 void
@@ -72,7 +68,7 @@ IPV2*
 IPV2::global()
 {
   if (!global_) {
-      fprintf(stderr,"IPV2::global: global not set\n");
+      cerr << "IPV2::global: global not set" << endl;
       abort();
     }
   return global_;
@@ -80,13 +76,27 @@ IPV2::global()
 
   // some routines for debugging
 void
-IPV2::print_keyword(FILE*f,ip_keyword_tree_t*k)
+IPV2::print_keyword(ostream&f,ip_keyword_tree_t*k)
 {
   ip_print_keyword(f,k);
 }
 
 void
-IPV2::print_tree(FILE*f,ip_keyword_tree_t*k)
+IPV2::print_tree(ostream&f,ip_keyword_tree_t*k)
 {
   ip_print_tree(f,k);
+}
+
+/* Show position. */
+void
+IPV2::showpos()
+{
+  cerr << "error occurred at line number "
+       << lexer->lineno() << " (roughly)" << endl;
+}
+
+int
+IPV2wrap()
+{
+  return 1;
 }

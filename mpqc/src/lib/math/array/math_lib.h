@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.4  1994/10/11 17:49:35  etseidl
+ * Revision 1.5  1995/10/11 21:13:54  cljanss
+ * ParsedKeyVal now uses iostream instead of stdio.  Various other cleanups.
+ *
+ * Revision 1.4  1994/10/11  17:49:35  etseidl
  * fix up for c++
  *
  * Revision 1.3  1994/08/26  18:04:44  etseidl
@@ -42,6 +45,8 @@
 
 #ifndef _math_lib_h
 #define _math_lib_h
+
+#include <stdio.h>
 
 #if defined(__cplusplus)
 extern "C" {

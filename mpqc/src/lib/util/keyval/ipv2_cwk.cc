@@ -79,13 +79,14 @@ IPV2::cwk_add(const char* keyword)
     }
 
   if (ip_keyword) {
-    fprintf(ip_out,"IP_KEYWORDS from IPV2::cwk_add (%s): {\n",keyword);
+    *ip_out << "IP_KEYWORDS from IPV2::cwk_add (" << keyword << "): {"
+            << endl;
     for (I=ip_cwk; I!=NULL; I=I->p) {
-      fprintf(ip_out,"  ");
-      ip_print_keyword(ip_out,I->kt);
-      fprintf(ip_out,"\n");
+        *ip_out << "  ";
+        ip_print_keyword(*ip_out,I->kt);
+        *ip_out << endl;
       }
-    fprintf(ip_out,"  }\n");
+    *ip_out << "  }" << endl;
     }
 
   }
@@ -263,9 +264,9 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
     }
 
   if (r && ip_keyword) {
-    fprintf(ip_out,"IP_KEYWORD from ip_descend_tree: ");
-    ip_print_keyword(ip_out,r);
-    fprintf(ip_out,"\n");
+    *ip_out << "IP_KEYWORD from ip_descend_tree: ";
+    ip_print_keyword(*ip_out,r);
+    *ip_out << endl;
     }
 
   return r;
@@ -280,9 +281,9 @@ IPV2::ip_key_value(const char* keyword)
   kt = ip_cwk_descend_tree(keyword);
 
   if (kt && ip_keyword) {
-    fprintf(ip_out,"IP_KEYWORD from ip_key_value: ");
-    ip_print_keyword(ip_out,kt);
-    fprintf(ip_out,"\n");
+    *ip_out << "IP_KEYWORD from ip_key_value: ";
+    ip_print_keyword(*ip_out,kt);
+    *ip_out << endl;
     }
 
   if (kt) return kt->value;

@@ -94,8 +94,8 @@ int
 IPV2::exist_v(const char* keyword,int n,int* v)
 {
   if (n!=0) {
-    fprintf(ip_out,"IPV2::exist_v: n must be zero n = %d, v = 0x%x\n", n, v);
-    exit(1);
+    *ip_out << "IPV2::exist_v: n must be zero n = " << n << endl;
+    abort();
     }
   if (ip_cwk_descend_tree(keyword)) return 1;
 

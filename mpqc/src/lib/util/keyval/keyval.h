@@ -4,7 +4,8 @@
 #ifdef __GNUG__
 #pragma interface
 #endif
-#include <stdio.h>
+
+#include <iostream.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -69,7 +70,7 @@ class KeyVal: public VRefCount {
     //texi Set the current error condition.
     void seterror(KeyValError err);
 
-    void offset(FILE* fp,int n); // Put n ' ' into fp.
+    void offset(ostream& fp,int n); // Put n ' ' into fp.
     enum {OffsetDelta=4};
 
     //texi Ultimately called by @code{exists}.
@@ -197,8 +198,8 @@ class KeyVal: public VRefCount {
     //texi Return a textual representation of the current error.
     char*  errormsg();
 
-    virtual void errortrace(FILE*fp=stderr,int offset = 0);
-    virtual void dump(FILE*fp=stderr,int offset = 0);
+    virtual void errortrace(ostream&fp=cerr,int offset = 0);
+    virtual void dump(ostream&fp=cerr,int offset = 0);
 };
 
 REF_dec(KeyVal);
@@ -356,8 +357,8 @@ class StringKeyVal: public KeyVal {
     virtual const char* truekeyword(const char*);
     int    key_exists(const char*);
 
-    virtual void errortrace(FILE*fp=stderr,int offset = 0);
-    virtual void dump(FILE*fp=stderr,int offset = 0);
+    virtual void errortrace(ostream&fp=cerr,int offset = 0);
+    virtual void dump(ostream&fp=cerr,int offset = 0);
 };
 
 class AggregateKeyVal : public KeyVal {
@@ -377,8 +378,8 @@ class AggregateKeyVal : public KeyVal {
     ~AggregateKeyVal();
     int    key_exists(const char*);
     RefKeyValValue key_value(const char*);
-    void errortrace(FILE*fp=stderr, int offset = 0);
-    void dump(FILE*fp=stderr,int offset = 0);
+    void errortrace(ostream&fp=cerr, int offset = 0);
+    void dump(ostream&fp=cerr,int offset = 0);
 };
 
 class PrefixKeyVal : public KeyVal {
@@ -400,8 +401,8 @@ class PrefixKeyVal : public KeyVal {
     ~PrefixKeyVal();
     int    key_exists(const char*);
     RefKeyValValue key_value(const char*);
-    void errortrace(FILE*fp=stderr, int offset = 0);
-    void dump(FILE*fp=stderr,int offset = 0);
+    void errortrace(ostream&fp=cerr, int offset = 0);
+    void dump(ostream&fp=cerr,int offset = 0);
 };
 
 class IPV2;
@@ -417,7 +418,7 @@ class ParsedKeyVal : public StringKeyVal {
   public:
     ParsedKeyVal();
     ParsedKeyVal(const char*);
-    ParsedKeyVal(FILE*);
+    ParsedKeyVal(istream&);
     ParsedKeyVal(IPV2*);
     // This ctor is given a string which is used to form keywords
     // that are sought in the keyval argument.  The associated values
@@ -430,9 +431,9 @@ class ParsedKeyVal : public StringKeyVal {
     virtual const char* classname(const char*);
     virtual const char* truekeyword(const char*);
     void read(const char*);
-    void read(FILE*);
-    void errortrace(FILE*fp=stderr, int offset = 0);
-    void dump(FILE*fp=stderr,int offset = 0);
+    void read(istream&);
+    void errortrace(ostream&fp=cerr, int offset = 0);
+    void dump(ostream&fp=cerr,int offset = 0);
 };
 
 REF_dec(ParsedKeyVal);

@@ -104,13 +104,13 @@ StringKeyVal::key_value(const char* key)
 }
 
 void
-StringKeyVal::errortrace(FILE*fp,int n)
+StringKeyVal::errortrace(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"StringKeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n); fp << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
 void
-StringKeyVal::dump(FILE*fp,int n)
+StringKeyVal::dump(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"StringKeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n); fp << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
 }

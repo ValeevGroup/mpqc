@@ -37,9 +37,9 @@ IPV2::error(const char *msg,...)
 {
   va_list args;
   va_start(args,msg);
-  fprintf(ip_out,"IPV2::error: ");
-  vfprintf(ip_out,msg,args);
-  fprintf(ip_out,"\n");
+  fprintf(stderr,"IPV2::error: ");
+  vfprintf(stderr,msg,args);
+  fprintf(stderr,"\n");
   va_end(args);
   showpos();
   exit(1);
@@ -69,17 +69,17 @@ IPV2::warn(const char *msg,...)
       strcat(newmsg,lastkeyword);
       strcat(newmsg,&poskey[2]);
       va_start(args,msg);
-      fprintf(ip_out,"IPV2::warn: ");
-      vfprintf(ip_out,newmsg,args);
-      fprintf(ip_out,"\n");
+      fprintf(stderr,"IPV2::warn: ");
+      vfprintf(stderr,newmsg,args);
+      fprintf(stderr,"\n");
       va_end(args);
       if (poskey) free(newmsg);
     }
   else {
       va_start(args,msg);
-      fprintf(ip_out,"IPV2::warn: ");
-      vfprintf(ip_out,msg,args);
-      fprintf(ip_out,"\n");
+      fprintf(stderr,"IPV2::warn: ");
+      vfprintf(stderr,msg,args);
+      fprintf(stderr,"\n");
       va_end(args);
     }
 }
@@ -87,7 +87,7 @@ IPV2::warn(const char *msg,...)
 void
 IPV2::ip_lastkeyword(const char*keyword)
 {
-  strcpy(lastkeyword,keyword);
+  strncpy(lastkeyword,keyword, KEYWORD_LENGTH-1);
 }
 
 void
@@ -101,6 +101,10 @@ void
 IPV2::ip_lastkeyword_(ip_keyword_tree_t*kt)
 {
   if (kt->up) ip_lastkeyword_(kt->up);
+  if (strlen(lastkeyword) + strlen(kt->keyword) + 2 > KEYWORD_LENGTH) {
+      cerr << "IPV2: keyword too big" << endl;
+      abort();
+    }
   strcat(lastkeyword,":");
   strcat(lastkeyword,kt->keyword);
 }

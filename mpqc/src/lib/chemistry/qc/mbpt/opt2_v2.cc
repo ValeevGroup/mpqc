@@ -42,8 +42,8 @@ extern "C" {
 static void iqs(int *item,int *index,int left,int right);
 static void iquicksort(int *item,int *index,int n);
 
-#include "opt2.h"
-#include "bzerofast.h"
+#include <chemistry/qc/mbpt/opt2.h>
+#include <chemistry/qc/mbpt/bzerofast.h>
 
 int
 mbpt_opt2_v2(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
@@ -65,7 +65,6 @@ mbpt_opt2_v2(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int i_offset; 
   int npass, pass;
   long ni;
-  long tmpint;
   int np, nq, nr, ns; 
   int P, Q, R, S;
   int p, q, r, s;
@@ -80,10 +79,8 @@ mbpt_opt2_v2(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int me;
   int nproc;
   int rest;
-  int node;
   int r_offset;
   int sum;
-  int nfunc;
   int min;
   int iproc;
   int nRshell;

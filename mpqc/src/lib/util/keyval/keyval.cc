@@ -405,21 +405,21 @@ RefDescribedClass KeyVal::Va_describedclassvalue(const char* key,int narg,...)
   return key_describedclassvalue(newkey);
   }
 
-void KeyVal::offset(FILE*fp,int n)
+void KeyVal::offset(ostream&fp,int n)
 {
   for (int i=0; i<n; i++) {
-      fprintf(fp," ");
+      fp << " ";
     }
 }
 
-void KeyVal::errortrace(FILE*fp,int n)
+void KeyVal::errortrace(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"KeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n); fp << "KeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
-void KeyVal::dump(FILE*fp,int n)
+void KeyVal::dump(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"KeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n); fp << "KeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
 // here are some inline candidates that are here for now because

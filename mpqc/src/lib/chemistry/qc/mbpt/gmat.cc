@@ -53,7 +53,6 @@ mbpt_make_gmat(scf_struct_t *scf_info, centers_t *centers,
                double *DPmat, FILE *outfile)
 {
   int errcod;
-  int i;
 
  /* get some timing info */
   tim_enter("gmat");
@@ -129,9 +128,6 @@ form_max_dens(double *DPmat, signed char *maxp,
 int
 mbpt_init_gmat(centers_t *centers, scf_struct_t *scf_info, double *intbuf)
 {
-  int flags;
-
-  flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
 
 //  mbpt_gmat_intbuf =
 //    int_initialize_erep(flags,0,centers,centers,centers,centers);
@@ -171,9 +167,7 @@ make_g_d_nor(scf_struct_t *scf_info, centers_t *centers, RefSymmSCMatrix& Gmat,
   int tmax,imax,cpmax,pmaxijk;
   int pmaxik,pmaxjk,pmaxij,Qvecij;
   int i,j,k,l;
-  int isize, jsize;
-  int ij,kl,ijkl;
-  int g,gij,gkl,gijkl;
+  int ij,kl;
   int n1,n2,n3,n4;
   int e12,e34,e13e24,e_any;
   int bf1,bf2,bf3,bf4;
@@ -183,7 +177,6 @@ make_g_d_nor(scf_struct_t *scf_info, centers_t *centers, RefSymmSCMatrix& Gmat,
   int ij1;
   int lij,lkl;
   int index;
-  int nijkl,leavel;
   int int_index,kindex;
   int nproc=numnodes0();
   int me=mynode0();
@@ -270,7 +263,6 @@ make_g_d_nor(scf_struct_t *scf_info, centers_t *centers, RefSymmSCMatrix& Gmat,
   for (i=0; i<centers->nshell; i++) {
 
     for (j=0; j<=i; j++) {
-      leavel=0;
       ij = ioff(i)+j;
 //    Qvecij=(int)scf_bnd_Qvec[ij];
       Qvecij=(int)int_Qvec[ij];

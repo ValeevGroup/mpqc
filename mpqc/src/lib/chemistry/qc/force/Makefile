@@ -14,7 +14,8 @@ ifeq ($(ARCH),SUN4)
 override COPTIONS = -O2
 endif
 
-WEBSRC = spcsscf.web mpcsscf.web mposscf.web
+HISTORICALWEBSRC = spcsscf.web mpcsscf.web mposscf.web
+WEBSRC = mpcsscf.web mposscf.web
 .PRECIOUS: $(WEBSRC:%.web=%.c)
 CXXSRC = read.cc
 

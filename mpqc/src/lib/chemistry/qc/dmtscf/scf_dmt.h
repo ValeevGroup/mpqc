@@ -46,6 +46,8 @@ extern "C" {
 #ifdef __cplusplus
 }
 
+class RefKeyVal;
+
 /* The preferred input reader for C++ programs. */
 int scf_init_scf_struct(const RefKeyVal&, centers_t&, scf_struct_t&);
 int scf_init_scf(const RefKeyVal&, centers_t&, scf_struct_t&, sym_struct_t&);

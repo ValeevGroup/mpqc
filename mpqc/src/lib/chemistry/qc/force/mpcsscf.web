@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.9  1995/03/18 00:10:26  cljanss
+% Revision 1.10  1995/10/11 21:13:46  cljanss
+% ParsedKeyVal now uses iostream instead of stdio.  Various other cleanups.
+%
+% Revision 1.9  1995/03/18  00:10:26  cljanss
 % Using util/group to provide picl support.  Deleted the comm directory.
 %
 % Revision 1.8  1995/03/17  01:49:04  cljanss
@@ -232,10 +235,6 @@ here and by the \.{libint} library.
 @<Include files.@>=
 #include <math/array/math_lib.h>
 
-@ The input will be parsed with version 2 of the input parser, \.{libipv2}.
-@<Include files.@>=
-#include <util/keyval/ipv2c.h>
-
 @ The derivative integrals are to be computed with the \.{libintv2} library.
 @<Include files.@>=
 #include <chemistry/qc/intv2/int_libv2.h>
@@ -346,21 +345,11 @@ int *opts;
   init_called = 1;
 }
 
-@ The |dmt_force_csscf_init| routine is called to initalize the
+@ The |dmt_force_csscf_init1| routine is called to initalize the
 |dmt_force_csscf| routine.  It handles reading the input.  The
-input must be parsed with \.{libipv2} before this routine is called.
-The sole argument of this function is a |FILE *| for the output file,
-|initfp|.
-
-@<Global functions.@>=
-GLOBAL_FUNCTION void
-dmt_force_csscf_init(initfp)
-FILE *initfp;
-{
-  dmt_force_csscf_init1(0,initfp);
-}
-
-@ 
+input must be passed in the |void*| keyval argument which is
+cast from and to a |KeyVal| pointer by routines in read.cc.
+The |FILE *| argument of this function for the output file.
 
 @<Global functions.@>=
 GLOBAL_FUNCTION void
@@ -369,16 +358,7 @@ void* keyval;
 FILE *initfp;
 {
   fp = initfp;
-  if (!keyval && mynode0()==0) {
-      ip_cwk_push();
-      ip_cwk_clear();
-      ip_cwk_add(":default");
-      ip_cwk_add(":force");
-    }
   @<Read and broadcast the input options.@> @;@/
-  if (!keyval && mynode0()==0) {
-      ip_cwk_pop();
-    }
   init_called = 1;
 }
 

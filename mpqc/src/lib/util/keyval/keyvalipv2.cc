@@ -1,5 +1,6 @@
 
-#include <stdio.h>
+#include <iostream.h>
+#include <fstream.h>
 #include <stdlib.h>
 #include <string.h>
 #include <util/keyval/ipv2.h>
@@ -30,7 +31,7 @@ nfp(0)
   read(name);
 }
 
-ParsedKeyVal::ParsedKeyVal(FILE* fp):
+ParsedKeyVal::ParsedKeyVal(istream& fp):
 nfile(0),
 file(0),
 nfp(0)
@@ -95,10 +96,8 @@ nfp(0)
 void
 ParsedKeyVal::read(const char* name)
 {
-  FILE *infp;
-
-  infp = fopen(name,"r");
-  if (!infp) {
+  ifstream infp(name,ios::in);
+  if (infp.bad()) {
     fprintf(stderr,"ParsedKeyVal couldn't open %s\n",name);
     exit(1);
     }
@@ -113,13 +112,12 @@ ParsedKeyVal::read(const char* name)
 
   read(infp);
   nfp--; // read(infp) will incr nfp, but this isn't desired so undo
-  fclose(infp);
 }
 
-void ParsedKeyVal::read(FILE*infp)
+void ParsedKeyVal::read(istream&infp)
 {
   nfp++;
-  ipv2->read(infp,stderr);
+  ipv2->read(infp,cerr);
 }
 
 ParsedKeyVal::~ParsedKeyVal()
@@ -170,29 +168,29 @@ ParsedKeyVal::truekeyword(const char*key)
   else return result;
 }
 
-void ParsedKeyVal::errortrace(FILE*fp,int n)
+void ParsedKeyVal::errortrace(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"ParsedKeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n); fp << "ParsedKeyVal: error: \"" << errormsg() << "\"" << endl;
   if (nfp) {
       offset(fp,n);
-      fprintf(fp,"    reading from %d files with unknown names\n", nfp);
+      fp << "    reading from " << nfp << " files with unknown names" << endl;
     }
   for (int i=0; i<nfile; i++) {
-      offset(fp,n); fprintf(fp,"    reading from \"%s\"\n",file[i]);
+      offset(fp,n); fp << "    reading from \"" << file[i] << "\"" << endl;
     }
 }
 
-void ParsedKeyVal::dump(FILE*fp,int n)
+void ParsedKeyVal::dump(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"ParsedKeyVal: error: \"%s\"\n",errormsg());
+  offset(fp,n); fp << "ParsedKeyVal: error: \"" << errormsg() << "\"" << endl;
   if (nfp) {
       offset(fp,n);
-      fprintf(fp,"    reading from %d files with unknown names\n", nfp);
+      fp << "    reading from " << nfp << " files with unknown names" << endl;
     }
   for (int i=0; i<nfile; i++) {
-      offset(fp,n); fprintf(fp,"    reading from \"%s\"\n",file[i]);
+      offset(fp,n); fp << "    reading from \"" << file[i] << "\"" << endl;
     }
-  offset(fp,n); fprintf(fp,"The IPV2 tree:\n");
+  offset(fp,n); fp << "The IPV2 tree:" << endl;
   ipv2->print_tree(fp);
 
 }

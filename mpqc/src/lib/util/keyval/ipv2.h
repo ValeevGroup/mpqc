@@ -5,7 +5,12 @@
 #pragma interface
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
+#include <util/keyval/ipv2_scan.h>
+
+#undef yyFlexLexer
+#define yyFlexLexer IPV2FlexLexer
+#include <FlexLexer.h>
 
 // For temporary data (only used while parsing)
 /* This integer list is used to keep track of the karray index. */
@@ -33,11 +38,6 @@ struct ip_keyword_tree_list_struct {
   struct ip_keyword_tree_list_struct *p;
   };
 
-struct ip_string_list_struct {
-  char *string;
-  struct ip_string_list_struct *p;
-  };
-
 struct ip_cwk_stack_struct {
   struct ip_keyword_tree_list_struct *ktl;
   struct ip_cwk_stack_struct *p;
@@ -46,7 +46,6 @@ typedef struct ip_cwk_stack_struct ip_cwk_stack_t;
 
 typedef struct ip_keyword_tree_struct ip_keyword_tree_t;
 typedef struct ip_keyword_tree_list_struct ip_keyword_tree_list_t;
-typedef struct ip_string_list_struct ip_string_list_t;
 
 class IPV2
 {
@@ -88,16 +87,12 @@ class IPV2
 
   // This is used for error processing
   char lastkeyword[KEYWORD_LENGTH];
-
-  // keep track of the line number in the input
-  int lineno;
   
   // These are needed always:
-  FILE* ip_in;
-  FILE* ip_out;
+  istream* ip_in;
+  ostream* ip_out;
   ip_keyword_tree_t* ip_tree;
   ip_keyword_tree_list_t* ip_cwk;
-  int ip_uppercase;
   int ip_keyword;
 
   // private routines mainly used for parsing the input
@@ -137,33 +132,24 @@ class IPV2
   void ip_cwk_karray_add(int,...);
   ip_keyword_tree_t* ip_karray_descend_v(ip_keyword_tree_t*,int,int*);
   ip_keyword_tree_t* ip_karray_descend(ip_keyword_tree_t*,int,...);
-  void ip_print_keyword(FILE*,ip_keyword_tree_t*);
-  void ip_print_tree(FILE*,ip_keyword_tree_t*);
-  void ip_print_tree_(FILE*,ip_keyword_tree_t*,int);
-  void ip_indent(FILE*,int);
+  void ip_print_keyword(ostream&,ip_keyword_tree_t*);
+  void ip_print_tree(ostream&,ip_keyword_tree_t*);
+  void ip_print_tree_(ostream&,ip_keyword_tree_t*,int);
+  void ip_indent(ostream&,int);
   int ip_special_characters(char*);
   char* ip_append_keystrings(char*,char*);
   void ip_pop_karray();
-  void ip_initialize(FILE*,FILE*);
-  void ip_append(FILE*,FILE*);
+  void ip_initialize(istream&,ostream&);
+  void ip_append(istream&,ostream&);
   char* get_truename(ip_keyword_tree_t*kt);
 
-  void cvs_toupper(char*);
   void showpos();
 
-  int ylex();
+  IPV2FlexLexer *lexer;
+
+  int ylex() { return lexer->yylex(); }
   int yparse();
-  void yrestart(FILE*);
   void yerror(const char* s);
-  int ywrap();
-#ifndef OLD_FLEX_SCANNER
-  int y_get_next_buffer();
-  void yunput(int c, char *buf_ptr);
-  int yinput();
-#endif    
- public:
-  static FILE* yin;
-  static FILE* yout;
 
  public:
   IPV2();
@@ -171,10 +157,9 @@ class IPV2
   static int have_global();
   static void set_global(IPV2*);
   static IPV2* global();
-  void set_uppercase(int);
   // calls either ip_append or ip_initialize based on ip_initialized
-  void read(FILE*,FILE*);
-  void append_from_input(const char*,FILE*);
+  void read(istream&,ostream&);
+  void append_from_input(const char*,ostream&);
   void done();
   const char* error_message(IPV2::Status);
   void error(const char*,...);
@@ -210,8 +195,8 @@ class IPV2
   IPV2::Status count_v(const char*,int*,int,int*);
 
   // some routines for debugging
-  void print_keyword(FILE*f=stderr,ip_keyword_tree_t*k=0);
-  void print_tree(FILE*f=stderr,ip_keyword_tree_t*k=0);
+  void print_keyword(ostream&f=cerr,ip_keyword_tree_t*k=0);
+  void print_tree(ostream&f=cerr,ip_keyword_tree_t*k=0);
 };
 
 #endif

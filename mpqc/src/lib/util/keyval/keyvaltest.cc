@@ -1,8 +1,8 @@
 
 // a simple program to test the class stuff
 
-#include <stdio.h>
 #include <iostream.h>
+#include <fstream.h>
 
 #include <util/class/class.h>
 #include <util/keyval/ipv2.h>
@@ -198,14 +198,14 @@ main()
 
   // test IPV2
   IPV2::Status err;
-  IPV2 *ipv2 = new IPV2();
-  FILE* in = fopen(SRCDIR "/keyvaltest.in","r");
-  if (!in) {
+  ifstream in(SRCDIR "/keyvaltest.in",ios::in);
+  if (in.bad()) {
       printf("couldn't open " SRCDIR "/keyvaltest.in\n");
       abort();
     }
-  ipv2->read(in,stdout);
-  ipv2->print_tree(stdout);
+  IPV2 *ipv2 = new IPV2();
+  ipv2->read(in,cout);
+  ipv2->print_tree(cout);
   const char* test = 0;
   ipv2->value_v(":forref:nest:x",&test,0,0);
   printf("test = \"%s\"\n", test);

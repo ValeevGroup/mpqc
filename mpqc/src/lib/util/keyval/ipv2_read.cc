@@ -11,35 +11,23 @@
 #endif
 #include <util/keyval/ipv2.h>
 
-/* Set the ip_uppercase global. */
-void
-IPV2::set_uppercase(int uc)
-{
-  if (uc) ip_uppercase = 1;
-  else ip_uppercase = 0;
-}
+#include <iostream.h>
+#include <fstream.h>
 
 /* Initialize the ip routines.  This involves parsing the entire file and
  * converting it into an internal representation. */
 /* in = the input file. */
 /* out = the output file. */
 void
-IPV2::ip_initialize(FILE*in,FILE*out)
+IPV2::ip_initialize(istream&in,ostream&out)
 {
   ip_initialized = 1;
-  
-  if (in)  ip_in = in;
-  else     ip_in = stdin;
-  
-  if (out) ip_out = out;
-  else     ip_out = stdout;
 
-  // initialize the line number
-  lineno = 1;
+  ip_in = &in;
+  ip_out = &out;
   
   /* Just in case a scanner has already been running. */
-  if (yin) yrestart(ip_in);
-  else yin = ip_in;
+  lexer->switch_streams(ip_in, ip_out);
   
   /* If ip_tree is not NULL, then ip_initialize has been called twice,
    * with a done inbetween. Call done now. */
@@ -65,24 +53,18 @@ IPV2::ip_initialize(FILE*in,FILE*out)
 /* in = the input file. */
 /* out = the output file. */
 void
-IPV2::ip_append(FILE*in,FILE*out)
+IPV2::ip_append(istream&in,ostream&out)
 {
   
-  if (in)  {
-      ip_in = in;
-      lineno = 1;
-      yrestart(in);
-    }
-  
-  if (out) ip_out = out;
+  ip_in = &in;
+  ip_out = &out;
+
+  lexer->switch_streams(ip_in, ip_out);
   
   if (sub_tree != NULL) {
       error("ip_append: sub_tree != NULL - impossible");
     }
-  
-#ifndef FLEX
-  yylineno = 0;
-#endif
+
   yparse();
   
   ip_internal_values();
@@ -94,14 +76,13 @@ IPV2::ip_append(FILE*in,FILE*out)
  * prefix"files" that does not begin with a '/'.  Each of these files is
  * ip_append'ed to the set of inputs. */
 void
-IPV2::append_from_input(const char*prefix,FILE*outfile)
+IPV2::append_from_input(const char*prefix,ostream&outfile)
 {
   char keyword[KEYWORD_LENGTH];
   const char *dir;
   const char *file;
   char dirfile[512];
   int i,nfile;
-  FILE *infile;
   
   /* Get the prefix. */
   strcpy(keyword,prefix);
@@ -116,14 +97,13 @@ IPV2::append_from_input(const char*prefix,FILE*outfile)
 	  if (dir && (file[0] != '/')) strcpy(dirfile,dir);
 	  else dirfile[0] = '\0';
 	  strcat(dirfile,file);
-	  infile = fopen(dirfile,"r");
-	  if (!infile) {
+          ifstream infile(dirfile, ios::in);
+	  if (infile.bad()) {
 	      warn("IPV2::append_from_input: couldn't open the file %s",dirfile);
 	    }
 	  else {
-	      fprintf(outfile,"appending %s to input\n",dirfile);
+              outfile << "appending " << dirfile << " to input" << endl;
 	      ip_append(infile,outfile);
-	      fclose(infile);
 	    }
 	}
     }

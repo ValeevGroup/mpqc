@@ -1,22 +1,21 @@
 
-#include <stdio.h>
+#include <iostream.h>
 #include <util/keyval/ipv2.h>
 
 #define N_INDENT 2
 
 void
-IPV2::ip_print_keyword(FILE*fp,ip_keyword_tree_t*st)
+IPV2::ip_print_keyword(ostream&fp,ip_keyword_tree_t*st)
 {
   if (st->up) ip_print_keyword(fp,st->up);
-  fprintf(fp,"%s:",st->keyword);
+  fp << st->keyword << ":";
   }
 
 /* This prints out a keyword tree, tree.  If tree is NULL then ip_tree
  * is printed out. */
 void
-IPV2::ip_print_tree(FILE*fp,ip_keyword_tree_t*tree)
+IPV2::ip_print_tree(ostream&fp,ip_keyword_tree_t*tree)
 {
-  if (!fp) fp = stdout;
   if (!tree) tree = ip_tree;
   if (!tree) return;
 
@@ -28,7 +27,7 @@ IPV2::ip_print_tree(FILE*fp,ip_keyword_tree_t*tree)
  * is printed out.  Indent is used to record how deep in the tree we
  * are, so we know how far to indent things. */
 void
-IPV2::ip_print_tree_(FILE*fp,ip_keyword_tree_t*tree,int indent)
+IPV2::ip_print_tree_(ostream&fp,ip_keyword_tree_t*tree,int indent)
 {
   ip_keyword_tree_t *I;
 
@@ -46,36 +45,36 @@ IPV2::ip_print_tree_(FILE*fp,ip_keyword_tree_t*tree,int indent)
 
     ip_indent(fp,indent);
     if (ip_special_characters(I->keyword)) {
-      fprintf(fp,"\"%s\"",I->keyword);
+      fp << "\"" << I->keyword << "\"" << endl;
       }
     else {
-      fprintf(fp,"%s",I->keyword);
+      fp << I->keyword << endl;
       }
 
     if (I->classname) {
-      fprintf(fp,"<%s>",I->classname);
+      fp << "<" << I->keyword << ">" << endl;
       }
 
     if (!(I->value || I->down || I->variable)) {
-      printf(": (\n");
+      fp << ": (" << endl;
       }
 
     if (I->variable) {
-        fprintf(fp," = $%s\n",I->variable);
+      fp << " = $" << I->variable << endl;
       }
     if (I->truename) {
-        fprintf(fp,"\"%s\"",I->truename);
+      fp << "\"" << I->truename << "\"";
       }
 
     if (I->value) {
-      if (I->down) fprintf(fp," (= %s)",I->value);
-      else fprintf(fp," = %s\n",I->value);
+      if (I->down) fp << " (= " << I->value << ")";
+      else fp << " = " << I->value << endl;
       }
     if (I->down) {
-      fprintf(fp,": (\n");
+      fp << ": (" << endl;
       ip_print_tree_(fp,I->down,indent + N_INDENT);
       ip_indent(fp,indent + N_INDENT);
-      fprintf(fp,")\n");
+      fp << ")" << endl;
       }
 
     } while ((I = I->across) != tree);
@@ -83,11 +82,11 @@ IPV2::ip_print_tree_(FILE*fp,ip_keyword_tree_t*tree,int indent)
   }
 
 void
-IPV2::ip_indent(FILE*fp,int n)
+IPV2::ip_indent(ostream&fp,int n)
 {
   int i;
 
-  for (i=0; i<n; i++) fprintf(fp," ");
+  for (i=0; i<n; i++) fp << " ";
   }
 
 int

@@ -227,7 +227,7 @@ GaussianBasisSet::
   if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"GaussianBasisSet:: couldn't find \"%s\":\n",
 	      keyword);
-      keyval->errortrace(stderr);
+      keyval->errortrace(cerr);
       exit(1);
     }
   if (!count) return;
@@ -240,7 +240,7 @@ GaussianBasisSet::
           if (!newbasis) {
 	      fprintf(stderr,"GaussianBasisSet: error processing get for \"%s\"\n",
 		      prefix);
-              keyval->errortrace(stderr);
+              keyval->errortrace(cerr);
 	      exit(1);
 	    }
 	  recursively_get_shell(ishell,keyval,element,newbasis,havepure,pure,get);

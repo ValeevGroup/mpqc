@@ -102,25 +102,25 @@ PrefixKeyVal::~PrefixKeyVal()
   delete[] prefices;
 }
 
-void PrefixKeyVal::errortrace(FILE*fp,int n)
+void PrefixKeyVal::errortrace(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"PrefixKeyVal: error: \"%s\"\n",errormsg());
-  offset(fp,n); fprintf(fp,"  prefixes:\n");
+  offset(fp,n); fp << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
+  offset(fp,n); fp << "  prefixes:" << endl;
   for (int i=0; i<nprefix; i++) {
-      offset(fp,n); fprintf(fp,"    \"%s\"\n",prefices[i]);
+      offset(fp,n); fp << "    \"" << prefices[i] << "\"" << endl;
     }
-  offset(fp,n); fprintf(fp,"  keyval:\n");
+  offset(fp,n); fp << "  keyval:" << endl;
   keyval->errortrace(fp,n + OffsetDelta);
 }
 
-void PrefixKeyVal::dump(FILE*fp,int n)
+void PrefixKeyVal::dump(ostream&fp,int n)
 {
-  offset(fp,n); fprintf(fp,"PrefixKeyVal: error: \"%s\"\n",errormsg());
-  offset(fp,n); fprintf(fp,"  prefixes:\n");
+  offset(fp,n); fp << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
+  offset(fp,n); fp << "  prefixes:" << endl;
   for (int i=0; i<nprefix; i++) {
-      offset(fp,n); fprintf(fp,"    \"%s\"\n",prefices[i]);
+      offset(fp,n); fp << "    \"" << prefices[i] << "\"" << endl;
     }
-  offset(fp,n); fprintf(fp,"  keyval:\n");
+  offset(fp,n); fp << "  keyval:" << endl;
   keyval->dump(fp,n + OffsetDelta);
 }
 

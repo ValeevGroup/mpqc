@@ -3,6 +3,9 @@
 #pragma interface
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifdef USE_INLINE
 #define INLINE inline
 #else
@@ -87,12 +90,19 @@ INLINE long QCXDR::byte_swap(unsigned long l)
 
 INLINE float QCXDR::byte_swap(float f)
 {
+#if defined(SGI) && !defined(__GNUG__)
+  fprintf(stderr,
+          "QCXDR::byte_swap(float): not available because of compiler bug\n");
+  abort();
+  return 0.0;
+#else
   double r;
   if (sizeof(float) == 2) byte_swap2(&f, &r);
   else if (sizeof(float) == 4) byte_swap4(&f, &r);
   else if (sizeof(float) == 8) byte_swap8(&f, &r);
   else if (sizeof(float) == 16) byte_swap16(&f, &r);
   return r;
+#endif
 }
 
 // and an 8 byte double

@@ -1,9 +1,4 @@
 %{
-#define yyerror IPV2::yerror
-#define yyparse IPV2::yparse
-#define yylex IPV2::ylex
-#define yywrap IPV2::ywrap
-#include <stdio.h>
 #ifdef DEC
 #include <math.h>
 #else
@@ -22,6 +17,10 @@ int yydebug =1;
 #include <alloca.h>
 #endif
 #include <util/keyval/ipv2.h>
+#define yyerror IPV2::yerror
+#define yyparse IPV2::yparse
+#define yylex IPV2::ylex
+#define yywrap IPV2::ywrap
 %}
 
 %union {

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.2  1995/10/11 21:13:50  cljanss
+ * ParsedKeyVal now uses iostream instead of stdio.  Various other cleanups.
+ *
  * Revision 1.1  1995/10/09 04:48:53  cljanss
  * The MBPT code from the mpqcic directory has been moved here.  Ida's
  * new gradient code is here as well.
@@ -71,7 +74,7 @@ mbpt_make_opt2_fock(scf_struct_t *scf_info,
   int nlocalb=dmt_nlocal(FOCK);
   int nn;
   int errcod;
-  double occi, occj, occ0;
+  double occi, occj;
   double *Fblk,*FOblk;
   double_vector_t occ_num;
 
@@ -99,7 +102,6 @@ mbpt_make_opt2_fock(scf_struct_t *scf_info,
 
  /* form effective fock matrix in mo basis */
 
-  occ0 = occ_num.d[0];
   for (nn=0; nn < nlocalb; nn++ ) {
     dmt_get_block(FOCK,nn,&ib,&jb,&Fblk);
     dmt_get_block(FOCKO,nn,&ib,&jb,&FOblk);

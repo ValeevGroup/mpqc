@@ -34,7 +34,7 @@ extern "C" {
 }
 
 class PointGroup;
-class KeyVal;
+class RefKeyVal;
 
 int sym_struct_from_pg(const PointGroup&, centers_t&, sym_struct_t&);
 int sym_init_centers(const RefKeyVal&, centers_t&, sym_struct_t&);

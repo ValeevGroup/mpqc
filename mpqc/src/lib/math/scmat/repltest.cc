@@ -51,7 +51,7 @@ main(int argc, char** argv)
       msg << keyval->describedclassvalue("messagegrp");
 
       if (msg.null()) {
-          cerr << indent << "Couldn't initialize MessageGrp\n";
+          std::cerr << indent << "Couldn't initialize MessageGrp\n";
           abort();
         }
     }

@@ -46,7 +46,7 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/../dft/LIBS.h)
 
 scftest:: scftest.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o scftest $^ $(SYSLIBS) $(LTLINKBINOPTS)

@@ -454,16 +454,11 @@ BlockedSCMatrix::invert_this()
   if (d1->blocks()->nblock() == 1) {
     RefSCMatrix tdim = subkit->matrix(d1->blocks()->subdim(0),
                                       d1->blocks()->subdim(0));
-
-    for (i=0; i < d2->blocks()->nblock(); i++)
-      if (mats_[i].nonnull())
-        tdim.assign_subblock(mats_[i], 0, d1->n()-1,
-                             d2->blocks()->start(i),
-                             d2->blocks()->fence(i)-1);
-
+    tdim->convert(this);
     res = tdim->invert_this();
     transpose_this();
 
+    // d1 and d2 were swapped by now
     for (i=0; i < d1->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
         mats_[i].assign(tdim.get_subblock(d1->blocks()->start(i),
@@ -476,14 +471,11 @@ BlockedSCMatrix::invert_this()
     RefSCMatrix tdim = subkit->matrix(d2->blocks()->subdim(0),
                                       d2->blocks()->subdim(0));
 
-    for (i=0; i < d1->blocks()->nblock(); i++)
-      if (mats_[i].nonnull())
-        tdim.assign_subblock(mats_[i], d1->blocks()->start(i), d1->blocks()->fence(i)-1,
-                             0, d2->n()-1);
-
+    tdim->convert(this);
     res = tdim->invert_this();
     transpose_this();
 
+    // d1 and d2 were swapped by now
     for (i=0; i < d2->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
         mats_[i].assign(tdim.get_subblock(0, d1->n()-1,

@@ -103,6 +103,11 @@ class MsgStateRecv: public StateInBinXDR {
 
     virtual ~MsgStateRecv();
 
+    //. Returns the version of the ClassDesc.  This assumes that
+    // the version of the remote class is the same as that of
+    // the local class.
+    int version(const ClassDesc*);
+
     //. The buffer size of statein and stateout objects that communicate
     //with each other must match.
     void set_buffer_size(int);

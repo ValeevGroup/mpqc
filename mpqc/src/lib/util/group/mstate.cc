@@ -114,7 +114,8 @@ MsgStateSend::put_array_void(const void* vd, int n)
 int
 MsgStateSend::put(const ClassDesc*cd)
 {
-  return StateOutBinXDR::put(grp->classdesc_to_index(cd));
+  int index = grp->classdesc_to_index(cd);
+  return StateOutBinXDR::put(index);
 }
 
 int
@@ -188,6 +189,13 @@ MsgStateRecv::~MsgStateRecv()
   release_buffer(send_buffer);
 }
 
+int
+MsgStateRecv::version(const ClassDesc* cd)
+{
+  if (!cd) return -1;
+  return cd->version();
+}
+
 void
 MsgStateRecv::set_buffer_size(int size)
 {
@@ -229,8 +237,10 @@ MsgStateRecv::get(const ClassDesc**cd)
   int r = StateInBinXDR::get(index);
   *cd = grp->index_to_classdesc(index);
   if (!*cd) {
-      cerr << scprintf("MsgStateRecvt::get(const ClassDesc**cd): "
-              "class not available on this processor\n");
+      cerr << "MsgStateRecvt::get(const ClassDesc**cd): "
+           << "class not available on this processor:"
+           << endl;
+      cerr << " index = " << index << endl;
       abort();
     }
   return r;

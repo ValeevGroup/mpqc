@@ -307,7 +307,7 @@ class StateIn: public DescribedClass {
 
     //. Returns the version of the ClassDesc in the persistent object
     //. or -1 if info on the ClassDesc doesn't exist
-    int version(const ClassDesc*);
+    virtual int version(const ClassDesc*);
     
     //. This restores strings saved with
     //. \srccd{\clsnmref{StateOut}::putstring}.

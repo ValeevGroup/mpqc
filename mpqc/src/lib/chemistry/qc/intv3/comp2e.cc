@@ -1762,8 +1762,10 @@ Int2eV3::nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
   int nonredundant_index;
   int i,j,k,l;
 
-  redundant_index = *red_off;
-  nonredundant_index = *nonred_off;
+  double *redundant_ptr = &buffer[*red_off];
+  double *nonredundant_ptr = &buffer[*nonred_off];
+
+  nonredundant_index = 0;
   int n34 = n3*n4;
   for (i=0; i<n1; i++) {
     int jmax = INT_MAX2(e12,i,n2);
@@ -1772,18 +1774,18 @@ Int2eV3::nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
       for (k=0; k<=kmax; k++) {
         int lmax = INT_MAX4(e13e24,e34,i,j,k,n4);
         for (l=0; l<=lmax; l++) {
-          buffer[nonredundant_index] = buffer[redundant_index];
-          nonredundant_index++;
-          redundant_index++;
+          nonredundant_ptr[l] = redundant_ptr[l];
           }
-        redundant_index += n4-(lmax+1);
+        redundant_ptr += n4;
+        nonredundant_index += lmax+1;
+        nonredundant_ptr += lmax+1;
         }
-      redundant_index += (n3-(kmax+1))*n4;
+      redundant_ptr += (n3-(kmax+1))*n4;
       }
-    redundant_index += (n2-(jmax+1))*n34;
+    redundant_ptr += (n2-(jmax+1))*n34;
     }
-  *red_off = redundant_index;
-  *nonred_off = nonredundant_index;
+  *red_off += n1*n2*n34;
+  *nonred_off += nonredundant_index;
   }
 
 /* This is an alternate interface to int_erep_all1der.  It takes

@@ -76,6 +76,7 @@ MemoryGrp::initial_memorygrp()
 {
   int argc = 0;
   initial_memorygrp(argc,0);
+  return 0;
 }
 
 MemoryGrp *

@@ -7,6 +7,7 @@
 #endif
 
 #include <unistd.h>
+#include <util/misc/formio.h>
 #include <util/group/memmpl.h>
 
 #include <mpi.h>

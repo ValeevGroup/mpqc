@@ -142,10 +142,6 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   grp = new ParagonMessageGrp;
   if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
   else return grp;
-#elif defined(HAVE_MPI) && !defined(HAVE_P4)
-  grp = new MPIMessageGrp;
-  if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
-  else return grp;
 #endif
   return 0;
 }
@@ -272,8 +268,8 @@ MessageGrp::initialize(int me, int n)
     }
 
   if (me_ == 0) {
-    cout << "MessageGrp: registered " << nclass_ << " classes and "
-         << n_ << " nodes\n";
+    cout << "MessageGrp(" << class_name() << "): registered "
+         << nclass_ << " classes and " << n_ << " nodes" << endl;
     }
 
   this->dereference();
@@ -555,8 +551,8 @@ MessageGrp::raw_collect(const void *part, const int *lengths, void *whole,
   int offset = 0;
   for (int i=0; i<n_; i++) {
       int nbytes = lengths[i];
-      if (i==me_) memcpy(&whole[offset], part, nbytes);
-      raw_bcast(&whole[offset], nbytes, i);
+      if (i==me_) memcpy(&((char*)whole)[offset], part, nbytes);
+      raw_bcast(&((char*)whole)[offset], nbytes, i);
       offset += nbytes;
     }
 }

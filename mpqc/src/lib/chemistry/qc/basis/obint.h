@@ -15,34 +15,76 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
+class EfieldDotVectorData: public VRefCount
+{
+  public:
+    double position[3];
+    double vector[3];
+
+    void set_position(double*);
+    void set_vector(double*);
+};
+REF_dec(EfieldDotVectorData);
+
+class DipoleData: public VRefCount
+{
+  public:
+    double origin[3];
+
+    DipoleData(double *d) {origin[0]=d[0]; origin[1]=d[1]; origin[2]=d[2];}
+    DipoleData() {origin[0]=origin[1]=origin[2];}
+    void set_origin(double*);
+};
+REF_dec(DipoleData);
+
+class PointChargeData: public VRefCount
+{
+  public:
+    PointBag_double* charges;
+    PointChargeData(PointBag_double* c): charges(c) {}
+};
+REF_dec(PointChargeData);
+
+//. \clsnm{OneBodyInt} is an abstract base class for objects that
+// compute integrals between two basis functions.
 class OneBodyInt : public VRefCount {
   protected:
-    RefGaussianBasisSet bs1;
-    RefGaussianBasisSet bs2;
+    RefGaussianBasisSet bs1_;
+    RefGaussianBasisSet bs2_;
 
     double *buffer_;
 
-  public:
-    OneBodyInt(const RefGaussianBasisSet&b);
     OneBodyInt(const RefGaussianBasisSet&b1,
-               const RefGaussianBasisSet&b2);
+               const RefGaussianBasisSet&b2 = 0);
+
+  public:
     virtual ~OneBodyInt();
   
+    //. Returns the number of basis functions.
     int nbasis() const;
     int nbasis1() const;
     int nbasis2() const;
 
+    //. Returns the number of basis shells.
     int nshell() const;
     int nshell1() const;
     int nshell2() const;
 
+    //. Returns the basis sets.
     RefGaussianBasisSet basis();
     RefGaussianBasisSet basis1();
     RefGaussianBasisSet basis2();
 
+    //. Returns the buffer where the integrals are placed.
     const double * buffer() const;
     
+    //. Computes the integrals between basis functions in the
+    // given shell pair.
     virtual void compute_shell(int,int) = 0;
+
+    //. This is called for one body integrals that take data to let
+    // them know that the data they reference has changed.
+    virtual void reinitialize();
 };
 
 REF_dec(OneBodyInt);

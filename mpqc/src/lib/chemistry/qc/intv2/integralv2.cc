@@ -66,131 +66,55 @@ IntegralV2::new_spherical_transform_iter(int l, int inv)
 }
 
 RefOneBodyInt
-IntegralV2::overlap_int(const RefGaussianBasisSet& gbs)
+IntegralV2::overlap()
 {
-  return new GaussianOverlapIntv2(gbs);
+  return new GaussianOverlapIntv2(bs1_, bs2_);
 }
 
 RefOneBodyInt
-IntegralV2::overlap_int(const RefGaussianBasisSet& gbs1,
-                        const RefGaussianBasisSet& gbs2)
+IntegralV2::kinetic()
 {
-  return new GaussianOverlapIntv2(gbs1, gbs2);
+  return new GaussianKineticIntv2(bs1_, bs2_);
 }
 
 RefOneBodyInt
-IntegralV2::kinetic_int(const RefGaussianBasisSet& gbs)
+IntegralV2::point_charge(const RefPointChargeData& dat)
 {
-  return new GaussianKineticIntv2(gbs);
+  return new GaussianPointChargeIntv2(bs1_, bs2_, dat);
 }
 
 RefOneBodyInt
-IntegralV2::kinetic_int(const RefGaussianBasisSet& gbs1,
-                        const RefGaussianBasisSet& gbs2)
+IntegralV2::nuclear()
 {
-  return new GaussianKineticIntv2(gbs1, gbs2);
+  return new GaussianNuclearIntv2(bs1_, bs2_);
 }
 
 RefOneBodyInt
-IntegralV2::point_charge_int(PointBag_double* pb,
-                             const RefGaussianBasisSet& gbs)
+IntegralV2::efield_dot_vector(const RefEfieldDotVectorData&dat)
 {
-  return new GaussianPointChargeIntv2(pb, gbs);
+  return new GaussianEfieldDotVectorIntv2(bs1_, bs2_, dat);
 }
 
 RefOneBodyInt
-IntegralV2::point_charge_int(PointBag_double *pb,
-                             const RefGaussianBasisSet& gbs1,
-                             const RefGaussianBasisSet& gbs2)
+IntegralV2::dipole(const RefDipoleData& dat)
 {
-  return new GaussianPointChargeIntv2(pb, gbs1, gbs2);
-}
-
-RefOneBodyInt
-IntegralV2::nuclear_int(const RefGaussianBasisSet& gbs)
-{
-  return new GaussianNuclearIntv2(gbs);
-}
-
-RefOneBodyInt
-IntegralV2::nuclear_int(PointBag_double *pb,
-                        const RefGaussianBasisSet& gbs1,
-                        const RefGaussianBasisSet& gbs2)
-{
-  return new GaussianNuclearIntv2(pb, gbs1, gbs2);
-}
-
-RefOneBodyInt
-IntegralV2::efield_dot_vector_int(const RefGaussianBasisSet& gbs,
-                                 double *position,
-                                 double *vector)
-{
-  return new GaussianEfieldDotVectorIntv2(gbs, position, vector);
-}
-
-RefOneBodyInt
-IntegralV2::efield_dot_vector_int(const RefGaussianBasisSet& gbs1,
-                                 const RefGaussianBasisSet& gbs2,
-                                 double *position,
-                                 double *vector)
-{
-  return new GaussianEfieldDotVectorIntv2(gbs1, gbs2, position, vector);
-}
-
-RefOneBodyInt
-IntegralV2::dipole_int(const RefGaussianBasisSet& gbs,
-                      double *origin)
-{
-  return new GaussianDipoleIntv2(gbs, origin);
-}
-
-RefOneBodyInt
-IntegralV2::dipole_int(const RefGaussianBasisSet& gbs1,
-                       const RefGaussianBasisSet& gbs2,
-                       double *origin)
-{
-  return new GaussianDipoleIntv2(gbs1, gbs2, origin);
+  return new GaussianDipoleIntv2(bs1_, bs2_, dat);
 }
 
 RefOneBodyDerivInt
-IntegralV2::deriv_int(const RefGaussianBasisSet& gbs)
+IntegralV2::deriv()
 {
-  return new OneBodyDerivIntv2(gbs);
-}
-
-RefOneBodyDerivInt
-IntegralV2::deriv_int(const RefGaussianBasisSet& gbs1,
-                      const RefGaussianBasisSet& gbs2)
-{
-  return new OneBodyDerivIntv2(gbs1, gbs2);
+  return new OneBodyDerivIntv2(bs1_, bs2_);
 }
 
 RefTwoBodyInt
-IntegralV2::two_body_int(const RefGaussianBasisSet& gbs)
+IntegralV2::electron_repulsion()
 {
-  return new TwoBodyIntV2(gbs);
-}
-
-RefTwoBodyInt
-IntegralV2::two_body_int(const RefGaussianBasisSet& gbs1,
-                         const RefGaussianBasisSet& gbs2,
-                         const RefGaussianBasisSet& gbs3,
-                         const RefGaussianBasisSet& gbs4)
-{
-  return new TwoBodyIntV2(gbs1, gbs2, gbs3, gbs4);
+  return new TwoBodyIntV2(bs1_, bs2_, bs3_, bs4_);
 }
 
 RefTwoBodyDerivInt
-IntegralV2::two_body_deriv_int(const RefGaussianBasisSet& gbs)
+IntegralV2::electron_repulsion_deriv()
 {
-  return new TwoBodyDerivIntV2(gbs);
-}
-
-RefTwoBodyDerivInt
-IntegralV2::two_body_deriv_int(const RefGaussianBasisSet& gbs1,
-                         const RefGaussianBasisSet& gbs2,
-                         const RefGaussianBasisSet& gbs3,
-                         const RefGaussianBasisSet& gbs4)
-{
-  return new TwoBodyDerivIntV2(gbs1, gbs2, gbs3, gbs4);
+  return new TwoBodyDerivIntV2(bs1_, bs2_, bs3_, bs4_);
 }

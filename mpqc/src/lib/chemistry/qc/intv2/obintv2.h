@@ -19,7 +19,6 @@ class OneBodyIntv2 : public OneBodyInt {
     struct struct_centers* c2;
 
   public:
-    OneBodyIntv2(const RefGaussianBasisSet&);
     OneBodyIntv2(const RefGaussianBasisSet&, const RefGaussianBasisSet&);
     ~OneBodyIntv2();
 };
@@ -29,7 +28,6 @@ class OneBodyIntv2 : public OneBodyInt {
 class GaussianOverlapIntv2 : public OneBodyIntv2
 {
   public:
-    GaussianOverlapIntv2(const RefGaussianBasisSet&);
     GaussianOverlapIntv2(const RefGaussianBasisSet&,
                          const RefGaussianBasisSet&);
     ~GaussianOverlapIntv2();
@@ -39,7 +37,6 @@ class GaussianOverlapIntv2 : public OneBodyIntv2
 class GaussianKineticIntv2 : public OneBodyIntv2
 {
   public:
-    GaussianKineticIntv2(const RefGaussianBasisSet&);
     GaussianKineticIntv2(const RefGaussianBasisSet&,
                          const RefGaussianBasisSet&);
     ~GaussianKineticIntv2();
@@ -52,23 +49,22 @@ class GaussianPointChargeIntv2 : public OneBodyIntv2
     int ncharge;
     double** position;
     double* charge;
+    RefPointChargeData data_;
 
-    void init(PointBag_double*);
-    
   public:
-    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&);
-    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&,
-                             const RefGaussianBasisSet&);
+    GaussianPointChargeIntv2(const RefGaussianBasisSet&,
+                             const RefGaussianBasisSet&,
+                             const RefPointChargeData&);
     ~GaussianPointChargeIntv2();
     void compute_shell(int,int);
+
+    void reinitialize();
 };
 
 class GaussianNuclearIntv2 : public GaussianPointChargeIntv2
 {
   public:
-    GaussianNuclearIntv2(const RefGaussianBasisSet&);
-    GaussianNuclearIntv2(PointBag_double *charges,
-                         const RefGaussianBasisSet&,
+    GaussianNuclearIntv2(const RefGaussianBasisSet&,
                          const RefGaussianBasisSet&);
     ~GaussianNuclearIntv2();
 };
@@ -77,34 +73,24 @@ class GaussianEfieldDotVectorIntv2: public OneBodyIntv2
 {
   private:
     double *buffer3_; // a larger buffer is needed than that provided
-    double position_[3];
-    double vector_[3];
+    RefEfieldDotVectorData data_;
   public:
     GaussianEfieldDotVectorIntv2(const RefGaussianBasisSet&,
-                                 double *postion = 0,
-                                 double *vector = 0);
-    GaussianEfieldDotVectorIntv2(const RefGaussianBasisSet&,
                                  const RefGaussianBasisSet&,
-                                 double *postion = 0,
-                                 double *vector = 0);
+                                 const RefEfieldDotVectorData&);
     ~GaussianEfieldDotVectorIntv2();
-    void position(const double*);
-    void vector(const double*);
     void compute_shell(int,int);
 };
 
 class GaussianDipoleIntv2: public OneBodyIntv2
 {
   private:
-    double origin_[3];
+    RefDipoleData data_;
   public:
     GaussianDipoleIntv2(const RefGaussianBasisSet&,
-                        const double *origin = 0);
-    GaussianDipoleIntv2(const RefGaussianBasisSet&,
                         const RefGaussianBasisSet&,
-                        const double *origin = 0);
+                        const RefDipoleData&);
     ~GaussianDipoleIntv2();
-    void origin(const double*);
     void compute_shell(int,int);
 };
 
@@ -121,8 +107,8 @@ class OneBodyDerivIntv2 : public OneBodyDerivInt {
     struct struct_centers* c2;
 
   public:
-    OneBodyDerivIntv2(const RefGaussianBasisSet&);
-    OneBodyDerivIntv2(const RefGaussianBasisSet&, const RefGaussianBasisSet&);
+    OneBodyDerivIntv2(const RefGaussianBasisSet&,
+                      const RefGaussianBasisSet&);
     ~OneBodyDerivIntv2();
 
     void compute_hcore_shell(int center, int ish, int jsh);

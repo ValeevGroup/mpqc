@@ -29,6 +29,11 @@ Integral::Integral()
 Integral::Integral(StateIn& s) :
   SavableState(s)
 {
+  bs1_.restore_state(s);
+  bs2_.restore_state(s);
+  bs3_.restore_state(s);
+  bs4_.restore_state(s);
+  s.get(storage_);
 }
 
 Integral::Integral(const RefKeyVal&)
@@ -36,8 +41,13 @@ Integral::Integral(const RefKeyVal&)
 }
 
 void
-Integral::save_data_state(StateOut&)
+Integral::save_data_state(StateOut&o)
 {
+  bs1_.save_state(o);
+  bs2_.save_state(o);
+  bs3_.save_state(o);
+  bs4_.save_state(o);
+  o.put(storage_);
 }
 
 RefPetiteList
@@ -51,4 +61,19 @@ Integral::shell_rotation(int am, SymmetryOperation& so, int pure)
 {
   ShellRotation r(am, so, *this, pure);
   return r;
+}
+
+void
+Integral::set_basis(const RefGaussianBasisSet &b1,
+                    const RefGaussianBasisSet &b2,
+                    const RefGaussianBasisSet &b3,
+                    const RefGaussianBasisSet &b4)
+{
+  bs1_ = b1;
+  bs2_ = b2;
+  bs3_ = b3;
+  bs4_ = b4;
+  if (bs2_.null()) bs2_ = bs1_;
+  if (bs3_.null()) bs3_ = bs2_;
+  if (bs4_.null()) bs4_ = bs3_;
 }

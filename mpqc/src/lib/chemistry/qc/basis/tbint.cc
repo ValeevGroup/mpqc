@@ -12,29 +12,11 @@
 
 ///////////////////////////////////////////////////////////////////////
 
-TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b) :
-  bs1(b), bs2(b), bs3(b), bs4(b)
-{
-  // allocate a buffer
-  int biggest_shell = b->max_nfunction_in_shell();
-  biggest_shell *= biggest_shell;
-  biggest_shell *= biggest_shell;
-
-  if (biggest_shell) {
-    buffer_ = new double[biggest_shell];
-  } else {
-    buffer_ = 0;
-  }
-
-  store1_=store2_=1;
-  int_store_=0;
-}
-
 TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b1,
                        const RefGaussianBasisSet&b2,
                        const RefGaussianBasisSet&b3,
                        const RefGaussianBasisSet&b4) :
-  bs1(b1), bs2(b2), bs3(b3), bs4(b4)
+  bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4)
 {
   // allocate a buffer
   int biggest_shell = b1->max_nfunction_in_shell() *
@@ -47,9 +29,6 @@ TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b1,
   } else {
     buffer_ = 0;
   }
-
-  store1_=store2_=1;
-  int_store_=0;
 }
 
 TwoBodyInt::~TwoBodyInt()
@@ -63,91 +42,91 @@ TwoBodyInt::~TwoBodyInt()
 int
 TwoBodyInt::nbasis() const
 {
-  return bs1->nbasis();
+  return bs1_->nbasis();
 }
 
 int
 TwoBodyInt::nbasis1() const
 {
-  return bs1->nbasis();
+  return bs1_->nbasis();
 }
 
 int
 TwoBodyInt::nbasis2() const
 {
-  return bs2->nbasis();
+  return bs2_->nbasis();
 }
 
 int
 TwoBodyInt::nbasis3() const
 {
-  return bs3->nbasis();
+  return bs3_->nbasis();
 }
 
 int
 TwoBodyInt::nbasis4() const
 {
-  return bs4->nbasis();
+  return bs4_->nbasis();
 }
 
 int
 TwoBodyInt::nshell() const
 {
-  return bs1->nshell();
+  return bs1_->nshell();
 }
 
 int
 TwoBodyInt::nshell1() const
 {
-  return bs1->nshell();
+  return bs1_->nshell();
 }
 
 int
 TwoBodyInt::nshell2() const
 {
-  return bs2->nshell();
+  return bs2_->nshell();
 }
 
 int
 TwoBodyInt::nshell3() const
 {
-  return bs3->nshell();
+  return bs3_->nshell();
 }
 
 int
 TwoBodyInt::nshell4() const
 {
-  return bs4->nshell();
+  return bs4_->nshell();
 }
 
 RefGaussianBasisSet
 TwoBodyInt::basis()
 {
-  return bs1;
+  return bs1_;
 }
 
 RefGaussianBasisSet
 TwoBodyInt::basis1()
 {
-  return bs1;
+  return bs1_;
 }
 
 RefGaussianBasisSet
 TwoBodyInt::basis2()
 {
-  return bs2;
+  return bs2_;
 }
 
 RefGaussianBasisSet
 TwoBodyInt::basis3()
 {
-  return bs3;
+  return bs3_;
 }
 
 RefGaussianBasisSet
 TwoBodyInt::basis4()
 {
-  return bs4;
+  return bs4_;
 }
 
 const double *

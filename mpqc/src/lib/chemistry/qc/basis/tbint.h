@@ -13,23 +13,19 @@
 
 class TwoBodyInt : public VRefCount {
   protected:
-    int store1_;
-    int store2_;
-    int int_store_;
-    
-    RefGaussianBasisSet bs1;
-    RefGaussianBasisSet bs2;
-    RefGaussianBasisSet bs3;
-    RefGaussianBasisSet bs4;
+    RefGaussianBasisSet bs1_;
+    RefGaussianBasisSet bs2_;
+    RefGaussianBasisSet bs3_;
+    RefGaussianBasisSet bs4_;
 
     double *buffer_;
 
+    TwoBodyInt(const RefGaussianBasisSet&bs1,
+               const RefGaussianBasisSet&bs2 = 0,
+               const RefGaussianBasisSet&bs3 = 0,
+               const RefGaussianBasisSet&bs4 = 0);
+
   public:
-    TwoBodyInt(const RefGaussianBasisSet&b);
-    TwoBodyInt(const RefGaussianBasisSet&b1,
-               const RefGaussianBasisSet&b2,
-               const RefGaussianBasisSet&b3,
-               const RefGaussianBasisSet&b4);
     virtual ~TwoBodyInt();
   
     int nbasis() const;
@@ -53,10 +49,6 @@ class TwoBodyInt : public VRefCount {
     const double * buffer() const;
     
     virtual void compute_shell(int,int,int,int) = 0;
-
-    int int_store1(int i) { store1_=i; };
-    int int_store2(int i) { store2_=i; };
-    int integral_storage(int i) { int_store_=i; };
 };
 
 REF_dec(TwoBodyInt);

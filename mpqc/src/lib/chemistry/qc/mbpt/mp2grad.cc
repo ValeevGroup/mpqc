@@ -35,7 +35,8 @@ extern "C" {
 static int
 mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
         double_vector_t *_evals, int nfzc, int nfzv, int mem,FILE* outfile,
-        RefMessageGrp msg, double &energy, double_matrix_t *);
+        const RefMessageGrp &msg, const RefMemoryGrp &mem,
+        double &energy, double_matrix_t *);
 
 static void
 s2pdm_contrib(double *intbuf, centers_t *centers, double *PHF, double *P2AO,
@@ -114,8 +115,10 @@ print_contrib(double tmpval, int num, int onum,
 
 static int
 mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
-     double_vector_t *_evals, int nfzc, int nfzv, int mem_alloc, FILE* outfile,
-        RefMessageGrp msg, double &energy, double_matrix_t *gradientt)
+        double_vector_t *_evals, int nfzc, int nfzv,
+        int mem_alloc, FILE* outfile,
+        const RefMessageGrp &msg, const RefMemoryGrp &mem,
+        double &energy, double_matrix_t *gradientt)
 {
 
   // New version of MP2 gradient program which uses the full
@@ -440,8 +443,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
         }
     }
 
-  RefMemoryGrp mem
-      = MemoryGrp::create_memorygrp(nijmax*nbasis*nbasis*sizeof(double));
+  mem->set_localsize(nijmax*nbasis*nbasis*sizeof(double));
 
   mem->lock(0);
 
@@ -1551,7 +1553,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     }           // exit loop over i-batches (pass)
 
-  mem = 0;
+  mem->set_localsize(0);
 
   // debug print
   if (me == 0) {
@@ -2472,7 +2474,7 @@ mbpt_mp2_gradient(scf_struct_t &scf_info,
                   dmt_matrix Scf_Vec, dmt_matrix Fock, dmt_matrix FockO,
                   int mem_alloc,
                   FILE *outfile,
-                  RefMessageGrp &grp,
+                  const RefMessageGrp &grp, const RefMemoryGrp &mem,
                   double &energy, double_matrix_t &gradient)
 {
   dmt_matrix S = dmt_create("libscfv3 overlap matrix",scf_info.nbfao,SCATTERED);
@@ -2527,7 +2529,7 @@ mbpt_mp2_gradient(scf_struct_t &scf_info,
 
   tim_enter("mp2grad");
   mp2grad(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,outfile,
-          grp,energy,&gradient);
+          grp,mem,energy,&gradient);
   tim_exit("mp2grad");
        
   free_double_vector(&evals);

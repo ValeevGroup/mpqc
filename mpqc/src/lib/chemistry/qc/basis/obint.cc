@@ -12,27 +12,41 @@
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b) :
-  bs1(b), bs2(b)
+void
+EfieldDotVectorData::set_position(double*p)
 {
-  // allocate a buffer
-  int biggest_shell = b->max_nfunction_in_shell();
-  biggest_shell *= biggest_shell;
-
-  if (biggest_shell) {
-    buffer_ = new double[biggest_shell];
-  } else {
-    buffer_ = 0;
-  }
+  position[0] = p[0];
+  position[1] = p[1];
+  position[2] = p[2];
 }
 
-OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b1,
-                       const RefGaussianBasisSet&b2) :
-  bs1(b1), bs2(b2)
+void
+EfieldDotVectorData::set_vector(double*v)
+{
+  vector[0] = v[0];
+  vector[1] = v[1];
+  vector[2] = v[2];
+}
+
+///////////////////////////////////////////////////////////////////////
+
+void
+DipoleData::set_origin(double*o)
+{
+  origin[0] = o[0];
+  origin[1] = o[1];
+  origin[2] = o[2];
+}
+
+///////////////////////////////////////////////////////////////////////
+
+OneBodyInt::OneBodyInt(const RefGaussianBasisSet&bs1,
+                       const RefGaussianBasisSet&bs2) :
+  bs1_(bs1), bs2_(bs2)
 {
   // allocate a buffer
-  int biggest_shell = b1->max_nfunction_in_shell() *
-                      b2->max_nfunction_in_shell();
+  int biggest_shell = bs1_->max_nfunction_in_shell() *
+                      bs2_->max_nfunction_in_shell();
     
   if (biggest_shell) {
     buffer_ = new double[biggest_shell];
@@ -52,61 +66,66 @@ OneBodyInt::~OneBodyInt()
 int
 OneBodyInt::nbasis() const
 {
-  return bs1->nbasis();
+  return bs1_->nbasis();
 }
 
 int
 OneBodyInt::nbasis1() const
 {
-  return bs1->nbasis();
+  return bs1_->nbasis();
 }
 
 int
 OneBodyInt::nbasis2() const
 {
-  return bs2->nbasis();
+  return bs2_->nbasis();
 }
 
 int
 OneBodyInt::nshell() const
 {
-  return bs1->nshell();
+  return bs1_->nshell();
 }
 
 int
 OneBodyInt::nshell1() const
 {
-  return bs1->nshell();
+  return bs1_->nshell();
 }
 
 int
 OneBodyInt::nshell2() const
 {
-  return bs2->nshell();
+  return bs2_->nshell();
 }
 
 RefGaussianBasisSet
 OneBodyInt::basis()
 {
-  return bs1;
+  return bs1_;
 }
 
 RefGaussianBasisSet
 OneBodyInt::basis1()
 {
-  return bs1;
+  return bs1_;
 }
 
 RefGaussianBasisSet
 OneBodyInt::basis2()
 {
-  return bs2;
+  return bs2_;
 }
 
 const double *
 OneBodyInt::buffer() const
 {
   return buffer_;
+}
+
+void
+OneBodyInt::reinitialize()
+{
 }
 
 ///////////////////////////////////////////////////////////////////////

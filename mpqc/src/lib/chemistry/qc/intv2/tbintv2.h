@@ -17,7 +17,6 @@ class TwoBodyIntV2 : public TwoBodyInt {
     void init();
     
   public:
-    TwoBodyIntV2(const RefGaussianBasisSet&b);
     TwoBodyIntV2(const RefGaussianBasisSet&b1,
                  const RefGaussianBasisSet&b2,
                  const RefGaussianBasisSet&b3,
@@ -40,7 +39,6 @@ class TwoBodyDerivIntV2 : public TwoBodyDerivInt {
     void init();
     
   public:
-    TwoBodyDerivIntV2(const RefGaussianBasisSet&b);
     TwoBodyDerivIntV2(const RefGaussianBasisSet&b1,
                       const RefGaussianBasisSet&b2,
                       const RefGaussianBasisSet&b3,

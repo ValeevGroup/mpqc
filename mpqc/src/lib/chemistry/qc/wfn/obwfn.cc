@@ -9,6 +9,10 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+#ifndef DBL_EPSILON
+#define DBL_EPSILON 1.0e-15
+#endif
+
 SavableState_REF_def(OneBodyWavefunction);
 
 #define CLASSNAME OneBodyWavefunction
@@ -105,12 +109,13 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   //ovec.print("old wavefunction");
   
   // now form the overlap between the old basis and the new one
+  integral()->set_basis(basis(), owfn->basis());
   RefSCMatrix s2(basis_dimension(), ovec.rowdim(), basis_matrixkit());
-  RefSCElementOp op =
-    new OneBodyIntOp(integral()->overlap_int(basis(), owfn->basis()));
+  RefSCElementOp op = new OneBodyIntOp(integral()->overlap());
   s2.assign(0.0);
   s2.element_op(op);
   op = 0;
+  integral()->set_basis(basis());
 
   //s2.print("overlap between new basis and old");
   

@@ -176,7 +176,8 @@ Wavefunction::overlap()
 {
   if (!overlap_.computed()) {
     RefSymmSCMatrix s(basis_dimension(), basis_matrixkit());
-    RefSCElementOp ov = new OneBodyIntOp(integral()->overlap_int(gbs_));
+    integral()->set_basis(gbs_);
+    RefSCElementOp ov = new OneBodyIntOp(integral()->overlap());
     s.assign(0.0);
     s.element_op(ov);
     ov=0;

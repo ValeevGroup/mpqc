@@ -25,6 +25,7 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
+#include <chemistry/qc/intv2/integralv2.h>
 #include <chemistry/qc/intv2/obintv2.h>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -446,8 +447,10 @@ MPSCF::compute()
             RefSymmSCMatrix DAO = density();
             RefSymmSCMatrix efieldAO(DAO.dim(),solvent_->matrixkit());
 
-            GaussianEfieldDotVectorIntv2 *edotnv2 =
-              new GaussianEfieldDotVectorIntv2(basis());
+            RefIntegral integ = new IntegralV2;
+            integ->set_basis(basis());
+            RefEfieldDotVectorData edotvdat = new EfieldDotVectorData;
+            RefOneBodyInt edotnv2 = integ->efield_dot_vector(edotvdat);
 
             RefSCElementOp edotn_op = new OneBodyIntOp(edotnv2);
 //             // BEGIN DEBUG
@@ -503,7 +506,7 @@ MPSCF::compute()
 //                 cout.flush();
 //                 fflush(stdout);
 //                 // END DEBUG
-                edotnv2->position(scf_info.chargex[j]);
+                edotvdat->set_position(scf_info.chargex[j]);
 //                 // BEGIN DEBUG compute the exact normals for now
 //                 double tmp = 0.0;
 //                 for (k=0; k<3; k++) {
@@ -516,7 +519,8 @@ MPSCF::compute()
 //                     normals[j][k] *= tmp;
 //                   }
 //                 // END DEBUG compute the exact normals for now
-                edotnv2->vector(normals[j]);
+                edotvdat->set_vector(normals[j]);
+                edotnv2->reinitialize();
                 efieldAO.assign(0.0);
                 efieldAO.element_op(edotn_op);
 //                 // BEGIN DEBUG

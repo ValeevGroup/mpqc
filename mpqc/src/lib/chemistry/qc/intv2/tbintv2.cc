@@ -18,30 +18,23 @@ extern "C" {
 #include <chemistry/qc/intv2/tbintv2.h>
 #include <chemistry/qc/intv2/storage.h>
 
-TwoBodyIntV2::TwoBodyIntV2(const RefGaussianBasisSet& b) :
-  TwoBodyInt(b),
-  same_center(1)
-{
-  c1 = c2 = c3 = c4 = int_centers_from_gbs(b);
-  if (!c1) {
-    fprintf(stderr,"TwoBodyIntV2::could not form centers\n");
-    abort();
-  }
-  
-  init();
-}
-
 TwoBodyIntV2::TwoBodyIntV2(const RefGaussianBasisSet& b1,
                            const RefGaussianBasisSet& b2,
                            const RefGaussianBasisSet& b3,
                            const RefGaussianBasisSet& b4) :
-  TwoBodyInt(b1,b2,b3,b4),
-  same_center(0)
+  TwoBodyInt(b1,b2,b3,b4)
 {
   c1 = int_centers_from_gbs(b1);
-  c2 = int_centers_from_gbs(b2);
-  c3 = int_centers_from_gbs(b3);
-  c4 = int_centers_from_gbs(b4);
+  if (b1 != b2 || b1 != b3 || b1 != b4) {
+      same_center = 0;
+      c2 = int_centers_from_gbs(b2);
+      c3 = int_centers_from_gbs(b3);
+      c4 = int_centers_from_gbs(b4);
+    }
+  else {
+      c2 = c3 = c4 = c1;
+      same_center = 1;
+    }
 
   if (!c1 || !c2 || !c3 || !c4) {
     fprintf(stderr,"TwoBodyIntV2::could not form centers\n");
@@ -109,30 +102,23 @@ TwoBodyIntV2::compute_shell(int is, int js, int ks, int ls)
 
 //////////////////////////////////////////////////////////////////////////
 
-TwoBodyDerivIntV2::TwoBodyDerivIntV2(const RefGaussianBasisSet& b) :
-  TwoBodyDerivInt(b),
-  same_center(1)
-{
-  c1 = c2 = c3 = c4 = int_centers_from_gbs(b);
-  if (!c1) {
-    fprintf(stderr,"TwoBodyDerivIntV2::could not form centers\n");
-    abort();
-  }
-  
-  init();
-}
-
 TwoBodyDerivIntV2::TwoBodyDerivIntV2(const RefGaussianBasisSet& b1,
                                      const RefGaussianBasisSet& b2,
                                      const RefGaussianBasisSet& b3,
                                      const RefGaussianBasisSet& b4) :
-  TwoBodyDerivInt(b1,b2,b3,b4),
-  same_center(0)
+  TwoBodyDerivInt(b1,b2,b3,b4)
 {
   c1 = int_centers_from_gbs(b1);
-  c2 = int_centers_from_gbs(b2);
-  c3 = int_centers_from_gbs(b3);
-  c4 = int_centers_from_gbs(b4);
+  if (b1 != b2 || b1 != b3 || b1 != b4) {
+      same_center = 0;
+      c2 = int_centers_from_gbs(b2);
+      c3 = int_centers_from_gbs(b3);
+      c4 = int_centers_from_gbs(b4);
+    }
+  else {
+      c2 = c3 = c4 = c1;
+      same_center = 1;
+    }
 
   if (!c1 || !c2 || !c3 || !c4) {
     fprintf(stderr,"TwoBodyDerivIntV2::could not form centers\n");

@@ -26,52 +26,23 @@ class IntegralV2 : public Integral {
     RedundantCartesianSubIter * new_redundant_cartesian_sub_iter(int);
     SphericalTransformIter * new_spherical_transform_iter(int, int=0);
     
-    RefOneBodyInt overlap_int(const RefGaussianBasisSet&);
-    RefOneBodyInt overlap_int(const RefGaussianBasisSet&,
-                              const RefGaussianBasisSet&);
+    RefOneBodyInt overlap();
 
-    RefOneBodyInt kinetic_int(const RefGaussianBasisSet&);
-    RefOneBodyInt kinetic_int(const RefGaussianBasisSet&,
-                              const RefGaussianBasisSet&);
+    RefOneBodyInt kinetic();
 
-    RefOneBodyInt point_charge_int(PointBag_double*,
-                                   const RefGaussianBasisSet&);
-    RefOneBodyInt point_charge_int(PointBag_double*,
-                                   const RefGaussianBasisSet&,
-                                   const RefGaussianBasisSet&);
+    RefOneBodyInt point_charge(const RefPointChargeData& =0);
 
-    RefOneBodyInt nuclear_int(const RefGaussianBasisSet&);
-    RefOneBodyInt nuclear_int(PointBag_double*, const RefGaussianBasisSet&,
-                              const RefGaussianBasisSet&);
+    RefOneBodyInt nuclear();
 
-    RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
-                                        double *position = 0,
-                                        double *vector = 0);
-    RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
-                                        const RefGaussianBasisSet&,
-                                        double *position = 0,
-                                        double *vector = 0);
+    RefOneBodyInt efield_dot_vector(const RefEfieldDotVectorData& =0);
 
-    RefOneBodyInt dipole_int(const RefGaussianBasisSet&, double *origin = 0);
-    RefOneBodyInt dipole_int(const RefGaussianBasisSet&,
-                             const RefGaussianBasisSet&,
-                             double *origin =0);
+    RefOneBodyInt dipole(const RefDipoleData& =0);
 
-    RefOneBodyDerivInt deriv_int(const RefGaussianBasisSet&);
-    RefOneBodyDerivInt deriv_int(const RefGaussianBasisSet&,
-                                 const RefGaussianBasisSet&);
+    RefOneBodyDerivInt deriv();
 
-    RefTwoBodyInt two_body_int(const RefGaussianBasisSet&);
-    RefTwoBodyInt two_body_int(const RefGaussianBasisSet&,
-                               const RefGaussianBasisSet&,
-                               const RefGaussianBasisSet&,
-                               const RefGaussianBasisSet&);
+    RefTwoBodyInt electron_repulsion();
 
-    RefTwoBodyDerivInt two_body_deriv_int(const RefGaussianBasisSet&);
-    RefTwoBodyDerivInt two_body_deriv_int(const RefGaussianBasisSet&,
-                                          const RefGaussianBasisSet&,
-                                          const RefGaussianBasisSet&,
-                                          const RefGaussianBasisSet&);
+    RefTwoBodyDerivInt electron_repulsion_deriv();
 };
 
 

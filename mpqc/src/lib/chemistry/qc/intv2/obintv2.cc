@@ -15,24 +15,21 @@ extern "C" {
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyIntv2
 
-OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs) :
-  OneBodyInt(bs)
-{
-  c1 = c2 = int_centers_from_gbs(bs);
-  int_initialize_1e(0,0,c1,c1);
-  int_initialize_offsets1(c1,c1);
-  same_center=1;
-}
-
 OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs1,
                            const RefGaussianBasisSet&bs2) :
   OneBodyInt(bs1,bs2)
 {
   c1 = int_centers_from_gbs(bs1);
-  c2 = int_centers_from_gbs(bs2);
+  if (bs1 == bs2 || bs2.null()) {
+      c2 = c1;
+      same_center=1;
+    }
+  else {
+      c2 = int_centers_from_gbs(bs2);
+      same_center=0;
+    }
   int_initialize_1e(0,0,c1,c2);
   int_initialize_offsets1(c1,c2);
-  same_center=0;
 }
 
 OneBodyIntv2::~OneBodyIntv2()
@@ -49,11 +46,6 @@ OneBodyIntv2::~OneBodyIntv2()
 
 ////////////////////////////////////////////////////////////////////////////
 // GaussianOverlapIntv2
-
-GaussianOverlapIntv2::GaussianOverlapIntv2(const RefGaussianBasisSet&bs_) :
-  OneBodyIntv2(bs_)
-{
-}
 
 GaussianOverlapIntv2::GaussianOverlapIntv2(const RefGaussianBasisSet&bs1,
                                            const RefGaussianBasisSet&bs2) :
@@ -73,11 +65,6 @@ GaussianOverlapIntv2::compute_shell(int i, int j)
 
 ////////////////////////////////////////////////////////////////////////////
 // GaussianKineticIntv2
-
-GaussianKineticIntv2::GaussianKineticIntv2(const RefGaussianBasisSet&bs_) :
-  OneBodyIntv2(bs_)
-{
-}
 
 GaussianKineticIntv2::GaussianKineticIntv2(const RefGaussianBasisSet&bs1,
                                            const RefGaussianBasisSet&bs2) :
@@ -99,18 +86,29 @@ GaussianKineticIntv2::compute_shell(int i, int j)
 // GaussianPointChargeIntv2
 
 void
-GaussianPointChargeIntv2::init(PointBag_double*charges)
+GaussianPointChargeIntv2::reinitialize()
 {
-  ncharge = charges->length();
-  
-  if (ncharge) {
+  PointBag_double *charges = data_->charges;
+
+  int nchargenew = charges->length();
+
+  int realloc_charges;
+  if (charges->length() != ncharge) {
+      ncharge = charges->length();
+      realloc_charges = 1;
+    }
+  else {
+      realloc_charges = 0;
+    }
+
+  if (ncharge && realloc_charges) {
     position = new double*[ncharge];
     charge = new double[ncharge];
   }
   
   int i = 0;
   for (Pix pix= charges->first(); pix!=0; charges->next(pix)) {
-    position[i] = new double[3];
+    if (realloc_charges) position[i] = new double[3];
     charge[i] = charges->get(pix);
     for (int j=0; j<3; j++) {
       position[i][j] = charges->point(pix)[j];
@@ -119,21 +117,16 @@ GaussianPointChargeIntv2::init(PointBag_double*charges)
   }
 }
 
-GaussianPointChargeIntv2::GaussianPointChargeIntv2(PointBag_double*charges,
-                                           const RefGaussianBasisSet&bs_) :
-  OneBodyIntv2(bs_)
+GaussianPointChargeIntv2::GaussianPointChargeIntv2(
+    const RefGaussianBasisSet&bs1,
+    const RefGaussianBasisSet&bs2,
+    const RefPointChargeData&dat):
+  OneBodyIntv2(bs1,bs2),
+  data_(dat),
+  ncharge(0),
+  charge(0),
+  position(0)
 {
-  init(charges);
-  delete charges;
-}
-
-GaussianPointChargeIntv2::GaussianPointChargeIntv2(PointBag_double*charges,
-					   const RefGaussianBasisSet&bs1,
-                                           const RefGaussianBasisSet&bs2):
-  OneBodyIntv2(bs1,bs2)
-{
-  init(charges);
-  delete charges;
 }
 
 GaussianPointChargeIntv2::~GaussianPointChargeIntv2()
@@ -156,15 +149,10 @@ GaussianPointChargeIntv2::compute_shell(int i,int j)
 ////////////////////////////////////////////////////////////////////////////
 // GaussianNuclearIntv2
 
-GaussianNuclearIntv2::GaussianNuclearIntv2(const RefGaussianBasisSet&bs_) :
-  GaussianPointChargeIntv2(bs_->molecule()->charges(),bs_)
-{
-}
-
-GaussianNuclearIntv2::GaussianNuclearIntv2(PointBag_double *charges,
-                                           const RefGaussianBasisSet&bs1,
+GaussianNuclearIntv2::GaussianNuclearIntv2(const RefGaussianBasisSet&bs1,
                                            const RefGaussianBasisSet&bs2) :
-  GaussianPointChargeIntv2(charges,bs1,bs2)
+  GaussianPointChargeIntv2(bs1, bs2,
+                           new PointChargeData(bs1_ ->molecule()->charges()))
 {
 }
 
@@ -176,28 +164,11 @@ GaussianNuclearIntv2::~GaussianNuclearIntv2()
 // GaussianEfieldDotVectorIntv2
 
 GaussianEfieldDotVectorIntv2::GaussianEfieldDotVectorIntv2(
-    const RefGaussianBasisSet&bs_,
-    double *p,
-    double *v) :
-  OneBodyIntv2(bs_)
-{
-  int biggest_shell = bs_->max_nfunction_in_shell();
-  if (biggest_shell) {
-      buffer3_ = new double[biggest_shell * biggest_shell * 3];
-    }
-  else {
-      buffer3_ = 0;
-    }
-  if (p) position(p);
-  if (v) vector(v);
-}
-
-GaussianEfieldDotVectorIntv2::GaussianEfieldDotVectorIntv2(
     const RefGaussianBasisSet&bs1,
     const RefGaussianBasisSet&bs2,
-    double *p,
-    double *v) :
-  OneBodyIntv2(bs1,bs2)
+    const RefEfieldDotVectorData&dat) :
+  OneBodyIntv2(bs1,bs2),
+  data_(dat)
 {
   int biggest_shell = bs1->max_nfunction_in_shell() *
                       bs2->max_nfunction_in_shell();
@@ -207,25 +178,11 @@ GaussianEfieldDotVectorIntv2::GaussianEfieldDotVectorIntv2(
   else {
       buffer3_ = 0;
     }
-  if (p) position(p);
-  if (v) vector(v);
 }
 
 GaussianEfieldDotVectorIntv2::~GaussianEfieldDotVectorIntv2()
 {
   if (buffer3_) delete[] buffer3_;
-}
-
-void
-GaussianEfieldDotVectorIntv2::position(const double *a)
-{
-  for (int i=0; i<3; i++) position_[i] = a[i];
-}
-
-void
-GaussianEfieldDotVectorIntv2::vector(const double *a)
-{
-  for (int i=0; i<3; i++) vector_[i] = a[i];
 }
 
 void
@@ -241,13 +198,13 @@ GaussianEfieldDotVectorIntv2::compute_shell(int i,int j)
   tmp = buffer3_;
   for (ii=0;ii<nint3;ii++) *tmp++ = 0.0;
 
-  int_accum_shell_efield(c1,c2,buffer3_,i,j,position_);
+  int_accum_shell_efield(c1,c2,buffer3_,i,j,data_->position);
 
   tmp = buffer3_;
   for (ii=0; ii<nint; ii++) {
       buffer_[ii] = 0.0;
       for (jj=0; jj<3; jj++) {
-          buffer_[ii] += *tmp++ * vector_[jj];
+          buffer_[ii] += *tmp++ * data_->vector[jj];
         }
     }
 }
@@ -255,29 +212,19 @@ GaussianEfieldDotVectorIntv2::compute_shell(int i,int j)
 ////////////////////////////////////////////////////////////////////////////
 // GaussianDipoleIntv2
 
-GaussianDipoleIntv2::GaussianDipoleIntv2(const RefGaussianBasisSet&bs_,
-                                         const double* o) :
-  OneBodyIntv2(bs_)
-{
-  if (o) origin(o);
-}
-
 GaussianDipoleIntv2::GaussianDipoleIntv2(const RefGaussianBasisSet&bs1,
                                          const RefGaussianBasisSet&bs2,
-                                         const double* o) :
-  OneBodyIntv2(bs1,bs2)
+                                         const RefDipoleData&dat) :
+  OneBodyIntv2(bs1,bs2),
+  data_(dat)
 {
-  if (o) origin(o);
+  if (data_.null()) {
+      data_ = new DipoleData;
+    }
 }
 
 GaussianDipoleIntv2::~GaussianDipoleIntv2()
 {
-}
-
-void
-GaussianDipoleIntv2::origin(const double *a)
-{
-  for (int i=0; i<3; i++) origin_[i] = a[i];
 }
 
 void
@@ -292,30 +239,27 @@ GaussianDipoleIntv2::compute_shell(int i,int j)
   tmp = buffer_;
   for (ii=0;ii<nint3;ii++) *tmp++ = 0.0;
 
-  int_accum_shell_dipole(c1,c2,buffer_,i,j,origin_);
+  int_accum_shell_dipole(c1,c2,buffer_,i,j,data_->origin);
 }
 
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyDerivIntv2
-
-OneBodyDerivIntv2::OneBodyDerivIntv2(const RefGaussianBasisSet&bs) :
-  OneBodyDerivInt(bs)
-{
-  c1 = c2 = int_centers_from_gbs(bs);
-  int_initialize_offsets1(c1,c1);
-  intbuf = int_initialize_1e(0,1,c1,c1);
-  same_center=1;
-}
 
 OneBodyDerivIntv2::OneBodyDerivIntv2(const RefGaussianBasisSet&bs1,
                                      const RefGaussianBasisSet&bs2) :
   OneBodyDerivInt(bs1,bs2)
 {
   c1 = int_centers_from_gbs(bs1);
-  c2 = int_centers_from_gbs(bs2);
+  if (bs1 == bs2) {
+      c2 = c1;
+      same_center = 1;
+    }
+  else {
+      c2 = int_centers_from_gbs(bs2);
+      same_center = 0;
+    }
   int_initialize_offsets1(c1,c2);
   intbuf = int_initialize_1e(0,1,c1,c2);
-  same_center=0;
 }
 
 OneBodyDerivIntv2::~OneBodyDerivIntv2()

@@ -16,7 +16,7 @@ mbpt_mp2_gradient(scf_struct_t &scf_info,
                   dmt_matrix Scf_Vec, dmt_matrix Fock, dmt_matrix FockO,
                   int mem_alloc,
                   FILE *outfile,
-                  RefMessageGrp &grp,
+                  const RefMessageGrp &grp, const RefMemoryGrp &mem,
                   double &energy, double_matrix_t &gradient);
 
 #endif

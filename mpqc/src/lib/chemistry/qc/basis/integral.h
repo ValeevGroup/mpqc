@@ -7,14 +7,12 @@
 #endif
 
 #include <util/state/state.h>
+#include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/obint.h>
+#include <chemistry/qc/basis/tbint.h>
 
 class SymmetryOperation;
 class RefPetiteList;
-class RefOneBodyInt;
-class RefOneBodyIntIter;
-class RefOneBodyDerivInt;
-class RefTwoBodyInt;
-class RefTwoBodyDerivInt;
 class RefSymmSCMatrix;
 class ShellRotation;
 class CartesianIter;
@@ -25,7 +23,6 @@ class PointBag_double;
 
 SavableState_REF_fwddec(SCElementOp)
 SavableState_REF_fwddec(SCElementOp3)
-SavableState_REF_fwddec(GaussianBasisSet)
 
 
 // some useful things to have that depend on the underlying integrals
@@ -37,6 +34,14 @@ class Integral : public SavableState {
 #   include <util/class/classda.h>
   protected:
     Integral();
+    RefGaussianBasisSet bs1_;
+    RefGaussianBasisSet bs2_;
+    RefGaussianBasisSet bs3_;
+    RefGaussianBasisSet bs4_;
+
+    // the maximum number of bytes that should be used for
+    // storing intermediates
+    int storage_;
 
   public:
     Integral(StateIn&);
@@ -44,9 +49,15 @@ class Integral : public SavableState {
     
     void save_data_state(StateOut&);
 
+    void set_storage(int i) { storage_=i; };
+
     RefPetiteList petite_list(const RefGaussianBasisSet&);
     ShellRotation shell_rotation(int am, SymmetryOperation&, int pure=0);
 
+    virtual void set_basis(const RefGaussianBasisSet &b1,
+                           const RefGaussianBasisSet &b2 = 0,
+                           const RefGaussianBasisSet &b3 = 0,
+                           const RefGaussianBasisSet &b4 = 0);
 
     ///////////////////////////////////////////////////////////////////////
     // the following must be defined in the specific integral package
@@ -58,55 +69,24 @@ class Integral : public SavableState {
     virtual SphericalTransformIter *
                               new_spherical_transform_iter(int, int=0) =0;
     
-    virtual RefOneBodyInt overlap_int(const RefGaussianBasisSet&) =0;
-    virtual RefOneBodyInt overlap_int(const RefGaussianBasisSet&,
-                                      const RefGaussianBasisSet&) =0;
+    virtual RefOneBodyInt overlap() =0;
     
-    virtual RefOneBodyInt kinetic_int(const RefGaussianBasisSet&) =0;
-    virtual RefOneBodyInt kinetic_int(const RefGaussianBasisSet&,
-                                      const RefGaussianBasisSet&) =0;
+    virtual RefOneBodyInt kinetic() =0;
+
+    virtual RefOneBodyInt point_charge(const RefPointChargeData&) =0;
+
+    // charges from the atom on the first center are used
+    virtual RefOneBodyInt nuclear() = 0;
+
+    virtual RefOneBodyInt efield_dot_vector(const RefEfieldDotVectorData&) =0;
+
+    virtual RefOneBodyInt dipole(const RefDipoleData&) =0;
+
+    virtual RefOneBodyDerivInt deriv() =0;
     
-
-    virtual RefOneBodyInt point_charge_int(PointBag_double*,
-                                           const RefGaussianBasisSet&) =0;
-    virtual RefOneBodyInt point_charge_int(PointBag_double*,
-                                           const RefGaussianBasisSet&,
-                                           const RefGaussianBasisSet&) =0;
-
-    virtual RefOneBodyInt nuclear_int(const RefGaussianBasisSet&) =0;
-    virtual RefOneBodyInt nuclear_int(PointBag_double*,
-                                      const RefGaussianBasisSet&,
-                                      const RefGaussianBasisSet&) =0;
-
-    virtual RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
-                                                double *position = 0,
-                                                double *vector = 0) =0;
-    virtual RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
-                                                const RefGaussianBasisSet&,
-                                                double *position = 0,
-                                                double *vector = 0) =0;
-
-    virtual RefOneBodyInt dipole_int(const RefGaussianBasisSet&,
-                                     double *origin = 0) =0;
-    virtual RefOneBodyInt dipole_int(const RefGaussianBasisSet&,
-                                     const RefGaussianBasisSet&,
-                                     double *origin = 0) =0;
-
-    virtual RefOneBodyDerivInt deriv_int(const RefGaussianBasisSet&) =0;
-    virtual RefOneBodyDerivInt deriv_int(const RefGaussianBasisSet&,
-                                         const RefGaussianBasisSet&) =0;
+    virtual RefTwoBodyInt electron_repulsion() =0;
     
-    virtual RefTwoBodyInt two_body_int(const RefGaussianBasisSet&) =0;
-    virtual RefTwoBodyInt two_body_int(const RefGaussianBasisSet&,
-                                       const RefGaussianBasisSet&,
-                                       const RefGaussianBasisSet&,
-                                       const RefGaussianBasisSet&) =0;
-    
-    virtual RefTwoBodyDerivInt two_body_deriv_int(const RefGaussianBasisSet&) =0;
-    virtual RefTwoBodyDerivInt two_body_deriv_int(const RefGaussianBasisSet&,
-                                                  const RefGaussianBasisSet&,
-                                                  const RefGaussianBasisSet&,
-                                                  const RefGaussianBasisSet&) =0;
+    virtual RefTwoBodyDerivInt electron_repulsion_deriv() =0;
 };
 SavableState_REF_dec(Integral);
 

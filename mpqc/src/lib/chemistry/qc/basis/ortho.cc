@@ -20,7 +20,8 @@ ortho(const RefIntegral& ints, const RefGaussianBasisSet&t,
       abort();
     }
 
-  RefSCElementOp overlap = new OneBodyIntOp(ints->overlap_int(t));
+  ints->set_basis(t);
+  RefSCElementOp overlap = new OneBodyIntOp(ints->overlap());
   
   RefSymmSCMatrix ov(dim, t->matrixkit());
   ov.element_op(overlap);

@@ -82,7 +82,7 @@ ReplSCMatrixListSubblockIter::ReplSCMatrixListSubblockIter(
   data_(data),
   ndata_(ndata)
 {
-  if (access == Write || (access == Read && grp->me() != 0)) {
+  if (access == Write) {
       for (int i=0; i<ndata; i++) data[i] = 0.0;
     }
 }

@@ -101,7 +101,7 @@ class LocalSCVector: public SCVector {
 class LocalSCMatrix: public SCMatrix {
     friend class LocalSymmSCMatrix;
     friend class LocalDiagSCMatrix;
-    friend LocalSCVector;
+    friend class LocalSCVector;
 #   define CLASSNAME LocalSCMatrix
 #   include <util/class/classd.h>
   private:
@@ -163,7 +163,7 @@ class LocalSCMatrix: public SCMatrix {
 class LocalSymmSCMatrix: public SymmSCMatrix {
     friend class LocalSCMatrix;
     friend class LocalDiagSCMatrix;
-    friend LocalSCVector;
+    friend class LocalSCVector;
 #   define CLASSNAME LocalSymmSCMatrix
 #   include <util/class/classd.h>
   private:
@@ -226,9 +226,9 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
 };
 
 class LocalDiagSCMatrix: public DiagSCMatrix {
-    friend LocalSCMatrix;
-    friend LocalSymmSCMatrix;
-    friend LocalSCVector;
+    friend class LocalSCMatrix;
+    friend class LocalSymmSCMatrix;
+    friend class LocalSCVector;
 #   define CLASSNAME LocalDiagSCMatrix
 #   include <util/class/classd.h>
   private:

@@ -116,7 +116,7 @@ class ReplSCVector: public SCVector {
 class ReplSCMatrix: public SCMatrix {
     friend class ReplSymmSCMatrix;
     friend class ReplDiagSCMatrix;
-    friend ReplSCVector;
+    friend class ReplSCVector;
 #   define CLASSNAME ReplSCMatrix
 #   include <util/class/classd.h>
   protected:
@@ -185,7 +185,7 @@ class ReplSCMatrix: public SCMatrix {
 class ReplSymmSCMatrix: public SymmSCMatrix {
     friend class ReplSCMatrix;
     friend class ReplDiagSCMatrix;
-    friend ReplSCVector;
+    friend class ReplSCVector;
 #   define CLASSNAME ReplSymmSCMatrix
 #   include <util/class/classd.h>
   protected:
@@ -259,9 +259,9 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
 };
 
 class ReplDiagSCMatrix: public DiagSCMatrix {
-    friend ReplSCMatrix;
-    friend ReplSymmSCMatrix;
-    friend ReplSCVector;
+    friend class ReplSCMatrix;
+    friend class ReplSymmSCMatrix;
+    friend class ReplSCVector;
 #   define CLASSNAME ReplDiagSCMatrix
 #   include <util/class/classd.h>
   protected:

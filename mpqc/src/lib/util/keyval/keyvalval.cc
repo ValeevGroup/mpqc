@@ -39,7 +39,7 @@
 
 REF_def(KeyValValue)
 
-KeyValValue::KeyValValue(KeyValValue&)
+KeyValValue::KeyValValue(const KeyValValue&)
 {
 }
 

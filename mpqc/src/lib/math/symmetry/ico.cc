@@ -91,20 +91,20 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   gso[0][2] = 3.0*sqrt(5.0)/10.0;
   gso[0][3] = -sqrt(5.0-2.0*sqrt(5.0))*sqrt(5.0)/10.0;
   gso[1][0] = -gso[0][1];
-  gso[1][1] = (1-sqrt(5))/4.0;
-  gso[1][2] = cosd*sqrt(3)/2.0;
-  gso[1][3] = cosd*sqrt(5-2*sqrt(5))*sqrt(3)/2.0;
+  gso[1][1] = (1-sqrt(5.0))/4.0;
+  gso[1][2] = cosd*sqrt(3.0)/2.0;
+  gso[1][3] = cosd*sqrt(5-2*sqrt(5.0))*sqrt(3.0)/2.0;
   gso[2][0] = gso[0][2];
   gso[2][1] = -gso[1][2];
-  gso[2][2] = (5-3*sqrt(5))/20.0;
-  gso[2][3] = sqrt(5-2*sqrt(5))*(sqrt(5)+5)/20;
+  gso[2][2] = (5-3*sqrt(5.0))/20.0;
+  gso[2][3] = sqrt(5.0-2*sqrt(5.0))*(sqrt(5.0)+5)/20;
   gso[3][0] = -gso[0][3];
   gso[3][1] = gso[1][3];
   gso[3][2] = -gso[2][3];
-  gso[3][3] = (sqrt(5)+1)/4.0;
+  gso[3][3] = (sqrt(5.0)+1)/4.0;
 
   hso[0][0] = -1.0/5.0;
-  hso[0][4] = sqrt(3)*(sqrt(5)+1)/10.0;
+  hso[0][4] = sqrt(3.0)*(sqrt(5.0)+1)/10.0;
   hso[0][3] = 3.0*cosd*(3.0*sqrt(5.0)-5.0)/10.0;
   hso[0][2] = 3.0*cosd*(5.0-sqrt(5.0))/10.0;
   hso[0][1] = sqrt(3.0)*(sqrt(5.0)-1.0)/10.0;

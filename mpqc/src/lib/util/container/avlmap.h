@@ -53,14 +53,14 @@ class AVLMap {
         iterator(const EAVLMMap<K,AVLMapNode<K,T> > *m,
                  AVLMapNode<K,T> *n)
           :map_(m), node(n) {}
-        iterator(const AVLMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
+        iterator(const typename AVLMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
         void operator++() { map_->next(node); }
         void operator++(int) { operator++(); }
-        int operator == (const AVLMap<K,T>::iterator &i) const
+        int operator == (const typename AVLMap<K,T>::iterator &i) const
             { return map_ == i.map_ && node == i.node; }
-        int operator != (const AVLMap<K,T>::iterator &i) const
+        int operator != (const typename AVLMap<K,T>::iterator &i) const
             { return !operator == (i); }
-        void operator = (const AVLMap<K,T>::iterator &i)
+        void operator = (const typename AVLMap<K,T>::iterator &i)
             { map_ = i.map_; node = i.node; }
         const K &key() const { return node->node.key; }
         T &data() { return node->data; }
@@ -106,7 +106,7 @@ AVLMap<K,T>::remove(const K& key)
 }
 
 template <class K, class T>
-inline AVLMap<K,T>::iterator
+inline typename AVLMap<K,T>::iterator
 AVLMap<K,T>::find(const K& k) const
 {
   return iterator(&map_,map_.find(k));

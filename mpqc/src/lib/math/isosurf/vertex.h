@@ -32,10 +32,8 @@
 #pragma interface
 #endif
 
-extern "C" {
 #include <stdlib.h>
 #include <math.h>
-}
 #include <util/ref/ref.h>
 #include <math/scmat/matrix.h>
 #include <math/isosurf/volume.h>

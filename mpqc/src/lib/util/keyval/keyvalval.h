@@ -36,10 +36,9 @@
 class KeyValValue: public VRefCount {
   public:
     enum KeyValValueError { OK, WrongType };
-  protected:
-    KeyValValue(KeyValValue&);
   public:
     KeyValValue() {}
+    KeyValValue(const KeyValValue&);
     virtual ~KeyValValue();
     // return 1 for success 0, if the datum is of the wrong type
     virtual KeyValValue::KeyValValueError doublevalue(double&) const;

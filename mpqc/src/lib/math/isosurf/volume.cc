@@ -29,9 +29,7 @@
 #pragma implementation
 #endif
 
-extern "C" {
-# include <math.h>
-};
+#include <math.h>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>

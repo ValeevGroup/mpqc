@@ -103,7 +103,7 @@ class DistSCVector: public SCVector {
 class DistSCMatrix: public SCMatrix {
     friend class DistSymmSCMatrix;
     friend class DistDiagSCMatrix;
-    friend DistSCVector;
+    friend class DistSCVector;
 #   define CLASSNAME DistSCMatrix
 #   include <util/class/classd.h>
   protected:
@@ -178,7 +178,7 @@ class DistSCMatrix: public SCMatrix {
 class DistSymmSCMatrix: public SymmSCMatrix {
     friend class DistSCMatrix;
     friend class DistDiagSCMatrix;
-    friend DistSCVector;
+    friend class DistSCVector;
 #   define CLASSNAME DistSymmSCMatrix
 #   include <util/class/classd.h>
   protected:
@@ -236,9 +236,9 @@ class DistSymmSCMatrix: public SymmSCMatrix {
 };
 
 class DistDiagSCMatrix: public DiagSCMatrix {
-    friend DistSCMatrix;
-    friend DistSymmSCMatrix;
-    friend DistSCVector;
+    friend class DistSCMatrix;
+    friend class DistSymmSCMatrix;
+    friend class DistSCVector;
 #   define CLASSNAME DistDiagSCMatrix
 #   include <util/class/classd.h>
   protected:

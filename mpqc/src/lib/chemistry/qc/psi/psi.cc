@@ -3,10 +3,8 @@
 #pragma implementation
 #endif
 
-extern "C" {
 #include <stdlib.h>
 #include <math.h>
-}
 
 #include <util/keyval/keyval.h>
 #include <util/misc/libmisc.h>

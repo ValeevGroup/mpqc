@@ -28,6 +28,9 @@
 #ifndef _util_container_eavlmmap_h
 #define _util_container_eavlmmap_h
 
+#ifdef HAVE_CONFIG_H
+#  include <scconfig.h>
+#endif
 #include <iostream.h>
 #include <util/misc/exenv.h>
 #include <util/container/compare.h>
@@ -86,14 +89,14 @@ class EAVLMMap {
         T *node;
       public:
         iterator(EAVLMMap<K,T> *m, T *n):map_(m),node(n){}
-        iterator(const EAVLMMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
+        iterator(const typename EAVLMMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
         void operator++() { map_->next(node); }
         void operator++(int) { operator++(); }
-        int operator == (const EAVLMMap<K,T>::iterator &i) const
+        int operator == (const typename EAVLMMap<K,T>::iterator &i) const
             { return map_ == i.map_ && node == i.node; }
-        int operator != (const EAVLMMap<K,T>::iterator &i) const
+        int operator != (const typename EAVLMMap<K,T>::iterator &i) const
             { return !operator == (i); }
-        void operator = (const EAVLMMap<K,T>::iterator &i)
+        void operator = (const typename EAVLMMap<K,T>::iterator &i)
             { map_ = i.map_; node = i.node; }
         const K &key() const { return map_->key(node); }
         T & operator *() { return *node; }

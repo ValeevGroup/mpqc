@@ -66,7 +66,7 @@ ssarmac.h: ssartem.h $(TMPL2MACDEP)
 ssar2mac.h: ssar2tem.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > ssar2mac.h
 
-avltest: avltest.o
+avltest: avltest.o libmisc.$(LIBSUF) libkeyval.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF) libcontainer.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o avltest $^
 
 artest: artest.o libcontainer.$(LIBSUF)

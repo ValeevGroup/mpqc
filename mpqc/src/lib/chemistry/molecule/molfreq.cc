@@ -353,7 +353,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
 
   // compute S_el
   double S_el;
-  S_el = R*log(degeneracy);
+  S_el = R*log(double(degeneracy));
 
   // compute total molar entropy S (in J/(mol*K))
   double S;

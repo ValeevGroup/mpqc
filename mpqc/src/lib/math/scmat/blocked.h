@@ -117,7 +117,7 @@ class BlockedSCVector: public SCVector {
 class BlockedSCMatrix: public SCMatrix {
     friend class BlockedSymmSCMatrix;
     friend class BlockedDiagSCMatrix;
-    friend BlockedSCVector;
+    friend class BlockedSCVector;
 #   define CLASSNAME BlockedSCMatrix
 #   include <util/class/classd.h>
   private:
@@ -193,7 +193,7 @@ class BlockedSCMatrix: public SCMatrix {
 class BlockedSymmSCMatrix: public SymmSCMatrix {
     friend class BlockedSCMatrix;
     friend class BlockedDiagSCMatrix;
-    friend BlockedSCVector;
+    friend class BlockedSCVector;
 #   define CLASSNAME BlockedSymmSCMatrix
 #   include <util/class/classd.h>
   private:
@@ -267,9 +267,9 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
 };
 
 class BlockedDiagSCMatrix: public DiagSCMatrix {
-    friend BlockedSCMatrix;
-    friend BlockedSymmSCMatrix;
-    friend BlockedSCVector;
+    friend class BlockedSCMatrix;
+    friend class BlockedSymmSCMatrix;
+    friend class BlockedSCVector;
 #   define CLASSNAME BlockedDiagSCMatrix
 #   include <util/class/classd.h>
   private:

@@ -45,14 +45,14 @@ class AVLSet {
         iterator(const EAVLMMap<K,AVLMapNode<K,int> > *m,
                  const AVLMapNode<K,int> *n)
           :map_(m), node(n) {}
-        iterator(const AVLSet<K>::iterator &i):map_(i.map_),node(i.node) {}
+        iterator(const typename AVLSet<K>::iterator &i):map_(i.map_),node(i.node) {}
         void operator++() { map_->next(node); }
         void operator++(int) { operator++(); }
-        int operator == (const AVLSet<K>::iterator &i) const
+        int operator == (const typename AVLSet<K>::iterator &i) const
             { return map_ == i.map_ && node == i.node; }
-        int operator != (const AVLSet<K>::iterator &i) const
+        int operator != (const typename AVLSet<K>::iterator &i) const
             { return !(map_ == i.map_ && node == i.node); }
-        void operator = (const AVLSet<K>::iterator &i)
+        void operator = (const typename AVLSet<K>::iterator &i)
             { map_ = i.map_; node = i.node; }
         const K &key() const { return node->node.key; }
         const K &operator *() const { return node->node.key; }
@@ -99,7 +99,7 @@ AVLSet<K>::operator |= (const AVLSet<K> &s)
 }
 
 template <class K>
-inline AVLSet<K>::iterator
+inline typename AVLSet<K>::iterator
 AVLSet<K>::find(const K& k) const
 {
   return iterator(&map_.map_,map_.map_.find(k));

@@ -244,6 +244,12 @@
 /* Define if the C++ keywork "typename" exists.  */
 #undef HAVE_TYPENAME
 
+#ifdef __cplusplus
+#  ifndef HAVE_TYPENAME
+#    define typename
+#  endif
+#endif
+
 /* Set to the FORTRAN 77 dgemm name.  */
 #undef F77_DGEMM_SYMBOL
 

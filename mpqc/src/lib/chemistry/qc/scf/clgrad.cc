@@ -5,6 +5,7 @@
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 #include <chemistry/qc/intv2/int_libv2.h>
+#include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clscf.h>
 
 static void
@@ -214,8 +215,16 @@ CLSCF::do_gradient(const RefSCVector& gradient)
   
   double tnint=0;
 
+  PetiteList pl(basis());
+
   for (int i=0; i < centers->nshell; i++) {
+    if (!pl.in_p1(i))
+      continue;
+    
     for (int j=0; j <= i; j++) {
+      int ij = (i*(i+1) >> 1) + j;
+      if (!pl.in_p2(ij))
+        continue;
 
 #if BOUNDS
       if (int_erep_2bound_1der(i,j)+PPmax < threshold)
@@ -224,7 +233,11 @@ CLSCF::do_gradient(const RefSCVector& gradient)
 
       for (int k=0; k <= i; k++) {
         for (int l=0; l <= ((i==k)?j:k); l++) {
-
+          int kl = (k*(k+1)>>1) + l;
+          int qijkl;
+          if (!(qijkl=pl.in_p4(ij,kl,i,j,k,l)))
+            continue;
+          
 #if BOUNDS
           if (int_erep_4bound_1der(i,j,k,l)+PPmax < threshold)
             continue;
@@ -261,7 +274,7 @@ CLSCF::do_gradient(const RefSCVector& gradient)
 
                       double contrib;
 
-                      contrib = coulombscale*ints[indexijkl]*
+                      contrib = coulombscale*ints[indexijkl]*qijkl*
                                              _gr_dens.get_element(io,jo)*
                                              _gr_dens.get_element(ko,lo);
 
@@ -270,7 +283,7 @@ CLSCF::do_gradient(const RefSCVector& gradient)
                       twoelec.accumulate_element(xyz+dercenters.onum*3,
                                                  -contrib);
                       
-                      contrib = exchangescale*ints[indexijkl]*
+                      contrib = exchangescale*ints[indexijkl]*qijkl*
                                               _gr_dens.get_element(io,ko)*
                                               _gr_dens.get_element(jo,lo);
                       twoelec.accumulate_element(xyz+dercenters.num[derset]*3,
@@ -279,7 +292,7 @@ CLSCF::do_gradient(const RefSCVector& gradient)
                                                  -contrib);
 
                       if (i!=j && k!=l) {
-                        contrib = exchangescale*ints[indexijkl]*
+                        contrib = exchangescale*ints[indexijkl]*qijkl*
                                               _gr_dens.get_element(io,lo)*
                                               _gr_dens.get_element(jo,ko);
                         twoelec.accumulate_element(
@@ -301,8 +314,36 @@ CLSCF::do_gradient(const RefSCVector& gradient)
     }
   }
 
-  //twoelec.print("two electron contribution");
-  gradient.accumulate(twoelec);
+  twoelec.print("two electron contribution");
+
+  RefSCVector sym2ei = twoelec.copy();
+  CharacterTable ct = _mol->point_group().char_table();
+  SymmetryOperation so;
+  
+  for (int alpha=0; alpha < centers->n; alpha++) {
+    for (int g=1; g < ct.order(); g++) {
+      so = ct.symm_operation(g);
+      int ap = pl.atom_map(alpha,g);
+
+      sym2ei.accumulate_element(alpha*3+0,
+                               twoelec.get_element(ap*3+0)*so(0,0) +
+                               twoelec.get_element(ap*3+1)*so(1,0) +
+                               twoelec.get_element(ap*3+2)*so(2,0));
+      sym2ei.accumulate_element(alpha*3+1,
+                               twoelec.get_element(ap*3+0)*so(0,1) +
+                               twoelec.get_element(ap*3+1)*so(1,1) +
+                               twoelec.get_element(ap*3+2)*so(2,1));
+      sym2ei.accumulate_element(alpha*3+2,
+                               twoelec.get_element(ap*3+0)*so(0,2) +
+                               twoelec.get_element(ap*3+1)*so(1,2) +
+                               twoelec.get_element(ap*3+2)*so(2,2));
+    }
+  }
+    
+  sym2ei.scale(1.0/ct.order());
+  sym2ei.print("symmetrized two electron contribution");
+
+  gradient.accumulate(sym2ei);
   //gradient.print("cartesian gradient");
 
   printf("%20.0f derivative integrals\n",tnint);

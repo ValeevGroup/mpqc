@@ -279,7 +279,6 @@ void
 CLSCF::do_vector(double& eelec, double& nucrep)
 {
   _gr_vector = _eigenvectors.result_noupdate();
-  //_gr_vector.print("start vector");
   
   // allocate storage for the temp arrays
   RefSCMatrix nvector = _gr_vector.clone();

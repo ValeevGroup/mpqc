@@ -25,7 +25,6 @@ mole<CLSCF>: (
   ckpt_dir = "./"
   filename = "test"
   maxiter=20
-  ndocc=14
 
   extrap<DIIS>: (
     start = 5
@@ -34,7 +33,7 @@ mole<CLSCF>: (
   )
 )
 
-molecule = $:h3op
+molecule = $:ozone_c1
 
 coor = $:symcoor
 message = $:message1
@@ -54,9 +53,9 @@ xopt<QNewtonOpt>: (
 
 gbasis<GaussianBasisSet>: (
   molecule = $:molecule
-  %name = "6-31G**"
+  name = "6-31G**"
   %name = "STO-3G"
-  name = "aug-cc-pVTZ"
+  %name = "aug-cc-pVTZ"
 
   puream=yes
 )
@@ -178,6 +177,15 @@ h3op<Molecule>: (
   { atoms geometry } = {
       h    [  1.5000000000    0.0000000000    1.0000000000 ]
       o    [  0.0000000000    0.0000000000    0.0000000000 ]
+  }
+)
+
+water_c1<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+      H    [  1.5000000000    0.0000000000    1.0000000000 ]
+      H    [ -1.5000000000    0.0000000000    1.0000000000 ]
+      O    [  0.0000000000    0.0000000000    0.0000000000 ]
   }
 )
 

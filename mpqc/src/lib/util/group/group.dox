@@ -47,6 +47,12 @@ two important specializations of this class:
                          requires POSIX threads and a thread-safe MPI
                          implementation.
 
+  <dt>ARMCIMemoryGrp<dd> This message group uses the Aggregate Remote Copy
+                         Interface (ARMCI).  This exploits the RDMA
+                         capabilities of interconnects such as Myrinet and
+                         InfiniBand.
+
+
 </dl>
 
 \section multithreading Multi-Threading

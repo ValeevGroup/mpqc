@@ -178,7 +178,7 @@ The length and width of the table can be anything the user desires.
 Occasionally, a user may need to repeat some value several times in an
 input file.  If the value must be changed, it would be nice to only
 change the value in one place.  The value substitution feature of
-ParsedKeyVal always the user to do this.  Any place a value can
+ParsedKeyVal allows the user to do this.  Any place a value can
 occur the user can place a <tt>$</tt>.  Following this a keyword must be
 given.  This keyword must have been assigned before the attempt is made
 to use its value in a value substitution.

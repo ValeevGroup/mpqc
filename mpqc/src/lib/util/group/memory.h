@@ -116,40 +116,9 @@ inline size_t distsize_to_size(const distsize_t &a) {return a;}
 /** The MemoryGrp abstract class provides a way of accessing distributed
 memory in a parallel machine.  Several specializations are available.  For
 one processor, ProcMemoryGrp provides a simple stub implementation.
-Otherwise, the specializations that work well are ShmMemoryGrp,
-ParagonMemoryGrp, and MPLMemoryGrp.  If your parallel operation system and
-libraries do not directly support active messages or global shared memory
-you can try IParagonMemoryGrp or MPIMemoryGrp, as is appropriate.  However,
-these latter specializations do not always work and perform poorly.
-
-If a MemoryGrp is not given to the program, then one will be automatically
-chosen depending on which MessageGrp is used by default, the type of
-machine on which the code was compiled, and what options were given at
-configuration time.  The following rules are applied until the first
-matching set of criteria are found.
-
-\begin{itemize}
-
-   \item If an MPIMessageGrp is used then:
-
-     \begin{itemize}
-
-        \item If the has the Message Passing Library then
-           MPLMemoryGrp is used.
-
-        \item Otherwise, MPIMemoryGrp is used.
-
-     \end{itemize}
-
-   \item If an ShmMessageGrp is used, then a
-      ShmMemoryGrp is used.
-
-   \item If there is only one processor, then ProcMemoryGrp is
-       used.
-
-   \item Otherwise, no memory group can be created.
-
-\end{itemize}
+Parallel specializations include ShmMemoryGrp, MTMPIMemoryGrp, and
+ARMCIMemoryGrp.  The particular specializations that work depend highly on
+the target hardware and software environment.
 
 */
 class MemoryGrp: public DescribedClass {
@@ -255,18 +224,22 @@ class MemoryGrp: public DescribedClass {
     virtual void print(std::ostream &o = ExEnv::out0()) const;
 
     /** Create a memory group.  This routine looks for a -memorygrp
-        argument, then the environmental variable MEMORYGRP, and, finally,
-        the default MessageGrp object to decide which specialization of
-        MemoryGrp would be appropriate.  The argument to -memorygrp should
-        be either string for a ParsedKeyVal constructor or a classname.
-        The default ThreadGrp and MessageGrp objects should be initialized
-        before this is called. */
+        argument, and then the environmental variable MEMORYGRP to decide
+        which specialization of MemoryGrp would be appropriate.  The
+        argument to -memorygrp or the value of the environmental variable
+        should be either string for a ParsedKeyVal constructor or a
+        classname.  The default ThreadGrp and MessageGrp objects should be
+        initialized before this is called. */
     static MemoryGrp* initial_memorygrp(int &argc, char** argv);
     static MemoryGrp* initial_memorygrp();
     /** The default memory group contains the primary memory group to
         be used by an application. */
     static void set_default_memorygrp(const Ref<MemoryGrp>&);
-    /// Returns the default memory group.
+    /** Returns the default memory group.  If the default memory
+        group has not yet been set, then one is created.
+        The particular specialization used is determined by
+        configuration options and which specializations are being
+        used for MessageGrp and ThreadGrp. */
     static MemoryGrp* get_default_memorygrp();
 };
 

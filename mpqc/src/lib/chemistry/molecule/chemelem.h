@@ -34,8 +34,7 @@ class ChemicalElement :
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
-    int Z_;
+  public:
     struct atom_info_type
     {
       char   *name;
@@ -55,6 +54,9 @@ class ChemicalElement :
       double  atomic_radius;
       double  vdw_radius;
     };
+
+  private:
+    int Z_;
   
     static int max_atomic_number;
     static atom_info_type atom_info[];

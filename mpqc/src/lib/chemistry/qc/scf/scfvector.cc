@@ -190,9 +190,9 @@ SCF::compute_vector(double& eelec)
                << endl;
         }
         cout << node0 << decindent;
-      
-        delete[] vals;
       }
+
+      delete[] vals;
     }
   }
 

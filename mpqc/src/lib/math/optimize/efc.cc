@@ -214,12 +214,12 @@ EFCOpt::update()
   RefDiagSCMatrix evals(dimension(),matrixkit());
 
   hessian_.diagonalize(evals,evecs);
-  evals.print("hessian eigenvalues");
-  evecs.print("hessian eigenvectors");
+  //evals.print("hessian eigenvalues");
+  //evecs.print("hessian eigenvectors");
 
   // form gradient to local hessian modes F = Ug
   RefSCVector F = evecs.t() * gcurrent;
-  F.print("F");
+  //F.print("F");
 
   // figure out if hessian has the right number of negative eigenvalues
   int ncoord = evals.n();
@@ -349,7 +349,7 @@ EFCOpt::update()
   cout << node0 << endl
        << indent << scprintf("taking step of size %f",tot) << endl;
                     
-  xdisp.print("xdisp");
+  //xdisp.print("xdisp");
 
   // try steepest descent
   // RefSCVector xdisp = -1.0*gcurrent;

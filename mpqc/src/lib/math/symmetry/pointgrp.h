@@ -222,7 +222,7 @@ class PointGroup: public SavableState {
     //texi Like the above, but this constructor also takes a point of origin
     // as an argument.
     PointGroup(const char*,SymmetryOperation&,Point&);
-    //texi The KeyVal constructor.  @xref{The PointGroup KeyVal Constructor}
+    //texi The KeyVal constructor (@ref{The PointGroup KeyVal Constructor}).
     PointGroup(const RefKeyVal&);
 
     PointGroup(StateIn&);

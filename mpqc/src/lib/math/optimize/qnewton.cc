@@ -36,6 +36,7 @@
 #include <util/misc/formio.h>
 
 #define CLASSNAME QNewtonOpt
+#define VERSION 2
 #define PARENTS public Optimize
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -62,6 +63,9 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
   lineopt_ = keyval->describedclassvalue("lineopt");
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
+  print_x_ = keyval->booleanvalue("print_x");
+  print_hessian_ = keyval->booleanvalue("print_hessian");
+  print_gradient_ = keyval->booleanvalue("print_gradient");
 
   RefSymmSCMatrix hessian(dimension(),matrixkit());
   // get a guess hessian from the function
@@ -92,6 +96,16 @@ QNewtonOpt::QNewtonOpt(StateIn&s):
   s.get(accuracy_);
   s.get(take_newton_step_);
   s.get(maxabs_gradient);
+  if (s.version(static_class_desc()) > 1) {
+    s.get(print_hessian_);
+    s.get(print_x_);
+    s.get(print_gradient_);
+  }
+  else {
+    print_hessian_ = 0;
+    print_x_ = 0;
+    print_gradient_ = 0;
+  }
   lineopt_.restore_state(s);
 }
 
@@ -108,6 +122,9 @@ QNewtonOpt::save_data_state(StateOut&s)
   s.put(accuracy_);
   s.put(take_newton_step_);
   s.put(maxabs_gradient);
+  s.put(print_hessian_);
+  s.put(print_x_);
+  s.put(print_gradient_);
   lineopt_.save_state(s);
 }
 
@@ -195,6 +212,38 @@ QNewtonOpt::update()
   if (update_.nonnull()) {
       update_->update(ihessian_,function(),xcurrent,gcurrent);
     }
+
+  if (print_hessian_) {
+    RefSymmSCMatrix hessian = ihessian_.gi();
+    cout << node0 << indent << "hessian = [" << endl;
+    cout << incindent;
+    int n = hessian.n();
+    for (int i=0; i<n; i++) {
+      cout << node0 << indent << "[";
+      for (int j=0; j<=i; j++) {
+        cout << node0 << scprintf(" % 10.6f",double(hessian(i,j)));
+      }
+      cout << node0 << " ]" << endl;
+    }
+    cout << decindent;
+    cout << node0 << indent << "]" << endl;
+  }
+  if (print_x_) {
+    int n = xcurrent.n();
+    cout << node0 << indent << "x = [";
+    for (int i=0; i<n; i++) {
+      cout << node0 << scprintf(" % 16.12f",double(xcurrent(i)));
+    }
+    cout << node0 << " ]" << endl;
+  }
+  if (print_gradient_) {
+    int n = gcurrent.n();
+    cout << node0 << indent << "gradient = [";
+    for (int i=0; i<n; i++) {
+      cout << node0 << scprintf(" % 16.12f",double(gcurrent(i)));
+    }
+    cout << node0 << " ]" << endl;
+  }
 
   // take the step
   RefSCVector xdisp = -1.0*(ihessian_ * gcurrent);

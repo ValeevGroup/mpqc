@@ -57,6 +57,10 @@ class QNewtonOpt: public Optimize {
     RefLineOpt lineopt_;
 
     int take_newton_step_;
+
+    int print_hessian_;
+    int print_x_;
+    int print_gradient_;
   public:
     QNewtonOpt(const RefKeyVal&);
     QNewtonOpt(StateIn&);

@@ -744,7 +744,7 @@ BlockedSCMatrix::save(StateOut&s)
   s.put(has_subblocks);
   s.put(nblocks());
   for (int i=0; i<nblocks(); i++) {
-      block(i)->save(s);
+      block(i).save(s);
     }
 }
 
@@ -769,7 +769,7 @@ BlockedSCMatrix::restore(StateIn& s)
           abort();
         }
       for (int i=0; i<nblocks(); i++) {
-          block(i)->restore(s);
+          block(i).restore(s);
         }
     }
   else {

@@ -293,7 +293,7 @@ BlockedDiagSCMatrix::save(StateOut&s)
   s.put(has_subblocks);
   s.put(nblocks());
   for (int i=0; i<nblocks(); i++) {
-      block(i)->save(s);
+      block(i).save(s);
     }
 }
 
@@ -316,7 +316,7 @@ BlockedDiagSCMatrix::restore(StateIn& s)
           abort();
         }
       for (int i=0; i<nblocks(); i++) {
-          block(i)->restore(s);
+          block(i).restore(s);
         }
     }
   else {

@@ -6,6 +6,10 @@ DOCXX=doc++
 html: sc.dxx include.dxx library.dxx binary.dxx
 	$(DOCXX) -d html $<
 
+.PHONY: tex
+tex: sc.dxx include.dxx library.dxx binary.dxx
+	$(DOCXX) -t $< > doc.tex
+
 .PHONY: include.dxx
 include.dxx:
 	$(PERL) ../bin/mkdoc.pl ../src/lib $@

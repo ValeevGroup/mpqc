@@ -38,6 +38,7 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/mbpt.h>
+#include <chemistry/qc/mbpt/util.h>
 
 static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
 static void zero_gradients(double **f, int n1, int n2);
@@ -206,6 +207,9 @@ MBPT2::compute_cs_grad()
 
   double **gradient, *gradient_dat;  // The MP2 gradient
   double **ginter;    // Intermediates for the MP2 gradient
+
+  BiggestContribs biggest_coefs(4,10);
+  CharacterTable ct = molecule()->point_group()->char_table();
 
   int dograd = do_gradient();
 
@@ -376,6 +380,7 @@ MBPT2::compute_cs_grad()
   double *scf_vector_dat = new double[nbasis*nbasis];
   Scf_Vec.t()->convert(scf_vector_dat);
 
+  int *orbital_map = new int[nbasis];
   evals = new double[nbasis];
   double** scf_vector = new double*[nbasis];
   int idoc=0, ivir=0;
@@ -384,11 +389,13 @@ MBPT2::compute_cs_grad()
     if (occ(i) >= 2.0 - epsilon) {
       evals[idoc] = evalmat(i);
       scf_vector[idoc] = &scf_vector_dat[i*nbasis];
+      orbital_map[idoc] = i;
       idoc++;
       }
     else {
       evals[ivir+nocc] = evalmat(i);
       scf_vector[ivir+nocc] = &scf_vector_dat[i*nbasis];
+      orbital_map[ivir+nocc] = i;
       ivir++;
       }
     }
@@ -964,6 +971,8 @@ MBPT2::compute_cs_grad()
               ibja_ptr = &mo_int[b+nocc + nbasis*(nocc + nbasis*ij_index)];
               for (a=0; a<nvir_act; a++) {
                 delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
+                if (i>=j && a>=b)
+                  biggest_coefs.insert(*iajb_ptr - *ibja_ptr,i,j,a,b);
                 ecorr_mp2 += *iajb_ptr*(2**iajb_ptr - *ibja_ptr)*delta_ijab;
                 iajb_ptr++;
                 ibja_ptr += nbasis;;
@@ -1714,8 +1723,33 @@ MBPT2::compute_cs_grad()
   msg_->sum(aoint_computed);
   msg_->sum(aointder_computed);
 
+  biggest_coefs.combine(msg_);
+
   if (me == 0) {
     emp2 = escf + ecorr_mp2;
+
+    if (biggest_coefs.ncontrib()) {
+      cout << endl << indent << "Largest first order coefficients:" << endl;
+      }
+    for (i=0; i<biggest_coefs.ncontrib(); i++) {
+      int i0 = orbital_map[biggest_coefs.indices(i)[0]];
+      int i1 = orbital_map[biggest_coefs.indices(i)[1]];
+      int i2 = orbital_map[biggest_coefs.indices(i)[2] + nocc];
+      int i3 = orbital_map[biggest_coefs.indices(i)[3] + nocc];
+      cout << indent
+           << scprintf("  %2d %12.8f %2d %3s %2d %3s -> %2d %3s %2d %3s",
+                       i+1, biggest_coefs.val(i),
+                       symorb_num_[i0]+1,
+                       ct.gamma(symorb_irrep_[i0]).symbol(),
+                       symorb_num_[i1]+1,
+                       ct.gamma(symorb_irrep_[i1]).symbol(),
+                       symorb_num_[i2]+1,
+                       ct.gamma(symorb_irrep_[i2]).symbol(),
+                       symorb_num_[i3]+1,
+                       ct.gamma(symorb_irrep_[i3]).symbol()
+             )
+           << endl;
+      }
 
     // Print out various energies etc.
 
@@ -1799,17 +1833,34 @@ MBPT2::compute_cs_grad()
   RefSCDimension nbasis_dim(new SCDimension(nbasis));
 
   if (me == 0) {
+    BiggestContribs biggest_s2(2,10);
     // compute the S2 norm
     double s2norm = 0.0;
     laj_ptr = Laj;
     for (j=0; j<nocc; j++) {
       for (a=0; a<nvir; a++) {
         tmpval = *laj_ptr++/(evals[a+nocc]-evals[j]);
+        biggest_s2.insert(tmpval,j,a);
         s2norm += tmpval*tmpval;
         }
       }
     s2norm = sqrt(s2norm/(2*nocc_act));
     cout << indent << "S2 norm = " << s2norm << endl;
+    if (biggest_s2.ncontrib()) {
+      cout << endl << indent << "Largest S2 values:" << endl;
+      }
+    for (i=0; i<biggest_s2.ncontrib(); i++) {
+      int i0 = orbital_map[biggest_s2.indices(i)[0]];
+      int i1 = orbital_map[biggest_s2.indices(i)[1] + nocc];
+      cout << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
+                                 i+1, biggest_s2.val(i),
+                                 symorb_num_[i0]+1,
+                                 ct.gamma(symorb_irrep_[i0]).symbol(),
+                                 symorb_num_[i1]+1,
+                                 ct.gamma(symorb_irrep_[i1]).symbol()
+                                 )
+           << endl;
+      }
     }
 
 
@@ -2227,6 +2278,7 @@ MBPT2::compute_cs_grad()
   delete[] scf_vector;
   delete[] scf_vector_dat;
   delete[] evals;
+  delete[] orbital_map;
 
   tim_exit("mp2-mem");
   }

@@ -36,7 +36,7 @@ TARGET_TO_MAKE = libmbpt
 BIN_OR_LIB = LIB
 
 CXXSRCS = mbpt.cc csgrad.cc csgmat.cc cscphf.cc \
-          hsosv1.cc hsosv2.cc hsosv2lb.cc
+          hsosv1.cc hsosv2.cc hsosv2lb.cc util.cc
 
 CSRCS = bzerofast.c
 

@@ -1,9 +1,9 @@
 //
-// linkage.h
+// newton.h
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
-// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
 //
 // This file is part of the SC Toolkit.
@@ -25,28 +25,49 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _math_optimize_linkage_h
-#define _math_optimize_linkage_h
+#ifndef _math_optimize_newton_h
+#define _math_optimize_newton_h
 
-#ifndef __PIC__
+#ifdef __GNUC__
+#pragma interface
+#endif
 
-#include <math/optimize/qnewton.h>
-#include <math/optimize/newton.h>
-#include <math/optimize/gdiis.h>
-#include <math/optimize/efc.h>
-#include <math/optimize/steep.h>
+#include <util/state/state.h>
+#include <util/class/class.h>
+#include <math/scmat/matrix.h>
+#include <math/optimize/function.h>
+#include <math/optimize/opt.h>
 #include <math/optimize/update.h>
 
-#include <math/scmat/linkage.h>
+////////////////////////////////////////////////////////////////////////
+// newton and related methods
 
-const ClassDesc &optimize_force_link_a_ = QNewtonOpt::class_desc_;
-const ClassDesc &optimize_force_link_b_ = GDIISOpt::class_desc_;
-const ClassDesc &optimize_force_link_c_ = EFCOpt::class_desc_;
-const ClassDesc &optimize_force_link_d_ = BFGSUpdate::class_desc_;
-const ClassDesc &optimize_force_link_e_ = PowellUpdate::class_desc_;
-const ClassDesc &optimize_force_link_f_ = SteepestDescentOpt::class_desc_;
-const ClassDesc &optimize_force_link_g_ = NewtonOpt::class_desc_;
+class NewtonOpt: public Optimize {
+#   define CLASSNAME NewtonOpt
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double maxabs_gradient;
+    double accuracy_;
 
-#endif /* __PIC__ */
+    int print_hessian_;
+    int print_x_;
+    int print_gradient_;
+  public:
+    NewtonOpt(const RefKeyVal&);
+    NewtonOpt(StateIn&);
+    ~NewtonOpt();
+    void save_data_state(StateOut&);
+
+    void init();
+    int update();
+};
 
 #endif
+
+// Local Variables:
+// mode: c++
+// c-file-style: "ETS"
+// End:

@@ -46,6 +46,7 @@
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <util/render/render.h>
 
 #include <math/optimize/opt.h>
 
@@ -56,6 +57,7 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 // Force linkages:
+#include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>
@@ -433,6 +435,55 @@ main(int argc, char *argv[])
     //molfreq->thermochemistry(scf_info.nopen+1);
     molfreq->thermochemistry(1);
     tim->exit("frequencies");
+  }
+
+  // see if any pictures are desired
+  RefRender renderer = keyval->describedclassvalue("renderer");
+  RefRenderedObject rendered = keyval->describedclassvalue("rendered");
+  RefAnimatedObject animated = keyval->describedclassvalue("rendered");
+  if (renderer.nonnull() && rendered.nonnull()) {
+    tim->enter("render");
+    if (grp->me() == 0) renderer->render(rendered);
+    tim->exit("render");
+  }
+  else if (renderer.nonnull() && animated.nonnull()) {
+    tim->enter("render");
+    if (grp->me() == 0) renderer->animate(animated);
+    tim->exit("render");
+  }
+  else if (renderer.nonnull()) {
+    tim->enter("render");
+    int n = keyval->count("rendered");
+    for (i=0; i<n; i++) {
+      rendered = keyval->describedclassvalue("rendered",i);
+      animated = keyval->describedclassvalue("rendered",i);
+      if (rendered.nonnull()) {
+        // make sure the object has a name so we don't overwrite its file
+        if (rendered->name() == 0) {
+          char ic[64];
+          sprintf(ic,"%02d",i);
+          rendered->set_name(ic);
+        }
+        if (grp->me() == 0) renderer->render(rendered);
+      }
+      else if (animated.nonnull()) {
+        // make sure the object has a name so we don't overwrite its file
+        if (animated->name() == 0) {
+          char ic[64];
+          sprintf(ic,"%02d",i);
+          animated->set_name(ic);
+        }
+        if (grp->me() == 0) renderer->animate(animated);
+      }
+    }
+    tim->exit("render");
+  }
+  RefMolFreqAnimate molfreqanim = keyval->describedclassvalue("animate_modes");
+  if (ready_for_freq && molfreq.nonnull()
+      && molfreqanim.nonnull() && renderer.nonnull()) {
+    tim->enter("render");
+    molfreq->animate(renderer, molfreqanim);
+    tim->exit("render");
   }
 
   if (mole.nonnull()) {

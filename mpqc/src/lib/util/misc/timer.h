@@ -1,4 +1,8 @@
 
+#ifndef _util_misc_timer_h
+#define _util_misc_timer_h
+
+#include <stdio.h>
 #include <util/misc/timer.gbl>
 
 #ifdef TIMING
@@ -20,3 +24,5 @@
 #define TPRINT(x)
 #endif
 #endif
+
+#endif /* _util_misc_timer_h */

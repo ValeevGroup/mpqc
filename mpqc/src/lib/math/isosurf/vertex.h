@@ -17,7 +17,7 @@ extern "C" {
 #include <math/isosurf/volume.h>
 #include <math/isosurf/implicit.h>
 
-class Vertex: public RefCount {
+class Vertex: public VRefCount {
   private:
     RefSCVector _point;
     RefSCVector _gradient;

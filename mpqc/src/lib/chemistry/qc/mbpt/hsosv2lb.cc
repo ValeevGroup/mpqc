@@ -929,11 +929,15 @@ MBPT2::compute_hsos_v2_lb()
     set_actual_value_accuracy(reference_->actual_value_accuracy()
                               *ref_to_mp2_acc);
     }
+  else if (method_ && nsocc == 0 && !strcmp(method_,"mp")) {
+    set_energy(ezapt2);
+    set_actual_value_accuracy(reference_->actual_value_accuracy()
+                              *ref_to_mp2_acc);
+    }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
       cout << node0 << indent
-           << "MBPT2: bad method for closed shell case: " << method_
-           << ", using zapt" << endl;
+           << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()

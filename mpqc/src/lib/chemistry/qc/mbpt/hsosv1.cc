@@ -41,6 +41,34 @@ typedef int dmt_matrix;
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 
+static distsize_t
+compute_v1_memory(distsize_t ni,
+                  distsize_t nfuncmax, distsize_t nbasis,
+                  distsize_t a_number, distsize_t nshell,
+                  distsize_t ndocc, distsize_t nsocc, distsize_t nvir,
+                  distsize_t nfzc, distsize_t nfzv,
+                  distsize_t nproc)
+{
+  distsize_t mem = 0;
+  distsize_t nocc = ndocc + nsocc;
+  distsize_t dim_ij = nocc*ni - (ni*(ni-1))/2;
+  mem += nproc*sizeof(int);
+  mem += (nbasis+nsocc-nfzc-nfzv)*sizeof(double);
+  mem += nfuncmax*nfuncmax*nbasis*ni*sizeof(double);
+  mem += nfuncmax*nfuncmax*nbasis*ni*sizeof(double);
+  mem += nbasis*a_number*dim_ij*sizeof(double);
+  mem += nvir*a_number*sizeof(double);
+  mem += nvir*nvir*sizeof(double);
+  if (nsocc) {
+    mem += nsocc*sizeof(double);
+    mem += ndocc*nsocc*(nvir-nsocc)*sizeof(double);
+    mem += ndocc*nsocc*(nvir-nsocc)*sizeof(double);
+    }
+  mem += sizeof(double*)*(nbasis);
+  mem += sizeof(double)*((nocc+nvir)*nbasis);
+  return mem;
+}
+
 void
 MBPT2::compute_hsos_v1()
 {
@@ -76,7 +104,6 @@ MBPT2::compute_hsos_v1()
   int dim_ij;
   int aoint_computed = 0;
   int nshell;
-  double A, B, C, ni_top, max, ni_double; /* Variables used to compute ni  */
   double *evals_open;    /* reordered scf eigenvalues                      */
   const double *intbuf;  /* 2-electron AO integral buffer                  */
   double *trans_int1;    /* partially transformed integrals                */
@@ -182,6 +209,16 @@ MBPT2::compute_hsos_v1()
     a_vector[i] += nvir*sizeof(double); /* first a_rest nodes hold an extra a */
     }
 
+  // Cannot restart when singly occupied orbitals are present
+  if (nsocc) {
+    restart_orbital_v1_ = 0;
+    }
+  else if (restart_orbital_v1_) {
+    cout << node0 << indent
+         << scprintf("Restarting at orbital %d with partial energy %18.14f",
+                     restart_orbital_v1_, restart_ecorr_)
+         << endl;
+    }
 
   /* compute batch size ni for opt2 loops                                 *
    * need to store the following arrays: trans_int1-4, trans_int4_node,   *
@@ -190,49 +227,60 @@ MBPT2::compute_hsos_v1()
    * since a_number is not the same on all nodes, use node 0's a_number   *
    * (which is >= all other a_numbers) and broadcast ni afterwords        */
 
-  if (me == 0) {
-//    ni = (mem_alloc - sizeof(double)*(nvir*nvir + nbasis*(nvir+nocc)
-//                                     + (nocc+nvir) + nsocc 
-//                                     + 2*ndocc*nsocc*(nvir-nsocc) 
-//                                     + nvir*a_number)
-//                    - sizeof(int)*nproc)/
-//          (sizeof(double)*(2*nfuncmax*nfuncmax*nbasis + nbasis*a_number*nocc));
-    A = -0.5*sizeof(double)*nbasis*a_number;
-    B = sizeof(double)*(2*nfuncmax*nfuncmax + (nocc+0.5)*a_number)*nbasis;
-    C = sizeof(double)*(nvir*nvir + (nbasis+1)*(nocc+nvir) + nsocc 
-                        + 2*ndocc*nsocc*(nvir-nsocc) + nvir*a_number)
-        + sizeof(int)*nproc;
-    ni_top = -B/(2*A);  /* ni value for which memory requirement is max. */
-    max = A*ni_top*ni_top + B*ni_top + C;
-    if (max <= mem_alloc) {
-      ni = nocc;
-      npass = 1;
-      rest = 0;
-      }
-    else {
-      ni_double = (-B + sqrt((double)(B*B - 4*A*(C-mem_alloc))))/(2*A);
-      ni = (int) ni_double;
-      if (ni > nocc) ni = nocc;
-      rest = nocc%ni;
-      npass = (nocc - rest)/ni + 1;
-      if (rest == 0) npass--;
-      }
+  distsize_t memused = 0;
+  ni = 0;
+  for (i=1; i<=nocc-restart_orbital_v1_; i++) {
+    distsize_t tmpmem = compute_v1_memory(i,
+                                          nfuncmax, nbasis, a_number, nshell,
+                                          ndocc, nsocc, nvir,
+                                          nfzc, nfzv, nproc);
+    if (tmpmem > mem_alloc) break;
+    ni = i;
+    memused = tmpmem;
     }
+
+  /* set ni equal to the smallest batch size for any node */
+  msg_->min(ni);
   msg_->bcast(ni);
-  msg_->bcast(npass);
-  msg_->bcast(rest);
+
+  cout << node0 << indent
+       << "Memory available per node:      " << mem_alloc << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Total memory used per node:     " << memused << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Memory required for one pass:   "
+       << compute_v1_memory(nocc-restart_orbital_v1_,
+                            nfuncmax, nbasis, a_number, nshell,
+                            ndocc, nsocc, nvir, nfzc, nfzv, nproc)
+       << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Minimum memory required:        "
+       << compute_v1_memory(1,
+                            nfuncmax, nbasis, a_number, nshell,
+                            ndocc, nsocc, nvir, nfzc, nfzv, nproc)
+       << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Batch size:                     " << ni
+       << endl;
 
   if (ni < nsocc) {
-    cerr << "Not enough memory allocated" << endl;
+    cout << node0 << indent << "Not enough memory allocated to handle"
+         << " SOCC orbs in first pass" << endl;
     abort();
     }
 
-  if (ni < 1) {     /* this applies only to a closed shell case */
-    cerr << "Not enough memory allocated" << endl;
+  if (ni < 1) {
+    cout << node0 << indent << "Not enough memory allocated" << endl;
     abort();
     }
 
-  cout << node0 << indent << "computed batchsize: " << ni << endl;
+  rest = (nocc-restart_orbital_v1_)%ni;
+  npass = (nocc - restart_orbital_v1_ - rest)/ni + 1;
+  if (rest == 0) npass--;
 
   nshell = basis()->nshell();
   if (me == 0) {
@@ -351,7 +399,7 @@ MBPT2::compute_hsos_v1()
 ***************************************************************************/
 
   for (pass=0; pass<npass; pass++) {
-    i_offset= pass*ni;  
+    i_offset= pass*ni + restart_orbital_v1_;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
     bzerofast(trans_int3,nbasis*a_number*dim_ij);
 
@@ -693,6 +741,19 @@ MBPT2::compute_hsos_v1()
         tim_exit("compute ecorr");
         }       /* exit j loop */
       }         /* exit i loop */
+
+    if (nsocc == 0 && npass > 1 && pass < npass - 1) {
+      double passe = ecorr_opt2;
+      msg_->sum(passe);
+      cout << node0 << indent
+           << "Partial correlation energy for pass " << pass << ":" << endl;
+      cout << node0 << indent
+           << scprintf("  restart_ecorr   = %18.14f", passe)
+           << endl;
+      cout << node0 << indent
+           << scprintf("  restart_orbital_v1 = %d", ((pass+1) * ni))
+           << endl;
+      }
     }           /* exit loop over i-batches (pass) */
 
   // don't need the AO integrals anymore
@@ -742,6 +803,12 @@ MBPT2::compute_hsos_v1()
   msg_->sum(ecorr_zapt2);
   msg_->sum(aoint_computed);
 
+  if (restart_orbital_v1_) {
+    ecorr_opt1 += restart_ecorr_;
+    ecorr_opt2 += restart_ecorr_;
+    ecorr_zapt2 += restart_ecorr_;
+    }
+
   escf = reference_->energy();
   hf_energy_ = escf;
 
@@ -787,11 +854,15 @@ MBPT2::compute_hsos_v1()
     set_actual_value_accuracy(reference_->actual_value_accuracy()
                               *ref_to_mp2_acc);
     }
+  else if (method_ && nsocc == 0 && !strcmp(method_,"mp")) {
+    set_energy(ezapt2);
+    set_actual_value_accuracy(reference_->actual_value_accuracy()
+                              *ref_to_mp2_acc);
+    }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
       cout << node0 << indent
-           << "MBPT2: bad method for closed shell case: " << method_
-           << ", using zapt" << endl;
+           << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()

@@ -77,6 +77,9 @@ class MBPT2: public Wavefunction {
     double hf_energy_;
     RefSCVector hf_gradient_;
 
+    double restart_ecorr_;
+    int restart_orbital_v1_;
+
   protected:
     void init_variables();
 

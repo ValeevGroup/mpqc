@@ -122,6 +122,9 @@ MBPT2::MBPT2(StateIn& s):
 
   mem = MemoryGrp::initial_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
+
+  restart_ecorr_ = 0.0;
+  restart_orbital_v1_ = 0;
 }
 
 MBPT2::MBPT2(const RefKeyVal& keyval):
@@ -165,6 +168,9 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   debug_ = keyval->booleanvalue("debug");
   if (keyval->error() == KeyVal::WrongType)
       debug_ = keyval->intvalue("debug");
+
+  restart_ecorr_ = keyval->doublevalue("restart_ecorr");
+  restart_orbital_v1_ = keyval->intvalue("restart_orbital_v1");
 
   hf_energy_ = 0.0;
 

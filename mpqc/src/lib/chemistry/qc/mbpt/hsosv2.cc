@@ -226,14 +226,13 @@ MBPT2::compute_hsos_v2()
    * sorted_shells, nbf, and proc                                         */
     
   distsize_t memused = 0;
-  for (ni=1; ni<=nocc; ni++) {
+  ni = 0;
+  for (i=1; i<=nocc; i++) {
     distsize_t tmpmem = compute_v2_memory(ni,
                                           nfuncmax, nbasis, nbf[me], nshell,
                                           ndocc, nsocc, nvir, nproc);
-    if (tmpmem > mem_alloc) {
-      ni--;
-      break;
-      }
+    if (tmpmem > mem_alloc) break;
+    ni = i;
     memused = tmpmem;
     }
 
@@ -848,11 +847,15 @@ MBPT2::compute_hsos_v2()
     set_actual_value_accuracy(reference_->actual_value_accuracy()
                               *ref_to_mp2_acc);
     }
+  else if (method_ && nsocc == 0 && !strcmp(method_,"mp")) {
+    set_energy(ezapt2);
+    set_actual_value_accuracy(reference_->actual_value_accuracy()
+                              *ref_to_mp2_acc);
+    }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
       cout << node0 << indent
-           << "MBPT2: bad method for closed shell case: " << method_
-           << ", using zapt" << endl;
+           << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }
     set_energy(ezapt2);
     set_actual_value_accuracy(reference_->actual_value_accuracy()

@@ -1032,7 +1032,7 @@ MBPT2::compute_cs_grad()
       cout << node0 << indent
            << "Partial correlation energy for pass " << pass << ":" << endl;
       cout << node0 << indent
-           << scprintf("  restart_ecorr_memgrp   = %14.10f", passe)
+           << scprintf("  restart_ecorr_memgrp   = %18.14f", passe)
            << endl;
       cout << node0 << indent
            << scprintf("  restart_orbital_memgrp = %d", ((pass+1) * ni))

@@ -445,9 +445,11 @@ MPSCF::compute()
             _density.computed() = 0;
             RefSymmSCMatrix DAO = density();
             RefSymmSCMatrix efieldAO(DAO.dim(),solvent_->matrixkit());
-            GaussianEfieldDotVectorIntv2 *edotnv2
-                = new GaussianEfieldDotVectorIntv2(basis(), molecule());
-            RefSCElementOp edotn_op = edotnv2;
+
+            GaussianEfieldDotVectorIntv2 *edotnv2 =
+              new GaussianEfieldDotVectorIntv2(basis());
+
+            RefSCElementOp edotn_op = new OneBodyIntOp(edotnv2);
 //             // BEGIN DEBUG
 //             cout.flush();
 //             fflush(stdout);

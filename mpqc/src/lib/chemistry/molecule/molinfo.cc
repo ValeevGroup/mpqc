@@ -54,8 +54,9 @@ MolInfo::MolInfo(const RefKeyVal& pkeyval)
       keyval = new AggregateKeyVal(pkeyval,libkeyval);
     }
   else if (libdir = getenv("SCLIBDIR")) {
-      const char* molinfo = "molinfo.ipv2";
-      libdir = strchr(libdir,'=') + 1;
+      const char* molinfo = "/molinfo.ipv2";
+      const char *eq = strchr(libdir,'=');
+      if (eq) libdir = eq + 1;
       char *filename = new char[strlen(libdir) + strlen(molinfo) + 1];
       strcpy(filename, libdir);
       strcat(filename, molinfo);

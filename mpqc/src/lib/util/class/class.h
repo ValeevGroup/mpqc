@@ -49,7 +49,7 @@ class ParentClass
     ParentClass(const ParentClass&);
     ~ParentClass();
     int is_virtual() const;
-    Access access() const;
+    Access access() const { return _access; }
     const ClassDesc* classdesc() const;
     void change_classdesc(ClassDesc*n);
 };
@@ -66,11 +66,11 @@ class ParentClasses
   public:
     ParentClasses(const char*);
     ~ParentClasses();
-    ParentClass& parent(int i);
-    const ParentClass& parent(int i) const;
-    ParentClass& operator[](int i);
-    const ParentClass& operator[](int i) const;
-    int n() const;
+    ParentClass& parent(int i) { return *_classes[i]; }
+    const ParentClass& parent(int i) const { return *_classes[i]; }
+    ParentClass& operator[](int i) { return *_classes[i]; }
+    const ParentClass& operator[](int i) const { return *_classes[i]; }
+    int n() const { return _n; }
     void change_parent(ClassDesc*oldcd,ClassDesc*newcd);
 };
     
@@ -101,9 +101,9 @@ class ClassDesc {
     ~ClassDesc();
     static void list_all_classes();
     static ClassDesc* name_to_class_desc(const char*);
-    const ParentClasses& parents() const;
-    const char* name() const;
-    int version() const;
+    const ParentClasses& parents() const { return parents_; }
+    const char* name() const { return classname_; }
+    int version() const { return version_; }
     DescribedClass* create_described_class() const;
 
     // create an object using the default constructor

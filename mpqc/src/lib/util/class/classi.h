@@ -77,9 +77,10 @@ CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
       return this;
     }
   void* p = 0;
-  for (int i=0; i<CLASSNAME::class_desc_.parents().n(); i++) {
-      if (!CLASSNAME::class_desc_.parents()[i].access()
-          == ParentClass::Private) {
+  const ParentClasses& parents = CLASSNAME::class_desc_.parents();
+  int n = parents.n();
+  for (int i=0; i<n; i++) {
+      if (!parents[i].access() == ParentClass::Private) {
           void * tmp = casts[i];
           if (!tmp) continue;
           if (p && tmp != p) {

@@ -117,11 +117,6 @@ int ParentClass::is_virtual() const
   return _is_virtual;
 }
 
-ParentClass::Access ParentClass::access() const
-{
-  return _access;
-}
-
 const ClassDesc* ParentClass::classdesc() const
 {
   return _classdesc;
@@ -214,31 +209,6 @@ ParentClasses::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
   for (int i=0; i<_n; i++) {
       if (parent(i).classdesc() == oldcd) parent(i).change_classdesc(newcd);
     }
-}
-
-ParentClass& ParentClasses::parent(int i)
-{
-  return *_classes[i];
-}
-
-const ParentClass& ParentClasses::parent(int i) const
-{
-  return *_classes[i];
-}
-
-ParentClass& ParentClasses::operator[](int i)
-{
-  return *_classes[i];
-}
-
-const ParentClass& ParentClasses::operator[](int i) const
-{
-  return *_classes[i];
-}
-
-int ParentClasses::n() const
-{
-  return _n;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -380,20 +350,6 @@ ClassDesc::list_all_classes()
           printf("\n");
         }
     }
-}
-
-const ParentClasses& ClassDesc::parents() const
-{
-  return parents_;
-}
-
-const char* ClassDesc::name() const
-{
-  return classname_;
-}
-
-int ClassDesc::version() const
-{ return version_;
 }
 
 DescribedClass* ClassDesc::create_described_class() const

@@ -308,6 +308,8 @@ Wavefunction::overlap()
     s.element_op(ov);
     ov=0;
 
+    if (debug_ > 1) s.print("AO skeleton overlap");
+
     // then symmetrize it
     RefSymmSCMatrix sb(so_dimension(), basis_matrixkit());
     pl->symmetrize(s,sb);

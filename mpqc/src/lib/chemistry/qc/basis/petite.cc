@@ -18,6 +18,7 @@ PetiteList::PetiteList()
   nshell_=0;
   nirrep_=0;
   ng_=0;
+  nblocks_=0;
   p1_=0;
   atom_map_=0;
   shell_map_=0;
@@ -57,6 +58,7 @@ PetiteList::~PetiteList()
   natom_=0;
   nshell_=0;
   ng_=0;
+  nblocks_=0;
   nirrep_=0;
   p1_=0;
   atom_map_=0;
@@ -212,6 +214,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
 
   // and then use projection operators to figure out how many SO's of each
   // symmetry type there will be
+  nblocks_ = 0;
   nbf_in_ir_ = new int[nirrep_];
   for (i=0; i < nirrep_; i++) {
     double t=0;
@@ -219,6 +222,12 @@ PetiteList::init(const RefGaussianBasisSet &gb)
       t += ct.gamma(i).character(g)*red_rep[g];
 
     nbf_in_ir_[i] = ((int) (t+0.5))/ng_;
+    if (ct.gamma(i).complex()) {
+      nblocks_++;
+      nbf_in_ir_[i] *= 2;
+    } else {
+      nblocks_ += ct.gamma(i).degeneracy();
+    }
   }
 
   delete[] red_rep;
@@ -242,17 +251,17 @@ PetiteList::SO_basisdim()
   CharacterTable ct = gbs_->molecule()->point_group().char_table();
 
   // ncomp is the number of symmetry blocks we have
-  int ncomp=0;
-  for (i=0; i < nirrep_; i++)
-    ncomp += ct.gamma(i).degeneracy();
+  int ncomp=nblocks();
   
   // saoelem is the current SO in a block
   int *nao = new int [ncomp];
   memset(nao,0,sizeof(int)*ncomp);
 
-  for (i=ii=0; i < nirrep_; i++)
-    for (j=0; j < ct.gamma(i).degeneracy(); j++,ii++)
+  for (i=ii=0; i < nirrep_; i++) {
+    int je = ct.gamma(i).complex() ? 1 : ct.gamma(i).degeneracy();
+    for (j=0; j < je; j++,ii++)
       nao[ii] = nbf_in_ir_[i];
+  }
 
   RefBlockedSCDimension ret =
     new BlockedSCDimension(gbs_->matrixkit(),ncomp,nao);

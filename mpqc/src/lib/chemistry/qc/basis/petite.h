@@ -45,6 +45,7 @@ class PetiteList {
     int nshell_;
     int ng_;
     int nirrep_;
+    int nblocks_;
 
     RefGaussianBasisSet gbs_;
     
@@ -78,6 +79,8 @@ class PetiteList {
     int in_p4(int ij, int kl, int i, int j, int k, int l) const;
     
     int nfunction(int i) const { return nbf_in_ir_[i]; }
+
+    int nblocks() const { return nblocks_; }
 
     void print(FILE* =stdout, int verbose=1);
 

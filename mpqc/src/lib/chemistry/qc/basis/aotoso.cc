@@ -239,7 +239,8 @@ PetiteList::aotoso()
   CharacterTable ct = mol.point_group().char_table();
   SymmetryOperation so;
 
-  // ncomp is the number of symmetry blocks we have
+  // ncomp is the number of symmetry blocks we have. for point groups with
+  // complex E representations, this will be cut in two eventually
   int ncomp=0;
   for (i=0; i < nirrep_; i++)
     ncomp += ct.gamma(i).degeneracy();
@@ -261,7 +262,8 @@ PetiteList::aotoso()
   SO_block *SOs = new SO_block[ncomp];
   for (i=0; i < ncomp; i++) {
     ir = whichir[i];
-    SOs[i].so.set_length(nbf_in_ir_[ir]);
+    int len = (ct.gamma(ir).complex()) ? nbf_in_ir_[ir]/2 : nbf_in_ir_[ir];
+    SOs[i].so.set_length(len);
   }
   
   double *blc = new double[gbs.nbasis()];
@@ -326,7 +328,7 @@ PetiteList::aotoso()
           for (d=0; d < ct.gamma(ir).degeneracy(); d++) {
             // if this is a point group with a complex E representation,
             // then only do the first set of projections for E
-            if (d && ct.complex() && ct.gamma(ir).degeneracy()==2)
+            if (d && ct.complex() && ct.gamma(ir).complex())
               break;
             
             for (int comp=0; comp < ct.gamma(ir).degeneracy(); comp++) {
@@ -397,31 +399,64 @@ PetiteList::aotoso()
   delete[] lc;
   delete[] blc;
 
-  for (i=0; i < ncomp; i++) {
-    ir = whichir[i];
-    int cmp = whichcmp[i];
+  if (ct.complex()) {
+    SO_block *nSOs = new SO_block[nblocks_];
 
-    if (saoelem[i] < nbf_in_ir_[ir]) {
-      // if we found too few, there are big problems
+    int in=0;
+
+    for (i=ir=0; ir < nirrep_; ir++) {
+      if (ct.gamma(ir).complex()) {
+        nSOs[in].so.set_length(nbf_in_ir_[ir]);
+        int k;
+        for (k=0; k < SOs[i].so.length(); k++)
+          nSOs[in].add(SOs[i].so[k],k);
+        i++;
+
+        for (int j=0; j < SOs[i].so.length(); j++,k++)
+          nSOs[in].add(SOs[i].so[j],k);
+
+        i++;
+        in++;
+      } else {
+        for (int j=0; j < ct.gamma(ir).degeneracy(); j++,i++,in++) {
+          nSOs[in].so.set_length(nbf_in_ir_[ir]);
+          for (int k=0; k < SOs[i].so.length(); k++)
+            nSOs[in].add(SOs[i].so[k],k);
+        }
+      }
+    }
+
+    SO_block *tmp= SOs;
+    SOs = nSOs;
+    delete[] tmp;
+
+  } else {
+    for (i=0; i < ncomp; i++) {
+      ir = whichir[i];
+      int cmp = whichcmp[i];
+
+      if (saoelem[i] < nbf_in_ir_[ir]) {
+        // if we found too few, there are big problems
       
-      fprintf(stderr,"trouble making SO's for irrep %s\n",
-              ct.gamma(ir).symbol());
-      fprintf(stderr,"  only found %d out of %d SO's\n",
-              saoelem[i], nbf_in_ir_[ir]);
-      SOs[i].print("");
+        fprintf(stderr,"trouble making SO's for irrep %s\n",
+                ct.gamma(ir).symbol());
+        fprintf(stderr,"  only found %d out of %d SO's\n",
+                saoelem[i], nbf_in_ir_[ir]);
+        SOs[i].print("");
 
-      abort();
+        abort();
 
-    } else if (saoelem[i] > nbf_in_ir_[ir]) {
-      // there are some redundant so's left...need to do something to get
-      // the elements we want
+      } else if (saoelem[i] > nbf_in_ir_[ir]) {
+        // there are some redundant so's left...need to do something to get
+        // the elements we want
       
-      fprintf(stderr,"trouble making SO's for irrep %s\n",
-              ct.gamma(ir).symbol());
-      fprintf(stderr,"  found %d SO's, but there should only be %d\n",
-              saoelem[i], nbf_in_ir_[ir]);
-      SOs[i].print("");
-      abort();
+        fprintf(stderr,"trouble making SO's for irrep %s\n",
+                ct.gamma(ir).symbol());
+        fprintf(stderr,"  found %d SO's, but there should only be %d\n",
+                saoelem[i], nbf_in_ir_[ir]);
+        SOs[i].print("");
+        abort();
+      }
     }
   }
 

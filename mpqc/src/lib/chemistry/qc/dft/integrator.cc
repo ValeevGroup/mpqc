@@ -200,42 +200,41 @@ DenIntegrator::do_point(const SCVector3 &r,
     }
 
   // loop over basis functions adding contributions to the density
-  double alpha_density;
-  double beta_density;
-  double alpha_density_grad;
-  double beta_density_grad;
+  PointInputData id;
 
-  get_density(alpha_dmat_, alpha_density, alpha_density_grad);
+  get_density(alpha_dmat_, id.dens_alpha, id.dens_grad_alpha);
+  id.dens_alpha13 = pow(id.dens_alpha,1./3.);
 
   if (!spin_polarized_) {
-      beta_density = alpha_density;
-      beta_density_grad = alpha_density_grad;
+      id.dens_beta = id.dens_alpha;
+      id.dens_grad_beta = id.dens_grad_alpha;
+      id.dens_beta13 = id.dens_alpha13;
     }
   else {
-      get_density(beta_dmat_, beta_density, beta_density_grad);
+      get_density(beta_dmat_, id.dens_beta, id.dens_grad_beta);
+      id.dens_beta13 = pow(id.dens_alpha,1./3.);
     }
+  //id.dens13 = pow(id.dens_alpha + id.dens_beta, 1./3.);
 
-  double energy, alpha_pot, beta_pot;
-  func->point(alpha_density, beta_density,
-              alpha_density_grad, beta_density_grad,
-              energy, alpha_pot, beta_pot);
+  PointOutputData od;
+  func->point(id, od);
 
-  value_ += energy * weight;
+  value_ += od.energy * weight;
 
   if (compute_potential_integrals_) {
       // the contribution to the potential integrals
       for (j=0; j<nbasis_; j++) {
           int joff = (j*(j+1))/2;
           double tmp = bs_values_[j] * weight;
-          double tmpa = tmp * alpha_pot;
-          double tmpb = tmp * beta_pot;
+          double tmpa = tmp * od.alpha_pot;
+          double tmpb = tmp * od.beta_pot;
           for (k=0; k<=j; k++) {
               alpha_vmat_[joff+k] += tmpa * bs_values_[k];
               beta_vmat_[joff+k] += tmpb * bs_values_[k];
             }
         }
     }
-  return alpha_density + beta_density;
+  return id.dens_alpha + id.dens_beta;
 }
 
 ///////////////////////////////////////////////////////////////////////////

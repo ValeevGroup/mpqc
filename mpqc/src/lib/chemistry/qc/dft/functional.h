@@ -35,6 +35,26 @@
 #include <util/state/state.h>
 #include <chemistry/qc/wfn/wfn.h>
 
+class PointInputData {
+  public:
+    double dens_alpha;
+    double dens_beta;
+    double dens_grad_alpha;
+    double dens_grad_beta;
+
+    // provided for convenience
+    //double dens13;
+    double dens_alpha13;
+    double dens_beta13;
+};
+
+class PointOutputData {
+  public:
+    double energy;
+    double alpha_pot;
+    double beta_pot;
+};
+
 class DenFunctional: virtual_base public SavableState {
 #   define CLASSNAME DenFunctional
 #   include <util/state/stated.h>
@@ -60,9 +80,7 @@ class DenFunctional: virtual_base public SavableState {
     // The default implementation returns 0.
     virtual int need_density_gradient();
 
-    virtual void point(double dens_alpha, double dens_beta,
-                       double dens_grad_alpha, double dens_grad_beta,
-                       double &energy, double &alpha_pot, double &beta_pot) = 0;
+    virtual void point(const PointInputData&, PointOutputData&) = 0;
 };
 SavableState_REF_dec(DenFunctional);
 
@@ -81,9 +99,7 @@ class NElFunctional: public DenFunctional {
     ~NElFunctional();
     void save_data_state(StateOut &);
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &value, double &notuseda, double &notusedb);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 //. The \clsnm{SumDenFunctional} computes energies and densities
@@ -109,9 +125,7 @@ class SumDenFunctional: public DenFunctional {
     void set_compute_potential(int);
     int need_density_gradient();
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &energy, double &alpha_pot, double &beta_pot);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 //. The \clsnm{XalphaFunctional} computes energies and densities
@@ -132,9 +146,7 @@ class XalphaFunctional: public DenFunctional {
     ~XalphaFunctional();
     void save_data_state(StateOut &);
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &energy, double &alpha_pot, double &beta_pot);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 //. The \clsnm{LSDAXFunctional} computes energies and densities
@@ -153,9 +165,7 @@ class LSDAXFunctional: public DenFunctional {
     ~LSDAXFunctional();
     void save_data_state(StateOut &);
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &energy, double &alpha_pot, double &beta_pot);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 //. The \clsnm{LSDACFunctional} computes energies and densities using the
@@ -175,9 +185,7 @@ class LSDACFunctional: public DenFunctional {
     ~LSDACFunctional();
     void save_data_state(StateOut &);
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &energy, double &alpha_pot, double &beta_pot);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 //. The \clsnm{Becke88Functional} computes energies and densities
@@ -198,9 +206,7 @@ class Becke88Functional: public DenFunctional {
 
     int need_density_gradient();
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &energy, double &alpha_pot, double &beta_pot);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 //. The \clsnm{LYPFunctional} computes energies and densities
@@ -221,9 +227,7 @@ class LYPFunctional: public DenFunctional {
 
     int need_density_gradient();
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &energy, double &alpha_pot, double &beta_pot);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 //. The \clsnm{PW91Functional} computes energies and densities
@@ -252,9 +256,7 @@ class PW91Functional: public DenFunctional {
 
     int need_density_gradient();
 
-    void point(double dens_alpha, double dens_beta,
-               double dens_grad_alpha, double dens_grad_beta,
-               double &energy, double &alpha_pot, double &beta_pot);
+    void point(const PointInputData&, PointOutputData&);
 };
 
 #endif

@@ -136,11 +136,10 @@ NElFunctional::save_data_state(StateOut& s)
 }
 
 void
-NElFunctional::point(double dens_alpha, double dens_beta,
-                     double dens_grad_alpha, double dens_grad_beta,
-                     double &value, double &notuseda, double &notusedb)
+NElFunctional::point(const PointInputData &id,
+                     PointOutputData &od)
 {
-  value = dens_alpha + dens_beta;
+  od.energy = id.dens_alpha + id.dens_beta;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -224,22 +223,20 @@ SumDenFunctional::set_compute_potential(int val)
 }
 
 void
-SumDenFunctional::point(double dens_alpha, double dens_beta,
-                        double dens_grad_alpha, double dens_grad_beta,
-                        double &energy, double &alpha_pot, double &beta_pot)
+SumDenFunctional::point(const PointInputData &id,
+                        PointOutputData &od)
 {
-  energy = 0.0;
-  alpha_pot = beta_pot = 0.0;
+  od.energy = 0.0;
+  od.alpha_pot = od.beta_pot = 0.0;
+  PointOutputData tmpod;
   for (int i=0; i<n_; i++) {
       double e,pa,pb;
-      funcs_[i]->point(dens_alpha,dens_beta,
-                       dens_grad_alpha, dens_grad_beta,
-                       e, pa, pb);
+      funcs_[i]->point(id, tmpod);
       
-      energy += coefs_[i] * e;
+      od.energy += coefs_[i] * tmpod.energy;
       if (compute_potential_) {
-          alpha_pot += coefs_[i] * pa;
-          beta_pot += coefs_[i] * pb;
+          od.alpha_pot += coefs_[i] * tmpod.alpha_pot;
+          od.beta_pot += coefs_[i] * tmpod.alpha_pot;
         }
     }
 }
@@ -292,12 +289,11 @@ XalphaFunctional::save_data_state(StateOut& s)
 }
 
 void
-XalphaFunctional::point(double dens_alpha, double dens_beta,
-                        double dens_grad_alpha, double dens_grad_beta,
-                        double &energy, double &alpha_pot, double &beta_pot)
+XalphaFunctional::point(const PointInputData &id,
+                        PointOutputData &od)
 {
-  double density = dens_alpha + dens_beta;
-  energy = - factor_ * pow(density, 1.0/3.0) * density * 0.75;
+  double density = id.dens_alpha + id.dens_beta;
+  od.energy = - factor_ * pow(density, 1.0/3.0) * density * 0.75;
 
   if (compute_potential_) {
       cerr << class_name() << ": cannot compute potential" << endl;
@@ -349,17 +345,18 @@ LSDAXFunctional::save_data_state(StateOut& s)
 }
 
 void
-LSDAXFunctional::point(double dens_alpha, double dens_beta,
-                       double dens_grad_alpha, double dens_grad_beta,
-                       double &energy, double &alpha_pot, double &beta_pot)
+LSDAXFunctional::point(const PointInputData &id,
+                       PointOutputData &od)
 {
 
   const double mcx2rthird = -0.9305257363491;
   if (!spin_polarized_) {
-      energy = mcx2rthird * 2.0 * pow(dens_alpha, 4./3.);
+      od.energy = mcx2rthird * 2.0 * id.dens_alpha * id.dens_alpha13;
     }
   else {
-      energy = mcx2rthird * (pow(dens_alpha, 4./3.)+pow(dens_alpha, 4./3.));
+      od.energy = mcx2rthird
+                * (id.dens_alpha * id.dens_alpha13
+                   +id.dens_beta * id.dens_beta13);
     }
 
   // this is the same as the above
@@ -452,12 +449,11 @@ LSDACFunctional::F(double x, double A, double x0, double b, double c)
 
 // based on the equations given on a NIST WWW site
 void
-LSDACFunctional::point(double dens_alpha, double dens_beta,
-                       double dens_grad_alpha, double dens_grad_beta,
-                       double &energy, double &alpha_pot, double &beta_pot)
+LSDACFunctional::point(const PointInputData &id,
+                       PointOutputData &od)
 {
-  double rho = dens_alpha + dens_beta;
-  double zeta = (dens_alpha - dens_beta)/rho;
+  double rho = id.dens_alpha + id.dens_beta;
+  double zeta = (id.dens_alpha - id.dens_beta)/rho;
   double x = pow(3./(4.*M_PI*rho), 1./6.);
 
   double epc    = F(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
@@ -475,7 +471,7 @@ LSDACFunctional::point(double dens_alpha, double dens_beta,
   double beta = fpp0 * delta_ec_1 / alphac - 1.;
   double delta_ec = alphac * (f/fpp0) * (1. + beta * zeta4);
   double ec = epc + delta_ec;
-  energy = ec * rho;
+  od.energy = ec * rho;
 
   if (compute_potential_) {
       cerr << class_name() << ": cannot compute potential" << endl;
@@ -536,9 +532,8 @@ Becke88Functional::need_density_gradient()
 // From:  C.W. Murray et al.  Mol. Phys. Vol 78  pp 997-1014 (1993)
 // originally coded by Mike Colvin
 void
-Becke88Functional::point(double dens_a, double dens_b,
-                         double grad_a, double grad_b,
-                         double &energy, double &alpha_pot, double &beta_pot)
+Becke88Functional::point(const PointInputData &id,
+                         PointOutputData &od)
 {
   double ex;
 
@@ -549,17 +544,17 @@ Becke88Functional::point(double dens_a, double dens_b,
   // is a closed shell system or not
   if (!spin_polarized_) {
       // Use simplified formula
-      double dens_a4_3=pow(dens_a,4./3.);
-      double x=grad_a/dens_a4_3;
+      double dens_a4_3=pow(id.dens_alpha,4./3.);
+      double x=id.dens_grad_alpha/dens_a4_3;
       ex=-2.*beta*dens_a4_3*x*x/(1.+6.*beta*x*asinh(x));
     }
   else {
       // Use exact formula
-      double dens_a4_3=pow(dens_a,4./3.);
-      double x_a=grad_a/dens_a4_3;
+      double dens_a4_3=pow(id.dens_alpha,4./3.);
+      double x_a=id.dens_grad_alpha/dens_a4_3;
       ex=-beta*dens_a4_3*x_a*x_a/(1.+6.*beta*x_a*asinh(x_a));
-      double dens_b4_3=pow(dens_b,4./3.);
-      double x_b=grad_b/dens_b4_3;
+      double dens_b4_3=pow(id.dens_beta,4./3.);
+      double x_b=id.dens_grad_beta/dens_b4_3;
       ex-=beta*dens_b4_3*x_b*x_b/(1.+6.*beta*x_b*asinh(x_b));
     }
 
@@ -568,7 +563,7 @@ Becke88Functional::point(double dens_a, double dens_b,
       abort();
     }
 
-  energy = ex;
+  od.energy = ex;
 
   //cout << scprintf("B88 = %18.16f", energy) << endl;
 }
@@ -626,16 +621,15 @@ LYPFunctional::need_density_gradient()
 // From: Burkhard Miehlich, et al.  Chem Phys. Lett. Vol. 157 pp200-206 (1989)
 // originally coded by Mike Colvin
 void
-LYPFunctional::point(double dens_a, double dens_b,
-                     double grad_a, double grad_b,
-                     double &energy, double &alpha_pot, double &beta_pot)
+LYPFunctional::point(const PointInputData &id,
+                     PointOutputData &od)
 {
   double ec;
 
   // Precalculate terms for efficiency
-  double dens=dens_a+dens_b;
+  double dens=id.dens_alpha+id.dens_beta;
   double dens2=dens*dens;
-  double grad=grad_a+grad_b;
+  double grad=id.dens_grad_alpha+id.dens_grad_beta;
   double grad2=grad*grad;
   double dens1_3=pow(dens,1./3.);
 
@@ -658,21 +652,23 @@ LYPFunctional::point(double dens_a, double dens_b,
     }
   else {
       // Use Miehlich's original formula
-      double dens_a2=dens_a*dens_a;
-      double dens_b2=dens_b*dens_b;
-      double grad_a2=grad_a*grad_a;
-      double grad_b2=grad_b*grad_b;
+      double dens_a2=id.dens_alpha*id.dens_alpha;
+      double dens_b2=id.dens_beta*id.dens_beta;
+      double grad_a2=id.dens_grad_alpha*id.dens_grad_alpha;
+      double grad_b2=id.dens_grad_beta*id.dens_grad_beta;
         
-      ec= -4*a*dens_a*dens_b/
+      ec= -4*a*id.dens_alpha*id.dens_beta/
           ((1. + d/dens1_3)*dens) - a*b*omega*
           (-2.*grad2*dens2/3. +
            grad_b2*(2.*dens2/3. - dens_a2) +
            grad_a2*(2.*dens2/3. - dens_b2) +
-           dens_a*dens_b*
+           id.dens_alpha*id.dens_beta*
            ((47./18. - 7.*delta/18.)*grad2 -
             (5./2. - delta/18.)*(grad_a2 + grad_b2) -
-            (-11. + delta)*(grad_a2*dens_a/dens + grad_b2*dens_b/dens)/9. +
-            pow(2.,11./3.)*cf*(pow(dens_a,8./3.) + pow(dens_b,8./3.))));
+            (-11. + delta)*(grad_a2*id.dens_alpha/dens
+                            + grad_b2*id.dens_beta/dens)/9. +
+            pow(2.,11./3.)*cf*(pow(id.dens_alpha,8./3.)
+                               + pow(id.dens_beta,8./3.))));
     }
 
   if (compute_potential_) {
@@ -680,7 +676,7 @@ LYPFunctional::point(double dens_a, double dens_b,
       abort();
     }
 
-  energy = ec;
+  od.energy = ec;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -735,19 +731,18 @@ PW91Functional::need_density_gradient()
 // Wang, Perdew, Phys. Rev. B 45, 13244, 1992
 // from correspondence from Perdew found on WWW
 void
-PW91Functional::point(double dens_a, double dens_b,
-                      double grad_a, double grad_b,
-                      double &energy, double &alpha_pot, double &beta_pot)
+PW91Functional::point(const PointInputData &id,
+                      PointOutputData &od)
 {
   double EC, VCUP, VCDN, ECRS, ECZET, ALFC;
 
-  double rho = dens_a + dens_b;
-  double zeta = (dens_a - dens_b)/rho;
+  double rho = id.dens_alpha + id.dens_beta;
+  double zeta = (id.dens_alpha - id.dens_beta)/rho;
   double rs = pow(3./(4.*M_PI*rho), 1./3.);
 
   CORLSD(rs, zeta, EC, VCUP, VCDN, ECRS, ECZET, ALFC);
 
-  energy = EC * rho;
+  od.energy = EC * rho;
 
   if (compute_potential_) {
       // not true, really, but abort anyway

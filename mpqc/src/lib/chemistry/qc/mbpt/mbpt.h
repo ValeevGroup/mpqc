@@ -151,7 +151,7 @@ class MBPT2: public Wavefunction {
         \item[nfzc] The number of frozen core orbitals.  The default is 0.
         If no atoms have an atomic number greater than 30, then the number
         of orbitals to be frozen can be automatically determined by
-        specifying \keywd{nfzc = auto}.
+        specifying nfzc = auto.
 
         \item[nfzv] The number of frozen virtual orbitals.  The default is
         0.

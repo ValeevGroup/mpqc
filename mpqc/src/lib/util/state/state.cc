@@ -543,9 +543,14 @@ StateOut::put_header()
   const int version = 1;
   put_array_int(&version,1);
 
+#ifdef HAVE_CUSERID
   char userid[L_cuserid+9];
   memset(userid, 0, 9);
   cuserid(userid);
+#else
+  char userid[9];
+  sprintf(userid,"pumauser");
+#endif
   userid[8] = 0;
   put_array_char(userid,9);
 

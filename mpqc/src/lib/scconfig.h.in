@@ -87,6 +87,9 @@
 /* Define if you have the fchdir function.  */
 #undef HAVE_FCHDIR
 
+/* Define if you have the cuserid function.  */
+#undef HAVE_CUSERID
+
 /* Define if you have functioning SYSV IPC.  */
 #undef HAVE_SYSV_IPC
 

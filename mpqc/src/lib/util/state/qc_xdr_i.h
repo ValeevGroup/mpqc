@@ -137,10 +137,10 @@ INLINE void QCXDR::byte_swap(float*f)
   return 0.0;
 #else
   char r[16];
-  if (sizeof(float) == 2) { byte_swap2(&f, r); byte_copy2(r, &f); }
-  else if (sizeof(float) == 4) { byte_swap4(&f, r); byte_copy4(r, &f); }
-  else if (sizeof(float) == 8) { byte_swap8(&f, r); byte_copy8(r, &f); }
-  else if (sizeof(float) == 16) { byte_swap16(&f, r); byte_copy16(r, &f); }
+  if (sizeof(float) == 2) { byte_swap2(f, r); byte_copy2(r, f); }
+  else if (sizeof(float) == 4) { byte_swap4(f, r); byte_copy4(r, f); }
+  else if (sizeof(float) == 8) { byte_swap8(f, r); byte_copy8(r, f); }
+  else if (sizeof(float) == 16) { byte_swap16(f, r); byte_copy16(r, f); }
 #endif
 }
 
@@ -148,10 +148,10 @@ INLINE void QCXDR::byte_swap(float*f)
 INLINE void QCXDR::byte_swap(double *d)
 {
   char r[16];
-  if (sizeof(double) == 2) { byte_swap2(&d, r); byte_copy2(r, &d); }
-  else if (sizeof(double) == 4) { byte_swap4(&d, r); byte_copy4(r, &d); }
-  else if (sizeof(double) == 8) { byte_swap8(&d, r); byte_copy8(r, &d); }
-  else if (sizeof(double) == 16) { byte_swap16(&d, r); byte_copy16(r, &d); }
+  if (sizeof(double) == 2) { byte_swap2(d, r); byte_copy2(r, d); }
+  else if (sizeof(double) == 4) { byte_swap4(d, r); byte_copy4(r, d); }
+  else if (sizeof(double) == 8) { byte_swap8(d, r); byte_copy8(r, d); }
+  else if (sizeof(double) == 16) { byte_swap16(d, r); byte_copy16(r, d); }
 }
 
 // I'll also assume pointers are the same length as longs

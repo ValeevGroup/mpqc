@@ -209,6 +209,11 @@ class IntMolecularCoor: public MolecularCoor
     int nextra_bonds_;
     int* extra_bonds_;
 
+    int given_fixed_values_; // if true make molecule have given fixed values
+
+    int max_update_steps_;
+    double max_update_disp_;
+
     virtual void init();
     virtual void new_coords();
     virtual void read_keyval(const RefKeyVal&);
@@ -222,6 +227,8 @@ class IntMolecularCoor: public MolecularCoor
     virtual void form_coordinates() =0;
     
     virtual RefSCDimension dim();
+    virtual int all_to_cartesian(RefSCVector&internal);
+    virtual int all_to_internal(RefSCVector&internal);
     virtual int to_cartesian(RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);

@@ -26,6 +26,7 @@ static int nearest_contact(int,Molecule&);
 // members of IntMolecularCoor
 
 #define CLASSNAME IntMolecularCoor
+#define VERSION 2
 #define PARENTS public MolecularCoor
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -50,7 +51,10 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   scale_tors_(1.0),
   scale_outs_(1.0),
   nextra_bonds_(0),
-  extra_bonds_(0)
+  extra_bonds_(0),
+  max_update_steps_(100),
+  max_update_disp_(0.5),
+  given_fixed_values_(0)
 {
   new_coords();
 }
@@ -80,6 +84,19 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
 {
   s.get(nextra_bonds_);
   s.get(extra_bonds_);
+
+  if (s.version(static_class_desc()) >= 2) {
+      printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): new version\n");
+      s.get(max_update_steps_);
+      s.get(max_update_disp_);
+      s.get(given_fixed_values_);
+    }
+  else {
+      printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): old version\n");
+      max_update_steps_ = 100;
+      max_update_disp_ = 0.5;
+      given_fixed_values_ = 0;
+    }
 
   dim_.restore_state(s);
   dnatom3_.restore_state(s);
@@ -133,6 +150,14 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   fixed_ = keyval->describedclassvalue("fixed");
   if (fixed_.null()) fixed_ = new SetIntCoor;
   followed_ = keyval->describedclassvalue("followed");
+
+  given_fixed_values_ = keyval->booleanvalue("have_fixed_values");
+
+  max_update_steps_ = keyval->intvalue("max_update_steps");
+  if (keyval->error() != KeyVal::OK) max_update_steps_ = 100;
+
+  max_update_disp_ = keyval->doublevalue("max_update_disp");
+  if (keyval->error() != KeyVal::OK) max_update_disp_ = 0.5;
 
   // the extra_bonds list is given as a vector of atom numbers
   // (atom numbering starts at 1)
@@ -233,9 +258,44 @@ IntMolecularCoor::init()
   add_tors(tors_,bonds,m);
   add_out(outs_,bonds,m);
 
+  if (given_fixed_values_) {
+      // save the given coordinate values
+      RefSCDimension original_dfixed = new LocalSCDimension(fixed_->n());
+      RefSCVector given_fixed_coords(original_dfixed);
+      for (i=0; i<original_dfixed.n(); i++) {
+          given_fixed_coords(i) = fixed_->coor(i)->value();
+        }
+
+      // break up the displacement into several manageable steps
+      double maxabs = given_fixed_coords.maxabs();
+      int nstep = int(maxabs/max_update_disp_) + 1;
+      given_fixed_coords.scale(1.0/nstep);
+      printf("IntMolecularCoor: displacing fixed coorindates to the"
+             " requested values in %d steps\n", nstep);
+      for (int istep=1; istep<=nstep; istep++) {
+          form_coordinates();
+
+          dim_ = new LocalSCDimension(variable_->n());
+          dvc_ = new LocalSCDimension(variable_->n()+constant_->n());
+
+          RefSCVector new_internal_coordinates(dvc_);
+          for (i=0; i<variable_->n(); i++) {
+              new_internal_coordinates(i) = variable_->coor(i)->value();
+            }
+          for (int j=0; j<original_dfixed.n(); j++,i++) {
+              new_internal_coordinates(i)
+                  = istep * double(given_fixed_coords(j));
+            }
+          for (; j<constant_->n(); i++,j++) {
+              new_internal_coordinates(i) = constant_->coor(j)->value();
+            }
+
+          all_to_cartesian(new_internal_coordinates);
+        }
+    }
+
   form_coordinates();
 
-  // finish computing needed dimensions
   dim_ = new LocalSCDimension(variable_->n());
   dvc_ = new LocalSCDimension(variable_->n()+constant_->n());
 }
@@ -427,6 +487,10 @@ IntMolecularCoor::save_data_state(StateOut&s)
   s.put(nextra_bonds_);
   s.put(extra_bonds_,2*nextra_bonds_);
 
+  s.put(max_update_steps_);
+  s.put(max_update_disp_);
+  s.put(given_fixed_values_);
+
   dim_.save_state(s);
   dnatom3_.save_state(s);
   dvc_.save_state(s);
@@ -464,13 +528,87 @@ IntMolecularCoor::dim()
 }
 
 int
+IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
+{
+  // get a reference to Molecule for convenience
+  Molecule& molecule = *(molecule_.pointer());
+
+  // don't bother updating the bmatrix when the error is less than this
+  const double update_tolerance = 1.0e-6;
+
+  // compute the internal coordinate displacements
+  RefSCVector old_internal(dvc_);
+
+  all_to_internal(old_internal);
+
+  // form the set of all coordinates
+  RefSetIntCoor variable_and_constant = new SetIntCoor();
+  variable_and_constant->add(variable_);
+  variable_and_constant->add(constant_);
+
+  RefSCMatrix bmat(dvc_,dnatom3_);
+  RefSymmSCMatrix bmbt(dvc_);
+  RefSymmSCMatrix bmbt_i;
+  for (int step = 0; step < max_update_steps_; step++) {
+      // compute the old internal coordinates
+      all_to_internal(old_internal);
+
+      // the displacements
+      RefSCVector displacement = new_internal - old_internal;
+      RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
+      RefSCElementOp op = maxabs;
+      displacement.element_op(op);
+      if (maxabs->result() < cartesian_tolerance_) {
+          return 0;
+        }
+
+      if ((update_bmat_ && (maxabs->result()>update_tolerance)) || step == 0) {
+          // form the bmatrix
+          variable_and_constant->bmat(molecule_,bmat);
+          // form the initial inverse of bmatrix * bmatrix_t
+          bmbt.assign(0.0);
+          bmbt.accumulate_symmetric_product(bmat);
+          bmbt_i = bmbt.gi();
+        }
+
+      // compute the cartesian displacements
+      RefSCVector cartesian_displacement = bmat.t() * bmbt_i * displacement;
+      // update the geometry
+      for (int i=0; i < dnatom3_.n(); i++) {
+#if OLD_BMAT
+          molecule[i/3][i%3] += cartesian_displacement(i) * 1.88972666;
+#else        
+          molecule[i/3][i%3] += cartesian_displacement(i);
+#endif          
+        }
+    }
+
+  cout.flush();
+  cerr.flush();
+  fflush(stdout);
+  fflush(stderr);
+
+  fprintf(stderr,"WARNING: IntMolecularCoor"
+          "::all_to_cartesian(RefSCVector&):"
+          " too many iterations in geometry update\n");
+
+  fflush(stderr);
+
+  new_internal.print("desired internal coordinates");
+  (new_internal
+   - old_internal).print("difference of desired and actual coordinates");
+
+  cout.flush();
+
+  return -1;
+}
+
+int
 IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 {
   // get a reference to Molecule for convenience
   Molecule& molecule = *(molecule_.pointer());
 
-  // convergence parameters
-  const int maxstep = 100;
   // don't bother updating the bmatrix when the error is less than this
   const double update_tolerance = 1.0e-6;
 
@@ -487,7 +625,7 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
   RefSCMatrix bmat(dvc_,dnatom3_);
   RefSymmSCMatrix bmbt(dvc_);
   RefSymmSCMatrix bmbt_i;
-  for (int step = 0; step < maxstep; step++) {
+  for (int step = 0; step < max_update_steps_; step++) {
       // compute the old internal coordinates
       to_internal(old_internal);
 
@@ -528,11 +666,29 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
         }
     }
 
-  fprintf(stderr,"IntMolecularCoor"
+  fprintf(stderr,"WARNING: IntMolecularCoor"
           "::to_cartesian(RefSCVector&new_internal):"
           " too many iterations in geometry update\n");
 
   return -1;
+}
+
+int
+IntMolecularCoor::all_to_internal(RefSCVector&internal)
+{
+  variable_->update_values(molecule_);
+  constant_->update_values(molecule_);
+   
+  int n = dim_.n();
+  for (int i=0; i<n; i++) {
+      internal(i) = variable_->coor(i)->value();
+    }
+  n = dvc_.n();
+  for (int j=0; i<n; i++,j++) {
+      internal(i) = constant_->coor(j)->value();
+    }
+
+  return 0;
 }
 
 int
@@ -808,6 +964,10 @@ IntMolecularCoor::print(SCostream& os)
   os.indent() << "symmetry_tolerance = " << symmetry_tolerance_ << endl;
   os.indent() << "simple_tolerance = " << simple_tolerance_ << endl;
   os.indent() << "coordinate_tolerance = " << coordinate_tolerance_ << endl;
+  os.indent() << "have_fixed_values = " << given_fixed_values_ << endl;
+  os.indent() << "max_update_steps = " << max_update_steps_ << endl;
+  os.indent() << "max_update_disp = " << max_update_disp_ << endl;
+  os.indent() << "have_fixed_values = " << given_fixed_values_ << endl;
   os--;
   
   os.indent() << "Molecule:\n"; os++; molecule_->print(os); os--;

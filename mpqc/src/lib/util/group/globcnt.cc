@@ -11,7 +11,7 @@
 #include <sys/sem.h>
 #include <util/group/globcnt.h>
 
-#if defined(OSF) || defined(SUNMOS) || defined(AIX)
+#if defined(AIX)
 union semun {
   int val;
   struct semid_ds *buf;

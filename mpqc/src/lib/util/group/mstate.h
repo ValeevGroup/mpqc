@@ -15,7 +15,7 @@ class MsgStateSend: public StateOutBinXDR {
     MsgStateSend(const MsgStateSend&);
     operator=(const MsgStateSend&);
   protected:
-    const RefMessageGrp& grp;
+    RefMessageGrp grp;
     int nbuf; // the number of bytes used in the buffer
     int bufsize; // the allocated size of the data buffer
     char* buffer; // the data buffer
@@ -53,7 +53,7 @@ class MsgStateRecv: public StateInBinXDR {
     MsgStateRecv(const MsgStateRecv&);
     operator=(const MsgStateRecv&);
   protected:
-    const RefMessageGrp& grp;
+    RefMessageGrp grp;
     int nbuf; // the number of bytes used in the buffer
     int ibuf; // the current pointer withing the buffer
     int bufsize; // the allocated size of the buffer
@@ -141,6 +141,39 @@ class BcastStateRecv: public MsgStateRecv {
   public:
     BcastStateRecv(const RefMessageGrp&, int source = 0);
     void source(int s);
+};
+
+//texi This creates and forwards/retrieves data from either
+// a @code{BcastStateRecv} or a @code{BcastStateSend}
+// depending on the value of the @var{source} argument to
+// constructor.
+class BcastState {
+  private:
+    BcastStateRecv *recv_;
+    BcastStateSend *send_;
+  public:
+    //texi Create a @code{BcastState} object.  The default
+    // source is node 0.
+    BcastState(const RefMessageGrp &, int source = 0);
+
+    ~BcastState();
+
+    //texi Broadcast data to all nodes.  After these are called
+    // for a group of data the @code{flush} member must be called
+    // to force the source node to actually write the data.
+    void bcast(int &);
+    void bcast(double &);
+    void bcast(int *&, int);
+    void bcast(double *&, int);
+    void bcast(SSRefBase &);
+
+    //texi Force data to be written.  Data is not otherwise written
+    // until the buffer is full.
+    void flush();
+
+    //texi Controls the amount of data that is buffered before it is
+    // sent.
+    void set_buffer_size(int);
 };
 
 #endif

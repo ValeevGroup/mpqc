@@ -13,7 +13,7 @@ class ParagonMemoryGrp: public ActiveMsgMemoryGrp {
 #define CLASSNAME ParagonMemoryGrp
 #include <util/class/classd.h>
   private:
-    friend static void paragon_memory_handler(long,long,long,long);
+    friend void paragon_memory_handler(long,long,long,long);
     
     void retrieve_data(void *, int node, int offset, int size);
     void replace_data(void *, int node, int offset, int size);

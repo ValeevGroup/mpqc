@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/bug.h>
 #include <util/group/mstate.h>
 
 // This sets up a communication buffer.  It is made up of a of
@@ -86,7 +87,6 @@ MsgStateSend::put_array_void(const void* vd, int n)
 int
 MsgStateSend::put(const ClassDesc*cd)
 {
-  printf("putting ClassDesc index\n"); fflush(stdout);
   return StateOutBinXDR::put(grp->classdesc_to_index(cd));
 }
 
@@ -155,7 +155,8 @@ MsgStateRecv::MsgStateRecv(const RefMessageGrp&grp_):
 MsgStateRecv::~MsgStateRecv()
 {
   if (ibuf && (nbuf != ibuf)) {
-      fprintf(stderr,"MsgStateRecv::~MsgStateRecv(): buffer still has data\n");
+      fprintf(stderr,"MsgStateRecv::~MsgStateRecv(): buffer still has"
+              " %d bytes of data\n", nbuf - ibuf);
     }
   release_buffer(send_buffer);
 }
@@ -198,7 +199,6 @@ int
 MsgStateRecv::get(const ClassDesc**cd)
 {
   int index;
-  printf("getting ClassDesc index\n"); fflush(stdout);
   int r = StateInBinXDR::get(index);
   *cd = grp->index_to_classdesc(index);
   if (!*cd) {
@@ -364,4 +364,79 @@ BcastStateRecv::next_buffer()
   translate(nbuf_buffer);
   nbuf = *nbuf_buffer;
   ibuf = 0;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// BcastState member functions
+
+BcastState::BcastState(const RefMessageGrp &grp, int source)
+{
+  if (grp->n() == 1) {
+      recv_ = 0;
+      send_ = 0;
+    }
+  else if (grp->me() == source) {
+      recv_ = 0;
+      send_ = new BcastStateSend(grp);
+    }
+  else {
+      recv_ = new BcastStateRecv(grp,source);
+      send_ = 0;
+    }
+}
+
+BcastState::~BcastState()
+{
+  delete[] recv_;
+  delete[] send_;
+}
+
+void
+BcastState::bcast(int &a)
+{
+  if (recv_) recv_->get(a);
+  else if (send_) send_->put(a);
+}
+
+void
+BcastState::bcast(double &a)
+{
+  if (recv_) recv_->get(a);
+  else if (send_) send_->put(a);
+}
+
+void
+BcastState::bcast(int *&a, int n)
+{
+  if (recv_) recv_->get(a);
+  else if (send_) send_->put(a,n);
+}
+
+void
+BcastState::bcast(double *&a, int n)
+{
+  if (recv_) recv_->get(a);
+  else if (send_) send_->put(a,n);
+}
+
+void
+BcastState::bcast(SSRefBase &a)
+{
+  if (recv_) a.restore_state(*recv_);
+  else if (send_) {
+      a.save_state(*send_);
+    }
+}
+
+void
+BcastState::flush()
+{
+  if (send_) send_->flush();
+}
+
+void
+BcastState::set_buffer_size(int n)
+{
+  if (send_) send_->set_buffer_size(n);
+  if (recv_) send_->set_buffer_size(n);
 }

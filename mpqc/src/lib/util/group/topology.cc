@@ -1,3 +1,6 @@
+#ifdef __GNUG__
+#pragma implementation
+#endif
 
 #include <util/group/message.h>
 #include <util/group/topology.h>

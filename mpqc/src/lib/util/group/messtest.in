@@ -21,4 +21,9 @@ pvmmessage<PVMMessageGrp>: (
   %          ]
   )
 
-message = $:mpimessage
+message = $:shmmessage
+
+debug<Debugger>: (
+   cmd = "echo $(PREFIX) $(EXEC) $(PID)"
+   wait_for_debugger = no
+  )

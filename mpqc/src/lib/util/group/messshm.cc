@@ -48,7 +48,7 @@ union semun {
 #define NALIGN 8
 #define ROUNDUPTOALIGN(n) (((n) + (NALIGN-1)) & ~(NALIGN-1))
 
-#define SHMCOMMBUFSIZE 1000000
+#define SHMCOMMBUFSIZE 1500000
 
 struct commbuf_struct {
     int nmsg;
@@ -439,8 +439,11 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   msgbuf_t *message,*lastmessage;
 
 #ifdef DEBUG
-  printf("node %2d recv type 0x%08x length %6d\n",
-         me(), type, bytes);
+  cout << "ShmGrp: basic_recv: "
+       << "type = " << type << ' '
+       << "buf = " << buf << ' '
+       << "bytes = " << bytes << ' '
+       << "me = " << me() << endl;
   print_buffer(me(),me());
 #endif
 
@@ -498,8 +501,12 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
   msgbuf_t *availmsg;
 
 #ifdef DEBUG
-  printf("node %2d send to %2d type 0x%08x length %6d\n",
-         me(), dest, type, bytes);
+  cout << "ShmGrp: basic_send: "
+       << "dest = " << dest << ' '
+       << "type = " << type << ' '
+       << "buf = " << buf << ' '
+       << "bytes = " << bytes << ' '
+       << "me = " << me() << endl;
 #endif
 
   if (dest>=n()) {
@@ -529,7 +536,7 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
           printf(" commbuf[%d] + sizeof(commbuf_t) = 0x%x\n",
                  dest,((char*)commbuf[dest]) + sizeof(commbuf_t));
           printf(" size = %d\n",bytes);
-          exit(1);
+          abort();
         }
       else {
           // try to recover from a full buffer by waiting for the dest

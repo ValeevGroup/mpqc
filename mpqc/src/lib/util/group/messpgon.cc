@@ -2,12 +2,10 @@
 #include <stdio.h>
 extern "C" {
 #include <nx.h>
-void gsync(void);
-void crecv(long typesel, char *buf, long count);
-void csend(long type, char *buf, long count, long node, long ptype);
-void gopf(char*,int,char*,long (*rf)(char*,char*));
 }
 #include <util/group/messpgon.h>
+
+typedef long(*gopfarg)(...);
 
 #define CLASSNAME ParagonMessageGrp
 #define PARENTS public intMessageGrp
@@ -105,7 +103,7 @@ ParagonMessageGrp::reduce(double*d, int n, GrpReduce<double>&r,
   if (!scratch) work = new double[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(double), (char*)work, doublereduce);
+  gopf((char*)d, n*sizeof(double), (char*)work, (gopfarg)doublereduce);
 
   if (!scratch) delete[] work;
 }
@@ -128,7 +126,7 @@ ParagonMessageGrp::reduce(int*d, int n, GrpReduce<int>&r,
   if (!scratch) work = new int[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(int), (char*)work, intreduce);
+  gopf((char*)d, n*sizeof(int), (char*)work, (gopfarg)intreduce);
 
   if (!scratch) delete[] work;
 }
@@ -151,7 +149,7 @@ ParagonMessageGrp::reduce(char*d, int n, GrpReduce<char>&r,
   if (!scratch) work = new char[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(char), (char*)work, charreduce);
+  gopf((char*)d, n*sizeof(char), (char*)work, (gopfarg)charreduce);
 
   if (!scratch) delete[] work;
 }
@@ -174,7 +172,7 @@ ParagonMessageGrp::reduce(long*d, int n, GrpReduce<long>&r,
   if (!scratch) work = new long[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(long), (char*)work, longreduce);
+  gopf((char*)d, n*sizeof(long), (char*)work, (gopfarg)longreduce);
 
   if (!scratch) delete[] work;
 }
@@ -197,7 +195,7 @@ ParagonMessageGrp::reduce(float*d, int n, GrpReduce<float>&r,
   if (!scratch) work = new float[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(float), (char*)work, floatreduce);
+  gopf((char*)d, n*sizeof(float), (char*)work, (gopfarg)floatreduce);
 
   if (!scratch) delete[] work;
 }
@@ -221,7 +219,8 @@ ParagonMessageGrp::reduce(unsigned char*d, int n, GrpReduce<unsigned char>&r,
   if (!scratch) work = new unsigned char[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(unsigned char), (char*)work, unsignedcharreduce);
+  gopf((char*)d, n*sizeof(unsigned char), (char*)work,
+       (gopfarg)unsignedcharreduce);
 
   if (!scratch) delete[] work;
 }
@@ -244,7 +243,7 @@ ParagonMessageGrp::reduce(short*d, int n, GrpReduce<short>&r,
   if (!scratch) work = new short[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(short), (char*)work, shortreduce);
+  gopf((char*)d, n*sizeof(short), (char*)work, (gopfarg)shortreduce);
 
   if (!scratch) delete[] work;
 }

@@ -1,3 +1,6 @@
+#ifdef __GNUG__
+#pragma interface
+#endif
 
 #ifndef _util_group_topology_h
 #define _util_group_topology_h

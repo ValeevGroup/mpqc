@@ -10,17 +10,9 @@
 
 extern "C" {
 #include <nx.h>
-void gsync(void);
-void crecv(long typesel, char *buf, long count);
-void csend(long type, char *buf, long count, long node, long ptype);
-void gopf(char*,int,char*,long (*rf)(char*,char*));
-void crecvx(long typesel, char *buf, long count, long nodesel,
-                    long ptypesel, long info[]);
-void hrecv(long, char*, long, void (*handler)(long, long, long, long));
-long masktrap(long state);
-void msgignore(long);
-void msgwait(long);
 }
+
+typedef void (*handlertype)(...);
 
 #define DISABLE do { masktrap(1); fflush(stdout); } while(0)
 #define ENABLE do { fflush(stdout); masktrap(0); } while(0)
@@ -39,7 +31,7 @@ void msgwait(long);
 
 static ParagonMemoryGrp *global_pgon_mem = 0;
 
-static void
+void
 paragon_memory_handler(long ptype, long pcount, long pnode, long pptype)
 {
   global_pgon_mem->active_ = 0;
@@ -148,7 +140,8 @@ ParagonMemoryGrp::activate()
               data_request_type_, (char *) data_request_buffer_.data(),
               data_request_buffer_.nbytes()));
       hrecv(data_request_type_, (char *) data_request_buffer_.data(),
-            data_request_buffer_.nbytes(), paragon_memory_handler);
+            data_request_buffer_.nbytes(),
+            (handlertype)paragon_memory_handler);
     }
   active_ = 1;
 }

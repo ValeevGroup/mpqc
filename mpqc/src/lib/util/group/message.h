@@ -171,6 +171,8 @@ class MessageGrp: public DescribedClass {
     virtual void bcast(long* data, int ndata, int from = 0);
     virtual void bcast(float* data, int ndata, int from = 0);
     virtual void raw_bcast(void* data, int nbyte, int from = 0);
+    void bcast(double& data, int from = 0) { bcast(&data, 1, from); }
+    void bcast(int& data, int from = 0) { bcast(&data, 1, from); }
 
     // global reduction operations
     virtual void sum(double* data, int n, double* = 0, int target = -1);
@@ -178,16 +180,22 @@ class MessageGrp: public DescribedClass {
     virtual void sum(char* data, int n, char* = 0, int target = -1);
     virtual void sum(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
+    void sum(double& data) { sum(&data, 1); }
+    void sum(int& data) { sum(&data, 1); }
     virtual void max(double* data, int n, double* = 0, int target = -1);
     virtual void max(int* data, int n, int* = 0, int target = -1);
     virtual void max(char* data, int n, char* = 0, int target = -1);
     virtual void max(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
+    void max(double& data) { max(&data, 1); }
+    void max(int& data) { max(&data, 1); }
     virtual void min(double* data, int n, double* = 0, int target = -1);
     virtual void min(int* data, int n, int* = 0, int target = -1);
     virtual void min(char* data, int n, char* = 0, int target = -1);
     virtual void min(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
+    void min(double& data) { min(&data, 1); }
+    void min(int& data) { min(&data, 1); }
     virtual void reduce(double*, int n, GrpReduce<double>&,
                         double*scratch = 0, int target = -1);
     virtual void reduce(int*, int n, GrpReduce<int>&,
@@ -202,6 +210,8 @@ class MessageGrp: public DescribedClass {
                         float*scratch = 0, int target = -1);
     virtual void reduce(long*, int n, GrpReduce<long>&,
                         long*scratch = 0, int target = -1);
+    void reduce(double& data, GrpReduce<double>& r) { reduce(&data, 1, r); }
+    void reduce(int& data, GrpReduce<int>& r) { reduce(&data, 1, r); }
 
     // synchronization
     virtual void sync();

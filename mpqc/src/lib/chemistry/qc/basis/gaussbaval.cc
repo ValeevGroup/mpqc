@@ -46,19 +46,31 @@ int GaussianBasisSet::grad_values(cart_point& r,
 	for (int ish=0; ish < nshell; ish++) {
             if (basis_values && g_values)
               {
+#ifdef __GNUC__
 	        nreturns=operator()(ishell).grad_values(r_diff,
+#else
+	        nreturns=((GaussianShell)operator()(ishell)).grad_values(r_diff,
+#endif
                                                         &g_values[ibasis*3],
                                                         &basis_values[ibasis]);
               }
             else if (g_values)
               {
+#ifdef __GNUC__
 	        nreturns=operator()(ishell).grad_values(r_diff,
+#else
+	        nreturns=((GaussianShell)operator()(ishell)).grad_values(r_diff,
+#endif
                                                         &g_values[ibasis*3],
                                                         &basis_values[ibasis]);
               }
             else if (basis_values)
               {
+#ifdef __GNUC__
 	        nreturns=operator()(ishell).grad_values(r_diff,
+#else
+	        nreturns=((GaussianShell)operator()(ishell)).grad_values(r_diff,
+#endif
                                                         0,
                                                         &basis_values[ibasis]);
               }

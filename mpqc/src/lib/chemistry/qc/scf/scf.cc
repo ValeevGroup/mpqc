@@ -179,7 +179,6 @@ SCF::save_data_state(StateOut& s)
   s.put(dens_reset_freq_);
   s.put(reset_occ_);
   s.put(local_dens_);
-  s.put(storage_);
   double dstorage = storage_;
   s.put(dstorage);
   s.put(print_all_evals_);

@@ -36,7 +36,7 @@
 #include <chemistry/qc/basis/obint.h>
 
 static ClassDesc Integral_cd(
-  typeid(Integral),"Integral",1,"public SavableState",
+  typeid(Integral),"Integral",2,"public SavableState",
   0, 0, 0);
 
 Integral::Integral(const Ref<GaussianBasisSet> &b1,
@@ -58,7 +58,16 @@ Integral::Integral(StateIn& s) :
   bs2_ << SavableState::restore_state(s);
   bs3_ << SavableState::restore_state(s);
   bs4_ << SavableState::restore_state(s);
-  s.get(storage_);
+  if (s.version(::class_desc<Integral>()) >= 2) {
+    double dstorage;
+    s.get(dstorage);
+    storage_ = size_t(dstorage);
+  }
+  else {
+    unsigned int istorage;
+    s.get(istorage);
+    storage_ = istorage;
+  }
   grp_ = MessageGrp::get_default_messagegrp();
 }
 
@@ -76,7 +85,8 @@ Integral::save_data_state(StateOut&o)
   SavableState::save_state(bs2_.pointer(),o);
   SavableState::save_state(bs3_.pointer(),o);
   SavableState::save_state(bs4_.pointer(),o);
-  o.put(storage_);
+  double dstorage = storage_;
+  o.put(dstorage);
 }
 
 Ref<PetiteList>

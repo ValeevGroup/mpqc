@@ -56,7 +56,7 @@ fail()
  * integrals are stored.
  */
 double *
-Int2eV3::int_initialize_erep(int storage, int order,
+Int2eV3::int_initialize_erep(size_t storage, int order,
                              const Ref<GaussianBasisSet> &cs1,
                              const Ref<GaussianBasisSet> &cs2,
                              const Ref<GaussianBasisSet> &cs3,

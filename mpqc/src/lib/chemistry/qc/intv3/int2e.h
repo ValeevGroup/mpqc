@@ -240,7 +240,7 @@ class Int2eV3: public RefCount {
 
     // globals from init2e.cc
   protected:
-    double *int_initialize_erep(int storage, int order,
+    double *int_initialize_erep(size_t storage, int order,
                                 const Ref<GaussianBasisSet> &cs1,
                                 const Ref<GaussianBasisSet> &cs2,
                                 const Ref<GaussianBasisSet> &cs3,
@@ -347,7 +347,7 @@ class Int2eV3: public RefCount {
             const Ref<GaussianBasisSet>&,
             const Ref<GaussianBasisSet>&,
             const Ref<GaussianBasisSet>&,
-            int order, int storage);
+            int order, size_t storage);
     ~Int2eV3();
 
     // storage.cc: for the storage of integrals

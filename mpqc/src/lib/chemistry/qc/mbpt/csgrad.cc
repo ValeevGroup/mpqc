@@ -322,7 +322,7 @@ MBPT2::compute_cs_grad()
       }
     mem_static *= sizeof(double);
     int nthreads = thr_->nthread();
-    mem_static += nthreads * integral()->storage_required(&Integral::electron_repulsion,basis()); // integral evaluators
+    mem_static += nthreads * integral()->storage_required_eri(basis()); // integral evaluators
     ni = compute_cs_batchsize(mem_static, nocc_act-restart_orbital_memgrp_); 
     }
 
@@ -345,7 +345,7 @@ MBPT2::compute_cs_grad()
   int mem_remaining;
   if (mem_alloc <= (dyn_mem + mem_static)) mem_remaining = 0;
   else mem_remaining = mem_alloc - dyn_mem - mem_static;
-  mem_remaining += thr_->nthread() * integral()->storage_required(&Integral::electron_repulsion,basis());
+  mem_remaining += thr_->nthread() * integral()->storage_required_eri(basis());
 
   ExEnv::out0() << indent
        << "Memory available per node:      " << mem_alloc << " Bytes"

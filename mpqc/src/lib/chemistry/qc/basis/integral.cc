@@ -218,25 +218,34 @@ Integral::set_basis(const Ref<GaussianBasisSet> &b1,
 }
 
 size_t
-Integral::storage_required(Ref<TwoBodyInt> (Integral::* inteval)(),
-			   const Ref<GaussianBasisSet> &b1,
-			   const Ref<GaussianBasisSet> &b2,
-			   const Ref<GaussianBasisSet> &b3,
-			   const Ref<GaussianBasisSet> &b4)
+Integral::storage_required_eri(const Ref<GaussianBasisSet> &b1,
+			       const Ref<GaussianBasisSet> &b2,
+			       const Ref<GaussianBasisSet> &b3,
+			       const Ref<GaussianBasisSet> &b4)
 {
-  // By default, generated integral evaluator will not need
+  // By default, generated ERI evaluator will not need
   // any significant amount of memory
   return 0;
 }
 
 size_t
-Integral::storage_required(Ref<TwoBodyDerivInt> (Integral::* inteval)(),
-			   const Ref<GaussianBasisSet> &b1,
-			   const Ref<GaussianBasisSet> &b2,
-			   const Ref<GaussianBasisSet> &b3,
-			   const Ref<GaussianBasisSet> &b4)
+Integral::storage_required_eri_deriv(const Ref<GaussianBasisSet> &b1,
+				     const Ref<GaussianBasisSet> &b2,
+				     const Ref<GaussianBasisSet> &b3,
+				     const Ref<GaussianBasisSet> &b4)
 {
-  // By default, generated derivative integral evaluator will not need
+  // By default, generated derivative ERI evaluator will not need
+  // any significant amount of memory
+  return 0;
+}
+
+size_t
+Integral::storage_required_grt(const Ref<GaussianBasisSet> &b1,
+			       const Ref<GaussianBasisSet> &b2,
+			       const Ref<GaussianBasisSet> &b3,
+			       const Ref<GaussianBasisSet> &b4)
+{
+  // By default, generated GRT evaluator will not need
   // any significant amount of memory
   return 0;
 }
@@ -251,10 +260,7 @@ Integral::storage_unused()
 Ref<TwoBodyInt>
 Integral::grt()
 {
-  ExEnv::errn() << scprintf("Integral::grt() is not implemented in this particular integrals factory.") << endl;
-  ExEnv::errn() << scprintf("failing module:\n%s",__FILE__) << endl;
-  abort();
-  return 0;
+  throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
 }
 
 /////////////////////////////////////////////////////////////////////////////

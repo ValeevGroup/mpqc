@@ -107,20 +107,24 @@ class Integral : public SavableState {
     size_t storage_used() { return storage_used_; }
     /// Returns how much storage was not needed.
     size_t storage_unused();
-    /// Returns how much storage will be needed to initialize a two-body integrals
-    /// evaluator object with member inteval.
-    virtual size_t storage_required(Ref<TwoBodyInt> (Integral::* inteval)(),
-				 const Ref<GaussianBasisSet> &b1,
-				 const Ref<GaussianBasisSet> &b2 = 0,
-				 const Ref<GaussianBasisSet> &b3 = 0,
-				 const Ref<GaussianBasisSet> &b4 = 0);
-    /// Returns how much storage will be needed to initialize a two-body derivative integrals
-    /// evaluator object with member inteval.
-    virtual size_t storage_required(Ref<TwoBodyDerivInt> (Integral::* inteval)(),
-				 const Ref<GaussianBasisSet> &b1,
-				 const Ref<GaussianBasisSet> &b2 = 0,
-				 const Ref<GaussianBasisSet> &b3 = 0,
-				 const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for electron repulsion integrals. */
+    virtual size_t storage_required_eri(const Ref<GaussianBasisSet> &b1,
+					const Ref<GaussianBasisSet> &b2 = 0,
+					const Ref<GaussianBasisSet> &b3 = 0,
+					const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for linear R12 integrals. */
+    virtual size_t storage_required_grt(const Ref<GaussianBasisSet> &b1,
+					const Ref<GaussianBasisSet> &b2 = 0,
+					const Ref<GaussianBasisSet> &b3 = 0,
+					const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for derivative electron repulsion integrals. */
+    virtual size_t storage_required_eri_deriv(const Ref<GaussianBasisSet> &b1,
+					      const Ref<GaussianBasisSet> &b2 = 0,
+					      const Ref<GaussianBasisSet> &b3 = 0,
+					      const Ref<GaussianBasisSet> &b4 = 0);
 
     /** The specific integral classes use this to tell Integral
         how much memory they are using/freeing. */
@@ -211,7 +215,9 @@ class Integral : public SavableState {
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv() =0;
 
-    /// Return a TwoBodyInt that computes two-electron integrals specific to linear R12 methods.
+    /** Return a TwoBodyInt that computes two-electron integrals specific to linear R12 methods.
+        According to the convention in the literature, "g" stands for electron repulsion integral,
+	"r" for the integral of r12 operator, and "t" for the commutator integrals */
     virtual Ref<TwoBodyInt> grt();
     
     /// Return the MessageGrp used by the integrals objects.

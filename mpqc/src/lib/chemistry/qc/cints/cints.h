@@ -63,13 +63,14 @@ class IntegralCints : public Integral {
 
     Integral* clone();
     
-    /// Returns how much storage will be needed to initialize an evaluator object
-    /// with the function.
-    size_t storage_required(Ref<TwoBodyInt> (Integral::* inteval)(),
-			    const Ref<GaussianBasisSet> &b1,
-			    const Ref<GaussianBasisSet> &b2 = 0,
-			    const Ref<GaussianBasisSet> &b3 = 0,
-			    const Ref<GaussianBasisSet> &b4 = 0);
+    size_t storage_required_eri(const Ref<GaussianBasisSet> &b1,
+				const Ref<GaussianBasisSet> &b2 = 0,
+				const Ref<GaussianBasisSet> &b3 = 0,
+				const Ref<GaussianBasisSet> &b4 = 0);
+    size_t storage_required_grt(const Ref<GaussianBasisSet> &b1,
+				const Ref<GaussianBasisSet> &b2 = 0,
+				const Ref<GaussianBasisSet> &b3 = 0,
+				const Ref<GaussianBasisSet> &b4 = 0);
     
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);

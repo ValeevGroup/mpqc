@@ -88,25 +88,22 @@ IntegralCints::clone()
   return new IntegralCints;
 }
 
-//
-// This seemingly anti-C++ function is needed this is just a factory class,
-// not the (base) evaluator class
-//
 size_t
-IntegralCints::storage_required(Ref<TwoBodyInt> (Integral::* inteval)(),
-				const Ref<GaussianBasisSet> &b1,
-				const Ref<GaussianBasisSet> &b2,
-				const Ref<GaussianBasisSet> &b3,
-				const Ref<GaussianBasisSet> &b4)
+IntegralCints::storage_required_eri(const Ref<GaussianBasisSet> &b1,
+				    const Ref<GaussianBasisSet> &b2,
+				    const Ref<GaussianBasisSet> &b3,
+				    const Ref<GaussianBasisSet> &b4)
 {
-  size_t storage_required = 0;
+  return EriCints::storage_required(b1,b2,b3,b4);
+}
 
-  if (inteval == &Integral::electron_repulsion)
-    storage_required = EriCints::storage_required(b1,b2,b3,b4);
-  else if (inteval == &Integral::grt)
-    storage_required = GRTCints::storage_required(b1,b2,b3,b4);
-
-  return storage_required;
+size_t
+IntegralCints::storage_required_grt(const Ref<GaussianBasisSet> &b1,
+				    const Ref<GaussianBasisSet> &b2,
+				    const Ref<GaussianBasisSet> &b3,
+				    const Ref<GaussianBasisSet> &b4)
+{
+  return GRTCints::storage_required(b1,b2,b3,b4);
 }
 
 CartesianIter *

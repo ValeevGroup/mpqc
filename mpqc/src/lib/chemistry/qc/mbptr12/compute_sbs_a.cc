@@ -209,7 +209,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     mem_static = nbasis*noso; // scf vector
     mem_static *= sizeof(double);
     int nthreads = thr->nthread();
-    mem_static += nthreads * integral->storage_required(&Integral::grt,bs); // integral evaluators
+    mem_static += nthreads * integral->storage_required_grt(bs); // integral evaluators
     size_t mem_dynamic = mem_alloc - mem_static;
     ni = compute_transform_batchsize_(mem_dynamic, nocc_act-restart_orbital_, num_te_types); 
   }
@@ -229,7 +229,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   size_t mem_remaining = 0;
   if (mem_alloc <= (dyn_mem + mem_static)) mem_remaining += 0;
   else mem_remaining += mem_alloc - dyn_mem - mem_static;
-  mem_remaining += thr->nthread() * integral->storage_required(&Integral::grt,bs);
+  mem_remaining += thr->nthread() * integral->storage_required_grt(bs);
   
   ExEnv::out0() << indent
 		<< "Memory available per node:      " << mem_alloc << " Bytes"

@@ -360,6 +360,11 @@ MolecularEnergy::hessian_implemented()
 }
 
 void
+MolecularEnergy::symmetry_changed()
+{
+}
+
+void
 MolecularEnergy::print_natom_3(const RefSCVector &v,
                                const char *title, ostream&o)
 {

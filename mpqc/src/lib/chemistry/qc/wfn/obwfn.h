@@ -87,6 +87,8 @@ class OneBodyWavefunction: public Wavefunction {
                                                int alp=1);
     virtual RefSCMatrix hcore_guess();
 
+    void symmetry_changed();
+    
     double orbital(const SCVector3& r, int iorb);
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
 

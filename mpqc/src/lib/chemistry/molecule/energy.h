@@ -106,6 +106,10 @@ class MolecularEnergy: public Function {
 
     RefMolecularCoor molecularcoor() { return mc_; }
 
+    //. Call this if you have changed the molecular symmetry of the
+    // molecule contained by this MolecularEnergy
+    virtual void symmetry_changed();
+    
     //. Nicely print n x 3 data that are stored in a vector.
     void print_natom_3(const RefSCVector &, const char *t=0, ostream&o=cout);
 

@@ -65,6 +65,8 @@ class CLSCF: public SCF {
 
     RefSymmSCMatrix density();
 
+    void symmetry_changed();
+    
     // returns 0
     int spin_polarized();
 

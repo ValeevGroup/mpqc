@@ -111,6 +111,9 @@ class Wavefunction: public MolecularEnergy {
     RefGaussianBasisSet basis();
     RefIntegral integral();
 
+    // override symmetry_changed from MolecularEnergy
+    void symmetry_changed();
+    
     // returns a matrix which transforms AO's to orthogonal AO's
     // can be overridden, but defaults to S^-1/2
     virtual RefSymmSCMatrix ao_to_orthog_ao();

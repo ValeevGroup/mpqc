@@ -137,6 +137,14 @@ Wavefunction::Wavefunction(StateIn&s):
   basiskit_ = gbs_->so_matrixkit();
 }
 
+void
+Wavefunction::symmetry_changed()
+{
+  RefPetiteList pl = integral_->petite_list();
+  basisdim_ = pl->SO_basisdim();
+  basiskit_ = gbs_->so_matrixkit();
+}
+
 Wavefunction::~Wavefunction()
 {
   if (bs_values) {

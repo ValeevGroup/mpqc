@@ -316,6 +316,15 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 //
 
 void
+CLSCF::symmetry_changed()
+{
+  SCF::symmetry_changed();
+  cl_fock_.result_noupdate()=0;
+  nirrep_ = molecule()->point_group()->char_table().ncomp();
+  set_occupations(0);
+}
+
+void
 CLSCF::init_vector()
 {
   // initialize the two electron integral classes

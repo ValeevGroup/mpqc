@@ -537,6 +537,16 @@ OneBodyWavefunction::nelectron()
   return int(tocc+0.5);
 }
 
+void
+OneBodyWavefunction::symmetry_changed()
+{
+  Wavefunction::symmetry_changed();
+  
+  // for now, delete old eigenvectors...later we'll transform to new
+  // pointgroup
+  eigenvectors_.result_noupdate() = 0;
+}
+  
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -384,6 +384,7 @@ FinDispMolecularHessian::displace(int disp)
     else {
       mol_->set_point_group(newpg);
       }
+    mole_->symmetry_changed();
     }
 
 #ifdef DEBUG

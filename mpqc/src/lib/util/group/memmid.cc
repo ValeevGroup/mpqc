@@ -38,6 +38,8 @@
 #include <util/misc/formio.h>
 #include <util/group/memmid.h>
 
+#define dbufsize 8192
+
 ///////////////////////////////////////////////////////////////////////
 // The handler function and its data
 
@@ -55,6 +57,9 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
   int i;
   int mid;
   int dsize;
+  double chunk[dbufsize];
+  int remain;
+  int dremain;
   int junk;
   double *source_data;
   double *data;
@@ -123,26 +128,34 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       break;
   case MemoryDataRequest::DoubleSum:
       dsize = size/sizeof(double);
-      data = new double[dsize];
-      mid = recv(data, size, node, to_type);
-      wait(mid);
-      if (debug_) {
-          cout << scprintf("%d: %s summing %d bytes (%d doubles) (mid = %d)",
-                           me_, handlerstr, size, size/sizeof(double), mid)
-               << endl;
-        }
+      remain = size;
+      dremain = dsize;
       if (offset < 0 || offset+size > offsets_[me()+1]) {
-          cerr << "MIDMemoryGrp::handler(): bad offset/size for DoubleSum: "
-               << "offset = " << offset
+          cerr << "MIDMemoryGrp::handler(): bad offset/size for DoubleSum:"
+               << " offset = " << offset
                << ", size = " << size
                << ", fence = " << offsets_[me()+1] << endl;
           abort();
         }
-      source_data = (double*) &data_[offset];
-      for (i=0; i<dsize; i++) {
-          source_data[i] += data[i];
+      while (remain > 0) {
+          int dchunksize = dbufsize;
+          if (dremain < dchunksize) dchunksize = dremain;
+          int chunksize = dchunksize*sizeof(double);
+          mid = recv(chunk, chunksize, node, to_type);
+          wait(mid);
+          if (debug_) {
+              cout << scprintf("%d: %s summing %d bytes (%d doubles) (mid=%d)",
+                               me_, handlerstr, size, size/sizeof(double), mid)
+                   << endl;
+            }
+          source_data = (double*) &data_[offset];
+          for (i=0; i<dchunksize; i++) {
+              source_data[i] += chunk[i];
+            }
+          dremain -= dchunksize;
+          remain -= chunksize;
+          offset += chunksize;
         }
-      delete[] data;
       if (use_acknowledgments_) {
           junk = (me() & 0xff) + (ack_serial_number++ << 8);
           mid = send(&junk, sizeof(junk), node, from_type);
@@ -336,8 +349,19 @@ MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
   int mid = send(buf.data(), buf.nbytes(), node, data_request_type_);
   do_wait("sum: send req", mid, q, buf.nbytes(), node);
 
-  mid = send(data, size, node, data_type_to_handler_);
-  do_wait("sum: send dat", mid, q, size, node);
+  int remain = size;
+  int dremain = size/sizeof(double);
+  int dataoffset = 0;
+  while (remain > 0) {
+      int dchunksize = dbufsize;
+      if (dremain < dchunksize) dchunksize = dremain;
+      int chunksize = dchunksize*sizeof(double);
+      mid = send(&data[dataoffset], chunksize, node, data_type_to_handler_);
+      do_wait("sum: send dat", mid, q, size, node);
+      dremain -= dchunksize;
+      remain -= chunksize;
+      dataoffset += dchunksize;
+    }
 
   if (use_acknowledgments_) {
       int junk;
@@ -439,9 +463,6 @@ MIDMemoryGrp::sync_act(int reactivate)
                << endl;
       int tmpmid;
       do {
-          if (!active_) {
-              cerr << me_ << ": MIDMemoryGrp::sync(): not active (2)" << endl;
-            }
           tmpmid = wait(mid, data_request_mid_);
           if (tmpmid == data_request_mid_) {
               if (debug_) 

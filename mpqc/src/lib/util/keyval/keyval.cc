@@ -126,6 +126,7 @@ KeyVal::key_describedclassvalue(const char* key)
   if (val.nonnull()) {
       RefDescribedClass result;
       seterror(val->describedclassvalue(result));
+      val = 0; // fix for gcc 2.7.0 bug
       return result;
     }
   return DefaultRefDescribedClass();

@@ -195,22 +195,12 @@ AC_CHECK_PROG(AR,ar,ar)
 AC_CHECK_PROG(PERL,perl,perl)
 AC_CHECK_PROG(BISON,bison,bison)
 AC_CHECK_PROG(FLEX,flex,flex)
-AC_CHECK_PROG(CTANGLE,ctangle,ctangle)
-AC_CHECK_PROG(CWEAVE,cweave,cweave)
 AC_CHECK_PROG(GENCLASS,genclass,genclass)
-AC_CHECK_PROG(SGEN,sgen,sgen,sgen)
-AC_CHECK_PROG(TMPL,tmpl,tmpl,tmpl)
 AC_CHECK_PROG(LISTLIBS,listlibs,listlibs,$srcdir/bin/listlibs.sh)
 
 dnl The lack of certain tools is a show stopper
 
 changequote(<<, >>)dnl
-
-if [ X$CTANGLE = X ]; then
-  echo "Could not find the program ctangle.  It can be obtained at"
-  echo "ftp://labrea.stanford.edu/pub/cweb in the cweb package."
-  exit 1
-fi
 
 if [ X$BISON = X ]; then
   echo "Could not find the program bison.  It can be obtained at"

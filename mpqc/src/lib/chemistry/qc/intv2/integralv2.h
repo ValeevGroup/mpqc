@@ -8,6 +8,7 @@
 
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/obint.h>
+#include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/cartiter.h>
 #include <chemistry/qc/basis/transform.h>
 
@@ -118,50 +119,37 @@ class OneBodyIntv2 : public OneBodyInt
 {
   private:
     int same_center;
+
   protected:
     struct struct_centers* c1;
     struct struct_centers* c2;
+
   public:
-    OneBodyIntv2(const RefGaussianBasisSet&, OneBodyIntIter* =0);
-    OneBodyIntv2(const RefGaussianBasisSet&, const RefGaussianBasisSet&,
-                 OneBodyIntIter* =0);
+    OneBodyIntv2(const RefGaussianBasisSet&);
+    OneBodyIntv2(const RefGaussianBasisSet&, const RefGaussianBasisSet&);
     ~OneBodyIntv2();
 };
 
-class OneBody3Intv2 : public OneBody3Int
-{
-  private:
-    int same_center;
-  protected:
-    struct struct_centers* c1;
-    struct struct_centers* c2;
-  public:
-    OneBody3Intv2(const RefGaussianBasisSet&, OneBodyIntIter* =0);
-    OneBody3Intv2(const RefGaussianBasisSet&, const RefGaussianBasisSet&,
-                  OneBodyIntIter* =0);
-    ~OneBody3Intv2();
-};
+///////////////////////////////////////////////////////////////////////////
 
 class GaussianOverlapIntv2 : public OneBodyIntv2
 {
   public:
-    GaussianOverlapIntv2(const RefGaussianBasisSet&, OneBodyIntIter* =0);
+    GaussianOverlapIntv2(const RefGaussianBasisSet&);
     GaussianOverlapIntv2(const RefGaussianBasisSet&,
-                         const RefGaussianBasisSet&,
-                         OneBodyIntIter* =0);
+                         const RefGaussianBasisSet&);
     ~GaussianOverlapIntv2();
-    void compute_shell(int,int,double*);
+    void compute_shell(int,int);
 };
 
 class GaussianKineticIntv2 : public OneBodyIntv2
 {
   public:
-    GaussianKineticIntv2(const RefGaussianBasisSet&, OneBodyIntIter* =0);
+    GaussianKineticIntv2(const RefGaussianBasisSet&);
     GaussianKineticIntv2(const RefGaussianBasisSet&,
-                         const RefGaussianBasisSet&,
-                         OneBodyIntIter* =0);
+                         const RefGaussianBasisSet&);
     ~GaussianKineticIntv2();
-    void compute_shell(int,int,double*);
+    void compute_shell(int,int);
 };
 
 class GaussianPointChargeIntv2 : public OneBodyIntv2
@@ -174,24 +162,20 @@ class GaussianPointChargeIntv2 : public OneBodyIntv2
     void init(PointBag_double*);
     
   public:
+    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&);
     GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&,
-                             OneBodyIntIter* =0);
-    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&,
-                             const RefGaussianBasisSet&,
-                             OneBodyIntIter* =0);
+                             const RefGaussianBasisSet&);
     ~GaussianPointChargeIntv2();
-    void compute_shell(int,int,double*);
+    void compute_shell(int,int);
 };
 
 class GaussianNuclearIntv2 : public GaussianPointChargeIntv2
 {
   public:
-    GaussianNuclearIntv2(const RefGaussianBasisSet&, OneBodyIntIter* =0);
+    GaussianNuclearIntv2(const RefGaussianBasisSet&);
     GaussianNuclearIntv2(PointBag_double *charges,
                          const RefGaussianBasisSet&,
-                         const RefGaussianBasisSet&,
-                         OneBodyIntIter* =0);
-
+                         const RefGaussianBasisSet&);
     ~GaussianNuclearIntv2();
 };
 
@@ -204,34 +188,55 @@ class GaussianEfieldDotVectorIntv2: public OneBodyIntv2
   public:
     GaussianEfieldDotVectorIntv2(const RefGaussianBasisSet&,
                                  double *postion = 0,
-                                 double *vector = 0,
-                                 OneBodyIntIter* =0);
+                                 double *vector = 0);
     GaussianEfieldDotVectorIntv2(const RefGaussianBasisSet&,
                                  const RefGaussianBasisSet&,
                                  double *postion = 0,
-                                 double *vector = 0,
-                                 OneBodyIntIter* =0);
+                                 double *vector = 0);
     ~GaussianEfieldDotVectorIntv2();
     void position(const double*);
     void vector(const double*);
-    void compute_shell(int,int,double*);
+    void compute_shell(int,int);
 };
 
-class GaussianDipoleIntv2: public OneBody3Intv2
+class GaussianDipoleIntv2: public OneBodyIntv2
 {
   private:
     double origin_[3];
   public:
     GaussianDipoleIntv2(const RefGaussianBasisSet&,
-                        const double *origin = 0,
-                        OneBodyIntIter* =0);
+                        const double *origin = 0);
     GaussianDipoleIntv2(const RefGaussianBasisSet&,
                         const RefGaussianBasisSet&,
-                        const double *origin = 0,
-                        OneBodyIntIter* =0);
+                        const double *origin = 0);
     ~GaussianDipoleIntv2();
     void origin(const double*);
-    void compute_shell(int,int,double*);
+    void compute_shell(int,int);
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class TwoBodyIntV2 : public TwoBodyInt {
+  private:
+    int same_center;
+    struct struct_centers* c1;
+    struct struct_centers* c2;
+    struct struct_centers* c3;
+    struct struct_centers* c4;
+
+    double *intbuf;
+    
+    void init();
+    
+  public:
+    TwoBodyIntV2(const RefGaussianBasisSet&b);
+    TwoBodyIntV2(const RefGaussianBasisSet&b1,
+                 const RefGaussianBasisSet&b2,
+                 const RefGaussianBasisSet&b3,
+                 const RefGaussianBasisSet&b4);
+    virtual ~TwoBodyIntV2();
+
+    void compute_shell(int,int,int,int);
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -254,41 +259,43 @@ class IntegralV2 : public Integral {
     RedundantCartesianSubIter * new_redundant_cartesian_sub_iter(int);
     SphericalTransformIter * new_spherical_transform_iter(int, int=0);
     
-    RefSCElementOp overlap_op(const RefGaussianBasisSet&, OneBodyIntIter* = 0);
-    RefSCElementOp overlap_op(const RefGaussianBasisSet&,
-                              const RefGaussianBasisSet&, OneBodyIntIter* = 0);
+    RefOneBodyInt overlap_int(const RefGaussianBasisSet&);
+    RefOneBodyInt overlap_int(const RefGaussianBasisSet&,
+                              const RefGaussianBasisSet&);
 
-    RefSCElementOp kinetic_op(const RefGaussianBasisSet&, OneBodyIntIter* = 0);
-    RefSCElementOp kinetic_op(const RefGaussianBasisSet&,
-                              const RefGaussianBasisSet&, OneBodyIntIter* = 0);
+    RefOneBodyInt kinetic_int(const RefGaussianBasisSet&);
+    RefOneBodyInt kinetic_int(const RefGaussianBasisSet&,
+                              const RefGaussianBasisSet&);
 
-    RefSCElementOp point_charge_op(PointBag_double*,
+    RefOneBodyInt point_charge_int(PointBag_double*,
+                                   const RefGaussianBasisSet&);
+    RefOneBodyInt point_charge_int(PointBag_double*,
                                    const RefGaussianBasisSet&,
-                                   OneBodyIntIter* = 0);
-    RefSCElementOp point_charge_op(PointBag_double*,
-                                   const RefGaussianBasisSet&,
-                                   const RefGaussianBasisSet&,
-                                   OneBodyIntIter* = 0);
+                                   const RefGaussianBasisSet&);
 
-    RefSCElementOp nuclear_op(const RefGaussianBasisSet&, OneBodyIntIter* = 0);
-    RefSCElementOp nuclear_op(PointBag_double*, const RefGaussianBasisSet&,
-                              const RefGaussianBasisSet&, OneBodyIntIter* = 0);
+    RefOneBodyInt nuclear_int(const RefGaussianBasisSet&);
+    RefOneBodyInt nuclear_int(PointBag_double*, const RefGaussianBasisSet&,
+                              const RefGaussianBasisSet&);
 
-    RefSCElementOp efield_dot_vector_op(const RefGaussianBasisSet&,
+    RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
                                         double *position = 0,
-                                        double *vector = 0,
-                                        OneBodyIntIter* = 0);
-    RefSCElementOp efield_dot_vector_op(const RefGaussianBasisSet&,
+                                        double *vector = 0);
+    RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
                                         const RefGaussianBasisSet&,
                                         double *position = 0,
-                                        double *vector = 0,
-                                        OneBodyIntIter* = 0);
+                                        double *vector = 0);
 
-    RefSCElementOp3 dipole_op(const RefGaussianBasisSet&, double *origin = 0,
-                              OneBodyIntIter* = 0);
-    RefSCElementOp3 dipole_op(const RefGaussianBasisSet&,
-                              const RefGaussianBasisSet&,
-                              double *origin = 0, OneBodyIntIter* = 0);
+    RefOneBodyInt dipole_int(const RefGaussianBasisSet&, double *origin = 0);
+    RefOneBodyInt dipole_int(const RefGaussianBasisSet&,
+                             const RefGaussianBasisSet&,
+                             double *origin =0);
+
+    RefTwoBodyInt two_body_int(const RefGaussianBasisSet&);
+    RefTwoBodyInt two_body_int(const RefGaussianBasisSet&,
+                               const RefGaussianBasisSet&,
+                               const RefGaussianBasisSet&,
+                               const RefGaussianBasisSet&);
 };
+
 
 #endif

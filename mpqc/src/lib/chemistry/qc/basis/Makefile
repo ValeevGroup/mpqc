@@ -13,10 +13,11 @@ TARGET_TO_MAKE = libbasis
 BIN_OR_LIB = LIB
 
 CXXSRC = gaussbas.cc gaussshell.cc gaussshval.cc gaussbaval.cc \
-       gaussbas_i.cc gaussshe_i.cc files.cc petite.cc aotoso.cc rot.cc
+       gaussbas_i.cc gaussshe_i.cc files.cc petite.cc aotoso.cc rot.cc \
+       symgaussbas.cc
 
 INC = gaussbas.h gaussshe_i.h basis.h gaussbas_i.h gaussshell.h files.h \
-      petite.h rot.h
+      petite.h rot.h symgaussbas.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.o)
@@ -32,7 +33,7 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libbasis.so
 endif
 
-btest: $(TESTOBJ) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+btest: $(TESTOBJ) libintegral.a $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

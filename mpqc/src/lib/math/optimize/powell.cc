@@ -1,7 +1,5 @@
 
-extern "C" {
-#  include <math.h>
-}
+#include <math.h>
 
 #include <math/optimize/update.h>
 #include <math/optimize/transform.h>
@@ -106,3 +104,9 @@ PowellUpdate::apply_transform(const RefNonlinearTransform& trans)
   trans->transform_coordinates(xprev);
   trans->transform_gradient(gprev);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

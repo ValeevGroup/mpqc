@@ -48,3 +48,7 @@ class DIIS: public SelfConsistentExtrapolation {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -75,3 +75,7 @@ class LineOpt: public Optimize {
 SavableState_REF_dec(LineOpt);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -1,7 +1,5 @@
 
-extern "C" {
-#  include <math.h>
-}
+#include <math.h>
 
 #include <math/optimize/update.h>
 #include <math/optimize/transform.h>
@@ -186,3 +184,8 @@ BFGSUpdate::update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
   }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

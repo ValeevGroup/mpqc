@@ -126,3 +126,7 @@ class Function: virtual_base public SavableState, public Compute {
 SavableState_REF_dec(Function);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

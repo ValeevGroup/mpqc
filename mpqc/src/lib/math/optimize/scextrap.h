@@ -80,3 +80,7 @@ class SelfConsistentExtrapolation: public SavableState {
 SavableState_REF_dec(SelfConsistentExtrapolation);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

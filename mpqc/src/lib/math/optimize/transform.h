@@ -54,3 +54,7 @@ class IdentityTransform: public NonlinearTransform {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

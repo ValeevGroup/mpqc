@@ -9,7 +9,6 @@
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <util/misc/formio.h>
-#include <iomanip.h>
 
 #define CLASSNAME GDIISOpt
 #define PARENTS public Optimize
@@ -132,8 +131,6 @@ GDIISOpt::init()
 int
 GDIISOpt::update()
 {
-  int me=matrixkit()->messagegrp()->me();
-  
   int i,j,ii,jj;
   
   // these are good candidates to be input options
@@ -172,27 +169,23 @@ GDIISOpt::update()
     accurate_enough = (function()->actual_gradient_accuracy() <=
                        accuracy_*roundoff_error_factor);
 
-    if (!accurate_enough && me==0) {
-      cout.unsetf(ios::fixed);
-      cout << indent
+    if (!accurate_enough) {
+      cout << node0 << indent
            << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
            << indent
-           << "        function()->actual_gradient_accuracy() = "
-           << setw(15) << setprecision(8)
-           << function()->actual_gradient_accuracy() << endl << indent
-           << "                                     accuracy_ = "
-           << setw(15) << setprecision(8) << accuracy_ << endl;
+           << scprintf(
+             "        function()->actual_gradient_accuracy() = %15.8e",
+             function()->actual_gradient_accuracy()) << endl << indent
+           << scprintf(
+             "                                     accuracy_ = %15.8e",
+             accuracy_) << endl;
     }
   } while(!accurate_enough);
 
-  if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient
-      && me==0) {
-    cout.unsetf(ios::fixed);
-    cout << indent
-         << "NOTICE: maxabs_gradient increased from "
-         << setw(8) << setprecision(4) << old_maxabs_gradient
-         << " to " << setw(8) << setprecision(4) << maxabs_gradient
-         << endl;
+  if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient) {
+    cout << node0 << indent
+         << scprintf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e",
+                     old_maxabs_gradient, maxabs_gradient) << endl;
   }
 
   // make the next gradient computed more accurate, since it will
@@ -232,21 +225,15 @@ GDIISOpt::update()
     double maxstepsize=0.6;
     if (tot > maxstepsize) {
       double scal = maxstepsize/tot;
-      if (me==0) {
-        cout.setf(ios::fixed);
-        cout << endl << indent << "stepsize of "
-             << setw(8) << setprecision(5) << tot << " is too big, scaling by "
-             << setw(8) << setprecision(5) << scal << endl;
-      }
+      cout << node0 << endl << indent
+           << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
+           << endl;
       xdisp.scale(scal);
       tot *= scal;
     }
                     
-    if (me==0) {
-      cout.setf(ios::fixed);
-      cout << endl << indent << "taking step of size "
-           << setw(8) << setprecision(5) << tot << endl;
-    }
+    cout << node0 << endl << indent
+         << scprintf("taking step of size %f", tot) << endl;
     
     RefSCVector xnext = xcurrent + xdisp;
     function()->set_x(xnext);
@@ -317,22 +304,16 @@ GDIISOpt::update()
   double maxstepsize=0.6;
   if (tot > maxstepsize) {
     double scal = maxstepsize/tot;
-    if (me==0) {
-      cout.setf(ios::fixed);
-      cout << endl << indent << "stepsize of "
-           << setw(8) << setprecision(5) << tot << " is too big, scaling by "
-           << setw(8) << setprecision(5) << scal << endl;
-    }
+    cout << node0 << endl << indent
+         << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
+         << endl;
     xdisp.scale(scal);
     tot *= scal;
   }
 
-  if (me==0) {
-    cout.setf(ios::fixed);
-    cout << endl << indent << "taking step of size "
-         << setw(8) << setprecision(5) << tot << endl;
-  }
-  
+  cout << node0 << endl << indent
+       << scprintf("taking step of size %f", tot) << endl;
+    
   RefSCVector xnext = xcurrent + xdisp;
   function()->set_x(xnext);
   
@@ -345,3 +326,9 @@ GDIISOpt::update()
             && (con_crit2 <= convergence_)
             && (con_crit3 <= convergence_);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -118,3 +118,9 @@ SelfConsistentExtrapolation::save_data_state(StateOut& s)
   s.put(errorset_);
   s.put(tolerance_);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

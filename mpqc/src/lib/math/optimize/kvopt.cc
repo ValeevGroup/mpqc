@@ -58,3 +58,8 @@ main(int argc, char** argv)
   return 0;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

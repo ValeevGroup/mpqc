@@ -3,9 +3,7 @@
 #pragma implementation
 #endif
 
-extern "C" {
-#  include <math.h>
-}
+#include <math.h>
 
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
@@ -170,3 +168,9 @@ LineOpt::set_search_direction(RefSCVector&s)
 {
   search_direction_ = s.copy();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

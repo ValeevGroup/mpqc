@@ -97,3 +97,7 @@ class PowellUpdate: public HessianUpdate {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

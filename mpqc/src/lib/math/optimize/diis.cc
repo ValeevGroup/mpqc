@@ -33,7 +33,8 @@ DIIS::init()
   bold = new double*[ndiis];
   
   if (!btemp || !bmat || !bold) {
-    cerr << "DIIS::init:  alloc of bmat, bold, and btemp failed\n";
+    cerr << node0 << indent
+         << "DIIS::init: alloc of bmat, bold, and btemp failed\n";
     abort();
   }
   
@@ -100,9 +101,10 @@ DIIS::DIIS(const RefKeyVal& keyval):
   if (keyval->error() != KeyVal::OK) damping_factor = 0;
   
   if (ndiis <= 0) {
-      cerr <<  "DIIS::DIIS(const RefKeyVal& keyval): got ndiis = 0\n";
-      abort();
-    }
+    cerr << node0 << indent
+         << "DIIS::DIIS(const RefKeyVal& keyval): got ndiis = 0\n";
+    abort();
+  }
 
   init();
 }
@@ -277,9 +279,10 @@ DIIS::extrapolate(const RefSCExtrapData& data,
         }
 
       if (fabs(determ) < 10.0e-20) {
-          cerr << "DIIS::extrapolate:  trial " << trial << " no good\n";
-          return -1;
-        }
+        cerr << node0 << indent
+             << "DIIS::extrapolate:  trial " << trial << " no good\n";
+        return -1;
+      }
 
       if (iter >= start) {
           int kk=1;
@@ -295,3 +298,9 @@ DIIS::extrapolate(const RefSCExtrapData& data,
 
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -320,3 +320,9 @@ SymmSCMatrixSCExtrapError::scalar_product(const RefSCExtrapError& arg)
   m->element_op(sp.pointer(), a->m.pointer());
   return sp->result();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

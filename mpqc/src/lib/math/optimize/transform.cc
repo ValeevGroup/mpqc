@@ -25,7 +25,7 @@ void
 NonlinearTransform::transform_hessian(const RefSymmSCMatrix& h)
 {
   if (h.null()) return;
-  cout << indent
+  cout << node0 << indent
        << "WARNING: NonlinearTransform::transform_hessian: "
        << "using linear transform\n";
   RefSymmSCMatrix newh = h->clone();
@@ -68,3 +68,9 @@ void
 IdentityTransform::transform_ihessian(const RefSymmSCMatrix &ih)
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

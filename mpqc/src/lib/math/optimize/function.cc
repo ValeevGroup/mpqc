@@ -325,15 +325,12 @@ Function::actual_hessian_accuracy()
 void
 Function::print(ostream&o)
 {
-  if (matrixkit_->messagegrp()->me()==0) {
-    o << indent << "Function Parameters:\n" << incindent;
-    o << indent << "value_accuracy = " << desired_value_accuracy() << endl;
-    o << indent << "gradient.accuracy = "
-      << desired_gradient_accuracy()
-      << endl;
-    o << indent << "hessian_accuracy = " << desired_hessian_accuracy() << endl;
-    o << decindent << endl;
-  }
+  o << node0 << indent << "Function Parameters:\n" << incindent
+    << indent << scprintf("value_accuracy = %e\n",desired_value_accuracy())
+    << indent << scprintf("gradient.accuracy = %e\n",
+                          desired_gradient_accuracy())
+    << indent << scprintf("hessian_accuracy = %e\n",desired_hessian_accuracy())
+    << decindent << endl;
 }
 
 void
@@ -368,3 +365,9 @@ Function::hessian_implemented()
 {
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

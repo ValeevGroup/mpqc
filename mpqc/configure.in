@@ -214,7 +214,6 @@ AC_CHECK_PROG(AR,ar,ar)
 AC_CHECK_PROG(PERL,perl,perl)
 AC_CHECK_PROG(BISON,bison,bison)
 AC_CHECK_PROG(FLEX,flex,flex)
-AC_CHECK_PROG(GENCLASS,genclass,genclass)
 
 dnl The lack of certain tools is a show stopper
 
@@ -235,12 +234,6 @@ fi
 if [ X$PERL = X ]; then
   echo "Could not find the program perl.  It can be obtained at"
   echo "ftp://prep.ai.mit.edu/pub/gnu"
-  exit 1
-fi
-
-if [ X$GENCLASS = X ]; then
-  echo "Could not find the program genclass.  It can be obtained at"
-  echo "ftp://prep.ai.mit.edu/pub/gnu in the libg++ distribution."
   exit 1
 fi
 

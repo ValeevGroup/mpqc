@@ -36,7 +36,7 @@ SCMatrixdouble::operator=(double a)
 INLINE double
 SCMatrixdouble::operator=(const SCMatrixdouble& md)
 {
-  double a = md.get_element(i,j);
+  double a = md.matrix.get_element(i,j);
   matrix.set_element(i,j,a);
   return a;
 }
@@ -72,7 +72,7 @@ SymmSCMatrixdouble::operator=(double a)
 INLINE double
 SymmSCMatrixdouble::operator=(const SymmSCMatrixdouble& md)
 {
-  double a = md.get_element(i,j);
+  double a = md.matrix.get_element(i,j);
   matrix.set_element(i,j,a);
   return a;
 }
@@ -108,7 +108,7 @@ DiagSCMatrixdouble::operator=(double a)
 INLINE double
 DiagSCMatrixdouble::operator=(const DiagSCMatrixdouble& md)
 {
-  double a = md.get_element(i);
+  double a = md.matrix.get_element(i);
   matrix.set_element(i,a);
   return a;
 }
@@ -144,7 +144,7 @@ SCVectordouble::operator=(double a)
 INLINE double
 SCVectordouble::operator=(const SCVectordouble& vd)
 {
-  double a = vd.get_element(i);
+  double a = vd.vector.get_element(i);
   vector.set_element(i,a);
   return a;
 }

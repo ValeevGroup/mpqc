@@ -20,6 +20,28 @@ version="@SC_VERSION@"
 soversion="@SC_SO_VERSION@"
 buildid="@BUILDID@"
 scdatadir=@scdatadir@
+enableshared=@ENABLESHARED@
+
+# set up libtool related variables
+if [ X$enableshared = Xyes ]; then
+  libtool=@exec_prefix@/bin/sc-libtool
+  ltlink="$libtool --mode=link"
+  if [ -n "$buildid" ]; then
+    ltlinklibopts="-rpath $libdir -release $buildid -version-info $soversion"
+  else
+    ltlinklibopts="-rpath $libdir -version-info $soversion"
+  fi
+  ltlinkbinopts=
+  ltcomp="$libtool --mode=compile"
+  ltinst="$libtool --mode=install"
+else
+  libtool=
+  ltlink=
+  ltlinklibopts=
+  ltlinkbinopts=
+  ltcomp=
+  ltinst=
+fi
 
 sclibs=""
 for i in $all_sclibs; do
@@ -30,7 +52,7 @@ for i in $all_sclibs; do
 done
 
 usage="\
-Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
+Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags] [--libtool] [--ltlink] [--ltlinklibopts] [--ltlinkbinopts] [--ltcomp] [--ltinst]"
 
 if test $# -eq 0; then
       echo "${usage}" 1>&2
@@ -102,6 +124,24 @@ while test $# -gt 0; do
       ;;
     --libs)
       echo -L${libdir} $sclibs $libs
+      ;;
+    --libtool)
+      echo $libtool
+      ;;
+    --ltlink)
+      echo $ltlink
+      ;;
+    --ltlinklibopts)
+      echo $ltlinklibopts
+      ;;
+    --ltlinkbinopts)
+      echo $ltlinkbinopts
+      ;;
+    --ltcomp)
+      echo $ltcomp
+      ;;
+    --ltinst)
+      echo $ltinst
       ;;
     *)
       echo "${usage}" 1>&2

@@ -70,8 +70,8 @@ Int2eV3::int_init_buildgc(int order,
   int am;
   int i,j,k,l,m;
   int ci,cj,ck,cl;
-  int e0f0_con_int_bufsize, con_int_bufsize;
-  double *e0f0_con_int_buf, *con_int_buf;
+  int e0f0_con_int_bufsize;
+  double *e0f0_con_int_buf;
   int int_v_bufsize, int_v0_bufsize;
   double *int_v_buf, *int_v0_buf;
 
@@ -135,6 +135,11 @@ Int2eV3::int_init_buildgc(int order,
   used_storage_build_ += inthave.nbyte();
   used_storage_build_ += contract_length.nbyte();
   used_storage_build_ += build.int_v_list.nbyte();
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "inthave: " << inthave.nbyte() << endl;
+  cout << "contract_length: " << contract_length.nbyte() << endl;
+  cout << "int_v_list: " << build.int_v_list.nbyte() << endl;
+#endif
 
   /* Set all slots to 0 */
   for (i=0; i<=am12; i++) {
@@ -192,21 +197,20 @@ Int2eV3::int_init_buildgc(int order,
 
   /* Allocate storage for the contracted integrals (these are the output
    * of the build routines). */
-  /* The ci, etc, indices refer to which of the pair of contraction
+  /* The ci, etc, indices refer to which set of contraction
    * coefficients we are using. */
   e0f0_con_int_bufsize = 0;
-  con_int_bufsize = 0;
-  int_con_ints_array = new IntV3Arraydoublep4***[nc1];
-  used_storage_build_ += sizeof(IntV3Arraydoublep4***)*nc1;
+  e0f0_con_ints_array = new IntV3Arraydoublep2***[nc1];
+  used_storage_build_ += sizeof(IntV3Arraydoublep2***)*nc1;
   for (ci=0; ci<nc1; ci++) {
-    int_con_ints_array[ci] = new IntV3Arraydoublep4**[nc2];
-    used_storage_build_ += sizeof(IntV3Arraydoublep4**)*nc2;
+    e0f0_con_ints_array[ci] = new IntV3Arraydoublep2**[nc2];
+    used_storage_build_ += sizeof(IntV3Arraydoublep2**)*nc2;
     for (cj=0; cj<nc2; cj++) {
-      int_con_ints_array[ci][cj] = new IntV3Arraydoublep4*[nc3];
-      used_storage_build_ += sizeof(IntV3Arraydoublep4*)*nc3;
+      e0f0_con_ints_array[ci][cj] = new IntV3Arraydoublep2*[nc3];
+      used_storage_build_ += sizeof(IntV3Arraydoublep2*)*nc3;
       for (ck=0; ck<nc3; ck++) {
-        int_con_ints_array[ci][cj][ck] = new IntV3Arraydoublep4[nc4];
-        used_storage_build_ += sizeof(IntV3Arraydoublep4)*nc4;
+        e0f0_con_ints_array[ci][cj][ck] = new IntV3Arraydoublep2[nc4];
+        used_storage_build_ += sizeof(IntV3Arraydoublep2)*nc4;
         for (cl=0; cl<nc4; cl++) {
   int am12_for_con;
   int am34_for_con;
@@ -219,63 +223,41 @@ Int2eV3::int_init_buildgc(int order,
     am34_for_con = jmax_for_con[ck] + jmax_for_con[cl];
     }
 
-  int_con_ints_array[ci][cj][ck][cl].set_dim(am12+1,am12+1,am34+1,am34+1);
-  used_storage_build_ += int_con_ints_array[ci][cj][ck][cl].nbyte();
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "am12_for_con: " << am12_for_con << endl;
+  cout << "am34_for_con: " << am34_for_con << endl;
+#endif
+
+  e0f0_con_ints_array[ci][cj][ck][cl].set_dim(am12+1,am34+1);
+  used_storage_build_ += e0f0_con_ints_array[ci][cj][ck][cl].nbyte();
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "e0f0_con_ints_array: "
+       << e0f0_con_ints_array[ci][cj][ck][cl].nbyte()
+       << endl;
+#endif
 
   /* Count how much storage for the integrals is needed. */
-  for (i=0; i<=am12; i++) {
-    for (j=0; j<=am12; j++) {
-      for (k=0; k<=am34; k++) {
-        for (l=0; l<=am34; l++) {
-          int_con_ints_array[ci][cj][ck][cl](i,j,k,l) = 0;
-          }
-        }
-      }
-    }
   for (i=0; i<=am12_for_con; i++) {
-    for (j=0; j<=am12_for_con-i; j++) {
-      for (k=0; k<=am34_for_con; k++) {
-        for (l=0; l<=am34_for_con-k; l++) {
-          if ((j==0)&&(l==0)) {
-            int s =  INT_NCART(i)
-                   * INT_NCART(j)
-                   * INT_NCART(l)
-                   * INT_NCART(k);
-            e0f0_con_int_bufsize += s;
-            con_int_bufsize += s;
-             }
-          else if ((ci==0)&&(cj==0)&&(ck==0)&&(cl==0)) {
-            con_int_bufsize +=  INT_NCART(i)
-                              * INT_NCART(j)
-                              * INT_NCART(k)
-                              * INT_NCART(l);
-             }
-          else if (int_con_ints_array[0][0][0][0](i,j,k,l)) {
-            int_con_ints_array[ci][cj][ck][cl](i,j,k,l) =
-              int_con_ints_array[0][0][0][0](i,j,k,l);
-             }
-          else {
-            con_int_bufsize +=  INT_NCART(i)
-                              * INT_NCART(j)
-                              * INT_NCART(k)
-                              * INT_NCART(l);
-             }
-          }
-        }
+    for (k=0; k<=am34_for_con; k++) {
+      int s =  INT_NCART(i)
+               * INT_NCART(k);
+      e0f0_con_int_bufsize += s;
       }
     }
           }
         }
       }
     }
-  e0f0_con_int_buf = (double*) malloc(con_int_bufsize*sizeof(double));
-  used_storage_build_ += con_int_bufsize * sizeof(double);
+  e0f0_con_int_buf = (double*) malloc(sizeof(double)*e0f0_con_int_bufsize);
+  used_storage_build_ += e0f0_con_int_bufsize * sizeof(double);
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "e0f0_int_buf: " << e0f0_con_int_bufsize * sizeof(double) << endl;
+#endif
   if (!e0f0_con_int_buf) {
     cerr << scprintf("couldn't allocate contracted integral storage\n");
     fail();
     }
   add_store(e0f0_con_int_buf);
-  con_int_buf = &e0f0_con_int_buf[e0f0_con_int_bufsize];
   /* Allocate storage for the integrals which will be used by the shift
    * routine. */
   for (ci=0; ci<nc1; ci++) {
@@ -294,63 +276,27 @@ Int2eV3::int_init_buildgc(int order,
     }
 
   for (i=0; i<=am12; i++) {
-    for (j=0; j<=am12; j++) {
-      for (k=0; k<=am34; k++) {
-        for (l=0; l<=am34; l++) {
-          int_con_ints_array[ci][cj][ck][cl](i,j,k,l) = 0;
-          }
-        }
+    for (k=0; k<=am34; k++) {
+      e0f0_con_ints_array[ci][cj][ck][cl](i,k) = 0;
       }
     }
   for (i=0; i<=am12_for_con; i++) {
-    for (j=0; j<=am12_for_con-i; j++) {
-      for (k=0; k<=am34_for_con; k++) {
-        for (l=0; l<=am34_for_con-k; l++) {
+    for (k=0; k<=am34_for_con; k++) {
 /* If there are Pople style s=p shells and the shells are ordered
  * first s and then p and there are no p or d shells on the molecule,
  * then this algorithm would will allocate a little more storage
  * than needed.  General contraction should be ordered high to
  * low angular momentum for this reason. */
-                /* Share storage for certain cases. */
-          if ((j==0)&&(l==0)) {
-            int_con_ints_array[ci][cj][ck][cl](i,j,k,l)
-                = e0f0_con_int_buf;
-            e0f0_con_int_buf +=  INT_NCART(i)
-                               * INT_NCART(j)
-                               * INT_NCART(k)
-                               * INT_NCART(l);
-             }
-           else if ((ci==0)&&(cj==0)&&(ck==0)&&(cl==0)) {
-            int_con_ints_array[ci][cj][ck][cl](i,j,k,l)
-                = con_int_buf;
-            con_int_buf +=  INT_NCART(i)
-                          * INT_NCART(j)
-                          * INT_NCART(k)
-                          * INT_NCART(l);
-               }
-           else if (int_con_ints_array[0][0][0][0](i,j,k,l)) {
-             int_con_ints_array[ci][cj][ck][cl](i,j,k,l) =
-               int_con_ints_array[0][0][0][0](i,j,k,l);
-             }
-           else {
-            int_con_ints_array[ci][cj][ck][cl](i,j,k,l)
-                = con_int_buf;
-            con_int_buf +=  INT_NCART(i)
-                          * INT_NCART(j)
-                          * INT_NCART(k)
-                          * INT_NCART(l);
-             }
-          }
-        }
+      e0f0_con_ints_array[ci][cj][ck][cl](i,k)
+        = e0f0_con_int_buf;
+      e0f0_con_int_buf +=  INT_NCART(i)
+                           * INT_NCART(k);
       }
     }
           }
         }
       }
     }
-
-  /* This pointer is needed if int_buildam (without gc) is called. */
-  int_con_ints = &int_con_ints_array[0][0][0][0];
 
   /* Initialize the build_routine array. */
   for (i=0; i<4; i++) {
@@ -437,6 +383,9 @@ Int2eV3::int_init_buildgc(int order,
   saved_ncon = nc1;
 
   used_storage_ += used_storage_build_;
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "used_storage_build: " << used_storage_build_ << endl;
+#endif
   }
 
 void
@@ -453,13 +402,13 @@ Int2eV3::int_done_buildgc()
   for (ci=0; ci<saved_ncon; ci++) {
     for (cj=0; cj<saved_ncon; cj++) {
       for (ck=0; ck<saved_ncon; ck++) {
-        delete[] int_con_ints_array[ci][cj][ck];
+        delete[] e0f0_con_ints_array[ci][cj][ck];
         }
-      delete[] int_con_ints_array[ci][cj];
+      delete[] e0f0_con_ints_array[ci][cj];
       }
-    delete[] int_con_ints_array[ci];
+    delete[] e0f0_con_ints_array[ci];
     }
-  delete[] int_con_ints_array;
+  delete[] e0f0_con_ints_array;
 
   }
 
@@ -553,7 +502,7 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
           if (int_shell3->am(ck)+dam3 +int_shell4->am(cl)+dam4 < n)
             continue;
       for (k=0; k<INT_NCART(m)*INT_NCART(n); k++) {
-        int_con_ints_array[ci][cj][ck][cl](m,0,n,0)[k] = 0.0;
+        e0f0_con_ints_array[ci][cj][ck][cl](m,n)[k] = 0.0;
         }
           }
         }
@@ -741,7 +690,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
           for (m=mlower; m<=mupper; m++) {
             int o;
             int sizec = contract_length(m,nlower,nupper);
-            con_ints = int_con_ints_array[ci][cj][ck][cl](m,0,nlower,0);
+            con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
             bufferprim = build.int_v_list(m,nlower,0);
 
             for (o=sizec; o!=0; o--) {
@@ -901,7 +850,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
           for (m=mlower; m<=mupper; m++) {
             int o;
             int sizec = contract_length(m,nlower,nupper);
-            con_ints = int_con_ints_array[ci][cj][ck][cl](m,0,nlower,0);
+            con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
             bufferprim = build.int_v_list(m,nlower,0);
 
             /* Sum the integrals into the contracted integrals. */

@@ -77,6 +77,26 @@ IntCoor::IntCoor(const RefKeyVal&keyval)
 {
   label_ = keyval->pcharvalue("label");
   value_ = keyval->doublevalue("value");
+
+  char* unit = keyval->pcharvalue("unit");
+  if (unit) {
+      if (!strcmp(unit, "bohr")) {
+        }
+      else if (!strcmp(unit, "angstrom")) {
+          value_ /= bohr_conv;
+        }
+      else if (!strcmp(unit, "radian")) {
+        }
+      else if (!strcmp(unit, "degree")) {
+          value_ *= M_PI/180.0;
+        }
+      else {
+          fprintf(stderr, "IntCoor::IntCoor(KeyVal): unknown unit = \"%s\"\n",
+                  unit);
+          abort();
+        }
+      delete[] unit;
+    }
 }
 
 IntCoor::IntCoor(StateIn& si):

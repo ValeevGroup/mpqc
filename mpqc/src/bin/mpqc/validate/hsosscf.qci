@@ -1,0 +1,27 @@
+
+test_basis: STO-3G 6-311G**
+test_method: hsoshf hsosxalpha hsoshfk hsoshfs hsoshfb hsoshfg96 hsosblyp hsosb3lyp hsospbe
+test_calc: energy opt
+test_molecule:              h2o  dh2  ch2
+test_molecule_symmetry:     c2v  d2h  c2v
+test_molecule_multiplicity:   1   3    3
+
+restart: no
+checkpoint: no
+
+label: unrestricted open shell self consistent field tests (HF and DFT)
+
+h2o:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+dh2:
+  H  0.0 0.0  10.0
+  H  0.0 0.0 -10.0
+
+ch2:
+  C   0.000   0.000  -0.100
+  H   0.000   0.857   0.596
+  H   0.000  -0.857   0.596
+

@@ -60,6 +60,18 @@ SYMM3MASTER=symm3.qci
 SYMM3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(SYMM3MASTER))
 SYMM3OUTPUTS = $(SYMM3INPUTS:%.$(INSUF)=%.out)
 
+CLSCFMASTER=clscf.qci
+CLSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(CLSCFMASTER))
+CLSCFOUTPUTS = $(CLSCFINPUTS:%.$(INSUF)=%.out)
+
+USCFMASTER=uscf.qci
+USCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(USCFMASTER))
+USCFOUTPUTS = $(USCFINPUTS:%.$(INSUF)=%.out)
+
+HSOSSCFMASTER=hsosscf.qci
+HSOSSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(HSOSSCFMASTER))
+HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
+
 CKPTINPUTS = \
  ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_2mp2.in \
  ckpt_0efcopt.in    ckpt_1clscf.in     ckpt_1qnewtopt.in  ckpt_2qnewtopt.in \
@@ -80,6 +92,7 @@ MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 
 METHODSINPUTS = \
   clks_b88.in clks_lsdax.in clks_xa.in clks_blyp.in clks_b3lyp.in \
+  hsosks_b88.in hsosks_lsdax.in hsosks_xa.in hsosks_blyp.in hsosks_b3lyp.in \
   uks_b88.in uks_lsdax.in uks_xa.in uks_blyp.in uks_b3lyp.in \
   clhf.in hsoshf.in uhf.in osshf.in tchf.in
 METHODSINPUTS := $(METHODSINPUTS:%=run/methods_%)
@@ -90,7 +103,8 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
-            $(CKPTINPUTS) $(MBPTINPUTS)
+            $(CKPTINPUTS) $(MBPTINPUTS) \
+            $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSINPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 ##############################################################################
@@ -104,7 +118,7 @@ default::
 
 .PHONY: inputs
 inputs:: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods
+inputs:: methods clscf uscf hsosscf
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -129,6 +143,15 @@ symm2: stamp-symm2
 
 .PHONY: symm3
 symm3: stamp-symm3
+
+.PHONY: clscf
+clscf: stamp-clscf
+
+.PHONY: uscf
+uscf: stamp-uscf
+
+.PHONY: hsosscf
+hsosscf: stamp-hsosscf
 
 .PHONY: opt
 opt: stamp-opt
@@ -184,6 +207,18 @@ stamp-symm2: $(RUN) $(SYMM2MASTER) $(INPUTGENDEPS)
 stamp-symm3: $(RUN) $(SYMM3MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(SYMM3MASTER)
 	touch stamp-symm3
+
+stamp-clscf: $(RUN) $(CLSCFMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(CLSCFMASTER)
+	touch stamp-clscf
+
+stamp-uscf: $(RUN) $(USCFMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(USCFMASTER)
+	touch stamp-uscf
+
+stamp-hsosscf: $(RUN) $(HSOSSCFMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(HSOSSCFMASTER)
+	touch stamp-hsosscf
 
 ##############################################################################
 

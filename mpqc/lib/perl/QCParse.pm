@@ -607,6 +607,41 @@ package MPQCInputWriter;
               "ROSCF" => "SCF",
               "SCF" => "SCF",
               "UHF" => "UHF",
+              "CLHF" => "CLHF",
+              "HSOSHF" => "HSOSHF",
+              "HF" => "SCF",
+              "HFK" => "DFT",
+              "XALPHA" => "DFT",
+              "HFS"    => "DFT",
+              "HFB"    => "DFT",
+              "HFG96"  => "DFT",
+              "BLYP"   => "DFT",
+              "B3LYP"  => "DFT",
+              "PBE"    => "DFT",
+              "CLHFK" => "DFT",
+              "CLXALPHA" => "DFT",
+              "CLHFS"    => "DFT",
+              "CLHFB"    => "DFT",
+              "CLHFG96"  => "DFT",
+              "CLBLYP"   => "DFT",
+              "CLB3LYP"  => "DFT",
+              "CLPBE"    => "DFT",
+              "HSOSHFK" => "DFT",
+              "HSOSXALPHA" => "DFT",
+              "HSOSHFS"    => "DFT",
+              "HSOSHFB"    => "DFT",
+              "HSOSHFG96"  => "DFT",
+              "HSOSBLYP"   => "DFT",
+              "HSOSB3LYP"  => "DFT",
+              "HSOSPBE"    => "DFT",
+              "UHFK" => "DFT",
+              "UXALPHA" => "DFT",
+              "UHFS"    => "DFT",
+              "UHFB"    => "DFT",
+              "UHFG96"  => "DFT",
+              "UBLYP"   => "DFT",
+              "UB3LYP"  => "DFT",
+              "UPBE"    => "DFT",
              );
 %mbpt2map = ("MP2" => "mp",
              "OPT1[2]" => "opt1",
@@ -719,12 +754,50 @@ sub input_string() {
     my $inputmethod = $methodmap{uc($qcinput->method())};
     my $method = "$inputmethod";
     $method = "SCF" if ($method eq "");
+    my $openmethod = substr(uc($qcinput->method()),0,4);
+    if (substr($openmethod,0,2) eq "CL") { $openmethod = "CL"; }
+    if (substr($openmethod,0,1) eq "U") { $openmethod = "U"; }
     if ($method eq "SCF") {
-        if ($qcinput->mult() == 1) {
+        if ($openmethod eq "U") {
+            $method = "UHF";
+        }
+        elsif ($openmethod eq "CL") {
             $method = "CLHF";
+        }
+        elsif ($openmethod eq "HSOS") {
+            $method = "HSOSHF";
+        }
+        elsif ($qcinput->mult() == 1) {
+            $method = "CLHF";
+            $openmethod = "CL";
         }
         else {
             $method = "HSOSHF";
+            $openmethod = "HSOS";
+        }
+    }
+    my $functional;
+    if ($method eq "DFT") {
+        $functional = uc($qcinput->method());
+        if ($openmethod eq "U") {
+            $method = "UKS";
+            $functional = substr($functional,1);
+        }
+        elsif ($openmethod eq "CL") {
+            $method = "CLKS";
+            $functional = substr($functional,2);
+        }
+        elsif ($openmethod eq "HSOS") {
+            $method = "HSOSKS";
+            $functional = substr($functional,4);
+        }
+        elsif ($qcinput->mult() == 1) {
+            $method = "CLKS";
+            $openmethod = "CL";
+        }
+        else {
+            $method = "UKS";
+            $openmethod = "U";
         }
     }
     my $mole = "  do_energy = yes";
@@ -746,6 +819,9 @@ sub input_string() {
         $mole = "$mole\n    print_npa = yes";
         if ($docc ne "") {$mole = "$mole\n    $docc";}
         if ($socc ne "") {$mole = "$mole\n    $socc";}
+    }
+    if ($method eq "CLKS" || $method eq "UKS" || $method eq "HSOSKS") {
+        $mole = "$mole\n    functional<StdDenFunctional>: name = \"$functional\"";
     }
     if ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
@@ -790,7 +866,8 @@ sub input_string() {
     elsif (! ($basis =~ /^STO/
               || $basis =~ /^MI/
               || $basis =~ /^\d-\d1G$/)) {
-        $mole = "$mole\n    guess_wavefunction<$method>: (";
+        my $guessmethod = "${openmethod}HF";
+        $mole = "$mole\n    guess_wavefunction<$guessmethod>: (";
         $mole = "$mole\n      molecule = \$:molecule";
         $mole = "$mole\n      total_charge = $charge";
         $mole = "$mole\n      multiplicity = $mult";

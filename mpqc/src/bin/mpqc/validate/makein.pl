@@ -117,12 +117,14 @@ sub process_file {
     init_var($test_vars, $parse, "fzv", 0);
     init_var($test_vars, $parse, "docc", "auto");
     init_var($test_vars, $parse, "socc", "auto");
+    init_var($test_vars, $parse, "multiplicity", 1);
     init_var($test_vars, $parse, "molecule", "molecule");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
     my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");
     my @molecule_docc = $parse->value_as_array("test_molecule_docc");
     my @molecule_socc = $parse->value_as_array("test_molecule_socc");
+    my @molecule_mult = $parse->value_as_array("test_molecule_multiplicity");
     my @molecule_followed = $parse->value_as_array("test_molecule_followed");
     my @molecule_fixed = $parse->value_as_array("test_molecule_fixed");
 
@@ -143,6 +145,7 @@ sub process_file {
         my $fzv = $test_vars->{"fzv"}->[$index->{"fzv"}];
         my $docc = $test_vars->{"docc"}->[$index->{"docc"}];
         my $socc = $test_vars->{"socc"}->[$index->{"socc"}];
+        my $mult = $test_vars->{"multiplicity"}->[$index->{"multiplicity"}];
         my $method = $test_vars->{"method"}->[$index->{"method"}];
         my $calc = $test_vars->{"calc"}->[$index->{"calc"}];
         my $symmetry = $test_vars->{"symmetry"}->[$index->{"symmetry"}];
@@ -173,6 +176,9 @@ sub process_file {
             }
             if ($#molecule_socc >= $molindex) {
                 $socc = $molecule_socc[$molindex];
+            }
+            if ($#molecule_mult >= $molindex) {
+                $mult = $molecule_mult[$molindex];
             }
             # check for fixed coordinates
             $fixed = $molecule_fixed[$molindex];
@@ -229,6 +235,7 @@ sub process_file {
         $parse->set_value("fzv", $fzv);
         $parse->set_value("docc", $docc);
         $parse->set_value("socc", $socc);
+        $parse->set_value("state", $mult);
         $parse->set_value("molecule", $parse->value($molecule));
         $parse->set_value("fixed", $parse->value($fixed));
         $parse->set_value("followed", $parse->value($followed));

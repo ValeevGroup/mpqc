@@ -74,8 +74,9 @@ SCF::compute_vector(double& eelec)
   RefDiagSCMatrix evals(oso_dimension(), basis_matrixkit());
 
   double delta = 1.0;
-  int iter;
-  for (iter=0; iter < maxiter_; iter++) {
+  int iter, iter_since_reset = 0;
+  double accuracy = 1.0;
+  for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
     // form the density from the current vector 
     tim_enter("density");
     delta = new_density();
@@ -86,13 +87,23 @@ SCF::compute_vector(double& eelec)
       break;
 
     // reset the density from time to time
-    if (iter && !(iter%dens_reset_freq_))
+    if (iter_since_reset && !(iter_since_reset%dens_reset_freq_)) {
       reset_density();
+      iter_since_reset = 0;
+    }
       
     // form the AO basis fock matrix & add density dependant H
     tim_enter("fock");
-    double accuracy = 0.01 * delta;
-    if (accuracy > 0.0001) accuracy = 0.0001;
+    double new_accuracy = 0.01 * delta;
+    if (new_accuracy > 0.001) new_accuracy = 0.001;
+    if (iter == 0) accuracy = new_accuracy;
+    else if (new_accuracy < accuracy) {
+      accuracy = new_accuracy/10.0;
+      if (iter_since_reset > 0) {
+        reset_density();
+        iter_since_reset = 0;
+      }
+    }
     ao_fock(accuracy);
     tim_exit("fock");
 

@@ -38,7 +38,7 @@ mpqc: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
-    memory = 10000000
+    memory = 16000000
   )
   % optimizer object for the molecular geometry
   opt<QNewtonOpt>: (

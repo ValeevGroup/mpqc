@@ -24,6 +24,7 @@ mpqc: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
+    memory = 16000000
   )
   % molecular coordinates for optimization
   coor<SymmMolecularCoor>: (

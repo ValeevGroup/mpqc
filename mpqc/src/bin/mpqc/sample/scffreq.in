@@ -20,6 +20,7 @@ mpqc: (
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
+    memory = 16000000
   )
 % vibrational frequency input
   freq<MolecularFrequencies>: (

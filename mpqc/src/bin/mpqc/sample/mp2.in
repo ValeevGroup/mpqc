@@ -21,10 +21,12 @@ mpqc: (
   mole<MBPT2>: (
     molecule = $:molecule
     basis = $:basis
+    memory = 16000000
     % reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
+      memory = 16000000
     )
   )
 )

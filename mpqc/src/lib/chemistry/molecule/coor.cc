@@ -101,7 +101,7 @@ IntCoor::IntCoor(const RefKeyVal&keyval)
           value_ *= M_PI/180.0;
         }
       else {
-          fprintf(stderr, "IntCoor::IntCoor(KeyVal): unknown unit = \"%s\"\n",
+          fprintf(stderr,"  IntCoor::IntCoor(KeyVal): unknown unit = \"%s\"\n",
                   unit);
           abort();
         }
@@ -194,7 +194,7 @@ SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
   RefIntCoorGen gen = keyval->describedclassvalue("generator");
 
   if (gen.null() && !n) {
-      fprintf(stderr,"SetIntCoor::SetIntCoor: bad input\n");
+      fprintf(stderr,"  SetIntCoor::SetIntCoor: bad input\n");
       abort();
     }
 
@@ -755,7 +755,7 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
       for (int i=0; i<nextra_bonds_*2; i++) {
           extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
           if (keyval->error() != KeyVal::OK) {
-              fprintf(stderr,"IntCoorGen:: keyval CTOR: "
+              fprintf(stderr,"  IntCoorGen:: keyval CTOR: "
                       "problem reading \"extra_bonds:%d\"\n",i);
               abort();
             }

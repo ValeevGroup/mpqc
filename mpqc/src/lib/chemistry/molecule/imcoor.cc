@@ -180,7 +180,7 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
           for (int i=0; i<nextra_bonds*2; i++) {
               extra_bonds[i] = keyval->intvalue("extra_bonds",i);
               if (keyval->error() != KeyVal::OK) {
-                  fprintf(stderr,"IntMolecularCoor:: keyval CTOR: "
+                  fprintf(stderr,"  IntMolecularCoor:: keyval CTOR: "
                           "problem reading \"extra_bonds:%d\"\n",i);
                   abort();
                 }
@@ -269,7 +269,7 @@ IntMolecularCoor::init()
       double maxabs = given_fixed_coords.maxabs();
       int nstep = int(maxabs/max_update_disp_) + 1;
       given_fixed_coords.scale(1.0/nstep);
-      printf("IntMolecularCoor: displacing fixed coordinates to the"
+      printf("  IntMolecularCoor: displacing fixed coordinates to the"
              " requested values in %d steps\n", nstep);
       for (int istep=1; istep<=nstep; istep++) {
           form_coordinates();
@@ -325,12 +325,12 @@ IntMolecularCoor::init()
         }
 
       if (rank != dim_.n()) {
-          printf("IntMolecularCoor::init: rank changed\n");
+          printf("  IntMolecularCoor::init: rank changed\n");
         }
 
       double kappa2 = sigma(0)/sigma(dim_.n()-1);
 
-      printf("IntMolecularCoor::init: condition number = %14.8f\n", kappa2);
+      printf("  IntMolecularCoor::init: condition number = %14.8f\n", kappa2);
     }
 #endif
 }
@@ -437,7 +437,7 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
       totally_symmetric = Ur.t() * B * geom;
 
       int ntotally_symmetric = count_nonzero(totally_symmetric,0.001);
-      printf("found %d totally symmetric coordinates\n", ntotally_symmetric);
+      printf("  found %d totally symmetric coordinates\n", ntotally_symmetric);
 
       // compute the cumulative projection
       if (projection.null()) {
@@ -490,13 +490,13 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
                            Ktmp);
       // require that the epsilon rank equal the number of fixed coordinates
       if (Ktmp.nrow() != dfixed.n()) {
-          fprintf(stderr, "ERROR: IntMolecularCoor: nfixed = %d rank = %d\n",
+          fprintf(stderr, "  ERROR: IntMolecularCoor: nfixed = %d rank = %d\n",
                   dfixed.n(), Ktmp.ncol());
           abort();
         }
       // check that fixed coordinates be totally symmetric
       if (Ktmp.nrow() != count_nonzero(totally_symmetric_fixed, ts_eps)) {
-          fprintf(stderr, "WARNING: only %d of %d fixed coordinates are"
+          fprintf(stderr, "  WARNING: only %d of %d fixed coordinates are"
                   " totally symmetric\n",
                   count_nonzero(totally_symmetric_fixed, ts_eps), dfixed.n());
         }
@@ -748,7 +748,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
               if(pow(vecs(j,i),2.0) > simple_tolerance_) nonzero++;
             }
           if(!nonzero) {
-              fprintf(stderr,"Geom_form_K: no nonzero simple coordinates");
+              fprintf(stderr,"  Geom_form_K: no nonzero simple coordinates");
               abort();
             }
 
@@ -935,7 +935,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
   fflush(stdout);
   fflush(stderr);
 
-  fprintf(stderr,"WARNING: IntMolecularCoor"
+  fprintf(stderr,"  WARNING: IntMolecularCoor"
           "::all_to_cartesian(RefSCVector&):"
           " too many iterations in geometry update\n");
 
@@ -956,7 +956,7 @@ IntMolecularCoor::to_cartesian(const RefSCVector&new_internal)
   if (new_internal.dim().n() != dim_.n()
       || dvc_.n() != variable_->n() + constant_->n()
       || new_internal.dim().n() != variable_->n()) {
-      fprintf(stderr,"to_cartesian: internal error in dim\n");
+      fprintf(stderr,"  to_cartesian: internal error in dim\n");
       abort();
     }
 
@@ -978,7 +978,7 @@ IntMolecularCoor::all_to_internal(RefSCVector&internal)
   if (internal.dim().n() != dvc_.n()
       || dim_.n() != variable_->n()
       || dvc_.n() != variable_->n() + constant_->n()) {
-      fprintf(stderr,"all_to_internal: internal error in dim\n");
+      fprintf(stderr,"  all_to_internal: internal error in dim\n");
       abort();
     }
 
@@ -1003,7 +1003,7 @@ IntMolecularCoor::to_internal(RefSCVector&internal)
 {
   if (internal.dim().n() != dim_.n()
       || dim_.n() != variable_->n()) {
-      fprintf(stderr,"to_internal: internal error in dim\n");
+      fprintf(stderr,"  to_internal: internal error in dim\n");
       abort();
     }
 

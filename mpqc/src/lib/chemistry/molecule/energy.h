@@ -49,7 +49,7 @@ class MolecularEnergy: public NLP2 {
     virtual RefMolecule molecule();
     void guess_hessian(RefSymmSCMatrix&);
 
-    void set_x(RefSCVector&);
+    void set_x(const RefSCVector&);
 
     virtual void print(SCostream& =SCostream::cout);
 };

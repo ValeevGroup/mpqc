@@ -210,7 +210,7 @@ MolecularEnergy::molecule_to_x()
 }
 
 void
-MolecularEnergy::set_x(RefSCVector&v)
+MolecularEnergy::set_x(const RefSCVector&v)
 {
   NLP0::set_x(v);
   x_to_molecule();

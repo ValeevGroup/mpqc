@@ -100,6 +100,39 @@ out_of_memory()
   abort();
 }
 
+#if defined(__alpha__)
+#include <signal.h>
+#include <asm/fpu.h>
+extern "C" {
+  void ieee_set_fp_control(long);
+  long ieee_get_fp_control(void);
+};
+void sigfpe_handler(int)
+{
+  long fp_control = ieee_get_fp_control();
+  int fatal = 0;
+  if (fp_control & IEEE_STATUS_INV) {
+      cout << "SGIFPE: invalid operation" << endl;;
+      fatal = 1;
+    }
+  if (fp_control & IEEE_STATUS_DZE) {
+      cout << "SGIFPE: divide by zero" << endl;;
+      fatal = 1;
+    }
+  if (fp_control & IEEE_STATUS_OVF) {
+      cout << "SGIFPE: overflow" << endl;;
+      fatal = 1;
+    }
+  if (fp_control & IEEE_STATUS_UNF) {
+      //cout << "SGIFPE: underflow" << endl;;
+    }
+  if (fp_control & IEEE_STATUS_INE) {
+      //cout << "SGIFPE: inexact" << endl;;
+    }
+  if (fatal) abort();
+}
+#endif
+
 int
 main(int argc, char *argv[])
 {
@@ -113,6 +146,10 @@ main(int argc, char *argv[])
   // make floating point errors cause an exception (except for denormalized
   // operands, since small numbers are denormalized)
   asm("fldcw %0" : : "o" (0x372));
+#endif
+
+#if defined(__alpha__)
+  signal(SIGFPE,sigfpe_handler);
 #endif
 
   ExEnv::set_args(argc, argv);

@@ -26,7 +26,8 @@ ARRAYSET_def(RefIntCoor);
 void *
 IntCoor::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -81,6 +82,14 @@ IntCoor::value() const
   return value_;
 }
 
+#ifndef __GNUC__
+void
+IntCoor::print()
+{
+  print(0);
+}
+#endif
+
 void
 IntCoor::print(RefMolecule mol, SCostream& os)
 {
@@ -118,7 +127,8 @@ SavableState_REF_def(SetIntCoor);
 void *
 SetIntCoor::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -269,6 +279,14 @@ SetIntCoor::guess_hessian(RefMolecule& mol,RefSymmSCMatrix& hessian)
     }
 }
 
+#ifndef __GNUC__
+void
+SetIntCoor::print()
+{
+  print(0);
+}
+#endif
+
 void
 SetIntCoor::print(RefMolecule mol, SCostream& os)
 {
@@ -313,7 +331,8 @@ SetIntCoor::clear()
 void *
 SumIntCoor::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { IntCoor::_castdown(cd) };
+  void* casts[1];
+  casts[0] = IntCoor::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -444,6 +463,14 @@ SumIntCoor::ctype() const
   return "SUM";
 }
 
+#ifndef __GNUC__
+void
+SumIntCoor::print()
+{
+  print(0);
+}
+#endif
+
 void
 SumIntCoor::print(RefMolecule mol, SCostream& os)
 {
@@ -523,7 +550,8 @@ SavableState_REF_def(MolecularCoor);
 void *
 MolecularCoor::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

@@ -23,6 +23,10 @@
 #include <string.h>
 #include <math.h>
 
+#if defined(SGI) && !defined(__GNUC__)
+#include <bstring.h>
+#endif
+
 #include "simple.h"
 #include "chemelem.h"
 #include "localdef.h"
@@ -46,7 +50,8 @@ SavableState_REF_def(SimpleCo);
 void *
 SimpleCo::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { IntCoor::_castdown(cd) };
+  void* casts[1];
+  casts[0] = IntCoor::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -165,6 +170,14 @@ SimpleCo::update_value(RefMolecule&mol)
 {
   calc_intco(*mol);
 }
+
+#ifndef __GNUC__
+void
+SimpleCo::print()
+{
+  print(0);
+}
+#endif
 
 void
 SimpleCo::print(RefMolecule mol, SCostream& os)

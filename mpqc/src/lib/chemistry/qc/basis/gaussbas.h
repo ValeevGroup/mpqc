@@ -11,6 +11,7 @@
 //#include <util/container/pixmap.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 
 // this is for centers_t*
@@ -18,7 +19,6 @@
 
 class GaussianShell;
 class RefKeyVal;
-class cart_point;
 
 class GaussianBasisSet: public SavableState
 {
@@ -106,8 +106,9 @@ class GaussianBasisSet: public SavableState
     //operator struct struct_centers*();
 
     // compute the value for this basis set at position r
-    int values(cart_point& r, double* basis_values) const;
-    int grad_values(cart_point& r,double*g_values,double* basis_values=0)const;
+    int values(const SCVector3& r, double* basis_values) const;
+    int grad_values(const SCVector3& r,
+                    double*g_values,double* basis_values=0)const;
 
     // fill in matrix with a matrix that orthogonalizes the basis functions
     // note: this member is provided in the integrals library

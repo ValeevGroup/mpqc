@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <util/state/state.h>
-#include <math/topology/point.h>
+#include <math/scmat/vector3.h>
 
 class CartesianIter
 {
@@ -114,8 +114,8 @@ class GaussianShell: public SavableState
     double exponent(int iprim) const;
 
     // compute the value of this shell at offset r
-    int values(cart_point& r, double* basis_values);
-    int grad_values(cart_point& r,
+    int values(const SCVector3& r, double* basis_values);
+    int grad_values(const SCVector3& R,
                     double* g_values,
                     double* basis_values=0) const;
 

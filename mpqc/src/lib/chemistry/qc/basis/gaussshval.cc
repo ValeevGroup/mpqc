@@ -12,13 +12,13 @@
 #define MAX_NCON  10
 #define MAX_AM    4
 
-int GaussianShell::values(cart_point& r, double* basis_values)
+int GaussianShell::values(const SCVector3& r, double* basis_values)
 {
   return grad_values(r, 0, basis_values);
 }
 
 // Returns a pointer to a vector of values of basis 
-int GaussianShell::grad_values(cart_point& r,
+int GaussianShell::grad_values(const SCVector3& r,
                                double* g_values,
                                double* basis_values) const
 {

@@ -9,16 +9,16 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/gaussshell.h>
 
-int GaussianBasisSet::values(cart_point& r, double* basis_values) const
+int GaussianBasisSet::values(const SCVector3& r, double* basis_values) const
 {
   return grad_values(r, 0, basis_values);
 }
 
-int GaussianBasisSet::grad_values(cart_point& r,
+int GaussianBasisSet::grad_values(const SCVector3& r,
                              double* g_values,
                              double* basis_values) const
 {
-    cart_point r_diff;
+    SCVector3 r_diff;
     int ishell = 0;
     int ibasis = 0;
     int nreturns;

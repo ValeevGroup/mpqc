@@ -477,11 +477,13 @@ SCMatrix::assign(SCMatrix*a)
 void
 SCMatrix::assign(const double*a)
 {
-  int n = nrow();
+  int i;
+  int nr = nrow();
+  int nc = ncol();
   // some compilers need the following cast
-  const double **v = (const double**) new double*[n];
-  for (int i=0; i<n; i++) {
-      v[i] = &a[i*n];
+  const double **v = (const double**) new double*[nr];
+  for (i=0; i<nr; i++) {
+      v[i] = &a[i*nc];
     }
   assign(v);
   delete[] v;
@@ -490,10 +492,14 @@ SCMatrix::assign(const double*a)
 void
 SCMatrix::assign(const double**a)
 {
-  int nr = nrow();
-  int nc = ncol();
-  for (int i=0; i<nr; i++) {
-      for (int j=0; j<nc; i++) {
+  int i;
+  int j;
+  int nr;
+  int nc;
+  nr = nrow();
+  nc = ncol();
+  for (i=0; i<nr; i++) {
+      for (j=0; j<nc; j++) {
           set_element(i,j,a[i][j]);
         }
     }
@@ -502,10 +508,12 @@ SCMatrix::assign(const double**a)
 void
 SCMatrix::convert(double*a)
 {
-  int n = nrow();
-  double **v = new double*[n];
-  for (int i=0; i<n; i++) {
-      v[i] = &a[i*n];
+  int i;
+  int nr = nrow();
+  int nc = ncol();
+  double **v = new double*[nr];
+  for (i=0; i<nr; i++) {
+      v[i] = &a[i*nc];
     }
   convert(v);
   delete[] v;
@@ -514,10 +522,12 @@ SCMatrix::convert(double*a)
 void
 SCMatrix::convert(double**a)
 {
-  int nr = nrow();
-  int nc = ncol();
-  for (int i=0; i<nr; i++) {
-      for (int j=0; j<nc; i++) {
+  int i, j;
+  int nr, nc;
+  nr = nrow();
+  nc = ncol();
+  for (i=0; i<nr; i++) {
+      for (j=0; j<nc; j++) {
           a[i][j] = get_element(i,j);
         }
     }
@@ -626,13 +636,15 @@ SymmSCMatrix::assign(double a)
 void
 SymmSCMatrix::assign(const double*a)
 {
+  int i;
   int nr = n();
   // some compilers need the following cast
   const double **v = (const double **) new double*[nr];
   int ioff= 0;
-  for (int i=0; i<nr; i++) {
-      v[i] = &a[ioff];
+  for (i=0; i<nr; i++) {
       ioff += i;
+      v[i] = &a[ioff];
+//    ioff += i;
     }
   assign(v);
   delete[] v;
@@ -641,9 +653,12 @@ SymmSCMatrix::assign(const double*a)
 void
 SymmSCMatrix::assign(const double**a)
 {
-  int nr = n();
-  for (int i=0; i<nr; i++) {
-      for (int j=0; j<=i; i++) {
+  int i;
+  int j;
+  int nr;
+  nr = n();
+  for (i=0; i<nr; i++) {
+      for (j=0; j<=i; j++) {
           set_element(i,j,a[i][j]);
         }
     }
@@ -652,12 +667,14 @@ SymmSCMatrix::assign(const double**a)
 void
 SymmSCMatrix::convert(double*a)
 {
+  int i;
   int nr = n();
   double **v = new double*[nr];
   int ioff= 0;
-  for (int i=0; i<nr; i++) {
-      v[i] = &a[ioff];
+  for (i=0; i<nr; i++) {
       ioff += i;
+      v[i] = &a[ioff];
+//    ioff += i;
     }
   convert(v);
   delete[] v;
@@ -666,9 +683,12 @@ SymmSCMatrix::convert(double*a)
 void
 SymmSCMatrix::convert(double**a)
 {
-  int nr = n();
-  for (int i=0; i<nr; i++) {
-      for (int j=0; j<=i; i++) {
+  int i;
+  int j;
+  int nr;
+  nr = n();
+  for (i=0; i<nr; i++) {
+      for (j=0; j<=i; j++) {
           a[i][j] = get_element(i,j);
         }
     }
@@ -778,8 +798,9 @@ DiagSCMatrix::assign(double a)
 void
 DiagSCMatrix::assign(const double*a)
 {
+  int i;
   int nr = n();
-  for (int i=0; i<nr; i++) {
+  for (i=0; i<nr; i++) {
       set_element(i,a[i]);
     }
 }
@@ -787,8 +808,9 @@ DiagSCMatrix::assign(const double*a)
 void
 DiagSCMatrix::convert(double*a)
 {
+  int i;
   int nr = n();
-  for (int i=0; i<nr; i++) {
+  for (i=0; i<nr; i++) {
       a[i] = get_element(i);
     }
 }
@@ -888,8 +910,9 @@ SCVector::assign(double a)
 void
 SCVector::assign(const double*a)
 {
+  int i;
   int nr = n();
-  for (int i=0; i<nr; i++) {
+  for (i=0; i<nr; i++) {
       set_element(i,a[i]);
     }
 }
@@ -897,8 +920,9 @@ SCVector::assign(const double*a)
 void
 SCVector::convert(double*a)
 {
+  int i;
   int nr = n();
-  for (int i=0; i<nr; i++) {
+  for (i=0; i<nr; i++) {
       a[i] = get_element(i);
     }
 }

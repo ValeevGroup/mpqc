@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# Use -*-perl-*- mode in emacs.
 'di';
 'ig00';
 #+##############################################################################
@@ -106,9 +107,10 @@ $THISPROG = "texi2html 1.4";		# program name and version
 #---############################################################################
 
 $use_bibliography = 1;
-$usage = "Usage: $0 [-check] [-glossary] [-menu] [-split] [-verbose] name\n";
+$usage = "Usage: $0 [-check] [-glossary] [-menu] [-[deep]split] [-verbose] name\n";
 while ($_ = $ARGV[0], /^-/) {
     shift;
+    if (/^-deep(split)?$/){ $deepsplit = 1; next; }
     if (/^-v(erbose)?$/)  { $verbose = 1; next; }
     if (/^-d(ebug)?$/)    { $debug = 1; next; }
     if (/^-c(heck)?$/)    { $check = 1; next; }
@@ -134,8 +136,9 @@ if ($docu =~ /.*\//) {
 }
 $docu_name =~ s/\.tex.?$//;	# basename of the document
 
-$docu_toc = $docu_doc = $docu_foot = $docu_name;
+$docu_top = $docu_toc = $docu_doc = $docu_foot = $docu_name;
 $docu_toc  .= '_toc.html';	# document's table of contents
+$docu_top  .= '_top.html';      # document's top
 $docu_doc  .= '.html';		# document's contents
 $docu_foot .= '_foot.html';	# document's footnotes
 
@@ -143,18 +146,26 @@ chop($today = `date +"%d %B %Y"`);
 @fhs = ();			# hold the file handles to read
 %value = ();			# hold texinfo variables
 %node2sec = ();			# node to section name
-%sec2href = ();			# section to HREF
+%sec2href = ();			# section name to HREF
+%sec2sec = ();                  # section name to n.n.n format
+%sec2file = ();                 # section in n.n.n format to file
+%sec2id = ();                   # section in n.n.n format to id
+%sec2name = ();                 # section in n.n.n format to name
 %bib2href = ();			# bibliography reference to HREF
 %gloss2href = ();		# glossary term to HREF
-@chapters = ();			# list of chapters
+@splitnames = ();		# list of chapter/section/... names
+%is_split = ();                 # 1 if starts a new file 0 otherwise (.n.n.n)
 
 # initial indexes
 $bib_num = 0;
 $foot_num = 0;
 $gloss_num = 0;
 $idx_num = 0;
-$sec_num = 0;
+$#sec_num = 0; # the length of sec_num is the current number of levels
+$do_not_split = 0; # when this is true splitting is turned off
+$do_not_split_level = 0; # the highest level at which splitting is turned off
 $doc_num = 0;
+$lines_are_top = 0; # the lines being accumulated belong to the top section
 
 print "# reading from $docu\n" if $verbose;
 
@@ -180,6 +191,12 @@ while ($_ = &next_line) {
     if (/^\@end\s+(\w+)\b/) {
 	$end_tag = $1;
 	next if $to_skip{"end $1"};
+    } elsif (/^\@c\s*texi2html\s*:\s+do\s+not\s+split/) {
+        if (! $do_not_split) {
+            $do_not_split = 1;
+            $do_not_split_level = $level;
+        }
+        next;
     } elsif (/^\@(\w+)\b/) {
 	$tag = $1;
 	next if $to_skip{$1};
@@ -193,12 +210,18 @@ while ($_ = &next_line) {
 	# special cases
 	if ($tag eq 'top' || ($tag eq 'node' && /^\@node\s+top\s*,/i)) {
 	    @lines = (); # ignore all lines before top
+            $lines_are_top = 1;
 	    next;
 	} elsif ($tag eq 'node') {
 	    s/^\@node\s+//;
 	    ($node) = split(/,/);
 	    $node =~ s/\s+/ /g; # normalize
 	    $node =~ s/ $//;
+            if ($lines_are_top) {
+                $lines_are_top = 0;
+                @top_lines = @lines;
+                @lines = ();
+            }
 	    next;
 	} elsif ($tag eq 'include') {
 	    if (/^\@include\s+($FILERE)\s*$/o) {
@@ -289,10 +312,31 @@ while ($_ = &next_line) {
 		$name = $1;
 		$name =~ s/\s+$//;
 		$level = $sec2level{$tag};
-                # modified level checking done here too -- clj
-		&next_doc if $split_doc && ($level == 1 || $level == 2);
-		$id = 'SEC' . ++$sec_num;
+                if ($level > $#sec_num) {
+                    # add a new group of subsections starting at # 1
+                    $#sec_num = $level;
+                    $sec_num[$level] = 1;
+                }
+                elsif ($level < $#sec_num) {
+                    # move up the group of subsections and increment
+                    $#sec_num = $level;
+                    ++$sec_num[$level];
+                }
+                else {
+                    # add another subsection at the same level
+                    ++$sec_num[$level];
+                }
+                if ($do_not_split && ($level <= $do_not_split_level)) {
+                    # turn splitting back on
+                    $do_not_split = 0;
+                }
+		&next_doc if &do_split;
+		$id = 'SEC' . join('.',@sec_num);
 		$sec2href{$name} = "$docu_doc#$id";
+		@{sec2sec{$name}} = join(".",@sec_num);
+                @sec2name{join(".",@sec_num)} = $name;
+                $sec2file{join('.',@sec_num)} = $docu_doc;
+                $sec2id{join('.',@sec_num)} = $id;
 		# check biblio and glossary
 		$in_bibliography = ($name =~ /^bibliography$/i);
 		$in_glossary = ($name =~ /^glossary$/i);
@@ -321,9 +365,12 @@ while ($_ = &next_line) {
 		push(@toc_lines, &substitute_style($_));
 		# update DOC
 		push(@lines, "<H$level>" . &anchor($id, "$docu_toc#$id", $name) . "</H$level>\n");
-		push(@chapters, $name) if $level == 1;
-                # here's a little experiment in splitting -- clj
-		push(@chapters, $name) if $level == 2;
+                push(@splitnames, $name) if &do_split;
+                if (&do_split) {
+                    $is_split{join('.',@sec_num)} = 1;
+                } else {
+                    $is_split{join('.',@sec_num)} = 0;
+                }
 		next;
 	    } else {
 		warn "Bad section line: $_";
@@ -399,6 +446,14 @@ while ($level < $curlevel) {
     push(@toc_lines, "</UL>\n");
 }
 print "# end of pass 1\n" if $verbose;
+
+# passes 2/3 and 4 have been converted to a routine
+
+&pass234(*top_lines,*top_doc_lines);
+&pass234(*lines,*doc_lines);
+
+sub pass234 {
+    local(*lines, *doc_lines) = @_;
 
 #+++############################################################################
 #                                                                              #
@@ -493,7 +548,7 @@ while (@lines) {
     # simple style substitutions
     $_ = &substitute_style($_);
     # try to guess bibliography references or glossary terms
-    unless (/^<H\d><A NAME=\"SEC\d/) {
+    unless (/^<H\d><A NAME=\"SEC\d/) { # this is needed to fix hilit: "
 	if ($use_bibliography) {
 	    $done = '';
 	    while (/$BIBRE/o) {
@@ -616,6 +671,8 @@ while (@lines3) {
 }
 print "# end of pass 4\n" if $verbose;
 
+} # end of pass234 routine
+
 #+++############################################################################
 #                                                                              #
 # Pass 5: print things                                                         #
@@ -632,6 +689,7 @@ if (open(FILE, "> $docu_toc")) {
     print FILE <<EOT;
 $header
 <TITLE>$value{'title'} - Table of Contents</TITLE>
+Go to the <A HREF="$docu_top"> top.
 <H1>$value{'title'}</H1>
 <H2>$value{'subtitle'}</H2>
 <ADDRESS>$value{'author'}</ADDRESS>
@@ -643,37 +701,102 @@ EOT
     warn "Can't write to $docu_toc: $!\n";
 }
 
+# print TOP
+if (open(FILE, "> $docu_top")) {
+    print "# creating $docu_top...\n" if $verbose;
+    print FILE <<EOT;
+$header
+<TITLE>$value{'title'} - Top of Document</TITLE>
+Go to the <A HREF="$docu_toc"> table of contents.
+<H1>$value{'title'}</H1>
+<H2>$value{'subtitle'}</H2>
+<ADDRESS>$value{'author'}</ADDRESS>
+<P>
+EOT
+    &print(*top_doc_lines, FILE);
+    close(FILE);
+} else {
+    warn "Can't write to $docu_top: $!\n";
+}
+
 # print document
-if ($split_doc) {
+if ($split_doc || $deepsplit) {
     $doc_num = 0;
-    while (@chapters) {
-	$chapter = shift(@chapters);
+    while (@splitnames) {
+	$chapter = shift(@splitnames);
+        # print "got chapter = $chapter\n";
+        @sec_num = split(/\./,@sec2sec{$chapter});
 	&next_doc;
 	if (open(FILE, "> $docu_doc")) {
 	    print "# creating $docu_doc...\n" if $verbose;
-	    $prev_doc = &doc_name($doc_num - 1);
-	    $prev_doc = '' if $doc_num == 1;
-	    $next_doc = &doc_name($doc_num + 1);
-	    $next_doc = '' unless @chapters;
+            # compute the section numbers
+            @next_sec_num = @sec_num;
+            ++@next_sec_num[$#sec_num];
+            $next_index = join('.',@next_sec_num);
+            @prev_sec_num = @sec_num;
+            --@prev_sec_num[$#sec_num];
+            $prev_index = join('.',@prev_sec_num);
+            @up_sec_num = @sec_num;
+            --$#up_sec_num;
+            $up_index = join('.',@up_sec_num);
+            @down_sec_num = @sec_num;
+            ++$#down_sec_num;
+            $down_sec_num[$#down_sec_num] = 1;
+            $down_index = join('.',@down_sec_num);
+            # if the sections really exist, find out where there are
+            if (defined($sec2file{$prev_index})) {
+                $prev_doc = $sec2file{$prev_index} . "#" . $sec2id{$prev_index};
+            }
+            else {
+                $prev_doc = '';
+            }
+            if (defined($sec2file{$next_index})) {
+                $next_doc = $sec2file{$next_index} . "#" . $sec2id{$next_index};
+            }
+            else {
+                $next_doc = '';
+            }
+            if (defined($sec2file{$up_index})) {
+                $up_doc = $sec2file{$up_index} . "#" . $sec2id{$up_index};
+            }
+            else {
+                $up_doc = '';
+            }
+            if (defined($sec2file{$down_index})) {
+                $down_doc = $sec2file{$down_index} . "#" . $sec2id{$down_index};
+            }
+            else {
+                $down_doc = '';
+            }
 	    print FILE "$header\n";
 	    print FILE "<TITLE>$value{'title'} - $chapter</TITLE>\n";
-	    print FILE "Go to the " if $prev_doc || $next_doc;
-	    print FILE &anchor('', $prev_doc, "previous") if $prev_doc;
-	    print FILE ", " if $prev_doc && $next_doc;
-	    print FILE &anchor('', $next_doc, "next") if $next_doc;
-	    print FILE " chapter.<P>\n" if $prev_doc || $next_doc;
+	    print FILE "Go to the " if $prev_doc;
+	    print FILE &anchor('', $prev_doc, "previous section") if $prev_doc;
+            print FILE "($sec2name{$prev_index}).\n" if $prev_doc;
+	    print FILE "Go to the " if $next_doc;
+	    print FILE &anchor('', $next_doc, "next section") if $next_doc;
+            print FILE "($sec2name{$next_index}).\n" if $next_doc;
+	    print FILE "Go to the ";
+	    print FILE &anchor('', $up_doc, "containing section") if $up_doc;
+            print FILE "($sec2name{$up_index}).\n" if $up_doc;
+	    print FILE &anchor('', $docu_toc, "table of contents.\n") if ! $up_doc;
+	    print FILE "Go to the ";
+	    print FILE &anchor('', $docu_top, "top.\n");
+	    print FILE "Go to the " if $down_doc;
+	    print FILE &anchor('', $down_doc, "first subsection") if $down_doc;
+            print FILE "($sec2name{$down_index}).\n" if $down_doc;
             @tmp_lines = ();
 	    $seen = 0;
             while (@doc_lines) {
 		$_ = shift(@doc_lines);
-		if (/^<H1><A NAME=\"SEC\d.+<\/A><\/H1>$/) {
+		if (/^<H1><A NAME=\"SEC.+<\/A><\/H1>$/) {
 		    if ($seen++) {
 			unshift(@doc_lines, $_);
 			last;
 		    }
                 }
-		if (/^<H2><A NAME=\"SEC\d.+<\/A><\/H2>$/) {
-		    if ($seen++) {
+		elsif ($deepsplit && /^<H\d><A NAME=\"SEC([^\"]+)/) {
+		    if ($is_split{$1} && $seen++) {
 			unshift(@doc_lines, $_);
 			last;
 		    }
@@ -718,6 +841,27 @@ EOT
 }
 
 print "# that's all folks\n" if $verbose;
+
+#+++############################################################################
+#                                                                              #
+# Functions added by CLJ for implementing -deepsplit                           #
+#                                                                              #
+#---############################################################################
+
+sub do_split {
+    if ($do_not_split) {
+        return(0);
+    }
+    elsif ($deepsplit) {
+        return(1);
+    }
+    elsif ($split_doc && $level == 1) {
+        return(1);
+    }
+    else {
+        return(0);
+    }
+}
 
 #+++############################################################################
 #                                                                              #

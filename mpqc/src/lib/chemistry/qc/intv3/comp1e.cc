@@ -33,13 +33,13 @@ Int1eV3::int_initialize_1e(int flags, int order)
    */
   if (order == 0) order = 1;
 
-  jmax1 = int_find_jmax(cs1);
-  jmax2 = int_find_jmax(cs2);
+  jmax1 = bs1_->max_angular_momentum();
+  jmax2 = bs2_->max_angular_momentum();
   jmax = jmax1 + jmax2;
 
   fjt_ = new FJT(jmax + 2*order);
 
-  nshell2 = int_find_ncartmax(cs1)*int_find_ncartmax(cs2);
+  nshell2 = bs1_->max_cartesian()*bs2_->max_cartesian();
 
   if (order == 0) {
     init_order = 0;
@@ -87,23 +87,23 @@ Int1eV3::overlap(int ish, int jsh)
   int gc1,gc2;
   int index,index1,index2;
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
-  FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,index1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,index2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = comp_shell_overlap(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
-      END_FOR_GCCART(index2)
-    END_FOR_GCCART(index1)
+      END_FOR_GCCART_GS(index2)
+    END_FOR_GCCART_GS(index1)
 
-  intv3_transform_1e(cartesianbuffer, buff, shell1, shell2);
+  intv3_transform_1e(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the overlap ints between functions in two shells.
@@ -122,21 +122,21 @@ Int1eV3::overlap_1der(int ish, int jsh,
     exit(1);
     }
 
-  centers_t *dercs;
-  if (idercs == 0) dercs = cs1;
-  else dercs = cs2;
+  RefGaussianBasisSet dercs;
+  if (idercs == 0) dercs = bs1_;
+  else dercs = bs2_;
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  ni = shell1->nfunc;
-  nj = shell2->nfunc;
+  ni = gshell1->nfunction();
+  nj = gshell2->nfunction();
 
 #if 0
   printf("zeroing %d*%d*3 elements of buff\n",ni,nj);
@@ -154,7 +154,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_overlap_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum)
+                                      RefGaussianBasisSet dercs, int centernum)
 {
   accum_shell_1der(buff,ish,jsh,dercs,centernum,comp_shell_overlap);
   }
@@ -178,12 +178,12 @@ Int1eV3::comp_shell_overlap(int gc1, int i1, int j1, int k1,
 
   /* Loop over the primitives in the shells. */
   result = 0.0;
-  for (i=0; i<shell1->nprim; i++) {
-    for (j=0; j<shell2->nprim; j++) {
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
 
       /* Compute the intermediates. */
-      exp1 = shell1->exp[i];
-      exp2 = shell2->exp[j];
+      exp1 = gshell1->exponent(i);
+      exp2 = gshell2->exponent(j);
       oozeta = 1.0/(exp1 + exp2);
       oo2zeta = 0.5*oozeta;
       AmB2 = 0.0;
@@ -196,7 +196,8 @@ Int1eV3::comp_shell_overlap(int gc1, int i1, int j1, int k1,
         }
       ss =   pow(3.141592653589793/(exp1+exp2),1.5)
            * exp(- oozeta * exp1 * exp2 * AmB2);
-      tmp     =  shell1->coef[gc1][i] * shell2->coef[gc2][j]
+      tmp     =  gshell1->coefficient_unnorm(gc1,i)
+               * gshell2->coefficient_unnorm(gc2,j)
                * comp_prim_overlap(i1,j1,k1,i2,j2,k2);
       if (exponent_weighted == 0) tmp *= exp1;
       else if (exponent_weighted == 1) tmp *= exp2;
@@ -221,18 +222,21 @@ Int1eV3::int_prim_overlap(shell_t *pshell1, shell_t *pshell2,
   double AmB,AmB2;
 
   /* Compute the intermediates. */
-  oozeta = 1.0/(shell1->exp[prim1] + shell2->exp[prim2]);
+  oozeta = 1.0/(gshell1->exponent(prim1) + gshell2->exponent(prim2));
   oo2zeta = 0.5*oozeta;
   AmB2 = 0.0;
   for (xyz=0; xyz<3; xyz++) {
-    Pi = oozeta*(shell1->exp[prim1] * A[xyz] + shell2->exp[prim2] * B[xyz]);
+    Pi = oozeta*(gshell1->exponent(prim1) * A[xyz]
+                 + gshell2->exponent(prim2) * B[xyz]);
     PmA[xyz] = Pi - A[xyz];
     PmB[xyz] = Pi - B[xyz];
     AmB = A[xyz] - B[xyz];
     AmB2 += AmB*AmB;
     }
-  ss =   pow(3.141592653589793/(shell1->exp[prim1]+shell2->exp[prim2]),1.5)
-       * exp(- oozeta * shell1->exp[prim1] * shell2->exp[prim2] * AmB2);
+  ss =   pow(3.141592653589793/(gshell1->exponent(prim1)
+                                +gshell2->exponent(prim2)),1.5)
+       * exp(- oozeta * gshell1->exponent(prim1)
+             * gshell2->exponent(prim2) * AmB2);
   return comp_prim_overlap(i1,j1,k1,i2,j2,k2);
   }
 
@@ -298,23 +302,23 @@ Int1eV3::kinetic(int ish, int jsh)
   int index;
   int gc1,gc2;
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
-  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,cart1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
-      END_FOR_GCCART(cart2)
-    END_FOR_GCCART(cart1)
+      END_FOR_GCCART_GS(cart2)
+    END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(cartesianbuffer, buff, shell1, shell2);
+  intv3_transform_1e(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 void
@@ -325,23 +329,23 @@ Int1eV3::int_accum_shell_kinetic(int ish, int jsh)
   int index;
   int gc1,gc2;
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
 
-  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,cart1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
-      END_FOR_GCCART(cart2)
-    END_FOR_GCCART(cart1)
-  intv3_accum_transform_1e(cartesianbuffer, buff, shell1, shell2);
+      END_FOR_GCCART_GS(cart2)
+    END_FOR_GCCART_GS(cart1)
+  intv3_accum_transform_1e(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the kinetic energy derivative integrals between functions
@@ -350,7 +354,7 @@ Int1eV3::int_accum_shell_kinetic(int ish, int jsh)
  */
 void
 Int1eV3::int_accum_shell_kinetic_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum)
+                                      RefGaussianBasisSet dercs, int centernum)
 {
   accum_shell_1der(buff,ish,jsh,dercs,centernum,comp_shell_kinetic);
   }
@@ -363,7 +367,7 @@ Int1eV3::int_accum_shell_kinetic_1der(int ish, int jsh,
  */
 void
 Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
-                          centers_t *dercs, int centernum,
+                          RefGaussianBasisSet dercs, int centernum,
                           double (Int1eV3::*shell_function)
                           (int,int,int,int,int,int,int,int))
 {
@@ -379,20 +383,20 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
    * else fprintf(stdout,"\n");
    */
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
-  FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
-      if ((cs1==cs2)&&(c1==c2)) {
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
+  FOR_GCCART_GS(gc1,index1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,index2,i2,j2,k2,gshell2)
+      if ((bs1_==bs2_)&&(c1==c2)) {
         if (    three_center
-             && !((cs1==third_centers)&&(c1==third_centernum))
-             && ((cs1==dercs)&&(c1==centernum))) {
+             && !((bs1_==third_centers)&&(c1==third_centernum))
+             && ((bs1_==dercs)&&(c1==centernum))) {
           for (i=0; i<3; i++) {
             /* Derivative wrt first shell. */
             exponent_weighted = 0;
@@ -420,7 +424,7 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
           for (i=0; i<3; i++) tmp[i] = 0.0;
           }
         }
-      else if ((cs1==dercs)&&(c1==centernum)) {
+      else if ((bs1_==dercs)&&(c1==centernum)) {
         for (i=0; i<3; i++) {
           exponent_weighted = 0;
           tmp[i] = 2.0 *
@@ -432,7 +436,7 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
             }
           }
         }
-      else if ((cs2==dercs)&&(c2==centernum)) {
+      else if ((bs2_==dercs)&&(c2==centernum)) {
         for (i=0; i<3; i++) {
           exponent_weighted = 1;
           tmp[i] = 2.0 *
@@ -456,10 +460,10 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
 
       /* Increment the pointer to the xyz for the next atom. */
       ctmp += 3;
-      END_FOR_GCCART(index2)
-    END_FOR_GCCART(index1)
+      END_FOR_GCCART_GS(index2)
+    END_FOR_GCCART_GS(index1)
 
-  intv3_accum_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
+  intv3_accum_transform_1e_xyz(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* Compute the kinetic energy for the shell.  The arguments are the
@@ -478,33 +482,36 @@ Int1eV3::comp_shell_kinetic(int gc1, int i1, int j1, int k1,
 
   /* Loop over the primitives in the shells. */
   result = 0.0;
-  for (i=0; i<shell1->nprim; i++) {
-    for (j=0; j<shell2->nprim; j++) {
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
 
       /* Compute the intermediates. */
-      oo2zeta_a = 0.5/shell1->exp[i];
-      oo2zeta_b = 0.5/shell2->exp[j];
-      oozeta = 1.0/(shell1->exp[i] + shell2->exp[j]);
+      oo2zeta_a = 0.5/gshell1->exponent(i);
+      oo2zeta_b = 0.5/gshell2->exponent(j);
+      oozeta = 1.0/(gshell1->exponent(i) + gshell2->exponent(j));
       oo2zeta = 0.5*oozeta;
-      xi = oozeta * shell1->exp[i] * shell2->exp[j];
+      xi = oozeta * gshell1->exponent(i) * gshell2->exponent(j);
       AmB2 = 0.0;
       for (xyz=0; xyz<3; xyz++) {
-        Pi = oozeta*(shell1->exp[i] * A[xyz] + shell2->exp[j] * B[xyz]);
+        Pi = oozeta*(gshell1->exponent(i) * A[xyz]
+                     + gshell2->exponent(j) * B[xyz]);
         PmA[xyz] = Pi - A[xyz];
         PmB[xyz] = Pi - B[xyz];
         AmB = A[xyz] - B[xyz];
         AmB2 += AmB*AmB;
         }
       /* The s integral kinetic energy. */
-      ss =   pow(3.141592653589793/(shell1->exp[i]+shell2->exp[j]),1.5)
+      ss =   pow(3.141592653589793/(gshell1->exponent(i)
+                                    +gshell2->exponent(j)),1.5)
            * exp(- xi * AmB2);
       sTs =  ss
            * xi
            * (3.0 - 2.0 * xi * AmB2);
-      tmp     =  shell1->coef[gc1][i] * shell2->coef[gc2][j]
+      tmp     =  gshell1->coefficient_unnorm(gc1,i)
+               * gshell2->coefficient_unnorm(gc2,j)
                * comp_prim_kinetic(i1,j1,k1,i2,j2,k2);
-      if (exponent_weighted == 0) tmp *= shell1->exp[i];
-      else if (exponent_weighted == 1) tmp *= shell2->exp[j];
+      if (exponent_weighted == 0) tmp *= gshell1->exponent(i);
+      else if (exponent_weighted == 1) tmp *= gshell2->exponent(j);
       result += tmp;
       }
     }
@@ -590,7 +597,7 @@ Int1eV3::comp_prim_kinetic(int i1, int j1, int k1,
  */
 void
 Int1eV3::int_accum_shell_nuclear_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum)
+                                      RefGaussianBasisSet dercs, int centernum)
 {
   int_accum_shell_nuclear_hf_1der(ish,jsh,dercs,centernum);
   int_accum_shell_nuclear_nonhf_1der(ish,jsh,dercs,centernum);
@@ -603,22 +610,25 @@ Int1eV3::int_accum_shell_nuclear_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_nuclear_hfc_1der(int ish, int jsh,
-                                          centers_t *dercs, int centernum)
+                                          RefGaussianBasisSet dercs,
+                                          int centernum)
 {
   /* If both ish and jsh are not on the der center,
    * then there's no correction. */
-  if (!(  (cs1==dercs)
-        &&(cs2==dercs)
-        &&(cs1->center_num[ish]==centernum)
-        &&(cs2->center_num[jsh]==centernum))) {
+  if (!(  (bs1_==dercs)
+        &&(bs2_==dercs)
+        &&(bs1_->shell_to_center(ish)==centernum)
+        &&(bs2_->shell_to_center(jsh)==centernum))) {
     return;
     }
 
   /* Compute the nuc attr part of the nuclear derivative for three equal
    * centers. */
   scale_shell_result = 1;
-  result_scale_factor = -cs1->center[centernum].charge;
-  C = cs1->center[centernum].r;
+  result_scale_factor = -bs1_->molecule()->atom(centernum).element().charge();
+  for (int xyz=0; xyz<3; xyz++) {
+      C[xyz] = bs1_->r(centernum,xyz);
+    }
   accum_shell_efield(buff,ish,jsh);
   scale_shell_result = 0;
 
@@ -630,29 +640,34 @@ Int1eV3::int_accum_shell_nuclear_hfc_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
-                                         centers_t *dercs, int centernum)
+                                         RefGaussianBasisSet dercs,
+                                         int centernum)
 {
 
   /* If both ish and jsh are on the der center, then the contrib is zero. */
-  if (  (cs1==dercs)
-      &&(cs2==dercs)
-      &&(cs1->center_num[ish]==centernum)
-      &&(cs2->center_num[jsh]==centernum)) {
+  if (  (bs1_==dercs)
+      &&(bs2_==dercs)
+      &&(bs1_->shell_to_center(ish)==centernum)
+      &&(bs2_->shell_to_center(jsh)==centernum)) {
     return;
     }
 
   /* Compute the nuc attr part of the nuclear derivative. */
-  if (cs1 == dercs) {
+  if (bs1_ == dercs) {
     scale_shell_result = 1;
-    result_scale_factor = -cs1->center[centernum].charge;
-    C = cs1->center[centernum].r;
+    result_scale_factor= -bs1_->molecule()->atom(centernum).element().charge();
+    for (int xyz=0; xyz<3; xyz++) {
+        C[xyz] = bs1_->r(centernum,xyz);
+      }
     accum_shell_efield(buff,ish,jsh);
     scale_shell_result = 0;
     }
-  else if (cs2 == dercs) {
+  else if (bs2_ == dercs) {
     scale_shell_result = 1;
-    result_scale_factor = -cs2->center[centernum].charge;
-    C = cs2->center[centernum].r;
+    result_scale_factor= -bs2_->molecule()->atom(centernum).element().charge();
+    for (int xyz=0; xyz<3; xyz++) {
+        C[xyz] = bs2_->r(centernum,xyz);
+      }
     accum_shell_efield(buff,ish,jsh);
     scale_shell_result = 0;
     }
@@ -665,28 +680,33 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                            centers_t *dercs, int centernum)
+                                            RefGaussianBasisSet dercs,
+                                            int centernum)
 {
   int i;
 
   /* Get the basis function part of the nuclear derivative. */
   three_center = 1;
-  third_centers = cs1;
-  for (i=0; i<cs1->n; i++) {
+  third_centers = bs1_;
+  for (i=0; i<bs1_->ncenter(); i++) {
     third_centernum = i;
-    C = cs1->center[i].r;
+    for (int xyz=0; xyz<3; xyz++) {
+        C[xyz] = bs1_->r(i,xyz);
+      }
     scale_shell_result = 1;
-    result_scale_factor = -cs1->center[i].charge;
+    result_scale_factor = -bs1_->molecule()->atom(i).element().charge();
     accum_shell_1der(buff,ish,jsh,dercs,centernum,comp_shell_nuclear);
     scale_shell_result = 0;
     }
-  if (cs2!=cs1) {
-    third_centers = cs2;
-    for (i=0; i<cs2->n; i++) {
+  if (bs2_!=bs1_) {
+    third_centers = bs2_;
+    for (i=0; i<bs2_->ncenter(); i++) {
       third_centernum = i;
-      C = cs2->center[i].r;
+      for (int xyz=0; xyz<3; xyz++) {
+          C[xyz] = bs2_->r(i,xyz);
+        }
       scale_shell_result = 1;
-      result_scale_factor = -cs2->center[i].charge;
+      result_scale_factor = -bs2_->molecule()->atom(i).element().charge();
       accum_shell_1der(buff,ish,jsh,dercs,centernum,comp_shell_nuclear);
       scale_shell_result = 0;
       }
@@ -704,7 +724,9 @@ Int1eV3::int_accum_shell_efield(int ish, int jsh,
                                 double *position)
 {
   scale_shell_result = 0;
-  C = position;
+  for (int xyz=0; xyz<3; xyz++) {
+      C[xyz] = position[xyz];
+    }
   accum_shell_efield(buff,ish,jsh);
 }
 
@@ -728,27 +750,27 @@ Int1eV3::accum_shell_efield(double *buff, int ish, int jsh)
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,index1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,index2,i2,j2,k2,gshell2)
       comp_shell_efield(efield,gc1,i1,j1,k1,gc2,i2,j2,k2);
       if (scale_shell_result) {
         for (i=0; i<3; i++) efield[i] *= result_scale_factor;
         }
       for (i=0; i<3; i++) tmp[i] = efield[i];
       tmp += 3;
-      END_FOR_GCCART(index2)
-    END_FOR_GCCART(index1)
+      END_FOR_GCCART_GS(index2)
+    END_FOR_GCCART_GS(index1)
 
-  intv3_accum_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
+  intv3_accum_transform_1e_xyz(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the efield integrals between functions in two shells.
@@ -759,7 +781,9 @@ void
 Int1eV3::efield(int ish, int jsh, double *position)
 {
   scale_shell_result = 0;
-  C = position;
+  for (int xyz=0; xyz<3; xyz++) {
+      C[xyz] = position[xyz];
+    }
 
   int i;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
@@ -773,27 +797,27 @@ Int1eV3::efield(int ish, int jsh, double *position)
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,index1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,index2,i2,j2,k2,gshell2)
       comp_shell_efield(efield,gc1,i1,j1,k1,gc2,i2,j2,k2);
       if (scale_shell_result) {
         for (i=0; i<3; i++) efield[i] *= result_scale_factor;
         }
       for (i=0; i<3; i++) tmp[i] = efield[i];
       tmp += 3;
-      END_FOR_GCCART(index2)
-    END_FOR_GCCART(index1)
+      END_FOR_GCCART_GS(index2)
+    END_FOR_GCCART_GS(index1)
 
-  intv3_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
+  intv3_transform_1e_xyz(cartesianbuffer, buff, gshell1, gshell2);
 }
 
 /* This computes the nuc rep energy integrals between functions in two shells.
@@ -813,38 +837,42 @@ Int1eV3::nuclear(int ish, int jsh)
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
 
-  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,cart1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = 0.0;
-      /* Loop thru the centers on cs1. */
-      for (i=0; i<cs1->n; i++) {
-        C = cs1->center[i].r;
+      /* Loop thru the centers on bs1_. */
+      for (i=0; i<bs1_->ncenter(); i++) {
+        for (int xyz=0; xyz<3; xyz++) {
+          C[xyz] = bs1_->r(i,xyz);
+          }
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                       * cs1->center[i].charge;
+                       * bs1_->molecule()->atom(i).element().charge();
         }
-      /* Loop thru the centers on cs2 if necessary. */
-      if (cs2 != cs1) {
-        for (i=0; i<cs2->n; i++) {
-          C = cs2->center[i].r;
+      /* Loop thru the centers on bs2_ if necessary. */
+      if (bs2_ != bs1_) {
+        for (i=0; i<bs2_->ncenter(); i++) {
+          for (int xyz=0; xyz<3; xyz++) {
+            C[xyz] = bs2_->r(i,xyz);
+            }
           cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                         * cs2->center[i].charge;
+                         * bs2_->molecule()->atom(i).element().charge();
           }
         }
       index++;
-      END_FOR_GCCART(cart2)
-    END_FOR_GCCART(cart1)
+      END_FOR_GCCART_GS(cart2)
+    END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(cartesianbuffer, buff, shell1, shell2);
+  intv3_transform_1e(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the integrals between functions in two shells for
@@ -868,31 +896,33 @@ Int1eV3::int_accum_shell_point_charge(int ish, int jsh,
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
 
-  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,cart1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       /* Loop thru the point charges. */
       tmp = 0.0;
       for (i=0; i<ncharge; i++) {
-        C = position[i];
+          for (int xyz=0; xyz<3; xyz++) {
+              C[xyz] = position[i][xyz];
+            }
         tmp -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
                        * charge[i];
         }
       cartesianbuffer[index] = tmp;
       index++;
-      END_FOR_GCCART(cart2)
-    END_FOR_GCCART(cart1)
+      END_FOR_GCCART_GS(cart2)
+    END_FOR_GCCART_GS(cart1)
 
-  intv3_accum_transform_1e(cartesianbuffer, buff, shell1, shell2);
+  intv3_accum_transform_1e(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the integrals between functions in two shells for
@@ -914,30 +944,32 @@ Int1eV3::point_charge(int ish, int jsh,
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
 
-  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,cart1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = 0.0;
       /* Loop thru the point charges. */
       for (i=0; i<ncharge; i++) {
-        C = position[i];
+        for (int xyz=0; xyz<3; xyz++) {
+          C[xyz] = position[i][xyz];
+          }
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
                                 * charge[i];
         }
       index++;
-      END_FOR_GCCART(cart2)
-    END_FOR_GCCART(cart1)
+      END_FOR_GCCART_GS(cart2)
+    END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(cartesianbuffer, buff, shell1, shell2);
+  intv3_transform_1e(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 
@@ -958,38 +990,42 @@ Int1eV3::hcore(int ish, int jsh)
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
   index = 0;
-  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,cart1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
-      /* Loop thru the centers on cs1. */
-      for (i=0; i<cs1->n; i++) {
-        C = cs1->center[i].r;
+      /* Loop thru the centers on bs1_. */
+      for (i=0; i<bs1_->ncenter(); i++) {
+        for (int xyz=0; xyz<3; xyz++) {
+          C[xyz] = bs1_->r(i,xyz);
+          }
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                * cs1->center[i].charge;
+                                * bs1_->molecule()->atom(i).element().charge();
         }
-      /* Loop thru the centers on cs2 if necessary. */
-      if (cs2 != cs1) {
-        for (i=0; i<cs2->n; i++) {
-          C = cs2->center[i].r;
+      /* Loop thru the centers on bs2_ if necessary. */
+      if (bs2_ != bs1_) {
+        for (i=0; i<bs2_->ncenter(); i++) {
+          for (int xyz=0; xyz<3; xyz++) {
+            C[xyz] = bs2_->r(i,xyz);
+            }
           cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                * cs2->center[i].charge;
+                                * bs2_->molecule()->atom(i).element().charge();
           }
         }
       index++;
-      END_FOR_GCCART(cart2)
-    END_FOR_GCCART(cart1)
+      END_FOR_GCCART_GS(cart2)
+    END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(cartesianbuffer, buff, shell1, shell2);
+  intv3_transform_1e(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the 1e Hamiltonian deriv ints between functions in two shells.
@@ -1008,21 +1044,21 @@ Int1eV3::hcore_1der(int ish, int jsh,
     exit(1);
     }
 
-  centers_t *dercs;
-  if (idercs == 0) dercs = cs1;
-  else dercs = cs2;
+  RefGaussianBasisSet dercs;
+  if (idercs == 0) dercs = bs1_;
+  else dercs = bs2_;
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  ni = shell1->nfunc;
-  nj = shell2->nfunc;
+  ni = gshell1->nfunction();
+  nj = gshell2->nfunction();
 
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -1048,21 +1084,21 @@ Int1eV3::kinetic_1der(int ish, int jsh,
     exit(1);
     }
 
-  centers_t *dercs;
-  if (idercs == 0) dercs = cs1;
-  else dercs = cs2;
+  RefGaussianBasisSet dercs;
+  if (idercs == 0) dercs = bs1_;
+  else dercs = bs2_;
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  ni = shell1->nfunc;
-  nj = shell2->nfunc;
+  ni = gshell1->nfunction();
+  nj = gshell2->nfunction();
 
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -1086,21 +1122,21 @@ Int1eV3::nuclear_1der(int ish, int jsh, int idercs, int centernum)
     exit(1);
     }
 
-  centers_t *dercs;
-  if (idercs == 0) dercs = cs1;
-  else dercs = cs2;
+  RefGaussianBasisSet dercs;
+  if (idercs == 0) dercs = bs1_;
+  else dercs = bs2_;
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  ni = shell1->nfunc;
-  nj = shell2->nfunc;
+  ni = gshell1->nfunction();
+  nj = gshell2->nfunction();
 
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -1115,7 +1151,7 @@ Int1eV3::nuclear_1der(int ish, int jsh, int idercs, int centernum)
  */
 void
 Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
-                                   centers_t *dercs, int centernum)
+                                   RefGaussianBasisSet dercs, int centernum)
 {
   int i;
   int c1,s1,c2,s2;
@@ -1126,17 +1162,17 @@ Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  ni = shell1->nfunc;
-  nj = shell2->nfunc;
+  ni = gshell1->nfunction();
+  nj = gshell2->nfunction();
 
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -1151,7 +1187,7 @@ Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum)
+                                      RefGaussianBasisSet dercs, int centernum)
 {
   int i;
   int c1,s1,c2,s2;
@@ -1162,17 +1198,17 @@ Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
     exit(1);
     }
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
 
-  ni = shell1->nfunc;
-  nj = shell2->nfunc;
+  ni = gshell1->nfunction();
+  nj = gshell2->nfunction();
 
 #if 0
   printf("int_shell_nuclear_nonhf_1der: zeroing %d doubles in buff\n",ni*nj*3);
@@ -1205,17 +1241,18 @@ Int1eV3::comp_shell_nuclear(int gc1, int i1, int j1, int k1,
 
   /* Loop over the primitives in the shells. */
   result = 0.0;
-  for (i=0; i<shell1->nprim; i++) {
-    for (j=0; j<shell2->nprim; j++) {
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
 
       /* Compute the intermediates. */
-      zeta = shell1->exp[i] + shell2->exp[j];
+      zeta = gshell1->exponent(i) + gshell2->exponent(j);
       oozeta = 1.0/zeta;
       oo2zeta = 0.5*oozeta;
       AmB2 = 0.0;
       PmC2 = 0.0;
       for (xyz=0; xyz<3; xyz++) {
-        Pi = oozeta*(shell1->exp[i] * A[xyz] + shell2->exp[j] * B[xyz]);
+        Pi = oozeta*(gshell1->exponent(i) * A[xyz]
+                     + gshell2->exponent(j) * B[xyz]);
         PmA[xyz] = Pi - A[xyz];
         PmB[xyz] = Pi - B[xyz];
         PmC[xyz] = Pi - C[xyz];
@@ -1225,8 +1262,10 @@ Int1eV3::comp_shell_nuclear(int gc1, int i1, int j1, int k1,
         }
 
       /* The auxillary integral coeficients. */
-      auxcoef =   2.0 * 3.141592653589793/(shell1->exp[i]+shell2->exp[j])
-           * exp(- oozeta * shell1->exp[i] * shell2->exp[j] * AmB2);
+      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+                                           +gshell2->exponent(j))
+           * exp(- oozeta * gshell1->exponent(i)
+                 * gshell2->exponent(j) * AmB2);
 
       /* The Fm(U) intermediates. */
       fjttable_ = fjt_->values(am,zeta*PmC2);
@@ -1238,11 +1277,12 @@ Int1eV3::comp_shell_nuclear(int gc1, int i1, int j1, int k1,
         }
 
       /* Compute the nuclear attraction integral. */
-      tmp     =  shell1->coef[gc1][i] * shell2->coef[gc2][j]
+      tmp     =  gshell1->coefficient_unnorm(gc1,i)
+               * gshell2->coefficient_unnorm(gc2,j)
                * comp_prim_nuclear(i1,j1,k1,i2,j2,k2,0);
 
-      if (exponent_weighted == 0) tmp *= shell1->exp[i];
-      else if (exponent_weighted == 1) tmp *= shell2->exp[j];
+      if (exponent_weighted == 0) tmp *= gshell1->exponent(i);
+      else if (exponent_weighted == 1) tmp *= gshell2->exponent(j);
 
       result += tmp;
       }
@@ -1351,17 +1391,17 @@ Int1eV3::comp_shell_efield(double *efield,
 
   /* Loop over the primitives in the shells. */
   for (xyz=0; xyz<3; xyz++) result[xyz] = 0.0;
-  for (i=0; i<shell1->nprim; i++) {
-    for (j=0; j<shell2->nprim; j++) {
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
 
       /* Compute the intermediates. */
-      zeta = shell1->exp[i] + shell2->exp[j];
+      zeta = gshell1->exponent(i) + gshell2->exponent(j);
       oozeta = 1.0/zeta;
       oo2zeta = 0.5*oozeta;
       AmB2 = 0.0;
       PmC2 = 0.0;
       for (xyz=0; xyz<3; xyz++) {
-        Pi = oozeta*(shell1->exp[i] * A[xyz] + shell2->exp[j] * B[xyz]);
+        Pi = oozeta*(gshell1->exponent(i) * A[xyz] + gshell2->exponent(j) * B[xyz]);
         PmA[xyz] = Pi - A[xyz];
         PmB[xyz] = Pi - B[xyz];
         PmC[xyz] = Pi - C[xyz];
@@ -1371,8 +1411,10 @@ Int1eV3::comp_shell_efield(double *efield,
         }
 
       /* The auxillary integral coeficients. */
-      auxcoef =   2.0 * 3.141592653589793/(shell1->exp[i]+shell2->exp[j])
-           * exp(- oozeta * shell1->exp[i] * shell2->exp[j] * AmB2);
+      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+                                           +gshell2->exponent(j))
+           * exp(- oozeta * gshell1->exponent(i)
+                 * gshell2->exponent(j) * AmB2);
 
       /* The Fm(U) intermediates. */
       fjttable_ = fjt_->values(am+1,zeta*PmC2);
@@ -1385,7 +1427,8 @@ Int1eV3::comp_shell_efield(double *efield,
 
       /* Compute the nuclear attraction integral. */
       for (xyz=0; xyz<3; xyz++) {
-        result[xyz] +=  shell1->coef[gc1][i] * shell2->coef[gc2][j]
+        result[xyz] +=  gshell1->coefficient_unnorm(gc1,i)
+                      * gshell2->coefficient_unnorm(gc2,j)
                       * comp_prim_efield(xyz,i1,j1,k1,i2,j2,k2,0);
         }
       }
@@ -1507,27 +1550,27 @@ Int1eV3::int_accum_shell_dipole(int ish, int jsh,
   int index,index1,index2;
   double dipole[3];
 
-  C = com;
+  for (int xyz=0; xyz<3; xyz++) C[xyz] = com[xyz];
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
-  FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,index1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,index2,i2,j2,k2,gshell2)
       comp_shell_dipole(dipole,gc1,i1,j1,k1,gc2,i2,j2,k2);
       for(mu=0; mu < 3; mu++) {
         cartesianbuffer[index] = dipole[mu];
         index++;
         }
-      END_FOR_GCCART(index2)
-    END_FOR_GCCART(index1)
-  intv3_accum_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
+      END_FOR_GCCART_GS(index2)
+    END_FOR_GCCART_GS(index1)
+  intv3_accum_transform_1e_xyz(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the dipole integrals between functions in two shells.
@@ -1544,27 +1587,27 @@ Int1eV3::dipole(int ish, int jsh, double *com)
   int index,index1,index2;
   double dipole[3];
 
-  C = com;
+  for (int xyz=0; xyz<3; xyz++) C[xyz] = com[xyz];
 
-  c1 = cs1->center_num[ish];
-  c2 = cs2->center_num[jsh];
-  s1 = cs1->shell_num[ish];
-  s2 = cs2->shell_num[jsh];
-  A = cs1->center[c1].r;
-  B = cs2->center[c2].r;
-  shell1 = &(cs1->center[c1].basis.shell[s1]);
-  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
   index = 0;
-  FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
+  FOR_GCCART_GS(gc1,index1,i1,j1,k1,gshell1)
+    FOR_GCCART_GS(gc2,index2,i2,j2,k2,gshell2)
       comp_shell_dipole(dipole,gc1,i1,j1,k1,gc2,i2,j2,k2);
       for(mu=0; mu < 3; mu++) {
         cartesianbuffer[index] = dipole[mu];
         index++;
         }
-      END_FOR_GCCART(index2)
-    END_FOR_GCCART(index1)
-  intv3_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
+      END_FOR_GCCART_GS(index2)
+    END_FOR_GCCART_GS(index1)
+  intv3_transform_1e_xyz(cartesianbuffer, buff, gshell1, gshell2);
   }
 
 void
@@ -1584,12 +1627,12 @@ Int1eV3::comp_shell_dipole(double* dipole,
   if ((i1<0)||(j1<0)||(k1<0)||(i2<0)||(j2<0)||(k2<0)) return;
 
   /* Loop over the primitives in the shells. */
-  for (i=0; i<shell1->nprim; i++) {
-    for (j=0; j<shell2->nprim; j++) {
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
 
       /* Compute the intermediates. */
-      exp1 = shell1->exp[i];
-      exp2 = shell2->exp[j];
+      exp1 = gshell1->exponent(i);
+      exp2 = gshell2->exponent(j);
       oozeta = 1.0/(exp1 + exp2);
       oo2zeta = 0.5*oozeta;
       AmB2 = 0.0;
@@ -1604,7 +1647,8 @@ Int1eV3::comp_shell_dipole(double* dipole,
       ss =   pow(3.141592653589793/(exp1+exp2),1.5)
            * exp(- oozeta * exp1 * exp2 * AmB2);
       sMus = ss * PmC[mu];
-      tmp     =  shell1->coef[gc1][i] * shell2->coef[gc2][j];
+      tmp     =  gshell1->coefficient_unnorm(gc1,i)
+               * gshell2->coefficient_unnorm(gc2,j);
       if (exponent_weighted == 0) tmp *= exp1;
       else if (exponent_weighted == 1) tmp *= exp2;
       dipole[0] += tmp * comp_prim_dipole(1,0,0,i1,j1,k1,i2,j2,k2);

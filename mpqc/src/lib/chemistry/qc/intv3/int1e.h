@@ -15,12 +15,16 @@ extern "C" {
 
 class Int1eV3: public VRefCount {
   protected:
-    centers_t *cs1;
-    centers_t *cs2;
     RefGaussianBasisSet bs1_;
     RefGaussianBasisSet bs2_;
     double *fjttable_;
     RefFJT fjt_;
+    int bs1_shell_offset_;
+    int bs2_shell_offset_;
+    int bs1_func_offset_;
+    int bs2_func_offset_;
+    int bs1_prim_offset_;
+    int bs2_prim_offset_;
 
     // statics from comp_1e.c:
   protected:
@@ -29,21 +33,21 @@ class Int1eV3: public VRefCount {
     double sMus;
     double sTs;
     double xi;
-    double *A;
-    double *B;
-    double *C;
+    double A[3];
+    double B[3];
+    double C[3];
     double ss;
     double PmA[3];
     double PmB[3];
     double PmC[3];
     double zeta;
     double oo2zeta;
-    shell_t *shell1, *shell2;
+    GaussianShell *gshell1, *gshell2;
     int exponent_weighted;
     int scale_shell_result;
     double result_scale_factor;
     int three_center;
-    centers_t *third_centers;
+    RefGaussianBasisSet third_centers;
     int third_centernum;
     int init_order;
     double *buff;
@@ -53,7 +57,7 @@ class Int1eV3: public VRefCount {
   protected:
     void accum_shell_1der(
         double *buff, int ish, int jsh,
-        centers_t *dercs, int centernum,
+        RefGaussianBasisSet dercs, int centernum,
         double (Int1eV3::*)(int,int,int,int,int,int,int,int)
         );
     double comp_shell_overlap(int gc1, int i1, int j1, int k1,
@@ -83,7 +87,8 @@ class Int1eV3: public VRefCount {
     // routines from comp_1e:
   protected:
     void int_accum_shell_overlap_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum);
+                                      RefGaussianBasisSet dercs,
+                                      int centernum);
     void int_done_1e();
     void int_initialize_1e(int flags, int order);
     double int_prim_overlap(shell_t *pshell1, shell_t *pshell2,
@@ -93,31 +98,39 @@ class Int1eV3: public VRefCount {
                             int i2, int j2, int k2);
     void int_accum_shell_kinetic(int ish, int jsh);
     void int_accum_shell_kinetic_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum);
+                                      RefGaussianBasisSet dercs,
+                                      int centernum);
     void int_accum_shell_nuclear_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum);
+                                      RefGaussianBasisSet dercs,
+                                      int centernum);
     void int_accum_shell_nuclear_hfc_1der(int ish, int jsh,
-                                          centers_t *dercs, int centernum);
+                                          RefGaussianBasisSet dercs,
+                                          int centernum);
     void int_accum_shell_nuclear_hf_1der(int ish, int jsh,
-                                         centers_t *dercs, int centernum);
+                                         RefGaussianBasisSet dercs,
+                                         int centernum);
     void int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                            centers_t *dercs, int centernum);
+                                            RefGaussianBasisSet dercs,
+                                            int centernum);
     void int_accum_shell_efield(int ish, int jsh,
                                 double *position);
     void int_accum_shell_point_charge(int ish, int jsh,
                                       int ncharge, double* charge,
                                       double** position);
     void int_shell_nuclear_hf_1der(int ish, int jsh,
-                                   centers_t *dercs, int centernum);
+                                   RefGaussianBasisSet dercs,
+                                   int centernum);
     void int_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                      centers_t *dercs, int centernum);
+                                      RefGaussianBasisSet dercs,
+                                      int centernum);
     void int_accum_shell_dipole(int ish, int jsh,
                                 double *com);
 
     // from offsets.cc
   protected:
-    void int_initialize_offsets1(centers_t *cs1, centers_t *cs2);
-    void int_done_offsets1(centers_t *cs1, centers_t *cs2);
+    void int_initialize_offsets1(RefGaussianBasisSet cs1,
+                                 RefGaussianBasisSet cs2);
+    void int_done_offsets1(RefGaussianBasisSet cs1, RefGaussianBasisSet cs2);
 
   public:
     Int1eV3(const RefGaussianBasisSet&,

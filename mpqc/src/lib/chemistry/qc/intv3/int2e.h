@@ -23,6 +23,19 @@ class Int2eV3: public VRefCount {
     RefGaussianBasisSet bs3_;
     RefGaussianBasisSet bs4_;
 
+    int bs1_shell_offset_;
+    int bs2_shell_offset_;
+    int bs3_shell_offset_;
+    int bs4_shell_offset_;
+    int bs1_func_offset_;
+    int bs2_func_offset_;
+    int bs3_func_offset_;
+    int bs4_func_offset_;
+    int bs1_prim_offset_;
+    int bs2_prim_offset_;
+    int bs3_prim_offset_;
+    int bs4_prim_offset_;
+
     // statics from vrr.cc
   public:
     enum { STORAGE_CHUNK = 4096 };

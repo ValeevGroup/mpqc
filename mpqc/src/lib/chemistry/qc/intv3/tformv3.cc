@@ -266,18 +266,19 @@ copy_to_source(double *integrals, int nsource)
 }
 
 static void
-do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
+do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
+                int chunk)
 {
   int i, j;
   int ogc1, ogc2;
   int ogc1pure, ogc2pure;
   int am1, am2;
-  int pure1 = have_pure(sh1);
-  int pure2 = have_pure(sh2);
-  int ncart1 = int_ncart(sh1);
-  int ncart2 = int_ncart(sh2);
-  int nfunc1 = sh1->nfunc;
-  int nfunc2 = sh2->nfunc;
+  int pure1 = sh1->has_pure();
+  int pure2 = sh2->has_pure();
+  int ncart1 = sh1->ncartesian();
+  int ncart2 = sh2->ncartesian();
+  int nfunc1 = sh1->nfunction();
+  int nfunc2 = sh2->nfunction();
   int nfunci, nfuncj;
 
   if (!pure1 && !pure2) return;
@@ -286,20 +287,20 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
    * transforming the first index. */
   if (pure1) {
       copy_to_source(integrals, ncart1*ncart2*chunk);
-      memset(integrals, 0, sizeof(double)*sh1->nfunc*ncart2*chunk);
+      memset(integrals, 0, sizeof(double)*sh1->nfunction()*ncart2*chunk);
 
       ogc1 = 0;
       ogc1pure = 0;
-      for (i=0; i<sh1->ncon; i++) {
-          am1 = sh1->type[i].am;
-          nfunci = INT_NFUNC(sh1->type[i].puream, sh1->type[i].am);
+      for (i=0; i<sh1->ncontraction(); i++) {
+          am1 = sh1->am(i);
+          nfunci = sh1->nfunction(i);
           ogc2 = 0;
-          for (j=0; j<sh2->ncon; j++) {
-              am2 = sh2->type[j].am;
-              nfuncj = INT_NFUNC(sh2->type[j].puream, sh2->type[j].am);
+          for (j=0; j<sh2->ncontraction(); j++) {
+              am2 = sh2->am(j);
+              nfuncj = sh2->nfunction(j);
 
-              if (sh1->type[i].puream) {
-                  SphericalTransformIterV3 trans(sh1->type[i].am);
+              if (sh1->is_pure(i)) {
+                  SphericalTransformIterV3 trans(sh1->am(i));
                   do_sparse_transform11(source, integrals, chunk,
                                         trans,
                                         ogc1,
@@ -320,25 +321,26 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
 
   if (pure2) {
       copy_to_source(integrals, nfunc1*ncart2*chunk);
-      memset(integrals, 0, sizeof(double)*sh1->nfunc*sh2->nfunc*chunk);
+      memset(integrals, 0,
+             sizeof(double)*sh1->nfunction()*sh2->nfunction()*chunk);
 
       ogc1 = 0;
-      for (i=0; i<sh1->ncon; i++) {
-          am1 = sh1->type[i].am;
-          nfunci = INT_NFUNC(sh1->type[i].puream, sh1->type[i].am);
+      for (i=0; i<sh1->ncontraction(); i++) {
+          am1 = sh1->am(i);
+          nfunci = sh1->nfunction(i);
           ogc2 = 0;
           ogc2pure = 0;
-          for (j=0; j<sh2->ncon; j++) {
-              am2 = sh2->type[j].am;
-              nfuncj = INT_NFUNC(sh2->type[j].puream, sh2->type[j].am);
+          for (j=0; j<sh2->ncontraction(); j++) {
+              am2 = sh2->am(j);
+              nfuncj = sh2->nfunction(j);
 
-              if (sh2->type[j].puream) {
-                  SphericalTransformIterV3 trans(sh2->type[j].am);
+              if (sh2->is_pure(j)) {
+                  SphericalTransformIterV3 trans(sh2->am(j));
                   do_sparse_transform12(source, integrals, chunk,
                                         trans,
                                         INT_NPURE(am1), ogc1,
                                         ncart2, ogc2,
-                                        sh2->nfunc, ogc2pure);
+                                        sh2->nfunction(), ogc2pure);
                 }
               else {
                   do_copy1(source, integrals, chunk,
@@ -356,14 +358,14 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
 /* it is ok for integrals and target to overlap */
 static void
 transform_1e(double *integrals, double *target,
-             shell_t *sh1, shell_t *sh2, int chunk)
+             GaussianShell *sh1, GaussianShell *sh2, int chunk)
 {
   int ntarget;
 
   do_transform_1e(integrals, sh1, sh2, chunk);
 
   /* copy the integrals to the target, if necessary */
-  ntarget = sh1->nfunc * sh2->nfunc;
+  ntarget = sh1->nfunction() * sh2->nfunction();
   if (integrals != target) {
       memmove(target, integrals, ntarget*sizeof(double)*chunk);
     }
@@ -372,41 +374,41 @@ transform_1e(double *integrals, double *target,
 /* it is not ok for integrals and target to overlap */
 static void
 accum_transform_1e(double *integrals, double *target,
-                   shell_t *sh1, shell_t *sh2, int chunk)
+                   GaussianShell *sh1, GaussianShell *sh2, int chunk)
 {
   int i, ntarget;
 
   do_transform_1e(integrals, sh1, sh2, chunk);
 
   /* accum the integrals to the target */
-  ntarget = sh1->nfunc * sh2->nfunc * chunk;
+  ntarget = sh1->nfunction() * sh2->nfunction() * chunk;
   for (i=0; i<ntarget; i++) target[i] += integrals[i];
 }
 
 void
 intv3_transform_1e(double *integrals, double *target,
-             shell_t *sh1, shell_t *sh2)
+                   GaussianShell *sh1, GaussianShell *sh2)
 {
   transform_1e(integrals, target, sh1, sh2, 1);
 }
 
 void
 intv3_accum_transform_1e(double *integrals, double *target,
-                   shell_t *sh1, shell_t *sh2)
+                         GaussianShell *sh1, GaussianShell *sh2)
 {
   accum_transform_1e(integrals, target, sh1, sh2, 1);
 }
 
 void
 intv3_transform_1e_xyz(double *integrals, double *target,
-             shell_t *sh1, shell_t *sh2)
+                       GaussianShell *sh1, GaussianShell *sh2)
 {
   transform_1e(integrals, target, sh1, sh2, 3);
 }
 
 void
 intv3_accum_transform_1e_xyz(double *integrals, double *target,
-                   shell_t *sh1, shell_t *sh2)
+                             GaussianShell *sh1, GaussianShell *sh2)
 {
   accum_transform_1e(integrals, target, sh1, sh2, 3);
 }

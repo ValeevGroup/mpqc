@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.2  1996/07/17 23:58:19  cljanss
+ * First pass at removing centers_t.  More to come.
+ *
  * Revision 1.1  1996/05/30 19:05:43  cljanss
  * Updated Integral interface. Added IntegralV3.  Removed IntegralV2.
  *
@@ -65,7 +68,17 @@
     (index)=0;\
     FOR_CART(i,j,k,(sh)->type[gc].am)
 
+#define FOR_GCCART_GS(gc,index,i,j,k,sh)\
+    for ((gc)=0; (gc)<(sh)->ncontraction(); (gc)++) {\
+    (index)=0;\
+    FOR_CART(i,j,k,(sh)->am(gc))
+
 #define END_FOR_GCCART(index)\
+    (index)++;\
+    END_FOR_CART\
+    }
+
+#define END_FOR_GCCART_GS(index)\
     (index)++;\
     END_FOR_CART\
     }

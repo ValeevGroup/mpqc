@@ -103,7 +103,8 @@ Int2eV3::int_initialize_erep(int storage, int order,
   else int_store2 = 0;
 
   /* Allocate storage for the intermediates. */
-  alloc_inter(cs4->prim_offset + cs4->nprim, cs4->shell_offset + cs4->nshell);
+  alloc_inter(cs4->prim_offset + cs4->nprim,
+              bs4_shell_offset_ + bs4_->nshell());
 
   /* Set up the one shell intermediates, block by block. */
   if (int_store1) {

@@ -84,15 +84,15 @@ Int2eV3::int_init_buildgc(int order,
   jmax_for_con = (int *) malloc(sizeof(int)*nc1);
   for (i=0; i<nc1; i++) {
     int tmp;
-    jmax_for_con[i] = int_find_jmax_for_con(int_cs1,i);
-    if (  (int_cs2 != int_cs1)
-        &&((tmp=int_find_jmax_for_con(int_cs2,i))>jmax_for_con[i]))
+    jmax_for_con[i] = bs1_->max_am_for_contraction(i);
+    if (  (bs2_ != bs1_)
+        &&((tmp=bs2_->max_am_for_contraction(i))>jmax_for_con[i]))
       jmax_for_con[i] = tmp;
-    if (  (int_cs3 != int_cs1) && (int_cs3 != int_cs2)
-        &&((tmp=int_find_jmax_for_con(int_cs3,i))>jmax_for_con[i]))
+    if (  (bs3_ != bs1_) && (bs3_ != bs2_)
+        &&((tmp=bs3_->max_am_for_contraction(i))>jmax_for_con[i]))
       jmax_for_con[i] = tmp;
-    if (  (int_cs4 != int_cs1) && (int_cs4 != int_cs2) && (int_cs4 != int_cs3)
-        &&((tmp=int_find_jmax_for_con(int_cs4,i))>jmax_for_con[i]))
+    if (  (bs4_ != bs1_) && (bs4_ != bs2_) && (bs4_ != bs3_)
+        &&((tmp=bs4_->max_am_for_contraction(i))>jmax_for_con[i]))
       jmax_for_con[i] = tmp;
     }
 
@@ -525,21 +525,17 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
 #endif
 
   /* Compute the offset shell numbers. */
-  osh1 = sh1 + int_cs1->shell_offset;
-  if (!int_unit2) osh2 = sh2 + int_cs2->shell_offset;
-  osh3 = sh3 + int_cs3->shell_offset;
-  if (!int_unit4) osh4 = sh4 + int_cs4->shell_offset;
+  osh1 = sh1 + bs1_shell_offset_;
+  if (!int_unit2) osh2 = sh2 + bs2_shell_offset_;
+  osh3 = sh3 + bs3_shell_offset_;
+  if (!int_unit4) osh4 = sh4 + bs4_shell_offset_;
 
-  nc1 = int_cs1->center[int_cs1->center_num[sh1]]
-                 .basis.shell[int_cs1->shell_num[sh1]].ncon;
+  nc1 = bs1_->shell(sh1).ncontraction();
   if (int_unit2) nc2 = 1;
-  else nc2 = int_cs2->center[int_cs2->center_num[sh2]]
-            .basis.shell[int_cs2->shell_num[sh2]].ncon;
-  nc3 = int_cs3->center[int_cs3->center_num[sh3]]
-                 .basis.shell[int_cs3->shell_num[sh3]].ncon;
+  else nc2 = bs2_->shell(sh2).ncontraction();
+  nc3 = bs3_->shell(sh3).ncontraction();
   if (int_unit4) nc4 = 1;
-  else nc4 = int_cs4->center[int_cs4->center_num[sh4]]
-            .basis.shell[int_cs4->shell_num[sh4]].ncon;
+  else nc4 = bs4_->shell(sh4).ncontraction();
 
   /* Zero the target contracted integrals that the build routine
    * will accumulate into. */
@@ -1192,31 +1188,31 @@ Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
     build.int_v_r42 = int_shell_r.dp[osh4][2];
     }
   else {
-    build.int_v_r10 = int_cs1->center[int_cs1->center_num[sh1]].r[0];
-    build.int_v_r11 = int_cs1->center[int_cs1->center_num[sh1]].r[1];
-    build.int_v_r12 = int_cs1->center[int_cs1->center_num[sh1]].r[2];
+    build.int_v_r10 = bs1_->r(bs1_->shell_to_center(sh1),0);
+    build.int_v_r11 = bs1_->r(bs1_->shell_to_center(sh1),1);
+    build.int_v_r12 = bs1_->r(bs1_->shell_to_center(sh1),2);
     if (int_unit2) {
         build.int_v_r20 = build.int_v_r10;
         build.int_v_r21 = build.int_v_r11;
         build.int_v_r22 = build.int_v_r12;
       }
     else {
-        build.int_v_r20 = int_cs2->center[int_cs2->center_num[sh2]].r[0];
-        build.int_v_r21 = int_cs2->center[int_cs2->center_num[sh2]].r[1];
-        build.int_v_r22 = int_cs2->center[int_cs2->center_num[sh2]].r[2];
+        build.int_v_r20 = bs2_->r(bs2_->shell_to_center(sh2),0);
+        build.int_v_r21 = bs2_->r(bs2_->shell_to_center(sh2),1);
+        build.int_v_r22 = bs2_->r(bs2_->shell_to_center(sh2),2);
       }
-    build.int_v_r30 = int_cs3->center[int_cs3->center_num[sh3]].r[0];
-    build.int_v_r31 = int_cs3->center[int_cs3->center_num[sh3]].r[1];
-    build.int_v_r32 = int_cs3->center[int_cs3->center_num[sh3]].r[2];
+    build.int_v_r30 = bs3_->r(bs3_->shell_to_center(sh3),0);
+    build.int_v_r31 = bs3_->r(bs3_->shell_to_center(sh3),1);
+    build.int_v_r32 = bs3_->r(bs3_->shell_to_center(sh3),2);
     if (int_unit4) {
         build.int_v_r40 = build.int_v_r30;
         build.int_v_r41 = build.int_v_r31;
         build.int_v_r42 = build.int_v_r32;
       }
     else {
-        build.int_v_r40 = int_cs4->center[int_cs4->center_num[sh4]].r[0];
-        build.int_v_r41 = int_cs4->center[int_cs4->center_num[sh4]].r[1];
-        build.int_v_r42 = int_cs4->center[int_cs4->center_num[sh4]].r[2];
+        build.int_v_r40 = bs4_->r(bs4_->shell_to_center(sh4),0);
+        build.int_v_r41 = bs4_->r(bs4_->shell_to_center(sh4),1);
+        build.int_v_r42 = bs4_->r(bs4_->shell_to_center(sh4),2);
       }
     }
   }

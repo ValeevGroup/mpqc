@@ -122,6 +122,27 @@ prim_offset(centers_t *cs, int off)
   return off + cs->nprim;
   }
 
+/* Compute the shell offset. */
+static int
+shell_offset(RefGaussianBasisSet cs, int off)
+{
+  return off + cs->nshell();
+}
+
+/* Compute the prim offset. */
+static int
+prim_offset(RefGaussianBasisSet cs, int off)
+{
+  return off + cs->nprimitive();
+}
+
+/* Compute the func offset. */
+static int
+func_offset(RefGaussianBasisSet cs, int off)
+{
+  return off + cs->nbasis();
+}
+
 /* Free storage for the offset arrays. */
 static void
 free_offsets(centers_t *cs)
@@ -144,32 +165,52 @@ free_offsets(centers_t *cs)
 
 /* This initializes the offset arrays for one electron integrals. */
 void
-Int1eV3::int_initialize_offsets1(centers_t *cs1, centers_t *cs2)
+Int1eV3::int_initialize_offsets1(RefGaussianBasisSet cs1,
+                                 RefGaussianBasisSet cs2)
 {
   int shell_offset1;
   int prim_offset1;
   int func_offset1;
 
   /* Shell offset arrays. */
+  bs1_shell_offset_ = 0;
   shell_offset1 = shell_offset(cs1,0);
-  if (cs2 != cs1) shell_offset(cs2,shell_offset1);
+  if (bs2_ != bs1_) {
+      shell_offset(cs2,shell_offset1);
+      bs2_shell_offset_ = shell_offset1;
+    }
+  else {
+      bs2_shell_offset_ = bs1_shell_offset_;
+    }
 
-  /* Primitive offset arrays. */
+  /* Prim offset arrays. */
+  bs1_prim_offset_ = 0;
   prim_offset1 = prim_offset(cs1,0);
-  if (cs2 != cs1) prim_offset(cs2,prim_offset1);
+  if (bs2_ != bs1_) {
+      prim_offset(cs2,prim_offset1);
+      bs2_prim_offset_ = prim_offset1;
+    }
+  else {
+      bs2_prim_offset_ = bs1_prim_offset_;
+    }
 
-  /* Function offset arrays. */
+  /* Func offset arrays. */
+  bs1_func_offset_ = 0;
   func_offset1 = func_offset(cs1,0);
-  if (cs2 != cs1) func_offset(cs2,func_offset1);
+  if (bs2_ != bs1_) {
+      func_offset(cs2,func_offset1);
+      bs2_func_offset_ = func_offset1;
+    }
+  else {
+      bs2_func_offset_ = bs1_func_offset_;
+    }
   }
 
 /* This is called to free the offsets. */
 void
-Int1eV3::int_done_offsets1(centers_t *cs1, centers_t *cs2)
+Int1eV3::int_done_offsets1(RefGaussianBasisSet cs1, RefGaussianBasisSet cs2)
 {
-  free_offsets(cs1);
-  if (!(cs2==cs1)) free_offsets(cs2);
-  }
+}
 
 /* Initialize the offset arrays for two electron integrals. */
 void
@@ -190,40 +231,133 @@ Int2eV3::int_initialize_offsets2(centers_t *cs1, centers_t *cs2,
   int func_offset4;
 
   /* Shell offset arrays. */
+  bs1_shell_offset_ = 0;
+
   shell_offset1 = shell_offset(cs1,0);
-  if   (cs2 == cs1) shell_offset2 = shell_offset1;
-  else              shell_offset2 = shell_offset(cs2,shell_offset1);
-  if      (cs3 == cs1) shell_offset3 = shell_offset1;
-  else if (cs3 == cs2) shell_offset3 = shell_offset2;
-  else                 shell_offset3 = shell_offset(cs3,shell_offset2);
-  if      (cs4 == cs1) shell_offset4 = shell_offset1;
-  else if (cs4 == cs2) shell_offset4 = shell_offset2;
-  else if (cs4 == cs3) shell_offset4 = shell_offset3;
-  else                 shell_offset4 = shell_offset(cs4,shell_offset3);
+  if (bs2_ == bs1_) {
+      shell_offset2 = shell_offset1;
+      bs2_shell_offset_ = bs1_shell_offset_;
+    }
+  else {
+      shell_offset2 = shell_offset(cs2,shell_offset1);
+      bs2_shell_offset_ = shell_offset1;
+    }
 
-  /* Primitive offset arrays. */
+  if (bs3_ == bs1_) {
+      shell_offset3 = shell_offset2;
+      bs3_shell_offset_ = bs1_shell_offset_;
+    }
+  else if (bs3_ == bs2_) {
+      shell_offset3 = shell_offset2;
+      bs3_shell_offset_ = bs2_shell_offset_;
+    }
+  else {
+      shell_offset3 = shell_offset(cs3,shell_offset2);
+      bs3_shell_offset_ = shell_offset2;
+    }
+
+  if (bs4_ == bs1_) {
+      shell_offset4 = shell_offset3;
+      bs4_shell_offset_ = bs1_shell_offset_;
+    }
+  else if (bs4_ == bs2_) {
+      shell_offset4 = shell_offset3;
+      bs4_shell_offset_ = bs2_shell_offset_;
+    }
+  else if (bs4_ == bs3_) {
+      shell_offset4 = shell_offset3;
+      bs4_shell_offset_ = bs3_shell_offset_;
+    }
+  else {
+      shell_offset4 = shell_offset(cs4,shell_offset3);
+      bs4_shell_offset_ = shell_offset3;
+    }
+
+  /* Prim offset arrays. */
+  bs1_prim_offset_ = 0;
+
   prim_offset1 = prim_offset(cs1,0);
-  if   (cs2 == cs1) prim_offset2 = prim_offset1;
-  else              prim_offset2 = prim_offset(cs2,prim_offset1);
-  if      (cs3 == cs1) prim_offset3 = prim_offset1;
-  else if (cs3 == cs2) prim_offset3 = prim_offset2;
-  else                 prim_offset3 = prim_offset(cs3,prim_offset2);
-  if      (cs4 == cs1) prim_offset4 = prim_offset1;
-  else if (cs4 == cs2) prim_offset4 = prim_offset2;
-  else if (cs4 == cs3) prim_offset4 = prim_offset3;
-  else                 prim_offset4 = prim_offset(cs4,prim_offset3);
+  if (bs2_ == bs1_) {
+      prim_offset2 = prim_offset1;
+      bs2_prim_offset_ = bs1_prim_offset_;
+    }
+  else {
+      prim_offset2 = prim_offset(cs2,prim_offset1);
+      bs2_prim_offset_ = prim_offset1;
+    }
 
-  /* Basis function offset arrays. */
+  if (bs3_ == bs1_) {
+      prim_offset3 = prim_offset2;
+      bs3_prim_offset_ = bs1_prim_offset_;
+    }
+  else if (bs3_ == bs2_) {
+      prim_offset3 = prim_offset2;
+      bs3_prim_offset_ = bs2_prim_offset_;
+    }
+  else {
+      prim_offset3 = prim_offset(cs3,prim_offset2);
+      bs3_prim_offset_ = prim_offset2;
+    }
+
+  if (bs4_ == bs1_) {
+      prim_offset4 = prim_offset3;
+      bs4_prim_offset_ = bs1_prim_offset_;
+    }
+  else if (bs4_ == bs2_) {
+      prim_offset4 = prim_offset3;
+      bs4_prim_offset_ = bs2_prim_offset_;
+    }
+  else if (bs4_ == bs3_) {
+      prim_offset4 = prim_offset3;
+      bs4_prim_offset_ = bs3_prim_offset_;
+    }
+  else {
+      prim_offset4 = prim_offset(cs4,prim_offset3);
+      bs4_prim_offset_ = prim_offset3;
+    }
+
+  /* Func offset arrays. */
+  bs1_func_offset_ = 0;
+
   func_offset1 = func_offset(cs1,0);
-  if   (cs2 == cs1) func_offset2 = func_offset1;
-  else              func_offset2 = func_offset(cs2,func_offset1);
-  if      (cs3 == cs1) func_offset3 = func_offset1;
-  else if (cs3 == cs2) func_offset3 = func_offset2;
-  else                 func_offset3 = func_offset(cs3,func_offset2);
-  if      (cs4 == cs1) func_offset4 = func_offset1;
-  else if (cs4 == cs2) func_offset4 = func_offset2;
-  else if (cs4 == cs3) func_offset4 = func_offset3;
-  else                 func_offset4 = func_offset(cs4,func_offset3);
+  if (bs2_ == bs1_) {
+      func_offset2 = func_offset1;
+      bs2_func_offset_ = bs1_func_offset_;
+    }
+  else {
+      func_offset2 = func_offset(cs2,func_offset1);
+      bs2_func_offset_ = func_offset1;
+    }
+
+  if (bs3_ == bs1_) {
+      func_offset3 = func_offset2;
+      bs3_func_offset_ = bs1_func_offset_;
+    }
+  else if (bs3_ == bs2_) {
+      func_offset3 = func_offset2;
+      bs3_func_offset_ = bs2_func_offset_;
+    }
+  else {
+      func_offset3 = func_offset(cs3,func_offset2);
+      bs3_func_offset_ = func_offset2;
+    }
+
+  if (bs4_ == bs1_) {
+      func_offset4 = func_offset3;
+      bs4_func_offset_ = bs1_func_offset_;
+    }
+  else if (bs4_ == bs2_) {
+      func_offset4 = func_offset3;
+      bs4_func_offset_ = bs2_func_offset_;
+    }
+  else if (bs4_ == bs3_) {
+      func_offset4 = func_offset3;
+      bs4_func_offset_ = bs3_func_offset_;
+    }
+  else {
+      func_offset4 = func_offset(cs4,func_offset3);
+      bs4_func_offset_ = func_offset3;
+    }
   }
 
 /* This is called to free the offsets. */

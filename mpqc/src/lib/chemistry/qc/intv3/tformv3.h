@@ -6,6 +6,7 @@
 #ifndef _chemistry_qc_intv3_tranform_h
 #define _chemistry_qc_intv3_tranform_h
 
+#include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/intv3/macros.h>
 
@@ -15,19 +16,19 @@ extern "C" {
 
 /* integrals and target may overlap */
 void intv3_transform_1e(double *integrals, double *target,
-                      shell_t *sh1, shell_t *sh2);
+                        GaussianShell *sh1, GaussianShell *sh2);
 
 /* integrals and target may not overlap */
 void intv3_accum_transform_1e(double *integrals, double *target,
-                            shell_t *sh1, shell_t *sh2);
+                              GaussianShell *sh1, GaussianShell *sh2);
 
 /* integrals and target may overlap */
 void intv3_transform_1e_xyz(double *integrals, double *target,
-                          shell_t *sh1, shell_t *sh2);
+                            GaussianShell *sh1, GaussianShell *sh2);
 
 /* integrals and target may not overlap */
 void intv3_accum_transform_1e_xyz(double *integrals, double *target,
-                                shell_t *sh1, shell_t *sh2);
+                                  GaussianShell *sh1, GaussianShell *sh2);
 
 /* integrals and target may overlap */
 void intv3_transform_2e(double *integrals, double *target,

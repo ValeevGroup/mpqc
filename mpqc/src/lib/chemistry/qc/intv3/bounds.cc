@@ -29,7 +29,7 @@ void
 Int2eV3::int_init_bounds_nocomp()
 {
   int i;
-  int nshell=int_cs1->nshell;
+  int nshell=bs1_->nshell();
   int nsht=nshell*(nshell+1)/2;
 
   if (int_Qvec) free(int_Qvec);
@@ -58,7 +58,7 @@ void
 Int2eV3::int_init_bounds_1der_nocomp()
 {
   int i;
-  int nshell=int_cs1->nshell;
+  int nshell=bs1_->nshell();
   int nsht=nshell*(nshell+1)/2;
 
   if (!int_derivative_bounds) {
@@ -224,15 +224,14 @@ void
 Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
 {
   int sh1,sh2;
-  centers_t *cs1 = int_cs1;
 
-  if ((cs1 != int_cs2)&&(cs1 != int_cs3)&&(cs1 != int_cs4)) {
+  if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
     fprintf(stderr,"bounds.compute_bounds: all centers must be the same\n");
     exit(1);
     }
 
   *overall = -126;
-  for(sh1=0; sh1 < cs1->nshell ; sh1++) {
+  for(sh1=0; sh1 < bs1_->nshell() ; sh1++) {
     for(sh2=0; sh2 <= sh1 ; sh2++) {
       compute_bounds_shell(overall,vec,flag,sh1,sh2);
       }
@@ -251,7 +250,6 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
   double max;
   double tol = pow(2.0,-126.0);
   double loginv = 1.0/log(2.0);
-  centers_t *cs1;
   int old_int_integral_storage = int_integral_storage;
   int_integral_storage = 0;
 
@@ -260,8 +258,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
   int old_red = redundant();
   set_redundant(1);
 
-  cs1 = int_cs1;
-  if ((cs1 != int_cs2)&&(cs1 != int_cs3)&&(cs1 != int_cs4)) {
+  if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
     fprintf(stderr,"bounds.compute_bounds: all centers must be the same\n");
     exit(1);
     }

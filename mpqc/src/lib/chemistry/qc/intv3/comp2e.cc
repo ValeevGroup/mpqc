@@ -106,10 +106,10 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 #endif
 
   /* Compute the offset shell numbers. */
-  osh1 = *psh1 + int_cs1->shell_offset;
-  if (!int_unit2) osh2 = *psh2 + int_cs2->shell_offset;
-  osh3 = *psh3 + int_cs3->shell_offset;
-  if (!int_unit4) osh4 = *psh4 + int_cs4->shell_offset;
+  osh1 = *psh1 + bs1_shell_offset_;
+  if (!int_unit2) osh2 = *psh2 + bs2_shell_offset_;
+  osh3 = *psh3 + bs3_shell_offset_;
+  if (!int_unit4) osh4 = *psh4 + bs4_shell_offset_;
 
   sh1 = *psh1;
   if (!int_unit2) sh2 = *psh2;
@@ -763,10 +763,10 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   am[3] = int_find_jmax_shell(shell4);
 
   /* Compute the offset shell numbers. */
-  osh[0] = psh1 + int_cs1->shell_offset;
-  osh[1] = psh2 + int_cs2->shell_offset;
-  osh[2] = psh3 + int_cs3->shell_offset;
-  osh[3] = psh4 + int_cs4->shell_offset;
+  osh[0] = psh1 + bs1_shell_offset_;
+  osh[1] = psh2 + bs2_shell_offset_;
+  osh[2] = psh3 + bs3_shell_offset_;
+  osh[3] = psh4 + bs4_shell_offset_;
 
   /* This macro returns true if two shell centers are the same. */
 #define SC(cs1,sh1,cs2,sh2) (((cs1)==(cs2))&&((cs1)->center_num[sh1]==(cs1)->center_num[sh2]))
@@ -1208,10 +1208,10 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
   nints = shell1->nfunc * shell2->nfunc * shell3->nfunc * shell4->nfunc;
 
   /* Compute the offset shell numbers. */
-  osh[0] = *psh1 + int_cs1->shell_offset;
-  osh[1] = *psh2 + int_cs2->shell_offset;
-  osh[2] = *psh3 + int_cs3->shell_offset;
-  osh[3] = *psh4 + int_cs4->shell_offset;
+  osh[0] = *psh1 + bs1_shell_offset_;
+  osh[1] = *psh2 + bs2_shell_offset_;
+  osh[2] = *psh3 + bs3_shell_offset_;
+  osh[3] = *psh4 + bs4_shell_offset_;
 
   /* Save the location of the int_buffer. */
   user_int_buffer = int_buffer;

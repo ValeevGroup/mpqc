@@ -34,6 +34,7 @@ class GaussianBasisSet: public SavableState
     RefMolecule molecule_;
 
     RefSCMatrixKit matrixkit_;
+    RefSCMatrixKit so_matrixkit_;
     RefSCDimension basisdim_;
     
     int ncenter_;
@@ -70,6 +71,7 @@ class GaussianBasisSet: public SavableState
 
     RefMolecule molecule() const { return molecule_; }
     RefSCMatrixKit matrixkit() { return matrixkit_; }
+    RefSCMatrixKit so_matrixkit() { return so_matrixkit_; }
     RefSCDimension basisdim() { return basisdim_; }
 
     int ncenter() const;

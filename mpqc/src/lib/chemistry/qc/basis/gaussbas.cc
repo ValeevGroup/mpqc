@@ -5,6 +5,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/misc/newstring.h>
+#include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
@@ -310,6 +311,8 @@ GaussianBasisSet::init2()
   if (matrixkit_.null())
     matrixkit_ = SCMatrixKit::default_matrixkit();
 
+  so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
+  
   if (basisdim_.null())
     basisdim_ = new SCDimension(nbasis(), "basis set dimension");
 }
@@ -318,6 +321,7 @@ void
 GaussianBasisSet::set_matrixkit(const RefSCMatrixKit& mk)
 {
   matrixkit_ = mk;
+  so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
 }
 
 void

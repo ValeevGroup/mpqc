@@ -34,10 +34,13 @@
 
 #include <math/isosurf/volume.h>
 #include <chemistry/qc/wfn/wfn.h>
+#include <chemistry/qc/basis/extent.h>
 #include <chemistry/molecule/molrender.h>
 
 namespace sc {
 
+/** This is a Volume that computer the electron density.  It
+    can be used to generate isodensity surfaces. */
 class ElectronDensity: public Volume {
   protected:
     Ref<Wavefunction> wfn_;
@@ -49,6 +52,54 @@ class ElectronDensity: public Volume {
     virtual void boundingbox(double valuemin,
                              double valuemax,
                              SCVector3& p1, SCVector3& p2);
+};
+
+/** This a more highly optimized than ElectronDensity since
+    everything is precomputed.  However, it cannot be used
+    if the density and/or geometry might change between
+    computations of the density or bounding box. */
+class BatchElectronDensity: public Volume {
+    void init();
+  protected:
+    Ref<Wavefunction> wfn_;
+
+    Ref<GaussianBasisSet> basis_;
+    GaussianBasisSet::ValueData *valdat_;
+    double *alpha_dmat_;
+    double *beta_dmat_;
+    double *dmat_bound_;
+    ShellExtent *extent_;
+    int ncontrib_;
+    int *contrib_;
+    int ncontrib_bf_;
+    int *contrib_bf_;
+    double *bs_values_;
+    double *bsg_values_;
+    double *bsh_values_;
+    int nshell_;
+    int nbasis_;
+    int spin_polarized_;
+    int linear_scaling_;
+    int use_dmat_bound_;
+
+    double accuracy_;
+    virtual void init_data();
+    void compute_basis_values(SCVector3&r);
+    void compute_density(double *dmat, double &rho, double *grad, double *hess);
+
+    virtual void compute();
+  public:
+    BatchElectronDensity(const Ref<KeyVal>&);
+    BatchElectronDensity(const Ref<Wavefunction>&);
+    ~BatchElectronDensity();
+    /** Returns the bounding box. */
+    virtual void boundingbox(double valuemin,
+                             double valuemax,
+                             SCVector3& p1, SCVector3& p2);
+    /** This must be called if anything in the Wavefunction, such as the
+        Molecule's geometry, changes.  It will cause all stratch storage to
+        be released. */
+    void clear();
 };
 
 class DensityColorizer: public MoleculeColorizer {

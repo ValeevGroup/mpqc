@@ -39,6 +39,9 @@
 using namespace std;
 using namespace sc;
 
+/////////////////////////////////////////////////////////////////////////////
+// ElectronDensity
+
 static ClassDesc ElectronDensity_cd(
   typeid(ElectronDensity),"ElectronDensity",1,"public Volume",
   0, create<ElectronDensity>, 0);
@@ -108,6 +111,370 @@ ElectronDensity::boundingbox(double valuemin,
       p1[i] = p1[i] - 3.0;
       p2[i] = p2[i] + 3.0;
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// BatchElectronDensity
+
+static ClassDesc BatchElectronDensity_cd(
+  typeid(BatchElectronDensity),"BatchElectronDensity",1,"public Volume",
+  0, create<BatchElectronDensity>, 0);
+
+BatchElectronDensity::BatchElectronDensity(const Ref<Wavefunction> &wfn):
+  Volume()
+{
+  wfn_ = wfn;
+  init();
+}
+
+BatchElectronDensity::BatchElectronDensity(const Ref<KeyVal> &keyval):
+  Volume(keyval)
+{
+  wfn_ << keyval->describedclassvalue("wfn");
+  init();
+}
+
+BatchElectronDensity::~BatchElectronDensity()
+{
+  clear();
+}
+
+void
+BatchElectronDensity::init()
+{
+  valdat_ = 0;
+  extent_ = 0;
+
+  alpha_dmat_ = 0;
+  beta_dmat_ = 0;
+  dmat_bound_ = 0;
+  contrib_ = 0;
+  contrib_bf_ = 0;
+  bs_values_ = 0;
+  bsg_values_ = 0;
+  bsh_values_ = 0;
+
+  linear_scaling_ = 1;
+  use_dmat_bound_ = 1;
+}
+
+void
+BatchElectronDensity::clear()
+{
+  delete valdat_;
+  delete extent_;
+
+  delete[] alpha_dmat_;
+  delete[] beta_dmat_;
+  delete[] dmat_bound_;
+  delete[] contrib_;
+  delete[] contrib_bf_;
+  delete[] bs_values_;
+  delete[] bsg_values_;
+  delete[] bsh_values_;
+
+  init();
+}
+
+void
+BatchElectronDensity::init_data()
+{
+  spin_polarized_ = wfn_->spin_polarized();
+  nshell_ = wfn_->basis()->nshell();
+  nbasis_ = wfn_->basis()->nbasis();
+  basis_ = wfn_->basis();
+
+  contrib_ = new int[nshell_];
+  contrib_bf_ = new int[nbasis_];
+  bs_values_ = new double[nbasis_];
+  bsg_values_ = new double[3*nbasis_];
+  bsh_values_ = new double[6*nbasis_];
+  alpha_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
+
+  valdat_ = new GaussianBasisSet::ValueData(basis_, wfn_->integral());
+
+  extent_ = new ShellExtent;
+  extent_->init(wfn_->basis());
+   
+  RefSymmSCMatrix adens = wfn_->alpha_ao_density();
+  alpha_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
+  adens->convert(alpha_dmat_);
+
+  beta_dmat_ = 0;
+  if (spin_polarized_) {
+      RefSymmSCMatrix bdens = wfn_->beta_ao_density();
+      beta_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
+      bdens->convert(beta_dmat_);
+    }
+
+  dmat_bound_ = new double[(nshell_*(nshell_+1))/2];
+  int ij = 0;
+  for (int i=0; i<nshell_; i++) {
+      int ni = wfn_->basis()->shell(i).nfunction();
+      for (int j=0; j<=i; j++,ij++) {
+          int nj = wfn_->basis()->shell(j).nfunction();
+          double bound = 0.0;
+          int ibf = wfn_->basis()->shell_to_function(i);
+          for (int k=0; k<ni; k++,ibf++) {
+              int lmax = nj-1;
+              if (i==j) lmax = k;
+              int jbf = wfn_->basis()->shell_to_function(j);
+              int ijbf = (ibf*(ibf+1))/2 + jbf;
+              for (int l=0; l<=lmax; l++,ijbf++) {
+                  double a = fabs(alpha_dmat_[ijbf]);
+                  if (a > bound) bound = a;
+                  if (beta_dmat_) {
+                      double b = fabs(beta_dmat_[ijbf]);
+                      if (b > bound) bound = b;
+                    }
+                }
+            }
+          dmat_bound_[ij] = bound;
+        }
+    }
+}
+
+void
+BatchElectronDensity::compute_basis_values(SCVector3&r)
+{
+  // only consider those shells for which phi_i * (Max_j D_ij phi_j) > tol
+  if (linear_scaling_ && use_dmat_bound_) {
+      const std::vector<ExtentData> &cs = extent_->contributing_shells(r[0],r[1],r[2]);
+      ncontrib_ = 0;
+      for (int i=0; i<cs.size(); i++) {
+          int ish = cs[i].shell;
+          int contrib = 0;
+          for (int j=0; j<cs.size(); j++) {
+              int jsh = cs[j].shell;
+              int ijsh = (ish>jsh)?((ish*(ish+1))/2+jsh):((jsh*(jsh+1))/2+ish);
+              if (cs[i].bound*cs[j].bound*dmat_bound_[ijsh] > 0.00001*accuracy_) {
+                  contrib = 1;
+                  break;
+                }
+            }
+          if (contrib) {
+              contrib_[ncontrib_++] = ish;
+            }
+        }
+    }
+  else if (linear_scaling_) {
+      const std::vector<ExtentData> &cs = extent_->contributing_shells(r[0],r[1],r[2]);
+      ncontrib_ = cs.size();
+      for (int i=0; i<ncontrib_; i++) {
+          contrib_[i] = cs[i].shell;
+        }
+    }
+  else {
+      ncontrib_ = nshell_;
+      for (int i=0; i<nshell_; i++) contrib_[i] = i;
+    }
+
+  ncontrib_bf_ = 0;
+  for (int i=0; i<ncontrib_; i++) {
+      int nbf = basis_->shell(contrib_[i]).nfunction();
+      int bf = basis_->shell_to_function(contrib_[i]);
+      for (int j=0; j<nbf; j++, bf++) {
+          contrib_bf_[ncontrib_bf_++] = bf;
+        }
+    }
+
+  // compute the basis set values
+  double *bsv = bs_values_;
+  double *bsg = (gradient_needed()?bsg_values_:0);
+  double *bsh = (hessian_needed()?bsh_values_:0);
+  for (int i=0; i<ncontrib_; i++) {
+      basis_->hessian_shell_values(r,contrib_[i],valdat_,bsh,bsg,bsv);
+      int shsize = basis_->shell(contrib_[i]).nfunction();
+      if (bsh) bsh += 6 * shsize;
+      if (bsg) bsg += 3 * shsize;
+      if (bsv) bsv += shsize;
+    }
+}
+
+void
+BatchElectronDensity::compute_density(double *dmat,
+                                      double &rho,
+                                      double *grad,
+                                      double *hess)
+{
+  int i, j;
+
+  double tmp = 0.0;
+  double densij;
+  double bvi, bvix, bviy, bviz;
+  double bvixx, bviyx, bviyy, bvizx, bvizy, bvizz;
+
+  const int X = 0;
+  const int Y = 1;
+  const int Z = 2;
+  const int XX = 0;
+  const int YX = 1;
+  const int YY = 2;
+  const int ZX = 3;
+  const int ZY = 4;
+  const int ZZ = 5;
+
+  bool need_hessian = hessian_needed();
+  bool need_gradient = gradient_needed();
+
+  if (need_gradient) for (i=0; i<3; i++) grad[i] = 0.0;
+  if (need_hessian) for (i=0; i<6; i++) hess[i] = 0.0;
+
+  if (need_gradient) {
+      for (i=0; i < ncontrib_bf_; i++) {
+          int it = contrib_bf_[i];
+          bvi = bs_values_[i];
+          if (need_gradient) {
+              bvix = bsg_values_[i*3+X];
+              bviy = bsg_values_[i*3+Y];
+              bviz = bsg_values_[i*3+Z];
+            }
+          if (need_hessian) {
+              bvixx = bsh_values_[i*6+XX];
+              bviyx = bsh_values_[i*6+YX];
+              bviyy = bsh_values_[i*6+YY];
+              bvizx = bsh_values_[i*6+ZX];
+              bvizy = bsh_values_[i*6+ZY];
+              bvizz = bsh_values_[i*6+ZZ];
+            }
+          int j3 = 0, j6 = 0;
+          int itoff = (it*(it+1))>>1;
+          int itjt;
+          double t = 0.0;
+          for (j=0; j < i; j++) {
+              int jt = contrib_bf_[j];
+              itjt = itoff+jt;
+
+              densij = dmat[itjt];
+              double bvj = bs_values_[j];
+
+              t += densij*bvi*bvj;
+
+              double bvjx, bvjy, bvjz;
+              if (need_gradient) {
+                  bvjx = bsg_values_[j3+X];
+                  bvjy = bsg_values_[j3+Y];
+                  bvjz = bsg_values_[j3+Z];
+                  grad[X] += densij*(bvi*bvjx + bvj*bvix);
+                  grad[Y] += densij*(bvi*bvjy + bvj*bviy);
+                  grad[Z] += densij*(bvi*bvjz + bvj*bviz);
+                  j3 += 3;
+                }
+
+              if (need_hessian) {
+                  double bvjxx = bsh_values_[j6+XX];
+                  double bvjyx = bsh_values_[j6+YX];
+                  double bvjyy = bsh_values_[j6+YY];
+                  double bvjzx = bsh_values_[j6+ZX];
+                  double bvjzy = bsh_values_[j6+ZY];
+                  double bvjzz = bsh_values_[j6+ZZ];
+
+                  hess[XX] += densij*(bvi*bvjxx+bvix*bvjx+bvjx*bvix+bvixx*bvj);
+                  hess[YX] += densij*(bvi*bvjyx+bviy*bvjx+bvjy*bvix+bviyx*bvj);
+                  hess[YY] += densij*(bvi*bvjyy+bviy*bvjy+bvjy*bviy+bviyy*bvj);
+                  hess[ZX] += densij*(bvi*bvjzx+bviz*bvjx+bvjz*bvix+bvizx*bvj);
+                  hess[ZY] += densij*(bvi*bvjzy+bviz*bvjy+bvjz*bviy+bvizy*bvj);
+                  hess[ZZ] += densij*(bvi*bvjzz+bviz*bvjz+bvjz*bviz+bvizz*bvj);
+
+                  j6 += 6;
+                }
+            }
+          densij = dmat[itoff+it]*bvi;
+          tmp += t + 0.5*densij*bvi;
+          if (need_gradient) {
+              grad[X] += densij*bvix;
+              grad[Y] += densij*bviy;
+              grad[Z] += densij*bviz;
+            }
+          if (need_hessian) {
+              hess[XX] += densij*bvixx;
+              hess[YX] += densij*bviyx;
+              hess[YY] += densij*bviyy;
+              hess[ZX] += densij*bvizx;
+              hess[ZY] += densij*bvizy;
+              hess[ZZ] += densij*bvizz;
+            }
+        }
+    }
+  else {
+      for (i=0; i < ncontrib_bf_; i++) {
+          int it = contrib_bf_[i];
+          bvi = bs_values_[i];
+          int itoff = (it*(it+1))>>1;
+          int itjt;
+          double t = 0.0;
+          for (j=0; j < i; j++) {
+              int jt = contrib_bf_[j];
+              itjt = itoff+jt;
+
+              densij = dmat[itjt];
+              double bvj = bs_values_[j];
+
+              t += densij*bvi*bvj;
+            }
+          densij = dmat[itoff+it]*bvi;
+          tmp += t + 0.5*densij*bvi;
+        }
+    }
+  rho = tmp;
+}
+
+void
+BatchElectronDensity::compute()
+{
+  if (alpha_dmat_ == 0) init_data();
+
+  SCVector3 r;
+  get_x(r);
+
+  compute_basis_values(r);
+
+  double val;
+  double grad[3];
+  double hess[6];
+  compute_density(alpha_dmat_, val, grad, hess);
+  if (spin_polarized_) {
+      double bval;
+      double bgrad[3];
+      double bhess[6];
+      compute_density(beta_dmat_, bval, bgrad, bhess);
+      val += bval;
+      for (int i=0; i<3; i++) grad[i] += bgrad[i];
+      for (int i=0; i<6; i++) hess[i] += bhess[i];
+    }
+  double factor = 2.0;
+  if (!spin_polarized_) factor *= 2.0;
+  val *= factor;
+  for (int i=0; i<3; i++) grad[i] *= factor;
+  for (int i=0; i<6; i++) hess[i] *= factor;
+
+  if (value_needed()) {
+      set_value(val);
+      set_actual_value_accuracy(desired_value_accuracy());
+    }
+  if (gradient_needed()) {
+      set_value(val);
+      set_actual_value_accuracy(desired_value_accuracy());
+      SCVector3 d(grad);
+      set_gradient(d);
+      set_actual_gradient_accuracy(desired_gradient_accuracy());
+    }
+  if (hessian_needed()) {
+      ExEnv::err0() << indent
+           << "BatchElectronDensity::compute(): hessian isn't yet implemented\n";
+      abort();
+    }
+}
+
+void
+BatchElectronDensity::boundingbox(double valuemin,
+                             double valuemax,
+                             SCVector3& p1, SCVector3& p2)
+{
+  if (alpha_dmat_ == 0) init_data();
+  // this is a very conservative bounding box
+  for (int i=0; i<3; i++) p1[i] = extent_->lower(i);
+  for (int i=0; i<3; i++) p2[i] = extent_->upper(i);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -221,13 +588,16 @@ GradDensityColorizer::colorize(const Ref<RenderedPolygons> &poly)
   int i;
   int nvertex = poly->nvertex();
 
+  Ref<BatchElectronDensity> den = new BatchElectronDensity(wfn_);
+
   if (nvertex) {
       double *data = new double[nvertex];
 
       for (i=0; i<nvertex; i++) {
           SCVector3 v(poly->vertex(i));
           SCVector3 g;
-          wfn_->density_gradient(v,g.data());
+          den->set_x(v);
+          den->get_gradient(g);
           data[i] = g.norm();
         }
 
@@ -265,8 +635,8 @@ GradDensityColorizer::colorize(const Ref<RenderedPolygons> &poly)
 
       for (i=0; i<nvertex; i++) {
           Color c;
-          if (data[i] < 0.0) c.set_rgb(-data[i]+base,0.3,0.3);
-          else c.set_rgb(0.3,0.3,data[i]+base);
+          if (data[i] > 0.0) c.set_rgb(data[i]+base,0.3,0.3);
+          else c.set_rgb(0.3,0.3,-data[i]+base);
           poly->set_vertex_color(i,c);
         }
 

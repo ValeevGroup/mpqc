@@ -4,11 +4,10 @@
 
 The \clsnm{Debugger} class describes what should be done when
 a catastrophic error causes unexpected program termination.
-It can try things such as run start a debugger running where
+It can try things such as start a debugger running where
 the program died or it can attempt to produce a stack traceback
-showing roughly where the program died.  These attempts could
-just complicate matters more if the program has gotten into
-a peculiar enough state.
+showing roughly where the program died.  These attempts will not
+always succeed.
 
 The \clsnm{KeyVal} input parameters for \clsnm{Debugger} are given
 below.

@@ -40,7 +40,7 @@ instead of when an MPIMessageGrp is created, name the executable
 \section{Environmental Variables}
 
 MPQC looks at four environmental variables to set up
-communication and find library files.  Other libraries
+communication and find library files.  Machine specific libraries
 and utilities to run programs in parallel might look
 at other environment variables as well.  The four that
 apply on all platforms are:
@@ -99,7 +99,7 @@ object is anonymous, that is, no keyword is associated with it.
 Here is an example:
 
 \begin{alltt}
-setenv MESSAGEGRP "<\clsnmref{ShmMessageGrp}>:(n = 4)"
+setenv MESSAGEGRP "<\type{ShmMessageGrp}>:(n = 4)"
 \end{alltt}
 
 \section{Running MPQC on a Shared Memory Multiprocessor}
@@ -108,16 +108,16 @@ setenv MESSAGEGRP "<\clsnmref{ShmMessageGrp}>:(n = 4)"
 
 By default, MPQC will run on only one CPU.  To specify more, you can give a
 \clsnmref{ShmMessageGrp} \htmlref{object}{pkvobject} on the command line.
-This would run mpqc in four processes:
+The following would run mpqc in four processes:
 \begin{alltt}
-\exenm{mpqc} {\ttfamily -messagegrp "<\clsnmref{ShmMessageGrp}>:(n = 4)" -f} {\itshape input_file}
+\exenm{mpqc} -messagegrp "<\type{ShmMessageGrp}>:(n = 4)" -f {\itshape input_file}
 \end{alltt}
 
 Alternately, the \clsnmref{ShmMessageGrp} \htmlref{object}{pkvobject} can
 be given as an environmental variable:
 \begin{alltt}
-{\ttfamily setenv MESSAGEGRP "<\clsnmref{ShmMessageGrp}>:(n = 4)"}
-\exenm{mpqc} {\ttfamily -f} {\itshape input_file}
+setenv MESSAGEGRP "<\type{ShmMessageGrp}>:(n = 4)"
+\exenm{mpqc} -f {\itshape input_file}
 \end{alltt}
 
 If MPQC should unexpectedly die, shared memory segments and
@@ -139,12 +139,20 @@ s    391 0x00000000 --ra-------  cljanss     user
 \end{alltt}
 
 To remove the IPC resources used by \verb|cljanss| in
-the above example, type:
+the above example on IRIX, type:
 
 \begin{alltt}
 ipcrm -m 288800
 ipcrm -s 390
 ipcrm -s 391
+\end{alltt}
+
+And on Linux, type:
+
+\begin{alltt}
+ipcrm shm 288800
+ipcrm sem 390
+ipcrm sem 391
 \end{alltt}
 
 \section{Running MPQC on the Intel Paragon Running OSF}
@@ -160,16 +168,16 @@ To run interactively type:
 \index{computers!IBM SP2}
 \index{SP2}
 
-The code is currently working on the
-\htmladdnormallink{Maui SP2}{http://www.mhpcc.edu/}.
-They have \htmladdnormallink{extensive information}{http://www.mhpcc.edu/}
-on how to run on their SP2.
+The big SP2 installations have extensive information on
+how to run on an SP2.  See, for example, the Maui SP2's
+WWW site, \htmladdnormallink{http://www.mhpcc.edu/}{http://www.mhpcc.edu/}.
 
 \subsection{Running Interactively}
 
-The job is controlled by a group of environment variables.
+When running interactively on an SP2,
+the job is controlled by a group of environment variables.
 Here are my current settings:
-\begin{verbatim}
+\begin{alltt}
 MP_CSS_INTERRUPT=YES
 MP_HOSTFILE=NULL
 MP_EUILIB=us
@@ -180,14 +188,22 @@ MP_LABELIO=yes
 MP_INFOLEVEL=1
 MP_PGMMODEL=spmd
 MP_PROCS=4
-\end{verbatim}
+\end{alltt}
 The last variable, \verb|MP_NPROCS|, sets the number
 of processors that will be used.
 
-The program is run with the command:
+The program can be run with the shell following \exenm{/bin/sh} script:
+
 \begin{alltt}
-poe {\itshape executable} -f {\itshape inputfile}
+export MEMORYGRP="<\type{MPLMemoryGrp}>:(ack=yes)"
+export MESSAGEGRP="<\type{MPIMessageGrp}>:(errors_return=1)"
+/usr/bin/poe {\itshape executable} -f {\itshape inputfile}
 \end{alltt}
+
+The \verb|MEMORYGRP| variable must be set for MP2 calculations to work.
+However, for as yet unknown reasons, MP2 using the \keywd{memgrp} algorithm
+will occasionally give a wrong answer on the SP2.  This is not
+reproducible.
 
 \subsection{Using Load Leveler}
 
@@ -198,10 +214,15 @@ MPQC:
 
 \begin{alltt}
 #!/bin/sh
-#@ environment = MessageGrp=MPIMessageGrp;\\
-   MP_LANG=En_US;MP_LABELIO=YES;MP_INFOLEVEL=1;\\
-   MP_PGMMODEL=spmd;MP_RESD=YES;MP_CSS_INTERRUPT=YES;\\
+\begin{htmlonly}
+#@ environment = MessageGrp=MPIMessageGrp;MP_LANG=En_US;MP_LABELIO=YES;MP_INFOLEVEL=1;MP_PGMMODEL=spmd;MP_RESD=YES;MP_CSS_INTERRUPT=YES;MP_EUILIB=us
+\end{htmlonly}
+\begin{latexonly}
+#@ environment = MessageGrp=MPIMessageGrp;\verb|\|
+   MP_LANG=En_US;MP_LABELIO=YES;MP_INFOLEVEL=1;\verb|\|
+   MP_PGMMODEL=spmd;MP_RESD=YES;MP_CSS_INTERRUPT=YES;\verb|\|
    MP_EUILIB=us
+\end{latexonly}
 #@ input = /dev/null
 #@ output = mpqc.out.$(Cluster).$(Process)
 #@ error = mpqc.err.$(Cluster).$(Process)
@@ -215,14 +236,16 @@ MPQC:
 #@ shell = /bin/sh
 #@ cpu_limit = {\itshape CPULIMIT}
 #@ queue
-/usr/lpp/poe/bin/poe {\itshape EXECUTABLE} -f {\itshape INPUTFILE}
+export MEMORYGRP="<\type{MPLMemoryGrp}>:(ack=yes)"
+export MESSAGEGRP="<\type{MPIMessageGrp}>:(errors_return=1)"
+/usr/bin/poe {\itshape EXECUTABLE} -f {\itshape INPUTFILE}
 \end{alltt}
 
 To make the above useful, the italicized variables must be replaced.
 Table~\ref{runningspvariables} explains the meaning of the variables:
 
 \begin{table}
-\caption{Variables Meanings for Sample IBM SP2 Loadleveler Script.}
+\caption{Meanings of Variables in Sample IBM SP2 Loadleveler Script.}
 \begin{center}
 \begin{tabular}{lp{2.5in}c}
   \multicolumn{1}{c}{Variable}

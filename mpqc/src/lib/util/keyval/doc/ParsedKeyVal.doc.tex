@@ -159,7 +159,7 @@ balls: (
   color    = [  red      blue     red   ]
   diameter = [   12       14       11   ]
   material = [  rubber  vinyl   plastic ]
-  bouces   = [  yes      no       no    ]
+  bounces  = [  yes      no       no    ]
   coordinate = [[ 0.0  0.0  0.0]
                 [ 1.0  2.0 -1.0]
                 [ 1.0 -1.0  1.0]]
@@ -237,13 +237,6 @@ substitutions.
 
 \subsection{Expression Evaluation}
 
-It is nice to be able to multiply numbers together directly in the input
-file.  For example, you may need to change the units on a number and
-want to see where exactly the number is coming from.  This motivated the
-development of an expression evaluation facility in the
-\clsnmref{ParsedKeyVal} package.  This facility is still under development,
-but some primitive expressions can be evaluated in the current release.
-
 Suppose your program requires several parameters \verb|x1|, \verb|x2|,
 and \verb|x3|.  Furthermore, suppose that their ratios remain fixed for
 all the runs of the program that you desire.  It would be best to
@@ -262,7 +255,7 @@ So we see that to the right of the ``\verb|=|'' the characters
 This is in contrast to their function when they are to the left of the
 ``\verb|=|'', where they are the keyword grouping operators.
 
-Currently, the expression must be binary and the data is all converted
+The expression must be binary and the data is all converted
 to double.  If you use the expression construction operators to produce
 data that the program expects to be integer, you will certainly get the
 wrong answers (unless the desired value happens to be zero).

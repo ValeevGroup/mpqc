@@ -4,10 +4,10 @@
 
 MPQC is an object-oriented program that directly allows the user to specify
 objects that MPQC then manipulates to obtain energies, properties, etc.
-Thus, the input may seem a bit complex to the beginner; however, many
-calculations will quite similar to the examples given later in this
-chapter.  The best way to get started is to use one of the example input
-files and modify it to meet your needs.
+Thus, the input may seem a bit complex to the beginner; however, most
+calculations should be quite similar to the one of the examples given later
+in this chapter.  The best way to get started is to use one of the example
+input files and modify it to meet your needs.
 
 MPQC starts off by creating a
 \hyperref{\clsnm{ParsedKeyVal}}
@@ -20,14 +20,15 @@ of the input file.  It is basically a free format input that
 associates keywords and logical groupings of keywords with
 values.  The values can be scalars, arrays, or objects.
 
-The keywords recognized by \exenm{mpqc} begin with either an \keywd{mpqc}
-or \keywd{default} prefix.  That is, they must be nested between an
-\keywd{mpqc:(} and a \keywd{)}.  Alternately, each keyword can be prefixed
-by \keywd{mpqc:}.  The primary keywords are given below.  Some of the
-keywords specify \htmlref{objects}{pkvobject}, in which case the object
-will require more \clsnmref{KeyVal} input.  These objects are created from
-the input by using their \clsnmref{KeyVal} constructors, which are
-documented in
+The keywords recognized by MPQC begin with the \keywd{mpqc} prefix.
+That is, they must be nested between an \keywd{mpqc:(} and a \keywd{)}.
+Alternately, each keyword can be individually prefixed by \keywd{mpqc:}.
+If they are not found with the \keywd{mpqc} prefix, the prefix
+\keywd{default} will also be considered.  The primary keywords are given
+below.  Some of the keywords specify \htmlref{objects}{pkvobject}, in which
+case the object will require more \clsnmref{KeyVal} input.  These objects
+are created from the input by using their \clsnmref{KeyVal} constructors,
+which are documented in
 \begin{latexonly}
 Chapters~\ref{firstclasschapt} through~\ref{lastclasschapt}.
 \end{latexonly}
@@ -53,7 +54,10 @@ several chapters that follow.
         \clsnmref{ThreadGrp} that can be used to advantage on shared-memory
         multiprocessor machines for certain types of calculations.  This
         keyword can be overridden by giving the \clsnmref{ThreadGrp} in the
-        environment or command line.
+        environment or command line.  See
+        \hyperref{the section on running MPQC}{Section~}{}{running MPQC}
+        for more information.
+        This feature is not fully implemented in the current release.
 \item[\keywd{checkpoint}] The value of this keyword is boolean.  If true,
         then optimizations will be checkpointed after each iteraction.  The
         default is to checkpoint.

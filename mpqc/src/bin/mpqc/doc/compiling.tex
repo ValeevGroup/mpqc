@@ -4,21 +4,23 @@
 \index{installing}
 
 
-These instructions are for a machine running Unix or a clone. The codes
-work under Linux, and AIX, at least.  The code has also be built under MS
-Windows NT using the Cygnus development tools.
+These instructions are for a machine running Unix or Unix-like system. The
+codes work under Linux, and AIX, at least.  The code has also be built
+under MS Windows NT using the Cygnus development tools.
 
 \section{Prerequisites}
  Make sure that you have the following programs available. Most can be
 found at any GNU software FTP repository.
   \begin{itemize}
 
-    \item Compilers for the C and C++ languages are needed. I currently use
-          GNU gcc 2.7.2.1 on Linux Redhat 4.1 with a recent kernel and a
-          few other updates, most important of which is a recent libc (I
-          use glibc 2.0). I also use xlC (3.1.3) on an IBM SP2.  I highly
-          recommend the GNU compiler which can be installed on many
-          architectures.  It can be obtained by FTP from prep.ai.mit.edu.
+    \item Compilers for the C and C++ languages are needed.
+       \begin{itemize}
+           \item GNU gcc 2.7.2 or later works.  I highly recommend the GNU
+               compiler which can be installed on many architectures.  It
+               can be obtained by FTP from prep.ai.mit.edu.
+
+           \item IBM xlC 3.1.3 or later works.
+       \end{itemize}
 
     \item Parts of GNU libg++ are needed.  It isn't necessary to link with
           libg++, but you need to have the genclass command in your path
@@ -51,7 +53,7 @@ found at any GNU software FTP repository.
 
     \item perl: This is used to convert template classes to macros,
           generate documentation, generate and check the validation suite
-          etc.  To compile the code, either perl 4 or perl 5 will work.  To
+          etc.  To compile MPQC, either perl 4 or perl 5 will work.  To
           generate the validation inputs and automatically check the
           outputs, perl 5.003 is needed.
 
@@ -91,7 +93,7 @@ Linux-ELF system.
 \item[\type{--with-ar}] Gives the name of the program than makes libraries.
 \item[\type{--with-ld}] Gives the name of the object linker.
 \item[\type{--with-include}] Gives directories in which include files
-should be sought.  For example, \type{--with-include=-I/u/local/inc -I/u/cljanss/include}
+should be sought.  For example, \type{--with-include="-I/u/local/inc -I/u/cljanss/include"}
 \item[\type{--with-libs}] Specifies libraries that executables should be
 linked with.
 \item[\type{--with-libdirs}] Gives the directories in which libraries
@@ -105,7 +107,7 @@ suit your needs.
 \section{Compiling MPQC}
 
  First you need to generate several include files to satisfy
-cross-dependencies between libraries.  Do these by changing directory into
+cross-dependencies between libraries.  Do this by changing into
 your target directory and type \type{make interface}.  If you get error
 messages in this step do a \type{make distclean} after correcting the
 problem since there might be some incorrectly generated include or source
@@ -190,9 +192,9 @@ type \type{make check} and outputs in the \filnm{ref} and \filnm{run}
 directories will be pairwise compared.
 
   When files are pairwise compared first the status (\type{ok},
-\type{missing}, or \type{failing}) for each file is printed.  If both
+\type{missing}, or \type{failed}) for each file is printed.  If both
 statuses are \type{ok} then an \type{E:} is printed followed by the number
-of digits to which the results agree.  If they agree to all digits
+of digits to which the energies agree.  If they agree to all digits
 \type{99} is printed.  If a gradient was computed, then \type{Grad:} is
 printed followed by the number of digits to which the gradients in least
 agreement agree.  Likewise if frequencies were computed.

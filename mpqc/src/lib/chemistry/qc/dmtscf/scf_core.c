@@ -89,9 +89,17 @@ dmt_matrix Sahalf;
   *  M(mo) = ~c'*M*c' = ~c*S-1/2*M*S-1/2*c = ~c*M(s-1/2)*c
   */
 
+#if 0
   dmt_mult(Hcore,Sahalf,Evecs); /* Evecs is a scratch matrix here. */
   dmt_mult(Sahalf,Evecs,Scr);   /* Evecs is a scratch matrix here. */
   dmt_diag(Scr,Evecs,evals);
+#else
+  {
+    dmt_matrix Hc = dmt_columns("foo",Hcore);
+    dmt_diag(Hc,Evecs,evals);
+    dmt_free(Hc);
+  }
+#endif
   dmt_mult(Sahalf,Evecs,Scf_Vec);
 
   free(evals);

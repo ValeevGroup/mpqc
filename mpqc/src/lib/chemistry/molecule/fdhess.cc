@@ -64,7 +64,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e):
   ndisp_ = 0;
   debug_ = 0;
   gradients_ = 0;
-  accuracy_ = -1.0;
+  accuracy_ = disp_/1000;
   restart_ = DEFAULT_RESTART;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = 0;
@@ -103,7 +103,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
                                                truevalue);
 
-  accuracy_ = keyval->doublevalue("gradient_accuracy",KeyValValuedouble(-1.0));
+  accuracy_ = keyval->doublevalue("gradient_accuracy",
+                                  KeyValValuedouble(disp_/1000));
 
   gradients_ = 0;
   ndisp_ = 0;
@@ -545,6 +546,15 @@ FinDispMolecularHessian::cartesian_hessian()
        << ndisplace() << " displacements:" << endl
        << indent << "Starting at displacement: "
        << ndisplacements_done() << endl;
+  ExEnv::out() << node0 << indent << "Hessian options: " << endl;
+  ExEnv::out() << node0 << indent << "  displacement: " << disp_
+               << " bohr" << endl;
+  ExEnv::out() << node0 << indent << "  gradient_accuracy: "
+               << accuracy_ << " au" << endl;
+  ExEnv::out() << node0 << indent << "  eliminate_cubic_terms: "
+               << (eliminate_cubic_terms_==0?"no":"yes") << endl;
+  ExEnv::out() << node0 << indent << "  only_totally_symmetric: "
+               << (only_totally_symmetric_==0?"no":"yes") << endl;
 
   for (int i=ndisplacements_done(); i<ndisplace(); i++) {
     // This produces side-effects in mol and may even change

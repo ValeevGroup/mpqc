@@ -258,6 +258,14 @@ BlockedSymmSCMatrix::solve_this(SCVector*v)
 }
 
 void
+BlockedSymmSCMatrix::scale(double s)
+{
+  for (int i=0; i < d->blocks()->nblock(); i++)
+    if (mats_[i].nonnull())
+      mats_[i]->scale(s);
+}
+
+void
 BlockedSymmSCMatrix::gen_invert_this()
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
@@ -394,7 +402,8 @@ BlockedSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
 
 // this += a * b * transpose(a)
 void
-BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
+BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
+                                          SCMatrix::Transform t)
 {
   int i, zero=0;
   
@@ -406,10 +415,18 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
                                           class_name());
 
   // check the dimensions
-  if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-    cerr << indent << "BlockedSymmSCMatrix::accumulate_transform: bad dim\n";
-    abort();
-  }
+  if (t == SCMatrix::NormalTransform) {
+      if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
+          cerr << indent << "BlockedSymmSCMatrix::accumulate_transform: bad dim\n";
+          abort();
+        }
+    }
+  else {
+      if (!dim()->equiv(la->coldim()) || !lb->dim()->equiv(la->rowdim())) {
+          cerr << indent << "BlockedSymmSCMatrix::accumulate_transform: bad dim\n";
+          abort();
+        }
+    }
 
   int mxnb = (d->blocks()->nblock() > la->nblocks_)
              ? d->blocks()->nblock()
@@ -423,13 +440,14 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
       continue;
                              
     mats_[mi]->accumulate_transform(la->mats_[i].pointer(),
-                                    lb->mats_[bi].pointer());
+                                    lb->mats_[bi].pointer(),t);
   }
 }
 
 // this += a * b * transpose(a)
 void
-BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
+BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b,
+                                          SCMatrix::Transform t)
 {
   int i, zero=0;
   

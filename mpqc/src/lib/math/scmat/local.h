@@ -208,8 +208,10 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate_symmetric_outer_product(SCVector*);
     void accumulate_symmetric_product(SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
-    void accumulate_transform(SCMatrix*,SymmSCMatrix*);
-    void accumulate_transform(SCMatrix*,DiagSCMatrix*);
+    void accumulate_transform(SCMatrix*,SymmSCMatrix*,
+                              SCMatrix::Transform = SCMatrix::NormalTransform);
+    void accumulate_transform(SCMatrix*,DiagSCMatrix*,
+                              SCMatrix::Transform = SCMatrix::NormalTransform);
     void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,

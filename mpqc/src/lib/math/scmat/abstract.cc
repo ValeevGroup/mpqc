@@ -679,7 +679,8 @@ SymmSCMatrix::accumulate_symmetric_product(SCMatrix *a)
 }
 
 void
-SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
+SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b,
+                                   SCMatrix::Transform t)
 {
   RefSCMatrix brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
@@ -687,17 +688,35 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
 
   RefSCMatrix tmp = a->clone();
   tmp->assign(0.0);
-  tmp->accumulate_product(a,brect);
-  brect = 0;
 
-  RefSCMatrix at = a->copy();
-  at->transpose_this();
+  RefSCMatrix res;
 
-  RefSCMatrix res = kit()->matrix(dim(),dim());
-  res->assign(0.0);
-  res->accumulate_product(tmp.pointer(), at.pointer());
+  if (t == SCMatrix::TransposeTransform) {
+      RefSCMatrix at = a->copy();
+      at->transpose_this();
+
+      tmp->accumulate_product(at.pointer(), brect.pointer());
+      brect = 0;
+      at = 0;
+
+      res = kit()->matrix(dim(),dim());
+      res->assign(0.0);
+      res->accumulate_product(tmp.pointer(), a);
+    }
+  else {
+      tmp->accumulate_product(a,brect);
+      brect = 0;
+
+      RefSCMatrix at = a->copy();
+      at->transpose_this();
+
+      res = kit()->matrix(dim(),dim());
+      res->assign(0.0);
+      res->accumulate_product(tmp.pointer(), at.pointer());
+      at = 0;
+    }
+
   tmp = 0;
-  at = 0;
 
   scale(2.0);
   accumulate_symmetric_sum(res.pointer());
@@ -705,7 +724,8 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
 }
 
 void
-SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
+SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b,
+                                   SCMatrix::Transform t)
 {
   RefSCMatrix m = kit()->matrix(a->rowdim(),a->rowdim());
   RefSCMatrix brect = kit()->matrix(b->dim(),b->dim());
@@ -714,17 +734,35 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
 
   RefSCMatrix tmp = a->clone();
   tmp->assign(0.0);
-  tmp->accumulate_product(a,brect);
-  brect = 0;
 
-  RefSCMatrix at = a->copy();
-  at->transpose_this();
+  RefSCMatrix res;
+  
+  if (t == SCMatrix::TransposeTransform) {
+      RefSCMatrix at = a->copy();
+      at->transpose_this();
 
-  RefSCMatrix res = kit()->matrix(dim(),dim());
-  res->assign(0.0);
-  res->accumulate_product(tmp.pointer(), at.pointer());
+      tmp->accumulate_product(at.pointer(), brect.pointer());
+      brect = 0;
+      at = 0;
+
+      res = kit()->matrix(dim(),dim());
+      res->assign(0.0);
+      res->accumulate_product(tmp.pointer(), a);
+    }
+  else {
+      tmp->accumulate_product(a, brect.pointer());
+      brect = 0;
+
+      RefSCMatrix at = a->copy();
+      at->transpose_this();
+
+      res = kit()->matrix(dim(),dim());
+      res->assign(0.0);
+      res->accumulate_product(tmp.pointer(), at.pointer());
+      at = 0;
+    }
+
   tmp = 0;
-  at = 0;
 
   scale(2.0);
   accumulate_symmetric_sum(res.pointer());

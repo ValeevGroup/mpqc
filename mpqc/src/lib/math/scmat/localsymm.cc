@@ -523,7 +523,8 @@ LocalSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
 
 // this += a * b * transpose(a)
 void
-LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
+LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
+                                        SCMatrix::Transform t)
 {
   // do the necessary castdowns
   LocalSCMatrix*la
@@ -553,7 +554,8 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
 
 // this += a * b * transpose(a)
 void
-LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
+LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b,
+                                        SCMatrix::Transform t)
 {
   // do the necessary castdowns
   LocalSCMatrix*la

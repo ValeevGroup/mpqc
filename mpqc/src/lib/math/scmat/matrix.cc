@@ -741,18 +741,20 @@ RefSymmSCMatrix::accumulate_symmetric_sum(const RefSCMatrix& a) const
 
 void
 RefSymmSCMatrix::accumulate_transform(const RefSCMatrix& a,
-                                      const RefSymmSCMatrix&b) const
+                                      const RefSymmSCMatrix&b,
+                                      SCMatrix::Transform t) const
 {
   require_nonnull();
-  pointer()->accumulate_transform(a.pointer(),b.pointer());
+  pointer()->accumulate_transform(a.pointer(),b.pointer(),t);
 }
 
 void
 RefSymmSCMatrix::accumulate_transform(const RefSCMatrix& a,
-                                      const RefDiagSCMatrix&b) const
+                                      const RefDiagSCMatrix&b,
+                                      SCMatrix::Transform t) const
 {
   require_nonnull();
-  pointer()->accumulate_transform(a.pointer(),b.pointer());
+  pointer()->accumulate_transform(a.pointer(),b.pointer(),t);
 }
 
 void

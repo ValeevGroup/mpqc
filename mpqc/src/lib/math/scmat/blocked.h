@@ -218,6 +218,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
+    void scale(double);
 
     SCMatrix * get_subblock(int,int,int,int);
     SymmSCMatrix * get_subblock(int,int);
@@ -242,8 +243,10 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void accumulate_symmetric_outer_product(SCVector*);
     void accumulate_symmetric_product(SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
-    void accumulate_transform(SCMatrix*,SymmSCMatrix*);
-    void accumulate_transform(SCMatrix*,DiagSCMatrix*);
+    void accumulate_transform(SCMatrix*,SymmSCMatrix*,
+                              SCMatrix::Transform = SCMatrix::NormalTransform);
+    void accumulate_transform(SCMatrix*,DiagSCMatrix*,
+                              SCMatrix::Transform = SCMatrix::NormalTransform);
     void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
 
     void convert_accumulate(SymmSCMatrix*a);

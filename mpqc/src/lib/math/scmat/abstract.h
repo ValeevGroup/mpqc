@@ -192,6 +192,9 @@ class SCMatrix: public DescribedClass {
     RefSCDimension d1,d2;
     RefSCMatrixKit kit_;
   public:
+    // used to control transformations
+    enum Transform { NormalTransform = 0, TransposeTransform = 1 };
+    
     // concrete functions (some can be overridden)
     SCMatrix(const RefSCDimension&, const RefSCDimension&, SCMatrixKit *);
     virtual ~SCMatrix();
@@ -421,8 +424,10 @@ class SymmSCMatrix: public DescribedClass {
     //. Sum into \srccd{this} the products of various vectors or matrices.
     virtual void accumulate_symmetric_sum(SCMatrix*) = 0;
     virtual void accumulate_symmetric_product(SCMatrix*);
-    virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*);
-    virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*);
+    virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*,
+                            SCMatrix::Transform = SCMatrix::NormalTransform);
+    virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*, 
+                            SCMatrix::Transform = SCMatrix::NormalTransform);
     virtual void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
     virtual void accumulate_symmetric_outer_product(SCVector*);
     //. Return the scalar obtained by multiplying \srccd{this} on the

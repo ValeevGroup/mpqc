@@ -53,17 +53,6 @@ stack_alignment_check(void *ptr, const char *where)
 #  define stack_alignment_check(ptr,where)
 #endif
 
-#if defined(__i386__) && defined(__GNUG__)
-//#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
-#define FIX_STACK __asm__("andl\t$0xfffffff8,%esp\n\t"); \
-                  __asm__("addl\t$-4,%esp\n\t")
-//#define FIX_STACK
-#define A8 __attribute__ ((aligned (8)))
-#else
-#define FIX_STACK
-#define A8
-#endif
-
   /* MG is the maximum angular momentum for which we will use
    * the generated build routines. It is defined in oint3/build.h */
 #define MINA(x) (((x)<MG)?(x):MG)
@@ -548,7 +537,6 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
   else
     build_not_using_gcs(nc1,nc2,nc3,nc4,
                     minam1,minam3,maxam12,maxam34,dam1,dam2,dam3,dam4,eAB);
-
   }
 
 void
@@ -556,7 +544,6 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              int minam1, int minam3, int maxam12, int maxam34,
                              int dam1, int dam2, int dam3, int dam4, int eAB)
 {
-  FIX_STACK;
   int i,j,k,l,m;
   int ci,cj,ck,cl;
   double *bufferprim;
@@ -702,7 +689,6 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
                          int minam1, int minam3, int maxam12, int maxam34,
                          int dam1, int dam2, int dam3, int dam4, int eAB)
 {
-  FIX_STACK;
   int i,j,k,l,m;
   int ci,cj,ck,cl;
   int maxam1234=maxam12+maxam34;
@@ -839,7 +825,6 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
 void
 Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
 {
-  FIX_STACK;
   int i;
   double T;
   double pmq,pmq2;
@@ -957,7 +942,6 @@ void
 Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
                                           int am, double norm)
 {
-  FIX_STACK;
   int i;
   double T;
   double pmq,pmq2;
@@ -1072,7 +1056,6 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
 void
 Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 {
-  FIX_STACK;
   if (int_store1 && !int_unit2 && !int_unit4) {
     build.int_v_r10 = int_shell_r(osh1,0);
     build.int_v_r11 = int_shell_r(osh1,1);
@@ -1120,8 +1103,6 @@ Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 void
 Int2eV3::blockbuildprim(int minam1,int maxam12,int minam3,int maxam34)
 {
-  FIX_STACK;
-
   int m, b;
   int l=maxam12+maxam34;
 
@@ -1435,8 +1416,6 @@ Int2eV3::blockbuildprim_1(int amin,int amax,int am34,int m)
 void
 Int2eV3::blockbuildprim_3(int bmin,int bmax,int m)
 {
-  FIX_STACK;
-
   double *I00;
   double *I10; /* = [a0|c0](m) */
   double *I11; /* = [a0|c0](m+1) */

@@ -738,6 +738,36 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new LYPCFunctional;
         }
+      else if (!strcmp(name_,"SVWN1")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN1LCFunctional;
+        }
+      else if (!strcmp(name_,"SVWN1RPA")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN1LCFunctional(1);
+        }
+      else if (!strcmp(name_,"SVWN2")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN2LCFunctional;
+        }
+      else if (!strcmp(name_,"SVWN3")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN3LCFunctional;
+        }
+      else if (!strcmp(name_,"SVWN4")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN4LCFunctional;
+        }
+      else if (!strcmp(name_,"SVWN5")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN5LCFunctional;
+        }
       else if (!strcmp(name_,"SPZ81")) {
           init_arrays(3);
           funcs_[0] = new SlaterXFunctional;
@@ -754,13 +784,6 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new P86CFunctional;
-          funcs_[3] = new PZ81LCFunctional;
-        }
-      else if (!strcmp(name_,"BNewP86")) {
-          init_arrays(4);
-          funcs_[0] = new SlaterXFunctional;
-          funcs_[1] = new Becke88XFunctional;
-          funcs_[2] = new NewP86CFunctional;
           funcs_[3] = new PZ81LCFunctional;
         }
       else if (!strcmp(name_,"B3LYP")) {

@@ -159,8 +159,7 @@ double *mgdbuff;
 double maxpijkl;
 double *tnint;
 {
-  int g,m,leavel,nijkl;
-  int num;
+  int g,leavel,nijkl;
   int s1,s2,s3,s4;
   int n1,n2,n3,n4;
   int e12,e34,e13e24;
@@ -173,9 +172,8 @@ double *tnint;
   int lij,lkl;
   int gi,gj,gk,gl,gij,gkl,gijkl;
   int index;
-  int keql;
   int use_symmetry=(sym_info->g >1);
-  int imax,cpmax,scale;
+  int imax,cpmax;
   int inttol = (int) ((double) -(scf_info->intcut)/log10(2.0));
 
   double pki_int;

@@ -1,6 +1,31 @@
 \documentstyle{web}
 \begin{document}
 
+@* Administrivia.
+My personal miscellaney of definitions.  
+
+@d private static
+@d public
+@f private static
+@f public static
+
+
+@ Fix up some lint gripes.
+@d Printf (void) printf@
+char *sprintf();
+char *getenv();
+
+@ Forward declarations.
+@c
+private int local_node;
+private int debug_node;
+
+@ We'll need these include files.
+@c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 @* Debugger control.  This package can arrange to start
 up the debugger over the calling process.  You must
 first call |debug_init|.  The debugger can then be
@@ -67,33 +92,6 @@ int i;
 
 @ This was just used in the usage example.
 @<$\ldots$ other code.@>= {}
-
-@* Administrivia.
-My personal miscellaney of definitions.  
-
-@d private=static
-@d public=
-@f private static
-@f public static
-
-
-@ Fix up some lint gripes.
-@d Printf=(void) printf@
-char *sprintf();
-char *getenv();
-
-@ Forward declarations.
-@c
-private int local_node;
-private int debug_node;
-
-@ We'll need these include files.
-@c
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-
 
 @* The code.
 We'll start with an  outline of the program.  

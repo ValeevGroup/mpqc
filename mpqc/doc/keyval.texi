@@ -7,7 +7,7 @@ The @code{KeyVal} class provides a means for users to associate keywords
 with values.  The package is flexible enough to allow complex structures
 and arrays to be read from an input file.  Classes which are descendants
 of @code{DescribedClass} (@pxref{The DescribedClass Class}) and have a
-@code{KeyVal} constructor can be completely specified with a
+@code{KeyVal} constructor can be completely specified by a
 @code{KeyVal} object and initialized with a single C++ statement.
 
 @menu
@@ -26,26 +26,7 @@ of @code{DescribedClass} (@pxref{The DescribedClass Class}) and have a
 @clindex KeyVal
 @c texi2html: do not split
 
-The @code{KeyVal} class is designed to simplify the process of allowing
-a user to specify keyword/value associations to a C++ program.  A
-flexible input style and ease of use for the programmer is achieved with
-this method.  Keywords are represented by null terminated character arrays.
-The keywords are organized hierarchially, in a manner similar to the way
-that many file systems are organized.  One character is special,
-'@code{:}', which is used to separate the various hierarchial labels,
-which are referred to as ``segments'', in the keyword.
-
-A convention for specifying arrays is provided by @code{KeyVal}.  Each
-index of the array is given by appending a segment containing the
-character representation of the index.  Thus, @code{array:3:4} would be
-a the keyword corresponding to third row and fourth column of
-@code{array}.
-
-To allow the @code{KeyVal} class to have associations that can represent
-data for classes, the keyword can be associated with a class as well as
-a value.  This permits polymorphic data to be unambiguously represented
-by keyword/value associations.  Most use of @code{KeyVal} need not be
-concerned with this.
+@include KeyVal.texi
 
 @menu
 * KeyVal Interface:: The interface to the KeyVal class.
@@ -58,50 +39,7 @@ concerned with this.
 @subsection Interface
 
 The public interface to @code{KeyVal} is:
-@table @code
-@item virtual const RefKeyValValue value(const char*)
-Return the value associated with the keyword.
-
-@item virtual int exists(const char*)
-This takes as its only argument a keyword.
-Returns 1 if the keyword has a value and 0 otherwise.
-
-@item RefDescribedClass virtual describedclassvalue(const char*)
-Returns a reference to an object of type DescribedClass
-(@pxref{The DescribedClass Class}).
-
-@item double doublevalue(const char*)
-Returns the double precision floating point value of the keyword argument.
-
-@item float floatvalue(const char*)
-Returns the single precision floating point value of the keyword argument.
-
-@item char charvalue(const char*)
-Returns the character value of the keyword argument.
-
-@item int intvalue(const char*)
-Returns the integer value of the keyword argument.
-
-@item char* pcharvalue(const char*)
-Returns the a copy of the string representation of the keyword's value.
-Storage for the copy is obtained with new.
-
-@item virtual KeyValError error()
-Return the current error condition.
-
-@item virtual char* errormsg()
-Return a textual representation of the current error.
-
-@item virtual char* errormsg(KeyValError @var{err})
-Return a textual representation of @var{err}.  The current error
-condition will be used if the arguement is omitted.
-
-@item virtual int count(const char*)
-If the value of a keyword is an array, then return its length.
-If no arguments are given then the top level will be checked to
-see if it is an array and, if so, the number of elements will be
-counted.
-@end table
+@include KeyVal.pub.texi
 
 Each of the members taking a keyword for an argument can have up to two
 more integers following the keyword in the
@@ -111,23 +49,7 @@ decimal representation of the indices.  These members can also take
 just one or two integer arguments, with the keyword omitted.
 
 The protected interface is:
-@table @code
-@item void seterror(KeyValError)
-Set the current error condition.
-
-@item virtual int    key_exists(const char*)=0
-@item virtual int    key_count(const char* =0)
-@item virtual RefKeyValValue key_value(const char*)=0
-@item virtual int    key_booleanvalue(const char*)
-@item virtual double key_doublevalue(const char*)
-@item virtual float  key_floatvalue(const char*)
-@item virtual char   key_charvalue(const char*)
-@item virtual int    key_intvalue(const char*)
-@item virtual char*  key_pcharvalue(const char*)
-@item virtual RefDescribedClass key_describedclassvalue(const char*)
-These are the overridable members that all of the data access
-members of the public interface use to access data.
-@end table
+@include KeyVal.pro.texi
 
 @c .........................................................................
 

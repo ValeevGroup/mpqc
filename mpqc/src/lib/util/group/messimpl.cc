@@ -99,6 +99,7 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   if (argc && argv) {
       for (int i=0; i<argc; i++) {
 	  if (argv[i] && !strcmp(argv[i], "-messagegrp")) {
+              char *messagegrp_string = argv[i];
               i++;
               if (i >= argc) {
                   ExEnv::err() << "-messagegrp must be following by an argument"
@@ -106,13 +107,15 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
                   abort();
                 }
               keyval_string = argv[i];
-              // permute the messagegrp arguments to the end of argv
-              char *tmp = argv[argc-2];
-              argv[argc-2] = argv[i-1];
-              argv[i-1] = tmp;
-              tmp = argv[argc-1];
-              argv[argc-1] = argv[i];
-              argv[i] = tmp;
+              // move the messagegrp arguments to the end of argv
+              int j;
+              for (j=i+1; j<argc; j++) {
+                  argv[j-2] = argv[j];
+                }
+              argv[j++] = messagegrp_string;
+              argv[j++] = keyval_string;
+              // decrement argc to hide the last two arguments
+              argc -= 2;
               break;
             }
         }

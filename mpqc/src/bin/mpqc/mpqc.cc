@@ -291,13 +291,6 @@ main(int argc, char *argv[])
   if (strcmp(options.retrieve("W"),"."))
     chdir(options.retrieve("W"));
 
-  // get the message group.  first try the commandline and environment
-  Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.nonnull())
-    MessageGrp::set_default_messagegrp(grp);
-  else
-    grp = MessageGrp::get_default_messagegrp();
-
   // initialize keyval input
   const char *object_input = options.retrieve("f");
   const char *generic_input;
@@ -314,6 +307,13 @@ main(int argc, char *argv[])
     options.usage();
     abort();
   }
+
+  // get the message group.  first try the commandline and environment
+  Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp.nonnull())
+    MessageGrp::set_default_messagegrp(grp);
+  else
+    grp = MessageGrp::get_default_messagegrp();
 
   if (object_input == 0 && generic_input == 0) {
     generic_input = "mpqc.in";

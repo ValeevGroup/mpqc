@@ -179,10 +179,10 @@ main(int argc, char *argv[])
   pdbfile[nfilebase] = '\0';
   strcat(pdbfile, ".pdb");
 
+  RefDebugger debugger;
+
  // initialize the picl routines
   RefMessageGrp grp = init_mp(filename, argc, argv);
-
-  //debug_init(argv[0]);
 
  // initialize timing for mpqc
 
@@ -192,8 +192,6 @@ main(int argc, char *argv[])
   RefKeyVal keyval;
 
   int nfzc, nfzv, mem_alloc;
-
-  RefDebugger debugger;
 
   if (mynode0() == 0) {
     fprintf(outfile,
@@ -477,6 +475,9 @@ main(int argc, char *argv[])
     assign_centers(&oldcenters,tcenters);
     free_centers(tcenters);
   }
+
+ // done with bcaststate now
+  bcaststate.forget_references();
 
  // initialize the dmt library
   init_dmt(&centers,&sym_info);

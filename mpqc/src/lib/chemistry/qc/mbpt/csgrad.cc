@@ -492,6 +492,7 @@ MBPT2::compute_cs_grad()
   MemoryGrpBuf<double> membuf(mem);
   MemoryGrpBuf<double> membuf_remote(mem);
 
+  tim_enter("mp2 passes");
   for (pass=0; pass<npass; pass++) {
 
     if (debug_) {
@@ -1668,6 +1669,7 @@ MBPT2::compute_cs_grad()
       }
 
     }           // exit loop over i-batches (pass)
+  tim_exit("mp2 passes");
 
   mem->set_localsize(0);
 

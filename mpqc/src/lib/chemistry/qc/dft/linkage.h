@@ -45,6 +45,7 @@ const ClassDesc &dft_force_link_f_ = LYPFunctional::class_desc_;
 const ClassDesc &dft_force_link_g_ = HFACM::class_desc_;
 const ClassDesc &dft_force_link_h_ = CLKS::class_desc_;
 const ClassDesc &dft_force_link_i_ = UKS::class_desc_;
+const ClassDesc &dft_force_link_j_ = LSDACFunctional::class_desc_;
 
 #endif /* __PIC__ */
 

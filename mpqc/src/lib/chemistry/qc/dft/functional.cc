@@ -194,7 +194,7 @@ SumDenFunctional::SumDenFunctional(const RefKeyVal& keyval):
   int ncoef = keyval->count("coefs");
   int nfunc = keyval->count("funcs");
   if (ncoef != nfunc && ncoef != 0) {
-      cerr << "SumDenFunctional: number of coefs and funcs differ" << endl;
+      cout << "SumDenFunctional: number of coefs and funcs differ" << endl;
       abort();
     }
   
@@ -364,7 +364,7 @@ LSDAXFunctional::point(const PointInputData &id,
     }
 }
 
-#if 0
+#if 1
 /////////////////////////////////////////////////////////////////////////////
 // LSDACFunctional
 
@@ -404,7 +404,7 @@ LSDACFunctional::~LSDACFunctional()
 void
 LSDACFunctional::save_data_state(StateOut& s)
 {
-  cerr << "LSDACFunctional: cannot save state" << endl;
+  cout << "LSDACFunctional: cannot save state" << endl;
   abort();
 }
 
@@ -433,8 +433,8 @@ LSDACFunctional::point(const PointInputData &id,
   const double sixth = 1./6.;
   const double four_thirds = 4./3.;
 
-  double rho = id.dens_alpha + id.dens_beta;
-  double zeta = (id.dens_alpha - id.dens_beta)/rho;
+  double rho = id.rho_a + id.rho_b;
+  double zeta = (id.rho_a - id.rho_b)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
 
   double epc    = F(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
@@ -451,7 +451,7 @@ LSDACFunctional::point(const PointInputData &id,
   od.energy = ec * rho;
 
   if (compute_potential_) {
-      cerr << class_name() << ": cannot compute potential" << endl;
+      cout << class_name() << ": cannot compute potential" << endl;
       abort();
     }
 }
@@ -500,7 +500,7 @@ XalphaFunctional::~XalphaFunctional()
 void
 XalphaFunctional::save_data_state(StateOut& s)
 {
-  cerr << "XalphaFunctional: cannot save state" << endl;
+  cout << "XalphaFunctional: cannot save state" << endl;
   abort();
 }
 
@@ -576,7 +576,7 @@ Becke88Functional::~Becke88Functional()
 void
 Becke88Functional::save_data_state(StateOut& s)
 {
-  cerr << "Becke88Functional: cannot save state" << endl;
+  cout << "Becke88Functional: cannot save state" << endl;
   abort();
 }
 
@@ -681,7 +681,7 @@ LYPFunctional::~LYPFunctional()
 void
 LYPFunctional::save_data_state(StateOut& s)
 {
-  cerr << "LYPFunctional: cannot save state" << endl;
+  cout << "LYPFunctional: cannot save state" << endl;
   abort();
 }
 
@@ -746,7 +746,7 @@ LYPFunctional::point(const PointInputData &id,
     }
 
   if (compute_potential_) {
-      cerr << class_name() << ": cannot compute potential" << endl;
+      cout << class_name() << ": cannot compute potential" << endl;
       abort();
     }
 
@@ -793,7 +793,7 @@ PW91Functional::~PW91Functional()
 void
 PW91Functional::save_data_state(StateOut& s)
 {
-  cerr << "PW91Functional: cannot save state" << endl;
+  cout << "PW91Functional: cannot save state" << endl;
   abort();
 }
 
@@ -839,7 +839,7 @@ PW91Functional::point(const PointInputData &id,
   
   if (compute_potential_) {
       // not true, really, but abort anyway
-      cerr << class_name() << ": cannot compute potential" << endl;
+      cout << class_name() << ": cannot compute potential" << endl;
       abort();
     }
 }

@@ -76,7 +76,7 @@ HFACM::HFACM(const RefKeyVal& keyval):
 
   scf_ = keyval->describedclassvalue("hf");
   if (scf_.null()) {
-      cerr << "HFACM: requires \"hf\" keyword of type SCF" << endl;
+      cout << "HFACM: requires \"hf\" keyword of type SCF" << endl;
       abort();
     }
 }
@@ -115,11 +115,11 @@ HFACM::compute()
       set_actual_value_accuracy(desired_value_accuracy());
     }
   if (gradient_needed()) {
-      cerr << "HFACM: gradient not implemented" << endl;
+      cout << "HFACM: gradient not implemented" << endl;
       abort();
     }
   if (hessian_needed()) {
-      cerr << "HFACM: hessian not implemented" << endl;
+      cout << "HFACM: hessian not implemented" << endl;
       abort();
     }
 }

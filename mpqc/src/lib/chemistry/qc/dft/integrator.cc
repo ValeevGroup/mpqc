@@ -273,7 +273,6 @@ DenIntegrator::do_point(const SCVector3 &r,
       if (need_gradient_) {
           for (i=0; i<3; i++) id.del_rho_b[i] = id.del_rho_a[i];
           id.gamma_bb = id.gamma_aa;
-          id.gamma_ab = id.gamma_aa;
         }
     }
   else {
@@ -281,7 +280,6 @@ DenIntegrator::do_point(const SCVector3 &r,
       id.rho_b_13 = pow(id.rho_b,1./3.);
       if (need_gradient_) {
           id.gamma_bb = norm(id.del_rho_b);
-          id.gamma_ab = sqrt(dot(id.del_rho_a, id.del_rho_b));
         }
     }
 

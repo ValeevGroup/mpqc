@@ -42,7 +42,6 @@ struct PointInputData {
 
     double gamma_aa;
     double gamma_bb;
-    double gamma_ab;
 
     double del_rho_a[3];
     double del_rho_b[3];
@@ -168,7 +167,7 @@ class LSDAXFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-#if 0
+#if 1
 /** The LSDACFunctional computes energies and densities using the
     LSDA correlation term (from Vosko, Wilk, and Nusair). */
 class LSDACFunctional: public DenFunctional {

@@ -218,7 +218,7 @@ CLKS::ao_fock()
 
   // for now quit
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -295,7 +295,7 @@ CLKS::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("clks e2");
@@ -329,7 +329,7 @@ CLKS::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    cerr << node0 << indent
+    cout << node0 << indent
          << "CLKS::two_body_deriv: can't do gradient yet\n";
     abort();
   }

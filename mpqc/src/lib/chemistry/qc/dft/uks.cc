@@ -193,7 +193,7 @@ UKS::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("uks e2");
@@ -255,7 +255,7 @@ UKS::ao_fock()
 
   // for now quit
   else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -342,7 +342,7 @@ UKS::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    cerr << node0 << indent
+    cout << node0 << indent
          << "UKS::two_body_deriv: can't do gradient yet\n";
     abort();
   }

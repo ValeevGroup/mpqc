@@ -127,6 +127,12 @@ sub compare_vecs {
     my $e1, $e2;
     my $maxerror = 99;
     my $log10 = log(10.0);
+    my $nv1 = @v1;
+    my $nv2 = @v2;
+    if ($nv1 != $nv2) {
+        printf "compare_vecs: vecs not of equal length\n";
+        exit 1;
+    }
     while (($e1 = shift @v1)
            &&($e2 = shift @v2)) {
         my $diff = abs($e2-$e1);
@@ -140,4 +146,13 @@ sub compare_vecs {
         if ($ldiff < $maxerror) { $maxerror = $ldiff; }
     }
     $maxerror;
+}
+
+sub print_vec {
+    my $v1ref = shift;
+    my @v1 = @{$v1ref};
+    my $e1;
+    while ($e1 = shift @v1) {
+        printf " %12.8f\n", $e1;
+    }
 }

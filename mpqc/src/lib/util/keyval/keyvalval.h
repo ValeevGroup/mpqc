@@ -142,8 +142,17 @@ class KeyValValueRefDescribedClass: public KeyValValue {
 class KeyValValueString: public KeyValValue {
   private:
     const char* _val;
+    char *_val_to_delete;
   public:
-    KeyValValueString(const char*);
+    // Copy = copy the string data
+    // Steal = use the passed pointer and delete it in DTOR
+    // Use = use the passed pointer but do not delete it
+    enum Storage { Copy, Steal, Use };
+
+    KeyValValueString(const char*,
+                      KeyValValueString::Storage s = KeyValValueString::Use);
+    KeyValValueString(char*,
+                      KeyValValueString::Storage s = KeyValValueString::Use);
     KeyValValueString(const KeyValValueString&);
     ~KeyValValueString();
     KeyValValue::KeyValValueError doublevalue(double&) const;

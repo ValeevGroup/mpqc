@@ -291,16 +291,56 @@ KeyValValueRefDescribedClass::print(ostream&o) const
 
 /////////////////////////////////////////////////////////////////////////
 
-KeyValValueString::KeyValValueString(const char* val):
-  _val(val)
+KeyValValueString::KeyValValueString(
+    const char* val, KeyValValueString::Storage s)
 {
+  switch (s) {
+  case Copy:
+      _val_to_delete = strcpy(new char[strlen(val)+1], val);
+      _val = _val_to_delete;
+      break;
+  case Steal:
+      cerr << "KeyValValueString: CTOR: cannot steal const string" << endl;
+      abort();
+      break;
+  case Use:
+      _val = val;
+      _val_to_delete = 0;
+      break;
+    }
 }
-KeyValValueString::KeyValValueString(const KeyValValueString&val):
-  _val(val._val)
+KeyValValueString::KeyValValueString(
+    char* val, KeyValValueString::Storage s)
 {
+  switch (s) {
+  case Copy:
+      _val_to_delete = strcpy(new char[strlen(val)+1], val);
+      _val = _val_to_delete;
+      break;
+  case Steal:
+      _val = val;
+      _val_to_delete = val;
+      break;
+  case Use:
+      _val = val;
+      _val_to_delete = 0;
+      break;
+    }
+}
+KeyValValueString::KeyValValueString(const KeyValValueString&val)
+{
+  if (val._val_to_delete == 0) {
+      _val = val._val;
+      _val_to_delete = 0;
+    }
+  else {
+      _val_to_delete = strcpy(new char[strlen(val._val)+1], val._val);
+      _val = _val_to_delete;
+    }
 }
 KeyValValueString::~KeyValValueString()
 {
+  delete[] _val_to_delete;
 }
 KeyValValue::KeyValValueError
 KeyValValueString::doublevalue(double&val) const

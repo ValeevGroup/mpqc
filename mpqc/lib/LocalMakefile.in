@@ -50,7 +50,7 @@ LISTLIBS=@LISTLIBS@ -DLIBSUF=$(LIBSUF)
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory
 INCLUDE = -I$(TOPDIR)/src/lib @CPPFLAGS@
-DEFINES = @DEFS@
+DEFINES = @DEFS@ @EXTRADEFINES@
 
 CPPFLAGS = $(DEFINES) $(INCLUDE)
 

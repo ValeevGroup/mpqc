@@ -54,12 +54,12 @@ KeyValKeyword::hash() const
   int i;
 
   // Even numbered bytes make up the lower part of the hash index
-  for (i=0; i<::strlen(keyword_); i+=2) {
+  for (i=0; i < ::strlen(keyword_); i+=2) {
       r ^= keyword_[i];
     }
 
   // Odd numbered bytes make up the upper part of the hash index
-  for (i=1; i<::strlen(keyword_); i+=2) {
+  for (i=1; i < ::strlen(keyword_); i+=2) {
       r ^= keyword_[i]<<8;
     }
 

@@ -103,11 +103,18 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
 
 MOIndexSpace::MOIndexSpace(StateIn& si) : SavableState(si)
 {
-  coefs_.restore(si);
-  basis_ << SavableState::restore_state(si);
+  si.get(name_);
 
-  si.get(offsets_);
+  coefs_.restore(si);
+  evals_.restore(si);
+  basis_ << SavableState::restore_state(si);
   si.get(mosym_);
+
+  si.get(rank_);
+  si.get(full_rank_);
+  si.get(nblocks_);
+  si.get(offsets_);
+  si.get(nmo_);
 
   int moorder; si.get(moorder); moorder = (int) moorder_;
   
@@ -121,11 +128,19 @@ MOIndexSpace::~MOIndexSpace()
 void
 MOIndexSpace::save_data_state(StateOut& so)
 {
-  coefs_.save(so);
-  SavableState::save_state(basis_.pointer(),so);
+  so.put(name_);
 
-  so.put(offsets_);
+  coefs_.save(so);
+  evals_.save(so);
+  modim_ = evals_.dim();
+  SavableState::save_state(basis_.pointer(),so);
   so.put(mosym_);
+
+  so.put(rank_);
+  so.put(full_rank_);
+  so.put(nblocks_);
+  so.put(offsets_);
+  so.put(nmo_);
 
   so.put((int)moorder_);
 }

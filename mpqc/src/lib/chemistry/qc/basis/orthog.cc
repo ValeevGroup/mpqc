@@ -199,9 +199,9 @@ OverlapOrthog::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
       for (i=0; i<bev->nblocks(); i++) {
           if (bev->block(i).null()) continue;
           for (j=0; j<nfunc[i]; j++) {
-              bev->block(i)->assign_column(
-                  bU->block(i)->get_column(pm_index[ifunc]),j
-                  );
+              RefSCVector col = bU->block(i)->get_column(pm_index[ifunc]);
+              bev->block(i)->assign_column(col,j);
+              col = 0;
               ifunc++;
             }
         }

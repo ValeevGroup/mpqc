@@ -145,7 +145,7 @@ PsiWfn::compute()
 }
 
 double
-PsiWfn::density(cart_point&d)
+PsiWfn::density(const SCVector3&d)
 {
   abort();
 }

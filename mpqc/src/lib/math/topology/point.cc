@@ -35,32 +35,6 @@
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
 
-cart_point::cart_point()
-{
-}
-cart_point::cart_point(const cart_point&p)
-{
-  r[0]=p[0];
-  r[1]=p[1];
-  r[2]=p[2];
-}
-cart_point::cart_point(const double* p)
-{
-  r[0]=p[0];
-  r[1]=p[1];
-  r[2]=p[2];
-}
-cart_point::~cart_point() {};
-double& cart_point::operator[](int i) { return r[i]; };
-const double& cart_point::operator[](int i) const { return r[i]; };
-double& cart_point::x() { return r[0]; };
-double& cart_point::y() { return r[1]; };
-double& cart_point::z() { return r[2]; };
-const double& cart_point::x() const { return r[0]; };
-const double& cart_point::y() const { return r[1]; };
-const double& cart_point::z() const { return r[2]; };
-
-
 #define CLASSNAME Point
 #define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
@@ -224,11 +198,6 @@ int Point::dimension() const
 {
   return dim;
 }
-
-DescribedClass_REF_def(Point);
-ARRAY_def(RefPoint);
-SET_def(RefPoint);
-ARRAYSET_def(RefPoint);
 
 /////////////////////////////////////////////////////////////////////////////
 

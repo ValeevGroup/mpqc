@@ -92,37 +92,6 @@ class Point : public SavableState
 
 };
 
-DescribedClass_REF_dec(Point);
-ARRAY_dec(RefPoint);
-SET_dec(RefPoint);
-ARRAYSET_dec(RefPoint);
-
-class cart_point {
- private:
-  double r[3];
- public:
-  cart_point();
-  cart_point(const cart_point&p);
-  cart_point(const double*);
-  ~cart_point();
-  double& operator[](int i);
-  const double& operator[](int i) const;
-  double& x();
-  double& y();
-  double& z();
-  const double& x() const;
-  const double& y() const;
-  const double& z() const;
-};
-
-typedef cart_point Point3;
-
-typedef struct {
-  double r;
-  double theta;
-  double phi;
-} sph_point;
-
 #endif
 
 // Local Variables:

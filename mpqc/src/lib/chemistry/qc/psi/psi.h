@@ -26,7 +26,7 @@ class PsiWfn: public Wavefunction {
     virtual ~PsiWfn();
     void save_data_state(StateOut&);
 
-    double density(cart_point&);
+    double density(const SCVector3&);
     RefSymmSCMatrix density();
 
     void print(ostream&o=cout);

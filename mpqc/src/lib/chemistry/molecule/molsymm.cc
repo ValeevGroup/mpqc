@@ -567,7 +567,7 @@ Molecule::highest_point_group(double tol) const
 #endif
 
   SymmetryOperation frame;
-  Point origin;
+  SCVector3 origin;
   for (i=0; i<3; i++) {
     frame(i,0) = xaxis[i];
     frame(i,1) = yaxis[i];

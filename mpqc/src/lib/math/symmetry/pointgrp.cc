@@ -58,9 +58,12 @@
 #include <util/misc/formio.h>
 #include <math/symmetry/pointgrp.h>
 
+#include <math/topology/point.h> // still needed to support old ckpt files
+
 ////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME PointGroup
+#define VERSION 2
 #define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -99,7 +102,8 @@ PointGroup::PointGroup(const char *s, SymmetryOperation& so)
   origin_[0] = origin_[1] = origin_[2] =0;
 }
 
-PointGroup::PointGroup(const char *s, SymmetryOperation& so, Point& or)
+PointGroup::PointGroup(const char *s, SymmetryOperation& so,
+                       const SCVector3& or)
   : symb(0)
 {
   set_symbol(s);
@@ -136,11 +140,20 @@ PointGroup::PointGroup(const RefKeyVal& kv)
 
 PointGroup::PointGroup(StateIn& si) :
   symb(0),
-  SavableState(si),
-  origin_(si)
+  SavableState(si)
 {
+  int i;
+  if (si.version(static_class_desc()) < 2) {
+    Point *p = new Point(si);
+    for (i=0; i<3; i++) origin_[i] = p->operator[](i);
+    delete p;
+  }
+  else {
+    for (i=0; i<3; i++) si.get(origin_[i]);
+  }
+
   si.getstring(symb);
-  for (int i=0; i < 3; i++)
+  for (i=0; i < 3; i++)
     for (int j=0; j < 3; j++)
       si.get(frame(i,j));
 }
@@ -188,10 +201,12 @@ PointGroup::set_symbol(const char *sym)
 void
 PointGroup::save_data_state(StateOut& so)
 {
-  origin_.save_object_state(so);
+  int i;
+  for (i=0; i<3; i++) so.put(origin_[i]);
+
   so.putstring(symb);
 
-  for (int i=0; i < 3; i++)
+  for (i=0; i < 3; i++)
     for (int j=0; j < 3; j++)
       so.put(frame(i,j));
 }

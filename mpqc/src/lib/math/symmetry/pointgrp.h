@@ -58,7 +58,7 @@
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
-#include <math/topology/point.h>
+#include <math/scmat/vector3.h>
 
 ////////////////////////////////////////////////////////////////////
 
@@ -445,7 +445,7 @@ class PointGroup: public SavableState {
   private:
     char *symb;
     SymmetryOperation frame;
-    Point origin_;
+    SCVector3 origin_;
 
   public:
     PointGroup();
@@ -457,7 +457,7 @@ class PointGroup: public SavableState {
     PointGroup(const char*,SymmetryOperation&);
     //. Like the above, but this constructor also takes a point of origin
     // as an argument.
-    PointGroup(const char*,SymmetryOperation&,Point&);
+    PointGroup(const char*,SymmetryOperation&,const SCVector3&);
     //. The \clsnmref{KeyVal} constructor.
     PointGroup(const RefKeyVal&);
 
@@ -480,9 +480,8 @@ class PointGroup: public SavableState {
     //. A const version of the above
     const SymmetryOperation& symm_frame() const { return frame; }
     //. Returns the origin of the symmetry frame.
-    Point& origin() { return origin_; }
-    //. A const version of the above.
-    const Point& origin() const { return origin_; }
+    SCVector3& origin() { return origin_; }
+    const SCVector3& origin() const { return origin_; }
 
     //. Sets (or resets) the Schoenflies symbol.
     void set_symbol(const char*);

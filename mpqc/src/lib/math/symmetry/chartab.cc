@@ -46,6 +46,8 @@
  *      June, 1993
  */
 
+#include <ctype.h>
+
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 #include <math/symmetry/pointgrp.h>

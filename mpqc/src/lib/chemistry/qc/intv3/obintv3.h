@@ -78,6 +78,7 @@ class OneBodyDerivIntV3 : public OneBodyDerivInt {
                       IntegralFunction);
     ~OneBodyDerivIntV3();
     void compute_shell(int,int,DerivCenters&);
+    void compute_shell(int,int,int);
 };
 
 #endif

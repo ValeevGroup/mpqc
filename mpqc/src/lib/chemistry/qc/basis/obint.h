@@ -267,6 +267,7 @@ class OneBodyDerivInt : public VRefCount {
     const double * buffer() const;
     
     virtual void compute_shell(int ish, int jsh, DerivCenters&) = 0;
+    virtual void compute_shell(int ish, int jsh, int center) = 0;
 };
 
 REF_dec(OneBodyDerivInt);

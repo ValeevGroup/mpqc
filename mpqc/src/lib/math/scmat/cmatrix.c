@@ -523,7 +523,35 @@ cmat_diag(double**a, double*evals, double**evecs, int n,
               int matz, double tol)
 {
   int i,j;
-  double*fv1 = (double*) malloc(sizeof(double)*n);
+  int diagonal=1;
+  double*fv1;
+
+ /* I'm having problems with diagonalizing matrices which are already
+  * diagonal.  So let's first check to see if _a_ is diagonal, and if it
+  * is, then just return the diagonal elements in evals and a unit matrix
+  * in evecs
+  */
+
+  for (i=1; i < n; i++) {
+    for (j=0; j < i; j++) {
+      if (fabs(a[i][j]) > tol) diagonal=0;
+      }
+    }
+
+  if (diagonal) {
+    for(i=0; i < n; i++) {
+      evals[i] = a[i][i];
+      evecs[i][i] = 1.0;
+
+      for(j=0; j < i; j++) {
+        evecs[i][j] = evecs[j][i] = 0.0;
+        }
+      }
+    eigsort(n,evals,evecs);
+    return;
+    }
+
+  fv1 = (double*) malloc(sizeof(double)*n);
 
   for(i=0; i < n; i++) {
       for(j=0; j <= i; j++) {

@@ -49,7 +49,7 @@ sub initialize {
         open(OUTFILE,"<$outfile");
         my $first = 1;
         while (<OUTFILE>) {
-            if ($first && /^ *[0-9]:/) {
+            if ($first && /^ *[0-9]+:/) {
                 $have_nodenum = 1;
                 $first = 0;
             }
@@ -259,6 +259,7 @@ sub parse_mpqc {
             # old style geometry
             my $molstr = "";
             while (<$out>) {
+                s/^ *[0-9]+:// if ($have_nodenum);
                 if (! /^\s+\d+\s+(\w+)\s+$fltrx\s+$fltrx\s+$fltrx\s+/
                  && ! /^\s+\d+\s+(\w+)\s+\S+\s+$fltrx\s+$fltrx\s+$fltrx\s+/) {
                     last;
@@ -280,6 +281,7 @@ sub parse_mpqc {
             # new style geometry
             my $molstr = "";
             while (<$out>) {
+                s/^ *[0-9]+:// if ($have_nodenum);
                 if (! /^\s+\d+\s+(\w+)\s+\[\s*$fltrx\s+$fltrx\s+$fltrx\s*\]/
                  && ! /^\s+\d+\s+(\w+)\s+\"[^\"]*\"+\s+\[\s*$fltrx\s+$fltrx\s+$fltrx\s*\]/) { # " (unconfuse emacs)
                     last;
@@ -299,6 +301,7 @@ sub parse_mpqc {
         elsif (/^\s+Frequencies .*:\s*$/) {
             # read the frequencies
             while (<$out>) {
+                s/^ *[0-9]+:// if ($have_nodenum);
                 if (/^\s+\d+\s+$fltrx\s*$/) {
                     $freq->[$ifreq] = $1;
                     $ifreq++;

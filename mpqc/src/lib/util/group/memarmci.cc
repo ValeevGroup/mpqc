@@ -169,9 +169,9 @@ ARMCIMemoryGrp::sum_data(double *data, int node, int offset, int size)
     }
 
   if (armci_lock_.nonnull()) armci_lock_->lock();
-  // original code sending all data at once:
+  // Original code sending all data at once:
   // ARMCI_AccV(ARMCI_ACC_DBL, &scale, &acc_dat, 1, node);
-  // hack to send smaller chunks to not overflow buffers in ARMCI:
+  // Hack to send smaller chunks to not overflow buffers in ARMCI:
   int incr = 32768;
   for (int i=0; i<size; i+=incr) {
       void *tsrc = (&(((char*)src)[i]));
@@ -183,6 +183,8 @@ ARMCIMemoryGrp::sum_data(double *data, int node, int offset, int size)
       acc_dat.ptr_array_len = 1;
       ARMCI_AccV(ARMCI_ACC_DBL, &scale, &acc_dat, 1, node);
     }
+  // Send data all at once using the contiguous routine (which does not exist):
+  // ARMCI_Acc(ARMCI_ACC_DBL, &scale, src, dst, size, node);
   if (armci_lock_.nonnull()) armci_lock_->unlock();
 }
 

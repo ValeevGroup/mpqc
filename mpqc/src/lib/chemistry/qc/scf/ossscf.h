@@ -6,95 +6,89 @@
 #pragma interface
 #endif
 
-#include <math/scmat/elemop.h>
-#include <math/scmat/block.h>
-#include <math/scmat/blkiter.h>
-#include <math/optimize/scextrap.h>
-#include <chemistry/qc/wfn/obwfn.h>
-#include <chemistry/qc/wfn/effh.h>
-
-#include <math/array/math_lib.h>
-#include <chemistry/qc/intv2/int_libv2.h>
+#include <chemistry/qc/scf/scf.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
-class OSSSCF: public OneBodyWavefunction
-{
+class OSSSCF: public SCF {
 #   define CLASSNAME OSSSCF
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
  protected:
-    RefSelfConsistentExtrapolation _extrap;
-    RefSCExtrapData _data;
-    RefSCExtrapError _error;
+    int user_occupations_;
+    int tndocc_;
+    int nirrep_;
+    int *ndocc_;
+    int osa_;
+    int osb_;
+    int local_;
 
-    RefAccumDIH _accumdih;
-    RefAccumDDH _accumddh;
-    RefAccumEffectiveH _accumeffh;
+    ResultRefSymmSCMatrix cl_fock_;
+    ResultRefSymmSCMatrix op_focka_;
+    ResultRefSymmSCMatrix op_fockb_;
 
-    RefSymmSCMatrix _fock;
-    RefSymmSCMatrix _opa_fock;
-    RefSymmSCMatrix _opb_fock;
-    RefDiagSCMatrix _fock_evals;
-    
-    int _ndocc;
-    int _density_reset_freq;
-
-    int _maxiter;
-    int _eliminate;
-
-    char *ckptdir;
-    char *fname;
-
-    // these are temporary data, so they should not be checkpointed
-    RefSymmSCMatrix _gr_dens;
-    RefSymmSCMatrix _gr_dens_diff;
-    RefSymmSCMatrix _gr_gmat;
-    RefSymmSCMatrix _gr_opa_dens;
-    RefSymmSCMatrix _gr_opa_dens_diff;
-    RefSymmSCMatrix _gr_opa_gmat;
-    RefSymmSCMatrix _gr_opb_dens;
-    RefSymmSCMatrix _gr_opb_dens_diff;
-    RefSymmSCMatrix _gr_opb_gmat;
-    RefSymmSCMatrix _gr_hcore;
-    RefSCMatrix _gr_vector;
-    
-    void init();
-    virtual void compute();
-    virtual void do_vector(double&,double&);
-    virtual void form_ao_fock(centers_t *, double*);
-    virtual double scf_energy();
-    virtual void do_gradient(const RefSCVector&);
-    void form_density(const RefSCMatrix& vec,
-                              const RefSymmSCMatrix& density,
-                              const RefSymmSCMatrix& density_diff,
-                              const RefSymmSCMatrix& open_densitya,
-                              const RefSymmSCMatrix& open_densitya_diff,
-                              const RefSymmSCMatrix& open_densityb,
-                              const RefSymmSCMatrix& open_densityb_diff);
-    
   public:
     OSSSCF(StateIn&);
-    OSSSCF(const OSSSCF&);
     OSSSCF(const RefKeyVal&);
-    OSSSCF(const OneBodyWavefunction&);
     ~OSSSCF();
 
-    OSSSCF& operator=(const OSSSCF&);
-    
     void save_data_state(StateOut&);
 
     void print(ostream&o=cout);
 
-    RefSCMatrix eigenvectors();
+    double occupation(int ir, int vectornum);
 
-    double occupation(int vectornum);
+    int n_fock_matrices() const;
+    RefSymmSCMatrix fock(int);
+    RefSymmSCMatrix effective_fock();
 
     int value_implemented();
     int gradient_implemented();
     int hessian_implemented();
+
+  protected:
+    // these are temporary data, so they should not be checkpointed
+    RefTwoBodyInt tbi_;
+
+    RefSymmSCMatrix cl_dens_;
+    RefSymmSCMatrix cl_dens_diff_;
+    RefSymmSCMatrix cl_gmat_;
+    RefSymmSCMatrix op_densa_;
+    RefSymmSCMatrix op_densa_diff_;
+    RefSymmSCMatrix op_gmata_;
+    RefSymmSCMatrix op_densb_;
+    RefSymmSCMatrix op_densb_diff_;
+    RefSymmSCMatrix op_gmatb_;
+
+    RefSymmSCMatrix cl_hcore_;
+    
+    void set_occupations(const RefDiagSCMatrix& evals);
+
+    // scf things
+    void init_vector();
+    void done_vector();
+    void reset_density();
+    double new_density();
+    double scf_energy();
+
+    void ao_fock();
+
+    RefSCExtrapData extrap_data();
+    
+    // gradient things
+    void init_gradient();
+    void done_gradient();
+
+    RefSymmSCMatrix lagrangian();
+    RefSymmSCMatrix gradient_density();
+    void two_body_deriv(double*);
+
+    // hessian things
+
+    void init_hessian();
+    void done_hessian();
 };
 SavableState_REF_dec(OSSSCF);
 

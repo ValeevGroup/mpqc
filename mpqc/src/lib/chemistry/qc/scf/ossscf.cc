@@ -1,13 +1,46 @@
 
 #ifdef __GNUC__
 #pragma implementation
+#pragma implementation "osscont.h"
 #endif
 
-#include <util/misc/newstring.h>
+#include <iostream.h>
+#include <iomanip.h>
+
+#include <math.h>
+
+#include <util/misc/timer.h>
+#include <util/misc/formio.h>
+
+#include <math/scmat/block.h>
+#include <math/scmat/blocked.h>
+#include <math/scmat/local.h>
+#include <math/scmat/repl.h>
+#include <math/scmat/dist.h>
+
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
-#include <chemistry/qc/scf/clscf.h>
+
+#include <chemistry/qc/basis/petite.h>
+
+#include <chemistry/qc/scf/scflocal.h>
+#include <chemistry/qc/scf/scfden.h>
+#include <chemistry/qc/scf/effh.h>
+
 #include <chemistry/qc/scf/ossscf.h>
+#include <chemistry/qc/scf/osscont.h>
+#include <chemistry/qc/scf/lgbuild.h>
+#include <chemistry/qc/scf/ltbgrad.h>
+
+///////////////////////////////////////////////////////////////////////////
+
+#ifdef __GNUC__
+template class GBuild<LocalOSSContribution>;
+template class LocalGBuild<LocalOSSContribution>;
+
+template class TBGrad<LocalOSSGradContribution>;
+template class LocalTBGrad<LocalOSSGradContribution>;
+#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // OSSSCF
@@ -15,178 +48,207 @@
 #define CLASSNAME OSSSCF
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
-#define PARENTS public OneBodyWavefunction
+#define PARENTS public SCF
 #include <util/class/classi.h>
 void *
 OSSSCF::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = OneBodyWavefunction::_castdown(cd);
+  casts[0] = SCF::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-static void
-occ(PointBag_double *z, int &nd)
-{
-  int Z=0;
-  for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
-
-  nd = Z/2;
-  if (Z%2) {
-    fprintf(stderr,"OSSSCF::occ: Warning, there's a leftover electron.\n");
-    fprintf(stderr,"  total nuclear charge = %d, %d closed shells\n",Z,nd);
-    fprintf(stderr,"  total charge = %d\n\n",Z-2*nd);
-  }
-
-  nd--;
-}
-
-void
-OSSSCF::init()
-{
-  occ(_mol->charges(),_ndocc);
-  _density_reset_freq = 10;
-  _maxiter = 100;
-  _eliminate = 1;
-  ckptdir = new_string("./");
-  fname = new_string("this_here_thing");
-}
-
 OSSSCF::OSSSCF(StateIn& s) :
-  OneBodyWavefunction(s)
+  SCF(s),
+  cl_fock_(this),
+  op_focka_(this),
+  op_fockb_(this)
+  maybe_SavableState(s)
 {
-  _extrap.restore_state(s);
-  _data.restore_state(s);
-  _error.restore_state(s);
-
-  _accumdih.restore_state(s);
-  _accumddh.restore_state(s);
-  _accumeffh.restore_state(s);
-
-  s.get(_ndocc);
-  s.get(_density_reset_freq);
-  s.get(_maxiter);
-  s.get(_eliminate);
-
-  s.getstring(ckptdir);
-  s.getstring(fname);
+  cl_fock_.result_noupdate() =
+    basis_matrixkit()->symmmatrix(basis_dimension());
+  cl_fock_.restore_state(s);
+  cl_fock_.result_noupdate().restore(s);
+  
+  op_focka_.result_noupdate() =
+    basis_matrixkit()->symmmatrix(basis_dimension());
+  op_focka_.restore_state(s);
+  op_focka_.result_noupdate().restore(s);
+  
+  op_fockb_.result_noupdate() =
+    basis_matrixkit()->symmmatrix(basis_dimension());
+  op_fockb_.restore_state(s);
+  op_fockb_.result_noupdate().restore(s);
+  
+  s.get(user_occupations_);
+  s.get(tndocc_);
+  s.get(nirrep_);
+  s.get(ndocc_);
+  s.get(osa_);
+  s.get(osb_);
 }
 
 OSSSCF::OSSSCF(const RefKeyVal& keyval) :
-  OneBodyWavefunction(keyval)
+  SCF(keyval),
+  cl_fock_(this),
+  op_focka_(this),
+  op_fockb_(this)
 {
-  init();
+  int me = scf_grp_->me();
   
-  _extrap = keyval->describedclassvalue("extrap");
-  if (_extrap.null()) {
-    _extrap = new DIIS;
-  }
-
-  _accumdih = keyval->describedclassvalue("accumdih");
-  if (_accumdih.null()) {
-    _accumdih = new AccumHCore;
-  }
-  _accumdih->init(basis(),molecule());
+  cl_fock_.compute()=0;
+  cl_fock_.computed()=0;
   
-  _accumddh = keyval->describedclassvalue("accumddh");
-  if (_accumddh.null()) {
-    _accumddh = new AccumNullDDH;
-  }
-  _accumddh->init(basis(),molecule());
+  op_focka_.compute()=0;
+  op_focka_.computed()=0;
   
-  _accumeffh = keyval->describedclassvalue("accumeffh");
-  if (_accumeffh.null()) {
-    _accumeffh = new GSGeneralEffH;
-  }
+  op_fockb_.compute()=0;
+  op_fockb_.computed()=0;
   
-  if (keyval->exists("ndocc"))
-    _ndocc = keyval->intvalue("ndocc");
+  // calculate the total nuclear charge
+  int Znuc=0;
+  PointBag_double *z = molecule()->charges();
+  
+  for (Pix i=z->first(); i; z->next(i)) Znuc += (int) z->get(i);
 
-  if (keyval->exists("density_reset_freq"))
-    _density_reset_freq = keyval->intvalue("density_reset_freq");
+  // check to see if this is to be a charged molecule
+  int charge = keyval->intvalue("total_charge");
+  int nelectrons = Znuc-charge;
 
-  if (keyval->exists("maxiter"))
-    _maxiter = keyval->intvalue("maxiter");
-
-  if (keyval->exists("eliminate"))
-    _maxiter = keyval->booleanvalue("eliminate");
-
-  if (keyval->exists("ckpt_dir")) {
-    delete[] ckptdir;
-    ckptdir = keyval->pcharvalue("ckpt_dir");
+  // figure out how many doubly occupied shells there are
+  if (keyval->exists("ndocc")) {
+    tndocc_ = keyval->intvalue("ndocc");
+  } else {
+    tndocc_ = (nelectrons-2)/2;
+    if ((nelectrons-2)%2) {
+      if (me==0) {
+        cerr << endl << indent <<
+          "OSSSCF::init: Warning, there's a leftover electron.\n";
+        cerr << incindent;
+        cerr << indent << "total_charge = " << charge << endl;
+        cerr << indent << "total nuclear charge = " << Znuc << endl;
+        cerr << indent << "ndocc_ = " << tndocc_ << endl << decindent;
+      }
+    }
   }
 
-  if (keyval->exists("filename")) {
-    delete[] fname;
-    fname = keyval->pcharvalue("filename");
+  if (me==0)
+    cout << endl << indent << "OSSSCF::init: total charge = " <<
+      Znuc-2*tndocc_-2 << endl << endl;
+
+  nirrep_ = molecule()->point_group().char_table().ncomp();
+
+  if (nirrep_==1) {
+    cerr << indent << "OSSSCF::init: cannot do C1 symmetry\n";
+    abort();
   }
-}
 
-OSSSCF::OSSSCF(const OneBodyWavefunction& obwfn) :
-  OneBodyWavefunction(obwfn)
-{
-  init();
-  _accumeffh = new GSGeneralEffH;
-  _accumddh = new AccumNullDDH;
-  _accumdih = new AccumHCore;
-  _accumdih->init(basis(),molecule());
-  _extrap = new DIIS;
-}
+  osa_=-1;
+  osb_=-1;
+  
+  if (keyval->exists("docc") && keyval->exists("socc")) {
+    ndocc_ = new int[nirrep_];
+    user_occupations_=1;
+    for (int i=0; i < nirrep_; i++) {
+      ndocc_[i] = keyval->intvalue("docc",i);
+      int nsi = keyval->intvalue("socc",i);
+      if (nsi && osa_<0)
+        osa_==i;
+      else if (nsi && osb_<0)
+        osb_==i;
+      else if (nsi) {
+        cerr << indent << "OSSSCF::init: too many open shells\n";
+        abort();
+      }
+    }
+  } else {
+    ndocc_=0;
+    user_occupations_=0;
+    set_occupations(0);
+  }
 
-OSSSCF::OSSSCF(const OSSSCF& ossscf) :
-  OneBodyWavefunction(ossscf)
-{
-  _extrap = ossscf._extrap;
-  _data = ossscf._data;
-  _error = ossscf._error;
-  _accumdih = ossscf._accumdih;
-  _accumddh = ossscf._accumddh;
-  _accumeffh = ossscf._accumeffh;
-  _ndocc = ossscf._ndocc;
-  _density_reset_freq = ossscf._density_reset_freq;
-  _maxiter = ossscf._maxiter;
-  _eliminate = ossscf._eliminate;
+  if (me==0) {
+    cout << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      cout << " " << ndocc_[i];
+    cout << " ]\n";
 
-  ckptdir = new_string(ossscf.ckptdir);
-  fname = new_string(ossscf.fname);
+    cout << indent << "socc = [";
+    for (int i=0; i < nirrep_; i++)
+      cout << " " << (i==osa_ || i==osb_) ? 1 : 0;
+    cout << " ]\n";
+  }
+
+  // check to see if this was done in SCF(keyval)
+  if (!keyval->exists("maxiter"))
+    maxiter_ = 200;
+
+  if (!keyval->exists("level_shift"))
+    level_shift_ = 1.0;
 }
 
 OSSSCF::~OSSSCF()
 {
-}
-
-RefSCMatrix
-OSSSCF::eigenvectors()
-{
-  return _eigenvectors;
+  if (ndocc_) {
+    delete[] ndocc_;
+    ndocc_=0;
+  }
 }
 
 void
 OSSSCF::save_data_state(StateOut& s)
 {
-  _extrap.save_state(s);
-  _data.save_state(s);
-  _error.save_state(s);
-
-  _accumdih.save_state(s);
-  _accumddh.save_state(s);
-  _accumeffh.save_state(s);
-
-  s.put(_ndocc);
-  s.put(_density_reset_freq);
-  s.put(_maxiter);
-  s.put(_eliminate);
-
-  s.putstring(ckptdir);
-  s.putstring(fname);
+  SCF::save_data_state(s);
+  
+  cl_fock_.save_data_state(s);
+  cl_fock_.result_noupdate().save(s);
+  
+  op_focka_.save_data_state(s);
+  op_focka_.result_noupdate().save(s);
+  
+  op_fockb_.save_data_state(s);
+  op_fockb_.result_noupdate().save(s);
+  
+  s.put(user_occupations_);
+  s.put(tndocc_);
+  s.put(nirrep_);
+  s.put(ndocc_,nirrep_);
+  s.put(osa_);
+  s.put(osb_);
 }
 
 double
-OSSSCF::occupation(int i)
+OSSSCF::occupation(int ir, int i)
 {
-  if (i < _ndocc) return 2.0;
-  if (i < _ndocc + 2) return 1.0;
-  return 0.0;
+  if (i < ndocc_[ir])
+    return 2.0;
+  else if ((ir==osa_ || ir==osb_) && (i == ndocc_[ir]))
+    return 1.0;
+  else
+    return 0.0;
+}
+
+int
+OSSSCF::n_fock_matrices() const
+{
+  return 2;
+}
+
+RefSymmSCMatrix
+OSSSCF::fock(int n)
+{
+  if (n > 2) {
+    cerr << indent << "OSSSCF::fock: there are only three fock matrices, ";
+    cerr << "but fock(" << n << ") was requested" << endl;
+    abort();
+  }
+
+  if (n==0)
+    return cl_fock_.result();
+  else if (n==1)
+    return op_focka_.result();
+  else if (n==2)
+    return op_fockb_.result();
 }
 
 int
@@ -210,328 +272,856 @@ OSSSCF::hessian_implemented()
 void
 OSSSCF::print(ostream&o)
 {
-  OneBodyWavefunction::print(o);
+  SCF::print(o);
+  if (scf_grp_->me()==0) {
+    o << indent << "OSSSCF Parameters:\n" << incindent;
+    o << indent << "ndocc = " << tndocc_ << endl;
+    o << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      o << " " << ndocc_[i];
+    o << " ]" << endl;
+    o << indent << "socc = [";
+    for (int i=0; i < nirrep_; i++)
+      o << " " << (i==osa_ || i==osb_) ? 1 : 0;
+    o << " ]" << endl << decindent << endl;
+  }
 }
 
-void
-OSSSCF::compute()
-{
-  // hack!!!!  need a way to make sure that the basis geometry is the
-  // same as that in the molecule, also need a member in diis to reset it
-  _accumeffh->docc(0,_ndocc);
-  _accumeffh->socc(_ndocc,_ndocc+2);
-  
-  _extrap=new DIIS;
-  
-  if (_hessian.needed())
-    set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
-
-  if (_gradient.needed())
-    set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
-
-  if (_energy.needed()) {
-    if (_eigenvectors.result_noupdate().null()) {
-      // make sure we don't accidentally compute the gradient or hessian
-      int gcomp = _gradient.compute(0);
-      int hcomp = _hessian.compute(0);
-
-      // start from core guess
-      CLSCF hcwfn(*this);
-      RefSCMatrix vec = hcwfn.eigenvectors();
-
-      _eigenvectors = vec;
-      _gradient.compute(gcomp);
-      _hessian.compute(hcomp);
-    }
-
-    // schmidt orthogonalize the vector
-    _eigenvectors.result_noupdate()->schmidt_orthog(overlap().pointer(),
-                                                    _ndocc+2);
-
-    if (_fock.null())
-      _fock = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
-    
-    if (_opa_fock.null())
-      _opa_fock = _fock.clone();
-    
-    if (_opb_fock.null())
-      _opb_fock = _fock.clone();
-    
-    if (_fock_evals.null())
-      _fock_evals = _fock->dim()->create_diagmatrix();
-    
-    printf("\n  OSSSCF::compute: energy accuracy = %g\n\n",
-           _energy.desired_accuracy());
-
-    double eelec,nucrep;
-    do_vector(eelec,nucrep);
-      
-    // this will be done elsewhere eventually
-    printf("  total scf energy = %20.15f\n",eelec+nucrep);
-
-    set_energy(eelec+nucrep);
-    _energy.set_actual_accuracy(_energy.desired_accuracy());
-  }
-
-  if (_gradient.needed()) {
-    RefSCVector gradient = _moldim->create_vector();
-
-    printf("\n  OSSSCF::compute: gradient accuracy = %g\n\n",
-           _gradient.desired_accuracy());
-
-    do_gradient(gradient);
-    gradient.print("cartesian gradient");
-    set_gradient(gradient);
-
-    _gradient.set_actual_accuracy(_gradient.desired_accuracy());
-  }
-  
-  if (_hessian.needed()) {
-    fprintf(stderr,"OSSSCF::compute: gradient not implemented\n");
-    abort();
-  }
-  
-}
-
+//////////////////////////////////////////////////////////////////////////////
 
 void
-OSSSCF::do_vector(double& eelec, double& nucrep)
+OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
-  int i;
+  if (user_occupations_)
+    return;
+  
+  int i,j;
+  
+  RefDiagSCMatrix evals;
+  
+  if (ev.null())
+    evals = core_hamiltonian().eigvals();
+  else
+    evals = ev;
 
-  _gr_vector = _eigenvectors.result_noupdate();
+  // first convert evals to something we can deal with easily
+  BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
+                                                 "OSSSCF::set_occupations");
   
-  // allocate storage for the temp arrays
-  RefSCMatrix nvector = _gr_vector.clone();
+  RefPetiteList pl = integral()->petite_list(basis());
   
-  _gr_dens = _fock.clone();
-  _gr_dens.assign(0.0);
-  
-  _gr_dens_diff = _gr_dens->clone();
-  _gr_dens_diff.assign(0.0);
-  
-  _gr_gmat = _gr_dens->clone();
-  _gr_gmat.assign(0.0);
-
-  _gr_opa_dens = _fock.clone();
-  _gr_opa_dens.assign(0.0);
-  
-  _gr_opa_dens_diff = _gr_dens->clone();
-  _gr_opa_dens_diff.assign(0.0);
-  
-  _gr_opa_gmat = _gr_dens->clone();
-  _gr_opa_gmat.assign(0.0);
-
-  _gr_opb_dens = _fock.clone();
-  _gr_opb_dens.assign(0.0);
-  
-  _gr_opb_dens_diff = _gr_dens->clone();
-  _gr_opb_dens_diff.assign(0.0);
-  
-  _gr_opb_gmat = _gr_dens->clone();
-  _gr_opb_gmat.assign(0.0);
-
-  _gr_hcore = _gr_dens->clone();
-
-  // form Hcore
-  _gr_hcore.assign(0.0);
-  _accumdih->accum(_gr_hcore);
-
-  // initialize some junk
-  centers_t *centers = basis()->convert_to_centers_t();
-  if (!centers) {
-    fprintf(stderr,"hoot man!  no centers\n");
-    abort();
+  double **vals = new double*[nirrep_];
+  for (i=0; i < nirrep_; i++) {
+    int nf=pl->nfunction(i);
+    if (nf) {
+      vals[i] = new double[nf];
+      evalsb->block(i)->convert(vals[i]);
+    } else {
+      vals[i] = 0;
+    }
   }
 
-  int_initialize_offsets2(centers,centers,centers,centers);
+  // now loop to find the tndocc_ lowest eigenvalues and populate those
+  // MO's
+  int *newdocc = new int[nirrep_];
+  memset(newdocc,0,sizeof(int)*nirrep_);
 
-  nucrep = int_nuclear_repulsion(centers,centers);
-  
-  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
-  double *intbuf = 
-    int_initialize_erep(flags,0,centers,centers,centers,centers);
+  for (i=0; i < tndocc_; i++) {
+    // find lowest eigenvalue
+    int lir,ln;
+    double lowest=999999999;
 
-  int_storage(1000000);
-
-  int_init_bounds();
-
-  for (int iter=0; iter < _maxiter; iter++) {
-    // form the density from the current vector 
-    form_density(_gr_vector,
-                 _gr_dens,_gr_dens_diff,
-                 _gr_opa_dens,_gr_opa_dens_diff,
-                 _gr_opb_dens,_gr_opb_dens_diff);
-
-    // check convergence
-    int ij=0;
-    double delta=0;
-    for (i=0; i < _gr_dens_diff->n(); i++)
-      for (int j=0; j <= i; j++,ij++)
-        delta += _gr_dens_diff.get_element(i,j)*_gr_dens_diff.get_element(i,j);
-    delta = sqrt(delta/ij);
-
-    if (delta < _energy.desired_accuracy()) break;
-
-    // reset the density from time to time
-    if (iter && !iter%10) {
-      _gr_gmat.assign(0.0);
-      _gr_dens_diff.assign(_gr_dens);
-      _gr_opa_gmat.assign(0.0);
-      _gr_opa_dens_diff.assign(_gr_opa_dens);
-      _gr_opb_gmat.assign(0.0);
-      _gr_opb_dens_diff.assign(_gr_opb_dens);
-    }
-      
-    // scale the off-diagonal elements of the density matrix
-    _gr_dens_diff->scale(2.0);
-    _gr_dens_diff->scale_diagonal(0.5);
-    _gr_opa_dens_diff->scale(2.0);
-    _gr_opa_dens_diff->scale_diagonal(0.5);
-    _gr_opb_dens_diff->scale(2.0);
-    _gr_opb_dens_diff->scale_diagonal(0.5);
-    
-    // form the AO basis fock matrix
-    form_ao_fock(centers,intbuf);
-
-    // unscale the off-diagonal elements of the density matrix
-    _gr_dens_diff->scale(0.5);
-    _gr_dens_diff->scale_diagonal(2.0);
-    _gr_opa_dens_diff->scale(0.5);
-    _gr_opa_dens_diff->scale_diagonal(2.0);
-    _gr_opb_dens_diff->scale(0.5);
-    _gr_opb_dens_diff->scale_diagonal(2.0);
-
-    // calculate the electronic energy
-    eelec = scf_energy();
-    printf("iter %5d energy = %20.15f delta = %15.10g\n",
-           iter,eelec+nucrep,delta);
-
-#if 0
-    // now extrapolate the fock matrix
-    // first we form the error matrix which is the offdiagonal blocks of
-    // the MO fock matrix
-    RefSymmSCMatrix mofock = _fock.clone();
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
-
-    RefSymmSCMatrix moofock = _op_fock.clone();
-    moofock.assign(0.0);
-    moofock.accumulate_transform(_gr_vector.t(),_op_fock);
-
-    mofock.element_op(_accumeffh,moofock);
-
-    for (i=0; i < mofock->n(); i++) {
-      double occi = occupation(i);
-      for (int j=0; j <= i; j++) {
-        double occj = occupation(j);
-        if (occi == occj)
-          mofock.set_element(i,j,0.0);
+    for (int ir=0; ir < nirrep_; ir++) {
+      int nf=pl->nfunction(ir);
+      if (!nf)
+        continue;
+      for (j=0; j < nf; j++) {
+        if (vals[ir][j] < lowest) {
+          lowest=vals[ir][j];
+          lir=ir;
+          ln=j;
+        }
       }
     }
-    
-    // now transform MO error to the AO basis
-    RefSymmSCMatrix ao_error = mofock.clone();
-    ao_error.assign(0.0);
-    ao_error.accumulate_transform(_gr_vector,mofock);
-    
-    // and do the DIIS extrapolation
-    _data = new SymmSCMatrix2SCExtrapData(_fock,_op_fock);
-    _error = new SymmSCMatrixSCExtrapError(ao_error);
-    _extrap->extrapolate(_data,_error);
-    _data=0;
-    _error=0;
-    ao_error=0;
-
-    // now transform extrapolated fock to MO basis
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
-
-    moofock.assign(0.0);
-    moofock.accumulate_transform(_gr_vector.t(),_op_fock);
-
-    mofock.element_op(_accumeffh,moofock);
-    moofock=0;
-
-    // diagonalize MO fock to get MO vector
-    mofock.diagonalize(_fock_evals,nvector);
-    mofock=0;
-#else
-    RefSymmSCMatrix mofock = _fock.clone();
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
-
-    RefSymmSCMatrix mooafock = _opa_fock.clone();
-    mooafock.assign(0.0);
-    mooafock.accumulate_transform(_gr_vector.t(),_opa_fock);
-
-    RefSymmSCMatrix moobfock = _opb_fock.clone();
-    moobfock.assign(0.0);
-    moobfock.accumulate_transform(_gr_vector.t(),_opb_fock);
-
-    int bvec=_ndocc+2-1;
-    for (i=0; i < _ndocc; i++)
-      mooafock.set_element(bvec,i,moobfock.get_element(bvec,i));
-    
-    for (i=_ndocc+2; i < basis()->nbasis(); i++) 
-      mooafock.set_element(i,bvec,moobfock.get_element(i,bvec));
-
-    mofock.element_op(_accumeffh,mooafock);
-
-    mofock.diagonalize(_fock_evals,nvector);
-#endif
-
-    // transform MO vector to AO basis
-    _gr_vector = _gr_vector * nvector;
-    
-    // and orthogonalize vector
-    _gr_vector->schmidt_orthog(overlap().pointer(),basis()->nbasis());
+    vals[lir][ln]=999999999;
+    newdocc[lir]++;
   }
-      
-  _gr_vector.print("converged vector");
-  _fock_evals.print("evals");
-  
-  _eigenvectors = _gr_vector;
-  _eigenvectors.computed() = 1;
-  
-  int_done_bounds();
-  int_done_erep();
-  int_done_offsets2(centers,centers,centers,centers);
-  int_done_storage();
-  free_centers(centers);
-  free(centers);
 
-  _gr_dens = 0;
-  _gr_dens_diff = 0;
-  _gr_gmat = 0;
-  _gr_opa_dens = 0;
-  _gr_opa_dens_diff = 0;
-  _gr_opa_gmat = 0;
-  _gr_opb_dens = 0;
-  _gr_opb_dens_diff = 0;
-  _gr_opb_gmat = 0;
-  _gr_hcore = 0;
-  _gr_vector = 0;
-  nvector = 0;
+  int osa=-1, osb=-1;
+  
+  for (i=0; i < 2; i++) {
+    // find lowest eigenvalue
+    int lir,ln;
+    double lowest=999999999;
+
+    for (int ir=0; ir < nirrep_; ir++) {
+      int nf=pl->nfunction(ir);
+      if (!nf)
+        continue;
+      for (j=0; j < nf; j++) {
+        if (vals[ir][j] < lowest) {
+          lowest=vals[ir][j];
+          lir=ir;
+          ln=j;
+        }
+      }
+    }
+    vals[lir][ln]=999999999;
+
+    if (!i) {
+      osa=lir;
+    } else {
+      if (lir==osa) {
+        i--;
+        continue;
+      }
+      osb=lir;
+    }
+  }
+
+  // get rid of vals
+  for (i=0; i < nirrep_; i++)
+    if (vals[i])
+      delete[] vals[i];
+  delete[] vals;
+
+  if (!ndocc_) {
+    ndocc_=newdocc;
+    osa_=osa;
+    osb_=osb;
+  } else {
+    // test to see if newocc is different from ndocc_
+    for (i=0; i < nirrep_; i++) {
+      if (ndocc_[i] != newdocc[i] && scf_grp_->me()==0) {
+        cerr << indent << "OSSSCF::set_occupations:  WARNING!!!!\n";
+        cerr << incindent << indent <<
+          "occupations for irrep " << i+1 << " have changed\n";
+        cerr << indent << "ndocc was " << ndocc_[i] << ", changed to "
+             << newdocc[i] << endl << decindent;
+      }
+      if (((osa != osa_ && osa != osb_) || (osb != osb_ && osb != osa_))
+          && scf_grp_->me()==0) {
+        cerr << indent << "OSSSCF::set_occupations:  WARNING!!!!\n";
+        cerr << incindent << indent
+             << "open shell occupations have changed"
+             << endl << decindent;
+        osa_=osa;
+        osb_=osb;
+        reset_density();
+      }
+    }
+
+    memcpy(ndocc_,newdocc,sizeof(int)*nirrep_);
+    //osa_=osa;
+    //osb_=osb;
+    
+    delete[] newdocc;
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// scf things
+//
+
+void
+OSSSCF::init_vector()
+{
+  // initialize the two electron integral classes
+  tbi_ = integral()->electron_repulsion();
+
+  // calculate the core Hamiltonian
+  cl_hcore_ = core_hamiltonian();
+  
+  // allocate storage for other temp matrices
+  cl_dens_ = cl_hcore_.clone();
+  cl_dens_.assign(0.0);
+  
+  cl_dens_diff_ = cl_hcore_.clone();
+  cl_dens_diff_.assign(0.0);
+
+  op_densa_ = cl_hcore_.clone();
+  op_densa_.assign(0.0);
+  
+  op_densa_diff_ = cl_hcore_.clone();
+  op_densa_diff_.assign(0.0);
+
+  op_densb_ = cl_hcore_.clone();
+  op_densb_.assign(0.0);
+  
+  op_densb_diff_ = cl_hcore_.clone();
+  op_densb_diff_.assign(0.0);
+
+  // gmat is in AO basis
+  cl_gmat_ = basis()->matrixkit()->symmmatrix(basis()->basisdim());
+  cl_gmat_.assign(0.0);
+
+  op_gmata_ = cl_gmat_.clone();
+  op_gmata_.assign(0.0);
+
+  op_gmatb_ = cl_gmat_.clone();
+  op_gmatb_.assign(0.0);
+
+  // test to see if we need a guess vector
+  if (eigenvectors_.result_noupdate().null()) {
+    eigenvectors_ = hcore_guess();
+    cl_fock_ = cl_hcore_.clone();
+    cl_fock_.result_noupdate().assign(0.0);
+    op_focka_ = cl_hcore_.clone();
+    op_focka_.result_noupdate().assign(0.0);
+    op_fockb_ = cl_hcore_.clone();
+    op_fockb_.result_noupdate().assign(0.0);
+  }
+
+  scf_vector_ = eigenvectors_.result_noupdate();
+
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
+}
+
+void
+OSSSCF::done_vector()
+{
+  tbi_=0;
+  
+  cl_hcore_ = 0;
+  cl_gmat_ = 0;
+  cl_dens_ = 0;
+  cl_dens_diff_ = 0;
+  op_gmata_ = 0;
+  op_densa_ = 0;
+  op_densa_diff_ = 0;
+  op_gmatb_ = 0;
+  op_densb_ = 0;
+  op_densb_diff_ = 0;
+
+  scf_vector_ = 0;
+}
+
+void
+OSSSCF::reset_density()
+{
+  cl_gmat_.assign(0.0);
+  cl_dens_diff_.assign(cl_dens_);
+
+  op_gmata_.assign(0.0);
+  op_densa_diff_.assign(op_densa_);
+
+  op_gmatb_.assign(0.0);
+  op_densb_diff_.assign(op_densb_);
+}
+
+double
+OSSSCF::new_density()
+{
+  // copy current density into density diff and scale by -1.  later we'll
+  // add the new density to this to get the density difference.
+  cl_dens_diff_.assign(cl_dens_);
+  cl_dens_diff_.scale(-1.0);
+
+  op_densa_diff_.assign(op_densa_);
+  op_densa_diff_.scale(-1.0);
+
+  op_densb_diff_.assign(op_densb_);
+  op_densb_diff_.scale(-1.0);
+
+  cl_dens_.assign(0.0);
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  cl_dens_.element_op(op);
+  cl_dens_.scale(2.0);
+
+  op_densa_.assign(0.0);
+  op = new SCFDensity(this, scf_vector_, 1.0);
+  op_densa_.element_op(op);
+
+  cl_dens_.accumulate(op_densa_);
+
+  op_densb_.assign(op_densa_);
+  BlockedSymmSCMatrix::castdown(op_densa_)->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densb_)->block(osa_)->assign(0.0);
+  
+  cl_dens_diff_.accumulate(cl_dens_);
+  op_densa_diff_.accumulate(op_densa_);
+  op_densb_diff_.accumulate(op_densb_);
+
+  RefSCElementScalarProduct sp(new SCElementScalarProduct);
+  cl_dens_diff_.element_op(sp, cl_dens_diff_);
+  
+  double delta = sp->result();
+  delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
+
+  return delta;
 }
 
 double
 OSSSCF::scf_energy()
 {
-  RefSymmSCMatrix t = _fock.copy();
-  t.accumulate(_gr_hcore);
+  RefSymmSCMatrix t = cl_fock_.result_noupdate().copy();
+  t.accumulate(cl_hcore_);
 
-  double eelec=0;
-  for (int i=0; i < t->n(); i++) {
-    for (int j=0; j < i; j++) {
-      eelec += _gr_dens.get_element(i,j)*t.get_element(i,j)
-               - _gr_opa_dens.get_element(i,j)*_gr_opa_gmat.get_element(i,j)
-               - _gr_opb_dens.get_element(i,j)*_gr_opb_gmat.get_element(i,j);
+  RefSymmSCMatrix ga = op_focka_.result_noupdate().copy();
+  ga.scale(-1.0);
+  ga.accumulate(cl_fock_.result_noupdate());
+  
+  RefSymmSCMatrix gb = op_fockb_.result_noupdate().copy();
+  gb.scale(-1.0);
+  gb.accumulate(cl_fock_.result_noupdate());
+  
+  SCFEnergy *eop = new SCFEnergy;
+  eop->reference();
+  RefSCElementOp2 op = eop;
+  t.element_op(op, cl_dens_);
+
+  double cl_e = eop->result();
+  
+  eop->reset();
+  ga.element_op(op, op_densa_);
+  double opa_e = eop->result();
+
+  eop->reset();
+  gb.element_op(op, op_densb_);
+  double opb_e = eop->result();
+
+  op=0;
+  eop->dereference();
+  delete eop;
+
+  return cl_e-opa_e-opb_e;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+class OSSExtrapData : public SCExtrapData {
+#   define CLASSNAME OSSExtrapData
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    RefSymmSCMatrix m1;
+    RefSymmSCMatrix m2;
+    RefSymmSCMatrix m3;
+  public:
+    OSSExtrapData(StateIn&);
+    OSSExtrapData(const RefSymmSCMatrix&, const RefSymmSCMatrix&,
+                  const RefSymmSCMatrix&);
+
+    void save_data_state(StateOut&);
+    
+    SCExtrapData* copy();
+    void zero();
+    void accumulate_scaled(double, const RefSCExtrapData&);
+};
+
+#define CLASSNAME OSSExtrapData
+#define PARENTS public SCExtrapData
+#define HAVE_STATEIN_CTOR
+#include <util/class/classi.h>
+void *
+OSSExtrapData::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCExtrapData::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+OSSExtrapData::OSSExtrapData(StateIn&s) :
+  SCExtrapData(s)
+{
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+  m1 = k->symmmatrix(dim);
+  m2 = k->symmmatrix(dim);
+  m3 = k->symmmatrix(dim);
+  m1.restore(s);
+  m2.restore(s);
+  m3.restore(s);
+}
+
+OSSExtrapData::OSSExtrapData(
+    const RefSymmSCMatrix& mat1,
+    const RefSymmSCMatrix& mat2,
+    const RefSymmSCMatrix& mat3)
+{
+  m1 = mat1;
+  m2 = mat2;
+  m3 = mat3;
+}
+
+void
+OSSExtrapData::save_data_state(StateOut& s)
+{
+  SCExtrapData::save_data_state(s);
+  m1.dim().save_state(s);
+  m1.save(s);
+  m2.save(s);
+  m3.save(s);
+}
+
+void
+OSSExtrapData::zero()
+{
+  m1.assign(0.0);
+  m2.assign(0.0);
+  m3.assign(0.0);
+}
+
+SCExtrapData*
+OSSExtrapData::copy()
+{
+  return new OSSExtrapData(m1.copy(), m2.copy(), m3.copy());
+}
+
+void
+OSSExtrapData::accumulate_scaled(double scale, const RefSCExtrapData& data)
+{
+  OSSExtrapData* a = OSSExtrapData::require_castdown(
+          data.pointer(), "OSSExtrapData::accumulate_scaled");
+
+  RefSymmSCMatrix am = a->m1.copy();
+  am.scale(scale);
+  m1.accumulate(am);
+  am = 0;
+
+  am = a->m2.copy();
+  am.scale(scale);
+  m2.accumulate(am);
+
+  am = a->m3.copy();
+  am.scale(scale);
+  m3.accumulate(am);
+}
+
+////////////////////////////////////////////////////////////////////////////
+    
+RefSCExtrapData
+OSSSCF::extrap_data()
+{
+  RefSCExtrapData data =
+    new OSSExtrapData(cl_fock_.result_noupdate(),
+                      op_focka_.result_noupdate(),
+                      op_fockb_.result_noupdate());
+  return data;
+}
+
+RefSymmSCMatrix
+OSSSCF::effective_fock()
+{
+  // use fock() instead of cl_fock_ just in case this is called from
+  // someplace outside SCF::compute_vector()
+  RefSymmSCMatrix mofock = fock(0).clone();
+  mofock.assign(0.0);
+  mofock.accumulate_transform(scf_vector_.t(), fock(0));
+
+  RefSymmSCMatrix mofocka = fock(1).clone();
+  mofocka.assign(0.0);
+  mofocka.accumulate_transform(scf_vector_.t(), fock(1));
+  
+  RefSymmSCMatrix mofockb = fock(2).clone();
+  mofockb.assign(0.0);
+  mofockb.accumulate_transform(scf_vector_.t(), fock(2));
+  
+  BlockedSymmSCMatrix::castdown(mofocka)->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(mofockb)->block(osa_)->assign(0.0);
+  
+  mofocka.accumulate(mofockb);
+  mofockb=0;
+  
+  RefSCElementOp2 op = new GSGeneralEffH(this);
+  mofock.element_op(op, mofocka);
+
+  return mofock;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+void
+OSSSCF::ao_fock()
+{
+  RefPetiteList pl = integral()->petite_list(basis());
+  
+  // calculate G.  First transform cl_dens_diff_ to the AO basis, then
+  // scale the off-diagonal elements by 2.0
+  RefSymmSCMatrix dd = cl_dens_diff_;
+  cl_dens_diff_ = pl->to_AO_basis(dd);
+  cl_dens_diff_->scale(2.0);
+  cl_dens_diff_->scale_diagonal(0.5);
+
+  RefSymmSCMatrix dda = op_densa_diff_;
+  op_densa_diff_ = pl->to_AO_basis(dda);
+  op_densa_diff_->scale(2.0);
+  op_densa_diff_->scale_diagonal(0.5);
+  
+  RefSymmSCMatrix ddb = op_densb_diff_;
+  op_densb_diff_ = pl->to_AO_basis(ddb);
+  op_densb_diff_->scale(2.0);
+  op_densb_diff_->scale_diagonal(0.5);
+  
+  // now try to figure out the matrix specialization we're dealing with
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert G and P to local matrices
+  if (local_ || basis()->nbasis() < 700) {
+    RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
+    RefSCDimension ldim = basis()->basisdim();
+
+    RefSymmSCMatrix ptmp = cl_dens_diff_;
+    RefSymmSCMatrix patmp = op_densa_diff_;
+    RefSymmSCMatrix pbtmp = op_densb_diff_;
+
+    RefSymmSCMatrix gtmp = cl_gmat_;
+    RefSymmSCMatrix gatmp = op_gmata_;
+    RefSymmSCMatrix gbtmp = op_gmatb_;
+
+    // if these aren't local matrices, then make copies of the density
+    // matrices
+    if (!local_) {
+      lkit = new LocalSCMatrixKit;
+
+      ptmp = lkit->symmmatrix(ldim);
+      ptmp->convert(cl_dens_diff_);
+
+      patmp = lkit->symmmatrix(ldim);
+      patmp->convert(op_densa_diff_);
+
+      pbtmp = lkit->symmmatrix(ldim);
+      pbtmp->convert(op_densb_diff_);
     }
-    eelec += 0.5*(_gr_dens.get_element(i,i)*t.get_element(i,i)
-               - _gr_opa_dens.get_element(i,i)*_gr_opa_gmat.get_element(i,i)
-               - _gr_opb_dens.get_element(i,i)*_gr_opb_gmat.get_element(i,i)
-      );
+
+    // if we're not dealing with local matrices, or we're running on
+    // multiple processors, then make a copy of the G matrices
+    if (!local_ || scf_grp_->n() > 1) {
+      gtmp = lkit->symmmatrix(ldim);
+      gatmp = lkit->symmmatrix(ldim);
+      gbtmp = lkit->symmmatrix(ldim);
+
+      gtmp->assign(0.0);
+      gatmp->assign(0.0);
+      gbtmp->assign(0.0);
+    }
+
+    // create block iterators for the G and P matrices
+    RefSCMatrixSubblockIter giter =
+      gtmp->local_blocks(SCMatrixSubblockIter::Write);
+    giter->begin();
+    SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
+
+    RefSCMatrixSubblockIter piter =
+      ptmp->local_blocks(SCMatrixSubblockIter::Read);
+    piter->begin();
+    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+
+    RefSCMatrixSubblockIter gaiter =
+      gatmp->local_blocks(SCMatrixSubblockIter::Write);
+    gaiter->begin();
+    SCMatrixLTriBlock *gablock = SCMatrixLTriBlock::castdown(gaiter->block());
+
+    RefSCMatrixSubblockIter gbiter =
+      gbtmp->local_blocks(SCMatrixSubblockIter::Write);
+    gbiter->begin();
+    SCMatrixLTriBlock *gbblock = SCMatrixLTriBlock::castdown(gbiter->block());
+
+    RefSCMatrixSubblockIter paiter =
+      patmp->local_blocks(SCMatrixSubblockIter::Read);
+    paiter->begin();
+    SCMatrixLTriBlock *pablock = SCMatrixLTriBlock::castdown(paiter->block());
+
+    RefSCMatrixSubblockIter pbiter =
+      pbtmp->local_blocks(SCMatrixSubblockIter::Read);
+    pbiter->begin();
+    SCMatrixLTriBlock *pbblock = SCMatrixLTriBlock::castdown(pbiter->block());
+
+    double *gmat_data = gblock->data;
+    double *pmat_data = pblock->data;
+    double *gmata_data = gablock->data;
+    double *pmata_data = pablock->data;
+    double *gmatb_data = gbblock->data;
+    double *pmatb_data = pbblock->data;
+
+    char * pmax = init_pmax(basis(), pmat_data);
+  
+    LocalOSSContribution lclc(gmat_data, pmat_data, gmata_data, pmata_data,
+                              gmatb_data, pmatb_data);
+    LocalGBuild<LocalOSSContribution>
+      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
+    gb.build_gmat(desired_value_accuracy()/100.0);
+
+    delete[] pmax;
+
+    // if we're running on multiple processors, then sum the G matrices
+    if (scf_grp_->n() > 1) {
+      scf_grp_->sum(gmat_data, i_offset(basis()->nbasis()));
+      scf_grp_->sum(gmata_data, i_offset(basis()->nbasis()));
+      scf_grp_->sum(gmatb_data, i_offset(basis()->nbasis()));
+    }
+    
+    // if we're running on multiple processors, or we don't have local
+    // matrices, then accumulate gtmp back into G
+    if (!local_ || scf_grp_->n() > 1) {
+      cl_gmat_->convert_accumulate(gtmp);
+      op_gmata_->convert_accumulate(gatmp);
+      op_gmatb_->convert_accumulate(gbtmp);
+    }
   }
-  return eelec;
+
+  // for now quit
+  else {
+    cerr << indent << "Cannot yet use anything but Local matrices\n";
+    abort();
+  }
+  
+  // get rid of AO delta P
+  cl_dens_diff_ = dd;
+  dd = cl_dens_diff_.clone();
+
+  op_densa_diff_ = dda;
+  dda = op_densa_diff_.clone();
+
+  op_densb_diff_ = ddb;
+  ddb = op_densb_diff_.clone();
+
+  // now symmetrize the skeleton G matrix, placing the result in dd
+  RefSymmSCMatrix skel_gmat = cl_gmat_.copy();
+  skel_gmat.scale(1.0/(double)pl->order());
+  pl->symmetrize(skel_gmat,dd);
+
+  skel_gmat = op_gmata_.copy();
+  skel_gmat.scale(1.0/(double)pl->order());
+  pl->symmetrize(skel_gmat,dda);
+  
+  skel_gmat = op_gmatb_.copy();
+  skel_gmat.scale(1.0/(double)pl->order());
+  pl->symmetrize(skel_gmat,ddb);
+  
+  // F = H+G
+  cl_fock_.result_noupdate().assign(cl_hcore_);
+  cl_fock_.result_noupdate().accumulate(dd);
+
+  // Fa = H+G-Ga
+  op_focka_.result_noupdate().assign(cl_fock_.result_noupdate());
+  dda.scale(-1.0);
+  op_focka_.result_noupdate().accumulate(dda);
+
+  // Fb = H+G-Gb
+  op_fockb_.result_noupdate().assign(cl_fock_.result_noupdate());
+  ddb.scale(-1.0);
+  op_fockb_.result_noupdate().accumulate(ddb);
+
+  cl_fock_.computed()=1;
+  op_focka_.computed()=1;
+  op_fockb_.computed()=1;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+OSSSCF::init_gradient()
+{
+  // presumably the eigenvectors have already been computed by the time
+  // we get here
+  scf_vector_ = eigenvectors_.result_noupdate();
+
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
+}
+
+void
+OSSSCF::done_gradient()
+{
+  cl_dens_=0;
+  op_densa_=0;
+  op_densb_=0;
+  scf_vector_ = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+// MO lagrangian
+//       c    o   v
+//  c  |2*FC|2*FC|0|
+//     -------------
+//  o  |2*FC| FO |0|
+//     -------------
+//  v  | 0  |  0 |0|
+//
+class OSSLag : public BlockedSCElementOp2 {
+  private:
+    OSSSCF *scf_;
+
+  public:
+    OSSLag(OSSSCF* s) : scf_(s) {}
+    ~OSSLag() {}
+
+    int has_side_effects() { return 1; }
+
+    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2) {
+      int ir=current_block();
+
+      for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
+        double occi = scf_->occupation(ir,bi1.i());
+        double occj = scf_->occupation(ir,bi1.j());
+
+        if (occi==1.0 && occj==1.0)
+          bi1.set(bi2.get());
+        else if (occi==0.0)
+          bi1.set(0.0);
+      }
+    }
+};
+
+RefSymmSCMatrix
+OSSSCF::lagrangian()
+{
+  RefSymmSCMatrix mofock = cl_fock_.result_noupdate().clone();
+  mofock.assign(0.0);
+  mofock.accumulate_transform(scf_vector_.t(), cl_fock_.result_noupdate());
+
+  RefSymmSCMatrix mofocka = mofock.clone();
+  mofocka.assign(0.0);
+  mofocka.accumulate_transform(scf_vector_.t(), op_focka_.result_noupdate());
+  
+  RefSymmSCMatrix mofockb = mofock.clone();
+  mofockb.assign(0.0);
+  mofockb.accumulate_transform(scf_vector_.t(), op_fockb_.result_noupdate());
+  
+  BlockedSymmSCMatrix::castdown(mofocka)->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(mofockb)->block(osa_)->assign(0.0);
+  
+  mofocka.accumulate(mofockb);
+  mofockb=0;
+  
+  mofock.scale(2.0);
+  
+  RefSCElementOp2 op = new OSSLag(this);
+  mofock.element_op(op, mofocka);
+  mofocka=0;
+
+  // transform MO lagrangian to SO basis
+  RefSymmSCMatrix so_lag(basis_dimension(), basis_matrixkit());
+  so_lag.assign(0.0);
+  so_lag.accumulate_transform(scf_vector_, mofock);
+  
+  // and then from SO to AO
+  RefPetiteList pl = integral()->petite_list();
+  RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
+
+  ao_lag.scale(-1.0);
+
+  return ao_lag;
+}
+
+RefSymmSCMatrix
+OSSSCF::gradient_density()
+{
+  cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
+  op_densa_ = cl_dens_.clone();
+  op_densb_ = cl_dens_.clone();
+  
+  cl_dens_.assign(0.0);
+  op_densa_.assign(0.0);
+  op_densb_.assign(0.0);
+  
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  cl_dens_.element_op(op);
+  cl_dens_.scale(2.0);
+  
+  op = new SCFDensity(this, scf_vector_, 1.0);
+  op_densa_.element_op(op);
+  op_densb_.assign(op_densa_);
+
+  BlockedSymmSCMatrix::castdown(op_densa_)->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densb_)->block(osa_)->assign(0.0);
+  
+  RefPetiteList pl = integral()->petite_list(basis());
+  
+  cl_dens_ = pl->to_AO_basis(cl_dens_);
+  op_densa_ = pl->to_AO_basis(op_densa_);
+  op_densb_ = pl->to_AO_basis(op_densb_);
+
+  RefSymmSCMatrix tdens = cl_dens_.copy();
+  tdens.accumulate(op_densa_);
+  tdens.accumulate(op_densb_);
+
+  op_densa_.scale(2.0);
+  op_densb_.scale(2.0);
+  
+  return tdens;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+OSSSCF::two_body_deriv(double * tbgrad)
+{
+  RefSCElementMaxAbs m = new SCElementMaxAbs;
+  cl_dens_.element_op(m);
+  double pmax = m->result();
+  m=0;
+
+  // now try to figure out the matrix specialization we're dealing with.
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert P to local matrices
+  RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
+  int local = lkit.nonnull();
+
+  if (local || basis()->nbasis() < 700) {
+    RefSCDimension ldim = basis()->basisdim();
+    RefSymmSCMatrix ptmp = cl_dens_;
+    RefSymmSCMatrix patmp = op_densa_;
+    RefSymmSCMatrix pbtmp = op_densb_;
+
+    // if these aren't local matrices, then make copies of the density
+    // matrices
+    if (!local) {
+      lkit = new LocalSCMatrixKit;
+
+      ptmp = lkit->symmmatrix(ldim);
+      ptmp->convert(cl_dens_);
+
+      patmp = lkit->symmmatrix(ldim);
+      patmp->convert(op_densa_);
+
+      pbtmp = lkit->symmmatrix(ldim);
+      pbtmp->convert(op_densb_);
+    }
+    
+    // create block iterators for the G and P matrices
+    RefSCMatrixSubblockIter piter =
+      ptmp->local_blocks(SCMatrixSubblockIter::Read);
+    piter->begin();
+    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+
+    RefSCMatrixSubblockIter paiter =
+      patmp->local_blocks(SCMatrixSubblockIter::Read);
+    paiter->begin();
+    SCMatrixLTriBlock *pablock = SCMatrixLTriBlock::castdown(paiter->block());
+
+    RefSCMatrixSubblockIter pbiter =
+      pbtmp->local_blocks(SCMatrixSubblockIter::Read);
+    pbiter->begin();
+    SCMatrixLTriBlock *pbblock = SCMatrixLTriBlock::castdown(pbiter->block());
+
+    double *pmat_data = pblock->data;
+    double *pmata_data = pablock->data;
+    double *pmatb_data = pbblock->data;
+  
+    LocalOSSGradContribution l(pmat_data,pmata_data,pmatb_data);
+    LocalTBGrad<LocalOSSGradContribution> tb(l, integral(), basis(),scf_grp_);
+    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+  }
+
+  // for now quit
+  else {
+    cerr << indent << "OSSSCF::two_body_deriv: can't do gradient yet\n";
+    abort();
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+OSSSCF::init_hessian()
+{
+}
+
+void
+OSSSCF::done_hessian()
+{
 }

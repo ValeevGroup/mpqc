@@ -9,7 +9,7 @@ TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
 SRCS = scf.cc scfvector.cc scfgradient.cc scfden.cc effh.cc \
-       clscf.cc hsosscf.cc
+       clscf.cc hsosscf.cc ossscf.cc
 
 CLASSES = SCF CLSCF HSOSSCF
 

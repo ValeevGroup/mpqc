@@ -451,7 +451,7 @@ changequote([, ])dnl
   ;;
   rs6000-* | powerpc-*)
     if test X$GCC != Xyes; then
-      LDFLAGS="$LDFLAGS -bmaxdata:0x40000000"
+      LDFLAGS="$LDFLAGS -bmaxdata:0x70000000"
     fi
     if test X$CC = XxlC -o X$CC = XxlC_r; then
       CCDEPENDSUF=u

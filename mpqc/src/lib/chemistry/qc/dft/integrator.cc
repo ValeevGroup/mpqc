@@ -569,7 +569,13 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
           double chi=bragg_radius_a/bragg_radius[jcenter];
           double uab=(chi-1.)/(chi+1.);
           a_mat[icenter][jcenter] = uab/(uab*uab-1.);
-          oorab[icenter][jcenter] = 1./centers[icenter].dist(centers[jcenter]);
+          if (icenter!=jcenter) {
+              oorab[icenter][jcenter]
+                  = 1./centers[icenter].dist(centers[jcenter]);
+            }
+          else {
+              oorab[icenter][jcenter] = 0.0;
+            }
         }
     }
 

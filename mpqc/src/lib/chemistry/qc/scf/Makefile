@@ -8,7 +8,8 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
-SRCS = scf.cc scfcompute.cc clscf.cc
+SRCS = scf.cc scfvector.cc scfgradient.cc \
+       clscf.cc hsosscf.cc
 
 CLASSES = SCF
 

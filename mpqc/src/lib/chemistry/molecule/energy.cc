@@ -142,7 +142,7 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
 
 MolecularEnergy::~MolecularEnergy()
 {
-  if (ckpt_file_) delete[] ckpt_file_;
+  if (ckpt_file_) free(ckpt_file_);
   ckpt_file_ = 0;
 }
 
@@ -210,7 +210,7 @@ MolecularEnergy::set_checkpoint()
 void
 MolecularEnergy::set_checkpoint_file(const char *path)
 {
-  if (ckpt_file_) delete[] ckpt_file_;
+  if (ckpt_file_) free(ckpt_file_);
   if (path) {
     ckpt_file_ = strdup(path);
   } else

@@ -538,7 +538,8 @@ try_main(int argc, char *argv[])
   int restart = keyval->booleanvalue("restart",truevalue);
 
   int checkpoint = keyval->booleanvalue("checkpoint",truevalue);
-
+  int checkpoint_freq = keyval->intvalue("checkpoint_freq",KeyValValueint(1));
+  
   int savestate = keyval->booleanvalue("savestate",truevalue);
 
   struct stat sb;
@@ -591,6 +592,7 @@ try_main(int argc, char *argv[])
       mole->set_checkpoint();
       if (grp->me() == 0) mole->set_checkpoint_file(mole_ckpt_file);
       else mole->set_checkpoint_file(devnull);
+      mole->set_checkpoint_freq(checkpoint_freq);
     }
   }
 

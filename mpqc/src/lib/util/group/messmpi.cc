@@ -118,7 +118,7 @@ MPIMessageGrp::probet(int type)
   if (flag) {
     rnode = status.MPI_SOURCE;
     rtag = status.MPI_TAG;
-    rlen = 0;
+    MPI_Get_count(&status, MPI_BYTE, &rlen);
     return 1;
     }
   else {

@@ -143,16 +143,15 @@ int CharacterTable::make_table()
     // for odd n, the irreps are A and E1...E(nir-1)
     // for even n, the irreps are A, B, and E1...E(nir-2)
     //
-    i=0;
     {
       IrreducibleRepresentation ir(g,1,"A");
       for (gi=0; gi < g; gi++) {
         ir.rep[gi] = ir.proj[0][gi] = 1;
       }
 
-      gamma_[i] = ir;
-      i++;
+      gamma_[0] = ir;
     }
+    i=1;
 
     if (!(nt%2)) {
       IrreducibleRepresentation ir(g,1,"B");
@@ -215,7 +214,6 @@ int CharacterTable::make_table()
     // for odd n, the irreps are A1, A2, and E1...E(nir-2)
     // for even n, the irreps are A1, A2, B1, B2, and E1...E(nir-4)
     //
-    i=0;
     {
       IrreducibleRepresentation ir1(g,1,"A1");
       IrreducibleRepresentation ir2(g,1,"A2");
@@ -229,11 +227,10 @@ int CharacterTable::make_table()
         ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = -1;
       }
 
-      gamma_[i] = ir1;
-      i++;
-      gamma_[i] = ir2;
-      i++;
+      gamma_[0] = ir1;
+      gamma_[1] = ir2;
     }
+    i=2;
 
     if (!(nt%2)) {
       IrreducibleRepresentation ir1(g,1,"B1");
@@ -335,7 +332,6 @@ int CharacterTable::make_table()
     // for even n, the irreps are Ag, Bg, Au, Bu,
     //                            E1g...E(nir/2-1)g, E1u...E(nir/2-1)u
     //
-    i=0;
     {
       IrreducibleRepresentation ir1(g,1, (nt%2) ? "A'" : "Ag");
       IrreducibleRepresentation ir2(g,1, (nt%2) ? "A\"" : "Au");
@@ -349,10 +345,10 @@ int CharacterTable::make_table()
         ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = -1;
       }
 
-      gamma_[i] = ir1;
-      gamma_[i+nirrep_/2] = ir2;
-      i++;
+      gamma_[0] = ir1;
+      gamma_[nirrep_/2] = ir2;
     }
+    i=1;
 
     if (!(nt%2)) {
       double ineg = ((nt/2)%2) ? -1.0 : 1.0;
@@ -463,7 +459,7 @@ int CharacterTable::make_table()
   case SN:
     // clockwise rotation-reflection by theta*i radians about z axis
     //
-    // for odd n/2, the irreps are Ag, Au, E1g...E(nir/2-1)',E1u...E(nir/2-1)u
+    // for odd n/2, the irreps are Ag, Au, E1g...E(nir/2-1)g,E1u...E(nir/2-1)u
     // for even n/2, the irreps are A, B, E1...E(nir-2)
     //
     i=0;
@@ -602,7 +598,6 @@ int CharacterTable::make_table()
       // for odd n, the irreps are A1, A2, and E1...E(nir-2)
       // for even n, the irreps are A1, A2, B1, B2, and E1...E(nir-4)
       //
-      i=0;
       {
         IrreducibleRepresentation ir1(g,1,"A1");
         IrreducibleRepresentation ir2(g,1,"A2");
@@ -616,11 +611,10 @@ int CharacterTable::make_table()
           ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = -1.0;
         }
 
-        gamma_[i] = ir1;
-        i++;
-        gamma_[i] = ir2;
-        i++;
+        gamma_[0] = ir1;
+        gamma_[1] = ir2;
       }
+      i=2;
 
       if (!(nt%2)) {
         IrreducibleRepresentation ir1(g,1,"B1");
@@ -642,58 +636,59 @@ int CharacterTable::make_table()
         gamma_[i] = ir2;
         i++;
       }
-    }
 
-    // for the E irreps, the projection operators are:
-    // for the n Cn's:
-    //   Ei xx = cos(m*theta*i) m = 0-(nt-1)
-    //      xy = -sin(m*theta*i)
-    //      yx = sin(m*theta*i)
-    //      yy = cos(m*theta*i)
-    //
-    // for the n sigma's:
-    //   Ei xx = cos(m*theta*i) m = 0-(nt-1)
-    //      xy = -sin(m*theta*i)
-    //      yx = -sin(m*theta*i)
-    //      yy = -cos(m*theta*i)
-    ei=1;
-    itheta=theta;
-    for (; i < nirrep_; i++, ei++, itheta += theta) {
-      char lab[4];
-      if (nt==3 || nt==4)
-        sprintf(lab,"E");
-      else
-        sprintf(lab,"E%d",ei);
+      // for the E irreps, the projection operators are:
+      // for the n Cn's:
+      //   Ei xx = cos(m*theta*i) m = 0-(nt-1)
+      //      xy = -sin(m*theta*i)
+      //      yx = sin(m*theta*i)
+      //      yy = cos(m*theta*i)
+      //
+      // for the n C2's:
+      //   Ei xx = cos(m*theta*i) m = 0-(nt-1)
+      //      xy = -sin(m*theta*i)
+      //      yx = -sin(m*theta*i)
+      //      yy = -cos(m*theta*i)
+      ei=1;
+      itheta=theta;
+      for (; i < nirrep_; i++, ei++, itheta += theta) {
+        char lab[4];
+        if (nt==3 || nt==4)
+          sprintf(lab,"E");
+        else
+          sprintf(lab,"E%d",ei);
 
-      IrreducibleRepresentation ir(g,2,lab);
+        IrreducibleRepresentation ir(g,2,lab);
 
-      jitheta = 0;
-      for (j=0; j < nt; j++, jitheta += itheta) {
-        ctheta = cos(jitheta);
-        stheta = sin(jitheta);
+        jitheta = 0;
+        for (j=0; j < nt; j++, jitheta += itheta) {
+          ctheta = cos(jitheta);
+          stheta = sin(jitheta);
           
-        // Cn's
-        ir.rep[j] = 2.0*ctheta;
+          // Cn's
+          ir.rep[j] = 2.0*ctheta;
 
-        ir.proj[0][j] = ctheta;
-        ir.proj[1][j] = -stheta;
-        ir.proj[2][j] = stheta;
-        ir.proj[3][j] = ctheta;
+          ir.proj[0][j] = ctheta;
+          ir.proj[1][j] = -stheta;
+          ir.proj[2][j] = stheta;
+          ir.proj[3][j] = ctheta;
 
-        // sigma's
-        ir.rep[j+nt] = 0;
+          // C2's
+          ir.rep[j+nt] = 0;
 
-        ir.proj[0][j+nt] = ctheta;
-        ir.proj[1][j+nt] = -stheta;
-        ir.proj[2][j+nt] = -stheta;
-        ir.proj[3][j+nt] = -ctheta;
+          ir.proj[0][j+nt] = ctheta;
+          ir.proj[1][j+nt] = -stheta;
+          ir.proj[2][j+nt] = -stheta;
+          ir.proj[3][j+nt] = -ctheta;
+        }
+
+        gamma_[i] = ir;
       }
-
-      gamma_[i] = ir;
     }
     
     itheta=0;
     for (i=0, j=nt; i < nt ; i++, j++, itheta += theta) {
+      // Cn's
       symop[i][0][0] = symop[i][1][1] = cos(itheta);
       symop[i][0][1] = sin(itheta);
       symop[i][1][0] = -sin(itheta);
@@ -701,6 +696,7 @@ int CharacterTable::make_table()
 
       rot[i] = trans[i] = symop[i].trace();
 
+      // C2's
       symop[j][0][0] = cos(itheta);
       symop[j][1][1] = -cos(itheta);
       symop[j][1][0] = symop[j][0][1] = -sin(itheta);
@@ -711,249 +707,232 @@ int CharacterTable::make_table()
 
     break;
 
-  case DND: // rotation reflection about z axis by theta/2 radians, followed
-            // by c2 about x axis, then reflection through yz plane
+  case DND:
+    // rotation reflection about z axis by theta/2 radians, followed
+    // by c2 about x axis, then reflection through yz plane
+    //
+    // for odd n, the irreps are A1g, A2g, A1u, A2u, E1g...E(nir/2-2)g,
+    //                                               E1u...E(nir/2-2)u
+    // for even n, the irreps are A1, A2, B1, B2, E1...E(nir-4)
+    //
+    {
+      IrreducibleRepresentation ir1(g,1,(nt%2) ? "A1g" : "A1");
+      IrreducibleRepresentation ir2(g,1,(nt%2) ? "A2g" : "A2");
+      IrreducibleRepresentation ir3(g,1,(nt%2) ? "A1u" : "B1");
+      IrreducibleRepresentation ir4(g,1,(nt%2) ? "A2u" : "B2");
+
+      for (gi=0; gi < 2*nt; gi++) {
+        // Sn
+        ir1.rep[gi] = ir1.proj[0][gi] = 1.0;
+        ir2.rep[gi] = ir2.proj[0][gi] = 1.0;
+        ir3.rep[gi] = ir3.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
+        ir4.rep[gi] = ir4.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
+
+        // n C2's and n sigma's
+        ir1.rep[gi+2*nt] = ir1.proj[0][gi+2*nt] = 1.0;
+        ir2.rep[gi+2*nt] = ir2.proj[0][gi+2*nt] = -1.0;
+        ir3.rep[gi+2*nt] = ir3.proj[0][gi+2*nt] = (gi < nt) ? 1.0 : -1.0;
+        ir4.rep[gi+2*nt] = ir4.proj[0][gi+2*nt] = (gi < nt) ? -1.0 : 1.0;
+      }
+
+      gamma_[0] = ir1;
+      gamma_[1] = ir2;
+
+      if (nt%2) {
+        gamma_[nirrep_/2] = ir3;
+        gamma_[1+nirrep_/2] = ir4;
+        i=2;
+      } else {
+        gamma_[2] = ir3;
+        gamma_[3] = ir4;
+        i=4;
+      }
+    }
+    
+    // for the E irreps, the projection operators are:
+    // for the 2n Sn's
+    //   Ei xx = cos(m*theta*i) m = 0-(nt-1)
+    //      xy = -sin(m*theta*i)
+    //      yx = sin(m*theta*i)
+    //      yy = cos(m*theta*i)
+    //
+    // for the n C2's:
+    //   Ei xx = cos(m*theta*i) m = 0-(nt-1)
+    //      xy = -sin(m*theta*i)
+    //      yx = -sin(m*theta*i)
+    //      yy = -cos(m*theta*i)
+    //
+    // for the n sigma's:
+    //   Ei xx = cos(m*theta*i) m = 0-(nt-1)
+    //      xy = sin(m*theta*i)
+    //      yx = sin(m*theta*i)
+    //      yy = -cos(m*theta*i)
+    ei=1;
+    itheta=0.5*theta;
+
     if (nt%2) {
-      {
-        IrreducibleRepresentation ir(g,1,"A1g");
-        for (i=0; i < g; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-
-        gamma_[0] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"A2g");
-        for (i=0; i < g/2; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=g/2; i < g; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-
-        gamma_[1] = ir;
-      }
-
-      for (i=2; i < nirrep_/2 ; i++) {
+      for (; i < nirrep_/2 ; i++, ei++, itheta += 0.5*theta) {
         if (nt==3)
           sprintf(label,"Eg");
         else
-          sprintf(label,"E%dg",i-1);
+          sprintf(label,"E%dg",ei);
 
-        IrreducibleRepresentation ir(g,2,label);
+        IrreducibleRepresentation ir1(g,2,label);
 
-        ir.rep[0] = 2.0;
-        ir.proj[0][0] = 1.0;
-        ir.proj[1][0] = 0.0;
-        ir.proj[2][0] = 0.0;
-        ir.proj[3][0] = 1.0;
-
-        for (j=1; j < g/2; j++) {
-          ir.rep[j] = 2.0*cos((double)2.0*theta*j*(i-1));
-
-          ir.proj[0][j] = cos((double)2.0*theta*j*(i-1));
-          ir.proj[1][j] = sin((double)2.0*theta*j*(i-1));
-          ir.proj[2][j] = -sin((double)2.0*theta*j*(i-1));
-          ir.proj[3][j] = cos((double)2.0*theta*j*(i-1));
-        }
-        
-        // C2's
-        for (j=g/2; j < 3*g/4; j++) {
-          ir.rep[j] = 0.0;
-
-          ir.proj[0][j] = cos((double)theta*j*(i-1));
-          ir.proj[1][j] = sin((double)theta*j*(i-1));
-          ir.proj[2][j] = sin((double)theta*j*(i-1));
-          ir.proj[3][j] = -cos((double)theta*j*(i-1));
-        }
-
-        // sigma d's
-        for (j=3*g/4; j < g; j++) {
-          ir.rep[j] = 0.0;
-
-          ir.proj[0][j] = -cos((double)theta*j*(i-1)+0.5*theta);
-          ir.proj[1][j] = -sin((double)theta*j*(i-1)+0.5*theta);
-          ir.proj[2][j] = -sin((double)theta*j*(i-1)+0.5*theta);
-          ir.proj[3][j] = cos((double)theta*j*(i-1)+0.5*theta);
-        }
-
-        gamma_[i] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"A1u");
-        gamma_[i] = ir;
-        i++;
-      }
-      {
-        IrreducibleRepresentation ir(g,1,"A2u");
-        gamma_[i] = ir;
-        i++;
-      }
-
-      for (; i < nirrep_; i++) {
-        i0=i-nirrep_/2;
-        
         if (nt==3)
           sprintf(label,"Eu");
         else
-          sprintf(label,"E%du",i0-1);
+          sprintf(label,"E%du",ei);
 
-        IrreducibleRepresentation ir(g,2,label);
-        gamma_[i] = ir;
-      }
+        IrreducibleRepresentation ir2(g,2,label);
 
-      for (i=nirrep_/2,i0=0; i < nirrep_; i++,i0++) {
-        for (j=0; j < g/2; j++)
-          gamma_[i].rep[j] = pow(-1.0,(double) j)*gamma_[i0].rep[j];
-        for (; j < 3*g/4; j++)
-          gamma_[i].rep[j] =  gamma_[i0].rep[j];
-        for (; j < g    ; j++)
-          gamma_[i].rep[j] = -gamma_[i0].rep[j];
-      }
+        jitheta=0;
+        double ineg = -pow(-1.0,(double)ei);
+        for (j=0; j < 2*nt; j++, jitheta += itheta) {
+          double ci1 = (j%2) ? -ineg : 1.0;
+          double ci2 = (j%2) ? ineg : 1.0;
+          
+          ctheta = cos(jitheta);
+          stheta = sin(jitheta);
+          
+          // Sn's
+          ir1.rep[j] = 2.0*ci1*ctheta;
 
-      for (i=nirrep_/2,i0=0; i < nirrep_; i++,i0++) {
-        for (int d=0; d < gamma_[i].nproj(); d++) {
-          for (j=0; j < g/2; j++)
-            gamma_[i].proj[d][j] = pow(-1.0,(double) j)*gamma_[i0].proj[d][j];
-          for (; j < 3*g/4; j++)
-            gamma_[i].proj[d][j] =  gamma_[i0].proj[d][j];
-          for (; j < g    ; j++)
-            gamma_[i].proj[d][j] = -gamma_[i0].proj[d][j];
+          ir1.proj[0][j] = ci1*ctheta;
+          ir1.proj[1][j] = -ci1*stheta;
+          ir1.proj[2][j] = ci1*stheta;
+          ir1.proj[3][j] = ci1*ctheta;
+
+          ir2.rep[j] = 2.0*ci2*ctheta;
+
+          ir2.proj[0][j] = ci2*ctheta;
+          ir2.proj[1][j] = -ci2*stheta;
+          ir2.proj[2][j] = ci2*stheta;
+          ir2.proj[3][j] = ci2*ctheta;
         }
+        
+        jitheta = 0;
+        for (j=0; j < nt; j++, jitheta += ei*theta) {
+          ctheta = cos(jitheta);
+          stheta = sin(jitheta);
+
+          // C2's
+          ir1.rep[j+2*nt] = 0.0;
+
+          ir1.proj[0][j+2*nt] = ctheta;
+          ir1.proj[1][j+2*nt] = -stheta;
+          ir1.proj[2][j+2*nt] = -stheta;
+          ir1.proj[3][j+2*nt] = -ctheta;
+
+          ir2.rep[j+2*nt] = 0.0;
+
+          ir2.proj[0][j+2*nt] = ctheta;
+          ir2.proj[1][j+2*nt] = -stheta;
+          ir2.proj[2][j+2*nt] = -stheta;
+          ir2.proj[3][j+2*nt] = -ctheta;
+
+          // sigma d's
+          ctheta = cos(jitheta + ei*0.5*theta);
+          stheta = sin(jitheta + ei*0.5*theta);
+
+          ir1.rep[j+3*nt] = 0.0;
+
+          ir1.proj[0][j+3*nt] = -ineg*ctheta;
+          ir1.proj[1][j+3*nt] = -ineg*stheta;
+          ir1.proj[2][j+3*nt] = -ineg*stheta;
+          ir1.proj[3][j+3*nt] = ineg*ctheta;
+
+          ir2.rep[j+3*nt] = 0.0;
+
+          ir2.proj[0][j+3*nt] = ineg*ctheta;
+          ir2.proj[1][j+3*nt] = ineg*stheta;
+          ir2.proj[2][j+3*nt] = ineg*stheta;
+          ir2.proj[3][j+3*nt] = -ineg*ctheta;
+        }
+
+        gamma_[i] = ir1;
+        gamma_[i+nirrep_/2] = ir2;
       }
     } else {
-      {
-        IrreducibleRepresentation ir(g,1,"A1");
-        for (i=0; i < g; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-
-        gamma_[0] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"A2");
-        for (i=0; i < g/2; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=g/2; i < g; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-        gamma_[1] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"B1");
-        for (i=0; i < g/2; i++) {
-          ir.rep[i] = pow(-1.0,(double) i);
-          ir.proj[0][i] = pow(-1.0,(double) i);
-        }
-        for ( ; i < 3*g/4; i++) {
-          ir.rep[i] =  1.0;
-          ir.proj[0][i] =  1.0;
-        }
-        for ( ; i < g    ; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-
-        gamma_[2] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"B2");
-        for (i=0; i < g/2; i++) {
-          ir.rep[i] = pow(-1.0,(double) i);
-          ir.proj[0][i] = pow(-1.0,(double) i);
-        }
-        for ( ; i < 3*g/4; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-        for ( ; i < g    ; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-
-        gamma_[3] = ir;
-      }
-
-      for (i=4; i < nirrep_; i++) {
+      for (; i < nirrep_; i++, ei++, itheta += 0.5*theta) {
         if (nt==2)
           sprintf(label,"E");
         else
-          sprintf(label,"E%d",i-3);
+          sprintf(label,"E%d",ei);
 
         IrreducibleRepresentation ir(g,2,label);
 
-        ir.rep[0] = 2.0;
-        ir.proj[0][0] = 1.0;
-        ir.proj[1][0] = 0.0;
-        ir.proj[2][0] = 0.0;
-        ir.proj[3][0] = 1.0;
+        jitheta=0;
+        for (j=0; j < 2*nt; j++, jitheta += itheta) {
+          ctheta = cos(jitheta);
+          stheta = sin(jitheta);
+          
+          ir.rep[j] = 2.0*ctheta;
 
-        for (j=1; j < g/2; j++) {
-          ir.rep[j] = 2.0*cos((double)theta*j*(i-3)*0.5);
-
-          ir.proj[0][j] = cos((double)theta*j*(i-3)*0.5);
-          ir.proj[1][j] = sin((double)theta*j*(i-3)*0.5);
-          ir.proj[2][j] = -sin((double)theta*j*(i-3)*0.5);
-          ir.proj[3][j] = cos((double)theta*j*(i-3)*0.5);
+          ir.proj[0][j] = ctheta;
+          ir.proj[1][j] = -stheta;
+          ir.proj[2][j] = stheta;
+          ir.proj[3][j] = ctheta;
         }
         
-        for (j=g/2; j < 3*g/4; j++) {
-          ir.rep[j] = 0.0;
+        jitheta=0;
+        for (j=0; j < nt; j++, jitheta += ei*theta) {
+          ctheta = cos(jitheta);
+          stheta = sin(jitheta);
+          
+          // C2's
+          ir.rep[j+2*nt] = 0.0;
 
-          ir.proj[0][j] = cos((double)theta*(j+2)*(i-3));
-          ir.proj[1][j] = sin((double)theta*(j+2)*(i-3));
-          ir.proj[2][j] = sin((double)theta*(j+2)*(i-3));
-          ir.proj[3][j] = -cos((double)theta*(j+2)*(i-3));
-        }
+          ir.proj[0][j+2*nt] = ctheta;
+          ir.proj[1][j+2*nt] = -stheta;
+          ir.proj[2][j+2*nt] = -stheta;
+          ir.proj[3][j+2*nt] = -ctheta;
 
-        for (j=3*g/4; j < g; j++) {
-          ir.rep[j] = 0.0;
+          // sigma's
+          ctheta = cos(jitheta + ei*0.5*theta);
+          stheta = sin(jitheta + ei*0.5*theta);
+          
+          ir.rep[j+3*nt] = 0.0;
 
-          ir.proj[0][j] = cos((double)(0.5*theta)*((2*j+1)*(i-3)+nt));
-          ir.proj[1][j] = sin((double)(0.5*theta)*((2*j+1)*(i-3)+nt));
-          ir.proj[2][j] = sin((double)(0.5*theta)*((2*j+1)*(i-3)+nt));
-          ir.proj[3][j] = -cos((double)(0.5*theta)*((2*j+1)*(i-3)+nt));
+          ir.proj[0][j+3*nt] = ctheta;
+          ir.proj[1][j+3*nt] = stheta;
+          ir.proj[2][j+3*nt] = stheta;
+          ir.proj[3][j+3*nt] = -ctheta;
         }
 
         gamma_[i] = ir;
       }
     }
 
-    for (i=0; i < 2*nt ; i++) {
-      symop[i][0][0] = symop[i][1][1] = cos((double)theta*i*0.5);
-      symop[i][0][1] = sin((double)theta*i*0.5);
-      symop[i][1][0] = -sin((double)theta*i*0.5);
-      symop[i][2][2] = pow(-1.0,(double) i);
+    // Sn's
+    itheta = 0;
+    for (i=0; i < 2*nt ; i++, itheta += 0.5*theta) {
+      symop[i][0][0] = symop[i][1][1] = cos(itheta);
+      symop[i][0][1] = sin(itheta);
+      symop[i][1][0] = -sin(itheta);
+      symop[i][2][2] = (i%2) ? -1.0 : 1.0;
 
       trans[i] = symop[i].trace();
       rot[i] = (i%2) ? -trans[i] : trans[i];
     }
 
-    for (i=0,j=2*nt; i < nt ; i++,j++) {
-      symop[j][0][0] = cos((double)theta*i);
-      symop[j][1][1] = -cos((double)theta*i);
-      symop[j][1][0] = symop[j][0][1] = -sin((double)theta*i);
+    // C2's
+    itheta = 0;
+    for (i=0,j=2*nt; i < nt ; i++, j++, itheta += theta) {
+      symop[j][0][0] = cos(itheta);
+      symop[j][1][1] = -cos(itheta);
+      symop[j][1][0] = symop[j][0][1] = -sin(itheta);
       symop[j][2][2] = -1.0;
 
       rot[j] = trans[j] = symop[j].trace();
     }
 
-    for (i=0,j=3*nt; i < nt ; i++,j++) {
-      symop[j][0][0] = cos((double)theta*i+theta*0.5);
-      symop[j][1][1] = -cos((double)theta*i+theta*0.5);
-      symop[j][1][0] = symop[j][0][1] = -sin((double)theta*i+theta*0.5);
+    // sigma's
+    itheta = 0.5*theta;
+    for (i=0,j=3*nt; i < nt ; i++, j++, itheta += theta) {
+      symop[j][0][0] = cos(itheta);
+      symop[j][1][1] = -cos(itheta);
+      symop[j][1][0] = symop[j][0][1] = sin(itheta);
       symop[j][2][2] = 1.0;
 
       trans[j] = symop[j].trace();
@@ -962,406 +941,262 @@ int CharacterTable::make_table()
 
     break;
 
-  case DNH: // clockwise rotation and rotation-reflection about z axis,
-            // followed by c2 about x axis and then reflection
-            // through xz 
+  case DNH:
+    // clockwise rotation and rotation-reflection about z axis,
+    // followed by c2 about x axis and then reflection
+    // through xz 
 
-    if (nt==2) { // d2h is a special case
-      {
-        IrreducibleRepresentation ir(g,1,"Ag");
-        for (i=0; i < 8; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
+    // d2h is a special case
+    if (nt==2) {
+      IrreducibleRepresentation ir1(g,1,"Ag");
+      IrreducibleRepresentation ir2(g,1,"B1g");
+      IrreducibleRepresentation ir3(g,1,"B2g");
+      IrreducibleRepresentation ir4(g,1,"B3g");
 
-        gamma_[0] = ir;
-      }
+      IrreducibleRepresentation ir5(g,1,"Au");
+      IrreducibleRepresentation ir6(g,1,"B1u");
+      IrreducibleRepresentation ir7(g,1,"B2u");
+      IrreducibleRepresentation ir8(g,1,"B3u");
 
-      {
-        IrreducibleRepresentation ir(g,1,"B1g");
-        for (i=0; i < 4; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=4; i < 8; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
+      for (gi=0; gi < 8; gi++) {
+        ir1.rep[gi] = ir1.proj[0][gi] = 1.0;
+        ir2.rep[gi] = ir2.proj[0][gi] = (gi < 4) ? 1.0 : -1.0;
 
-        gamma_[1] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"B2g");
-        ir.rep[0] = ir.rep[3] = ir.rep[5] = ir.rep[6] = 1.0;
-        ir.rep[1] = ir.rep[2] = ir.rep[4] = ir.rep[7] = -1.0;
-        ir.proj[0][0] = ir.proj[0][3] = ir.proj[0][5] = ir.proj[0][6] = 1.0;
-        ir.proj[0][1] = ir.proj[0][2] = ir.proj[0][4] = ir.proj[0][7] = -1.0;
-
-        gamma_[2] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"B3g");
-        ir.rep[0] = ir.rep[3] = ir.rep[4] = ir.rep[7] = 1.0;
-        ir.rep[1] = ir.rep[2] = ir.rep[5] = ir.rep[6] = -1.0;
-        ir.proj[0][0] = ir.proj[0][3] = ir.proj[0][4] = ir.proj[0][7] = 1.0;
-        ir.proj[0][1] = ir.proj[0][2] = ir.proj[0][5] = ir.proj[0][6] = -1.0;
-
-        gamma_[3] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"Au");
-        for (i=0; i < 2; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=2; i < 4; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-        for (i=4; i < 6; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=6; i < 8; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-
-        gamma_[4] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"B1u");
-        for (i=0; i < 2; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=2; i < 6; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-        for (i=6; i < 8; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-
-        gamma_[5] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"B2u");
-        for (i=0; i < 4; i++) {
-          ir.rep[i] =  pow(-1.0,(double)i);
-          ir.proj[0][i] =  pow(-1.0,(double)i);
-        }
-        for (i=4; i < 8; i++) {
-          ir.rep[i] = -pow(-1.0,(double)i);
-          ir.proj[0][i] = -pow(-1.0,(double)i);
-        }
-
-        gamma_[6] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"B3u");
-        for (i=0; i < 8; i++) {
-          ir.rep[i] = pow(-1.0,(double)i);
-          ir.proj[0][i] = pow(-1.0,(double)i);
-        }
-
-        gamma_[7] = ir;
-      }
-    }
-
-    else if (nt%2) {
-      {
-        IrreducibleRepresentation ir(g,1,"A1'");
-        for (i=0; i < g; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-
-        gamma_[0] = ir;
-      }
-
-      {
-        IrreducibleRepresentation ir(g,1,"A2'");
-        for (i=0; i < g/2; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=g/2; i < g; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
-
-        gamma_[1] = ir;
-      }
-
-      for (i=2; i < nirrep_/2 ; i++) {
-        if (nt==3)
-          sprintf(label,"E'");
-        else
-          sprintf(label,"E%d'",i-1);
-
-        IrreducibleRepresentation ir(g,2,label);
-
-        ir.rep[0] = 2.0;
-        ir.proj[0][0] = 1.0;
-        ir.proj[1][0] = 0.0;
-        ir.proj[2][0] = 0.0;
-        ir.proj[3][0] = 1.0;
-
-        for (j=1; j < g/4; j++) {
-          ir.rep[j] = 2.0*cos((double)theta*j*(i-1));
-
-          ir.proj[0][j] = cos((double)theta*j*(i-1));
-          ir.proj[1][j] = sin((double)theta*j*(i-1));
-          ir.proj[2][j] = -sin((double)theta*j*(i-1));
-          ir.proj[3][j] = cos((double)theta*j*(i-1));
-        }
+        ir3.rep[gi] = ir3.proj[0][gi] = (gi%4==0 || gi%4==3) ?
+          ((gi < 4) ? 1.0 : -1.0) : ((gi < 4) ? -1.0 : 1.0);
+        ir4.rep[gi] = ir4.proj[0][gi] = (gi%4==0 || gi%4==3) ? 1.0 : -1.0;
         
-        for (   ; j < g/2; j++) {
-          ir.rep[j] = 2.0*cos((double)theta*j*(i-1));
+        ir5.rep[gi] = ir5.proj[0][gi] = (gi%4==0 || gi%4==1) ? 1.0 : -1.0;
+        ir6.rep[gi] = ir6.proj[0][gi] = (gi%4==0 || gi%4==1) ?
+          ((gi < 4) ? 1.0 : -1.0) : ((gi < 4) ? -1.0 : 1.0);
 
-          ir.proj[0][j] = cos((double)theta*j*(i-1));
-          ir.proj[1][j] = sin((double)theta*j*(i-1));
-          ir.proj[2][j] = -sin((double)theta*j*(i-1));
-          ir.proj[3][j] = cos((double)theta*j*(i-1));
-        }
-        
-        for (   ; j < g  ; j++) {
-          ir.rep[j] = 0.0;
-
-          ir.proj[0][j] = cos((double)theta*j*(i-1));
-          ir.proj[1][j] = -sin((double)theta*j*(i-1));
-          ir.proj[2][j] = -sin((double)theta*j*(i-1));
-          ir.proj[3][j] = -cos((double)theta*j*(i-1));
-        }
-
-        gamma_[i] = ir;
+        ir7.rep[gi] = ir7.proj[0][gi] = (gi < 4) ?
+          ((gi%2) ? -1.0 : 1.0) : ((gi%2) ? 1.0 : -1.0);
+        ir8.rep[gi] = ir8.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
       }
 
-      {
-        IrreducibleRepresentation ir(g,1,"A1\"");
-        gamma_[i] = ir;
-        i++;
-      }
-      {
-        IrreducibleRepresentation ir(g,1,"A2\"");
-        gamma_[i] = ir;
-        i++;
-      }
-
-      for ( ; i < nirrep_; i++) {
-        i0=i-(nirrep_/2);
-
-        if (nt==3)
-          sprintf(label,"E\"");
-        else
-          sprintf(label,"E%d\"",i0-1);
-
-        IrreducibleRepresentation ir(g,2,label);
-
-        gamma_[i] = ir;
-      }
-
-      for (i=nirrep_/2,i0=0; i < nirrep_; i0++,i++) {
-        for (j=0; j < g/4; j++) gamma_[i].rep[j] =  gamma_[i0].rep[j];
-        for (   ; j < g/2; j++) gamma_[i].rep[j] = -gamma_[i0].rep[j];
-        for ( ; j < 3*g/4; j++) gamma_[i].rep[j] =  gamma_[i0].rep[j];
-        for ( ; j < g    ; j++) gamma_[i].rep[j] = -gamma_[i0].rep[j];
-      }
-
-      for (i=nirrep_/2,i0=0; i < nirrep_; i0++,i++) {
-        for (int d=0; d < gamma_[i].nproj(); d++) {
-         for (j=0; j < g/4; j++) gamma_[i].proj[d][j] =  gamma_[i0].proj[d][j];
-         for (   ; j < g/2; j++) gamma_[i].proj[d][j] = -gamma_[i0].proj[d][j];
-         for ( ; j < 3*g/4; j++) gamma_[i].proj[d][j] =  gamma_[i0].proj[d][j];
-         for ( ; j < g    ; j++) gamma_[i].proj[d][j] = -gamma_[i0].proj[d][j];
-        }
-      }
+      gamma_[0] = ir1;
+      gamma_[1] = ir2;
+      gamma_[2] = ir3;
+      gamma_[3] = ir4;
+      gamma_[4] = ir5;
+      gamma_[5] = ir6;
+      gamma_[6] = ir7;
+      gamma_[7] = ir8;
 
     } else {
       {
-        IrreducibleRepresentation ir(g,1,"A1g");
-        for (i=0; i < g; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
+        IrreducibleRepresentation ir1(g,1, (nt%2) ? "A1'" : "A1g");
+        IrreducibleRepresentation ir2(g,1, (nt%2) ? "A2'" : "A2g");
+        IrreducibleRepresentation ir3(g,1, (nt%2) ? "A1\"" : "A1u");
+        IrreducibleRepresentation ir4(g,1, (nt%2) ? "A2\"" : "A2u");
+
+        for (gi=0; gi < nt; gi++) {
+          // n Cn's
+          ir1.rep[gi] = ir1.proj[0][gi] = 1.0;
+          ir2.rep[gi] = ir2.proj[0][gi] = 1.0;
+          ir3.rep[gi] = ir3.proj[0][gi] = 1.0;
+          ir4.rep[gi] = ir4.proj[0][gi] = 1.0;
+
+          // n Sn's
+          ir1.rep[gi+nt] = ir1.proj[0][gi+nt] = 1.0;
+          ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = 1.0;
+          ir3.rep[gi+nt] = ir3.proj[0][gi+nt] = -1.0;
+          ir4.rep[gi+nt] = ir4.proj[0][gi+nt] = -1.0;
+
+          // n C2's
+          ir1.rep[gi+2*nt] = ir1.proj[0][gi+2*nt] = 1.0;
+          ir2.rep[gi+2*nt] = ir2.proj[0][gi+2*nt] = -1.0;
+          ir3.rep[gi+2*nt] = ir3.proj[0][gi+2*nt] = 1.0;
+          ir4.rep[gi+2*nt] = ir4.proj[0][gi+2*nt] = -1.0;
+
+          // n sigma's
+          ir1.rep[gi+3*nt] = ir1.proj[0][gi+3*nt] = 1.0;
+          ir2.rep[gi+3*nt] = ir2.proj[0][gi+3*nt] = -1.0;
+          ir3.rep[gi+3*nt] = ir3.proj[0][gi+3*nt] = -1.0;
+          ir4.rep[gi+3*nt] = ir4.proj[0][gi+3*nt] = 1.0;
         }
 
-        gamma_[0] = ir;
+        gamma_[0] = ir1;
+        gamma_[1] = ir2;
+        gamma_[nirrep_/2] = ir3;
+        gamma_[1+nirrep_/2] = ir4;
+          
+        i=2;
       }
 
-      {
-        IrreducibleRepresentation ir(g,1,"A2g");
-        for (i=0; i < g/2; i++) {
-          ir.rep[i] = 1.0;
-          ir.proj[0][i] = 1.0;
-        }
-        for (i=g/2; i < g; i++) {
-          ir.rep[i] = -1.0;
-          ir.proj[0][i] = -1.0;
-        }
+      if (!(nt%2)) {
+        IrreducibleRepresentation ir1(g,1,"B1g");
+        IrreducibleRepresentation ir2(g,1,"B2g");
+        IrreducibleRepresentation ir3(g,1,"B1u");
+        IrreducibleRepresentation ir4(g,1,"B2u");
 
-        gamma_[1] = ir;
-      }
+        for (gi=0; gi < nt; gi++) {
+          // n Cn's
+          ir1.rep[gi] = ir1.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
+          ir2.rep[gi] = ir2.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
+          ir3.rep[gi] = ir3.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
+          ir4.rep[gi] = ir4.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
 
-      {
-        IrreducibleRepresentation ir(g,1,"B1g");
-        for (i=0; i < g; i++) {
-          ir.rep[i] = pow(-1.0,(double)i);
-          ir.proj[0][i] = pow(-1.0,(double)i);
-        }
+          // n Sn's
+          ir1.rep[gi+nt] = ir1.proj[0][gi+nt] = (gi%2) ? -1.0 : 1.0;
+          ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = (gi%2) ? -1.0 : 1.0;
+          ir3.rep[gi+nt] = ir3.proj[0][gi+nt] = (gi%2) ? 1.0 : -1.0;
+          ir4.rep[gi+nt] = ir4.proj[0][gi+nt] = (gi%2) ? 1.0 : -1.0;
 
-        gamma_[2] = ir;
-      }
+          // n C2's
+          ir1.rep[gi+2*nt] = ir1.proj[0][gi+2*nt] = (gi%2) ? -1.0 : 1.0;
+          ir2.rep[gi+2*nt] = ir2.proj[0][gi+2*nt] = (gi%2) ? 1.0 : -1.0;
+          ir3.rep[gi+2*nt] = ir3.proj[0][gi+2*nt] = (gi%2) ? -1.0 : 1.0;
+          ir4.rep[gi+2*nt] = ir4.proj[0][gi+2*nt] = (gi%2) ? 1.0 : -1.0;
 
-      {
-        IrreducibleRepresentation ir(g,1,"B2g");
-        for (i=0; i < g/2; i++) {
-          ir.rep[i] = pow(-1.0,(double)i);
-          ir.proj[0][i] = pow(-1.0,(double)i);
-        }
-        for (i=g/2; i < g; i++) {
-          ir.rep[i] = pow(-1.0,(double)(i+1));
-          ir.proj[0][i] = pow(-1.0,(double)(i+1));
-        }
-
-        gamma_[3] = ir;
-      }
-
-      for (i=4; i < nirrep_/2; i++) {
-        if (nt==4)
-          sprintf(label,"Eg");
-        else
-          sprintf(label,"E%dg",i-3);
-
-        IrreducibleRepresentation ir(g,2,label);
-
-        for (j=0; j < g/4 ; j++) {
-          ir.rep[j] = 2.0*cos((double)theta*j*(i-3));
-
-          ir.proj[0][j] = cos((double)theta*j*(i-3));
-          ir.proj[1][j] = sin((double)theta*j*(i-3));
-          ir.proj[2][j] = -sin((double)theta*j*(i-3));
-          ir.proj[3][j] = cos((double)theta*j*(i-3));
+          // n sigma's
+          ir1.rep[gi+3*nt] = ir1.proj[0][gi+3*nt] = (gi%2) ? -1.0 : 1.0;
+          ir2.rep[gi+3*nt] = ir2.proj[0][gi+3*nt] = (gi%2) ? 1.0 : -1.0;
+          ir3.rep[gi+3*nt] = ir3.proj[0][gi+3*nt] = (gi%2) ? 1.0 : -1.0;
+          ir4.rep[gi+3*nt] = ir4.proj[0][gi+3*nt] = (gi%2) ? -1.0 : 1.0;
         }
         
-        for (j=g/4; j < g/2; j++) {
-          ir.rep[j] =
-            pow(-1.0,(double)(i+1))*2.0*cos((double)theta*j*(i-3));
+        gamma_[2] = ir1;
+        gamma_[3] = ir2;
+        gamma_[2+nirrep_/2] = ir3;
+        gamma_[3+nirrep_/2] = ir4;
 
-          ir.proj[0][j] = pow(-1.0,(double)(i+1))*cos((double)theta*j*(i-3));
-          ir.proj[1][j] = pow(-1.0,(double)(i+1))*sin((double)theta*j*(i-3));
-          ir.proj[2][j] = -pow(-1.0,(double)(i+1))*sin((double)theta*j*(i-3));
-          ir.proj[3][j] = pow(-1.0,(double)(i+1))*cos((double)theta*j*(i-3));
-        }
-
-        for (j=g/2; j < 3*g/4; j++) {
-          ir.rep[j] = 0.0;
-
-          ir.proj[0][j] = cos((double)theta*j*(i-3));
-          ir.proj[1][j] = -sin((double)theta*j*(i-3));
-          ir.proj[2][j] = -sin((double)theta*j*(i-3));
-          ir.proj[3][j] = -cos((double)theta*j*(i-3));
-        }
-
-        for (j=3*g/4; j < g; j++) {
-          ir.rep[j] = 0.0;
-
-          ir.proj[0][j] = pow(-1.0,(double)(i+1))*cos((double)theta*j*(i-3));
-          ir.proj[1][j] = -pow(-1.0,(double)(i+1))*sin((double)theta*j*(i-3));
-          ir.proj[2][j] = -pow(-1.0,(double)(i+1))*sin((double)theta*j*(i-3));
-          ir.proj[3][j] = -pow(-1.0,(double)(i+1))*cos((double)theta*j*(i-3));
-        }
-
-        gamma_[i] = ir;
+        i=4;
       }
+      
+      ei=1;
+      itheta=theta;
+      for (; i < nirrep_/2 ; i++, ei++, itheta += theta) {
+        if (nt==3)
+          sprintf(label,"E'");
+        else if (nt==4)
+          sprintf(label,"Eg");
+        else
+          sprintf(label,"E%d%s", ei, (nt%2) ? "'" : "g");
 
-      {
-        IrreducibleRepresentation ir(g,1,"A1u");
-        gamma_[i] = ir;
-        i++;
-      }
-      {
-        IrreducibleRepresentation ir(g,1,"A2u");
-        gamma_[i] = ir;
-        i++;
-      }
-      {
-        IrreducibleRepresentation ir(g,1,"B1u");
-        gamma_[i] = ir;
-        i++;
-      }
-      {
-        IrreducibleRepresentation ir(g,1,"B2u");
-        gamma_[i] = ir;
-        i++;
-      }
+        IrreducibleRepresentation ir1(g,2,label);
 
-      for (; i < nirrep_; i++) {
-        i0=i-(nirrep_/2);
-
-        if (nt==4)
+        if (nt==3)
+          sprintf(label,"E\"");
+        else if (nt==4)
           sprintf(label,"Eu");
         else
-          sprintf(label,"E%du",i0-3);
+          sprintf(label,"E%d%s", ei, (nt%2) ? "\"" : "u");
 
-        IrreducibleRepresentation ir(g,2,label);
-        gamma_[i] = ir;
-      }
+        IrreducibleRepresentation ir2(g,2,label);
 
-      for (i=nirrep_/2,i0=0; i < nirrep_; i0++,i++) {
-        for (j=0; j < g/4; j++) gamma_[i].rep[j] =  gamma_[i0].rep[j];
-        for (   ; j < g/2; j++) gamma_[i].rep[j] = -gamma_[i0].rep[j];
-        for ( ; j < 3*g/4; j++) gamma_[i].rep[j] =  gamma_[i0].rep[j];
-        for (   ; j < g  ; j++) gamma_[i].rep[j] = -gamma_[i0].rep[j];
-      }
+        jitheta=0;
+        double ineg = (nt%2) ? -1.0 : -pow(-1.0,(double)ei);
 
-      for (i=nirrep_/2,i0=0; i < nirrep_; i0++,i++) {
-        for (int d=0; d < gamma_[i].nproj(); d++) {
-         for (j=0; j < g/4; j++) gamma_[i].proj[d][j] =  gamma_[i0].proj[d][j];
-         for (   ; j < g/2; j++) gamma_[i].proj[d][j] = -gamma_[i0].proj[d][j];
-         for ( ; j < 3*g/4; j++) gamma_[i].proj[d][j] =  gamma_[i0].proj[d][j];
-         for (   ; j < g  ; j++) gamma_[i].proj[d][j] = -gamma_[i0].proj[d][j];
+        for (j=0; j < nt; j++, jitheta += itheta) {
+          ctheta = cos(jitheta);
+          stheta = sin(jitheta);
+          
+          // Cn's
+          ir1.rep[j] = 2.0*ctheta;
+
+          ir1.proj[0][j] = ctheta;
+          ir1.proj[1][j] = -stheta;
+          ir1.proj[2][j] = stheta;
+          ir1.proj[3][j] = ctheta;
+
+          ir2.rep[j] = 2.0*ctheta;
+
+          ir2.proj[0][j] = ctheta;
+          ir2.proj[1][j] = -stheta;
+          ir2.proj[2][j] = stheta;
+          ir2.proj[3][j] = ctheta;
+
+          // Sn's
+          ir1.rep[j+nt] = -2.0*ineg*ctheta;
+
+          ir1.proj[0][j+nt] = -ineg*ctheta;
+          ir1.proj[1][j+nt] = ineg*stheta;
+          ir1.proj[2][j+nt] = -ineg*stheta;
+          ir1.proj[3][j+nt] = -ineg*ctheta;
+
+          ir2.rep[j+nt] = 2.0*ineg*ctheta;
+
+          ir2.proj[0][j+nt] = ineg*ctheta;
+          ir2.proj[1][j+nt] = -ineg*stheta;
+          ir2.proj[2][j+nt] = ineg*stheta;
+          ir2.proj[3][j+nt] = ineg*ctheta;
+
+          // C2's
+          ir1.rep[j+2*nt] = 0.0;
+
+          ir1.proj[0][j+2*nt] = ctheta;
+          ir1.proj[1][j+2*nt] = -stheta;
+          ir1.proj[2][j+2*nt] = -stheta;
+          ir1.proj[3][j+2*nt] = -ctheta;
+
+          ir2.rep[j+2*nt] = 0.0;
+
+          ir2.proj[0][j+2*nt] = ctheta;
+          ir2.proj[1][j+2*nt] = -stheta;
+          ir2.proj[2][j+2*nt] = -stheta;
+          ir2.proj[3][j+2*nt] = -ctheta;
+
+          // sigma's
+          ir1.rep[j+3*nt] = 0.0;
+
+          ir1.proj[0][j+3*nt] = -ineg*ctheta;
+          ir1.proj[1][j+3*nt] = -ineg*stheta;
+          ir1.proj[2][j+3*nt] = -ineg*stheta;
+          ir1.proj[3][j+3*nt] = ineg*ctheta;
+
+          ir2.rep[j+3*nt] = 0.0;
+
+          ir2.proj[0][j+3*nt] = ineg*ctheta;
+          ir2.proj[1][j+3*nt] = ineg*stheta;
+          ir2.proj[2][j+3*nt] = ineg*stheta;
+          ir2.proj[3][j+3*nt] = -ineg*ctheta;
         }
+        
+        gamma_[i] = ir1;
+        gamma_[i+nirrep_/2] = ir2;
       }
     }
 
-    for (i=0; i < nt ; i++) {
-      symop[i][0][0] = symop[i][1][1] =
-      symop[i+nt][0][0] = symop[i+nt][1][1] = cos((double)theta*i);
-      symop[i][0][1] = symop[i+nt][0][1] = sin((double)theta*i);
-      symop[i][1][0] = symop[i+nt][1][0] = -sin((double)theta*i);
+    itheta=0;
+    for (i=0; i < nt ; i++, itheta += theta) {
+      ctheta = cos(itheta);
+      stheta = sin(itheta);
+      
+      // Cn's
+      symop[i][0][0] = symop[i][1][1] = ctheta;
+      symop[i][0][1] = stheta;
+      symop[i][1][0] = -stheta;
       symop[i][2][2] = 1.0;
+      
+      rot[i] = trans[i] = symop[i].trace();
+
+      // Sn's
+      symop[i+nt][0][0] = symop[i+nt][1][1] = ctheta;
+      symop[i+nt][0][1] = stheta;
+      symop[i+nt][1][0] = -stheta;
       symop[i+nt][2][2] = -1.0;
 
-      rot[i] = trans[i] = symop[i].trace();
       trans[i+nt] = symop[i+nt].trace();
       rot[i+nt] = -trans[i+nt];
-    }
 
-    for (i=0,j=2*nt; i < nt ; i++,j++) {
-      symop[j][0][0] = cos((double)theta*i);
-      symop[j][1][1] = -cos((double)theta*i);
-      symop[j][1][0] = symop[j][0][1] = -sin((double)theta*i);
-      symop[j][2][2] = -1.0;
+      // C2's
+      symop[i+2*nt][0][0] = ctheta;
+      symop[i+2*nt][1][1] = -ctheta;
+      symop[i+2*nt][1][0] = symop[i+2*nt][0][1] = -stheta;
+      symop[i+2*nt][2][2] = -1.0;
 
-      rot[j] = trans[j] = symop[j].trace();
-    }
+      rot[i+2*nt] = trans[i+2*nt] = symop[i+2*nt].trace();
 
-    for (i=0,j=3*nt; i < nt ; i++,j++) {
-      symop[j][0][0] = cos((double)theta*i);
-      symop[j][1][1] = -cos((double)theta*i);
-      symop[j][1][0] = symop[j][0][1] = sin((double)theta*i);
-      symop[j][2][2] = 1.0;
+      // sigma's
+      symop[i+3*nt][0][0] = ctheta;
+      symop[i+3*nt][1][1] = -ctheta;
+      symop[i+3*nt][1][0] = symop[i+3*nt][0][1] = stheta;
+      symop[i+3*nt][2][2] = 1.0;
 
-      trans[j] = symop[j].trace();
-      rot[j] = -trans[j];
+      trans[i+3*nt] = symop[i+3*nt].trace();
+      rot[i+3*nt] = -trans[i+3*nt];
     }
 
     break;

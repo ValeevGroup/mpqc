@@ -37,6 +37,9 @@ MBPT2::MBPT2(StateIn& s):
   s.get(debug_);
 
   eliminate_in_gmat_ = 1;
+
+  mem = MemoryGrp::initial_memorygrp();
+  msg_ = MessageGrp::get_default_messagegrp();
 }
 
 MBPT2::MBPT2(const RefKeyVal& keyval):
@@ -85,9 +88,6 @@ MBPT2::save_data_state(StateOut& s)
   s.putstring(method_);
   s.putstring(algorithm_);
   s.put(debug_);
-
-  mem = MemoryGrp::initial_memorygrp();
-  msg_ = MessageGrp::get_default_messagegrp();
 }
 
 void

@@ -148,6 +148,12 @@ MPI2MemoryGrp::obtain_writeonly(distsize_t offset, int size)
 void *
 MPI2MemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
+  static int warn = 1;
+  if (warn) {
+    warn = 0;
+    ExEnv::err() << "MPI2MemoryGrp: readwrite doesn't properly lock"
+                 << endl;
+  }
   void *data = (void *) new char[size];
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
@@ -188,13 +194,23 @@ MPI2MemoryGrp::sum_reduction_on_node(double *data, int doffset,
 }
 
 void
-MPI2MemoryGrp::release_read(void *data, distsize_t offset, int size)
+MPI2MemoryGrp::release_readonly(void *data, distsize_t offset, int size)
 {
   delete[] data;
 }
 
 void
-MPI2MemoryGrp::release_write(void *data, distsize_t offset, int size)
+MPI2MemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
+{
+  MemoryIter i(data, offsets_, n());
+  for (i.begin(offset, size); i.ready(); i.next()) {
+      replace_data(i.data(), i.node(), i.offset(), i.size());
+    }
+  delete[] data;
+}
+
+void
+MPI2MemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
 {
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {

@@ -46,3 +46,9 @@ PointBag_double::~PointBag_double()
       delete (PointBagElem_double*) impl(i).getptr();
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

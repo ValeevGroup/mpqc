@@ -114,3 +114,7 @@ class PointBag_double
 #endif
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

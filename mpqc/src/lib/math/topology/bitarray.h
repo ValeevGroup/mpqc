@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <math/scmat/offset.h>
 
 //
@@ -91,8 +92,8 @@ inline BitArray::BitArray(int i, int j)
   : a(0), n(0), nm(0), na(0)
 {
   if (i!=j) {
-    fprintf(stderr,"BitArray(int,int): i != j\n");
-    exit(1);
+    cerr << node0 << indent << "BitArray(int,int): i != j" << endl;
+    abort();
   }
   int sz = i*(i+1)/2;
 
@@ -110,3 +111,7 @@ inline BitArray::~BitArray()
 }
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

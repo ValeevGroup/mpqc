@@ -6,7 +6,7 @@
 #endif
 
 // This class implements arbitrary dimensional point using double precision #'s
-#include <stdio.h>
+#include <iostream.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -57,7 +57,7 @@ class Point : public SavableState
     const double &operator[](int i) const;
   
   // Print out a Point
-    void print(FILE *fp = stdout);
+    void print(ostream& = cout);
 
   // save and restore state
     void save_data_state(StateOut&);
@@ -98,4 +98,6 @@ typedef struct {
 
 #endif
 
-
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

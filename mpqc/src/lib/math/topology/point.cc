@@ -7,6 +7,7 @@
 #include <math/topology/point.h>
 #include <math/scmat/matrix.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/formio.h>
 
 cart_point::cart_point()
 {
@@ -57,7 +58,7 @@ Point::Point(const double *y, int in_dim)
     if (dim > 0) {
         x=new double[dim];
         if (!memcpy (x,y,dim*sizeof(double)))
-          fprintf(stderr,"Bad copy in Point cnstrctr\n");
+            cerr << node0 << indent << "Bad copy in Point cnstrctr\n";
       }
 }
     
@@ -67,7 +68,7 @@ Point::Point(const Point &in_point)
     if (dim > 0) {
         x=new double[dim];
         if (!memcpy (x,in_point.x,dim*sizeof(double)))
-          fprintf(stderr,"Bad copy in Point copy ctor\n");
+            cerr << node0 << indent << "Bad copy in Point copy ctor\n";
       }
 }
     
@@ -136,7 +137,7 @@ double *Point::copy(void) const
   if (dim > 0) {
       double *x_out = new double[dim];
       if (!memcpy (x_out,x,dim*sizeof(double)))
-        fprintf(stderr,"Bad copy in point copy function\n");
+          cerr << node0 << indent << "Bad copy in point copy function\n";
       return x_out;
     }
   return 0;
@@ -160,7 +161,7 @@ double &Point::operator[](int i)
 {
     if (i < 0 || i >= dim)
     {
-	fprintf(stderr," Dimension out of bounds in Point[]\n");
+        cerr << node0 << indent << "Dimension out of bounds in Point[]\n";
 	abort();
     }
     return x[i];
@@ -171,18 +172,18 @@ const double &Point::operator[](int i) const
 {
     if (i < 0 || i >= dim)
     {
-	fprintf(stderr," Dimension out of bounds in Point[]\n");
+        cerr << node0 << indent << "Dimension out of bounds in Point[]\n";
 	abort();
     }
     return x[i];
 }
 
 // Print out a Point
-void Point::print(FILE *fp)
+void Point::print(ostream& os)
 {
     int i;
-    for (i=0;i<dim;i++)	fprintf(fp," %12.8f",x[i]);
-    fprintf(fp,"\n");
+    for (i=0;i<dim;i++)	os << node0 << scprintf(" %12.8f",x[i]);
+    os << node0 << endl;
 }
 
 void
@@ -202,3 +203,9 @@ DescribedClass_REF_def(Point);
 ARRAY_def(RefPoint);
 SET_def(RefPoint);
 ARRAYSET_def(RefPoint);
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -51,6 +51,7 @@ class BEMSolvent: public DescribedClass {
     RefSCMatrixKit matrixkit_;
     RefSCMatrix system_matrix_i_;
     double f_;
+    RefMessageGrp grp_;
 
     double area_;
     double volume_;

@@ -60,6 +60,8 @@ BEMSolvent::BEMSolvent(const RefKeyVal& keyval)
 
   dielectric_constant_ = keyval->doublevalue("dielectric_constant");
   if (keyval->error() != KeyVal::OK) dielectric_constant_ = 78.0;
+
+  grp_ = MessageGrp::get_default_messagegrp();
 }
 
 BEMSolvent::~BEMSolvent()
@@ -252,29 +254,32 @@ BEMSolvent::init_system_matrix()
   system_matrix.assign(0.0);
 
   // integrate over the surface
-  double A = 0.0;
-  double V = 0.0;
+  double *sysmati = new double[n];
+  RefSCVector vsysmati(system_matrix->rowdim(),system_matrix->kit());
   TriangulatedSurfaceIntegrator triint(surf_);
-  for (triint = 0; triint.update(); triint++) {
-      V += triint.weight()*triint.dA()[2]*triint.current()->point()[2];
-      const SCVector3& surfpv = triint.current()->point();
-      int j0 = triint.vertex_number(0);
-      int j1 = triint.vertex_number(1);
-      int j2 = triint.vertex_number(2);
-      double r = triint.r();
-      double s = triint.s();
-      double rs = 1 - r - s;
-      double dA = triint.w();
-      A += dA;
-      double fdA = - f_ * dA;
-      double rfdA = r * fdA;
-      double sfdA = s * fdA;
-      double rsfdA = rs * fdA;
-      // loop thru all the vertices
-      for (i = 0; i<n; i++) {
-          RefVertex v = surf_->vertex(i);
-          const SCVector3& pv = v->point();
-          const SCVector3& nv = v->normal();
+  triint.distribute(grp_);
+  // loop thru all the vertices
+  for (i = 0; i<n; i++) {
+      memset(sysmati,0,sizeof(double)*n);
+      RefVertex v = surf_->vertex(i);
+      const SCVector3& pv = v->point();
+      const SCVector3& nv = v->normal();
+      for (triint = 0; triint.update(); triint++) {
+          // these depend on only triint
+          const SCVector3& surfpv = triint.current()->point();
+          int j0 = triint.vertex_number(0);
+          int j1 = triint.vertex_number(1);
+          int j2 = triint.vertex_number(2);
+          double r = triint.r();
+          double s = triint.s();
+          double rs = 1 - r - s;
+          double dA = triint.w();
+          double fdA = - f_ * dA;
+          double rfdA = r * fdA;
+          double sfdA = s * fdA;
+          double rsfdA = rs * fdA;
+
+          // these depend on both triint and i
           SCVector3 diff(pv - surfpv);
           double normal_component = diff.dot(nv);
           double diff2 = diff.dot(diff);
@@ -287,16 +292,25 @@ BEMSolvent::init_system_matrix()
             }
           double denom = diff2*sqrt(diff2);
           double common_factor = normal_component/denom;
-          system_matrix.set_element(i, j0,
-                                    common_factor * rsfdA
-                                    + system_matrix.get_element(i, j0));
-          system_matrix.set_element(i, j1, common_factor * rfdA
-                                    + system_matrix.get_element(i, j2));
-          system_matrix.set_element(i, j2, common_factor * sfdA
-                                    + system_matrix.get_element(i, j2));
+          sysmati[j0] += common_factor * rsfdA;
+          sysmati[j1] += common_factor * rfdA;
+          sysmati[j2] += common_factor * sfdA;
         }
+      grp_->sum(sysmati,n);
+      vsysmati->assign(sysmati);
+      system_matrix->assign_row(vsysmati,i);
     }
 
+  delete[] sysmati;
+
+  double A = 0.0;
+  double V = 0.0;
+  for (triint = 0; triint.update(); triint++) {
+      V += triint.weight()*triint.dA()[2]*triint.current()->point()[2];
+      A += triint.w();
+    }
+  grp_->sum(A);
+  grp_->sum(V);
   area_ = A;
   volume_ = V;
 
@@ -399,48 +413,34 @@ BEMSolvent::self_interaction_energy(double** charge_positions,
 
   charges_to_surface_charge_density(charge);
 
-  // Precompute all of the integration points.
-  TriangulatedSurfaceIntegrator itemplate(surf_);
-  int n_integration_points = itemplate.n();
-  TriangulatedSurfaceIntegrator *integration_points
-      = new TriangulatedSurfaceIntegrator[n_integration_points];
-
-  for (itemplate=0, i=0; i<n_integration_points; i++,itemplate++) {
-      integration_points[i] = itemplate;
-      integration_points[i].update();
-    }
+  TriangulatedSurfaceIntegrator triint(surf_);
+  int n_integration_points = triint.n();
+  SCVector3 *points = new SCVector3[n_integration_points];
+  double *charges = new double[n_integration_points];
 
   double energy = 0.0;
+  for (triint=0, i=0; i<n_integration_points&&triint.update(); i++,triint++) {
+      points[i] = triint.current()->point();
+      int v0 = triint.vertex_number(0);
+      int v1 = triint.vertex_number(1);
+      int v2 = triint.vertex_number(2);
+      double r = triint.r();
+      double s = triint.s();
+      double rs = 1.0 - r - s;
+      double dA = triint.w();
+      charges[i] = (charge[v0]*rs + charge[v1]*r + charge[v2]*s)*dA;
+      energy += 0.0; // is this good enough for the self term?
+    }
   for (i=0; i<n_integration_points; i++) {
-      const SCVector3& ipv = integration_points[i].current()->point();
-      int iv0 = integration_points[i].vertex_number(0);
-      int iv1 = integration_points[i].vertex_number(1);
-      int iv2 = integration_points[i].vertex_number(2);
-      double ir = integration_points[i].r();
-      double is = integration_points[i].s();
-      double irs = 1 - ir - is;
-      double idA = integration_points[i].w();
-      double icharge = (charge[iv0]*irs + charge[iv1]*ir + charge[iv2]*is)*idA;
-      // interaction of the surface element with itself
-      energy += 0.0; // is this good enough?
-      // interaction of the surface element with all other surface elements
+      double chargesi = charges[i];
+      SCVector3 pointsi(points[i]);
       for (j = 0; j<i; j++) {
-          const SCVector3& jpv = integration_points[j].current()->point();
-          int jv0 = integration_points[j].vertex_number(0);
-          int jv1 = integration_points[j].vertex_number(1);
-          int jv2 = integration_points[j].vertex_number(2);
-          double jr = integration_points[j].r();
-          double js = integration_points[j].s();
-          double jrs = 1 - jr - js;
-          double jdA = integration_points[j].w();
-          double jcharge = (charge[jv0]*jrs
-                            + charge[jv1]*jr
-                            + charge[jv2]*js)*jdA;
-          energy += icharge * jcharge/ipv.dist(jpv);
+          energy += chargesi*charges[j]/pointsi.dist(points[j]);
         }
     }
 
-  delete[] integration_points;
+  delete[] points;
+  delete[] charges;
 
   surface_charge_density_to_charges(charge);
 

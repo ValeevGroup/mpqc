@@ -58,21 +58,21 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////
 
 IrreducibleRepresentation::IrreducibleRepresentation() :
-  g(0), degen(0), nrot_(0), ntrans_(0), complex_(0), symb(0), rep(0)
+  g(0), degen(0), nrot_(0), ntrans_(0), complex_(0), symb(0), rep(0), csymb(0)
 {
 }
 
 IrreducibleRepresentation::IrreducibleRepresentation(
-  int order, int d, const char *lab) :
-  g(0), degen(0), nrot_(0), ntrans_(0), complex_(0), symb(0), rep(0)
+  int order, int d, const char *lab, const char *clab) :
+  g(0), degen(0), nrot_(0), ntrans_(0), complex_(0), symb(0), rep(0), csymb(0)
 {
-  init(order,d,lab);
+  init(order,d,lab,clab);
 }
 
 
 IrreducibleRepresentation::IrreducibleRepresentation(
   const IrreducibleRepresentation& ir) :
-  g(0), degen(0), nrot_(0), ntrans_(0), complex_(0), symb(0), rep(0)
+  g(0), degen(0), nrot_(0), ntrans_(0), complex_(0), symb(0), rep(0), csymb(0)
 {
   *this = ir;
 }
@@ -85,7 +85,7 @@ IrreducibleRepresentation::~IrreducibleRepresentation()
 IrreducibleRepresentation&
 IrreducibleRepresentation::operator=(const IrreducibleRepresentation& ir)
 {
-  init(ir.g,ir.degen,ir.symb);
+  init(ir.g,ir.degen,ir.symb,ir.csymb);
 
   nrot_ = ir.nrot_;
   ntrans_ = ir.ntrans_;
@@ -98,16 +98,19 @@ IrreducibleRepresentation::operator=(const IrreducibleRepresentation& ir)
 }
 
 void
-IrreducibleRepresentation::init(int order, int d, const char *lab)
+IrreducibleRepresentation::init(int order, int d, const char *lab,
+                                const char *clab)
 {
   g=order;
   degen=d;
   ntrans_=nrot_=complex_=0;
 
-  if (symb)
-    delete[] symb;
-
+  delete[] symb;
   symb = new_string(lab);
+
+  delete[] csymb;
+  if (clab) csymb = new_string(clab);
+  else csymb = 0;
 
   if (rep) {
     delete[] rep;

@@ -244,6 +244,7 @@ class IrreducibleRepresentation {
     int ntrans_;   // the number of translations in this irrep
     int complex_;  // true if this irrep has a complex representation
     char *symb;    // mulliken symbol for this irrep
+    char *csymb;    // mulliken symbol for this irrep w/o special characters
 
     SymRep *rep;   // representation matrices for the symops
 
@@ -253,14 +254,14 @@ class IrreducibleRepresentation {
     /** This constructor takes as arguments the order of the point group,
      the degeneracy of the irrep, and the Mulliken symbol of the irrep.
      The Mulliken symbol is copied internally. */
-    IrreducibleRepresentation(int,int,const char*);
+    IrreducibleRepresentation(int,int,const char*,const char* =0);
 
     ~IrreducibleRepresentation();
 
     IrreducibleRepresentation& operator=(const IrreducibleRepresentation&);
 
     /// Initialize the order, degeneracy, and Mulliken symbol of the irrep.
-    void init(int =0, int =0, const char* =0);
+    void init(int =0, int =0, const char* =0, const char* =0);
     
     /// Returns the order of the group.
     int order() const { return g; }
@@ -282,6 +283,11 @@ class IrreducibleRepresentation {
 
     /// Returns the Mulliken symbol for the irrep.
     const char * symbol() const { return symb; }
+
+    /** Returns the Mulliken symbol for the irrep without special
+        characters.
+    */
+    const char * symbol_ns() const { return (csymb?csymb:symb); }
 
     /** Returns the character for the i'th symmetry operation of the point
      group. */

@@ -121,7 +121,8 @@ MolecularFrequencies::compute_frequencies(const RefSymmSCMatrix &xhessian)
   disym_ = symmbasis->rowdim();
 
   ExEnv::out() << node0 << endl
-       << indent << "Frequencies (cm-1; negative is imaginary):";
+               << indent << "Frequencies (cm-1; negative is imaginary):"
+               << endl;
 
   // initialize the frequency tables
   if (nfreq_) delete[] nfreq_;
@@ -207,7 +208,19 @@ MolecularFrequencies::do_freq_for_irrep(
       freq_[irrep][i] = freqs(i);
       freqs(i) = freqs->get_element(i) * 219474.63;
     }
-  freqs.print(pg_->char_table().gamma(irrep).symbol());
+
+  ExEnv::out() << node0 << indent
+               << pg_->char_table().gamma(irrep).symbol() << endl;
+  int ifreqoff = 1;
+  for (i=0; i<irrep; i++) ifreqoff += nfreq_[i];
+  for (i=0; i<freqs.n(); i++) {
+      double freq = freqs(freqs.n()-i-1);
+      ExEnv::out() << node0 << indent
+                   << scprintf("%4d % 8.2f",i+ifreqoff,freq)
+                   << endl;
+    }
+  ExEnv::out() << node0 << endl;
+
   if (debug_) {
       eigvecs.print("eigenvectors");
       ncbasis.print("ncbasis");
@@ -472,16 +485,18 @@ void
 MolecularFrequencies::animate(const Ref<Render>& render,
                               const Ref<MolFreqAnimate>& anim)
 {
-  int i,j;
+  int i,j, symoff = 0;
   for (i=0; i<nirrep_; i++) {
-      for (j=0; j<disym_->blocks()->size(i); j++) {
+      int nfreq = disym_->blocks()->size(i);
+      for (j=0; j<nfreq; j++) {
           char name[128];
-          sprintf(name,"%s.%02d",
-                pg_->char_table().gamma(i).symbol(), j);
+          sprintf(name,"%02d.%s",
+                  nfreq-j+symoff, pg_->char_table().gamma(i).symbol_ns());
           anim->set_name(name);
           anim->set_mode(i,j);
           render->animate(anim.pointer());
         }
+      symoff += nfreq;
     }
 }
 

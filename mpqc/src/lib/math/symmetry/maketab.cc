@@ -123,13 +123,13 @@ int CharacterTable::make_table()
     break;
 
   case CS: // reflection through the xy plane
-    gamma_[0].init(2,1,"A'");
+    gamma_[0].init(2,1,"A'","Ap");
     gamma_[0].rep[0][0][0] = 1.0;
     gamma_[0].rep[1][0][0] = 1.0;
     gamma_[0].nrot_=1;
     gamma_[0].ntrans_=2;
 
-    gamma_[1].init(2,1,"A\"");
+    gamma_[1].init(2,1,"A\"","App");
     gamma_[1].rep[0][0][0] =  1.0;
     gamma_[1].rep[1][0][0] = -1.0;
     gamma_[1].nrot_=2;
@@ -306,8 +306,8 @@ int CharacterTable::make_table()
     // for even n, the irreps are Ag, Bg, Au, Bu,
     //                            E1g...E(nir/2-1)g, E1u...E(nir/2-1)u
     //
-    gamma_[0].init(g,1, (nt%2) ? "A'" : "Ag");
-    gamma_[nirrep_/2].init(g,1, (nt%2) ? "A\"" : "Au");
+    gamma_[0].init(g,1, (nt%2) ? "A'" : "Ag", (nt%2) ? "Ap" : 0);
+    gamma_[nirrep_/2].init(g,1, (nt%2) ? "A\"" : "Au", (nt%2) ? "Ap" : 0);
 
     for (gi=0; gi < nt; gi++) {
       // Cn's

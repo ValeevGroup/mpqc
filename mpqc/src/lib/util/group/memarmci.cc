@@ -98,11 +98,11 @@ ARMCIMemoryGrp::set_localsize(size_t localsize)
   data_ = reinterpret_cast<char*>(all_data_[me()]);
 
   if (debug_) {
-      for (int i=0; i<n(); i++) {
-          std::cout << me() << ": all_data[" << i
-                    << "] = " << all_data_[i] << std::endl;
-        }
+    for (int i=0; i<n(); i++) {
+      std::cout << me() << ": all_data[" << i
+		<< "] = " << all_data_[i] << std::endl;
     }
+  }
 
   ARMCI_Create_mutexes(1);
 }
@@ -174,8 +174,7 @@ ARMCIMemoryGrp::sum_data(double *data, int node, int offset, int size)
 void
 ARMCIMemoryGrp::sync()
 {
-  ARMCI_AllFence();
-  msg_->sync();
+  ARMCI_Barrier();
 }
 
 void
@@ -190,7 +189,10 @@ ARMCIMemoryGrp::deactivate()
 void*
 ARMCIMemoryGrp::malloc_local(size_t nbyte)
 {
-  return ARMCI_Malloc_local(nbyte);
+  void* buf = ARMCI_Malloc_local(nbyte);
+  if (buf == NULL)
+    throw std::runtime_error("ARMCIMemoryGrp::malloc_local -- failed to allocate memory");
+  return buf;
 }
 
 void

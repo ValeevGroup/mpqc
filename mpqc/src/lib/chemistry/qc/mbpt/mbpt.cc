@@ -80,7 +80,7 @@ dquicksort(double *item,int *index,int n)
 ///////////////////////////////////////////////////////////////////////////
 // MBPT2
 
-#define VERSION 3
+#define VERSION 4
 #define CLASSNAME MBPT2
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -119,6 +119,13 @@ MBPT2::MBPT2(StateIn& s):
     }
   else {
       dynamic_ = 0;
+    }
+
+  if (s.version(static_class_desc()) >= 4) {
+      s.get(cphf_epsilon_);
+    }
+  else {
+      cphf_epsilon_ = 1.0e-8;
     }
 
   hf_energy_ = 0.0;
@@ -185,6 +192,8 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   KeyValValueint default_dynamic(0);
   dynamic_ = keyval->intvalue("dynamic", default_dynamic);
 
+  cphf_epsilon_ = keyval->doublevalue("cphf_epsilon",KeyValValuedouble(1.e-8));
+
   hf_energy_ = 0.0;
 
   symorb_irrep_ = 0;
@@ -214,6 +223,7 @@ MBPT2::save_data_state(StateOut& s)
   s.put(debug_);
   s.put(dos2_);
   s.put(dynamic_);
+  s.put(cphf_epsilon_);
 }
 
 void

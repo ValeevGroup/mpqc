@@ -57,7 +57,7 @@ void
 MBPT2::cs_cphf(double **scf_vector,
                double *Laj, double *eigval, RefSCMatrix& P2aj)
 {
-  const double epsilon = 1.0e-8; //convergence criterion for P2aj
+  double epsilon = cphf_epsilon_; //convergence criterion for P2aj
 
   int i, j, k, l, a;
   int niter;

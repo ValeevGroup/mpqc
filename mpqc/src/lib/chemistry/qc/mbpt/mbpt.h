@@ -56,6 +56,7 @@ class MBPT2: public Wavefunction {
     int nfzc, nfzv;
     unsigned int mem_alloc;
 
+    double cphf_epsilon_;
     int eliminate_in_gmat_;
     const double *intbuf_;
     RefTwoBodyInt tbint_;

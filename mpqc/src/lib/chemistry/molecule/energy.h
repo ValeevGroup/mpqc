@@ -18,7 +18,7 @@ class MolecularEnergy: public NLP2 {
     RefMolecularCoor _mc;
 
   protected:
-    Resultdouble& _energy;
+    AccResultdouble& _energy;
 
     RefSCDimension _moldim; // the number of cartesian variables
     RefMolecule _mol;

@@ -83,10 +83,13 @@ ExEnv::init(int &argcref, char **&argvref)
 
   memset(username_,0,9);
 #if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
-  const char *pw_name = getpwuid(geteuid())->pw_name;
-  if (pw_name) {
-      strncpy(username_, pw_name, 9);
+  struct passwd *pw = getpwuid(geteuid());
+  if (pw && pw->pw_name) {
+      strncpy(username_, pw->pw_name, 9);
       username_[8] = 0;
+    }
+  else {
+      strcpy(username_,"UNKNOWN");
     }
 #else
   strcpy(username_,"UNKNOWN");

@@ -35,7 +35,8 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libbasis.so
 endif
 
-btest: $(TESTOBJ) libintv2.a liboint2.a $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+btest: $(TESTOBJ) libintv3.a liboint3.a libintv2.a liboint2.a \
+                  $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
 
 clean::

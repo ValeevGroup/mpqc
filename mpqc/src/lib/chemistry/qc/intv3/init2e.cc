@@ -195,10 +195,10 @@ Int2eV3::int_initialize_erep(int storage, int order,
   int_init_shiftgc(order,jmax1,jmax2,jmax3,jmax4);
 
   /* Allocate storage for the integral buffer. */
-  int maxsize = cs1->max_nfunction_in_shell()
-                *cs2->max_nfunction_in_shell()
-                *cs3->max_nfunction_in_shell()
-                *cs4->max_nfunction_in_shell();
+  int maxsize = cs1->max_ncartesian_in_shell()
+                *cs2->max_ncartesian_in_shell()
+                *cs3->max_ncartesian_in_shell()
+                *cs4->max_ncartesian_in_shell();
   if (order==0) {
     int_buffer = (double *) malloc(sizeof(double) * maxsize);
     int_derint_buffer = 0;

@@ -1175,13 +1175,45 @@ UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     RefSymmSCMatrix ptmpa = get_local_data(densa_, pmata, SCF::Read);
     RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
   
-    LocalUHFGradContribution l(pmata,pmatb);
-    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
     RefPetiteList pl = integral()->petite_list();
-    LocalTBGrad<LocalUHFGradContribution>
-      tb(l, tbi, pl, basis(), scf_grp_,
-         tbgrad, pmax, desired_gradient_accuracy(), 1, 0, exchange_fraction);
-    tb.run();
+    LocalUHFGradContribution l(pmata,pmatb);
+
+    int i;
+    int na3 = molecule()->natom()*3;
+    int nthread = threadgrp_->nthread();
+    double **grads = new double*[nthread];
+    RefTwoBodyDerivInt *tbis = new RefTwoBodyDerivInt[nthread];
+    for (i=0; i < nthread; i++) { 
+      tbis[i] = integral()->electron_repulsion_deriv();
+      grads[i] = new double[na3];
+      memset(grads[i], 0, sizeof(double)*na3);
+    }
+
+    LocalTBGrad<LocalUHFGradContribution> **tblds =
+      new LocalTBGrad<LocalUHFGradContribution>*[nthread];
+
+    for (i=0; i < nthread; i++) {
+      tblds[i] = new LocalTBGrad<LocalUHFGradContribution>(
+        l, tbis[i], pl, basis(), scf_grp_, grads[i], pmax,
+        desired_gradient_accuracy(), nthread, i, exchange_fraction);
+      threadgrp_->add_thread(i, tblds[i]);
+    }
+
+    if (threadgrp_->start_threads() < 0
+        ||threadgrp_->wait_threads() < 0) {
+      cerr << node0 << indent
+           << "USCF: error running threads" << endl;
+      abort();
+    }
+
+    for (i=0; i < nthread; i++) {
+      for (int j=0; j < na3; j++)
+        tbgrad[j] += grads[i][j];
+
+      delete[] grads[i];
+      delete tblds[i];
+    }
+
     scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
   }
 

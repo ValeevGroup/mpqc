@@ -432,4 +432,12 @@ class StateInBinXDR : public StateInBin,
     ~StateInBinXDR();
   };
 
+#ifndef __GNUC__
+static SavableState * att_hack_job(StateIn&si)
+{
+  return SavableState::restore_state(si);
+}
+#endif
+
+
 #endif

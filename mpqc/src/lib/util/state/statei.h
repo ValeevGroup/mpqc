@@ -23,7 +23,11 @@ CLASSNAME::save_object_state(StateOut&so)
 CLASSNAME*
 CLASSNAME::restore_state(StateIn&si)
 {
+#ifdef __GNUC__
   return CLASSNAME::castdown(SavableState::restore_state(si));
+#else
+  return CLASSNAME::castdown(att_hack_job(si));
+#endif
 }
 
 #undef stringize

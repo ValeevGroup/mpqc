@@ -38,6 +38,7 @@
 #  include <util/group/messpgon.h>
 #endif
 #ifdef HAVE_MPI
+#  define MPICH_SKIP_MPICXX
 #  include <mpi.h>
 #  include <util/group/messmpi.h>
 #endif

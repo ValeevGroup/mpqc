@@ -34,6 +34,7 @@
 #define _util_group_memmtmpi_h
 
 #include <fstream>
+#define MPICH_SKIP_MPICXX
 #include <mpi.h>
 
 #include <util/group/message.h>

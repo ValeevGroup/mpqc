@@ -36,6 +36,12 @@
 /* Define if you have <time.h>.  */
 #undef HAVE_TIME_H
 
+/* Define if you have <machine/fpu.h>.  */
+#undef HAVE_MACHINE_FPU_H
+
+/* Define if you have <asm/fpu.h>.  */
+#undef HAVE_ASM_FPU_H
+
 /* Define if you have <sys/resource.h>.  */
 #undef HAVE_SYS_RESOURCE_H
 
@@ -101,6 +107,12 @@
 
 /* Define if you have the ctime function.  */
 #undef HAVE_CTIME
+
+/* Define if you have the ieee_set_fp_control function.  */
+#undef HAVE_IEEE_SET_FP_CONTROL
+
+/* Define if you have the ieee_get_fp_control function.  */
+#undef HAVE_IEEE_GET_FP_CONTROL
 
 /* Define if you have functioning SYSV IPC.  */
 #undef HAVE_SYSV_IPC

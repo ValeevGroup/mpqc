@@ -123,9 +123,14 @@ out_of_memory()
   abort();
 }
 
-#if defined(__alpha__)
 #include <signal.h>
+#if defined(HAVE_MACHINE_FPU_H)
+#include <machine/fpu.h>
+#elif defined(HAVE_ASM_FPU_H)
 #include <asm/fpu.h>
+#endif
+
+#if defined(HAVE_IEEE_SET_FP_CONTROL) && defined(HAVE_IEEE_GET_FP_CONTROL)
 extern "C" {
   void ieee_set_fp_control(long);
   long ieee_get_fp_control(void);
@@ -173,7 +178,7 @@ main(int argc, char *argv[])
   asm("fldcw %0" : : "o" (0x372));
 #endif
 
-#if defined(__alpha__)
+#if defined(HAVE_IEEE_SET_FP_CONTROL) && defined(HAVE_IEEE_GET_FP_CONTROL)
   signal(SIGFPE,sigfpe_handler);
 #endif
 

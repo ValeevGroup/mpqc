@@ -31,6 +31,7 @@
 
 #include <math.h>
 #include <util/misc/formio.h>
+#include <math/symmetry/corrtab.h>
 #include <math/scmat/local.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/molfreq.h>
@@ -503,14 +504,19 @@ MolecularFrequencies::displace(int disp)
         }
     }
 
-  RefPointGroup newpg = mol_->highest_point_group();
-
   if (irrep == 0) {
       mol_->set_point_group(original_point_group_);
     }
   else {
-      // Future work: doesn't need to be reduced to c1 symmetry here
-      mol_->set_point_group(new PointGroup("c1"));
+      RefPointGroup newpg = mol_->highest_point_group();
+      CorrelationTable corrtab;
+      if (corrtab.initialize_table(original_point_group_, newpg)) {
+          // something went wrong so use c1 symmetry
+          mol_->set_point_group(new PointGroup("c1"));
+        }
+      else {
+          mol_->set_point_group(newpg);
+        }
     }
 }
 

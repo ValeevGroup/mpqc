@@ -19,6 +19,7 @@ extern "C" {
 #include <math/scmat/matrix.h>
 #include <math/topology/point.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/solvent/bem.h>
 class Molecule;
 class MolecularCoor;
 
@@ -55,6 +56,10 @@ class MPSCF: public OneBodyWavefunction
     int sync_loop;
     void compute();
     void init(int =0);
+
+    void scfvec_to_eigenvectors();
+
+    RefBEMSolvent solvent_;
   public:
     MPSCF(const RefKeyVal&);
     MPSCF(StateIn&);
@@ -68,6 +73,9 @@ class MPSCF: public OneBodyWavefunction
     double exchange_energy();
 
     double occupation(int vectornum);
+
+    int value_implemented();
+    int gradient_implemented();
 };
 
 #endif

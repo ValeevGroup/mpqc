@@ -88,10 +88,10 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (mynode0()==0)
       printf("V integrals\n");
-    dmt_print(V);
+    dmt_printf("%15.7f ",V);
     if (mynode0()==0)
       printf("T integrals\n");
-    dmt_print(T);
+    dmt_printf("%15.7f ",T);
   }
 
   dmt_copy(V,H);

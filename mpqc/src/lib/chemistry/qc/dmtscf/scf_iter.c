@@ -439,7 +439,7 @@ FILE *outfile;
 
   if (scf_info->print_flg&1024) {
     printf("Density");
-    dmt_print(Pmat);
+    dmt_printf("%15.7f ",Pmat);
   }
   
   if (scf_make_gmat(scf_info,sym_info,centers,
@@ -503,7 +503,7 @@ int iter;
   */
   if (scf_info->print_flg&1024) {
     printf("AO Fock");
-    dmt_print(Fock);
+    dmt_printf("%15.7f ",Fock);
   }
   
   if (scf_info->iopen) {
@@ -517,7 +517,7 @@ int iter;
 
   if (scf_info->print_flg&1024) {
     printf("MO Fock");
-    dmt_print(Fock);
+    dmt_printf("%15.7f ",Fock);
   }
   
  /* now diagonalize the MO Fock matrix */
@@ -526,7 +526,7 @@ int iter;
 
   if (scf_info->print_flg&1024) {
     printf("Evecs");
-    dmt_print(Scr1);
+    dmt_printf("%15.7f ",Scr1);
   }
   
   dmt_transpose(Scf_Vec);
@@ -535,7 +535,7 @@ int iter;
 
   if (scf_info->print_flg&1024) {
     printf("New vector");
-    dmt_print(Scf_Vec);
+    dmt_printf("%15.7f ",Scf_Vec);
   }
   
  /* un-level shift eigenvalues */
@@ -585,10 +585,12 @@ dmt_matrix SScr2;
   }
 
   if (scf_info->print_flg&1024) {
+    printf("Skel G matrix");
+    dmt_printf("%15.7f ",Gmat);
     printf("Hcore");
-    dmt_print(Hcore);
+    dmt_printf("%15.7f ",Hcore);
     printf("G matrix");
-    dmt_print(SScr1);
+    dmt_printf("%15.7f ",SScr1);
   }
   
  /* F = H + G

@@ -92,7 +92,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"S inv\n");
-    dmt_print(Sinv);
+    dmt_printf("%15.7f ",Sinv);
   }
 
  /* initialize the integral routines */
@@ -151,7 +151,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"C2\n");
-    dmt_print(C2);
+    dmt_printf("%15.7f ",C2);
   }
 
  /* form overlap between old basis and new basis */
@@ -162,7 +162,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"S2\n");
-    dmt_print(S2);
+    dmt_printf("%15.7f ",S2);
   }
 
  /* form projected vector by multiplying the old vector by the overlap */
@@ -172,7 +172,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"Cprime\n");
-    dmt_print(Cprime);
+    dmt_printf("%15.7f ",Cprime);
   }
 
  /* free some memory */
@@ -190,7 +190,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"D\n");
-    dmt_print(D);
+    dmt_printf("%15.7f ",D);
   }
 
  /* form X = Cprime~ * D */
@@ -203,7 +203,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"X\n");
-    dmt_print(X);
+    dmt_printf("%15.7f ",X);
   }
 
  /* form X**-1/2 */
@@ -217,7 +217,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"X^-1/2\n");
-    dmt_print(X);
+    dmt_printf("%15.7f ",X);
   }
 
  /* finally, form Cnew = D*X**-1/2 */
@@ -230,7 +230,7 @@ FILE *outfile;
   if (scf_info->print_flg&1024) {
     if (me==0)
       fprintf(outfile,"Cnew\n");
-    dmt_print(Cnew);
+    dmt_printf("%15.7f ",Cnew);
   }
 
  /* and put Cnew into Scf_Vec */

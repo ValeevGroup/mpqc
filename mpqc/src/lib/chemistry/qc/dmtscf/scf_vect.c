@@ -131,9 +131,9 @@ FILE *outfile;
 
   if (scf_info->print_flg&1024) {
     if (mynode0()==0) printf("scf vector");
-    dmt_print(Scf_Vec);
+    dmt_printf("%15.7f ",Scf_Vec);
     if (mynode0()==0) printf("mo fock");
-    dmt_print(Fock);
+    dmt_printf("%15.7f ",Fock);
   }
 
 /* clean up your room young man */
@@ -210,10 +210,10 @@ FILE *outfile;
   if (scf_info->print_flg & 1024) {
     if (mynode0()==0)
       fprintf(outfile,"Overlap Integrals\n");
-    dmt_print(S);
+    dmt_printf("%15.7f ",S);
     if (mynode0()==0)
       fprintf(outfile,"Hcore\n");
-    dmt_print(Hcore);
+    dmt_printf("%15.7f ",Hcore);
   }
   
  /* we don't need the T and V matrices any longer, so free up the memory */
@@ -279,11 +279,11 @@ FILE *outfile;
     if (scf_info->print_flg & 1024 && mynode0()==0) {
       if (mynode0()==0)
         fprintf(outfile,"Sahalf\n");
-      dmt_print(Sahalf);
+      dmt_printf("%15.7f ",Sahalf);
 
       if (mynode0()==0)
         fprintf(outfile,"Hcore Guess\n");
-      dmt_print(Scf_Vec);
+      dmt_printf("%15.7f ",Scf_Vec);
     }
     dmt_free(Sahalf);
   }

@@ -35,6 +35,9 @@ TARGET_TO_MAKE = libstate
 default:: $(DEPENDINCLUDE)
 default:: libstate.a
 
+statetest.o: statetest.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
 statetest: statetest.o libstate.a ../keyval/libkeyval.a ../class/libclass.a ../container/libcontainer.a
 	$(CXX) $(CXXFLAGS) -o statetest $^ $(SYSLIBS)
 

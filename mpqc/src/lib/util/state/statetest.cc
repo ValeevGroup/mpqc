@@ -348,7 +348,7 @@ main()
   show( akv.intvalue("x") );  show (akv.errormsg() ); cout << '\n';
   show( akv.intvalue(":z") );  show (akv.errormsg() ); cout << '\n';
 
-  ParsedKeyVal pkv("statetest.in"); pkv.unmanage();
+  ParsedKeyVal pkv(SRCDIR "/statetest.in"); pkv.unmanage();
 
   show( pkv.exists(":x") );  show( pkv.errormsg() ); cout << '\n';
   show( pkv.exists(":z") );  show (pkv.errormsg() ); cout << '\n';

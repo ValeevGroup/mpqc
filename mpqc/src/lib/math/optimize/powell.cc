@@ -3,7 +3,7 @@ extern "C" {
 #  include <math.h>
 }
 
-#include "opt.h"
+#include "update.h"
 #include <util/keyval/keyval.h>
 
 #define CLASSNAME PowellUpdate
@@ -72,22 +72,22 @@ PowellUpdate::update(RefSymmSCMatrix&hessian,RefNLP2&nlp,
   }
   
   if (xprev.nonnull()) {
-      RefSCVector xdisp = xnew-xprev;
-      RefSCVector gdisp = gnew-gprev-hessian*xdisp;
-      double xdisp_xdisp = xdisp.scalar_product(xdisp);
-      double gdisp_xdisp = gdisp.scalar_product(xdisp);
-      hessian.accumulate(
-        xdisp.symmetric_outer_product() *
-        (-gdisp_xdisp/(xdisp_xdisp*xdisp_xdisp))
-        );
-      RefSCMatrix temp =
-        (gdisp.outer_product(xdisp) + xdisp.outer_product(gdisp)) *
-        (0.5/xdisp_xdisp);
-      hessian.accumulate_symmetric_sum(temp);
-      xprev.assign(xnew);
-      gprev.assign(gnew);
-    } else {
-      xprev = xnew.copy();
-      gprev = gnew.copy();
-    }
+    RefSCVector xdisp = xnew-xprev;
+    RefSCVector gdisp = gnew-gprev-hessian*xdisp;
+    double xdisp_xdisp = xdisp.scalar_product(xdisp);
+    double gdisp_xdisp = gdisp.scalar_product(xdisp);
+    hessian.accumulate(
+      xdisp.symmetric_outer_product() *
+      (-gdisp_xdisp/(xdisp_xdisp*xdisp_xdisp))
+    );
+    RefSCMatrix temp =
+      (gdisp.outer_product(xdisp) + xdisp.outer_product(gdisp)) *
+      (0.5/xdisp_xdisp);
+    hessian.accumulate_symmetric_sum(temp);
+    xprev.assign(xnew);
+    gprev.assign(gnew);
+  } else {
+    xprev = xnew.copy();
+    gprev = gnew.copy();
+  }
 }

@@ -1,9 +1,13 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 extern "C" {
 #  include <math.h>
 }
 
-#include "opt.h"
+#include "qnewton.h"
 #include <util/keyval/keyval.h>
 
 #define CLASSNAME QNewtonOpt

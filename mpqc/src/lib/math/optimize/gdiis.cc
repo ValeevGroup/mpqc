@@ -99,7 +99,6 @@ GDIISOpt::GDIISOpt(StateIn&s):
   update_.restore_state(s);
   s.get(convergence_);
   s.get(accuracy_);
-  s.get(take_newton_step_);
   s.get(maxabs_gradient);
   coords_ = new RefSCVector[nsave];
   grad_ = new RefSCVector[nsave];
@@ -127,7 +126,6 @@ GDIISOpt::save_data_state(StateOut&s)
   update_.save_state(s);
   s.put(convergence_);
   s.put(accuracy_);
-  s.put(take_newton_step_);
   s.put(maxabs_gradient);
   for (int i=0; i < nsave; i++) {
     coords_[i].save_state(s);
@@ -140,7 +138,6 @@ void
 GDIISOpt::init()
 {
   Optimize::init();
-  take_newton_step_ = 1;
   maxabs_gradient = -1.0;
 }
 

@@ -1,6 +1,6 @@
 
-#ifndef _math_optimize_efc_h
-#define _math_optimize_efc_h
+#ifndef _math_optimize_qnewton_h
+#define _math_optimize_qnewton_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -14,31 +14,29 @@
 #include <math/optimize/update.h>
 
 ////////////////////////////////////////////////////////////////////////
-// eigenvector following a la Baker (JCC Vol 7, No 4, 385-395, 1986)
+// newton and related methods
 
-class EFCOpt: public Optimize {
-#   define CLASSNAME EFCOpt
+class QNewtonOpt: public Optimize {
+#   define CLASSNAME QNewtonOpt
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int tstate;
-    int modef;
-  
     double maxabs_gradient;
     double convergence_;
     double accuracy_;
 
     RefNLP2 nlp_;
-    RefSymmSCMatrix hessian_;
+    RefSymmSCMatrix ihessian_;
     RefHessianUpdate update_;
-    RefSCVector last_mode_;
+    RefLineOpt lineopt_;
 
+    int take_newton_step_;
   public:
-    EFCOpt(const RefKeyVal&);
-    EFCOpt(StateIn&);
-    ~EFCOpt();
+    QNewtonOpt(const RefKeyVal&);
+    QNewtonOpt(StateIn&);
+    ~QNewtonOpt();
     void save_data_state(StateOut&);
 
     void init();

@@ -11,6 +11,7 @@
 #include <math/scmat/matrix.h>
 #include <math/optimize/nlp.h>
 #include <math/optimize/opt.h>
+#include <math/optimize/update.h>
 
 ////////////////////////////////////////////////////////////////////////
 // gdiis
@@ -38,7 +39,6 @@ class GDIISOpt: public Optimize {
     RefSymmSCMatrix ihessian_;
     RefHessianUpdate update_;
 
-    int take_newton_step_;
   public:
     GDIISOpt(const RefKeyVal&);
     GDIISOpt(StateIn&);

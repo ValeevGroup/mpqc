@@ -45,6 +45,9 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
   tstate = keyval->booleanvalue("transition_state");
   if (keyval->error() != KeyVal::OK) tstate = 0;
 
+  modef = keyval->booleanvalue("mode_following");
+  if (keyval->error() != KeyVal::OK) modef = 0;
+
   if (tstate) {
     printf("\n  performing a transition state search\n\n");
   }
@@ -74,13 +77,13 @@ EFCOpt::EFCOpt(StateIn&s):
   Optimize(s)
 {
   s.get(tstate);
+  s.get(modef);
   nlp_.restore_state(s);
   hessian_.restore_state(s);
   update_.restore_state(s);
   last_mode_.restore_state(s);
   s.get(convergence_);
   s.get(accuracy_);
-  s.get(take_newton_step_);
   s.get(maxabs_gradient);
 }
 
@@ -93,13 +96,13 @@ EFCOpt::save_data_state(StateOut&s)
 {
   Optimize::save_data_state(s);
   s.put(tstate);
+  s.put(modef);
   nlp_.save_state(s);
   hessian_.save_state(s);
   update_.save_state(s);
   last_mode_.save_state(s);
   s.put(convergence_);
   s.put(accuracy_);
-  s.put(take_newton_step_);
   s.put(maxabs_gradient);
 }
 
@@ -107,7 +110,6 @@ void
 EFCOpt::init()
 {
   Optimize::init();
-  take_newton_step_ = 1;
   maxabs_gradient = -1.0;
 }
 
@@ -204,34 +206,44 @@ EFCOpt::update()
   // nneg==1, but we won't make that an option yet)
   if (tstate) {
     int mode = 0;
-    
-    if (nneg != 1)
-      printf("\nwarning!  hessian has wrong form\n");
 
-    // which mode are we following.  find mode with maximum overlap with
-    // last mode followed
-    double overlap=0;
-    if (last_mode_.nonnull()) {
-      for (i=0; i < ncoord; i++) {
-        double S=0;
-        for (j=0; j < ncoord; j++) {
-          S += fabs(last_mode_.get_element(j))*fabs(evecs.get_element(j,i));
+    if (modef) {
+      // which mode are we following.  find mode with maximum overlap with
+      // last mode followed
+      if (last_mode_.nonnull()) {
+        double overlap=0;
+        for (i=0; i < ncoord; i++) {
+          double S=0;
+          for (j=0; j < ncoord; j++) {
+            S += last_mode_.get_element(j)*evecs.get_element(j,i);
+          }
+          S = fabs(S);
+          if (S > overlap) {
+            mode = i;
+            overlap = S;
+          }
         }
-        if (S > overlap) {
-          mode = i;
-          overlap = S;
+      } else {
+        last_mode_ = hessian_.dim()->create_vector();
+      
+        // find mode with max component = coord 0 which should be the
+        // mode being followed
+        double comp=0;
+        for (i=0; i < ncoord; i++) {
+          double S = fabs(evecs.get_element(0,i));
+          if (S>comp) {
+            mode=i;
+            comp=S;
+          }
         }
       }
-    } else {
-      last_mode_ = hessian_.dim()->create_vector();
+    
+      for (i=0; i < ncoord; i++)
+        last_mode_(i) = evecs(i,mode);
+
+      printf("\n following mode %d\n",mode);
     }
     
-    for (i=0; i < ncoord; i++)
-      last_mode_(i) = evecs(i,mode);
-
-    printf("\n following mode %d\n",mode);
-    
-    // no mode following yet, just follow lowest mode
     double bk = evals(mode);
     double Fk = F(mode);
     double lambda_p = 0.5*bk + 0.5*sqrt(bk*bk + 4*Fk*Fk);
@@ -241,7 +253,7 @@ EFCOpt::update()
     do {
       lambda_n=nlambda;
       nlambda=0;
-      for (i=0; i < F.n(); i++) {
+      for (i=0; i < ncoord; i++) {
         if (i==mode) continue;
         
         nlambda += F.get_element(i)*F.get_element(i) /
@@ -267,7 +279,7 @@ EFCOpt::update()
       }
     }
     
- // minimum
+ // minimum search
   } else {
     // evaluate lambda
     double lambda;

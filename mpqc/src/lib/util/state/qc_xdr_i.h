@@ -1,6 +1,8 @@
 
+#ifndef PRAGMA_IMPLEMENTATION_BUG
 #ifdef __GNUC__
 #pragma interface
+#endif
 #endif
 
 #ifdef USE_INLINE

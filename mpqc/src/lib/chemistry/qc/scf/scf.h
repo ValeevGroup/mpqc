@@ -48,6 +48,9 @@ class SCF: public OneBodyWavefunction {
 #   define CLASSNAME SCF
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  private:
+    int need_vec_;
+    
   protected:
     RefOneBodyWavefunction guess_wfn_;
     

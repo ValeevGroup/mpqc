@@ -62,6 +62,7 @@ SCF::SCF(StateIn& s) :
   maybe_SavableState(s)
 {
   debug_ = 0;
+  need_vec_ = 1;
 
   s.get(maxiter_);
   s.get(dens_reset_freq_);
@@ -77,6 +78,7 @@ SCF::SCF(StateIn& s) :
 
 SCF::SCF(const RefKeyVal& keyval) :
   OneBodyWavefunction(keyval),
+  need_vec_(1),
   maxiter_(40),
   level_shift_(0),
   reset_occ_(0),
@@ -331,7 +333,8 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 
   if (ReplSymmSCMatrix::castdown(l.pointer()))
     p = ReplSymmSCMatrix::castdown(l.pointer())->get_data();
-  else p = LocalSymmSCMatrix::castdown(l.pointer())->get_data();
+  else
+    p = LocalSymmSCMatrix::castdown(l.pointer())->get_data();
 
   return l;
 }
@@ -341,9 +344,7 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 void
 SCF::initial_vector(int needv)
 {
-  static int need_vec=1;
-
-  if (need_vec) {
+  if (need_vec_) {
     if (eigenvectors_.result_noupdate().null()) {
       // if guess_wfn_ is non-null then try to get a guess vector from it.
       // First check that the same basis is used...if not, then project the
@@ -391,7 +392,7 @@ SCF::initial_vector(int needv)
     }
   }
 
-  need_vec=needv;
+  need_vec_=needv;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -424,6 +425,23 @@ SCF::init_mem(int nm)
   integral()->set_storage(storage_-nmem);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+#if 0
+void
+SCF::so_density(const RefSymmSCMatrix d, double scale)
+{
+  BlockedSCMatrix *bvec = BlockedSCMatrix::required_castdown(
+    scf_vector_, "SCF::so_density: blocked vector");
+  
+  if (local_ || local_dens_) {
+    // first lets get the occupied bits of the scf vector
+    
+    double *pmat;
+    RefSymmSCMatrix ptmp = get_local_data(d, pmat, SCF::Accum);
+  }
+}
+#endif
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

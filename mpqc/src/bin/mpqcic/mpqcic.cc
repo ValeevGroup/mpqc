@@ -122,7 +122,7 @@ init_dmt(centers_t *centers, sym_struct_t *sym_info)
 
   delete[] shellmap;  
 
-  if (mynode0() == 0) printf("\n");
+  cout << node0 << endl;
   dmt_map_examine();
 
   int_done_offsets1(centers,centers);
@@ -169,8 +169,6 @@ main(int argc, char *argv[])
   
   struct stat stbuf;
 
-  FILE *outfile = stdout;
-  
   const char *filename = "mpqc.in";
 
   int check = 0;
@@ -221,12 +219,13 @@ main(int argc, char *argv[])
   int nfzc, nfzv, mem_alloc;
 
   if (msg->me() == 0) {
-    fprintf(outfile,
-        "\n       MPQC: Massively Parallel Quantum Chemistry\n\n\n");
+    cout << endl
+         << "       MPQC: Massively Parallel Quantum Chemistry"
+         << endl << endl << endl;
 
-    fprintf(outfile,"  Running on a %s with %d nodes.\n",
-            TARGET_ARCH, msg->n());
-    fflush(outfile);
+    cout << scprintf("  Running on a %s with %d nodes.",
+                     TARGET_ARCH, msg->n())
+         << endl;
 
    // initialize keyval
     RefKeyVal pkv(new ParsedKeyVal(filename));
@@ -263,14 +262,14 @@ main(int argc, char *argv[])
     free_centers(tcenters);
 
     if (sym_struct_from_gbs(gbs, sym_info) < 0) {
-      fprintf(stderr,"mpqcic:  could not form sym_info\n");
+      cerr << "mpqcic:  could not form sym_info" << endl;
       exit(1);
     }
 
     RefKeyVal scfkv(new AggregateKeyVal(new PrefixKeyVal(":scf",keyval),
                                         new PrefixKeyVal(":default",keyval)));
     if (scf_init_scf_struct(scfkv, centers, scf_info) < 0) {
-      fprintf(stderr,"mpqcic:  could not form scf_info\n");
+      cerr << "mpqcic:  could not form scf_info" << endl;
       exit(1);
     }
     scfkv=0;
@@ -399,32 +398,47 @@ main(int argc, char *argv[])
     if (keyval->exists("filename"))
       filename = keyval->pcharvalue("filename");
 
-    fprintf(outfile,"\n  mpqc options:\n");
-    fprintf(outfile,"    do_scf             = %s\n",(do_scf)?"YES":"NO");
-    fprintf(outfile,"    dertype            = %s\n",dertype);
-    fprintf(outfile,"    optimize_geometry  = %s\n",(opt_geom)?"YES":"NO");
-    fprintf(outfile,"    nopt               = %d\n",nopt);
-    fprintf(outfile,"    properties         = %s\n",(proper)?"YES":"NO");
-    fprintf(outfile,"    points_per_ang     = %f\n",dens);
-    fprintf(outfile,"    save_vector        = %s\n",(save_vector)?"YES":"NO");
-    fprintf(outfile,"    save_fock          = %s\n",(save_fock)?"YES":"NO");
-    fprintf(outfile,"    node_timings       = %s\n",(node_timings)?"YES":"NO");
-    fprintf(outfile,"    throttle           = %d\n",throttle);
-    fprintf(outfile,"    sync_loop          = %d\n",sync_loop);
-    fprintf(outfile,"    print_geometry     = %s\n",
-                                                  (print_geometry)?"YES":"NO");
-    fprintf(outfile,"    mp2                = %s\n\n", (do_mp2)?"YES":"NO");
-    fprintf(outfile,"    opt2_v1            = %s\n\n", (do_opt2_v1)?"YES":"NO");
-    fprintf(outfile,"    opt2_v2            = %s\n\n", (do_opt2_v2)?"YES":"NO");
-    fprintf(outfile,"    opt2v2lb           = %s\n\n", (do_opt2v2lb)?"YES":"NO");
+    cout << scprintf("\n  mpqc options:\n");
+    cout << scprintf("    do_scf             = %s\n",
+                     (do_scf)?"YES":"NO");
+    cout << scprintf("    dertype            = %s\n",
+                     dertype);
+    cout << scprintf("    optimize_geometry  = %s\n",
+                     (opt_geom)?"YES":"NO");
+    cout << scprintf("    nopt               = %d\n",
+                     nopt);
+    cout << scprintf("    properties         = %s\n",
+                     (proper)?"YES":"NO");
+    cout << scprintf("    points_per_ang     = %f\n",
+                     dens);
+    cout << scprintf("    save_vector        = %s\n",
+                     (save_vector)?"YES":"NO");
+    cout << scprintf("    save_fock          = %s\n",
+                     (save_fock)?"YES":"NO");
+    cout << scprintf("    node_timings       = %s\n",
+                     (node_timings)?"YES":"NO");
+    cout << scprintf("    throttle           = %d\n",
+                     throttle);
+    cout << scprintf("    sync_loop          = %d\n",
+                     sync_loop);
+    cout << scprintf("    print_geometry     = %s\n",
+                     (print_geometry)?"YES":"NO");
+    cout << scprintf("    mp2                = %s\n\n",
+                     (do_mp2)?"YES":"NO");
+    cout << scprintf("    opt2_v1            = %s\n\n",
+                     (do_opt2_v1)?"YES":"NO");
+    cout << scprintf("    opt2_v2            = %s\n\n",
+                     (do_opt2_v2)?"YES":"NO");
+    cout << scprintf("    opt2v2lb           = %s\n\n",
+                     (do_opt2v2lb)?"YES":"NO");
 
     if (save_vector) {
-      fprintf(outfile,"  scf vector will be written to file %s.scfvec\n",
-              scf_info.fname);
+      cout << scprintf("  scf vector will be written to file %s.scfvec\n",
+                       scf_info.fname);
     }
     
     if (save_fock) {
-      fprintf(outfile,
+      cout << scprintf(
               "  fock matrices will be written to file(s) %s.fock (%s.fock)\n",
               scf_info.fname, scf_info.fname);
     }
@@ -438,7 +452,7 @@ main(int argc, char *argv[])
     
    // initialize the geometry optimization stuff
     if (opt_geom) {
-      fprintf(outfile,"\n");
+      cout << endl;
       geom_code = Geom_init_mpqc(mol,keyval,geomfile);
     }
 
@@ -480,20 +494,23 @@ main(int argc, char *argv[])
   bcaststate.flush();
 
   if (limit && gbs->nbasis() > limit) {
-      cout << "The limit of " << limit
+      cout << node0
+           << "The limit of " << limit
            << " basis functions has been exceeded."
            << endl;
       check = 1;
     }
 
   if (gbs->nbasis() == 0) {
-      cout << endl << "  Exiting because there are no basis functions" << endl;
+      cout << node0
+           << endl << "  Exiting because there are no basis functions" << endl;
       clean_mp(msg);
       return 0;
     }
 
   if (check) {
-      cout << "  Exiting since the check option is on." << endl;
+      cout << node0
+           << "  Exiting since the check option is on." << endl;
       clean_mp(msg);
       return 0;
     }
@@ -544,7 +561,7 @@ main(int argc, char *argv[])
     RefKeyVal fkv;
     
     if (mynode0()==0) {
-      fprintf(outfile,"\n");
+      cout << endl;
     
       fkv = new AggregateKeyVal(new PrefixKeyVal(":force",keyval),
                                 new PrefixKeyVal(":default",keyval));
@@ -552,9 +569,9 @@ main(int argc, char *argv[])
 
     if (!do_mp2) {
         if (scf_info.iopen)
-            dmt_force_osscf_keyval_init(fkv.pointer(),outfile);
+            dmt_force_osscf_keyval_init(fkv.pointer(),stdout);
         else
-            dmt_force_csscf_keyval_init(fkv.pointer(),outfile);
+            dmt_force_csscf_keyval_init(fkv.pointer(),stdout);
       }
 
     allocbn_double_matrix(&gradient,"n1 n2",3,centers.n);
@@ -564,7 +581,7 @@ main(int argc, char *argv[])
     msg->bcast(geom_code);
 
     if (geom_code==GEOM_ABORT || geom_code==GEOM_DONE) {
-      fprintf(outfile,"mpqcnode: geom_code says you are done or in trouble\n");
+      cout << "mpqcnode: geom_code says you are done or in trouble\n";
       clean_mp(msg);
       return geom_code != GEOM_DONE;
     }
@@ -593,7 +610,7 @@ main(int argc, char *argv[])
     dmt_read(vecfile,Scf_Vec);
     
     if (mynode0()==0)
-      fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
+      cout << scprintf("\n  read vector from file %s\n\n",vecfile);
   } else {
     scf_info.restart = 0;
   }
@@ -602,7 +619,7 @@ main(int argc, char *argv[])
 
   if (!do_scf && do_grad && do_mp2) {
       if (mynode0()==0)
-          fprintf(stderr,"Must do scf before mp2 gradient. Program exits\n");
+          cerr << "Must do scf before mp2 gradient. Program exits\n";
       clean_mp(msg);
       return 1;
     }
@@ -621,12 +638,12 @@ main(int argc, char *argv[])
 
       tim->enter("scf_vect");
       errcod = scf_vector(&scf_info, &sym_info, &centers, Fock, FockO, Scf_Vec,
-                          &oldcenters, outfile);
+                          &oldcenters, stdout);
       tim->exit("scf_vect");
       energy = scf_info.nuc_rep + scf_info.e_elec;
 
       if (errcod != 0) {
-        fprintf(outfile,"trouble forming scf vector\n");
+        cout << "trouble forming scf vector\n";
         clean_mp(msg);
         return 1;
       }
@@ -638,28 +655,28 @@ main(int argc, char *argv[])
 
       // get new geometry
 
-      if (mynode0() == 0) fprintf(outfile,"\n");
+      cout << node0 << endl;
 
       if (geom_code == GEOM_COMPUTE_GRADIENT) {
         if (do_mp2) {
             mbpt_mp2_gradient(scf_info, sym_info, centers,
                               nfzc, nfzv,
                               Scf_Vec, Fock, FockO,
-                              mem_alloc, outfile, msg, mem,
+                              mem_alloc, stdout, msg, mem,
                               energy, gradient);
           }
         else if (!scf_info.iopen) {
-          dmt_force_csscf(outfile, Fock, Scf_Vec,
+          dmt_force_csscf(stdout, Fock, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed, &gradient);
           }
         else {
-          dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
+          dmt_force_osscf(stdout, Fock, FockO, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed,
                           scf_info.nopen, &gradient);
           }
 
         if (mynode0()==0) {
-          fprintf(outfile,"\n");
+          cout << endl;
 
           RefSCVector gradv(Geom_dim_natom3(), gbs->matrixkit());
           
@@ -680,15 +697,15 @@ main(int argc, char *argv[])
             mbpt_mp2_gradient(scf_info, sym_info, centers,
                               nfzc, nfzv,
                               Scf_Vec, Fock, FockO,
-                              mem_alloc, outfile, msg, mem,
+                              mem_alloc, stdout, msg, mem,
                               energy, gradient);
           }
         else if (!scf_info.iopen) {
-          dmt_force_csscf(outfile, Fock, Scf_Vec,
+          dmt_force_csscf(stdout, Fock, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed, &gradient);
           }
         else {
-          dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
+          dmt_force_osscf(stdout, Fock, FockO, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed,
                           scf_info.nopen, &gradient);
         }
@@ -701,7 +718,7 @@ main(int argc, char *argv[])
     if (opt_geom && geom_code != GEOM_DONE && geom_code != GEOM_ABORT &&
         mynode0() == 0 && iter == nopt) {
       geometry_converged = 0;
-      fprintf(outfile,"  Too many geometry iterations: quitting\n");
+      cout << "  Too many geometry iterations: quitting\n";
     } else {
       geometry_converged = 1;
     }
@@ -735,102 +752,6 @@ main(int argc, char *argv[])
       dmt_force_csscf_done();
   }
 
- /* print out some useful stuff */
-#if 0
-  if (proper) {
-    tim->enter("properties");
-    int nat=centers.n;
-    int natr=nat*(nat+1)/2;
-    double_vector_t dipole,charge,mcharge,lcharge;
-    double_matrix_t bond_pops,bond_indx;
-    expts_t mulpts;
-
-    allocbn_expts(&mulpts,"n",nat+natr);
-    for(i=0; i < mulpts.n; i++) allocbn_exmul(&mulpts.p[i],"charge",0.0);
-
-    allocbn_double_matrix(&bond_pops,"n1 n2",nat,nat);
-    allocbn_double_matrix(&bond_indx,"n1 n2",nat,nat);
-    allocbn_double_vector(&charge,"n",nat);
-    allocbn_double_vector(&mcharge,"n",nat);
-    allocbn_double_vector(&lcharge,"n",nat);
-    allocbn_double_vector(&dipole,"n",3);
-
-    scf_mulliken(&centers,&scf_info,&irreps,SCF_VEC,&bond_pops,
-       &bond_indx,&mcharge,outfile);
-
-    scf_lowdin(&centers,&scf_info,&irreps,SCF_VEC,
-       &bond_indx,&lcharge,outfile);
-
-    scf_dipole_and_ex_mulliken(&centers,&scf_info,&irreps,SCF_VEC,
-        &bond_pops,&mulpts,&dipole,outfile);
-
-    if(me==0) {
-      FILE *dp = fopen("points.dat","w");
-      FILE *mp = fopen("mopac.dat","w");
-      if (dp)  {
-	fprintf(dp,"%d\n",mulpts.n);
-	for(i=0; i < mulpts.n; i++) {
-	  fprintf(dp,"%20.13e %20.13e %20.13e %20.13e\n",
-	               mulpts.p[i].charge,
-                       mulpts.p[i].r[0],mulpts.p[i].r[1],mulpts.p[i].r[2]);
-	  }
-        fclose(dp);
-	}
-      if (mp) {
-        expts_t at;
-        at.n = centers.n;
-        at.p = &mulpts.p[mulpts.n-centers.n];
-
-        fprintf(mp," 1SCF AVSWRT ESP CONNOLLY GRADIENT DEPVAR=1.0\n");
-        fprintf(mp," no comment\n\n");
-        for (i=0; i < centers.n; i++)
-          fprintf(mp,"%4s%13.4f 1 %13.4f 1 %13.4f 1\n",
-            centers.center[i].atom,
-            at.p[i].r[0]*0.529177,
-            at.p[i].r[1]*0.529177,
-            at.p[i].r[2]*0.529177
-            );
-        fclose(mp);
-	}
-      }
-
-    Scf_charges_from_esp(&centers,SCF_VEC,&charge,&dipole,
-                                              &mulpts,dens,-1,outfile,keyval);
-
-    if(me==0) {
-      char *atomlb;
-
-      fprintf(outfile,"\n  Net Charges\n");
-      fprintf(outfile,
-   "      Atom            Mulliken              Lowdin                 ESP\n");
-      for(i=0; i < centers.n; i++) {
-        if(atom_labels) atomlb=atom_labels[i];
-        else atomlb=centers.center[i].atom;
-
-        fprintf(outfile,"%5d %5s %20.10f %20.10f %20.10f\n",
-            i+1,atomlb,mcharge.d[i],lcharge.d[i],charge.d[i]);
-        }
-      printf("\n");
-      }
-
-    free_double_vector(&charge);
-    free_double_vector(&mcharge);
-    free_double_vector(&lcharge);
-    free_double_vector(&dipole);
-    free_double_matrix(&bond_indx);
-    free_double_matrix(&bond_pops);
-    free_expts(&mulpts);
-    tim->exit("properties");
-  }
-
-  if (do_mp2) {
-    if (!do_scf) dmt_read(fockfile,FOCK);
-    tim->enter("mp2");
-    mp2_hah(&centers,&scf_info,SCF_VEC,FOCK,outfile,keyval);
-    tim->exit("mp2");
-  }
-#endif
-
   if (do_mp2 && !do_grad) {
       if (!do_scf) {
           char filename[512];
@@ -844,41 +765,43 @@ main(int argc, char *argv[])
       mbpt_opt2(centers,scf_info,sym_info,Scf_Vec,Fock,FockO,
                 nfzc,nfzv,mem_alloc,
                 do_opt2_v1, do_opt2_v2, do_opt2v2lb,
-                outfile);
+                stdout);
     }
 
   if (molfreq.nonnull()) {
       tim->enter("frequencies");
       molfreq->compute_displacements();
-      cout << "Computing molecular frequencies from "
+      cout << node0
+           << "Computing molecular frequencies from "
            << molfreq->ndisplace() << " displacements:" << endl;
       for (int i=0; i<molfreq->ndisplace(); i++) {
           // This produces side-effects in mol and may even change
           // its symmetry.
-          cout << "Beginning displacement " << i << ":" << endl;
+          cout << node0
+               << "Beginning displacement " << i << ":" << endl;
           molfreq->displace(i);
           if (sym_struct_from_gbs(gbs, sym_info) < 0) {
-              fprintf(stderr,"mpqcic: could not form sym_info for disp\n");
+              cerr << "mpqcic: could not form sym_info for disp\n";
               exit(1);
             }
           reset_centers(centers,mol);
           errcod = scf_vector(&scf_info,
                               &sym_info, &centers, Fock, FockO, Scf_Vec,
-                              &oldcenters, outfile);
+                              &oldcenters, stdout);
           if (do_mp2) {
               mbpt_mp2_gradient(scf_info, sym_info, centers,
                                 nfzc, nfzv,
                                 Scf_Vec, Fock, FockO,
-                                mem_alloc, outfile, msg, mem,
+                                mem_alloc, stdout, msg, mem,
                                 energy, gradient);
             }
           else if (!scf_info.iopen) {
-              dmt_force_csscf(outfile, Fock, Scf_Vec,
+              dmt_force_csscf(stdout, Fock, Scf_Vec,
                               &centers, &sym_info, scf_info.nclosed,
                               &gradient);
             }
           else {
-              dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
+              dmt_force_osscf(stdout, Fock, FockO, Scf_Vec,
                               &centers, &sym_info, scf_info.nclosed,
                               scf_info.nopen, &gradient);
             }
@@ -897,13 +820,13 @@ main(int argc, char *argv[])
       tim->exit("frequencies");
     }
 
-  if (msg->me() == 0) cout << "Timing Summary:" << endl;
+  cout << node0 << "Timing Summary:" << endl;
   tim->print();
 
   RegionTimer::set_default_regiontimer(0);
   tim = 0;
 
-  fflush(outfile);
+  fflush(stdout);
 
   delete[] pdbfile;
   delete[] geomfile;

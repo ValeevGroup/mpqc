@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <util/misc/formio.h>
+
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
@@ -50,9 +52,6 @@
 // #define STATEIN StateInText
 
 /////////////////////////////////////////////////////////////////
-
-static FILE *outfp=stdout;
-static FILE *errfp=stderr;
 
 static RefMolecule mol;
 static RefMolecularCoor coor;
@@ -154,18 +153,17 @@ get_input(const RefKeyVal& keyval)
     }
   }
 
-  fprintf(outfp,"  intco:print_hessian       = %d\n",print_hessian);
-  fprintf(outfp,"  intco:print_internal      = %d\n",print_internal);
-  fprintf(outfp,"  intco:transition_state    = %d\n",tstate);
-  fprintf(outfp,"  intco:mode_following      = %d\n",modef);
-  fprintf(outfp,"  intco:maxstepsize         = %g\n",maxstepsize);
-  fprintf(outfp,"  intco:cartesian_tolerance = %g\n",cart_tol);
-  fprintf(outfp,"  intco:convergence         = %g\n",conv_crit);
-  fprintf(outfp,"  intco:max_force           = %g\n",conv_maxf);
-  fprintf(outfp,"  intco:rms_force           = %g\n",conv_rmsf);
-  fprintf(outfp,"  intco:delta_energy        = %g\n",conv_energy);
-  fprintf(outfp,"\n");
-  fflush(outfp);
+  cout << scprintf("  intco:print_hessian       = %d\n",print_hessian);
+  cout << scprintf("  intco:print_internal      = %d\n",print_internal);
+  cout << scprintf("  intco:transition_state    = %d\n",tstate);
+  cout << scprintf("  intco:mode_following      = %d\n",modef);
+  cout << scprintf("  intco:maxstepsize         = %g\n",maxstepsize);
+  cout << scprintf("  intco:cartesian_tolerance = %g\n",cart_tol);
+  cout << scprintf("  intco:convergence         = %g\n",conv_crit);
+  cout << scprintf("  intco:max_force           = %g\n",conv_maxf);
+  cout << scprintf("  intco:rms_force           = %g\n",conv_rmsf);
+  cout << scprintf("  intco:delta_energy        = %g\n",conv_energy);
+  cout << endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -262,7 +260,7 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval,
    // make sure molecule and mol refer to the same object
     molecule = mol;
     
-    fprintf(outfp,
+    cout << scprintf(
             "\n restarting geometry optimization at iteration %d\n",iter);
   }
 
@@ -270,25 +268,22 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval,
       if (coor->nconstrained()) use_internal_forces = 1;
       else use_internal_forces = 0;
     }
-  fprintf(outfp,"  intco:use_internal_forces = %d\n", use_internal_forces);
+  cout << scprintf("  intco:use_internal_forces = %d\n", use_internal_forces);
 
-  fprintf(outfp,"\n Initial geometry in Geom_init_mpqc\n");
-  fprintf(outfp,"Molecule:\n");
-  fflush(outfp);
+  cout << scprintf("\n Initial geometry in Geom_init_mpqc\n");
+  cout << scprintf("Molecule:") << endl;
   mol->print();
   
-  fflush(outfp);
   if (print_internal) {
-    fprintf(outfp,"\n Initial internal coordinates\n\n");
-    fflush(outfp);
+    cout << scprintf("\n Initial internal coordinates")
+         << endl << endl;
     coor->print();
   } else {
-    fprintf(outfp,"\n Initial simple internal coordinates\n\n");
-    fflush(outfp);
+    cout << scprintf("\n Initial simple internal coordinates");
+    cout << endl << endl;
     coor->print_simples();
   }
-  fprintf(outfp,"\n");
-  fflush(outfp);
+  cout << endl;
 
   return GEOM_COMPUTE_GRADIENT;
 }
@@ -300,20 +295,19 @@ Geom_done_mpqc(const RefKeyVal& keyval, int converged,
   const char *msg;
 
   if (converged)
-    fprintf(outfp,"\nConverged Simple Internal Coordinates\n");
+    cout << scprintf("\nConverged Simple Internal Coordinates\n");
   else
-    fprintf(outfp,"\nNonconverged Simple Internal Coordinates\n");
+    cout << scprintf("\nNonconverged Simple Internal Coordinates\n");
 
-  fflush(outfp);
+  cout << endl;
   
   coor->print_simples();
 
-  fprintf(outfp,"\nFinal cartesian coordinates after %d iterations\n\n",iter);
-  fprintf(outfp,"Molecule:\n");
-  fflush(outfp);
+  cout << scprintf("\nFinal cartesian coordinates after %d iterations",iter);
+  cout << endl << endl;
+  cout << scprintf("Molecule:") << endl;;
   mol->print();
-  fprintf(outfp,"\n");
-  fflush(outfp);
+  cout << endl;
 
   coor=0;
   mol=0;
@@ -508,18 +502,17 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval,
   
   if (fabs(delta_energy) < conv_energy
       && iconv < conv_crit && rmsforce < conv_rmsf && maxforce < conv_maxf) {
-    fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g (%5.2g)\n",
+    cout << scprintf("\n max of 1/2 idisp*iforce = %15.10g (%5.2g)\n",
             iconv, conv_crit);
-    fprintf(outfp," max force               = %15.10g (%5.2g)\n",
+    cout << scprintf(" max force               = %15.10g (%5.2g)\n",
             maxforce, conv_maxf);
-    fprintf(outfp," rms force               = %15.10g (%5.2g)\n",
+    cout << scprintf(" rms force               = %15.10g (%5.2g)\n",
             rmsforce, conv_rmsf);
-    fprintf(outfp," delta energy            = %15.10g (%5.2g)\n",
+    cout << scprintf(" delta energy            = %15.10g (%5.2g)\n",
             delta_energy, conv_energy);
-    fprintf(outfp,"\n the geometry is converged\n");
+    cout << scprintf("\n the geometry is converged\n");
 
-    fprintf(outfp,"\n converged geometry\n");
-    fflush(outfp);
+    cout << scprintf("\n converged geometry") << endl;
     mol->print();
 
     return GEOM_DONE;
@@ -529,35 +522,34 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval,
   double tot = sqrt(xdisp.scalar_product(xdisp));
   if (tot > maxstepsize) {
     double scal = maxstepsize/tot;
-    fprintf(outfp,"\n stepsize of %f is too big, scaling by %f\n",tot,scal);
+    cout << scprintf("\n stepsize of %f is too big, scaling by %f\n",tot,scal);
     xdisp.scale(scal);
     tot *= scal;
   }
-  fprintf(outfp,"\n taking step of size %f\n",tot);
+  cout << scprintf("\n taking step of size %f\n",tot);
 
   // displace internal coordinates
   xn.accumulate(xdisp);
   //xn.print("new internal coordinates");
   
-  fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",iconv);
-  fprintf(outfp," max force               = %15.10g\n",maxforce);
-  fprintf(outfp," rms force               = %15.10g\n",rmsforce);
-  fprintf(outfp," max disp                = %15.10g\n",maxdisp);
-  fprintf(outfp," rms disp                = %15.10g\n",rmsdisp);
-  fflush(outfp);
+  cout << scprintf("\n max of 1/2 idisp*iforce = %15.10g\n",iconv);
+  cout << scprintf(" max force               = %15.10g\n",maxforce);
+  cout << scprintf(" rms force               = %15.10g\n",rmsforce);
+  cout << scprintf(" max disp                = %15.10g\n",maxdisp);
+  cout << scprintf(" rms disp                = %15.10g\n",rmsdisp);
+  cout.flush();
 
   // now transform new internal coords back to cartesian coordinates
   Molecule foo_save = *(mol.pointer());
   if (coor->to_cartesian(xn) < 0) {
     // that failed, try steepest descent and get out of here
-    fprintf(stderr,"\n  trying cartesian steepest descent..."
-                   "cross your fingers\n");
+    cerr << scprintf("\n  trying cartesian steepest descent..."
+                     "cross your fingers\n");
     for (i=0; i < cart_grad.n(); i++)
       (*mol.pointer())[i/3][i%3] = foo_save[i/3][i%3]-cart_grad[i];
   }
 
-  fprintf(outfp,"\nnew molecular coordinates\n");
-  fflush(outfp);
+  cout << scprintf("\nnew molecular coordinates") << endl;
   mol->print();
 
   // checkpoint

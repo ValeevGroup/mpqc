@@ -8,6 +8,8 @@
 #include <math/isosurf/edgeRAVLMap.h>
 #include <math/isosurf/vertexAVLSet.h>
 
+#define VERBOSE 0
+
 void
 TriangulatedSurface::remove_slender_triangles(double height_cutoff)
 {
@@ -30,9 +32,11 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
   int nedge = _edges.length();
   int ntriangle = _triangles.length();
 
-  printf("TriangulatedSurface::remove_slender_triangles:\n");
-  printf("initial: ");
-  topology_info();
+  if (VERBOSE) {
+      printf("TriangulatedSurface::remove_slender_triangles:\n");
+      printf("initial: ");
+      topology_info();
+    }
 
   int deleted_edges_length;
   do {
@@ -275,7 +279,9 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
       _completed_surface = 1;
     }
 
-  printf("final: ");
-  topology_info();
+  if (VERBOSE) {
+      printf("final: ");
+      topology_info();
+    }
 }
 

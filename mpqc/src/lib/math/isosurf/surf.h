@@ -13,8 +13,14 @@
 #include <util/container/pixintRAVLMap.h>
 #include <util/container/intpixRAVLMap.h>
 #include <math/isosurf/edgeRAVLMap.h>
+#include <math/isosurf/volume.h>
 
-class TriangulatedSurface {
+class TriangulatedSurface: public DescribedClass {
+#   define CLASSNAME TriangulatedSurface
+#   define HAVE_CTOR
+#   define HAVE_KEYVAL_CTOR
+//#   include <util/state/stated.h>
+#   include <util/class/classd.h>
   protected:
     int _completed_surface;
 
@@ -43,7 +49,7 @@ class TriangulatedSurface {
     Arraydouble _values;
 
     // what to use to integrate over the surface
-    TriangleIntegrator* _integrator;
+    RefTriangleIntegrator _integrator;
 
     void clear_int_arrays();
 
@@ -70,11 +76,12 @@ class TriangulatedSurface {
     RefVertexRefEdgeAVLSetRAVLMap _tmp_edges;
   public:
     TriangulatedSurface();
+    TriangulatedSurface(const RefKeyVal&);
     virtual ~TriangulatedSurface();
 
     // set up an integrator
-    void set_integrator(TriangleIntegrator*); // arg is deleted by DTOR or set
-    virtual TriangleIntegrator* integrator(int itri);
+    void set_integrator(const RefTriangleIntegrator&);
+    virtual RefTriangleIntegrator integrator(int itri);
 
     // construct the surface
     void add_triangle(const RefVertex&,
@@ -121,8 +128,13 @@ class TriangulatedSurface {
     void topology_info(FILE*f=stdout);
     void topology_info(int nvertex, int nedge, int ntri, FILE*f=stdout);
 };
+DescribedClass_REF_dec(TriangulatedSurface);
 
 class TriangulatedSurface10: public TriangulatedSurface {
+#   define CLASSNAME TriangulatedSurface10
+#   define HAVE_KEYVAL_CTOR
+//#   include <util/state/stated.h>
+#   include <util/class/classd.h>
   private:
     RefVolume _vol;
     double _isovalue;
@@ -136,6 +148,7 @@ class TriangulatedSurface10: public TriangulatedSurface {
     Edge* newEdge(const RefVertex&,const RefVertex&) const;
   public:
     TriangulatedSurface10(const RefVolume&vol,double isovalue);
+    TriangulatedSurface10(const RefKeyVal& keyval);
     ~TriangulatedSurface10();
     double area();
     double volume();
@@ -173,5 +186,40 @@ class TriangulatedSurfaceIntegrator {
     // setting TSI = i sets TSI to begin at the triangle i
     int operator = (int);
 };
+
+class TriangulatedImplicitSurface: public DescribedClass {
+#   define CLASSNAME TriangulatedImplicitSurface
+#   define HAVE_KEYVAL_CTOR
+//#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    // The surface is defined as an isosurface of the volume vol_.
+    RefVolume vol_;
+    double isovalue_;
+    RefTriangulatedSurface surf_;
+
+    int remove_short_edges_;
+    double short_edge_factor_;
+    int remove_slender_triangles_;
+    double slender_triangle_factor_;
+    double resolution_;
+
+    void init();
+  public:
+    TriangulatedImplicitSurface(const RefKeyVal&);
+    ~TriangulatedImplicitSurface();
+
+    int nvertex() { return surf_->nvertex(); }
+    RefVertex vertex(int i) { return surf_->vertex(i); }
+    int nedge() { return surf_->nedge(); }
+    RefEdge edge(int i) { return surf_->edge(i); }
+    int ntriangle() { return surf_->ntriangle(); }
+    RefTriangle triangle(int i) { return surf_->triangle(i); }
+
+    int triangle_vertex(int i,int j) { return surf_->triangle_vertex(i,j); }
+    int triangle_edge(int i,int j) { return surf_->triangle_edge(i,j); }
+    int edge_vertex(int i,int j) { return surf_->edge_vertex(i,j); }
+};
+DescribedClass_REF_dec(TriangulatedImplicitSurface);
 
 #endif

@@ -68,16 +68,6 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   // there is no performance penalty.
   bounds *= 2;
 
-  fprintf(stderr,"bounding box is (%f, %f, %f) (%f, %f, %f)\n",
-          p0.get_element(0),p0.get_element(1),p0.get_element(2),
-          p1.get_element(0),p1.get_element(1),p1.get_element(2));
-  fprintf(stderr,"midpoint is (%f, %f, %f)\n",
-          midpoint.get_element(0),
-          midpoint.get_element(1),
-          midpoint.get_element(2));
-  fprintf(stderr,"biggest_width = %f, resolution = %f, bounds = %d\n",
-          biggest_width, _resolution, bounds);
-
   // Initialize the static pointer to this, so the C polygonizer can find us.
   current_x = RefSCVector(_volume->dimension());
   current = this;

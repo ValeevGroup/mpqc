@@ -3,14 +3,46 @@
 #pragma implementation
 #endif
 
+#include <util/keyval/keyval.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <math/isosurf/surf.h>
+#include <math/isosurf/isosurf.h>
 
 /////////////////////////////////////////////////////////////////////////
 // TriangulatedSurface
 
+#define CLASSNAME TriangulatedSurface
+#define PARENTS public DescribedClass
+#define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+//#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+TriangulatedSurface::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 TriangulatedSurface::TriangulatedSurface():
+  _triangle_vertex(0),
+  _triangle_edge(0),
+  _edge_vertex(0),
+  _integrator(new GaussTriangleIntegrator(1)),
+  _index_to_vertex(0),
+  _index_to_edge(0),
+  _index_to_triangle(0),
+  _vertex_to_index(0),
+  _edge_to_index(0),
+  _triangle_to_index(0),
+  _tmp_edges(RefEdgeAVLSet())
+{
+  clear();
+}
+
+TriangulatedSurface::TriangulatedSurface(const RefKeyVal&):
   _triangle_vertex(0),
   _triangle_edge(0),
   _edge_vertex(0),
@@ -29,7 +61,6 @@ TriangulatedSurface::TriangulatedSurface():
 TriangulatedSurface::~TriangulatedSurface()
 {
   clear();
-  delete _integrator;
 }
 
 void
@@ -57,13 +88,12 @@ TriangulatedSurface::topology_info(int v, int e, int t, FILE* fp)
 }
 
 void
-TriangulatedSurface::set_integrator(TriangleIntegrator*i)
+TriangulatedSurface::set_integrator(const RefTriangleIntegrator& i)
 {
-  delete _integrator;
   _integrator = i;
 }
 
-TriangleIntegrator*
+RefTriangleIntegrator
 TriangulatedSurface::integrator(int)
 {
   // currently the argument, the integer index of the triangle, is ignored
@@ -557,6 +587,19 @@ TriangulatedSurface::newTriangle(const RefEdge& e0,
 //////////////////////////////////////////////////////////////////////
 // TriangulatedSurface10
 
+#define CLASSNAME TriangulatedSurface10
+#define PARENTS public TriangulatedSurface
+#define HAVE_KEYVAL_CTOR
+//#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+TriangulatedSurface10::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = TriangulatedSurface::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 TriangulatedSurface10::TriangulatedSurface10(const RefVolume&vol,
                                              double isovalue):
   _vol(vol),
@@ -564,6 +607,18 @@ TriangulatedSurface10::TriangulatedSurface10(const RefVolume&vol,
 {
   // improve the integrator
   set_integrator(new GaussTriangleIntegrator(7));
+}
+
+TriangulatedSurface10::TriangulatedSurface10(const RefKeyVal& keyval)
+{
+  _vol = keyval->describedclassvalue("volume");
+  _isovalue = keyval->doublevalue("value");
+
+  // If an integrator was not specified in the input, then choose
+  // a better one than the TriangulatedSurface default.
+  if (!keyval->exists("integrator")) {
+      set_integrator(new GaussTriangleIntegrator(7));
+    }
 }
 
 TriangulatedSurface10::~TriangulatedSurface10()
@@ -667,7 +722,7 @@ TriangulatedSurfaceIntegrator::
 {
   if (_itri < 0 || _itri >= _ts->ntriangle()) return 0;
 
-  TriangleIntegrator* i = _ts->integrator(_itri);
+  TriangleIntegrator* i = _ts->integrator(_itri).pointer();
   _s = i->s(_irs);
   _r = i->r(_irs);
   _weight = i->w(_irs);
@@ -707,4 +762,76 @@ TriangulatedSurfaceIntegrator::
   _itri = i;
   _irs = 0;
   return i;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// TriangulatedImplicitSurface
+
+#define CLASSNAME TriangulatedImplicitSurface
+#define PARENTS public DescribedClass
+#define HAVE_KEYVAL_CTOR
+//#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+TriangulatedImplicitSurface::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+TriangulatedImplicitSurface::
+TriangulatedImplicitSurface(const RefKeyVal&keyval)
+{
+  vol_ = keyval->describedclassvalue("volume");
+  if (keyval->error() != KeyVal::OK) {
+      fprintf(stderr,"TriangulatedImplicitSurface(const RefKeyVal&keyval): "
+              "requires \"volume\"\n");
+      abort();
+    }
+
+  surf_ = keyval->describedclassvalue("surface");
+  if (keyval->error() != KeyVal::OK) surf_ = new TriangulatedSurface;
+
+  isovalue_ = keyval->doublevalue("value");
+  if (keyval->error() != KeyVal::OK) isovalue_ = 0.0;
+
+  remove_short_edges_ = keyval->booleanvalue("remove_short_edges");
+  if (keyval->error() != KeyVal::OK) remove_short_edges_ = 1;
+
+  remove_slender_triangles_ = keyval->booleanvalue("remove_slender_triangles");
+  if (keyval->error() != KeyVal::OK) remove_slender_triangles_ = 0;
+
+  short_edge_factor_ = keyval->doublevalue("short_edge_factor");
+  if (keyval->error() != KeyVal::OK) short_edge_factor_ = 0.3;
+
+  slender_triangle_factor_ = keyval->doublevalue("slender_triangle_factor");
+  if (keyval->error() != KeyVal::OK) slender_triangle_factor_ = 0.3;
+
+  resolution_ = keyval->doublevalue("resolution");
+  if (keyval->error() != KeyVal::OK) resolution_ = 1.0;
+
+  init();
+}
+
+void
+TriangulatedImplicitSurface::init()
+{
+  ImplicitSurfacePolygonizer isogen(vol_);
+  isogen.set_resolution(resolution_);
+
+  isogen.isosurface(isovalue_,*surf_.pointer());
+  surf_->fix_orientation();
+  if (remove_short_edges_) {
+      surf_->remove_short_edges(short_edge_factor_*resolution_);
+      surf_->fix_orientation();
+    }
+  if (remove_slender_triangles_) {
+      surf_->remove_slender_triangles(slender_triangle_factor_);
+      surf_->fix_orientation();
+    }
+}
+
+TriangulatedImplicitSurface::~TriangulatedImplicitSurface()
+{
 }

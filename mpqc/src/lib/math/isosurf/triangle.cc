@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <util/keyval/keyval.h>
 #include <math/isosurf/triangle.h>
 #include <math/scmat/vector3.h>
 
@@ -437,9 +438,33 @@ Triangle10::interpolate(double r,double s,RefVertex&result)
 /////////////////////////////////////////////////////////////////////////
 // TriangleIntegrator
 
+#define CLASSNAME TriangleIntegrator
+#define PARENTS public DescribedClass
+#define HAVE_KEYVAL_CTOR
+//#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+TriangleIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 TriangleIntegrator::TriangleIntegrator(int order):
   _n(order)
 {
+  _r = new double [_n];
+  _s = new double [_n];
+  _w = new double [_n];
+}
+
+TriangleIntegrator::TriangleIntegrator(const RefKeyVal& keyval)
+{
+  _n = keyval->intvalue("n");
+  if (keyval->error() != KeyVal::OK) {
+      _n = 7;
+    }
   _r = new double [_n];
   _s = new double [_n];
   _w = new double [_n];
@@ -450,6 +475,18 @@ TriangleIntegrator::~TriangleIntegrator()
   delete[] _r;
   delete[] _s;
   delete[] _w;
+}
+
+void
+TriangleIntegrator::set_n(int n)
+{
+  delete[] _r;
+  delete[] _s;
+  delete[] _w;
+  _n = n;
+  _r = new double [_n];
+  _s = new double [_n];
+  _w = new double [_n];
 }
 
 void
@@ -473,8 +510,40 @@ TriangleIntegrator::set_s(int i,double s)
 /////////////////////////////////////////////////////////////////////////
 // GaussTriangleIntegrator
 
+#define CLASSNAME GaussTriangleIntegrator
+#define PARENTS public TriangleIntegrator
+#define HAVE_KEYVAL_CTOR
+//#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+GaussTriangleIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = TriangleIntegrator::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+GaussTriangleIntegrator::GaussTriangleIntegrator(const RefKeyVal& keyval):
+  TriangleIntegrator(keyval)
+{
+  init_rw(n());
+}
+
 GaussTriangleIntegrator::GaussTriangleIntegrator(int order):
   TriangleIntegrator(order)
+{
+  init_rw(n());
+}
+
+void
+GaussTriangleIntegrator::set_n(int n)
+{
+  TriangleIntegrator::set_n(n);
+  init_rw(n);
+}
+
+void
+GaussTriangleIntegrator::init_rw(int order)
 {
   if (order == 1) {
       set_r(0, 1.0/3.0);

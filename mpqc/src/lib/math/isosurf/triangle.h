@@ -66,7 +66,11 @@ ARRAY_dec(RefTriangle10);
 SET_dec(RefTriangle10);
 ARRAYSET_dec(RefTriangle10);
 
-class TriangleIntegrator {
+class TriangleIntegrator: public DescribedClass {
+#   define CLASSNAME TriangleIntegrator
+#   define HAVE_KEYVAL_CTOR
+//#   include <util/state/stated.h>
+#   include <util/class/classd.h>
   private:
     int _n;
     double* _r;
@@ -77,18 +81,29 @@ class TriangleIntegrator {
     void set_s(int i,double s);
     void set_w(int i,double w);
   public:
+    TriangleIntegrator(const RefKeyVal&);
     TriangleIntegrator(int n);
     virtual ~TriangleIntegrator();
     inline double w(int i) { return _w[i]; }
     inline double r(int i) { return _r[i]; }
     inline double s(int i) { return _s[i]; }
     inline int n() { return _n; }
+    virtual void set_n(int n);
 };
+DescribedClass_REF_dec(TriangleIntegrator);
 
 class GaussTriangleIntegrator: public TriangleIntegrator {
+#   define CLASSNAME GaussTriangleIntegrator
+#   define HAVE_KEYVAL_CTOR
+//#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    void init_rw(int order);
   public:
+    GaussTriangleIntegrator(const RefKeyVal&);
     GaussTriangleIntegrator(int order);
     ~GaussTriangleIntegrator();
+    void set_n(int n);
 };
 
 #endif

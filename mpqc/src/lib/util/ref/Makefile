@@ -32,7 +32,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-REALCXXSRC = refi.cc identity.cc
+REALCXXSRC = ref.cc identity.cc
 
 GENCXXSRC =
 GENSRC = $(GENCXXSRC)

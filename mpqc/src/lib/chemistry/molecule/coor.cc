@@ -820,7 +820,7 @@ IntCoorGen::print(ostream& out) const
       << decindent;
 }
 
-static
+static void
 find_bonds(Molecule &m, BitArrayLTri &bonds,
            double radius_scale_factor_)
 {

@@ -426,16 +426,17 @@ MOIndexSpace::dqs(double *item,int *index,int left,int right)
   int i,j;
   double x;
   int y;
+  const double small_diff = 1.0e-12;
   
   i=left; j=right;
   x=item[index[(left+right)/2]];
   
   do {
-    while(item[index[i]]<x && i<right) i++;
-    while(x<item[index[j]] && j>left) j--;
+    while(item[index[i]]<x && fabs(x-item[index[i]]) > small_diff && i<right) i++;
+    while(x<item[index[j]] && fabs(x-item[index[j]]) > small_diff && j>left) j--;
     
     if (i<=j) {
-      if (item[index[i]] != item[index[j]]) {
+      if (fabs(item[index[i]] - item[index[j]]) > small_diff) {
         y=index[i];
         index[i]=index[j];
         index[j]=y;

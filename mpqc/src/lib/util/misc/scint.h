@@ -11,7 +11,38 @@
 #define util_misc_scint_h
 
 #ifdef HAVE_STDINT_H
+
 #include <stdint.h>
+
+typedef int8_t         sc_int8_t;
+typedef int_least8_t   sc_int_least8_t;
+typedef int_fast8_t    sc_int_fast8_t;
+typedef uint8_t        sc_uint8_t;
+typedef uint_least8_t  sc_uint_least8_t;
+typedef uint_fast8_t   sc_uint_fast8_t;
+                       
+typedef int16_t        sc_int16_t;
+typedef int_least16_t  sc_int_least16_t;
+typedef int_fast16_t   sc_int_fast16_t;
+typedef uint16_t       sc_uint16_t;
+typedef uint_least16_t sc_uint_least16_t;
+typedef uint_fast16_t  sc_uint_fast16_t;
+                       
+typedef int32_t        sc_int32_t;
+typedef int_least32_t  sc_int_least32_t;
+typedef int_fast32_t   sc_int_fast32_t;
+typedef uint32_t       sc_uint32_t;
+typedef uint_least32_t sc_uint_least32_t;
+typedef uint_fast32_t  sc_uint_fast32_t;
+                       
+typedef intmax_t       sc_intmax_t;
+typedef uintmax_t      sc_uintmax_t;
+typedef int64_t        sc_int64_t;
+typedef int_least64_t  sc_int_least64_t;
+typedef int_fast64_t   sc_int_fast64_t;
+typedef uint64_t       sc_uint64_t;
+typedef uint_least64_t sc_uint_least64_t;
+typedef uint_fast64_t  sc_uint_fast64_t;
 
 #else
 
@@ -29,12 +60,12 @@
 //  8-bit types  -------------------------------------------------------------//
 
 # if UCHAR_MAX == 0xff
-     typedef signed char     int8_t;
-     typedef signed char     int_least8_t;
-     typedef signed char     int_fast8_t;
-     typedef unsigned char   uint8_t;
-     typedef unsigned char   uint_least8_t;
-     typedef unsigned char   uint_fast8_t;
+     typedef signed char     sc_int8_t;
+     typedef signed char     sc_int_least8_t;
+     typedef signed char     sc_int_fast8_t;
+     typedef unsigned char   sc_uint8_t;
+     typedef unsigned char   sc_uint_least8_t;
+     typedef unsigned char   sc_uint_fast8_t;
 # else
 #    error defaults not correct; you must hand modify scint.h
 # endif
@@ -42,12 +73,12 @@
 //  16-bit types  ------------------------------------------------------------//
 
 # if USHRT_MAX == 0xffff
-     typedef short           int16_t;
-     typedef short           int_least16_t;
-     typedef short           int_fast16_t;
-     typedef unsigned short  uint16_t;
-     typedef unsigned short  uint_least16_t;
-     typedef unsigned short  uint_fast16_t;
+     typedef short           sc_int16_t;
+     typedef short           sc_int_least16_t;
+     typedef short           sc_int_fast16_t;
+     typedef unsigned short  sc_uint16_t;
+     typedef unsigned short  sc_uint_least16_t;
+     typedef unsigned short  sc_uint_fast16_t;
 # else
 #    error defaults not correct; you must hand modify scint.h
 # endif
@@ -55,19 +86,19 @@
 //  32-bit types  ------------------------------------------------------------//
 
 # if UINT_MAX == 0xffffffff
-     typedef int             int32_t;
-     typedef int             int_least32_t;
-     typedef int             int_fast32_t;
-     typedef unsigned int    uint32_t;
-     typedef unsigned int    uint_least32_t;
-     typedef unsigned int    uint_fast32_t;
+     typedef int             sc_int32_t;
+     typedef int             sc_int_least32_t;
+     typedef int             sc_int_fast32_t;
+     typedef unsigned int    sc_uint32_t;
+     typedef unsigned int    sc_uint_least32_t;
+     typedef unsigned int    sc_uint_fast32_t;
 # elif ULONG_MAX == 0xffffffff
-     typedef long            int32_t;
-     typedef long            int_least32_t;
-     typedef long            int_fast32_t;
-     typedef unsigned long   uint32_t;
-     typedef unsigned long   uint_least32_t;
-     typedef unsigned long   uint_fast32_t;
+     typedef long            sc_int32_t;
+     typedef long            sc_int_least32_t;
+     typedef long            sc_int_fast32_t;
+     typedef unsigned long   sc_uint32_t;
+     typedef unsigned long   sc_uint_least32_t;
+     typedef unsigned long   sc_uint_fast32_t;
 # else
 #    error defaults not correct; you must hand modify scint.h
 # endif
@@ -79,41 +110,39 @@
 #endif
 
 # ifdef ULLONG_MAX
-#    if ULLONG_MAX == 18446744073709551615 // 2**64 - 1
-     typedef long long            intmax_t;
-     typedef unsigned long long   uintmax_t;
-     typedef long long            int64_t;
-     typedef long long            int_least64_t;
-     typedef long long            int_fast64_t;
-     typedef unsigned long long   uint64_t;
-     typedef unsigned long long   uint_least64_t;
-     typedef unsigned long long   uint_fast64_t;
+//#    if ULLONG_MAX == 18446744073709551615 // 2**64 - 1
+#    if ULONGLONG_MAX == (0xffffffffffffffffuLL) // uLL reqd for xlC
+     typedef long long            sc_intmax_t;
+     typedef unsigned long long   sc_uintmax_t;
+     typedef long long            sc_int64_t;
+     typedef long long            sc_int_least64_t;
+     typedef long long            sc_int_fast64_t;
+     typedef unsigned long long   sc_uint64_t;
+     typedef unsigned long long   sc_uint_least64_t;
+     typedef unsigned long long   sc_uint_fast64_t;
 #    else
 #       error defaults not correct; you must hand modify scint.h
 #    endif
 # elif ULONG_MAX != 0xffffffff
 
 #    if ULONG_MAX == 18446744073709551615 // 2**64 - 1
-     typedef long                 intmax_t;
-     typedef unsigned long        uintmax_t;
-     typedef long                 int64_t;
-     typedef long                 int_least64_t;
-     typedef long                 int_fast64_t;
-     typedef unsigned long        uint64_t;
-     typedef unsigned long        uint_least64_t;
-     typedef unsigned long        uint_fast64_t;
+     typedef long                 sc_intmax_t;
+     typedef unsigned long        sc_uintmax_t;
+     typedef long                 sc_int64_t;
+     typedef long                 sc_int_least64_t;
+     typedef long                 sc_int_fast64_t;
+     typedef unsigned long        sc_uint64_t;
+     typedef unsigned long        sc_uint_least64_t;
+     typedef unsigned long        sc_uint_fast64_t;
 #    else
 #       error defaults not correct; you must hand modify scint.h
 #    endif
 # else // assume no 64-bit integers
 #    error 64 bit integer types are required
-     typedef int32_t              intmax_t;
-     typedef uint32_t             uintmax_t;
+     typedef sc_int32_t              sc_intmax_t;
+     typedef sc_uint32_t             sc_uintmax_t;
 # endif
 
 #endif
-
-typedef int_least64_t sc_int_least64_t;
-typedef uint_least64_t sc_uint_least64_t;
 
 #endif

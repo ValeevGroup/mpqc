@@ -196,11 +196,11 @@ MessageGrp::reduce(double* data, int n, GrpReduce<double>& red,
     }
   else passed_scratch = 1;
 
-  for (int idat=0; idat<n; idat+=tgop_max) {
-      int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  RefGlobalMsgIter i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
-      for (i->backwards(); !i->done(); i->next()) {
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
           if (i->send()) {
               send(i->sendto(), &data[idat], ndat);
             }
@@ -209,6 +209,7 @@ MessageGrp::reduce(double* data, int n, GrpReduce<double>& red,
               red.reduce(&data[idat], scratch, ndat);
             }
         }
+      if (n > tgop_max) sync();
     }
 
   if (target == -1) {
@@ -232,11 +233,11 @@ MessageGrp::reduce(int* data, int n, GrpReduce<int>& red,
     }
   else passed_scratch = 1;
 
-  for (int idat=0; idat<n; idat+=tgop_max) {
-      int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  RefGlobalMsgIter i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
-      for (i->backwards(); !i->done(); i->next()) {
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
           if (i->send()) {
               send(i->sendto(), &data[idat], ndat);
             }
@@ -245,6 +246,7 @@ MessageGrp::reduce(int* data, int n, GrpReduce<int>& red,
               red.reduce(&data[idat], scratch, ndat);
             }
         }
+      if (n > tgop_max) sync();
     }
 
   if (target == -1) {
@@ -268,11 +270,11 @@ MessageGrp::reduce(char* data, int n, GrpReduce<char>& red,
     }
   else passed_scratch = 1;
 
-  for (int idat=0; idat<n; idat+=tgop_max) {
-      int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  RefGlobalMsgIter i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
-      for (i->backwards(); !i->done(); i->next()) {
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
           if (i->send()) {
               send(i->sendto(), &data[idat], ndat);
             }
@@ -281,6 +283,7 @@ MessageGrp::reduce(char* data, int n, GrpReduce<char>& red,
               red.reduce(&data[idat], scratch, ndat);
             }
         }
+      if (n > tgop_max) sync();
     }
 
   if (target == -1) {
@@ -304,11 +307,11 @@ MessageGrp::reduce(unsigned char* data, int n, GrpReduce<unsigned char>& red,
     }
   else passed_scratch = 1;
 
-  for (int idat=0; idat<n; idat+=tgop_max) {
-      int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  RefGlobalMsgIter i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
-      for (i->backwards(); !i->done(); i->next()) {
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
           if (i->send()) {
               send(i->sendto(), &data[idat], ndat);
             }
@@ -317,6 +320,7 @@ MessageGrp::reduce(unsigned char* data, int n, GrpReduce<unsigned char>& red,
               red.reduce(&data[idat], scratch, ndat);
             }
         }
+      if (n > tgop_max) sync();
     }
 
   if (target == -1) {
@@ -340,11 +344,11 @@ MessageGrp::reduce(short* data, int n, GrpReduce<short>& red,
     }
   else passed_scratch = 1;
 
-  for (int idat=0; idat<n; idat+=tgop_max) {
-      int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  RefGlobalMsgIter i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
-      for (i->backwards(); !i->done(); i->next()) {
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
           if (i->send()) {
               send(i->sendto(), &data[idat], ndat);
             }
@@ -353,6 +357,7 @@ MessageGrp::reduce(short* data, int n, GrpReduce<short>& red,
               red.reduce(&data[idat], scratch, ndat);
             }
         }
+      if (n > tgop_max) sync();
     }
 
   if (target == -1) {
@@ -376,11 +381,11 @@ MessageGrp::reduce(float* data, int n, GrpReduce<float>& red,
     }
   else passed_scratch = 1;
 
-  for (int idat=0; idat<n; idat+=tgop_max) {
-      int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  RefGlobalMsgIter i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
-      for (i->backwards(); !i->done(); i->next()) {
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
           if (i->send()) {
               send(i->sendto(), &data[idat], ndat);
             }
@@ -389,6 +394,7 @@ MessageGrp::reduce(float* data, int n, GrpReduce<float>& red,
               red.reduce(&data[idat], scratch, ndat);
             }
         }
+      if (n > tgop_max) sync();
     }
 
   if (target == -1) {
@@ -412,11 +418,11 @@ MessageGrp::reduce(long* data, int n, GrpReduce<long>& red,
     }
   else passed_scratch = 1;
 
-  for (int idat=0; idat<n; idat+=tgop_max) {
-      int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  RefGlobalMsgIter i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
-      for (i->backwards(); !i->done(); i->next()) {
+  for (i->backwards(); !i->done(); i->next()) {
+      for (int idat=0; idat<n; idat+=tgop_max) {
+          int ndat = (idat+tgop_max>n)?(n-idat):tgop_max;
           if (i->send()) {
               send(i->sendto(), &data[idat], ndat);
             }
@@ -425,6 +431,7 @@ MessageGrp::reduce(long* data, int n, GrpReduce<long>& red,
               red.reduce(&data[idat], scratch, ndat);
             }
         }
+      if (n > tgop_max) sync();
     }
 
   if (target == -1) {

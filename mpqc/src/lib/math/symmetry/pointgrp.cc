@@ -151,6 +151,12 @@ PointGroup::PointGroup(const PointGroup& pg)
   *this = pg;
 }
 
+PointGroup::PointGroup(const RefPointGroup& pg)
+  : symb(0)
+{
+  *this = *pg.pointer();
+}
+
 PointGroup::~PointGroup()
 {
   if (symb) { delete[] symb; symb=0; }

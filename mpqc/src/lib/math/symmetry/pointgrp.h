@@ -463,6 +463,7 @@ class PointGroup: public SavableState {
 
     PointGroup(StateIn&);
     PointGroup(const PointGroup&);
+    PointGroup(const RefPointGroup&);
     ~PointGroup();
 
     PointGroup& operator=(const PointGroup&);

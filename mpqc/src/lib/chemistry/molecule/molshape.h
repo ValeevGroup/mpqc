@@ -129,10 +129,10 @@ class ConnollyShape2: public Shape {
     ~ConnollyShape2();
     void initialize(const RefMolecule&,double probe_radius);
     double distance_to_surface(const SCVector3&r,
-                               double*grad=0) const;
+                               SCVector3*grad=0) const;
     void boundingbox(double valuemin,
                      double valuemax,
-                     RefSCVector& p1, RefSCVector& p2);
+                     SCVector3& p1, SCVector3& p2);
 
     static void print_counts(FILE*fp = stdout);
 };

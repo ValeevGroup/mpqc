@@ -326,11 +326,12 @@ TriangulatedSurface::area()
 double
 TriangulatedSurface::volume()
 {
-  if (ntriangle() && triangle(0)->order() > 1) {
-      fprintf(stderr,"TriangulatedSurface::volume(): WARNING: "
-              "computing volume from flat triangles\n");
+  double volume = 0.0;
+  TriangulatedSurfaceIntegrator triint(this);
+  for (triint = 0; triint.update(); triint++) {
+      volume += triint.weight()*triint.dA()[2]*triint.current()->point()[2];
     }
-  return flat_volume();
+  return volume;
 }
 
 void
@@ -474,10 +475,9 @@ TriangulatedSurface::print(FILE*fp)
   fprintf(fp," %3d Vertices:\n",np);
   for (i=0; i<np; i++) {
       RefVertex p = vertex(i);
-      int dim = p->dimension();
       fprintf(fp,"  %3d:",i);
-      for (int j=0; j<dim; j++) {
-          fprintf(fp," % 15.10f", (double)p->point()[j]);
+      for (int j=0; j<3; j++) {
+          fprintf(fp," % 15.10f", p->point()[j]);
         }
       fprintf(fp,"\n");
     }
@@ -512,10 +512,9 @@ TriangulatedSurface::print_vertices_and_triangles(FILE*fp)
   fprintf(fp," %3d Vertices:\n",np);
   for (i=0; i<np; i++) {
       RefVertex p = vertex(i);
-      int dim = p->dimension();
       fprintf(fp,"  %3d:",i);
-      for (int j=0; j<dim; j++) {
-          fprintf(fp," % 15.10f", (double)p->point()[j]);
+      for (int j=0; j<3; j++) {
+          fprintf(fp," % 15.10f", p->point()[j]);
         }
       fprintf(fp,"\n");
     }
@@ -542,9 +541,8 @@ TriangulatedSurface::print_geomview_format(FILE*fp)
   int np = nvertex();
   for (i=0; i<np; i++) {
       RefVertex p = vertex(i);
-      int dim = p->dimension();
-      for (int j=0; j<dim; j++) {
-          fprintf(fp," % 15.10f", (double)p->point()[j]);
+      for (int j=0; j<3; j++) {
+          fprintf(fp," % 15.10f", p->point()[j]);
         }
       fprintf(fp,"\n");
     }
@@ -646,12 +644,7 @@ void
 TriangulatedSurfaceIntegrator::set_surface(const RefTriangulatedSurface&s)
 {
   _ts = s;
-  if (_ts->nvertex()) {
-      RefSCDimension n = _ts->vertex(0)->point().dim();
-      RefSCVector p(n);
-      RefSCVector g(n);
-      _current = new Vertex(p,g);
-    }
+  _current = new Vertex();
 }
 
 int
@@ -690,11 +683,8 @@ TriangulatedSurfaceIntegrator::update()
   _weight = i->w(_irs);
   RefTriangle t = _ts->triangle(_itri);
   RefTriInterpCoef coef = i->coef(t->order(),_irs);
-  _surface_element = t->interpolate(coef, _r,_s,_current);
-
-  //printf("%3d: r=%5.3f s=%5.3f w=%8.5f dA=%8.5f ",
-  //       _itri, _r, _s, _weight, _surface_element);
-  //_current->print(stdout);
+  t->interpolate(coef, _r, _s, _current, _dA);
+  _surface_element = _dA.norm();
 
   return (int) 1;
 }

@@ -13,7 +13,7 @@ extern "C" {
 #include "density.h"
 
 ElectronDensity::ElectronDensity(Wavefunction&wfn):
-  Volume(new LocalSCDimension(3)),
+  Volume(),
   _wfn(wfn)
 {
 }
@@ -25,19 +25,15 @@ ElectronDensity::~ElectronDensity()
 void
 ElectronDensity::compute()
 {
-  RefSCVector cv = get_x();
-  RefSCVector r(dimension());
-  r[0] = cv.get_element(0);
-  r[1] = cv.get_element(1);
-  r[2] = cv.get_element(2);
+  SCVector3 r;
+  get_x(r);
   cart_point rc;
   rc[0] = r[0]; rc[1] = r[1]; rc[2] = r[2];
   // do_gradient will automatically cause the value to be computed
   if (do_gradient()) {
-      RefSCVector d(dimension());
       double v[3];
       set_value(_wfn.density_gradient(rc,v));
-      d.assign(v);
+      SCVector3 d(v);
       set_gradient(d);
     }
   else if (do_value()) {

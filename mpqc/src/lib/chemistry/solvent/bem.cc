@@ -59,9 +59,9 @@ BEMSolvent::charge_positions(double**pos)
   int i,j;
   int n = ncharge();
   for (i=0; i<n; i++) {
-      RefSCVector p = surf_->vertex(i)->point();
+      const SCVector3& p = surf_->vertex(i)->point();
       for (j=0; j<3; j++) { 
-          pos[i][j] = p->get_element(j);
+          pos[i][j] = p[j];
         }
     }
 }
@@ -72,9 +72,9 @@ BEMSolvent::normals(double**norms)
   int i,j;
   int n = ncharge();
   for (i=0; i<n; i++) {
-      RefSCVector p = surf_->vertex(i)->normal();
+      const SCVector3& p = surf_->vertex(i)->normal();
       for (j=0; j<3; j++) { 
-          norms[i][j] = p->get_element(j);
+          norms[i][j] = p[j];
         }
     }
 }
@@ -214,10 +214,7 @@ BEMSolvent::init_system_matrix()
   double A = 0.0;
   TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
-      RefSCVector surfv = triint.current()->point();
-      SCVector3 surfpv(surfv->get_element(0),
-                       surfv->get_element(1),
-                       surfv->get_element(2));
+      const SCVector3& surfpv = triint.current()->point();
       int j0 = triint.vertex_number(0);
       int j1 = triint.vertex_number(1);
       int j2 = triint.vertex_number(2);
@@ -233,15 +230,9 @@ BEMSolvent::init_system_matrix()
       // loop thru all the vertices
       for (i = 0; i<n; i++) {
           RefVertex v = surf_->vertex(i);
-          RefSCVector vpoint = v->point();
-          RefSCVector vnormal = v->normal();
-          SCVector3 pv(vpoint->get_element(0),
-                       vpoint->get_element(1),
-                       vpoint->get_element(2));
-          SCVector3 nv(vnormal->get_element(0),
-                       vnormal->get_element(1),
-                       vnormal->get_element(2));
-          SCVector3 diff(pv - surfv);
+          SCVector3& pv = v->point();
+          SCVector3& nv = v->normal();
+          SCVector3 diff(pv - surfpv);
           double normal_component = diff.dot(nv);
           double diff2 = diff.dot(diff);
           if (diff2 <= 1.0e-8) {
@@ -289,10 +280,7 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
   double efield_dot_normal = 0.0;
   TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
-      RefSCVector surfv = triint.current()->point();
-      SCVector3 surfpv(surfv->get_element(0),
-                       surfv->get_element(1),
-                       surfv->get_element(2));
+      const SCVector3& surfpv = triint.current()->point();
       int j0 = triint.vertex_number(0);
       int j1 = triint.vertex_number(1);
       int j2 = triint.vertex_number(2);
@@ -365,10 +353,7 @@ BEMSolvent::self_interaction_energy(double** charge_positions,
 
   double energy = 0.0;
   for (i=0; i<n_integration_points; i++) {
-      RefSCVector ip = integration_points[i].current()->point();
-      SCVector3 ipv(ip->get_element(0),
-                    ip->get_element(1),
-                    ip->get_element(2));
+      const SCVector3& ipv = integration_points[i].current()->point();
       int iv0 = integration_points[i].vertex_number(0);
       int iv1 = integration_points[i].vertex_number(1);
       int iv2 = integration_points[i].vertex_number(2);
@@ -381,10 +366,7 @@ BEMSolvent::self_interaction_energy(double** charge_positions,
       energy += 0.0; // is this good enough?
       // interaction of the surface element with all other surface elements
       for (j = 0; j<i; j++) {
-          RefSCVector jp = integration_points[j].current()->point();
-          SCVector3 jpv(jp->get_element(0),
-                        jp->get_element(1),
-                        jp->get_element(2));
+          const SCVector3& jpv = integration_points[j].current()->point();
           int jv0 = integration_points[j].vertex_number(0);
           int jv1 = integration_points[j].vertex_number(1);
           int jv2 = integration_points[j].vertex_number(2);

@@ -148,6 +148,7 @@ class TriangulatedSurfaceIntegrator {
     double _weight;
     double _surface_element;
     RefVertex _current;
+    SCVector3 _dA;
   public:
     TriangulatedSurfaceIntegrator();
     // the surface cannot be changed until this is destroyed
@@ -168,6 +169,8 @@ class TriangulatedSurfaceIntegrator {
     inline double r() const { return _r; }
     inline double s() const { return _s; }
     inline double w() const { return _weight*_surface_element; }
+    double weight() const { return _weight; }
+    const SCVector3& dA() const { return _dA; }
     RefVertex current();
     // Tests to see if this point is valid, if it is then
     // _r, _s, etc are computed and 1 is returned.

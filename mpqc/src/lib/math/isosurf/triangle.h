@@ -45,9 +45,9 @@ class Triangle: public VRefCount {
     // returns the surface area element
     // 0<=r<=1, 0<=s<=1, 0<=r+s<=1
     // RefVertex is the intepolated vertex (both point and normal)
-    double interpolate(const RefTriInterpCoef&,
-                       double r,double s,const RefVertex&v);
-    double interpolate(double r,double s,const RefVertex&v);
+    void interpolate(const RefTriInterpCoef&,
+                     double r,double s,const RefVertex&v, SCVector3& dA);
+    void interpolate(double r,double s,const RefVertex&v, SCVector3& dA);
 
     // returns a corner vertex from the triangle
     // i = 0 is the (0,0) vertex (or L1 = 1, L2 = 0, L3 = 0)

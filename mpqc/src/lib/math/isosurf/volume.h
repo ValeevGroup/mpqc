@@ -9,6 +9,7 @@
 #include <math/optimize/nlp.h>
 #include <util/container/ref.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/vector3.h>
 
 class Volume: public NLP2 {
 #   define CLASSNAME Volume
@@ -23,24 +24,30 @@ class Volume: public NLP2 {
 
     virtual void failure(const char*);
   public:
-    Volume(const RefSCDimension&);
+    Volume();
     Volume(const RefKeyVal&);
     ~Volume();
+
+    void set_gradient(const SCVector3& g);
+    void get_gradient(SCVector3& g);
+    void set_x(const SCVector3& x);
+    void get_x(SCVector3& x);
 
     // find the corners of a bounding box which approximately
     // contains all points with a value between valuemin and valuemax
     // the result must satisfy p1[i] < p2[i]
     virtual void boundingbox(double valuemin,
                              double valuemax,
-                             RefSCVector& p1, RefSCVector& p2) = 0;
-    virtual void pointset(double resolution,
-                          double valuemin,
-                          double valuemax,
-                          SetRefSCVector& points);
+                             SCVector3& p1, SCVector3& p2) = 0;
 
-    virtual RefSCVector interpolate(RefSCVector&,RefSCVector&,double value);
-    virtual RefSCVector solve(RefSCVector&,RefSCVector&,double value);
-    
+    virtual void interpolate(const SCVector3& p1,
+                             const SCVector3& p2,
+                             double value,
+                             SCVector3& result);
+    virtual void solve(const SCVector3& p,
+                       const SCVector3& grad,
+                       double value,
+                       SCVector3& result);
 };
 
 SavableState_REF_dec(Volume);

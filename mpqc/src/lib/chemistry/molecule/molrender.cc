@@ -325,10 +325,10 @@ RenderedMolecularSurface::init()
     }
 
   for (i=0; i<nvertex; i++) {
-      RefSCVector v = surf_->vertex(i)->point();
-      double x = v->get_element(0);
-      double y = v->get_element(1);
-      double z = v->get_element(2);
+      const SCVector3& v = surf_->vertex(i)->point();
+      double x = v[0];
+      double y = v[1];
+      double z = v[2];
       o->set_vertex(i, x, y, z);
       Color c;
       compute_color(natom, axyz, argb, arad, x, y, z, c);

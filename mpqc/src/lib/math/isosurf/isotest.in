@@ -16,6 +16,6 @@ surf<TriangulatedImplicitSurface>: (
     remove_slender_triangles = no
     short_edge_factor = 0.4
     slender_triangle_factor = 0.2
-    order = 2
+    order = 3
     initialize = yes
   )

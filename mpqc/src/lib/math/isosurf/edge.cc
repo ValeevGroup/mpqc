@@ -40,10 +40,8 @@ Edge::~Edge()
 
 double Edge::straight_length()
 {
-  RefSCVector A(vertex(0)->point());
-  RefSCVector B(vertex(1)->point());
-  RefSCVector BA = B - A;
-  return sqrt(BA.dot(BA));
+  SCVector3 BA = vertex(1)->point() - vertex(0)->point();
+  return BA.norm();
 }
 
 void Edge::add_vertices(SetRefVertex&set)
@@ -62,8 +60,8 @@ Edge::set_order(int order, const RefVolume&vol,double isovalue)
   _vertices = newvertices;
   _order = order;
 
-  RefSCVector pv[2];
-  RefSCVector norm[2];
+  SCVector3 pv[2];
+  SCVector3 norm[2];
 
   int i;
   for (i=0; i<2; i++) {
@@ -74,14 +72,14 @@ Edge::set_order(int order, const RefVolume&vol,double isovalue)
   for (i=1; i<_order; i++) {
       double I = (1.0*i)/order;
       double J = (1.0*(_order - i))/order;
-      RefSCVector interpv = I * pv[0] + J * pv[1];
-      RefSCVector start(interpv.dim());
-      start.assign(interpv);
-      RefSCVector interpnorm = I * norm[0] + J * norm[1];
-      RefSCVector newpoint = vol->solve(start,interpnorm,isovalue);
+      SCVector3 interpv = I * pv[0] + J * pv[1];
+      SCVector3 start(interpv);
+      SCVector3 interpnorm = I * norm[0] + J * norm[1];
+      SCVector3 newpoint;
+      vol->solve(start,interpnorm,isovalue,newpoint);
       vol->set_x(newpoint);
       if (vol->gradient_implemented()) {
-          interpnorm = vol->gradient().copy();
+          vol->get_gradient(interpnorm);
           interpnorm.normalize();
         }
       _vertices[i] = new Vertex(newpoint,interpnorm);

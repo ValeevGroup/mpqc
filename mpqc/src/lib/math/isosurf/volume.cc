@@ -10,6 +10,7 @@ extern "C" {
 
 #include <util/keyval/keyval.h>
 #include <math/scmat/vector3.h>
+#include <math/scmat/local.h>
 #include "volume.h"
 
 #define CLASSNAME Volume
@@ -25,8 +26,8 @@ Volume::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-Volume::Volume(const RefSCDimension& dim):
-  NLP2(dim),
+Volume::Volume():
+  NLP2(new LocalSCDimension(3)),
   _interp_acc(1.0e-6)
 {
 }
@@ -43,12 +44,12 @@ Volume::~Volume()
 }
 
 // interpolate using the bisection algorithm
-RefSCVector
-Volume::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
+void
+Volume::interpolate(const SCVector3& A,
+                    const SCVector3& B,
+                    double val,
+                    SCVector3& result)
 {
-  RefSCVector A(p1);
-  RefSCVector B(p2);
-
   set_x(A);
   double value0 = value() - val;
 
@@ -59,13 +60,15 @@ Volume::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
       failure("interpolate(): values at endpoints don't bracket val");
     }
   else if (value0 == 0.0) {
-      return p1;
+      result = A;
+      return;
     }
   else if (value1 == 0.0) {
-      return p2;
+      result = B;
+      return;
     }
 
-  RefSCVector BA = B - A;
+  SCVector3 BA = B - A;
 
   double length = sqrt(BA.dot(BA));
   int niter = (int) (log(length/_interp_acc)/M_LN2);
@@ -75,7 +78,7 @@ Volume::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
   double fnext = 0.5;
 
   for (int i=0; i<niter; i++) {
-      RefSCVector X = A + fnext*BA;
+      SCVector3 X = A + fnext*BA;
       set_x(X);
       double valuenext = value() - val;
 
@@ -91,20 +94,26 @@ Volume::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
         }
     }
 
-  RefSCVector X = A + fnext*BA;
-  return X;
+  result = A + fnext*BA;
 }
 
-RefSCVector
-Volume::solve(RefSCVector& start,RefSCVector& grad,double val)
+void
+Volume::solve(const SCVector3& start,
+              const SCVector3& grad,
+              double val,
+              SCVector3& result)
 {
   double direction;
-  double startvalue = (set_x(start),value());
-  if (startvalue == val) return start;
+  set_x(start);
+  double startvalue = value();
+  if (startvalue == val) {
+      result = start;
+      return;
+    }
   else if (startvalue < val) direction = 1.0;
   else direction = -1.0;
   int i=0;
-  RefSCVector next;
+  SCVector3 next;
   double trialvalue;
   do {
       if (i>10) {
@@ -113,14 +122,10 @@ Volume::solve(RefSCVector& start,RefSCVector& grad,double val)
         }
       i++;
       next = start + (direction*i)*grad;
-#if __GNUC__ && __GNUC_MINOR__ > 5
       set_x(next);
       trialvalue = value();
-#else      
-      trialvalue = (set_x(next),value());
-#endif      
     } while ((startvalue-val)*(trialvalue-val)>0.0);
-  return interpolate(start,next,val);
+  interpolate(start,next,val,result);
 }
 
 void
@@ -130,43 +135,41 @@ Volume::failure(const char * msg)
   abort();
 }
 
-// the default point set is a uniform lattice
-// others can be used by overriding this member
 void
-Volume::pointset(double resolution,
-                 double valuemin, double valuemax,
-                 SetRefSCVector& points)
+Volume::set_gradient(const SCVector3& g)
 {
-  if (dimension().n()!=3) {
-      fprintf(stderr,"Volume::pointset: dim is != 3\n");
-      abort();
-    }
+  RefSCVector& grad = _gradient.result_noupdate();
+  grad.set_element(0, g[0]);
+  grad.set_element(1, g[1]);
+  grad.set_element(2, g[2]);
+  _gradient.computed() = 1;
+}
 
-  int dim = dimension().n();
-  RefSCVector p1(dimension()),p2(dimension());
-  boundingbox(valuemin, valuemax, p1, p2);
-  double* incr = new double [dim];
+void
+Volume::get_gradient(SCVector3& g)
+{
+  const RefSCVector v = gradient();
+  g[0] = v.get_element(0);
+  g[1] = v.get_element(1);
+  g[2] = v.get_element(2);
+}
 
-  int i;
-  for (i=0; i<dim; i++) {
-      incr[i] = resolution;
-      if ((p2(i)-p1(i))/incr[i] < 3) incr[i] = (p2(i)-p1(i))/3;
-    }
-  
-  SCVector3 p;
-  SCVector3 p1_(p1);
-  SCVector3 p2_(p2);
-  for (p(0) = p1_(0); p(0) < p2_(0)+incr[0]; p(0) += incr[0]) {
-      for (p(1) = p1_(1); p(1) < p2_(1)+incr[1]; p(1) += incr[1]) {
-          for (p(2) = p1_(2); p(2) < p2_(2)+incr[2]; p(2) += incr[2]) {
-              RefSCVector rp(dimension());
-              rp.assign(p.data());
-              points.add(rp);
-            }
-        }
-    }
+void
+Volume::set_x(const SCVector3& x)
+{
+  _x.set_element(0, x[0]);
+  _x.set_element(1, x[1]);
+  _x.set_element(2, x[2]);
+  obsolete();
+}
 
-  delete[] incr;
+void
+Volume::get_x(SCVector3& x)
+{
+  const RefSCVector& v = get_x_no_copy();
+  x[0] = v.get_element(0);
+  x[1] = v.get_element(1);
+  x[2] = v.get_element(2);
 }
 
 SavableState_REF_def(Volume);

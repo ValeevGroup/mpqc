@@ -217,7 +217,7 @@ ConnollyShape2::~ConnollyShape2()
 }
 
 double
-ConnollyShape2::distance_to_surface(const SCVector3&r, double*grad) const
+ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
 {
 #if COUNT_CONNOLLY2
   n_total_++;
@@ -225,9 +225,7 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, double*grad) const
   
   // can't compute grad so zero it if it is requested
   if (grad) {
-      grad[0] = 0.0;
-      grad[1] = 0.0;
-      grad[2] = 0.0;
+      *grad = 0.0;
     }
 
   CS2Sphere probe_centers(r,probe_r);
@@ -277,7 +275,7 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, double*grad) const
 void
 ConnollyShape2::boundingbox(double valuemin,
                             double valuemax,
-                            RefSCVector& p1, RefSCVector& p2)
+                            SCVector3& p1, SCVector3& p2)
 {
   int i,j;
   if (valuemin < -1.0 || valuemax > 1.0) {

@@ -8,8 +8,6 @@ extern "C" {
   }
 
 #include <util/keyval/keyval.h>
-#include <math/scmat/matrix.h>
-#include <math/scmat/local.h>
 #include "shape.h"
 
 const double infinity = 1.0e23;
@@ -17,7 +15,7 @@ const double infinity = 1.0e23;
 // given a vector X find which of the points in the vector of
 // vectors, A, is closest to it and return the distance
 static double
-closest_distance(SCVector3& X,SCVector3*A,int n,double*grad)
+closest_distance(SCVector3& X,SCVector3*A,int n,SCVector3*grad)
 {
   SCVector3 T = X-A[0];
   double min = T.dot(T);
@@ -30,7 +28,7 @@ closest_distance(SCVector3& X,SCVector3*A,int n,double*grad)
   if (grad) {
       T = X - A[imin];
       T.normalize();
-      for (int i=0; i<3; i++) grad[i] = T[i];
+      *grad = T;
     }
   return sqrt(min);
 }
@@ -56,7 +54,7 @@ SET_def(RefShape);
 ARRAYSET_def(RefShape);
 
 Shape::Shape():
-  Volume(new LocalSCDimension(3))
+  Volume()
 {
 }
 
@@ -72,21 +70,16 @@ Shape::~Shape()
 void
 Shape::compute()
 {
-  const RefSCVector& cv = get_x_no_copy();
   SCVector3 r;
-  r[0] = cv.get_element(0);
-  r[1] = cv.get_element(1);
-  r[2] = cv.get_element(2);
+  get_x(r);
   if (do_gradient()) {
       if (!gradient_implemented()) {
           fprintf(stderr,"Shape::compute: gradient not implemented\n");
           abort();
         }
-      double v[3];
-      set_value(distance_to_surface(r,v));
-      RefSCVector vv(dimension());
-      vv.assign(v);
-      set_gradient(vv);
+      SCVector3 v;
+      set_value(distance_to_surface(r,&v));
+      set_gradient(v);
     }
   else if (do_value()) set_value(distance_to_surface(r));
   if (do_hessian()) {
@@ -106,15 +99,15 @@ Shape::is_outside(const SCVector3&r) const
 // the outside of the shape are always returned.
 
 // interpolate using the bisection algorithm
-RefSCVector
-Shape::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
+void
+Shape::interpolate(const SCVector3& A,
+                   const SCVector3& B,
+                   double val,
+                   SCVector3& result)
 {
   if (val < 0.0) {
       failure("Shape::interpolate(): val is < 0.0");
     }
-  
-  RefSCVector A(p1);
-  RefSCVector B(p2);
 
   set_x(A);
   double value0 = value() - val;
@@ -126,22 +119,24 @@ Shape::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
       failure("Shape::interpolate(): values at endpoints don't bracket val");
     }
   else if (value0 == 0.0) {
-      return p1;
+      result = A;
+      return;
     }
   else if (value1 == 0.0) {
-      return p2;
+      result = B;
+      return;
     }
 
-  RefSCVector BA = B - A;
+  SCVector3 BA = B - A;
 
-  double length = sqrt(BA.scalar_product(BA));
+  double length = BA.norm();
   int niter = (int) (log(length/interpolation_accuracy())/M_LN2);
 
   double f0 = 0.0;
   double f1 = 1.0;
   double fnext = 0.5;
 
-  RefSCVector X = A + fnext*BA;
+  SCVector3 X = A + fnext*BA;
   set_x(X);
   double valuenext = value() - val;
 
@@ -164,9 +159,7 @@ Shape::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
       niter = 1;
     } while (valuenext < 0.0);
 
-  RefSCVector result(dimension());
-  result.assign(X);
-  return result;
+  result = X;
 }
 
 int
@@ -219,7 +212,7 @@ SET_def(RefSphereShape);
 ARRAYSET_def(RefSphereShape);
 
 double
-SphereShape::distance_to_surface(const SCVector3&p,double*grad) const
+SphereShape::distance_to_surface(const SCVector3&p,SCVector3*grad) const
 {
   int i;
   double r2 = 0.0;
@@ -234,7 +227,7 @@ SphereShape::distance_to_surface(const SCVector3&p,double*grad) const
       SCVector3 o(_origin);
       SCVector3 unit = pv - o;
       unit.normalize();
-      for (i=0; i<3; i++) grad[i] = unit[i];
+      for (i=0; i<3; i++) grad->elem(i) = unit[i];
     }
   return d;
 }
@@ -247,8 +240,8 @@ void SphereShape::print(FILE*fp) const
 
 void
 SphereShape::boundingbox(double valuemin, double valuemax,
-                         RefSCVector& p1,
-                         RefSCVector& p2)
+                         SCVector3& p1,
+                         SCVector3& p2)
 {
   if (valuemax < 0.0) valuemax = 0.0;
 
@@ -404,13 +397,13 @@ UncappedTorusHoleShape::print(FILE*fp) const
 
 void
 UncappedTorusHoleShape::boundingbox(double valuemin, double valuemax,
-                                    RefSCVector& p1,
-                                    RefSCVector& p2)
+                                    SCVector3& p1,
+                                    SCVector3& p2)
 {
-  RefSCVector p11(dimension());
-  RefSCVector p12(dimension());
-  RefSCVector p21(dimension());
-  RefSCVector p22(dimension());
+  SCVector3 p11;
+  SCVector3 p12;
+  SCVector3 p21;
+  SCVector3 p22;
 
   _s1.boundingbox(valuemin,valuemax,p11,p12);
   _s2.boundingbox(valuemin,valuemax,p21,p22);
@@ -534,7 +527,7 @@ ReentrantUncappedTorusHoleShape::
 }
 double
 ReentrantUncappedTorusHoleShape::
-  distance_to_surface(const SCVector3&X,double*grad) const
+  distance_to_surface(const SCVector3&X,SCVector3*grad) const
 {
   SCVector3 Xv(X);
 
@@ -557,7 +550,7 @@ ReentrantUncappedTorusHoleShape::
           if (grad) {
               SCVector3 unit(XP);
               unit.normalize();
-              for (int i=0; i<3; i++) grad[i] = - unit[i];
+              *grad = unit;
             }
           return radius() - rXP;
         }
@@ -602,7 +595,7 @@ NonreentrantUncappedTorusHoleShape::~NonreentrantUncappedTorusHoleShape()
 {
 }
 double NonreentrantUncappedTorusHoleShape::
-  distance_to_surface(const SCVector3&X,double* grad) const
+  distance_to_surface(const SCVector3&X,SCVector3* grad) const
 {
   SCVector3 Xv(X);
 
@@ -632,7 +625,7 @@ double NonreentrantUncappedTorusHoleShape::
       if (grad) {
           SCVector3 unit(PX);
           unit.normalize();
-          for (int i=0; i<3; i++) grad[i] = unit[i];
+          *grad = unit;
         }
       return radius() - rPX;
     }
@@ -959,7 +952,7 @@ is_contained_in_unbounded_pyramid(SCVector3 XD,
 }
 double
 Uncapped5SphereExclusionShape::
-  distance_to_surface(const SCVector3&X,double*grad) const
+  distance_to_surface(const SCVector3&X,SCVector3*grad) const
 {
   SCVector3 Xv(X);
 
@@ -1001,7 +994,7 @@ Uncapped5SphereExclusionShape::
                               /(XD.norm()*MD[side].norm()));
           if (angle >= theta_intersect) {
               if (grad) {
-                  for (int j=0; j<3; j++) grad[j] = -XD[j]/rXD;
+                  *grad = (-1.0/rXD)*XD;
                 }
               return r() - rXD;
             }
@@ -1052,7 +1045,7 @@ Uncapped5SphereExclusionShape::
                   double scale = - distance_to_plane
                          /(MDnorm*sqrt(r_intersect*r_intersect
                                        + distance_to_plane*distance_to_plane));
-                  for (int j=0; j<3; j++) grad[j] = MD[side][j] * scale;
+                  *grad = MD[side] * scale;
                 }
               else {
                   SCVector3 point_on_ring;
@@ -1060,7 +1053,7 @@ Uncapped5SphereExclusionShape::
                                 * (r_intersect/XM_in_plane_norm) + M;
                   SCVector3 gradv = Xv - point_on_ring;
                   gradv.normalize();
-                  for (int j=0; j<3; j++) grad[j] = gradv[j];
+                  *grad = gradv;
                 }
             }
           distance_to_ring_in_plane =
@@ -1076,15 +1069,15 @@ Uncapped5SphereExclusionShape::
 
 void
 Uncapped5SphereExclusionShape::boundingbox(double valuemin, double valuemax,
-                                           RefSCVector& p1,
-                                           RefSCVector& p2)
+                                           SCVector3& p1,
+                                           SCVector3& p2)
 {
-  RefSCVector p11(dimension());
-  RefSCVector p12(dimension());
-  RefSCVector p21(dimension());
-  RefSCVector p22(dimension());
-  RefSCVector p31(dimension());
-  RefSCVector p32(dimension());
+  SCVector3 p11;
+  SCVector3 p12;
+  SCVector3 p21;
+  SCVector3 p22;
+  SCVector3 p31;
+  SCVector3 p32;
 
   _s1.boundingbox(valuemin,valuemax,p11,p12);
   _s2.boundingbox(valuemin,valuemax,p21,p22);
@@ -1137,7 +1130,7 @@ UnionShape::add_shape(RefShape s)
 }
 
 double
-UnionShape::distance_to_surface(const SCVector3&p,double* grad) const
+UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 {
   if (_shapes.length() == 0) return 0.0;
   double min = _shapes[0]->distance_to_surface(p);
@@ -1166,16 +1159,16 @@ UnionShape::is_outside(const SCVector3&p) const
 
 void
 UnionShape::boundingbox(double valuemin, double valuemax,
-                        RefSCVector& p1,
-                        RefSCVector& p2)
+                        SCVector3& p1,
+                        SCVector3& p2)
 {
   if (_shapes.length() == 0) {
       for (int i=0; i<3; i++) p1[i] = p2[i] = 0.0;
       return;
     }
   
-  RefSCVector pt1(dimension());
-  RefSCVector pt2(dimension());
+  SCVector3 pt1;
+  SCVector3 pt2;
   
   int i,j;
   _shapes[0]->boundingbox(valuemin,valuemax,p1,p2);

@@ -18,15 +18,17 @@ class Shape: public Volume {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
-    
     Shape();
     Shape(const RefKeyVal&keyval);
     virtual double distance_to_surface(const SCVector3&r,
-                                       double*grad=0) const = 0;
+                                       SCVector3*grad=0) const = 0;
     virtual int is_outside(const SCVector3&r) const;
     virtual ~Shape();
     void compute();
-    RefSCVector interpolate(RefSCVector& p1,RefSCVector& p2,double val);
+    void interpolate(const SCVector3& p1,
+                     const SCVector3& p2,
+                     double val,
+                     SCVector3& result);
 
     int value_implemented();
 };
@@ -50,10 +52,10 @@ class SphereShape: public Shape {
     SphereShape(const SphereShape&);
     ~SphereShape();
     void boundingbox(double minvalue, double maxvalue,
-                     RefSCVector& p1, RefSCVector&p2);
+                     SCVector3& p1, SCVector3&p2);
     double radius() const { return _radius; }
     const SCVector3& origin() const { return _origin; }
-    double distance_to_surface(const SCVector3&r,double*grad=0) const;
+    double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
     void print(FILE*fp=stdout) const;
 
     // these are used to update the parameters describing the sphere
@@ -74,7 +76,8 @@ inline const SCVector3&
 SphereShape::origin(const SCVector3& o)
 {
   obsolete();
-  return _origin=o;
+  _origin = o;
+  return _origin;
 }
 
 REF_dec(SphereShape);
@@ -107,7 +110,7 @@ class UncappedTorusHoleShape: public Shape
     inline double radius() const { return _r; };
     void print(FILE*fp=stdout) const;
     void boundingbox(double valuemin, double valuemax,
-                     RefSCVector& p1, RefSCVector&p2);
+                     SCVector3& p1, SCVector3&p2);
 
     int gradient_implemented();
 };
@@ -126,7 +129,7 @@ class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
                                        const SphereShape&,
                                        const SphereShape&);
     ~NonreentrantUncappedTorusHoleShape();
-    double distance_to_surface(const SCVector3&r,double*grad=0) const;
+    double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
 
     int gradient_implemented();
 };
@@ -147,7 +150,7 @@ class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
                                     const SphereShape&);
     ~ReentrantUncappedTorusHoleShape();
     int is_outside(const SCVector3&r) const;
-    double distance_to_surface(const SCVector3&r,double*grad=0) const;
+    double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
 
     int gradient_implemented();
 };
@@ -211,10 +214,10 @@ class Uncapped5SphereExclusionShape: public Shape
     inline double r() const { return _r; };
     inline int solution_exists() const { return _solution_exists; };
     void print(FILE*fp=stdout) const;
-    double distance_to_surface(const SCVector3&r,double*grad=0) const;
+    double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
     int is_outside(const SCVector3&) const;
     void boundingbox(double valuemin, double valuemax,
-                     RefSCVector& p1, RefSCVector&p2);
+                     SCVector3& p1, SCVector3&p2);
 
     int gradient_implemented();
 };
@@ -229,10 +232,10 @@ class UnionShape: public Shape {
     void add_shape(RefShape);
     UnionShape();
     ~UnionShape();
-    double distance_to_surface(const SCVector3&r,double*grad=0) const;
+    double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
     int is_outside(const SCVector3&r) const;
     void boundingbox(double valuemin, double valuemax,
-                     RefSCVector& p1, RefSCVector& p2);
+                     SCVector3& p1, SCVector3& p2);
 
     int gradient_implemented();
 };

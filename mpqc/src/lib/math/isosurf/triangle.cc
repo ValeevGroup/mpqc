@@ -155,18 +155,18 @@ void Triangle::add_edges(SetRefEdge&set)
   for (int i=0; i<3; i++) set.add(_edges[i]);
 }
 
-double
-Triangle::interpolate(double r,double s,const RefVertex&result)
+void
+Triangle::interpolate(double r,double s,const RefVertex&result,SCVector3&dA)
 {
   TriInterpCoefKey key(_order, r, s);
   RefTriInterpCoef coef = new TriInterpCoef(key);
-  return interpolate(coef, r, s, result);
+  return interpolate(coef, r, s, result, dA);
 }
 
-double
+void
 Triangle::interpolate(const RefTriInterpCoef& coef,
                       double r, double s,
-                      const RefVertex&result)
+                      const RefVertex&result, SCVector3&dA)
 {
   int i, j, k;
 
@@ -174,40 +174,33 @@ Triangle::interpolate(const RefTriInterpCoef& coef,
   double L2 = r;
   double L3 = s;
 
-  RefSCVector tmp(_vertices[0]->point()->dim());
-  RefSCVector x_s(_vertices[0]->point()->dim());
-  RefSCVector x_r(_vertices[0]->point()->dim());
-  tmp.assign(0.0);
-  x_s.assign(0.0);
-  x_r.assign(0.0);
+  SCVector3 tmp(0.0);
+  SCVector3 x_s(0.0);
+  SCVector3 x_r(0.0);
   for (i=0; i<=_order; i++) {
       for (j=0; j <= _order-i; j++) {
           k = _order - i - j;
           int index = TriInterpCoef::ijk_to_index(i,j,k);
-          tmp.accumulate(coef->coef(i,j,k)*_vertices[index]->point());
-          x_s.accumulate(coef->sderiv(i,j,k)*_vertices[index]->point());
-          x_r.accumulate(coef->rderiv(i,j,k)*_vertices[index]->point());
+          tmp += coef->coef(i,j,k)*_vertices[index]->point();
+          x_s += coef->sderiv(i,j,k)*_vertices[index]->point();
+          x_r += coef->rderiv(i,j,k)*_vertices[index]->point();
         }
     }
-  result->point().assign(tmp);
+  result->set_point(tmp);
 
-  if (result->normal().nonnull()) {
-      tmp.assign(0.0);
+  if (result->has_normal()) {
       for (i=0; i<_order; i++) {
           for (j=0; j <= _order-i; j++) {
               k = _order - i - j;
               int index = TriInterpCoef::ijk_to_index(i,j,k);
-              tmp.accumulate(coef->coef(i,j,k)*_vertices[index]->point());
+              tmp += coef->coef(i,j,k)*_vertices[index]->point();
             }
         }
-      result->normal().assign(tmp);
+      result->set_normal(tmp);
     }
 
   // Find the surface element
-  SCVector3 xr3(x_r);
-  SCVector3 xs3(x_s);
-  double surface_element = (xr3.cross(xs3)).norm();
-  return surface_element;
+  dA = x_r.cross(x_s);
 }
 
 void
@@ -257,24 +250,19 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
           = _edges[2]->interior_vertex(_orientation2?i:j);
     }
 
-  if (order != _order) abort();
-
-  // find the triangle's interior vertices
-  RefSCVector p0(vertex(0)->point());
-  RefSCVector p1(vertex(1)->point());
-  RefSCVector p2(vertex(2)->point());
-  RefSCVector norm0(vertex(0)->normal());
-  RefSCVector norm1(vertex(1)->normal());
-  RefSCVector norm2(vertex(2)->normal());
-
-  if (order != _order) abort();
+  const SCVector3& p0 = vertex(0)->point();
+  const SCVector3& p1 = vertex(1)->point();
+  const SCVector3& p2 = vertex(2)->point();
+  const SCVector3& norm0 = vertex(0)->normal();
+  const SCVector3& norm1 = vertex(1)->normal();
+  const SCVector3& norm2 = vertex(2)->normal();
 
   for (i=0; i<=_order; i++) {
       double I = (1.0*i)/_order;
       for (j=0; j<=_order-i; j++) {
-          RefSCVector trialpoint;
-          RefSCVector trialnorm;
-          RefSCVector newpoint;
+          SCVector3 trialpoint;
+          SCVector3 trialnorm;
+          SCVector3 newpoint;
           double J = (1.0*j)/_order;
           k = _order - i - j;
           if (!i || !j || !k) continue; // interior point check
@@ -284,11 +272,11 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
           trialpoint = I*p0 + J*p1 + K*p2;
           trialnorm = I*norm0 + J*norm1 + K*norm2;
           // now refine that guess
-          newpoint = vol->solve(trialpoint,trialnorm,isovalue);
+          vol->solve(trialpoint,trialnorm,isovalue,newpoint);
           // compute the true normal
           vol->set_x(newpoint);
           if (vol->gradient_implemented()) {
-              trialnorm = vol->gradient().copy();
+              vol->get_gradient(trialnorm);
             }
           trialnorm.normalize();
           _vertices[index] = new Vertex(newpoint,trialnorm);

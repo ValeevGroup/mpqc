@@ -19,18 +19,19 @@ extern "C" {
 
 class Vertex: public VRefCount {
   private:
-    RefSCVector _point;
-    RefSCVector _normal;
+    SCVector3 _point;
+    SCVector3 *_normal; // _normal is optional
   public:
     Vertex();
-    Vertex(RefSCVector&point,RefSCVector&normal);
+    Vertex(const SCVector3& point,const SCVector3& normal);
+    Vertex(const SCVector3& point);
     ~Vertex();
-    RefSCVector normal() { return _normal; }
-    RefSCVector point() { return _point; }
-    void set_point(const RefSCVector&p);
-    void set_normal(const RefSCVector&p);
-    operator RefSCVector();
-    RefSCDimension dimension();
+    const SCVector3& point() const { return _point; }
+    int has_normal() const { return _normal != 0; }
+    const SCVector3& normal() const { return *_normal; }
+    void set_point(const SCVector3&p);
+    void set_normal(const SCVector3&p);
+    operator SCVector3&();
 
     void print(FILE*fp = stdout);
 };

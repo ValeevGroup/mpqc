@@ -206,7 +206,7 @@ main(int argc, char *argv[])
     assign_centers(&centers,tcenters);
     free_centers(tcenters);
 
-    if (sym_struct_from_pg(mol->point_group(), centers, sym_info) < 0) {
+    if (sym_struct_from_gbs(gbs, sym_info) < 0) {
       fprintf(stderr,"mpqcic:  could not form sym_info\n");
       exit(1);
     }
@@ -379,6 +379,7 @@ main(int argc, char *argv[])
    // write pdb file if requested
     if (make_pdb)
       Geom_write_pdb(keyval,mol,"initial geometry");
+
   }
 
   sgen_reset_bcast0();

@@ -78,10 +78,10 @@ mole<MPSCF>: (
     % MolecularEnergy input
     molecule = $:molecule
     % coor should be commented out if molecule is an atom
-    coor<IntMolecularCoor>: (
+    coor<SymmMolecularCoor>: (
         molecule = $:molecule
         %scale_bonds = 2.0
-        followed<BendSimpleCo> = [ "a(HOH)" 1 2 3 ]
+        %followed<BendSimpleCo> = [ "a(HOH)" 1 2 3 ]
       )
     % Wavefunction input
     basis<GaussianBasisSet>: (

@@ -19,9 +19,9 @@
 // Force linkages:
 #ifndef __PIC__
 const ClassDesc &fl0 = MPSCF::class_desc_;
-const ClassDesc &fl1 = IntMolecularCoor::class_desc_;
 const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
 const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
+const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
 const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 const ClassDesc &fl3 = GDIISOpt::class_desc_;
 const ClassDesc &fl4 = EFCOpt::class_desc_;
@@ -111,7 +111,6 @@ main(int argc, char**argv)
   }
 
   if (mole.nonnull()) {
-      printf("mole->energy() = %15.7f\n", mole->energy());
       if (mole->gradient_implemented()) {
           if (opt.nonnull()) {
               //opt->print(o);

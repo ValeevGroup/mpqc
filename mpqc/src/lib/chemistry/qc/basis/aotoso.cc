@@ -627,6 +627,8 @@ PetiteList::sotoao()
 {
   if (c1_)
     return aotoso();
+  else if (nirrep_ == ng_) // subgroup of d2h
+    return aotoso().t();
   else
     return aotoso().i();
 }
@@ -647,7 +649,8 @@ PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
   
   RefSymmSCMatrix somatrix(SO_basisdim(), gbs_->so_matrixkit());
   somatrix.assign(0.0);
-  somatrix->accumulate_transform(aotoso().t(), aomatrix);
+  somatrix->accumulate_transform(aotoso(), aomatrix,
+                                 SCMatrix::TransposeTransform);
 
   return somatrix;
 }
@@ -661,7 +664,12 @@ PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
   
   RefSymmSCMatrix aomatrix(AO_basisdim(), gbs_->so_matrixkit());
   aomatrix.assign(0.0);
-  aomatrix->accumulate_transform(sotoao().t(), somatrix);
+
+  if (nirrep_ == ng_) // subgroup of d2h
+    aomatrix->accumulate_transform(aotoso(), somatrix);
+  else
+    aomatrix->accumulate_transform(aotoso().i(), somatrix,
+                                   SCMatrix::TransposeTransform);
 
   RefSymmSCMatrix aom(gbs_->basisdim(), gbs_->matrixkit());
   aom->convert(aomatrix);
@@ -875,7 +883,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   CharacterTable ct = gbs.molecule()->point_group().char_table();
 
 #if 1
-  RefSCMatrix aoso = aotoso().t();
+  RefSCMatrix aoso = aotoso();
   BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aoso.pointer());
 
   for (b=0; b < lu->nblocks(); b++) {
@@ -890,7 +898,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   }
 
   sym.assign(0.0);
-  sym.accumulate_transform(aoso,bskel);
+  sym.accumulate_transform(aoso,bskel,SCMatrix::TransposeTransform);
   aoso=0;
 #else
   do_transform(skel,sym,gbs,*this,ct);

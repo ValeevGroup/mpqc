@@ -35,6 +35,8 @@
 
 #include <util/state/translate.h>
 
+#define DEBUG 0
+
 // This sets up a communication buffer.  It is made up of a of
 // an integer that gives the number of bytes used in the buffer
 // by the data region of size bufsize.
@@ -655,9 +657,19 @@ BcastStateInBin::seek(int loc)
 {
   file_position_ = loc;
 #if defined(HAVE_PUBSEEKOFF)
-  if (grp->me() == 0) buf_->pubseekoff(loc,ios::beg,ios::in);
+  if (grp->me() == 0) {
+      buf_->pubseekoff(loc,ios::beg,ios::in);
+#  if  DEBUG
+      cout << "pubseekoff to " << loc << endl;
+#  endif
+    }
 #elif defined(HAVE_SEEKOFF)
-  if (grp->me() == 0) buf_->seekoff(loc,ios::beg,ios::in);
+  if (grp->me() == 0) {
+      buf_->seekoff(loc,ios::beg,ios::in);
+#  if  DEBUG
+      cout << "seekoff to " << loc << endl;
+#  endif
+    }
 #endif
   nbuf = 0;
   ibuf = 0;
@@ -684,6 +696,13 @@ BcastStateInBin::get_array_void(void* vd, int n)
 {
   MsgStateBufRecv::get_array_void(vd, n);
   file_position_ += n;
+#if DEBUG
+  cout << "Read " << n << " bytes:";
+  for (int i=0; i<n; i++) {
+      cout << " " << (int) ((unsigned char*)vd)[i];
+    }
+  cout << endl;
+#endif
   return n;
 }
 

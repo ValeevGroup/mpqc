@@ -186,6 +186,9 @@ main(int argc, char *argv[])
       BcastStateInBin s(grp,files[i]);
       cout << incindent;
       s.list_objects(cout << node0);
+      if (s.has_directory() && !s.seekable()) {
+          cout << "(objects cannot be listed since cannot seek file)" << endl;
+        }
       cout << decindent;
     }
 

@@ -185,6 +185,7 @@ class StateIn:  public DescribedClass {
     //. Return non-zero if seek does anything sensible.  The
     //default implementation returns 0.
     virtual int seekable();
+    int has_directory() const { return dir_loc_ != 0; }
 
     //. List all the objects to the stream.  Only \clsnm{StateIn}
     //specializations with directories can list objects.

@@ -32,6 +32,8 @@
 #include <scconfig.h>
 #include <util/state/state_bin.h>
 
+#define DEBUG 0
+
 #define CLASSNAME StateOutBin
 #define PARENTS public StateOutFile
 #include <util/class/classi.h>
@@ -237,6 +239,13 @@ int StateInBin::get_array_void(void*p,int size)
       cerr << "StateInBin::get_array_void: failed" << endl;
       abort();
     }
+#if DEBUG
+  cout << "Read " << size << " bytes: ";
+  for (int i=0; i<size; i++) {
+      cout << ((unsigned char*)p)[i];
+    }
+  cout << endl;
+#endif
   file_position_ += size;
   return size;
 }

@@ -34,6 +34,8 @@
 #include <util/state/translate.h>
 #include <util/state/statein.h>
 
+#define DEBUG 0
+
 DescribedClass_REF_def(StateIn);
 
 #define CLASSNAME StateIn
@@ -250,7 +252,14 @@ StateIn::get_directory()
   int i, length;
 
   // read the type information
+#if DEBUG
+  cout << "Directory length location = " << tell() << endl;
+#endif
   get(length);
+#if DEBUG
+  cout << "Directory length = " << length << endl;
+  cout << "Directory entries location = " << tell() << endl;
+#endif
   for (i=0; i<length; i++) {
       char *name;
       int version, classid;
@@ -296,9 +305,12 @@ StateIn::get_directory()
 void
 StateIn::find_and_get_directory()
 {
-  if (directory_location()) {
+  if (directory_location() && seekable()) {
       int original_loc = tell();
       seek(directory_location());
+#if DEBUG
+      cout << "Getting directory from " << tell() << endl;
+#endif
       get_directory();
       seek(original_loc);
     }
@@ -309,8 +321,17 @@ StateIn::getstring(char*&s)
 {
   int r=0;
   int size;
+#if DEBUG
+  cout << "String length location = " << tell() << endl;
+#endif
   r += get(size);
+#if DEBUG
+  cout << "String length = " << size << endl;
+#endif
   if (size) {
+#if DEBUG
+      cout << "String location = " << tell() << endl;
+#endif
       s = new char[size];
       r += get_array_char(s,size-1);
       s[size-1] = '\0';
@@ -489,8 +510,13 @@ StateIn::dir_getobject(RefSavableState &p, const char *name)
 
   p = 0;
 
-  if (!use_directory()) {
+  if (!has_directory()) {
       cerr << "ERROR: StateIn: no directory to get object from" << endl;
+      abort();
+    }
+
+  if (!seekable()) {
+      cerr << "ERROR: StateIn: cannot get object because cannot seek" << endl;
       abort();
     }
 

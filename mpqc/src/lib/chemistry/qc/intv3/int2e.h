@@ -2,8 +2,8 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_int2e_h
-#define _chemistry_qc_int2e_h
+#ifndef _chemistry_qc_intv3_int2e_h
+#define _chemistry_qc_intv3_int2e_h
 
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
@@ -11,6 +11,7 @@
 #include <chemistry/qc/intv3/fjt.h>
 #include <chemistry/qc/intv3/types.h>
 #include <chemistry/qc/intv3/storage.h>
+#include <chemistry/qc/intv3/array.h>
 
 class Int2eV3: public VRefCount {
   protected:
@@ -53,11 +54,11 @@ class Int2eV3: public VRefCount {
     /* Offset primitive numbers. */
     int opr1, opr2, opr3, opr4;
     /* Boolean array which gives whether or not an array is computed. */
-    int_array3_t inthave;
+    IntV3Arrayint3 inthave;
     /* Saved initialization parameters used to free data. */
     int saved_am12,saved_am34,saved_ncon;
     /* Stores the length of the inner loop for integral contraction. */
-    int_array3_t contract_length;
+    IntV3Arrayint3 contract_length;
 
     // statics from hrr.cc
   protected:
@@ -69,7 +70,7 @@ class Int2eV3: public VRefCount {
     double CmD[3];
     /* Boolean array which gives whether or not a set of integrals has been
      * computed. */
-    int_array4_t shiftinthave;
+    IntV3Arrayint4 shiftinthave;
     int eAB;
 
     int redundant_;
@@ -78,12 +79,12 @@ class Int2eV3: public VRefCount {
   protected:
     RefFJT fjt_;
 
-    int_vector_t int_shell_to_prim;
-    double_matrix_t int_shell_r;
-    double_matrix_t int_prim_zeta;
-    double_matrix_t int_prim_k;
-    double_matrix_t int_prim_oo2zeta;
-    double_array3_t int_prim_p;
+    int *int_shell_to_prim;
+    IntV3Arraydouble2 int_shell_r;
+    IntV3Arraydouble2 int_prim_zeta;
+    IntV3Arraydouble2 int_prim_k;
+    IntV3Arraydouble2 int_prim_oo2zeta;
+    IntV3Arraydouble3 int_prim_p;
 
     double *int_buffer;
     double *int_derint_buffer;
@@ -98,8 +99,8 @@ class Int2eV3: public VRefCount {
     GaussianShell *int_shell3;
     GaussianShell *int_shell4;
 
-    doublep_array4_t *int_con_ints;
-    doublep_array4_t ****int_con_ints_array;  /* The contr. int. inter. */
+    IntV3Arraydoublep4 *int_con_ints;
+    IntV3Arraydoublep4 ****int_con_ints_array;  /* The contr. int. inter. */
 
     int int_expweight1; // For exponent weighted contractions.
     int int_expweight2; // For exponent weighted contractions.
@@ -156,25 +157,25 @@ class Int2eV3: public VRefCount {
 
     // globals from print2e.cc
   protected:
-    void int_offset_print(FILE *fp,
+    void int_offset_print(ostream &,
                           double *buffer,
                           RefGaussianBasisSet c1, int s1,
                           RefGaussianBasisSet c2, int s2,
                           RefGaussianBasisSet c3, int s3,
                           RefGaussianBasisSet c4, int s4);
-    void int_offset_print_n(FILE *fp, double *buffer,
+    void int_offset_print_n(ostream &, double *buffer,
                             int n1, int n2, int n3, int n4,
                             int o1, int o2, int o3, int o4,
                             int e12, int e13e24, int e34);
-    void int_print(FILE *fp, double *buffer,
+    void int_print(ostream &, double *buffer,
                    RefGaussianBasisSet c1, int s1,
                    RefGaussianBasisSet c2, int s2,
                    RefGaussianBasisSet c3, int s3,
                    RefGaussianBasisSet c4, int s4);
-    void int_print_n(FILE *fp, double *buffer,
+    void int_print_n(ostream &, double *buffer,
                      int n1, int n2, int n3, int n4,
                      int e12, int e13e24, int e34);
-    void int_print_intermediates(FILE *fp);
+    void int_print_intermediates(ostream &);
 
     // locals from hrr.cc
   protected:

@@ -5,7 +5,7 @@
 #ifndef _chemistry_qc_oint3_build_h
 #define _chemistry_qc_oint3_build_h
 
-#include <math/array/math_lib.h>
+#include <chemistry/qc/intv3/array.h>
 
 #define MG 3
 
@@ -43,7 +43,7 @@ class BuildIntV3 {
     double int_v_r42;
     double int_v_k12;
     double int_v_k34;
-    doublep_array3_t int_v_list;
+    IntV3Arraydoublep3 int_v_list;
   public:
     int impossible_integral();
 

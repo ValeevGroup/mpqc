@@ -1,8 +1,6 @@
 
-#include <stdio.h>
-
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
-
 #include <chemistry/qc/intv3/int2e.h>
 
 static inline void
@@ -19,8 +17,8 @@ iswtch(int *i, int *j)
 static void
 fail()
 {
-  fprintf(stderr,"failing module:\n%s\n",__FILE__);
-  exit(1);
+  cerr << scprintf("failing module:\n%s",__FILE__) << endl;
+  abort();
   }
 
 /* This initializes the shift routines.  It is called by int_initialize_erep.
@@ -54,17 +52,12 @@ Int2eV3::int_init_shiftgc(int order, int am1, int am2, int am3, int am4)
   if (order==1 && int_derivative_bounds) am3++;
 
   /* Allocate the array giving what has already been computed. */
-  if (allocbn_int_array4(&shiftinthave,"n1 n2 n3 n4",
-                         am1+am2+1,am2+1,am3+am4+1,am4+1)) {
-    fprintf(stderr,"problem allocating shiftinthave");
-    fail();
-    }
+  shiftinthave.set_dim(am1+am2+1,am2+1,am3+am4+1,am4+1);
   }
 
 void
 Int2eV3::int_done_shiftgc()
 {
-  free_int_array4(&shiftinthave);
   }
 
 void
@@ -78,8 +71,8 @@ Int2eV3::init_shiftinthave(int am1, int am2, int am3, int am4)
         for (l=0; l<=am4; l++) {
           /* The integrals for j==0 and l==0 have been precomputed
            * by the build routine. */
-          if ((j==0) && (l==0)) shiftinthave.i[i][j][k][l] = 1;
-          else                  shiftinthave.i[i][j][k][l] = 0;
+          if ((j==0) && (l==0)) shiftinthave(i,j,k,l) = 1;
+          else                  shiftinthave(i,j,k,l) = 0;
           }
         }
       }
@@ -141,11 +134,11 @@ Int2eV3::shiftint(int am1, int am2, int am3, int am4)
 #endif
 
   /* If the integral is known, then return the pointer to its buffer. */
-  if (shiftinthave.i[am1][am2][am3][am4])
-    return int_con_ints_array[g1][g2][g3][g4].dp[am1][am2][am3][am4];
+  if (shiftinthave(am1,am2,am3,am4))
+    return int_con_ints_array[g1][g2][g3][g4](am1,am2,am3,am4);
 
   /* Find the preallocated storage for the target integrals. */
-  buffer = int_con_ints_array[g1][g2][g3][g4].dp[am1][am2][am3][am4];
+  buffer = int_con_ints_array[g1][g2][g3][g4](am1,am2,am3,am4);
 
   /* Should we shift to 2 or to 4? */
   if (choose_shift(am1,am2,am3,am4) == 2) {
@@ -157,7 +150,7 @@ Int2eV3::shiftint(int am1, int am2, int am3, int am4)
     }
 
   /* Put the integrals in the list of precomputed integrals. */
-  shiftinthave.i[am1][am2][am3][am4] = 1;
+  shiftinthave(am1,am2,am3,am4) = 1;
 
   return buffer;
   }
@@ -174,23 +167,23 @@ Int2eV3::choose_shift(int am1, int am2, int am3, int am4)
 
   if (am2 == 0) {
     if (am4 == 0) {
-      fprintf(stderr,"shift: build routines missed (%d,0,%d,0)\n",am1,am3);
+      cerr << scprintf("shift: build routines missed (%d,0,%d,0)\n",am1,am3);
       fail();
       }
     return 4;
     }
   if (am4 == 0) return 2;
 
-  if (!shiftinthave.i[am1+1][am2-1][am3][am4]) {
+  if (!shiftinthave(am1+1,am2-1,am3,am4)) {
     nneed2 += INT_NCART(am1+1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
     }
-  if (!shiftinthave.i[am1][am2-1][am3][am4]) {
+  if (!shiftinthave(am1,am2-1,am3,am4)) {
     nneed2 += INT_NCART(am1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
     }
-  if (!shiftinthave.i[am1][am2][am3+1][am4-1]) {
+  if (!shiftinthave(am1,am2,am3+1,am4-1)) {
     nneed4 += INT_NCART(am1)*INT_NCART(am2)*INT_NCART(am3+1)*INT_NCART(am4-1);
     }
-  if (!shiftinthave.i[am1][am2-1][am3][am4-1]) {
+  if (!shiftinthave(am1,am2-1,am3,am4-1)) {
     nneed4 += INT_NCART(am1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4-1);
     }
   if (nneed2 <= nneed4) return 2;

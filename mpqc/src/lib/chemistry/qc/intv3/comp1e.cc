@@ -1,13 +1,11 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <tmpl.h>
-#include <math/array/math_lib.h>
+
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/fjt.h>
 #include <chemistry/qc/intv3/utils.h>
-
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/tformv3.h>
 
@@ -46,13 +44,10 @@ Int1eV3::int_initialize_1e(int flags, int order)
     scratchsize = nshell2*3;
     }
   else {
-    fprintf(stderr,"int_initialize_1e: invalid order: %d\n",order);
+    cerr << scprintf("int_initialize_1e: invalid order: %d\n",order);
     exit(1);
     }
 
-#if 0
-  printf("allocating %d doubles in init_1e\n",scratchsize);
-#endif
   buff = (double *) malloc(scratchsize*sizeof(double));
   cartesianbuffer = (double *) malloc(scratchsize*sizeof(double));
 
@@ -114,7 +109,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_overlap: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_overlap: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -376,11 +371,6 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
   double tmp[3];
   double *ctmp = cartesianbuffer;
 
-  /* fprintf(stdout,"accum_shell_1der: working on ( %2d | %2d )",ish,jsh);
-   * if (three_center) fprintf(stdout," third_centernum = %d\n",third_centernum);
-   * else fprintf(stdout,"\n");
-   */
-
   c1 = bs1_->shell_to_center(ish);
   c2 = bs2_->shell_to_center(jsh);
   for (int xyz=0; xyz<3; xyz++) {
@@ -514,9 +504,6 @@ Int1eV3::comp_shell_kinetic(int gc1, int i1, int j1, int k1,
       }
     }
 
-  /* fprintf(stdout,"comp_shell_kinetic(%d,%d,%d,%d,%d,%d): result = % 12.8lf\n",
-   *         i1,j1,k1,i2,j2,k2,result);
-   */
   return result;
   }
 
@@ -744,7 +731,7 @@ Int1eV3::accum_shell_efield(double *buff, int ish, int jsh)
   double *tmp = cartesianbuffer;
 
   if (!(init_order >= 1)) {
-    fprintf(stderr,"accum_shell_efield: one electron routines are not init'ed\n");
+    cerr << scprintf("accum_shell_efield: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -791,7 +778,7 @@ Int1eV3::efield(int ish, int jsh, double *position)
   double *tmp = cartesianbuffer;
 
   if (!(init_order >= 1)) {
-    fprintf(stderr,"Int1eV3::efield one electron routines are not ready\n");
+    cerr << scprintf("Int1eV3::efield one electron routines are not ready\n");
     exit(1);
     }
 
@@ -831,7 +818,7 @@ Int1eV3::nuclear(int ish, int jsh)
   int cart1,cart2;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_nuclear: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -890,7 +877,7 @@ Int1eV3::int_accum_shell_point_charge(int ish, int jsh,
   double tmp;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_pointcharge: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_pointcharge: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -938,7 +925,7 @@ Int1eV3::point_charge(int ish, int jsh,
   int cart1,cart2;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"Int1eV3::point_charge: one electron routines are not init'ed\n");
+    cerr << scprintf("Int1eV3::point_charge: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -984,7 +971,7 @@ Int1eV3::hcore(int ish, int jsh)
   int gc1,gc2;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"hcore: one electron routines are not init'ed\n");
+    cerr << scprintf("hcore: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1038,7 +1025,7 @@ Int1eV3::hcore_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_hcore: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_hcore: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1078,7 +1065,7 @@ Int1eV3::kinetic_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_kinetic: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_kinetic: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1116,7 +1103,7 @@ Int1eV3::nuclear_1der(int ish, int jsh, int idercs, int centernum)
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_nuclear: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1156,7 +1143,7 @@ Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_nuclear_hf_1der: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_nuclear_hf_1der: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1192,7 +1179,7 @@ Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    fprintf(stderr,"int_shell_nuclear_nonhf_1der: one electron routines are not init'ed\n");
+    cerr << scprintf("int_shell_nuclear_nonhf_1der: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1360,10 +1347,6 @@ Int1eV3::comp_prim_nuclear(int i1, int j1, int k1,
     }
   else result = fjttable_[m];
 
-  /* fprintf(stdout,"  comp_prim_nuclear(%d,%d,%d,%d,%d,%d,%d) = % 12.8lf\n",
-   *         i1,j1,k1,i2,j2,k2,m,result);
-   */
-
   return result;
   }
 
@@ -1434,9 +1417,6 @@ Int1eV3::comp_shell_efield(double *efield,
 
   for (xyz=0; xyz<3; xyz++) efield[xyz] = result[xyz];
 
-  /* fprintf(stdout,"comp_shell_efield(%d,%d,%d,%d,%d,%d): % 12.8lf % 12.8lf % 12.8lf\n",
-   *         i1,j1,k1,i2,j2,k2,efield[0],efield[1],efield[2]);
-   */
   }
 
 double
@@ -1449,9 +1429,7 @@ Int1eV3::comp_prim_efield(int xyz, int i1, int j1, int k1,
 
   if (i1) {
     result  = PmA[0] * comp_prim_efield(xyz,i1-1,j1,k1,i2,j2,k2,m);
-    /* fprintf(stdout," % 12.8lf",result); */
     result -= PmC[0] * comp_prim_efield(xyz,i1-1,j1,k1,i2,j2,k2,m+1);
-    /* fprintf(stdout," % 12.8lf",result); */
     if (i1>1) result += oo2zeta * (i1-1)
                        * (  comp_prim_efield(xyz,i1-2,j1,k1,i2,j2,k2,m)
                           - comp_prim_efield(xyz,i1-2,j1,k1,i2,j2,k2,m+1));
@@ -1459,7 +1437,6 @@ Int1eV3::comp_prim_efield(int xyz, int i1, int j1, int k1,
                      * (  comp_prim_efield(xyz,i1-1,j1,k1,i2-1,j2,k2,m)
                         - comp_prim_efield(xyz,i1-1,j1,k1,i2-1,j2,k2,m+1));
     if (xyz==0) result += comp_prim_nuclear(i1-1,j1,k1,i2,j2,k2,m+1);
-    /* fprintf(stdout," % 12.8lf",result); */
     }
   else if (j1) {
     result  = PmA[1] * comp_prim_efield(xyz,i1,j1-1,k1,i2,j2,k2,m);
@@ -1522,8 +1499,6 @@ Int1eV3::comp_prim_efield(int xyz, int i1, int j1, int k1,
      */
     result = 2.0 * zeta * PmC[xyz] * fjttable_[m+1];
     }
-
-  /* fprintf(stdout," % 12.8lf\n",result); */
 
   return result;
   }

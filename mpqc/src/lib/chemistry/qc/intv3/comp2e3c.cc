@@ -2,10 +2,8 @@
 /* These routines compute two and three center electron repulsion
  * integrals. */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <math/array/math_lib.h>
 
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/macros.h>

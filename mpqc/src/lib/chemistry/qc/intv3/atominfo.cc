@@ -1,8 +1,6 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <tmpl.h>
 #include <ctype.h>
 
 #include <chemistry/qc/intv3/atominfo.gbl>
@@ -34,7 +32,7 @@ struct {
    {"chlorine",    "cl", 17},
    {"argon",       "ar", 18},
    {"xenon",       "xe", 54},
-   {NULL,          NULL,  0}
+   {0,             0,    0}
   };
 
 /* Convert an atomic number to a symbol.  The returned character pointer is
@@ -53,7 +51,7 @@ IntV3::an_to_sym(int an)
       return result;
       }
     }
-  return NULL;
+  return 0;
   }
 
 /* Converts a symbol to an atom name.  If the symbol name is unknown
@@ -64,7 +62,7 @@ IntV3::sym_to_atom(char *sym)
   int i;
   char tmpsym[10];
 
-  if (!sym) return NULL;
+  if (!sym) return 0;
 
   /* Convert the passed name to lowercase. */
   strcpy(tmpsym,sym);
@@ -72,12 +70,12 @@ IntV3::sym_to_atom(char *sym)
     if (isupper(tmpsym[i])) tmpsym[i] += 'a' - 'A';
     }
 
-  for (i=0; atominfo[i].atom != NULL; i++) { 
+  for (i=0; atominfo[i].atom != 0; i++) { 
     if (!strcmp(tmpsym,atominfo[i].atom) || !strcmp(tmpsym,atominfo[i].symbol)) { 
       return atominfo[i].atom;
       }
     }
-  return NULL;
+  return 0;
   }
 
 int
@@ -94,7 +92,7 @@ IntV3::atom_to_an(char *atom)
     if (isupper(tmpatom[i])) tmpatom[i] += 'a' - 'A';
     }
 
-  for (i=0; atominfo[i].atom != NULL; i++) { 
+  for (i=0; atominfo[i].atom != 0; i++) { 
     if (!strcmp(tmpatom,atominfo[i].atom) || !strcmp(tmpatom,atominfo[i].symbol)) { 
       return atominfo[i].an;
       }

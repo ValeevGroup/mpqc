@@ -1,9 +1,6 @@
 
-#include <stdio.h>
-#include <tmpl.h>
-#include <math/array/math_lib.h>
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
-
 #include <chemistry/qc/intv3/int2e.h>
 
 /* Prints out an integral buffer given
@@ -16,7 +13,7 @@
  * centers structure.  Only nonzero integrals are printed.
  */
 void
-Int2eV3::int_offset_print(FILE *fp,
+Int2eV3::int_offset_print(ostream &o,
                           double *buffer,
                           RefGaussianBasisSet c1, int s1,
                           RefGaussianBasisSet c2, int s2,
@@ -30,7 +27,7 @@ Int2eV3::int_offset_print(FILE *fp,
   nfunc3 = c1->shell(s3).nfunction();
   nfunc4 = c1->shell(s4).nfunction();
 
-  int_offset_print_n(fp,buffer,nfunc1,nfunc2,nfunc3,nfunc4
+  int_offset_print_n(o,buffer,nfunc1,nfunc2,nfunc3,nfunc4
     ,bs1_func_offset_ + c1->shell_to_function(s1)
     ,bs2_func_offset_ + c2->shell_to_function(s2)
     ,bs3_func_offset_ + c3->shell_to_function(s3)
@@ -54,7 +51,7 @@ Int2eV3::int_offset_print(FILE *fp,
  * e34 = shell 3 == shell 4
  */
 void
-Int2eV3::int_offset_print_n(FILE *fp, double *buffer,
+Int2eV3::int_offset_print_n(ostream &o, double *buffer,
                             int n1, int n2, int n3, int n4,
                             int o1, int o2, int o3, int o4,
                             int e12, int e13e24, int e34)
@@ -68,8 +65,9 @@ Int2eV3::int_offset_print_n(FILE *fp, double *buffer,
       for (k=0; k<=INT_MAX3(e13e24,i,n3); k++) {
         for (l=0; l<=INT_MAX4(e13e24,e34,i,j,k,n4); l++) {
           if (INT_NONZERO(buffer[index]))
-            fprintf(fp," (%2d %2d|%2d %2d) = %11.7f\n",
-                    o1+i,o2+j,o3+k,o4+l,buffer[index]);
+            o << scprintf(" (%2d %2d|%2d %2d) = %11.7f",
+                          o1+i,o2+j,o3+k,o4+l,buffer[index])
+              << endl;
           index++;
           }
         }
@@ -85,7 +83,7 @@ Int2eV3::int_offset_print_n(FILE *fp, double *buffer,
  * ...
  */
 void
-Int2eV3::int_print(FILE *fp, double *buffer,
+Int2eV3::int_print(ostream &o, double *buffer,
                    RefGaussianBasisSet c1, int s1,
                    RefGaussianBasisSet c2, int s2,
                    RefGaussianBasisSet c3, int s3,
@@ -98,7 +96,7 @@ Int2eV3::int_print(FILE *fp, double *buffer,
   nfunc3 = c1->shell(s3).nfunction();
   nfunc4 = c1->shell(s4).nfunction();
 
-  int_print_n(fp,buffer,nfunc1,nfunc2,nfunc3,nfunc4
+  int_print_n(o,buffer,nfunc1,nfunc2,nfunc3,nfunc4
     ,(c2==c1)&&(s2==s1)
     ,(c3==c1)&&(s3==s1) && (c4==c2)&&(s4==s2)
     ,(c4==c3)&&(s4==s3)
@@ -116,7 +114,7 @@ Int2eV3::int_print(FILE *fp, double *buffer,
  * e34 = shell 3 == shell 4
  */
 void
-Int2eV3::int_print_n(FILE *fp, double *buffer,
+Int2eV3::int_print_n(ostream &o, double *buffer,
                      int n1, int n2, int n3, int n4,
                      int e12, int e13e24, int e34)
 {
@@ -129,8 +127,9 @@ Int2eV3::int_print_n(FILE *fp, double *buffer,
       for (k=0; k<=INT_MAX3(e13e24,i,n3); k++) {
         for (l=0; l<=INT_MAX4(e13e24,e34,i,j,k,n4); l++) {
           if (INT_NONZERO(buffer[index]))
-            fprintf(fp," (%2d %2d|%2d %2d) = (%4d) = %11.7f\n",
-                    i,j,k,l,index,buffer[index]);
+            o << scprintf(" (%2d %2d|%2d %2d) = (%4d) = %11.7f",
+                          i,j,k,l,index,buffer[index])
+              << endl;
           index++;
           }
         }
@@ -139,25 +138,21 @@ Int2eV3::int_print_n(FILE *fp, double *buffer,
   }
 
 void
-Int2eV3::int_print_intermediates(FILE *fp)
+Int2eV3::int_print_intermediates(ostream &o)
 {
-  fprintf(fp,"The integral intermediates:\n");
+  o << "The integral intermediates:" << endl;
 
-  fprintf(fp,"  int_prim_zeta:\n");
-  print_double_matrix(fp,&int_prim_zeta);
+  o << "  int_prim_zeta:" << endl;
+  int_prim_zeta.print(o);
 
-  fprintf(fp,"  int_prim_k:\n");
-  print_double_matrix(fp,&int_prim_k);
+  o << "  int_prim_k:" << endl;
+  int_prim_k.print(o);
 
-  fprintf(fp,"  int_prim_oo2zeta:\n");
-  print_double_matrix(fp,&int_prim_oo2zeta);
+  o << "  int_prim_oo2zeta:" << endl;
+  int_prim_oo2zeta.print(o);
 
-  fprintf(fp,"  int_prim_p:\n");
-  print_double_array3(fp,&int_prim_p);
-
-  fprintf(fp,"  int_shell_to_prim:\n");
-  print_int_vector(fp,&int_shell_to_prim);
-
+  o << "  int_prim_p:" << endl;
+  int_prim_p.print(o);
   }
 
 /////////////////////////////////////////////////////////////////////////////

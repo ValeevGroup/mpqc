@@ -1,13 +1,10 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include <tmpl.h>
-#include <math/array/math_lib.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
-
 #include <chemistry/qc/intv3/fjt.h>
 #include <chemistry/qc/intv3/utils.h>
 #include <chemistry/qc/intv3/int2e.h>
@@ -29,8 +26,8 @@ iswtch(int *i, int *j)
 static void
 fail()
 {
-  fprintf(stderr,"failing module:\n%s\n",__FILE__);
-  exit(1);
+  cerr << scprintf("failing module:\n%s",__FILE__) << endl;
+  abort();
   }
 
 /* This initializes the build routines.  It is called from
@@ -105,19 +102,15 @@ Int2eV3::int_init_buildgc(int order,
   am = am12 + am34;
 
   /* Allocate the intlist. */
-  if (  allocbn_int_array3(&inthave,"n1 n2 n3",am12+1,am34+1,am+1)
-      ||allocbn_int_array3(&contract_length,"n1 n2 n3",am12+1,am34+1,am34+1)
-      ||allocbn_doublep_array3(&build.int_v_list,"n1 n2 n3",am12+1,am34+1,am+1)) {
-    fprintf(stderr,"problem allocating integral intermediates for");
-    fprintf(stderr," am12 = %d, am34 = %d, and am = %d \n",am12,am34,am);
-    fail();
-    }
+  inthave.set_dim(am12+1,am34+1,am+1);
+  contract_length.set_dim(am12+1,am34+1,am34+1);
+  build.int_v_list.set_dim(am12+1,am34+1,am+1);
 
-  /* Set all slots to NULL */
+  /* Set all slots to 0 */
   for (i=0; i<=am12; i++) {
     for (j=0; j<=am34; j++) {
       for (k=0; k<=am12+am34; k++) {
-        build.int_v_list.dp[i][j][k] = NULL;
+        build.int_v_list(i,j,k) = 0;
         }
       }
     }
@@ -125,9 +118,9 @@ Int2eV3::int_init_buildgc(int order,
   for (i=0; i<=am12; i++) {
       for (j=0; j<=am34; j++) {
           for (k=0; k<=am34; k++) {
-              contract_length.i[i][j][k] = 0;
+              contract_length(i,j,k) = 0;
               for (l=j; l<=k; l++) {
-                  contract_length.i[i][j][k] += INT_NCART(i)*INT_NCART(l);
+                  contract_length(i,j,k) += INT_NCART(i)*INT_NCART(l);
                 }
             }
         }
@@ -147,7 +140,7 @@ Int2eV3::int_init_buildgc(int order,
 
   int_v0_buf = (double*) malloc(sizeof(double)*int_v_bufsize);
   if (!int_v0_buf) {
-    fprintf(stderr,"couldn't allocate all integral intermediates\n");
+    cerr << scprintf("couldn't allocate all integral intermediates\n");
     fail();
     }
   add_store(int_v0_buf);
@@ -156,10 +149,10 @@ Int2eV3::int_init_buildgc(int order,
   /* Allocate storage for the needed slots. */
   for (i=0; i<=am12; i++) {
     for (j=0; j<=am34; j++) {
-      build.int_v_list.dp[i][j][0] = int_v0_buf;
+      build.int_v_list(i,j,0) = int_v0_buf;
       int_v0_buf += INT_NCART(i)*INT_NCART(j);
       for (k=1; k<=am12+am34-i-j; k++) {
-        build.int_v_list.dp[i][j][k] = int_v_buf;
+        build.int_v_list(i,j,k) = int_v_buf;
         int_v_buf += INT_NCART(i)*INT_NCART(j);
         }
       }
@@ -172,17 +165,13 @@ Int2eV3::int_init_buildgc(int order,
    * coefficients we are using. */
   e0f0_con_int_bufsize = 0;
   con_int_bufsize = 0;
-  int_con_ints_array =
-    (doublep_array4_t ****)malloc(sizeof(doublep_array4_t ***)*nc1);
+  int_con_ints_array = new IntV3Arraydoublep4***[nc1];
   for (ci=0; ci<nc1; ci++) {
-    int_con_ints_array[ci] =
-      (doublep_array4_t ***)malloc(sizeof(doublep_array4_t **)*nc2);
+    int_con_ints_array[ci] = new IntV3Arraydoublep4**[nc2];
     for (cj=0; cj<nc2; cj++) {
-      int_con_ints_array[ci][cj] =
-        (doublep_array4_t **)malloc(sizeof(doublep_array4_t *)*nc3);
+      int_con_ints_array[ci][cj] = new IntV3Arraydoublep4*[nc3];
       for (ck=0; ck<nc3; ck++) {
-        int_con_ints_array[ci][cj][ck] =
-          (doublep_array4_t *)malloc(sizeof(doublep_array4_t )*nc4);
+        int_con_ints_array[ci][cj][ck] = new IntV3Arraydoublep4[nc4];
         for (cl=0; cl<nc4; cl++) {
   int am12_for_con;
   int am34_for_con;
@@ -195,17 +184,14 @@ Int2eV3::int_init_buildgc(int order,
     am34_for_con = jmax_for_con[ck] + jmax_for_con[cl];
     }
 
-  if (allocbn_doublep_array4(&int_con_ints_array[ci][cj][ck][cl],"n1 n2 n3 n4",
-                             am12+1,am12+1,am34+1,am34+1)) {
-    fprintf(stderr,"couldn't allocate contracted integral array\n");
-    fail();
-    }
+  int_con_ints_array[ci][cj][ck][cl].set_dim(am12+1,am12+1,am34+1,am34+1);
+
   /* Count how much storage for the integrals is needed. */
   for (i=0; i<=am12; i++) {
     for (j=0; j<=am12; j++) {
       for (k=0; k<=am34; k++) {
         for (l=0; l<=am34; l++) {
-          int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] = 0;
+          int_con_ints_array[ci][cj][ck][cl](i,j,k,l) = 0;
           }
         }
       }
@@ -228,9 +214,9 @@ Int2eV3::int_init_buildgc(int order,
                               * INT_NCART(k)
                               * INT_NCART(l);
              }
-          else if (int_con_ints_array[0][0][0][0].dp[i][j][k][l]) {
-            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
-              int_con_ints_array[0][0][0][0].dp[i][j][k][l];
+          else if (int_con_ints_array[0][0][0][0](i,j,k,l)) {
+            int_con_ints_array[ci][cj][ck][cl](i,j,k,l) =
+              int_con_ints_array[0][0][0][0](i,j,k,l);
              }
           else {
             con_int_bufsize +=  INT_NCART(i)
@@ -249,7 +235,7 @@ Int2eV3::int_init_buildgc(int order,
   e0f0_con_int_buf = (double*) malloc(con_int_bufsize*sizeof(double));
   used_storage_build_ += con_int_bufsize * sizeof(double);
   if (!e0f0_con_int_buf) {
-    fprintf(stderr,"couldn't allocate contracted integral storage\n");
+    cerr << scprintf("couldn't allocate contracted integral storage\n");
     fail();
     }
   add_store(e0f0_con_int_buf);
@@ -275,7 +261,7 @@ Int2eV3::int_init_buildgc(int order,
     for (j=0; j<=am12; j++) {
       for (k=0; k<=am34; k++) {
         for (l=0; l<=am34; l++) {
-          int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] = 0;
+          int_con_ints_array[ci][cj][ck][cl](i,j,k,l) = 0;
           }
         }
       }
@@ -291,7 +277,7 @@ Int2eV3::int_init_buildgc(int order,
  * low angular momentum for this reason. */
                 /* Share storage for certain cases. */
           if ((j==0)&&(l==0)) {
-            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]
+            int_con_ints_array[ci][cj][ck][cl](i,j,k,l)
                 = e0f0_con_int_buf;
             e0f0_con_int_buf +=  INT_NCART(i)
                                * INT_NCART(j)
@@ -299,19 +285,19 @@ Int2eV3::int_init_buildgc(int order,
                                * INT_NCART(l);
              }
            else if ((ci==0)&&(cj==0)&&(ck==0)&&(cl==0)) {
-            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]
+            int_con_ints_array[ci][cj][ck][cl](i,j,k,l)
                 = con_int_buf;
             con_int_buf +=  INT_NCART(i)
                           * INT_NCART(j)
                           * INT_NCART(k)
                           * INT_NCART(l);
                }
-           else if (int_con_ints_array[0][0][0][0].dp[i][j][k][l]) {
-             int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
-               int_con_ints_array[0][0][0][0].dp[i][j][k][l];
+           else if (int_con_ints_array[0][0][0][0](i,j,k,l)) {
+             int_con_ints_array[ci][cj][ck][cl](i,j,k,l) =
+               int_con_ints_array[0][0][0][0](i,j,k,l);
              }
            else {
-            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]
+            int_con_ints_array[ci][cj][ck][cl](i,j,k,l)
                 = con_int_buf;
             con_int_buf +=  INT_NCART(i)
                           * INT_NCART(j)
@@ -426,26 +412,18 @@ Int2eV3::int_done_buildgc()
   used_storage_ -= used_storage_build_;
   used_storage_build_ = 0;
 
-  free_int_array3(&inthave);
-  free_int_array3(&contract_length);
-
-  free_doublep_array3(&build.int_v_list);
-
   free_store();
 
   for (ci=0; ci<saved_ncon; ci++) {
     for (cj=0; cj<saved_ncon; cj++) {
       for (ck=0; ck<saved_ncon; ck++) {
-        for (cl=0; cl<saved_ncon; cl++) {
-          free_doublep_array4(&int_con_ints_array[ci][cj][ck][cl]);
-          }
-        free(int_con_ints_array[ci][cj][ck]);
+        delete[] int_con_ints_array[ci][cj][ck];
         }
-      free(int_con_ints_array[ci][cj]);
+      delete[] int_con_ints_array[ci][cj];
       }
-    free(int_con_ints_array[ci]);
+    delete[] int_con_ints_array[ci];
     }
-  free(int_con_ints_array);
+  delete[] int_con_ints_array;
 
   }
 
@@ -456,7 +434,7 @@ Int2eV3::add_store(void *p)
   if (!store) {
     store = (store_list_t*) malloc(sizeof(store_list_t));
     assert(store);
-    store->p = NULL;
+    store->p = 0;
     n_store_last = 0;
     }
   if (n_store_last >= STORAGE_CHUNK) {
@@ -474,7 +452,7 @@ void
 Int2eV3::free_store()
 {
   _free_store(store,n_store_last);
-  store = NULL;
+  store = 0;
   }
 
 void
@@ -511,18 +489,6 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
   maxam12 = maxam1 + maxam2;
   maxam34 = maxam3 + maxam4;
 
-#if 0
-  fprintf(stdout,"min=(%d,%d,%d,%d) max=(%d,%d,%d,%d)\n",
-          minam1,
-          minam2,
-          minam3,
-          minam4,
-          maxam1,
-          maxam2,
-          maxam3,
-          maxam4);
-#endif
-
   /* Compute the offset shell numbers. */
   osh1 = sh1 + bs1_shell_offset_;
   if (!int_unit2) osh2 = sh2 + bs2_shell_offset_;
@@ -551,7 +517,7 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
           if (int_shell3->am(ck)+dam3 +int_shell4->am(cl)+dam4 < n)
             continue;
       for (k=0; k<INT_NCART(m)*INT_NCART(n); k++) {
-        int_con_ints_array[ci][cj][ck][cl].dp[m][0][n][0][k] = 0.0;
+        int_con_ints_array[ci][cj][ck][cl](m,0,n,0)[k] = 0.0;
         }
           }
         }
@@ -624,28 +590,28 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
     if (int_expweight2) coef0 *= 2.0;
     if (int_expweight3) coef0 *= 2.0;
     if (int_expweight4) coef0 *= 2.0;
-    if (int_store1) opr1 = int_shell_to_prim.i[osh1] + i;
+    if (int_store1) opr1 = int_shell_to_prim[osh1] + i;
     for (j=0; j<int_shell2->nprimitive(); j++) {
       double coef1;
       coef1 = int_shell2->coefficient_unnorm(cj,j);
       if (int_expweight2) coef1 *=  coef0
                                       * int_shell2->exponent(j);
       else                     coef1 *= coef0;
-      if (int_store1) opr2 = int_shell_to_prim.i[osh2] + j;
+      if (int_store1) opr2 = int_shell_to_prim[osh2] + j;
       for (k=0; k<int_shell3->nprimitive(); k++) {
         double coef2;
         coef2 = int_shell3->coefficient_unnorm(ck,k);
         if (int_expweight3) coef2 *=  coef1
                                         * int_shell3->exponent(k);
         else                     coef2 *= coef1;
-        if (int_store1) opr3 = int_shell_to_prim.i[osh3] + k;
+        if (int_store1) opr3 = int_shell_to_prim[osh3] + k;
         for (l=0; l<int_shell4->nprimitive(); l++) {
           double coef3;
           coef3 = int_shell4->coefficient_unnorm(cl,l);
           if (int_expweight4) coef3 *=  coef2
                                           * int_shell4->exponent(l);
           else                     coef3 *= coef2;
-          if (int_store1) opr4 = int_shell_to_prim.i[osh4] + l;
+          if (int_store1) opr4 = int_shell_to_prim[osh4] + l;
 
           /* Produce the remaining intermediates. */
           gen_prim_intermediates_with_norm(i,j,k,l, maxam12+maxam34,coef3);
@@ -660,7 +626,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              [maxam12]
                              [minam3]
                              [maxam34][eAB]==BuildIntV3::impossible_integral){
-              fprintf(stderr,"trying to build with int2v%d%d%d%d (exact)\n",
+              cerr << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
             if ((build.*build_routine[minam1]
@@ -687,7 +653,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              [backminam3]
                              [backmaxam34][eAB]
                 == BuildIntV3::impossible_integral) {
-              fprintf(stderr,"trying to build with int2v%d%d%d%d\n",
+              cerr << scprintf("trying to build with int2v%d%d%d%d\n",
                       backminam1,backmaxam12,backminam3,backmaxam34);
               }
             have_all_ints = 0;
@@ -702,12 +668,12 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
               /* Mark the integrals as computed. */
               for (m=backminam1; m<=backmaxam12; m++) {
                 for (n=backminam3; n<=backmaxam34; n++) {
-                  inthave.i[m][n][0] = 1;
+                  inthave(m,n,0) = 1;
                   }
                 }
               }
             else {
-              fprintf(stderr,"backup build routine not available\n");
+              cerr << scprintf("backup build routine not available\n");
               fail();
               }
             }
@@ -738,9 +704,9 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
           /* Throw out all unneeded contractions. */
           for (m=mlower; m<=mupper; m++) {
             int o;
-            int sizec = contract_length.i[m][nlower][nupper];
-            con_ints = int_con_ints_array[ci][cj][ck][cl].dp[m][0][nlower][0];
-            bufferprim = build.int_v_list.dp[m][nlower][0];
+            int sizec = contract_length(m,nlower,nupper);
+            con_ints = int_con_ints_array[ci][cj][ck][cl](m,0,nlower,0);
+            bufferprim = build.int_v_list(m,nlower,0);
 
             for (o=sizec; o!=0; o--) {
               *con_ints++ += *bufferprim++;
@@ -784,21 +750,21 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
 
   /* Loop over the primitives. */
   for (i=0; i<int_shell1->nprimitive(); i++) {
-    if (int_store1) opr1 = int_shell_to_prim.i[osh1] + i;
+    if (int_store1) opr1 = int_shell_to_prim[osh1] + i;
     if (int_expweight1) ishl1expi=2.0*int_shell1->exponent(i);
 
     for (j=0; j<int_shell2->nprimitive(); j++) {
-      if (int_store1) opr2 = int_shell_to_prim.i[osh2] + j;
+      if (int_store1) opr2 = int_shell_to_prim[osh2] + j;
       ishl2expj = (int_expweight2) ? 
                         2.0*int_shell2->exponent(j)*ishl1expi : ishl1expi;
 
       for (k=0; k<int_shell3->nprimitive(); k++) {
-        if (int_store1) opr3 = int_shell_to_prim.i[osh3] + k;
+        if (int_store1) opr3 = int_shell_to_prim[osh3] + k;
         ishl3expk = (int_expweight3) ? 
                         2.0*int_shell3->exponent(k)*ishl2expj : ishl2expj;
 
         for (l=0; l<int_shell4->nprimitive(); l++) {
-          if (int_store1) opr4 = int_shell_to_prim.i[osh4] + l;
+          if (int_store1) opr4 = int_shell_to_prim[osh4] + l;
           c0scale = (int_expweight4) ? 
                         2.0*int_shell4->exponent(l)*ishl3expk : ishl3expk;
 
@@ -812,7 +778,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             }
           else if ((minam1<=MG)&&(minam3<=MG)&&(maxam12<=MG)&&(maxam34<=MG)) {
             if (brptr == BuildIntV3::impossible_integral) {
-              fprintf(stderr,"trying to build with int2v%d%d%d%d (exact)\n",
+              cerr << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
             if ((build.*brptr)()) {
@@ -837,7 +803,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
 
             /* We cannot build everything, so build what we can. */
             if (brptr2 == BuildIntV3::impossible_integral) {
-              fprintf(stderr,"trying to build with int2v%d%d%d%d\n",
+              cerr << scprintf("trying to build with int2v%d%d%d%d\n",
                       backminam1,backmaxam12,backminam3,backmaxam34);
               }
             have_all_ints = 0;
@@ -848,12 +814,12 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
               /* Mark the integrals as computed. */
               for (m=backminam1; m<=backmaxam12; m++) {
                 for (n=backminam3; n<=backmaxam34; n++) {
-                  inthave.i[m][n][0] = 1;
+                  inthave(m,n,0) = 1;
                   }
                 }
               }
             else {
-              fprintf(stderr,"backup build routine not available\n");
+              cerr << scprintf("backup build routine not available\n");
               fail();
               }
             }
@@ -898,9 +864,9 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
           /* Contract the primitive target integrals. */
           for (m=mlower; m<=mupper; m++) {
             int o;
-            int sizec = contract_length.i[m][nlower][nupper];
-            con_ints = int_con_ints_array[ci][cj][ck][cl].dp[m][0][nlower][0];
-            bufferprim = build.int_v_list.dp[m][nlower][0];
+            int sizec = contract_length(m,nlower,nupper);
+            con_ints = int_con_ints_array[ci][cj][ck][cl](m,0,nlower,0);
+            bufferprim = build.int_v_list(m,nlower,0);
 
             /* Sum the integrals into the contracted integrals. */
 #ifdef SUNMOS
@@ -943,20 +909,20 @@ Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
 
   if (int_store2 && !int_unit2 && !int_unit4) {
     double *tmp;
-    build.int_v_zeta12 = int_prim_zeta.d[opr1][opr2];
-    build.int_v_zeta34 = int_prim_zeta.d[opr3][opr4];
-    build.int_v_oo2zeta12 = int_prim_oo2zeta.d[opr1][opr2];
-    build.int_v_oo2zeta34 = int_prim_oo2zeta.d[opr3][opr4];
-    tmp = int_prim_p.d[opr1][opr2];
+    build.int_v_zeta12 = int_prim_zeta(opr1,opr2);
+    build.int_v_zeta34 = int_prim_zeta(opr3,opr4);
+    build.int_v_oo2zeta12 = int_prim_oo2zeta(opr1,opr2);
+    build.int_v_oo2zeta34 = int_prim_oo2zeta(opr3,opr4);
+    tmp = int_prim_p(opr1,opr2);
     build.int_v_p120 = *tmp++;
     build.int_v_p121 = *tmp++;
     build.int_v_p122 = *tmp;
-    tmp = int_prim_p.d[opr3][opr4];
+    tmp = int_prim_p(opr3,opr4);
     build.int_v_p340 = *tmp++;
     build.int_v_p341 = *tmp++;
     build.int_v_p342 = *tmp;
-    build.int_v_k12 = int_prim_k.d[opr1][opr2];
-    build.int_v_k34 = int_prim_k.d[opr3][opr4];
+    build.int_v_k12 = int_prim_k(opr1,opr2);
+    build.int_v_k34 = int_prim_k(opr3,opr4);
     }
   else {
     build.int_v_zeta12 = int_shell1->exponent(pr1) + int_shell2->exponent(pr2);
@@ -1039,11 +1005,7 @@ Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
   /* Convert the fjttable produced by int_fjt into the S integrals */
   conv_to_s = sqrt(build.int_v_ooze) * build.int_v_k12 * build.int_v_k34;
   for (i=0; i<=am; i++) {
-    build.int_v_list.dp[0][0][i][0] =   fjttable[i] * conv_to_s;
-#if 0
-    fprintf(stdout,"build.int_v_list.dp[0][0][%d][0] = %lf\n",
-            i,build.int_v_list.dp[0][0][i][0]);
-#endif
+    build.int_v_list(0,0,i)[0] =   fjttable[i] * conv_to_s;
     }
 
   }
@@ -1063,18 +1025,18 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
   double conv_to_s;
 
   if (int_store2) {
-    build.int_v_zeta12 = int_prim_zeta.d[opr1][opr2];
-    build.int_v_zeta34 = int_prim_zeta.d[opr3][opr4];
-    build.int_v_oo2zeta12 = int_prim_oo2zeta.d[opr1][opr2];
-    build.int_v_oo2zeta34 = int_prim_oo2zeta.d[opr3][opr4];
-    build.int_v_p120 = int_prim_p.d[opr1][opr2][0];
-    build.int_v_p121 = int_prim_p.d[opr1][opr2][1];
-    build.int_v_p122 = int_prim_p.d[opr1][opr2][2];
-    build.int_v_p340 = int_prim_p.d[opr3][opr4][0];
-    build.int_v_p341 = int_prim_p.d[opr3][opr4][1];
-    build.int_v_p342 = int_prim_p.d[opr3][opr4][2];
-    build.int_v_k12 = int_prim_k.d[opr1][opr2];
-    build.int_v_k34 = int_prim_k.d[opr3][opr4];
+    build.int_v_zeta12 = int_prim_zeta(opr1,opr2);
+    build.int_v_zeta34 = int_prim_zeta(opr3,opr4);
+    build.int_v_oo2zeta12 = int_prim_oo2zeta(opr1,opr2);
+    build.int_v_oo2zeta34 = int_prim_oo2zeta(opr3,opr4);
+    build.int_v_p120 = int_prim_p(opr1,opr2,0);
+    build.int_v_p121 = int_prim_p(opr1,opr2,1);
+    build.int_v_p122 = int_prim_p(opr1,opr2,2);
+    build.int_v_p340 = int_prim_p(opr3,opr4,0);
+    build.int_v_p341 = int_prim_p(opr3,opr4,1);
+    build.int_v_p342 = int_prim_p(opr3,opr4,2);
+    build.int_v_k12 = int_prim_k(opr1,opr2);
+    build.int_v_k34 = int_prim_k(opr3,opr4);
     }
   else {
     build.int_v_zeta12 = int_shell1->exponent(pr1) + int_shell2->exponent(pr2);
@@ -1158,11 +1120,7 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
   conv_to_s = sqrt(build.int_v_ooze)
             * build.int_v_k12 * build.int_v_k34 * norm;
   for (i=0; i<=am; i++) {
-    build.int_v_list.dp[0][0][i][0] =   fjttable[i] * conv_to_s;
-#if 0
-    fprintf(stdout,"build.int_v_list.dp[0][0][%d][0] = %lf\n",
-            i,build.int_v_list.dp[0][0][i][0]);
-#endif
+    build.int_v_list(0,0,i)[0] =   fjttable[i] * conv_to_s;
     }
 
   }
@@ -1173,18 +1131,18 @@ void
 Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 {
   if (int_store1 && !int_unit2 && !int_unit4) {
-    build.int_v_r10 = int_shell_r.d[osh1][0];
-    build.int_v_r11 = int_shell_r.d[osh1][1];
-    build.int_v_r12 = int_shell_r.d[osh1][2];
-    build.int_v_r20 = int_shell_r.d[osh2][0];
-    build.int_v_r21 = int_shell_r.d[osh2][1];
-    build.int_v_r22 = int_shell_r.d[osh2][2];
-    build.int_v_r30 = int_shell_r.d[osh3][0];
-    build.int_v_r31 = int_shell_r.d[osh3][1];
-    build.int_v_r32 = int_shell_r.d[osh3][2];
-    build.int_v_r40 = int_shell_r.d[osh4][0];
-    build.int_v_r41 = int_shell_r.d[osh4][1];
-    build.int_v_r42 = int_shell_r.d[osh4][2];
+    build.int_v_r10 = int_shell_r(osh1,0);
+    build.int_v_r11 = int_shell_r(osh1,1);
+    build.int_v_r12 = int_shell_r(osh1,2);
+    build.int_v_r20 = int_shell_r(osh2,0);
+    build.int_v_r21 = int_shell_r(osh2,1);
+    build.int_v_r22 = int_shell_r(osh2,2);
+    build.int_v_r30 = int_shell_r(osh3,0);
+    build.int_v_r31 = int_shell_r(osh3,1);
+    build.int_v_r32 = int_shell_r(osh3,2);
+    build.int_v_r40 = int_shell_r(osh4,0);
+    build.int_v_r41 = int_shell_r(osh4,1);
+    build.int_v_r42 = int_shell_r(osh4,2);
     }
   else {
     build.int_v_r10 = bs1_->r(bs1_->shell_to_center(sh1),0);
@@ -1223,13 +1181,13 @@ Int2eV3::buildprim(int am12, int am34, int m)
   double *buffer;
 
   /* Is this no integral? */
-  if ((am12 < 0) || (am34 < 0)) return NULL;
+  if ((am12 < 0) || (am34 < 0)) return 0;
 
   /* Is this integral on the list of computed integrals? */
-  if (inthave.i[am12][am34][m]) return build.int_v_list.dp[am12][am34][m];
+  if (inthave(am12,am34,m)) return build.int_v_list(am12,am34,m);
 
   /* Find the preallocated storage for the integrals. */
-  buffer = build.int_v_list.dp[am12][am34][m];
+  buffer = build.int_v_list(am12,am34,m);
 
   /* Should we build on center 1 or center 3. */
   if (choose_center(am12,am34,m) == 1) {
@@ -1242,17 +1200,7 @@ Int2eV3::buildprim(int am12, int am34, int m)
     }
 
   /* Put the integrals in the list of computed integrals. */
-  inthave.i[am12][am34][m] = 1;
-
-#if 0
-  fprintf(stdout,"buildprim: (%d 0|%d 0)(%d):\n",am12,am34,m);
-  int_print_n(stdout,buffer
-              ,INT_NCART(am12)
-              ,1
-              ,INT_NCART(am34)
-              ,1
-              ,0,0,0);
-#endif
+  inthave(am12,am34,m) = 1;
 
   return buffer;
   }
@@ -1527,15 +1475,11 @@ Int2eV3::init_inthave(int am12, int am34)
 {
   int i,j,k;
 
-#if 0 /* This cleans up inthave if the whole thing is to be printed */
-  zero_int_array3(&inthave);
-#endif
-
   for (i=0; i<=am12; i++) {
     for (j=0; j<=am34; j++) {
       for (k=0; k<=am12+am34-i-j; k++) {
-        if ((i==0)&&(j==0)) inthave.i[i][j][k] = 1;
-        else inthave.i[i][j][k] = 0;
+        if ((i==0)&&(j==0)) inthave(i,j,k) = 1;
+        else inthave(i,j,k) = 0;
         }
       }
     }
@@ -1553,35 +1497,35 @@ Int2eV3::choose_center(int am12, int am34, int m)
   if (am12==0) return 3;
   if (am34==0) return 1;
 
-  if (!inthave.i[am12-1][am34][m]) {
+  if (!inthave(am12-1,am34,m)) {
     need1 += INT_NCART(am12-1)*INT_NCART(am34);
     }
-  if (!inthave.i[am12-1][am34][m+1]) {
+  if (!inthave(am12-1,am34,m+1)) {
     need1 += INT_NCART(am12-1)*INT_NCART(am34);
     }
-  if ((am12>1) && (!inthave.i[am12-2][am34][m])) {
+  if ((am12>1) && (!inthave(am12-2,am34,m))) {
     need1 += INT_NCART(am12-2)*INT_NCART(am34);
     }
-  if ((am12>1) && (!inthave.i[am12-2][am34][m+1])) {
+  if ((am12>1) && (!inthave(am12-2,am34,m+1))) {
     need1 += INT_NCART(am12-2)*INT_NCART(am34);
     }
-  if (!inthave.i[am12-1][am34-1][m+1]) {
+  if (!inthave(am12-1,am34-1,m+1)) {
     need1 += INT_NCART(am12-1)*INT_NCART(am34-1);
     }
 
-  if (!inthave.i[am12][am34-1][m]) {
+  if (!inthave(am12,am34-1,m)) {
     need3 += INT_NCART(am12)*INT_NCART(am34-1);
     }
-  if (!inthave.i[am12][am34-1][m+1]) {
+  if (!inthave(am12,am34-1,m+1)) {
     need3 += INT_NCART(am12)*INT_NCART(am34-1);
     }
-  if ((am34>1) && (!inthave.i[am12][am34-2][m])) {
+  if ((am34>1) && (!inthave(am12,am34-2,m))) {
     need3 += INT_NCART(am12)*INT_NCART(am34-2);
     }
-  if ((am34>1) && (!inthave.i[am12][am34-2][m+1])) {
+  if ((am34>1) && (!inthave(am12,am34-2,m+1))) {
     need3 += INT_NCART(am12)*INT_NCART(am34-2);
     }
-  if (!inthave.i[am12-1][am34-1][m+1]) {
+  if (!inthave(am12-1,am34-1,m+1)) {
     need3 += INT_NCART(am12-1)*INT_NCART(am34-1);
     }
 

@@ -3,10 +3,7 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <tmpl.h>
-#include <math/array/math_lib.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/types.h>

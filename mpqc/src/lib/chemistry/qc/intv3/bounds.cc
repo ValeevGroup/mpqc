@@ -1,10 +1,8 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <tmpl.h>
-#include <math/array/math_lib.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/types.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/int2e.h>
@@ -34,13 +32,14 @@ Int2eV3::int_init_bounds_nocomp()
   if (int_Qvec) free(int_Qvec);
   
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
-  if(int_Qvec==NULL) {
-    fprintf(stderr,"int_init_bounds_nocomp: cannot malloc int_Qvec: %d\n",
-            nsht);
+  if(int_Qvec==0) {
+    cerr << scprintf("int_init_bounds_nocomp: cannot malloc int_Qvec: %d",
+                     nsht)
+         << endl;
     exit(1);
     }
 
-  int_Rvec = NULL;
+  int_Rvec = 0;
 
   int_Q = -126;
   for (i=0; i<nsht; i++) int_Qvec[i] = 0;
@@ -70,8 +69,8 @@ Int2eV3::int_init_bounds_1der_nocomp()
   
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   int_Rvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
-  if((int_Qvec==NULL) || (int_Rvec==NULL)) {
-    fprintf(stderr,"int_init_bounds_1der_nocomp: cannot malloc int_{R,Q}vec: %d\n",nsht);
+  if((int_Qvec==0) || (int_Rvec==0)) {
+    cerr << scprintf("int_init_bounds_1der_nocomp: cannot malloc int_{R,Q}vec: %d",nsht) << endl;
     exit(1);
     }
 
@@ -225,7 +224,8 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
   int sh1,sh2;
 
   if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
-    fprintf(stderr,"bounds.compute_bounds: all centers must be the same\n");
+    cerr << scprintf("bounds.compute_bounds: all centers must be the same")
+         << endl;
     exit(1);
     }
 
@@ -258,7 +258,8 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
   set_redundant(1);
 
   if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
-    fprintf(stderr,"bounds.compute_bounds: all centers must be the same\n");
+    cerr << scprintf("bounds.compute_bounds: all centers must be the same")
+         << endl;
     exit(1);
     }
 

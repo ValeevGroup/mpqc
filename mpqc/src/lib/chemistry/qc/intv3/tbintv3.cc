@@ -1,6 +1,4 @@
 
-#include <stdio.h>
-
 #include <chemistry/qc/intv3/tbintv3.h>
 
 TwoBodyIntV3::TwoBodyIntV3(const RefGaussianBasisSet& b1,

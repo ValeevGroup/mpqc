@@ -17,7 +17,8 @@ CXXSRC = fjt.cc offsets.cc tformv3.cc \
          int2e.cc comp2e.cc build2e.cc print2e.cc shift2e.cc init2e.cc \
          comp2e3c.cc \
          bounds.cc store.cc storage.cc \
-         obintv3.cc tbintv3.cc intv3.cc
+         obintv3.cc tbintv3.cc intv3.cc \
+         array.cc
 
 INC = fjt.h int1e.h int2e.h utils.h tformv3.h \
       tbintv3.h obintv3.h intv3.h cartitv3.h

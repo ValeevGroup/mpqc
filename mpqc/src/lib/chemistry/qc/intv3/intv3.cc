@@ -1,6 +1,4 @@
 
-#include <stdio.h>
-
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/tformv3.h>

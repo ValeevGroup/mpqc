@@ -6,18 +6,19 @@
 #define _chemistry_qc_intv3_fjt_h
 
 #include <util/ref/ref.h>
-#include <math/array/math_lib.h>
 
 class FJT: public VRefCount {
   private:
-    double_matrix_t gtable;
+    double **gtable;
 
     int maxj;
     double *denomarray;
     double wval_infinity;
     int itable_infinity;
 
-    double_vector_t int_fjttable;
+    double *int_fjttable;
+
+    int ngtable() const { return maxj + 7; }
   public:
     FJT(int n);
     ~FJT();

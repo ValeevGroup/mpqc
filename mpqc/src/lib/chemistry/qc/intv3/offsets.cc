@@ -1,7 +1,5 @@
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <math/array/math_lib.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/int2e.h>

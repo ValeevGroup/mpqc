@@ -1,9 +1,7 @@
 
-#include <stdio.h>
 #include <stdarg.h>
-#include <tmpl.h>
-#include <math/array/math_lib.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/types.h>
@@ -41,8 +39,8 @@ iswtch(int *i,int *j)
 static void
 fail()
 {
-  fprintf(stderr,"failing module:\n%s\n",__FILE__);
-  exit(1);
+  cerr << scprintf("failing module:\n%s",__FILE__) << endl;
+  abort();
 }
 
 /* This computes the 2erep integrals for a shell quartet
@@ -111,11 +109,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   int p12,p34,p13p24;
   int eAB;
 
-#if 0
-  fprintf(stdout,"compute_erep: dam: (%d %d|%d %d)\n",
-          dam1,dam2,dam3,dam4);
-#endif
-
   /* Compute the offset shell numbers. */
   osh1 = *psh1 + bs1_shell_offset_;
   if (!int_unit2) osh2 = *psh2 + bs2_shell_offset_;
@@ -132,8 +125,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       ||( !int_unit2 && (sh2 < 0 || sh2 >= bs2_->nbasis()))
       || sh3 < 0 || sh3 >= bs3_->nbasis()
       ||( !int_unit4 && (sh4 < 0 || sh4 >= bs4_->nbasis()))) {
-    fprintf(stderr,"compute_erep has been incorrectly used\n");
-    fprintf(stderr,"shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
+    cerr << scprintf("compute_erep has been incorrectly used\n");
+    cerr << scprintf("shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
             sh1,bs1_->nbasis()-1,
             sh2,bs2_->nbasis()-1,
             sh3,bs3_->nbasis()-1,
@@ -368,7 +361,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   if (int_integral_storage) {
     if (dam1 || dam2 || dam3 || dam4) {
-      fprintf(stderr,"cannot use integral storage and dam\n");
+      cerr << scprintf("cannot use integral storage and dam\n");
       fail();
       }
     if (    !int_unit2
@@ -406,48 +399,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   /* Shift angular momentum from 1 to 2 and from 3 to 4. */
   int_shiftgcam(i,j,k,l,tam1,tam2,tam3,tam4, eAB);
-
-#if 0
-  fprintf(stdout,"Top source int_con_ints_array[%d][%d][%d][%d]:\n",
-          i,j,k,l);
-  fprintf(stdout,"am = (%d,%d,%d,%d)  n = (%d,%d,%d,%d)\n",
-         tam1+tam2,
-         0,
-         tam3+tam4,
-         0,
-         INT_NCART(tam1 + tam2),
-         1,
-         INT_NCART(tam3 + tam4),
-         1
-         );
-  int_print_n(stdout,int_con_ints_array[i][j][k][l].dp
-               [tam1 +tam2][0][tam3 +tam4][0],
-               INT_NCART(tam1+tam2),
-               1,
-               INT_NCART(tam3+tam4),
-               1,
-               0,0,0);
-  fprintf(stdout,"Targets:\n");
-  fprintf(stdout,"am = (%d,%d,%d,%d)  n = (%d,%d,%d,%d)\n",
-         tam1,
-         tam2,
-         tam3,
-         tam4,
-         INT_NCART(tam1),
-         INT_NCART(tam2),
-         INT_NCART(tam3),
-         INT_NCART(tam4));
-  int_print_n(stdout,int_con_ints_array[i][j][k][l].dp
-                     [tam1]
-                     [tam2]
-                     [tam3]
-                     [tam4],
-               INT_NCART(tam1),
-               INT_NCART(tam2),
-               INT_NCART(tam3),
-               INT_NCART(tam4),
-               0,0,0);
-#endif
 
   /* Place the integrals in the integral buffer. */
   /* If permute_ is not set, then repack the integrals while copying. */
@@ -523,14 +474,9 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
                       + (pogc2 + INT_CARTINDEX(pam2,pi2,pj2)) * psize34
                       + (pogc3 + INT_CARTINDEX(pam3,pi3,pj3)) * psize4
                       + (pogc4 + INT_CARTINDEX(pam4,pi4,pj4));
-#if 0
-   printf("perm: int_buffer[%3d] += % f\n",newindex,
-          int_con_ints_array[i][j][k][l]
-                 .dp[tam1][tam2][tam3][tam4][redundant_index]);
-#endif
             int_buffer[newindex]
               = int_con_ints_array[i][j][k][l]
-                 .dp[tam1][tam2][tam3][tam4][redundant_index];
+                 (tam1,tam2,tam3,tam4)[redundant_index];
             redundant_index++;
             END_FOR_CART
           END_FOR_CART
@@ -542,12 +488,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     int size34 =  size3 * size4;
     int size234 = size2 * size34;
     double* redund_ints =
-      int_con_ints_array[i][j][k][l].dp[tam1][tam2][tam3][tam4];
+      int_con_ints_array[i][j][k][l](tam1,tam2,tam3,tam4);
     redundant_index = 0;
-#if 0
-    printf("Using int_con_ints_array[%d][%d][%d][%d].dp[%d][%d][%d][%d]\n",
-           i,j,k,l,tam1,tam2,tam3,tam4);
-#endif
     FOR_CART(i1,j1,k1,tam1)
       FOR_CART(i2,j2,k2,tam2)
         FOR_CART(i3,j3,k3,tam3)
@@ -556,11 +498,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
                       + (ogc2 + INT_CARTINDEX(tam2,i2,j2)) * size34
                       + (ogc3 + INT_CARTINDEX(tam3,i3,j3)) * size4
                       + (ogc4 + INT_CARTINDEX(tam4,i4,j4));
-#if 0
-   printf("perm: int_buffer[%3d] += % f\n",newindex,
-          int_con_ints_array[i][j][k][l]
-                 .dp[tam1][tam2][tam3][tam4][redundant_index]);
-#endif
             int_buffer[newindex] = redund_ints[redundant_index];
             redundant_index++;
             END_FOR_CART
@@ -643,7 +580,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     int redundant_offset = 0;
     int nonredundant_offset = 0;
     if ((osh1 == osh4)&&(osh2 == osh3)&&(osh1 != osh2)) {
-      fprintf(stderr,"nonredundant integrals cannot be generated\n");
+      cerr << scprintf("nonredundant integrals cannot be generated\n");
       fail();
       }
     e12 = (int_unit2?0:(osh1 == osh2));
@@ -863,7 +800,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
     int i;
 
     if ((osh[0] == osh[3])&&(osh[1] == osh[2])&&(osh[0] != osh[1])) {
-      fprintf(stderr,"nonredundant integrals cannot be generated (1der)\n");
+      cerr << scprintf("nonredundant integrals cannot be generated (1der)\n");
       fail();
       }
 
@@ -918,7 +855,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
   shell4 = &bs4_->shell(*psh4);
 
   if ((dercenter<0) || (dercenter > 3)) {
-    fprintf(stderr,"illegal derivative center -- must be 0, 1, 2, or 3\n");
+    cerr << scprintf("illegal derivative center -- must be 0, 1, 2, or 3\n");
     fail();
     }
 
@@ -1235,7 +1172,7 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
     int i;
 
     if ((osh[0] == osh[3])&&(osh[1] == osh[2])&&(osh[0] != osh[1])) {
-      fprintf(stderr,"nonredundant integrals cannot be generated (1der)\n");
+      cerr << scprintf("nonredundant integrals cannot be generated (1der)\n");
       fail();
       }
 

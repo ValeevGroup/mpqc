@@ -1,11 +1,6 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-extern "C" {
-#include <math/array/math_lib.h>
-}
 
 #include <util/misc/regtime.h>
 #include <util/keyval/keyval.h>

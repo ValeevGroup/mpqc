@@ -1,10 +1,8 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <tmpl.h>
-#include <math/array/math_lib.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/flags.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/types.h>
@@ -14,8 +12,8 @@
 static void
 fail()
 {
-  fprintf(stderr,"failing module:\n%s\n",__FILE__);
-  exit(1);
+  cerr << scprintf("failing module:\n%s",__FILE__) << endl;
+  abort();
 }
 
 /* Initialize the 2e integral computation routines.
@@ -58,7 +56,7 @@ Int2eV3::int_initialize_erep(int storage, int order,
 
   /* See if the order of derivative needed is allowed. */
   if (order > 1) {
-    fprintf(stderr,"int_initialize_erep cannot handle order>1, yet\n");
+    cerr << scprintf("int_initialize_erep cannot handle order>1, yet\n");
     }
 
   if (order > 0) {
@@ -69,9 +67,9 @@ Int2eV3::int_initialize_erep(int storage, int order,
 
   /* A noncritical limitation for now. */
   if ((cs1 != cs2) || (cs2 != cs3) || (cs3 != cs4)) {
-    fprintf(stderr,"libint: because the int_compute_erep routine\n");
-    fprintf(stderr,"might permute centers around, different centers\n");
-    fprintf(stderr,"cannot be given (but this can be easily fixed)\n");
+    cerr << scprintf("libint: because the int_compute_erep routine\n");
+    cerr << scprintf("might permute centers around, different centers\n");
+    cerr << scprintf("cannot be given (but this can be easily fixed)\n");
     fail();
     }
 
@@ -203,7 +201,7 @@ Int2eV3::int_initialize_erep(int storage, int order,
                 *cs4->max_nfunction_in_shell();
   if (order==0) {
     int_buffer = (double *) malloc(sizeof(double) * maxsize);
-    int_derint_buffer = NULL;
+    int_derint_buffer = 0;
     }
   else if (order==1) {
     int nderint;
@@ -216,13 +214,13 @@ Int2eV3::int_initialize_erep(int storage, int order,
     int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
     int_derint_buffer = (double *) malloc(sizeof(double) * nderint);
     if (!int_derint_buffer) {
-      fprintf(stderr,"couldn't malloc intermed storage for derivative ints\n");
+      cerr << scprintf("couldn't malloc intermed storage for derivative ints\n");
       fail();
       }
     }
 
   if (!int_buffer) {
-    fprintf(stderr,"couldn't allocate integrals\n");
+    cerr << scprintf("couldn't allocate integrals\n");
     fail();
     }
 
@@ -238,14 +236,7 @@ Int2eV3::int_done_erep()
   if (int_derint_buffer) free(int_derint_buffer);
   free(int_buffer);
   if (int_store1) {
-    free_double_matrix(&int_shell_r);
-    free_int_vector(&int_shell_to_prim);
-    }
-  if (int_store2) {
-    free_double_matrix(&int_prim_zeta);
-    free_double_matrix(&int_prim_oo2zeta);
-    free_double_array3(&int_prim_p);
-    free_double_matrix(&int_prim_k);
+    delete[] int_shell_to_prim;
     }
   int_done_buildgc();
   int_done_shiftgc();
@@ -257,24 +248,20 @@ void
 Int2eV3::alloc_inter(int nprim,int nshell)
 {
   if (int_store1) {
-    if (  allocbn_double_matrix(&int_shell_r, "n1 n2", nshell, 3)
-        ||allocbn_int_vector(&int_shell_to_prim, "n", nshell)
-        ) {
-      fprintf(stderr,"problem allocating O(n) integral intermediates for");
-      fprintf(stderr," %d shells and %d primitives\n",nshell,nprim);
+    int_shell_r.set_dim(nshell,3);
+    int_shell_to_prim = new int[nshell];
+    if (int_shell_to_prim == 0) {
+      cerr << "problem allocating O(n) integral intermediates for";
+      cerr << scprintf(" %d shells and %d primitives",nshell,nprim);
+      cerr << endl;
       fail();
       }
     }
   if (int_store2) {
-    if (  allocbn_double_matrix(&int_prim_zeta, "n1 n2", nprim, nprim)
-        ||allocbn_double_matrix(&int_prim_oo2zeta, "n1 n2", nprim, nprim)
-        ||allocbn_double_array3(&int_prim_p, "n1 n2 n3", nprim, nprim, 3)
-        ||allocbn_double_matrix(&int_prim_k, "n1 n2", nprim, nprim)
-        ) {
-      fprintf(stderr,"problem allocating O(n^2) integral intermediates for");
-      fprintf(stderr," %d shells and %d primitives\n",nshell,nprim);
-      fail();
-      }
+    int_prim_zeta.set_dim(nprim,nprim);
+    int_prim_oo2zeta.set_dim(nprim,nprim);
+    int_prim_k.set_dim(nprim,nprim);
+    int_prim_p.set_dim(nprim,nprim,3);
     }
   }
 
@@ -293,11 +280,11 @@ Int2eV3::compute_shell_1(RefGaussianBasisSet cs,
 
       /* The offset shell geometry vectors. */
       for (int xyz=0; xyz<3; xyz++) {
-        int_shell_r.d[offset][xyz] = cs->molecule()->atom(i).r(xyz);
+        int_shell_r(offset,xyz) = cs->molecule()->atom(i).r(xyz);
         }
 
       /* The number of the first offset primitive in a offset shell. */
-      int_shell_to_prim.i[offset] = iprim;
+      int_shell_to_prim[offset] = iprim;
 
       offset++;
       iprim += cs->shell(i,j).nprimitive();
@@ -340,19 +327,19 @@ Int2eV3::compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
             for (k2=0; k2<shell2->nprimitive(); k2++) {
 
               /* The zeta = alpha + beta intermediate. */
-              int_prim_zeta.d[offset1][offset2] =
+              int_prim_zeta(offset1,offset2) =
                 shell1->exponent(k1) + shell2->exponent(k2);
 
               /* The 1/(2 zeta) intermediate times 2.0. */
-              int_prim_oo2zeta.d[offset1][offset2] =
-                1.0/int_prim_zeta.d[offset1][offset2];
+              int_prim_oo2zeta(offset1,offset2) =
+                1.0/int_prim_zeta(offset1,offset2);
 
               /* The p = (alpha A + beta B) / zeta */
               for (i=0; i<3; i++) {
-                int_prim_p.d[offset1][offset2][i] =
+                int_prim_p(offset1,offset2,i) =
                   (  shell1->exponent(k1) * cs1->molecule()->atom(i1).r(i)
                    + shell2->exponent(k2) * cs2->molecule()->atom(i2).r(i))
-                  *  int_prim_oo2zeta.d[offset1][offset2];
+                  *  int_prim_oo2zeta(offset1,offset2);
                 }
 
               /* Compute AmB^2 */
@@ -364,16 +351,16 @@ Int2eV3::compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
                 }
 
               /* Compute the K intermediate. */
-              int_prim_k.d[offset1][offset2] =
+              int_prim_k(offset1,offset2) =
                    sqrt2pi54
-                 * int_prim_oo2zeta.d[offset1][offset2]
+                 * int_prim_oo2zeta(offset1,offset2)
                  * exp( -   shell1->exponent(k1) * shell2->exponent(k2)
-                          * int_prim_oo2zeta.d[offset1][offset2]
+                          * int_prim_oo2zeta(offset1,offset2)
                           * AmB2 );
 
               /* Finish the 1/(2 zeta) intermediate. */
-              int_prim_oo2zeta.d[offset1][offset2] =
-                0.5 * int_prim_oo2zeta.d[offset1][offset2];
+              int_prim_oo2zeta(offset1,offset2) =
+                0.5 * int_prim_oo2zeta(offset1,offset2);
 
               offset2++;
               }

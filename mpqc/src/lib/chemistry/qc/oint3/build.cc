@@ -3,12 +3,14 @@
 #endif
 
 #include <stdlib.h>
+#include <iostream.h>
+
 #include <chemistry/qc/oint3/build.h>
 
 int
 BuildIntV3::impossible_integral()
 {
-  fprintf(stderr,"oint3/build.cc: tried to build a impossible integral\n");
+  cerr << "oint3/build.cc: tried to build a impossible integral" << endl;
   abort();
   return(0);
 }

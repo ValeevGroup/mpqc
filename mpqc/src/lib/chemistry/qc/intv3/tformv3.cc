@@ -3,18 +3,11 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-extern "C" {
-#include <math/array/matrix.h>
-#include <math/array/matrixzero.h>
-#include <math/array/matrixprnt.h>
-#include <math/array/matrixallc.h>
-}
-
+#include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/tformv3.h>
 #include <chemistry/qc/intv3/utils.h>
@@ -42,7 +35,7 @@ SphericalTransformIterV3::SphericalTransformIterV3(int l, int inverse)
     if (inverse) transform_ = &itrans4;
     else transform_ = &trans4;
   } else {
-    fprintf(stderr, "SphericalTransformIterV3: cannot handle l = %d\n", l);
+    cerr << scprintf("SphericalTransformIterV3: cannot handle l = %d\n", l);
     abort();
   }
 }

@@ -516,7 +516,7 @@ case $target in
 changequote(<<, >>)dnl
   i[456]86-* | pentium | pentiumpro | k6 | athlon)
 changequote([, ])dnl
-    if X$STRICT_ARCH = Xyes; then
+    if test X$STRICT_ARCH = Xyes; then
       cpu_arch_option="-march=$target_cpu"
     else
       cpu_arch_option="-mcpu=$target_cpu"
@@ -527,7 +527,7 @@ changequote([, ])dnl
     if test X$GXX = Xyes; then
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC $cpu_arch_option"
     fi
-    AC_MSG_RESULT(IA-32)
+    AC_MSG_RESULT(IA-32: $cpu_arch_option)
   ;;
   i860-intel-puma*)
     if test X$GCC = Xyes; then

@@ -118,7 +118,7 @@ MTMPIThread::run_one()
       break;
   case MemoryDataRequest::Replace:
       nreq_recd_++;
-      MPI_Send(&tag_,1,MPI_INTEGER,req.node(),rtag,mem_->comm_);
+      MPI_Send(&tag_,1,MPI_INT,req.node(),rtag,mem_->comm_);
       MPI_Recv(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
                req.node(),tag_,mem_->comm_,&status);
       if (req.lock())
@@ -126,7 +126,7 @@ MTMPIThread::run_one()
       break;
   case MemoryDataRequest::DoubleSum:
       nreq_recd_++;
-      MPI_Send(&tag_,1,MPI_INTEGER,req.node(),rtag,mem_->comm_);
+      MPI_Send(&tag_,1,MPI_INT,req.node(),rtag,mem_->comm_);
       dsize = req.size()/sizeof(double);
       dremain = dsize;
       doffset = req.offset()/sizeof(double);
@@ -286,7 +286,7 @@ MTMPIMemoryGrp::replace_data(void *data, int node, int offset, int size,
   // wait for the go ahead message
   MPI_Status status;
   int rtag;
-  MPI_Recv(&rtag,1,MPI_INTEGER,node,tag,comm_,&status);
+  MPI_Recv(&rtag,1,MPI_INT,node,tag,comm_,&status);
 
   // send the data
   MPI_Send(data,size,MPI_BYTE,node,rtag,comm_);
@@ -310,7 +310,7 @@ MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
   // wait for the go ahead message
   MPI_Status status;
   int rtag;
-  MPI_Recv(&rtag,1,MPI_INTEGER,node,tag,comm_,&status);
+  MPI_Recv(&rtag,1,MPI_INT,node,tag,comm_,&status);
 
   int dsize = size/sizeof(double);
   int dremain = dsize;

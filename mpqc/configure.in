@@ -849,8 +849,16 @@ AC_TRY_LINK([
 ],[
   int val = 0;
   semctl(0,0,0,val);
+],[
+case $target in
+  *-sgi-irix*)
+    AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(sgi-irix, yes)
+  ;;
+  *)
+    AC_MSG_RESULT(no)
+  ;;
+esac
 ],
-AC_MSG_RESULT(no),
 AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(yes))
 AC_LANG_RESTORE
 

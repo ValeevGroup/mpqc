@@ -194,6 +194,67 @@ MolecularFrequencies::save_data_state(StateOut& so)
 }
 
 void
+MolecularFrequencies::restore_displacements(StateIn& si)
+{
+  int i;
+
+  original_point_group_.restore_state(si);
+  displacement_point_group_.restore_state(si);
+
+  si.get(disp_);
+  si.get(ndisp_);
+  si.get(nirrep_);
+  si.get(nexternal_);
+
+  displacements_ = new RefSCMatrix[nirrep_];
+  for (i=0; i < nirrep_; i++) {
+      int ndisp;
+      si.get(ndisp);
+      RefSCDimension ddisp = new SCDimension(ndisp);
+      displacements_[i] = matrixkit()->matrix(d3natom_,ddisp);
+      displacements_[i].restore(si);
+    }
+
+  gradients_ = new RefSCVector[ndisplace()];
+  for (i=0; i < ndisp_; i++) {
+      int ndisp;
+      si.get(ndisp);
+      RefSCDimension ddisp = new SCDimension(ndisp);
+      gradients_[i] = matrixkit()->vector(ddisp);
+      gradients_[i].restore(si);
+    }
+
+  original_geometry_ = matrixkit()->vector(d3natom_);
+  original_geometry_.restore(si);
+  disym_.restore_state(si);
+}
+
+void
+MolecularFrequencies::checkpoint_displacements(StateOut& so)
+{
+  int i;
+  original_point_group_.save_state(so);
+  displacement_point_group_.save_state(so);
+
+  so.put(disp_);
+  so.put(ndisp_);
+  so.put(nirrep_);
+  so.put(nexternal_);
+  for (i=0; i < nirrep_; i++) {
+      so.put(displacements_[i].ncol());
+      displacements_[i].save(so);
+    }
+
+  for (i=0; i < ndisp_; i++) {
+      so.put(gradients_[i].n());
+      gradients_[i].save(so);
+    }
+
+  original_geometry_.save(so);
+  disym_.save_state(so);
+}
+
+void
 MolecularFrequencies::compute_displacements()
 {
   // create the character table for the point group

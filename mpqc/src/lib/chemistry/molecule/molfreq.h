@@ -104,6 +104,9 @@ class MolecularFrequencies: public SavableState {
     void set_gradient(int disp, const RefSCVector &grad);
     void set_energy(const RefMolecularEnergy& mole);
 
+    void checkpoint_displacements(StateOut&);
+    void restore_displacements(StateIn&);
+
     void thermochemistry(int degeneracy, double temp=298.15, double pres=1.0);
 
     void animate(const RefRender&, const RefMolFreqAnimate&);

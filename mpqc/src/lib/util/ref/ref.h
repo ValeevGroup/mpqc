@@ -129,6 +129,10 @@
 #  endif
 #endif
 
+#ifndef REF_ALWAYS_USE_LOCKS
+#  define REF_ALWAYS_USE_LOCKS 0
+#endif
+
 #if REF_CHECK_STACK
 #include <unistd.h>
 #ifndef HAVE_SBRK_DEC
@@ -148,7 +152,11 @@ extern "C" void * sbrk(ssize_t);
 #if REF_USE_LOCKS
 #define __REF_LOCK__(p) p->lock_ptr()
 #define __REF_UNLOCK__(p) p->unlock_ptr()
+#if REF_ALWAYS_USE_LOCKS
+#define __REF_INITLOCK__() use_locks(true)
+#else
 #define __REF_INITLOCK__() ref_lock_ = 0xff
+#endif
 #else
 #define __REF_LOCK__(p)
 #define __REF_UNLOCK__(p)

@@ -140,8 +140,10 @@ PointGroup::set_symbol(const char *sym)
 {
   if (sym) {
     if (symb) delete[] symb;
-    symb = new char[strlen(sym)+1];
-    strcpy(symb,sym);
+    int len;
+    symb = new char[(len=strlen(sym))+1];
+    for (int i=0; i<len; i++) symb[i] = (char) tolower(sym[i]);
+    symb[len] = '\0';
   } else {
     set_symbol("c1");
   }

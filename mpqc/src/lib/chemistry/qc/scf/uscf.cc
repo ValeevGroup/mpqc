@@ -31,7 +31,9 @@
 
 #include <math.h>
 #include <limits.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <util/state/stateio.h>
 

@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
@@ -67,12 +68,15 @@ R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types
 R12IntsAcc_MemoryGrp::~R12IntsAcc_MemoryGrp()
 {
   for(int i=0;i<nocc_act_;i++)
-    for(int j=0;j<nocc_act_;j++) {
-      release_pair_block(i,j,eri);
-      release_pair_block(i,j,r12);
-      release_pair_block(i,j,r12t1);
-      release_pair_block(i,j,r12t2);
-    }
+    for(int j=0;j<nocc_act_;j++)
+      if (!is_local(i,j)) {
+	int ij = ij_index(i,j);
+	for(int oper_type=0; oper_type<num_te_types(); oper_type++)
+	  if (pairblk_[ij].ints_[oper_type] != NULL) {
+	    ExEnv::outn() << indent << mem_->me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
+	    throw std::runtime_error("Logic error: R12IntsAcc_MemoryGrp::~ : some nonlocal blocks have not been released!");
+	  }
+      }
   delete[] pairblk_;
 }
 
@@ -129,56 +133,27 @@ R12IntsAcc_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type)
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
-  // Can retrieve both local ...
-  if (is_local(i,j)) {
-    switch(oper_type) {
-      // Locally subblocks are store next to each other
-    case eri:
-      pb->refcount_[eri] += 1;
-      return pb->ints_[eri];
-    case r12:
-      pb->refcount_[r12] += 1;
-      return pb->ints_[r12];
-    case r12t1:
-      pb->refcount_[r12t1] += 1;
-      return pb->ints_[r12t1];
-    case r12t2:
-      pb->refcount_[r12t2] += 1;
-      return pb->ints_[r12t2];
-    default:
-      return 0;
-    }
+  if (!is_local(i,j) && pb->ints_[oper_type] == 0) {
+    pb->ints_[oper_type] = (double *) mem_->obtain_readonly(pb->offset_ + (distsize_t)oper_type*blksize_, blksize_);
   }
-  // ... and remote blocks
-  else {
-    if (pb->ints_[oper_type] == 0) {
-      pb->ints_[oper_type] = (double *) mem_->obtain_readonly(pb->offset_ + (distsize_t)oper_type*blksize_, blksize_);
-      pb->refcount_[oper_type] += 1;
-    }
-    return pb->ints_[oper_type];
-  }
+  pb->refcount_[oper_type] += 1;
+  return pb->ints_[oper_type];
 }
 
 void
 R12IntsAcc_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type)
 {
-  if (is_local(i,j)) {
-    // do nothing
-    int ij = ij_index(i,j);
-    struct PairBlkInfo *pb = &pairblk_[ij];
-    if (pb->refcount_[oper_type] > 0)
-      pb->refcount_[oper_type] -= 1;
+  int ij = ij_index(i,j);
+  struct PairBlkInfo *pb = &pairblk_[ij];
+  if (pb->refcount_[oper_type] <= 0) {
+    ExEnv::outn() << indent << mem_->me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
+    throw std::runtime_error("Logic error: R12IntsAcc_MemoryGrp::release_pair_block: refcount is already zero!");
   }
-  else {
-    int ij = ij_index(i,j);
-    struct PairBlkInfo *pb = &pairblk_[ij];
-    if (pb->refcount_[oper_type] > 0)
-      pb->refcount_[oper_type] -= 1;
-    if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 0) {
-      mem_->release_readonly(pb->ints_[oper_type],pb->offset_+ oper_type*blksize_,blksize_);
-      pb->ints_[oper_type] = NULL;
-    }
+  if (!is_local(i,j) && pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
+    mem_->release_readonly(pb->ints_[oper_type],pb->offset_+ oper_type*blksize_,blksize_);
+    pb->ints_[oper_type] = NULL;
   }
+  pb->refcount_[oper_type] -= 1;
 }
 
 // Local Variables:

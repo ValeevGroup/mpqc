@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
@@ -76,9 +77,12 @@ R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
 {
   for(int i=0;i<nocc_act_;i++)
     for(int j=0;j<nocc_act_;j++) {
-      release_pair_block(i,j,eri);
-      release_pair_block(i,j,r12);
-      release_pair_block(i,j,r12t1);
+      int ij = ij_index(i,j);
+      for(int oper_type=0; oper_type<num_te_types(); oper_type++)
+	if (pairblk_[ij].ints_[oper_type] != NULL) {
+	  ExEnv::outn() << indent << mem_->me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
+	  throw std::runtime_error("Logic error: R12IntsAcc_MPIIOFile::~ : some nonlocal blocks have not been released!");
+	}
     }
   delete[] pairblk_;
   delete[] filename_;
@@ -113,6 +117,10 @@ R12IntsAcc_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type)
 {
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
+  if (pb->refcount_[oper_type] <= 0) {
+    ExEnv::outn() << indent << mem_->me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
+    throw std::runtime_error("Logic error: R12IntsAcc_MPIIOFile::release_pair_block: refcount is already zero!");
+  }
   if (pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
     delete[] pb->ints_[oper_type];
     pb->ints_[oper_type] = NULL;

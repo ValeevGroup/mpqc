@@ -60,7 +60,6 @@ MBPT2_R12::compute_energy_a_()
   }
   int nocc_act = nocc - nfzc;
   int me = msg_->me();
-  if (me == 0) {
 
     r12eval_ = new R12IntEval(*this);
     r12eval_->set_stdapprox(stdapprox_);
@@ -74,6 +73,8 @@ MBPT2_R12::compute_energy_a_()
     RefSCMatrix Vaa, Xaa, Baa, Vab, Xab, Bab;
     RefSCVector emp2_aa, emp2_ab;
     r12eval_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab,emp2_aa,emp2_ab);
+
+  if (me == 0) {
 
     // Need eigenvalues
     RefDiagSCMatrix evalmat = r12eval_->evals();

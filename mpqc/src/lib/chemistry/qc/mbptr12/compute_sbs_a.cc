@@ -696,10 +696,12 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     index = 0;
     ij_index = 0;
     for (int i=0; i<ni; i++) {
+      int ii = i + i_offset - nfzc;
       for (int j=0; j<nocc_act; j++) {
+	int jj = j;
         double ecorr_ij = 0.0;
-	int ij_aa = (i > j) ? i*(i-1)/2 + j : j*(j-1)/2 + i;
-	int ij_ab = i*nocc_act + j;
+	int ij_aa = (ii > jj) ? ii*(ii-1)/2 + jj : jj*(jj-1)/2 + ii;
+	int ij_ab = ii*nocc_act + jj;
 	double eaa = 0.0;
 	double eab = 0.0;
 
@@ -735,15 +737,22 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	    } // exit a loop
 	  }   // exit b loop
 	  ij_index++;
-	  if (i != j)
+	  if (ii > jj) {
 	    emp2_aa.set_element(ij_aa,eaa);
+	    ExEnv::outn() << indent
+			  << scprintf("AA correlation energy for pair %3d %3d = %16.12f",
+				      i+i_offset, j+nfzc, eaa) << endl;
+	  }
 	  emp2_ab.set_element(ij_ab,eab);
+	  ExEnv::outn() << indent
+			<< scprintf("AB correlation energy for pair %3d %3d = %16.12f",
+				    i+i_offset, j+nfzc, eab) << endl;
 	}     // endif
 	if (debug_) {
 	  msg->sum(ecorr_ij);
 	  ExEnv::out0() << indent
 			<< scprintf("correlation energy for pair %3d %3d = %16.12f",
-				    i+i_offset, j, ecorr_ij)
+				    i+i_offset, j+nfzc, ecorr_ij)
 			<< endl;
 	}
       }         // exit j loop
@@ -860,14 +869,12 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   if (r12intsacc->has_access(me)) {
     int kl = 0;
-    int kl_aa=-1;
     for(int k=0;k<nocc_act;k++)
       for(int l=0;l<=k;l++,kl++) {
         int kl_proc = kl%nproc_with_ints;
         if (kl_proc != proc_with_ints[me])
           continue;
-	if (k != l)
-	  ++kl_aa;
+	int kl_aa = k*(k-1)/2 + l;
 	int kl_ab = k*nocc_act + l;
 	int lk_ab = l*nocc_act + k;
         
@@ -880,12 +887,11 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
         tim_exit("MO ints retrieve");
 
 	int ij = 0;
-        int ij_aa=-1;
         for(int i=0;i<nocc_act;i++)
           for(int j=0;j<=i;j++,ij++) {
 
-	    if (i != j)
-	      ++ij_aa;
+
+	    int ij_aa = i*(i-1)/2 + j;
 	    int ij_ab = i*nocc_act + j;
 	    int ji_ab = j*nocc_act + i;
             
@@ -1062,18 +1068,37 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   if (debug_)
     ExEnv::out0() << indent << "Computed intermediates V, X, and T" << endl;
   
+  // If running in distributed environment use Message group to collect intermediates and pair energies on node 0
   if (nproc > 1) {
-    // Use MemoryGrp to send all contributions to intermediates V, X, and T to node 0
+    // should only collect contributions from the nodes that computed the intermediates
     msg->sum(Vaa_ijkl,naa*naa,0,0);
     msg->sum(Vab_ijkl,nab*nab,0,0);
     msg->sum(Xaa_ijkl,naa*naa,0,0);
     msg->sum(Xab_ijkl,nab*nab,0,0);
     msg->sum(Taa_ijkl,naa*naa,0,0);
     msg->sum(Tab_ijkl,nab*nab,0,0);
+
+    int naa = emp2_aa.dim().n();
+    int nab = emp2_ab.dim().n();
+    double* epair_aa = new double[naa];
+    double* epair_ab = new double[nab];
+    bzerofast(epair_aa,naa);
+    bzerofast(epair_ab,nab);
+    emp2_aa.convert(epair_aa);
+    emp2_ab.convert(epair_ab);
+    msg->sum(epair_aa,naa,0,0);
+    msg->sum(epair_ab,nab,0,0);
+    msg->sync();
+    if (me == 0) {
+      emp2_aa.assign(epair_aa);
+      emp2_ab.assign(epair_ab);
+    }
+    delete[] epair_aa;
+    delete[] epair_ab;
   }
   
   if (debug_)
-    ExEnv::out0() << indent << "Gathered intermediates V, X, and T on node 0" << endl;
+    ExEnv::out0() << indent << "Gathered intermediates V, X, and T and MP2 pair energies on node 0" << endl;
   
   // Add intermediates contribution to their global values
   if (me == 0) {

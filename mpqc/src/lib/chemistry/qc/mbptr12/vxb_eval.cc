@@ -141,7 +141,6 @@ void R12IntEval::compute(RefSCMatrix& Vaa,
   int me = r12info()->msg()->me();
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
-  if (me == 0) {
     Vaa = local_matrix_kit->matrix(dim_aa_,dim_aa_);
     Baa = local_matrix_kit->matrix(dim_aa_,dim_aa_);
     Xaa = local_matrix_kit->matrix(dim_aa_,dim_aa_);
@@ -163,9 +162,10 @@ void R12IntEval::compute(RefSCMatrix& Vaa,
       ExEnv::out0() << indent << "Allocated V, B, and X intermediates" << endl;
     
     eval_sbs_a_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab,emp2pair_aa,emp2pair_ab);
-    eval_abs_a_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab);
+    if (r12info_->basis() != r12info_->basis_aux())
+      eval_abs_a_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab);
 
-    if (debug_) {
+    if (me == 0 && debug_) {
       Vaa.print("Alpha-alpha V matrix");
       Baa.print("Alpha-alpha B matrix");
       Xaa.print("Alpha-alpha X matrix");
@@ -191,7 +191,6 @@ void R12IntEval::compute(RefSCMatrix& Vaa,
 		 << "-Tr(V)/Tr(B) for alpha-beta pairs:" << indent <<
       scprintf("%10.6lf",(-1.0)*traceV_ab/traceB_ab) << endl;
 
-  }
     
 }
 			 

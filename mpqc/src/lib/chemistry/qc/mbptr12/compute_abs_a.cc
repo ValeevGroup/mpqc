@@ -849,15 +849,13 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   if (r12intsacc->has_access(me)) {
     int kl = 0;
-    int kl_aa=-1;
     for(int k=0;k<nocc_act;k++)
       for(int l=0;l<=k;l++,kl++) {
         double pfac_kl = (k==l) ? oosqrt2 : 1.0;
         int kl_proc = kl%nproc_with_ints;
         if (kl_proc != proc_with_ints[me])
           continue;
-	if (k != l)
-	  ++kl_aa;
+	int kl_aa = k*(k-1)/2 + l;
 	int kl_ab = k*nocc_act + l;
 	int lk_ab = l*nocc_act + k;
         
@@ -875,13 +873,11 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
         tim_exit("MO ints retrieve");
 
 	int ij = 0;
-        int ij_aa=-1;
         for(int i=0;i<nocc_act;i++)
           for(int j=0;j<=i;j++,ij++) {
 
             double pfac_ij = (i==j) ? oosqrt2 : 1.0;
-	    if (i != j)
-	      ++ij_aa;
+	    int ij_aa = i*(i-1)/2 + j;
 	    int ij_ab = i*nocc_act + j;
 	    int ji_ab = j*nocc_act + i;
             

@@ -20,7 +20,7 @@ class GrpSumReduce: public GrpReduce {
   public:
     void reduce(void*target, void*data, int nelement, int element_size) {
         T *v1 = (T*)target, *v2 = (T*) data;
-        for (int i=0; i<nelment; i++) {
+        for (int i=0; i<nelement; i++) {
             v1[i] += v2[i];
           }
       }

@@ -48,12 +48,22 @@ class CorrelationTable: public VRefCount {
     int n_;
     int *ngamma_;
     int **gamma_;
+
+    void clear();
   public:
+    CorrelationTable();
+
     //. Create a correlation table for the two groups.
     CorrelationTable(const RefPointGroup& group,
                      const RefPointGroup& subgroup);
 
     ~CorrelationTable();
+
+    //. Initalize the correlation table.  Returns 0 for success and nonzero
+    //for failure.  This will fail if the subgroup is not really a subgroup
+    //of group.
+    int initialize_table(const RefPointGroup& group,
+                         const RefPointGroup& subgroup);
 
     //. Returns the number of irreps in the high order group.
     int n() const { return n_; }

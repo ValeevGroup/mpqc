@@ -18,8 +18,10 @@ main(int argc, char *argv[])
 
   if (pg2.nonnull()) {
       pg2->char_table().print();
-      CorrelationTable corrtab(pg,pg2);
-      corrtab.print();
+      if (argc <= 3) {
+          CorrelationTable corrtab(pg,pg2);
+          corrtab.print();
+        }
     }
 
   // test given axis rearrangements

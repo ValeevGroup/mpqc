@@ -34,9 +34,51 @@
 
 ////////////////////////////////////////////////////////////////////////
 
+CorrelationTable::CorrelationTable():
+  n_(0),
+  ngamma_(0),
+  gamma_(0)
+{
+}
+
 CorrelationTable::CorrelationTable(const RefPointGroup& group,
+                                   const RefPointGroup& subgroup):
+  n_(0),
+  ngamma_(0),
+  gamma_(0)
+{
+  int rc = initialize_table(group,subgroup);
+  if (rc == -1) {
+      cerr << node0
+           << "ERROR: CorrelationTable: too many symop matches" << endl;
+      abort();
+    }
+  else if (rc == -2) {
+      cerr << node0
+           << "ERROR: CorrelationTable: not a subgroup or wrong ref frame"
+           << endl;
+      abort();
+    }
+  else if (rc == -3) {
+      cerr << node0 << "ERROR: CorrelationTable: degeneracies don't add up:"
+           << endl
+           << "  only nondegenerate groups supported"
+           << endl;
+      abort();
+    }
+}
+
+CorrelationTable::~CorrelationTable()
+{
+  clear();
+}
+
+int
+CorrelationTable::initialize_table(const RefPointGroup& group,
                                    const RefPointGroup& subgroup)
 {
+  clear();
+
   group_ = group;
   subgroup_ = subgroup;
 
@@ -82,17 +124,16 @@ CorrelationTable::CorrelationTable(const RefPointGroup& group,
         }
       }
     if (found > 1) {
-      cerr << node0
-           << "ERROR: CorrelationTable: too many symop matches" << endl;
-      abort();
+      delete[] so_to_subso;
+      delete[] subso_to_so;
+      return -1;
       }
     }
   for (i=0; i<subct.order(); i++) {
     if (subso_to_so[i] == -1) {
-      cerr << node0
-           << "ERROR: CorrelationTable: not a subgroup or wrong ref frame"
-           << endl;
-      abort();
+      delete[] so_to_subso;
+      delete[] subso_to_so;
+      return -2;
       }
     }
 
@@ -122,6 +163,7 @@ CorrelationTable::CorrelationTable(const RefPointGroup& group,
     }
 
   delete[] so_to_subso;
+  delete[] subso_to_so;
 
   for (i=0; i<n(); i++) {
     int degen = ct.gamma(i).degeneracy();
@@ -130,16 +172,13 @@ CorrelationTable::CorrelationTable(const RefPointGroup& group,
       subdegen += subct.gamma(gamma(i,j)).degeneracy();
       }
     if (degen != subdegen) {
-      cerr << node0 << "ERROR: CorrelationTable: degeneracies don't add up:"
-           << endl
-           << "  only nondegenerate groups supported"
-           << endl;
-      abort();
+      return -3;
       }
     }
 }
 
-CorrelationTable::~CorrelationTable()
+void
+CorrelationTable::clear()
 {
   for (int i=0; i<n_; i++) {
     delete[] gamma_[i];

@@ -1,29 +1,12 @@
 #!/usr/bin/perl
 # Use -*-perl-*- mode in emacs.
 
-$gettingdoc = 0;
-$doc = '';
+$class = '';
+$classdoc = '';
 %item = ();
 while(<>) {
-    if ($gettingdoc) {
-        if (/^[ \t]*\/\/[ \t]*(.*)/) {
-            $doc = "$doc\n$1";
-        }
-        else {
-            /[ \t]*(.*);[ \t]*/;
-            $member = $1;
-            $item{$interface} = "$item{$interface}\@item $member$doc\n";
-            $doc = '';
-            $gettingdoc = 0;
-        }
-    }
-    elsif (/^[ \t]*class[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/) {
-        $class = $1;
-        $interface = 'pri';
-        $private = '';
-        $protected = '';
-        $public = '';
-        do write_doc();
+    if (/^[ \t]*class[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/) {
+        do new_class($1,'');
     }
     elsif (/^[ \t]*private[ \t]*:/) {
         $interface = 'pri';
@@ -35,27 +18,70 @@ while(<>) {
         $interface = 'pro';
     }
     elsif (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]+(.*)/) {
-        $gettingdoc = 1;
-        $doc = "$doc\n$1";
+        do get_doc($1);
     }
     elsif (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]*$/) {
-        $gettingdoc = 1;
+        do get_doc('');
     }
 
 }
 
 do write_doc();
 
+sub new_class {
+    # flush out the documentation for the previous class
+    do write_doc();
+    $class = $_[0];
+    $classdoc = $_[1];
+    $interface = 'pri';
+    $private = '';
+    $protected = '';
+    $public = '';
+}
+
 sub write_doc {
+    if ($classdoc) {
+        if (!open(OUTPUT, ">$class.texi")) {
+            die "Can't open $class.texi: $!";
+        }
+        print "writing $class.texi\n";
+        print OUTPUT "$classdoc\n";
+        close(OUTPUT);
+    }
     for (keys(%item)) {
-        $filename = "$class" . "_" . "$_" . ".texi";
+        $filename = "$class.$_.texi";
         if (!open(OUTPUT, ">$filename")) {
             die "Can't open $filename: $!";
         }
+        print "writing $filename\n";
         print OUTPUT "\@table \@code\n";
         print OUTPUT $item{$_};
         print OUTPUT "\@end table\n";
         close(OUTPUT);
     }
     %item = ();
+    $classdoc = '';
+}
+
+sub get_doc {
+    $doc = $_[0];
+    while (<>) {
+        if (/^[ \t]*\/\/([Tt][Ee][Xx][Ii])?[ \t]*(.*)/) {
+            $doc = "$doc\n$2";
+        }
+        elsif (/^[ \t]*class[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/) {
+            do new_class($1,$doc);
+            last;
+        }
+        elsif (/[ \t]*(.*);[ \t]*/) {
+            $member = $1;
+            $item{$interface} = "$item{$interface}\@item $member\n$doc\n";
+            $doc = '';
+            last;
+        }
+        else {
+            print "Line: $_\n";
+            die "Could not parse line after documentation.";
+        }
+    }
 }

@@ -83,6 +83,9 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
       abort();
     }
     
+    if (istart >= iend || jstart >= jend)
+      continue;
+    
     int ishstart = gbs.function_to_shell(istart);
     int ishend = (iend) ? gbs.function_to_shell(iend-1) : 0;
 

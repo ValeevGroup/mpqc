@@ -243,13 +243,13 @@ IntegralV3::initialize_transforms()
 {
   maxl_ = -1;
   int maxam;
-  maxam = bs1_.nonnull?bs1_->max_angular_momentum():-1;
+  maxam = bs1_.nonnull()?bs1_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs2_.nonnull?bs2_->max_angular_momentum():-1;
+  maxam = bs2_.nonnull()?bs2_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs3_.nonnull?bs3_->max_angular_momentum():-1;
+  maxam = bs3_.nonnull()?bs3_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs4_.nonnull?bs4_->max_angular_momentum():-1;
+  maxam = bs4_.nonnull()?bs4_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
 
   st_ = new SphericalTransformV3**[maxl_+1];

@@ -1,0 +1,53 @@
+
+mole: [
+  <PSI_CI>: (
+    % NLP... input
+    value_accuracy = 1e-5
+    gradient_accuracy = 1e-4
+    % MolecularEnergy input
+    molecule<Molecule>: (
+        symmetry = c2v
+        % pdb_file = "input.pdb" % use this to get info from a pdb file
+        {atoms geometry} = {
+          H  [  -1.5  0.0  -0.3 ]
+          H  [   1.5  0.0  -0.3 ]
+          O  [   0.0  0.0   1.0 ]
+         }
+      )
+    coor<IntMolecularCoor>: (
+        molecule = $..:molecule
+        %scale_bonds = 2.0
+      )
+    % Wavefunction input
+    basis<GaussianBasisSet>: (
+        basisdir = "/usr/people/etseidl/basis/"
+        basisfiles = [ v2g90.ipv2 basis.ipv2 ]
+        molecule = $..:molecule
+        name = dz
+      )
+    % OneBodyWavefunction input
+    % PSISCF input
+      psibasis = $basis
+      docc = [ 3 0 1 1 ] socc = [ 0 0 0 0 ]
+      frozen_docc = [ 1 0 0 0 ] frozen_uocc = [ 0 0 0 0 ]
+      %docc = [ 5 ] socc = [ 0 ]
+      label = "6-31 hoh in c2v symmetry"
+      opentype = none
+      test = 0
+      psifiles: (
+          name = "stoh2o"
+        {  unit  nvolume  volumes } = {
+          default  1      [ "./" ]
+          }
+        )
+    )
+  ]
+
+opt: [
+  <QNewtonOpt>: (
+     convergence = 1.0e-4
+     function = $:mole:0
+     update<BFGSUpdate>:()
+     )
+  ]
+

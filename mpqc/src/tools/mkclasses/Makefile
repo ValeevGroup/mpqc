@@ -44,17 +44,17 @@ tclasses.h tclasses.cc:  tclasses.kv ./mkclasses
 
 # only works with bison and flex
 parse.cc parse.h: parse.yy
-	$(YACC) -v -d -o parse.cc $^
+	$(BISON) -v -d -o parse.cc $^
 	/bin/mv parse.cc.h parse.h
 	-@rm -f parse.cc.output
 
 scan.cc: scan.ll
-	$(LEX) -L -t $^ | grep -v "extern FILE .yyin" \
-	                | grep -v "static int yy_get_next_buffer.*;" \
-	                | sed "s/static int yy_get_next_buffer/int yy_get_next_buffer/" \
-	                | grep -v "static void yyunput.*;" \
-	                | sed "s/static void yyunput/void yyunput/" \
-	                | grep -v "static int yyinput.*;" \
-	                | sed "s/static int yyinput/int yyinput/" \
-	                > scan.cc
+	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \
+	                 | grep -v "static int yy_get_next_buffer.*;" \
+	                 | sed "s/static int yy_get_next_buffer/int yy_get_next_buffer/" \
+	                 | grep -v "static void yyunput.*;" \
+	                 | sed "s/static void yyunput/void yyunput/" \
+	                 | grep -v "static int yyinput.*;" \
+	                 | sed "s/static int yyinput/int yyinput/" \
+	                 > scan.cc
 

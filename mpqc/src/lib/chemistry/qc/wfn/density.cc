@@ -249,8 +249,9 @@ BatchElectronDensity::init_common_data(bool initialize_density_matrices)
   dmat_bound_ = new double[(nshell_*(nshell_+1))/2];
 
   if (initialize_density_matrices) {
-      set_densities(wfn_->alpha_ao_density(),
-                    (spin_polarized_?wfn_->beta_ao_density():0));
+      RefSymmSCMatrix beta_ao_density;
+      if (spin_polarized_) beta_ao_density = wfn_->beta_ao_density();
+      set_densities(wfn_->alpha_ao_density(), beta_ao_density);
     }
 
   valdat_ = new GaussianBasisSet::ValueData(basis_, wfn_->integral());

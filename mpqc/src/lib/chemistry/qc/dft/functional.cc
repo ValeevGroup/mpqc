@@ -376,7 +376,10 @@ check(const char *name, double fd, double an, const char *class_name)
        << endl;
   if ((fabs(an) > 0.03 && err/fabs(an) > 0.03)
       || ((fabs(an) <= 0.03) && err > 0.03)
-      || isnan(an)) {
+#ifdef HAVE_ISNAN
+      || isnan(an)
+#endif
+      ) {
       ExEnv::out0() << scprintf("Error: %12s: fd = % 12.8f an = % 12.8f (%s)",
                        name, fd, an, class_name)
            << endl;

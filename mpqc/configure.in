@@ -685,7 +685,7 @@ case $target in
     CXXDEPENDFLAGS="-xM"
   fi
   ;;
-  rs6000-* | powerpc-*)
+  rs6000-ibm-aix* | powerpc-ibm-aix*)
     if test X$GCC != Xyes; then
       LDFLAGS="$LDFLAGS -bmaxdata:0x70000000"
     fi

@@ -173,8 +173,10 @@ class LocalGBuild : public GBuild<T> {
                         continue;
 
 #ifdef SCF_CHECK_INTS
+#ifdef HAVE_ISNAN
                       if (isnan(pki_int))
                         abort();
+#endif
 #endif
                       
                       if (qijkl > 1)

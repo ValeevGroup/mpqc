@@ -141,14 +141,12 @@ IntegralCCA::~IntegralCCA()
 Integral*
 IntegralCCA::clone()
 {
-  //ExEnv::out0() << "IntegralCCA::clone() called\n";
   return new IntegralCCA(eval_factory_,use_opaque_);
 }
 
 CartesianIter *
 IntegralCCA::new_cartesian_iter(int l)
 {
-  //ExEnv::out0() << "IntegralCCA::new_cartesian_iter() called\n";
   //return new CartesianIterV3(l);
   return new CartesianIterCints(l);
 }
@@ -156,7 +154,6 @@ IntegralCCA::new_cartesian_iter(int l)
 RedundantCartesianIter *
 IntegralCCA::new_redundant_cartesian_iter(int l)
 {
-  //ExEnv::out0() << "IntegralCCA::new_redundant_cartesian_iter() called\n";
   //return new RedundantCartesianIterV3(l);
   return new RedundantCartesianIterCints(l);
 }
@@ -164,7 +161,6 @@ IntegralCCA::new_redundant_cartesian_iter(int l)
 RedundantCartesianSubIter *
 IntegralCCA::new_redundant_cartesian_sub_iter(int l)
 {
-  //ExEnv::out0() << "IntegralCCA::new_redundant_cartesian_sub_iter() called\n";
   //return new RedundantCartesianSubIterV3(l);
   return new RedundantCartesianSubIterCints(l);
 }
@@ -172,7 +168,6 @@ IntegralCCA::new_redundant_cartesian_sub_iter(int l)
 SphericalTransformIter *
 IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
 {
-  //ExEnv::out0() << "IntegralCCA::new_spherical_transform iter() called\n";
 
   // INTV3 version
 /*  if (l>maxl_ || l<0) {
@@ -211,7 +206,6 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
 const SphericalTransform *
 IntegralCCA::spherical_transform(int l, int inv, int subl)
 {
-  //ExEnv::out0() << "IntegralCCA::spherical_transform() called\n";	
 
   // INTV3 version
 /*  if (l>maxl_ || l<0) {
@@ -249,7 +243,6 @@ IntegralCCA::spherical_transform(int l, int inv, int subl)
 Ref<OneBodyInt>
 IntegralCCA::overlap()
 {
-  //ExEnv::out0() << "IntegralCCA::overlap() called\n";
   return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::overlap, 
                            use_opaque_ );
 }
@@ -257,7 +250,6 @@ IntegralCCA::overlap()
 Ref<OneBodyInt>
 IntegralCCA::kinetic()
 {
-  //ExEnv::out0() << "IntegralCCA::kinetic() called\n";
   return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::kinetic, 
                            use_opaque_ );
 }
@@ -265,7 +257,6 @@ IntegralCCA::kinetic()
 Ref<OneBodyInt>
 IntegralCCA::nuclear()
 {
-  //ExEnv::out0() << "IntegralCCA::nuclear() called\n";
   return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::nuclear, 
                            use_opaque_ );
 }
@@ -273,7 +264,6 @@ IntegralCCA::nuclear()
 Ref<OneBodyInt>
 IntegralCCA::hcore()
 {
-  //ExEnv::out0() << "IntegralCCA::hcore() called\n";
   return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::hcore, 
                            use_opaque_ );
 }
@@ -281,63 +271,54 @@ IntegralCCA::hcore()
 Ref<OneBodyInt>
 IntegralCCA::point_charge(const Ref<PointChargeData>& dat)
 {
-  //ExEnv::out0() << "IntegralCCA::point_charge() (not implemented) called\n";
 //   return new PointChargeIntV3(this, bs1_, bs2_, dat);
 }
 
 Ref<OneBodyInt>
 IntegralCCA::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 {
-  //ExEnv::out0() << "IntegralCCA::efield_dot_vector() (not implemented) called\n";
 //   return new EfieldDotVectorIntV3(this, bs1_, bs2_, dat);
 }
 
 Ref<OneBodyInt>
 IntegralCCA::dipole(const Ref<DipoleData>& dat)
 {
-//ExEnv::out0() << "IntegralCCA::dipole() (not implemented) called\n";
 //   return new DipoleIntV3(this, bs1_, bs2_, dat);
 }
 
 Ref<OneBodyInt>
 IntegralCCA::quadrupole(const Ref<DipoleData>& dat)
 {
-//ExEnv::out0() << "IntegralCCA::quadrupole() (not implemented) called\n";
 //   throw std::runtime_error("IntegralV3 cannot compute quadrupole moment integrals yet. Try IntegralCints instead.");
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::overlap_deriv()
 {
-//ExEnv::out0() << "IntegralCCA::overlap_deriv() (not implemented) called\n";
 //   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::overlap_1der);
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::kinetic_deriv()
 {
-//ExEnv::out0() << "IntegralCCA::kinetic_deriv() (not implemented) called\n";
 //   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::kinetic_1der);
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::nuclear_deriv()
 {
-//ExEnv::out0() << "IntegralCCA::nuclear_deriv() (not implemented) called\n";
 //   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::nuclear_1der);
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::hcore_deriv()
 {
-//ExEnv::out0() << "IntegralCCA::hcore_deriv() (not implemented) called\n";
 //   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::hcore_1der);
 }
 
 Ref<TwoBodyInt>
 IntegralCCA::electron_repulsion()
 {
-  //ExEnv::out0() << "IntegralCCA::electron_repulsion() called\n";
   return new TwoBodyIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
                            storage_, eval_factory_, use_opaque_ );
 }
@@ -345,7 +326,6 @@ IntegralCCA::electron_repulsion()
 Ref<TwoBodyDerivInt>
 IntegralCCA::electron_repulsion_deriv()
 {
-//ExEnv::out0() << "IntegralCCA::electron_repulsion_deriv() (not implemented) called\n";
 //   return new TwoBodyDerivIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
 }
 
@@ -355,7 +335,6 @@ IntegralCCA::set_basis(const Ref<GaussianBasisSet> &b1,
                        const Ref<GaussianBasisSet> &b3,
                        const Ref<GaussianBasisSet> &b4)
 {
-  //ExEnv::out0() << "IntegralCCA::set_basis() called\n";
   free_transforms();
   Integral::set_basis(b1,b2,b3,b4);
   initialize_transforms();
@@ -364,7 +343,6 @@ IntegralCCA::set_basis(const Ref<GaussianBasisSet> &b1,
 void
 IntegralCCA::free_transforms()
 {
-  //ExEnv::out0() << "IntegralCCA::free_transforms() called\n";
 
   // INTV3 version
 /*  int i,j;
@@ -404,8 +382,6 @@ IntegralCCA::free_transforms()
  void
  IntegralCCA::initialize_transforms()
  {
-   //ExEnv::out0() << "IntegralCCA::initialize_transforms() called\n";
- 
  
    // INTV3 version
 /*   maxl_ = -1;

@@ -46,12 +46,10 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
                            eval_factory,use_opaque);
   buffer_ = int2ecca_->buffer();
   int2ecca_->set_redundant(redundant_);
-  // integral_->adjust_storage(int2ev3_->used_storage());
 }
 
 TwoBodyIntCCA::~TwoBodyIntCCA()
 {
-  // integral_->adjust_storage(-int2ev3_->used_storage());
 }
 
 void
@@ -63,13 +61,11 @@ TwoBodyIntCCA::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  // return int2ecca_->erep_4bound(is,js,ks,ls);
 }
 
 void
 TwoBodyIntCCA::set_integral_storage(size_t storage)
 {
-  // int2ev3_->init_storage(storage);
 }
 
 /////////////////////////////////////////////////////////////////////////////

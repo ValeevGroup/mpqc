@@ -58,7 +58,6 @@ OneBodyIntCCA::~OneBodyIntCCA()
 void
 OneBodyIntCCA::compute_shell(int i, int j)
 {
-  //ExEnv::out0() << "OneBodyIntCCA::compute_shell() called\n";
   (int1ecca_.pointer()->*intfunc_)(i, j);
 }
 

@@ -45,20 +45,6 @@ Int1eCCA::Int1eCCA(Integral *integral,
   nuclear_ptr_(0), hcore_ptr_(0),
   integral_(integral), eval_factory_(eval_factory), use_opaque_(use_opaque)
 {
-  // integral_ = integral;
-  
-  // exponent_weighted = -1;
-  // scale_shell_result = 0;
-  // result_scale_factor = 1.0;
-  // three_center = 0;
-  // init_order = -1;
-  // buff = 0;
-  // cartesianbuffer = 0;
-  // cartesianbuffer_scratch = 0;
-  
-  // transform_init();
-  // int_initialize_offsets1();
-  // int_initialize_1e(0,order);
 
   int scratchsize=0,nshell2;
   
@@ -97,7 +83,7 @@ Int1eCCA::Int1eCCA(Integral *integral,
                                                       cca_bs1_, cca_bs2_ );
     overlap_ptr_ = &overlap_;
     if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( overlap_ptr_->buffer() ); }
+      try{ buff_ = static_cast<double*>( overlap_ptr_->get_buffer() ); }
       catch(exception &e) { e.what(); abort(); }
     }
   }
@@ -107,7 +93,7 @@ Int1eCCA::Int1eCCA(Integral *integral,
                                                       cca_bs1_, cca_bs2_ );
     kinetic_ptr_ = &kinetic_;
     if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( kinetic_ptr_->buffer() ); }
+      try{ buff_ = static_cast<double*>( kinetic_ptr_->get_buffer() ); }
       catch(exception &e) { e.what(); abort(); }
     }
   }
@@ -117,7 +103,7 @@ Int1eCCA::Int1eCCA(Integral *integral,
                                                       cca_bs1_, cca_bs2_ );
     nuclear_ptr_ = &nuclear_;
     if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( nuclear_ptr_->buffer() ); }
+      try{ buff_ = static_cast<double*>( nuclear_ptr_->get_buffer() ); }
       catch(exception &e) { e.what(); abort(); }
     }
   }
@@ -127,27 +113,10 @@ Int1eCCA::Int1eCCA(Integral *integral,
                                                     cca_bs1_, cca_bs2_ );
     hcore_ptr_ = &hcore_;
     if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( hcore_ptr_->buffer() ); }
+      try{ buff_ = static_cast<double*>( hcore_ptr_->get_buffer() ); }
       catch(exception &e) { e.what(); abort(); }
     }
   }
-
-/*
-  else {
-    void* temp;
-    cca_bs1_ = GaussianBasis_Molecular::_create();
-    cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
-    if( bs1_.pointer() == bs2_.pointer() )
-      temp = eval_factory_.get_buffer( 0, cca_bs1_, cca_bs1_ );
-      buff_ = const_cast<double*>( static_cast<double*>(temp) );
-    else {
-      cca_bs2_ = GaussianBasis_Molecular::_create();
-      cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
-      temp = eval_factory_.get_one_body_buffer( 0, cca_bs1_, cca_bs2_ );
-      buff_ = const_cast<double*>( static_cast<double*>(temp) );
-    }
-  }
-*/
 
 }
 
@@ -161,27 +130,6 @@ Int1eCCA::~Int1eCCA()
 void
 Int1eCCA::overlap( int ish, int jsh )
 {
-/*
-  if(overlap_ptr_==0) {
-    cca_bs1_ = GaussianBasis_Molecular::_create();
-    cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
-    if( bs1_.pointer() == bs2_.pointer() ) 
-      overlap_ = eval_factory_.get_integral_evaluator2( "overlap", 0,
-                                                        cca_bs1_, cca_bs1_ );
-    else {
-      cca_bs2_ = GaussianBasis_Molecular::_create();
-      cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
-      overlap_ = eval_factory_.get_integral_evaluator2( "overlap", 0, 
-                                                        cca_bs1_, cca_bs2_ );
-    }
-    overlap_ptr_ = &overlap_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( overlap_ptr_->buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-      ExEnv::err0() << "\nMPQC: got buffer pointer" << endl;
-    }
-  }
-*/
   if( use_opaque_ ) {
     overlap_ptr_->compute( ish, jsh, 0 );
   }
@@ -194,26 +142,6 @@ Int1eCCA::overlap( int ish, int jsh )
 void
 Int1eCCA::kinetic( int ish, int jsh )
 {
-/*
-  if(kinetic_ptr_==0) {
-    cca_bs1_ = GaussianBasis_Molecular::_create();
-    cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
-    if( bs1_.pointer() == bs2_.pointer() )
-      kinetic_ = eval_factory_.get_integral_evaluator2( "kinetic", 0,
-                                                        cca_bs1_, cca_bs1_ );
-    else {
-      cca_bs2_ = GaussianBasis_Molecular::_create();
-      cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
-      kinetic_ = eval_factory_.get_integral_evaluator2( "kinetic", 0, 
-                                                        cca_bs1_, cca_bs2_ );  
-    }
-    kinetic_ptr_ = &kinetic_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( kinetic_ptr_->buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-    }
-  }
-*/
   if( use_opaque_ )
     kinetic_ptr_->compute( ish, jsh, 0 );
   else {
@@ -225,26 +153,6 @@ Int1eCCA::kinetic( int ish, int jsh )
 void
 Int1eCCA::nuclear( int ish, int jsh )
 {
-/*
-  if(nuclear_ptr_==0) {
-    cca_bs1_ = GaussianBasis_Molecular::_create();
-    cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
-    if( bs1_.pointer() == bs2_.pointer() )
-      nuclear_ = eval_factory_.get_integral_evaluator2( "potential", 0,
-                                                         cca_bs1_, cca_bs1_ );
-    else {
-      cca_bs2_ = GaussianBasis_Molecular::_create();
-      cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
-      nuclear_ = eval_factory_.get_integral_evaluator2( "potential", 0, 
-                                                        cca_bs1_, cca_bs2_ );
-    }
-    nuclear_ptr_= &nuclear_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( nuclear_ptr_->buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-    }
-  }
-*/
   if( use_opaque_ )
     nuclear_ptr_->compute( ish, jsh, 0 );
   else {
@@ -256,26 +164,6 @@ Int1eCCA::nuclear( int ish, int jsh )
 void
 Int1eCCA::hcore( int ish, int jsh )
 {
-/*
-  if(hcore_ptr_==0) {
-    cca_bs1_ = GaussianBasis_Molecular::_create();
-    cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
-    if( bs1_.pointer() == bs2_.pointer() )
-      hcore_ = eval_factory_.get_integral_evaluator2( "1eham", 0,
-                                                      cca_bs1_, cca_bs1_ );
-    else {
-      cca_bs2_ = GaussianBasis_Molecular::_create();
-      cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
-      hcore_ = eval_factory_.get_integral_evaluator2( "1eham", 0, 
-                                                      cca_bs1_, cca_bs2_ );
-    }
-    hcore_ptr_= &hcore_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( hcore_ptr_->buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-    }
-  }
-*/
   if( use_opaque_ )
     hcore_ptr_->compute( ish, jsh, 0 );
   else {

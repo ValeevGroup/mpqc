@@ -47,20 +47,6 @@ Int2eCCA::Int2eCCA(Integral *integral,
   erep_ptr_(0), integral_(integral), eval_factory_(eval_factory),
   use_opaque_(use_opaque), buffer_(0)
 {
-  // integral_ = integral;
-
-  // exponent_weighted = -1;
-  // scale_shell_result = 0;
-  // result_scale_factor = 1.0;
-  // three_center = 0;
-  // init_order = -1;
-  // buff = 0;
-  // cartesianbuffer = 0;
-  // cartesianbuffer_scratch = 0;
-
-  // transform_init();
-  // int_initialize_offsets1();
-  // int_initialize_1e(0,order);
 
   /* Allocate storage for the integral buffer. */
   int maxsize = bs1_->max_ncartesian_in_shell()
@@ -87,7 +73,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
                                      cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_ );
   erep_ptr_ = &erep_;
   if( use_opaque_ ) {
-    try{ buffer_ = static_cast<double*>( erep_ptr_->buffer() ); }
+    try{ buffer_ = static_cast<double*>( erep_ptr_->get_buffer() ); }
     catch(std::exception &e) { e.what(); abort(); }
   }
 
@@ -108,26 +94,6 @@ Int2eCCA::~Int2eCCA()
 void
 Int2eCCA::compute_erep( int is, int js, int ks, int ls )
 {
-/*
-  if(erep_ptr_==0) {
-    cca_bs1_ = GaussianBasis_Molecular::_create();
-    cca_bs2_ = GaussianBasis_Molecular::_create();
-    cca_bs3_ = GaussianBasis_Molecular::_create();
-    cca_bs4_ = GaussianBasis_Molecular::_create();
-    cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
-    cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
-    cca_bs3_.initialize( bs3_.pointer(), bs3_->name() );
-    cca_bs4_.initialize( bs4_.pointer(), bs4_->name() );
-    erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
-                                       cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_ );
-    erep_ptr_ = &erep_;
-    if( use_opaque_ ) {
-      try{ buffer_ = static_cast<double*>( erep_ptr_->buffer() ); }
-      catch(std::exception &e) { e.what(); abort(); }
-    }
-  }
-*/
-
   if( use_opaque_ )
     erep_ptr_->compute( is, js, ks, ls, 0 );
   else {   
@@ -145,11 +111,6 @@ Int2eCCA::compute_erep( int is, int js, int ks, int ls )
 void 
 Int2eCCA::copy_buffer( int n ) 
 {
-//  int sidl_size = 1 + sidl_buffer_.upper(0) - sidl_buffer_.lower(0);
-//  ExEnv::out0() << "Copying out of sidl buffer of size " 
-//                << sidl_size << std::endl;
-//  for(int i=0; i<sidl_size; ++i)
-//    buffer_[i] = sidl_buffer_.get(i);
 
   for( int i=0; i<n; ++i)
      buffer_[i] = sidl_buffer_.get(i);
@@ -204,7 +165,6 @@ Int2eCCA::remove_redundant(int sh1, int sh2, int sh3, int sh4) {
   GaussianShell* int_shell2(&bs2_->shell(sh2));
   GaussianShell* int_shell3(&bs3_->shell(sh3));
   GaussianShell* int_shell4(&bs4_->shell(sh4));
-  //std::cout << "\npointers ok";
 
   bool need_unique_ints_only = false;
   int e12,e34,e13e24;
@@ -218,14 +178,11 @@ Int2eCCA::remove_redundant(int sh1, int sh2, int sh3, int sh4) {
   if (int_shell1 == int_shell3 && int_shell2 ==
       int_shell4 && int_shell1->nfunction()*int_shell2->nfunction()>1)
     e13e24 = 1;
-  //std::cout << "\nflags ok";
 
   if ( e12 || e34 || e13e24 )
     need_unique_ints_only = true;
-  //std::cout << "\nneed unique only: " << need_unique_ints_only;
 
   if (need_unique_ints_only) {
-    //std::cout << "\ncalling for removal";
     std::cout.flush();
     get_nonredundant_ints_( buffer_, buffer_, e13e24, e12, e34,
                             int_shell1, int_shell2, int_shell3, int_shell4 );

@@ -7,6 +7,7 @@ extern "C" {
 #include <iostream.h>
 #include <util/keyval/keyval.h>
 #include <util/keyval/keyvalImplMap.h>
+#include <util/class/proxy.h>
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -77,11 +78,11 @@ StringKeyVal::key_value(const char* key)
           const ClassDesc* cd = ClassDesc::name_to_class_desc(classn);
           if (!cd) {
               ClassDesc::load_class(classn);
+              cd = ClassDesc::name_to_class_desc(classn);
             }
           // the original error status must be saved
           KeyValError original_error = error();
           RefDescribedClass newdc(cd->create(pkv));
-          seterror(original_error);
           if (newdc.null()) {
               fprintf(stderr,"StringKeyVal::value: create failed for:\n");
               fprintf(stderr," keyword = \"%s\" class = \"%s\"\n",
@@ -89,6 +90,12 @@ StringKeyVal::key_value(const char* key)
               fprintf(stderr," either the KeyVal create operator doesn't\n");
               fprintf(stderr," exist or memory was exhausted\n");
             }
+          DescribedClassProxy *proxy
+              = DescribedClassProxy::castdown(newdc.pointer());
+          if (proxy) {
+              newdc = proxy->object();
+            }
+          seterror(original_error);
           //pkv.dump(stderr);
           KeyValValueRefDescribedClass* keyvalvalue =
             new KeyValValueRefDescribedClass(newdc);

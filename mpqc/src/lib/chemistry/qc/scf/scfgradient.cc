@@ -44,9 +44,9 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
     double *ddata;
     int istart, iend;
     int jstart, jend;
-    int tri=0;
+    int sub=0;
 
-    ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
+    ddata = get_tri_block(dblk, istart, iend, jstart, jend, sub);
     if (!ddata) {
       fprintf(stderr,"ob_gradient: can't figure out what density block is\n");
       abort();
@@ -67,7 +67,10 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
       int ist = gbs.shell_to_function(ish);
       int ien = ist + gsi.nfunction();
 
-      for (int jsh=jshstart; jsh <= (tri ? ish : jshend-1); jsh++, gsh++) {
+      for (int jsh=jshstart; jsh <= jshend; jsh++, gsh++) {
+        if (jsh > ish)
+          break;
+        
         // make sure that if we're running on multiple processors, but
         // the data blocks aren't distributed, we only calculate a part of
         // the gradient on each node
@@ -90,8 +93,8 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
               if (i < istart || i >= iend || j < jstart || j >= jend) {
                 index += 3;
               } else {
-                int doff = (tri) ? ij_offset(i-istart,j-jstart) :
-                                   (i-istart)*jlen + j-jstart;
+                int doff = (sub) ? ij_offset(i,j) :
+                                   ij_offset(i-istart,j-jstart);
                 double denij = ddata[doff];
                 dx += buf[index++] * denij;
                 dy += buf[index++] * denij;

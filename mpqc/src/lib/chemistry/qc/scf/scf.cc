@@ -211,7 +211,7 @@ SCF::print(ostream&o) const
   OneBodyWavefunction::print(o);
   o << node0 << indent << "SCF Parameters:\n" << incindent
     << indent << "maxiter = " << maxiter_ << endl
-    << indent << "density_reset_freq = " << dens_reset_freq_ << endl
+    << indent << "density_reset_frequency = " << dens_reset_freq_ << endl
     << indent << scprintf("level_shift = %f\n",level_shift_)
     << decindent << endl;
 }

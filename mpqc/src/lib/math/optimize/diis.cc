@@ -48,6 +48,8 @@ DIIS::DIIS()
 DIIS::DIIS(StateIn& s) :
   SelfConsistentExtrapolation(s)
 {
+  int i, j;
+
   s.get(start);
   s.get(ndiis);
   s.get(iter);
@@ -56,7 +58,6 @@ DIIS::DIIS(StateIn& s) :
   // hack for old sgen stuff...this will go away soon
   s.get(btemp.n);
   allocbn_double_vector(&btemp,"n",btemp.n);
-  int i;
   for (i=0; i < btemp.n; i++)
     s.get(btemp.d[i]);
 
@@ -64,14 +65,14 @@ DIIS::DIIS(StateIn& s) :
   s.get(bold.n2);
   allocbn_double_matrix(&bold,"n1 n2", bold.n1, bold.n2);
   for (i=0; i < bold.n1; i++)
-    for (int j=0; j < bold.n2; j++)
+    for (j=0; j < bold.n2; j++)
       s.get(bold.d[i][j]);
   
   s.get(bmat.n1);
   s.get(bmat.n2);
   allocbn_double_matrix(&bmat,"n1 n2", bmat.n1, bmat.n2);
   for (i=0; i < bmat.n1; i++)
-    for (int j=0; j < bmat.n2; j++)
+    for (j=0; j < bmat.n2; j++)
       s.get(bmat.d[i][j]);
   
   diism_data = new RefSCExtrapData[ndiis];
@@ -112,6 +113,8 @@ DIIS::~DIIS()
 void
 DIIS::save_data_state(StateOut& s)
 {
+  int i, j;
+
   SelfConsistentExtrapolation::save_data_state(s);
   s.put(start);
   s.put(ndiis);
@@ -120,20 +123,19 @@ DIIS::save_data_state(StateOut& s)
 
   // hack for old sgen stuff...this will go away soon
   s.put(btemp.n);
-  int i;
   for (i=0; i < btemp.n; i++)
     s.put(btemp.d[i]);
 
   s.put(bold.n1);
   s.put(bold.n2);
   for (i=0; i < bold.n1; i++)
-    for (int j=0; j < bold.n2; j++)
+    for (j=0; j < bold.n2; j++)
       s.put(bold.d[i][j]);
   
   s.put(bmat.n1);
   s.put(bmat.n2);
   for (i=0; i < bmat.n1; i++)
-    for (int j=0; j < bmat.n2; j++)
+    for (j=0; j < bmat.n2; j++)
       s.put(bmat.d[i][j]);
   
   for (i=0; i < ndiis; i++) {

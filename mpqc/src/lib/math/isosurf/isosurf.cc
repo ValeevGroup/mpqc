@@ -60,6 +60,9 @@ IsosurfaceGen::set_resolution(double r)
 
 ImplicitSurfacePolygonizer::ImplicitSurfacePolygonizer(const RefVolume&vol):
   _volume(vol)
+#ifdef HAVE_STL
+  ,_tmp_vertices(0)
+#endif
 {
 }
 

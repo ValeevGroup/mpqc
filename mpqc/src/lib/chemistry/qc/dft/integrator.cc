@@ -270,7 +270,7 @@ DenIntegrator::do_point(const SCVector3 &r,
       id.rho_b = id.rho_a;
       id.rho_b_13 = id.rho_a_13;
       if (need_gradient_) {
-          id.del_rho_b = id.del_rho_a;
+          for (i=0; i<3; i++) id.del_rho_b[i] = id.del_rho_a[i];
           id.gamma_bb = id.gamma_aa;
           id.gamma_ab = id.gamma_aa;
         }

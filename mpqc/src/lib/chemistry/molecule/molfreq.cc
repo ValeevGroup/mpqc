@@ -1010,7 +1010,7 @@ RefRenderedObject
 MolFreqAnimate::object(int iobject)
 {
   BlockedSCMatrix *normco
-      = BlockedSCMatrix::castdown(molfreq_->normal_coordinates());
+      = BlockedSCMatrix::castdown(molfreq_->normal_coordinates().pointer());
   RefMolecule mol = renmol_->molecule();
 
   double scale = 0.2 * cos(M_PI*(iobject+0.5)/(double)nframe_);

@@ -150,25 +150,25 @@ MsgStateSend::put(double d)
 }
 
 int
-MsgStateSend::put(char* d, int n)
+MsgStateSend::put(const char* d, int n)
 {
   return StateOut::put(d, n);
 }
 
 int
-MsgStateSend::put(int* d, int n)
+MsgStateSend::put(const int* d, int n)
 {
   return StateOut::put(d, n);
 }
 
 int
-MsgStateSend::put(float* d, int n)
+MsgStateSend::put(const float* d, int n)
 {
   return StateOut::put(d, n);
 }
 
 int
-MsgStateSend::put(double* d, int n)
+MsgStateSend::put(const double* d, int n)
 {
   return StateOut::put(d, n);
 }
@@ -288,27 +288,27 @@ MsgStateRecv::get(const ClassDesc**cd)
 }
 
 int
-MsgStateRecv::get(char& d)
+MsgStateRecv::get(char& d, const char *key)
 {
-  return StateIn::get(d);
+  return StateIn::get(d,key);
 }
 
 int
-MsgStateRecv::get(int& d)
+MsgStateRecv::get(int& d, const char *key)
 {
-  return StateIn::get(d);
+  return StateIn::get(d,key);
 }
 
 int
-MsgStateRecv::get(float& d)
+MsgStateRecv::get(float& d, const char *key)
 {
-  return StateIn::get(d);
+  return StateIn::get(d,key);
 }
 
 int
-MsgStateRecv::get(double& d)
+MsgStateRecv::get(double& d, const char *key)
 {
-  return StateIn::get(d);
+  return StateIn::get(d,key);
 }
 
 int

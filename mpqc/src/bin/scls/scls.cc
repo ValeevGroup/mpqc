@@ -30,6 +30,7 @@
 #endif
 
 #include <new.h>
+#include <unistd.h>
 
 #include <util/misc/exenv.h>
 #include <util/misc/formio.h>

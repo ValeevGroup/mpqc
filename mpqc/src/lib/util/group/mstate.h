@@ -70,10 +70,10 @@ class MsgStateSend: public StateOut {
     int put(int r);
     int put(float r);
     int put(double r);
-    int put(char*,int);
-    int put(int*,int);
-    int put(float*,int);
-    int put(double*,int);
+    int put(const char*,int);
+    int put(const int*,int);
+    int put(const float*,int);
+    int put(const double*,int);
 };
 
 //. The \clsnm{MsgStateBufRecv} is an abstract base class that
@@ -134,10 +134,10 @@ class MsgStateRecv: public MsgStateBufRecv {
     //. I only need to override \srccd{get(ClassDesc**)} but C++ will hide
     //all of the other put's so I must override everything.
     int get(const ClassDesc**);
-    int get(char&r);
-    int get(int&r);
-    int get(float&r);
-    int get(double&r);
+    int get(char&r, const char *key = 0);
+    int get(int&r, const char *key = 0);
+    int get(float&r, const char *key = 0);
+    int get(double&r, const char *key = 0);
     int get(char*&);
     int get(int*&);
     int get(float*&);

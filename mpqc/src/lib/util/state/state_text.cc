@@ -332,6 +332,39 @@ int StateInText::get(double&r, const char *key)
   return StateIn::get(r,key);
 }
 
+int StateOutText::put(const char*d,int n)
+{
+  return StateOut::put(d,n);
+}
+int StateInText::get(char*&r)
+{
+  return StateIn::get(r);
+}
+int StateOutText::put(const int*d,int n)
+{
+  return StateOut::put(d,n);
+}
+int StateInText::get(int*&r)
+{
+  return StateIn::get(r);
+}
+int StateOutText::put(const float*d,int n)
+{
+  return StateOut::put(d,n);
+}
+int StateInText::get(float*&r)
+{
+  return StateIn::get(r);
+}
+int StateOutText::put(const double*d,int n)
+{
+  return StateOut::put(d,n);
+}
+int StateInText::get(double*&r)
+{
+  return StateIn::get(r);
+}
+
 int StateOutText::putobject(const RefSavableState &p)
 {
   ostream out(buf_);
@@ -476,36 +509,36 @@ StateInText::newline()
 
 int StateOutText::putstring(const char*s)
 {
+  int r = 0;
   if (s) {
       int size = strlen(s);
-      no_newline(); put(size);
-      int result = 0;
+      no_newline(); r += put(size);
       if (size) {
-          result = put_array_char(s,size);
+          r += put_array_char(s,size);
         }
-      return result;
     }
   else {
-      put((int)0);
+      r += put((int)0);
     }
+  return r;
 }
 int StateInText::getstring(char*&s)
 {
+  int r = 0;
   int size;
-  no_newline(); get(size);
+  no_newline(); r += get(size);
   if (size) {
       s = new char[size+1];
       s[size] = '\0';
       int result = 0;
       if (size) {
-          result = get_array_char(s,size);
+          r += get_array_char(s,size);
         }
-      return result;
     }
   else {
       s = 0;
     }
-  return 0;
+  return r;
 }
 
 ///////////////////////////////////////////////////////////////////////

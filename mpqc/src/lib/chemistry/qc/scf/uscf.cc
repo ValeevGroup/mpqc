@@ -254,6 +254,7 @@ double
 UnrestrictedSCF::occupation(int ir, int i)
 {
   abort();
+  return 0;
 }
 
 double
@@ -274,12 +275,14 @@ RefSCMatrix
 UnrestrictedSCF::eigenvectors()
 {
   abort();
+  return 0;
 }
 
 RefDiagSCMatrix
 UnrestrictedSCF::eigenvalues()
 {
   abort();
+  return 0;
 }
 
 RefSCMatrix
@@ -762,6 +765,7 @@ RefSymmSCMatrix
 UnrestrictedSCF::effective_fock()
 {
   abort();
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -998,7 +1002,7 @@ UnrestrictedSCF::compute_vector(double& eelec)
     // compute spin contamination
     RefSCMatrix Sab = scf_vector_.t() * overlap() * scf_vectorb_;
     //Sab.print("Sab");
-    BlockedSCMatrix *pSab = BlockedSCMatrix::castdown(Sab);
+    BlockedSCMatrix *pSab = BlockedSCMatrix::castdown(Sab.pointer());
     double s2=0;
     for (int ir=0; ir < nirrep_; ir++) {
       RefSCMatrix Sab_ir=pSab->block(0);
@@ -1058,8 +1062,8 @@ UnrestrictedSCF::lagrangian()
   RefDiagSCMatrix ea = alpha_eigenvalues().copy();
   RefDiagSCMatrix eb = beta_eigenvalues().copy();
   
-  BlockedDiagSCMatrix *eab = BlockedDiagSCMatrix::castdown(ea);
-  BlockedDiagSCMatrix *ebb = BlockedDiagSCMatrix::castdown(eb);
+  BlockedDiagSCMatrix *eab = BlockedDiagSCMatrix::castdown(ea.pointer());
+  BlockedDiagSCMatrix *ebb = BlockedDiagSCMatrix::castdown(eb.pointer());
 
   RefPetiteList pl = integral()->petite_list(basis());
 

@@ -70,6 +70,10 @@ class StateOutText: public StateOutFile {
     int put(int r);
     int put(float r);
     int put(double r);
+    int put(const char*,int);
+    int put(const int*,int);
+    int put(const float*,int);
+    int put(const double*,int);
   };
 
 //. \clsnm{StateInText} reads state information written
@@ -111,10 +115,14 @@ class StateInText: public StateInFile {
     int get_array_float(float*,int);
     int get_array_double(double*,int);
     int get(const ClassDesc**);
-    int get(char&r, const char *key);
-    int get(int&r, const char *key);
-    int get(float&r, const char *key);
-    int get(double&r, const char *key);
+    int get(char&r, const char *key = 0);
+    int get(int&r, const char *key = 0);
+    int get(float&r, const char *key = 0);
+    int get(double&r, const char *key = 0);
+    int get(char*&);
+    int get(int*&);
+    int get(float*&);
+    int get(double*&);
   };
 
 #endif

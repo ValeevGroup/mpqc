@@ -304,14 +304,17 @@ Wavefunction::nao()
   int sym = (molecule()->point_group()->char_table().nirrep()==1?0:1);
 
   // compute S, the ao basis overlap
-  RefSymmSCMatrix S =
-    BlockedSymmSCMatrix::castdown(pl->to_AO_basis(overlap()))->block(0);
+  RefSymmSCMatrix blockedS = pl->to_AO_basis(overlap());
+  RefSymmSCMatrix S
+      = BlockedSymmSCMatrix::castdown(blockedS.pointer())->block(0);
+  blockedS = 0;
 # ifdef DEBUG
   S.print("S");
 # endif
 
   // compute P, the ao basis density
-  RefSymmSCMatrix P = BlockedSymmSCMatrix::castdown(ao_density())->block(0);
+  RefSymmSCMatrix P
+      = BlockedSymmSCMatrix::castdown(ao_density().pointer())->block(0);
 
   // why?  good question.
   RefSymmSCMatrix Ptmp = P->clone();

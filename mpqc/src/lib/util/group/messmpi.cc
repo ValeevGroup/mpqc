@@ -294,49 +294,58 @@ MPIMessageGrp::sync()
     }
 }
 
-static GrpReduce<double>* doublereduceobject;
-static void
-doublereduce(void*b, void*a, int*len, MPI_Datatype*datatype)
-{
-  doublereduceobject->reduce((double*)a, (double*)b, *len);
+#define REDUCEMEMBER(name, type, mpitype) \
+static GrpReduce<type>* name ## reduceobject; \
+static void \
+name ## reduce(void*b, void*a, int*len, MPI_Datatype*datatype) \
+{ \
+  name ## reduceobject->reduce((type*)a, (type*)b, *len); \
+} \
+void \
+MPIMessageGrp::reduce(type*d, int n, GrpReduce<type>&r, \
+                      type*scratch, int target) \
+{ \
+  name ## reduceobject = &r; \
+ \
+  MPI_Op op; \
+  MPI_Op_create(name ## reduce, 1, &op); \
+ \
+  type *work; \
+  if (!scratch) work = new type[n]; \
+  else work = scratch; \
+ \
+  int ret; \
+ \
+  if (target == -1) { \
+      ret = MPI_Allreduce(d, work, n, mpitype, op, MPI_COMM_WORLD); \
+    } \
+  else { \
+      ret = MPI_Reduce(d, work, n, mpitype, op, target, MPI_COMM_WORLD); \
+    } \
+ \
+  if (ret != MPI_SUCCESS) { \
+      cerr << me() << ": MPIMessageGrp::reduce(," \
+          << n << ",,," << target << "): mpi error:" << endl; \
+      print_error_and_abort(me(), ret); \
+    } \
+ \
+  if (target == -1 || target == me()) { \
+     for (int i=0; i<n; i++) d[i] = work[i]; \
+    } \
+ \
+  MPI_Op_free(&op); \
+ \
+  if (!scratch) delete[] work; \
 }
-void
-MPIMessageGrp::reduce(double*d, int n, GrpReduce<double>&r,
-                          double*scratch, int target)
-{
-  doublereduceobject = &r;
 
-  MPI_Op op;
-  MPI_Op_create(doublereduce, 1, &op);
-
-  double *work;
-  if (!scratch) work = new double[n];
-  else work = scratch;
-
-  int ret;
-
-  if (target == -1) {
-      ret = MPI_Allreduce(d, work, n, MPI_DOUBLE, op, MPI_COMM_WORLD);
-    }
-  else {
-      ret = MPI_Reduce(d, work, n, MPI_DOUBLE, op, target, MPI_COMM_WORLD);
-    }
-
-  if (ret != MPI_SUCCESS) {
-      cerr << me() << ": MPIMessageGrp::reduce(,"
-          << n << ",,," << target << "): mpi error:" << endl;
-      print_error_and_abort(me(), ret);
-    }
-
-  if (target == -1 || target == me()) {
-     for (int i=0; i<n; i++) d[i] = work[i];
-    }
-
-  MPI_Op_free(&op);
-
-  if (!scratch) delete[] work;
-}
-
+REDUCEMEMBER(double, double, MPI_DOUBLE)
+REDUCEMEMBER(float, float, MPI_FLOAT)
+REDUCEMEMBER(int, int, MPI_INT)
+REDUCEMEMBER(short, short, MPI_SHORT)
+REDUCEMEMBER(long, long, MPI_LONG)
+REDUCEMEMBER(char, char, MPI_CHAR)
+REDUCEMEMBER(uchar, unsigned char, MPI_UNSIGNED_CHAR)
+REDUCEMEMBER(schar, signed char, MPI_SIGNED_CHAR)
 
 void
 MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)

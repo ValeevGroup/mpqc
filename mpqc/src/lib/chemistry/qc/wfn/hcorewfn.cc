@@ -126,7 +126,8 @@ HCoreWfn::density()
 {
   if (!density_.computed()) {
     RefDiagSCMatrix mo_density(basis_dimension(), basis_matrixkit());
-    BlockedDiagSCMatrix *modens = BlockedDiagSCMatrix::castdown(mo_density);
+    BlockedDiagSCMatrix *modens
+      = BlockedDiagSCMatrix::castdown(mo_density.pointer());
     if (!modens) {
       cerr << node0 << indent << "HCoreWfn::density: basis weirdness" << endl;
       abort();

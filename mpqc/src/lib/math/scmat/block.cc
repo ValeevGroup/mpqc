@@ -52,7 +52,7 @@ SCMatrixRectBlock::SCMatrixRectBlock(int is, int ie, int js, int je):
 }
 
 SCMatrixRectBlock::SCMatrixRectBlock(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCMatrixRectBlock::class_desc_)
 {
   s.get(istart);
   s.get(jstart);
@@ -103,7 +103,7 @@ SCMatrixLTriBlock::SCMatrixLTriBlock(int s,int e):
 }
 
 SCMatrixLTriBlock::SCMatrixLTriBlock(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCMatrixLTriBlock::class_desc_)
 {
   s.get(start);
   s.get(end);
@@ -159,7 +159,7 @@ SCMatrixDiagBlock::SCMatrixDiagBlock(int is, int ie,int js):
 }
 
 SCMatrixDiagBlock::SCMatrixDiagBlock(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCMatrixDiagBlock::class_desc_)
 {
   s.get(istart);
   s.get(jstart);
@@ -208,7 +208,7 @@ SCVectorSimpleBlock::SCVectorSimpleBlock(int s, int e):
 }
 
 SCVectorSimpleBlock::SCVectorSimpleBlock(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCVectorSimpleBlock::class_desc_)
 {
   s.get(istart);
   s.get(iend);

@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////
 // DVector3
 
-SCVector3::SCVector3(RefSCVector&x)
+SCVector3::SCVector3(const RefSCVector&x)
 {
   if (x.dim().n() != 3) {
       fprintf(stderr,"SCVector3::SCVector3(RefSCVEctor&): bad length\n");

@@ -13,7 +13,7 @@ class VoidPtr
   public:
     VoidPtr();
     VoidPtr(void* d);
-    VoidPtr(VoidPtr& d);
+    VoidPtr(const VoidPtr& d);
     ~VoidPtr();
     
     void* getptr();

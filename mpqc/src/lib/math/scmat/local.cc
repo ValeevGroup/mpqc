@@ -9,15 +9,47 @@
 #include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
 
-/////////////////////////////////////////////////////////////////////////////
-// LocalSCDimension member functions
-
 #define CLASSNAME LocalSCDimension
 #define PARENTS public SCDimension
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
+
+#define CLASSNAME LocalSCMatrix
+#define PARENTS public SCMatrix
+#define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+#define CLASSNAME LocalSymmSCMatrix
+#define PARENTS public SymmSCMatrix
+#define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+#define CLASSNAME LocalDiagSCMatrix
+#define PARENTS public DiagSCMatrix
+#define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+#define CLASSNAME LocalSCVector
+#define PARENTS public SCVector
+#define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+/////////////////////////////////////////////////////////////////////////////
+// LocalSCDimension member functions
 
 LocalSCDimension::LocalSCDimension(int n): n_(n)
 {
@@ -84,14 +116,6 @@ SavableState_REF_def(LocalSCDimension);
 
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCMatrix member functions
-
-#define CLASSNAME LocalSCMatrix
-#define PARENTS public SCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
 
 static double **
 init_rect_rows(double *data, int ni,int nj)
@@ -368,7 +392,7 @@ LocalSCMatrix::invert_this()
 }
 
 void
-LocalSCMatrix::element_op(RefSCRectElementOp& op)
+LocalSCMatrix::element_op(const RefSCRectElementOp& op)
 {
   op->process(block.pointer());
 }
@@ -419,14 +443,6 @@ LocalSCMatrix::print(const char *title, ostream& os, int prec)
 
 /////////////////////////////////////////////////////////////////////////////
 // LocalSymmSCMatrix member functions
-
-#define CLASSNAME LocalSymmSCMatrix
-#define PARENTS public SymmSCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
 
 static double **
 init_symm_rows(double *data, int n)
@@ -706,7 +722,7 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
 }
 
 void
-LocalSymmSCMatrix::element_op(RefSCSymmElementOp& op)
+LocalSymmSCMatrix::element_op(const RefSCSymmElementOp& op)
 {
   op->process(block.pointer());
 }
@@ -757,14 +773,6 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
 
 /////////////////////////////////////////////////////////////////////////////
 // LocalDiagSCMatrix member functions
-
-#define CLASSNAME LocalDiagSCMatrix
-#define PARENTS public DiagSCMatrix
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
 
 LocalDiagSCMatrix::LocalDiagSCMatrix()
 {
@@ -871,7 +879,7 @@ LocalDiagSCMatrix::invert_this()
 }
 
 void
-LocalDiagSCMatrix::element_op(RefSCDiagElementOp& op)
+LocalDiagSCMatrix::element_op(const RefSCDiagElementOp& op)
 {
   op->process(block.pointer());
 }
@@ -909,14 +917,6 @@ LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
 
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCVector member functions
-
-#define CLASSNAME LocalSCVector
-#define PARENTS public SCVector
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
 
 LocalSCVector::LocalSCVector()
 {
@@ -1099,7 +1099,7 @@ LocalSCVector::scalar_product(SCVector*a)
 }
 
 void
-LocalSCVector::element_op(RefSCVectorElementOp& op)
+LocalSCVector::element_op(const RefSCVectorElementOp& op)
 {
   op->process(block.pointer());
 }

@@ -17,6 +17,7 @@ class SCDimension: virtual public SavableState {
     virtual ~SCDimension();
     virtual int n() = 0;
     virtual SCMatrix* create_matrix(SCDimension*) = 0;
+    SCMatrix* create_matrix(const RefSCDimension&);
     virtual SymmSCMatrix* create_symmmatrix() = 0;
     virtual DiagSCMatrix* create_diagmatrix() = 0;
     virtual SCVector* create_vector() = 0;
@@ -52,7 +53,7 @@ class SCVector: virtual public SavableState {
     virtual void accumulate_product(SCMatrix*,SCVector*) = 0;
     virtual void accumulate(SCVector*) = 0;
     virtual double scalar_product(SCVector*) = 0;
-    virtual void element_op(RefSCVectorElementOp&) = 0;
+    virtual void element_op(const RefSCVectorElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
@@ -98,7 +99,7 @@ class SCMatrix: virtual public SavableState {
     virtual void accumulate(SCMatrix*) = 0;
     virtual void transpose_this() = 0;
     virtual double invert_this() = 0;
-    virtual void element_op(RefSCRectElementOp&) = 0;
+    virtual void element_op(const RefSCRectElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
@@ -135,7 +136,7 @@ class SymmSCMatrix: virtual public SavableState {
     virtual void set_element(int,int,double) = 0;
     virtual void accumulate(SymmSCMatrix*) = 0;
     virtual double invert_this() = 0;
-    virtual void element_op(RefSCSymmElementOp&) = 0;
+    virtual void element_op(const RefSCSymmElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
     virtual void accumulate_symmetric_outer_product(SCVector*) = 0;
     virtual double scalar_product(SCVector*) = 0;
@@ -167,7 +168,7 @@ class DiagSCMatrix: virtual public SavableState {
     virtual void set_element(int,double) = 0;
     virtual void accumulate(DiagSCMatrix*) = 0;
     virtual double invert_this() = 0;
-    virtual void element_op(RefSCDiagElementOp&) = 0;
+    virtual void element_op(const RefSCDiagElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 

@@ -99,7 +99,7 @@ class Result ## T: public Result {					      \
     inline T* operator ->() { update(); return &_result; };		      \
     inline T& result() { update(); return _result; };			      \
     inline T& result_noupdate() { return _result; };			      \
-    inline void operator=(T& a) { _result = a; };			      \
+    inline void operator=(const T& a) { _result = a; };			      \
 }
 
 #define _Result_dec(PREFIX,BASE,T,PUBLIC)				      \
@@ -112,7 +112,7 @@ class PREFIX ## T: public BASE {					      \
     T* operator ->();							      \
     T& result();							      \
     T& result_noupdate();						      \
-    void operator=(T& a);						      \
+    void operator=(const T& a);						      \
     PUBLIC								      \
 }
 
@@ -128,7 +128,7 @@ PREFIX ## T::operator T&() { update(); return _result; };		      \
 T* PREFIX ## T::operator ->() { update(); return &_result; };		      \
 T& PREFIX ## T::result() { update(); return _result; };			      \
 T& PREFIX ## T::result_noupdate() { return _result; };			      \
-void PREFIX ## T::operator=(T& a) { _result = a; };			      \
+void PREFIX ## T::operator=(const T& a) { _result = a; };			      \
 OTHER
 
 #define Result_def(T) _Result_def(Result,Result,T,)
@@ -156,7 +156,7 @@ class Result ## T: public Result {					      \
     inline T* pointer() { update(); return &_result; };		              \
     inline T& result() { update(); return _result; };			      \
     inline T& result_noupdate() { return _result; };			      \
-    inline void operator=(T& a) { _result = a; };			      \
+    inline void operator=(const T& a) { _result = a; };			      \
 }
 
 #define _Result_dec_nc(PREFIX,BASE,T,PUBLIC)				      \
@@ -169,7 +169,7 @@ class PREFIX ## T: public BASE {					      \
     T* pointer();							      \
     T& result();							      \
     T& result_noupdate();						      \
-    void operator=(T& a);						      \
+    void operator=(const T& a);						      \
     PUBLIC								      \
 }
 
@@ -185,7 +185,7 @@ PREFIX ## T::operator T&() { update(); return _result; };		      \
 T* PREFIX ## T::pointer() { update(); return &_result; };		      \
 T& PREFIX ## T::result() { update(); return _result; };			      \
 T& PREFIX ## T::result_noupdate() { return _result; };			      \
-void PREFIX ## T::operator=(T& a) { _result = a; };			      \
+void PREFIX ## T::operator=(const T& a) { _result = a; };		      \
 OTHER
 
 #define Result_def_nc(T) _Result_def_nc(Result,Result,T,)

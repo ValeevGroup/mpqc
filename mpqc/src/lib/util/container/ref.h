@@ -59,50 +59,48 @@ class  Ref ## T  {							      \
   private:								      \
     T* p;								      \
   public:								      \
-    T* operator->();							      \
-    const T* operator->() const;					      \
-    T* pointer();							      \
-    const T* pointer() const;						      \
+    T* operator->() const;					      \
+    T* pointer() const;						      \
     REF_TYPE_CAST_DEC(T);			\
     REF_CONST_TYPE_CAST_DEC(T);			\
-    T& operator *();							      \
-    const T& operator *() const;					      \
+    T& operator *() const;					      \
     Ref ## T ();							      \
     Ref ## T (T*a);							      \
     Ref ## T (const Ref ## T &a);					      \
     ~Ref ## T ();							      \
-    int null();								      \
-    int nonnull();							      \
+    int null() const;							      \
+    int nonnull() const;						      \
     Ref ## T& operator=(const Ref ## T & c);				      \
     Ref ## T& operator=(T* cr);						      \
     void assign_pointer(T* cr);						      \
     int operator==(const Ref ## T &a) const;				      \
+    int operator!=(const Ref ## T &a) const;				      \
     int operator==(const T * a) const;					      \
+    int operator!=(const T * a) const;					      \
     int operator>=(const Ref ## T &a) const;				      \
     int operator<=(const Ref ## T &a) const;				      \
     int operator>(const Ref ## T &a) const;				      \
     int operator<(const Ref ## T &a) const;				      \
-    void  ref_info(FILE*fp=stdout);					      \
-    void warn(const char *);						      \
+    void  ref_info(FILE*fp=stdout) const;				      \
+    void warn(const char *) const;					      \
     void clear();							      \
-    void check_pointer();						      \
+    void check_pointer() const;						      \
     custom								      \
 }
 
 #define REF_dec(T) REF_dec_custom(T,)
 
 #define REF_def(T)							      \
-T* Ref ## T :: operator->() { return p; }				      \
-const T* Ref ## T :: operator->() const { return p; }			      \
-T* Ref ## T :: pointer() { return p; }					      \
-const T* Ref ## T :: pointer() const { return p; }			      \
+T* Ref ## T :: operator->() const { return p; }			      \
+T* Ref ## T :: pointer() const { return p; }			      \
 REF_TYPE_CAST_DEF(T);				\
 REF_CONST_TYPE_CAST_DEF(T);				\
-T& Ref ## T :: operator *() { return *p; };				      \
-const T& Ref ## T :: operator *() const { return *p; };			      \
-int Ref ## T :: null() { return p == 0; }				      \
-int Ref ## T :: nonnull() { return p != 0; }				      \
+T& Ref ## T :: operator *() const { return *p; };			      \
+int Ref ## T :: null() const { return p == 0; }				      \
+int Ref ## T :: nonnull() const { return p != 0; }			      \
+int Ref ## T :: operator!=(const Ref ## T &a) const { return p != a.p; }      \
 int Ref ## T :: operator==(const Ref ## T &a) const { return p == a.p; }      \
+int Ref ## T :: operator!=(const  T * a) const { return p != a; }	      \
 int Ref ## T :: operator==(const  T * a) const { return p == a; }	      \
 int Ref ## T :: operator>=(const  Ref ## T &a) const { return p >= a.p; }     \
 int Ref ## T :: operator<=(const  Ref ## T &a) const { return p <= a.p; }     \
@@ -141,7 +139,7 @@ Ref ## T :: clear()							      \
   p = 0;								      \
 }									      \
 void									      \
-Ref ## T :: warn ( const char * msg)					      \
+Ref ## T :: warn ( const char * msg) const				      \
 {									      \
   fprintf(stderr,"WARNING: %s\n",msg);					      \
 }									      \
@@ -170,13 +168,13 @@ void Ref ## T :: assign_pointer(T* cr)					      \
   p = cr;								      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-void Ref ## T :: check_pointer()					      \
+void Ref ## T :: check_pointer() const					      \
 {									      \
   if (p && p->nreference() <= 0) {					      \
       warn("Ref" # T ": bad reference count in referenced object\n");	      \
     }									      \
 }									      \
-void Ref ## T :: ref_info(FILE*fp)					      \
+void Ref ## T :: ref_info(FILE*fp) const				      \
 {									      \
   if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
   else fprintf(fp,"reference is null\n");				      \

@@ -7,7 +7,7 @@
 
 VoidPtr::VoidPtr(): ptr_(0) {}
 VoidPtr::VoidPtr(void* d): ptr_(d) {}
-VoidPtr::VoidPtr(VoidPtr& d): ptr_(d.ptr_) {}
+VoidPtr::VoidPtr(const VoidPtr& d): ptr_(d.ptr_) {}
 VoidPtr::~VoidPtr() {}
 
 void* VoidPtr::getptr() { return ptr_; }

@@ -32,6 +32,12 @@ SCDimension::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+SCMatrix*
+SCDimension::create_matrix(const RefSCDimension&d)
+{
+  return create_matrix(d.pointer());
+}
+
 SCDimension::~SCDimension()
 {
 }

@@ -29,12 +29,11 @@ class Set ## Type							      \
   ~Set ## Type ();							      \
   int length() const;							      \
   void clear();								      \
-  Pix add( Type & e);							      \
+  Pix add(const Type & e);						      \
   Type & operator()(Pix i);					              \
   const Type & operator()(const Pix i) const;				      \
   Set ## Type & operator += (const Set ## Type&s);			      \
-  Pix seek( Type &item);						      \
-  const Pix seek(const Type &item);					      \
+  Pix seek(const Type &item);						      \
   int contains(const Type &item);					      \
   void del( Type &item);						      \
   int owns(Pix i);							      \
@@ -76,7 +75,7 @@ void Set ## Type :: clear()						      \
   element.clear();							      \
   nelement = 0;								      \
 }									      \
-Pix Set ## Type :: add( Type & e)					      \
+Pix Set ## Type :: add(const Type & e)					      \
 {									      \
   int i;								      \
   for (i=0; i<nelement; i++) {						      \
@@ -134,14 +133,7 @@ Set ## Type & Set ## Type :: operator += (const Set ## Type&s)		      \
     }									      \
   return *this;								      \
 }									      \
-Pix Set ## Type :: seek( Type &item)					      \
-{									      \
-  for (int i=0; i<nelement; i++) {					      \
-      if (item == element[i]) return index_to_pix(i);			      \
-    }									      \
-  return 0;								      \
-}									      \
-const Pix Set ## Type :: seek(const Type &item)				      \
+Pix Set ## Type :: seek(const Type &item)				      \
 {									      \
   for (int i=0; i<nelement; i++) {					      \
       if (item == element[i]) return index_to_pix(i);			      \
@@ -177,7 +169,7 @@ class Arrayset ## Type : public Set ## Type				      \
   Arrayset ## Type (const Arrayset ## Type&);				      \
   Type & operator[](int i);						      \
   const Type & operator[](int i) const;					      \
-  int iseek( Type &item);						      \
+  int iseek(const Type &item);						      \
   ~Arrayset ## Type();							      \
 }
 
@@ -207,7 +199,7 @@ const Type & Arrayset ## Type :: operator[](int i) const		      \
     };									      \
   return element[i];							      \
 }									      \
-int Arrayset ## Type :: iseek( Type &item)				      \
+int Arrayset ## Type :: iseek(const Type &item)				      \
 {									      \
   for (int i=0; i<nelement; i++) {					      \
       if (item == element[i]) return i;					      \

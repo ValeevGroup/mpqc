@@ -80,11 +80,13 @@ class SymmetryOperation {
     SymmetryOperation();
     ~SymmetryOperation();
 
-    inline double trace() { return d[0][0]+d[1][1]+d[2][2]; }
+    inline double trace() const { return d[0][0]+d[1][1]+d[2][2]; }
     inline double* operator[](int i) { return d[i]; }
+    inline const double* operator[](int i) const { return d[i]; }
     inline double& operator()(int i, int j) { return d[i][j]; }
+    inline const double& operator()(int i, int j) const { return d[i][j]; }
 
-    void print(FILE* =stdout);
+    void print(FILE* =stdout) const;
 };
 
 class CharacterTable {
@@ -154,7 +156,9 @@ class PointGroup
     CharacterTable char_table() const;
     inline const char * symbol() const { return symb; }
     inline SymmetryOperation& symm_frame() { return frame; }
+    inline const SymmetryOperation& symm_frame() const { return frame; }
     inline Point& origin() { return origin_; }
+    inline const Point& origin() const { return origin_; }
 
     void set_symbol(const char*);
 

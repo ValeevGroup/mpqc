@@ -35,7 +35,7 @@ static int refcount(int nref)
 static int reference(const int& constrc)
 {
   // cast away the constness:
-  int& rc = (int) constrc;
+  int& rc = (int&) constrc;
   if (!managed(rc)) return 1;
   int nref = nreference(rc);
   nref++;

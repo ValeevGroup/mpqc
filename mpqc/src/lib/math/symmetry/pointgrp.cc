@@ -104,7 +104,7 @@ SymmetryOperation::~SymmetryOperation()
 }
 
 void
-SymmetryOperation::print(FILE* outfile)
+SymmetryOperation::print(FILE* outfile) const
 {
   fprintf(outfile,"        1          2          3\n");
   fprintf(outfile,"  1  %10.7f %10.7f %10.7f\n",d[0][0],d[0][1],d[0][2]);
@@ -179,7 +179,7 @@ void CharacterTable::print(FILE *fp, const char *off)
 // R' = ~E * R * E
 
 static void
-sim_transform(SymmetryOperation& so, SymmetryOperation& frame)
+sim_transform(SymmetryOperation& so, const SymmetryOperation& frame)
 {
   SymmetryOperation foo;
 

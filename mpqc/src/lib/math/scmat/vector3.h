@@ -19,7 +19,7 @@ class SCVector3
     SCVector3(double x[3]);
     SCVector3(double x,double y,double z);
     SCVector3(const SCVector3&p);
-    SCVector3(RefSCVector&);
+    SCVector3(const RefSCVector&);
     void normalize();
     SCVector3 operator*(double) const;
     SCVector3 operator+(const SCVector3&) const;

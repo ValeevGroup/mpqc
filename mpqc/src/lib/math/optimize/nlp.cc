@@ -55,6 +55,7 @@ NLP0::NLP0(StateIn&s):
   _value(s,this)
 {
   _dim.restore_state(s);
+  _x.restore_state(s);
 }  
 
 NLP0::~NLP0()
@@ -66,6 +67,7 @@ NLP0::save_data_state(StateOut&s)
 {
   _value.save_data_state(s);
   _dim.save_state(s);
+  _x.save_state(s);
 }
 
 

@@ -198,7 +198,8 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
   s.get(symmetry_tolerance_);
   s.get(coordinate_tolerance_);
 
-  form_coordinates();
+  // it shouldn't be necessary to call form_coordinates here
+  //form_coordinates();
 }
 
 void
@@ -672,6 +673,7 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
 
   // form the bmatrix
   variable_and_constant->bmat(molecule_,bmat);
+  
   // form the inverse of bmatrix * bmatrix_t
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);

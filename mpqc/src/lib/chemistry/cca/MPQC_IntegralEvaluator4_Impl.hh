@@ -90,12 +90,24 @@ namespace MPQC {
     int int_type_;
     int deriv_level_;
     std::string package_;
-    int **reorder_;
+
+    // reorder stuff
     int bufn_;
+    int **reorder_;
+    double *buf_;
     double *temp_buffer_;
+    int index_, con2_offset_, con3_offset_, con4_offset_, con_offset_,
+        local2_offset_, local3_offset_, local4_offset_,
+        c1_base_, c2_base_, c3_base_, c4_base_,
+        s1_is_cart_, s2_is_cart_, s3_is_cart_, s4_is_cart_,
+        s1_nfunc_, s2_nfunc_, s3_nfunc_, s4_nfunc_,
+        nc1_, nc2_, nc3_, nc4_;
+    sc::GaussianShell *s1_, *s2_, *s3_, *s4_;
 
     void reorder_intv3(int64_t,int64_t,int64_t,int64_t);
+    void reorder_intv3_inline(int64_t,int64_t,int64_t,int64_t);
     void initialize_reorder_intv3();
+    void reorder_c4(int,int,int,int,int,int);
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._implementation)
 
   private:

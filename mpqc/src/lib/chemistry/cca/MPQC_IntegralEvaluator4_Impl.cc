@@ -184,21 +184,10 @@ throw ()
     //eval_->set_redundant(0);
     eval_->compute_shell( (int) shellnum1, (int) shellnum2,
 			  (int) shellnum3, (int) shellnum4);
-    if( package_ == "intv3") 
+    if( package_ == "intv3") {
       reorder_intv3( shellnum1, shellnum2, shellnum3, shellnum4 );
-
-    sc::GaussianShell &s1 = bs1_->shell(shellnum1);
-    sc::GaussianShell &s2 = bs2_->shell(shellnum2);
-    sc::GaussianShell &s3 = bs3_->shell(shellnum3);
-    sc::GaussianShell &s4 = bs4_->shell(shellnum4);
-    int nfunc = s1.nfunction() * s2.nfunction() * s3.nfunction() * s4.nfunction();
-
-    //std::cout << "cca buffer:" << bufn_ << std::endl;
-    ++bufn_;
-    //for( int i=0; i<nfunc; ++i)
-    //  std::cout << sc_buffer_[i] << std::endl;
-    //std::cout << std::endl;
-
+      //reorder_intv3_inline( shellnum1, shellnum2, shellnum3, shellnum4 );
+    }
   }
   else {
     std::cout << "Eval4: int_type is " << int_type_ << std::endl
@@ -257,7 +246,6 @@ throw ()
 void
 MPQC::IntegralEvaluator4_impl::initialize_reorder_intv3()
 {
-
   temp_buffer_ = new double[max_nshell4_];
 
   int max12 = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
@@ -278,6 +266,23 @@ MPQC::IntegralEvaluator4_impl::initialize_reorder_intv3()
     int ncf = ccaiter->n();
 
     reorder_[i] = new int[ncf];
+    v3iter->start();
+    for( int j=0; j<ncf; ++j) {
+      ccaiter->start();
+      for( int k=0; k<ncf; ++k) {
+        if( v3iter->a() == ccaiter->a() &&
+            v3iter->b() == ccaiter->b() &&
+            v3iter->c() == ccaiter->c() ) {
+          reorder_[i][j] = k;
+          k=ncf; //break k loop
+        }
+        else ccaiter->next();
+      }
+      v3iter->next();
+    }
+
+/*
+    reorder_[i] = new int[ncf];
     ccaiter->start();
     for( int j=0; j<ncf; ++j) {
       v3iter->start();
@@ -292,6 +297,7 @@ MPQC::IntegralEvaluator4_impl::initialize_reorder_intv3()
       }
       ccaiter->next();
     }
+*/
 
     //std::cout << "reorder am=" << i << std::endl;
     //for( int j=0; j<ncf; ++j)
@@ -309,50 +315,46 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
                                              int64_t shellnum3,
                                              int64_t shellnum4)
 {
-  double *buf = const_cast<double*>( sc_buffer_ );
+  double* buf = const_cast<double*>( sc_buffer_ );
 
-  sc::GaussianShell &s1 = bs1_->shell(shellnum1);
-  sc::GaussianShell &s2 = bs2_->shell(shellnum2);
-  sc::GaussianShell &s3 = bs3_->shell(shellnum3);
-  sc::GaussianShell &s4 = bs4_->shell(shellnum4);
-  int nc1 = s1.ncontraction();
-  int nc2 = s2.ncontraction();
-  int nc3 = s3.ncontraction();
-  int nc4 = s4.ncontraction();
+  sc::GaussianShell* s1 = &( bs1_->shell(shellnum1) );
+  sc::GaussianShell* s2 = &( bs2_->shell(shellnum2) );
+  sc::GaussianShell* s3 = &( bs3_->shell(shellnum3) );
+  sc::GaussianShell* s4 = &( bs4_->shell(shellnum4) );
+  int nc1 = s1->ncontraction();
+  int nc2 = s2->ncontraction();
+  int nc3 = s3->ncontraction();
+  int nc4 = s4->ncontraction();
 
-  // is the really necessary?
+  // is this really necessary?
   int reorder_needed=0;
   for (int i=0; i<nc1; ++i) {
-    if( s1.am(i) == 1) reorder_needed=1;
-    else if( s1.am(i) > 1 && s1.is_cartesian(i) ) reorder_needed=1;
+    if( s1->am(i) == 1) reorder_needed=1;
+    else if( s1->am(i) > 1 && s1->is_cartesian(i) ) reorder_needed=1;
   }
   if (!reorder_needed)
     for (int i=0; i<nc2; ++i) {
-      if( s2.am(i) == 1) reorder_needed=1;
-      else if( s2.am(i) > 1 && s2.is_cartesian(i) ) reorder_needed=1;
+      if( s2->am(i) == 1) reorder_needed=1;
+      else if( s2->am(i) > 1 && s2->is_cartesian(i) ) reorder_needed=1;
     }
   if (!reorder_needed)
     for (int i=0; i<nc3; ++i) {
-      if( s3.am(i) == 1) reorder_needed=1;
-      else if( s3.am(i) > 1 && s3.is_cartesian(i) ) reorder_needed=1;
+      if( s3->am(i) == 1) reorder_needed=1;
+      else if( s3->am(i) > 1 && s3->is_cartesian(i) ) reorder_needed=1;
     }
   if (!reorder_needed)
     for (int i=0; i<nc4; ++i) {
-      if( s4.am(i) == 1) reorder_needed=1;
-      else if( s4.am(i) > 1 && s4.is_cartesian(i) ) reorder_needed=1;
+      if( s4->am(i) == 1) reorder_needed=1;
+      else if( s4->am(i) > 1 && s4->is_cartesian(i) ) reorder_needed=1;
     }
   if( !reorder_needed ) return;
 
   // copy buffer into temp space
-  int nfunc = s1.nfunction() * s2.nfunction() * s3.nfunction() * s4.nfunction();
+  int nfunc = s1->nfunction() * s2->nfunction() * 
+                s3->nfunction() * s4->nfunction();
   for( int i=0; i<nfunc; ++i) {
     temp_buffer_[i] = sc_buffer_[i];
   }
-
-  //std::cout << "intv3 buffer:" << bufn_ << std::endl;
-  //for( int i=0; i<nfunc; ++i) 
-  //   std::cout << temp_buffer_[i] << std::endl;
-  //std::cout << endl;
 
   int index=0, con2_offset=0, con3_offset=0, con4_offset=0, con_offset,
       local2_offset, local3_offset, local4_offset, 
@@ -360,18 +362,18 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
 
   int temp;
   for( int c4=0; c4<nc4; ++c4 )
-    con4_offset += s4.nfunction(c4);
+    con4_offset += s4->nfunction(c4);
 
   temp = 0;
   con3_offset = con4_offset;
   for( int c3=0; c3<nc3; ++c3 )
-    temp += s3.nfunction(c3);
+    temp += s3->nfunction(c3);
   con3_offset *= temp;
 
   temp = 0;
   con2_offset = con3_offset;
   for( int c2=0; c2<nc2; ++c2 )
-    temp += s2.nfunction(c2);
+    temp += s2->nfunction(c2);
   con2_offset *= temp;
 
   int s1_is_cart, s2_is_cart, s3_is_cart, s4_is_cart,
@@ -380,27 +382,27 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
   for( int c1=0; c1<nc1; ++c1 ) {
 
     c1_base = index;
-    s1_is_cart = s1.is_cartesian(c1);
-    s1_nfunc = s1.nfunction(c1);
+    s1_is_cart = s1->is_cartesian(c1);
+    s1_nfunc = s1->nfunction(c1);
 
     for( int fc1=0; fc1<s1_nfunc; ++fc1 ) {
 
       if( s1_is_cart )
-        c2_base = c1_base + reorder_[s1.am(c1)][fc1] * con2_offset;
+        c2_base = c1_base + reorder_[s1->am(c1)][fc1] * con2_offset;
       else
         c2_base = c1_base + fc1 * con2_offset;
 
       local2_offset = 0;
       for( int c2=0; c2<nc2; ++c2 ) {
 
-        if( c2>0 ) local2_offset += s2.nfunction(c2-1);
-        s2_is_cart = s2.is_cartesian(c2);
-        s2_nfunc = s2.nfunction(c2);
+        if( c2>0 ) local2_offset += s2->nfunction(c2-1);
+        s2_is_cart = s2->is_cartesian(c2);
+        s2_nfunc = s2->nfunction(c2);
 
         for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
 
           if( s2_is_cart )
-            c3_base = c2_base + (local2_offset + reorder_[s2.am(c2)][fc2]) 
+            c3_base = c2_base + (local2_offset + reorder_[s2->am(c2)][fc2]) 
                         * con3_offset;
           else
             c3_base = c2_base + (local2_offset + fc2) * con3_offset;
@@ -408,50 +410,34 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
           local3_offset = 0;
           for( int c3=0; c3<nc3; ++c3 ) {
 
-            if( c3>0 ) local3_offset += s3.nfunction(c3-1);
-            s3_is_cart = s3.is_cartesian(c3);
-            s3_nfunc = s3.nfunction(c3);
+            if( c3>0 ) local3_offset += s3->nfunction(c3-1);
+            s3_is_cart = s3->is_cartesian(c3);
+            s3_nfunc = s3->nfunction(c3);
 
             for( int fc3=0; fc3<s3_nfunc; ++fc3 ) {
 
               if( s3_is_cart )
-                c4_base = c3_base + (local3_offset + reorder_[s3.am(c3)][fc3])
+                c4_base = c3_base + (local3_offset + reorder_[s3->am(c3)][fc3])
                             * con4_offset;
               else
                 c4_base = c3_base + (local3_offset + fc3) * con4_offset;
 
               local4_offset = 0;
-              s4_nfunc = s4.nfunction(0);
-              if( s4.is_cartesian(0) ) 
-                for( int fc4=0; fc4<s4_nfunc; ++fc4) {
-                  buf[index] =
-                      temp_buffer_[ c4_base + local4_offset +
-                                   reorder_[s4.am(0)][fc4] ];
-                  ++index;
-                }
-              else 
-                for( int fc4=0; fc4<s4_nfunc; ++fc4) {
-                  buf[index] =
-                      temp_buffer_[ c4_base + local4_offset + fc4];
-                  ++index;
-                }
-    
-              for( int c4=1; c4<nc4; ++c4 ) {
+              for( int c4=0; c4<nc4; ++c4 ) {
 
-                local4_offset += s4.nfunction(c4-1);
-                s4_is_cart = s4.is_cartesian(c4);
-                s4_nfunc = s4.nfunction(c4);
+                if( c4>0 ) local4_offset += s4->nfunction(c4-1);
+                s4_is_cart = s4->is_cartesian(c4);
+                s4_nfunc = s4->nfunction(c4);
           
                 if( s4_is_cart ) 
                   for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
-                    buf[index] =
-                      temp_buffer_[ c4_base + local4_offset + 
-                                   reorder_[s4.am(c4)][fc4] ];
+                    buf[ c4_base + local4_offset + reorder_[s4->am(c4)][fc4] ]
+		      = temp_buffer_[index];
                     ++index;
                   }
                 else 
                   for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
-                    buf[index] = temp_buffer_[c4_base + local4_offset + fc4];
+                    buf[ c4_base + local4_offset + fc4 ] = temp_buffer_[index];
                     ++index;
                   }
               }
@@ -459,6 +445,172 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
           }
         }
       }
+    }
+  }
+
+}
+
+void
+MPQC::IntegralEvaluator4_impl::reorder_intv3_inline(int64_t shellnum1,
+                                                    int64_t shellnum2,
+                                                    int64_t shellnum3,
+                                                    int64_t shellnum4)
+{
+  buf_ = const_cast<double*>( sc_buffer_ );
+
+  s1_ = &( bs1_->shell(shellnum1) );
+  s2_ = &( bs2_->shell(shellnum2) );
+  s3_ = &( bs3_->shell(shellnum3) );
+  s4_ = &( bs4_->shell(shellnum4) );
+  nc1_ = s1_->ncontraction();
+  nc2_ = s2_->ncontraction();
+  nc3_ = s3_->ncontraction();
+  nc4_ = s4_->ncontraction();
+
+  // is this really necessary?
+  int reorder_needed=0;
+  for (int i=0; i<nc1_; ++i) {
+    if( s1_->am(i) == 1) reorder_needed=1;
+    else if( s1_->am(i) > 1 && s1_->is_cartesian(i) ) reorder_needed=1;
+  }
+  if (!reorder_needed)
+    for (int i=0; i<nc2_; ++i) {
+      if( s2_->am(i) == 1) reorder_needed=1;
+      else if( s2_->am(i) > 1 && s2_->is_cartesian(i) ) reorder_needed=1;
+    }
+  if (!reorder_needed)
+    for (int i=0; i<nc3_; ++i) {
+      if( s3_->am(i) == 1) reorder_needed=1;
+      else if( s3_->am(i) > 1 && s3_->is_cartesian(i) ) reorder_needed=1;
+    }
+  if (!reorder_needed)
+    for (int i=0; i<nc4_; ++i) {
+      if( s4_->am(i) == 1) reorder_needed=1;
+      else if( s4_->am(i) > 1 && s4_->is_cartesian(i) ) reorder_needed=1;
+    }
+  if( !reorder_needed ) return;
+
+  // copy buffer into temp space
+  int nfunc = s1_->nfunction() * s2_->nfunction() * 
+                s3_->nfunction() * s4_->nfunction();
+  for( int i=0; i<nfunc; ++i) {
+    temp_buffer_[i] = sc_buffer_[i];
+  }
+
+  index_ = con2_offset_ = con3_offset_ = con4_offset_ = 0;
+
+  int temp;
+  for( int c4=0; c4<nc4_; ++c4 )
+    con4_offset_ += s4_->nfunction(c4);
+
+  temp = 0;
+  con3_offset_ = con4_offset_;
+  for( int c3=0; c3<nc3_; ++c3 )
+    temp += s3_->nfunction(c3);
+  con3_offset_ *= temp;
+
+  temp = 0;
+  con2_offset_ = con3_offset_;
+  for( int c2=0; c2<nc2_; ++c2 )
+    temp += s2_->nfunction(c2);
+  con2_offset_ *= temp;
+
+  int c3_is_cart, c3_not_cart;
+
+  for( int c1=0; c1<nc1_; ++c1 ) {
+
+    c1_base_ = index_;
+    s1_is_cart_ = s1_->is_cartesian(c1);
+    s1_nfunc_ = s1_->nfunction(c1);
+
+    for( int fc1=0; fc1<s1_nfunc_; ++fc1 ) {
+
+      if( s1_is_cart_ )
+        c2_base_ = c1_base_ + reorder_[s1_->am(c1)][fc1] * con2_offset_;
+      else
+        c2_base_ = c1_base_ + fc1 * con2_offset_;
+
+      local2_offset_ = 0;
+      for( int c2=0; c2<nc2_; ++c2 ) {
+
+        if( c2>0 ) local2_offset_ += s2_->nfunction(c2-1);
+        s2_is_cart_ = s2_->is_cartesian(c2);
+        s2_nfunc_ = s2_->nfunction(c2);
+
+        for( int fc2=0; fc2<s2_nfunc_; ++fc2 ) {
+
+          if( s2_is_cart_ )
+            c3_base_ = c2_base_ + (local2_offset_ + reorder_[s2_->am(c2)][fc2]) 
+                        * con3_offset_;
+          else
+            c3_base_ = c2_base_ + (local2_offset_ + fc2) * con3_offset_;
+
+          local3_offset_ = 0;
+          c3_is_cart = s3_->is_cartesian(0);
+	  c3_not_cart = !c3_is_cart;
+          s3_nfunc_ = s3_->nfunction(0);
+          for( int fc3=0; fc3<s3_nfunc_; ++fc3 )
+            reorder_c4(0, c3_base_, local3_offset_,
+		       c3_is_cart, c3_not_cart, fc3);
+
+          for( int c3=1; c3<nc3_; ++c3 ) {
+
+            local3_offset_ += s3_->nfunction(c3-1);
+            c3_is_cart = s3_->is_cartesian(c3);
+	    c3_not_cart = !c3_is_cart;
+	    s3_nfunc_ = s3_->nfunction(c3);
+            for( int fc3=0; fc3<s3_nfunc_; ++fc3 ) {
+	      reorder_c4( c3, c3_base_, local3_offset_,
+			  c3_is_cart, c3_not_cart, fc3);
+
+            }
+          }
+        }
+      }
+    }
+  }
+
+}
+
+inline void
+MPQC::IntegralEvaluator4_impl::reorder_c4(int c3,
+					  int c3_base,
+					  int local3_offset,
+					  int c3_is_cart,
+					  int c3_not_cart,
+					  int fc3)
+{
+
+  int c4_base, local4_offset, c4_is_cart, c4_not_cart, c4_nfunc;
+
+  c4_base = c3_base 
+    + ( c3_is_cart * (local3_offset + reorder_[s3_->am(c3)][fc3]) 
+	+ c3_not_cart * (local3_offset + fc3) )
+    * con4_offset_;
+
+  local4_offset = 0;
+  c4_is_cart = s4_->is_cartesian(0);
+  c4_not_cart = !c4_is_cart;
+  c4_nfunc = s4_->nfunction(0);
+  for( int fc4=0; fc4<c4_nfunc; ++fc4) {
+    buf_[ c4_base_ 
+	  + c4_is_cart * reorder_[s4_->am(0)][fc4]
+	  + c4_not_cart * fc4 ] 
+      = temp_buffer_[index_];
+    ++index_;
+  }
+
+  for( int c4=1; c4<nc4_; ++c4 ) {
+    local4_offset += s4_->nfunction(c4-1);
+    c4_is_cart = s4_->is_cartesian(c4);
+    c4_not_cart = !c4_is_cart;
+    c4_nfunc = s4_->nfunction(c4);
+    for( int fc4=0; fc4<c4_nfunc; ++fc4 ) {
+      buf_[ c4_base + local4_offset 
+	    + c4_is_cart * reorder_[s4_->am(c4)][fc4]
+            + c4_not_cart * fc4 ] 
+	= temp_buffer_[index_];
+      ++index_;
     }
   }
 

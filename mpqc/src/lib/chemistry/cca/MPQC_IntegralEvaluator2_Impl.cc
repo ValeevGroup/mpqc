@@ -17,9 +17,10 @@
 #pragma implementation "ccaiter.h"
 #include <ccaiter.h>
 
-Ref<GaussianBasisSet> basis_cca_to_sc(Molecular&);
-
 using namespace std;
+using namespace Chemistry::QC::GaussianBasis;
+
+Ref<GaussianBasisSet> basis_cca_to_sc(Molecular&);
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._includes)
 
@@ -226,10 +227,6 @@ throw ()
   else 
     abort();
 
-  sc::GaussianShell &s1 = bs1_->shell(shellnum1);
-  sc::GaussianShell &s2 = bs2_->shell(shellnum2);
-  int nfunc = s1.nfunction() * s2.nfunction();
- 
   /* deriv wrt what center?  interface needs work
   else if( int_type_ == one_body_deriv ) {
     deriv_eval_->compute_shell( (int) shellnum1, (int) shellnum2,??? );

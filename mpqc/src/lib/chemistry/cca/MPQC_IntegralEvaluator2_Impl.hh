@@ -43,9 +43,7 @@
 #ifdef HAVE_CINTS
   #include <chemistry/qc/cints/cints.h>
 #endif
-//#include <util/ref/ref.h>
 using namespace sc;
-using namespace Chemistry::QC::GaussianBasis;
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._includes)
 
 namespace MPQC { 

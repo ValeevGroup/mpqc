@@ -542,7 +542,11 @@ cmat_diag(double**a, double*evals, double**evecs, int n,
   free(fv1);
   }
 
+#ifndef __GNUC__
+static double dsign(double a, double b)
+#else
 inline static double dsign(double a, double b)
+#endif
 {
   return (b >= 0.0) ? fabs(a) : -fabs(a);
 }

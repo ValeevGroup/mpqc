@@ -8,9 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////
 // SymmOneBodyIntIter
 
-#if 0
-SymmOneBodyIntIter::SymmOneBodyIntIter(const RefPetiteList& p) :
-  pl(p)
+SymmOneBodyIntIter::SymmOneBodyIntIter(const RefOneBodyInt& ints,
+                                       const RefPetiteList& p) :
+  OneBodyIntIter(ints), pl(p)
 {
 }
 
@@ -27,27 +27,11 @@ SymmOneBodyIntIter::next()
 }
 
 void
-SymmOneBodyIntIter::next_ltri()
+SymmOneBodyIntIter::start(int ist, int jst, int ien, int jen)
 {
-  OneBodyIntIter::next_ltri();
-  while (!pl->lambda(icur,jcur))
-    OneBodyIntIter::next_ltri();
-}
-
-void
-SymmOneBodyIntIter::start()
-{
-  OneBodyIntIter::start();
+  OneBodyIntIter::start(ist,jst,ien,jen);
   while (!pl->lambda(icur,jcur))
     OneBodyIntIter::next();
-}
-
-void
-SymmOneBodyIntIter::start_ltri()
-{
-  OneBodyIntIter::start_ltri();
-  while (!pl->lambda(icur,jcur))
-    OneBodyIntIter::next_ltri();
 }
 
 double
@@ -55,7 +39,6 @@ SymmOneBodyIntIter::scale() const
 {
   return (double) pl->lambda(icur,jcur) / (double) pl->order();
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -143,7 +126,7 @@ AOSO_Transformation::process(SCMatrixBlockIter&)
 }
 
 void
-AOSO_Transformation::process(SCMatrixRectBlock* blk)
+AOSO_Transformation::process_spec(SCMatrixRectBlock* blk)
 {
   SO_block& sob = sos.sos_[current_block()];
 
@@ -186,12 +169,15 @@ AOSO_Unit::process(SCMatrixBlockIter&)
 }
 
 void
-AOSO_Unit::process(SCMatrixRectBlock* blk)
+AOSO_Unit::process_spec(SCMatrixRectBlock* blk)
 {
-#if 0
-  int fi = (d1->nblocks()==1) ? d1->first(0) : d1->first(current_block());
-  int fj = (d2->nblocks()==1) ? d2->first(0) : d2->first(current_block());
-
+  int curblk = current_block();
+  RefSCBlockInfo rblk = d1->blocks();
+  RefSCBlockInfo cblk = d2->blocks();
+  
+  int fi = (rblk->nblock()==1) ? rblk->start(0) : rblk->start(curblk);
+  int fj = (cblk->nblock()==1) ? cblk->start(0) : cblk->start(curblk);
+  
   int isize = blk->iend - blk->istart;
   int jsize = blk->jend - blk->jstart;
   
@@ -201,6 +187,5 @@ AOSO_Unit::process(SCMatrixRectBlock* blk)
     for (int j=blk->jstart; j < blk->jend; j++)
       if (i+fi==j+fj)
         blk->data[(i-blk->istart)*jsize+j-blk->jstart]=1;
-#endif
 }
 

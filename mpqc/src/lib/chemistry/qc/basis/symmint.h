@@ -12,24 +12,19 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-#if 0
 class SymmOneBodyIntIter : public OneBodyIntIter {
   protected:
     RefPetiteList pl;
     
   public:
-    SymmOneBodyIntIter(const RefPetiteList&);
+    SymmOneBodyIntIter(const RefOneBodyInt&, const RefPetiteList&);
     ~SymmOneBodyIntIter();
 
-    void start();
+    void start(int ist=0, int jst=0, int ien=0, int jen=0);
     void next();
-
-    void start_ltri();
-    void next_ltri();
 
     double scale() const;
 };
-#endif
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +60,7 @@ class AOSO_Unit : public BlockedSCElementOp {
     AOSO_Unit(const RefSCDimension&,const RefSCDimension&);
 
     void process(SCMatrixBlockIter&);
-    void process(SCMatrixRectBlock*);
+    void process_spec(SCMatrixRectBlock*);
 };
 
 class AOSO_Transformation : public BlockedSCElementOp {
@@ -77,6 +72,6 @@ class AOSO_Transformation : public BlockedSCElementOp {
     AOSO_Transformation(const RefGaussianBasisSet&, const RefPetiteList&);
 
     void process(SCMatrixBlockIter&);
-    void process(SCMatrixRectBlock*);
+    void process_spec(SCMatrixRectBlock*);
 };
 #endif

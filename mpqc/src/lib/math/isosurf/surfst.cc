@@ -76,11 +76,19 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
       topology_info();
     }
 
+#if WRITE_OOGL
+  if (_debug) {
+      render(new OOGLRender("surfstinit.oogl"));
+    }
+#endif
+
   int deleted_edges_length;
   do {
       RefTriangleAVLSet deleted_triangles;
       RefEdgeAVLSet deleted_edges;
       RefVertexAVLSet deleted_vertices;
+
+      RefVertexAVLSet vertices_of_deleted_triangles;
 
       RefTriangleAVLSet new_triangles;
       RefEdgeAVLSet new_edges;
@@ -149,17 +157,22 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
               RefTriangleAVLSet connected_triangles;
               connected_triangles |= connected_triangle_map[vertex];
 
-              // if one of the connected triangles is already being
-              // deleted, save this one until the next pass
+              // if one of the connected triangles has a vertex
+              // in a deleted triangle, save this one until the
+              // next pass
               int skip = 0;
               for (J = connected_triangles.first();
                    J;
                    connected_triangles.next(J)) {
                   RefTriangle tri = connected_triangles(J);
-                  if (deleted_triangles.contains(tri)) {
-                      skip = 1;
-                      break;
+                  for (j=0; j<3; j++) {
+                      RefVertex v = tri->vertex(j);
+                      if (vertices_of_deleted_triangles.contains(v)) {
+                          skip = 1;
+                          break;
+                        }
                     }
+                  if (skip) break;
                 }
               if (skip) continue;
 
@@ -226,6 +239,16 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
               deleted_triangles |= connected_triangles;
               deleted_vertices.add(vertex);
               deleted_edges |= connected_edges;
+
+              for (J = deleted_triangles.first();
+                   J;
+                   deleted_triangles.next(J)) {
+                  RefTriangle t = deleted_triangles(J);
+                  for (j=0; j<2; j++) {
+                      RefVertex v = t->vertex(j);
+                      vertices_of_deleted_triangles.add(v);
+                    }
+                }
 
               // find a new point that replaces the deleted vertex
               // (for now use one of the original, since it must lie on the
@@ -317,14 +340,20 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
         }
 
 #if WRITE_OOGL
-        {
+      if (_debug) {
           char filename[100];
           static int pass = 0;
           sprintf(filename, "surfst%04d.oogl", pass);
+          cout << scprintf("PASS = %04d\n", pass);
           RefRender render = new OOGLRender(filename);
           RefRenderedPolygons poly = new RenderedPolygons;
           poly->initialize(_vertices.length(), _triangles.length(),
                            RenderedPolygons::Vertex);
+          // the number of triangles and edges touching a vertex
+          int *n_triangle = new int[_vertices.length()];
+          int *n_edge = new int[_vertices.length()];
+          memset(n_triangle,0,sizeof(int)*_vertices.length());
+          memset(n_edge,0,sizeof(int)*_vertices.length());
           Pix I;
           PixintRAVLMap pix_to_index(0);
           int i = 0;
@@ -332,9 +361,9 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
               RefVertex v = _vertices(I);
               pix_to_index[(Pix)v.pointer()] = i;
               poly->set_vertex(i,
-                               v->point()->get_element(0),
-                               v->point()->get_element(1),
-                               v->point()->get_element(2));
+                               v->point()[0],
+                               v->point()[1],
+                               v->point()[2]);
               if (deleted_vertices.seek(v)) {
                   poly->set_vertex_rgb(i, 1.0, 0.0, 0.0);
                 }
@@ -345,19 +374,41 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
           i = 0;
           for (I = _triangles.first(); I; _triangles.next(I), i++) {
               RefTriangle t = _triangles(I);
-              poly->set_face(i,
-                             pix_to_index[(Pix)t->vertex(0).pointer()],
-                             pix_to_index[(Pix)t->vertex(1).pointer()],
-                             pix_to_index[(Pix)t->vertex(2).pointer()]);
+              int i0 = pix_to_index[(Pix)t->vertex(0).pointer()];
+              int i1 = pix_to_index[(Pix)t->vertex(1).pointer()];
+              int i2 = pix_to_index[(Pix)t->vertex(2).pointer()];
+              n_triangle[i0]++;
+              n_triangle[i1]++;
+              n_triangle[i2]++;
+              poly->set_face(i,i0,i1,i2);
             }
-          if (_verbose) {
-              cout << scprintf("PASS = %04d: ", pass);
+          for (I = _edges.first(); I; _edges.next(I), i++) {
+              RefEdge e = _edges(I);
+              int i0 = pix_to_index[(Pix)e->vertex(0).pointer()];
+              int i1 = pix_to_index[(Pix)e->vertex(1).pointer()];
+              n_edge[i0]++;
+              n_edge[i1]++;
             }
-          else {
-              cout << scprintf("PASS = %04d\n", pass);
+          i = 0;
+          for (I = _vertices.first(); I; _vertices.next(I), i++) {
+              RefVertex v = _vertices(I);
+              if (n_triangle[i] != n_edge[i]) {
+                  cout << "found bad vertex"
+                       << " nedge = " << n_edge[i]
+                       << " ntriangle = " << n_triangle[i]
+                       << endl;
+                  if (deleted_vertices.seek(v)) {
+                      poly->set_vertex_rgb(i, 1.0, 1.0, 0.0);
+                    }
+                  else {
+                      poly->set_vertex_rgb(i, 0.0, 1.0, 0.0);
+                    }
+                }
             }
           render->render(poly);
           pass++;
+          delete[] n_triangle;
+          delete[] n_edge;
         }
 #endif
 

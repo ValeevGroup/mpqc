@@ -677,7 +677,9 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
                          bs_values_, bsg_values_, bsh_values_);
         }
     }
-  else { return id.a.rho + id.b.rho; }
+  else {
+      return id.a.rho + id.b.rho;
+    }
   
   value_ += od.energy * w_mult;
 
@@ -1369,47 +1371,17 @@ EulerMaclaurinRadialIntegrator::nr() const
 }
 
 double
-EulerMaclaurinRadialIntegrator::radial_value(int ir, int nr, double radii)
+EulerMaclaurinRadialIntegrator::radial_value(int ir, int nr, double radii,
+                                             double &multiplier)
 {
-  double q = (double) (double)ir/(double)nr;
+  double q = (double)ir/(double)nr;
   double value = q/(1.-q);
   double r = radii*value*value;
-  set_dr_dq( 2.*radii*q*pow(1.-q,-3.) );
-  set_dr_dqr2( dr_dq_*r*r );
+  double dr_dq =  2.*radii*q*pow(1.-q,-3.);
+  double dr_dqr2 = dr_dq*r*r;
+  multiplier = dr_dqr2/nr;
   return r;
 }
-
-double
-EulerMaclaurinRadialIntegrator::radial_multiplier(int nr)
-{
-  double value = get_dr_dqr2();
-  return value/((double) nr);
-}
-
-void
-EulerMaclaurinRadialIntegrator::set_dr_dq(double i)
-{
-  dr_dq_ = i;
-}
-
-double
-EulerMaclaurinRadialIntegrator::get_dr_dq(void) const
-{
-  return dr_dq_;
-}
-
-void
-EulerMaclaurinRadialIntegrator::set_dr_dqr2(double i)
-{
-  dr_dqr2_ = i;
-}
-
-double
-EulerMaclaurinRadialIntegrator::get_dr_dqr2(void) const
-{
-  return dr_dqr2_;
-}
-
 
 void
 EulerMaclaurinRadialIntegrator::print(ostream &o) const
@@ -1862,6 +1834,7 @@ RadialAngularIntegratorThread::run()
   int nangular;
   int ir, iangular;           // Loop indices for diff. integration dim
   int point_count;            // Counter for # integration points per center
+  int nr;
 
   SCVector3 center;           // Cartesian position of center
   SCVector3 integration_point;
@@ -1876,11 +1849,11 @@ RadialAngularIntegratorThread::run()
       // get current radial grid: depends on convergence threshold
       RadialIntegrator *radial
           = ra_integrator_->get_radial_grid(mol_->Z(icenter));
-      for (ir=0; ir < radial->nr(); ir++) {
+      nr = radial->nr();
+      for (ir=0; ir < nr; ir++) {
           if (! (parallel_counter++%nthread_ == ithread_)) continue;
-          double r = radial->radial_value(ir, radial->nr(),
-                                          atomic_radius_[icenter]);
-          radial_multiplier = radial->radial_multiplier(radial->nr());
+          double r = radial->radial_value(ir, nr, atomic_radius_[icenter],
+                                          radial_multiplier);
           // get current angular grid: depends on radial point and threshold
           AngularIntegrator *angular
               = ra_integrator_->get_angular_grid(r, atomic_radius_[icenter],

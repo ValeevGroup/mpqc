@@ -205,8 +205,8 @@ class RadialIntegrator: virtual public SavableState {
     void save_data_state(StateOut &);
 
     virtual int nr() const = 0;
-    virtual double radial_value(int ir, int nr, double radii) = 0;
-    virtual double radial_multiplier(int nr) = 0;
+    virtual double radial_value(int ir, int nr, double radii,
+                                double &multiplier) = 0;
 };
 SavableState_REF_dec(RadialIntegrator);
 
@@ -238,14 +238,6 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  protected:
-    double dr_dq_;
-    double dr_dqr2_;
-
-    double get_dr_dq(void) const;
-    void set_dr_dq(double i);
-    double get_dr_dqr2(void) const;
-    void set_dr_dqr2(double i);
   public:
     EulerMaclaurinRadialIntegrator();
     EulerMaclaurinRadialIntegrator(int i);
@@ -255,8 +247,7 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     void save_data_state(StateOut &);
 
     int nr() const;
-    double radial_value(int ir, int nr, double radii);
-    double radial_multiplier(int nr);
+    double radial_value(int ir, int nr, double radii, double &multiplier);
 
     void print(ostream & =ExEnv::out()) const;
 };

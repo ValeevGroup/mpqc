@@ -36,6 +36,8 @@
 #include <util/state/state.h>
 #include <util/ref/ref.h>
 
+SavableState_REF_fwddec(Units);
+
 //. The \clsnm{Units} class is used to perform unit converions.
 class Units: public SavableState {
 #define CLASSNAME Units
@@ -54,6 +56,9 @@ class Units: public SavableState {
     Units(char *strrep, Units::Storage = Units::Copy);
     Units(StateIn&);
     ~Units();
+
+    double to(const RefUnits &) const;
+    double from(const RefUnits &) const;
 
     double to_atomic_units() const;
     double from_atomic_units() const;

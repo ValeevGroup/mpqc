@@ -87,6 +87,18 @@ Units::save_data_state(StateOut&s)
 }
 
 double
+Units::to(const RefUnits &units) const
+{
+  return to_atomic_units_/units->to_atomic_units_;
+}
+
+double
+Units::from(const RefUnits &units) const
+{
+  return 1.0/to(units);
+}
+
+double
 Units::to_atomic_units() const
 {
   return to_atomic_units_;
@@ -133,6 +145,9 @@ Units::parse_unit()
       const double Ea = e*e/((4.0*M_PI*e0)*a0); // J
       const double time = hbar/Ea; // s
 
+      // other conversions
+      const double amu = 1.6605655e-27; // kg
+
       double factor = 1.0;
       if (!strncmp(rest, "bohr", nchar)
           ||!strncmp(rest, "bohrs", nchar)) {
@@ -160,6 +175,9 @@ Units::parse_unit()
                ||!strncmp(rest, "aangstrom", nchar)
                ||!strncmp(rest, "aangstroms", nchar)) {
           factor = 1.0e-10/a0;
+        }
+      else if (!strncmp(rest, "amu", nchar)) {
+          factor = amu/me;
         }
       else if (!strncmp(rest, "degree", nchar)
                ||!strncmp(rest, "degrees", nchar)) {

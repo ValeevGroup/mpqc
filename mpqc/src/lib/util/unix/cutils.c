@@ -237,7 +237,7 @@ log_doit(int errnoflag, int priority, const char *fmt, va_list ap)
 
 /**************************************************************/
 
-#if !defined(SUNMOS)
+#if !defined(PARAGON)
 
 static struct errordesc {
   int val;

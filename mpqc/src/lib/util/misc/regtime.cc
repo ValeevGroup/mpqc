@@ -268,7 +268,8 @@ TimedRegion::wall_exit(double t)
 
 RegionTimer::RegionTimer(const char *topname, int cpu_time, int wall_time):
   cpu_time_(0),
-  wall_time_(0)
+  wall_time_(0),
+  default_(0)
 {
 #if HAVE_CPU_TIME
   cpu_time_ = cpu_time;
@@ -340,6 +341,32 @@ RegionTimer::exit(const char *name)
       abort();
     }
   current_ = current_->up();
+}
+
+void
+RegionTimer::enter_default()
+{
+  if (cpu_time_) default_->cpu_enter(get_cpu_time());
+  if (wall_time_) default_->wall_enter(get_wall_time());
+}
+
+void
+RegionTimer::exit_default()
+{
+  if (cpu_time_) default_->cpu_exit(get_cpu_time());
+  if (wall_time_) default_->wall_exit(get_wall_time());
+}
+
+void
+RegionTimer::set_default(const char *name)
+{
+  default_ = current_->findinsubregion(name);
+}
+
+void
+RegionTimer::unset_default()
+{
+  default_ = 0;
 }
 
 void
@@ -498,6 +525,24 @@ void
 tim_exit(const char *name)
 {
   if (default_regtimer.nonnull()) default_regtimer->exit(name);
+}
+
+void
+tim_set_default(const char *name)
+{
+  if (default_regtimer.nonnull()) default_regtimer->set_default(name);
+}
+
+void
+tim_enter_default()
+{
+  if (default_regtimer.nonnull()) default_regtimer->enter_default();
+}
+
+void
+tim_exit_default()
+{
+  if (default_regtimer.nonnull()) default_regtimer->exit_default();
 }
 
 void

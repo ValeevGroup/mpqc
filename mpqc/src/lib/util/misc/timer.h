@@ -35,6 +35,9 @@ extern "C" {
   void tim_enter(const char *);
   void tim_exit(const char *);
   void tim_change(const char *);
+  void tim_set_default(const char *);
+  void tim_enter_default();
+  void tim_exit_default();
   void tim_print(int);
 
 #ifdef __cplusplus

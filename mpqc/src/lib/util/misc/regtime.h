@@ -46,14 +46,19 @@ class RegionTimer: public VRefCount {
 
     TimedRegion *top_;
     TimedRegion *current_;
+    TimedRegion *default_;
 
   public:
     RegionTimer(const char *topname = "total",
                 int cpu_time = 0, int wall_time = 1);
     ~RegionTimer();
-    void enter(const char *);
+    void enter(const char * = 0);
     void change(const char *newname, const char * oldname = 0);
     void exit(const char * = 0);
+    void set_default(const char *);
+    void unset_default();
+    void enter_default();
+    void exit_default();
     virtual void print(ostream& = cout);
 
     void update_top();

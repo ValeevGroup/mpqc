@@ -55,8 +55,6 @@ class HSOSSCF: public SCF {
 
     RefSymmSCMatrix cl_hcore_;
 
-    char *init_pmax(double*);
-    
     void set_occupations(const RefDiagSCMatrix& evals);
 
     // scf things

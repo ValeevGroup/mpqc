@@ -26,6 +26,7 @@ class SCF: public OneBodyWavefunction {
     int maxiter_;
     int int_store_;
     int dens_reset_freq_;
+    double level_shift_;
 
     RefMessageGrp scf_grp_;
     

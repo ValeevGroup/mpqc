@@ -10,6 +10,7 @@
 #include <chemistry/qc/basis/symmint.h>
 
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/scf/scfden.h>
 #include <chemistry/qc/scf/scflocal.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -21,6 +22,10 @@ SCF::compute_vector(double& eelec)
 
   // one day this should be in the input
   RefSelfConsistentExtrapolation extrap = new DIIS;
+  
+  // create level shifter
+  LevelShift *level_shift = new LevelShift(this);
+  level_shift->reference();
   
   // set up subclass for vector calculation
   init_vector();
@@ -60,7 +65,17 @@ SCF::compute_vector(double& eelec)
     RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
   
     RefSymmSCMatrix eff = effective_fock();
+
+    // level shift effective fock
+    level_shift->set_shift(level_shift_);
+    eff.element_op(level_shift);
+    
     eff.diagonalize(evals,nvector);
+
+    // now un-level shift eigenvalues
+    level_shift->set_shift(-level_shift_);
+    evals.element_op(level_shift);
+    
     set_occupations(evals);
 
     eff=0;

@@ -30,6 +30,7 @@ SCF::SCF(StateIn& s) :
   s.get(maxiter_);
   s.get(int_store_);
   s.get(dens_reset_freq_);
+  s.get(level_shift_);
 
   integral()->set_storage(int_store_);
 
@@ -49,6 +50,7 @@ SCF::SCF(const RefKeyVal& keyval) :
   OneBodyWavefunction(keyval),
   maxiter_(40),
   int_store_(0),
+  level_shift_(0),
   dens_reset_freq_(10)
 {
   if (keyval->exists("maxiter"))
@@ -59,6 +61,9 @@ SCF::SCF(const RefKeyVal& keyval) :
 
   if (keyval->exists("integral_storage"))
     int_store_ = keyval->intvalue("integral_storage");
+
+  if (keyval->exists("level_shift"))
+    level_shift_ = keyval->doublevalue("level_shift");
 
   integral()->set_storage(int_store_);
 
@@ -85,6 +90,7 @@ SCF::save_data_state(StateOut& s)
   s.put(maxiter_);
   s.put(int_store_);
   s.put(dens_reset_freq_);
+  s.put(level_shift_);
 }
 
 RefSCMatrix

@@ -21,6 +21,9 @@
 #include <chemistry/qc/basis/petite.h>
 
 #include <chemistry/qc/scf/scflocal.h>
+#include <chemistry/qc/scf/scfden.h>
+#include <chemistry/qc/scf/effh.h>
+
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/scf/hsoscont.h>
 #include <chemistry/qc/scf/lgbuild.h>
@@ -137,6 +140,9 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
     maxiter_ = 100;
+
+  if (!keyval->exists("level_shift"))
+    level_shift_ = 1.0;
 }
 
 HSOSSCF::~HSOSSCF()
@@ -396,139 +402,34 @@ HSOSSCF::reset_density()
 double
 HSOSSCF::new_density()
 {
-  BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(
-    scf_vector_, "HSOSSCF::new_density: scf_vector");
+  // copy current density into density diff and scale by -1.  later we'll
+  // add the new density to this to get the density difference.
+  cl_dens_diff_.assign(cl_dens_);
+  cl_dens_diff_.scale(-1.0);
 
-  BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_, "HSOSSCF::new_density: density");
+  op_dens_diff_.assign(op_dens_);
+  op_dens_diff_.scale(-1.0);
 
-  BlockedSymmSCMatrix *ddensp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_diff_, "HSOSSCF::new_density: density difference");
+  cl_dens_.assign(0.0);
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  cl_dens_.element_op(op);
+  cl_dens_.scale(2.0);
+
+  op_dens_.assign(0.0);
+  op = new SCFDensity(this, scf_vector_, 1.0);
+  op_dens_.element_op(op);
+
+  cl_dens_.accumulate(op_dens_);
   
-  BlockedSymmSCMatrix *odensp = BlockedSymmSCMatrix::require_castdown(
-    op_dens_, "HSOSSCF::new_density: open density");
+  cl_dens_diff_.accumulate(cl_dens_);
+  op_dens_diff_.accumulate(op_dens_);
 
-  BlockedSymmSCMatrix *oddensp = BlockedSymmSCMatrix::require_castdown(
-    op_dens_diff_, "HSOSSCF::new_density: open density difference");
+  RefSCElementScalarProduct sp(new SCElementScalarProduct);
+  cl_dens_diff_.element_op(sp, cl_dens_diff_);
   
-  RefPetiteList pl = integral()->petite_list(basis());
-  
-  int ij=0;
-  double delta=0;
-  int istart, iend, jstart, jend, tri;
-  double *ddata;
+  double delta = sp->result();
+  delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
 
-  for (int ir=0; ir < vecp->nblocks(); ir++) {
-    int nbasis = pl->nfunction(ir);
-
-    if (!nbasis)
-      continue;
-    
-    RefSCMatrix vir = vecp->block(ir);
-    RefSymmSCMatrix dir = densp->block(ir);
-    RefSymmSCMatrix ddir = ddensp->block(ir);
-    RefSymmSCMatrix odir = odensp->block(ir);
-    RefSymmSCMatrix oddir = oddensp->block(ir);
-  
-    // copy current density into density diff and scale by -1.  later we'll
-    // add the new density to this to get the density difference.
-    ddir.assign(dir);
-    ddir.scale(-1.0);
-    dir.assign(0.0);
-
-    oddir.assign(odir);
-    oddir.scale(-1.0);
-    odir.assign(0.0);
-    
-    RefSCMatrixSubblockIter diter =
-      dir->local_blocks(SCMatrixSubblockIter::Write);
-
-    double *ck = new double[nbasis];
-    
-    // loop over columns of the scf vector
-    int k;
-    for (k=0;  k < ndocc_[ir]; k++) {
-      RefSCVector rck = vir.get_column(k);
-      rck->convert(ck);
-
-      // now loop over blocks of the density matrix and fill them in
-      for (diter->begin(); diter->ready(); diter->next()) {
-        SCMatrixBlock *dblk = diter->block();
-
-        ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-        if (!ddata) {
-          fprintf(stderr,"HSOSSCF::new_density: oops...can't get data\n");
-          abort();
-        }
-
-        int dij=0;
-        for (int i=istart; i < iend; i++)
-          for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++)
-            ddata[dij] += ck[i]*ck[j];
-      }
-    }
-    // force ReplSCMatrices to do the sum
-    diter=0;
-
-    dir.scale(2.0);
-
-    diter = odir->local_blocks(SCMatrixSubblockIter::Write);
-
-    for (;  k < ndocc_[ir]+nsocc_[ir]; k++) {
-      RefSCVector rck = vir.get_column(k);
-      rck->convert(ck);
-
-      // now loop over blocks of the density matrix and fill them in
-      for (diter->begin(); diter->ready(); diter->next()) {
-        SCMatrixBlock *dblk = diter->block();
-
-        ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-        if (!ddata) {
-          fprintf(stderr,"HSOSSCF::new_density: oops...can't get open data\n");
-          abort();
-        }
-
-        int dij=0;
-        for (int i=istart; i < iend; i++)
-          for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++)
-            ddata[dij] += ck[i]*ck[j];
-      }
-    }
-
-    // force ReplSCMatrices to do the sum
-    diter=0;
-
-    delete[] ck;
-    
-    dir.accumulate(odir);
-    ddir.accumulate(dir);
-    oddir.accumulate(odir);
-
-    // now calculate rms delta d
-    diter = ddir->local_blocks(SCMatrixSubblockIter::Read);
-
-    for (diter->begin(); diter->ready(); diter->next()) {
-      SCMatrixBlock *dblk = diter->block();
-
-      ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-      if (!ddata) {
-        fprintf(stderr,"CLSCF::new_density: oops...can't get diff data\n");
-        abort();
-      }
-
-      int dij=0;
-      for (int i=istart; i < iend; i++)
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++, ij++)
-          delta += ddata[dij]*ddata[dij];
-    }
-  }
-
-  if (!local_ && scf_grp_->n() > 1) {
-    scf_grp_->sum(&delta, 1);
-    scf_grp_->sum(&ij, 1);
-  }
-
-  delta = sqrt(delta/ij);
   return delta;
 }
 
@@ -542,110 +443,49 @@ HSOSSCF::scf_energy()
   go.scale(-1.0);
   go.accumulate(cl_fock_);
   
-  BlockedSymmSCMatrix *ofockp = BlockedSymmSCMatrix::require_castdown(
-    go, "HSOSSCF::scf_energy: open fock");
+  SCFEnergy *eop = new SCFEnergy;
+  eop->reference();
+  RefSCElementOp2 op = eop;
+  t.element_op(op, cl_dens_);
 
-  BlockedSymmSCMatrix *odensp = BlockedSymmSCMatrix::require_castdown(
-    op_dens_, "HSOSSCF::scf_energy: open density");
+  double cl_e = eop->result();
+  
+  eop->reset();
+  go.element_op(op, op_dens_);
+  double op_e = eop->result();
 
-  BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_, "HSOSSCF::scf_energy: density");
+  op=0;
+  eop->dereference();
+  delete eop;
 
-  BlockedSymmSCMatrix *fockp = BlockedSymmSCMatrix::require_castdown(
-    t, "HSOSSCF::scf_energy: H+F");
-
-  double eelec=0;
-  for (int ir=0; ir < fockp->nblocks(); ir++) {
-    RefSymmSCMatrix dir = densp->block(ir);
-    RefSymmSCMatrix fhir = fockp->block(ir);
-    RefSymmSCMatrix odir = odensp->block(ir);
-    RefSymmSCMatrix goir = ofockp->block(ir);
-
-    if (!dir.n())
-      continue;
-
-    RefSCMatrixSubblockIter diter =
-      dir->local_blocks(SCMatrixSubblockIter::Read);
-    RefSCMatrixSubblockIter fiter =
-      fhir->local_blocks(SCMatrixSubblockIter::Read);
-    RefSCMatrixSubblockIter oditer =
-      odir->local_blocks(SCMatrixSubblockIter::Read);
-    RefSCMatrixSubblockIter goiter =
-      goir->local_blocks(SCMatrixSubblockIter::Read);
-    
-    SCMatrixJointSubblockIter subi(diter,fiter,oditer,goiter);
-
-    for (subi.begin(); subi.ready(); subi.next()) {
-      SCMatrixBlock *dblk=subi.block(0);
-      SCMatrixBlock *fblk=subi.block(1);
-      SCMatrixBlock *odblk=subi.block(2);
-      SCMatrixBlock *goblk=subi.block(3);
-
-      int istart, iend, jstart, jend, tri;
-
-      double *ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-      double *fdata = get_tri_block(fblk, istart, iend, jstart, jend, tri);
-      double *oddata = get_tri_block(odblk, istart, iend, jstart, jend, tri);
-      double *godata = get_tri_block(goblk, istart, iend, jstart, jend, tri);
-
-      if (!ddata || !fdata || !oddata || !godata) {
-        fprintf(stderr,"HSOSSCF::scf_energy: oops...can't get data\n");
-        abort();
-      }
-
-      int ij=0;
-      for (int i=istart; i < iend; i++) {
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
-          eelec += (i==j) ? 0.5*(ddata[ij]*fdata[ij] - oddata[ij]*godata[ij]) :
-                                 ddata[ij]*fdata[ij] - oddata[ij]*godata[ij];
-        }
-      }
-    }
-  }
-
-  if (!local_ && (scf_grp_->n() > 1))
-    scf_grp_->sum(&eelec, 1);
-
-  return eelec;
+  return cl_e-op_e;
 }
 
-char *
-HSOSSCF::init_pmax(double *pmat_data)
+RefSCExtrapData
+HSOSSCF::extrap_data()
 {
-  double l2inv = 1.0/log(2.0);
-  double tol = pow(2.0,-126.0);
-  
-  GaussianBasisSet& gbs = *basis().pointer();
-  
-  char * pmax = new char[i_offset(gbs.nshell())];
-
-  int ish, jsh, ij;
-  for (ish=ij=0; ish < gbs.nshell(); ish++) {
-    int istart = gbs.shell_to_function(ish);
-    int iend = istart + gbs(ish).nfunction();
-    
-    for (jsh=0; jsh <= ish; jsh++,ij++) {
-      int jstart = gbs.shell_to_function(jsh);
-      int jend = jstart + gbs(jsh).nfunction();
-      
-      double maxp=0, tmp;
-
-      for (int i=istart; i < iend; i++) {
-        int ijoff = i_offset(i);
-        for (int j=jstart; j < ((ish==jsh) ? i+1 : jend); j++,ijoff++)
-          if ((tmp=fabs(pmat_data[ijoff])) > maxp)
-            maxp=tmp;
-      }
-
-      if (maxp <= tol)
-        maxp=tol;
-
-      pmax[ij] = (signed char) (log(maxp)*l2inv);
-    }
-  }
-
-  return pmax;
+  RefSCExtrapData data = new SymmSCMatrix2SCExtrapData(cl_fock_,op_fock_);
+  return data;
 }
+
+RefSymmSCMatrix
+HSOSSCF::effective_fock()
+{
+  RefSymmSCMatrix mofock = cl_fock_.clone();
+  mofock.assign(0.0);
+  mofock.accumulate_transform(scf_vector_.t(), cl_fock_);
+
+  RefSymmSCMatrix mofocko = op_fock_.clone();
+  mofocko.assign(0.0);
+  mofocko.accumulate_transform(scf_vector_.t(), op_fock_);
+
+  RefSCElementOp2 op = new GSGeneralEffH(this);
+  mofock.element_op(op, mofocko);
+
+  return mofock;
+}
+
+//////////////////////////////////////////////////////////////////////////////
 
 void
 HSOSSCF::ao_fock()
@@ -724,7 +564,8 @@ HSOSSCF::ao_fock()
     double *pmat_data = pblock->data;
     double *gmato_data = goblock->data;
     double *pmato_data = poblock->data;
-    char * pmax = init_pmax(pmat_data);
+
+    char * pmax = init_pmax(basis(), pmat_data);
   
     LocalHSOSContribution lclc(gmat_data, pmat_data, gmato_data, pmato_data);
     LocalGBuild<LocalHSOSContribution>
@@ -775,58 +616,6 @@ HSOSSCF::ao_fock()
   op_fock_.assign(cl_fock_);
   ddo.scale(-1.0);
   op_fock_.accumulate(ddo);
-}
-
-RefSCExtrapData
-HSOSSCF::extrap_data()
-{
-  RefSCExtrapData data = new SymmSCMatrix2SCExtrapData(cl_fock_,op_fock_);
-  return data;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-class HSOSEffFock : public BlockedSCElementOp2 {
-  private:
-    HSOSSCF *scf_;
-
-  public:
-    HSOSEffFock(HSOSSCF* s) : scf_(s) {}
-    ~HSOSEffFock() {}
-
-    int has_side_effects() { return 1; }
-
-    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2) {
-      int ir=current_block();
-
-      for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
-        double occi = scf_->occupation(ir,bi1.i());
-        double occj = scf_->occupation(ir,bi1.j());
-
-        if (occi==1.0 && occj==2.0)
-          bi1.set(2.0*bi1.get()-bi2.get());
-        else if (occi==0.0 && occj==1.0)
-          bi1.set(bi2.get());
-      
-      }
-    }
-};
-    
-RefSymmSCMatrix
-HSOSSCF::effective_fock()
-{
-  RefSymmSCMatrix mofock = cl_fock_.clone();
-  mofock.assign(0.0);
-  mofock.accumulate_transform(scf_vector_.t(), cl_fock_);
-
-  RefSymmSCMatrix mofocko = op_fock_.clone();
-  mofocko.assign(0.0);
-  mofocko.accumulate_transform(scf_vector_.t(), op_fock_);
-
-  RefSCElementOp2 op = new HSOSEffFock(this);
-  mofock.element_op(op, mofocko);
-
-  return mofock;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -926,94 +715,17 @@ HSOSSCF::gradient_density()
   cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
   op_dens_ = cl_dens_.clone();
   
-  BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(
-    scf_vector_, "HSOSSCF::gradient_density: scf_vector");
-
-  BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_, "HSOSSCF::gradient_density: density");
-
-  BlockedSymmSCMatrix *odensp = BlockedSymmSCMatrix::require_castdown(
-    op_dens_, "HSOSSCF::gradient_density: open density");
-
   cl_dens_.assign(0.0);
   op_dens_.assign(0.0);
   
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  cl_dens_.element_op(op);
+  cl_dens_.scale(2.0);
+  
+  op = new SCFDensity(this, scf_vector_, 1.0);
+  op_dens_.element_op(op);
+  
   RefPetiteList pl = integral()->petite_list(basis());
-  
-  int ij=0;
-  double delta=0;
-  int istart, iend, jstart, jend, tri;
-  double *ddata;
-
-  for (int ir=0; ir < vecp->nblocks(); ir++) {
-    int nbasis = pl->nfunction(ir);
-
-    if (!nbasis)
-      continue;
-
-    RefSCMatrix vir = vecp->block(ir);
-    RefSymmSCMatrix dir = densp->block(ir);
-    RefSymmSCMatrix odir = odensp->block(ir);
-  
-    RefSCMatrixSubblockIter diter =
-      dir->local_blocks(SCMatrixSubblockIter::Write);
-
-    double *ck = new double[nbasis];
-    
-    // loop over columns of the scf vector
-    int k;
-    for (k=0;  k < ndocc_[ir]; k++) {
-      RefSCVector rck = vir.get_column(k);
-      rck->convert(ck);
-
-      // now loop over blocks of the density matrix and fill them in
-      for (diter->begin(); diter->ready(); diter->next()) {
-        SCMatrixBlock *dblk = diter->block();
-
-        ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-        if (!ddata) {
-          fprintf(stderr,"HSOSSCF::gradient_density: oops...can't get data\n");
-          abort();
-        }
-
-        int dij=0;
-        for (int i=istart; i < iend; i++)
-          for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++)
-            ddata[dij] += ck[i]*ck[j];
-      }
-    }
-
-    // force repl matrices to do the sum
-    diter=0;
-
-    dir.scale(2.0);
-
-    diter = odir->local_blocks(SCMatrixSubblockIter::Write);
-
-    for (;  k < ndocc_[ir]+nsocc_[ir]; k++) {
-      RefSCVector rck = vir.get_column(k);
-      rck->convert(ck);
-
-      // now loop over blocks of the density matrix and fill them in
-      for (diter->begin(); diter->ready(); diter->next()) {
-        SCMatrixBlock *dblk = diter->block();
-
-        ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-        if (!ddata) {
-          fprintf(stderr,"HSOSSCF::gradient_density: "
-                         "oops...can't get open data\n");
-          abort();
-        }
-
-        int dij=0;
-        for (int i=istart; i < iend; i++)
-          for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++)
-            ddata[dij] += ck[i]*ck[j];
-      }
-    }
-
-    delete[] ck;
-  }
   
   cl_dens_ = pl->to_AO_basis(cl_dens_);
   op_dens_ = pl->to_AO_basis(op_dens_);

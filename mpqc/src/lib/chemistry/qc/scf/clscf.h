@@ -11,7 +11,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 class CLSCF: public SCF {
-    friend class CLDensity;
 #   define CLASSNAME CLSCF
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR

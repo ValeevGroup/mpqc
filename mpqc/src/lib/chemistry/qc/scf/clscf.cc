@@ -21,6 +21,7 @@
 #include <chemistry/qc/basis/petite.h>
 
 #include <chemistry/qc/scf/scflocal.h>
+#include <chemistry/qc/scf/scfden.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/clcont.h>
 #include <chemistry/qc/scf/lgbuild.h>
@@ -310,46 +311,6 @@ CLSCF::reset_density()
   cl_dens_diff_.assign(cl_dens_);
 }
 
-//////////////////////////////////////////////////////////////////////////////
-
-class CLDensity : public BlockedSCElementOp {
-  private:
-    BlockedSCMatrix *vec;
-    CLSCF *scf_;
-
-  public:
-    CLDensity(CLSCF* s, const RefSCMatrix&v) : scf_(s) {
-      vec = BlockedSCMatrix::require_castdown(v,"CLDensity");
-    }
-    ~CLDensity() {}
-
-    int has_side_effects() { return 1; }
-
-    void process(SCMatrixBlockIter& bi) {
-      int ir=current_block();
-
-      RefSCMatrix vir = vec->block(ir);
-      int nbasis=vir.ncol();
-
-      if (!nbasis)
-        return;
-      
-      double *ck = new double[nbasis];
-
-      // loop over columns of the scf vector
-      for (int k=0;  k < scf_->ndocc_[ir]; k++) {
-        RefSCVector rck = vir.get_column(k);
-        rck->convert(ck);
-
-        for (bi.reset(); bi; bi++) {
-          bi.set(bi.get() + ck[bi.i()]*ck[bi.j()]);
-        }
-      }
-
-      delete[] ck;
-    }
-};
-
 double
 CLSCF::new_density()
 {
@@ -359,7 +320,7 @@ CLSCF::new_density()
   cl_dens_diff_.scale(-1.0);
   
   cl_dens_.assign(0.0);
-  RefSCElementOp op = new CLDensity(this, scf_vector_);
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
   cl_dens_.element_op(op);
   cl_dens_.scale(2.0);
 
@@ -374,37 +335,13 @@ CLSCF::new_density()
   return delta;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-
-class CLEnergy : public SCElementOp2 {
-  private:
-    double eelec;
-    int deferred_;
-    
-  public:
-    CLEnergy() : eelec(0), deferred_(0) {}
-    ~CLEnergy() {}
-
-    int has_collect() { return 1; }
-    void defer_collect(int h) { deferred_=h; }
-    void collect(const RefMessageGrp&grp) { if (!deferred_) grp->sum(eelec); }
-    double result() { return eelec; }
-
-    void process(SCMatrixBlockIter&i, SCMatrixBlockIter&j) {
-      for (i.reset(), j.reset(); i && j; i++, j++) {
-        int ii=i.i(); int jj=j.j();
-        eelec += (ii==jj) ? 0.5*j.get()*i.get() : i.get()*j.get();
-      }
-    }
-};
-
 double
 CLSCF::scf_energy()
 {
   RefSymmSCMatrix t = cl_fock_.copy();
   t.accumulate(cl_hcore_);
 
-  CLEnergy *eop = new CLEnergy;
+  SCFEnergy *eop = new SCFEnergy;
   eop->reference();
   RefSCElementOp2 op = eop;
   t.element_op(op,cl_dens_);
@@ -419,44 +356,6 @@ CLSCF::scf_energy()
 }
 
 //////////////////////////////////////////////////////////////////////////////
-
-static char *
-init_pmax(const RefGaussianBasisSet& gbs_, double *pmat_data)
-{
-  double l2inv = 1.0/log(2.0);
-  double tol = pow(2.0,-126.0);
-  
-  GaussianBasisSet& gbs = *gbs_.pointer();
-  
-  char * pmax = new char[i_offset(gbs.nshell())];
-
-  int ish, jsh, ij;
-  for (ish=ij=0; ish < gbs.nshell(); ish++) {
-    int istart = gbs.shell_to_function(ish);
-    int iend = istart + gbs(ish).nfunction();
-    
-    for (jsh=0; jsh <= ish; jsh++,ij++) {
-      int jstart = gbs.shell_to_function(jsh);
-      int jend = jstart + gbs(jsh).nfunction();
-      
-      double maxp=0, tmp;
-
-      for (int i=istart; i < iend; i++) {
-        int ijoff = i_offset(i);
-        for (int j=jstart; j < ((ish==jsh) ? i+1 : jend); j++,ijoff++)
-          if ((tmp=fabs(pmat_data[ijoff])) > maxp)
-            maxp=tmp;
-      }
-
-      if (maxp <= tol)
-        maxp=tol;
-
-      pmax[ij] = (signed char) (log(maxp)*l2inv);
-    }
-  }
-
-  return pmax;
-}
 
 void
 CLSCF::ao_fock()
@@ -641,7 +540,7 @@ CLSCF::gradient_density()
   cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
   cl_dens_.assign(0.0);
   
-  RefSCElementOp op = new CLDensity(this, scf_vector_);
+  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
   cl_dens_.element_op(op);
   cl_dens_.scale(2.0);
   

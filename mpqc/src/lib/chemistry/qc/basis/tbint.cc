@@ -16,7 +16,7 @@ TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b1,
                        const RefGaussianBasisSet&b2,
                        const RefGaussianBasisSet&b3,
                        const RefGaussianBasisSet&b4) :
-  bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4)
+  bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4), redundant_(1)
 {
   buffer_ = 0;
 }
@@ -136,8 +136,10 @@ ShellQuartetIter::init(const double * b,
                        int is, int js, int ks, int ls,
                        int fi, int fj, int fk, int fl,
                        int ni, int nj, int nk, int nl,
-                       double scl)
+                       double scl, int redund)
 {
+  redund_ = redund;
+  
   e12 = (is==js);
   e34 = (ks==ls);
   e13e24 = (is==ks) && (js==ls);
@@ -171,37 +173,70 @@ void
 ShellQuartetIter::next()
 {
   index++;
+
+  if (redund_) {
+    if (lcur < lend-1) {
+      lcur++;
+      l_++;
+      return;
+    }
+
+    lcur=0;
+    l_=lstart;
+    
+    if (kcur < kend-1) {
+      kcur++;
+      k_++;
+      return;
+    }
+
+    kcur=0;
+    k_=kstart;
+
+    if (jcur < jend-1) {
+      jcur++;
+      j_++;
+      return;
+    }
+
+    jcur=0;
+    j_=jstart;
   
-  if (lcur < ((e34) ? (((e13e24)&&((kcur)==(icur)))?(jcur):(kcur))
-              : ((e13e24)&&((kcur)==(icur)))?(jcur):(lend)-1)) {
-    lcur++;
-    l_++;
-    return;
-  }
+    icur++;
+    i_++;
 
-  lcur=0;
-  l_=lstart;
+  } else {
+    if (lcur < ((e34) ? (((e13e24)&&((kcur)==(icur)))?(jcur):(kcur))
+                : ((e13e24)&&((kcur)==(icur)))?(jcur):(lend)-1)) {
+      lcur++;
+      l_++;
+      return;
+    }
 
-  if (kcur < ((e13e24)?(icur):((kend)-1))) {
-    kcur++;
-    k_++;
-    return;
-  }
+    lcur=0;
+    l_=lstart;
 
-  kcur=0;
-  k_=kstart;
+    if (kcur < ((e13e24)?(icur):((kend)-1))) {
+      kcur++;
+      k_++;
+      return;
+    }
 
-  if (jcur < ((e12)?(icur):((jend)-1))) {
-    jcur++;
-    j_++;
-    return;
-  }
+    kcur=0;
+    k_=kstart;
 
-  jcur=0;
-  j_=jstart;
+    if (jcur < ((e12)?(icur):((jend)-1))) {
+      jcur++;
+      j_++;
+      return;
+    }
+
+    jcur=0;
+    j_=jstart;
   
-  icur++;
-  i_++;
+    icur++;
+    i_++;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -282,7 +317,8 @@ TwoBodyIntIter::current_quartet()
            tbi->basis()->operator()(jcur).nfunction(),
            tbi->basis()->operator()(kcur).nfunction(),
            tbi->basis()->operator()(lcur).nfunction(),
-           scale()
+           scale(),
+           tbi->redundant()
     );
 
   return sqi;

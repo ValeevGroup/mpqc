@@ -22,6 +22,8 @@ class TwoBodyInt : public VRefCount {
 
     double *buffer_;
 
+    int redundant_;
+    
     TwoBodyInt(const RefGaussianBasisSet&bs1,
                const RefGaussianBasisSet&bs2,
                const RefGaussianBasisSet&bs3,
@@ -53,6 +55,11 @@ class TwoBodyInt : public VRefCount {
 
     // an index of -1 for any shell indicates any shell
     virtual int log2_shell_bound(int,int,int,int) = 0;
+
+    // if redundant is true, then keep redundant integrals in buffer_.  The
+    // default is true.
+    int redundant() const { return redundant_; }
+    void set_redundant(int i) { redundant_ = i; }
 };
 
 REF_dec(TwoBodyInt);
@@ -64,6 +71,8 @@ class ShellQuartetIter {
     const double * buf;
     double scale_;
 
+    int redund_;
+    
     int e12;
     int e34;
     int e13e24;
@@ -98,7 +107,7 @@ class ShellQuartetIter {
                       int, int, int, int,
                       int, int, int, int,
                       int, int, int, int,
-                      double);
+                      double, int);
 
     virtual void start();
     virtual void next();

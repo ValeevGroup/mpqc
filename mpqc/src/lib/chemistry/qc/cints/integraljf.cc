@@ -20,17 +20,17 @@ OneBodyIntJF::init()
   if (lci)
     delete[] lci;
 
-  lci = new int[ioff(maxam+1)+1];
+  lci = new int[ioffset(maxam+1)+1];
   lci[0]=0;
 
   for (i=1; i <= maxam; i++)
-    lci[ioff(i)] = lci[ioff(i)-1] = 1;
+    lci[ioffset(i)] = lci[ioffset(i)-1] = 1;
 
   for (i=2; i <= maxam; i++)
     for (j=1; j < i; j++)
-      lci[ioff(i)+j] = lci[ioff(i-1)+j-1]+lci[ioff(i-1)+j];
+      lci[ioffset(i)+j] = lci[ioffset(i-1)+j-1]+lci[ioffset(i-1)+j];
 
-  lci[ioff(maxam+1)] = 1;
+  lci[ioffset(maxam+1)] = 1;
   
   // df[i] gives (i-1)!!, so that (-1)!! is defined...
   // we shouldn't need both this and lci with the range needed on df[]

@@ -42,7 +42,7 @@ GaussianPointChargeIntJF::init(PointBag_double*charges)
       vint[i][j] = new double*[vijlen];
 
       for (int k=0; k < vijlen; k++) {
-        vint[i][j][k] = new double[ioff(i+1)*ioff(j+1)];
+        vint[i][j][k] = new double[ioffset(i+1)*ioffset(j+1)];
       }
     }
   }
@@ -146,7 +146,7 @@ GaussianPointChargeIntJF::compute_shell(int i,int j,double*buf)
       PB[2] = P[2] - aj[2];
 
       // loop over general contractions
-      int ioffset=0;
+      int ioffst=0;
       for (int ci=0; ci < gsi.ncontraction(); ci++) {
         double inorm = gsi.coefficient_unnorm(ci,pi);
         int ami = gsi.am(ci);
@@ -160,7 +160,7 @@ GaussianPointChargeIntJF::compute_shell(int i,int j,double*buf)
           
           init_peint(ami, amj, pi, pj, gam, oo2gam, K_norm, P, PA, PB);
 
-          int ij=ioffset;
+          int ij=ioffst;
           int index=0;
           for (int ii=0; ii <= ami; ii++) {
             int l1 = ami-ii;
@@ -182,9 +182,9 @@ GaussianPointChargeIntJF::compute_shell(int i,int j,double*buf)
               }
             }
           }
-          joffset += ioff(amj+1);
+          joffset += ioffset(amj+1);
         }
-        ioffset += ioff(ami+1);
+        ioffst += ioffset(ami+1);
       }
     }
   }
@@ -226,7 +226,7 @@ GaussianPointChargeIntJF::init_peint(int am1, int am2, int pi, int pj,
   abc[1][2] = PB[2];
 
   // zero the storage for targets
-  memset((char *)via1a2m, 0, (ioff(am1+1)*ioff(am2+1)*sizeof(double)));
+  memset((char *)via1a2m, 0, (ioffset(am1+1)*ioffset(am2+1)*sizeof(double)));
 
   // for each center
   for (pt=0; pt < ncharge; pt++) {
@@ -304,15 +304,15 @@ GaussianPointChargeIntJF::init_peint(int am1, int am2, int pi, int pj,
 
                   if (am1) {
                     i = am1 - L0[0];
-                    a = i + ioff(i) - L0[1];
+                    a = i + ioffset(i) - L0[1];
                   }
 
                   if (am2) {
                     i = am2-L1[0];
-                    c = i + ioff(i) - L1[1];
+                    c = i + ioffset(i) - L1[1];
                   }
 
-                  T2 = a*ioff(am2+1)+c;
+                  T2 = a*ioffset(am2+1)+c;
 
                   L0[xyz] = L0[xyz] - 1;
                   am1 = am1 - 1;
@@ -320,15 +320,15 @@ GaussianPointChargeIntJF::init_peint(int am1, int am2, int pi, int pj,
 
                   if (am1) {
                     i = am1-L0[0];
-                    a = i + ioff(i) - L0[1];
+                    a = i + ioffset(i) - L0[1];
                   }
 
                   if (am2) {
                     i = am2-L1[0];
-                    c = i + ioff(i) - L1[1];
+                    c = i + ioffset(i) - L1[1];
                   }
 
-                  T3 = a*ioff(am2+1)+c;
+                  T3 = a*ioffset(am2+1)+c;
 
                   L0[xyz] = L0[xyz] + 1;
                   am1 = am1 + 1;
@@ -338,15 +338,15 @@ GaussianPointChargeIntJF::init_peint(int am1, int am2, int pi, int pj,
 
                   if (am1) {
                     i = am1-L0[0];
-                    a = i + ioff(i) - L0[1];
+                    a = i + ioffset(i) - L0[1];
                   }
 
                   if (am2) {
                     i = am2-L1[0];
-                    c = i + ioff(i) - L1[1];
+                    c = i + ioffset(i) - L1[1];
                   }
 
-                  T4 = a*ioff(am2+1)+c;
+                  T4 = a*ioffset(am2+1)+c;
                   L1[0] = L1[0] + 1;
                   am2 = am2 + 1;
                   L0[xyz] = L0[xyz] + 1;
@@ -410,26 +410,26 @@ GaussianPointChargeIntJF::init_peint(int am1, int am2, int pi, int pj,
               a = c = 0;
               if (am1) {
                 i = am1-L0[0];
-                a = i + ioff(i) - L0[1];
+                a = i + ioffset(i) - L0[1];
               }
               if (am2) {
                 i = am2-L1[0];
-                c = i + ioff(i) - L1[1];
+                c = i + ioffset(i) - L1[1];
               }
-              T2 = a*ioff(am2+1)+c;
+              T2 = a*ioffset(am2+1)+c;
 
               L1[xyz] = L1[xyz] - 1;
               am2 = am2 - 1;
               a = c = 0;
               if (am1) {
                 i = am1-L0[0];
-                a = i + ioff(i) - L0[1];
+                a = i + ioffset(i) - L0[1];
               }
               if (am2) {
                 i = am2-L1[0];
-                c = i + ioff(i) - L1[1];
+                c = i + ioffset(i) - L1[1];
               }
-              T3 = a*ioff(am2+1)+c;
+              T3 = a*ioffset(am2+1)+c;
 
               L1[xyz] = L1[xyz] + 2;
               am2 = am2 + 2;
@@ -567,26 +567,26 @@ GaussianPointChargeIntJF::do_pe_doublet(double abc[3][3], double F[20],
                 a = c = 0;
                 if (am1) {
                   i = am1-L0[0];
-                  a = i + ioff(i) - L0[1];
+                  a = i + ioffset(i) - L0[1];
                 }
                 if (am2) {
                   i = am2-L1[0];
-                  c = i + ioff(i) - L1[1];
+                  c = i + ioffset(i) - L1[1];
                 }
-                T2 = a*ioff(am2+1)+c;
+                T2 = a*ioffset(am2+1)+c;
 
                 L0[xyz] = L0[xyz] - 1;
                 am1 = am1 - 1;
                 a = c = 0;
                 if (am1){
                   i = am1-L0[0];
-                  a = i + ioff(i) - L0[1];
+                  a = i + ioffset(i) - L0[1];
                 }
                 if (am2) {
                   i = am2-L1[0];
-                  c = i + ioff(i) - L1[1];
+                  c = i + ioffset(i) - L1[1];
                 }
-                T3 = a*ioff(am2+1)+c;
+                T3 = a*ioffset(am2+1)+c;
 
                 L0[xyz] = L0[xyz] + 1;
                 am1 = am1 + 1;
@@ -595,13 +595,13 @@ GaussianPointChargeIntJF::do_pe_doublet(double abc[3][3], double F[20],
                 a = c = 0;
                 if (am1) {
                   i = am1-L0[0];
-                  a = i + ioff(i) - L0[1];
+                  a = i + ioffset(i) - L0[1];
                 }
                 if (am2) {
                   i = am2-L1[0];
-                  c = i + ioff(i) - L1[1];
+                  c = i + ioffset(i) - L1[1];
                 }
-                T4 = a*ioff(am2+1)+c;
+                T4 = a*ioffset(am2+1)+c;
 
                 L1[0] = L1[0] + 1;
                 am2 = am2 + 1;
@@ -664,26 +664,26 @@ GaussianPointChargeIntJF::do_pe_doublet(double abc[3][3], double F[20],
             a = c = 0;
             if (am1) {
               i = am1-L0[0];
-              a = i + ioff(i) - L0[1];
+              a = i + ioffset(i) - L0[1];
             }
             if (am2) {
               i = am2-L1[0];
-              c = i + ioff(i) - L1[1];
+              c = i + ioffset(i) - L1[1];
             }
-            T2 = a*ioff(am2+1)+c;
+            T2 = a*ioffset(am2+1)+c;
 
             L1[xyz] = L1[xyz] - 1;
             am2 = am2 - 1;
             a = c = 0;
             if (am1) {
               i = am1-L0[0];
-              a = i + ioff(i) - L0[1];
+              a = i + ioffset(i) - L0[1];
             }
             if (am2) {
               i = am2-L1[0];
-              c = i + ioff(i) - L1[1];
+              c = i + ioffset(i) - L1[1];
             }
-            T3 = a*ioff(am2+1)+c;
+            T3 = a*ioffset(am2+1)+c;
             L1[xyz] = L1[xyz] + 2;
             am2 = am2 + 2;
           }

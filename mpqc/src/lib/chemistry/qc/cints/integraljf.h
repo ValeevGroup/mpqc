@@ -4,11 +4,12 @@
 #ifndef _chemistry_qc_cints_integraljf_h
 #define _chemistry_qc_cints_integraljf_h
 
-#include <chemistry/qc/basis/integral.h>
 #include <math/topology/pointbag.h>
 
-class OneBodyIntJF : public OneBodyInt
-{
+#include <chemistry/qc/basis/obint.h>
+#include <chemistry/qc/basis/integral.h>
+
+class OneBodyIntJF : public OneBodyInt {
   protected:
     static int maxfact;
     
@@ -24,21 +25,19 @@ class OneBodyIntJF : public OneBodyInt
                        double[3], double[3], double);
 
   public:
-    OneBodyIntJF(const RefGaussianBasisSet&, OneBodyIntIter* =0);
-    OneBodyIntJF(const RefGaussianBasisSet&, const RefGaussianBasisSet&,
-                 OneBodyIntIter* =0);
+    OneBodyIntJF(const RefGaussianBasisSet&);
+    OneBodyIntJF(const RefGaussianBasisSet&, const RefGaussianBasisSet&);
     ~OneBodyIntJF();
 };
 
 class GaussianOverlapIntJF : public OneBodyIntJF
 {
   public:
-    GaussianOverlapIntJF(const RefGaussianBasisSet&, OneBodyIntIter* =0);
+    GaussianOverlapIntJF(const RefGaussianBasisSet&);
     GaussianOverlapIntJF(const RefGaussianBasisSet&,
-                         const RefGaussianBasisSet&,
-                         OneBodyIntIter* =0);
+                         const RefGaussianBasisSet&);
     ~GaussianOverlapIntJF();
-    void compute_shell(int,int,double*);
+    void compute_shell(int,int);
 };
 
 class GaussianKineticIntJF : public OneBodyIntJF

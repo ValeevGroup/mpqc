@@ -110,6 +110,7 @@ SCF::SCF(const RefKeyVal& keyval) :
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
+    cout << incindent << incindent;
     guess_wfn_ = keyval->describedclassvalue("guess_wavefunction");
     if (guess_wfn_.null()) {
       char *path = keyval->pcharvalue("guess_wavefunction");
@@ -129,6 +130,7 @@ SCF::SCF(const RefKeyVal& keyval) :
         delete[] path;
       }
     }
+    cout << decindent << decindent;
   }
   
   scf_grp_ = basis()->matrixkit()->messagegrp();
@@ -155,6 +157,12 @@ RefSCMatrix
 SCF::eigenvectors()
 {
   return eigenvectors_.result();
+}
+
+RefDiagSCMatrix
+SCF::eigenvalues()
+{
+  return eigenvalues_.result();
 }
 
 void
@@ -331,44 +339,59 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 //////////////////////////////////////////////////////////////////////////////
 
 void
-SCF::initial_vector()
+SCF::initial_vector(int needv)
 {
-  // if guess_wfn_ is non-null then try to get a guess vector from it.
-  // First check that the same basis is used...if not, then project the
-  // guess vector into the present basis.
-  // right now the check is crude...there should be an equiv member in
-  // GaussianBasisSet
-  if (guess_wfn_.nonnull()) {
-    if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
-      cout << node0 << indent
-           << "Using guess wavefunction as starting vector" << endl;
+  static int need_vec=1;
 
-      // indent output of eigenvectors() call if there is any
-      cout << incindent << incindent;
-      eigenvectors_ = guess_wfn_->eigenvectors();
-      cout << decindent << decindent;
-    } else {
-      cout << node0 << indent
-           << "Projecting guess wavefunction into the present basis set"
-           << endl;
+  if (need_vec) {
+    if (eigenvectors_.result_noupdate().null()) {
+      // if guess_wfn_ is non-null then try to get a guess vector from it.
+      // First check that the same basis is used...if not, then project the
+      // guess vector into the present basis.
+      // right now the check is crude...there should be an equiv member in
+      // GaussianBasisSet
+      if (guess_wfn_.nonnull()) {
+        if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
+          cout << node0 << indent
+               << "Using guess wavefunction as starting vector" << endl;
 
-      // indent output of projected_eigenvectors() call if there is any
-      cout << incindent << incindent;
-      eigenvectors_ = projected_eigenvectors(guess_wfn_);
-      cout << decindent << decindent;
-    }
+          // indent output of eigenvectors() call if there is any
+          cout << incindent << incindent;
+          eigenvectors_ = guess_wfn_->eigenvectors();
+          eigenvalues_ = guess_wfn_->eigenvalues();
+          cout << decindent << decindent;
+        } else {
+          cout << node0 << indent
+               << "Projecting guess wavefunction into the present basis set"
+               << endl;
 
-    // we should only have to do this once, so free up memory used
-    // for the old wavefunction
-    guess_wfn_=0;
+          // indent output of projected_eigenvectors() call if there is any
+          cout << incindent << incindent;
+          eigenvectors_ = projected_eigenvectors(guess_wfn_);
+          eigenvalues_ = projected_eigenvalues(guess_wfn_);
+          cout << decindent << decindent;
+        }
 
-    cout << node0 << endl;
+        // we should only have to do this once, so free up memory used
+        // for the old wavefunction
+        guess_wfn_=0;
+
+        cout << node0 << endl;
       
-  } else {
-    cout << node0 << indent << "Starting from core Hamiltonian guess\n"
-         << endl;
-    eigenvectors_ = hcore_guess();
+      } else {
+        cout << node0 << indent << "Starting from core Hamiltonian guess\n"
+             << endl;
+        eigenvectors_ = hcore_guess();
+        eigenvalues_ = core_hamiltonian().eigvals();
+      }
+    } else {
+      // this is just an old vector, so orthogonalize it
+      eigenvectors_.result_noupdate()->schmidt_orthog(overlap().pointer(),
+                                                      basis()->nbasis());
+    }
   }
+
+  need_vec=needv;
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -61,6 +61,8 @@ SCF::compute_vector(double& eelec)
   // calculate the nuclear repulsion energy
   double nucrep = molecule()->nuclear_repulsion_energy();
 
+  RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
+
   for (int iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
     tim_enter("density");
@@ -99,7 +101,6 @@ SCF::compute_vector(double& eelec)
     // diagonalize effective MO fock to get MO vector
     tim_enter("evals");
     RefSCMatrix nvector = scf_vector_.clone();
-    RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
   
     RefSymmSCMatrix eff = effective_fock();
 
@@ -118,7 +119,6 @@ SCF::compute_vector(double& eelec)
       set_occupations(evals);
 
     eff=0;
-    evals=0;
     
     // transform MO vector to AO basis
     scf_vector_ = scf_vector_ * nvector;
@@ -130,6 +130,10 @@ SCF::compute_vector(double& eelec)
     tim_exit("schmidt");
   }
       
+  eigenvalues_ = evals;
+  eigenvalues_.computed() = 1;
+  evals = 0;
+  
   eigenvectors_ = scf_vector_;
   eigenvectors_.computed() = 1;
   

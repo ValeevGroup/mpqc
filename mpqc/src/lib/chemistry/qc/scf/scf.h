@@ -93,8 +93,10 @@ class SCF: public OneBodyWavefunction {
     RefSymmSCMatrix get_local_data(const RefSymmSCMatrix&, double*&, Access);
     
     // create the initial scf vector.  either use the eigenvectors in
-    // guess_wfn_, or use a core Hamiltonian guess.
-    void initial_vector();
+    // guess_wfn_, or use a core Hamiltonian guess.  Call this with needv
+    // equal to 0 if you expect to call it twice with the same geometry
+    // (eg. when calling from both set_occupations() and init_vector()).
+    void initial_vector(int needv=1);
     
     // given the total number of density and fock matrices, figure out
     // how much memory that will require and then set the local_dens_
@@ -109,6 +111,7 @@ class SCF: public OneBodyWavefunction {
     void save_data_state(StateOut&);
 
     RefSCMatrix eigenvectors();
+    RefDiagSCMatrix eigenvalues();
 
     // return the number of AO Fock matrices needed
     virtual int n_fock_matrices() const =0;

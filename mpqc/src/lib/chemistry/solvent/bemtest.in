@@ -1,12 +1,21 @@
 % Emacs should use -*- keyval -*- mode.
 
-molecule<Molecule>: (
+h2o<Molecule>: (
     symmetry=c2v
     {atoms geometry} = {
       H  [   1.5  0.0  -0.3 ]
       O  [   0.0  0.0   1.0 ]
      }
   )
+
+he<Molecule>: (
+    symmetry=c1
+    {atoms geometry} = {
+      He  [   0.0  0.0  0.0 ]
+     }
+  )
+
+molecule = $:h2o
 
 atominfo<AtomInfo>: ()
 

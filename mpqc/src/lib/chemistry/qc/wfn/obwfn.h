@@ -58,6 +58,8 @@ class OneBodyWavefunction: public Wavefunction {
 
     void save_data_state(StateOut&);
 
+    int nelectron();
+
     // returns the so to mo transformation matrix
     virtual RefSCMatrix eigenvectors() = 0;
     virtual RefDiagSCMatrix eigenvalues() = 0;

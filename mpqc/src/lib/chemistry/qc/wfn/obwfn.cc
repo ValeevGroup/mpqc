@@ -519,6 +519,16 @@ OneBodyWavefunction::beta_eigenvalues()
   return 0;
 }
 
+int
+OneBodyWavefunction::nelectron()
+{
+  double tocc = 0.0;
+  for (int i=0; i<nirrep_; i++) {
+    tocc += occupations_[i];
+  }
+  return (tocc<0?int(tocc-0.5):int(tocc+0.5));
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -3,6 +3,7 @@ ifndef SRCDIR
   SRCDIR=.
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+INCLUDE += -I. -I$(SRCDIR)
 
 TARGET_TO_MAKE = sgen
 BIN_OR_LIB = BIN

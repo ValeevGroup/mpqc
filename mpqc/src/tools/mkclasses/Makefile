@@ -3,6 +3,7 @@ ifndef SRCDIR
   SRCDIR=.
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+INCLUDE += -I. -I$(SRCDIR)
 
 TARGET_TO_MAKE = mkclasses
 BIN_OR_LIB = BIN

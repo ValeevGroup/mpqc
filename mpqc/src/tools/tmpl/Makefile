@@ -3,6 +3,7 @@ ifndef SRCDIR
   SRCDIR=.
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+INCLUDE += -I. -I$(SRCDIR)
 
 BIN_OR_LIB = BIN
 TARGET_TO_MAKE = tmpl

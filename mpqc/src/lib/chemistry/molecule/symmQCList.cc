@@ -4,57 +4,11 @@
 #include "symm.h"
 #include "symmQCList.h"
 
-// DescribedClass_IMPL(SymmCoPtr,1,"","",SymmCoPtr::create,0,0,0,0)
-// create_IMPL(SymmCoPtr)
-// SavableState_IMPL(SymmCoPtr)
-// void * SymmCoPtr::_castdown(const ClassDesc *cd)
-// {
-//   if(&class_desc_ == cd) return this;
-//   return 0;
-//   }
-// 
-// SymmCoPtr::SymmCoPtr() : p(0) {}
-// 
-// SymmCoPtr::SymmCoPtr(SymmCo *sc) : p(sc) { if(p) p->count++; }
-// 
-// SymmCoPtr::SymmCoPtr(SymmCoPtr& sc) : p(sc.p) { if(p) p->count++; }
-// 
-// SymmCoPtr::~SymmCoPtr() { if (p && --(p->count) <= 0) delete p; }
-// 
-// SymmCoPtr& SymmCoPtr::operator=(SymmCo* sc)
-// {
-//   if( p && --(p->count) <= 0 && p != sc) delete p;
-// 
-//   p=sc;
-//   if(p) p->count++;
-//   return *this;
-//   }
-// 
-// SymmCoPtr& SymmCoPtr::operator=(SymmCoPtr& sc)
-// {
-//   if( p && --(p->count) <= 0 && p != sc.p) delete p;
-// 
-//   p=sc.p;
-//   if(p) p->count++;
-//   return *this;
-//   }
-// 
-// void SymmCoPtr::save_data_state(StateOut& so)
-// {
-//   so.put(p);
-//   }
-// 
-// void SymmCoPtr::restore_data_state(int v, StateIn& si)
-// {
-//   p = SymmCo::restore_state(si);
-//   if(p) p->count++;
-//   }
-
 ///////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME SymmCoListLink
 #define PARENTS virtual public SavableState
-#define HAVE_CTOR
+//#define HAVE_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -65,9 +19,7 @@ SymmCoListLink::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-SymmCoListLink::SymmCoListLink() : next(0), prev(0) {}
-
-SymmCoListLink::SymmCoListLink(SymmCo *o) : obj(o), next(0), prev(0) {}
+//SymmCoListLink::SymmCoListLink() : next(0), prev(0) {}
 
 SymmCoListLink::SymmCoListLink(RefSymmCo& o) : obj(o), next(0), prev(0) {}
 
@@ -130,6 +82,7 @@ DescribedClass_REF_def(SymmCoList);
 #define CLASSNAME SymmCoList
 #define PARENTS virtual public SavableState
 #define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -170,21 +123,6 @@ SymmCoList::~SymmCoList()
   }
 
 // add object to tail end of list
-void SymmCoList::add(SymmCo *bo)
-{
-  SymmCoListLink *bll = new SymmCoListLink(bo);
-
-  if(!head)
-    head=current=bll;
-  else {
-   // set current to end of list
-    for(; current->next; current=current->next) ;
-   // now tack bll onto current
-    current->next = bll;
-    bll->prev = current;
-    }
-  }
-
 void SymmCoList::add(RefSymmCo& bo)
 {
   SymmCoListLink *bll = new SymmCoListLink(bo);
@@ -276,6 +214,31 @@ SymmCoList::SymmCoList(StateIn& si):
   current = SymmCoListLink::restore_state(si);
 }
 
+SymmCoList::SymmCoList(KeyVal& kv):
+  head(0),
+  current(0)
+{
+  int nco = kv.count();
+  for (int i = 0; i<nco; i++) {
+      RefDescribedClass val = kv.describedclassvalue(i);
+      RefSymmCo sc = val;
+      if (val.nonnull() && sc.null()) {
+          fprintf(stderr,"could not convert type %s to SymmCoList\n",
+                  val->class_name());
+          abort();
+        }
+      val = 0;
+      add(sc.pointer());
+    }
+}
+
+int SymmCoList::length()
+{
+  int j=0;
+  for(current=head; current; j++,current=current->next );
+  return j;
+  }
+
 RefSymmCo& SymmCoList::operator[](int i)
 {
   int j=0;
@@ -308,7 +271,7 @@ SymmCoListIter::SymmCoListIter() : p(0) {}
 SymmCoListIter::SymmCoListIter(SymmCoList* l)
   : list(l), p(0)
 {
-  p=l->head;
+  if (l) p=l->head;
   }
 
 SymmCoListIter& SymmCoListIter::operator=(int i)
@@ -329,7 +292,9 @@ SymmCoListIter& SymmCoListIter::operator=(SymmCoList& b)
 
 SymmCoListIter& SymmCoListIter::operator=(SymmCoList *b)
 {
-  list = b; p = list->head;
+  list = b;
+  if (list) p = list->head;
+  else p = 0;
   return *this;
   }
 
@@ -340,6 +305,14 @@ RefSymmCo& SymmCoListIter::this_object()
 
   return p->obj;
   }
+
+SymmCo * SymmCoListIter::operator->()
+{
+  if (!p || p->obj.null())
+    err_quit("SymmCoListIter::operator->(): p or p->obj is null\n");
+
+  return p->obj.pointer();
+}
 
 int SymmCoListIter::operator==(SymmCo& b)
 {

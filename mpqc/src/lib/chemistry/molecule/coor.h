@@ -9,9 +9,9 @@ class Molecule;
 class MolecularCoor
 {
  protected:
-  Molecule& _mol;
+  RefMolecule _mol;
  public:
-  MolecularCoor(Molecule&mol);
+  MolecularCoor(RefMolecule mol);
   virtual ~MolecularCoor();
   virtual int dim() = 0;
   virtual void to_cartesian(ColumnVector&cartesian,ColumnVector&internal) = 0;
@@ -26,7 +26,7 @@ class ProjectedCartesian: public MolecularCoor
   int ncart;
   int nint;
  public:
-  ProjectedCartesian(Molecule&mol);
+  ProjectedCartesian(RefMolecule&mol);
   ~ProjectedCartesian();
   int dim();
   void to_cartesian(ColumnVector&cartesian,ColumnVector&projected);
@@ -36,24 +36,11 @@ class ProjectedCartesian: public MolecularCoor
 /////////////////////////////////////////////////////////////////////
 
 #if 0
-class SymmCoList;
-
-class InternalCoordinate : public MolecularCoor
+class InternalMolecularCoor : public MolecularCoor
 {
- protected:
-  SymmCoList *symm;
-  int nint;
-};
-
-class NonRedundantIntCo : public InternalCoordinate
-{
- public:
-  NonRedundantIntCo(Molecule&);
-  ~NonRedundantIntCo();
-
-  inline int dim() { return nint; }
-  void to_cartesian(ColumnVector&cartesian,ColumnVector&internal);
-  void to_internal(ColumnVector&internal,ColumnVector&cartesian);
+  protected:
+    InternalCoorSet variable;
+    InternalCoorSet fixed;
 };
 #endif
 

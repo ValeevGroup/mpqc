@@ -24,9 +24,9 @@ class MolecularEnergy: public NLP2 {
     int _have_gradient;
     int _have_hessian;
 
-    double& _energy;
-    ColumnVector& _gradient;
-    SymmetricMatrix& _hessian;
+    Resultdouble& _energy;
+    ResultColumnVector& _gradient;
+    ResultSymmetricMatrix& _hessian;
   protected:
     Molecule& _mol;
 

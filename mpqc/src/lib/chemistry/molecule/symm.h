@@ -53,6 +53,9 @@ class RefSimpleCo;
 
 //////////////////////////////////////////////////////////////////////////
 
+class RefSimpleCoList;
+class RefSymmCoList;
+
 class SymmCo : V_BASE {
 #   define CLASSNAME SymmCo
 #   define HAVE_CTOR
@@ -70,9 +73,9 @@ class SymmCo : V_BASE {
   public:
     SymmCo();
     SymmCo(const char*,int);
-    SymmCo(const char*,RefSimpleCo&);
+    SymmCo(const char*,RefSimpleCo);
     SymmCo(KeyVal&);
-    SymmCo(SimpleCoList*,KeyVal*,const char*,int=0);
+    SymmCo(RefSimpleCoList,RefKeyVal,const char*,int=0);
     SymmCo(const SymmCo&);
     ~SymmCo();
 
@@ -97,14 +100,17 @@ class SymmCo : V_BASE {
     void save_data_state(StateOut&);
     SymmCo(StateIn&);
 
-    friend SymmCoList * Geom_form_symm(Molecule&,SimpleCoList* =0,int =1);
-    friend SymmCoList * Geom_form_symm(Molecule&,SymmCoList*,int =1);
+    friend RefSymmCoList Geom_form_symm(Molecule&,RefSimpleCoList =0,int =1,
+                                       RefSymmCoList fixed=0);
+    friend RefSymmCoList Geom_form_symm(Molecule&,RefSymmCoList,int =1,
+                                       RefSymmCoList fixed=0);
 
-    friend DMatrix Geom_form_hessian(Molecule&,SimpleCoList* =0);
-    friend DMatrix Geom_form_hessian(Molecule&,SimpleCoList*,SymmCoList*);
+    friend DMatrix Geom_form_hessian(Molecule&,RefSimpleCoList =0);
+    friend DMatrix Geom_form_hessian(Molecule&,RefSimpleCoList,RefSymmCoList);
 
-    friend DMatrix Geom_form_K(Molecule&,SimpleCoList* =0,int =1);
-    friend DMatrix Geom_form_K(Molecule&,SymmCoList*,int =1);
+    friend DMatrix Geom_form_K(Molecule&,RefSimpleCoList =0,int =1);
+    friend DMatrix Geom_form_K(Molecule&,RefSymmCoList,int =1,
+                               RefSymmCoList fixed=0,DMatrix*Kfixed=0);
 
     friend ostream& operator<<(ostream&,SymmCo&);
   };
@@ -112,18 +118,18 @@ DescribedClass_REF_dec(SymmCo);
 
 /////////////////////////////////////////////////////////////////////////
 
-SymmCoList * Geom_read_symm(KeyVal*,const char*,SimpleCoList* =0);
+RefSymmCoList Geom_read_symm(RefKeyVal,const char*,RefSimpleCoList =0);
 
-void Geom_add_symm(KeyVal*,const char*,SymmCoList*,SimpleCoList* =0);
-DMatrix Geom_make_bmat(SymmCoList*,Molecule&);
-SymmCoList * Geom_symm_from_simple(SimpleCoList*,int=0);
+void Geom_add_symm(RefKeyVal,const char*,RefSymmCoList,RefSimpleCoList =0);
+DMatrix Geom_make_bmat(RefSymmCoList,Molecule&);
+RefSymmCoList Geom_symm_from_simple(RefSimpleCoList,int=0);
 
 
-void Geom_calc_simples(SymmCoList*,Molecule&);
-void Geom_normalize(SymmCoList*);
+void Geom_calc_simples(RefSymmCoList,Molecule&);
+void Geom_normalize(RefSymmCoList);
 
-void Geom_print_pretty(SymmCoList*);
-void Geom_print_pretty(ostream&,SymmCoList*);
+void Geom_print_pretty(RefSymmCoList);
+void Geom_print_pretty(ostream&,RefSymmCoList);
 
 #undef V_BASE
 

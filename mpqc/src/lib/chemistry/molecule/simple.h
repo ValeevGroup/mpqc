@@ -38,6 +38,7 @@
 
 class SimpleCoPtr;
 class SimpleCoList;
+class RefSimpleCoList;
 
 // class SCCount {
 //   friend class SimpleCoPtr;
@@ -55,7 +56,7 @@ class SimpleCo : V_BASE {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    char *ref;
+    char *label_;
     int natoms_;
     int *atoms;
     double value_;
@@ -66,7 +67,7 @@ class SimpleCo : V_BASE {
   public:
     virtual ~SimpleCo();
 
-    inline const char * reference() const { return ref; }
+    inline const char * label() const { return label_; }
     inline const int natoms() const { return natoms_; }
     inline const int operator[](int i) const { return atoms[i]; }
     inline double value() const { return value_; }
@@ -302,12 +303,12 @@ typedef LinOPSimpleCo LinOP;
  * these are some utility routines
  */
 
-SimpleCoList * Geom_read_simples(KeyVal*);
-SimpleCoList * Geom_form_simples(Molecule&);
-void Geom_calc_simples(SimpleCoList*,Molecule&);
+RefSimpleCoList Geom_read_simples(RefKeyVal);
+RefSimpleCoList Geom_form_simples(Molecule&);
+void Geom_calc_simples(RefSimpleCoList,Molecule&);
 
-void Geom_print_pretty(SimpleCoList*);
-void Geom_print_pretty(ostream&,SimpleCoList*,const double* =0);
+void Geom_print_pretty(RefSimpleCoList);
+void Geom_print_pretty(ostream&,RefSimpleCoList,const double* =0);
 
 /////////////////////////////////////////////////////////////////////
 

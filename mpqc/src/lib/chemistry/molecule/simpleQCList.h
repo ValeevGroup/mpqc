@@ -77,7 +77,7 @@ class SimpleCoListLink
     SimpleCoListLink *prev;
 
     SimpleCoListLink();
-    SimpleCoListLink(SimpleCo*);
+    //SimpleCoListLink(SimpleCo*);
     SimpleCoListLink(RefSimpleCo&);
     SimpleCoListLink(const SimpleCoListLink&);
     ~SimpleCoListLink();
@@ -112,7 +112,7 @@ class SimpleCoList
     SimpleCoList(const SimpleCoList&);
     virtual ~SimpleCoList();
 
-    void add(SimpleCo*);
+    //void add(SimpleCo*);
     void add(RefSimpleCo&);
     void remove_first(RefSimpleCo&);
     void remove_all(RefSimpleCo&);
@@ -125,11 +125,12 @@ class SimpleCoList
     virtual void print(ostream&,const char* = " ") const;
     virtual void print(FILE* =stdout,const char* = " ") const;
   };
+DescribedClass_REF_dec(SimpleCoList);
 
 class SimpleCoListIter {
     friend class SimpleCoList;
   protected:
-    SimpleCoList *list;
+    RefSimpleCoList list;
     SimpleCoListLink *p;
   public:
     SimpleCoListIter();

@@ -32,13 +32,17 @@
 
 //////////////////////////////////////////////////////////////////////
 
-static void add_bonds(SimpleCoList*, BitArray&, Molecule&);
-static void add_bends(SimpleCoList*, BitArray&, Molecule&);
-static void add_tors(SimpleCoList*, BitArray&, Molecule&);
-static void add_out(SimpleCoList*, BitArray&, Molecule&);
+static void add_bonds(RefSimpleCoList, BitArray&, Molecule&);
+static void add_bends(RefSimpleCoList, BitArray&, Molecule&);
+static void add_tors(RefSimpleCoList, BitArray&, Molecule&);
+static void add_out(RefSimpleCoList, BitArray&, Molecule&);
 
 static int linear(Molecule&,int,int,int);
 static int hterminal(Molecule&, BitArray&, int);
+
+#if defined(I860)
+extern "C" void bzero(void*,int);
+#endif
 
 //////////////////////////////////////////////////////////////////////
 
@@ -56,13 +60,13 @@ SimpleCo::_castdown(const ClassDesc*cd)
 }
 
 SimpleCo::SimpleCo()
- : natoms_(0), ref(0), value_(0), atoms(0) {}
+ : natoms_(0), label_(0), value_(0), atoms(0) {}
 
 SimpleCo::SimpleCo(int na, const char *re) :
-  natoms_(na), atoms(0), value_(0), ref(0)
+  natoms_(na), atoms(0), value_(0), label_(0)
 {
   atoms=new int[na]; bzero(atoms,sizeof(int)*na);
-  if(re) { ref=new char[strlen(re)+1]; strcpy(ref,re); }
+  if(re) { label_=new char[strlen(re)+1]; strcpy(label_,re); }
   }
 
 SimpleCo::~SimpleCo()
@@ -73,7 +77,7 @@ SimpleCo::~SimpleCo()
 void SimpleCo::init()
 {
   if(atoms) delete[] atoms; atoms=0;
-  if(ref) delete[] ref; ref=0;
+  if(label_) delete[] label_; label_=0;
   natoms_=0; value_=0;
   }
 
@@ -82,7 +86,7 @@ void SimpleCo::save_data_state(StateOut& so)
   so.put(value_);
   so.put(natoms_);
   so.put(atoms,natoms_);
-  so.putstring(ref);
+  so.putstring(label_);
 }
 
 SimpleCo::SimpleCo(StateIn& si):
@@ -91,13 +95,13 @@ SimpleCo::SimpleCo(StateIn& si):
   si.get(value_);
   si.get(natoms_);
   si.get(atoms);
-  si.getstring(ref);
+  si.getstring(label_);
 }
 
 int SimpleCo::operator==(SimpleCo& sc)
 {
-  if(ref && !sc.ref || !ref && sc.ref) return 0;
-  if(ref && strcmp(ref,sc.ref)) return 0;
+  if(label_ && !sc.label_ || !label_ && sc.label_) return 0;
+  if(label_ && strcmp(label_,sc.label_)) return 0;
 
   if(atoms && !sc.atoms || !atoms && sc.atoms) return 0;
   if(atoms)
@@ -108,22 +112,12 @@ int SimpleCo::operator==(SimpleCo& sc)
 
 ////////////////////////////////////////////////////////////////////
 
-SimpleCoList::SimpleCoList(KeyVal &keyval)
-{
-  int nsimp=keyval.count();
-
-  for(int i=0; i < nsimp; i++) {
-      add(keyval.describedclassvalue(i));
-    }
-
-}
-
-SimpleCoList *
-Geom_read_simples(KeyVal *keyval)
+RefSimpleCoList
+Geom_read_simples(RefKeyVal keyval)
 {
   int nsimp=keyval->count("simp");
 
-  SimpleCoList *list = new SimpleCoList;
+  RefSimpleCoList list(new SimpleCoList);
 
   for(int i=0; i < nsimp; i++) {
     char *val = keyval->pcharvalue("simp",i,0);
@@ -149,10 +143,10 @@ Geom_read_simples(KeyVal *keyval)
   return list;
   }
 
-void Geom_print_pretty(SimpleCoList *list) { Geom_print_pretty(cout,list); }
+void Geom_print_pretty(RefSimpleCoList list) { Geom_print_pretty(cout,list); }
 
 void
-Geom_print_pretty(ostream& os, SimpleCoList *list, const double *coeff)
+Geom_print_pretty(ostream& os, RefSimpleCoList list, const double *coeff)
 {
   int i;
   SimpleCoListIter p;
@@ -166,12 +160,12 @@ Geom_print_pretty(ostream& os, SimpleCoList *list, const double *coeff)
 
 ostream& operator<<(ostream& os, SimpleCo& sc)
 {
-  if (sc.reference()==0 || sc.natoms()==0) return os;
+  if (sc.label()==0 || sc.natoms()==0) return os;
 
   os.setf(ios::fixed,ios::floatfield); os.precision(10);
 
   os << "  ";
-  os.setf(ios::left,ios::adjustfield); os.width(10); os << sc.reference();
+  os.setf(ios::left,ios::adjustfield); os.width(10); os << sc.label();
   os.setf(ios::right,ios::adjustfield); os.width(6); os << sc.ctype();
   for (int i=0; i < sc.natoms(); i++) { os.width(6); os << sc[i]; }
   os.width(40-6*sc.natoms());  os << sc.preferred_value();
@@ -180,7 +174,7 @@ ostream& operator<<(ostream& os, SimpleCo& sc)
   }
 
 void
-Geom_calc_simples(SimpleCoList *list, Molecule &m)
+Geom_calc_simples(RefSimpleCoList list, Molecule &m)
 {
   for(SimpleCoListIter p=list; p; p++)
     p->calc_intco(m);
@@ -188,10 +182,10 @@ Geom_calc_simples(SimpleCoList *list, Molecule &m)
 
 /////////////////////////////////////////////////////////////////////
 
-SimpleCoList * Geom_form_simples(Molecule& m)
+RefSimpleCoList Geom_form_simples(Molecule& m)
 {
   int i,j,ij;
-  SimpleCoList *ret=0;
+  RefSimpleCoList ret;
 
  // let's go through the geometry and find all the close contacts
  // bonds is a lower triangle matrix of 1's and 0's indicating whether
@@ -230,18 +224,18 @@ SimpleCoList * Geom_form_simples(Molecule& m)
  */
 
 static void
-add_bonds(SimpleCoList *list, BitArray& bonds, Molecule& m)
+add_bonds(RefSimpleCoList list, BitArray& bonds, Molecule& m)
 {
   int i,j,ij;
-  int refc=0;
-  char ref[80];
+  int labelc=0;
+  char label[80];
 
   for(i=ij=0; i < m.natom(); i++) {
     for(j=0; j <= i; j++,ij++) {
       if(bonds[ij]) {
-        refc++;
-        sprintf(ref,"s%d",refc);
-        list->add(new Stre(ref,j+1,i+1));
+        labelc++;
+        sprintf(label,"s%d",labelc);
+        list->add(new Stre(label,j+1,i+1));
         }
       }
     }
@@ -273,11 +267,11 @@ linear(Molecule& m, int i, int j, int k)
   }
 
 static void
-add_bends(SimpleCoList *list, BitArray& bonds, Molecule& m)
+add_bends(RefSimpleCoList list, BitArray& bonds, Molecule& m)
 {
   int i,j,k;
-  int refc=0;
-  char ref[80];
+  int labelc=0;
+  char label[80];
 
   int n = m.natom();
 
@@ -288,9 +282,9 @@ add_bends(SimpleCoList *list, BitArray& bonds, Molecule& m)
           if(bonds(j,k)) {
             if(linear(m,i,j,k)) continue;
 
-	    refc++;
-	    sprintf(ref,"b%d",refc);
-	    list->add(new Bend(ref,k+1,j+1,i+1));
+	    labelc++;
+	    sprintf(label,"b%d",labelc);
+	    list->add(new Bend(label,k+1,j+1,i+1));
 	    }
           }
 	}
@@ -317,11 +311,11 @@ hterminal(Molecule& m, BitArray& bonds, int i)
 }
 
 static void
-add_tors(SimpleCoList *list, BitArray& bonds, Molecule& m)
+add_tors(RefSimpleCoList list, BitArray& bonds, Molecule& m)
 {
   int i,j,k,l;
-  int refc=0;
-  char ref[80];
+  int labelc=0;
+  char label[80];
 
   int n = m.natom();
 
@@ -347,9 +341,9 @@ add_tors(SimpleCoList *list, BitArray& bonds, Molecule& m)
               if (bonds(k,l)) {
 		if(linear(m,j,k,l)) continue;
 
-		refc++;
-		sprintf(ref,"t%d",refc);
-		list->add(new Tors(ref,l+1,k+1,j+1,i+1));
+		labelc++;
+		sprintf(label,"t%d",labelc);
+		list->add(new Tors(label,l+1,k+1,j+1,i+1));
 		}
 	      }
 	    }
@@ -360,11 +354,11 @@ add_tors(SimpleCoList *list, BitArray& bonds, Molecule& m)
   }
 
 static void
-add_out(SimpleCoList *list, BitArray& bonds, Molecule& m)
+add_out(RefSimpleCoList list, BitArray& bonds, Molecule& m)
 {
   int i,j,k,l;
-  int refc=0;
-  char ref[80];
+  int labelc=0;
+  char label[80];
 
   int n = m.natom();
 
@@ -380,9 +374,9 @@ add_out(SimpleCoList *list, BitArray& bonds, Molecule& m)
           if(k!=j && bonds(i,k)) {
             for(l=0; l < k; l++) {
               if(l!=j && bonds(i,l)) {
-		refc++;
-		sprintf(ref,"o%d",refc);
-		list->add(new Out(ref,j+1,i+1,l+1,k+1));
+		labelc++;
+		sprintf(label,"o%d",labelc);
+		list->add(new Out(label,j+1,i+1,l+1,k+1));
 		}
 	      }
 	    }

@@ -52,6 +52,8 @@
 
 ///////////////////////////////////////////////////////////////////////
 
+DescribedClass_REF_def(SimpleCoList);
+
 #define CLASSNAME SimpleCoListLink
 #define PARENTS virtual public SavableState
 #define HAVE_CTOR
@@ -66,8 +68,6 @@ SimpleCoListLink::_castdown(const ClassDesc*cd)
 }
 
 SimpleCoListLink::SimpleCoListLink() : next(0), prev(0) {}
-
-SimpleCoListLink::SimpleCoListLink(SimpleCo *o) : obj(o), next(0), prev(0) {}
 
 SimpleCoListLink::SimpleCoListLink(RefSimpleCo& o) : obj(o), next(0), prev(0) {}
 
@@ -128,6 +128,7 @@ void SimpleCoListLink::print(FILE *of, const char *pad) const
 #define CLASSNAME SimpleCoList
 #define PARENTS virtual public SavableState
 #define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -154,6 +155,17 @@ SimpleCoList::SimpleCoList(SimpleCo *bo)
   current=head;
   }
 
+SimpleCoList::SimpleCoList(KeyVal &keyval)
+  : current(0), head(0)
+{
+  int nsimp=keyval.count();
+
+  for(int i=0; i < nsimp; i++) {
+      add(keyval.describedclassvalue(i));
+    }
+
+}
+
 SimpleCoList::SimpleCoList(RefSimpleCo&bo)
   : current(0), head(0)
 {
@@ -168,21 +180,6 @@ SimpleCoList::~SimpleCoList()
   }
 
 // add object to tail end of list
-void SimpleCoList::add(SimpleCo *bo)
-{
-  SimpleCoListLink *bll = new SimpleCoListLink(bo);
-
-  if(!head)
-    head=current=bll;
-  else {
-   // set current to end of list
-    for(; current->next; current=current->next) ;
-   // now tack bll onto current
-    current->next = bll;
-    bll->prev = current;
-    }
-  }
-
 void SimpleCoList::add(RefSimpleCo& bo)
 {
   SimpleCoListLink *bll = new SimpleCoListLink(bo);

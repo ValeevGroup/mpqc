@@ -72,7 +72,8 @@ SymmetricMatrix MolecularEnergy::EvalH()
 
 void MolecularEnergy::set_energy(double e)
 {
-  _energy = e;
+  _energy.result_noupdate() = e;
+  _energy.computed() = 1;
   _have_energy = 1;
 }
 
@@ -92,7 +93,8 @@ double MolecularEnergy::energy()
 void MolecularEnergy::set_gradient(ColumnVector&g)
 {
   if (_mc == 0) {
-      _gradient = g;
+      _gradient.result_noupdate() = g;
+      _gradient.computed() = 1;
     }
   else {
       _mc->to_internal(_gradient,g);
@@ -116,10 +118,11 @@ const ColumnVector& MolecularEnergy::gradient()
 void MolecularEnergy::set_hessian(SymmetricMatrix&h)
 {
   if (_mc == 0) {
-      _hessian = h;
+      _hessian.result_noupdate() = h;
+      _hessian.computed() = 1;
     }
   else {
-      _mc->to_internal(_hessian,h);
+      _mc->to_internal(_hessian.result(),h);
     }
   _have_hessian = 1;
 }

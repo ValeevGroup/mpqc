@@ -15,7 +15,7 @@ extern "C" {
 #include "symm.h"
 #include "symmQCList.h"
 
-MolecularCoor::MolecularCoor(Molecule&mol):
+MolecularCoor::MolecularCoor(RefMolecule mol):
   _mol(mol)
 {
 }
@@ -23,14 +23,14 @@ MolecularCoor::~MolecularCoor()
 {
 }
 
-ProjectedCartesian::ProjectedCartesian(Molecule&mol):
+ProjectedCartesian::ProjectedCartesian(RefMolecule&mol):
   MolecularCoor(mol)
 {
   int i;
   ColumnVector v[6];
   int nproj = 3;
 
-  int natom = _mol.natom();
+  int natom = _mol->natom();
   ncart = 3*natom;
   nint = ncart - nproj;
   for (i=0; i<nproj; i++) v[i].ReDimension(ncart);
@@ -110,43 +110,3 @@ void ProjectedCartesian::to_internal(ColumnVector&projected,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#if 0
-NonRedundantIntCo::NonRedundantIntCo(Molecule&mol)
-  : InternalCoordinate(mol), symm(0), nint(0)
-{
-  symm = Geom_form_symm(_mol);
-
-  if(!symm)
-    err_quit("NonRedundantIntCo(Molecule&mol): could not form symm");
-
-  Geom_calc_simples(symm,_mol);
-
-  for(SymmCoListIter p=symm; p; p++,nint++) ;
-}
-
-NonRedundantIntCo::~NonRedundantIntCo()
-{
-  if(symm) delete symm;
-}
-
-void NonRedundantIntCo::to_cartesian(ColumnVector&cartesian,
-                                     ColumnVector&projected)
-{
-}
-
-void NonRedundantIntCo::to_internal(ColumnVector&internal,
-                                    ColumnVector&cartesian)
-{
-  DMatrix bmat = Geom_make_bmat(symm,_mol);
-
-  DMatrix ginv = (bmat*bmat.transpose()).inverse();
-
-  Dmatrix ctmp(bmat.ncol());
-  for(int i=0; i < ctmp.dim(); i++) ctmp[i] = cartesian(i);
-  
-  DMatrix itmp = ginv*bmat*ctmp;
-
-  for(i=0; i < itmp.dim(); i++) internal(i) = itmp[i];
-}
-#endif

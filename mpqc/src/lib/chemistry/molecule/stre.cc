@@ -59,7 +59,7 @@ StreSimpleCo::StreSimpleCo(const char *re, int a1, int a2)
 StreSimpleCo::StreSimpleCo(KeyVal &kv)
   : SimpleCo(2)
 {
-  ref=kv.pcharvalue(0);
+  label_=kv.pcharvalue(0);
   atoms[0]=kv.intvalue(1);
   atoms[1]=kv.intvalue(2);
 }
@@ -67,7 +67,7 @@ StreSimpleCo::StreSimpleCo(KeyVal &kv)
 StreSimpleCo::StreSimpleCo(KeyVal *kv, const char *lab, int n)
   : SimpleCo(2)
 {
-  ref=kv->pcharvalue(lab,n,1);
+  label_=kv->pcharvalue(lab,n,1);
   atoms[0]=kv->intvalue(lab,n,2);
   atoms[1]=kv->intvalue(lab,n,3);
   }
@@ -78,8 +78,8 @@ StreSimpleCo::~StreSimpleCo()
 
 StreSimpleCo& StreSimpleCo::operator=(const StreSimpleCo& s)
 {
-  if(ref) delete[] ref;
-  ref=new char[strlen(s.ref)+1]; strcpy(ref,s.ref);
+  if(label_) delete[] label_;
+  label_=new char[strlen(s.label_)+1]; strcpy(label_,s.label_);
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1];
 
   return *this;
@@ -117,7 +117,7 @@ double StreSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 void StreSimpleCo::print(ostream& os, const char *pad) const
 {
   os << pad << "Stretch:\n";
-  if(ref) os << pad << "  ref   = " << reference() << endl;
+  if(label_) os << pad << "  ref   = " << label() << endl;
   if(atoms) os << pad << "  atoms = " << atoms[0] << " " << atoms[1] << endl;
   os << pad << "  len   = " << value() << endl;
   os.flush();
@@ -126,7 +126,7 @@ void StreSimpleCo::print(ostream& os, const char *pad) const
 void StreSimpleCo::print(FILE *of, const char *pad) const
 {
   fprintf(of,"%sStretch:\n",pad);
-  if(ref) fprintf(of,"%s  ref   = %s\n",pad,reference());
+  if(label_) fprintf(of,"%s  ref   = %s\n",pad,label());
   if(atoms) fprintf(of,"%s  atoms = %d %d\n",pad,atoms[0],atoms[1]);
   fprintf(of,"%s  len   = %lf\n",pad,value());
   fflush(of);

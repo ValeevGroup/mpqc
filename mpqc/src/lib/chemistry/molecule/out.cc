@@ -59,7 +59,7 @@ OutSimpleCo::OutSimpleCo(const char *refr, int a1, int a2, int a3, int a4)
 OutSimpleCo::OutSimpleCo(KeyVal &kv) :
   SimpleCo(4)
 {
-  ref=kv.pcharvalue(0);
+  label_=kv.pcharvalue(0);
   atoms[0]=kv.intvalue(1);
   atoms[1]=kv.intvalue(2);
   atoms[2]=kv.intvalue(3);
@@ -69,7 +69,7 @@ OutSimpleCo::OutSimpleCo(KeyVal &kv) :
 OutSimpleCo::OutSimpleCo(KeyVal *kv, const char *lab, int n) :
   SimpleCo(4)
 {
-  ref=kv->pcharvalue(lab,n,1);
+  label_=kv->pcharvalue(lab,n,1);
   atoms[0]=kv->intvalue(lab,n,2);
   atoms[1]=kv->intvalue(lab,n,3);
   atoms[2]=kv->intvalue(lab,n,4);
@@ -82,9 +82,9 @@ OutSimpleCo::~OutSimpleCo()
 
 OutSimpleCo& OutSimpleCo::operator=(const OutSimpleCo& s)
 {
-  if(ref) delete[] ref;
-  ref=new char[strlen(s.ref)+1];
-  strcpy(ref,s.ref);
+  if(label_) delete[] label_;
+  label_=new char[strlen(s.label_)+1];
+  strcpy(label_,s.label_);
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   atoms[3]=s.atoms[3];
   return *this;
@@ -93,7 +93,7 @@ OutSimpleCo& OutSimpleCo::operator=(const OutSimpleCo& s)
 void OutSimpleCo::print(ostream& os, const char *pad) const
 {
   os << pad << "Out-of-plane:\n";
-  if(ref) os << pad << "  ref   = " << ref << endl;
+  if(label_) os << pad << "  label_   = " << label_ << endl;
   if(atoms) {
     os << pad << "  atoms = " << atoms[0] << " " << atoms[1];
     os << " " << atoms[2] << " " << atoms[3] << endl;
@@ -105,7 +105,7 @@ void OutSimpleCo::print(ostream& os, const char *pad) const
 void OutSimpleCo::print(FILE *of, const char *pad) const
 {
   fprintf(of,"%sOut-of-plane:\n",pad);
-  if(ref) fprintf(of,"%s  ref   = %s\n",pad,ref);
+  if(label_) fprintf(of,"%s  label_   = %s\n",pad,label_);
   if(atoms) fprintf(of,"%s  atoms = %d %d %d %d\n",pad,
         atoms[0],atoms[1],atoms[2],atoms[3]);
   fprintf(of,"%s  theta = %lf\n",pad,value());

@@ -10,6 +10,7 @@ DescribedClass_REF_def(Molecule);
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
+
 void *
 Molecule::_castdown(const ClassDesc*cd)
 {
@@ -144,20 +145,6 @@ Molecule::print(FILE*fp)
              "          mass\n");
 
   int i;
-#if defined(I860) && !defined(PARAGON)
-  double x;
-  for (i=0; i<natom(); i++) {
-      fprintf(fp," %5d%5s%8s%16.9e %16.9e %16.9e%10.5f\n",
-              i+1,
-	      get_atom(i).element().symbol(),
-	      (get_atom(i).label()) ? get_atom(i).label(): " ",
-	      (((x=get_atom(i)[0]) < 1e-12 && x > -1e-12) ? 0.0 : x),
-	      (((x=get_atom(i)[1]) < 1e-12 && x > -1e-12) ? 0.0 : x),
-	      (((x=get_atom(i)[2]) < 1e-12 && x > -1e-12) ? 0.0 : x),
-              get_atom(i).element().mass()
-              );
-    }
-#else
   for (i=0; i<natom(); i++) {
       fprintf(fp," %5d%5s%8s%16.10f%16.10f%16.10f%10.5f\n",
               i+1,
@@ -169,7 +156,6 @@ Molecule::print(FILE*fp)
               get_atom(i).element().mass()
               );
     }
-#endif
 }
 
 AtomicCenter& Molecule::operator[](int ind)
@@ -205,11 +191,15 @@ PointBag_double* Molecule::charges() const
 void Molecule::save_data_state(StateOut& so)
 {
   so.put(natoms);
-  for (int i=0; i < natoms; i++) get_atom(i).save_object_state(so);
+  for (int i=0; i < natoms; i++) {
+      get_atom(i).save_object_state(so);
+    }
 }
 
 Molecule::Molecule(StateIn& si):
-  SavableState(si,class_desc_), atoms(0), natoms(0)
+  atoms(0),
+  natoms(0),
+  SavableState(si,class_desc_)
 {
   int natom;
   si.get(natom);

@@ -12,7 +12,10 @@
 
 // Macro to expand to query function
 #define QUERY_FUNCTION_PROTO(type,property) \
-  inline const type property() const { return atom_info[Z_].property; }
+  const type property() const
+#define QUERY_FUNCTION_IMPL(type,property) \
+  INLINE const type ChemicalElement::property() const \
+  { return atom_info[Z_].property; }
 
 							      
 class ChemicalElement :
@@ -74,11 +77,14 @@ class ChemicalElement :
     QUERY_FUNCTION_PROTO(double,specific_heat);
     QUERY_FUNCTION_PROTO(double,density);
     QUERY_FUNCTION_PROTO(double,atomic_radius);
-    inline double atomic_radius_au() const
-      { return atom_info[Z_].atomic_radius * ang_to_au; }
     QUERY_FUNCTION_PROTO(double,vdw_radius);
-    inline double charge() { return (double) number(); }
+    double atomic_radius_au() const;
+    double charge() const;
 };
 DescribedClass_REF_dec(ChemicalElement);
+
+#ifdef INLINE_FUNCTIONS
+#include <chemistry/molecule/chmelm_i.h>
+#endif
 
 #endif

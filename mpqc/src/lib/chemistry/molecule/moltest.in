@@ -1,4 +1,13 @@
 
+fixed<SymmCoList>: [
+  <SymmCo>: (
+     label = "fixed coordinate"
+     simp: [
+       <StreSimpleCo> = [ "fixed stretch" 1 2 ]
+       ]
+     )
+  ]
+
 molecule<Molecule>: (
     angstrom = yes
     { atoms                  geometry                } =

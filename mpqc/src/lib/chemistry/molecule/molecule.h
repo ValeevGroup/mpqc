@@ -19,7 +19,7 @@ class PointBag_double;
 
 // Generic Molecule
 class Molecule :
-  virtual public SavableState, virtual public DescribedClass
+  virtual public SavableState
 {
 #   define CLASSNAME Molecule
 #   define HAVE_CTOR

@@ -65,7 +65,7 @@ class SymmCoListIter;
 class SymmCoListLink
   : virtual public SavableState {
 #   define CLASSNAME SymmCoListLink
-#   define HAVE_CTOR
+//#   define HAVE_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
@@ -76,8 +76,8 @@ class SymmCoListLink
     SymmCoListLink *next;
     SymmCoListLink *prev;
 
-    SymmCoListLink();
-    SymmCoListLink(SymmCo*);
+    //SymmCoListLink();
+    //SymmCoListLink(SymmCo*);
     SymmCoListLink(RefSymmCo&);
     SymmCoListLink(const SymmCoListLink&);
     ~SymmCoListLink();
@@ -96,6 +96,7 @@ class SymmCoList
   : virtual public SavableState {
 #   define CLASSNAME SymmCoList
 #   define HAVE_CTOR
+#   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
@@ -110,13 +111,16 @@ class SymmCoList
     SymmCoList(const SymmCoList&);
     virtual ~SymmCoList();
 
-    void add(SymmCo*);
+    //void add(SymmCo*);
     void add(RefSymmCo&);
     void remove_first(RefSymmCo&);
     void remove_all(RefSymmCo&);
 
     void save_data_state(StateOut&so);
     SymmCoList(StateIn&);
+    SymmCoList(KeyVal&);
+
+    int length();
 
     RefSymmCo& operator[](int);
 
@@ -128,7 +132,7 @@ DescribedClass_REF_dec(SymmCoList);
 class SymmCoListIter {
     friend class SymmCoList;
   protected:
-    SymmCoList *list;
+    RefSymmCoList list;
     SymmCoListLink *p;
   public:
     SymmCoListIter();
@@ -145,8 +149,7 @@ class SymmCoListIter {
     inline SymmCoListIter& operator++() { if(p) p=p->next; return *this; }
     inline SymmCoListIter& operator--() { if(p) p=p->prev; return *this; }
 
-    inline SymmCo * operator->()
-                        { if(p) return p->obj.pointer(); else return 0; }
+    SymmCo * operator->();
 
     RefSymmCo& this_object();
 

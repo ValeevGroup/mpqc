@@ -28,9 +28,13 @@
 #include <string.h>
 #include <math.h>
 
+#if defined(I860)
+extern "C" void bzero(void*,int);
+#endif
+
 ///////////////////////////////////////////////////////////////////////
 
-static SymmCoList * make_symm_from_simple(SimpleCoList*, int =0);
+static RefSymmCoList make_symm_from_simple(RefSimpleCoList, int =0);
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -39,6 +43,7 @@ DescribedClass_REF_def(SymmCo);
 #define CLASSNAME SymmCo
 #define PARENTS virtual public SavableState
 #define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -63,7 +68,7 @@ SymmCo::SymmCo(const char *lab, int n) :
   for (int i=0; i < n_simple; i++) coeff_[i]=1.0;
   }
 
-SymmCo::SymmCo(const char *lab, RefSimpleCo& sim) : 
+SymmCo::SymmCo(const char *lab, RefSimpleCo sim) : 
   n_simple(1), val(0), label_(0), coeff_(0)
 {
   if(lab) { label_ = new char[strlen(lab)+1]; strcpy(label_,lab); }
@@ -76,7 +81,7 @@ static RefSimpleCo&
 find_simple(SimpleCoList *list, const char *val)
 {
   for(SimpleCoListIter p=list; p; p++) {
-    if (!strcmp(p->reference(),val)) {
+    if (!strcmp(p->label(),val)) {
       return p.this_object();
       }
     }
@@ -105,14 +110,29 @@ SymmCo::SymmCo(KeyVal &kv):
   for(int i=0; i < n_simple; i++) coeff_[i]=1.0;
 
   for(i=0; i < n_simple; i++) {
-    simple[i] = kv.describedclassvalue("simp",i);
-    if (kv.exists("coef",i)) coeff_[i]=kv.doublevalue("coef",i);
+      RefDescribedClass val = kv.describedclassvalue("simp",i);
+      simple[i] = val;
+      if (val.nonnull() && simple[i].null()) {
+          fprintf(stderr,"could not convert type %s to SimpleCo\n",
+                  val->class_name());
+          abort();
+        }
+      val = 0;
+    
+      if (kv.exists("coef",i)) coeff_[i]=kv.doublevalue("coef",i);
     }
 
   label_ = kv.pcharvalue("label");
-  }
+  if (!label_) {
+      char * tmplabel = "no label";
+      label_ = strcpy(new char[strlen(tmplabel)+1],tmplabel);
+    }
+}
 
-SymmCo::SymmCo(SimpleCoList *simple_list, KeyVal *kv, const char *lab, int n) :
+SymmCo::SymmCo(RefSimpleCoList simple_list,
+               RefKeyVal kv,
+               const char *lab,
+               int n) :
   n_simple(0), val(0), label_(0), coeff_(0)
 {
   int type=kv->count(lab,n);
@@ -320,10 +340,10 @@ ostream& operator<<(ostream& os,SymmCo& sc)
 
 ///////////////////////////////////////////////////////////////////////
 
-void Geom_print_pretty(SymmCoList *sc) { Geom_print_pretty(cout,sc); }
+void Geom_print_pretty(RefSymmCoList sc) { Geom_print_pretty(cout,sc); }
 
 void
-Geom_print_pretty(ostream& os, SymmCoList *sc)
+Geom_print_pretty(ostream& os, RefSymmCoList sc)
 {
   for(SymmCoListIter sp=sc; sp; sp++)
     os << *sp.this_object();
@@ -339,8 +359,11 @@ Geom_print_pretty(ostream& os, SymmCoList *sc)
  * input
  */
 
-void Geom_add_symm(KeyVal *kv, const char *stype, SymmCoList *slist,
-                                                         SimpleCoList *list)
+void
+Geom_add_symm(RefKeyVal kv,
+              const char *stype,
+              RefSymmCoList slist,
+              RefSimpleCoList list)
 {
   int read_simp=0;
 
@@ -351,20 +374,19 @@ void Geom_add_symm(KeyVal *kv, const char *stype, SymmCoList *slist,
   for(int i=0; i < nsymm; i++)
     slist->add(new SymmCo(list,kv,stype,i));
 
-  if(read_simp) delete list;
-  }
+}
 
 /*
  * read symmco array "stype" from input
  */
 
-SymmCoList * 
-Geom_read_symm(KeyVal *kv, const char *stype, SimpleCoList *list)
+RefSymmCoList
+Geom_read_symm(RefKeyVal kv, const char *stype, RefSimpleCoList list)
 {
-  SymmCoList *slist = new SymmCoList;
+  RefSymmCoList slist(new SymmCoList);
   Geom_add_symm(kv,stype,slist,list);
   return slist;
-  }
+}
 
 /*
  * calculate the values of all the simple internal coordinates used
@@ -398,7 +420,7 @@ Geom_normalize(SymmCoList *slist)
  */
 
 DMatrix
-Geom_make_bmat(SymmCoList *slist, Molecule& m)
+Geom_make_bmat(RefSymmCoList slist, Molecule& m)
 {
   int i,nsym=0;
   for(SymmCoListIter sp=slist; sp; sp++,nsym++) ;
@@ -426,19 +448,19 @@ Geom_make_bmat(SymmCoList *slist, Molecule& m)
  * if sort==true then sort the simples by type
  */
 
-SymmCoList *
-Geom_symm_from_simple(SimpleCoList *list, int sort)
+RefSymmCoList
+Geom_symm_from_simple(RefSimpleCoList list, int sort)
 {
   if(!list) return 0;
 
   return make_symm_from_simple(list,sort);
   }
 
-static SymmCoList *
-make_symm_from_simple(SimpleCoList *list, int sort)
+static RefSymmCoList
+make_symm_from_simple(RefSimpleCoList list, int sort)
 {
   SimpleCoListIter p;
-  SymmCoList *slist = new SymmCoList;
+  RefSymmCoList slist(new SymmCoList);
 
   for(p=list; p; p++)
     slist->add(new SymmCo("a",p.this_object()));
@@ -454,34 +476,35 @@ make_symm_from_simple(SimpleCoList *list, int sort)
  * if just_a1 is true, then only form the totally symmetric coordinates
  */
 
-SymmCoList *
-Geom_form_symm(Molecule& m, SimpleCoList *list, int just_a1)
+RefSymmCoList
+Geom_form_symm(Molecule& m,
+               RefSimpleCoList list,
+               int just_a1,
+               RefSymmCoList fixed)
 {
-  int free_list = 0;
 
   if(!list) {
     if((list=Geom_form_simples(m))==0) {
       err_msg("Geom_form_symm: could not form simples list");
       return 0;
       }
-    free_list=1;
     }
 
-  SymmCoList *slist = make_symm_from_simple(list);
+  RefSymmCoList slist = make_symm_from_simple(list);
 
-  if(free_list) delete list;
-
-  SymmCoList *ret = Geom_form_symm(m,slist,just_a1);
-  delete slist;
+  RefSymmCoList ret = Geom_form_symm(m,slist,just_a1,fixed);
 
   return ret;
   }
 
-SymmCoList *
-Geom_form_symm(Molecule& m, SymmCoList *list, int just_a1)
+RefSymmCoList
+Geom_form_symm(Molecule& m,
+               RefSymmCoList list,
+               int just_a1,
+               RefSymmCoList fixed)
 {
   int i,j;
-  SymmCoList *slist;
+  RefSymmCoList slist;
 
   if(list==0) {
     err_msg("Geom_form_symm: list is null");
@@ -492,9 +515,17 @@ Geom_form_symm(Molecule& m, SymmCoList *list, int just_a1)
   for(SymmCoListIter p=list; p; p++)
     p->normalize();
 
- // form the transformation matrix from redundant coords to non-redund.
-  DMatrix K = Geom_form_K(m,list,just_a1);
+  // normalize the fixed coordinates too
+  for(SymmCoListIter fixed_i=fixed; fixed_i; fixed_i++)
+    fixed_i->normalize();
 
+ // form the transformation matrix from redundant coords to non-redund.
+  DMatrix Kfixed; // nfixed x nred
+  DMatrix K = Geom_form_K(m,list,just_a1,fixed,&Kfixed);
+
+  int nfixed;
+  if (fixed && fixed->length() > 0) nfixed = Kfixed.nrow();
+  else nfixed = 0;
   int nsym = K.ncol();
   int nred = K.nrow();
 
@@ -530,6 +561,17 @@ Geom_form_symm(Molecule& m, SymmCoList *list, int just_a1)
 	  }
 	}
       }
+    // now put the contribution from the fixed coordinates in the
+    // coordinate list
+    for(j=0,fixed_i=0; j < nfixed; j++,fixed_i++) {
+      if(fabs(K[j][i]) > 1.0e-12) {
+        for(int k=0; k < fixed_i->nsimple(); k++) {
+          sp->simple[sim] = fixed_i.this_object()->simple[k];
+	  sp->coeff_[sim] = Kfixed[j][i]*fixed_i.this_object()->coeff_[k];
+	  sim++;
+	  }
+	}
+      }
 
     slist->add(sp);
     }
@@ -546,9 +588,8 @@ Geom_form_symm(Molecule& m, SymmCoList *list, int just_a1)
  */
 
 DMatrix
-Geom_form_K(Molecule& m, SimpleCoList *list, int just_a1)
+Geom_form_K(Molecule& m, RefSimpleCoList list, int just_a1)
 {
-  int free_list=0;
 
   if(!list) {
     if((list=Geom_form_simples(m))==0) {
@@ -556,22 +597,21 @@ Geom_form_K(Molecule& m, SimpleCoList *list, int just_a1)
       DMatrix foo(0,0);
       return foo;
       }
-    free_list=1;
     }
 
-  SymmCoList *slist = make_symm_from_simple(list);
-
-  if(free_list) delete list;
+  RefSymmCoList slist = make_symm_from_simple(list);
 
   DMatrix ret = Geom_form_K(m,slist,just_a1);
-  delete slist;
 
   return ret;
   }
   
 
+// Fixed are coordinates that are orthogonal to the computed coordinates
+// generated by this routine.
 DMatrix
-Geom_form_K(Molecule& m, SymmCoList *list, int just_a1)
+Geom_form_K(Molecule& m, RefSymmCoList list, int just_a1,
+            RefSymmCoList fixed, DMatrix* Kfixed)
 {
   int i,j;
 
@@ -587,6 +627,39 @@ Geom_form_K(Molecule& m, SymmCoList *list, int just_a1)
 
  // and form b*b~
   DMatrix bmbt = bmat * bmat.transpose();
+
+  // the number of fixed coordinates
+  int nfixed = (fixed?fixed->length():0);
+  Kfixed->resize(nfixed,nred);
+
+  if (nfixed && !Kfixed) {
+      fprintf(stderr,"Geom_form_K needs a Kfixed\n");
+      abort();
+    }
+
+  // form the fixed part of the b matrix
+  if (nfixed && Kfixed) {
+    DMatrix bmat_fixed = Geom_make_bmat(fixed,m);
+    DMatrix bmbt_fixed = bmat_fixed * bmat_fixed.transpose();
+
+    // need the cross terms in bmbt also
+    DMatrix bmbt_fix_red = bmat_fixed * bmat.transpose();
+
+    // orthogalize the redundant coordinates to the fixed coordinates
+    DMatrix redundant_ortho(nfixed,nred);
+    for (i=0; i<nred; i++) {
+      for (j=0; j<nfixed; j++) {
+        redundant_ortho(j,i) = - bmbt_fix_red(j,i)/bmbt_fixed(j,j);
+        }
+      }
+    if (Kfixed) *Kfixed = redundant_ortho;
+
+    // convert bmbt to the new coordinate system
+    bmbt = bmbt
+      + redundant_ortho.transpose() * bmbt_fixed * redundant_ortho
+      + redundant_ortho.transpose() * bmbt_fix_red
+      + bmbt_fix_red.transpose() * redundant_ortho;
+    }
 
  // now diagonalize bmbt, this should give you the 3n-6(5) symmetrized
  // internal coordinates
@@ -659,17 +732,14 @@ Geom_form_K(Molecule& m, SymmCoList *list, int just_a1)
 // approximate hessian ala Fischer and Alml:of
 
 DMatrix
-Geom_form_hessian(Molecule& m, SimpleCoList *list)
+Geom_form_hessian(Molecule& m, RefSimpleCoList list)
 {
-  int free_list=0;
-
   if(!list) {
     if((list=Geom_form_simples(m))==0) {
       err_msg("Geom_form_hessian: could not form simples list");
       DMatrix foo(0,0);
       return foo;
       }
-    free_list=1;
     }
 
   int count=0;
@@ -683,11 +753,12 @@ Geom_form_hessian(Molecule& m, SimpleCoList *list)
   DMatrix hess(count,count);
   hess.zero();
 
+  printf("Geom_form_hessian: the reference count for list is %d\n",
+         list->nreference());
+
   int i;
   for(i=0,p=0; p; p++,i++)
     hess(i,i) = p->calc_force_con(m);
-
-  if(free_list) delete list;
 
   return hess;
   }
@@ -713,7 +784,7 @@ gen_inverse(DMatrix& mat)
 
 
 DMatrix
-Geom_form_hessian(Molecule& m, SimpleCoList *simples, SymmCoList *symm)
+Geom_form_hessian(Molecule& m, RefSimpleCoList simples, RefSymmCoList symm)
 {
   int i;
 
@@ -723,9 +794,8 @@ Geom_form_hessian(Molecule& m, SimpleCoList *simples, SymmCoList *symm)
     DMatrix ihessian = Geom_form_hessian(m,simples);
 
    // now form the cartesian hessian from ihessian 
-    SymmCoList *rsymm = make_symm_from_simple(simples);
+    RefSymmCoList rsymm = make_symm_from_simple(simples);
     DMatrix rbmat = Geom_make_bmat(rsymm,m);
-    delete rsymm;
 
     chessian = rbmat.transpose() * ihessian * rbmat;
     }

@@ -8,13 +8,13 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 CXXSRC = atomcent.cc chemelem.cc molecule.cc \
          simple.cc symm.cc stre.cc bend.cc out.cc tors.cc lin.cc \
          simpleQCList.cc symmQCList.cc energy.cc coor.cc \
-         shape.cc \
+         shape.cc chmelm_i.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
       simple.h symm.h localdef.h simpleQCList.h symmQCList.h \
-      coor.h energy.h shape.h
+      coor.h energy.h shape.h chmelm_i.h
 
 DEPENDINCLUDE = $(INC)
 
@@ -32,11 +32,11 @@ default:: libmolecule.a
 
 moltest: $(TESTOBJ) libmolecule.a \
 	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(CXX) $(CXXFLAGS) -o moltest $^
+	$(CXX) $(CXXFLAGS) -o moltest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.o=.d) $(TESTOBJ:%.o=%.d)
 endif

@@ -328,6 +328,7 @@ void
 Wavefunction::print(ostream&o)
 {
   MolecularEnergy::print(o);
+  basis()->print_brief(o);
   // the other stuff is a wee bit too big to print
   if (print_nao_ || print_npa_) {
     tim_enter("NAO");

@@ -4,6 +4,7 @@ test_method: scf mp2
 test_symmetry: c2v c2 c1
 test_calc: energy opt
 
+restart: no
 checkpoint: no
 
 label: water test series

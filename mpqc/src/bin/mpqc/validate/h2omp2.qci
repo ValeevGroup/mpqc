@@ -6,6 +6,7 @@ test_calc: energy opt
 test_fzc: 0 1
 test_fzv: 0 1
 
+restart: no
 checkpoint: no
 
 label: water mp2 test series

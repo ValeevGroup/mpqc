@@ -11,6 +11,7 @@ test_molecule_fzc:      2    2    2    2    2    2
 test_molecule_fzv:      2    2    2    2    2    2
                         4    4    4    4    4    4
 
+restart: no
 checkpoint: no
 
 label: symmetry test series 1

@@ -5,6 +5,7 @@ test_calc: opt
 test_molecule:          h2  beh2 b2h6 nh3 c2h2 h2o hf 
 test_molecule_symmetry: d2h d2h  d2h  cs  d2h  c2v c2v
 
+restart: no
 checkpoint: no
 
 label: optimization test series

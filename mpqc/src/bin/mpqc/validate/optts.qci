@@ -7,6 +7,7 @@ test_molecule:          az2  az3
 test_molecule_symmetry: c1   c1
 test_molecule_followed: azc2 azc3
 
+restart: no
 checkpoint: no
 
 label: transition state optimization test series

@@ -5,6 +5,7 @@ gradient: yes
 test_molecule:          c2h2 c2h2 c2h2 c2h2 c2h2 c2h2
 test_molecule_symmetry: d2h  c2v  cs   c2   ci   c1  
 
+restart: no
 checkpoint: no
 
 label: symmetry test series 2

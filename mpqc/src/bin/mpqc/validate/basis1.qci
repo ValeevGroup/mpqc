@@ -13,6 +13,7 @@ gradient: yes
 test_molecule:          h2  he  lih beh2 b2h6 nh3 c2h2 h2o hf  ne 
 test_molecule_symmetry: d2h d2h c2v d2h  d2h  cs  d2h  c2v c2v d2h
 
+restart: no
 checkpoint: no
 
 label: basis set test series 1

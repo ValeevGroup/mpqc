@@ -14,7 +14,7 @@ WEBFILES = pathfopen.web rdmatrix.web timer.web
 CSRC = ieee.c prober.c assert.c machtype.c checkalloc.c mtype.c
 GENSRC = $(WEBFILES:%.web=%.c)
 
-CXXSRC = compute.cc compute_i.cc error.cc formio.cc bug.cc
+CXXSRC = compute.cc error.cc formio.cc bug.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc
 
@@ -40,16 +40,16 @@ default:: $(TOPDIR)/lib/libmisc.so
 endif
 
 comptest: comptest.cc $(TOPDIR)/lib/libmisc.a $(TOPDIR)/lib/libstate.a
-	$(CXX) $(CXXFLAGS) $^ -o comptest
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o comptest
 
 bugtest: bugtest.cc $(TOPDIR)/lib/libmisc.a \
 	$(TOPDIR)/lib/libkeyval.a $(TOPDIR)/lib/libstate.a \
 	$(TOPDIR)/lib/libclass.a \
 	$(TOPDIR)/lib/libcontainer.a $(TOPDIR)/lib/libref.a
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest
 
 formiot: formiot.cc libmisc.a
-	$(CXX) $(CXXFLAGS) $^ -o formiot
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o formiot
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -6,13 +6,14 @@
 #include <util/misc/compute.h>
 #include <util/state/state.h>
 
-Result_def_nc(int);
-Result_def_nc(float);
-Result_def_nc(double);
-SSAccResult_def_nc(double);
+#ifdef __GNUC__
+template class Result<int>;
+template class Result<double>;
+template class NCAccResult<double>;
+#endif
 
-ARRAY_def(ResultP);
-SET_def(ResultP);
+ARRAY_def(ResultBaseP);
+SET_def(ResultBaseP);
 
 Compute::Compute()
 {
@@ -23,7 +24,7 @@ Compute::~Compute()
 }
 
 void
-Compute::add(Result*r)
+Compute::add(ResultBase*r)
 {
   _results.add(r);
 }
@@ -39,8 +40,14 @@ Compute::obsolete()
 
 ////////////////////////////////////////////////////////////////////////
 
+ResultBase::ResultBase(Compute*c):
+  _compute(0),_computed(0),_c(c)
+{
+  c->add(this);
+}
+
 void
-Result::update() {
+ResultBase::update() {
   if (!computed()) {
       int oldcompute = compute(1);
       _c->compute();
@@ -52,11 +59,11 @@ Result::update() {
     }
 }
 
-Result::~Result()
+ResultBase::~ResultBase()
 {
 }
 
-Result::Result(StateIn&s,Compute*c):
+ResultBase::ResultBase(StateIn&s,Compute*c):
   _c(c)
 {
   s.get(_compute);
@@ -65,7 +72,7 @@ Result::Result(StateIn&s,Compute*c):
   c->add(this);
 }
 
-Result::Result(const Result&r, Compute*c) :
+ResultBase::ResultBase(const ResultBase&r, Compute*c) :
   _c(c)
 {
   _compute=r._compute;
@@ -75,14 +82,14 @@ Result::Result(const Result&r, Compute*c) :
 }
 
 void
-Result::save_data_state(StateOut&s)
+ResultBase::save_data_state(StateOut&s)
 {
   s.put(_compute);
   s.put(_computed);
 }
 
-Result&
-Result::operator=(const Result&r)
+ResultBase&
+ResultBase::operator=(const ResultBase&r)
 {
   _compute=r._compute;
   _computed=r._computed;
@@ -91,31 +98,31 @@ Result::operator=(const Result&r)
 
 /////////////////////////////////////////////////////////////////////////
 
-AccResult::AccResult(Compute*c):
-  Result(c),
+AccResultBase::AccResultBase(Compute*c):
+  ResultBase(c),
   _actual_accuracy(0.0),
   _desired_accuracy(0.01)
 {
 }
 
-AccResult::~AccResult()
+AccResultBase::~AccResultBase()
 {
 }
 
 double
-AccResult::actual_accuracy() const
+AccResultBase::actual_accuracy() const
 {
   return _actual_accuracy;
 }
 
 double
-AccResult::desired_accuracy() const
+AccResultBase::desired_accuracy() const
 {
   return _desired_accuracy;
 }
 
 void
-AccResult::set_desired_accuracy(double a)
+AccResultBase::set_desired_accuracy(double a)
 {
   _desired_accuracy = a;
   if (_desired_accuracy < _actual_accuracy) {
@@ -124,7 +131,7 @@ AccResult::set_desired_accuracy(double a)
 }
 
 void
-AccResult::set_actual_accuracy(double a)
+AccResultBase::set_actual_accuracy(double a)
 {
   _actual_accuracy = a;
   if (_desired_accuracy < _actual_accuracy) {
@@ -135,32 +142,32 @@ AccResult::set_actual_accuracy(double a)
   computed() = 1;
 }
 
-AccResult::AccResult(StateIn&s,Compute*c):
-  Result(s,c)
+AccResultBase::AccResultBase(StateIn&s,Compute*c):
+  ResultBase(s,c)
 {
   s.get(_actual_accuracy);
   s.get(_desired_accuracy);
 }
 
-AccResult::AccResult(const AccResult&a, Compute*c) :
-  Result(a,c)
+AccResultBase::AccResultBase(const AccResultBase&a, Compute*c) :
+  ResultBase(a,c)
 {
   _actual_accuracy=a._actual_accuracy;
   _desired_accuracy=a._desired_accuracy;
 }
 
 void
-AccResult::save_data_state(StateOut&s)
+AccResultBase::save_data_state(StateOut&s)
 {
-  Result::save_data_state(s);
+  ResultBase::save_data_state(s);
   s.put(_actual_accuracy);
   s.put(_desired_accuracy);
 }
 
-AccResult&
-AccResult::operator=(const AccResult&a)
+AccResultBase&
+AccResultBase::operator=(const AccResultBase&a)
 {
-  Result::operator=(a);
+  ResultBase::operator=(a);
   _actual_accuracy=a._actual_accuracy;
   _desired_accuracy=a._desired_accuracy;
   return *this;

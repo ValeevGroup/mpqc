@@ -84,44 +84,4 @@ class AccumNullDDH: public AccumDDH {
 
 SavableState_REF_dec(AccumNullDDH);
 
-////////////////////////////////////////////////////////////////////////////
-
-class AccumEffectiveH: public SCElementOp2 {
-#   define CLASSNAME AccumEffectiveH
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
-  protected:
-    double coef_[18];
-    int dbegin_;
-    int dfence_;
-    int sbegin_;
-    int sfence_;
-
-    virtual void init() =0;
-    
-    // hindex is 0 for the closed and 1 for the open shell fock matrix
-    // shelli and shellj are 0 for closed, 1 for open, and 2 for virtual
-    int index(int hindex, int shelli, int shellj);
-
-    // converts a basis function number to a shell number
-    int shell(int ibasis);
-
-    double& coef(int i, int j, int k) { return coef_[index(i,j,k)]; }
-
-  public:
-    AccumEffectiveH();
-    AccumEffectiveH(StateIn&);
-    AccumEffectiveH(const RefKeyVal&);
-    virtual ~AccumEffectiveH();
-
-    void save_data_state(StateOut&);
-    
-    virtual void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
-
-    void docc(int begin, int fence);
-    void socc(int begin, int fence);
-};
-SavableState_REF_dec(AccumEffectiveH);
-
-
 #endif

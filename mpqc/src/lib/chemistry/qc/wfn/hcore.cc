@@ -55,7 +55,9 @@ AccumHCore::accum(const RefSymmSCMatrix& h)
   h.element_op(hc);
   hc=0;
 
-  hc = new OneBodyIntOp(integral_->nuclear());
+  RefOneBodyInt nuc = integral_->nuclear();
+  nuc->reinitialize();
+  hc = new OneBodyIntOp(nuc);
   h.element_op(hc);
   hc=0;
 }

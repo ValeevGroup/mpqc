@@ -30,14 +30,14 @@
 
 #include <util/group/message.h>
 
-/** The ShmMessageGrp class is an implementation of \Ref{MessageGrp} that
+/** The ShmMessageGrp class is an implementation of MessageGrp that
 allows multiple process to be started that communicate with shared memory.
 This only provides improved performance if you have multiple CPU's in a
 symmetric multiprocessor configuration.  Nonetheless, it is quite useful on
 a single CPU for tracking down bugs.
 
 The ShmMessageGrp KeyVal constructor takes a single keyword that specifies
-the number of processors.  Here is an example of a \Ref{ParsedKeyVal} input
+the number of processors.  Here is an example of a ParsedKeyVal input
 that creates a ShmMessageGrp that runs on four processors:
 
 <pre>

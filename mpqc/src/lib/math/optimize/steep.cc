@@ -99,7 +99,7 @@ SteepestDescentOpt::update()
 {
   // these are good candidates to be input options
   const double maxabs_gradient_to_desired_accuracy = 0.05;
-  const double maxabs_gradient_to_next_desired_accuracy = 0.001;
+  const double maxabs_gradient_to_next_desired_accuracy = 0.005;
   const double roundoff_error_factor = 1.1;
 
   // the gradient convergence criterion.

@@ -69,6 +69,14 @@ class Molecule: public SavableState
     int *Z_;
     double *charges_;
 
+    // symmetry equiv info
+    int nuniq_;
+    int *nequiv_;
+    int **equiv_;
+    int *atom_to_uniq_;
+    void init_symmetry_info(double tol=0.5);
+    void clear_symmetry_info();
+
     // these are optional
     double *mass_;
     char **labels_;
@@ -188,8 +196,12 @@ class Molecule: public SavableState
     // principal axes.
     void principal_moments_of_inertia(double *evals, double **evecs=0) const;
 
-    int num_unique_atoms();
-    int *find_unique_atoms();  // returns new'd array
+    //. Return information about symmetry unique and equivalent atoms.
+    int nunique() const { return nuniq_; }
+    int unique(int iuniq) const { return equiv_[iuniq][0]; }
+    int nequivalent(int iuniq) const { return nequiv_[iuniq]; }
+    int equivalent(int iuniq, int j) const { return equiv_[iuniq][j]; }
+    int atom_to_unique(int iatom) const { return atom_to_uniq_[iatom]; }
 
     //. Return the number of core electrons.
     int n_core_electrons();

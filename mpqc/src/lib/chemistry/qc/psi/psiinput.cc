@@ -356,16 +356,15 @@ PSI_Input::write_geom()
 int errcod;
 char ts[133];
 
-    int *unique ;
-    unique = _mol->find_unique_atoms();
     write_string("geometry = (\n");
-    for (int i=0; i < _mol->num_unique_atoms(); i++) {
-        sprintf(ts, "  (% 14.12f % 14.12f % 14.12f)\n", _mol->r(unique[i],0),
-           _mol->r(unique[i],1), _mol->r(unique[i],2));
+    for (int i=0; i < _mol->nunique(); i++) {
+        sprintf(ts, "  (% 14.12f % 14.12f % 14.12f)\n",
+                _mol->r(_mol->unique(i),0),
+                _mol->r(_mol->unique(i),1),
+                _mol->r(_mol->unique(i),2));
         write_string(ts);
         } 
     write_string("    )\n");
-    delete[] unique;
     if (errcod) return(0);
     else return(1);
 }
@@ -379,28 +378,27 @@ PSI_Input::write_basis(void)
 
   begin_section("basis");
   RefAtomInfo atominfo = _mol->atominfo();
-  int *unique ;
-  unique = _mol->find_unique_atoms();
-  for (i=0; i<_mol->num_unique_atoms(); i++) {
+  for (i=0; i<_mol->nunique(); i++) {
+    int uniquei = _mol->unique(i);
     sprintf(ts, "%s:SCdefined = (\n", 
-	    atominfo->name(_mol->Z(unique[i])));
+	    atominfo->name(_mol->Z(uniquei)));
     write_string(ts);
     for(am=0; am<6; am++){
-      for (j = 0; j < _gbs->nshell_on_center(unique[i]); j++) {
-	for (l=(*_gbs)(unique[i],j).ncontraction()-1; l>-1;l--) {
-          if((*_gbs)(unique[i],j).am(l)==am){
+      for (j = 0; j < _gbs->nshell_on_center(uniquei); j++) {
+	for (l=(*_gbs)(uniquei,j).ncontraction()-1; l>-1;l--) {
+          if((*_gbs)(uniquei,j).am(l)==am){
             const char *purestring = "";
-            if (am==2&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "5";
-            if (am==3&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "7";
-            if (am==4&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "9";
-            if (am==5&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "11";
-	    sprintf(ts, "  (%c%s\n", (*_gbs)(unique[i],j).amchar(l),
+            if (am==2&&(*_gbs)(uniquei,j).is_pure(l)) purestring = "5";
+            if (am==3&&(*_gbs)(uniquei,j).is_pure(l)) purestring = "7";
+            if (am==4&&(*_gbs)(uniquei,j).is_pure(l)) purestring = "9";
+            if (am==5&&(*_gbs)(uniquei,j).is_pure(l)) purestring = "11";
+	    sprintf(ts, "  (%c%s\n", (*_gbs)(uniquei,j).amchar(l),
                     purestring);
 	    write_string(ts);
-	    for(k=0; k<(*_gbs)(unique[i],j).nprimitive(); k++){
+	    for(k=0; k<(*_gbs)(uniquei,j).nprimitive(); k++){
 	      sprintf(ts, "    (%22.16f   % 18.16f)\n",
-                      (*_gbs)(unique[i],j).exponent(k),
-		      (*_gbs)(unique[i],j).coefficient_norm(l,k));
+                      (*_gbs)(uniquei,j).exponent(k),
+		      (*_gbs)(uniquei,j).coefficient_norm(l,k));
 	      write_string(ts);
 	      }
 	    write_string("  )\n");
@@ -411,8 +409,6 @@ PSI_Input::write_basis(void)
     write_string("  )\n");
     }
   end_section();
-  delete[] unique;
-          
 }
 
 void
@@ -590,15 +586,13 @@ PSI_Input::write_input(void)
 
   begin_section("input");
   RefAtomInfo atominfo = _mol->atominfo();
-  unique = _mol->find_unique_atoms();
   sprintf(t1, "atoms = (");
-  for (i=0; i < _mol->num_unique_atoms(); i++) {
-    sprintf(t2, "%s ", atominfo->symbol(_mol->Z(unique[i])));
+  for (i=0; i < _mol->nunique(); i++) {
+    sprintf(t2, "%s ", atominfo->symbol(_mol->Z(_mol->unique(i))));
     strcat(t1, t2);
     }
   strcat(t1, ")\n");
   write_string(t1);
-  delete[] unique;
 
   write_geom();
   write_keyword("basis", "SCdefined");

@@ -134,14 +134,11 @@ main(int argc, char **argv)
       cout << "Clean Molecule wrt principal axes:\n";
       mol->print();
 
-      int nunique = mol->num_unique_atoms();
-      int * unique_atoms = mol->find_unique_atoms();
+      int nunique = mol->nunique();
 
       cout << "nunique=" << nunique << ":";
-      for (i=0; i < nunique; i++) cout << " " << unique_atoms[i]+1;
+      for (i=0; i < nunique; i++) cout << " " << mol->unique(i)+1;
       cout << endl;
-
-      delete[] unique_atoms;
 
       mol->point_group()->char_table().print();
 

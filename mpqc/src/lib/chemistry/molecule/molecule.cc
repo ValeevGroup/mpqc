@@ -63,11 +63,16 @@ Molecule::Molecule():
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
   geometry_units_ = new Units("bohr");
+  init_symmetry_info();
 }
 
 Molecule::Molecule(const Molecule& mol):
  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
 {
+  nuniq_ = 0;
+  equiv_ = 0;
+  nequiv_ = 0;
+  atom_to_uniq_ = 0;
   *this=mol;
 }
 
@@ -97,6 +102,8 @@ Molecule::clear()
   mass_ = 0;
   delete[] Z_;
   Z_ = 0;
+
+  clear_symmetry_info();
 }
 
 Molecule::Molecule(const RefKeyVal&input):
@@ -175,7 +182,7 @@ Molecule::Molecule(const RefKeyVal&input):
       if (natom != input->count("atoms")) {
           cerr << node0 << indent
                << "Molecule: size of \"geometry\" != size of \"atoms\"\n";
-          return;
+          abort();
         }
 
       int i;
@@ -204,6 +211,10 @@ Molecule::Molecule(const RefKeyVal&input):
   char *symmetry = input->pcharvalue("symmetry");
   double symtol = input->doublevalue("symmetry_tolerance",
                                      KeyValValuedouble(1.0e-4));
+  nuniq_ = 0;
+  equiv_ = 0;
+  nequiv_ = 0;
+  atom_to_uniq_ = 0;
   if (symmetry && !strcmp(symmetry,"auto")) {
       set_point_group(highest_point_group(symtol), symtol*10.0);
     }
@@ -218,8 +229,13 @@ Molecule::Molecule(const RefKeyVal&input):
         }
       translate(r);
 
-      if (input->booleanvalue("redundant_atoms")) cleanup_molecule(symtol);
-      else symmetrize();
+      if (input->booleanvalue("redundant_atoms")) {
+          init_symmetry_info();
+          cleanup_molecule(symtol);
+        }
+      else {
+          symmetrize();
+        }
     }
   delete[] symmetry;
 }
@@ -263,6 +279,8 @@ Molecule::operator=(const Molecule& mol)
       Z_ = new int[natoms_];
       memcpy(Z_, mol.Z_, natoms_*sizeof(int));
     }
+
+  init_symmetry_info();
 
   return *this;
 }
@@ -551,6 +569,7 @@ Molecule::Molecule(StateIn& si):
           si.getstring(labels_[i]);
         }
     }
+  init_symmetry_info();
 }
 
 void
@@ -567,6 +586,9 @@ Molecule::set_point_group(const RefPointGroup&ppg, double tol)
       pg_->origin()[i] = 0;
     }
   translate(r);
+
+  clear_symmetry_info();
+  init_symmetry_info();
 
   cleanup_molecule(tol);
 }
@@ -684,30 +706,6 @@ Molecule::atom_at_position(double *v, double tol) const
   return -1;
 }
 
-///////////////////////////////////////////////////////////////////////////
-
-// pass in natoms if you don't want to search through the entire molecule
-static int
-is_unique(SCVector3& p, Molecule *mol, int natoms)
-{
-  for (int i=natoms-1; i >= 0; i--) {
-      SCVector3 ai(mol->r(i));
-      if (p.dist(ai) < 0.5) return 0;
-    }
-  return 1;
-}
-
-static int
-is_unique(SCVector3& p, Molecule *mol)
-{
-  for (int i=0; i < mol->natom(); i++) {
-      SCVector3 ai(mol->r(i));
-      if (p.dist(ai) < 0.5) return 0;
-    }
-
-  return 1;
-}
-
 // We are given a molecule which may or may not have just the symmetry
 // distinct atoms in it.  We have to go through the existing set of atoms,
 // perform each symmetry operation in the point group on each of them, and
@@ -720,6 +718,8 @@ Molecule::symmetrize(double tol)
   if (!strcmp(this->point_group()->symbol(),"c1")) {
       return;
     }
+
+  clear_symmetry_info();
 
   Molecule *newmol = new Molecule(*this);
   
@@ -756,6 +756,8 @@ Molecule::symmetrize(double tol)
   *this = *newmol;
   geometry_units_ = saved_units;
   delete newmol;
+
+  init_symmetry_info();
 }
 
 void
@@ -856,140 +858,6 @@ Molecule::transform_to_principal_axes(int trans_frame)
   }
 }
 
-// returns an array containing indices of the unique atoms
-int *
-Molecule::find_unique_atoms()
-{
-  // if this is a c1 molecule, then return all indices
-  if (!strcmp(point_group()->symbol(),"c1")) {
-    int * ret = new int[natom()];
-    for (int i=0; i < natom(); i++) ret[i]=i;
-    return ret;
-  }
-
-  int nuniq = num_unique_atoms();
-  int * ret = new int[nuniq];
-
-  // so that we don't have side effects, copy this to mol
-  RefMolecule mol=new Molecule(*this);
-
-  // the first atom is always unique
-  ret[0]=0;
-
-//   mol->transform_to_principal_axes(0);
-//   mol->symmetrize();
-
-  CharacterTable ct = mol->point_group()->char_table();
-
-  SCVector3 ac;
-  SymmetryOperation so;
-  SCVector3 np;
-
-  int nu=1;
-  int i;
-  for (i=1; i < mol->natom(); i++) {
-    ac = mol->r(i);
-    int i_is_unique=1;
-
-    // subject i to all symmetry ops...if one of these maps into an atom
-    // further down in atoms, then break out
-    for (int g=0; g < ct.order(); g++) {
-      so = ct.symm_operation(g);
-      for (int ii=0; ii < 3; ii++) {
-        np[ii]=0;
-        for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
-      }
-
-      if (!is_unique(np,mol.pointer(),i)) {
-        i_is_unique=0;
-        break;
-      }
-    }
-    if (i_is_unique) {
-      ret[nu]=i;
-      nu++;
-    }
-  }
-
- // now let's go through the unique atoms and see if they have any zero
- // coordinates.  if not, then see if any of the equivalent atoms do.
- // change the coordinate number if so
-  double tol=1.0e-5;
-  for (i=0; i < nuniq; i++) {
-    ac = mol->r(ret[i]);
-    if (fabs(ac[0]) < tol || fabs(ac[1]) < tol || fabs(ac[2]) < tol)
-      continue;
-
-    for (int g=1; g < ct.order(); g++) {
-      int breakg=0;
-      so = ct.symm_operation(g);
-      for (int ii=0; ii < 3; ii++) {
-        np[ii]=0;
-        for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
-      }
-
-     // if np has a zero coordinate then find it in atoms
-      if (fabs(np[0]) < tol || fabs(np[1]) < tol || fabs(np[2]) < tol) {
-        for (int j=0; j < mol->natom(); j++) {
-          if (np.dist(SCVector3(mol->r(j))) < 0.1) {
-            ret[i] = j;
-            breakg=1;
-            break;
-          }
-        }
-      }
-    if (breakg) break;
-    }
-  }
-
-  return ret;
-}
-
-int
-Molecule::num_unique_atoms()
-{
- // if this is a c1 molecule, then return natom
-  if (!strcmp(point_group()->symbol(),"c1") || natom() == 0)
-    return natom();
-
- // so that we don't have side effects, copy this to mol
-  RefMolecule mol = new Molecule(*this);
-
-//   mol_transform_to_principal_axes(mol,0);
-//   mol->symmetrize();
-
-  SCVector3 ac;
-  SymmetryOperation so;
-  SCVector3 np;
-
-  CharacterTable ct = mol->point_group()->char_table();
-
-  int nu=1;
-
-  for (int i=1; i < mol->natom(); i++) {
-    ac = mol->r(i);
-    int i_is_unique=1;
-
-    // subject i to all symmetry ops...if one of these maps into an atom
-    // further down in atoms, then break out
-    for (int g=0; g < ct.order(); g++) {
-      so = ct.symm_operation(g);
-      for (int ii=0; ii < 3; ii++) {
-        np[ii]=0;
-        for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
-      }
-
-      if (!is_unique(np,mol.pointer(),i)) {
-        i_is_unique=0;
-        break;
-      }
-    }
-    if (i_is_unique) nu++;
-  }
-
-  return nu;
-}
-
 // given a molecule, make sure that equivalent centers have coordinates
 // that really map into each other
 
@@ -999,10 +867,6 @@ Molecule::cleanup_molecule(double tol)
   // if symmetry is c1, do nothing else
   if (!strcmp(point_group()->symbol(),"c1")) return;
 
-  // now let's find out how many unique atoms there are and who they are
-  int nuniq = num_unique_atoms();
-  int *uniq = find_unique_atoms();
-
   int i;
   SCVector3 up,np,ap;
   SymmetryOperation so;
@@ -1011,9 +875,9 @@ Molecule::cleanup_molecule(double tol)
   // first clean up the unique atoms by replacing each coordinate with the
   // average of coordinates obtained by applying all symmetry operations to
   // the original atom, iff the new atom ends up near the original atom
-  for (i=0; i < nuniq; i++) {
+  for (i=0; i < nunique(); i++) {
       // up will store the original coordinates of unique atom i
-      up = r(uniq[i]);
+      up = r(unique(i));
       // ap will hold the average coordinate (times the number of coordinates)
       // initialize it to the E result
       ap = up;
@@ -1031,18 +895,18 @@ Molecule::cleanup_molecule(double tol)
             }
         }
       // replace the unique coordinate with the average coordinate
-      r_[uniq[i]][0] = ap[0] / ncoor;
-      r_[uniq[i]][1] = ap[1] / ncoor;
-      r_[uniq[i]][2] = ap[2] / ncoor;
+      r_[unique(i)][0] = ap[0] / ncoor;
+      r_[unique(i)][1] = ap[1] / ncoor;
+      r_[unique(i)][2] = ap[2] / ncoor;
     }
 
   // find the atoms equivalent to each unique atom and eliminate
   // numerical errors that may be in the equivalent atom's coordinates
 
   // loop through unique atoms
-  for (i=0; i < nuniq; i++) {
+  for (i=0; i < nunique(); i++) {
       // up will store the coordinates of unique atom i
-      up = r(uniq[i]);
+      up = r(unique(i));
 
       // loop through all sym ops except E
       for (int g=1; g < ct.order(); g++) {
@@ -1074,7 +938,6 @@ Molecule::cleanup_molecule(double tol)
         }
     }
 
-  delete[] uniq;
 }
 
 ///////////////////////////////////////////////////////////////////

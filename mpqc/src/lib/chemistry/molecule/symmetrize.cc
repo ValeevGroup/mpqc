@@ -61,25 +61,11 @@ main(int argc, char *argv[])
   cout << "cleaned molecule\n";
   mol->print();
   
-  int nunique = mol->num_unique_atoms();
-  int * unique_atoms = mol->find_unique_atoms();
+  int nunique = mol->nunique();
 
   cout << scprintf("\nnunique=%d: ",nunique);
-  for (i=0; i < nunique; i++) cout << scprintf(" %d",unique_atoms[i]+1);
+  for (i=0; i < nunique; i++) cout << scprintf(" %d",mol->unique(i)+1);
   cout << endl;
-
-  // this doesn't handle isotopic substitutions right and
-  // gets the point group wrong:
-  //RefMolecule unique = new Molecule;
-  //for (i=0; i < nunique; i++)
-  //  unique->add_atom(mol->Z(unique_atoms[i]),
-  //                   mol->r(unique_atoms[i])[0],
-  //                   mol->r(unique_atoms[i])[1],
-  //                   mol->r(unique_atoms[i])[2]
-  //                   );
-  //
-  //cout << "unique atoms\n";
-  //unique->print();
   
   exit(0);
 }

@@ -32,6 +32,126 @@
 
 #undef DEBUG
 
+void
+Molecule::clear_symmetry_info()
+{
+  for (int i=0; i<nuniq_; i++) {
+    delete[] equiv_[i];
+    }
+  delete[] equiv_;
+  delete[] nequiv_;
+  delete[] atom_to_uniq_;
+  nuniq_ = 0;
+  equiv_ = 0;
+  nequiv_ = 0;
+  atom_to_uniq_ = 0;
+}
+
+void
+Molecule::init_symmetry_info(double tol)
+{
+  if (natom() == 0) {
+    nuniq_ = 0;
+    equiv_ = 0;
+    nequiv_ = 0;
+    atom_to_uniq_ = 0;
+    return;
+    }
+
+  nequiv_ = new int[natom()];
+  atom_to_uniq_ = new int[natom()];
+  equiv_ = new int*[natom()];
+
+  if (!strcmp(point_group()->symbol(),"c1")) {
+    for (int i=0; i < natom(); i++) {
+      nequiv_[i]=1;
+      equiv_[i]=new int[1];
+      equiv_[i][0]=i;
+      }
+    return;
+  }
+
+  // the first atom is always unique
+  nuniq_ = 1;
+  nequiv_[0]=1;
+  equiv_[0] = new int[1];
+  equiv_[0][0]=0;
+  atom_to_uniq_[0]=0;
+
+  CharacterTable ct = point_group()->char_table();
+
+  SCVector3 ac;
+  SymmetryOperation so;
+  SCVector3 np;
+
+  // find the equivalent atoms
+  int i;
+  for (i=1; i < natom(); i++) {
+    ac = r(i);
+    int i_is_unique=1;
+    int i_equiv;
+
+    // apply all symmetry ops in the group to the atom
+    for (int g=0; g < ct.order(); g++) {
+      so = ct.symm_operation(g);
+      for (int ii=0; ii < 3; ii++) {
+        np[ii]=0;
+        for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
+        }
+
+      // see if the transformed atom is equivalent to a unique atom
+      for (int j=0; j<nuniq_; j++) {
+        int uniq = equiv_[j][0];
+        SCVector3 aj(r(uniq));
+        if (np.dist(aj) < tol
+            && Z(uniq) == Z(i)
+            && fabs(mass(uniq)-mass(i)) < tol) {
+          i_is_unique = 0;
+          i_equiv = j;
+          break;
+          }
+        }
+      }
+    if (i_is_unique) {
+      nequiv_[nuniq_]=1;
+      equiv_[nuniq_]=new int[1];
+      equiv_[nuniq_][0]=i;
+      atom_to_uniq_[i] = nuniq_;
+      nuniq_++;
+      }
+    else {
+      int *tmp = new int[nequiv_[i_equiv]+1];
+      memcpy(tmp,equiv_[i_equiv],nequiv_[i_equiv]*sizeof(int));
+      delete[] equiv_[i_equiv];
+      equiv_[i_equiv] = tmp;
+      equiv_[i_equiv][nequiv_[i_equiv]] = i;
+      nequiv_[i_equiv]++;
+      atom_to_uniq_[i] = i_equiv;
+      }
+    }
+
+  // The first atom in the equiv list is considered the primary unique
+  // atom.  Just to make things look pretty, make the atom with the most
+  // zeros in its x, y, z coordinate the unique atom.  Nothing else should
+  // rely on this being done.
+  double ztol=1.0e-5;
+  for (i=0; i < nuniq_; i++) {
+    int maxzero = 0;
+    int jmaxzero = 0;
+    for (int j=0; j<nequiv_[i]; j++) {
+      int nzero = 0;
+      for (int k=0; k<3; k++) if (fabs(r(equiv_[i][j],k)) < ztol) nzero++;
+      if (nzero > maxzero) {
+        maxzero = nzero;
+        jmaxzero = j;
+        }
+      }
+    int tmp = equiv_[i][jmaxzero];
+    equiv_[i][jmaxzero] = equiv_[i][0];
+    equiv_[i][0] = tmp;
+    }
+}
+
 int
 Molecule::has_inversion(SCVector3 &origin, double tol) const
 {

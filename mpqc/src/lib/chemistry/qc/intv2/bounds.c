@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.7  1995/09/21 18:19:20  ibniels
+ * Added function int_erep_2bound
+ *
  * Revision 1.6  1995/08/21 19:36:19  cljanss
  * 1) New integral storage scheme using AVL trees.
  * 2) Updated bounds routines so the SCF program could use them.
@@ -188,6 +191,16 @@ int s4;
   int kl=(s3>s4) ? ((s3*(s3+1))>>1)+s4 : ((s4*(s4+1))>>1)+s3;
 
   return((int) int_Qvec[ij]+int_Qvec[kl]);
+  }
+
+GLOBAL_FUNCTION int
+int_erep_2bound(s1,s2)
+int s1;
+int s2;
+{
+  int ij=(s1>s2) ? ((s1*(s1+1))>>1)+s2 : ((s2*(s2+1))>>1)+s1;
+
+  return((int) int_Qvec[ij]);
   }
 
 GLOBAL_FUNCTION int

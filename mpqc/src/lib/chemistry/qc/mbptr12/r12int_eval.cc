@@ -395,10 +395,18 @@ R12IntEval::get_tform_(const std::string& tform_name)
 void
 R12IntEval::init_intermeds_()
 {
-  Vaa_->unit();
-  Vab_->unit();
-  Baa_->unit();
-  Bab_->unit();
+  if (r12info_->msg()->me() == 0) {
+    Vaa_->unit();
+    Vab_->unit();
+    Baa_->unit();
+    Bab_->unit();
+  }
+  else {
+    Vaa_.assign(0.0);
+    Vab_.assign(0.0);
+    Baa_.assign(0.0);
+    Bab_.assign(0.0);
+  }
   Aaa_.assign(0.0);
   Aab_.assign(0.0);
   T2aa_.assign(0.0);
@@ -582,9 +590,13 @@ R12IntEval::r2_contrib_to_X_orig_()
 void
 R12IntEval::r2_contrib_to_X_new_()
 {
+  unsigned int me = r12info_->msg()->me();
+
   // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
   RefSCMatrix R2 = compute_r2_(r12info_->act_occ_space(),r12info_->act_occ_space());
 
+  if (me != 0)
+    return;
   Xab_.accumulate(R2);
 
   SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
@@ -769,69 +781,93 @@ R12IntEval::compute()
     compute_B_gbc_2_();
   }
 
+  // Distribute the final intermediates to every node
+  globally_sum_intermeds_(true);
+
   evaluated_ = true;
 }
 
 void
-R12IntEval::globally_sum_scmatrix_(RefSCMatrix& A)
+R12IntEval::globally_sum_scmatrix_(RefSCMatrix& A, bool to_all_tasks, bool to_average)
 {
   Ref<MessageGrp> msg = r12info_->msg();
+  unsigned int ntasks = msg->n();
   // If there's only one task then there's nothing to do
-  if (msg->n() == 1)
+  if (ntasks == 1)
     return;
 
   const int nelem = A.ncol() * A.nrow();
   double *A_array = new double[nelem];
   A.convert(A_array);
-  msg->sum(A_array,nelem,0,-1);
+  if (to_all_tasks)
+    msg->sum(A_array,nelem,0,-1);
+  else
+    msg->sum(A_array,nelem,0,0);
   A.assign(A_array);
+  if (to_average)
+    A.scale(1.0/(double)ntasks);
+  if (!to_all_tasks && msg->me() != 0)
+    A.assign(0.0);
 
   delete[] A_array;
 }
 
 void
-R12IntEval::globally_sum_scvector_(RefSCVector& A)
+R12IntEval::globally_sum_scvector_(RefSCVector& A, bool to_all_tasks, bool to_average)
 {
   Ref<MessageGrp> msg = r12info_->msg();
+  unsigned int ntasks = msg->n();
   // If there's only one task then there's nothing to do
-  if (msg->n() == 1)
+  if (ntasks == 1)
     return;
 
   const int nelem = A.dim().n();
   double *A_array = new double[nelem];
   A.convert(A_array);
-  msg->sum(A_array,nelem,0,-1);
+  if (to_all_tasks)
+    msg->sum(A_array,nelem,0,-1);
+  else
+    msg->sum(A_array,nelem,0,0);
   A.assign(A_array);
+  if (to_average)
+    A.scale(1.0/(double)ntasks);
+  if (!to_all_tasks && msg->me() != 0)
+    A.assign(0.0);
 
   delete[] A_array;
 }
 
 void
-R12IntEval::globally_sum_intermeds_()
+R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
 {
-  globally_sum_scmatrix_(Vaa_);
-  globally_sum_scmatrix_(Vab_);
+  globally_sum_scmatrix_(Vaa_,to_all_tasks);
+  globally_sum_scmatrix_(Vab_,to_all_tasks);
 
-  globally_sum_scmatrix_(Xaa_);
-  globally_sum_scmatrix_(Xab_);
+  globally_sum_scmatrix_(Xaa_,to_all_tasks);
+  globally_sum_scmatrix_(Xab_,to_all_tasks);
 
-  globally_sum_scmatrix_(Baa_);
-  globally_sum_scmatrix_(Bab_);
+  globally_sum_scmatrix_(Baa_,to_all_tasks);
+  globally_sum_scmatrix_(Bab_,to_all_tasks);
 
-  globally_sum_scmatrix_(Aaa_);
-  globally_sum_scmatrix_(Aab_);
+  globally_sum_scmatrix_(Aaa_,to_all_tasks);
+  globally_sum_scmatrix_(Aab_,to_all_tasks);
 
-  globally_sum_scmatrix_(T2aa_);
-  globally_sum_scmatrix_(T2ab_);
+  globally_sum_scmatrix_(T2aa_,to_all_tasks);
+  globally_sum_scmatrix_(T2ab_,to_all_tasks);
 
-  globally_sum_scmatrix_(Raa_);
-  globally_sum_scmatrix_(Rab_);
+  globally_sum_scmatrix_(Raa_,to_all_tasks);
+  globally_sum_scmatrix_(Rab_,to_all_tasks);
 
-  globally_sum_scvector_(emp2pair_aa_);
-  globally_sum_scvector_(emp2pair_ab_);
+  globally_sum_scvector_(emp2pair_aa_,to_all_tasks);
+  globally_sum_scvector_(emp2pair_ab_,to_all_tasks);
 
-  if (debug_)
-    ExEnv::out0() << indent << "Collected contributions to the intermediates from all tasks" << endl;
+  if (debug_) {
+    ExEnv::out0() << indent << "Collected contributions to the intermediates from all tasks";
+    if (to_all_tasks)
+      ExEnv::out0() << " and distributed to every task" << endl;
+    else
+      ExEnv::out0() << " on task 0" << endl;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -176,16 +176,24 @@ class R12IntEval : virtual public SavableState {
   void compute_amps_();
 
   /** Sum contributions to SCMatrix A from all nodes and broadcast so
-      every node has the correct SCMatrix */
-  void globally_sum_scmatrix_(RefSCMatrix& A);
+      every node has the correct SCMatrix. If to_all_tasks is false, then
+      collect all contributions to task 0 and zero out the matrix on other tasks,
+      otherwise distribute the sum to every task. If to_average is true then
+      each result is scaled by the inverse of the number of tasks. */
+  void globally_sum_scmatrix_(RefSCMatrix& A, bool to_all_tasks = false, bool to_average = false);
 
   /** Sum contributions to SCVector A from all nodes and broadcast so
-      every node has the correct SCVector */
-  void globally_sum_scvector_(RefSCVector& A);
+      every node has the correct SCVector. If to_all_tasks is false, then
+      collect all contributions to task 0 and zero out the matrix on other tasks,
+      otherwise distribute the sum to every task. If to_average is true then 
+      each result is scaled by the inverse of the number of tasks. */
+  void globally_sum_scvector_(RefSCVector& A, bool to_all_tasks = false, bool to_average = false);
 
   /** Sum contributions to the intermediates from all nodes and broadcast so
-      every node has the correct matrices */
-  void globally_sum_intermeds_();
+      every node has the correct matrices. If to_all_tasks is false, then
+      collect all contributions to task 0 and zero out the matrix on other tasks,
+      otherwise distribute the sum to every task. */
+  void globally_sum_intermeds_(bool to_all_tasks = false);
 
 public:
   R12IntEval(StateIn&);

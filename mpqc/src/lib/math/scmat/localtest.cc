@@ -9,4 +9,5 @@ main()
   RefSCDimension d2(new LocalSCDimension(3));
   RefSCDimension d3(new LocalSCDimension(4));
   matrixtest(d1,d2,d3);
+  return 0;
 }

@@ -121,6 +121,9 @@
 /* Define if you have the <mpi.h> header file and library.  */
 #undef HAVE_MPI
 
+/* Define if your MPI implementation uses p4 */
+#undef HAVE_P4
+
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
 
@@ -149,3 +152,9 @@
 #undef TARGET_ARCH
 
 #endif /* _CONFIG_H */
+
+/* 
+ * Local Variables:
+ * mode: c++
+ * End:
+ */

@@ -151,6 +151,20 @@ LocalSymmSCMatrix::invert_this()
 }
 
 double
+LocalSymmSCMatrix::determ()
+{
+  return cmat_determ(rows,1,n());
+}
+
+double
+LocalSymmSCMatrix::trace()
+{
+  double ret=0;
+  for (int i=0; i < n(); i++) ret += rows[i][i];
+  return ret;
+}
+
+double
 LocalSymmSCMatrix::solve_this(SCVector*v)
 {
   LocalSCVector* lv =
@@ -164,6 +178,27 @@ LocalSymmSCMatrix::solve_this(SCVector*v)
     }
 
   return cmat_solve_lin(rows,1,lv->block->data,n());
+}
+
+void
+LocalSymmSCMatrix::gen_invert_this()
+{
+  double *evals = new double[n()];
+  double **evecs = cmat_new_square_matrix(n());
+  
+  cmat_diag(rows,evals,evecs,n(),1,1.0e-15);
+
+  for (int i=0; i < n(); i++) {
+    if (fabs(evals[i]) > 1.0e-8)
+      evals[i] = 1.0/evals[i];
+    else
+      evals[i] = 0;
+  }
+
+  cmat_transform_diagonal_matrix(rows, n(), evals, n(), evecs, 0);
+  
+  delete[] evals;
+  cmat_delete_matrix(evecs);  
 }
 
 void
@@ -288,6 +323,27 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
     }
 
   cmat_transform_symmetric_matrix(rows,n(),lb->rows,lb->n(),la->rows,1);
+}
+
+// this += a * b * transpose(a)
+void
+LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
+{
+  // do the necessary castdowns
+  LocalSCMatrix*la
+    = LocalSCMatrix::require_castdown(a,"%s::accumulate_transform",
+                                      class_name());
+  LocalDiagSCMatrix*lb
+    = LocalDiagSCMatrix::require_castdown(b,"%s::accumulate_transform",
+                                          class_name());
+
+  // check the dimensions
+  if (n() != la->nrow() || la->ncol() != lb->n()) {
+      fprintf(stderr,"LocalSymmSCMatrix::accumulate_transform: bad dim\n");
+      abort();
+    }
+
+  cmat_transform_diagonal_matrix(rows,n(),lb->block->data,lb->n(),la->rows,1);
 }
 
 double
@@ -467,10 +523,47 @@ LocalDiagSCMatrix::invert_this()
   int nelem = n();
   double*data = block->data;
   for (int i=0; i<nelem; i++) {
-      data[i] = 1.0/data[i];
       det *= data[i];
+      data[i] = 1.0/data[i];
     }
   return det;
+}
+
+double
+LocalDiagSCMatrix::determ()
+{
+  double det = 1.0;
+  int nelem = n();
+  double *data = block->data;
+  for (int i=0; i < nelem; i++) {
+    det *= data[i];
+  }
+  return det;
+}
+
+double
+LocalDiagSCMatrix::trace()
+{
+  double det = 0;
+  int nelem = n();
+  double *data = block->data;
+  for (int i=0; i < nelem; i++) {
+    det += data[i];
+  }
+  return det;
+}
+
+void
+LocalDiagSCMatrix::gen_invert_this()
+{
+  int nelem = n();
+  double *data = block->data;
+  for (int i=0; i < nelem; i++) {
+    if (fabs(data[i]) > 1.0e-8)
+      data[i] = 1.0/data[i];
+    else
+      data[i] = 0;
+  }
 }
 
 void

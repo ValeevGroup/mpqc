@@ -375,6 +375,36 @@ LocalSCMatrix::invert_this()
   return cmat_invert(rows,0,nrow());
 }
 
+void
+LocalSCMatrix::gen_invert_this()
+{
+  fprintf(stderr,"LocalSCMatrix::gen_invert_this: SVD not implemented yet");
+  abort();
+}
+
+double
+LocalSCMatrix::determ()
+{
+  if (nrow() != ncol()) {
+    fprintf(stderr,"LocalSCMatrix::determ: matrix is not square\n");
+    abort();
+  }
+  return cmat_determ(rows,0,nrow());
+}
+
+double
+LocalSCMatrix::trace()
+{
+  if (nrow() != ncol()) {
+    fprintf(stderr,"LocalSCMatrix::trace: matrix is not square\n");
+    abort();
+  }
+  double ret=0;
+  for (int i=0; i < nrow(); i++)
+    ret += rows[i][i];
+  return ret;
+}
+
 double
 LocalSCMatrix::solve_this(SCVector*v)
 {

@@ -99,6 +99,27 @@ cmat_transpose_matrix(double**a, int nr, int nc)
 
 /* a is symmetric if sym is true */
 double
+cmat_determ(double** a, int sym, int dim)
+{
+  int i;
+  double det=0;
+  int *indx= (int*) malloc(sizeof(int)*dim);
+
+  if (sym) {
+    fprintf(stderr,"cmat_determ: can't handle sym=1 yet\n");
+    abort();
+  }
+
+  ludcmp(a,dim,indx,&det);
+  free(indx);
+
+  for (i=0; i < dim; i++) det *= a[i][i];
+
+  return det;
+}
+
+/* a is symmetric if sym is true */
+double
 cmat_solve_lin(double** a, int sym, double* b, int dim)
 {
   int i;
@@ -115,6 +136,7 @@ cmat_solve_lin(double** a, int sym, double* b, int dim)
   for(i=0; i < dim; i++) det *= a[i][i];
 
   lubksb(a,dim,indx,b);
+  free(indx);
 
   return det;
   }
@@ -161,6 +183,7 @@ cmat_invert(double**a, int sym, int dim)
 
   free(b);
   cmat_delete_matrix(y);
+  free(indx);
 
   /* copy a back to the original a, if necessary */
   if (sym) {
@@ -509,6 +532,33 @@ cmat_transform_symmetric_matrix(double**a,int na, /* a is (na,na) */
 
   /* delete the temporary */
   cmat_delete_matrix(t);
+}
+
+/*
+ * a is symmetric (na,na) in a triangular storage format
+ * b is diagonal (nb,nb) in a vector storage format
+ * a (+)= c * b * transpose(c) (+= if add)
+ */
+void
+cmat_transform_diagonal_matrix(double**a,int na, /* a is (na,na) */
+                               double*b,int nb,  /* b is (nb,nb) */
+                               double**c,        /* c is (na,nb) */
+                               int add)
+{
+  int i,j,k;
+  double t;
+
+  for (i=0; i < na; i++) {
+    for (j=0; j <= i; j++) {
+      t=0;
+      for (k=0; k < nb; k++)
+        t += c[i][k] * c[j][k] * b[k];
+      if (add)
+        a[i][j] += t;
+      else
+        a[i][j] = t;
+    }
+  }
 }
 
 /*

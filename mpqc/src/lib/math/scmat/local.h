@@ -109,6 +109,9 @@ class LocalSCMatrix: public SCMatrix {
     void transpose_this();
     double invert_this();
     double solve_this(SCVector*);
+    double determ();
+    double trace();
+    void gen_invert_this();
     void element_op(const RefSCRectElementOp&);
     void print(const char* title=0,ostream& out=cout, int =10);
 };
@@ -147,6 +150,9 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate(SymmSCMatrix*);
     double invert_this();
     double solve_this(SCVector*);
+    double trace();
+    double determ();
+    void gen_invert_this();
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
@@ -154,6 +160,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate_symmetric_product(SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
     void accumulate_transform(SCMatrix*,SymmSCMatrix*);
+    void accumulate_transform(SCMatrix*,DiagSCMatrix*);
     void element_op(const RefSCSymmElementOp&);
     void print(const char* title=0,ostream& out=cout, int =10);
 };
@@ -186,6 +193,9 @@ class LocalDiagSCMatrix: virtual public DiagSCMatrix {
     void set_element(int,double);
     void accumulate(DiagSCMatrix*);
     double invert_this();
+    double determ();
+    double trace();
+    void gen_invert_this();
 
     void element_op(const RefSCDiagElementOp&);
     void print(const char* title=0,ostream& out=cout, int =10);

@@ -403,6 +403,18 @@ RefSCMatrix::i() const
   return ret;
 }
 
+RefSCMatrix
+RefSCMatrix::gi() const
+{
+  require_nonnull();
+  
+  RefSCMatrix ret;
+  ret = clone();
+  ret->assign(pointer());
+  ret->gen_invert_this();
+  return ret;
+}
+
 int
 RefSCMatrix::nrow() const
 {
@@ -544,10 +556,28 @@ RefSCMatrix::operator *(double a) const
 }
 
 double
-RefSCMatrix::solve_this(const RefSCVector& v) const
+RefSCMatrix::solve_lin(const RefSCVector& v) const
 {
   require_nonnull();
-  return pointer()->solve_this(v.pointer());
+  RefSCMatrix c = clone();
+  c->assign(pointer());
+  return c->solve_this(v.pointer());
+}
+
+double
+RefSCMatrix::determ() const
+{
+  require_nonnull();
+  RefSCMatrix c = clone();
+  c->assign(pointer());
+  return c->determ();
+}
+
+double
+RefSCMatrix::trace() const
+{
+  require_nonnull();
+  return pointer()->trace();
 }
 
 RefSCMatrix
@@ -658,6 +688,14 @@ RefSymmSCMatrix::accumulate_transform(const RefSCMatrix& a,
   pointer()->accumulate_transform(a.pointer(),b.pointer());
 }
 
+void
+RefSymmSCMatrix::accumulate_transform(const RefSCMatrix& a,
+                                      const RefDiagSCMatrix&b) const
+{
+  require_nonnull();
+  pointer()->accumulate_transform(a.pointer(),b.pointer());
+}
+
 RefSymmSCMatrix
 RefSymmSCMatrix::operator+(const RefSymmSCMatrix&a) const
 {
@@ -696,6 +734,18 @@ RefSymmSCMatrix::i() const
   ret = clone();
   ret->assign(pointer());
   ret->invert_this();
+  return ret;
+}
+
+RefSymmSCMatrix
+RefSymmSCMatrix::gi() const
+{
+  require_nonnull();
+  
+  RefSymmSCMatrix ret;
+  ret = clone();
+  ret->assign(pointer());
+  ret->gen_invert_this();
   return ret;
 }
 
@@ -747,10 +797,30 @@ RefSymmSCMatrix::eigvecs() const
 }
 
 double
-RefSymmSCMatrix::solve_this(const RefSCVector& v) const
+RefSymmSCMatrix::solve_lin(const RefSCVector& v) const
 {
   require_nonnull();
-  return pointer()->solve_this(v.pointer());
+  
+  RefSymmSCMatrix ret = clone();
+  ret->assign(pointer());
+  return ret->solve_this(v.pointer());
+}
+
+double
+RefSymmSCMatrix::determ() const
+{
+  require_nonnull();
+  
+  RefSymmSCMatrix ret = clone();
+  ret->assign(pointer());
+  return ret->determ();
+}
+
+double
+RefSymmSCMatrix::trace() const
+{
+  require_nonnull();
+  return pointer()->trace();
 }
 
 void
@@ -1022,6 +1092,18 @@ RefDiagSCMatrix::i() const
   return ret;
 }
 
+RefDiagSCMatrix
+RefDiagSCMatrix::gi() const
+{
+  require_nonnull();
+  
+  RefDiagSCMatrix ret;
+  ret = clone();
+  ret->assign(pointer());
+  ret->gen_invert_this();
+  return ret;
+}
+
 int
 RefDiagSCMatrix::n() const
 {
@@ -1104,6 +1186,18 @@ void
 RefDiagSCMatrix::element_op(const RefSCDiagElementOp&op) const
 {
   if (nonnull()) pointer()->element_op(op);
+}
+
+double
+RefDiagSCMatrix::determ() const
+{
+  return pointer()->determ();
+}
+
+double
+RefDiagSCMatrix::trace() const
+{
+  return pointer()->trace();
 }
 
 void

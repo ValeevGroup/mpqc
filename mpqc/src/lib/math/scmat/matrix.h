@@ -300,6 +300,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     RefSCMatrix operator-(const RefSCMatrix&) const;
     RefSCMatrix t() const;
     RefSCMatrix i() const;
+    RefSCMatrix gi() const;
     RefSCMatrix clone() const;
     RefSCMatrix copy() const;
     void set_element(int,int,double) const;
@@ -317,7 +318,9 @@ class RefSCMatrix: public RefSSSCMatrix {
     void element_op(const RefSCRectElementOp&) const;
     int nrow() const;
     int ncol() const;
-    double solve_this(const RefSCVector&) const;
+    double solve_lin(const RefSCVector&) const;
+    double determ() const;
+    double trace() const;
     RefSCDimension rowdim() const;
     RefSCDimension coldim() const;
     SCMatrixdouble operator()(int i,int j) const;
@@ -349,6 +352,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     RefSymmSCMatrix operator+(const RefSymmSCMatrix&) const;
     RefSymmSCMatrix operator-(const RefSymmSCMatrix&) const;
     RefSymmSCMatrix i() const;
+    RefSymmSCMatrix gi() const;
     RefSymmSCMatrix clone() const;
     RefSymmSCMatrix copy() const;
     void set_element(int,int,double) const;
@@ -358,6 +362,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void accumulate_symmetric_product(const RefSCMatrix&) const;
     void accumulate_symmetric_sum(const RefSCMatrix&) const;
     void accumulate_transform(const RefSCMatrix&,const RefSymmSCMatrix&) const;
+    void accumulate_transform(const RefSCMatrix&,const RefDiagSCMatrix&) const;
     void assign(const RefSymmSCMatrix&) const;
     void scale(double) const;
     void assign(double) const;
@@ -367,7 +372,9 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void convert(double**) const;
     void accumulate(const RefSymmSCMatrix&) const;
     void element_op(const RefSCSymmElementOp&) const;
-    double solve_this(const RefSCVector&) const;
+    double solve_lin(const RefSCVector&) const;
+    double trace() const;
+    double determ() const;
     RefDiagSCMatrix eigvals() const;
     RefSCMatrix eigvecs() const;
     void diagonalize(const RefDiagSCMatrix& eigvals,
@@ -402,6 +409,7 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     RefDiagSCMatrix operator+(const RefDiagSCMatrix&) const;
     RefDiagSCMatrix operator-(const RefDiagSCMatrix&) const;
     RefDiagSCMatrix i() const;
+    RefDiagSCMatrix gi() const;
     RefDiagSCMatrix clone() const;
     RefDiagSCMatrix copy() const;
     void set_element(int,double) const;
@@ -414,6 +422,8 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     void accumulate(const RefDiagSCMatrix&) const;
     void element_op(const RefSCDiagElementOp&) const;
     int n() const;
+    double trace() const;
+    double determ() const;
     RefSCDimension dim() const;
     DiagSCMatrixdouble operator()(int i) const;
     void print(ostream&) const;

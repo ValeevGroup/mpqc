@@ -409,6 +409,7 @@ main(int argc, char *argv[])
     SCFormIO::set_debug(1);
 
   // initialize timing for mpqc
+  grp->sync(); // make sure nodes are sync'ed before starting timings
   Ref<RegionTimer> tim;
   if (keyval->exists("timer")) tim << keyval->describedclassvalue("timer");
   else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);

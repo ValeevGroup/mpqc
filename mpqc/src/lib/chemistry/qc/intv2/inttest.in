@@ -48,23 +48,23 @@ htest: (
     )
    basis<GaussianBasisSet>: (
        puream = yes
-       name = testd
+       name = test
        molecule = $..:molecule
     )
  )
 
-centers = $:h2o
+centers = $:htest
 
 test: (
    print_centers = yes
    overlap = yes
-   kinetic = yes
-   hcore = yes
-   nuclear = yes
+   kinetic = no
+   hcore = no
+   nuclear = no
    3 = no
-   bounds = yes
-   4 = yes
-   4der = yes
+   bounds = no
+   4 = no
+   4der = no
    print = yes
    niter = 1
    permute = yes
@@ -109,12 +109,17 @@ basis:(
             1.0           1.0
             }
      )
-    (type: [(am = d puream = no)]
+    (type: [(am = d)]
           { exp           coef:0 } = {
             1.0           1.0
             }
      )
-    (type: [(am = f puream = no)]
+    (type: [(am = f)]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+    (type: [(am = g)]
           { exp           coef:0 } = {
             1.0           1.0
             }

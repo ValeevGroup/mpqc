@@ -1,4 +1,8 @@
 
+#if defined(__GNUC__)
+#pragma implementation
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,43 +15,145 @@
 
 #define PRINT 0
 
-typedef struct {
-    int cartindex;
-    int pureindex;
-    double coef;
-} transform_t;
+// initialize the transformations
+static SphericalTransform trans2(2);
+static SphericalTransform trans3(3);
+static SphericalTransform trans4(4);
 
-#define sqrt3 1.73205080756887729352
-#define nd6d5 8
-static transform_t d6d5[nd6d5]
-  = {{   0, 0, -1.0 * 0.5},
-       { 2, 0,  2.0 * 0.5},
-       { 5, 0, -1.0 * 0.5},
-       { 0, 1,  1.0 * 0.5 * sqrt3},
-       { 5, 1, -1.0 * 0.5 * sqrt3},
-       { 3, 2,  1.0},
-       { 4, 3,  1.0},
-       { 1, 4,  1.0}};
+void
+SphericalTransform::Component::init(int a, int b, int c, double coef,
+                                    int pureindex)
+{
+  a_ = a;
+  b_ = b;
+  c_ = c;
+  coef_ = coef;
+  pureindex_ = pureindex;
+  cartindex_ = INT_CARTINDEX(a+b+c,a,b);
+}
 
-#define sqrt5 2.23606797749978969640
-#define nf10f7 16
-static transform_t f10f7[nf10f7]
-  = {{   0, 0,  sqrt5/1.5},
-       { 2, 0, -1.0},
-       { 7, 0, -1.0},
-       { 2, 1,  1.0},
-       { 7, 1, -1.0},
-       { 1, 2, -1.0},
-       { 3, 2,  sqrt5/1.5},
-       { 8, 2, -1.0},
-       { 1, 3,  1.0},
-       { 8, 3, -1.0},
-       { 4, 4, -1.0},
-       { 6, 4, -1.0},
-       { 9, 4,  sqrt5/1.5},
-       { 4, 5,  1.0},
-       { 6, 5, -1.0},
-       { 5, 6,  1.0}};
+SphericalTransform::SphericalTransform(int l)
+{
+  n_ = 0;
+  l_ = l;
+  components_ = 0;
+  int i = 0;
+
+  if (l==2) {
+      add(0,0,2,  2.0 * sqrt(0.25), i);
+      add(2,0,0, -1.0 * sqrt(0.25), i);
+      add(0,2,0, -1.0 * sqrt(0.25), i);
+      i++;
+      add(2,0,0,  1.0 * sqrt(0.75), i);
+      add(0,2,0, -1.0 * sqrt(0.75), i);
+      i++;
+      add(1,1,0,  1.0 * sqrt(3.0), i);
+      i++;
+      add(0,1,1,  1.0 * sqrt(3.0), i);
+      i++;
+      add(1,0,1,  1.0 * sqrt(3.0), i);
+    }
+  else if (l==3) {
+      add(0,0,3,  2.0 * sqrt(0.25), i);
+      add(2,0,1, -3.0 * sqrt(0.25), i);
+      add(0,2,1, -3.0 * sqrt(0.25), i);
+      i++;
+      add(1,0,2,  4.0 * sqrt(0.375), i);
+      add(3,0,0, -1.0 * sqrt(0.375), i);
+      add(1,2,0, -1.0 * sqrt(0.375), i);
+      i++;
+      add(0,1,2,  4.0 * sqrt(0.375), i);
+      add(0,3,0, -1.0 * sqrt(0.375), i);
+      add(2,1,0, -1.0 * sqrt(0.375), i);
+      i++;
+      add(2,0,1,  1.0 * sqrt(3.75), i);
+      add(0,2,1, -1.0 * sqrt(3.75), i);
+      i++;
+      add(1,1,1,  1.0 * sqrt(15.0), i);
+      i++;
+      add(3,0,0,  1.0 * sqrt(0.625), i);
+      add(1,2,0, -3.0 * sqrt(0.625), i);
+      i++;
+      add(0,3,0,  1.0 * sqrt(0.625), i);
+      add(2,1,0, -3.0 * sqrt(0.625), i);
+    }
+  else if (l==4) {
+      add(0,0,4,  8.0 * sqrt(1.0/64.0), i);
+      add(4,0,0,  3.0 * sqrt(1.0/64.0), i);
+      add(0,4,0,  3.0 * sqrt(1.0/64.0), i);
+      add(2,0,2,-24.0 * sqrt(1.0/64.0), i);
+      add(0,2,2,-24.0 * sqrt(1.0/64.0), i);
+      add(2,2,0,  6.0 * sqrt(1.0/64.0), i);
+      i++;
+      add(1,0,3,  4.0 * sqrt(0.625), i);
+      add(3,0,1, -3.0 * sqrt(0.625), i);
+      add(1,2,1, -3.0 * sqrt(0.625), i);
+      i++;
+      add(0,1,3,  4.0 * sqrt(0.625), i);
+      add(0,3,1, -3.0 * sqrt(0.625), i);
+      add(2,1,1, -3.0 * sqrt(0.625), i);
+      i++;
+      add(2,0,2,  6.0 * sqrt(0.3125), i);
+      add(0,2,2, -6.0 * sqrt(0.3125), i);
+      add(4,0,0, -1.0 * sqrt(0.3125), i);
+      add(0,4,0,  1.0 * sqrt(0.3125), i);
+      i++;
+      add(1,1,2,  6.0 * sqrt(1.25), i);
+      add(3,1,0, -1.0 * sqrt(1.25), i);
+      add(1,3,0, -1.0 * sqrt(1.25), i);
+      i++;
+      add(1,2,1,  3.0 * sqrt(4.375), i);
+      add(3,0,1, -1.0 * sqrt(4.375), i);
+      i++;
+      add(2,1,1,  3.0 * sqrt(4.375), i);
+      add(0,3,1, -1.0 * sqrt(4.375), i);
+      i++;
+      add(2,2,0,  6.0 * sqrt(35.0/64.0), i);
+      add(4,0,0, -1.0 * sqrt(35.0/64.0), i);
+      add(0,4,0, -1.0 * sqrt(35.0/64.0), i);
+      i++;
+      add(3,1,0,  1.0 * sqrt(8.75), i);
+      add(1,3,0, -1.0 * sqrt(8.75), i);
+    }
+  else {
+      fprintf(stderr, "SphericalTransform: cannot handle l = %d\n", l);
+      abort();
+    }
+}
+
+SphericalTransform::~SphericalTransform()
+{
+  delete[] components_;
+}
+
+void
+SphericalTransform::add(int a, int b, int c, double coef, int pureindex)
+{
+  Component *ncomp = new Component[n_+1];
+  int i;
+  for (i=0; i<n_; i++) ncomp[i] = components_[i];
+  ncomp[i].init(a, b, c, coef, pureindex);
+  delete[] components_;
+  components_ = ncomp;
+  n_++;
+}
+
+SphericalTransformIter::SphericalTransformIter(int l)
+{
+  if (l==2) {
+      transform_ = &trans2;
+    }
+  else if (l==3) {
+      transform_ = &trans3;
+    }
+  else if (l==4) {
+      transform_ = &trans4;
+    }
+  else {
+      fprintf(stderr, "SphericalTransformIter: cannot handle l = %d\n", l);
+      abort();
+    }
+}
 
 static double *source = 0;
 static int nsourcemax = 0;
@@ -91,17 +197,17 @@ do_copy2(double *source, double *target,
 
 static void
 do_sparse_transform11(double *source, double *target, int chunk,
-                      transform_t *trans, int nt,
+                      SphericalTransformIter& trans,
                       int offsetcart1,
                       int offsetpure1,
                       int n2, int s2, int offset2)
 {
-  int i2, t;
+  int i2;
 
-  for (t=0; t<nt; t++) {
-      double coef = trans[t].coef;
-      int pure = trans[t].pureindex;
-      int cart = trans[t].cartindex;
+  for (trans.begin(); trans.ready(); trans.next()) {
+      double coef = trans.coef();
+      int pure = trans.pureindex();
+      int cart = trans.cartindex();
       int offtarget = ((offsetpure1 + pure)*s2 + offset2)*chunk;
       int offsource = ((offsetcart1 + cart)*s2 + offset2)*chunk;
       for (i2=0; i2<n2*chunk; i2++) {
@@ -112,17 +218,17 @@ do_sparse_transform11(double *source, double *target, int chunk,
 
 static void
 do_sparse_transform12(double *source, double *target, int chunk,
-                      transform_t *trans, int nt,
+                      SphericalTransformIter& trans,
                       int n1, int offset1,
                       int s2cart, int offsetcart2,
                       int s2pure, int offsetpure2)
 {
-  int i1, t, ichunk;
+  int i1, ichunk;
 
-  for (t=0; t<nt; t++) {
-      double coef = trans[t].coef;
-      int pure = trans[t].pureindex;
-      int cart = trans[t].cartindex;
+  for (trans.begin(); trans.ready(); trans.next()) {
+      double coef = trans.coef();
+      int pure = trans.pureindex();
+      int cart = trans.cartindex();
       for (i1=0; i1<n1; i1++) {
           int offtarget = ((offset1 + i1)*s2pure + offsetpure2 + pure)*chunk;
           int offsource = ((offset1 + i1)*s2cart + offsetcart2 + cart)*chunk; 
@@ -142,7 +248,7 @@ do_abort()
 
 void
 do_sparse_transform2(double *source, double *target,
-                     int index, transform_t *trans, int ntrans,
+                     int index, SphericalTransformIter& trans,
                      int stcart, int stpure,
                      int ogctcart, int ogctpure,
                      int n1, int s1, int ogc1,
@@ -150,7 +256,7 @@ do_sparse_transform2(double *source, double *target,
                      int n3, int s3, int ogc3,
                      int n4, int s4, int ogc4)
 {
-  int i1, i2, i3, i4, t;
+  int i1, i2, i3, i4;
   int offtarget, offsource;
 
   switch (index) {
@@ -172,10 +278,10 @@ do_sparse_transform2(double *source, double *target,
       break;
     }
 
-  for (t=0; t<ntrans; t++) {
-      double coef = trans[t].coef;
-      int pure = trans[t].pureindex;
-      int cart = trans[t].cartindex;
+  for (trans.begin(); trans.ready(); trans.next()) {
+      double coef = trans.coef();
+      int pure = trans.pureindex();
+      int cart = trans.cartindex();
       for (i1=0; i1<n1; i1++) {
           for (i2=0; i2<n2; i2++) {
               for (i3=0; i3<n3; i3++) {
@@ -297,25 +403,12 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
               nfuncj = INT_NFUNC(sh2->type[j].puream, sh2->type[j].am);
 
               if (sh1->type[i].puream) {
-                  if (sh1->type[i].am == 2) {
-                      do_sparse_transform11(source, integrals, chunk,
-                                            d6d5, nd6d5,
-                                            ogc1,
-                                            ogc1pure,
-                                            INT_NCART(am2), ncart2, ogc2);
-                    }
-                  else if (sh1->type[i].am == 3) {
-                      do_sparse_transform11(source, integrals, chunk,
-                                            f10f7, nf10f7,
-                                            ogc1,
-                                            ogc1pure,
-                                            INT_NCART(am2), ncart2, ogc2);
-                    }
-                  else {
-                      fprintf(stderr, "int_transform_1e: bad am = %d\n",
-                              sh1->type[i].am);
-                      do_abort();
-                    }
+                  SphericalTransformIter trans(sh1->type[i].am);
+                  do_sparse_transform11(source, integrals, chunk,
+                                        trans,
+                                        ogc1,
+                                        ogc1pure,
+                                        INT_NCART(am2), ncart2, ogc2);
                 }
               else {
                   do_copy1(source, integrals, chunk,
@@ -344,25 +437,12 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
               nfuncj = INT_NFUNC(sh2->type[j].puream, sh2->type[j].am);
 
               if (sh2->type[j].puream) {
-                  if (sh2->type[j].am == 2) {
-                      do_sparse_transform12(source, integrals, chunk,
-                                            d6d5, nd6d5,
-                                            INT_NPURE(am1), ogc1,
-                                            ncart2, ogc2,
-                                            sh2->nfunc, ogc2pure);
-                    }
-                  else if (sh2->type[j].am == 3) {
-                      do_sparse_transform12(source, integrals, chunk,
-                                            f10f7, nf10f7,
-                                            INT_NPURE(am1), ogc1,
-                                            ncart2, ogc2,
-                                            sh2->nfunc, ogc2pure);
-                    }
-                  else {
-                      fprintf(stderr, "int_transform_1e: bad am = %d\n",
-                              sh2->type[j].am);
-                      do_abort();
-                    }
+                  SphericalTransformIter trans(sh2->type[j].am);
+                  do_sparse_transform12(source, integrals, chunk,
+                                        trans,
+                                        INT_NPURE(am1), ogc1,
+                                        ncart2, ogc2,
+                                        sh2->nfunc, ogc2pure);
                 }
               else {
                   do_copy1(source, integrals, chunk,
@@ -582,31 +662,16 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
                   ncartl = INT_NCART(am4);
 
                   if (shell->type[*tgencon].puream) {
-                      if (shell->type[*tgencon].am == 2) {
-                          do_sparse_transform2(source, target,
-                                               index, d6d5, nd6d5,
-                                               ncart[index], nfunc[index],
-                                               ogccart[index], ogcfunc[index],
-                                               *ni, nsource1, *ogc1,
-                                               *nj, nsource2, *ogc2,
-                                               *nk, nsource3, *ogc3,
-                                               *nl, nsource4, *ogc4);
-                        }
-                      else if (shell->type[*tgencon].am == 3) {
-                          do_sparse_transform2(source, target,
-                                               index, f10f7, nf10f7,
-                                               ncart[index], nfunc[index],
-                                               ogccart[index], ogcfunc[index],
-                                               *ni, nsource1, *ogc1,
-                                               *nj, nsource2, *ogc2,
-                                               *nk, nsource3, *ogc3,
-                                               *nl, nsource4, *ogc4);
-                        }
-                      else {
-                          fprintf(stderr, "int_transform_2e: bad am = %d\n",
-                                  shell->type[*tgencon].am);
-                          do_abort();
-                        }
+                      SphericalTransformIter
+                          trans(shell->type[*tgencon].am);
+                      do_sparse_transform2(source, target,
+                                           index, trans,
+                                           ncart[index], nfunc[index],
+                                           ogccart[index], ogcfunc[index],
+                                           *ni, nsource1, *ogc1,
+                                           *nj, nsource2, *ogc2,
+                                           *nk, nsource3, *ogc3,
+                                           *nl, nsource4, *ogc4);
                     }
                   else {
                       do_copy2(source, integrals,

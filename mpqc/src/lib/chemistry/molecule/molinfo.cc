@@ -59,7 +59,7 @@ MolInfo::doublevalue(const char* sym,
   double val = keyval->doublevalue(keyword);
   if (keyval->error() != KeyVal::OK) {
       sprintf(keyword, "default:%s", property);
-      double val = keyval->doublevalue(keyword);
+      val = keyval->doublevalue(keyword);
     }
   return val;
 }
@@ -73,7 +73,7 @@ MolInfo::doublevalue(const char* sym,
   double val = keyval->doublevalue(keyword);
   if (keyval->error() != KeyVal::OK) {
       sprintf(keyword, "default:%s:%d", property, i);
-      double val = keyval->doublevalue(keyword);
+      val = keyval->doublevalue(keyword);
     }
   return val;
 }
@@ -118,7 +118,7 @@ AtomInfo::preload_values()
           radius_to_bohr_ = 1.0;
         }
       else {
-          fprintf(stderr,"AtomInfo: unkown radius_unit: \"%s\"\n",
+          fprintf(stderr,"AtomInfo: unknown radius_unit: \"%s\"\n",
                   radius_unit);
           abort();
         }

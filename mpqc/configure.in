@@ -358,10 +358,10 @@ case $target in
   changequote(<<, >>)dnl
   i[56]86-*)
     if test X$GCC = Xyes; then
-      COPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+      COPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2 -malign-double"
     fi
     if test X$GXX = Xyes; then
-      CXXOPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+      CXXOPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2 -malign-double"
     fi
     AC_MSG_RESULT("i586 or i686")
   ;;

@@ -92,27 +92,35 @@ at any GNU software FTP repository.
          or perl 5 will work.  To generate the validation inputs and
          automatically check the outputs, perl 5.003 or later is needed.
 
-    <li> A library supporting the Message Passing Interface (MPI) is
-         required to use MPQC in parallel on distributed memory machines.
-         To use MP2 in parallel a thread-safe MPI is needed.  For Linux, <a
-         href="http://www.mpi-softtech.com">MPI Software Technology,
-         Inc.</a> has developed a thread-safe MPI.
-
   </ul>
 
-\section compilepreopt Optional packages
+\section compilepreopt Optional Packages
 
 The following packages are not necessary to compile MPQC, but may provide additional
 features.
 
-<dl>
+<ul>
 
-<dt> Libint (version 1.1.0 or higher): This is a machine-generated library that
-can be used for evaluation of certain molecular integrals. IntegralCints and MBPT2_R12
-classes depend on this library. The library is freely available under GNU Public License (GPL)
-from <a href="http://www.ccmst.gatech.edu/evaleev/libint/">www.ccmst.gatech.edu/evaleev/libint/</a>.
+    <li> A Message Passing Interface (MPI) is required to use MPQC in
+         parallel on distributed memory machines.
 
-</dl>
+    <li> The parallel MP2 and MP2-R12 methods require direct access to
+         remote memory.  This requires one of two features: A thread-safe
+         MPI (<a href="http://www.mpi-softtech.com">MPI Software
+         Technology, Inc.</a> has developed a thread-safe MPI) or the <a
+         href="http://www.emsl.pnl.gov/docs/parsoft/armci/">Aggregate
+         Remote Memory Copy Interface (ARMCI)</a>.  These respectively
+         permit remote memory access through the ARMCIMemoryGrp and the
+         MTMPIMemoryGrp classes, respectively.
+
+    <li> Libint (version 1.1.0 or higher): This is a machine-generated
+         library that can be used for evaluation of certain molecular
+         integrals. IntegralCints and MBPT2_R12 classes depend on this
+         library. The library is freely available under GNU Public License
+         (GPL) from <a
+         href="http://www.ccmst.gatech.edu/evaleev/libint/">www.ccmst.gatech.edu/evaleev/libint/</a>.
+
+</ul>
 
 \section compileconf Configuration
 

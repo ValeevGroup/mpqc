@@ -223,7 +223,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     SCMatrixdouble operator()(int i,int j) const;
 };
 //texi Allow multiplication with a scalar on the left.
-RefSCMatrix operator*(double,RefSCMatrix&);
+RefSCMatrix operator*(double,const RefSCMatrix&);
 
 SavableState_named_REF_dec(RefSSSymmSCMatrix,SymmSCMatrix);
 //texi

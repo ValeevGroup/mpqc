@@ -417,7 +417,7 @@ RefSCMatrix::trace() const
 }
 
 RefSCMatrix
-operator *(double a, RefSCMatrix& v)
+operator *(double a, const RefSCMatrix& v)
 {
   return v*a;
 }

@@ -766,7 +766,9 @@ void
 Int1eV3::efield(int ish, int jsh, double *position)
 {
   scale_shell_result = 0;
-  for (int xyz=0; xyz<3; xyz++) {
+  int xyz;
+
+  for (xyz=0; xyz<3; xyz++) {
       C[xyz] = position[xyz];
     }
 
@@ -784,7 +786,7 @@ Int1eV3::efield(int ish, int jsh, double *position)
 
   c1 = bs1_->shell_to_center(ish);
   c2 = bs2_->shell_to_center(jsh);
-  for (int xyz=0; xyz<3; xyz++) {
+  for (xyz=0; xyz<3; xyz++) {
       A[xyz] = bs1_->r(c1,xyz);
       B[xyz] = bs2_->r(c2,xyz);
     }
@@ -1522,12 +1524,13 @@ Int1eV3::int_accum_shell_dipole(int ish, int jsh,
   int gc1,gc2;
   int index,index1,index2;
   double dipole[3];
+  int xyz;
 
-  for (int xyz=0; xyz<3; xyz++) C[xyz] = com[xyz];
+  for (xyz=0; xyz<3; xyz++) C[xyz] = com[xyz];
 
   c1 = bs1_->shell_to_center(ish);
   c2 = bs2_->shell_to_center(jsh);
-  for (int xyz=0; xyz<3; xyz++) {
+  for (xyz=0; xyz<3; xyz++) {
       A[xyz] = bs1_->r(c1,xyz);
       B[xyz] = bs2_->r(c2,xyz);
     }
@@ -1559,12 +1562,13 @@ Int1eV3::dipole(int ish, int jsh, double *com)
   int gc1,gc2;
   int index,index1,index2;
   double dipole[3];
+  int xyz;
 
-  for (int xyz=0; xyz<3; xyz++) C[xyz] = com[xyz];
+  for (xyz=0; xyz<3; xyz++) C[xyz] = com[xyz];
 
   c1 = bs1_->shell_to_center(ish);
   c2 = bs2_->shell_to_center(jsh);
-  for (int xyz=0; xyz<3; xyz++) {
+  for (xyz=0; xyz<3; xyz++) {
       A[xyz] = bs1_->r(c1,xyz);
       B[xyz] = bs2_->r(c2,xyz);
     }

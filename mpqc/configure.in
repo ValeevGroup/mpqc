@@ -1035,6 +1035,13 @@ AC_CHECK_HEADER(perf.h,[
   ]
 )
 
+AC_CHECK_HEADER(execinfo.h,HAVE_EXECINFO_H_INC=1)
+AC_CHECK_FUNC(backtrace, HAVE_BACKTRACE_FUNC=1)
+AC_CHECK_FUNC(backtrace_symbols_fd, HAVE_BACKTRACE_SYMBOLS_FD_FUNC=1)
+if test -n "$HAVE_EXECINFO_H_INC" -a -n "$HAVE_BACKTRACE_FUNC"  -a -n "$HAVE_BACKTRACE_SYMBOLS_FD_FUNC"; then
+  AC_DEFINE(HAVE_BACKTRACE)
+fi
+
 if test X$PARALLEL = Xyes; then
 
   dnl ----- check for the mpi library

@@ -45,6 +45,10 @@
 #include <iostream>
 #include <signal.h>
 
+#ifdef HAVE_BACKTRACE
+#  include <execinfo.h>
+#endif
+
 #include <util/keyval/keyval.h>
 #include <util/misc/bug.h>
 #include <util/state/stateio.h>
@@ -468,6 +472,13 @@ Debugger::default_debugger()
 void
 Debugger::traceback(const char *reason)
 {
+#ifdef HAVE_BACKTRACE
+  ExEnv::outn() << prefix_ << "Debugger::traceback:" << std::endl;
+  const int n = 100;
+  void *p[n];
+  int nret = backtrace(p,n);
+  backtrace_symbols_fd(p, nret, 0);
+#else // HAVE_BACKTRACE
 #if SIMPLE_STACK
   int bottom = 0x1234;
   void **topstack = (void**)0xffffffffL;
@@ -511,6 +522,7 @@ Debugger::traceback(const char *reason)
 #else
   ExEnv::outn() << prefix_ << "traceback not available for this arch" << endl;
 #endif // SIMPLE_STACK
+#endif // HAVE_BACKTRACE
 }
 
 /////////////////////////////////////////////////////////////////////////////

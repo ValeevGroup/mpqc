@@ -205,6 +205,9 @@
 /* Define if you have the <perf.h> header file and library.  */
 #undef HAVE_PERF
 
+/* Define if you have <execinfo.h> backtrace and backtrace_symbol_fd.  */
+#undef HAVE_BACKTRACE
+
 /* Define if MPIMessageGrp should be used by default. */
 #undef DEFAULT_MPI
 

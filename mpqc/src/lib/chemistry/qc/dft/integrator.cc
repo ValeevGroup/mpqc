@@ -1329,8 +1329,8 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                   if (do_point(icenter, integration_point, denfunc,
                                w, multiplier,
                                nuclear_gradient, f_gradient, w_gradient)
-                      * int_volume < 1e2*DBL_EPSILON
-                      && int_volume > 1e2*DBL_EPSILON) {
+                      * multiplier < 1e2*DBL_EPSILON
+                      && multiplier > 1e2*DBL_EPSILON) {
                       r_done=1;
                       break;
                     }
@@ -1444,12 +1444,17 @@ RadialIntegrator::set_nr(int i)
   nr_ = i;
 }
 
-int
+const int
 RadialIntegrator::get_nr(void)
 {
   return nr_;
 }
 
+void
+RadialIntegrator::print(ostream &o) 
+{
+  o << node0 << indent << scprintf("nr       = %5d", get_nr()) << endl;
+}
 
 ///////////////////////////////////////
 //  AngularIntegrator
@@ -1490,12 +1495,33 @@ AngularIntegrator::save_data_state(StateOut& s)
   abort();
 }
 
+int
+AngularIntegrator::get_ntheta(void)
+{
+}
+
+int
+AngularIntegrator::get_nphi(void)
+{
+}
+
+int
+AngularIntegrator::get_Ktheta(void)
+{
+}
+
+double
+AngularIntegrator::sin_theta(SCVector3 &point)
+{
+}
 
 ///////////////////////////////////////
 //  EulerMaclaurinRadialIntegrator
 
 #define CLASSNAME EulerMaclaurinRadialIntegrator
 #define PARENTS public RadialIntegrator
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
@@ -1543,10 +1569,10 @@ EulerMaclaurinRadialIntegrator::radial_value(int ir, int nr, double radii)
   return r;
 }
 
-
 double
-EulerMaclaurinRadialIntegrator::radial_multiplier(double value, int nr)
+EulerMaclaurinRadialIntegrator::radial_multiplier(int nr)
 {
+  double value = get_dr_dqr2();
   return value/((double) nr);
 }
 
@@ -1578,6 +1604,8 @@ EulerMaclaurinRadialIntegrator::get_dr_dqr2(void)
 // LebedevAngularIntegrator
 #define CLASSNAME LebedevAngularIntegrator
 #define PARENTS public AngularIntegrator
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
@@ -1632,9 +1660,36 @@ LebedevAngularIntegrator::LebedevAngularIntegrator(const RefKeyVal& keyval)
   z_ = new double [npoints];
   lebedev_weights_ = new double [npoints];
   set_point_count(0);
-  
-  if (npoints == 9) {
+
+  if (npoints == 1202) {
+      set_N1(13); set_N2(4); set_N3(16);
+    }
+  else if (npoints == 974) {
+      set_N1(12); set_N2(4); set_N3(12);
+    }
+  else if (npoints == 770) {
+      set_N1(10); set_N2(3); set_N3(9);
+    }
+  else if (npoints == 590) {
+      set_N1(9); set_N2(3); set_N3(6);
+    }
+  else if (npoints == 302) {
+      set_N1(6); set_N2(2); set_N3(2);
+    }
+  else if (npoints == 194) {
+      set_N1(4); set_N2(1); set_N3(1);
+    }
+  else if (npoints == 110) {
+      set_N1(3); set_N2(1); set_N3(0);
+    }
+  else if (npoints == 50) {
+      set_N1(1); set_N2(0); set_N3(0);
+    }
+  else if (npoints == 38) {
       set_N1(0); set_N2(1); set_N3(0);
+    }
+  else if (npoints == 6) {
+      set_N1(0); set_N2(0); set_N3(0);
     }
   build_grid();
 }
@@ -1726,6 +1781,11 @@ LebedevAngularIntegrator::set_point_count(int i)
   point_count_ = i;
 }
 
+double
+LebedevAngularIntegrator::sin_theta(SCVector3 &point)
+{
+  return 0.0;
+}
 
 double
 LebedevAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 &point,
@@ -1735,18 +1795,7 @@ LebedevAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 &point
   integration_point.x() = r*x_[iangular];
   integration_point.y() = r*y_[iangular];
   integration_point.z() = r*z_[iangular];
-
-   return ( lebedev_weights_[iangular] );
-  
-  //int itheta, iphi, nphi_r;
-  //nphi_r = get_nphi_r();
-  //itheta = iangular/nphi_r;
-  //iphi = iangular - itheta*nphi_r;
-  //point.theta() = theta_quad_points_[itheta];
-  //point.phi() = (double) iphi/ (double) nphi_r * 2.0 * M_PI;
-  //point.spherical_to_cartesian(integration_point);
-  //return ( sin_theta(point)*theta_quad_weights_[itheta]*2.0*M_PI/(double)nphi_r );
-
+  return ( 4.0 * M_PI * lebedev_weights_[iangular] );
 }
 
 int
@@ -1766,20 +1815,24 @@ void
 LebedevAngularIntegrator::build_grid(void)
 {
   int norder, npoints, N1, N2, N3;
+  int i, gen_point[6];
 
   norder = get_norder();
   npoints = get_npoints();
   N1 = get_N1();
   N2 = get_N2();
   N3 = get_N3();
+  for (i=0; i<6; i++) gen_point[i] = 0;
 
-  double A[3], *l, *m, *B, *q, *r, *C, *u, *v, *w, *D;
+  double A1, A2, A3, *l, *m, *B, *q, *r, *C, *u, *v, *w, *D;
   l = new double [N1]; m = new double [N1]; B = new double [N1];
   q = new double [N2]; r = new double [N2]; C = new double [N2];
   u = new double [N3]; v = new double [N3]; w = new double [N3]; D = new double [N3];
+  A1 = A2 = A3 = 0.0;
   
   if (norder == 59 && npoints == 1202) {
-      A[0]  = 0.110518923327e-3; A[1]  = 0.920523273809e-3; A[2]  = 0.913315978645e-3;
+      for (i=0; i<6; i++) gen_point[i] = 1;
+      A1    = 0.110518923327e-3; A2    = 0.920523273809e-3; A3    = 0.913315978645e-3;
       
       l[0]  = 0.371263644966e-1; m[0]  = 0.998620681800e+0; B[0]  = 0.369042189802e-3;
       l[1]  = 0.914006041226e-1; m[1]  = 0.991610739722e+0; B[1]  = 0.560399092868e-3;
@@ -1815,7 +1868,154 @@ LebedevAngularIntegrator::build_grid(void)
       u[12] = 0.766162121390e+0; v[12] = 0.639427963475e+0; w[12] = 0.642454922422e-1; D[12] = 0.915801617469e-3;
       u[13] = 0.755358414353e+0; v[13] = 0.626980550902e+0; w[13] = 0.190601822278e+0; D[13] = 0.913157800319e-3;
       u[14] = 0.734430575756e+0; v[14] = 0.603116169310e+0; w[14] = 0.311227594715e+0; D[14] = 0.910781357948e-3;
-      u[15] = 0.704383718402e+0; v[15] = 0.569370279847e+0; w[15] = 0.423864478152e+0; D[15] = 0.910576025897e-3;
+      u[15] = 0.704383718402e+0; v[15] = 0.569370249847e+0; w[15] = 0.423864478152e+0; D[15] = 0.910576025897e-3;
+    }
+  else if (norder == 53 && npoints == 974) {
+      for (i=0; i<6; i++) { if(i!=1) gen_point[i] = 1; }
+      A1 = 0.1438294190e-3; A2 = 0.0; A3 = 0.1125772288e-2;
+
+      l[0]  = 0.4292963545e-1; m[0]  = 0.9981553450e+0; B[0]  = 0.4948029342e-3;
+      l[1]  = 0.1051426854e+0; m[1]  = 0.9888832243e+0; B[1]  = 0.7357990108e-3;
+      l[2]  = 0.1750024867e+0; m[2]  = 0.9688902204e+0; B[2]  = 0.8889132771e-3;
+      l[3]  = 0.2477653379e+0; m[3]  = 0.9366027304e+0; B[3]  = 0.9888347838e-3;
+      l[4]  = 0.3206567123e+0; m[4]  = 0.8912679426e+0; B[4]  = 0.1053299681e-2;
+      l[5]  = 0.3916520749e+0; m[5]  = 0.8325967237e+0; B[5]  = 0.1092778807e-2;
+      l[6]  = 0.4590825874e+0; m[6]  = 0.7605829053e+0; B[6]  = 0.1114389394e-2;
+      l[7]  = 0.5214563888e+0; m[7]  = 0.6754009691e+0; B[7]  = 0.1123724788e-2;
+      l[8]  = 0.6253170244e+0; m[8]  = 0.4668589056e+0; B[8]  = 0.1125239325e-2;
+      l[9]  = 0.6637926744e+0; m[9]  = 0.3446136542e+0; B[9]  = 0.1126153271e-2;
+      l[10] = 0.6910410398e+0; m[10] = 0.2119541518e+0; B[10] = 0.1130286931e-2;
+      l[11] = 0.7052907007e+0; m[11] = 0.7162440144e-1; B[11] = 0.1134986534e-2;
+
+      q[0]  = 0.1236686762e+0; r[0]  = 0.9923235654e+0; C[0]  = 0.6823367927e-3;
+      q[1]  = 0.2940777114e+0; r[1]  = 0.9557815124e+0; C[1]  = 0.9454158160e-3;
+      q[2]  = 0.4697753849e+0; r[2]  = 0.8827859807e+0; C[2]  = 0.1074429975e-2;
+      q[3]  = 0.6334563241e+0; r[3]  = 0.7737784472e+0; C[3]  = 0.1129300086e-2;
+
+      u[0]  = 0.5974048614e-1; v[0]  = 0.2029128752e+0; w[0]  = 0.9773727228e+0; D[0]  = 0.8436884500e-3;
+      u[1]  = 0.1375760408e+0; v[1]  = 0.4602621942e+0; w[1]  = 0.8770584618e+0; D[1]  = 0.1075255720e-2;
+      u[2]  = 0.3391016526e+0; v[2]  = 0.5030673999e+0; w[2]  = 0.7949422999e+0; D[2]  = 0.1108577236e-2;
+      u[3]  = 0.1271675191e+0; v[3]  = 0.2817606422e+0; w[3]  = 0.9510201693e+0; D[3]  = 0.9566475323e-3;
+      u[4]  = 0.2693120740e+0; v[4]  = 0.4331561291e+0; w[4]  = 0.8601434616e+0; D[4]  = 0.1080663250e-2;
+      u[5]  = 0.1419786452e+0; v[5]  = 0.6256167358e+0; w[5]  = 0.7671021862e+0; D[5]  = 0.1126797131e-2;
+      u[6]  = 0.6709284600e-1; v[6]  = 0.3798395216e+0; w[6]  = 0.9226161107e+0; D[6]  = 0.1022568715e-2;
+      u[7]  = 0.7057738183e-1; v[7]  = 0.5517505421e+0; w[7]  = 0.8310175524e+0; D[7]  = 0.1108960267e-2;
+      u[8]  = 0.2783888477e+0; v[8]  = 0.6029619156e+0; w[8]  = 0.7476206108e+0; D[8]  = 0.1122790653e-2;
+      u[9]  = 0.1979578938e+0; v[9]  = 0.3589606329e+0; w[9]  = 0.9121183784e+0; D[9]  = 0.1032401847e-2;
+      u[10] = 0.2087307061e+0; v[10] = 0.5348666438e+0; w[10] = 0.8187485362e+0; D[10] = 0.1107249382e-2;
+      u[11] = 0.4055122137e+0; v[11] = 0.5674997546e+0; w[11] = 0.7165918454e+0; D[11] = 0.1121780048e-2;
+    }
+  else if (norder == 47 && npoints == 770) {
+      for (i=0; i<6; i++) gen_point[i] = 1;
+      A1 = 0.2192942090e-3;  A2 = 0.1436433617e-2;  A3 = 0.1421940344e-2;
+      l[0]  = 0.5087204410e-1;  m[0]  = 0.9974086776e+0;  B[0]  = 0.6798123510e-3;
+      l[1]  = 0.1228198790e+0;  m[1]  = 0.9847997535e+0;  B[1]  = 0.9913184235e-3;
+      l[2]  = 0.2026890814e+0;  m[2]  = 0.9580366759e+0;  B[2]  = 0.1180207833e-2;
+      l[3]  = 0.2847745156e+0;  m[3]  = 0.9153179504e+0;  B[3]  = 0.1296599602e-2;
+      l[4]  = 0.3656719078e+0;  m[4]  = 0.8559019286e+0;  B[4]  = 0.1365871427e-2;
+      l[5]  = 0.4428264886e+0;  m[5]  = 0.7796213195e+0;  B[5]  = 0.1402988604e-2;
+      l[6]  = 0.5140619627e+0;  m[6]  = 0.6866444472e+0;  B[6]  = 0.1418645563e-2;
+      l[7]  = 0.6306401219e+0;  m[7]  = 0.4523119203e+0;  B[7]  = 0.1421376741e-2;
+      l[8]  = 0.6716883332e+0;  m[8]  = 0.3125213050e+0;  B[8]  = 0.1423996475e-2;
+      l[9]  = 0.6979792685e+0;  m[9]  = 0.1601558034e+0;  B[9]  = 0.1431554042e-2;
+
+      q[0] = 0.1446865674e+0; r[0] = 0.9894775374e+0; C[0] = 0.9254401499e-3;
+      q[1] = 0.3390263475e+0; r[1] = 0.9407768787e+0; C[1] = 0.1250239995e-2;
+      q[2] = 0.5335804651e+0; r[2] = 0.8457493051e+0; C[2] = 0.1394365843e-2;
+
+      u[0] = 0.6944024393e-1; v[0] = 0.2355187894e+0; w[0] = 0.9693858634e+0; D[0] = 0.1127089094e-2;
+      u[1] = 0.2269004109e+0; v[1] = 0.4102182474e+0; w[1] = 0.8833103605e+0; D[1] = 0.1345753761e-2;
+      u[2] = 0.8025574608e-1; v[2] = 0.6214302417e+0; w[2] = 0.7793481057e+0; D[2] = 0.1424957283e-2;
+      u[3] = 0.1467999527e+0; v[3] = 0.3245284345e+0; w[3] = 0.9344148270e+0; D[3] = 0.1261523341e-2;
+      u[4] = 0.1571507769e+0; v[4] = 0.5224482189e+0; w[4] = 0.8380641334e+0; D[4] = 0.1392547106e-2;
+      u[5] = 0.2365702993e+0; v[5] = 0.6017546634e+0; w[5] = 0.7628406246e+0; D[5] = 0.1418761677e-2;
+      u[6] = 0.7714815866e-1; v[6] = 0.4346575516e+0; w[6] = 0.8972853361e+0; D[6] = 0.1338366684e-2;
+      u[7] = 0.3062936666e+0; v[7] = 0.4908826589e+0; w[7] = 0.8156092232e+0; D[7] = 0.1393700862e-2;
+      u[8] = 0.3822477379e+0; v[8] = 0.5648768149e+0; w[8] = 0.7313007936e+0; D[8] = 0.1415914757e-2;
+    }
+  else if (norder == 41 && npoints == 590) {
+      for (i=0; i<6; i++) { if(i!=1) gen_point[i] = 1; }
+      A1 = 0.3095121295e-3; A2 = 0.0; A3 = 0.1852379698e-2;
+      l[0] = 0.6095034115e-1; m[0] = 0.9962781297e+0; B[0] = 0.9764331164e-3;
+      l[1] = 0.1459036449e+0; m[1] = 0.9784805837e+0; B[1] = 0.1384737234e-2;
+      l[2] = 0.2384736701e+0; m[2] = 0.9414141582e+0; B[2] = 0.1617210647e-2;
+      l[3] = 0.3317920736e+0; m[3] = 0.8830787279e+0; B[3] = 0.1749564657e-2;
+      l[4] = 0.4215761784e+0; m[4] = 0.8028368773e+0; B[4] = 0.1818471778e-2;
+      l[5] = 0.5044419707e+0; m[5] = 0.7007685753e+0; B[5] = 0.1846715956e-2;
+      l[6] = 0.6372546939e+0; m[6] = 0.4333738687e+0; B[6] = 0.1852028828e-2;
+      l[7] = 0.6807744066e+0; m[7] = 0.2703560883e+0; B[7] = 0.1858812585e-2;
+      l[8] = 0.7040954938e+0; m[8] = 0.9219040707e-1; B[8] = 0.1871790639e-2;
+
+      q[0] = 0.1724782009e+0; r[0] = 0.9850133350e+0; C[0] = 0.1300321685e-2;
+      q[1] = 0.3964755348e+0; r[1] = 0.9180452877e+0; C[1] = 0.1705153996e-2;
+      q[2] = 0.6116843442e+0; r[2] = 0.7911019296e+0; C[2] = 0.1857161196e-2;
+
+      u[0] = 0.8213021581e-1; v[0] = 0.2778673190e+0; w[0] = 0.9571020743e+0; D[0] = 0.1555213603e-2;
+      u[1] = 0.8999205842e-1; v[1] = 0.5033564271e+0; w[1] = 0.8593798558e+0; D[1] = 0.1802239128e-2;
+      u[2] = 0.1816640840e+0; v[2] = 0.5984126497e+0; w[2] = 0.7803207424e+0; D[2] = 0.1849830560e-2;
+      u[3] = 0.1720795225e+0; v[3] = 0.3791035407e+0; w[3] = 0.9092134750e+0; D[3] = 0.1713904507e-2;
+      u[4] = 0.2634716655e+0; v[4] = 0.4742392842e+0; w[4] = 0.8400474883e+0; D[4] = 0.1802658934e-2;
+      u[5] = 0.3518280927e+0; v[5] = 0.5610263808e+0; w[5] = 0.7493106119e+0; D[5] = 0.1842866472e-2;
+    }
+  else if (norder == 29 && npoints == 302) {
+      for (i=0; i<6; i++) { if(i!=1) gen_point[i] = 1; }
+      A1 = 0.854591172878e-3; A3 = 0.359911928502e-2;
+      l[0] = 0.701176641609; m[0] = 0.129238672710; B[0] = 0.365004580768e-2;
+      l[1] = 0.656632941022; m[1] = 0.371034178385; B[1] = 0.360482260142e-2;
+      l[2] = 0.472905413258; m[2] = 0.743452042987; B[2] = 0.357672966173e-2;
+      l[3] = 0.351564034558; m[3] = 0.867643624544; B[3] = 0.344978842429e-2;
+      l[4] = 0.221964523631; m[4] = 0.949454317226; B[4] = 0.310895312238e-2;
+      l[5] = 0.0961830852303; m[5] = 0.990705621379; B[5] = 0.235210141366e-2;
+
+      q[0] = 0.571895589188; r[0] = 0.820326419828; C[0] = 0.360082093222e-2;
+      q[1] = 0.264415288706; r[1] = 0.964408914879; C[1] = 0.298234496317e-2;
+
+      u[0] = 0.251003475177; v[0] = 0.800072749407; w[0] = 0.544867737258; D[0] = 0.357154055427e-2;
+      u[1] = 0.902442529533; v[1] = 0.412772408317; w[1] = 0.123354853258; D[1] = 0.339231220501e-2;
+    }
+  else if (norder == 23 && npoints == 194) {
+      for (i=0; i<6; i++) gen_point[i] = 1;
+      //A1 = pow(2.,7.)*73./5242545.; A2 = pow(2.,14.)*1663./( pow(3.,3.)*pow(11.,2.)*1458821.);
+      //A3 = pow(3.,10.)*1599797./( pow(2.,9.)*pow(173.,2.)*pow(13.,2.)*6545.);
+      A1 = 0.178234044724e-2; A2 = 0.571690594998e-2; A3 = 0.557338317884e-2;
+      l[0] = 0.444693317871; m[0] = 0.777493219315; B[0] = 0.551877146727e-2;
+      l[1] = 0.289246562758; m[1] = 0.912509096867; B[1] = 0.515823771181e-2;
+      l[2] = 0.671297344270; m[2] = 0.314196994183; B[2] = 0.560870408259e-2;
+      l[3] = 0.129933544765; m[3] = 0.982972302707; B[3] = 0.410677702817e-2;
+
+      q[0] = 0.345770219761; r[0] = 0.938319218128;
+      // C[0] = pow(38.,4.)/(pow(33.,2.)*pow(7.,3.)*1105.);
+      C[0] = 0.505184606462e-2;
+      
+      u[0] = 0.159041710538; v[0] = 0.836036015482; w[0] = 0.525118572443; D[0] = 0.553024891623e-2;
+    }
+  else if (norder == 17 && npoints == 110) {
+      gen_point[0] = 1; gen_point[1] = 0; gen_point[2] = 1;
+      gen_point[3] = 1; gen_point[4] = 1; gen_point[5] = 0;
+      A1 = 0.382827049494e-2;
+      A2 = 0.0;
+      A3 = 0.98550016044e-2;
+      l[0] = 0.185115635345; m[0] = 0.965124035087; B[0] = 0.844068048232e-2;
+      l[1] = 0.383386152638; m[1] = 0.840255982384; B[1] = 0.959547133607e-2;
+      l[2] = 0.690421048382; m[2] = 0.238807866929; B[2] = 0.994281489118e-2;
+
+      q[0] = 0.478369028812; r[0] = 0.878158910604; C[0] = 0.969499636166e-2;
+      // C[0] = 4.*pow(17.,3.)/2027025.;
+    }
+  else if (norder == 11 && npoints == 50) {
+      for (i=0; i<4; i++) gen_point[i] = 1;
+      A1 = 4./315.; A2 = 64./2835.; A3 = 27./1280.;
+      m[0] = 3./sqrt(11.); l[0] = 1./sqrt(2.) * sqrt( (1.-m[0]*m[0]) ); B[0] = pow(11., 4.)/725760.;
+    }
+  else if (norder == 9 && npoints == 38) {
+      gen_point[0] = 1; gen_point[1] = 0; gen_point[2] = 1;
+      gen_point[3] = 0; gen_point[4] = 1; gen_point[5] = 0;
+      A1 = 1./105.; A2 = 0.0; A3 = 9./280.;
+      q[0] = 0.459700843381; r[0] = 0.888073833977; C[0] = 1./35.;
+    }
+  else if (npoints == 6) {
+      A1 = 1./6.;
+      gen_point[0] = 1;
     }
   else {
       cout << class_name() << ": (norder, npoints) = " << norder <<"," << npoints
@@ -1823,25 +2023,56 @@ LebedevAngularIntegrator::build_grid(void)
       abort();
     }
 
+  double norm = A1*6.0 + A2*12.0 + A3*8.0;
+  int j;
+
+  // Norm of the Lebedev Weights
+  for (j=0; j<N1; j++) norm += 24.0*B[j];
+  for (j=0; j<N2; j++) norm += 24.0*C[j];
+  for (j=0; j<N3; j++) norm += 48.0*D[j];
+  cout << "norm = " << scprintf("%30.18f",norm) << endl;
+  norm /= norm;
+  //A1 *= norm; A2 *= norm; A3 *= norm;
+  //for (j=0; j<N1; j++) B[j] *= norm;
+  //for (j=0; j<N2; j++) C[j] *= norm;
+  //for (j=0; j<N3; j++) D[j] *= norm;
+
+  // Check that points are on a unit sphere
+  for (j=0; j<N1; j++) {
+      norm = 2.0*l[j]*l[j] + m[j]*m[j];
+      cout << "Bk points norm[" << j << "] = " << scprintf("%20.15f",norm) << endl;
+      //l[j] = 1./sqrt(2.) * sqrt(1.-m[j]*m[j]);
+    }
+  for (j=0; j<N2; j++) {
+      norm = q[j]*q[j] + r[j]*r[j];
+      cout << "Ck points norm[" << j << "] = " << scprintf("%20.15f",norm) << endl;
+      //r[j] = sqrt(1.-q[j]*q[j]);
+    }
+  for (j=0; j<N3; j++) {
+      norm = u[j]*u[j] + v[j]*v[j] + w[j]*w[j];
+      cout << "Dk points norm[" << j << "] = " << scprintf("%20.15f",norm) << endl;
+      //u[j] *= norm; v[j] *= norm; w[j] *= norm;
+    }
+  
   double *zero_array;
   zero_array = new double[N2];
   for (int i=0; i<N2; i++) zero_array[i] = 0.0;
 
   double zero = 0.0;
   double one = 1.0;
-  double sqrt2 = sqrt(2.);
-  double sqrt3 = sqrt(3.);
+  double sqrt2 = 1./sqrt(2.);
+  double sqrt3 = 1./sqrt(3.);
   
   // call generate_points rouinte
-  generate_points(A,   1, 3, &one,   &zero,  &zero);
-  generate_points(A+1, 1, 3, &sqrt2, &sqrt2, &zero);
-  generate_points(A+2, 1, 1, &sqrt3, &sqrt3, &sqrt3);
-  generate_points(B,  N1, 3, l,      m,      l);
-  generate_points(C,  N2, 6, q,      r,      zero_array); 
-  generate_points(D,  N3, 6, u,      v,      w);
+  if (gen_point[0]) generate_points(&A1, 1, 3, &one,   &zero,  &zero);
+  if (gen_point[1]) generate_points(&A2, 1, 3, &sqrt2, &sqrt2, &zero);
+  if (gen_point[2]) generate_points(&A3, 1, 1, &sqrt3, &sqrt3, &sqrt3);
+  if (gen_point[3]) generate_points(B,  N1, 3, l,      m,      l);
+  if (gen_point[4]) generate_points(C,  N2, 6, q,      r,      zero_array); 
+  if (gen_point[5]) generate_points(D,  N3, 6, u,      v,      w);
   
   delete [] zero_array;
-    
+  cout << " Total number of points in grid = " << get_point_count() << endl;    
 }
 
 void
@@ -1901,14 +2132,22 @@ LebedevAngularIntegrator::expand(double array[], int offset, double weight)
   expand(copy_array, offset+1, weight);
   
   delete [] copy_array;
-  
-
 }
+
+void
+LebedevAngularIntegrator::print(ostream &o)
+{
+  o << node0 << indent << scprintf("norder   = %5d", get_norder()) << endl;
+  o << node0 << indent << scprintf("nangular = %5d", get_npoints()) << endl;
+}
+
 /////////////////////////////////
 //  GaussLegendreAngularIntegrator
 
 #define CLASSNAME GaussLegendreAngularIntegrator
 #define PARENTS public AngularIntegrator
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
@@ -2113,6 +2352,13 @@ GaussLegendreAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 
   return ( sin_theta(point)*theta_quad_weights_[itheta]*2.0*M_PI/(double)nphi_r );
 }
 
+void
+GaussLegendreAngularIntegrator::print(ostream &o) 
+{
+  o << node0 << indent << scprintf("ntheta   = %5d", get_ntheta()) << endl;
+  o << node0 << indent << scprintf("nphi     = %5d", get_nphi()) << endl;
+  o << node0 << indent << scprintf("Ktheta   = %5d", get_Ktheta()) << endl;
+}
 
 //////////////////////////////////////////////
 //  RadialAngularIntegrator
@@ -2168,8 +2414,6 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
   abort();
 }
 
-
-// Murray93 Integrator used as template
 void
 RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
                               const RefSymmSCMatrix& densa,
@@ -2246,11 +2490,11 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       for (ir=0; ir < nr[icenter]; ir++) {
           double r = RadInt_->radial_value(ir, nr[icenter], bragg_radius[icenter]);
           point.r() = r;
-          dr_dqr2 = RadInt_->get_dr_dqr2();
-          radial_multiplier = RadInt_->radial_multiplier(dr_dqr2, nr[icenter]);
+          //dr_dqr2 = RadInt_->get_dr_dqr2();
+          radial_multiplier = RadInt_->radial_multiplier(nr[icenter]);
           nangular = AngInt_->num_angular_points(r/bragg_radius[icenter],ir);
           AngInt_->angular_weights();
-          double radial_int_volume = RadInt_->get_dr_dqr2();
+          //double radial_int_volume = RadInt_->get_dr_dqr2();
           for (iangular=0; iangular<nangular; iangular++) {
               angular_multiplier =
                 AngInt_->angular_point_cartesian(iangular, point, integration_point);
@@ -2259,20 +2503,19 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
               //if (w_gradient) weight_->test(icenter, integration_point);
               point_count++;
               double multiplier = angular_multiplier * radial_multiplier;
-              double angular_int_volume = AngInt_->sin_theta(point);
-              double int_volume = radial_int_volume * angular_int_volume;
+              //double angular_int_volume = AngInt_->sin_theta(point);
+              //double int_volume = radial_int_volume * angular_int_volume;
               if (do_point(icenter, integration_point, denfunc,
                            w, multiplier,
                            nuclear_gradient, f_gradient, w_gradient)
-                  * int_volume < 1e2*DBL_EPSILON
-                  && int_volume > 1e2*DBL_EPSILON) {
+                  * multiplier < 1e2*DBL_EPSILON
+                  && multiplier > 1e2*DBL_EPSILON) {
                   r_done=1;
-                  break;
+                  // break;
                 }
             }
-
-          if (r_done)
-              break;
+          //if (r_done) 
+              // break;
         }
       point_count_total+=point_count;
     }
@@ -2315,10 +2558,8 @@ RadialAngularIntegrator::print(ostream &o) const
 {
   o << node0 << indent << class_name() << " Parameters:" << endl;
   o << incindent;
-  o << node0 << indent << scprintf("nr     = %5d", RadInt_->get_nr()) << endl;
-  o << node0 << indent << scprintf("ntheta = %5d", AngInt_->get_ntheta()) << endl;
-  o << node0 << indent << scprintf("nphi   = %5d", AngInt_->get_nphi()) << endl;
-  o << node0 << indent << scprintf("Ktheta = %5d", AngInt_->get_Ktheta()) << endl;
+  RadInt_->print(o);
+  AngInt_->print(o);
   o << decindent;
 }
 

@@ -188,13 +188,14 @@ class RadialIntegrator: virtual public SavableState{
     void save_data_state(StateOut &);
 
     void set_nr(int i);
-    int get_nr(void);
+    const int get_nr(void);
     virtual double radial_value(int ir, int nr, double radii) = 0;
-    virtual double radial_multiplier(double value, int nr) = 0;
+    virtual double radial_multiplier(int nr) = 0;
     virtual double get_dr_dq(void) = 0;
     virtual double get_dr_dqr2(void) = 0;
     virtual void set_dr_dq(double i) = 0;
     virtual void set_dr_dqr2(double i) = 0;
+    void print(ostream & =cout);
 };
 SavableState_REF_dec(RadialIntegrator);
 
@@ -210,14 +211,15 @@ class AngularIntegrator: virtual public SavableState{
     ~AngularIntegrator();
     void save_data_state(StateOut &);
 
-    virtual int get_ntheta(void) = 0;
-    virtual int get_nphi(void) = 0;
-    virtual int get_Ktheta(void) = 0;
+    virtual int get_ntheta(void);
+    virtual int get_nphi(void);
+    virtual int get_Ktheta(void);
     virtual int num_angular_points(double r_value, int ir) = 0;
     virtual void angular_weights(void) = 0;
     virtual double angular_point_cartesian(int iangular, SCVector3 &point,
         SCVector3 &integration_point) = 0;
-    virtual double sin_theta(SCVector3 &point) = 0;
+    virtual double sin_theta(SCVector3 &point);
+    virtual void print(ostream & =cout) = 0;
 };
 SavableState_REF_dec(AngularIntegrator);
 
@@ -238,11 +240,12 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     void save_data_state(StateOut &);
 
     double radial_value(int ir, int nr, double radii);
-    double radial_multiplier(double value, int nr);
+    double radial_multiplier(int nr);
     double get_dr_dq(void);
     void set_dr_dq(double i);
     double get_dr_dqr2(void);
     void set_dr_dqr2(double i);
+    void print(ostream & =cout);
 };
 
 class LebedevAngularIntegrator: public AngularIntegrator {
@@ -284,6 +287,8 @@ class LebedevAngularIntegrator: public AngularIntegrator {
     void build_grid(void);
     void generate_points(double weights[], int N, int nsets, double  u[], double v[], double w[]);
     void expand(double array[], int offset, double weight);
+    void print(ostream & =cout);
+    double sin_theta(SCVector3 &point);
 };
 
 class GaussLegendreAngularIntegrator: public AngularIntegrator {
@@ -326,6 +331,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
         SCVector3 &integration_point);
     double sin_theta(SCVector3 &point);
     void gauleg(double x1, double x2, int n);    
+    void print(ostream & =cout);
 };
 
 class RadialAngularIntegrator: public DenIntegrator {

@@ -388,7 +388,6 @@ CLSCF::new_density()
   cl_dens_diff_.assign(cl_dens_);
   cl_dens_diff_.scale(-1.0);
   
-  cl_dens_.assign(0.0);
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
 

@@ -142,6 +142,11 @@ double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     double r1 = dist(m[a].point(),m[b].point());
     double r2 = dist(m[c].point(),m[b].point());
     double r3 = dist(m[c].point(),m[d].point());
+#if OLD_BMAT
+    r1 *= bohr;
+    r2 *= bohr;
+    r3 *= bohr;
+#endif    
     for (int j=0; j < 3; j++) {
       uu = z1[j]/(r1*si);
       zz = z2[j]/(r3*si2);
@@ -169,9 +174,13 @@ double TorsSimpleCo::calc_force_con(Molecule& m)
   double k = 0.0015 + 14.0*pow(1.0,0.57)/pow((rad_ab*r_ab),4.0) *
                            exp(-2.85*(r_ab-rad_ab));
 
+#if OLD_BMAT  
   // return force constant in mdyn*ang/rad^2
+  return k*4.359813653;
+#else
   return k;
-  }
+#endif  
+}
 
 const char *
 TorsSimpleCo::ctype() const

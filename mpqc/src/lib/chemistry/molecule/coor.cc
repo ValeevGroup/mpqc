@@ -11,6 +11,7 @@ extern "C" {
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
+#include <chemistry/molecule/simple.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -550,9 +551,13 @@ SumIntCoor::update_value(RefMolecule&molecule)
   value_ = 0.0;
   for (i=0; i<l; i++) {
       coor_[i]->update_value(molecule);
+#if OLD_BMAT
+      if (StreSimpleCo::castdown(coor_[i]))
+        value_ += coef_[i] * StreSimpleCo::castdown(coor_[i])->angstrom();
+      else
+#endif        
       value_ += coef_[i] * coor_[i]->value();
     }
-
 }
 
 void

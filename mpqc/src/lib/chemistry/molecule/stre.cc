@@ -93,8 +93,13 @@ double StreSimpleCo::calc_force_con(Molecule& m)
 
   double k = 0.3601 * exp(-1.944*(value()-rad_ab));
 
+#if OLD_BMAT
+  // return force constant in mdyn/ang
+  return k*4.359813653/(0.52917706*0.52917706);
+#else  
   return k;
-  }
+#endif  
+}
 
 double StreSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {

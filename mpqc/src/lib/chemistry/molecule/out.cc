@@ -113,6 +113,10 @@ double OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
               (den*dist(m[c].point(),m[b].point()));
     double sthta3 = (cphi1*cphi3-cphi2)/
               (den*dist(m[d].point(),m[b].point()));
+#if OLD_BMAT
+    sthta2 /= bohr;
+    sthta3 /= bohr;
+#endif
     for(int j=0; j < 3; j++) {
       ww[j] = z1[j]*sthta2;
       zz[j] = z1[j]*sthta3;
@@ -120,6 +124,9 @@ double OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     normal(z1,u1,xx);
     normal(u1,xx,z1);
     double r1i = 1.0/(dist(m[a].point(),m[b].point()));
+#if OLD_BMAT
+    r1i /= bohr;
+#endif    
     for(j=0; j < 3; j++) {
       uu = z1[j]*r1i;
       vv = -uu-ww[j]-zz[j];
@@ -155,8 +162,14 @@ double OutSimpleCo::calc_force_con(Molecule& m)
   double k = 0.0025 + 0.0061*pow((rad_ab*rad_ac),0.80)*pow(cos(value()),4.0) *
                            exp(-3.0*(r_ax-rad_ax));
 
+#if OLD_BMAT
+  // return force constant in mdyn*ang/rad^2
+  return k*4.359813653;
+#else  
   return k;
-  }
+#endif  
+}
+
 const char *
 OutSimpleCo::ctype() const
 {

@@ -107,6 +107,10 @@ double LinIPSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     normal(z2,u3,u1);
     double r1 = dist(m[a].point(),m[b].point());
     double r2 = dist(m[c].point(),m[b].point());
+#if OLD_BMAT
+    r1 *= bohr;
+    r2 *= bohr;
+#endif    
     for (int j=0; j < 3; j++) {
       uu=z1[j]/r1;
       ww=u1[j]/r2;

@@ -309,14 +309,14 @@ IntMolecularCoor::form_coordinates()
       SumIntCoor* coordinate = new SumIntCoor(label);
 
       for(int j=0; j < nredundant; j++) {
-          if(fabs(K(j,i)) > simple_tolerance_) {
+          if(pow(K(j,i),2.0) > simple_tolerance_) {
               coordinate->add(all_->coor(j),K(j,i));
             }
         }
       // now put the contribution from the fixed coordinates in the
       // coordinate list
       for(j=0; j < nfixed; j++) {
-          if(fabs(Kfixed(j,i)) > simple_tolerance_) {
+          if(pow(Kfixed(j,i),2.0) > simple_tolerance_) {
               coordinate->add(fixed_->coor(j),Kfixed(j,i));
             }
         }
@@ -497,7 +497,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 
           int nonzero=0;
           for(j=0; j < nredundant; j++) {
-              if(fabs(vecs(j,i)) > simple_tolerance_) nonzero++;
+              if(pow(vecs(j,i),2.0) > simple_tolerance_) nonzero++;
             }
           if(!nonzero) {
               fprintf(stderr,"Geom_form_K: no nonzero simple coordinates");
@@ -627,7 +627,11 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 
       // update the geometry
       for(i=0; i < dnatom3_.n(); i++) {
+#if OLD_BMAT
+          molecule[i/3][i%3] += cartesian_displacement(i) * 1.88972666;
+#else        
           molecule[i/3][i%3] += cartesian_displacement(i);
+#endif          
         }
     }
 
@@ -679,7 +683,11 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
   bmbt.accumulate_symmetric_product(bmat);
   bmbt_i = bmbt.gi();
 
+#if OLD_BMAT  
+  RefSCVector all_internal = bmbt_i*bmat*(gradient*8.2388575);
+#else
   RefSCVector all_internal = bmbt_i*bmat*gradient;
+#endif  
 
   // put the variable coordinate gradients into internal
   int n = variable_->n();
@@ -935,9 +943,47 @@ IntMolecularCoor::print_simples(SCostream& os)
 void
 IntMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
+  RefSCDimension rdim = new LocalSCDimension(all_->n());
+  RefSymmSCMatrix rhessian(rdim);
+  rhessian.assign(0.0);
+  all_->guess_hessian(molecule_,rhessian);
+  //rhessian.print("rhessian");
+
+  RefSCDimension dn3 = molecule_->dim_natom3();
+  RefSCMatrix bmat(rdim,dn3);
+  all_->bmat(molecule_,bmat);
+  //bmat.print("bmat");
+  
+  RefSymmSCMatrix chess(dn3);
+  chess.assign(0.0);
+  chess.accumulate_transform(bmat.t(),rhessian);
+
+  //chess.print("chess");
+
+  rdim = new LocalSCDimension(variable_->n());
+  bmat= rdim->create_matrix(dn3);
+  variable_->bmat(molecule_,bmat);
+  //bmat.print("bmat");
+  
+  RefSymmSCMatrix bmbt(rdim);
+  bmbt.assign(0.0);
+  bmbt.accumulate_symmetric_product(bmat);
+  bmbt = bmbt.gi();
+  //bmbt.print("inv bmbt");
+  
+  RefSCMatrix b = bmbt * bmat;
+  
+  hessian.assign(0.0);
+  hessian.accumulate_transform(b,chess);
+  //hessian.print("hessian");
+
+#if 0
   hessian.assign(0.0);
 
   for (int i=0; i<variable_->n(); i++) {
       hessian(i,i) = variable_->coor(i)->force_constant(molecule_);
     }
+
+  //hessian.print("hessian");
+#endif  
 }

@@ -99,6 +99,10 @@ double BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     double si=s2(co);
     double r1i = 1.0/(si*dist(m[a].point(),m[b].point()));
     double r2i = 1.0/(si*dist(m[c].point(),m[b].point()));
+#if OLD_BMAT
+    r1i /= bohr;
+    r2i /= bohr;
+#endif    
     for (int j=0; j < 3; j++) {
       uu = (co*u1[j]-u2[j])*r1i;
       ww = (co*u2[j]-u1[j])*r2i;
@@ -128,8 +132,13 @@ double BendSimpleCo::calc_force_con(Molecule& m)
   double k = 0.089 + 0.11/pow((rad_ab*rad_ac),-0.42) *
                            exp(-0.44*(r_ab+r_ac-rad_ab-rad_ac));
 
+#if OLD_BMAT
+  // return force constant in mdyn*ang/rad^2
+  return k*4.359813653;
+#else  
   return k;
-  }
+#endif  
+}
 
 const char *
 BendSimpleCo::ctype() const

@@ -26,6 +26,7 @@ TriangulatedSurface::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+RefEdgeAVLSet niledgeavlset;
 TriangulatedSurface::TriangulatedSurface():
   _triangle_vertex(0),
   _triangle_edge(0),
@@ -37,7 +38,7 @@ TriangulatedSurface::TriangulatedSurface():
   _vertex_to_index(0),
   _edge_to_index(0),
   _triangle_to_index(0),
-  _tmp_edges(RefEdgeAVLSet()),
+  _tmp_edges(niledgeavlset),
   _verbose(0)
 {
   clear();
@@ -53,7 +54,7 @@ TriangulatedSurface::TriangulatedSurface(const RefKeyVal& keyval):
   _vertex_to_index(0),
   _edge_to_index(0),
   _triangle_to_index(0),
-  _tmp_edges(RefEdgeAVLSet())
+  _tmp_edges(niledgeavlset)
 {
   _verbose = keyval->booleanvalue("verbose");
   set_integrator(keyval->describedclassvalue("integrator"));
@@ -198,9 +199,11 @@ TriangulatedSurface::complete_int_arrays()
   _triangle_vertex = new int*[ntri];
   for (i=0; i<ntri; i++) {
       _triangle_vertex[i] = new int[3];
-      for (int j=0; j<3; j++)
+      for (int j=0; j<3; j++) {
+          RefVertex v = triangle(i)->vertex(j);
           _triangle_vertex[i][j] =
-                   _vertex_to_index[_vertices.seek(triangle(i)->vertex(j))];
+                   _vertex_to_index[_vertices.seek(v)];
+        }
     }
 
   // construct the array that converts the triangle number and edge number
@@ -208,9 +211,11 @@ TriangulatedSurface::complete_int_arrays()
   _triangle_edge = new int*[ntri];
   for (i=0; i<ntri; i++) {
       _triangle_edge[i] = new int[3];
-      for (int j=0; j<3; j++)
+      for (int j=0; j<3; j++) {
+          RefEdge e = triangle(i)->edge(j);
           _triangle_edge[i][j] =
-             _edge_to_index[_edges.seek(triangle(i)->edge(j))];
+             _edge_to_index[_edges.seek(e)];
+        }
     }
 
   // construct the array that converts the edge number and vertex number
@@ -218,9 +223,11 @@ TriangulatedSurface::complete_int_arrays()
   _edge_vertex = new int*[ne];
   for (i=0; i<ne; i++) {
       _edge_vertex[i] = new int[2];
-      for (int j=0; j<2; j++)
-        _edge_vertex[i][j]
-            = _vertex_to_index[_vertices.seek(edge(i)->vertex(j))];
+      for (int j=0; j<2; j++) {
+          RefVertex v = edge(i)->vertex(j);
+          _edge_vertex[i][j]
+              = _vertex_to_index[_vertices.seek(v)];
+        }
     }
 }
 
@@ -486,19 +493,24 @@ TriangulatedSurface::print(FILE*fp)
   fprintf(fp," %3d Edges:\n",ne);
   for (i=0; i<ne; i++) {
       RefEdge e = edge(i);
+      RefVertex v0 = e->vertex(0);
+      RefVertex v1 = e->vertex(1);
       fprintf(fp,"  %3d: %3d %3d\n",i,
-              _vertex_to_index[_vertices.seek(e->vertex(0))],
-              _vertex_to_index[_vertices.seek(e->vertex(1))]);
+              _vertex_to_index[_vertices.seek(v0)],
+              _vertex_to_index[_vertices.seek(v1)]);
     }
 
   int nt = ntriangle();
   fprintf(fp," %3d Triangles:\n",nt);
   for (i=0; i<nt; i++) {
       RefTriangle tri = triangle(i);
+      RefEdge e0 = tri->edge(0);
+      RefEdge e1 = tri->edge(1);
+      RefEdge e2 = tri->edge(2);
       fprintf(fp,"  %3d: %3d %3d %3d\n",i,
-              _edge_to_index[_edges.seek(tri->edge(0))],
-              _edge_to_index[_edges.seek(tri->edge(1))],
-              _edge_to_index[_edges.seek(tri->edge(2))]);
+              _edge_to_index[_edges.seek(e0)],
+              _edge_to_index[_edges.seek(e1)],
+              _edge_to_index[_edges.seek(e2)]);
     }
 }
 

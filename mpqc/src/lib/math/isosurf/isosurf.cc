@@ -92,9 +92,12 @@ ImplicitSurfacePolygonizer::isosurface(double value,
       RefVertexRefTriangleAVLSetRAVLMap vertex_to_triangles(empty);
       for (i=0; i<surf.ntriangle(); i++) {
           RefTriangle t = surf.triangle(i);
-          vertex_to_triangles[t->vertex(0)].add(t);
-          vertex_to_triangles[t->vertex(1)].add(t);
-          vertex_to_triangles[t->vertex(2)].add(t);
+	  RefVertex v0 = t->vertex(0);
+	  RefVertex v1 = t->vertex(1);
+	  RefVertex v2 = t->vertex(2);
+          vertex_to_triangles[v0].add(t);
+          vertex_to_triangles[v1].add(t);
+          vertex_to_triangles[v2].add(t);
         }
       for (i=0; i<surf.nvertex(); i++) {
           RefVertex v = surf.vertex(i);

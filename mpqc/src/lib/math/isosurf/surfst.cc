@@ -138,9 +138,12 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
                    J;
                    connected_triangles.next(J)) {
                   RefTriangle ctri = connected_triangles(J);
-                  all_edges.add(ctri->edge(0));
-                  all_edges.add(ctri->edge(1));
-                  all_edges.add(ctri->edge(2));
+                  RefEdge e0 = ctri->edge(0);
+                  RefEdge e1 = ctri->edge(1);
+                  RefEdge e2 = ctri->edge(2);
+                  all_edges.add(e0);
+                  all_edges.add(e1);
+                  all_edges.add(e2);
                 }
               // find all of the edges connected to the deleted vertex
               // (including the short edge)
@@ -159,8 +162,10 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
               RefVertexAVLSet connected_vertices;
               for (J = perimeter_edges.first(); J; perimeter_edges.next(J)) {
                   RefEdge e = perimeter_edges(J);
-                  connected_vertices.add(e->vertex(0));
-                  connected_vertices.add(e->vertex(1));
+                  RefVertex v0 = e->vertex(0);
+                  RefVertex v1 = e->vertex(1);
+                  connected_vertices.add(v0);
+                  connected_vertices.add(v1);
                 }
               RefTriangleAVLSet triangles_connected_to_perimeter;
               for (J = connected_vertices.first();
@@ -173,9 +178,12 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
                    J;
                    triangles_connected_to_perimeter.next(J)) {
                   RefTriangle t = triangles_connected_to_perimeter(J);
-                  if (connected_vertices.seek(t->vertex(0))
-                      &&connected_vertices.seek(t->vertex(1))
-                      &&connected_vertices.seek(t->vertex(2))) {
+                  RefVertex v0 = t->vertex(0);
+                  RefVertex v1 = t->vertex(1);
+                  RefVertex v2 = t->vertex(2);
+                  if (connected_vertices.seek(v0)
+                      &&connected_vertices.seek(v1)
+                      &&connected_vertices.seek(v2)) {
                       skip = 1;
                       break;
                     }
@@ -220,8 +228,9 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
               for (J = perimeter_edges.first(); J; perimeter_edges.next(J)) {
                   RefEdge e = perimeter_edges(J);
                   for (k = 0; k<2; k++) {
-                      if (e->vertex(k) == replacement_vertex) continue;
-                      if (!new_edge_map.contains(e->vertex(k))) {
+                      RefVertex v = e->vertex(k);
+                      if (v == replacement_vertex) continue;
+                      if (!new_edge_map.contains(v)) {
                           RefEdge new_e;
                           // if the edge already exists then use the
                           // existing edge
@@ -230,18 +239,18 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
                                perimeter_edges.next(K)) {
                               RefEdge tmp = perimeter_edges(K);
                               if ((tmp->vertex(0) == replacement_vertex
-                                   &&tmp->vertex(1) == e->vertex(k))
+                                   &&tmp->vertex(1) == v)
                                   ||(tmp->vertex(1) == replacement_vertex
-                                     &&tmp->vertex(0) == e->vertex(k))) {
+                                     &&tmp->vertex(0) == v)) {
                                   new_e = tmp;
                                   break;
                                 }
                             }
                           if (!K) {
                               new_e = newEdge(replacement_vertex,
-                                              e->vertex(k));
+                                              v);
                             }
-                          new_edge_map[e->vertex(k)] = new_e;
+                          new_edge_map[v] = new_e;
                           new_edges.add(new_e);
                         }
                     }
@@ -251,10 +260,12 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
               // vertex)
               for (J = perimeter_edges.first(); J; perimeter_edges.next(J)) {
                   RefEdge e1 = perimeter_edges(J);
-                  RefEdge e2 = new_edge_map[e1->vertex(0)];
-                  RefEdge e3 = new_edge_map[e1->vertex(1)];
-                  if (e1->vertex(0) == replacement_vertex
-                      ||e1->vertex(1) == replacement_vertex) continue;
+                  RefVertex v0 = e1->vertex(0);
+                  RefVertex v1 = e1->vertex(1);
+                  RefEdge e2 = new_edge_map[v0];
+                  RefEdge e3 = new_edge_map[v1];
+                  if (v0 == replacement_vertex
+                      || v1 == replacement_vertex) continue;
                   // Compute the correct orientation of e1 within the new
                   // triangle, by finding the orientation within the old
                   // triangle.

@@ -30,22 +30,14 @@ set_scale(double& coulombscale, double& exchangescale,
     exchangescale *= 2.0;
 }
 
-void
-SCF::compute_gradient(const RefSCVector& gradient)
+//////////////////////////////////////////////////////////////////////////////
+
+static void
+ob_gradient(const RefOneBodyDerivInt& derint, const RefSCVector& gradient,
+            const RefSymmSCMatrix& density, const RefGaussianBasisSet& gbs_)
 {
-#if 0
-  init_gradient();
-  gradient.assign(0.0);
-
-  // handy things
-  GaussianBasisSet& gbs = *basis().pointer();
-
-  // form one electron contribution
-  RefSymmSCMatrix lag = lagrangian();
-  RefSymmSCMatrix dens = gradient_density();
-
-  RefOneBodyDerivInt overlap_der = integral()->overlap_deriv();
-  RefOneBodyDerivInt hcore_der = integral()->hcore_deriv();
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  
   for (int ish=0; ish < gbs.nshell(); ish++) {
     GaussianShell& gsi = gbs(ish);
       
@@ -59,17 +51,16 @@ SCF::compute_gradient(const RefSCVector& gradient)
       int jend = jstart + gsj.nfunction();
 
       DerivCenters cent;
-      int x;
 
-      overlap_der->compute_shell(ish,jsh,cent);
-      const double *buf = overlap_der->buffer();
+      derint->compute_shell(ish,jsh,cent);
+      const double *buf = derint->buffer();
+
       int index=0;
-      for (x=0; x<cent.n(); x++) {
-        double dx, dy, dz;
-        dx = dy = dz = 0.0;
+      for (int x=0; x < cent.n(); x++) {
+        double dx=0, dy=0, dz=0;
         for (int i=istart; i < iend; i++) {
           for (int j=jstart; j < jend; j++) {
-            double ewij = lag.get_element(i,j);
+            double ewij = density.get_element(i,j);
             dx += buf[index++] * ewij;
             dy += buf[index++] * ewij;
             dz += buf[index++] * ewij;
@@ -80,56 +71,65 @@ SCF::compute_gradient(const RefSCVector& gradient)
           dy *= 2.0;
           dz *= 2.0;
         }
-        gradient.accumulate_element(x*3+0, dx);
-        gradient.accumulate_element(x*3+1, dy);
-        gradient.accumulate_element(x*3+2, dz);
+        gradient.accumulate_element(cent.atom(x)*3+0, dx);
+        gradient.accumulate_element(cent.atom(x)*3+1, dy);
+        gradient.accumulate_element(cent.atom(x)*3+2, dz);
         if (cent.has_omitted_center()) {
-          int o = cent.omitted_center();
-          gradient.accumulate_element(o*3+0, -dx);
-          gradient.accumulate_element(o*3+1, -dy);
-          gradient.accumulate_element(o*3+2, -dz);
-        }
-      }
-
-      hcore_der->compute_shell(ish,jsh,cent);
-      buf = hcore_der->buffer();
-      index=0;
-      for (x=0; x<cent.n(); x++) {
-        double dx, dy, dz;
-        dx = dy = dz = 0.0;
-        for (int i=istart; i < iend; i++) {
-          for (int j=jstart; j < jend; j++) {
-            double dij = dens.get_element(i,j);
-            dx += buf[index++] * dij;
-            dy += buf[index++] * dij;
-            dz += buf[index++] * dij;
+          int o = cent.omitted_atom();
+          if (cent.atom(x) != o) {
+            gradient.accumulate_element(o*3+0, -dx);
+            gradient.accumulate_element(o*3+1, -dy);
+            gradient.accumulate_element(o*3+2, -dz);
           }
-        }
-        if (ish != jsh) {
-          dx *= 2.0;
-          dy *= 2.0;
-          dz *= 2.0;
-        }
-        gradient.accumulate_element(x*3+0, dx);
-        gradient.accumulate_element(x*3+1, dy);
-        gradient.accumulate_element(x*3+2, dz);
-        if (cent.has_omitted_center()) {
-          int o = cent.omitted_center();
-          gradient.accumulate_element(o*3+0, -dx);
-          gradient.accumulate_element(o*3+1, -dy);
-          gradient.accumulate_element(o*3+2, -dz);
+          x++;
         }
       }
     }
   }
+}
 
-  lag=0;
+//////////////////////////////////////////////////////////////////////////////
+
+void
+SCF::compute_gradient(const RefSCVector& gradient)
+{
+  init_gradient();
+
+  // handy things
+  GaussianBasisSet& gbs = *basis().pointer();
+  Molecule& mol = *molecule().pointer();
+
+  // do the nuclear contribution
+  gradient.assign(0.0);
+  double xyz[3];
+  for (int x=0; x < mol.natom(); x++) {
+    mol.nuclear_repulsion_1der(x, xyz);
+    for (int x1=0; x1 < 3; x1++)
+      gradient.accumulate_element(x*3+x1,xyz[x1]);
+  }
+  gradient.print("nuclear-nuclear term");
+
+  // form overlap contribution
+  gradient.assign(0.0);
+  RefSymmSCMatrix dens = lagrangian();
+  dens.print("lag");
+  RefOneBodyDerivInt derint = integral()->overlap_deriv();
+  ob_gradient(derint, gradient, dens, basis());
+  gradient.print("overlap term");
+  
+  // other one electron contributions
+  gradient.assign(0.0);
+  dens = gradient_density();
+  dens.print("density");
+  derint = integral()->hcore_deriv();
+  ob_gradient(derint, gradient, dens, basis());
+
   dens=0;
-  overlap_der=0;
-  hcore_der=0;
+  derint=0;
   
   gradient.print("one electron contribution");
 
+#if 0
   RefTwoBodyDerivInt tbints = integral()->electron_repulsion_deriv();
   
   // now the two electron part

@@ -183,7 +183,7 @@ CLSCF::value_implemented()
 int
 CLSCF::gradient_implemented()
 {
-  return 0;
+  return 1;
 }
 
 int
@@ -373,8 +373,9 @@ CLSCF::new_density()
         double pt=0;
         int k;
         for (k=0; k < ndocc_[ir]; k++)
-          pt += 2.0*vir->get_element(i,k)*vir->get_element(j,k);
+          pt += vir->get_element(i,k)*vir->get_element(j,k);
 
+        pt *= 2.0;
         double dlt = pt - dir->get_element(i,j);
         delta += dlt*dlt;
       
@@ -633,24 +634,28 @@ CLSCF::done_gradient()
 RefSymmSCMatrix
 CLSCF::lagrangian()
 {
-  RefSymmSCMatrix ewdens(basis_dimension(), basis_matrixkit());
-  RefSymmSCMatrix evals = effective_fock();
-  
-#if 0
-  for (int i=0; i < scf_vector_->nrow(); i++) {
-    for (int j=0; j <= i; j++) {
-      double pt=0;
-      for (int k=0; k < ndocc_; k++)
-        pt += scf_vector_->get_element(i,k)*scf_vector_->get_element(j,k)*
-          evals->get_element(k,k);
-      
-      ewdens->set_element(i,j,pt);
-    }
-  }
-  ewdens->scale(-2.0);
-#endif
+  // the MO lagrangian is just the eigenvalues of the occupied MO's
+  RefSymmSCMatrix mofock = effective_fock();
+  RefDiagSCMatrix evals = mofock.eigvals();
 
-  return ewdens;
+  BlockedDiagSCMatrix *ev = BlockedDiagSCMatrix::castdown(evals);
+  for (int b=0; b < ev->nblocks(); b++) {
+    RefDiagSCMatrix evb = ev->block(b);
+    for (int i=ndocc_[b]; i < evb.n(); i++)
+      evb->set_element(i,0.0);
+  }
+  
+  // transform MO lagrangian to SO basis
+  RefSymmSCMatrix so_lag(basis_dimension(), basis_matrixkit());
+  so_lag.assign(0.0);
+  so_lag.accumulate_transform(scf_vector_, evals);
+  
+  // and then from SO to AO
+  RefPetiteList pl = integral()->petite_list();
+  RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
+  ao_lag->scale(-2.0);
+
+  return ao_lag;
 }
 
 RefSymmSCMatrix
@@ -658,19 +663,37 @@ CLSCF::gradient_density()
 {
   cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
   
-#if 0
-  for (int i=0; i < scf_vector_->nrow(); i++) {
-    for (int j=0; j <= i; j++) {
-      double pt=0;
-      for (int k=0; k < ndocc_; k++)
-        pt += scf_vector_->get_element(i,k)*scf_vector_->get_element(j,k);
-      
-      cl_dens_->set_element(i,j,2.0*pt);
+  BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(
+    scf_vector_, "CLSCF::new_density: scf_vector");
+
+  BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
+    cl_dens_, "CLSCF::new_density: density");
+
+  RefPetiteList pl = integral()->petite_list(basis());
+  
+  int ij=0;
+  double delta=0;
+
+  for (int ir=0; ir < vecp->nblocks(); ir++) {
+    int nbasis = pl->nfunction(ir);
+
+    RefSCMatrix vir = vecp->block(ir);
+    RefSymmSCMatrix dir = densp->block(ir);
+  
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j <= i; j++,ij++) {
+        double pt=0;
+        for (int k=0; k < ndocc_[ir]; k++)
+          pt += vir->get_element(i,k)*vir->get_element(j,k);
+
+        dir->set_element(i,j,2.0*pt);
+      }
     }
   }
-#endif
   
-  return cl_dens_;
+  RefSymmSCMatrix ao_dens = pl->to_AO_basis(cl_dens_);
+
+  return ao_dens;
 }
 
 void

@@ -33,6 +33,7 @@
 #define _util_misc_regtime_h
 
 #include <iostream>
+#include <string>
 #include <util/class/class.h>
 
 namespace sc {

@@ -133,6 +133,7 @@ class ReplSCMatrix: public SCMatrix {
     void accumulate(SCVector*);
     void transpose_this();
     double invert_this();
+    void svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V);
     double solve_this(SCVector*);
     double determ_this();
     double trace();

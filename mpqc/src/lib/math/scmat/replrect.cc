@@ -610,6 +610,81 @@ ReplSCMatrix::trace()
   return ret;
 }
 
+void
+ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
+{
+  ReplSCMatrix* lU =
+    ReplSCMatrix::require_castdown(U,"ReplSCMatrix::svd_this");
+  ReplSCMatrix* lV =
+    ReplSCMatrix::require_castdown(V,"ReplSCMatrix::svd_this");
+  ReplDiagSCMatrix* lsigma =
+    ReplDiagSCMatrix::require_castdown(sigma,"ReplSCMatrix::svd_this");
+
+  RefSCDimension mdim = rowdim();
+  RefSCDimension ndim = coldim();
+  int m = mdim.n();
+  int n = ndim.n();
+
+  RefSCDimension pdim;
+  if (m == n && m == sigma->dim().n())
+    pdim = sigma->dim();
+  else if (m<n)
+    pdim = mdim;
+  else
+    pdim = ndim;
+
+  int p = pdim.n();
+
+  if (!mdim->equiv(lU->rowdim()) ||
+      !mdim->equiv(lU->coldim()) ||
+      !ndim->equiv(lV->rowdim()) ||
+      !ndim->equiv(lV->coldim()) ||
+      !pdim->equiv(sigma->dim())) {
+      fprintf(stderr,"ReplSCMatrix: svd_this: dimension mismatch\n");
+      abort();
+    }
+
+  // form a fortran style matrix for the SVD routines
+  double *dA = new double[m*n];
+  double *dU = new double[m*m];
+  double *dV = new double[n*n];
+  double *dsigma = new double[n];
+  double *w = new double[(3*p-1>m)?(3*p-1):m];
+
+  int i,j;
+  for (i=0; i<m; i++) {
+      for (j=0; j<n; j++) {
+          dA[i + j*m] = this->rows[i][j];
+        }
+    }
+
+  int three = 3;
+
+  sing_(dU, &m, &three, dsigma, dV, &n, &three, dA, &m, &m, &n, w);
+
+  for (i=0; i<m; i++) {
+      for (j=0; j<m; j++) {
+          lU->rows[i][j] = dU[i + j*m];
+        }
+    }
+
+  for (i=0; i<n; i++) {
+      for (j=0; j<n; j++) {
+          lV->rows[i][j] = dV[i + j*n];
+        }
+    }
+
+  for (i=0; i<p; i++) {
+      lsigma->matrix[i] = dsigma[i];
+    }
+
+  delete[] dA;
+  delete[] dU;
+  delete[] dV;
+  delete[] dsigma;
+  delete[] w;
+}
+
 double
 ReplSCMatrix::solve_this(SCVector*v)
 {

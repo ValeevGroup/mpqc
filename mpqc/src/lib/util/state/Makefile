@@ -36,7 +36,7 @@ default:: $(DEPENDINCLUDE)
 default:: libstate.a
 
 statetest: statetest.o libstate.a ../keyval/libkeyval.a ../class/libclass.a ../container/libcontainer.a
-	$(CXX) $(CXXFLAGS) -o statetest $^
+	$(CXX) $(CXXFLAGS) -o statetest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -840,3 +840,66 @@ Molecule::cleanup_molecule()
  // one last pass to make me happy
   get_rid_of_annoying_numbers(this);
 }
+
+///////////////////////////////////////////////////////////////////
+// Compute the principal axes and the principal moments of inertia
+///////////////////////////////////////////////////////////////////
+
+void
+Molecule::principal_moments_of_inertia(double *evals, double **evecs)
+{
+
+  // The principal moments of inertia are computed in amu*angstrom^2
+  // evals: principal moments of inertia
+  // evecs: principal axes (optional argument)
+
+  const double au_to_angs = 0.2800283608302436; // for moments of inertia
+
+  double *inert[3];  // inertia tensor
+
+  int i, j;
+  int delete_evecs = 0;
+
+  // (allocate and) initialize evecs, evals, and inert
+  if (!evecs) {
+    evecs = new double*[3];
+    for (i=0; i<3; i++) evecs[i] = new double[3];
+    delete_evecs = 1;
+    }
+  for (i=0; i<3; i++) {
+    inert[i] = new double[3];
+    memset(inert[i],'\0',sizeof(double)*3);
+    memset(evecs[i],'\0',sizeof(double)*3);
+    }
+  memset(evals,'\0',sizeof(double)*3);
+
+  // translate molecule so origin becomes the center of mass
+  center_of_mass();
+  move_to_com();
+
+  // compute inertia tensor
+  AtomicCenter ac;
+  for (i=0; i<natom(); i++) {
+    ac = atom(i);
+    double m=au_to_angs*ac.element().mass();
+    inert[0][0] += m * (ac[1]*ac[1] + ac[2]*ac[2]);
+    inert[1][0] -= m * ac[0]*ac[1];
+    inert[1][1] += m * (ac[0]*ac[0] + ac[2]*ac[2]);
+    inert[2][0] -= m * ac[0]*ac[2];
+    inert[2][1] -= m * ac[1]*ac[2];
+    inert[2][2] += m * (ac[0]*ac[0] + ac[1]*ac[1]);
+    }
+  inert[0][1] = inert[1][0];
+  inert[0][2] = inert[2][0];
+  inert[1][2] = inert[2][1];
+
+  cmat_diag(inert, evals, evecs, 3, 1, 1e-14);
+
+  if (delete_evecs) {
+    for (i=0; i<3; i++) delete[] evecs[i];
+    delete[] evecs;
+    }
+  for (i=0; i<3; i++) {
+    delete[] inert[i];
+    }
+}

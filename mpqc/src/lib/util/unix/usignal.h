@@ -26,7 +26,11 @@
 #include <signal.h>
 
 #if defined(SGI)
+#ifdef __GNUC__
 typedef  void  Sigfunc(int,...);  /* for signal handlers */
+#else
+typedef  void  Sigfunc(...);  /* for signal handlers */
+#endif
 #define SIG_HANDLER(a,b) void a(int b,...)
 #else
 typedef  void  Sigfunc(int);  /* for signal handlers */

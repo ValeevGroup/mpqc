@@ -8,7 +8,7 @@ SETIMPL = AVL
 MAPIMPL = RAVL
 
 CXXSRC = state.cc state_bin.cc \
-         state_ptr.cc state_text.cc state_xdr.cc state_file.cc
+         state_ptr.cc state_text.cc state_xdr.cc state_file.cc qc_xdr_i.cc
 
 GENCXXSRC = stateptrSet.cc \
             stateptr$(SETIMPL)Set.cc statenumSet.cc statenum$(SETIMPL)Set.cc \
@@ -18,7 +18,8 @@ LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 GENSRC = $(GENCXXSRC)
 
 INC =  LIBS.h state.h state_debug.h state_net.h state_ptr.h \
-       statenumdefs.h stateptrdefs.h qc_xdr.h classddefs.h
+       statenumdefs.h stateptrdefs.h qc_xdr.h classddefs.h \
+       qc_xdr_i.h
 GENINC = stateptrImplSet.h statenumImplSet.h \
          stateptrSet.h stateptr$(SETIMPL)Set.h statenumSet.h \
          statenum$(SETIMPL)Set.h \

@@ -25,3 +25,6 @@ CLASSNAME::restore_state(StateIn&si)
 {
   return CLASSNAME::castdown(SavableState::restore_state(si));
 }
+
+#undef stringize
+#undef stringize_

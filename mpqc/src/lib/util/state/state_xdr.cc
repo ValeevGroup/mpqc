@@ -125,6 +125,11 @@ StateOutBinXDR::~StateOutBinXDR()
 {
 }
 
+int StateOutBinXDR::put_array_void(const void*v,int i)
+{
+  return StateOutBin::put_array_void(v,i);
+}
+
 //////////////////////////////////////////////////////////////
 
 StateInBinXDR::StateInBinXDR() :
@@ -144,4 +149,9 @@ StateInBinXDR::StateInBinXDR(const char *path, const char * mode) :
 
 StateInBinXDR::~StateInBinXDR()
 {
+}
+
+int StateInBinXDR::get_array_void(void*v,int i)
+{
+  return StateInBin::get_array_void(v,i);
 }

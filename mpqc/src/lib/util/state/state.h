@@ -17,6 +17,8 @@ class SavableState: virtual public DescribedClass {
 #   include <util/class/classda.h>
   protected:
     SavableState();
+    SavableState(const SavableState&);
+    SavableState& operator=(const SavableState&);
   public:
     virtual ~SavableState();
 
@@ -69,6 +71,10 @@ class ClassDescPintMap;
 class StateOut: virtual public DescribedClass {
 #   define CLASSNAME StateOut
 #   include <util/class/classda.h>
+  private:
+    // do not allow copy constructor or assignment
+    StateOut(const StateOut&);
+    operator=(const StateOut&);
   protected:
     StateDataPtrSet* ps_;
     ClassDescPintMap* _classidmap;
@@ -102,6 +108,10 @@ DescribedClass_REF_dec(StateOut);
 class StateIn: virtual public DescribedClass {
 #   define CLASSNAME StateIn
 #   include <util/class/classda.h>
+  private:
+    // do not allow copy constructor or assignment
+    StateIn(const StateIn&);
+    operator=(const StateIn&);
   protected:
     StateDataNumSet* ps_;
     int _nextobject;
@@ -141,6 +151,10 @@ DescribedClass_REF_dec(StateIn);
 ////////////////////////////////////////////////////////////////////
 
 class StateOutFile: virtual public StateOut {
+  private:
+    // do not allow copy constructor or assignment
+    StateOutFile(const StateOutFile&);
+    operator=(const StateOutFile&);
   protected:
     int opened_;
     FILE* fp_;
@@ -153,9 +167,14 @@ class StateOutFile: virtual public StateOut {
     virtual void flush();
     virtual void close();
     virtual void rewind();
+    virtual int open(const char *, const char * = "w");
   };
 
 class StateInFile: virtual public StateIn {
+  private:
+    // do not allow copy constructor or assignment
+    StateInFile(const StateInFile&);
+    operator=(const StateInFile&);
   protected:
     int opened_;
     FILE* fp_;
@@ -168,11 +187,16 @@ class StateInFile: virtual public StateIn {
     virtual void flush();
     virtual void close();
     virtual void rewind();
+    virtual int open(const char *, const char * = "r");
   };
 
 ////////////////////////////////////////////////////////////////////
 
 class StateOutText: public StateOutFile {
+  private:
+    // do not allow copy constructor or assignment
+    StateOutText(const StateOutText&);
+    operator=(const StateOutText&);
   protected:
     void newline();
     void comment(const char*,...);
@@ -202,6 +226,10 @@ class StateOutText: public StateOutFile {
   };
 
 class StateInText: public StateInFile {
+  private:
+    // do not allow copy constructor or assignment
+    StateInText(const StateInText&);
+    operator=(const StateInText&);
   protected:
     int _newlines;
     
@@ -240,6 +268,10 @@ class StateInText: public StateInFile {
 ////////////////////////////////////////////////////////////////////
 
 class StateOutBin: public StateOutFile {
+  private:
+    // do not allow copy constructor or assignment
+    StateOutBin(const StateOutBin&);
+    operator=(const StateOutBin&);
   protected:
     int put_array_void(const void*,int);
   public:
@@ -250,6 +282,10 @@ class StateOutBin: public StateOutFile {
   };
 
 class StateInBin: public StateInFile {
+  private:
+    // do not allow copy constructor or assignment
+    StateInBin(const StateInBin&);
+    operator=(const StateInBin&);
   protected:
     int get_array_void(void*,int);
   public:
@@ -262,6 +298,10 @@ class StateInBin: public StateInFile {
 ////////////////////////////////////////////////////////////////////
 
 class StateOutXDR : virtual public StateOut, public QCXDR {
+  private:
+    // do not allow copy constructor or assignment
+    StateOutXDR(const StateOutXDR&);
+    operator=(const StateOutXDR&);
   protected:
   public:
     StateOutXDR();
@@ -275,10 +315,13 @@ class StateOutXDR : virtual public StateOut, public QCXDR {
 class StateOutBinXDR : public StateOutBin,
                        public StateOutXDR
 {
+  private:
+    // do not allow copy constructor or assignment
+    StateOutBinXDR(const StateOutBinXDR&);
+    operator=(const StateOutBinXDR&);
   protected:
     //this is needed for a mips-sgi-irix4 gcc 2.5.2 bug
-    inline int put_array_void(const void*v,int i)
-    { StateOutBin::put_array_void(v,i); }
+    int put_array_void(const void*v,int i);
   public:
     StateOutBinXDR();
     StateOutBinXDR(FILE*);
@@ -287,6 +330,10 @@ class StateOutBinXDR : public StateOutBin,
 };
 
 class StateInXDR : virtual public StateIn, public QCXDR {
+  private:
+    // do not allow copy constructor or assignment
+    StateInXDR(const StateInXDR&);
+    operator=(const StateInXDR&);
   protected:
   public:
     StateInXDR();
@@ -300,10 +347,13 @@ class StateInXDR : virtual public StateIn, public QCXDR {
 class StateInBinXDR : public StateInBin,
                       public StateInXDR
 {
+  private:
+    // do not allow copy constructor or assignment
+    StateInBinXDR(const StateInBinXDR&);
+    operator=(const StateInBinXDR&);
   protected:
     //this is needed for a mips-sgi-irix4 gcc 2.5.2 bug
-    inline int get_array_void(void*v,int i)
-    { StateInBin::get_array_void(v,i); }
+    int get_array_void(void*v,int i);
   public:
     StateInBinXDR();
     StateInBinXDR(FILE*);

@@ -197,53 +197,45 @@ int StateInText::get(const ClassDesc**cd)
 int StateOutText::put(char r)
 {
   no_array();
-  StateOut::put(r);
-  //newline();
+  return StateOut::put(r);
 }
 int StateInText::get(char&r)
 {
   no_array();
-  StateIn::get(r);
-  //newline();
+  return StateIn::get(r);
 }
 
 int StateOutText::put(int r)
 {
   no_array();
-  StateOut::put(r);
-  //newline();
+  return StateOut::put(r);
 }
 int StateInText::get(int&r)
 {
   no_array();
-  StateIn::get(r);
-  //newline();
+  return StateIn::get(r);
 }
 
 int StateOutText::put(float r)
 {
   no_array();
-  StateOut::put(r);
-  //newline();
+  return StateOut::put(r);
 }
 int StateInText::get(float&r)
 {
   no_array();
-  StateIn::get(r);
-  //newline();
+  return StateIn::get(r);
 }
 
 int StateOutText::put(double r)
 {
   no_array();
-  StateOut::put(r);
-  //newline();
+  return StateOut::put(r);
 }
 int StateInText::get(double&r)
 {
   no_array();
-  StateIn::get(r);
-  //newline();
+  return StateIn::get(r);
 }
 
 int StateOutText::put(char*s,int size)

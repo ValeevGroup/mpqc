@@ -29,6 +29,15 @@ SavableState::SavableState()
 {
 }
 
+SavableState::SavableState(const SavableState&)
+{
+}
+
+SavableState& SavableState::operator=(const SavableState&)
+{
+  return *this;
+}
+
 SavableState::SavableState(StateIn&si,const ClassDesc& cd)
 {
   // In case si is looking for the next pointer, let it know i
@@ -127,6 +136,15 @@ StateOut::StateOut() :
 {
 }
 
+StateOut::StateOut(const StateOut&) {
+    fprintf(stderr,"StateOut: private copy ctor called???\n");
+    abort();
+}
+StateOut::operator=(const StateOut&) {
+    fprintf(stderr,"StateOut: private assignment called???\n");
+    abort();
+}
+
 StateOut::~StateOut()
 {
   if(ps_) delete ps_; ps_=0;
@@ -157,6 +175,15 @@ StateIn::_castdown(const ClassDesc*cd)
 {
   void* casts[] =  { DescribedClass::_castdown(cd) };
   return do_castdowns(casts,cd);
+}
+
+StateIn::StateIn(const StateIn&) {
+    fprintf(stderr,"StateIn: private copy ctor called???\n");
+    abort();
+}
+StateIn::operator=(const StateIn&) {
+    fprintf(stderr,"StateIn: private assignment called???\n");
+    abort();
 }
 
 StateIn::StateIn() :

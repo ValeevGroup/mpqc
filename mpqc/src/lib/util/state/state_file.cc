@@ -29,6 +29,19 @@ void StateOutFile::flush() { fflush(fp_); }
 void StateOutFile::close() { if(opened_) fclose(fp_); opened_=0; fp_=0; }
 void StateOutFile::rewind() { if(fp_) fseek(fp_,0,0); }
 
+int StateOutFile::open(const char *path, const char * mode)
+{
+  if (opened_) fclose(fp_);
+
+  if ((fp_ = fopen(path,mode))==0) {
+    fprintf(stderr,"StateOutFile::open(%s,%s) failed\n",path,mode);
+    return -1;
+    }
+
+  opened_ = 1;
+  return 0;
+}
+
 ////////////////////////////////////
 
 StateInFile::StateInFile() :
@@ -56,3 +69,17 @@ StateInFile::~StateInFile()
 void StateInFile::flush() { fflush(fp_); }
 void StateInFile::close() { if(opened_) fclose(fp_); opened_=0; fp_=0; }
 void StateInFile::rewind() { if(fp_) fseek(fp_,0,0); }
+
+int StateInFile::open(const char *path, const char * mode)
+{
+  if (opened_) fclose(fp_);
+
+  if ((fp_ = fopen(path,mode))==0) {
+    fprintf(stderr,"StateInFile::open(%s,%s) failed\n",path,mode);
+    return -1;
+    }
+
+  opened_ = 1;
+  return 0;
+}
+

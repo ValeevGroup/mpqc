@@ -118,22 +118,6 @@ StateInText::abort()
 
 ///////////////////////////////////////////////////////////////////////
 
-// int
-// StateOutText::put(const ClassDesc* cd)
-// {
-//   comment("class description for \"%s\"", cd->name());
-//   int result = StateOut::put(cd);
-//   comment("end of class description\n");
-//   return result;
-// }
-// int
-// StateInText::get(const ClassDesc**cd)
-// {
-//   comment();
-//   int result = StateIn::get(cd);
-//   comment();
-//   return result;
-// }
 int StateOutText::put(const ClassDesc*cd)
 {
   //
@@ -141,9 +125,11 @@ int StateOutText::put(const ClassDesc*cd)
   if (!_classidmap->contains((ClassDesc*)cd)) {
       putparents(cd);
       fprintf(fp_," version of class %s is %d\n",cd->name(),cd->version());
+      fflush(fp_);
       _classidmap->operator[]((ClassDesc*)cd) = _nextclassid++;
     }
   fprintf(fp_,"object of class %s being written\n", cd->name());
+  fflush(fp_);
   return 0;
   }
 void
@@ -159,6 +145,7 @@ StateOutText::putparents(const ClassDesc*cd)
           fprintf(fp_," version of class %s is %d\n",
                   tmp->name(),
                   tmp->version());
+          fflush(fp_);
           _classidmap->operator[](tmp) = _nextclassid++;
         }
     }
@@ -243,10 +230,7 @@ int StateOutText::put(char*s,int size)
   if (!s) size = 0;
   if (putpointer((void*)s)) {
       no_newline(); put(size);
-      //start_array();
       int result = put_array_char(s,size);
-      //end_array();
-      //newline();
       return result;
     }
   return 0;
@@ -259,10 +243,7 @@ int StateInText::get(char*&s)
     if (size) {
       s = new char[size];
       havepointer(objnum,(void*)s);
-      //start_array();
       int result = get_array_char(s,size);
-      //end_array();
-      //newline();
       return result;
       }
     else s = 0;
@@ -275,10 +256,7 @@ int StateOutText::put(int*s,int size)
   if (!s) size = 0;
   if (putpointer((void*)s)) {
       no_newline(); put(size);
-      //start_array();
       int result = put_array_int(s,size);
-      //end_array();
-      //newline();
       return result;
     }
   return 0;
@@ -291,10 +269,7 @@ int StateInText::get(int*&s)
     if (size) {
       s = new int[size];
       havepointer(objnum,(void*)s);
-      //start_array();
       int result = get_array_int(s,size);
-      //end_array();
-      //newline();
       return result;
       }
     else s = 0;
@@ -307,10 +282,7 @@ int StateOutText::put(float*s,int size)
   if (!s) size = 0;
   if (putpointer((void*)s)) {
       no_newline(); put(size);
-      //start_array();
       int result = put_array_float(s,size);
-      //end_array();
-      //newline();
       return result;
     }
   return 0;
@@ -323,10 +295,7 @@ int StateInText::get(float*&s)
     if (size) {
       s = new float[size];
       havepointer(objnum,(void*)s);
-      //start_array();
       int result = get_array_float(s,size);
-      //end_array();
-      //newline();
       return result;
       }
     else s = 0;
@@ -339,10 +308,7 @@ int StateOutText::put(double*s,int size)
   if (!s) size = 0;
   if (putpointer((void*)s)) {
       no_newline(); put(size);
-      //start_array();
       int result = put_array_double(s,size);
-      //end_array();
-      //newline();
       return result;
     }
   return 0;
@@ -355,10 +321,7 @@ int StateInText::get(double*&s)
     if (size) {
       s = new double[size];
       havepointer(objnum,(void*)s);
-      //start_array();
       int result = get_array_double(s,size);
-      //end_array();
-      //newline();
       return result;
       }
     else s = 0;
@@ -366,67 +329,24 @@ int StateInText::get(double*&s)
   return 0;
 }
 
-// int StateOutText::put(int*r,int s)
-// {
-//   start_array();
-//   StateOut::put(r,s);
-//   end_array();
-//   newline();
-// }
-// int StateInText::get(int*&r)
-// {
-//   start_array();
-//   StateIn::get(r);
-//   end_array();
-//   newline();
-// }
-// 
-// int StateOutText::put(float*r,int s)
-// {
-//   start_array();
-//   StateOut::put(r,s);
-//   end_array();
-//   newline();
-// }
-// int StateInText::get(float*&r)
-// {
-//   start_array();
-//   StateIn::get(r);
-//   end_array();
-//   newline();
-// }
-// 
-// int StateOutText::put(double*r,int s)
-// {
-//   start_array();
-//   StateOut::put(r,s);
-//   end_array();
-//   newline();
-// }
-// int StateInText::get(double*&r)
-// {
-//   start_array();
-//   StateIn::get(r);
-//   end_array();
-//   newline();
-// }
-
 int StateOutText::putpointer(void*p)
 {
   if (p == 0) {
       fprintf(fp_,"reference to null\n");
+      fflush(fp_);
       return 0;
     }
   StateDataPtr dp(p);
   Pix ind = ps_->seek(dp);
-  //printf("StateOut::putpointer: ind = %d for 0x%x\n",(int)ind,p);
   if (ind == 0) {
       ind = ps_->add(dp);
       fprintf(fp_,"writing object %d\n",int(ind));
+      fflush(fp_);
       return 1;
     }
   else {
       fprintf(fp_,"reference to object %d\n",int(ind));
+      fflush(fp_);
       return 0;
     }
 }
@@ -513,6 +433,7 @@ StateOutText::newline()
       return;
     }
   fprintf(fp_,"\n");
+  fflush(fp_);
 }
 void
 StateInText::newline()
@@ -537,6 +458,7 @@ StateOutText::comment(const char* fmt,...)
   fprintf(fp_, "%% ");
   vfprintf(fp_, fmt, args);
   fprintf(fp_, "\n");
+  fflush(fp_);
   va_end(args);
 }
 void
@@ -630,6 +552,7 @@ int StateOutText::put_array_int(const int*d,int size)
   start_array();
   int nwrit=0;
   for (int i=0; i<size; i++) nwrit += fprintf(fp_," %d",d[i]);
+  fflush(fp_);
   end_array();
   newline();
   return nwrit;
@@ -651,7 +574,8 @@ int StateOutText::put_array_float(const float*d,int size)
 {
   start_array();
   int nwrit=0;
-  for (int i=0; i<size; i++) nwrit += fprintf(fp_," %f",d[i]);
+  for (int i=0; i<size; i++) nwrit += fprintf(fp_," %20.15e",d[i]);
+  fflush(fp_);
   end_array();
   newline();
   return nwrit;
@@ -673,7 +597,8 @@ int StateOutText::put_array_double(const double*d,int size)
 {
   start_array();
   int nwrit=0;
-  for (int i=0; i<size; i++) nwrit += fprintf(fp_," %f",d[i]);
+  for (int i=0; i<size; i++) nwrit += fprintf(fp_," %20.15e",d[i]);
+  fflush(fp_);
   end_array();
   newline();
   return nwrit;

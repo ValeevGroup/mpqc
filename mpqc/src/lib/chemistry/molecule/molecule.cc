@@ -9,6 +9,7 @@
 #include "molecule.h"
 #include "localdef.h"
 #include <math/scmat/local.h>
+#include <math/scmat/cmatrix.h>
 
 SavableState_REF_def(Molecule);
 
@@ -19,8 +20,6 @@ SavableState_REF_def(Molecule);
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
-#include <math/scmat/cmatrix.h>
-
 void *
 Molecule::_castdown(const ClassDesc*cd)
 {

@@ -750,12 +750,13 @@ MBPT2::compute_hsos_v1()
     /* print out various energies etc.*/
 
     cout << indent
-         << scprintf("Number of shell quartets for which AO integrals would\n"
-                     "have been computed without bounds checking: %i\n",
-                     npass*nshell*nshell*(nshell+1)*(nshell+1)/4);
+         << "Number of shell quartets for which AO integrals would" << endl
+         << indent
+         << "have been computed without bounds checking: "
+         << npass*nshell*nshell*(nshell+1)*(nshell+1)/4 << endl;
     cout << indent
-         << scprintf("Number of shell quartets for which AO integrals\n"
-                     "were computed: %i\n",aoint_computed);
+         << "Number of shell quartets for which AO integrals" << endl
+         << indent << "were computed: " << aoint_computed << endl;
     cout << indent
          << scprintf("ROHF energy [au]:                  %17.12lf\n", escf);
     cout << indent

@@ -1733,7 +1733,7 @@ MBPT2::compute_cs_grad()
       if (dograd) {
         cout << indent
              << "Number of shell quartets for which AO integral derivatives\n"
-             << "were computed: " << aointder_computed
+             << indent << "were computed: " << aointder_computed
              << endl;
         }
       }

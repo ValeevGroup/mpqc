@@ -116,10 +116,22 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
 {
   reference_ = keyval->describedclassvalue("reference");
   if (reference_.null()) {
-      cerr << "MBPT2::MBPT2: no reference wavefunction" << endl;
+      cerr << node0 << "MBPT2::MBPT2: no reference wavefunction" << endl;
       abort();
     }
   nfzc = keyval->intvalue("nfzc");
+  char *nfzc_charval = keyval->pcharvalue("nfzc");
+  if (!strcmp(nfzc_charval, "auto")) {
+      if (molecule()->max_z() > 30) {
+          cerr << node0
+               << "MBPT2: cannot use \"nfzc = auto\" for Z > 30" << endl;
+          abort();
+        }
+      nfzc = molecule()->n_core_electrons()/2;
+      cout << node0 << indent
+           << "MBPT2: auto-freezing " << nfzc << " core orbitals" << endl;
+    }
+  delete[] nfzc_charval;
   nfzv = keyval->intvalue("nfzv");
   mem_alloc = keyval->intvalue("memory");
   if (keyval->error() != KeyVal::OK) {
@@ -380,6 +392,25 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       vecs = newvecs;
       vals = newvals;
       delete[] indices;
+    }
+  // check the splitting between frozen and nonfrozen orbitals
+  if (nfzc && nfzc < nbasis) {
+      double split = vals(nfzc) - vals(nfzc-1);
+      if (split < 0.2) {
+          cout << node0 << endl
+               << indent << "WARNING: "
+               << "MBPT2: gap between frozen and active occupied orbitals is "
+               << split << " au" << endl << endl;
+        }
+    }
+  if (nfzv && nbasis-nfzv-1 >= 0) {
+      double split = vals(nbasis-nfzv) - vals(nbasis-nfzv-1);
+      if (split < 0.2) {
+          cout << node0 << endl
+               << indent << "WARNING: "
+               << "MBPT2: gap between frozen and active virtual orbitals is "
+               << split << " au" << endl << endl;
+        }
     }
 }
 

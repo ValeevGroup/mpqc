@@ -425,6 +425,15 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   free(r12ints_file);
 
 
+  /////////////////////////////////////////////////
+  // zero out data arrays prior to the FIRST pass
+  /////////////////////////////////////////////////
+
+  if (!restart) {
+    emp2_aa.assign(0.0);
+    emp2_ab.assign(0.0);
+  }
+  
   /*-----------------------------------
 
     Start the integrals transformation
@@ -725,8 +734,6 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     // For now compute MP2 energy to verify the transformed ERIs
     tim_enter("compute emp2");
 
-    emp2_aa.assign(0.0);
-    emp2_ab.assign(0.0);
     index = 0;
     ij_index = 0;
     for (int i=0; i<ni; i++) {

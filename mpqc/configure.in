@@ -71,6 +71,24 @@ esac
 ]
 )
 
+AC_ARG_ENABLE(ref-macros,
+[  --disable-ref-macros      Do not use macros to declare ref classes.],
+[
+case $enableval in
+  yes)
+    AC_DEFINE(USE_REF_MACROS)
+  ;;
+  no)
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-ref-macros ($enableval)])
+  ;;
+esac
+],[
+  AC_DEFINE(USE_REF_MACROS)
+]
+)
+
 AC_ARG_ENABLE(cross-compile,
 [  --enable-cross-compile  Rather than checking, assume cross compilation.],
 [
@@ -232,9 +250,10 @@ AC_LANG_RESTORE
 
 dnl -------- Checks for cross compiling. ----------
 
-if test X$cross_compiling != Xyes; then
-AC_C_CROSS
-fi
+# obsolete starting at autoconf 2.12
+#if test X$cross_compiling != Xyes; then
+#AC_C_CROSS
+#fi
 
 #if test X$cross_compiling = Xyes -a X$target = X$host; then
 #  AC_MSG_ERROR([Cross compiling, but target is host (use --host).])

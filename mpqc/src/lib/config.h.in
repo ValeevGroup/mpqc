@@ -15,6 +15,9 @@
 /* Define if you want to optimize the reference counting code.  */
 #undef REF_OPTIMIZE
 
+/* Define if you want to use macros instead of templates for ref's.  */
+#undef USE_REF_MACROS
+
 /* Define if you don't have vprintf but do have _doprnt.  */
 #undef HAVE_DOPRNT
 

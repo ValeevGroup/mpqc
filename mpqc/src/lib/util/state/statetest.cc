@@ -287,8 +287,8 @@ D::D(StateIn&s):
   int* nullref;
   s.get(nullref);
   s.get(id);
-  _a = A::restore_state(s);
-  _b = B::restore_state(s);
+  _a.restore_state(s);
+  _b.restore_state(s);
 }
 void
 D::save_data_state(StateOut&s)
@@ -297,8 +297,8 @@ D::save_data_state(StateOut&s)
   C::save_data_state(s);
   s.put((int*)0,0);
   s.put(id);
-  _a->save_state(s);
-  _b->save_state(s);
+  _a.save_state(s);
+  _b.save_state(s);
 }
 
 #define CLASSNAME D

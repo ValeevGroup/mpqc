@@ -65,13 +65,13 @@ MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
 {
   r12eval_ << SavableState::restore_state(si);
 
-  RefSCDimension dim_aa = r12eval_->dim_aa();
-  RefSCDimension dim_ab = r12eval_->dim_ab();
+  RefSCDimension dim_oo_aa = r12eval_->dim_oo_aa();
+  RefSCDimension dim_oo_ab = r12eval_->dim_oo_ab();
   Ref<SCMatrixKit> kit = r12eval_->r12info()->matrixkit();
-  er12_aa_ = kit->vector(dim_aa);
-  er12_ab_ = kit->vector(dim_ab);
-  emp2r12_aa_ = kit->vector(dim_aa);
-  emp2r12_ab_ = kit->vector(dim_ab);
+  er12_aa_ = kit->vector(dim_oo_aa);
+  er12_ab_ = kit->vector(dim_oo_ab);
+  emp2r12_aa_ = kit->vector(dim_oo_aa);
+  emp2r12_ab_ = kit->vector(dim_oo_ab);
  
   er12_aa_.restore(si);
   er12_ab_.restore(si);
@@ -175,6 +175,8 @@ void MP2R12Energy::compute()
   Ref<MessageGrp> msg = r12info->msg();
   int me = msg->me();
   int ntasks = msg->n();
+  
+  bool ebc = r12eval_->ebc();
 
   //
   // Evaluate pair energies:
@@ -185,32 +187,38 @@ void MP2R12Energy::compute()
   int nocc = r12info->nocc();
   int nfzc = r12info->nfzc();
   int nocc_act = r12info->nocc_act();
+  int nvir_act = r12info->nvir_act();
   RefDiagSCMatrix evalmat = r12eval_->evals();
-  double* evals = new double[nocc_act];
+  vector<double> evals_act_occ(nocc_act);
+  vector<double> evals_act_vir(nvir_act);
   for(int i=nfzc; i<nocc; i++)
-    evals[i-nfzc] = evalmat(i);
+    evals_act_occ[i-nfzc] = evalmat(i);
+  for(int i=0; i<nvir_act; i++)
+    evals_act_vir[i] = evalmat(i+nocc);
   evalmat = 0;
 
   // Get the intermediates
   RefSCMatrix Vaa = r12eval_->V_aa();
   RefSCMatrix Xaa = r12eval_->X_aa();
   RefSCMatrix Baa = r12eval_->B_aa();
+  RefSCMatrix Aaa = r12eval_->A_aa();
   RefSCMatrix Vab = r12eval_->V_ab();
   RefSCMatrix Xab = r12eval_->X_ab();
   RefSCMatrix Bab = r12eval_->B_ab();
+  RefSCMatrix Aab = r12eval_->A_ab();
   RefSCVector emp2_aa = r12eval_->emp2_aa();
   RefSCVector emp2_ab = r12eval_->emp2_ab();
 
   // Prepare total and R12 pairs
   Ref<SCMatrixKit> localkit = Vaa.kit();
-  RefSCDimension dim_aa = r12eval_->dim_aa();
-  RefSCDimension dim_ab = r12eval_->dim_ab();
-  int naa = dim_aa.n();
-  int nab = dim_ab.n();
-  emp2r12_aa_ = localkit->vector(dim_aa);
-  emp2r12_ab_ = localkit->vector(dim_ab);
-  er12_aa_ = localkit->vector(dim_aa);
-  er12_ab_ = localkit->vector(dim_ab);
+  RefSCDimension dim_oo_aa = r12eval_->dim_oo_aa();
+  RefSCDimension dim_oo_ab = r12eval_->dim_oo_ab();
+  int naa = dim_oo_aa.n();
+  int nab = dim_oo_ab.n();
+  emp2r12_aa_ = localkit->vector(dim_oo_aa);
+  emp2r12_ab_ = localkit->vector(dim_oo_ab);
+  er12_aa_ = localkit->vector(dim_oo_aa);
+  er12_ab_ = localkit->vector(dim_oo_ab);
   double* er12_aa_vec = new double[naa];
   double* er12_ab_vec = new double[nab];
   bzerofast(er12_aa_vec,naa);
@@ -223,12 +231,12 @@ void MP2R12Energy::compute()
   // Allocate the B matrix:
   // 1) in MP2-R12/A the B matrix is the same for all pairs
   // 2) int MP2-R12/A' the B matrix is pair-specific
-  RefSCMatrix Baa_inv = Baa.clone();
+  RefSCMatrix Baa_ij = Baa.clone();
   if (stdapprox_ == LinearR12::StdApprox_A) {
-    Baa_inv->assign(Baa);
-    Baa_inv->gen_invert_this();
+    Baa_ij->assign(Baa);
+    Baa_ij->gen_invert_this();
     if (debug_ > 1)
-      Baa_inv.print("Inverse alpha-alpha MP2-R12/A B matrix");
+      Baa_ij.print("Inverse alpha-alpha MP2-R12/A B matrix");
   }
   
   int ij=0;
@@ -243,31 +251,48 @@ void MP2R12Energy::compute()
       // In MP2-R12/A' matrices B are pair-specific:
       // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
       if (stdapprox_ == LinearR12::StdApprox_Ap) {
-        Baa_inv.assign(Baa);
+        Baa_ij.assign(Baa);
         int kl=0;
         for(int k=0; k<nocc_act; k++)
           for(int l=0; l<k; l++, kl++) {
             int ow=0;
             for(int o=0; o<nocc_act; o++)
               for(int w=0; w<o; w++, ow++) {
-                double fx = 0.5 * (evals[k] + evals[l] + evals[o] + evals[w] - 2.0*evals[i] - 2.0*evals[j]) *
-                Xaa.get_element(kl,ow);
-                Baa_inv.accumulate_element(kl,ow,fx);
+                double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
+                                   - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
+                            Xaa.get_element(kl,ow);
+
+                Baa_ij.accumulate_element(kl,ow,fx);
+
+                // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+                if (ebc == false) {
+                  double fy = 0.0;
+                  int cd=0;
+                  for(int c=0; c<nvir_act; c++)
+                    for(int d=0; d<c; d++, cd++) {
+
+                      fy -= Aaa.get_element(kl,cd)*Aaa.get_element(ow,cd)/(evals_act_vir[c] + evals_act_occ[d]
+                                                                         - evals_act_occ[i] - evals_act_occ[j]);
+                    }
+
+                  Baa_ij.accumulate_element(kl,ow,fy);
+                }
+
               }
           }
         if (debug_ > 1)
-          Baa_inv.print("Alpha-alpha MP2-R12/A' B matrix");
+          Baa_ij.print("Alpha-alpha MP2-R12/A' B matrix");
 
-        Baa_inv->gen_invert_this();
+        Baa_ij->gen_invert_this();
 
         if (debug_ > 1)
-          Baa_inv.print("Inverse alpha-alpha MP2-R12/A' B matrix");
+          Baa_ij.print("Inverse alpha-alpha MP2-R12/A' B matrix");
       }
 
-      double eaa_ij = -2.0*Vaa_ij.dot(Baa_inv * Vaa_ij);
+      double eaa_ij = -2.0*Vaa_ij.dot(Baa_ij * Vaa_ij);
       er12_aa_vec[ij] = eaa_ij;
     }
-  Baa_inv = 0;
+  Baa_ij = 0;
   msg->sum(er12_aa_vec,naa,0,-1);
   er12_aa_->assign(er12_aa_vec);
   emp2r12_aa_->assign(emp2_aa);
@@ -306,9 +331,25 @@ void MP2R12Energy::compute()
             int ow=0;
             for(int o=0; o<nocc_act; o++)
               for(int w=0; w<nocc_act; w++, ow++) {
-                double fx = 0.5 * (evals[k] + evals[l] + evals[o] + evals[w] - 2.0*evals[i] - 2.0*evals[j]) *
+                double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
+                                   - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
                 Xab.get_element(kl,ow);
                 Bab_ij.accumulate_element(kl,ow,fx);
+
+                // If EBC is not assumed add Akl,cd*Acd,ow/(ec+ed-ei-ej)
+                if (ebc == false) {
+                  double fy = 0.0;
+                  int cd=0;
+                  for(int c=0; c<nvir_act; c++)
+                    for(int d=0; d<nvir_act; d++, cd++) {
+
+                      fy -= Aab.get_element(kl,cd)*Aab.get_element(ow,cd)/(evals_act_vir[c] + evals_act_occ[d]
+                                                                           - evals_act_occ[i] - evals_act_occ[j]);
+                    }
+
+                  Bab_ij.accumulate_element(kl,ow,fy);
+                }
+
               }
           }
         if (debug_ > 1)
@@ -329,8 +370,6 @@ void MP2R12Energy::compute()
   emp2r12_ab_->assign(emp2_ab);
   emp2r12_ab_->accumulate(er12_ab_);
   delete[] er12_ab_vec;
-
-  delete[] evals;
 
   evaluated_ = true;
   
@@ -410,12 +449,12 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   else {
 
     Ref<SCMatrixKit> localkit = er12_aa_.kit();
-    RefSCVector emp2r12_0 = localkit->vector(r12eval_->dim_s());
-    RefSCVector emp2r12_1 = localkit->vector(r12eval_->dim_t());
-    RefSCVector emp2_0 = localkit->vector(r12eval_->dim_s());
-    RefSCVector emp2_1 = localkit->vector(r12eval_->dim_t());
-    RefSCVector er12_0 = localkit->vector(r12eval_->dim_s());
-    RefSCVector er12_1 = localkit->vector(r12eval_->dim_t());
+    RefSCVector emp2r12_0 = localkit->vector(r12eval_->dim_oo_s());
+    RefSCVector emp2r12_1 = localkit->vector(r12eval_->dim_oo_t());
+    RefSCVector emp2_0 = localkit->vector(r12eval_->dim_oo_s());
+    RefSCVector emp2_1 = localkit->vector(r12eval_->dim_oo_t());
+    RefSCVector er12_0 = localkit->vector(r12eval_->dim_oo_s());
+    RefSCVector er12_1 = localkit->vector(r12eval_->dim_oo_t());
 
     // Triplet pairs are easy
     emp2r12_1->assign(emp2r12_aa_);
@@ -459,8 +498,8 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
       }
 
     // compute total singlet and triplet energies
-    RefSCVector unit_0 = localkit->vector(r12eval_->dim_s());
-    RefSCVector unit_1 = localkit->vector(r12eval_->dim_t());
+    RefSCVector unit_0 = localkit->vector(r12eval_->dim_oo_s());
+    RefSCVector unit_1 = localkit->vector(r12eval_->dim_oo_t());
     unit_0->assign(1.0);
     unit_1->assign(1.0);
     emp2tot_0 = emp2_0.dot(unit_0);

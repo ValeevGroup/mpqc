@@ -14,8 +14,6 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <tmpl.h>
-#include <util/bio/libbio.h>
-#include <util/keyval/ipv2c.h>
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 #include <util/misc/libmisc.h>

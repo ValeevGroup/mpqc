@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
@@ -69,6 +70,19 @@ R12IntsAcc_Node0File::R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char* file
   filename_ = strdup(filename);
   if (!restart) {
     datafile_ = creat(filename_,0644);
+    // If the file was not opened correctly - throw an exception
+    if (datafile_ == -1) {
+      switch (errno) {
+	case EACCES:
+	throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- access to the requested file is not allowed");
+	case ENOSPC:
+	throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- no space left in the filesystem");
+
+	default:
+        throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- failed to open POSIX file on node 0");
+      }
+    }
+    // If everything is fine close it and proceed
     close(datafile_);
   }
 }

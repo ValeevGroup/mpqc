@@ -33,10 +33,13 @@
 #include <string.h>
 #include <math.h>
 
+#include <util/group/thread.h>
 #include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/tformv3.h>
 #include <chemistry/qc/intv3/utils.h>
+
+static RefThreadLock lock;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -539,6 +542,8 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
     }
 #endif
 
+  lock->lock();
+
   copy_to_source(integrals, nsource1*nsource2*nsource3*nsource4);
   memset(target, 0, sizeof(double)*ntarget1*ntarget2*ntarget3*ntarget4);
 
@@ -599,6 +604,8 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
       ogcfunc[0] += nfunci;
     }
 
+  lock->unlock();
+
 #if PRINT
     {
       double *tmp = integrals;
@@ -630,6 +637,10 @@ intv3_transform_2e(double *integrals, double *target,
   int pure3 = sh3->has_pure();
   int pure4 = sh4->has_pure();
 
+  if (lock.null()) {
+      lock = ThreadGrp::get_default_threadgrp()->new_lock();
+    }
+  
   if (pure1) {
       do_gencon_sparse_transform_2e(integrals, target, 0, sh1, sh2, sh3, sh4);
       integrals = target;

@@ -3,11 +3,13 @@ extern "C" {
 #include <stdio.h>
 }
 
+#include <math/scmat/local.h>
+#include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 #include "density.h"
 
 ElectronDensity::ElectronDensity(Wavefunction&wfn):
-  Volume(3),
+  Volume(new LocalSCDimension(3)),
   _wfn(wfn)
 {
 }
@@ -19,19 +21,23 @@ ElectronDensity::~ElectronDensity()
 void
 ElectronDensity::compute()
 {
-  const ColumnVector& cv = NLP0::GetX();
-  Point3 r;
-  r[0] = cv.element(0);
-  r[1] = cv.element(1);
-  r[2] = cv.element(2);
+  RefSCVector cv = get_x();
+  RefSCVector r(dimension());
+  r[0] = cv.get_element(0);
+  r[1] = cv.get_element(1);
+  r[2] = cv.get_element(2);
+  cart_point rc;
+  rc[0] = r[0]; rc[1] = r[1]; rc[2] = r[2];
   // do_gradient will automatically cause the value to be computed
   if (do_gradient()) {
-      DVector d(3);
-      set_value(_wfn.density_gradient(r,d.pointer()));
+      RefSCVector d(dimension());
+      double v[3];
+      set_value(_wfn.density_gradient(rc,v));
+      d.assign(v);
       set_gradient(d);
     }
   else if (do_value()) {
-      set_value(_wfn.density(r));
+      set_value(_wfn.density(rc));
     }
   if (do_hessian()) {
       fprintf(stderr,"ElectronDensity::compute(): "
@@ -44,9 +50,9 @@ ElectronDensity::compute()
 void
 ElectronDensity::boundingbox(double valuemin,
                              double valuemax,
-                             Point& p1, Point& p2)
+                             RefSCVector& p1, RefSCVector& p2)
 {
-  Molecule& mol = _wfn.molecule();
+  Molecule& mol = *_wfn.molecule();
 
   if (mol.natom() == 0) {
       for (int i=0; i<3; i++) p1[i] = p2[i] = 0.0;
@@ -61,7 +67,7 @@ ElectronDensity::boundingbox(double valuemin,
         }
     }
   for (i=0; i<3; i++) {
-      p1[i] -= 3.0;
-      p2[i] += 3.0;
+      p1[i] = p1[i] - 3.0;
+      p2[i] = p2[i] + 3.0;
     }
 }

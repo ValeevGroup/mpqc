@@ -16,6 +16,9 @@
 #define QUERY_FUNCTION_IMPL(type,property) \
   INLINE const type ChemicalElement::property() const \
   { return atom_info[Z_].property; }
+#define QUERY_FUNCTION_CONV_IMPL(type,property,unit_conversion) \
+  INLINE const type ChemicalElement::property() const \
+  { return atom_info[Z_].property * unit_conversion; }
 
 							      
 class ChemicalElement :
@@ -78,7 +81,6 @@ class ChemicalElement :
     QUERY_FUNCTION_PROTO(double,density);
     QUERY_FUNCTION_PROTO(double,atomic_radius);
     QUERY_FUNCTION_PROTO(double,vdw_radius);
-    double atomic_radius_au() const;
     double charge() const;
 };
 DescribedClass_REF_dec(ChemicalElement);

@@ -187,13 +187,15 @@ LocalSCMatrix::coldim()
 double
 LocalSCMatrix::get_element(int i,int j)
 {
-  return block->data[compute_offset(i,j)];
+  int off = compute_offset(i,j);
+  return block->data[off];
 }
 
 void
 LocalSCMatrix::set_element(int i,int j,double a)
 {
-  block->data[compute_offset(i,j)] = a;
+  int off = compute_offset(i,j);
+  block->data[off] = a;
 }
 
 void
@@ -219,6 +221,102 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
            rows, 0,
            nrow(), la->ncol(), this->ncol(),
            1);
+}
+
+// does the outer product a x b.  this must have rowdim() == a->dim() and
+// coldim() == b->dim()
+void
+LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
+{
+  const char* name = "LocalSCMatrix::accumulate_outer_product";
+  // make sure that the arguments are of the correct type
+  LocalSCVector* la = LocalSCVector::require_castdown(a,name);
+  LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
+
+  // make sure that the dimensions match
+  if (this->rowdim() != a->dim()
+      || this->coldim() != b->dim()) {
+      fprintf(stderr,"LocalSCMatrix::"
+              "accumulate_outer_product(SCVector*a,SCVector*b):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nr = a->n();
+  int nc = b->n();
+  double* adat = la->block->data;
+  double* bdat = lb->block->data;
+  double** thisdat = rows;
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<nc; j++) {
+          thisdat[i][j] += adat[i] * bdat[j];
+        }
+    }
+}
+
+void
+LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
+{
+  const char* name = "LocalSCMatrix::accumulate_product";
+  // make sure that the arguments are of the correct type
+  LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
+  LocalSymmSCMatrix* lb = LocalSymmSCMatrix::require_castdown(b,name);
+
+  // make sure that the dimensions match
+  if (this->rowdim() != a->rowdim()
+      || this->coldim() != b->dim()
+      || a->coldim() != b->dim()) {
+      fprintf(stderr,"LocalSCMatrix::"
+              "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  double **cd = rows;
+  double **ad = la->rows;
+  double **bd = lb->rows;
+  int ni = a->rowdim().n();
+  int njk = b->dim().n();
+  for (int i=0; i<ni; i++) {
+      for (int j=0; j<njk; j++) {
+          for (int k=0; k<=j; k++) {
+              cd[i][k] += ad[i][j]*bd[j][k];
+            }
+          for (; k<njk; k++) {
+              cd[i][k] += ad[i][j]*bd[k][j];
+            }
+        }
+    }
+}
+
+void
+LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
+{
+  const char* name = "LocalSCMatrix::accumulate_product";
+  // make sure that the arguments are of the correct type
+  LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
+  LocalDiagSCMatrix* lb = LocalDiagSCMatrix::require_castdown(b,name);
+
+  // make sure that the dimensions match
+  if (this->rowdim() != a->rowdim()
+      || this->coldim() != b->dim()
+      || a->coldim() != b->dim()) {
+      fprintf(stderr,"LocalSCMatrix::"
+              "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  double **cd = rows;
+  double **ad = la->rows;
+  double *bd = lb->block->data;
+  int ni = a->rowdim().n();
+  int nj = b->dim().n();
+  for (int i=0; i<ni; i++) {
+      for (int j=0; j<nj; j++) {
+          cd[i][j] += ad[i][j]*bd[j];
+        }
+    }
 }
 
 void
@@ -504,6 +602,55 @@ LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
   cmat_symmetric_mxm(rows,n(),la->rows,la->ncol(),1);
 }
 
+// computes this += a + a.t
+void
+LocalSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
+{
+  // make sure that the argument is of the correct type
+  LocalSCMatrix* la
+    = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
+                                          "accumulate_symmetric_sum");
+
+  if (la->rowdim() != dim() || la->coldim() != dim()) {
+      fprintf(stderr,"LocalSymmSCMatrix::"
+              "accumulate_symmetric_sum(SCMatrix*a): bad dim");
+      abort();
+    }
+
+  int n = dim().n();
+  double** tdat = this->rows;
+  double** adat = la->rows;
+  for (int i=0; i<n; i++) {
+      for (int j=0; j<=i; j++) {
+          tdat[i][j] += adat[i][j] + adat[j][i];
+        }
+    }
+}
+
+void
+LocalSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  LocalSCVector* la
+    = LocalSCVector::require_castdown(a,"LocalSymmSCMatrix::"
+                                      "accumulate_symmetric_outer_product");
+
+  if (la->dim() != dim()) {
+      fprintf(stderr,"LocalSymmSCMatrix::"
+              "accumulate_symmetric_outer_product(SCMatrix*a): bad dim");
+      abort();
+    }
+
+  int n = dim().n();
+  double** tdat = this->rows;
+  double* adat = la->block->data;
+  for (int i=0; i<n; i++) {
+      for (int j=0; j<=i; j++) {
+          tdat[i][j] += adat[i]*adat[j];
+        }
+    }
+}
+
 // this += a * b * transpose(a)
 void
 LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
@@ -522,6 +669,33 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
     }
 
   cmat_transform_symmetric_matrix(rows,n(),lb->rows,lb->n(),la->rows,1);
+}
+
+double
+LocalSymmSCMatrix::scalar_product(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  LocalSCVector* la
+    = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
+
+  // make sure that the dimensions match
+  if (this->dim() != la->dim()) {
+      fprintf(stderr,"LocalSCVector::"
+              "scale_product(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = n();
+  double* adat = la->block->data;
+  double result = 0.0;
+  for (int i=0; i<nelem; i++) {
+      for (int j=0; j<i; j++) {
+          result += 2.0 * rows[i][j] * adat[i] * adat[j];
+        }
+      result += rows[i][i] * adat[i] * adat[i];
+    }
+  return result;
 }
 
 void
@@ -798,12 +972,22 @@ LocalSCVector::dim()
 double
 LocalSCVector::get_element(int i)
 {
+  int size = block->iend - block->istart;
+  if (i < 0 || i >= size) {
+      fprintf(stderr,"LocalSCVector::get_element: bad index\n");
+      abort();
+    }
   return block->data[i];
 }
 
 void
 LocalSCVector::set_element(int i,double a)
 {
+  int size = block->iend - block->istart;
+  if (i < 0 || i >= size) {
+      fprintf(stderr,"LocalSCVector::set_element: bad index\n");
+      abort();
+    }
   block->data[i] = a;
 }
 
@@ -825,10 +1009,44 @@ LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
     }
 
   cmat_mxm(la->rows, 0,
-           &(lb->block->data), 0,
-           &(block->data), 0,
+           &(lb->block->data), 1,
+           &(block->data), 1,
            n(), la->ncol(), 1,
            1);
+}
+
+void
+LocalSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
+{
+  const char* name = "LocalSCVector::accumulate_product";
+  // make sure that the arguments are of the correct type
+  LocalSymmSCMatrix* la = LocalSymmSCMatrix::require_castdown(a,name);
+  LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
+
+  // make sure that the dimensions match
+  if (this->dim() != a->dim()
+      || a->dim() != b->dim()) {
+      fprintf(stderr,"LocalSCVector::"
+              "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  double* thisdat = block->data;
+  double** adat = la->rows;
+  double* bdat = lb->block->data;
+  int n = dim()->n();
+  for (int i=0; i<n; i++) {
+      int j;
+      double tmp = 0.0;
+      for (j=0; j<=i; j++) {
+          tmp += adat[i][j] * bdat[j];
+        }
+      for (; j<n; j++) {
+          tmp += adat[j][i] * bdat[j];
+        }
+      thisdat[i] += tmp;
+    }
 }
 
 void

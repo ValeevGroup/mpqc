@@ -70,7 +70,7 @@ here and by the \.{libint} library.
 
 @ The input will be parsed with version 2 of the input parser, \.{libipv2}.
 @<Include files.@>=
-#include <util/ipv2/ip_libv2.h>
+#include <util/keyval/ipv2c.h>
 
 @ The derivative integrals are to be computed with the \.{libint} library.
 @<Include files.@>=

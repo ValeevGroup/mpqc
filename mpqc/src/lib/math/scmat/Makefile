@@ -4,6 +4,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
 default:: $(DEPENDINCLUDE)
 default:: libscmat.a
@@ -74,6 +75,9 @@ TESTFILES = # localtest.in
 
 DISTFILES = $(CXXSRC) $(INC) scmat.h $(WEBSRC) Makefile LIBS.h \
             $(TESTSRC) $(TESTFILES)
+
+matrixtest:
+	@echo The target must be a specialization such as localtest.
 
 localtest: localtest.o $(TESTOBJ) libscmat.a \
 	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)

@@ -1,37 +1,40 @@
 
 #include "obwfn.h"
 
-
-void OneBodyWavefunction::init(KeyVal&keyval)
+#define CLASSNAME OneBodyWavefunction
+#define PARENTS public Wavefunction
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+OneBodyWavefunction::_castdown(const ClassDesc*cd)
 {
-  x_changed();
+  void* casts[] =  { Wavefunction::_castdown(cd) };
+  return do_castdowns(casts,cd);
 }
 
-OneBodyWavefunction::OneBodyWavefunction(KeyVal&keyval,
-                           Molecule&mol,
-                           GaussianBasisSet&gbs):
-  Wavefunction(keyval,mol,gbs)
+OneBodyWavefunction::OneBodyWavefunction(KeyVal&keyval):
+  Wavefunction(keyval),
+  _density(this)
 {
-  init(keyval);
-}
-
-OneBodyWavefunction::OneBodyWavefunction(KeyVal&keyval,
-                           Molecule&mol,
-                           GaussianBasisSet&gbs,
-                           MolecularCoor&mc):
-  Wavefunction(keyval,mol,gbs,mc)
-{
-  init(keyval);
 }
 
 OneBodyWavefunction::~OneBodyWavefunction()
 {
 }
 
-void OneBodyWavefunction::x_changed()
+OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
+  SavableState(s,class_desc_),
+  Wavefunction(s),
+  _density(this)
 {
-  Wavefunction::x_changed();
-  _have_density = 0;
+  abort();
+}
+
+void
+OneBodyWavefunction::save_data_state(StateOut&s)
+{
+  Wavefunction::save_data_state(s);
+  abort();
 }
 
 double OneBodyWavefunction::density(cart_point&c)
@@ -39,45 +42,56 @@ double OneBodyWavefunction::density(cart_point&c)
   return Wavefunction::density(c);
 }
 
-const SymmetricMatrix& OneBodyWavefunction::density()
+const RefSymmSCMatrix
+OneBodyWavefunction::density()
 {
 
-  if (!_have_density) {
-      const Matrix& vec = eigenvectors();
-      Matrix ortho;
-      Matrix orthoi;
-      basis().ortho(ortho,orthoi);
-      int nbasis = basis().nbasis();
+  if (!_density.computed()) {
+      RefSCMatrix vec = eigenvectors();
+      RefSCMatrix ortho(dimension(),dimension());
+      RefSCMatrix orthoi(dimension(),dimension());
+      basis()->ortho(ortho,orthoi);
+      int nbasis = basis()->nbasis();
 
-      _density.ReDimension(nbasis);
-      _density = 0.0;
+      RefSymmSCMatrix newdensity(dimension());
+      _density = newdensity;
+      newdensity.assign(0.0);
       for (int k=0; k<nbasis; k++) {
           double occ = occupation(k);
           if (occ == 0.0) continue;
           for (int i=0; i<nbasis; i++) {
               for (int j=0; j<=i; j++) {
-                  _density.element(i,j)
-                    += occ*vec.element(i,k)*vec.element(j,k);
+                  newdensity.set_element(i,j,
+                             newdensity.get_element(i,j)
+                             + occ*vec.get_element(i,k)*vec.get_element(j,k));
                 }
             }
         }
 
-      _have_density = 1;
+      _density.computed() = 1;
     }
 
   return _density;
 }
 
 // Function for returning an orbital value at a point
-double OneBodyWavefunction::orbital(cart_point& r, int iorb)
+double
+OneBodyWavefunction::orbital(cart_point& r, int iorb)
 {
   return Wavefunction::orbital(r,iorb,eigenvectors());
 }
 
 // Function for returning an orbital value at a point
-double OneBodyWavefunction::orbital_density(cart_point& r,
+double
+OneBodyWavefunction::orbital_density(cart_point& r,
                                             int iorb,
                                             double* orbval)
 {
   return Wavefunction::orbital_density(r,iorb,eigenvectors(),orbval);
+}
+
+void
+OneBodyWavefunction::print(SCostream&o)
+{
+  Wavefunction::print(o);
 }

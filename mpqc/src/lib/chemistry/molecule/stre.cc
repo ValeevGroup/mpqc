@@ -40,7 +40,7 @@ StreSimpleCo::_castdown(const ClassDesc*cd)
   void* casts[] =  { SimpleCo::_castdown(cd) };
   return do_castdowns(casts,cd);
 }
-SimpleCo_IMPL(StreSimpleCo)
+SimpleCo_IMPL(StreSimpleCo);
 
 StreSimpleCo::StreSimpleCo() : SimpleCo(2) {}
 
@@ -57,20 +57,17 @@ StreSimpleCo::StreSimpleCo(const char *re, int a1, int a2)
   }
 
 StreSimpleCo::StreSimpleCo(KeyVal &kv)
-  : SimpleCo(2)
+  : SimpleCo(kv,2)
 {
-  label_=kv.pcharvalue(0);
-  atoms[0]=kv.intvalue(1);
-  atoms[1]=kv.intvalue(2);
 }
 
-StreSimpleCo::StreSimpleCo(KeyVal *kv, const char *lab, int n)
-  : SimpleCo(2)
-{
-  label_=kv->pcharvalue(lab,n,1);
-  atoms[0]=kv->intvalue(lab,n,2);
-  atoms[1]=kv->intvalue(lab,n,3);
-  }
+// StreSimpleCo::StreSimpleCo(KeyVal *kv, const char *lab, int n)
+//   : SimpleCo(2)
+// {
+//   label_=kv->pcharvalue(lab,n,1);
+//   atoms[0]=kv->intvalue(lab,n,2);
+//   atoms[1]=kv->intvalue(lab,n,3);
+//   }
 
 StreSimpleCo::~StreSimpleCo()
 {
@@ -88,15 +85,14 @@ StreSimpleCo& StreSimpleCo::operator=(const StreSimpleCo& s)
 double StreSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[0]-1; int b=atoms[1]-1;
-  double rad_ab = (m[a].element().atomic_radius()
-                 + m[b].element().atomic_radius()) / 0.52917706;
+  double rad_ab =   m[a].element().atomic_radius()
+                  + m[b].element().atomic_radius();
 
   calc_intco(m);
 
   double k = 0.3601 * exp(-1.944*(value()-rad_ab));
 
-  // return force constant in mdyn/ang
-  return k*4.359813653/(0.52917706*0.52917706);
+  return k;
   }
 
 double StreSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
@@ -114,21 +110,27 @@ double StreSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   return angstrom();
 }
 
-void StreSimpleCo::print(ostream& os, const char *pad) const
-{
-  os << pad << "Stretch:\n";
-  if(label_) os << pad << "  ref   = " << label() << endl;
-  if(atoms) os << pad << "  atoms = " << atoms[0] << " " << atoms[1] << endl;
-  os << pad << "  len   = " << value() << endl;
-  os.flush();
-  }
 
-void StreSimpleCo::print(FILE *of, const char *pad) const
+const char *
+StreSimpleCo::ctype() const
 {
-  fprintf(of,"%sStretch:\n",pad);
-  if(label_) fprintf(of,"%s  ref   = %s\n",pad,label());
-  if(atoms) fprintf(of,"%s  atoms = %d %d\n",pad,atoms[0],atoms[1]);
-  fprintf(of,"%s  len   = %lf\n",pad,value());
-  fflush(of);
-  }
+  return "STRE";
+}
 
+double
+StreSimpleCo::bohr() const
+{
+  return value_;
+}
+
+double
+StreSimpleCo::angstrom() const
+{
+  return value_*0.52917706;
+}
+
+double
+StreSimpleCo::preferred_value() const
+{
+  return value_*0.52917706;
+}

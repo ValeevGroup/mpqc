@@ -3,50 +3,46 @@
 #define _chemistry_qc_wfn_wfn_h
 
 #include <stdio.h>
-#include <chemistry/molecule/energy.h>
-#include <math/newmat7/newmat.h>
+#include <util/misc/compute.h>
+#include <math/scmat/matrix.h>
 #include <math/topology/point.h>
+#include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/basis.h>
-class Molecule;
-class MolecularCoor;
-class ColumnVector;
-class SymmetricMatrix;
-class Matrix;
 
 class Wavefunction: public MolecularEnergy
 {
+#   define CLASSNAME Wavefunction
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
  private:
-  int _have_natural_orbitals;
-  int _have_natural_density;
-  Matrix _natural_orbitals;
-  DiagonalMatrix _natural_density;
+    RefSCDimension _basisdim;
+    ResultRefSCMatrix _natural_orbitals;
+    ResultRefDiagSCMatrix _natural_density;
 
-  double* bs_values;
-  double* bsg_values;
-  GaussianBasisSet& _gbs;
-  void init(KeyVal&);
+    double* bs_values;
+    double* bsg_values;
+    RefGaussianBasisSet _gbs;
  public:
-  Wavefunction(KeyVal&,Molecule&,GaussianBasisSet&);
-  Wavefunction(KeyVal&,Molecule&,GaussianBasisSet&,MolecularCoor&);
-  virtual ~Wavefunction();
+    Wavefunction(KeyVal&);
+    Wavefunction(StateIn&);
+    virtual ~Wavefunction();
+    void save_data_state(StateOut&);
 
-  void x_changed();
+    void print(SCostream& =SCostream::cout);
+    double density(cart_point&);
+    double density_gradient(cart_point&,double*);
+    double natural_orbital(cart_point& r, int iorb);
+    double natural_orbital_density(cart_point& r, int orb, double* orbval = 0);
+    double orbital(cart_point& r, int iorb, RefSCMatrix& orbs);
+    double orbital_density(cart_point& r,
+                           int iorb,
+                           RefSCMatrix& orbs,
+                           double* orbval = 0);
 
-  void print(FILE* =stdout);
-  double density(cart_point&);
-  double density_gradient(cart_point&,double*);
-  double natural_orbital(cart_point& r, int iorb);
-  double natural_orbital_density(cart_point& r, int iorb, double* orbval = 0);
-  double orbital(cart_point& r, int iorb, const Matrix& orbs);
-  double orbital_density(cart_point& r,
-                         int iorb,
-                         const Matrix& orbs,
-                         double* orbval = 0);
-
-  virtual const SymmetricMatrix& density() = 0;
-  const Matrix& natural_orbitals();
-  const DiagonalMatrix& natural_density();
-  const GaussianBasisSet& basis();
+    virtual RefSymmSCMatrix density() = 0;
+    virtual RefSCMatrix natural_orbitals();
+    virtual RefDiagSCMatrix natural_density();
+    RefGaussianBasisSet basis();
 };
 
 #endif

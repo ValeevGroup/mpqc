@@ -6,65 +6,49 @@ extern "C" {
 #include <stdio.h>
 }
 
-#include <math/opt/nlp.h>
-class Molecule;
-class ColumnVector;
-class SymmetricMatrix;
-class MolecularCoor;
+#include <math/optimize/nlp.h>
+#include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/coor.h>
 
 class MolecularEnergy: public NLP2 {
+#   define CLASSNAME MolecularEnergy
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   private:
-    MolecularCoor* _mc;
+    RefMolecularCoor _mc;
 
-    int _do_energy;
-    int _do_gradient;
-    int _do_hessian;
-
-    int _have_energy;
-    int _have_gradient;
-    int _have_hessian;
-
-    Resultdouble& _energy;
-    ResultColumnVector& _gradient;
-    ResultSymmetricMatrix& _hessian;
   protected:
-    Molecule& _mol;
+    Resultdouble& _energy;
+
+    RefSCDimension _moldim; // the number of cartesian variables
+    RefMolecule _mol;
 
     void failure(const char *);
-
-    virtual void compute() = 0;
 
     virtual void set_energy(double);
     // These are passed gradients and hessian in cartesian coordinates.
     // The _gradient and _hessian in internal coordinates are computed.
-    virtual void set_gradient(ColumnVector&);
-    virtual void set_hessian(SymmetricMatrix&);
+    virtual void set_gradient(RefSCVector&);
+    virtual void set_hessian(RefSymmSCMatrix&);
+
+    void x_to_molecule();
+    void molecule_to_x();
   public:
-    MolecularEnergy(Molecule&);
-    MolecularEnergy(Molecule&,MolecularCoor&);
+    MolecularEnergy(KeyVal&);
+    MolecularEnergy(StateIn&);
+    MolecularEnergy(RefMolecule&);
+    MolecularEnergy(RefMolecule&,RefMolecularCoor&);
     ~MolecularEnergy();
-    void X_to_molecule();
-    void molecule_to_X();
-
-    void Eval();
-    double EvalF();
-    ColumnVector EvalG();
-    SymmetricMatrix EvalH();
-
-    virtual void x_changed();
+    void save_data_state(StateOut&);
 
     virtual double energy();
-    virtual const ColumnVector& gradient();
-    virtual const SymmetricMatrix& hessian();
+    virtual RefMolecule molecule();
+    void guess_hessian(RefSymmSCMatrix&);
 
-    int do_energy(int);
-    int do_gradient(int);
-    int do_hessian(int);
-    int do_energy();
-    int do_gradient();
-    int do_hessian();
+    void set_x(RefSCVector&);
 
-    inline Molecule& molecule() { return _mol; }
+    virtual void print(SCostream& =SCostream::cout);
 };
+SavableState_REF_dec(MolecularEnergy);
 
 #endif

@@ -98,27 +98,12 @@ CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
   return p;
 }
 #ifdef HAVE_CTOR
-DescribedClass*
-CLASSNAME::create()
-{
-  return (DescribedClass*) new CLASSNAME();
-}
 #undef HAVE_CTOR
 #endif
 #ifdef HAVE_KEYVAL_CTOR
-DescribedClass*
-CLASSNAME::create(KeyVal& keyval)
-{
-  return (DescribedClass*) new CLASSNAME(keyval);
-}
 #undef HAVE_KEYVAL_CTOR
 #endif
 #ifdef HAVE_STATEIN_CTOR
-DescribedClass*
-CLASSNAME::create(StateIn& statein)
-{
-  return (DescribedClass*) new CLASSNAME(statein);
-}
 #undef HAVE_STATEIN_CTOR
 #endif
 

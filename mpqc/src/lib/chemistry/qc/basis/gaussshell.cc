@@ -10,7 +10,24 @@
 const char* GaussianShell::amtypes = "spdfghijkl";
 const char* GaussianShell::AMTYPES = "SPDFGHIJKL";
 
-int GaussianShell::max_am()
+SavableState_REF_def(GaussianShell);
+
+#define CLASSNAME GaussianShell
+#define PARENTS virtual public SavableState
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+void *
+GaussianShell::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SavableState::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
+int
+GaussianShell::max_am()
 {
   int r = 0;
   for (int i=0; i<ncon; i++) if (r<l[i]) r = l[i];
@@ -79,6 +96,38 @@ GaussianShell::GaussianShell(KeyVal&keyval)
 
   // Compute the normalization constants
   normalize_shell();
+}
+
+GaussianShell::GaussianShell(StateIn&s):
+  SavableState(s,class_desc_)
+{
+  s.get(nprim);
+  s.get(ncon);
+  s.get(nfunc);
+  s.get(l);
+  s.get(puream);
+  s.get(exp);
+  coef = new double*[ncon];
+  norm = new double*[nfunc];
+  for (int i=0; i<ncon; i++) {
+      s.get(coef[i]);
+      s.get(norm[i]);
+    }
+}
+
+void
+GaussianShell::save_data_state(StateOut&s)
+{
+  s.put(nprim);
+  s.put(ncon);
+  s.put(nfunc);
+  s.put(l,ncon);
+  s.put(puream,ncon);
+  s.put(exp,nprim);
+  for (int i=0; i<ncon; i++) {
+      s.put(coef[i],nprim);
+      s.put(norm[i],nfunc);
+    }
 }
 
 GaussianShell::GaussianShell(KeyVal&keyval,int pure)

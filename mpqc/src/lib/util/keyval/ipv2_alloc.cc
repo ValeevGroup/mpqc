@@ -21,7 +21,7 @@ IPV2::ip_alloc_keyword_tree()
   result->classname = NULL;
   result->truename = NULL;
   result->value = NULL;
-  result->alias = NULL;
+  result->variable = NULL;
 
   return result;
   }
@@ -43,6 +43,7 @@ IPV2::ip_free_keyword_tree(ip_keyword_tree_t* tree)
     if (I->classname) free(I->classname);
     if (I->truename) free(I->truename);
     if (I->value) free(I->value);
+    if (I->variable) free(I->variable);
     nextI = I->across;
     free(I);
     }

@@ -1,6 +1,10 @@
 %
 % $Log$
-% Revision 1.3  1994/05/18 22:04:48  etseidl
+% Revision 1.4  1994/06/08 01:15:26  cljanss
+% Many changes.  These include: newmat7 and nihmatrix -> scmat
+% and mpqcic -> MPSCF and updated optimize stuff.
+%
+% Revision 1.3  1994/05/18  22:04:48  etseidl
 % use distributed bounds initialization
 %
 % Revision 1.2  1994/02/23  02:14:34  cljanss
@@ -205,6 +209,11 @@ the libraries, so we must include its header file.
 @<Include files.@>=
 #include <tmpl.h>
 
+@ The input reading routines in read.cc let us read with either ipv2 or
+keyval.
+@<Include files.@>=
+#include "read.h"
+
 @ The \.{libmath} library provides support for several of the data types used
 here and by the \.{libint} library.
 @<Include files.@>=
@@ -212,7 +221,7 @@ here and by the \.{libint} library.
 
 @ The input will be parsed with version 2 of the input parser, \.{libipv2}.
 @<Include files.@>=
-#include <util/ipv2/ip_libv2.h>
+#include <util/keyval/ipv2c.h>
 
 @ The derivative integrals are to be computed with the \.{libintv2} library.
 @<Include files.@>=
@@ -276,14 +285,40 @@ GLOBAL_FUNCTION void
 dmt_force_csscf_init(initfp)
 FILE *initfp;
 {
+  dmt_force_csscf_init1(0,initfp);
+}
+
+@ 
+
+@<Global functions.@>=
+GLOBAL_FUNCTION void
+dmt_force_csscf_init1(keyval, initfp)
+void* keyval;
+FILE *initfp;
+{
   fp = initfp;
-  ip_cwk_push();
-  ip_cwk_clear();
-  ip_cwk_add(":default");
-  ip_cwk_add(":force");
+  if (!keyval) {
+      ip_cwk_push();
+      ip_cwk_clear();
+      ip_cwk_add(":default");
+      ip_cwk_add(":force");
+    }
   @<Read and broadcast the input options.@> @;@/
-  ip_cwk_pop();
+  if (!keyval) {
+      ip_cwk_pop();
+    }
   init_called = 1;
+}
+
+@ This is called to change the |threshold|.  The argument is $-log_{10}$ of
+the threshold.
+@<Global functions.@>=
+GLOBAL_FUNCTION void
+dmt_force_csscf_threshold_10(new_threshold)
+int new_threshold;
+{
+  threshold_10 = new_threshold;
+  if (bounds) threshold = int_bound_log(pow(10.0, -threshold_10));
 }
 
 @ This should be called when |dmt_force_csscf| is no longer needed.
@@ -453,20 +488,34 @@ input need only be available on node 0.
 @<Read and broadcast the input options.@>=
 {
   if (mynode0()==0) fprintf(fp,"The force library input parameters:\n");
-  read_and_bcast_boolean("print_all_1der",&print_all_1der); @^print options@> @.print_all_1der@>
-  read_and_bcast_boolean("print_nuc_1der",&print_nuc_1der); @.print_nuc_1der@>
-  read_and_bcast_boolean("print_kinetic_1der",&print_kinetic_1der); @.print_kinetic_1der@>
-  read_and_bcast_boolean("print_nuclear_1der",&print_nuclear_1der); @.print_nuclear_1der@>
-  read_and_bcast_boolean("print_hcoreder",&print_hcoreder); @.print_hcoreder@>
-  read_and_bcast_boolean("print_overlap_1der",&print_overlap_1der); @.print_overlap_1der@>
-  read_and_bcast_boolean("print_all",&print_all); @.print_all@>
-  read_and_bcast_boolean("print_density",&print_density); @.print_density@>
-  read_and_bcast_boolean("print_mofock",&print_mofock); @.print_mofock@>
-  read_and_bcast_boolean("print_ewdensity",&print_ewdensity); @.print_ewdensity@>
-  read_and_bcast_boolean("bounds",&bounds); @.bounds@>
-  read_and_bcast_boolean("sparse",&sparse); @.sparse@>
-  read_and_bcast_int("threshold",&threshold_10); @.threshold@>
-  read_and_bcast_boolean("local_P",&local_P); @.local_P@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_all_1der",&print_all_1der); @^print options@> @.print_all_1der@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_nuc_1der",&print_nuc_1der); @.print_nuc_1der@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_kinetic_1der",&print_kinetic_1der); @.print_kinetic_1der@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_nuclear_1der",&print_nuclear_1der); @.print_nuclear_1der@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_hcoreder",&print_hcoreder); @.print_hcoreder@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_overlap_1der",&print_overlap_1der); @.print_overlap_1der@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_all",&print_all); @.print_all@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_density",&print_density); @.print_density@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_mofock",&print_mofock); @.print_mofock@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "print_ewdensity",&print_ewdensity); @.print_ewdensity@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "bounds",&bounds); @.bounds@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "sparse",&sparse); @.sparse@>
+  dmt_force_read_and_bcast_int(keyval,fp,
+    "threshold",&threshold_10); @.threshold@>
+  dmt_force_read_and_bcast_boolean(keyval,fp,
+    "local_P",&local_P); @.local_P@>
   print_all_1der = print_all || print_all_1der;
 
   if (bounds) threshold = int_bound_log(pow(10.0, -threshold_10));
@@ -1435,33 +1484,6 @@ int l;
   *exchangescale = -0.25 * scale;
   if (k != l) *coulombscale *= 2.0;
   if ((k != l)&&(i == j)) *exchangescale *= 2.0;
-}
-
-@ This uses the input parsing routines to get values on node 0 and
-then calls bcast0 to let all the nodes know the values.
-@<Local functions.@>=
-LOCAL_FUNCTION VOID
-read_and_bcast_boolean(name,boolval)
-char *name;
-int *boolval;
-{
-  int errcod;
-  if (mynode0()==0) errcod = ip_boolean(name,boolval,0);
-  bcast0(boolval,sizeof(int),mtype_get(),0);
-  if (mynode0()==0) fprintf(fp,"  :force:%s = %d\n",name,*boolval);
-}
-
-@ This is the int version of |read_and_bcast_boolean|.
-@<Local functions.@>=
-LOCAL_FUNCTION VOID
-read_and_bcast_int(name,intval)
-char *name;
-int *intval;
-{
-  int errcod;
-  if (mynode0()==0) errcod = ip_data(name,"%d",intval,0);
-  bcast0(intval,sizeof(int),mtype_get(),0);
-  if (mynode0()==0) fprintf(fp,"  :force:%s = %d\n",name,*intval);
 }
 
 @ This takes the partial forces array on all nodes and sums them

@@ -3,7 +3,18 @@
 #include "ipv2.h"
 #include "keyval.h"
 
-ParsedKeyVal::ParsedKeyVal()
+ParsedKeyVal::ParsedKeyVal(IPV2*i):
+nfp(0),
+nfile(0),
+file(0)
+{
+  ipv2 = i;
+}
+
+ParsedKeyVal::ParsedKeyVal():
+nfp(0),
+nfile(0),
+file(0)
 {
   ipv2 = new IPV2;
 }

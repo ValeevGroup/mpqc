@@ -39,10 +39,6 @@ IPV2::ip_print_tree_(FILE*fp,ip_keyword_tree_t*tree,int indent)
     //       I->keyword,I->value,I->down->keyword);
     //  }
 
-    if (!(I->value || I->down)) {
-      warn("ip_print_tree: tree has neither value nor subtrees-impossible");
-      }
-
     if (!I->keyword) {
       warn("ip_print_tree: tree has no keyword - impossible");
       }
@@ -59,8 +55,12 @@ IPV2::ip_print_tree_(FILE*fp,ip_keyword_tree_t*tree,int indent)
       fprintf(fp,"<%s>",I->classname);
       }
 
-    if (I->alias) {
-        fprintf(fp,"*");
+    if (!(I->value || I->down || I->variable)) {
+      printf(": (\n");
+      }
+
+    if (I->variable) {
+        fprintf(fp," = $%s\n",I->variable);
       }
     if (I->truename) {
         fprintf(fp,"\"%s\"",I->truename);

@@ -404,12 +404,17 @@ main(int argc, char *argv[])
   else
     FOCKO = dmt_nil();
 
-/* if restart, the read in old scf vector */
-  
-  if(restart) {
-    dmt_read(vecfile,SCF_VEC);
-    if(me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
-    scf_info.restart=1;
+/* if restart, then read in old scf vector if it exists */
+
+  FILE* test_vec = fopen(vecfile,"r");
+  if(test_vec && restart) {
+      fclose(test_vec);
+      dmt_read(vecfile,SCF_VEC);
+      if(me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
+      scf_info.restart=1;
+    }
+  else if (test_vec) {
+      fclose(test_vec);
     }
 
   tim_exit("input");

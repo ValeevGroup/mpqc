@@ -1,7 +1,11 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:40  etseidl
- * Initial revision
+ * Revision 1.2  1994/06/08 01:17:11  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:41  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/03/30  22:34:23  jannsen
  * Merged in Sandia non CVS codes.
@@ -20,7 +24,7 @@ static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <tmpl.h>
-#include <util/ipv2/ip_libv2.h>
+#include <util/keyval/ipv2c.h>
 #include "param.h"
 
 #include "file_info.gbl"

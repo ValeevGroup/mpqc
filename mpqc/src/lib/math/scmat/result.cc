@@ -1,6 +1,5 @@
 
-#include <util/misc/compute.h>
-#include <math/scmat/matrix.h>
+#include <math/scmat/result.h>
 
 Result_def(RefSCMatrix);
 Result_def(RefSymmSCMatrix);

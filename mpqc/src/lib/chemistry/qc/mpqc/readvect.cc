@@ -2,7 +2,7 @@
 #include "mpqc.h"
 #include <math/newmat7/newmat.h>
 
-void MPQC::read_vector(char *fname,int n_basis, Matrix &scf_vector)
+void MPSCF::read_vector(char *fname,int n_basis, RefSCMatrix &scf_vector)
 {
     // Try to open file containing scf vector
     FILE *fd= fopen(fname,"r");
@@ -37,7 +37,7 @@ void MPQC::read_vector(char *fname,int n_basis, Matrix &scf_vector)
         //printf(" MO #%d\n",i);
         for (int j=0; j< n_basis; j++)
         {
-            scf_vector.element(j,i)=scf_tmp[j];
+            scf_vector.set_element(j,i,scf_tmp[j]);
             //printf(" %d %lf\n",j,scf_tmp[j]);
         }
     }

@@ -15,16 +15,17 @@ override COPTIONS = -O2
 endif
 
 WEBSRC = spcsscf.web mpcsscf.web mposscf.web
+CXXSRC = read.cc
 
 GENSRC = $(WEBSRC:%.web=%.c)
 SRCS = $(GENSRC)
 
-INC = libforce.h
+INC = libforce.h read.h
 GENINC = $(SRCS:%.c=%.gbl)
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
-LIBOBJ= $(SRCS:%.c=%.$(OBJSUF))
+LIBOBJ= $(SRCS:%.c=%.$(OBJSUF)) $(CXXSRC:%.cc=%.$(OBJSUF))
 
 ################################################################3
 

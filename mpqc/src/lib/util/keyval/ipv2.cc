@@ -1,6 +1,11 @@
 
+#include <stdlib.h>
+
 #include "ipv2.h"
 #include <util/keyval/ipv2_parse.h>
+
+// IPV2's static member
+IPV2* IPV2::global_ = 0;
 
 IPV2::IPV2():
 ip_in(0),
@@ -46,4 +51,39 @@ void IPV2::yerror(const char* s)
 int IPV2::ywrap()
 {
   return 1;
+}
+
+void
+IPV2::set_global(IPV2* i)
+{
+  global_ = i;
+}
+
+int
+IPV2::have_global()
+{
+  return global_ != 0;
+}
+
+IPV2*
+IPV2::global()
+{
+  if (!global_) {
+      fprintf(stderr,"IPV2::global: global not set\n");
+      abort();
+    }
+  return global_;
+}
+
+  // some routines for debugging
+void
+IPV2::print_keyword(FILE*f,ip_keyword_tree_t*k)
+{
+  ip_print_keyword(f,k);
+}
+
+void
+IPV2::print_tree(FILE*f,ip_keyword_tree_t*k)
+{
+  ip_print_tree(f,k);
 }

@@ -1,6 +1,10 @@
 
 #include "compute.h"
 
+Result_def(int);
+Result_def(float);
+Result_def(double);
+
 ARRAY_def(ResultP);
 SET_def(ResultP);
 

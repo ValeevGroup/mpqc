@@ -16,11 +16,11 @@ WEBFILES = debug.web pathfopen.web rdmatrix.web timer.web
 CSRC = ieee.c prober.c assert.c machtype.c checkalloc.c mtype.c
 GENSRC = $(WEBFILES:%.web=%.c)
 
-CXXSRC = compute.cc
+CXXSRC = compute.cc compute_i.cc scostream.cc
 
-TESTSRC = comptest.cc
+TESTSRC = comptest.cc scotest.cc
 
-INC = assert.h libmisc.h memory.h timer.h compute.h
+INC = assert.h libmisc.h memory.h timer.h compute.h scostream.h
 GENINC = machtype.gbl timer.gbl assert.gbl
 
 DISTFILES = $(WEBFILES) $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
@@ -38,6 +38,9 @@ default:: libmisc.a
 
 comptest: comptest.cc libmisc.a
 	$(CXX) $(CXXFLAGS) $^ -o comptest
+
+scotest: scotest.cc libmisc.a
+	$(CXX) $(CXXFLAGS) $^ -o scotest
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

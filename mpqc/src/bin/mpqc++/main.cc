@@ -3,7 +3,6 @@
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
-#include <math/opt/opt.h>
 #include <chemistry/qc/mpqc/mpqc.h>
 #include <chemistry/molecule/shape.h>
 

@@ -4,5 +4,6 @@ chemistry/qc/dmtscf/libdmtscf.a
 #include <chemistry/qc/intv2/LIBS.h>
 #include <math/array/LIBS.h>
 #include <math/dmt/LIBS.h>
+#include <util/keyval/LIBS.h>
 #include <util/sgen/LIBS.h>
 #include <util/bio/LIBS.h>

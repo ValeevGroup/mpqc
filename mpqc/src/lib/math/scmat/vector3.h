@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <math.h>
 
+class RefSCVector;
+
 class SCVector3
 {
   private:
@@ -29,6 +31,7 @@ class SCVector3
     const double& operator [] (int i) const;
     double& operator () (int i);
     const double& operator () (int i) const;
+    const double* data() const;
     double& x();
     double& y();
     double& z();

@@ -1,28 +1,84 @@
 
+#include <math/scmat/local.h>
 #include "molecule.h"
-#include "symm.h"
-#include "symmQCList.h"
-#include "simple.h"
-#include "simpleQCList.h"
+#include "energy.h"
+#include "coor.h"
+
+// force linkage of the taylor expansion energy evaluator
+#include "taylor_f.h"
+
+__builtin_delete(void*ptr)
+{
+  if (ptr>(void*)0 && ptr<(void*)0x100) abort();
+  if (ptr) free(ptr);
+}
+
+void do_displacement(RefMolecularCoor&mc,int i);
 
 main()
 {
-  RefKeyVal kv(new ParsedKeyVal("moltest.in"));
+  RefKeyVal kv(new ParsedKeyVal(SRCDIR "/moltest.in"));
 
-  RefDescribedClass val = kv->describedclassvalue("fixed");
-  RefSymmCoList fixed = val;
-  if (val.nonnull() && fixed.null()) {
-      fprintf(stderr,"could not convert type %s to SymmCoList\n",
-              val->class_name());
-      abort();
-    }
-  val = 0;
-  printf("the fixed list\n");
-  fixed->print();
+  RefMolecule mol = new Molecule(PrefixKeyVal("molecule",*kv.pointer()));
+  printf("Molecule:\n");
+  mol->print();
 
-  Molecule mol(PrefixKeyVal("molecule",*kv.pointer()));
-  mol.print();
+  printf("getting simp:\n");
+  SetIntCoor simp(PrefixKeyVal("simp",*kv.pointer()));
+  simp.update_values(mol);
+  printf("simp:\n");
+  simp.print(mol);
 
-  SimpleCoList simp(PrefixKeyVal("simp",*kv.pointer()));
-  simp.print();
+  // compare the analytic bmatrix to the finite displacement bmatrix
+  SetIntCoor bmat_test(PrefixKeyVal("bmat_test",*kv.pointer()));
+  RefSCDimension dnc(new LocalSCDimension(bmat_test.n()));
+  RefSCDimension dn3(new LocalSCDimension(mol->natom()*3));
+  RefSCMatrix bmatrix(dnc,dn3);
+  RefSCMatrix fd_bmatrix(dnc,dn3);
+  printf("testing bmat with:\n");
+  bmat_test.update_values(mol);
+  bmat_test.print();
+  bmat_test.bmat(mol,bmatrix);
+  bmat_test.fd_bmat(mol,fd_bmatrix);
+  cout << "test bmatrix:\n";
+  bmatrix.print();
+  cout << "difference between test and finite displacement bmatrix:\n";
+  (fd_bmatrix - bmatrix).print();
+
+  // now we get ambitious
+  RefMolecularCoor mc = kv->describedclassvalue("molcoor");
+
+  mc->print();
+
+  do_displacement(mc,0);
+  do_displacement(mc,1);
+  do_displacement(mc,2);
+  do_displacement(mc,3);
+
+  RefSymmSCMatrix hessian(mc->dim());
+  mc->guess_hessian(hessian);
+
+  cout << "The guess hessian:\n";
+  hessian.print();
+
+  RefMolecularEnergy me = kv->describedclassvalue("energy");
+  me->print();
+}
+
+
+void
+do_displacement(RefMolecularCoor&mc,int i)
+{
+  // now try to displace the geometry
+  RefSCVector internal(mc->dim());
+  mc->to_internal(internal);
+  cout << "The initial internal coordinates:\n";
+  internal.print();
+  internal(i) = internal(i) + 0.2;
+  cout << "The new internal coordinates:\n";
+  internal.print();
+  mc->to_cartesian(internal);
+  mc->to_internal(internal);
+  cout << "The actual new internal coordinates:\n";
+  internal.print();
 }

@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <iostream.h>
-#include <math/newmat7/newmat.h>
+#include <math/scmat/matrix.h>
 #include <util/keyval/keyval.h>
 #include <math/topology/point.h>
 #include <chemistry/qc/basis/gaussshell.h>
@@ -25,26 +25,26 @@ double Wavefunction::natural_orbital_density(cart_point& r,
 // Function for returning an orbital value at a point
 double Wavefunction::orbital(cart_point& r,
                              int iorb,
-                             const Matrix& orbs)
+                             RefSCMatrix& orbs)
 {
     double *result;
-    int nbasis = basis().nbasis();
+    int nbasis = basis()->nbasis();
     if (!bs_values) bs_values=new double[nbasis];
 
     // compute the basis set values
-    basis().values(r,bs_values);
+    basis()->values(r,bs_values);
     
     // loop over basis functions
     double orb_value = 0;
     for (int i=0; i<nbasis; i++)
-        orb_value += orbs.element(i,iorb)*bs_values[i];
+        orb_value += orbs.get_element(i,iorb)*bs_values[i];
 
     return orb_value;
 }     
 
 double Wavefunction::orbital_density(cart_point& r,
                                      int iorb,
-                                     const Matrix& orbs,
+                                     RefSCMatrix& orbs,
                                      double* orbvalue)
 {
   double tmp = orbital(r,iorb,orbs);

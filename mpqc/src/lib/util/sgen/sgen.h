@@ -2,7 +2,7 @@
 #ifndef _SGEN_H
 #define _SGEN_H
 
-#ifdef __STDC__
+#if defined(__cplusplus) || defined(__STDC__)
 #define ARGS0 void
 #define ARGS1(a) a
 #define ARGS2(a,b) a,b
@@ -18,6 +18,10 @@
 #define ARGS4(a,b,c,d)
 #define ARGS5(a,b,c,d,e)
 #define ARGS6(a,b,c,d,e,f)
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 void sgen_print_suppress_indent( ARGS0 );
@@ -135,6 +139,9 @@ void sgen_sndrcv_print( ARGS4(int,int,int,int) );
 void sndrcv0_sync( ARGS0 );
 void sgen_reset_sndrcv0( ARGS0 );
 
+#ifdef __cplusplus
+}
+#endif
 
 #undef ARGS0
 #undef ARGS1

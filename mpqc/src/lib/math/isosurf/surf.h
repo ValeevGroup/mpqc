@@ -7,23 +7,22 @@ extern "C" {
 }
 #include <util/container/ref.h>
 #include <util/container/set.h>
-#include <math/topology/point.h>
+#include <math/scmat/matrix.h>
 #include <math/isosurf/volume.h>
 
 class Vertex: public RefCount {
   private:
-    RefPoint _point;
-    DVector _gradient;
+    RefSCVector _point;
+    RefSCVector _gradient;
   public:
     Vertex();
-    //Vertex(RefPoint&point);
-    Vertex(RefPoint&point,DVector&gradient);
+    Vertex(RefSCVector&point,RefSCVector&gradient);
     ~Vertex();
-    inline DVector& gradient() { return _gradient; };
-    inline RefPoint& point() { return _point; };
-    inline void set_point(RefPoint&p) { _point = p; };
-    inline operator RefPoint() { return _point; };
-    inline int dimension() { return _point->dimension(); };
+    RefSCVector gradient();
+    RefSCVector point();
+    void set_point(RefSCVector&p);
+    operator RefSCVector();
+    RefSCDimension dimension();
 
     void print(FILE*fp = stdout);
 };
@@ -82,7 +81,7 @@ class Triangle: public VRefCount {
     // returns the surface area element
     // 0<=r<=1, 0<=s<=1, 0<=r+s<=1
     // RefVertex is the intepolated vertex (both point and gradient)
-    virtual double interpolate(double r,double s,RefVertex v);
+    virtual double interpolate(double r,double s,RefVertex&v);
 
     // returns a vertex in the triangle
     // i = 0 is the (0,0) vertex
@@ -107,7 +106,7 @@ class Triangle10: public Triangle {
                RefVolume vol,
                double isovalue);
     virtual ~Triangle10();
-    double interpolate(double r,double s,RefVertex v);
+    double interpolate(double r,double s,RefVertex&v);
     double area();
 };
 
@@ -237,10 +236,11 @@ class UniformLattice {
   protected:
     double* _start;
     double* _incr;
+    RefSCDimension _scdim;
     int _ndim;
     int* _dim;
   public:
-    UniformLattice();
+    UniformLattice(RefSCDimension&);
     // 3D CTOR
     UniformLattice(int dim0,double start0,double incr0,
                    int dim1,double start1,double incr1,
@@ -248,6 +248,7 @@ class UniformLattice {
     virtual ~UniformLattice();
     void set_lattice_parameters(int dim,int*n,double*start,double*incr);
     inline const int* dim_vector() { return _dim; };
+    inline RefSCDimension scdim() { return _scdim; };
     inline int dim(int i) { return _dim[i]; };
     inline int ndim() { return _ndim; };
     inline double start(int i) { return _start[i]; };
@@ -255,13 +256,13 @@ class UniformLattice {
 
     // 3D access functions
     double value(int,int,int);
-    RefPoint interpolate(int,int,int,int,int,int,double);
+    RefSCVector interpolate(int,int,int,int,int,int,double);
 
     // general access functions
     virtual double value(int*) = 0;
-    virtual RefPoint interpolate(int*,int*,double) = 0;
+    virtual RefSCVector interpolate(int*,int*,double) = 0;
 
-    virtual void gradient(RefPoint,DVector&) = 0;
+    virtual void gradient(RefSCVector&,RefSCVector&) = 0;
 };
 
 class ImplicitUniformLattice: public UniformLattice {
@@ -281,9 +282,9 @@ class ImplicitUniformLattice: public UniformLattice {
 
     // 3D access functions
     virtual double value(int*);
-    virtual RefPoint interpolate(int*,int*,double);
+    virtual RefSCVector interpolate(int*,int*,double);
 
-    virtual void gradient(RefPoint,DVector&);
+    virtual void gradient(RefSCVector&,RefSCVector&);
 };
 
 class StoredUniformLattice: public UniformLattice {

@@ -1,7 +1,11 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:16  etseidl
- * Initial revision
+ * Revision 1.2  1994/06/08 01:15:13  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:17  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.6  1993/04/27  23:54:56  jannsen
  * rs/6000 port
@@ -44,7 +48,7 @@ static char rcsid[]="$Id$";
 #include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <util/ipv2/ip_libv2.h>
+#include <util/keyval/ipv2c.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 
 #include "scf.h"
@@ -56,6 +60,8 @@ static char rcsid[]="$Id$";
 #define MAX0(a,b) ((a)>(b))?(a):(b)
 #define MIN0(a,b) ((a)<(b))?(a):(b)
 
+/* reads in an old basis set and calls scf_project_vector_ to do
+ * a projection */
 GLOBAL_FUNCTION int
 scf_project_vector(centers, irreps, scf_info, Scf_Vec, oldvecfile, outfile)
 centers_t *centers;
@@ -69,37 +75,12 @@ FILE *outfile;
   int m,n;
   int errcod,count;
   int me=mynode0();
-  int nlocal=dmt_nlocal(Scf_Vec);
-  int icol,nocc;
-  int fd;
   int basis_array=1;
   char *bset;
-  double *col;
-  loop_t *loop;
-
-  dmt_matrix S=dmt_old("libscfv3 overlap matrix");
-  dmt_matrix Shalf = dmt_old("libscfv3 scf_core_guess scr4");
-
-  dmt_matrix SCR1=dmt_create("math/dmt/libdmtscf proj scr1",scf_info->nbfao,COLUMNS);
-  dmt_matrix SCR2=dmt_create("math/dmt/libdmtscf proj scr2",scf_info->nbfao,COLUMNS);
-  dmt_matrix SCR3=dmt_create("math/dmt/libdmtscf proj scr3",scf_info->nbfao,COLUMNS);
-  dmt_matrix Cprime=dmt_create("math/dmt/libdmtscf proj scr4",scf_info->nbfao,COLUMNS);
-
-  dmt_matrix Cnew,X,D,Sinv,C2,S2;
   centers_t old_cen;
   center_t *center;
 
-  nocc=irreps->ir[0].nclosed+irreps->ir[0].nopen;
-
-/* form Sinv = (S**-1/2)**2 */
-
-  Sinv=SCR1;
-  dmt_copy(Shalf,SCR2);
-  dmt_mult(SCR2,Shalf,Sinv);
-
-  dmt_free(Shalf);
-
-/* first let's construct a centers struct using the old basis set */
+/* construct a centers struct using the old basis set */
 
   if(me==0) {
     ip_cwk_push();
@@ -181,14 +162,62 @@ the_place_where_errors_go:
 
   if(errcod!=0) return(-1);
 
+  return scf_project_vector_(&old_cen, centers, irreps, scf_info, Scf_Vec,
+                             oldvecfile, outfile);
+}
+
+/* projects the basis set from old_cen to centers, the basis functions
+ * in old_cen should be normalized and only on node 0. */
+GLOBAL_FUNCTION int
+scf_project_vector_(old_cen, centers, irreps, scf_info,
+                   Scf_Vec, oldvecfile, outfile)
+centers_t *old_cen;
+centers_t *centers;
+scf_irreps_t *irreps;
+scf_struct_t *scf_info;
+dmt_matrix Scf_Vec;
+char *oldvecfile;
+FILE *outfile;
+{
+  int i,j;
+  int m,n;
+  int errcod;
+  int me=mynode0();
+  int nlocal=dmt_nlocal(Scf_Vec);
+  int icol,nocc;
+  int fd;
+  double *col;
+  loop_t *loop;
+
+  dmt_matrix S=dmt_old("libscfv3 overlap matrix");
+  dmt_matrix Shalf = dmt_old("libscfv3 scf_core_guess scr4");
+
+  dmt_matrix SCR1=dmt_create("math/dmt/libdmtscf proj scr1",scf_info->nbfao,COLUMNS);
+  dmt_matrix SCR2=dmt_create("math/dmt/libdmtscf proj scr2",scf_info->nbfao,COLUMNS);
+  dmt_matrix SCR3=dmt_create("math/dmt/libdmtscf proj scr3",scf_info->nbfao,COLUMNS);
+  dmt_matrix Cprime=dmt_create("math/dmt/libdmtscf proj scr4",scf_info->nbfao,COLUMNS);
+
+  dmt_matrix Cnew,X,D,Sinv,C2,S2;
+  center_t *center;
+
+  nocc=irreps->ir[0].nclosed+irreps->ir[0].nopen;
+
+/* form Sinv = (S**-1/2)**2 */
+
+  Sinv=SCR1;
+  dmt_copy(Shalf,SCR2);
+  dmt_mult(SCR2,Shalf,Sinv);
+
+  dmt_free(Shalf);
+
  /* broadcast old centers struct to nodes */
 
-  bcast0_centers(&old_cen,0,0);
+  bcast0_centers(old_cen,0,0);
 
-  int_initialize_1e(0,0,centers,&old_cen);
-  int_initialize_offsets1(centers,&old_cen);
+  int_initialize_1e(0,0,centers,old_cen);
+  int_initialize_offsets1(centers,old_cen);
 
-  m=old_cen.nfunc;
+  m=old_cen->nfunc;
   n=centers->nfunc;
 
  /* read old vector */
@@ -234,17 +263,17 @@ the_place_where_errors_go:
  /* form overlap between old basis and new basis */
 
   S2=SCR3;
-  form_s2(centers,&old_cen,S2);
+  form_s2(centers,old_cen,S2);
 
  /* form projected vector by multiplying the old vector by the overlap */
 
   dmt_mult(S2,C2,Cprime);
 
  /* free some memory */
-  int_done_offsets1(centers,&old_cen);
+  int_done_offsets1(centers,old_cen);
   int_done_1e();
 
-  free_centers(&old_cen);
+  free_centers(old_cen);
 
  /* form D = Sinv x Cprime */
 
@@ -336,13 +365,13 @@ LOCAL_FUNCTION int
 read_basis_(what,atom,basisname,basis)
 int what;
 char *atom;
-char *basisname;
+const char *basisname;
 basis_t *basis;
 {
   int i;
   int errcod;
   char key[KEYWORD_LENGTH];
-  char *val;
+  const char *val;
 
 
   i = 0;

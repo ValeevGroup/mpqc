@@ -1,6 +1,6 @@
 
-#ifndef _util_container_result_h
-#define _util_container_result_h
+#ifndef _util_misc_compute_h
+#define _util_misc_compute_h
 
 #include <stdio.h>
 #include <util/container/set.h>
@@ -36,6 +36,10 @@ class Compute
     void obsolete();
 };
 
+// Usually Result_dec(Type) will be used to create a result that has
+// a particular datum associated with it, however simple Result's can
+// also be declared to keep track of datum's for which it is awkward
+// to use Result_dec.
 class Result
 {
   private:
@@ -47,16 +51,17 @@ class Result
     // Compute::compute() will be called.
     void update();
   public:
-    inline Result(Compute*c):_c(c),_compute(0),_computed(0) { c->add(this); };
-    inline int& compute() { return _compute; };
-    inline int compute(int c) { int r = _compute; _compute = c; return r; };
-    inline int& computed() { return _computed; };
+    Result(Compute*c);
+    int& compute();
+    int compute(int c);
+    int& computed();
+    int needed();
 };
 
 // This provide access to the result.  Before the result is
 // returned Result::update() is called to make sure that the
 // datum is up to date.
-#define Result_dec(T)							      \
+#define Result_inline_dec(T)						      \
 class Result ## T: public Result {					      \
   private:								      \
     T _result;								      \
@@ -69,7 +74,36 @@ class Result ## T: public Result {					      \
     inline void operator=(T& a) { _result = a; };			      \
 }
 
-// Results for some common type
+#define Result_dec(T)							      \
+class Result ## T: public Result {					      \
+  private:								      \
+    T _result;								      \
+  public:								      \
+    Result ## T (Compute*c);						      \
+    operator T&();							      \
+    T* operator ->();							      \
+    T& result();							      \
+    T& result_noupdate();						      \
+    void operator=(T& a);						      \
+}
+
+#define Result_def(T)							      \
+Result ## T::Result ## T (Compute*c):Result(c) {};			      \
+Result ## T::operator T&() { update(); return _result; };		      \
+T* Result ## T::operator ->() { update(); return &_result; };		      \
+T& Result ## T::result() { update(); return _result; };			      \
+T& Result ## T::result_noupdate() { return _result; };			      \
+void Result ## T::operator=(T& a) { _result = a; };
+
+#ifdef INLINE_FUNCTIONS
+#include <util/misc/compute_i.h>
+#undef Result_def
+#undef Result_dec
+#define Result_def(T)
+#define Result_dec(T) Result_inline_dec(T)
+#endif
+
+// Results for some common types
 Result_dec(int);
 Result_dec(float);
 Result_dec(double);

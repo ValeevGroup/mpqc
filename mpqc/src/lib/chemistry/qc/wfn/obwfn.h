@@ -6,23 +6,26 @@
 
 class OneBodyWavefunction: public Wavefunction
 {
+#   define CLASSNAME OneBodyWavefunction
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
  private:
-  void init(KeyVal&keyval);
-  int _have_density;
-  SymmetricMatrix _density;
+    ResultRefSymmSCMatrix _density;
  public:
-  OneBodyWavefunction(KeyVal&,Molecule&,GaussianBasisSet&);
-  OneBodyWavefunction(KeyVal&,Molecule&,GaussianBasisSet&,MolecularCoor&);
-  ~OneBodyWavefunction();
-  void x_changed();
+    OneBodyWavefunction(KeyVal&);
+    OneBodyWavefunction(StateIn&);
+    ~OneBodyWavefunction();
+    void save_data_state(StateOut&);
 
-  virtual const Matrix& eigenvectors() = 0;
-  virtual double occupation(int vectornum) = 0;
-  double orbital(cart_point& r, int iorb);
-  double orbital_density(cart_point& r, int iorb, double* orbval = 0);
+    virtual RefSCMatrix eigenvectors() = 0;
+    virtual double occupation(int vectornum) = 0;
+    double orbital(cart_point& r, int iorb);
+    double orbital_density(cart_point& r, int iorb, double* orbval = 0);
 
-  double density(cart_point&);
-  const SymmetricMatrix& density();
+    double density(cart_point&);
+    RefSymmSCMatrix density();
+
+    void print(SCostream&o=SCostream::cout);
 };
 
 #endif

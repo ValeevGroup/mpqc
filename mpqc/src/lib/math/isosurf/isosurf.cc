@@ -468,11 +468,11 @@ static P_Vertex *interp_vertex(int i1, int j1, int k1, int i2, int j2, int k2)
 
   vtx= new_vertex( current_type );
 
-  RefPoint p = lattice->interpolate(i1,j1,k1,i2,j2,k2,contour_value);
+  RefSCVector p = lattice->interpolate(i1,j1,k1,i2,j2,k2,contour_value);
 
-  vtx->x = p->operator[](0);
-  vtx->y = p->operator[](1);
-  vtx->z = p->operator[](2);
+  vtx->x = p[0];
+  vtx->y = p[1];
+  vtx->z = p[2];
 
   return vtx;
 }
@@ -2022,9 +2022,12 @@ static int convert_to_surface(TriangulatedSurface& surf,UniformLattice&lat)
    */
   thisvtx= vertex_list;
   i= 0;
-  DVector gradient(3);
   while (thisvtx) {
-      RefPoint newpoint = new Point(thisvtx->x,thisvtx->y,thisvtx->z);
+      RefSCVector gradient(lat.scdim());
+      RefSCVector newpoint(lat.scdim());
+      newpoint[0] = thisvtx->x;
+      newpoint[1] = thisvtx->y;
+      newpoint[2] = thisvtx->z;
       lat.gradient(newpoint,gradient);
       points[i] = new Vertex(newpoint,gradient);
       surf.add_vertex(points[i]);

@@ -92,32 +92,6 @@ ChemicalElement::ChemicalElement(StateIn& si):
   si.get(Z_);
 }
 
-#if 0
-#define QUERY_FUNCTION(type,property)                         \
-type ChemicalElement::property()                              \
-{                                                             \
-    return atom_info[Z_].property;                          \
-}                                                             
-
-// Here are all of the query functions for the properties
-QUERY_FUNCTION(char* ,name)              
-QUERY_FUNCTION(char* ,symbol)           
-QUERY_FUNCTION(int   ,number)           
-QUERY_FUNCTION(double,mass)             
-QUERY_FUNCTION(int   ,family)           
-QUERY_FUNCTION(int   ,row)              
-QUERY_FUNCTION(int   ,valence)          
-QUERY_FUNCTION(int   ,melting_pt)       
-QUERY_FUNCTION(int   ,boiling_pt)       
-QUERY_FUNCTION(int   ,first_ion_pt)     
-QUERY_FUNCTION(double,bragg_radius)  
-QUERY_FUNCTION(double,electronegativity)
-QUERY_FUNCTION(double,specific_heat)    
-QUERY_FUNCTION(double,density)          
-QUERY_FUNCTION(double,atomic_radius)          
-QUERY_FUNCTION(double,vdw_radius)          
-#endif
-
 // Initialize static variables for ChemicalElement class
 int ChemicalElement::max_atomic_number=107;
 ChemicalElement::atom_info_type ChemicalElement::atom_info[]=

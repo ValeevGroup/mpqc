@@ -163,7 +163,7 @@ SavableState_REF_def(SCElementMaxAbs);
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
-SCElementMaxAbs::SCElementMaxAbs(double a):r(0.0) {}
+SCElementMaxAbs::SCElementMaxAbs():r(0.0) {}
 SCElementMaxAbs::SCElementMaxAbs(StateIn&s):
   SavableState(s,class_desc_)
 {
@@ -429,9 +429,50 @@ SCMatrix::convert(double**a)
 }
 
 void
+SCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix *t = b->copy();
+  t->transpose_this();
+  SCMatrix *t2 = this->copy();
+  t2->transpose_this();
+  t2->accumulate_product(t,a);
+  delete t;
+  t2->transpose_this();
+  assign(t2);
+  delete t2;
+}
+
+void
+SCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix *t = b->copy();
+  t->transpose_this();
+  SCMatrix *t2 = this->copy();
+  t2->accumulate_product(t,a);
+  delete t;
+  t2->transpose_this();
+  assign(t2);
+  delete t2;
+}
+
+void
 SCMatrix::print(ostream&o)
 {
   print(0, o, 10);
+}
+
+SCMatrix*
+SCMatrix::clone()
+{
+  return rowdim()->create_matrix(coldim());
+}
+
+SCMatrix*
+SCMatrix::copy()
+{
+  SCMatrix* result = clone();
+  result->assign(this);
+  return result;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -569,6 +610,20 @@ SymmSCMatrix::print(ostream&o)
   print(0, o, 10);
 }
 
+SymmSCMatrix*
+SymmSCMatrix::clone()
+{
+  return dim()->create_symmmatrix();
+}
+
+SymmSCMatrix*
+SymmSCMatrix::copy()
+{
+  SymmSCMatrix* result = clone();
+  result->assign(this);
+  return result;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // DiagSCMatrix member functions
 
@@ -656,6 +711,20 @@ void
 DiagSCMatrix::print(ostream&o)
 {
   print(0, o, 10);
+}
+
+DiagSCMatrix*
+DiagSCMatrix::clone()
+{
+  return dim()->create_diagmatrix();
+}
+
+DiagSCMatrix*
+DiagSCMatrix::copy()
+{
+  DiagSCMatrix* result = clone();
+  result->assign(this);
+  return result;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -750,4 +819,26 @@ void
 SCVector::print(ostream&o)
 {
   print(0, o, 10);
+}
+
+void
+SCVector::normalize()
+{
+  double norm = scalar_product(this);
+  norm = 1.0/sqrt(norm);
+  scale(norm);
+}
+
+SCVector*
+SCVector::clone()
+{
+  return dim()->create_vector();
+}
+
+SCVector*
+SCVector::copy()
+{
+  SCVector* result = clone();
+  result->assign(this);
+  return result;
 }

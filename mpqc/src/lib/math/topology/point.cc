@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 #include "point.h"
-#include <math/nihmatrix/nihmatrix.h>
+#include <math/scmat/matrix.h>
 #include <util/keyval/keyval.h>
 
 cart_point::cart_point()
@@ -66,12 +66,12 @@ Point::Point(const Point &in_point)
       }
 }
     
-Point::Point(const DVector &in)
+Point::Point(RefSCVector &in)
 {
-    dim=in.dim();
+    dim=in.dim().n();
     if (dim > 0) {
         x=new double[dim];
-        for (int i=0; i<dim; i++) x[i] = in[i];
+        in.convert(x);
       }
 }
 
@@ -126,7 +126,7 @@ Point::save_data_state(StateOut& so)
 Point::~Point(void) { if (dim > 0) delete[] x;};
 
 // Copy to double *
-double *Point::copy(void)
+double *Point::copy(void) const
 {
   if (dim > 0) {
       double *x_out = new double[dim];

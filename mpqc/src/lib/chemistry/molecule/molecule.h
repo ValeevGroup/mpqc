@@ -4,7 +4,8 @@
 
 #include <stdio.h>
 #include <Pix.h>
-
+#include <ostream.h>
+#include <util/misc/scostream.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
@@ -44,19 +45,22 @@ class Molecule :
 
     void add_atom(int,AtomicCenter&);
 
-    virtual void print(FILE*fp=stdout);
+    virtual void print(SCostream& =SCostream::cout);
+    virtual void print(FILE*);
     int natom() const;
     int owns(Pix);
     Pix first();
     void next(Pix&);
     AtomicCenter& operator()(Pix);
     AtomicCenter& operator[](int);
+    AtomicCenter& atom(int);
     const AtomicCenter& operator()(Pix) const; 
     const AtomicCenter& operator[](int) const;
+    const AtomicCenter& atom(int) const;
     PointBag_double* charges() const;
 
     void save_data_state(StateOut&);
 };
-DescribedClass_REF_dec(Molecule);
+SavableState_REF_dec(Molecule);
 
 #endif

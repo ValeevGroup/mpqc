@@ -2,36 +2,41 @@
 extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 }
 
-#include <math.h>
-#include <math/newmat7/newmat.h>
-#include <math/newmat7/newmatap.h>
+#include <iostream.h>
 #include <util/keyval/keyval.h>
+#include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 #include "wfn.h"
-#include <ostream.h>
 
-void Wavefunction::init(KeyVal&keyval)
+#define CLASSNAME Wavefunction
+#define PARENTS public MolecularEnergy
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+Wavefunction::_castdown(const ClassDesc*cd)
 {
-  x_changed();
+  void* casts[] =  { MolecularEnergy::_castdown(cd) };
+  return do_castdowns(casts,cd);
 }
 
-Wavefunction::Wavefunction(KeyVal&keyval,
-                           Molecule&mol,
-                           GaussianBasisSet&gbs):
-MolecularEnergy(mol),_gbs(gbs)
+Wavefunction::Wavefunction(KeyVal&keyval):
+  MolecularEnergy(keyval),
+  _natural_orbitals(this),
+  _natural_density(this),
+  bs_values(0),
+  bsg_values(0)
 {
-  init(keyval);
-}
+  _natural_orbitals.compute() = 0;
+  _natural_density.compute() = 0;
 
-Wavefunction::Wavefunction(KeyVal&keyval,
-                           Molecule&mol,
-                           GaussianBasisSet&gbs,
-                           MolecularCoor&mc):
-MolecularEnergy(mol,mc),_gbs(gbs)
-{
-  init(keyval);
+  _gbs
+    = GaussianBasisSet::require_castdown(keyval.describedclassvalue("basis"),
+                                         "Wavefunction::Wavefunction\n");
+
+  _basisdim = new LocalSCDimension(_gbs->nbasis());
 }
 
 Wavefunction::~Wavefunction()
@@ -40,63 +45,88 @@ Wavefunction::~Wavefunction()
   if (bsg_values) delete[] bsg_values;
 }
 
-void Wavefunction::x_changed()
+Wavefunction::Wavefunction(StateIn&s):
+  SavableState(s,class_desc_),
+  MolecularEnergy(s),
+  _natural_orbitals(this),
+  _natural_density(this),
+  bs_values(0),
+  bsg_values(0)
 {
-  MolecularEnergy::x_changed();
-  _have_natural_orbitals = 0;
-  _have_natural_density = 0;
+  abort();
 }
 
-const Matrix& Wavefunction::natural_orbitals()
+void
+Wavefunction::save_data_state(StateOut&s)
 {
-  if (!_have_natural_orbitals) {
-      //cout.width(8);
-      //cout.precision(4);
-      //cout.setf(ios::fixed,ios::floatfield);
-      const SymmetricMatrix& dens = density();
+  MolecularEnergy::save_data_state(s);
+  abort();
+}
+
+RefSCMatrix
+Wavefunction::natural_orbitals()
+{
+  if (!_natural_orbitals.computed()) {
+      RefSymmSCMatrix dens = density();
 
       // transform the density into an orthogonal basis
-      const GaussianBasisSet& gbs = basis();
+      const GaussianBasisSet& gbs = *basis();
       int nbasis = gbs.nbasis();
-      Matrix ortho;
-      Matrix orthoi;
+      RefSCMatrix ortho;
+      RefSCMatrix orthoi;
       gbs.ortho(ortho,orthoi);
 
-      SymmetricMatrix densortho(nbasis);
-      densortho << orthoi.t()*dens*orthoi;
+      RefSymmSCMatrix densortho(_basisdim);
+      densortho.assign(0.0);
+      densortho.accumulate_transform(orthoi.t(),dens);
 
-      _natural_orbitals.ReDimension(nbasis,nbasis);
-      _natural_density.ReDimension(nbasis);
+      RefSCMatrix natorb(_basisdim,_basisdim);
+      RefDiagSCMatrix natden(_basisdim);
+      _natural_orbitals = natorb;
+      _natural_density = natden;
 
-      EigenValues(densortho,_natural_density,_natural_orbitals);
+      densortho.diagonalize(_natural_density,_natural_orbitals);
 
       // _natural_orbitals is the ortho to NO basis transform
       // make _natural_orbitals the AO to the NO basis transform
       _natural_orbitals = ortho * _natural_orbitals;
 
-      _have_natural_orbitals = 1;
-      _have_natural_density = 1;
+      _natural_orbitals.computed() = 1;
+      _natural_density.computed() = 1;
     }
 
   return _natural_orbitals;
 }
 
-const DiagonalMatrix& Wavefunction::natural_density()
+RefDiagSCMatrix
+Wavefunction::natural_density()
 {
-  if (!_have_natural_density) {
-      const SymmetricMatrix& dens = density();
-      int nbasis = basis().nbasis();
-      _natural_orbitals.ReDimension(nbasis,nbasis);
-      _natural_density.ReDimension(nbasis);
-      EigenValues(dens,_natural_density,_natural_orbitals);
-      _have_natural_orbitals = 1;
-      _have_natural_density = 1;
+  if (!_natural_density.computed()) {
+      RefSymmSCMatrix dens = density();
+
+      RefSCMatrix natorb(_basisdim,_basisdim);
+      RefDiagSCMatrix natden(_basisdim);
+      _natural_orbitals = natorb;
+      _natural_density = natden;
+
+      dens.diagonalize(_natural_density,_natural_orbitals);
+
+      _natural_orbitals.computed() = 1;
+      _natural_density.computed() = 1;
     }
 
   return _natural_density;
 }
 
-const GaussianBasisSet& Wavefunction::basis()
+RefGaussianBasisSet
+Wavefunction::basis()
 {
   return _gbs;
+}
+
+void
+Wavefunction::print(SCostream&o)
+{
+  MolecularEnergy::print(o);
+  // the other stuff is a wee bit too big to print
 }

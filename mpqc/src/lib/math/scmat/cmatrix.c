@@ -274,7 +274,7 @@ lubksb(double** a, int n, int *indx, double* b)
  * of the matrix can be optionally used and the (+) means that accumulation
  * is optional.  The dimensions of the matrices is as follows:
  * a(nr,nl) (if ta then a(nl,nr))
- * b(nl,nc) (if tb then b(nl,nc))
+ * b(nl,nc) (if tb then b(nc,nl))
  * c(nr,nc) (if tc then c(nc,nr))
  */
 void
@@ -287,16 +287,28 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
   double t00,t01,t10,t11;
   double *att,*bt;
   double *at1,*bt1;
+  double** old_a = 0;
+  double** old_b = 0;
 
   odd_nr = (nr)%2;
   odd_nc = (nc)%2;
 
   if(ta) {
       cmat_transpose_matrix(a,nl,nr);
+      if (nr > nl) {
+          old_a = a;
+          a = (double**) malloc(nr*sizeof(double*));
+          a[0] = old_a[0];
+        }
       cmat_matrix_pointers(a,a[0],nr,nl);
     }
   if(!tb) {
       cmat_transpose_matrix(b,nl,nc);
+      if (nc > nl) {
+          old_b = b;
+          b = (double**) malloc(nc*sizeof(double*));
+          b[0] = old_b[0];
+        }
       cmat_matrix_pointers(b,b[0],nc,nl);
     }
 
@@ -407,10 +419,18 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
 
   if(ta) {
       cmat_transpose_matrix(a,nr,nl);
+      if (old_a) {
+          free(a);
+          a = old_a;
+        }
       cmat_matrix_pointers(a,a[0],nr,nl);
     }
   if(!tb) {
       cmat_transpose_matrix(b,nc,nl);
+      if (old_b) {
+          free(b);
+          b = old_b;
+        }
       cmat_matrix_pointers(b,b[0],nl,nc);
     }
   }

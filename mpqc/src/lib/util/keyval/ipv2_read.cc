@@ -110,7 +110,7 @@ IPV2::append_from_input(const char*prefix,FILE*outfile)
   
   strcpy(keyword,prefix);
   strcat(keyword,"files");
-  if (ip_count(keyword,&nfile,0)!=OK) return;
+  if (count(keyword,&nfile,0)!=OK) return;
   for (i=0; i<nfile; i++) {
       if (value_v(keyword,&file,1,&i) == OK) {
 	  if (dir && (file[0] != '/')) strcpy(dirfile,dir);
@@ -384,31 +384,41 @@ IPV2::dup_string(const char*s)
 ip_keyword_tree_t *
 IPV2::ip_get_variable_kt(char* variable)
 {
+  char* passed_variable = variable;
   ip_keyword_tree_t *kt;
-  
-  /* If sub_tree is still NULL then we have a problem. */
-  if (!sub_tree) {
-      error("tried to put a keyword at the top level - impossible");
+  ip_keyword_tree_t *top;
+
+  top = sub_tree;
+
+  /* One or more occurrences of "..:" at the beginning of the keyword
+   * move us up the keyword tree */
+  while(top && !strncmp(variable,"..:",3)) {
+      variable = &variable[3];
+      top = top->up;
     }
   
-  /* Push the old path and set up the new one. */
-  cwk_push();
-  cwk_clear();
-  ip_cwk_add_kt(sub_tree);
-  
-  /* Descend the keyword tree. */
-  kt = ip_cwk_descend_tree(variable);
-  
+  /* If top is still then we have a problem. */
+  if (!top) {
+      error("tried to get a variable above the top level - impossible");
+    }
+
+  /* Descend the keyword tree, creating nodes if needed. */
+  if (variable[0] == ':') {
+      kt = ip_descend_tree(ip_tree,variable);
+    }
+  else {
+      kt = ip_descend_tree(top,variable);
+    }
+
+  /* This should never be the case since variable keyword trees are
+   * created as needed. */
   if (!kt) {
       warn("couldn't find the variable %s",variable);
       return NULL;
     }
   
   /* Release storage for the variable. */
-  free(variable);
-  
-  /* Restore the old path. */
-  cwk_pop();
+  free(passed_variable);
   
   return(kt);
 }
@@ -419,15 +429,10 @@ IPV2::ip_assign_variable(char* variable)
   ip_keyword_tree_t *kt;
   
   if (table_keywords) ip_next_table_entry();
-  
-  /* Get the keyword tree associated with the variable. */
-  kt = ip_get_variable_kt(variable);
-  
-  /* Copy kt to the current subtree. */
-  if (kt) ip_copy_keyword_tree(sub_tree,kt);
 
   /* Note that the subtree is really a reference to another subtree. */
-  sub_tree->alias = kt;
+  sub_tree->variable = (char*)malloc(strlen(variable)+1);
+  strcpy(sub_tree->variable,variable);
 }
 
 char *
@@ -465,57 +470,6 @@ IPV2::ip_double_to_string(double val)
   
   return result;
 }
-  
-
-/* kt1 is made to look like kt2. */
-void
-IPV2::ip_copy_keyword_tree(ip_keyword_tree_t*kt1,ip_keyword_tree_t*kt2)
-{
-  ip_keyword_tree_t *new_kt,*I;
-  int first = 1;
-
-  if (!kt2) return;
-  if (!kt1) return;
-
-  if (kt1->alias) {
-      fprintf(stderr,"IPV2::ip_copy_keyword_tree: alias already present\n");
-      abort();
-    }
-  kt1->alias = kt2;
-
-  if (kt2->value) {
-    if (kt1->value) return; /* Duplicate value--return. */
-    kt1->value = (char *) malloc(strlen(kt2->value)+1);
-    strcpy(kt1->value,kt2->value);
-    return;
-    }
-
-  if (!kt2->down) return;
-
-  I = kt2->down;
-  do {
-    if (first) {
-      first = 0;
-      kt1->down = ip_alloc_keyword_tree();
-      kt1->down->up = kt1;
-      kt1->down->across = kt1->down;
-      kt1->down->down = NULL;
-      kt1->down->value = NULL;
-      kt1 = kt1->down;
-      new_kt = kt1;
-      }
-    else {
-	new_kt = ip_alloc_keyword_tree();
-	new_kt->across = kt1->across;
-	new_kt->up = kt1->up;
-	new_kt->down = NULL;
-	kt1->across = new_kt;
-      }
-    new_kt->keyword = (char *) malloc(strlen(I->keyword)+1);
-    strcpy(new_kt->keyword,I->keyword);
-    ip_copy_keyword_tree(new_kt,I);
-    } while ((I = I->across) != kt2->down);
-  }
 
 void
 IPV2::ip_assign_value(char*value)

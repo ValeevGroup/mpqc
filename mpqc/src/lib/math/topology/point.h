@@ -12,7 +12,7 @@
 #include <util/container/set.h>
 #include <util/container/array.h>
 
-class DVector;
+class RefSCVector;
 class KeyVal;
 
 class Point : virtual public SavableState
@@ -31,7 +31,7 @@ class Point : virtual public SavableState
     Point(int in_dim=3);
     Point(const double *y, int in_dim=3);
     Point(const Point &in_point);
-    Point(const DVector&);
+    Point(RefSCVector&);
     Point(double);
     Point(double,double);
     Point(double,double,double);
@@ -45,7 +45,7 @@ class Point : virtual public SavableState
     void resize(int dim);
 
   // Copy to double *
-    double *copy(void);
+    double *copy(void) const;
 
     Point& operator=(const Point&);
   

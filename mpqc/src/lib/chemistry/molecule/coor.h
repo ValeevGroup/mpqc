@@ -1,47 +1,203 @@
 
-#ifndef _chemistry_molecule_molcoor_h
-#define _chemistry_molecule_molcoor_h
+#ifndef _chemistry_molecule_coor_h
+#define _chemistry_molecule_coor_h
 
-#include <stdio.h>
-#include <math/newmat7/newmat.h>
-class Molecule;
+#include <ostream.h>
+#include <util/misc/scostream.h>
+#include <util/container/ref.h>
+#include <util/container/array.h>
+#include <util/container/set.h>
+#include <math/scmat/matrix.h>
+#include <chemistry/molecule/molecule.h>
 
-class MolecularCoor
-{
- protected:
-  RefMolecule _mol;
- public:
-  MolecularCoor(RefMolecule mol);
-  virtual ~MolecularCoor();
-  virtual int dim() = 0;
-  virtual void to_cartesian(ColumnVector&cartesian,ColumnVector&internal) = 0;
-  virtual void to_internal(ColumnVector&internal,ColumnVector&cartesian) = 0;
-};
-
-class ProjectedCartesian: public MolecularCoor
-{
- private:
-  int nproj; // for linear 5, nonlinear 6
-  Matrix x;
-  int ncart;
-  int nint;
- public:
-  ProjectedCartesian(RefMolecule&mol);
-  ~ProjectedCartesian();
-  int dim();
-  void to_cartesian(ColumnVector&cartesian,ColumnVector&projected);
-  void to_internal(ColumnVector&projected,ColumnVector&cartesian);
-};
-
-/////////////////////////////////////////////////////////////////////
-
-#if 0
-class InternalMolecularCoor : public MolecularCoor
-{
+class RefIntCoor;
+class IntCoor: virtual public SavableState {
+#   define CLASSNAME IntCoor
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   protected:
-    InternalCoorSet variable;
-    InternalCoorSet fixed;
+    // conversion factors from radians, bohr to the preferred units
+    static double bohr_conv;
+    static double radian_conv;
+    char *label_;
+    double value_;
+  public:
+    IntCoor(const char* label = 0);
+    IntCoor(KeyVal&);
+    IntCoor(const IntCoor&);
+    IntCoor(StateIn&);
+    virtual ~IntCoor();
+    void save_data_state(StateOut&);
+    virtual const char* label() const;
+    virtual double value() const;
+    virtual double preferred_value() const;
+    virtual const char* ctype() const = 0; // name for coor type
+    virtual void print(RefMolecule =0, SCostream& =SCostream::cout);
+    virtual double force_constant(RefMolecule&) = 0;
+    virtual void update_value(RefMolecule&) = 0;
+    virtual void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0) = 0;
+    virtual int equivalent(RefIntCoor&) = 0;
 };
-#endif
+SavableState_REF_dec(IntCoor);
+ARRAY_dec(RefIntCoor);
+SET_dec(RefIntCoor);
+ARRAYSET_dec(RefIntCoor);
+
+class SumIntCoor: public IntCoor {
+#   define CLASSNAME SumIntCoor
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    Arraydouble coef_;
+    ArrayRefIntCoor coor_;
+  public:
+    SumIntCoor(const char *);
+    SumIntCoor(KeyVal&);
+    SumIntCoor(StateIn&);
+    ~SumIntCoor();
+    void save_data_state(StateOut&);
+    int n();
+    void add(RefIntCoor&,double coef);
+    void normalize();
+
+    // IntCoor overrides
+    double preferred_value() const;
+    const char* ctype() const; // name for coor type
+    void print(RefMolecule = 0, SCostream& =SCostream::cout);
+    double force_constant(RefMolecule&);
+    void update_value(RefMolecule&);
+    void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0);
+    int equivalent(RefIntCoor&);
+};
+
+class RefSetIntCoor;
+class SetIntCoor: virtual public SavableState {
+#   define CLASSNAME SetIntCoor
+#   define HAVE_CTOR
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    ArraysetRefIntCoor coor_;
+  public:
+    SetIntCoor();
+    SetIntCoor(KeyVal&);
+    SetIntCoor(StateIn&);
+    virtual ~SetIntCoor();
+    void save_data_state(StateOut&);
+    void add(RefIntCoor&);
+    void add(RefSetIntCoor&);
+    void clear();
+    int n();
+    RefIntCoor coor(int);
+    virtual void fd_bmat(RefMolecule&,RefSCMatrix&);
+    virtual void bmat(RefMolecule&, RefSCMatrix&);
+    virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);
+    virtual void print(RefMolecule =0,SCostream& =SCostream::cout);
+    virtual void update_values(RefMolecule&);
+    virtual void values_to_vector(RefSCVector&);
+};
+SavableState_REF_dec(SetIntCoor);
+
+class MolecularCoor: virtual public SavableState
+{
+#   define CLASSNAME MolecularCoor
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  protected:
+    RefMolecule molecule_;
+  public:
+    MolecularCoor(RefMolecule&);
+    MolecularCoor(KeyVal&);
+    MolecularCoor(StateIn&);
+    virtual ~MolecularCoor();
+    void save_data_state(StateOut&);
+    virtual void print(SCostream& =SCostream::cout) = 0;
+    virtual RefSCDimension dim() = 0;
+    // convert molecular coordinates to and from cartesians
+    virtual void to_cartesian(RefSCVector&internal) = 0;
+    virtual void to_internal(RefSCVector&internal) = 0;
+    // convert the gradients
+    virtual void to_cartesian(RefSCVector&cartesian,RefSCVector&internal) = 0;
+    virtual void to_internal(RefSCVector&internal,RefSCVector&cartesian) = 0;
+    // convert the hessian
+    virtual void to_cartesian(RefSymmSCMatrix&cartesian,
+                              RefSymmSCMatrix&internal) =0;
+    virtual void to_internal(RefSymmSCMatrix&cartesian,
+                             RefSymmSCMatrix&hessian) = 0;
+    virtual void guess_hessian(RefSymmSCMatrix&hessian) = 0;
+};
+SavableState_REF_dec(MolecularCoor);
+
+class IntMolecularCoor: public MolecularCoor
+{
+#   define CLASSNAME IntMolecularCoor
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    void form_K_matrices(RefSCDimension& dredundant,
+                         RefSCDimension& dfixed,
+                         RefSCMatrix& K,
+                         RefSCMatrix& Kfixed,
+                         int*& is_totally_symmetric);
+  protected:
+    RefSCDimension dim_; // corresponds to the number of variable coordinates
+    RefSCDimension dnatom3_; // the number of atoms x 3
+    RefSCDimension dvc_; // the number of variable + constant coordinates
+
+    RefSetIntCoor variable_; // the variable internal coordinates
+    RefSetIntCoor constant_; // the constant internal coordinates
+    
+    RefSetIntCoor fixed_;
+
+    // these are all of the basic coordinates
+    RefSetIntCoor bonds_;
+    RefSetIntCoor bends_;
+    RefSetIntCoor tors_;
+    RefSetIntCoor outs_;
+    RefSetIntCoor extras_; // these are provided by the user
+
+    RefSetIntCoor all_;
+
+    // Useful relationships
+    // variable_->n() + constant_->n() = 3N-6(5)
+    // symm_->n() + asymm_->n() = 3N-6(5)
+
+    int update_bmat_;  // if 1 recompute the b matrix during to_cartesian
+    int only_totally_symmetric_; // only coors with tot. symm comp. are varied
+    double symmetry_tolerance_; // tol used to find coors with tot. sym. comp.
+    double simple_tolerance_; // tol used to see if a simple is included
+    double coordinate_tolerance_; // tol used to see if a coor is included
+    double scale_bonds_; // scale factor for bonds
+    double scale_bends_; // scale factor for bends
+    double scale_tors_;  // scale factor for tors
+    double scale_outs_;  // scale factor for outs
+
+    int nextra_bonds_;
+    int* extra_bonds_;
+
+    virtual void init();
+  public:
+    IntMolecularCoor(RefMolecule&mol);
+    IntMolecularCoor(KeyVal&);
+    IntMolecularCoor(StateIn&);
+    virtual ~IntMolecularCoor();
+    void save_data_state(StateOut&);
+    virtual void form_coordinates();
+    virtual RefSCDimension dim();
+    virtual void to_cartesian(RefSCVector&internal);
+    virtual void to_internal(RefSCVector&internal);
+    virtual void to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
+    virtual void to_internal(RefSCVector&internal,RefSCVector&cartesian);
+    virtual void to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
+    virtual void to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
+    virtual void print(SCostream& =SCostream::cout);
+    void guess_hessian(RefSymmSCMatrix&hessian);
+};
 
 #endif

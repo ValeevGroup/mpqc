@@ -241,7 +241,7 @@ RefSCMatrix::RefSCMatrix (RefSCMatrix & o): RefSSSCMatrix (o) {}
              
 RefSCMatrix::RefSCMatrix (SCMatrix * o): RefSSSCMatrix (o) {}
              
-RefSCMatrix::RefSCMatrix (RefDescribedClassBase&o): RefSSSCMatrix (o) {}
+// RefSCMatrix::RefSCMatrix (RefDescribedClassBase&o): RefSSSCMatrix (o) {}
 
 RefSCMatrix::~RefSCMatrix () {}
 
@@ -252,12 +252,12 @@ RefSCMatrix::operator=(SCMatrix* cr)
   return *this;
 }
 
-RefSCMatrix&
-RefSCMatrix::operator=( RefDescribedClassBase & c)
-{
-  RefSSSCMatrix::operator=(c);
-  return *this;
-}
+// RefSCMatrix&
+// RefSCMatrix::operator=( RefDescribedClassBase & c)
+// {
+//   RefSSSCMatrix::operator=(c);
+//   return *this;
+// }
 
 RefSCMatrix&
 RefSCMatrix::operator=( RefSCMatrix & c)
@@ -287,6 +287,18 @@ RefSCMatrix::get_element(int i, int j)
   return pointer()->get_element(i,j);
 }
 
+RefSCVector
+RefSCMatrix::operator*(RefSCVector&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCVector r = rowdim()->create_vector();
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
 RefSCMatrix
 RefSCMatrix::operator*(RefSCMatrix&a)
 {
@@ -294,6 +306,30 @@ RefSCMatrix::operator*(RefSCMatrix&a)
   a.require_nonnull();
 
   RefSCMatrix r = rowdim()->create_matrix(a->coldim());
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
+RefSCMatrix
+RefSCMatrix::operator*(RefSymmSCMatrix&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCMatrix r = rowdim()->create_matrix(a->dim());
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
+RefSCMatrix
+RefSCMatrix::operator*(RefDiagSCMatrix&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCMatrix r = rowdim()->create_matrix(a->dim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;
@@ -498,6 +534,13 @@ operator *(double a, RefSCMatrix& v)
   return v*a;
 }
 
+void
+RefSCMatrix::accumulate_outer_product(RefSCVector& v1,RefSCVector&v2)
+{
+  require_nonnull();
+  pointer()->accumulate_outer_product(v1.pointer(),v2.pointer());
+}
+
 ///////////////////////////////////////////////////////////////////
 // RefSymmSCMatrix members
 
@@ -515,10 +558,10 @@ RefSymmSCMatrix::RefSymmSCMatrix (SymmSCMatrix * o):
 {
 }
              
-RefSymmSCMatrix::RefSymmSCMatrix (RefDescribedClassBase&o):
-  RefSSSymmSCMatrix (o)
-{
-}
+// RefSymmSCMatrix::RefSymmSCMatrix (RefDescribedClassBase&o):
+//   RefSSSymmSCMatrix (o)
+// {
+// }
 
 RefSymmSCMatrix::~RefSymmSCMatrix ()
 {
@@ -531,12 +574,12 @@ RefSymmSCMatrix::operator=(SymmSCMatrix* cr)
   return *this;
 }
 
-RefSymmSCMatrix&
-RefSymmSCMatrix::operator=( RefDescribedClassBase & c)
-{
-  RefSSSymmSCMatrix::operator=(c);
-  return *this;
-}
+// RefSymmSCMatrix&
+// RefSymmSCMatrix::operator=( RefDescribedClassBase & c)
+// {
+//   RefSSSymmSCMatrix::operator=(c);
+//   return *this;
+// }
 
 RefSymmSCMatrix&
 RefSymmSCMatrix::operator=( RefSymmSCMatrix & c)
@@ -563,6 +606,27 @@ RefSymmSCMatrix::get_element(int i, int j)
 {
   require_nonnull();
   return pointer()->get_element(i,j);
+}
+
+void
+RefSymmSCMatrix::accumulate_symmetric_product(RefSCMatrix& a)
+{
+  require_nonnull();
+  pointer()->accumulate_symmetric_product(a.pointer());
+}
+
+void
+RefSymmSCMatrix::accumulate_symmetric_sum(RefSCMatrix& a)
+{
+  require_nonnull();
+  pointer()->accumulate_symmetric_sum(a.pointer());
+}
+
+void
+RefSymmSCMatrix::accumulate_transform(RefSCMatrix& a,RefSymmSCMatrix&b)
+{
+  require_nonnull();
+  pointer()->accumulate_transform(a.pointer(),b.pointer());
 }
 
 RefSymmSCMatrix
@@ -744,6 +808,30 @@ RefSymmSCMatrix::print(const char*title,ostream&out, int precision)
   pointer()->print(title,out,precision);
 }
 
+RefSCMatrix
+RefSymmSCMatrix::operator*(RefSCMatrix&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCMatrix r = dim()->create_matrix(a->coldim());
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
+RefSCVector
+RefSymmSCMatrix::operator*(RefSCVector&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCVector r = dim()->create_vector();
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
 RefSymmSCMatrix
 RefSymmSCMatrix::operator *(double a)
 {
@@ -756,6 +844,20 @@ RefSymmSCMatrix
 operator *(double a, RefSymmSCMatrix& v)
 {
   return v*a;
+}
+
+void
+RefSymmSCMatrix::accumulate_symmetric_outer_product(RefSCVector&v)
+{
+  require_nonnull();
+  pointer()->accumulate_symmetric_outer_product(v.pointer());
+}
+
+double
+RefSymmSCMatrix::scalar_product(RefSCVector&v)
+{
+  if (null()) return 0.0;
+  return pointer()->scalar_product(v.pointer());
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -775,10 +877,10 @@ RefDiagSCMatrix::RefDiagSCMatrix (DiagSCMatrix * o):
 {
 }
              
-RefDiagSCMatrix::RefDiagSCMatrix (RefDescribedClassBase&o):
-  RefSSDiagSCMatrix (o)
-{
-}
+// RefDiagSCMatrix::RefDiagSCMatrix (RefDescribedClassBase&o):
+//   RefSSDiagSCMatrix (o)
+// {
+// }
 
 RefDiagSCMatrix::~RefDiagSCMatrix ()
 {
@@ -791,12 +893,12 @@ RefDiagSCMatrix::operator=(DiagSCMatrix* cr)
   return *this;
 }
 
-RefDiagSCMatrix&
-RefDiagSCMatrix::operator=( RefDescribedClassBase & c)
-{
-  RefSSDiagSCMatrix::operator=(c);
-  return *this;
-}
+// RefDiagSCMatrix&
+// RefDiagSCMatrix::operator=( RefDescribedClassBase & c)
+// {
+//   RefSSDiagSCMatrix::operator=(c);
+//   return *this;
+// }
 
 RefDiagSCMatrix&
 RefDiagSCMatrix::operator=( RefDiagSCMatrix & c)
@@ -823,6 +925,18 @@ RefDiagSCMatrix::get_element(int i)
 {
   require_nonnull();
   return pointer()->get_element(i);
+}
+
+RefSCMatrix
+RefDiagSCMatrix::operator*(RefSCMatrix&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCMatrix r = dim()->create_matrix(a->coldim());
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
 }
 
 RefDiagSCMatrix
@@ -997,10 +1111,10 @@ RefSCVector::RefSCVector (SCVector * o):
 {
 }
 
-RefSCVector::RefSCVector (RefDescribedClassBase&o):
-  RefSSSCVector (o)
-{
-}
+// RefSCVector::RefSCVector (RefDescribedClassBase&o):
+//   RefSSSCVector (o)
+// {
+// }
 
 RefSCVector::~RefSCVector ()
 {
@@ -1013,12 +1127,12 @@ RefSCVector::operator=(SCVector* cr)
   return *this;
 }
 
-RefSCVector&
-RefSCVector::operator=( RefDescribedClassBase & c)
-{
-  RefSSSCVector::operator=(c);
-  return *this;
-}
+// RefSCVector&
+// RefSCVector::operator=( RefDescribedClassBase & c)
+// {
+//   RefSSSCVector::operator=(c);
+//   return *this;
+// }
 
 RefSCVector&
 RefSCVector::operator=( RefSCVector & c)
@@ -1092,6 +1206,12 @@ RefSCVector::dim()
 
 SCVectordouble
 RefSCVector::operator()(int i)
+{
+  return SCVectordouble(pointer(),i);
+}
+
+SCVectordouble
+RefSCVector::operator[](int i)
 {
   return SCVectordouble(pointer(),i);
 }
@@ -1200,3 +1320,36 @@ operator *(double a, RefSCVector& v)
 {
   return v*a;
 }
+
+void
+RefSCVector::normalize()
+{
+  require_nonnull();
+  pointer()->normalize();
+}
+
+RefSymmSCMatrix
+RefSCVector::symmetric_outer_product()
+{
+  RefSymmSCMatrix result(dim());
+  result.assign(0.0);
+  result.accumulate_symmetric_outer_product(pointer());
+  return result;
+}
+
+RefSCMatrix
+RefSCVector::outer_product(RefSCVector&v)
+{
+  RefSCMatrix result(dim(),v.dim());
+  result.assign(0.0);
+  result.accumulate_outer_product(*this,v);
+  return result;
+}
+
+double
+RefSCVector::maxabs()
+{
+  if (null()) return 0.0;
+  return pointer()->maxabs();
+}
+

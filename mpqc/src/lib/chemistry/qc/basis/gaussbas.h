@@ -3,8 +3,10 @@
 #define _chemistry_qc_basis_gaussbas_h
 
 #include <stdio.h>
-#include <math/newmat7/newmat.h>
-#include <util/container/pixmap.h>
+#include <util/container/ref.h>
+//#include <util/container/pixmap.h>
+#include <util/state/state.h>
+#include <math/scmat/matrix.h>
 
 // this is for centers_t*
 #include <chemistry/qc/intv2/atoms.h>
@@ -12,96 +14,107 @@
 class GaussianShell;
 class KeyVal;
 class Molecule;
+class RefMolecule;
+class cart_point;
 
-// This class is complicated by the use of several different sorts of Pixes:
-//   Centerpixes are the pixes for the Molecule class and are used
-//     as keys into the shell PixMap.  Some centerpixes may be owned
-//     by the molecule class (the basis set may have basis functions that
-//     are not on a shell).
-//   Shellpixes select a particular shell.  These are used by the r and
-//     operator[] members.
-//
-//   The r and operator[] members also take integer arguments for those
-//     not interested in using pixes.  The pix_to_ix and ix_to_pix
-//     members map between the representations.
-class GaussianBasisSet
+class GaussianBasisSet: virtual public SavableState
 {
- private:
-  char* name_;
-  GaussianShell** shell;
-  Pix* shell_to_centerpix;
-  int* shell_to_function_;
-  PixMap<int> centerpix_to_shellnum; // the number of the first shell is 0
-  PixMap<double*> centerpix_to_r;
-  PixMap<int> centerpix_to_nshell;
-  int nshell_;
-  int nbasis_;
-  void recursively_get_shell(int&,KeyVal&,const char*,const char*,int,int,int);
- public:
-  GaussianBasisSet(KeyVal&,Molecule&);
-  virtual ~GaussianBasisSet();
-  inline const char* name() const { return name_; }
-  inline int nshell() const { return nshell_; }
-  inline int nbasis() const { return nbasis_; }
-  int max_nfunction_in_shell() const;
-  int shell_to_function(Pix shellpix) const;
-  inline int shell_to_function(int i) const
-  { shell_to_function(ix_to_pix(i)); }
+#   define CLASSNAME GaussianBasisSet
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    char* name_;
+    GaussianShell** shell;
+    Arrayint shell_to_function_;
+    Arrayint function_to_shell_;
 
-  // iteration over centers with centerpixes
-  int ncenter() const;
-  Pix first_center() const;
-  void next_center(Pix& centerpix) const;
-  int nshell_on_center(Pix centerpix) const;
-  // the centershell pixes are equivalent to the shell pixes, below
-  Pix first_shell_on_center(Pix centerpix) const;
-  void next_shell_on_center(Pix centerpix,Pix& shellpix) const;
+    // Not using pixes anymore.  This is because they refer to molecule
+    // pixes which are not really a part of the basis set class.  They
+    // also make it difficult to restore state without molecule being a
+    // member of GaussianBasisSet, which I don't really like.
+    // Pix* shell_to_centerpix;
+    // PixMap<int> centerpix_to_shellnum; // the number of the first shell is 0
+    // PixMap<double*> centerpix_to_r;
+    // PixMap<int> centerpix_to_nshell;
 
-  // iteration over shells with shellpixes
-  Pix first() const;
-  void next(Pix& shellpix) const;
+    // pix replacments (using center numbers instead of center pixes):
+    int ncenter_;
+    Arrayint shell_to_center_;
+    Arrayint center_to_shell_;
+    Array2double center_to_r_;
+    Arrayint center_to_nshell_;
 
-  // access to shells and r thru pixes
-  const GaussianShell& operator[](Pix shellpix) const;
-  const double& r_center(Pix centerpix,int) const;
-  const double& r_shell(Pix shellpix,int) const;
-  GaussianShell& operator[](Pix shellpix);
-  double& r_center(Pix centerpix,int);
-  double& r_shell(Pix shellpix,int);
+    int nshell_;
+    int nbasis_;
+    int nprim_;
 
-  // map between shellpixes and integer indices for shells
-  inline Pix ix_to_pix(int i) const { return (Pix) (i+1); }
-  inline int pix_to_ix(Pix i) const { return ((int)i)-1; }
+    void recursively_get_shell(int&,KeyVal&,
+                               const char*,const char*,int,int,int);
 
-  // access to shells and r thru ints
-  inline const GaussianShell& operator[](int i) const
-  { return (*this)[ix_to_pix(i)]; }
-  inline const double& r(int i,int xyz) const
-  { return this->r_shell(ix_to_pix(i),xyz); }
-  inline GaussianShell& operator[](int i)
-  { return (*this)[ix_to_pix(i)]; }
-  inline double& r(int i,int xyz)
-  { return this->r_shell(ix_to_pix(i),xyz); }
+    void init(RefMolecule&,KeyVal&,
+              const char* basisname,
+              int have_userkeyval,
+              int pure);
+    void init2();
+  public:
+    GaussianBasisSet(KeyVal&);
+    GaussianBasisSet(StateIn&);
+    // pure is -1 if the pure from the basis set data is used.
+    // Otherwise 0 is cartesian and 1 is pure am.
+    GaussianBasisSet(RefMolecule&,const char*basisname,int pure = -1);
+    virtual ~GaussianBasisSet();
+    void save_data_state(StateOut&);
+    const char* name() const;
 
-  // this operator converts a shell pix to a center pix
-  Pix shell_to_center(Pix) const;
+    int ncenter() const;
+    int nshell() const;
+    int nshell_on_center(int icenter) const;
+    int nbasis() const;
+    int nprimitive() const;
 
-  // converts the basis set to a centers_t for compatibility with libintv2
-  // If the molecule is 0 then fake molecule information is included--
-  // this is useful in computing the overlap, for example.
-  centers_t* convert_to_centers_t(const Molecule*) const;
-  //operator struct struct_centers*();
+    int max_nfunction_in_shell() const;
 
-  // compute the value for this basis set at position r
-  int values(cart_point& r, double* basis_values) const;
-  int grad_values(cart_point& r, double*g_values, double* basis_values=0)const;
+    int shell_to_function(int i) const;
+    int function_to_shell(int i) const;
 
-  // fill in matrix with a matrix that orthogonalizes the basis functions
-  // note: this member is provided in the integrals library
-  void ortho(Matrix&ortho) const;
-  void ortho(Matrix&ortho,Matrix&ortho_inverse) const;
+    // access to shells thru overall shell number
+    const GaussianShell& operator()(int i) const;
+    GaussianShell& operator()(int i);
+    const GaussianShell& operator[](int i) const;
+    GaussianShell& operator[](int i);
 
-  void print(FILE*fp=stdout) const;
+    // access to shells thru center number and relative shell number
+    const GaussianShell& operator()(int icenter,int ishell) const;
+    GaussianShell& operator()(int icenter,int ishell);
+
+    // access to r thru center number
+    const double& r(int icenter,int xyz) const;
+    double& r(int icenter,int xyz);
+    
+    // converts the basis set to a centers_t for compatibility with libintv2
+    // If the molecule is 0 then fake molecule information is included--
+    // this is useful in computing the overlap, for example.
+    centers_t* convert_to_centers_t(const Molecule*) const;
+    //operator struct struct_centers*();
+
+    // compute the value for this basis set at position r
+    int values(cart_point& r, double* basis_values) const;
+    int grad_values(cart_point& r,double*g_values,double* basis_values=0)const;
+
+    // fill in matrix with a matrix that orthogonalizes the basis functions
+    // note: this member is provided in the integrals library
+    void ortho(RefSCMatrix&ortho) const;
+    void ortho(RefSCMatrix&ortho,RefSCMatrix&ortho_inverse) const;
+
+    void print(FILE*fp=stdout) const;
 };
+
+SavableState_REF_dec(GaussianBasisSet);
+
+#ifdef INLINE_FUNCTIONS
+#include <chemistry/qc/basis/gaussbas_i.h>
+#endif
 
 #endif

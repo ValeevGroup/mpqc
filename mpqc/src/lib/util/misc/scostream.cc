@@ -1,0 +1,201 @@
+
+#include <streambuf.h>
+#include <stdiostream.h>
+#include <util/misc/scostream.h>
+
+// static FILE* debug = fopen("debug.out","w");
+
+// create a standard SCostream output and error stream using file
+// descriptors
+SCostream SCostream::cout(1);
+SCostream SCostream::cerr(2);
+
+// see if a sensible filebuf can be created
+class SCfilebuf: public filebuf {
+  private:
+    int _column;
+  protected:
+    streamsize sys_write(const char*, streamsize);
+  public:
+    SCfilebuf(int);
+    streamsize xsputn(const char* s, streamsize n);
+    int get_column();
+};
+
+SCfilebuf::SCfilebuf(int fd):
+  filebuf(fd),
+  _column(0)
+{
+}
+
+streamsize
+SCfilebuf::xsputn(const char* s, streamsize n)
+{
+//   fprintf(debug, "xsputn called n = %d\n",n);
+  streamsize ret = filebuf::xsputn(s, n);
+  return ret;
+}
+
+streamsize
+SCfilebuf::sys_write(const char* s, streamsize n)
+{
+//   fprintf(debug, "sys_write called n = %d\n",n);
+  streamsize ret = filebuf::sys_write(s, n);
+
+  // find the last newline in s
+  for (int i=n-1; i>=0; i--) {
+      if (s[i] == '\n') break;
+    }
+  if (i == -1) _column += n;
+  else _column = n - i - 1;
+//   fprintf(stderr,"i = %d, n = %d, _column = %d\n",i,n,_column);
+//   fprintf(stderr,"\"");
+//   for (i=0; i<n; i++) fprintf(stderr,"%c",s[i]);
+//   fprintf(stderr,"\"\n");
+
+  return ret;
+}
+
+int
+SCfilebuf::get_column()
+{
+//   fprintf(debug,"get_column got %d\n",_column);
+  // flush updates _column:
+  return _column;
+}
+
+SCostream::SCostream():
+  indentation(0),
+  indentation_increment(2),
+  indentation_maximum(20),
+  nskip(0)
+{
+}
+
+SCostream::SCostream(FILE*fp):
+  indentation(0),
+  indentation_increment(2),
+  indentation_maximum(20),
+  nskip(0)
+{
+  init(new stdiobuf(fp));
+}
+
+SCostream::SCostream(int fd):
+  indentation(0),
+  indentation_increment(2),
+  indentation_maximum(20),
+  nskip(0)
+{
+  init(new SCfilebuf(fd));
+}
+
+// this causes very strange problems
+// SCostream::SCostream(ostream&o):
+//   ostream(o.rdbuf()), // the streambuf is not destroyed if the ctor is used
+//   indentation(0),
+//   indentation_increment(2),
+//   indentation_maximum(20),
+//   nskip(0)
+// {
+//   // the streambuf is destroyed if init is used.
+//   //init(o.rdbuf());
+// }
+
+SCostream::~SCostream()
+{
+}
+
+void
+SCostream::skip_next_indent()
+{
+  nskip++;
+}
+
+void
+SCostream::set_indent_to_column()
+{
+  int tmp = get_column();
+  if (tmp > 0) indentation += tmp;
+}
+
+int
+SCostream::get_column()
+{
+  // flush updates SCfilebuf's _column
+  flush();
+  return rdbuf()->get_column();
+}
+
+void
+SCostream::set_indent(int i)
+{
+  indentation = i;
+}
+
+int
+SCostream::get_indent()
+{
+  return indentation;
+}
+
+void
+SCostream::set_indent_inc(int i)
+{
+  indentation_increment = i;
+}
+
+int
+SCostream::get_indent_inc()
+{
+  return indentation_increment;
+}
+
+ostream&
+SCostream::indent()
+{
+  return indent(indentation);
+}
+
+ostream&
+SCostream::indent(int ni)
+{
+  if (nskip) {
+      nskip--;
+    }
+  else {
+      for (int i=0; i<ni; i++) {
+          (*this) << ' ';
+          //put(' ');
+        }
+    }
+  return *this;
+}
+
+SCostream&
+SCostream::operator--()
+{
+  indentation -= indentation_increment;
+  return *this;
+}
+
+SCostream&
+SCostream::operator++()
+{
+  indentation += indentation_increment;
+  return *this;
+}
+
+SCostream&
+SCostream::operator--(int)
+{
+  indentation -= indentation_increment;
+  return *this;
+}
+
+SCostream&
+SCostream::operator++(int)
+{
+  indentation += indentation_increment;
+  return *this;
+}

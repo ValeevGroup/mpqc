@@ -355,6 +355,7 @@ class ParsedKeyVal : public StringKeyVal {
     ParsedKeyVal();
     ParsedKeyVal(const char*);
     ParsedKeyVal(FILE*);
+    ParsedKeyVal(IPV2*);
     // This ctor is given a string which is used to form keywords
     // that are sought in the keyval argument.  The associated values
     // are used to construct file names that are used to initialize

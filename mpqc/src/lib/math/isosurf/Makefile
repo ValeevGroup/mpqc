@@ -7,12 +7,12 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 LD=$(CXX)
 
-CXXSRC = volume.cc tess.cc dtess.cc shape.cc surf.cc isosurf.cc
+CXXSRC = volume.cc tess.cc dtess.cc shape.cc surf.cc isosurf.cc volume_i.cc
 CSRC = ge_error.c dirichlet.c gauss.c
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
-INC = volume.h shape.h tess.h ge_error.h dirichlet.h pgen_objects.h
+INC = volume.h shape.h tess.h ge_error.h dirichlet.h pgen_objects.h volume_i.h
 
 DEPENDINCLUDE = $(INC)
 

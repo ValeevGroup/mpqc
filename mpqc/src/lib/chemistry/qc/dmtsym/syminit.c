@@ -1,8 +1,12 @@
 
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:52:58  etseidl
- * Initial revision
+ * Revision 1.2  1994/06/08 01:15:18  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:52:59  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.5  1993/04/27  23:58:12  jannsen
  * fixed compiler type conversion complaint
@@ -57,7 +61,7 @@ static char rcsid[] = "$Id$";
 #include <math.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include <util/ipv2/ip_libv2.h>
+#include <util/keyval/ipv2c.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
 #ifdef INT_SH_AM
@@ -85,8 +89,97 @@ static char rcsid[] = "$Id$";
 #include "syminit.gbl"
 #include "syminit.lcl"
 
+/* This reads centers info from the input and initializes the centers and
+ * sym_info structures. */
 GLOBAL_FUNCTION int
 sym_init_centers(_centers,_sym_info,point_group,_outfile)
+centers_t *_centers;
+sym_struct_t *_sym_info;
+char *point_group;
+FILE *_outfile;
+{
+  centers_t old_centers;
+  int errcod;
+  int nat;
+  int i,j;
+
+/* let's take a stab at generating the non-unique atoms, etc */
+
+  errcod = ip_count("atoms",&nat,0);
+  if(errcod != 0) {
+    serror(_outfile,__FILE__,"there don\'t appear to be any atoms\n",
+     (__LINE__)-3);
+    return(-1);
+    }
+
+  i=0;
+  errcod = ip_count("geometry",&i,0);
+  if (i!=nat) {
+    serror(_outfile,__FILE__,"size of atoms != size of geometry\n",
+     (__LINE__)-3);
+    return(-1);
+    }
+
+  allocbn_centers(&old_centers,"n",nat);
+  if(errcod != 0) {
+    serror(_outfile,__FILE__,"could not allocate memory for centers",
+     (__LINE__)-3);
+    return(-1);
+    }
+
+ /* loop over nat, and initialize the centers structure */
+  for(i=0; i < nat ; i++) {
+    center_t *_center = &old_centers.center[i];
+    char* at_lab;
+    char* bset;
+
+    init_center(_center);
+
+    errcod = ip_string("atoms",&at_lab,1,i);
+    if (errcod!=IPE_OK) return -1;
+    for(j=0; j < strlen(at_lab); j++) at_lab[j] = (char) toupper(at_lab[j]);
+    _center->atom = at_lab;
+
+    errcod = ip_data("charges","%lf",&_center->charge,1,i);
+    if(errcod != IPE_OK) _center->charge = atom_to_an(_center->atom);
+    
+    _center->r = (double *) malloc(sizeof(double)*3);
+    if (!_center->r) return -1;
+    
+    errcod = ip_count("basis",&j,0);
+    if(errcod == IPE_NOT_AN_ARRAY) {
+      errcod = ip_string("basis",&bset,0);
+      if (errcod!=IPE_OK) return -1;
+      }
+    else {
+      errcod = ip_string("basis",&bset,1,i);
+      if (errcod!=IPE_OK) return -1;
+      }
+    
+    errcod = int_read_basis(sym_to_atom(_center->atom),bset,&(_center->basis));
+    if (errcod!=IPE_OK) return -1;
+
+
+    for(j=0; j < 3 ; j++) {
+      errcod = ip_data("geometry","%lf",&_center->r[j],2,i,j);
+        if(errcod != 0) {
+          serror(_outfile,__FILE__,"problem reading the geometry",
+           (__LINE__)-3);
+          return(-1);
+          }
+        }
+    }
+
+  sym_init_given_centers(&old_centers,_centers,_sym_info,point_group,_outfile);
+
+  free_centers(&old_centers);
+}
+
+/* This inits centers based on the info found in _old_centers.
+ * It does not read any input. */
+GLOBAL_FUNCTION int
+sym_init_given_centers(_old_centers,_centers,_sym_info,point_group,_outfile)
+centers_t *_old_centers;
 centers_t *_centers;
 sym_struct_t *_sym_info;
 char *point_group;
@@ -119,7 +212,7 @@ FILE *_outfile;
 /* the first order of business is to find out what point group we're
  * dealing with */
 
-  if(point_group[0] == 0) {
+  if(!point_group || point_group[0] == 0) {
     fprintf(_outfile,"sym_init_centers: no symmetry specified\n");
     return(-1);
     }
@@ -151,17 +244,9 @@ FILE *_outfile;
 
 /* let's take a stab at generating the non-unique atoms, etc */
 
-  errcod = ip_count("atoms",&nat,0);
-  if(errcod != 0) {
+  nat = _old_centers->n;
+  if(!nat) {
     serror(_outfile,__FILE__,"there don\'t appear to be any atoms\n",
-     (__LINE__)-3);
-    return(-1);
-    }
-
-  i=0;
-  errcod = ip_count("geometry",&i,0);
-  if (i!=nat) {
-    serror(_outfile,__FILE__,"size of atoms != size of geometry\n",
      (__LINE__)-3);
     return(-1);
     }
@@ -184,12 +269,7 @@ FILE *_outfile;
   totnat=0;
   for(i=0; i < nat ; i++) {
     for(j=0; j < 3 ; j++) {
-      errcod = ip_data("geometry","%lf",&uniq_atoms.d[i][j],2,i,j);
-        if(errcod != 0) {
-          serror(_outfile,__FILE__,"could not allocate memory for n_eq_atoms",
-           (__LINE__)-3);
-          return(-1);
-          }
+        uniq_atoms.d[i][j] = _old_centers->center[i].r[j];
         }
     n_eq_atoms.i[i] = test_r(&trans,uniq_atoms.d[i]);
     totnat += n_eq_atoms.i[i];
@@ -209,11 +289,15 @@ FILE *_outfile;
   atom = 0;
   for(i=0; i < nat ; i++) {
     for(ng=0; ng < n_eq_atoms.i[i]; ng++) {
-      errcod = sym_make_center(&_centers->center[atom],uniq_atoms.d[i],i);
+      init_center(&_centers->center[atom]);
+      errcod = assign_center(&_centers->center[atom],&_old_centers->center[i]);
       if(errcod != 0) {
         sprintf(errmsg,"trouble making _centers->center[%d]",atom);
         serror(_outfile,__FILE__,errmsg,(__LINE__)-5);
         return(-1);
+        }
+      for (j=0; j<3; j++) {
+        _centers->center[atom].r[j] = uniq_atoms.d[i][j];
         }
       atom++;
       }

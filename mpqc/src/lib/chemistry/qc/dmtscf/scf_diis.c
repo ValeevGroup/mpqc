@@ -4,7 +4,11 @@
  */
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:31:15  etseidl
+ * Revision 1.3  1994/06/08 01:15:03  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
+ *
+ * Revision 1.2  1993/12/30  13:31:15  etseidl
  * merge in clj changes, do global sum of exchange energy in scf_ex.c
  *
  * Revision 1.5  1992/06/23  20:04:21  seidl
@@ -56,11 +60,11 @@ static char rcsid[]="$Id$";
 #include <stdlib.h>
 #include <tmpl.h>
 #include <math.h>
-#include <util/ipv2/ip_libv2.h>
 #include <math/dmt/libdmt.h>
 #include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
+#include <util/keyval/ipv2c.h>
 #include "scf.h"
 
 #include "scf_diis.gbl"

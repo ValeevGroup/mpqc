@@ -15,19 +15,15 @@ QUERY_FUNCTION_IMPL(int   ,valence);
 QUERY_FUNCTION_IMPL(int   ,melting_pt);
 QUERY_FUNCTION_IMPL(int   ,boiling_pt);
 QUERY_FUNCTION_IMPL(int   ,first_ion_pt);
-QUERY_FUNCTION_IMPL(double,bragg_radius);
+QUERY_FUNCTION_CONV_IMPL(double,bragg_radius,ang_to_au);
 QUERY_FUNCTION_IMPL(double,electronegativity);
 QUERY_FUNCTION_IMPL(double,specific_heat);
 QUERY_FUNCTION_IMPL(double,density);
-QUERY_FUNCTION_IMPL(double,atomic_radius);
-QUERY_FUNCTION_IMPL(double,vdw_radius);
+QUERY_FUNCTION_CONV_IMPL(double,atomic_radius,ang_to_au);
+QUERY_FUNCTION_CONV_IMPL(double,vdw_radius,ang_to_au);
 
-INLINE double ChemicalElement::atomic_radius_au() const
-{
-  return atom_info[Z_].atomic_radius * ang_to_au;
-}
-
-INLINE double ChemicalElement::charge() const
+INLINE double
+ChemicalElement::charge() const
 {
   return (double) number();
 }

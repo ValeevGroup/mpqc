@@ -4,6 +4,9 @@ extern "C" {
 #include <math.h>
 #include "p3dgen.h"
 }
+
+#include <math/scmat/matrix.h>
+#include <math/scmat/vector3.h>
 #include "surf.h"
 #include "isosurf.h"
 
@@ -16,7 +19,7 @@ SET_def(RefVertex);
 ARRAYSET_def(RefVertex);
 ARRAY_def(ArraysetRefVertex);
 
-Vertex::Vertex(RefPoint&point,DVector&gradient):
+Vertex::Vertex(RefSCVector&point,RefSCVector&gradient):
   _point(point),
   _gradient(gradient)
 {
@@ -30,16 +33,45 @@ Vertex::~Vertex()
 {
 }
 
+RefSCVector
+Vertex::gradient()
+{
+  return _gradient;
+}
+
+RefSCVector
+Vertex::point()
+{
+  return _point;
+}
+
+void
+Vertex::set_point(RefSCVector&p)
+{
+  _point = p;
+}
+
+Vertex::operator RefSCVector()
+{
+  return _point;
+}
+
+RefSCDimension
+Vertex::dimension()
+{
+  return _point.dim();
+}
+
 void
 Vertex::print(FILE*fp)
 {
   int i;
   fprintf(fp, "Vertex:");
-  for (i=0; i<_point->dimension(); i++)  {
-      fprintf(fp," %8.5f",_point->operator[](i));
+  for (i=0; i<_point.dim(); i++)  {
+      fprintf(fp," %8.5f", (double)_point[i]);
     }
   for (i=0; i<_gradient.dim(); i++)  {
-      fprintf(fp," %8.5f",_gradient[i]);
+      fprintf(fp," %8.5f", (double)_gradient[i]);
     }
   fprintf(fp,"\n");
 }
@@ -59,9 +91,9 @@ Edge::~Edge()
 
 double Edge::length()
 {
-  DVector A(_vertices[0]->point());
-  DVector B(_vertices[1]->point());
-  DVector BA = B - A;
+  RefSCVector A(_vertices[0]->point());
+  RefSCVector B(_vertices[1]->point());
+  RefSCVector BA = B - A;
   return sqrt(BA.dot(BA));
 }
 
@@ -92,8 +124,8 @@ Edge4::Edge4(RefVertex p1,RefVertex p2,RefVolume vol,double isovalue):
   RefVertex p[2];
   p[0] = p1;
   p[1] = p2;
-  DVector pv[2];
-  DVector grad[2];
+  RefSCVector pv[2];
+  RefSCVector grad[2];
 
   int i;
   for (i=0; i<2; i++) {
@@ -102,13 +134,15 @@ Edge4::Edge4(RefVertex p1,RefVertex p2,RefVolume vol,double isovalue):
     }
 
   for (i=0; i<2; i++) {
-      DVector interpv;
+      RefSCVector interpv;
       interpv = ((2.0*pv[i])+pv[(i==1)?0:1])*(1.0/3.0);
-      RefPoint start(new Point(interpv));
-      DVector interpgrad;
+      RefSCVector start(interpv.dim());
+      start.assign(interpv);
+      RefSCVector interpgrad;
       interpgrad = ((2.0*grad[i])+grad[(i==1)?0:1])*(1.0/3.0);
-      RefPoint newpoint = vol->solve(start,interpgrad,isovalue);
-      vol->gradient(newpoint,interpgrad);
+      RefSCVector newpoint = vol->solve(start,interpgrad,isovalue);
+      vol->set_x(newpoint);
+      interpgrad = vol->gradient().copy();
       _interiorvertices[i] = new Vertex(newpoint,interpgrad);
     }
 
@@ -215,7 +249,7 @@ void Triangle::add_edges(SetRefEdge&set)
 }
 
 double
-Triangle::interpolate(double r,double s,RefVertex result)
+Triangle::interpolate(double r,double s,RefVertex&result)
 {
   //  ^
   //  |s
@@ -242,19 +276,17 @@ Triangle::interpolate(double r,double s,RefVertex result)
     + L3 * p3->gradient();
 
   // Interpolate the point
-  DVector x1(p1->point());
-  DVector x2(p2->point());
-  DVector x3(p3->point());
+  RefSCVector x1(p1->point());
+  RefSCVector x2(p2->point());
+  RefSCVector x3(p3->point());
 
-  DVector newpoint = L1 * x1 + L2 * x2 + L3 * x3;
+  RefSCVector newpoint = L1 * x1 + L2 * x2 + L3 * x3;
 
-  for (int i=0; i<result->point()->dimension(); i++) {
-      result->point()->operator[](i) = newpoint[i];
-    }
+  result->point().assign(newpoint);
 
   // Find the surface element
-  DVector x21 = x2 - x1;
-  DVector x31 = x3 - x1;
+  SCVector3 x21 = x2 - x1;
+  SCVector3 x31 = x3 - x1;
   return (x21.cross(x31)).norm();
 }
 
@@ -346,25 +378,27 @@ Triangle10::Triangle10(RefEdge4 v1, RefEdge4 v2, RefEdge4 v3,
 
   //// find the midvertex of the triangle
 
-  DVector p0(_vertices[0]->point());
-  DVector p3(_vertices[3]->point());
-  DVector p8(_vertices[8]->point());
+  RefSCVector p0(_vertices[0]->point());
+  RefSCVector p3(_vertices[3]->point());
+  RefSCVector p8(_vertices[8]->point());
   // this vertex corresponds to r = s = 1/3 on the flat triangle
-  DVector p9 = (1.0/3.0)*(p0 + p3 + p8);
-  RefPoint trialp9(new Point(p9));
+  RefSCVector p9 = (1.0/3.0)*(p0 + p3 + p8);
+  RefSCVector trialp9(p9.dim());
+  trialp9.assign(p9);
 
   //// find the approximate gradient at the midvertex of the triangle
 
-  DVector& grad0 = _vertices[0]->gradient();
-  DVector& grad3 = _vertices[3]->gradient();
-  DVector& grad8 = _vertices[8]->gradient();
-  DVector grad9 = (1.0/3.0)*(grad0 + grad3 + grad8);
+  RefSCVector grad0 = _vertices[0]->gradient();
+  RefSCVector grad3 = _vertices[3]->gradient();
+  RefSCVector grad8 = _vertices[8]->gradient();
+  RefSCVector grad9 = (1.0/3.0)*(grad0 + grad3 + grad8);
 
   //// put the midvertex on the surface defined by vol(p9) = isovalue
 
-  RefPoint newpoint = vol->solve(trialp9,grad9,isovalue);
+  RefSCVector newpoint = vol->solve(trialp9,grad9,isovalue);
   // compute the true gradient
-  vol->gradient(newpoint,grad9);
+  vol->set_x(newpoint);
+  grad9 = vol->gradient().copy();
   _vertices[9] = new Vertex(newpoint,grad9);
 };
 
@@ -375,17 +409,16 @@ double Triangle10::area()
 }
 
 double
-Triangle10::interpolate(double r,double s,RefVertex result)
+Triangle10::interpolate(double r,double s,RefVertex&result)
 {
   int i;
 
-  int dim = _vertices[0]->point()->dimension();
+  RefSCDimension dim = _vertices[0]->point().dim();
 
-  if (result->point()->dimension() != dim) {
-      result->point()->resize(dim);
-    }
-  if (result->gradient().dim() != dim) {
-      result->gradient().resize(dim);
+  if (result->point().dim() != dim
+      ||result->gradient().dim() != dim) {
+      fprintf(stderr,"Triangle10::interpolate(): need to allocate vertex\n");
+      abort();
     }
 
   // use 10 point interpolation
@@ -463,38 +496,38 @@ Triangle10::interpolate(double r,double s,RefVertex result)
   Ns[9] = 27 *(L1s*L2*L3 + L1*L2s*L3 + L1*L2*L3s);
 
   // Interpolate the gradient
-  result->gradient().zero();
+  result->gradient().assign(0.0);
   for (i=0; i<10; i++)
-    result->gradient() += N[i] * _vertices[i]->gradient();
+    result->gradient() = result->gradient() + N[i] * _vertices[i]->gradient();
 
   // Interpolate the point
-  DVector x[10];
+  RefSCVector x[10];
   for (i=0; i<10; i++)
     x[i] = _vertices[i]->point();
 
-  DVector newpoint(_vertices[0]->point()->dimension());
-  newpoint.zero();
+  RefSCVector newpoint(_vertices[0]->point().dim());
+  newpoint.assign(0.0);
   for (i=0; i<10; i++)
-    newpoint += N[i] * x[i];
+    newpoint = newpoint + N[i] * x[i];
 
-  for (i=0; i<result->point()->dimension(); i++) {
-      result->point()->operator[](i) = newpoint[i];
-    }
+  result->point().assign(newpoint);
 
   // Find the surface element
-  DVector xr(_vertices[0]->point()->dimension());
-  xr.zero();
+  RefSCVector xr(_vertices[0]->point().dim());
+  xr.assign(0.0);
   for (i=0; i<10; i++)
-    xr += Nr[i] * x[i];
+    xr = xr + Nr[i] * x[i];
 
-  DVector xs(_vertices[0]->point()->dimension());
-  xs.zero();
+  RefSCVector xs(_vertices[0]->point().dim());
+  xs.assign(0.0);
   for (i=0; i<10; i++)
-    xs += Ns[i] * x[i];
+    xs = xs + Ns[i] * x[i];
 
   // _vertices[9]->point()->print();
 
-  double surface_element = (xr.cross(xs)).norm();
+  SCVector3 xr3(xr);
+  SCVector3 xs3(xs);
+  double surface_element = (xr3.cross(xs3)).norm();
   return surface_element;
 }
 
@@ -804,11 +837,13 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
             }
 
           // find the vertex replacement, D_rep
-          RefVertex D_rep(new Vertex(new Point(3),*(new DVector(3))));
+          RefSCVector newp(E2D->vertex(0)->dimension());
+          RefSCVector newv(E2D->vertex(0)->dimension());
+          RefVertex D_rep(new Vertex(newp,newv));
           for (i=0; i<3; i++) {
-              D_rep->point()->operator[](i) =
-                0.5*(D[0]->point()->operator[](i)
-                     + D[1]->point()->operator[](i));
+              D_rep->point()[i] =
+                0.5*(D[0]->point()[i]
+                     + D[1]->point()[i]);
               D_rep->gradient().operator[](i) =
                 0.5*(D[0]->gradient().operator[](i)
                      + D[1]->gradient().operator[](i));
@@ -961,6 +996,12 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
                   for (int j=0; j<3; j++) {
                       _triangle_edge[i][j]
                         = edge_map[_triangle_edge[i][j]];
+                      if (_triangle_edge[i][j] < 0
+                          || _triangle_edge[i][j] > 1000) {
+                          printf("funny edge\n");
+                          sqrt(-1.0);
+                          abort();
+                        }
                     }
                   i++;
                 }
@@ -1057,7 +1098,7 @@ TriangulatedSurface::compute_values(RefVolume&vol)
   _values.set_length(n);
 
   for (int i=0; i<n; i++) {
-      vol->SetX(_vertices[i]->point());
+      vol->set_x(_vertices[i]->point());
       _values[i] = vol->value();
     }
   _have_values = 1;
@@ -1080,18 +1121,18 @@ TriangulatedSurface::volume()
   for (int i=0; i<_triangles.length(); i++) {
 
       // get the vertices of the triangle
-      DVector A(_vertices[triangle_vertex(i,0)]->point());
-      DVector B(_vertices[triangle_vertex(i,1)]->point());
-      DVector C(_vertices[triangle_vertex(i,2)]->point());
+      RefSCVector A(_vertices[triangle_vertex(i,0)]->point());
+      RefSCVector B(_vertices[triangle_vertex(i,1)]->point());
+      RefSCVector C(_vertices[triangle_vertex(i,2)]->point());
 
       // project the vertices onto the xy plane
-      DVector Axy(A); Axy[2] = 0.0;
-      DVector Bxy(B); Bxy[2] = 0.0;
-      DVector Cxy(C); Cxy[2] = 0.0;
+      RefSCVector Axy(A.dim()); Axy.assign(A); Axy[2] = 0.0;
+      RefSCVector Bxy(B.dim()); Bxy.assign(B); Bxy[2] = 0.0;
+      RefSCVector Cxy(C.dim()); Cxy.assign(C); Cxy[2] = 0.0;
 
       // construct the legs of the triangle in the xy plane
-      DVector BAxy = Bxy - Axy;
-      DVector CAxy = Cxy - Axy;
+      RefSCVector BAxy = Bxy - Axy;
+      RefSCVector CAxy = Cxy - Axy;
 
       // find the lengths of the legs of the triangle in the xy plane
       double baxy = sqrt(BAxy.dot(BAxy));
@@ -1201,7 +1242,7 @@ TriangulatedSurface::print(FILE*fp)
       int dim = p->dimension();
       fprintf(fp,"  %3d:",i);
       for (int j=0; j<dim; j++) {
-          fprintf(fp," % 15.10f", p->point()->operator[](j));
+          fprintf(fp," % 15.10f", (double)p->point()[j]);
         }
       fprintf(fp,"\n");
     }
@@ -1239,7 +1280,7 @@ TriangulatedSurface::print_vertices_and_triangles(FILE*fp)
       int dim = p->dimension();
       fprintf(fp,"  %3d:",i);
       for (int j=0; j<dim; j++) {
-          fprintf(fp," % 15.10f", p->point()->operator[](j));
+          fprintf(fp," % 15.10f", (double)p->point()[j]);
         }
       fprintf(fp,"\n");
     }
@@ -1316,9 +1357,9 @@ TriangulatedSurface10::volume()
   double volume = 0.0;
   RefVertex current = tsi.current();
   for (tsi = 0; tsi; tsi++) {
-      DVector norm(current->gradient());
+      RefSCVector norm(current->gradient());
       norm.normalize();
-      volume += tsi.w() * norm[0] * current->point()->operator[](0);
+      volume += tsi.w() * norm[0] * current->point()[0];
     }
   
   return volume;
@@ -1344,10 +1385,10 @@ TriangulatedSurfaceIntegrator::
   _irs = 0;
 
   if (_ts->nvertex()) {
-      int n = _ts->vertex(0)->point()->dimension();
-      _current = new Vertex();
-      _current->point() = new Point(n);
-      _current->gradient().resize(n);
+      RefSCDimension n = _ts->vertex(0)->point().dim();
+      RefSCVector p(n);
+      RefSCVector g(n);
+      _current = new Vertex(p,g);
     }
 }
 
@@ -1416,8 +1457,9 @@ TriangulatedSurfaceIntegrator::
 //////////////////////////////////////////////////////////////////////
 // UniformLattice
 
-UniformLattice::UniformLattice()
+UniformLattice::UniformLattice(RefSCDimension&scdim)
 {
+  _scdim = scdim;
   _dim = 0;
   _start = 0;
   _incr = 0;
@@ -1475,7 +1517,7 @@ UniformLattice::value(int i0,int i1,int i2)
   return value(i);
 }
 
-RefPoint
+RefSCVector
 UniformLattice::interpolate(int i0,int i1,int i2,
                             int j0,int j1,int j2,
                             double value)
@@ -1545,13 +1587,15 @@ ImplicitUniformLattice::ImplicitUniformLattice(RefVolume& vol,
                                                double resolution,
                                                double minval,
                                                double maxval):
+  UniformLattice(vol->dimension()),
   _vol(vol)
 {
-  int dim = vol->GetDim();
+  RefSCDimension ddim = vol->dimension();
+  int dim = ddim.n();
   int* dims = new int[dim];
   double* start = new double[dim];
   double* incr = new double[dim];
-  Point p1(dim),p2(dim);
+  RefSCVector p1(ddim),p2(ddim);
   vol->boundingbox(minval, maxval, p1, p2);
 
   int i;
@@ -1576,28 +1620,32 @@ ImplicitUniformLattice::~ImplicitUniformLattice()
 double
 ImplicitUniformLattice::value(int* i)
 {
-  Point p(start(0)+incr(0)*i[0],start(1)+incr(1)*i[1],start(2)+incr(2)*i[2]);
-  _vol->SetX(p);
+  RefSCVector newx = _vol->get_x();
+  for (int ii=0; ii<3; ii++) {
+      newx(ii) = start(ii)+incr(ii)*i[ii];
+    }
+  _vol->set_x(newx);
   return _vol->value();
 }
 
-RefPoint
+RefSCVector
 ImplicitUniformLattice::interpolate(int* i1,int* i2,double value)
 {
   int i;
 
-  RefPoint p1 = new Point(_ndim);
-  for (i=0; i<_ndim; i++) p1->operator[](i) = start(i)+incr(i)*i1[i];
-  RefPoint p2 = new Point(_ndim);
-  for (i=0; i<_ndim; i++) p2->operator[](i) = start(i)+incr(i)*i2[i];
+  RefSCVector p1(_vol->dimension());
+  RefSCVector p2(_vol->dimension());
+  for (i=0; i<_ndim; i++) p1[i] = start(i)+incr(i)*i1[i];
+  for (i=0; i<_ndim; i++) p2[i] = start(i)+incr(i)*i2[i];
 
   return _vol->interpolate(p1,p2,value);
 }
 
 void
-ImplicitUniformLattice::gradient(RefPoint p,DVector& grad)
+ImplicitUniformLattice::gradient(RefSCVector& p,RefSCVector& grad)
 {
-  _vol->gradient(p,grad);
+  _vol->set_x(p);
+  grad = _vol->gradient();
 }
 
 IsosurfaceGen::IsosurfaceGen()

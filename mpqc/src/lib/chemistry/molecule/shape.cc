@@ -34,9 +34,9 @@ VDWShape::initialize(Molecule&mol)
 {
   _shapes.clear();
   for (int i=0; i<mol.natom(); i++) {
-      Point3 r;
+      SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol[i][j];
-      add_shape(new SphereShape(r,mol[i].element().atomic_radius_au()));
+      add_shape(new SphereShape(r,mol[i].element().atomic_radius()));
     }
 }
 
@@ -77,10 +77,10 @@ ConnollyShape::initialize(Molecule&mol,double probe_radius)
   _shapes.clear();
   ArraysetRefSphereShape spheres;
   for (int i=0; i<mol.natom(); i++) {
-      Point3 r;
+      SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol[i][j];
       RefSphereShape
-        sphere(new SphereShape(r,mol[i].element().atomic_radius_au()));
+        sphere(new SphereShape(r,mol[i].element().atomic_radius()));
       add_shape(sphere.pointer());
       spheres.add(sphere);
     }

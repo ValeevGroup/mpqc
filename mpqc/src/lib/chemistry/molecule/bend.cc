@@ -56,22 +56,18 @@ BendSimpleCo::BendSimpleCo(const char *refr, int a1, int a2, int a3)
   }
 
 BendSimpleCo::BendSimpleCo(KeyVal &kv)
-  : SimpleCo(3)
+  : SimpleCo(kv,3)
 {
-  label_=kv.pcharvalue(0);
-  atoms[0]=kv.intvalue(1);
-  atoms[1]=kv.intvalue(2);
-  atoms[2]=kv.intvalue(3);
 }
 
-BendSimpleCo::BendSimpleCo(KeyVal *kv, const char *lab, int n)
-  : SimpleCo(3)
-{
-  label_=kv->pcharvalue(lab,n,1);
-  atoms[0]=kv->intvalue(lab,n,2);
-  atoms[1]=kv->intvalue(lab,n,3);
-  atoms[2]=kv->intvalue(lab,n,4);
-  }
+// BendSimpleCo::BendSimpleCo(KeyVal *kv, const char *lab, int n)
+//   : SimpleCo(3)
+// {
+//   label_=kv->pcharvalue(lab,n,1);
+//   atoms[0]=kv->intvalue(lab,n,2);
+//   atoms[1]=kv->intvalue(lab,n,3);
+//   atoms[2]=kv->intvalue(lab,n,4);
+//   }
 
 BendSimpleCo::~BendSimpleCo()
 {
@@ -83,27 +79,6 @@ BendSimpleCo& BendSimpleCo::operator=(const BendSimpleCo& s)
   label_=new char[strlen(s.label_)+1]; strcpy(label_,s.label_);
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   return *this;
-  }
-
-void BendSimpleCo::print(ostream& os, const char *pad) const
-{
-  os << pad << "Bend:\n";
-  if(label_) os << pad << "  label_   = " << label_ << endl;
-  if(atoms) {
-    os << pad << "  atoms = " << atoms[0] << " " << atoms[1];
-    os << " " << atoms[2] << endl;
-    }
-  os << pad << "  theta = " << value() << endl;
-  os.flush();
-  }
-
-void BendSimpleCo::print(FILE *of, const char *pad) const
-{
-  fprintf(of,"%sBend:\n",pad);
-  if(label_) fprintf(of,"%s  label_   = %s\n",pad,label_);
-  if(atoms) fprintf(of,"%s  atoms = %d %d %d\n",pad,atoms[0],atoms[1],atoms[2]);
-  fprintf(of,"%s  theta = %lf\n",pad,value());
-  fflush(of);
   }
 
 double BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
@@ -121,8 +96,8 @@ double BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   if(bmat) {
     double uu,ww,vv;
     double si=s2(co);
-    double r1i = 1.0/(bohr*si*dist(m[a].point(),m[b].point()));
-    double r2i = 1.0/(bohr*si*dist(m[c].point(),m[b].point()));
+    double r1i = 1.0/(si*dist(m[a].point(),m[b].point()));
+    double r2i = 1.0/(si*dist(m[c].point(),m[b].point()));
     for (int j=0; j < 3; j++) {
       uu = (co*u1[j]-u2[j])*r1i;
       ww = (co*u2[j]-u1[j])*r2i;
@@ -140,11 +115,11 @@ double BendSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[0]-1; int c=atoms[2]-1;
 
-  double rad_ab = (m[a].element().atomic_radius() +
-                   m[b].element().atomic_radius() ) / 0.52917706;
+  double rad_ab =   m[a].element().atomic_radius()
+                  + m[b].element().atomic_radius();
 
-  double rad_ac = (m[a].element().atomic_radius() +
-                   m[c].element().atomic_radius() ) / 0.52917706;
+  double rad_ac =   m[a].element().atomic_radius()
+                  + m[c].element().atomic_radius();
 
   double r_ab = dist(m[a].point(),m[b].point());
   double r_ac = dist(m[a].point(),m[c].point());
@@ -152,6 +127,29 @@ double BendSimpleCo::calc_force_con(Molecule& m)
   double k = 0.089 + 0.11/pow((rad_ab*rad_ac),-0.42) *
                            exp(-0.44*(r_ab+r_ac-rad_ab-rad_ac));
 
-  // return force constant in mdyn*ang/rad^2
-  return k*4.359813653;
+  return k;
   }
+
+const char *
+BendSimpleCo::ctype() const
+{
+  return "BEND";
+}
+
+double
+BendSimpleCo::radians() const
+{
+  return value_;
+}
+
+double
+BendSimpleCo::degrees() const
+{
+  return value_*rtd;
+}
+
+double
+BendSimpleCo::preferred_value() const
+{
+  return value_*rtd;
+}

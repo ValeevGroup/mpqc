@@ -13,7 +13,15 @@
 #include <util/misc/timer.h>
 #include <util/misc/machtype.gbl>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void check_alloc(void*,char*);
 int mtype_get();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _util_misc_libmisc_h */

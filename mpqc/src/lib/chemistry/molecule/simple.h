@@ -30,66 +30,48 @@
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/coor.h>
 
 #undef V_BASE
 #define V_BASE virtual public SavableState
 
 //////////////////////////////////////////////////////////////////////////
 
-class SimpleCoPtr;
-class SimpleCoList;
-class RefSimpleCoList;
-
-// class SCCount {
-//   friend class SimpleCoPtr;
-// 
-//   private:
-//     int count;
-//   protected:
-//     SCCount(): count(0) {}
-//   };
-
-//////////////////////////////////////////////////////////////////////////
-
-class SimpleCo : V_BASE {
+class SimpleCo : public IntCoor {
 #   define CLASSNAME SimpleCo
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    char *label_;
     int natoms_;
     int *atoms;
-    double value_;
-
-    SimpleCo();
-    SimpleCo(int,const char* =0);
 
   public:
+    SimpleCo();
+    SimpleCo(int,const char* =0);
+    SimpleCo(KeyVal&,int);
     virtual ~SimpleCo();
 
-    inline const char * label() const { return label_; }
-    inline const int natoms() const { return natoms_; }
-    inline const int operator[](int i) const { return atoms[i]; }
-    inline double value() const { return value_; }
-    virtual double preferred_value() const =0;
-
-    virtual const char * ctype() const =0;
-
-    virtual void init();
+    int natoms() const;
+    int operator[](int i) const;
 
     void save_data_state(StateOut&);
     SimpleCo(StateIn&);
 
     virtual int operator==(SimpleCo&);
-    inline int operator!=(SimpleCo&u) { return !(*this==u); }
+    int operator!=(SimpleCo&u);
 
-    virtual double calc_force_con(Molecule&) =0;
-    virtual double calc_intco(Molecule&, double* =0, double =1) =0;
+    // these IntCoor members are implemented in term of
+    // the calc_force_con and calc_intco members.
+    double force_constant(RefMolecule&);
+    void update_value(RefMolecule&);
+    void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0);
 
-    virtual void print(ostream&, const char* =" ") const =0;
-    virtual void print(FILE* =stdout, const char* =" ") const =0;
+    virtual double calc_force_con(Molecule&) = 0;
+    virtual double calc_intco(Molecule&, double* =0, double =1) = 0;
 
-    friend ostream& operator<<(ostream&,SimpleCo&);
+    void print(RefMolecule =0, SCostream& = SCostream::cout);
+    
+    int equivalent(RefIntCoor&);
   };
 SavableState_REF_dec(SimpleCo);
 
@@ -102,8 +84,6 @@ SavableState_REF_dec(SimpleCo);
     SimpleCo& operator=(const SimpleCo&);				      \
     double calc_force_con(Molecule&);					      \
     double calc_intco(Molecule&, double* =0, double =1);		      \
-    void print(ostream&, const char* =" ") const;			      \
-    void print(FILE* =stdout, const char* =" ") const;			      \
     classname(StateIn&);						      \
     void save_data_state(StateOut&);                                          \
   private:
@@ -112,10 +92,13 @@ SavableState_REF_dec(SimpleCo);
 SimpleCo& classname::operator=(const SimpleCo& c)			      \
 {									      \
   classname *cp = classname::castdown((SimpleCo*)&c);			      \
-  if(cp)								      \
-    *this=*cp;								      \
-  else									      \
-    init();								      \
+  if(cp) {								      \
+      *this=*cp;							      \
+    }									      \
+  else {								      \
+      natoms_ = 0;							      \
+      atoms = 0;							      \
+    }									      \
 									      \
   return *this;								      \
   }									      \
@@ -144,14 +127,14 @@ SimpleCo_DECLARE(StreSimpleCo)
     StreSimpleCo(const StreSimpleCo&);
     StreSimpleCo(const char*, int, int);
     StreSimpleCo(KeyVal&);
-    StreSimpleCo(KeyVal*,const char*,int=0);
+    //StreSimpleCo(KeyVal*,const char*,int=0);
     ~StreSimpleCo();
 
-    inline const char * ctype() const { return "STRE"; }
-
-    inline double bohr() const { return value_; }
-    inline double angstrom() const { return value_*0.52917706; }
-    inline double preferred_value() const { return value_*0.52917706; }
+    const char * ctype() const;
+    
+    double bohr() const;
+    double angstrom() const;
+    double preferred_value() const;
   };
 
 typedef StreSimpleCo Stre;
@@ -173,14 +156,14 @@ SimpleCo_DECLARE(BendSimpleCo)
     BendSimpleCo(const BendSimpleCo&);
     BendSimpleCo(const char*, int, int, int);
     BendSimpleCo(KeyVal&);
-    BendSimpleCo(KeyVal*,const char*,int=0);
+    //BendSimpleCo(KeyVal*,const char*,int=0);
     ~BendSimpleCo();
 
-    inline const char * ctype() const { return "BEND"; }
-
-    inline double radians() const { return value_; }
-    inline double degrees() const { return value_*rtd; }
-    inline double preferred_value() const { return value_*rtd; }
+    const char * ctype() const;
+    
+    double radians() const;
+    double degrees() const;
+    double preferred_value() const;
   };
 
 typedef BendSimpleCo Bend;
@@ -200,14 +183,14 @@ SimpleCo_DECLARE(TorsSimpleCo)
     TorsSimpleCo(const TorsSimpleCo&);
     TorsSimpleCo(const char *refr, int, int, int, int);
     TorsSimpleCo(KeyVal&);
-    TorsSimpleCo(KeyVal*,const char*,int=0);
+    //TorsSimpleCo(KeyVal*,const char*,int=0);
     ~TorsSimpleCo();
 
-    inline const char * ctype() const { return "TORS"; }
-
-    inline double radians() const { return value_; }
-    inline double degrees() const { return value_*rtd; }
-    inline double preferred_value() const { return value_*rtd; }
+    const char * ctype() const;
+    
+    double radians() const;
+    double degrees() const;
+    double preferred_value() const;
   };
 
 typedef TorsSimpleCo Tors;
@@ -227,14 +210,14 @@ SimpleCo_DECLARE(OutSimpleCo)
     OutSimpleCo(const OutSimpleCo&);
     OutSimpleCo(const char *refr, int, int, int, int);
     OutSimpleCo(KeyVal&);
-    OutSimpleCo(KeyVal*,const char*,int=0);
+    //OutSimpleCo(KeyVal*,const char*,int=0);
     ~OutSimpleCo();
 
-    inline const char * ctype() const { return "OUT"; }
-
-    inline double radians() const { return value_; }
-    inline double degrees() const { return value_*rtd; }
-    inline double preferred_value() const { return value_*rtd; }
+    const char * ctype() const;
+    
+    double radians() const;
+    double degrees() const;
+    double preferred_value() const;
   };
 
 typedef OutSimpleCo Out;
@@ -254,16 +237,16 @@ SimpleCo_DECLARE(LinIPSimpleCo)
     LinIPSimpleCo(const LinIPSimpleCo&);
     LinIPSimpleCo(const char *refr, int, int, int, int);
     LinIPSimpleCo(KeyVal&);
-    LinIPSimpleCo(KeyVal*,const char*,int=0);
+    //LinIPSimpleCo(KeyVal*,const char*,int=0);
     ~LinIPSimpleCo();
 
-    inline const char * ctype() const { return "LINIP"; }
+    const char * ctype() const;
 
     void set_theta(const double*, const double*, const double*, const double*);
 
-    inline double radians() const { return value_; }
-    inline double degrees() const { return value_*rtd; }
-    inline double preferred_value() const { return value_*rtd; }
+    double radians() const;
+    double degrees() const;
+    double preferred_value() const;
   };
 
 typedef LinIPSimpleCo LinIP;
@@ -283,16 +266,16 @@ SimpleCo_DECLARE(LinOPSimpleCo)
     LinOPSimpleCo(const LinOPSimpleCo&);
     LinOPSimpleCo(const char *refr, int =0, int =0, int =0, int =0);
     LinOPSimpleCo(KeyVal&);
-    LinOPSimpleCo(KeyVal*,const char*,int=0);
+    //LinOPSimpleCo(KeyVal*,const char*,int=0);
     ~LinOPSimpleCo();
 
-    inline const char * ctype() const { return "LINOP"; }
+    const char * ctype() const;
 
     void set_theta(const double*, const double*, const double*, const double*);
 
-    inline double radians() const { return value_; }
-    inline double degrees() const { return value_*rtd; }
-    inline double preferred_value() const { return value_*rtd; }
+    double radians() const;
+    double degrees() const;
+    double preferred_value() const;
   };
 
 typedef LinOPSimpleCo LinOP;
@@ -302,13 +285,6 @@ typedef LinOPSimpleCo LinOP;
 /*
  * these are some utility routines
  */
-
-RefSimpleCoList Geom_read_simples(RefKeyVal);
-RefSimpleCoList Geom_form_simples(Molecule&);
-void Geom_calc_simples(RefSimpleCoList,Molecule&);
-
-void Geom_print_pretty(RefSimpleCoList);
-void Geom_print_pretty(ostream&,RefSimpleCoList,const double* =0);
 
 /////////////////////////////////////////////////////////////////////
 

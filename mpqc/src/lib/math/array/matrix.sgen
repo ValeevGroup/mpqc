@@ -1,7 +1,11 @@
 
 // $Log$
-// Revision 1.1  1993/12/29 12:53:29  etseidl
-// Initial revision
+// Revision 1.2  1994/06/08 01:16:15  cljanss
+// Many changes.  These include: newmat7 and nihmatrix -> scmat
+// and mpqcic -> MPSCF and updated optimize stuff.
+//
+// Revision 1.1.1.1  1993/12/29  12:53:30  etseidl
+// SC source tree 0.1
 //
 // Revision 1.2  1992/03/17  20:37:04  seidl
 // fix comments
@@ -31,8 +35,8 @@
 // Initial revision
 //
 
-default_modules(ip free alloc bread bwrite print init bcast0 rbcast0 sbcast0
-                fread fwrite iseq assign zero send0 recv0);
+default_modules(keyvalip free alloc bread bwrite print init bcast0 rbcast0
+                sbcast0 fread fwrite iseq assign zero send0 recv0);
 
 doublep_array4 {
   int n1;

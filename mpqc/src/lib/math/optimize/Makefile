@@ -7,14 +7,14 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 LD=$(CXX)
 
-CXXSRC = nlp.cc
+CXXSRC = nlp.cc opt.cc
 CSRC = 
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
-INC = nlp.h
+INC = nlp.h opt.h
 
-DEPENDINCLUDE = $(INC)
+DEPENDINCLUDE =
 
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = optimize
@@ -28,9 +28,12 @@ opttest: opttest.o optimize.a util/options/liboptions.a \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o opttest $^ $(SYSLIBS)
 
+opttest.o: opttest.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+opttest.d $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d) opttest.d
 endif

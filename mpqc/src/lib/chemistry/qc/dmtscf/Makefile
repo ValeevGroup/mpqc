@@ -16,6 +16,8 @@ CSRC = scf_bnd.c scf_core.c scf_diis.c scf_dip.c scf_en.c scf_esp.c \
        scf_proj.c scf_vect.c scf_ex.c scf_mkgdlb.c scf_mkk.c scf_mkj.c \
        scf_loopj.c scf_loopk.c
 
+CXXSRC = scf_kinp.cc
+
 SGENFILE = scf.sgen
 
 SGENSRC = scfasgn.c scfbc0.c scfbrd.c scfbwr.c scfinit.c \
@@ -28,7 +30,7 @@ INC = scf_dmt.h masses.h vdw_rad.h
 SGENINC = $(GENSRC:%.c=%.h)
 GENINC = $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)
 
-LIBOBJ = $(CSRC:%.c=%.o) $(GENSRC:%.c=%.o)
+LIBOBJ = $(CSRC:%.c=%.o) $(CXXSRC:%.cc=%.o) $(GENSRC:%.c=%.o)
 
 DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 

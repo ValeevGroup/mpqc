@@ -4,10 +4,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+class StateIn;
+class StateOut;
 
-#define ARRAY_dec(Type)							      \
-class Array ## Type							      \
-{									      \
+// standard members in all arrays
+#define ARRAY_dec_standard(Type)					      \
  private:								      \
   int _length;								      \
   Type * _array;							      \
@@ -15,13 +16,31 @@ class Array ## Type							      \
   Array ## Type();							      \
   Array ## Type(const Array ## Type &);					      \
   Array ## Type(int size);						      \
-  ~Array ## Type();							      \
+  virtual ~Array ## Type();						      \
   void set_length(int size);						      \
   void reset_length(int size);						      \
   Array ## Type& operator = (const Array ## Type & s);			      \
   int length() const;							      \
   void clear();								      \
   Type& operator[] (int i) const;					      \
+  Type& operator() (int i) const;
+
+// This is used to declare simple arrays
+#define ARRAY_dec(Type)							      \
+class Array ## Type							      \
+{									      \
+    ARRAY_dec_standard(Type);						      \
+}
+
+// These are simple arrays that have StateIn CTORS and save_object_state,
+// but do not actually inherit from SavableState at this time.  They only
+// work if Type is a basic type like int, double, etc.
+#define SSB_ARRAY_dec(Type)						      \
+class Array ## Type {							      \
+    ARRAY_dec_standard(Type)						      \
+  public:								      \
+    Array ## Type(StateIn&);						      \
+    void save_object_state(StateOut&);					      \
 }
 
 #define TMPARRAY_dec(Type)						      \
@@ -35,11 +54,10 @@ class TMPArray ## Type							      \
   TMPArray ## Type(const TMPArray ## Type &);				      \
   ~TMPArray ## Type();							      \
   Type& operator[] (int i) const;					      \
+  Type& operator() (int i) const;					      \
 }
 
-#define ARRAY2_dec(Type)						      \
-class Array2 ## Type							      \
-{									      \
+#define ARRAY2_dec_standard(Type)					      \
  private:								      \
   int _length0;								      \
   int _length1;								      \
@@ -48,13 +66,29 @@ class Array2 ## Type							      \
   Array2 ## Type();							      \
   Array2 ## Type(const Array2 ## Type &);				      \
   Array2 ## Type(int,int);						      \
-  ~Array2 ## Type();							      \
+  virtual ~Array2 ## Type();						      \
   void set_lengths(int,int);						      \
   Array2 ## Type & operator = (const Array2 ## Type & s);		      \
   int length0() const;							      \
   int length1() const;							      \
   void clear();								      \
   TMPArray ## Type operator[] (int i) const;				      \
+  Type& operator() (int i,int j);					      \
+  const Type& operator() (int i,int j) const;
+
+#define SSB_ARRAY2_dec(Type)						      \
+class Array2 ## Type							      \
+{									      \
+    ARRAY2_dec_standard(Type);						      \
+  public:								      \
+    Array2 ## Type(StateIn&);						      \
+    void save_object_state(StateOut&);					      \
+}
+
+#define ARRAY2_dec(Type)						      \
+class Array2 ## Type							      \
+{									      \
+    ARRAY2_dec_standard(Type);						      \
 }
 
 #define ARRAY_def(Type)							      \
@@ -100,12 +134,28 @@ class Array2 ## Type							      \
   Type& Array ## Type::operator[] (int i) const				      \
   {									      \
     if (i<0 || i>=_length) {						      \
-        fprintf(stderr,"Array::operator[] out of range: %d (nelement = %d)\n", \
+        fprintf(stderr,"Array::operator[](%d) out of range (%d)\n",	      \
+                i,_length);						      \
+        abort();							      \
+      };								      \
+    return _array[i];							      \
+  }									      \
+  Type& Array ## Type::operator() (int i) const				      \
+  {									      \
+    if (i<0 || i>=_length) {						      \
+        fprintf(stderr,"Array::operator()(%d) out of range (%d)\n",	      \
                 i,_length);						      \
         abort();							      \
       };								      \
     return _array[i];							      \
   }
+
+#define SSB_ARRAY_def(Type)						      \
+  ARRAY_def(Type)							      \
+  Array ## Type::Array ## Type(StateIn&s)				      \
+  { s.get(_length); if (_length) s.get(_array); }			      \
+  void Array ## Type::save_object_state(StateOut&s)			      \
+  { s.put(_length); if (_length) s.put(_array,_length); }
 
 #define ARRAY2_def(Type)						      \
   int Array2 ## Type::length0() const { return _length0; };		      \
@@ -144,13 +194,39 @@ class Array2 ## Type							      \
   TMPArray ## Type Array2 ## Type::operator[] (int i) const		      \
   {									      \
     if (i<0 || i>=_length0) {						      \
-        fprintf(stderr,"Array2::operator[] out of range: %d (nelement = %d)\n", \
+        fprintf(stderr,"Array2::operator[](%d) out of range (%d)\n",	      \
                 i,_length0);						      \
         abort();							      \
       };								      \
     TMPArray ## Type r(&_array[i*_length1],_length1);			      \
     return r;								      \
+  }									      \
+  Type& Array2 ## Type::operator() (int i,int j)			      \
+  {									      \
+    if (i<0 || i>=_length0 || j<0 || j>=_length1) {			      \
+        fprintf(stderr,"Array2::operator()(%d,%d): out of range (%d,%d)\n",   \
+                i,j,_length0,_length1);					      \
+        abort();							      \
+      };								      \
+    return _array[i*_length1+j];					      \
+  }									      \
+  const Type& Array2 ## Type::operator() (int i,int j) const		      \
+  {									      \
+    if (i<0 || i>=_length0 || j<0 || j>=_length1) {			      \
+        fprintf(stderr,"Array2::operator()(%d,%d): out of range (%d,%d)\n",   \
+                i,j,_length0,_length1);					      \
+        abort();							      \
+      };								      \
+    return _array[i*_length1+j];					      \
   }
+
+#define SSB_ARRAY2_def(Type)						      \
+  ARRAY2_def(Type)							      \
+  Array2 ## Type::Array2 ## Type(StateIn&s)				      \
+  { s.get(_length0); s.get(_length1); if (_length0&&_length1) s.get(_array);} \
+  void Array2 ## Type::save_object_state(StateOut&s)			      \
+  { s.put(_length0); s.put(_length1);					      \
+    if (_length0&&_length1) s.put(_array,_length0*_length1); }
 
 #define TMPARRAY_def(Type)						      \
   TMPArray ## Type :: TMPArray ## Type(const TMPArray ## Type &a):	      \
@@ -169,13 +245,13 @@ class Array2 ## Type							      \
   }
 
 // declare arrays of the basic types
-ARRAY_dec(int);
+SSB_ARRAY_dec(int);
 ARRAY_dec(Arrayint);
 TMPARRAY_dec(int);
-ARRAY2_dec(int);
-ARRAY_dec(double);
+SSB_ARRAY2_dec(int);
+SSB_ARRAY_dec(double);
 ARRAY_dec(Arraydouble);
 TMPARRAY_dec(double);
-ARRAY2_dec(double);
+SSB_ARRAY2_dec(double);
 
 #endif

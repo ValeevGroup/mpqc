@@ -141,7 +141,7 @@ IPV2::data_v(const char* keyword,const char* conv,void* value,int n,int*v)
   }
 
 IPV2::Status
-IPV2::classname(const char *keyword,char **name,int n,...)
+IPV2::classname(const char *keyword,const char **name,int n,...)
 {
   va_list args;
   int i;
@@ -166,13 +166,13 @@ IPV2::classname(const char *keyword,char **name,int n,...)
   }
 
 IPV2::Status
-IPV2::classname_v(const char* keyword,char** name,int n,int *v)
+IPV2::classname_v(const char* keyword,const char** name,int n,int *v)
 {
   ip_keyword_tree_t *kt;
   static char newkey[KEYWORD_LENGTH];
   Status errcod;
 
-  if ((errcod = ip_construct_key_v(keyword,newkey,n,v))!=OK) return errcod;
+  if ((errcod = construct_key_v(keyword,newkey,n,v))!=OK) return errcod;
 
   kt = ip_cwk_descend_tree(newkey);
   if (!kt) {
@@ -188,7 +188,7 @@ IPV2::classname_v(const char* keyword,char** name,int n,int *v)
   }
 
 IPV2::Status
-IPV2::truekeyword(const char *keyword,char **name,int n,...)
+IPV2::truekeyword(const char *keyword,const char **name,int n,...)
 {
   va_list args;
   int i;
@@ -220,34 +220,26 @@ get_name(ip_keyword_tree_t*kt,char*currentname)
   if (currentname) {
       newname = (char*)malloc(strlen(currentname)+strlen(kt->keyword)+2);
       sprintf(newname,"%s:%s",kt->keyword,currentname);
-      delete[] currentname;
+      free(currentname);
     }
   else newname = strcpy((char*)malloc(strlen(kt->keyword)+1),kt->keyword);
   return get_name(kt->up,newname);
 }
 
-static char*
-get_truename(ip_keyword_tree_t*kt)
+char*
+IPV2::get_truename(ip_keyword_tree_t*kt)
 {
-  ip_keyword_tree_t* start_kt = kt;
-  while (kt->alias) {
-      kt = kt->alias;
-      if (kt == start_kt) {
-          fprintf(stderr,"IPV2::get_truename: circular aliases\n");
-          abort();
-        }
-    }
   return get_name(kt,0);
 }
 
 IPV2::Status
-IPV2::truekeyword_v(const char* keyword,char** name,int n,int *v)
+IPV2::truekeyword_v(const char* keyword,const char** name,int n,int *v)
 {
   ip_keyword_tree_t *kt;
   static char newkey[KEYWORD_LENGTH];
   Status errcod;
 
-  if ((errcod = ip_construct_key_v(keyword,newkey,n,v))!=OK) return errcod;
+  if ((errcod = construct_key_v(keyword,newkey,n,v))!=OK) return errcod;
 
   kt = ip_cwk_descend_tree(newkey);
   if (!kt) {
@@ -255,13 +247,6 @@ IPV2::truekeyword_v(const char* keyword,char** name,int n,int *v)
     *name = 0;
     return KeyNotFound;
     }
-  else if (!kt->alias) {
-    ip_lastkeyword(keyword);
-    ip_lastkeywordtree(kt);
-    *name = 0;
-    return OK;
-    }
-    
 
   ip_lastkeywordtree(kt);
 
@@ -298,6 +283,7 @@ IPV2::string(const char *keyword,char **value,int n,...)
     }
   }
 
+// if an error is encountered, *value is not modified
 IPV2::Status
 IPV2::string_v(const char* keyword,char** value,int n,int *v)
 {
@@ -306,14 +292,15 @@ IPV2::string_v(const char* keyword,char** value,int n,int *v)
 
   if ((errcod = value_v(keyword,&val,n,v))!=0) return errcod;
 
-  *value = (char *) malloc(sizeof(char)*(strlen(val)+1));
-  if (! *value) return Malloc;
-  strcpy(*value,val);
+  char *tmp = new char[strlen(val)+1];
+  if (! tmp) return Malloc;
+  strcpy(tmp,val);
+  *value = tmp;
   return OK;
   }
 
 IPV2::Status
-IPV2::value(const char *keyword,char **value,int n,...)
+IPV2::value(const char *keyword,const char **value,int n,...)
 {
   va_list args;
   int i;
@@ -338,13 +325,13 @@ IPV2::value(const char *keyword,char **value,int n,...)
   }
 
 IPV2::Status
-IPV2::value_v(const char* keyword,char**value,int n,int*v)
+IPV2::value_v(const char* keyword,const char**value,int n,int*v)
 {
   Status errcod;
   ip_keyword_tree_t *kt;
   static char newkey[KEYWORD_LENGTH];
 
-  if ((errcod = ip_construct_key_v(keyword,newkey,n,v))!=OK) return errcod;
+  if ((errcod = construct_key_v(keyword,newkey,n,v))!=OK) return errcod;
 
   /* Get the kt corresponding to the keyword using the cwk. */
   kt = ip_cwk_descend_tree(newkey);
@@ -364,7 +351,7 @@ IPV2::value_v(const char* keyword,char**value,int n,int*v)
 
 
 IPV2::Status
-IPV2::ip_construct_key_v(const char* keyword,char *newkey,int n,int*v)
+IPV2::construct_key_v(const char* keyword,char *newkey,int n,int*v)
 {
   int i;
   char index[11];
@@ -374,7 +361,7 @@ IPV2::ip_construct_key_v(const char* keyword,char *newkey,int n,int*v)
   /* Construct the new keyword. */
   strcpy(newkey,keyword);
   for (i=0; i<n; i++) {
-    if ((errcod = ip_count_v(newkey,&count,0,NULL)) != OK) return errcod;
+    if ((errcod = count_v(newkey,&count,0,NULL)) != OK) return errcod;
     if (v[i]<0 || v[i]>=count) return OutOfBounds;
     sprintf(index,":%d",v[i]);
     strcat(newkey,index);

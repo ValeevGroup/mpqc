@@ -120,7 +120,7 @@ IPV2::ip_karray_descend(ip_keyword_tree_t*kt,int n,...)
   }
 
 IPV2::Status
-IPV2::ip_count_v(const char* keyword,int*karray_count,int n,int*v)
+IPV2::count_v(const char* keyword,int*karray_count,int n,int*v)
 {
   ip_keyword_tree_t *kt,*I;
   int index;
@@ -149,7 +149,7 @@ IPV2::ip_count_v(const char* keyword,int*karray_count,int n,int*v)
 
 /* This counts the number of elements in a keyword array. */
 IPV2::Status
-IPV2::ip_count(const char *keyword,int *karray_count,int n,...)
+IPV2::count(const char *keyword,int *karray_count,int n,...)
 {
   va_list args;
   int i;
@@ -157,7 +157,7 @@ IPV2::ip_count(const char *keyword,int *karray_count,int n,...)
   Status r;
 
   if (n==0) {
-    return ip_count_v(keyword,karray_count,n,NULL);
+    return count_v(keyword,karray_count,n,NULL);
     }
   else {
     v = (int *) malloc(sizeof(int)*n);
@@ -167,7 +167,7 @@ IPV2::ip_count(const char *keyword,int *karray_count,int n,...)
       v[i] = va_arg(args,int);
       }
     va_end(args);
-    r = ip_count_v(keyword,karray_count,n,v);
+    r = count_v(keyword,karray_count,n,v);
     free(v);
     return r;
     }

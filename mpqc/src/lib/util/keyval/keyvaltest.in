@@ -1,4 +1,17 @@
 
+% check forward references of variables
+forref: (
+  x = $a
+  z = $:forref:b:y
+  nest: (
+    x = $..:b:y
+    )
+  a = 5
+  b: (
+    y = by
+    )
+  )
+
 xxxx: (
    % this fails as a means of giving an object that doesn't require data:
    % y<Z>

@@ -15,7 +15,7 @@ CSRC = create_r.c skeleton.c syminit.c mkrpd.c mksym.c symerr.c symutil.c
 SGENFILE = symm.sgen
 SGENSRC = symmallc.c symmasgn.c symmfree.c symmbc0.c symmrbc0.c symmsbc0.c \
           symmsnd0.c symmrcv0.c symmbrd.c symmbwr.c symmfrd.c symmfwr.c \
-          symminit.c symmip.c symmiseq.c symmprnt.c symmzero.c
+          symminit.c symmiseq.c symmprnt.c symmzero.c
 
 INC = sym_dmt.h symm_mac.h
 SGENINC = $(SGENSRC:%.c=%.h)

@@ -4,17 +4,20 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
 CXXSRC = atomcent.cc chemelem.cc molecule.cc \
-         simple.cc symm.cc stre.cc bend.cc out.cc tors.cc lin.cc \
-         simpleQCList.cc symmQCList.cc energy.cc coor.cc \
-         shape.cc chmelm_i.cc
+         simple.cc stre.cc bend.cc out.cc tors.cc lin.cc \
+         energy.cc coor.cc \
+         shape.cc chmelm_i.cc imcoor.cc taylor.cc
+# symm.cc simpleQCList.cc symmQCList.cc 
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
-      simple.h symm.h localdef.h simpleQCList.h symmQCList.h \
-      coor.h energy.h shape.h chmelm_i.h
+      simple.h localdef.h \
+      coor.h energy.h shape.h chmelm_i.h taylor.h taylor_f.h
+# symm.h simpleQCList.h symmQCList.h 
 
 DEPENDINCLUDE = $(INC)
 

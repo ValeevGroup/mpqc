@@ -62,24 +62,19 @@ TorsSimpleCo::~TorsSimpleCo()
 }
 
 TorsSimpleCo::TorsSimpleCo(KeyVal &kv):
-  SimpleCo(4)
+  SimpleCo(kv,4)
 {
-  label_=kv.pcharvalue(0);
-  atoms[0]=kv.intvalue(1);
-  atoms[1]=kv.intvalue(2);
-  atoms[2]=kv.intvalue(3);
-  atoms[3]=kv.intvalue(4);
 }
 
-TorsSimpleCo::TorsSimpleCo(KeyVal *kv, const char *lab, int n) :
-  SimpleCo(4)
-{
-  label_=kv->pcharvalue(lab,n,1);
-  atoms[0]=kv->intvalue(lab,n,2);
-  atoms[1]=kv->intvalue(lab,n,3);
-  atoms[2]=kv->intvalue(lab,n,4);
-  atoms[3]=kv->intvalue(lab,n,5);
-  }
+// TorsSimpleCo::TorsSimpleCo(KeyVal *kv, const char *lab, int n) :
+//   SimpleCo(4)
+// {
+//   label_=kv->pcharvalue(lab,n,1);
+//   atoms[0]=kv->intvalue(lab,n,2);
+//   atoms[1]=kv->intvalue(lab,n,3);
+//   atoms[2]=kv->intvalue(lab,n,4);
+//   atoms[3]=kv->intvalue(lab,n,5);
+//   }
 
 TorsSimpleCo& TorsSimpleCo::operator=(const TorsSimpleCo& s)
 {
@@ -89,28 +84,6 @@ TorsSimpleCo& TorsSimpleCo::operator=(const TorsSimpleCo& s)
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   atoms[3]=s.atoms[3];
   return *this;
-  }
-
-void TorsSimpleCo::print(ostream& os, const char *pad) const
-{
-  os << pad << "Torsion:\n";
-  if(label_) os << pad << "  label_   = " << label_ << endl;
-  if(atoms) {
-    os << pad << "  atoms = " << atoms[0] << " " << atoms[1];
-    os << " " << atoms[2] << " " << atoms[3] << endl;
-    }
-  os << pad << "  omega = " << value() << endl;
-  os.flush();
-  }
-
-void TorsSimpleCo::print(FILE *of, const char *pad) const
-{
-  fprintf(of,"%sTorsion:\n",pad);
-  if(label_) fprintf(of,"%s  label_   = %s\n",pad,label_);
-  if(atoms) fprintf(of,"%s  atoms = %d %d %d %d\n",pad,
-     atoms[0],atoms[1],atoms[2],atoms[3]);
-  fprintf(of,"%s  omega = %lf\n",pad,value());
-  fflush(of);
   }
 
 double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
@@ -164,9 +137,9 @@ double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     normal(u3,u2,z2);
     co=scalar(u1,u2); double si=s2(co);
     co2=scalar(u2,u3); double si2=s2(co2);
-    double r1 = bohr*dist(m[a].point(),m[b].point());
-    double r2 = bohr*dist(m[c].point(),m[b].point());
-    double r3 = bohr*dist(m[c].point(),m[d].point());
+    double r1 = dist(m[a].point(),m[b].point());
+    double r2 = dist(m[c].point(),m[b].point());
+    double r3 = dist(m[c].point(),m[d].point());
     for (int j=0; j < 3; j++) {
       uu = z1[j]/(r1*si);
       zz = z2[j]/(r3*si2);
@@ -186,8 +159,8 @@ double TorsSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[2]-1;
 
-  double rad_ab = (m[a].element().atomic_radius() +
-                   m[b].element().atomic_radius()) / 0.52917706;
+  double rad_ab =   m[a].element().atomic_radius()
+                  + m[b].element().atomic_radius();
 
   double r_ab = dist(m[a].point(),m[b].point());
 
@@ -195,5 +168,29 @@ double TorsSimpleCo::calc_force_con(Molecule& m)
                            exp(-2.85*(r_ab-rad_ab));
 
   // return force constant in mdyn*ang/rad^2
-  return k*4.359813653;
+  return k;
   }
+
+const char *
+TorsSimpleCo::ctype() const
+{
+  return "TORS";
+}
+
+double
+TorsSimpleCo::radians() const
+{
+  return value_;
+}
+
+double
+TorsSimpleCo::degrees() const
+{
+  return value_*rtd;
+}
+
+double
+TorsSimpleCo::preferred_value() const
+{
+  return value_*rtd;
+}

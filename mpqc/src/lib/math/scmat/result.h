@@ -3,6 +3,7 @@
 #define _math_scmat_result_h
 
 #include <util/misc/compute.h>
+#include <math/scmat/matrix.h>
 
 Result_dec(RefSCMatrix);
 Result_dec(RefSymmSCMatrix);

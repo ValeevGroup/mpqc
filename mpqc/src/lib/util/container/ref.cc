@@ -3,10 +3,14 @@
 
 #define BAD_REF 1
 
+static void unmanage(int&);
+static int managed(int);
+
 // The reference count is coded in such way that a bad references
 // can be detected.
 static int nreference(int rc)
 {
+  if (!managed(rc)) return 1;
   int nref1 = rc&0x7fff;
   int nref2 = (rc>>16)&0x7fff;
   if (nref1 != nref2) {
@@ -26,6 +30,7 @@ static int refcount(int nref)
 }
 static int reference(int& rc)
 {
+  if (!managed(rc)) return 1;
   int nref = nreference(rc);
   nref++;
   rc = refcount(nref);
@@ -33,6 +38,7 @@ static int reference(int& rc)
 }
 static int dereference(int& rc)
 {
+  if (!managed(rc)) return 1;
   int nref = nreference(rc);
   nref--;
   if (nref < 0) {
@@ -41,6 +47,22 @@ static int dereference(int& rc)
     }
   rc = refcount(nref);
   return nref;
+}
+static void
+unmanage(int&rc)
+{
+  if (!managed(rc)) return;
+  if (nreference(rc)) {
+      fprintf(stderr,"[V]RefCount::unmanage: cannot unmanage a managed"
+              " object with a nonzero nreference\n");
+      abort();
+    }
+  rc = 0x7fffffff;
+}
+int
+managed(int rc)
+{
+  return rc != 0x7fffffff;
 }
 
 int
@@ -58,6 +80,16 @@ VRefCount::dereference()
 {
   return ::dereference(_reference_count_);
 }
+int
+VRefCount::managed()
+{
+  return ::managed(_reference_count_);
+}
+void
+VRefCount::unmanage()
+{
+  ::unmanage(_reference_count_);
+}
 
 int
 RefCount::nreference()
@@ -74,6 +106,16 @@ RefCount::dereference()
 {
   return ::dereference(_reference_count_);
 }
+int
+RefCount::managed()
+{
+  return ::managed(_reference_count_);
+}
+void
+RefCount::unmanage()
+{
+  ::unmanage(_reference_count_);
+}
 
 // The DTORs try to catch bugs by setting the ref count to BAD_REF.  In
 // principle, then, the Ref class and the RefCount classes can try
@@ -83,22 +125,22 @@ RefCount::dereference()
 
 VRefCount::~VRefCount()
 {
-  if (_reference_count_ > 0) {
-      fprintf(stderr,"WARNING: VRefCount: deleting a referenced object\n");
-    }
-  else if (_reference_count_ < 0) {
+  if (_reference_count_ == BAD_REF) {
       fprintf(stderr,"WARNING: VRefCount: deleting a deleted object\n");
+    }
+  else if (managed() && nreference()) {
+      fprintf(stderr,"WARNING: VRefCount: deleting a referenced object\n");
     }
   _reference_count_ = BAD_REF;
 }
 
 RefCount::~RefCount()
 {
-  if (_reference_count_ > 0) {
-      fprintf(stderr,"WARNING: RefCount: deleting a referenced object\n");
-    }
-  else if (_reference_count_ < 0) {
+  if (_reference_count_ == BAD_REF) {
       fprintf(stderr,"WARNING: RefCount: deleting a deleted object\n");
+    }
+  else if (managed() && nreference()) {
+      fprintf(stderr,"WARNING: RefCount: deleting a referenced object\n");
     }
   _reference_count_ = BAD_REF;
 }

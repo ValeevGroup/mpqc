@@ -1,9 +1,11 @@
 
 // a simple program to test the class stuff
 
+#include <stdio.h>
 #include <iostream.h>
 
 #include <util/class/class.h>
+#include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
 
 #define A_parents virtual public DescribedClass
@@ -189,6 +191,30 @@ main()
 {
   ClassDesc::list_all_classes();
 
+  // test IPV2
+  IPV2::Status err;
+  IPV2 *ipv2 = new IPV2();
+  FILE* in = fopen(SRCDIR "/keyvaltest.in","r");
+  if (!in) {
+      printf("couldn't open " SRCDIR "/keyvaltest.in\n");
+      abort();
+    }
+  ipv2->read(in,stdout);
+  ipv2->print_tree(stdout);
+  const char* test = 0;
+  ipv2->value_v(":forref:nest:x",&test,0,0);
+  printf("test = \"%s\"\n", test);
+  err = ipv2->truekeyword_v(":forref:a",&test,0,0);
+  printf("test = \"%s\" (%s)\n", test, ipv2.error_message(err));
+  err = ipv2->truekeyword_v(":forref:nest:x",&test,0,0);
+  printf("test = \"%s\" (%s)\n", test, ipv2.error_message(err));
+  err = ipv2->truekeyword_v(":forref:x",&test,0,0);
+  printf("test = \"%s\" (%s)\n", test, ipv2.error_message(err));
+  delete ipv2;
+  ipv2 = 0;
+
+  // test the test classes
+
   A a;
   cout << "A name:" << a.class_name() << '\n';
 
@@ -204,7 +230,7 @@ main()
        << (void*) DescribedClass::castdown(&d) << '\n';
 
 
-  AssignedKeyVal akv;
+  AssignedKeyVal akv; akv.unmanage();
 
   akv.assign(":x",1);
   akv.assign(":y",3.0);
@@ -220,7 +246,7 @@ main()
   show( akv.intvalue("x") );  show (akv.errormsg() ); cout << '\n';
   show( akv.intvalue(":z") );  show (akv.errormsg() ); cout << '\n';
 
-  ParsedKeyVal pkv("keyvaltest.in");
+  ParsedKeyVal pkv(SRCDIR "/keyvaltest.in"); pkv.unmanage();
 
   show( pkv.exists(":x") );  show( pkv.errormsg() ); cout << '\n';
   show( pkv.exists(":z") );  show (pkv.errormsg() ); cout << '\n';

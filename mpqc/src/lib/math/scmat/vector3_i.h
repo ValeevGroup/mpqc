@@ -27,14 +27,6 @@ SCVector3::SCVector3(double x,double y,double z)
 };
 
 INLINE
-SCVector3::SCVector3(const Point3&p)
-{
-  _v[0] = p[0];
-  _v[1] = p[1];
-  _v[2] = p[2];
-};
-
-INLINE
 SCVector3::SCVector3(const SCVector3&p)
 {
   _v[0] = p[0];
@@ -72,16 +64,22 @@ SCVector3::operator [] (int i) const
   return _v[i];
 }
 
+INLINE const double*
+SCVector3::data() const
+{             
+  return _v;
+}             
+
 INLINE double&
 SCVector3::x()
 {             
-  return _v[0]
+  return _v[0];
 }             
               
 INLINE double&
 SCVector3::y()
 {             
-  return _v[1]
+  return _v[1];
 }             
               
 INLINE double&

@@ -1,7 +1,11 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/06/08 01:14:15  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1993/04/28  17:29:07  jannsen
  * add -ifndef option
@@ -100,8 +104,13 @@ char **argv;
     ch = strrchr(tmpBaseName,'.');
     if (ch) *ch = '\0';
     /* remove directory names */
-    ch = strrchr(tmpBaseName,'/');
-    strcpy(BaseName,&ch[1]);
+    if (ch = strrchr(tmpBaseName,'/')) {
+        strcpy(BaseName,&ch[1]);
+      }
+    else {
+        strcpy(BaseName,tmpBaseName);
+      }
+    free(tmpBaseName);
 
     /* This opens the structure output file, since the parsing process
      * can cause some stuff to be written to it. */
@@ -132,7 +141,11 @@ char **argv;
     if (!is_entirely_excluded("alloc")) { printf(" alloc"); alloc_gen(); }
     if (!is_entirely_excluded("free")) { printf(" free"); free_gen(); }
     if (!is_entirely_excluded("init")) { printf(" init"); init_gen(); }
-    if (!is_entirely_excluded("ip")) { printf(" ip"); ip_gen(); }
+    /* keyvalip and ip are mutually exclusive */
+    if (!is_entirely_excluded("ip"))
+      { printf(" ip"); ip_gen(0); }
+    else if (!is_entirely_excluded("keyvalip"))
+      { printf(" keyvalip"); ip_gen(1); }
     if (!is_entirely_excluded("iseq")) { printf(" iseq"); iseq_gen(); }
     if (!is_entirely_excluded("assign")) { printf(" assign"); assign_gen(); }
     if (!is_entirely_excluded("bwrite")) { printf(" bwrite"); bwrite_gen(); }

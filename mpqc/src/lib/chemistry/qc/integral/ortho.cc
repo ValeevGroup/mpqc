@@ -1,38 +1,47 @@
 
 #include <math.h>
-#include <math/newmat7/newmatap.h>
+#include <math/scmat/matrix.h>
 #include "integralv2.h"
 
-void ortho(const GaussianBasisSet*t,Matrix&or,Matrix*orinv)
+void ortho(const GaussianBasisSet*t,RefSCMatrix&or,RefSCMatrix&orinv)
 {
-  GaussianOverlapIntv2 overlap(t);
   int n = t->nbasis();
-  SymmetricMatrix ov(n);
-  overlap.compute(ov);
-
-  Matrix trans(n,n);
-  DiagonalMatrix eigval(n);
-  EigenValues(ov,eigval,trans);
-
-  or.ReDimension(n,n);
-  or = trans * eigval * trans.t();
-
-  for (int i=0; i<n; i++) eigval.element(i) = sqrt(eigval.element(i));
-  if (orinv) {
-      orinv->ReDimension(n,n);
-      *orinv = trans * eigval * trans.t();
+  RefSCDimension dim = or.rowdim();
+  if (dim.n() != n) {
+      fprintf(stderr,"chemistry/qc/integral/ortho:ortho: dim.n() != n\n");
+      abort();
     }
-  for (i=0; i<n; i++) eigval.element(i) = 1.0/eigval.element(i);
 
-  or = trans * eigval * trans.t();
+  RefSCSymmElementOp overlap = new GaussianOverlapIntv2(t);
+  
+  RefSymmSCMatrix ov(dim);
+  ov.element_op(overlap);
+
+  RefSCMatrix trans(dim,dim);
+  RefDiagSCMatrix eigval(dim);
+
+  ov.diagonalize(eigval,trans);
+
+  RefSCVectorElementOp squareroot = new SCElementSquareRoot;
+  eigval.element_op(squareroot);
+
+  if (orinv) {
+      orinv.assign(trans * eigval * trans.t());
+    }
+
+  RefSCVectorElementOp invert = new SCElementInvert;
+  eigval.element_op(invert);
+
+  or.assign(trans * eigval * trans.t());
 }
 
-void GaussianBasisSet::ortho(Matrix&or) const
+void GaussianBasisSet::ortho(RefSCMatrix&or) const
 {
-  ::ortho(this,or,0);
+  RefSCMatrix orinv;
+  ::ortho(this,or,orinv);
 }
 
-void GaussianBasisSet::ortho(Matrix&or,Matrix&orinv) const
+void GaussianBasisSet::ortho(RefSCMatrix&or,RefSCMatrix&orinv) const
 {
-  ::ortho(this,or,&orinv);
+  ::ortho(this,or,orinv);
 }

@@ -3,14 +3,16 @@ extern "C" {
 # include <math.h>
   }
 
+#include <math/scmat/matrix.h>
+#include <math/scmat/local.h>
 #include "shape.h"
 
 // given a vector X find which of the points in the vector of
 // vectors, A, is closest to it and return the distance
 static double
-closest_distance(DVector3& X,DVector3*A,int n,double*grad)
+closest_distance(SCVector3& X,SCVector3*A,int n,double*grad)
 {
-  DVector3 T = X-A[0];
+  SCVector3 T = X-A[0];
   double min = T.dot(T);
   int imin = 0;
   for (int i=1; i<n; i++) {
@@ -46,7 +48,7 @@ SET_def(RefShape);
 ARRAYSET_def(RefShape);
 
 Shape::Shape():
-  Volume(3)
+  Volume(new LocalSCDimension(3))
 {
 }
 
@@ -57,15 +59,17 @@ Shape::~Shape()
 void
 Shape::compute()
 {
-  const ColumnVector& cv = GetX();
-  Point3 r;
-  r[0] = cv.element(0);
-  r[1] = cv.element(1);
-  r[2] = cv.element(2);
+  RefSCVector cv = get_x();
+  SCVector3 r;
+  r[0] = cv.get_element(0);
+  r[1] = cv.get_element(1);
+  r[2] = cv.get_element(2);
   if (do_gradient()) {
-      DVector v(3);
-      set_value(distance_to_surface(r,v.pointer()));
-      set_gradient(v);
+      double v[3];
+      set_value(distance_to_surface(r,v));
+      RefSCVector vv(dimension());
+      vv.assign(v);
+      set_gradient(vv);
     }
   else if (do_value()) set_value(distance_to_surface(r));
   if (do_hessian()) {
@@ -75,7 +79,7 @@ Shape::compute()
 }
 
 int
-Shape::is_outside(const Point3&r) const
+Shape::is_outside(const SCVector3&r) const
 {
   if (distance_to_surface(r)>0.0) return 1;
   return 0;
@@ -85,22 +89,20 @@ Shape::is_outside(const Point3&r) const
 // the outside of the shape are always returned.
 
 // interpolate using the bisection algorithm
-RefPoint
-Shape::interpolate(RefPoint p1,RefPoint p2,double val)
+RefSCVector
+Shape::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
 {
   if (val < 0.0) {
       failure("Shape::interpolate(): val is < 0.0");
     }
   
-  int dim = GetDim();
-  
-  DVector A(p1);
-  DVector B(p2);
+  RefSCVector A(p1);
+  RefSCVector B(p2);
 
-  SetX(A);
+  set_x(A);
   double value0 = value() - val;
 
-  SetX(B);
+  set_x(B);
   double value1 = value() - val;
 
   if (value0*value1 > 0.0) {
@@ -113,17 +115,17 @@ Shape::interpolate(RefPoint p1,RefPoint p2,double val)
       return p2;
     }
 
-  DVector BA = B - A;
+  RefSCVector BA = B - A;
 
-  double length = sqrt(BA.dot(BA));
+  double length = sqrt(BA.scalar_product(BA));
   int niter = (int) (log(length/interpolation_accuracy())/M_LN2);
 
   double f0 = 0.0;
   double f1 = 1.0;
   double fnext = 0.5;
 
-  DVector X = A + fnext*BA;
-  SetX(X);
+  RefSCVector X = A + fnext*BA;
+  set_x(X);
   double valuenext = value() - val;
 
   do {
@@ -139,13 +141,14 @@ Shape::interpolate(RefPoint p1,RefPoint p2,double val)
               fnext = (fnext + f1)*0.5;
             }
           X = A + fnext*BA;
-          SetX(X);
+          set_x(X);
           valuenext = value() - val;
         }
       niter = 1;
     } while (valuenext < 0.0);
 
-  RefPoint result = new Point(X);
+  RefSCVector result(dimension());
+  result.assign(X);
   return result;
 }
 
@@ -164,7 +167,7 @@ SphereShape::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-SphereShape::SphereShape(const Point3&o,double r):
+SphereShape::SphereShape(const SCVector3&o,double r):
   _origin(o),
   _radius(r)
 {
@@ -186,7 +189,7 @@ SET_def(RefSphereShape);
 ARRAYSET_def(RefSphereShape);
 
 double
-SphereShape::distance_to_surface(const Point3&p,double*grad) const
+SphereShape::distance_to_surface(const SCVector3&p,double*grad) const
 {
   int i;
   double r2 = 0.0;
@@ -198,9 +201,9 @@ SphereShape::distance_to_surface(const Point3&p,double*grad) const
   double d = r - _radius;
   if (d < 0.0) return -1.0;
   if (grad) {
-      DVector3 pv(p);
-      DVector3 o(_origin);
-      DVector3 unit = pv - o;
+      SCVector3 pv(p);
+      SCVector3 o(_origin);
+      SCVector3 unit = pv - o;
       unit.normalize();
       for (i=0; i<3; i++) grad[i] = unit[i];
     }
@@ -215,8 +218,8 @@ void SphereShape::print(FILE*fp) const
 
 void
 SphereShape::boundingbox(double valuemin, double valuemax,
-                         Point& p1,
-                         Point& p2)
+                         RefSCVector& p1,
+                         RefSCVector& p2)
 {
   if (valuemax < 0.0) valuemax = 0.0;
 
@@ -257,15 +260,15 @@ UncappedTorusHoleShape::newUncappedTorusHoleShape(double r,
 {
   // if the probe sphere fits between the two spheres, then there
   // is no need to include this shape
-  DVector3 A(s1.origin());
-  DVector3 B(s2.origin());
-  DVector3 BA = B - A;
+  SCVector3 A(s1.origin());
+  SCVector3 B(s2.origin());
+  SCVector3 BA = B - A;
   if (2.0*r <  BA.norm() - s1.radius() - s2.radius()) return 0;
 
   // check to see if the surface is reentrant
   double rrs1 = r+s1.radius();
   double rrs2 = r+s2.radius();
-  DVector3 R12 = ((DVector3)s1.origin()) - ((DVector3)s2.origin());
+  SCVector3 R12 = ((SCVector3)s1.origin()) - ((SCVector3)s2.origin());
   double r12 = sqrt(R12.dot(R12));
   if (sqrt(rrs1*rrs1-r*r) + sqrt(rrs2*rrs2-r*r) < r12)
     return new ReentrantUncappedTorusHoleShape(r,s1,s2);
@@ -278,7 +281,7 @@ UncappedTorusHoleShape::newUncappedTorusHoleShape(double r,
 // of _s1 and _s2 that touches the UncappedTorusHole.  There are two
 // candidates, the one closest to n is chosen.
 SphereShape
-UncappedTorusHoleShape::in_plane_sphere(const Point3& n) const
+UncappedTorusHoleShape::in_plane_sphere(const SCVector3& n) const
 {
   // the center of the sphere is given by the vector equation
   // P = A + a R(AB) + b U(perp),
@@ -303,21 +306,21 @@ UncappedTorusHoleShape::in_plane_sphere(const Point3& n) const
 
   double r_a = _s1.radius();
   double r_b = _s2.radius();
-  DVector3 A = _s1.origin();
-  DVector3 B = _s2.origin();
-  DVector3 N = n;
-  DVector3 R_AB = B - A;
-  DVector3 R_AN = N - A;
+  SCVector3 A = _s1.origin();
+  SCVector3 B = _s2.origin();
+  SCVector3 N = n;
+  SCVector3 R_AB = B - A;
+  SCVector3 R_AN = N - A;
 
   // vector projection of R_AN onto R_AB
-  DVector3 P_AN_AB = R_AB * (R_AN.dot(R_AB)/R_AB.dot(R_AB));
+  SCVector3 P_AN_AB = R_AB * (R_AN.dot(R_AB)/R_AB.dot(R_AB));
   // the perpendicular vector
-  DVector3 U_perp = R_AN - P_AN_AB;
+  SCVector3 U_perp = R_AN - P_AN_AB;
 
   // if |U| is tiny, then any vector perp to AB will do
   double u = U_perp.dot(U_perp);
   if (u<1.0e-23) {
-      DVector3 vtry = R_AB;
+      SCVector3 vtry = R_AB;
       vtry[0] += 1.0;
       vtry = vtry - R_AB * (vtry.dot(R_AB)/R_AB.dot(R_AB));
       if (vtry.dot(vtry) < 1.0e-23) {
@@ -345,7 +348,7 @@ UncappedTorusHoleShape::in_plane_sphere(const Point3& n) const
   //printf("r_Ar = %f, r_AB = %f\n",r_Ar,r_AB);
   //printf("a = %f, b = %f\n",a,b);
 
-  Point3 P = A + a * R_AB + b * U_perp;
+  SCVector3 P = A + a * R_AB + b * U_perp;
   //printf("a*R_AB: "); (a*R_AB).print();
   //printf("b*U_perp: "); (b*U_perp).print();
 
@@ -367,13 +370,13 @@ UncappedTorusHoleShape::print(FILE*fp) const
 
 void
 UncappedTorusHoleShape::boundingbox(double valuemin, double valuemax,
-                                    Point& p1,
-                                    Point& p2)
+                                    RefSCVector& p1,
+                                    RefSCVector& p2)
 {
-  Point p11(3);
-  Point p12(3);
-  Point p21(3);
-  Point p22(3);
+  RefSCVector p11(dimension());
+  RefSCVector p12(dimension());
+  RefSCVector p21(dimension());
+  RefSCVector p22(dimension());
 
   _s1.boundingbox(valuemin,valuemax,p11,p12);
   _s2.boundingbox(valuemin,valuemax,p21,p22);
@@ -391,15 +394,15 @@ UncappedTorusHoleShape::boundingbox(double valuemin, double valuemax,
 // is in triangle
 
 static int
-is_in_unbounded_triangle(const DVector3&XP,const DVector3&AP,const DVector3&BP)
+is_in_unbounded_triangle(const SCVector3&XP,const SCVector3&AP,const SCVector3&BP)
 {
-  DVector3 axis = BP.cross(AP);
+  SCVector3 axis = BP.cross(AP);
 
-  DVector3 BP_perp = BP; BP_perp.rotate(M_PI_2,axis);
+  SCVector3 BP_perp = BP; BP_perp.rotate(M_PI_2,axis);
   double u = BP_perp.dot(XP)/BP_perp.dot(AP);
   if (u<0.0) return 0;
 
-  DVector3 AP_perp = AP; AP_perp.rotate(M_PI_2,axis);
+  SCVector3 AP_perp = AP; AP_perp.rotate(M_PI_2,axis);
   double w = AP_perp.dot(XP)/AP_perp.dot(BP);
   if (w<0.0) return 0;
 
@@ -436,11 +439,11 @@ ReentrantUncappedTorusHoleShape::ReentrantUncappedTorusHoleShape(double r,
   // this gives
   //  z^2 BA.BA - 2z PA.BA + PA.PA - r^2 = 0
 
-  Point3 arbitrary; 
+  SCVector3 arbitrary; 
   arbitrary[0] = arbitrary[1] = arbitrary[2] = 0.0;
   SphereShape PS = in_plane_sphere(arbitrary);
-  DVector3 P(PS.origin());
-  DVector3 PA = P - A();
+  SCVector3 P(PS.origin());
+  SCVector3 PA = P - A();
 
   double a = BA.dot(BA);
   double minus_b = 2.0 * PA.dot(BA);
@@ -467,17 +470,17 @@ ReentrantUncappedTorusHoleShape::~ReentrantUncappedTorusHoleShape()
 }
 int
 ReentrantUncappedTorusHoleShape::
-  is_outside(const Point3&X) const
+  is_outside(const SCVector3&X) const
 {
-  DVector3 Xv(X);
+  SCVector3 Xv(X);
 
-  DVector3 P = in_plane_sphere(X).origin();
-  DVector3 XP = Xv - P;
+  SCVector3 P = in_plane_sphere(X).origin();
+  SCVector3 XP = Xv - P;
   double rXP = XP.norm();
   if (rXP > rAP || rXP > rBP) return 1;
 
-  DVector3 AP = A() - P;
-  DVector3 BP = B() - P;
+  SCVector3 AP = A() - P;
+  SCVector3 BP = B() - P;
 
   if (!is_in_unbounded_triangle(XP,AP,BP)) return 1;
 
@@ -489,27 +492,27 @@ ReentrantUncappedTorusHoleShape::
 }
 double
 ReentrantUncappedTorusHoleShape::
-  distance_to_surface(const Point3&X,double*grad) const
+  distance_to_surface(const SCVector3&X,double*grad) const
 {
-  DVector3 Xv(X);
+  SCVector3 Xv(X);
 
-  DVector3 P = in_plane_sphere(X).origin();
-  DVector3 XP = Xv - P;
+  SCVector3 P = in_plane_sphere(X).origin();
+  SCVector3 XP = Xv - P;
   double rXP = XP.norm();
   if (rXP > rAP || rXP > rBP) return infinity;
 
-  DVector3 AP = A() - P;
-  DVector3 BP = B() - P;
+  SCVector3 AP = A() - P;
+  SCVector3 BP = B() - P;
 
   if (!is_in_unbounded_triangle(XP,AP,BP)) return infinity;
 
-  DVector3 I1P = I[0] - P;
-  DVector3 I2P = I[1] - P;
+  SCVector3 I1P = I[0] - P;
+  SCVector3 I2P = I[1] - P;
 
   if (!is_in_unbounded_triangle(XP,I1P,I2P)) {
       if (rXP < radius()) {
           if (grad) {
-              DVector3 unit(XP);
+              SCVector3 unit(XP);
               unit.normalize();
               for (int i=0; i<3; i++) grad[i] = - unit[i];
             }
@@ -549,26 +552,26 @@ NonreentrantUncappedTorusHoleShape::~NonreentrantUncappedTorusHoleShape()
 {
 }
 double NonreentrantUncappedTorusHoleShape::
-  distance_to_surface(const Point3&X,double* grad) const
+  distance_to_surface(const SCVector3&X,double* grad) const
 {
-  DVector3 Xv(X);
+  SCVector3 Xv(X);
 
   SphereShape s(in_plane_sphere(X));
-  DVector3 P = s.origin();
-  DVector3 PX = P - Xv;
+  SCVector3 P = s.origin();
+  SCVector3 PX = P - Xv;
   double rPX = PX.norm();
   if (rPX > rAP || rPX > rBP) return infinity;
 
-  DVector3 PA = P - A();
-  DVector3 XA = Xv - A();
+  SCVector3 PA = P - A();
+  SCVector3 XA = Xv - A();
 
-  DVector3 axis = BA.cross(PA);
+  SCVector3 axis = BA.cross(PA);
 
-  DVector3 BA_perp = BA; BA_perp.rotate(M_PI_2,axis);
+  SCVector3 BA_perp = BA; BA_perp.rotate(M_PI_2,axis);
   double u = BA_perp.dot(XA)/BA_perp.dot(PA);
   if (u<0.0 || u>1.0) return infinity;
 
-  DVector3 PA_perp = PA; PA_perp.rotate(M_PI_2,axis);
+  SCVector3 PA_perp = PA; PA_perp.rotate(M_PI_2,axis);
   double w = PA_perp.dot(XA)/PA_perp.dot(BA);
   if (w<0.0 || w>1.0) return infinity;
 
@@ -577,7 +580,7 @@ double NonreentrantUncappedTorusHoleShape::
 
   if (rPX < radius()) {
       if (grad) {
-          DVector3 unit(PX);
+          SCVector3 unit(PX);
           unit.normalize();
           for (int i=0; i<3; i++) grad[i] = unit[i];
         }
@@ -635,13 +638,13 @@ Uncapped5SphereExclusionShape::
   double A2 = A().dot(A());
   double B2 = B().dot(B());
   double C2 = C().dot(C());
-  DVector3 BA = B()-A();
+  SCVector3 BA = B()-A();
   double DdotBA = 0.5*(rAr2 - rBr2 + B2 - A2);
   double DAdotBA = DdotBA - A().dot(BA);
   double BA2 = BA.dot(BA);
-  DVector3 CA = C() - A();
+  SCVector3 CA = C() - A();
   double CAdotBA = CA.dot(BA);
-  DVector3 CA_perpBA = CA - (CAdotBA/BA2)*BA;
+  SCVector3 CA_perpBA = CA - (CAdotBA/BA2)*BA;
   double CA_perpBA2 = CA_perpBA.dot(CA_perpBA);
   if (CA_perpBA2 < 1.0e-23) {
       _solution_exists = 0;
@@ -664,7 +667,7 @@ Uncapped5SphereExclusionShape::
 
   // The projection of D into the ABC plane
   M = A() + (DAdotBA/BA2)*BA + (DAdotCA_perpBA/CA_perpBA2)*CA_perpBA;
-  DVector3 BAxCA = BA.cross(CA);
+  SCVector3 BAxCA = BA.cross(CA);
   D[0] = M + h * BAxCA * ( 1.0/BAxCA.norm() );
   D[1] = M - h * BAxCA * ( 1.0/BAxCA.norm() );
 
@@ -675,9 +678,9 @@ Uncapped5SphereExclusionShape::
   C().print();
 
   for (int i=0; i<2; i++) {
-      DVector3 AD = A() - D[i];
-      DVector3 BD = B() - D[i];
-      DVector3 CD = C() - D[i];
+      SCVector3 AD = A() - D[i];
+      SCVector3 BD = B() - D[i];
+      SCVector3 CD = C() - D[i];
       BDxCD[i] = BD.cross(CD);
       BDxCDdotAD[i] = BDxCD[i].dot(AD);
       CDxAD[i] = CD.cross(AD);
@@ -697,10 +700,10 @@ Uncapped5SphereExclusionShape::
 
       {
         // Does the circle of intersection intersect with BA?
-        DVector3 MA = M - A();
-        DVector3 uBA = B() - A(); uBA.normalize();
-        DVector3 XA = uBA * MA.dot(uBA);
-        DVector3 XM = XA - MA;
+        SCVector3 MA = M - A();
+        SCVector3 uBA = B() - A(); uBA.normalize();
+        SCVector3 XA = uBA * MA.dot(uBA);
+        SCVector3 XM = XA - MA;
         double rXM2 = XM.dot(XM);
         double d_intersect_from_x2 = r_intersect*r_intersect - rXM2;
         if (d_intersect_from_x2 > 0.0) {
@@ -720,10 +723,10 @@ Uncapped5SphereExclusionShape::
 
       {
         // Does the circle of intersection intersect with BC?
-        DVector3 MC = M - C();
-        DVector3 uBC = B() - C(); uBC.normalize();
-        DVector3 XC = uBC * MC.dot(uBC);
-        DVector3 XM = XC - MC;
+        SCVector3 MC = M - C();
+        SCVector3 uBC = B() - C(); uBC.normalize();
+        SCVector3 XC = uBC * MC.dot(uBC);
+        SCVector3 XM = XC - MC;
         double rXM2 = XM.dot(XM);
         double d_intersect_from_x2 = r_intersect*r_intersect - rXM2;
         if (d_intersect_from_x2 > 0.0) {
@@ -743,10 +746,10 @@ Uncapped5SphereExclusionShape::
 
       {
         // Does the circle of intersection intersect with CA?
-        DVector3 MA = M - A();
-        DVector3 uCA = C() - A(); uCA.normalize();
-        DVector3 XA = uCA * MA.dot(uCA);
-        DVector3 XM = XA - MA;
+        SCVector3 MA = M - A();
+        SCVector3 uCA = C() - A(); uCA.normalize();
+        SCVector3 XA = uCA * MA.dot(uCA);
+        SCVector3 XM = XA - MA;
         double rXM2 = XM.dot(XM);
         double d_intersect_from_x2 = r_intersect*r_intersect - rXM2;
         if (d_intersect_from_x2 > 0.0) {
@@ -767,12 +770,12 @@ Uncapped5SphereExclusionShape::
     }
 }
 int
-Uncapped5SphereExclusionShape::is_outside(const Point3&X) const
+Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
 {
-  DVector3 Xv(X);
+  SCVector3 Xv(X);
 
   for (int i=0; i<2; i++) {
-      DVector3 XD = Xv - D[i];
+      SCVector3 XD = Xv - D[i];
       double rXD = XD.norm();
       if (rXD <= r()) return 1;
       double u = BDxCD[i].dot(XD)/BDxCDdotAD[i];
@@ -786,14 +789,14 @@ Uncapped5SphereExclusionShape::is_outside(const Point3&X) const
   return 0;
 }
 static int
-is_contained_in_unbounded_pyramid(DVector3 XD,
-                                  DVector3 AD,
-                                  DVector3 BD,
-                                  DVector3 CD)
+is_contained_in_unbounded_pyramid(SCVector3 XD,
+                                  SCVector3 AD,
+                                  SCVector3 BD,
+                                  SCVector3 CD)
 {
-  DVector3 BDxCD = BD.cross(CD);
-  DVector3 CDxAD = CD.cross(AD);
-  DVector3 ADxBD = AD.cross(BD);
+  SCVector3 BDxCD = BD.cross(CD);
+  SCVector3 CDxAD = CD.cross(AD);
+  SCVector3 ADxBD = AD.cross(BD);
   double u = BDxCD.dot(XD)/BDxCD.dot(AD);
   if (u <= 0.0) return 0;
   double v = CDxAD.dot(XD)/CDxAD.dot(BD);
@@ -804,12 +807,12 @@ is_contained_in_unbounded_pyramid(DVector3 XD,
 }
 double
 Uncapped5SphereExclusionShape::
-  distance_to_surface(const Point3&X,double*grad) const
+  distance_to_surface(const SCVector3&X,double*grad) const
 {
-  DVector3 Xv(X);
+  SCVector3 Xv(X);
 
   for (int i=0; i<2; i++) {
-      DVector3 XD = Xv - D[i];
+      SCVector3 XD = Xv - D[i];
       double u = BDxCD[i].dot(XD)/BDxCDdotAD[i];
       if (u <= 0.0) return infinity;
       double v = CDxAD[i].dot(XD)/CDxADdotBD[i];
@@ -862,8 +865,8 @@ Uncapped5SphereExclusionShape::
               double distance_to_plane;
               double distance_to_ring_in_plane;
               double MDnorm = MD[i].norm();
-              DVector3 XM = XD - MD[i];
-              DVector3 XM_in_plane;
+              SCVector3 XM = XD - MD[i];
+              SCVector3 XM_in_plane;
               if (MDnorm<1.0e-16) {
                   distance_to_plane = 0.0;
                   XM_in_plane = XD;
@@ -882,10 +885,10 @@ Uncapped5SphereExclusionShape::
                       for (int j=0; j<3; j++) grad[j] = MD[i][j] * scale;
                     }
                   else {
-                      DVector3 point_on_ring;
+                      SCVector3 point_on_ring;
                       point_on_ring = XM_in_plane
                         * (r_intersect/XM_in_plane_norm) + M;
-                      DVector3 gradv = Xv - point_on_ring;
+                      SCVector3 gradv = Xv - point_on_ring;
                       gradv.normalize();
                       for (int j=0; j<3; j++) grad[j] = gradv[j];
                     }
@@ -903,15 +906,15 @@ Uncapped5SphereExclusionShape::
 
 void
 Uncapped5SphereExclusionShape::boundingbox(double valuemin, double valuemax,
-                                           Point& p1,
-                                           Point& p2)
+                                           RefSCVector& p1,
+                                           RefSCVector& p2)
 {
-  Point p11;
-  Point p12;
-  Point p21;
-  Point p22;
-  Point p31;
-  Point p32;
+  RefSCVector p11;
+  RefSCVector p12;
+  RefSCVector p21;
+  RefSCVector p22;
+  RefSCVector p31;
+  RefSCVector p32;
 
   _s1.boundingbox(valuemin,valuemax,p11,p12);
   _s2.boundingbox(valuemin,valuemax,p21,p22);
@@ -957,7 +960,7 @@ UnionShape::add_shape(RefShape s)
 }
 
 double
-UnionShape::distance_to_surface(const Point3&p,double* grad) const
+UnionShape::distance_to_surface(const SCVector3&p,double* grad) const
 {
   if (_shapes.length() == 0) return 0.0;
   double min = _shapes[0]->distance_to_surface(p);
@@ -976,7 +979,7 @@ UnionShape::distance_to_surface(const Point3&p,double* grad) const
 }
 
 int
-UnionShape::is_outside(const Point3&p) const
+UnionShape::is_outside(const SCVector3&p) const
 {
   if (_shapes.length() == 0) return 1;
   for (int i=0; i<_shapes.length(); i++) {
@@ -988,16 +991,16 @@ UnionShape::is_outside(const Point3&p) const
 
 void
 UnionShape::boundingbox(double valuemin, double valuemax,
-                        Point& p1,
-                        Point& p2)
+                        RefSCVector& p1,
+                        RefSCVector& p2)
 {
   if (_shapes.length() == 0) {
       for (int i=0; i<3; i++) p1[i] = p2[i] = 0.0;
       return;
     }
   
-  Point pt1(3);
-  Point pt2(3);
+  RefSCVector pt1(dimension());
+  RefSCVector pt2(dimension());
   
   int i,j;
   _shapes[0]->boundingbox(valuemin,valuemax,p1,p2);

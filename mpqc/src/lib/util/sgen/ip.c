@@ -1,7 +1,11 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:40  etseidl
- * Initial revision
+ * Revision 1.2  1994/06/08 01:17:50  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:41  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/06/17  22:16:55  jannsen
  * cleaned up for saber-c
@@ -15,7 +19,7 @@
 static char *rcsid = "$Id$";
 
 #include <stdio.h>
-#include <util/ipv2/ip_libv2.h>
+#include <util/keyval/ipv2c.h>
 #include "sgen.h"
 
 /* ip_read_boolean_v.c,v
@@ -46,7 +50,7 @@ char *value;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   int errcod;
 
   if ((errcod = ip_value_v(keyword,&val,n,v))!=IPE_OK) return errcod;
@@ -69,7 +73,7 @@ double *value;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   int errcod;
 
   if ((errcod = ip_value_v(keyword,&val,n,v))!=IPE_OK) return errcod;
@@ -92,7 +96,7 @@ float *value;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   int errcod;
 
   if ((errcod = ip_value_v(keyword,&val,n,v))!=IPE_OK) return errcod;
@@ -115,7 +119,7 @@ int *value;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   int errcod;
 
   if ((errcod = ip_value_v(keyword,&val,n,v))!=IPE_OK) return errcod;
@@ -138,7 +142,7 @@ long *value;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   int errcod;
 
   if ((errcod = ip_value_v(keyword,&val,n,v))!=IPE_OK) return errcod;
@@ -177,7 +181,7 @@ unsigned int *value;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   int errcod;
 
   if ((errcod = ip_value_v(keyword,&val,n,v))!=IPE_OK) return errcod;
@@ -200,7 +204,7 @@ unsigned long *value;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   int errcod;
 
   if ((errcod = ip_value_v(keyword,&val,n,v))!=IPE_OK) return errcod;

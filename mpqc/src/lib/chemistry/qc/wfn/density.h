@@ -14,7 +14,7 @@ class ElectronDensity: public Volume {
     ~ElectronDensity();
     virtual void boundingbox(double valuemin,
                              double valuemax,
-                             Point& p1, Point& p2);
+                             RefSCVector& p1, RefSCVector& p2);
 };
 
 #endif

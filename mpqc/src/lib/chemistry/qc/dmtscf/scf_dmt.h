@@ -1,6 +1,11 @@
 
 #ifndef _scf_dmt_h
-#define _scf_dmt_h
+#define _scf_dmt_
+
+#ifdef __cplusplus
+class KeyVal;
+extern "C" {
+#endif /* __cplusplus */
 
 #include <chemistry/qc/dmtscf/scf.h>
 #include <chemistry/qc/dmtscf/scfallc.h>
@@ -25,5 +30,18 @@
 #include <chemistry/qc/dmtscf/scf_lowd.gbl>
 #include <chemistry/qc/dmtscf/scf_mull.gbl>
 #include <chemistry/qc/dmtscf/scf_vect.gbl>
+
+#ifdef __cplusplus
+}
+
+/* The preferred input reader for C++ programs. */
+int scf_get_keyval_input(KeyVal& keyval,
+                         centers_t *_unique_centers,
+                         scf_struct_t *_scf_info,
+                         sym_struct_t *_sym_info,
+                         scf_irreps_t *_irreps,
+                         centers_t *_centers,
+                         FILE *_outfile);
+#endif /* __cplusplus */
 
 #endif /* _scf_dmt_h */

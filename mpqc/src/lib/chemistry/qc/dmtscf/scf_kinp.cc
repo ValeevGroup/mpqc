@@ -1,123 +1,49 @@
 
 /* $Log$
- * Revision 1.3  1994/04/01 21:15:05  etseidl
- * add the ability to do the gmat formation in two steps, one for J and one
- * for K.  this will eventually be used by the dft stuff
+ * Revision 1.1  1994/06/08 01:15:11  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
  *
- * Revision 1.2  1994/01/19  13:15:00  seidl
- * add option to use a more load balanced gmat routine.
- *
- * Revision 1.1.1.1  1993/12/29  12:53:15  etseidl
- * SC source tree 0.1
- *
- * Revision 1.15  1992/06/17  21:54:15  jannsen
- * cleaned up for saber-c
- *
- * Revision 1.14  1992/06/16  16:25:51  seidl
- * make p_reset_freq 10
- *
- * Revision 1.13  1992/05/26  20:17:52  jannsen
- * use mtype_get to get message types for global operations
- * check results of memory allocations
- *
- * Revision 1.12  1992/05/19  20:58:27  seidl
- * add cheat stuff
- *
- * Revision 1.11  1992/05/12  10:33:36  seidl
- * no longer print nuclear rep. energy here
- *
- * Revision 1.10  1992/05/04  11:05:11  seidl
- * remove pk ints, add some options
- *
- * Revision 1.9  1992/04/22  15:56:46  seidl
- * add proj_vector
- *
- * Revision 1.8  1992/04/13  11:05:59  seidl
- * alpha and beta no longer necessary
- *
- * Revision 1.7  1992/04/09  17:53:52  seidl
- * indent options
- *
- * Revision 1.6  1992/04/07  18:04:13  jannsen
- * integral_storage is printed out
- *
- * Revision 1.5  1992/04/06  12:36:06  seidl
- * merge in sandia changes
- *
- * Revision 1.4  1992/04/01  01:03:09  seidl
- * fix silly comment end
- *
- * Revision 1.3  1992/03/31  22:24:49  seidl
- * add new options
- *
- * Revision 1.2  1992/03/21  00:42:29  seidl
- * change sym_libv2.h to chemistry/qc/dmtsym/sym_dmt.h
- * read in boolean eliminate
- *
- * Revision 1.1.1.1  1992/03/17  16:26:20  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:26:19  seidl
- * Initial revision
- *
- * Revision 1.4  1992/02/26  12:54:38  seidl
- * remember space for null at end of string
- *
- * Revision 1.3  1992/02/18  17:51:44  seidl
- * add local_P option
- *
- * Revision 1.2  1992/02/07  12:59:25  seidl
- * add restart information
- *
- * Revision 1.1  1992/02/04  23:48:08  seidl
- * Initial revision
- *
- * Revision 1.5  1992/01/16  19:53:07  seidl
- * use new integral routines
- *
- * Revision 1.4  1992/01/09  11:44:54  seidl
- * change format of geometry printout
- *
- * Revision 1.3  1991/12/20  18:16:01  seidl
- * the use_symmetry flag now means to use so's, so set it to 0 by default
- *
- * Revision 1.2  1991/12/20  16:30:25  seidl
- * move things around some, change from void to int function
- *
- * Revision 1.1  1991/12/17  21:43:23  seidl
- * Initial revision
  * */
 
 static char rcsid[] = "$Id$";
 
+extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <tmpl.h>
-#include <util/ipv2/ip_libv2.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <util/misc/libmisc.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
+}
 
-#include "scf.h"
-#include "scfinit.h"
-#include "scfprnt.h"
+#include <scf_dmt.h>
+#include <util/keyval/keyval.h>
+
+extern "C" {
 #include "scf_init.gbl"
-
-#include "scf_inp.gbl"
-#include "scf_inp.lcl"
+}
 
 #define PBOOL(a) ((a) ? ("yes"):("no"))
 
-GLOBAL_FUNCTION int
-scf_get_input(_scf_info, _sym_info, _irreps, _centers, _outfile)
-scf_struct_t *_scf_info;
-sym_struct_t *_sym_info;
-scf_irreps_t *_irreps;
-centers_t *_centers;
-FILE *_outfile;
+static int default_value(KeyVal&keyval,char*keyword);
+
+/* This initializes _scf_info, _sym_info, _irreps, and _centers,
+ * given the KeyVal input and the symmetry _unique_centers.
+ * There are some memory leaks--the return values of keyval.pcharvalue()
+ * are not always deleted.
+ */
+int
+scf_get_keyval_input(KeyVal& keyval,
+                     centers_t *_unique_centers,
+                     scf_struct_t *_scf_info,
+                     sym_struct_t *_sym_info,
+                     scf_irreps_t *_irreps,
+                     centers_t *_centers,
+                     FILE *_outfile)
 {
   int i;
   int size;
@@ -131,30 +57,20 @@ FILE *_outfile;
   double nuclear_charge;
   int n_electron;
 
-  char *open="none";
-  char *wfn="scf";
-  char *dertype="first";
-  char *pg="c1";
-
- /* push the current working keyword list, then add :default and :scf
-  * to cwk list */
-
-  ip_cwk_push();
-  ip_cwk_add(":default");
-  ip_cwk_add(":scf");
-
  /* first get the point group symbol of the molecule */
 
-  errcod = ip_string("symmetry",&pg,0);
+  char *pg = keyval.pcharvalue("symmetry");
+  if (keyval.error() != KeyVal::OK) pg = "c1";
 
  /* find out the opentype of the molecule, 
   * and then initialize the scf_struct */
 
-  errcod = ip_string("opentype",&open,0);
+  char* open = keyval.pcharvalue("opentype");
+  if (keyval.error() != KeyVal::OK) open = "none";
 
   init_scf_struct(_scf_info);
 
-  if(errcod==IPE_OK) {
+  if(keyval.error()==KeyVal::OK) {
     if(!strcmp(open,"highspin")|| /* high-spin open-shell */
             !strcmp(open,"singlet") || /* open-shell singlet */
             !strcmp(open,"twocon") ||  /* TCSCF */
@@ -166,8 +82,8 @@ FILE *_outfile;
  /* check to see if there is a socc vector.  this is afterall an open-shell
   * calculation, so there should be some, right?
   */
-      errcod=ip_count("socc",&nir,0);
-      if(errcod!=IPE_OK) {
+      nir = keyval.count("socc");
+      if(keyval.error() != KeyVal::OK) {
         fprintf(_outfile,"\n opentype is %s but there is no ",open);
         fprintf(_outfile,"socc vector\n");
         return(-1);
@@ -175,8 +91,7 @@ FILE *_outfile;
 
  /* get the number of irreps with open-shell orbitals */
       for(i=nop=0; i < nir; i++) {
-        dumo=0;
-        errcod=ip_data("socc","%d",&dumo,1,i);
+        dumo = keyval.intvalue("socc",i);
         if(dumo) nop++;
         }
       noptr=nop*(nop+1)/2;
@@ -209,8 +124,8 @@ FILE *_outfile;
   * this should be on the cfs
   */
 
-  errcod = ip_string("ckpt_dir",&_scf_info->ckptdir,0);
-  if(errcod!=0) {
+  _scf_info->ckptdir = keyval.pcharvalue("ckpt_dir");
+  if(keyval.error()!=KeyVal::OK) {
 #if defined(I860)
     size=strlen("/cfs/")+1;
     _scf_info->ckptdir = (char *) malloc(size);
@@ -229,82 +144,58 @@ FILE *_outfile;
   * .{scfvec,fock,etc...}
   */
 
-  errcod = ip_string("filename",&_scf_info->fname,0);
-  if(errcod!=0) {
+  _scf_info->fname = keyval.pcharvalue("filename");
+  if(keyval.error()!=KeyVal::OK) {
     size=strlen("libscfv3")+1;
     _scf_info->fname = (char *) malloc(size);
     check_alloc(_scf_info->fname,"_scf_info->fname");
     strcpy(_scf_info->fname,"libscfv3");
     }
 
-  _scf_info->debug=0;
-  errcod = ip_boolean("debug",&_scf_info->debug,0);
-  _scf_info->debug_node=0;
-  errcod = ip_boolean("debug_node",&_scf_info->debug_node,0);
+  _scf_info->debug = keyval.booleanvalue("debug");
+  _scf_info->debug_node = keyval.booleanvalue("debug_node");
 
  /* are the coordinates in angstrom units? */
-  angs=0;
-  errcod = ip_boolean("angstrom",&angs,0);
-  if (errcod == IPE_KEY_NOT_FOUND) 
-    errcod = ip_boolean("angstroms",&angs,0);
-  if (errcod == IPE_KEY_NOT_FOUND) 
-    errcod = ip_boolean("aangstrom",&angs,0);
-  if (errcod == IPE_KEY_NOT_FOUND) 
-    errcod = ip_boolean("aangstroms",&angs,0);
+  angs = keyval.booleanvalue("angstrom");
 
  /* use (nproc-1) nodes for gmat calculation (better load balance) */
-  _scf_info->load_bal=0;
-  errcod = ip_boolean("load_balance_gmat",&_scf_info->load_bal,0);
-
- /* use self-consistent dft? means that we only do J part of Gmat */
-  _scf_info->scdft=0;
-  errcod = ip_boolean("scdft",&_scf_info->scdft,0);
-
- /* or should we tack on the dft energy at the end? */
-  _scf_info->dft=0;
-  errcod = ip_boolean("dft",&_scf_info->dft,0);
+  _scf_info->load_bal=keyval.booleanvalue("load_balance_gmat");
 
  /* should the exchange energy be computed separately? */
-  _scf_info->exchange=0;
-  errcod = ip_boolean("exchange",&_scf_info->exchange,0);
+  _scf_info->exchange=keyval.booleanvalue("exchange");
 
  /* cheat by changing the threshold from iteration to iteration? */
-  _scf_info->cheat=0;
-  errcod = ip_boolean("cheat",&_scf_info->cheat,0);
+  _scf_info->cheat=keyval.booleanvalue("cheat");
 
  /* eliminate integral batches based on size of pmax? */
-  _scf_info->eliminate=1;
-  errcod = ip_boolean("eliminate",&_scf_info->eliminate,0);
+  _scf_info->eliminate = keyval.booleanvalue("eliminate");
+  if (keyval.error() != KeyVal::OK) _scf_info->eliminate=1;
 
  /* should the checkpoint file be deleted? */
-  _scf_info->ckpt_del=1;
-  errcod = ip_boolean("ckpt_del",&_scf_info->ckpt_del,0);
+  _scf_info->ckpt_del=keyval.booleanvalue("ckpt_del");
+  if (keyval.error() != KeyVal::OK) _scf_info->ckpt_del=1;
 
  /* print flag */
-  _scf_info->print_flg=0;
-  errcod = ip_data("print_flag","%d",&_scf_info->print_flg,0);
+  _scf_info->print_flg=keyval.intvalue("print_flag");
 
  /* how often to checkpoint */
-  _scf_info->ckpt_freq=5;
-  errcod = ip_data("ckpt_freq","%d",&_scf_info->ckpt_freq,0);
+  _scf_info->ckpt_freq=keyval.intvalue("ckpt_freq");
+  if (keyval.error() != KeyVal::OK) _scf_info->ckpt_freq=5;
 
  /* how often to reset the density and fock matrices */
-  _scf_info->p_reset_freq=10;
-  errcod = ip_data("density_reset_frequency","%d",&_scf_info->p_reset_freq,0);
+  _scf_info->p_reset_freq=keyval.intvalue("density_reset_frequency");
+  if (keyval.error() != KeyVal::OK) _scf_info->p_reset_freq=10;
 
  /* if there is an old vector available in a checkpoint file, 
   * use it as an intial guess, if there isn't a converged vector about
   */
   _scf_info->restart=0;
-  _scf_info->warmrestart=0;
-  errcod = ip_boolean("warmrestart",&_scf_info->warmrestart,0);
+  _scf_info->warmrestart=keyval.booleanvalue("warmrestart");
 
-  _scf_info->proj_vector=0;
-  errcod = ip_boolean("projected_guess",&_scf_info->proj_vector,0);
+  _scf_info->proj_vector=keyval.booleanvalue("projected_guess");
 
  /* use local density matrices? */
-  _scf_info->local_p=0;
-  errcod = ip_boolean("local_P",&_scf_info->local_p,0);
+  _scf_info->local_p=keyval.booleanvalue("local_P");
 
  /* if the point group is not C1, then perform calculation in the SO basis.
   * this will save time in the diagonalization of the fock matrix, and can
@@ -312,7 +203,7 @@ FILE *_outfile;
   * done in the SO basis */
   _scf_info->use_symmetry=0;
 #if 0 /* not used currently */
-  errcod = ip_boolean("use_symmetry",&_scf_info->use_symmetry,0);
+  _scf_info->use_symmetry=keyval.booleanvalue("use_symmetry");
 #endif
 
  /* integral elimination a la Alrichs.  I don't yet use minimized density
@@ -321,64 +212,50 @@ FILE *_outfile;
   * pmax = MAX( p[ij], p[kl], .25*( p[ik], p[il], p[jk], p[jl])
   * imax = MAX (IJKL), I,J,K,L = shell indices
   */
-  _scf_info->intcut=12;
-  errcod= ip_data("threshold","%d",&_scf_info->intcut,0);
+  _scf_info->intcut=keyval.intvalue("threshold");
+  if (keyval.error() != KeyVal::OK) _scf_info->intcut=12;
 
  /* this is used by version 2 of the integral library.  set int_store to
   * the number of integrals to be kept in memory.
   */
-  _scf_info->int_store=0;
-  errcod= ip_data("integral_storage","%d",&_scf_info->int_store,0);
+  _scf_info->int_store=keyval.intvalue("integral_storage");
 
 
  /* the number of error matrices to store in the DIIS procedure.
   * 6 is good for closed-shell, 4 for open-shell, 3 for gvb or TCSCF
   */
-  _scf_info->ndiis = scf_def_value("ndiis");
+  _scf_info->ndiis = default_value(keyval,"ndiis");
 
 
  /* this is an experimental flag for my own use. it is used to select
   * what to use for the diagonal blocks of the effective fock matrix
   * in an open-shell calculation
   */
-  _scf_info->fock_typ = 0;
-  errcod = ip_data("fock_type","%d",&_scf_info->fock_typ,0);
+  _scf_info->fock_typ = keyval.intvalue("fock_type");
 
 
  /* this is a damping factor for the bmat in the diis procedure.
   * the defaults are pretty darn good
   */
-  _scf_info->diisdamp = (opensh) ? 0.02 : 0.0;
-  if(_scf_info->twocon) _scf_info->diisdamp = 0.01;
-  errcod = ip_data("diisdamp","%lf",&_scf_info->diisdamp,0);
+  _scf_info->diisdamp = keyval.doublevalue("diisdamp");
+  if (keyval.error() != KeyVal::OK) {
+      _scf_info->diisdamp = (opensh) ? 0.02 : 0.0;
+      if(_scf_info->twocon) _scf_info->diisdamp = 0.01;
+    }
 
  /* level shifting, of course */
-  _scf_info->lvl_shift= (opensh) ? 1.0 : 0.0;
-  if(opensh) errcod = ip_data("levelshift","%lf",&_scf_info->lvl_shift,0);
-
-/******************************************************************/
- /* open basis set library. user must provide a basisdir, and one or more
-  * basis files.
-  */
-
-  ip_cwk_push();
-  ip_cwk_add(":default");
-  ip_cwk_add(":scf");
-
-  count=0;
-  errcod = ip_count("basisfiles",&count,0);
-  if(count) ip_append_from_input("basis",_outfile);
-
-/* read in the centers information from the input */
+  if(opensh) {
+      _scf_info->lvl_shift=keyval.doublevalue("levelshift");
+      if (keyval.error() != KeyVal::OK) _scf_info->lvl_shift=(opensh)?1.0:0.0;
+    }
 
   errcod = 
-    scf_initialize(_outfile,_centers,_scf_info,_sym_info,_irreps,pg,angs);
+    scf_initialize_given_centers(_outfile,_unique_centers,
+                                 _centers,_scf_info,_sym_info,_irreps,pg,angs);
   if(errcod != 0) {
     fprintf(_outfile,"trouble in scf_initialize\n");
     return(-1);
     }
-
-  ip_cwk_pop();
 
 /* find the nuclear charge */
 
@@ -390,10 +267,10 @@ FILE *_outfile;
 /* read in the number of mo's to occupy in each symmetry type */
 
   nir = _irreps->nirrep;
-  errcod = ip_count("docc",&count,0);
+  count = keyval.count("docc");
   if(_scf_info->iopen) {
-    errcod = ip_count("socc",&count,0);
-    if(errcod != 0) {
+    count = keyval.count("socc");
+    if(keyval.error() != KeyVal::OK) {
       fprintf(_outfile,"Hey! Add some unpaired electrons buddy!\n");
       return(-1);
       }
@@ -405,7 +282,7 @@ FILE *_outfile;
         }
       }
     }
-  if(errcod != 0 && !_scf_info->iopen) {
+  if(keyval.error() != KeyVal::OK && !_scf_info->iopen) {
     if (nir != 1) {
       fprintf(_outfile,"If there is more than one irrep must give docc!\n");
       return(-1);
@@ -425,10 +302,10 @@ FILE *_outfile;
       }
     n_electron = 0;
     for(i=0; i < nir ; i++) {
-      errcod = ip_data("docc","%d",&_irreps->ir[i].nclosed,1,i);
+      _irreps->ir[i].nclosed = keyval.intvalue("docc",i);
       n_electron += 2*_irreps->ir[i].nclosed;
       if(_scf_info->iopen) {
-        errcod = ip_data("socc","%d",&_irreps->ir[i].nopen,1,i);
+        _irreps->ir[i].nopen = keyval.intvalue("socc",i);
         n_electron += _irreps->ir[i].nopen;
         }
       }
@@ -436,8 +313,11 @@ FILE *_outfile;
   
 /* pretty-print some info about the calculation */
 
-  errcod = ip_string("wfn",&wfn,0);
-  errcod = ip_string("dertype",&dertype,0);
+  char *wfn=keyval.pcharvalue("wfn");
+  if (keyval.error() != KeyVal::OK) wfn="scf";
+
+  char *dertype=keyval.pcharvalue("dertype");
+  if (keyval.error() != KeyVal::OK) dertype="first";
 
   fprintf(_outfile,"\n\n  math/dmt/libdmtscf options:\n");
   fprintf(_outfile,"    wfn              = %s\n",wfn);
@@ -448,10 +328,10 @@ FILE *_outfile;
   fprintf(_outfile,"    threshold        = %d\n",_scf_info->intcut);
   fprintf(_outfile,"    eliminate        = %s\n",PBOOL(_scf_info->eliminate));
 
-  _scf_info->convergence = scf_def_value("convergence");
+  _scf_info->convergence = default_value(keyval,"convergence");
   fprintf(_outfile,"    convergence      = %d\n",_scf_info->convergence);
 
-  _scf_info->maxiter = scf_def_value("maxiter");
+  _scf_info->maxiter = default_value(keyval,"maxiter");
   fprintf(_outfile,"    maxiter          = %d\n",_scf_info->maxiter);
   fprintf(_outfile,"    symmetry         = %s\n",pg);
   fprintf(_outfile,"    local_P          = %s\n",PBOOL(_scf_info->local_p));
@@ -459,10 +339,6 @@ FILE *_outfile;
     fprintf(_outfile,"    print_flag       = %d\n",_scf_info->print_flg);
   if(_scf_info->load_bal) 
     fprintf(_outfile,"    load_balance_gmat= %s\n",PBOOL(_scf_info->load_bal));
-  if(_scf_info->dft) 
-    fprintf(_outfile,"    dft              = %s\n",PBOOL(_scf_info->dft));
-  if(_scf_info->scdft) 
-    fprintf(_outfile,"    scdft            = %s\n",PBOOL(_scf_info->scdft));
   if(_scf_info->exchange) 
     fprintf(_outfile,"    exchange         = %s\n",PBOOL(_scf_info->exchange));
   if(_scf_info->cheat) 
@@ -475,15 +351,15 @@ FILE *_outfile;
   fprintf(_outfile,"    nbasis           = %d\n\n",_scf_info->nbfao);
 
 
-  _scf_info->diis_flg=1;
-  errcod = ip_boolean("diis",&_scf_info->diis_flg,0);
+  _scf_info->diis_flg=keyval.booleanvalue("diis");
+  if (keyval.error() != KeyVal::OK) _scf_info->diis_flg=1;
   if(opensh)
     fprintf(_outfile,"  level shift                      = %f\n",
                                                   _scf_info->lvl_shift);
   if(_scf_info->diis_flg) {
     fprintf(_outfile,"  diis scale factor                = %f\n",
                                                   _scf_info->diisdamp+1.0);
-    _scf_info->it_diis = scf_def_value("diisstart");
+    _scf_info->it_diis = default_value(keyval,"diisstart");
     fprintf(_outfile,
        "  iterations before extrapolation  = %d\n",_scf_info->it_diis);
     fprintf(_outfile,"  %d error matrices will be kept\n",_scf_info->ndiis);
@@ -507,11 +383,11 @@ FILE *_outfile;
  */
 
   if(_scf_info->iopen) {
-    _scf_info->alpha=0.0;
-    ip_data("alpha","%lf",&_scf_info->alpha,0);
+    _scf_info->alpha=keyval.doublevalue("alpha");
+    if (keyval.error() != KeyVal::OK) _scf_info->alpha=0.0;
 
-    _scf_info->beta=-1.0;
-    ip_data("beta","%lf",&_scf_info->beta,0);
+    _scf_info->beta=keyval.doublevalue("beta");
+    if (keyval.error() != KeyVal::OK) _scf_info->beta=-1.0;
 
     _scf_info->beta=-_scf_info->beta;
 
@@ -555,86 +431,78 @@ FILE *_outfile;
 
 /**************************************************************/
 /* now print out scf_struct if you wish*/
-  bool=0;
-  errcod = ip_boolean("scf_info",&bool,0);
-  if(bool) {
+  if(keyval.booleanvalue("scf_info")) {
     fprintf(_outfile,"\nscf_struct\n");
     print_scf_struct(_outfile,_scf_info);
     fflush(_outfile);
     }
   
 /* now print out sym_struct if you wish*/
-  bool=0;
-  errcod = ip_boolean("sym_info",&bool,0);
-  if(bool) {
+  if(keyval.booleanvalue("sym_info")) {
     fprintf(_outfile,"\nsym_struct\n");
     print_sym_struct(_outfile,_sym_info);
     fflush(_outfile);
     }
   
 /* now print out irreps struct if you wish*/
-  bool=0;
-  errcod = ip_boolean("irrep_info",&bool,0);
-  if(bool) {
+  if(keyval.booleanvalue("irrep_info")) {
     fprintf(_outfile,"\nscf_irreps\n");
     print_scf_irreps(_outfile,_irreps);
     fflush(_outfile);
     }
   
 /* now print out centers struct if you wish*/
-  bool=0;
-  errcod = ip_boolean("centers_info",&bool,0);
-  if(bool) {
+  if(keyval.booleanvalue("centers_info")) {
     fprintf(_outfile,"\ncenters\n");
     print_centers(_outfile,_centers);
     fflush(_outfile);
     }
   fflush(_outfile);
 
-  ip_cwk_pop();
-
   return 0;
   }
 
-GLOBAL_FUNCTION int
-scf_def_value(keyword)
-char *keyword;
+static int
+default_value(KeyVal&keyval,char*keyword)
 {
-  int val=0;
-
-  ip_cwk_push();
-  ip_cwk_add(":default");
-  ip_cwk_add(":scf");
+  int val;
 
   if(!strcmp(keyword,"convergence")) {
-    char *wfn="scf";
-    char *der="first";
+    char *wfn;
+    char *der;
 
-    ip_string("wfn",&wfn,0);
-    ip_string("dertype",&der,0);
+    wfn = keyval.pcharvalue("wfn");
+    if (keyval.error() != KeyVal::OK) wfn = "scf";
+    der = keyval.pcharvalue("dertype");
+    if (keyval.error() != KeyVal::OK) der = "first";
 
-    val=7;
-    if(strcmp(wfn,"scf")) val = 10;
-    if(!strcmp(der,"second")) val = 12;
-    ip_data(keyword,"%d",&val,0);
+    val = keyval.intvalue(keyword);
+    if (keyval.error() != KeyVal::OK) {
+        val=7;
+        if(strcmp(wfn,"scf")) val = 10;
+        if(!strcmp(der,"second")) val = 12;
+      }
     }
   else if(!strcmp(keyword,"maxiter")) {
-    val=40;
-    ip_data(keyword,"%d",&val,0);
+    val = keyval.intvalue(keyword);
+    if (keyval.error() != KeyVal::OK) val=40;
     }
   else if(!strcmp(keyword,"diisstart")) {
-    ip_data(keyword,"%d",&val,0);
+    val = keyval.intvalue(keyword);
     }
   else if(!strcmp(keyword,"ndiis")) {
-    char *ot="none";
+    char *ot;
 
-    val = 6;
-    ip_string("opentype",&ot,0);
-    if(strcmp(ot,"none")) val=4;
-    if(!strcmp(ot,"twocon")) val = 3;
-    ip_data(keyword,"%d",&val,0);
+    ot = keyval.pcharvalue("opentype");
+
+    val = keyval.intvalue(keyword);
+    if (keyval.error() != KeyVal::OK) {
+        val = 6;
+        if(!ot && strcmp(ot,"none")) val=4;
+        if(!ot && !strcmp(ot,"twocon")) val = 3;
+      }
+    if (ot) delete[] ot;
     }
 
-  ip_cwk_pop();
   return val;
   }

@@ -223,7 +223,7 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
     for(i=0; i < nat; i++) {
 
   /* generate points on sphere around center i of radius scale*vdw_radius */
-      r_i = vdw_scale*mol[i].element().vdw_radius()/bohr;
+      r_i = vdw_scale*mol[i].element().vdw_radius();
 
       mpoint = (int) (M_PI*r_i*pts_per_ang);
       if(mpoint%2) mpoint++;
@@ -254,7 +254,7 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
                    (yp-center.p[l].r[1])*(yp-center.p[l].r[1])+
                    (zp-center.p[l].r[2])*(zp-center.p[l].r[2]);
               dist=sqrt(dist);
-              r_il=vdw_scale*mol[l].element().vdw_radius()/bohr;
+              r_il=vdw_scale*mol[l].element().vdw_radius();
               if(dist<r_il) break;
               }
             }

@@ -9,8 +9,6 @@
 #include <util/container/array.h>
 #include <util/container/set.h>
 
-extern "C" void * sbrk(int);
-
 class ClassKeyClassDescPMap;
 class ClassKeySet;
 class DescribedClass;
@@ -147,6 +145,8 @@ class  RefDescribedClassBase {
     int operator>( RefDescribedClassBase &a);
     int operator<( RefDescribedClassBase &a);
 };
+
+// this uses macros from util/container/ref.h
 #define DescribedClass_named_REF_dec(refname,T)				      \
 class  refname : public RefDescribedClassBase  {			      \
   private:								      \
@@ -200,7 +200,7 @@ DescribedClass* refname :: parentpointer() { return p; }		      \
 refname :: refname (): p(0) {}						      \
 refname :: refname (T*a): p(a)						      \
 {									      \
-  if (REF_CHECK_STACK && (void*) p > sbrk(0)) {				      \
+  if (DO_REF_CHECK_STACK(p)) {						      \
       warn("Ref" # T ": creating a reference to stack data");		      \
     }									      \
   if (p) p->reference();						      \
@@ -226,7 +226,7 @@ refname :: clear()							      \
 {									      \
   if (REF_CHECK_POINTER) check_pointer();				      \
   if (p && p->dereference()<=0) {					      \
-      if (REF_CHECK_STACK && (void*) p > sbrk(0)) {			      \
+      if (DO_REF_CHECK_STACK(p)) {					      \
           warn("Ref" # T ": skipping delete of object on the stack");	      \
         }								      \
       else {								      \

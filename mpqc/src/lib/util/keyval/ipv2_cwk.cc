@@ -170,10 +170,19 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
   char *token;
   int found;
 
+  if (!keyword) return kt;
+
   if (strlen(keyword)+1 > KEYWORD_LENGTH) {
       error("ip_descend_tree: maximum KEYWORD_LENGTH has been exceeded");
       }
-  strcpy(ch,keyword);
+
+  if (keyword[0] == ':') {
+      kt = ip_tree;
+      strcpy(ch,&keyword[1]);
+    }
+  else {
+      strcpy(ch,keyword);
+    }
 
   r = kt;
   token = strtok(ch,": \t");
@@ -182,16 +191,28 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
     found = 0;
     I = r;
     do {
-      if (!strcmp(token,I->keyword)) {
+      if (!strcmp(token,"..")) {
+        r = I->up;
+        token = strtok(NULL,": \t");
+        if (token == NULL) return I;
+        found = 1;
+        break;
+        }
+      else if (!strcmp(token,I->keyword)) {
+        if (I->variable) I = ip_descend_tree(I,I->variable);
         token = strtok(NULL,": \t");
         if (token == NULL) return I;
         r = I->down;
-        if (!r) return NULL;
+        if (!r) {
+            return NULL;
+          }
         found = 1;
         break;
         }
       } while ((I = I->across) != r);
-    if (!found) return NULL;
+    if (!found) {
+        return NULL;
+      }
     }
 
   if (r && ip_keyword) {

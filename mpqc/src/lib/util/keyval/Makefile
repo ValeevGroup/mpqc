@@ -19,7 +19,7 @@ MAPIMPL = RAVL
 CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
 	 ipv2_karray.cc ipv2_print.cc ipv2_read.cc \
 	 keyval.cc keyvalipv2.cc keyvalval.cc keyvalkey.cc keyvalass.cc \
-         keyvalstr.cc keyvalagg.cc keyvalpre.cc
+         keyvalstr.cc keyvalagg.cc keyvalpre.cc ipv2c.cc
 
 GENCXXSRC =ipv2_parse.cc ipv2_scan.cc \
            keyval$(MAPIMPL)Map.cc keyvalMap.cc
@@ -27,7 +27,7 @@ GENCXXSRC =ipv2_parse.cc ipv2_scan.cc \
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 GENSRC = $(GENCXXSRC)
 
-INC = ipv2.h keyval.h keyvaldefs.h
+INC = ipv2.h ipv2c.h keyval.h keyvaldefs.h
 GENINC = ipv2_parse.h \
          keyvalImplMap.h keyval$(MAPIMPL)Map.h keyvalMap.h
 
@@ -43,7 +43,10 @@ default:: $(DEPENDINCLUDE)
 default:: libkeyval.a
 
 keyvaltest: keyvaltest.o libkeyval.a ../container/libcontainer.a ../class/libclass.a
-	$(CXX) $(CXXFLAGS) -o keyvaltest $^
+	$(CXX) $(CXXFLAGS) -o keyvaltest $^ $(SYSLIBS)
+
+keyvaltest.o: keyvaltest.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

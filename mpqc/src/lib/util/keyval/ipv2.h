@@ -1,4 +1,7 @@
 
+#ifndef _util_keyval_ipv2_ipv2_h
+#define _util_keyval_ipv2_ipv2_h
+
 #include <stdio.h>
 
 // For temporary data (only used while parsing)
@@ -17,9 +20,8 @@ struct ip_keyword_tree_struct {
   struct ip_keyword_tree_struct *across; /* Circular list. */
   struct ip_keyword_tree_struct *up;    /* Terminated by NULL. */
   struct ip_keyword_tree_struct *down;  /* Terminated by NULL. */
-  struct ip_keyword_tree_struct *alias;  /* Keeps tracks of the source
-                                          * for copied keyword trees.
-                                          */
+  char *variable;  /* If this node points to another name, this
+                    * is the name, otherwise NULL. */
   char *value;
   };
 
@@ -47,19 +49,23 @@ class IPV2
 {
  public:
   enum Status {
-      OK            ,  /* No problem. */
-      KeyNotFound ,  /* The keyword was not found. */
-      OutOfBounds ,  /* An array subscript was out of bounds. */
-      Malloc        ,  /* Memory allocation failed. */
-      NotAnArray  ,  /* Gave index for data which isn't an array */
-      NotAScalar  ,  /* Didn't give index for data which is an array */
-      Type          ,  /* The datum is not of the appropiate type. */
-      HasNoValue  ,  /* The keyword has no value. */
-      ValNotExpd     /* A value was not expected for the keyword. */
+      OK=0          ,  /* No problem. */
+      KeyNotFound=1 ,  /* The keyword was not found. */
+      OutOfBounds=2 ,  /* An array subscript was out of bounds. */
+      Malloc=3      ,  /* Memory allocation failed. */
+      NotAnArray=4  ,  /* Gave index for data which isn't an array */
+      NotAScalar=5  ,  /* Didn't give index for data which is an array */
+      Type=6        ,  /* The datum is not of the appropiate type. */
+      HasNoValue=7  ,  /* The keyword has no value. */
+      ValNotExpd=8     /* A value was not expected for the keyword. */
       };
   enum { KEYWORD_LENGTH=256 };
   
  private:
+  // this is what is read by the ip_data, etc, func calls
+  // no IPV2 members allocate or delete storage for global_
+  static IPV2* global_;
+    
   // These are needed only when the input is being read in:
   ip_string_list_t* table_keywords;
   ip_string_list_t* current_table_keyword;
@@ -108,7 +114,6 @@ class IPV2
   void ip_assign_variable(char*);
   double ip_get_variable_double(char*);
   char* ip_double_to_string(double);
-  void ip_copy_keyword_tree(ip_keyword_tree_t*,ip_keyword_tree_t*);
   void ip_assign_value(char*value);
   void ip_start_karray();
   void ip_init_karray();
@@ -125,13 +130,10 @@ class IPV2
   void free_keyword_tree_list(ip_keyword_tree_list_t*);
   ip_keyword_tree_list_t* splice_keyword_tree_list(ip_keyword_tree_t*,
                                                    ip_keyword_tree_list_t*);
-  IPV2::Status ip_construct_key_v(const char*,char*,int,int*);
   void ip_cwk_karray_add_v(int,int*);
   void ip_cwk_karray_add(int,...);
   ip_keyword_tree_t* ip_karray_descend_v(ip_keyword_tree_t*,int,int*);
   ip_keyword_tree_t* ip_karray_descend(ip_keyword_tree_t*,int,...);
-  IPV2::Status ip_count_v(const char*,int*,int,int*);
-  IPV2::Status ip_count(const char*,int*,int,...);
   void ip_print_keyword(FILE*,ip_keyword_tree_t*);
   void ip_print_tree(FILE*,ip_keyword_tree_t*);
   void ip_print_tree_(FILE*,ip_keyword_tree_t*,int);
@@ -141,6 +143,7 @@ class IPV2
   void ip_pop_karray();
   void ip_initialize(FILE*,FILE*);
   void ip_append(FILE*,FILE*);
+  char* get_truename(ip_keyword_tree_t*kt);
 
   void cvs_toupper(char*);
   void showpos();
@@ -157,6 +160,9 @@ class IPV2
  public:
   IPV2();
   virtual ~IPV2();
+  static int have_global();
+  static void set_global(IPV2*);
+  static IPV2* global();
   void set_uppercase(int);
   // calls either ip_append or ip_initialize based on ip_initialized
   void read(FILE*,FILE*);
@@ -177,21 +183,27 @@ class IPV2
   IPV2::Status data(const char*,const char*,void*,int,...);
   IPV2::Status data_v(const char*,const char*,void*,int,int*);
     // the character string produced by classname must not be delete[]'ed
-  IPV2::Status classname(const char*,char**,int,...);
-  IPV2::Status classname_v(const char*,char**,int,int*);
+  IPV2::Status classname(const char*,const char**,int,...);
+  IPV2::Status classname_v(const char*,const char**,int,int*);
     // the character string produced by truekeyword must not be delete[]'ed
     // if there is no alias for the keyword the string pointer is set to
     // null and if the keyword exists OK is returned
-  IPV2::Status truekeyword(const char*,char**,int,...);
-  IPV2::Status truekeyword_v(const char*,char**,int,int*);
+  IPV2::Status truekeyword(const char*,const char**,int,...);
+  IPV2::Status truekeyword_v(const char*,const char**,int,int*);
   IPV2::Status string(const char*,char**,int,...);
   IPV2::Status string_v(const char*,char**,int,int*);
-  IPV2::Status value(const char*,char**,int,...);
-  IPV2::Status value_v(const char*,char**,int,int*);
+    // the character string produced by value must not be delete[]'ed
+    // or free'ed.
+  IPV2::Status value(const char*,const char**,int,...);
+  IPV2::Status value_v(const char*,const char**,int,int*);
+
+  IPV2::Status construct_key_v(const char*,char*,int,int*);
+  IPV2::Status count(const char*,int*,int,...);
+  IPV2::Status count_v(const char*,int*,int,int*);
 
   // some routines for debugging
-  inline void print_keyword(FILE*f=stderr,ip_keyword_tree_t*k=0)
-    { ip_print_keyword(f,k); };
-  inline void print_tree(FILE*f=stderr,ip_keyword_tree_t*k=0)
-    { ip_print_tree(f,k); };
+  void print_keyword(FILE*f=stderr,ip_keyword_tree_t*k=0);
+  void print_tree(FILE*f=stderr,ip_keyword_tree_t*k=0);
 };
+
+#endif

@@ -9,7 +9,7 @@
 
 SCVector3::SCVector3(RefSCVector&x)
 {
-  if (v.dim().n() != 3) {
+  if (x.dim().n() != 3) {
       fprintf(stderr,"SCVector3::SCVector3(RefSCVEctor&): bad length\n");
       abort();
     }

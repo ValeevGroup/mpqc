@@ -183,7 +183,7 @@ class SCElementMaxAbs: virtual public SCDiagElementOp,
   private:
     double r;
   public:
-    SCElementMaxAbs(double a);
+    SCElementMaxAbs();
     SCElementMaxAbs(StateIn&);
     ~SCElementMaxAbs();
     void save_data_state(StateOut&);
@@ -213,6 +213,8 @@ class RefSCDimension: public RefSSSCDimension {
     int n();
 };
 
+class RefSCMatrix;
+class RefSymmSCMatrix;
 SavableState_named_REF_dec(RefSSSCVector,SCVector);
 class RefSCVector: public RefSSSCVector {
     // standard overrides
@@ -221,10 +223,12 @@ class RefSCVector: public RefSSSCVector {
     RefSCVector(RefSCDimension&);
     RefSCVector(RefSCVector&);
     RefSCVector(SCVector *);
-    RefSCVector(RefDescribedClassBase&);
+    // don't allow automatic conversion from any reference to a
+    // described class
+    //RefSCVector(RefDescribedClassBase&);
     ~RefSCVector();
     RefSCVector& operator=(SCVector* cr);
-    RefSCVector& operator=( RefDescribedClassBase & c);
+    //RefSCVector& operator=( RefDescribedClassBase & c);
     RefSCVector& operator=( RefSCVector & c);
 
     // vector specific members
@@ -234,13 +238,18 @@ class RefSCVector: public RefSSSCVector {
     int n();
     RefSCDimension dim();
     SCVectordouble operator()(int);
+    SCVectordouble operator[](int);
     RefSCVector operator+(RefSCVector&a);
     RefSCVector operator-(RefSCVector&a);
     RefSCVector operator*(double);
     RefSCVector clone();
     RefSCVector copy();
+    RefSCMatrix outer_product(RefSCVector&);
+    RefSymmSCMatrix symmetric_outer_product();
+    double maxabs();
     double scalar_product(RefSCVector&);
     double dot(RefSCVector&);
+    void normalize();
     void assign(RefSCVector&);
     void assign(double);
     void assign(const double*);
@@ -255,6 +264,8 @@ RefSCVector operator*(double,RefSCVector&);
 ARRAY_dec(RefSCVector);
 SET_dec(RefSCVector);
 
+class RefSymmSCMatrix;
+class RefDiagSCMatrix;
 SavableState_named_REF_dec(RefSSSCMatrix,SCMatrix);
 class RefSCMatrix: public RefSSSCMatrix {
     // standard overrides
@@ -262,16 +273,19 @@ class RefSCMatrix: public RefSSSCMatrix {
     RefSCMatrix();
     RefSCMatrix(RefSCMatrix&);
     RefSCMatrix(SCMatrix *);
-    RefSCMatrix(RefDescribedClassBase&);
+    //RefSCMatrix(RefDescribedClassBase&);
     ~RefSCMatrix();
     RefSCMatrix& operator=(SCMatrix* cr);
-    RefSCMatrix& operator=( RefDescribedClassBase & c);
+    //RefSCMatrix& operator=( RefDescribedClassBase & c);
     RefSCMatrix& operator=( RefSCMatrix & c);
 
     // matrix specific members
   public:
     RefSCMatrix(RefSCDimension&,RefSCDimension&);
+    RefSCVector operator*(RefSCVector&);
     RefSCMatrix operator*(RefSCMatrix&);
+    RefSCMatrix operator*(RefSymmSCMatrix&);
+    RefSCMatrix operator*(RefDiagSCMatrix&);
     RefSCMatrix operator*(double);
     RefSCMatrix operator+(RefSCMatrix&);
     RefSCMatrix operator-(RefSCMatrix&);
@@ -281,6 +295,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     RefSCMatrix copy();
     void set_element(int,int,double);
     double get_element(int,int);
+    void accumulate_outer_product(RefSCVector&,RefSCVector&);
     void accumulate_product(RefSCMatrix&,RefSCMatrix&);
     void assign(RefSCMatrix&);
     void scale(double);
@@ -308,15 +323,17 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     RefSymmSCMatrix();
     RefSymmSCMatrix(RefSymmSCMatrix&);
     RefSymmSCMatrix(SymmSCMatrix *);
-    RefSymmSCMatrix(RefDescribedClassBase&);
+    //RefSymmSCMatrix(RefDescribedClassBase&);
     ~RefSymmSCMatrix();
     RefSymmSCMatrix& operator=(SymmSCMatrix* cr);
-    RefSymmSCMatrix& operator=( RefDescribedClassBase & c);
+    //RefSymmSCMatrix& operator=( RefDescribedClassBase & c);
     RefSymmSCMatrix& operator=( RefSymmSCMatrix & c);
 
     // matrix specific members
   public:
     RefSymmSCMatrix(RefSCDimension&);
+    RefSCMatrix operator*(RefSCMatrix&);
+    RefSCVector operator*(RefSCVector&a);
     RefSymmSCMatrix operator*(double);
     RefSymmSCMatrix operator+(RefSymmSCMatrix&);
     RefSymmSCMatrix operator-(RefSymmSCMatrix&);
@@ -325,7 +342,11 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     RefSymmSCMatrix copy();
     void set_element(int,int,double);
     double get_element(int,int);
-    void accumulate_symmetric_product(RefSymmSCMatrix&);
+    void accumulate_symmetric_outer_product(RefSCVector&);
+    double scalar_product(RefSCVector&);
+    void accumulate_symmetric_product(RefSCMatrix&);
+    void accumulate_symmetric_sum(RefSCMatrix&);
+    void accumulate_transform(RefSCMatrix&,RefSymmSCMatrix&);
     void assign(RefSymmSCMatrix&);
     void scale(double);
     void assign(double);
@@ -353,15 +374,16 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     RefDiagSCMatrix();
     RefDiagSCMatrix(RefDiagSCMatrix&);
     RefDiagSCMatrix(DiagSCMatrix *);
-    RefDiagSCMatrix(RefDescribedClassBase&);
+    //RefDiagSCMatrix(RefDescribedClassBase&);
     ~RefDiagSCMatrix();
     RefDiagSCMatrix& operator=(DiagSCMatrix* cr);
-    RefDiagSCMatrix& operator=( RefDescribedClassBase & c);
+    //RefDiagSCMatrix& operator=( RefDescribedClassBase & c);
     RefDiagSCMatrix& operator=( RefDiagSCMatrix & c);
 
     // matrix specific members
   public:
     RefDiagSCMatrix(RefSCDimension&);
+    RefSCMatrix operator*(RefSCMatrix&);
     RefDiagSCMatrix operator*(double);
     RefDiagSCMatrix operator+(RefDiagSCMatrix&);
     RefDiagSCMatrix operator-(RefDiagSCMatrix&);

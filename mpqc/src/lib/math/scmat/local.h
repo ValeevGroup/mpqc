@@ -37,7 +37,7 @@ class LocalSCVector: public SCVector {
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
-#   include <util/class/classda.h>
+#   include <util/class/classd.h>
   private:
     RefLocalSCDimension d;
     RefSCVectorSimpleBlock block;
@@ -54,6 +54,7 @@ class LocalSCVector: public SCVector {
     RefSCDimension dim();
     void set_element(int,double);
     double get_element(int);
+    void accumulate_product(SymmSCMatrix*,SCVector*);
     void accumulate_product(SCMatrix*,SCVector*);
     void accumulate(SCVector*);
     double scalar_product(SCVector*);
@@ -93,7 +94,10 @@ class LocalSCMatrix: public SCMatrix {
     RefSCDimension coldim();
     double get_element(int,int);
     void set_element(int,int,double);
+    void accumulate_outer_product(SCVector*,SCVector*);
     void accumulate_product(SCMatrix*,SCMatrix*);
+    void accumulate_product(SCMatrix*,SymmSCMatrix*);
+    void accumulate_product(SCMatrix*,DiagSCMatrix*);
     void accumulate(SCMatrix*);
     void transpose_this();
     double invert_this();
@@ -135,8 +139,11 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate(SymmSCMatrix*);
     double invert_this();
 
+    double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
+    void accumulate_symmetric_outer_product(SCVector*);
     void accumulate_symmetric_product(SCMatrix*);
+    void accumulate_symmetric_sum(SCMatrix*);
     void accumulate_transform(SCMatrix*,SymmSCMatrix*);
     void element_op(RefSCSymmElementOp&);
     void print(const char* title=0,ostream& out=cout, int =10);

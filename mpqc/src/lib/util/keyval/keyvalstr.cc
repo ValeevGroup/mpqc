@@ -37,10 +37,11 @@ StringKeyVal::truekeyword(const char * key)
   return key;
 }
 
+// This does not cause objects to be constructed.
 int
 StringKeyVal::key_exists(const char* key)
 {
-  value(key);
+  stringvalue(key);
   if (error() == OK || error() == HasNoValue) {
       return 1;
     }
@@ -72,7 +73,7 @@ StringKeyVal::key_value(const char* key)
         }
       else {
           // create a new instance of this datum
-          PrefixKeyVal pkv(tkw,*this);
+          PrefixKeyVal pkv(tkw,*this); pkv.unmanage();
           const ClassDesc* cd = ClassDesc::name_to_class_desc(classn);
           if (!cd) {
               fprintf(stderr,"StringKeyVal: couldn't find a class named \"%s\""

@@ -27,10 +27,13 @@ class SCVector: virtual public SavableState {
     SCVector(StateIn&);
 
     // concrete functions (some can be overridden)
+    virtual SCVector* copy();
+    virtual SCVector* clone();
     virtual ~SCVector();
     void save_data_state(StateOut&);
     virtual int n();
     virtual double maxabs(); // maximum absolute value of the elements
+    virtual void normalize();
     virtual void assign(double);
     virtual void assign(const double*);
     virtual void convert(double*);
@@ -41,6 +44,7 @@ class SCVector: virtual public SavableState {
     virtual RefSCDimension dim() = 0;
     virtual void set_element(int,double) = 0;
     virtual double get_element(int) = 0;
+    virtual void accumulate_product(SymmSCMatrix*,SCVector*) = 0;
     virtual void accumulate_product(SCMatrix*,SCVector*) = 0;
     virtual void accumulate(SCVector*) = 0;
     virtual double scalar_product(SCVector*) = 0;
@@ -73,13 +77,20 @@ class SCMatrix: virtual public SavableState {
     virtual void shift_diagonal(double);
     virtual void unit();
     virtual void print(ostream&);
+    virtual SCMatrix* copy();
+    virtual SCMatrix* clone();
 
     // pure virtual functions
     virtual RefSCDimension rowdim() = 0;
     virtual RefSCDimension coldim() = 0;
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
+    virtual void accumulate_outer_product(SCVector*,SCVector*) = 0;
     virtual void accumulate_product(SCMatrix*,SCMatrix*) = 0;
+    virtual void accumulate_product(SCMatrix*,SymmSCMatrix*) = 0;
+    virtual void accumulate_product(SCMatrix*,DiagSCMatrix*) = 0;
+    virtual void accumulate_product(SymmSCMatrix*,SCMatrix*);
+    virtual void accumulate_product(DiagSCMatrix*,SCMatrix*);
     virtual void accumulate(SCMatrix*) = 0;
     virtual void transpose_this() = 0;
     virtual double invert_this() = 0;
@@ -107,11 +118,14 @@ class SymmSCMatrix: virtual public SavableState {
     virtual void unit();
     virtual void print(ostream&);
     virtual int n();
+    virtual SymmSCMatrix* copy();
+    virtual SymmSCMatrix* clone();
 
     // pure virtual functions
     virtual RefSCDimension dim() = 0;
     virtual void diagonalize(DiagSCMatrix*,SCMatrix*) = 0;
     virtual void accumulate_symmetric_product(SCMatrix*) = 0;
+    virtual void accumulate_symmetric_sum(SCMatrix*) = 0;
     virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*) = 0;
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
@@ -119,6 +133,8 @@ class SymmSCMatrix: virtual public SavableState {
     virtual double invert_this() = 0;
     virtual void element_op(RefSCSymmElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+    virtual void accumulate_symmetric_outer_product(SCVector*) = 0;
+    virtual double scalar_product(SCVector*) = 0;
 };
 
 class DiagSCMatrix: virtual public SavableState {
@@ -138,6 +154,8 @@ class DiagSCMatrix: virtual public SavableState {
     virtual void assign(DiagSCMatrix*);
     virtual void print(ostream&);
     virtual int n();
+    virtual DiagSCMatrix* copy();
+    virtual DiagSCMatrix* clone();
 
     // pure virtual functions
     virtual RefSCDimension dim() = 0;

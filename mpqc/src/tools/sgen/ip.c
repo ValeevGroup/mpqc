@@ -1,7 +1,11 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/06/08 01:14:14  cljanss
+ * Many changes.  These include: newmat7 and nihmatrix -> scmat
+ * and mpqcic -> MPSCF and updated optimize stuff.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/06/17  23:07:29  jannsen
  * modified to generate clean code
@@ -48,7 +52,8 @@ static char *rcsid = "$Id$";
 #define O output
 
 GLOBAL_FUNCTION VOID
-ip_gen()
+ip_gen(use_keyval_ipv2)
+    int use_keyval_ipv2;
 {
   declaration_t *I;
   char outfile[FILENAME_MAX];
@@ -84,7 +89,12 @@ ip_gen()
   fprintf(output,"#include <stdlib.h>\n");
   fprintf(output,"#include <stdarg.h>\n");
   fprintf(output,"#include <util/sgen/sgen.h>\n");
-  fprintf(output,"#include <util/ipv2/ip_libv2.h>\n",BaseName);
+  if (use_keyval_ipv2) {
+      fprintf(output,"#include <util/keyval/ipv2c.h>\n");
+    }
+  else {
+      fprintf(output,"#include <util/ipv2/ip_libv2.h>\n");
+    }
   fprintf(output,"#include \"%s.h\"\n",BaseName);
   fprintf(output,"#include \"%sinit.h\"\n",BaseName);
   fprintf(output,"#include \"%sip.h\"\n",BaseName);
@@ -103,7 +113,8 @@ ip_gen()
             I->name,I->name,I->name);
     fprintf(include,"#endif\n");
 
-    if (is_excluded("ip",I)) continue;
+    if (use_keyval_ipv2 && is_excluded("keyvalip",I)) continue;
+    else if (!use_keyval_ipv2 && is_excluded("ip",I)) continue;
     /* Generate the vararg version of the vector function. */
     ip_vararg(I);
 

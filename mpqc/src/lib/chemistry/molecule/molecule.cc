@@ -2,7 +2,7 @@
 #include <math.h>
 #include "molecule.h"
 
-DescribedClass_REF_def(Molecule);
+SavableState_REF_def(Molecule);
 
 #define CLASSNAME Molecule
 #define PARENTS virtual public SavableState
@@ -190,6 +190,40 @@ Molecule::add_atom(int i,AtomicCenter& ac)
 }
 
 void
+Molecule::print(SCostream& os)
+{
+  int i;
+
+  os.indent();
+  os << "    n  atom  label          x               y               z"
+      "          mass\n";
+
+  os.setf(ios::fixed,ios::floatfield);
+  os.setf(ios::right,ios::adjustfield);
+
+  for (i=0; i<natom(); i++) {
+      os.indent();
+      os.precision(10);
+      os << ' ';
+      os.width(5);
+      os << i+1;
+      os.width(5);
+      os << get_atom(i).element().symbol();
+      os.width(8);
+      if (get_atom(i).label()) os << get_atom(i).label();
+      else os << " ";
+      for (int j=0; j<3; j++) {
+          os.width(16);
+          os << get_atom(i)[j];
+        }
+      os.precision(5);
+      os.width(10);
+      os << get_atom(i).element().mass();
+      os << endl;
+    }
+}
+
+void
 Molecule::print(FILE*fp)
 {
   fprintf(fp,"Molecule:\n");
@@ -233,12 +267,22 @@ AtomicCenter& Molecule::operator[](int ind)
   return get_atom(ind);
 }
 
+AtomicCenter& Molecule::atom(int ind)
+{
+  return get_atom(ind);
+}
+
 AtomicCenter& Molecule::operator()(Pix pix)
 {
   return get_atom(((int)pix)-1);
 }
 
 const AtomicCenter& Molecule::operator[](int ind) const
+{
+  return get_atom(ind);
+}
+
+const AtomicCenter& Molecule::atom(int ind) const
 {
   return get_atom(ind);
 }

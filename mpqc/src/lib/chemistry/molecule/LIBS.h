@@ -1,7 +1,7 @@
 chemistry/molecule/libmolecule.a
-#include <math/nihmatrix/LIBS.h>
+#include <math/scmat/LIBS.h>
 #include <math/topology/LIBS.h>
-#include <math/opt/LIBS.h>
+#include <math/optimize/LIBS.h>
 #include <math/isosurf/LIBS.h>
 #include <util/state/LIBS.h>
 #include <util/keyval/LIBS.h>

@@ -5,231 +5,248 @@ extern "C" {
 #include <math.h>
 }
 
-#include <math/newmat7/newmat.h>
+#include <math/scmat/local.h>
 #include <util/keyval/keyval.h>
-#include "molecule.h"
-#include "energy.h"
-#include "coor.h"
+#include <chemistry/molecule/energy.h>
 
-MolecularEnergy::MolecularEnergy(Molecule&mol):
-  NLP2(mol.natom()*3),
-  _mol(mol),
-  _mc(0),
-  _energy(fvalue),
-  _gradient(grad),
-  _hessian(Hessian),
-  _do_energy(1),
-  _do_gradient(0),
-  _do_hessian(0)
+SavableState_REF_def(MolecularEnergy);
+
+#define CLASSNAME MolecularEnergy
+#define PARENTS virtual public NLP2
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+MolecularEnergy::_castdown(const ClassDesc*cd)
 {
-  molecule_to_X();
+  void* casts[] =  { NLP2::_castdown(cd) };
+  return do_castdowns(casts,cd);
 }
 
-MolecularEnergy::MolecularEnergy(Molecule&mol,MolecularCoor&mc):
-  NLP2(mc.dim()),
-  _mol(mol),
-  _mc(&mc),
-  _energy(fvalue),
-  _gradient(grad),
-  _hessian(Hessian),
-  _do_gradient(0),
-  _do_hessian(0)
+static RefKeyVal ugly_CTOR_hack_keyval(0);
+static KeyVal&
+ugly_CTOR_hack_get_keyval(KeyVal&keyval)
 {
-  molecule_to_X();
+  if (ugly_CTOR_hack_keyval.nonnull()) {
+      fprintf(stderr,"MolecularEnergy KeyVal CTOR recursively called:"
+              " this is not yet supported--aborting.\n");
+      abort();
+    }
+
+  if (!keyval.exists("dimension")) {
+      // put the correct dimension in the input
+      RefSCDimension dim;
+      if (!keyval.exists("coor")) {
+          RefMolecule mol = keyval.describedclassvalue("molecule");
+          dim = new LocalSCDimension(mol->natom()*3);
+        }
+      else {
+          RefMolecularCoor coor = keyval.describedclassvalue("coor");
+          dim = coor->dim();
+        }
+      AssignedKeyVal * assignedkeyval = new AssignedKeyVal;
+      RefDescribedClass dc = dim;
+      assignedkeyval->assign("dimension",dc);
+      ugly_CTOR_hack_keyval = new AggregateKeyVal(*assignedkeyval,keyval);
+
+      return *ugly_CTOR_hack_keyval;
+    }
+  else {
+      return keyval;
+    }
+}
+MolecularEnergy::MolecularEnergy(KeyVal&keyval):
+  NLP2(ugly_CTOR_hack_get_keyval(keyval)),
+  _energy(_value)
+{
+  ugly_CTOR_hack_keyval = 0;
+
+  _mc  = keyval.describedclassvalue("coor");
+
+  _mol = keyval.describedclassvalue("molecule");
+
+  if (_mc.nonnull()) {
+      _moldim = new LocalSCDimension(_mol->natom()*3);
+    }
+  else {
+      _moldim = dimension();
+    }
+  
+  _energy.compute() = 1;
+  _gradient.compute() = 0;
+  _hessian.compute() = 0;
+
+  molecule_to_x();
+}
+
+MolecularEnergy::MolecularEnergy(RefMolecule&mol):
+  NLP2(new LocalSCDimension(mol->natom()*3)),
+  _mol(mol),
+  _mc(0),
+  _energy(_value)
+{
+  _moldim = _x.dim();
+  
+  _energy.compute() = 1;
+  _gradient.compute() = 0;
+  _hessian.compute() = 0;
+
+  molecule_to_x();
+}
+
+MolecularEnergy::MolecularEnergy(RefMolecule&mol,RefMolecularCoor&mc):
+  NLP2(mc->dim()),
+  _mol(mol),
+  _mc(mc),
+  _energy(_value)
+{
+  _moldim = new LocalSCDimension(mol->natom()*3);
+  
+  _energy.compute() = 1;
+  _gradient.compute() = 0;
+  _hessian.compute() = 0;
+
+  molecule_to_x();
 }
 
 MolecularEnergy::~MolecularEnergy()
 {
 }
 
-void MolecularEnergy::failure(const char * msg)
+MolecularEnergy::MolecularEnergy(StateIn&s):
+  SavableState(s,class_desc_),
+  NLP2(s),
+  _energy(_value)
+{
+  _mc->restore_state(s);
+}
+
+void
+MolecularEnergy::save_data_state(StateOut&s)
+{
+  _mc->save_state(s);
+}
+
+void
+MolecularEnergy::failure(const char * msg)
 {
   fprintf(stderr,"MolecularEnergy::failure: \"%s\"\n",msg);
   abort();
 }
 
-void MolecularEnergy::Eval()
-{
-  hessian(); gradient(); energy();
-}
-
-double MolecularEnergy::EvalF()
-{
-  return energy();
-}
-
-ColumnVector MolecularEnergy::EvalG()
-{
-  ColumnVector result = gradient();
-  return result;
-}
-
-SymmetricMatrix MolecularEnergy::EvalH()
-{
-  SymmetricMatrix result = hessian();
-  return result;
-}
-
-void MolecularEnergy::set_energy(double e)
+void
+MolecularEnergy::set_energy(double e)
 {
   _energy.result_noupdate() = e;
   _energy.computed() = 1;
-  _have_energy = 1;
 }
 
-double MolecularEnergy::energy()
+double
+MolecularEnergy::energy()
 {
-  if (!_have_energy) {
-      int old = do_energy(1);
-      compute();
-      do_energy(old);
-    }
-  if (!_have_energy) {
-      failure("could not compute energy");
-    }
   return _energy;
 }
 
-void MolecularEnergy::set_gradient(ColumnVector&g)
+void
+MolecularEnergy::set_gradient(RefSCVector&g)
 {
   if (_mc == 0) {
       _gradient.result_noupdate() = g;
-      _gradient.computed() = 1;
     }
   else {
-      _mc->to_internal(_gradient,g);
+      _mc->to_internal(_gradient.result_noupdate(),g);
     }
-  _have_gradient = 1;
+  _gradient.computed() = 1;
 }
 
-const ColumnVector& MolecularEnergy::gradient()
-{
-  if (!_have_gradient) {
-      int old = do_gradient(1);
-      compute();
-      do_gradient(old);
-    }
-  if (!_have_gradient) {
-      failure("could not compute gradient");
-    }
-  return _gradient;
-}
-
-void MolecularEnergy::set_hessian(SymmetricMatrix&h)
+void
+MolecularEnergy::set_hessian(RefSymmSCMatrix&h)
 {
   if (_mc == 0) {
       _hessian.result_noupdate() = h;
-      _hessian.computed() = 1;
     }
   else {
-      _mc->to_internal(_hessian.result(),h);
+      _mc->to_internal(_hessian.result_noupdate(),h);
     }
-  _have_hessian = 1;
+  _hessian.computed() = 1;
 }
 
-const SymmetricMatrix& MolecularEnergy::hessian()
+void
+MolecularEnergy::x_to_molecule()
 {
-  if (!_have_hessian) {
-      int old = do_hessian(1);
-      compute();
-      do_hessian(old);
-    }
-  if (!_have_hessian) {
-      failure("could not compute hessian");
-    }
-  return _hessian;
-}
-
-int MolecularEnergy::do_energy()
-{
-  return _do_energy;
-}
-
-int MolecularEnergy::do_gradient()
-{
-  return _do_gradient;
-}
-
-int MolecularEnergy::do_hessian()
-{
-  return _do_hessian;
-}
-
-int MolecularEnergy::do_energy(int f)
-{
-  int old = _do_energy;
-  _do_energy = f;
-  return old;
-}
-
-int MolecularEnergy::do_gradient(int f)
-{
-  int old = _do_gradient;
-  _do_gradient = f;
-  return old;
-}
-
-int MolecularEnergy::do_hessian(int f)
-{
-  int old = _do_hessian;
-  _do_hessian = f;
-  return old;
-}
-
-void MolecularEnergy::x_changed()
-{
-  _have_energy = 0;
-  _have_gradient = 0;
-  _have_hessian = 0;
-}
-
-void MolecularEnergy::X_to_molecule()
-{
-  ColumnVector cartesian(_mol.natom()*3);
 
   if (_mc == 0) {
-      cartesian = xc;
+      int c = 0;
+      for (int i=0; i<_mol->natom(); i++) {
+          _mol->operator[](i)[0] = _x(c); c++;
+          _mol->operator[](i)[1] = _x(c); c++;
+          _mol->operator[](i)[2] = _x(c); c++;
+        }
     }
   else {
-      _mc->to_cartesian(cartesian,xc);
+      _mc->to_cartesian(_x);
     }
 
-  //printf("xc:\n");
-  //Print(xc);
-
-  //printf("cartesian:\n");
-  //Print(cartesian);
-
-  int c = 1;
-  for (int i=0; i<_mol.natom(); i++) {
-      _mol[i][0] = cartesian(c); c++;
-      _mol[i][1] = cartesian(c); c++;
-      _mol[i][2] = cartesian(c); c++;
-    }
 }
 
-void MolecularEnergy::molecule_to_X()
+void
+MolecularEnergy::molecule_to_x()
 {
-  ColumnVector cartesian(_mol.natom()*3);
-
-  int c = 1;
-  for (int i=0; i<_mol.natom(); i++) {
-      cartesian(c) = _mol[i][0]; c++;
-      cartesian(c) = _mol[i][1]; c++;
-      cartesian(c) = _mol[i][2]; c++;
-    }
+  RefSCVector cartesian(_moldim);
 
   if (_mc == 0) {
-      xc = cartesian;
+      int c = 0;
+      for (int i=0; i<_mol->natom(); i++) {
+          cartesian(c) = _mol->operator[](i)[0]; c++;
+          cartesian(c) = _mol->operator[](i)[1]; c++;
+          cartesian(c) = _mol->operator[](i)[2]; c++;
+        }
+      _x = cartesian;
     }
   else {
-      _mc->to_internal(xc,cartesian);
+      _mc->to_internal(_x);
     }
 
-  //printf("xc:\n");
-  //Print(xc);
-
-  //printf("cartesian:\n");
-  //Print(cartesian);
+  obsolete();
 }
 
+void
+MolecularEnergy::set_x(RefSCVector&v)
+{
+  NLP0::set_x(v);
+  x_to_molecule();
+}
+
+RefMolecule
+MolecularEnergy::molecule()
+{
+  return _mol;
+}
+
+void
+MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
+{
+  if (_mc.nonnull) {
+      _mc->guess_hessian(hessian);
+    }
+  else {
+      NLP2::guess_hessian(hessian);
+    }
+}
+
+void
+MolecularEnergy::print(SCostream&o)
+{
+  NLP2::print(o);
+  if (_mc.nonnull()) {
+      o.indent(); o << "Molecular Coordinates:\n";
+      o++;
+      _mc->print(o);
+      o--;
+    }
+  else {
+      o.indent(); o << "Molecule:\n";
+      o++;
+      _mol->print(o);
+      o--;
+    }
+}

@@ -5,17 +5,17 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/basis/basis.h>
 
-class OneBodyInt: public SCSymmElementOp
+class OneBodyInt: public SCElementOp
 {
  private:
-  const GaussianBasisSet* bs;
+  RefGaussianBasisSet bs;
   double *buffer_;
  public:
-  OneBodyInt(const GaussianBasisSet*b);
+  OneBodyInt(const RefGaussianBasisSet&b);
   
   virtual int nbasis();
   virtual int nshell();
-  virtual const GaussianBasisSet& basis();
+  RefGaussianBasisSet basis() { return bs; }
 
   virtual void compute_shell(int,int,double*) = 0;
 
@@ -24,6 +24,33 @@ class OneBodyInt: public SCSymmElementOp
   virtual void process(SCMatrixLTriBlock*);
 
   virtual ~OneBodyInt();
+};
+
+class OneBody3Int: public SCElementOp3
+{
+ private:
+  RefGaussianBasisSet bs;
+  double *buffer_;
+ public:
+  OneBody3Int(const RefGaussianBasisSet&b);
+  
+  virtual int nbasis();
+  virtual int nshell();
+  RefGaussianBasisSet basis() { return bs; }
+
+  virtual void compute_shell(int,int,double*) = 0;
+
+  virtual void process(SCMatrixBlockIter&,
+                       SCMatrixBlockIter&,
+                       SCMatrixBlockIter&);
+  virtual void process(SCMatrixRectBlock*,
+                       SCMatrixRectBlock*,
+                       SCMatrixRectBlock*);
+  virtual void process(SCMatrixLTriBlock*,
+                       SCMatrixLTriBlock*,
+                       SCMatrixLTriBlock*);
+
+  virtual ~OneBody3Int();
 };
 
 #endif

@@ -12,6 +12,8 @@ package QCResult;
 # this seems to not work as expected
 $fltrx = "([-+]?(?:\\d+\\.\\d*|\\d+|\\.\\d+)(?:[eEdD][+-]?\\d+)?)";
 
+$have_nodenum = 0;
+
 sub test {
     my $i;
     @nums = ("-1.0", "-1", "-.1", "-1.",
@@ -45,7 +47,13 @@ sub initialize {
     if (-e $outfile) {
         $self->{"exists"} = 1;
         open(OUTFILE,"<$outfile");
+        my $first = 1;
         while (<OUTFILE>) {
+            if ($first && /^ *[0-9]:/) {
+                $have_nodenum = 1;
+                $first = 0;
+            }
+            s/^ *[0-9]+:// if ($have_nodenum);
             if (/^\s*MPQC:/) {
                 $self->parse_mpqc(\*OUTFILE);
                 last;
@@ -57,7 +65,6 @@ sub initialize {
         }
         close(<OUTFILE>);
     }
-
 }
 
 sub parse_g94 {
@@ -73,6 +80,7 @@ sub parse_g94 {
     my $freq = [];
     my $ifreq = 0;
     while (<$out>) {
+        s/^ *[0-9]+:// if ($have_nodenum);
         if (/^\s*SCF Done:  E\(RHF\) =\s*$fltrx\s/) {
             $scfenergy = $1;
         }
@@ -152,7 +160,7 @@ sub parse_g94 {
                 $self->{"ok"} = 1
                 }
             else {
-                printf "not ok because not converged\n";
+                #printf "not ok because not converged\n";
             }
         }
         else {
@@ -160,11 +168,11 @@ sub parse_g94 {
         }
         if ($qcinput->frequencies() && ! $havefreq) {
             $self->{"ok"} = 0;
-            printf "not ok because no freq\n";
+            #printf "not ok because no freq\n";
         }
     }
     else {
-        printf "not ok because no energy\n";
+        #printf "not ok because no energy\n";
     }
 }
 
@@ -190,6 +198,7 @@ sub parse_mpqc {
     my $to_angstrom = 0.52917706;
     my $geometry_conversion = $to_angstrom;
     while (<$out>) {
+        s/^ *[0-9]+:// if ($have_nodenum);
         if ($state eq "read grad" && $wante) {
             if (/^\s*([0-9]+\s+[A-Za-z]+\s+)?([\-\.0-9]+)\s+([\-\.0-9]+)\s+([\-\.0-9]+)/) {
                 $grad->[$ngrad + 0] = $2;
@@ -310,7 +319,7 @@ sub parse_mpqc {
     }
     my $qcinput = $self->{"qcinput"};
     my $method = $qcinput->method();
-    # printf "qcinput ok = %d\n", $qcinput->ok();
+    #printf "qcinput ok = %d\n", $qcinput->ok();
     if ($method eq "MP2") {
         if ($mp2energy ne "") {
             $self->{"energy"} = $mp2energy;
@@ -401,3 +410,5 @@ sub frequencies {
     my $self = shift;
     $self->{"freq"}
 }
+
+1;

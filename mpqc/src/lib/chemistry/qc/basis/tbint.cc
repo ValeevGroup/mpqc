@@ -32,21 +32,27 @@
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/basis.h>
 
 ///////////////////////////////////////////////////////////////////////
 
-TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b1,
+TwoBodyInt::TwoBodyInt(Integral *integral,
+                       const RefGaussianBasisSet&b1,
                        const RefGaussianBasisSet&b2,
                        const RefGaussianBasisSet&b3,
                        const RefGaussianBasisSet&b4) :
+  integral_(integral),
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4), redundant_(1)
 {
+  integral_->reference();
   buffer_ = 0;
 }
 
 TwoBodyInt::~TwoBodyInt()
 {
+  integral_->dereference();
+  if (integral_->nreference() == 0) delete integral_;
 }
 
 int
@@ -143,6 +149,11 @@ const double *
 TwoBodyInt::buffer() const
 {
   return buffer_;
+}
+
+void
+TwoBodyInt::set_integral_storage(int storage)
+{
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -350,17 +361,22 @@ TwoBodyIntIter::current_quartet()
 
 ///////////////////////////////////////////////////////////////////////
 
-TwoBodyDerivInt::TwoBodyDerivInt(const RefGaussianBasisSet&b1,
+TwoBodyDerivInt::TwoBodyDerivInt(Integral *integral,
+                                 const RefGaussianBasisSet&b1,
                                  const RefGaussianBasisSet&b2,
                                  const RefGaussianBasisSet&b3,
                                  const RefGaussianBasisSet&b4):
+  integral_(integral),
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4)
 {
+  integral_->reference();
   buffer_ = 0;
 }
 
 TwoBodyDerivInt::~TwoBodyDerivInt()
 {
+  integral_->dereference();
+  if (integral_->nreference() == 0) delete integral_;
 }
 
 int

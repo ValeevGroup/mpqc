@@ -39,8 +39,13 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
+class Integral;
+
 class TwoBodyInt : public VRefCount {
   protected:
+    // this is who created me
+    Integral *integral_;
+
     RefGaussianBasisSet bs1_;
     RefGaussianBasisSet bs2_;
     RefGaussianBasisSet bs3_;
@@ -50,7 +55,8 @@ class TwoBodyInt : public VRefCount {
 
     int redundant_;
     
-    TwoBodyInt(const RefGaussianBasisSet&bs1,
+    TwoBodyInt(Integral *integral,
+               const RefGaussianBasisSet&bs1,
                const RefGaussianBasisSet&bs2,
                const RefGaussianBasisSet&bs3,
                const RefGaussianBasisSet&bs4);
@@ -86,6 +92,9 @@ class TwoBodyInt : public VRefCount {
     // default is true.
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }
+
+    // this storage is used to cache computed integrals
+    virtual void set_integral_storage(int storage);
 };
 
 REF_dec(TwoBodyInt);
@@ -187,6 +196,9 @@ class TwoBodyIntIter {
 
 class TwoBodyDerivInt : public VRefCount {
   protected:
+    // this is who created me
+    Integral *integral_;
+
     RefGaussianBasisSet bs1_;
     RefGaussianBasisSet bs2_;
     RefGaussianBasisSet bs3_;
@@ -194,7 +206,8 @@ class TwoBodyDerivInt : public VRefCount {
 
     double *buffer_;
 
-    TwoBodyDerivInt(const RefGaussianBasisSet&b1,
+    TwoBodyDerivInt(Integral* integral,
+                    const RefGaussianBasisSet&b1,
                     const RefGaussianBasisSet&b2,
                     const RefGaussianBasisSet&b3,
                     const RefGaussianBasisSet&b4);

@@ -54,6 +54,7 @@ Integral::Integral(const RefGaussianBasisSet &b1,
                    const RefGaussianBasisSet &b4)
 {
   storage_ = 0;
+  storage_used_ = 0;
   grp_ = MessageGrp::get_default_messagegrp();
   set_basis(b1,b2,b3,b4);
 }
@@ -120,6 +121,14 @@ Integral::set_basis(const RefGaussianBasisSet &b1,
   if (bs3_.null()) bs3_ = bs2_;
   if (bs4_.null()) bs4_ = bs3_;
 }
+
+int
+Integral::storage_unused()
+{
+  int tmp=storage_-storage_used_;
+  return (tmp<0?0:tmp);
+}
+      
 
 /////////////////////////////////////////////////////////////////////////////
 

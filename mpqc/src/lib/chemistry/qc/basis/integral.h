@@ -71,9 +71,9 @@ class Integral : public SavableState {
     // the maximum number of bytes that should be used for
     // storing intermediates
     int storage_;
+    int storage_used_;
 
     RefMessageGrp grp_;
-
   public:
     Integral(StateIn&);
     Integral(const RefKeyVal&);
@@ -81,6 +81,12 @@ class Integral : public SavableState {
     void save_data_state(StateOut&);
 
     void set_storage(int i) { storage_=i; };
+    int storage_used() { return storage_used_; }
+    int storage_unused();
+
+    // For the specific integral classes to tell integral
+    // how much memory they are using/freeing.
+    void adjust_storage(int s) { storage_used_ += s; }
 
     RefPetiteList petite_list();
     RefPetiteList petite_list(const RefGaussianBasisSet&);

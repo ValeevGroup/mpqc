@@ -80,7 +80,7 @@ dquicksort(double *item,int *index,int n)
 ///////////////////////////////////////////////////////////////////////////
 // MBPT2
 
-#define VERSION 2
+#define VERSION 3
 #define CLASSNAME MBPT2
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -112,6 +112,13 @@ MBPT2::MBPT2(StateIn& s):
     }
   else {
       dos2_ = 0;
+    }
+
+  if (s.version(static_class_desc()) >= 3) {
+      s.get(dynamic_);
+    }
+  else {
+      dynamic_ = 0;
     }
 
   hf_energy_ = 0.0;
@@ -175,6 +182,9 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   restart_ecorr_ = keyval->doublevalue("restart_ecorr");
   restart_orbital_v1_ = keyval->intvalue("restart_orbital_v1");
 
+  KeyValValueint default_dynamic(0);
+  dynamic_ = keyval->intvalue("dynamic", default_dynamic);
+
   hf_energy_ = 0.0;
 
   symorb_irrep_ = 0;
@@ -203,6 +213,7 @@ MBPT2::save_data_state(StateOut& s)
   s.putstring(algorithm_);
   s.put(debug_);
   s.put(dos2_);
+  s.put(dynamic_);
 }
 
 void

@@ -66,6 +66,11 @@ class MBPT2: public Wavefunction {
 
     RefThreadGrp thr_;
 
+    // use a dynamic load balance algorithm if possible if true
+    // (will not work if messagegrp not thread safe and
+    // memorygrp needs catchup to work)
+    int dynamic_;
+
     // the irreps of the orbitals and the offset within the irrep
     int *symorb_irrep_;
     int *symorb_num_;

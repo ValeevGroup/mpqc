@@ -40,6 +40,7 @@
 
 class CSGradErep12Qtr: public Thread {
   private:
+    RefMessageGrp msg;
     RefMemoryGrp mem;
     RefTwoBodyInt tbint;
     RefGaussianBasisSet basis;
@@ -56,16 +57,25 @@ class CSGradErep12Qtr: public Thread {
     double tol;
     double **scf_vector;
     int debug;
+    int dynamic_;
+
+    void run_dynamic();
+    void run_static();
+    void run_task_manager();
+    void run_task_runner();
+    int get_task(int &S, int &R);
   public:
     CSGradErep12Qtr(int mythread_a, int nthread_a,
                     int me_a, int nproc_a,
                     const RefMemoryGrp &mem_a,
+                    const RefMessageGrp &msg_a,
                     const RefThreadLock &lock_a,
                     const RefGaussianBasisSet &basis_a,
                     const RefTwoBodyInt &tbint_a,
                     int ni_a, int nocc_a,
                     double **scf_vector_a,
-                    double tol_a, int debug_a);
+                    double tol_a, int debug_a,
+                    int dynamic_a);
     ~CSGradErep12Qtr();
 
     void set_i_offset(int ioff) { i_offset = ioff; }

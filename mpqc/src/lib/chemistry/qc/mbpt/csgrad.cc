@@ -525,8 +525,9 @@ MBPT2::compute_cs_grad()
   CSGradErep12Qtr** e12thread = new CSGradErep12Qtr*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
       e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
-                                         mem, lock, basis(), tbint[i],
-                                         ni, nocc, scf_vector, tol, debug_);
+                                         mem, msg_, lock, basis(), tbint[i],
+                                         ni, nocc, scf_vector, tol, debug_,
+                                         dynamic_);
     }
 
   tim_enter("mp2 passes");

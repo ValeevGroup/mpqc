@@ -5,8 +5,9 @@
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <chemistry/qc/scf/grscf.h>
+#include <chemistry/qc/scf/hsosscf.h>
 
+#if 0
 static void
 set_scale(double& coulombscale, double& exchangescale,
           int i, int j, int k, int l)
@@ -65,10 +66,12 @@ ew_density(const RefSCMatrix& vec, const RefDiagSCMatrix& evals,
   }
   ewdens->scale(-2.0);
 }
+#endif
 
 void
-GRSCF::do_gradient(const RefSCVector& gradient)
+HSOSSCF::do_gradient(const RefSCVector& gradient)
 {
+#if 0
   // grab a reference to the scf_vector, presumably it is current
   _gr_vector = _eigenvectors.result_noupdate();
   
@@ -320,4 +323,5 @@ GRSCF::do_gradient(const RefSCVector& gradient)
   free_double_vector(&dv);
   free_centers(centers);
   free(centers);
+#endif
 }

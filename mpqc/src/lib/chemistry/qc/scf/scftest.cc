@@ -7,7 +7,10 @@
 
 #include <util/keyval/keyval.h>
 
-#include <chemistry/qc/scf/grscf.h>
+#include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/hsosscf.h>
+#include <chemistry/qc/scf/ossscf.h>
+#include <chemistry/qc/scf/tcscf.h>
 #include <chemistry/molecule/coor.h>
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
@@ -18,7 +21,10 @@
 
 // Force linkages:
 #ifndef __PIC__
-const ClassDesc &fl0 = GRSCF::class_desc_;
+const ClassDesc &fl0  = CLSCF::class_desc_;
+const ClassDesc &fl0a = HSOSSCF::class_desc_;
+const ClassDesc &fl0b = OSSSCF::class_desc_;
+const ClassDesc &fl0c = TCSCF::class_desc_;
 const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
 const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
 const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
@@ -97,7 +103,6 @@ main(int argc, char**argv)
         o << "opt is null\n";
       }
     } else if (mole->value_implemented()) {
-      mole->gradient();
       o << " value of mole is ";
       o << mole->energy() << endl;
       printf("%20.15f\n",mole->energy());

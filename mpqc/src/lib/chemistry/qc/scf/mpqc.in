@@ -7,6 +7,14 @@ messageShm<ShmMessageGrp>: (
 
 message = $:message1
 
+ch2<Molecule>: (
+  symmetry=c2v
+  { atoms geometry } = {
+      H  [   1.5  0.0   1.0 ]
+      C  [   0.0  0.0   0.0 ]
+  }
+)
+
 water<Molecule>: (
   symmetry=c2v
   { atoms geometry } = {
@@ -15,9 +23,10 @@ water<Molecule>: (
   }
 )
 
-molecule = $:water
+molecule = $:ch2
+mole = $:tcmole
 
-mole<GRSCF>: (
+clmole<CLSCF>: (
   % NLP... input
   value_accuracy = 1e-5
   gradient_accuracy = 1e-4
@@ -43,6 +52,92 @@ mole<GRSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "h2o"
+)
+
+opmole<HSOSSCF>: (
+  % NLP... input
+  value_accuracy = 1e-14
+  gradient_accuracy = 1e-4
+
+  % MolecularEnergy input
+  molecule = $:molecule
+
+  % coor should be commented out if molecule is an atom
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+  )
+
+  % Wavefunction input
+  basis<GaussianBasisSet>: (
+    basisdir = "/net/midway/usr/people/etseidl/basis/"
+    basisfiles = [ v2g90.ipv2 ]
+    molecule = $:molecule
+    name = sto3g
+  )
+
+  % OneBodyWavefunction input
+  % MPSCF input
+  density_reset_freq = 5
+  ckpt_dir = "./"
+  filename = "ch2"
+  ndocc = 3
+  nsocc = 2
+)
+
+opbmole<OSSSCF>: (
+  % NLP... input
+  value_accuracy = 1e-14
+  gradient_accuracy = 1e-4
+
+  % MolecularEnergy input
+  molecule = $:molecule
+
+  % coor should be commented out if molecule is an atom
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+  )
+
+  % Wavefunction input
+  basis<GaussianBasisSet>: (
+    basisdir = "/net/midway/usr/people/etseidl/basis/"
+    basisfiles = [ v2g90.ipv2 ]
+    molecule = $:molecule
+    name = sto3g
+  )
+
+  % OneBodyWavefunction input
+  % MPSCF input
+  density_reset_freq = 5
+  ckpt_dir = "./"
+  filename = "ch2"
+)
+
+tcmole<TCSCF>: (
+  % NLP... input
+  value_accuracy = 1e-14
+  gradient_accuracy = 1e-4
+
+  % MolecularEnergy input
+  molecule = $:molecule
+
+  % coor should be commented out if molecule is an atom
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+  )
+
+  % Wavefunction input
+  basis<GaussianBasisSet>: (
+    basisdir = "/net/midway/usr/people/etseidl/basis/"
+    basisfiles = [ v2g90.ipv2 ]
+    molecule = $:molecule
+    name = sto3g
+  )
+
+  % OneBodyWavefunction input
+  % MPSCF input
+  density_reset_freq = 5
+  ckpt_dir = "./"
+  filename = "ch2"
 )
 
 opt<QNewtonOpt>: (

@@ -1,6 +1,6 @@
 
-#ifndef _chemistry_qc_scf_grscf_h
-#define _chemistry_qc_scf_grscf_h
+#ifndef _chemistry_qc_scf_clscf_h
+#define _chemistry_qc_scf_clscf_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -18,9 +18,9 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-class GRSCF: public OneBodyWavefunction
+class CLSCF: public OneBodyWavefunction
 {
-#   define CLASSNAME GRSCF
+#   define CLASSNAME CLSCF
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -35,11 +35,9 @@ class GRSCF: public OneBodyWavefunction
     RefAccumEffectiveH _accumeffh;
 
     RefSymmSCMatrix _fock;
-    RefSymmSCMatrix _op_fock;
     RefDiagSCMatrix _fock_evals;
     
     int _ndocc;
-    int _nsocc;
     int _density_reset_freq;
 
     int _maxiter;
@@ -51,10 +49,7 @@ class GRSCF: public OneBodyWavefunction
     // these are temporary data, so they should not be checkpointed
     RefSymmSCMatrix _gr_dens;
     RefSymmSCMatrix _gr_dens_diff;
-    RefSymmSCMatrix _gr_op_dens;
-    RefSymmSCMatrix _gr_op_dens_diff;
     RefSymmSCMatrix _gr_gmat;
-    RefSymmSCMatrix _gr_op_gmat;
     RefSymmSCMatrix _gr_hcore;
     RefSCMatrix _gr_vector;
     
@@ -66,13 +61,13 @@ class GRSCF: public OneBodyWavefunction
     virtual void do_gradient(const RefSCVector&);
     
   public:
-    GRSCF(StateIn&);
-    GRSCF(const GRSCF&);
-    GRSCF(const RefKeyVal&);
-    GRSCF(const OneBodyWavefunction&);
-    ~GRSCF();
+    CLSCF(StateIn&);
+    CLSCF(const CLSCF&);
+    CLSCF(const RefKeyVal&);
+    CLSCF(const OneBodyWavefunction&);
+    ~CLSCF();
 
-    GRSCF& operator=(const GRSCF&);
+    CLSCF& operator=(const CLSCF&);
     
     void save_data_state(StateOut&);
 
@@ -86,6 +81,6 @@ class GRSCF: public OneBodyWavefunction
     int gradient_implemented();
     int hessian_implemented();
 };
-SavableState_REF_dec(GRSCF);
+SavableState_REF_dec(CLSCF);
 
 #endif

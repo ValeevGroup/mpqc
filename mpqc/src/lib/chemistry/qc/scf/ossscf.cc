@@ -6,18 +6,18 @@
 #include <util/misc/newstring.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
-#include <chemistry/qc/scf/grscf.h>
+#include <chemistry/qc/scf/ossscf.h>
 
 ///////////////////////////////////////////////////////////////////////////
-// GRSCF
+// OSSSCF
 
-#define CLASSNAME GRSCF
+#define CLASSNAME OSSSCF
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public OneBodyWavefunction
 #include <util/class/classi.h>
 void *
-GRSCF::_castdown(const ClassDesc*cd)
+OSSSCF::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = OneBodyWavefunction::_castdown(cd);
@@ -25,19 +25,25 @@ GRSCF::_castdown(const ClassDesc*cd)
 }
 
 static void
-occ(PointBag_double *z, int &nd, int &ns)
+occ(PointBag_double *z, int &nd)
 {
   int Z=0;
   for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
 
   nd = Z/2;
-  ns = Z%2;
+  if (Z%2) {
+    fprintf(stderr,"OSSSCF::occ: Warning, there's a leftover electron.\n");
+    fprintf(stderr,"  total nuclear charge = %d, %d closed shells\n",Z,nd);
+    fprintf(stderr,"  total charge = %d\n\n",Z-2*nd);
+  }
+
+  nd--;
 }
 
 void
-GRSCF::init()
+OSSSCF::init()
 {
-  occ(_mol->charges(),_ndocc,_nsocc);
+  occ(_mol->charges(),_ndocc);
   _density_reset_freq = 10;
   _maxiter = 100;
   _eliminate = 1;
@@ -45,7 +51,7 @@ GRSCF::init()
   fname = new_string("this_here_thing");
 }
 
-GRSCF::GRSCF(StateIn& s) :
+OSSSCF::OSSSCF(StateIn& s) :
   OneBodyWavefunction(s)
 {
   _extrap.restore_state(s);
@@ -57,7 +63,6 @@ GRSCF::GRSCF(StateIn& s) :
   _accumeffh.restore_state(s);
 
   s.get(_ndocc);
-  s.get(_nsocc);
   s.get(_density_reset_freq);
   s.get(_maxiter);
   s.get(_eliminate);
@@ -66,7 +71,7 @@ GRSCF::GRSCF(StateIn& s) :
   s.getstring(fname);
 }
 
-GRSCF::GRSCF(const RefKeyVal& keyval) :
+OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   OneBodyWavefunction(keyval)
 {
   init();
@@ -96,9 +101,6 @@ GRSCF::GRSCF(const RefKeyVal& keyval) :
   if (keyval->exists("ndocc"))
     _ndocc = keyval->intvalue("ndocc");
 
-  if (keyval->exists("nsocc"))
-    _nsocc = keyval->intvalue("nsocc");
-
   if (keyval->exists("density_reset_freq"))
     _density_reset_freq = keyval->intvalue("density_reset_freq");
 
@@ -119,43 +121,42 @@ GRSCF::GRSCF(const RefKeyVal& keyval) :
   }
 }
 
-GRSCF::GRSCF(const OneBodyWavefunction& obwfn) :
+OSSSCF::OSSSCF(const OneBodyWavefunction& obwfn) :
   OneBodyWavefunction(obwfn)
 {
   init();
 }
 
-GRSCF::GRSCF(const GRSCF& grscf) :
-  OneBodyWavefunction(grscf)
+OSSSCF::OSSSCF(const OSSSCF& ossscf) :
+  OneBodyWavefunction(ossscf)
 {
-  _extrap = grscf._extrap;
-  _data = grscf._data;
-  _error = grscf._error;
-  _accumdih = grscf._accumdih;
-  _accumddh = grscf._accumddh;
-  _accumeffh = grscf._accumeffh;
-  _ndocc = grscf._ndocc;
-  _nsocc = grscf._nsocc;
-  _density_reset_freq = grscf._density_reset_freq;
-  _maxiter = grscf._maxiter;
-  _eliminate = grscf._eliminate;
+  _extrap = ossscf._extrap;
+  _data = ossscf._data;
+  _error = ossscf._error;
+  _accumdih = ossscf._accumdih;
+  _accumddh = ossscf._accumddh;
+  _accumeffh = ossscf._accumeffh;
+  _ndocc = ossscf._ndocc;
+  _density_reset_freq = ossscf._density_reset_freq;
+  _maxiter = ossscf._maxiter;
+  _eliminate = ossscf._eliminate;
 
-  ckptdir = new_string(grscf.ckptdir);
-  fname = new_string(grscf.fname);
+  ckptdir = new_string(ossscf.ckptdir);
+  fname = new_string(ossscf.fname);
 }
 
-GRSCF::~GRSCF()
+OSSSCF::~OSSSCF()
 {
 }
 
 RefSCMatrix
-GRSCF::eigenvectors()
+OSSSCF::eigenvectors()
 {
   return _eigenvectors;
 }
 
 void
-GRSCF::save_data_state(StateOut& s)
+OSSSCF::save_data_state(StateOut& s)
 {
   _extrap.save_state(s);
   _data.save_state(s);
@@ -166,7 +167,6 @@ GRSCF::save_data_state(StateOut& s)
   _accumeffh.save_state(s);
 
   s.put(_ndocc);
-  s.put(_nsocc);
   s.put(_density_reset_freq);
   s.put(_maxiter);
   s.put(_eliminate);
@@ -176,42 +176,45 @@ GRSCF::save_data_state(StateOut& s)
 }
 
 double
-GRSCF::occupation(int i)
+OSSSCF::occupation(int i)
 {
   if (i < _ndocc) return 2.0;
-  if (i < _ndocc + _nsocc) return 1.0;
+  if (i < _ndocc + 2) return 1.0;
   return 0.0;
 }
 
 int
-GRSCF::value_implemented()
+OSSSCF::value_implemented()
 {
   return 1;
 }
 
 int
-GRSCF::gradient_implemented()
+OSSSCF::gradient_implemented()
 {
-  return 1;
+  return 0;
 }
 
 int
-GRSCF::hessian_implemented()
+OSSSCF::hessian_implemented()
 {
   return 0;
 }
 
 void
-GRSCF::print(SCostream&o)
+OSSSCF::print(SCostream&o)
 {
   OneBodyWavefunction::print(o);
 }
 
 void
-GRSCF::compute()
+OSSSCF::compute()
 {
   // hack!!!!  need a way to make sure that the basis geometry is the
-  // same as that in the molecule
+  // same as that in the molecule, also need a member in diis to reset it
+  _accumeffh->docc(0,_ndocc);
+  _accumeffh->socc(_ndocc,_ndocc+2);
+  
   _extrap=new DIIS;
   
   for (int i=0; i < molecule()->natom(); i++) {
@@ -237,15 +240,21 @@ GRSCF::compute()
 
     // schmidt orthogonalize the vector
     _eigenvectors.result_noupdate()->schmidt_orthog(overlap().pointer(),
-                                                    _ndocc+_nsocc);
+                                                    _ndocc+2);
 
     if (_fock.null())
       _fock = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
     
+    if (_opa_fock.null())
+      _opa_fock = _fock.clone();
+    
+    if (_opb_fock.null())
+      _opb_fock = _fock.clone();
+    
     if (_fock_evals.null())
       _fock_evals = _fock->dim()->create_diagmatrix();
     
-    printf("\n  GRSCF::compute: energy accuracy = %g\n\n",
+    printf("\n  OSSSCF::compute: energy accuracy = %g\n\n",
            _energy.desired_accuracy());
 
     double eelec,nucrep;
@@ -261,7 +270,7 @@ GRSCF::compute()
   if (_gradient.needed()) {
     RefSCVector gradient = _moldim->create_vector();
 
-    printf("\n  GRSCF::compute: gradient accuracy = %g\n\n",
+    printf("\n  OSSSCF::compute: gradient accuracy = %g\n\n",
            _gradient.desired_accuracy());
 
     do_gradient(gradient);
@@ -272,7 +281,7 @@ GRSCF::compute()
   }
   
   if (_hessian.needed()) {
-    fprintf(stderr,"GRSCF::compute: gradient not implemented\n");
+    fprintf(stderr,"OSSSCF::compute: gradient not implemented\n");
     abort();
   }
   
@@ -280,10 +289,9 @@ GRSCF::compute()
 
 
 void
-GRSCF::do_vector(double& eelec, double& nucrep)
+OSSSCF::do_vector(double& eelec, double& nucrep)
 {
   _gr_vector = _eigenvectors.result_noupdate();
-  //_gr_vector.print("start vector");
   
   // allocate storage for the temp arrays
   RefSCMatrix nvector = _gr_vector.clone();
@@ -296,6 +304,24 @@ GRSCF::do_vector(double& eelec, double& nucrep)
   
   _gr_gmat = _gr_dens->clone();
   _gr_gmat.assign(0.0);
+
+  _gr_opa_dens = _fock.clone();
+  _gr_opa_dens.assign(0.0);
+  
+  _gr_opa_dens_diff = _gr_dens->clone();
+  _gr_opa_dens_diff.assign(0.0);
+  
+  _gr_opa_gmat = _gr_dens->clone();
+  _gr_opa_gmat.assign(0.0);
+
+  _gr_opb_dens = _fock.clone();
+  _gr_opb_dens.assign(0.0);
+  
+  _gr_opb_dens_diff = _gr_dens->clone();
+  _gr_opb_dens_diff.assign(0.0);
+  
+  _gr_opb_gmat = _gr_dens->clone();
+  _gr_opb_gmat.assign(0.0);
 
   _gr_hcore = _gr_dens->clone();
 
@@ -325,8 +351,11 @@ GRSCF::do_vector(double& eelec, double& nucrep)
 
   for (int iter=0; iter < _maxiter; iter++) {
     // form the density from the current vector 
-    form_density(_gr_vector,_gr_dens,_gr_dens_diff,0,0);
-    
+    form_density(_gr_vector,
+                 _gr_dens,_gr_dens_diff,
+                 _gr_opa_dens,_gr_opa_dens_diff,
+                 _gr_opb_dens,_gr_opb_dens_diff);
+
     // check convergence
     int ij=0;
     double delta=0;
@@ -341,11 +370,19 @@ GRSCF::do_vector(double& eelec, double& nucrep)
     if (iter && !iter%10) {
       _gr_gmat.assign(0.0);
       _gr_dens_diff.assign(_gr_dens);
+      _gr_opa_gmat.assign(0.0);
+      _gr_opa_dens_diff.assign(_gr_opa_dens);
+      _gr_opb_gmat.assign(0.0);
+      _gr_opb_dens_diff.assign(_gr_opb_dens);
     }
       
     // scale the off-diagonal elements of the density matrix
     _gr_dens_diff->scale(2.0);
     _gr_dens_diff->scale_diagonal(0.5);
+    _gr_opa_dens_diff->scale(2.0);
+    _gr_opa_dens_diff->scale_diagonal(0.5);
+    _gr_opb_dens_diff->scale(2.0);
+    _gr_opb_dens_diff->scale_diagonal(0.5);
     
     // form the AO basis fock matrix
     form_ao_fock(centers,intbuf);
@@ -353,37 +390,46 @@ GRSCF::do_vector(double& eelec, double& nucrep)
     // unscale the off-diagonal elements of the density matrix
     _gr_dens_diff->scale(0.5);
     _gr_dens_diff->scale_diagonal(2.0);
+    _gr_opa_dens_diff->scale(0.5);
+    _gr_opa_dens_diff->scale_diagonal(2.0);
+    _gr_opb_dens_diff->scale(0.5);
+    _gr_opb_dens_diff->scale_diagonal(2.0);
 
     // calculate the electronic energy
     eelec = scf_energy();
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
            iter,eelec+nucrep,delta);
 
+#if 0
     // now extrapolate the fock matrix
     // first we form the error matrix which is the offdiagonal blocks of
     // the MO fock matrix
-    RefSymmSCMatrix mo_error = _fock.clone();
+    RefSymmSCMatrix mofock = _fock.clone();
+    mofock.assign(0.0);
+    mofock.accumulate_transform(_gr_vector.t(),_fock);
 
-    mo_error.assign(0.0);
-    mo_error.accumulate_transform(_gr_vector.t(),_fock);
+    RefSymmSCMatrix moofock = _op_fock.clone();
+    moofock.assign(0.0);
+    moofock.accumulate_transform(_gr_vector.t(),_op_fock);
 
-    for (int i=0; i < mo_error->n(); i++) {
+    mofock.element_op(_accumeffh,moofock);
+
+    for (int i=0; i < mofock->n(); i++) {
       double occi = occupation(i);
       for (int j=0; j <= i; j++) {
         double occj = occupation(j);
         if (occi == occj)
-          mo_error.set_element(i,j,0.0);
+          mofock.set_element(i,j,0.0);
       }
     }
     
     // now transform MO error to the AO basis
-    RefSymmSCMatrix ao_error = mo_error.clone();
+    RefSymmSCMatrix ao_error = mofock.clone();
     ao_error.assign(0.0);
-    ao_error.accumulate_transform(_gr_vector,mo_error);
-    mo_error = 0;
+    ao_error.accumulate_transform(_gr_vector,mofock);
     
     // and do the DIIS extrapolation
-    _data = new SymmSCMatrixSCExtrapData(_fock);
+    _data = new SymmSCMatrix2SCExtrapData(_fock,_op_fock);
     _error = new SymmSCMatrixSCExtrapError(ao_error);
     _extrap->extrapolate(_data,_error);
     _data=0;
@@ -391,13 +437,42 @@ GRSCF::do_vector(double& eelec, double& nucrep)
     ao_error=0;
 
     // now transform extrapolated fock to MO basis
-    RefSymmSCMatrix mofock = _fock.clone();
     mofock.assign(0.0);
     mofock.accumulate_transform(_gr_vector.t(),_fock);
+
+    moofock.assign(0.0);
+    moofock.accumulate_transform(_gr_vector.t(),_op_fock);
+
+    mofock.element_op(_accumeffh,moofock);
+    moofock=0;
 
     // diagonalize MO fock to get MO vector
     mofock.diagonalize(_fock_evals,nvector);
     mofock=0;
+#else
+    RefSymmSCMatrix mofock = _fock.clone();
+    mofock.assign(0.0);
+    mofock.accumulate_transform(_gr_vector.t(),_fock);
+
+    RefSymmSCMatrix mooafock = _opa_fock.clone();
+    mooafock.assign(0.0);
+    mooafock.accumulate_transform(_gr_vector.t(),_opa_fock);
+
+    RefSymmSCMatrix moobfock = _opb_fock.clone();
+    moobfock.assign(0.0);
+    moobfock.accumulate_transform(_gr_vector.t(),_opb_fock);
+
+    int bvec=_ndocc+2-1;
+    for (int i=0; i < _ndocc; i++)
+      mooafock.set_element(bvec,i,moobfock.get_element(bvec,i));
+    
+    for (int i=_ndocc+2; i < basis()->nbasis(); i++) 
+      mooafock.set_element(i,bvec,moobfock.get_element(i,bvec));
+
+    mofock.element_op(_accumeffh,mooafock);
+
+    mofock.diagonalize(_fock_evals,nvector);
+#endif
 
     // transform MO vector to AO basis
     _gr_vector = _gr_vector * nvector;
@@ -418,13 +493,19 @@ GRSCF::do_vector(double& eelec, double& nucrep)
   _gr_dens = 0;
   _gr_dens_diff = 0;
   _gr_gmat = 0;
+  _gr_opa_dens = 0;
+  _gr_opa_dens_diff = 0;
+  _gr_opa_gmat = 0;
+  _gr_opb_dens = 0;
+  _gr_opb_dens_diff = 0;
+  _gr_opb_gmat = 0;
   _gr_hcore = 0;
   _gr_vector = 0;
   nvector = 0;
 }
 
 double
-GRSCF::scf_energy()
+OSSSCF::scf_energy()
 {
   RefSymmSCMatrix t = _fock.copy();
   t.accumulate(_gr_hcore);
@@ -432,9 +513,14 @@ GRSCF::scf_energy()
   double eelec=0;
   for (int i=0; i < t->n(); i++) {
     for (int j=0; j < i; j++) {
-      eelec += _gr_dens.get_element(i,j)*t.get_element(i,j);
+      eelec += _gr_dens.get_element(i,j)*t.get_element(i,j)
+               - _gr_opa_dens.get_element(i,j)*_gr_opa_gmat.get_element(i,j)
+               - _gr_opb_dens.get_element(i,j)*_gr_opb_gmat.get_element(i,j);
     }
-    eelec += 0.5*_gr_dens.get_element(i,i)*t.get_element(i,i);
+    eelec += 0.5*(_gr_dens.get_element(i,i)*t.get_element(i,i)
+               - _gr_opa_dens.get_element(i,i)*_gr_opa_gmat.get_element(i,i)
+               - _gr_opb_dens.get_element(i,i)*_gr_opb_gmat.get_element(i,i)
+      );
   }
   return eelec;
 }

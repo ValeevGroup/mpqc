@@ -615,29 +615,17 @@ IntegrationWeight::test(int icenter, SCVector3 &point)
   int natom = mol_->natom();
   int natom3 = natom*3;
 
-  // tests over sums of weights and weight derivatives
-  double *grad_w = new double[natom3];
-  double *sum_grad_w = new double[natom3];
-  memset(sum_grad_w,0,sizeof(double)*natom3);
+  // tests over sums of weights 
   int i;
   double sum_weight = 0.0;
   for (i=0; i<natom; i++) {
-      double weight = w(i,point,grad_w);
+      double weight = w(i,point);
       sum_weight += weight;
-      for (int j=0; j<natom3; j++) sum_grad_w[j] += grad_w[j];
     }
   if (fabs(1.0 - sum_weight) > DBL_EPSILON) {
       cout << "IntegrationWeight::test: failed on weight" << endl;
           cout << "sum_w = " << sum_weight << endl;
     }
-  for (i=0; i<natom3; i++) {
-      if (fabs(sum_grad_w[i]) > DBL_EPSILON) {
-          cout << "IntegrationWeight::test: failed on grad" << endl;
-          cout << "sum_grad_w[" << i << "] = " << sum_grad_w[i] << endl;
-        }
-    }
-  delete[] grad_w;
-  delete[] sum_grad_w;
 
   // finite displacement tests of weight gradients
   double *fd_grad_w = new double[natom3];
@@ -840,89 +828,91 @@ BeckeIntegrationWeight::compute_p(int icenter, SCVector3&point)
   return p;
 }
 
-double
-BeckeIntegrationWeight::compute_partial_p(int icenter, int kcenter,
-                                          SCVector3&point)
+// compute derivative of mu(grad_center,bcenter) wrt grad_center;
+// NB: the derivative is independent of the (implicit) wcenter
+// provided that wcenter!=grad_center
+void
+BeckeIntegrationWeight::compute_grad_nu(int grad_center, int bcenter,
+                                        SCVector3 &point, SCVector3 &grad)
 {
-  double ra = point.dist(centers[icenter]);
-  double *ooraba = oorab[icenter];
-  double *aa = a_mat[icenter];
+  SCVector3 r_g = point - centers[grad_center];
+  SCVector3 r_b = point - centers[bcenter];
+  SCVector3 r_gb = centers[grad_center] - centers[bcenter];
+  double mag_r_g = r_g.norm();
+  double mag_r_b = r_b.norm();
+  double oorgb = oorab[grad_center][bcenter];
+  double mu = (mag_r_g-mag_r_b)*oorgb;
+  double a_gb = a_mat[grad_center][bcenter];
+  double coef = 1.0-2.0*a_gb*mu;
+  double r_g_coef;
 
-  double p = 1.0;
-  for (int jcenter=0; jcenter < ncenters; jcenter++) {
-      if (icenter != jcenter && kcenter != jcenter) {
-          double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
-
-          if (mu < -1.)
-              continue; // s(-1) == 1.0
-          else if (mu > 1.) {
-              return 0.0; // s(1) == 0.0
-            }
-          else
-              p *= calc_s(mu + aa[jcenter]*(1.-mu*mu));
-        }
-    }
-
-  return p;
+  if (mag_r_g < 10.0 * DBL_EPSILON) r_g_coef = 0.0;
+  else r_g_coef = -coef*oorgb/mag_r_g;
+  for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] = r_g_coef * r_g[ixyz];
+  double r_gb_coef = coef*(mag_r_b - mag_r_g)*oorgb*oorgb*oorgb;
+  for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] += r_gb_coef * r_gb[ixyz];
 }
 
-// derivative is taken wrt jcenter
-void
-BeckeIntegrationWeight::compute_grad_s(int icenter, int jcenter, int wcenter,
-                                       SCVector3 &point, SCVector3 &grad)
+// compute t(nu_ij)
+double
+BeckeIntegrationWeight::compute_t(int icenter, int jcenter, SCVector3 &point)
 {
-  int point_moves_with_jcenter = (wcenter == jcenter);
+  // Cf. Johnson et al., JCP v. 98, p. 5612 (1993) (Appendix B)
+  // NB: t is zero if s is zero
+  
+  SCVector3 r_i = point - centers[icenter];
   SCVector3 r_j = point - centers[jcenter];
   SCVector3 r_ij = centers[icenter] - centers[jcenter];
+  double t;
   double mag_r_j = r_j.norm();
-  double mag_r_i = point.dist(centers[icenter]);
+  double mag_r_i = r_i.norm();
   double mu = (mag_r_i-mag_r_j)*oorab[icenter][jcenter];
+  if (mu >= 1.0-100*DBL_EPSILON) {
+      t = 0.0;
+      return t;
+    }
+
   double a_ij = a_mat[icenter][jcenter];
   double nu = mu + a_ij*(1.-mu*mu);
-  double oorij = oorab[icenter][jcenter];
-  double coef = -0.5
-              * calc_f3_prime(nu)
-              * (1.0-2.0*a_ij*mu);
+  double s;
+  if (mu <= -1.0) s = 1.0;
+  else s = calc_s(nu);
+  if (fabs(s) < 10*DBL_EPSILON) {
+      t = 0.0;
+      return t;
+    }
+  double p1 = 1.5*nu - 0.5*nu*nu*nu;
+  double p2 = 1.5*p1 - 0.5*p1*p1*p1;
 
-  if (!point_moves_with_jcenter) {
-      double r_j_coef;
-      if (mag_r_j < 10.0 * DBL_EPSILON) r_j_coef = 0.0;
-      else r_j_coef = coef*oorij/mag_r_j;
-      for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] = r_j_coef * r_j[ixyz];
-    }
-  else {
-      grad = 0.0;
-    }
-  double r_ij_coef = -coef*mag_r_j*oorij*oorij*oorij;
-  for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] += r_ij_coef * r_ij[ixyz];
+  t = -(27.0/16.0) * (1 - p2*p2) * (1 - p1*p1) * (1 - nu*nu) / s;
+  return t;
 }
 
 void
-BeckeIntegrationWeight::compute_grad_p(int grad_center,
-                                       int bcenter, int wcenter,
-                                       SCVector3&point,
-                                       SCVector3&grad)
+BeckeIntegrationWeight::compute_grad_p(int grad_center, int bcenter,
+                                          int wcenter, SCVector3&point,
+                                          double p, SCVector3&grad)
 {
-  double ra = point.dist(centers[bcenter]);
-  double *ooraba = oorab[bcenter];
-  double *aa = a_mat[bcenter];
+  // the gradient of p is computed using the formulae from
+  // Johnson et al., JCP v. 98, p. 5612 (1993) (Appendix B)
 
-  if (grad_center != bcenter) {
-      double p = compute_partial_p(bcenter, grad_center, point);
-      SCVector3 grad_s;
-      compute_grad_s(bcenter, grad_center, wcenter, point, grad_s);
-      for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] = p * grad_s[ixyz];
-    }
-  else {
+  if (grad_center == bcenter) {
       grad = 0.0;
       for (int dcenter=0; dcenter<ncenters; dcenter++) {
           if (dcenter == bcenter) continue;
-          double p = compute_partial_p(dcenter, bcenter, point);
-          SCVector3 grad_s;
-          compute_grad_s(dcenter, bcenter, wcenter, point, grad_s);
-          for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] += p * grad_s[ixyz];
+          SCVector3 grad_nu;
+          compute_grad_nu(grad_center, dcenter, point, grad_nu);
+          double t = compute_t(grad_center,dcenter,point);
+          for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] += t * grad_nu[ixyz];
         }
     }
+  else {
+      SCVector3 grad_nu;
+      compute_grad_nu(grad_center, bcenter, point, grad_nu);
+      double t = compute_t(bcenter,grad_center,point);
+      for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] = -t * grad_nu[ixyz];
+    }
+  grad *= p;
 }
 
 double
@@ -940,26 +930,42 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
   double w_a = p_a/p_sum;
 
   if (w_gradient) {
-      fd_w(acenter, point, w_gradient);
+      // w_gradient is computed using the formulae from
+      // Johnson et al., JCP v. 98, p. 5612 (1993) (Appendix B)
+      int i,j;
+      for (i=0; i<ncenters*3; i++ ) w_gradient[i] = 0.0;
+//      fd_w(acenter, point, w_gradient);  // imbn commented out for debug
 //        cout << point << " ";
 //        for (int i=0; i<ncenters*3; i++) {
 //            cout << scprintf(" %10.6f", w_gradient[i]);
 //          }
 //        cout << endl;
-      return w_a;
-      int i;
+//      return w_a;  // imbn commented out for debug
       for (int ccenter = 0; ccenter < ncenters; ccenter++) {
-          SCVector3 grad_c_w_a;
-          SCVector3 grad_c_p_a;
-          compute_grad_p(ccenter, acenter, acenter, point, grad_c_p_a);
-          for (i=0; i<3; i++) grad_c_w_a[i] = grad_c_p_a[i]/p_sum;
-          for (int bcenter=0; bcenter<ncenters; bcenter++) {
-              SCVector3 grad_c_p_b;
-              compute_grad_p(ccenter, bcenter, acenter, point, grad_c_p_b);
-              for (i=0; i<3; i++)
-                  grad_c_w_a[i] -= w_a*grad_c_p_b[i]/p_sum;
+          // NB: for ccenter==acenter, use translational invariance
+          // to get the corresponding component of the gradient
+          if (ccenter != acenter) {
+              SCVector3 grad_c_w_a;
+              SCVector3 grad_c_p_a;
+              compute_grad_p(ccenter, acenter, acenter, point, p_a, grad_c_p_a);
+              for (i=0; i<3; i++) grad_c_w_a[i] = grad_c_p_a[i]/p_sum;
+              for (int bcenter=0; bcenter<ncenters; bcenter++) {
+                  SCVector3 grad_c_p_b;
+                  double p_b = compute_p(bcenter,point);
+                  compute_grad_p(ccenter, bcenter, acenter, point, p_b,
+                                 grad_c_p_b);
+                  for (i=0; i<3; i++) grad_c_w_a[i] -= w_a*grad_c_p_b[i]/p_sum;
+                }
+              for (i=0; i<3; i++) w_gradient[ccenter*3+i] = grad_c_w_a[i];
             }
-          for (i=0; i<3; i++) w_gradient[ccenter*3+i] = grad_c_w_a[i];
+        }
+      // fill in w_gradient for ccenter==acenter
+      for (j=0; j<3; j++) {
+          for (i=0; i<ncenters; i++) {
+              if (i != acenter) {
+                  w_gradient[acenter*3+j] -= w_gradient[i*3+j];
+                }
+            }
         }
     }
 

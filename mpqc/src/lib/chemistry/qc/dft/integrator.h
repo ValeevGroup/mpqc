@@ -136,9 +136,11 @@ class BeckeIntegrationWeight: public IntegrationWeight {
     double **a_mat;
     double **oorab;
 
-    void compute_grad_s(int ic, int jc, int wc, SCVector3 &r, SCVector3 &grad);
-    void compute_grad_p(int gradc, int ic, int wc, SCVector3&r, SCVector3&g);
-    double compute_partial_p(int icenter, int kcenter, SCVector3&point);
+    void compute_grad_p(int gc, int ic, int wc, SCVector3&r, double p,
+                           SCVector3&g);
+    void compute_grad_nu(int gc, int bc, SCVector3 &point, SCVector3 &grad);
+
+    double compute_t(int ic, int jc, SCVector3 &point);
     double compute_p(int icenter, SCVector3&point);
 
   public:

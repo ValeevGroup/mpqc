@@ -344,11 +344,15 @@ CLSCF::init_vector()
   initial_vector(1);
 
   scf_vector_ = eigenvectors_.result_noupdate();
+
+  if (accumddh_.nonnull()) accumddh_->init(this);
 }
 
 void
 CLSCF::done_vector()
 {
+  if (accumddh_.nonnull()) accumddh_->done();
+
   tbi_=0;
   
   cl_gmat_ = 0;

@@ -109,6 +109,9 @@ CSGradErep12Qtr::run()
   int print_interval = work_per_thread/100;
   int time_interval = work_per_thread/10;
   int print_index = 0;
+  if (print_interval == 0) print_interval = 1;
+  if (time_interval == 0) time_interval = 1;
+  if (work_per_thread == 0) work_per_thread = 1;
 
   for (S=0; S<nshell; S++) {
     ns = basis->shell(S).nfunction();

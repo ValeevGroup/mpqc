@@ -147,23 +147,17 @@ main(int argc, char **argv)
 
   cout.flush();
   cerr.flush();
-  fflush(stdout);
-  fflush(stderr);
   
   // now we get ambitious
   RefMolecularCoor mc = kv->describedclassvalue("molcoor");
   cout.flush();
   cerr.flush();
-  fflush(stdout);
-  fflush(stderr);
 
   if (mc.nonnull()) {
       mc->print();
 
       cout.flush();
       cerr.flush();
-      fflush(stdout);
-      fflush(stderr);
 
       // do_displacement(mc,0);
       // do_displacement(mc,1);

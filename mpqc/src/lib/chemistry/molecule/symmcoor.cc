@@ -398,7 +398,6 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   constant_->update_values(molecule_);
   variable_->update_values(molecule_);
 
-  fflush(stdout);
   cout << node0 << incindent << indent
        << "SymmMolecularCoor::form_variable_coordinates()\n" << incindent
        << indent << "expected " << nunique << " coordinates\n"

@@ -35,6 +35,7 @@
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+#include <math/scmat/mops.h>
 
 extern "C" {
     int sing_(double *q, int *lq, int *iq, double *s, double *p,
@@ -772,6 +773,9 @@ ReplSCMatrix::solve_this(SCVector*v)
 void
 ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 {
+  int i,j,ij;
+  int m;
+
   ReplSymmSCMatrix* lS =
     ReplSymmSCMatrix::require_castdown(S,"ReplSCMatrix::schmidt_orthog");
   
@@ -782,7 +786,120 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
       abort();
     }
 
-  cmat_schmidt(rows,lS->matrix,nrow(),nc);
+  int me = messagegrp()->me();
+  int nproc = messagegrp()->n();
+  int nr = nrow();
+  
+  double vtmp;
+  double *v = new double[nr];
+  double *cm = new double[nr];
+
+  double **sblock = cmat_new_square_matrix(D1);
+  
+  double *s = lS->matrix;
+  
+  int mod = nc%nproc;
+  int ncoli = nc/nproc + (mod <= me ? 0 : 1);
+  int cstart = (nc/nproc)*me + (mod <= me ? mod : me);
+  int cend = cstart+ncoli;
+
+  // copy my columns to a rows of temp matrix
+  double **cols = cmat_new_rect_matrix(ncoli, nr);
+  for (i=cstart; i < cend; i++)
+    for (j=0; j < nr; j++)
+      cols[i-cstart][j] = rows[j][i];
+    
+  for (m=0; m < nc; m++) {
+    // who has this column
+    for (i=0; i < nproc; i++) {
+      int ni = nc/nproc + (mod <= i ? 0 : 1);
+      int csi = (nc/nproc)*i + (mod <= i ? mod : i);
+      if (m >= csi && m < csi+ni) {
+        if (i==me)
+          memcpy(cm, cols[m-csi], sizeof(double)*nr);
+        messagegrp()->bcast(cm, nr, i);
+      }
+    }
+    
+    memset(v, 0, sizeof(double)*nr);
+    
+    for (i=ij=0; i < nr; i += D1) {
+      int ni = nr-i;
+      if (ni > D1) ni = D1;
+      
+      for (j=0; j < nr; j += D1, ij++) {
+        if (ij%nproc != me)
+          continue;
+
+        int nj = nr-j;
+        if (nj > D1) nj = D1;
+        
+        copy_sym_block(sblock, lS->rows, i, ni, j, nj);
+        
+        for (int ii=0; ii < ni; ii++)
+          for (int jj=0; jj < nj; jj++)
+            v[i+ii] += cm[j+jj]*sblock[ii][jj];
+      }
+    }
+
+    messagegrp()->sum(v, nr);
+
+    for (i=0,vtmp=0.0; i < nr; i++)
+      vtmp += v[i]*cm[i];
+
+    if (!vtmp) {
+      cerr << "cmat_schmidt: bogus" << endl;
+      abort();
+    }
+
+    if (vtmp < 1.0e-15)
+      vtmp = 1.0e-15;
+
+    vtmp = 1.0/sqrt(vtmp);
+    
+    for (i=0; i < nr; i++) {
+      v[i] *= vtmp;
+      cm[i] *= vtmp;
+    }
+
+    if (m < nc-1) {
+      for (i=m+1; i < nc; i++) {
+        if (i < cstart)
+          continue;
+        if (i >= cend)
+          break;
+        
+        double *ci = cols[i-cstart];
+        
+        for (j=0,vtmp=0.0; j < nr; j++)
+          vtmp += v[j] * ci[j];
+        for (j=0; j < nr; j++)
+          ci[j] -= vtmp * cm[j];
+      }
+    }
+  }
+
+  // now collect columns again
+  for (i=0; i < nproc; i++) {
+    int ni = nc/nproc + (mod <= i ? 0 : 1);
+    int csi = (nc/nproc)*i + (mod <= i ? mod : i);
+    for (j=0; j < ni; j++) {
+      if (i==me) {
+        messagegrp()->bcast(cols[j], nr, i);
+        for (int k=0; k < nr; k++)
+          rows[k][j+csi] = cols[j][k];
+      }
+      else {
+        messagegrp()->bcast(cm, nr, i);
+        for (int k=0; k < nr; k++)
+          rows[k][j+csi] = cm[k];
+      }
+    }
+  }
+
+  cmat_delete_matrix(cols);
+  delete[] v;
+  delete[] cm;
 }
 
 void

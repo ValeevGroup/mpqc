@@ -35,6 +35,9 @@
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+#include <math/scmat/disthql.h>
+#include <math/scmat/offset.h>
+#include <math/scmat/mops.h>
 
 /////////////////////////////////////////////////////////////////////////////
 // ReplSymmSCMatrix member functions
@@ -392,6 +395,13 @@ ReplSymmSCMatrix::assign(const double**m)
 }
 
 void
+ReplSymmSCMatrix::scale(double s)
+{
+  int nelem = i_offset(n());
+  for (int i=0; i < nelem; i++) matrix[i] *= s;
+}
+
+void
 ReplSymmSCMatrix::accumulate(SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
@@ -412,13 +422,41 @@ ReplSymmSCMatrix::accumulate(SymmSCMatrix*a)
 double
 ReplSymmSCMatrix::invert_this()
 {
-  return cmat_invert(rows,1,n());
+  if (messagegrp()->n() == 1)
+      return cmat_invert(rows,1,n());
+  else {
+      RefDiagSCMatrix refa = kit()->diagmatrix(d);
+      RefSCMatrix refb = kit()->matrix(d,d);
+      diagonalize(refa.pointer(),refb.pointer());
+      double determ = 1.0;
+      for (int i=0; i<dim()->n(); i++) {
+          double val = refa->get_element(i);
+          determ *= val;
+        }
+      RefSCElementOp op = new SCElementInvert(1.0e-12);
+      refa->element_op(op.pointer());
+      assign(0.0);
+      accumulate_transform(refb.pointer(), refa.pointer());
+      return determ;
+    }
 }
 
 double
 ReplSymmSCMatrix::determ_this()
 {
-  return cmat_determ(rows,1,n());
+  if (messagegrp()->n() == 1)
+      return cmat_determ(rows,1,n());
+  else {
+      RefDiagSCMatrix refa = kit()->diagmatrix(d);
+      RefSCMatrix refb = kit()->matrix(d,d);
+      diagonalize(refa.pointer(),refb.pointer());
+      double determ = 1.0;
+      for (int i=0; i<dim()->n(); i++) {
+          double val = refa->get_element(i);
+          determ *= val;
+        }
+      return determ;
+    }
 }
 
 double
@@ -448,27 +486,31 @@ ReplSymmSCMatrix::solve_this(SCVector*v)
 void
 ReplSymmSCMatrix::gen_invert_this()
 {
-  double *evals = new double[n()];
-  double **evecs = cmat_new_square_matrix(n());
-  
-  cmat_diag(rows,evals,evecs,n(),1,1.0e-15);
+  RefSCMatrix evecs = kit()->matrix(dim(),dim());
+  RefDiagSCMatrix evals = kit()->diagmatrix(dim());
+
+  const char *name = "ReplSymmSCMatrix::gen_invert_this";
+  ReplDiagSCMatrix *levals = ReplDiagSCMatrix::require_castdown(evals,name);
+  ReplSCMatrix *levecs = ReplSCMatrix::require_castdown(evecs,name);
+
+  this->diagonalize(evals.pointer(), evecs.pointer());
 
   for (int i=0; i < n(); i++) {
-    if (fabs(evals[i]) > 1.0e-8)
-      evals[i] = 1.0/evals[i];
-    else
-      evals[i] = 0;
-  }
+      if (fabs(levals->matrix[i]) > 1.0e-8)
+          levals->matrix[i] = 1.0/levals->matrix[i];
+      else
+          levals->matrix[i] = 0;
+    }
 
-  cmat_transform_diagonal_matrix(rows, n(), evals, n(), evecs, 0);
-  
-  delete[] evals;
-  cmat_delete_matrix(evecs);  
+  assign(0.0);
+  accumulate_transform(levecs, levals);
 }
 
 void
 ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 {
+  int i;
+  
   const char* name = "ReplSymmSCMatrix::diagonalize";
   // make sure that the arguments is of the correct type
   ReplDiagSCMatrix* la = ReplDiagSCMatrix::require_castdown(a,name);
@@ -482,26 +524,75 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
       abort();
     }
 
-  double *eigvals;
-  double **eigvecs;
-  if (!la) {
-      eigvals = new double[n()];
+  // This sets up the index list of columns to be stored on this node
+  int n = dim()->n();
+  int me = messagegrp()->me();
+  int nproc = messagegrp()->n();
+
+  // if there are fewer vectors than processors, do serial diagonalization
+  if (n < nproc || nproc==1) {
+      double *eigvals = la->matrix;
+      double **eigvecs = lb->rows;
+      cmat_diag(rows, eigvals, eigvecs, n, 1, 1.0e-15);
     }
   else {
-      eigvals = la->matrix;
-    }
+      int nvec = n/nproc + (me<(n%nproc)?1:0);
+      int mvec = n/nproc + ((n%nproc) ? 1 : 0);
+      
+      int *ivec = new int[nvec];
+      for (i=0; i<nvec; i++)
+          ivec[i] = i*nproc + me;
 
-  if (!lb) {
-      eigvecs = cmat_new_square_matrix(n());
-    }
-  else {
-      eigvecs = lb->rows;
-    }
+      double *eigvals = new double[n];
+      double **eigvecs = cmat_new_rect_matrix(mvec, n);
+      double **rect = cmat_new_rect_matrix(mvec, n);
 
-  cmat_diag(rows,eigvals,eigvecs,n(),1,1.0e-15);
+      lb->assign(0.0);
 
-  if (!la) delete[] eigvals;
-  if (!lb) cmat_delete_matrix(eigvecs);
+      for (i=0; i < nvec; i++) {
+          int c = ivec[i];
+          int j;
+          for (j=0; j <= c; j++)
+              rect[i][j] = rows[c][j];
+          for (; j < n; j++)
+              rect[i][j] = rows[j][c];
+        }
+  
+      dist_diagonalize(n, nvec, rect[0], eigvals, eigvecs[0], messagegrp());
+
+      la->assign(eigvals);
+      delete[] eigvals;
+
+      int *tivec = new int [mvec];
+      for (i=0; i < nproc; i++) {
+          int tnvec;
+          
+          if (i==me) {
+              messagegrp()->bcast(nvec, me);
+              messagegrp()->bcast(eigvecs[0], n*nvec, me);
+              messagegrp()->bcast(ivec, nvec, me);
+              tnvec = nvec;
+              memcpy(tivec, ivec, sizeof(int)*nvec);
+              memcpy(rect[0], eigvecs[0], sizeof(double)*n*nvec);
+            }
+          else {
+              messagegrp()->bcast(tnvec, i);
+              messagegrp()->bcast(rect[0], n*tnvec, i);
+              messagegrp()->bcast(tivec, tnvec, i);
+            }
+
+          for (int j=0; j < tnvec; j++) {
+              int c = tivec[j];
+              for (int k=0; k < n; k++)
+                  lb->rows[k][c] = rect[j][k];
+            }
+        }
+
+      delete[] ivec;
+      delete[] tivec;
+      cmat_delete_matrix(eigvecs);
+      cmat_delete_matrix(rect);
+    }
 }
 
 // computes this += a * a.t
@@ -571,10 +662,26 @@ ReplSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
     }
 }
 
+static void
+print_mat(double **m, int nr, int nc)
+{
+  int i,j;
+  
+  for (i=0; i < nr; i++) {
+    for (j=0; j < nc; j++) printf("%11.5f ",m[i][j]);
+    printf("\n");
+  }
+}
+    
 // this += a * b * transpose(a)
 void
-ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
+ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
+                                       SCMatrix::Transform t)
 {
+  int i,j,k;
+  int ii,jj,kk;
+  int nc, nr;
+
   // do the necessary castdowns
   ReplSCMatrix*la
     = ReplSCMatrix::require_castdown(a,"%s::accumulate_transform",
@@ -583,17 +690,224 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
                                           class_name());
 
   // check the dimensions
-  if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
+  if (t == SCMatrix::NormalTransform) {
+    if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
       cerr << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
       abort();
     }
 
-  cmat_transform_symmetric_matrix(rows,n(),lb->rows,lb->n(),la->rows,1);
+    nc = lb->n();
+    nr = la->nrow();
+  } else {
+    if (!dim()->equiv(la->coldim()) || !lb->dim()->equiv(la->rowdim())) {
+      cerr << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
+      abort();
+    }
+
+    nc = lb->n();
+    nr = la->ncol();
+  }
+
+  int nproc = messagegrp()->n();
+
+  double **ablock = cmat_new_square_matrix(D1);
+  double **bblock = cmat_new_square_matrix(D1);
+  double **cblock = cmat_new_square_matrix(D1);
+
+  // if one processor then minimize the amount of memory used
+  if (nproc == 1) {
+    double **temp = cmat_new_rect_matrix(D1,nc);
+
+    for (i=0; i < nr; i += D1) {
+      int ni = nr-i;
+      if (ni > D1) ni = D1;
+
+      memset(temp[0], 0, sizeof(double)*D1*nc);
+
+      for (j=0; j < nc; j+= D1) {
+        int nj = nc-j;
+        if (nj > D1) nj = D1;
+
+        for (k=0; k < nc; k += D1) {
+        
+          int nk = nc-k;
+          if (nk > D1) nk = D1;
+
+          if (t == SCMatrix::NormalTransform)
+            copy_block(ablock, la->rows, i, ni, k, nk);
+          else
+            copy_trans_block(ablock, la->rows, i, ni, k, nk);
+          
+          copy_sym_block(bblock, lb->rows, j, nj, k, nk);
+          copy_block(cblock, temp, 0, ni, j, nj);
+          mult_block(ablock, bblock, cblock, ni, nj, nk);
+          return_block(temp, cblock, 0, ni, j, nj);
+        }
+      }
+
+      // now do ab * a~
+      for (j=0; j <= i; j+= D1) {
+        int nj = nr-j;
+        if (nj > D1) nj = D1;
+
+        memset(cblock[0], 0, sizeof(double)*D1*D1);
+      
+        for (k=0; k < nc; k += D1) {
+        
+          int nk = nc-k;
+          if (nk > D1) nk = D1;
+
+          copy_block(ablock, temp, 0, ni, k, nk);
+          if (t == SCMatrix::NormalTransform)
+            copy_block(bblock, la->rows, j, nj, k, nk);
+          else
+            copy_trans_block(bblock, la->rows, j, nj, k, nk);
+          
+          mult_block(ablock, bblock, cblock, ni, nj, nk);
+        }
+
+        // copy cblock(i,j) into result
+        if (j==i) {
+          for (ii=0; ii < ni; ii++)
+            for (jj=0; jj <= ii; jj++)
+              rows[i+ii][j+jj] += cblock[ii][jj];
+        } else {
+          for (ii=0; ii < ni; ii++)
+            for (jj=0; jj < nj; jj++)
+              rows[i+ii][j+jj] += cblock[ii][jj];
+        }
+      }
+    }
+
+    cmat_delete_matrix(temp);
+  }
+
+  // this version requires a full temp matrix be kept
+  else {
+    int me = messagegrp()->me();
+    int mod = nr%nproc;
+    int njrow = nr/nproc + ((mod <= me) ? 0 : 1);
+    int jstart = (nr/nproc)*me + ((mod <= me) ? mod : me);
+    int jend = jstart+njrow;
+
+    double **temp = cmat_new_rect_matrix(nr,nc);
+    memset(temp[0], 0, sizeof(double)*nr*nc);
+    
+    for (i=0; i < nc; i += D1) {
+      int ni = nc-i;
+      if (ni > D1) ni = D1;
+
+      for (k=0; k < nc; k += D1) {
+        int nk = nc-k;
+        if (nk > D1) nk = D1;
+          
+        copy_sym_block(ablock, lb->rows, i, ni, k, nk);
+
+        for (j=jstart; j < jend; j += D1) {
+          int nj = jend-j;
+          if (nj > D1) nj = D1;
+          
+          if (t == SCMatrix::NormalTransform)
+            copy_block(bblock, la->rows, j, nj, k, nk);
+          else
+            copy_trans_block(bblock, la->rows, j, nj, k, nk);
+
+          memset(cblock[0], 0, sizeof(double)*D1*D1);
+          mult_block(ablock, bblock, cblock, ni, nj, nk);
+
+          for (jj=0; jj < nj; jj++)
+            for (ii=0; ii < ni; ii++)
+              temp[j+jj][i+ii] += cblock[ii][jj];
+        }
+      }
+    }
+
+    for (i=0; i < nproc; i++) {
+      njrow = nr/nproc + ((mod <= i) ? 0 : 1);
+      jstart = (nr/nproc)*i + ((mod <= i) ? mod : i);
+      if (!njrow)
+        break;
+      messagegrp()->bcast(temp[jstart], njrow*nc, i);
+    }
+
+    int ind=0;
+    for (i=0; i < nr; i += D1) {
+      int ni = nr-i;
+      if (ni > D1) ni = D1;
+        
+      for (j=0; j <= i; j += D1, ind++) {
+        if (ind%nproc != me)
+          continue;
+        
+        int nj = nr-j;
+        if (nj > D1) nj = D1;
+        
+        memset(cblock[0], 0, sizeof(double)*D1*D1);
+      
+        for (k=0; k < nc; k += D1) {
+          int nk = nc-k;
+          if (nk > D1) nk = D1;
+            
+          if (t == SCMatrix::NormalTransform)
+            copy_block(ablock, la->rows, i, ni, k, nk);
+          else
+            copy_trans_block(ablock, la->rows, i, ni, k, nk);
+          copy_block(bblock, temp, j, nj, k, nk);
+          mult_block(ablock, bblock, cblock, ni, nj, nk);
+        }
+
+        if (i==j) {
+          for (ii=0; ii < ni; ii++)
+            for (jj=0; jj <= ii; jj++)
+              rows[i+ii][j+jj] += cblock[ii][jj];
+        } else {
+          for (ii=0; ii < ni; ii++)
+            for (jj=0; jj < nj; jj++)
+              rows[i+ii][j+jj] += cblock[ii][jj];
+        }
+      }
+    }
+    
+    ind=0;
+    for (i=0; i < nr; i += D1) {
+      int ni = nr-i;
+      if (ni > D1) ni = D1;
+
+      for (j=0; j <= i; j += D1, ind++) {
+        int nj = nr-j;
+        if (nj > D1) nj = D1;
+
+        int proc = ind%nproc;
+
+        if (proc==me)
+          copy_sym_block(ablock, rows, i, ni, j, nj);
+          
+        messagegrp()->bcast(ablock[0], D1*D1, proc);
+
+        if (i==j) {
+          for (ii=0; ii < ni; ii++)
+            for (jj=0; jj <= ii; jj++)
+              rows[i+ii][j+jj] = ablock[ii][jj];
+        } else {
+          for (ii=0; ii < ni; ii++)
+            for (jj=0; jj < nj; jj++)
+              rows[i+ii][j+jj] = ablock[ii][jj];
+        }
+      }
+    }
+
+    cmat_delete_matrix(temp);
+  }
+
+  cmat_delete_matrix(ablock);
+  cmat_delete_matrix(bblock);
+  cmat_delete_matrix(cblock);
 }
 
 // this += a * b * transpose(a)
 void
-ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
+ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b,
+                                       SCMatrix::Transform t)
 {
   // do the necessary castdowns
   ReplSCMatrix*la

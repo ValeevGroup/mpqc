@@ -28,6 +28,8 @@
 #include <iostream.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/bug.h>
+#include <util/misc/formio.h>
+#include <util/state/state_text.h>
 
 double bugtest_global_var_;
 double t;
@@ -77,7 +79,7 @@ main(int argc, char **argv)
   d.restore_state(i);
 
   d = 0;
-  cout << "bugtest: done" << endl;
+  cout << indent << "bugtest: done" << endl;
 
   return 0;
 }

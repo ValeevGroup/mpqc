@@ -52,26 +52,26 @@ TESTOBJ= $(TESTSRC:%.cc=%.$(OBJSUF))
 
 DEPENDINCLUDE = $(INC)
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
 #####################################################################
 
 default:: $(DEPENDINCLUDE)
 
-comptest: comptest.cc $(TOPDIR)/lib/libmisc.a $(TOPDIR)/lib/libstate.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o comptest
+comptest: comptest.o $(LIBS)
+	$(LD) $(LDFLAGS) $^ -o comptest $(SYSLIBS)
 
-tregtime: tregtime.cc $(TOPDIR)/lib/libmisc.a $(TOPDIR)/lib/libref.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o tregtime
+tregtime: tregtime.o $(LIBS)
+	$(LD) $(LDFLAGS) $^ -o tregtime $(SYSLIBS)
 
-bugtest: bugtest.cc \
-	$(TOPDIR)/lib/libkeyval.a $(TOPDIR)/lib/libstate.a \
-	$(TOPDIR)/lib/libclass.a $(TOPDIR)/lib/libmisc.a \
-        $(TOPDIR)/lib/libgroup.a \
-	$(TOPDIR)/lib/libcontainer.a $(TOPDIR)/lib/libref.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest
+bugtest: bugtest.o $(LIBS)
+	$(LD) $(LDFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest
 
-formiot: formiot.cc libmisc.a libgroup.a libkeyval.a libstate.a libclass.a \
-        libcontainer.a libref.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o formiot $(SYSLIBS)
+bugtest.o: bugtest.cc
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+formiot: formiot.o $(LIBS)
+	$(LD) $(LDFLAGS) $^ -o formiot $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -25,6 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <unistd.h>
+
+#include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 
 int
@@ -42,7 +45,7 @@ main()
   tim->enter("subx");
   sleep(2);
   tim->exit("subx");
-  cout << " x = " << x << endl;
+  cout << indent << " x = " << x << endl;
   tim->exit("x");
   tim->enter("a");
   double a = 0.0;
@@ -52,14 +55,14 @@ main()
   tim->enter("subx");
   sleep(1);
   tim->exit("subx");
-  cout << " a = " << a << endl;
+  cout << indent << " a = " << a << endl;
   tim->exit("a");
   tim->enter("y");
   double y = 0.0;
   for (i=0; i<10000000; i++) {
       y += 0.0001;
     }
-  cout << " y = " << y << endl;
+  cout << indent << " y = " << y << endl;
   tim->change("z", "y");
   double z = 0.0;
   for (i=0; i<10000000; i++) {

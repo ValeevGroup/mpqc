@@ -150,10 +150,12 @@ class IntegralStorer: public DescribedClass {
     IntegralStorer();
     IntegralStorer(const RefKeyVal&);
     ~IntegralStorer();
-    void init(int nintegral);
+    void init(int nbytes);
     void done();
     IntegralLink *find(IntegralKey&);
     int should_store(int cost, int actualsize);
+    void store(IntegralKey& key, const double *buf,
+               int size, int cost, int actualsize);
     void store(IntegralKey& key, int size, int cost, int actualsize);
     void print_stats();
     int table_size() const { return table_size_; }

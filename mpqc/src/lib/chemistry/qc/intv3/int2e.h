@@ -11,7 +11,7 @@
 #include <chemistry/qc/intv3/fjt.h>
 #include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv3/types.h>
-#include <chemistry/qc/intv3/storage.h>
+#include <chemistry/qc/intv2/storage.h>
 
 class Int2eV3: public VRefCount {
   protected:

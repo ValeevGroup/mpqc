@@ -110,12 +110,19 @@ void
 IntegralStorer::store(IntegralKey &key,
                       int size, int cost, int actualsize)
 {
+  store(key, int_buffer, size, cost, actualsize);
+}
+
+void
+IntegralStorer::store(IntegralKey &key, const double *buf,
+                      int size, int cost, int actualsize)
+{
   IntegralLink *link = new(size) IntegralLink(key, cost, size);
 
   int i;
   double *buffer = link->buffer();
   for (i=0; i<link->size; i++) {
-      buffer[i] = int_buffer[i];
+      buffer[i] = buf[i];
     }
 
 #if PRINT_STORED
@@ -191,14 +198,14 @@ IntegralStorer::find(IntegralKey& key)
 }
 
 void
-IntegralStorer::init(int nintegral)
+IntegralStorer::init(int nbytes)
 {
   costlist.initialize(&IntegralLink::costlist);
   for (int i=0; i<table_size_; i++) {
       table_[i].initialize(&IntegralLink::intlist);
     }
   done();
-  maxsize_ = nintegral * sizeof(double);
+  maxsize_ = nbytes;
 }
 
 void

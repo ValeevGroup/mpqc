@@ -173,7 +173,7 @@ ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const Ref<KeyVal>& keyval):
 }
 
 void
-ActiveMsgMemoryGrp::set_localsize(int localsize)
+ActiveMsgMemoryGrp::set_localsize(size_t localsize)
 {
   if (debug_) {
       ExEnv::out() << "ActiveMsgMemoryGrp::set_localsize(" << localsize << ")" << endl;
@@ -287,7 +287,7 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 }
 
 void
-ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, int doffset,
+ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
                                           int dlength, int node)
 {
   if (node == -1) node = me();

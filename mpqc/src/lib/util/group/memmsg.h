@@ -44,7 +44,7 @@ class MsgMemoryGrp: public MemoryGrp {
     MsgMemoryGrp(const Ref<MessageGrp>& msg);
     MsgMemoryGrp(const Ref<KeyVal>& keyval);
     ~MsgMemoryGrp();
-    void set_localsize(int localsize);
+    void set_localsize(size_t localsize);
 
     void sync();
 };

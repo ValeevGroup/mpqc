@@ -102,7 +102,7 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     ActiveMsgMemoryGrp(const Ref<KeyVal>&);
     ~ActiveMsgMemoryGrp();
 
-    void set_localsize(int);
+    void set_localsize(size_t);
     void *localdata();
 
     void *obtain_writeonly(distsize_t offset, int size);
@@ -113,7 +113,7 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     void release_readwrite(void *data, distsize_t offset, int size);
 
     void sum_reduction(double *data, distsize_t doffset, int dsize);
-    void sum_reduction_on_node(double *data, int doffset, int dsize,
+    void sum_reduction_on_node(double *data, size_t doffset, int dsize,
                                int node = -1);
 
     void print(std::ostream &o = ExEnv::out()) const;

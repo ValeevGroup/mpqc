@@ -55,7 +55,7 @@ class MPI2MemoryGrp: public MsgMemoryGrp {
     void deactivate();
 
     void *localdata();
-    void set_localsize(int);
+    void set_localsize(size_t);
 
     void *obtain_writeonly(distsize_t offset, int size);
     void *obtain_readwrite(distsize_t offset, int size);
@@ -64,7 +64,7 @@ class MPI2MemoryGrp: public MsgMemoryGrp {
     void release_writeonly(void *data, distsize_t offset, int size);
     void release_readwrite(void *data, distsize_t offset, int size);
     void sum_reduction(double *data, distsize_t doffset, int dsize);
-    void sum_reduction_on_node(double *data, int doffset, int dsize,
+    void sum_reduction_on_node(double *data, size_t doffset, int dsize,
                                int node = -1);
 
     void sync();

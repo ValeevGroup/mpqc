@@ -117,7 +117,7 @@ class MBPT2: public Wavefunction {
     void compute_hsos_v2_lb();
 
     // calculate the closed shell mp2 energy and gradient
-    int compute_cs_batchsize(int mem_static, int nocc_act);
+    int compute_cs_batchsize(size_t mem_static, int nocc_act);
     // distsize_t is used to allow memory requirements to be
     // estimated by starting the calculation on a single processor
     distsize_t compute_cs_dynamic_memory(int ni, int nocc_act);

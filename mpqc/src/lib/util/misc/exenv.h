@@ -48,7 +48,7 @@ class ExEnv {
     static char hostname_[256];
     static char username_[9];
 
-    static unsigned long mem_;
+    static size_t mem_;
     static int nproc_;
 
     static std::ostream *out_;
@@ -72,7 +72,7 @@ class ExEnv {
     static std::ostream &err() { return out(); }
 
     /// The amount of memory on this node.
-    static unsigned long memory() { if (!initialized_) err(); return mem_; }
+    static size_t memory() { if (!initialized_) err(); return mem_; }
     /// The number of processors on this node.
     static int nproc() { if (!initialized_) err(); return nproc_; }
 };

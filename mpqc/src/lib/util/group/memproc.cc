@@ -57,7 +57,7 @@ ProcMemoryGrp::~ProcMemoryGrp()
 }
 
 void
-ProcMemoryGrp::set_localsize(int localsize)
+ProcMemoryGrp::set_localsize(size_t localsize)
 {
   delete[] offsets_;
   delete[] data_;

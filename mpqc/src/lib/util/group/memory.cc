@@ -253,7 +253,7 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 }
 
 void
-MemoryGrp::sum_reduction_on_node(double *data, int doffset, int dlength,
+MemoryGrp::sum_reduction_on_node(double *data, size_t doffset, int dlength,
                                  int node)
 {
   if (node == -1) node = me();

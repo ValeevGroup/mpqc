@@ -67,7 +67,7 @@ MPI2MemoryGrp::~MPI2MemoryGrp()
 }
 
 void
-MPI2MemoryGrp::set_localsize(int localsize)
+MPI2MemoryGrp::set_localsize(size_t localsize)
 {
   deactivate();
   MsgMemoryGrp::set_localsize(localsize);
@@ -87,8 +87,9 @@ MPI2MemoryGrp::activate()
   MPI_Info_free(&info);
 
   if (r != MPI_SUCCESS) {
-    ExEnv::err() << scprintf("MPI2MemoryGrp::set_localsize(%d) failed on %d",
-                     localsize(), me()) << endl;
+    ExEnv::err() << "MPI2MemoryGrp::set_localsize("
+                 << localsize() << ") failed on "
+                 << me() << endl;
     abort();
   }
 
@@ -185,7 +186,7 @@ MPI2MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 }
 
 void
-MPI2MemoryGrp::sum_reduction_on_node(double *data, int doffset,
+MPI2MemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
                                      int dlength, int node)
 {
   if (node == -1) node = me();

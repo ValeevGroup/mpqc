@@ -71,7 +71,7 @@ class ShmMemoryGrp: public MsgMemoryGrp {
     ShmMemoryGrp(const Ref<KeyVal>&);
     ~ShmMemoryGrp();
 
-    void set_localsize(int);
+    void set_localsize(size_t);
     void *localdata();
 
     void *obtain_readwrite(distsize_t offset, int size);

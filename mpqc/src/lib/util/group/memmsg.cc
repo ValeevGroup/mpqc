@@ -70,7 +70,7 @@ MsgMemoryGrp::~MsgMemoryGrp()
 }
 
 void
-MsgMemoryGrp::set_localsize(int localsize)
+MsgMemoryGrp::set_localsize(size_t localsize)
 {
   delete[] offsets_;
 

@@ -53,7 +53,7 @@
 using namespace std;
 
 int ExEnv::initialized_ = 0;
-unsigned long ExEnv::mem_ = 0;
+size_t ExEnv::mem_ = 0;
 int ExEnv::nproc_ = 0;
 int *ExEnv::argc_ = 0;
 char ***ExEnv::argv_ = 0;

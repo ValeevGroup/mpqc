@@ -2410,7 +2410,7 @@ accum_gradients(double **g, double **f, int n1, int n2)
 // affect the batch size.
 /////////////////////////////////////
 int
-MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
+MBPT2::compute_cs_batchsize(size_t mem_static, int nocc_act)
 {
   size_t mem_dyn;   // dynamic memory available
   distsize_t maxdyn;
@@ -2423,7 +2423,12 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
   // the end of the i-batch loop (mem2)
   ///////////////////////////////////////
 
-  mem_dyn = mem_alloc - mem_static;
+  if (mem_alloc > mem_static) {
+    mem_dyn = mem_alloc - mem_static;
+    }
+  else {
+    mem_dyn = 0;
+    }
 
   // First determine if calculation is possible at all (i.e., if ni=1 possible)
 

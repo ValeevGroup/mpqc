@@ -201,7 +201,7 @@ class MemoryGrp: public DescribedClass {
     /** Set the size of locally held memory.
         When memory is accessed using a global offset counting
         starts at node 0 and proceeds up to node n() - 1. */
-    virtual void set_localsize(int) = 0;
+    virtual void set_localsize(size_t) = 0;
     /// Returns the amount of memory residing locally on me().
     size_t localsize() { return distsize_to_size(offsets_[me_+1]-offsets_[me_]); }
     /// Returns a pointer to the local data.
@@ -240,7 +240,7 @@ class MemoryGrp: public DescribedClass {
     virtual void release_readwrite(void *data, distsize_t offset, int size)=0;
 
     virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
-    virtual void sum_reduction_on_node(double *data, int doffset, int dsize,
+    virtual void sum_reduction_on_node(double *data, size_t doffset, int dsize,
                                        int node = -1);
 
     /** Synchronizes all the nodes.  Consider using this when the way you
@@ -309,9 +309,9 @@ class MemoryGrpBuf {
     /** These behave like writeonly, readwrite, and readonly, except the
         offset is local to the node specified by node.  If node = -1, then
         the local node is used. */
-    data_t *writeonly_on_node(int offset, int length, int node = -1);
-    data_t *readwrite_on_node(int offset, int length, int node = -1);
-    const data_t *readonly_on_node(int offset, int length, int node = -1);
+    data_t *writeonly_on_node(size_t offset, int length, int node = -1);
+    data_t *readwrite_on_node(size_t offset, int length, int node = -1);
+    const data_t *readonly_on_node(size_t offset, int length, int node = -1);
     /** Release the access to the chunk of global memory that was obtained
         with writeonly, readwrite, readonly, writeonly_on_node,
         readwrite_on_node, and readonly_on_node. */
@@ -371,7 +371,7 @@ MemoryGrpBuf<data_t>::readonly(distsize_t offset, int length)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::writeonly_on_node(int offset, int length, int node)
+MemoryGrpBuf<data_t>::writeonly_on_node(size_t offset, int length, int node)
 {
   if (node == -1) node = grp_->me();
   return writeonly(offset + grp_->offset(node)/sizeof(data_t), length);
@@ -379,7 +379,7 @@ MemoryGrpBuf<data_t>::writeonly_on_node(int offset, int length, int node)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::readwrite_on_node(int offset, int length, int node)
+MemoryGrpBuf<data_t>::readwrite_on_node(size_t offset, int length, int node)
 {
   if (node == -1) node = grp_->me();
   return readwrite(offset + grp_->offset(node)/sizeof(data_t), length);
@@ -387,7 +387,7 @@ MemoryGrpBuf<data_t>::readwrite_on_node(int offset, int length, int node)
 
 template <class data_t>
 const data_t *
-MemoryGrpBuf<data_t>::readonly_on_node(int offset, int length, int node)
+MemoryGrpBuf<data_t>::readonly_on_node(size_t offset, int length, int node)
 {
   if (node == -1) node = grp_->me();
   return readonly(offset + grp_->offset(node)/sizeof(data_t), length);

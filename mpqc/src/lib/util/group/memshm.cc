@@ -156,7 +156,7 @@ ShmMemoryGrp::detach_memory()
 }
 
 void
-ShmMemoryGrp::set_localsize(int localsize)
+ShmMemoryGrp::set_localsize(size_t localsize)
 {
   int i;
 

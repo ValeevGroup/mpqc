@@ -54,7 +54,7 @@ Optimize::Optimize(const RefKeyVal&keyval)
   ckpt_file = keyval->pcharvalue("checkpoint_file");
   if (keyval->error() != KeyVal::OK) {
     ckpt_file = new char[13];
-    strcat(ckpt_file,"opt_ckpt.dat");
+    strcpy(ckpt_file,"opt_ckpt.dat");
   }
   max_iterations_ = keyval->intvalue("max_iterations");
   if (keyval->error() != KeyVal::OK) max_iterations_ = 10;

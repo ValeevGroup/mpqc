@@ -60,6 +60,9 @@ SCF::compute_vector(double& eelec)
   
   // calculate the nuclear repulsion energy
   double nucrep = molecule()->nuclear_repulsion_energy();
+  cout << node0 << indent
+       << scprintf("nuclear repulsion energy = %20.15f", nucrep)
+       << endl << endl;
 
   RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
 

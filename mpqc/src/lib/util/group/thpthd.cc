@@ -37,6 +37,8 @@
 #include <pthread.h>
 #endif
 
+#include <string.h>
+
 #include <util/keyval/keyval.h>
 #include <util/group/thpthd.h>
 #include <util/misc/formio.h>
@@ -202,7 +204,8 @@ PthreadThreadGrp::start_threads()
                                Thread__run_Thread_run,
                                (void*) threads_[i]);
       if (res) {
-        ExEnv::errn() << indent << "thread death " << res << endl;
+        ExEnv::errn() << indent << "pthread_create failed" << endl;
+        ExEnv::errn() << "error: " << res << ": " << strerror(res) << endl;
         return -1;
       }
     }
@@ -218,10 +221,12 @@ PthreadThreadGrp::wait_threads()
   for (int i=1; i < nthread_; i++) {
     void *tn;
     if (threads_[i]) {
-      if (pthread_join(pthreads_[i], (void**)&tn)) {
+      int rc = pthread_join(pthreads_[i], (void**)&tn);
+      if (rc) {
         ExEnv::errn()
           << "PthreadThreadGrp::wait_threads(): error joining thread"
           << endl;
+        ExEnv::errn() << "error: " << rc << ": " << strerror(rc) << endl;
         abort();
       }
     }

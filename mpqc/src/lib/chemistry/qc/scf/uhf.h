@@ -38,9 +38,16 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+/**
+   This provides an unrestricted Hartree-Fock implementation.
+*/
 class UHF: public UnrestrictedSCF {
   public:
     UHF(StateIn&);
+    /**
+       The UHF KeyVal constructor reads no keywords.  All necessary
+       information is gathered by base class KeyVal constructors.
+    */
     UHF(const Ref<KeyVal>&);
     ~UHF();
 

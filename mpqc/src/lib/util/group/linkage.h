@@ -34,15 +34,23 @@
 #include <scconfig.h>
 #endif
 
+const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
+
 # ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
     const ClassDesc &group_force_link_a_ = ShmMessageGrp::class_desc_;
 # endif
-const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
+
 # ifdef HAVE_NX_H
-#  include <util/group/messpgon.h>
+#   include <util/group/messpgon.h>
     const ClassDesc &group_force_link_b_ = ParagonMessageGrp::class_desc_;
 # endif
+
+# ifdef HAVE_PTHREAD_H
+#   include <util/group/thpthd.h>
+    const ClassDesc &group_force_link_c_ = PthreadThreadGrp::class_desc_;
+# endif
 #endif /* __PIC__ */
+
 
 #endif

@@ -36,7 +36,7 @@ REQUIREDCXXSRC = mstate.cc \
          reduce.cc topology.cc hcube.cc picl.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc memoryi.cc \
          memamsg.cc memproc.cc memmid.cc \
-         pregtime.cc
+         pregtime.cc thread.cc
 
 OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
                  mempgon.cc memipgon.cc memmpl.cc
@@ -64,6 +64,12 @@ ifeq ($(HAVE_MPL),yes)
 endif
 ifeq ($(HAVE_PUMA_MPI2),yes)
   CXXSRC += mempuma.cc
+endif
+ifeq ($(HAVE_PTHREADS),yes)
+  CXXSRC += thpthd.cc
+endif
+ifeq ($(HAVE_PTHREAD),yes)
+  CXXSRC += thpthd.cc
 endif
 
 INC = pool.h message.h mstate.h topology.h picl.h \

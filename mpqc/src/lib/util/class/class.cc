@@ -80,9 +80,12 @@ ClassKey::~ClassKey()
 
 ClassKey& ClassKey::operator=(const ClassKey& key)
 {
-  if (classname_ && classname_ != key.classname_) {
-      delete[] classname_;
+  delete[] classname_;
+  if (key.classname_) {
       classname_ = ::strcpy(new char[strlen(key.classname_)+1],key.classname_);
+    }
+  else {
+      classname_ = 0;
     }
   return *this;
 }

@@ -26,6 +26,7 @@
 //
 
 #include <iostream.h>
+#include <stdlib.h>
 
 //
 // this is called by some GNU generated files.  only make it if we're not

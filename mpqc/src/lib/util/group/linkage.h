@@ -68,6 +68,11 @@ const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
     const ClassDesc &group_force_link_f_ = MPI2MemoryGrp::class_desc_;
 #endif
 
+#if defined(HAVE_MPI)
+#   include <util/group/memmtmpi.h>
+    const ClassDesc &group_force_link_g_ = MTMPIMemoryGrp::class_desc_;
+#endif
+
 #endif /* __PIC__ */
 
 

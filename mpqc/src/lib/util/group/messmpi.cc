@@ -345,7 +345,16 @@ REDUCEMEMBER(short, short, MPI_SHORT)
 REDUCEMEMBER(long, long, MPI_LONG)
 REDUCEMEMBER(char, char, MPI_CHAR)
 REDUCEMEMBER(uchar, unsigned char, MPI_UNSIGNED_CHAR)
+#ifdef MPI_SIGNED_CHAR
 REDUCEMEMBER(schar, signed char, MPI_SIGNED_CHAR)
+#else
+void
+MPIMessageGrp::reduce(signed char* d, int n, GrpReduce<signed char>& r,
+                      signed char*scratch, int target)
+{
+  MessageGrp::reduce(d,n,r,scratch,target);
+}
+#endif
 
 void
 MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)

@@ -1,0 +1,65 @@
+@c -*-texinfo-*-
+@node The StateOut Class, , , The State Library
+@section The StateOut Class
+@clindex StateOut
+
+The @code{StateOut} class provides the output operations needed
+by the member functions of @code{SavableState}.  It also keeps track
+of pointers to data so that two references to the same piece of data do
+not result in that data being sent to the output device two times.
+
+The @code{StateOut} class has the following interface:
+
+@table @code
+@item virtual void put(char)
+@itemx virtual void put(int)
+@itemx virtual void put(float)
+@itemx virtual void put(double)
+@itemx virtual void put(char*,int)
+@itemx virtual void put(int*,int)
+@itemx virtual void put(float*,int)
+@itemx virtual void put(double*,int)
+The @code{Client::save_data_state} member uses
+these functions to save information about the state of the
+object.  Most frequently, this will involve giving the
+data members of @code{Client} as arguments to @code{put}.
+
+The member functions taking pointer and integer arguments
+save a vector of the specified integer length of the
+appropiate type.  Additionally, the address of the data is
+kept in a table, so additional references to the data will
+not result in duplicated data being save.  Also, the restored
+@code{Client} object will contain the duplicated references
+as they appeared in the original.
+
+@item virtual void putstring(char*)
+This is like @code{put} except the length of the @code{char}
+array is determined by interpreting the character array as
+a character string.
+
+@item virtual void put(SavableState&)
+To save an object with parent @code{SavableState} use this member.
+Only objects which are not pointers and thus can not be
+polymorphic can be saved with this method.  Thus, @code{X*x;}
+@code{put(*X);} is incorrect.
+
+@item virtual void put(SavableState*)
+Pointers to objects are saved with this method.  Pointers to
+C-style arrays of objects are not supported.
+
+@item virtual void put(ClassDesc*)
+This member saves the state of @code{ClassDesc}.  It should
+not be necessary for the @code{Client} to call this.
+
+@item virtual int putpointer(void*)
+This will prepare @code{StateOut} to output a pointer to data.
+It first checks to see if the data has already been saved.
+If it has, then a reference to this data is saved and 1 is returned.
+Otherwise, 0 is returned and the class must continue with the save
+of the data referenced by this pointer.
+@end table
+
+Implementations of the @code{StateOut} class have been realized in
+the @code{StateOutFileBin} and @code{StateOutFileText} classes which
+save the date in files in binary and textual formats, respectively.
+

@@ -195,6 +195,7 @@ class IntMolecularCoor: public MolecularCoor
     double symmetry_tolerance_; // tol used to find coors with tot. sym. comp.
     double simple_tolerance_; // tol used to see if a simple is included
     double coordinate_tolerance_; // tol used to see if a coor is included
+    double cartesian_tolerance_;  // tol used in intco->cart transformation
     double scale_bonds_; // scale factor for bonds
     double scale_bends_; // scale factor for bends
     double scale_tors_;  // scale factor for tors

@@ -75,6 +75,7 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   symmetry_tolerance_(1.0e-5),
   simple_tolerance_(1.0e-3),
   coordinate_tolerance_(1.0e-7),
+  cartesian_tolerance_(1.0e-12),
   scale_bonds_(1.0),
   scale_bends_(1.0),
   scale_tors_(1.0),
@@ -103,6 +104,7 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
   symmetry_tolerance_(1.0e-5),
   simple_tolerance_(1.0e-3),
   coordinate_tolerance_(1.0e-7),
+  cartesian_tolerance_(1.0e-12),
   scale_bonds_(1.0),
   scale_bends_(1.0),
   scale_tors_(1.0),
@@ -160,6 +162,8 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
   if (keyval->error() == KeyVal::OK) simple_tolerance_ = tmp;
   tmp = keyval->doublevalue("coordinate_tolerance");
   if (keyval->error() == KeyVal::OK) coordinate_tolerance_ = tmp;
+  tmp = keyval->doublevalue("cartesian_tolerance");
+  if (keyval->error() == KeyVal::OK) cartesian_tolerance_ = tmp;
   
   init();
 }
@@ -197,6 +201,7 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
   s.get(simple_tolerance_);
   s.get(symmetry_tolerance_);
   s.get(coordinate_tolerance_);
+  s.get(cartesian_tolerance_);
 
   // it shouldn't be necessary to call form_coordinates here
   //form_coordinates();
@@ -562,6 +567,7 @@ IntMolecularCoor::save_data_state(StateOut&s)
   s.put(simple_tolerance_);
   s.put(symmetry_tolerance_);
   s.put(coordinate_tolerance_);
+  s.put(cartesian_tolerance_);
 }
 
 RefSCDimension
@@ -577,9 +583,9 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
   Molecule& molecule = *(molecule_.pointer());
 
   // convergence parameters
-  const int maxstep = 20;
+  const int maxstep = 100;
   // need to convergence tightly in case a tight optimization is being run
-  const double cartesian_tolerance = 1.0e-12;
+  // const double cartesian_tolerance = 1.0e-12;
   // don't bother updating the bmatrix when the error is less than this
   const double update_tolerance = 1.0e-6;
 
@@ -605,7 +611,7 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
       RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
       RefSCElementOp op = maxabs;
       displacement.element_op(op);
-      if (maxabs->result() < cartesian_tolerance) {
+      if (maxabs->result() < cartesian_tolerance_) {
           return;
         }
 

@@ -225,6 +225,12 @@ matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
   g.i().print("g.i()");
   (g * g.i()).print("g * g.i()");
 
+#ifndef NO_SVD
+  g.gi().print("g.gi()");
+  (g * g.gi()).print("g * g.gi()");
+  (g.gi() * g).print("g.gi() * g");
+#endif
+
   RefSCVector v(d3,kit);
   for (i=0; i<d3.n(); i++) {
       v(i) = 1.0/(i+1);
@@ -240,6 +246,12 @@ matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
   va.print("Vector va");
   wa.print("Vector wa");
 
+#ifndef NO_SVD
+  ma.gi().print("ma.gi()");
+  (ma * ma.gi()).print("ma * ma.gi()");
+  (ma.gi() * ma).print("ma.gi() * ma");
+#endif
+
   RefSCVector wb(d1,kit);
   RefSCMatrix mb(d3,d1,kit);
   randomize(mb);
@@ -248,6 +260,12 @@ matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
   ma.print("Matrix mb");
   va.print("Vector vb");
   wa.print("Vector wb");
+
+#ifndef NO_SVD
+  mb.gi().print("mb.gi()");
+  (mb * mb.gi()).print("mb * mb.gi()");
+  (mb.gi() * mb).print("mb.gi() * mb");
+#endif
 
   RefSymmSCMatrix bmbt(d3,kit);
   RefSCMatrix redundant_ortho(d2,d3,kit);

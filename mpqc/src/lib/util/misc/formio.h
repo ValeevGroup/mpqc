@@ -56,7 +56,7 @@ class SCFormIO {
     static long getverbose(ios&o);
     static void setindent(ios&o, long column);
     static long getindent(ios&o);
-    static void set_printnode(int);
+    static int  set_printnode(int);
     static void set_debug(int);
     static void init_mp(int me);
 

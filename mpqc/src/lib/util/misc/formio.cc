@@ -76,10 +76,12 @@ SCFormIO::default_basename()
   return default_basename_;
 }
 
-void
+int
 SCFormIO::set_printnode(int n)
 {
+  int r = node_to_print_;
   node_to_print_ = n;
+  return r;
 }
 
 void

@@ -74,6 +74,7 @@ SphericalTransform::SphericalTransform(int l)
     }
   else if (l==3) {
 #if 0
+      // orthonormal functions
       add(0,0,3,  2.0 * sqrt(0.25), i);
       add(2,0,1, -3.0 * sqrt(0.25), i);
       add(0,2,1, -3.0 * sqrt(0.25), i);
@@ -97,6 +98,8 @@ SphericalTransform::SphericalTransform(int l)
       add(0,3,0,  1.0 * sqrt(0.625), i);
       add(2,1,0, -3.0 * sqrt(0.625), i);
 #else
+      // unnormalized and nonorthogonal
+      // the pure to cartesian transform matrix is orthogonal, however
       add(0,0,3,  2.0, i);
       add(2,0,1, -3.0, i);
       add(0,2,1, -3.0, i);
@@ -123,6 +126,7 @@ SphericalTransform::SphericalTransform(int l)
     }
   else if (l==4) {
 #if 0
+      // orthonormal functions
       add(0,0,4,  8.0 * sqrt(1.0/64.0), i);
       add(4,0,0,  3.0 * sqrt(1.0/64.0), i);
       add(0,4,0,  3.0 * sqrt(1.0/64.0), i);
@@ -160,6 +164,8 @@ SphericalTransform::SphericalTransform(int l)
       add(3,1,0,  1.0 * sqrt(8.75), i);
       add(1,3,0, -1.0 * sqrt(8.75), i);
 #else
+      // unnormalized and nonorthogonal
+      // the pure to cartesian transform matrix is orthogonal, however
       add(0,0,4,  8.0, i);
       add(4,0,0,  3.0 + 15.0/19.0, i);
       add(0,4,0,  3.0 + 15.0/19.0, i);

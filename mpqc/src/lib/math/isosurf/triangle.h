@@ -10,61 +10,62 @@
 
 class Triangle: public VRefCount {
   protected:
-    unsigned int _orientation[3];
+    // these break gcc 2.5.8
+    //unsigned int _order:5;
+    //unsigned int _orientation0:1;
+    //unsigned int _orientation1:1;
+    //unsigned int _orientation2:1;
+    //unsigned char _order;
+    //unsigned char _orientation0;
+    //unsigned char _orientation1;
+    //unsigned char _orientation2;
+    unsigned int _order;
+    unsigned int _orientation0;
+    unsigned int _orientation1;
+    unsigned int _orientation2;
     RefEdge _edges[3];
-    RefSCVector _norm;
+    RefVertex *_vertices;
   public:
+    enum {max_order = 10};
+
     Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
              unsigned int orient0 = 0);
     RefEdge edge(int i) { return _edges[i]; };
     int contains(const RefEdge&) const;
-    unsigned int orientation(int i) const { return _orientation[i]; }
+    unsigned int orientation(int i) const
+    {
+      return i==0?_orientation0:i==1?_orientation1:_orientation2;
+    }
     unsigned int orientation(const RefEdge&) const;
-    virtual ~Triangle();
+    ~Triangle();
     void add_edges(SetRefEdge&);
     void add_vertices(SetRefVertex&);
 
     // returns the surface area element
     // 0<=r<=1, 0<=s<=1, 0<=r+s<=1
-    // RefVertex is the intepolated vertex (both point and gradient)
-    virtual double interpolate(double r,double s,RefVertex&v);
-    // computes the surface normal
-    virtual void normal(double r,double s,const RefSCVector&v);
+    // RefVertex is the intepolated vertex (both point and normal)
+    double interpolate(double r,double s,const RefVertex&v);
 
-    // returns a vertex in the triangle
-    // i = 0 is the (0,0) vertex
-    // i = 1 is the (r=0,s=1) vertex
-    // i = 2 is the (r=1,s=0) vertex
+    // returns a corner vertex from the triangle
+    // i = 0 is the (0,0) vertex (or L1 = 1, L2 = 0, L3 = 0)
+    // i = 1 is the (r=1,s=0) vertex (or L1 = 0, L2 = 1, L3 = 0)
+    // i = 2 is the (r=0,s=1) vertex (or L1 = 0, L2 = 0, L3 = 1)
     RefVertex vertex(int i);
 
-    virtual double area();
+    double flat_area();
 
     // flip the orientation
     void flip();
+
+    unsigned int order() const { return _order; }
+
+    void set_order(int order, const RefVolume&vol,double isovalue);
 };
 
 REF_dec(Triangle);
 ARRAY_dec(RefTriangle);
 SET_dec(RefTriangle);
 ARRAYSET_dec(RefTriangle);
-
-// 10 vertex triangle
-class Triangle10: public Triangle {
-  protected:
-    RefVertex _vertices[10];
-  public:
-    Triangle10(const RefEdge4& v1, const RefEdge4& v2, const RefEdge4& v3,
-               const RefVolume& vol,
-               double isovalue, unsigned int orientation0 = 0);
-    virtual ~Triangle10();
-    double interpolate(double r,double s,RefVertex&v);
-    double area();
-};
-
-REF_dec(Triangle10);
-ARRAY_dec(RefTriangle10);
-SET_dec(RefTriangle10);
-ARRAYSET_dec(RefTriangle10);
 
 class TriangleIntegrator: public DescribedClass {
 #   define CLASSNAME TriangleIntegrator

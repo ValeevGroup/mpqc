@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <math/scmat/vector3.h>
 #include <math/isosurf/isosurf.h>
 #include <math/isosurf/implicit.h>
 #include <math/isosurf/vtsRAVLMap.h>
@@ -113,7 +114,22 @@ ImplicitSurfacePolygonizer::isosurface(double value,
           RefSCVector tmp(_volume->dimension());
           norm.assign(0.0);
           for (Pix J = triangles.first(); J; triangles.next(J)) {
-              triangles(J)->normal(0.5, 0.5, tmp);
+              RefTriangle t(triangles(J));
+              // compute the normal to the surface
+              // (using flat triangles)
+              SCVector3 BA = t->vertex(1)->point() - t->vertex(0)->point();
+              SCVector3 CA = t->vertex(2)->point() - t->vertex(0)->point();
+              SCVector3 N = BA.cross(CA);
+              double n = N.norm();
+              if (n < 1.0e-15) {
+                  tmp.assign(0.0);
+                }
+              else {
+                  n = 1.0/n;
+                  for (int i=0; i<3; i++) {
+                      tmp[i] = - N[i]*n;
+                    }
+                }
               norm = norm + tmp;
             }
           norm.normalize();

@@ -14,14 +14,34 @@ SET_def(RefEdge);
 ARRAYSET_def(RefEdge);
 ARRAY_def(ArraysetRefEdge);
 
-Edge::~Edge()
+Edge::Edge(const RefVertex &p1,
+     const RefVertex &p2,
+     const RefVertex &p3)
 {
+  _order = 2;
+  _vertices = new RefVertex[3];
+  _vertices[0]=p1; _vertices[1]=p2; _vertices[2]=p3;
 }
 
-double Edge::length()
+Edge::Edge(const RefVertex &p1,
+     const RefVertex &p2,
+     const RefVertex &p3,
+     const RefVertex &p4)
 {
-  RefSCVector A(_vertices[0]->point());
-  RefSCVector B(_vertices[1]->point());
+  _order = 3;
+  _vertices = new RefVertex[4];
+  _vertices[0]=p1; _vertices[1]=p2; _vertices[2]=p3; _vertices[3]=p4;
+}
+
+Edge::~Edge()
+{
+  delete[] _vertices;
+}
+
+double Edge::straight_length()
+{
+  RefSCVector A(vertex(0)->point());
+  RefSCVector B(vertex(1)->point());
   RefSCVector BA = B - A;
   return sqrt(BA.dot(BA));
 }
@@ -29,62 +49,42 @@ double Edge::length()
 void Edge::add_vertices(SetRefVertex&set)
 {
   set.add(_vertices[0]);
-  set.add(_vertices[1]);
+  set.add(_vertices[_order]);
 }
 
-/////////////////////////////////////////////////////////////////////////
-// Edge4
-
-REF_def(Edge4);
-ARRAY_def(RefEdge4);
-SET_def(RefEdge4);
-ARRAYSET_def(RefEdge4);
-ARRAY_def(ArraysetRefEdge4);
-
-Edge4::~Edge4()
+void
+Edge::set_order(int order, const RefVolume&vol,double isovalue)
 {
-}
+  RefVertex *newvertices = new RefVertex[order+1];
+  newvertices[0] = vertex(0);
+  newvertices[order] = vertex(1);
+  delete[] _vertices;
+  _vertices = newvertices;
+  _order = order;
 
-Edge4::Edge4(RefVertex p1,RefVertex p2,const RefVolume&vol,double isovalue):
-  Edge(p1,p2)
-{
-  //// find the initial guess for the interior vertices
-  // Note: interior vertex 0 is next to vertex 0
-  RefVertex p[2];
-  p[0] = p1;
-  p[1] = p2;
   RefSCVector pv[2];
   RefSCVector norm[2];
 
   int i;
   for (i=0; i<2; i++) {
-      pv[i] = p[i]->point();
-      norm[i] = p[i]->normal();
+      pv[i] = vertex(i)->point();
+      norm[i] = vertex(i)->normal();
     }
 
-  for (i=0; i<2; i++) {
-      RefSCVector interpv;
-      interpv = ((2.0*pv[i])+pv[(i==1)?0:1])*(1.0/3.0);
+  for (i=1; i<_order; i++) {
+      double I = (1.0*i)/order;
+      double J = (1.0*(_order - i))/order;
+      RefSCVector interpv = I * pv[0] + J * pv[1];
       RefSCVector start(interpv.dim());
       start.assign(interpv);
-      RefSCVector interpnorm;
-      interpnorm = ((2.0*norm[i])+norm[(i==1)?0:1])*(1.0/3.0);
+      RefSCVector interpnorm = I * norm[0] + J * norm[1];
       RefSCVector newpoint = vol->solve(start,interpnorm,isovalue);
       vol->set_x(newpoint);
       if (vol->gradient_implemented()) {
           interpnorm = vol->gradient().copy();
           interpnorm.normalize();
         }
-      _interiorvertices[i] = new Vertex(newpoint,interpnorm);
+      _vertices[i] = new Vertex(newpoint,interpnorm);
     }
 
-}
-
-// Returns a length assuming linearity for now.
-double
-Edge4::length()
-{
-  //fprintf(stderr,"Edge4::length(): not implemented\n");
-  //abort();
-  return Edge::length();
 }

@@ -42,7 +42,10 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/isosurf.so
 endif
 
-isotest: isotest.o isosurf.a util/options/liboptions.a \
+isotest.o: isotest.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+isotest: isotest.o \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o isotest $^ $(SYSLIBS)
 

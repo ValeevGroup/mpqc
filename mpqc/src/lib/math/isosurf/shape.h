@@ -20,6 +20,7 @@ class Shape: public Volume {
   public:
     
     Shape();
+    Shape(const RefKeyVal&keyval);
     virtual double distance_to_surface(const SCVector3&r,
                                        double*grad=0) const = 0;
     virtual int is_outside(const SCVector3&r) const;
@@ -37,13 +38,15 @@ ARRAYSET_dec(RefShape);
 
 class SphereShape: public Shape {
 #   define CLASSNAME SphereShape
+#   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
-#   include <util/class/classda.h>
+#   include <util/class/classd.h>
   private:
     SCVector3 _origin;
     double _radius;
   public:
     SphereShape(const SCVector3&,double);
+    SphereShape(const RefKeyVal&);
     SphereShape(const SphereShape&);
     ~SphereShape();
     void boundingbox(double minvalue, double maxvalue,

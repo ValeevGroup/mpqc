@@ -8,6 +8,7 @@ extern "C" {
 # include <math.h>
 };
 
+#include <util/keyval/keyval.h>
 #include <math/scmat/vector3.h>
 #include "volume.h"
 
@@ -28,6 +29,13 @@ Volume::Volume(const RefSCDimension& dim):
   NLP2(dim),
   _interp_acc(1.0e-6)
 {
+}
+
+Volume::Volume(const RefKeyVal&keyval):
+  NLP2(keyval)
+{
+  _interp_acc = keyval->doublevalue("interpolation_accuracy");
+  if (keyval->error() != KeyVal::OK) _interp_acc = 1.0e-6;
 }
 
 Volume::~Volume()

@@ -84,7 +84,7 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
           // find the heights of the vertices in tri
           double l[3], l2[3], h[3];
           for (j=0; j<3; j++) {
-              l[j] = tri->edge(j)->length();
+              l[j] = tri->edge(j)->straight_length();
               if (l[j] <= 0.0) {
                   fprintf(stderr,"TriangulatedSurface::"
                           "remove_slender_triangles: bad edge length\n");

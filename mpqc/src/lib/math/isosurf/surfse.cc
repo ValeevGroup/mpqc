@@ -70,7 +70,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
   
       for (I = _edges.first(); I; _edges.next(I)) {
           RefEdge edge = _edges(I);
-          double length = edge->length();
+          double length = edge->straight_length();
           if (length < length_cutoff) {
               RefTriangleAVLSet connected_triangles;
               // = operator here causes problems
@@ -81,9 +81,9 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
                    J;
                    connected_triangles.next(J)) {
                   RefTriangle tri = connected_triangles(J);
-                  if (tri->edge(0)->length() < length
-                      ||tri->edge(1)->length() < length
-                      ||tri->edge(2)->length() < length
+                  if (tri->edge(0)->straight_length() < length
+                      ||tri->edge(1)->straight_length() < length
+                      ||tri->edge(2)->straight_length() < length
                       ||deleted_triangles.contains(tri)) {
                       skip = 1;
                       break;

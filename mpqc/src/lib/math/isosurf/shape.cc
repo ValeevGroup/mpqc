@@ -7,6 +7,7 @@ extern "C" {
 # include <math.h>
   }
 
+#include <util/keyval/keyval.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/local.h>
 #include "shape.h"
@@ -56,6 +57,11 @@ ARRAYSET_def(RefShape);
 
 Shape::Shape():
   Volume(new LocalSCDimension(3))
+{
+}
+
+Shape::Shape(const RefKeyVal& keyval):
+  Volume(keyval)
 {
 }
 
@@ -174,8 +180,9 @@ Shape::value_implemented()
 
 #define CLASSNAME SphereShape
 #define PARENTS public Shape
+#define HAVE_KEYVAL_CTOR
 #include <util/state/statei.h>
-#include <util/class/classia.h>
+#include <util/class/classi.h>
 void *
 SphereShape::_castdown(const ClassDesc*cd)
 {
@@ -193,6 +200,12 @@ SphereShape::SphereShape(const SCVector3&o,double r):
 SphereShape::SphereShape(const SphereShape&s):
   _origin(s._origin),
   _radius(s._radius)
+{
+}
+
+SphereShape::SphereShape(const RefKeyVal& keyval):
+  _origin(new PrefixKeyVal("origin",keyval)),
+  _radius(keyval->doublevalue("radius"))
 {
 }
 

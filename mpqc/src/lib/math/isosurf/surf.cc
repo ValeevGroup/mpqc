@@ -238,17 +238,17 @@ TriangulatedSurface::compute_values(RefVolume&vol)
 }
 
 double
-TriangulatedSurface::area()
+TriangulatedSurface::flat_area()
 {
   double result = 0.0;
   for (Pix i=_triangles.first(); i; _triangles.next(i)) {
-      result += _triangles(i)->area();
+      result += _triangles(i)->flat_area();
     }
   return result;
 }
 
 double
-TriangulatedSurface::volume()
+TriangulatedSurface::flat_volume()
 {
   double result = 0.0;
   for (int i=0; i<_triangles.length(); i++) {
@@ -310,6 +310,27 @@ TriangulatedSurface::volume()
   // opposite in sign to the direction assumed.  Flip the sign
   // to fix.
   return fabs(result);
+}
+
+double
+TriangulatedSurface::area()
+{
+  double area = 0.0;
+  TriangulatedSurfaceIntegrator triint(this);
+  for (triint = 0; triint.update(); triint++) {
+      area += triint.w();
+    }
+  return area;
+}
+
+double
+TriangulatedSurface::volume()
+{
+  if (ntriangle() && triangle(0)->order() > 1) {
+      fprintf(stderr,"TriangulatedSurface::volume(): WARNING: "
+              "computing volume from flat triangles\n");
+    }
+  return flat_volume();
 }
 
 void
@@ -590,102 +611,6 @@ TriangulatedSurface::newTriangle(const RefEdge& e0,
 }
 
 //////////////////////////////////////////////////////////////////////
-// TriangulatedSurface10
-
-#define CLASSNAME TriangulatedSurface10
-#define PARENTS public TriangulatedSurface
-#define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-TriangulatedSurface10::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = TriangulatedSurface::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-TriangulatedSurface10::TriangulatedSurface10(const RefVolume&vol,
-                                             double isovalue):
-  _vol(vol),
-  _isovalue(isovalue)
-{
-  // improve the integrator
-  set_integrator(new GaussTriangleIntegrator(7));
-}
-
-TriangulatedSurface10::TriangulatedSurface10(const RefKeyVal& keyval):
-  TriangulatedSurface(keyval)
-{
-  _vol = keyval->describedclassvalue("volume");
-  _isovalue = keyval->doublevalue("value");
-
-  // If an integrator was not specified in the input, then choose
-  // a better one than the TriangulatedSurface default.
-  if (!keyval->exists("integrator")) {
-      set_integrator(new GaussTriangleIntegrator(7));
-    }
-}
-
-TriangulatedSurface10::~TriangulatedSurface10()
-{
-}
-
-double
-TriangulatedSurface10::area()
-{
-  TriangulatedSurfaceIntegrator tsi(this);
-
-  double area = 0.0;
-  for (tsi = 0; tsi.update(); tsi++) {
-      area += tsi.w();
-    }
-  
-  return area;
-}
-
-double
-TriangulatedSurface10::volume()
-{
-  printf("TriangulatedSurface10::volume:\n");
-  printf("NOTE: approximate values are used for the interpolated normals\n");
-
-  TriangulatedSurfaceIntegrator tsi(this);
-  RefSCVector norm(_vol->dimension());
-
-  double volume = 0.0;
-  RefVertex current = tsi.current();
-  for (tsi = 0; tsi.update(); tsi++) {
-      tsi.normal(norm);
-      volume += tsi.w() * norm[0] * current->point()[0];
-    }
-  
-  // If the volume is negative, then the surface gradients were
-  // opposite in sign to the direction assumed.  Flip the sign
-  // to fix.
-  return fabs(volume);
-}
-
-Edge*
-TriangulatedSurface10::newEdge(const RefVertex& v0, const RefVertex& v1) const
-{
-  return new Edge4(v0,v1,_vol,_isovalue);
-}
-
-Triangle*
-TriangulatedSurface10::newTriangle(const RefEdge& e0,
-                                   const RefEdge& e1,
-                                   const RefEdge& e2,
-                                   int orientation) const
-{
-  // by construction the edges should be edge4's
-  Edge4* e40 = (Edge4*) e0.pointer();
-  Edge4* e41 = (Edge4*) e1.pointer();
-  Edge4* e42 = (Edge4*) e2.pointer();
-  return new Triangle10(e40,e41,e42,_vol,_isovalue,orientation);
-}
-
-//////////////////////////////////////////////////////////////////////
 // TriangulatedSurfaceIntegrator
 
 TriangulatedSurfaceIntegrator::
@@ -773,12 +698,6 @@ TriangulatedSurfaceIntegrator::update()
 }
 
 void
-TriangulatedSurfaceIntegrator::normal(const RefSCVector&n) const
-{
-  _ts->triangle(_itri)->normal(_r,_s,n);
-}
-
-void
 TriangulatedSurfaceIntegrator::
   operator ++()
 {
@@ -805,7 +724,7 @@ TriangulatedSurfaceIntegrator::
 // TriangulatedImplicitSurface
 
 #define CLASSNAME TriangulatedImplicitSurface
-#define PARENTS public DescribedClass
+#define PARENTS public TriangulatedSurface
 #define HAVE_KEYVAL_CTOR
 //#include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -813,12 +732,13 @@ void *
 TriangulatedImplicitSurface::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
+  casts[0] = TriangulatedSurface::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
 TriangulatedImplicitSurface::
-TriangulatedImplicitSurface(const RefKeyVal&keyval)
+TriangulatedImplicitSurface(const RefKeyVal&keyval):
+  TriangulatedSurface(keyval)
 {
   vol_ = keyval->describedclassvalue("volume");
   if (keyval->error() != KeyVal::OK) {
@@ -826,9 +746,6 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval)
               "requires \"volume\"\n");
       abort();
     }
-
-  surf_ = keyval->describedclassvalue("surface");
-  if (keyval->error() != KeyVal::OK) surf_ = new TriangulatedSurface;
 
   isovalue_ = keyval->doublevalue("value");
   if (keyval->error() != KeyVal::OK) isovalue_ = 0.0;
@@ -847,6 +764,12 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval)
 
   resolution_ = keyval->doublevalue("resolution");
   if (keyval->error() != KeyVal::OK) resolution_ = 1.0;
+
+  order_ = keyval->intvalue("order");
+  if (keyval->error() != KeyVal::OK) order_ = 1;
+
+  int initialize = keyval->booleanvalue("initialize");
+  if (initialize) init();
 }
 
 void
@@ -855,15 +778,26 @@ TriangulatedImplicitSurface::init()
   ImplicitSurfacePolygonizer isogen(vol_);
   isogen.set_resolution(resolution_);
 
-  isogen.isosurface(isovalue_,*surf_.pointer());
-  surf_->fix_orientation();
+  isogen.isosurface(isovalue_,*this);
+  fix_orientation();
   if (remove_short_edges_) {
-      surf_->remove_short_edges(short_edge_factor_*resolution_);
-      surf_->fix_orientation();
+      remove_short_edges(short_edge_factor_*resolution_);
+      fix_orientation();
     }
   if (remove_slender_triangles_) {
-      surf_->remove_slender_triangles(slender_triangle_factor_);
-      surf_->fix_orientation();
+      remove_slender_triangles(slender_triangle_factor_);
+      fix_orientation();
+    }
+
+  // see if a higher order approximation to the surface is required
+  if (order_ > 1) {
+      int i;
+      for (i=0; i<nedge(); i++) {
+          edge(i)->set_order(order_, vol_, isovalue_);
+        }
+      for (i=0; i<ntriangle(); i++) {
+          triangle(i)->set_order(order_, vol_, isovalue_);
+        }
     }
 }
 

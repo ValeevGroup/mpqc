@@ -11,12 +11,12 @@ extern "C" {
 #include <sys/stat.h>
 #include <tmpl.h>
 #include <util/bio/libbio.h>
+#include <util/keyval/ipv2c.h>
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 #include <util/misc/libmisc.h>
 
 #if defined(I860) || defined(SGI)
-int led(int);
 void bzero(void*,int);
 #endif
 };
@@ -29,12 +29,13 @@ void bzero(void*,int);
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 
-#define ioff(i) ((i)*((i)+1)/2)
-#define IOFF(i,j) ((i)>(j)) ? ioff((i))+(j) : ioff((j))+(i)
+////////////////////////////////////////////////////////////////////////////
 
+static void init_dmt(centers_t*,scf_struct_t*,sym_struct_t*);
 static void clean_and_exit(int);
 static void mkcostvec(centers_t*, sym_struct_t*, dmt_cost_t*);
 
+///////////////////////////////////////////////////////////////////////////
 int host;
 char* argv0;
 int MPSCF::active = 0;
@@ -53,313 +54,171 @@ MPSCF::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-// This grabs the molecule, computes the symmetry redundant centers,
-// sticks it back into the keyval input, and gives it to the base
-// class initializer.  The temporary keyvals created must be free'ed
-// by assigned nil to MPSCF_CTOR_hack_keyval.
-static RefKeyVal MPSCF_CTOR_hack_keyval;
-static KeyVal&
-MPSCF_CTOR_hack(KeyVal&keyval,
-                scf_struct_t *_scf_info,
-                sym_struct_t *_sym_info,
-                scf_irreps_t *_irreps,
-                centers_t *_centers,
-                FILE *outfile)
-{
-  RefMolecule uniq_molecule= keyval.describedclassvalue("molecule");
-  RefGaussianBasisSet gbs = keyval.describedclassvalue("basis");
-  centers_t *uniq_centers = gbs->convert_to_centers_t(uniq_molecule);
-  int errcod = scf_get_keyval_input(keyval,uniq_centers,
-                                    _scf_info,
-                                    _sym_info,
-                                    _irreps,
-                                    _centers,
-                                    outfile);
-  if(errcod != 0) {
-      fprintf(outfile,"trouble reading input\n");
-      clean_and_exit(host);
-    }
-  free_centers(uniq_centers);
-
-  // if the symmetry routines added atoms i've now got a huge mess
-  // to take care of.
-  if (uniq_molecule->natom() != _centers->n) {
-      RefMolecule molecule = new Molecule;
-      for (int i=0; i<_centers->n; i++) {
-          AtomicCenter ac(_centers->center[i].atom,
-                          _centers->center[i].r[0],
-                          _centers->center[i].r[1],
-                          _centers->center[i].r[2]
-              );
-          molecule->add_atom(i,ac);
-        }
-
-      // put the correct molecule in the input
-      AssignedKeyVal * assignedkeyval = new AssignedKeyVal;
-      assignedkeyval->assign("molecule",molecule);
-      MPSCF_CTOR_hack_keyval = new AggregateKeyVal(*assignedkeyval,keyval);
-
-      // the basis's molecule is also wrong, so fix it too
-      assignedkeyval->assign("basis:molecule",molecule);
-      // read in the bad basis so i can get its class descriptor
-      RefDescribedClass dc = keyval.describedclassvalue("basis");
-      // now create a good basis with a keyval that has the correct molecule
-      RefKeyVal pkv = new PrefixKeyVal("basis",*MPSCF_CTOR_hack_keyval);
-      dc = dc->class_desc()->create(*pkv);
-      pkv = 0;
-      assignedkeyval->assign("basis",dc);
-
-      // also fix coor's molecule (if coor exists)
-      if (keyval.exists("coor")) {
-          assignedkeyval->assign("coor:molecule",molecule);
-          // read in the bad coor so i can get its class descriptor
-          RefDescribedClass dc = keyval.describedclassvalue("coor");
-          // now create a good coor with a keyval that has the correct molecule
-          RefKeyVal pkv = new PrefixKeyVal("coor",*MPSCF_CTOR_hack_keyval);
-          dc = dc->class_desc()->create(*pkv);
-          pkv = 0;
-          assignedkeyval->assign("coor",dc);
-        }
-      return *MPSCF_CTOR_hack_keyval;
-    }
-  else {
-      return keyval;
-    }
-}
-
 MPSCF::MPSCF(KeyVal&keyval):
-  OneBodyWavefunction(MPSCF_CTOR_hack(keyval,
-                                      &scf_info,
-                                      &sym_info,
-                                      &irreps,
-                                      &centers,
-                                      stdout)),
+  OneBodyWavefunction(keyval),
   _exchange_energy(this),
   _eigenvectors(this),
   _scf(this)
 {
-  // get rid of the temporary keyval needed to initialize the base classes
-  MPSCF_CTOR_hack_keyval = 0;
+  RefGaussianBasisSet gbs = keyval.describedclassvalue("basis");
+  centers_t *tcenters = gbs->convert_to_centers_t(_mol);
 
-  // override the default thresholds
+  if (!tcenters) {
+    exit(3);
+  }
+
+  init_centers(&centers);
+  init_centers(&oldcenters);
+  assign_centers(&centers,tcenters);
+
+  free_centers(tcenters);
+
+  if (sym_struct_from_pg(_mol->point_group(),centers,sym_info) < 0) {
+    fprintf(stderr,"MPSCF::MPSCF(KeyVal&):  could not form sym_info\n");
+    exit(1);
+  }
+
+  if (scf_init_scf_struct_kv(keyval,centers,scf_info) < 0) {
+    fprintf(stderr,"MPSCF::MPSCF(KeyVal&):  could not form scf_info\n");
+    exit(1);
+  }
+
+ // override the default thresholds
   if (!keyval.exists("value_accuracy")) {
-      set_desired_value_accuracy(1.0e-10);
-    }
+    set_desired_value_accuracy(1.0e-10);
+  }
   if (!keyval.exists("gradient_accuracy")) {
-      set_desired_gradient_accuracy(1.0e-9);
-    }
+    set_desired_gradient_accuracy(1.0e-9);
+  }
   if (!keyval.exists("hessian_accuracy")) {
-      set_desired_hessian_accuracy(1.0e-8);
-    }
+    set_desired_hessian_accuracy(1.0e-8);
+  }
 
   // make sure only one MPSCF object exists
   if (active) {
-      fprintf(stderr,"only one MPSCF allowed\n");
-      abort();
-    }
+    fprintf(stderr,"only one MPSCF allowed\n");
+    abort();
+  }
   active = 1;
   
-  int i;
-  int errcod;
-  int nproc,me,top,ord,dir;
-  int localp;
-  int nshell,nshtr;
-  int throttle,geom_code=-1,sync_loop;
-  int size,count;
-  int *shellmap;
-  double energy;
-  dmt_cost_t* costvec;
-  int mp2;
-
-  char *filename="mpqc";
-  char **atom_labels;
-  char fockfile[512],fockofile[512],oldvecfile[512];
-  FILE *infile;
-
-  int restart;
-
-  struct stat stbuf;
-
-  double_matrix_t gradient;
-
-/* turn out the lights */
-
-#if defined(I860)
-  led(0);
-#endif
-
-/* some PICL emulators need argv0 */
+ // some PICL emulators need argv0
   argv0 = "bad news: argv0 not available -- MPSCF";
 
-/* get some info from the host program */
+ // get some info from the host program
+  int nproc,me,top,ord,dir;
 
   open0(&nproc,&me,&host);
   setarc0(&nproc,&top,&ord,&dir);
 
-/* initialize timing for mpqc */
-
+ // initialize timing for mpqc 
   tim_enter("mpqcnode");
   tim_enter("input");
 
-/* set up i/o. node 0 will do all the reading and pass what's needed on to
- * the other nodes 
- */
-
   outfile = stdout;
 
-  if(me==0) {
-      if(host0()!=0) {
-          fprintf(outfile,"\n  loaded from host program\n");
-        }
-      else {
-          fprintf(outfile,
-                  "\n      MPSCF: Massively Parallel Quantum Chemistry\n\n\n");
-          fprintf(outfile,"  loaded from workstation or SRM\n");
-        }
-      fprintf(outfile,"  Running on a %s with %d nodes.\n",
-              machine_type(),nproc);
-      fflush(outfile);
+  int throttle,sync_loop;
 
-      /* read input, and initialize various structs */
+  if (me == 0) {
 
-      localp = 0;
-      if (keyval.exists("local_P"))
-          localp = keyval.booleanvalue("local_P");
+    fprintf(outfile,
+              "\n      MPSCF: Massively Parallel Quantum Chemistry\n\n\n");
+    fprintf(outfile,"  Running on a %s with %d nodes.\n",machine_type(),nproc);
+    fflush(outfile);
 
-      throttle = 0;
-      if (keyval.exists("throttle")) throttle = keyval.intvalue("throttle");
+   // read input, and initialize various structs
 
-      sync_loop = 1;
-      if (keyval.exists("sync_loop")) sync_loop = keyval.intvalue("sync_loop");
+    node_timings = keyval.booleanvalue("node_timings");
 
-      node_timings=0;
-      if (keyval.exists("node_timings"))
-          node_timings = keyval.booleanvalue("node_timings");
+    throttle = keyval.intvalue("throttle");
 
-      if (keyval.exists("filename"))
-          filename = keyval.pcharvalue("filename");
+    sync_loop = keyval.intvalue("sync_loop");
+    if (keyval.error() != KeyVal::OK) sync_loop = 1;
 
-      save_vector=1;
-      if (keyval.exists("save_vector"))
-        save_vector = keyval.booleanvalue("save_vector");
+    save_vector = keyval.booleanvalue("save_vector");
+    if (keyval.error() != KeyVal::OK) save_vector=1;
 
-      restart=1;
-      if (keyval.exists("restart"))
-          restart = keyval.booleanvalue("restart");
+    fprintf(outfile,"\n  mpqc options:\n");
+    fprintf(outfile,"    node_timings       = %s\n",(node_timings)?"YES":"NO");
+    fprintf(outfile,"    throttle           = %d\n",throttle);
+    fprintf(outfile,"    sync_loop          = %d\n",sync_loop);
+    fprintf(outfile,"    save_vector        = %s\n",(save_vector)?"YES":"NO");
 
-      fprintf(outfile,"\n  mpqc options:\n");
-      fprintf(outfile,"    node_timings       = %s\n",(node_timings)?"YES":"NO");
-      fprintf(outfile,"    throttle           = %d\n",throttle);
-      fprintf(outfile,"    sync_loop          = %d\n",sync_loop);
-      fprintf(outfile,"    restart            = %s\n",(restart)?"YES":"NO");
-      fprintf(outfile,"    save_vector        = %s\n",(save_vector)?"YES":"NO");
-      sprintf(vecfile,"%s.scfvec",filename);
-      sprintf(oldvecfile,"%s.oldvec",filename);
-      sprintf(fockfile,"%s.fock",filename);
-      sprintf(fockofile,"%s.focko",filename);
+    sprintf(vecfile,"%s.scfvec",scf_info.fname);
 
-//       errcod = scf_get_input(&scf_info,&sym_info,&irreps,&centers,outfile);
-//       if(errcod != 0) {
-//           fprintf(outfile,"trouble reading input\n");
-//           clean_and_exit(host);
-//         }
-    }
+   // pretty print the scf struct
+    scf_print_options(outfile,scf_info);
+  }
 
   sgen_reset_bcast0();
 
   bcast0_scf_struct(&scf_info,0,0);
   bcast0_sym_struct(&sym_info,0,0);
   bcast0_centers(&centers,0,0);
-  bcast0_scf_irreps(&irreps,0,0);
 
-  bcast0(&restart,sizeof(int),mtype_get(),0);
   bcast0(&save_vector,sizeof(int),mtype_get(),0);
   bcast0(&throttle,sizeof(int),mtype_get(),0);
   bcast0(&sync_loop,sizeof(int),mtype_get(),0);
   bcast0(&node_timings,sizeof(int),mtype_get(),0);
-  bcast0(&localp,sizeof(int),mtype_get(),0);
 
-  if(me==0) size=strlen(vecfile)+1;
+  int size;
+  if (me==0) size=strlen(vecfile)+1;
   bcast0(&size,sizeof(int),mtype_get(),0);
   bcast0(vecfile,size,mtype_get(),0);
 
-  if(me==0) size=strlen(oldvecfile)+1;
-  bcast0(&size,sizeof(int),mtype_get(),0);
-  bcast0(oldvecfile,size,mtype_get(),0);
+ // if we're using a projected guess vector, then initialize oldcenters
+  if (scf_info.proj_vector) {
+    if (me==0) {
+      RefGaussianBasisSet gbs = keyval.describedclassvalue("pbasis");
+      tcenters = gbs->convert_to_centers_t(_mol);
 
-  if(me==0) size=strlen(fockfile)+1;
-  bcast0(&size,sizeof(int),mtype_get(),0);
-  bcast0(fockfile,size,mtype_get(),0);
+      assign_centers(&oldcenters,tcenters);
+      free_centers(tcenters);
 
-  if(me==0) size=strlen(fockofile)+1;
-  bcast0(&size,sizeof(int),mtype_get(),0);
-  bcast0(fockofile,size,mtype_get(),0);
+      int_normalize_centers(&oldcenters);
+    }
 
-/* initialize centers */
+    bcast0_centers(&oldcenters,0,0);
+  }
 
-  int_initialize_1e(0,0,&centers,&centers);
-  int_initialize_offsets1(&centers,&centers);
+ // initialize the dmt routines
+  init_dmt(&centers,&scf_info,&sym_info);
 
-/* initialize force and geometry routines */
+ // initialize force and geometry routines
+  if (me==0) fprintf(outfile,"\n");
+  if (scf_info.iopen)
+    dmt_force_osscf_keyval_init(&keyval,outfile);
+  else
+    dmt_force_csscf_keyval_init(&keyval,outfile);
 
-  if(me==0) fprintf(outfile,"\n");
-  if(scf_info.iopen) dmt_force_osscf_keyval_init(&keyval,outfile);
-  else dmt_force_csscf_keyval_init(&keyval,outfile);
-
-/* set up shell map for libdmt */
-
-  nshell=centers.nshell;
-  nshtr=nshell*(nshell+1)/2;
-
-  shellmap = (int *) malloc(sizeof(int)*nshell);
-  bzero(shellmap,sizeof(int)*nshell);
-
-  for(i=0; i < centers.nshell ; i++) shellmap[i] = INT_SH_NFUNC(&centers,i);
-
-  costvec = (dmt_cost_t*) malloc(sizeof(dmt_cost_t)*nshtr);
-  mkcostvec(&centers,&sym_info,costvec);
-  dmt_def_map2(scf_info.nbfao,centers.nshell,shellmap,costvec,0);
-  free(costvec);
-
-  free(shellmap);
-  if(me==0) printf("\n");
-  dmt_map_examine();
-
-  int_done_offsets1(&centers,&centers);
-  int_done_1e();
-
-/* set the throttle for libdmt loops */
-
+ // set the throttle for libdmt loops
   dmt_set_throttle(throttle);
 
-/* set the sync_loop for libdmt loops */
-
+ // set the sync_loop for libdmt loops
   dmt_set_sync_loop(sync_loop);
 
-/* allocate memory for vector and fock matrices */
+ // allocate memory for vector and fock matrices
 
-  SCF_VEC = dmt_create("scf vector",scf_info.nbfao,COLUMNS);
-  FOCK = dmt_create("fock matrix",scf_info.nbfao,SCATTERED);
-  if(scf_info.iopen)
-      FOCKO = dmt_create("open fock matrix",scf_info.nbfao,SCATTERED);
+  Scf_Vec = dmt_create("scf vector",scf_info.nbfao,COLUMNS);
+  Fock = dmt_create("fock matrix",scf_info.nbfao,SCATTERED);
+  if (scf_info.iopen)
+    FockO = dmt_create("open fock matrix",scf_info.nbfao,SCATTERED);
   else
-      FOCKO = dmt_nil();
+    FockO = dmt_nil();
 
-  if(mynode0() == 0 && save_vector)
+  if (mynode0() == 0 && save_vector)
       fprintf(outfile,"  scf vector will be written to file %s\n",vecfile);
 
-/* if restart, then read in old scf vector if it exists */
+ // if restart, then read in old scf vector if it exists
 
   FILE* test_vec = fopen(vecfile,"r");
-  if(test_vec && restart) {
-      fclose(test_vec);
-      dmt_read(vecfile,SCF_VEC);
-      if(me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
-      scf_info.restart=1;
-    }
-  else if (test_vec) {
-      fclose(test_vec);
-    }
+  if (test_vec && scf_info.restart) {
+    fclose(test_vec);
+    dmt_read(vecfile,Scf_Vec);
+    if(me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
+    scf_info.restart=1;
+  } else if (test_vec) {
+    fclose(test_vec);
+  }
 
   tim_exit("input");
   
@@ -459,14 +318,14 @@ MPSCF::compute()
       fprintf(outfile,"MPSCF: computing energy with integral cutoff 10^-%d"
               " and convergence 10^-%d\n",
               scf_info.intcut,scf_info.convergence);
-      errcod = scf_vector(&scf_info,&sym_info,&irreps,&centers,
-                          FOCK,FOCKO,SCF_VEC,outfile);
+      errcod = scf_vector(&scf_info,&sym_info,&centers,
+                          Fock,FockO,Scf_Vec,&oldcenters,outfile);
       if(errcod != 0) {
           fprintf(outfile,"trouble forming scf vector\n");
           clean_and_exit(host);
         }
 
-      if(save_vector) dmt_write(vecfile,SCF_VEC);
+      if(save_vector) dmt_write(vecfile,Scf_Vec);
 
       scf_info.restart=1;
       _scf.computed() = 1;
@@ -488,13 +347,13 @@ MPSCF::compute()
       fprintf(outfile,"MPSCF: computing gradient with cutoff 10^-%d\n",cutoff);
       if(!scf_info.iopen) {
           dmt_force_csscf_threshold_10(cutoff);
-          dmt_force_csscf(outfile,FOCK,SCF_VEC,
-                          &centers,&sym_info,irreps.ir[0].nclosed,&grad);
+          dmt_force_csscf(outfile,Fock,Scf_Vec,
+                          &centers,&sym_info,scf_info.nclosed,&grad);
         }
       else {
-          int ndoc=irreps.ir[0].nclosed;
-          int nsoc=irreps.ir[0].nopen;
-          dmt_force_osscf(outfile,FOCK,FOCKO,SCF_VEC,
+          int ndoc=scf_info.nclosed;
+          int nsoc=scf_info.nopen;
+          dmt_force_osscf(outfile,Fock,FockO,Scf_Vec,
                           &centers,&sym_info,ndoc,nsoc,&grad);
         }
       // convert the gradient to a SCVector
@@ -547,6 +406,11 @@ MPSCF::print(SCostream&o)
   o.flush();
 }
 
+///////////////////////////////////////////////////////////////////////////
+//
+//  static functions used to initialize mpscf
+//
+
 static void
 clean_and_exit(int host)
 {
@@ -579,7 +443,7 @@ mkcostvec(centers_t *centers,sym_struct_t *sym_info,dmt_cost_t *costvec)
   int nproc=numnodes0();
   int me=mynode0();
   double *intbuf;
-  extern signed char *Qvec;
+  extern signed char *scf_bnd_Qvec;
 
  /* free these up for now */
   int_done_offsets1(centers,centers);
@@ -611,7 +475,7 @@ mkcostvec(centers_t *centers,sym_struct_t *sym_info,dmt_cost_t *costvec)
 
       costvec[ij].i = i;
       costvec[ij].j = j;
-      costvec[ij].magnitude = (int) Qvec[ij];
+      costvec[ij].magnitude = (int) scf_bnd_Qvec[ij];
       costvec[ij].ami = ami;
       costvec[ij].amj = amj;
       costvec[ij].nconi = nconi;
@@ -628,4 +492,39 @@ mkcostvec(centers_t *centers,sym_struct_t *sym_info,dmt_cost_t *costvec)
   int_initialize_1e(0,0,centers,centers);
   int_initialize_offsets1(centers,centers);
   scf_done_bounds();
+}
+
+static void
+init_dmt(centers_t *centers, scf_struct_t *scf_info, sym_struct_t *sym_info)
+{
+ // initialize the centers
+  int_initialize_1e(0,0,centers,centers);
+  int_initialize_offsets1(centers,centers);
+
+ // set up shell map for libdmt
+  int nshell=centers->nshell;
+  int nshtr=nshell*(nshell+1)/2;
+
+  int *shellmap = new int[nshell];
+  bzero(shellmap,sizeof(int)*nshell);
+
+  for (int i=0; i < centers->nshell ; i++)
+    shellmap[i] = INT_SH_NFUNC(centers,i);
+
+  dmt_cost_t *costvec = (dmt_cost_t*) malloc(sizeof(dmt_cost_t)*nshtr);
+
+  if (!costvec) {
+    dmt_def_map2(scf_info->nbfao,centers->nshell,shellmap,costvec,1);
+  } else {
+    mkcostvec(centers,sym_info,costvec);
+    dmt_def_map2(scf_info->nbfao,centers->nshell,shellmap,costvec,0);
+    free(costvec);
   }
+
+  free(shellmap);
+  if (mynode0()==0) printf("\n");
+  dmt_map_examine();
+
+  int_done_offsets1(centers,centers);
+  int_done_1e();
+}

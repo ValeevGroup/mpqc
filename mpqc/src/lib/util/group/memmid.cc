@@ -140,10 +140,16 @@ MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
   if (debug_) printf("%d: MIDMemoryGrp KeyVal CTOR\n", me());
-  data_request_type_ = 113;
-  data_type_to_handler_ = 114;
-  data_type_from_handler_ = 115;
+  
   nsync_ = 0;
+
+  data_request_type_ = keyval->intvalue("request_type");
+  if (keyval->error() != KeyVal::OK) data_request_type_ = 113;
+  data_type_to_handler_ = keyval->intvalue("to_type");
+  if (keyval->error() != KeyVal::OK) data_type_to_handler_ = 114;
+  data_type_from_handler_ = keyval->intvalue("from_type");
+  if (keyval->error() != KeyVal::OK) data_type_from_handler_ = 115;
+
   use_acknowledgments_ = keyval->booleanvalue("ack");
   if (keyval->error() != KeyVal::OK) use_acknowledgments_ = 0;
   use_active_messages_ = keyval->booleanvalue("active");

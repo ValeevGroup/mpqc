@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.7  1994/09/01 18:42:24  cljanss
+% Revision 1.8  1994/09/24 01:45:08  cljanss
+% A few cleanups and made it work with cweave from cweb-3.1 and tex.
+%
+% Revision 1.7  1994/09/01  18:42:24  cljanss
 % Changed bool type to booln to avoid conflict with the C++ builtin 'bool'.
 %
 % Revision 1.6  1994/08/26  21:03:14  etseidl
@@ -92,11 +95,9 @@
 % add rcs stuff
 %
 %
-\documentstyle{web}
-\begin{document}
 \def\narrower{\advance\leftskip by 20pt \advance\rightskip by 20pt}
-\def\topofcontents{\begin{center}
-    {\titlefont {\ttitlefont dmt\_pack}: A loop-distributed matrix manager.}\\[4pt]
+\def\topofcontents{\centerline
+    {\titlefont {\ttitlefont dmt\_pack}: A loop-distributed matrix manager.}\\
    {\bf Michael E. Colvin}\\
    {\bf Charles Tong} \\
    {\bf Curtis L. Janssen}\\
@@ -106,36 +107,36 @@
    {\bf and}\\
    {\bf Edward T. Seidl}\\
    {\it National Institutes of Health}
-\end{center}\vfill}
+\vfill}
 
 
 \def\webtitle{\.{dmt\_pack}: A loop-distributed matrix manager.}
 
 \def\botofcontents{\vfill
-\center{\bf Disclaimer}
+%\centerline{\bf Disclaimer}
 
-\begin{quotation}
-
-Copyright \copyright\ 1991, Sandia Corporation. The U.S. Government retains
-a limited license in this software.
-
-The U.S. Government retains, in this software, a paid-up,
-nonexclusive, irrevocable worldwide license to reproduce, prepare
-derivative works, perform publicly and display publicly by or for the
-Government, including the right to distribute to other Government
-contractors. 
-
-Neither the United States, the U.S. Dept. of Energy, nor any of their
-employees, makes any warranty, express or implied, or assumes any
-legal liability or responsibility for the accuracy, completeness, or
-usefulness of any information, apparatus, product, or product
-disclosed, or represents that its use would not infringe privately
-owned rights. 
-
-Export Controlled. Not to be exported outside the U.S. and Canada
-without prior approval of the Bureau of Export Administration, U.S.
-Department of Commerce.
-\end{quotation}
+%\begin{quotation}
+%
+%Copyright \copyright\ 1991, Sandia Corporation. The U.S. Government retains
+%a limited license in this software.
+%
+%The U.S. Government retains, in this software, a paid-up,
+%nonexclusive, irrevocable worldwide license to reproduce, prepare
+%derivative works, perform publicly and display publicly by or for the
+%Government, including the right to distribute to other Government
+%contractors. 
+%
+%Neither the United States, the U.S. Dept. of Energy, nor any of their
+%employees, makes any warranty, express or implied, or assumes any
+%legal liability or responsibility for the accuracy, completeness, or
+%usefulness of any information, apparatus, product, or product
+%disclosed, or represents that its use would not infringe privately
+%owned rights. 
+%
+%Export Controlled. Not to be exported outside the U.S. and Canada
+%without prior approval of the Bureau of Export Administration, U.S.
+%Department of Commerce.
+%\end{quotation}
 }
 
 @* Introduction.  This is a package for the
@@ -1654,18 +1655,6 @@ if the row contributes.
   }
 }
 
-@ After we pass the columns (rows) of |in_mat| around the loop, we are
-obliged to remove out own rows from the message system.
-
-@<Remove the local rows of |in_mat| from the loop.@>=
-{
-  int nloc = dmt_nlocal(in_mat);
-  int i;
-  int ind;
-  double *block;
-  for (i = 0; i < nloc; i++)  dmt_next_cloop (&ind, &block);
-}
-
 @ This next routine converts from scattered blocks to columns.  The
 resulting column-distributed matrix will, of course, be symmetric.
 
@@ -1741,19 +1730,6 @@ re-do this to make it comprehensible $\ldots$
     }
   }
 }
-
-@ After sending the blocks of the scattered block matrix around the 
-loop, we must remove all of the messages initiated locally.
-
-@<Remove the locally produced blocks of |in_mat| from the loop.@>=
-{
-  int nloc = dmt_nlocal(in_mat);
-  int i;
-  int ind, jnd;
-  double *block;
-  for (i = 0; i < nloc; i++)  dmt_next_sloop (&ind, &jnd, &block);
-}
-
 
 @* Identifications of other processors.
  We'll need to keep up with the  number of processors and
@@ -2840,17 +2816,6 @@ for these diagonal blocks which are full.
   dmt_ngl_kill(loop);
 }
 
-
-@ We must flush the remaining messages from the loop.
-@<Remove local cells from  the loop.@>=
-{
-  int nl = dmt_nlocal (a);
-  int il;
-  for (il = 0; il < nl; il++) dmt_flush_next();
-}
-
-
-
 @ Diagonalize a matrix.
 
 @<Public higher level routines.@>=
@@ -3054,25 +3019,6 @@ sent back around to the owner.
   assert (j < diag_nlocal);
 }
 
-@ The columns of |vec| should have been passed all the way around the 
-loop now, and the next |nlocal| columns to be received locally from
-the loop should be the final versions of the columns to stored locally.
-Copy the columns from the loop, and store them locally.
-@<Remove columns of |vec| from loop.@>=
-{
-  int j;
-  int gind_loc, gind_loop;
-  double *col_loc, *col_loop;
-  int nl = dmt_nlocal (vec);
-  for (j = 0; j < nl; j++){
-    dmt_get_col(vec, j, &gind_loc, &col_loc);
-    dmt_next_cloop (&gind_loop, &col_loop);
-    assert (gind_loop == gind_loc);
-    dcopy (col_loc, col_loop, nbasis);
-  }
-}
-
-
 @* Nestable general loop routines.  These routines will hopefully
 provide all the support that is needed for any (reasonable)
 loop needs.  These are varargs functions, with a syntax
@@ -3080,17 +3026,16 @@ much like |printf| in the standard C library.
 One would call |dmt_ngl_create()| with a format string, followed
 by an arbitrary number of things to put on the loop. Legal
 format specifiers are (more to follow if necessary):
-\begin{itemize}
-\item[%m] Dmt matrix.
-\item[%mr] Read only dmt matrix.
-\item[%smr] Sparse dmt matrix.  Sparse data can only be read and not written.
-\item[%smrt] Sparse dmt matrix with threshold information.  Threshold information
+
+\item{|%m|} Dmt matrix.
+\item{|%mr|} Read only dmt matrix.
+\item{|%smr|} Sparse dmt matrix.  Sparse data can only be read and not written.
+\item{|%smrt|} Sparse dmt matrix with threshold information.  Threshold information
              is never updated.
-\item[%am] Array and dmt matrix.
-\item[%armr] Read only array and read only dmt matrix.
-\item[%sarmr] Sparse array and dmt matrix.
-\item[%sarmrt] Sparse array and dmt matrix with threshold information.
-\end{itemize}
+\item{|%am|} Array and dmt matrix.
+\item{|%armr|} Read only array and read only dmt matrix.
+\item{|%sarmr|} Sparse array and dmt matrix.
+\item{|%sarmrt|} Sparse array and dmt matrix with threshold information.
 
 All arrays are read only and all sparse data is read only.  I don't
 enforce this with |const| however, so it is up to the programmer to not
@@ -4023,7 +3968,7 @@ manipulation of sparse matrices.
  @<Sparse matrix initialization.@> @/
  @<Sparse matrix public routines.@> @/
 
-@ The smallest elements have $log_{10} \abs M_{ij} <=$
+@ The smallest elements have $log_{10} abs(M_{ij}) <=$
 |ELEMENTS_START| and are all grouped together.  The rest of the
 elements are grouped into the other |MAX_ELEMENTS|.
 
@@ -4065,7 +4010,7 @@ mdescr mat;
       size = isz * jsz;
       }
 
-    /* Increment the appropriate n_elements slot. */
+    /* Increment the appropriate $n_{elements}$ slot. */
     for (j=0; j<size; j++) {
       if (data[j] == 0.0) slot = ELEMENT_START;
       else slot = floor(log10(fabs(data[j])));
@@ -4076,10 +4021,10 @@ mdescr mat;
       }
     }
 
-  /* Globally sum the n_elements arrays. */
+  /* Globally sum the $n_{elements}$ arrays. */
   gsum0(n_elements,MAX_ELEMENTS,2,mtype_get(),0);
 
-  /* Print out the n_elements array on node 0. */
+  /* Print out the $n_{elements}$ array on node 0. */
   if (mynode0() == 0) {
     int ii;
     int total=0;

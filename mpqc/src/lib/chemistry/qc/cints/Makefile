@@ -8,12 +8,10 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
-CXXFLAGS = $(CXXFLAGS_DEBUG)
-
 TARGET_TO_MAKE = libcints
 BIN_OR_LIB = LIB
 
-SRCS = nucrep.cc integraljf.cc ovlp.cc kei.cc
+SRCS = nucrep.cc integraljf.cc ovlp.cc kei.cc pei.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

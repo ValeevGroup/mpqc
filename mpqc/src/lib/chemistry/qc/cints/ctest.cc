@@ -82,5 +82,31 @@ main(int argc, char *argv[])
 
   tim_print(0);
   
+  ///////////////////////////////////////////////////////////////////////
+  
+  s.assign(0.0);
+
+  tim_enter("intv2 pe");
+  op = new GaussianNuclearIntv2(gbs);
+  s.element_op(op);
+  op=0;
+  tim_exit("intv2 pe");
+
+  if (argc > 1)
+    s.print("pe integrals v2");
+
+  s.assign(0.0);
+
+  tim_enter("jf pe");
+  op = new GaussianNuclearIntJF(gbs);
+  s.element_op(op);
+  op=0;
+  tim_exit("jf pe");
+
+  if (argc > 1)
+    s.print("pe integrals jf");
+
+  tim_print(0);
+  
   return 0;
 }

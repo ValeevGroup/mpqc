@@ -19,6 +19,7 @@ class OneBodyIntJF : public OneBodyInt
     double *df;
     
     void init();
+    double overlap_intx(int, int, double, double, double);
     double overlap_int(int, int, int, int, int, int,
                        double[3], double[3], double);
 
@@ -55,37 +56,42 @@ class GaussianKineticIntJF : public OneBodyIntJF
     void compute_shell(int,int,double*);
 };
 
-#if 0
 class GaussianPointChargeIntJF : public OneBodyIntJF
 {
   private:
     int ncharge;
-    double** position;
-    double* charge;
+    double *charge;
+    double **position;
+
+    double ****vint;
+    char ***vint_done;
 
     void init(PointBag_double*);
+    void init_peint(int, int, int, int, double, double, double,
+                    double[3], double[3], double[3]);
+    double * do_pe_doublet(double[3][3], double[], int, int, int, int, double);
+    void calc_f(double[], int, double);
     
   public:
-    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&,
+    GaussianPointChargeIntJF(PointBag_double*, const RefGaussianBasisSet&,
                              OneBodyIntIter* =0);
-    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&,
+    GaussianPointChargeIntJF(PointBag_double*, const RefGaussianBasisSet&,
                              const RefGaussianBasisSet&,
                              OneBodyIntIter* =0);
-    ~GaussianPointChargeIntv2();
+    ~GaussianPointChargeIntJF();
     void compute_shell(int,int,double*);
 };
 
 class GaussianNuclearIntJF : public GaussianPointChargeIntJF
 {
   public:
-    GaussianNuclearIntv2(const RefGaussianBasisSet&, OneBodyIntIter* =0);
-    GaussianNuclearIntv2(PointBag_double *charges,
+    GaussianNuclearIntJF(const RefGaussianBasisSet&, OneBodyIntIter* =0);
+    GaussianNuclearIntJF(PointBag_double *charges,
                          const RefGaussianBasisSet&,
                          const RefGaussianBasisSet&,
                          OneBodyIntIter* =0);
 
-    ~GaussianNuclearIntv2();
+    ~GaussianNuclearIntJF();
 };
-#endif
 
 #endif

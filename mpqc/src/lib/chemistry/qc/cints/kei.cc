@@ -66,6 +66,8 @@ GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
       PB[1] = Py - aj[1];
       PB[2] = Pz - aj[2];
 
+      oogam *= 0.5;
+      
       // loop over general contractions
       int ioffset=0;
       for (int ci=0; ci < gsi.ncontraction(); ci++) {
@@ -96,7 +98,7 @@ GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
                   int n2 = ll;
 
                   buf[ijkl] += norm_prefact*ke_int(l1, m1, n1, l2, m2, n2,
-                                                   PA, PB, gam, a1, a2);
+                                                   PA, PB, oogam, a1, a2);
                 }
               }
             }
@@ -112,31 +114,46 @@ GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
 double
 GaussianKineticIntJF::ke_int(int l1, int m1, int n1, int l2, int m2, int n2,
                              double PA[3], double PB[3],
-                             double gam, double a1, double a2)
+                             double oo2gam, double a1, double a2)
 {
-  double Ix, Iy, Iz;
-  double I1, I2, I3, I4;
+  double I = 0;
+  double I1, I2, I3, I4, Ilmn;
 
-  I2 = overlap_int(l1+1, m1, n1, l2+1, m2, n2, PA, PB, gam);
-  I3 = overlap_int(l1+1, m1, n1, l2-1, m2, n2, PA, PB, gam);
-  I1 = overlap_int(l1-1, m1, n1, l2-1, m2, n2, PA, PB, gam);
-  I4 = overlap_int(l1-1, m1, n1, l2+1, m2, n2, PA, PB, gam);
+  double pax = PA[0];
+  double pbx = PB[0];
+  
+  Ilmn = overlap_intx(m1,m2,PA[1],PB[1],oo2gam) *
+         overlap_intx(n1,n2,PA[2],PB[2],oo2gam);
+  I2 = Ilmn * overlap_intx(l1+1, l2+1, pax, pbx, oo2gam);
+  I3 = Ilmn * overlap_intx(l1+1, l2-1, pax, pbx, oo2gam);
+  I1 = Ilmn * overlap_intx(l1-1, l2-1, pax, pbx, oo2gam);
+  I4 = Ilmn * overlap_intx(l1-1, l2+1, pax, pbx, oo2gam);
  
-  Ix = (0.5*l1*l2*I1 + 2*a1*a2*I2 - a1*l2*I3 - a2*l1*I4);
+  I += (0.5*l1*l2*I1 + 2*a1*a2*I2 - a1*l2*I3 - a2*l1*I4);
 
-  I2 = overlap_int(l1, m1+1, n1, l2, m2+1, n2, PA, PB, gam);
-  I3 = overlap_int(l1, m1+1, n1, l2, m2-1, n2, PA, PB, gam);
-  I1 = overlap_int(l1, m1-1, n1, l2, m2-1, n2, PA, PB, gam);
-  I4 = overlap_int(l1, m1-1, n1, l2, m2+1, n2, PA, PB, gam);
+  pax = PA[1];
+  pbx = PB[1];
   
-  Iy = (0.5*m1*m2*I1 + 2*a1*a2*I2 - a1*m2*I3 - a2*m1*I4);
-
-  I2 = overlap_int(l1, m1, n1+1, l2, m2, n2+1, PA, PB, gam);
-  I3 = overlap_int(l1, m1, n1+1, l2, m2, n2-1, PA, PB, gam);
-  I1 = overlap_int(l1, m1, n1-1, l2, m2, n2-1, PA, PB, gam);
-  I4 = overlap_int(l1, m1, n1-1, l2, m2, n2+1, PA, PB, gam);
+  Ilmn = overlap_intx(l1,l2,PA[0],PB[0],oo2gam) *
+         overlap_intx(n1,n2,PA[2],PB[2],oo2gam);
+  I2 = Ilmn * overlap_intx(m1+1, m2+1, pax, pbx, oo2gam);
+  I3 = Ilmn * overlap_intx(m1+1, m2-1, pax, pbx, oo2gam);
+  I1 = Ilmn * overlap_intx(m1-1, m2-1, pax, pbx, oo2gam);
+  I4 = Ilmn * overlap_intx(m1-1, m2+1, pax, pbx, oo2gam);
   
-  Iz = (0.5*n1*n2*I1 + 2*a1*a2*I2 - a1*n2*I3 - a2*n1*I4);
+  I += (0.5*m1*m2*I1 + 2*a1*a2*I2 - a1*m2*I3 - a2*m1*I4);
 
-  return (Ix+Iy+Iz);
+  pax = PA[2];
+  pbx = PB[2];
+  
+  Ilmn = overlap_intx(l1,l2,PA[0],PB[0],oo2gam) *
+         overlap_intx(m1,m2,PA[1],PB[1],oo2gam);
+  I2 = Ilmn * overlap_intx(n1+1, n2+1, pax, pbx, oo2gam);
+  I3 = Ilmn * overlap_intx(n1+1, n2-1, pax, pbx, oo2gam);
+  I1 = Ilmn * overlap_intx(n1-1, n2-1, pax, pbx, oo2gam);
+  I4 = Ilmn * overlap_intx(n1-1, n2+1, pax, pbx, oo2gam);
+  
+  I += (0.5*n1*n2*I1 + 2*a1*a2*I2 - a1*n2*I3 - a2*n1*I4);
+
+  return I;
 }

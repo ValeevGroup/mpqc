@@ -66,6 +66,8 @@ GaussianOverlapIntJF::compute_shell(int i, int j, double * buf)
       PB[1] = py - aj[1];
       PB[2] = pz - aj[2];
 
+      oogam *= 0.5;
+      
       // loop over general contractions
       int ioffset=0;
       for (int ci=0; ci < gsi.ncontraction(); ci++) {
@@ -96,7 +98,7 @@ GaussianOverlapIntJF::compute_shell(int i, int j, double * buf)
                   int n2 = ll;
 
                   buf[ijkl] += norm_prefact*overlap_int(l1, m1, n1, l2, m2, n2,
-                                                        PA, PB, gam);
+                                                        PA, PB, oogam);
                 }
               }
             }

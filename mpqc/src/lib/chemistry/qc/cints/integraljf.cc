@@ -91,162 +91,47 @@ OneBodyIntJF::~OneBodyIntJF()
 }
 
 double
-OneBodyIntJF::overlap_int(int l1, int m1, int n1, int l2, int m2, int n2,
-                          double PA[3], double PB[3],
-                          double gam)
+OneBodyIntJF::overlap_intx(int l1, int l2, double da, double db, double oo2gam)
 {
   int i, i2, ii, jj, imax, itmp;
-  double Ix, I=1.0;
-  double oo2gam = 0.5/gam;
-  double gtmp;
+  int *lcip1, *lcip2;
+  double Ix = 0.0;
+  double gtmp = 1.0;
 
-  int al1[] = { l1, m1, n1 };
-  int al2[] = { l2, m2, n2 };
+  lcip1 = lci + (l1*(l1+1)>>1);
+  lcip2 = lci + (l2*(l2+1)>>1);
 
-  for (int x=0; x < 3; x++) {
-    int l1x = al1[x];
-    int l2x = al2[x];
+  imax = (l1+l2)>>1;
 
-    int *lcip1 = lci + (l1x*(l1x+1)>>1);
-    int *lcip2 = lci + (l2x*(l2x+1)>>1);
+  for (i=0,i2=0; i <= imax; i++, i2++, i2++, gtmp *= oo2gam) {
+    double sum = 0.0;
 
-    double da = PA[x];
-    double db = PB[x];
-  
-    Ix = 0.0;
-    gtmp=1.0;
-    imax = (l1x+l2x)>>1;
+    ii=0; jj=i2;
+    while (jj > l2) {
+      ii++;
+      jj--;
+    }
 
-    for (i=0,i2=0; i <= imax; i++, gtmp *= oo2gam, i2 += 2) {
-      double sum = 0.0;
-
-      for (ii=0; ii <= l1x; ii++) {
-        jj = i2-ii;
-        if (jj < 0)
-          break;
-        else if (jj > l2x)
-          continue;
+    for (; (jj > -1) && (ii <= l1); ii++, jj--) {
     
-        itmp = lcip1[ii] * lcip2[jj];
-        if (!itmp)
-          continue;
+      itmp = lcip1[ii] * lcip2[jj] * num_ser[i];
     
-        sum += itmp * pow(da, (long int)(l1x-ii)) *
-                      pow(db, (long int)(l2x-jj));
-      }
-
-      Ix += sum * num_ser[i] * gtmp;
+      sum += itmp * pow(da, (long int)(l1-ii)) *
+                    pow(db, (long int)(l2-jj));
     }
 
-    I *= Ix;
+    Ix += sum * gtmp;
   }
 
-  return I;
+  return Ix;
 }
 
-#if 0
-////////////////////////////////////////////////////////////////////////////
-// GaussianKineticIntv2
-
-GaussianKineticIntJF::GaussianKineticIntJF(const RefGaussianBasisSet&bs_,
-                                           OneBodyIntIter *it):
-  OneBodyIntJF(bs_,it)
+double
+OneBodyIntJF::overlap_int(int l1, int m1, int n1, int l2, int m2, int n2,
+                          double PA[3], double PB[3],
+                          double oo2gam)
 {
+  return overlap_intx(l1,l2,PA[0],PB[0],oo2gam) *
+         overlap_intx(m1,m2,PA[1],PB[1],oo2gam) *
+         overlap_intx(n1,n2,PA[2],PB[2],oo2gam);
 }
-
-GaussianKineticIntJF::GaussianKineticIntJF(const RefGaussianBasisSet&bs1,
-                                           const RefGaussianBasisSet&bs2,
-                                           OneBodyIntIter *it):
-  OneBodyIntJF(bs1,bs2,it)
-{
-}
-
-GaussianKineticIntJF::~GaussianKineticIntJF()
-{
-}
-
-void GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
-{
-  //int_shell_kinetic(c1,c2,buf,i,j);
-}
-
-////////////////////////////////////////////////////////////////////////////
-// GaussianPointChargeIntv2
-
-void
-GaussianPointChargeIntJF::init(PointBag_double*charges)
-{
-  ncharge = charges->length();
-  
-  if (ncharge) {
-    position = new double*[ncharge];
-    charge = new double[ncharge];
-  }
-  
-  int i = 0;
-  for (Pix pix= charges->first(); pix!=0; charges->next(pix)) {
-    position[i] = new double[3];
-    charge[i] = charges->get(pix);
-    for (int j=0; j<3; j++) {
-      position[i][j] = charges->point(pix)[j];
-    }
-    i++;
-  }
-}
-
-GaussianPointChargeIntJF::GaussianPointChargeIntJF(PointBag_double*charges,
-					   const RefGaussianBasisSet&bs_,
-                                           OneBodyIntIter *it) :
-  OneBodyIntJF(bs_,it)
-{
-  init(charges);
-  delete charges;
-}
-
-GaussianPointChargeIntJF::GaussianPointChargeIntJF(PointBag_double*charges,
-					   const RefGaussianBasisSet&bs1,
-					   const RefGaussianBasisSet&bs2,
-                                           OneBodyIntIter *it) :
-  OneBodyIntJF(bs1,bs2,it)
-{
-  init(charges);
-  delete charges;
-}
-
-GaussianPointChargeIntJF::~GaussianPointChargeIntJF()
-{
-  for (int i=0; i<ncharge; i++) {
-      delete position[i];
-    }
-  if (ncharge) {
-      delete[] charge;
-      delete[] position;
-    }
-}
-
-void GaussianPointChargeIntJF::compute_shell(int i,int j,double*buf)
-{
-  //int_shell_point_charge(c1,c2,buf,i,j,ncharge,charge,position);
-}
-
-////////////////////////////////////////////////////////////////////////////
-// GaussianNuclearIntJF
-
-GaussianNuclearIntJF::GaussianNuclearIntJF(const RefGaussianBasisSet&bs_,
-                                           OneBodyIntIter *it) :
-  GaussianPointChargeIntJF(bs_->molecule()->charges(),bs_,it)
-{
-}
-
-GaussianNuclearIntJF::GaussianNuclearIntJF(PointBag_double *charges,
-                                           const RefGaussianBasisSet&bs1,
-                                           const RefGaussianBasisSet&bs2,
-                                           OneBodyIntIter *it):
-  GaussianPointChargeIntJF(charges,bs1,bs2,it)
-{
-}
-
-GaussianNuclearIntJF::~GaussianNuclearIntJF()
-{
-}
-#endif

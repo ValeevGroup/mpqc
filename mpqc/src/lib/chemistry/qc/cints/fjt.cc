@@ -77,7 +77,7 @@ Taylor_Fjt_Eval::Taylor_Fjt_Eval(unsigned int mmax, double accuracy)
     free_Taylor_Fm_Eval();
   }
   
-  T_crit = init_array(max_m + 1);   /*--- m=0 is included! ---*/
+  T_crit = new double[max_m + 1];   /*--- m=0 is included! ---*/
   max_T = 0;
   /*--- Figure out T_crit for each m and put into the T_crit ---*/
   for(m=max_m;m>=0;m--) {
@@ -143,7 +143,7 @@ Taylor_Fjt_Eval::Taylor_Fjt_Eval(unsigned int mmax, double accuracy)
 
 Taylor_Fjt_Eval::~Taylor_Fm_Eval()
 {
-  free(T_crit);
+  delete[] T_crit;
   T_crit = NULL;
   free_block(grid);
   grid = NULL;

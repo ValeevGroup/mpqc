@@ -269,7 +269,7 @@ DistSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const DistSymmSCMatrix* la
-    = DistSymmSCMatrix::require_castdown(a,"DistSymmSCMatrix::accumulate");
+    = DistSymmSCMatrix::require_const_castdown(a,"DistSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {

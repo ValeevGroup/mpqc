@@ -347,7 +347,7 @@ void
 BlockedSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  const BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_castdown(a,
+  const BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_const_castdown(a,
                                    "BlockedSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match

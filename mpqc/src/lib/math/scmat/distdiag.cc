@@ -183,7 +183,7 @@ DistDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const DistDiagSCMatrix* la
-    = DistDiagSCMatrix::require_castdown(a,"DistDiagSCMatrix::accumulate");
+    = DistDiagSCMatrix::require_const_castdown(a,"DistDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {

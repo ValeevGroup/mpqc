@@ -483,7 +483,7 @@ LocalSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSCMatrix* la
-    = LocalSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
+    = LocalSCMatrix::require_const_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
@@ -502,7 +502,7 @@ LocalSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSymmSCMatrix* la
-    = LocalSymmSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
+    = LocalSymmSCMatrix::require_const_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -530,7 +530,7 @@ LocalSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalDiagSCMatrix* la
-    = LocalDiagSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
+    = LocalDiagSCMatrix::require_const_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -552,7 +552,7 @@ LocalSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
+    = LocalSCVector::require_const_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)

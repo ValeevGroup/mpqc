@@ -182,7 +182,7 @@ ReplSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const ReplSCVector* la
-    = ReplSCVector::require_castdown(a,"ReplSCVector::accumulate");
+    = ReplSCVector::require_const_castdown(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -201,7 +201,7 @@ ReplSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const ReplSCMatrix *la
-    = ReplSCMatrix::require_castdown(a,"ReplSCVector::accumulate");
+    = ReplSCMatrix::require_const_castdown(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)

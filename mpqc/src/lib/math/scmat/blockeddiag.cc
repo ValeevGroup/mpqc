@@ -109,7 +109,7 @@ void
 BlockedDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  const BlockedDiagSCMatrix* la = BlockedDiagSCMatrix::require_castdown(a,
+  const BlockedDiagSCMatrix* la = BlockedDiagSCMatrix::require_const_castdown(a,
                                "BlockedDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match

@@ -93,7 +93,7 @@ LocalDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const LocalDiagSCMatrix* la
-    = LocalDiagSCMatrix::require_castdown(a,"LocalDiagSCMatrix::accumulate");
+    = LocalDiagSCMatrix::require_const_castdown(a,"LocalDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {

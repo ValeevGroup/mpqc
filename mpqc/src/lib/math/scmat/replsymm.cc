@@ -412,7 +412,7 @@ ReplSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const ReplSymmSCMatrix* la
-    = ReplSymmSCMatrix::require_castdown(a,"ReplSymmSCMatrix::accumulate");
+    = ReplSymmSCMatrix::require_const_castdown(a,"ReplSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {

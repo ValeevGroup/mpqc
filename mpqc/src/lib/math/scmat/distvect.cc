@@ -165,7 +165,7 @@ DistSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const DistSCVector* la
-    = DistSCVector::require_castdown(a,"DistSCVector::accumulate");
+    = DistSCVector::require_const_castdown(a,"DistSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -197,7 +197,7 @@ DistSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const DistSCMatrix* la
-    = DistSCMatrix::require_castdown(a,"DistSCVector::accumulate");
+    = DistSCMatrix::require_const_castdown(a,"DistSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)

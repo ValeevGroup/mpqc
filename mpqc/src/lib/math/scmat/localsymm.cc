@@ -337,7 +337,7 @@ LocalSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSymmSCMatrix* la
-    = LocalSymmSCMatrix::require_castdown(a,"LocalSymmSCMatrix::accumulate");
+    = LocalSymmSCMatrix::require_const_castdown(a,"LocalSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {

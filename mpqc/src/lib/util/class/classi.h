@@ -74,7 +74,7 @@ CLASSNAME::castdown(DescribedClass*p)
   return (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
 }
 const CLASSNAME*
-CLASSNAME::castdown(const DescribedClass*p)
+CLASSNAME::const_castdown(const DescribedClass*p)
 {
   if (!p) return 0;
   return (const CLASSNAME*) ((DescribedClass*)p)->_castdown(CLASSNAME::static_class_desc());
@@ -98,7 +98,7 @@ CLASSNAME::require_castdown(DescribedClass*p,const char * errmsg,...)
   return t;
 }
 const CLASSNAME*
-CLASSNAME::require_castdown(const DescribedClass*p,const char * errmsg,...)
+CLASSNAME::require_const_castdown(const DescribedClass*p,const char * errmsg,...)
 {
   if (!p) return 0;
   const CLASSNAME* t = (const CLASSNAME*) ((DescribedClass*)p)->_castdown(CLASSNAME::static_class_desc());

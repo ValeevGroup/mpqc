@@ -209,7 +209,7 @@ BlockedSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const BlockedSCVector* la
-    = BlockedSCVector::require_castdown(a,"BlockedSCVector::accumulate");
+    = BlockedSCVector::require_const_castdown(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -228,7 +228,7 @@ BlockedSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const BlockedSCMatrix* la
-    = BlockedSCMatrix::require_castdown(a,"BlockedSCVector::accumulate");
+    = BlockedSCMatrix::require_const_castdown(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)

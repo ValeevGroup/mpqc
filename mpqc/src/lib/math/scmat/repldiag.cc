@@ -133,7 +133,7 @@ ReplDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const ReplDiagSCMatrix* la
-    = ReplDiagSCMatrix::require_castdown(a,"ReplDiagSCMatrix::accumulate");
+    = ReplDiagSCMatrix::require_const_castdown(a,"ReplDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {

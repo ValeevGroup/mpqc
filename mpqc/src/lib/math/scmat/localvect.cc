@@ -165,7 +165,7 @@ LocalSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
+    = LocalSCVector::require_const_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -184,7 +184,7 @@ LocalSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const LocalSCMatrix* la
-    = LocalSCMatrix::require_castdown(a,"LocalSCVector::accumulate");
+    = LocalSCMatrix::require_const_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)

@@ -40,6 +40,7 @@ SCF::~SCF()
 void
 SCF::save_data_state(StateOut& s)
 {
+  OneBodyWavefunction::save_data_state(s);
   s.put(maxiter_);
 }
 
@@ -53,4 +54,54 @@ void
 SCF::print(ostream&o)
 {
   OneBodyWavefunction::print(o);
+}
+
+void
+SCF::compute()
+{
+  if (hessian_needed())
+    set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
+
+  if (gradient_needed())
+    set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
+
+  if (value_needed()) {
+    printf("\n  SCF::compute: energy accuracy = %g\n\n",
+           desired_value_accuracy());
+
+    double eelec;
+    compute_vector(eelec);
+      
+    // this will be done elsewhere eventually
+    double nucrep = molecule()->nuclear_repulsion_energy();
+    printf("  total scf energy = %20.15f\n",eelec+nucrep);
+
+    set_energy(eelec+nucrep);
+    set_actual_value_accuracy(desired_value_accuracy());
+  }
+
+  if (gradient_needed()) {
+    RefSCVector gradient = matrixkit()->vector(moldim());
+
+    printf("\n  SCF::compute: gradient accuracy = %g\n\n",
+           desired_gradient_accuracy());
+
+    compute_gradient(gradient);
+    gradient.print("cartesian gradient");
+    set_gradient(gradient);
+
+    set_actual_gradient_accuracy(desired_gradient_accuracy());
+  }
+  
+  if (hessian_needed()) {
+    RefSymmSCMatrix hessian = matrixkit()->symmmatrix(moldim());
+    
+    printf("\n  SCF::compute: hessian accuracy = %g\n\n",
+           desired_hessian_accuracy());
+
+    compute_hessian(hessian);
+    set_hessian(hessian);
+
+    set_actual_hessian_accuracy(desired_hessian_accuracy());
+  }
 }

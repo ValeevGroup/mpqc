@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include <util/misc/formio.h>
 #include <util/group/message.h>
 #include <util/group/mstate.h>
 #include <util/group/hcube.h>

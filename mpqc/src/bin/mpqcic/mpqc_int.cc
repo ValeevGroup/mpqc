@@ -188,7 +188,7 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
    // use inverse hessian for QN, hessian for EFC
     if (!efc) update->set_inverse();
 
-    dc = mol->dim_natom3();
+    dc = coor->dim_natom3();
     di = coor->dim();
 
    // create the inverted hessian 
@@ -281,6 +281,11 @@ Geom_done_mpqc(const RefKeyVal& keyval, int converged)
   mol=0;
 }
 
+RefSCDimension
+Geom_dim_natom3()
+{
+  return coor->dim_natom3();
+}
 
 int
 Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)

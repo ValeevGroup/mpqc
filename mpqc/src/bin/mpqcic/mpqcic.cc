@@ -181,6 +181,8 @@ main(int argc, char *argv[])
 
   int nfzc, nfzv, mem_alloc;
 
+  RefSCDimension dnatom3;
+
   if (mynode0() == 0) {
     fprintf(outfile,
         "\n       MPQC: Massively Parallel Quantum Chemistry\n\n\n");
@@ -198,7 +200,7 @@ main(int argc, char *argv[])
     pkv = ppkv = 0;
 
     mol = keyval->describedclassvalue("molecule");
-    
+
     gbs = keyval->describedclassvalue("basis");
     tcenters = gbs->convert_to_centers_t(mol.pointer());
 
@@ -506,7 +508,7 @@ main(int argc, char *argv[])
         if (mynode0()==0) {
           fprintf(outfile,"\n");
 
-          RefSCVector gradv(mol->dim_natom3());
+          RefSCVector gradv(Geom_dim_natom3());
           
           int i,j,ij;
           for (j=ij=0; j < gradient.n2; j++) {

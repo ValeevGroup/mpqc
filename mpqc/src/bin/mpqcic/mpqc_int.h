@@ -39,6 +39,9 @@ extern "C" {
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 
+
+RefSCDimension Geom_dim_natom3();
+
 int Geom_init_mpqc(RefMolecule&, const RefKeyVal&);
 
 int Geom_update_mpqc(RefSCVector&, const RefKeyVal&);

@@ -46,19 +46,12 @@ class Wavefunction: public MolecularEnergy {
   public:
 
     /// An enum for the types of orthogonalization.
-    enum { Symmetric, Canonical };
+    enum OrthogMethod { Symmetric=1, Canonical=2, GramSchmidt=3 };
 
   private:
     RefSCDimension aodim_;
     RefSCDimension sodim_;
-    RefSCDimension osodim_;
     Ref<SCMatrixKit> basiskit_;
-
-    ResultRefSCMatrix overlap_eigvec_;
-    ResultRefDiagSCMatrix overlap_isqrt_eigval_;
-    ResultRefDiagSCMatrix overlap_sqrt_eigval_;
-    double min_overlap_eigval_;
-    double max_overlap_eigval_;
     
     ResultRefSymmSCMatrix overlap_;
     ResultRefSymmSCMatrix hcore_;
@@ -71,24 +64,41 @@ class Wavefunction: public MolecularEnergy {
     Ref<GaussianBasisSet> gbs_;
     Ref<Integral> integral_;
 
-    // The tolerance for lambda(max)/lambda(min) for linearly
-    // independent basis functions
+    // The tolerance for linearly independent basis functions.
+    // The intepretation depends on the orthogonalization method.
     double lindep_tol_;
-
-    // Whether or not to symmetrically orthogonalize
-    int symm_orthog_;
+    // The orthogonalization method
+    OrthogMethod orthog_method_;
+    // The dimension in the orthogonalized SO basis
+    RefSCDimension osodim_;
+    // The orthogonalization matrices
+    RefSCMatrix orthog_trans_;
+    RefSCMatrix orthog_trans_inverse_;
+    // The maximum and minimum residuals from the orthogonalization
+    // procedure.  The interpretation depends on the method used.
+    // For symmetry and canonical, these are the min and max overlap
+    // eigenvalues.  These are the residuals for the basis functions
+    // that actually end up being used.
+    double min_orthog_res_;
+    double max_orthog_res_;
 
     int print_nao_;
     int print_npa_;
 
-    void compute_overlap_eig();
+    void compute_overlap_eig(RefSCMatrix& overlap_eigvec,
+                             RefDiagSCMatrix& overlap_isqrt_eigval,
+                             RefDiagSCMatrix& overlap_sqrt_eigval);
+    void compute_symmetric_orthog();
+    void compute_canonical_orthog();
+    void compute_gs_orthog();
+    void compute_orthog_trans();
 
   protected:
 
     int debug_;
 
-    double min_overlap_eigval() const { return min_overlap_eigval_; }
-    double max_overlap_eigval() const { return max_overlap_eigval_; }
+    double min_orthog_res() const { return min_orthog_res_; }
+    double max_orthog_res() const { return max_orthog_res_; }
     
   public:
     Wavefunction(StateIn&);
@@ -200,7 +210,9 @@ class Wavefunction: public MolecularEnergy {
     RefSCMatrix so_to_orthog_so_inverse();
 
     /// Returns the orthogonalization method
-    int orthog_method() { return symm_orthog_?Symmetric:Canonical; }
+    OrthogMethod orthog_method() { return orthog_method_; }
+
+    void obsolete();
 
     void print(std::ostream& = ExEnv::out()) const;
 };

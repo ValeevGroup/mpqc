@@ -63,6 +63,8 @@ extern "C" {
     void cmat_diag(double**symm_a, double*evals, double**evecs, int n,
                    int matz, double tol);
     void cmat_schmidt(double **rows, double *S, int nrow, int nc);
+    int cmat_schmidt_tol(double **C, double *S, int nrow, int ncol,
+                         double tolerance, double *res);
 
 
 #ifdef __cplusplus

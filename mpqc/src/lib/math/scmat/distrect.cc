@@ -780,17 +780,14 @@ DistSCMatrix::solve_this(SCVector*v)
 void
 DistSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 {
-  DistSymmSCMatrix* lS =
-    require_dynamic_cast<DistSymmSCMatrix*>(S,"DistSCMatrix::schmidt_orthog");
-
   error("no schmidt_orthog");
-  
-  // make sure that the dimensions match
-  if (!rowdim()->equiv(lS->dim())) {
-      ExEnv::err() << indent << "DistSCMatrix::schmidt_orthog(): "
-           << "dimensions don't match\n";
-      abort();
-    }
+}
+
+int
+DistSCMatrix::schmidt_orthog_tol(SymmSCMatrix *S, double tol, double *res)
+{
+  error("no schmidt_orthog_tol");
+  return 0;
 }
 
 void

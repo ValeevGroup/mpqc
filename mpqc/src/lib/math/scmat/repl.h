@@ -158,6 +158,7 @@ class ReplSCMatrix: public SCMatrix {
     double determ_this();
     double trace();
     void schmidt_orthog(SymmSCMatrix*,int);
+    int schmidt_orthog_tol(SymmSCMatrix*, double tol, double *res=0);
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,
                     SCMatrix*);

@@ -326,6 +326,11 @@ class SCMatrix: public DescribedClass {
     /** Schmidt orthogonalize this.  S is the overlap matrix.
         n is the number of columns to orthogonalize. */
     virtual void schmidt_orthog(SymmSCMatrix*, int n) =0;
+
+    /** Schmidt orthogonalize this.  S is the overlap matrix.  tol is the
+        tolerance.  The number of linearly independent vectors is
+        returned. */
+    virtual int schmidt_orthog_tol(SymmSCMatrix*, double tol, double*res=0)=0;
     
     /// Perform the element operation op on each element of this.
     virtual void element_op(const Ref<SCElementOp>&) = 0;

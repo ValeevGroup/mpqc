@@ -609,6 +609,16 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
                                lS->dim()->blocks()->subdim(i).n());
 }
 
+int
+BlockedSCMatrix::schmidt_orthog_tol(SymmSCMatrix *S, double tol, double *res)
+{
+  ExEnv::err() << node0
+               << "ERROR: BlockedSCMatrix::schmidt_orthog_tol doesn't exist"
+               << endl;
+  abort();
+  return 0;
+}
+
 void
 BlockedSCMatrix::element_op(const Ref<SCElementOp>& op)
 {

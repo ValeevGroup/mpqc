@@ -361,7 +361,7 @@ MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
   int nbatri = (nbasis*(nbasis+1))/2;
 
   double tol = desired_gradient_accuracy() / 1000.0;
-  if (min_overlap_eigval() < 1.0) { tol *= min_overlap_eigval(); }
+  if (min_orthog_res() < 1.0) { tol *= min_orthog_res(); }
   int inttol = (int) (log(tol)/log(2.0));
 
   double tnint=0.0;

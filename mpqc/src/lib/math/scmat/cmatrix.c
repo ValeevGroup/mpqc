@@ -987,3 +987,60 @@ cmat_schmidt(double **C, double *S, int nrow, int nc)
     }
   }
 }
+
+/* Returns the number of linearly independent vectors
+   orthogonal wrt S. */
+int
+cmat_schmidt_tol(double **C, double *S, int nrow, int ncol,
+                 double tolerance, double *res)
+{
+  int i,j,ij;
+  int m;
+  double vtmp;
+  int northog = 0;
+  double *v = (double*) malloc(sizeof(double)*nrow);
+
+  if (res) *res = 1.0;
+
+  if (!v) {
+    fprintf(stderr,"cmat_schmidt_tol: could not malloc v(%d)\n",nrow);
+    abort();
+  }
+
+  /* Orthonormalize the columns of C wrt S. */
+  for (m=0; m < ncol; m++) {
+    v[0] = C[0][m] * S[0];
+
+    for (i=ij=1; i < nrow; i++) {
+      for (j=0,vtmp=0.0; j < i; j++,ij++) {
+        vtmp += C[j][m]*S[ij];
+        v[j] += C[i][m]*S[ij];
+      }
+      v[i] = vtmp + C[i][m]*S[ij];
+      ij++;
+    }
+
+    for (i=0,vtmp=0.0; i < nrow; i++)
+      vtmp += v[i]*C[i][m];
+
+    if (vtmp < tolerance) continue;
+
+    if (res && (m == 0 || vtmp < *res)) *res = vtmp;
+
+    vtmp = 1.0/sqrt(vtmp);
+    
+    for (i=0; i < nrow; i++) {
+      v[i] *= vtmp;
+      C[i][northog] = C[i][m] * vtmp;
+    }
+
+    for (i=m+1,vtmp=0.0; i < ncol; i++) {
+        for (j=0,vtmp=0.0; j < nrow; j++)
+            vtmp += v[j] * C[j][i];
+        for (j=0; j < nrow; j++)
+            C[j][i] -= vtmp * C[j][northog];
+      }
+    northog++;
+  }
+  return northog;
+}

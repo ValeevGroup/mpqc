@@ -151,7 +151,7 @@ OSSHF::ao_fock(double accuracy)
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;
-    if (min_overlap_eigval() < 1.0) { gmat_accuracy *= min_overlap_eigval(); }
+    if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
 
     int i;
     for (i=0; i < nthread; i++) {

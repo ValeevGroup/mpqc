@@ -726,6 +726,22 @@ LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   cmat_schmidt(rows,lS->block->data,nrow(),nc);
 }
 
+int
+LocalSCMatrix::schmidt_orthog_tol(SymmSCMatrix *S, double tol, double *res)
+{
+  LocalSymmSCMatrix* lS =
+    require_dynamic_cast<LocalSymmSCMatrix*>(S,"LocalSCMatrix::schmidt_orthog");
+  
+  // make sure that the dimensions match
+  if (!rowdim()->equiv(lS->dim())) {
+      ExEnv::err() << indent << "LocalSCMatrix::schmidt_orthog(): " <<
+          "dimensions don't match\n";
+      abort();
+    }
+
+  return cmat_schmidt_tol(rows,lS->block->data,nrow(),ncol(),tol,res);
+}
+
 void
 LocalSCMatrix::element_op(const Ref<SCElementOp>& op)
 {

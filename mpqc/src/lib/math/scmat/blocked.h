@@ -163,6 +163,7 @@ class BlockedSCMatrix: public SCMatrix {
     double trace();
     void gen_invert_this();
     void schmidt_orthog(SymmSCMatrix*,int);
+    int schmidt_orthog_tol(SymmSCMatrix*, double tol, double *res=0);
 
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,

@@ -90,8 +90,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     aux_basis_ = basis();
 
   // Default is to assume GBC and EBC
-  gebc_ = true;
-  gebc_ = keyval->booleanvalue("gebc");
+  if (keyval->exists("gebc"))
+    gebc_ = keyval->booleanvalue("gebc");
+  else
+    gebc_ = true;
   if (gebc_ == false)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12: gebc=false has not been implemented yet");
 

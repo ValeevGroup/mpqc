@@ -228,7 +228,7 @@ void R12IntEval::compute()
   if (evaluated_)
     return;
   
-  if (gebc_)
+  if (!gebc_)
     throw std::runtime_error("R12IntEval::compute: intermediates for MP2-R12 methods that assume neither GBC nor EBC have not been implemented yet");
   if (spinadapted_)
     throw std::runtime_error("R12IntEval::compute: spin-adapted R12 intermediates have not been implemented yet");

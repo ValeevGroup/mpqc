@@ -557,6 +557,33 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ)
   }
 }
 
+double
+SCF::one_body_energy()
+{
+  RefSymmSCMatrix dens = ao_density().copy();
+  RefSymmSCMatrix hcore = dens->clone();
+  hcore.assign(0.0);
+  RefSCElementOp hcore_op = new OneBodyIntOp(integral()->hcore());
+  hcore.element_op(hcore_op);
+
+  dens->scale_diagonal(0.5);
+  SCElementScalarProduct *prod = new SCElementScalarProduct;
+  prod->reference();
+  RefSCElementOp2 op = prod;
+  hcore->element_op(prod, dens);
+  double e = prod->result();
+  op = 0;
+  prod->dereference();
+  delete prod;
+  return 2.0 * e;
+}
+
+void
+SCF::two_body_energy(double &ec, double &ex)
+{
+  cerr << class_name() << ": two_body_energy not implemented" << endl;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

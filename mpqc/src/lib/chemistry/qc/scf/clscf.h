@@ -64,7 +64,9 @@ class CLSCF: public SCF {
     int n_fock_matrices() const;
     RefSymmSCMatrix fock(int);
     RefSymmSCMatrix effective_fock();
-    
+
+    void two_body_energy(double &ec, double &ex);
+
     int value_implemented();
     int gradient_implemented();
     int hessian_implemented();

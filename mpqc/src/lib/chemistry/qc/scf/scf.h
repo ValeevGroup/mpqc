@@ -127,7 +127,10 @@ class SCF: public OneBodyWavefunction {
 
     // return the effective MO fock matrix
     virtual RefSymmSCMatrix effective_fock() =0;
-    
+
+    virtual double one_body_energy();
+    virtual void two_body_energy(double &ec, double &ex);
+
     void print(ostream&o=cout);
 
     // nicely print n x 3 data that are stored in a vector

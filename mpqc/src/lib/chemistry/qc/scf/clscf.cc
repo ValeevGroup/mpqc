@@ -441,7 +441,7 @@ CLSCF::scf_energy()
   double eelec = eop->result();
 
   delete eop;
-  
+
   return eelec;
 }
 
@@ -544,6 +544,91 @@ CLSCF::ao_fock()
   cl_fock_.result_noupdate().assign(cl_hcore_);
   cl_fock_.result_noupdate().accumulate(dd);
   cl_fock_.computed()=1;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+CLSCF::two_body_energy(double &ec, double &ex)
+{
+  tim_enter("clscf e2");
+  ec = 0.0;
+  ex = 0.0;
+  if (local_ || local_dens_) {
+    // grab the data pointers from the G and P matrices
+    double *pmat;
+    tim_enter("local data");
+    RefSymmSCMatrix dens = ao_density();
+    RefSymmSCMatrix ptmp = get_local_data(dens, pmat, SCF::Read);
+    tim_exit("local data");
+
+    // initialize the two electron integral classes
+    tbi_ = integral()->electron_repulsion();
+    tbi_->set_integral_storage(0);
+
+    GaussianBasisSet& gbs = *basis().pointer();
+    TwoBodyInt& tbi = *tbi_.pointer();
+
+    const double *intbuf = tbi.buffer();
+
+    // POINT GROUP SYMMETRY IS NOT YET USED HERE
+    // INTEGRAL INDEX SYMMETRY IS NOT YET USED HERE
+    // BOUNDS ARE NOT YET USED HERE
+    // PARALLELISM NOT YET USED HERE
+    for (int i=0; i<gbs.nshell(); i++) {
+      int ni=gbs(i).nfunction();
+      int fi=gbs.shell_to_function(i);
+      for (int j=0; j<gbs.nshell(); j++) {
+        int nj=gbs(j).nfunction();
+        int fj=gbs.shell_to_function(j);
+        for (int k=0; k<gbs.nshell(); k++) {
+          int nk=gbs(k).nfunction();
+          int fk=gbs.shell_to_function(k);
+          int lmax = k;
+          if (k==i) lmax = j;
+          for (int l=0; l<gbs.nshell(); l++) {
+            int nl=gbs(l).nfunction();
+            int fl=gbs.shell_to_function(l);
+            tbi.compute_shell(i,j,k,l);
+            int index = 0;
+            for (int I=0, ii=fi; I<ni; I++, ii++) {
+              for (int J=0, jj=fj; J<nj; J++, jj++) {
+                int iijj;
+                if (ii > jj) iijj = (ii*(ii+1))/2 + jj;
+                else iijj = (jj*(jj+1))/2 + ii;
+                double pij = pmat[iijj];
+                for (int K=0, kk=fk; K<nk; K++, kk++) {
+                  int iikk;
+                  if (ii > kk) iikk = (ii*(ii+1))/2 + kk;
+                  else iikk = (kk*(kk+1))/2 + ii;
+                  double pik = pmat[iikk];
+                  for (int L=0, ll=fl; L<nl; L++, ll++, index++) {
+                    int kkll;
+                    if (kk > ll) kkll = (kk*(kk+1))/2 + ll;
+                    else kkll = (ll*(ll+1))/2 + kk;
+                    double pkl = pmat[kkll];
+                    int jjll;
+                    if (jj > ll) jjll = (jj*(jj+1))/2 + ll;
+                    else jjll = (ll*(ll+1))/2 + jj;
+                    double pjl = pmat[jjll];
+                    ec += 0.5 * pij * pkl * intbuf[index];
+                    ex += -0.25 * pik * pjl * intbuf[index];
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    tbi_ = 0;
+  }
+  else {
+    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    abort();
+  }
+  tim_exit("clscf e2");
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,9 @@
 #ifndef _chemistry_molecule_coor_h
 #define _chemistry_molecule_coor_h
 
+#ifdef __GNUC__
 #include <ostream.h>
+#endif
 #include <util/misc/scostream.h>
 #include <util/container/ref.h>
 #include <util/container/array.h>
@@ -32,7 +34,12 @@ class IntCoor: virtual public SavableState {
     virtual double value() const;
     virtual double preferred_value() const;
     virtual const char* ctype() const = 0; // name for coor type
+#ifdef __GNUC__
     virtual void print(RefMolecule =0, SCostream& =SCostream::cout);
+#else
+    virtual void print();
+    virtual void print(RefMolecule, SCostream& =SCostream::cout);
+#endif
     virtual double force_constant(RefMolecule&) = 0;
     virtual void update_value(RefMolecule&) = 0;
     virtual void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0) = 0;
@@ -65,7 +72,12 @@ class SumIntCoor: public IntCoor {
     // IntCoor overrides
     double preferred_value() const;
     const char* ctype() const; // name for coor type
+#ifdef __GNUC__
     void print(RefMolecule = 0, SCostream& =SCostream::cout);
+#else
+    void print();
+    void print(RefMolecule, SCostream& =SCostream::cout);
+#endif
     double force_constant(RefMolecule&);
     void update_value(RefMolecule&);
     void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0);
@@ -96,7 +108,12 @@ class SetIntCoor: virtual public SavableState {
     virtual void fd_bmat(RefMolecule&,RefSCMatrix&);
     virtual void bmat(RefMolecule&, RefSCMatrix&);
     virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);
+#ifdef __GNUC__
     virtual void print(RefMolecule =0,SCostream& =SCostream::cout);
+#else
+    virtual void print();
+    virtual void print(RefMolecule,SCostream& =SCostream::cout);
+#endif
     virtual void update_values(RefMolecule&);
     virtual void values_to_vector(RefSCVector&);
 };

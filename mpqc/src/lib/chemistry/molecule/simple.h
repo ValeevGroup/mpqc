@@ -69,7 +69,12 @@ class SimpleCo : public IntCoor {
     virtual double calc_force_con(Molecule&) = 0;
     virtual double calc_intco(Molecule&, double* =0, double =1) = 0;
 
+#ifdef __GNUC__
     void print(RefMolecule =0, SCostream& = SCostream::cout);
+#else
+    void print();
+    void print(RefMolecule, SCostream& = SCostream::cout);
+#endif
     
     int equivalent(RefIntCoor&);
   };

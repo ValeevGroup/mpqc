@@ -383,9 +383,9 @@ void GaussianBasisSet::print(FILE*fp) const
   for (icenter=0; icenter < ncenter_; icenter++) {
       fprintf(fp,"center %d: %12.8f %12.8f %12.8f, nshell = %d, shellnum = %d\n",
 	      icenter,
-	      center_to_r_[icenter][0],
-	      center_to_r_[icenter][1],
-	      center_to_r_[icenter][2],
+	      center_to_r_(icenter,0),
+	      center_to_r_(icenter,1),
+	      center_to_r_(icenter,2),
 	      center_to_nshell_[icenter],
 	      center_to_shell_[icenter]);
       for (int ishell=0; ishell < center_to_nshell_[icenter]; ishell++) {

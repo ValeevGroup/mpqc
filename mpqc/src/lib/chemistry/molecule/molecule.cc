@@ -848,10 +848,6 @@ Molecule::transform_to_principal_axes(int trans_frame)
     for (int j=0; j < 3; j++) {
       double t=0;
       for (int k=0; k < 3; k++) t += tso[i][k]*evecs[k][j];
-      if (fabs(t) < 0.5)
-        t = 0;
-      else if (fabs(t) >= .5)
-        t = 1;
       
       pg_->symm_frame()[i][j] = t;
     }

@@ -999,6 +999,11 @@ SCMatrixNullSubblockIter::SCMatrixNullSubblockIter():
 {
 }
 
+SCMatrixNullSubblockIter::SCMatrixNullSubblockIter(Access access):
+  SCMatrixSubblockIter(access)
+{
+}
+
 void
 SCMatrixNullSubblockIter::begin()
 {

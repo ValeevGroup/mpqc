@@ -332,6 +332,7 @@ class SCMatrixListSubblockIter: public SCMatrixSubblockIter {
 class SCMatrixNullSubblockIter: public SCMatrixSubblockIter {
   public:
     SCMatrixNullSubblockIter();
+    SCMatrixNullSubblockIter(Access);
     void begin();
     int ready();
     void next();
@@ -353,6 +354,7 @@ class SCMatrixCompositeSubblockIter: public SCMatrixSubblockIter {
     int ready();
     void next();
     SCMatrixBlock *block();
+    int current_block() const { return iiter_; }
 };
 REF_dec(SCMatrixCompositeSubblockIter);
 

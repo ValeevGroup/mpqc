@@ -1167,6 +1167,21 @@ AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
 AC_CHECK_FUNCS(gethostname time ctime)
 AC_CHECK_FUNCS(setrlimit setenv)
 
+dnl --------- Checks for an isnan/iostream issue on OS X. ---------
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING(isnan and iostream)
+AC_LINK_IFELSE([
+  #include <iostream>
+  #include <math.h>
+  int main(int,char**) { isnan(1.0); return 0; }
+  ],
+  AC_DEFINE(HAVE_ISNAN)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_LANG_RESTORE
+
 dnl --------- Check for the glibc extensions to C99 fenv.h. ---------
 
 AC_CHECK_HEADERS(fenv.h)

@@ -38,6 +38,10 @@
 using namespace std;
 using namespace sc;
 
+#ifndef HAVE_ISNAN
+#define isnan(x) ((x)!=(x))
+#endif
+
 #define MIN_DENSITY 1.e-14
 #define MIN_GAMMA 1.e-24
 #define MIN_SQRTGAMMA 1.e-12

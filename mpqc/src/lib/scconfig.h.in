@@ -99,6 +99,9 @@
 /* Define if you have the setenv function.  */
 #undef HAVE_SETENV
 
+/* Define if isnan is available from C++.  */
+#undef HAVE_ISNAN
+
 /* Define if you have the sigfillset function (and company).  */
 #undef HAVE_SIGFILLSET
 

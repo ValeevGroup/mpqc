@@ -12,8 +12,6 @@
 using namespace std;
 using namespace sc;
 
-ARRAY_def(ExtentData);
-
 ShellExtent::ShellExtent()
 {
   contributing_shells_ = 0;
@@ -25,7 +23,7 @@ ShellExtent::~ShellExtent()
   delete[] contributing_shells_;
 }
 
-ArrayExtentData &
+std::vector<ExtentData> &
 ShellExtent::data(int x, int y, int z)
 {
   if (x>=n_[0] || y>=n_[1] || z>= n_[2] || x<0 || y<0 || z<0) {
@@ -35,7 +33,7 @@ ShellExtent::data(int x, int y, int z)
   return contributing_shells_[z + n_[2]*(y + n_[1]*x)];
 }
 
-ArrayExtentData &
+std::vector<ExtentData> &
 ShellExtent::data(int *b)
 {
   return data(b[0],b[1],b[2]);
@@ -88,7 +86,7 @@ ShellExtent::init(const Ref<GaussianBasisSet>&gbs,
       if (n_[i]*resolution_ + lower_[i] < upper[i]) n_[i]++;
     }
 
-  contributing_shells_ = new ArrayExtentData[n_[0]*n_[1]*n_[2]];
+  contributing_shells_ = new std::vector<ExtentData>[n_[0]*n_[1]*n_[2]];
 
   for (i=0; i<mol->natom(); i++) {
       //ExEnv::outn() << indent << "working on atom " << i << endl;
@@ -139,7 +137,7 @@ ShellExtent::init(const Ref<GaussianBasisSet>&gbs,
     }
 }
 
-const ArrayExtentData &
+const std::vector<ExtentData> &
 ShellExtent::contributing_shells(double x, double y, double z)
 {
   int i, block[3];
@@ -180,7 +178,7 @@ ShellExtent::print(ostream &o)
   for (i=0; i<n_[0]; i++) {
       for (j=0; j<n_[1]; j++) {
           for (k=0; k<n_[2]; k++) {
-              const ArrayExtentData &d = data(i,j,k);
+              const std::vector<ExtentData> &d = data(i,j,k);
               if (d.size()) {
                   o << indent
                        << i << " " << j << " " << k << ":" << endl;

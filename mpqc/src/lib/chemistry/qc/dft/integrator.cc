@@ -307,7 +307,7 @@ DenIntegrator::init(const Ref<Wavefunction> &wfn)
       for (int i=0; i<extent_->n(0); i++) {
           for (int j=0; j<extent_->n(1); j++) {
               for (int k=0; k<extent_->n(2); k++) {
-                  const ArrayExtentData &e
+                  const std::vector<ExtentData> &e
                       = extent_->contributing_shells(i,j,k);
                   int val = e.size();
                   if (val > maxval) maxval = val;
@@ -592,7 +592,7 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
 
   // only consider those shells for which phi_i * (Max_j D_ij phi_j) > tol
   if (linear_scaling_ && use_dmat_bound_) {
-      const ArrayExtentData &cs = extent_->contributing_shells(r[0],r[1],r[2]);
+      const std::vector<ExtentData> &cs = extent_->contributing_shells(r[0],r[1],r[2]);
       ncontrib_ = 0;
       for (i=0; i<cs.size(); i++) {
           int ish = cs[i].shell;
@@ -611,7 +611,7 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
         }
     }
   else if (linear_scaling_) {
-      const ArrayExtentData &cs = extent_->contributing_shells(r[0],r[1],r[2]);
+      const std::vector<ExtentData> &cs = extent_->contributing_shells(r[0],r[1],r[2]);
       ncontrib_ = cs.size();
       for (i=0; i<ncontrib_; i++) {
           contrib_[i] = cs[i].shell;

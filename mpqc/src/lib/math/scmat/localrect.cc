@@ -523,6 +523,14 @@ LocalSCMatrix::transpose_this()
   RefSCDimension tmp = d1;
   d1 = d2;
   d2 = tmp;
+
+  int itmp = block->istart;
+  block->istart = block->jstart;
+  block->jstart = itmp;
+
+  itmp = block->iend;
+  block->iend = block->jend;
+  block->jend = itmp;
 }
 
 double

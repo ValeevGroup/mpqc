@@ -6,8 +6,33 @@ extern "C" {
 #include "shape.h"
 #include "molecule.h"
 
+#define CLASSNAME VDWShape
+#define PARENTS public UnionShape
+#define HAVE_KEYVAL_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+VDWShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { UnionShape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
 VDWShape::VDWShape(Molecule&mol)
 {
+  initialize(mol);
+}
+
+VDWShape::VDWShape(KeyVal&keyval)
+{
+  RefMolecule mol = keyval.describedclassvalue("molecule");
+  initialize(*mol.pointer());
+}
+
+void
+VDWShape::initialize(Molecule&mol)
+{
+  _shapes.clear();
   for (int i=0; i<mol.natom(); i++) {
       Point3 r;
       for (int j=0; j<3; j++) r[j] = mol[i][j];
@@ -19,8 +44,37 @@ VDWShape::~VDWShape()
 {
 }
 
+#define CLASSNAME ConnollyShape
+#define PARENTS public UnionShape
+#define HAVE_KEYVAL_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+ConnollyShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { UnionShape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
 ConnollyShape::ConnollyShape(Molecule&mol,double probe_radius)
 {
+  initialize(mol,probe_radius);
+}
+
+ConnollyShape::ConnollyShape(KeyVal&keyval)
+{
+  RefMolecule mol = keyval.describedclassvalue("molecule");
+  double probe_radius = keyval.doublevalue("probe_radius");
+  if (keyval.error() != KeyVal::OK) {
+      probe_radius = 2.6456173;
+    }
+  initialize(*mol.pointer(),probe_radius);
+}
+
+void
+ConnollyShape::initialize(Molecule&mol,double probe_radius)
+{
+  _shapes.clear();
   ArraysetRefSphereShape spheres;
   for (int i=0; i<mol.natom(); i++) {
       Point3 r;

@@ -215,6 +215,23 @@ sub value_as_array {
     return @array;
 }
 
+# returns an array reference of whitespace delimited tokens
+sub value_as_arrayref {
+    my $self = shift;
+    my $keyword = shift;
+    my $keyval = $self->{'keyval'};
+    my $value = $keyval->{$keyword};
+    my $array = [];
+    $i = 0;
+    $value =~ s/^\s+$//;
+    while ($value ne '') {
+        $value =~ s/^\s*(\S+)\s*//s;
+        $array->[$i] = $1;
+        $i++;
+    }
+    return $array;
+}
+
 # returns an array of lines
 sub value_as_lines {
     my $self = shift;
@@ -334,6 +351,17 @@ sub symmetry {
     uc $_;
 }
 
+sub memory {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("memory");
+    s/^\s*//;
+    s/\s*$//;
+    if ($_ eq "") {
+        $_ = 16000000;
+    }
+    $_;
+}
+
 sub state {
     my $self = shift;
     $_ = $self->{"parser"}->value("state");
@@ -407,6 +435,16 @@ sub optimize {
     $bval;
 }
 
+sub transition_state {
+    my $self = shift;
+    my $bval = $self->{"parser"}->boolean_value("transition_state");
+    if ($bval eq "") {
+        my $val = $self->{"parser"}->value("transition_state");
+        $self->error("Bad value for transtion_state: $val");
+    }
+    $bval;
+}
+
 sub frequencies {
     my $self = shift;
     my $bval = $self->{"parser"}->boolean_value("frequencies");
@@ -448,6 +486,11 @@ sub write_file {
     my $file = shift;
     my $parser = $self->{'parser'};
     $parser->write_file($file);
+}
+
+sub mode_following() {
+    my $self = shift;
+    return scalar($self->{"parser"}->value_as_array("followed")) != 0;
 }
 
 ##########################################################################
@@ -546,11 +589,23 @@ sub input_string() {
     my $basis = "% basis set specification";
     $basis = "$basis\nbasis<GaussianBasisSet>: (";
     $basis = sprintf "%s\n  name = \"%s\"", $basis, $qcinput->basis();
-    my $puream = "yes";
-    $puream = "no" if ($qcinput->basis() eq "6-31G*");
-    $basis = "$basis\n  puream = $puream";
     $basis = "$basis\n  molecule = \$:molecule";
     $basis = "$basis\n)\n";
+
+    my $fixed = $qcparse->value_as_arrayref("fixed");
+    my $followed = $qcparse->value_as_arrayref("followed");
+    if (scalar(@{$fixed}) != 0) {
+        $fixed = $self->mpqc_fixed_coor($fixed);
+    }
+    else {
+        $fixed = "";
+    }
+    if (scalar(@{$followed}) != 0) {
+        $followed = $self->mpqc_followed_coor($followed);
+    }
+    else {
+        $followed = "";
+    }
 
     my $coor = "  % molecular coordinates for optimization";
     $coor = "$coor\n  coor<SymmMolecularCoor>: (";
@@ -558,8 +613,11 @@ sub input_string() {
     $coor = "$coor\n    generator<IntCoorGen>: (";
     $coor = "$coor\n      molecule = \$:molecule";
     $coor = "$coor\n    )";
-    $coor = "$coor\n  )";
+    $coor = "$coor$followed";
+    $coor = "$coor$fixed";
+    $coor = "$coor\n  )\n";
 
+    my $memory = $qcinput->memory();
     my $method = $methodmap{uc($qcinput->method())};
     $method = "SCF" if ($method eq "");
     if ($method eq "SCF") {
@@ -582,6 +640,7 @@ sub input_string() {
     $mole = "$mole\n    molecule = \$:molecule";
     $mole = "$mole\n    basis = \$:basis";
     $mole = "$mole\n    coor = \$..:coor";
+    $mole = "$mole\n    memory = $memory";
     if ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
         my $fzv = $qcinput->fzv();
@@ -597,6 +656,31 @@ sub input_string() {
         $mole = "$mole\n    reference<$refmethod>: (";
         $mole = "$mole\n      molecule = \$:molecule";
         $mole = "$mole\n      basis = \$:basis";
+        $mole = "$mole\n      memory = $memory";
+        if (! ($basis =~ /^STO/
+               || $basis =~ /^MI/
+               || $basis =~ /^\d-\d1G$/)) {
+            $mole = "$mole\n      guess_wavefunction<$refmethod>: (";
+            $mole = "$mole\n        molecule = \$:molecule";
+            $mole = "$mole\n        basis<GaussianBasisSet>: (";
+            $mole = "$mole\n          molecule = \$:molecule";
+            $mole = "$mole\n          name = \"STO-3G\"";
+            $mole = "$mole\n        )";
+            $mole = "$mole\n        memory = $memory";
+            $mole = "$mole\n      )";
+        }
+        $mole = "$mole\n    )";
+    }
+    elsif (! ($basis =~ /^STO/
+              || $basis =~ /^MI/
+              || $basis =~ /^\d-\d1G$/)) {
+        $mole = "$mole\n    guess_wavefunction<$method>: (";
+        $mole = "$mole\n      molecule = \$:molecule";
+        $mole = "$mole\n      basis<GaussianBasisSet>: (";
+        $mole = "$mole\n        molecule = \$:molecule";
+        $mole = "$mole\n        name = \"STO-3G\"";
+        $mole = "$mole\n      )";
+        $mole = "$mole\n      memory = $memory";
         $mole = "$mole\n    )";
     }
     $mole = "$mole\n  )\n";
@@ -608,10 +692,27 @@ sub input_string() {
     else {
         $opt = "  optimize = no";
     }
+    my $optclass, $updateclass;
+    if ($qcinput->transition_state()) {
+        $optclass = "EFCOpt";
+        $updateclass = "PowellUpdate";
+    }
+    else {
+        $optclass = "QNewtonOpt";
+        $updateclass = "BFGSUpdate";
+    }
     $opt = "$opt\n  % optimizer object for the molecular geometry";
-    $opt = "$opt\n  opt<QNewtonOpt>: (";
+    $opt = "$opt\n  opt<$optclass>: (";
+    $opt = "$opt\n    max_iterations = 20";
     $opt = "$opt\n    function = \$..:mole";
-    $opt = "$opt\n    update<BFGSUpdate>: ()";
+    if ($qcinput->transition_state()) {
+        $opt = "$opt\n    transition_state = yes";
+        if ($qcinput->mode_following()) {
+            $opt = "$opt\n    hessian = [ [ -0.1 ] ]";
+            $opt = "$opt\n    mode_following = yes";
+        }
+    }
+    $opt = "$opt\n    update<$updateclass>: ()";
     $opt = "$opt\n    convergence<MolEnergyConvergence>: (";
     $opt = "$opt\n      cartesian = yes";
     $opt = "$opt\n    )";
@@ -627,8 +728,73 @@ sub input_string() {
 
     my $mpqcstart = sprintf ("mpqc: (\n  checkpoint = %s\n",
                              bool_to_yesno($qcinput->checkpoint()));
+    $mpqcstart = sprintf ("%s  savestate = %s\n",
+                          $mpqcstart,bool_to_yesno($qcinput->checkpoint()));
     my $mpqcstop = ")\n";
     "$mol$basis$mpqcstart$coor$mole$opt$freq$mpqcstop";
+}
+
+sub mpqc_fixed_coor {
+    my $self = shift;
+    my $coorref = shift;
+    my $result = "";
+    $result = "\n    fixed<SetIntCoor>: [";
+    while (scalar(@{$coorref}) != 0) {
+        my $nextcoor = $self->mpqc_sum_coor("      ","",$coorref);
+        $result = "$result\n$nextcoor";
+    }
+    $result = "$result\n    ]";
+}
+
+sub mpqc_followed_coor {
+    my $self = shift;
+    my $coorref = shift;
+    sprintf "\n%s", $self->mpqc_sum_coor("    ","followed",$coorref);
+}
+
+sub mpqc_sum_coor {
+    my $self = shift;
+    my $space = shift;
+    my $name = shift;
+    my $coor = shift;
+    my $result = "$space$name<SumIntCoor>:(";
+    $result = "$result\n$space  coor: [";
+    my @coef = ();
+    do {
+        $coef[$ncoor] = shift @{$coor};
+        my $simple = $self->mpqc_coor($coor);
+        $result = "$result\n$space    $simple";
+        $ncoor = $ncoor + 1;
+    } while($coor->[0] eq "+" && shift @{$coor} eq "+");
+    $result = "$result\n$space  ]";
+    $result = "$result\n$space  coef = [";
+    my $i;
+    foreach $i (0..$#coef) {
+        $result = "$result $coef[$i]";
+    }
+    $result = "$result]";
+    $result = "$result\n$space)";
+    $result;
+}
+
+sub mpqc_coor {
+    my $self = shift;
+    my $coor = shift;
+    my $type = shift @{$coor};
+    if ($type eq "TORS") {
+        return sprintf "<TorsSimpleCo>:(atoms = [%d %d %d %d])",
+                       shift @{$coor},shift @{$coor},
+                       shift @{$coor},shift @{$coor};
+    }
+    if ($type eq "BEND") {
+        return sprintf "<BendSimpleCo>:(atoms = [%d %d %d])",
+                       shift @{$coor},shift @{$coor},
+                       shift @{$coor};
+    }
+    if ($type eq "STRE") {
+        return sprintf "<StreSimpleCo>:(atoms = [%d %d])",
+                        shift @{$coor},shift @{$coor};
+    }
 }
 
 sub bool_to_yesno {

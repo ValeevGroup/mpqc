@@ -40,18 +40,23 @@ sub initialize {
     $parse->parse_file($infile);
     $self->{"qcinput"} = QCInput::new QCInput($parse);
 
-    open(OUTFILE,"<$outfile");
-    while (<OUTFILE>) {
-        if (/^\s*MPQC:/) {
-            $self->parse_mpqc(\*OUTFILE);
-            last;
+    $self->{"exists"} = 0;
+    $self->{"ok"} = 0;
+    if (-e $outfile) {
+        $self->{"exists"} = 1;
+        open(OUTFILE,"<$outfile");
+        while (<OUTFILE>) {
+            if (/^\s*MPQC:/) {
+                $self->parse_mpqc(\*OUTFILE);
+                last;
+            }
+            elsif (/^\s*Entering Gaussian System/) {
+                $self->parse_g94(\*OUTFILE);
+                last;
+            }
         }
-        elsif (/^\s*Entering Gaussian System/) {
-            $self->parse_g94(\*OUTFILE);
-            last;
-        }
+        close(<OUTFILE>);
     }
-    close(<OUTFILE>);
 }
 
 sub parse_g94 {
@@ -151,7 +156,23 @@ sub parse_mpqc {
     my $freq;
     my $wante = 1;
     my $ifreq = 0;
+    my $grad;
+    my $ngrad;
+    my $state = "none";
     while (<$out>) {
+        if ($state eq "read grad" && $wante) {
+            if (/^\s*([0-9]+\s+[A-Za-z]+\s+)?([\-\.0-9]+)\s+([\-\.0-9]+)\s+([\-\.0-9]+)/) {
+                $grad->[$ngrad + 0] = $2;
+                $grad->[$ngrad + 1] = $3;
+                $grad->[$ngrad + 2] = $4;
+                $ngrad = $ngrad + 3;
+            }
+            else {
+                $self->{"grad"} = $grad;
+                $state = "none";
+            }
+        }
+
         if ($wante && /total scf energy =\s+$fltrx/) {
             $scfenergy = $1;
         }
@@ -185,6 +206,11 @@ sub parse_mpqc {
                 $molstr = "${molstr} $1 $2 $3 $4\n";
             }
             $molecule = new Molecule($molstr);
+        }
+        elsif (/^\s+Total (MP2 )?[Gg]radient/) {
+            $state = "read grad";
+            $grad = [];
+            $ngrad = 0;
         }
         elsif (/^\s+Frequencies .*:\s*$/) {
             # read the irrep
@@ -262,6 +288,11 @@ sub ok {
     $self->{"ok"}
 }
 
+sub exists {
+    my $self = shift;
+    $self->{"exists"}
+}
+
 sub input {
     my $self = shift;
     $self->{"qcinput"}
@@ -270,6 +301,16 @@ sub input {
 sub energy {
     my $self = shift;
     $self->{"energy"}
+}
+
+sub optmolecule {
+    my $self = shift;
+    $self->{"optmolecule"};
+}
+
+sub gradient {
+    my $self = shift;
+    $self->{"grad"};
 }
 
 sub frequencies {

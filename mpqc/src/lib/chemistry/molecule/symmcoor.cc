@@ -292,7 +292,7 @@ SymmMolecularCoor::init()
 }
 
 void
-SymmMolecularCoor::form_coordinates()
+SymmMolecularCoor::form_coordinates(int keep_variable)
 {
   int i;
   int nbonds = bonds_->n();
@@ -336,7 +336,7 @@ SymmMolecularCoor::form_coordinates()
   RefSCDimension dnonzero = K.coldim();
   int nnonzero = dnonzero.n();
 
-  variable_->clear();
+  if (!keep_variable) variable_->clear();
   constant_->clear();
 
   // now remove followed coords from the fixed list, and add to the
@@ -391,7 +391,7 @@ SymmMolecularCoor::form_coordinates()
           // constant_->add(coordinate);
         }
       else {
-          variable_->add(coordinate);
+          if (!keep_variable) variable_->add(coordinate);
         }
     }
 

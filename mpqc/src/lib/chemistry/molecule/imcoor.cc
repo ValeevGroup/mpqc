@@ -184,6 +184,8 @@ IntMolecularCoor::new_coords()
 void
 IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
 {
+  variable_ = keyval->describedclassvalue("variable");
+  if (variable_.null()) variable_ = new SetIntCoor;
   fixed_ = keyval->describedclassvalue("fixed");
   if (fixed_.null()) fixed_ = new SetIntCoor;
   followed_ = keyval->describedclassvalue("followed");
@@ -295,6 +297,10 @@ IntMolecularCoor::init()
   all_->add(outs_);
   all_->add(extras_);
 
+  // don't let form_coordinates create new variables coordinates
+  // if they were given by the user
+  int keep_variable = (variable_->n() != 0);
+
   if (given_fixed_values_) {
       // save the given coordinate values
       RefSCDimension original_dfixed
@@ -322,7 +328,7 @@ IntMolecularCoor::init()
            << "displacing fixed coordinates to the requested values in "
            << nstep << " steps\n";
       for (int istep=1; istep<=nstep; istep++) {
-          form_coordinates();
+          form_coordinates(keep_variable);
 
           dim_ = new SCDimension(variable_->n(), "Nvar");
           dvc_ = new SCDimension(variable_->n()+constant_->n(),
@@ -351,7 +357,7 @@ IntMolecularCoor::init()
         }
     }
 
-  form_coordinates();
+  form_coordinates(keep_variable);
 
   dim_ = new SCDimension(variable_->n(), "Nvar");
   dvc_ = new SCDimension(variable_->n()+constant_->n(),

@@ -80,9 +80,9 @@ RedundMolecularCoor::save_data_state(StateOut&s)
 }
 
 void
-RedundMolecularCoor::form_coordinates()
+RedundMolecularCoor::form_coordinates(int keep_variable)
 {
-  variable_ = all_;
+  if (!keep_variable) variable_ = all_;
 
   if (form_print_simples_) print_simples(cout);
   if (form_print_variable_) print_variable(cout);

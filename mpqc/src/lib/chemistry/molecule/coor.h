@@ -466,7 +466,7 @@ class IntMolecularCoor: public MolecularCoor
   
     //. Actually form the variable and constant internal coordinates from
     // the simple internal coordinates.
-    virtual void form_coordinates() =0;
+    virtual void form_coordinates(int keep_variable=0) =0;
     
     //. Like \srccd{to\_cartesians()}, except all internal coordinates are
     // considered, not just the variable ones.
@@ -525,7 +525,7 @@ class SymmMolecularCoor: public IntMolecularCoor
 
     //. Actually form the variable and constant internal coordinates from
     // the simple internal coordinates.
-    void form_coordinates();
+    void form_coordinates(int keep_variable=0);
 
     //. Form the approximate hessian.
     void guess_hessian(RefSymmSCMatrix&hessian);
@@ -565,7 +565,7 @@ class RedundMolecularCoor: public IntMolecularCoor
 
     //. Actually form the variable and constant internal coordinates from
     // the simple internal coordinates.
-    void form_coordinates();
+    void form_coordinates(int keep_variable=0);
     //. Form the approximate hessian.
     void guess_hessian(RefSymmSCMatrix&hessian);
     //. Invert the hessian.

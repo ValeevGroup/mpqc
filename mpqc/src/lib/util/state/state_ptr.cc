@@ -27,7 +27,7 @@ int StateIn::getpointer(void**p)
     return refnum;
     }
   else {
-    *p = ((*ps_)(ind)).ptr();
+    *p = ((*this->ps_)(ind)).ptr();
     //printf("StateOut::getpointer: pointer is made 0x%x\n",*p);
     return 0;
     }
@@ -72,7 +72,7 @@ int StateOut::putpointer(void*p)
       return 1;
     }
   else {
-      put((*ps_)(ind).num());
+      put((*this->ps_)(ind).num());
       return 0;
     }
 }

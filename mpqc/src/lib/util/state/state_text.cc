@@ -352,7 +352,7 @@ int StateOutText::putpointer(void*p)
       return 1;
     }
   else {
-      fprintf(fp_,"reference to object %d\n",(*ps_)(ind).num());
+      fprintf(fp_,"reference to object %d\n",(*this->ps_)(ind).num());
       fflush(fp_);
       return 0;
     }
@@ -381,7 +381,7 @@ int StateInText::getpointer(void**p)
       sscanf(line,"reference to object %d\n",&refnum);
       StateDataNum num(refnum);
       Pix ind = ps_->seek(num);
-      *p = ((*ps_)(ind)).ptr();
+      *p = ((*this->ps_)(ind)).ptr();
       return 0;
     }
   else {

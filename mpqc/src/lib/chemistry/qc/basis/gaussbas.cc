@@ -587,7 +587,7 @@ int
 GaussianBasisSet::count_even_temp_shells_(Ref<KeyVal>& keyval, const char* element, const char* basisname,
                                           int havepure, int pure)
 {
-  int nshell;
+  int nshell = 0;
   char keyword[KeyVal::MaxKeywordLength];
 
   sprintf(keyword,":basis:%s:%s:am",element,basisname);
@@ -638,6 +638,8 @@ GaussianBasisSet::get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const 
   char keyword[KeyVal::MaxKeywordLength];
 
   // count the number of even-tempered primitive blocks
+  sprintf(keyword,":basis:%s:%s:am",
+          element,basisname);
   int nblocks = keyval->count(keyword) - 1;
   if (keyval->error() != KeyVal::OK) {
     ExEnv::err0() << indent

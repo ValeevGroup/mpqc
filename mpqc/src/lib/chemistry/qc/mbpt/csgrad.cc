@@ -1429,10 +1429,12 @@ MBPT2::compute_cs_grad()
     }           // exit loop over i-batches (pass)
   tim_exit("mp2 passes");
 
-  for (i=0; i<thr_->nthread(); i++) {
-    delete qbt34thread[i];
+  if (dograd || do_d1_) {
+    for (i=0; i<thr_->nthread(); i++) {
+      delete qbt34thread[i];
     }
-  delete[] qbt34thread;
+    delete[] qbt34thread;
+  }
 
   mem->set_localsize(0);
 

@@ -7,53 +7,12 @@
  * are multiplied by 2
  */
 
-/* $Log$
- * Revision 1.1  1993/12/29 12:53:16  etseidl
- * Initial revision
- *
- * Revision 1.4  1992/06/23  20:04:41  seidl
- * change dmt matrices to uppercase,
- * get rid of unnecessary matrice
- *
- * Revision 1.3  1992/06/17  21:54:22  jannsen
- * cleaned up for saber-c
- *
- * Revision 1.2  1992/03/21  00:39:48  seidl
- * change sym_libv2.h to chemistry/qc/dmtsym/sym_dmt.h
- *
- * Revision 1.1.1.1  1992/03/17  16:26:33  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:26:32  seidl
- * Initial revision
- *
- * Revision 1.2  1992/02/04  23:48:08  seidl
- * use math/dmt/libdmt-like density matrix formation
- *
- * Revision 1.1  1992/01/30  19:30:45  seidl
- * Initial revision
- *
- * Revision 1.4  1992/01/16  19:53:07  seidl
- * use new integral routines
- *
- * Revision 1.3  1992/01/13  19:15:08  seidl
- * add some comments
- *
- * Revision 1.2  1992/01/09  11:45:36  seidl
- * no longer include util/ipv2/ip_libv2
- *
- * Revision 1.1  1991/12/20  16:23:10  seidl
- * Initial revision
- * */
-
-static char *rcsid = "$Id$";
-
 #include <stdio.h>
 #include <tmpl.h>
+#include <util/misc/libmisc.h>
 #include <math/dmt/libdmt.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <chemistry/qc/dmtsym/sym_dmt.h>
 
 #include "scf.h"
 
@@ -61,97 +20,98 @@ static char *rcsid = "$Id$";
 #include "scf_mkden.lcl"
 
 GLOBAL_FUNCTION int
-scf_make_density(_scf_info,_irreps,
-       SCF_VEC,PMAT,DPMAT,PMATO,DPMATO,_occnum,_outfile)
-scf_struct_t *_scf_info;
-scf_irreps_t *_irreps;
-dmt_matrix SCF_VEC;
-dmt_matrix PMAT;
-dmt_matrix DPMAT;
-dmt_matrix PMATO;
-dmt_matrix DPMATO;
-double_vector_t *_occnum;
-FILE *_outfile;
+scf_make_density(scf_info,Scf_Vec,Pmat,DPmat,PmatO,DPmatO,occnum)
+scf_struct_t *scf_info;
+dmt_matrix Scf_Vec;
+dmt_matrix Pmat;
+dmt_matrix DPmat;
+dmt_matrix PmatO;
+dmt_matrix DPmatO;
+double *occnum;
 {
   int nlb;
   int nlocalb;
   int ib,jb,i,j,ist,jst,isz,jsz;
   int k;
   int ndocc,nsocc;
-  double *col,*occ,*pblk;
-  scf_irrep_t *s;
+  double *col,*pblk;
   loop_t *loop;
 
-  s = &_irreps->ir[0];
-  occ = _occnum->d;
-  ndocc = s->nclosed;
-  nsocc = s->nopen;
+  assert(dmt_distribution(Scf_Vec) == COLUMNS);
+  assert(dmt_distribution(Pmat) == SCATTERED);
+  assert(dmt_distribution(DPmat) == SCATTERED);
+  if (scf_info->iopen) {
+    assert(dmt_distribution(PmatO) == SCATTERED);
+    assert(dmt_distribution(DPmatO) == SCATTERED);
+  }
 
-  nlocalb = dmt_nlocal(PMAT);
+  ndocc = scf_info->nclosed;
+  nsocc = scf_info->nopen;
 
-/* save old density in DPMAT, and scale by -1.0 */
+  nlocalb = dmt_nlocal(Pmat);
 
-  dmt_copy(PMAT,DPMAT);
-  dmt_scale(DPMAT,-1.0);
-  dmt_fill(PMAT,0.0);
+/* save old density in DPmat, and scale by -1.0 */
 
-  if(_scf_info->iopen) {
-    dmt_copy(PMATO,DPMATO);
-    dmt_scale(DPMATO,-1.0);
-    dmt_fill(PMATO,0.0);
-    }
+  dmt_copy(Pmat,DPmat);
+  dmt_scale(DPmat,-1.0);
+  dmt_fill(Pmat,0.0);
+
+  if (scf_info->iopen) {
+    dmt_copy(PmatO,DPmatO);
+    dmt_scale(DPmatO,-1.0);
+    dmt_fill(PmatO,0.0);
+  }
 
  /* now put scfvec on the loop */
 
-  loop = dmt_ngl_create("%mr",SCF_VEC);
-  while(dmt_ngl_next(loop)) {
+  loop = dmt_ngl_create("%mr",Scf_Vec);
+  while (dmt_ngl_next(loop)) {
     int iind,isize,jsize;
     dmt_ngl_create_inner(loop,0);
-    while(dmt_ngl_next_inner_m(loop,&iind,&isize,&k,&jsize,&col)) {
+    while (dmt_ngl_next_inner_m(loop,&iind,&isize,&k,&jsize,&col)) {
 
-      for(nlb=0; nlb < nlocalb ; nlb++) {
-        if(k < ndocc) {
-          dmt_get_block(PMAT,nlb,&ib,&jb,&pblk);
-          dmt_describe_block(PMAT,ib,&ist,&isz);
-          dmt_describe_block(PMAT,jb,&jst,&jsz);
+      for (nlb=0; nlb < nlocalb ; nlb++) {
+        if (k < ndocc) {
+          dmt_get_block(Pmat,nlb,&ib,&jb,&pblk);
+          dmt_describe_block(Pmat,ib,&ist,&isz);
+          dmt_describe_block(Pmat,jb,&jst,&jsz);
 
-          for(i=0; i < isz ; i++) {
-            for(j=0; j < jsz ; j++) {
+          for (i=0; i < isz ; i++) {
+            for (j=0; j < jsz ; j++) {
               pblk[i*jsz+j] += col[ist+i]*col[jst+j];
-              }
             }
           }
-        else if(k < ndocc+nsocc) {
-          dmt_get_block(PMATO,nlb,&ib,&jb,&pblk);
-          dmt_describe_block(PMATO,ib,&ist,&isz);
-          dmt_describe_block(PMATO,jb,&jst,&jsz);
+        } else if (k < ndocc+nsocc) {
+          dmt_get_block(PmatO,nlb,&ib,&jb,&pblk);
+          dmt_describe_block(PmatO,ib,&ist,&isz);
+          dmt_describe_block(PmatO,jb,&jst,&jsz);
 
-          for(i=0; i < isz ; i++) {
-            for(j=0; j < jsz ; j++) {
-              pblk[i*jsz+j] += occ[k]*col[ist+i]*col[jst+j];
-              }
+          for (i=0; i < isz ; i++) {
+            for (j=0; j < jsz ; j++) {
+              pblk[i*jsz+j] += occnum[k]*col[ist+i]*col[jst+j];
             }
           }
         }
       }
     }
+  }
 
  /* now kill loop */
 
   dmt_ngl_kill(loop);
   
- /* now scale PMAT */
+ /* now scale Pmat */
 
-  dmt_scale(PMAT,4.0);
-  dmt_scale_diagonal(PMAT,0.5);
+  dmt_scale(Pmat,4.0);
+  dmt_scale_diagonal(Pmat,0.5);
 
-  if(_scf_info->iopen) {
-    dmt_scale(PMATO,2.0);
-    dmt_scale_diagonal(PMATO,0.5);
-    dmt_sum(PMATO,DPMATO);
-    dmt_sum(PMATO,PMAT);
-    }
-
-  dmt_sum(PMAT,DPMAT);
-  return 0;
+  if (scf_info->iopen) {
+    dmt_scale(PmatO,2.0);
+    dmt_scale_diagonal(PmatO,0.5);
+    dmt_sum(PmatO,DPmatO);
+    dmt_sum(PmatO,Pmat);
   }
+
+  dmt_sum(Pmat,DPmat);
+  return 0;
+}

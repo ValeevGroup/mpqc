@@ -1,96 +1,6 @@
 
-/* $Log$
- * Revision 1.4  1994/05/17 15:36:32  etseidl
- * add scf_loopj and scf_loopk
- *
- * Revision 1.3  1994/04/01  21:15:02  etseidl
- * add the ability to do the gmat formation in two steps, one for J and one
- * for K.  this will eventually be used by the dft stuff
- *
- * Revision 1.2  1994/01/19  13:14:52  seidl
- * add option to use a more load balanced gmat routine.
- *
- * Revision 1.1.1.1  1993/12/29  12:53:16  etseidl
- * SC source tree 0.1
- *
- * Revision 1.12  1992/06/23  20:04:30  seidl
- * change dmt matrices to uppercase,
- * get rid of unnecessary matrice
- *
- * Revision 1.11  1992/06/17  21:53:13  jannsen
- * cleaned up for saber-c and changed to ngl loops
- *
- * Revision 1.10  1992/06/16  16:25:08  seidl
- * add tim_print(), remove call to scf_make_g_d_o
- *
- * Revision 1.9  1992/05/26  20:17:45  jannsen
- * use mtype_get to get message types for global operations
- * check results of memory allocations
- *
- * Revision 1.8  1992/05/19  20:56:36  seidl
- * use message types 7000-7999
- *
- * Revision 1.7  1992/05/04  11:03:29  seidl
- * use gdcomb for getting local matrix off loop, remove pk integral stuff
- *
- * Revision 1.6  1992/04/22  15:54:05  seidl
- * add timing call
- *
- * Revision 1.5  1992/04/09  17:55:08  seidl
- * use signed char for maxp array
- *
- * Revision 1.4  1992/04/06  12:35:46  seidl
- * include math.h
- *
- * Revision 1.3  1992/04/01  01:02:47  seidl
- * fixed new bounds
- *
- * Revision 1.2  1992/03/21  00:38:38  seidl
- * change sym_libv2.h to chemistry/qc/dmtsym/sym_dmt.h
- *
- * Revision 1.1.1.1  1992/03/17  16:26:15  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:26:14  seidl
- * Initial revision
- *
- * Revision 1.8  1992/03/09  13:00:16  seidl
- * for local_P make maxp array
- *
- * Revision 1.7  1992/03/04  15:55:47  seidl
- * add scf bounds checking
- *
- * Revision 1.6  1992/02/28  19:00:40  seidl
- * add call to scf_make_g_l
- *
- * Revision 1.5  1992/02/21  15:10:19  seidl
- * start adding support for non-local density matrices
- *
- * Revision 1.4  1992/02/10  16:59:33  seidl
- * don't call scf_make_g if no integrals written to disk
- *
- * Revision 1.3  1992/02/07  12:58:44  seidl
- * remove timing stuff
- *
- * Revision 1.2  1992/02/05  14:11:35  seidl
- * use util/misc/libmisc timing routines
- *
- * Revision 1.1  1992/02/04  23:48:08  seidl
- * Initial revision
- *
- * Revision 1.3  1992/01/16  19:53:07  seidl
- * use new integral routines
- *
- * Revision 1.2  1992/01/14  19:33:40  seidl
- * change a few print statements
- *
- * Revision 1.1  1992/01/13  19:13:15  seidl
- * Initial revision
- * */
-
-static char rcsid[] = "$Id$";
-
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <tmpl.h>
@@ -119,263 +29,392 @@ static char rcsid[] = "$Id$";
 #include "scf_gmat.gbl"
 #include "scf_gmat.lcl"
 
-static double *intbuf=NULL;
+/* this is a pointer to the buffer which holds the integrals */
+static double *intbuf;
+
+/***************************************************************************
+ *
+ * given a centers struct and an scf struct, initialize some stuff needed
+ * to form the G matrix
+ *
+ */
 
 GLOBAL_FUNCTION int
-scf_make_gmat(_scf_info,_sym_info,_irreps,_centers,
-       GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,_init,_iter,_outfile)
-scf_struct_t *_scf_info;
-sym_struct_t *_sym_info;
-scf_irreps_t *_irreps;
-centers_t *_centers;
-dmt_matrix GMAT;
-dmt_matrix GMATO;
-dmt_matrix DPMAT;
-dmt_matrix DPMATO;
-dmt_matrix SSCR1;
-dmt_matrix SSCR2;
-int _init;
-int _iter;
-FILE *_outfile;
+scf_init_gmat(centers,scf_info)
+centers_t *centers;
+scf_struct_t *scf_info;
 {
-  int iopen=_scf_info->iopen;
+  int flags;
+
+  int_initialize_offsets2(centers,centers,centers,centers);
+
+  flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+
+  intbuf = int_initialize_erep(flags,0,centers,centers,centers,centers);
+  if (!intbuf) {
+    fprintf(stderr,"scf_init_gmat:  int_initialize_erep() failed\n");
+    return -1;
+  }
+
+  int_storage(scf_info->int_store);
+
+  if (scf_info->eliminate || scf_info->local_p) {
+    if (scf_init_bounds(centers,intbuf) < 0) {
+      fprintf(stderr,"scf_init_gmat:  scf_init_bounds failed\n");
+      int_done_erep();
+      int_done_offsets2(centers,centers,centers,centers);
+      int_done_storage();
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+/*************************************************************************
+ *
+ * frees memory used by the integral routines and the scf bounds
+ */
+
+GLOBAL_FUNCTION VOID
+scf_done_gmat(centers, scf_info)
+centers_t *centers;
+scf_struct_t *scf_info;
+{
+  int_done_erep();
+  int_done_offsets2(centers,centers,centers,centers);
+  int_done_storage();
+
+  if (scf_info->eliminate || scf_info->local_p) scf_done_bounds();
+}
+
+/**************************************************************************
+ *
+ * calculates the closed and open shell G matrices
+ *
+ * input:
+ *   scf_info = pointer to initialized scf struct
+ *   sym_info = pointer to initialized sym struct
+ *   centers  = pointer to initialized centers struct
+ *   Gmat     = scattered dmt matrix containing old skeleton G matrix
+ *   GmatO    = scattered dmt matrix containing old skeleton G matrix
+ *   DPmat    = scattered dmt matrix containing density diff matrix
+ *   DPmatO   = scattered dmt matrix containing density diff matrix
+ *   SScr1    = scattered dmt scratch matrix
+ *   SScr2    = scattered dmt scratch matrix
+ *   outfile  = FILE pointer to output (can be null if no output desired)
+ *
+ * on return:
+ *   Gmat and GmatO contain the new skeleton fock matrices
+ *
+ * return 0 on success and -1 on failure
+ */
+
+GLOBAL_FUNCTION int
+scf_make_gmat(scf_info,sym_info,centers,Gmat,GmatO,DPmat,DPmatO,
+                                                   SScr1,SScr2,outfile)
+scf_struct_t *scf_info;
+sym_struct_t *sym_info;
+centers_t *centers;
+dmt_matrix Gmat;
+dmt_matrix GmatO;
+dmt_matrix DPmat;
+dmt_matrix DPmatO;
+dmt_matrix SScr1;
+dmt_matrix SScr2;
+FILE *outfile;
+{
   int errcod;
-  int ntri=_scf_info->nbatri;
-  int flags=0;
-  signed char *maxp;
 
-  double_vector_t ptmp,ptmpo,gtmp,gtmpo;
+  assert(dmt_distribution(Gmat) == SCATTERED);
+  assert(dmt_distribution(DPmat) == SCATTERED);
+  assert(dmt_distribution(SScr1) == SCATTERED);
+  assert(dmt_distribution(SScr2) == SCATTERED);
+  if (scf_info->iopen) {
+    assert(dmt_distribution(GmatO) == SCATTERED);
+    assert(dmt_distribution(DPmatO) == SCATTERED);
+  }
 
-  if((_scf_info->print_flg & 16) && _init) tim_print(0);
-
+ /* get some timing info */
   tim_enter("gmat");
-  tim_enter("init");
 
-/* if using local density matrices, then allocate memory for them */
+  if (scf_info->local_p) {
+    if (scf_info->load_bal) {
+      errcod = scf_make_g_d_lb(centers,scf_info,sym_info,
+                               Gmat,GmatO,DPmat,DPmatO,intbuf,outfile);
 
-  if(_scf_info->local_p) {
-    errcod = allocbn_double_vector(&gtmp,"n",ntri);
-    if(errcod != 0) {
-      fprintf(_outfile,"scf_make_gmat: malloc trouble 1\n");
-      return(-1);
-      }
-    zero_double_vector(&gtmp);
+    } else if (scf_info->scdft) {
+      errcod = scf_make_j_d(centers,scf_info,sym_info,
+                               Gmat,DPmat,intbuf,outfile);
 
-    errcod = allocbn_double_vector(&ptmp,"n",ntri);
-    if(errcod != 0) {
-      fprintf(_outfile,"scf_make_gmat: malloc trouble 2\n");
-      return(-1);
-      }
-    zero_double_vector(&ptmp);
-
-    if(_scf_info->eliminate) {
-      int nshell=dmt_nblocks(DPMAT);
-      int nsht=nshell*(nshell+1)/2;
-      maxp = (signed char *) malloc(nsht);
-      if(maxp==NULL) {
-        fprintf(_outfile,"trouble mallocing maxp\n");
-        return(-1);
-        }
-      }
-    scat_to_dv(&ptmp,DPMAT,maxp,_scf_info->eliminate);
-
-    if(iopen) {
-      errcod = allocbn_double_vector(&gtmpo,"n",ntri);
-      if(errcod != 0) {
-        fprintf(_outfile,"scf_make_gmat: malloc trouble 3\n");
-        return(-1);
-        }
-      zero_double_vector(&gtmpo);
-
-      errcod = allocbn_double_vector(&ptmpo,"n",ntri);
-      if(errcod != 0) {
-        fprintf(_outfile,"scf_make_gmat: malloc trouble 4\n");
-        return(-1);
-        }
-      zero_double_vector(&ptmpo);
-      scat_to_dv(&ptmpo,DPMATO,NULL,0);
-      }
-    }
-
- /* if this is the first time through, initialize the buffer which will
-  * contain the integrals
-  */
-  if(_init) {
-    int_initialize_offsets2(_centers,_centers,_centers,_centers);
-
-    flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
-
-    intbuf = 
-      int_initialize_erep(flags,0,_centers,_centers,_centers,_centers);
-
-    int_storage(_scf_info->int_store);
-    if(_scf_info->eliminate || _scf_info->local_p) 
-      scf_init_bounds(_centers,intbuf);
-
-    }
-  tim_exit("init");
-  if((_scf_info->print_flg & 16) && _init) tim_print(0);
-
-  if(_scf_info->local_p) {
-
-  /* calculate integrals directly and stuff into the g matrix */
-    if (_scf_info->load_bal) {
-      errcod = scf_make_g_d_lb(_centers,_irreps,_scf_info,_sym_info,
-               &gtmp,&gtmpo,&ptmp,&ptmpo,maxp,intbuf,_iter,_outfile);
-      }
-    else if (_scf_info->scdft) {
-      errcod = scf_make_j_d(_centers,_irreps,_scf_info,_sym_info,
-               &gtmp,&ptmp,maxp,intbuf,_iter,_outfile);
      /* this is here until we get the Vxc stuff implemented */
-      errcod = scf_make_k_d(_centers,_irreps,_scf_info,_sym_info,
-               &gtmp,&ptmp,maxp,intbuf,_iter,_outfile);
-      }
-    else {
-      errcod = scf_make_g_d(_centers,_irreps,_scf_info,_sym_info,
-               &gtmp,&gtmpo,&ptmp,&ptmpo,maxp,intbuf,_iter,_outfile);
-      }
+      errcod = scf_make_k_d(centers,scf_info,sym_info,
+                               Gmat,DPmat,intbuf,outfile);
 
-    if(errcod != 0) {
-      fprintf(_outfile,"scf_iter: trouble forming gmat 2\n");
-      return(-1);
-      }
+    } else {
+      errcod = scf_make_g_d(centers,scf_info,sym_info,
+                               Gmat,GmatO,DPmat,DPmatO,intbuf,outfile);
     }
+  }
 
-/* if not using local density, then form the g matrix loopwise */
+ /* if not using local density, then form the g matrix loopwise */
   else {
-    if (_scf_info->scdft) {
-      errcod = scf_make_j_l(_centers,_scf_info,_sym_info,
-               GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,intbuf,_iter,_outfile);
-      errcod = scf_make_k_l(_centers,_scf_info,_sym_info,
-               GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,intbuf,_iter,_outfile);
-      }
-    else {
-      errcod = scf_make_g_l(_centers,_scf_info,_sym_info,
-               GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,intbuf,_iter,_outfile);
-      if(errcod != 0) {
-        fprintf(_outfile,"scf_iter: trouble forming gmat 3\n");
-        return(-1);
-        }
-      }
+    if (scf_info->scdft) {
+      errcod = scf_make_j_l(centers,scf_info,sym_info,
+                            Gmat,DPmat,SScr1,intbuf,outfile);
+      errcod = scf_make_k_l(centers,scf_info,sym_info,
+                            Gmat,DPmat,SScr1,intbuf,outfile);
+    } else {
+      errcod = scf_make_g_l(centers,scf_info,sym_info,Gmat,GmatO,DPmat,DPmatO,
+                            SScr1,SScr2,intbuf,outfile);
     }
+  }
 
-  tim_enter("clean");
-  int_reduce_storage_threshold();
+  if (errcod != 0) {
+    fprintf(stderr,"scf_gmat: trouble forming gmat 3\n");
+    return -1;
+  }
 
-  if(_scf_info->local_p) {
-    dv_to_scat(&gtmp,GMAT,&ptmp);
-    if(iopen) dv_to_scat(&gtmpo,GMATO,&ptmpo);
-  
-    free_double_vector(&ptmp);
-    free_double_vector(&gtmp);
-    if(iopen) {
-      free_double_vector(&ptmpo);
-      free_double_vector(&gtmpo);
-      }
-    if(_scf_info->eliminate) free(maxp);
-    }
-
-  tim_exit("clean");
   tim_exit("gmat");
 
   return 0;
-  }
+}
 
-LOCAL_FUNCTION VOID
-scat_to_dv(dv,sm,maxp,elim)
-double_vector_t *dv;
-dmt_matrix sm;
-signed char *maxp;
+/***************************************************************************
+ *
+ * given a dmt density matrix, form an array holding a local copy of the whole
+ * matrix.  This is for use by the direct scf functions.
+ *
+ * input:
+ *   scf_info = pointer to initialized scf struct
+ *   Pmat     = scattered dmt matrix containing a density matrix 
+ *   lp       = pointer to the pointer which will point to the local density
+ *              matrix. (uninitialized)
+ *   maxp     = pointer to the pointer to the array holding maxP(ishell)
+ *   elim     = 1 if doing integral screening
+ *
+ * on return:
+ *   pointer at lp is malloc'd and contains local density
+ *   pointer at maxp is malloc'd and contains maxP(ishell)
+ *
+ * return 0 on success, -1 on failure
+ */
+
+GLOBAL_FUNCTION int
+scf_make_local_pmat(scf_info,Pmat,lp,maxp,elim)
+scf_struct_t *scf_info;
+dmt_matrix Pmat;
+double **lp;
+signed char **maxp;
 int elim;
 {
   int i,j,ij,ib,jb,isz,jsz,ist,jst,lij;
+  int nshell=dmt_nblocks(Pmat);
+  int nsht=nshell*(nshell+1)/2;
+
   double *blk;
   double linv=1.0/log(2.0);
   double tol=pow(2.0,-126.0);
   double tmp,ftmp;
   loop_t *loop;
 
-  loop = dmt_ngl_create("%mr",sm);
+  assert(dmt_distribution(Pmat) == SCATTERED);
 
-  while(dmt_ngl_next(loop)) {
-    dmt_ngl_create_inner(loop,0);
-    while(dmt_ngl_next_inner_m(loop,&ib,&isz,&jb,&jsz,&blk)) {
-      dmt_describe_block(sm,ib,&ist,&isz);
-      dmt_describe_block(sm,jb,&jst,&jsz);
-
-      if(ib!=jb) {
-        for(i=0; i < isz ; i++) {
-          lij=IOFF((i+ist),jst);
-          for(j=0; j < jsz ; j++,lij++) {
-            dv->d[lij] = blk[i*jsz+j];
-            }
-          }
-        }
-      else {
-        for(i=0; i < isz ; i++) {
-          lij=IOFF((i+ist),jst);
-          for(j=0; j <= i ; j++,lij++) {
-            dv->d[lij] = blk[i*jsz+j];
-            }
-          }
-        }
-
-      if(elim) {
-        tmp=0.0;
-        for(i=0; i < isz*jsz; i++) 
-          if ((ftmp=fabs(blk[i])) > tmp) tmp=ftmp;
-
-        tmp=(tmp>tol) ? tmp:tol;
-
-        ij=ib*(ib+1)/2+jb;
-        maxp[ij]=(signed char) (log(tmp)*linv);
-        }
-
-      }
-    }
-
-  dmt_ngl_kill(loop);
+  *lp = (double *) malloc(sizeof(double)*scf_info->nbatri);
+  if (!(*lp)) {
+    fprintf(stderr,"scf_make_local_pmat:  could not malloc lp\n");
+    return -1;
   }
 
+  if (elim) {
+    *maxp = (signed char *) malloc(sizeof(signed char)*nsht);
+    if (!(*maxp)) {
+      fprintf(stderr,"scf_make_local_pmat: could not malloc maxp\n");
+      free (*lp);
+      return -1;
+    }
+  }
 
-LOCAL_FUNCTION VOID
-dv_to_scat(dv,sm,scr)
-double_vector_t *dv;
-dmt_matrix sm;
-double_vector_t *scr;
+  loop = dmt_ngl_create("%mr",Pmat);
+
+  while (dmt_ngl_next(loop)) {
+    dmt_ngl_create_inner(loop,0);
+    while(dmt_ngl_next_inner_m(loop,&ib,&isz,&jb,&jsz,&blk)) {
+      dmt_describe_block(Pmat,ib,&ist,&isz);
+      dmt_describe_block(Pmat,jb,&jst,&jsz);
+
+      if (ib!=jb) {
+        for (i=0; i < isz ; i++) {
+          lij=IOFF((i+ist),jst);
+
+          for (j=0; j < jsz ; j++,lij++) {
+            (*lp)[lij] = blk[i*jsz+j];
+          }
+        }
+      } else {
+        for (i=0; i < isz ; i++) {
+          lij=IOFF((i+ist),jst);
+
+          for(j=0; j <= i ; j++,lij++) {
+            (*lp)[lij] = blk[i*jsz+j];
+          }
+        }
+      }
+
+      if (elim) {
+        tmp=0.0;
+        for (i=0; i < isz*jsz; i++) 
+          if ((ftmp=fabs(blk[i])) > tmp) tmp=ftmp;
+
+        tmp = (tmp>tol) ? tmp : tol;
+
+        ij = ib*(ib+1)/2+jb;
+        (*maxp)[ij] = (signed char) (log(tmp)*linv);
+      }
+    }
+  }
+
+  dmt_ngl_kill(loop);
+
+  return 0;
+}
+
+/**************************************************************************
+ * 
+ * for use by the local_P direct scf routines, this will take an array
+ * containing local contributions to the G matrix, and stuff them into a
+ * scattered matrix.
+ *
+ * a global sum should already have been done on lg
+ */
+
+GLOBAL_FUNCTION VOID
+scf_lgmat_to_scat(lg,Gmat)
+double *lg;
+dmt_matrix Gmat;
 {
   int i,j,ib,jb,isz,jsz,ist,jst,lij;
   int nlocal,nl;
-  int dim = cubedim0();
   double *lblk;
 
-  nlocal = dmt_nlocal(sm);
+  assert(dmt_distribution(Gmat) == SCATTERED);
 
- /* sum up locally held matrices */
-  gop1(dv->d,dv->n,scr->d,'+',mtype_get());
+  nlocal = dmt_nlocal(Gmat);
 
  /* and transfer to locally held blocks of distributed matrix */
-  for(nl=0; nl < nlocal ; nl++) {
-    dmt_get_block(sm,nl,&ib,&jb,&lblk);
-    dmt_describe_block(sm,ib,&ist,&isz);
-    dmt_describe_block(sm,jb,&jst,&jsz);
+  for (nl=0; nl < nlocal ; nl++) {
+    dmt_get_block(Gmat,nl,&ib,&jb,&lblk);
+    dmt_describe_block(Gmat,ib,&ist,&isz);
+    dmt_describe_block(Gmat,jb,&jst,&jsz);
 
-    if(ib!=jb) {
-      for(i=0; i < isz ; i++) {
+    if (ib!=jb) {
+      for (i=0; i < isz ; i++) {
         lij=IOFF((i+ist),jst);
-        for(j=0; j < jsz ; j++,lij++) {
-          lblk[i*jsz+j] += dv->d[lij];
-          }
+        for (j=0; j < jsz ; j++,lij++) {
+          lblk[i*jsz+j] += lg[lij];
         }
       }
-    else {
-      for(i=0; i < isz ; i++) {
+    } else {
+      for (i=0; i < isz ; i++) {
         lij=IOFF((i+ist),jst);
-        for(j=0; j <= i ; j++,lij++) {
-          lblk[i*jsz+j] += dv->d[lij];
-          if(i!=j) lblk[j*jsz+i] += dv->d[lij];
-          }
+        for (j=0; j <= i ; j++,lij++) {
+          lblk[i*jsz+j] += lg[lij];
+          if(i!=j) lblk[j*jsz+i] += lg[lij];
         }
       }
     }
   }
+}
+
+/*****************************************************************************
+ *
+ * this initialized the arrays needed for the local_P direct fock build.
+ *
+ * on return:
+ *   dpmat, dpmato, maxp, gmat, and gmato are malloc'd and either contain
+ *   the local density, or are zero'd
+ *
+ * return 0 on success, -1 on failure
+ */
+
+GLOBAL_FUNCTION int
+scf_init_direct_gmat(scf_info, DPmat, DPmatO, dpmat, dpmato, maxp, gmat, gmato)
+scf_struct_t *scf_info;
+dmt_matrix DPmat;
+dmt_matrix DPmatO;
+double **dpmat;
+double **dpmato;
+signed char **maxp;
+double **gmat;
+double **gmato;
+{
+
+  assert(dmt_distribution(DPmat) == SCATTERED);
+  if (scf_info->iopen) assert(dmt_distribution(DPmat) == SCATTERED);
+
+  if (scf_make_local_pmat(scf_info,DPmat,dpmat,maxp,scf_info->eliminate) < 0) {
+    fprintf(stderr,"scf_init_direct_gmat:  scf_make_local_pmat() failed\n");
+    return -1;
+  }
+
+  if (scf_info->iopen) {
+    if (scf_make_local_pmat(scf_info,DPmatO,dpmato,NULL,0)) {
+      fprintf(stderr,"scf_init_direct_gmat:  scf_make_local_pmat() failed\n");
+
+      free(*dpmat);
+      if (*maxp) free(*maxp);
+
+      return -1;
+    }
+  }
+
+ /* now allocate memory for the local G matrices */
+
+  (*gmat) = (double *) malloc(sizeof(double)*scf_info->nbatri);
+  if (!(*gmat)) {
+    fprintf(stderr,"scf_init_direct_gmat:  could not malloc gmat\n");
+
+    free(*dpmat);
+    if (*maxp) free(*maxp);
+    if (scf_info->iopen) free(*dpmato);
+
+    return -1;
+  }
+
+  bzero(*gmat,sizeof(double)*scf_info->nbatri);
+
+  if (scf_info->iopen) {
+    (*gmato) = (double *) malloc(sizeof(double)*scf_info->nbatri);
+    if (!(*gmato)) {
+      fprintf(stderr,"scf_init_direct_gmat:  could not malloc gmato\n");
+
+      free(*gmat);
+      free(*dpmat);
+      free(*dpmato);
+      if (*maxp) free(*maxp);
+
+      return -1;
+    }
+
+  bzero(*gmato,sizeof(double)*scf_info->nbatri);
+  }
+
+  return 0;
+}
+
+/* free up the arrays used in the local_P direct fock build */
+
+GLOBAL_FUNCTION VOID
+scf_done_direct_gmat(dpmat, dpmato, maxp, gmat, gmato)
+double *dpmat;
+double *dpmato;
+signed char *maxp;
+double *gmat;
+double *gmato;
+{
+  if (dpmat) free(dpmat);
+  if (dpmato) free(dpmato);
+  if (maxp) free(maxp);
+  if (gmat) free(gmat);
+  if (gmato) free(gmato);
+}

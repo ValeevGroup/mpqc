@@ -7,3 +7,4 @@ chemistry/qc/dmtscf/libdmtscf.a
 #include <util/keyval/LIBS.h>
 #include <util/sgen/LIBS.h>
 #include <util/bio/LIBS.h>
+#include <util/misc/LIBS.h>

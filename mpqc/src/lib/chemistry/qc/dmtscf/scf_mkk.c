@@ -4,46 +4,46 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
+#include <math.h>
+
 #include <tmpl.h>
 #include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 #include <math/array/math_lib.h>
 #include <util/misc/libmisc.h>
-#include <math.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
+
 #include "scf.h"
 #include "scf_bnd.gbl"
-
-#ifdef INT_CE_SH_AM
-#undef INT_CE_SH_AM
-#endif
-#define INT_CE_SH_AM(c,a,s) ((c)->center[(a)].basis.shell[(s)].type[0].am)
+#include "scf_gmat.gbl"
 
 #define ioff(i) (((i)*((i)+1))>>1)
 #define IOFF(a,b) (((a)>(b))?(ioff(a)+(b)):(ioff(b)+(a)))
 
-extern signed char *Qvec;
+extern signed char *scf_bnd_Qvec;
 
 #include "scf_mkk.gbl"
 #include "scf_mkk.lcl"
 
+/**************************************************************************
+ *
+ */
+
 GLOBAL_FUNCTION int
-scf_make_k_d(_centers,_irreps,_scf_info,_sym_info,
-                 _gmat,_dpmat,maxp,_mgdbuff,iter,_outfile)
-centers_t *_centers;
-scf_irreps_t *_irreps;
-scf_struct_t *_scf_info;
-sym_struct_t *_sym_info;
-double_vector_t *_gmat;
-double_vector_t *_dpmat;
-signed char *maxp;
-double *_mgdbuff;
-int iter;
-FILE *_outfile;
+scf_make_k_d(centers,scf_info,sym_info,Gmat,DPmat,mgdbuff,outfile)
+centers_t *centers;
+scf_struct_t *scf_info;
+sym_struct_t *sym_info;
+dmt_matrix Gmat;
+dmt_matrix DPmat;
+double *mgdbuff;
+FILE *outfile;
 {
-  register int tmax,imax,cpmax,pmaxijk;
-  int pmaxik,pmaxjk,pmaxij,Qvecij;
+  int tmax,imax,cpmax,pmaxijk;
+  int pmaxjk,Qvecij;
   int i,j,k,l;
   int ij,kl,ijkl;
   int g,gij,gkl,gijkl;
@@ -60,41 +60,65 @@ FILE *_outfile;
   int int_index,kindex;
   int nproc=numnodes0();
   int me=mynode0();
+  int errcod;
   int s1,s2,s3,s4;
+  int inttol = (int) ((double) -(scf_info->intcut)/log10(2.0));
+  int use_symmetry=(sym_info->g > 1)?1:0;
+
   double tnint=0.0;
   double pki_int,value;
-  double *gtmp,*ptmp,*ptmpo,*gtmpo;
-  int inttol = (int) ((double) -(_scf_info->intcut)/log10(2.0));
-  int use_symmetry=(_sym_info->g > 1)?1:0;
-  char *shnfunc;
+  double *gtmp=0, *ptmp=0;
 
+  char *shnfunc;
+  signed char *maxp;
+
+
+ /* start timing */
   tim_enter("scf_mkgk");
 
-  gtmp = _gmat->d;
-  ptmp = _dpmat->d;
+ /* transfer DPmat to ptmp and init maxp */
+  errcod = scf_make_local_pmat(scf_info,DPmat,&ptmp,&maxp,scf_info->eliminate);
+  if (errcod < 0)  {
+    fprintf(stderr,"scf_make_j_d:  scf_make_local_pmat() failed\n");
+    return -1;
+  }
+
+ /* allocate memory for gtmp */
+  gtmp = (double *) malloc(sizeof(double)*scf_info->nbatri);
+  if (!gtmp) {
+    fprintf(stderr,"scf_make_j_d:  could not malloc gtmp\n");
+    free (ptmp);
+    if (maxp) free (maxp);
+    return -1;
+  }
+
+  bzero(gtmp,sizeof(double)*scf_info->nbatri);
 
  /* form shnfunc array */
 
-  shnfunc = (char *) malloc(_centers->nshell);
+  shnfunc = (char *) malloc(centers->nshell);
   if(shnfunc==NULL) {
-    fprintf(_outfile,"could not malloc shnfunc\n");
+    fprintf(outfile,"could not malloc shnfunc\n");
+    free (ptmp);
+    if (maxp) free (maxp);
+    free (gtmp);
     return(-1);
     }
-  for (i=0; i<_centers->nshell; i++) shnfunc[i]=INT_SH_NFUNC((_centers),i);
+  for (i=0; i<centers->nshell; i++) shnfunc[i]=INT_SH_NFUNC((centers),i);
 
  /* loop over all shells, calculate a bunch of integrals from each shell
   * quartet, and stick those integrals where they belong
   */
 
   kindex=int_index=0;
-  for (i=0; i<_centers->nshell; i++) {
-    if(use_symmetry) if(!_sym_info->p1[i]) continue;
+  for (i=0; i<centers->nshell; i++) {
+    if(use_symmetry) if(!sym_info->p1[i]) continue;
 
     for (j=0; j<=i; j++) {
       leavel=0;
       ij = ioff(i)+j;
-      if(use_symmetry) if(!_sym_info->lamij[ij]) continue;
-      Qvecij=(int)Qvec[ij];
+      if(use_symmetry) if(!sym_info->lamij[ij]) continue;
+      Qvecij=(int)scf_bnd_Qvec[ij];
 
       for (k=0; k<=i; k++,kindex++) {
         if(kindex%nproc!=me) {
@@ -102,7 +126,7 @@ FILE *_outfile;
           }
 
         kl=ioff(k);
-        if(_scf_info->eliminate) {
+        if(scf_info->eliminate) {
           pmaxijk=maxp[(ioff(i)+k)]-2;
           if((pmaxjk=maxp[IOFF(j,k)]-2)>pmaxijk) pmaxijk=pmaxjk;
           }
@@ -112,9 +136,9 @@ FILE *_outfile;
           if(use_symmetry) {
             ijkl=ioff(ij)+kl;
             nijkl=leavel=0;
-            for(g=0; g < _sym_info->g ; g++) {
-              gij=IOFF(_sym_info->shell_map[i][g],_sym_info->shell_map[j][g]);
-              gkl=IOFF(_sym_info->shell_map[k][g],_sym_info->shell_map[l][g]);
+            for(g=0; g < sym_info->g ; g++) {
+              gij=IOFF(sym_info->shell_map[i][g],sym_info->shell_map[j][g]);
+              gkl=IOFF(sym_info->shell_map[k][g],sym_info->shell_map[l][g]);
               gijkl = IOFF(gij,gkl);
               if(gijkl > ijkl) leavel=1;
               if(gijkl == ijkl) nijkl++;
@@ -122,12 +146,12 @@ FILE *_outfile;
             if(leavel) {
               kl++; continue;
               }
-            qijkl = _sym_info->g/nijkl;
+            qijkl = sym_info->g/nijkl;
             }
 
-          imax = (int) Qvec[kl]+Qvecij;
+          imax = (int) scf_bnd_Qvec[kl]+Qvecij;
 
-          if(_scf_info->eliminate) {
+          if(scf_info->eliminate) {
             cpmax = pmaxijk;
             if((tmax=maxp[(ioff(i)+l)]-2)>cpmax) cpmax=tmax;
             if((tmax=maxp[IOFF(j,l)]-2)>cpmax) cpmax=tmax;
@@ -135,7 +159,7 @@ FILE *_outfile;
             if(cpmax+imax < inttol) {
               /* If we are trying to save integrals on this node, then
                * int_index must be incremented now. */
-              if (_scf_info->int_store) int_index++;
+              if (scf_info->int_store) int_index++;
               kl++;
               continue;
               }
@@ -163,20 +187,20 @@ FILE *_outfile;
           e_any = (e12||e13e24||e34);
           if(e_any) {
             for (bf1=0; bf1<=INT_MAX1(n1) ; bf1++) {
-              i2 = _centers->func_num[s1] + bf1;
+              i2 = centers->func_num[s1] + bf1;
 
               for (bf2=0; bf2<=INT_MAX2(e12,bf1,n2) ; bf2++) {
-                j2 = _centers->func_num[s2] + bf2;
+                j2 = centers->func_num[s2] + bf2;
                 if(i2>=j2) { i1=i2; j1=j2; }
                 else { i1=j2; j1=i2; }
                 ij1=ioff(i1)+j1;
 
                 for (bf3=0; bf3<=INT_MAX3(e13e24,bf1,n3) ; bf3++) {
-                  k2 = _centers->func_num[s3] + bf3;
+                  k2 = centers->func_num[s3] + bf3;
 
                   for (bf4=0;bf4<=INT_MAX4(e13e24,e34,bf1,bf2,bf3,n4);bf4++){
-                    if (INT_NONZERO(_mgdbuff[index])) {
-                      l2 = _centers->func_num[s4] + bf4;
+                    if (INT_NONZERO(mgdbuff[index])) {
+                      l2 = centers->func_num[s4] + bf4;
 
                       if(k2>=l2) { k1=k2; l1=l2; }
                       else { k1=l2; l1=k2; }
@@ -188,7 +212,7 @@ FILE *_outfile;
                         ii = k1; jj = l1; kk = i1; ll = j1;
                         }
 
-                      pki_int = (double) qijkl*_mgdbuff[index];
+                      pki_int = (double) qijkl*mgdbuff[index];
 
                       if (jj == kk) {
                         if (ii == jj || kk == ll) {
@@ -249,20 +273,20 @@ FILE *_outfile;
             }
           else {
             for (bf1=0; bf1<n1 ; bf1++) {
-              i2 = _centers->func_num[s1] + bf1;
+              i2 = centers->func_num[s1] + bf1;
 
               for (bf2=0; bf2<n2 ; bf2++) {
-                j2 = _centers->func_num[s2] + bf2;
+                j2 = centers->func_num[s2] + bf2;
                 if(i2>=j2) { i1=i2; j1=j2; }
                 else { i1=j2; j1=i2; }
                 ij1=ioff(i1)+j1;
 
                 for (bf3=0; bf3<n3 ; bf3++) {
-                  k2 = _centers->func_num[s3] + bf3;
+                  k2 = centers->func_num[s3] + bf3;
 
                   for (bf4=0; bf4<n4; bf4++) {
-                    if (INT_NONZERO(_mgdbuff[index])) {
-                      l2 = _centers->func_num[s4] + bf4;
+                    if (INT_NONZERO(mgdbuff[index])) {
+                      l2 = centers->func_num[s4] + bf4;
 
                       if(k2>=l2) { k1=k2; l1=l2; }
                       else { k1=l2; l1=k2; }
@@ -274,7 +298,7 @@ FILE *_outfile;
                         ii = k1; jj = l1; kk = i1; ll = j1;
                         }
 
-                      pki_int = (double) qijkl*_mgdbuff[index];
+                      pki_int = (double) qijkl*mgdbuff[index];
 
                       if (jj == kk) {
                         lij=ioff(ii)+jj;
@@ -333,15 +357,26 @@ FILE *_outfile;
       }
     }
 
-  if(_scf_info->print_flg & 4) {
+  if(scf_info->print_flg & 4) {
     gsum0(&tnint,1,5,mtype_get(),0);
     if(mynode0()==0)
-      fprintf(_outfile,"  %8.0f integrals in scf_make_k_d\n",tnint);
+      fprintf(outfile,"  %8.0f integrals in scf_make_k_d\n",tnint);
     }
 
   free(shnfunc);
 
+ /* now sum up contributions to gtmp and gtmpo */
+  gop1(gtmp,scf_info->nbatri,ptmp,'+',mtype_get());
+
+ /* and stuff gtmp's back into Gmat's */
+  scf_lgmat_to_scat(gtmp,Gmat);
+
+  free(ptmp);
+  free(gtmp);
+
   tim_exit("scf_mkgk");
+
+  int_reduce_storage_threshold();
 
   return 0;
   }

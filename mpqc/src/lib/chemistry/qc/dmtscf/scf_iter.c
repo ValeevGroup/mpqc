@@ -1,397 +1,742 @@
 
-/* $Log$
- * Revision 1.2  1993/12/30 13:31:18  etseidl
- * merge in clj changes, do global sum of exchange energy in scf_ex.c
- *
- * Revision 1.16  1992/06/29  17:48:08  seidl
- * use scf_schmidt() for non-local_p as well
- *
- * Revision 1.15  1992/06/23  20:04:32  seidl
- * change dmt matrices to uppercase,
- * get rid of unnecessary matrice
- *
- * Revision 1.14  1992/06/17  21:54:18  jannsen
- * cleaned up for saber-c
- *
- * Revision 1.13  1992/06/16  16:27:08  seidl
- * reset first three iterations for cheat
- *
- * Revision 1.12  1992/05/19  20:58:30  seidl
- * add cheat stuff
- *
- * Revision 1.11  1992/05/04  11:06:38  seidl
- * remove pk ints, timings controlled by print_flg now
- *
- * Revision 1.10  1992/04/17  14:56:57  seidl
- * pass overlap matrix to scf_schmit()
- *
- * Revision 1.9  1992/04/13  11:06:56  seidl
- * exit after printing out energy if maxiter exceeded
- *
- * Revision 1.8  1992/04/08  20:39:43  seidl
- * move tim_print statement so times are printed out after first iteration
- *
- * Revision 1.7  1992/04/06  19:34:11  seidl
- * use iter%ckpt_freq, not iter%5
- *
- * Revision 1.6  1992/04/06  12:36:36  seidl
- * reset converged flag and diis_er
- *
- * Revision 1.5  1992/04/01  01:03:37  seidl
- * fix bounds
- *
- * Revision 1.4  1992/03/31  22:25:43  seidl
- * print timing info if _scf_info->print_tim is true
- *
- * Revision 1.3  1992/03/21  00:39:17  seidl
- * change sym_libv2.h to chemistry/qc/dmtsym/sym_dmt.h
- *
- * Revision 1.2  1992/03/18  12:16:14  seidl
- * add timing statement
- *
- * Revision 1.1.1.1  1992/03/17  16:26:23  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:26:22  seidl
- * Initial revision
- *
- * Revision 1.7  1992/02/26  12:21:46  seidl
- * free fdiag when done with it
- *
- * Revision 1.6  1992/02/21  15:17:58  seidl
- * add schmit orthogonalization
- *
- * Revision 1.5  1992/02/13  00:42:31  seidl
- * free up memory in diis when done
- * get correct form of mo fock matrices for open shell when done
- *
- * Revision 1.4  1992/02/10  17:01:29  seidl
- * remove clock0() call
- *
- * Revision 1.3  1992/02/07  12:59:59  seidl
- * remove timing stuff, don't checkpoint after 1st iteration
- *
- * Revision 1.2  1992/02/05  14:05:23  seidl
- * checkpoint vector and fock matrices every 5 iterations
- * use util/misc/libmisc timing routines
- *
- * Revision 1.1  1992/02/04  23:48:08  seidl
- * Initial revision
- *
- * Revision 1.8  1992/01/16  19:53:07  seidl
- * use new integral routines
- *
- * Revision 1.7  1992/01/13  19:14:26  seidl
- * add some timing statements, call scf_make_gmat instead of
- * scf_make_g_d and scf_make_g
- *
- * Revision 1.6  1992/01/09  11:58:50  seidl
- * first parallel version
- *
- * Revision 1.5  1992/01/06  11:48:04  seidl
- * add call to scf_schmit
- *
- * Revision 1.4  1992/01/02  16:20:13  seidl
- * add open-shell and diis
- *
- * Revision 1.3  1991/12/24  19:30:41  seidl
- * fix bug in writing of open-shell gmatrix to scr array
- *
- * Revision 1.2  1991/12/24  11:47:47  seidl
- * clean up matrices when converged
- *
- * Revision 1.1  1991/12/20  16:23:08  seidl
- * Initial revision
- * */
-
-static char rcsid[] = "$Id$";
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
 #include <tmpl.h>
 #include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 #include <math/dmt/libdmt.h>
 #include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
+
 #include "scf.h"
 
 #include "scf_mkden.gbl"
 #include "scf_gmat.gbl"
 #include "scf_en.gbl"
-#include "scf_fock.gbl"
 #include "scf_diis.gbl"
 #include "scf_orth.gbl"
 
 #include "scf_iter.gbl"
 #include "scf_iter.lcl"
 
-GLOBAL_FUNCTION int
-scf_iter(_scf_info,_sym_info,_irreps,_centers,
-       SCF_VEC,FOCK,FOCKO,_evals,_occ_num,
-       GMAT,GMATO,PMAT,DPMAT,PMATO,DPMATO,SCR1,SCR2,SCR3,SSCR1,SSCR2,_outfile)
-scf_struct_t *_scf_info;
-sym_struct_t *_sym_info;
-scf_irreps_t *_irreps;
-centers_t *_centers;
-dmt_matrix SCF_VEC;
-dmt_matrix FOCK;
-dmt_matrix FOCKO;
-double_vector_t *_evals;
-double_vector_t *_occ_num;
-dmt_matrix GMAT;
-dmt_matrix GMATO;
-dmt_matrix PMAT;
-dmt_matrix DPMAT;
-dmt_matrix PMATO;
-dmt_matrix DPMATO;
-dmt_matrix SCR1;
-dmt_matrix SCR2;
-dmt_matrix SCR3;
-dmt_matrix SSCR1;
-dmt_matrix SSCR2;
-FILE *_outfile;
-{
-  int i;
-  int iter,maxiter;
-  int iopen=_scf_info->iopen;
-  int errcod;
-  int nbasis=_scf_info->nbfao;
-  char vecfile[512],fockfile[512],fockofile[512];
+/* these are pointer copies of the core hamiltonian and overlap integrals */
+static dmt_matrix Hcore, S;
 
-  dmt_matrix S=dmt_old("libscfv3 overlap matrix");
+/* closed shell density and density difference */
+static dmt_matrix Pmat, DPmat;
 
-  maxiter = _scf_info->maxiter;
+/* open shell density and density difference */
+static dmt_matrix PmatO, DPmatO;
 
-/* what are the names of the checkpoint files? */
+/* Gmat and GmatO contain the skeleton G matrices */
+static dmt_matrix Gmat, GmatO;
 
-  sprintf(vecfile,"%s%s.scfvec",_scf_info->ckptdir,_scf_info->fname);
-  sprintf(fockfile,"%s%s.fock",_scf_info->ckptdir,_scf_info->fname);
-  sprintf(fockofile,"%s%s.focko",_scf_info->ckptdir,_scf_info->fname);
+/* scratch matrices...use SScr2 sparingly since it contains the symmetrized
+ * open-shell fock matrix after scf_iter() is called
+ */
+static dmt_matrix Scr1, Scr2, Scr3;
+static dmt_matrix SScr1, SScr2;
 
-/* begin the iteration here */
-
-  _scf_info->converged=0;
-  _scf_info->diis_er=0.0;
-  for(iter=0; iter < maxiter ; iter++) {
-
-   /* beware, there are side effects.  on exit SSCR2 contains the full
-    * open-shell part of the fock matrix 
-    */
-    make_fock(_centers,_scf_info,_sym_info,FOCK,FOCKO,GMAT,GMATO,SSCR1,SSCR2,_outfile);
-
-    scf_calculate_energy(_scf_info,FOCK,PMAT,DPMAT,
-                                   SSCR2,PMATO,SSCR1,iter,_outfile);
-
-  /* perform diis extrapolation, returns new fock matrix in ao basis */
-    if(_scf_info->diis_flg) {
-      errcod = scf_diis(_scf_info,FOCK,FOCKO,SCF_VEC,_occ_num,iter,
-              SCR1,SCR2,SCR3,0,_outfile);
-      if(errcod != 0) {
-        fprintf(_outfile,"scf_iter: trouble in scf_diis\n");
-        return(-1);
-        }
-      }
-
-  /* if open-shell, form effective fock matrix used to get new vector */
-    if(iopen) {
-      errcod = scf_make_fock(_scf_info,FOCK,FOCKO,SCF_VEC,_occ_num,
-                    SCR1,SCR2,SCR3,iter,_outfile);
-      if(errcod != 0) {
-        fprintf(_outfile,"scf_iter: trouble in scf_make_fock\n");
-        return(-1);
-        }
-      }
-
-/* transform fock matrix to mo basis, then diagonalize to obtain new vector
- * scf_make_fock already does this, so don't do it for open shell
+/*************************************************************************
+ *
+ * given the scf struct this initializes the matrices needed for scf
+ * iterations
+ *
+ * input:
+ *   HM = scattered dmt matrix containing core hamiltonian
+ *   SM = scattered dmt matrix containing overlap integrals
  */
 
-    if(!iopen) {
-      dmt_mult(FOCK,SCF_VEC,SCR1);
-      dmt_mult(SCF_VEC,SCR1,SCR2);
-      dmt_copy(SCR2,FOCK);
-      }
+GLOBAL_FUNCTION int
+scf_init_iter(centers,scf_info,HM,SM)
+centers_t *centers;
+scf_struct_t *scf_info;
+dmt_matrix HM;
+dmt_matrix SM;
+{
+  int nbasis = scf_info->nbfao;
 
-    dmt_copy(FOCK,SCR2); /* dmt_diag needs a columns dist. matrix */
-    dmt_diag(SCR2,SCR1,_evals->d);
-    dmt_transpose(SCF_VEC);
-    dmt_mult(SCF_VEC,SCR1,SCR2);
-    dmt_copy(SCR2,SCF_VEC);
+  assert(dmt_distribution(HM) == SCATTERED);
+  assert(dmt_distribution(SM) == SCATTERED);
 
-/* un-level shift eigenvalues */
+  Hcore = HM;
+  S = SM;
 
-    if(iopen) {
-      double_vector_t fdiag;
-      double occi;
-      double occ0=_occ_num->d[0];
-
-      errcod = allocbn_double_vector(&fdiag,"n",nbasis);
-      dmt_get_diagonal(FOCK,fdiag.d);
-       
-      for(i=0; i < nbasis; i++) {
-        occi=_occ_num->d[i];
-        if(occi==occ0 && occi) {
-          _evals->d[i] += _scf_info->lvl_shift;
-          fdiag.d[i] += _scf_info->lvl_shift;
-          }
-        else if(occi) {
-          _evals->d[i] += 0.5*_scf_info->lvl_shift;
-          fdiag.d[i] += 0.5*_scf_info->lvl_shift;
-          }
-        }
-      dmt_set_diagonal(FOCK,fdiag.d);
-    
-      free_double_vector(&fdiag);
-      }
-
-    if(_scf_info->print_flg & 2) {
-      sync0();
-      tim_print(0);
-      }
-
-/* if converged, return */
-
-    if(_scf_info->converged) {
- /* make sure the real closed and open shell mo fock matrices are placed in
-  * FOCK and FOCKO.
-  */
-      if(_scf_info->diis_flg) {
-        scf_diis(_scf_info,FOCK,FOCKO,SCF_VEC,_occ_num,iter,
-              SCR1,SCR2,SCR3,1,_outfile);
-        }
-      else {
-        make_fock(_centers,_scf_info,_sym_info,
-                  FOCK,FOCKO,GMAT,GMATO,SSCR1,SSCR2,_outfile);
-
-        dmt_mult(FOCK,SCF_VEC,SCR1);
-        dmt_mult(SCF_VEC,SCR1,SCR2);
-        dmt_copy(SCR2,FOCK);
-        if(iopen) {
-          dmt_mult(FOCKO,SCF_VEC,SCR1);
-          dmt_mult(SCF_VEC,SCR1,SCR2);
-          dmt_copy(SCR2,FOCKO);
-          }
-        }
-
-      if(mynode0()==0) {
-          fprintf(_outfile,"\n  converged scf energy is %20.10f au\n",
-                  _scf_info->nuc_rep + _scf_info->e_elec);
-        }
-      return(0);
-      }
-
-/* orthogonalize new vector */
-
-    errcod = scf_schmidt(_scf_info,_irreps,SCF_VEC,S,1,_outfile);
-    if(errcod!=0) {
-      fprintf(_outfile,"trouble orthogonalizing scf vector\n");
-      return(-1);
-      }
-
-/* make new density matrices */
-
-    errcod = scf_make_density(_scf_info,_irreps,
-      SCF_VEC,PMAT,DPMAT,PMATO,DPMATO,_occ_num,_outfile);
-    if(errcod!=0) {
-      fprintf(_outfile,"trouble forming density matrices\n");
-      return(-1);
-      }
-
-/* reset density if appropriate */
-
-    if(_scf_info->eliminate && 
-      ((iter+1)%_scf_info->p_reset_freq == 0 || 
-       (_scf_info->cheat && iter < 3))) {
-      dmt_copy(PMAT,DPMAT);
-      dmt_fill(GMAT,0.0);
-      if(_scf_info->iopen) {
-        dmt_copy(PMATO,DPMATO);
-        dmt_fill(GMATO,0.0);
-        }
-      if(mynode0()==0) fprintf(_outfile,"  resetting density matrices\n");
-      }
-
-/* and armed with the new density matrix, form new gmatrix */
-
-    if((iter+1) < maxiter) {
-      errcod = scf_make_gmat(_scf_info,_sym_info,_irreps,_centers,
-               GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,0,iter+1,_outfile);
-      if(errcod != 0) {
-        fprintf(_outfile,"scf_iter: trouble forming gmat\n");
-        return(-1);
-        }
-      }
-
-/* checkpoint every "ckpt_freq" iterations */
-    if((iter+1)%_scf_info->ckpt_freq==0) {
-      if(mynode0()==0)
-        fprintf(_outfile,"  checkpointing vector and fock matrices\n");
-      dmt_write(vecfile,SCF_VEC);
-      dmt_write(fockfile,FOCK);
-      if(iopen) dmt_write(fockofile,FOCKO);
-      }
-
-    } /* ad nauseum */
-
-
-/* clean up after yourself */
-  if(_scf_info->diis_flg) {
-    scf_diis(_scf_info,FOCK,FOCKO,SCF_VEC,_occ_num,iter,
-          SCR1,SCR2,SCR3,1,_outfile);
-    }
-  else {
-    make_fock(_centers,_scf_info,_sym_info,FOCK,FOCKO,GMAT,GMATO,SSCR1,SSCR2,_outfile);
-
-    dmt_mult(FOCK,SCF_VEC,SCR1);
-    dmt_mult(SCF_VEC,SCR1,SCR2);
-    dmt_copy(SCR2,FOCK);
-    if(iopen) {
-      dmt_mult(FOCKO,SCF_VEC,SCR1);
-      dmt_mult(SCF_VEC,SCR1,SCR2);
-      dmt_copy(SCR2,FOCKO);
-      }
-    }
-
-  return 0;
+ /* initialize the diis routines */
+  if (scf_init_diis(scf_info) < 0) {
+    fprintf(stderr,"scf_init_iter: could not init diis routines\n");
+    return -1;
   }
 
-LOCAL_FUNCTION VOID
-make_fock(_centers,_scf_info,_sym_info,FOCK,FOCKO,GMAT,GMATO,SSCR1,SSCR2,_outfile)
-centers_t *_centers;
-scf_struct_t *_scf_info;
-sym_struct_t *_sym_info;
-dmt_matrix FOCK;
-dmt_matrix FOCKO;
-dmt_matrix GMAT;
-dmt_matrix GMATO;
-dmt_matrix SSCR1;
-dmt_matrix SSCR2;
-FILE *_outfile;
+ /* initialize the g matrix stuff */
+  if (scf_init_gmat(centers,scf_info) < 0) {
+    fprintf(stderr,"scf_init_iter: could not init gmat routines\n");
+    return -1;
+  }
+
+ /* form initial density matrices */
+
+  Pmat = dmt_create("dmtscf density matrix",nbasis,SCATTERED);
+  dmt_fill(Pmat,0.0);
+
+  DPmat = dmt_create("dmtscf density diff matrix",nbasis,SCATTERED);
+  dmt_fill(DPmat,0.0);
+
+  if (scf_info->iopen) {
+    PmatO = dmt_create("dmtscf open density matrix",nbasis,SCATTERED);
+    dmt_fill(PmatO,0.0);
+
+    DPmatO = dmt_create("dmtscf open density diff matrix",nbasis,SCATTERED);
+    dmt_fill(DPmatO,0.0);
+
+  } else {
+    PmatO = dmt_nil();
+    DPmatO = dmt_nil();
+  }
+
+ /* allocate memory for the G matrices */
+
+  Gmat = dmt_create("dmtscf g matrix",nbasis,SCATTERED);
+  dmt_fill(Gmat,0.0);
+
+  if (scf_info->iopen) {
+    GmatO = dmt_create("dmtscf open g matrix",nbasis,SCATTERED);
+    dmt_fill(GmatO,0.0);
+  } else {
+    GmatO = dmt_nil();
+  }
+
+ /* allocate scratch arrays now */
+
+  Scr1 = dmt_create("scf_iter: scr1",nbasis,COLUMNS);
+  Scr2 = dmt_create("scf_iter: scr2",nbasis,COLUMNS);
+  Scr3 = dmt_create("scf_iter: scr3",nbasis,COLUMNS);
+  SScr1 = dmt_create("scf_iter: scr4",nbasis,SCATTERED);
+  SScr2 = dmt_create("scf_iter: scr5",nbasis,SCATTERED);
+
+  return 0;
+}
+
+/************************************************************************
+ * 
+ * this frees up the matrices used for scf iterations
+ *
+ * input:
+ *   centers  = pointer to initialized centers struct
+ *   scf_info = pointer to initialized scf struct
+ *   sym_info = pointer to initialized sym struct
+ *   Fock     = scattered distributed matrix
+ *   FockO    = scattered distributed matrix
+ *   Scf_Vec  = column distributed matrix containing the converged wfn
+ *
+ * on return:
+ *   Fock and FockO contain the MO fock matrices
+ *
+ * return 0 on success, -1 on failure
+ */
+
+GLOBAL_FUNCTION VOID
+scf_done_iter(centers,scf_info,sym_info,Fock,FockO,Scf_Vec)
+centers_t *centers;
+scf_struct_t *scf_info;
+sym_struct_t *sym_info;
+dmt_matrix Fock;
+dmt_matrix FockO;
+dmt_matrix Scf_Vec;
 {
-  int iopen=_scf_info->iopen;
-  dmt_matrix HCORE=dmt_old("libscfv3 hcore matrix");
 
- /* form full g matrix from the skeleton gmatrix, place the result in SSCR1 */
+  assert(dmt_distribution(Scf_Vec) == COLUMNS);
+  assert(dmt_distribution(Fock) == SCATTERED);
+  if (scf_info->iopen) assert(dmt_distribution(FockO) == SCATTERED);
 
-  if(_sym_info->g > 1) {
-    sym_sym_matrix(_centers,_sym_info,GMAT,SSCR1,_outfile);
-    if(iopen) sym_sym_matrix(_centers,_sym_info,GMATO,SSCR2,_outfile);
+ /* clean up the diis functions */
+  if (scf_info->diis_flg) scf_done_diis(scf_info);
+
+ /* retrieve the MO Fock matrices */
+  make_fock(centers,scf_info,sym_info,Fock,FockO,Gmat,GmatO,SScr1,SScr2);
+
+  dmt_mult(Fock,Scf_Vec,Scr1);
+  dmt_mult(Scf_Vec,Scr1,Scr2);
+  dmt_copy(Scr2,Fock);
+
+  if (scf_info->iopen) {
+    dmt_mult(FockO,Scf_Vec,Scr1);
+    dmt_mult(Scf_Vec,Scr1,Scr2);
+    dmt_copy(Scr2,FockO);
+  }
+
+ /* free up 2ei functions */
+  scf_done_gmat(centers,scf_info);
+
+  dmt_free(Pmat);
+  dmt_free(DPmat);
+  dmt_free(Gmat);
+  dmt_free(Scr1);
+  dmt_free(Scr2);
+  dmt_free(Scr3);
+  dmt_free(SScr1);
+  dmt_free(SScr2);
+  if (scf_info->iopen) {
+    dmt_free(PmatO);
+    dmt_free(DPmatO);
+    dmt_free(GmatO);
+  }
+}
+
+/*****************************************************************************
+ * 
+ * actually do the iterations needed for an scf calculation
+ *
+ * input:
+ *   scf_info = pointer to initialized scf struct
+ *   sym_info = pointer to initialized sym struct
+ *   centers  = pointer to initialized centers struct
+ *   Scf_Vec  = column distributed matrix
+ *   HM       = scattered dmt matrix containing core hamiltonian
+ *   SM       = scattered dmt matrix containing overlap integrals
+ *   Fock     = scattered distributed matrix
+ *   FockO    = scattered distributed matrix
+ *   evals    = pointer to double array
+ *   occ_num  = pointer to double array containing MO occupation numbers
+ *   outfile  = FILE pointer to output
+ *
+ * on return:
+ *   Scf_Vec contains the converged SCF wavefunction
+ *   Fock and FockO contain the MO fock matrices
+ *   evals contains the MO energies
+ *
+ * return 0 on success, -1 on failure
+ */
+ 
+GLOBAL_FUNCTION int
+scf_do_iter(scf_info,sym_info,centers,
+            Scf_Vec,HM,SM,Fock,FockO,evals,occ_num,outfile)
+scf_struct_t *scf_info;
+sym_struct_t *sym_info;
+centers_t *centers;
+dmt_matrix Scf_Vec;
+dmt_matrix HM;
+dmt_matrix SM;
+dmt_matrix Fock;
+dmt_matrix FockO;
+double *evals;
+double *occ_num;
+FILE *outfile;
+{
+  int iter,errcod=0;
+  double etot, edif, neelec, delta;
+  double plimit = pow(10.0,(double) -(scf_info->convergence));
+
+  char vecfile[512],fockfile[512],fockofile[512];
+
+  assert(dmt_distribution(Scf_Vec) == COLUMNS);
+  assert(dmt_distribution(HM) == SCATTERED);
+  assert(dmt_distribution(SM) == SCATTERED);
+  assert(dmt_distribution(Fock) == SCATTERED);
+  if (scf_info->iopen) assert(dmt_distribution(FockO) == SCATTERED);
+
+ /* what are the names of the checkpoint files? */
+
+  sprintf(vecfile,"%s%s.scfvec",scf_info->ckptdir,scf_info->fname);
+  sprintf(fockfile,"%s%s.fock",scf_info->ckptdir,scf_info->fname);
+  sprintf(fockofile,"%s%s.focko",scf_info->ckptdir,scf_info->fname);
+
+ /* initialize the scf_iter stuff */
+  scf_init_iter(centers,scf_info,HM,SM);
+
+ /* print the header for the energies */
+  if (mynode0()==0 && outfile) {
+    fprintf(outfile,"\n  iter       total energy       "
+                    " delta E         delta P          diiser\n");
+  }
+
+ /* begin the iteration here */
+
+  scf_info->converged=0;
+  scf_info->diis_er=0.0;
+
+  for (iter=0; iter < scf_info->maxiter ; iter++) {
+
+   /* calculate the next scf vector
+    * the AO fock matrices are in Fock and FockO now
+    */
+    errcod = scf_make_ao_fock(scf_info,sym_info,centers,Scf_Vec,Fock,FockO,
+                              occ_num,iter,outfile);
+    if (errcod < 0) {
+      fprintf(stderr,"scf_do_iter:  scf_iter failed on iteration %d\n",iter+1);
+      break;
     }
-  else {
-    dmt_copy(GMAT,SSCR1);
-    if(iopen) dmt_copy(GMATO,SSCR2);
+
+   /* calculate the electronic energy */
+    neelec =
+      scf_electronic_energy(scf_info,Hcore,Fock,Pmat,FockO,PmatO,SScr1,SScr2);
+   
+   /* calculate the change in the density */
+    delta = scf_rms_delta_density(scf_info,DPmat);
+
+   /* Etot = Eelec + Enucrep */
+    etot = scf_info->nuc_rep + neelec;
+
+   /* delta(E) = Eelec(n-1) - Eelec(n) */
+    edif = scf_info->e_elec - neelec;
+    scf_info->e_elec = neelec;
+
+    if (mynode0()==0 && outfile) {
+      fprintf(outfile, "%5d %20.10f %15.6e %15.6e %15.6e\n",
+                     iter+1, etot, edif, delta, scf_info->diis_er);
+      fflush(outfile);
     }
+
+   /* checkpoint every "ckpt_freq" iterations */
+    if (((iter+1) % scf_info->ckpt_freq) == 0) {
+      if (mynode0()==0 && outfile) {
+        fprintf(outfile,
+          "  scf_do_iter: checkpointing vector and fock matrices\n");
+      }
+      dmt_write(vecfile,Scf_Vec);
+      dmt_write(fockfile,Fock);
+      if (scf_info->iopen) dmt_write(fockofile,FockO);
+    }
+
+   /* if converged, return */
+    if (delta < plimit) {
+      scf_info->converged = 1;
+      if (mynode0()==0 && outfile) {
+          fprintf(outfile,"\n  converged scf energy is %20.10f au\n",
+                  scf_info->nuc_rep + scf_info->e_elec);
+      }
+      break;
+    }
+
+   /* calculate next vector.  after this, Fock and FockO contain MO matrices */
+    errcod = scf_make_new_vec(scf_info,Scf_Vec,Fock,FockO,evals,occ_num,iter);
+    if (errcod < 0) {
+      fprintf(stderr,"scf_do_iter: could not make new vector %d\n",iter);
+      break;
+    }
+  }
+
+ /* cleanup */
+
+ /* this puts MO fock matrices into Fock and FockO */
+  scf_done_iter(centers,scf_info,sym_info,Fock,FockO,Scf_Vec);
+
+  return errcod;
+}
+
+/***************************************************************************
+ *
+ * input:
+ *   scf_info = pointer to initialized scf struct
+ *   sym_info = pointer to initialized sym struct
+ *   centers  = pointer to initialized centers struct
+ *   Scf_Vec  = column distributed matrix containing a trial scf vector
+ *   Fock     = scattered distributed matrix
+ *   FockO    = scattered distributed matrix
+ *   occ_num  = pointer to double array containing MO occupation numbers
+ *   iter     = current iteration (first iteration is 0)
+ *   outfile  = FILE pointer to output
+ *
+ * on return:
+ *   Fock and FockO contain the AO fock matrices
+ *   Fock = Hcore + G
+ *   FockO = Hcore + G - GO
+ *
+ * return 0 on success, -1 on failure
+ */
+
+GLOBAL_FUNCTION int
+scf_make_ao_fock(scf_info,sym_info,centers,Scf_Vec,Fock,FockO,
+                                                occ_num,iter,outfile)
+scf_struct_t *scf_info;
+sym_struct_t *sym_info;
+centers_t *centers;
+dmt_matrix Scf_Vec;
+dmt_matrix Fock;
+dmt_matrix FockO;
+double *occ_num;
+int iter;
+FILE *outfile;
+{
+
+  assert(dmt_distribution(Scf_Vec) == COLUMNS);
+  assert(dmt_distribution(Fock) == SCATTERED);
+  if (scf_info->iopen) assert(dmt_distribution(FockO) == SCATTERED);
+
+ /* form density matrices from scf vector */
+  if (scf_make_density(scf_info,Scf_Vec,Pmat,DPmat,PmatO,DPmatO,occ_num) < 0) {
+    fprintf(stderr,"scf_make_ao_fock: trouble forming density matrices\n");
+    return -1;
+  }
+
+ /* reset density if appropriate */
+
+  if (iter && scf_info->eliminate && ((iter)%scf_info->p_reset_freq == 0)) {
+    dmt_copy(Pmat,DPmat);
+    dmt_fill(Gmat,0.0);
+    if (scf_info->iopen) {
+      dmt_copy(PmatO,DPmatO);
+      dmt_fill(GmatO,0.0);
+    }
+
+    if (mynode0()==0 && outfile)
+      fprintf(outfile,"  scf_make_ao_fock: resetting density matrices\n");
+  }
+
+ /* and armed with the new density matrix, form new skeleton G and GO */
+
+  if (scf_make_gmat(scf_info,sym_info,centers,
+                    Gmat,GmatO,DPmat,DPmatO,SScr1,SScr2,outfile) < 0) {
+    fprintf(stderr,"scf_make_ao_fock: trouble forming gmat\n");
+    return -1;
+  }
+
+  /* form the full G matrices from the skeleton one, and then form 
+   * Fock = H + G and FockO = H + G - GO
+   */
+  make_fock(centers,scf_info,sym_info,Fock,FockO,Gmat,GmatO,SScr1,SScr2);
+
+  return 0;
+}
+
+/***************************************************************************
+ *
+ * input:
+ *   scf_info = pointer to initialized scf struct
+ *   Scf_Vec  = column distributed matrix
+ *   Fock     = scattered distributed matrix
+ *   FockO    = scattered distributed matrix
+ *   evals    = pointer to double array
+ *   occ_num  = pointer to double array containing MO occupation numbers
+ *   iter     = current iteration (first iteration is 0)
+ *
+ * on return:
+ *   Scf_Vec contains the current SCF vector
+ *   Fock contains the MO fock matrice or effective MO fock matrix (open shell)
+ *   FockO contains the open-shell fock matrix transformed to MO basis
+ *   evals contains the MO energies
+ *
+ * return 0 on success, -1 on failure
+ */
+
+GLOBAL_FUNCTION int
+scf_make_new_vec(scf_info,Scf_Vec,Fock,FockO,evals,occ_num,iter)
+scf_struct_t *scf_info;
+dmt_matrix Scf_Vec;
+dmt_matrix Fock;
+dmt_matrix FockO;
+double *evals;
+double *occ_num;
+int iter;
+{
+  assert(dmt_distribution(Scf_Vec) == COLUMNS);
+  assert(dmt_distribution(Fock) == SCATTERED);
+  if (scf_info->iopen) assert(dmt_distribution(FockO) == SCATTERED);
+
+ /* perform diis extrapolation, returns new fock matrix in ao basis */
+  if (scf_info->diis_flg) {
+    if (scf_diis(scf_info,Fock,FockO,Scf_Vec,occ_num,iter,Scr1,Scr2,Scr3) < 0) {
+      fprintf(stderr,"scf_make_new_vec: trouble in scf_diis\n");
+      return -1;
+    }
+  }
+
+ /* if open-shell, form effective MO fock matrix used to get new vector
+  * and level shift it. otherwise, just transform Fock matrix to MO basis.
+  */
+  if (scf_info->iopen) {
+    make_eff_fock(scf_info,Fock,FockO,Scf_Vec,occ_num,iter);
+  } else {
+    dmt_mult(Fock,Scf_Vec,Scr1);
+    dmt_mult(Scf_Vec,Scr1,Scr2);
+    dmt_copy(Scr2,Fock);
+  }
+
+ /* now diagonalize the MO Fock matrix */
+  dmt_copy(Fock,Scr2); /* dmt_diag needs a columns dist. matrix */
+  dmt_diag(Scr2,Scr1,evals);
+  dmt_transpose(Scf_Vec);
+  dmt_mult(Scf_Vec,Scr1,Scr2);
+  dmt_copy(Scr2,Scf_Vec);
+
+ /* un-level shift eigenvalues */
+
+  if (scf_info->iopen) {
+    un_level_shift(scf_info,Fock,occ_num,evals);
+  }
+
+  if (scf_info->print_flg & 2) {
+    sync0();
+    tim_print(0);
+  }
+
+ /* orthogonalize new vector */
+  if (scf_schmidt(scf_info,Scf_Vec,S,1) < 0) {
+    fprintf(stderr,"scf_make_new_vec: trouble orthogonalizing scf vector\n");
+    return -1;
+  }
+
+  return 0;
+}
+
+/*************************************************************************
+ *
+ * this takes the Skeleton fock matrices in Gmat and GmatO, symmetrizes 
+ * them, and then forms Fock = Hcore + sym(Gmat), and FockO = sym(GmatO)
+ */
+
+LOCAL_FUNCTION VOID
+make_fock(centers,scf_info,sym_info,Fock,FockO,Gmat,GmatO,SScr1,SScr2)
+centers_t *centers;
+scf_struct_t *scf_info;
+sym_struct_t *sym_info;
+dmt_matrix Fock;
+dmt_matrix FockO;
+dmt_matrix Gmat;
+dmt_matrix GmatO;
+dmt_matrix SScr1;
+dmt_matrix SScr2;
+{
+ /* form full g matrix from the skeleton gmatrix, place the result in SScr1 */
+
+  if (sym_info->g > 1) {
+    sym_sym_matrix(centers,sym_info,Gmat,SScr1);
+    if (scf_info->iopen) sym_sym_matrix(centers,sym_info,GmatO,SScr2);
+  } else {
+    dmt_copy(Gmat,SScr1);
+    if (scf_info->iopen) dmt_copy(GmatO,SScr2);
+  }
 
  /* F = H + G
   * FO = H + G - GO */
 
-  dmt_copy(HCORE,FOCK);
-  dmt_sum(SSCR1,FOCK);
+  dmt_copy(Hcore,Fock);
+  dmt_sum(SScr1,Fock);
 
-  if(iopen) {
-    dmt_copy(SSCR2,FOCKO);
-    dmt_scale(FOCKO,-1.0);
-    dmt_sum(FOCK,FOCKO);
+  if (scf_info->iopen) {
+    dmt_copy(SScr2,FockO);
+    dmt_scale(FockO,-1.0);
+    dmt_sum(Fock,FockO);
+  }
+}
+
+LOCAL_FUNCTION VOID
+un_level_shift(scf_info,Fock,occ_num,evals)
+scf_struct_t *scf_info;
+dmt_matrix Fock;
+double *occ_num;
+double *evals;
+{
+  int i;
+  double *fdiag;
+  double occi;
+  double occ0 = occ_num[0];
+
+  fdiag = (double *) malloc(sizeof(double)*scf_info->nbfao);
+  if (!fdiag) {
+    fprintf(stderr,"un_level_shift:  could not malloc fdiag\n");
+    exit(1);
+  }
+
+  dmt_get_diagonal(Fock,fdiag);
+       
+  for (i=0; i < scf_info->nbfao; i++) {
+    occi = occ_num[i];
+    if (occi==occ0 && occi) {
+      evals[i] += scf_info->lvl_shift;
+      fdiag[i] += scf_info->lvl_shift;
+    } else if (occi) {
+      evals[i] += 0.5*scf_info->lvl_shift;
+      fdiag[i] += 0.5*scf_info->lvl_shift;
     }
   }
+  dmt_set_diagonal(Fock,fdiag);
+  
+  free(fdiag);
+}
+
+/*************************************************************************
+ * 
+ * given the closed and open-shell fock matrices in the AO basis, form
+ * the effective open-shell Fock matrix. also level shifts the fock matrix
+ *
+ * input:
+ *   scf_info = pointer to scf struct
+ *   Fock     = scattered dmt matrix containing fock matrix (overwritten)
+ *   FockO    = scattered dmt matrix containing open-shell fock matrix
+ *   Scf_Vec  = column dmt matrix containing scf vector
+ *   occ_num  = pointer to double array containing mo occupation numbers
+ *   Scr1, Scr2, Scr3 = column dmt scratch matrices
+ *   iter     = iteration number
+ *
+ * on return:
+ *   Fock contains effective MO basis fock matrix
+ *
+ */
+
+LOCAL_FUNCTION VOID
+make_eff_fock(scf_info,Fock,FockO,Scf_Vec,occ_num,iter)
+scf_struct_t *scf_info;
+dmt_matrix Fock;
+dmt_matrix FockO;
+dmt_matrix Scf_Vec;
+double *occ_num;
+int iter;
+{
+  int i,j;
+  int ib,isz,ist,jb,jsz,jst;
+  int nlocalb=dmt_nlocal(Fock);
+  int nn;
+  double occi, occj, occ0;
+  double *Fblk,*FOblk;
+
+ /* transform fock to mo basis */
+  dmt_mult(Fock,Scf_Vec,Scr3);
+  dmt_mult(Scf_Vec,Scr3,Scr1);
+  dmt_copy(Scr1,Fock);
+
+ /* transform fock_open to mo basis */
+  dmt_mult(FockO,Scf_Vec,Scr3);
+  dmt_mult(Scf_Vec,Scr3,Scr2);
+  dmt_copy(Scr2,FockO);
+
+ /* form effective fock matrix in mo basis */
+
+  occ0 = occ_num[0];
+  for (nn=0; nn < nlocalb; nn++ ) {
+    dmt_get_block(Fock,nn,&ib,&jb,&Fblk);
+    dmt_get_block(FockO,nn,&ib,&jb,&FOblk);
+    dmt_describe_block(Fock,ib,&ist,&isz);
+    dmt_describe_block(Fock,jb,&jst,&jsz);
+
+    for (i=0; i < isz ; i++) {
+      for (j=0; j < jsz ; j++) {
+        occi = occ_num[ist+i];
+        occj = occ_num[jst+j];
+
+     /* default: Guest & Saunders general form 
+            C        O         V
+        ----------
+        |        |
+     C  |   fc   |
+        |        |
+        -------------------
+        |        |        |
+     O  | 2fc-fo |   fc   |
+        |        |        |
+        ----------------------------
+        |        |        |        |
+     V  |   fc   |   fo   |   fc   |
+        |        |        |        |
+        ----------------------------
+      */
+        if (iter < scf_info->maxiter-1 && 
+           !scf_info->converged && !scf_info->fock_typ) {
+          if (occi == occj) 
+            Fblk[i*jsz+j] = Fblk[i*jsz+j];
+          else if (occi && occj)
+            Fblk[i*jsz+j] = 2.0*Fblk[i*jsz+j]-FOblk[i*jsz+j];
+          else if (occi==2.0 || occj==2.0)
+            Fblk[i*jsz+j] = Fblk[i*jsz+j];
+          else
+            Fblk[i*jsz+j] = FOblk[i*jsz+j];
+        }
+
+     /* Guest & Saunders' form for high spin
+            C        O         V
+        ----------
+        |        |
+     C  | 2fc-fo |
+        |        |
+        -------------------
+        |        |        |
+     O  | 2fc-fo | 2fc-fo |
+        |        |        |
+        ----------------------------
+        |        |        |        |
+     V  |   fc   |   fo   | 2fc-fo |
+        |        |        |        |
+        ----------------------------
+      */
+        else if (iter < scf_info->maxiter-1 && !scf_info->converged 
+                                          && scf_info->fock_typ == 1) {
+          if ((occi == occj) || (occi && occj))
+            Fblk[i*jsz+j] = 2.0*Fblk[i*jsz+j]-FOblk[i*jsz+j];
+          else if (occi==2.0 || occj==2.0)
+            Fblk[i*jsz+j] = Fblk[i*jsz+j];
+          else
+            Fblk[i*jsz+j] = FOblk[i*jsz+j];
+        }
+
+     /* test form
+            C        O         V
+        ----------
+        |        |
+     C  |   fo   |
+        |        |
+        -------------------
+        |        |        |
+     O  | 2fc-fo |   fo   |
+        |        |        |
+        ----------------------------
+        |        |        |        |
+     V  |   fc   |   fo   |   fo   |
+        |        |        |        |
+        ----------------------------
+      */
+        else if (iter < scf_info->maxiter-1 && !scf_info->converged &&
+                                              scf_info->fock_typ == 2) {
+          if (occi == occj) 
+            FOblk[i*jsz+j] = FOblk[i*jsz+j];
+          else if (occi && occj)
+            Fblk[i*jsz+j] = 2.0*Fblk[i*jsz+j]-FOblk[i*jsz+j];
+          else if (occi==2.0 || occj==2.0)
+            Fblk[i*jsz+j] = Fblk[i*jsz+j];
+          else
+            Fblk[i*jsz+j] = FOblk[i*jsz+j];
+        }
+
+     /* form for converged wavefunction
+            C        O         V
+        ----------
+        |        |
+     C  |   fc   |
+        |        |
+        -------------------
+        |        |        |
+     O  | 2fc-fo |   fo   |
+        |        |        |
+        ----------------------------
+        |        |        |        |
+     V  |   fc   |   fo   |   fo   |
+        |        |        |        |
+        ----------------------------
+      */
+        else {
+          if ((occi+occj)==4.0)
+            Fblk[i*jsz+j] = Fblk[i*jsz+j];
+          else if (occi == occj) 
+            Fblk[i*jsz+j] = FOblk[i*jsz+j];
+          else if (occi && occj)
+            Fblk[i*jsz+j] = 2.0*Fblk[i*jsz+j]-FOblk[i*jsz+j];
+          else if (occi==2.0 || occj==2.0)
+            Fblk[i*jsz+j] = Fblk[i*jsz+j];
+          else
+            Fblk[i*jsz+j] = FOblk[i*jsz+j];
+        }
+
+        if (ib==jb && j==i) {
+          if (occi == occ0 && occi) {
+            Fblk[i*jsz+j] -= scf_info->lvl_shift;
+          } else {
+            if (occi) Fblk[i*jsz+j] -= 0.5*scf_info->lvl_shift;
+          }
+        }
+      }
+    }
+  }
+}

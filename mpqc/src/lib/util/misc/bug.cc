@@ -115,7 +115,7 @@ Debugger::Debugger(const RefKeyVal &keyval)
   if (keyval->error() != KeyVal::OK) traceback_ = 1;
 
   exit_on_signal_ = keyval->booleanvalue("exit");
-  if (keyval->error() != KeyVal::OK) traceback_ = 1;
+  if (keyval->error() != KeyVal::OK) exit_on_signal_ = 1;
 
   wait_for_debugger_ = keyval->booleanvalue("wait_for_debugger");
   if (keyval->error() != KeyVal::OK) wait_for_debugger_ = 1;

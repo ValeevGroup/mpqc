@@ -1,6 +1,6 @@
-define([sc_version],[2.1.0])
+define([sc_mmm_version],[2.1.0])
 define([sc_buildid],[alpha])
-define([sc_so_version],[1:0:0])
+define([sc_so_version],[3:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -17,19 +17,17 @@ AC_DEFINE_UNQUOTED(TARGET_ARCH, "$target")
 
 define([default_prefix_dash],ifelse(sc_buildid, ,[],[-]))
 define([default_prefix],builtin(format,"/usr/local/mpqc/%s%s%s",
-                        sc_version,default_prefix_dash,sc_buildid))
+                        sc_mmm_version,default_prefix_dash,sc_buildid))
 
-SC_VERSION=sc_version
-AC_DEFINE_UNQUOTED(SC_VERSION, "$SC_VERSION")
-AC_SUBST(SC_VERSION)
+SC_MMM_VERSION=sc_mmm_version
 
 SC_SO_VERSION=sc_so_version
 AC_SUBST(SC_SO_VERSION)
 
 changequote(<<, >>)dnl
-SC_MAJOR_VERSION=`echo $SC_VERSION|sed 's/\([0-9]*\)\.[0-9]*\.[0-9]*/\1/'`
-SC_MINOR_VERSION=`echo $SC_VERSION|sed 's/[0-9]*\.\([0-9]*\)\.[0-9]*/\1/'`
-SC_MICRO_VERSION=`echo $SC_VERSION|sed 's/[0-9]*\.[0-9]*\.\([0-9]*\)/\1/'`
+SC_MAJOR_VERSION=`echo $SC_MMM_VERSION|sed 's/\([0-9]*\)\.[0-9]*\.[0-9]*/\1/'`
+SC_MINOR_VERSION=`echo $SC_MMM_VERSION|sed 's/[0-9]*\.\([0-9]*\)\.[0-9]*/\1/'`
+SC_MICRO_VERSION=`echo $SC_MMM_VERSION|sed 's/[0-9]*\.[0-9]*\.\([0-9]*\)/\1/'`
 changequote([, ])dnl
 AC_DEFINE_UNQUOTED(SC_MAJOR_VERSION,$SC_MAJOR_VERSION)
 AC_DEFINE_UNQUOTED(SC_MINOR_VERSION,$SC_MINOR_VERSION)
@@ -294,10 +292,15 @@ AC_SUBST(BUILDID)
 AC_DEFINE_UNQUOTED(SC_BUILDID,"$BUILDID")
 
 if test "$BUILDID"; then
-  ac_default_prefix="/usr/local/mpqc/$SC_VERSION-$BUILDID"
+  SC_VERSION="$SC_MMM_VERSION-$BUILDID"
 else
-  ac_default_prefix="/usr/local/mpqc/$SC_VERSION"
+  SC_VERSION="$SC_MMM_VERSION"
 fi
+
+AC_DEFINE_UNQUOTED(SC_VERSION, "$SC_VERSION")
+AC_SUBST(SC_VERSION)
+
+ac_default_prefix="/usr/local/mpqc/$SC_VERSION"
 
 AC_ARG_WITH(cc,
 [  --with-cc               Gives the name of the C compiler to use.],
@@ -345,11 +348,7 @@ LD=$withval
 if test $prefix = $ac_default_prefix -o $prefix = NONE; then
   scdatadir=$datadir
 else
-  if test "$BUILDID"; then
-    scdatadir="$datadir/mpqc/$SC_VERSION-$BUILDID"
-  else
-    scdatadir=$datadir/mpqc/$SC_VERSION
-  fi
+  scdatadir=$datadir/mpqc/$SC_VERSION
 fi
 AC_ARG_WITH(sc-datadir,
 [  --with-sc-datadir       Specifies arch-independent install subdir.],

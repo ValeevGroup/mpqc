@@ -104,7 +104,7 @@ LocalSCVector::accumulate_element(int i,double a)
 }
 
 void
-LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
+LocalSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 {
   const char* name = "LocalSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
@@ -127,7 +127,7 @@ LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 }
 
 void
-LocalSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
+LocalSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 {
   const char* name = "LocalSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
@@ -200,7 +200,7 @@ LocalSCVector::accumulate(SCMatrix*a)
 }
 
 void
-LocalSCVector::assign(double a)
+LocalSCVector::assign_val(double a)
 {
   int nelem = d->n();
   int i;
@@ -208,15 +208,15 @@ LocalSCVector::assign(double a)
 }
 
 void
-LocalSCVector::assign(SCVector*a)
+LocalSCVector::assign_v(SCVector*a)
 {
   // make sure that the argument is of the correct type
   LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSCVector::assign");
+    = LocalSCVector::require_castdown(a,"LocalSCVector::assign_v");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "LocalSCVector::assign(SCVector*a): "
+      cerr << indent << "LocalSCVector::assign_v(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -227,7 +227,7 @@ LocalSCVector::assign(SCVector*a)
 }
 
 void
-LocalSCVector::assign(const double*a)
+LocalSCVector::assign_p(const double*a)
 {
   int nelem = d->n();
   int i;

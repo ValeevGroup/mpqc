@@ -367,14 +367,14 @@ ReplSymmSCMatrix::accumulate_row(SCVector *v, int i)
 }
 
 void
-ReplSymmSCMatrix::assign(double val)
+ReplSymmSCMatrix::assign_val(double val)
 {
   int n = (d->n()*(d->n()+1))/2;
   for (int i=0; i<n; i++) matrix[i] = val;
 }
 
 void
-ReplSymmSCMatrix::assign(SymmSCMatrix*m)
+ReplSymmSCMatrix::assign_s(SymmSCMatrix*m)
 {
   ReplSymmSCMatrix* lm = ReplSymmSCMatrix::castdown(m);
   if (lm && dim()->equiv(lm->dim())) {
@@ -386,14 +386,14 @@ ReplSymmSCMatrix::assign(SymmSCMatrix*m)
 }
 
 void
-ReplSymmSCMatrix::assign(const double*m)
+ReplSymmSCMatrix::assign_p(const double*m)
 {
   int d = i_offset(n());
   memcpy(matrix, m, sizeof(double)*d);
 }
 
 void
-ReplSymmSCMatrix::assign(const double**m)
+ReplSymmSCMatrix::assign_pp(const double**m)
 {
   for (int i=0; i < n(); i++)
       for (int j=0; j <= i; j++)

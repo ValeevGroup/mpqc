@@ -73,7 +73,7 @@ class RangeLock {
     int checkgr(int start, int fence, int value);
 
     void check();
-    void print(ostream &o = cout);
+    void print(ostream &o = cout) const;
 
     int lockvalue(int i);
 };

@@ -74,7 +74,7 @@ RenderedObject::set_name(const char *name)
 }
 
 void
-RenderedObject::print(ostream& os)
+RenderedObject::print(ostream& os) const
 {
   os << "RenderedObject:" << endl;
   if (material_.nonnull()) {

@@ -344,7 +344,7 @@ LocalSCMatrix::accumulate_column(SCVector *v, int i)
 }
 
 void
-LocalSCMatrix::assign(double a)
+LocalSCMatrix::assign_val(double a)
 {
   int n = d1->n() * d2->n();
   double *data = block->data;
@@ -352,25 +352,7 @@ LocalSCMatrix::assign(double a)
 }
 
 void
-LocalSCMatrix::assign(SCMatrix *m)
-{
-  SCMatrix::assign(m);
-}
-
-void
-LocalSCMatrix::assign(const double *m)
-{
-  SCMatrix::assign(m);
-}
-
-void
-LocalSCMatrix::assign(const double **m)
-{
-  SCMatrix::assign(m);
-}
-
-void
-LocalSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
+LocalSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
 {
   const char* name = "LocalSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
@@ -432,7 +414,7 @@ LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 }
 
 void
-LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
+LocalSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
   const char* name = "LocalSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
@@ -443,7 +425,7 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
       cerr << indent <<
-          "LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b): " <<
+          "LocalSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): " <<
           "dimensions don't match" << endl;
       abort();
     }
@@ -467,9 +449,9 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 }
 
 void
-LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
+LocalSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
-  const char* name = "LocalSCMatrix::accumulate_product";
+  const char* name = "LocalSCMatrix::accumulate_product_rd";
   // make sure that the arguments are of the correct type
   LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
   LocalDiagSCMatrix* lb = LocalDiagSCMatrix::require_castdown(b,name);
@@ -478,7 +460,7 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
       cerr << indent <<
-          "LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b): " <<
+          "LocalSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b): " <<
           "dimensions don't match" << endl;
       abort();
     }
@@ -494,18 +476,6 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
           cd[i][j] += ad[i][j]*bd[j];
         }
     }
-}
-
-void
-LocalSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
-}
-
-void
-LocalSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
 }
 
 void

@@ -82,16 +82,16 @@ class BlockedSCVector: public SCVector {
     void save(StateOut&);
     void restore(StateIn&);
 
-    void assign(double);
-    void assign(SCVector*);
-    void assign(const double*);
+    void assign_val(double);
+    void assign_v(SCVector*);
+    void assign_p(const double*);
 
     double get_element(int);
     void set_element(int,double);
     void accumulate_element(int,double);
 
-    void accumulate_product(SCMatrix*,SCVector*);
-    void accumulate_product(SymmSCMatrix*,SCVector*);
+    void accumulate_product_rv(SCMatrix*,SCVector*);
+    void accumulate_product_sv(SymmSCMatrix*,SCVector*);
 
     void accumulate(SCVector*);
     void accumulate(SCMatrix*);
@@ -136,10 +136,7 @@ class BlockedSCMatrix: public SCMatrix {
     void save(StateOut&);
     void restore(StateIn&);
 
-    void assign(double);
-    void assign(SCMatrix *);
-    void assign(const double *);
-    void assign(const double **);
+    void assign_val(double);
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -156,11 +153,9 @@ class BlockedSCMatrix: public SCMatrix {
     void accumulate_column(SCVector *v, int i);
 
     void accumulate_outer_product(SCVector*,SCVector*);
-    void accumulate_product(SCMatrix*,SCMatrix*);
-    void accumulate_product(SCMatrix*,SymmSCMatrix*);
-    void accumulate_product(SCMatrix*,DiagSCMatrix*);
-    void accumulate_product(SymmSCMatrix*,SCMatrix*);
-    void accumulate_product(DiagSCMatrix*,SCMatrix*);
+    void accumulate_product_rr(SCMatrix*,SCMatrix*);
+    void accumulate_product_rs(SCMatrix*,SymmSCMatrix*);
+    void accumulate_product_rd(SCMatrix*,DiagSCMatrix*);
     void accumulate(SCMatrix*);
     void accumulate(SymmSCMatrix*);
     void accumulate(DiagSCMatrix*);
@@ -219,8 +214,8 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     void scale(double);
-    void assign(double);
-    void assign(SymmSCMatrix*m);
+    void assign_val(double);
+    void assign_s(SymmSCMatrix*m);
 
     SCMatrix * get_subblock(int,int,int,int);
     SymmSCMatrix * get_subblock(int,int);

@@ -156,13 +156,13 @@ Function::save_data_state(StateOut&s)
 }
 
 RefSCMatrixKit
-Function::matrixkit()
+Function::matrixkit() const
 {
   return matrixkit_;
 }
 
 RefSCDimension
-Function::dimension()
+Function::dimension() const
 {
   return dim_;
 }
@@ -181,7 +181,7 @@ Function::value()
 }
 
 int
-Function::value_needed()
+Function::value_needed() const
 {
   return value_.needed();
 }
@@ -212,13 +212,13 @@ Function::set_actual_value_accuracy(double a)
 }
 
 double
-Function::desired_value_accuracy()
+Function::desired_value_accuracy() const
 {
   return value_.desired_accuracy();
 }
 
 double
-Function::actual_value_accuracy()
+Function::actual_value_accuracy() const
 {
   return value_.actual_accuracy();
 }
@@ -231,7 +231,7 @@ Function::gradient()
 }
 
 int
-Function::gradient_needed()
+Function::gradient_needed() const
 {
   return gradient_.needed();
 }
@@ -262,13 +262,13 @@ Function::set_actual_gradient_accuracy(double a)
 }
 
 double
-Function::actual_gradient_accuracy()
+Function::actual_gradient_accuracy() const
 {
   return gradient_.actual_accuracy();
 }
 
 double
-Function::desired_gradient_accuracy()
+Function::desired_gradient_accuracy() const
 {
   return gradient_.desired_accuracy();
 }
@@ -280,7 +280,7 @@ Function::hessian()
 }
 
 int
-Function::hessian_needed()
+Function::hessian_needed() const
 {
   return hessian_.needed();
 }
@@ -326,19 +326,19 @@ Function::set_actual_hessian_accuracy(double a)
 }
 
 double
-Function::desired_hessian_accuracy()
+Function::desired_hessian_accuracy() const
 {
   return hessian_.desired_accuracy();
 }
 
 double
-Function::actual_hessian_accuracy()
+Function::actual_hessian_accuracy() const
 {
   return hessian_.actual_accuracy();
 }
 
 void
-Function::print(ostream&o)
+Function::print(ostream&o) const
 {
   const char *computed = " (computed)";
   const char *notcomputed = "";
@@ -373,19 +373,19 @@ Function::set_dimension(const RefSCDimension& dim)
 }
 
 int
-Function::value_implemented()
+Function::value_implemented() const
 {
   return 0;
 }
 
 int
-Function::gradient_implemented()
+Function::gradient_implemented() const
 {
   return 0;
 }
 
 int
-Function::hessian_implemented()
+Function::hessian_implemented() const
 {
   return 0;
 }

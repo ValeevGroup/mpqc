@@ -164,6 +164,18 @@ StateInText::read(char*s)
 }
 
 int
+StateInText::read(unsigned int&i)
+{
+  istream in(buf_);
+  in >> i;
+  if (in.fail()) {
+      cerr << "StateInText::read(unsigned int&): failed\n" << endl;
+      abort();
+    }
+  return (sizeof(int));
+}
+
+int
 StateInText::read(int&i)
 {
   istream in(buf_);
@@ -290,6 +302,17 @@ int StateInText::get(char&r, const char *key)
   return StateIn::get(r,key);
 }
 
+int StateOutText::put(unsigned int r)
+{
+  no_array();
+  return StateOut::put(r);
+}
+int StateInText::get(unsigned int&r, const char *key)
+{
+  no_array();
+  return StateIn::get(r,key);
+}
+
 int StateOutText::put(int r)
 {
   no_array();
@@ -328,6 +351,14 @@ int StateOutText::put(const char*d,int n)
   return StateOut::put(d,n);
 }
 int StateInText::get(char*&r)
+{
+  return StateIn::get(r);
+}
+int StateOutText::put(const unsigned int*d,int n)
+{
+  return StateOut::put(d,n);
+}
+int StateInText::get(unsigned int*&r)
 {
   return StateIn::get(r);
 }
@@ -557,6 +588,30 @@ int StateInText::get_array_char(char*d,int size)
   end_array();
   newline();
   return size+1;
+}
+
+int StateOutText::put_array_uint(const unsigned int*d,int size)
+{
+  ostream out(buf_);
+  start_array();
+  int nwrit=0;
+  for (int i=0; i<size; i++) { out << ' ' << d[i]; nwrit++; }
+  out.flush();
+  end_array();
+  newline();
+  return nwrit;
+}
+int StateInText::get_array_uint(unsigned int*d,int size)
+{
+  start_array();
+  int nread,tnread=0;
+  for (int i=0; i<size; i++) {
+      nread=read(d[i]);
+      tnread += nread;
+    }
+  end_array();
+  newline();
+  return tnread;
 }
 
 int StateOutText::put_array_int(const int*d,int size)

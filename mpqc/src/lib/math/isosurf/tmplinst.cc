@@ -39,10 +39,7 @@ template class AVLMapNode<RefVertex, int>;
 template class AVLMap<RefVertex, int>;
 template class AVLSet<RefVertex>;
 
-template class EAVLMMapNode<int, AVLMapNode<int, RefVertex> >;
-template class EAVLMMap<int, AVLMapNode<int, RefVertex> >;
-template class AVLMapNode<int, RefVertex>;
-template class AVLMap<int, RefVertex>;
+template class Array<RefVertex>;
 
 // Edge
 template class EAVLMMapNode<RefEdge, AVLMapNode<RefEdge, int> >;
@@ -51,10 +48,7 @@ template class AVLMapNode<RefEdge, int>;
 template class AVLMap<RefEdge, int>;
 template class AVLSet<RefEdge>;
 
-template class EAVLMMapNode<int, AVLMapNode<int, RefEdge> >;
-template class EAVLMMap<int, AVLMapNode<int, RefEdge> >;
-template class AVLMapNode<int, RefEdge>;
-template class AVLMap<int, RefEdge>;
+template class Array<RefEdge>;
 
 // Triangle
 template class EAVLMMapNode<RefTriangle, AVLMapNode<RefTriangle, int> >;
@@ -63,10 +57,7 @@ template class AVLMapNode<RefTriangle, int>;
 template class AVLMap<RefTriangle, int>;
 template class AVLSet<RefTriangle>;
 
-template class EAVLMMapNode<int, AVLMapNode<int, RefTriangle> >;
-template class EAVLMMap<int, AVLMapNode<int, RefTriangle> >;
-template class AVLMapNode<int, RefTriangle>;
-template class AVLMap<int, RefTriangle>;
+template class Array<RefTriangle>;
 
 // Shape
 template class EAVLMMapNode<RefShape, AVLMapNode<RefShape, int> >;

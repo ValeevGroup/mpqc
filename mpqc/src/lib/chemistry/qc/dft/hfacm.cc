@@ -178,13 +178,13 @@ HFACM::beta_density()
 }
 
 int
-HFACM::value_implemented()
+HFACM::value_implemented() const
 {
   return 1;
 }
 
 int
-HFACM::gradient_implemented()
+HFACM::gradient_implemented() const
 {
   return 0;
 }

@@ -378,34 +378,16 @@ ReplSCMatrix::accumulate_column(SCVector *v, int i)
 }
 
 void
-ReplSCMatrix::assign(double a)
+ReplSCMatrix::assign_val(double a)
 {
   int n = d1->n() * d2->n();
   for (int i=0; i<n; i++) matrix[i] = a;
 }
 
 void
-ReplSCMatrix::assign(SCMatrix*m)
+ReplSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
 {
-  SCMatrix::assign(m);
-}
-
-void
-ReplSCMatrix::assign(const double*m)
-{
-  SCMatrix::assign(m);
-}
-
-void
-ReplSCMatrix::assign(const double**m)
-{
-  SCMatrix::assign(m);
-}
-
-void
-ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
-{
-  const char* name = "ReplSCMatrix::accumulate_product";
+  const char* name = "ReplSCMatrix::accumulate_product_rr";
   // make sure that the arguments are of the correct type
   ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
   ReplSCMatrix* lb = ReplSCMatrix::require_castdown(b,name);
@@ -414,7 +396,7 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
       cerr << indent
-           << "ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b): "
+           << "ReplSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
            << "dimensions don't match\n";
       abort();
     }
@@ -525,9 +507,9 @@ ReplSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 }
 
 void
-ReplSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
+ReplSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
-  const char* name = "ReplSCMatrix::accumulate_product";
+  const char* name = "ReplSCMatrix::accumulate_product_rs";
   // make sure that the arguments are of the correct type
   ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
   ReplSymmSCMatrix* lb = ReplSymmSCMatrix::require_castdown(b,name);
@@ -536,7 +518,7 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
       cerr << indent
-           << "ReplSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b): "
+           << "ReplSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): "
            << "dimensions don't match\n";
       abort();
     }
@@ -560,9 +542,9 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 }
 
 void
-ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
+ReplSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
-  const char* name = "ReplSCMatrix::accumulate_product";
+  const char* name = "ReplSCMatrix::accumulate_product_rd";
   // make sure that the arguments are of the correct type
   ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
   ReplDiagSCMatrix* lb = ReplDiagSCMatrix::require_castdown(b,name);
@@ -571,7 +553,7 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
       cerr << indent
-           << "ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b): "
+           << "ReplSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b): "
            << "dimensions don't match\n";
       abort();
     }
@@ -587,18 +569,6 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
           cd[i][j] += ad[i][j]*bd[j];
         }
     }
-}
-
-void
-ReplSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
-}
-
-void
-ReplSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
 }
 
 void

@@ -81,13 +81,13 @@ TCHF::save_data_state(StateOut& s)
 }
 
 int
-TCHF::value_implemented()
+TCHF::value_implemented() const
 {
   return 1;
 }
 
 int
-TCHF::gradient_implemented()
+TCHF::gradient_implemented() const
 {
   return 1;
 }

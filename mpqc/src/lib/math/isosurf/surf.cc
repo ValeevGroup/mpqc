@@ -406,7 +406,7 @@ TriangulatedSurface::add_vertex(const RefVertex&t)
   int i = _vertices.length();
   _vertices.insert(t);
   if (i != _vertices.length()) {
-      _index_to_vertex[i] = t;
+      _index_to_vertex.push_back(t);
       _vertex_to_index[t] = i;
       if (_index_to_vertex.length() != _vertex_to_index.length()) {
           cerr << "TriangulatedSurface::add_vertex: length mismatch" << endl;
@@ -421,7 +421,7 @@ TriangulatedSurface::add_edge(const RefEdge&t)
   int i = _edges.length();
   _edges.insert(t);
   if (i != _edges.length()) {
-      _index_to_edge[i] = t;
+      _index_to_edge.push_back(t);
       _edge_to_index[t] = i;
       if (_index_to_edge.length() != _edge_to_index.length()) {
           cerr << "TriangulatedSurface::add_edge: length mismatch" << endl;
@@ -437,7 +437,7 @@ TriangulatedSurface::add_triangle(const RefTriangle&t)
   int i = _triangles.length();
   _triangles.insert(t);
   if (i != _triangles.length()) {
-      _index_to_triangle[i] = t;
+      _index_to_triangle.push_back(t);
       _triangle_to_index[t] = i;
       if (_index_to_triangle.length() != _triangle_to_index.length()) {
           cerr << "TriangulatedSurface::add_triangle: length mismatch" << endl;
@@ -528,7 +528,7 @@ TriangulatedSurface::find_edge(const RefVertex& v1, const RefVertex& v2)
 }
 
 void
-TriangulatedSurface::print(ostream&o)
+TriangulatedSurface::print(ostream&o) const
 {
   o << indent << "TriangulatedSurface:" << endl;
   int i;
@@ -550,10 +550,12 @@ TriangulatedSurface::print(ostream&o)
       RefEdge e = edge(i);
       RefVertex v0 = e->vertex(0);
       RefVertex v1 = e->vertex(1);
+      AVLMap<RefVertex,int>::iterator v0i = _vertex_to_index.find(v0);
+      AVLMap<RefVertex,int>::iterator v1i = _vertex_to_index.find(v1);
+      int v0int = v0i==_vertex_to_index.end()? -1: v0i.data();
+      int v1int = v1i==_vertex_to_index.end()? -1: v1i.data();
       o << indent
-        << scprintf("  %3d: %3d %3d",i,
-                    _vertex_to_index[v0],
-                    _vertex_to_index[v1])
+        << scprintf("  %3d: %3d %3d",i, v0int, v1int)
         << endl;
     }
 
@@ -564,17 +566,20 @@ TriangulatedSurface::print(ostream&o)
       RefEdge e0 = tri->edge(0);
       RefEdge e1 = tri->edge(1);
       RefEdge e2 = tri->edge(2);
+      AVLMap<RefEdge,int>::iterator e0i = _edge_to_index.find(e0);
+      AVLMap<RefEdge,int>::iterator e1i = _edge_to_index.find(e1);
+      AVLMap<RefEdge,int>::iterator e2i = _edge_to_index.find(e2);
+      int e0int = e0i==_edge_to_index.end()? -1: e0i.data();
+      int e1int = e1i==_edge_to_index.end()? -1: e1i.data();
+      int e2int = e2i==_edge_to_index.end()? -1: e2i.data();
       o << indent
-        << scprintf("  %3d: %3d %3d %3d",i,
-                    _edge_to_index[e0],
-                    _edge_to_index[e1],
-                    _edge_to_index[e2])
+        << scprintf("  %3d: %3d %3d %3d",i, e0int, e1int, e2int)
         << endl;
     }
 }
 
 void
-TriangulatedSurface::print_vertices_and_triangles(ostream&o)
+TriangulatedSurface::print_vertices_and_triangles(ostream&o) const
 {
   o << indent << "TriangulatedSurface:" << endl;
   int i;
@@ -634,7 +639,7 @@ TriangulatedSurface::render(const RefRender &render)
 }
 
 void
-TriangulatedSurface::print_geomview_format(ostream&o)
+TriangulatedSurface::print_geomview_format(ostream&o) const
 {
   o << "OFF" << endl;
 

@@ -526,7 +526,7 @@ SymmMolecularCoor::change_coordinates()
 }
 
 void
-SymmMolecularCoor::print(ostream& os)
+SymmMolecularCoor::print(ostream& os) const
 {
   IntMolecularCoor::print(os);
   

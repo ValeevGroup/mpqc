@@ -165,13 +165,13 @@ PsiWfn::nelectron()
 }
 
 int
-PsiWfn::value_implemented()
+PsiWfn::value_implemented() const
 {
   return 1;
 }
 
 int
-PsiWfn::gradient_implemented()
+PsiWfn::gradient_implemented() const
 {
   return 1;
 }
@@ -446,7 +446,7 @@ PsiCCSDT::read_energy()
 }
 
 int
-PsiCCSDT::gradient_implemented()
+PsiCCSDT::gradient_implemented() const
 {
   return 0;
 }

@@ -383,20 +383,16 @@ Molecule::add_atom(int Z,double x,double y,double z,
 }
 
 void
-Molecule::print(ostream& os)
+Molecule::print(ostream& os) const
 {
   int i;
 
   double conv = geometry_units_->from_atomic_units();
 
-  // Be careful here, since MolecularFormula requires a smart
-  // pointer that might try to delete this if i'm not referenced.
-  reference();
   MolecularFormula *mf = new MolecularFormula(this);
   os << node0 << indent
      << "Molecular formula: " << mf->formula() << endl;
   delete mf;
-  dereference();
 
   os << node0 << indent << "molecule<Molecule>: (" << endl;
   os << incindent;
@@ -1048,7 +1044,7 @@ Molecule::max_z()
 }
 
 void
-Molecule::print_pdb(ostream& os, char *title)
+Molecule::print_pdb(ostream& os, char *title) const
 {
   RefUnits u = new Units("angstrom");
   double bohr = u->from_atomic_units();

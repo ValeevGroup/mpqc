@@ -144,10 +144,10 @@ TaylorMolecularEnergy::save_data_state(StateOut&s)
 }
 
 void
-TaylorMolecularEnergy::print(ostream&o)
+TaylorMolecularEnergy::print(ostream&o) const
 {
   MolecularEnergy::print(o);
-  if (coordinates_.nonnull()) coordinates_->print(molecule(), o);
+  if (coordinates_.nonnull()) coordinates_->print_details(molecule(), o);
   int nfc = force_constant_index_.length();
   o << indent << "Force Constants:" << endl;
   o << incindent;
@@ -250,19 +250,19 @@ TaylorMolecularEnergy::compute()
 }
 
 int
-TaylorMolecularEnergy::value_implemented()
+TaylorMolecularEnergy::value_implemented() const
 {
   return 1;
 }
 
 int
-TaylorMolecularEnergy::gradient_implemented()
+TaylorMolecularEnergy::gradient_implemented() const
 {
   return coordinates_.null() && maxorder_ >= 1;
 }
 
 int
-TaylorMolecularEnergy::hessian_implemented()
+TaylorMolecularEnergy::hessian_implemented() const
 {
   return 0;
 }

@@ -157,13 +157,13 @@ CartMolecularCoor::to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart)
 }
 
 void
-CartMolecularCoor::print(ostream& os)
+CartMolecularCoor::print(ostream& os) const
 {
   molecule_->print(os);
 }
 
 void
-CartMolecularCoor::print_simples(ostream& os)
+CartMolecularCoor::print_simples(ostream& os) const
 {
 }
 

@@ -205,16 +205,8 @@ SimpleCo::update_value(const RefMolecule&mol)
   calc_intco(*mol);
 }
 
-#ifndef __GNUC__
 void
-SimpleCo::print()
-{
-  print(0);
-}
-#endif
-
-void
-SimpleCo::print(RefMolecule mol, ostream& os)
+SimpleCo::print_details(const RefMolecule &mol, ostream& os) const
 {
   os << node0 << indent
      << scprintf("%-5s %7s %11.5f", ctype(), (label()?label():""),

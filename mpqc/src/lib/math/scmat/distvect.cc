@@ -224,21 +224,15 @@ DistSCVector::accumulate(SCMatrix*a)
 }
 
 void
-DistSCVector::assign(double d)
-{
-  SCVector::assign(d);
-}
-
-void
-DistSCVector::assign(SCVector*a)
+DistSCVector::assign_v(SCVector*a)
 {
   // make sure that the argument is of the correct type
   DistSCVector* la
-    = DistSCVector::require_castdown(a,"DistSCVector::assign");
+    = DistSCVector::require_castdown(a,"DistSCVector::assign_v");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "DistSCVector::assign(SCVector*a): "
+      cerr << indent << "DistSCVector::assign_v(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -262,7 +256,7 @@ DistSCVector::assign(SCVector*a)
 }
 
 void
-DistSCVector::assign(const double*a)
+DistSCVector::assign_p(const double*a)
 {
   SCMatrixBlockListIter I;
   for (I=blocklist->begin();
@@ -374,9 +368,9 @@ DistSCVector::element_op(const RefSCElementOp3& op,
 }
 
 void
-DistSCVector::accumulate_product(SCMatrix *pa, SCVector *pb)
+DistSCVector::accumulate_product_rv(SCMatrix *pa, SCVector *pb)
 {
-  const char* name = "DistSCMatrix::accumulate_product";
+  const char* name = "DistSCMatrix::accumulate_product_rv";
   // make sure that the arguments are of the correct type
   DistSCMatrix* a = DistSCMatrix::require_castdown(pa,name);
   DistSCVector* b = DistSCVector::require_castdown(pb,name);
@@ -384,7 +378,7 @@ DistSCVector::accumulate_product(SCMatrix *pa, SCVector *pb)
   // make sure that the dimensions match
   if (!dim()->equiv(a->rowdim()) || !a->coldim()->equiv(b->dim())) {
       cerr << indent
-           << "DistSCVector::accumulate_product(SCMatrix*a,SCVector*b): "
+           << "DistSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
     }
@@ -429,12 +423,6 @@ DistSCVector::accumulate_product(SCMatrix *pa, SCVector *pb)
   I = 0;
 
   delete[] res;
-}
-
-void
-DistSCVector::accumulate_product(SymmSCMatrix *pa, SCVector *pb)
-{
-  SCVector::accumulate_product(pa,pb);
 }
 
 void

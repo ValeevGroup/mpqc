@@ -86,7 +86,7 @@ BlockedSCVector::~BlockedSCVector()
 }
 
 void
-BlockedSCVector::assign(double a)
+BlockedSCVector::assign_val(double a)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
@@ -94,7 +94,7 @@ BlockedSCVector::assign(double a)
 }
 
 void
-BlockedSCVector::assign(SCVector*a)
+BlockedSCVector::assign_v(SCVector*a)
 {
   // make sure that the argument is of the correct type
   BlockedSCVector* la
@@ -113,7 +113,7 @@ BlockedSCVector::assign(SCVector*a)
 }
 
 void
-BlockedSCVector::assign(const double*a)
+BlockedSCVector::assign_p(const double*a)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (vecs_[i].nonnull())
@@ -163,7 +163,7 @@ BlockedSCVector::accumulate_element(int i,double a)
 }
 
 void
-BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b)
+BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 {
   const char* name = "BlockedSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
@@ -173,7 +173,7 @@ BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b)
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
     cerr << indent
-         << "BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b): "
+         << "BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b): "
          << "dimensions don't match\n";
     abort();
   }
@@ -184,7 +184,7 @@ BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 }
 
 void
-BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
+BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 {
   const char* name = "BlockedSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
@@ -194,7 +194,7 @@ BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
     cerr << indent
-         << "BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b): "
+         << "BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b): "
          << "dimensions don't match\n";
     abort();
   }

@@ -90,9 +90,11 @@ class ResultInfo
     ResultInfo(Compute*c);
     virtual ~ResultInfo();
     int& compute() { return _compute; }
+    const int& compute() const { return _compute; }
     int compute(int c) { int r = _compute; _compute = c; return r; }
     int& computed() { return _computed; }
-    virtual int needed();
+    const int& computed() const { return _computed; }
+    virtual int needed() const;
 };
 
 // This is like result but the accuracy with which a result was computed as
@@ -118,9 +120,9 @@ class AccResultInfo: public ResultInfo
     double desired_accuracy() const;
     void set_desired_accuracy(double);
     void set_actual_accuracy(double);
-    int computed_to_desired_accuracy()
+    int computed_to_desired_accuracy() const
         { return computed() && _actual_accuracy <= _desired_accuracy; }
-    int needed();
+    int needed() const;
 };
 
 #include <util/misc/comptmpl.h>

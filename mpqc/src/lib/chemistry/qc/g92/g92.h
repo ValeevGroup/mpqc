@@ -111,9 +111,9 @@ public:
 
   double occupation(int f) { return 0; }
 
-  int value_implemented() { return 1; }
-  int gradient_implemented() { return 1; }
-  int hessian_implemented() { return 1; }
+  int value_implemented() const { return 1; }
+  int gradient_implemented() const { return 1; }
+  int hessian_implemented() const { return 1; }
 };
 
 class Gaussian92UHF: public Gaussian92
@@ -137,9 +137,9 @@ public:
 
   double occupation(int f) { return 0; }
 
-  int value_implemented() { return 1; }
-  int gradient_implemented() { return 1; }
-  int hessian_implemented() { return 1; }
+  int value_implemented() const { return 1; }
+  int gradient_implemented() const { return 1; }
+  int hessian_implemented() const { return 1; }
 };
 
 #endif

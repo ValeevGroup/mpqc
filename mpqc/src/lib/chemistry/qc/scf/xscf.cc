@@ -230,13 +230,13 @@ XSCF::occupation(int i)
 }
 
 int
-XSCF::value_implemented()
+XSCF::value_implemented() const
 {
   return 1;
 }
 
 int
-XSCF::gradient_implemented()
+XSCF::gradient_implemented() const
 {
   return 1;
 }

@@ -89,16 +89,16 @@ class Function: virtual_base public SavableState, public Compute {
 
     //. Return the \clsnmref{SCMatrixKit} used to construct
     //vectors and matrices.
-    RefSCMatrixKit matrixkit();
+    RefSCMatrixKit matrixkit() const;
     //. Return the \clsnmref{SCDimension} of the problem.
-    RefSCDimension dimension();
+    RefSCDimension dimension() const;
 
     virtual void save_data_state(StateOut&);
 
     //. Return the value of the function.
     virtual double value();
     //. Returns nonzero if the current value is not up-to-date.
-    int value_needed();
+    int value_needed() const;
     //. If passed a nonzero number, compute the value the next
     //time \srccd{compute()} is called.  Return a nonzero number
     //if the value was previously to be computed.
@@ -108,28 +108,28 @@ class Function: virtual_base public SavableState, public Compute {
     //. Set the accuracy to which the value is to be computed.
     virtual void set_desired_value_accuracy(double);
     //. Return the accuracy with which the value has been computed.
-    virtual double actual_value_accuracy();
+    virtual double actual_value_accuracy() const;
     //. Return the accuracy with which the value is to be computed.
-    virtual double desired_value_accuracy();
+    virtual double desired_value_accuracy() const;
 
     //. These are analogous to the routines that deal with values,
     //but work with gradients instead.
     virtual RefSCVector gradient();
-    int gradient_needed();
+    int gradient_needed() const;
     int do_gradient(int);
     virtual void set_desired_gradient_accuracy(double);
-    virtual double actual_gradient_accuracy();
-    virtual double desired_gradient_accuracy();
+    virtual double actual_gradient_accuracy() const;
+    virtual double desired_gradient_accuracy() const;
     AccResultRefSCVector& gradient_result() { return gradient_; }
 
     //. These are analogous to the routines that deal with values,
     //but work with the hessian instead.
     virtual RefSymmSCMatrix hessian();
-    int hessian_needed();
+    int hessian_needed() const;
     int do_hessian(int);
     virtual void set_desired_hessian_accuracy(double);
-    virtual double actual_hessian_accuracy();
-    virtual double desired_hessian_accuracy();
+    virtual double actual_hessian_accuracy() const;
+    virtual double desired_hessian_accuracy() const;
     AccResultRefSymmSCMatrix& hessian_result() { return hessian_; }
 
     // hessian by gradients at finite displacements
@@ -141,9 +141,9 @@ class Function: virtual_base public SavableState, public Compute {
 
     //. Information about the availability of values, gradients,
     //and hessians.
-    virtual int value_implemented();
-    virtual int gradient_implemented();
-    virtual int hessian_implemented();
+    virtual int value_implemented() const;
+    virtual int gradient_implemented() const;
+    virtual int hessian_implemented() const;
 
     //. Set and retrieve the coordinate values.
     virtual void set_x(const RefSCVector&);
@@ -160,7 +160,7 @@ class Function: virtual_base public SavableState, public Compute {
     virtual RefNonlinearTransform change_coordinates();
 
     //. Print information about the object.
-    virtual void print(ostream& = cout);
+    virtual void print(ostream& = cout) const;
 };
 SavableState_REF_dec(Function);
 

@@ -68,11 +68,11 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     TaylorMolecularEnergy(StateIn&);
     ~TaylorMolecularEnergy();
     void save_data_state(StateOut&);
-    void print(ostream& = cout);
+    void print(ostream& = cout) const;
     void compute();
-    int value_implemented();
-    int gradient_implemented();
-    int hessian_implemented();
+    int value_implemented() const;
+    int gradient_implemented() const;
+    int hessian_implemented() const;
 };
 
 #endif

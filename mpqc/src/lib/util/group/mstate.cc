@@ -128,6 +128,12 @@ MsgStateSend::put(char d)
 }
 
 int
+MsgStateSend::put(unsigned int d)
+{
+  return StateOut::put(d);
+}
+
+int
 MsgStateSend::put(int d)
 {
   return StateOut::put(d);
@@ -148,6 +154,12 @@ MsgStateSend::put(double d)
 
 int
 MsgStateSend::put(const char* d, int n)
+{
+  return StateOut::put(d, n);
+}
+
+int
+MsgStateSend::put(const unsigned int* d, int n)
 {
   return StateOut::put(d, n);
 }
@@ -297,6 +309,12 @@ MsgStateRecv::get(int& d, const char *key)
 }
 
 int
+MsgStateRecv::get(unsigned int& d, const char *key)
+{
+  return StateIn::get(d,key);
+}
+
+int
 MsgStateRecv::get(float& d, const char *key)
 {
   return StateIn::get(d,key);
@@ -310,6 +328,12 @@ MsgStateRecv::get(double& d, const char *key)
 
 int
 MsgStateRecv::get(char*& d)
+{
+  return StateIn::get(d);
+}
+
+int
+MsgStateRecv::get(unsigned int*& d)
 {
   return StateIn::get(d);
 }

@@ -313,7 +313,7 @@ MemoryGrp::deactivate()
 }
 
 void
-MemoryGrp::print(ostream&o)
+MemoryGrp::print(ostream&o) const
 {
   o << scprintf("MemoryGrp (node %d):\n", me());
   locks_.print(o);

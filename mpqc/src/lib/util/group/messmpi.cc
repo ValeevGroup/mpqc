@@ -348,6 +348,7 @@ MPIMessageGrp::reduce(type*d, int n, GrpReduce<type>&r, \
 
 REDUCEMEMBER(double, double, MPI_DOUBLE)
 REDUCEMEMBER(float, float, MPI_FLOAT)
+REDUCEMEMBER(uint, unsigned int, MPI_INT)
 REDUCEMEMBER(int, int, MPI_INT)
 REDUCEMEMBER(short, short, MPI_SHORT)
 REDUCEMEMBER(long, long, MPI_LONG)

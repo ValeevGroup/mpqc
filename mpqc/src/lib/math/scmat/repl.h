@@ -82,15 +82,15 @@ class ReplSCVector: public SCVector {
   public:
     ReplSCVector(const RefSCDimension&,ReplSCMatrixKit*);
     ~ReplSCVector();
-    void assign(double);
-    void assign(SCVector*);
-    void assign(const double*);
+    void assign_val(double);
+    void assign_v(SCVector*);
+    void assign_p(const double*);
 
     void set_element(int,double);
     void accumulate_element(int,double);
     double get_element(int);
-    void accumulate_product(SymmSCMatrix*,SCVector*);
-    void accumulate_product(SCMatrix*,SCVector*);
+    void accumulate_product_sv(SymmSCMatrix*,SCVector*);
+    void accumulate_product_rv(SCMatrix*,SCVector*);
     void accumulate(SCVector*);
     void accumulate(SCMatrix*);
     double scalar_product(SCVector*);
@@ -133,10 +133,7 @@ class ReplSCMatrix: public SCMatrix {
     ~ReplSCMatrix();
 
     // implementations and overrides of virtual functions
-    void assign(double);
-    void assign(SCMatrix*);
-    void assign(const double*);
-    void assign(const double**);
+    void assign_val(double);
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -151,11 +148,9 @@ class ReplSCMatrix: public SCMatrix {
     void accumulate_column(SCVector *v, int i);
 
     void accumulate_outer_product(SCVector*,SCVector*);
-    void accumulate_product(SCMatrix*,SCMatrix*);
-    void accumulate_product(SCMatrix*,SymmSCMatrix*);
-    void accumulate_product(SCMatrix*,DiagSCMatrix*);
-    void accumulate_product(SymmSCMatrix*,SCMatrix*);
-    void accumulate_product(DiagSCMatrix*,SCMatrix*);
+    void accumulate_product_rr(SCMatrix*,SCMatrix*);
+    void accumulate_product_rs(SCMatrix*,SymmSCMatrix*);
+    void accumulate_product_rd(SCMatrix*,DiagSCMatrix*);
     void accumulate(SCMatrix*);
     void accumulate(SymmSCMatrix*);
     void accumulate(DiagSCMatrix*);
@@ -206,10 +201,10 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     ~ReplSymmSCMatrix();
 
     // implementations and overrides of virtual functions
-    void assign(double);
-    void assign(SymmSCMatrix*);
-    void assign(const double*);
-    void assign(const double**);
+    void assign_val(double);
+    void assign_s(SymmSCMatrix*);
+    void assign_p(const double*);
+    void assign_pp(const double**);
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -225,7 +220,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void assign_row(SCVector *v, int i);
     void accumulate_row(SCVector *v, int i);
 
-    void accumulate_product(SCMatrix*,SCMatrix*);
+    void accumulate_product_rr(SCMatrix*,SCMatrix*);
     void accumulate(SymmSCMatrix*);
     double invert_this();
     double solve_this(SCVector*);
@@ -278,9 +273,7 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     ~ReplDiagSCMatrix();
 
     // implementations and overrides of virtual functions
-    void assign(double);
-    void assign(const double *);
-    void assign(DiagSCMatrix *);
+    void assign_val(double);
     double get_element(int);
     void set_element(int,double);
     void accumulate_element(int,double);

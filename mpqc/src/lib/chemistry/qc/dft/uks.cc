@@ -92,13 +92,13 @@ UKS::save_data_state(StateOut& s)
 }
 
 int
-UKS::value_implemented()
+UKS::value_implemented() const
 {
   return 1;
 }
 
 int
-UKS::gradient_implemented()
+UKS::gradient_implemented() const
 {
   return 0;
 }

@@ -297,13 +297,13 @@ MolecularEnergy::get_cartesian_hessian()
 }
 
 RefSCDimension
-MolecularEnergy::moldim()
+MolecularEnergy::moldim() const
 {
   return moldim_;
 }
 
 RefMolecule
-MolecularEnergy::molecule()
+MolecularEnergy::molecule() const
 {
   return mol_;
 }
@@ -362,7 +362,7 @@ MolecularEnergy::hessian()
 }
 
 int
-MolecularEnergy::hessian_implemented()
+MolecularEnergy::hessian_implemented() const
 {
   return hess_.nonnull();
 }
@@ -383,7 +383,7 @@ MolecularEnergy::change_coordinates()
 
 void
 MolecularEnergy::print_natom_3(const RefSCVector &v,
-                               const char *title, ostream&o)
+                               const char *title, ostream&o) const
 {
   int precision = 10;
   int lwidth = precision + 4;
@@ -409,7 +409,7 @@ MolecularEnergy::print_natom_3(const RefSCVector &v,
 
 void
 MolecularEnergy::print_natom_3(double **vn3,
-                               const char *title, ostream&o)
+                               const char *title, ostream&o) const
 {
   int precision = 10;
   int lwidth = precision + 4;
@@ -434,7 +434,7 @@ MolecularEnergy::print_natom_3(double **vn3,
 }
 
 void
-MolecularEnergy::print(ostream&o)
+MolecularEnergy::print(ostream&o) const
 {
   Function::print(o);
   if (mc_.nonnull()) {
@@ -516,7 +516,7 @@ SumMolecularEnergy::~SumMolecularEnergy()
 }
 
 int
-SumMolecularEnergy::value_implemented()
+SumMolecularEnergy::value_implemented() const
 {
   for (int i=0; i<n_; i++) {
       if (!mole_[i]->value_implemented()) return 0;
@@ -525,7 +525,7 @@ SumMolecularEnergy::value_implemented()
 }
 
 int
-SumMolecularEnergy::gradient_implemented()
+SumMolecularEnergy::gradient_implemented() const
 {
   for (int i=0; i<n_; i++) {
       if (!mole_[i]->gradient_implemented()) return 0;
@@ -534,7 +534,7 @@ SumMolecularEnergy::gradient_implemented()
 }
 
 int
-SumMolecularEnergy::hessian_implemented()
+SumMolecularEnergy::hessian_implemented() const
 {
   for (int i=0; i<n_; i++) {
       if (!mole_[i]->hessian_implemented()) return 0;

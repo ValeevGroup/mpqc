@@ -427,9 +427,9 @@ DistSCMatrix::accumulate(SCVector*a)
 }
 
 void
-DistSCMatrix::accumulate_product(SCMatrix*pa,SCMatrix*pb)
+DistSCMatrix::accumulate_product_rr(SCMatrix*pa,SCMatrix*pb)
 {
-  const char* name = "DistSCMatrix::accumulate_product";
+  const char* name = "DistSCMatrix::accumulate_product_rr";
   // make sure that the arguments are of the correct type
   DistSCMatrix* a = DistSCMatrix::require_castdown(pa,name);
   DistSCMatrix* b = DistSCMatrix::require_castdown(pb,name);
@@ -438,7 +438,7 @@ DistSCMatrix::accumulate_product(SCMatrix*pa,SCMatrix*pb)
   if (!rowdim()->equiv(a->rowdim()) || !coldim()->equiv(b->coldim()) ||
       !a->coldim()->equiv(b->rowdim())) {
       cerr << indent
-           << "DistSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b): "
+           << "DistSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
            << "dimensions don't match\n";
       abort();
     }
@@ -472,30 +472,6 @@ DistSCMatrix::accumulate_product(SCMatrix*pa,SCMatrix*pb)
   vecform_op(AccumFromVec);
   delete_vecform();
   a->delete_vecform();
-}
-
-void
-DistSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
-}
-
-void
-DistSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
-}
-
-void
-DistSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
-}
-
-void
-DistSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
 }
 
 void

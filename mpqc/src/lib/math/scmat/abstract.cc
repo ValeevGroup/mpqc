@@ -198,7 +198,7 @@ SCMatrix::randomize()
 }
 
 void
-SCMatrix::assign(double a)
+SCMatrix::assign_val(double a)
 {
   RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
@@ -233,14 +233,14 @@ SCMatrix::unit()
 }
 
 void
-SCMatrix::assign(SCMatrix*a)
+SCMatrix::assign_r(SCMatrix*a)
 {
   this->assign(0.0);
   this->accumulate(a);
 }
 
 void
-SCMatrix::assign(const double*a)
+SCMatrix::assign_p(const double*a)
 {
   int i;
   int nr = nrow();
@@ -255,7 +255,7 @@ SCMatrix::assign(const double*a)
 }
 
 void
-SCMatrix::assign(const double**a)
+SCMatrix::assign_pp(const double**a)
 {
   int i;
   int j;
@@ -313,7 +313,7 @@ SCMatrix::convert(double**a)
 }
 
 void
-SCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
+SCMatrix::accumulate_product_sr(SymmSCMatrix*a,SCMatrix*b)
 {
   SCMatrix *t = b->copy();
   t->transpose_this();
@@ -327,7 +327,7 @@ SCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
 }
 
 void
-SCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
+SCMatrix::accumulate_product_dr(DiagSCMatrix*a,SCMatrix*b)
 {
   SCMatrix *t = b->copy();
   t->transpose_this();
@@ -408,7 +408,7 @@ SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 }
 
 void
-SCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
+SCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
   SCMatrix *brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
@@ -418,7 +418,7 @@ SCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 }
 
 void
-SCMatrix::accumulate_product(SymmSCMatrix*a,SymmSCMatrix*b)
+SCMatrix::accumulate_product_ss(SymmSCMatrix*a,SymmSCMatrix*b)
 {
   SCMatrix *arect = kit()->matrix(a->dim(),a->dim());
   arect->assign(0.0);
@@ -432,7 +432,7 @@ SCMatrix::accumulate_product(SymmSCMatrix*a,SymmSCMatrix*b)
 }
 
 void
-SCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
+SCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
   SCMatrix *brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
@@ -515,14 +515,14 @@ SymmSCMatrix::randomize()
 }
 
 void
-SymmSCMatrix::assign(double a)
+SymmSCMatrix::assign_val(double a)
 {
   RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
 }
 
 void
-SymmSCMatrix::assign(const double*a)
+SymmSCMatrix::assign_p(const double*a)
 {
   int i;
   int nr = n();
@@ -539,7 +539,7 @@ SymmSCMatrix::assign(const double*a)
 }
 
 void
-SymmSCMatrix::assign(const double**a)
+SymmSCMatrix::assign_pp(const double**a)
 {
   int i;
   int j;
@@ -625,7 +625,7 @@ SymmSCMatrix::unit()
 }
 
 void
-SymmSCMatrix::assign(SymmSCMatrix*a)
+SymmSCMatrix::assign_s(SymmSCMatrix*a)
 {
   this->assign(0.0);
   this->accumulate(a);
@@ -870,14 +870,14 @@ DiagSCMatrix::randomize()
 }
 
 void
-DiagSCMatrix::assign(double a)
+DiagSCMatrix::assign_val(double a)
 {
   RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
 }
 
 void
-DiagSCMatrix::assign(const double*a)
+DiagSCMatrix::assign_p(const double*a)
 {
   int i;
   int nr = n();
@@ -918,7 +918,7 @@ DiagSCMatrix::scale(double a)
 }
 
 void
-DiagSCMatrix::assign(DiagSCMatrix*a)
+DiagSCMatrix::assign_d(DiagSCMatrix*a)
 {
   this->assign(0.0);
   this->accumulate(a);
@@ -1033,14 +1033,14 @@ SCVector::randomize()
 }
 
 void
-SCVector::assign(double a)
+SCVector::assign_val(double a)
 {
   RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
 }
 
 void
-SCVector::assign(const double*a)
+SCVector::assign_p(const double*a)
 {
   int i;
   int nr = n();
@@ -1081,7 +1081,7 @@ SCVector::scale(double a)
 }
 
 void
-SCVector::assign(SCVector*a)
+SCVector::assign_v(SCVector*a)
 {
   this->assign(0.0);
   this->accumulate(a);
@@ -1127,7 +1127,7 @@ SCVector::copy()
 }
 
 void
-SCVector::accumulate_product(SymmSCMatrix *m, SCVector *v)
+SCVector::accumulate_product_sv(SymmSCMatrix *m, SCVector *v)
 {
   RefSCMatrix mrect = kit()->matrix(m->dim(),m->dim());
   mrect->assign(0.0);

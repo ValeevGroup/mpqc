@@ -93,13 +93,8 @@ class SimpleCo : public IntCoor {
     // is to be calculated, the third argument gives the coefficient.
     virtual double calc_intco(Molecule&, double* =0, double =1) = 0;
 
-#ifdef __GNUC__
     //. Print the coordinate.
-    void print(RefMolecule =0, ostream& = cout);
-#else
-    void print();
-    void print(RefMolecule, ostream& = cout);
-#endif
+    void print_details(const RefMolecule &, ostream& = cout) const;
     
     //. Tests to see if two coordinates are equivalent to each other.
     // This is false if the atoms don't match.

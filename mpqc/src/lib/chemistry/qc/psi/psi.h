@@ -34,8 +34,8 @@ class PsiWfn: public Wavefunction {
     int spin_polarized();
     int nelectron();
 
-    int gradient_implemented();
-    int value_implemented();
+    int gradient_implemented() const;
+    int value_implemented() const;
 };
 
 class PsiHF: public PsiWfn {
@@ -100,7 +100,7 @@ class PsiCCSDT: public PsiWfn {
     PsiCCSDT(StateIn&);
     ~PsiCCSDT();
     void save_data_state(StateOut&);
-    int gradient_implemented();
+    int gradient_implemented() const;
 };
 
 class PsiCI: public PsiWfn {

@@ -322,7 +322,7 @@ RangeLock::set(int start, int fence, int value)
 }
 
 void
-RangeLock::print(ostream &o)
+RangeLock::print(ostream &o) const
 {
   for (RangeLockItem *i = root_; i; i = i->next) {
       o << scprintf("  RangeLockItem: [%5d, %5d): %4d\n",

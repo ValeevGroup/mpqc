@@ -80,13 +80,13 @@ CLHF::save_data_state(StateOut& s)
 }
 
 int
-CLHF::value_implemented()
+CLHF::value_implemented() const
 {
   return 1;
 }
 
 int
-CLHF::gradient_implemented()
+CLHF::gradient_implemented() const
 {
   return 1;
 }

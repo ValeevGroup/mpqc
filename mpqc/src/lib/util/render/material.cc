@@ -62,7 +62,7 @@ Material::~Material()
 }
 
 void
-Material::print(ostream& os)
+Material::print(ostream& os) const
 {
   os << "Material" << endl;
 }

@@ -78,6 +78,8 @@ class MPIMessageGrp: public MessageGrp {
 
     void reduce(double*, int n, GrpReduce<double>&,
                 double*scratch = 0, int target = -1);
+    void reduce(unsigned int*, int n, GrpReduce<unsigned int>&,
+                unsigned int*scratch = 0, int target = -1);
     void reduce(int*, int n, GrpReduce<int>&,
                 int*scratch = 0, int target = -1);
     void reduce(char*, int n, GrpReduce<char>&,

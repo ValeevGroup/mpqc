@@ -66,8 +66,8 @@ class HFACM: public Wavefunction {
     RefSymmSCMatrix alpha_density();
     RefSymmSCMatrix beta_density();
 
-    int value_implemented();
-    int gradient_implemented();
+    int value_implemented() const;
+    int gradient_implemented() const;
 };
 
 #endif

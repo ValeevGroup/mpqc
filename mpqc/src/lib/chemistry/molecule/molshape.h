@@ -128,7 +128,7 @@ class CS2Sphere
     double radius(void) const {return _radius;}
 
     void recenter(const SCVector3 &v) { _v -= v; }
-    void print(ostream& os=cout) 
+    void print(ostream& os=cout) const
     {
       os << node0 << indent
          << scprintf("Rad=%lf, Center=(%lf,%lf,%lf), From origin=%lf\n",

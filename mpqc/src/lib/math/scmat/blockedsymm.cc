@@ -259,7 +259,7 @@ BlockedSymmSCMatrix::solve_this(SCVector*v)
 }
 
 void
-BlockedSymmSCMatrix::assign(double s)
+BlockedSymmSCMatrix::assign_val(double s)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
@@ -267,7 +267,7 @@ BlockedSymmSCMatrix::assign(double s)
 }
 
 void
-BlockedSymmSCMatrix::assign(SymmSCMatrix*a)
+BlockedSymmSCMatrix::assign_s(SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_castdown(a,
@@ -275,7 +275,7 @@ BlockedSymmSCMatrix::assign(SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    cerr << indent << "BlockedSymmSCMatrix::assign(SymmSCMatrix*a): "
+    cerr << indent << "BlockedSymmSCMatrix::assign_s(SymmSCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }

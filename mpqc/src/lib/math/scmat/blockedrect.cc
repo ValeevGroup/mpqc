@@ -116,29 +116,11 @@ BlockedSCMatrix::~BlockedSCMatrix()
 }
 
 void
-BlockedSCMatrix::assign(double v)
+BlockedSCMatrix::assign_val(double v)
 {
   for (int i=0; i < nblocks_; i++)
     if (mats_[i].nonnull())
       mats_[i]->assign(v);
-}
-
-void
-BlockedSCMatrix::assign(SCMatrix *v)
-{
-  SCMatrix::assign(v);
-}
-
-void
-BlockedSCMatrix::assign(const double *v)
-{
-  SCMatrix::assign(v);
-}
-
-void
-BlockedSCMatrix::assign(const double **v)
-{
-  SCMatrix::assign(v);
 }
 
 double
@@ -299,7 +281,7 @@ BlockedSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 }
 
 void
-BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
+BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
 {
   int i, zero = 0;
 
@@ -312,7 +294,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
     cerr << indent
-         << "BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b): "
+         << "BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
          << "dimensions don't match\n";
     abort();
   }
@@ -337,7 +319,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
 }
 
 void
-BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
+BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
   int i, zero=0;
   
@@ -350,7 +332,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
     cerr << indent
-         << "BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b): "
+         << "BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): "
          << "dimensions don't match\n";
     abort();
   }
@@ -366,7 +348,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 
 
 void
-BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
+BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
   int i, zero=0;
   
@@ -379,7 +361,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
     cerr << indent
-         << "BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b): "
+         << "BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b): "
          << "dimensions don't match\n";
     abort();
   }
@@ -391,18 +373,6 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
       continue;
     mats_[i]->accumulate_product(la->mats_[i], lb->mats_[bi]);
   }
-}
-
-void
-BlockedSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
-}
-
-void
-BlockedSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
-{
-  SCMatrix::accumulate_product(a,b);
 }
 
 void

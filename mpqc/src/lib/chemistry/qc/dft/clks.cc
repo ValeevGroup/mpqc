@@ -92,13 +92,13 @@ CLKS::save_data_state(StateOut& s)
 }
 
 int
-CLKS::value_implemented()
+CLKS::value_implemented() const
 {
   return 1;
 }
 
 int
-CLKS::gradient_implemented()
+CLKS::gradient_implemented() const
 {
   return 0;
 }

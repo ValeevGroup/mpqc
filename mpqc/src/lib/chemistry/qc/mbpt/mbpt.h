@@ -141,8 +141,8 @@ class MBPT2: public Wavefunction {
     RefSymmSCMatrix density();
     int spin_polarized();
 
-    int gradient_implemented();
-    int value_implemented();
+    int gradient_implemented() const;
+    int value_implemented() const;
 
     void symmetry_changed();
 

@@ -241,7 +241,6 @@ class DescribedClass : public VRefCount {
     virtual void* _castdown(const ClassDesc*);
     //. These print the object.
     virtual void print(ostream& =cout) const;
-    virtual void print(ostream& =cout);
   };
 
 //. \clsnm{DCRefBase} provides a few utility routines common to all

@@ -122,9 +122,9 @@ ReplSCVector::accumulate_element(int i,double a)
 }
 
 void
-ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b)
+ReplSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 {
-  const char* name = "ReplSCVector::accumulate_product";
+  const char* name = "ReplSCVector::accumulate_product_rv";
   // make sure that the arguments are of the correct type
   ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
   ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
@@ -132,7 +132,7 @@ ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b)
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
       cerr << indent
-           << "ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b): "
+           << "ReplSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
     }
@@ -145,9 +145,9 @@ ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 }
 
 void
-ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
+ReplSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 {
-  const char* name = "ReplSCVector::accumulate_product";
+  const char* name = "ReplSCVector::accumulate_product_sv";
   // make sure that the arguments are of the correct type
   ReplSymmSCMatrix* la = ReplSymmSCMatrix::require_castdown(a,name);
   ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
@@ -155,7 +155,7 @@ ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
       cerr << indent
-           << "ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b): "
+           << "ReplSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
     }
@@ -217,7 +217,7 @@ ReplSCVector::accumulate(SCMatrix*a)
 }
 
 void
-ReplSCVector::assign(double a)
+ReplSCVector::assign_val(double a)
 {
   int nelem = d->n();
   int i;
@@ -225,15 +225,15 @@ ReplSCVector::assign(double a)
 }
 
 void
-ReplSCVector::assign(SCVector*a)
+ReplSCVector::assign_v(SCVector*a)
 {
   // make sure that the argument is of the correct type
   ReplSCVector* la
-    = ReplSCVector::require_castdown(a,"ReplSCVector::assign");
+    = ReplSCVector::require_castdown(a,"ReplSCVector::assign_v");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      cerr << indent << "ReplSCVector::assign(SCVector*a): "
+      cerr << indent << "ReplSCVector::assign_v(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -244,7 +244,7 @@ ReplSCVector::assign(SCVector*a)
 }
 
 void
-ReplSCVector::assign(const double*a)
+ReplSCVector::assign_p(const double*a)
 {
   int nelem = d->n();
   int i;

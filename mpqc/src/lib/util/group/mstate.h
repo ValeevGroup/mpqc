@@ -69,11 +69,13 @@ class MsgStateSend: public StateOut {
     //hide all of the other put's so I must override everything.
     int put(const ClassDesc*);
     int put(char r);
+    int put(unsigned int r);
     int put(int r);
     int put(float r);
     int put(double r);
     int put(const char*,int);
     int put(const int*,int);
+    int put(const unsigned int*,int);
     int put(const float*,int);
     int put(const double*,int);
 };
@@ -137,10 +139,12 @@ class MsgStateRecv: public MsgStateBufRecv {
     //all of the other put's so I must override everything.
     int get(const ClassDesc**);
     int get(char&r, const char *key = 0);
+    int get(unsigned int&r, const char *key = 0);
     int get(int&r, const char *key = 0);
     int get(float&r, const char *key = 0);
     int get(double&r, const char *key = 0);
     int get(char*&);
+    int get(unsigned int*&);
     int get(int*&);
     int get(float*&);
     int get(double*&);

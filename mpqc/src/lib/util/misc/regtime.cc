@@ -382,7 +382,7 @@ RegionTimer::~RegionTimer()
 }
 
 double
-RegionTimer::get_cpu_time()
+RegionTimer::get_cpu_time() const
 {
 #ifdef HAVE_NX
   return 0.0;
@@ -397,7 +397,7 @@ RegionTimer::get_cpu_time()
 }
 
 double
-RegionTimer::get_wall_time()
+RegionTimer::get_wall_time() const
 {
 #ifdef HAVE_NX
   return dclock();
@@ -409,7 +409,7 @@ RegionTimer::get_wall_time()
 }
 
 double
-RegionTimer::get_flops()
+RegionTimer::get_flops() const
 {
 #if !HAVE_FLOPS
   return 0.0;
@@ -508,43 +508,43 @@ RegionTimer::change(const char *newname, const char *oldname)
 }
 
 int
-RegionTimer::nregion()
+RegionTimer::nregion() const
 {
   return top_->nregion();
 }
 
 void
-RegionTimer::get_region_names(const char *region_names[])
+RegionTimer::get_region_names(const char *region_names[]) const
 {
   top_->get_region_names(region_names);
 }
 
 void
-RegionTimer::get_cpu_times(double *cpu_time)
+RegionTimer::get_cpu_times(double *cpu_time) const
 {
   top_->get_cpu_times(cpu_time);
 }
 
 void
-RegionTimer::get_wall_times(double *wall_time)
+RegionTimer::get_wall_times(double *wall_time) const
 {
   top_->get_wall_times(wall_time);
 }
 
 void
-RegionTimer::get_flops(double *flops)
+RegionTimer::get_flops(double *flops) const
 {
   top_->get_flops(flops);
 }
 
 void
-RegionTimer::get_depth(int *depth)
+RegionTimer::get_depth(int *depth) const
 {
   top_->get_depth(depth);
 }
 
 void
-RegionTimer::update_top()
+RegionTimer::update_top() const
 {
   if (cpu_time_) top_->cpu_exit(get_cpu_time());
   if (wall_time_) top_->wall_exit(get_wall_time());
@@ -552,7 +552,7 @@ RegionTimer::update_top()
 }
 
 void
-RegionTimer::print(ostream& o)
+RegionTimer::print(ostream& o) const
 {
   update_top();
 

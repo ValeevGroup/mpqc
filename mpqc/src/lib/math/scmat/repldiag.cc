@@ -122,22 +122,10 @@ ReplDiagSCMatrix::accumulate_element(int i,double a)
 }
 
 void
-ReplDiagSCMatrix::assign(double val)
+ReplDiagSCMatrix::assign_val(double val)
 {
   int n = d->n();
   for (int i=0; i<n; i++) matrix[i] = val;
-}
-
-void
-ReplDiagSCMatrix::assign(DiagSCMatrix*m)
-{
-  DiagSCMatrix::assign(m);
-}
-
-void
-ReplDiagSCMatrix::assign(const double*m)
-{
-  DiagSCMatrix::assign(m);
 }
 
 void

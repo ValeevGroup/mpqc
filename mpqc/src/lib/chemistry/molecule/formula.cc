@@ -41,10 +41,30 @@ static const char * symbols[] = {
   "Zr", 0
 };
 
-MolecularFormula::MolecularFormula(const RefMolecule& m)
-  : form_(0)
+MolecularFormula::MolecularFormula(const RefMolecule&m):
+  form_(0)
 {
-  Molecule& mol = *m.pointer();
+  compute_form(m.pointer());
+}
+
+MolecularFormula::MolecularFormula(const Molecule *m):
+  form_(0)
+{
+  compute_form(m);
+}
+
+MolecularFormula::~MolecularFormula()
+{
+  if (form_) {
+    delete[] form_;
+    form_=0;
+  }
+}
+
+void
+MolecularFormula::compute_form(const Molecule *m)
+{
+  const Molecule& mol = *m;
 
   memset(count_, 0, sizeof(count_));
 
@@ -86,14 +106,6 @@ MolecularFormula::MolecularFormula(const RefMolecule& m)
       strcat(form_, temp);
       delete[] temp;
     }
-  }
-}
-
-MolecularFormula::~MolecularFormula()
-{
-  if (form_) {
-    delete[] form_;
-    form_=0;
   }
 }
 

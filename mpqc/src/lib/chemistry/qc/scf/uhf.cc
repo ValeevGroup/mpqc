@@ -81,13 +81,13 @@ UHF::save_data_state(StateOut& s)
 }
 
 int
-UHF::value_implemented()
+UHF::value_implemented() const
 {
   return 1;
 }
 
 int
-UHF::gradient_implemented()
+UHF::gradient_implemented() const
 {
   return 1;
 }

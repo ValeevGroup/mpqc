@@ -172,16 +172,14 @@ IntCoor::set_value(double v)
   value_ = v;
 }
 
-#ifndef __GNUC__
 void
-IntCoor::print()
+IntCoor::print(ostream &o) const
 {
-  print(0);
+  print_details(0,o);
 }
-#endif
 
 void
-IntCoor::print(RefMolecule mol, ostream& os)
+IntCoor::print_details(const RefMolecule &mol, ostream& os) const
 {
   os.setf(ios::fixed,ios::floatfield);
   os.precision(10);
@@ -379,21 +377,13 @@ SetIntCoor::guess_hessian(RefMolecule& mol,RefSymmSCMatrix& hessian)
     }
 }
 
-#ifndef __GNUC__
 void
-SetIntCoor::print()
-{
-  print(0);
-}
-#endif
-
-void
-SetIntCoor::print(RefMolecule mol, ostream& os)
+SetIntCoor::print_details(const RefMolecule &mol, ostream& os) const
 {
   int i;
 
   for(i=0; i<coor_.length(); i++) {
-      coor_[i]->print(mol,os);
+      coor_[i]->print_details(mol,os);
     }
 }
 
@@ -555,16 +545,8 @@ SumIntCoor::ctype() const
   return "SUM";
 }
 
-#ifndef __GNUC__
 void
-SumIntCoor::print()
-{
-  print(0);
-}
-#endif
-
-void
-SumIntCoor::print(RefMolecule mol, ostream& os)
+SumIntCoor::print_details(const RefMolecule &mol, ostream& os) const
 {
   int initial_indent = SCFormIO::getindent(os);
   int i;
@@ -579,7 +561,7 @@ SumIntCoor::print(RefMolecule mol, ostream& os)
 
       SCFormIO::setindent(os, SCFormIO::getindent(os) + 15);
       os << node0 << skipnextindent;
-      coor_[i]->print(mol,os);
+      coor_[i]->print_details(mol,os);
       SCFormIO::setindent(os, initial_indent);
     }
 }
@@ -824,7 +806,7 @@ IntCoorGen::save_data_state(StateOut& s)
 }
 
 void
-IntCoorGen::print(ostream& out)
+IntCoorGen::print(ostream& out) const
 {
   out << node0 << indent << "IntCoorGen:" << endl << incindent
       << indent << "linear_bends = " << linear_bends_ << endl

@@ -80,13 +80,13 @@ HSOSHF::save_data_state(StateOut& s)
 }
 
 int
-HSOSHF::value_implemented()
+HSOSHF::value_implemented() const
 {
   return 1;
 }
 
 int
-HSOSHF::gradient_implemented()
+HSOSHF::gradient_implemented() const
 {
   return 1;
 }

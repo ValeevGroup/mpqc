@@ -55,7 +55,7 @@ Appearance::~Appearance()
 }
 
 void
-Appearance::print(ostream& os)
+Appearance::print(ostream& os) const
 {
   os << "Appearance:" << endl;
   os << "  level is ";

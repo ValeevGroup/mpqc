@@ -46,7 +46,7 @@ class Appearance: public DescribedClass {
     ~Appearance();
     Parameter<int>& level() { return level_; }
 
-    void print(ostream& = cout);
+    void print(ostream& = cout) const;
 };
 DescribedClass_REF_dec(Appearance);
 

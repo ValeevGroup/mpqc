@@ -53,8 +53,8 @@ class HSOSHF: public HSOSSCF {
 
     void two_body_energy(double &ec, double &ex);
 
-    int value_implemented();
-    int gradient_implemented();
+    int value_implemented() const;
+    int gradient_implemented() const;
 
   protected:
     void ao_fock();

@@ -418,7 +418,7 @@ IntMolecularCoor::init()
       cout << node0 << endl
            << indent << "Watched coordinate(s):\n" << incindent;
       watched_->update_values(molecule_);
-      watched_->print(molecule_,cout);
+      watched_->print_details(molecule_,cout);
       cout << node0 << decindent;
     }
 }
@@ -903,7 +903,7 @@ IntMolecularCoor::to_cartesian(const RefMolecule &mol,
       cout << node0 << endl
            << indent << "Watched coordinate(s):\n" << incindent;
       watched_->update_values(mol);
-      watched_->print(mol,cout);
+      watched_->print_details(mol,cout);
       cout << node0 << decindent;
     }
   
@@ -1034,7 +1034,7 @@ IntMolecularCoor::nconstrained()
 }
 
 void
-IntMolecularCoor::print(ostream& os)
+IntMolecularCoor::print(ostream& os) const
 {
   all_->update_values(molecule_);
 
@@ -1071,71 +1071,71 @@ IntMolecularCoor::print(ostream& os)
 }
 
 void
-IntMolecularCoor::print_simples(ostream& os)
+IntMolecularCoor::print_simples(ostream& os) const
 {
   if (matrixkit()->messagegrp()->me()==0) {
     if (bonds_->n()) {
       os << node0 << indent << "Bonds:\n" << incindent;
-      bonds_->print(molecule_,os);
+      bonds_->print_details(molecule_,os);
       os << node0 << decindent;
     }
     if (bends_->n()) {
       os << node0 << indent << "Bends:\n" << incindent;
-      bends_->print(molecule_,os);
+      bends_->print_details(molecule_,os);
       os << node0 << decindent;
     }
     if (tors_->n()) {
       os << node0 << indent << "Torsions:\n" << incindent;
-      tors_->print(molecule_,os);
+      tors_->print_details(molecule_,os);
       os << node0 << decindent;
     }
     if (outs_->n()) {
       os << node0 << indent << "Out of Plane:\n" << incindent;
-      outs_->print(molecule_,os);
+      outs_->print_details(molecule_,os);
       os << node0 << decindent;
     }
     if (extras_->n()) {
       os << node0 << indent << "Extras:\n" << incindent;
-      extras_->print(molecule_,os);
+      extras_->print_details(molecule_,os);
       os << node0 << decindent;
     }
     if (fixed_->n()) {
       os << node0 << indent << "Fixed:\n" << incindent;
-      fixed_->print(molecule_,os);
+      fixed_->print_details(molecule_,os);
       os << node0 << decindent;
     }
     if (followed_.nonnull()) {
       os << node0 << indent << "Followed:\n" << incindent;
-      followed_->print(molecule_,os);
+      followed_->print_details(molecule_,os);
       os << node0 << decindent;
     }
     if (watched_.nonnull()) {
       os << node0 << indent << "Watched:\n" << incindent;
-      watched_->print(molecule_,os);
+      watched_->print_details(molecule_,os);
       os << node0 << decindent;
     }
   }
 }
 
 void
-IntMolecularCoor::print_variable(ostream& os)
+IntMolecularCoor::print_variable(ostream& os) const
 {
   if (variable_->n() == 0) return;
   os << node0 << indent
      << "Variable Coordinates:" << endl;
   os << incindent;
-  variable_->print(molecule_,os);
+  variable_->print_details(molecule_,os);
   os << decindent;
 }
 
 void
-IntMolecularCoor::print_constant(ostream& os)
+IntMolecularCoor::print_constant(ostream& os) const
 {
   if (constant_->n() == 0) return;
   os << node0 << indent
      << "Constant Coordinates:" << endl;
   os << incindent;
-  constant_->print(molecule_,os);
+  constant_->print_details(molecule_,os);
   os << decindent;
 }
 

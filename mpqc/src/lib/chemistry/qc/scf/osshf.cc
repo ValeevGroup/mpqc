@@ -81,13 +81,13 @@ OSSHF::save_data_state(StateOut& s)
 }
 
 int
-OSSHF::value_implemented()
+OSSHF::value_implemented() const
 {
   return 1;
 }
 
 int
-OSSHF::gradient_implemented()
+OSSHF::gradient_implemented() const
 {
   return 1;
 }

@@ -65,20 +65,20 @@ class RegionTimer: public DescribedClass {
     void unset_default();
     void enter_default();
     void exit_default();
-    virtual void print(ostream& = cout);
+    virtual void print(ostream& = cout) const;
 
-    void update_top();
+    void update_top() const;
 
-    int nregion();
-    void get_region_names(const char *names[]);
-    void get_wall_times(double *);
-    void get_cpu_times(double *);
-    void get_flops(double *);
-    void get_depth(int *);
+    int nregion() const;
+    void get_region_names(const char *names[]) const;
+    void get_wall_times(double *) const;
+    void get_cpu_times(double *) const;
+    void get_flops(double *) const;
+    void get_depth(int *) const;
 
-    double get_wall_time();
-    double get_cpu_time();
-    double get_flops();
+    double get_wall_time() const;
+    double get_cpu_time() const;
+    double get_flops() const;
 
     static RegionTimer *default_regiontimer();
     static void set_default_regiontimer(const RefRegionTimer &);

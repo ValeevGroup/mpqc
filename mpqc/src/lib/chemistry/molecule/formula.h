@@ -40,10 +40,12 @@ class MolecularFormula {
     enum {nelem_ = 105};
     int count_[nelem_];
     char *form_;
-    
+
+    void compute_form(const Molecule *m);
   public:
-    //. This constructor takes a \clsnm{RefMolecule} as its argument.
-    MolecularFormula(const RefMolecule&);
+    //. Constructors.  The argument must be nonnull.
+    MolecularFormula(const RefMolecule&m);
+    MolecularFormula(const Molecule *m);
 
     ~MolecularFormula();
 

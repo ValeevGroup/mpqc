@@ -73,9 +73,8 @@ class DistSCVector: public SCVector {
   public:
     DistSCVector(const RefSCDimension&, DistSCMatrixKit*);
     ~DistSCVector();
-    void assign(double);
-    void assign(SCVector*);
-    void assign(const double*);
+    void assign_p(const double*);
+    void assign_v(SCVector*a);
     void convert(double* v);
     void convert(SCVector *);
 
@@ -85,8 +84,7 @@ class DistSCVector: public SCVector {
     void accumulate(SCVector*);
     void accumulate(SCMatrix*m);
     double scalar_product(SCVector*);
-    void accumulate_product(SCMatrix *, SCVector *);
-    void accumulate_product(SymmSCMatrix *, SCVector *);
+    void accumulate_product_rv(SCMatrix *, SCVector *);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SCVector*);
@@ -149,11 +147,7 @@ class DistSCMatrix: public SCMatrix {
     void accumulate_column(SCVector *v, int i);
 
     void accumulate_outer_product(SCVector*,SCVector*);
-    void accumulate_product(SCMatrix*,SCMatrix*);
-    void accumulate_product(SymmSCMatrix*,SCMatrix*);
-    void accumulate_product(DiagSCMatrix*,SCMatrix*);
-    void accumulate_product(SCMatrix*,SymmSCMatrix*);
-    void accumulate_product(SCMatrix*,DiagSCMatrix*);
+    void accumulate_product_rr(SCMatrix*,SCMatrix*);
     void accumulate(SCMatrix*);
     void accumulate(SymmSCMatrix*);
     void accumulate(DiagSCMatrix*);
@@ -214,7 +208,7 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     void assign_row(SCVector *v, int i);
     void accumulate_row(SCVector *v, int i);
 
-    void accumulate_product(SCMatrix*,SCMatrix*);
+    void accumulate_product_rr(SCMatrix*,SCMatrix*);
     void accumulate(SymmSCMatrix*);
     double invert_this();
     double solve_this(SCVector*);

@@ -100,7 +100,7 @@ Transform::scale(double scalefactor)
     }
 
 void
-Transform::print(ostream& os)
+Transform::print(ostream& os) const
 {
   os << "Transform" << endl;
 }

@@ -59,9 +59,9 @@ class TriangulatedSurface: public DescribedClass {
     AVLMap<RefTriangle,int> _triangle_to_index;
 
     // map integer indices to an object
-    AVLMap<int,RefVertex> _index_to_vertex;
-    AVLMap<int,RefEdge> _index_to_edge;
-    AVLMap<int,RefTriangle> _index_to_triangle;
+    Array<RefVertex> _index_to_vertex;
+    Array<RefEdge> _index_to_edge;
+    Array<RefTriangle> _index_to_triangle;
 
     // mappings between array element numbers
     int** _triangle_vertex;
@@ -137,17 +137,17 @@ class TriangulatedSurface: public DescribedClass {
     virtual void clear();
 
     // get information from the object sets
-    inline int nvertex() { return _vertices.length(); };
-    inline RefVertex vertex(int i) { return _index_to_vertex[i]; };
-    inline int nedge() { return _edges.length(); };
-    inline RefEdge edge(int i) { return _index_to_edge[i]; };
-    inline int ntriangle() { return _triangles.length(); };
-    inline RefTriangle triangle(int i) { return _index_to_triangle[i]; }
+    int nvertex() const { return _vertices.length(); };
+    RefVertex vertex(int i) const { return _index_to_vertex[i]; };
+    int nedge() const { return _edges.length(); };
+    RefEdge edge(int i) const { return _index_to_edge[i]; };
+    int ntriangle() const { return _triangles.length(); };
+    RefTriangle triangle(int i) const { return _index_to_triangle[i]; }
 
     // information from the index mappings
-    inline int triangle_vertex(int i,int j) { return _triangle_vertex[i][j]; };
-    inline int triangle_edge(int i,int j) { return _triangle_edge[i][j]; };
-    inline int edge_vertex(int i,int j) { return _edge_vertex[i][j]; };
+    int triangle_vertex(int i,int j) const { return _triangle_vertex[i][j]; };
+    int triangle_edge(int i,int j) const { return _triangle_edge[i][j]; };
+    int edge_vertex(int i,int j) const { return _edge_vertex[i][j]; };
 
     // associate values with vertices
     //void compute_colors(Volume&);
@@ -160,9 +160,9 @@ class TriangulatedSurface: public DescribedClass {
     virtual double volume();
 
     // output of the surface
-    virtual void print(ostream&o=cout);
-    virtual void print_vertices_and_triangles(ostream&o=cout);
-    virtual void print_geomview_format(ostream&o=cout);
+    virtual void print(ostream&o=cout) const;
+    virtual void print_vertices_and_triangles(ostream&o=cout) const;
+    virtual void print_geomview_format(ostream&o=cout) const;
     virtual void render(const RefRender &render);
 
     // print information about the topology

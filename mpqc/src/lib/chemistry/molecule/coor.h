@@ -82,13 +82,9 @@ class IntCoor: public SavableState {
     virtual double preferred_value() const;
     //. Returns a string representation of the type of coordinate this is.
     virtual const char* ctype() const = 0;
-#ifdef __GNUC__
     //. Print information about the coordinate.
-    virtual void print(RefMolecule =0, ostream& =cout);
-#else
-    virtual void print();
-    virtual void print(RefMolecule, ostream& =cout);
-#endif
+    virtual void print(ostream & o=cout) const;
+    virtual void print_details(const RefMolecule &, ostream& =cout) const;
     //. Returns the value of the force constant associated with this
     // coordinate.
     virtual double force_constant(RefMolecule&) = 0;
@@ -142,13 +138,8 @@ class SumIntCoor: public IntCoor {
     double preferred_value() const;
     //. Always returns ``SUM''.
     const char* ctype() const;
-#ifdef __GNUC__
     //. Print the individual coordinates in the sum with their coefficients.
-    void print(RefMolecule = 0, ostream& =cout);
-#else
-    void print();
-    void print(RefMolecule, ostream& =cout);
-#endif
+    void print_details(const RefMolecule &, ostream& =cout) const;
     //. Returns the weighted sum of the individual force constants.
     double force_constant(RefMolecule&);
     //. Recalculate the value of the coordinate.
@@ -204,13 +195,8 @@ class SetIntCoor: public SavableState {
     // Hessian is a symmetric matrix whose i'th diagonal is the force constant
     // for the i'th coordinate in the set.
     virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);
-#ifdef __GNUC__
     //. Print the coordinates in the set.
-    virtual void print(RefMolecule =0,ostream& =cout);
-#else
-    virtual void print();
-    virtual void print(RefMolecule,ostream& =cout);
-#endif
+    virtual void print_details(const RefMolecule &,ostream& =cout) const;
     //. Recalculate the values of the internal coordinates in the set.
     virtual void update_values(const RefMolecule&);
     //. Copy the values of the internal coordinates to a vector.
@@ -270,7 +256,7 @@ class IntCoorGen: public SavableState
     virtual void generate(const RefSetIntCoor&);
 
     //. Print out information about this.
-    virtual void print(ostream& out=cout);
+    virtual void print(ostream& out=cout) const;
 };
 SavableState_REF_dec(IntCoorGen);
 
@@ -311,8 +297,8 @@ class MolecularCoor: public SavableState
     RefMolecule molecule() const { return molecule_; }
 
     //. Print the coordinate.
-    virtual void print(ostream& =cout) = 0;
-    virtual void print_simples(ostream& =cout) = 0;
+    virtual void print(ostream& =cout) const = 0;
+    virtual void print_simples(ostream& =cout) const = 0;
 
     //. Returns a smart reference to an \clsnmref{SCDimension} equal to the
     // number of coordinates (be they Cartesian, internal, or whatever)
@@ -372,7 +358,7 @@ class MolecularCoor: public SavableState
     // to not change anything and return an \clsnmref{IdentityTransform}.
     virtual RefNonlinearTransform change_coordinates();
 
-    RefSCMatrixKit matrixkit() { return matrixkit_; }
+    RefSCMatrixKit matrixkit() const { return matrixkit_; }
 };
 SavableState_REF_dec(MolecularCoor);
 
@@ -487,10 +473,10 @@ class IntMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
     virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
-    virtual void print(ostream& =cout);
-    virtual void print_simples(ostream& =cout);
-    virtual void print_variable(ostream& =cout);
-    virtual void print_constant(ostream& =cout);
+    virtual void print(ostream& =cout) const;
+    virtual void print_simples(ostream& =cout) const;
+    virtual void print_variable(ostream& =cout) const;
+    virtual void print_constant(ostream& =cout) const;
     int nconstrained();
 };
 
@@ -539,7 +525,7 @@ class SymmMolecularCoor: public IntMolecularCoor
     // and might transform to a new set of coordinates.
     RefNonlinearTransform change_coordinates();
 
-    void print(ostream& =cout);
+    void print(ostream& =cout) const;
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -615,8 +601,8 @@ class CartMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
     virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
-    virtual void print(ostream& =cout);
-    virtual void print_simples(ostream& =cout);
+    virtual void print(ostream& =cout) const;
+    virtual void print_simples(ostream& =cout) const;
     void guess_hessian(RefSymmSCMatrix&hessian);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };

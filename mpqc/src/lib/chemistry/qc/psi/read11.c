@@ -37,7 +37,6 @@ int read_file11(int natom, int readto,
       double **grad, int *ngrad) 
 {
    int i,j ;                /* loop variables */
-   int nskip;               /* lines to skip in file11 */
    FILE *fpi ;              /* pointer for input file file11.dat */
    double g1, g2, g3;       /* junk variables for gradients */
    char line_in[MAX_LN_11]; /* input buffer */
@@ -124,10 +123,10 @@ int i ;
    fprintf(fpo, "DATA FROM FILE11.DAT\n") ;
    fprintf(fpo, "Label :\n%s\n", label) ;
    fprintf(fpo, "Number of atoms = %d\n", natom) ;
-   fprintf(fpo, "Energy = %.10lf\n", energy) ;
+   fprintf(fpo, "Energy = %.10f\n", energy) ;
    fprintf(fpo, "Cartesian coordinates (bohr) :\n") ;
    for (i=0; i<natom; i++) {
-      fprintf(fpo, "     %4d    %12.7lf    %12.7lf    %12.7lf\n",
+      fprintf(fpo, "     %4d    %12.7f    %12.7f    %12.7f\n",
             AN[i], X[i], Y[i], Z[i]) ;
       }
    fprintf(fpo, "\n") ;

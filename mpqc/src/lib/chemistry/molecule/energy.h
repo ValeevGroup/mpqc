@@ -86,8 +86,8 @@ class MolecularEnergy: public Function {
     //. A wrapper around value();
     virtual double energy();
 
-    virtual RefMolecule molecule();
-    virtual RefSCDimension moldim();
+    virtual RefMolecule molecule() const;
+    virtual RefSCDimension moldim() const;
     
     void guess_hessian(RefSymmSCMatrix&);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
@@ -95,7 +95,7 @@ class MolecularEnergy: public Function {
     //. If a molecule hessian object is given, it will be used
     //to provide a hessian.
     RefSymmSCMatrix hessian();
-    int hessian_implemented();
+    int hessian_implemented() const;
 
     void set_x(const RefSCVector&);
 
@@ -115,10 +115,11 @@ class MolecularEnergy: public Function {
     RefNonlinearTransform change_coordinates();
     
     //. Nicely print n x 3 data that are stored in a vector.
-    void print_natom_3(const RefSCVector &, const char *t=0, ostream&o=cout);
-    void print_natom_3(double **, const char *t=0, ostream&o=cout);
+    void print_natom_3(const RefSCVector &,
+                       const char *t=0, ostream&o=cout) const;
+    void print_natom_3(double **, const char *t=0, ostream&o=cout) const;
 
-    virtual void print(ostream& = cout);
+    virtual void print(ostream& = cout) const;
 };
 SavableState_REF_dec(MolecularEnergy);
 
@@ -140,9 +141,9 @@ class SumMolecularEnergy: public MolecularEnergy {
 
     void save_data_state(StateOut&);
 
-    int value_implemented();
-    int gradient_implemented();
-    int hessian_implemented();
+    int value_implemented() const;
+    int gradient_implemented() const;
+    int hessian_implemented() const;
 
     void set_x(const RefSCVector&);
 };

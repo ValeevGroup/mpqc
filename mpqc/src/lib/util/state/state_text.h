@@ -62,15 +62,18 @@ class StateOutText: public StateOutFile {
     ~StateOutText();
     int putstring(const char*);
     int put_array_char(const char*,int);
+    int put_array_uint(const unsigned int*,int);
     int put_array_int(const int*,int);
     int put_array_float(const float*,int);
     int put_array_double(const double*,int);
     int put(const ClassDesc*);
     int put(char r);
+    int put(unsigned int r);
     int put(int r);
     int put(float r);
     int put(double r);
     int put(const char*,int);
+    int put(const unsigned int*,int);
     int put(const int*,int);
     int put(const float*,int);
     int put(const double*,int);
@@ -94,6 +97,7 @@ class StateInText: public StateInFile {
     void no_array();
 
     int read(char*);
+    int read(unsigned int&);
     int read(int&);
     int read(float&);
     int read(double&);
@@ -111,15 +115,18 @@ class StateInText: public StateInFile {
     ~StateInText();
     int getstring(char*&);
     int get_array_char(char*,int);
+    int get_array_uint(unsigned int*,int);
     int get_array_int(int*,int);
     int get_array_float(float*,int);
     int get_array_double(double*,int);
     int get(const ClassDesc**);
     int get(char&r, const char *key = 0);
+    int get(unsigned int&r, const char *key = 0);
     int get(int&r, const char *key = 0);
     int get(float&r, const char *key = 0);
     int get(double&r, const char *key = 0);
     int get(char*&);
+    int get(unsigned int*&);
     int get(int*&);
     int get(float*&);
     int get(double*&);

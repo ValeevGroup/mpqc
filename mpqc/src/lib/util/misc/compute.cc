@@ -135,7 +135,7 @@ ResultInfo::operator=(const ResultInfo&r)
 }
 
 int
-ResultInfo::needed()
+ResultInfo::needed() const
 {
   return _compute && (!_computed);
 }
@@ -222,7 +222,7 @@ AccResultInfo::operator=(const AccResultInfo&a)
 }
 
 int
-AccResultInfo::needed()
+AccResultInfo::needed() const
 {
   return compute() && !computed_to_desired_accuracy();
 }

@@ -124,8 +124,8 @@ class MCSCF: public OneBodyWavefunction
 
     double occupation(int vectornum);
 
-    int value_implemented();
-    int gradient_implemented();
+    int value_implemented() const;
+    int gradient_implemented() const;
 };
 SavableState_REF_dec(MCSCF);
 

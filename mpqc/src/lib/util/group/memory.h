@@ -78,8 +78,8 @@ class MemoryGrp: public DescribedClass {
     virtual ~MemoryGrp();
     
     //. Returns who I am and how many nodes there are.
-    int me() { return me_; }
-    int n() { return n_; }
+    int me() const { return me_; }
+    int n() const { return n_; }
 
     //. Set the size of locally held memory.
     //. When memory is accessed using a global offset counting
@@ -132,7 +132,7 @@ class MemoryGrp: public DescribedClass {
     virtual void catchup();
 
     //. Prints out information about the object.
-    virtual void print(ostream &o = cout);
+    virtual void print(ostream &o = cout) const;
 
     //. Create a memory group.  This routine looks for a -memorygrp
     //argument, then the environmental variable MEMORYGRP, and, finally,

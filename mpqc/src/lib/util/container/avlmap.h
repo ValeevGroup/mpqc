@@ -46,11 +46,12 @@ class AVLMap {
   public:
     class iterator {
       private:
-        EAVLMMap<K, AVLMapNode<K,T> > *map_;
+        const EAVLMMap<K, AVLMapNode<K,T> > *map_;
         AVLMapNode<K, T> *node;
       public:
         iterator(): map_(0), node(0) {}
-        iterator(EAVLMMap<K,AVLMapNode<K,T> > *m, AVLMapNode<K,T> *n)
+        iterator(const EAVLMMap<K,AVLMapNode<K,T> > *m,
+                 AVLMapNode<K,T> *n)
           :map_(m), node(n) {}
         iterator(const AVLMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
         void operator++() { map_->next(node); }
@@ -70,7 +71,7 @@ class AVLMap {
     void insert(const K& key, const T& data);
     void remove(const K& key);
     int contains(const K& k) const { return map_.find(k) != 0; }
-    iterator find(const K&);
+    iterator find(const K&) const;
     T &operator[](const K &k);
 
     int height() { return map_.height(); }
@@ -78,8 +79,8 @@ class AVLMap {
 
     int length() const { return map_.length(); }
 
-    iterator begin() { return iterator(&map_,map_.start()); }
-    iterator end() { return iterator(&map_,0); }
+    iterator begin() const { return iterator(&map_,map_.start()); }
+    iterator end() const { return iterator(&map_,0); }
 
     void print() { map_.print(); }
 };
@@ -106,7 +107,7 @@ AVLMap<K,T>::remove(const K& key)
 
 template <class K, class T>
 inline AVLMap<K,T>::iterator
-AVLMap<K,T>::find(const K& k)
+AVLMap<K,T>::find(const K& k) const
 {
   return iterator(&map_,map_.find(k));
 }

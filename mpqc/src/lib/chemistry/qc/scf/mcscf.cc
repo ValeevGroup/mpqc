@@ -234,13 +234,13 @@ MCSCF::occupation(int i)
 }
 
 int
-MCSCF::value_implemented()
+MCSCF::value_implemented() const
 {
   return 1;
 }
 
 int
-MCSCF::gradient_implemented()
+MCSCF::gradient_implemented() const
 {
   return 1;
 }

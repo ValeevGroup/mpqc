@@ -125,18 +125,22 @@ class SCVector: public DescribedClass {
     //. Assign each element to a random number between -1 and 1
     virtual void randomize();
     //. Assign all elements of this to \vrbl{val}.
-    virtual void assign(double val);
+    void assign(double val) { assign_val(val); }
     //. Assign element \vrbl{i} to \vrbl{v[i]} for all \vrbl{i}.
-    virtual void assign(const double* v);
+    void assign(const double* v) { assign_p(v); }
+    //. Make \srccd{this} have the same elements as \vrbl{v}.
+    //. The dimensions must match.
+    void assign(SCVector* v) { assign_v(v); }
+    //. Overridden to implement the assign functions.
+    virtual void assign_val(double val);
+    virtual void assign_p(const double* v);
+    virtual void assign_v(SCVector *v);
     //. Assign \vrbl{v[i]} to element \vrbl{i} for all \vrbl{i}.
     virtual void convert(double* v);
     //. Convert an \clsnmref{SCVector} of a different specialization
     //. to this specialization and possibly accumulate the data.
     virtual void convert(SCVector*);
     virtual void convert_accumulate(SCVector*);
-    //. Make \srccd{this} have the same elements as \vrbl{v}.
-    //. The dimensions must match.
-    virtual void assign(SCVector* v);
     //. Multiply each element by \vrbl{val}.
     virtual void scale(double val);
 
@@ -149,8 +153,12 @@ class SCVector: public DescribedClass {
     //. Return the value of element \vrbl{i}.
     virtual double get_element(int i) = 0;
     //. Sum the result of \vrbl{m} times \vrbl{v} into \srccd{this}.
-    virtual void accumulate_product(SymmSCMatrix* m, SCVector* v);
-    virtual void accumulate_product(SCMatrix* m, SCVector* v) = 0;
+    void accumulate_product(SymmSCMatrix* m, SCVector* v)
+        { accumulate_product_sv(m,v); }
+    void accumulate_product(SCMatrix* m, SCVector* v)
+        {  accumulate_product_rv(m,v); }
+    virtual void accumulate_product_sv(SymmSCMatrix* m, SCVector* v);
+    virtual void accumulate_product_rv(SCMatrix* m, SCVector* v) = 0;
     //. Sum \vrbl{v} into this.
     virtual void accumulate(SCVector*v) = 0;
     //. Sum \vrbl{m} into this.  One of \vrbl{m}'s dimensions must be 1.
@@ -214,12 +222,20 @@ class SCMatrix: public DescribedClass {
     //. Assign each element to a random number between -1 and 1
     virtual void randomize();
     //. Set all elements to \vrbl{val}.
-    virtual void assign(double val);
+    void assign(double val) { assign_val(val); }
     //. Assign element \vrbl{i}, \vrbl{j} to
     //. \srccd{\vrbl{m}[\vrbl{i}*nrow()+\vrbl{j}]}.
-    virtual void assign(const double* m);
+    void assign(const double* m) { assign_p(m); }
     //. Assign element \vrbl{i}, \vrbl{j} to \srccd{\vrbl{m}[\vrbl{i}][\vrbl{j}]}.
-    virtual void assign(const double** m);
+    void assign(const double** m) { assign_pp(m); }
+    //. Make \srccd{this} have the same elements as \vrbl{m}.
+    //. The dimensions must match.
+    void assign(SCMatrix* m) { assign_r(m); }
+    //. Overridden to implement to assign members.
+    virtual void assign_val(double val);
+    virtual void assign_p(const double* m);
+    virtual void assign_pp(const double** m);
+    virtual void assign_r(SCMatrix* m);
     //. Like the \srccd{assign} members, but these write values
     //. to the arguments.
     virtual void convert(double*);
@@ -228,9 +244,6 @@ class SCMatrix: public DescribedClass {
     //. to this specialization and possibly accumulate the data.
     virtual void convert(SCMatrix*);
     virtual void convert_accumulate(SCMatrix*);
-    //. Make \srccd{this} have the same elements as \vrbl{m}.
-    //. The dimensions must match.
-    virtual void assign(SCMatrix* m);
     //. Multiply all elements by \vrbl{val}.
     virtual void scale(double val);
     //. Scale the diagonal elements by \vrbl{val}.
@@ -283,12 +296,24 @@ class SCMatrix: public DescribedClass {
     virtual void accumulate(SCVector*) = 0;
     //. Sum into \srccd{this} the products of various vectors or matrices.
     virtual void accumulate_outer_product(SCVector*,SCVector*) = 0;
-    virtual void accumulate_product(SCMatrix*,SCMatrix*) = 0;
-    virtual void accumulate_product(SCMatrix*,SymmSCMatrix*);
-    virtual void accumulate_product(SCMatrix*,DiagSCMatrix*);
-    virtual void accumulate_product(SymmSCMatrix*,SCMatrix*);
-    virtual void accumulate_product(DiagSCMatrix*,SCMatrix*);
-    virtual void accumulate_product(SymmSCMatrix*,SymmSCMatrix*);
+    void accumulate_product(SCMatrix*m1,SCMatrix*m2)
+        { accumulate_product_rr(m1,m2); }
+    void accumulate_product(SCMatrix*m1,SymmSCMatrix*m2)
+        { accumulate_product_rs(m1,m2); }
+    void accumulate_product(SCMatrix*m1,DiagSCMatrix*m2)
+        { accumulate_product_rd(m1,m2); }
+    void accumulate_product(SymmSCMatrix*m1,SCMatrix*m2)
+        { accumulate_product_sr(m1,m2); }
+    void accumulate_product(DiagSCMatrix*m1,SCMatrix*m2)
+        { accumulate_product_dr(m1,m2); }
+    void accumulate_product(SymmSCMatrix*m1,SymmSCMatrix*m2)
+        { accumulate_product_ss(m1,m2); }
+    virtual void accumulate_product_rr(SCMatrix*,SCMatrix*) = 0;
+    virtual void accumulate_product_rs(SCMatrix*,SymmSCMatrix*);
+    virtual void accumulate_product_rd(SCMatrix*,DiagSCMatrix*);
+    virtual void accumulate_product_sr(SymmSCMatrix*,SCMatrix*);
+    virtual void accumulate_product_dr(DiagSCMatrix*,SCMatrix*);
+    virtual void accumulate_product_ss(SymmSCMatrix*,SymmSCMatrix*);
     //. Transpose \srccd{this}.
     virtual void transpose_this() = 0;
     //. Return the trace.
@@ -353,12 +378,20 @@ class SymmSCMatrix: public DescribedClass {
     //. Assign each element to a random number between -1 and 1
     virtual void randomize();
     //. Set all elements to \vrbl{val}.
-    virtual void assign(double val);
+    void assign(double val) { assign_val(val); }
     //. Assign element \vrbl{i}, \vrbl{j} to
     //. \srccd{\vrbl{m}[\vrbl{i}*(\vrbl{i}+1)/2+\vrbl{j}]}.
-    virtual void assign(const double* m);
+    void assign(const double* m) { assign_p(m); }
     //. Assign element \vrbl{i}, \vrbl{j} to \srccd{\vrbl{m}[\vrbl{i}][\vrbl{j}]}.
-    virtual void assign(const double** m);
+    void assign(const double** m) { assign_pp(m); }
+    //. Make \srccd{this} have the same elements as \vrbl{m}.
+    //. The dimensions must match.
+    void assign(SymmSCMatrix* m) { assign_s(m); }
+    //. Overridden to implement the assign functions
+    virtual void assign_val(double val);
+    virtual void assign_p(const double* m);
+    virtual void assign_pp(const double** m);
+    virtual void assign_s(SymmSCMatrix* m);
     //. Like the \srccd{assign} members, but these write values
     //. to the arguments.
     virtual void convert(double*);
@@ -367,9 +400,6 @@ class SymmSCMatrix: public DescribedClass {
     //. to this specialization and possibly accumulate the data.
     virtual void convert(SymmSCMatrix*);
     virtual void convert_accumulate(SymmSCMatrix*);
-    //. Make \srccd{this} have the same elements as \vrbl{m}.
-    //. The dimensions must match.
-    virtual void assign(SymmSCMatrix* m);
     //. Multiply all elements by \vrbl{val}.
     virtual void scale(double);
     //. Scale the diagonal elements by \vrbl{val}.
@@ -489,10 +519,17 @@ class DiagSCMatrix: public DescribedClass {
     //. Assign each element to a random number between -1 and 1
     virtual void randomize();
     //. Set all elements to \vrbl{val}.
-    virtual void assign(double val);
+    void assign(double val) { assign_val(val); }
     //. Assign element \vrbl{i}, \vrbl{i} to
     //. \srccd{\vrbl{m}[\vrbl{i}]}.
-    virtual void assign(const double*);
+    void assign(const double*p) { assign_p(p); }
+    //. Make \srccd{this} have the same elements as \vrbl{m}.
+    //. The dimensions must match.
+    void assign(DiagSCMatrix*d) { assign_d(d); }
+    //. Overridden to implement the assign members.
+    virtual void assign_val(double val);
+    virtual void assign_p(const double*);
+    virtual void assign_d(DiagSCMatrix*);
     //. Like the \srccd{assign} member, but this writes values
     //. to the argument.
     virtual void convert(double*);
@@ -500,9 +537,6 @@ class DiagSCMatrix: public DescribedClass {
     //. to this specialization and possibly accumulate the data.
     virtual void convert(DiagSCMatrix*);
     virtual void convert_accumulate(DiagSCMatrix*);
-    //. Make \srccd{this} have the same elements as \vrbl{m}.
-    //. The dimensions must match.
-    virtual void assign(DiagSCMatrix*);
     //. Multiply all elements by \vrbl{val}.
     virtual void scale(double);
     //. Return the dimension.

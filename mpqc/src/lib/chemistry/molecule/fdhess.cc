@@ -211,6 +211,11 @@ FinDispMolecularHessian::restart()
     restore_displacements(si);
     mol_ = mole_->molecule();
 
+    if (ndisplacements_done() >= ndisplace()) {
+        restart_=0;
+        return;
+      }
+    
     // make sure we change the symmetry info everywhere in the MolE
     int irrep, index;
     double coef;

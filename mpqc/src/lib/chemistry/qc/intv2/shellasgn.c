@@ -1,4 +1,7 @@
 /* $Log$
+ * Revision 1.7  1995/11/16 00:47:39  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.6  1995/10/25 21:19:55  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -104,29 +107,6 @@ shell_t *_shell_2;
     else _shell_1->coef = NULL;
     }
   else _shell_1->coef = NULL; /* DT. */
-
-/* here is the hand coded part for norm */
-
-  if(_shell_2->norm && _shell_2->ncon!=0) {
-    if ((_shell_2->norm != NULL)) {
-      _shell_1->norm = (double **) malloc(sizeof(double *)*_shell_2->ncon);
-      if(_shell_1->norm==NULL) return(-1);
-      for (i=0; i<_shell_2->ncon; i++)  {
-        if((ncart=INT_NCART(_shell_2->type[i].am))!=0) {
-          if(_shell_2->norm[i]!=NULL) {
-            _shell_1->norm[i] = (double *) malloc(sizeof(double)*ncart);
-            if(_shell_1->norm[i]==NULL) return(-1);
-            for(j=0;j<ncart;j++)
-              _shell_1->norm[i][j]=_shell_2->norm[i][j];
-            }
-          }
-        else _shell_1->norm[i] = NULL;
-        }
-      /* Skipped: else _shell_1->coef[i] = NULL;*/ /* DT. */
-      }
-    else _shell_1->coef = NULL;
-    }
-  else _shell_1->norm = NULL;
 
   return 0;
   }

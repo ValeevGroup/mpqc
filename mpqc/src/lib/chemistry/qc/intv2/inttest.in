@@ -18,11 +18,8 @@ h2o: (
      }
   )
   basis<GaussianBasisSet>: (
-    %basisdir = "/net/midway/usr/people/etseidl/basis/"
-    basisfiles = [ "v2g90supp.ipv2" "v2g90nogc.ipv2" ]
     molecule = $..:molecule
-    name = 6-31s
-    %name = sto3gd
+    name = "6-31G*"
     puream = yes
    )
 )
@@ -56,22 +53,22 @@ htest: (
     )
  )
 
-centers = $:heh
+centers = $:h2o
 
 test: (
    print_centers = yes
-   overlap = no
-   kinetic = no
-   hcore = no
-   nuclear = no
+   overlap = yes
+   kinetic = yes
+   hcore = yes
+   nuclear = yes
    3 = no
-   bounds = no
-   4 = no
+   bounds = yes
+   4 = yes
    4der = yes
    print = yes
-   niter = 0
+   niter = 1
    permute = yes
-   quartet = [0 0 0 1]
+   %quartet = [0 0 0 1]
    %storage = 10000
  )
 

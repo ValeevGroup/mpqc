@@ -625,6 +625,8 @@ double_array3_t *trans;
     }
   }
 
+  int_initialize_centers(centers);
+
   return 0;
 }
 
@@ -660,7 +662,6 @@ double_array3_t *trans;
   double tr[3];
 
  /* we need some more information about the basis set, etc */
-  int_normalize_centers(centers);
   int_initialize_1e(0,0,centers,centers);
   int_initialize_offsets1(centers,centers);
 

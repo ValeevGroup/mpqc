@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.10  1995/11/16 00:47:29  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.9  1995/10/25 21:19:46  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -217,7 +220,6 @@ int jsh;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
   int gc1,gc2;
   int index,index1,index2;
-  double shell1norm,shell2norm;
 
   c1 = cs1->center_num[ish];
   c2 = cs2->center_num[jsh];
@@ -229,10 +231,8 @@ int jsh;
   shell2 = &(cs2->center[c2].basis.shell[s2]);
   index = 0;
   FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    shell1norm = shell1->norm[gc1][index1];
     FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
-      shell2norm = shell2->norm[gc2][index2];
-      cartesianbuffer[index] = shell1norm * shell2norm * comp_shell_overlap(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      cartesianbuffer[index] = comp_shell_overlap(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
       END_FOR_GCCART(index2)
     END_FOR_GCCART(index1)
@@ -463,7 +463,6 @@ int jsh;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
   int cart1,cart2;
   int index;
-  double norm1,norm2;
   int gc1,gc2;
 
   c1 = cs1->center_num[ish];
@@ -476,10 +475,8 @@ int jsh;
   shell2 = &(cs2->center[c2].basis.shell[s2]);
   index = 0;
   FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-      norm2 = shell2->norm[gc2][cart2];
-      cartesianbuffer[index] = norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
@@ -498,7 +495,6 @@ int jsh;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
   int cart1,cart2;
   int index;
-  double norm1,norm2;
   int gc1,gc2;
 
   c1 = cs1->center_num[ish];
@@ -512,10 +508,8 @@ int jsh;
   index = 0;
 
   FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-      norm2 = shell2->norm[gc2][cart2];
-      cartesianbuffer[index] = norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
@@ -561,7 +555,6 @@ double (*shell_function)();
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
   int index1,index2;
   double tmp[3];
-  double shell1norm,shell2norm;
   double *ctmp = cartesianbuffer;
 
   /* fprintf(stdout,"accum_shell_1der: working on ( %2d | %2d )",ish,jsh);
@@ -578,12 +571,7 @@ double (*shell_function)();
   shell1 = &(cs1->center[c1].basis.shell[s1]);
   shell2 = &(cs2->center[c2].basis.shell[s2]);
   FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    shell1norm = shell1->norm[gc1][index1];
-#if 0
-    printf("shell1norm = shell1->norm[%d][%d] = % f\n",gc1,index1,shell1norm);
-#endif
     FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
-      shell2norm = shell2->norm[gc2][index2];
       if ((cs1==cs2)&&(c1==c2)) {
         if (    three_center
              && !((cs1==third_centers)&&(c1==third_centernum))
@@ -656,10 +644,7 @@ printf("exp_w = %d, scale_sh = %d, result_scale_f = % f\n",
 #if 0
       printf("tmp1 = % f % f % f\n",tmp[0],tmp[1],tmp[2]);
 #endif
-#if 0
-      printf("shell1norm = % f, shell2norm = % f\n",shell1norm,shell2norm);
-#endif
-      for (i=0; i<3; i++) ctmp[i] = shell1norm * shell2norm * tmp[i];
+      for (i=0; i<3; i++) ctmp[i] = tmp[i];
 
 #if 0
       printf("ctmp = % f % f % f\n",ctmp[0],ctmp[1],ctmp[2]);
@@ -1029,7 +1014,6 @@ int jsh;
   int index;
   int gc1,gc2;
   int cart1,cart2;
-  double norm1,norm2;
 
   if (!(init_order >= 0)) {
     fprintf(stderr,"int_shell_nuclear: one electron routines are not init'ed\n");
@@ -1047,9 +1031,7 @@ int jsh;
   index = 0;
 
   FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-      norm2 = shell2->norm[gc2][cart2];
       cartesianbuffer[index] = 0.0;
       /* Loop thru the centers on cs1. */
       for (i=0; i<cs1->n; i++) {
@@ -1065,7 +1047,6 @@ int jsh;
                          * cs2->center[i].charge;
           }
         }
-      cartesianbuffer[index] *= norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
@@ -1093,7 +1074,6 @@ double** position;
   int index;
   int gc1,gc2;
   int cart1,cart2;
-  double norm1,norm2;
   double tmp;
 
   if (!(init_order >= 0)) {
@@ -1112,9 +1092,7 @@ double** position;
   index = 0;
 
   FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-      norm2 = shell2->norm[gc2][cart2];
       /* Loop thru the point charges. */
       tmp = 0.0;
       for (i=0; i<ncharge; i++) {
@@ -1122,7 +1100,7 @@ double** position;
         tmp -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
                        * charge[i];
         }
-      cartesianbuffer[index] = tmp * norm1 * norm2;
+      cartesianbuffer[index] = tmp;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
@@ -1150,7 +1128,6 @@ double** position;
   int index;
   int gc1,gc2;
   int cart1,cart2;
-  double norm1,norm2;
 
   if (!(init_order >= 0)) {
     fprintf(stderr,"int_shell_pointcharge: one electron routines are not init'ed\n");
@@ -1168,9 +1145,7 @@ double** position;
   index = 0;
 
   FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-      norm2 = shell2->norm[gc2][cart2];
       cartesianbuffer[index] = 0.0;
       /* Loop thru the point charges. */
       for (i=0; i<ncharge; i++) {
@@ -1178,7 +1153,6 @@ double** position;
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
                                 * charge[i];
         }
-      cartesianbuffer[index] *= norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
@@ -1202,7 +1176,6 @@ int jsh;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
   int index;
   int cart1,cart2;
-  double norm1,norm2;
   int gc1,gc2;
 
   if (!(init_order >= 0)) {
@@ -1221,9 +1194,7 @@ int jsh;
 
   index = 0;
   FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-    norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-      norm2 = shell2->norm[gc2][cart2];
       cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       /* Loop thru the centers on cs1. */
       for (i=0; i<cs1->n; i++) {
@@ -1239,7 +1210,6 @@ int jsh;
                                 * cs2->center[i].charge;
           }
         }
-      cartesianbuffer[index] *= norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
@@ -1634,7 +1604,6 @@ int k2;
 {
   int i,j,k,xyz;
   double result[3];
-  double norm1,norm2;
   double Pi;
   double oozeta;
   double AmB,AmB2;
@@ -1643,11 +1612,6 @@ int k2;
   int am;
 
   am = i1+j1+k1+i2+j2+k2;
-
-  if (shell1->norm) norm1 = shell1->norm[gc1][INT_CARTINDEX(i1+j1+k1,i1,j1)];
-  else norm1 = 1.0;
-  if (shell2->norm) norm2 = shell2->norm[gc2][INT_CARTINDEX(i2+j2+k2,i2,j2)];
-  else norm2 = 1.0;
 
   /* Loop over the primitives in the shells. */
   for (xyz=0; xyz<3; xyz++) result[xyz] = 0.0;
@@ -1691,7 +1655,7 @@ int k2;
       }
     }
 
-  for (xyz=0; xyz<3; xyz++) efield[xyz] = norm1 * norm2 * result[xyz];
+  for (xyz=0; xyz<3; xyz++) efield[xyz] = result[xyz];
 
   /* fprintf(stdout,"comp_shell_efield(%d,%d,%d,%d,%d,%d): % 12.8lf % 12.8lf % 12.8lf\n",
    *         i1,j1,k1,i2,j2,k2,efield[0],efield[1],efield[2]);
@@ -1817,7 +1781,6 @@ double *com;
   int im,jm,km;
   int gc1,gc2;
   int index,index1,index2;
-  double shell1norm,shell2norm;
   double dipole[3];
 
   C = com;
@@ -1832,12 +1795,10 @@ double *com;
   shell2 = &(cs2->center[c2].basis.shell[s2]);
   index = 0;
   FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    shell1norm = shell1->norm[gc1][index1];
     FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
-      shell2norm = shell2->norm[gc2][index2];
       comp_shell_dipole(dipole,gc1,i1,j1,k1,gc2,i2,j2,k2);
       for(mu=0; mu < 3; mu++) {
-        cartesianbuffer[index] = shell1norm * shell2norm * dipole[mu];
+        cartesianbuffer[index] = dipole[mu];
         index++;
         }
       END_FOR_GCCART(index2)

@@ -14,7 +14,6 @@ OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs):
   OneBodyInt(bs)
 {
   c1 = c2 = bs->convert_to_centers_t();
-  int_normalize_centers(c1);
   int_initialize_1e(0,0,c1,c1);
   int_initialize_offsets1(c1,c1);
   same_center=1;
@@ -26,8 +25,6 @@ OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs1,
 {
   c1 = bs1->convert_to_centers_t();
   c2 = bs2->convert_to_centers_t();
-  int_normalize_centers(c1);
-  int_normalize_centers(c2);
   int_initialize_1e(0,0,c1,c2);
   int_initialize_offsets1(c1,c2);
   same_center=0;
@@ -52,7 +49,6 @@ OneBody3Intv2::OneBody3Intv2(const RefGaussianBasisSet&bs) :
   OneBody3Int(bs)
 {
   c1 = c2 = bs->convert_to_centers_t();
-  int_normalize_centers(c1);
   int_initialize_1e(0,0,c1,c1);
   int_initialize_offsets1(c1,c1);
   same_center=1;
@@ -64,8 +60,6 @@ OneBody3Intv2::OneBody3Intv2(const RefGaussianBasisSet&bs1,
 {
   c1 = bs1->convert_to_centers_t();
   c2 = bs2->convert_to_centers_t();
-  int_normalize_centers(c1);
-  int_normalize_centers(c2);
   int_initialize_1e(0,0,c1,c2);
   int_initialize_offsets1(c1,c2);
   same_center=0;

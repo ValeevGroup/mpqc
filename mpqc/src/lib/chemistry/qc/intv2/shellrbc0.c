@@ -1,4 +1,7 @@
 /* $Log$
+ * Revision 1.7  1995/11/16 00:47:40  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.6  1995/10/25 21:19:57  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -109,29 +112,6 @@ int _root;
     else _shell->coef = NULL;
     }
   else _shell->coef = NULL; /* DT. */
-
-/* hand coded part for norm */
-  if(_shell->ncon!=0) {
-    if(rbcast0_test_pointer(_type,_root,sizeof(double **))!=NULL) {
-      _shell->norm = (double **) malloc(sizeof(double *)*_shell->ncon);
-      sgen_chkmalloc(_shell->norm);
-      memset(_shell->norm,'\0',sizeof(double *)*_shell->ncon);
-      for (i=0; i<_shell->ncon; i++)  {
-        if((ncart=INT_NCART(_shell->type[i].am))!=0) {
-          if(rbcast0_test_pointer(_type,_root,sizeof(double *))!=NULL) {
-            _shell->norm[i] = (double *) malloc(sizeof(double )*ncart);
-            sgen_chkmalloc(_shell->norm[i]);
-            memset(_shell->norm[i],'\0',sizeof(double )*ncart);
-            rbcast0_double((_shell->norm[i]),_type,_root,sizeof(double)*ncart);
-            }
-          }
-        else _shell->norm[i] = NULL;
-        }
-      /* Skipped: else _shell->norm[i] = NULL;*/ /* DT. */
-      }
-    else _shell->norm = NULL;
-    }
-  else _shell->norm = NULL; /* DT. */
 
   return;
   }

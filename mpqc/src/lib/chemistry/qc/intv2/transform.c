@@ -150,7 +150,7 @@ do_sparse_transform2(double *source, double *target,
                      int n3, int s3, int ogc3,
                      int n4, int s4, int ogc4)
 {
-  int i1, i2, i3, i4, t, ichunk;
+  int i1, i2, i3, i4, t;
   int offtarget, offsource;
 
   switch (index) {
@@ -266,7 +266,7 @@ copy_to_source(double *integrals, int nsource)
 static void
 do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
 {
-  int i, j, ichunk;
+  int i, j;
   int ogc1, ogc2;
   int ogc1pure, ogc2pure;
   int am1, am2;
@@ -312,7 +312,8 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
                                             INT_NCART(am2), ncart2, ogc2);
                     }
                   else {
-                      fprintf(stderr, "int_transform_1e: bad am\n");
+                      fprintf(stderr, "int_transform_1e: bad am = %d\n",
+                              sh1->type[i].am);
                       do_abort();
                     }
                 }
@@ -342,15 +343,15 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
               am2 = sh2->type[j].am;
               nfuncj = INT_NFUNC(sh2->type[j].puream, sh2->type[j].am);
 
-              if (sh2->type[i].puream) {
-                  if (sh2->type[i].am == 2) {
+              if (sh2->type[j].puream) {
+                  if (sh2->type[j].am == 2) {
                       do_sparse_transform12(source, integrals, chunk,
                                             d6d5, nd6d5,
                                             INT_NPURE(am1), ogc1,
                                             ncart2, ogc2,
                                             sh2->nfunc, ogc2pure);
                     }
-                  else if (sh2->type[i].am == 3) {
+                  else if (sh2->type[j].am == 3) {
                       do_sparse_transform12(source, integrals, chunk,
                                             f10f7, nf10f7,
                                             INT_NPURE(am1), ogc1,
@@ -358,7 +359,8 @@ do_transform_1e(double *integrals, shell_t *sh1, shell_t *sh2, int chunk)
                                             sh2->nfunc, ogc2pure);
                     }
                   else {
-                      fprintf(stderr, "int_transform_1e: bad am\n");
+                      fprintf(stderr, "int_transform_1e: bad am = %d\n",
+                              sh2->type[j].am);
                       do_abort();
                     }
                 }
@@ -601,7 +603,8 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
                                                *nl, nsource4, *ogc4);
                         }
                       else {
-                          fprintf(stderr, "int_transform_2e: bad am\n");
+                          fprintf(stderr, "int_transform_2e: bad am = %d\n",
+                                  shell->type[*tgencon].am);
                           do_abort();
                         }
                     }

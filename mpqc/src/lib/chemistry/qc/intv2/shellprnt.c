@@ -1,4 +1,7 @@
 /* $Log$
+ * Revision 1.6  1995/11/16 00:47:40  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.5  1995/10/25 21:19:56  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -135,32 +138,4 @@ shell_t *_shell;
   sgen_print_nindent += -1;
   sgen_print_nindent = orig_indent;
   SPI;
-
-/* hand coded part for norm */
-  if (_shell->norm) {
-    fprintf(fp,"norm = ");
-    sgen_print_nindent += 7;
-    fprintf(fp,"[");
-    sgen_print_nindent += 1;
-    for (i=0; i<_shell->ncon; i++)  {
-      if (i!=0) SPI;
-      fprintf(fp,"[");
-      sgen_print_nindent += 1;
-      ncart=INT_NCART(_shell->type[i].am);
-      for (j=0; j<ncart; j++)  {
-        print_double(fp,&(_shell->norm[i][j]));
-        if(!((j+1)%8) && j) {
-          fprintf(fp,"\n");
-          SPI;
-          }
-        }
-      fprintf(fp,"]\n");
-      sgen_print_nindent += -1;
-      }
-    SPI;
-    fprintf(fp,"]\n");
-    sgen_print_nindent += -1;
-    sgen_print_nindent = orig_indent;
-    SPI;
-    }
   }

@@ -8,6 +8,7 @@
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/files.h>
+#include <chemistry/qc/intv2/int_libv2.h>
 
 SavableState_REF_def(GaussianBasisSet);
 
@@ -428,7 +429,6 @@ GaussianBasisSet::convert_to_centers_t()
           shell[ishell].type
             = (shell_type_t*)malloc(sizeof(shell_type_t)*ncon);
 	  shell[ishell].coef = (double**)malloc(sizeof(double*)*ncon);
-          shell[ishell].norm = 0;
 	  int i;
 	  for (i=0; i<ncon; i++) {
 	      shell[ishell].coef[i] = (double*)malloc(sizeof(double)*nprim);
@@ -448,6 +448,7 @@ GaussianBasisSet::convert_to_centers_t()
 	    }
 	}
     }
+  int_initialize_centers(c);
   return c;
 }
 

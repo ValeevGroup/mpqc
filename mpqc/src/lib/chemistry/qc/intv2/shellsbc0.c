@@ -1,4 +1,7 @@
 /* $Log$
+ * Revision 1.6  1995/11/16 00:47:42  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.5  1995/10/25 21:19:59  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -81,21 +84,6 @@ int _root;
           if(_shell->coef[i]!=NULL) {
             sbcast0_double((_shell->coef[i]),_type,_root,
               sizeof(double)*_shell->nprim);
-            }
-          }
-        }
-      }
-    }
-
-/* hand coded part for norm */
-  if(_shell->ncon!=0) {
-    sbcast0_pointer(&(_shell->norm),_type,_root,sizeof(double **));
-    if(_shell->norm!=NULL) {
-      for (i=0; i<_shell->ncon; i++)  {
-        if((ncart=INT_NCART(_shell->type[i].am))!=0) {
-          sbcast0_pointer(&(_shell->norm[i]),_type,_root,sizeof(double *));
-          if(_shell->norm[i]!=NULL) {
-            sbcast0_double((_shell->norm[i]),_type,_root,sizeof(double)*ncart);
             }
           }
         }

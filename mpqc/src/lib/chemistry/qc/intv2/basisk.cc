@@ -11,6 +11,7 @@ extern "C" {
 #include <chemistry/qc/intv2/atomsinit.h>
 
 #include <chemistry/qc/intv2/atominfo.gbl>
+#include <chemistry/qc/intv2/normalize.gbl>
 }
 
 enum whats { READ, COUNT };
@@ -151,6 +152,8 @@ int_read_centers(const RefKeyVal& keyval, centers_t& centers)
 
   delete[] basis;
 
+  int_initialize_centers(&centers);
+
   return 0;
 }
 
@@ -188,7 +191,6 @@ read_shells(const RefKeyVal& keyval, const char *atom, const char *bname,
 
        // zero out the bits we aren't responsible for
         basis.shell[nsh].nfunc = 0;
-        basis.shell[nsh].norm = 0;
         
        // count type to get the number of general contractions
         int ncon = keyval->count(key);

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.6  1995/11/16 00:47:38  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.5  1995/10/25 21:19:54  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -60,7 +63,7 @@
 /* This routine must be called before anything else, even the offset
  * initializing routines (because this produces the shell nfunc info). */
 GLOBAL_FUNCTION VOID
-int_normalize_centers(centers)
+int_initialize_centers(centers)
 centers_t *centers;
 {
   int i,j;
@@ -77,8 +80,10 @@ centers_t *centers;
     }
   }
 
-/* This only normalizes the cartesian components.  If pure angular
- * momentum is used the basis function will not be normalized. */
+/* This converts the contraction coefficients
+ * from contraction coefficients for normalized primitives
+ * to contraction coefficients for unnormalized primitives.
+ */
 GLOBAL_FUNCTION VOID
 int_normalize_shell(shell)
 shell_t *shell;
@@ -89,15 +94,6 @@ shell_t *shell;
   double bfnormxl;
   double normalization;
   double c,ss;
-
-  if (shell->norm) {
-    fprintf(stderr,"shell normalization info already exists (shell->norm)\n");
-#if 0
-    print_shell(stderr,shell);
-    exit(1);
-#endif
-    }
-  shell->norm = (double **) malloc(sizeof(double*)*shell->ncon);
 
   for (gc=0; gc<shell->ncon; gc++) {
     /* Convert the contraction coefficients
@@ -126,17 +122,6 @@ shell_t *shell;
     for (i=0; i<shell->nprim; i++) {
       shell->coef[gc][i] *= normalization;
       }
-
-    /* Determine the normalization for each basis function in the shell. */
-    shell->norm[gc]
-      = (double *) malloc(sizeof(double)*INT_NCART(shell->type[gc].am));
-
-    index = 0;
-    bfnormxl = bfnorm(shell->type[gc].am,0,0);
-    FOR_CART(i,j,k,shell->type[gc].am)
-      shell->norm[gc][index] = bfnorm(i,j,k)/bfnormxl;
-      index++;
-      END_FOR_CART
     }
   }
 

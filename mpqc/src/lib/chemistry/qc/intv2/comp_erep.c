@@ -3,6 +3,9 @@
  */
 
 /* $Log$
+ * Revision 1.9  1995/11/16 00:47:32  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.8  1995/10/25 21:19:48  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -134,7 +137,7 @@ int *psh2;
 int *psh3;
 int *psh4;
 {
-  compute_erep(flags,1,psh1,psh2,psh3,psh4,0,0,0,0);
+  compute_erep(flags,psh1,psh2,psh3,psh4,0,0,0,0);
   }
 
 /* This is an alternate interface to int_erep.  It takes
@@ -163,9 +166,8 @@ int  *sizes;
  * 1 in that it used total angular momentum here.
  */
 LOCAL_FUNCTION VOID
-compute_erep(flags,normalize,psh1,psh2,psh3,psh4,dam1,dam2,dam3,dam4)
+compute_erep(flags,psh1,psh2,psh3,psh4,dam1,dam2,dam3,dam4)
 int flags;
-int normalize;
 int *psh1;
 int *psh2;
 int *psh3;
@@ -199,8 +201,8 @@ int dam4;
   int eAB;
 
 #if 0
-  fprintf(stdout,"compute_erep: dam: (%d %d|%d %d), normalize: %d\n",
-          dam1,dam2,dam3,dam4,normalize);
+  fprintf(stdout,"compute_erep: dam: (%d %d|%d %d)\n",
+          dam1,dam2,dam3,dam4);
 #endif
 
   /* Compute the offset shell numbers. */
@@ -541,36 +543,6 @@ int dam4;
          INT_NCART(tam2),
          INT_NCART(tam3),
          INT_NCART(tam4));
-  int_print_n(stdout,int_con_ints_array[i][j][k][l].dp
-                     [tam1]
-                     [tam2]
-                     [tam3]
-                     [tam4],
-               INT_NCART(tam1),
-               INT_NCART(tam2),
-               INT_NCART(tam3),
-               INT_NCART(tam4),
-               0,0,0);
-#endif
-
-  /* Normalize the integrals if the normalize flag is set to true. */
-  if (normalize) {
-    normalize_erep_given_gc(int_con_ints_array[i][j][k][l].dp
-                     [tam1]
-                     [tam2]
-                     [tam3]
-                     [tam4],
-                   i,j,k,l,
-                   int_shell1,int_shell2,int_shell3,int_shell4);
-    }
-
-#if 0
-  fprintf(stdout,"Normalized targets:\n");
-  fprintf(stdout,"am = (%d,%d,%d,%d)\n",
-         tam1,
-         tam2,
-         tam3,
-         tam4);
   int_print_n(stdout,int_con_ints_array[i][j][k][l].dp
                      [tam1]
                      [tam2]
@@ -983,13 +955,6 @@ der_centers_t *der_centers;
   der_centers->ocs = ucs[omit];
   der_centers->onum = ucs[omit]->center_num[ush[omit]];
 
-  /* Normalize the integrals. */
-  current_buffer = user_int_buffer;
-  for (i=0; i<3*der_centers->n; i++) {
-    normalize_erep(current_buffer,shell1,shell2,shell3,shell4);
-    current_buffer = &current_buffer[ncart];
-    }
-
   /* Transform to pure am. */
   current_buffer = user_int_buffer;
   current_pure_buffer = user_int_buffer;
@@ -1099,7 +1064,7 @@ int dercenter;
   sizep234 = sizep34 * sizep2;
 
   compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK|INT_NOPURE,
-               0,psh1,psh2,psh3,psh4,
+               psh1,psh2,psh3,psh4,
                    -DCTEST(0),
                    -DCTEST(1),
                    -DCTEST(2),
@@ -1179,7 +1144,7 @@ int dercenter;
   else if (dercenter==2) int_expweight3 = 1;
   else if (dercenter==3) int_expweight4 = 1;
   compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK|INT_NOPURE,
-               0,psh1,psh2,psh3,psh4,
+               psh1,psh2,psh3,psh4,
                      DCTEST(0),
                      DCTEST(1),
                      DCTEST(2),
@@ -1322,97 +1287,6 @@ int *nonred_off;
   *nonred_off = nonredundant_index;
   }
 
-/* Ints is an integral buffer to be normalized.
- * shell1-4 specifies the shell quartet.
- * This function requires the redundant integrals. */
-LOCAL_FUNCTION VOID
-normalize_erep(ints,shell1,shell2,shell3,shell4)
-double *ints;
-shell_t *shell1;
-shell_t *shell2;
-shell_t *shell3;
-shell_t *shell4;
-{
-  int redundant_index;
-  int gc1,gc2,gc3,gc4;
-  int index1,index2,index3,index4;
-  double norm1,norm2,norm3,norm4;
-  int i1,j1,k1;
-  int i2,j2,k2;
-  int i3,j3,k3;
-  int i4,j4,k4;
-
-  redundant_index = 0;
-  FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-    norm1 = shell1->norm[gc1][index1];
-    FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
-      norm2 = norm1 * shell2->norm[gc2][index2];
-      FOR_GCCART(gc3,index3,i3,j3,k3,shell3)
-        norm3 = norm2 * shell3->norm[gc3][index3];
-        FOR_GCCART(gc4,index4,i4,j4,k4,shell4)
-          norm4 = norm3 * shell4->norm[gc4][index4];
-          ints[redundant_index] *= norm4;
-          redundant_index++;
-          END_FOR_GCCART(index4)
-        END_FOR_GCCART(index3)
-      END_FOR_GCCART(index2)
-    END_FOR_GCCART(index1)
-  }
-
-/* Ints is an integral buffer to be normalized.
- * shell1-4 specifies the shell quartet.
- * This function requires the redundant integrals. */
-LOCAL_FUNCTION VOID
-normalize_erep_given_gc(ints,gc1,gc2,gc3,gc4,shell1,shell2,shell3,shell4)
-double *ints;
-int gc1;
-int gc2;
-int gc3;
-int gc4;
-shell_t *shell1;
-shell_t *shell2;
-shell_t *shell3;
-shell_t *shell4;
-{
-  int redundant_index;
-  int am1,am2,am3,am4;
-  int index1,index2,index3,index4;
-  double norm1,norm2,norm3,norm4;
-  int i1,j1,k1;
-  int i2,j2,k2;
-  int i3,j3,k3;
-  int i4,j4,k4;
-
-  am1 = shell1->type[gc1].am;
-  am2 = shell2->type[gc2].am;
-  am3 = shell3->type[gc3].am;
-  am4 = shell4->type[gc4].am;
-
-  redundant_index = 0;
-  index1 = 0;
-  FOR_CART(i1,j1,k1,am1)
-    norm1 = shell1->norm[gc1][index1];
-    index2 = 0;
-    FOR_CART(i2,j2,k2,am2)
-      norm2 = norm1 * shell2->norm[gc2][index2];
-      index3 = 0;
-      FOR_CART(i3,j3,k3,am3)
-        norm3 = norm2 * shell3->norm[gc3][index3];
-        index4 = 0;
-        FOR_CART(i4,j4,k4,am4)
-          norm4 = norm3 * shell4->norm[gc4][index4];
-          ints[redundant_index] *= norm4;
-          redundant_index++;
-          index4++;
-          END_FOR_CART
-        index3++;
-        END_FOR_CART
-      index2++;
-      END_FOR_CART
-    index1++;
-    END_FOR_CART
-  }
-
 /* This is an alternate interface to int_erep_all1der.  It takes
  * as arguments the flags, an integer vector of shell numbers
  * and an integer vector which will be filled in with size
@@ -1493,13 +1367,6 @@ int *size;
   current_buffer = user_int_buffer;
   compute_erep_bound1der(flags|INT_NOPERM|INT_NOPURE,current_buffer,
                           psh1,psh2,psh3,psh4);
-
-  /* Normalize the integrals. */
-  current_buffer = user_int_buffer;
-  for (i=0; i<3; i++) {
-    normalize_erep(current_buffer,shell1,shell2,shell3,shell4);
-    current_buffer = &current_buffer[ncart];
-    }
 
   /* Transform to pure am. */
   current_buffer = user_int_buffer;
@@ -1629,7 +1496,7 @@ int *psh4;
         END_DERLOOP(1,2,sign)\
       END_DERLOOP(0,1,sign)
 
-  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,0,psh1,psh2,psh3,psh4,
+  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,psh1,psh2,psh3,psh4,
                    -DCT1(0),
                    -DCT1(1),
                    -DCT1(2),
@@ -1686,7 +1553,7 @@ int *psh4;
    * angular momentum of dercenter to the needed value. */
   int_expweight1 = 1;
   int_expweight3 = 1;
-  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,0,psh1,psh2,psh3,psh4,
+  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,psh1,psh2,psh3,psh4,
                      DCT1(0),
                      DCT1(1),
                      DCT1(2),
@@ -1753,7 +1620,7 @@ int *psh4;
    * with the exponents taken from the dercenter and adjust the
    * angular momentum of dercenter to the needed value. */
   int_expweight1 = 1;
-  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,0,psh1,psh2,psh3,psh4,
+  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,psh1,psh2,psh3,psh4,
                      DCT2(0),
                      DCT2(1),
                      DCT2(2),

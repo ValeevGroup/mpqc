@@ -13,10 +13,8 @@ shell_type (!print) {
 //   nfunc is the number of basis functions in this shell
 //   exp is a vector of exponents
 //   shell_type gives the precise type of the shell
-//   coef is a vector of contraction coefficients
+//   coef is a vector of contraction coefficients (for unnormalized prims)
 //   pcoef is the p contraction coef of an sp pair
-//   norm is a vector of normalization constants for each function in the shell
-//     norm must be allocated and freed explicitly by the user
 shell (!print !rbcast0 !sbcast0 !assign !zero !send0 !recv0) {
   int nprim;
   int ncon;
@@ -24,7 +22,6 @@ shell (!print !rbcast0 !sbcast0 !assign !zero !send0 !recv0) {
   double exp[nprim];
   shell_type type[ncon];
   double coef[ncon][nprim];
-  double **norm;
 };
 
 // basis is a set of basis functions

@@ -99,15 +99,14 @@ int GaussianShell::grad_values(const SCVector3& r,
       for (i=0; i<ncon; i++) {
           // handle s functions with a special case to speed things up
           if (l[i] == 0) {
-              basis_values[i_basis] = norm[i][0]*precon[i];
+              basis_values[i_basis] = precon[i];
               i_basis++;
             }
           else {
               CartesianIter j(l[i]);
               for (j.start(); j; j.next()) {
-                  basis_values[i_basis] = norm[i][j.bfn()]
-                    *xs[j.a()]*ys[j.b()]*zs[j.c()]
-                    *precon[i];
+                  basis_values[i_basis] = xs[j.a()]*ys[j.b()]*zs[j.c()]
+                                         *precon[i];
                   i_basis++;
                 }
             }
@@ -120,7 +119,7 @@ int GaussianShell::grad_values(const SCVector3& r,
       for (i=0; i<ncon; i++) {
           // handle s functions with a special case to speed things up
           if (l[i] == 0) {
-              double norm_precon_g = norm[i][0]*precon_g[i];
+              double norm_precon_g = precon_g[i];
               g_values[i_grad] = -xs[1]*norm_precon_g;
               i_grad++;
               g_values[i_grad] = -ys[1]*norm_precon_g;
@@ -131,8 +130,8 @@ int GaussianShell::grad_values(const SCVector3& r,
           else {
               CartesianIter j(l[i]);
               for (j.start(); j; j.next()) {
-                  double norm_precon = norm[i][j.bfn()]*precon[i];
-                  double norm_precon_g = norm[i][j.bfn()]*precon_g[i];
+                  double norm_precon = precon[i];
+                  double norm_precon_g = precon_g[i];
                   g_values[i_grad] = - norm_precon_g
                     * xs[j.a()+1] * ys[j.b()] * zs[j.c()];
                   if (j.a()) g_values[i_grad] += j.a() * norm_precon

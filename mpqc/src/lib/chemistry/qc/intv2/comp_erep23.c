@@ -3,7 +3,10 @@
  * integrals. */
 
 /* $Log$
- * Revision 1.2  1995/03/17 01:49:30  cljanss
+ * Revision 1.3  1995/11/16 00:47:35  cljanss
+ * Removed normalization for individual basis functions.
+ *
+ * Revision 1.2  1995/03/17  01:49:30  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -48,9 +51,6 @@ make_int_unit_shell()
   int_unit_shell->coef = (double**) malloc(sizeof(double*));
   int_unit_shell->coef[0] = (double*) malloc(sizeof(double));
   int_unit_shell->coef[0][0] = 1.0;
-  int_unit_shell->norm = (double**) malloc(sizeof(double*));
-  int_unit_shell->norm[0] = (double*) malloc(sizeof(double));
-  int_unit_shell->norm[0][0] = 1.0;
 }
 
 /* Compute a 2 center electron repulsion integral.  Electron 1 is in

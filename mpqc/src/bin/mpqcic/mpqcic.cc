@@ -415,8 +415,6 @@ main(int argc, char *argv[])
 
       assign_centers(&oldcenters,tcenters);
       free_centers(tcenters);
-      
-      int_normalize_centers(&oldcenters);
     }
 
     bcast0_centers(&oldcenters,0,0);

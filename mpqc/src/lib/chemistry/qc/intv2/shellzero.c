@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.5  1995/03/17 01:49:41  cljanss
+ * Revision 1.6  1995/11/16 00:47:43  cljanss
+ * Removed normalization for individual basis functions.
+ *
+ * Revision 1.5  1995/03/17  01:49:41  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -68,19 +71,6 @@ shell_t *_shell;
         if(_shell->nprim!=0) {
           if(_shell->coef[i]!=NULL) {
             memset(_shell->coef[i],'\0',sizeof(double)*_shell->nprim);
-            }
-          }
-        }
-      }
-    }
-
-/* hand coded part for norm */
-  if(_shell->ncon!=0) {
-    if(_shell->norm!=NULL) {
-      for (i=0; i<_shell->ncon; i++)  {
-        if((nfunc=INT_NCART(_shell->type[i].am))!=0) {
-          if(_shell->norm[i]!=NULL) {
-            memset(_shell->norm[i],'\0',sizeof(double)*nfunc);
             }
           }
         }

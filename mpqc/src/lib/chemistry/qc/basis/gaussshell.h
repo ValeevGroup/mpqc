@@ -49,7 +49,6 @@ class GaussianShell: public SavableState
     int* puream;
     double* exp;
     double** coef;  // contraction coefficients for unnormalized primitives
-    double** norm;
 
     double shell_normalization(int);
     void convert_coef();
@@ -111,7 +110,7 @@ class GaussianShell: public SavableState
     double coefficient_unnorm(int con,int prim) const;
     // returns the con coef for normalized primitives
     double coefficient_norm(int con,int prim) const;
-    double normalization(int con,int bfn) const;
+//     double normalization(int con,int bfn) const;
     double exponent(int iprim) const;
 
     // compute the value of this shell at offset r

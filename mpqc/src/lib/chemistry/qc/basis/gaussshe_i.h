@@ -115,11 +115,11 @@ GaussianShell::coefficient_unnorm(int con,int prim) const
   return coef[con][prim];
 }
 
-INLINE double
-GaussianShell::normalization(int con,int bfn) const
-{
-  return norm[con][bfn];
-}
+// INLINE double
+// GaussianShell::normalization(int con,int bfn) const
+// {
+//   return norm[con][bfn];
+// }
 
 INLINE double
 GaussianShell::exponent(int iprim) const

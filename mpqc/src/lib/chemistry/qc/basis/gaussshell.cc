@@ -113,10 +113,8 @@ GaussianShell::GaussianShell(StateIn&s):
   s.get(puream);
   s.get(exp);
   coef = new double*[ncon];
-  norm = new double*[ncon];
   for (int i=0; i<ncon; i++) {
       s.get(coef[i]);
-      s.get(norm[i]);
     }
 }
 
@@ -131,7 +129,6 @@ GaussianShell::save_data_state(StateOut&s)
   s.put(exp,nprim);
   for (int i=0; i<ncon; i++) {
       s.put(coef[i],nprim);
-      s.put(norm[i],ncartesian(i));
     }
 }
 
@@ -340,25 +337,11 @@ void GaussianShell::normalize_shell()
 {
   int i,gc;
 
-  // Allocate storage to hold the normalization constants for the individual
-  // basis functions
-  norm = new double* [ncontraction()];
-  for (i=0; i<ncontraction(); i++) {
-      norm[i] = new double [ncartesian(i)];
-    }
-
   for (gc=0; gc<ncon; gc++) {
       // Normalize the contraction coefficients
       double normalization = shell_normalization(gc);
       for (i=0; i<nprim; i++) {
 	  coef[gc][i] *= normalization;
-	}
-
-      // Determine the basis function normalization
-      double bfnormxl = bfnorm(l[gc],0,0);
-      CartesianIter ci(l[gc]);
-      for (ci.start(); ci; ci.next()) {
-	  norm[gc][ci.bfn()] = bfnorm(ci.a(),ci.b(),ci.c())/bfnormxl;
 	}
     }
 
@@ -388,12 +371,6 @@ void GaussianShell::print(FILE* fp) const
       for (j=0; j<nprim; j++) fprintf(fp," %f",coef[i][j]);
       fprintf(fp,"\n");
     }
-
-  for (i=0; i<ncon; i++) {
-      fprintf(fp,"  norm[%d]:",i);
-      for (j=0; j<ncartesian(i); j++) fprintf(fp," %f",norm[i][j]);
-      fprintf(fp,"\n");
-    }
 }
 
 GaussianShell::~GaussianShell()
@@ -404,10 +381,8 @@ GaussianShell::~GaussianShell()
 
   for (int i=0; i<ncon; i++) {
       delete[] coef[i];
-      delete[] norm[i];
     }
 
   delete[] coef;
-  delete[] norm;
 }
 

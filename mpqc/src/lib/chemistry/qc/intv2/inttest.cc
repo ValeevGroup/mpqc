@@ -36,7 +36,6 @@ main()
   centers_t *pcenters = basis->convert_to_centers_t();
   centers_t &centers = *pcenters;
 
-  int_normalize_centers(&centers);
   int_initialize_offsets2(&centers,&centers,&centers,&centers);
   
   if (tkeyval->booleanvalue("print_centers")) print_centers(stdout,&centers);

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.10  1995/11/16 00:47:35  cljanss
+ * Removed normalization for individual basis functions.
+ *
  * Revision 1.9  1995/08/21 19:36:21  cljanss
  * 1) New integral storage scheme using AVL trees.
  * 2) Updated bounds routines so the SCF program could use them.
@@ -65,6 +68,7 @@
 #ifndef _chemistry_qc_intv2_int_libv2_h
 #define _chemistry_qc_intv2_int_libv2_h
 
+#include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/storage.h>
 
 #ifdef __cplusplus

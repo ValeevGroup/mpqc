@@ -606,8 +606,6 @@ scf_make_old_centers(const RefKeyVal& topkeyval, centers_t& centers,
       }
     }
 
-    int_normalize_centers(&oldcenters);
-
     errcod=0;
     bcast0(&errcod,sizeof(int),mtype_get(),0);
 

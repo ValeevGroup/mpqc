@@ -15,10 +15,7 @@
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/local.h>
-#include <math/scmat/repl.h>
-#include <math/scmat/dist.h>
 
-#include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 
 #include <chemistry/qc/basis/petite.h>
@@ -448,44 +445,16 @@ CLSCF::ao_fock()
   // now try to figure out the matrix specialization we're dealing with
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
+
   if (local_ || basis()->nbasis() < 700) {
-    RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
-    RefSCDimension ldim = basis()->basisdim();
+    // grab the data pointers from the G and P matrices
+    double *gmat, *pmat;
+    RefSymmSCMatrix gtmp = get_local_data(cl_gmat_, gmat, SCF::Accum);
+    RefSymmSCMatrix ptmp = get_local_data(cl_dens_diff_, pmat, SCF::Read);
 
-    RefSymmSCMatrix gtmp = cl_gmat_;
-    RefSymmSCMatrix ptmp = cl_dens_diff_;
-
-    // if these aren't local matrices, then make a copy of the density matrix
-    if (!local_) {
-      lkit = new LocalSCMatrixKit;
-
-      ptmp = lkit->symmmatrix(ldim);
-      ptmp->convert(cl_dens_diff_);
-    }
-    
-    // if we're not dealing with local matrices, or we're running on
-    // multiple processors, then make a copy of the G matrix
-    if (!local_ || scf_grp_->n() > 1) {
-      gtmp = lkit->symmmatrix(ldim);
-      gtmp->assign(0.0);
-    }
-
-    // create block iterators for the G and P matrices
-    RefSCMatrixSubblockIter giter =
-      gtmp->local_blocks(SCMatrixSubblockIter::Write);
-    giter->begin();
-    SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
-
-    RefSCMatrixSubblockIter piter =
-      ptmp->local_blocks(SCMatrixSubblockIter::Read);
-    piter->begin();
-    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
-
-    double *gmat_data = gblock->data;
-    double *pmat_data = pblock->data;
-    char * pmax = init_pmax(basis(), pmat_data);
+    char * pmax = init_pmax(pmat);
   
-    LocalCLContribution lclc(gmat_data, pmat_data);
+    LocalCLContribution lclc(gmat, pmat);
     LocalGBuild<LocalCLContribution>
       gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
     gb.build_gmat(desired_value_accuracy()/100.0);
@@ -494,7 +463,7 @@ CLSCF::ao_fock()
 
     // if we're running on multiple processors, then sum the G matrix
     if (scf_grp_->n() > 1)
-      scf_grp_->sum(gmat_data, i_offset(basis()->nbasis()));
+      scf_grp_->sum(gmat, i_offset(basis()->nbasis()));
 
     // if we're running on multiple processors, or we don't have local
     // matrices, then accumulate gtmp back into G
@@ -619,28 +588,10 @@ CLSCF::two_body_deriv(double * tbgrad)
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert P to a local matrix
   if (local_ || basis()->nbasis() < 700) {
-    RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
-    RefSCDimension ldim = basis()->basisdim();
-    RefSymmSCMatrix ptmp = cl_dens_;
+    double *pmat;
+    RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
 
-    // if these aren't local matrices, then make copies of the density
-    // matrices
-    if (!local_) {
-      lkit = new LocalSCMatrixKit;
-
-      ptmp = lkit->symmmatrix(ldim);
-      ptmp->convert(cl_dens_);
-    }
-    
-    // create block iterators for the G and P matrices
-    RefSCMatrixSubblockIter piter =
-      ptmp->local_blocks(SCMatrixSubblockIter::Read);
-    piter->begin();
-    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
-
-    double *pmat_data = pblock->data;
-  
-    LocalCLGradContribution l(pmat_data);
+    LocalCLGradContribution l(pmat);
     LocalTBGrad<LocalCLGradContribution> tb(l, integral(), basis(), scf_grp_);
     tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
   }

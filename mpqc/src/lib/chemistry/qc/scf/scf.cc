@@ -5,12 +5,12 @@
 
 #include <iostream.h>
 #include <iomanip.h>
+#include <math.h>
 
 #include <util/misc/formio.h>
 
 #include <math/scmat/local.h>
-#include <math/scmat/repl.h>
-#include <math/scmat/dist.h>
+#include <math/scmat/offset.h>
 
 #include <chemistry/qc/scf/scf.h>
 
@@ -154,4 +154,67 @@ SCF::compute()
 
     set_actual_hessian_accuracy(desired_hessian_accuracy());
   }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+char *
+SCF::init_pmax(double *pmat_data)
+{
+  double l2inv = 1.0/log(2.0);
+  double tol = pow(2.0,-126.0);
+  
+  GaussianBasisSet& gbs = *basis().pointer();
+  
+  char * pmax = new char[i_offset(gbs.nshell())];
+
+  int ish, jsh, ij;
+  for (ish=ij=0; ish < gbs.nshell(); ish++) {
+    int istart = gbs.shell_to_function(ish);
+    int iend = istart + gbs(ish).nfunction();
+    
+    for (jsh=0; jsh <= ish; jsh++,ij++) {
+      int jstart = gbs.shell_to_function(jsh);
+      int jend = jstart + gbs(jsh).nfunction();
+      
+      double maxp=0, tmp;
+
+      for (int i=istart; i < iend; i++) {
+        int ijoff = i_offset(i);
+        for (int j=jstart; j < ((ish==jsh) ? i+1 : jend); j++,ijoff++)
+          if ((tmp=fabs(pmat_data[ijoff])) > maxp)
+            maxp=tmp;
+      }
+
+      if (maxp <= tol)
+        maxp=tol;
+
+      pmax[ij] = (signed char) (log(maxp)*l2inv);
+    }
+  }
+
+  return pmax;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+RefSymmSCMatrix
+SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
+{
+  RefSymmSCMatrix l = m;
+  
+  if (!LocalSymmSCMatrix::castdown(l)) {
+    RefSCMatrixKit k = new LocalSCMatrixKit;
+    l = k->symmmatrix(m.dim());
+    l->convert(m);
+
+    if (access == Accum)
+      l->assign(0.0);
+  } else if (scf_grp_->n() > 1 && access==Accum) {
+    l = m.clone();
+    l.assign(0.0);
+  }
+
+  p = LocalSymmSCMatrix::castdown(l)->get_data();
+  return l;
 }

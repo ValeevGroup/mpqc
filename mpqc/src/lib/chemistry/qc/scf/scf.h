@@ -46,6 +46,15 @@ class SCF: public OneBodyWavefunction {
     // calculate the scf hessian
     virtual void compute_hessian(const RefSymmSCMatrix&);
     
+    // returns the log of the max density element in each shell block
+    char * init_pmax(double *);
+    
+    // given a matrix, this will convert the matrix to a local matrix if
+    // it isn't one already, and return that local matrix.  it will also
+    // set the double* to point to the local matrix's data.
+    enum Access { Read, Write, Accum };
+    RefSymmSCMatrix get_local_data(const RefSymmSCMatrix&, double*&, Access);
+    
   public:
     SCF(StateIn&);
     SCF(const RefKeyVal&);

@@ -3,8 +3,6 @@
 #pragma implementation
 #endif
 
-#include <math.h>
-
 #include <math/scmat/offset.h>
 #include <math/scmat/blkiter.h>
 
@@ -160,44 +158,4 @@ LevelShift::process(SCMatrixBlockIter& i)
     else if (occi>0.0)
       i.set(i.get()-0.5*shift);
   }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-char *
-init_pmax(const RefGaussianBasisSet& gbs_, double *pmat_data)
-{
-  double l2inv = 1.0/log(2.0);
-  double tol = pow(2.0,-126.0);
-  
-  GaussianBasisSet& gbs = *gbs_.pointer();
-  
-  char * pmax = new char[i_offset(gbs.nshell())];
-
-  int ish, jsh, ij;
-  for (ish=ij=0; ish < gbs.nshell(); ish++) {
-    int istart = gbs.shell_to_function(ish);
-    int iend = istart + gbs(ish).nfunction();
-    
-    for (jsh=0; jsh <= ish; jsh++,ij++) {
-      int jstart = gbs.shell_to_function(jsh);
-      int jend = jstart + gbs(jsh).nfunction();
-      
-      double maxp=0, tmp;
-
-      for (int i=istart; i < iend; i++) {
-        int ijoff = i_offset(i);
-        for (int j=jstart; j < ((ish==jsh) ? i+1 : jend); j++,ijoff++)
-          if ((tmp=fabs(pmat_data[ijoff])) > maxp)
-            maxp=tmp;
-      }
-
-      if (maxp <= tol)
-        maxp=tol;
-
-      pmax[ij] = (signed char) (log(maxp)*l2inv);
-    }
-  }
-
-  return pmax;
 }

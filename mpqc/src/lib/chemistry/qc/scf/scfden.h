@@ -61,7 +61,5 @@ class LevelShift : public BlockedSCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
-char * init_pmax(const RefGaussianBasisSet&, double *);
-
 #endif
 

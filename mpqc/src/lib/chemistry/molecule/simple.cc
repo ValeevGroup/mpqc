@@ -224,7 +224,7 @@ SimpleCo::print(RefMolecule mol, ostream& os)
   os << indent << ctype()
                << " ";
   os.width(10);
-  os          << label()
+  os          << (label()?label():"")
               << " ";
   os.width(14);
   os.setf(ios::right,ios::adjustfield);

@@ -48,7 +48,7 @@ void
 SymmOneBodyIntIter::next()
 {
   OneBodyIntIter::next();
-  while (!pl->lambda(icur,jcur) && OneBodyIntIter::ready())
+  while (OneBodyIntIter::ready() && !pl->lambda(icur,jcur))
     OneBodyIntIter::next();
 }
 

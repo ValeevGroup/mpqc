@@ -25,9 +25,12 @@ void MPQC::GaussianBasis_Atomic_impl::_ctor() {
 // user defined destructor
 void MPQC::GaussianBasis_Atomic_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic._dtor)
+
+  // JPK: problems here
   //for(int i=0; i<nshell_; ++i)
   //  delete &shell_array_[i];
   //delete shell_array_;
+
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic._dtor)
 }
 

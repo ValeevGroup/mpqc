@@ -25,9 +25,12 @@ void MPQC::GaussianBasis_Molecular_impl::_ctor() {
 // user defined destructor
 void MPQC::GaussianBasis_Molecular_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular._dtor)
+
+  // JK: problems here
   //for(int i=0; i<natom_; ++i)
   //  delete &atomic_array_[i];
   //delete atomic_array_;
+
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Molecular._dtor)
 }
 

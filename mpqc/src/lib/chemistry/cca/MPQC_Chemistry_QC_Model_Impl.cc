@@ -105,6 +105,8 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.initialize_aggregatekeyval)
 
+  // this doesn't seem to work, though JPK and CLJ both think it should
+
   std::cout << "Initializing MPQC model using aggregate keyval\n";
   
   sc::Ref<sc::ParsedKeyVal> kv = new sc::ParsedKeyVal;
@@ -387,14 +389,8 @@ vector_to_array(const sc::RefSCVector &v)
 {
   sidl::array<double> a = sidl::array<double>::create1d(v.dim().n());
 
-  for (int i=0,ai=a.lower(0); i<v.dim().n(); i++,ai++) {
-//        std::cout << "v(" << i << ") = " << v(i) << std::endl;
+  for (int i=0,ai=a.lower(0); i<v.dim().n(); i++,ai++)
       a.set(ai, v(i));
-//        std::cout << "a.get(" << ai << ") = " << a.get(ai) << std::endl;
-    }
-
-//    std::cout << "in vector_to_array n_vec = " << v.dim().n() << std::endl;
-//    std::cout << "in vector_to_array n_arr = " << a.upper(0)-a.lower(0)+1 << std::endl;
 
   return a;
 }

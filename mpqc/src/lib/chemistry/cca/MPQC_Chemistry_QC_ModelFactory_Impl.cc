@@ -189,9 +189,8 @@ throw (
 
   /*
    Currently two possibilities for obtaining model keyval:
-     1) theory and basis are supplied by Util::StringProvider components
-        or built-in parameter port and we can construct a simple model 
-        keyval input
+     1) theory and basis are supplied by built-in parameter port 
+        and we can construct a simple model keyval input
      2) keyval filename is supplied for us to read from
   */  
   std::string keyval_filename = 
@@ -322,8 +321,6 @@ throw (
                 << e.getNote() << std::endl;
   }
 
-  std::cout << "\n services registered";
-
   molecule_ = 0;
 
   // setup parameters
@@ -345,27 +342,21 @@ throw (
         ConfigurableParameterFactory *cpf
           = dynamic_cast<ConfigurableParameterFactory *>(cp);
         ConfigurableParameterPort *pp = setup_parameters(cpf);
-        std::cout << "\ncasting CPPort to Port";
         classic::gov::cca::Port *clscp
           = dynamic_cast<classic::gov::cca::Port*>(pp);
         if (!clscp) {
           std::cout << "Couldn't cast to classic::gov::cca::Port"
                     << std::endl;
         }
-        std::cout << "\ndoing static cast";
         void *vp = static_cast<void*>(clscp);
-        std::cout << "\ncreating from classic";
         ccaffeine::ports::PortTranslator provideX
           = ccaffeine::ports::PortTranslator::createFromClassic(vp);
 
-        std::cout << "\nadding ProvidesPort";
         services_.addProvidesPort(provideX,
                                   "configure", "ParameterPort", tm);
 
-        std::cout << "\nreleasing/unreging classicParam";
         services_.releasePort("classicParam");
         services_.unregisterUsesPort("classicParam");
-        std::cout << "\nreleased/unreged";
       }
     }
 
@@ -374,8 +365,6 @@ throw (
     std::cout << "Exception caught: " << e.what() << std::endl;
   }
  
-  std::cout << "\nexiting setServices()";
-
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory.setServices)
 }
 
@@ -385,7 +374,6 @@ throw (
 ConfigurableParameterPort *
 MPQC::Chemistry_QC_ModelFactory_impl::setup_parameters(ConfigurableParameterFactory *cpf)
 {
-  std::cout << "\nin setup_parameters()";
   ConfigurableParameterPort * pp = cpf->createConfigurableParameterPort();
 
   pp->setBatchTitle("PortTranslatorStarter Configuration");
@@ -414,8 +402,6 @@ MPQC::Chemistry_QC_ModelFactory_impl::setup_parameters(ConfigurableParameterFact
   pp->addRequest(molecule_filename_param_);
   pp->addRequest(keyval_filename_param_);
   pp->addRequest(integral_buffer_param_);
-
-  std::cout << "\nexiting setup_parameters()";
 
   return pp;
 }

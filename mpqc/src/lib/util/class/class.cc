@@ -46,93 +46,10 @@
 using namespace std;
 using namespace sc;
 
-AVLMap<ClassKey,ClassDescP>* ClassDesc::all_ = 0;
+AVLMap<std::string,ClassDescP>* ClassDesc::all_ = 0;
 AVLMap<type_info_key,ClassDescP>* ClassDesc::type_info_all_ = 0;
 char * ClassDesc::classlib_search_path_ = 0;
-AVLSet<ClassKey>* ClassDesc::unresolved_parents_ = 0;
-
-/////////////////////////////////////////////////////////////////
-
-ClassKey::ClassKey() :
-  classname_(0)
-{
-}
-
-ClassKey::ClassKey(const char* name):
-  classname_(::strcpy(new char[strlen(name)+1],name))
-{
-}
-
-ClassKey::ClassKey(const ClassKey& key)
-{
-  if (key.classname_) {
-      classname_ = ::strcpy(new char[strlen(key.classname_)+1],key.classname_);
-    }
-  else {
-      classname_ = 0;
-    }
-}
-
-ClassKey::~ClassKey()
-{
-  delete[] classname_;
-}
-
-ClassKey& ClassKey::operator=(const ClassKey& key)
-{
-  delete[] classname_;
-  if (key.classname_) {
-      classname_ = ::strcpy(new char[strlen(key.classname_)+1],key.classname_);
-    }
-  else {
-      classname_ = 0;
-    }
-  return *this;
-}
-
-int ClassKey::operator==(const ClassKey& ck) const
-{
-  return cmp(ck) == 0;
-}
-
-int ClassKey::operator<(const ClassKey& ck) const
-{
-  return cmp(ck) < 0;
-}
-
-int
-ClassKey::hash() const
-{
-  int r=0;
-  size_t i;
-
-  // Even numbered bytes make up the lower part of the hash index
-  for (i=0; i < ::strlen(classname_); i+=2) {
-      r ^= classname_[i];
-    }
-
-  // Odd numbered bytes make up the upper part of the hash index
-  for (i=1; i < ::strlen(classname_); i+=2) {
-      r ^= classname_[i]<<8;
-    }
-
-  return r;
-}
-
-int ClassKey::cmp(const ClassKey&ck) const
-{
-  if (!classname_) {
-      if (!ck.classname_) return 0;
-      return -1;
-    }
-  if (!ck.classname_) return 1;
-  return strcmp(classname_,ck.classname_);
-}
-
-char* ClassKey::name() const
-{
-  return classname_;
-}
+AVLSet<std::string>* ClassDesc::unresolved_parents_ = 0;
 
 /////////////////////////////////////////////////////////////////
 
@@ -204,7 +121,7 @@ ParentClasses::init(const char* parents)
           access = ParentClass::Private;
         }
       else {
-          ClassKey parentkey(token);
+          std::string parentkey(token);
           // if the parents class desc does not exist create a temporary
           // the temporary will be incorrect,because it does not have the
           // parent's parents
@@ -212,7 +129,7 @@ ParentClasses::init(const char* parents)
               ClassDesc *tmp_classdesc = new ClassDesc(token);
               ClassDesc::all()[parentkey] = tmp_classdesc;
               if (ClassDesc::unresolved_parents_ == 0) {
-                  ClassDesc::unresolved_parents_ = new AVLSet<ClassKey>;
+                  ClassDesc::unresolved_parents_ = new AVLSet<std::string>;
                 }
               ClassDesc::unresolved_parents_->insert(token);
             }
@@ -346,7 +263,7 @@ ClassDesc::init(const char* name, int version,
 
   // make sure that the static members have been initialized
   if (!all_) {
-      all_ = new AVLMap<ClassKey,ClassDescP>;
+      all_ = new AVLMap<std::string,ClassDescP>;
       const char* tmp = getenv("LD_LIBRARY_PATH");
       if (tmp) {
           // Needed for misbehaving getenv's.
@@ -386,13 +303,13 @@ ClassDesc::init(const char* name, int version,
 
   classname_ = ::strcpy(new char[strlen(name)+1],name);
 
-  ClassKey key(name);
+  std::string key(name);
 
   // let each of the parents know that this is a child
   for (int i=0; i<parents_.n(); i++) {
-      ClassKey parentkey(parents_[i].classdesc()->name());
+      std::string parentkey(parents_[i].classdesc()->name());
       if (!(*all_)[parentkey]->children_)
-        (*all_)[parentkey]->children_ = new AVLSet<ClassKey>;
+        (*all_)[parentkey]->children_ = new AVLSet<std::string>;
       // let the parents know about the child
       ((*all_)[parentkey]->children_)->insert(key);
     }
@@ -407,14 +324,14 @@ ClassDesc::init(const char* name, int version,
           ExEnv::err0()
               << indent
               << "ERROR: ClassDesc: inconsistency in initialization for "
-              << key.name()
+              << key
               << "--perhaps a duplicated CTOR call" << endl;
           abort();
         }
 
       // go thru the list of children and correct their
       // parent class descriptors
-      for (AVLSet<ClassKey>::iterator i=children_->begin();
+      for (AVLSet<std::string>::iterator i=children_->begin();
            i!=children_->end(); i++) {
           (*all_)[*i]->change_parent((*all_)[key],this);
         }
@@ -433,7 +350,7 @@ ClassDesc::~ClassDesc()
 {
   // remove references to this class descriptor
   if (children_) {
-      for (AVLSet<ClassKey>::iterator i=children_->begin();
+      for (AVLSet<std::string>::iterator i=children_->begin();
            i!=children_->end(); i++) {
           if (all_->contains(*i)) {
               (*all_)[*i]->change_parent(this,0);
@@ -441,7 +358,7 @@ ClassDesc::~ClassDesc()
         }
     }
   // delete this ClassDesc from the list of all ClassDesc's
-  ClassKey key(classname_);
+  std::string key(classname_);
   all_->remove(key);
   // if the list of all ClassDesc's is empty, delete it
   if (all_->length() == 0) {
@@ -464,7 +381,7 @@ ClassDesc::class_desc(const type_info &ti)
   return (*type_info_all_)[type_info_key(&ti)];
 }
 
-AVLMap<ClassKey,ClassDescP>&
+AVLMap<std::string,ClassDescP>&
 ClassDesc::all()
 {
   if (!all_) {
@@ -477,7 +394,7 @@ ClassDesc::all()
 ClassDesc*
 ClassDesc::name_to_class_desc(const char* name)
 {
-  ClassKey key(name);
+  std::string key(name);
   if (all_->find(key) == all_->end()) return 0;
   return (*all_)[key];
 }
@@ -517,7 +434,7 @@ void
 ClassDesc::list_all_classes()
 {
   ExEnv::out0() << "Listing all classes:" << endl;
-  for (AVLMap<ClassKey,ClassDescP>::iterator ind=all_->begin();
+  for (AVLMap<std::string,ClassDescP>::iterator ind=all_->begin();
        ind!=all_->end(); ind++) {
       ClassDesc* classdesc = ind.data();
       ExEnv::out0() << "class " << classdesc->name() << endl;
@@ -546,12 +463,12 @@ ClassDesc::list_all_classes()
             }
           ExEnv::out0() << endl;
         }
-      AVLSet<ClassKey>* children = classdesc->children_;
+      AVLSet<std::string>* children = classdesc->children_;
       if (children) {
           ExEnv::out0() << "  children:";
-          for (AVLSet<ClassKey>::iterator pind=children->begin();
+          for (AVLSet<std::string>::iterator pind=children->begin();
                pind!=children->end(); pind++) {
-              ExEnv::out0() << " " << (*pind).name();
+              ExEnv::out0() << " " << (*pind);
             }
           ExEnv::out0() << endl;
         }
@@ -625,7 +542,7 @@ ClassDesc::load_class(const char* classname)
                       // load code for parents
                       while (unresolved_parents_
                              && unresolved_parents_->length()) {
-                          load_class((*unresolved_parents_->begin()).name());
+                          load_class((*unresolved_parents_->begin()).c_str());
                         }
 
                       fclose(fp);
@@ -721,16 +638,16 @@ operator <<(ostream&o, const RefBase &ref)
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
-template class EAVLMMapNode<ClassKey,AVLMapNode<ClassKey,ClassDescP> >;
-template class EAVLMMap<ClassKey,AVLMapNode<ClassKey,ClassDescP> >;
-template class AVLMapNode<ClassKey,ClassDescP>;
-template class AVLMap<ClassKey,ClassDescP>;
+template class EAVLMMapNode<std::string,AVLMapNode<std::string,ClassDescP> >;
+template class EAVLMMap<std::string,AVLMapNode<std::string,ClassDescP> >;
+template class AVLMapNode<std::string,ClassDescP>;
+template class AVLMap<std::string,ClassDescP>;
 
-template class EAVLMMapNode<ClassKey,AVLMapNode<ClassKey,int> >;
-template class EAVLMMap<ClassKey,AVLMapNode<ClassKey,int> >;
-template class AVLMapNode<ClassKey,int>;
-template class AVLMap<ClassKey,int>;
-template class AVLSet<ClassKey>;
+template class EAVLMMapNode<std::string,AVLMapNode<std::string,int> >;
+template class EAVLMMap<std::string,AVLMapNode<std::string,int> >;
+template class AVLMapNode<std::string,int>;
+template class AVLMap<std::string,int>;
+template class AVLSet<std::string>;
 
 #endif
 

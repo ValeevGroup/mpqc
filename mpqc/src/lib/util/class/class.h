@@ -32,6 +32,8 @@
 #ifndef _util_class_class_h
 #define _util_class_class_h
 
+#include <map>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -58,23 +60,6 @@ class DescribedClass;
 class ClassDesc;
 typedef ClassDesc* ClassDescP;
 typedef const ClassDesc* CClassDescP;
-
-/// Provides a key into a map of classes.
-class ClassKey {
-  private:
-    char* classname_;
-  public:
-    ClassKey();
-    ClassKey(const char* name);
-    ClassKey(const ClassKey&);
-    ~ClassKey();
-    ClassKey& operator=(const ClassKey&);
-    int operator==(const ClassKey& ck) const;
-    int operator<(const ClassKey& ck) const;
-    int hash() const;
-    int cmp(const ClassKey&ck) const;
-    char* name() const;
-  };
 
 class ClassDesc;
 
@@ -173,15 +158,15 @@ class type_info_key {
 class ClassDesc: public Identity {
     friend class ParentClasses;
   private:
-    static AVLMap<ClassKey,ClassDescP> *all_;
+    static AVLMap<std::string,ClassDescP> *all_;
     static AVLMap<type_info_key,ClassDescP> *type_info_all_;
     static char * classlib_search_path_;
-    static AVLSet<ClassKey> *unresolved_parents_;
+    static AVLSet<std::string> *unresolved_parents_;
 
     char* classname_;
     int version_;
     ParentClasses parents_;
-    AVLSet<ClassKey> *children_;
+    AVLSet<std::string> *children_;
     DescribedClass* (*ctor_)();
     DescribedClass* (*keyvalctor_)(const Ref<KeyVal>&);
     DescribedClass* (*stateinctor_)(StateIn&);
@@ -205,7 +190,7 @@ class ClassDesc: public Identity {
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
 
-    static AVLMap<ClassKey,ClassDescP>& all();
+    static AVLMap<std::string,ClassDescP>& all();
     const ParentClasses& parents() const { return parents_; }
 
     /// Writes a list of all of the classes to ExEnv::out0().

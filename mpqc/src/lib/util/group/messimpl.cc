@@ -194,13 +194,13 @@ MessageGrp::initialize(int me, int n)
     }
 
   int i;
-  AVLMap<ClassKey,ClassDescP>::iterator J;
+  AVLMap<std::string,ClassDescP>::iterator J;
   
   me_ = me;
   n_ = n;
 
   // get all of the classes known on this node
-  AVLMap<ClassKey,ClassDescP>& classes = ClassDesc::all();
+  AVLMap<std::string,ClassDescP>& classes = ClassDesc::all();
 
   // Keeps count of how many classes are known.
   int iclass = 0;

@@ -53,9 +53,9 @@ class SCMatrixBlockIter {
     virtual int i() = 0;
     /// Returns the column index.
     virtual int j() = 0;
-    /// Set the current element to \vrbl{val}.
+    /// Set the current element to val.
     virtual void set(double val) = 0;
-    /// Add \vrbl{val} to the current element.
+    /// Add val to the current element.
     virtual void accum(double val);
     /// Return the value of the current element.
     virtual double get() = 0;

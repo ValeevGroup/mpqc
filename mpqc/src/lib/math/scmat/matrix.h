@@ -86,7 +86,7 @@ class RefSCVector: public RefDCSCVector {
     RefSCVector operator-(const RefSCVector&a) const;
     /// Scale a vector.
     RefSCVector operator*(double) const;
-    /// Return the outer product between this and \vrbl{v}.
+    /// Return the outer product between this and v.
     RefSCMatrix outer_product(const RefSCVector& v) const;
     /// The outer product of this with itself is a symmetric matrix.
     RefSymmSCMatrix symmetric_outer_product() const;
@@ -142,7 +142,7 @@ class RefSCMatrix: public RefDCSCMatrix {
     /// Make this refer to m.
      RefSCMatrix(SCMatrix* m);
     ~RefSCMatrix();
-    /// Make this refer to {m.
+    /// Make this refer to m.
     RefSCMatrix& operator=(SCMatrix* m);
     /// Make this and m refer to the same matrix.
     RefSCMatrix& operator=(const RefSCMatrix& m);
@@ -385,8 +385,8 @@ class RefDiagSCMatrix: public RefDCDiagSCMatrix {
     RefDiagSCMatrix i() const;
     /// Return the generalized inverse of this.
     RefDiagSCMatrix gi() const;
-    /// These call the \clsnmref{SCMatrix} members of the same name
-    /// after checking for references to \srccd{0}.
+    /// These call the SCMatrix members of the same name
+    /// after checking for references to 0.
     RefDiagSCMatrix clone() const;
     RefDiagSCMatrix copy() const;
     void set_element(int,double) const;

@@ -75,9 +75,9 @@ class SCBlockInfo: public SavableState {
     int nblock() const { return nblocks_; }
     /// Return the starting index for block i.
     int start(int i) const { return start_[i]; }
-    /// Return the size of block \vrbl{i}.
+    /// Return the size of block i.
     int size(int i) const { return size_[i]; }
-    ///  Return the last index $+ 1$ for block \vrbl{i}.
+    ///  Return the last index $+ 1$ for block i.
     int fence(int i) const { return start_[i] + size_[i]; }
 
     void elem_to_block(int i, int &block, int &offset);

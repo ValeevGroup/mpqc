@@ -127,7 +127,6 @@ fill(double *vector, SCVectorSimpleBlock &b)
   int i,offset=0;
   for (i=b.istart; i<b.iend; i++,offset++) {
       vector[i] = b.data[offset];
-    }
   }
 }
 */
@@ -163,7 +162,6 @@ fill(double *vector, SCVectorSimpleSubBlock &b)
   int i,offset=b.offset;
   for (i=b.istart; i<b.iend; i++,offset++) {
       vector[i] = b.data[offset];
-    }
   }
 }
 */
@@ -348,7 +346,6 @@ fill(double **matrix, SCMatrixDiagBlock &b)
   int i,j,offset=0;
   for (i=b.istart,j=b.jstart; i<b.iend; i++,j++,offset++) {
       matrix[i][j] = b.data[offset];
-    }
   }
 }
 */
@@ -386,7 +383,6 @@ fill(double **matrix, SCMatrixDiagSubBlock &b)
   int i,j,offset=b.offset;
   for (i=b.istart,j=b.jstart; i<b.iend; i++,j++,offset++) {
       matrix[i][j] = b.data[offset];
-    }
   }
 }
 */

@@ -77,6 +77,7 @@ BEMSolvent::alloc_array(int n, int m)
 void
 BEMSolvent::free_array(double** array)
 {
+  if (!array) return;
   delete[] array[0];
   delete[] array;
 }

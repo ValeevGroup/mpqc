@@ -1,0 +1,132 @@
+//
+// $Log$
+// Revision 1.1  1993/12/29 12:53:14  etseidl
+// Initial revision
+//
+// Revision 1.9  1992/07/09  15:40:03  seidl
+// add expts and exmul for extended mulliken analysis
+//
+// Revision 1.8  1992/05/04  11:00:00  seidl
+// remove pk int stuff, get rid of memory allocation modules
+//
+// Revision 1.7  1992/04/22  15:52:50  seidl
+// add boolean proj_vector
+//
+// Revision 1.6  1992/04/13  11:05:29  seidl
+// get rid of useless open-shell stuff
+//
+// Revision 1.5  1992/04/10  10:44:58  seidl
+// remove definition of ptrs struct
+//
+// Revision 1.4  1992/03/31  22:23:00  seidl
+// add a few things to scf_struct
+//
+// Revision 1.3  1992/03/21  00:37:20  seidl
+// add boolean eliminate to scf_struct
+//
+// Revision 1.2  1992/03/17  20:35:42  seidl
+// fix comments
+//
+// Revision 1.1.1.1  1992/03/17  16:25:48  seidl
+// DOE-NIH Quantum Chemistry Library 0.0
+//
+// Revision 1.3  1992/02/18  17:52:27  seidl
+// add local_p to scf_struct
+//
+// Revision 1.2  1992/02/10  16:57:37  seidl
+// add a few new options
+//
+// Revision 1.1  1992/02/04  23:48:54  seidl
+// Initial revision
+//
+// Revision 1.8  1992/01/16  19:51:28  seidl
+// add int_store parameter to scf_struct
+//
+// Revision 1.7  1992/01/09  11:36:30  seidl
+// add modules recv0 and send0
+//
+// Revision 1.6  1991/12/30  18:47:43  seidl
+// do not generate zero functions for pkints or the ptrs
+//
+// Revision 1.5  1991/12/24  11:47:04  seidl
+// add assign, iseq, and zzero routines
+//
+// Revision 1.4  1991/12/20  16:23:41  seidl
+// add diis_flg, convergence, maxiter, it_diis, and lvl_shift to scf_struct
+//
+// Revision 1.3  1991/12/17  21:46:06  seidl
+// add default_modules for new sgen
+//
+//
+
+default_modules(assign iseq bread bwrite print alloc free zero
+       init bcast0 rbcast0 sbcast0 recv0 send0 );
+
+scf_struct {
+  boolean hsos;           // 1 if high-spin open-shell
+  boolean singlet;        // 1 if open-shell singlet
+  boolean special;        // 1 if OPENTYPE=special
+  boolean twocon;         // 1 if tcscf
+  boolean use_symmetry;   // 1 if symmetry is to be used
+  boolean restart;        // 1 if old scf vector to be used
+  boolean diis_flg;       // 1 if diis is to be used
+  boolean warmrestart;    // 1 if there is a checkpoint vector to
+                          //                  be used for restart
+  boolean ckpt_del;       // 1 if checkpoint files are deleted
+  boolean local_p;        // 1 if local density matrices used
+  boolean eliminate;      // if true, then use pmax
+  boolean proj_vector;    // if true, form guess vector from old basis set
+  boolean cheat;          // if true, use big threshold in early iterations
+  boolean exchange;       // if true, print the exchange energy contribution
+  boolean debug;
+  boolean debug_node;
+
+  string ckptdir;     // ckptdir: directory for checkpoint files
+  string fname;      //    fname: files written as "fname".{scfvec,fock,etc...}
+
+  int ckpt_freq;      //   ckpt_freq: checkpoint every ckpt_freq iterations
+  int convergence;    // convergence: convergence on density matrix
+  int maxiter;        //     maxiter: maximum number of iterations in scf
+  int n_open;         //      n_open: number of open shells
+  int optri;          //       optri: ioff(n_open)
+  int intcut;         //      intcut: cutoff for not calculating int batch
+  int int_store;      //   int_store: the number of integrals to keep in core
+  int p_reset_freq;   // p_reset_freq: redo full fock matrix this often
+  int ndiis;          //       ndiis: number of error matrices to use with diis
+  int it_diis;        //     it_diis: iteration to begin diis extrapolation
+  int fock_typ;       //    fock_typ: used to select form of fock_eff 
+                      //              for open-shell scf
+  int print_flg;
+
+  double diisdamp;    //    diisdamp: scale factor for diag. elements of bmat
+  double lvl_shift;   //   lvl_shift: level shift
+
+
+  boolean iopen;          //       iopen: 1 if open-shell or tcscf
+  boolean converged;      //   converged: 1 if wavefunction is converged
+
+  int nbfso;          //       nbfso: number of basis functions in so basis
+  int nbfao;          //       nbfao: number of basis functions in ao basis
+  int nbstri;         //      nbstri: size of lower triangle in so basis
+  int nbatri;         //      nbatri: size of lower triangle in ao basis
+  int nsomax;         //      nsomax: max. # of so's per irrep
+  int mxcoef;         //      mxcoef: sum of (# so's per irrep)**2
+  int mxcoef2;        //     mxcoef2: sum of ioff[# so's per irrep]
+
+  double nuc_rep;     //     nuc_rep: nuclear repulsion energy
+  double e_elec;      //      e_elec: electronic energy
+  double diis_er;     //     diis_er: maximum element of diis error matrix
+
+  double alpha;
+  double beta;
+  } ;
+
+exmul {
+  double charge;
+  double r[3];
+  };
+
+expts {
+  int n;
+  exmul p[n];
+  };

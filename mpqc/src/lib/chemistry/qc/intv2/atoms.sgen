@@ -1,0 +1,110 @@
+
+// $Log$
+// Revision 1.1  1993/12/29 12:53:01  etseidl
+// Initial revision
+//
+// Revision 1.3  1992/03/31  01:21:11  jannsen
+// Merged in Sandia non CVS codes.
+//
+//Revision 1.3  1992/01/17  22:11:41  cljanss
+//added e t seidl's changes:
+//add assign, iseq, zero, send0 and recv0 modules
+//do not generate many things for shell, instead use functions in shellsg.c
+//
+//Revision 1.2  1992/01/08  17:14:12  cljanss
+//added fwrite and fread modules
+//
+//Revision 1.1  1991/12/14  00:19:36  cljanss
+//Initial revision
+//
+
+// Old log from libint (version 1)
+//Revision 1.3  91/10/31  14:44:04  cljanss
+//added the basis set name to the basis struct
+//
+//Revision 1.2  91/08/09  16:39:48  cljanss
+//added a default_modules statement
+//
+//Revision 1.1  1991/06/16  16:52:19  janssen
+//Initial revision
+//
+
+default_modules(ip free alloc bread bwrite print init bcast0 rbcast0 sbcast0
+                fread fwrite assign iseq zero send0 recv0);
+
+shell_type (!ip !print) {
+  int am;
+  int puream;
+  };
+
+// shell describes a shell of basis functions
+//   nprim is the number of primitives
+//   ncon is the number of sets contraction coefficients
+//   nfunc is the number of basis functions in this shell
+//   exp is a vector of exponents
+//   shell_type gives the precise type of the shell
+//   coef is a vector of contraction coefficients
+//   pcoef is the p contraction coef of an sp pair
+//   norm is a vector of normalization constants for each function in the shell
+//     norm must be allocated and freed explicitly by the user
+shell (!bread !bwrite !print !rbcast0 !sbcast0 !fread !fwrite !assign
+       !zero !send0 !recv0) {
+  int nprim;
+  int ncon;
+  int nfunc;
+  double exp[nprim];
+  shell_type type[ncon];
+  double coef[ncon][nprim];
+  double **norm;
+  };
+
+// basis is a set of basis functions
+//   n is the number of basis functions
+//   name is the name of the basis set
+//   shell is an array of shells
+basis (!ip) {
+  int n;
+  string name;
+  shell shell[n];
+  };
+
+// center descibes a single atom and its basis functions
+//   atom is the name of the atom
+//   charge is the charge of the atom
+//   r gives the x, y, and z coordinates of the atom
+//   basis gives the basis functions on the atom
+center (!ip) {
+  string atom;
+  double charge;
+  double r[3];
+  basis basis;
+  };
+
+// centers describes the atoms and their basis functions
+//   n is the number of centers
+//   center is an array of structures describing each atoms and bf's.
+//   shell_offset is the offset for the shells on these centers
+//   prim_offset is the offset for the primitives on these centers
+//   func_offset is the offset for the basis functions on these centers
+//   nshell is the number of shells on these centers
+//   nprim is the number of primitives on these centers
+//   nfunc is the number of basis functions on these centers
+//   nbf is the number of ao basis functions on these centers
+//   center_num maps the overall shell number to the center number
+//   shell_num maps the overall shell number to the shell num on its center
+//   func_num maps the overall shell number to the first basis function in the
+//     shell
+centers {
+  int n;
+  center center[n];
+  int shell_offset;
+  int prim_offset;
+  int func_offset;
+  int nshell;
+  int nprim;
+  int nfunc;
+  int center_num[nshell];
+  int shell_num[nshell];
+  int func_num[nshell];
+  };
+

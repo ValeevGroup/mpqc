@@ -1,0 +1,11 @@
+s/math_lib/math\/array\/math_lib/g
+s/libdmtqc/chemistry\/qc\/dmtqc\/libdmtqc/g
+s/libdmt/math\/dmt\/libdmt/g
+s/int_libv2/chemistry\/qc\/intv2\/int_libv2/g
+s/sym_dmt/chemistry\/qc\/dmtsym\/sym_dmt/g
+s/sym_lib/chemistry\/qc\/sym\/sym_lib/g
+s/sgen/util\/sgen\/sgen/g
+s/libutil/util\/misc\/libmisc/g
+s/ip_libv2/util\/ipv2\/ip_libv2/g
+s/libbio/util\/bio\/libbio/g
+s/picl/comm\/picl\/picl/g

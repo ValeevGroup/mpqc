@@ -1,0 +1,65 @@
+This is TeX, C Version 3.14t3 (format=lplain 91.9.20)  7 JUN 1993 15:17
+**opt++
+(opt++.tex
+LaTeX Version 2.09 <7 Dec 1989>
+(/net/home/meza/doc/Jcmtex/jcmart.sty
+Document Style `JCM article'. Released 4 September 1986.
+(/net/home/meza/doc/Jcmtex/jcmart12.sty)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+)
+(/net/home/meza/doc/Jcmtex/mystyle.sty) (/net/home/meza/doc/Jcmtex/epsf.tex
+\epsffilein=\read0
+\epsfxsize=\dimen99
+\epsfysize=\dimen100
+\epsftsize=\dimen101
+\epsfrsize=\dimen102
+\epsftmp=\dimen103
+\pspoints=\dimen104
+)
+(opt++.aux (sect1.aux) (sect2.aux) (sect3.aux) (sect4.aux) (sect5.aux))
+(cover.tex
+Underfull \hbox (badness 10000) in paragraph at lines 4--5
+
+
+\hbox(0.0+0.0)x469.75499
+.\glue(\rightskip) 0.0
+
+[0
+
+]) (opt++.toc)
+\tf@toc=\write3
+ [5] (sect1.tex) [7
+
+] (sect2.tex) [8
+
+
+] [9] (sect3.tex) [10
+
+
+]
+(sect4.tex) [11
+
+
+] (sect5.tex) [12
+
+
+]
+No file opt++.bbl.
+(opt++.aux (sect1.aux) (sect2.aux) (sect3.aux) (sect4.aux) (sect5.aux)) ) 
+Here is how much of TeX's memory you used:
+ 291 strings out of 4463
+ 2429 string characters out of 63241
+ 32500 words of memory out of 262141
+ 2142 multiletter control sequences out of 9500
+ 18996 words of font info for 72 fonts, out of 72000 for 255
+ 14 hyphenation exceptions out of 607
+ 12i,7n,17p,255b,171s stack positions out of 300i,40n,60p,3000b,4000s
+
+Output written on opt++.dvi (8 pages, 6128 bytes).

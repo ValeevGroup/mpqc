@@ -1,0 +1,1473 @@
+%
+% $Log$
+% Revision 1.1  1993/12/29 12:52:59  etseidl
+% Initial revision
+%
+% Revision 1.9  1993/04/28  00:17:42  jannsen
+% added the sparse option
+%
+% Revision 1.8  1992/06/17  22:00:17  jannsen
+% cleaned up for saber-c
+%
+% Revision 1.7  1992/05/26  20:21:07  jannsen
+% make bounds checking optional
+% distribute bounds checking among nodes
+% use mtype_get() to get message types
+%
+% Revision 1.6  1992/05/19  20:54:52  seidl
+% use message types 8000-8999
+%
+% Revision 1.5  1992/05/13  18:26:01  jannsen
+% added bounds checking
+%
+% Revision 1.4  1992/04/16  16:59:09  jannsen
+% changed ngl loop routines and added timings for "erep"
+%
+% Revision 1.3  1992/04/06  12:44:00  seidl
+% merge in sandia changes
+%
+% Revision 1.2  1992/03/18  12:55:49  seidl
+% fix log
+%
+% Revision 1.1.1.1  1992/03/17  16:28:18  seidl
+% DOE-NIH Quantum Chemistry Library 0.0
+% 
+% Revision 1.1  1992/03/17  16:28:16  seidl
+% Initial revision
+% 
+% Revision 1.4  1992/02/11  12:09:38  seidl
+% change where int_index is incremented, now symmetry
+% works for local P as well
+%
+% Revision 1.3  1992/02/10  16:11:40  seidl
+% symmetry works for non-local P
+% do not transform fock matrix to mo basis, pass it in in
+% the MO basis instead
+%
+%
+
+\documentstyle[fleqn]{web}
+\begin{document}
+
+\def\mnls{\hbox{$(\mu\nu\vert\lambda\sigma)$}}
+\def\hcore{{\bf H}^{\rm core}}
+\def\half{\hbox{$\raise.5ex\hbox{$\scriptstyle1$}\!{\displaystyle/}\mskip-3mu%
+    \lower.5ex\hbox{$\scriptstyle2$}$}}
+
+\def\topofcontents
+  {\centerline{
+    \titlefont {\. libforce}: A library for computing the gradient of the electronic
+               energy.}
+   \bigskip
+   \centerline{\bf Curtis L. Janssen}
+   \centerline{\it Center for Computational Engineering}
+   \centerline{\it Sandia National Laboratories, Livermore, CA}
+  \vfill} 
+
+
+\def\botofcontents{\vfill
+\center{\bf Disclaimer}
+
+\begin{quotation}
+
+Copyright \copyright\ 1991, Sandia Corporation. The U.S. Government retains
+a limited license in this software.
+
+The U.S. Government retains, in this software, a paid-up,
+nonexclusive, irrevocable worldwide license to reproduce, prepare
+derivative works, perform publicly and display publicly by or for the
+Government, including the right to distribute to other Government
+contractors. 
+
+Neither the United States, the U.S. Dept. of Energy, nor any of their
+employees, makes any warranty, express or implied, or assumes any
+legal liability or responsibility for the accuracy, completeness, or
+usefulness of any information, apparatus, product, or product
+disclosed, or represents that its use would not infringe privately
+owned rights. 
+
+Export Controlled. Not to be exported outside the U.S. and Canada
+without prior approval of the Bureau of Export Administration, U.S.
+Department of Commerce.
+\end{quotation}}
+
+
+\def\webtitle{\.{libforce/mpcsscf}: A parallelized gradient routine.}
+
+
+
+@* The closed shell SCF gradient routine.
+Described herein is a subroutine which computes the first derivative of
+the closed shell self-consistent-field energy with respect to variations in
+the nuclear coordinates.  This routine takes as arguments information about the
+wavefunction and fills in a passed in data structure with the final gradients.
+
+The first derivative of the electronic energy for a closed shell wavefunction
+is usually written
+\begin{equation}
+ {{\partial E_{\rm csscf}} \over {\partial a}} =
+         \sum_{\mu\nu}^{AO} P_{\mu\nu} {{\partial h_{\mu\nu}} \over {\partial a}}
+       + \sum_{\mu\nu}^{AO} W_{\mu\nu} {{\partial S_{\mu\nu}} \over {\partial a}}
+       + \sum_{\mu\nu\rho\sigma}^{AO}
+             \biggl\{  {1 \over 2} P_{\mu\nu} P_{\rho\sigma}
+                     - {1 \over 4} P_{\mu\rho} P_{\nu\sigma} \biggr\}
+             {{\partial (\mu\nu \vert \rho\sigma)} \over {\partial a}}
+\end{equation}
+except for a few minus signs and factors of two which are taken into
+account in my definition of the density, $P$, and energy weighted density,
+$W$
+\begin{equation}
+    P_{\mu\nu} =  2 \sum_i^{\rm d.o.} C_{\mu}^i C_{\nu}^i
+\end{equation}
+and
+\begin{equation}
+    W_{\mu\nu} = - 2 \sum_i^{\rm d.o.} C_{\mu}^i C_{\nu}^i \epsilon_i
+\end{equation}
+The nuclear repulsion terms have been omitted from the equation since
+they can be computed with minimal effort.
+
+However for the purpose of the parallelizing this computation it is more
+convenient to write the above gradient formula as
+\begin{equation}
+ {{\partial E_{\rm csscf}} \over {\partial a}} =
+         \sum_{\mu\nu}^{AO} P_{\mu\nu} {{\partial h_{\mu\nu}} \over {\partial a}}
+       + \sum_{\mu\nu}^{AO} W_{\mu\nu} {{\partial S_{\mu\nu}} \over {\partial a}}
+       + \sum_{\mu\nu\rho\sigma}^{AO} P_{\mu\nu} P_{\rho\sigma}
+             \biggl\{  {1 \over 2} {{\partial (\mu\nu \vert \rho\sigma)}
+                                       \over {\partial a}}
+                     - {1 \over 4} {{\partial (\mu\rho \vert \nu\sigma)}
+                                       \over {\partial a}}
+                    \biggr\}
+\end{equation}
+This formula demonstrates the general organization of the code a little
+better.  Rather than being an integral driven subroutine, this is a density
+matrix driven subroutine.  The density matrix elements which find themselves
+on the nodes determine which integrals that those nodes will evaluate.
+
+Unfortunately, this density matrix driven scheme costs us nearly three
+times as many integral evaluations than are needed for the scheme where
+each node has its own local copy of the entire density matrix.  For
+this reason an input option to the program allows local density matrices
+to be used, but it is up the user to determine if enough memory is
+available.
+
+The document is divided into three parts, the set up, primarily consisting
+of definitions and
+the set of include files needed, the global function for computing the
+force, the |force_csscf_dmt| routine, and local support functions.
+
+The program itself is divided similarly, as outlined below:
+
+@c
+@<Include files.@> @;@/
+@<Global variables.@> @;@/
+@<Global functions.@> @;@/
+@<Local functions.@> @;@/
+
+
+
+@* Definitions and include files.
+
+@ The RCS ID
+
+@c
+static char rcsid[]="$Id$";
+
+@ The macro GradientFormat is a string giving the format in which all
+gradients will be printed out.
+
+@d GradientFormat = "  %3d  % 14.10f % 14.10f % 14.10f\n"
+
+@ The macro IOFF(i,j) computes the location of point m(i,j) in the
+array holding the lower triangle of matrix m.
+
+@d IOFF(i,j) = ((i)>(j))?(((i)*((i)+1))>>1)+(j):(((j)*((j)+1))>>1)+(i)
+
+@ Include files for the C library.
+@<Include files.@>=
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+@ The PICL communication routines' declarations.
+@<Include files.@>=
+#include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
+
+@ The C prototype generation facility, \.{tmpl}, is used in this file and
+the libraries, so we must include its header file.
+@<Include files.@>=
+#include <tmpl.h>
+
+@ The \.{libmath} library provides support for several of the data types used
+here and by the \.{libint} library.
+@<Include files.@>=
+#include <math/array/math_lib.h>
+
+@ The input will be parsed with version 2 of the input parser, \.{libipv2}.
+@<Include files.@>=
+#include <util/ipv2/ip_libv2.h>
+
+@ The derivative integrals are to be computed with the \.{libintv2} library.
+@<Include files.@>=
+#include <chemistry/qc/intv2/int_libv2.h>
+@ Support for parallel matrix operations and distributed matrix storage are
+given in the \.{libdmt} library.
+@<Include files.@>=
+#include <math/dmt/libdmt.h>
+#include <chemistry/qc/dmtqc/libdmtqc.h>
+
+@ Debugging and timing support are found in the utility library, \.{libutil}.
+@<Include files.@>=
+#include <util/misc/libmisc.h>
+
+@ Symmetry is dealt with by the \.{libsymv2} library.
+@<Include files.@>=
+#include <chemistry/qc/dmtsym/sym_dmt.h>
+
+
+@ The templates for the global and local function definitions are found
+in |csscf.gbl| and |csscf.lcl|, respectively.
+@<Include files.@>=
+#include "mpcsscf.gbl"
+#include "mpcsscf.lcl"
+
+@* The global variables.
+@ All of these variables are set up by the |dmt_force_csscf_init| routine.
+@<Global variables.@>=
+static int print_nuc_1der=0;
+static int print_kinetic_1der=0;
+static int print_nuclear_1der=0;
+static int print_2e_1der=0;
+static int print_hcoreder=0;
+static int print_overlap_1der=0;
+static int print_all_1der=0;
+static int print_density=0;
+static int print_mofock=0;
+static int print_ewdensity=0;
+static int print_all = 0;
+static int local_P = 0;
+static int init_called=0;
+static int threshold_10=12;
+static int bounds=1;
+static int sparse=1;
+static int threshold;
+
+@ This is the output file.
+@<Global variables.@>=
+static FILE *fp;
+
+@* The global functions.
+
+@ The |dmt_force_csscf_init| routine is called to initalize the
+|dmt_force_csscf| routine.  It handles reading the input.  The
+input must be parsed with \.{libipv2} before this routine is called.
+The sole argument of this function is a |FILE *| for the output file,
+|initfp|.
+
+@<Global functions.@>=
+GLOBAL_FUNCTION void
+dmt_force_csscf_init(initfp)
+FILE *initfp;
+{
+  fp = initfp;
+  ip_cwk_push();
+  ip_cwk_clear();
+  ip_cwk_add(":default");
+  ip_cwk_add(":force");
+  @<Read and broadcast the input options.@> @;@/
+  ip_cwk_pop();
+  init_called = 1;
+}
+
+@ This should be called when |dmt_force_csscf| is no longer needed.
+@<Global functions.@>=
+GLOBAL_FUNCTION void
+dmt_force_csscf_done()
+{
+}
+
+@ The |dmt_force_csscf| routine
+computes the first derivative of the electronic energy with respect to changes
+in the nuclear coordinates for closed shell self-consistent-field (CSSCF)
+wavefunctions.  The input arguments consist of the output file, |forcefp|, the
+final Fock matrix in the atomic orbital basis, |F|, the eigenvectors, |C|,
+the number of doubly occupied orbitals, |ndoc|.
+The routine forms in |f| all of
+the contributions to the force.  The matrix |f| is passed in as an
+allocated |double_matrix_t| datum.
+
+
+@<Global functions.@>=
+#ifdef NCUBE_V2
+static void tenter_gradient() { TENTER("gradient"); }
+static void texit_gradient() { TEXIT("gradient"); }
+static void tenter_initialize() { TENTER("initialize"); }
+static void texit_initialize() { TEXIT("initialize"); }
+static void tenter_twoei() { TENTER("two electron init"); }
+static void texit_twoei() { TEXIT("two electron init"); }
+static void tenter_twoe() { TENTER("two electron"); }
+static void texit_twoe() { TEXIT("two electron"); }
+static void tenter_onee() { TENTER("one electron"); }
+static void texit_onee() { TEXIT("one electron"); }
+static void tenter_ewd() { TENTER("energy weighted density"); }
+static void texit_ewd() { TEXIT("energy weighted density"); }
+#endif
+GLOBAL_FUNCTION void
+dmt_force_csscf(forcefp, F, C, centers, sym_info, ndoc, f) @;
+FILE *forcefp; /* The output file. */
+dmt_matrix F; /* The Fock matrix. */
+dmt_matrix C; /* The eigenvectors. */
+centers_t *centers; /* The atom and basis set information. */
+sym_struct_t *sym_info; /* symmetry information */
+int ndoc; /* The number of doubly occupied orbitals. */
+double_matrix_t *f; /* The forces on the atoms. */
+{
+  dmt_matrix P; /* The density matrix. */
+  dmt_matrix W; /* The energy weighted density. */
+  dmt_matrix Ct; /* The transpose of the coefficient matrix. */
+  int nao = dmt_size(C);  /* The number of atomic orbitals == 
+                             number of basis funcs. */
+  int natom = centers->n; /* The number of atoms. */
+  double_vector_t fxyz; /* A scratch vector for holding results for a 
+                            given center. */
+  double *ints; /* The pointer to the two electron integral buffer. */
+  int master = (mynode0() == 0);
+  double *oneebuff;
+  double_matrix_t finter;
+  int nlocal;
+  int nproc,me,host;
+  int_bound_t Pmax;
+  int_bound_t PPmax;
+
+#ifdef NCUBE_V2
+  tenter_gradient();
+  tenter_initialize();
+#else
+  TENTER("gradient");
+  TENTER("initialize");
+#endif
+
+  who0(&nproc,&me,&host);
+
+  fp = forcefp;
+
+  if (master && !init_called) {
+    printf("WARNING: dmt_force_csscf_init has not been called\n");
+    }
+
+  if (master) {
+    @<Initialize the |f| matrix.@> @;@/
+    }
+
+  @<Allocate and initialize the |finter| matrix.@> @;@/
+
+  @<Allocate and initialize the |fxyz| vector.@> @;@/
+
+  @<Compute the transpose of the coefficient matrix.@> @;@/
+
+  @<Compute the density matrix.@> @;@/
+
+  if (master) {
+    @<Compute the nuclear contribution to the gradients.@> @;@/
+    }
+
+  @<Initialize the one electron integral routines.@> @;@/
+#ifdef NCUBE_V2
+  texit_initialize();
+  tenter_ewd();
+#else
+  TEXIT("initialize");
+  TENTER("energy weighted density");
+#endif
+  @<Compute the energy weighted density matrix.@> @;@/
+#ifdef NCUBE_V2
+  texit_ewd();
+  tenter_onee();
+#else
+  TEXIT("energy weighted density");
+  TENTER("one electron");
+#endif
+  @<Compute the overlap contribution to the gradients.@> @;@/
+
+  @<Compute the one electron contribution to the gradients.@> @;@/
+
+  @<Clean up the one electron integral routines.@> @;@/
+#ifdef NCUBE_V2
+  texit_onee();
+  tenter_twoei();
+#else
+  TEXIT("one electron");
+  TENTER("two electron init");
+#endif
+  @<Initialize the two electron integral routines.@> @;@/
+#ifdef NCUBE_V2
+  texit_twoei();
+  tenter_twoe();
+#else
+  TEXIT("two electron init");
+  TENTER("two electron");
+#endif
+  if (local_P) {
+    @<Compute the two electron contribution to the gradients with local P.@> @;@/
+    }
+  else {
+    @<Compute the two electron contribution to the gradients.@> @;@/
+    }
+#ifdef NCUBE_V2
+  texit_twoe();
+#else
+  TEXIT("two electron");
+#endif
+
+  @<Clean up the two electron integral routines.@> @;@/
+
+  @<Free the |fxyz| vector.@> @;@/
+
+  @<Free the |finter| matrix.@> @;@/
+
+  @<Free dmt storage.@> @;@/
+
+  if (master) {
+    @<Print out the results.@> @;@/
+    }
+
+#ifdef NCUBE_V2
+  texit_gradient();
+#else
+  TEXIT("gradient");
+#endif
+
+}
+
+@ Here the input for the program is processed.  The \.{libipv2} routines
+must already be initialized and the input must have been parsed and
+available.  If the program is running on multiple processors, then the
+input need only be available on node 0.
+@<Read and broadcast the input options.@>=
+{
+  if (mynode0()==0) fprintf(fp,"The force library input parameters:\n");
+  read_and_bcast_boolean("print_all_1der",&print_all_1der); @^print options@> @.print_all_1der@>
+  read_and_bcast_boolean("print_nuc_1der",&print_nuc_1der); @.print_nuc_1der@>
+  read_and_bcast_boolean("print_kinetic_1der",&print_kinetic_1der); @.print_kinetic_1der@>
+  read_and_bcast_boolean("print_nuclear_1der",&print_nuclear_1der); @.print_nuclear_1der@>
+  read_and_bcast_boolean("print_hcoreder",&print_hcoreder); @.print_hcoreder@>
+  read_and_bcast_boolean("print_overlap_1der",&print_overlap_1der); @.print_overlap_1der@>
+  read_and_bcast_boolean("print_all",&print_all); @.print_all@>
+  read_and_bcast_boolean("print_density",&print_density); @.print_density@>
+  read_and_bcast_boolean("print_mofock",&print_mofock); @.print_mofock@>
+  read_and_bcast_boolean("print_ewdensity",&print_ewdensity); @.print_ewdensity@>
+  read_and_bcast_boolean("bounds",&bounds); @.bounds@>
+  read_and_bcast_boolean("sparse",&sparse); @.sparse@>
+  read_and_bcast_int("threshold",&threshold_10); @.threshold@>
+  read_and_bcast_boolean("local_P",&local_P); @.local_P@>
+  print_all_1der = print_all || print_all_1der;
+
+  if (bounds) threshold = int_bound_log(pow(10.0, -threshold_10));
+}
+
+@ The resulting gradients will be accumulated into the |f| matrix.
+@<Initialize the |f| matrix.@>=
+{
+  int i,j;
+
+  for (i=0; i<natom; i++) {
+    for (j=0; j<3; j++) {
+      f->d[j][i] = 0.0;
+    }
+  }
+}
+
+@ The |finter| matrix holds intermediate contributions to the gradient on
+each node.
+@<Allocate and initialize the |finter| matrix.@>=
+{
+  allocbn_double_matrix(&finter,"n1 n2",3,natom);
+}
+
+@
+@<Free the |finter| matrix.@>=
+{
+  free_double_matrix(&finter);
+}
+
+@ The nodes need a little scratch vector.
+@<Allocate and initialize the |fxyz| vector.@>=
+{
+  allocbn_double_vector(&fxyz,"n",3);
+}
+
+@ @<Free the |fxyz| vector.@>=
+{
+  free_double_vector(&fxyz);
+  }
+
+@ @<Free dmt storage.@>=
+{
+  dmt_free(W);
+  dmt_free(Ct);
+  dmt_free(P);
+}
+
+@ Tell the \.{libint} routines that one electron derivatives are going to
+be computed.
+@<Initialize the one electron integral routines.@>=
+{
+  int_initialize_offsets1(centers,centers);
+  oneebuff = int_initialize_1e(0,1,centers,centers);
+}
+
+@ Tell the \.{libint} routines that one electron derivatives are no longer
+needed.
+@<Clean up the one electron integral routines.@>=
+{
+  int_done_offsets1(centers,centers);
+  int_done_1e();
+}
+
+@ Tell the \.{libint} routines that two electron derivatives are going to
+be computed.
+@<Initialize the two electron integral routines.@>=
+{
+  int_initialize_offsets2(centers,centers,centers,centers);
+  ints = int_initialize_erep(INT_EREP|INT_NOSTR1|INT_NOSTR2|INT_NOSTRB
+                             |(bounds?0:INT_NODERB),
+                             1,centers,centers,centers,centers);
+  if (bounds) {
+#define OLDBOUNDSINIT
+#ifdef OLDBOUNDSINIT
+    /* Intialize all bounds locally. */
+    int_init_bounds_1der();
+#else
+    /* Initialize only local bounds and do global ops to get all bounds .*/
+    int i;
+    int nlocal = dmt_nlocal(P);
+    int nshell = dmt_nblocks(P);
+    int ntri = (nshell*(nshell+1))>>1;
+    int ish,jsh,isz,jsz;
+    double *data;
+    int_init_bounds_1der_nocomp();
+    for (i=0; i<nlocal; i++) {
+      dmt_get_block_dsc(P,i,&ish,&isz,&jsh,&jsz,&data);
+      int_bounds_1der_comp(ish,jsh);
+      }
+    gop0_sc(&int_Q,1,'M',mtype_get());
+    gop0_sc(&int_R,1,'M',mtype_get());
+    gop0_sc(int_Qvec,ntri,'+',mtype_get());
+    gop0_sc(int_Rvec,ntri,'+',mtype_get());
+#endif
+    }
+}
+
+@ Tell the \.{libint} routines that two electron derivatives are no longer
+needed.
+@<Clean up the two electron integral routines.@>=
+{
+  if (bounds) int_done_bounds_1der();
+  int_done_offsets2(centers,centers,centers,centers);
+  int_done_erep();
+}
+
+@
+@<Compute the transpose of the coefficient matrix.@>=
+{
+  Ct = dmt_create("Transposed eigenvectors",nao,COLUMNS);
+  dmt_copy(C,Ct);
+  dmt_transpose(Ct);
+}
+
+
+@
+@<Compute the density matrix.@>=
+{
+  double d_Pmax;
+  int print = print_density || print_all;
+  @^print options@> @.print_density@> @.print_all@>
+
+  /* Compute the density matrix. */
+  P = dmt_create("Density matrix",nao,SCATTERED);
+  dmt_density(C,ndoc,P);
+  dmt_scale(P,2.0);
+  if (print) {
+    if (master) printf("The density matrix:\n");
+    dmt_printf("%12.8lf ",P);
+    }
+
+  nlocal = dmt_nlocal(P);
+
+  d_Pmax = dmt_max_abs(P);
+  if (bounds) Pmax = int_bound_log( d_Pmax );
+  if (bounds) PPmax = int_bound_log(6.0 * d_Pmax * d_Pmax);
+
+  gop0_sc(&Pmax,1,'M',mtype_get());
+  gop0_sc(&PPmax,1,'M',mtype_get());
+}
+
+@
+@<Compute the energy weighted density matrix.@>=
+{
+  dmt_matrix Fmo;
+
+#if 0
+  tmp = dmt_create("temporary matrix",nao,COLUMNS);
+  Fmo = dmt_create("MO Fock matrix",nao,COLUMNS);
+  dmt_mult(F,C,tmp);
+  dmt_mult(C,tmp,Fmo);
+#else
+  Fmo=F;
+#endif
+  if (print_mofock || print_all) {
+    @^print options@> @.print_mofock@> @.print_all@>
+    if (master) printf("The mo basis fock matrix:\n");
+    dmt_printf("%12.8lf ",Fmo);
+    }
+
+  W = dmt_create("Energy weighted density",nao,SCATTERED);
+  dmt_ewdensity(C,Fmo,ndoc,W);
+  dmt_scale(W,-2.0);
+  if (print_ewdensity || print_all) {
+    @^print options@> @.print_ewdensity@> @.print_all@>
+    if (master) printf("The energy weighted density:\n");
+    dmt_printf("%12.8lf ",W);
+    }
+
+#if 0
+  dmt_free(tmp);
+  dmt_free(Fmo);
+#endif
+}
+
+@
+@<Compute the nuclear contribution to the gradients.@>=
+{
+  int iatom,xyz;
+  int print = (print_nuc_1der||print_all_1der);
+  @^print options@> @.print_nuc_1der@> @.print_all_1der@>
+
+  if (print) {
+    fprintf(fp,"The nucleus-nucleus contribution:\n");
+    }
+
+  for (iatom=0; iatom<natom; iatom++) {
+    int_nuclear_repulsion_1der(centers,centers,&fxyz,centers,iatom);
+    if (print) {
+      fprintf(fp,GradientFormat,iatom,fxyz.d[0],fxyz.d[1],fxyz.d[2]);
+      }
+    for (xyz=0; xyz<3; xyz++) {
+      f->d[xyz][iatom] += fxyz.d[xyz];
+      }
+    }
+
+  if (print) {
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+}
+
+@
+@<Compute the one electron contribution to the gradients.@>=
+{
+  int i,j;
+  int k,l;
+  int ish,jsh,isz,jsz,ijsz;
+  int index;
+  int print = (print_kinetic_1der||print_all_1der);
+  double *Pblock;
+  @^print options@> @.print_kinetic_1der@> @.print_all_1der@>
+
+  fill_double_matrix(&finter,0,finter.n1,0,finter.n2, 0.0);
+
+  for (i=0; i<centers->n; i++) {
+    for (j=0; j<nlocal; j++) {
+      dmt_get_block_dsc(P,j,&ish,&isz,&jsh,&jsz,&Pblock);
+      ijsz = isz*jsz;
+      int_shell_kinetic_1der(centers,centers,oneebuff,ish,jsh,centers,i);
+      int_accum_shell_nuclear_hf_1der(centers,centers,oneebuff,ish,jsh,centers,i);
+      int_accum_shell_nuclear_nonhf_1der(centers,centers,oneebuff,ish,jsh,centers,i);
+      if (print_all || print_kinetic_1der) {
+        @^print_options@> @.print_kinetic_1der@> @.print_all@>
+        int index2 = 0;
+        index = 0;
+        fprintf(fp,"The one electron derivatives for center %d:\n",i);
+        for (k=0; k<isz; k++) {
+          for (l=0; l<jsz; l++) {
+            fprintf(fp," %d %d %d %d %12.8lf %12.8lf %12.8lf  %12.8lf\n",
+                    ish,jsh,k,l,
+                    oneebuff[index],oneebuff[index+1],oneebuff[index+2],
+                    Pblock[index2]);
+            index += 3;
+            index2++;
+            }
+          }
+        }
+      for (k=0; k<3; k++) fxyz.d[k] = 0.0;
+      index = 0;
+      for (k=0; k<ijsz; k++) {
+        for (l=0; l<3; l++) {
+          fxyz.d[l] += oneebuff[index] * Pblock[k];
+          index++;
+          }
+        }
+      if (ish != jsh) {
+        for (k=0; k<3; k++) fxyz.d[k] *= 2.0;
+        }
+      for (k=0; k<3; k++) finter.d[k][i] += fxyz.d[k];
+      }
+    }
+
+  /* Sum up all of the node's forces. */
+  sum_forces(&finter);
+
+  /* Sum the intermediate forces into the total forces. */
+  if (master) {
+    add_double_matrix(f,0,f->n1,0,f->n2, &finter,0,f->n1,0,f->n2);
+    }
+
+  if (print && master) {
+    fprintf(fp,"The one electron contribution:\n");
+    for (i=0; i<centers->n; i++) {
+      fprintf(fp,GradientFormat,i,finter.d[0][i],finter.d[1][i],finter.d[2][i]);
+      }
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+}
+
+@
+@<Compute the overlap contribution to the gradients.@>=
+{
+  int i,j;
+  int k,l;
+  int ish,jsh,isz,jsz,ijsz;
+  int index;
+  int print = (print_overlap_1der||print_all_1der);
+  double *Wblock;
+  @^print options@> @.print_overlap_1der@> @.print_all_1der@>
+
+  fill_double_matrix(&finter,0,finter.n1,0,finter.n2, 0.0);
+
+  for (i=0; i<centers->n; i++) {
+    for (j=0; j<nlocal; j++) {
+      dmt_get_block_dsc(W,j,&ish,&isz,&jsh,&jsz,&Wblock);
+      ijsz = isz*jsz;
+      int_shell_overlap_1der(centers,centers,oneebuff,ish,jsh,centers,i);
+      if (print_all || print_overlap_1der) {
+        @^print_options@> @.print_overlap_1der@> @.print_all@>
+        int index2 = 0;
+        index = 0;
+        fprintf(fp,"The one electron derivatives for center %d:\n",i);
+        for (k=0; k<isz; k++) {
+          for (l=0; l<jsz; l++) {
+            fprintf(fp," %d %d %d %d %12.8lf %12.8lf %12.8lf  %12.8lf\n",
+                    ish,jsh,k,l,
+                    oneebuff[index],oneebuff[index+1],oneebuff[index+2],
+                    Wblock[index2]);
+            index += 3;
+            index2++;
+            }
+          }
+        }
+      for (k=0; k<3; k++) fxyz.d[k] = 0.0;
+      index = 0;
+      for (k=0; k<ijsz; k++) {
+        for (l=0; l<3; l++) {
+          fxyz.d[l] += oneebuff[index] * Wblock[k];
+          index++;
+          }
+        }
+      if (ish != jsh) {
+        for (k=0; k<3; k++) fxyz.d[k] *= 2.0;
+        }
+      for (k=0; k<3; k++) finter.d[k][i] += fxyz.d[k];
+      }
+    }
+
+  /* Sum up all of the node's forces. */
+  sum_forces(&finter);
+
+  /* Sum the intermediate forces into the total forces. */
+  if (master) {
+    add_double_matrix(f,0,f->n1,0,f->n2, &finter,0,f->n1,0,f->n2);
+    }
+
+  if (print && master) {
+    fprintf(fp,"The overlap energy contribution:\n");
+    for (i=0; i<centers->n; i++) {
+      fprintf(fp,GradientFormat,i,finter.d[0][i],finter.d[1][i],finter.d[2][i]);
+      }
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+}
+
+@ The two electron contribution to the gradients is computed by passing
+blocks of the density matrix around the loop of processors.  After each
+processor receives a new block it examines the locally held blocks of
+the density matrix to see if it needs to form the contributions
+$P^{local}_{ij} P^{loop}_{kl} (ij \vert kl)$,
+$P^{local}_{ij} P^{loop}_{kl} (ik \vert jl)$,
+and possibly
+$P^{local}_{ij} P^{loop}_{kl} (il \vert jk)$.
+Note that doing things in this way requires that the density matrix only get
+passed around the loop one time, but it forces us to reevaluate the integrals
+two to three (closer to three) times.
+
+@<Compute the two electron contribution to the gradients.@>=
+{
+  int i,j;
+  int iloop,ilocal,jloop,jlocal;
+  int iszloop,iszlocal,jszloop,jszlocal;
+  int g,gi,gj,gk,gl,gij,gkl,gijkl;
+  int ij,kl,ijkl,nijkl;
+  int leavel;
+  int nlocal = dmt_nlocal(P);
+  int use_symmetry=(sym_info->g > 1);
+  loop_t *loop;
+  double *Pthres;
+  double qijkl=1.0;
+  double *Ploop,*Plocal;
+  int_bound_t bound_4;
+  int_bound_t bound_1der;
+  int print = (print_2e_1der||print_all_1der);
+  @^print options@> @.print_2e_1der@> @.print_all_1der@>
+
+  if (bounds) bound_4 = int_bound_log(4.0);
+  if (bounds) bound_1der = int_erep_0bound_1der();
+
+  fill_double_matrix(&finter,0,finter.n1,0,finter.n2, 0.0);
+
+  if (bounds) {
+    /* Use thresholds for the formation of the density loop to avoid
+     * uneeded communication. */
+    Pthres = (double*) malloc(sizeof(double)*nlocal);
+    if (!Pthres) {
+      fprintf(fp,"libforce/mpcsscf Pthres couldn't be allocated\n");
+      exit(1);
+      }
+    for (i=0; i<nlocal; i++) {
+      Pthres[i] = int_bound_double(((int)threshold)-bound_4-bound_1der-Pmax);
+      }
+    if (sparse) {
+      loop = dmt_ngl_create("%smrt",P,Pthres);
+      }
+    else {
+      loop = dmt_ngl_create("%mr",P);
+      }
+    free(Pthres);
+    }
+  else {
+    if (sparse) {
+      loop = dmt_ngl_create("%smr",P);
+      }
+    else {
+      loop = dmt_ngl_create("%mr",P);
+      }
+    }
+  while(dmt_ngl_next(loop)) {
+    dmt_ngl_create_inner(loop,0);
+    while(dmt_ngl_next_inner_m(loop,&iloop,&iszloop,&jloop,&jszloop,&Ploop)) {
+      for (j=0; j<nlocal; j++) {
+        dmt_get_block_dsc(P,j,&ilocal,&iszlocal,&jlocal,&jszlocal,&Plocal);
+        if(use_symmetry) {
+        /* is I in the group P1? */
+          if(!sym_info->p1[ilocal]) continue;
+
+        /* is IJ in the group P2? */
+          ij=IOFF(ilocal,jlocal);
+          if(!sym_info->lamij[ij]) continue;
+
+        /* is IJKL in the group P4? */
+          kl=IOFF(iloop,jloop);
+          ijkl=IOFF(ij,kl);
+          nijkl=leavel=0;
+          for(g=0; g < sym_info->g ; g++) {
+            gi = sym_info->shell_map[ilocal][g];
+            gj = sym_info->shell_map[jlocal][g];
+            gk = sym_info->shell_map[iloop][g];
+            gl = sym_info->shell_map[jloop][g];
+            gij = IOFF(gi,gj);
+            gkl = IOFF(gk,gl);
+            gijkl = IOFF(gij,gkl);
+            if(gijkl > ijkl) leavel=1;
+            if(gijkl == ijkl) nijkl++;
+            }
+          if(leavel) continue;
+          qijkl = (double) sym_info->g/nijkl;
+          }
+        @<Continue if the local and loop blocks are redundant.@> @;@/
+        @<Two electron contribution from local and loop density.@> @;@/
+        }
+      }
+    }
+  dmt_ngl_kill(loop);
+
+  /* Sum up all of the nodes' forces. */
+  sum_forces(&finter);
+
+  /* symmetrize the 2-electron contribution to the gradient */
+  if(use_symmetry) {
+    @<Symmetrize the 2-electron contribution to the gradients.@> @;@/
+    }
+
+  /* Sum the intermediate forces into the total forces. */
+  if (master) {
+    add_double_matrix(f,0,f->n1,0,f->n2, &finter,0,f->n1,0,f->n2);
+    }
+
+  if (print && master) {
+    fprintf(fp,"The two electron contribution:\n");
+    for (i=0; i<centers->n; i++) {
+      fprintf(fp,GradientFormat,i,finter.d[0][i],finter.d[1][i],finter.d[2][i]);
+      }
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+}
+
+@ This prevents redundant contributions from being considered.  They are
+implicitly considered by determining a scale factor for the gradients, the
+code for which can be found in the <Two electron contribution from local and
+loop density.> section.
+@<Continue if the local and loop blocks are redundant.@>=
+{
+  if (ilocal < iloop) continue;
+  if ((ilocal==iloop)&&(jlocal<jloop)) continue;
+}
+
+@ This first determines a scale factor for the gradient contributions.
+The scale factor depends on the shell equivalence information, because
+redundant contributions are not considered (see the <Continue
+if the local and loop blocks are redundant.> section).
+@<Two electron contribution from local and loop density.@>=
+{
+  double coulombscale,exchangescale;
+
+  if ((ilocal < jlocal)||(iloop < jloop)) {
+    printf("assumed ordering of indices is wrong (mpcsscf.web)\n");
+    exit(1);
+    }
+
+  set_scale(&coulombscale,&exchangescale,ilocal,jlocal,iloop,jloop);
+
+  @<The coulomb contribution.@> @;@/
+  @<The first exchange contribution.@> @;@/
+  if ((iloop != jloop)&&(ilocal != jlocal)) {
+    @<The second exchange contribution.@> @;@/
+    }
+}
+
+@ This contributes terms like $P^{local}_{ij} P^{loop}_{kl} (ij \vert kl)$.
+@<The coulomb contribution.@>=
+{
+  int i,j,k,l;
+  int indexij,indexkl,indexijkl;
+  der_centers_t dercenters;
+  int derset;
+  int xyz;
+  double contrib;
+
+  TENTER("erep");
+  int_erep_all1der(INT_EREP|INT_REDUND|INT_NOPERM,
+                   &ilocal,&jlocal,&iloop,&jloop,
+                   &dercenters);
+  TEXIT("erep");
+
+  indexijkl = 0;
+  for (derset=0; derset<dercenters.n; derset++) {
+    for (xyz=0; xyz<3; xyz++) {
+      indexij = 0;
+      for (i=0; i<iszlocal; i++) {
+        for (j=0; j<jszlocal; j++) {
+          indexkl = 0;
+          for (k=0; k<iszloop; k++) {
+            for (l=0; l<jszloop; l++) {
+              contrib =  coulombscale * ints[indexijkl] * qijkl
+                       * Plocal[indexij] * Ploop[indexkl];
+              if (contrib > 0.00001 || contrib < -0.00001) {
+#ifdef PRINTCONTRIBS
+                printf("co %d %d  %d %d %d %d :  % 12.8lf % 12.8lf (% 12.8lf * %4.1lf)\n",
+                       xyz, dercenters.num[derset],
+                       centers->func_num[ilocal] + i,
+                       centers->func_num[jlocal] + j,
+                       centers->func_num[iloop] + k,
+                       centers->func_num[jloop] + l,
+                       coulombscale * Plocal[indexij] * Ploop[indexkl],
+                       ints[indexijkl],
+                       0.5 * Plocal[indexij] * Ploop[indexkl],
+                       coulombscale * 2.0);
+#endif
+                }
+              finter.d[xyz][dercenters.num[derset]] += contrib;
+              finter.d[xyz][dercenters.onum] -= contrib;
+              indexijkl++;
+              indexkl++;
+              }
+            }
+          indexij++;
+          }
+        }
+      }
+    }
+          
+}
+
+@ This contributes terms like $P^{local}_{ij} P^{loop}_{kl} (ik \vert jl)$.
+@<The first exchange contribution.@>=
+{
+  int i,j,k,l;
+  int indexij,indexkl,indexikjl;
+  der_centers_t dercenters;
+  int derset;
+  int xyz;
+  double contrib;
+
+  TENTER("erep");
+  int_erep_all1der(INT_EREP|INT_REDUND|INT_NOPERM,
+                   &ilocal,&iloop,&jlocal,&jloop,
+                   &dercenters);
+  TEXIT("erep");
+
+  for (derset=0; derset<dercenters.n; derset++) {
+    for (xyz=0; xyz<3; xyz++) {
+      indexij = 0;
+      for (i=0; i<iszlocal; i++) {
+        for (j=0; j<jszlocal; j++) {
+          indexkl = 0;
+          for (k=0; k<iszloop; k++) {
+            indexikjl = jszloop*(jszlocal*(iszloop*(iszlocal*(3*(derset)+xyz) + i) + k) + j);
+            for (l=0; l<jszloop; l++) {
+              contrib =  exchangescale * ints[indexikjl] * qijkl
+                       * Plocal[indexij] * Ploop[indexkl];
+              if (contrib > 0.00001 || contrib < -0.00001) {
+#ifdef PRINTCONTRIBS
+                printf("e1 %d %d  %d %d %d %d :  % 12.8lf % 12.8lf (% 12.8lf * %4.1lf)\n",
+                       xyz, dercenters.num[derset],
+                       centers->func_num[ilocal] + i,
+                       centers->func_num[jlocal] + j,
+                       centers->func_num[iloop] + k,
+                       centers->func_num[jloop] + l,
+                       exchangescale * Plocal[indexij] * Ploop[indexkl],
+                       ints[indexikjl],
+                       0.25 * Plocal[indexij] * Ploop[indexkl],
+                       - exchangescale * 4.0);
+#endif
+                }
+              finter.d[xyz][dercenters.num[derset]] += contrib;
+              finter.d[xyz][dercenters.onum] -= contrib;
+              indexikjl++;
+              indexkl++;
+              }
+            }
+          indexij++;
+          }
+        }
+      }
+    }
+          
+}
+
+@ This contributes terms like $P^{local}_{ij} P^{loop}_{kl} (il \vert jk)$.
+@<The second exchange contribution.@>=
+{
+  int i,j,k,l;
+  int indexij,indexkl,indexiljk;
+  der_centers_t dercenters;
+  int derset;
+  int xyz;
+  double contrib;
+
+  TENTER("erep");
+  int_erep_all1der(INT_EREP|INT_REDUND|INT_NOPERM,
+                   &ilocal,&jloop,&jlocal,&iloop,
+                   &dercenters);
+  TEXIT("erep");
+
+  for (derset=0; derset<dercenters.n; derset++) {
+    for (xyz=0; xyz<3; xyz++) {
+      indexij = 0;
+      for (i=0; i<iszlocal; i++) {
+        for (j=0; j<jszlocal; j++) {
+          indexkl = 0;
+          for (k=0; k<iszloop; k++) {
+            for (l=0; l<jszloop; l++) {
+              indexiljk = iszloop*(jszlocal*(jszloop*(iszlocal*(3*(derset)+xyz) + i) + l) + j) + k;
+              contrib =  exchangescale * ints[indexiljk] * qijkl
+                       * Plocal[indexij] * Ploop[indexkl];
+              if (contrib > 0.00001 || contrib < -0.00001) {
+#ifdef PRINTCONTRIBS
+                printf("e2 %d %d  %d %d %d %d :  % 12.8lf % 12.8lf (% 12.8lf * %4.1lf)\n",
+                       xyz, dercenters.num[derset],
+                       centers->func_num[ilocal] + i,
+                       centers->func_num[jlocal] + j,
+                       centers->func_num[iloop] + k,
+                       centers->func_num[jloop] + l,
+                       exchangescale * Plocal[indexij] * Ploop[indexkl],
+                       ints[indexiljk],
+                       0.25 * Plocal[indexij] * Ploop[indexkl],
+                       - exchangescale * 4.0);
+#endif
+                }
+              finter.d[xyz][dercenters.num[derset]] += contrib;
+              finter.d[xyz][dercenters.onum] -= contrib;
+              indexkl++;
+              }
+            }
+          indexij++;
+          }
+        }
+      }
+    }
+}
+
+@ If the user sets to |"local_P"| input flag to true, then a local copy of
+the density matrix is used to compute the two electron contribution to
+the gradients.  This will eliminate the redundant evaluation of the
+two electron derivative integrals that is required when the density matrix
+is kept on the loop at the expense of requiring enough memory on each node
+to hold the entire density matrix.
+@<Compute the two electron contribution to the gradients with local P.@>=
+{
+  int i,j,k,l, l_end;
+  int g,gi,gj,gk,gl,gij,gkl,gijkl;
+  int ij,kl,ijkl,nijkl;
+  int leavel;
+  int use_symmetry=(sym_info->g > 1);
+  double qijkl=1.0;
+  int int_index;
+  double **localP;
+  int nshell = dmt_nblocks(P);
+  int print = (print_2e_1der||print_all_1der);
+  @^print options@> @.print_2e_1der@> @.print_all_1der@>
+
+  @<Allocate storage for localP.@> @;@/
+
+  /* Copy the density, P, to localP. */
+  dmt_mdescr_to_local_s(P,localP);
+
+  fill_double_matrix(&finter,0,finter.n1,0,finter.n2, 0.0);
+
+  /* Canonically loop thru the integrals. */
+  int_index = 0;
+  for (i=0; i<nshell; i++) {
+   /* is I in the group P1? */
+    if(use_symmetry) if(!sym_info->p1[i]) continue;
+    for (j=0; j<=i; j++) {
+   /* is IJ in the group P2? */
+      if(use_symmetry) {
+        ij=IOFF(i,j);
+        if(!sym_info->lamij[ij]) continue;
+        }
+   /* Will this choice of i and j contribute? */
+#if 0
+      printf("testing on (%d,%d): %d + %d < %d?\n",
+             i,j,int_erep_2bound_1der(i,j),PPmax,threshold);
+#endif
+      if (bounds && (int_erep_2bound_1der(i,j)+PPmax < threshold)) continue;
+      for (k=0; k<=i; k++) {
+        if (k==i) l_end = j;
+        else      l_end = k;
+        for (l=0; l<=l_end; l++,int_index++) {
+          qijkl=1.0;
+          if (int_index%nproc == me) {
+          /* Will this i, j, k, l contribute? */
+#if 0
+            printf("testing on (%d,%d,%d,%d): %d + %d < %d?\n",
+                   i,j,k,l,int_erep_4bound_1der(i,j,k,l),PPmax,threshold);
+#endif
+            if (bounds && (int_erep_4bound_1der(i,j,k,l)+PPmax < threshold))
+              continue;
+          /* is IJKL in the group P4? */
+            if(use_symmetry) {
+              kl=IOFF(k,l);
+              ijkl=IOFF(ij,kl);
+              nijkl=leavel=0;
+              for(g=0; g < sym_info->g ; g++) {
+                gi = sym_info->shell_map[i][g];
+                gj = sym_info->shell_map[j][g];
+                gk = sym_info->shell_map[k][g];
+                gl = sym_info->shell_map[l][g];
+                gij = IOFF(gi,gj);
+                gkl = IOFF(gk,gl);
+                gijkl = IOFF(gij,gkl);
+                if(gijkl > ijkl) leavel=1;
+                if(gijkl == ijkl) nijkl++;
+                }
+              if(leavel) continue;
+              qijkl = (double) sym_info->g/nijkl;
+              }
+
+            @<Include all two electron contributions from this i,j,k,l.@> @;@/
+            }
+          }
+        }
+      }
+    }
+
+  @<Free storage for localP.@> @;@/
+
+  /* Sum up all of the nodes' forces. */
+  sum_forces(&finter);
+
+  /* symmetrize the 2-electron contribution to the gradient */
+  if(use_symmetry) {
+    @<Symmetrize the 2-electron contribution to the gradients.@> @;@/
+    }
+
+  /* Sum the intermediate forces into the total forces. */
+  if (master) {
+    add_double_matrix(f,0,f->n1,0,f->n2, &finter,0,f->n1,0,f->n2);
+    }
+
+  if (print && master) {
+    fprintf(fp,"The two electron contribution:\n");
+    for (i=0; i<centers->n; i++) {
+      fprintf(fp,GradientFormat,i,finter.d[0][i],finter.d[1][i],finter.d[2][i]);
+      }
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+}
+
+@ This takes the ``skeleton'' gradient held in |finter|, and performs
+the symmetrization
+$$
+E^{h}_{\alpha} = g^{-1} \sum_{R} \sum_{h'} E^{*h'}_{\alpha'} R(1,h',h)
+$$
+(see Dupuis and King, J. Chem. Phys. {\bf68} 3998(1978)).
+
+@<Symmetrize the 2-electron contribution to the gradients.@>=
+{
+    int alpha,ap;
+    int nat=sym_info->natom;
+    double_matrix_t fsym;
+
+    allocbn_double_matrix(&fsym,"n1 n2",3,nat);
+    zero_double_matrix(&fsym);
+
+    if(print && master) {
+      for (i=0; i<centers->n; i++)
+      fprintf(fp,GradientFormat,i,finter.d[0][i],finter.d[1][i],finter.d[2][i]);
+      }
+
+    for(alpha=0; alpha < nat; alpha++) {
+      for(g=0; g < sym_info->g ; g++) {
+        ap=sym_info->atom_map[alpha][g];
+     /* x,y,and z are part of an enum defined in libsymv2/symm\_mac.h */
+        fsym.d[0][alpha] += finter.d[0][ap]*sym_info->Rp[g][x][x]
+                          + finter.d[1][ap]*sym_info->Rp[g][x][y]
+                          + finter.d[2][ap]*sym_info->Rp[g][x][z];
+
+        fsym.d[1][alpha] += finter.d[0][ap]*sym_info->Rp[g][y][x]
+                          + finter.d[1][ap]*sym_info->Rp[g][y][y]
+                          + finter.d[2][ap]*sym_info->Rp[g][y][z];
+
+        fsym.d[2][alpha] += finter.d[0][ap]*sym_info->Rp[g][z][x]
+                          + finter.d[1][ap]*sym_info->Rp[g][z][y]
+                          + finter.d[2][ap]*sym_info->Rp[g][z][z];
+        }
+      fsym.d[0][alpha] /= (double)sym_info->g;
+      fsym.d[1][alpha] /= (double)sym_info->g;
+      fsym.d[2][alpha] /= (double)sym_info->g;
+      }
+
+    free_double_matrix(&finter);
+    init_double_matrix(&finter);
+    assign_double_matrix(&finter,&fsym);
+    free_double_matrix(&fsym);
+}
+
+@ @<Allocate storage for localP.@>=
+{
+  int i;
+  double *row;
+  int size = (nao*(nao+1))>>1;
+  localP = (double **) malloc(sizeof(double*)*nao);
+  row = (double *) malloc(sizeof(double)*size);
+  for (i=0; i<nao; i++) {
+    localP[i] = row;
+    row = &row[i+1];
+    }
+}
+
+@ @<Free storage for localP.@>=
+{
+  free(localP[0]);
+  free(localP);
+}
+
+
+@ @<Include all two electron contributions from this i,j,k,l.@>=
+{
+  int derset, xyz;
+  int ip,jp,kp,lp;
+  int io,jo,ko,lo;
+  der_centers_t dercenters;
+  int sh[4];
+  int sz[4];
+  int indexijkl;
+  double exchangescale,coulombscale;
+
+  sh[0] = i; sh[1] = j; sh[2] = k; sh[3] = l;
+
+  /* Compute the integrals. */
+  TENTER("erep");
+  int_erep_all1der_v(INT_EREP|INT_REDUND|INT_NOPERM,
+                   sh,sz,&dercenters);
+  TEXIT("erep");
+
+  set_scale(&coulombscale,&exchangescale,i,j,k,l);
+
+  indexijkl=0;
+  for (derset=0; derset < dercenters.n; derset++) {
+    for (xyz=0; xyz<3; xyz++) {
+      for (ip=0; ip<sz[0]; ip++) {
+        io = ip + centers->func_num[i];
+        for (jp=0; jp<sz[1]; jp++) {
+          jo = jp + centers->func_num[j];
+          for (kp=0; kp<sz[2]; kp++) {
+            ko = kp + centers->func_num[k];
+            for (lp=0; lp<sz[3]; lp++) {
+              lo = lp + centers->func_num[l];
+              @<The coulomb contribution from localP.@> @;@/
+              @<The first exchange contribution from localP.@> @;@/
+              if (i!=j && k!=l) {
+                @<The second exchange contribution from localP.@> @;@/
+                }
+              indexijkl++;
+              }
+            }
+          }
+        }
+      }
+    }
+}
+
+@ This contributes terms like $P_{ij} P_{kl} (ij \vert kl)$.
+@<The coulomb contribution from localP.@>=
+{
+  double contrib;
+  int ioP,joP,koP,loP;
+  if (jo>io) { ioP = jo; joP = io; }
+  else       { ioP = io; joP = jo; }
+  if (lo>ko) { koP = lo; loP = ko; }
+  else       { koP = ko; loP = lo; }
+  contrib = coulombscale * ints[indexijkl] * qijkl *
+            localP[ioP][joP] * localP[koP][loP];
+  finter.d[xyz][dercenters.num[derset]] += contrib;
+  finter.d[xyz][dercenters.onum] -= contrib;
+}
+
+@ This contributes terms like $P_{ik} P_{jl} (ij \vert kl)$.
+@<The first exchange contribution from localP.@>=
+{
+  double contrib;
+  int ioP,joP,koP,loP;
+  if (ko>io) { ioP = ko; koP = io; }
+  else       { ioP = io; koP = ko; }
+  if (lo>jo) { joP = lo; loP = jo; }
+  else       { joP = jo; loP = lo; }
+  contrib = exchangescale * ints[indexijkl] * qijkl *
+            localP[ioP][koP] * localP[joP][loP];
+  finter.d[xyz][dercenters.num[derset]] += contrib;
+  finter.d[xyz][dercenters.onum] -= contrib;
+}
+
+@ This contributes terms like $P_{il} P_{jk} (ij \vert kl)$.
+@<The second exchange contribution from localP.@>=
+{
+  double contrib;
+  int ioP,joP,koP,loP;
+  if (lo>io) { ioP = lo; loP = io; }
+  else       { ioP = io; loP = lo; }
+  if (ko>jo) { joP = ko; koP = jo; }
+  else       { joP = jo; koP = ko; }
+  contrib = exchangescale * ints[indexijkl] * qijkl *
+            localP[ioP][loP] * localP[joP][koP];
+  finter.d[xyz][dercenters.num[derset]] += contrib;
+  finter.d[xyz][dercenters.onum] -= contrib;
+}
+
+
+@
+@<Print out the results.@>=
+{
+  int i;
+
+  fprintf(fp,"The total gradient:\n");
+  for (i=0; i<centers->n; i++) {
+    fprintf(fp,GradientFormat,i,f->d[0][i],f->d[1][i],f->d[2][i]);
+    }
+  fprintf(fp,"\n");
+}
+
+@* The local functions.
+
+@ Only unique contributions to the derivatives are computed.  To account
+for the redundant contributions that have been ommitted a scale factor
+must be determined for the exchange and the coulomb contributions.
+This routine examines the indices |i|, |j|, |k|, and |l| to determine
+scale values which are written to the memory locations pointed to
+by |coulombscale| and |exchangescale|.
+@<Local functions.@>=
+LOCAL_FUNCTION VOID
+set_scale(coulombscale,exchangescale,i,j,k,l)
+double *coulombscale;
+double *exchangescale;
+int i;
+int j;
+int k;
+int l;
+{
+  double scale = 1.0;
+  if ((i != k)||(j != l)) scale *= 2.0;
+  if (i != j) scale *= 2.0;
+  *coulombscale = 0.5 * scale;
+  *exchangescale = -0.25 * scale;
+  if (k != l) *coulombscale *= 2.0;
+  if ((k != l)&&(i == j)) *exchangescale *= 2.0;
+}
+
+@ This uses the input parsing routines to get values on node 0 and
+then calls bcast0 to let all the nodes know the values.
+@<Local functions.@>=
+LOCAL_FUNCTION VOID
+read_and_bcast_boolean(name,boolval)
+char *name;
+int *boolval;
+{
+  int errcod;
+  if (mynode0()==0) errcod = ip_boolean(name,boolval,0);
+  bcast0(boolval,sizeof(int),mtype_get(),0);
+  if (mynode0()==0) fprintf(fp,"  :force:%s = %d\n",name,*boolval);
+}
+
+@ This is the int version of |read_and_bcast_boolean|.
+@<Local functions.@>=
+LOCAL_FUNCTION VOID
+read_and_bcast_int(name,intval)
+char *name;
+int *intval;
+{
+  int errcod;
+  if (mynode0()==0) errcod = ip_data(name,"%d",intval,0);
+  bcast0(intval,sizeof(int),mtype_get(),0);
+  if (mynode0()==0) fprintf(fp,"  :force:%s = %d\n",name,*intval);
+}
+
+@ This takes the partial forces array on all nodes and sums them
+into the forces array on node 0.
+@<Local functions.@>=
+LOCAL_FUNCTION VOID
+sum_forces(f)
+double_matrix_t *f;
+{
+  int i;
+
+  for (i=0; i<f->n1; i++) {
+    gsum0(f->d[i],f->n2,5,mtype_get(),0);
+    }
+  }

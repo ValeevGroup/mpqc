@@ -1,0 +1,113 @@
+
+// $Log$
+// Revision 1.1  1993/12/29 12:53:29  etseidl
+// Initial revision
+//
+// Revision 1.2  1992/03/17  20:37:04  seidl
+// fix comments
+//
+// Revision 1.1.1.1  1992/03/17  16:35:26  seidl
+// DOE-NIH Quantum Chemistry Library 0.0
+//
+// Revision 1.4  1992/01/09  12:06:41  seidl
+// add send0 and recv0 modules
+//
+// Revision 1.3  1991/12/24  12:37:47  seidl
+// fix comments!
+//
+// Revision 1.2  1991/12/24  12:36:16  seidl
+// add iseq, assign, and zero modules
+//
+// Revision 1.1  1991/12/20  16:01:42  seidl
+// Initial revision
+//
+// Revision 1.3  91/12/02  17:14:15  cljanss
+// generate the fread and fwrite modules
+//
+// Revision 1.2  91/08/08  22:34:35  cljanss
+// the new default_modules statement has been added
+//
+// Revision 1.1  1991/06/19  14:44:23  janssen
+// Initial revision
+//
+
+default_modules(ip free alloc bread bwrite print init bcast0 rbcast0 sbcast0
+                fread fwrite iseq assign zero send0 recv0);
+
+doublep_array4 {
+  int n1;
+  int n2;
+  int n3;
+  int n4;
+  double *dp[n1][n2][n3][n4];
+  };
+
+double_array4 {
+  int n1;
+  int n2;
+  int n3;
+  int n4;
+  double d[n1][n2][n3][n4];
+  };
+
+int_array4 {
+  int n1;
+  int n2;
+  int n3;
+  int n4;
+  int i[n1][n2][n3][n4];
+  };
+
+doublep_array3 {
+  int n1;
+  int n2;
+  int n3;
+  double *dp[n1][n2][n3];
+  };
+
+double_array3 {
+  int n1;
+  int n2;
+  int n3;
+  double d[n1][n2][n3];
+  };
+
+int_array3 {
+  int n1;
+  int n2;
+  int n3;
+  int i[n1][n2][n3];
+  };
+
+doublep_matrix {
+  int n1;
+  int n2;
+  double *dp[n1][n2];
+  };
+
+double_matrix {
+  int n1;
+  int n2;
+  double d[n1][n2];
+  };
+
+int_matrix {
+  int n1;
+  int n2;
+  int i[n1][n2];
+  };
+
+doublep_vector {
+  int n;
+  double *dp[n];
+  };
+
+double_vector {
+  int n;
+  double d[n];
+  };
+
+int_vector {
+  int n;
+  int i[n];
+  };

@@ -1,0 +1,37 @@
+   ReadMe file for newmat07, an experimental matrix package in C++.
+
+
+Documentation is in  newmata.txt, newmatb.txt and newmatc.txt.
+
+This is a minor upgrade on newmat06 to correct some errors, improve
+efficiency and improve compatibility with a range of compilers. It
+includes some new FFT functions and an option for allowing C style
+subscripts. You should upgrade from newmat06. If you are using << to
+load a real into a submatrix please change this to =.
+
+
+If you are upgrading from newmat03 or newmat04 note the following
+
+.hxx files are now .h files
+
+real changed to Real
+
+BOOL changed to Boolean
+
+CopyToMatrix changed to AsMatrix, etc
+
+real(A) changed to A.AsScalar()
+
+option added in include.h for version 2.1 or later
+
+added band matrices
+
+added exceptions.
+
+
+Newmat07 is quite a bit longer that newmat04, so if you are almost out of
+space with newmat04, don't throw newmat04 away until you have checked your
+program will work under newmat07.
+
+
+See the section on changes in newmata.txt for other changes.

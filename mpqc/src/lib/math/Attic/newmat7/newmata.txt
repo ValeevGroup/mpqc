@@ -1,0 +1,1381 @@
+//$$ newmata.txt                                   Documentation file
+
+
+   Documentation for newmat07, an experimental matrix package in C++.
+   ==================================================================
+
+
+MATRIX PACKAGE                                          1 January, 1993
+
+Copyright (C) 1991,2,3: R B Davies
+
+Permission is granted to use but not to sell.
+
+
+Contents
+========
+
+General description
+Is this the package you need?
+Changes
+Where you can get a copy of this package
+Compiler performance
+Example
+Detailed documentation
+   Customising
+   Constructors
+   Elements of matrices
+   Matrix copy
+   Entering values
+   Unary operators
+   Binary operators
+   Combination of a matrix and scalar
+   Scalar functions of matrices
+   Submatrix operations
+   Change dimensions
+   Change type
+   Multiple matrix solve
+   Memory management
+   Efficiency
+   Output
+   Accessing matrices of unspecified type
+   Cholesky decomposition
+   Householder triangularisation
+   Singular Value Decomposition
+   Eigenvalues
+   Sorting
+   Fast Fourier Transform
+   Interface to Numerical Recipes in C
+   Exceptions
+   Clean up following an exception
+List of files
+Problem report form
+
+
+---------------------------------------------------------------------------
+
+
+General description
+===================
+
+The package is intented for scientists and engineers who need to
+manipulate a variety of types of matrices using standard matrix
+operations. Emphasis is on the kind of operations needed in statistical
+calculations such as least squares, linear equation solve and
+eigenvalues.
+
+It supports matrix types
+
+    Matrix                       (rectangular matrix)
+    nricMatrix                   (variant of rectangular matrix)
+    UpperTriangularMatrix
+    LowerTriangularMatrix
+    DiagonalMatrix
+    SymmetricMatrix
+    BandMatrix
+    UpperBandMatrix              (upper triangular band matrix)
+    LowerBandMatrix              (lower triangular band matrix)
+    SymmetricBandMatrix
+    RowVector                    (derived from Matrix)
+    ColumnVector                 (derived from Matrix).
+
+Only one element type (float or double) is supported.
+
+The package includes the operations *, +, -, inverse, transpose,
+conversion between types, submatrix, determinant, Cholesky
+decomposition, Householder triangularisation, singular value
+decomposition, eigenvalues of a symmetric matrix, sorting, fast fourier
+transform, printing and an interface with "Numerical Recipes in C".
+
+It is intended for matrices in the range 15 x 15 to the maximum size
+your machine will accomodate in a single array. For example 90 x 90 (125
+x 125 for triangular matrices) in machines that have 8192 doubles as the
+maximum size of an array. The number of elements in an array cannot
+exceed the maximum size of an "int". The package will work for very
+small matrices but becomes rather inefficient.
+
+A two-stage approach to evaluating matrix expressions is used to improve
+efficiency and reduce use of temporary storage.
+
+The package is designed for version 2 or 3 of C++. It works with Borland
+(3.1) and Microsoft (7.0) C++ on a PC and AT&T C++ (2.1 & 3) and Gnu C++
+(2.2). It works with some problems with Zortech C++ (version 3.04).
+
+
+---------------------------------------------------------------------------
+
+
+Is this the package you need?
+=============================
+
+Do you
+
+1.   need matrix operators such as * and + defined as operators so you
+     can write things like
+
+        X  = A * (B + C);
+
+2.   need a variety of types of matrices
+
+3.   need only one element type (float or double)
+
+4.   work with matrices in the range 10 x 10 up to what can be stored in
+     one memory block
+
+5.   tolerate a large package
+
+
+Then maybe this is the right package for you. 
+
+If you don't need (1) then there may be better options. Likewise if you
+don't need (2) there may be better options. If you require "not (5)"
+then this is not the package for you.
+
+
+If you need (2) and "not (3)" and have some spare money, then maybe you
+should look at M++ from Dyad [phone in the USA (800)366-1573,
+(206)637-9427, fax (206)637-9428], or the Rogue Wave matrix package
+[(800)487-3217, (503)754-3010, fax (503)757-6650].
+
+
+If you need not (4); that is very large matrices that will need to be
+stored on disk, there is a package YAMP on CompuServe under the Borland
+C++ library that might be of interest.
+
+
+Details of some other free C or C++ matrix packages follow - extracted
+from the list assembled by ajayshah@usc.edu.
+
+Name: SPARSE
+Where: in sparse on Netlib
+Description: library for LU factorisation for large sparse matrices 
+Author: Ken Kundert, Alberto Sangiovanni-Vincentelli,
+     sparse@ic.berkeley.edu
+
+Name: matrix.tar.Z
+Where: in ftp-raimund/pub/src/Math on nestroy.wu-wien.ac.at
+     (137.208.3.4)
+Author: Paul Schmidt, TI
+Description: Small matrix library, including SOR, WLS
+
+Name: matrix04.zip
+Where: in mirrors/msdos/c on wuarchive.wustl.edu
+Description: Small matrix toolbox
+
+Name: Matrix.tar.Z
+Where: in pub ftp.cs.ucla.edu
+Description: The C++ Matrix class, including a matrix implementation of
+     the backward error propagation (backprop) algorithm for training
+     multi-layer, feed-forward artificial neural networks
+Author: E. Robert (Bob) Tisdale, edwin@cs.ucla.edu
+
+Name: meschach
+Where: in c/meschach on netlib
+Systems: Unix, PC
+Description: a library for matrix computation; more functionality than
+     Linpack; nonstandard matrices
+Author: David E. Stewart, des@thrain.anu.edu.au
+Version: 1.0, Feb 1992
+
+Name: nlmdl
+Where: in pub/arg/nlmdl at ccvr1.cc.ncsu.edu (128.109.212.20)
+Language: C++
+Systems: Unix, MS-DOS (Turbo C++)
+Description: a library for estimation of nonlinear models
+Author: A. Ronald Gallant, arg@ccvr1.cc.ncsu.edu
+Comments: nonlinear maximisation, estimation, includes a real matrix
+     class
+Version: January 1991
+
+
+
+---------------------------------------------------------------------------
+
+
+Changes
+=======
+
+Newmat07 - January, 1993
+
+Minor corrections to improve compatibility with Zortech, Microsoft and
+Gnu. Correction to exception module. Additional FFT functions. Some
+minor increases in efficiency. Submatrices can now be used on RHS of =.
+Option for allowing C type subscripts. Method for loading short lists of
+numbers.
+
+
+Newmat06 - December 1992:
+
+Added band matrices; 'real' changed to 'Real' (to avoid potential
+conflict in complex class); Inject doesn't check for no loss of
+information;  fixes for AT&T C++ version 3.0; real(A) becomes
+A.AsScalar(); CopyToMatrix becomes AsMatrix, etc; .c() is no longer
+required (to be deleted in next version); option for version 2.1 or
+later. Suffix for include files changed to .h; BOOL changed to Boolean
+(BOOL doesn't work in g++ v 2.0); modfications to allow for compilers
+that destroy temporaries very quickly; (Gnu users - see the section of
+compiler performance). Added CleanUp, LinearEquationSolver, primitive
+version of exceptions.
+
+
+Newmat05 - June 1992:
+
+For private release only 
+
+
+Newmat04 - December 1991:
+
+Fix problem with G++1.40, some extra documentation
+
+
+Newmat03 - November 1991:
+
+Col and Cols become Column and Columns. Added Sort, SVD, Jacobi,
+Eigenvalues, FFT, real conversion of 1x1 matrix, "Numerical Recipes in
+C" interface, output operations, various scalar functions. Improved
+return from functions. Reorganised setting options in "include.hxx".
+
+
+Newmat02 - July 1991:
+
+Version with matrix row/column operations and numerous additional
+functions.
+
+
+Matrix - October 1990:
+
+Early version of package.
+
+
+---------------------------------------------------------------------------
+
+
+How to get a copy of this package
+=================================
+
+I am putting copies on Compuserve (Borland library, zip format),
+SIMTEL20 (MsDos library, zip format), comp.sources.misc on Internet
+(shar format).
+
+
+---------------------------------------------------------------------------
+
+
+Compiler performance
+====================
+
+I have tested this package on a number of compilers. Here are the levels
+of success with this package. In most cases I have chosen code that
+works under all the compilers I have access to, but I have had to
+include some specific work-arounds for some compilers. For the MsDos
+versions, I use a 486dx computer running MsDos 5. The unix versions are
+on a Sun Sparc station or a Silicon Graphics or a HP unix workstation.
+Thanks to Victoria University and Industrial Research Ltd for access to
+the Unix machines.
+
+A series of #defines at the beginning of "include.h" customises the
+package for the compiler you are using. Turbo, Borland, Gnu and Zortech
+are recognised automatically, otherwise you have to set the appropriate
+#define statement. Activate the option for version 2.1 if you are using
+version 2.1 of C++ or later.
+
+Borland C++ 3.1: Recently this has been my main development platform,
+so naturally almost everything works with this compiler. Make sure you
+have the compiler option "treat enums as ints" set. There was a problem
+with the library utility in version 2.0 which is now fixed. You will
+need to use the large model. If you are not debugging, turn off the
+options that collect debugging information.
+
+Microsoft C++ (7.0): Seems to work OK. You must #define
+TEMPS_DESTROYED_QUICKLY owing to a bug in the current version of MSC.
+
+Zortech C++ 3.0: "const" doesn't work correctly with this compiler, so
+the package skips all of the statements Zortech can't handle. Zortech
+leaves rubbish on the heap. I don't know whether this is my programming
+error or a Zortech error or additional printer buffers. Deactivate the
+option for version 2.1 in include.h. Does not support IO manipulators.
+Otherwise the package mostly works, but not completely. Best don't
+#define TEMPS_DESTROYED_QUICKLY. Exceptions and the nric interface don't
+work. I think the problems are because Zortech doesn't handle
+conversions correctly, particularly automatic conversions. Zortech runs
+much more slowly than Borland and Microsoft. Use the large model and
+optimisation.
+
+Glockenspiel C++ (2.00a for MsDos loading into Microsoft C 5.1): I
+haven't tested the latest version of my package with Glockenspiel. I had
+to #define the matrix names to shorter names to avoid ambiguities and
+had quite a bit of difficulty stopping the compiles from running out of
+space and not exceeding Microsoft's block nesting limit. A couple of my
+test statements produced statements too complex for Microsoft, but
+basically the package worked. This was my original development platform
+and I still use .cxx as my file name extensions for the C++ files.
+
+Sun AT&T C++ 2.1;3.0: This works fine. Except aggregates are not
+supported in 2.1 and setjmp.h generated a warning message. Neither
+compiler would compile when I set DO_FREE_CHECK (see my file
+newmatc.txt). If you are using "interviews" you may get a conflict with
+Catch. Either #undefine Catch or replace Catch with CATCH throughout my
+package. In AT&T 2.1 you may get an error when you use an expression for
+the single argument when constructing a Vector or DiagonalMatrix or one
+of the Triangular Matrices. You need to evaluate the expression
+separately.
+
+Gnu G++ 2.2:  This mostly works. You can't use expressions like
+Matrix(X*Y) in the middle of an expression and (Matrix)(X*Y) is
+unreliable. If you write a function returning a matrix, you MUST use the
+ReturnMatrix method described in this documentation. This is because g++
+destroys temporaries occuring in an expression too soon for the two
+stage way of evaluating expressions that newmat uses. Gnu 2.2 does seem
+to leave some rubbish on the stack. I suspect this is a printer buffer
+so it may not be a bug. There were a number of warning messages from the
+compiler about my "unconstanting" constants; but I think this was just
+gnu being over-sensitive. Gnu 2.3.2 seems to report internal errors -
+these don't seem to be consistent, different users report different
+experiences; I suggest, if possible, you stick to version 2.2 until 2.3
+sorts itself out.
+
+JPI: Their second release worked on a previous version of this package
+provided you disabled the smart link option - it isn't smart enough. I
+haven't tested the latest version of this package.
+
+
+---------------------------------------------------------------------------
+
+Example
+=======
+
+An example is given in  example.cxx .  This gives a simple linear
+regression example using four different algorithms. The correct output
+is given in example.txt. The program carries out a check that no memory
+is left allocated on the heap when it terminates.
+
+The file  example.mak is a make file for compiling example.cxx under gnu g++.
+Use the gnu make facility. You can probably adapt it for the compiler you are
+using. I also include the make files for Zortech, Borland and Microsoft C -
+see the list of files. Use a command like
+
+gmake -f example.mak
+nmake -f ex_ms.mak
+make -f ex_z.mak
+make -f ex_b.mak
+
+ ---------------------------------------------------------------------
+| Don't forget to remove references to  newmat9.cxx  in the make file |
+| if you are using a compiler that does not support the standard io   |
+| manipulators.                                                       |
+ ---------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+
+
+Detailed Documentation
+======================
+
+Copyright (C) 1989,1990,1991,1992,1993: R B Davies
+
+Permission is granted to use but not to sell.
+
+   --------------------------------------------------------------
+  | Please understand that this is a test version; there may     |
+  | still be bugs and errors. Use at your own risk. I take no    |
+  | responsibility for any errors or omissions in this package   |
+  | or for any misfortune that may befall you or others as a     |
+  | result of its use.                                           |
+   --------------------------------------------------------------
+
+Please report bugs to me at
+
+    robertd@kauri.vuw.ac.nz
+
+or
+
+    Compuserve 72777,656
+
+When reporting a bug please tell me which C++ compiler you are using (if
+known), and what version. Also give me details of your computer (if
+known). Tell me where you downloaded your version of my package from and
+its version number (eg newmat03 or newmat04). (There may be very minor
+differences between versions at different sites). Note any changes you
+have made to my code. If at all possible give me a piece of code
+illustrating the bug.
+
+Please do report bugs to me.
+
+
+The matrix inverse routine and the sort routines are adapted from
+"Numerical Recipes in C" by Press, Flannery, Teukolsky, Vetterling,
+published by the Cambridge University Press.
+
+Other code is adapted from routines in "Handbook for Automatic
+Computation, Vol II, Linear Algebra" by Wilkinson and Reinsch, published
+by Springer Verlag. 
+
+
+Customising
+-----------
+
+I use .h as the suffix of definition files and .cxx as the suffix of
+C++ source files. This does not cause any problems with the compilers I
+use except that Borland and Turbo need to be told to accept any suffix
+as meaning a C++ file rather than a C file.
+
+Use the large model when you are using a PC. Do not "outline" inline
+functions.
+
+Each file accessing the matrix package needs to have file newmat.h 
+#included  at the beginning. Files using matrix applications (Cholesky
+decomposition, Householder triangularisation etc) need newmatap.h
+instead (or as well). If you need the output functions you will also
+need newmatio.h.
+
+The file  include.h  sets the options for the compiler. If you are using
+a compiler different from one I have worked with you may have to set up
+a new section in  include.h  appropriate for your compiler.
+
+Borland, Turbo, Gnu, Microsoft and Zortech are recognised automatically.
+If you using Glockenspiel on a PC, AT&T activate the appropriate
+statement at the beginning of include.h.
+
+Activate the appropriate statement to make the element type float or
+double.
+
+If you are using version 2.1 or later of C++ make sure Version21 is
+#defined, otherwise make sure it is not #defined.
+
+The file (newmat9.cxx) containing the output routines can be used only
+with libraries that support the AT&T input/output routines including
+manipulators. It cannot be used with Zortech or Gnu.
+
+You will need to compile all the *.cxx files except example.cxx and the
+tmt*.cxx files to to get the complete package. The tmt*.cxx files are
+used for testing and example.cxx is an example. The files tmt.mak and
+example.mak are "make" files for unix systems. Edit in the correct name
+of compiler. This "make" file worked for me with the default "make" on
+the HP unix workstation and the Sun sparc station and gmake on the
+Silicon Graphics. With Borland and Microsoft, its pretty quick just to
+load all the files in the interactive environment by pointing and
+clicking.
+
+You may need to increase the stack space size.
+
+
+Constructors
+------------
+
+To construct an m x n matrix, A, (m and n are integers) use
+
+    Matrix A(m,n);
+
+The UpperTriangularMatrix, LowerTriangularMatrix, SymmetricMatrix and
+DiagonalMatrix types are square. To construct an n x n matrix use,
+for example
+
+    UpperTriangularMatrix U(n);
+
+Band matrices need to include bandwidth information in their
+constructors.
+
+    BandMatrix BM(n, lower, upper);
+    UpperBandMatrix UB(n, upper);
+    LowerBandMatrix LB(n, lower);
+    SymmetrixBandMatrix SB(n, lower);
+
+The integers upper and lower are the number of non-zero diagonals above
+and below the diagonal (excluding the diagonal) respectively.
+ 
+The RowVector and ColumnVector types take just one argument in their
+constructors:
+
+    RowVector RV(n);
+
+You can also construct vectors and matrices without specifying the
+dimension. For example
+
+    Matrix A;
+
+In this case the dimension must be set by an assignment statement or a
+re-dimension statement.
+
+You can also use a constructor to set a matrix equal to another matrix
+or matrix expression.
+
+    Matrix A = U;
+
+    Matrix A = U * L;
+
+Only conversions that don't lose information are supported - eg you
+cannot convert an upper triangular matrix into a diagonal matrix using =.
+
+
+Elements of matrices
+--------------------
+
+Elements are accessed by expressions of the form A(i,j) where i and j
+run from 1 to the appropriate dimension. Access elements of vectors with
+just one argument. Diagonal matrices can accept one or two subscripts.
+
+This is different from the earliest version of the package in which the
+subscripts ran from 0 to one less than the appropriate dimension. Use
+A.element(i,j) if you want this earlier convention.
+
+A(i,j) and A.element(i,j) can appear on either side of an = sign.
+
+If you activate the #define SETUP_C_SUBSCRIPTS in newmat.h you can also
+access elements using the tradition C style notation. That is A[i][j]
+for matrices (except diagonal) and V[i] for vectors and diagonal
+matrices. The subscripts start at zero (ie like element) and there is no
+range checking. Because of the possibility of confusing V(i)
+and V[i], I suggest you do not activate this option unless you really
+want to use it. This option may not be available for Complex when this
+is introduced.
+
+
+Matrix copy
+-----------
+
+The operator = is used for copying matrices, converting matrices, or
+evaluating expressions. For example
+
+    A = B;  A = L;  A = L * U;
+
+Only conversions that don't lose information are supported. The
+dimensions of the matrix on the left hand side are adjusted to those of
+the matrix or expression on the right hand side. Elements on the right
+hand side which are not present on the left hand side are set to zero.
+
+The operator << can be used in place of = where it is permissible for
+information to be lost.
+
+For example
+
+    SymmetricMatrix S; Matrix A;
+    ......
+    S << A.t() * A;
+
+is acceptable whereas
+
+    S = A.t() * A;                            // error
+
+will cause a runtime error since the package does not (yet?) recognise
+A.t()*A as symmetric.
+
+Note that you can not use << with constructors. For example
+
+    SymmetricMatrix S << A.t() * A;           // error
+
+does not work.
+
+Also note that << cannot be used to load values from a full matrix into
+a band matrix, since it will be unable to determine the bandwidth of the
+band matrix.
+
+A third copy routine is used in a similar role to =. Use
+
+    A.Inject(D);
+
+to copy the elements of D to the corresponding elements of A but leave
+the elements of A unchanged if there is no corresponding element of D
+(the = operator would set them to 0). This is useful, for example, for
+setting the diagonal elements of a matrix without disturbing the rest of
+the matrix. Unlike = and <<, Inject does not reset the dimensions of A,
+which must match those of D. Inject does not test for no loss of
+information.
+
+You cannot replace D by a matrix expression. The effect of Inject(D)
+depends on the type of D. If D is an expression it might not be obvious
+to the user what type it would have. So I thought it best to disallow
+expressions.
+
+Inject can be used for loading values from a regular matrix into a band
+matrix. (Don't forget to zero any elements of the left hand side that
+will not be set by the loading operation).
+
+Both << and Inject can be used with submatrix expressions on the left
+hand side. See the section on submatrices.
+
+To set the elements of a matrix to a scalar use operator =
+
+    Real r; Matrix A(m,n);
+    ......
+    Matrix A(m,n); A = r;
+
+
+Entering values
+---------------
+
+You can load the elements of a matrix from an array:
+
+    Matrix A(3,2);
+    Real a[] = { 11,12,21,22,31,33 };
+    A << a;
+
+This construction cannot check that the numbers of elements match
+correctly. This version of << can be used with submatrices on the left
+hand side. It is not defined for band matrices.
+
+Alternatively you can enter short lists using a sequence of numbers
+separated by << .
+
+    Matrix A(3,2);
+    A << 11 << 12
+      << 21 << 22
+      << 31 << 32;
+
+This does check for the correct total number of entries, although the
+message for there being insufficient numbers in the list may be delayed
+until the end of the block or the next use of this construction. This
+does not work for band matrices or submatrices, or for long lists. Also
+try to restrict its use to numbers. You can include expressions, but
+these must not call a function which includes the same construction.
+
+
+Unary operators
+---------------
+
+The package supports unary operations
+
+    change sign of elements            -A
+    transpose                          A.t()
+    inverse (of square matrix A)       A.i()
+
+
+Binary operations
+-----------------
+
+The package supports binary operations
+
+    matrix addition                    A+B
+    matrix subtraction                 A-B
+    matrix multiplication              A*B
+    equation solve (square matrix A)   A.i()*B
+
+In the last case the inverse is not calculated.
+
+Notes:
+
+If you are doing repeated multiplication. For example A*B*C, use
+brackets to force the order to minimize the number of operations. If C
+is a column vector and A is not a vector, then it will usually reduce
+the number of operations to use A*(B*C) .
+
+The package does not recognise B*A.i() as an equation solve. It is
+probably better to use (A.t().i()*B.t()).t() .
+
+
+Combination of a matrix and scalar
+----------------------------------
+
+The following expression multiplies the elements of a matrix A by a
+scalar f:  A * f; Likewise one can divide the elements of a matrix A by
+a scalar f:  A / f;
+
+The expressions  A + f and A - f add or subtract a rectangular matrix of
+the same dimension as A with elements equal to f to or from the matrix
+A.
+
+In each case the matrix must be the first term in the expression.
+Expressions such  f + A  or  f * A  are not recognised.
+
+
+Scalar functions of matrices
+----------------------------
+            
+    int m = A.Nrows();                    // number of rows
+    int n = A.Ncols();                    // number of columns
+    Real ssq = A.SumSquare();             // sum of squares of elements
+    Real sav = A.SumAbsoluteValue();      // sum of absolute values
+    Real mav = A.MaximumAbsoluteValue();  // maximum of absolute values
+    Real norm = A.Norm1();                // maximum of sum of absolute
+                                             values of elements of a column
+    Real norm = A.NormInfinity();         // maximum of sum of absolute
+                                             values of elements of a row
+    Real t = A.Trace();                   // trace
+    LogandSign ld = A.LogDeterminant();   // log of determinant
+    Boolean z = A.IsZero();               // test all elements zero
+    MatrixType mt = A.Type();             // type of matrix
+    Real* s = Store();                    // pointer to array of elements
+    int l = Storage();                    // length of array of elements
+
+A.LogDeterminant() returns a value of type LogandSign. If ld is of type 
+LogAndSign  use
+
+    ld.Value()    to get the value of the determinant
+    ld.Sign()     to get the sign of the determinant (values 1, 0, -1)
+    ld.LogValue() to get the log of the absolute value.
+
+A.IsZero() returns Boolean value TRUE if the matrix A has all elements
+equal to 0.0.
+
+MatrixType mt = A.Type() returns the type of a matrix. Use (char*)mt to
+get a string  (UT, LT, Rect, Sym, Diag, Crout, BndLU) showing the type
+(Vector types are returned as Rect).
+
+SumSquare(A), SumAbsoluteValue(A), MaximumAbsoluteValue(A), Trace(A),
+LogDeterminant(A), Norm1(A), NormInfinity(A)  can be used in place of
+A.SumSquare(), A.SumAbsoluteValue(), A.MaximumAbsoluteValue(),
+A.Trace(), A.LogDeterminant(), A.Norm1(), A.NormInfinity().
+
+
+Submatrix operations
+--------------------
+
+A.SubMatrix(fr,lr,fc,lc)
+
+This selects a submatrix from A. the arguments  fr,lr,fc,lc  are the
+first row, last row, first column, last column of the submatrix with the
+numbering beginning at 1. This may be used in any matrix expression or
+on the left hand side of =, << or Inject. Inject does not check no
+information loss. You can also use the construction
+
+    Real c; .... A.SubMatrix(fr,lr,fc,lc) = c;
+
+to set a submatrix equal to a constant.
+
+The follwing are variants of SubMatrix:
+
+    A.SymSubMatrix(f,l)             //   This assumes fr=fc and lr=lc.
+    A.Rows(f,l)                     //   select rows
+    A.Row(f)                        //   select single row
+    A.Columns(f,l)                  //   select columns
+    A.Column(f)                     //   select single column
+
+In each case f and l mean the first and last row or column to be
+selected (starting at 1).
+
+If SubMatrix or its variant occurs on the right hand side of an = or <<
+or within an expression its type is as follows
+
+    A.Submatrix(fr,lr,fc,lc):           If A is RowVector or
+                                        ColumnVector then same type
+                                        otherwise type Matrix
+    A.SymSubMatrix(f,l):                Same type as A
+    A.Rows(f,l):                        Type Matrix
+    A.Row(f):                           Type RowVector
+    A.Columns(f,l):                     Type Matrix
+    A.Column(f):                        Type ColumnVector
+
+
+If SubMatrix or its variant appears on the left hand side of  = or << ,
+think of its type being Matrix. Thus L.Row(1) where L is
+LowerTriangularMatrix expects  L.Ncols()  elements even though it will
+use only one of them. If you are using = the program will check for no
+loss of data.
+
+
+Change dimensions
+-----------------
+
+The following operations change the dimensions of a matrix. The values
+of the elements are lost.
+
+    A.ReDimension(nrows,ncols);     // for type Matrix or nricMatrix
+    A.ReDimension(n);               // for all other types, except Band
+    A.ReDimension(n,lower,upper);   // for BandMatrix
+    A.ReDimension(n,lower);         // for LowerBandMatrix
+    A.ReDimension(n,upper);         // for UpperBandMatrix
+    A.ReDimension(n,lower);         // for SymmetricBandMatrix
+
+Use   A.CleanUp()  to set the dimensions of A to zero and release all
+the heap memory.
+
+Remember that ReDimension destroys values. If you want to ReDimension, but
+keep the values in the bit that is left use something like
+
+ColumnVector V(100);
+...                            // load values
+V = V.Rows(1,50);              // to get first 50 vlaues.
+
+If you want to extend a matrix or vector use something like
+
+ColumnVector V(50);
+...                            // load values
+{ V.Release(); ColumnVector X=V; V.ReDimension(100); V.Rows(1,50)=X; }
+                               // V now length 100
+
+
+Change type
+-----------
+
+The following functions interpret the elements of a matrix
+(stored row by row) to be a vector or matrix of a different type. Actual
+copying is usually avoided where these occur as part of a more
+complicated expression.
+
+    A.AsRow()
+    A.AsColumn()
+    A.AsDiagonal()
+    A.AsMatrix(nrows,ncols)
+    A.AsScalar()
+
+The expression A.AsScalar() is used to convert a 1 x 1 matrix to a
+scalar.
+
+
+Multiple matrix solve
+---------------------
+
+If A is a square or symmetric matrix use
+
+    CroutMatrix X = A;                // carries out LU decomposition
+    Matrix AP = X.i()*P; Matrix AQ = X.i()*Q;
+    LogAndSign ld = X.LogDeterminant();
+
+rather than
+
+    Matrix AP = A.i()*P; Matrix AQ = A.i()*Q;
+    LogAndSign ld = A.LogDeterminant();
+
+since each operation will repeat the LU decomposition.
+
+If A is a BandMatrix or a SymmetricBandMatrix begin with
+
+    BandLUMatrix X = A;               // carries out LU decomposition
+
+A CroutMatrix or a BandLUMatrix can't be manipulated or copied. Use
+references as an alternative to copying.
+
+Alternatively use
+
+    LinearEquationSolver X = A;
+
+This will choose the most appropiate decomposition of A. That is, the
+band form if A is banded; the Crout decomposition if A is square or
+symmetric and no decomposition if A is triangular or diagonal. If you
+want to use the LinearEquationSolver #include newmatap.h.
+
+
+Memory management
+-----------------
+
+The package does not support delayed copy. Several strategies are
+required to prevent unnecessary matrix copies.
+
+Where a matrix is called as a function argument use a constant
+reference. For example
+
+    YourFunction(const Matrix& A)
+
+rather than
+
+    YourFunction(Matrix A)
+
+
+Skip the rest of this section on your first reading.
+
+ --------------------------------------------------------------------- 
+|  Gnu g++ users please read on; if you are returning matrix values   |
+|  from a function, then you must use the ReturnMatrix construct.     |
+ ---------------------------------------------------------------------
+
+A second place where it is desirable to avoid unnecessary copies is when
+a function is returning a matrix. Matrices can be returned from a
+function with the return command as you would expect. However these may
+incur one and possibly two copyings of the matrix. To avoid this use the
+following instructions.
+
+Make your function of type  ReturnMatrix . Then precede the return
+statement with a Release statement (or a ReleaseAndDelete statement if
+the matrix was created with new). For example
+
+
+    ReturnMatrix MakeAMatrix()
+    {
+       Matrix A;
+       ......
+       A.Release(); return A;
+    }
+
+or
+
+    ReturnMatrix MakeAMatrix()
+    {
+       Matrix* m = new Matrix;
+       ......
+       m->ReleaseAndDelete(); return *m;
+    }
+
+
+If you are using AT&T C++ you may wish to replace  return A; by
+return (ReturnMatrix)A;  to avoid a warning message.
+
+ 
+ --------------------------------------------------------------------- 
+| Do not forget to make the function of type ReturnMatrix; otherwise  |
+| you may get incomprehensible run-time errors.                       |
+ --------------------------------------------------------------------- 
+
+You can also use .Release() or ->ReleaseAndDelete() to allow a matrix
+expression to recycle space. Suppose you call
+
+    A.Release();
+
+just before A is used just once in an expression. Then the memory used
+by A is either returned to the system or reused in the expression. In
+either case, A's memory is destroyed. This procedure can be used to
+improve efficiency and reduce the use of memory.
+
+Use ->ReleaseAndDelete for matrices created by new if you want to
+completely delete the matrix after it is accessed.
+
+
+Efficiency
+----------
+
+The package tends to be not very efficient for dealing with matrices
+with short rows. This is because some administration is required for
+accessing rows for a variety of types of matrices. To reduce the
+administration a special multiply routine is used for rectangular
+matrices in place of the generic one. Where operations can be done
+without reference to the individual rows (such as adding matrices of the
+same type) appropriate routines are used.
+
+When you are using small matrices (say smaller than 10 x 10) you may
+find it a little faster to use rectangular matrices rather than the
+triangular or symmetric ones.
+
+
+Output
+------
+
+To print a matrix use an expression like
+
+    Matrix A;
+    ......
+    cout << setw(10) << setprecision(5) << A;
+
+This will work only with systems that support the AT&T input/output
+routines including manipulators.
+
+
+Accessing matrices of unspecified type
+--------------------------------------
+
+Skip this section on your first reading.
+
+Suppose you wish to write a function which accesses a matrix of unknown
+type including expressions (eg A*B). Then use a layout similar to the
+following:
+
+   void YourFunction(BaseMatrix& X)
+   {
+      GeneralMatrix* gm = X.Evaluate();   // evaluate an expression
+                                          // if necessary
+      ........                            // operations on *gm
+      gm->tDelete();                      // delete *gm if a temporary
+   }
+
+See, as an example, the definitions of operator<< in newmat9.cxx.
+
+Under certain circumstances; particularly where X is to be used just
+once in an expression you can leave out the Evaluate() statement and the
+corresponding tDelete(). Just use X in the expression.
+
+If you know YourFunction will never have to handle a formula as its
+argument you could also use
+
+   void YourFunction(const GeneralMatrix& X)
+   {
+      ........                            // operations on X
+   }
+
+
+Cholesky decomposition
+----------------------
+
+Suppose S is symmetric and positive definite. Then there exists a unique
+lower triangular matrix L such that L * L.t() = S. To calculate this use
+
+    SymmetricMatrix S;
+    ......
+    LowerTriangularMatrix L = Cholesky(S);
+
+If S is a symmetric band matrix then L is a band matrix and an
+alternative procedure is provied for carrying out the decomposition:
+
+    SymmetricBandMatrix S;
+    ......
+    LowerBandMatrix L = Cholesky(S);
+
+
+Householder triangularisation
+-----------------------------
+
+Start with matrix
+
+       / X    0 \      s
+       \ Y    0 /      t
+
+         n    s
+
+The Householder triangularisation post multiplies by an orthogonal
+matrix Q such that the matrix becomes
+
+       / 0    L \      s
+       \ Z    M /      t
+
+         n    s
+
+where L is lower triangular. Note that X is the transpose of the matrix
+sometimes considered in this context.
+
+This is good for solving least squares problems: choose b (matrix or row
+vector) to minimize the sum of the squares of the elements of
+
+         Y - b*X
+
+Then choose b = M * L.i();
+
+Two routines are provided:
+
+    HHDecompose(X, L);
+
+replaces X by orthogonal columns and forms L.
+
+    HHDecompose(X, Y, M);
+
+uses X from the first routine, replaces Y by Z and forms M.
+
+
+Singular Value Decomposition
+----------------------------
+
+The singular value decomposition of an m x n matrix A ( where m >= n) is
+a decomposition
+
+    A  = U * D * V.t()
+
+where U is m x n with  U.t() * U  equalling the identity, D is an n x n
+diagonal matrix and V is an n x n orthogonal matrix.
+
+Singular value decompositions are useful for understanding the structure
+of ill-conditioned matrices, solving least squares problems, and for
+finding the eigenvalues of A.t() * A.
+
+To calculate the singular value decomposition of A (with m >= n) use one
+of
+
+    SVD(A, D, U, V);                  // U (= A is OK)
+    SVD(A, D);
+    SVD(A, D, U);                     // U (= A is OK)
+    SVD(A, D, U, FALSE);              // U (can = A) for workspace only
+    SVD(A, D, U, V, FALSE);           // U (can = A) for workspace only
+
+The values of A are not changed unless A is also inserted as the third
+argument.
+
+
+Eigenvalues
+-----------
+
+An eigenvalue decomposition of a symmetric matrix A is a decomposition
+
+    A  = V * D * V.t()
+
+where V is an orthogonal matrix and D is a diagonal matrix.
+
+Eigenvalue analyses are used in a wide variety of engineering,
+statistical and other mathematical analyses.
+
+The package includes two algorithms: Jacobi and Householder. The first
+is extremely reliable but much slower than the second.
+
+The code is adapted from routines in "Handbook for Automatic
+Computation, Vol II, Linear Algebra" by Wilkinson and Reinsch, published
+by Springer Verlag. 
+
+
+    Jacobi(A,D,S,V);                  // A, S symmetric; S is workspace,
+                                      //    S = A is OK
+    Jacobi(A,D);                      // A symmetric
+    Jacobi(A,D,S);                    // A, S symmetric; S is workspace,
+                                      //    S = A is OK
+    Jacobi(A,D,V);                    // A symmetric
+
+    EigenValues(A,D);                 // A symmetric
+    EigenValues(A,D,S);               // A, S symmetric; S is for back
+                                      //    transforming, S = A is OK
+    EigenValues(A,D,V);               // A symmetric
+
+
+Sorting
+-------
+
+To sort the values in a matrix or vector, A, (in general this operation
+makes sense only for vectors and diagonal matrices) use
+
+    SortAscending(A);
+
+or
+
+    SortDescending(A);
+
+I use the Shell-sort algorithm. This is a medium speed algorithm, you
+might want to replace it with something faster if speed is critical and
+your matrices are large.
+
+
+Fast Fourier Transform
+----------------------
+
+FFT(X, Y, F, G);                         // F=X and G=Y are OK
+
+where X, Y, F, G are column vectors. X and Y are the real and imaginary
+input vectors; F and G are the real and imaginary output vectors. The
+lengths of X and Y must be equal and should be the product of numbers
+less than about 10 for fast execution.
+
+The formula is
+
+          n-1
+   h[k] = SUM  z[j] exp (-2 pi i jk/n)
+          j=0
+
+where z[j] is stored complex and stored in X(j+1) and Y(j+1). Likewise
+h[k] is complex and stored in F(k+1) and G(k+1). The fast Fourier
+algorithm takes order n log(n) operations (for "good" values of n)
+rather than n**2 that straight evaluation would take.
+
+I use the method of Carl de Boor (1980), Siam J Sci Stat Comput, pp
+173-8. The sines and cosines are calculated explicitly. This gives
+better accuracy, at an expense of being a little slower than is
+otherwise possible.
+
+Related functions
+
+FFTI(F, G, X, Y);                        // X=F and Y=G are OK
+RealFFT(X, F, G);
+RealFFTI(F, G, X);
+
+FFTI is the inverse trasform for FFT. RealFFT is for the case when the
+input vector is real, that is Y = 0. I assume the length of X, denoted
+by n, is even. The program sets the lengths of F and G to n/2 + 1.
+RealFFTI is the inverse of RealFFT.
+
+
+Interface to Numerical Recipes in C
+-----------------------------------
+
+This package can be used with the vectors and matrices defined in
+"Numerical Recipes in C". You need to edit the routines in Numerical
+Recipes so that the elements are of the same type as used in this
+package. Eg replace float by double, vector by dvector and matrix by
+dmatrix, etc. You will also need to edit the function definitions to use
+the version acceptable to your compiler. Then enclose the code from
+Numerical Recipes in  extern "C" { ... }. You will also need to include
+the matrix and vector utility routines.
+
+Then any vector in Numerical Recipes with subscripts starting from 1 in
+a function call can be accessed by a RowVector, ColumnVector or
+DiagonalMatrix in the present package. Similarly any matrix with
+subscripts starting from 1 can be accessed by an  nricMatrix  in the
+present package. The class nricMatrix is derived from Matrix and can be
+used in place of Matrix. In each case, if you wish to refer to a
+RowVector, ColumnVector, DiagonalMatrix or nricMatrix X in an function
+from Numerical Recipes, use X.nric() in the function call.
+
+Numerical Recipes cannot change the dimensions of a matrix or vector. So
+matrices or vectors must be correctly dimensioned before a Numerical
+Recipes routine is called.
+
+For example
+
+   SymmetricMatrix B(44);
+   .....                             // load values into B
+   nricMatrix BX = B;                // copy values to an nricMatrix
+   DiagonalMatrix D(44);             // Matrices for output
+   nricMatrix V(44,44);              //    correctly dimensioned
+   int nrot;
+   jacobi(BX.nric(),44,D.nric(),V.nric(),&nrot);
+                                     // jacobi from NRIC
+   cout << D;                        // print eigenvalues
+
+
+Exceptions
+----------
+
+This package includes a partial implementation of exceptions. I used
+Carlos Vidal's article in the September 1992 C Users Journal as a
+starting point.
+
+Newmat does a partial clean up of memory following throwing an exception
+- see the next section. However, the present version will leave a little
+heap memory unrecovered under some circumstances. I would not expect
+this to be a major problem, but it is something that needs to be sorted
+out.
+
+The functions/macros I define are Try, Throw, Catch, CatchAll and
+CatchAndThrow. Try, Throw, Catch and CatchAll correspond to try, throw,
+catch and catch(...) in the C++ standard. A list of Catch clauses must
+be terminated by either CatchAll or CatchAndThrow but not both. Throw
+takes an Exception as an argument or takes no argument (for passing on
+an exception). I do not have a version of Throw for specifying which
+exceptions a function might throw. Catch takes an exception class name
+as an argument; CatchAll and CatchAndThrow don't have any arguments.
+Try, Catch and CatchAll must be followed by blocks enclosed in curly
+brackets.
+
+All Exceptions must be derived from a class, Exception, defined in
+newmat and can contain only static variables. See the examples in newmat
+if you want to define additional exceptions.
+
+I have defined 5 clases of exceptions for users (there are others but I
+suggest you stick to these ones):
+
+   SpaceException                 Insufficient space on the heap
+   ProgramException               Errors such as out of range index or
+                                  incompatible matrix types or
+                                  dimensions
+   ConvergenceException           Iterative process does not converge
+   DataException                  Errors such as attempting to invert a
+                                  singular matrix
+   InternalException              Probably a programming error in newmat
+
+For each of these exception classes, I have defined a member function
+void SetAction(int). If you call SetAction(1), and a corresponding
+exception occurs, you will get an error message. If there is a Catch
+clause for that exception, execution will be passed to that clause,
+otherwise the program will exit. If you call SetAction(0) you will get
+the same response, except that there will be no error message. If you
+call SetAction(-1), you will get the error message but the program will
+always exit.
+
+I have defined a class Tracer that is intended to help locate the place
+where an error has occurred. At the beginning of a function I suggest
+you include a statement like
+
+   Tracer tr("name");
+
+where name is the name of the function. This name will be printed as
+part of the error message, if an exception occurs in that function, or
+in a function called from that function. You can change the name as you
+proceed through a function with the ReName function
+
+   tr.ReName("new name");
+
+if, for example, you want to track progress through the function.
+
+
+Clean up following an exception
+-------------------------------
+
+The exception mechanisms in newmat are based on the C functions setjmp
+and longjmp. These functions do not call destructors so can lead to
+garbage being left on the heap. (I refer to memory allocated by "new" as
+heap memory). For example, when you call
+
+Matrix A(20,30);
+
+a small amount of space is used on the stack containing the row and
+column dimensions of the matrix and 600 doubles are allocated on the
+heap for the actual values of the matrix. At the end of the block in
+which A is declared, the destructor for A is called and the 600
+doubles are freed. The locations on the stack are freed as part of the
+normal operations of the stack. If you leave the block using a longjmp
+command those 600 doubles will not be freed and will occupy space until
+the program terminates.
+
+To overcome this problem newmat keeps a list of all the currently
+declared matrices and its exception mechanism will return heap memory
+when you do a Throw and Catch.
+
+However it will not return heap memory from objects from other packages.
+If you want the mechanism to work with another class you will have to do
+three things:
+
+1: derive your class from class Janitor defined in except.h;
+
+2: define a function void CleanUp() in that class to return all heap
+   memory;
+
+3: include the following lines in the class definition
+
+      public:
+         void* operator new(size_t size)
+         { do_not_link=TRUE; void* t = ::operator new(size); return t; }
+         void operator delete(void* t) { ::operator delete(t); }
+
+
+
+
+
+
+---------------------------------------------------------------------------
+
+
+List of files
+=============
+
+README          readme file
+NEWMATA  TXT    documentation file
+NEWMATB  TXT    notes on the package design
+NEWMATC  TXT    notes on testing the package
+
+BOOLEAN  H      boolean class definition
+CONTROLW H      control word definition file
+EXCEPT   H      general exception handler definitions
+INCLUDE  H      details of include files and options
+NEWMAT   H      main matrix class definition file
+NEWMATAP H      applications definition file
+NEWMATIO H      input/output definition file
+NEWMATRC H      row/column functions definition files
+NEWMATRM H      rectangular matrix access definition files
+PRECISIO H      numerical precision constants
+
+BANDMAT  CXX    band matrix routines
+CHOLESKY CXX    Cholesky decomposition
+EXCEPT   CXX    general error and exception handler
+EVALUE   CXX    eigenvalues and eigenvector calculation
+FFT      CXX    fast Fourier transform
+HHOLDER  CXX    Householder triangularisation
+JACOBI   CXX    eigenvalues by the Jacobi method
+NEWMAT1  CXX    type manipulation routines
+NEWMAT2  CXX    row and column manipulation functions
+NEWMAT3  CXX    row and column access functions
+NEWMAT4  CXX    constructors, redimension, utilities
+NEWMAT5  CXX    transpose, evaluate, matrix functions
+NEWMAT6  CXX    operators, element access
+NEWMAT7  CXX    invert, solve, binary operations
+NEWMAT8  CXX    LU decomposition, scalar functions
+NEWMAT9  CXX    output routines
+NEWMATEX CXX    matrix exception handler
+NEWMATRM CXX    rectangular matrix access functions
+SORT     CXX    sorting functions
+SUBMAT   CXX    submatrix functions
+SVD      CXX    singular value decomposition
+
+EXAMPLE  CXX    example of use of package
+EXAMPLE  TXT    output from example
+EXAMPLE  MAK    make file for example (ATandT or Gnu)
+EX_MS    MAK    make file for Microsoft C
+EX_Z     MAK    make file for Zortech
+EX_B     MAK    make file for Borland
+
+See newmatc.txt for details of test files.
+
+---------------------------------------------------------------------------
+
+                   Matrix package problem report form
+                   ----------------------------------
+
+Version: ............... newmat07
+Date of release: ....... Jaunary 1st, 1993
+Primary site: ..........
+Downloaded from: .......
+Your email address: ....
+Today's date: ..........
+Your machine: ..........
+Operating system: ......
+Compiler & version: ....
+Describe the problem - attach examples if possible:
+
+
+
+
+
+
+
+
+
+Email to  robertd@kauri.vuw.ac.nz  or  Compuserve 72777,656 
+
+-------------------------------------------------------------------------------

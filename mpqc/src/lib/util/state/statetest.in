@@ -1,0 +1,26 @@
+
+x = 1
+y = 3.0
+
+test: (
+  object_a<A>: (
+    a = 4
+    )
+  object_b<B>: (
+    A: a = 111
+    b = 121
+    )
+  object_d<D>: (
+    B: (
+      A: a = 11
+      b = 12
+      )
+    C: (
+      c = 13
+      )
+    d = 14
+    a = $:test:object_b
+    b = $:test:object_b
+    )
+  object = $object_d
+  )

@@ -1,0 +1,272 @@
+
+typedef int dmt_matrix;
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <tmpl.h>
+
+extern "C" {
+#include <comm/picl/picl.h>
+}
+
+#include <util/class/class.h>
+#include <util/state/state.h>
+#include <util/keyval/keyval.h>
+#include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/simple.h>
+#include <chemistry/molecule/symm.h>
+#include <chemistry/molecule/simpleQCList.h>
+#include <chemistry/molecule/symmQCList.h>
+#include <math/nihmatrix/nihmatrix.h>
+#include <math/nihmatrix/lmath.h>
+
+extern "C" {
+#include <chemistry/qc/dmtqc/libdmtqc.h>
+#include <util/misc/libmisc.h>
+#include <util/bio/libbio.h>
+}
+
+#include "mpqc_int.h"
+
+extern "C" {
+ int mynode0();
+ int numnodes0();
+ void gop1(double*,int,double*,char,int);
+}
+
+
+int
+mp2_hah(centers_t *centers, scf_struct_t *scf_info,
+        dmt_matrix Scf_Vec, dmt_matrix Fock, FILE* outfile)
+{
+  tim_enter("init");
+
+  ParsedKeyVal rawin("mpqc.in");
+  PrefixKeyVal pref1(":mp2",rawin);
+  PrefixKeyVal pref2(":default",rawin);
+  AggregateKeyVal keyval(pref1,pref2);
+
+  int nfzc=0,nfzv=0;
+
+  if (keyval.exists("frozen_docc")) {
+    nfzc = keyval.intvalue("frozen_docc");
+    }
+
+  if (keyval.exists("frozen_uocc")) {
+    nfzv = keyval.intvalue("frozen_uocc");
+    }
+
+  int_initialize_offsets2(centers,centers,centers,centers);
+
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+
+  double *intbuf = 
+    int_initialize_erep(flags,0,centers,centers,centers,centers);
+
+  int a,b;
+  int i,j,k,l;
+  int p,q,r,s;
+  int P,Q,R,S;
+  int bf1,bf2,bf3,bf4;
+  int nbasis=centers->nfunc;
+  int nocc=0,nvir;
+
+  for (i=0; i < centers->n; i++) nocc += (int) centers->center[i].charge;
+
+  nocc /= 2;
+  nvir = nbasis-nocc;
+
+  nvir -= nfzv;
+  nocc -= nfzc;
+
+  /*
+   * otay, let's get a grip here, and form the MO integrals
+   * this is all in core for now till I figure out what the hell
+   * I'm doing
+   *
+   * First thing, let's get the scf vector off the nodes
+   */
+
+  DMatrix scf_vector(nbasis,nbasis);
+  double *evals = new double[nbasis];
+
+  dmt_get_diagonal(Fock,evals);
+
+  loop_t *loop = dmt_ngl_create("%mr",Scf_Vec);
+  while(dmt_ngl_next(loop)) {
+    int iind,isize,jsize;
+    double *col;
+
+    dmt_ngl_create_inner(loop,0);
+    while(dmt_ngl_next_inner_m(loop,&iind,&isize,&k,&jsize,&col)) {
+
+      for (i=0; i < nbasis; i++)
+        scf_vector(i,k) = col[i];
+      }
+    }
+
+  dmt_ngl_kill(loop);
+
+  DMatrix A1(216,nocc);
+  DMatrix A2(36*nocc,nocc);
+  DMatrix A3(6*nvir*nocc,nocc);
+
+  DMatrix A4(nvir*nvir,nocc*nocc);
+
+  A4.zero();
+
+  tim_exit("init");
+
+  for (P=0; P < centers->nshell; P++) {
+    int np = INT_SH_NFUNC((centers),P);
+
+    A3.zero();
+
+    for (R=0; R < centers->nshell; R++) {
+      int nr = INT_SH_NFUNC((centers),R);
+
+      A2.zero();
+
+      for (Q=0; Q < centers->nshell; Q++) {
+        int nq = INT_SH_NFUNC((centers),Q);
+
+        A1.zero();
+
+/*
+ * ok, so I'm doing redundant integrals, but I have to.
+ * the only thing that worries me is when R==S, will I get redundant r!=s?
+ */
+        for (S=0; S < centers->nshell ; S++) {
+
+          int pp=P,qq=Q,rr=R,ss=S;
+
+          tim_enter("erep");
+          int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM|INT_REDUND,&pp,&qq,&rr,&ss);
+          tim_exit("erep");
+      
+          int ns = INT_SH_NFUNC((centers),ss);
+
+          int e12 = (pp==qq);
+          int e13e24 = (pp==rr) && (qq==ss);
+          int e34 = (rr==ss);
+
+          int index=0;
+
+          for (bf1=0; bf1 < np  ; bf1++) {
+            for (bf2=0; bf2 < nq ; bf2++) {
+              for (bf3=0; bf3 < nr ; bf3++) {
+                int prq = bf1*nq*nr + bf3*nq + bf2;
+
+                for (bf4=0; bf4 < ns ;bf4++) {
+                  if (INT_NONZERO(intbuf[index])) {
+                    int s = centers->func_num[ss] + bf4;
+
+                    double pqrs = intbuf[index];
+
+                    for (i=0; i < nocc; i++) {
+                      A1[prq][i] += pqrs*scf_vector(s,i+nfzc);
+                      }
+                    }
+
+                  index++;
+                  }
+                }
+              }
+            }
+          }
+        
+        int prq=0;
+        for (bf1=0; bf1 < np  ; bf1++) {
+          for (bf3=0; bf3 < nr ; bf3++) {
+            for (bf2=0; bf2 < nq ; bf2++,prq++) {
+              int q = centers->func_num[Q] + bf2;
+
+              int prj = bf1*nr*nocc + bf3*nocc;
+              for (j=0; j < nocc; j++,prj++) {
+                double c_qj = scf_vector(q,j+nfzc);
+
+                for (i=0; i < nocc; i++) {
+                  A2[prj][i] += A1[prq][i] * c_qj;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+      for (bf1=0; bf1 < np  ; bf1++) {
+        for (bf3=0; bf3 < nr ; bf3++) {
+          int r = centers->func_num[R] + bf3;
+          int paj = bf1*nvir*nocc;
+
+          for (a=0; a < nvir; a++) {
+            double c_ra=scf_vector(r,a+nfzc+nocc);
+            int prj = bf1*nr*nocc + bf3*nocc;
+
+            for (j=0; j < nocc; j++,prj++,paj++) {
+              for (i=0; i < nocc; i++) {
+                A3[paj][i] += A2[prj][i] * c_ra;
+                }
+              }
+            }
+          }
+        }
+      }
+
+    for (bf1=0; bf1 < np  ; bf1++) {
+      int p = centers->func_num[P] + bf1;
+
+      for (b=0; b < nvir; b++) {
+        double c_pb = scf_vector(p,b+nfzc+nocc);
+        int paj=bf1*nvir*nocc;
+        for (a=0; a < nvir; a++) {
+          for (j=0; j < nocc; j++,paj++) {
+            for (i=0; i < nocc; i++) {
+              A4(b*nvir+a,j*nocc+i) += A3[paj][i] * c_pb;
+              }
+            }
+          }
+        }
+      }
+    }
+
+A4.print("moints");
+
+   /*
+    * alright, we've got the mo integrals, now calculate
+    *  Ecorr = 
+    */
+
+  double Ecorr=0;
+
+  for (a=0; a < nvir; a++) {
+    for (b=0; b <= a; b++) {
+      double eab = evals[a+nfzc+nocc]+evals[b+nfzc+nocc];
+
+      for (i=0; i < nocc; i++) {
+        for (j=0; j < nocc; j++) {
+          double t1 = A4(b*nvir+a,j*nocc+i)*A4(b*nvir+a,j*nocc+i);
+          double t2 = A4(b*nvir+a,j*nocc+i)*A4(b*nvir+a,i*nocc+j);
+
+          Ecorr += (2*t1-t2)/(eab-evals[i+nfzc]-evals[j+nfzc]);
+
+          if (a!=b) {
+            Ecorr += (2*t1-t2)/(eab-evals[i+nfzc]-evals[j+nfzc]);
+            }
+          }
+        }
+      }
+    }
+
+  printf("\n");
+  printf("  E(SCF)  = %20.10f\n",scf_info->e_elec+scf_info->nuc_rep);
+  printf("  E(Corr) = %20.10f\n",-Ecorr);
+  printf("  E(MP2)  = %20.10f\n\n",scf_info->e_elec+scf_info->nuc_rep-Ecorr);
+
+  return(0);
+  }

@@ -1,0 +1,727 @@
+
+%
+% $Id$
+%
+
+\documentstyle[alltt]{article}
+
+\title{The Input Parsing Library \\ Version 2}
+\author{Curtis L. Janssen}
+
+\begin{document}
+
+\newcommand{\libip}{{\tt libipv2}}
+\newcommand{\sgen}{{\tt sgen}}
+\newcommand{\var}[1]{{\it #1}}
+\newcommand{\lit}[1]{{\tt #1}}
+\newcommand{\clang}[1]{{\tt #1}}
+
+\maketitle
+
+\begin{abstract}
+Version 2 of the input parsing library, \libip{},
+provides users of the C language with a flexible and easy to
+use method of obtaining parameters from an input file.
+The input file contains assigments of the form \var{keyword} \lit{=}
+\var{value}.
+Keywords are formed from a chain of ``segments'', which allows keywords
+to be grouped according to function.
+Several useful capabilities are provided in an automatic way by the
+\libip{} routines, such as value substitions, array construction,
+table construction, and expression evaluation.
+\end{abstract}
+
+\vskip 0.25in
+{
+\centering
+\framebox[4in]
+{\begin{minipage}{3.75in}
+\sc WARNING:  Not all of the routines described herein have been tested,
+some things might not work, and some things might be missing.
+These routines come with no warranty or guarantee of any kind.
+If that isn't enough, then try this: this manual might be wrong,
+the grammer described might be ridiculous, ambiguous, too complicated
+to use, or useless for any other reason.  No claims of any sort are
+made, regardless of how wonderful I might try to make libip or
+anything else sound in this manual or orally or anywhere or anyhow else.
+\end{minipage}}
+\vskip 0.25in
+}
+
+\tableofcontents
+
+
+\section{Introduction}
+The \libip{} routines were designed to simplify the process of allowing
+a user to specify a large quantity of data to a C language program.
+The design goals were a flexible input style and ease of use for the
+programmer.  It will take more experience to determine whether or
+not these goals have been met, but they have at least proven useful where
+they have been used before.
+
+\subsection{Assignments}
+As an example of the use of \libip{}, consider the following input:
+\begin{verbatim}
+x_coordinate = 1.0
+y_coordinate = 2.0
+x_coordinate = 3.0
+\end{verbatim}
+Two assignements will be made.  The keyword \lit{x\_coordinate} will be
+associated with the value \lit{1.0} and the keyword \lit{y\_coordinate}
+will be assigned to \lit{2.0}.  The third line in the above input
+will have no effect since \lit{x\_coordinate} was assigned previously.
+
+\subsection{Keyword Grouping}
+Lets imagine that we have a program
+which needs to read in the characteristics of animals.  There are lots
+of animals so it might be nice to catagorize them by their family.
+Here is a sample format for such an input file:
+\begin{verbatim}
+reptile: (
+  alligator: (
+    legs = 4
+    extinct = no
+    )
+  python: (
+    legs = 0
+    extinct = no
+    )
+  )
+bird: (
+  owl: (
+    flys = yes
+    extinct = no
+    )
+  )
+\end{verbatim}
+
+This sample illustrates the use of \var{keyword} \lit{=} \var{value}
+assignments and the keyword grouping operators \lit{(} and \lit{)}.
+The keywords in this example are
+\begin{verbatim}
+reptile:alligator:legs
+reptile:alligator:extinct
+reptile:alligator:legs
+reptile:python:size
+reptile:python:extinct
+bird:owl:flys
+bird:owl:extinct
+\end{verbatim}
+
+The \lit{:}'s occuring in these keywords break the keywords into
+smaller logical units called keyword segments.  The sole purpose of this 
+is to allow persons writing input files
+to group the input into easy to read sections.  In the above example
+there are two main sections, the reptile section and the bird section.
+The reptile section takes the form \lit{reptile} \lit{:} \lit{(}
+\var{keyword} \lit{=} \var{value} assignments \lit{)}.  Each of the
+keywords found between the parentheses has the \lit{reptile:} prefix
+attached to it.  Within each of these sections further keyword groupings
+can be used, as many and as deeply nested as the user wants.
+
+Keyword grouping is also useful when you need many different
+programs to read from the same input file.  Each program can
+be assigned its own unique section.
+
+\subsection{Array Construction}
+A method of specifying arrays of data would be useful.  One way to
+do this would be as follows:
+\begin{verbatim}
+array: (
+  0 = 5.4
+  1 = 8.9
+  2 = 3.7
+  )
+\end{verbatim}
+The numbers \lit{0}, \lit{1}, and \lit{2} in this example are
+keyword segments which serve as indices of \lit{array}.  However,
+this syntax is somewhat awkward and array construction operators
+have been provided to simplify the input for this case.
+The following input is equivalent to the above input:
+\begin{verbatim}
+array = [ 5.4 8.9 3.7 ]
+\end{verbatim}
+
+More complex arrays than this can be imagined.  Suppose an array
+of complex numbers is needed.   For example the input
+\begin{verbatim}
+carray: (
+  0: ( r = 1.0  i = 0.0 )
+  1: ( r = 0.0  i = 1.0 )
+  )
+\end{verbatim}
+could be written as
+\begin{verbatim}
+carray: [
+  (r = 1.0 i = 0.0)
+  (r = 0.0 i = 1.0)
+  ]
+\end{verbatim}
+which looks a bit nicer than the example without array construction
+operators.
+
+Furthermore, the array construction operators can be nested in about
+every imaginable way.  This allows multidimensional arrays of complicated
+data to be represented.
+
+\subsection{Incremental Array Construction}
+It would be nice to just extend an array that is already defined.
+This feature has not been implemented; however, user demand
+for it might result in its implementation.  The operators reserved for
+this purpose are \lit{+[} and \lit{]}.
+
+\subsection{Table Construction}
+Although the array contstruction operators will suit most requirements
+for enumerated lists of data, in some cases the input can still look
+ugly.  This can, in some cases, be fixed with the table construction
+operators, \lit{\{} and \lit{\}}.
+
+Suppose a few long vectors of the same length are needed and the data
+in the $i$'th element of each array is related or somehow belong together.
+If the arrays are so long that the width of a page is exceeded, then
+data that should be seen next to each other are no longer adjacent.
+The way this problem can be fixed is to arrange the data vertically
+side by side rather than horizontally.  The table construction
+operators allows the user to achieve this in a very simple manner.
+In the following example, it doesn't look much better to use
+the table construction operator, it is only provided to show the
+syntax:
+\begin{verbatim}
+balls: (
+  color    = [  red      blue     red   ]
+  diameter = [   12       14       11   ]
+  material = [  rubber  vinyl   plastic ]
+  bouces   = [  yes      no       no    ]
+  )
+\end{verbatim}
+can be written
+\begin{verbatim}
+balls: (
+  { color diameter material bounces }
+                  =
+  {  red     12    rubber    yes
+     blue    14    vinyl     no
+     red     11    plastic   no     }
+  )
+\end{verbatim}
+The length and width of the table can be anything the user desires.
+
+\subsection{Value Substitution}
+Occasionally, a user may need to repeat some value several times in
+an input file.  If the value must be changed, it would be nice to
+only change the value in one place.  The value substitution feature
+of \libip{} always the user to do this.  Any place a value can
+occur the user can place a \lit{\$}.  Following this a keyword
+must be given.  This keyword must have been assigned before
+the attempt is made to use its value in a value substitution.
+
+Here is an example illustrating most of the variable substition
+features:
+\begin{verbatim}
+default:linewidth = 130
+testsub: (
+  ke: (
+    ke_1 = 1
+    ke_2 = 2
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    )
+  kx = $ke
+  r1 = 3.0
+  r2 = $r1
+  linewidth = $:default:linewidth
+  )
+\end{verbatim}
+is the same as specifying
+\begin{verbatim}
+testsub: (
+  ke: (
+    ke_1 = 1
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    ke_2 = 2
+    )
+  linewidth = 130
+  r2 = 3.0
+  r1 = 3.0
+  kx: (
+    ke_1 = 1
+    ke_2 = 2
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    )
+  )
+\end{verbatim}
+It can be seen from this that value substitution can result in
+entire keyword segment hierarchies being copied, as well as
+simple substitutions.
+
+\subsection{Expression Evaluation}
+It is nice to be able to multiply numbers together directly in
+the input file.  For example, you may need to change the units
+on a number and want to see where exactly the number is coming
+from.  This motivated the development of an expression evaluation
+facility in the \libip{} package.  This facility is still under
+development, but some primitive expressions can be evaluated in
+the current release.
+
+Suppose your program requires several parameters \lit{x1}, \lit{x2}, and
+\lit{x3}.
+Furthermore, suppose that their ratios remain fixed for all the runs
+of the program that you desire.  It would be best to specify some
+scale factor in the input that would be the only thing that has
+to be changed from run to run.  If you don't want to or cannot modify
+the program, then this can be done directly with \libip{} as follows
+\begin{verbatim}
+scale = 1.234
+x1 = ( $:scale *  1.2 )
+x2 = ( $:scale *  9.2 )
+x3 = ( $:scale * -2.0 )
+\end{verbatim}
+So we see that to the right of the ``\lit{=}'' the characters ``\lit{(}''
+and ``\lit{)}'' are the expression construction operators.  This is
+in contrast to their function when they are to the left of the
+``\lit{=}'', where they
+are the keyword grouping operators.
+
+Currently, the expression must be binary and the data is all converted
+to double.  If you use the expression construction operators to produce
+data that the program expects to be integer, you will certainly get
+the wrong answers (unless the desired value happens to be zero).
+
+\subsection{The Current Working Keyword List}\label{cwklist}
+Applications that use the \libip{} package to parse input files should
+provide the user with two pieces of information about each piece of
+data that the application needs.  The first is the keyword which is
+searched for and the second is the current working keyword list.
+The current working keyword list provides a list of prefixes for
+the keyword.  Each element in this list is tried until a match is
+found.  The value of the first matching keyword appended to a current
+working keyword is the value that the application will use.  The
+current working keyword list was designed to eliminate redundant
+entries in the input file.  Suppose an application
+consists of several related programs that require independent input,
+however, the user wants some of the input parameters to be the same
+for some of the programs and different for others.
+
+\begin{figure}[e]
+\centering
+
+\fbox{\begin{minipage}[t]{2in}\small
+\begin{center}
+{\normalsize \bf Prog1 Manual}
+\end{center}
+
+{\bf Input File}
+\begin{itemize}
+\item[] \verb|input.ipv2|
+\end{itemize}
+
+{\bf Current Working Keywords}
+\begin{itemize}
+\item[] \verb|:default|
+\item[] \verb|:prog1|
+\end{itemize}
+
+{\bf Keywords}
+\begin{itemize}
+\item[] \verb|convergence|
+\item[] \verb|title|
+\item[] \verb|:prog1:restart|
+\end{itemize}
+\end{minipage}} \
+\fbox{\begin{minipage}[t]{2in}\small
+\begin{center}
+{\normalsize \bf Prog2 Manual}
+\end{center}
+
+{\bf Input File}
+\begin{itemize}
+\item[] \verb|input.ipv2|
+\end{itemize}
+
+{\bf Current Working Keywords}
+\begin{itemize}
+\item[] \verb|:default|
+\item[] \verb|:prog2|
+\end{itemize}
+
+{\bf Keywords}
+\begin{itemize}
+\item[] \verb|convergence|
+\item[] \verb|title|
+\item[] \verb|:prog2:restart|
+\end{itemize}
+\end{minipage}}
+
+\caption{The documentation for {\tt prog1} and {\tt prog2}.}
+\label{progdoc}
+
+\end{figure}
+
+
+For example, we have two programs, \verb|prog1| and \verb|prog2|.
+The documentation for these programs is shown in Figure~\ref{progdoc}.
+The file contents of the file \verb|input.ipv2| is shown in
+Figure~\ref{proginputfile}
+and the keyword assigments made by these programs are given in
+Table~\ref{progoneassign} for \verb|prog1| and in Table~\ref{progtwoassign}
+for \verb|prog2|.
+
+\begin{figure}[e]
+\centering
+\fbox{\begin{minipage}{2in}
+\begin{alltt}
+
+default: ( \\
+  title = "Test calculation." \\
+  restart = yes \\
+  convergence = 0.0001 \\
+  ) \\
+
+prog1: ( \\
+  convergence = 0.01 \\
+  title = "Course conv." \\
+  restart = no \\
+  ) \\
+
+prog2: ( \\
+  title = "Prog2 title." \\
+  ) \\
+
+\end{alltt}
+\end{minipage}}
+\caption{The input file, {\tt input.ipv2}.}
+\label{proginputfile}
+\end{figure}
+
+\begin{table}[e]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\multicolumn{1}{|c}{Keyword}
+  & \multicolumn{1}{c}{Actual Keyword}
+  & \multicolumn{1}{c|}{Value} \\
+\hline
+\verb|convergence| & \verb|:prog1:convergence| & \verb|0.01| \\
+\verb|title| & \verb|:prog1:title| & \verb|"Course conv."| \\
+\verb|:prog1:restart| & \verb|:prog1:restart| & \verb|yes| \\
+\hline
+\end{tabular}
+\caption{Keyword assigments made by {\tt prog1}.}
+\label{progoneassign}
+\end{table}
+
+\begin{table}[e]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\multicolumn{1}{|c}{Keyword}
+  & \multicolumn{1}{c}{Actual Keyword}
+  & \multicolumn{1}{c|}{Value} \\
+\hline
+\verb|convergence| & \verb|:default:convergence| & \verb|0.0001| \\
+\verb|title| & \verb|:prog2:title| & \verb|"Prog2 title."| \\
+\verb|:prog2:restart| & & undefined \\
+\hline
+\end{tabular}
+\caption{Keyword assigments made by {\tt prog2}.}
+\label{progtwoassign}
+\end{table}
+
+
+\section{Programming with \libip{}}
+All the programming complexity associated with keyword grouping,
+array construction, table construction, and value substitution introduced
+in the previous section is completely hidden from the programmer using the
+\libip{} routines.  The library handles all of these things automatically
+to present the programmer with nothing but simple \var{keyword} \lit{=}
+\var{value} assignments.  However, \libip{} does go beyond this to
+give the programmer simple means to read arrays, find keywords
+in the input file, count the number of elements in arrays, and do type
+conversions on values.  If this is still not enough, the explicit use of
+the \libip{} routines can be nearly completely eliminated
+by using the \sgen{} utility program, which generates C language
+routines to read in and do other useful manipulations with
+with C data structures.
+
+\subsection{Initializing and Cleaning Up}
+\begin{verbatim}
+#include <ip_libv2.h>
+void ip_initialize(FILE *in, FILE *out);
+void ip_done()
+\end{verbatim}
+The \verb|ip_initialize| routine is the first routine called by the user
+of the \libip{} package.  The first argument, \verb|in|, is a
+\verb|FILE| pointer to the input file to be parsed.  The second argument,
+\verb|out|, is a \verb|FILE| pointer to the name of an output file.
+The \libip{} package will only write to \verb|out| if an error is
+encountered.  All of the input is processed at the time \verb|ip_initialize|
+is called.  The input is converted into an internal representation which
+is stored in memory.  This internal data is used in subsequent calls
+to the \libip{} package.  After the \libip{} routines are no longer needed,
+the \verb|ip_done| routine should be called to release this memory.
+
+\subsection{Multiple Input Files}
+\begin{verbatim}
+#include <ip_libv2.h>
+void ip_append(FILE *in, FILE *out);
+void ip_append_from_input(char *prefix, FILE *out);
+\end{verbatim}
+The \verb|ip_append| routine is used to parse input from multiple files.
+The \verb|ip_initialize| routine must be called to process the first
+file before \verb|ip_append| is called.  Otherwise, the behaviour is
+essentially the same as for \verb|ip_initialize|.
+
+The \verb|ip_append_from_input| routine uses information from the
+input files which have already been parsed to obtain more
+files to parse of the user's (rather than the programmer's) choice.
+The argument \verb|prefix| is a NULL terminated character string
+and the argument \verb|out| corresponds to the \verb|out| arguments
+of \verb|ip_append| and \verb|ip_initialize|.
+First, \verb|ip_append_from_input| appends the string \verb|"dir"| to
+\verb|prefix| to form a keyword.  The string value of this keyword is
+obtained from the currently parsed input.  This value is used as
+the directory string which is used as discussed below.  Next, the
+string \verb|"files"| is appended to \verb|prefix|.  This is an
+array of strings.  Each of the elements of this array are appended
+to the directory string to obtain a complete filename which is opened
+and given, together with the second argument, \verb|out|, to the
+\verb|ip_append| routine.  If one of the files cannot be opened, then
+an error message is printed and processing continues with the next
+file.
+
+\subsection{Current Working Keyword List Maintenance}
+\begin{verbatim}
+#include <ip_libv2.h>
+void ip_cwk_root();
+void ip_cwk_clear();
+void ip_cwk_add(char *keyword);
+void ip_cwk_push();
+void ip_cwk_pop();
+\end{verbatim}
+The current working keyword list is described from the user
+perspective in Section~\ref{cwklist}.  This routines allow
+the programmer to create the list, add new entries, save the
+current working keyword list to a stack and retrieave the
+current working keyword list from the stack.  If the programmer
+attempts to set the current working keyword path to a path that
+does not exist in the current input, then that keyword path is
+deleted from the list.  In other words, the current working keyword
+list should not be set until all of the input has been parsed with
+\verb|ip_initialize|, \verb|ip_append|, and \verb|ip_append_from_input|.
+
+The \verb|ip_cwk_root| routine sets the current working keyword list
+to \verb|:|, which means that any keywords searched for are only
+matched by exact matches in the input.
+
+The \verb|ip_cwk_clear| routine sets the current working keyword list
+to be empty.  Nothing will be match in this case.  This routine is
+only used to initialize the current working keyword list for further
+manipulations.
+
+The \verb|ip_cwk_add| routine adds a new working keyword to the
+current working keyword list.  There are two ways to add keywords
+to this list.  In the first way, this routine is called with an
+absolute path (which begins with a ``\verb|:|'').  This absolute
+path is added to the beginning\footnote{This is important--the
+last working keyword added is the first one searched for.} of the current
+working keyword list.  In the second way, \verb|ip_cwk_add| is
+called with a relative keyword.  This relative keyword is appended to
+the end of all of the keywords in the current working keyword list.
+
+The \verb|ip_cwk_push| and \verb|ip_cwk_pop| functions respectively
+push and pop the current working keyword list from the internal stack of
+working keyword lists.  The stack is initially empty after the call
+to \verb|ip_initialize| and to call \verb|ip_cwk_pop| on an empty
+stack is an error.
+
+\subsection{Obtaining Input Parameters}
+\begin{verbatim}
+#include <ip_libv2.h>
+int ip_data(char *keyword, char *conv, void *value, n, ...);
+int ip_data_v(char *keyword, char *conv, void *value, n, int *v);
+int ip_boolean(char *keyword, int *boolean, n, ...);
+int ip_boolean_v(char *keyword, int *boolean, n, int *v);
+int ip_value(char *keyword, char **string, n, ...);
+int ip_value_v(char *keyword, char **string, n, int *v);
+int ip_string(char *keyword, char **string, n, ...);
+int ip_string_v(char *keyword, char **string, n, int *v);
+\end{verbatim}
+After the input has been parsed and read into memory, these routines
+are used to extract data from the input.  They all take a keyword as
+an argument.  If the keyword given is absolute, which is true if and
+only if the first character in the keyword is ``\verb|:|'', then
+the value associated with that keyword is returned.  Otherwise, the
+keyword is relative to the current working keyword list and the
+keyword is appended to each keyword in this list to generate a completed
+keyword.  The value of the keyword is the value of the first completed
+keyword which can be found in the input.  Each of these routines has
+two forms.  The first is a variable argument list length format in which
+the number of indices to the keyword are given followed by each integer
+index.  The second form takes the number of indices followed by a pointer
+to an integer vector.  The purpose of allowing indices to be specified
+in the argument list is to make the reading of arrays a little easier.
+For example the code
+\begin{verbatim}
+  for (i=0; i<n; i++) {
+    sscanf(keyword,"vector:%d",i);
+    ip_value(keyword,value,0);
+    }
+\end{verbatim}
+can be replaced by
+\begin{verbatim}
+  for (i=0; i<n; i++) {
+    ip_value("vector",value,1,i);
+    }
+\end{verbatim}
+which is a little prettier.  If indices are not desired, then use
+the variable arguments interface and set \verb|n| equal to zero.
+
+The \verb|ip_data| routine takes a \verb|scanf| conversion specification
+as the argument \verb|conv|.  The \verb|value| argument is a pointer to
+data of the appropiate type.  The \verb|ip_data_v| routine is equivalent
+to the \verb|ip_data| routine, except a pointer to an array of indices
+is expected, instead of a variable length argument list.
+
+The \verb|ip_boolean| routine requires a pointer to an integer, \verb|boolean|.
+If the value associated with the keyword is \verb|yes|, \verb|true|, or
+\verb|1|, then \verb|*boolean=1| on exit.
+If the value associated with the keyword is \verb|no|, \verb|false|, or
+\verb|0|, then \verb|*boolean=0| on exit.
+The value of the keyword is converted to lower case automatically.
+
+The \verb|ip_value| routine writes to \verb|*string| the location of
+the internal data that has been allocated by the parsing routines for
+the value associated with the keyword.  All data is held internally as
+character data.  Modifying the character array \verb|*string| is not
+recommended and the user should never \verb|free(*string)|.
+
+The \verb|ip_string| routine is like \verb|ip_value|, except the
+character array at \verb|*string| is \verb|malloc|'ed by \verb|ip_string|
+and can be modified and \verb|free|'ed by the user.
+
+\subsection{Array Dimensions}
+\begin{verbatim}
+#include <ip_libv2.h>
+int ip_count(char *keyword, int *count, int n, ...);
+int ip_count_v(char *keyword, int *count, int n, int *v);
+\end{verbatim}
+These routines count the number of elements in a vector.  The count
+will be found in \verb|*count| on exit.
+
+\subsection{Error Processing}
+\begin{verbatim}
+#include <ip_libv2.h>
+char *ip_error_message(int errcod);
+void ip_error(char *msg, ...);
+void ip_warn(char *msg, ...);
+\end{verbatim}
+These routines assist in the handling of errors.  Section~\ref{errorsection}
+should be consulted for a list of the errors and how they are obtained.
+
+The \verb|ip_error_message| routine takes an error code as the argument
+and returns a string which describes the error.
+
+The \verb|ip_error| routine can be used when a fatal error occurs.  It
+will print out a message and call \verb|exit|.  The \verb|msg| argument
+is a conversion like those which \verb|printf| uses.  The data following
+the \verb|msg| argument are values to be converted according to the
+format specifiers in \verb|msg|.
+
+The \verb|ip_warn| command is like \verb|ip_error|, except control returns
+to the caller after the message is printed.  An additional format conversion
+is available for \verb|ip_warn|, \verb|%k|.  When this is found in \verb|msg|
+the last keyword searched for is inserted into the message and no additional
+arguments are expected.  The \verb|%k| format conversion can only appear one
+time in \verb|msg|.
+
+\subsection{Other Useful Routines}
+\begin{verbatim}
+#include <ip_libv2.h>
+int ip_exist(char *keyword, n, ...);
+int ip_exist_v(char *keyword, n, int *v);
+void ip_set_uppercase(int uc);
+\end{verbatim} 
+The \verb|ip_exist| routine checks for the existence of a keyword.
+
+Calling \verb|ip_set_uppercase| with \verb|uc| set to 1 causes all
+unquoted keywords and data to be converted to uppercase as they
+are read in by the \verb|ip_initialize|, \verb|ip_append|, and
+\verb|ip_append_from_input| routines.  This is the only routine
+in \libip{} that can be called before \verb|ip_initialize|.
+
+
+\section{Error Codes}
+\label{errorsection}
+The \libip{} routines which return an integer return an error code.
+These error codes are \verb|#define|'ed to symbolic names in the
+\verb|ip_libv2.h| include file. Table~\ref{errorcodes} summarizes
+the error codes and their meanings.
+
+
+\begin{table}[e]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\multicolumn{1}{|c}{Symbolic Name}
+  & \multicolumn{1}{c|}{Description} \\
+\hline
+\verb|IPE_OK|                & no problem (\verb|IPE_OK| $==$ 0)\\
+\verb|IPE_KEY_NOT_FOUND|     & the keyword was not found \\
+\verb|IPE_OUT_OF_BOUNDS|     & an array subscript was out of bounds \\
+\verb|IPE_MALLOC|            & memory allocation failed \\
+\verb|IPE_NOT_AN_ARRAY|      & gave index for data which isn't an array \\
+\verb|IPE_NOT_A_SCALAR|      & didn't give index for data which is an array \\
+\verb|IPE_TYPE|              & the datum is not of the appropiate type \\
+\verb|IPE_HAS_NO_VALUE|      & the keyword has no value \\
+\verb|IPE_VAL_NOT_EXPD|      & a value was not expected for the keyword \\
+\hline
+\end{tabular}
+\caption{Error codes returned by \libip{} routines.}
+\label{errorcodes}
+\end{table}
+
+\section{Implementation Notes}
+
+\subsection{Sandia National Laboratories, Livermore}
+The \libip{} routines only run on the SGI machines, but this can be
+changed.  The library
+is \verb|~cljanss/SGI/lib/libipv2.a|.  The include
+files are in \verb|~cljanss/include|, so you must
+give the C compiler the \verb|-I/usr/people2/cljanss/include| option.
+The source and documentation are in \verb|~cljanss/src/ParQC/libipv2|.
+
+\subsubsection{Bugs}
+The routines with variable arguments sometimes fail when $n > 0$.
+
+\subsection{Sandia National Laboratories, Albuquerque}
+Remarkably, the \libip{} routines run on the NCUBE.  The needed files
+can be found on the front end, cubicle.  Due to recent changes the files
+cannot be found on the gateway machine, ceratiidae; my home directory
+will be nearly empty there.
+The library
+is \verb|~cljanss/NCUBE/lib/libipv2.lib|.  The include
+files are in \verb|~cljanss/include|, so you must
+give the C compiler the \verb|-I/home1/cljanss/include| option.
+The source is in \verb|~cljanss/ParQC/libipv2|.
+
+\subsubsection{Bugs}
+No known bugs.
+
+\subsection{Stanford University}
+The \libip{} routines currently run on d31ha0.Stanford.EDU.
+The library is \verb|~psi/sandia/DEC/lib/libipv2.a|.  The include
+files are in \verb|~psi/sandia/include|.
+
+\subsubsection{Bugs}
+The \libip{} library has not been thoroughly tested at Stanford, but no bugs
+are known.
+
+\end{document}

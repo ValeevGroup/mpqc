@@ -1,0 +1,520 @@
+	.file	1 "bug.cc"
+
+ # GNU C++ 2.4.5 [AL 1.1, MM 40] Silicon Graphics Mips compiled by GNU C
+
+ # Cc1 defaults:
+
+ # Cc1 arguments (-G value = 8, Cpu = default, ISA = 1):
+ # -quiet -dumpbase -g -o
+
+gcc2_compiled.:
+__gnu_compiled_cplusplus:
+	.text
+	#.def	B;	.scl	10;	.type	0x8;	.size	1;	.endef
+	#.def	.eos;	.val	1;	.scl	102;	.tag	B;	.size	1;	.endef
+	.align	2
+	#.def	__1B;	.val	__1B;	.scl	3;	.tag	B;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 18
+LM1:
+	.ent	__1B
+__1B:
+	.frame	$fp,8,$31		# vars= 0, regs= 1/0, args = 0, extra= 0
+	.mask	0x40000000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,8
+	sw	$fp,0($sp)
+	move	$fp,$sp
+	move	$3,$4
+	#.def	this;	.val	3;	.scl	17;	.tag	B;	.size	1;	.type	0x18;	.endef
+$L2:
+	move	$2,$3
+	j	$L1
+	j	$L1
+$L1:
+	move	$sp,$fp			# sp not trusted here
+	lw	$fp,0($sp)
+	addu	$sp,$sp,8
+	j	$31
+	.end	__1B
+	#.def	B;	.scl	13;	.tag	B;	.size	1;	.type	0x8;	.endef
+	.align	2
+	#.def	__1BRC1B;	.val	__1BRC1B;	.scl	3;	.tag	B;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 19
+LM2:
+	.ent	__1BRC1B
+__1BRC1B:
+	.frame	$fp,8,$31		# vars= 0, regs= 1/0, args = 0, extra= 0
+	.mask	0x40000000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,8
+	sw	$fp,0($sp)
+	move	$fp,$sp
+	move	$3,$4
+	sw	$5,12($fp)
+	#.def	this;	.val	3;	.scl	17;	.tag	B;	.size	1;	.type	0x18;	.endef
+$L4:
+	move	$2,$3
+	j	$L3
+	j	$L3
+$L3:
+	move	$sp,$fp			# sp not trusted here
+	lw	$fp,0($sp)
+	addu	$sp,$sp,8
+	j	$31
+	.end	__1BRC1B
+	#.def	B;	.scl	13;	.tag	B;	.size	1;	.type	0x8;	.endef
+	.align	2
+	#.def	_._1B;	.val	_._1B;	.scl	3;	.type	0x21;	.endef
+
+	.loc	1 20
+LM3:
+	.ent	_._1B
+_._1B:
+	.frame	$fp,32,$31		# vars= 0, regs= 3/0, args = 16, extra= 0
+	.mask	0xc0010000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,32
+	sw	$31,24($sp)
+	sw	$fp,20($sp)
+	sw	$16,16($sp)
+	move	$fp,$sp
+	move	$16,$4
+	sw	$5,36($fp)
+	#.def	this;	.val	16;	.scl	17;	.tag	B;	.size	1;	.type	0x18;	.endef
+	#.def	__in.chrg;	.val	4;	.scl	9;	.type	0x4;	.endef
+$L6:
+	lw	$3,36($fp)
+	andi	$2,$3,0x0001
+	beq	$2,$0,$L8
+	move	$4,$16
+	li	$5,0x00000001		# 1
+	jal	__builtin_delete
+	j	$L8
+$L7:
+$L8:
+$L5:
+	move	$sp,$fp			# sp not trusted here
+	lw	$31,24($sp)
+	lw	$fp,20($sp)
+	lw	$16,16($sp)
+	addu	$sp,$sp,32
+	j	$31
+	.end	_._1B
+	#.def	B;	.scl	13;	.tag	B;	.size	1;	.type	0x8;	.endef
+	#.def	C;	.scl	10;	.type	0x8;	.size	1;	.endef
+	#.def	.eos;	.val	1;	.scl	102;	.tag	C;	.size	1;	.endef
+	.align	2
+	#.def	__1C;	.val	__1C;	.scl	3;	.tag	C;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 26
+LM4:
+	.ent	__1C
+__1C:
+	.frame	$fp,8,$31		# vars= 0, regs= 1/0, args = 0, extra= 0
+	.mask	0x40000000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,8
+	sw	$fp,0($sp)
+	move	$fp,$sp
+	move	$3,$4
+	#.def	this;	.val	3;	.scl	17;	.tag	C;	.size	1;	.type	0x18;	.endef
+$L10:
+	move	$2,$3
+	j	$L9
+	j	$L9
+$L9:
+	move	$sp,$fp			# sp not trusted here
+	lw	$fp,0($sp)
+	addu	$sp,$sp,8
+	j	$31
+	.end	__1C
+	#.def	C;	.scl	13;	.tag	C;	.size	1;	.type	0x8;	.endef
+	.align	2
+	#.def	__1CRC1C;	.val	__1CRC1C;	.scl	3;	.tag	C;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 27
+LM5:
+	.ent	__1CRC1C
+__1CRC1C:
+	.frame	$fp,8,$31		# vars= 0, regs= 1/0, args = 0, extra= 0
+	.mask	0x40000000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,8
+	sw	$fp,0($sp)
+	move	$fp,$sp
+	move	$3,$4
+	sw	$5,12($fp)
+	#.def	this;	.val	3;	.scl	17;	.tag	C;	.size	1;	.type	0x18;	.endef
+$L12:
+	move	$2,$3
+	j	$L11
+	j	$L11
+$L11:
+	move	$sp,$fp			# sp not trusted here
+	lw	$fp,0($sp)
+	addu	$sp,$sp,8
+	j	$31
+	.end	__1CRC1C
+	#.def	C;	.scl	13;	.tag	C;	.size	1;	.type	0x8;	.endef
+	#.def	Aval;	.scl	10;	.type	0x8;	.size	1;	.endef
+	#.def	.eos;	.val	1;	.scl	102;	.tag	Aval;	.size	1;	.endef
+	.align	2
+	#.def	__4AvalG1B;	.val	__4AvalG1B;	.scl	3;	.tag	Aval;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 32
+LM6:
+	.ent	__4AvalG1B
+__4AvalG1B:
+	.frame	$fp,32,$31		# vars= 0, regs= 4/0, args = 16, extra= 0
+	.mask	0xc0030000,-4
+	.fmask	0x00000000,0
+	subu	$sp,$sp,32
+	sw	$31,28($sp)
+	sw	$fp,24($sp)
+	sw	$17,20($sp)
+	sw	$16,16($sp)
+	move	$fp,$sp
+	move	$17,$4
+	#.def	this;	.val	17;	.scl	17;	.tag	Aval;	.size	1;	.type	0x18;	.endef
+$L15:
+	move	$2,$17
+$Lb0:
+	#.begin	$Lb0	1
+$Le1:
+	#.bend	$Le1	1
+	move	$16,$2
+	j	$L13
+$Lb2:
+	#.begin	$Lb2	1
+$Le3:
+	#.bend	$Le3	1
+	j	$L13
+$L13:
+	addu	$2,$fp,39
+	move	$4,$2
+	li	$5,0x00000002		# 2
+	jal	_._1B
+	j	$L14
+$L14:
+	move	$2,$16
+	move	$sp,$fp			# sp not trusted here
+	lw	$31,28($sp)
+	lw	$fp,24($sp)
+	lw	$17,20($sp)
+	lw	$16,16($sp)
+	addu	$sp,$sp,32
+	j	$31
+	.end	__4AvalG1B
+	#.def	Aval;	.scl	13;	.tag	Aval;	.size	1;	.type	0x8;	.endef
+	.align	2
+	#.def	__4AvalG1C;	.val	__4AvalG1C;	.scl	3;	.tag	Aval;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 33
+LM7:
+	.ent	__4AvalG1C
+__4AvalG1C:
+	.frame	$fp,8,$31		# vars= 0, regs= 1/0, args = 0, extra= 0
+	.mask	0x40000000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,8
+	sw	$fp,0($sp)
+	move	$fp,$sp
+	move	$3,$4
+	#.def	this;	.val	3;	.scl	17;	.tag	Aval;	.size	1;	.type	0x18;	.endef
+$L17:
+	move	$2,$3
+	j	$L16
+	j	$L16
+$L16:
+	move	$sp,$fp			# sp not trusted here
+	lw	$fp,0($sp)
+	addu	$sp,$sp,8
+	j	$31
+	.end	__4AvalG1C
+	#.def	Aval;	.scl	13;	.tag	Aval;	.size	1;	.type	0x8;	.endef
+	#.def	Aref;	.scl	10;	.type	0x8;	.size	1;	.endef
+	#.def	.eos;	.val	1;	.scl	102;	.tag	Aref;	.size	1;	.endef
+	.align	2
+	#.def	__4ArefR1B;	.val	__4ArefR1B;	.scl	3;	.tag	Aref;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 38
+LM8:
+	.ent	__4ArefR1B
+__4ArefR1B:
+	.frame	$fp,8,$31		# vars= 0, regs= 1/0, args = 0, extra= 0
+	.mask	0x40000000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,8
+	sw	$fp,0($sp)
+	move	$fp,$sp
+	move	$3,$4
+	sw	$5,12($fp)
+	#.def	this;	.val	3;	.scl	17;	.tag	Aref;	.size	1;	.type	0x18;	.endef
+$L19:
+	move	$2,$3
+	j	$L18
+	j	$L18
+$L18:
+	move	$sp,$fp			# sp not trusted here
+	lw	$fp,0($sp)
+	addu	$sp,$sp,8
+	j	$31
+	.end	__4ArefR1B
+	#.def	Aref;	.scl	13;	.tag	Aref;	.size	1;	.type	0x8;	.endef
+	.align	2
+	#.def	__4ArefR1C;	.val	__4ArefR1C;	.scl	3;	.tag	Aref;	.size	1;	.type	0x68;	.endef
+
+	.loc	1 39
+LM9:
+	.ent	__4ArefR1C
+__4ArefR1C:
+	.frame	$fp,8,$31		# vars= 0, regs= 1/0, args = 0, extra= 0
+	.mask	0x40000000,-8
+	.fmask	0x00000000,0
+	subu	$sp,$sp,8
+	sw	$fp,0($sp)
+	move	$fp,$sp
+	move	$3,$4
+	sw	$5,12($fp)
+	#.def	this;	.val	3;	.scl	17;	.tag	Aref;	.size	1;	.type	0x18;	.endef
+$L21:
+	move	$2,$3
+	j	$L20
+	j	$L20
+$L20:
+	move	$sp,$fp			# sp not trusted here
+	lw	$fp,0($sp)
+	addu	$sp,$sp,8
+	j	$31
+	.end	__4ArefR1C
+	#.def	Aref;	.scl	13;	.tag	Aref;	.size	1;	.type	0x8;	.endef
+	.rdata
+	.align	2
+$LC0:
+
+	.byte	0x41,0x72,0x65,0x66,0x28,0x42,0x26,0x29
+	.byte	0x20,0x46,0x41,0x49,0x4c,0x45,0x44,0xa
+	.byte	0x0
+	.align	2
+$LC1:
+
+	.byte	0x41,0x72,0x65,0x66,0x28,0x42,0x26,0x29
+	.byte	0x20,0x4f,0x4b,0xa,0x0
+	.align	2
+$LC2:
+
+	.byte	0x41,0x72,0x65,0x66,0x28,0x43,0x26,0x29
+	.byte	0x20,0x46,0x41,0x49,0x4c,0x45,0x44,0xa
+	.byte	0x0
+	.align	2
+$LC3:
+
+	.byte	0x41,0x72,0x65,0x66,0x28,0x43,0x26,0x29
+	.byte	0x20,0x4f,0x4b,0xa,0x0
+	.align	2
+$LC4:
+
+	.byte	0x41,0x76,0x61,0x6c,0x28,0x42,0x29,0x20
+	.byte	0x46,0x41,0x49,0x4c,0x45,0x44,0xa,0x0
+	.align	2
+$LC5:
+
+	.byte	0x41,0x76,0x61,0x6c,0x28,0x42,0x29,0x20
+	.byte	0x4f,0x4b,0xa,0x0
+	.align	2
+$LC6:
+
+	.byte	0x41,0x76,0x61,0x6c,0x28,0x43,0x29,0x20
+	.byte	0x46,0x41,0x49,0x4c,0x45,0x44,0xa,0x0
+	.align	2
+$LC7:
+
+	.byte	0x41,0x76,0x61,0x6c,0x28,0x43,0x29,0x20
+	.byte	0x4f,0x4b,0xa,0x0
+	.text
+	.align	2
+	#.def	main;	.val	main;	.scl	2;	.type	0x24;	.endef
+	.globl	main
+
+	.loc	1 43
+LM10:
+	.ent	main
+main:
+	.frame	$fp,80,$31		# vars= 24, regs= 10/0, args = 16, extra= 0
+	.mask	0xc0ff0000,-4
+	.fmask	0x00000000,0
+	subu	$sp,$sp,80
+	sw	$31,76($sp)
+	sw	$fp,72($sp)
+	sw	$23,68($sp)
+	sw	$22,64($sp)
+	sw	$21,60($sp)
+	sw	$20,56($sp)
+	sw	$19,52($sp)
+	sw	$18,48($sp)
+	sw	$17,44($sp)
+	sw	$16,40($sp)
+	move	$fp,$sp
+	jal	__main
+
+	.loc	1 44
+LM11:
+	li	$4,0x00000001		# 1
+	jal	__builtin_new
+	move	$20,$2
+	addu	$4,$fp,16
+	jal	__1B
+	move	$4,$20
+	addu	$5,$fp,16
+	jal	__4ArefR1B
+	move	$16,$2
+	addu	$4,$fp,16
+	li	$5,0x00000002		# 2
+	jal	_._1B
+	bne	$16,$0,$L23
+	la	$4,$LC0
+	jal	printf
+	j	$L24
+$L23:
+
+	.loc	1 45
+LM12:
+	la	$4,$LC1
+	jal	printf
+$L24:
+
+	.loc	1 47
+LM13:
+	li	$4,0x00000001		# 1
+	jal	__builtin_new
+	move	$20,$2
+	addu	$2,$fp,24
+	move	$4,$2
+	jal	__1C
+	addu	$3,$fp,24
+	move	$4,$20
+	move	$5,$3
+	jal	__4ArefR1C
+	move	$17,$2
+	bne	$17,$0,$L25
+	la	$4,$LC2
+	jal	printf
+	j	$L26
+$L25:
+
+	.loc	1 48
+LM14:
+	la	$4,$LC3
+	jal	printf
+$L26:
+
+	.loc	1 50
+LM15:
+	li	$4,0x00000001		# 1
+	jal	__builtin_new
+	move	$20,$2
+	move	$21,$sp
+	move	$22,$sp
+	subu	$sp,$sp,24
+	addu	$3,$sp,16
+	move	$2,$3
+	addu	$3,$2,7
+	srl	$2,$3,3
+	move	$3,$2
+	sll	$2,$3,3
+	.set	volatile
+	lw	$3,0($sp)
+	.set	novolatile
+	addu	$23,$21,7
+	addu	$2,$fp,32
+	move	$4,$2
+	jal	__1B
+	addu	$3,$fp,32
+	move	$4,$23
+	move	$5,$3
+	jal	__1BRC1B
+	addu	$3,$fp,32
+	move	$4,$3
+	li	$5,0x00000002		# 2
+	jal	_._1B
+	move	$sp,$22
+	move	$4,$20
+	lw	$5,4($21)
+	jal	__4AvalG1B
+	move	$18,$2
+	bne	$18,$0,$L27
+	la	$4,$LC4
+	jal	printf
+	j	$L28
+$L27:
+
+	.loc	1 51
+LM16:
+	la	$4,$LC5
+	jal	printf
+$L28:
+
+	.loc	1 53
+LM17:
+	li	$4,0x00000001		# 1
+	jal	__builtin_new
+	move	$20,$2
+	move	$21,$sp
+	move	$22,$sp
+	subu	$sp,$sp,24
+	addu	$3,$sp,16
+	move	$2,$3
+	addu	$3,$2,7
+	srl	$2,$3,3
+	move	$3,$2
+	sll	$2,$3,3
+	.set	volatile
+	lw	$3,0($sp)
+	.set	novolatile
+	addu	$23,$21,7
+	addu	$2,$fp,32
+	move	$4,$2
+	jal	__1C
+	addu	$3,$fp,32
+	move	$4,$23
+	move	$5,$3
+	jal	__1CRC1C
+	move	$sp,$22
+	move	$4,$20
+	lw	$5,4($21)
+	jal	__4AvalG1C
+	move	$19,$2
+	bne	$19,$0,$L29
+	la	$4,$LC6
+	jal	printf
+	j	$L30
+$L29:
+
+	.loc	1 54
+LM18:
+	la	$4,$LC7
+	jal	printf
+$L30:
+	move	$2,$0
+	j	$L22
+	j	$L22
+
+	.loc	1 55
+LM19:
+$L22:
+	move	$sp,$fp			# sp not trusted here
+	lw	$31,76($sp)
+	lw	$fp,72($sp)
+	lw	$23,68($sp)
+	lw	$22,64($sp)
+	lw	$21,60($sp)
+	lw	$20,56($sp)
+	lw	$19,52($sp)
+	lw	$18,48($sp)
+	lw	$17,44($sp)
+	lw	$16,40($sp)
+	addu	$sp,$sp,80
+	j	$31
+	.end	main

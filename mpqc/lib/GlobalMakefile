@@ -1,0 +1,128 @@
+
+# The global GNU Makefile used to set up for any machine
+
+#
+# set up some defaults here which can be overridden in the
+# LocalMakefile
+#
+
+#
+# make sure TARGET_TO_MAKE is defined to something, otherwise
+# make clean will remove everything
+#
+TARGET_TO_MAKE = $(shell basename `pwd`)
+
+#
+# if SRCDIR is not defined, then SRCDIR is the TOPDIR
+#
+ifndef SRCDIR
+  SRCDIR = .
+endif
+
+#
+# this vpath works with listlibs to find the libraries
+#
+vpath %.a $(TOPDIR)/src.lib
+
+#
+# THISDIR is the name of the current directory relative to TOPDIR/src.lib/
+#
+THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src.lib/,,$(shell pwd))
+
+#
+# first check for generated include files in the machine dependent directories
+# and then for include files in the src directory
+#
+INCLUDE = -I. -I$(SRCDIR) -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
+CXXINCLUDE = -I. -I$(SRCDIR) -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
+
+#
+# the programs to convert a web file to C source or TeX source
+#
+CTANGLE = ceetangle
+CWEAVE = ceeweave
+
+# The object code suffix
+OBJSUF = o
+
+# The library suffix
+LIBSUF = a
+
+# the other installer
+INSTALL = install
+INSTALLLIBOPT = -m 0644
+INSTALLBINOPT = -m 0755 -s
+
+# The include file installer
+INCINSTALL=$(SRCDIR)/$(TOPDIR)/bin/incinstall
+
+# The library locator
+#LISTLIBS=$(SRCDIR)/$(TOPDIR)/bin/listlibs.sh
+LISTLIBS=$(TOPDIR)/bin/listlibs
+
+# The object directory maker
+OBJECTDIR=$(SRCDIR)/$(TOPDIR)/bin/objectdir
+
+# The dependency maker
+MAKEDEPEND=makedep
+APPENDDEPEND=appenddepend
+
+# compression program to use
+COMPRESS = gzip
+UNCOMPRESS = gzip -d
+
+#
+# the sgen code generator
+#
+SGEN=sgen
+
+#
+# the default compilers
+#
+FC = f77
+CC = gcc
+CXX = g++
+AR = ar
+RANLIB = ranlib
+LD = $(CC)
+
+ARFLAGS = r
+LDFLAGS =
+
+COPTIONS = -O
+COPTIONS_NOOPT =
+COPTIONS_DEBUG = -g
+
+CFLAGS = $(COPTIONS) $(DEFINES) $(INCLUDE)
+CFLAGS_NOOPT = $(COPTIONS_NOOPT) $(DEFINES) $(INCLUDE)
+CFLAGS_DEBUG = $(COPTIONS_DEBUG) $(DEFINES) $(INCLUDE)
+
+CXXOPTIONS = -O
+CXXOPTIONS_NOOPT =
+CXXOPTIONS_DEBUG = -g
+
+CXXFLAGS = $(CXXOPTIONS) $(DEFINES) $(CXXINCLUDE)
+CXXFLAGS_NOOPT = $(CXXOPTIONS_NOOPT) $(DEFINES) $(CXXINCLUDE)
+CXXFLAGS_DEBUG = $(CXXOPTIONS_DEBUG) $(DEFINES) $(CXXINCLUDE)
+
+FOPTIONS = -O
+FOPTIONS_NOOPT =
+FOPTIONS_DEBUG = -g
+FFLAGS_SAVE =
+FFLAGS = $(FOPTIONS) $(FFLAGS_SAVE)
+FFLAGS_NOOPT = $(FOPTIONS_NOOPT) $(FFLAGS_SAVE)
+FFLAGS_DEBUG = $(FOPTIONS_DEBUG) $(FFLAGS_SAVE)
+
+#
+# lex or flex?
+#
+LEX = flex
+
+#
+# yacc or bison?
+#
+YACC=bison
+
+############
+
+include $(TOPDIR)/lib/LocalMakefile

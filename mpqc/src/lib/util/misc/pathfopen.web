@@ -1,0 +1,106 @@
+\documentstyle{web}
+\begin{document}
+
+@* Finding a file on a search path.  The routine exported from this
+file does an |fopen| on a requested file, looking in each directory
+along a provided search path.
+
+
+Here is the routine.  It searches |path| for |name|, and returns a
+|FILE *| to the successfully opened file.  If the file is not found on
+the path, zero is returned.
+
+@<pathfopen.@>=
+FILE *pathfopen(path, name, type)
+char *path, *name, *type;
+{
+  char fname[256], *tpath = path;
+  FILE *rval;
+  while (1) {
+    @<Copy next directory into |fname|, |break| if done.@>;@/
+    @<Append |name| to |fname|.@>;@/
+    @<Try to open the file.  |return| on success.@>;
+  }
+  return ((FILE *) 0);
+}
+
+@ The path string has the usual format of a list of directories
+separated by colons.  We'll copy characters from |path| into |fname|
+until we encounter a colon.
+
+@<Copy next directory into |fname|, |break| if done.@>=
+{
+  static int donep;
+  int i=0;
+  if (tpath == path) donep = 0;
+  if (donep) break;
+  while (1){
+    if (*tpath == 0) donep = 1;
+    fname[i] = *tpath++;
+    if (fname[i] == ':' || fname[i] == 0) break;
+    i++;
+  }
+  fname[i] = 0;
+}
+
+@ To build a file name to try and open, we must append |name| to the
+directory that is currently stored in |fname|. Examine the end of the
+directory name to see if we should insert a trailing '/'.
+
+@<Append |name| to |fname|.@>=
+{
+  int n = strlen(fname);
+  if (n > 0 && fname[n-1] != '/') strcat (fname, "/");
+  strcat (fname, name);
+}
+
+@ Well, we should have a proper file name to in |fname|.  Let's try
+and see if we can open it.
+@<Try to open the file.  |return| on success.@>=
+{
+  rval = fopen (fname, type);
+  if (rval != 0) return (rval);
+}
+
+
+
+@ Here is a little test program to try out the routine.
+@<Test program.@>=
+@<testfopen.@>;
+main () 
+{
+  testfopen (".", "pathfopen.c");
+  testfopen ("", "pathfopen.c");
+  testfopen ("/etc/::", "pathfopen.c");
+  testfopen ("/etc:/:/usr2/raw/mpg/guess",  "pathfopen.c");
+  testfopen ("/etc:/:/usr2/raw/mpg/guess/",  "pathfopen.c");
+  testfopen ("/etc:/:/usr2/raw/guess/",  "pathfopen.c");
+  testfopen ("/etc:/:/usr2/raw/mpg/guess/",  "pathfopen.c");
+}
+
+@ A little routine to try out |pathfopen|.
+@<testfopen.@>=
+testfopen (p, n)
+char *p, *n;
+{
+  FILE *tmp;
+  printf ("Searching \"%s\" for \"%s\"...", p, n); fflush(stdout);
+  tmp = pathfopen (p,n,"r");
+  if (tmp == 0){
+    printf ("Failure\n");
+  } else{
+    printf ("Success!\n");
+    fclose (tmp);
+  }
+}
+
+@ Here, at the very end, we'll assemble the pieces into a proper file.
+
+@c
+#undef TESTPROG
+#include <string.h>
+#include <stdio.h>
+@<pathfopen.@>
+#ifdef TESTPROG
+@<Test program.@>;
+#endif

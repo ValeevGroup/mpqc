@@ -1,0 +1,46 @@
+#!/bin/csh -f
+
+# This takes as an argument a source code directory.  The directories
+# of the source code directory are recursively descended and Makefile's
+# are sought.  For a directory with a Makefile a corresponding directory
+# and Makefile is created with the following entries:
+# SRCDIR = the source code directory
+# VPATH = $(SRCDIR)
+# include $(SRCDIR)/Makefile
+
+# maybe this should also be done
+# if a GlobalMakefile or a GlobalRules is found symbolic links are made
+
+if ("$1" == "") then
+  echo usage: $0 directory
+  exit 1
+  endif
+
+set objectdir = `pwd`
+set srcdir = $1
+cd $srcdir
+set nonomatch
+
+foreach i (*)
+  if (-d $srcdir/$i && $i != CVS) then
+    if (! -d $objectdir/$i) mkdir $objectdir/$i
+    if (-f $srcdir/$i/Makefile || -f $srcdir/$i/makefile) then
+      if (-f $srcdir/$i/Makefile) then
+        set makefile = Makefile
+        endif
+      if (-f $srcdir/$i/makefile) then
+        set makefile = makefile
+        endif
+      if (! -f $objectdir/$i/Makefile) then
+	echo building $objectdir/$i/Makefile
+        echo SRCDIR = $srcdir/$i > $objectdir/$i/Makefile
+        echo VPATH = \$\(SRCDIR\) >> $objectdir/$i/Makefile
+        echo include \$\(SRCDIR\)/$makefile >> $objectdir/$i/Makefile
+      else
+	echo will not overwrite $objectdir/$i/Makefile
+        endif
+      endif
+    cd $objectdir/$i
+    $0 $srcdir/$i
+    endif
+  end

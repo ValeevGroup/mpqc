@@ -1,0 +1,15 @@
+
+molecule<Molecule>: (
+    angstrom = yes
+    { atoms                  geometry                } =
+    {
+      o        [ 0.000000    0.000000    0.000000 ]
+      h        [ 0.000000    0.000000    0.947321 ]
+      h        [ 0.912870    0.000000   -0.253151 ]
+    }
+  )
+
+simp<SimpleCoList>: [
+    <StreSimpleCo> = [ "st1" 1 2 ]
+    <StreSimpleCo> = [ "st2" 1 3 ]
+  ]

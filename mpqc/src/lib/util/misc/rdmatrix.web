@@ -1,0 +1,75 @@
+\documentstyle{web}
+\begin{document}
+
+@* Reading a matrix.  This routine reads in a matrix (in
+a text form) from a file.  The goal is a routine that
+can read in the text versions of matrices produced by
+|dmt_pack|, as well as those currently produced by the
+one electron package, for instance.  These touw forms
+are very similar, consisting of one line for each
+column of the matrix giving the values of the element
+of the matrix.  The difference is that in |dmt_pack|,
+the ordering of the columns is not sequential---the
+order depends upon the distribution of th ecolumns
+through the nodes of the machine.  Thus, in this
+format, each column of floating-point numbers is
+preceded by a column index in the form $(index)$.
+Thus, in reading we simply examine each incoming line
+to see if it is preceeded by such a construct.
+
+@c
+#include <stdio.h>
+#include "assert.h"
+@<The |read_matrix| routine.@> @;@/
+
+@ The routine takes three arguments: The name of the
+file to be opened and read, the size of the matrix, and
+a pointer to a location to receive the array.
+
+@<The |read_matrix| routine.@>=
+
+read_matrix (fname, n, d)
+char *fname;
+int n;   
+double *d;
+{
+  FILE *f;
+  int i;
+
+  @<Open file |fname| as |f| for |read_matrix|.@>;
+  for (i=0; i<n; i++) {
+    @<Read column |i| from the file.@>;
+  }
+  if (f != stdin) fclose (f);
+
+}
+
+@ We check to see if |fname| is non-null. If teh length
+of the string is zero, then we use |stdin|.  Otherwise,
+if a string is given, then we open the requested file.
+
+@<Open file |fname| as |f| for |read_matrix|.@> =
+
+  if (strlen (fname) == 0) f = stdin;
+  else f = fopen (fname, "r");
+  if (f == (FILE *) -1) {
+    fprintf (stderr, "Couldn't open file %s\n", fname);
+    exit(1);
+  }
+
+@ When we read in the next column, we first check to
+see of the index of the column is given as an integer
+in parenthesis. If so, then we use that value to figure
+out where to store the column data into |d|.
+
+@<Read column |i| from the file.@>=
+{
+  int j, icol, colnum, ifgot, ifcol;
+  ifcol = fscanf (f, " (%d) ", &icol);
+  colnum = ifcol ? icol : i;
+  for (j = 0; j < n; j++) {
+    ifgot = fscanf (f, " %lf ", &d[n*colnum + j]);
+    assert (ifgot);
+  }
+}
+

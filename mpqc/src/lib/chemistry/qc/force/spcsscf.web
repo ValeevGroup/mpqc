@@ -1,0 +1,607 @@
+
+\documentstyle[fleqn]{web}
+\begin{document}
+
+\def\mnls{\hbox{$(\mu\nu\vert\lambda\sigma)$}}
+\def\hcore{{\bf H}^{\rm core}}
+\def\half{\hbox{$\raise.5ex\hbox{$\scriptstyle1$}\!{\displaystyle/}\mskip-3mu%
+    \lower.5ex\hbox{$\scriptstyle2$}$}}
+
+\def\topofcontents
+  {\centerline{
+    \titlefont {\. spcsscf}: Single processor closed shell SCF gradients.}
+   \bigskip
+   \centerline{\bf Curtis L. Janssen}
+   \centerline{\it Center for Computational Engineering}
+   \centerline{\it Sandia National Laboratories, Livermore, CA}
+  \vfill} 
+
+
+\def\botofcontents{\vfill
+\center{\bf Disclaimer}
+
+\begin{quotation}
+
+We don't claim  \.{spcsscf} is good for
+anything---if you think it is, great, but it's up to
+you to decide.  If  \.{spcsscf} doesn't work:
+tough.  If you lose a million because 
+\.{spcsscf} messes up, it's you that's out the million,
+not us.  If you don't like this disclaimer: tough.
+We reserve the right to do the absolute minimum
+provided by law, up to and including nothing.  
+\end{quotation}
+
+
+\vfill
+\center{Copyright \copyright\  Sandia National Laboratories, 1989, 1990, 1991}}
+\def\webtitle{\.{spcsscf}: A gradient routine.}
+
+
+
+@* The single processor closed shell SCF force library.
+
+@c
+@<Include files.@> @;@/
+@<Global functions.@> @;@/
+
+
+
+@* Definitions and include files.
+
+@ The macro GradientFormat is a string giving the format in which all
+gradients will be printed out.
+
+@d GradientFormat = "  %3d  % 14.10f % 14.10f % 14.10f\n"
+
+@ Include files for the C library.
+@<Include files.@>=
+#include <stdio.h>
+
+@ The C prototype generation facility, \.{tmpl}, is used in this file and
+the libraries, so we must include its header file.
+@<Include files.@>=
+#include <tmpl.h>
+
+@ The \.{libmath} library provides support for several of the data types used
+here and by the \.{libint} library.
+@<Include files.@>=
+#include <math/array/math_lib.h>
+
+@ The input will be parsed with version 2 of the input parser, \.{libipv2}.
+@<Include files.@>=
+#include <util/ipv2/ip_libv2.h>
+
+@ The derivative integrals are to be computed with the \.{libint} library.
+@<Include files.@>=
+#include <chemistry/qc/intv2/int_libv2.h>
+@ Support for parallel matrix operations and distributed matrix storage are
+given in the \.{libdmt} library.
+@<Include files.@>=
+#include <math/dmt/libdmt.h>
+
+@ Debugging and timing support are found in the uility library, \.{libutil}.
+@<Include files.@>=
+#include <util/misc/libmisc.h>
+
+@ The templates for the global and local function definitions are found
+in |csscf.gbl| and |csscf.lcl|, respectively.
+@<Include files.@>=
+#include "spcsscf.gbl"
+#include "spcsscf.lcl"
+
+@* The global functions.
+
+@ The |force_csscf| routine computes the gradient of the closed shell self
+consistent field energy
+The \.{libdmt} library is not used and no parallelism is
+exploited.  Its primary role is as a test routine.
+
+@<Global functions.@>=
+GLOBAL_FUNCTION void
+force_csscf(fp,F,C,centers,ndoc,f)
+FILE *fp; /* The output file. */
+double_matrix_t *F; /* The Fock matrix. */
+double_matrix_t *C; /* The eigenvectors. */
+centers_t *centers; /* The atom and basis set information. */
+int ndoc; /* The number of doubly occupied orbitals. */
+double_matrix_t *f; /* The forces on the atoms. */
+{
+  double_matrix_t P; /* The density matrix. */
+  double_matrix_t W; /* The energy weighted density. */
+  double_matrix_t Ct; /* The transpose of the coefficient matrix. */
+  int nao = C->n1;  /* The number of atomic orbitals == number of basis funcs. */
+  int natom = centers->n; /* The number of atoms. */
+  double_vector_t fxyz; /* A scratch vector for holding results for a given center. */
+  double *ints; /* The pointer to the two electron integral buffer. */
+  int print_nuc_1der=0;
+  int print_kinetic_1der=0;
+  int print_nuclear_1der=0;
+  int print_2e_1der=0;
+  int print_hcoreder=0;
+  int print_overlap_1der=0;
+  int print_all_1der=0;
+  int print_density=0;
+  int print_mofock=0;
+  int print_ewdensity=0;
+  int print_all = 0;
+
+  @<Read the input options.@> @;@/
+
+  @<Allocate and initialize the |f| matrix.@> @;@/
+
+  @<Allocate and initialize the |fxyz| vector.@> @;@/
+
+  @<Compute the transpose of the coefficient matrix.@> @;@/
+
+  @<Compute the density matrix.@> @;@/
+
+  @<Compute the nuclear contribution to the gradients.@> @;@/
+
+  @<Initialize the one electron integral routines.@> @;@/
+
+  @<Compute the energy weighted density matrix.@> @;@/
+
+  @<Compute the overlap contribution to the gradients.@> @;@/
+
+  @<Compute the kinetic energy contribution to the gradients.@> @;@/
+
+  @<Compute the nuclear attraction energy contribution to the gradients.@> @;@/
+
+  @<Clean up the one electron integral routines.@> @;@/
+
+  @<Initialize the two electron integral routines.@> @;@/
+
+  @<Compute the two electron contribution to the gradients.@> @;@/
+
+  @<Clean up the two electron integral routines.@> @;@/
+
+  @<Print out the results.@> @;@/
+
+}
+
+@ Here the input for the program is processed.  The \.{libipv2} routines
+must already be initialized and the input must have been parsed and
+available.  If the program is running on multiple processors, then the
+input must be available on this node.
+@<Read the input options.@>=
+{
+  int errcod;
+  errcod = ip_boolean("print_all_1der",&print_all_1der,0); @^print options@> @.print_all_1der@>
+  errcod = ip_boolean("print_nuc_1der",&print_nuc_1der,0); @.print_nuc_1der@>
+  errcod = ip_boolean("print_kinetic_1der",&print_kinetic_1der,0); @.print_kinetic_1der@>
+  errcod = ip_boolean("print_nuclear_1der",&print_nuclear_1der,0); @.print_nuclear_1der@>
+  errcod = ip_boolean("print_hcoreder",&print_hcoreder,0); @.print_hcoreder@>
+  errcod = ip_boolean("print_overlap_1der",&print_overlap_1der,0); @.print_overlap_1der@>
+  errcod = ip_boolean("print_all",&print_all,0); @.print_all@>
+  errcod = ip_boolean("print_density",&print_density,0); @.print_density@>
+  errcod = ip_boolean("print_mofock",&print_mofock,0); @.print_mofock@>
+  errcod = ip_boolean("print_ewdensity",&print_ewdensity,0); @.print_ewdensity@>
+  print_all_1der = print_all || print_all_1der;
+}
+
+@
+@<Allocate and initialize the |f| matrix.@>=
+{
+  int i,j;
+
+  allocbn_double_matrix(f,"n1 n2",3,natom);
+  for (i=0; i<natom; i++) {
+    for (j=0; j<3; j++) {
+      f->d[j][i] = 0.0;
+    }
+  }
+}
+
+@
+@<Allocate and initialize the |fxyz| vector.@>=
+{
+  allocbn_double_vector(&fxyz,"n",3);
+}
+
+@
+@<Initialize the one electron integral routines.@>=
+{
+  int_initialize_offsets1(centers,centers);
+  int_initialize_1e(0,1,centers,centers);
+}
+
+@
+@<Clean up the one electron integral routines.@>=
+{
+  int_done_offsets1(centers,centers);
+  int_done_1e();
+}
+
+@
+@<Initialize the two electron integral routines.@>=
+{
+  int_initialize_offsets2(centers,centers,centers,centers);
+  ints = int_initialize_erep(INT_EREP,1,centers,centers,centers,centers);
+}
+
+@
+@<Clean up the two electron integral routines.@>=
+{
+  int_done_offsets2(centers,centers,centers,centers);
+  int_done_erep();
+}
+
+@
+@<Compute the transpose of the coefficient matrix.@>=
+{
+  allocbn_double_matrix(&Ct,"n1 n2",nao,nao);
+  transpose_double_matrix(C,0,nao,0,nao, &Ct,0,nao,0,nao);
+}
+
+
+@
+@<Compute the density matrix.@>=
+{
+  int print = print_density || print_all;
+  @^print options@> @.print_density@> @.print_all@>
+
+  /* Compute the density matrix. */
+  allocbn_double_matrix(&P,"n1 n2",nao,nao);
+  multiply_double_matrix(&Ct,0,nao,0,ndoc, C,0,ndoc,0,nao, &P,0,nao,0,nao);
+  scale_double_matrix(&P,2.0);
+  if (print) {
+    fprintf(fp,"The density matrix:\n");
+    print_double_matrix(fp,&P);
+    }
+}
+
+@
+@<Compute the energy weighted density matrix.@>=
+{
+  double_matrix_t tmp,Fmo;
+
+  allocbn_double_matrix(&tmp,"n1 n2",nao,nao);
+  allocbn_double_matrix(&Fmo,"n1 n2",nao,nao);
+  multiply_double_matrix(C,0,nao,0,nao, F,0,nao,0,nao, &tmp,0,nao,0,nao);
+  multiply_double_matrix(&tmp,0,nao,0,nao, &Ct,0,nao,0,nao, &Fmo,0,nao,0,nao);
+  if (print_mofock || print_all) {
+    @^print options@> @.print_mofock@> @.print_all@>
+    fprintf(fp,"The mo basis fock matrix:\n");
+    print_double_matrix(fp,&Fmo);
+    }
+
+  allocbn_double_matrix(&W,"n1 n2",nao,nao);
+  multiply_double_matrix(&Ct,0,nao,0,ndoc, &Fmo,0,ndoc,0,ndoc, &tmp,0,nao,0,ndoc);
+  multiply_double_matrix(&tmp,0,nao,0,ndoc, C,0,ndoc,0,nao, &W,0,nao,0,nao);
+  scale_double_matrix(&W,2.0);
+  if (print_ewdensity || print_all) {
+    @^print options@> @.print_ewdensity@> @.print_all@>
+    fprintf(fp,"The energy weighted density:\n");
+    print_double_matrix(fp,&W);
+    }
+
+  free_double_matrix(&tmp);
+  free_double_matrix(&Fmo);
+}
+
+@
+@<Compute the nuclear contribution to the gradients.@>=
+{
+  int iatom,xyz;
+  int print = (print_nuc_1der||print_all_1der);
+  @^print options@> @.print_nuc_1der@> @.print_all_1der@>
+
+  if (print) {
+    fprintf(fp,"The nucleus-nucleus contribution:\n");
+    }
+
+  for (iatom=0; iatom<natom; iatom++) {
+    int_nuclear_repulsion_1der(centers,centers,&fxyz,centers,iatom);
+    if (print) {
+      fprintf(fp,GradientFormat,iatom,fxyz.d[0],fxyz.d[1],fxyz.d[2]);
+    }
+   for (xyz=0; xyz<3; xyz++) {
+     f->d[xyz][iatom] += fxyz.d[xyz];
+     }
+   }
+
+  if (print) {
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+}
+
+@
+@<Compute the kinetic energy contribution to the gradients.@>=
+{
+  int i,j,k,l;
+  double_array3_t kineticder;
+  double_matrix_t tmp;
+  int print = (print_kinetic_1der||print_all_1der);
+  @^print options@> @.print_kinetic_1der@> @.print_all_1der@>
+
+  if (print) {
+    fprintf(fp,"The kinetic energy contribution:\n");
+    }
+
+  allocbn_double_array3(&kineticder,"n1 n2 n3",3,nao,nao);
+  allocbn_double_matrix(&tmp,"n1 n2",nao,nao);
+
+  for (i=0; i<centers->n; i++) {
+    int_kinetic_1der(centers,centers,&kineticder,centers,i);
+    if (print_all || print_kinetic_1der) { @^print_options@> @.print_kinetic_1der@> @.print_all@>
+      fprintf(fp,"The one electron derivatives for center %d:\n",i);
+      print_double_array3(fp,&kineticder);
+      fprintf(fp,"\n");
+      }
+    for (j=0; j<3; j++) {
+      /* Copy kineticder for this j to the tmp matrix. */
+      for (k=0; k<nao; k++) {
+        for (l=0; l<nao; l++) {
+          tmp.d[k][l] = kineticder.d[j][k][l];
+          }
+        }
+      fxyz.d[j] = dot_double_matrix(&tmp,0,nao,0,nao, &P,0,nao,0,nao);
+      }
+    if (print) {
+      fprintf(fp,GradientFormat,i,fxyz.d[0],fxyz.d[1],fxyz.d[2]);
+      }
+    for (j=0; j<3; j++) {
+      f->d[j][i] += fxyz.d[j];
+      }
+    }
+
+  if (print) {
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+  free_double_array3(&kineticder);
+  free_double_matrix(&tmp);
+}
+
+@
+@<Compute the nuclear attraction energy contribution to the gradients.@>=
+{
+  int i,j,k,l;
+  double_array3_t nuclearder;
+  double_matrix_t tmp;
+  int print = (print_nuclear_1der||print_all_1der);
+  @^print options@> @.print_nuclear_1der@> @.print_all_1der@>
+
+  if (print) {
+    fprintf(fp,"The nucleus-electron Hellman-Feynman contribution:\n");
+    }
+
+  allocbn_double_array3(&nuclearder,"n1 n2 n3",3,nao,nao);
+  allocbn_double_matrix(&tmp,"n1 n2",nao,nao);
+
+  for (i=0; i<centers->n; i++) {
+    int_nuclear_hf_1der(centers,centers,&nuclearder,centers,i);
+    if (print_all || print_nuclear_1der) { @^print_options@> @.print_nuclear_1der@> @.print_all@>
+      fprintf(fp,"The one electron derivatives for center %d:\n",i);
+      print_double_array3(fp,&nuclearder);
+      fprintf(fp,"\n");
+      }
+    for (j=0; j<3; j++) {
+      /* Copy nuclearder for this j to the tmp matrix. */
+      for (k=0; k<nao; k++) {
+        for (l=0; l<nao; l++) {
+          tmp.d[k][l] = nuclearder.d[j][k][l];
+          }
+        }
+      fxyz.d[j] = dot_double_matrix(&tmp,0,nao,0,nao, &P,0,nao,0,nao);
+      }
+    if (print) {
+      fprintf(fp,GradientFormat,i,fxyz.d[0],fxyz.d[1],fxyz.d[2]);
+      }
+    for (j=0; j<3; j++) {
+      f->d[j][i] += fxyz.d[j];
+      }
+    }
+
+  if (print) {
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+  if (print) {
+    fprintf(fp,"The nucleus-electron non-Hellman-Feynman contribution:\n");
+    }
+
+  allocbn_double_array3(&nuclearder,"n1 n2 n3",3,nao,nao);
+  allocbn_double_matrix(&tmp,"n1 n2",nao,nao);
+
+  for (i=0; i<centers->n; i++) {
+    int_nuclear_nonhf_1der(centers,centers,&nuclearder,centers,i);
+    if (print_all || print_nuclear_1der) { @^print_options@> @.print_nuclear_1der@> @.print_all@>
+      fprintf(fp,"The one electron derivatives for center %d:\n",i);
+      print_double_array3(fp,&nuclearder);
+      fprintf(fp,"\n");
+      }
+    for (j=0; j<3; j++) {
+      /* Copy nuclearder for this j to the tmp matrix. */
+      for (k=0; k<nao; k++) {
+        for (l=0; l<nao; l++) {
+          tmp.d[k][l] = nuclearder.d[j][k][l];
+          }
+        }
+      fxyz.d[j] = dot_double_matrix(&tmp,0,nao,0,nao, &P,0,nao,0,nao);
+      }
+    if (print) {
+      fprintf(fp,GradientFormat,i,fxyz.d[0],fxyz.d[1],fxyz.d[2]);
+      }
+    for (j=0; j<3; j++) {
+      f->d[j][i] += fxyz.d[j];
+      }
+    }
+
+  if (print) {
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+  free_double_array3(&nuclearder);
+  free_double_matrix(&tmp);
+}
+
+@
+@<Compute the overlap contribution to the gradients.@>=
+{
+  int i,j,k,l;
+  double_array3_t overlapder;
+  double_matrix_t tmp;
+  int print = (print_overlap_1der||print_all_1der);
+  @^print options@> @.print_overlap_1der@> @.print_all_1der@>
+
+  if (print) {
+    fprintf(fp,"The overlap contribution:\n");
+    }
+
+  allocbn_double_array3(&overlapder,"n1 n2 n3",3,nao,nao);
+  allocbn_double_matrix(&tmp,"n1 n2",nao,nao);
+
+  for (i=0; i<centers->n; i++) {
+    int_overlap_1der(centers,centers,&overlapder,centers,i);
+    if (print_all) { @^print_options@> @.print_all@>
+      fprintf(fp,"The overlap derivatives for center %d:\n",i);
+      print_double_array3(fp,&overlapder);
+      fprintf(fp,"\n");
+      }
+    for (j=0; j<3; j++) {
+      /* Copy overlapder for this j to the tmp matrix. */
+      for (k=0; k<nao; k++) {
+        for (l=0; l<nao; l++) {
+          tmp.d[k][l] = overlapder.d[j][k][l];
+          }
+        }
+      fxyz.d[j] = - dot_double_matrix(&tmp,0,nao,0,nao, &W,0,nao,0,nao);
+      }
+    if (print) {
+      fprintf(fp,GradientFormat,i,fxyz.d[0],fxyz.d[1],fxyz.d[2]);
+      }
+    for (j=0; j<3; j++) {
+      f->d[j][i] += fxyz.d[j];
+      }
+    }
+
+  if (print) {
+    fprintf(fp,"\n");
+    fflush(fp);
+    }
+
+  free_double_array3(&overlapder);
+  free_double_matrix(&tmp);
+
+}
+
+@
+@<Compute the two electron contribution to the gradients.@>=
+{
+  int i,j,k,l;
+  int pi,pj,pk,pl;
+  int ni,nj,nk,nl;
+  int bi,bj,bk,bl;
+  int fi,fj,fk,fl;
+  double_matrix_t f2e;
+  der_centers_t der_centers;
+  int derset,xyz;
+  int nint,index;
+  int print = (print_2e_1der||print_all_1der);
+  @^print options@> @.print_2e_1der@> @.print_all_1der@>
+
+  allocbn_double_matrix(&f2e,"n1 n2",3,centers->n);
+
+  /* Zero out the f2e matrix. */
+  for (i=0; i<f2e.n1; i++) {
+    for (j=0; j<f2e.n2; j++) {
+      f2e.d[i][j] = 0.0;
+      }
+    }
+
+  for (i=0; i<centers->nshell; i++) {
+    for (j=0; j<centers->nshell; j++) {
+      for (k=0; k<centers->nshell; k++) {
+        for (l=0; l<centers->nshell; l++) {
+          pi = i; pj = j; pk = k; pl = l;
+          int_erep_all1der(INT_EREP|INT_REDUND|INT_NOPERM,&pi,&pj,&pk,&pl,&der_centers);
+          ni = INT_SH_NFUNC(centers,pi);
+          nj = INT_SH_NFUNC(centers,pj);
+          nk = INT_SH_NFUNC(centers,pk);
+          nl = INT_SH_NFUNC(centers,pl);
+          /* Sum the 2e contributions into the forces. */
+          nint = ni*nj*nk*nl;
+          for (derset=0; derset<der_centers.n; derset++) {
+            index = 0;
+            for (bi=0; bi<ni; bi++) {
+              fi = centers->func_num[pi] + bi;
+              for (bj=0; bj<nj; bj++) {
+                fj = centers->func_num[pj] + bj;
+                for (bk=0; bk<nk; bk++) {
+                  fk = centers->func_num[pk] + bk;
+                  for (bl=0; bl<nl; bl++) {
+                    double density;
+                    fl = centers->func_num[pl] + bl;
+                    density =    0.50 * P.d[fi][fj] * P.d[fk][fl]
+                               - 0.25 * P.d[fi][fk] * P.d[fj][fl];
+#if 0
+                    fprintf(stdout," d/d%d(%d %d|%d %d): ",
+                            der_centers.num[derset],fi,fj,fk,fl);
+                    fprintf(stdout," %10.7lf %10.7lf %10.7lf, ",
+                            ints[index+nint*(0+3*derset)],
+                            ints[index+nint*(1+3*derset)],
+                            ints[index+nint*(2+3*derset)]);
+                    fprintf(stdout," %10.7lf %10.7lf %10.7lf, ",
+                            density*ints[index+nint*(0+3*derset)],
+                            density*ints[index+nint*(1+3*derset)],
+                            density*ints[index+nint*(2+3*derset)]);
+                    fprintf(stdout,"%d\n", der_centers.onum);
+#endif
+                    for (xyz=0; xyz<3; xyz++) {
+                      double contrib = density * ints[index+nint*(xyz + 3*derset)];
+#ifdef TESTXYZ /* Mon Sep  2 15:08:59 1991 */
+                      double cdensity =    0.50 * P.d[fi][fj] * P.d[fk][fl];
+                      double edensity =  - 0.25 * P.d[fi][fk] * P.d[fj][fl];
+                      if (contrib > 0.00001 || contrib < -0.00001) {
+                        printf("co %d %d  %d %d %d %d :  % 12.8lf % 12.8lf\n",
+                               xyz,der_centers.num[derset],fi,fj,fk,fl,
+                               cdensity,ints[index+nint*(xyz+3*derset)]);
+                        printf("ex %d %d  %d %d %d %d :  % 12.8lf % 12.8lf\n",
+                               xyz,der_centers.num[derset],fi,fj,fk,fl,
+                               edensity,ints[index+nint*(xyz+3*derset)]);
+                        }
+#endif /* TESTXYZ Mon Sep  2 15:08:59 1991 */
+                      f2e.d[xyz][der_centers.num[derset]] += contrib;
+                      f2e.d[xyz][der_centers.onum] -= contrib;
+                      }
+                    index++;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  if (print) {
+    fprintf(fp,"The electron-electron contribution:\n");
+    for (i=0; i<centers->n; i++) {
+      fprintf(fp,GradientFormat,i,f2e.d[0][i],f2e.d[1][i],f2e.d[2][i]);
+      for (j=0; j<3; j++) {
+        f->d[j][i] += f2e.d[j][i];
+        }
+      }
+    fprintf(fp,"\n");
+    }
+}
+
+@
+@<Print out the results.@>=
+{
+  int i;
+
+  fprintf(fp,"The total gradient:\n");
+  for (i=0; i<centers->n; i++) {
+    fprintf(fp,GradientFormat,i,f->d[0][i],f->d[1][i],f->d[2][i]);
+    }
+  fprintf(fp,"\n");
+}
+

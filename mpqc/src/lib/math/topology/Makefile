@@ -1,0 +1,31 @@
+TOPDIR=../../..
+ifndef SRCDIR
+  SRCDIR=.
+endif
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+
+#CXXFLAGS = $(CXXFLAGS_DEBUG)
+
+CXXSRC = point.cc pointbag.cc
+
+LIBOBJ = $(CXXSRC:%.cc=%.o)
+
+INC =  point.h pointbag.h pointset.h
+
+DEPENDINCLUDE = $(INC)
+
+BIN_OR_LIB = LIB
+TARGET_TO_MAKE = libtopology
+
+DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
+
+default:: $(DEPENDINCLUDE)
+default:: libtopology.a
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(LIBOBJ:.o=.d)
+endif

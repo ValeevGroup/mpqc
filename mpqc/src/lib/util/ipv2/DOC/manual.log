@@ -1,0 +1,84 @@
+This is TeX, C Version 3.14t3 (format=lplain 91.9.20)  2 DEC 1991 13:33
+**manual
+(manual.tex
+LaTeX Version 2.09 <7 Dec 1989>
+(/usr/local/lib/tex/inputs/article.sty
+Document Style `article' <16 Mar 88>.
+(/usr/local/lib/tex/inputs/art10.sty)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+)
+(/usr/people2/cljanss/lib/tex/inputs/alltt.sty) (manual.aux) (manual.toc
+[1
+
+])
+\tf@toc=\write3
+ [2] [3] [4] [5] [6] [7]
+Overfull \hbox (21.54567pt too wide) in paragraph at lines 473--477
+\tenrm The []\tentt ip_append \tenrm rou-tine is used to parse in-put from mul-
+ti-ple files. The []\tentt ip_initialize
+
+\hbox(6.94444+2.22223)x345.0, glue set - 1.0
+.\tenrm T
+.\tenrm h
+.\tenrm e
+.\glue 3.33333 plus 1.66666 minus 1.11111
+.\hbox(0.0+0.0)x0.0
+.etc.
+
+[8] [9] [10] [11]
+Overfull \hbox (42.82237pt too wide) in paragraph at lines 690--696
+\tenrm The li-brary is []\tentt ~cljanss/SGI/lib/libipv2.a\tenrm . The in-clude
+ files are in []\tentt ~cljanss/include\tenrm ,
+
+\hbox(6.94444+2.22223)x345.0, glue set - 1.0
+.\tenrm T
+.\tenrm h
+.\tenrm e
+.\glue 3.33333 plus 1.66666 minus 1.11111
+.\tenrm l
+.etc.
+
+
+Overfull \hbox (33.96953pt too wide) in paragraph at lines 701--710
+\tenrm in []\tentt ~cljanss/include\tenrm , so you must give the C com-piler th
+e []\tentt -I/home1/cljanss/include
+
+\hbox(6.94444+2.22223)x345.0, glue set - 1.0
+.\tenrm i
+.\tenrm n
+.\glue 3.33333 plus 1.66666 minus 1.11111
+.\hbox(0.0+0.0)x0.0
+.\tentt ~
+.etc.
+
+
+Overfull \hbox (14.48868pt too wide) in paragraph at lines 715--718
+[]\tentt ~psi/sandia/DEC/lib/libipv2.a\tenrm . The in-clude files are in []\ten
+tt ~psi/sandia/include\tenrm . 
+
+\hbox(6.94444+2.22223)x345.0, glue set - 1.0
+.\hbox(0.0+0.0)x0.0
+.\tentt ~
+.\tentt p
+.\tentt s
+.\tentt i
+.etc.
+
+[12] [13] [14] [15] (manual.aux) ) 
+Here is how much of TeX's memory you used:
+ 179 strings out of 4463
+ 1686 string characters out of 63241
+ 38181 words of memory out of 262141
+ 2119 multiletter control sequences out of 9500
+ 19465 words of font info for 74 fonts, out of 72000 for 255
+ 14 hyphenation exceptions out of 607
+ 16i,8n,19p,212b,417s stack positions out of 300i,40n,60p,3000b,4000s
+
+Output written on manual.dvi (15 pages, 38668 bytes).

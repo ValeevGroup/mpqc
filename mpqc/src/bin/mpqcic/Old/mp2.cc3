@@ -1,0 +1,305 @@
+
+typedef int dmt_matrix;
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <tmpl.h>
+
+extern "C" {
+#include <comm/picl/picl.h>
+}
+
+#include <util/class/class.h>
+#include <util/state/state.h>
+#include <util/keyval/keyval.h>
+#include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/simple.h>
+#include <chemistry/molecule/symm.h>
+#include <chemistry/molecule/simpleQCList.h>
+#include <chemistry/molecule/symmQCList.h>
+#include <math/nihmatrix/nihmatrix.h>
+#include <math/nihmatrix/lmath.h>
+
+extern "C" {
+#include <chemistry/qc/dmtqc/libdmtqc.h>
+#include <util/misc/libmisc.h>
+#include <util/bio/libbio.h>
+}
+
+#include "mpqc_int.h"
+
+extern "C" {
+ int mynode0();
+ int numnodes0();
+ void gop1(double*,int,double*,char,int);
+}
+
+
+int
+mp2_hah(centers_t *centers, dmt_matrix Scf_Vec, dmt_matrix Fock, FILE* outfile)
+{
+
+  int_initialize_offsets2(centers,centers,centers,centers);
+
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+
+  double *intbuf = 
+    int_initialize_erep(flags,0,centers,centers,centers,centers);
+
+  int i,j,k,l;
+  int p,q,r,s;
+  int P,Q,R,S;
+  int nbasis=centers->nfunc;
+  int nocc=0,nvir;
+
+  for (i=0; i < centers->n; i++) nocc += (int) centers->center[i].charge;
+
+  nocc /= 2;
+  nvir = nbasis-nocc;
+
+  /*
+   * otay, let's get a grip here, and form the MO integrals
+   * this is all in core for now till I figure out what the hell
+   * I'm doing
+   *
+   * First thing, let's get the scf vector off the nodes
+   */
+
+  DMatrix scf_vector(nbasis,nbasis);
+  double *evals = new double[nbasis];
+
+  dmt_get_diagonal(Fock,evals);
+
+  loop_t *loop = dmt_ngl_create("%mr",Scf_Vec);
+  while(dmt_ngl_next(loop)) {
+    int iind,isize,jsize;
+    double *col;
+
+    dmt_ngl_create_inner(loop,0);
+    while(dmt_ngl_next_inner_m(loop,&iind,&isize,&k,&jsize,&col)) {
+
+      for (i=0; i < nbasis; i++)
+        scf_vector(i,k) = col[i];
+      }
+    }
+
+  dmt_ngl_kill(loop);
+
+  scf_vector.print("scf_vector");
+
+  double ***moints = new double**[nbasis];
+  double ****aoints = new double***[nbasis];
+
+  for (i=0; i < nbasis; i++) {
+    moints[i] = new double*[nocc];
+    aoints[i] = new double**[nbasis];
+    for (j=0; j < nbasis; j++) {
+      moints[i][j] = new double[nbasis];
+      aoints[i][j] = new double*[nbasis];
+      for (k=0; k < nbasis; k++) {
+        moints[i][j][k] = 0;
+        aoints[i][j][k] = new double[nbasis];
+        for (l=0; l < nbasis; l++) {
+          aoints[i][j][k][l] = 0;
+          }
+        }
+      }
+    }
+
+  for (P=0; P < centers->nshell; P++) {
+    for (Q=0; Q <= P; Q++) {
+      for (R=0; R <= P; R++) {
+        for (S=0; S <= ((P==R)?Q:R) ; S++) {
+
+          int pp=P,qq=Q,rr=R,ss=S;
+
+          int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM,&pp,&qq,&rr,&ss);
+      
+          int np = INT_SH_NFUNC((centers),pp);
+          int nq = INT_SH_NFUNC((centers),qq);
+          int nr = INT_SH_NFUNC((centers),rr);
+          int ns = INT_SH_NFUNC((centers),ss);
+
+          int e12 = (pp==qq);
+          int e13e24 = (pp==rr) && (qq==ss);
+          int e34 = (rr==ss);
+
+          int index=0;
+
+          int bf1,bf2,bf3,bf4;
+          int p1,q1,r1,s1;
+
+          for (bf1=0; bf1<=INT_MAX1(np) ; bf1++) {
+            int p2 = centers->func_num[pp] + bf1;
+
+            for (bf2=0; bf2<=INT_MAX2(e12,bf1,nq) ; bf2++) {
+
+              int q2 = centers->func_num[qq] + bf2;
+
+              if (p2 >= q2) { p1=p2; q1=q2; }
+              else { p1=q2; q1=p2; }
+
+              int pq = p1*(p1+1)/2 + q1;
+
+              for (bf3=0; bf3<=INT_MAX3(e13e24,bf1,nr) ; bf3++) {
+                int r2 = centers->func_num[rr] + bf3;
+
+                for (bf4=0; bf4 <= INT_MAX4(e13e24,e34,bf1,bf2,bf3,ns);bf4++) {
+                  if (INT_NONZERO(intbuf[index])) {
+                    int s2 = centers->func_num[ss] + bf4;
+
+                    if (r2 >= s2) { r1=r2; s1=s2; }
+                    else { r1=s2; s1=r2; }
+
+                    int rs = r1*(r1+1)/2 + s1;
+
+                    if (pq >= rs) {
+                      p = p1; q = q1; r = r1; s = s1;
+                      }
+                    else {
+                      p = r1; q = s1; r = p1; s = q1;
+                      }
+
+                    aoints[p][q][r][s] =
+                    aoints[q][p][r][s] =
+                    aoints[p][q][s][r] =
+                    aoints[q][p][s][r] =
+                    aoints[r][s][p][q] =
+                    aoints[r][s][q][p] =
+                    aoints[s][r][p][q] =
+                    aoints[s][r][q][p] =
+                                         intbuf[index];
+
+                    }
+
+                  index++;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  double iqrs[7][7][7];
+  double Ecorr=0;
+
+  for (i=0; i < nocc; i++) {
+    bzero(iqrs,sizeof(double)*7*7*7);
+
+    for (p=0; p < nbasis; p++) {
+      double c_pi=scf_vector(p,i);
+
+      for (q=0; q <= p; q++) {
+        double c_qi=scf_vector(q,i);
+
+        for (r=0; r <= p; r++) {
+          double c_ri=scf_vector(r,i);
+
+          for (s=0; s <= ((p==r)?q:r) ; s++) {
+            double pqrs = aoints[p][q][r][s];
+            double c_si = scf_vector(s,i);
+
+            if (p==q && q==r && r==s)
+              iqrs[q][r][s] += c_pi * pqrs;
+            else if (p==q && r==s) {
+              iqrs[q][r][s] += c_pi * pqrs;
+              iqrs[s][p][q] += c_ri * pqrs;
+              }
+            else if (p==q || r==s) {
+              iqrs[q][r][s] += c_pi * pqrs;
+              iqrs[p][s][r] += c_qi * pqrs;
+              iqrs[s][p][q] += c_ri * pqrs;
+              iqrs[r][q][p] += c_si * pqrs;
+              }
+            else if (p==r && q==s) {
+              iqrs[q][r][s] += c_pi * pqrs;
+              iqrs[q][s][r] += c_pi * pqrs;
+              iqrs[p][r][s] += c_qi * pqrs;
+              iqrs[p][s][r] += c_qi * pqrs;
+              }
+            else {
+              iqrs[q][r][s] += c_pi * pqrs;
+              iqrs[q][s][r] += c_pi * pqrs;
+              iqrs[p][r][s] += c_qi * pqrs;
+              iqrs[p][s][r] += c_qi * pqrs;
+              iqrs[s][p][q] += c_ri * pqrs;
+              iqrs[s][q][p] += c_ri * pqrs;
+              iqrs[r][p][q] += c_si * pqrs;
+              iqrs[r][q][p] += c_si * pqrs;
+              }
+            }
+          }
+        }
+      }
+
+    double ijrs[7][7];
+    for (j=nocc; j < nbasis; j++) {
+      bzero(ijrs,sizeof(double)*49);
+
+      for (q=0; q < nbasis; q++) {
+        double c_qj = scf_vector(q,j);
+        for (r=0; r < nbasis; r++) {
+          for (s=0; s < nbasis; s++) {
+            ijrs[r][s] += c_qj * iqrs[q][r][s];
+            }
+          }
+        }
+
+      double ijks[7];
+      for (k=0; k <= i; k++) {
+        bzero(ijks,sizeof(double)*7);
+
+        for (r=0; r < nbasis; r++) {
+          double c_rk = scf_vector(r,k);
+          for (s=0; s < nbasis; s++) {
+            ijks[s] += c_rk * ijrs[r][s];
+            }
+          }
+
+        double ijkl;
+        for (l=nocc; l < ((i==k) ? (j+1) : nbasis) ; l++) {
+          ijkl=0;
+          for (s=0; s < nbasis; s++) {
+            ijkl += scf_vector(s,l)*ijks[s];
+            }
+
+          moints[j][k][l] = ijkl;
+          }
+        }
+      }
+
+   /*
+    * alright, we've got the mo integrals, now calculate
+    *  Ecorr = 
+    */
+
+    int a,b;
+
+    for (a=nocc; a < nbasis; a++) {
+      for (j=0; j < i; j++) {
+        for (b=nocc; b < nbasis; b++) {
+          double t1 = moints[a][j][b]*moints[a][j][b];
+          double t2 = moints[a][j][b]*moints[b][j][a];
+
+          Ecorr += 2*(2*t1-t2)/(evals[a]+evals[b]-evals[i]-evals[j]);
+          }
+        }
+      for (b=nocc; b < a; b++)
+        Ecorr += 2*moints[a][i][b]*moints[a][i][b]/
+                 (evals[a]+evals[b]-evals[i]-evals[i]);
+      Ecorr += moints[a][i][a]*moints[a][i][a]/
+                 (evals[a]+evals[a]-evals[i]-evals[i]);
+      }
+    }
+
+  printf(" E(MP2) = %20.10f\n\n",Ecorr);
+
+  return(0);
+  }

@@ -1,0 +1,31 @@
+\documentstyle[12pt,draft,mystyle]{jcmart}
+
+\input{epsf}
+
+\begin{document}
+
+\input {cover}
+
+\newpage
+\setcounter{page}{5}	% SAND report tocs start on page 5
+\tableofcontents
+
+\linespacing{1.0}
+\pagestyle{plain}
+
+\newpage
+\setcounter{page}{7}	% SAND reports start on page 7
+%\pagestyle{myheadings}
+\include{sect1}
+\include{sect2}
+\include{sect3}
+\include{sect4}
+\include{sect5}
+
+\clearpage
+%\input{hybib}
+%\bibliographystyle{unsrt}  % unsorted
+\bibliographystyle{plain}
+\bibliography{hybib}
+
+\end{document}

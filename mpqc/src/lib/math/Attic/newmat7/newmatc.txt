@@ -1,0 +1,39 @@
+//$$ newmatc.txt                                      Testing
+
+                    Testing newmat on your compiler
+                    ===============================
+
+There are a series of files of the form tmt?.cxx included with some
+versions of the package. These are used to check that the package is
+performing correctly. They consist of a large number of matrix formulae
+all of which evaluate to zero (except the first one which is used to
+check that we are detecting non-zero matrices). The printout should
+state that it has found one non-zero matrix.
+
+Various versions of the make file (extension .mak) are included with the
+package.
+
+There is an optional #define DO_FREE_CHECK in include.h. If this is
+activated the program will check that the new-s and delete-s are
+balanced. There should be no unbalanced new-s or delete-s. You need the
+ANSI version of the preprocessor to run DO_FREE_CHECK.
+
+The program also allocates and deletes a large block and small block of
+memory before it starts the main testing and then at the end of the
+test. It then checks that the blocks of memory were allocated in the
+same place. If not then one suspects that there has been a memory leak.
+i.e. a piece of memory has been allocated and not deleted.
+
+This is not completely foolproof. Programs may allocate extra print
+buffers while the program is running. I have tried to overcome this by
+doing a print before I allocate the first memory block. Programs may
+allocate memory for different sized items in different places, or might
+not allocate items consecutively. Or they might mix the items with memory
+blocks from other programs. Nevertheless, I seem to get consistent
+answers from most of the compilers I am working with, so I think this is
+a worthwhile test.
+
+Gnu 2.2 and Zortech do not pass this test. There may be good reasons for
+this, but I think it would be a good idea if the authors of these
+packages made sure they knew what was happening.
+

@@ -1,0 +1,25 @@
+
+  intco: (
+    add_simp = [
+      [tors at1 46 29 57 58 ]
+      [tors at2 46 29 57 51 ]
+      [tors at3 46 29 57 30 ]
+      ]
+    )
+
+  intco: (
+    add_simp: (
+      0<TorsSimpleCo> = [ at1 46 29 57 58 ]
+      1<TorsSimpleCo> = [ at2 46 29 57 51 ]
+      2<TorsSimpleCo> = [ at3 46 29 57 30 ]
+      )
+    )
+
+  intco: (
+    add_simp: [
+      tors = [ at1 46 29 57 58 ]
+      tors = [ at2 46 29 57 51 ]
+      tors = [ at3 46 29 57 30 ]
+      ]
+    )
+

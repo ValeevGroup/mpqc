@@ -1,0 +1,82 @@
+
+#define DTOR 1
+#define CTOR 5
+
+//             CTOR
+//           1      2     3    4    5
+// DTOR 0    ok     ok
+//      1   fail   fail  fail fail  ok
+//
+
+extern "C" {
+    int printf(const char*, ...);
+}
+
+class B {
+  public:
+    B();
+    B(const B&);
+#if DTOR
+    ~B();
+#endif /* DTOR */
+};
+
+B::B()
+{
+}
+B::B(const B&b)
+{
+}
+#if DTOR
+B::~B()
+{
+  printf("B::~B() called: this = 0x%x\n",this);
+}
+#endif /* DTOR */
+
+class A {
+  public:
+#if CTOR == 1
+    A(B,void*,int=0,int=0,int=1);
+#elif CTOR == 2
+    A(B,void*);
+#elif CTOR == 3
+    A(B,int);
+#elif CTOR == 4
+    A(B);
+#elif CTOR == 5
+    A(B&);
+#endif /* CTOR */
+};
+
+#if CTOR == 1
+A::A(B,void*,int,int,int)
+#elif CTOR == 2
+A::A(B,void*)
+#elif CTOR == 3
+A::A(B,int)
+#elif CTOR == 4
+A::A(B)
+#elif CTOR == 5
+A::A(B&)
+#endif /* CTOR */
+{
+  printf("A::A: this = 0x%x\n",this);
+}
+
+extern "C" {
+    int cpp_main();
+}
+
+cpp_main()
+{
+  B b;
+#if CTOR >= 4
+  A* a = new A(b);
+#else
+  A* a = new A(b,0);
+#endif /* CTOR */
+  printf("a = 0x%x\n",a);
+  if (a==0) printf("FAILED\n");
+  else printf("OK\n");
+}

@@ -1,0 +1,356 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include <util/keyval/keyval.h>
+
+#include "gaussshell.h"
+
+const char* GaussianShell::amtypes = "spdfghijkl";
+const char* GaussianShell::AMTYPES = "SPDFGHIJKL";
+
+int GaussianShell::max_am()
+{
+  int r = 0;
+  for (int i=0; i<ncon; i++) if (r<l[i]) r = l[i];
+  return r;
+}
+
+// this GaussianShell ctor allocates and computes normalization constants
+// and computes nfunc
+GaussianShell::GaussianShell(
+  int ncn,int nprm,double*e,int*am,int*pure,double**c,PrimitiveType pt
+  ):
+nprim(nprm),
+ncon(ncn),
+l(am),
+puream(pure),
+exp(e),
+coef(c)
+{
+  // Compute the number of basis functions in this shell
+  compute_nfunc();
+
+  // Convert the coefficients to coefficients for unnormalized primitives,
+  // if needed.
+  if (pt == Normalized) convert_coef();
+
+  // Compute the normalization constants
+  normalize_shell();
+}
+
+// this GaussianShell ctor is much like the above except the puream
+// array is generated according to the value of pure
+GaussianShell::GaussianShell(
+  int ncn,int nprm,double*e,int*am,GaussianType pure,double**c,PrimitiveType pt
+  ):
+  nprim(nprm),
+  ncon(ncn),
+  l(am),
+  exp(e),
+  coef(c)
+{
+  puream = new int [ncontraction()];
+  for (int i=0; i<ncontraction(); i++) puream[i] = (pt == Pure);
+
+  // Compute the number of basis functions in this shell
+  compute_nfunc();
+
+  // Convert the coefficients to coefficients for unnormalized primitives,
+  // if needed.
+  if (pt == Normalized) convert_coef();
+
+  // Compute the normalization constants
+  normalize_shell();
+}
+
+GaussianShell::GaussianShell(KeyVal&keyval)
+{
+  // read in the shell
+  PrimitiveType pt = keyval_init(keyval,0,0);
+
+  // Compute the number of basis functions in this shell
+  compute_nfunc();
+
+  // Convert the coefficients to coefficients for unnormalized primitives,
+  // if needed.
+  if (pt == Normalized) convert_coef();
+
+  // Compute the normalization constants
+  normalize_shell();
+}
+
+GaussianShell::GaussianShell(KeyVal&keyval,int pure)
+{
+  // read in the shell
+  PrimitiveType pt = keyval_init(keyval,1,pure);
+
+  // Compute the number of basis functions in this shell
+  compute_nfunc();
+
+  // Convert the coefficients to coefficients for unnormalized primitives,
+  // if needed.
+  if (pt == Normalized) convert_coef();
+
+  // Compute the normalization constants
+  normalize_shell();
+}
+
+GaussianShell::PrimitiveType
+GaussianShell::keyval_init(KeyVal& keyval,int havepure,int pure)
+{
+  ncon = keyval.count("type");
+  if (keyval.error() != KeyVal::OK) {
+      fprintf(stderr,"GaussianShell couldn't find the \"type\" array:\n");
+      keyval.dump(stderr);
+      abort();
+    }
+  nprim = keyval.count("exp");
+  if (keyval.error() != KeyVal::OK) {
+      fprintf(stderr,"GaussianShell couldn't find the \"exp\" array:\n");
+      keyval.dump(stderr);
+      abort();
+    }
+  int normalized = keyval.booleanvalue("normalized");
+  if (keyval.error() != KeyVal::OK) normalized = 1;
+  
+  l = new int[ncon];
+  puream = new int[ncon];
+  exp = new double[nprim];
+  coef = new double*[ncon];
+
+  int i,j;
+  for (i=0; i<nprim; i++) {
+      exp[i] = keyval.doublevalue("exp",i);
+      if (keyval.error() != KeyVal::OK) {
+          fprintf(stderr,"GaussianShell: error reading exp:%d: %s\n",
+                  i,keyval.errormsg());
+          keyval.errortrace(stderr);
+          exit(1);
+        }
+    }
+  for (i=0; i<ncon; i++) {
+      PrefixKeyVal prefixkeyval("type",keyval,i);
+      coef[i] = new double[nprim];
+      char* am = prefixkeyval.pcharvalue("am");
+      if (prefixkeyval.error() != KeyVal::OK) {
+          fprintf(stderr,"GaussianShell: error reading am: \"%s\"\n",
+                  prefixkeyval.errormsg());
+          prefixkeyval.errortrace(stderr);
+          exit(1);
+        }
+      l[i] = -1;
+      for (int li=0; amtypes[li] != '\0'; li++) {
+	  if (amtypes[li] == am[0] || AMTYPES[li] == am[0]) { l[i] = li; break; }
+	}
+      if (l[i] == -1 || strlen(am) != 1) {
+          fprintf(stderr,"GaussianShell: bad angular momentum: \"%s\"\n", am);
+          prefixkeyval.errortrace(stderr);
+          exit(1);
+	}
+      if (havepure) puream[i] = pure;
+      else {
+          puream[i] = prefixkeyval.intvalue("puream");
+          if (prefixkeyval.error() != KeyVal::OK) {
+              puream[i] = 0;
+              //fprintf(stderr,"GaussianShell: error reading puream: \"%s\"\n",
+              //        prefixkeyval.errormsg());
+              //exit(1);
+            }
+        }
+      for (j=0; j<nprim; j++) {
+        coef[i][j] = keyval.doublevalue("coef",i,j);
+        if (keyval.error() != KeyVal::OK) {
+            fprintf(stderr,"GaussianShell: error reading coef:%d:%d: %s\n",
+                    i,j,keyval.errormsg());
+            keyval.errortrace(stderr);
+            exit(1);
+            }
+        }
+      delete[] am;
+    }
+
+  if (normalized) return Normalized;
+  else return Unnormalized;
+}
+
+int GaussianShell::nfunction(int con)
+{
+  return puream[con]?
+           (l[con]<<1+1):
+           (((l[con]+2)*(l[con]+1))>>1);
+}
+
+void GaussianShell::compute_nfunc()
+{
+  nfunc = 0;
+  for (int i=0; i<ncontraction(); i++) nfunc += nfunction(i);
+}
+
+/* Compute the norm for ((x^x1)||(x^x2)).  This is slower than need be. */
+static double
+norm(int x1,int x2,double c,double ss)
+{
+  if (x1 < x2) return norm(x2,x1,c,ss);
+  if (x1 == 1) {
+    if (x2 == 1) return c * ss;
+    else return 0.0;
+    }
+  if (x1 == 0) return ss;
+  return c * ( (x1-1) * norm(x1-2,x2,c,ss) + (x2 * norm(x1-1,x2-1,c,ss)));
+}
+
+void GaussianShell::convert_coef()
+{
+  int i,gc;
+  double c,ss;
+
+  // Convert the contraction coefficients from coefficients over
+  // normalized primitives to coefficients over unnormalized primitives
+  for (gc=0; gc<ncon; gc++) {
+      for (i=0; i<nprim; i++) {
+	  c = 0.25/exp[i];
+	  ss = pow(3.141592653589793/(exp[i]+exp[i]),1.5);
+	  coef[gc][i]
+	    *= 1.0/sqrt(::norm(l[gc],l[gc],c,ss));
+	}
+    }
+}
+
+double GaussianShell::coefficient_norm(int con,int prim)
+{
+  double c = 0.25/exp[prim];
+  double ss = pow(3.141592653589793/(exp[prim]+exp[prim]),1.5);
+  return coef[con][prim] * sqrt(::norm(l[con],l[con],c,ss));
+}
+
+// compute n!!
+static long
+factfact(int n)
+{
+  long result;
+  int i;
+
+  result = 1;
+  for (i=3; i<=n; i+=2) {
+    result *= i;
+    }
+  return result;
+  }
+
+// compute the part of the normalization that depends on the exponents
+// of x, y, and z.
+static double
+bfnorm(int i,int j,int k)
+{
+  return 1.0/(sqrt((double)  factfact(2*i-1)
+                           * factfact(2*j-1)
+                           * factfact(2*k-1)));
+  }
+
+// Compute the normalization constant for a shell.
+// returns 1/sqrt(<(x^l 0 0|(x^l 0 0)>).
+// The formula is from Obara and Saika (for the basis functions within
+// the shell that have powers of x only (a and b refer to the power
+// of x):
+// (a||b) = 1/(4 alpha) * ( a (a-1||b) + b (a||b-1) )
+double
+GaussianShell::shell_normalization(int gc)
+{
+  int i,j;
+  double result,c,ss;
+
+  if (puream[gc]) {
+    fprintf(stderr,"int_shell_normalization: cannot handle puream:\n");
+    exit(1);
+    }
+
+  result = 0.0;
+  for (i=0; i<nprim; i++) {
+    for (j=0; j<nprim; j++) {
+      c = 0.50/(exp[i] + exp[j]);
+      ss = pow(3.141592653589793/(exp[i]+exp[j]),1.5);
+      result += coef[gc][i] * coef[gc][j] *
+               ::norm(l[gc],l[gc],c,ss);
+      }
+    }
+
+  return 1.0/sqrt(result);
+}
+ 
+void GaussianShell::normalize_shell()
+{
+  int i,gc;
+
+  // Allocate storage to hold the normalization constants for the individual
+  // basis functions
+  norm = new double* [ncontraction()];
+  for (i=0; i<ncontraction(); i++) {
+      norm[i] = new double [nfunction(i)];
+    }
+
+  for (gc=0; gc<ncon; gc++) {
+      // Normalize the contraction coefficients
+      double normalization = shell_normalization(gc);
+      for (i=0; i<nprim; i++) {
+	  coef[gc][i] *= normalization;
+	}
+
+      // Determine the basis function normalization
+      double bfnormxl = bfnorm(l[gc],0,0);
+      CartesianIter ci(l[gc]);
+      for (ci.start(); ci; ci.next()) {
+	  norm[gc][ci.bfn()] = bfnorm(ci.a(),ci.b(),ci.c())/bfnormxl;
+	}
+    }
+
+}
+
+void GaussianShell::print(FILE* fp)
+{
+  int i,j;
+
+  fprintf(fp,"GaussianShell:\n");
+  fprintf(fp,"  ncontraction = %d, nprimitive = %d\n",ncon,nprim);
+
+  fprintf(fp,"  exponents:");
+  for (i=0; i<nprim; i++) fprintf(fp," %f",exp[i]);
+  fprintf(fp,"\n");
+
+  fprintf(fp,"  l:");
+  for (i=0; i<ncon; i++) fprintf(fp," %d", l[i]);
+  fprintf(fp,"\n");
+
+  fprintf(fp,"  type:");
+  for (i=0; i<ncon; i++) fprintf(fp," %s", puream[i]?"pure":"cart");
+  fprintf(fp,"\n");
+
+  for (i=0; i<ncon; i++) {
+      fprintf(fp,"  coef[%d]:",i);
+      for (j=0; j<nprim; j++) fprintf(fp," %f",coef[i][j]);
+      fprintf(fp,"\n");
+    }
+
+  for (i=0; i<ncon; i++) {
+      fprintf(fp,"  norm[%d]:",i);
+      for (j=0; j<nfunction(i); j++) fprintf(fp," %f",norm[i][j]);
+      fprintf(fp,"\n");
+    }
+}
+
+GaussianShell::~GaussianShell()
+{
+  delete[] l;
+  delete[] puream;
+  delete[] exp;
+
+  for (int i=0; i<ncon; i++) {
+      delete[] coef[i];
+      delete[] norm[i];
+    }
+
+  delete[] coef;
+  delete[] norm;
+}
+

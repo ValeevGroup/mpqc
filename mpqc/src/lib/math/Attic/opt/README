@@ -1,0 +1,32 @@
+README file for OPT++, an experimental optimization package in C++.
+
+
+This is an experimental package of algorithms for nonlinear equations
+and optimization written in C++. This package uses R.B. Davies's matrix
+package newmat7.
+
+The motivation for this package is to build an environment for the
+rapid prototyping and development of new algorithms in optimization.
+
+Warning: This is still fairly experimental. 
+
+
+Notes: Changes to newmat7
+
+print.C 	printing routines taken from tmt.cxx
+newmat6.C 	added output statements for out of bounds message.
+newmat.h 	added two new member function Dot and Norm2 to
+		ColumnVector
+
+
+
+-----------------------------------------------------------------------------
+Juan C. Meza	(510) 294-2425 
+Sandia National Laboratories
+Center for Computational Engineering
+Department 8117
+P.O. Box 969
+Livermore, CA 94551-0969
+meza@california.sandia.gov 
+FAX (510) 294-2234
+-----------------------------------------------------------------------------

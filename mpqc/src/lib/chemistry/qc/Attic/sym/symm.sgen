@@ -1,0 +1,90 @@
+
+#include <tmpl.h>
+#include <math/array/math_lib.h>
+
+default_modules(ip free alloc bread bwrite print init bcast0 rbcast0 sbcast0
+                fread fwrite assign iseq zero send0 recv0);
+
+character {
+  int g;           // the order of the group, ie, the number of sym ops
+  int degen;       // the degeneracy of this irrep
+  int nrot;        // the number of rotations in this irrep
+  int ntrans;      // the number of translations in this irrep
+  string label;    // the mulliken symbol for this irrep
+
+  double rep[g];
+  };
+
+char_tab {
+  int nirrep;
+
+  character gamma[nirrep];
+  };
+
+sym_struct {
+  int natom;          //       natom = the total number of atoms
+  int nshell;         //      nshell = the total number of shells
+  int nshtri;         //      nshtri = nshell*(nshell+1)/2
+  int g;              //           g = the order of the point group 
+  int nirrep;         //      nirrep = the number of irreps
+  int n1;             //          n1 = 3
+  int n2;             //          n2 = 6
+  int n2p;            //         n2p = 5
+  int n3;             //          n3 = 10
+  int n3p;            //         n3p = 7
+  int n4;             //          n4 = 15
+  int n4p;            //         n4p = 9
+  int pg;
+  string point_group; // point_group = 
+                      //        the schoenflies symbol for the point group
+
+  int p1[nshell];            //  p1[n] is 1 if shell n is in the group P1
+  int first[natom];          // first[i] is the first bfxn on atom i
+  int firstp[natom];         // firstp[i] is the first bfxn on atom i in 
+                             //    so basis
+  int atom_map[natom][g];    // atom_map[n][g] is the atom that symop g
+                             //   maps atom n into
+  int shell_map[nshell][g];  // shell_map[n][g] is the shell that symop g
+                             //   maps shell n into
+  int lamij[nshtri];         // see Dupuis & King, IJQC 11,613,(1977)
+
+  double Rp[g][n1][n1];       // transformation matrices for p shells
+  double Rd[g][n2][n2];       // transformation matrices for d shells
+  double Rf[g][n3][n3];       // transformation matrices for f shells
+  double Rg[g][n4][n4];       // transformation matrices for g shells
+
+  double Rdp[g][n2][n2p];    // transformation matrices for pure am d shells
+  double Rfp[g][n3][n3p];    // transformation matrices for pure am f shells
+  double Rgp[g][n4][n4p];    // transformation matrices for pure am g shells
+
+  char_tab ct;            // character table not in Cotton order
+  } ;
+
+scf_irrep {
+  int num_so;
+  int num_so_tri;
+  int nclosed;
+  int nopen;
+  int degeneracy;
+  int os_num;
+  int ideg;
+  string irrep_label;
+  };
+
+scf_irreps {
+  int nirrep;
+
+  scf_irrep ir[nirrep];
+  };
+
+sym_d_vector (!alloc) {
+  int nirrep;
+
+  double_vector ir[nirrep];
+  };
+
+sym_d_matrix (!alloc) {
+  int nirrep;
+
+  double_matrix ir[nirrep];
+  };

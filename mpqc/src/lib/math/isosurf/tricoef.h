@@ -2,6 +2,10 @@
 #ifndef _math_isosurf_tricoef_h
 #define _math_isosurf_tricoef_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <util/container/ref.h>
 
 class TriInterpCoefKey {

@@ -223,6 +223,18 @@
 /* The version number. */
 #undef SC_VERSION
 
+/* The major version number. */
+#undef SC_MAJOR_VERSION
+
+/* The minor version number. */
+#undef SC_MINOR_VERSION
+
+/* The micro version number. */
+#undef SC_MICRO_VERSION
+
+/* The buildid. */
+#undef SC_BUILDID
+
 /* The library directory in the src distribution. */
 #undef SRC_SCLIBDIR
 

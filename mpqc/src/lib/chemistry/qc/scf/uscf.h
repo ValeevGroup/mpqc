@@ -39,13 +39,16 @@
 /// A base class for unrestricted self-consistent-field methods.
 class UnrestrictedSCF: public SCF {
   protected:
+    Ref<PointGroup> most_recent_pg_;
     int user_occupations_;
     int tnalpha_;
     int tnbeta_;
     int nirrep_;
     int *nalpha_;
     int *nbeta_;
-    
+    int *initial_nalpha_;
+    int *initial_nbeta_;
+
     AccResultRefSCMatrix oso_eigenvectors_beta_;
     AccResultRefDiagSCMatrix eigenvalues_beta_;
     ResultRefSymmSCMatrix focka_;
@@ -77,7 +80,9 @@ class UnrestrictedSCF: public SCF {
     RefSymmSCMatrix alpha_density();
     RefSymmSCMatrix beta_density();
     RefSymmSCMatrix density();
-    
+
+    void symmetry_changed();
+
     double occupation(int, int);
     double alpha_occupation(int, int);
     double beta_occupation(int, int);

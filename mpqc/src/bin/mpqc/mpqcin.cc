@@ -402,9 +402,9 @@ MPQCIn::parse_string(const char *s)
     }
 
   if (frequencies_.val()) {
-      ostrs << indent << "freq<MolecularFrequencies>: (";
-      ostrs << indent << "  molecule = $:molecule";
-      ostrs << indent << ")";
+      ostrs << indent << "freq<MolecularFrequencies>: (" << endl;
+      ostrs << indent << "  molecule = $:molecule" << endl;
+      ostrs << indent << ")" << endl;
     }
 
   ostrs << decindent;
@@ -577,6 +577,9 @@ MPQCIn::write_energy_object(ostream &ostrs,
                 && !strncmp("STO",basis,3))
               && strncmp("STO",basis_.val(),3)
               && guess_method)) {
+      if (frequencies_.val()) {
+          ostrs << indent << "keep_guess_wavefunction = 1" << endl;;
+        }
       write_energy_object(ostrs, "guess_wavefunction",
                           guess_method, "STO-3G", 0);
     }

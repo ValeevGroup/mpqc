@@ -29,17 +29,26 @@
 #pragma implementation
 #endif
 
+#include <iostream.h>
 #include <util/misc/exenv.h>
 #include <string.h>
 
+#ifdef HAVE_NIAMA
+#include <niama.h>
+#include <niama_impl.h>
+#endif
+
+int ExEnv::initialized_ = 0;
+unsigned long ExEnv::mem_ = 0;
+int ExEnv::nproc_ = 0;
 int *ExEnv::argc_ = 0;
 char ***ExEnv::argv_ = 0;
 
 void
-ExEnv::set_args(int &argcref, char **&argvref)
+ExEnv::err()
 {
-  argc_ = &argcref;
-  argv_ = &argvref;
+  cout << "ExEnv: attempted to use before initialized" << endl;
+  abort();
 }
 
 const char *
@@ -52,6 +61,50 @@ ExEnv::program_name()
   return start;
 }
 
+void
+ExEnv::init(int &argcref, char **&argvref)
+{
+  argc_ = &argcref;
+  argv_ = &argvref;
+
+  initialized_ = 1;
+#ifdef HAVE_NIAMA
+#if 0
+  using namespace NIAMA;
+
+  CORBA::ORB_var orb = CORBA::ORB_init(*argc_, *argv_, "mico-local-orb");
+  CORBA::BOA_var boa = orb->BOA_init(*argc_, *argv_, "mico-local-boa");
+  CORBA::Object_var obj = orb->bind("IDL:NIAMA/Machine:1.0");
+  if (CORBA::is_nil (obj)) {
+      cout << "could not bind to NIAMA server ... giving up" << endl;
+      return;
+    }
+  Machine_var machine = Machine::_narrow (obj);
+  if (CORBA::is_nil(machine)) {
+      return;
+    }
+
+  nproc_ = machine->n_processor();
+  mem_ = machine->memory();
+
+  cout << "ExEnv::init: NIAMA: nproc = " << nproc_ << endl;
+  cout << "ExEnv::init: NIAMA: memory = " << mem_ << endl;
+#else
+  using namespace NIAMA;
+  // init ORB
+  CORBA::ORB_var orb = CORBA::ORB_init(*argc_, *argv_, "mico-local-orb");
+
+  // server side
+  Machine_impl* machine = new Machine_impl;
+
+  nproc_ = machine->n_processor();
+  mem_ = machine->memory();
+
+  CORBA::release(machine);
+  
+#endif
+#endif
+}
 
 // Local Variables:
 // mode: c++

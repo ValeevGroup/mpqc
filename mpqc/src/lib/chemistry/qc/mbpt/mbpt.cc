@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/misc/exenv.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbpt/mbpt.h>
@@ -175,7 +176,11 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   nfzv = keyval->intvalue("nfzv");
   mem_alloc = keyval->intvalue("memory");
   if (keyval->error() != KeyVal::OK) {
-      mem_alloc = 8000000;
+      // by default, take half of the memory
+      mem_alloc = ExEnv::memory()/2;
+      if (mem_alloc == 0) {
+          mem_alloc = 8000000;
+        }
     }
   mem = keyval->describedclassvalue("memorygrp");
   if (mem.null()) {

@@ -124,6 +124,9 @@
 /* Define if you can have the pthread_attr_getstacksize function.  */
 #undef HAVE_PTHREAD_ATTR_GETSTACKSIZE
 
+/* Define if you have the NIAMA library.  */
+#undef HAVE_NIAMA
+
 /* Define if you have the <nx.h> header file and -lnx (Intel Paragon).  */
 #undef HAVE_NX
 

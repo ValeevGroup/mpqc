@@ -32,6 +32,9 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
+# needed for corba
+CXXFLAGS := $(CXXFLAGS:-fno-implicit-templates=)
+
 TARGET_TO_MAKE = libmisc
 BIN_OR_LIB = LIB
 

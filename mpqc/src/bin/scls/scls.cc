@@ -67,7 +67,7 @@ main(int argc, char *argv[])
   atexit(clean_up);
   set_new_handler(out_of_memory);
 
-  ExEnv::set_args(argc, argv);
+  ExEnv::init(argc, argv);
 
 #ifdef HAVE_MPI
   // MPI is allowed wait until MPI_Init to fill in argc and argv,

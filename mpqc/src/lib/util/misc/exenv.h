@@ -32,21 +32,34 @@
 #ifndef _util_misc_exenv_h
 #define _util_misc_exenv_h
 
+#include <scconfig.h>
+
 /** The ExEnv class is used to find out about how
     the program is being run. */
 class ExEnv {
   protected:
+    static int initialized_;
     static int *argc_;
     static char ***argv_;
+
+    static unsigned long mem_;
+    static int nproc_;
+
+    static void err();
   public:
     /// Set the argument count and vector.
-    static void set_args(int &argcref, char **&argvref);
+    static void init(int &argcref, char **&argvref);
     /// Return an reference to the argument count.
     static int &argc() { return *argc_; }
     /// Return an reference to the argument vector.
     static char **&argv() { return *argv_; }
     /// Return argv[0] with the path removed.
     static const char *program_name();
+
+    /// The amount of memory on this node.
+    static unsigned long memory() { if (!initialized_) err(); return mem_; }
+    /// The number of processors on this node.
+    static int nproc() { if (!initialized_) err(); return nproc_; }
 };
 
 #endif

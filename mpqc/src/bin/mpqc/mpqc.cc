@@ -83,6 +83,25 @@
 //////////////////////////////////////////////////////////////////////////
 
 static void
+trash_stack_b(int &i, char *&ichar)
+{
+  char stack;
+  ichar = &stack;
+  ichar -= 10;
+  for (i=0; i<1000; i++) {
+    *ichar-- = 0xfe;
+  }
+}
+
+static void
+trash_stack()
+{
+  int i;
+  char *ichar;
+  trash_stack_b(i,ichar);
+}
+
+static void
 clean_up(void)
 {
   MessageGrp::set_default_messagegrp(0);
@@ -136,6 +155,8 @@ void sigfpe_handler(int)
 int
 main(int argc, char *argv[])
 {
+  //trash_stack();
+
   KeyValValueboolean truevalue(1), falsevalue(0);
   int i;
   const char *devnull = "/dev/null";
@@ -152,7 +173,7 @@ main(int argc, char *argv[])
   signal(SIGFPE,sigfpe_handler);
 #endif
 
-  ExEnv::set_args(argc, argv);
+  ExEnv::init(argc, argv);
 
 #ifdef HAVE_MPI
   // MPI is allowed wait until MPI_Init to fill in argc and argv,

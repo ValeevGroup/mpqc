@@ -32,6 +32,7 @@
 #include <util/keyval/keyval.h>
 #include <util/group/thread.h>
 #include <util/misc/formio.h>
+#include <util/misc/exenv.h>
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -88,9 +89,10 @@ ThreadGrp::ThreadGrp(const ThreadGrp &tg, int nthread)
 
 ThreadGrp::ThreadGrp(const RefKeyVal& keyval)
 {
-  nthread_ = keyval->intvalue("num_threads");
-  if (keyval->error() != KeyVal::OK)
-    nthread_ = 1;
+  int defaultnum = ExEnv::nproc();
+  if (defaultnum == 0) defaultnum = 1;
+  KeyValValueint num(defaultnum);
+  nthread_ = keyval->intvalue("num_threads",num);
 
   threads_ = new Thread*[nthread_];
 }

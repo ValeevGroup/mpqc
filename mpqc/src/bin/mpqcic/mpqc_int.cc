@@ -111,6 +111,7 @@ static void guess_hessian(RefSimpleCoList,RefKeyVal);
 static int get_symmco(RefKeyVal);
 static DMatrix gen_inverse(DMatrix&);
 static void get_input(RefKeyVal);
+static void write_pdb(RefKeyVal);
 static int setup_cart(centers_t *cs,RefKeyVal);
 
 /////////////////////////////////////////////////////////////////
@@ -633,6 +634,8 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
     fprintf(outfp,"\n converged geometry\n");
     mol.print(outfp);
 
+    if (keyval->booleanvalue("output_pdb")) write_pdb(keyval);
+
     return GEOM_DONE;
     }
 
@@ -688,6 +691,8 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
 
   fprintf(outfp,"\n updated geometry\n");
   mol.print(outfp);
+
+  if (keyval->booleanvalue("output_pdb")) write_pdb(keyval);
 
   if (print_internal) {
       Geom_form_and_print_simples(keyval,
@@ -1089,4 +1094,71 @@ setup_cart(centers_t *cs,RefKeyVal keyval)
   idisp.zero();
 
   return GEOM_COMPUTE_GRADIENT;
+  }
+
+static double
+dist(Point& a, Point& b)
+{
+  return (sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])+
+               (a[2]-b[2])*(a[2]-b[2])));
+}
+
+static void
+write_pdb(RefKeyVal keyval)
+{
+  double bohr = 0.52917706;
+
+  FILE *pdbf;
+
+  if (keyval->exists("filename")) {
+    char path[512];
+    char *fn = keyval->pcharvalue("filename");
+    sprintf(path,"%s.pdb",fn);
+    pdbf = fopen(path,"a+");
+    delete[] fn;
+    }
+  else
+    pdbf = fopen("mpqc.pdb","a+");
+
+  if (!pdbf) return;
+
+  if (keyval->exists("title")) {
+    char *title = keyval->pcharvalue("title");
+    fprintf(pdbf,"%-10s%-60s\n","COMPND",title);
+    delete[] title;
+    }
+  else {
+    fprintf(pdbf,"%-10s%-60s\n","COMPND","Title");
+    }
+
+  fprintf(pdbf,"REMARK   Iteration %d\n",iter);
+
+  for (int i=0; i < mol.natom(); i++) {
+    char symb[4];
+    sprintf(symb,"%s1",mol[i].element().symbol());
+
+    fprintf(pdbf,"HETATM%5d  %-3s UNK %5d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
+             i+1, symb, 0, mol[i][0]*bohr, mol[i][1]*bohr, mol[i][2]*bohr);
+    }
+
+  for (i=0; i < mol.natom(); i++) {
+    double at_rad_i = mol[i].element().atomic_radius();
+
+    fprintf(pdbf,"CONECT%5d",i+1);
+
+    for(int j=0; j < mol.natom(); j++) {
+
+      if (j==i) continue;
+
+      double at_rad_j = mol[j].element().atomic_radius();
+
+      if (bohr*dist(mol[i].point(),mol[j].point()) < 1.1*(at_rad_i+at_rad_j))
+        fprintf(pdbf,"%5d",j+1);
+      }
+
+    fprintf(pdbf,"\n");
+    }
+
+  fprintf(pdbf,"END\n");
+  fclose(pdbf);
   }

@@ -11,6 +11,8 @@ extern "C" {
 #include <math/scmat/local.h>
 #include "shape.h"
 
+const double infinity = 1.0e23;
+
 // given a vector X find which of the points in the vector of
 // vectors, A, is closest to it and return the distance
 static double

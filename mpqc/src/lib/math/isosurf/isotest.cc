@@ -7,11 +7,12 @@ extern "C" {
 #endif // SGI
 }
 #include <util/options/GetLongOpt.h>
+#include <util/misc/ieee.h>
 
 #include "volume.h"
 #include "shape.h"
-//#include "tess.h"
 #include "surf.h"
+#include "isosurf.h"
 
 class TestTriangleIntegrator: public TriangleIntegrator {
   public:
@@ -26,6 +27,8 @@ class TestTriangleIntegrator: public TriangleIntegrator {
 
 main(int argc,char** argv)
 {
+  ieee_trap_errors();
+
   GetLongOpt option;
   option.enroll("help",GetLongOpt::NoValue,
                 "print this option summary",0);
@@ -73,8 +76,8 @@ main(int argc,char** argv)
 // 
 //   tess.print();
 
-  ImplicitUniformLattice lat(vol,resolution,minval,maxval);
-  MCubesIsosurfaceGen isogen(lat);
+  ImplicitSurfacePolygonizer isogen(vol);
+  isogen.set_resolution(resolution);
 
   double distance_from_surface = 0.5;
   //TriangulatedSurface10 surf(vol,distance_from_surface);
@@ -83,10 +86,11 @@ main(int argc,char** argv)
   //surf.set_integrator(new TestTriangleIntegrator());
   isogen.isosurface(distance_from_surface,surf);
 
-  FILE* fp = fopen("isotest.out","w");
-  surf.print_vertices_and_triangles(fp);
-  surf.remove_short_edges();
-  surf.print_vertices_and_triangles(fp);
+  FILE* fp = fopen("isotest.off","w");
+  //surf.print_vertices_and_triangles(fp);
+  //surf.remove_short_edges();
+  //surf.print_vertices_and_triangles(fp);
+  surf.print_geomview_format(fp);
   fclose(fp);
 
   printf("surface is written\n");
@@ -94,6 +98,12 @@ main(int argc,char** argv)
   //surf.print();
   printf("surf.area() = %f, surf.volume() = %f\n",
          surf.area(),surf.volume());
+
+  double area = 0.0;
+  for (int i=0; i<surf.ntriangle(); i++) {
+      area += surf.triangle(i)->Triangle::area();
+    }
+  printf("flat triangle area = %f\n",area);
 
   // if surface is a sphere here are the correct value
   double sr = distance_from_surface + radius;

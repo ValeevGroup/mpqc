@@ -13,8 +13,6 @@
 #include <util/container/array.h>
 #include <util/container/set.h>
 
-static const double infinity = 1.0e23;
-
 class Shape: public Volume {
 #   define CLASSNAME Shape
 #   include <util/state/stated.h>

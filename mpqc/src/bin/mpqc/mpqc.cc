@@ -301,14 +301,24 @@ main(int argc, char *argv[])
     grp->bcast(statsize);
   }
   if (restart && statresult==0 && statsize) {
-    StateInBinXDR si(restartfile);
-    char *suf = strrchr(restartfile,'.');
-    if (!strcmp(suf,".wfn")) {
-      mole.restore_state(si);
+    // hackery alert...for now read in checkpoint files on node0 only and
+    // broadcast...this won't work for Dist matrices!
+    if (grp->me() == 0) {
+      StateInBinXDR si(restartfile);
+      char *suf = strrchr(restartfile,'.');
+      if (!strcmp(suf,".wfn")) {
+        mole.restore_state(si);
+      }
+      else {
+        opt.restore_state(si);
+        mole = opt->function();
+      }
     }
-    else {
-      opt.restore_state(si);
-      mole = opt->function();
+
+    if (grp->n() > 1) {
+      BcastState b(grp, 0);
+      b.bcast(mole);
+      b.bcast(opt);
     }
   } else {
     mole = keyval->describedclassvalue("mole");

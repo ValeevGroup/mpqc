@@ -308,8 +308,6 @@ Debugger::debug(const char *reason)
 #else
   if (cmd_) {
       int pid = getpid();
-      char cpid[128];
-      sscanf(cpid,"%d",pid);
       // contruct the command name
       char *cmd = 0;
       for (char *c=cmd_; *c;) {

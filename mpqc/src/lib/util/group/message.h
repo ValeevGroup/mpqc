@@ -154,33 +154,33 @@ class MessageGrp: public DescribedClass {
 
     /** Send messages sequentially to the target processor.
         Similar members exist for each of the basic types. */
-    virtual void send(int target, double* data, int ndata);
-    virtual void send(int target, unsigned int* data, int ndata);
-    virtual void send(int target, int* data, int ndata);
-    virtual void send(int target, char* data, int nbyte);
-    virtual void send(int target, unsigned char* data, int nbyte);
-    virtual void send(int target, signed char* data, int nbyte);
-    virtual void send(int target, short* data, int ndata);
-    virtual void send(int target, long* data, int ndata);
-    virtual void send(int target, float* data, int ndata);
+    virtual void send(int target, const double* data, int ndata);
+    virtual void send(int target, const unsigned int* data, int ndata);
+    virtual void send(int target, const int* data, int ndata);
+    virtual void send(int target, const char* data, int nbyte);
+    virtual void send(int target, const unsigned char* data, int nbyte);
+    virtual void send(int target, const signed char* data, int nbyte);
+    virtual void send(int target, const short* data, int ndata);
+    virtual void send(int target, const long* data, int ndata);
+    virtual void send(int target, const float* data, int ndata);
     void send(int target, double data) { send(target,&data,1); }
     void send(int target, int data) { send(target,&data,1); }
-    virtual void raw_send(int target, void* data, int nbyte) = 0;
+    virtual void raw_send(int target, const void* data, int nbyte) = 0;
 
     /** Send typed messages to the target processor.
         Similar members exist for each of the basic types. */
-    virtual void sendt(int target, int type, double* data, int ndata);
-    virtual void sendt(int target, int type, unsigned int* data, int ndata);
-    virtual void sendt(int target, int type, int* data, int ndata);
-    virtual void sendt(int target, int type, char* data, int nbyte);
-    virtual void sendt(int target, int type, unsigned char* data, int nbyte);
-    virtual void sendt(int target, int type, signed char* data, int nbyte);
-    virtual void sendt(int target, int type, short* data, int ndata);
-    virtual void sendt(int target, int type, long* data, int ndata);
-    virtual void sendt(int target, int type, float* data, int ndata);
+    virtual void sendt(int target, int type, const double* data, int ndata);
+    virtual void sendt(int target, int type, const unsigned int* data, int ndata);
+    virtual void sendt(int target, int type, const int* data, int ndata);
+    virtual void sendt(int target, int type, const char* data, int nbyte);
+    virtual void sendt(int target, int type, const unsigned char* data, int nbyte);
+    virtual void sendt(int target, int type, const signed char* data, int nbyte);
+    virtual void sendt(int target, int type, const short* data, int ndata);
+    virtual void sendt(int target, int type, const long* data, int ndata);
+    virtual void sendt(int target, int type, const float* data, int ndata);
     void sendt(int target, int type, double data) {sendt(target,type,&data,1);}
     void sendt(int target, int type, int data) {sendt(target,type,&data,1);}
-    virtual void raw_sendt(int target, int type, void* data, int nbyte) = 0;
+    virtual void raw_sendt(int target, int type, const void* data, int nbyte) = 0;
 
     /** Receive messages sent sequentually from the sender.
         Similar members exist for each of the basic types. */
@@ -298,6 +298,9 @@ class MessageGrp: public DescribedClass {
     /// Synchronize all of the processors.
     virtual void sync();
 
+    /// Return the MachineTopology object.
+    Ref<MachineTopology> topology() { return topology_; }
+
     /** Each message group maintains an association of ClassDesc with
         a global index so SavableState information can be sent between
         nodes without needing to send the classname and look up the
@@ -325,7 +328,7 @@ class ProcMessageGrp: public MessageGrp {
     message_t *sync_messages;
     message_t *type_messages;
 
-    void sendit(message_t *& messages, int dest, int msgtype, void* buf, int bytes);
+    void sendit(message_t *& messages, int dest, int msgtype, const void* buf, int bytes);
     void recvit(message_t *& messages, int source, int type, void* buf, int bytes,
                 int& last_size, int& last_type);
         
@@ -336,8 +339,8 @@ class ProcMessageGrp: public MessageGrp {
 
     Ref<MessageGrp> clone(void);
     
-    void raw_send(int target, void* data, int nbyte);
-    void raw_sendt(int target, int type, void* data, int nbyte);
+    void raw_send(int target, const void* data, int nbyte);
+    void raw_sendt(int target, int type, const void* data, int nbyte);
     void raw_recv(int sender, void* data, int nbyte);
     void raw_recvt(int type, void* data, int nbyte);
     void raw_bcast(void* data, int nbyte, int from);
@@ -378,7 +381,7 @@ class intMessageGrp: public MessageGrp {
     int *target_seq;
     
     /// Must be implemented by specializations.
-    virtual void basic_send(int target, int type, void* data, int nbyte) = 0;
+    virtual void basic_send(int target, int type, const void* data, int nbyte) = 0;
     /// Must be implemented by specializations.
     virtual void basic_recv(int type, void* data, int nbyte) = 0;
     /// Must be implemented by specializations.
@@ -391,9 +394,9 @@ class intMessageGrp: public MessageGrp {
   public:
     ~intMessageGrp();
 
-    void raw_send(int target, void* data, int nbyte);
+    void raw_send(int target, const void* data, int nbyte);
     void raw_recv(int sender, void* data, int nbyte);
-    void raw_sendt(int target, int type, void* data, int nbyte);
+    void raw_sendt(int target, int type, const void* data, int nbyte);
     void raw_recvt(int type, void* data, int nbyte);
 
     int probet(int);

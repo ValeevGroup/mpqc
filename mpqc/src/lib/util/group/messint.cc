@@ -119,7 +119,7 @@ intMessageGrp::seq_msgtype(int source, int seq)
 }
 
 void
-intMessageGrp::raw_send(int target, void* data, int nbyte)
+intMessageGrp::raw_send(int target, const void* data, int nbyte)
 {
   int& seq = target_seq[target];
   int msgtype = seq_msgtype(me(),seq);
@@ -150,7 +150,7 @@ intMessageGrp::raw_recv(int sender, void* data, int nbyte)
 }
 
 void
-intMessageGrp::raw_sendt(int target, int msgtype, void* data, int nbyte)
+intMessageGrp::raw_sendt(int target, int msgtype, const void* data, int nbyte)
 {
   basic_send(target, typ_msgtype(msgtype), data, nbyte);
 }

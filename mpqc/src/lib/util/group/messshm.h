@@ -67,7 +67,7 @@ a single CPU for tracking down bugs.
 */
 class ShmMessageGrp: public intMessageGrp {
   protected:
-    void basic_send(int target, int type, void* data, int nbyte);
+    void basic_send(int target, int type, const void* data, int nbyte);
     void basic_recv(int type, void* data, int nbyte);
     int basic_probe(int type);
     void initialize(int nprocs);

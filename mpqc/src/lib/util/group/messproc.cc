@@ -59,7 +59,7 @@ Ref<MessageGrp> ProcMessageGrp::clone(void)
   return pmg;
 }
 
-void ProcMessageGrp::sendit(message_t *& messages, int dest, int msgtype, void* buf,
+void ProcMessageGrp::sendit(message_t *& messages, int dest, int msgtype, const void* buf,
                             int bytes)
 {
   message_t *msg;
@@ -131,13 +131,13 @@ void ProcMessageGrp::recvit(message_t *& messages, int source, int type, void* b
 }
 
 void
-ProcMessageGrp::raw_send(int target, void* data, int nbyte)
+ProcMessageGrp::raw_send(int target, const void* data, int nbyte)
 {
   sendit(sync_messages, target, -1, data, nbyte);
 }
 
 void
-ProcMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
+ProcMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
 {
   sendit(type_messages, target, type, data, nbyte);
 }

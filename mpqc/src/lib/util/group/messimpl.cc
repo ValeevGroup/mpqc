@@ -311,47 +311,47 @@ MessageGrp::initialize(int me, int n)
 // Sequential send routines
 
 void
-MessageGrp::send(int target, double* data, int ndata)
+MessageGrp::send(int target, const double* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(double));
 }
 void
-MessageGrp::send(int target, short* data, int ndata)
+MessageGrp::send(int target, const short* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(short));
 }
 void
-MessageGrp::send(int target, long* data, int ndata)
+MessageGrp::send(int target, const long* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(long));
 }
 void
-MessageGrp::send(int target, float* data, int ndata)
+MessageGrp::send(int target, const float* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(float));
 }
 void
-MessageGrp::send(int target, unsigned int* data, int ndata)
+MessageGrp::send(int target, const unsigned int* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(int));
 }
 void
-MessageGrp::send(int target, int* data, int ndata)
+MessageGrp::send(int target, const int* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(int));
 }
 void
-MessageGrp::send(int target, char* data, int ndata)
+MessageGrp::send(int target, const char* data, int ndata)
 {
   raw_send(target, data, ndata);
 }
 void
-MessageGrp::send(int target, unsigned char* data, int ndata)
+MessageGrp::send(int target, const unsigned char* data, int ndata)
 {
   raw_send(target, data, ndata);
 }
 void
-MessageGrp::send(int target, signed char* data, int ndata)
+MessageGrp::send(int target, const signed char* data, int ndata)
 {
   raw_send(target, data, ndata);
 }
@@ -407,47 +407,47 @@ MessageGrp::recv(int sender, signed char* data, int ndata)
 // Typed send routines
 
 void
-MessageGrp::sendt(int target, int type, double* data, int ndata)
+MessageGrp::sendt(int target, int type, const double* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(double));
 }
 void
-MessageGrp::sendt(int target, int type, short* data, int ndata)
+MessageGrp::sendt(int target, int type, const short* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(short));
 }
 void
-MessageGrp::sendt(int target, int type, long* data, int ndata)
+MessageGrp::sendt(int target, int type, const long* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(long));
 }
 void
-MessageGrp::sendt(int target, int type, float* data, int ndata)
+MessageGrp::sendt(int target, int type, const float* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(float));
 }
 void
-MessageGrp::sendt(int target, int type, unsigned int* data, int ndata)
+MessageGrp::sendt(int target, int type, const unsigned int* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(int));
 }
 void
-MessageGrp::sendt(int target, int type, int* data, int ndata)
+MessageGrp::sendt(int target, int type, const int* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(int));
 }
 void
-MessageGrp::sendt(int target, int type, char* data, int ndata)
+MessageGrp::sendt(int target, int type, const char* data, int ndata)
 {
   raw_sendt(target, type, data, ndata);
 }
 void
-MessageGrp::sendt(int target, int type, unsigned char* data, int ndata)
+MessageGrp::sendt(int target, int type, const unsigned char* data, int ndata)
 {
   raw_sendt(target, type, data, ndata);
 }
 void
-MessageGrp::sendt(int target, int type, signed char* data, int ndata)
+MessageGrp::sendt(int target, int type, const signed char* data, int ndata)
 {
   raw_sendt(target, type, data, ndata);
 }

@@ -76,9 +76,9 @@ class MPIMessageGrp: public MessageGrp {
     /// Clones (dups) an MPIMessageGrp from MPI_COMM_WORLD 
     Ref<MessageGrp> clone(void);
     
-    void raw_send(int target, void* data, int nbyte);
+    void raw_send(int target, const void* data, int nbyte);
     void raw_recv(int sender, void* data, int nbyte);
-    void raw_sendt(int target, int type, void* data, int nbyte);
+    void raw_sendt(int target, int type, const void* data, int nbyte);
     void raw_recvt(int type, void* data, int nbyte);
 
     int probet(int type);

@@ -324,7 +324,7 @@ void ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   release_write(me());
 }
 
-void ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
+void ShmMessageGrp::basic_send(int dest, int type, const void* buf, int bytes)
 {
   int i;
   msgbuf_t *availmsg;

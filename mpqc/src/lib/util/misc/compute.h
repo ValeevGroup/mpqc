@@ -10,6 +10,8 @@
 #include <util/container/set.h>
 
 class Result;
+class StateIn;
+class StateOut;
 
 typedef Result* ResultP;
 

@@ -3,6 +3,8 @@
 #pragma implementation
 #endif
 
+#include <cmath>
+
 #include <util/keyval/keyval.h>
 #include <util/misc/libmisc.h>
 #include <util/misc/formio.h>
@@ -24,6 +26,23 @@ PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval):
   Wavefunction(keyval)
 {
   exenv_ << keyval->describedclassvalue("psienv");
+  if (exenv_.null()) {
+    ExEnv::err0() << "PsiWavefunction::PsiWavefunction: no Psi execution environment object (psienv)" << endl;
+    abort();
+  }
+  
+  nirrep_ = molecule()->point_group()->char_table().order();
+  docc_ = read_occ(keyval,"docc",nirrep_);
+  socc_ = read_occ(keyval,"socc",nirrep_);
+  frozen_docc_ = read_occ(keyval,"frozen_docc",nirrep_);
+  frozen_uocc_ = read_occ(keyval,"frozen_uocc",nirrep_);
+
+  int bytes = keyval->intvalue("memory");
+  if (bytes <= 2000000)
+    bytes = 2000000;
+  int bytes_str_len = (int)ceil(log10(bytes));
+  memory_ = new char[bytes_str_len+5];
+  sprintf(memory_,"(%ld B)",bytes);
 }
 
 PsiWavefunction::~PsiWavefunction()
@@ -89,7 +108,7 @@ PsiWavefunction::compute()
     }
     set_gradient(gradientvec);
     file11->close();
-    system("/bin/rm -f /tmp/file11.dat");
+    file11->remove();
   }
   else {
       double energy = 0.0;;
@@ -113,17 +132,42 @@ PsiWavefunction::nelectron()
 }
 
 void
-PsiWavefunction::write_basic_input(int conv, const char *wfn)
+PsiWavefunction::write_basic_input(int conv)
 {
   const char *dertype = gradient_needed() ? "first" : "none";
 
-  Ref<PsiInput> psiinput = exenv_->get_psi_input();
-  psiinput->write_defaults(exenv_,wfn,dertype);
+  Ref<PsiInput> psiinput = get_psi_input();
+  psiinput->write_defaults(exenv_,dertype);
+  psiinput->write_keyword("default:memory",memory_);
   psiinput->begin_section("input");
   psiinput->write_keyword("no_reorient","true");
-  psiinput->write_keyword("basis","ccpvdz");
+  psiinput->write_basis(basis());
+  if (basis()->max_nfunction_in_shell() != basis()->max_ncartesian_in_shell())
+    psiinput->write_keyword("puream","true");
   psiinput->write_geom(molecule());
   psiinput->end_section();
+  psiinput->write_basis_sets(basis());
+}
+
+// Shamelessly borrowed from class SCF
+int *
+PsiWavefunction::read_occ(const Ref<KeyVal> &keyval, const char *name, int nirrep)
+{
+  int *occ = 0;
+  if (keyval->exists(name)) {
+    if (keyval->count(name) != nirrep) {
+      ExEnv::err0() << indent
+                   << "ERROR: PsiWavefunction: have " << nirrep << " irreps but "
+                   << name << " vector is length " << keyval->count(name)
+                   << endl;
+      abort();
+    }
+    occ = new int[nirrep];
+    for (int i=0; i<nirrep; i++) {
+      occ[i] = keyval->intvalue(name,i);
+    }
+  }
+  return occ;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -155,12 +199,6 @@ PsiSCF::save_data_state(StateOut&s)
   abort();
 }
 
-void
-PsiSCF::write_basic_input(int convergence)
-{
-  PsiWavefunction::write_basic_input(convergence, "SCF");
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 static ClassDesc PsiCLHF_cd(
@@ -170,6 +208,11 @@ static ClassDesc PsiCLHF_cd(
 PsiCLHF::PsiCLHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
+  if (!docc_) {
+    ExEnv::err0() << indent
+		  << "ERROR: PsiCLHF: did not find docc array" << endl;
+    abort();
+  }
 }
 
 PsiCLHF::~PsiCLHF()
@@ -183,12 +226,22 @@ PsiCLHF::PsiCLHF(StateIn&s):
 }
 
 void
+PsiCLHF::write_basic_input(int convergence)
+{
+  Ref<PsiInput> input = get_psi_input();
+  input->write_keyword("default:reference","rhf");
+  if (docc_)
+    input->write_keyword_array("default:docc",nirrep_,docc_);
+}
+
+void
 PsiCLHF::write_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
   input->open();
+  PsiWavefunction::write_basic_input(convergence);
   write_basic_input(convergence);
-  input->write_keyword("default:reftype","rhf");
+  input->write_keyword("default:wfn","scf");
   input->close();
 }
 
@@ -201,6 +254,16 @@ static ClassDesc PsiROHF_cd(
 PsiROHF::PsiROHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
+  if (!docc_) {
+    ExEnv::err0() << indent
+		  << "ERROR: PsiROHF: did not find docc array" << endl;
+    abort();
+  }
+  if (!socc_) {
+    ExEnv::err0() << indent
+		  << "ERROR: PsiROHF: did not find socc array" << endl;
+    abort();
+  }
 }
 
 PsiROHF::~PsiROHF()
@@ -214,12 +277,78 @@ PsiROHF::PsiROHF(StateIn&s):
 }
 
 void
+PsiROHF::write_basic_input(int convergence)
+{
+  Ref<PsiInput> input = get_psi_input();
+  input->write_keyword("default:reference","rohf");
+  if (docc_)
+    input->write_keyword_array("default:docc",nirrep_,docc_);
+  if (socc_)
+    input->write_keyword_array("default:socc",nirrep_,socc_);
+}
+
+void
 PsiROHF::write_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
   input->open();
+  PsiWavefunction::write_basic_input(convergence);
   write_basic_input(convergence);
-  input->write_keyword("default:reftype","rohf");
+  input->write_keyword("default:wfn","scf");
+  input->close();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
+static ClassDesc PsiUHF_cd(
+  typeid(PsiUHF),"PsiUHF",1,"public PsiSCF",
+  0, create<PsiUHF>, create<PsiUHF>);
+
+PsiUHF::PsiUHF(const Ref<KeyVal>&keyval):
+  PsiSCF(keyval)
+{
+  if (!docc_) {
+    ExEnv::err0() << indent
+		  << "ERROR: PsiUHF: did not find docc array" << endl;
+    abort();
+  }
+  if (!socc_) {
+    ExEnv::err0() << indent
+		  << "ERROR: PsiUHF: did not find socc array" << endl;
+    abort();
+  }
+}
+
+PsiUHF::~PsiUHF()
+{
+}
+
+PsiUHF::PsiUHF(StateIn&s):
+  PsiSCF(s)
+{
+  abort();
+}
+
+void
+PsiUHF::write_basic_input(int convergence)
+{
+  Ref<PsiInput> input = get_psi_input();
+  input->write_keyword("default:reference","uhf");
+  if (docc_)
+    input->write_keyword_array("default:docc",nirrep_,docc_);
+  if (socc_)
+    input->write_keyword_array("default:socc",nirrep_,socc_);
+}
+
+void
+PsiUHF::write_input(int convergence)
+{
+  Ref<PsiInput> input = get_psi_input();
+  input->open();
+  PsiWavefunction::write_basic_input(convergence);
+  write_basic_input(convergence);
+  input->write_keyword("default:wfn","scf");
   input->close();
 }
 
@@ -232,6 +361,11 @@ static ClassDesc PsiCCSD_cd(
 PsiCCSD::PsiCCSD(const Ref<KeyVal>&keyval):
   PsiWavefunction(keyval)
 {
+  reference_ << keyval->describedclassvalue("reference");
+  if (reference_.null()) {
+    ExEnv::err0() << "PsiCCSD::PsiCCSD: no reference wavefunction" << endl;
+    abort();
+  }
 }
 
 PsiCCSD::~PsiCCSD()
@@ -245,6 +379,16 @@ PsiCCSD::PsiCCSD(StateIn&s):
   abort();
 }
 
+int
+PsiCCSD::gradient_implemented() const
+{
+  int impl = 0;
+  PsiSCF::RefType reftype = reference_->reftype();
+  if (reftype == PsiSCF::rhf || reftype == PsiSCF::rohf)
+    impl = 1;
+  return impl;
+}
+
 void
 PsiCCSD::save_data_state(StateOut&s)
 {
@@ -255,11 +399,20 @@ PsiCCSD::save_data_state(StateOut&s)
 void
 PsiCCSD::write_input(int convergence)
 {
+  if (gradient_needed())
+    reference_->do_gradient(1);
+  else
+    reference_->do_gradient(0);
+    
   Ref<PsiInput> input = get_psi_input();
   input->open();
-  write_basic_input(convergence,"ccsd");
-  input->write_keyword("default:reftype","rhf");
-  input->write_keyword("default:memory","(20 MB)");
+  PsiWavefunction::write_basic_input(convergence);
+  reference_->write_basic_input(convergence);
+  input->write_keyword("default:wfn","ccsd");
+  if (frozen_docc_)
+    input->write_keyword_array("default:frozen_docc",nirrep_,frozen_docc_);
+  if (frozen_uocc_)
+    input->write_keyword_array("default:frozen_uocc",nirrep_,frozen_uocc_);
   input->close();
 }
 
@@ -272,6 +425,17 @@ static ClassDesc PsiCCSD_T_cd(
 PsiCCSD_T::PsiCCSD_T(const Ref<KeyVal>&keyval):
   PsiWavefunction(keyval)
 {
+  reference_ << keyval->describedclassvalue("reference");
+  if (reference_.null()) {
+    ExEnv::err0() << "PsiCCSD_T::PsiCCSD_T: no reference wavefunction" << endl;
+    abort();
+  }
+
+  PsiSCF::RefType reftype = reference_->reftype();
+  if (reftype == PsiSCF::rohf) {
+    ExEnv::err0() << "PsiCCSD_T::PsiCCSD_T: ROHF-based CCSD(T) has not been implemented yet" << endl;
+    abort();
+  }
 }
 
 PsiCCSD_T::~PsiCCSD_T()
@@ -285,6 +449,14 @@ PsiCCSD_T::PsiCCSD_T(StateIn&s):
   abort();
 }
 
+int
+PsiCCSD_T::gradient_implemented() const
+{
+  int impl = 0;
+  PsiSCF::RefType reftype = reference_->reftype();
+  return impl;
+}
+
 void
 PsiCCSD_T::save_data_state(StateOut&s)
 {
@@ -295,11 +467,23 @@ PsiCCSD_T::save_data_state(StateOut&s)
 void
 PsiCCSD_T::write_input(int convergence)
 {
+  if (gradient_needed())
+    reference_->do_gradient(1);
+  else
+    reference_->do_gradient(0);
+    
   Ref<PsiInput> input = get_psi_input();
   input->open();
-  write_basic_input(convergence,"ccsd");
-  input->write_keyword("default:reftype","rhf");
-  input->write_keyword("default:memory","(20 MB)");
+  PsiWavefunction::write_basic_input(convergence);
+  reference_->write_basic_input(convergence);
+  input->write_keyword("default:wfn","ccsd");
+  input->begin_section("psi");
+  input->write_keyword("exec","(\"cints\" \"cscf\" \"transqt\" \"ccsort\" \"ccenergy\" \"cchbar\" \"cctriples\")");
+  input->end_section();
+  if (frozen_docc_)
+    input->write_keyword_array("default:frozen_docc",nirrep_,frozen_docc_);
+  if (frozen_uocc_)
+    input->write_keyword_array("default:frozen_uocc",nirrep_,frozen_uocc_);
   input->close();
 }
 

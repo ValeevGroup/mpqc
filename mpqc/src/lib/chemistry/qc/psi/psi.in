@@ -2,46 +2,40 @@
 
 mole: [
   <PsiCCSD>: (
+    memory = 40000000
+
     % Psi Environment data
     psienv<PsiExEnv>: (
+      cwd = ./
+      fileprefix = psi.test
       nscratch = 1
-      scratch = [ "/tmp/evaleev/" ]
+      scratch = [ "/scratch/evaleev/" ]
     )
-    % Function input
-    value_accuracy = 1e-5
-    gradient_accuracy = 1e-4
+
     % MolecularEnergy input
     molecule<Molecule>: (
         symmetry = c2v
-        % pdb_file = "input.pdb" % use this to get info from a pdb file
         {atoms geometry} = {
           H  [  -1.5  0.0  -0.3 ]
           H  [   1.5  0.0  -0.3 ]
           O  [   0.0  0.0   1.0 ]
          }
       )
-    % Wavefunction input
+
+    % Basis input
     basis<GaussianBasisSet>: (
         molecule = $..:molecule
-        name = cc-pVDZ
+        name = "cc-pVDZ"
       )
-    % OneBodyWavefunction input
-    % PSISCF input
-      psibasis = $basis
+
+    reference<PsiCLHF>: (
+      psienv = $..:psienv
+      molecule = $..:molecule
+      basis = $..:basis
       docc = [ 3 0 1 1 ] socc = [ 0 0 0 0 ]
-      frozen_docc = [ 1 0 0 0 ] frozen_uocc = [ 0 0 0 0 ]
-      %docc = [ 5 ] socc = [ 0 ]
-      label = "6-31 hoh in c2v symmetry"
-      opentype = none
-      test = 0
-      psifiles: (
-          name = "stoh2o"
-        {  unit  nvolume  volumes } = {
-          default  1      [ "./" ]
-          }
-        )
     )
-  ]
+  )
+]
 
 opt: [
   <QNewtonOpt>: (

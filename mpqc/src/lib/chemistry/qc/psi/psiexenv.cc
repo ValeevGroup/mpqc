@@ -23,6 +23,8 @@ int PsiExEnv::ckptfile_(30);
 string PsiExEnv::defaultcwd_("/tmp");
 string PsiExEnv::defaultfileprefix_("psi");
 string PsiExEnv::defaultpsiprefix_("/usr/local/psi/bin");
+string PsiExEnv::defaultstdout_("psi.stdout");
+string PsiExEnv::defaultstderr_("psi.stderr");
 
 PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval)
 {
@@ -44,6 +46,19 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval)
     fileprefix_ = string(fileprefixchar);
   else
     fileprefix_ = string(defaultfileprefix_);
+
+  char *stdout_char = keyval->pcharvalue("stdout");
+  if (stdout_char)
+    stdout_ = string(stdout_char);
+  else
+    stdout_ = string(defaultstdout_);
+  delete[] stdout_char;
+  char *stderr_char = keyval->pcharvalue("stderr");
+  if (stderr_char)
+    stderr_ = string(stderr_char);
+  else
+    stderr_ = string(defaultstderr_);
+  delete[] stderr_char;
 
   nscratch_ = keyval->intvalue("nscratch");
   if (nscratch_ != keyval->count("scratch")) {
@@ -122,8 +137,8 @@ int PsiExEnv::run_psi()
 int PsiExEnv::run_psi_module(char *module)
 {
   int errcod;
-  char *module_cmd = new char[cwd_.size()+strlen(module)+psiprefix_.size()+16];
-  sprintf(module_cmd,"cd %s; %s/%s",cwd_.c_str(),psiprefix_.c_str(),module);
+  char *module_cmd = new char[cwd_.size()+strlen(module)+psiprefix_.size()+stdout_.size()+stderr_.size()+36];
+  sprintf(module_cmd,"cd %s; %s/%s 1>> %s 2>> %s",cwd_.c_str(),psiprefix_.c_str(),module,stdout_.c_str(),stderr_.c_str());
   if (errcod = system(module_cmd)) {
       ExEnv::outn() << "PsiWavefunction: module " << module << " failed" << endl;
       abort();

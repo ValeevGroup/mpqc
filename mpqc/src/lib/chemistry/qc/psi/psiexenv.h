@@ -23,11 +23,15 @@ class PsiExEnv: public DescribedClass {
     static string defaultpsiprefix_;
     static string defaultcwd_;
     static string defaultfileprefix_;
+    static string defaultstdout_;
+    static string defaultstderr_;
 
     // Calculation-specific info
     string psiprefix_;
-    string cwd_;
+    string cwd_;        // working directory where all files will be placed
     string fileprefix_;
+    string stdout_;     // Standard output of psi modules
+    string stderr_;     // Standard error of psi modules
     int nscratch_;
     string *scratch_;
     Ref<PsiInput> psiinput_;

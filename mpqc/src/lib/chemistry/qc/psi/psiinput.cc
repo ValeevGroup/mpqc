@@ -15,6 +15,7 @@
 #endif
 
 #include <iostream>
+#include <cmath>
 
 #include <util/misc/formio.h>
 #include <math/symmetry/corrtab.h>
@@ -61,19 +62,34 @@ PsiInput::write_indent()
 }
 
 void
+PsiInput::incindent(int i)
+{
+  if (i > 0)
+    indentation_ += i;
+}
+
+void
+PsiInput::decindent(int i)
+{
+  if (i > 0)
+    indentation_ -= i;
+}
+
+void
 PsiInput::begin_section(const char * s)
 {
    write_indent();
-   indentation_ += 2;
    file_ << s << ":(" << endl;
+   incindent(2);
 }
 
 void
 PsiInput::end_section(void)
 {
-   indentation_ -= 2;
+   decindent(2);
    write_indent();
    file_ << ")" << endl;
+   write_string("\n");
 }
 
 void
@@ -137,6 +153,11 @@ PsiInput::write_key_wq(const char *keyword, const char *value)
 void
 PsiInput::write_geom(const Ref<Molecule>& mol)
 {
+  // If the highest symmetry group is not the actual group - use subgroup keyword
+  if (!mol->point_group()->equiv(mol->highest_point_group())) {
+    write_keyword("subgroup",mol->point_group()->symbol());
+  }
+
   write_string("geometry = (\n");
   for (int i=0; i < mol->natom(); i++) {
     write_string("  (");
@@ -152,20 +173,89 @@ PsiInput::write_geom(const Ref<Molecule>& mol)
 void
 PsiInput::write_basis(const Ref<GaussianBasisSet>& basis)
 {
+  Ref<Molecule> molecule = basis->molecule();
+  int natom = molecule->natom();
+
+  write_string("basis = (\n");
+  incindent(2);
+  for(int atom=0; atom<natom; atom++) {
+    int uatom = molecule->atom_to_unique(atom);
+
+    // Replace all spaces with underscores in order for Psi libipv1 to parse properly
+    char *name = strdup(basis->name());
+    int len = strlen(name);
+    for (int i=0; i<len; i++)
+      if (name[i] == ' ')
+	name[i] = '_';
+
+    char *basisname = new char[strlen(basis->name()) + ((int)ceil(log10(uatom+2))) + 5];
+    sprintf(basisname,"\"%s%d\" \n",name,uatom);
+    write_string(basisname);
+    delete[] name;
+  }
+  decindent(2);
+  write_string(")\n");
+}
+
+void
+PsiInput::write_basis_sets(const Ref<GaussianBasisSet>& basis)
+{
   begin_section("basis");
-  Ref<AtomInfo> atominfo = basis->molecule()->atominfo(); 
+  Ref<Molecule> molecule = basis->molecule();
+  Ref<AtomInfo> atominfo = basis->molecule()->atominfo();
+  int nunique = molecule->nunique();
+
+  for(int uatom=0; uatom<nunique; uatom++) {
+    int atom = molecule->unique(uatom);
+    const char *atomname = atominfo->name(molecule->Z(atom));
+
+    // Replace all spaces with underscores in order for Psi libipv1 to parse properly
+    char *name = strdup(basis->name());
+    int len = strlen(name);
+    for (int i=0; i<len; i++)
+      if (name[i] == ' ')
+	name[i] = '_';
+
+    char *psibasisname = new char[strlen(atomname) + strlen(basis->name()) + ((int)ceil(log10(uatom+2))) + 9];
+    sprintf(psibasisname,"%s:\"%s%d\" = (\n",atomname,name,uatom);
+    write_string(psibasisname);
+    delete[] name;
+    incindent(2);
+    int nshell = basis->nshell_on_center(atom);
+    for(int sh=0;sh<nshell;sh++) {
+      int shell = basis->shell_on_center(atom,sh);
+      GaussianShell& Shell = basis->shell(shell);
+      int ncon = Shell.ncontraction();
+      int nprim = Shell.nprimitive();
+      for(int con=0; con<ncon; con++) {
+	char amstring[4];
+	sprintf(amstring,"(%c\n",Shell.amchar(con));
+	write_string(amstring);
+	incindent(2);
+	for(int prim=0; prim<nprim; prim++) {
+	  char primstring[50];
+	  sprintf(primstring,"(%20.10lf    %20.10lf)\n",
+		  Shell.exponent(prim),
+		  Shell.coefficient_norm(con,prim));
+	  write_string(primstring);
+	}
+	decindent(2);
+	write_string(")\n");
+      }
+    }
+    decindent(2);
+    write_string(")\n");
+    delete[] psibasisname;
+  }
   end_section();
 }
 
 void
-PsiInput::write_defaults(const Ref<PsiExEnv>& exenv, const char *wfn,
-			 const char *dertype)
+PsiInput::write_defaults(const Ref<PsiExEnv>& exenv, const char *dertype)
 {
   begin_section("default");
   
   write_key_wq("label"," ");
-  write_keyword("wfn",wfn);
-  write_keyword("reference","rhf");
   write_keyword("dertype",dertype);
   begin_section("files");
   begin_section("default");
@@ -188,17 +278,6 @@ PsiInput::write_defaults(const Ref<PsiExEnv>& exenv, const char *wfn,
 
 void
 PsiInput::print(ostream& o)
-{
-}
-
-void
-PsiInput::write_input_file(const char *dertype, const char *wavefn, 
-    const int convergence, const char *fname )
-{
-}
-
-void
-PsiInput::write_input(void)
 {
 }
 

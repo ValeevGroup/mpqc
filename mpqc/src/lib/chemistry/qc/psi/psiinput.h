@@ -47,6 +47,8 @@ class PsiInput: public RefCount {
     void begin_section(const char * s);
     void end_section();
     void write_indent();
+    void incindent(int);
+    void decindent(int);
     void write_comment(const char *);
     void write_keyword(const char *, const char *);
     void write_keyword(const char *, int);
@@ -55,16 +57,14 @@ class PsiInput: public RefCount {
     void write_keyword_array(const char *, int, double *);
     void write_string(const char *);
     void write_key_wq(const char *, const char *);
-    
+
+    /// Construct the "basis" keyword for input
     void write_basis(const Ref<GaussianBasisSet>&);
+    /// Write basis sets explicitly
+    void write_basis_sets(const Ref<GaussianBasisSet>&);
     void write_geom(const Ref<Molecule>&);
     
-    void write_defaults(const Ref<PsiExEnv>&, const char *wfn,
-			const char *dertype);
-    void write_input();
-    void write_input_file(const char *,const char *,
-			  const int convergence = 0, const char *s = "input.dat");
-
+    void write_defaults(const Ref<PsiExEnv>&, const char *dertype);
 };
 
 #endif

@@ -56,6 +56,16 @@ PsiFile11::open()
 void
 PsiFile11::close()
 {
+  if (!file_.is_open())
+    file_.close();
+}
+
+void
+PsiFile11::remove()
+{
+  if (file_.is_open())
+    file_.close();
+  file_.open(filename_.c_str(),ios::trunc);
   file_.close();
 }
 

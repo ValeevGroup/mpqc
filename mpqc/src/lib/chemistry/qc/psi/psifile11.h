@@ -34,6 +34,7 @@ class PsiFile11: public RefCount {
     
     void open();
     void close();
+    void remove();
     int get_natom(int entry);
     double get_energy(int entry);
     double get_coord(int entry, int atom, int xyz);

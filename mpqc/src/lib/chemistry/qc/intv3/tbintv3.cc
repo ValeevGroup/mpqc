@@ -26,6 +26,7 @@ TwoBodyIntV3::~TwoBodyIntV3()
 void
 TwoBodyIntV3::compute_shell(int is, int js, int ks, int ls)
 {
+  int2ev3_->set_redundant(redundant());
   int2ev3_->erep(is,js,ks,ls);
 }
 

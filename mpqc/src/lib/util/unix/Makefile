@@ -9,7 +9,7 @@ CSRC = cutils.c
 
 CXXSRC =
 
-ifneq ($(ARCH),I860)
+ifeq ($(ARCH),none)
   CXXSRC += daemon.cc usignal.cc
 endif
 

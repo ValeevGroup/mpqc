@@ -56,6 +56,10 @@ SYMM2MASTER=symm2.qci
 SYMM2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(SYMM2MASTER))
 SYMM2OUTPUTS = $(SYMM2INPUTS:%.$(INSUF)=%.out)
 
+SYMM3MASTER=symm3.qci
+SYMM3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(SYMM3MASTER))
+SYMM3OUTPUTS = $(SYMM3INPUTS:%.$(INSUF)=%.out)
+
 CKPTINPUTS = \
  ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_2mp2.in \
  ckpt_0efcopt.in    ckpt_1clscf.in     ckpt_1qnewtopt.in  ckpt_2qnewtopt.in \
@@ -79,7 +83,7 @@ MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 ALLINPUTS = $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
-            $(SYMM1INPUTS) $(SYMM2INPUTS) \
+            $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
@@ -93,7 +97,7 @@ default::
 	@echo \'make diff\' to use the diff program to compare outputs
 
 .PHONY: inputs
-inputs: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 ckpt mbpt
+inputs: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -115,6 +119,9 @@ symm1: stamp-symm1
 
 .PHONY: symm2
 symm2: stamp-symm2
+
+.PHONY: symm3
+symm3: stamp-symm3
 
 .PHONY: opt
 opt: stamp-opt
@@ -164,10 +171,14 @@ stamp-symm2: $(RUN) $(SYMM2MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(SYMM2MASTER)
 	touch stamp-symm2
 
+stamp-symm3: $(RUN) $(SYMM3MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(SYMM3MASTER)
+	touch stamp-symm3
+
 ##############################################################################
 
 .PHONY: checkrun
-checkrun: checkckpt checkmbpt checksymm1 checksymm2
+checkrun: checkckpt checkmbpt checksymm1 checksymm2 checksymm3
 	@echo Check for complete outputs in the run directory:
 	for file in $(ALLOUTPUTS); \
 	  do \
@@ -253,6 +264,15 @@ checksymm2:
 	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}cs}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}c2v}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}d2h}.out;\
+	); done
+
+.PHONY: checksymm3
+checksymm3:
+	@for o in $(SYMM3OUTPUTS); \
+	do ( \
+	  expect=`echo $${o}|sed 's/^.*symm3_.*_\(.*\)_.*$$/\1/'`; \
+	  actual=`grep 'g point g' $${o}|sed 's/^.*to \(.*\)$$/\1/'`; \
+	  echo $${o}: expected $${expect} got $${actual}; \
 	); done
 
 .PHONY: check

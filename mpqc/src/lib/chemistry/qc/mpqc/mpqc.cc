@@ -32,6 +32,7 @@ void bzero(void*,int);
 #define IOFF(i,j) ((i)>(j)) ? ioff((i))+(j) : ioff((j))+(i)
 
 static void clean_and_exit(int);
+static void mkcostvec(centers_t*, sym_struct_t*, dmt_cost_t*);
 
 int host;
 char* argv0;
@@ -165,7 +166,7 @@ MPSCF::MPSCF(KeyVal&keyval):
   int size,count;
   int *shellmap;
   double energy;
-  int_vector_t costvec;
+  dmt_cost_t* costvec;
   int mp2;
 
   char *filename="mpqc";
@@ -313,9 +314,10 @@ MPSCF::MPSCF(KeyVal&keyval):
 
   for(i=0; i < centers.nshell ; i++) shellmap[i] = INT_SH_NFUNC(&centers,i);
 
-  costvec.n=0;
-  costvec.i=NULL;
-  dmt_def_map2(scf_info.nbfao,centers.nshell,shellmap,costvec.i,1);
+  costvec = (dmt_cost_t*) malloc(sizeof(dmt_cost_t)*nshtr);
+  mkcostvec(&centers,&sym_info,costvec);
+  dmt_def_map2(scf_info.nbfao,centers.nshell,shellmap,costvec,0);
+  free(costvec);
 
   free(shellmap);
   if(me==0) printf("\n");
@@ -556,3 +558,69 @@ clean_and_exit(int host)
   close0(0);
   exit(0);
 }
+
+static void
+mkcostvec(centers_t *centers,sym_struct_t *sym_info,dmt_cost_t *costvec)
+{
+  int flags;
+  int i,j,k,l;
+  int ij,kl,ijkl;
+  int ioffi,ioffij;
+  int g,gi,gj,gk,gl,gij,gkl,gijkl;
+  int Qvecij,bound,cost;
+  int nb;
+  int leavel;
+  int use_symmetry=(sym_info->g>1);
+  int nproc=numnodes0();
+  int me=mynode0();
+  double *intbuf;
+  extern signed char *Qvec;
+
+ /* free these up for now */
+  int_done_offsets1(centers,centers);
+  int_done_1e();
+
+  int_initialize_offsets2(centers,centers,centers,centers);
+
+  flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+
+  intbuf =
+    int_initialize_erep(flags,0,centers,centers,centers,centers);
+
+  scf_init_bounds(centers,intbuf);
+
+  for (i=ij=0; i<centers->nshell; i++) {
+    int nconi = centers->center[centers->center_num[i]].
+                       basis.shell[centers->shell_num[i]].ncon;
+    int nprimi = centers->center[centers->center_num[i]].
+                       basis.shell[centers->shell_num[i]].nprim;
+    int ami = centers->center[centers->center_num[i]].
+                       basis.shell[centers->shell_num[i]].type[0].am;
+    for (j=0; j<=i; j++,ij++) {
+      int nconj = centers->center[centers->center_num[j]].
+                         basis.shell[centers->shell_num[j]].ncon;
+      int nprimj = centers->center[centers->center_num[j]].
+                         basis.shell[centers->shell_num[j]].nprim;
+      int amj = centers->center[centers->center_num[j]].
+                         basis.shell[centers->shell_num[j]].type[0].am;
+
+      costvec[ij].i = i;
+      costvec[ij].j = j;
+      costvec[ij].magnitude = (int) Qvec[ij];
+      costvec[ij].ami = ami;
+      costvec[ij].amj = amj;
+      costvec[ij].nconi = nconi;
+      costvec[ij].nconj = nconj;
+      costvec[ij].nprimi = nprimi;
+      costvec[ij].nprimj = nprimj;
+      costvec[ij].dimi = INT_SH_NFUNC(centers,i);;
+      costvec[ij].dimj = INT_SH_NFUNC(centers,j);;
+      }
+    }
+
+  int_done_erep();
+  int_done_offsets2(centers,centers,centers,centers);
+  int_initialize_1e(0,0,centers,centers);
+  int_initialize_offsets1(centers,centers);
+  scf_done_bounds();
+  }

@@ -43,7 +43,7 @@ INC = bem.h
 DEPENDINCLUDE = $(INC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libsolvent
+TARGET_TO_MAKE = libSCsolvent
 
 TESTSRC = bemtest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))

@@ -34,7 +34,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
-TARGET_TO_MAKE = libbasis
+TARGET_TO_MAKE = libSCbasis
 BIN_OR_LIB = LIB
 
 CXXSRC = gaussbas.cc gaussshell.cc files.cc \
@@ -63,7 +63,7 @@ aotoso.$(OBJSUF) aotoso.d: f77sym.h
 f77sym.h: f77sym.in
 	$(MKF77SYM) $< $@
 
-btest: $(TESTOBJ) libintv3.$(LIBSUF) liboint3.$(LIBSUF) \
+btest: $(TESTOBJ) libSCintv3.$(LIBSUF) libSCoint3.$(LIBSUF) \
                   $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 

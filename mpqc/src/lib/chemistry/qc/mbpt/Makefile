@@ -32,7 +32,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libmbpt
+TARGET_TO_MAKE = libSCmbpt
 BIN_OR_LIB = LIB
 
 CXXSRCS = mbpt.cc csgrad.cc csgrade12.cc csgrads2pdm.cc csgmat.cc cscphf.cc \
@@ -54,7 +54,7 @@ endif
 
 LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-mbpttest:: mbpttest.$(OBJSUF) $(LIBS) libdft.$(LIBSUF)
+mbpttest:: mbpttest.$(OBJSUF) $(LIBS) libSCdft.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o mbpttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 mbpttest.$(OBJSUF): mbpttest.cc

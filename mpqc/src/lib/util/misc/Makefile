@@ -35,7 +35,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 # needed for corba
 CXXFLAGS := $(CXXFLAGS:-fno-implicit-templates=)
 
-TARGET_TO_MAKE = libmisc
+TARGET_TO_MAKE = libSCmisc
 BIN_OR_LIB = LIB
 
 CSRC = ieee.c checkalloc.c mtype.c

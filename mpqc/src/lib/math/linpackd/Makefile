@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = liblinpackd
+TARGET_TO_MAKE = libSClinpackd
 BIN_OR_LIB = LIB
 
 CSRC = linpackd.c

@@ -31,7 +31,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libscf
+TARGET_TO_MAKE = libSCscf
 BIN_OR_LIB = LIB
 
 SRCS = scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \

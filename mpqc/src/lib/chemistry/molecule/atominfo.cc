@@ -254,7 +254,7 @@ AtomInfo::load_library_values()
         }
       else {
           struct stat sb;
-          const char *ainfo = INSTALLED_SCLIBDIR "/atominfo.kv";
+          const char *ainfo = SCDATADIR "/atominfo.kv";
 #ifdef SRC_SCLIBDIR
           if (stat(ainfo, &sb) != 0) {
               ainfo = SRC_SCLIBDIR "/atominfo.kv";

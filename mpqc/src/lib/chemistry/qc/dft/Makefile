@@ -31,7 +31,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libdft
+TARGET_TO_MAKE = libSCdft
 BIN_OR_LIB = LIB
 
 SRCS = functional.cc integrator.cc \

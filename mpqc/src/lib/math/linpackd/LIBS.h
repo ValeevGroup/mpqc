@@ -1,1 +1,1 @@
-liblinpackd.LIBSUF
+libSClinpackd.LIBSUF

@@ -1,4 +1,4 @@
-libwfn.LIBSUF
+libSCwfn.LIBSUF
 #include <util/misc/LIBS.h>
 #include <math/scmat/LIBS.h>
 #include <chemistry/molecule/LIBS.h>

@@ -66,7 +66,7 @@ endif
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libgroup
+TARGET_TO_MAKE = libSCgroup
 
 TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc thrtest.cc
 DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
@@ -80,52 +80,52 @@ memtest.$(OBJSUF): memtest.cc
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 memtest: memtest.$(OBJSUF) \
-	libgroup.$(LIBSUF) \
-	libkeyval.$(LIBSUF) \
-	libmisc.$(LIBSUF) \
-	libstate.$(LIBSUF) \
-	libclass.$(LIBSUF) \
-	libcontainer.$(LIBSUF) \
-	libref.$(LIBSUF)
+	libSCgroup.$(LIBSUF) \
+	libSCkeyval.$(LIBSUF) \
+	libSCmisc.$(LIBSUF) \
+	libSCstate.$(LIBSUF) \
+	libSCclass.$(LIBSUF) \
+	libSCcontainer.$(LIBSUF) \
+	libSCref.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 pooltest: pooltest.$(OBJSUF) \
-	libmisc.$(LIBSUF) \
-	libgroup.$(LIBSUF) \
-	libkeyval.$(LIBSUF) \
-	libstate.$(LIBSUF) \
-	libclass.$(LIBSUF) \
-	libcontainer.$(LIBSUF) \
-	libref.$(LIBSUF)
+	libSCmisc.$(LIBSUF) \
+	libSCgroup.$(LIBSUF) \
+	libSCkeyval.$(LIBSUF) \
+	libSCstate.$(LIBSUF) \
+	libSCclass.$(LIBSUF) \
+	libSCcontainer.$(LIBSUF) \
+	libSCref.$(LIBSUF)
 	$(LTLINK) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-rnglocktest: rnglocktest.$(OBJSUF) libgroup.$(LIBSUF)
+rnglocktest: rnglocktest.$(OBJSUF) libSCgroup.$(LIBSUF)
 	$(LTLINK) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 messtest.$(OBJSUF): messtest.cc
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 messtest: messtest.$(OBJSUF) \
-	libgroup.$(LIBSUF) \
-	libkeyval.$(LIBSUF) \
-	libmisc.$(LIBSUF) \
-	libstate.$(LIBSUF) \
-	libclass.$(LIBSUF) \
-	libcontainer.$(LIBSUF) \
-	libref.$(LIBSUF)
+	libSCgroup.$(LIBSUF) \
+	libSCkeyval.$(LIBSUF) \
+	libSCmisc.$(LIBSUF) \
+	libSCstate.$(LIBSUF) \
+	libSCclass.$(LIBSUF) \
+	libSCcontainer.$(LIBSUF) \
+	libSCref.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 thrtest.$(OBJSUF): thrtest.cc
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 thrtest: thrtest.$(OBJSUF) \
-	libgroup.$(LIBSUF) \
-	libkeyval.$(LIBSUF) \
-	libmisc.$(LIBSUF) \
-	libstate.$(LIBSUF) \
-	libclass.$(LIBSUF) \
-	libcontainer.$(LIBSUF) \
-	libref.$(LIBSUF)
+	libSCgroup.$(LIBSUF) \
+	libSCkeyval.$(LIBSUF) \
+	libSCmisc.$(LIBSUF) \
+	libSCstate.$(LIBSUF) \
+	libSCclass.$(LIBSUF) \
+	libSCcontainer.$(LIBSUF) \
+	libSCref.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o thrtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

@@ -5,13 +5,13 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = liboptions
+TARGET_TO_MAKE = libSCoptions
 
 LIBOBJ = GetLongOpt.$(OBJSUF)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-sample: README.$(OBJSUF) liboptions.$(LIBSUF)
+sample: README.$(OBJSUF) libSCoptions.$(LIBSUF)
 	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKBINOPTS)
 
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)

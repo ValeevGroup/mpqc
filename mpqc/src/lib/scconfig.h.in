@@ -229,6 +229,9 @@
 /* The installed location of the library directory. */
 #undef INSTALLED_SCLIBDIR
 
+/* The location of architecture independent files. */
+#undef SCDATADIR
+
 /* Define if template should be explicitly instantiated.  */
 #undef EXPLICIT_TEMPLATE_INSTANTIATION
 

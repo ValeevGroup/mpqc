@@ -32,7 +32,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libwfn
+TARGET_TO_MAKE = libSCwfn
 BIN_OR_LIB = LIB
 
 SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc hcorewfn.cc \

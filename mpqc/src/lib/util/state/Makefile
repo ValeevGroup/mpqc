@@ -47,7 +47,7 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libstate
+TARGET_TO_MAKE = libSCstate
 
 default:: $(DEPENDINCLUDE)
 
@@ -56,9 +56,9 @@ interface:: $(DEPENDINCLUDE)
 statetest.$(OBJSUF): statetest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDE) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-statetest: statetest.$(OBJSUF) libkeyval.$(LIBSUF) libmisc.$(LIBSUF) \
-           libgroup.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) \
-           libcontainer.$(LIBSUF) libref.$(LIBSUF)
+statetest: statetest.$(OBJSUF) libSCkeyval.$(LIBSUF) libSCmisc.$(LIBSUF) \
+           libSCgroup.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) \
+           libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o statetest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

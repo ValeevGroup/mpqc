@@ -1,4 +1,4 @@
-libgroup.LIBSUF
+libSCgroup.LIBSUF
 #include <util/state/LIBS.h>
 #include <util/keyval/LIBS.h>
 #include <util/misc/LIBS.h>

@@ -61,7 +61,7 @@ BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
     }
   else {
       struct stat sb;
-      const char *bdir = INSTALLED_SCLIBDIR "/basis";
+      const char *bdir = SCDATADIR "/basis";
 #ifdef SRC_SCLIBDIR
       if (stat(bdir, &sb) != 0) {
           bdir = SRC_SCLIBDIR "/basis";

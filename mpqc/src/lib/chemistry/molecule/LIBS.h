@@ -1,4 +1,4 @@
-libmolecule.LIBSUF
+libSCmolecule.LIBSUF
 #include <math/scmat/LIBS.h>
 #include <math/optimize/LIBS.h>
 #include <math/isosurf/LIBS.h>

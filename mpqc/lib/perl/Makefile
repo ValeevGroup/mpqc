@@ -8,5 +8,5 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install::
-	$(INSTALL) $(INSTALLDIROPT) $(libdir)/perl
-	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.pm $(libdir)/perl
+	$(INSTALL) $(INSTALLDIROPT) $(scdatadir)/perl
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.pm $(scdatadir)/perl

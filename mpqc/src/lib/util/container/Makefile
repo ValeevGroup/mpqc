@@ -48,7 +48,7 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 DISTFILES = Makefile $(INC) LIBS.h $(REALCXXSRC) $(TESTCXX)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libcontainer
+TARGET_TO_MAKE = libSCcontainer
 
 default:: $(DEPENDINCLUDE)
 
@@ -66,10 +66,10 @@ ssarmac.h: ssartem.h $(TMPL2MACDEP)
 ssar2mac.h: ssar2tem.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > ssar2mac.h
 
-avltest: avltest.$(OBJSUF) libmisc.$(LIBSUF) libkeyval.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF) libcontainer.$(LIBSUF)
+avltest: avltest.$(OBJSUF) libSCmisc.$(LIBSUF) libSCkeyval.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) libSCref.$(LIBSUF) libSCcontainer.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o avltest $^ $(LTLINKBINOPTS)
 
-artest: artest.$(OBJSUF) libcontainer.$(LIBSUF) libmisc.$(LIBSUF) libkeyval.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF) libcontainer.$(LIBSUF)
+artest: artest.$(OBJSUF) libSCcontainer.$(LIBSUF) libSCmisc.$(LIBSUF) libSCkeyval.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) libSCref.$(LIBSUF) libSCcontainer.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o artest $^ $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

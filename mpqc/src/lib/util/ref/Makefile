@@ -49,16 +49,16 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 DISTFILES = Makefile $(INC) LIBS.h $(REALCXXSRC) $(TESTCXX)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libref
+TARGET_TO_MAKE = libSCref
 
 default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)
 
 reftest: reftest.$(OBJSUF) reftestx.$(OBJSUF) \
-           libkeyval.$(LIBSUF) \
-           libgroup.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) \
-           libcontainer.$(LIBSUF) libref.$(LIBSUF) libmisc.$(LIBSUF)
+           libSCkeyval.$(LIBSUF) \
+           libSCgroup.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) \
+           libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF) libSCmisc.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o reftest $^ $(LTLINKBINOPTS) $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

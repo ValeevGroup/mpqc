@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libpsi
+TARGET_TO_MAKE = libSCpsi
 BIN_OR_LIB = LIB
 
 SRCS = psi.cc file11.cc psiinput.cc

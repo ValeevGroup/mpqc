@@ -41,7 +41,7 @@ class MsgStateSend: public StateOutBinXDR {
   private:
     // do not allow copy constructor or assignment
     MsgStateSend(const MsgStateSend&);
-    operator=(const MsgStateSend&);
+    void operator=(const MsgStateSend&);
   protected:
     RefMessageGrp grp;
     int nbuf; // the number of bytes used in the buffer
@@ -82,7 +82,7 @@ class MsgStateRecv: public StateInBinXDR {
   private:
     // do not allow copy constructor or assignment
     MsgStateRecv(const MsgStateRecv&);
-    operator=(const MsgStateRecv&);
+    void operator=(const MsgStateRecv&);
   protected:
     RefMessageGrp grp;
     int nbuf; // the number of bytes used in the buffer
@@ -132,7 +132,7 @@ class StateSend: public MsgStateSend {
   private:
     // do not allow copy constructor or assignment
     StateSend(const StateSend&);
-    operator=(const StateSend&);
+    void operator=(const StateSend&);
   private:
     int target_;
   public:
@@ -153,7 +153,7 @@ class StateRecv: public MsgStateRecv {
   private:
     // do not allow copy constructor or assignment
     StateRecv(const StateRecv&);
-    operator=(const StateRecv&);
+    void operator=(const StateRecv&);
   private:
     int source_;
   protected:
@@ -172,7 +172,7 @@ class BcastStateSend: public MsgStateSend {
   private:
     // do not allow copy constructor or assignment
     BcastStateSend(const BcastStateSend&);
-    operator=(const BcastStateSend&);
+    void operator=(const BcastStateSend&);
   public:
     //. Create the \clsnm{BcastStateSend}.
     BcastStateSend(const RefMessageGrp&);
@@ -189,7 +189,7 @@ class BcastStateRecv: public MsgStateRecv {
   private:
     // do not allow copy constructor or assignment
     BcastStateRecv(const BcastStateRecv&);
-    operator=(const BcastStateRecv&);
+    void operator=(const BcastStateRecv&);
   protected:
     int source_;
     void next_buffer();

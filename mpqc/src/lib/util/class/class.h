@@ -100,7 +100,7 @@ class ParentClasses
     void add(ParentClass*);
     // do not allow copy constructor or assignment
     ParentClasses(const ParentClasses&);
-    operator=(const ParentClasses&);
+    void operator=(const ParentClasses&);
   public:
     ParentClasses();
     void init(const char*);
@@ -145,7 +145,7 @@ class ClassDesc: public Identity {
 
     // do not allow copy constructor or assignment
     ClassDesc(const ClassDesc&);
-    operator=(const ClassDesc&);
+    void operator=(const ClassDesc&);
   public:
     ClassDesc(char*,int=1,char* p=0,
               DescribedClass* (*ctor)()=0,

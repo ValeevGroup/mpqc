@@ -57,7 +57,7 @@ class QCXDR
   private:
     // do not allow copy constructor or assignment
     QCXDR(const QCXDR&);
-    operator=(const QCXDR&);
+    void operator=(const QCXDR&);
   public:
     QCXDR();
     //. These perform the translation to/from xdr format

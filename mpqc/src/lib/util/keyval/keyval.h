@@ -88,7 +88,7 @@ class KeyVal: public VRefCount {
     KeyValError errcod;
     // do not allow a copy constructor or assignment
     KeyVal(const KeyVal&);
-    operator=(const KeyVal&);
+    void operator=(const KeyVal&);
   protected:
     KeyVal();
 
@@ -339,7 +339,7 @@ class AssignedKeyVal: public KeyVal {
     KeyValKeywordRefKeyValValueMap* _map;
     // do not allow a copy constructor or assignment
     AssignedKeyVal(const AssignedKeyVal&);
-    operator=(const AssignedKeyVal&);
+    void operator=(const AssignedKeyVal&);
   public:
     AssignedKeyVal();
     ~AssignedKeyVal();
@@ -367,7 +367,7 @@ class StringKeyVal: public KeyVal {
     KeyValKeywordRefKeyValValueMap* _map;
     // do not allow a copy constructor or assignment
     StringKeyVal(const StringKeyVal&);
-    operator=(const StringKeyVal&);
+    void operator=(const StringKeyVal&);
   protected:
     StringKeyVal();
   public:
@@ -393,7 +393,7 @@ class AggregateKeyVal : public KeyVal {
     RefKeyVal getkeyval(const char*key);
     // do not allow a copy constructor or assignment
     AggregateKeyVal(const AggregateKeyVal&);
-    operator=(const AggregateKeyVal&);
+    void operator=(const AggregateKeyVal&);
   public:
     AggregateKeyVal(const RefKeyVal&);
     AggregateKeyVal(const RefKeyVal&,const RefKeyVal&);
@@ -415,7 +415,7 @@ class PrefixKeyVal : public KeyVal {
     int getnewprefixkey(const char*key,char*newkey);
     // do not allow a copy constructor or assignment
     PrefixKeyVal(const PrefixKeyVal&);
-    operator=(const PrefixKeyVal&);
+    void operator=(const PrefixKeyVal&);
   public:
     PrefixKeyVal(const RefKeyVal&,int);
     PrefixKeyVal(const RefKeyVal&,int,int);
@@ -451,7 +451,7 @@ class ParsedKeyVal : public StringKeyVal {
     IPV2* ipv2;
     // do not allow a copy constructor or assignment
     ParsedKeyVal(const ParsedKeyVal&);
-    operator=(const ParsedKeyVal&);
+    void operator=(const ParsedKeyVal&);
   public:
     //. Create an empty \clsnm{ParsedKeyVal}.
     ParsedKeyVal();

@@ -366,7 +366,7 @@ class StateOutFile: public StateOut {
   private:
     // do not allow copy constructor or assignment
     StateOutFile(const StateOutFile&);
-    operator=(const StateOutFile&);
+    void operator=(const StateOutFile&);
   protected:
     int opened_;
     streambuf *buf_;
@@ -400,7 +400,7 @@ class StateInFile: public StateIn {
   private:
     // do not allow copy constructor or assignment
     StateInFile(const StateInFile&);
-    operator=(const StateInFile&);
+    void operator=(const StateInFile&);
   protected:
     int opened_;
     streambuf *buf_;
@@ -432,7 +432,7 @@ class StateOutText: public StateOutFile {
   private:
     // do not allow copy constructor or assignment
     StateOutText(const StateOutText&);
-    operator=(const StateOutText&);
+    void operator=(const StateOutText&);
   protected:
     void newline();
     void start_array();
@@ -466,7 +466,7 @@ class StateInText: public StateInFile {
   private:
     // do not allow copy constructor or assignment
     StateInText(const StateInText&);
-    operator=(const StateInText&);
+    void operator=(const StateInText&);
   protected:
     int _newlines;
     
@@ -508,7 +508,7 @@ class StateOutBin: public StateOutFile {
   private:
     // do not allow copy constructor or assignment
     StateOutBin(const StateOutBin&);
-    operator=(const StateOutBin&);
+    void operator=(const StateOutBin&);
   protected:
     int put_array_void(const void*,int);
   public:
@@ -524,7 +524,7 @@ class StateInBin: public StateInFile {
   private:
     // do not allow copy constructor or assignment
     StateInBin(const StateInBin&);
-    operator=(const StateInBin&);
+    void operator=(const StateInBin&);
   protected:
     int get_array_void(void*,int);
   public:
@@ -543,7 +543,7 @@ class StateOutBinXDR : public StateOutBin, public QCXDR
   private:
     // do not allow copy constructor or assignment
     StateOutBinXDR(const StateOutBinXDR&);
-    operator=(const StateOutBinXDR&);
+    void operator=(const StateOutBinXDR&);
   protected:
     //this is needed for a mips-sgi-irix4 gcc 2.5.2 bug
     int put_array_void(const void*v,int i);
@@ -565,7 +565,7 @@ class StateInBinXDR : public StateInBin, public QCXDR
   private:
     // do not allow copy constructor or assignment
     StateInBinXDR(const StateInBinXDR&);
-    operator=(const StateInBinXDR&);
+    void operator=(const StateInBinXDR&);
   protected:
     //this is needed for a mips-sgi-irix4 gcc 2.5.2 bug
     int get_array_void(void*v,int i);

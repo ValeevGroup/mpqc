@@ -20,9 +20,8 @@
     void* _castdown(const ClassDesc*);
     static CLASSNAME* castdown(DescribedClass*p);
     static CLASSNAME* castdown(RefDescribedClass&p);
-    inline static const ClassDesc* static_class_desc()
-      { return &CLASSNAME::class_desc_; }
-    inline const ClassDesc* class_desc() const { return &class_desc_; }
+    static const ClassDesc* static_class_desc();
+    const ClassDesc* class_desc() const;
 #ifdef HAVE_CTOR
     static DescribedClass* create();
 #undef HAVE_CTOR

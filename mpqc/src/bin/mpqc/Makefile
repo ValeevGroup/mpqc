@@ -54,12 +54,11 @@ ifeq ($(HAVE_LIBDERIV),yes)
   XLIBS += -lderiv
 endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  LTLINKBINOPTS += -R$(CCAFE_LIB)
-  CPPFLAGS += -DHAVE_CHEMISTRY_CCA
+  LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB) -R$(libdir)/cca
+  DEFINES += -DHAVE_CHEMISTRY_CCA
 endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
-
 
 #################################################################
 
@@ -68,6 +67,7 @@ default:: $(DEPENDINCLUDE)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 mpqc: $(BINOBJ) $(LIBS)
+	echo "$(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h"
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(XLIBS) $(SYSLIBS) $(LTLINKBINOPTS)
 
 $(TOPDIR)/lib/libmpqc.a: $(BINOBJ)

@@ -90,13 +90,6 @@ Int2eCCA::~Int2eCCA()
   // int_done_offsets1();
 }
 
-/* Compute the shell offset. */
-static int
-shell_offset(Ref<GaussianBasisSet> cs, int off)
-{
-  return off + cs->nshell();
-}
-
 void
 Int2eCCA::compute_erep( int is, int js, int ks, int ls )
 {
@@ -228,6 +221,13 @@ Int2eCCA::remove_redundant(int sh1, int sh2, int sh3, int sh4) {
 // copied liberally from intV3 
 
 /*
+
+static int
+shell_offset(Ref<GaussianBasisSet> cs, int off)
+{
+  return off + cs->nshell();
+}
+
 #define INT_MAX1(n1) ((n1)-1)
 #define INT_MAX2(e12,i,n2) ((e12)?(i):((n2)-1))
 #define INT_MAX3(e13e24,i,n3) ((e13e24)?(i):((n3)-1))

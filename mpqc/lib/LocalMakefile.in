@@ -160,3 +160,8 @@ CCAFE_LIB=@CCAFE_LIBDIR@
 # cca-chem libs
 CCA_CHEM_LIB=@CCA_CHEM_LIB@
 
+ifeq ($(ENABLECCA),yes)
+  LTLINKLIBOPTS += -rpath $(libdir)/cca
+endif
+
+

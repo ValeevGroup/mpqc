@@ -99,7 +99,7 @@ throw ()
   // Initialize the sc::Integral factory
   // not supporting mixed basis sets yet
   std::cout << "  initializing " << package_ << " " << evaluator_label_
-            << " integral evaluator\n";
+            << " integral evaluator by basis name\n";
   if ( package_ == "intv3" )
     integral_ = new IntegralV3( bs1_ );
 #ifdef HAVE_CINTS

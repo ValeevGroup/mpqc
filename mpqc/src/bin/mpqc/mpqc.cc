@@ -475,6 +475,23 @@ try_main(int argc, char *argv[])
        << indent
        << "Total number of processors = " << grp->n() * thread->nthread() << endl;
 
+#ifdef HAVE_CHEMISTRY_CCA
+  // initialize cca framework
+  string cca_path(options.retrieve("cca-path"));
+  string cca_load(options.retrieve("cca-load"));
+  KeyValValuestring emptystring("");
+  if(cca_path.size()==0)
+    cca_path = keyval->stringvalue("cca-path",emptystring);
+  if(cca_load.size()==0)
+    cca_load = keyval->stringvalue("cca-load",emptystring);
+  if( (cca_load.size()+cca_path.size()) > 0 ) {
+    string cca_args = "--path " + cca_path + " --load " + cca_load;
+    ExEnv::out0() << endl << indent << "Initializing CCA framework with args: "
+                  << endl << indent << cca_args << endl;
+    CCAEnv::init( cca_args );
+  }
+#endif
+
   // now set up the debugger
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue("debug");
   if (debugger.nonnull()) {
@@ -627,23 +644,6 @@ try_main(int argc, char *argv[])
   
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
-#ifdef HAVE_CHEMISTRY_CCA
-  // initialize cca framework
-  string cca_path(options.retrieve("cca-path"));
-  string cca_load(options.retrieve("cca-load"));
-  KeyValValuestring emptystring("");
-  if(cca_path.size()==0)
-    cca_path = keyval->stringvalue("cca-path",emptystring);
-  if(cca_load.size()==0)
-    cca_load = keyval->stringvalue("cca-load",emptystring);
-  if( (cca_load.size()+cca_path.size()) > 0 ) {
-    string cca_args = " --path " + cca_path + " --load " + cca_load;
-    ExEnv::out0() << endl << indent << "Initializing CCA framework with args: " 
-                  << endl << indent << cca_args << endl;
-    CCAEnv::init( cca_args );
-  }
-#endif
-  
   // sanity checks for the benefit of reasonable looking output
   if (opt.null()) do_opt=0;
   
@@ -666,7 +666,7 @@ try_main(int argc, char *argv[])
 
   delete[] restartfile;
   delete[] ckptfile;
-  
+
   int ready_for_freq = 1;
   if (mole.nonnull()) {
     if (((do_opt && opt.nonnull()) || do_grad)

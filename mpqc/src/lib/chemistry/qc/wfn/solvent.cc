@@ -204,8 +204,9 @@ BEMSolventH::init(const RefWavefunction& wfn)
       RefDenFunctional functional
           = new NElInShapeFunctional(solvent_->surface()->volume_object(),
                                      solvent_->surface()->isovalue());
-      integrator->set_wavefunction(wfn_);
+      integrator->init(wfn_);
       integrator->integrate(functional);
+      integrator->done();
       cout << node0 << indent
            << scprintf("N(e) in isosurf = %12.8f", integrator->value())
            << endl;

@@ -68,7 +68,7 @@ keyvaltest.o: keyvaltest.cc
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
-	/bin/rm -f keyvaltest
+	/bin/rm -f keyvaltest ipv2_parse.output
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 OTHEROBJ = keyvaltest.o
@@ -78,12 +78,14 @@ endif
 
 #### yacc and lex ####
 # (only works with bison and flex)
-ipv2_parse.cc ipv2_parse.h: ipv2_parse.yy
+ipv2_parse.cc: ipv2_parse.yy
 	$(BISON) -v -d -o ipv2_parse.tmp $^
-	sed "s/^int yyparse.*;$$//" < ipv2_parse.tmp > ipv2_parse.cc
+	sed "s/^int yyparse.*;$$//" < ipv2_parse.tmp \
+		| sed "s/^YYPARSE_RETURN_TYPE yyparse.*;$$//" \
+		> ipv2_parse.cc
 	/bin/mv ipv2_parse.tmp.h ipv2_parse.h
+	/bin/mv ipv2_parse.tmp.output ipv2_parse.output
 	-@rm -f ipv2_parse.tmp
-	-@rm -f ipv2_parse.output
 
 ipv2_scan.cc: ipv2_scan.ll
 	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \
@@ -95,3 +97,6 @@ ipv2_scan.cc: ipv2_scan.ll
 	                | sed "s/static int yyinput/int yyinput/" \
 	                > ipv2_scan.cc
 
+ipv2_parse.h: ipv2_parse.cc
+
+ipv2_scan.d: ipv2_parse.h

@@ -48,7 +48,9 @@
 #endif
 #ifdef HAVE_MPI
 #   include <util/group/messmpi.h>
+#   include <util/group/memmtmpi.h>
     const ClassDesc &fl2 = MPIMessageGrp::class_desc_;
+    const ClassDesc &fl3 = MTMPIMemoryGrp::class_desc_;
 #endif
 //#endif
 

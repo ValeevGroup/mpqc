@@ -39,7 +39,7 @@ REQUIREDCXXSRC = mstate.cc \
          pregtime.cc thread.cc
 
 OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
-                 mempgon.cc memipgon.cc memmpl.cc
+                 mempgon.cc memipgon.cc memmpl.cc memmtmpi.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
 
@@ -60,7 +60,7 @@ ifeq ($(HAVE_PVM),yes)
   CXXSRC += messpvm.cc
 endif
 ifeq ($(HAVE_MPI),yes)
-  CXXSRC += messmpi.cc memmpi.cc
+  CXXSRC += messmpi.cc memmpi.cc memmtmpi.cc
 endif
 ifeq ($(HAVE_MPL),yes)
   CXXSRC += memmpl.cc
@@ -75,7 +75,7 @@ endif
 INC = pool.h message.h mstate.h topology.h \
       messshm.h messpvm.h messmpi.h \
       rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
-      memmpl.h memmpi.h mempuma.h pregtime.h
+      memmpl.h memmpi.h mempuma.h pregtime.h memmtmpi.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 

@@ -132,8 +132,10 @@ class StateOut: public DescribedClass {
     /// Write an STL vector of data.
     template <class T>
     int put(typename std::vector<T> &v) {
-      int l = v.size(); put(l);
-      if (l) { for (int i=0; i<l; i++) put(v[i]); }
+      int l = v.size();
+      int r = put(l);
+      if (l) { for (int i=0; i<l; i++) r += put(v[i]); }
+      return r;
     }
 
     /** Don't keep track of pointers to objects.  Calling this

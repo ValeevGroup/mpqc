@@ -57,17 +57,29 @@ The \clsnm{MBPT2} class derives from \clsnmref{Wavefunction}.
           for MP2 energies and gradients.
 
         \item[\keywd{v1}] Use algorithm V1.  Only energies can be
-          computed.
+          computed.  The maximum number of processors that can be
+          utilized is the number of virtual orbitals.  This algorithm
+          computes few integrals than the others, but has higher
+          communication requirements.
 
         \item[\keywd{v2}] Use algorithm V2.  Only energies can be
-          computed.
+          computed.  The maximum number of processors that can be
+          utilized is the number of shells.
 
-        \item[\keywd{v2lb}] Use a modified V2 algorithm that may compute a
-           few more two electron integrals, but may get better load balance
-           on the $O(n_\mathrm{basis}^5)$ part of the calculation.  Only
-           energies can be computed.
+        \item[\keywd{v2lb}] Use a modified V2 algorithm that may
+          compute more two electron integrals, but may get better load
+          balance on the $O(n_\mathrm{basis}^5)$ part of the
+          calculation.  Only energies can be computed.  This is
+          recommended only for computations involving large molecules
+          (where the transformation is dominant) on very many
+          processors (approaching the number of shells).
 
      \end{description}
+
+     The \keywd{v1} and \keywd{v2} algorithms are discussed in Ida
+     M. B. Nielsen and Edward T. Seidl, J. Comp. Chem. 16, 1301
+     (1995).  The \keywd{memgrp} algorithm is discussed in Ida
+     M. B. Nielsen, Chem. Phys. Lett. 255, 210 (1996).  
 
   \item[\keywd{memorygrp}] A \clsnmref{MemoryGrp}
      \htmlref{object}{pkvobject} that is used by the \type{memgrp}

@@ -83,7 +83,7 @@ ShmMessageGrp::sync()
     }
 }
 
-ShmMessageGrp::~ShmMessageGrp(int release)
+ShmMessageGrp::~ShmMessageGrp()
 {
   static struct sembuf semndec;
 

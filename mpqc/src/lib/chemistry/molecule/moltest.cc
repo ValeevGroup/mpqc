@@ -24,7 +24,7 @@ main()
   RefKeyVal kv(new ParsedKeyVal(SRCDIR "/moltest.in"));
   RefKeyVal pkv(new PrefixKeyVal("molecule",kv));
 
-  RefMolecule mol = new Molecule(pkv);
+  RefMolecule mol = kv->describedclassvalue("molecule");
 
   mol_cleanup_molecule(mol);
   printf("Clean Molecule:\n");

@@ -37,16 +37,16 @@ TriangulatedSurface::TriangulatedSurface():
   _vertex_to_index(0),
   _edge_to_index(0),
   _triangle_to_index(0),
-  _tmp_edges(RefEdgeAVLSet())
+  _tmp_edges(RefEdgeAVLSet()),
+  _verbose(0)
 {
   clear();
 }
 
-TriangulatedSurface::TriangulatedSurface(const RefKeyVal&):
+TriangulatedSurface::TriangulatedSurface(const RefKeyVal& keyval):
   _triangle_vertex(0),
   _triangle_edge(0),
   _edge_vertex(0),
-  _integrator(new GaussTriangleIntegrator(1)),
   _index_to_vertex(0),
   _index_to_edge(0),
   _index_to_triangle(0),
@@ -55,6 +55,11 @@ TriangulatedSurface::TriangulatedSurface(const RefKeyVal&):
   _triangle_to_index(0),
   _tmp_edges(RefEdgeAVLSet())
 {
+  _verbose = keyval->booleanvalue("verbose");
+  set_integrator(keyval->describedclassvalue("integrator"));
+  if (keyval->error() != KeyVal::OK) {
+      set_integrator(new GaussTriangleIntegrator(1));
+    }
   clear();
 }
 
@@ -609,7 +614,8 @@ TriangulatedSurface10::TriangulatedSurface10(const RefVolume&vol,
   set_integrator(new GaussTriangleIntegrator(7));
 }
 
-TriangulatedSurface10::TriangulatedSurface10(const RefKeyVal& keyval)
+TriangulatedSurface10::TriangulatedSurface10(const RefKeyVal& keyval):
+  TriangulatedSurface(keyval)
 {
   _vol = keyval->describedclassvalue("volume");
   _isovalue = keyval->doublevalue("value");
@@ -628,10 +634,10 @@ TriangulatedSurface10::~TriangulatedSurface10()
 double
 TriangulatedSurface10::area()
 {
-  TriangulatedSurfaceIntegrator tsi(*this);
+  TriangulatedSurfaceIntegrator tsi(this);
 
   double area = 0.0;
-  for (tsi = 0; tsi; tsi++) {
+  for (tsi = 0; tsi.update(); tsi++) {
       area += tsi.w();
     }
   
@@ -644,12 +650,12 @@ TriangulatedSurface10::volume()
   printf("TriangulatedSurface10::volume:\n");
   printf("NOTE: approximate values are used for the interpolated normals\n");
 
-  TriangulatedSurfaceIntegrator tsi(*this);
+  TriangulatedSurfaceIntegrator tsi(this);
   RefSCVector norm(_vol->dimension());
 
   double volume = 0.0;
   RefVertex current = tsi.current();
-  for (tsi = 0; tsi; tsi++) {
+  for (tsi = 0; tsi.update(); tsi++) {
       tsi.normal(norm);
       volume += tsi.w() * norm[0] * current->point()[0];
     }
@@ -683,24 +689,44 @@ TriangulatedSurface10::newTriangle(const RefEdge& e0,
 // TriangulatedSurfaceIntegrator
 
 TriangulatedSurfaceIntegrator::
-  TriangulatedSurfaceIntegrator(TriangulatedSurface&ts)
+  TriangulatedSurfaceIntegrator(const RefTriangulatedSurface&ts)
 {
-  _ts = &ts;
+  set_surface(ts);
 
   _itri = 0;
   _irs = 0;
+}
 
+TriangulatedSurfaceIntegrator::
+  TriangulatedSurfaceIntegrator()
+{
+}
+
+void
+TriangulatedSurfaceIntegrator::
+  operator =(const TriangulatedSurfaceIntegrator&i)
+{
+  set_surface(i._ts);
+
+  _itri = i._itri;
+  _irs = i._irs;
+}
+
+TriangulatedSurfaceIntegrator::
+  ~TriangulatedSurfaceIntegrator()
+{
+}
+
+void
+TriangulatedSurfaceIntegrator::set_surface(const RefTriangulatedSurface&s)
+{
+  _ts = s;
   if (_ts->nvertex()) {
       RefSCDimension n = _ts->vertex(0)->point().dim();
       RefSCVector p(n);
       RefSCVector g(n);
       _current = new Vertex(p,g);
     }
-}
-
-TriangulatedSurfaceIntegrator::
-  ~TriangulatedSurfaceIntegrator()
-{
 }
 
 int
@@ -717,8 +743,19 @@ TriangulatedSurfaceIntegrator::
   return _current;
 }
 
-TriangulatedSurfaceIntegrator::
-  operator int()
+int
+TriangulatedSurfaceIntegrator::n()
+{
+  int result = 0;
+  int ntri = _ts->ntriangle();
+  for (int i=0; i<ntri; i++) {
+      result += _ts->integrator(i)->n();
+    }
+  return result;
+}
+
+int
+TriangulatedSurfaceIntegrator::update()
 {
   if (_itri < 0 || _itri >= _ts->ntriangle()) return 0;
 
@@ -803,15 +840,13 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) remove_slender_triangles_ = 0;
 
   short_edge_factor_ = keyval->doublevalue("short_edge_factor");
-  if (keyval->error() != KeyVal::OK) short_edge_factor_ = 0.3;
+  if (keyval->error() != KeyVal::OK) short_edge_factor_ = 0.4;
 
   slender_triangle_factor_ = keyval->doublevalue("slender_triangle_factor");
-  if (keyval->error() != KeyVal::OK) slender_triangle_factor_ = 0.3;
+  if (keyval->error() != KeyVal::OK) slender_triangle_factor_ = 0.2;
 
   resolution_ = keyval->doublevalue("resolution");
   if (keyval->error() != KeyVal::OK) resolution_ = 1.0;
-
-  init();
 }
 
 void

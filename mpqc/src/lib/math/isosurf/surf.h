@@ -22,6 +22,8 @@ class TriangulatedSurface: public DescribedClass {
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    int _verbose;
+
     int _completed_surface;
 
     // sets of objects that make up the surface
@@ -78,6 +80,10 @@ class TriangulatedSurface: public DescribedClass {
     TriangulatedSurface();
     TriangulatedSurface(const RefKeyVal&);
     virtual ~TriangulatedSurface();
+
+    // control printing
+    int verbose() const { return _verbose; }
+    void verbose(int v) { _verbose = v; }
 
     // set up an integrator
     void set_integrator(const RefTriangleIntegrator&);
@@ -156,7 +162,7 @@ class TriangulatedSurface10: public TriangulatedSurface {
 
 class TriangulatedSurfaceIntegrator {
   private:
-    TriangulatedSurface* _ts;
+    RefTriangulatedSurface _ts;
     int _itri;
     int _irs;
     double _r;
@@ -165,9 +171,20 @@ class TriangulatedSurfaceIntegrator {
     double _surface_element;
     RefVertex _current;
   public:
+    TriangulatedSurfaceIntegrator();
     // the surface cannot be changed until this is destroyed
-    TriangulatedSurfaceIntegrator(TriangulatedSurface&);
+    TriangulatedSurfaceIntegrator(const RefTriangulatedSurface&);
     ~TriangulatedSurfaceIntegrator();
+    // Objects initialized by these operators are not automatically
+    // updated.  This must be done with the update member.
+    void operator = (const TriangulatedSurfaceIntegrator&);
+    TriangulatedSurfaceIntegrator(const TriangulatedSurfaceIntegrator&i) {
+        operator = (i);
+      }
+    // Return the number of integration points.
+    int n();
+    // Assign the surface.  Don't do this while iterating.
+    void set_surface(const RefTriangulatedSurface&);
     // returns the number of the vertex in the current triangle
     int vertex_number(int i);
     inline double r() const { return _r; }
@@ -175,12 +192,17 @@ class TriangulatedSurfaceIntegrator {
     inline double w() const { return _weight*_surface_element; }
     void normal(const RefSCVector&) const;
     RefVertex current();
-    // Tests to see if this point is value, if it is then
-    // _r, _s, etc are computed.
-    // NOTE: this is the only member that can cause _r, _s, etc
-    // to be computed.
-    operator int();
-    // go to the next point
+    // Tests to see if this point is valid, if it is then
+    // _r, _s, etc are computed and 1 is returned.
+    int update();
+    // This can be used to loop through unique pairs of points.
+    // The argument should be a TriangulatedSurfaceIntegrator for
+    // the same surface as this.
+    int operator < (TriangulatedSurfaceIntegrator&i) {
+        update();
+        return _itri<i._itri?1:(_itri>i._itri?0:(_irs<i._irs?1:0));
+      }
+    // Goes to the next point.  Does not update.
     void operator++();
     inline void operator++(int) { operator++(); }
     // setting TSI = i sets TSI to begin at the triangle i
@@ -204,7 +226,6 @@ class TriangulatedImplicitSurface: public DescribedClass {
     double slender_triangle_factor_;
     double resolution_;
 
-    void init();
   public:
     TriangulatedImplicitSurface(const RefKeyVal&);
     ~TriangulatedImplicitSurface();
@@ -219,6 +240,15 @@ class TriangulatedImplicitSurface: public DescribedClass {
     int triangle_vertex(int i,int j) { return surf_->triangle_vertex(i,j); }
     int triangle_edge(int i,int j) { return surf_->triangle_edge(i,j); }
     int edge_vertex(int i,int j) { return surf_->edge_vertex(i,j); }
+
+    void init();
+    void clear() { surf_->clear(); }
+
+    RefTriangleIntegrator integrator(int itri) {
+        return surf_->integrator(itri);
+      }
+
+    RefTriangulatedSurface surface() { return surf_; }
 };
 DescribedClass_REF_dec(TriangulatedImplicitSurface);
 

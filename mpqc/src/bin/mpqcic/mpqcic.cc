@@ -90,12 +90,12 @@ init_dmt(centers_t *centers, sym_struct_t *sym_info)
 }
 
 static void
-reset_centers(centers_t *centers, RefMolecule& mol)
+reset_centers(centers_t& centers, RefMolecule& mol)
 {
   for (int i=0; i < mol->natom(); i++) {
-    centers->center[i].r[0] = mol->atom(i)[0];
-    centers->center[i].r[1] = mol->atom(i)[1];
-    centers->center[i].r[2] = mol->atom(i)[2];
+    centers.center[i].r[0] = mol->atom(i)[0];
+    centers.center[i].r[1] = mol->atom(i)[1];
+    centers.center[i].r[2] = mol->atom(i)[2];
   }
 }
 
@@ -117,7 +117,7 @@ main(int argc, char *argv[])
   RefMolecule mol;
   RefGaussianBasisSet gbs;
   
-  centers_t *centers, *oldcenters;
+  centers_t centers, oldcenters, *tcenters;
   scf_struct_t scf_info;
   sym_struct_t sym_info;
 
@@ -159,15 +159,20 @@ main(int argc, char *argv[])
     mol = keyval->describedclassvalue("molecule");
     
     gbs = keyval->describedclassvalue("basis");
-    centers = gbs->convert_to_centers_t(mol.pointer());
+    tcenters = gbs->convert_to_centers_t(mol.pointer());
 
-    if (sym_struct_from_pg(mol->point_group(), *centers, sym_info) < 0) {
+    init_centers(&centers);
+    init_centers(&oldcenters);
+    assign_centers(&centers,tcenters);
+    free_centers(tcenters);
+
+    if (sym_struct_from_pg(mol->point_group(), centers, sym_info) < 0) {
       fprintf(stderr,"mpqcic:  could not form sym_info\n");
       exit(1);
     }
 
     RefKeyVal scfkv = new PrefixKeyVal(":scf :default",keyval);
-    if (scf_init_scf_struct(scfkv, *centers, scf_info) < 0) {
+    if (scf_init_scf_struct(scfkv, centers, scf_info) < 0) {
       fprintf(stderr,"mpqcic:  could not form scf_info\n");
       exit(1);
     }
@@ -272,7 +277,7 @@ main(int argc, char *argv[])
       fprintf(outfile,"\n");
       geom_code = Geom_init_mpqc(mol,keyval);
     } else if (read_geom && stat("geom.dat",&stbuf)==0 && stbuf.st_size!=0) {
-      read_geometry(*centers,keyval,outfile);
+      read_geometry(centers,keyval,outfile);
     }
 
    // we may have change the geometry in mol, so reform centers
@@ -283,7 +288,7 @@ main(int argc, char *argv[])
 
   bcast0_scf_struct(&scf_info,0,0);
   bcast0_sym_struct(&sym_info,0,0);
-  bcast0_centers(centers,0,0);
+  bcast0_centers(&centers,0,0);
 
   bcast0(&do_scf,sizeof(int),mtype_get(),0);
   bcast0(&do_grad,sizeof(int),mtype_get(),0);
@@ -303,16 +308,19 @@ main(int argc, char *argv[])
   if (scf_info.proj_vector) {
     if (mynode0()==0) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("pbasis");
-      oldcenters = gbs->convert_to_centers_t(mol.pointer());
+      tcenters = gbs->convert_to_centers_t(mol.pointer());
 
-      int_normalize_centers(oldcenters);
+      assign_centers(&oldcenters,tcenters);
+      free_centers(tcenters);
+      
+      int_normalize_centers(&oldcenters);
     }
 
-    bcast0_centers(oldcenters,0,0);
+    bcast0_centers(&oldcenters,0,0);
   }
 
  // initialize the dmt library
-  init_dmt(centers,&sym_info);
+  init_dmt(&centers,&sym_info);
   
  // initialize force and geometry routines
 
@@ -330,7 +338,7 @@ main(int argc, char *argv[])
     else
       dmt_force_csscf_keyval_init(fkv.pointer(),outfile);
 
-    allocbn_double_matrix(&gradient,"n1 n2",3,centers->n);
+    allocbn_double_matrix(&gradient,"n1 n2",3,centers.n);
   }
 
   if (opt_geom) {
@@ -379,14 +387,14 @@ main(int argc, char *argv[])
     while(geom_code != GEOM_DONE && geom_code != GEOM_ABORT && iter < nopt) {
 
       // broadcast new geometry information */
-      for (int i=0; i < centers->n; i++)
-        bcast0(centers->center[i].r,sizeof(double)*3,mtype_get(),0);
+      for (int i=0; i < centers.n; i++)
+        bcast0(centers.center[i].r,sizeof(double)*3,mtype_get(),0);
 
       // calculate new scf_vector
 
       tim_enter("scf_vect");
-      errcod = scf_vector(&scf_info, &sym_info, centers, Fock, FockO, Scf_Vec,
-                          oldcenters, outfile);
+      errcod = scf_vector(&scf_info, &sym_info, &centers, Fock, FockO, Scf_Vec,
+                          &oldcenters, outfile);
       tim_exit("scf_vect");
 
       if (errcod != 0) {
@@ -406,10 +414,10 @@ main(int argc, char *argv[])
       if (geom_code == GEOM_COMPUTE_GRADIENT) {
         if (!scf_info.iopen) {
           dmt_force_csscf(outfile, Fock, Scf_Vec,
-                          centers, &sym_info, scf_info.nclosed, &gradient);
+                          &centers, &sym_info, scf_info.nclosed, &gradient);
         } else {
           dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
-                          centers, &sym_info, scf_info.nclosed,
+                          &centers, &sym_info, scf_info.nclosed,
                           scf_info.nopen, &gradient);
         }
 
@@ -423,10 +431,10 @@ main(int argc, char *argv[])
       else if (do_grad) {
         if (!scf_info.iopen) {
           dmt_force_csscf(outfile, Fock, Scf_Vec,
-                          centers, &sym_info, scf_info.nclosed, &gradient);
+                          &centers, &sym_info, scf_info.nclosed, &gradient);
         } else {
           dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
-                          centers, &sym_info, scf_info.nclosed,
+                          &centers, &sym_info, scf_info.nclosed,
                           scf_info.nopen, &gradient);
         }
       }

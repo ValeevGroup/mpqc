@@ -107,7 +107,7 @@ RenderedPolylines::initialize(int nvertex, int nline,
   if (coloring == Vertex) {
       vertex_rgb_ = new double*[nvertex];
       double*tmp = vertex_rgb_[0] = new double[3*nvertex];
-      for (int i=1; i<nvertex; i++) {
+      for (i=1; i<nvertex; i++) {
           tmp += 3;
           vertex_rgb_[i] = tmp;
         }

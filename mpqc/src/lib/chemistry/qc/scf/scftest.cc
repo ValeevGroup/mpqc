@@ -12,55 +12,15 @@
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
 #include <util/group/pregtime.h>
+#include <util/group/picl.h>
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
-
-#include <math/optimize/qnewton.h>
-#include <math/optimize/gdiis.h>
-#include <math/optimize/efc.h>
-#include <math/optimize/update.h>
 
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 
-#include <chemistry/qc/scf/scf.h>
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
-#include <chemistry/qc/scf/ossscf.h>
-#include <chemistry/qc/scf/tcscf.h>
-
-#include <math/scmat/repl.h>
-#include <math/scmat/dist.h>
-
 // Force linkages:
-#ifndef __PIC__
-const ClassDesc &fl0a = CLSCF::class_desc_;
-const ClassDesc &fl0b = HSOSSCF::class_desc_;
-const ClassDesc &fl0c = OSSSCF::class_desc_;
-const ClassDesc &fl0d = TCSCF::class_desc_;
-
-const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
-const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
-const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
-
-const ClassDesc &fl2 = QNewtonOpt::class_desc_;
-const ClassDesc &fl3 = GDIISOpt::class_desc_;
-const ClassDesc &fl4 = EFCOpt::class_desc_;
-const ClassDesc &fl5 = BFGSUpdate::class_desc_;
-
-const ClassDesc &fl6 = ReplSCMatrixKit::class_desc_;
-const ClassDesc &fl7 = DistSCMatrixKit::class_desc_;
-
-# ifdef HAVE_SYSV_IPC
-#   include <util/group/messshm.h>
-    const ClassDesc &fl8 = ShmMessageGrp::class_desc_;
-# endif
-const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
-# ifdef HAVE_NX_H
-#  include <util/group/messpgon.h>
-    const ClassDesc &fl10 = ParagonMessageGrp::class_desc_;
-# endif
-#endif
+#include <chemistry/qc/scf/linkage.h>
 
 RefRegionTimer tim;
 RefMessageGrp grp;
@@ -96,6 +56,12 @@ init_mp(const RefKeyVal& keyval)
 
   SCFormIO::setindent(cout, 2);
   SCFormIO::setindent(cerr, 2);
+  
+  {
+    int nproc, me, host, top, ord, dir;
+    open0_messagegrp(&nproc,&me,&host,grp);
+    setarc0(&nproc,&top,&ord,&dir);
+  }
   
   return grp;
 }

@@ -118,8 +118,8 @@ ImplicitSurfacePolygonizer::isosurface(double value,
                 }
               else {
                   n = 1.0/n;
-                  for (int i=0; i<3; i++) {
-                      tmp[i] = - N[i]*n;
+                  for (int j=0; j<3; j++) {
+                      tmp[j] = - N[j]*n;
                     }
                 }
               norm = norm + tmp;

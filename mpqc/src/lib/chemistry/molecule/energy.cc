@@ -45,7 +45,7 @@ using namespace sc;
 // MolecularEnergy
 
 static ClassDesc MolecularEnergy_cd(
-  typeid(MolecularEnergy),"MolecularEnergy",4,"public Function",
+  typeid(MolecularEnergy),"MolecularEnergy",5,"public Function",
   0, 0, 0);
 
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
@@ -56,6 +56,8 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   moldim_ = mole.moldim_;
   mol_ = mole.mol_;
   initial_pg_ = new PointGroup(mol_->point_group());
+  ckpt_ = mole.ckpt_;
+  ckpt_file_ = strdup(mole.ckpt_file_);
 }
 
 MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
@@ -124,6 +126,13 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
     }
   set_dimension(dim);
 
+  ckpt_ = keyval->booleanvalue("checkpoint");
+  if (keyval->error() != KeyVal::OK) ckpt_ = 0;
+  ckpt_file_ = keyval->pcharvalue("checkpoint_file");
+  if (keyval->error() != KeyVal::OK) {
+    ckpt_file_ = strdup("mole_ckpt.dat");
+  }
+
   do_value(1);
   do_gradient(0);
   do_hessian(0);
@@ -133,6 +142,8 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
 
 MolecularEnergy::~MolecularEnergy()
 {
+  if (ckpt_file_) delete[] ckpt_file_;
+  ckpt_file_ = 0;
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
@@ -152,6 +163,15 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   if (s.version(::class_desc<MolecularEnergy>()) >= 4)
       initial_pg_ << SavableState::restore_state(s);
   else initial_pg_ = new PointGroup(mol_->point_group());
+  if (s.version(::class_desc<MolecularEnergy>()) >= 5) {
+    s.get(ckpt_,"checkpoint");
+    s.getstring(ckpt_file_);
+  }
+  else {
+    ckpt_ = 0;
+    ckpt_file_ = strdup("mole_ckpt.dat");
+  }
+
 }
 
 MolecularEnergy&
@@ -177,6 +197,36 @@ MolecularEnergy::save_data_state(StateOut&s)
   SavableState::save_state(hess_.pointer(),s);
   SavableState::save_state(guesshess_.pointer(),s);
   SavableState::save_state(initial_pg_.pointer(),s);
+  s.put(ckpt_);
+  s.putstring(ckpt_file_);
+}
+
+void
+MolecularEnergy::set_checkpoint()
+{
+  ckpt_ = 1;
+}
+
+void
+MolecularEnergy::set_checkpoint_file(const char *path)
+{
+  if (ckpt_file_) delete[] ckpt_file_;
+  if (path) {
+    ckpt_file_ = strdup(path);
+  } else
+    ckpt_file_ = 0;
+}
+
+bool
+MolecularEnergy::if_to_checkpoint() const
+{
+  return (ckpt_ == 1);
+}
+
+const char*
+MolecularEnergy::checkpoint_file() const
+{
+  return ckpt_file_;
 }
 
 void

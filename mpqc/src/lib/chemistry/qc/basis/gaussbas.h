@@ -126,7 +126,9 @@ class GaussianBasisSet: public SavableState
     RefSCDimension basisdim_;
 
     int ncenter_;
+
     std::vector<int> shell_to_center_;
+    std::vector<int> shell_to_primitive_;
     std::vector<int> center_to_shell_;
     std::vector<int> center_to_nshell_;
     std::vector<int> center_to_nbasis_;
@@ -302,6 +304,8 @@ class GaussianBasisSet: public SavableState
     int shell_on_center(int icenter, int shell) const;
     /// Return the center on which the given shell is located.
     int shell_to_center(int ishell) const { return shell_to_center_[ishell]; }
+    /// Return the overall index of the first primitive from the given shell
+    int shell_to_primitive(int ishell) const {return shell_to_primitive_[ishell]; }
     /// Return the number of basis functions.
     int nbasis() const { return nbasis_; }
     /// Return the number of basis functions on the given center.
@@ -314,6 +318,8 @@ class GaussianBasisSet: public SavableState
     /** Return the maximum number of Cartesian functions that any shell has.
         The optional argument is an angular momentum increment. */
     int max_ncartesian_in_shell(int aminc=0) const;
+    /// Return the maximum number of primitive Gaussian that any shell has.
+    int max_nprimitive_in_shell() const;
     /// Return the highest angular momentum in any shell.
     int max_angular_momentum() const;
     /// Return the maximum number of Gaussians in a contraction in any shell.

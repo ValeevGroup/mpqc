@@ -41,6 +41,7 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
+#include <chemistry/qc/cints/linkage.h>
 
 #include <chemistry/qc/wfn/wfn.h>
 
@@ -120,8 +121,10 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
     );
 
   integral_ << keyval->describedclassvalue("integrals");
-  if (integral_.null())
-    integral_ = new IntegralV3(gbs_);
+  if (integral_.null()) {
+    Integral* default_intf = Integral::get_default_integral();
+    integral_ = default_intf->clone();
+  }
   
   integral_->set_basis(gbs_);
   Ref<PetiteList> pl = integral_->petite_list();

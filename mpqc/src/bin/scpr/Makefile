@@ -4,6 +4,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+include $(TOPDIR)/lib/Makedirlist
 INCLUDE += -I. -I$(SRCDIR)
 CXXINCLUDE += -I. -I$(SRCDIR)
 
@@ -21,7 +22,18 @@ DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: scpr
 
-LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+XDEF=
+XLIBS=
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ XDEF += -DHAVE_CHEMISTRY_QC_MBPTR12
+ XLIBS += -lPSI_r12
+ endif
+XDEF += -DHAVE_CHEMISTRY_QC_CINTS
+XLIBS += -lPSI_int
+endif
+
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(XDEF) $(SRCDIR)/LIBS.h)
 
 #################################################################
 
@@ -30,7 +42,7 @@ default:: $(DEPENDINCLUDE)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 scpr: $(BINOBJ) $(LIBS)
-	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(XLIBS) $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: scpr
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)

@@ -385,10 +385,12 @@ GaussianBasisSet::init2(int skip_ghosts)
 
   // compute nbasis_ and shell_to_function_[]
   shell_to_function_.resize(nshell_);
+  shell_to_primitive_.resize(nshell_);
   nbasis_ = 0;
   nprim_ = 0;
   for (ishell=0; ishell<nshell_; ishell++) {
       shell_to_function_[ishell] = nbasis_;
+      shell_to_primitive_[ishell] = nprim_;
       nbasis_ += shell_[ishell]->nfunction();
       nprim_ += shell_[ishell]->nprimitive();
     }
@@ -549,6 +551,17 @@ GaussianBasisSet::max_ncartesian_in_shell(int aminc) const
 }
 
 int
+GaussianBasisSet::max_nprimitive_in_shell() const
+{
+  int i;
+  int max = 0;
+  for (i=0; i<nshell_; i++) {
+      if (max < shell_[i]->nprimitive()) max = shell_[i]->nprimitive();
+    }
+  return max;
+}
+
+int
 GaussianBasisSet::max_am_for_contraction(int con) const
 {
   int i;
@@ -651,8 +664,8 @@ GaussianBasisSet::print(ostream& os) const
              center_to_shell_[icenter]);
       for (int ishell=0; ishell < center_to_nshell_[icenter]; ishell++) {
 	  os << indent
-             << scprintf("Shell %d: functionnum = %d\n",
-                         ishell,shell_to_function_[ioshell]);
+             << scprintf("Shell %d: functionnum = %d, primnum = %d\n",
+                         ishell,shell_to_function_[ioshell],shell_to_primitive_[ioshell]);
           os << incindent;
 	  operator()(icenter,ishell).print(os);
           os << decindent;

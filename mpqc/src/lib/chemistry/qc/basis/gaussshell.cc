@@ -261,7 +261,7 @@ GaussianShell::init_computed_data()
       if (max < maxi) max = maxi;
 
       int mini = l[i];
-      if (min > mini) min = mini;
+      if (min > mini || i == 0) min = mini;
 
       nc += ncartesian(i);
 

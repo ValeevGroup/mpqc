@@ -40,6 +40,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/files.h>
 #include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/basis/sobasis.h>
@@ -485,6 +486,30 @@ do_extent_test(const Ref<GaussianBasisSet> &gbs)
   extent->print();
 }
 
+void
+do_gpetite_test(const Ref<GaussianBasisSet> &b1,
+                const Ref<GaussianBasisSet> &b2)
+{
+  canonical_aaab c4(b1,b1,b1,b2);
+  Ref<GPetite4<canonical_aaab> > p4
+      = new GPetite4<canonical_aaab>(b1,b1,b1,b2,c4);
+  cout << "tesing GPetite4<canonical_aaab>" << endl;
+  for (int i=0; i<b1->nshell(); i++) {
+      for (int j=0; j<=i; j++) {
+          for (int k=0; k<b1->nshell(); k++) {
+              for (int l=0; l<b2->nshell(); l++) {
+                  cout << " " << i
+                       << " " << j
+                       << " " << k
+                       << " " << l
+                       << " in p4: " << p4->in_p4(i,j,k,l)
+                       << endl;
+                }
+            }
+        }
+    }
+}
+
 int
 main(int, char *argv[])
 {
@@ -509,6 +534,7 @@ main(int, char *argv[])
   int doso = keyval->booleanvalue("so");
   int doatoms = keyval->booleanvalue("atoms");
   int dopetite = keyval->booleanvalue("petite");
+  int dogpetite = keyval->booleanvalue("gpetite");
   int dovalues = keyval->booleanvalue("values");
   int doextent = keyval->booleanvalue("extent");
   int doaoorthog = keyval->booleanvalue("aoorthog");
@@ -537,6 +563,10 @@ main(int, char *argv[])
       if (dopetite) {
           intgrl->set_basis(gbs);
           intgrl->petite_list()->print();
+        }
+
+      if (dogpetite) {
+          do_gpetite_test(gbs,gbs2);
         }
 
       if (doso) {

@@ -82,6 +82,21 @@ class Integral : public SavableState {
     
     void save_data_state(StateOut&);
 
+    /** Create an integral factory.  This routine looks for a -integral
+        argument, then the environmental variable INTEGRAL.
+        The argument to -integral should
+        be either string for a ParsedKeyVal constructor or a classname.
+        This factory is not guaranteed to have its storage and basis
+        sets set up properly, hence set_basis and set_storage
+        need to be called on it. */
+    static Integral* initial_integral(int &argc, char **argv);
+    /// Specifies a new default Integral factory
+    static void set_default_integral(const Ref<Integral>&);
+    /// Returns the default Integral factory
+    static Integral* get_default_integral();
+    /// Clones the given Integral factory. The new factory may need to have set_basis and set_storage to be called on it.
+    virtual Integral* clone() =0;
+
     /** Returns nonzero if this and the given Integral object have the same
         integral ordering, normalization conventions, etc.  */
     virtual int equiv(const Ref<Integral> &);
@@ -92,6 +107,20 @@ class Integral : public SavableState {
     size_t storage_used() { return storage_used_; }
     /// Returns how much storage was not needed.
     size_t storage_unused();
+    /// Returns how much storage will be needed to initialize a two-body integrals
+    /// evaluator object with member inteval.
+    virtual size_t storage_required(Ref<TwoBodyInt> (Integral::* inteval)(),
+				 const Ref<GaussianBasisSet> &b1,
+				 const Ref<GaussianBasisSet> &b2 = 0,
+				 const Ref<GaussianBasisSet> &b3 = 0,
+				 const Ref<GaussianBasisSet> &b4 = 0);
+    /// Returns how much storage will be needed to initialize a two-body derivative integrals
+    /// evaluator object with member inteval.
+    virtual size_t storage_required(Ref<TwoBodyDerivInt> (Integral::* inteval)(),
+				 const Ref<GaussianBasisSet> &b1,
+				 const Ref<GaussianBasisSet> &b2 = 0,
+				 const Ref<GaussianBasisSet> &b3 = 0,
+				 const Ref<GaussianBasisSet> &b4 = 0);
 
     /** The specific integral classes use this to tell Integral
         how much memory they are using/freeing. */
@@ -122,7 +151,7 @@ class Integral : public SavableState {
     virtual RedundantCartesianIter * new_redundant_cartesian_iter(int) =0;
     /** Return a RedundantCartesianSubIter object.  The caller is
         responsible for freeing the object. */
-    virtual RedundantCartesianSubIter *
+    virtual RedundantCartesianSubIter*
                                  new_redundant_cartesian_sub_iter(int) =0;
     /** Return a SphericalTransformIter object.  The caller is
         responsible for freeing the object. */
@@ -156,8 +185,13 @@ class Integral : public SavableState {
         dotted with a given vector. */
     virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
-    /// Return a OneBodyInt that computes dipole moment integrals.
+    /** Return a OneBodyInt that computes electric dipole moment integrals.
+	The canonical order of integrals in a set is x, y, z. */
     virtual Ref<OneBodyInt> dipole(const Ref<DipoleData>&) =0;
+
+    /** Return a OneBodyInt that computes electric quadrupole moment integrals.
+	The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2. */
+    virtual Ref<OneBodyInt> quadrupole(const Ref<DipoleData>&) =0;
 
     /// Return a OneBodyDerivInt that computes overlap derivatives.
     virtual Ref<OneBodyDerivInt> overlap_deriv() =0;
@@ -177,6 +211,9 @@ class Integral : public SavableState {
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv() =0;
 
+    /// Return a TwoBodyInt that computes two-electron integrals specific to linear R12 methods.
+    virtual Ref<TwoBodyInt> grt();
+    
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }
 };

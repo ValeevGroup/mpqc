@@ -56,6 +56,8 @@ class IntegralV3 : public Integral {
     ~IntegralV3();
 
     void save_data_state(StateOut&);
+
+    Integral* clone();
     
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);
@@ -79,6 +81,8 @@ class IntegralV3 : public Integral {
     Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>& =0);
 
     Ref<OneBodyInt> dipole(const Ref<DipoleData>& =0);
+
+    Ref<OneBodyInt> quadrupole(const Ref<DipoleData>& =0);
 
     Ref<OneBodyDerivInt> overlap_deriv();
                                      

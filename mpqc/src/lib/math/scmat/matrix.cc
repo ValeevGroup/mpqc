@@ -33,6 +33,7 @@
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/blocked.h>
 
 using namespace std;
 
@@ -600,6 +601,22 @@ RefSCMatrix::restore(StateIn&s)
     }
 }
 
+int
+RefSCMatrix::nblock() const
+{
+  BlockedSCMatrix *b = dynamic_cast<BlockedSCMatrix*>(pointer());
+  if (b) return b->nblocks();
+  return 1;
+}
+
+RefSCMatrix
+RefSCMatrix::block(int i) const
+{
+  BlockedSCMatrix *b = dynamic_cast<BlockedSCMatrix*>(pointer());
+  if (b) return b->block(i);
+  return *this;
+}
+
 ///////////////////////////////////////////////////////////////////
 // RefSymmSCMatrix members
 
@@ -1124,6 +1141,23 @@ RefSymmSCMatrix::restore(StateIn&s)
     }
 }
 
+int
+RefSymmSCMatrix::nblock() const
+{
+  BlockedSymmSCMatrix *b = dynamic_cast<BlockedSymmSCMatrix*>(pointer());
+  if (b) return b->nblocks();
+  return 1;
+}
+
+RefSymmSCMatrix
+RefSymmSCMatrix::block(int i) const
+{
+  BlockedSymmSCMatrix *b = dynamic_cast<BlockedSymmSCMatrix*>(pointer());
+  if (b) return b->block(i);
+  return *this;
+}
+
+
 ///////////////////////////////////////////////////////////////////
 // RefDiagSCMatrix members
 
@@ -1435,6 +1469,22 @@ RefDiagSCMatrix::restore(StateIn&s)
   else {
       clear();
     }
+}
+
+int
+RefDiagSCMatrix::nblock() const
+{
+  BlockedDiagSCMatrix *b = dynamic_cast<BlockedDiagSCMatrix*>(pointer());
+  if (b) return b->nblocks();
+  return 1;
+}
+
+RefDiagSCMatrix
+RefDiagSCMatrix::block(int i) const
+{
+  BlockedDiagSCMatrix *b = dynamic_cast<BlockedDiagSCMatrix*>(pointer());
+  if (b) return b->block(i);
+  return *this;
 }
 
 ///////////////////////////////////////////////////////////////////

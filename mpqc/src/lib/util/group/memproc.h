@@ -38,7 +38,7 @@
 
 namespace sc {
 
-/** The ProcMessageGrp concrete class provides an implementation of
+/** The ProcMemoryGrp concrete class provides an implementation of
 MemoryGrp for a single processor. */
 class ProcMemoryGrp: public MemoryGrp {
   private:

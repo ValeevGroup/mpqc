@@ -212,12 +212,12 @@ CSGradErep12Qtr::run()
         p_offset = basis->shell_to_function(P);
 
 	// check if symmetry unique and compute degeneracy
-	int deg;
+        int deg;
         if (usep4_) deg = p4list->in_p4(P,Q,R,S);
         else deg = 1;
-	double symfac = (double) deg;
-	if (deg == 0)
-	  continue;
+        double symfac = (double) deg;
+        if (deg == 0)
+          continue;
 
         if (tbint->log2_shell_bound(P,Q,R,S) < tol) {
           continue;  // skip ereps less than tol

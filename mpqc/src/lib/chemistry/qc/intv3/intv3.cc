@@ -25,7 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <stdexcept>
+
 #include <util/state/stateio.h>
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/tformv3.h>
@@ -38,6 +41,17 @@ using namespace sc;
 static ClassDesc IntegralV3_cd(
   typeid(IntegralV3),"IntegralV3",1,"public Integral",
   0, create<IntegralV3>, create<IntegralV3>);
+
+extern Ref<Integral> default_integral;
+
+Integral*
+Integral::get_default_integral()
+{
+  if (default_integral.null())
+    default_integral = new IntegralV3;
+
+  return default_integral;
+}
 
 IntegralV3::IntegralV3(const Ref<GaussianBasisSet> &b1,
                        const Ref<GaussianBasisSet> &b2,
@@ -69,6 +83,12 @@ IntegralV3::save_data_state(StateOut& s)
 IntegralV3::~IntegralV3()
 {
   free_transforms();
+}
+
+Integral*
+IntegralV3::clone()
+{
+  return new IntegralV3;
 }
 
 CartesianIter *
@@ -165,6 +185,12 @@ Ref<OneBodyInt>
 IntegralV3::dipole(const Ref<DipoleData>& dat)
 {
   return new DipoleIntV3(this, bs1_, bs2_, dat);
+}
+
+Ref<OneBodyInt>
+IntegralV3::quadrupole(const Ref<DipoleData>& dat)
+{
+  throw std::runtime_error("IntegralV3 cannot compute quadrupole moment integrals yet. Try IntegralCints instead.");
 }
 
 Ref<OneBodyDerivInt>

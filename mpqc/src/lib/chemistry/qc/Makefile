@@ -33,7 +33,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(TOPDIR)/lib/Makedirlist
 
-SUBDIRS = basis oint3 intv3 wfn scf dft mbpt
+SUBDIRS = basis oint3 intv3 cints wfn scf dft mbpt mbptr12
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
 SUBDIRS := $(SUBDIRS) psi
 endif

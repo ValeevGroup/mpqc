@@ -84,6 +84,8 @@
 #include <chemistry/qc/scf/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
+#include <chemistry/qc/mbptr12/linkage.h>
+#include <chemistry/qc/cints/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC
@@ -131,6 +133,7 @@ clean_up(void)
   MessageGrp::set_default_messagegrp(0);
   ThreadGrp::set_default_threadgrp(0);
   SCMatrixKit::set_default_matrixkit(0);
+  Integral::set_default_integral(0);
   RegionTimer::set_default_regiontimer(0);
 }
 
@@ -496,6 +499,16 @@ try_main(int argc, char *argv[])
       dynamic_cast<SCMatrixKit*>(
         keyval->describedclassvalue("matrixkit").pointer()));
 
+  // get the integral factory. first try commandline and environment
+  Ref<Integral> integral = Integral::initial_integral(argc, argv);
+  if (integral.nonnull())
+    Integral::set_default_integral(integral);
+  else
+    integral = Integral::get_default_integral();
+  ExEnv::out0() << endl << indent
+       << "Using " << integral->class_name()
+       << " by default for molecular integrals evaluation" << endl << endl;
+  
   // check for a molecular energy and optimizer
   KeyValValueString molnamedef(basename);
   char * molname = keyval->pcharvalue("filename", molnamedef);
@@ -509,7 +522,13 @@ try_main(int argc, char *argv[])
   char * restartfile = keyval->pcharvalue("restart_file", restartfiledef);
   
   char * wfn_file = keyval->pcharvalue("wfn_file");
-  
+  if (wfn_file == 0) {
+    wfn_file = new char[strlen(molname)+6];
+    sprintf(wfn_file,"%s.wfn",molname);
+  }
+  char *mole_ckpt_file = new char[strlen(wfn_file)+6];
+  sprintf(mole_ckpt_file,"%s.ckpt",wfn_file);
+
   int restart = keyval->booleanvalue("restart",truevalue);
 
   int checkpoint = keyval->booleanvalue("checkpoint",truevalue);
@@ -562,6 +581,11 @@ try_main(int argc, char *argv[])
     MolecularFormula mf(mole->molecule());
     ExEnv::out0() << endl << indent
          << "Molecular formula " << mf.formula() << endl;
+    if (checkpoint) {
+      mole->set_checkpoint();
+      if (grp->me() == 0) mole->set_checkpoint_file(mole_ckpt_file);
+      else mole->set_checkpoint_file(devnull);
+    }
   }
 
   if (checkpoint && opt.nonnull()) {
@@ -870,6 +894,7 @@ try_main(int argc, char *argv[])
   molhess = 0;
   opt = 0;
   mole = 0;
+  integral = 0;
   debugger = 0;
   thread = 0;
   tim = 0;

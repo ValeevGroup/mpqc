@@ -38,6 +38,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/util.h>
@@ -52,6 +53,9 @@ using namespace sc;
 #define SINGLE_THREAD_QBT34 0
 #define SINGLE_THREAD_S2PDM 0
 
+#define PRINT2Q 0
+#define PRINT3Q 0
+#define PRINT4Q 0
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);
 #endif
@@ -155,7 +159,6 @@ MBPT2::compute_cs_grad()
   int ni;
 
   double *evals;              // scf eigenvalues
-  const double *intbuf;       // 2-electron AO integral buffer
   double *iajb_ptr, *ibja_ptr, *iakb_ptr, *ibka_ptr;
   double *iajc_ptr, *ibjc_ptr, *icjb_ptr, *icja_ptr;
   double *ijkb_ptr, *ibkj_ptr;
@@ -295,7 +298,8 @@ MBPT2::compute_cs_grad()
   //
   // The following arrays are kept throughout (all of type double):
   //   scf_vector, gradient, ginter, Pkj, Pab, Wkj, Wab, Waj, Laj
-  // and memory allocated for these arrays is called mem_static
+  // and memory allocated for these arrays  and integral evaluators
+  // is called mem_static
   //
   ////////////////////////////////////////////////////////
   if (me == 0) {
@@ -317,6 +321,8 @@ MBPT2::compute_cs_grad()
       mem_static += nocc*nvir; // partial Laj
       }
     mem_static *= sizeof(double);
+    int nthreads = thr_->nthread();
+    mem_static += nthreads * integral()->storage_required(&Integral::electron_repulsion,basis()); // integral evaluators
     ni = compute_cs_batchsize(mem_static, nocc_act-restart_orbital_memgrp_); 
     }
 
@@ -334,11 +340,12 @@ MBPT2::compute_cs_grad()
   msg_->bcast(dmem_static);
   mem_static = size_t(dmem_static);
 
-  // Compute the storage remaining for the integral routines
+  // Compute the storage to be used by the integral routines (required plus optional)
   size_t dyn_mem = distsize_to_size(compute_cs_dynamic_memory(ni,nocc_act));
   int mem_remaining;
   if (mem_alloc <= (dyn_mem + mem_static)) mem_remaining = 0;
-  else mem_remaining = mem_alloc - dyn_mem + mem_static;
+  else mem_remaining = mem_alloc - dyn_mem - mem_static;
+  mem_remaining += thr_->nthread() * integral()->storage_required(&Integral::electron_repulsion,basis());
 
   ExEnv::out0() << indent
        << "Memory available per node:      " << mem_alloc << " Bytes"
@@ -531,8 +538,6 @@ MBPT2::compute_cs_grad()
   for (i=0; i<thr_->nthread(); i++) {
       tbints_[i] = integral()->electron_repulsion();
     }
-  tbint_ = tbints_[0];
-  intbuf = tbint_->buffer();
   if (dograd || do_d1_) {
     tbintder_ = new Ref<TwoBodyDerivInt>[thr_->nthread()];
     for (i=0; i<thr_->nthread(); i++) {
@@ -667,6 +672,31 @@ MBPT2::compute_cs_grad()
 
     integral_iqjs = (double*) mem->localdata();
 
+#if PRINT2Q
+    if (me == 0) {
+      int index = 0;
+      int ij_index = 0;
+      for (int i = 0; i<ni; i++) {
+	for (int j = 0; j<nocc; j++) {
+	  if (index++ % nproc == me) {
+	    if (j >= nfzc) {
+	      double *integral_ij_offset = integral_iqjs + nbasis*nbasis*ij_index;
+	      for (int s = 0; s<nbasis; s++) {
+		double *integral_ijsq_ptr = integral_ij_offset + s*nbasis;
+		for (int q = 0; q<nbasis; q++) {
+		  printf("2Q: (%d %d|%d %d) = %12.8f\n",
+			 i,q,j,s,*integral_ijsq_ptr);
+		  *integral_ijsq_ptr++;
+		}
+	      }
+	    }
+	    ij_index++;
+	  }
+	}
+      }
+    }
+#endif
+
     // Allocate and initialize some arrays
     ixjs_tmp = new double[nbasis];
 
@@ -734,6 +764,31 @@ MBPT2::compute_cs_grad()
     // been overwritten by three-quarter transformed integrals ixjs;
     // rename the array integral_ixjs, where x = any MO
     integral_ixjs = integral_iqjs;
+
+#if PRINT3Q
+    if (me == 0) {
+      int index = 0;
+      int ij_index = 0;
+      for (int i = 0; i<ni; i++) {
+	for (int j = 0; j<nocc; j++) {
+	  if (index++ % nproc == me) {
+	    if (j >= nfzc) {
+	      double *integral_ij_offset = integral_ixjs + nbasis*nbasis*ij_index;
+	      for (int s = 0; s<nbasis; s++) {
+		double *integral_ijsx_ptr = integral_ij_offset + s*nbasis;
+		for (int x = 0; x<noso; x++) {
+		  printf("3Q: (%d %d|%d %d) = %12.8f\n",
+			 i,x,j,s,*integral_ijsx_ptr);
+		  *integral_ijsx_ptr++;
+		}
+	      }
+	    }
+	    ij_index++;
+	  }
+	}
+      }
+    }
+#endif
 
     integral_iajy = new double[noso];
     // in iajy: i act; a,j act or frz; y act or frz occ or virt.
@@ -844,6 +899,10 @@ MBPT2::compute_cs_grad()
               iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
               bb = b+nocc;
               for (a=0; a<nvir_act; a++) {
+#if PRINT4Q
+	      printf("4Q: (%d %d|%d %d) = %12.8f\n",
+		     i,a+nocc,j,b+nocc,*iajb_ptr);
+#endif
 		// Zero out nonsymmetric integral, else divide by denominators
 	        if (usep4 && ( symorb_irrep_[ii] ^
 		      symorb_irrep_[j] ^
@@ -1905,6 +1964,7 @@ MBPT2::compute_cs_grad()
   make_cs_gmat_new(Gmat, Dmat_matrix);
   tim_exit("make_gmat for Wkj");
   done_cs_gmat();
+  for (i=0; i<thr_->nthread(); i++) tbints_[i] = 0;
   delete[] tbints_; tbints_ = 0;
   RefSCMatrix Wkj_matrix(nocc_dim, nocc_dim, kit);
   Wkj_matrix->assign(Wkj);

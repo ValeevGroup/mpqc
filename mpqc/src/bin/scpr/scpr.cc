@@ -43,6 +43,8 @@
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
+#include <chemistry/qc/cints/linkage.h>
+#include <chemistry/qc/mbptr12/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
 

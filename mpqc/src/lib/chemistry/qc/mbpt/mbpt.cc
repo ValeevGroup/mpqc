@@ -549,7 +549,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
     }
   else {
       // compute orbital symmetry information for c1
-      for (i=0; i<nbasis; i++) {
+      for (i=0; i<noso; i++) {
           symorb_irrep_[i] = 0;
           symorb_num_[i] = i;
         }
@@ -617,8 +617,7 @@ MBPT2::nelectron()
 double
 MBPT2::ref_energy()
 {
-  energy();
-  return hf_energy_;
+  return reference_->energy();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -626,8 +625,7 @@ MBPT2::ref_energy()
 double
 MBPT2::corr_energy()
 {
-  energy();
-  return energy() - hf_energy_;
+  return energy() - reference_->energy();
 }
 
 /////////////////////////////////////////////////////////////////////////////

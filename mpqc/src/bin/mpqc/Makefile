@@ -25,14 +25,24 @@ DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 default:: mpqc
 
 XDEF =
+XLIBS =
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
 XDEF += -DHAVE_CHEMISTRY_QC_PSI
 endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
 XDEF += -DHAVE_CHEMISTRY_QC_CC
 endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ XDEF += -DHAVE_CHEMISTRY_QC_MBPTR12
+ XLIBS += -lPSI_r12
+ endif
+XDEF += -DHAVE_CHEMISTRY_QC_CINTS
+XLIBS += -lPSI_int
+endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
+
 
 #################################################################
 
@@ -41,7 +51,7 @@ default:: $(DEPENDINCLUDE)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 mpqc: $(BINOBJ) $(LIBS)
-	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(XLIBS) $(SYSLIBS) $(LTLINKBINOPTS)
 
 $(TOPDIR)/lib/libmpqc.a: $(BINOBJ)
 	/bin/rm -f $@

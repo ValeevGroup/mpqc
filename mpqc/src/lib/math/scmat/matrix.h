@@ -241,6 +241,15 @@ class RefSCMatrix: public Ref<SCMatrix> {
     double determ() const;
     /// Assign and examine matrix elements.
     SCMatrixdouble operator()(int i,int j) const;
+
+    /** If this matrix is blocked return the number of blocks.
+     * Otherwise return 1.
+     */
+    int nblock() const;
+    /** If this matrix is blocked return block i.
+     * Otherwise return this as block 0.
+     */
+    RefSCMatrix block(int i) const;
 };
 /// Allow multiplication with a scalar on the left.
 RefSCMatrix operator*(double,const RefSCMatrix&);
@@ -350,6 +359,14 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
                      const RefSCMatrix& eigvecs) const;
     /// Assign and examine matrix elements.
     SymmSCMatrixdouble operator()(int i,int j) const;
+    /** If this matrix is blocked return the number of blocks.
+     * Otherwise return 1.
+     */
+    int nblock() const;
+    /** If this matrix is blocked return block i.
+     * Otherwise return this as block 0.
+     */
+    RefSymmSCMatrix block(int i) const;
 };
 /// Allow multiplication with a scalar on the left.
 RefSymmSCMatrix operator*(double,const RefSymmSCMatrix&);
@@ -420,6 +437,14 @@ class RefDiagSCMatrix: public Ref<DiagSCMatrix> {
     double determ() const;
     /// Assign and examine matrix elements.
     DiagSCMatrixdouble operator()(int i) const;
+    /** If this matrix is blocked return the number of blocks.
+     * Otherwise return 1.
+     */
+    int nblock() const;
+    /** If this matrix is blocked return block i.
+     * Otherwise return this as block 0.
+     */
+    RefDiagSCMatrix block(int i) const;
 };
 /// Allow multiplication with a scalar on the left.
 RefDiagSCMatrix operator*(double,const RefDiagSCMatrix&);

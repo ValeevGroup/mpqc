@@ -44,6 +44,117 @@ using namespace sc;
 
 ////////////////////////////////////////////////////////////////////////////
 
+int **
+sc::compute_atom_map(const Ref<GaussianBasisSet> &basis)
+{
+  // grab references to the Molecule and BasisSet for convenience
+  GaussianBasisSet& gbs = *basis.pointer();
+  Molecule& mol = *gbs.molecule().pointer();
+
+  // create the character table for the point group
+  CharacterTable ct = mol.point_group()->char_table();
+
+  int natom = gbs.ncenter();
+  int ng = ct.order();
+  int **atom_map;
+  atom_map = new int*[natom];
+  for (int i=0; i < natom; i++) atom_map[i] = new int[ng];
+  
+  double np[3];
+  SymmetryOperation so;
+
+  // loop over all centers
+  for (int i=0; i < natom; i++) {
+    SCVector3 ac(mol.r(i));
+
+    // then for each symop in the pointgroup, transform the coordinates of
+    // center "i" and see which atom it maps into
+    for (int g=0; g < ng; g++) {
+      so = ct.symm_operation(g);
+
+      for (int ii=0; ii < 3; ii++) {
+        np[ii] = 0;
+        for (int jj=0; jj < 3; jj++)
+          np[ii] += so(ii,jj) * ac[jj];
+      }
+
+      atom_map[i][g] = mol.atom_at_position(np, 0.05);
+      if (atom_map[i][g] < 0) {
+        ExEnv::out0() << "ERROR: Symmetry operation " << g << " did not map atom "
+             << i+1 << " to another atom:" << endl;
+        ExEnv::out0() << indent << "Molecule:" << endl;
+        ExEnv::out0() << incindent;
+        mol.print();
+        ExEnv::out0() << decindent;
+        ExEnv::out0() << indent << "attempted to find atom at" << endl;
+        ExEnv::out0() << incindent;
+        ExEnv::out0() << indent << np[0] << " " << np[1] << " " << np[2] << endl;
+        abort();
+      }
+    }
+  }
+
+  return atom_map;
+}
+  
+
+void
+sc::delete_atom_map(int **atom_map, const Ref<GaussianBasisSet> &basis)
+{
+  if (atom_map) {
+    int natom = basis->ncenter();
+    for (int i=0; i < natom; i++)
+      delete[] atom_map[i];
+    delete[] atom_map;
+  }
+}
+
+int **
+sc::compute_shell_map(int **atom_map, const Ref<GaussianBasisSet> &basis)
+{
+  int **shell_map;
+
+  GaussianBasisSet& gbs = *basis.pointer();
+  Molecule& mol = *gbs.molecule().pointer();
+
+  // create the character table for the point group
+  CharacterTable ct = mol.point_group()->char_table();
+
+  int natom = gbs.ncenter();
+  int ng = ct.order();
+
+  int nshell = basis->nshell();
+  shell_map = new int*[nshell];
+  for (int i=0; i < nshell; i++)
+    shell_map[i] = new int[ng];
+
+  for (int i=0; i<natom; i++) {
+    // hopefully, shells on equivalent centers will be numbered in the same
+    // order
+    for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      int shellnum = gbs.shell_on_center(i,s);
+      for (int g=0; g < ng; g++) {
+        shell_map[shellnum][g] = gbs.shell_on_center(atom_map[i][g],s);
+      }
+    }
+  }
+
+  return shell_map;
+}
+
+void
+sc::delete_shell_map(int **shell_map, const Ref<GaussianBasisSet> &basis)
+{
+  int nshell = basis->nshell();
+  if (shell_map) {
+    for (int i=0; i < nshell; i++)
+      delete[] shell_map[i];
+    delete[] shell_map;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 PetiteList::PetiteList(const Ref<GaussianBasisSet> &gbs,
                        const Ref<Integral>& ints) :
   gbs_(gbs),

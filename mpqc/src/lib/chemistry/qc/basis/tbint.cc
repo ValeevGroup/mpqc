@@ -148,9 +148,10 @@ TwoBodyInt::basis4()
 }
 
 const double *
-TwoBodyInt::buffer() const
+TwoBodyInt::buffer(tbint_type i) const
 {
-  return buffer_;
+  if (i==eri) return buffer_;
+  return 0;
 }
 
 void

@@ -113,7 +113,7 @@ typedef long distssize_t;
 inline size_t distsize_to_size(const distsize_t &a) {return a;}
 #endif
 
-/** The MessageGrp abstract class provides a way of accessing distributed
+/** The MemoryGrp abstract class provides a way of accessing distributed
 memory in a parallel machine.  Several specializations are available.  For
 one processor, ProcMemoryGrp provides a simple stub implementation.
 Otherwise, the specializations that work well are ShmMemoryGrp,
@@ -259,9 +259,9 @@ class MemoryGrp: public DescribedClass {
 };
 
 
-/** The MemoryGrpBug class provides access to pieces of the
+/** The MemoryGrpBuf class provides access to pieces of the
     global shared memory that have been obtained with MemoryGrp.
-    MemoryGrpBug is a template class that is parameterized on
+    MemoryGrpBuf is a template class that is parameterized on
     data_t.  All lengths and offsets of given in terms
     of sizeof(data_t). */
 template <class data_t>

@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <scconfig.h>
 #include <iostream>
 #include <scconfig.h>
 
@@ -58,6 +59,15 @@ i_offset64(sc_int_least64_t i)
 {
   return ((i*(i+1)) >> 1);
 }
+
+// //////////////////////////////////////////////////////////////////////////
+// These are helper functions for PetiteList and GPetite4
+
+int **compute_atom_map(const Ref<GaussianBasisSet> &);
+void delete_atom_map(int **atom_map, const Ref<GaussianBasisSet> &);
+
+int **compute_shell_map(int **atom_map, const Ref<GaussianBasisSet> &);
+void delete_shell_map(int **shell_map, const Ref<GaussianBasisSet> &);
 
 // //////////////////////////////////////////////////////////////////////////
 
@@ -143,6 +153,8 @@ class PetiteList : public RefCount {
 
     int in_p1(int n) const { return (c1_) ? 1 : (int) p1_[n]; }
     int in_p2(int ij) const { return (c1_) ? 1 : (int) lamij_[ij]; }
+    /// Same as previous, except for it takes i and j separately
+    int in_p2(int i, int j) const { return (c1_) ? 1 : (int) lamij_[ij_offset(i,j)]; }
     int in_p4(int ij, int kl, int i, int j, int k, int l) const;
     /// Same as previous, except for doesn't assume ij > kl and recomputes them
     int in_p4(int i, int j, int k, int l) const;
@@ -190,9 +202,9 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
     return 1;
   
   sc_int_least64_t ijkl = i_offset64(ij)+kl;
-  int nijkl=0;
+  int nijkl=1;
 
-  for (int g=0; g < ng_; g++) {
+  for (int g=1; g < ng_; g++) {
     int gij = ij_offset(shell_map_[i][g],shell_map_[j][g]);
     int gkl = ij_offset(shell_map_[k][g],shell_map_[l][g]);
     sc_int_least64_t gijkl = ij_offset64(gij,gkl);
@@ -215,9 +227,9 @@ PetiteList::in_p4(int i, int j, int k, int l) const
   int ij = ij_offset(i,j);
   int kl = ij_offset(k,l);
   sc_int_least64_t ijkl = ij_offset64(ij,kl);
-  int nijkl=0;
+  int nijkl=1;
 
-  for (int g=0; g < ng_; g++) {
+  for (int g=1; g < ng_; g++) {
     int gij = ij_offset(shell_map_[i][g],shell_map_[j][g]);
     int gkl = ij_offset(shell_map_[k][g],shell_map_[l][g]);
     sc_int_least64_t gijkl = ij_offset64(gij,gkl);
@@ -232,6 +244,8 @@ PetiteList::in_p4(int i, int j, int k, int l) const
 }
 
 }
+
+
 
 #endif
 

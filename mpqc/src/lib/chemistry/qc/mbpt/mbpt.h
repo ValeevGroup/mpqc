@@ -237,6 +237,9 @@ class MBPT2: public Wavefunction {
 
     int nelectron();
 
+    int nfzcore() const { return nfzc; };
+    int nfzvirt() const { return nfzv; };
+
     RefSymmSCMatrix density();
     int spin_polarized();
 

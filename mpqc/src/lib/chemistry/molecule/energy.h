@@ -55,6 +55,10 @@ class MolecularEnergy: public Function {
 
     RefSCVector cartesian_gradient_;
     RefSymmSCMatrix cartesian_hessian_;
+
+    int ckpt_;
+    char *ckpt_file_;
+
   protected:
     Ref<PointGroup> initial_pg_;
 
@@ -104,6 +108,13 @@ class MolecularEnergy: public Function {
 
     void save_data_state(StateOut&);
 
+    /// Set up checkpointing
+    void set_checkpoint();
+    void set_checkpoint_file(const char*);
+    /// Check if need to checkpoint
+    bool if_to_checkpoint() const;
+    const char* checkpoint_file() const;
+    
     MolecularEnergy & operator=(const MolecularEnergy&);
     
     /// A wrapper around value();

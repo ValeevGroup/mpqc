@@ -29,12 +29,16 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
+#include <sstream>
+
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/obint.h>
 
+using namespace std;
 using namespace sc;
 
 static ClassDesc Integral_cd(
@@ -91,6 +95,86 @@ Integral::save_data_state(StateOut&o)
   o.put(dstorage);
 }
 
+Ref<Integral> default_integral;
+
+void
+Integral::set_default_integral(const Ref<Integral>& intf)
+{
+  default_integral = intf;
+}
+
+// Liberally borrowed from ThreadGrp
+Integral*
+Integral::initial_integral(int& argc, char ** argv)
+{
+  Integral *intf = 0;
+  char * keyval_string = 0;
+  
+  // see if an integral factory is given on the command line
+  if (argc && argv) {
+    for (int i=0; i < argc; i++) {
+      if (argv[i] && !strcmp(argv[i], "-integral")) {
+        char *integral_string = argv[i];
+        i++;
+        if (i >= argc) {
+          throw runtime_error("-integral must be followed by an argument");
+        }
+        keyval_string = argv[i];
+        // move the integral arguments to the end of argv
+        int j;
+        for (j=i+1; j<argc; j++) {
+          argv[j-2] = argv[j];
+        }
+        argv[j++] = integral_string;
+        argv[j++] = keyval_string;
+        // decrement argc to hide the last two arguments
+        argc -= 2;
+        break;
+      }
+    }
+  }
+
+  if (!keyval_string) {
+    // find out if the environment gives the containing integral
+    keyval_string = getenv("INTEGRAL");
+    if (keyval_string) {
+      if (!strncmp("INTEGRAL=", keyval_string, 11)) {
+        keyval_string = strchr(keyval_string, '=');
+      }
+      if (*keyval_string == '=') keyval_string++;
+    }
+  }
+
+  // if keyval input for a integral was found, then
+  // create it.
+  if (keyval_string) {
+    if (keyval_string[0] == '\0') return 0;
+    Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
+    strkv->parse_string(keyval_string);
+    Ref<DescribedClass> dc = strkv->describedclassvalue();
+    intf = dynamic_cast<Integral*>(dc.pointer());
+    if (dc.null()) {
+      ostringstream errmsg;
+      errmsg << "Integral::initial_integral: couldn't find a Integral in " << keyval_string << ends;
+      throw runtime_error(errmsg.str());
+    } else if (!intf) {
+      ostringstream errmsg;
+      errmsg << "initial_integral: wanted Integral but got " << dc->class_name() << ends;
+      throw runtime_error(errmsg.str());
+    }
+    // prevent an accidental delete
+    intf->reference();
+    strkv = 0;
+    dc = 0;
+    // accidental delete not a problem anymore since all smart pointers
+    // to intf are dead
+    intf->dereference();
+    return intf;
+  }
+
+  return 0;
+}
+
 int
 Integral::equiv(const Ref<Integral> &integral)
 {
@@ -134,12 +218,44 @@ Integral::set_basis(const Ref<GaussianBasisSet> &b1,
 }
 
 size_t
+Integral::storage_required(Ref<TwoBodyInt> (Integral::* inteval)(),
+			   const Ref<GaussianBasisSet> &b1,
+			   const Ref<GaussianBasisSet> &b2,
+			   const Ref<GaussianBasisSet> &b3,
+			   const Ref<GaussianBasisSet> &b4)
+{
+  // By default, generated integral evaluator will not need
+  // any significant amount of memory
+  return 0;
+}
+
+size_t
+Integral::storage_required(Ref<TwoBodyDerivInt> (Integral::* inteval)(),
+			   const Ref<GaussianBasisSet> &b1,
+			   const Ref<GaussianBasisSet> &b2,
+			   const Ref<GaussianBasisSet> &b3,
+			   const Ref<GaussianBasisSet> &b4)
+{
+  // By default, generated derivative integral evaluator will not need
+  // any significant amount of memory
+  return 0;
+}
+
+size_t
 Integral::storage_unused()
 {
   ptrdiff_t tmp=storage_-storage_used_;
   return (tmp<0?0:tmp);
 }
-      
+
+Ref<TwoBodyInt>
+Integral::grt()
+{
+  ExEnv::errn() << scprintf("Integral::grt() is not implemented in this particular integrals factory.") << endl;
+  ExEnv::errn() << scprintf("failing module:\n%s",__FILE__) << endl;
+  abort();
+  return 0;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -101,10 +101,14 @@ class TwoBodyInt : public RefCount {
     Ref<GaussianBasisSet> basis4();
     //@}
 
+    /// Types of two-body integrals that TwoBodyInt understands
+    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
+
     /** The computed shell integrals will be put in the buffer returned
-        by this member.
-    */
-    const double * buffer() const;
+        by this member.  Some TwoBodyInt specializations have more than
+	one buffer:  The type arguments selects which buffer is returned.
+	If the requested type is not supported, then 0 is returned. */
+    virtual const double * buffer(tbint_type type = eri) const;
     
     /** Given for shell indices, this will cause the integral buffer
         to be filled in. */
@@ -126,9 +130,8 @@ class TwoBodyInt : public RefCount {
 
     /// Return the integral factory that was used to create this object.
     Integral *integral() const { return integral_; }
+
 };
-
-
 
 // //////////////////////////////////////////////////////////////////////////
 

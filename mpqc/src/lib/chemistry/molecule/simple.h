@@ -36,9 +36,6 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 
-#undef V_BASE
-#define V_BASE virtual public SavableState
-
 //////////////////////////////////////////////////////////////////////////
 
 class SimpleCo : public IntCoor {
@@ -287,15 +284,5 @@ SimpleCo_DECLARE(LinOPSimpleCo)
   };
 
 typedef LinOPSimpleCo LinOP;
-
-/////////////////////////////////////////////////////////////////////
-
-/*
- * these are some utility routines
- */
-
-/////////////////////////////////////////////////////////////////////
-
-#undef V_BASE
 
 #endif /* _intco_simple_h */

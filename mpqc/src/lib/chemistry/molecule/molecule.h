@@ -26,7 +26,11 @@ class PointBag_double;
 
 //#include "atomcentXPlex.h"
 
-// Generic Molecule
+//texi
+// The @code{Molecule} class provides information about the groups of atoms
+// we chemists like to call molecules.  @code{Molecule} is a
+// @code{SavableState} and has a @code{StateIn} constructor.  @code{Molecule}
+// also has a @code{KeyVal} constructor (@ref{The Molecule KeyVal Constructor}).
 class Molecule: public SavableState
 {
 #   define CLASSNAME Molecule
@@ -39,39 +43,69 @@ class Molecule: public SavableState
     PointGroup pg;
     AtomicCenter* atoms;
     int natoms;
+    //texi Returns the i'th @code{AtomicCenter} in the @code{atoms} array.
     AtomicCenter& get_atom(int);
+    //texi @code{const} version of the above.
     const AtomicCenter& get_atom(int) const;
   public:
     Molecule();
     Molecule(Molecule&);
     Molecule(StateIn&);
+    //texi The @code{KeyVal} constructor (@ref{The Molecule KeyVal
+    // Constructor}).
     Molecule(const RefKeyVal&input);
+
     virtual ~Molecule();
 
     Molecule& operator=(Molecule&);
 
+    //texi Add an @code{AtomicCenter} to the @code{Molecule}.  The first
+    // argument is the index of the atom.  You should add atoms sequentially
+    // starting from zero.
     void add_atom(int,AtomicCenter&);
 
+    //texi Print information about the molecule.
     virtual void print(SCostream& =SCostream::cout);
     virtual void print(FILE*);
+    //texi Returns the number of atoms in the molcule.
     int natom() const;
 
-    int owns(Pix);
+    //texi Returns `1' if @code{i} is a valid @code{Pix} for this molecule.
+    // Returns `0' otherwise.
+    int owns(Pix i);
+    //texi Returns the @code{Pix} for the first atom.
     Pix first();
-    void next(Pix&);
+    //texi Sets @code{i} to point to the next atom.  @code{i} is null if there
+    // are no more atoms.
+    void next(Pix& i);
 
-    AtomicCenter& operator()(Pix);
-    AtomicCenter& operator[](int);
-    AtomicCenter& atom(int);
+    //texi Returns the @code{AtomicCenter} pointed to by @code{i}.
+    AtomicCenter& operator()(Pix i);
+    //texi @code{const} version of the above.
     const AtomicCenter& operator()(Pix) const;
+    //texi Returns the i'th @code{AtomicCenter}.
+    AtomicCenter& operator[](int i);
+    //texi @code{const} version of the above.
     const AtomicCenter& operator[](int) const;
+    //texi Returns the i'th @code{AtomicCenter}.
+    AtomicCenter& atom(int i);
+    //texi @code{const} version of the above.
     const AtomicCenter& atom(int) const;
 
+    //texi Returns a @code{PointBag_double*} containing the nuclear charges
+    // of the atoms.
     PointBag_double* charges() const;
 
+    //texi Returns the point group of the molecule (@ref{The PointGroup Class}).
     PointGroup& point_group();
+    //texi @code{const} version of the above.
     const PointGroup& point_group() const;
+
+    //texi Returns a @code{RefPoint} containing the cartesian coordinates of
+    // the center of mass for the molecule
     RefPoint center_of_mass();
+    //texi If the molecule contains only symmetry unique atoms, this function
+    // will generate the other, redundant atoms.
     void symmetrize();
 
     void save_data_state(StateOut&);

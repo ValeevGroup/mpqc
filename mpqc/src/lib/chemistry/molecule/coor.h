@@ -16,6 +16,15 @@
 
 class SSRefIntCoor;
 typedef class SSRefIntCoor RefIntCoor;
+
+//texi
+// @code{IntCoor} is an abstract base class.  From it are derived the
+// simple internal coordinate classes (@ref{The SimpleCo Class} and
+// @ref{The Simple Internal Coordinate Classes}), and a class describing
+// linear combinations of internal coordinates (@ref{The SumIntCoor Class}).
+//
+// @code{IntCoor} is a @code{SavableState} and has a @code{StateIn}
+// constructor, as well as a @code{KeyVal} constructor.
 class IntCoor: public SavableState {
 #   define CLASSNAME IntCoor
 #   include <util/state/stated.h>
@@ -27,25 +36,42 @@ class IntCoor: public SavableState {
     char *label_;
     double value_;
   public:
-    IntCoor(const char* label = 0);
-    IntCoor(const RefKeyVal&);
-    IntCoor(const IntCoor&);
     IntCoor(StateIn&);
+    IntCoor(const IntCoor&);
+    //texi This constructor takes a string containing a label for the
+    // internal coordinate.  The string is copied.
+    IntCoor(const char* label = 0);
+    //texi The KeyVal constructor (@ref{The IntCoor KeyVal Constructor}).
+    IntCoor(const RefKeyVal&);
+    
     virtual ~IntCoor();
     void save_data_state(StateOut&);
+
+    //texi Returns the string containing the label for the internal coordinate.
     virtual const char* label() const;
+    //texi Returns the value of the coordinate in atomic units or radians.
     virtual double value() const;
+    //texi Returns the value of the coordinate in more familiar units (at
+    // least to those in the U.S.).
     virtual double preferred_value() const;
-    virtual const char* ctype() const = 0; // name for coor type
+    //texi Returns a string representation of the type of coordinate this is.
+    virtual const char* ctype() const = 0;
 #ifdef __GNUC__
+    //texi Print information about the coordinate.
     virtual void print(RefMolecule =0, SCostream& =SCostream::cout);
 #else
     virtual void print();
     virtual void print(RefMolecule, SCostream& =SCostream::cout);
 #endif
+    //texi Returns the value of the force constant associated with this
+    // coordinate.
     virtual double force_constant(RefMolecule&) = 0;
+    //texi Recalculate the value of the coordinate.
     virtual void update_value(RefMolecule&) = 0;
+    //texi Fill in a row the the B matrix.
     virtual void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0) = 0;
+    //texi Test to see if this internal coordinate is equivalent to that one.
+    // The definition of equivalence is left up to the individual coordinates.
     virtual int equivalent(RefIntCoor&) = 0;
 };
 SavableState_REF_dec(IntCoor);
@@ -53,6 +79,12 @@ ARRAY_dec(RefIntCoor);
 SET_dec(RefIntCoor);
 ARRAYSET_dec(RefIntCoor);
 
+//texi
+// @code{SumIntCoor} is used to construct linear combinations of internal
+// coordinates.  Normally one will use simple internal coordinates, such as
+// bond lengths and angles.  @code{SumIntCoor} inherits from @code{IntCoor}
+// (@ref{The IntCoor Class}), so it is a @code{SavableState}.
+// @code{SumIntCoor} has @code{StateIn} and @code{KeyVal} constructors.
 class SumIntCoor: public IntCoor {
 #   define CLASSNAME SumIntCoor
 #   define HAVE_KEYVAL_CTOR
@@ -63,32 +95,54 @@ class SumIntCoor: public IntCoor {
     Arraydouble coef_;
     ArrayRefIntCoor coor_;
   public:
-    SumIntCoor(const char *);
-    SumIntCoor(const RefKeyVal&);
     SumIntCoor(StateIn&);
+    //texi This constructor takes a string containing a label for this
+    // coordinate.
+    SumIntCoor(const char *);
+    //texi The KeyVal constructor (@ref{The SumIntCoor KeyVal Constructor}).
+    SumIntCoor(const RefKeyVal&);
+
     ~SumIntCoor();
     void save_data_state(StateOut&);
+
+    //texi Returns the number of coordinates in this linear combination.
     int n();
+    //texi Add a coordinate to the linear combination.  @code{coef} is the
+    // coefficient for the added coordinate.
     void add(RefIntCoor&,double coef);
+    //texi This function normalizes all the coefficients.
     void normalize();
 
     // IntCoor overrides
+    //texi Returns the value of the coordinate in a.u. and radians.
     double preferred_value() const;
-    const char* ctype() const; // name for coor type
+    //texi Always returns ``SUM''.
+    const char* ctype() const;
 #ifdef __GNUC__
+    //texi Print the individual coordinates in the sum with their coefficients.
     void print(RefMolecule = 0, SCostream& =SCostream::cout);
 #else
     void print();
     void print(RefMolecule, SCostream& =SCostream::cout);
 #endif
+    //texi Returns the weighted sum of the individual force constants.
     double force_constant(RefMolecule&);
+    //texi Recalculate the value of the coordinate.
     void update_value(RefMolecule&);
+    //texi Fill in a row the the B matrix.
     void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0);
+    //texi Always returns 0.
     int equivalent(RefIntCoor&);
 };
 
 class SSRefSetIntCoor;
 typedef class SSRefSetIntCoor RefSetIntCoor;
+
+//texi
+// @code{SetIntCoor} is a class which holds sets of internal coordinates, be
+// they simple internal coordinates or combinations of coordinates.
+// @code{SetIntCoor} is a @code{SavableState}, and has @code{StateIn} and
+// @code{KeyVal} constructors.
 class SetIntCoor: public SavableState {
 #   define CLASSNAME SetIntCoor
 #   define HAVE_CTOR
@@ -100,27 +154,45 @@ class SetIntCoor: public SavableState {
     ArraysetRefIntCoor coor_;
   public:
     SetIntCoor();
-    SetIntCoor(const RefKeyVal&);
     SetIntCoor(StateIn&);
+    //texi The KeyVal constructor (@ref{The SetIntCoor KeyVal Constructor}).
+    SetIntCoor(const RefKeyVal&);
+
     virtual ~SetIntCoor();
     void save_data_state(StateOut&);
+
+    //texi Adds an internal coordinate to the set.
     void add(const RefIntCoor&);
+    //texi Adds all the elements of another set to this one.
     void add(const RefSetIntCoor&);
+    //texi Removes a coordinate from this set.
     void del(const RefIntCoor&);
+    //texi Removes all the elements of a set of coordinates from this one.
     void del(const RefSetIntCoor&);
+    //texi Removes all coordinates from the set.
     void clear();
+    //texi Returns the number of coordinates in the set.
     int n() const;
-    RefIntCoor coor(int) const;
+    //texi Returns a reference to the i'th coordinate in the set.
+    RefIntCoor coor(int i) const;
+    //texi Compute the B matrix by finite displacements.
     virtual void fd_bmat(RefMolecule&,RefSCMatrix&);
+    //texi Compute the B matrix the old-fashioned way.
     virtual void bmat(RefMolecule&, RefSCMatrix&);
+    //texi Create an approximate Hessian for this set of coordinates.  This
+    // Hessian is a symmetric matrix whose i'th diagonal is the force constant
+    // for the i'th coordinate in the set.
     virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);
 #ifdef __GNUC__
+    //texi Print the coordinates in the set.
     virtual void print(RefMolecule =0,SCostream& =SCostream::cout);
 #else
     virtual void print();
     virtual void print(RefMolecule,SCostream& =SCostream::cout);
 #endif
+    //texi Recalculate the values of the internal coordinates in the set.
     virtual void update_values(RefMolecule&);
+    //texi Copy the values of the internal coordinates to a vector.
     virtual void values_to_vector(RefSCVector&);
 };
 SavableState_REF_dec(SetIntCoor);

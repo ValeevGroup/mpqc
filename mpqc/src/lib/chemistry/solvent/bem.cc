@@ -154,9 +154,9 @@ BEMSolvent::init()
 }
 
 void
-BEMSolvent::done()
+BEMSolvent::done(int clear_surface)
 {
-  surf_->clear();
+  if (clear_surface) surf_->clear();
   system_matrix_i_ = 0;
 
   if (vertex_area_) delete[] vertex_area_;

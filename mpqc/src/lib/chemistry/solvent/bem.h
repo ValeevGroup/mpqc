@@ -83,8 +83,8 @@ class BEMSolvent: public DescribedClass {
     // molecule has the correct the geometry and all of the
     // parameters have been adjusted.
     void init();
-    // This gets rid of the system matrix inverse.
-    void done();
+    // This gets rid of the system matrix inverse and, optionally, the surface.
+    void done(int clear_surface = 1);
 
     int ncharge() { return surf_->nvertex(); }
 

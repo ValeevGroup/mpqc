@@ -1902,15 +1902,15 @@ MBPT2::compute_cs_grad()
     cout <<node0
          <<indent<<scprintf("D1(MP2)                = %12.8f", d1_diag)
          <<endl
-         <<indent<<scprintf("T1 matrix 1-norm       = %12.8f", t1onenorm)
+         <<indent<<scprintf("S2 matrix 1-norm       = %12.8f", t1onenorm)
          <<endl
-         <<indent<<scprintf("T1 matrix inf-norm     = %12.8f", t1infnorm)
+         <<indent<<scprintf("S2 matrix inf-norm     = %12.8f", t1infnorm)
          <<endl
          <<indent<<scprintf("S2 diagnostic          = %12.8f", s2_diag)
          <<endl;
     if (biggest_t1.ncontrib()) {
       cout << node0 << endl
-           << indent << "Largest T1 values (unique determinants):" << endl;
+           << indent << "Largest S2 values (unique determinants):" << endl;
       }
     for (i=0; i<biggest_t1.ncontrib(); i++) {
       int i0 = orbital_map[biggest_t1.indices(i)[0]];

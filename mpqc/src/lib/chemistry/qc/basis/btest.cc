@@ -1,6 +1,5 @@
 
 #include <util/keyval/keyval.h>
-#include <math/scmat/local.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/intv3/intv3.h>
 
@@ -11,26 +10,24 @@ main(int, char *argv[])
   
   RefKeyVal keyval = new ParsedKeyVal(filename);
   
-  RefIntegralV3 intgrl = new IntegralV3;
-
-  RefMatrixKit kit = new LocalMatrixKit;
+  RefIntegral intgrl = new IntegralV3;
 
   for (int i=0; i<keyval->count("test"); i++) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);
       intgrl->set_basis(gbs);
 
-      RefSymmSCMatrix s(gbs->basisdim(),kit);
+      RefSymmSCMatrix s(gbs->basisdim(), gbs->matrixkit());
       RefSCElementOp ov =
-        new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap_int()));
+        new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap()));
       s.assign(0.0);
       s.element_op(ov);
       ov=0;
       s.print("overlap");
       
       RefGaussianBasisSet gbs2 = keyval->describedclassvalue("test2", i);
-      RefSCMatrix ssq(gbs->basisdim(),gbs2->basisdim(),kit);
+      RefSCMatrix ssq(gbs->basisdim(),gbs2->basisdim(),gbs->matrixkit());
       intgrl->set_basis(gbs,gbs2);
-      ov = new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap_int()));
+      ov = new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap()));
       ssq.assign(0.0);
       ssq.element_op(ov);
       ssq.print("overlap sq");

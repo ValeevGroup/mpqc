@@ -293,6 +293,11 @@ MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
 
   init_mid();
 
+  if (n() == 1) {
+      cerr << "MPLMemoryGrp: nproc = 1 not allowed" << endl;
+      abort();
+    }
+
   if (debug_) 
       cout << scprintf("MPLMemoryGrp activating\n");
   activate();

@@ -56,7 +56,7 @@ void
 SymmOneBodyIntIter::start(int ist, int jst, int ien, int jen)
 {
   OneBodyIntIter::start(ist,jst,ien,jen);
-  while (!pl->lambda(icur,jcur) && OneBodyIntIter::ready())
+  while (OneBodyIntIter::ready() && !pl->lambda(icur,jcur))
     OneBodyIntIter::next();
 }
 

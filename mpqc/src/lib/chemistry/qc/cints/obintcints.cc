@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/cints/obint.h>
+#include <chemistry/qc/cints/obintcints.h>
 
 using namespace sc;
 

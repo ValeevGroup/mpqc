@@ -32,8 +32,8 @@
 #include <chemistry/qc/cints/cints.h>
 #include <chemistry/qc/cints/cartit.h>
 #include <chemistry/qc/cints/tform.h>
-#include <chemistry/qc/cints/obint.h>
-#include <chemistry/qc/cints/tbint.h>
+#include <chemistry/qc/cints/obintcints.h>
+#include <chemistry/qc/cints/tbintcints.h>
 #include <chemistry/qc/cints/eri.h>
 #include <chemistry/qc/cints/grt.h>
 

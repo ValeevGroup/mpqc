@@ -25,8 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUC__
+#pragma implementation "junk.h"
+#endif
+
 #include <chemistry/qc/basis/integral.h>
-#include <chemistry/qc/cints/tbint.h>
+#include <chemistry/qc/cints/tbintcints.h>
 #include <chemistry/qc/cints/eri.h>
 #include <chemistry/qc/cints/grt.h>
 

@@ -39,12 +39,12 @@ BIN_OR_LIB = LIB
 
 TESTCSRC = cintstest.cc
 
-CXXSRC = cints.cc obint.cc tbint.cc tform.cc int2e.cc eri.cc comp_eri.cc storage.cc \
-	grt.cc comp_grt.cc \
+CXXSRC = cints.cc obintcints.cc tbintcints.cc tform.cc int2e.cc eri.cc comp_eri.cc \
+        storage.cc grt.cc comp_grt.cc \
 	primpairs.cc shellpairs.cc permute2e.cc int1e.cc overlap.cc kinetic.cc nuclear.cc \
 	hcore.cc obosrr.cc edipole.cc equadrupole.cc
 
-INC = cints.h obint.h tbint.h tform.h cartit.h macros.h primpairs.h shellpairs.h
+INC = cints.h obintcints.h tbintcints.h tform.h cartit.h macros.h primpairs.h shellpairs.h
 
 LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))

@@ -101,6 +101,7 @@ main(int argc, char *argv[])
       else if (!strcmp(arg,"-W")) working_dir = argv[++i];
       else if (!strcmp(arg,"-d")) debug = 1;
       else if (!strcmp(arg,"-h")) help = 1;
+      else if (!strcmp(arg,"-l")) SCFormIO::setverbose(cout,1);
       else if (!strcmp(arg,"-v")) version = 1;
       else if (!strcmp(arg,"-w")) warranty = 1;
       else if (!strcmp(arg,"-L")) license = 1;
@@ -137,9 +138,9 @@ main(int argc, char *argv[])
            << indent << "-messagegrp <$val> (which message group to use)"<<endl
            << indent << "-W <$val> (set the working directory)" << endl
            << indent << "-d (turn on debugging)" << endl
+           << indent << "-l (verbose printing)" << endl
            << indent << "-v (print the version)" << endl
            << indent << "-w (print the warranty)" << endl
-           << indent << "-l (detailed list of objects)" << endl
            << indent << "-L (print the license)" << endl
            << indent << "-h (print this help)" << endl;
 

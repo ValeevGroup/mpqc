@@ -37,36 +37,50 @@
 #include <util/keyval/keyval.h>
 
 SavableState_REF_fwddec(SCExtrapData);
+/** SCExtrapData hold the data to be extrapolated needed by
+    SelfConsistentExtrapolation.  */
 class SCExtrapData: public SavableState {
 #   define CLASSNAME SCExtrapData
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
+    /// Construct a new SCExtrapData.
     SCExtrapData();
+    /// Constructor to restore SCExtrapData from a StateIn object.
     SCExtrapData(StateIn&);
     virtual ~SCExtrapData();
 
     void save_data_state(StateOut&);
     
+    /** Return a copy of this. */
     virtual SCExtrapData* copy() = 0;
+    /** Set this to zero. */
     virtual void zero() = 0;
+    /** The passed SCExtrapData is accumulated into this after applying the
+        scaling factor. */
     virtual void accumulate_scaled(double scale, const RefSCExtrapData&) = 0;
 };
 SavableState_REF_dec(SCExtrapData);
 
 SavableState_REF_fwddec(SCExtrapError);
+/** SCExtrapError holds the error data needed by SelfConsistentExtrapolation.
+ */
 class SCExtrapError: public SavableState {
 #   define CLASSNAME SCExtrapError
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
+    /// Construct a new SCExtrapError.
     SCExtrapError();
+    /// Constructor to restore SCExtrapError from a StateIn object.
     SCExtrapError(StateIn&);
     virtual ~SCExtrapError();
 
     void save_data_state(StateOut&);
     
+    /// Returns some measure of the total error.
     virtual double error() = 0;
+    /// Performs a scalar product between this and the given SCExtrapError.
     virtual double scalar_product(const RefSCExtrapError&) = 0;
 };
 SavableState_REF_dec(SCExtrapError);

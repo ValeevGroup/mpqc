@@ -467,6 +467,8 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   int nproc=scf_grp_->n();
   int uhf = spin_unrestricted();
   
+  d->assign(0.0);
+  
   RefSCMatrix vector;
   if (alp || !uhf)
     vector = scf_vector_;
@@ -521,10 +523,8 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
       }
     }
 
-    if (col0 == -1) {
-      dir->assign(0.0);
+    if (col0 == -1)
       continue;
-    }
 
     if (coln == -1)
       coln = nbasis-1;

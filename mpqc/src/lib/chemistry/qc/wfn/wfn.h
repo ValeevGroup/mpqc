@@ -46,6 +46,11 @@ class Wavefunction: public MolecularEnergy {
 #   define CLASSNAME Wavefunction
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  public:
+
+    /// An enum for the types of orthogonalization.
+    enum { Symmetric, Canonical };
+
   private:
     RefSCDimension aodim_;
     RefSCDimension sodim_;
@@ -190,6 +195,9 @@ class Wavefunction: public MolecularEnergy {
     /** Returns the inverse of the transformation returned by so_to_orthog_so.
      */
     RefSCMatrix so_to_orthog_so_inverse();
+
+    /// Returns the orthogonalization method
+    int orthog_method() { return symm_orthog_?Symmetric:Canonical; }
 
     void print(ostream& = cout) const;
 };

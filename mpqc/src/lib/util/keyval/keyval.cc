@@ -87,7 +87,8 @@ KeyVal::key_doublevalue(const char* key, const KeyValValue& def)
       seterror(val->doublevalue(result));
     }
   else {
-      seterror(def.doublevalue(result));
+      KeyValValue::KeyValValueError err = def.doublevalue(result);
+      if (error() == OK) seterror(err);
     }
   return result;
 }
@@ -100,7 +101,8 @@ KeyVal::key_booleanvalue(const char* key, const KeyValValue& def)
       seterror(val->booleanvalue(result));
     }
   else {
-      seterror(def.booleanvalue(result));
+      KeyValValue::KeyValValueError err = def.booleanvalue(result);
+      if (error() == OK) seterror(err);
     }
   return result;
 }
@@ -113,7 +115,8 @@ KeyVal::key_intvalue(const char* key, const KeyValValue& def)
       seterror(val->intvalue(result));
     }
   else {
-      seterror(def.intvalue(result));
+      KeyValValue::KeyValValueError err = def.intvalue(result);
+      if (error() == OK) seterror(err);
     }
   return result;
 }
@@ -126,7 +129,8 @@ KeyVal::key_floatvalue(const char* key, const KeyValValue& def)
       seterror(val->floatvalue(result));
     }
   else {
-      seterror(def.floatvalue(result));
+      KeyValValue::KeyValValueError err = def.floatvalue(result);
+      if (error() == OK) seterror(err);
     }
   return result;
 }
@@ -139,7 +143,8 @@ KeyVal::key_charvalue(const char* key, const KeyValValue& def)
       seterror(val->charvalue(result));
     }
   else {
-      seterror(def.charvalue(result));
+      KeyValValue::KeyValValueError err = def.charvalue(result);
+      if (error() == OK) seterror(err);
     }
   return result;
 }
@@ -152,7 +157,8 @@ KeyVal::key_pcharvalue(const char* key, const KeyValValue& def)
       seterror(val->pcharvalue(result));
     }
   else {
-      seterror(def.pcharvalue(result));
+      KeyValValue::KeyValValueError err = def.pcharvalue(result);
+      if (error() == OK) seterror(err);
     }
   if (result) return strcpy(new char[strlen(result)+1], result);
   else return 0;
@@ -167,7 +173,8 @@ KeyVal::key_describedclassvalue(const char* key, const KeyValValue& def)
       val = 0; // fix for gcc 2.7.0 bug
     }
   else {
-      seterror(def.describedclassvalue(result));
+      KeyValValue::KeyValValueError err = def.describedclassvalue(result);
+      if (error() == OK) seterror(err);
     }
   return result;
 }

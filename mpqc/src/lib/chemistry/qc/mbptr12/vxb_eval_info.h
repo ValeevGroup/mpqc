@@ -149,7 +149,7 @@ public:
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
   /** Sets the amount of memory to use for the calculation. Default is
       determined by DEFAULT_SC_MEMORY. */
-  void set_memory(size_t nbytes) { if (nbytes >= 0) memory_ = nbytes; };
+  void set_memory(const size_t nbytes);
   /** Sets the ABS approach to be used (ABS or CABS).
       Default depends on how the object was constructed. */
   void set_absmethod(LinearR12::ABSMethod abs_method);

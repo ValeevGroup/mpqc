@@ -93,6 +93,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   construct_ri_basis_(false);
 
   tfactory_ = new MOIntsTransformFactory(integral_,obs_space_);
+  tfactory_->set_memory(memory_);
 }
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
@@ -191,6 +192,15 @@ char* R12IntEvalInfo::ints_file() const
 {
   return strdup(ints_file_);
 }
+
+void
+R12IntEvalInfo::set_memory(const size_t memory)
+{
+  if (memory > 0)
+    memory_ = memory;
+  tfactory_->set_memory(memory_);
+}
+
 
 void
 R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)

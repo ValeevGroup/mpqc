@@ -229,7 +229,7 @@ ostream&
 SCFormIO::license(ostream& o)
 {
   o << indent
-    << "This program is free software; you can redistribute it and/or modify"
+    << "This program is open-source software; you can redistribute it and/or modify"
     << endl << indent
     << "it under the terms of the GNU General Public License as published by"
     << endl << indent

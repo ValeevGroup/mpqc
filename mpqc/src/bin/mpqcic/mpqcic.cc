@@ -300,6 +300,10 @@ main(int argc, char *argv[])
     
    // pretty print the scf options
     scf_print_options(stdout, scf_info);
+
+    if (print_geometry) {
+        mol->print();
+      }
     
    // initialize the geometry optimization stuff
     if (opt_geom) {

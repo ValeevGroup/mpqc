@@ -223,7 +223,7 @@ SimpleCo::print(RefMolecule mol, SCostream& os)
       for (i=0; i<(4-natoms()); i++) {
           os << "   ";
         }
-      for (int i=0; i<natoms(); i++) {
+      for (i=0; i<natoms(); i++) {
           os << separator << mol->atom(atoms[i]-1).element().symbol();
           separator = "-";
         }

@@ -193,7 +193,8 @@ main(int argc, char *argv[])
 #if defined(__i386__) && defined(__GNUC__)
   // make floating point errors cause an exception (except for denormalized
   // operands, since small numbers are denormalized)
-  asm("fldcw %0" : : "o" (0x372));
+// This causes problems with SIGFPE in gdb starting with Linux/Mandrake8.0
+//  asm("fldcw %0" : : "o" (0x372));
 #endif
 
 #if defined(HAVE_IEEE_SET_FP_CONTROL) && defined(HAVE_IEEE_GET_FP_CONTROL)

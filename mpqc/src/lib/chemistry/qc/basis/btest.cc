@@ -29,11 +29,118 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/state/state_text.h>
+#include <util/state/state_bin.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/files.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
+#include <chemistry/qc/basis/sobasis.h>
+#include <chemistry/qc/basis/sointegral.h>
+
+static void
+do_so_shell_test(const RefSOBasis& sobas, const RefTwoBodySOInt &soer,
+                 int i, int j, int k, int l)
+{
+  if (i>=soer->basis1()->nshell()
+      ||j>=soer->basis2()->nshell()
+      ||k>=soer->basis3()->nshell()
+      ||l>=soer->basis4()->nshell()) return;
+
+  int p,q,r,s;
+  soer->compute_shell(i,j,k,l);
+  const double *buf = soer->buffer();
+  int np = sobas->nfunction(i);
+  int nq = sobas->nfunction(j);
+  int nr = sobas->nfunction(k);
+  int ns = sobas->nfunction(l);
+  int off = 0;
+  cout << "SHELL ("<<i<<j<<"|"<<k<<l<<"):" << endl;
+  for (p=0; p<np; p++) {
+      for (q=0; q<nq; q++) {
+          for (r=0; r<nr; r++) {
+              cout << "      ("<<p<<q<<"|"<<r<<"*) =";
+              for (s=0; s<ns; s++, off++) {
+                  cout << scprintf(" % 10.6f",buf[off]);
+                }
+              cout << endl;
+            }
+        }
+    }
+}
+
+static void
+do_so_shell_test(const RefSOBasis& sobas, const RefOneBodySOInt &soov,
+                 int i, int j)
+{
+  if (i>=soov->basis1()->nshell()
+      ||j>=soov->basis2()->nshell()) return;
+
+  int p,q;
+  soov->compute_shell(i,j);
+  const double *buf = soov->buffer();
+  int np = sobas->nfunction(i);
+  int nq = sobas->nfunction(j);
+  int off = 0;
+  cout << "SHELL ("<<i<<"|"<<j<<"):" << endl;
+  for (p=0; p<np; p++) {
+      cout << "      ("<<p<<"|"<<"*) =";
+      for (q=0; q<nq; q++, off++) {
+          cout << scprintf(" % 10.6f",buf[off]);
+        }
+      cout << endl;
+    }
+}
+
+static void
+do_so_test(const RefKeyVal &keyval,
+           const RefIntegral& intgrl, const RefGaussianBasisSet &gbs)
+{
+  intgrl->set_basis(gbs);
+
+  RefSOBasis sobas = new SOBasis(gbs, intgrl);
+  sobas->print(cout << node0);
+
+  RefTwoBodyInt aoer = intgrl->electron_repulsion();
+  RefTwoBodySOInt soer = new TwoBodySOInt(aoer);
+
+  RefOneBodyInt aoov = intgrl->overlap();
+  RefOneBodySOInt soov = new OneBodySOInt(aoov);
+
+  sobas = soer->basis();
+  sobas->print(cout << node0);
+
+  if (keyval->exists(":shell")) {
+    do_so_shell_test(sobas, soer,
+                     keyval->intvalue(":shell",0),
+                     keyval->intvalue(":shell",1),
+                     keyval->intvalue(":shell",2),
+                     keyval->intvalue(":shell",3));
+    do_so_shell_test(sobas, soov,
+                     keyval->intvalue(":shell",0),
+                     keyval->intvalue(":shell",1));
+    }
+  else {
+      int i,j,k,l;
+      cout << "SO Electron Repulsion:" << endl;
+      for (i=0; i<sobas->nshell(); i++) {
+          for (j=0; j<sobas->nshell(); j++) {
+              for (k=0; k<sobas->nshell(); k++) {
+                  for (l=0; l<sobas->nshell(); l++) {
+                      do_so_shell_test(sobas, soer, i, j, k, l);
+                    }
+                }
+            }
+        }
+      cout << "SO Overlap:" << endl;
+      for (i=0; i<sobas->nshell(); i++) {
+          for (j=0; j<sobas->nshell(); j++) {
+              do_so_shell_test(sobas, soov, i, j);
+            }
+        }
+    }
+}
 
 static void
 test_overlap(const RefGaussianBasisSet& gbs, const RefGaussianBasisSet& gbs2,
@@ -321,122 +428,142 @@ main(int, char *argv[])
   
   RefIntegral intgrl = new IntegralV3;
 
+  int dooverlap = keyval->booleanvalue("overlap");
+  int doeigvals = keyval->booleanvalue("eigvals");
+  int dostate = keyval->booleanvalue("state");
+  int doso = keyval->booleanvalue("so");
+  int doatoms = keyval->booleanvalue("atoms");
+  int dopetite = keyval->booleanvalue("petite");
+  int dovalues = keyval->booleanvalue("values");
+
   for (i=0; i<keyval->count("test"); i++) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);
       RefGaussianBasisSet gbs2 = keyval->describedclassvalue("test2", i);
 
-      test_overlap(gbs,gbs2,intgrl);
+      if (dooverlap) test_overlap(gbs,gbs2,intgrl);
 
-      test_eigvals(gbs,intgrl);
+      if (doeigvals) test_eigvals(gbs,intgrl);
 
-      StateOutText out("btest.out");
-      gbs.save_state(out);
-      StateInText in("btest.out");
-      gbs.restore_state(in);
-      gbs->print();
-      intgrl->petite_list()->print();
+      if (dostate) {
+          StateOutBin out("btest.out");
+          gbs.save_state(out);
+          out.close();
+          StateInBin in("btest.out");
+          gbs.restore_state(in);
+          gbs->print();
+        }
 
-      gbs->set_integral(intgrl);
-      test_func_values(gbs);
+      if (dopetite) {
+          intgrl->set_basis(gbs);
+          intgrl->petite_list()->print();
+        }
+
+      if (doso) {
+          do_so_test(keyval, intgrl, gbs);
+        }
+
+      if (dovalues) {
+          intgrl->set_basis(gbs);
+          gbs->set_integral(intgrl);
+          test_func_values(gbs);
+        }
     }
 
-  const int nelem = 37;
-  RefChemicalElement elements[nelem];
-  for (i=0; i<nelem; i++) {
-      elements[i] = new ChemicalElement(i+1);
-    }
+  if (doatoms) {
+      const int nelem = 37;
 
-  // Make H, C, and Si molecules
-  AtomicCenter hatomcent("H",0,0,0);
-  AtomicCenter catomcent("C",0,0,0);
-  AtomicCenter patomcent("P",0,0,0);
-  RefMolecule hmol = new Molecule(); hmol->add_atom(0,hatomcent);
-  RefMolecule cmol = new Molecule(); cmol->add_atom(0,catomcent);
-  RefMolecule pmol = new Molecule(); pmol->add_atom(0,patomcent);
+      // Make H, C, and P molecules
+      RefMolecule hmol = new Molecule();
+      hmol->add_atom(AtomInfo::string_to_Z("H"),0,0,0);
+      RefMolecule cmol = new Molecule();
+      cmol->add_atom(AtomInfo::string_to_Z("C"),0,0,0);
+      RefMolecule pmol = new Molecule();
+      pmol->add_atom(AtomInfo::string_to_Z("P"),0,0,0);
 
-  perlout << "%basissets = (" << endl;
-  int nbasis = keyval->count("basislist");
-  RefKeyVal nullkv = new AssignedKeyVal();
-  for (i=0; i<nbasis; i++) {
-      int first_element = 1;
-      char *basisname = keyval->pcharvalue("basislist",i);
-      perlout << "  \"" << basisname << "\" => (";
-      BasisFileSet bfs(nullkv);
-      RefKeyVal basiskv = bfs.keyval(nullkv, basisname);
-      char elemstr[512];
-      elemstr[0] = '\0';
-      int last_elem_exists = 0;
-      int n0 = 0;
-      int n1 = 0;
-      int n2 = 0;
-      for (j=0; j<nelem; j++) {
-          RefAssignedKeyVal atombaskv_a(new AssignedKeyVal());
-          RefKeyVal atombaskv(atombaskv_a);
-          char keyword[256];
-          strcpy(keyword,":basis:");
-          strcat(keyword,elements[j]->name());
-          strcat(keyword,":");
-          strcat(keyword,basisname);
-          if (basiskv->exists(keyword)) {
-              if (!first_element) {
-                  perlout << ",";
+      perlout << "%basissets = (" << endl;
+      int nbasis = keyval->count("basislist");
+      RefKeyVal nullkv = new AssignedKeyVal();
+      for (i=0; i<nbasis; i++) {
+          int first_element = 1;
+          char *basisname = keyval->pcharvalue("basislist",i);
+          perlout << "  \"" << basisname << "\" => (";
+          BasisFileSet bfs(nullkv);
+          RefKeyVal basiskv = bfs.keyval(nullkv, basisname);
+          char elemstr[512];
+          elemstr[0] = '\0';
+          int last_elem_exists = 0;
+          int n0 = 0;
+          int n1 = 0;
+          int n2 = 0;
+          for (j=0; j<nelem; j++) {
+              RefAssignedKeyVal atombaskv_a(new AssignedKeyVal());
+              RefKeyVal atombaskv(atombaskv_a);
+              char keyword[256];
+              strcpy(keyword,":basis:");
+              strcat(keyword,AtomInfo::name(j+1));
+              strcat(keyword,":");
+              strcat(keyword,basisname);
+              if (basiskv->exists(keyword)) {
+                  if (!first_element) {
+                      perlout << ",";
+                    }
+                  else {
+                      first_element = 0;
+                    }
+                  perlout << "\"" << AtomInfo::symbol(j+1) << "\"";
+                  if (!last_elem_exists) {
+                      if (elemstr[0] != '\0') strcat(elemstr,", ");
+                      strcat(elemstr,AtomInfo::symbol(j+1));
+                    }
+                  else if (last_elem_exists == 2) {
+                      strcat(elemstr,"-");
+                    }
+                  last_elem_exists++;
+                  if (j+1 == 1) {
+                      atombaskv_a->assign("name", basisname);
+                      atombaskv_a->assign("molecule", hmol);
+                      RefGaussianBasisSet gbs=new GaussianBasisSet(atombaskv);
+                      n0 = gbs->nbasis();
+                    }
+                  if (j+1 == 6) {
+                      atombaskv_a->assign("name", basisname);
+                      atombaskv_a->assign("molecule", cmol);
+                      RefGaussianBasisSet gbs=new GaussianBasisSet(atombaskv);
+                      n1 = gbs->nbasis();
+                    }
+                  if (j+1 == 15) {
+                      atombaskv_a->assign("name", basisname);
+                      atombaskv_a->assign("molecule", pmol);
+                      RefGaussianBasisSet gbs=new GaussianBasisSet(atombaskv);
+                      n2 = gbs->nbasis();
+                    }
                 }
               else {
-                  first_element = 0;
-                }
-              perlout << "\"" << elements[j]->symbol() << "\"";
-              if (!last_elem_exists) {
-                  if (elemstr[0] != '\0') strcat(elemstr,", ");
-                  strcat(elemstr,elements[j]->symbol());
-                }
-              else if (last_elem_exists == 2) {
-                  strcat(elemstr,"-");
-                }
-              last_elem_exists++;
-              if (j+1 == 1) {
-                  atombaskv_a->assign("name", basisname);
-                  atombaskv_a->assign("molecule", hmol);
-                  RefGaussianBasisSet gbs = new GaussianBasisSet(atombaskv);
-                  n0 = gbs->nbasis();
-                }
-              if (j+1 == 6) {
-                  atombaskv_a->assign("name", basisname);
-                  atombaskv_a->assign("molecule", cmol);
-                  RefGaussianBasisSet gbs = new GaussianBasisSet(atombaskv);
-                  n1 = gbs->nbasis();
-                }
-              if (j+1 == 15) {
-                  atombaskv_a->assign("name", basisname);
-                  atombaskv_a->assign("molecule", pmol);
-                  RefGaussianBasisSet gbs = new GaussianBasisSet(atombaskv);
-                  n2 = gbs->nbasis();
+                  if (last_elem_exists > 1) {
+                      if (last_elem_exists == 2) strcat(elemstr,", ");
+                      strcat(elemstr, AtomInfo::symbol(j));
+                    }
+                  last_elem_exists = 0;
                 }
             }
-          else {
-              if (last_elem_exists > 1) {
-                  if (last_elem_exists == 2) strcat(elemstr,", ");
-                  strcat(elemstr, elements[j-1]->symbol());
-                }
-              last_elem_exists = 0;
-            }
+          perlout << ")";
+          if (i != nbasis-1) perlout << "," << endl;
+          perlout << endl;
+          cout << "\\verb*|" << basisname << "| & " << elemstr << " & ";
+          if (n0>0) cout << n0;
+          cout << " & ";
+          if (n1>0) cout << n1;
+          cout << " & ";
+          if (n2>0) cout << n2;
+          cout << " \\\\" << endl;
+          delete[] basisname;
         }
-      perlout << ")";
-      if (i != nbasis-1) perlout << "," << endl;
-      perlout << endl;
-      cout << "\\verb*|" << basisname << "| & " << elemstr << " & ";
-      if (n0>0) cout << n0;
-      cout << " & ";
-      if (n1>0) cout << n1;
-      cout << " & ";
-      if (n2>0) cout << n2;
-      cout << " \\\\" << endl;
-      delete[] basisname;
+
+      perlout << ")" << endl << ends;
+
+      char *perlout_s = perlout.str();
+      cout << perlout_s;
     }
-
-  perlout << ")" << endl << ends;
-
-  char *perlout_s = perlout.str();
-  cout << perlout_s;
 
   return 0;
 }

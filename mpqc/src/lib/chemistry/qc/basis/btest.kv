@@ -1,4 +1,14 @@
 
+overlap = 0
+eigvals = 0
+state   = 0
+so      = 1
+atoms   = 0
+petite  = 0
+values  = 0
+
+shell = [3 3 3 3]
+
 xmolecule = $:ico_d5
 
 basislist = [
@@ -67,6 +77,14 @@ he<Molecule>: (
     }
  )
 
+h2<Molecule>: (
+  symmetry = d2h
+  { atoms geometry } = {
+    h  [ 0.0  0.0   0.7 ]
+    h  [ 0.0  0.0  -0.7 ]
+    }
+ )
+
 ne<Molecule>: (
   symmetry = c1
   { atoms geometry } = {
@@ -74,14 +92,14 @@ ne<Molecule>: (
     }
  )
 
-molecule = $:he
+molecule = $:h2
 
 test2 : [
  <GaussianBasisSet>: (
    molecule = $:molecule
    %name = "foo"
-   %name = "STO-3G"
-   name = "6-31G**"
+   name = "STO-3G"
+   %name = "6-31G**"
    %name = "aug-cc-pVTZ"
    %puream=yes
  )
@@ -92,9 +110,12 @@ test : [
    molecule = $:molecule
    %name = "foo"
    %name = "STO-3G"
-   %name = "6-31G**"
+   %name = "6-31G*"
+   name = "6-311G**"
+   %name = "cc-pVDZ"
    %name = "aug-cc-pVDZ"
-   name = "aug-cc-pVTZ"
+   %name = "cc-pVTZ"
+   %name = "aug-cc-pVTZ"
    %puream=yes
  )
 ]

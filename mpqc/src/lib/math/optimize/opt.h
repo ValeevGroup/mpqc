@@ -119,13 +119,14 @@ class QNewtonOpt: public Optimize {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    double maxabs_gradient;
+    double convergence_;
+    double accuracy_;
+
     RefNLP2 nlp_;
     RefSymmSCMatrix ihessian_;
     RefIHessianUpdate update_;
     RefLineOpt lineopt_;
-    double convergence_;
-
-    double accuracy_;
 
     int take_newton_step_;
   public:

@@ -305,7 +305,8 @@ QNewtonOpt::_castdown(const ClassDesc*cd)
 }
 
 QNewtonOpt::QNewtonOpt(KeyVal&keyval):
-  Optimize(keyval)
+  Optimize(keyval),
+  maxabs_gradient(-1.0)
 {
   nlp_ = keyval.describedclassvalue("function");
   update_ = keyval.describedclassvalue("update");
@@ -343,6 +344,7 @@ QNewtonOpt::QNewtonOpt(StateIn&s):
   s.get(convergence_);
   s.get(accuracy_);
   s.get(take_newton_step_);
+  s.get(maxabs_gradient);
   lineopt_.restore_state(s);
 }
 
@@ -360,6 +362,7 @@ QNewtonOpt::save_data_state(StateOut&s)
   s.put(convergence_);
   s.put(accuracy_);
   s.put(take_newton_step_);
+  s.put(maxabs_gradient);
   lineopt_.save_state(s);
 }
 
@@ -368,41 +371,68 @@ QNewtonOpt::init()
 {
   Optimize::init();
   take_newton_step_ = 1;
+  maxabs_gradient = -1.0;
 }
 
 int
 QNewtonOpt::update()
 {
+  // these are good candidates to be input options
+  const double maxabs_gradient_to_desired_accuracy = 0.05;
+  const double maxabs_gradient_to_next_desired_accuracy = 0.001;
+  const double roundoff_error_factor = 1.1;
+
   // the gradient convergence criterion.
-  double con_crit2;
+  double old_maxabs_gradient = maxabs_gradient;
   RefSCVector xcurrent;
   RefSCVector gcurrent;
   double value;
+
+  SCostream::cout.flush();
     
   // get the next gradient at the required level of accuracy.
   // usually only one pass is needed, unless we happen to find
   // that the accuracy was set too low.
+  int accurate_enough;
   do {
       // compute the current point
-      nlp_->set_gradient_accuracy(accuracy_);
+      nlp_->set_desired_gradient_accuracy(accuracy_);
+
       xcurrent = nlp_->get_x().copy();
       gcurrent = nlp_->gradient().copy();
       value = nlp_->value();
 
       // compute the gradient convergence criterion now so i can see if
       // the accuracy needs to be tighter
-      con_crit2 = gcurrent.maxabs();
+      maxabs_gradient = gcurrent.maxabs();
       // compute the required accuracy
-      accuracy_ = 0.01 * con_crit2;
-    } while(nlp_->gradient_accuracy() > accuracy_);
+      accuracy_ = maxabs_gradient * maxabs_gradient_to_desired_accuracy;
 
-  printf("x:\n");
-  xcurrent.print();
-  printf("value = %15.9f\n",value);
-  printf("g:\n");
-  gcurrent.print();
-  printf("ihessian:\n");
-  ihessian_.print();
+      // The roundoff_error_factor is thrown in to allow for round off making
+      // the current gcurrent.maxabs() a bit smaller than the previous,
+      // which would make the current required accuracy less than the
+      // gradient's actual accuracy and cause everything to be recomputed.
+      int accurate_enough = (
+        nlp_->actual_gradient_accuracy() <= accuracy_*roundoff_error_factor);
+
+      if (!accurate_enough) {
+          printf("NOTICE: nlp_->actual_gradient_accuracy() > accuracy_:\n");
+          printf("  nlp_->actual_gradient_accuracy() = %15.8f\n",
+                 nlp_->actual_gradient_accuracy());
+          printf("  accuracy_ = %15.8f\n", accuracy_);
+          fflush(stdout);
+        }
+    } while(!accurate_enough);
+
+  if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient) {
+      printf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e\n",
+             old_maxabs_gradient, maxabs_gradient);
+      fflush(stdout);
+    }
+
+  // make the next gradient computed more accurate, since it will
+  // be smaller
+  accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
   
   if (!take_newton_step_ && lineopt_.nonnull()) {
       // see if the line min step is really needed
@@ -427,6 +457,7 @@ QNewtonOpt::update()
 
   // compute the convergence criteria
   double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
+  double con_crit2 = maxabs_gradient;
   double con_crit3 = xdisp.maxabs();
 
   return   (con_crit1 <= convergence_)

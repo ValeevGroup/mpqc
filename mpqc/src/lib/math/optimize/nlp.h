@@ -14,9 +14,7 @@ class NLP0: virtual public SavableState, public Compute {
   protected:
     RefSCDimension _dim;
     RefSCVector    _x;    // variables
-    Resultdouble   _value;// value of function at _x
-    double       _value_accuracy; // the value should be evaluated with this
-                                  // accuracy
+    AccResultdouble   _value;// value of function at _x
     virtual void set_value(double);
   public:
     NLP0(RefSCDimension&);
@@ -35,8 +33,9 @@ class NLP0: virtual public SavableState, public Compute {
     virtual void set_x(RefSCVector&);
     virtual RefSCVector get_x();
 
-    virtual void set_value_accuracy(double);
-    virtual double value_accuracy();
+    virtual void set_desired_value_accuracy(double);
+    virtual double actual_value_accuracy();
+    virtual double desired_value_accuracy();
 
     virtual void print(SCostream& =SCostream::cout);
 };
@@ -54,9 +53,8 @@ class NLP1: public NLP0 {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    ResultRefSCVector _gradient; // gradient at _x
+    AccResultRefSCVector _gradient; // gradient at _x
     virtual void set_gradient(RefSCVector&);
-    double       _gradient_accuracy;
   public:
     NLP1(RefSCDimension&);
     NLP1(StateIn&);
@@ -69,8 +67,9 @@ class NLP1: public NLP0 {
     int do_gradient(int);
     int do_gradient();
 
-    virtual void set_gradient_accuracy(double);
-    virtual double gradient_accuracy();
+    virtual void set_desired_gradient_accuracy(double);
+    virtual double actual_gradient_accuracy();
+    virtual double desired_gradient_accuracy();
 
     // gradients by values at finite displacements
     // virtual RefSCVector fd0_gradient();
@@ -84,9 +83,8 @@ class NLP2: public NLP1 {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    ResultRefSymmSCMatrix _hessian;
+    AccResultRefSymmSCMatrix _hessian;
     virtual void set_hessian(RefSymmSCMatrix&);
-    double       _hessian_accuracy;
   public:
     NLP2(RefSCDimension&);
     NLP2(StateIn&);
@@ -99,8 +97,9 @@ class NLP2: public NLP1 {
     int do_hessian(int);
     int do_hessian();
 
-    virtual void set_hessian_accuracy(double);
-    virtual double hessian_accuracy();
+    virtual void set_desired_hessian_accuracy(double);
+    virtual double actual_hessian_accuracy();
+    virtual double desired_hessian_accuracy();
 
     // hessian by gradients at finite displacements
     // virtual RefSCMatrix fd1_hessian();

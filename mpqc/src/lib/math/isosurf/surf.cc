@@ -35,6 +35,7 @@
 #include <math/scmat/vector3.h>
 #include <math/isosurf/surf.h>
 #include <math/isosurf/isosurf.h>
+#include <util/render/polygons.h>
 
 /////////////////////////////////////////////////////////////////////////
 // TriangulatedSurface
@@ -66,7 +67,8 @@ TriangulatedSurface::TriangulatedSurface():
   _edge_to_index(0),
   _triangle_to_index(0),
   _tmp_edges(niledgeavlset),
-  _verbose(0)
+  _verbose(0),
+  _debug(0)
 {
   clear();
 }
@@ -84,6 +86,7 @@ TriangulatedSurface::TriangulatedSurface(const RefKeyVal& keyval):
   _tmp_edges(niledgeavlset)
 {
   _verbose = keyval->booleanvalue("verbose");
+  _debug = keyval->booleanvalue("debug");
   set_integrator(keyval->describedclassvalue("integrator"));
   if (keyval->error() != KeyVal::OK) {
       set_integrator(new GaussTriangleIntegrator(1));
@@ -586,6 +589,35 @@ TriangulatedSurface::print_vertices_and_triangles(ostream&o)
 }
 
 void
+TriangulatedSurface::render(const RefRender &render)
+{
+  RefRenderedPolygons poly = new RenderedPolygons;
+  poly->initialize(_vertices.length(), _triangles.length(),
+                   RenderedPolygons::Vertex);
+  Pix I;
+  PixintRAVLMap pix_to_index(0);
+  int i = 0;
+  for (I = _vertices.first(); I; _vertices.next(I), i++) {
+      RefVertex v = _vertices(I);
+      pix_to_index[(Pix)v.pointer()] = i;
+      poly->set_vertex(i,
+                       v->point()[0],
+                       v->point()[1],
+                       v->point()[2]);
+      poly->set_vertex_rgb(i, 0.3, 0.3, 0.3);
+    }
+  i = 0;
+  for (I = _triangles.first(); I; _triangles.next(I), i++) {
+      RefTriangle t = _triangles(I);
+      poly->set_face(i,
+                     pix_to_index[(Pix)t->vertex(0).pointer()],
+                     pix_to_index[(Pix)t->vertex(1).pointer()],
+                     pix_to_index[(Pix)t->vertex(2).pointer()]);
+    }
+  render->render(poly);
+}
+
+void
 TriangulatedSurface::print_geomview_format(ostream&o)
 {
   o << "OFF" << endl;
@@ -823,22 +855,30 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval):
 void
 TriangulatedImplicitSurface::init()
 {
+  if (_verbose) cout << "TriangulatedImplicitSurface: init start" << endl;
   ImplicitSurfacePolygonizer isogen(vol_);
   isogen.set_resolution(resolution_);
 
+  if (_verbose) cout << "TriangulatedImplicitSurface: isosurface" << endl;
   isogen.isosurface(isovalue_,*this);
+  if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
   fix_orientation();
   if (remove_short_edges_) {
+      if (_verbose) cout << "TriangulatedImplicitSurface: short edges" << endl;
       remove_short_edges(short_edge_factor_*resolution_);
+      if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
       fix_orientation();
     }
   if (remove_slender_triangles_) {
+      if (_verbose) cout << "TriangulatedImplicitSurface: slender" << endl;
       remove_slender_triangles(slender_triangle_factor_);
+      if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
       fix_orientation();
     }
 
   // see if a higher order approximation to the surface is required
   if (order_ > 1) {
+      if (_verbose) cout << "TriangulatedImplicitSurface: order" << endl;
       int i;
       for (i=0; i<nedge(); i++) {
           edge(i)->set_order(order_, vol_, isovalue_);
@@ -847,6 +887,7 @@ TriangulatedImplicitSurface::init()
           triangle(i)->set_order(order_, vol_, isovalue_);
         }
     }
+  if (_verbose) cout << "TriangulatedImplicitSurface: init done" << endl;
 }
 
 TriangulatedImplicitSurface::~TriangulatedImplicitSurface()

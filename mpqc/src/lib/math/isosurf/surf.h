@@ -40,6 +40,7 @@
 #include <util/container/intpixRAVLMap.h>
 #include <math/isosurf/edgeRAVLMap.h>
 #include <math/isosurf/volume.h>
+#include <util/render/render.h>
 
 class TriangulatedSurface: public DescribedClass {
 #   define CLASSNAME TriangulatedSurface
@@ -49,6 +50,7 @@ class TriangulatedSurface: public DescribedClass {
 #   include <util/class/classd.h>
   protected:
     int _verbose;
+    int _debug;
 
     int _completed_surface;
 
@@ -157,6 +159,7 @@ class TriangulatedSurface: public DescribedClass {
     virtual void print(ostream&o=cout);
     virtual void print_vertices_and_triangles(ostream&o=cout);
     virtual void print_geomview_format(ostream&o=cout);
+    virtual void render(const RefRender &render);
 
     // print information about the topology
     void topology_info(ostream&o=cout);

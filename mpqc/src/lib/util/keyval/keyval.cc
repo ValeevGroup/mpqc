@@ -114,6 +114,7 @@ KeyVal::key_pcharvalue(const char* key)
   if (val.nonnull()) {
       char* result;
       seterror(val->pcharvalue(result));
+      if (result) result = strcpy(new char[strlen(result)+1], result);
       return result;
     }
   return Defaultpchar();

@@ -60,6 +60,8 @@ class QNewtonOpt: public Optimize {
     int print_hessian_;
     int print_x_;
     int print_gradient_;
+    int linear_;
+    int restrict_;
   public:
     /** The KeyVal constructor.
         The KeyVal constructor reads the following keywords:
@@ -92,6 +94,11 @@ class QNewtonOpt: public Optimize {
 
         <dt><tt>print_hessian</tt><dd> If true, print the approximate
         hessian each iteration. The default is false.
+
+        <dt><tt>linear</tt><dd> Allow linear step if quadratic step appears
+        poor.  The default is false.
+
+        <dt><tt>restrict</tt><dd> Restrict step size.  The default is true.
 
         </dl> */
     QNewtonOpt(const Ref<KeyVal>&);

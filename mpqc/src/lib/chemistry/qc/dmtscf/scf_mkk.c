@@ -1,6 +1,6 @@
 
 /* Calculates two-electron integrals on the fly and sticks them into the
- * appropriate part of the G matrix
+ * appropriate part of the K matrix
  */
 
 #include <stdio.h>
@@ -33,12 +33,12 @@ extern signed char *scf_bnd_Qvec;
  */
 
 GLOBAL_FUNCTION int
-scf_make_k_d(centers,scf_info,sym_info,Gmat,DPmat,mgdbuff,outfile)
+scf_make_k_d(centers,scf_info,sym_info,Kmat,Pmat,mgdbuff,outfile)
 centers_t *centers;
 scf_struct_t *scf_info;
 sym_struct_t *sym_info;
-dmt_matrix Gmat;
-dmt_matrix DPmat;
+dmt_matrix Kmat;
+dmt_matrix Pmat;
 double *mgdbuff;
 FILE *outfile;
 {
@@ -76,8 +76,8 @@ FILE *outfile;
  /* start timing */
   tim_enter("scf_mkgk");
 
- /* transfer DPmat to ptmp and init maxp */
-  errcod = scf_make_local_pmat(scf_info,DPmat,&ptmp,&maxp,scf_info->eliminate);
+ /* transfer Pmat to ptmp and init maxp */
+  errcod = scf_make_local_pmat(scf_info,Pmat,&ptmp,&maxp,scf_info->eliminate);
   if (errcod < 0)  {
     fprintf(stderr,"scf_make_j_d:  scf_make_local_pmat() failed\n");
     return -1;
@@ -365,11 +365,11 @@ FILE *outfile;
 
   free(shnfunc);
 
- /* now sum up contributions to gtmp and gtmpo */
+ /* now sum up contributions to gtmp */
   gop1(gtmp,scf_info->nbatri,ptmp,'+',mtype_get());
 
- /* and stuff gtmp's back into Gmat's */
-  scf_lgmat_to_scat(gtmp,Gmat);
+ /* and stuff gtmp into Kmat */
+  scf_lgmat_to_scat(gtmp,Kmat);
 
   free(ptmp);
   free(gtmp);

@@ -48,6 +48,7 @@ class MolecularEnergy: public NLP2 {
     virtual double energy();
     virtual RefMolecule molecule();
     void guess_hessian(RefSymmSCMatrix&);
+    RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
     void set_x(const RefSCVector&);
 

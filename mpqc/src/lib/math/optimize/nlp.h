@@ -123,6 +123,7 @@ class NLP2: public NLP1 {
 
     // quick, approximate hessian
     virtual void guess_hessian(RefSymmSCMatrix&);
+    virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
     virtual void print(SCostream& =SCostream::cout);
 

@@ -672,7 +672,6 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
 {
   RefSCMatrix bmat(dvc_,gradient.dim());
   RefSymmSCMatrix bmbt(dvc_);
-  RefSymmSCMatrix bmbt_i;
 
   RefSetIntCoor variable_and_constant = new SetIntCoor();
   variable_and_constant->add(variable_);
@@ -684,12 +683,12 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
   // form the inverse of bmatrix * bmatrix_t
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);
-  bmbt_i = bmbt.gi();
+  bmbt = bmbt.gi();
 
 #if OLD_BMAT  
-  RefSCVector all_internal = bmbt_i*bmat*(gradient*8.2388575);
+  RefSCVector all_internal = bmbt*bmat*(gradient*8.2388575);
 #else
-  RefSCVector all_internal = bmbt_i*bmat*gradient;
+  RefSCVector all_internal = bmbt*bmat*gradient;
 #endif  
 
   // put the variable coordinate gradients into internal
@@ -986,4 +985,10 @@ IntMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
   
   hessian.assign(0.0);
   hessian.accumulate_transform(b,rhessian);
+}
+
+RefSymmSCMatrix
+IntMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
+{
+  return hessian.gi();
 }

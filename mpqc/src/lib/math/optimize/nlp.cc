@@ -333,6 +333,12 @@ NLP2::guess_hessian(RefSymmSCMatrix&hessian)
   hessian.element_op(op);
 }
 
+RefSymmSCMatrix
+NLP2::inverse_hessian(RefSymmSCMatrix&hessian)
+{
+  return hessian.gi();
+}
+
 void
 NLP2::set_desired_hessian_accuracy(double a)
 {

@@ -44,6 +44,7 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
   RefSymmSCMatrix hessian(nlp_->dimension());
   // get a guess hessian from nlp
   nlp_->guess_hessian(hessian);
+  
   // see if any hessian matrix elements have been given in the input
   if (keyval->exists("hessian")) {
       int n = hessian.n();
@@ -56,7 +57,7 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
             }
         }
     }
-  ihessian_ = hessian.gi();
+  ihessian_ = nlp_->inverse_hessian(hessian);
 }
 
 QNewtonOpt::QNewtonOpt(StateIn&s):

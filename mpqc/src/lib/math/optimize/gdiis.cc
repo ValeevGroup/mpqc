@@ -63,7 +63,7 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
       }
     }
   }
-  ihessian_ = hessian.gi();
+  ihessian_ = nlp_->inverse_hessian(hessian);
 
   dim_ = nlp_->dimension();
   coords_ = new RefSCVector[nsave];

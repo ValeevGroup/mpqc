@@ -169,3 +169,9 @@ CartMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 
   hessian.accumulate_transform(evecs,evals);
 }
+
+RefSymmSCMatrix
+CartMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
+{
+  return hessian.gi();
+}

@@ -24,7 +24,7 @@ void *
 RedundMolecularCoor::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = MolecularCoor::_castdown(cd);
+  casts[0] = IntMolecularCoor::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -36,6 +36,7 @@ RedundMolecularCoor::RedundMolecularCoor(RefMolecule&mol):
 RedundMolecularCoor::RedundMolecularCoor(const RefKeyVal& keyval):
   IntMolecularCoor(keyval)
 {
+  init();
 }
 
 RedundMolecularCoor::RedundMolecularCoor(StateIn& s):
@@ -78,21 +79,43 @@ RedundMolecularCoor::form_coordinates()
   int nunique = n3 - 6; // need to detect linear
 
   if (nredundant < nunique) {
-      fprintf(stderr,"IntMolecularCoor::form_coordinates: "
-              "found too few redundant coordinates\n");
-      fprintf(stderr,"  (the geometry is probably bad)\n");
-      abort();
-    }
+    fprintf(stderr,"RedundMolecularCoor::form_coordinates: "
+            "found too few redundant coordinates\n");
+    fprintf(stderr,"  (the geometry is probably bad)\n");
+    abort();
+  }
   
   // put the fixed coordinates into the constant list
   nfixed = fixed_->n();
   for (i=0; i<nfixed; i++) {
-      constant_->add(fixed_->coor(i));
-    }
+    constant_->add(fixed_->coor(i));
+  }
 }
 
 void
 RedundMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
-  all_->guess_hessian(molecule_,hessian);
+  variable_->guess_hessian(molecule_,hessian);
+}
+
+RefSymmSCMatrix
+RedundMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
+{
+  RefSCDimension dredun = hessian.dim();
+  
+  RefSCMatrix bmat(dredun,molecule_->dim_natom3());
+  variable_->bmat(molecule_,bmat);
+  
+  RefSymmSCMatrix bmbt(dredun);
+  bmbt.assign(0.0);
+  bmbt.accumulate_symmetric_product(bmat);
+  RefSymmSCMatrix bmbt_i = bmbt.gi();
+
+  bmat = dredun->create_matrix(dredun);
+  bmat.assign(0.0);
+  for (int i=0; i < dredun->n(); i++)
+    bmat.set_element(i,i,1.0);
+  bmat = bmbt * bmat;
+  bmat = bmbt_i*bmat;
+  return bmat * (bmat*hessian*bmat).gi() * bmat;
 }

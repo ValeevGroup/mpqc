@@ -237,6 +237,17 @@ MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
     }
 }
 
+RefSymmSCMatrix
+MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
+{
+  if (_mc.nonnull()) {
+      return _mc->inverse_hessian(hessian);
+    }
+  else {
+      return NLP2::inverse_hessian(hessian);
+    }
+}
+
 void
 MolecularEnergy::print(SCostream&o)
 {

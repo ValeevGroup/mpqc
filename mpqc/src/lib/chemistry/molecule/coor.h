@@ -125,6 +125,8 @@ class SetIntCoor: public SavableState {
 };
 SavableState_REF_dec(SetIntCoor);
 
+//////////////////////////////////////////////////////////////////////////
+
 class MolecularCoor: public SavableState
 {
 #   define CLASSNAME MolecularCoor
@@ -153,6 +155,7 @@ class MolecularCoor: public SavableState
     virtual int to_internal(RefSymmSCMatrix&cartesian,
                              RefSymmSCMatrix&hessian) = 0;
     virtual void guess_hessian(RefSymmSCMatrix&hessian) = 0;
+    virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&) = 0;
 };
 SavableState_REF_dec(MolecularCoor);
 
@@ -224,6 +227,7 @@ class IntMolecularCoor: public MolecularCoor
     virtual void print(SCostream& =SCostream::cout);
     virtual void print_simples(SCostream& =SCostream::cout);
     void guess_hessian(RefSymmSCMatrix&hessian);
+    RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -244,6 +248,7 @@ class RedundMolecularCoor: public IntMolecularCoor
     void save_data_state(StateOut&);
     void form_coordinates();
     void guess_hessian(RefSymmSCMatrix&hessian);
+    RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -277,6 +282,7 @@ class CartMolecularCoor: public MolecularCoor
     virtual void print(SCostream& =SCostream::cout);
     virtual void print_simples(SCostream& =SCostream::cout);
     void guess_hessian(RefSymmSCMatrix&hessian);
+    RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };
 
 #endif

@@ -7,8 +7,6 @@
 #include <math/isosurf/edgeRAVLMap.h>
 #include <math/isosurf/vertexAVLSet.h>
 
-#define VERBOSE 0
-
 void
 TriangulatedSurface::fix_orientation()
 {
@@ -100,7 +98,7 @@ TriangulatedSurface::fix_orientation()
         }
     }
 
-  if (VERBOSE) {
+  if (_verbose) {
       printf("%d out of %d triangles were flipped\n", nflip, ntri);
     }
 

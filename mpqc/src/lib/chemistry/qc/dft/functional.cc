@@ -224,7 +224,7 @@ DenFunctional::do_fd_point(PointInputData&id,
                            double&in,double&out,
                            double lower_bound, double upper_bound)
 {
-  double delta = 0.00001;
+  double delta = 0.0000001;
   PointOutputData tod;
   double insave = in;
 

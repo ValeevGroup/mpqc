@@ -1908,23 +1908,27 @@ MBPT2::compute_cs_grad()
     for (j=0; j<nocc; j++) {
       P2MO_matrix->set_element(i,j,Pkj_matrix->get_element(i,j));
       W2MO_matrix->set_element(i,j,Wkj_matrix->get_element(i,j));
-      SCF_matrix->set_element(i,j,Co->get_element(i,j));
       }
     for (j=nocc; j<noso; j++) {
       P2MO_matrix->set_element(i,j,Paj_matrix->get_element(j-nocc,i));
       W2MO_matrix->set_element(i,j,Waj_matrix->get_element(i,j-nocc));
-      SCF_matrix->set_element(i,j,Cv->get_element(i,j-nocc));
       }
     }
   for (i=nocc; i<noso; i++) {
     for (j=0; j<nocc; j++) {
       P2MO_matrix->set_element(i,j,Paj_matrix->get_element(i-nocc,j));
       W2MO_matrix->set_element(i,j,Waj_matrix->get_element(j,i-nocc));
-      SCF_matrix->set_element(i,j,Co->get_element(i,j));
       }
     for (j=nocc; j<noso; j++) {
       P2MO_matrix->set_element(i,j,Pab_matrix->get_element(i-nocc,j-nocc));
       W2MO_matrix->set_element(i,j,Wab_matrix->get_element(i-nocc,j-nocc));
+      }
+    }
+  for (i=0; i<nbasis; i++) {
+    for (j=0; j<nocc; j++) {
+      SCF_matrix->set_element(i,j,Co->get_element(i,j));
+      }
+    for (j=nocc; j<noso; j++) {
       SCF_matrix->set_element(i,j,Cv->get_element(i,j-nocc));
       }
     }
@@ -1934,6 +1938,14 @@ MBPT2::compute_cs_grad()
 //                Cv*(Paj_matrix*Co.t() + Pab_matrix*Cv.t());
 //  W2AO_matrix = Co*(Wkj_matrix*Co.t() + Waj_matrix*Cv.t()) +
 //                Cv*(Waj_matrix.t()*Co.t() + Wab_matrix*Cv.t());
+
+  if (debug_ > 1) {
+    SCF_matrix.print("SCF_matrix");
+    P2MO_matrix.print("P2MO_matrix");
+    W2MO_matrix.print("W2MO_matrix");
+    P2AO_matrix.print("P2AO_matrix");
+    W2AO_matrix.print("W2AO_matrix");
+    }
 
   // Convert P2AO_matrix and W2AO_matrix to double*
   P2AO = new double[nbasis*nbasis];

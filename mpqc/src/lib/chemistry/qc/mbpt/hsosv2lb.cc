@@ -51,7 +51,6 @@ MBPT2::compute_hsos_v2_lb()
   int a, b;
   int isocc, asocc;   // indices running over singly occupied orbitals
   int nfuncmax = basis()->max_nfunction_in_shell();
-  int nbasis = basis()->nbasis();
   int nvir;
   int nshell;
   int shellmax;
@@ -153,7 +152,7 @@ MBPT2::compute_hsos_v2_lb()
     abort();
     }
 
-  if (nfzv > nbasis - ndocc - nsocc) {
+  if (nfzv > noso - ndocc - nsocc) {
     ExEnv::err() << node0
          << "The number of frozen virtual orbitals exceeds the number" << endl
          << "of unoccupied orbitals; program exiting" << endl;
@@ -162,7 +161,7 @@ MBPT2::compute_hsos_v2_lb()
 
   ndocc = ndocc - nfzc;
   // nvir = # of unocc. orb. + # of s.o. orb. - # of frozen virt. orb.
-  nvir  = nbasis - ndocc - nfzc - nfzv; 
+  nvir  = noso - ndocc - nfzc - nfzv; 
   // nocc = # of d.o. orb. + # of s.o. orb - # of frozen d.o. orb.
   nocc  = ndocc + nsocc;
   nshell = basis()->nshell();
@@ -401,7 +400,7 @@ MBPT2::compute_hsos_v2_lb()
   // (need socc's to compute energy denominators - see
   // socc_sum comment below)
   /////////////////////////////////////////////////////////
-  evals_open = (double*) malloc((nbasis+nsocc-nfzc-nfzv)*sizeof(double));
+  evals_open = (double*) malloc((noso+nsocc-nfzc-nfzv)*sizeof(double));
 
   RefDiagSCMatrix occ;
   RefDiagSCMatrix evals;
@@ -413,13 +412,13 @@ MBPT2::compute_hsos_v2_lb()
     Scf_Vec.print("eigenvectors");
     }
 
-  double *scf_vectort_dat = new double[nbasis*nbasis];
+  double *scf_vectort_dat = new double[nbasis*noso];
   Scf_Vec->convert(scf_vectort_dat);
 
   double** scf_vectort = new double*[nocc + nvir];
 
   int idoc = 0, ivir = 0, isoc = 0;
-  for (i=nfzc; i<nbasis-nfzv; i++) {
+  for (i=nfzc; i<noso-nfzv; i++) {
     if (occ(i) >= 2.0 - epsilon) {
       evals_open[idoc+nsocc] = evals(i);
       scf_vectort[idoc+nsocc] = &scf_vectort_dat[i*nbasis];

@@ -109,7 +109,7 @@ class MBPT2: public Wavefunction {
 
     // calculate the opt2 energy using algorithm v2
     distsize_t compute_v2_memory(int ni,
-                             int nfuncmax, int nbasis, int nbfme, int nshell,
+                             int nfuncmax, int nbfme, int nshell,
                              int ndocc, int nsocc, int nvir, int nproc);
     void compute_hsos_v2();
 

@@ -1,13 +1,12 @@
 
-gradient: yes
 test_basis: 6-311++G**
-test_method:        scf hfs  mp2   mp2 mp2 mp2
-test_method_option:  -   -  memgrp v1  v2  v2lb
-test_molecule:          h2o ch2
-test_molecule_symmetry: c2v c2v
-test_multiplicity:       0   1
+test_method:        scf hfs mp2 mp2v1 mp2v2 mp2v2lb zapt2v1 zapt2v2 zapt2v2lb
+test_molecule:              h2o ch2
+test_gradient:              yes yes
+test_molecule_symmetry:     c2v c2v
+test_molecule_multiplicity:  1   3
 test_orthog_method: gramschmidt canonical symmetric
-test_lindep_tol: 0.0001 0.0010 0.0100 0.0200 0.0300 0.0400 0.0500
+test_lindep_tol: 0.0001 0.0500
 
 restart: no
 checkpoint: no

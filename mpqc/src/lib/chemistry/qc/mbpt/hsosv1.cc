@@ -46,7 +46,7 @@ using namespace std;
 
 static distsize_t
 compute_v1_memory(int ni,
-                  int nfuncmax, int nbasis,
+                  int nfuncmax, int nbasis, int noso,
                   int a_number, int nshell,
                   int ndocc, int nsocc, int nvir,
                   int nfzc, int nfzv,
@@ -56,7 +56,7 @@ compute_v1_memory(int ni,
   int nocc = ndocc + nsocc;
   int dim_ij = nocc*ni - (ni*(ni-1))/2;
   mem += nproc*sizeof(int);
-  mem += (nbasis+nsocc-nfzc-nfzv)*sizeof(double);
+  mem += (noso+nsocc-nfzc-nfzv)*sizeof(double);
   mem += nfuncmax*nfuncmax*nbasis*ni*sizeof(double);
   mem += nfuncmax*nfuncmax*nbasis*ni*sizeof(double);
   mem += (distsize_t)nbasis*a_number*dim_ij*sizeof(double);
@@ -80,7 +80,6 @@ MBPT2::compute_hsos_v1()
   int a, b;
   int isocc, asocc;   /* indices running over singly occupied orbitals */
   int nfuncmax = basis()->max_nfunction_in_shell();
-  int nbasis = basis()->nbasis();
   int nvir;
   int nocc=0;
   int ndocc=0,nsocc=0;
@@ -161,7 +160,7 @@ MBPT2::compute_hsos_v1()
     abort();
     }
 
-  if (nfzv > nbasis - ndocc - nsocc) {
+  if (nfzv > noso - ndocc - nsocc) {
     ExEnv::err() << node0
          << "The number of frozen virtual orbitals exceeds the number" << endl
          << "of unoccupied orbitals; program exiting" << endl;
@@ -170,7 +169,7 @@ MBPT2::compute_hsos_v1()
 
   ndocc = ndocc - nfzc;
   /* nvir = # of unocc. orb. + # of s.o. orb. - # of frozen virt. orb. */
-  nvir  = nbasis - ndocc - nfzc - nfzv; 
+  nvir  = noso - ndocc - nfzc - nfzv; 
   /* nocc = # of d.o. orb. + # of s.o. orb - # of frozen d.o. orb. */
   nocc  = ndocc + nsocc;
 
@@ -227,7 +226,8 @@ MBPT2::compute_hsos_v1()
   ni = 0;
   for (i=1; i<=nocc-restart_orbital_v1_; i++) {
     distsize_t tmpmem = compute_v1_memory(i,
-                                          nfuncmax, nbasis, a_number, nshell,
+                                          nfuncmax, nbasis, noso,
+                                          a_number, nshell,
                                           ndocc, nsocc, nvir,
                                           nfzc, nfzv, nproc);
     if (tmpmem > mem_alloc) break;
@@ -250,14 +250,14 @@ MBPT2::compute_hsos_v1()
   ExEnv::out() << node0 << indent
        << "Memory required for one pass:   "
        << compute_v1_memory(nocc-restart_orbital_v1_,
-                            nfuncmax, nbasis, a_number, nshell,
+                            nfuncmax, nbasis, noso, a_number, nshell,
                             ndocc, nsocc, nvir, nfzc, nfzv, nproc)
        << " Bytes"
        << endl;
   ExEnv::out() << node0 << indent
        << "Minimum memory required:        "
        << compute_v1_memory(1,
-                            nfuncmax, nbasis, a_number, nshell,
+                            nfuncmax, nbasis, noso, a_number, nshell,
                             ndocc, nsocc, nvir, nfzc, nfzv, nproc)
        << " Bytes"
        << endl;
@@ -299,7 +299,7 @@ MBPT2::compute_hsos_v1()
    * (need socc's to compute energy denominators - see                   *
    * socc_sum comment below)                                             */
 
-  evals_open = (double*) malloc((nbasis+nsocc-nfzc-nfzv)*sizeof(double));
+  evals_open = (double*) malloc((noso+nsocc-nfzc-nfzv)*sizeof(double));
   if (!evals_open) {
     ExEnv::err() << "could not allocate storage for evals_open" << endl;
     abort();
@@ -314,13 +314,13 @@ MBPT2::compute_hsos_v1()
   if (debug_>1) evals.print("eigenvalues");
   if (debug_>2) Scf_Vec.print("eigenvectors");
 
-  double *scf_vectort_dat = new double[nbasis*nbasis];
+  double *scf_vectort_dat = new double[noso*nbasis];
   Scf_Vec->convert(scf_vectort_dat);
 
   double** scf_vectort = new double*[nocc + nvir];
 
   int idoc = 0, ivir = 0, isoc = 0;
-  for (i=nfzc; i<nbasis-nfzv; i++) {
+  for (i=nfzc; i<noso-nfzv; i++) {
     if (occ(i) >= 2.0 - epsilon) {
       evals_open[idoc+nsocc] = evals(i);
       scf_vectort[idoc+nsocc] = &scf_vectort_dat[i*nbasis];

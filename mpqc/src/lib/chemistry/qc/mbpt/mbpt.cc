@@ -430,6 +430,13 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
 
       // compute the AO to new MO scf vector
       RefSCMatrix so_ao = reference_->integral()->petite_list()->sotoao();
+
+      if (debug_ > 1) {
+          vecs_mo1_mo2.t().print("vecs_mo1_mo2.t()");
+          vecs_so_mo1.t().print("vecs_so_mo1.t()");
+          so_ao.print("so_ao");
+        }
+      
       vecs = vecs_mo1_mo2.t() * vecs_so_mo1.t() * so_ao;
     }
   else {
@@ -488,21 +495,20 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   // sort the eigenvectors and values if symmetry is not c1
   if (molecule()->point_group()->char_table().order() != 1) {
       if (debug_) ExEnv::out() << node0 << indent << "sorting eigenvectors" << endl;
-      int n = vals.n();
-      double *evals = new double[n];
+      double *evals = new double[noso];
       vals->convert(evals);
-      int *indices = new int[n];
-      dquicksort(evals,indices,n);
+      int *indices = new int[noso];
+      dquicksort(evals,indices,noso);
       delete[] evals;
       // make sure all nodes see the same indices and evals
-      msg_->bcast(indices,n);
+      msg_->bcast(indices,noso);
       RefSCMatrix newvecs(vecs.rowdim(), vecs.coldim(), matrixkit());
       RefDiagSCMatrix newvals(vals.dim(), matrixkit());
       RefDiagSCMatrix newoccs(vals.dim(), matrixkit());
-      for (i=0; i<n; i++) {
+      for (i=0; i<noso; i++) {
           newvals(i) = vals(indices[i]);
           newoccs(i) = occs(indices[i]);
-          for (j=0; j<n; j++) {
+          for (j=0; j<nbasis; j++) {
               newvecs(i,j) = vecs(indices[i],j);
             }
         }
@@ -513,15 +519,15 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       // compute orbital symmetry information
       CharacterTable ct = molecule()->point_group()->char_table();
       int orbnum = 0;
-      int *tmp_irrep = new int[n];
-      int *tmp_num = new int[n];
+      int *tmp_irrep = new int[noso];
+      int *tmp_num = new int[noso];
       for (i=0; i<oso_dimension()->blocks()->nblock(); i++) {
           for (j=0; j<oso_dimension()->blocks()->size(i); j++, orbnum++) {
               tmp_irrep[orbnum] = i;
               tmp_num[orbnum] = j;
             }
         }
-      for (i=0; i<n; i++) {
+      for (i=0; i<noso; i++) {
           symorb_irrep_[i] = tmp_irrep[indices[i]];
           symorb_num_[i] = tmp_num[indices[i]];
         }
@@ -538,7 +544,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
         }
     }
   // check the splitting between frozen and nonfrozen orbitals
-  if (nfzc && nfzc < nbasis) {
+  if (nfzc && nfzc < noso) {
       double split = vals(nfzc) - vals(nfzc-1);
       if (split < 0.2) {
           ExEnv::out() << node0 << endl
@@ -547,7 +553,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
                << split << " au" << endl << endl;
         }
     }
-  if (nfzv && nbasis-nfzv-1 >= 0) {
+  if (nfzv && noso-nfzv-1 >= 0) {
       double split = vals(nbasis-nfzv) - vals(nbasis-nfzv-1);
       if (split < 0.2) {
           ExEnv::out() << node0 << endl

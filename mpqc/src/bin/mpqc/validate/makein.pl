@@ -113,7 +113,6 @@ sub process_file {
     init_var($test_vars, $parse, "grid", "default");
     init_var($test_vars, $parse, "symmetry", "C1");
     init_var($test_vars, $parse, "method", "SCF");
-    init_var($test_vars, $parse, "method_option", "-");
     init_var($test_vars, $parse, "calc", "energy");
     init_var($test_vars, $parse, "fzc", 0);
     init_var($test_vars, $parse, "fzv", 0);
@@ -155,7 +154,6 @@ sub process_file {
         my $mult = $test_vars->{"multiplicity"}->[$index->{"multiplicity"}];
         my $gradient = $test_vars->{"gradient"}->[$index->{"gradient"}];
         my $method = $test_vars->{"method"}->[$index->{"method"}];
-        my $method_option = $test_vars->{"method_option"}->[$index->{"method_option"}];
         my $calc = $test_vars->{"calc"}->[$index->{"calc"}];
         my $symmetry = $test_vars->{"symmetry"}->[$index->{"symmetry"}];
         my $molecule = $test_vars->{"molecule"}->[$index->{"molecule"}];
@@ -242,8 +240,7 @@ sub process_file {
             exit 1;
         }
 
-        # extra filename modifiers
-        my $fextra = "";
+        my $fextra = ""; # extra filename modifiers
         $parse->set_value("basis", $basis);
         $parse->set_value("grid", $grid);
         $parse->set_value("method", $method);
@@ -254,7 +251,13 @@ sub process_file {
         $parse->set_value("socc", $socc);
         $parse->set_value("state", $mult);
         if ($gradient ne "default") {
-            $parse->set_value("gradient", $gradient);
+            if ($method =~ /v[12](lb)?$/) {
+                # these methods don't support gradients
+                $parse->set_value("gradient", "no");
+            }
+            else {
+                $parse->set_value("gradient", $gradient);
+            }
         }
         if ($orthog_method ne "default") {
             $parse->set_value("orthog_method", $orthog_method);
@@ -301,6 +304,11 @@ sub process_file {
             $ok = 0 if (! $gotit);
         }
 
+        my $spinok = 1;
+        if (($method =~ /MP2/i) && $mult > 1) {
+            $spinok = 0;
+        }
+
         my $inputfile;
         $method = tofilename($method);
         $basis = tofilename($basis);
@@ -321,6 +329,11 @@ sub process_file {
         if (! $ok) {
             if (! $echonames) {
                 printf "skipping $inputfile since basis not available\n";
+            }
+        }
+        elsif (! $spinok) {
+            if (! $echonames) {
+                printf "skipping $inputfile due to mult/method combo\n";
             }
         }
         else {

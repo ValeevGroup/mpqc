@@ -740,7 +740,21 @@ Wavefunction::compute_orthog_trans()
     abort();
   }
 
+  ExEnv::out() << node0 << indent
+               << "n(SO):        ";
+  for (int i=0; i<sodim_->blocks()->nblock(); i++) {
+    ExEnv::out() << node0 << scprintf(" %5d", sodim_->blocks()->size(i));
+  }
+  ExEnv::out() << node0 << endl;
+
   if (sodim_.n() != osodim_.n()) {
+    ExEnv::out() << node0 << indent
+                 << "n(orthog SO): ";
+    for (int i=0; i<osodim_->blocks()->nblock(); i++) {
+      ExEnv::out() << node0 << scprintf(" %5d", osodim_->blocks()->size(i));
+      }
+    ExEnv::out() << node0 << endl;
+
     ExEnv::out() << node0 << indent
                  << "WARNING: " << sodim_.n() - osodim_.n()
                  << " basis function"

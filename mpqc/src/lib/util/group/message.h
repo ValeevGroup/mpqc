@@ -470,10 +470,6 @@ class intMessageGrp: public MessageGrp {
     int leftover_ctl_bits();
 };
 
-#ifndef __GNUG__
-#  include <util/group/message.cc>
-#endif
-
 #endif
 
 

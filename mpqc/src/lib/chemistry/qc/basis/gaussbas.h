@@ -95,7 +95,7 @@ class GaussianBasisSet: public SavableState
 
     void save_data_state(StateOut&);
 
-    const char* name() const;
+    const char* name() const { return name_; }
 
     RefMolecule molecule() const { return molecule_; }
     RefSCMatrixKit matrixkit() { return matrixkit_; }
@@ -103,13 +103,13 @@ class GaussianBasisSet: public SavableState
     RefSCDimension basisdim() { return basisdim_; }
 
     int ncenter() const;
-    int nshell() const;
+    int nshell() const { return nshell_; }
     int nshell_on_center(int icenter) const;
     int shell_on_center(int icenter, int shell) const;
     int shell_to_center(int shell) const;
-    int nbasis() const;
+    int nbasis() const { return nbasis_; }
     int nbasis_on_center(int icenter) const;
-    int nprimitive() const;
+    int nprimitive() const { return nprim_; }
 
     int max_nfunction_in_shell() const;
     int max_ncartesian_in_shell(int aminc=0) const;
@@ -120,16 +120,16 @@ class GaussianBasisSet: public SavableState
     int max_am_for_contraction(int con) const;
     int max_cartesian() const;
 
-    int shell_to_function(int i) const;
+    int shell_to_function(int i) const { return shell_to_function_(i); }
     int function_to_shell(int i) const;
 
     // access to shells thru overall shell number
-    const GaussianShell& operator()(int i) const;
-    GaussianShell& operator()(int i);
-    const GaussianShell& operator[](int i) const;
-    GaussianShell& operator[](int i);
-    const GaussianShell& shell(int i) const { return operator()(i); }
-    GaussianShell& shell(int i) { return operator()(i); }
+    const GaussianShell& operator()(int i) const { return *shell_[i]; }
+    GaussianShell& operator()(int i) { return *shell_[i]; }
+    const GaussianShell& operator[](int i) const { return *shell_[i]; }
+    GaussianShell& operator[](int i) { return *shell_[i]; }
+    const GaussianShell& shell(int i) const { return *shell_[i]; }
+    GaussianShell& shell(int i) { return *shell_[i]; }
 
     // access to shells thru center number and relative shell number
     const GaussianShell& operator()(int icenter,int ishell) const;
@@ -155,10 +155,6 @@ class GaussianBasisSet: public SavableState
 };
 
 SavableState_REF_dec(GaussianBasisSet);
-
-#ifdef INLINE_FUNCTIONS
-#include <chemistry/qc/basis/gaussbas_i.h>
-#endif
 
 #endif
 

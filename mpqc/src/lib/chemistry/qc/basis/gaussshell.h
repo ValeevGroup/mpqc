@@ -104,29 +104,29 @@ class GaussianShell: public SavableState
     GaussianShell(const RefKeyVal&,int pure);
     ~GaussianShell();
     void save_data_state(StateOut&);
-    int nprimitive() const;
-    int ncontraction() const;
-    int nfunction() const;
+    int nprimitive() const { return nprim; }
+    int ncontraction() const { return ncon; }
+    int nfunction() const { return nfunc; }
     int max_angular_momentum() const;
     int min_angular_momentum() const;
     int max_cartesian() const;
-    int am(int con) const;
+    int am(int con) const { return l[con]; }
     int max_am() const { return max_angular_momentum(); }
     int min_am() const { return min_angular_momentum(); }
-    char amchar(int con) const;
+    char amchar(int con) const { return amtypes[l[con]]; }
     int nfunction(int con) const;
     int ncartesian() const;
     // this is given a shift for all of the angular momentums
     int ncartesian_with_aminc(int aminc) const;
     int ncartesian(int con) const;
-    int is_cartesian(int con) const;
-    int is_pure(int con) const;
+    int is_cartesian(int con) const { return !puream[con]; }
+    int is_pure(int con) const { return puream[con]; }
     int has_pure() const;
     // returns the con coef for unnormalized primitives
-    double coefficient_unnorm(int con,int prim) const;
+    double coefficient_unnorm(int con,int prim) const {return coef[con][prim];}
     // returns the con coef for normalized primitives
     double coefficient_norm(int con,int prim) const;
-    double exponent(int iprim) const;
+    double exponent(int iprim) const { return exp[iprim]; }
 
     // compute the value of this shell at offset r
     int values(const RefIntegral&, const SCVector3& r, double* basis_values);
@@ -147,10 +147,6 @@ class GaussianShell: public SavableState
 };
 
 SavableState_REF_dec(GaussianShell);
-
-#ifdef INLINE_FUNCTIONS
-#include <chemistry/qc/basis/gaussshe_i.h>
-#endif
 
 #endif
 

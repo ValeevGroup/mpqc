@@ -111,6 +111,7 @@ AccResult::set_actual_accuracy(double a)
               " desired accuracy\n");
       abort();
     }
+  computed() = 1;
 }
 
 AccResult::AccResult(StateIn&s,Compute*c):

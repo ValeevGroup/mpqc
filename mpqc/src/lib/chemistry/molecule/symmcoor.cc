@@ -280,7 +280,7 @@ SymmMolecularCoor::form_coordinates()
 
   RefSetIntCoor saved_fixed_ = fixed_;
   fixed_ = new SetIntCoor;
-  fixed_->add(fixed_);
+  fixed_->add(saved_fixed_);
   // if we're following coordinates, add them to the fixed list
   if (followed_.nonnull())
     fixed_->add(followed_);

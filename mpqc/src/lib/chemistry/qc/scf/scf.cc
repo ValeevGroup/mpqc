@@ -156,7 +156,7 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   if (accumddh_.null())
     accumddh_ = new AccumHNull;
   
-  KeyValValuesize defaultmem(8000000);
+  KeyValValuesize defaultmem(DEFAULT_SC_MEMORY);
   storage_ = keyval->sizevalue("memory",defaultmem);
   
   if (keyval->exists("local_density"))

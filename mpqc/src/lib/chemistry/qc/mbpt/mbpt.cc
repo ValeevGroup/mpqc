@@ -193,7 +193,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
       // by default, take half of the memory
       mem_alloc = ExEnv::memory()/2;
       if (mem_alloc == 0) {
-          mem_alloc = 8000000;
+          mem_alloc = DEFAULT_SC_MEMORY;
         }
     }
   mem << keyval->describedclassvalue("memorygrp");

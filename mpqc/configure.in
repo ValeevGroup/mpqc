@@ -246,6 +246,13 @@ BUILDID=$withval
 AC_SUBST(BUILDID)
 AC_DEFINE_UNQUOTED(SC_BUILDID,"$BUILDID")
 
+DEFAULT_SC_MEMORY=32000000
+AC_ARG_WITH(default-memory,
+[  --with-default-memory   Gives the default memory allocation.],
+DEFAULT_SC_MEMORY=$withval
+)
+AC_DEFINE_UNQUOTED(DEFAULT_SC_MEMORY,$DEFAULT_SC_MEMORY)
+
 if test "$BUILDID"; then
   SC_VERSION="$SC_MMM_VERSION-$BUILDID"
 else

@@ -78,7 +78,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   ints_file_ = mbptr12->r12ints_file();
 
   // Default values
-  memory_ = 8000000;
+  memory_ = DEFAULT_SC_MEMORY;
   debug_ = 0;
   dynamic_ = false;
 

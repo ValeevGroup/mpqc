@@ -40,7 +40,8 @@ BlockedSCVector::resize(BlockedSCDimension *bsd)
   vecs_ = new RefSCVector[d->nblocks()];
 
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i] = d->dim(i)->create_vector();
+    if (d->n(i))
+      vecs_[i] = d->dim(i)->create_vector();
 }
 
 BlockedSCVector::BlockedSCVector() :
@@ -110,7 +111,8 @@ void
 BlockedSCVector::assign(double a)
 {
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->assign(a);
+    if (vecs_[i].nonnull())
+      vecs_[i]->assign(a);
 }
 
 void
@@ -128,14 +130,16 @@ BlockedSCVector::assign(SCVector*a)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->assign(la->vecs_[i]);
+    if (vecs_[i].nonnull())
+      vecs_[i]->assign(la->vecs_[i]);
 }
 
 void
 BlockedSCVector::assign(const double*a)
 {
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->assign(a+d->first(i));
+    if (vecs_[i].nonnull())
+      vecs_[i]->assign(a+d->first(i));
 }
 
 double
@@ -194,7 +198,8 @@ BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
+    if (vecs_[i].nonnull())
+      vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
 }
 
 void
@@ -214,7 +219,8 @@ BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
+    if (vecs_[i].nonnull())
+      vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
 }
 
 void
@@ -232,7 +238,8 @@ BlockedSCVector::accumulate(SCVector*a)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->accumulate(la->vecs_[i]);
+    if (vecs_[i].nonnull())
+      vecs_[i]->accumulate(la->vecs_[i]);
 }
 
 double
@@ -252,7 +259,8 @@ BlockedSCVector::scalar_product(SCVector*a)
   double result=0;
 
   for (int i=0; i < d->nblocks(); i++)
-    result += vecs_[i]->scalar_product(la->vecs_[i]);
+    if (vecs_[i].nonnull())
+      result += vecs_[i]->scalar_product(la->vecs_[i]);
   
   return result;
 }
@@ -265,7 +273,8 @@ BlockedSCVector::element_op(const RefSCElementOp& op)
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    vecs_[i]->element_op(op);
+    if (vecs_[i].nonnull())
+      vecs_[i]->element_op(op);
   }
 }
 
@@ -286,7 +295,8 @@ BlockedSCVector::element_op(const RefSCElementOp2& op,
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    vecs_[i]->element_op(op, lm->vecs_[i]);
+    if (vecs_[i].nonnull())
+      vecs_[i]->element_op(op, lm->vecs_[i]);
   }
 }
 
@@ -309,11 +319,11 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    vecs_[i]->element_op(op, lm->vecs_[i], ln->vecs_[i]);
+    if (vecs_[i].nonnull())
+      vecs_[i]->element_op(op, lm->vecs_[i], ln->vecs_[i]);
   }
 }
 
-// from Ed Seidl at the NIH (with a bit of hacking)
 void
 BlockedSCVector::print(const char *title, ostream& os, int prec)
 {
@@ -321,6 +331,9 @@ BlockedSCVector::print(const char *title, ostream& os, int prec)
   char *newtitle = new char[len + 80];
 
   for (int i=0; i < d->nblocks(); i++) {
+    if (vecs_[i].null())
+      continue;
+    
     sprintf(newtitle,"%s:  block %d",title,i+1);
     vecs_[i]->print(newtitle, os, prec);
   }

@@ -45,19 +45,22 @@ BlockedSCMatrix::resize(BlockedSCDimension *a, BlockedSCDimension *b)
     nblocks_ = d1->nblocks();
     mats_ = new RefSCMatrix[d1->nblocks()];
     for (int i=0; i < d1->nblocks(); i++)
-      mats_[i] = d1->dim(i)->create_matrix(d2->dim(0));
+      if (d1->n(i) && d2->n(0))
+        mats_[i] = d1->dim(i)->create_matrix(d2->dim(0));
 
   } else if (a->nblocks() == 1 && b->nblocks() > 1) {
     nblocks_ = d2->nblocks();
     mats_ = new RefSCMatrix[d2->nblocks()];
     for (int i=0; i < d2->nblocks(); i++)
-      mats_[i] = d1->dim(0)->create_matrix(d2->dim(i));
+      if (d2->n(i) && d1->n(0))
+        mats_[i] = d1->dim(0)->create_matrix(d2->dim(i));
 
   } else if (a->nblocks() == b->nblocks()) {
     nblocks_ = d2->nblocks();
     mats_ = new RefSCMatrix[d1->nblocks()];
     for (int i=0; i < d1->nblocks(); i++)
-      mats_[i] = d1->dim(i)->create_matrix(d2->dim(i).pointer());
+      if (d2->n(i) && d1->n(i))
+        mats_[i] = d1->dim(i)->create_matrix(d2->dim(i).pointer());
 
   } else {
     fprintf(stderr,"BlockedSCMatrix::resize: wrong number of blocks\n");
@@ -142,7 +145,8 @@ void
 BlockedSCMatrix::assign(double v)
 {
   for (int i=0; i < nblocks_; i++)
-    mats_[i]->assign(v);
+    if (mats_[i].nonnull())
+      mats_[i]->assign(v);
 }
 
 double
@@ -292,12 +296,15 @@ BlockedSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
   }
 
   for (int i=0; i < d1->nblocks(); i++)
-    mats_[i]->accumulate_outer_product(la->vecs_[i], lb->vecs_[i]);
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate_outer_product(la->vecs_[i], lb->vecs_[i]);
 }
 
 void
 BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
 {
+  int i, zero = 0;
+
   const char* name = "BlockedSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = BlockedSCMatrix::require_castdown(a,name);
@@ -312,32 +319,30 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
     abort();
   }
 
-  int nba = la->d1->nblocks();
-  int nbb = lb->d2->nblocks();
+  // find out the number of blocks we need to process.
+  int mxnb = (nblocks_ > la->nblocks_) ? nblocks_ : la->nblocks_;
   
-  if (nba == 1 && nbb > 1) {
-    for (int i=0; i < d2->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[0], lb->mats_[i]);
+  int nrba = la->d1->nblocks();
+  int ncba = la->d2->nblocks();
+  int nrbb = lb->d1->nblocks();
+  int ncbb = lb->d2->nblocks();
+  
+  int &mi = (nrba==1 && ncba > 1 && nrbb > 1 && ncbb==1) ? zero : i;
+  int &ai = (nrba==1 && ncba==1) ? zero : i;
+  int &bi = (nrbb==1 && ncbb==1) ? zero : i;
 
-  } else if (nba > 1 && nbb == 1) {
-    for (int i=0; i < d1->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[i], lb->mats_[0]);
-
-  } else if (nba == nbb) {
-    for (int i=0; i < d1->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[i], lb->mats_[i]);
-
-  } else {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
-    fprintf(stderr,"blocks don't match\n");
-    abort();
+  for (i=0; i < mxnb; i++) {
+    if (mats_[mi].null() || la->mats_[ai].null() || lb->mats_[bi].null())
+      continue;
+    mats_[mi]->accumulate_product(la->mats_[ai], lb->mats_[bi]);
   }
 }
 
 void
 BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 {
+  int i, zero=0;
+  
   const char* name = "BlockedSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = BlockedSCMatrix::require_castdown(a,name);
@@ -352,32 +357,21 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
     abort();
   }
 
-  int nba = la->d1->nblocks();
-  int nbb = lb->d->nblocks();
+  int &bi = (lb->d->nblocks()==1) ? zero : i;
   
-  if (nba == 1 && nbb > 1) {
-    for (int i=0; i < d2->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[0], lb->mats_[i]);
-
-  } else if (nba > 1 && nbb == 1) {
-    for (int i=0; i < d1->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[i], lb->mats_[0]);
-
-  } else if (nba == nbb) {
-    for (int i=0; i < d1->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[i], lb->mats_[i]);
-
-  } else {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
-    fprintf(stderr,"blocks don't match\n");
-    abort();
+  for (i=0; i < nblocks_; i++) {
+    if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
+      continue;
+    mats_[i]->accumulate_product(la->mats_[i], lb->mats_[bi]);
   }
 }
+
 
 void
 BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
 {
+  int i, zero;
+  
   const char* name = "BlockedSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = BlockedSCMatrix::require_castdown(a,name);
@@ -392,26 +386,12 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
     abort();
   }
 
-  int nba = la->d1->nblocks();
-  int nbb = lb->d->nblocks();
+  int &bi = (lb->d->nblocks()==1) ? zero : i;
   
-  if (nba == 1 && nbb > 1) {
-    for (int i=0; i < d2->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[0], lb->mats_[i]);
-
-  } else if (nba > 1 && nbb == 1) {
-    for (int i=0; i < d1->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[i], lb->mats_[0]);
-
-  } else if (nba == nbb) {
-    for (int i=0; i < d1->nblocks(); i++)
-      mats_[i]->accumulate_product(la->mats_[i], lb->mats_[i]);
-
-  } else {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
-    fprintf(stderr,"blocks don't match\n");
-    abort();
+  for (i=0; i < nblocks_; i++) {
+    if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
+      continue;
+    mats_[i]->accumulate_product(la->mats_[i], lb->mats_[bi]);
   }
 }
 
@@ -430,14 +410,16 @@ BlockedSCMatrix::accumulate(SCMatrix*a)
   }
 
   for (int i=0; i < nblocks_; i++)
-    mats_[i]->accumulate(la->mats_[i]);
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate(la->mats_[i]);
 }
 
 void
 BlockedSCMatrix::transpose_this()
 {
   for (int i=0; i < nblocks_; i++)
-    mats_[i]->transpose_this();
+    if (mats_[i].nonnull())
+      mats_[i]->transpose_this();
   
   RefBlockedSCDimension tmp = d1;
   d1 = d2;
@@ -468,14 +450,16 @@ BlockedSCMatrix::invert_this()
     RefSCMatrix tdim = d1->dim(0)->create_matrix(d1->dim(0));
 
     for (i=0; i < d2->nblocks(); i++)
-      tdim.assign_subblock(mats_[i], 0, d1->n()-1,
+      if (mats_[i].nonnull())
+        tdim.assign_subblock(mats_[i], 0, d1->n()-1,
                                      d2->first(i), d2->last(i)-1);
 
     res = tdim->invert_this();
     transpose_this();
 
     for (i=0; i < d1->nblocks(); i++)
-      mats_[i].assign(tdim.get_subblock(d1->first(i), d1->last(i)-1,
+      if (mats_[i].nonnull())
+        mats_[i].assign(tdim.get_subblock(d1->first(i), d1->last(i)-1,
                                         0, d2->n()-1));
     
     return res;
@@ -484,14 +468,16 @@ BlockedSCMatrix::invert_this()
     RefSCMatrix tdim = d2->dim(0)->create_matrix(d2->dim(0));
 
     for (i=0; i < d1->nblocks(); i++)
-      tdim.assign_subblock(mats_[i], d1->first(i), d1->last(i)-1,
+      if (mats_[i].nonnull())
+        tdim.assign_subblock(mats_[i], d1->first(i), d1->last(i)-1,
                                      0, d2->n()-1);
 
     res = tdim->invert_this();
     transpose_this();
 
     for (i=0; i < d2->nblocks(); i++)
-      mats_[i].assign(tdim.get_subblock(0, d1->n()-1,
+      if (mats_[i].nonnull())
+        mats_[i].assign(tdim.get_subblock(0, d1->n()-1,
                                         d2->first(i), d2->last(i)-1));
     
     return res;
@@ -515,7 +501,8 @@ BlockedSCMatrix::determ_this()
   double res=1;
   
   for (int i=0; i < nblocks_; i++)
-    res *= mats_[i]->determ_this();
+    if (mats_[i].nonnull())
+      res *= mats_[i]->determ_this();
 
   return res;
 }
@@ -525,7 +512,8 @@ BlockedSCMatrix::trace()
 {
   double ret=0;
   for (int i=0; i < nblocks_; i++)
-    ret += mats_[i]->trace();
+    if (mats_[i].nonnull())
+      ret += mats_[i]->trace();
   
   return ret;
 }
@@ -541,7 +529,8 @@ BlockedSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
     BlockedDiagSCMatrix::require_castdown(sigma,"BlockedSCMatrix::svd_this");
 
   for (int i=0; i < nblocks_; i++)
-    mats_[i]->svd_this(lU->mats_[i], lsigma->mats_[i], lV->mats_[i]);
+    if (mats_[i].nonnull())
+      mats_[i]->svd_this(lU->mats_[i], lsigma->mats_[i], lV->mats_[i]);
 }
 
 double
@@ -560,7 +549,8 @@ BlockedSCMatrix::solve_this(SCVector*v)
   }
 
   for (int i=0; i < nblocks_; i++)
-    res *= mats_[i]->solve_this(lv->vecs_[i]);
+    if (mats_[i].nonnull())
+      res *= mats_[i]->solve_this(lv->vecs_[i]);
 
   return res;
 }
@@ -579,7 +569,8 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   }
 
   for (int i=0; i < nblocks_; i++)
-    mats_[i]->schmidt_orthog(lS->mats_[i].pointer(), lS->dim(i).n());
+    if (mats_[i].nonnull())
+      mats_[i]->schmidt_orthog(lS->mats_[i].pointer(), lS->dim(i).n());
 }
 
 void
@@ -590,7 +581,8 @@ BlockedSCMatrix::element_op(const RefSCElementOp& op)
   for (int i=0; i < nblocks_; i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op);
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op);
   }
 }
 
@@ -611,7 +603,8 @@ BlockedSCMatrix::element_op(const RefSCElementOp2& op,
   for (int i=0; i < nblocks_; i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op,lm->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
 }
 
@@ -635,8 +628,9 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
   for (int i=0; i < nblocks_; i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op,lm->mats_[i].pointer(),
-                            ln->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op,lm->mats_[i].pointer(),
+                              ln->mats_[i].pointer());
   }
 }
 
@@ -647,6 +641,9 @@ BlockedSCMatrix::print(const char *title, ostream& os, int prec)
   char *newtitle = new char[len + 80];
 
   for (int i=0; i < nblocks_; i++) {
+    if (mats_[i].null())
+      continue;
+
     sprintf(newtitle,"%s:  block %d",title,i+1);
     mats_[i]->print(newtitle, os, prec);
   }

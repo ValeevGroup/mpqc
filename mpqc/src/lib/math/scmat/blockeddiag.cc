@@ -36,7 +36,8 @@ BlockedDiagSCMatrix::resize(BlockedSCDimension *a)
 
   mats_ = new RefDiagSCMatrix[d->nblocks()];
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i] = d->dim(i)->create_diagmatrix();
+    if (d->n(i))
+      mats_[i] = d->dim(i)->create_diagmatrix();
 }
 
 BlockedDiagSCMatrix::BlockedDiagSCMatrix() :
@@ -133,7 +134,8 @@ BlockedDiagSCMatrix::accumulate(DiagSCMatrix*a)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->accumulate(la->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate(la->mats_[i].pointer());
 }
 
 double
@@ -142,7 +144,8 @@ BlockedDiagSCMatrix::invert_this()
   double det = 1.0;
 
   for (int i=0; i < d->nblocks(); i++)
-    det *= mats_[i]->invert_this();
+    if (mats_[i].nonnull())
+      det *= mats_[i]->invert_this();
   
   return det;
 }
@@ -153,7 +156,8 @@ BlockedDiagSCMatrix::determ_this()
   double det = 1.0;
 
   for (int i=0; i < d->nblocks(); i++)
-    det *= mats_[i]->determ_this();
+    if (mats_[i].nonnull())
+      det *= mats_[i]->determ_this();
   
   return det;
 }
@@ -164,7 +168,8 @@ BlockedDiagSCMatrix::trace()
   double det = 0;
 
   for (int i=0; i < d->nblocks(); i++)
-    det += mats_[i]->trace();
+    if (mats_[i].nonnull())
+      det += mats_[i]->trace();
   
   return det;
 }
@@ -173,7 +178,8 @@ void
 BlockedDiagSCMatrix::gen_invert_this()
 {
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->gen_invert_this();
+    if (mats_[i].nonnull())
+      mats_[i]->gen_invert_this();
 }
 
 void
@@ -184,7 +190,8 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp& op)
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op);
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op);
   }
 }
 
@@ -204,7 +211,8 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp2& op,
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op,lm->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
 }
 
@@ -227,7 +235,8 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op,lm->mats_[i].pointer(),ln->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op,lm->mats_[i].pointer(),ln->mats_[i].pointer());
   }
 }
 
@@ -238,6 +247,9 @@ BlockedDiagSCMatrix::print(const char *title, ostream& os, int prec)
   char *newtitle = new char[len + 80];
 
   for (int i=0; i < d->nblocks(); i++) {
+    if (mats_[i].null())
+      continue;
+    
     sprintf(newtitle,"%s:  block %d",title,i+1);
     mats_[i]->print(newtitle, os, prec);
   }

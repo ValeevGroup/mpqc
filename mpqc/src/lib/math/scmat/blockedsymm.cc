@@ -36,7 +36,8 @@ BlockedSymmSCMatrix::resize(BlockedSCDimension *a)
   
   mats_ = new RefSymmSCMatrix[d->nblocks()];
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i] = d->dim(i)->create_symmmatrix();
+    if (d->n(i))
+      mats_[i] = d->dim(i)->create_symmmatrix();
 }
 
 BlockedSymmSCMatrix::BlockedSymmSCMatrix() :
@@ -216,7 +217,8 @@ BlockedSymmSCMatrix::invert_this()
   double res=1;
   
   for (int i=0; i < d->nblocks(); i++)
-    res *= mats_[i]->invert_this();
+    if (mats_[i].nonnull())
+      res *= mats_[i]->invert_this();
 
   return res;
 }
@@ -227,7 +229,8 @@ BlockedSymmSCMatrix::determ_this()
   double res=1;
   
   for (int i=0; i < d->nblocks(); i++)
-    res *= mats_[i]->determ_this();
+    if (mats_[i].nonnull())
+      res *= mats_[i]->determ_this();
 
   return res;
 }
@@ -238,7 +241,8 @@ BlockedSymmSCMatrix::trace()
   double res=0;
   
   for (int i=0; i < d->nblocks(); i++)
-    res += mats_[i]->determ_this();
+    if (mats_[i].nonnull())
+      res += mats_[i]->determ_this();
 
   return res;
 }
@@ -259,7 +263,8 @@ BlockedSymmSCMatrix::solve_this(SCVector*v)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    res *= mats_[i]->solve_this(lv->vecs_[i].pointer());
+    if (mats_[i].nonnull())
+      res *= mats_[i]->solve_this(lv->vecs_[i].pointer());
 
   return res;
 }
@@ -268,7 +273,8 @@ void
 BlockedSymmSCMatrix::gen_invert_this()
 {
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->gen_invert_this();
+    if (mats_[i].nonnull())
+      mats_[i]->gen_invert_this();
 }
 
 double
@@ -287,7 +293,8 @@ BlockedSymmSCMatrix::scalar_product(SCVector*a)
 
   double result = 0.0;
   for (int i=0; i < d->nblocks(); i++)
-    result += mats_[i]->scalar_product(la->vecs_[i].pointer());
+    if (mats_[i].nonnull())
+      result += mats_[i]->scalar_product(la->vecs_[i].pointer());
 
   return result;
 }
@@ -308,7 +315,8 @@ BlockedSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->diagonalize(la->mats_[i].pointer(),lb->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->diagonalize(la->mats_[i].pointer(),lb->mats_[i].pointer());
 }
 
 void
@@ -326,13 +334,16 @@ BlockedSymmSCMatrix::accumulate(SymmSCMatrix*a)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->accumulate(la->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate(la->mats_[i].pointer());
 }
 
 // computes this += a * a.t
 void
 BlockedSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
 {
+  int i, zero=0;
+  
   // make sure that the argument is of the correct type
   BlockedSCMatrix* la
     = BlockedSCMatrix::require_castdown(a,"BlockedSymmSCMatrix::"
@@ -344,8 +355,12 @@ BlockedSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->accumulate_symmetric_product(la->mats_[i].pointer());
+  int mxnb = (d->nblocks() > la->nblocks_) ? d->nblocks() : la->nblocks_;
+  int &mi = (d->nblocks()==1) ? zero : i;
+
+  for (i=0; i < mxnb; i++)
+    if (mats_[mi].nonnull() && la->mats_[i].nonnull())
+      mats_[mi]->accumulate_symmetric_product(la->mats_[i].pointer());
 }
 
 // computes this += a + a.t
@@ -364,7 +379,8 @@ BlockedSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->accumulate_symmetric_sum(la->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate_symmetric_sum(la->mats_[i].pointer());
 }
 
 void
@@ -382,13 +398,16 @@ BlockedSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    mats_[i]->accumulate_symmetric_outer_product(la->vecs_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate_symmetric_outer_product(la->vecs_[i].pointer());
 }
 
 // this += a * b * transpose(a)
 void
 BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
 {
+  int i, zero=0;
+  
   // do the necessary castdowns
   BlockedSCMatrix*la
     = BlockedSCMatrix::require_castdown(a,"%s::accumulate_transform",
@@ -402,28 +421,26 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
     abort();
   }
 
-  if (lb->d->nblocks() == 1 && d->nblocks() > 1) {
-    for (int i=0; i < d->nblocks(); i++)
-      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
-                                     lb->mats_[0].pointer());
+  int mxnb = (d->nblocks() > la->nblocks_) ? d->nblocks() : la->nblocks_;
 
-  } else if (lb->d->nblocks() > 1 && d->nblocks() == 1) {
-    for (int i=0; i < lb->d->nblocks(); i++)
-      mats_[0]->accumulate_transform(la->mats_[i].pointer(),
-                                     lb->mats_[i].pointer());
-
-  } else if (lb->d->nblocks() == d->nblocks()) {
-    for (int i=0; i < d->nblocks(); i++)
-      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
-                                     lb->mats_[i].pointer());
+  int &mi = (d->nblocks()==1) ? zero : i;
+  int &bi = (lb->d->nblocks()==1) ? zero : i;
+  
+  for (i=0; i < mxnb; i++) {
+    if (mats_[mi].null() || la->mats_[i].null() || lb->mats_[bi].null())
+      continue;
+                             
+    mats_[mi]->accumulate_transform(la->mats_[i].pointer(),
+                                    lb->mats_[bi].pointer());
   }
-
 }
 
 // this += a * b * transpose(a)
 void
 BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
 {
+  int i, zero=0;
+  
   // do the necessary castdowns
   BlockedSCMatrix*la
     = BlockedSCMatrix::require_castdown(a,"%s::accumulate_transform",
@@ -438,20 +455,17 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
     abort();
   }
 
-  if (lb->d->nblocks() == 1 && d->nblocks() > 1) {
-    for (int i=0; i < d->nblocks(); i++)
-      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
-                                     lb->mats_[0].pointer());
+  int mxnb = (d->nblocks() > la->nblocks_) ? d->nblocks() : la->nblocks_;
 
-  } else if (lb->d->nblocks() > 1 && d->nblocks() == 1) {
-    for (int i=0; i < lb->d->nblocks(); i++)
-      mats_[0]->accumulate_transform(la->mats_[i].pointer(),
-                                     lb->mats_[i].pointer());
+  int &mi = (d->nblocks()==1) ? zero : i;
+  int &bi = (lb->d->nblocks()==1) ? zero : i;
 
-  } else if (lb->d->nblocks() == d->nblocks()) {
-    for (int i=0; i < d->nblocks(); i++)
-      mats_[i]->accumulate_transform(la->mats_[i].pointer(),
-                                     lb->mats_[i].pointer());
+  for (i=0; i < mxnb; i++) {
+    if (mats_[mi].null() || la->mats_[i].null() || lb->mats_[bi].null())
+      continue;
+                             
+    mats_[mi]->accumulate_transform(la->mats_[i].pointer(),
+                                    lb->mats_[bi].pointer());
   }
 }
 
@@ -463,7 +477,8 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp& op)
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op);
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op);
   }
 }
 
@@ -483,7 +498,8 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op,lm->mats_[i].pointer());
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
 }
 
@@ -506,7 +522,8 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
       bop->working_on(i);
-    mats_[i]->element_op(op,lm->mats_[i].pointer(),
+    if (mats_[i].nonnull())
+      mats_[i]->element_op(op,lm->mats_[i].pointer(),
                             ln->mats_[i].pointer());
   }
 }
@@ -518,6 +535,9 @@ BlockedSymmSCMatrix::print(const char *title, ostream& os, int prec)
   char *newtitle = new char[len + 80];
 
   for (int i=0; i < d->nblocks(); i++) {
+    if (mats_[i].null())
+      continue;
+    
     sprintf(newtitle,"%s:  block %d",title,i+1);
     mats_[i]->print(newtitle, os, prec);
   }

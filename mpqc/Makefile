@@ -8,7 +8,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 SUBDIRS = lib src
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
-include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 miscclean::
 	-rm -f config.log

@@ -57,14 +57,12 @@ static void mkcostvec(centers_t*, sym_struct_t*, dmt_cost_t*);
 ///////////////////////////////////////////////////////////////////////////
 
 static void
-clean_and_exit(RefMessageGrp& grp)
+clean_mp(const RefMessageGrp& grp)
 {
   picl_prober();
 
   close0(0);
-  grp = 0;
-  MessageGrp::set_default_messagegrp(grp);
-  exit(0);
+  MessageGrp::set_default_messagegrp(0);
 }
 
 static RefMessageGrp
@@ -213,6 +211,11 @@ main(int argc, char *argv[])
     keyval = new AggregateKeyVal(ppkv,pkv);
 
     debugger = keyval->describedclassvalue(":debug");
+    // Let the debugger know the name of the executable and the node
+    if (debugger.nonnull()) {
+        debugger->set_exec(argv[0]);
+        debugger->set_prefix(grp->me());
+      }
 
     pkv = ppkv = 0;
 
@@ -505,7 +508,8 @@ main(int argc, char *argv[])
 
     if (geom_code==GEOM_ABORT || geom_code==GEOM_DONE) {
       fprintf(outfile,"mpqcnode: geom_code says you are done or in trouble\n");
-      clean_and_exit(grp);
+      clean_mp(grp);
+      return geom_code != GEOM_DONE;
     }
   }
 
@@ -542,7 +546,8 @@ main(int argc, char *argv[])
   if (!do_scf && do_grad && do_mp2) {
       if (mynode0()==0)
           fprintf(stderr,"Must do scf before mp2 gradient. Program exits\n");
-      clean_and_exit(grp);
+      clean_mp(grp);
+      return 1;
     }
 
  // if we need vector, get one
@@ -565,7 +570,8 @@ main(int argc, char *argv[])
 
       if (errcod != 0) {
         fprintf(outfile,"trouble forming scf vector\n");
-        clean_and_exit(grp);
+        clean_mp(grp);
+        return 1;
       }
     
       scf_info.restart=1;
@@ -788,10 +794,11 @@ main(int argc, char *argv[])
 
   fflush(outfile);
 
-  clean_and_exit(grp);
-
   delete[] pdbfile;
   delete[] geomfile;
+
+  clean_mp(grp);
+
   return 0;
 }
 

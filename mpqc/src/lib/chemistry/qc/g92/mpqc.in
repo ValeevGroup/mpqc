@@ -57,19 +57,36 @@ g92_mole<Gaussian92SCF> : (
   multiplicity = 1
   memory = 2000000
 
-  g92_dir = "/usr/local/g92/"
-  scratch_dir = "/usr/tmp/"
+  g92_dir = "/usr/g92/g92/"
+  scratch_dir = "/data/etseidl/"
 )
 
 mole = $:g92_mole
 
-opt<QNewtonOpt>: (
+opt<GDIISOpt>: (
     convergence = 1.0e-5
-    max_iterations = 1
+    max_iterations = 10
+    function = $:g92_mole
+    update<BFGSUpdate>:()
+)
+
+qnopt<QNewtonOpt>: (
+    convergence = 1.0e-5
+    max_iterations = 10
     function = $:mole
     transition_state=no
     update<BFGSUpdate>:()
-  )
+)
+
+efcopt<EFCOpt>: (
+    convergence = 1.0e-5
+    max_iterations = 10
+    function = $:mole
+    transition_state=no
+    update<BFGSUpdate>:()
+)
+
+%opt = $:gdiisopt
 
 basis:(
   hydrogen: sto3g: [

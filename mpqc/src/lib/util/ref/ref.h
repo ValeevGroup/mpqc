@@ -36,7 +36,8 @@
 //
 // REF_CHECK_STACK:  If this is 1 referenced objects are checked to see if they
 // reside on the stack, in which case storage for the object is not managed,
-// if management is enabled.
+// if management is enabled.  This feature can be confused by multiple threads
+// and memory checking libraries.
 //
 // REF_CHECKSUM:  If this is 1 checksums of the reference count are kept
 // and checked to see if an object has been overwritten.
@@ -106,7 +107,7 @@
 #endif
 #else
 #ifndef REF_CHECK_STACK
-#define REF_CHECK_STACK 1
+#define REF_CHECK_STACK 0
 #endif
 #endif
 

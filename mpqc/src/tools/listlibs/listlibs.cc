@@ -105,6 +105,7 @@ void list::del_cur()
     cur_->n->p = 0;
     t = cur_;
     cur_ = cur_->n;
+    head_ = cur_;
     delete t;
     }
   else {

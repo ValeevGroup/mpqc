@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <strstream.h>
+
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/files.h>
@@ -157,6 +159,9 @@ main(int, char *argv[])
 {
   int i, j;
 
+  char o[10000];
+  ostrstream perlout(o,sizeof(o));
+
   char *filename = (argv[1]) ? argv[1] : SRCDIR "/btest.kv";
   
   RefKeyVal keyval = new ParsedKeyVal(filename);
@@ -193,12 +198,13 @@ main(int, char *argv[])
   RefMolecule cmol = new Molecule(); cmol->add_atom(0,catomcent);
   RefMolecule pmol = new Molecule(); pmol->add_atom(0,patomcent);
 
+  perlout << "%basissets = (" << endl;
   int nbasis = keyval->count("basislist");
   RefKeyVal nullkv = new AssignedKeyVal();
-  RefAssignedKeyVal atombaskv_a(new AssignedKeyVal());
-  RefKeyVal atombaskv(atombaskv_a);
   for (i=0; i<nbasis; i++) {
+      int first_element = 1;
       char *basisname = keyval->pcharvalue("basislist",i);
+      perlout << "  \"" << basisname << "\" => (";
       BasisFileSet bfs(nullkv);
       RefKeyVal basiskv = bfs.keyval(nullkv, basisname);
       char elemstr[512];
@@ -208,12 +214,21 @@ main(int, char *argv[])
       int n1 = 0;
       int n2 = 0;
       for (j=0; j<nelem; j++) {
+          RefAssignedKeyVal atombaskv_a(new AssignedKeyVal());
+          RefKeyVal atombaskv(atombaskv_a);
           char keyword[256];
           strcpy(keyword,":basis:");
           strcat(keyword,elements[j]->name());
           strcat(keyword,":");
           strcat(keyword,basisname);
           if (basiskv->exists(keyword)) {
+              if (!first_element) {
+                  perlout << ",";
+                }
+              else {
+                  first_element = 0;
+                }
+              perlout << "\"" << elements[j]->symbol() << "\"";
               if (!last_elem_exists) {
                   if (elemstr[0] != '\0') strcat(elemstr,", ");
                   strcat(elemstr,elements[j]->symbol());
@@ -249,6 +264,9 @@ main(int, char *argv[])
               last_elem_exists = 0;
             }
         }
+      perlout << ")";
+      if (i != nbasis-1) perlout << "," << endl;
+      perlout << endl;
       cout << "\\verb*|" << basisname << "| & " << elemstr << " & ";
       if (n0>0) cout << n0;
       cout << " & ";
@@ -258,6 +276,11 @@ main(int, char *argv[])
       cout << " \\\\" << endl;
       delete[] basisname;
     }
+
+  perlout << ")" << endl << ends;
+
+  char *perlout_s = perlout.str();
+  cout << perlout_s;
 
   return 0;
 }

@@ -58,7 +58,7 @@ LIBOBJ= $(CXXSRC:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
 
-btest: $(TESTOBJ) libintv3.a liboint3.a \
+btest: $(TESTOBJ) libintv3.$(LIBSUF) liboint3.$(LIBSUF) \
                   $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
 

@@ -1279,7 +1279,7 @@ MBPT2::compute_cs_grad()
 
         // If both PQRS and PQRS derivative are zero, skip to next R
         if (tbint_->log2_shell_bound(R,S) < tol
-            && tbintder_->log2_shell_bound(R,S) < tol) continue;
+            && (dograd && tbintder_->log2_shell_bound(R,S) < tol)) continue;
 
         if (index++ % nproc == me) {
 

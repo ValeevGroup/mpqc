@@ -129,6 +129,13 @@ FILE *outfile;
     print_evals(outfile,evals,occ_num,nbasis);
   }
 
+  if (scf_info->print_flg&1024) {
+    if (mynode0()==0) printf("scf vector");
+    dmt_print(Scf_Vec);
+    if (mynode0()==0) printf("mo fock");
+    dmt_print(Fock);
+  }
+
 /* clean up your room young man */
   dmt_free(S);
   dmt_free(Hcore);

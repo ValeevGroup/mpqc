@@ -78,6 +78,7 @@ paragon_memory_handler(long ptype, long pcount, long pnode, long pptype)
       global_pgon_mem->activate();
       break;
   case MemoryDataRequest::DoubleSum:
+  {
       int dsize = size/sizeof(double);
       double *data = new double[dsize];
       PRINTF(("%d:: receiving %d bytes (%d doubles)\n",
@@ -90,7 +91,9 @@ paragon_memory_handler(long ptype, long pcount, long pnode, long pptype)
       delete[] data;
       csend(from_type, (char*) &junk, sizeof(junk), node, 0);
       global_pgon_mem->activate();
+  }
       break;
+
   default:
       fprintf(stderr, "paragon_memory_handler: bad request id\n");
       abort();

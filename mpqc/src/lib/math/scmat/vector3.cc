@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <stdio.h>
 #include "matrix.h"
 #include "vector3.h"

@@ -2,6 +2,10 @@
 #ifndef _math_scmat_blkiter_h
 #define _math_scmat_blkiter_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 class SCMatrixRectBlock;
 class SCMatrixLTriBlock;
 class SCMatrixDiagBlock;

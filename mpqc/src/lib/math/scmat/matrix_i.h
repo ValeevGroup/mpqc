@@ -1,6 +1,9 @@
 
 #ifndef _math_scmat_matrix_i_h
 #define _math_scmat_matrix_i_h
+#ifdef __GNUC__
+#pragma interface
+#endif
 
 #include <math/scmat/abstract.h>
 

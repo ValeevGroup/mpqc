@@ -1,6 +1,9 @@
 
 #ifndef _math_scmat_vector3_h
 #define _math_scmat_vector3_h
+#ifdef __GNUC__
+#pragma interface
+#endif
 
 #include <stdio.h>
 #include <math.h>

@@ -2,6 +2,10 @@
 #ifndef _math_scmat_abstract_h
 #define _math_scmat_abstract_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <math/scmat/matrix.h>
 
 class SCDimension: virtual public SavableState {

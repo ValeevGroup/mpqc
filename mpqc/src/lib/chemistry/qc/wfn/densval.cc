@@ -103,14 +103,8 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
       int j;
       for (j=0; j<nbasis; j++) {
           tmp += nos.get_element(j,i)*bs_values[j];
-          std::cout << scprintf("%d %d: %12.8f %12.8f",
-                                i, j, nos.get_element(j,i), bs_values[j])
-                    << std::endl;
         }
       elec_density += nd.get_element(i)*tmp*tmp;
-      std::cout << scprintf("%d: %12.8f %12.8f %12.8f",
-                            i, nd.get_element(i), tmp, tmp)
-                << std::endl;
       double tmpg[3];
       tmpg[0] = tmpg[1] = tmpg[2] = 0.0;
       for (j=0; j<nbasis; j++) {

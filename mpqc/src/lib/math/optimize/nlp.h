@@ -15,18 +15,24 @@ class NLP0: virtual_base public SavableState, public Compute {
 #   define CLASSNAME NLP0
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
+  private:
+    RefSCMatrixKit _matrixkit;
   protected:
     RefSCDimension _dim;
     RefSCVector    _x;    // variables
     AccResultdouble   _value;// value of function at _x
     virtual void set_value(double);
+
+    virtual void set_matrixkit(const RefSCMatrixKit&);
+    virtual void set_dimension(const RefSCDimension&);
   public:
-    NLP0(const RefSCDimension&);
+    NLP0();
     NLP0(StateIn&);
     NLP0(const RefKeyVal&);
     virtual ~NLP0();
 
-    virtual RefSCDimension dimension();
+    RefSCMatrixKit matrixkit();
+    RefSCDimension dimension();
 
     virtual void save_data_state(StateOut&);
 
@@ -73,7 +79,7 @@ class NLP1: public NLP0 {
     AccResultRefSCVector _gradient; // gradient at _x
     virtual void set_gradient(RefSCVector&);
   public:
-    NLP1(const RefSCDimension&);
+    NLP1();
     NLP1(StateIn&);
     NLP1(const RefKeyVal&);
     virtual ~NLP1();
@@ -91,6 +97,8 @@ class NLP1: public NLP0 {
     // gradients by values at finite displacements
     // virtual RefSCVector fd0_gradient();
 
+    void set_dimension(const RefSCDimension&);
+
     virtual void print(SCostream& =SCostream::cout);
 };
 SavableState_REF_dec(NLP1);
@@ -103,7 +111,7 @@ class NLP2: public NLP1 {
     AccResultRefSymmSCMatrix _hessian;
     virtual void set_hessian(RefSymmSCMatrix&);
   public:
-    NLP2(const RefSCDimension&);
+    NLP2();
     NLP2(StateIn&);
     NLP2(const RefKeyVal&);
     virtual ~NLP2();
@@ -126,6 +134,8 @@ class NLP2: public NLP1 {
     virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
     virtual void print(SCostream& =SCostream::cout);
+
+    void set_dimension(const RefSCDimension&);
 
     // information about the availability of values, gradients, and hessians
     virtual int value_implemented();

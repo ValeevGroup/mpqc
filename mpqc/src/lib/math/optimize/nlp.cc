@@ -30,9 +30,7 @@ NLP0::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-NLP0::NLP0(const RefSCDimension&dim):
-  _dim(dim),
-  _x(dim),
+NLP0::NLP0():
   _value(this)
 {
   _value.set_desired_accuracy(DBL_EPSILON);
@@ -41,20 +39,20 @@ NLP0::NLP0(const RefSCDimension&dim):
 NLP0::NLP0(const RefKeyVal&kv):
   _value(this)
 {
-  _dim = kv->describedclassvalue("dimension");
+  _matrixkit = kv->describedclassvalue("matrixkit");
+
+  if (_matrixkit.null()) _matrixkit = SCMatrixKit::default_matrixkit();
 
   _value.set_desired_accuracy(kv->doublevalue("value_accuracy"));
   if (_value.desired_accuracy() < DBL_EPSILON)
     _value.set_desired_accuracy(DBL_EPSILON);
-
-  RefSCVector x(_dim);
-  _x = x;
 }
 
 NLP0::NLP0(StateIn&s):
   SavableState(s),
   _value(s,this)
 {
+  _matrixkit.restore_state(s);
   _dim.restore_state(s);
   _x.restore_state(s);
 }  
@@ -67,10 +65,16 @@ void
 NLP0::save_data_state(StateOut&s)
 {
   _value.save_data_state(s);
+  _matrixkit.save_state(s);
   _dim.save_state(s);
   _x.save_state(s);
 }
 
+RefSCMatrixKit
+NLP0::matrixkit()
+{
+  return _matrixkit;
+}
 
 RefSCDimension
 NLP0::dimension()
@@ -134,6 +138,24 @@ NLP0::print(SCostream&o)
   o.indent(); o << "value_accuracy = " << desired_value_accuracy() << endl;
 }
 
+void
+NLP0::set_matrixkit(const RefSCMatrixKit& kit)
+{
+  if (_dim.nonnull()) {
+      fprintf(stderr, "ERROR: NLP0::set_matrixkit: "
+              "dimension is already set\n");
+      abort();
+    }
+  _matrixkit = kit;
+}
+
+void
+NLP0::set_dimension(const RefSCDimension& dim)
+{
+  _dim = dim;
+  _x = _matrixkit->vector(dim);
+}
+
 ///////////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(NLP1);
@@ -151,12 +173,9 @@ NLP1::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-NLP1::NLP1(const RefSCDimension&dim):
-  NLP0(dim),
+NLP1::NLP1():
   _gradient(this)
 {
-  RefSCVector g(dim);
-  _gradient.result_noupdate() = g;
   _gradient.set_desired_accuracy(DBL_EPSILON);
 }
 
@@ -164,13 +183,9 @@ NLP1::NLP1(const RefKeyVal&kv):
   NLP0(kv),
   _gradient(this)
 {
-  RefSCVector gradient(_dim);
-
   _gradient.set_desired_accuracy(kv->doublevalue("gradient_accuracy"));
   if (_gradient.desired_accuracy() < DBL_EPSILON)
     _gradient.set_desired_accuracy(DBL_EPSILON);
-
-  _gradient = gradient;
 }
 
 NLP1::NLP1(StateIn&s):
@@ -244,6 +259,13 @@ NLP1::print(SCostream&o)
                 << endl;
 }
 
+void
+NLP1::set_dimension(const RefSCDimension& dim)
+{
+  NLP0::set_dimension(dim);
+  _gradient = matrixkit()->vector(dim);
+}
+
 ///////////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(NLP2);
@@ -261,12 +283,9 @@ NLP2::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-NLP2::NLP2(const RefSCDimension&dim):
-  NLP1(dim),
+NLP2::NLP2():
   _hessian(this)
 {
-  RefSymmSCMatrix h(dim);
-  _hessian.result_noupdate() = h;
   _hessian.set_desired_accuracy(DBL_EPSILON);
 }
 
@@ -274,13 +293,9 @@ NLP2::NLP2(const RefKeyVal&kv):
   NLP1(kv),
   _hessian(this)
 {
-  RefSymmSCMatrix hessian(_dim);
-
   _hessian.set_desired_accuracy(kv->doublevalue("hessian_accuracy"));
   if (_hessian.desired_accuracy() < DBL_EPSILON)
     _hessian.set_desired_accuracy(DBL_EPSILON);
-
-  _hessian = hessian;
 }
 
 NLP2::NLP2(StateIn&s):
@@ -382,6 +397,13 @@ int
 NLP2::hessian_implemented()
 {
   return 0;
+}
+
+void
+NLP2::set_dimension(const RefSCDimension& dim)
+{
+  NLP1::set_dimension(dim);
+  _hessian = matrixkit()->symmmatrix(dim);
 }
 
 ///////////////////////////////////////////////////////////////////////////

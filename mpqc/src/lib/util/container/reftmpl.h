@@ -14,16 +14,16 @@ class  Ref  : private RefBase {
     T& operator *() const { return *p; };
     int null() const { return p == 0; }
     int nonnull() const { return p != 0; }
-    int operator!=(const Ref<T> &a) const { return p != a.p; }
+    int operator!=(const Ref<T> &a) const { return ne(p,a.p); }
     int compare(const Ref<T> &a) const
-    { return ((p==a.p)?0:((p<a.p)?-1:1)); }
-    int operator==(const Ref<T> &a) const { return p == a.p; }
-    int operator!=(const  T * a) const { return p != a; }
-    int operator==(const  T * a) const { return p == a; }
-    int operator>=(const  Ref<T> &a) const { return p >= a.p; }
-    int operator<=(const  Ref<T> &a) const { return p <= a.p; }
-    int operator>(const  Ref<T> &a) const { return p > a.p; }
-    int operator<(const  Ref<T> &a) const { return p < a.p; }
+    { return eq(p,a.p)?0:((lt(p,a.p)?-1:1)); }
+    int operator==(const Ref<T> &a) const { return eq(p,a.p); }
+    int operator!=(const  T * a) const { return ne(p,a); }
+    int operator==(const  T * a) const { return eq(p,a); }
+    int operator>=(const  Ref<T> &a) const { return ge(p,a.p); }
+    int operator<=(const  Ref<T> &a) const { return le(p,a.p); }
+    int operator>(const  Ref<T> &a) const { return gt(p,a.p); }
+    int operator<(const  Ref<T> &a) const { return lt(p,a.p); }
     Ref(): p(0) {}
     Ref(T*a): p(a)
     {

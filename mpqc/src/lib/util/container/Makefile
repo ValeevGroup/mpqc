@@ -74,7 +74,7 @@ artest: artest.o libcontainer.a
 settestt: settestt.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o settestt $^
 
-reftest: reftest.o reftestx.o libcontainer.a
+reftest: reftest.o reftestx.o libcontainer.a ../misc/libmisc.a
 	$(CXX) $(CXXFLAGS) -o reftest $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

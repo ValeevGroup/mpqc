@@ -50,6 +50,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <util/misc/identity.h>
+
 #ifdef REF_CONFIG
 #include <refconfig.h>
 #endif
@@ -116,7 +118,7 @@ extern "C" void * sbrk(int);
 
 typedef unsigned long refcount_t;
 
-class VRefCount {
+class VRefCount: public Identity {
   private:
 #if REF_CHECKSUM
 #   if REF_MANAGE

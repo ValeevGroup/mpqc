@@ -64,7 +64,7 @@ MPI2MemoryGrp::MPI2MemoryGrp(const Ref<KeyVal>& keyval):
 MPI2MemoryGrp::~MPI2MemoryGrp()
 {
   deactivate();
-  delete[] data_;
+  delete[] (char*) data_;
 }
 
 void
@@ -72,7 +72,7 @@ MPI2MemoryGrp::set_localsize(size_t localsize)
 {
   deactivate();
   MsgMemoryGrp::set_localsize(localsize);
-  delete[] data_;
+  delete[] (char*) data_;
   data_ = new char[localsize];
   activate();
 }
@@ -83,6 +83,7 @@ MPI2MemoryGrp::activate()
   MPI_Info info;
   MPI_Info_create(&info);
   MPI_Info_set(info, "no_locks", "true");
+  MPI_Info_set(info, "IBM_win_cache", "0");
   int r = MPI_Win_create(data_, localsize(), sizeof(double), info,
                          MPI_COMM_WORLD, &rma_win_);
   MPI_Info_free(&info);
@@ -131,7 +132,6 @@ MPI2MemoryGrp::sum_data(double *data, int node, int offset, int size)
   int doffset = offset/sizeof(double);
   int dsize = size/sizeof(double);
 
-  
   int r = MPI_Accumulate(data, dsize, MPI_DOUBLE,
                          node, doffset, dsize, MPI_DOUBLE,
                          MPI_SUM, rma_win_);
@@ -200,7 +200,7 @@ MPI2MemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
 void
 MPI2MemoryGrp::release_readonly(void *data, distsize_t offset, int size)
 {
-  delete[] data;
+  delete[] (char*) data;
 }
 
 void
@@ -210,7 +210,7 @@ MPI2MemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
   for (i.begin(offset, size); i.ready(); i.next()) {
       replace_data(i.data(), i.node(), i.offset(), i.size());
     }
-  delete[] data;
+  delete[] (char*) data;
 }
 
 void
@@ -220,13 +220,14 @@ MPI2MemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
   for (i.begin(offset, size); i.ready(); i.next()) {
       replace_data(i.data(), i.node(), i.offset(), i.size());
     }
-  delete[] data;
+  delete[] (char*) data;
 }
 
 void
 MPI2MemoryGrp::sync()
 {
   MPI_Win_fence(0, rma_win_);
+  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void *

@@ -1213,6 +1213,14 @@ int CharacterTable::make_table()
     td();
     break;
 
+  case O:
+    o();
+    break;
+
+  case OH:
+    oh();
+    break;
+
   default:
     return -1;
 

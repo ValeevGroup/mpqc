@@ -132,7 +132,7 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
     }
   }
 
-  SymmGaussianBasisSet *sgbs = SymmGaussianBasisSet::castdown(gbs);
+  SymmGaussianBasisSet *sgbs = SymmGaussianBasisSet::castdown(gbs.pointer());
   if (!sgbs)
     sgbs = new SymmGaussianBasisSet(*gbs.pointer());
   if (!sgbs) {
@@ -285,7 +285,7 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
       
   // if we didn't get sgbs from a castdown, then we created it with new.
   // free it.
-  if (!SymmGaussianBasisSet::castdown(gbs))
+  if (!SymmGaussianBasisSet::castdown(gbs.pointer()))
     delete sgbs;
   
   return 0;

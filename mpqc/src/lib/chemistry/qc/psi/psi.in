@@ -1,7 +1,12 @@
 % Emacs should use -*- KeyVal -*- mode.
 
 mole: [
-  <PsiCI>: (
+  <PsiCCSD>: (
+    % Psi Environment data
+    psienv<PsiExEnv>: (
+      nscratch = 1
+      scratch = [ "/tmp/evaleev/" ]
+    )
     % Function input
     value_accuracy = 1e-5
     gradient_accuracy = 1e-4
@@ -15,16 +20,10 @@ mole: [
           O  [   0.0  0.0   1.0 ]
          }
       )
-    coor<IntMolecularCoor>: (
-        molecule = $..:molecule
-        %scale_bonds = 2.0
-      )
     % Wavefunction input
     basis<GaussianBasisSet>: (
-        basisdir = "/usr/people/etseidl/basis/"
-        basisfiles = [ v2g90.ipv2 basis.ipv2 ]
         molecule = $..:molecule
-        name = dz
+        name = cc-pVDZ
       )
     % OneBodyWavefunction input
     % PSISCF input

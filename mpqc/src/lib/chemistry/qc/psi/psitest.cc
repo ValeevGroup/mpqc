@@ -1,9 +1,9 @@
 
 #include <util/misc/formio.h>
-#include <chemistry/qc/psi/psi.h>
+#include <chemistry/qc/psi/psiwfn.h>
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
-#include <new>
+#include <chemistry/qc/psi/linkage.h>
 
 using namespace std;
 
@@ -18,15 +18,6 @@ main(int argc, char**argv)
 
   set_new_handler(die);
   
-/* prepare for potential debugging */
-#if (defined(SGI) || defined(SUN4)) && defined(USE_DEBUG)
-  debug_init(argv[0]);
-#endif
-
-#if ((defined(SGI) || defined(SUN4)) && (!defined(SABER))) && defined(USE_DEBUG)
-  malloc_debug_on_error();
-#endif
-
   // the output stream is standard out
   ostream& o = cout;
 
@@ -35,17 +26,24 @@ main(int argc, char**argv)
   pkv->read( SRCDIR "/psi.in");
   pkv = 0; // should only use rpkv
 
-  int i;
+  int i, do_grad = 1;
+
   for (i=0; rpkv->exists("mole",i); i++) {
       Ref<MolecularEnergy> mole;
       mole << rpkv->describedclassvalue("mole",i);
+      if (do_grad)
+	mole->do_gradient(1);
+      else
+	mole->do_gradient(0);
 
       if (mole.nonnull()) {
-          mole->print(o);
+	  mole->print(o);
 
           o << "energy = " << mole->energy() << endl;
-          o << "gradient:\n";
-          o << incindent; mole->gradient().print(o); o << decindent;
+	  if (do_grad) {
+	      o << "gradient:\n";
+	      o << incindent; mole->gradient().print(o); o << decindent;
+	  }
         }
       else {
           o << "mole[" << i << "] is null\n";

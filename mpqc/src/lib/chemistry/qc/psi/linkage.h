@@ -30,13 +30,11 @@
 
 #ifndef __PIC__
 
-#include <chemistry/qc/psi/psi.h>
+#include <chemistry/qc/psi/psiwfn.h>
+#include <math/optimize/qnewton.h>
 
-static ForceLink<PsiHF> psi_force_link_a_;
-static ForceLink<PsiCI> psi_force_link_b_;
-static ForceLink<PsiCCSD> psi_force_link_c_;
-static ForceLink<PsiCCSD_T> psi_force_link_d_;
-static ForceLink<PsiCCSDT> psi_force_link_e_;
+static ForceLink<PsiCLHF> psi_force_link_a_;
+static ForceLink<QNewtonOpt> qnewtonopt_force_link_a_;
 
 #endif /* __PIC__ */
 

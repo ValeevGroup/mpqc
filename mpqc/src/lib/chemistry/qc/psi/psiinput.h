@@ -13,71 +13,58 @@
 #pragma interface
 #endif
 
-#ifndef _CHEMISTRY_QC_PSI_PSI_INPUT_H
-#define _CHEMISTRY_QC_PSI_PSI_INPUT_H
+#ifndef _chemistry_qc_psi_input_h
+#define _chemistry_qc_psi_input_h
 
+#include <fstream>
+#include <string>
+#include<util/ref/ref.h>
 #include<chemistry/molecule/molecule.h>
 #include<chemistry/qc/basis/basis.h>
 
-class CorrelationTable;
+class PsiExEnv;
 
-class PSI_Input {
+///////////////////////////////////////////////////
+/// PsiInput is a Psi input file
 
-   private:
-      int indentation;
-      int memory; // the memory in megabytes
-      char * opentype;
-      int nirrep;
-      int * docc;
-      int * socc;
-      int * frozen_docc;
-      int * frozen_uocc;
-      int ex_lvl;
-      char * label;
-      char * name;
-      int nunit;
-      char **unit;
-      int *nvolume;
-      char ***volumes;
-      int _test;
+class PsiInput: public RefCount {
 
-   protected:
-      Ref<PointGroup> _origpg;
-      Ref<Molecule> _mol;
-      Ref<GaussianBasisSet> _gbs;
-      FILE *fp;
+  string filename_;
+  std::ofstream file_;
 
-   public:
-      void begin_section(const char * s);
-      void end_section();
-      void write_indent();
-      int write_keyword(const char *, const char *);
-      int write_keyword(const char *, int);
-      int write_keyword(const char *, double);
-      int write_keyword(const char *, int, int *);
-      int write_keyword(const char *, int, double *);
-      int write_geom();
-      void write_string(const char *);
-//      int write_basis(Ref<GaussianBasisSet>&);
-      int write_basis(void);
-      int write_defaults(const char *, const char *);
-      void write_input();
-      int write_key_wq(const char *, const char *);
-      void write_orbvec(const CorrelationTable &corrtab,
-                        const char *orbvec_name,
-                        const int *orbvec);
+  int indentation_;
+  
+  // No default constructor
+  PsiInput() {};
 
-   public:
-      PSI_Input(const Ref<KeyVal>&);
-      PSI_Input();
-      virtual ~PSI_Input();
-      void print(std::ostream&);
-      virtual void write_input_file(const char *,const char *,
-               const int convergence = 0, const char *s = "input.dat");
-      int test() { return _test; }
+  public:
+    PsiInput(const string& name);
+    ~PsiInput();
+    void open();
+    void close();
+    void print(std::ostream&);
 
-      void open(const char*filename);
-      void close();
+    void begin_section(const char * s);
+    void end_section();
+    void write_indent();
+    void write_comment(const char *);
+    void write_keyword(const char *, const char *);
+    void write_keyword(const char *, int);
+    void write_keyword(const char *, double);
+    void write_keyword_array(const char *, int, int *);
+    void write_keyword_array(const char *, int, double *);
+    void write_string(const char *);
+    void write_key_wq(const char *, const char *);
+    
+    void write_basis(const Ref<GaussianBasisSet>&);
+    void write_geom(const Ref<Molecule>&);
+    
+    void write_defaults(const Ref<PsiExEnv>&, const char *wfn,
+			const char *dertype);
+    void write_input();
+    void write_input_file(const char *,const char *,
+			  const int convergence = 0, const char *s = "input.dat");
+
 };
 
 #endif

@@ -23,7 +23,6 @@ int yydebug =1;
 #define yylex MPQCIn::ylex
 #define yynerrs MPQCInyynerrs
 #define yychar MPQCInyychar
-#define YYSTYPE MPQCInYYSTYPE
 %}
 
 %union {

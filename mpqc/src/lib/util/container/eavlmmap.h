@@ -30,6 +30,7 @@
 
 #include <iostream.h>
 #include <util/container/compare.h>
+#include <unistd.h> // for size_t on solaris
 
 template <class K, class T>
 class EAVLMMapNode {

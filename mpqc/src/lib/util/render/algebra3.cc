@@ -56,6 +56,12 @@ double& vec2::operator [] ( int i) {
     return n[i];
 }
 
+const double& vec2::operator [] ( int i) const {
+    if (i < VX || i > VY)
+	V_ERROR("vec2 [] operator: illegal access; index = " << i << '\n')
+    return n[i];
+}
+
 
 // SPECIAL FUNCTIONS
 
@@ -211,6 +217,12 @@ vec3& vec3::operator /= ( const double d )
   return *this; }
 
 double& vec3::operator [] ( int i) {
+    if (i < VX || i > VZ)
+	V_ERROR("vec3 [] operator: illegal access; index = " << i << '\n')
+    return n[i];
+}
+
+const double& vec3::operator [] ( int i) const {
     if (i < VX || i > VZ)
 	V_ERROR("vec3 [] operator: illegal access; index = " << i << '\n')
     return n[i];
@@ -777,12 +789,12 @@ mat3 identity2D()
 		vec3(0.0, 1.0, 0.0),
 		vec3(0.0, 0.0, 1.0)); }
 
-mat3 translation2D(vec2& v)
+mat3 translation2D(const vec2& v)
 {   return mat3(vec3(1.0, 0.0, v[VX]),
 		vec3(0.0, 1.0, v[VY]),
 		vec3(0.0, 0.0, 1.0)); }
 
-mat3 rotation2D(vec2& Center, const double angleDeg) {
+mat3 rotation2D(const vec2& Center, const double angleDeg) {
     double  angleRad = angleDeg * M_PI / 180.0,
 	    c = cos(angleRad),
 	    s = sin(angleRad);
@@ -792,7 +804,7 @@ mat3 rotation2D(vec2& Center, const double angleDeg) {
 		vec3(0.0, 0.0, 1.0));
 }
 
-mat3 scaling2D(vec2& scaleVector)
+mat3 scaling2D(const vec2& scaleVector)
 {   return mat3(vec3(scaleVector[VX], 0.0, 0.0),
 		vec3(0.0, scaleVector[VY], 0.0),
 		vec3(0.0, 0.0, 1.0)); }
@@ -803,18 +815,19 @@ mat4 identity3D()
 		vec4(0.0, 0.0, 1.0, 0.0),
 		vec4(0.0, 0.0, 0.0, 1.0)); }
 
-mat4 translation3D(vec3& v)
+mat4 translation3D(const vec3& v)
 {   return mat4(vec4(1.0, 0.0, 0.0, v[VX]),
 		vec4(0.0, 1.0, 0.0, v[VY]),
 		vec4(0.0, 0.0, 1.0, v[VZ]),
 		vec4(0.0, 0.0, 0.0, 1.0)); }
 
-mat4 rotation3D(vec3& Axis, const double angleDeg) {
+mat4 rotation3D(const vec3& Axisarg, const double angleDeg) {
     double  angleRad = angleDeg * M_PI / 180.0,
 	    c = cos(angleRad),
 	    s = sin(angleRad),
 	    t = 1.0 - c;
 
+    vec3 Axis(Axisarg);
     Axis.normalize();
     return mat4(vec4(t * Axis[VX] * Axis[VX] + c,
 		     t * Axis[VX] * Axis[VY] - s * Axis[VZ],
@@ -831,7 +844,7 @@ mat4 rotation3D(vec3& Axis, const double angleDeg) {
 		vec4(0.0, 0.0, 0.0, 1.0));
 }
 
-mat4 scaling3D(vec3& scaleVector)
+mat4 scaling3D(const vec3& scaleVector)
 {   return mat4(vec4(scaleVector[VX], 0.0, 0.0, 0.0),
 		vec4(0.0, scaleVector[VY], 0.0, 0.0),
 		vec4(0.0, 0.0, scaleVector[VZ], 0.0),

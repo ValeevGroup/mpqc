@@ -20,7 +20,7 @@ class Appearance: public DescribedClass {
     ~Appearance();
     Parameter<int>& level() { return level_; }
 
-    void print(FILE*fp);
+    void print(FILE*fp = stdout);
 };
 DescribedClass_REF_dec(Appearance);
 

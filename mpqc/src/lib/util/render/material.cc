@@ -1,13 +1,6 @@
 
 #include "material.h"
 
-Color::Color(const RefKeyVal& keyval)
-{
-  red_ = keyval->doublevalue(0);
-  green_ = keyval->doublevalue(1);
-  blue_ = keyval->doublevalue(2);
-}
-
 #define CLASSNAME Material
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public DescribedClass
@@ -29,10 +22,12 @@ Material::Material()
 Material::Material(const RefKeyVal& keyval)
 {
   if (keyval->exists("diffuse")) {
-      diffuse_.set(Color(new PrefixKeyVal("diffuse", keyval)));
+      Color c(new PrefixKeyVal("diffuse", keyval));
+      diffuse_.set(c);
     }
   if (keyval->exists("ambient")) {
-      ambient_.set(Color(new PrefixKeyVal("ambient", keyval)));
+      Color c(new PrefixKeyVal("ambient", keyval));
+      ambient_.set(c);
     }
 }
 

@@ -6,18 +6,18 @@ render<OOGLRender>: (
   )
 
 red<Material>: (
-     diffuse = [ 1.0 0.0 0.0 ]
-     ambient = [ 1.0 0.0 0.0 ]
+     diffuse:rgb = [ 1.0 0.0 0.0 ]
+     ambient:rgb = [ 1.0 0.0 0.0 ]
   )
 
 blue<Material>: (
-     diffuse = [ 0.0 0.0 1.0 ]
-     ambient = [ 0.0 0.0 1.0 ]
+     diffuse:rgb = [ 0.0 0.0 1.0 ]
+     ambient:rgb = [ 0.0 0.0 1.0 ]
   )
 
 object<RenderedObjectSet>: (
   appearance<Appearance>: (
-      level = 2
+      level = 4
     )
   objects: [
     <RenderedSphere>: (
@@ -35,11 +35,21 @@ object<RenderedObjectSet>: (
                scale = 2.0
              )
        )
+    <RenderedPolylines>: (
+          {      vertices    vertex_color_list } = {
+              [1.0 1.0 1.0]  [ 0.0 0.0 1.0 ]
+              [2.0 2.0 2.0]  [ 0.0 0.0 1.0 ]
+              [-2.0 2.0 2.0] [ 0.0 1.0 0.0 ]
+             }
+          lines = [[ 0 1 ]
+                   [ 1 2 ]
+                   ]
+       )
     <RenderedPolygons>: (
           transform<Transform>: (
                translate = [ 0.0 1.0 1.0 ]
              )
-          {      vertices     vertex_color } = {
+          {      vertices  vertex_color_list } = {
             [ 0.0 0.0 0.0 ] [ 0.0 0.0 0.0 ]
             [ 0.0 0.0 1.0 ] [ 0.0 0.0 1.0 ]
             [ 0.0 1.0 0.0 ] [ 0.0 1.0 0.0 ]

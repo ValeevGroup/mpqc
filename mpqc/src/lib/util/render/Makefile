@@ -6,17 +6,19 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 CXXSRC = render.cc oogl.cc object.cc polygons.cc polysphere.cc \
-         transform.cc appearance.cc material.cc sphere.cc algebra3.cc
+         transform.cc appearance.cc material.cc sphere.cc algebra3.cc \
+         color.cc polylines.cc
 
 CLASSES = Render OOGLRender \
           Transform Appearance Material \
           RenderedObject \
-          RenderedSphere
+          RenderedSphere RenderedPolygons RenderedPolylines
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
-INC = render.h oogl.h object.h sphere.h \
-      algebra3.h parameter.h find.h stack.h polygons.h polysphere.h
+INC = render.h oogl.h object.h sphere.h color.h \
+      algebra3.h parameter.h find.h stack.h polygons.h polysphere.h \
+      polylines.h
 
 DEPENDINCLUDE = $(INC)
 

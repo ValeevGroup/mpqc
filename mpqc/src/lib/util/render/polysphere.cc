@@ -66,8 +66,6 @@ subdivide(int level, int maxlevel,
           int nv, int ne, int nf, const RefRenderedPolygons& poly)
 {
   int i;
-
-  printf("subdivide: level = %d\n", level);
   
   if (level >= maxlevel) {
       // fill in poly

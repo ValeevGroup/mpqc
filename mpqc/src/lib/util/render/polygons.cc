@@ -5,6 +5,7 @@
 #include "render.h"
 #include "object.h"
 #include "polygons.h"
+#include "color.h"
 
 #define CLASSNAME RenderedPolygons
 #define HAVE_KEYVAL_CTOR
@@ -33,11 +34,11 @@ RenderedPolygons::RenderedPolygons(const RefKeyVal& keyval):
 {
   int nvertex = keyval->count("vertices");
   int nface = keyval->count("faces");
-  Color color;
-  if (keyval->count("vertex_color")) {
-      color = Vertex;
+  Coloring coloring;
+  if (keyval->count("vertex_color_list")) {
+      coloring = Vertex;
     }
-  initialize(nvertex, nface, color);
+  initialize(nvertex, nface, coloring);
 
   for (int i=0; i<nvertex; i++) {
       set_vertex(i,
@@ -46,12 +47,12 @@ RenderedPolygons::RenderedPolygons(const RefKeyVal& keyval):
                  keyval->doublevalue("vertices", i, 2));
     }
 
-  if (color == Vertex) {
+  if (coloring == Vertex) {
       for (i=0; i<nvertex; i++) {
           set_vertex_rgb(i,
-                         keyval->doublevalue("vertex_color", i, 0),
-                         keyval->doublevalue("vertex_color", i, 1),
-                         keyval->doublevalue("vertex_color", i, 2));
+                         keyval->doublevalue("vertex_color_list", i, 0),
+                         keyval->doublevalue("vertex_color_list", i, 1),
+                         keyval->doublevalue("vertex_color_list", i, 2));
         }
     }
 
@@ -89,9 +90,9 @@ RenderedPolygons::render(const RefRender& render)
 
 void
 RenderedPolygons::initialize(int nvertex, int nface,
-                             RenderedPolygons::Color color)
+                             RenderedPolygons::Coloring coloring)
 {
-  color_ = color;
+  coloring_ = coloring;
   nvertex_ = nvertex;
   nface_ = nface;
   
@@ -102,7 +103,7 @@ RenderedPolygons::initialize(int nvertex, int nface,
       vertices_[i] = tmp;
     }
 
-  if (color == Vertex) {
+  if (coloring == Vertex) {
       vertex_rgb_ = new double*[nvertex];
       double*tmp = vertex_rgb_[0] = new double[3*nvertex];
       for (int i=1; i<nvertex; i++) {

@@ -29,6 +29,9 @@ class RenderedObject: public DescribedClass {
     RefMaterial material() const { return material_; }
     RefAppearance appearance() const { return appearance_; }
     RefTransform transform() const { return transform_; }
+    void material(const RefMaterial&m) { material_ = m; }
+    void appearance(const RefAppearance&a) { appearance_ = a; }
+    void transform(const RefTransform&t) { transform_ = t; }
 
     virtual void print(FILE* fp = stdout);
 

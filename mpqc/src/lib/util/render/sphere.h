@@ -11,6 +11,7 @@ class RenderedSphere: public RenderedObject {
   protected:
     void render(const RefRender&);
   public:
+    RenderedSphere();
     RenderedSphere(const RefMaterial&);
     RenderedSphere(const RefKeyVal&);
     ~RenderedSphere();

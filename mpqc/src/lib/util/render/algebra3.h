@@ -65,6 +65,7 @@ vec2& operator -= ( const vec2& v );	// decrementation by a vec2
 vec2& operator *= ( const double d );	// multiplication by a constant
 vec2& operator /= ( const double d );	// division by a constant
 double& operator [] ( int i);		// indexing
+const double& operator[](int i) const;  // indexing
 
 // special functions
 
@@ -132,6 +133,7 @@ vec3& operator -= ( const vec3& v );	    // decrementation by a vec3
 vec3& operator *= ( const double d );	    // multiplication by a constant
 vec3& operator /= ( const double d );	    // division by a constant
 double& operator [] ( int i);		    // indexing
+const double& operator[](int i) const;	    // indexing
 
 // special functions
 
@@ -357,14 +359,14 @@ friend vec3 operator * (const mat4& a, const vec3& v);	    // linear transform
 *								*
 ****************************************************************/
 
-mat3 identity2D();					    // identity 2D
-mat3 translation2D(vec2& v);				    // translation 2D
-mat3 rotation2D(vec2& Center, const double angleDeg);	    // rotation 2D
-mat3 scaling2D(vec2& scaleVector);			    // scaling 2D
-mat4 identity3D();					    // identity 3D
-mat4 translation3D(vec3& v);				    // translation 3D
-mat4 rotation3D(vec3& Axis, const double angleDeg);	    // rotation 3D
-mat4 scaling3D(vec3& scaleVector);			    // scaling 3D
-mat4 perspective3D(const double d);			    // perspective 3D
+mat3 identity2D();                                          // identity 2D
+mat3 translation2D(const vec2& v);                          // translation 2D
+mat3 rotation2D(const vec2& Center, const double angleDeg); // rotation 2D
+mat3 scaling2D(const vec2& scaleVector);                    // scaling 2D
+mat4 identity3D();                                          // identity 3D
+mat4 translation3D(const vec3& v);                          // translation 3D
+mat4 rotation3D(const vec3& Axis, const double angleDeg);   // rotation 3D
+mat4 scaling3D(const vec3& scaleVector);                    // scaling 3D
+mat4 perspective3D(const double d);                         // perspective 3D
 
 #endif

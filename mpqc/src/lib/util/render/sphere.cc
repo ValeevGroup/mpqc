@@ -18,6 +18,10 @@ RenderedSphere::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+RenderedSphere::RenderedSphere()
+{
+}
+
 RenderedSphere::RenderedSphere(const RefMaterial& material):
   RenderedObject(material)
 {

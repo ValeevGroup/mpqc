@@ -23,10 +23,9 @@ Transform::Transform(const RefKeyVal& keyval)
           fprintf(stderr,"Transform: error in translation\n");
           abort();
         }
-      vec3 r(keyval->doublevalue("translate",0),
-             keyval->doublevalue("translate",1),
-             keyval->doublevalue("translate",2));
-      transform_ = transform_ * translation3D(r);
+      translate(keyval->doublevalue("translate",0),
+                keyval->doublevalue("translate",1),
+                keyval->doublevalue("translate",2));
     }
   if (keyval->exists("rotate")) {
       if (keyval->count("rotate:axis") != 3
@@ -37,19 +36,43 @@ Transform::Transform(const RefKeyVal& keyval)
       vec3 axis(keyval->doublevalue("rotate:axis",0),
                 keyval->doublevalue("rotate:axis",1),
                 keyval->doublevalue("rotate:axis",2));
-      transform_ = transform_
-                 * rotation3D(axis, keyval->doublevalue("rotate:angle"));
+      rotate(axis, keyval->doublevalue("rotate:angle"));
     }
   if (keyval->exists("scale")) {
       double scalefactor = keyval->doublevalue("scale");
-      transform_ = transform_
-                 * scaling3D(vec3(scalefactor,scalefactor,scalefactor));
+      scale(scalefactor);
     }
 }
 
 Transform::~Transform()
 {
 }
+
+void
+Transform::translate(double x, double y, double z)
+{
+  vec3 r(x,y,z);
+  translate(r);
+}
+
+void
+Transform::translate(const vec3& r)
+{
+  transform_ = translation3D(r) * transform_;
+}
+
+void
+Transform::rotate(const vec3& axis, double angle)
+{
+  transform_ = rotation3D(axis, angle) * transform_;
+}
+
+void
+Transform::scale(double scalefactor)
+{
+  transform_ = scaling3D(vec3(scalefactor,scalefactor,scalefactor))
+             * transform_;
+    }
 
 void
 Transform::print(FILE*fp)

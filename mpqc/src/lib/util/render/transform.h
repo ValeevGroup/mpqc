@@ -19,6 +19,10 @@ class Transform: public DescribedClass {
     Transform(const RefKeyVal&);
     ~Transform();
     mat4& transform() { return transform_; }
+    void translate(double, double, double);
+    void translate(const vec3&);
+    void rotate(const vec3&, double angle_degrees);
+    void scale(double);
     void print(FILE*fp = stdout);
 };
 DescribedClass_REF_dec(Transform);

@@ -13,6 +13,7 @@ DescribedClass_REF_fwddec(RenderedObject);
 DescribedClass_REF_fwddec(RenderedObjectSet);
 DescribedClass_REF_fwddec(RenderedSphere);
 DescribedClass_REF_fwddec(RenderedPolygons);
+DescribedClass_REF_fwddec(RenderedPolylines);
 
 class Render: public DescribedClass {
 #   define CLASSNAME Render
@@ -52,6 +53,7 @@ class Render: public DescribedClass {
     virtual void set(const RefRenderedObjectSet&);
     virtual void sphere(const RefRenderedSphere&);
     virtual void polygons(const RefRenderedPolygons&) = 0;
+    virtual void polylines(const RefRenderedPolylines&) = 0;
 };
 DescribedClass_REF_dec(Render);
 

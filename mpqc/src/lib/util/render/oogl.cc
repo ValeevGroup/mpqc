@@ -4,6 +4,7 @@
 #include "object.h"
 #include "sphere.h"
 #include "polygons.h"
+#include "polylines.h"
 #include "material.h"
 
 #define CLASSNAME OOGLRender
@@ -21,12 +22,14 @@ OOGLRender::_castdown(const ClassDesc*cd)
 OOGLRender::OOGLRender(const char * filename)
 {
   filename_ = strcpy(new char[strlen(filename)+1], filename);
+  oogl_spheres_ = 0;
   fp_ = 0;
   clear();
 }
 
 OOGLRender::OOGLRender(FILE * fp)
 {
+  oogl_spheres_ = 0;
   filename_ = 0;
   fp_ = fp;
   clear();
@@ -164,6 +167,57 @@ OOGLRender::polygons(const RefRenderedPolygons& poly)
       fprintf(fp_, " %d", poly->nvertex_in_face(i));
       for (int j=0; j<poly->nvertex_in_face(i); j++) {
           fprintf(fp_, " %d", poly->face(i,j));
+        }
+      fprintf(fp_, "\n");
+    }
+}
+
+void
+OOGLRender::polylines(const RefRenderedPolylines& poly)
+{
+  int i;
+
+  int nvertex= 0;
+  for (i=0; i<poly->npolyline(); i++) nvertex += poly->nvertex_in_polyline(i);
+  fprintf(fp_, " = VECT\n");
+  fprintf(fp_, "%d %d %d\n",
+          poly->npolyline(),
+          nvertex,
+          (poly->have_vertex_rgb()? nvertex:0));
+  for (i=0; i<poly->npolyline(); i++) {
+      fprintf(fp_, " %d", poly->nvertex_in_polyline(i));
+    }
+  fprintf(fp_, "\n");
+  if (poly->have_vertex_rgb()) {
+      for (i=0; i<poly->npolyline(); i++) {
+          fprintf(fp_, " %d", poly->nvertex_in_polyline(i));
+        }
+    }
+  else {
+      for (i=0; i<poly->npolyline(); i++) {
+          fprintf(fp_, " 0");
+        }
+    }
+  fprintf(fp_, "\n");
+  for (i=0; i<poly->npolyline(); i++) {
+      for (int j=0; j<poly->nvertex_in_polyline(i); j++) {
+          int ivertex = poly->polyline(i,j);
+          fprintf(fp_, " %10.4f %10.4f %10.4f",
+                  poly->vertex(ivertex,0),
+                  poly->vertex(ivertex,1),
+                  poly->vertex(ivertex,2));
+        }
+    }
+  fprintf(fp_, "\n");
+  if (poly->have_vertex_rgb()) {
+      for (i=0; i<poly->npolyline(); i++) {
+          for (int j=0; j<poly->nvertex_in_polyline(i); j++) {
+              int ivertex = poly->polyline(i,j);
+              fprintf(fp_, " %10.4f %10.4f %10.4f 1.0",
+                      poly->vertex_rgb(ivertex,0),
+                      poly->vertex_rgb(ivertex,1),
+                      poly->vertex_rgb(ivertex,2));
+            }
         }
       fprintf(fp_, "\n");
     }

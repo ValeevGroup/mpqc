@@ -6,6 +6,7 @@
 #include <util/render/parameter.h>
 
 // cannot be used with g++ 2.6-94q4 and has other bugs anyway
+#if 0
 template <class T1, class T2>
 void
 find_parameter_in_stack(Stack<T1>& stack,
@@ -23,6 +24,7 @@ find_parameter_in_stack(Stack<T1>& stack,
         }
     }
 }
+#endif
 
 inline void
 find_int_parameter_in_appearance_stack(Stack<RefAppearance>& stack,

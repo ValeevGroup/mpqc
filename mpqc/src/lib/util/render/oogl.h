@@ -25,6 +25,7 @@ class OOGLRender: public Render {
     void set(const RefRenderedObjectSet&);
     void sphere(const RefRenderedSphere&);
     void polygons(const RefRenderedPolygons&);
+    void polylines(const RefRenderedPolylines&);
 };
 DescribedClass_REF_dec(OOGLRender);
 

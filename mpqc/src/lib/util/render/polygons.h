@@ -2,15 +2,17 @@
 #ifndef _util_render_polygons_h
 #define _util_render_polygons_h
 
+#include <util/keyval/keyval.h>
 #include <util/render/object.h>
 
 class RenderedPolygons: public RenderedObject {
 #   define CLASSNAME RenderedPolygons
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
+  public:
+    enum Coloring { None, Vertex /*, Face*/ };
   private:
-    enum Color { None, Vertex /*, Face*/ };
-    RenderedPolygons::Color color_;
+    RenderedPolygons::Coloring coloring_;
     int nvertex_;
     int nface_;
     double** vertices_;
@@ -25,9 +27,12 @@ class RenderedPolygons: public RenderedObject {
     ~RenderedPolygons();
 
     void initialize(int nvertex, int nface,
-                    RenderedPolygons::Color c = RenderedPolygons::None);
+                    RenderedPolygons::Coloring c = RenderedPolygons::None);
     void set_vertex(int, double x, double y, double z);
     void set_vertex_rgb(int, double r, double g, double b);
+    void set_vertex_color(int i, const Color&c) {
+        set_vertex_rgb(i, c.red(), c.green(), c.blue());
+      }
     void set_face(int iface, int v1, int v2, int v3);
     void set_face(int iface, int v1, int v2, int v3, int v4);
 
@@ -37,7 +42,7 @@ class RenderedPolygons: public RenderedObject {
     double vertex(int i, int j) const { return vertices_[i][j]; }
     int face(int i,int j) const { return faces_[i][j]; }
     double vertex_rgb(int i, int j) const { return vertex_rgb_[i][j]; }
-    int have_vertex_rgb() const { return color_ == Vertex; }
+    int have_vertex_rgb() const { return coloring_ == Vertex; }
 };
 DescribedClass_REF_dec(RenderedPolygons);
 

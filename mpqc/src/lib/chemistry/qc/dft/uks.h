@@ -63,7 +63,6 @@ class UKS: public UnrestrictedSCF {
 
     int value_implemented();
     int gradient_implemented();
-    int hessian_implemented();
 
   protected:
     double exc_;

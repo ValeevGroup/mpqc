@@ -91,12 +91,6 @@ TCHF::gradient_implemented()
   return 1;
 }
 
-int
-TCHF::hessian_implemented()
-{
-  return 0;
-}
-
 void
 TCHF::print(ostream&o)
 {

@@ -31,7 +31,7 @@
 
 #include <math.h>
 #include <util/misc/formio.h>
-#include <util/state/state_bin.h>
+#include <util/group/message.h>
 #include <math/symmetry/corrtab.h>
 #include <math/scmat/local.h>
 #include <math/scmat/blocked.h>
@@ -57,45 +57,18 @@ MolecularFrequencies::_castdown(const ClassDesc*cd)
 
 MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
 {
-  mole_ = keyval->describedclassvalue("energy");
-
+  mol_ = keyval->describedclassvalue("molecule");
+  if (mol_.null()) {
+      cerr << node0 << "MolecularFrequencies: KeyVal CTOR requires molecule"
+           << endl;
+      abort();
+    }
+  KeyValValueRefDescribedClass def_pg(mol_->point_group());
+  pg_ = keyval->describedclassvalue("point_group", def_pg);
+  nirrep_ = pg_->char_table().nirrep();
   debug_ = keyval->booleanvalue("debug");
-
-  accuracy_ = 1e-10;
-  if (keyval->exists("gradient_accuracy"))
-      accuracy_ = keyval->doublevalue("gradient_accuracy");
-  
-  if (mole_.null()) {
-      mol_ = keyval->describedclassvalue("molecule");
-      kit_ = SCMatrixKit::default_matrixkit();
-    }
-  else {
-      mol_ = mole_->molecule();
-      kit_ = mole_->matrixkit();
-      d3natom_ = mole_->moldim();
-    }
-  if (d3natom_.null()) d3natom_ = new SCDimension(3*mol_->natom());
-  bd3natom_ = new SCDimension(3*mol_->natom());
-  bd3natom_->blocks()->set_subdim(0,d3natom_);
-  symkit_ = new BlockedSCMatrixKit(kit_);
-
-  displacement_point_group_ = keyval->describedclassvalue("point_group");
-  if (displacement_point_group_.null()) {
-      displacement_point_group_
-          = new PointGroup(*mol_->point_group().pointer());
-    }
-
-  nirrep_ = displacement_point_group_->char_table().nirrep();
-  displacements_ = new RefSCMatrix[nirrep_];
-
-  disp_ = keyval->doublevalue("displacement");
-  if (keyval->error() != KeyVal::OK) disp_ = 0.001;
-
-  gradients_ = 0;
-
   nfreq_ = 0;
   freq_ = 0;
-  ndisp_ = 0;
 }
 
 MolecularFrequencies::~MolecularFrequencies()
@@ -107,8 +80,6 @@ MolecularFrequencies::~MolecularFrequencies()
         }
       delete[] freq_;
     }
-  delete[] displacements_;
-  delete[] gradients_;
 }
 
 MolecularFrequencies::MolecularFrequencies(StateIn& si):
@@ -116,518 +87,57 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
 {
   int i;
 
-  if (si.version(static_class_desc()) < 2) {
+  if (si.version(static_class_desc()) < 3) {
       cerr << "MolecularFrequencies: cannot restore from old version" << endl;
       abort();
     }
 
-  original_point_group_.restore_state(si);
-
-  if (si.version(static_class_desc()) >= 2) {
-      displacement_point_group_.restore_state(si);
-    }
-
   mol_.restore_state(si);
-  mole_.restore_state(si);
+  pg_.restore_state(si);
 
-  if (mole_.null()) {
-      kit_ = SCMatrixKit::default_matrixkit();
-    }
-  else {
-      kit_ = mole_->matrixkit();
-      d3natom_ = mole_->moldim();
-    }
-  if (d3natom_.null()) d3natom_ = new SCDimension(3*mol_->natom());
-  bd3natom_ = new SCDimension(3*mol_->natom());
-  bd3natom_->blocks()->set_subdim(0,d3natom_);
-  symkit_ = new BlockedSCMatrixKit(kit_);
-
-  if (si.version(static_class_desc()) >= 3) {
-      si.get(accuracy_);
-    }
-
-  si.get(disp_);
-  si.get(ndisp_);
   si.get(nirrep_);
-  si.get(nexternal_);
-  displacements_ = new RefSCMatrix[nirrep_];
-
-  for (i=0; i < nirrep_; i++) {
-      int ndisp;
-      si.get(ndisp);
-      RefSCDimension ddisp = new SCDimension(ndisp);
-      displacements_[i] = matrixkit()->matrix(d3natom_,ddisp);
-      displacements_[i].restore(si);
-    }
-
-  freq_ = 0;
-  nfreq_ = 0;
-  debug_ = 0;
-
-  gradients_ = new RefSCVector[ndisplace()];
-  for (i=0; i < ndisp_; i++) {
-      int ndisp;
-      si.get(ndisp);
-      RefSCDimension ddisp = new SCDimension(ndisp);
-      gradients_[i] = matrixkit()->vector(ddisp);
-      gradients_[i].restore(si);
-    }
-
-  original_geometry_ = matrixkit()->vector(d3natom_);
-  original_geometry_.restore(si);
-  disym_.restore_state(si);
+  si.get(nfreq_);
+  for (i=0; i<nirrep_; i++) si.get(freq_[i]);
 }
 
 void
 MolecularFrequencies::save_data_state(StateOut& so)
 {
   int i;
-  original_point_group_.save_state(so);
 
-  displacement_point_group_.save_state(so);
   mol_.save_state(so);
-  mole_.save_state(so);
-  so.put(accuracy_);
-  so.put(disp_);
-  so.put(ndisp_);
+  pg_.save_state(so);
+
   so.put(nirrep_);
-  so.put(nexternal_);
-  for (i=0; i < nirrep_; i++) {
-      so.put(displacements_[i].ncol());
-      displacements_[i].save(so);
-    }
-
-  for (i=0; i < ndisp_; i++) {
-      so.put(gradients_[i].n());
-      gradients_[i].save(so);
-    }
-
-  original_geometry_.save(so);
-  disym_.save_state(so);
+  so.put(nfreq_,nirrep_);
+  for (i=0; i<nirrep_; i++) so.put(freq_[i],nfreq_[i]);
 }
 
 void
-MolecularFrequencies::restore_displacements(StateIn& si)
-{
-  int i;
-
-  original_point_group_.restore_state(si);
-  displacement_point_group_.restore_state(si);
-
-  si.get(disp_);
-  si.get(ndisp_);
-  si.get(nirrep_);
-  si.get(nexternal_);
-
-  displacements_ = new RefSCMatrix[nirrep_];
-  for (i=0; i < nirrep_; i++) {
-      int ndisp;
-      si.get(ndisp);
-      RefSCDimension ddisp = new SCDimension(ndisp);
-      displacements_[i] = matrixkit()->matrix(d3natom_,ddisp);
-      displacements_[i].restore(si);
-    }
-
-  gradients_ = new RefSCVector[ndisplace()];
-  for (i=0; i < ndisp_; i++) {
-      int ndisp;
-      si.get(ndisp);
-      RefSCDimension ddisp = new SCDimension(ndisp);
-      gradients_[i] = matrixkit()->vector(ddisp);
-      gradients_[i].restore(si);
-    }
-
-  original_geometry_ = matrixkit()->vector(d3natom_);
-  original_geometry_.restore(si);
-  disym_.restore_state(si);
-}
-
-void
-MolecularFrequencies::checkpoint_displacements(StateOut& so)
-{
-  int i;
-  original_point_group_.save_state(so);
-  displacement_point_group_.save_state(so);
-
-  so.put(disp_);
-  so.put(ndisp_);
-  so.put(nirrep_);
-  so.put(nexternal_);
-  for (i=0; i < nirrep_; i++) {
-      so.put(displacements_[i].ncol());
-      displacements_[i].save(so);
-    }
-
-  for (i=0; i < ndisp_; i++) {
-      so.put(gradients_[i].n());
-      gradients_[i].save(so);
-    }
-
-  original_geometry_.save(so);
-  disym_.save_state(so);
-}
-
-void
-MolecularFrequencies::compute_gradients(const char *ckptfile)
-{
-  int i;
-  const char *freqckptfile =
-    (MessageGrp::get_default_messagegrp()->me()==0) ? ckptfile : "/dev/null";
-  
-  for (i=ndisplacements_done(); i < ndisplace(); i++) {
-    // This produces side-effects in mol and may even change
-    // its symmetry.
-    cout << node0 << endl << indent
-         << "Beginning displacement " << i << ":" << endl;
-    displace(i);
-
-    mole_->obsolete();
-    mole_->set_desired_gradient_accuracy(accuracy_);
-
-    RefSCVector gradv = mole_->get_cartesian_gradient();
-    set_gradient(i, gradv);
-
-    StateOutBin so(freqckptfile);
-    checkpoint_displacements(so);
-  }
-
-  original_geometry();
-}
-
-void
-MolecularFrequencies::compute_displacements()
-{
-  // create the character table for the point group
-  CharacterTable ct = displacement_point_group_->char_table();
-
-  int ng = ct.order();
-  int natom = mol_->natom();
-
-  original_point_group_ = mol_->point_group();
-  original_geometry_ = matrixkit()->vector(d3natom_);
-
-  int i, coor;
-  for (i=0, coor=0; i<mol_->natom(); i++) {
-      for (int j=0; j<3; j++, coor++) {
-          original_geometry_(coor) = mol_->r(i,j);
-        }
-    }
-
-  // Form the matrix of displacements in cartesian coordinates
-  RefSCMatrix cartdisp(d3natom_,d3natom_,matrixkit());
-  cartdisp.assign(0.0);
-  for (i=0; i<3*natom; i++) {
-      cartdisp(i,i) = 1.0;
-    }
-
-  // Project out translations and rotations
-  RefSCDimension dext(new SCDimension(6));
-  // form a basis for the translation and rotation coordinates
-  RefSCMatrix externaldisp(d3natom_,dext,matrixkit());
-  externaldisp.assign(0.0);
-  for (i=0; i<natom; i++) {
-      SCVector3 atom(mol_->r(i));
-      for (int j=0; j<3; j++) {
-          externaldisp(i*3 + j,j) = 1.0;
-        }
-      externaldisp(i*3 + 1, 3 + 0) =  atom[2];
-      externaldisp(i*3 + 2, 3 + 0) = -atom[1];
-      externaldisp(i*3 + 0, 3 + 1) =  atom[2];
-      externaldisp(i*3 + 2, 3 + 1) = -atom[0];
-      externaldisp(i*3 + 0, 3 + 2) =  atom[1];
-      externaldisp(i*3 + 1, 3 + 2) = -atom[0];
-    }
-  // do an SVD on the external displacements
-  RefSCMatrix Uext(d3natom_,d3natom_,matrixkit());
-  RefSCMatrix Vext(dext,dext,matrixkit());
-  RefSCDimension min;
-  nexternal_ = dext.n();
-  if (d3natom_.n()<dext.n()) min = d3natom_;
-  else min = dext;
-  int nmin = min.n();
-  RefDiagSCMatrix sigmaext(min,matrixkit());
-  externaldisp.svd(Uext,sigmaext,Vext);
-  // find the epsilon rank
-  const double epsilonext = 1.0e-4;
-  int rankext = 0;
-  for (i=0; i<nmin; i++) {
-      if (sigmaext(i) > epsilonext) rankext++;
-    }
-  cout << node0 << indent << "The external rank is " << rankext << endl;
-  // find the projection onto the externaldisp perp space
-  if (rankext) {
-      RefSCDimension drankext_tilde = new SCDimension(d3natom_.n() - rankext);
-      RefSCMatrix Uextr_tilde(d3natom_,drankext_tilde,matrixkit());
-      Uextr_tilde.assign_subblock(Uext,
-                                  0, d3natom_.n()-1,
-                                  0, drankext_tilde.n()-1,
-                                  0, rankext);
-      RefSymmSCMatrix projext_perp(d3natom_, matrixkit());
-      projext_perp.assign(0.0);
-      projext_perp.accumulate_symmetric_product(Uextr_tilde);
-      cartdisp = projext_perp * cartdisp;
-    }
-
-  // Form the mapping of atom numbers to transformed atom number
-  int **atom_map = new int*[natom];
-  for (i=0; i < natom; i++) atom_map[i] = new int[ng];
-  // loop over all centers
-  for (i=0; i < natom; i++) {
-      SCVector3 ac(mol_->r(i));
-      // then for each symop in the pointgroup, transform the coordinates of
-      // center "i" and see which atom it maps into
-      for (int g=0; g < ng; g++) {
-          double np[3];
-          SymmetryOperation so = ct.symm_operation(g);
-          for (int ii=0; ii < 3; ii++) {
-              np[ii] = 0;
-              for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
-            }
-          atom_map[i][g] = mol_->atom_at_position(np, 0.05);
-          if (atom_map[i][g] < 0) {
-              cerr << node0 << indent
-                   << "MolecularFrequencies: atom mapping bad" << endl;
-              abort();
-            }
-        }
-    }
-
-  int *dims = new int[nirrep_];
-
-  // Project the cartesian displacements into each irrep
-  SymmetryOperation so;
-  for (i=0; i<nirrep_; i++) {
-      IrreducibleRepresentation irrep = ct.gamma(i);
-      RefSCMatrix *components = new RefSCMatrix[irrep.degeneracy()];
-      // loop over the components of this irrep
-      int j;
-      for (j=0; j<irrep.degeneracy(); j++) {
-          // form the projection matrix for this component of this irrep
-          RefSCMatrix projmat(d3natom_,d3natom_,matrixkit());
-          projmat.assign(0.0);
-          // form the projection matrix for irrep i component j
-          // loop over the symmetry operators
-          for (int g=0; g < ng; g++) {
-              double coef = ((double)irrep.character(g)*irrep.degeneracy())/ng;
-              so = ct.symm_operation(g);
-              for (int atom=0; atom<natom; atom++) {
-                  for (int ii=0; ii < 3; ii++) {
-                      for (int jj=0; jj < 3; jj++) {
-                          projmat.accumulate_element(atom_map[atom][g]*3+ii,
-                                                     atom*3 + jj,
-                                                     coef * so(ii,jj));
-                        }
-                    }
-                }
-            }
-          // projection matrix for irrep i, component j is formed
-          RefSCMatrix cartdisp_ij = projmat * cartdisp;
-          RefSCMatrix U(d3natom_, d3natom_, matrixkit());
-          RefSCMatrix V(d3natom_, d3natom_, matrixkit());
-          RefDiagSCMatrix sigma(d3natom_, matrixkit());
-          cartdisp_ij.svd(U, sigma, V);
-          // Compute the epsilon rank of cartdisp ij
-          const double epsilon = 1.0e-3;
-          int k, rank = 0;
-          for (k=0; k<3*natom; k++) {
-              if (sigma(k) > epsilon) rank++;
-            }
-          if (!rank) continue;
-          // Find an orthogonal matrix that spans the range of cartdisp ij
-          RefSCDimension drank = new SCDimension(rank);
-          RefSCMatrix Ur(d3natom_,drank,matrixkit());
-          Ur.assign_subblock(U,0, d3natom_.n()-1, 0, drank.n()-1, 0, 0);
-          // Reassign cartdisp_ij to the orthonormal displacement
-          cartdisp_ij = Ur;
-          if (debug_) {
-              cout << node0 << indent
-                   << "Irrep " << irrep.symbol() << " component " << j << endl;
-              cartdisp_ij.print("cartdisp:",cout);
-            }
-          components[j] = cartdisp_ij;
-        }
-      int ndisp = 0;
-      for (j=0; j<irrep.degeneracy(); j++) ndisp += components[j].ncol();
-
-      dims[i] = ndisp;
-      RefSCDimension ddisp = new SCDimension(ndisp);
-      displacements_[i] = matrixkit()->matrix(d3natom_,ddisp);
-      int offset = 0;
-      for (j=0; j<irrep.degeneracy(); j++) {
-          displacements_[i]->assign_subblock(
-              components[j],
-              0, d3natom_.n()-1,
-              offset, offset+components[j].ncol()-1,
-              0, 0);
-          offset += components[j].ncol();
-        }
-      delete[] components;
-    }
-
-  int total = 0;
-  for (i=0; i<nirrep_; i++) {
-      total += dims[i];
-    }
-  RefSCBlockInfo bi = new SCBlockInfo(total, nirrep_, dims);
-  delete[] dims;
-  for (i=0; i<nirrep_; i++) {
-      bi->set_subdim(i, displacements_[i]->coldim());
-    }
-  disym_ = new SCDimension(bi);
-
-  for (i=0; i<natom; i++) delete[] atom_map[i];
-  delete[] atom_map;
-
-  gradients_ = new RefSCVector[ndisplace()];
-}
-
-void
-MolecularFrequencies::get_disp(int disp, int &irrep, int &index, double &coef)
-{
-  int disp_offset = 0;
-
-  // check for +ve totally symmetric displacements
-  if (disp < disp_offset + displacements_[0].ncol()) {
-      irrep = 0;
-      coef = 1.0;
-      index = disp - disp_offset;
-      return;
-    }
-  disp_offset += displacements_[0].ncol();
-  // check for -ve totally symmetric displacements
-  if (disp < disp_offset + displacements_[0].ncol()) {
-      irrep = 0;
-      coef = -1.0;
-      index = disp - disp_offset;
-      return;
-    }
-  disp_offset += displacements_[0].ncol();
-  for (int i=1; i<nirrep_; i++) {
-      if (disp < disp_offset + displacements_[i].ncol()) {
-          irrep = i;
-          coef = 1.0;
-          index = disp - disp_offset;
-          return;
-        }
-      disp_offset += displacements_[i].ncol();
-    }
-  cerr << node0 << indent
-       << "MolecularFrequencies::get_disp: bad disp number" << endl;
-  abort();
-}
-
-int
-MolecularFrequencies::ndisplace() const
-{
-  int ndisp = 2 * displacements_[0].ncol();
-  for (int i=1; i<nirrep_; i++) {
-      ndisp += displacements_[i].ncol();
-    }
-  return ndisp;
-}
-
-void
-MolecularFrequencies::displace(int disp)
-{
-  int irrep, index;
-  double coef;
-  get_disp(disp, irrep, index, coef);
-
-  if (mole_.nonnull()) mole_->obsolete();
-
-  for (int i=0, coor=0; i<mol_->natom(); i++) {
-      for (int j=0; j<3; j++, coor++) {
-          mol_->r(i,j) = original_geometry_(coor)
-                           + coef * disp_
-                            * displacements_[irrep]->get_element(coor,index);
-        }
-    }
-
-  if (irrep == 0) {
-      mol_->set_point_group(original_point_group_);
-    }
-  else {
-      RefPointGroup newpg = mol_->highest_point_group();
-      CorrelationTable corrtab;
-      if (corrtab.initialize_table(original_point_group_, newpg)) {
-          // something went wrong so use c1 symmetry
-          mol_->set_point_group(new PointGroup("c1"));
-        }
-      else {
-          mol_->set_point_group(newpg);
-        }
-    }
-
-#ifdef DEBUG
-  cout << node0 << indent
-       << "Displacement point group: " << endl
-       << incindent << displacement_point_group_ << decindent;
-  cout << node0 << indent
-       << "Displaced molecule: " << endl
-       << incindent << mol_ << decindent;
-#endif
-
-  cout << node0 << indent
-       << "Displacement is "
-       << displacement_point_group_->char_table().gamma(irrep).symbol()
-       << " in " << displacement_point_group_->symbol()
-       << ".  Using point group "
-       << mol_->point_group()->symbol()
-       << " for displaced molecule."
-       << endl;
-}
-
-void
-MolecularFrequencies::original_geometry()
-{
-  if (mole_.nonnull()) mole_->obsolete();
-
-  for (int i=0, coor=0; i<mol_->natom(); i++) {
-      for (int j=0; j<3; j++, coor++) {
-          mol_->r(i,j) = original_geometry_(coor);
-        }
-    }
-
-  mol_->set_point_group(original_point_group_);
-}
-
-void
-MolecularFrequencies::set_energy(const RefMolecularEnergy &mole)
-{
-  mole_ = mole;
-  mol_ = mole_->molecule();
-}
-
-void
-MolecularFrequencies::set_gradient(int disp, const RefSCVector &grad)
-{
-  int irrep, index;
-  double coef;
-  get_disp(disp, irrep, index, coef);
-
-  // transform the gradient into symmetrized coordinates
-  gradients_[disp] = displacements_[irrep].t() * grad;
-  if (debug_) {
-      grad.print("cartesian gradient");
-      gradients_[disp].print("internal gradient");
-    }
-
-  ndisp_++;
-}
-
-void
-MolecularFrequencies::compute_frequencies_from_gradients()
+MolecularFrequencies::compute_frequencies(const RefSymmSCMatrix &xhessian)
 {
   int i, coor;
+
+  RefSCMatrix symmbasis
+      = MolecularHessian::cartesian_to_symmetry(mol_,pg_);
+  BlockedSCMatrix *bsymmbasis = BlockedSCMatrix::castdown(symmbasis.pointer());
+
+  kit_ = xhessian->kit();
+  d3natom_ = xhessian->dim();
+  symkit_ = symmbasis->kit();
+  bd3natom_ = symmbasis->coldim();
+  disym_ = symmbasis->rowdim();
 
   cout << node0 << endl
        << indent << "Frequencies (cm-1; negative is imaginary):";
 
   // initialize the frequency tables
+  if (nfreq_) delete[] nfreq_;
   nfreq_ = new int[nirrep_];
+  if (freq_) delete[] freq_;
   freq_ = new double*[nirrep_];
 
-  // initialize normal cooridinate matrix
+  // initialize normal coordinate matrix
   normco_ = symmatrixkit()->matrix(bd3natom_, disym_);
 
   // find the inverse sqrt mass matrix
@@ -640,89 +150,33 @@ MolecularFrequencies::compute_frequencies_from_gradients()
 
   RefSymmSCMatrix dhessian;
 
-  RefSymmSCMatrix xhessian;
-  if (debug_) {
-      xhessian = matrixkit()->symmmatrix(d3natom_);
-      xhessian.assign(0.0);
-    }
-
-  // start with the totally symmetry frequencies
-  RefSCMatrix dtrans = displacements_[0];
-  RefSCDimension ddim = dtrans.coldim();
-  nfreq_[0] = ddim.n();
-  freq_[0] = new double[nfreq_[0]];
-  dhessian = matrixkit()->symmmatrix(ddim);
-  for (i=0; i<ddim.n(); i++) {
-      for (int j=0; j<=i; j++) {
-          dhessian(i,j) = (gradients_[i](j) - gradients_[i+ddim.n()](j)
-                         + gradients_[j](i) - gradients_[j+ddim.n()](i))
-                         /(4.0*disp_);
-        }
-    }
-  do_freq_for_irrep(0, m, dhessian, xhessian);
-
-  int offset = 2*ddim.n();
-  for (int irrep=1; irrep<nirrep_; irrep++) {
-      dtrans = displacements_[irrep];
-      ddim = dtrans.coldim();
+  for (int irrep=0; irrep<nirrep_; irrep++) {
+      RefSCMatrix dtranst = bsymmbasis->block(irrep);
+      RefSCDimension ddim = dtranst.rowdim();
       nfreq_[irrep] = ddim.n();
       freq_[irrep] = new double[nfreq_[irrep]];
       if (ddim.n() == 0) continue;
       dhessian = matrixkit()->symmmatrix(ddim);
-      for (i=0; i<ddim.n(); i++) {
-          for (int j=0; j<=i; j++) {
-              dhessian(i,j) = (gradients_[i+offset](j)
-                             + gradients_[j+offset](i))
-                             /(2.0*disp_);
-            }
-        }
-      do_freq_for_irrep(irrep, m, dhessian, xhessian);
-      offset += ddim.n();
+      dhessian.assign(0.0);
+      dhessian.accumulate_transform(dtranst,xhessian);
+      do_freq_for_irrep(irrep, m, dhessian, dtranst);
     }
-
-  if (debug_) {
-      xhessian.print("xhessian");
-
-      RefSCMatrix mrect(d3natom_,d3natom_,matrixkit());
-      mrect.assign(0.0);
-      mrect->accumulate(m.pointer());
-
-      RefSymmSCMatrix mxhessian(d3natom_,matrixkit());
-      mxhessian.assign(0.0);
-      mxhessian.accumulate_transform(mrect,xhessian);
-      mxhessian.print("mass weighted cartesian hessian");
-      RefDiagSCMatrix freqs(d3natom_, matrixkit());
-      RefSCMatrix eigvec(d3natom_, d3natom_, matrixkit());
-      mxhessian.diagonalize(freqs,eigvec);
-      // convert the eigvals to frequencies in wavenumbers
-      for (i=0; i<freqs.n(); i++) {
-          if (freqs(i) >=0.0) freqs(i) = sqrt(freqs(i));
-          else freqs(i) = -sqrt(-freqs(i));
-          freqs(i) = freqs->get_element(i) * 219474.63;
-        }
-      freqs.print("Frequencies from cartesian hessian");
-
-      eigvec.print("Mass weighted cartesian hessian eigenvectors.");
-
-      normco_.print("Normal Coordinates");
-    }
-
 }
 
 void
-MolecularFrequencies::do_freq_for_irrep(int irrep,
-                                        const RefDiagSCMatrix &m,
-                                        const RefSymmSCMatrix &dhessian,
-                                        const RefSymmSCMatrix &xhessian)
+MolecularFrequencies::do_freq_for_irrep(
+    int irrep,
+    const RefDiagSCMatrix &m,
+    const RefSymmSCMatrix &dhessian,
+    const RefSCMatrix &dtranst)
 {
   int i;
-  RefSCMatrix dtrans = displacements_[irrep];
+  RefSCMatrix dtrans = dtranst.t();
   RefSCDimension ddim = dtrans.coldim();
   if (ddim.n() == 0) return;
   if (debug_) {
       dhessian.print("dhessian");
       dtrans.print("dtrans");
-      xhessian.accumulate_transform(dtrans, dhessian);
     }
   // find the basis for the normal coordinates
   RefSCMatrix ncbasis = m * dtrans;
@@ -761,7 +215,7 @@ MolecularFrequencies::do_freq_for_irrep(int irrep,
       freq_[irrep][i] = freqs(i);
       freqs(i) = freqs->get_element(i) * 219474.63;
     }
-  freqs.print(displacement_point_group_->char_table().gamma(irrep).symbol());
+  freqs.print(pg_->char_table().gamma(irrep).symbol());
   if (debug_) {
       eigvecs.print("eigenvectors");
       ncbasis.print("ncbasis");
@@ -825,13 +279,13 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   // for linear molecules: sigma = 2 (D_inf_h), sigma = 1 (C_inf_v)
   // for non-linear molecules: sigma = # of rot. in pt. grp, including E
   int sigma;
-  CharacterTable ct = displacement_point_group_->char_table();
+  CharacterTable ct = pg_->char_table();
   if (linear) {
       //if (D_inf_h) sigma = 2;
-      if (displacement_point_group_->symbol()[0] == 'D' ||
-          displacement_point_group_->symbol()[0] == 'd') sigma = 2;
-      else if (displacement_point_group_->symbol()[0] == 'C' ||
-               displacement_point_group_->symbol()[0] == 'c') sigma = 1;
+      if (ct.symbol()[0] == 'D' ||
+          ct.symbol()[0] == 'd') sigma = 2;
+      else if (ct.symbol()[0] == 'C' ||
+               ct.symbol()[0] == 'c') sigma = 1;
       else {
           cerr << "MolecularFrequencies: For linear molecules"
                << " the specified point group must be Cnv or Dnh"
@@ -839,23 +293,23 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
           abort();
           }
       }
-  else if ((displacement_point_group_->symbol()[0] == 'C' ||
-            displacement_point_group_->symbol()[0] == 'c') &&
-           (displacement_point_group_->symbol()[1] >= '1'  &&
-            displacement_point_group_->symbol()[1] <= '8') &&
-            displacement_point_group_->symbol()[2] == '\0') {
+  else if ((ct.symbol()[0] == 'C' ||
+            ct.symbol()[0] == 'c') &&
+           (ct.symbol()[1] >= '1'  &&
+            ct.symbol()[1] <= '8') &&
+            ct.symbol()[2] == '\0') {
       sigma = ct.order();  // group is a valid CN
       }
-  else if ((displacement_point_group_->symbol()[0] == 'D' ||
-            displacement_point_group_->symbol()[0] == 'd') &&
-           (displacement_point_group_->symbol()[1] >= '2'  &&
-            displacement_point_group_->symbol()[1] <= '6') &&
-            displacement_point_group_->symbol()[2] == '\0') {
+  else if ((ct.symbol()[0] == 'D' ||
+            ct.symbol()[0] == 'd') &&
+           (ct.symbol()[1] >= '2'  &&
+            ct.symbol()[1] <= '6') &&
+            ct.symbol()[2] == '\0') {
       sigma = ct.order();  // group is a valid DN
       }
-  else if ((displacement_point_group_->symbol()[0] == 'T' ||
-            displacement_point_group_->symbol()[0] == 't') &&
-            displacement_point_group_->symbol()[1] == '\0') {
+  else if ((ct.symbol()[0] == 'T' ||
+            ct.symbol()[0] == 't') &&
+            ct.symbol()[1] == '\0') {
       sigma = ct.order();  // group is T
       }
   else sigma = (int)(0.5*ct.order()); // group is not pure rot. group (CN, DN, or T)
@@ -927,21 +381,25 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
 
   double EPV = NA*k*T;
 
+  int nexternal = 6;
+  if (mol_->natom() == 1) nexternal = 3;
+  else if (mol_->is_linear()) nexternal = 5;
+
   double Erot;
-  if (nexternal_ == 3) {
+  if (nexternal == 3) {
       // atom
       Erot = 0.0;
     }
-  else if (nexternal_ == 5) {
+  else if (nexternal == 5) {
       // linear
       Erot = EPV;
     }
-  else if (nexternal_ == 6) {
+  else if (nexternal == 6) {
       // nonlinear
       Erot = 1.5 * EPV;
     }
   else {
-      cerr << "Strange number of external coordinates: " << nexternal_
+      cerr << "Strange number of external coordinates: " << nexternal
            << ".  Setting Erot to 0.0" << endl;
       Erot = 0.0;
     }
@@ -996,7 +454,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   cout << node0 << indent
        << scprintf("Principal moments of inertia (amu*angstrom^2):"
           " %.5lf, %.5lf, %.5lf\n", pmi[0], pmi[1], pmi[2])
-       << indent << "Point group: " << displacement_point_group_->symbol()
+       << indent << "Point group: " << ct.symbol()
        << endl
        << indent << "Order of point group: " << ct.order() << endl
        << indent << "Rotational symmetry number: " << sigma << endl;
@@ -1024,7 +482,7 @@ MolecularFrequencies::animate(const RefRender& render,
       for (j=0; j<disym_->blocks()->size(i); j++) {
           char name[128];
           sprintf(name,"%s.%02d",
-                displacement_point_group_->char_table().gamma(i).symbol(), j);
+                pg_->char_table().gamma(i).symbol(), j);
           anim->set_name(name);
           anim->set_mode(i,j);
           render->animate(anim);
@@ -1077,10 +535,9 @@ MolFreqAnimate::object(int iobject)
   BlockedSCMatrix *normco
       = BlockedSCMatrix::castdown(molfreq_->normal_coordinates().pointer());
   RefMolecule mol = renmol_->molecule();
+  RefMolecule molcopy = new Molecule(*mol.pointer());
 
   double scale = 0.2 * cos(M_PI*(iobject+0.5)/(double)nframe_);
-
-  molfreq_->original_geometry();
 
   RefSCMatrix irrepblock = normco->block(irrep_);
   int ixyz, iatom, icoor=0;
@@ -1098,7 +555,9 @@ MolFreqAnimate::object(int iobject)
   sprintf(name,"%02d",iobject);
   renmol_->set_name(name);
 
-  molfreq_->original_geometry();
+  // restore the original molecule
+  mol->operator = (*molcopy.pointer());
+  if (dependent_mole_.nonnull()) dependent_mole_->obsolete();
 
   return renmol_;
 }

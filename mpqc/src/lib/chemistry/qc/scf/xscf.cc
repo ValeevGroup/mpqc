@@ -240,12 +240,6 @@ XSCF::gradient_implemented()
   return 1;
 }
 
-int
-XSCF::hessian_implemented()
-{
-  return 0;
-}
-
 void
 XSCF::print(ostream&o)
 {

@@ -102,12 +102,6 @@ CLKS::gradient_implemented()
   return 0;
 }
 
-int
-CLKS::hessian_implemented()
-{
-  return 0;
-}
-
 void
 CLKS::print(ostream&o)
 {

@@ -36,7 +36,7 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\" -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 CXXSRC = molecule.cc molsymm.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc stors.cc linip.cc linop.cc \
          energy.cc coor.cc imcoor.cc symmcoor.cc redund.cc cartcoor.cc \
-         molshape.cc taylor.cc \
+         molshape.cc taylor.cc hess.cc fdhess.cc \
          molrender.cc atominfo.cc molfreq.cc formula.cc
 
 CLASSES = Molecule \
@@ -54,7 +54,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = molecule.h \
       simple.h localdef.h \
-      coor.h energy.h molshape.h taylor.h \
+      coor.h energy.h molshape.h taylor.h hess.h fdhess.h \
       molrender.h atominfo.h molfreq.h formula.h
 
 DEPENDINCLUDE = $(INC)

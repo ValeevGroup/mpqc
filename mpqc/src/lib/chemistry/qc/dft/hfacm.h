@@ -68,7 +68,6 @@ class HFACM: public Wavefunction {
 
     int value_implemented();
     int gradient_implemented();
-    int hessian_implemented();
 };
 
 #endif

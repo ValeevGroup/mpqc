@@ -244,12 +244,6 @@ MCSCF::gradient_implemented()
   return 1;
 }
 
-int
-MCSCF::hessian_implemented()
-{
-  return 0;
-}
-
 void
 MCSCF::print(ostream&o)
 {

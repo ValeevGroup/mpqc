@@ -102,12 +102,6 @@ UKS::gradient_implemented()
   return 0;
 }
 
-int
-UKS::hessian_implemented()
-{
-  return 0;
-}
-
 double
 UKS::scf_energy()
 {

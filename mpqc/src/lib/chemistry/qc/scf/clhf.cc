@@ -90,12 +90,6 @@ CLHF::gradient_implemented()
   return 1;
 }
 
-int
-CLHF::hessian_implemented()
-{
-  return 0;
-}
-
 void
 CLHF::print(ostream&o)
 {

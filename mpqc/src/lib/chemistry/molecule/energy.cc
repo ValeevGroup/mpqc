@@ -44,7 +44,7 @@ SavableState_REF_def(MolecularEnergy);
 
 #define CLASSNAME MolecularEnergy
 #define PARENTS public Function
-#define VERSION 2
+#define VERSION 3
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *
@@ -77,6 +77,10 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
            << endl;
       abort();
     }
+
+  hess_ = keyval->describedclassvalue("hessian");
+
+  guesshess_ = keyval->describedclassvalue("guess_hessian");
 
   moldim_ = new SCDimension(3 * mol_->natom(), "3Natom");
 
@@ -124,6 +128,10 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   mol_.restore_state(s);
   if (s.version(static_class_desc()) >= 2) s.get(print_molecule_when_changed_);
   else print_molecule_when_changed_ = 1;
+  if (s.version(static_class_desc()) >= 3) {
+      hess_.restore_state(s);
+      guesshess_.restore_state(s);
+    }
 }
 
 MolecularEnergy&
@@ -145,6 +153,8 @@ MolecularEnergy::save_data_state(StateOut&s)
   moldim_.save_state(s);
   mol_.save_state(s);
   s.put(print_molecule_when_changed_);
+  hess_.save_state(s);
+  guesshess_.save_state(s);
 }
 
 void
@@ -182,6 +192,7 @@ MolecularEnergy::set_gradient(RefSCVector&g)
 void
 MolecularEnergy::set_hessian(RefSymmSCMatrix&h)
 {
+  cartesian_hessian_ = h.copy();
   if (mc_.null()) {
     Function::set_hessian(h);
   } else {
@@ -264,6 +275,19 @@ MolecularEnergy::get_cartesian_gradient()
   return cartesian_gradient_;
 }
 
+RefSymmSCMatrix
+MolecularEnergy::get_cartesian_hessian()
+{
+  hessian();
+  if (cartesian_gradient_.null()) {
+      cerr << "MolecularEnergy::get_cartesian_hessian(): "
+           << "cartesian hessian not available"
+           << endl;
+      abort();
+    }
+  return cartesian_hessian_;
+}
+
 RefSCDimension
 MolecularEnergy::moldim()
 {
@@ -279,7 +303,21 @@ MolecularEnergy::molecule()
 void
 MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
 {
-  if (mc_.nonnull()) {
+  if (guesshess_.nonnull()) {
+      int nullmole = (guesshess_->energy() == 0);
+      this->reference();
+      if (nullmole) guesshess_->set_energy(this);
+      RefSymmSCMatrix xhess = guesshess_->cartesian_hessian();
+      if (nullmole) guesshess_->set_energy(0);
+      this->dereference();
+      if (mc_.nonnull()) {
+          mc_->to_internal(hessian, xhess);
+        }
+      else {
+          hessian.assign(xhess);
+        }
+    }
+  else if (mc_.nonnull()) {
       mc_->guess_hessian(hessian);
     }
   else {
@@ -296,6 +334,29 @@ MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
   else {
       return Function::inverse_hessian(hessian);
     }
+}
+
+RefSymmSCMatrix
+MolecularEnergy::hessian()
+{
+  if (hess_.null()) return hessian_.result();
+
+  if (hessian_.computed()) return hessian_.result();
+
+  int nullmole = (hess_->energy() == 0);
+  this->reference();
+  if (nullmole) hess_->set_energy(this);
+  RefSymmSCMatrix xhess = hess_->cartesian_hessian();
+  if (nullmole) hess_->set_energy(0);
+  this->dereference();
+  set_hessian(xhess);
+  return hessian_.result();
+}
+
+int
+MolecularEnergy::hessian_implemented()
+{
+  return hess_.nonnull();
 }
 
 void

@@ -126,7 +126,6 @@ class MCSCF: public OneBodyWavefunction
 
     int value_implemented();
     int gradient_implemented();
-    int hessian_implemented();
 };
 SavableState_REF_dec(MCSCF);
 

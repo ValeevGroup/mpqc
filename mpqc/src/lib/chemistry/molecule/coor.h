@@ -312,6 +312,9 @@ class MolecularCoor: public SavableState
     // number of atoms in the molecule times 3.
     RefSCDimension dim_natom3() { return dnatom3_; }
 
+    //. Returns the molecule.
+    RefMolecule molecule() const { return molecule_; }
+
     //. Print the coordinate.
     virtual void print(ostream& =cout) = 0;
     virtual void print_simples(ostream& =cout) = 0;

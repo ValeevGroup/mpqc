@@ -62,7 +62,6 @@ class CLKS: public CLSCF {
 
     int value_implemented();
     int gradient_implemented();
-    int hessian_implemented();
 
     RefSymmSCMatrix density();
   protected:

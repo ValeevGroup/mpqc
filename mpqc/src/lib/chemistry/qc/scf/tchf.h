@@ -55,7 +55,6 @@ class TCHF: public TCSCF {
     
     int value_implemented();
     int gradient_implemented();
-    int hessian_implemented();
 
   protected:
     void ao_fock();

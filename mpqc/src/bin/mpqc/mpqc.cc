@@ -54,6 +54,7 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/molfreq.h>
+#include <chemistry/molecule/fdhess.h>
 #include <chemistry/molecule/formula.h>
 #include <chemistry/qc/wfn/wfn.h>
 
@@ -361,25 +362,9 @@ main(int argc, char *argv[])
   }
 
   // see if frequencies are wanted
-  char * freqfile = new char[strlen(molname)+6];
-  sprintf(freqfile,"%s.freq",molname);
-  if (restart) {
-    if (grp->me() == 0) {
-      statresult = stat(freqfile,&sb);
-      statsize = (statresult==0) ? sb.st_size : 0;
-    }
-    grp->bcast(statresult);
-    grp->bcast(statsize);
-  }
 
+  RefMolecularHessian molhess = keyval->describedclassvalue("hess");
   RefMolecularFrequencies molfreq = keyval->describedclassvalue("freq");
-  if (restart && statresult==0 && statsize && molfreq.nonnull()) {
-    BcastStateInBin si(grp,freqfile);
-    molfreq->restore_displacements(si);
-  }
-
-  if (molfreq.nonnull() && mole.nonnull())
-    molfreq->set_energy(mole);
   
   int check = (options.retrieve("c") != 0);
   int limit = atoi(options.retrieve("l"));
@@ -518,27 +503,34 @@ main(int argc, char *argv[])
       delete[] ckptfile;
     }
   }
-  
+
+  // Frequency calculation.
   if (ready_for_freq && molfreq.nonnull()) {
-    tim->enter("frequencies");
+    RefSymmSCMatrix xhessian;
+    if (molhess.nonnull()) {
+      // if "hess" input was given, use it to compute the hessian
+      xhessian = molhess->cartesian_hessian();
+    }
+    else if (mole->hessian_implemented()) {
+      // if mole can compute the hessian, use that hessian
+      xhessian = mole->get_cartesian_hessian();
+    }
+    else if (mole->gradient_implemented()) {
+      // if mole can compute gradients, use gradients at finite
+      // displacements to compute the hessian
+      molhess = new FinDispMolecularHessian(mole);
+      xhessian = molhess->cartesian_hessian();
+    }
+    else {
+      cout << "mpqc: WARNING: Frequencies cannot be computed" << endl;
+    }
 
-    if (!molfreq->displacements_computed())
-      molfreq->compute_displacements();
-
-    cout << node0 << indent
-         << "Computing molecular frequencies from "
-         << molfreq->ndisplace() << " displacements:" << endl
-         << indent << "Starting at displacement: "
-         << molfreq->ndisplacements_done() << endl;
-
-    molfreq->compute_gradients(freqfile);
-    molfreq->compute_frequencies_from_gradients();
-    molfreq->thermochemistry(1);
-
-    tim->exit("frequencies");
+    if (xhessian.nonnull()) {
+      molfreq->compute_frequencies(xhessian);
+      // DEGENERACY IS NOT CORRECT FOR NON-SINGLET CASES:
+      molfreq->thermochemistry(1);
+    }
   }
-
-  delete[] freqfile;
 
   // see if any pictures are desired
   RefRender renderer = keyval->describedclassvalue("renderer");

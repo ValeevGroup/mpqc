@@ -91,12 +91,6 @@ OSSHF::gradient_implemented()
   return 1;
 }
 
-int
-OSSHF::hessian_implemented()
-{
-  return 0;
-}
-
 void
 OSSHF::print(ostream&o)
 {

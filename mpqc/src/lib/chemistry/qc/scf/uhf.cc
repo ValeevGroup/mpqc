@@ -91,12 +91,6 @@ UHF::gradient_implemented()
   return 1;
 }
 
-int
-UHF::hessian_implemented()
-{
-  return 0;
-}
-
 void
 UHF::print(ostream&o)
 {

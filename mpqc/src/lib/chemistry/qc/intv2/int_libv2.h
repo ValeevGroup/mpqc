@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.5  1994/08/24 16:07:02  etseidl
+ * Revision 1.6  1994/08/25 16:49:15  etseidl
+ * fix error in prototype for int_read_basis()
+ *
+ * Revision 1.5  1994/08/24  16:07:02  etseidl
  * no longer include atomsip.h, add prototypes for keyval functions
  *
  * Revision 1.4  1994/08/16  20:21:23  etseidl
@@ -88,7 +91,7 @@ extern "C" {
 }
 
 class KeyVal;
-int int_read_basis(KeyVal&, char*, const char*, basis_t*);
+int int_read_basis(KeyVal&, char*, const char*, basis_t&);
 int int_read_centers(KeyVal&, centers_t&);
 
 #endif

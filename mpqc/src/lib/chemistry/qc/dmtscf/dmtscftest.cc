@@ -2,17 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern "C" {
-#include <tmpl.h>
-
 #include <util/group/picl.h>
-
 #include <util/misc/libmisc.h>
-#include <math/dmt/matrix.h>
-}
-
 #include <util/keyval/keyval.h>
-
+#include <math/dmt/matrix.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
@@ -80,7 +73,8 @@ main(int argc, char *argv[])
   if (mynode0() == 0) {
    // initialize keyval
     RefKeyVal pkv(new ParsedKeyVal(filename));
-    RefKeyVal ppkv(new PrefixKeyVal(":scf :default",pkv));
+    RefKeyVal ppkv(new AggregateKeyVal(new PrefixKeyVal(":scf",pkv),
+                                       new PrefixKeyVal(":default",pkv)));
     pkv = new ParsedKeyVal("input",ppkv);
     keyval = new AggregateKeyVal(ppkv,pkv);
 

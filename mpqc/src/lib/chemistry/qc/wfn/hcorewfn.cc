@@ -80,7 +80,7 @@ HCoreWfn::eigenvectors()
     eigenvectors_.computed() = 1;
   }
   
-  return eigenvectors_;
+  return eigenvectors_.result_noupdate();
 }
 
 double

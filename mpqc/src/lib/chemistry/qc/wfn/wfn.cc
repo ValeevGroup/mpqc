@@ -147,7 +147,7 @@ Wavefunction::natural_orbitals()
       natural_density_.computed() = 1;
     }
 
-  return natural_orbitals_;
+  return natural_orbitals_.result_noupdate();
 }
 
 RefDiagSCMatrix
@@ -168,7 +168,7 @@ Wavefunction::natural_density()
       natural_density_.computed() = 1;
     }
 
-  return natural_density_;
+  return natural_density_.result_noupdate();
 }
 
 RefSymmSCMatrix
@@ -186,7 +186,7 @@ Wavefunction::overlap()
     overlap_.computed() = 1;
   }
 
-  return overlap_;
+  return overlap_.result_noupdate();
 }
 
 RefSymmSCMatrix
@@ -204,7 +204,7 @@ Wavefunction::core_hamiltonian()
     hcore_.computed() = 1;
   }
 
-  return hcore_;
+  return hcore_.result_noupdate();
 }
 
 // at some point this will have to check for zero eigenvalues and not

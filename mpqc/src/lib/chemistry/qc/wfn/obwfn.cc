@@ -252,7 +252,7 @@ OneBodyWavefunction::density()
     density_.computed() = 1;
   }
 
-  return density_;
+  return density_.result_noupdate();
 }
 
 // Function for returning an orbital value at a point

@@ -113,9 +113,9 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
                  use_checkpoint_guess, scratch_dir, g92_dir, mole,
                  charge, multiplicity);
 
-    if (!parse_g92_freq(name, g92_calc[runtype].parse_string, mole,
-                         energy, gradient, frequencies, normalmodes,
-                         nmodes, nimag))
+    if (parse_g92_freq(name, g92_calc[runtype].parse_string, mole,
+                       energy, gradient, frequencies, normalmodes,
+                       nmodes, nimag))
     {
         fprintf(stderr,"Error parsing G92 Force calculation\n");
         fprintf(stderr,"Check output in %s.out\n",name);
@@ -126,7 +126,7 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
     char commandstr[100];
     if (keep_g92_log)
     {
-        sprintf(commandstr,"cat %s.g92.out >> %s.log",name,name);
+        sprintf(commandstr,"cat %s.g92freq.out >> %s.freqlog",name,name);
         system(commandstr);
     }
     else if (!use_checkpoint_guess)
@@ -134,8 +134,10 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
         sprintf(commandstr,"%s.chk",name);
         unlink(commandstr);
     }
-    sprintf(commandstr,"%s.g92.out",name);
+    sprintf(commandstr,"%s.g92freq.out",name);
     unlink(commandstr);
+
+    return 0;
 }    
 
 int
@@ -214,11 +216,13 @@ run_g92_freq(char *prefix, int runtype, char *basis, int memory,
 
     // assemble and execute g92 command 
     sprintf(commandstr,"%s/g92 < %s > %s",g92_dir,infilename, outfilename);
-    system(commandstr);
+    int ret = system(commandstr);
     
     // Free filesnames
     free(outfilename);
     free(infilename);
+
+    return ret;
 }
 
 int
@@ -398,7 +402,7 @@ parse_g92_freq(char *prefix,char *parse_string, RefMolecule mole,
     fclose(fp_g92_output);
     free(outfilename);
 
-    return 1;
+    return 0;
 }
 
 #ifdef TEST_MAIN

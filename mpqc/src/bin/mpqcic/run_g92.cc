@@ -108,8 +108,8 @@ run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
                  use_checkpoint_guess, scratch_dir, g92_dir, mole,
                  charge, multiplicity);
 
-    if (!parse_g92(name, g92_calc[runtype].parse_string, mole->natom(),
-                    energy, gradient))
+    if (parse_g92(name, g92_calc[runtype].parse_string, mole->natom(),
+                  energy, gradient))
     {
         fprintf(stderr,"Error parsing G92 Force calculation\n");
         fprintf(stderr,"Check output in %s.out\n",name);
@@ -130,6 +130,8 @@ run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
     }
     sprintf(commandstr,"%s.g92.out",name);
     unlink(commandstr);
+
+    return 0;
 }    
 
 int
@@ -208,11 +210,13 @@ run_g92_calc(char *prefix, int runtype, char *basis, int memory,
 
     // assemble and execute scf command 
     sprintf(commandstr,"%s/g92 < %s > %s",g92_dir,infilename, outfilename);
-    system(commandstr);
+    int ret = system(commandstr);
     
     // Free filesnames
     free(outfilename);
     free(infilename);
+
+    return ret;
 }
 
 int
@@ -329,7 +333,7 @@ parse_g92(char *prefix, char *parse_string, int natoms, double & energy,
     fclose(fp_g92_output);
     free(outfilename);
 
-    return 1;
+    return 0;
 
 }
 

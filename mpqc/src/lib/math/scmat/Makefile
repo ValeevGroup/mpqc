@@ -12,17 +12,17 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libscmat.so
 endif
 
-CXXSRC = abstract.cc   local.cc      local2.cc  matrix.cc \
-         blkiter.cc    matrix_i.cc   result.cc \
-         vector3.cc    vector3_i.cc  block.cc \
-         matrix3.cc
+CXXSRC = local.cc      localrect.cc  localdiag.cc  localsymm.cc  localvect.cc \
+         abstract.cc   matrix.cc     matrix_i.cc \
+         block.cc      blkiter.cc    elemop.cc     result.cc \
+         matrix3.cc    vector3.cc    vector3_i.cc
 
 CSRC = cmatrix.c
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) 
 
 INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
-       result.h vector3.h vector3_i.h block.h matrix3.h
+       result.h vector3.h vector3_i.h block.h matrix3.h elemop.h
 
 GENINC =
 

@@ -221,4 +221,26 @@ class DiagSCMatrix: public SavableState {
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
+class SCMatrixKit: public SavableState {
+#   define CLASSNAME SCMatrixKit
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  public:
+    SCMatrixKit();
+    SCMatrixKit(const RefKeyVal&);
+    SCMatrixKit(StateIn&);
+    ~SCMatrixKit();
+    void save_data_state(StateOut&);
+
+    // this member is default in local.cc
+    static SCMatrixKit* default_matrixkit();
+
+    virtual SCDimension* dimension(int n, const char* name = 0) = 0;
+
+    SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
+    SymmSCMatrix* symmmatrix(const RefSCDimension&);
+    DiagSCMatrix* diagmatrix(const RefSCDimension&);
+    SCVector* vector(const RefSCDimension&);
+};
+
 #endif

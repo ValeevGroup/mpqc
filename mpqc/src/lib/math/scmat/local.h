@@ -218,4 +218,20 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 };
 
+class LocalSCMatrixKit: public SCMatrixKit {
+#   define CLASSNAME LocalSCMatrixKit
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    LocalSCMatrixKit();
+    LocalSCMatrixKit(const RefKeyVal&);
+    LocalSCMatrixKit(StateIn&);
+    ~LocalSCMatrixKit();
+    void save_data_state(StateOut&);
+
+    SCDimension* dimension(int n, const char* name=0);
+};
+
 #endif

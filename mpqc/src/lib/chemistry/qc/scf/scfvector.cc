@@ -121,9 +121,18 @@ SCF::compute_vector(double& eelec)
     // level shift effective fock
     level_shift->set_shift(level_shift_);
     eff.element_op(level_shift);
+
+    if (debug_>1) {
+      eff.print("effective 1 body hamiltonian");
+    }
     
     eff.diagonalize(evals,nvector);
     tim_exit("evals");
+
+    if (debug_>1) {
+      scf_vector_.print("old scf vector");
+      nvector.print("nvector");
+    }
 
     // now un-level shift eigenvalues
     level_shift->set_shift(-level_shift_);
@@ -137,11 +146,19 @@ SCF::compute_vector(double& eelec)
     // transform MO vector to AO basis
     scf_vector_ = scf_vector_ * nvector;
     nvector=0;
-    
+
+    if (debug_>1) {
+      scf_vector_.print("AO basis scf vector");
+    }
+
     // and orthogonalize vector
-    tim_enter("schmidt");
-    scf_vector_->schmidt_orthog(overlap().pointer(),basis()->nbasis());
-    tim_exit("schmidt");
+    tim_enter("orthog");
+    orthog_vector(scf_vector_, overlap());
+    tim_exit("orthog");
+
+    if (debug_>1) {
+      scf_vector_.print("orthogonalized AO basis scf vector");
+    }
   }
       
   eigenvalues_ = evals;

@@ -110,7 +110,13 @@ class SCF: public OneBodyWavefunction {
     void init_mem(int);
     
     void so_density(const RefSymmSCMatrix& d, double occ, int alp=1);
-    
+
+    // if needed, adjust C so that C.t()*S*C = 1 (with perhaps some
+    // zero elements on the diagonal for linearly dependent basis sets)
+    void orthog_vector(RefSCMatrix &C, const RefSymmSCMatrix &S,
+                       double diag_one_tolerance=1.0e-10,
+                       double offdiag_tolerance=1.0e-10,
+                       double diag_zero_tolerance=1.0e-10);
   public:
     SCF(StateIn&);
     SCF(const RefKeyVal&);

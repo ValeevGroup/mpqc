@@ -147,6 +147,11 @@ CLHF::ao_fock()
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
 
+  if (debug_>1) {
+    cl_gmat_.print("cl_gmat before build");
+    cl_dens_diff_.print("cl_dens_diff before build");
+  }
+
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *gmat, *pmat;
@@ -251,7 +256,13 @@ CLHF::ao_fock()
   // now symmetrize the skeleton G matrix, placing the result in dd
   RefSymmSCMatrix skel_gmat = cl_gmat_.copy();
   skel_gmat.scale(1.0/(double)pl->order());
+  if (debug_>1) {
+    skel_gmat.print("skel_gmat before symmetrize");
+  }
   pl->symmetrize(skel_gmat,dd);
+  if (debug_>1) {
+    dd.print("dd after symmetrize");
+  }
   tim_exit("symm");
   
   // F = H+G

@@ -21,18 +21,20 @@ SavableStateProxy::_castdown(const ClassDesc*cd)
 
 SavableStateProxy::SavableStateProxy(const RefKeyVal &keyval)
 {
-  char *filename = keyval->pcharvalue("file");
-  if (filename) {
+  RefStateIn statein = keyval->describedclassvalue("statein");
+  if (statein.nonnull()) {
       char *objectname = keyval->pcharvalue("object");
-      StateInBin si(filename);
+      StateIn &si = *(statein.pointer());
+      if (keyval->exists("override")) {
+          si.set_override(new PrefixKeyVal(keyval,"override"));
+        }
       if (objectname) {
-          object_.restore_state(si, objectname);
+          object_.dir_restore_state(si, objectname);
           delete[] objectname;
         }
       else {
           object_.restore_state(si);
         }
-      delete[] filename;
     }
 }
 

@@ -39,6 +39,8 @@
 //. only.  The state information can read in again with
 //. \clsnmref{StateInText}.
 class StateOutText: public StateOutFile {
+#   define CLASSNAME StateOutText
+#   include <util/class/classd.h>
   private:
     // do not allow copy constructor or assignment
     StateOutText(const StateOutText&);
@@ -73,6 +75,9 @@ class StateOutText: public StateOutFile {
 //. \clsnm{StateInText} reads state information written
 //. with \clsnm{StateOutText}.
 class StateInText: public StateInFile {
+#   define CLASSNAME StateInText
+#   define HAVE_KEYVAL_CTOR
+#   include <util/class/classd.h>
   private:
     // do not allow copy constructor or assignment
     StateInText(const StateInText&);
@@ -98,6 +103,7 @@ class StateInText: public StateInFile {
     StateInText();
     StateInText(istream& s);
     StateInText(const char *);
+    StateInText(const RefKeyVal &);
     ~StateInText();
     int getstring(char*&);
     int get_array_char(char*,int);
@@ -105,10 +111,10 @@ class StateInText: public StateInFile {
     int get_array_float(float*,int);
     int get_array_double(double*,int);
     int get(const ClassDesc**);
-    int get(char&r);
-    int get(int&r);
-    int get(float&r);
-    int get(double&r);
+    int get(char&r, const char *key);
+    int get(int&r, const char *key);
+    int get(float&r, const char *key);
+    int get(double&r, const char *key);
   };
 
 #endif

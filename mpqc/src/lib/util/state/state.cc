@@ -110,18 +110,57 @@ SavableState::save_state(SavableState*th,StateOut&so)
 }
 
 SavableState*
-SavableState::restore_state(StateIn&si, const char *name)
+SavableState::restore_state(StateIn& si)
 {
+  return dir_restore_state(si,0,0);
+}
+
+SavableState*
+SavableState::key_restore_state(StateIn& si,
+                                const char *keyword)
+{
+  return dir_restore_state(si,0,keyword);
+}
+
+SavableState*
+SavableState::dir_restore_state(StateIn&si, const char *objectname,
+                                const char *keyword)
+{
+  RefKeyVal old_override;
+  RefSavableState overriding_value;
+  int p = si.push_key(keyword);
+  const int can_override_objects = 0;
+  if (can_override_objects && keyword && si.override().nonnull()) {
+      overriding_value = si.override()->describedclassvalue(si.key());
+      old_override = si.override();
+      if (overriding_value.nonnull()) {
+          si.set_override(0);
+        }
+    }
   // restore the pointer
   RefSavableState ss;
-  if (name) si.dir_getobject(ss, name);
+  if (objectname) si.dir_getobject(ss, objectname);
   else si.getobject(ss);
+  if (overriding_value.nonnull()) {
+      cout << node0 << indent
+           << "overriding \"" << si.key() << "\": object of type ";
+      if (ss.null()) cout << node0 << "(null)";
+      else cout << node0 << ss->class_name();
+      cout << node0 << " -> object of type "
+           << overriding_value->class_name()
+           << endl;
+      ss = overriding_value;
+    }
   SavableState *ret = ss.pointer();
   if (ret) {
       ret->reference();
       ss = 0;
       ret->dereference();
     }
+  if (old_override.nonnull()) {
+      si.set_override(old_override);
+    }
+  si.pop_key(p);
   return ret;
 }
 
@@ -301,6 +340,8 @@ StateIn::StateIn() :
   nextclassid_(0),
   translate_(new TranslateDataIn(this, new TranslateDataBigEndian))
 {
+  key_[0] = '\0';
+  keylength_ = 0;
 }
 
 StateIn::~StateIn()
@@ -309,6 +350,26 @@ StateIn::~StateIn()
   delete translate_;
   delete classidmap_;
   delete classdatamap_;
+}
+
+int
+StateIn::push_key(const char *keyword)
+{
+  if (!keyword || override_.null()) return keylength_;
+
+  int length = strlen(keyword);
+  if (keylength_ + length + 1 >= KeyVal::MaxKeywordLength) {
+      cerr << "StateIn: KeyVal::MaxKeywordLength exceeded" << endl;
+      abort();
+    }
+  int old_keylength = keylength_;
+  if (keylength_) key_[keylength_++] = ':';
+  char *tmp = &key_[keylength_];
+  for (int i=0; i<length; i++) tmp[i] = keyword[i];
+  keylength_ += length;
+  key_[keylength_] = '\0';
+
+  return old_keylength;
 }
 
 int
@@ -358,10 +419,73 @@ StateIn::get_array_double(double*p,int size)
   return translate_->get(p,size);
 }
 
-int StateIn::get(char&r) { return get_array_char(&r,1); }
-int StateIn::get(int&r) { return get_array_int(&r,1); }
-int StateIn::get(float&r) { return get_array_float(&r,1); }
-int StateIn::get(double&r) { return get_array_double(&r,1); }
+int
+StateIn::get(char&r, const char *keyword)
+{
+  int n = get_array_char(&r,1);
+  if (keyword && override().nonnull()) {
+      int p = push_key(keyword);
+      char roverride = override()->charvalue(key());
+      if (override()->error() == KeyVal::OK) {
+          cout << node0 << indent << "overriding \"" << key()
+               << "\": " << r << " -> " << roverride << endl;
+          r = roverride;
+        }
+      pop_key(p);
+    }
+  return n;
+}
+
+int
+StateIn::get(int&r, const char *keyword)
+{
+  int n = get_array_int(&r,1);
+  if (keyword && override().nonnull()) {
+      int p = push_key(keyword);
+      int roverride = override()->intvalue(key());
+      if (override()->error() == KeyVal::OK) {
+          cout << node0 << indent << "overriding \"" << key()
+               << "\": " << r << " -> " << roverride << endl;
+          r = roverride;
+        }
+      pop_key(p);
+    }
+  return n;
+}
+
+int
+StateIn::get(float&r, const char *keyword)
+{
+  int n = get_array_float(&r,1);
+  if (keyword && override().nonnull()) {
+      int p = push_key(keyword);
+      float roverride = override()->floatvalue(key());
+      if (override()->error() == KeyVal::OK) {
+          cout << node0 << indent << "overriding \"" << key()
+               << "\": " << r << " -> " << roverride << endl;
+          r = roverride;
+        }
+      pop_key(p);
+    }
+  return n;
+}
+
+int
+StateIn::get(double&r, const char *keyword)
+{
+  int n = get_array_double(&r,1);
+  if (keyword && override().nonnull()) {
+      int p = push_key(keyword);
+      double roverride = override()->doublevalue(key());
+      if (override()->error() == KeyVal::OK) {
+          cout << node0 << indent << "overriding \"" << key()
+               << "\": " << r << " -> " << roverride << endl;
+          r = roverride;
+        }
+      pop_key(p);
+    }
+  return n;
+}
 
 /////////////////////////////////////////////////////////////////
 

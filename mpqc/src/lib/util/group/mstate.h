@@ -79,6 +79,8 @@ class MsgStateSend: public StateOut {
 //. The \clsnm{MsgStateBufRecv} is an abstract base class that
 //buffers objects sent through a \clsnm{MessageGrp}.
 class MsgStateBufRecv: public StateIn {
+#   define CLASSNAME MsgStateBufRecv
+#   include <util/class/classda.h>
   private:
     // do not allow copy constructor or assignment
     MsgStateBufRecv(const MsgStateBufRecv&);
@@ -98,9 +100,11 @@ class MsgStateBufRecv: public StateIn {
     //. Specializations must implement \srccd{next\_buffer()}.
     virtual void next_buffer() = 0;
   public:
-    //. \clsnm{MsgStateBufRecv} must be initialized with a
+    //. \clsnm{MsgStateBufRecv} can be initialized with a
     //\clsnmref{MessageGrp}.
     MsgStateBufRecv(const RefMessageGrp&);
+    //. \clsnm{MsgStateBufRecv} will use the default \clsnmref{MessageGrp}.
+    MsgStateBufRecv();
 
     virtual ~MsgStateBufRecv();
 
@@ -256,6 +260,9 @@ class BcastState {
 //StateInBin on node 0 and broadcasts it to all nodes
 //so state can be simultaneously restored on all nodes.
 class BcastStateInBin: public MsgStateBufRecv {
+#   define CLASSNAME BcastStateInBin
+#   define HAVE_KEYVAL_CTOR
+#   include <util/class/classd.h>
   private:
     // do not allow copy constructor or assignment
     BcastStateInBin(const BcastStateRecv&);
@@ -268,6 +275,9 @@ class BcastStateInBin: public MsgStateBufRecv {
     void next_buffer();
     int get_array_void(void*, int);
   public:
+    //. Create the \clsnm{BcastStateRecv} using the default
+    //\clsnmref{MessageGrp}.
+    BcastStateInBin(const RefKeyVal &);
     //. Create the \clsnm{BcastStateRecv}.
     BcastStateInBin(const RefMessageGrp&, const char *filename);
 

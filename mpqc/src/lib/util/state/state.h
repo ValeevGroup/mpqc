@@ -33,6 +33,7 @@
 #endif
 
 #include <util/class/class.h>
+#include <util/keyval/keyval.h>
 #include <util/container/array.h>
 
 #define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
@@ -127,14 +128,20 @@ class SavableState: public DescribedClass {
 
     //// restore functions
 
-    //. This restores objects saved with \srccd{save\_state}.  The
+    //. These restores objects saved with \srccd{save\_state}.  The
     //. exact type of the next object in \srccd{si} can be any
     //. type publically derived from the \clsnm{SavableState}.
     //. Derived classes implement a similar static function that
-    //. returns a pointer to the derived class.  If the name is
+    //. returns a pointer to the derived class.  If the objectname is
     //. given the directory will be consulted to find and restore
-    //. that object.
-    static SavableState* restore_state(StateIn& si, const char *name = 0);
+    //. that object.  If the keyword is given it is used to override
+    //. values while restoring.
+    static SavableState* restore_state(StateIn& si);
+    static SavableState* key_restore_state(StateIn& si,
+                                           const char *keyword);
+    static SavableState* dir_restore_state(StateIn& si,
+                                           const char *objectname,
+                                           const char *keyword = 0);
 
   protected:
 
@@ -161,7 +168,14 @@ class SSRefBase {
     void check_castdown_result(void*, SavableState *, const ClassDesc *);
   public:
     virtual SavableState *sspointer() = 0;
-    virtual void restore_state(StateIn&, const char *name = 0) = 0;
+    virtual void dir_restore_state(StateIn& si, const char *objectname,
+                                   const char *keyword = 0) = 0;
+    void key_restore_state(StateIn& si, const char *keyword) {
+      dir_restore_state(si,0,keyword);
+    }
+    void restore_state(StateIn& si) {
+      dir_restore_state(si,0,0);
+    }
     void save_data_state(StateOut&);
     //. Save the state of the reference.
     void save_state(StateOut&);
@@ -313,7 +327,10 @@ class StateIn: public DescribedClass {
     void operator=(const StateIn&);
     int have_cd_;
     int dir_loc_;
+    char key_[KeyVal::MaxKeywordLength];
+    int keylength_;
   protected:
+    RefKeyVal override_;
     TranslateDataIn *translate_;
     StateDataNumSet* ps_;
     int expected_object_num_;
@@ -326,6 +343,10 @@ class StateIn: public DescribedClass {
     char userid_[9];
     char format_;
     virtual int get_array_void(void*,int);
+
+    int push_key(const char *key);
+    void pop_key(int n) { key_[n] = '\0'; keylength_ = n; }
+    const char *key() { return key_; }
 
     void get_directory();
     int directory_location() const { return dir_loc_; }
@@ -381,10 +402,10 @@ class StateIn: public DescribedClass {
 
     //. These restore data saved with \clsnmref{StateOut}'s \srccd{put}.
     //members.
-    virtual int get(char&r);
-    virtual int get(int&r);
-    virtual int get(float&r);
-    virtual int get(double&r);
+    virtual int get(char&r, const char *keyword = 0);
+    virtual int get(int&r, const char *keyword = 0);
+    virtual int get(float&r, const char *keyword = 0);
+    virtual int get(double&r, const char *keyword = 0);
     //. These restore data saved with \clsnmref{StateOut}'s \srccd{put}.
     //members.  The data is allocated by StateIn.
     virtual int get(char*&);
@@ -416,7 +437,15 @@ class StateIn: public DescribedClass {
     //default implementation returns 0.
     virtual int seekable();
 
+    //. List all the objects to the stream.  Only \clsnm{StateIn}
+    //specializations with directories can list objects.
     virtual void list_objects(ostream& =cout);
+
+    //. Give this \clsnm{StateIn} a \clsnmref{KeyVal} object
+    //that is used to override values.
+    void set_override(const RefKeyVal&kv) { override_ = kv; }
+    //. Return the \clsnmref{KeyVal} used to override values.
+    const RefKeyVal &override() const { return override_; }
   };
 DescribedClass_REF_dec(StateIn);
 

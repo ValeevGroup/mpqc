@@ -71,7 +71,7 @@ Optimize::Optimize(StateIn&s):
 {
   s.get(ckpt_);
   s.getstring(ckpt_file);
-  s.get(max_iterations_);
+  s.get(max_iterations_,"max_iterations");
   s.get(max_stepsize_);
   if (s.version(static_class_desc()) > 1) {
       s.get(print_timings_);

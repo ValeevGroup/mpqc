@@ -326,12 +326,15 @@ main(int argc, char *argv[])
   }
   if (restart && statresult==0 && statsize) {
     BcastStateInBin si(grp,restartfile);
+    if (keyval->exists("override")) {
+      si.set_override(new PrefixKeyVal(keyval,"override"));
+    }
     char *suf = strrchr(restartfile,'.');
     if (!strcmp(suf,".wfn")) {
-      mole.restore_state(si);
+      mole.key_restore_state(si,"mole");
     }
     else {
-      opt.restore_state(si);
+      opt.key_restore_state(si,"opt");
       if (opt.nonnull()) mole = opt->function();
     }
   } else {

@@ -43,6 +43,17 @@
 #include <util/state/classdImplMap.h>
 #include <util/state/classdatImplMap.h>
 
+#define CLASSNAME StateOutText
+#define PARENTS public StateOutFile
+#include <util/class/classi.h>
+void *
+StateOutText::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = StateOutFile::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 StateOutText::StateOutText() :
   StateOutFile(),
   no_newline_(0),
@@ -68,6 +79,18 @@ StateOutText::~StateOutText()
 {
 }
 
+#define CLASSNAME StateInText
+#define PARENTS public StateInFile
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+StateInText::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  StateInFile::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 StateInText::StateInText() :
   StateInFile(),
   newlines_(0),
@@ -90,6 +113,19 @@ StateInText::StateInText(const char *path) :
   no_newline_(0),
   no_array_(0)
 {
+}
+
+StateInText::StateInText(const RefKeyVal &keyval):
+  newlines_(0),
+  no_newline_(0),
+  no_array_(0)
+{
+  char *path = keyval->pcharvalue("file");
+  if (!path) {
+      cerr << "StateInText(const RefKeyVal&): no path given" << endl;
+    }
+  open(path);
+  delete[] path;
 }
 
 StateInText::~StateInText()
@@ -257,10 +293,10 @@ int StateOutText::put(char r)
   no_array();
   return StateOut::put(r);
 }
-int StateInText::get(char&r)
+int StateInText::get(char&r, const char *key)
 {
   no_array();
-  return StateIn::get(r);
+  return StateIn::get(r,key);
 }
 
 int StateOutText::put(int r)
@@ -268,10 +304,10 @@ int StateOutText::put(int r)
   no_array();
   return StateOut::put(r);
 }
-int StateInText::get(int&r)
+int StateInText::get(int&r, const char *key)
 {
   no_array();
-  return StateIn::get(r);
+  return StateIn::get(r,key);
 }
 
 int StateOutText::put(float r)
@@ -279,10 +315,10 @@ int StateOutText::put(float r)
   no_array();
   return StateOut::put(r);
 }
-int StateInText::get(float&r)
+int StateInText::get(float&r, const char *key)
 {
   no_array();
-  return StateIn::get(r);
+  return StateIn::get(r,key);
 }
 
 int StateOutText::put(double r)
@@ -290,10 +326,10 @@ int StateOutText::put(double r)
   no_array();
   return StateOut::put(r);
 }
-int StateInText::get(double&r)
+int StateInText::get(double&r, const char *key)
 {
   no_array();
-  return StateIn::get(r);
+  return StateIn::get(r,key);
 }
 
 int StateOutText::putobject(const RefSavableState &p)

@@ -87,7 +87,7 @@ CLASSNAME::require_castdown(DescribedClass*p,const char * errmsg,...)
               stringize(CLASSNAME),p?p->class_name():"(null)");
       fflush(stderr);
       va_end(args);
-      abort();
+      ::abort();
   }
   return t;
 }

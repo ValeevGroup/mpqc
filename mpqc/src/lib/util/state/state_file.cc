@@ -38,6 +38,17 @@
 #include <util/state/classdatImplMap.h>
 #include <util/state/stateptrImplSet.h>
 
+#define CLASSNAME StateOutFile
+#define PARENTS public StateOut
+#include <util/class/classia.h>
+void *
+StateOutFile::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = StateOut::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 StateOutFile::StateOutFile() :
   opened_(0), buf_(cout.rdbuf())
 {
@@ -94,6 +105,17 @@ int StateOutFile::open(const char *path)
 }
 
 ////////////////////////////////////
+
+#define CLASSNAME StateInFile
+#define PARENTS public StateIn
+#include <util/class/classia.h>
+void *
+StateInFile::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  StateIn::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
 
 StateInFile::StateInFile() :
   opened_(0), buf_(cin.rdbuf())

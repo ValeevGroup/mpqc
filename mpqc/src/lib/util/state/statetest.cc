@@ -36,6 +36,8 @@
 #include <util/keyval/keyval.h>
 #include <util/state/state.h>
 
+#include <util/state/linkage.h>
+
 #ifdef __GNUG__
 #pragma implementation "stattmpl"
 #pragma implementation "clastmpl"
@@ -87,6 +89,7 @@ class A: A_parents {
       s << "A::t1c = " << t1c << '\n';
       s << "A::t2c = " << t2c << '\n';
       s << "A::a = " << a() << '\n';
+      s << "A::d = " << d << '\n';
       s << "A::array = {"
         << array[0] << ' '
         << array[1] << ' '
@@ -129,9 +132,9 @@ A::A(const RefKeyVal&keyval):
 A::A(StateIn&s):
   SavableState(s)
 {
-  s.get(d);
+  s.get(d,"d");
   s.getstring(t1c);
-  s.get(ia);
+  s.get(ia,"a");
   s.getstring(t2c);
   s.get(array);
 }
@@ -195,7 +198,7 @@ B::B():
 {
 }
 B::B(const RefKeyVal&keyval):
-  A(new PrefixKeyVal("A",keyval)),
+  A(keyval),
   ib(keyval->intvalue("b"))
 {
 }
@@ -295,6 +298,9 @@ class D: D_parents {
 #   include <util/class/classd.h>
   private:
     int id;
+    char cd;
+    float fd;
+    double dd;
     RefA _a;
     RefB _b;
     char *cdat;
@@ -333,16 +339,22 @@ class D: D_parents {
 };
 SavableState_REF_dec(D);
 SavableState_REF_def(D);
-D::D():
-  id(4)
+D::D()
 {
+  id = 4;
+  cd = 'd';
+  fd = 4.1;
+  dd = 8.2;
 }
 D::D(const RefKeyVal&keyval):
-  B(new PrefixKeyVal("B",keyval)),
-  C(new PrefixKeyVal("C",keyval)),
-  id(keyval->intvalue("d")),
-  _a(A::castdown(keyval->describedclassvalue("a"))),
-  _b(B::castdown(keyval->describedclassvalue("b")))
+  B(keyval),
+  C(keyval),
+  id(keyval->intvalue("di")),
+  cd(keyval->charvalue("dc")),
+  fd(keyval->floatvalue("df")),
+  dd(keyval->doublevalue("dd")),
+  _a(A::castdown(keyval->describedclassvalue("da"))),
+  _b(B::castdown(keyval->describedclassvalue("db")))
 {
   ddat = new double[4];
   fdat = new float[4];
@@ -358,14 +370,17 @@ D::D(StateIn&s):
   C(s)
   maybe_SavableState(s)
 {
-  s.get(id);
+  s.get(id,"di");
+  s.get(cd,"dc");
+  s.get(fd,"df");
+  s.get(dd,"dd");
   char *junk;
   s.getstring(junk);
   delete[] junk;
-  _a.restore_state(s);
+  _a.key_restore_state(s,"da");
   s.getstring(junk);
   delete[] junk;
-  _b.restore_state(s);
+  _b.key_restore_state(s,"db");
   s.get(ddat);
   s.get(fdat);
   s.get(idat);
@@ -377,6 +392,9 @@ D::save_data_state(StateOut&s)
   B::save_data_state(s);
   C::save_data_state(s);
   s.put(id);
+  s.put(cd);
+  s.put(fd);
+  s.put(dd);
   s.putstring("here begins _a");
   _a.save_state(s);
   s.putstring("here begins _b");
@@ -518,7 +536,7 @@ main()
   if (ra.nonnull()) { ra->print(); cout << endl; }
   if (sia.use_directory()) {
       cout << " --- restoring from A's directory ---" << endl;
-      ra.restore_state(sia,"B:1");
+      ra.dir_restore_state(sia,"B:1");
       cout << "B:1 classname = " << ra->class_name() << endl;
     }
   sia.close();
@@ -535,11 +553,11 @@ main()
       sia.open("statetest.a.out");
       cout << node0 << indent
            << " --- restoring from A's directory (2) ---" << endl;
-      ra.restore_state(sia,"B:1");
+      ra.dir_restore_state(sia,"B:1");
       cout << node0 << indent
            << "B:1 classname = " << ra->class_name() << endl;
       RefA ra3;
-      ra3.restore_state(sia,"B:1");
+      ra3.dir_restore_state(sia,"B:1");
       cout << node0 << indent
            <<"first B:1: " << (void*) ra.pointer()
            << " second B:1: " << (void*) ra3.pointer()
@@ -547,6 +565,15 @@ main()
     }
   cout << node0 << indent << "objects in sia" << endl;
   sia.list_objects();
+
+  if (sia.use_directory()) {
+      cout << " ----- proxy tests ----- " << endl;
+      RefD d1 = pkv->describedclassvalue("test2:proxy1");
+      RefD d2 = pkv->describedclassvalue("test2:proxy2");
+      cout << "d1 = " << (void*)d1.pointer()
+           << " d2 = " << (void*)d2.pointer() << endl;
+      if (d1.nonnull()) d1->print();
+    }
 
   return 0;
 }

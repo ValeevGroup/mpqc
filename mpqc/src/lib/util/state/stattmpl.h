@@ -50,12 +50,14 @@ class SSRef: public DCRef<T>, public SSRefBase {
     SSRef (StateIn&s) { restore_state(s); }
     SavableState *sspointer() { return p; }
     //. Restore the state of the reference.
-    void restore_state(StateIn&si, const char *name = 0) {
-        SavableState* ss = SavableState::restore_state(si, name);
-        T* t = T::castdown(ss);
-        check_castdown_result((void*)t,ss,T::static_class_desc());
-        assign_pointer(t);
-      };
+    void dir_restore_state(StateIn& si, const char *objectname,
+                           const char *keyword = 0) {
+      SavableState* ss
+          = SavableState::dir_restore_state(si, objectname, keyword);
+      T* t = T::castdown(ss);
+      check_castdown_result((void*)t,ss,T::static_class_desc());
+      assign_pointer(t);
+    };
 };
 
 /////////////////////////////////////////////////////////////////////////////

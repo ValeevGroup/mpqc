@@ -216,7 +216,7 @@ main(int argc, char *argv[])
               cout << incindent;
             }
           RefSavableState o;
-          o.restore_state(s,objects[j]);
+          o.dir_restore_state(s,objects[j]);
           cout << node0 << o;
           if (nobject > 1) cout << decindent;
         }

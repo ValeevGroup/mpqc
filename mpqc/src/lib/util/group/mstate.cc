@@ -176,6 +176,27 @@ MsgStateSend::put(double* d, int n)
 ///////////////////////////////////////////////////////////////////////////
 // MsgStateBufRecv member functions
 
+#define CLASSNAME MsgStateBufRecv
+#define PARENTS public StateIn
+#include <util/class/classi.h>
+void *
+MsgStateBufRecv::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = StateIn::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+MsgStateBufRecv::MsgStateBufRecv()
+{
+  grp = MessageGrp::get_default_messagegrp();
+  nbuf = 0;
+  ibuf = 0;
+  send_buffer = 0;
+  bufsize = 0;
+  obtain_buffer(nbuf_buffer,send_buffer,nheader,buffer,bufsize,8192);
+}
+
 MsgStateBufRecv::MsgStateBufRecv(const RefMessageGrp&grp_):
   grp(grp_)
 {
@@ -507,12 +528,35 @@ BcastState::forget_references()
 ///////////////////////////////////////////////////////////////////////////
 // BcastStateRecv member functions
 
+#define CLASSNAME BcastStateInBin
+#define PARENTS public MsgStateBufRecv
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+BcastStateInBin::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = MsgStateBufRecv::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 BcastStateInBin::BcastStateInBin(const RefMessageGrp&grp_,
                                  const char *filename):
   MsgStateBufRecv(grp_)
 {
   opened_ = 0;
   open(filename);
+}
+
+BcastStateInBin::BcastStateInBin(const RefKeyVal &keyval)
+{
+  char *path = keyval->pcharvalue("file");
+  if (!path) {
+      cerr << "StateInBin(const RefKeyVal&): no path given" << endl;
+    }
+  opened_ = 0;
+  open(path);
+  delete[] path;
 }
 
 BcastStateInBin::~BcastStateInBin()

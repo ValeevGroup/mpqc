@@ -47,6 +47,8 @@
 //. and the \clsnmref{StateOutFileBin} writes in a binary
 //. format.
 class StateOutFile: public StateOut {
+#   define CLASSNAME StateOutFile
+#   include <util/class/classda.h>
   private:
     // do not allow copy constructor or assignment
     StateOutFile(const StateOutFile&);
@@ -79,6 +81,8 @@ class StateOutFile: public StateOut {
 //. reads with a text format and the \clsnmref{StateInFileBin}
 //. reads with a binary format.
 class StateInFile: public StateIn {
+#   define CLASSNAME StateInFile
+#   include <util/class/classda.h>
   private:
     // do not allow copy constructor or assignment
     StateInFile(const StateInFile&);

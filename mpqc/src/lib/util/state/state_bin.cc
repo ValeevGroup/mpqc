@@ -31,6 +31,17 @@
 
 #include <util/state/state_bin.h>
 
+#define CLASSNAME StateOutBin
+#define PARENTS public StateOutFile
+#include <util/class/classi.h>
+void *
+StateOutBin::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = StateOutFile::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 StateOutBin::StateOutBin() :
   StateOutFile()
 {
@@ -108,6 +119,18 @@ StateOutBin::use_directory()
 
 ////////////////////////////////////////////////////////////////
 
+#define CLASSNAME StateInBin
+#define PARENTS public StateInFile
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+StateInBin::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  StateInFile::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 StateInBin::StateInBin() :
   StateInFile()
 {
@@ -128,6 +151,16 @@ StateInBin::StateInBin(const char *path) :
   file_position_ = 0;
   get_header();
   find_and_get_directory();
+}
+
+StateInBin::StateInBin(const RefKeyVal &keyval)
+{
+  char *path = keyval->pcharvalue("file");
+  if (!path) {
+      cerr << "StateInBin(const RefKeyVal&): no path given" << endl;
+    }
+  open(path);
+  delete[] path;
 }
 
 StateInBin::~StateInBin()

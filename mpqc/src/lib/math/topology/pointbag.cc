@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include "pointbag.h"
 
 PointBagElem_double::PointBagElem_double(const Point&p, const double&t):

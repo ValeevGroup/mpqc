@@ -2,6 +2,10 @@
 #ifndef _math_optimize_nlp_h
 #define _math_optimize_nlp_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <util/misc/scostream.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>

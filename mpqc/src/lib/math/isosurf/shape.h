@@ -2,6 +2,10 @@
 #ifndef _math_isosurf_shape_h
 #define _math_isosurf_shape_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <math/isosurf/volume.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>

@@ -2,6 +2,10 @@
 #ifndef _math_isosurf_volume_h
 #define _math_isosurf_volume_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <math/optimize/nlp.h>
 #include <util/container/ref.h>
 #include <math/scmat/matrix.h>

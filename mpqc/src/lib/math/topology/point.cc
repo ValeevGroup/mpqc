@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <stdlib.h>
 #include "point.h"
 #include <math/scmat/matrix.h>

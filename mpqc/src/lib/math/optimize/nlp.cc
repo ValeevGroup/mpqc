@@ -1,5 +1,7 @@
 
-static char rcsid[] = "$Header$";
+#ifdef __GNUC__
+#pragma implementation
+#endif
 
 #include <math.h>
 #include <stdio.h>

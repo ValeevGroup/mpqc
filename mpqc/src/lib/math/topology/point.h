@@ -1,6 +1,10 @@
 #ifndef _libQC_point_h
 #define _libQC_point_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 // This class implements arbitrary dimensional point using double precision #'s
 #include <stdio.h>
 #include <string.h>

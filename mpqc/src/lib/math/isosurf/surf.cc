@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 extern "C" {
 #include <stdio.h>
 #include <math.h>

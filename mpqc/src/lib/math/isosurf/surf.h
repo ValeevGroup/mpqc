@@ -2,6 +2,10 @@
 #ifndef _math_isosurf_surf_h
 #define _math_isosurf_surf_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 extern "C" {
 #include <stdio.h>
 }

@@ -2,6 +2,10 @@
 #ifndef _libQC_pointbag_h
 #define _libQC_pointbag_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <math/topology/point.h>
 
 //This is not working gcc 2.3.3 for obscure reasons

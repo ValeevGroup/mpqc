@@ -145,6 +145,20 @@ Molecule::print(FILE*fp)
              "          mass\n");
 
   int i;
+#if defined(I860) && !defined(PARAGON)
+  double x;
+  for (i=0; i<natom(); i++) {
+      fprintf(fp," %5d%5s%8s%16.9e %16.9e %16.9e%10.5f\n",
+              i+1,
+              get_atom(i).element().symbol(),
+              (get_atom(i).label()) ? get_atom(i).label(): " ",
+              (((x=get_atom(i)[0]) < 1e-12 && x > -1e-12) ? 0.0 : x),
+              (((x=get_atom(i)[1]) < 1e-12 && x > -1e-12) ? 0.0 : x),
+              (((x=get_atom(i)[2]) < 1e-12 && x > -1e-12) ? 0.0 : x),
+              get_atom(i).element().mass()
+              );
+    }
+#else
   for (i=0; i<natom(); i++) {
       fprintf(fp," %5d%5s%8s%16.10f%16.10f%16.10f%10.5f\n",
               i+1,
@@ -156,6 +170,7 @@ Molecule::print(FILE*fp)
               get_atom(i).element().mass()
               );
     }
+#endif
 }
 
 AtomicCenter& Molecule::operator[](int ind)

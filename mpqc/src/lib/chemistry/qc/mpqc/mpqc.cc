@@ -287,6 +287,12 @@ MPSCF::compute()
 {
   int i,j;
 
+ // print the geometry every iteration
+  if (mynode0()==0) {
+    fprintf(outfile,"  molecular geometry in MPSCF::compute()\n");
+    _mol->print(outfile);
+  }
+
   // Adjust the value accuracy if gradients are needed and set up
   // minimal accuracies.
   if (desired_value_accuracy() > 1.0e-4)
@@ -357,6 +363,7 @@ MPSCF::compute()
     int cutoff = ((int) -log10(desired_gradient_accuracy())) + 1;
     fprintf(outfile,"\n");
     fprintf(outfile,"  MPSCF: computing gradient with cutoff 10^-%d\n",cutoff);
+    fprintf(outfile,"\n");
     if (!scf_info.iopen) {
       dmt_force_csscf_threshold_10(cutoff);
       dmt_force_csscf(outfile,Fock,Scf_Vec,

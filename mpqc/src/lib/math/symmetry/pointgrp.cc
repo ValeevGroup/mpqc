@@ -140,7 +140,7 @@ PointGroup::PointGroup(StateIn& si) :
       si.get(frame(i,j));
 }
 
-PointGroup::PointGroup(PointGroup& pg)
+PointGroup::PointGroup(const PointGroup& pg)
   : symb(0)
 {
   *this = pg;

@@ -50,17 +50,17 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
     void replace_data(void *, int node, int offset, int size);
     void sum_data(double *data, int node, int doffset, int dsize);
 
-    int active_;
+    volatile int active_;
 
     int data_request_type_;
     int data_type_to_handler_;
     int data_type_from_handler_;
 
-    long data_request_mid_;
+    volatile long data_request_mid_;
 
     MemoryDataRequest data_request_buffer_;
 
-    int nsync_;
+    volatile int nsync_;
 
     int use_acknowledgments_;
     int use_active_messages_;

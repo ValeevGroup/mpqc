@@ -132,8 +132,14 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
     }
   }
 
-  SymmGaussianBasisSet *sgbs =
-    SymmGaussianBasisSet::require_castdown(gbs,"sym_struct_from_gbs");
+  SymmGaussianBasisSet *sgbs = SymmGaussianBasisSet::castdown(gbs);
+  if (!sgbs)
+    sgbs = new SymmGaussianBasisSet(*gbs.pointer());
+  if (!sgbs) {
+    fprintf(stderr,"sym_struct_from_gbs: "
+            "could not create SymmGaussianBasisSet\n");
+    return -1;
+  }
                                                                       
   PointGroup& pg = sgbs->molecule()->point_group();
   CharacterTable ct = pg.char_table();
@@ -277,5 +283,10 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
     }
   }
       
+  // if we didn't get sgbs from a castdown, then we created it with new.
+  // free it.
+  if (!SymmGaussianBasisSet::castdown(gbs))
+    delete sgbs;
+  
   return 0;
 }

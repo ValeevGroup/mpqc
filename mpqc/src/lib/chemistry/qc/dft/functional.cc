@@ -76,6 +76,8 @@ DenFunctional::DenFunctional(StateIn& s):
   SavableState(s)
 {
   s.get(a0_);
+  s.get(spin_polarized_);
+  s.get(compute_potential_);
 }
 
 DenFunctional::DenFunctional()
@@ -101,6 +103,8 @@ void
 DenFunctional::save_data_state(StateOut& s)
 {
   s.put(a0_);
+  s.put(spin_polarized_);
+  s.put(compute_potential_);
 }
 
 int
@@ -594,6 +598,7 @@ SumDenFunctional::~SumDenFunctional()
 void
 SumDenFunctional::save_data_state(StateOut& s)
 {
+  DenFunctional::save_data_state(s);
   s.put(n_);
   if (n_) {
       s.put(coefs_, n_);
@@ -822,6 +827,7 @@ StdDenFunctional::~StdDenFunctional()
 void
 StdDenFunctional::save_data_state(StateOut& s)
 {
+  SumDenFunctional::save_data_state(s);
   s.putstring(name_);
 }
 
@@ -989,8 +995,7 @@ PW92LCFunctional::~PW92LCFunctional()
 void
 PW92LCFunctional::save_data_state(StateOut& s)
 {
-  cout << "PW92LCFunctional: cannot save state" << endl;
-  abort();
+  LSDACFunctional::save_data_state(s);
 }
 
 double
@@ -1121,8 +1126,7 @@ PZ81LCFunctional::~PZ81LCFunctional()
 void
 PZ81LCFunctional::save_data_state(StateOut& s)
 {
-  cout << "PZ81LCFunctional: cannot save state" << endl;
-  abort();
+  LSDACFunctional::save_data_state(s);
 }
 
 double
@@ -1277,9 +1281,107 @@ VWNLCFunctional::_castdown(const ClassDesc*cd)
 VWNLCFunctional::VWNLCFunctional(StateIn& s):
   SavableState(s), LSDACFunctional(s)
 {
+  s.get(Ap_);
+  s.get(Af_);
+  s.get(A_alpha_);
+
+  s.get(x0p_mc_);
+  s.get(bp_mc_);
+  s.get(cp_mc_);
+  s.get(x0f_mc_);
+  s.get(bf_mc_);
+  s.get(cf_mc_);
+  s.get(x0_alpha_mc_);
+  s.get(b_alpha_mc_);
+  s.get(c_alpha_mc_);
+  
+  s.get(x0p_rpa_);
+  s.get(bp_rpa_);
+  s.get(cp_rpa_);
+  s.get(x0f_rpa_);
+  s.get(bf_rpa_);
+  s.get(cf_rpa_);
+  s.get(x0_alpha_rpa_);
+  s.get(b_alpha_rpa_);
+  s.get(c_alpha_rpa_);
 }
 
 VWNLCFunctional::VWNLCFunctional()
+{
+  init_constants();
+}
+
+VWNLCFunctional::~VWNLCFunctional()
+{
+}
+
+VWNLCFunctional::VWNLCFunctional(const RefKeyVal& keyval):
+  LSDACFunctional(keyval)
+{
+  init_constants();
+  Ap_  = keyval->doublevalue("Ap", KeyValValuedouble(Ap_));
+  Af_  = keyval->doublevalue("Af", KeyValValuedouble(Af_));
+  A_alpha_  = keyval->doublevalue("A_alpha", KeyValValuedouble(A_alpha_));
+ 
+  x0p_mc_  = keyval->doublevalue("x0p_mc", KeyValValuedouble(x0p_mc_));
+  bp_mc_   = keyval->doublevalue("bp_mc", KeyValValuedouble(bp_mc_));
+  cp_mc_   = keyval->doublevalue("cp_mc", KeyValValuedouble(cp_mc_));
+  x0f_mc_  = keyval->doublevalue("x0f_mc", KeyValValuedouble(x0f_mc_));
+  bf_mc_   = keyval->doublevalue("bf_mc", KeyValValuedouble(bf_mc_));
+  cf_mc_   = keyval->doublevalue("cf_mc", KeyValValuedouble(cf_mc_));
+  x0_alpha_mc_ = keyval->doublevalue("x0_alpha_mc",
+                                     KeyValValuedouble(x0_alpha_mc_));
+  b_alpha_mc_  = keyval->doublevalue("b_alpha_mc",
+                                     KeyValValuedouble(b_alpha_mc_));
+  c_alpha_mc_  = keyval->doublevalue("c_alpha_mc",
+                                     KeyValValuedouble(c_alpha_mc_));
+
+  x0p_rpa_ = keyval->doublevalue("x0p_rpa", KeyValValuedouble(x0p_rpa_));
+  bp_rpa_  = keyval->doublevalue("bp_rpa", KeyValValuedouble(bf_rpa_));
+  cp_rpa_  = keyval->doublevalue("cp_rpa", KeyValValuedouble(cp_rpa_));
+  x0f_rpa_ = keyval->doublevalue("x0f_rpa", KeyValValuedouble(x0f_rpa_));
+  bf_rpa_  = keyval->doublevalue("bf_rpa", KeyValValuedouble(bf_rpa_));
+  cf_rpa_  = keyval->doublevalue("cf_rpa", KeyValValuedouble(cf_rpa_));
+  x0_alpha_rpa_ = keyval->doublevalue("x0_alpha_rpa",
+                                      KeyValValuedouble(x0_alpha_rpa_));
+  b_alpha_rpa_  = keyval->doublevalue("b_alpha_rpa",
+                                      KeyValValuedouble(b_alpha_rpa_));
+  c_alpha_rpa_  = keyval->doublevalue("c_alpha_rpa",
+                                      KeyValValuedouble(c_alpha_rpa_));   
+}
+
+void
+VWNLCFunctional::save_data_state(StateOut& s)
+{
+  LSDACFunctional::save_data_state(s);
+
+  s.put(Ap_);
+  s.put(Af_);
+  s.put(A_alpha_);
+
+  s.put(x0p_mc_);
+  s.put(bp_mc_);
+  s.put(cp_mc_);
+  s.put(x0f_mc_);
+  s.put(bf_mc_);
+  s.put(cf_mc_);
+  s.put(x0_alpha_mc_);
+  s.put(b_alpha_mc_);
+  s.put(c_alpha_mc_);
+  
+  s.put(x0p_rpa_);
+  s.put(bp_rpa_);
+  s.put(cp_rpa_);
+  s.put(x0f_rpa_);
+  s.put(bf_rpa_);
+  s.put(cf_rpa_);
+  s.put(x0_alpha_rpa_);
+  s.put(b_alpha_rpa_);
+  s.put(c_alpha_rpa_);
+}
+
+void
+VWNLCFunctional::init_constants()
 {
   Ap_ = 0.0310907;
   Af_ = 0.01554535;
@@ -1304,46 +1406,6 @@ VWNLCFunctional::VWNLCFunctional()
   x0_alpha_rpa_ = -0.228344;
   b_alpha_rpa_  = 1.06835;
   c_alpha_rpa_  = 11.4813;
-  
-}
-
-VWNLCFunctional::~VWNLCFunctional()
-{
-}
-
-VWNLCFunctional::VWNLCFunctional(const RefKeyVal& keyval):
-  LSDACFunctional(keyval)
-{
-    Ap_  = keyval->doublevalue("Ap", KeyValValuedouble(0.0310907));
-    Af_  = keyval->doublevalue("Af", KeyValValuedouble(0.01554535));
-    A_alpha_  = keyval->doublevalue("A_alpha", KeyValValuedouble(-1./(6.*M_PI*M_PI)));
- 
-    x0p_mc_  = keyval->doublevalue("x0p_mc", KeyValValuedouble(-0.10498));
-    bp_mc_   = keyval->doublevalue("bp_mc", KeyValValuedouble(3.72744));
-    cp_mc_   = keyval->doublevalue("cp_mc", KeyValValuedouble(12.9352));
-    x0f_mc_  = keyval->doublevalue("x0f_mc", KeyValValuedouble(-0.32500));
-    bf_mc_   = keyval->doublevalue("bf_mc", KeyValValuedouble(7.06042));
-    cf_mc_   = keyval->doublevalue("cf_mc", KeyValValuedouble(18.0578));
-    x0_alpha_mc_ = keyval->doublevalue("x0_alpha_mc", KeyValValuedouble(-0.00475840));
-    b_alpha_mc_  = keyval->doublevalue("b_alpha_mc", KeyValValuedouble(1.13107));
-    c_alpha_mc_  = keyval->doublevalue("c_alpha_mc", KeyValValuedouble(13.0045));
-
-    x0p_rpa_ = keyval->doublevalue("x0p_rpa", KeyValValuedouble(-0.409286));
-    bp_rpa_  = keyval->doublevalue("bp_rpa", KeyValValuedouble(13.0720));
-    cp_rpa_  = keyval->doublevalue("cp_rpa", KeyValValuedouble(42.7198));
-    x0f_rpa_ = keyval->doublevalue("x0f_rpa", KeyValValuedouble(-0.743294));
-    bf_rpa_  = keyval->doublevalue("bf_rpa", KeyValValuedouble(20.1231));
-    cf_rpa_  = keyval->doublevalue("cf_rpa", KeyValValuedouble(101.578));
-    x0_alpha_rpa_ = keyval->doublevalue("x0_alpha_rpa", KeyValValuedouble(-0.228344));
-    b_alpha_rpa_  = keyval->doublevalue("b_alpha_rpa", KeyValValuedouble(1.06835));
-    c_alpha_rpa_  = keyval->doublevalue("c_alpha_rpa", KeyValValuedouble(11.4813));
-   
-}
-void
-VWNLCFunctional::save_data_state(StateOut& s)
-{
-  cout << "VWNLCFunctional: cannot save state" << endl;
-  abort();
 }
 
 double
@@ -1405,6 +1467,12 @@ VWN1LCFunctional::VWN1LCFunctional(StateIn& s):
   SavableState(s),
   VWNLCFunctional(s)
 {
+  s.get(x0p_);
+  s.get(bp_);
+  s.get(cp_);
+  s.get(x0f_);
+  s.get(bf_);
+  s.get(cf_);
 }
 
 VWN1LCFunctional::VWN1LCFunctional()
@@ -1420,16 +1488,14 @@ VWN1LCFunctional::VWN1LCFunctional()
 VWN1LCFunctional::VWN1LCFunctional(const RefKeyVal& keyval):
   VWNLCFunctional(keyval)
 {
-    Ap_ = keyval->doublevalue("Ap", KeyValValuedouble(0.0310907));
-    x0p_ = keyval->doublevalue("x0p", KeyValValuedouble(-0.10498));
-    bp_ = keyval->doublevalue("bp", KeyValValuedouble(3.72744));
-    cp_ = keyval->doublevalue("cp", KeyValValuedouble(12.9352));
-    Af_ = keyval->doublevalue("Af", KeyValValuedouble(0.01554535));
-    x0f_ = keyval->doublevalue("x0f", KeyValValuedouble(-0.32500));
-    bf_ = keyval->doublevalue("bf", KeyValValuedouble(7.06042));
-    cf_ = keyval->doublevalue("cf", KeyValValuedouble(18.0578));
+    x0p_ = keyval->doublevalue("x0p", KeyValValuedouble(x0p_mc_));
+    bp_ = keyval->doublevalue("bp", KeyValValuedouble(bp_mc_));
+    cp_ = keyval->doublevalue("cp", KeyValValuedouble(cp_mc_));
+    x0f_ = keyval->doublevalue("x0f", KeyValValuedouble(x0f_mc_));
+    bf_ = keyval->doublevalue("bf", KeyValValuedouble(bf_mc_));
+    cf_ = keyval->doublevalue("cf", KeyValValuedouble(cf_mc_));
 
-    int vwn1rpa = keyval->intvalue("vwn1rpa", KeyValValueint(0));
+    int vwn1rpa = keyval->booleanvalue("rpa", KeyValValueboolean(0));
     if (vwn1rpa) {
         x0p_ = x0p_rpa_;
         bp_  = bp_rpa_;
@@ -1447,8 +1513,13 @@ VWN1LCFunctional::~VWN1LCFunctional()
 void
 VWN1LCFunctional::save_data_state(StateOut& s)
 {
-  cout << "VWN1LCFunctional: cannot save state" << endl;
-  abort();
+  VWNLCFunctional::save_data_state(s);
+  s.put(x0p_);
+  s.put(bp_);
+  s.put(cp_);
+  s.put(x0f_);
+  s.put(bf_);
+  s.put(cf_);
 }
 
 // Based on the VWN1 functional in Vosko, Wilk, and Nusair, Can. J. Phys.
@@ -1545,8 +1616,7 @@ VWN2LCFunctional::~VWN2LCFunctional()
 void
 VWN2LCFunctional::save_data_state(StateOut& s)
 {
-  cout << "VWN2LCFunctional: cannot save state" << endl;
-  abort();
+  VWNLCFunctional::save_data_state(s);
 }
 
 void
@@ -1648,6 +1718,7 @@ VWN3LCFunctional::VWN3LCFunctional(StateIn& s):
   SavableState(s),
   VWNLCFunctional(s)
 {
+  s.get(monte_carlo_prefactor_);
 }
 
 VWN3LCFunctional::VWN3LCFunctional()
@@ -1658,7 +1729,8 @@ VWN3LCFunctional::VWN3LCFunctional()
 VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
   VWNLCFunctional(keyval)
 {
-    monte_carlo_prefactor_ = keyval->intvalue("monte_carlo_prefactor", KeyValValueint(0));
+    monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
+                                                  KeyValValueboolean(0));
 }
 
 VWN3LCFunctional::~VWN3LCFunctional()
@@ -1668,8 +1740,8 @@ VWN3LCFunctional::~VWN3LCFunctional()
 void
 VWN3LCFunctional::save_data_state(StateOut& s)
 {
-  cout << "VWN3LCFunctional: cannot save state" << endl;
-  abort();
+  VWNLCFunctional::save_data_state(s);
+  s.put(monte_carlo_prefactor_);
 }
 
 // based on the equations given on a NIST WWW site
@@ -1786,6 +1858,7 @@ VWNTestLCFunctional::VWNTestLCFunctional(StateIn& s):
   SavableState(s),
   VWNLCFunctional(s)
 {
+  s.get(monte_carlo_prefactor_);
 }
 
 VWNTestLCFunctional::VWNTestLCFunctional()
@@ -1796,7 +1869,8 @@ VWNTestLCFunctional::VWNTestLCFunctional()
 VWNTestLCFunctional::VWNTestLCFunctional(const RefKeyVal& keyval):
   VWNLCFunctional(keyval)
 {
-    monte_carlo_prefactor_ = keyval->intvalue("monte_carlo_prefactor", KeyValValueint(0));
+  monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
+                                                KeyValValueboolean(0));
 }
 
 VWNTestLCFunctional::~VWNTestLCFunctional()
@@ -1806,8 +1880,8 @@ VWNTestLCFunctional::~VWNTestLCFunctional()
 void
 VWNTestLCFunctional::save_data_state(StateOut& s)
 {
-  cout << "VWNTestLCFunctional: cannot save state" << endl;
-  abort();
+  VWNLCFunctional::save_data_state(s);
+  s.put(monte_carlo_prefactor_);
 }
 
 // based on the equations given on a NIST WWW site
@@ -1933,8 +2007,7 @@ VWN4LCFunctional::~VWN4LCFunctional()
 void
 VWN4LCFunctional::save_data_state(StateOut& s)
 {
-  cout << "VWN4LCFunctional: cannot save state" << endl;
-  abort();
+  VWNLCFunctional::save_data_state(s);
 }
 
 // based on the equations given on a NIST WWW site
@@ -2061,8 +2134,7 @@ VWN5LCFunctional::~VWN5LCFunctional()
 void
 VWN5LCFunctional::save_data_state(StateOut& s)
 {
-  cout << "VWN5LCFunctional: cannot save state" << endl;
-  abort();
+  VWNLCFunctional::save_data_state(s);
 }
 
 // based on the equations given on a NIST WWW site
@@ -2146,6 +2218,8 @@ XalphaFunctional::XalphaFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(alpha_);
+  factor_ = alpha_ * 2.25 * pow(3.0/(4.*M_PI), 1.0/3.0);
 }
 
 XalphaFunctional::XalphaFunctional()
@@ -2168,8 +2242,8 @@ XalphaFunctional::~XalphaFunctional()
 void
 XalphaFunctional::save_data_state(StateOut& s)
 {
-  cout << "XalphaFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(alpha_);
 }
 
 void
@@ -2225,6 +2299,10 @@ Becke88XFunctional::Becke88XFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(beta_);
+  beta6_ = 6. * beta_;
+  beta26_ = beta6_ * beta_;
+  beta2_ = beta_ * beta_;
 }
 
 Becke88XFunctional::Becke88XFunctional()
@@ -2251,8 +2329,8 @@ Becke88XFunctional::~Becke88XFunctional()
 void
 Becke88XFunctional::save_data_state(StateOut& s)
 {
-  cout << "Becke88XFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(beta_);
 }
 
 int
@@ -2363,23 +2441,25 @@ LYPCFunctional::LYPCFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(a_);
+  s.get(b_);
+  s.get(c_);
+  s.get(d_);
 }
 
 LYPCFunctional::LYPCFunctional()
 {
-  a_ = 0.04918;
-  b_ = 0.132;
-  c_ = 0.2533;
-  d_ = 0.349;
+  init_constants();
 }
 
 LYPCFunctional::LYPCFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
-  a_ = keyval->doublevalue("a", KeyValValuedouble(0.04918));
-  b_ = keyval->doublevalue("b", KeyValValuedouble(0.132));
-  c_ = keyval->doublevalue("c", KeyValValuedouble(0.2533));
-  d_ = keyval->doublevalue("d", KeyValValuedouble(0.349));
+  init_constants();
+  a_ = keyval->doublevalue("a", KeyValValuedouble(a_));
+  b_ = keyval->doublevalue("b", KeyValValuedouble(b_));
+  c_ = keyval->doublevalue("c", KeyValValuedouble(c_));
+  d_ = keyval->doublevalue("d", KeyValValuedouble(d_));
 }
 
 LYPCFunctional::~LYPCFunctional()
@@ -2389,8 +2469,20 @@ LYPCFunctional::~LYPCFunctional()
 void
 LYPCFunctional::save_data_state(StateOut& s)
 {
-  cout << "LYPFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(a_);
+  s.put(b_);
+  s.put(c_);
+  s.put(d_);
+}
+
+void
+LYPCFunctional::init_constants()
+{
+  a_ = 0.04918;
+  b_ = 0.132;
+  c_ = 0.2533;
+  d_ = 0.349;
 }
 
 int
@@ -2530,31 +2622,33 @@ P86CFunctional::P86CFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(a_);
+  s.get(C1_);
+  s.get(C2_);
+  s.get(C3_);
+  s.get(C4_);
+  s.get(C5_);
+  s.get(C6_);
+  s.get(C7_);
 }
 
 P86CFunctional::P86CFunctional()
 {
-  a_ = 1.745*0.11;
-  C1_ = 0.001667;
-  C2_ = 0.002568;
-  C3_ = 0.023266;
-  C4_ = 7.389e-6;
-  C5_ = 8.723;
-  C6_ = 0.472;
-  C7_ = 1e4*C4_;
+  init_constants();
 }
 
 P86CFunctional::P86CFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
-  a_ = keyval->doublevalue("a", KeyValValuedouble(1.745*0.11));
-  C1_ = keyval->doublevalue("C1", KeyValValuedouble(0.001667));
-  C2_ = keyval->doublevalue("C2", KeyValValuedouble(0.002568));
-  C3_ = keyval->doublevalue("C3", KeyValValuedouble(0.023266));
-  C4_ = keyval->doublevalue("C4", KeyValValuedouble(7.389e-6));
-  C5_ = keyval->doublevalue("C5", KeyValValuedouble(8.723));
-  C6_ = keyval->doublevalue("C6", KeyValValuedouble(0.472));
-  C7_ = keyval->doublevalue("C7", KeyValValuedouble(1e4*C4_));
+  init_constants();
+  a_ = keyval->doublevalue("a", KeyValValuedouble(a_));
+  C1_ = keyval->doublevalue("C1", KeyValValuedouble(C1_));
+  C2_ = keyval->doublevalue("C2", KeyValValuedouble(C2_));
+  C3_ = keyval->doublevalue("C3", KeyValValuedouble(C3_));
+  C4_ = keyval->doublevalue("C4", KeyValValuedouble(C4_));
+  C5_ = keyval->doublevalue("C5", KeyValValuedouble(C5_));
+  C6_ = keyval->doublevalue("C6", KeyValValuedouble(C6_));
+  C7_ = keyval->doublevalue("C7", KeyValValuedouble(C7_));
 }
 
 P86CFunctional::~P86CFunctional()
@@ -2564,8 +2658,28 @@ P86CFunctional::~P86CFunctional()
 void
 P86CFunctional::save_data_state(StateOut& s)
 {
-  cout << "P86CFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(a_);
+  s.put(C1_);
+  s.put(C2_);
+  s.put(C3_);
+  s.put(C4_);
+  s.put(C5_);
+  s.put(C6_);
+  s.put(C7_);
+}
+
+void
+P86CFunctional::init_constants()
+{
+  a_ = 1.745*0.11;
+  C1_ = 0.001667;
+  C2_ = 0.002568;
+  C3_ = 0.023266;
+  C4_ = 7.389e-6;
+  C5_ = 8.723;
+  C6_ = 0.472;
+  C7_ = 1e4*C4_;
 }
 
 int
@@ -2670,6 +2784,9 @@ PBECFunctional::PBECFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  local_.restore_state(s);
+  s.get(gamma);
+  s.get(beta);
 }
 
 PBECFunctional::PBECFunctional()
@@ -2710,8 +2827,10 @@ PBECFunctional::~PBECFunctional()
 void
 PBECFunctional::save_data_state(StateOut& s)
 {
-  cout << "PBECFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  local_.save_state(s);
+  s.put(gamma);
+  s.put(beta);
 }
 
 int
@@ -2975,6 +3094,8 @@ PW91CFunctional::PW91CFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  local_.restore_state(s);
+  init_constants();
 }
 
 PW91CFunctional::PW91CFunctional()
@@ -3014,8 +3135,8 @@ PW91CFunctional::~PW91CFunctional()
 void
 PW91CFunctional::save_data_state(StateOut& s)
 {
-  cout << "PW91CFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  local_.save_state(s);
 }
 
 int
@@ -3491,6 +3612,11 @@ PW91XFunctional::PW91XFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(a);
+  s.get(b);
+  s.get(c);
+  s.get(d);
+  s.get(a_x);
 }
 
 PW91XFunctional::PW91XFunctional()
@@ -3530,8 +3656,12 @@ PW91XFunctional::init_constants()
 void
 PW91XFunctional::save_data_state(StateOut& s)
 {
-  cout << "PW91XFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(a);
+  s.put(b);
+  s.put(c);
+  s.put(d);
+  s.put(a_x);
 }
 
 int
@@ -3687,6 +3817,8 @@ PBEXFunctional::PBEXFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(mu);
+  s.get(kappa);
 }
 
 PBEXFunctional::PBEXFunctional()
@@ -3713,7 +3845,7 @@ void
 PBEXFunctional::init_constants()
 {
   // in paper:
-  mu = 0.21951;
+  // mu = 0.21951;
   // in PBE.F
   mu = 0.2195149727645171;
   kappa = 0.804;
@@ -3722,8 +3854,9 @@ PBEXFunctional::init_constants()
 void
 PBEXFunctional::save_data_state(StateOut& s)
 {
-  cout << "PBEXFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(mu);
+  s.put(kappa);
 }
 
 int
@@ -3830,6 +3963,12 @@ mPW91XFunctional::mPW91XFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  init_constants(mPW91);
+  s.get(b);
+  s.get(beta);
+  s.get(c);
+  s.get(d);
+  s.get(x_d_coef);
 }
 
 mPW91XFunctional::mPW91XFunctional()
@@ -3906,8 +4045,12 @@ mPW91XFunctional::init_constants(Func f)
 void
 mPW91XFunctional::save_data_state(StateOut& s)
 {
-  cout << "PW91XFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(b);
+  s.put(beta);
+  s.put(c);
+  s.put(d);
+  s.put(x_d_coef);
 }
 
 int
@@ -4045,23 +4188,25 @@ PW86XFunctional::PW86XFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(m_);
+  s.get(a_);
+  s.get(b_);
+  s.get(c_);
 }
 
 PW86XFunctional::PW86XFunctional()
 {
-  m_ = 1./15.;
-  a_ = 0.0864/m_;
-  b_ = 14.;
-  c_ = 0.2;
+  init_constants();
 }
 
 PW86XFunctional::PW86XFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
-  m_ = keyval->doublevalue("m", KeyValValuedouble(1./15.));
-  a_ = keyval->doublevalue("a", KeyValValuedouble(0.0864/m_));
-  b_ = keyval->doublevalue("b", KeyValValuedouble(14.));
-  c_ = keyval->doublevalue("c", KeyValValuedouble(0.2));
+  init_constants();
+  m_ = keyval->doublevalue("m", KeyValValuedouble(m_));
+  a_ = keyval->doublevalue("a", KeyValValuedouble(a_));
+  b_ = keyval->doublevalue("b", KeyValValuedouble(b_));
+  c_ = keyval->doublevalue("c", KeyValValuedouble(c_));
 }
 
 PW86XFunctional::~PW86XFunctional()
@@ -4071,8 +4216,20 @@ PW86XFunctional::~PW86XFunctional()
 void
 PW86XFunctional::save_data_state(StateOut& s)
 {
-  cout << "PW86XFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(m_);
+  s.put(a_);
+  s.put(b_);
+  s.put(c_);
+}
+
+void
+PW86XFunctional::init_constants()
+{
+  m_ = 1./15.;
+  a_ = 0.0864/m_;
+  b_ = 14.;
+  c_ = 0.2;
 }
 
 int
@@ -4197,17 +4354,19 @@ G96XFunctional::G96XFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
+  s.get(b_);
 }
 
 G96XFunctional::G96XFunctional()
 {
-  b_ = 1./137.;
+  init_constants();
 }
 
 G96XFunctional::G96XFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
-  b_ = keyval->doublevalue("b", KeyValValuedouble(1./137.));
+  init_constants();
+  b_ = keyval->doublevalue("b", KeyValValuedouble(b_));
 }
 
 G96XFunctional::~G96XFunctional()
@@ -4217,8 +4376,14 @@ G96XFunctional::~G96XFunctional()
 void
 G96XFunctional::save_data_state(StateOut& s)
 {
-  cout << "G96XFunctional: cannot save state" << endl;
-  abort();
+  DenFunctional::save_data_state(s);
+  s.put(b_);
+}
+
+void
+G96XFunctional::init_constants()
+{
+  b_ = 1./137.;
 }
 
 int

@@ -323,6 +323,7 @@ class P86CFunctional: public DenFunctional {
     double C5_;
     double C6_;
     double C7_;
+    void init_constants();
   public:
     P86CFunctional();
     P86CFunctional(const RefKeyVal &);
@@ -369,7 +370,10 @@ class VWNLCFunctional: public LSDACFunctional {
     double Ap_, Af_, A_alpha_;
     double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
     double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
-    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
+    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_;
+    double x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
+    void init_constants();
+
     double F(double x, double A, double x0, double b, double c);
     double dFdr_s(double x, double A, double x0, double b, double c);
   public:
@@ -399,7 +403,8 @@ class VWNTestLCFunctional: public VWNLCFunctional {
     ~VWNTestLCFunctional();
     void save_data_state(StateOut &);
 
-    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
+    void point_lc(const PointInputData&, PointOutputData&,
+                  double &, double &, double &);
 };
     
 /** The VWN1LCFunctional computes energies and densities using the
@@ -411,7 +416,7 @@ class VWN1LCFunctional: public VWNLCFunctional {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    double Ap_, x0p_, bp_, cp_, Af_, x0f_, bf_, cf_;
+    double x0p_, bp_, cp_, x0f_, bf_, cf_;
   public:
     VWN1LCFunctional();
     VWN1LCFunctional(const RefKeyVal &);
@@ -419,7 +424,8 @@ class VWN1LCFunctional: public VWNLCFunctional {
     ~VWN1LCFunctional();
     void save_data_state(StateOut &);
 
-    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
+    void point_lc(const PointInputData&, PointOutputData&,
+                  double &, double &, double &);
 };
 
 /** The VWN2LCFunctional computes energies and densities using the
@@ -620,6 +626,7 @@ class LYPCFunctional: public DenFunctional {
     double b_;
     double c_;
     double d_;
+    void init_constants();
   public:
     LYPCFunctional();
     LYPCFunctional(const RefKeyVal &);
@@ -647,6 +654,7 @@ class PW86XFunctional: public DenFunctional {
     double b_;
     double c_;
     double m_;
+    void init_constants();
   public:
     PW86XFunctional();
     PW86XFunctional(const RefKeyVal &);
@@ -784,6 +792,7 @@ class G96XFunctional: public DenFunctional {
 #   include <util/class/classd.h>
   protected:
     double b_;
+    void init_constants();
   public:
     G96XFunctional();
     G96XFunctional(const RefKeyVal &);

@@ -84,6 +84,8 @@ class DenIntegrator: virtual public SavableState {
     double do_point(int acenter, const SCVector3 &r, const RefDenFunctional &,
                     double weight, double multiplier, double *nuclear_gradient,
                     double *f_gradient, double *w_gradient);
+
+    void init_object();
   public:
     /// Construct a new DenIntegrator.
     DenIntegrator();
@@ -210,15 +212,9 @@ class RadialIntegrator: virtual public SavableState {
     ~RadialIntegrator();
     void save_data_state(StateOut &);
 
-    void set_nr(int i);
-    int get_nr(void) const;
+    virtual int nr() const = 0;
     virtual double radial_value(int ir, int nr, double radii) = 0;
     virtual double radial_multiplier(int nr) = 0;
-    virtual double get_dr_dq(void) const = 0;
-    virtual double get_dr_dqr2(void) const = 0;
-    virtual void set_dr_dq(double i) = 0;
-    virtual void set_dr_dqr2(double i) = 0;
-    void print(ostream & =cout) const;
 };
 SavableState_REF_dec(RadialIntegrator);
 
@@ -238,7 +234,6 @@ class AngularIntegrator: virtual public SavableState{
     virtual int num_angular_points(double r_value, int ir) = 0;
     virtual double angular_point_cartesian(int iangular, double r,
         SCVector3 &integration_point) const = 0;
-    virtual void print(ostream & =cout) const = 0;
 };
 SavableState_REF_dec(AngularIntegrator);
 
@@ -253,6 +248,11 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
   protected:
     double dr_dq_;
     double dr_dqr2_;
+
+    double get_dr_dq(void) const;
+    void set_dr_dq(double i);
+    double get_dr_dqr2(void) const;
+    void set_dr_dqr2(double i);
   public:
     EulerMaclaurinRadialIntegrator();
     EulerMaclaurinRadialIntegrator(const RefKeyVal &);
@@ -260,12 +260,11 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     ~EulerMaclaurinRadialIntegrator();
     void save_data_state(StateOut &);
 
+    int nr() const;
     double radial_value(int ir, int nr, double radii);
     double radial_multiplier(int nr);
-    double get_dr_dq(void) const;
-    void set_dr_dq(double i);
-    double get_dr_dqr2(void) const;
-    void set_dr_dqr2(double i);
+
+    void print(ostream & =cout) const;
 };
 
 /** An implementation of a Lebedev angular integrator.  It uses code
@@ -350,13 +349,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     int Ktheta_r_;
     double *theta_quad_weights_;
     double *theta_quad_points_;
-  public:
-    GaussLegendreAngularIntegrator();
-    GaussLegendreAngularIntegrator(const RefKeyVal &);
-    GaussLegendreAngularIntegrator(StateIn &);
-    ~GaussLegendreAngularIntegrator();
-    void save_data_state(StateOut &);
-    
+
     int get_ntheta(void) const;
     void set_ntheta(int i);
     int get_nphi(void) const;
@@ -369,11 +362,19 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     void set_nphi_r(int i);
     int get_Ktheta_r(void) const;
     void set_Ktheta_r(int i);
+
+    double sin_theta(SCVector3 &point) const;
+    void gauleg(double x1, double x2, int n);    
+  public:
+    GaussLegendreAngularIntegrator();
+    GaussLegendreAngularIntegrator(const RefKeyVal &);
+    GaussLegendreAngularIntegrator(StateIn &);
+    ~GaussLegendreAngularIntegrator();
+    void save_data_state(StateOut &);
+    
     int num_angular_points(double r_value, int ir);
     double angular_point_cartesian(int iangular, double r,
         SCVector3 &integration_point) const;
-    double sin_theta(SCVector3 &point) const;
-    void gauleg(double x1, double x2, int n);    
     void print(ostream & =cout) const;
 };
 
@@ -400,7 +401,6 @@ class RadialAngularIntegrator: public DenIntegrator {
                    const RefSymmSCMatrix& densa =0,
                    const RefSymmSCMatrix& densb =0,
                    double *nuclear_gradient = 0);
-
     void print(ostream & =cout) const;
 };
     
@@ -419,7 +419,8 @@ class Murray93Integrator: public DenIntegrator {
     int Ktheta_;
 
     RefIntegrationWeight weight_;
-    
+
+    void init_object();
   public:
     Murray93Integrator();
     Murray93Integrator(const RefKeyVal &);

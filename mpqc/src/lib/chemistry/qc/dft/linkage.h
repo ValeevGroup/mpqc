@@ -33,7 +33,6 @@
 #include <chemistry/qc/dft/clks.h>
 #include <chemistry/qc/dft/uks.h>
 #include <chemistry/qc/dft/hsosks.h>
-#include <chemistry/qc/dft/hfacm.h>
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
@@ -43,7 +42,6 @@ const ClassDesc &dft_force_link_c_ = XalphaFunctional::class_desc_;
 const ClassDesc &dft_force_link_d_ = SlaterXFunctional::class_desc_;
 const ClassDesc &dft_force_link_e_ = Becke88XFunctional::class_desc_;
 const ClassDesc &dft_force_link_f_ = LYPCFunctional::class_desc_;
-const ClassDesc &dft_force_link_g_ = HFACM::class_desc_;
 const ClassDesc &dft_force_link_h_ = CLKS::class_desc_;
 const ClassDesc &dft_force_link_i_ = UKS::class_desc_;
 const ClassDesc &dft_force_link_j_ = VWN5LCFunctional::class_desc_;

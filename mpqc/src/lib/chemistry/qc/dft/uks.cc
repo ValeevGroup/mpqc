@@ -66,8 +66,8 @@ UKS::UKS(StateIn& s) :
   UnrestrictedSCF(s)
 {
   exc_=0;
-  integrator_ = new Murray93Integrator();
-  functional_ = new SlaterXFunctional();
+  integrator_.restore_state(s);
+  functional_.restore_state(s);
 }
 
 UKS::UKS(const RefKeyVal& keyval) :
@@ -75,10 +75,13 @@ UKS::UKS(const RefKeyVal& keyval) :
 {
   exc_=0;
   integrator_ = keyval->describedclassvalue("integrator");
-  if (integrator_.null()) integrator_ = new Murray93Integrator();
+  if (integrator_.null()) integrator_ = new RadialAngularIntegrator();
 
   functional_ = keyval->describedclassvalue("functional");
-  if (functional_.null()) functional_ = new SlaterXFunctional();
+  if (functional_.null()) {
+    cout << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
+    abort();
+  }
 }
 
 UKS::~UKS()
@@ -89,6 +92,8 @@ void
 UKS::save_data_state(StateOut& s)
 {
   UnrestrictedSCF::save_data_state(s);
+  integrator_.save_state(s);
+  functional_.save_state(s);
 }
 
 int

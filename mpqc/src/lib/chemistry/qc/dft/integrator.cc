@@ -36,7 +36,6 @@
 #include <util/state/stateio.h>
 #include <chemistry/qc/dft/integrator.h>
 
-#define COUNT_CONTRIBUTIONS 0 // not mt-safe if 1
 //#define CHECK_ALIGN(v) if(int(&v)&7)cout<<"Bad Alignment: "<< ## v <<endl;
 #define CHECK_ALIGN(v)
 
@@ -58,45 +57,24 @@ DenIntegrator::_castdown(const ClassDesc*cd)
 DenIntegrator::DenIntegrator(StateIn& s):
   SavableState(s)
 {
+  init_object();
+  s.get(linear_scaling_);
+  s.get(use_dmat_bound_);
 }
 
 DenIntegrator::DenIntegrator()
 {
-  contrib_ = 0;
-  contrib_bf_ = 0;
-  bs_values_ = 0;
-  bsg_values_ = 0;
-  bsh_values_ = 0;
-  alpha_dmat_ = 0;
-  beta_dmat_ = 0;
-  dmat_bound_ = 0;
-  alpha_vmat_ = 0;
-  beta_vmat_ = 0;
-  compute_potential_integrals_ = 0;
-  accuracy_ = DBL_EPSILON;
-  linear_scaling_ = 1;
-  use_dmat_bound_ = 1;
+  init_object();
 }
 
 DenIntegrator::DenIntegrator(const RefKeyVal& keyval)
 {
-  contrib_ = 0;
-  contrib_bf_ = 0;
-  bs_values_ = 0;
-  bsg_values_ = 0;
-  bsh_values_ = 0;
-  alpha_dmat_ = 0;
-  beta_dmat_ = 0;
-  dmat_bound_ = 0;
-  alpha_vmat_ = 0;
-  beta_vmat_ = 0;
-  compute_potential_integrals_ = 0;
-  accuracy_ = DBL_EPSILON;
+  init_object();
 
   linear_scaling_ = keyval->booleanvalue("linear_scaling",
-                                         KeyValValueboolean(1));
+                                         KeyValValueboolean(linear_scaling_));
   use_dmat_bound_ = keyval->booleanvalue("use_dmat_bound",
-                                         KeyValValueboolean(1));
+                                         KeyValValueboolean(use_dmat_bound_));
 }
 
 DenIntegrator::~DenIntegrator()
@@ -116,8 +94,27 @@ DenIntegrator::~DenIntegrator()
 void
 DenIntegrator::save_data_state(StateOut& s)
 {
-  cout << class_name() << ": cannot save state" << endl;
-  abort();
+  s.put(linear_scaling_);
+  s.put(use_dmat_bound_);
+}
+
+void
+DenIntegrator::init_object()
+{
+  contrib_ = 0;
+  contrib_bf_ = 0;
+  bs_values_ = 0;
+  bsg_values_ = 0;
+  bsh_values_ = 0;
+  alpha_dmat_ = 0;
+  beta_dmat_ = 0;
+  dmat_bound_ = 0;
+  alpha_vmat_ = 0;
+  beta_vmat_ = 0;
+  compute_potential_integrals_ = 0;
+  accuracy_ = DBL_EPSILON;
+  linear_scaling_ = 1;
+  use_dmat_bound_ = 1;
 }
 
 void
@@ -442,10 +439,6 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
   tim_exit("get_density");
 }
 
-#if COUNT_CONTRIBUTIONS
-static int *contrib_array = 0;
-#endif
-
 double
 DenIntegrator::do_point(int acenter, const SCVector3 &r,
                         const RefDenFunctional &func,
@@ -497,9 +490,6 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
       cout << "DenIntegrator::do_point: ncontrib invalid" << endl;
       abort();
     }
-#if COUNT_CONTRIBUTIONS
-  contrib_array[ncontrib_]++;
-#endif
   if (ncontrib_ == 0) { tim_exit("do_point"); return 0.0; }
 
   ncontrib_bf_ = 0;
@@ -682,8 +672,6 @@ IntegrationWeight::~IntegrationWeight()
 void
 IntegrationWeight::save_data_state(StateOut& s)
 {
-  cout << class_name() << ": cannot save state" << endl;
-  abort();
 }
 
 void
@@ -832,8 +820,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight(StateIn& s):
   bragg_radius = 0;
   a_mat = 0;
   oorab = 0;
-
-  abort();
+  centers = 0;
 }
 
 BeckeIntegrationWeight::BeckeIntegrationWeight()
@@ -861,8 +848,7 @@ BeckeIntegrationWeight::~BeckeIntegrationWeight()
 void
 BeckeIntegrationWeight::save_data_state(StateOut& s)
 {
-  cout << ": cannot save state" << endl;
-  abort();
+  IntegrationWeight::save_data_state(s);
 }
 
 void
@@ -1161,31 +1147,26 @@ Murray93Integrator::Murray93Integrator(StateIn& s):
   SavableState(s),
   DenIntegrator(s)
 {
-  abort();
+  init_object();
+  s.get(nr_);
+  s.get(ntheta_);
+  s.get(nphi_);
+  s.get(Ktheta_);
 }
 
 Murray93Integrator::Murray93Integrator()
 {
-  nr_ = 64;
-  ntheta_ = 16;
-  nphi_ = 32;
-  Ktheta_ = 5;
-  weight_ = new BeckeIntegrationWeight;
+  init_object();
 }
 
 Murray93Integrator::Murray93Integrator(const RefKeyVal& keyval):
   DenIntegrator(keyval)
 {
-  nr_ = keyval->intvalue("nr");
-  if (nr_ == 0) nr_ = 64;
-  ntheta_ = keyval->intvalue("ntheta");
-  if (ntheta_ == 0) ntheta_ = 16;
-  nphi_ = keyval->intvalue("nphi");
-  if (nphi_ == 0) nphi_ = 2*ntheta_;
-  Ktheta_ = keyval->intvalue("Ktheta");
-  if (keyval->error() != KeyVal::OK)
-      Ktheta_ = 5;
-  weight_ = new BeckeIntegrationWeight;
+  init_object();
+  nr_ = keyval->intvalue("nr", KeyValValueint(nr_));
+  ntheta_ = keyval->intvalue("ntheta", KeyValValueint(ntheta_));
+  nphi_ = keyval->intvalue("nphi", KeyValValueint(2*ntheta_));
+  Ktheta_ = keyval->intvalue("Ktheta", KeyValValueint(Ktheta_));
 }
 
 Murray93Integrator::~Murray93Integrator()
@@ -1195,10 +1176,22 @@ Murray93Integrator::~Murray93Integrator()
 void
 Murray93Integrator::save_data_state(StateOut& s)
 {
-  cout << ": cannot save state" << endl;
-  abort();
+  DenIntegrator::save_data_state(s);
+  s.put(nr_);
+  s.put(ntheta_);
+  s.put(nphi_);
+  s.put(Ktheta_);
 }
 
+void
+Murray93Integrator::init_object()
+{
+  nr_ = 75;
+  ntheta_ = 16;
+  nphi_ = 2*ntheta_;
+  Ktheta_ = 5;
+  weight_ = new BeckeIntegrationWeight;
+}
 
 // taken from Mike Colvin 1997/07/21 and modified
 void
@@ -1210,12 +1203,6 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
   tim_enter("integrate");
 
   init_integration(denfunc, densa, densb, nuclear_gradient);
-
-#if COUNT_CONTRIBUTIONS
-  delete[] contrib_array;
-  contrib_array = new int[nshell_+1];
-  memset(contrib_array, 0, sizeof(int)*(nshell_+1));
-#endif
 
   RefMolecule mol = wavefunction()->molecule();
   weight_->init(mol, DBL_EPSILON);
@@ -1353,22 +1340,6 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
     delete[] centers;
 
   tim_exit("integrate");
-
-#if COUNT_CONTRIBUTIONS
-  int tot = 0;
-  double sav1 = 0.0;
-  double sav2 = 0.0;
-  for (int i=0; i<nshell_+1; i++) {
-      cout << "contrib_array[" << setw(2) << i << "] = "
-           << contrib_array[i] << endl;
-      tot += contrib_array[i];
-      sav1 += contrib_array[i]*i;
-      sav2 += contrib_array[i]*i*i;
-    }
-  cout << "tot = " << tot << endl;
-  cout << "sav1 = " << sav1/(tot*nshell_) << endl;
-  cout << "sav2 = " << sav2/(tot*nshell_*nshell_) << endl;
-#endif
 }
 
 void
@@ -1405,14 +1376,10 @@ RadialIntegrator::RadialIntegrator(StateIn& s):
 
 RadialIntegrator::RadialIntegrator()
 {
-  set_nr(64);
 }
 
 RadialIntegrator::RadialIntegrator(const RefKeyVal& keyval)
 {
-  set_nr( keyval->intvalue("nr") );
-  if (keyval->error() != KeyVal::OK)
-      set_nr(64);
 }
 
 RadialIntegrator::~RadialIntegrator()
@@ -1422,29 +1389,6 @@ RadialIntegrator::~RadialIntegrator()
 void
 RadialIntegrator::save_data_state(StateOut& s)
 {
-  cout << class_name() << ": cannot save state" << endl;
-  abort();
-}
-
-void
-RadialIntegrator::set_nr(int i)
-{
-  nr_ = i;
-}
-
-int
-RadialIntegrator::get_nr(void) const
-{
-  return nr_;
-}
-
-void
-RadialIntegrator::print(ostream &o) const
-{
-  o << node0 << indent << class_name() << ":" << endl;
-  o << incindent;
-  o << node0 << indent << scprintf("nr       = %5d", get_nr()) << endl;
-  o << decindent;
 }
 
 ///////////////////////////////////////
@@ -1482,8 +1426,6 @@ AngularIntegrator::~AngularIntegrator()
 void
 AngularIntegrator::save_data_state(StateOut& s)
 {
-  cout << class_name() << ": cannot save state" << endl;
-  abort();
 }
 
 ///////////////////////////////////////
@@ -1507,15 +1449,19 @@ EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(StateIn& s):
   SavableState(s),
   RadialIntegrator(s)
 {
+  s.get(nr_);
 }
 
 EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator()
 {
+  nr_ = 75;
 }
 
-EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(const RefKeyVal& keyval):
-RadialIntegrator(keyval)
+EulerMaclaurinRadialIntegrator
+::EulerMaclaurinRadialIntegrator(const RefKeyVal& keyval):
+  RadialIntegrator(keyval)
 {
+  nr_ = keyval->intvalue("nr", KeyValValueint(75));
 }
 
 EulerMaclaurinRadialIntegrator::~EulerMaclaurinRadialIntegrator()
@@ -1525,8 +1471,14 @@ EulerMaclaurinRadialIntegrator::~EulerMaclaurinRadialIntegrator()
 void
 EulerMaclaurinRadialIntegrator::save_data_state(StateOut& s)
 {
-  cout << class_name() << ": cannot save state" << endl;
-  abort();
+  RadialIntegrator::save_data_state(s);
+  s.put(nr_);
+}
+
+int
+EulerMaclaurinRadialIntegrator::nr() const
+{
+  return nr_;
 }
 
 double
@@ -1571,6 +1523,16 @@ EulerMaclaurinRadialIntegrator::get_dr_dqr2(void) const
   return dr_dqr2_;
 }
 
+
+void
+EulerMaclaurinRadialIntegrator::print(ostream &o) const
+{
+  o << node0 << indent << class_name() << ":" << endl;
+  o << incindent;
+  o << node0 << indent << scprintf("nr       = %5d", nr()) << endl;
+  o << decindent;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // LebedevLaikovIntegrator
 
@@ -1592,16 +1554,18 @@ LebedevLaikovIntegrator::LebedevLaikovIntegrator(StateIn& s):
   SavableState(s),
   AngularIntegrator(s)
 {
+  s.get(npoint_);
+  init(npoint_);
 }
 
 LebedevLaikovIntegrator::LebedevLaikovIntegrator()
 {
-  init(1202);
+  init(302);
 }
 
 LebedevLaikovIntegrator::LebedevLaikovIntegrator(const RefKeyVal& keyval)
 {
-  KeyValValueint defnpoint(1202);
+  KeyValValueint defnpoint(302);
   init(keyval->intvalue("npoint", defnpoint));
 }
 
@@ -1616,8 +1580,8 @@ LebedevLaikovIntegrator::~LebedevLaikovIntegrator()
 void
 LebedevLaikovIntegrator::save_data_state(StateOut& s)
 {
-  cout << class_name() << ": cannot save state" << endl;
-  abort();
+  AngularIntegrator::save_data_state(s);
+  s.put(npoint_);
 }
 
 extern "C" {
@@ -1686,6 +1650,11 @@ GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator(StateIn& s):
   SavableState(s),
   AngularIntegrator(s)
 {
+  s.get(ntheta_);
+  s.get(nphi_);
+  s.get(Ktheta_);
+  theta_quad_weights_ = new double[ntheta_];
+  theta_quad_points_ = new double[ntheta_];
 }
 
 GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator()
@@ -1721,8 +1690,10 @@ GaussLegendreAngularIntegrator::~GaussLegendreAngularIntegrator()
 void
 GaussLegendreAngularIntegrator::save_data_state(StateOut& s)
 {
-  cout << class_name() << ": cannot save state" << endl;
-  abort();
+  AngularIntegrator::save_data_state(s);
+  s.put(ntheta_);
+  s.put(nphi_);
+  s.put(Ktheta_);
 }
 
 int
@@ -1906,13 +1877,15 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   SavableState(s),
   DenIntegrator(s)
 {
-  abort();
+  radial_.restore_state(s);
+  angular_.restore_state(s);
+  weight_.restore_state(s);
 }
 
 RadialAngularIntegrator::RadialAngularIntegrator()
 {
   radial_  = new EulerMaclaurinRadialIntegrator;
-  angular_ = new GaussLegendreAngularIntegrator;
+  angular_ = new LebedevLaikovIntegrator;
   weight_  = new BeckeIntegrationWeight;
 }
 
@@ -1935,8 +1908,10 @@ RadialAngularIntegrator::~RadialAngularIntegrator()
 void
 RadialAngularIntegrator::save_data_state(StateOut& s)
 {
-  cout << ": cannot save state" << endl;
-  abort();
+  DenIntegrator::save_data_state(s);
+  radial_.save_state(s);
+  angular_.save_state(s);
+  weight_.save_state(s);
 }
 
 void
@@ -1949,12 +1924,6 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
 
   init_integration(denfunc, densa, densb, nuclear_gradient);
 
-#if COUNT_CONTRIBUTIONS
-  delete[] contrib_array;
-  contrib_array = new int[nshell_+1];
-  memset(contrib_array, 0, sizeof(int)*(nshell_+1));
-#endif
-
   RefMolecule mol = wavefunction()->molecule();
   weight_->init(mol, DBL_EPSILON);
 
@@ -1964,7 +1933,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   int *nr = new int[ncenters];
   int nangular;
   
-  for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = radial_->get_nr();
+  for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = radial_->nr();
 
   double *w_gradient = 0;
   double *f_gradient = 0;
@@ -1987,7 +1956,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   SCVector3 center;           // Cartesian position of center
   SCVector3 integration_point;
 
-  double w,q,int_volume,radial_multiplier,angular_multiplier,dr_dqr2;
+  double w,q,int_volume,radial_multiplier,angular_multiplier;
         
   // Determine maximium # grid points
   int nr_max=0;
@@ -2010,35 +1979,26 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
 
       point_count=0;
       center = centers[icenter];
-      int r_done = 0;
       for (ir=0; ir < nr[icenter]; ir++) {
-//      for (ir=nr[icenter]-1; ir >= 0; ir--) {
-          double r = radial_->radial_value(ir, nr[icenter], bragg_radius[icenter]);
-          //dr_dqr2 = radial_->get_dr_dqr2();
+          double r = radial_->radial_value(ir, nr[icenter],
+                                           bragg_radius[icenter]);
           radial_multiplier = radial_->radial_multiplier(nr[icenter]);
           nangular = angular_->num_angular_points(r/bragg_radius[icenter],ir);
-          //double radial_int_volume = radial_->get_dr_dqr2();
           for (iangular=0; iangular<nangular; iangular++) {
               angular_multiplier =
-                angular_->angular_point_cartesian(iangular,r,integration_point);
+                angular_->angular_point_cartesian(iangular,r,
+                                                  integration_point);
               integration_point += center;
               w=weight_->w(icenter, integration_point, w_gradient);
-              //if (w_gradient) weight_->test(icenter, integration_point);
               point_count++;
               double multiplier = angular_multiplier * radial_multiplier;
-              //double angular_int_volume = angular_->sin_theta(point);
-              //double int_volume = radial_int_volume * angular_int_volume;
               if (do_point(icenter, integration_point, denfunc,
                            w, multiplier,
                            nuclear_gradient, f_gradient, w_gradient)
                   * multiplier < 1e2*DBL_EPSILON
                   && multiplier > 1e2*DBL_EPSILON) {
-                  r_done=1;
-                  // break;
                 }
             }
-          //if (r_done) 
-              // break;
         }
       point_count_total+=point_count;
     }
@@ -2047,33 +2007,16 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   done_integration();
   weight_->done();
 
-     cout << node0 << indent
-          << "Total integration points = " << point_count_total << endl;
-    //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
+  cout << node0 << indent
+       << "Total integration points = " << point_count_total << endl;
 
-    delete[] f_gradient;
-    delete[] w_gradient;
-    delete[] bragg_radius;
-    delete[] nr;
-    delete[] centers;
+  delete[] f_gradient;
+  delete[] w_gradient;
+  delete[] bragg_radius;
+  delete[] nr;
+  delete[] centers;
 
   tim_exit("integrate");
-
-#if COUNT_CONTRIBUTIONS
-  int tot = 0;
-  double sav1 = 0.0;
-  double sav2 = 0.0;
-  for (int i=0; i<nshell_+1; i++) {
-      cout << "contrib_array[" << setw(2) << i << "] = "
-           << contrib_array[i] << endl;
-      tot += contrib_array[i];
-      sav1 += contrib_array[i]*i;
-      sav2 += contrib_array[i]*i*i;
-    }
-  cout << "tot = " << tot << endl;
-  cout << "sav1 = " << sav1/(tot*nshell_) << endl;
-  cout << "sav2 = " << sav2/(tot*nshell_*nshell_) << endl;
-#endif
 }
 
 void

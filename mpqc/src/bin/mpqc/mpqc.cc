@@ -295,6 +295,8 @@ main(int argc, char *argv[])
   // check for a molecular energy and optimizer
   KeyValValueString molnamedef(basename);
   char * molname = keyval->pcharvalue("filename", molnamedef);
+  if (strcmp(molname, basename))
+    SCFormIO::set_default_basename(molname);
 
   char * ckptfile = new char[strlen(molname)+6];
   sprintf(ckptfile,"%s.ckpt",molname);

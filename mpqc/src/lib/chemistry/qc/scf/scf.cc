@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 
 #include <util/misc/formio.h>
-#include <util/state/state_bin.h>
+#include <util/group/mstate.h>
 
 #include <math/scmat/local.h>
 #include <math/scmat/repl.h>
@@ -132,6 +132,8 @@ SCF::SCF(const RefKeyVal& keyval) :
   print_all_evals_ = keyval->booleanvalue("print_evals");
   print_occ_evals_ = keyval->booleanvalue("print_occupied_evals");
   
+  scf_grp_ = basis()->matrixkit()->messagegrp();
+  
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
@@ -143,7 +145,7 @@ SCF::SCF(const RefKeyVal& keyval) :
       char *path = keyval->pcharvalue("guess_wavefunction");
       struct stat sb;
       if (path && stat(path, &sb)==0 && sb.st_size) {
-        StateInBin s(path);
+        BcastStateInBin s(scf_grp_, path);
 
         // reset the default matrixkit so that the matrices in the guess
         // wavefunction will match those in this wavefunction
@@ -159,8 +161,6 @@ SCF::SCF(const RefKeyVal& keyval) :
     }
     cout << decindent << decindent;
   }
-  
-  scf_grp_ = basis()->matrixkit()->messagegrp();
 }
 
 SCF::~SCF()

@@ -173,10 +173,19 @@ main(int argc, char *argv[])
   
   const char *filename = "mpqc.in";
 
+  int check = 0;
+  int limit = 0;
   int iarg;
   for (iarg=1; iarg<argc; iarg++) {
       // skip over the options
-      if (argv[iarg][0] == '-') iarg++;
+      if (argv[iarg][0] == '-') {
+          if (!strcmp(argv[iarg],"-c")) check = 1;
+          else if (!strcmp(argv[iarg],"-l")) {
+              iarg++;
+              limit = atoi(argv[iarg]);
+            }
+          else iarg++;
+        }
       else {
           filename = argv[iarg];
           break;
@@ -436,11 +445,12 @@ main(int argc, char *argv[])
    // write pdb file if requested
     if (make_pdb)
       Geom_write_pdb(keyval,mol,pdbfile,"initial geometry");
-
   }
 
   // send input data to all the nodes
   BcastState bcaststate(msg);
+  bcaststate.bcast(check);
+  bcaststate.bcast(limit);
   bcaststate.bcast(do_scf);
   bcaststate.bcast(do_grad);
   bcaststate.bcast(nopt);
@@ -465,6 +475,22 @@ main(int argc, char *argv[])
   bcaststate.bcast(gbs);
   bcaststate.bcast(molfreq);
   bcaststate.flush();
+
+  if (limit && gbs->nbasis() > limit) {
+      cout << "The limit of " << limit
+           << " basis functions has been exceeded."
+           << endl;
+      check = 1;
+    }
+
+  if (check) {
+      if (msg->me() == 0) {
+          cout << "There are " << mol->natom() << " atoms" << endl;
+          cout << "and " << gbs->nbasis() << " basis functions." << endl;
+        }
+      clean_mp(msg);
+      return 0;
+    }
 
   // set up the basis set on this center
   if (msg->me() != 0) {
@@ -508,7 +534,7 @@ main(int argc, char *argv[])
   
  // initialize force and geometry routines
 
-  if (do_grad) {
+  if (do_grad || molfreq.nonnull()) {
     RefKeyVal fkv;
     
     if (mynode0()==0) {

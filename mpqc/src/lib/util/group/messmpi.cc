@@ -41,6 +41,26 @@
 //#define MPI_SEND_ROUTINE MPI_Send // hangs
 #define MPI_SEND_ROUTINE MPI_Bsend // works requires the attach and detach
 
+///////////////////////////////////////////////////////////////////////
+
+static
+void
+print_error_and_abort(int me, int mpierror)
+{
+  char msg[MPI_MAX_ERROR_STRING+1];
+  int size;
+  MPI_Error_string(mpierror, msg, &size);
+  msg[size] = '\0';
+  cerr << me << ": " << msg << endl;
+  cout.flush();
+  cerr.flush();
+  MPI_Abort(MPI_COMM_WORLD, mpierror);
+  abort();
+}
+
+///////////////////////////////////////////////////////////////////////
+// The MPIMessageGrp class
+
 #define CLASSNAME MPIMessageGrp
 #define PARENTS public MessageGrp
 #define HAVE_CTOR
@@ -402,7 +422,13 @@ MPIMessageGrp::raw_send(int target, void* data, int nbyte)
                        me(), nbyte, target, 0)
            << endl;
     }
-  MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,0,MPI_COMM_WORLD); 
+  int ret;
+  if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,0,MPI_COMM_WORLD))
+      != MPI_SUCCESS) {
+      cerr << me() << ": MPIMessageGrp::raw_send("
+          << target << ",," << nbyte << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
   if (debug_) cerr << scprintf("Node %d sent\n", me()) << endl;
 }
 
@@ -416,7 +442,13 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
                        me(), nbyte, sender, 0)
            << endl;
     }
-  MPI_Recv(data,nbyte,MPI_BYTE,sender,0,MPI_COMM_WORLD,&status);
+  int ret;
+  if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,0,MPI_COMM_WORLD,&status))
+      != MPI_SUCCESS) {
+      cerr << me() << ": MPIMessageGrp::raw_recv("
+          << sender << ",," << nbyte << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
   rlen = nbyte;
@@ -432,7 +464,13 @@ MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
                        me(), nbyte, target, type)
            << endl;
     }
-  MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,type,MPI_COMM_WORLD); 
+  int ret;
+  if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,type,MPI_COMM_WORLD))
+      != MPI_SUCCESS) {
+      cerr << me() << ": MPIMessageGrp::raw_sendt("
+          << target << "," << type << ",," << nbyte << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
   if (debug_) cerr << scprintf("Node %d sent\n", me()) << endl;
 }
 
@@ -447,7 +485,13 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
                        me(), nbyte, MPI_ANY_SOURCE, type)
            << endl;
     }
-  MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&status);
+  int ret;
+  if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,
+                      type,MPI_COMM_WORLD,&status)) != MPI_SUCCESS) {
+      cerr << me() << ": MPIMessageGrp::raw_recvt("
+          << type << ",," << nbyte << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
   rlen = nbyte;
@@ -462,7 +506,13 @@ MPIMessageGrp::probet(int type)
 
   if (type == -1) type = MPI_ANY_TAG;
   else type = (type<<1) + 1;
-  MPI_Iprobe(MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&flag,&status);
+  int ret;
+  if ((ret = MPI_Iprobe(MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&flag,&status))
+      != MPI_SUCCESS ) {
+      cerr << me() << ": MPIMessageGrp::probet("
+          << type << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
   if (flag) {
     rnode = status.MPI_SOURCE;
     rtag = status.MPI_TAG;
@@ -497,7 +547,11 @@ MPIMessageGrp::last_type()
 void
 MPIMessageGrp::sync()
 {
-  MPI_Barrier(MPI_COMM_WORLD);
+  int ret;
+  if ((ret = MPI_Barrier(MPI_COMM_WORLD)) != MPI_SUCCESS) {
+      cerr << me() << ": MPIMessageGrp::sync(): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
 }
 
 static GrpReduce<double>* doublereduceobject;
@@ -519,11 +573,19 @@ MPIMessageGrp::reduce(double*d, int n, GrpReduce<double>&r,
   if (!scratch) work = new double[n];
   else work = scratch;
 
+  int ret;
+
   if (target == -1) {
-      MPI_Allreduce(d, work, n, MPI_DOUBLE, op, MPI_COMM_WORLD);
+      ret = MPI_Allreduce(d, work, n, MPI_DOUBLE, op, MPI_COMM_WORLD);
     }
   else {
-      MPI_Reduce(d, work, n, MPI_DOUBLE, op, target, MPI_COMM_WORLD);
+      ret = MPI_Reduce(d, work, n, MPI_DOUBLE, op, target, MPI_COMM_WORLD);
+    }
+
+  if (ret != MPI_SUCCESS) {
+      cerr << me() << ": MPIMessageGrp::reduce(,"
+          << n << ",,," << target << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
     }
 
   if (target == -1 || target == me()) {
@@ -545,7 +607,13 @@ MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)
       cerr << scprintf("Node %d bcast %d bytes from %d", me(), nbyte, from)
            << endl;
     }
-  MPI_Bcast(data, nbyte, MPI_BYTE, from, MPI_COMM_WORLD);
+  int ret;
+  if ((ret = MPI_Bcast(data, nbyte, MPI_BYTE, from, MPI_COMM_WORLD))
+      != MPI_SUCCESS) {
+      cerr << me() << ": MPIMessageGrp::raw_bcast(,"
+          << nbyte << "," << from << "): mpi error:" << endl;
+      print_error_and_abort(me(), ret);
+    }
   if (debug_) {
       cerr << scprintf("Node %d done with bcast", me()) << endl;
     }

@@ -48,23 +48,10 @@ CorrelationTable::CorrelationTable(const RefPointGroup& group,
   gamma_(0)
 {
   int rc = initialize_table(group,subgroup);
-  if (rc == -1) {
-      cerr << node0
-           << "ERROR: CorrelationTable: too many symop matches" << endl;
-      abort();
-    }
-  else if (rc == -2) {
-      cerr << node0
-           << "ERROR: CorrelationTable: not a subgroup or wrong ref frame"
-           << endl;
-      abort();
-    }
-  else if (rc == -3) {
-      cerr << node0 << "ERROR: CorrelationTable: degeneracies don't add up:"
-           << endl
-           << "  only nondegenerate groups supported"
-           << endl;
-      abort();
+  if (rc != 0) {
+    cerr << node0
+         << "ERROR: CorrelationTable: " << error(rc) << endl;
+    abort();
     }
 }
 
@@ -88,6 +75,7 @@ CorrelationTable::initialize_table(const RefPointGroup& group,
   CharacterTable subct = subgroup_->char_table();
 
   n_ = ct.nirrep();
+  subn_ = subct.nirrep();
   ngamma_ = new int[n_];
   gamma_ = new int*[n_];
 
@@ -137,25 +125,29 @@ CorrelationTable::initialize_table(const RefPointGroup& group,
       }
     }
 
+  // compute the correlation table
   for (i=0; i<ct.nirrep(); i++) {
-    int match;
     for (j=0; j<subct.nirrep(); j++) {
-      match = j;
+      double nmatch = 0.0;
       for (k=0; k<ct.order(); k++) {
         double chr = ct.gamma(i).character(k);
         if (so_to_subso[k] >= 0) {
           double subchr = subct.gamma(j).character(so_to_subso[k]);
-          if (fabs(subchr - chr) > 1.0e-6) {
-            match = -1;
-            break;
-            }
+          nmatch += subchr*chr;
           }
         }
-      if (match >= 0) {
-        int *newgamma = new int[ngamma_[i] + 1];
+      nmatch /= subct.order();
+      int inmatch = (int)(nmatch+0.5);
+      if (fabs(nmatch-inmatch)>1.0e-6) {
+        delete[] so_to_subso;
+        delete[] subso_to_so;
+        return -4;
+        }
+      if (inmatch > 0) {
+        int *newgamma = new int[ngamma_[i] + inmatch];
         memcpy(newgamma,gamma_[i],ngamma_[i]*sizeof(int));
-        newgamma[ngamma_[i]] = j;
-        ngamma_[i]++;
+        for (k=0; k<inmatch; k++) newgamma[ngamma_[i]+k] = j;
+        ngamma_[i] += inmatch;
         delete[] gamma_[i];
         gamma_[i] = newgamma;
         }
@@ -185,6 +177,38 @@ CorrelationTable::clear()
     }
   delete[] ngamma_;
   delete[] gamma_;
+}
+
+const char *
+CorrelationTable::error(int rc)
+{
+  if (rc == -1) {
+    return "too many symop matches";
+    }
+  else if (rc == -2) {
+    return "not a subgroup or wrong ref frame";
+    }
+  else if (rc == -3) {
+    return "only groups with non-complex characters supported (degen sum)";
+    }
+  else if (rc == -4) {
+    return "only groups with non-complex characters supported (nonint nirr)";
+    }
+  else if (rc != 0) {
+    return "unknown error";
+    }
+}
+
+int
+CorrelationTable::degen(int i) const
+{
+  return group_->char_table().gamma(i).degeneracy();
+}
+
+int
+CorrelationTable::subdegen(int i) const
+{
+  return subgroup_->char_table().gamma(i).degeneracy();
 }
 
 void

@@ -46,6 +46,7 @@ class CorrelationTable: public VRefCount {
     RefPointGroup subgroup_;
 
     int n_;
+    int subn_;
     int *ngamma_;
     int **gamma_;
 
@@ -65,8 +66,17 @@ class CorrelationTable: public VRefCount {
     int initialize_table(const RefPointGroup& group,
                          const RefPointGroup& subgroup);
 
+    //. Converts error codes from initialize\_table into a text string.
+    const char *error(int errcod);
+
     //. Returns the number of irreps in the high order group.
     int n() const { return n_; }
+    //. Returns the number of irreps in the subgroup.
+    int subn() const { return subn_; }
+    //. Returns the degeneracy of the irrep.
+    int degen(int igamma) const;
+    //. Returns the degeneracy of the subgroup irrep.
+    int subdegen(int igamma) const;
     //. Returns the number of irreps in the low order group that an irrep
     //from the high order group can be reduced to.
     int ngamma(int igamma) const { return ngamma_[igamma]; }

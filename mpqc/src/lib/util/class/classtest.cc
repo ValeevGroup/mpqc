@@ -79,16 +79,19 @@ C::_castdown(const ClassDesc*cd)
 #define D_parents GNU_BUG_VIRTUAL public B, GNU_BUG_VIRTUAL public C
 class D: D_parents {
 #define CLASSNAME D
+#define HAVE_CTOR
 #include <util/class/classd.h>
   private:
     int id;
+    A* atst;
   public:
-    D():id(4) {};
-    ~D() { cout << "D dtor\n"; };
+    D():id(4),atst(new A) {};
+    ~D() { delete atst; cout << "D dtor\n"; };
 };
 
 #define CLASSNAME D
 #define PARENTS D_parents
+#define HAVE_CTOR
 #include <util/class/classi.h>
 void *
 D::_castdown(const ClassDesc*cd)
@@ -121,6 +124,8 @@ main()
 
   A a;
   cout << "A name:" << a.class_name() << '\n';
+
+  D* dtst = D::castdown(ClassDesc::name_to_class_desc("D")->create());
 
 #ifndef SIMPLE_TEST
   D d;

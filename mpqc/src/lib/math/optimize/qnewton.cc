@@ -33,8 +33,6 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
 {
   update_ = keyval->describedclassvalue("update");
   if (update_.nonnull()) update_->set_inverse();
-  convergence_ = keyval->doublevalue("convergence");
-  if (keyval->error() != KeyVal::OK) convergence_ = 1.0e-6;
   lineopt_ = keyval->describedclassvalue("lineopt");
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
@@ -65,7 +63,6 @@ QNewtonOpt::QNewtonOpt(StateIn&s):
   ihessian_ = matrixkit()->symmmatrix(dimension());
   ihessian_.restore(s);
   update_.restore_state(s);
-  s.get(convergence_);
   s.get(accuracy_);
   s.get(take_newton_step_);
   s.get(maxabs_gradient);
@@ -82,7 +79,6 @@ QNewtonOpt::save_data_state(StateOut&s)
   Optimize::save_data_state(s);
   ihessian_.save(s);
   update_.save_state(s);
-  s.put(convergence_);
   s.put(accuracy_);
   s.put(take_newton_step_);
   s.put(maxabs_gradient);
@@ -193,34 +189,18 @@ QNewtonOpt::update()
   
   RefSCVector xnext = xcurrent + xdisp;
 
-  if (conv_.nonnull()) {
-    conv_->reset();
-    conv_->get_grad(function());
-    conv_->get_x(function());
-  }
+  conv_->reset();
+  conv_->get_grad(function());
+  conv_->get_x(function());
 
   function()->set_x(xnext);
 
-  if (conv_.nonnull()) {
-    conv_->get_nextx(function());
-  }
+  conv_->get_nextx(function());
 
   // do a line min step next time
   if (lineopt_.nonnull()) take_newton_step_ = 0;
 
-  if (conv_.null()) {
-    // compute the convergence criteria
-    double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
-    double con_crit2 = maxabs_gradient;
-    double con_crit3 = xdisp.maxabs();
-
-    return   (con_crit1 <= convergence_)
-              && (con_crit2 <= convergence_)
-              && (con_crit3 <= convergence_);
-  }
-  else {
-    return conv_->converged();
-  }
+  return conv_->converged();
 }
 
 /////////////////////////////////////////////////////////////////////////////

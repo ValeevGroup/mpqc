@@ -33,6 +33,16 @@ Convergence::Convergence()
   set_defaults();
 }
 
+Convergence::Convergence(double tolerance)
+{
+  set_defaults();
+  max_disp_ = tolerance;
+  max_grad_ = tolerance;
+  rms_disp_ = tolerance;
+  rms_grad_ = tolerance;
+  graddisp_ = tolerance;
+}
+
 Convergence::Convergence(StateIn&s):
   SavableState(s)
 {

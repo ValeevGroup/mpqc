@@ -24,7 +24,6 @@ class QNewtonOpt: public Optimize {
 #   include <util/class/classd.h>
   protected:
     double maxabs_gradient;
-    double convergence_;
     double accuracy_;
 
     RefSymmSCMatrix ihessian_;

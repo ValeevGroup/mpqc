@@ -44,6 +44,7 @@ class Convergence: virtual_base public SavableState {
   public:
     //. Standard constructors and destructor.
     Convergence();
+    Convergence(double tolerance);
     Convergence(StateIn&);
     Convergence(const RefKeyVal&);
     virtual ~Convergence();

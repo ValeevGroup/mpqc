@@ -61,7 +61,6 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
 {
   int me=grp->me();
   int nproc=grp->n();
-  int local = (LocalSymmSCMatrix::castdown(density.pointer()) != 0);
   int gsh=0;
   
   GaussianBasisSet& gbs = *gbs_.pointer();
@@ -102,12 +101,6 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
       for (int jsh=jshstart; jsh <= jshend; jsh++, gsh++) {
         if (jsh > ish)
           break;
-        
-        // make sure that if we're running on multiple processors, but
-        // the data blocks aren't distributed, we only calculate a part of
-        // the gradient on each node
-        if (local && (gsh%nproc != me))
-          continue;
         
         GaussianShell& gsj = gbs(jsh);
 
@@ -183,24 +176,28 @@ SCF::compute_gradient(const RefSCVector& gradient)
   RefOneBodyDerivInt derint = integral()->overlap_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
 
+  scf_grp_->sum(o,n3);
+
   if (debug_) {
     gradient.assign(o);
     print_natom_3(gradient,"Overlap Contribution to the Gradient:");
   }
+
+  for (i=0; i < n3; i++) g[i] += o[i];
   
   // other one electron contributions
   tim_change("one electron gradient");
+  memset(o,0,sizeof(double)*gradient.n());
   dens = gradient_density();
   derint = integral()->hcore_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
+
+  scf_grp_->sum(o,n3);
 
   if (debug_) {
     gradient.assign(o);
     print_natom_3(gradient,"One-Electron Contribution to the Gradient:");
   }
-
-  if (scf_grp_->n() > 1)
-    scf_grp_->sum(o, n3);
 
   for (i=0; i < n3; i++) g[i] += o[i];
   
@@ -223,6 +220,10 @@ SCF::compute_gradient(const RefSCVector& gradient)
   gradient.assign(g);
   delete[] g;
   delete[] o;
+
+  if (debug_) {
+    print_natom_3(gradient,"Total Gradient:");
+  }
   
   done_gradient();
   tim_exit("compute gradient");

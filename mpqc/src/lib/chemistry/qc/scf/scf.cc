@@ -36,6 +36,7 @@
 #include <util/misc/formio.h>
 
 #include <math/scmat/local.h>
+#include <math/scmat/repl.h>
 #include <math/scmat/offset.h>
 
 #include <math/optimize/diis.h>
@@ -199,7 +200,8 @@ SCF::compute()
 {
   int me=scf_grp_->me();
   
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())) ?1:0;
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())
+            ||ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) ?1:0;
   
   if (hessian_needed())
     set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
@@ -302,8 +304,9 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 {
   RefSymmSCMatrix l = m;
   
-  if (!LocalSymmSCMatrix::castdown(l.pointer())) {
-    RefSCMatrixKit k = new LocalSCMatrixKit;
+  if (!LocalSymmSCMatrix::castdown(l.pointer())
+      && !ReplSymmSCMatrix::castdown(l.pointer())) {
+    RefSCMatrixKit k = new ReplSCMatrixKit;
     l = k->symmmatrix(m.dim());
     l->convert(m);
 
@@ -314,7 +317,10 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
     l.assign(0.0);
   }
 
-  p = LocalSymmSCMatrix::castdown(l.pointer())->get_data();
+  if (ReplSymmSCMatrix::castdown(l.pointer()))
+    p = ReplSymmSCMatrix::castdown(l.pointer())->get_data();
+  else p = LocalSymmSCMatrix::castdown(l.pointer())->get_data();
+
   return l;
 }
 
@@ -374,7 +380,8 @@ SCF::init_mem(int nm)
   int nmem = i_offset(basis()->nbasis())*nm*sizeof(double);
 
   // if we're actually using local matrices, then there's no choice
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())) {
+  if (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())
+      ||ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) {
     if (nmem > storage_)
       return;
   } else {

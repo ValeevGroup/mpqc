@@ -35,7 +35,7 @@ REQUIREDCXXSRC = mstate.cc \
          message.cc messagei.cc messproc.cc messint.cc \
          reduce.cc topology.cc hcube.cc picl.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc memoryi.cc \
-         globcnt.cc memamsg.cc memproc.cc memmid.cc \
+         memamsg.cc memproc.cc memmid.cc \
          pregtime.cc
 
 OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
@@ -44,7 +44,7 @@ OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
 CXXSRC := $(REQUIREDCXXSRC)
 
 ifeq ($(HAVE_SYSV_IPC),yes)
-  CXXSRC += messshm.cc memshm.cc
+  CXXSRC += messshm.cc memshm.cc globcnt.cc
 endif
 ifeq ($(HAVE_NX),yes)
   CXXSRC += messpgon.cc memipgon.cc

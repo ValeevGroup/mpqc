@@ -25,6 +25,10 @@
 //#define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;
 #define SavableState_named_REF_def(refname,T)
 
+// This does forward declarations of REF classes.
+#define SavableState_REF_fwddec(T) class SSRef ## T; \
+                                   typedef class SSRef ## T Ref ## T;
+
 class StateIn;
 class StateOut;
 

@@ -104,7 +104,7 @@ class Molecule: public SavableState
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     int natoms_;
     RefAtomInfo atominfo_;
     RefPointGroup pg_;

@@ -216,11 +216,11 @@ int PrefixKeyVal::getnewprefixkey(const char*key,char*newkey)
 }
 
 RefKeyValValue
-PrefixKeyVal::key_value(const char * arg)
+PrefixKeyVal::key_value(const char * arg, const KeyValValue &def)
 {
   char newkey[MaxKeywordLength];
   getnewprefixkey(arg,newkey);
-  RefKeyValValue result(keyval->value(newkey));
+  RefKeyValValue result(keyval->key_value(newkey,def));
   seterror(keyval->error());
   return result;
 }

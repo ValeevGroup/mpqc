@@ -46,7 +46,8 @@ extern "C" {
 REF_def(KeyVal);
 
 KeyVal::KeyVal() :
-  errcod(OK)
+  errcod(OK),
+  verbose_(0)
 {
 }
 
@@ -78,83 +79,97 @@ int KeyVal::key_count(const char* key)
   }
 
 double
-KeyVal::key_doublevalue(const char* key)
+KeyVal::key_doublevalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(value(key));
+  RefKeyValValue val(key_value(key,def));
+  double result;
   if (val.nonnull()) {
-      double result;
       seterror(val->doublevalue(result));
-      return result;
     }
-  return Defaultdouble();
+  else {
+      seterror(def.doublevalue(result));
+    }
+  return result;
 }
 int
-KeyVal::key_booleanvalue(const char* key)
+KeyVal::key_booleanvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(value(key));
+  RefKeyValValue val(key_value(key,def));
+  int result;
   if (val.nonnull()) {
-      int result;
       seterror(val->booleanvalue(result));
-      return result;
     }
-  return Defaultboolean();
+  else {
+      seterror(def.booleanvalue(result));
+    }
+  return result;
 }
 int
-KeyVal::key_intvalue(const char* key)
+KeyVal::key_intvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(value(key));
+  RefKeyValValue val(key_value(key,def));
+  int result;
   if (val.nonnull()) {
-      int result;
       seterror(val->intvalue(result));
-      return result;
     }
-  return Defaultint();
+  else {
+      seterror(def.intvalue(result));
+    }
+  return result;
 }
 float
-KeyVal::key_floatvalue(const char* key)
+KeyVal::key_floatvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(value(key));
+  RefKeyValValue val(key_value(key,def));
+  float result;
   if (val.nonnull()) {
-      float result;
       seterror(val->floatvalue(result));
-      return result;
     }
-  return Defaultfloat();
+  else {
+      seterror(def.floatvalue(result));
+    }
+  return result;
 }
 char
-KeyVal::key_charvalue(const char* key)
+KeyVal::key_charvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(value(key));
+  RefKeyValValue val(key_value(key,def));
+  char result;
   if (val.nonnull()) {
-      char result;
       seterror(val->charvalue(result));
-      return result;
     }
-  return Defaultchar();
+  else {
+      seterror(def.charvalue(result));
+    }
+  return result;
 }
 char*
-KeyVal::key_pcharvalue(const char* key)
+KeyVal::key_pcharvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(value(key));
+  RefKeyValValue val(key_value(key,def));
+  const char* result;
   if (val.nonnull()) {
-      const char* result;
       seterror(val->pcharvalue(result));
-      if (result) return strcpy(new char[strlen(result)+1], result);
-      return 0;
     }
-  return Defaultpchar();
+  else {
+      seterror(def.pcharvalue(result));
+    }
+  if (result) return strcpy(new char[strlen(result)+1], result);
+  else return 0;
 }
 RefDescribedClass
-KeyVal::key_describedclassvalue(const char* key)
+KeyVal::key_describedclassvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(value(key));
+  RefKeyValValue val(key_value(key,def));
+  RefDescribedClass result;
   if (val.nonnull()) {
-      RefDescribedClass result;
       seterror(val->describedclassvalue(result));
       val = 0; // fix for gcc 2.7.0 bug
-      return result;
     }
-  return DefaultRefDescribedClass();
+  else {
+      seterror(def.describedclassvalue(result));
+    }
+  return result;
 }
 
 int
@@ -168,44 +183,44 @@ KeyVal::count(const char*key)
   return key_count(key);
 }
 RefKeyValValue
-KeyVal::value(const char*key)
+KeyVal::value(const char*key,const KeyValValue &def)
 {
-  return key_value(key);
+  return key_value(key,def);
 }
 int
-KeyVal::booleanvalue(const char*key)
+KeyVal::booleanvalue(const char*key,const KeyValValue& def)
 {
-  return key_booleanvalue(key);
+  return key_booleanvalue(key,def);
 }
 double
-KeyVal::doublevalue(const char*key)
+KeyVal::doublevalue(const char*key,const KeyValValue& def)
 {
-  return key_doublevalue(key);
+  return key_doublevalue(key,def);
 }
 float
-KeyVal::floatvalue(const char*key)
+KeyVal::floatvalue(const char*key,const KeyValValue& def)
 {
-  return key_floatvalue(key);
+  return key_floatvalue(key,def);
 }
 char
-KeyVal::charvalue(const char*key)
+KeyVal::charvalue(const char*key,const KeyValValue& def)
 {
-  return key_charvalue(key);
+  return key_charvalue(key,def);
 }
 int
-KeyVal::intvalue(const char*key)
+KeyVal::intvalue(const char*key,const KeyValValue& def)
 {
-  return key_intvalue(key);
+  return key_intvalue(key,def);
 }
 char*
-KeyVal::pcharvalue(const char*key)
+KeyVal::pcharvalue(const char*key,const KeyValValue& def)
 {
-  return key_pcharvalue(key);
+  return key_pcharvalue(key,def);
 }
 RefDescribedClass
-KeyVal::describedclassvalue(const char*key)
+KeyVal::describedclassvalue(const char*key,const KeyValValue& def)
 {
-  return key_describedclassvalue(key);
+  return key_describedclassvalue(key,def);
 }
 
 static void getnewkey(char*newkey,const char*key,int n1)
@@ -245,47 +260,48 @@ int KeyVal::count(const char* key,int n1)
   getnewkey(newkey,key,n1);
   return key_count(newkey);
   }
-double KeyVal::doublevalue(const char* key,int n1)
+double KeyVal::doublevalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1);
-  return key_doublevalue(newkey);
+  return key_doublevalue(newkey,def);
   }
-float KeyVal::floatvalue(const char* key,int n1)
+float KeyVal::floatvalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1);
-  return key_floatvalue(newkey);
+  return key_floatvalue(newkey,def);
   }
-char KeyVal::charvalue(const char* key,int n1)
+char KeyVal::charvalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1);
-  return key_charvalue(newkey);
+  return key_charvalue(newkey,def);
   }
-int KeyVal::intvalue(const char* key,int n1)
+int KeyVal::intvalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1);
-  return key_intvalue(newkey);
+  return key_intvalue(newkey,def);
   }
-int KeyVal::booleanvalue(const char* key,int n1)
+int KeyVal::booleanvalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1);
-  return key_booleanvalue(newkey);
+  return key_booleanvalue(newkey,def);
   }
-char* KeyVal::pcharvalue(const char* key,int n1)
+char* KeyVal::pcharvalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1);
-  return key_pcharvalue(newkey);
+  return key_pcharvalue(newkey,def);
   }
-RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1)
+RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,
+                                              const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1);
-  return key_describedclassvalue(newkey);
+  return key_describedclassvalue(newkey,def);
   }
 
 // For arrays:
@@ -301,47 +317,54 @@ int KeyVal::count(const char* key,int n1,int n2)
   getnewkey(newkey,key,n1,n2);
   return key_count(newkey);
   }
-double KeyVal::doublevalue(const char* key,int n1,int n2)
+double KeyVal::doublevalue(const char* key,int n1,int n2,
+                           const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
-  return key_doublevalue(newkey);
+  return key_doublevalue(newkey,def);
   }
-float KeyVal::floatvalue(const char* key,int n1,int n2)
+float KeyVal::floatvalue(const char* key,int n1,int n2,
+                         const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
-  return key_floatvalue(newkey);
+  return key_floatvalue(newkey,def);
   }
-char KeyVal::charvalue(const char* key,int n1,int n2)
+char KeyVal::charvalue(const char* key,int n1,int n2,
+                       const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
-  return key_charvalue(newkey);
+  return key_charvalue(newkey,def);
   }
-int KeyVal::intvalue(const char* key,int n1,int n2)
+int KeyVal::intvalue(const char* key,int n1,int n2,
+                     const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
-  return key_intvalue(newkey);
+  return key_intvalue(newkey,def);
   }
-int KeyVal::booleanvalue(const char* key,int n1,int n2)
+int KeyVal::booleanvalue(const char* key,int n1,int n2,
+                         const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
-  return key_booleanvalue(newkey);
+  return key_booleanvalue(newkey,def);
   }
-char* KeyVal::pcharvalue(const char* key,int n1,int n2)
+char* KeyVal::pcharvalue(const char* key,int n1,int n2,
+                         const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
-  return key_pcharvalue(newkey);
+  return key_pcharvalue(newkey,def);
   }
-RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,int n2)
+RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,int n2,
+                                              const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
-  return key_describedclassvalue(newkey);
+  return key_describedclassvalue(newkey,def);
   }
 
 // new and improved for the intel, we can once again use va_arg(), so the
@@ -385,42 +408,42 @@ double KeyVal::Va_doublevalue(const char* key,int narg,...)
   va_list args;
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
-  return key_doublevalue(newkey);
+  return key_doublevalue(newkey,KeyValValuedouble());
   }
 float KeyVal::Va_floatvalue(const char* key,int narg,...)
   {
   va_list args;
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
-  return key_floatvalue(newkey);
+  return key_floatvalue(newkey,KeyValValuefloat());
   }
 char KeyVal::Va_charvalue(const char* key,int narg,...)
   {
   va_list args;
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
-  return key_charvalue(newkey);
+  return key_charvalue(newkey,KeyValValuechar());
   }
 int KeyVal::Va_intvalue(const char* key,int narg,...)
   {
   va_list args;
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
-  return key_intvalue(newkey);
+  return key_intvalue(newkey,KeyValValueint());
   }
 char* KeyVal::Va_pcharvalue(const char* key,int narg,...)
   {
   va_list args;
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
-  return key_pcharvalue(newkey);
+  return key_pcharvalue(newkey,KeyValValuepchar());
   }
 RefDescribedClass KeyVal::Va_describedclassvalue(const char* key,int narg,...)
   {
   va_list args;
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
-  return key_describedclassvalue(newkey);
+  return key_describedclassvalue(newkey,KeyValValueRefDescribedClass());
   }
 
 void KeyVal::errortrace(ostream&fp)
@@ -443,60 +466,145 @@ int KeyVal::have_unseen()
   return -1;
 }
 
+void
+KeyVal::seterror(KeyValValue::KeyValValueError e)
+{
+  if (e == KeyValValue::OK) {
+      seterror(KeyVal::OK);
+    }
+  else if (e == KeyValValue::WrongType) {
+      seterror(KeyVal::WrongType);
+    }
+  else {
+      // shouldn't get here
+      seterror(KeyVal::OperationFailed);
+    }
+}
+
 // here are some inline candidates that are here for now because
 // they were making executables big
-void   KeyVal::seterror(KeyValError err) { errcod = err; }
-int    KeyVal::exists(int i) { return exists((const char*)0,i); };
-int    KeyVal::count(int i) { return count((const char*)0,i); };
-int    KeyVal::booleanvalue(int i)
+void
+KeyVal::seterror(KeyValError err)
 {
-  return booleanvalue((const char*)0,i);
-};
-double KeyVal::doublevalue(int i) { return doublevalue((const char*)0,i); };
-float  KeyVal::floatvalue(int i) { return floatvalue((const char*)0,i); };
-char   KeyVal::charvalue(int i) { return charvalue((const char*)0,i); };
-int    KeyVal::intvalue(int i) { return intvalue((const char*)0,i); };
-char*  KeyVal::pcharvalue(int i) { return pcharvalue((const char*)0,i); };
-RefDescribedClass KeyVal::describedclassvalue(int i)
+  errcod = err;
+}
+
+int
+KeyVal::exists(int i)
 {
-  return describedclassvalue((const char*)0,i);
-};
-int    KeyVal::exists(int i,int j) { return exists((const char*)0,i,j); };
-int    KeyVal::count(int i,int j) { return count((const char*)0,i,j); };
-int    KeyVal::booleanvalue(int i,int j)
+  return exists((const char*)0,i);
+}
+
+int
+KeyVal::count(int i)
 {
-  return booleanvalue((const char*)0,i,j);
-};
-double KeyVal::doublevalue(int i,int j)
+  return count((const char*)0,i);
+}
+
+int
+KeyVal::booleanvalue(int i,const KeyValValue& def)
 {
-  return doublevalue((const char*)0,i,j);
-};
-float  KeyVal::floatvalue(int i,int j)
+  return booleanvalue((const char*)0,i,def);
+}
+
+double
+KeyVal::doublevalue(int i,const KeyValValue& def)
 {
-  return floatvalue((const char*)0,i,j);
-};
-char   KeyVal::charvalue(int i,int j)
+  return doublevalue((const char*)0,i,def);
+}
+
+float
+KeyVal::floatvalue(int i,const KeyValValue& def)
 {
-  return charvalue((const char*)0,i,j);
-};
-int    KeyVal::intvalue(int i,int j)
+  return floatvalue((const char*)0,i,def);
+}
+
+char
+KeyVal::charvalue(int i,const KeyValValue& def)
 {
-  return intvalue((const char*)0,i,j);
-};
-char*  KeyVal::pcharvalue(int i,int j)
+  return charvalue((const char*)0,i,def);
+}
+
+int
+KeyVal::intvalue(int i,const KeyValValue& def)
 {
-  return pcharvalue((const char*)0,i,j);
-};
-RefDescribedClass KeyVal::describedclassvalue(int i,int j)
+  return intvalue((const char*)0,i,def);
+}
+
+char*
+KeyVal::pcharvalue(int i,const KeyValValue& def)
 {
-  return describedclassvalue((const char*)0,i,j);
-};
-double KeyVal::Defaultdouble() { return 0.0; };
-int    KeyVal::Defaultint() { return 0; };
-float  KeyVal::Defaultfloat() { return 0.0; };
-char   KeyVal::Defaultchar() { return 0; };
-char*  KeyVal::Defaultpchar() { return 0; };
-int    KeyVal::Defaultboolean() { return 0; };
-RefDescribedClass KeyVal::DefaultRefDescribedClass() { return 0; };
-KeyVal::KeyValError KeyVal::error() { return errcod; }
-char*  KeyVal::errormsg() { return errormsg(errcod); }
+  return pcharvalue((const char*)0,i,def);
+}
+
+RefDescribedClass
+KeyVal::describedclassvalue(int i,const KeyValValue& def)
+{
+  return describedclassvalue((const char*)0,i,def);
+}
+
+int
+KeyVal::exists(int i,int j)
+{
+  return exists((const char*)0,i,j);
+}
+
+int
+KeyVal::count(int i,int j)
+{
+  return count((const char*)0,i,j);
+}
+
+int
+KeyVal::booleanvalue(int i,int j,const KeyValValue& def)
+{
+  return booleanvalue((const char*)0,i,j,def);
+}
+
+double
+KeyVal::doublevalue(int i,int j,const KeyValValue& def)
+{
+  return doublevalue((const char*)0,i,j,def);
+}
+
+float
+KeyVal::floatvalue(int i,int j,const KeyValValue& def)
+{
+  return floatvalue((const char*)0,i,j,def);
+}
+
+char
+KeyVal::charvalue(int i,int j,const KeyValValue& def)
+{
+  return charvalue((const char*)0,i,j,def);
+}
+
+int
+KeyVal::intvalue(int i,int j,const KeyValValue& def)
+{
+  return intvalue((const char*)0,i,j,def);
+}
+
+char*
+KeyVal::pcharvalue(int i,int j,const KeyValValue& def)
+{
+  return pcharvalue((const char*)0,i,j,def);
+}
+
+RefDescribedClass
+KeyVal::describedclassvalue(int i,int j,const KeyValValue& def)
+{
+  return describedclassvalue((const char*)0,i,j,def);
+}
+
+KeyVal::KeyValError
+KeyVal::error()
+{
+  return errcod;
+}
+
+char*
+KeyVal::errormsg()
+{
+  return errormsg(errcod);
+}

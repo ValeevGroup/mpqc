@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _KeyVal_h
-#define _KeyVal_h
+#ifndef _util_keyval_keyval_h
+#define _util_keyval_keyval_h
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -37,6 +37,7 @@
 #include <stdarg.h>
 
 #include <util/class/class.h>
+#include <util/keyval/keyvalval.h>
 
 class KeyValKeyword {
   private:
@@ -80,6 +81,9 @@ REF_fwddec(KeyValValue);
 // by keyword/value associations.  Most use of \clsnm{KeyVal} need not be
 // concerned with this.
 class KeyVal: public VRefCount {
+    // these classes need to directly access the key_value member
+    friend class AggregateKeyVal;
+    friend class PrefixKeyVal;
   public:
     enum {MaxKeywordLength = 256};
     enum KeyValError { OK, HasNoValue, WrongType,
@@ -90,31 +94,36 @@ class KeyVal: public VRefCount {
     KeyVal(const KeyVal&);
     void operator=(const KeyVal&);
   protected:
+    int verbose_;
+
     KeyVal();
 
     //. Set the current error condition.
     void seterror(KeyValError err);
+    void seterror(KeyValValue::KeyValValueError err);
 
     //. Ultimately called by \srccd{exists}.
     virtual int    key_exists(const char*) = 0;
     //. Ultimately called by \srccd{count}.
     virtual int    key_count(const char* =0);
     //. Ultimately called by \srccd{value}.
-    virtual RefKeyValValue key_value(const char*) = 0;
-    //. Ultimately called by \srccd{booleavalue}.
-    virtual int    key_booleanvalue(const char*);
+    virtual RefKeyValValue key_value(const char*,
+                                     const KeyValValue& def) = 0;
+    //. Ultimately called by \srccd{booleanvalue}.
+    virtual int    key_booleanvalue(const char*,const KeyValValue& def);
     //. Ultimately called by \srccd{doublevalue}.
-    virtual double key_doublevalue(const char* key);
+    virtual double key_doublevalue(const char* key,const KeyValValue& def);
     //. Ultimately called by \srccd{floatvalue}.
-    virtual float  key_floatvalue(const char* key);
+    virtual float  key_floatvalue(const char* key,const KeyValValue& def);
     //. Ultimately called by \srccd{charvalue}.
-    virtual char   key_charvalue(const char* key);
+    virtual char   key_charvalue(const char* key,const KeyValValue& def);
     //. Ultimately called by \srccd{intvalue}.
-    virtual int    key_intvalue(const char* key);
+    virtual int    key_intvalue(const char* key,const KeyValValue& def);
     //. Ultimately called by \srccd{pcharvalue}.
-    virtual char*  key_pcharvalue(const char* key);
+    virtual char*  key_pcharvalue(const char* key,const KeyValValue& def);
     //. Ultimately called by \srccd{describedclassvalue}.
-    virtual RefDescribedClass key_describedclassvalue(const char* key);
+    virtual RefDescribedClass key_describedclassvalue(const char* key,
+                                                      const KeyValValue& def);
 
   public:
     virtual ~KeyVal();
@@ -132,65 +141,101 @@ class KeyVal: public VRefCount {
     // counted.
     int    count(const char* =0);
     //. Return the value associated with the keyword.
-    RefKeyValValue value(const char* = 0);
+    RefKeyValValue value(const char* = 0,
+                         const KeyValValue& def=KeyValValue());
     //. Returns the boolean value (0 = false, 1 = true) of \vrbl{key}.
-    int    booleanvalue(const char* key = 0);
+    int    booleanvalue(const char* key = 0,
+                        const KeyValValue& def=KeyValValueboolean());
     //. Returns the double value of \vrbl{key}.
-    double doublevalue(const char* key = 0);
+    double doublevalue(const char* key = 0,
+                       const KeyValValue& def=KeyValValuedouble());
     //. Returns the float value of \vrbl{key}.
-    float  floatvalue(const char* key = 0);
+    float  floatvalue(const char* key = 0,
+                      const KeyValValue& def=KeyValValuefloat());
     //. Returns the char value of \vrbl{key}.
-    char   charvalue(const char* key = 0);
+    char   charvalue(const char* key = 0,
+                     const KeyValValue& def=KeyValValuechar());
     //. Returns the int value of \vrbl{key}.
-    int    intvalue(const char* key = 0);
+    int    intvalue(const char* key = 0,
+                    const KeyValValue& def=KeyValValueint());
     //. Returns a copy of the string representation of the \vrbl{key}'s
     // value. Storage for the copy is obtained with new.
-    char*  pcharvalue(const char* key = 0);
+    char*  pcharvalue(const char* key = 0,
+                      const KeyValValue& def=KeyValValuepchar());
     //. Returns a reference to an object of type DescribedClass
     // (@pxref{The DescribedClass Class}).
-    RefDescribedClass describedclassvalue(const char* key = 0);
+    RefDescribedClass describedclassvalue(const char* key = 0,
+                     const KeyValValue& def=KeyValValueRefDescribedClass());
 
     // For vectors:
     int    exists(const char*,int);
     int    count(const char*,int);
-    int    booleanvalue(const char*,int);
-    double doublevalue(const char* key,int);
-    float  floatvalue(const char* key,int);
-    char   charvalue(const char* key,int);
-    int    intvalue(const char* key,int);
-    char*  pcharvalue(const char* key,int);
-    RefDescribedClass describedclassvalue(const char* key,int);
+    int    booleanvalue(const char*,int,
+                        const KeyValValue& def=KeyValValueboolean());
+    double doublevalue(const char* key,int,
+                       const KeyValValue& def=KeyValValuedouble());
+    float  floatvalue(const char* key,int,
+                      const KeyValValue& def=KeyValValuefloat());
+    char   charvalue(const char* key,int,
+                     const KeyValValue& def=KeyValValuechar());
+    int    intvalue(const char* key,int,
+                    const KeyValValue& def=KeyValValueint());
+    char*  pcharvalue(const char* key,int,
+                      const KeyValValue& def=KeyValValuepchar());
+    RefDescribedClass describedclassvalue(const char* key,int,
+                     const KeyValValue& def=KeyValValueRefDescribedClass());
 
     int    exists(int i);
     int    count(int i);
-    int    booleanvalue(int i);
-    double doublevalue(int i);
-    float  floatvalue(int i);
-    char   charvalue(int i);
-    int    intvalue(int i);
-    char*  pcharvalue(int i);
-    RefDescribedClass describedclassvalue(int i);
+    int    booleanvalue(int i,
+                        const KeyValValue& def=KeyValValueboolean());
+    double doublevalue(int i,
+                       const KeyValValue& def=KeyValValuedouble());
+    float  floatvalue(int i,
+                      const KeyValValue& def=KeyValValuefloat());
+    char   charvalue(int i,
+                     const KeyValValue& def=KeyValValuechar());
+    int    intvalue(int i,
+                    const KeyValValue& def=KeyValValueint());
+    char*  pcharvalue(int i,
+                      const KeyValValue& def=KeyValValuepchar());
+    RefDescribedClass describedclassvalue(int i,
+                     const KeyValValue& def=KeyValValueRefDescribedClass());
 
     // For arrays:
     int    exists(const char*,int,int);
     int    count(const char*,int,int);
-    int    booleanvalue(const char*,int,int);
-    double doublevalue(const char* key,int,int);
-    float  floatvalue(const char* key,int,int);
-    char   charvalue(const char* key,int,int);
-    int    intvalue(const char* key,int,int);
-    char*  pcharvalue(const char* key,int,int);
-    RefDescribedClass describedclassvalue(const char* key,int,int);
+    int    booleanvalue(const char*,int,int,
+                        const KeyValValue& def=KeyValValueboolean());
+    double doublevalue(const char* key,int,int,
+                       const KeyValValue& def=KeyValValuedouble());
+    float  floatvalue(const char* key,int,int,
+                      const KeyValValue& def=KeyValValuefloat());
+    char   charvalue(const char* key,int,int,
+                     const KeyValValue& def=KeyValValuechar());
+    int    intvalue(const char* key,int,int,
+                    const KeyValValue& def=KeyValValueint());
+    char*  pcharvalue(const char* key,int,int,
+                      const KeyValValue& def=KeyValValuepchar());
+    RefDescribedClass describedclassvalue(const char* key,int,int,
+                     const KeyValValue& def=KeyValValueRefDescribedClass());
 
     int    exists(int i,int j);
     int    count(int i,int j);
-    int    booleanvalue(int i,int j);
-    double doublevalue(int i,int j);
-    float  floatvalue(int i,int j);
-    char   charvalue(int i,int j);
-    int    intvalue(int i,int j);
-    char*  pcharvalue(int i,int j);
-    RefDescribedClass describedclassvalue(int i,int j);
+    int    booleanvalue(int i,int j,
+                        const KeyValValue& def=KeyValValueboolean());
+    double doublevalue(int i,int j,
+                       const KeyValValue& def=KeyValValuedouble());
+    float  floatvalue(int i,int j,
+                      const KeyValValue& def=KeyValValuefloat());
+    char   charvalue(int i,int j,
+                     const KeyValValue& def=KeyValValuechar());
+    int    intvalue(int i,int j,
+                    const KeyValValue& def=KeyValValueint());
+    char*  pcharvalue(int i,int j,
+                      const KeyValValue& def=KeyValValuepchar());
+    RefDescribedClass describedclassvalue(int i,int j,
+                     const KeyValValue& def=KeyValValueRefDescribedClass());
 
     // For all else:
     int    Va_exists(const char*,int,...);
@@ -202,15 +247,6 @@ class KeyVal: public VRefCount {
     int    Va_intvalue(const char* key,int,...);
     char*  Va_pcharvalue(const char* key,int,...);
     RefDescribedClass Va_describedclassvalue(const char* key,int,...);
-
-    // default values
-    static double Defaultdouble();
-    static int    Defaultint();
-    static float  Defaultfloat();
-    static char   Defaultchar();
-    static char*  Defaultpchar();
-    static int    Defaultboolean();
-    static RefDescribedClass DefaultRefDescribedClass();
 
     //. Return the current error condition.
     KeyValError error();
@@ -229,111 +265,13 @@ class KeyVal: public VRefCount {
     //none, or -1 this keyval doesn't keep track of unseen
     //keywords.
     virtual int have_unseen();
+
+    //. Control printing of assignments.
+    void verbose(int v) { verbose_ = v; }
+    int verbose() const { return verbose_; }
 };
 
 REF_dec(KeyVal);
-
-class KeyValValue: public VRefCount {
-  protected:
-    KeyValValue();
-    KeyValValue(KeyValValue&);
-  public:
-    virtual ~KeyValValue();
-    virtual KeyVal::KeyValError doublevalue(double&);
-    virtual KeyVal::KeyValError booleanvalue(int&);
-    virtual KeyVal::KeyValError floatvalue(float&);
-    virtual KeyVal::KeyValError charvalue(char&);
-    virtual KeyVal::KeyValError intvalue(int&);
-    virtual KeyVal::KeyValError pcharvalue(const char*&);
-    virtual KeyVal::KeyValError describedclassvalue(RefDescribedClass&);
-};
-
-REF_dec(KeyValValue);
-
-class KeyValValuedouble: public KeyValValue {
-  private:
-    double _val;
-  public:
-    KeyValValuedouble(double);
-    KeyValValuedouble(const KeyValValuedouble&);
-    ~KeyValValuedouble();
-    KeyVal::KeyValError doublevalue(double&);
-};
-
-class KeyValValueboolean: public KeyValValue {
-  private:
-    int _val;
-  public:
-    KeyValValueboolean(int);
-    KeyValValueboolean(const KeyValValueboolean&);
-    ~KeyValValueboolean();
-    KeyVal::KeyValError booleanvalue(int&);
-};
-
-class KeyValValuefloat: public KeyValValue {
-  private:
-    float _val;
-  public:
-    KeyValValuefloat(float);
-    KeyValValuefloat(const KeyValValuefloat&);
-    ~KeyValValuefloat();
-    KeyVal::KeyValError floatvalue(float&);
-};
-
-class KeyValValuechar: public KeyValValue {
-  private:
-    char _val;
-  public:
-    KeyValValuechar(char);
-    KeyValValuechar(const KeyValValuechar&);
-    ~KeyValValuechar();
-    KeyVal::KeyValError charvalue(char&);
-};
-
-class KeyValValueint: public KeyValValue {
-  private:
-    int _val;
-  public:
-    KeyValValueint(int);
-    KeyValValueint(const KeyValValueint&);
-    ~KeyValValueint();
-    KeyVal::KeyValError intvalue(int&);
-};
-
-class KeyValValuepchar: public KeyValValue {
-  private:
-    char* _val;
-  public:
-    KeyValValuepchar(const char*);
-    KeyValValuepchar(const KeyValValuepchar&);
-    ~KeyValValuepchar();
-    KeyVal::KeyValError pcharvalue(const char*&);
-};
-
-class KeyValValueRefDescribedClass: public KeyValValue {
-  private:
-    RefDescribedClass _val;
-  public:
-    KeyValValueRefDescribedClass(const RefDescribedClass&);
-    KeyValValueRefDescribedClass(const KeyValValueRefDescribedClass&);
-    ~KeyValValueRefDescribedClass();
-    KeyVal::KeyValError describedclassvalue(RefDescribedClass&);
-};
-
-class KeyValValueString: public KeyValValue {
-  private:
-    const char* _val;
-  public:
-    KeyValValueString(const char*);
-    KeyValValueString(const KeyValValueString&);
-    ~KeyValValueString();
-    KeyVal::KeyValError doublevalue(double&);
-    KeyVal::KeyValError booleanvalue(int&);
-    KeyVal::KeyValError floatvalue(float&);
-    KeyVal::KeyValError charvalue(char&);
-    KeyVal::KeyValError intvalue(int&);
-    KeyVal::KeyValError pcharvalue(const char*&);
-};
 
 // this class allows keyval associations to be set up by the program,
 // rather than determined by an external file
@@ -344,11 +282,13 @@ class AssignedKeyVal: public KeyVal {
     // do not allow a copy constructor or assignment
     AssignedKeyVal(const AssignedKeyVal&);
     void operator=(const AssignedKeyVal&);
+  protected:
+    int    key_exists(const char*);
+    RefKeyValValue key_value(const char*,
+                             const KeyValValue& def);
   public:
     AssignedKeyVal();
     ~AssignedKeyVal();
-    int    key_exists(const char*);
-    RefKeyValValue key_value(const char*);
 
     void assign(const char*, const RefKeyValValue&);
     void assign(const char*, double);
@@ -374,9 +314,11 @@ class StringKeyVal: public KeyVal {
     void operator=(const StringKeyVal&);
   protected:
     StringKeyVal();
+    int    key_exists(const char*);
+    RefKeyValValue key_value(const char*,
+                             const KeyValValue& def);
   public:
     virtual ~StringKeyVal();
-    RefKeyValValue key_value(const char*);
     virtual const char* stringvalue(const char *) = 0;
     // returns the name of the exact class the object at the keyword
     virtual const char* classname(const char*);
@@ -384,7 +326,6 @@ class StringKeyVal: public KeyVal {
     // of variable substitution takes place (needed to make multiple
     // references to the same object work in input files)
     virtual const char* truekeyword(const char*);
-    int    key_exists(const char*);
 
     virtual void errortrace(ostream&fp=cerr);
     virtual void dump(ostream&fp=cerr);
@@ -398,6 +339,10 @@ class AggregateKeyVal : public KeyVal {
     // do not allow a copy constructor or assignment
     AggregateKeyVal(const AggregateKeyVal&);
     void operator=(const AggregateKeyVal&);
+  protected:
+    int    key_exists(const char*);
+    RefKeyValValue key_value(const char*,
+                             const KeyValValue& def);
   public:
     AggregateKeyVal(const RefKeyVal&);
     AggregateKeyVal(const RefKeyVal&,const RefKeyVal&);
@@ -405,8 +350,6 @@ class AggregateKeyVal : public KeyVal {
     AggregateKeyVal(const RefKeyVal&,const RefKeyVal&,const RefKeyVal&,
                     const RefKeyVal&);
     ~AggregateKeyVal();
-    int    key_exists(const char*);
-    RefKeyValValue key_value(const char*);
     void errortrace(ostream&fp=cerr);
     void dump(ostream&fp=cerr);
 };
@@ -420,6 +363,9 @@ class PrefixKeyVal : public KeyVal {
     // do not allow a copy constructor or assignment
     PrefixKeyVal(const PrefixKeyVal&);
     void operator=(const PrefixKeyVal&);
+    int    key_exists(const char*);
+    RefKeyValValue key_value(const char*,
+                             const KeyValValue& def);
   public:
     PrefixKeyVal(const RefKeyVal&,int);
     PrefixKeyVal(const RefKeyVal&,int,int);
@@ -437,8 +383,6 @@ class PrefixKeyVal : public KeyVal {
     PrefixKeyVal(const char*,const RefKeyVal&,int,int,int);
     PrefixKeyVal(const char*,const RefKeyVal&,int,int,int,int);
     ~PrefixKeyVal();
-    int    key_exists(const char*);
-    RefKeyValValue key_value(const char*);
     void errortrace(ostream&fp=cerr);
     void dump(ostream&fp=cerr);
 };

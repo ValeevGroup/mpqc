@@ -282,6 +282,7 @@ main()
   show( akv->intvalue(":z") );  show (akv->errormsg() ); cout << '\n';
 
   RefKeyVal pkv = new ParsedKeyVal(SRCDIR "/keyvaltest.in");
+  pkv->verbose(1);
 
   cout << "Initial unseen keywords:" << endl;
   cout << incindent;

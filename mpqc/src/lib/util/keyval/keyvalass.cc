@@ -53,7 +53,7 @@ AssignedKeyVal::key_exists(const char * key)
 }
 
 RefKeyValValue
-AssignedKeyVal::key_value(const char * key)
+AssignedKeyVal::key_value(const char * key, const KeyValValue &def)
 {
   KeyValKeyword k(key); 
   if (exists(key)) {

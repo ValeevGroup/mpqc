@@ -76,27 +76,32 @@ AggregateKeyVal::~AggregateKeyVal()
 RefKeyVal
 AggregateKeyVal::getkeyval(const char* keyword)
 {
+  RefKeyVal lastkeyval;
   for (int i=0; i<MaxKeyVal && kv[i].nonnull(); i++) {
       kv[i]->exists(keyword);
       seterror(kv[i]->error());
       if (error() != KeyVal::UnknownKeyword) return kv[i];
+      lastkeyval = kv[i];
     }
-  return 0;
+  // The last keyval in the list is used to lookup the value
+  // if the keyword is not found.  This only affects printing
+  // in verbose keyvals.
+  return lastkeyval;
 }
 
 RefKeyValValue
-AggregateKeyVal::key_value(const char*arg)
+AggregateKeyVal::key_value(const char*arg, const KeyValValue &def)
 {
-  KeyVal* kval = getkeyval(arg).pointer();
-  if (kval) return kval->value(arg);
+  RefKeyVal kval = getkeyval(arg);
+  if (kval.nonnull()) return kval->key_value(arg,def);
   else return 0;
 }
 
 int
 AggregateKeyVal::key_exists(const char* key)
 {
-  KeyVal* kval = getkeyval(key).pointer();
-  if (kval) return kval->exists(key);
+  RefKeyVal kval = getkeyval(key);
+  if (kval.nonnull()) return kval->exists(key);
   else return 0;
 }
 

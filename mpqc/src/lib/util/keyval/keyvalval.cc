@@ -25,18 +25,19 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUG__
+#pragma implementation
+#endif
+
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
 
-#include <iostream.h>
-#include <util/keyval/keyval.h>
+#include <util/keyval/keyvalval.h>
+
+/////////////////////////////////////////////////////////////////////////
 
 REF_def(KeyValValue)
-
-KeyValValue::KeyValValue()
-{
-}
 
 KeyValValue::KeyValValue(KeyValValue&)
 {
@@ -46,59 +47,77 @@ KeyValValue::~KeyValValue()
 {
 }
 
-KeyVal::KeyValError
-KeyValValue::doublevalue(double& val)
+KeyValValue::KeyValValueError
+KeyValValue::doublevalue(double& val) const
 {
-  val = KeyVal::Defaultdouble();
-  return KeyVal::WrongType;
+  KeyValValuedouble def;
+  def.doublevalue(val);
+  return KeyValValue::WrongType;
 }
 
-KeyVal::KeyValError
-KeyValValue::booleanvalue(int& val)
+KeyValValue::KeyValValueError
+KeyValValue::booleanvalue(int& val) const
 {
-  val = KeyVal::Defaultboolean();
-  return KeyVal::WrongType;
+  KeyValValueboolean def;
+  def.booleanvalue(val);
+  return KeyValValue::WrongType;
 }
 
-KeyVal::KeyValError
-KeyValValue::floatvalue(float& val)
+KeyValValue::KeyValValueError
+KeyValValue::floatvalue(float& val) const
 {
-  val = KeyVal::Defaultfloat();
-  return KeyVal::WrongType;
+  KeyValValuefloat def;
+  def.floatvalue(val);
+  return KeyValValue::WrongType;
 }
 
-KeyVal::KeyValError
-KeyValValue::charvalue(char& val)
+KeyValValue::KeyValValueError
+KeyValValue::charvalue(char& val) const
 {
-  val = KeyVal::Defaultchar();
-  return KeyVal::WrongType;
+  KeyValValuechar def;
+  def.charvalue(val);
+  return KeyValValue::WrongType;
 }
 
-KeyVal::KeyValError
-KeyValValue::intvalue(int& val)
+KeyValValue::KeyValValueError
+KeyValValue::intvalue(int& val) const
 {
-  val = KeyVal::Defaultint();
-  return KeyVal::WrongType;
+  KeyValValueint def;
+  def.intvalue(val);
+  return KeyValValue::WrongType;
 }
 
-KeyVal::KeyValError
-KeyValValue::pcharvalue(const char*& val)
+KeyValValue::KeyValValueError
+KeyValValue::pcharvalue(const char*& val) const
 {
-  val = KeyVal::Defaultpchar();
-  return KeyVal::WrongType;
+  KeyValValuepchar def;
+  def.pcharvalue(val);
+  return KeyValValue::WrongType;
 }
 
-KeyVal::KeyValError
-KeyValValue::describedclassvalue(RefDescribedClass& val)
+KeyValValue::KeyValValueError
+KeyValValue::describedclassvalue(RefDescribedClass& val) const
 {
-  val = KeyVal::DefaultRefDescribedClass();
-  return KeyVal::WrongType;
+  KeyValValueRefDescribedClass def;
+  def.describedclassvalue(val);
+  return KeyValValue::WrongType;
 }
 
-KeyValValuedouble::KeyValValuedouble(double val):
-  _val(val)
+void
+KeyValValue::print(ostream&o) const
 {
+  o << "(empty value)";
 }
+
+ostream&
+operator << (ostream&o, const KeyValValue &val)
+{
+  val.print(o);
+  return o;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
 KeyValValuedouble::KeyValValuedouble(const KeyValValuedouble&val):
   _val(val._val)
 {
@@ -107,17 +126,21 @@ KeyValValuedouble::~KeyValValuedouble()
 {
 }
 
-KeyVal::KeyValError
-KeyValValuedouble::doublevalue(double&val)
+KeyValValue::KeyValValueError
+KeyValValuedouble::doublevalue(double&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
 
-KeyValValueboolean::KeyValValueboolean(int val):
-  _val(val)
+void
+KeyValValuedouble::print(ostream&o) const
 {
+  o << _val;
 }
+
+/////////////////////////////////////////////////////////////////////////
+
 KeyValValueboolean::KeyValValueboolean(const KeyValValueboolean&val):
   _val(val._val)
 {
@@ -126,17 +149,21 @@ KeyValValueboolean::~KeyValValueboolean()
 {
 }
 
-KeyVal::KeyValError
-KeyValValueboolean::booleanvalue(int&val)
+KeyValValue::KeyValValueError
+KeyValValueboolean::booleanvalue(int&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
 
-KeyValValuefloat::KeyValValuefloat(float val):
-  _val(val)
+void
+KeyValValueboolean::print(ostream&o) const
 {
+  o << (_val?"true":"false");
 }
+
+/////////////////////////////////////////////////////////////////////////
+
 KeyValValuefloat::KeyValValuefloat(const KeyValValuefloat&val):
   _val(val._val)
 {
@@ -145,17 +172,21 @@ KeyValValuefloat::~KeyValValuefloat()
 {
 }
 
-KeyVal::KeyValError
-KeyValValuefloat::floatvalue(float&val)
+KeyValValue::KeyValValueError
+KeyValValuefloat::floatvalue(float&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
 
-KeyValValuechar::KeyValValuechar(char val):
-  _val(val)
+void
+KeyValValuefloat::print(ostream&o) const
 {
+  o << _val;
 }
+
+/////////////////////////////////////////////////////////////////////////
+
 KeyValValuechar::KeyValValuechar(const KeyValValuechar&val):
   _val(val._val)
 {
@@ -164,17 +195,21 @@ KeyValValuechar::~KeyValValuechar()
 {
 }
 
-KeyVal::KeyValError
-KeyValValuechar::charvalue(char&val)
+KeyValValue::KeyValValueError
+KeyValValuechar::charvalue(char&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
 
-KeyValValueint::KeyValValueint(int val):
-  _val(val)
+void
+KeyValValuechar::print(ostream&o) const
 {
+  o << _val;
 }
+
+/////////////////////////////////////////////////////////////////////////
+
 KeyValValueint::KeyValValueint(const KeyValValueint&val):
   _val(val._val)
 {
@@ -183,12 +218,20 @@ KeyValValueint::~KeyValValueint()
 {
 }
 
-KeyVal::KeyValError
-KeyValValueint::intvalue(int&val)
+KeyValValue::KeyValValueError
+KeyValValueint::intvalue(int&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
+
+void
+KeyValValueint::print(ostream&o) const
+{
+  o << _val;
+}
+
+/////////////////////////////////////////////////////////////////////////
 
 KeyValValuepchar::KeyValValuepchar(const char* val):
   _val(strcpy(new char[strlen(val)+1],val))
@@ -202,18 +245,21 @@ KeyValValuepchar::~KeyValValuepchar()
 {
   delete[] _val;
 }
-KeyVal::KeyValError
-KeyValValuepchar::pcharvalue(const char*&val)
+KeyValValue::KeyValValueError
+KeyValValuepchar::pcharvalue(const char*&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
 
-KeyValValueRefDescribedClass::
-  KeyValValueRefDescribedClass(const RefDescribedClass& val):
-  _val(val)
+void
+KeyValValuepchar::print(ostream&o) const
 {
+  o << _val;
 }
+
+/////////////////////////////////////////////////////////////////////////
+
 KeyValValueRefDescribedClass::
   KeyValValueRefDescribedClass(const KeyValValueRefDescribedClass& val):
   _val(val._val)
@@ -223,12 +269,27 @@ KeyValValueRefDescribedClass::
   ~KeyValValueRefDescribedClass()
 {
 }
-KeyVal::KeyValError
-KeyValValueRefDescribedClass::describedclassvalue(RefDescribedClass&val)
+KeyValValue::KeyValValueError
+KeyValValueRefDescribedClass::describedclassvalue(RefDescribedClass&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
+
+void
+KeyValValueRefDescribedClass::print(ostream&o) const
+{
+  if (_val.nonnull()) {
+      o << "<" << _val->class_name()
+        << " " << _val->identifier()
+        << ">";
+    }
+  else {
+      o << "<empty object>";
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
 
 KeyValValueString::KeyValValueString(const char* val):
   _val(val)
@@ -241,14 +302,14 @@ KeyValValueString::KeyValValueString(const KeyValValueString&val):
 KeyValValueString::~KeyValValueString()
 {
 }
-KeyVal::KeyValError
-KeyValValueString::doublevalue(double&val)
+KeyValValue::KeyValValueError
+KeyValValueString::doublevalue(double&val) const
 {
   val = atof(_val);
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
-KeyVal::KeyValError
-KeyValValueString::booleanvalue(int&val)
+KeyValValue::KeyValValueError
+KeyValValueString::booleanvalue(int&val) const
 {
   char lc_kv[20];
   strncpy(lc_kv,_val,20);
@@ -263,34 +324,41 @@ KeyValValueString::booleanvalue(int&val)
   else if (!strcmp(lc_kv,"0")) val = 0;
   else {
       val = 0;
-      return KeyVal::WrongType;
+      return KeyValValue::WrongType;
     }
 
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
-KeyVal::KeyValError
-KeyValValueString::floatvalue(float&val)
+KeyValValue::KeyValValueError
+KeyValValueString::floatvalue(float&val) const
 {
   val = (float) atof(_val);
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
-KeyVal::KeyValError
-KeyValValueString::charvalue(char&val)
+KeyValValue::KeyValValueError
+KeyValValueString::charvalue(char&val) const
 {
   val = _val[0];
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
-KeyVal::KeyValError
-KeyValValueString::intvalue(int&val)
+KeyValValue::KeyValValueError
+KeyValValueString::intvalue(int&val) const
 {
   val = atoi(_val);
-  return KeyVal::OK;
+  return KeyValValue::OK;
 }
-KeyVal::KeyValError
-KeyValValueString::pcharvalue(const char*&val)
+KeyValValue::KeyValValueError
+KeyValValueString::pcharvalue(const char*&val) const
 {
   val = _val;
-  return KeyVal::OK;
+  return KeyValValue::OK;
+}
+
+void
+KeyValValueString::print(ostream&o) const
+{
+  if (_val) o << _val;
+  else o << "(empty value)";
 }
 
 /////////////////////////////////////////////////////////////////////////////

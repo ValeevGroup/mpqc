@@ -18,6 +18,26 @@ Rotation::done() {
   _n=0;
 }
 
+Rotation::Rotation(int n) :
+  _am(0),
+  _n(n),
+  r(0)
+{
+  if (_n) {
+    r = new double*[_n];
+    for (int i=0; i < _n; i++)
+      r[i] = new double[_n];
+  }
+}
+
+Rotation::Rotation(const Rotation& rot) :
+  _am(0),
+  _n(0),
+  r(0)
+{
+  *this = rot;
+}
+
 Rotation::Rotation(int a, SymmetryOperation& so, int pure):
   _am(0),
   _n(0),
@@ -32,6 +52,25 @@ Rotation::Rotation(int a, SymmetryOperation& so, int pure):
 Rotation::~Rotation()
 {
   done();
+}
+
+Rotation&
+Rotation::operator=(const Rotation& rot)
+{
+  done();
+
+  _n = rot._n;
+  _am = rot._am;
+
+  if (_n && rot.r) {
+    r = new double*[_n];
+    for (int i=0; i < _n; i++) {
+      r[i] = new double[_n];
+      memcpy(r[i],rot.r[i],sizeof(double)*_n);
+    }
+  }
+
+  return *this;
 }
 
 // Compute the transformation matrices for general cartesian shells
@@ -150,6 +189,68 @@ Rotation::init_pure(int a, SymmetryOperation&so)
     }
 }
 
+// returns the result of rot*this
+Rotation
+Rotation::operate(const Rotation& rot) const
+{
+  if (_n != rot._n) {
+    fprintf(stderr,"Rotation::operate(): dimensions don't match\n");
+    fprintf(stderr,"  %d != %d\n",rot._n,_n);
+    abort();
+  }
+  
+  Rotation ret(_n);
+  ret._am = _am;
+  
+  for (int i=0; i < _n; i++) {
+    for (int j=0; j < _n; j++) {
+      double t=0;
+      for (int k=0; k < _n; k++)
+        t += rot.r[i][k] * r[k][j];
+      ret.r[i][j] = t;
+    }
+  }
+
+  return ret;
+}
+
+Rotation
+Rotation::sim_transform(const Rotation& rot) const
+{
+  int i,j,k;
+
+  if (rot._n != _n) {
+    fprintf(stderr,"Rotation::sim_transform(): dimensions don't match\n");
+    fprintf(stderr,"  %d != %d\n",rot._n,_n);
+    abort();
+  }
+  
+  Rotation ret(_n), foo(_n);
+  ret._am = foo._am = _am;
+
+  // foo = r * d
+  for (i=0; i < _n; i++) {
+    for (j=0; j < _n; j++) {
+      double t=0;
+      for (k=0; k < _n; k++)
+        t += rot.r[i][k] * r[k][j];
+      foo.r[i][j] = t;
+    }
+  }
+
+  // ret = (r*d)*r~ = foo*r~
+  for (i=0; i < _n; i++) {
+    for (j=0; j < _n; j++) {
+      double t=0;
+      for (k=0; k < _n; k++)
+        t += foo.r[i][k]*rot.r[j][k];
+      ret.r[i][j]=t;
+    }
+  }
+
+  return ret;
+}
+    
 double
 Rotation::trace() const {
   double t=0;

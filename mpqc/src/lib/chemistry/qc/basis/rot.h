@@ -21,18 +21,25 @@ class Rotation {
     void init(int a, SymmetryOperation&so);
     void init_pure(int a, SymmetryOperation&so);
     
+    Rotation(int n);
+    Rotation(const Rotation&);
     Rotation(int a, SymmetryOperation& so, int pure = 0);
     ~Rotation();
 
+    Rotation& operator=(const Rotation&);
+    
     int am() const { return _am; }
     int dim() const { return _n; }
     
     double& operator()(int i, int j) { return r[i][j]; }
     double* operator[](int i) { return r[i]; }
     
-    void print() const;
+    Rotation operate(const Rotation&) const;
+    Rotation sim_transform(const Rotation&) const;
     
     double trace() const;
+    
+    void print() const;
 };
 
 

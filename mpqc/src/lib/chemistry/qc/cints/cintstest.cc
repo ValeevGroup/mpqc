@@ -44,6 +44,7 @@
 
 
 using namespace std;
+using namespace sc;
 
 #define CINTS
 
@@ -230,11 +231,11 @@ int main(int argc, char **argv)
   Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
 
 #ifdef CINTS
-  int storage_needed = integralcints->storage_required(&Integral::electron_repulsion,basis);
+  int storage_needed = integralcints->storage_required_eri(basis);
   cout << scprintf("Need %d bytes to create EriCints\n",storage_needed);
   Ref<TwoBodyInt> erepcints = integralcints->electron_repulsion();
   testint(erepcints);
-  storage_needed = integralcints->storage_required(&Integral::grt,basis);
+  storage_needed = integralcints->storage_required_grt(basis);
   cout << scprintf("Need %d bytes to create GRTCints\n",storage_needed);
   Ref<TwoBodyInt> grtcints = integralcints->grt();
   testint(grtcints);
@@ -637,10 +638,10 @@ print_grt_ints(Ref<TwoBodyInt>& tbcints)
 {
   Ref<GaussianBasisSet> basis = tbcints->basis();
   const double *buffer[4];
-  buffer[0] = tbcints->buffer(0);
-  buffer[1] = tbcints->buffer(1);
-  buffer[2] = tbcints->buffer(2);
-  buffer[3] = tbcints->buffer(3);
+  buffer[0] = tbcints->buffer(TwoBodyInt::eri);
+  buffer[1] = tbcints->buffer(TwoBodyInt::r12);
+  buffer[2] = tbcints->buffer(TwoBodyInt::r12t1);
+  buffer[3] = tbcints->buffer(TwoBodyInt::r12t2);
   char teout_filename[] = "teout0.dat";
   FILE *teout[4];
 

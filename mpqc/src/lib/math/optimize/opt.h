@@ -34,7 +34,8 @@ class Optimize: virtual_base public SavableState {
 
     void save_data_state(StateOut&);
 
-    //. Do the optimization.
+    //. Do the optimization.  Returns nonzero if the optimization
+    //. is complete.
     virtual int optimize();
 
     //. Set up for checkpointing.

@@ -74,6 +74,7 @@ class MBPT2_R12: public MBPT2 {
     double mp2_corr_energy_;
     double r12_corr_energy_;
     LinearR12::StandardApproximation stdapprox_;
+    LinearR12::ABSMethod abs_method_;
     R12IntEvalInfo::StoreMethod r12ints_method_;
     char* r12ints_file_;
     bool gebc_;
@@ -130,6 +131,10 @@ class MBPT2_R12: public MBPT2 {
 	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary basis to be used for the resolution
 	of the identity. Default is to use the same basis as for the orbital expansion.
 
+        <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
+        by Klopper and Samson, or the new ABS variant, introduced by EV, should be used.
+	Valid values are "KS" and "EV". The default is to use the new method.
+
 	<dt><tt>r12ints</tt><dd> This specifies how to store transformed MO integrals.
 	Valid values are:
 
@@ -181,6 +186,7 @@ class MBPT2_R12: public MBPT2 {
 
     Ref<GaussianBasisSet> aux_basis() const;
     bool gebc() const;
+    LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
     bool spinadapted() const;
     R12IntEvalInfo::StoreMethod r12ints_method() const;

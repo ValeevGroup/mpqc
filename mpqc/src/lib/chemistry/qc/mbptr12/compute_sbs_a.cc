@@ -130,6 +130,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   Ref<Integral> integral = r12info()->integral();
   Ref<GaussianBasisSet> bs = r12info()->basis();
   bool two_basis_form = (bs != r12info()->basis_aux());
+  LinearR12::ABSMethod abs_method = r12info()->abs_method();
   Ref<MessageGrp> msg = r12info()->msg();
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
@@ -168,7 +169,8 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   int nvir  = noso - nocc;
 
   double pfac_xy_1, pfac_xy_2;
-  if (two_basis_form) {
+  if (two_basis_form &&
+      abs_method == LinearR12::ABS_KS) {
     pfac_xy_1 = 0.5;
     pfac_xy_2 = -0.5;
   }

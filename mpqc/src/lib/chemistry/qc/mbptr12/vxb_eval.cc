@@ -78,6 +78,7 @@ R12IntEval::R12IntEval(MBPT2_R12* mbptr12)
   emp2pair_ab_ = local_matrix_kit->vector(dim_ab_);
 
   gebc_ = mbptr12->gebc();
+  abs_method_ = mbptr12->abs_method();
   stdapprox_ = mbptr12->stdapprox();
   spinadapted_ = mbptr12->spinadapted();
 
@@ -118,6 +119,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   emp2pair_ab_.restore(si);
 
   int gebc; si.get(gebc); gebc_ = (bool) gebc;
+  int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
   int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
   int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
@@ -157,6 +159,8 @@ void R12IntEval::save_data_state(StateOut& so)
   emp2pair_aa_.save(so);
   emp2pair_ab_.save(so);
 
+  so.put((int)gebc_);
+  so.put((int)abs_method_);
   so.put((int)stdapprox_);
   so.put((int)spinadapted_);
   so.put((int)evaluated_);
@@ -169,6 +173,7 @@ void R12IntEval::obsolete()
 }
 
 void R12IntEval::set_gebc(bool gebc) { gebc_ = gebc; };
+void R12IntEval::set_absmethod(LinearR12::ABSMethod abs_method) { abs_method_ = abs_method; };
 void R12IntEval::set_stdapprox(LinearR12::StandardApproximation stdapprox) { stdapprox_ = stdapprox; };
 void R12IntEval::set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted; };
 void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
@@ -233,9 +238,8 @@ void R12IntEval::compute()
   if (spinadapted_)
     throw std::runtime_error("R12IntEval::compute: spin-adapted R12 intermediates have not been implemented yet");
 
-  int nocc_act = r12info()->nocc_act();
-  int naa = nocc_act*(nocc_act-1)/2;
-  int nab = nocc_act*nocc_act;
+  r12info_->set_absmethod(abs_method_);
+
   int me = r12info()->msg()->me();
   MolecularEnergy* mole = r12info()->mole();
 
@@ -288,6 +292,18 @@ void R12IntEval::compute()
   
   ExEnv::out0() << endl;
   ExEnv::out0() << indent << "Basis Set completeness diagnostics:" << endl;
+  ExEnv::out0() << indent << indent
+		<< "Tr(V) for alpha-alpha pairs:" << indent <<
+    scprintf("%10.6lf",traceV_aa) << endl;
+  ExEnv::out0() << indent << indent
+		<< "Tr(B) for alpha-alpha pairs:" << indent <<
+    scprintf("%10.6lf",traceB_aa) << endl;
+  ExEnv::out0() << indent << indent
+		<< "Tr(V) for alpha-beta pairs:" << indent <<
+    scprintf("%10.6lf",traceV_ab) << endl;
+  ExEnv::out0() << indent << indent
+		<< "Tr(B) for alpha-beta pairs:" << indent <<
+    scprintf("%10.6lf",traceB_ab) << endl;
   ExEnv::out0() << indent << indent
 		<< "-Tr(V)/Tr(B) for alpha-alpha pairs:" << indent <<
     scprintf("%10.6lf",(-1.0)*traceV_aa/traceB_aa) << endl;

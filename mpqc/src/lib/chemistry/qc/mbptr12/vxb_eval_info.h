@@ -37,6 +37,7 @@
 #include <util/group/memory.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/mbptr12/linearr12.h>
 
 namespace sc {
 
@@ -75,6 +76,7 @@ private:
   int debug_;
   StoreMethod ints_method_;
   char* ints_file_;
+  LinearR12::ABSMethod abs_method_;
 
   RefSCMatrix scf_vec_;
   RefDiagSCMatrix evals_;
@@ -96,6 +98,7 @@ public:
   void set_ints_method(const StoreMethod method) { ints_method_ = method; };
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
   void set_memory(size_t nbytes) { if (nbytes >= 0) memory_ = nbytes; };
+  void set_absmethod(LinearR12::ABSMethod abs_method) { abs_method_ = abs_method; };
 
   MolecularEnergy* mole() const { return mole_; };
   Ref<SCF> ref() const { return ref_; };
@@ -119,6 +122,8 @@ public:
   const int noso() const { return noso_;};
   const int nfzc() const { return nfzc_;};
   const int nfzv() const { return nfzv_;};
+
+  LinearR12::ABSMethod abs_method() const { return abs_method_; };
 
   RefSCMatrix scf_vec() const { return scf_vec_; };
   RefDiagSCMatrix evals() const { return evals_; };

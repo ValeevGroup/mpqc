@@ -49,7 +49,7 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc MBPT2_R12_cd(
-  typeid(MBPT2_R12),"MBPT2_R12",1,"public MBPT2",
+  typeid(MBPT2_R12),"MBPT2_R12",2,"public MBPT2",
   0, create<MBPT2_R12>, create<MBPT2_R12>);
 
 MBPT2_R12::MBPT2_R12(StateIn& s):
@@ -61,6 +61,9 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12b_energy_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
   int gebc; s.get(gebc); gebc_ = (bool)gebc;
+  if (s.version(::class_desc<MBPT2_R12>()) >= 2) {
+    int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
+  }
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   int r12ints_method; s.get(r12ints_method); r12ints_method_ = (R12IntEvalInfo::StoreMethod) r12ints_method;
@@ -94,10 +97,25 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (gebc_ == false)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12: gebc=false has not been implemented yet");
 
+  // Default is to use the old ABS method, of Klopper and Samson, to apply the resolution of the identity
+  // In the near future the default will be to use the new ABS method, ABS'.
+  char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("ks"));
+  if ( !strcmp(abs_method_str,"KS") ||
+       !strcmp(abs_method_str,"ks") ) {
+    abs_method_ = LinearR12::ABS_KS;
+  }
+  else if ( !strcmp(abs_method_str,"EV") ||
+	    !strcmp(abs_method_str,"ev") ) {
+    abs_method_ = LinearR12::ABS_EV;
+  }
+  else {
+    delete[] abs_method_str;
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- unrecognized value for abs_method");
+  }
+  delete[] abs_method_str;
+
   // Default method is MBPT2-R12/A
-  stdapprox_ = LinearR12::StdApprox_A;
-  char* sa_string = 0;
-  sa_string = keyval->pcharvalue("stdapprox");
+  char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A"));
   if ( !strcmp(sa_string,"A") ||
        !strcmp(sa_string,"a") ) {
     stdapprox_ = LinearR12::StdApprox_A;
@@ -109,46 +127,47 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     stdapprox_ = LinearR12::StdApprox_Ap;
   }
   else if ( !strcmp(sa_string,"B") ||
-	    !strcmp(sa_string,"b") )
-    throw std::runtime_error("MBPT2_R12: MP2-R12/B energy is not implemented yet");
-
+	    !strcmp(sa_string,"b") ) {
+    delete[] sa_string;
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- MP2-R12/B energy is not implemented yet");
+  }
+  else {
+    delete[] sa_string;
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- unrecognized value for stdapprox");
+  }
 
   // Default is to use spin-adapted algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
 
   // Determine how to store MO integrals
-  char* r12ints_str = 0;
-  r12ints_str = keyval->pcharvalue("r12ints");
-  if (!r12ints_str) {
+  char *r12ints_str = keyval->pcharvalue("r12ints",KeyValValuepchar("mem-posix"));
+  if (!strcmp(r12ints_str,"mem")) {
+    r12ints_method_ = R12IntEvalInfo::mem_only;
+  }
+#if HAVE_MPIIO
+  else if (!strcmp(r12ints_str,"mem-mpi")) {
+    r12ints_method_ = R12IntEvalInfo::mem_mpi;
+  }
+  else if (!strcmp(r12ints_str,"mpi")) {
+    r12ints_method_ = R12IntEvalInfo::mpi;
+  }
+#else
+  else if ( !strcmp(r12ints_str,"mem-mpi") ||
+	    !strcmp(r12ints_str,"mpi") ) {
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- the value for keyword r12ints is not valid in this environment (no MPI-I/O detected)");
+  }
+#endif
+  else if (!strcmp(r12ints_str,"mem-posix")) {
     r12ints_method_ = R12IntEvalInfo::mem_posix;
   }
-  else {
-    if (!strcmp(r12ints_str,"mem")) {
-      r12ints_method_ = R12IntEvalInfo::mem_only;
-    }
-#if HAVE_MPIIO
-    else if (!strcmp(r12ints_str,"mem-mpi")) {
-      r12ints_method_ = R12IntEvalInfo::mem_mpi;
-    }
-    else if (!strcmp(r12ints_str,"mpi")) {
-      r12ints_method_ = R12IntEvalInfo::mpi;
-    }
-#else
-    else if ( !strcmp(r12ints_str,"mem-mpi") ||
-	      !strcmp(r12ints_str,"mpi") ) {
-      throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- specified keyword r12ints is not valid in this environment (no MPI-I/O detected)");
-    }
-#endif
-    else if (!strcmp(r12ints_str,"mem-posix")) {
-      r12ints_method_ = R12IntEvalInfo::mem_posix;
-    }
-    else if (!strcmp(r12ints_str,"posix")) {
-      r12ints_method_ = R12IntEvalInfo::posix;
-    }
-    else
-      throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- invalid value for keyword r12ints");
-    delete[] r12ints_str;
+  else if (!strcmp(r12ints_str,"posix")) {
+    r12ints_method_ = R12IntEvalInfo::posix;
   }
+  else {
+    delete[] r12ints_str;
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- invalid value for keyword r12ints");
+  }
+  delete[] r12ints_str;
 
   // Make sure that integrals storage method is compatible with standard approximation
   // i.e. is stdapprox = B cannot use mem.
@@ -193,6 +212,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12b_energy_.pointer(),s);
   SavableState::save_state(aux_basis_.pointer(),s);
   s.put((int)gebc_);
+  s.put((int)abs_method_);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);
   s.put((int)r12ints_method_);
@@ -208,6 +228,14 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
   o << indent << "GBC and EBC assumed: " << (gebc_ ? "true" : "false") << endl;
+  switch(abs_method_) {
+  case LinearR12::ABS_KS :
+    o << indent << "ABS method variant: KS (Klopper and Samson)" << endl;
+    break;
+  case LinearR12::ABS_EV :
+    o << indent << "ABS method variant: EV (Edward Valeev)" << endl;
+    break;
+  }
   switch (stdapprox_) {
     case LinearR12::StdApprox_A :
       o << indent << "Standard Approximation: A" << endl;
@@ -310,6 +338,14 @@ bool
 MBPT2_R12::gebc() const
 {
   return gebc_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+LinearR12::ABSMethod
+MBPT2_R12::abs_method() const
+{
+  return abs_method_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

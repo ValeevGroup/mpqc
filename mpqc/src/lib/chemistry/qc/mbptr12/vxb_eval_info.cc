@@ -46,7 +46,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",2,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",3,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -73,6 +73,8 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   nfzv_ = mbptr12->nfzvirt();
   nocc_act_ = nocc_ - nfzc_;
   noso_ = oso_dim.n();
+
+  abs_method_ = mbptr12->abs_method();
 
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();
@@ -118,6 +120,10 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     si.get(print_percent_);
   }
 
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 3) {
+    int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
+  }
+
   orbsym_ = 0;
   eigen_(evals_,scf_vec_,occs_,orbsym_);
 }
@@ -149,6 +155,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
+  so.put((int)abs_method_);
 }
 
 char* R12IntEvalInfo::ints_file() const
@@ -211,6 +218,11 @@ void R12IntEvalInfo::eigen_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCM
   Ref<SCMatrixKit> so_matrixkit = bs_->so_matrixkit();
   Ref<PetiteList> plist = ref_->integral()->petite_list();
   RefSCDimension oso_dim = plist->SO_basisdim();
+  // Special dimension for MOs sorted by energy
+  int* nfunc_per_block = new int[1];
+  nfunc_per_block[0] = oso_dim.n();
+  RefSCDimension mo_sorted_dim = new SCDimension(oso_dim.n(), 1, nfunc_per_block, "MO (sorted by energy)");
+  mo_sorted_dim->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
 
   int nbasis = bs_->nbasis();
 
@@ -275,9 +287,9 @@ void R12IntEvalInfo::eigen_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCM
     delete[] evals;
     // make sure all nodes see the same indices and evals
     msg_->bcast(indices,noso_);
-    RefSCMatrix newvecs(vecs.rowdim(), vecs.coldim(), matrixkit());
-    RefDiagSCMatrix newvals(vals.dim(), matrixkit());
-    RefDiagSCMatrix newoccs(vals.dim(), matrixkit());
+    RefSCMatrix newvecs(mo_sorted_dim, vecs.coldim(), matrixkit());
+    RefDiagSCMatrix newvals(mo_sorted_dim, matrixkit());
+    RefDiagSCMatrix newoccs(mo_sorted_dim, matrixkit());
     for (int i=0; i<noso_; i++) {
       newvals(i) = vals(indices[i]);
       newoccs(i) = occs(indices[i]);

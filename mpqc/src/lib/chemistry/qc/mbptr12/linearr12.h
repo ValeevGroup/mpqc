@@ -37,6 +37,8 @@ namespace sc {
     enum StandardApproximation {StdApprox_A = 0,
 				StdApprox_Ap = 1,
 				StdApprox_B = 2};
+    enum ABSMethod {ABS_KS = 0,
+		    ABS_EV = 1};
   }
 
 }

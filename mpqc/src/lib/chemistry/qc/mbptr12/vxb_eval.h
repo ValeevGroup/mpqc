@@ -66,6 +66,7 @@ class R12IntEval : virtual public SavableState {
   RefSCDimension dim_aa_, dim_ab_, dim_s_, dim_t_;
 
   bool gebc_;
+  LinearR12::ABSMethod abs_method_;
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
   int debug_;
@@ -81,6 +82,7 @@ public:
   void obsolete();
   
   void set_gebc(bool gebc);
+  void set_absmethod(LinearR12::ABSMethod abs_method);
   void set_stdapprox(LinearR12::StandardApproximation stdapprox);
   void set_spinadapted(bool spinadapted);
   void set_debug(int debug);

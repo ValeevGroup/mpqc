@@ -40,6 +40,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+#define DEBUG 0
 
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 1.0e-15
@@ -210,13 +211,17 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
   BlockedSCMatrix *ovecp = BlockedSCMatrix::require_castdown(ovec.pointer(),
     "OneBodyWavefunction::projected_eigenvectors: ovec"
     );
-  //ovec.print("old wavefunction");
-    
+#if DEBUG
+  ovec.print("old wavefunction");
+#endif
+
   RefSCMatrix vec = hcore_guess();
   BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(vec.pointer(),
     "OneBodyWavefunction::projected_eigenvectors: vec"
     );
-  //vec.print("hcore guess wavefunction");
+#if DEBUG
+  vec.print("hcore guess wavefunction");
+#endif
 
   // we'll need the inverse of S eventually
   RefSymmSCMatrix s = overlap();
@@ -230,7 +235,9 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
     sinv.pointer(),
     "OneBodyWavefunction::projected_eigenvectors: sinv"
     );
-  //sinv.print("Sinv");
+#if DEBUG
+  sinv.print("Sinv");
+#endif
 
   for (int irrep=0; irrep < vecp->nblocks(); irrep++) {
     // find out how many occupied orbitals there should be
@@ -252,36 +259,48 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
     // get subblock of old vector
     RefSCMatrix ovecsb = ovecp->block(irrep).get_subblock(
       0, plo->nfunction(irrep)-1, 0, nocc-1);
-    //ovecsb.print("old vec subblock");
-  
+#if DEBUG
+    ovecsb.print("old vec subblock");
+#endif
+
     // form C' = S2 * Cold
     RefSCMatrix cprime = s2p->block(irrep) * ovecsb;
-    //cprime.print("C' matrix");
-  
+#if DEBUG
+    cprime.print("C' matrix");
+#endif
+
     // we're done with ovecsb, free up some memory
     ovecsb=0;
   
     // now we need a matrix D = S^-1 * C' 
     RefSCMatrix D = sinvp->block(irrep) * cprime;
-    //D.print("D matrix");
-  
+#if DEBUG
+    D.print("D matrix");
+#endif
+
     // we also need X = C'~ * S^-1 * C'
     RefSymmSCMatrix X(cprime.coldim(),basis()->matrixkit());
     X.assign(0.0);
     X.accumulate_transform(cprime,sinvp->block(irrep),
                            SCMatrix::TransposeTransform);
-    //X.print("X matrix");
-  
+#if DEBUG
+    X.print("X matrix");
+#endif
+
     // we're done with cprime, free up some memory
     cprime=0;
 
     // now form X^-1/2
     form_m_half(X);
-    //X.print("X^-1/2 matrix");
+#if DEBUG
+    X.print("X^-1/2 matrix");
+#endif
 
     // and form C'' = D * X^-1/2
     RefSCMatrix Cpp = D * X;
-    //Cpp.print("new vector (occupied bits)");
+#if DEBUG
+    Cpp.print("new vector (occupied bits)");
+#endif
   
     // we're done with X, free up some memory
     X=0;
@@ -294,6 +313,10 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
 
     Cpp=0;
   }
+
+#if DEBUG
+  vec.print("projected vectors");
+#endif
 
   return vec;
 }
@@ -368,6 +391,10 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
 
     delete[] vals;
   }
+
+#if DEBUG
+  val.print("projected values");
+#endif
 
   return val;
 }

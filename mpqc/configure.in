@@ -489,6 +489,18 @@ AC_TRY_COMPILE([#include "confdefs.h"
 #ifdef HAVE_MP_H
 #include <mp.h>
 #endif
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#endif
+#ifdef HAVE_MACHINE_ENDIAN_H
+#include <machine/endian.h>
+#endif
+#ifdef HAVE_SYS_ENDIAN_H
+#include <sys/endian.h>
+#endif
+#ifdef HAVE_SYS_MACHINE_H
+#include <sys/machine.h>
+#endif
 #include <sys/types.h>
 #include <sys/param.h>], [
 #if BYTE_ORDER != BIG_ENDIAN

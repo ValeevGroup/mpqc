@@ -231,43 +231,41 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   delete[] red_rep;
 }
 
-// forms the basis function rotation matrix for the g'th symmetry operation
-// in the point group
-RefSCMatrix
-PetiteList::r(int g)
+RefBlockedSCDimension
+PetiteList::AO_basisdim()
 {
-  SymmetryOperation so =
-    _gbs->molecule()->point_group().char_table().symm_operation(g);
-  GaussianBasisSet& gbs = *_gbs.pointer();
+  RefBlockedSCDimension ret =
+    new BlockedSCDimension(_gbs->matrixkit(),_gbs->nbasis());
 
-  RefSCMatrix ret = gbs.basisdim()->create_matrix(gbs.basisdim());
-  ret.assign(0.0);
+  return ret;
+}
+
+RefBlockedSCDimension
+PetiteList::SO_basisdim()
+{
+  int i, j, ii;
   
-  // this should be replaced with an element op at some point
-  for (int i=0; i < _natom; i++) {
-    int j = _atom_map[i][g];
+  // create the character table for the point group
+  CharacterTable ct = _gbs->molecule()->point_group().char_table();
 
-    for (int s=0; s < gbs.nshell_on_center(i); s++) {
-      int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
-      int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
-      
-      for (int c=0; c < gbs(i,s).ncontraction(); c++) {
-        int am=gbs(i,s).am(c);
+  // ncomp is the number of symmetry blocks we have
+  int ncomp=0;
+  for (i=0; i < _nirrep; i++)
+    ncomp += ct.gamma(i).degeneracy();
+  
+  // saoelem is the current SO in a block
+  int *nao = new int [ncomp];
+  memset(nao,0,sizeof(int)*ncomp);
 
-        if (am==0) {
-          ret.set_element(func_j,func_i,1.0);
-        } else {
-          Rotation rr(am,so,gbs(i,s).is_pure(c));
-          for (int ii=0; ii < rr.dim(); ii++)
-            for (int jj=0; jj < rr.dim(); jj++)
-              ret.set_element(func_j+jj,func_i+ii,rr(ii,jj));
-        }
+  for (i=ii=0; i < _nirrep; i++)
+    for (j=0; j < ct.gamma(i).degeneracy(); j++,ii++)
+      nao[ii] = _nbf_in_ir[i];
 
-        func_i += gbs(i,s).nfunction(c);
-        func_j += gbs(i,s).nfunction(c);
-      }
-    }
-  }
+  RefBlockedSCDimension ret =
+    new BlockedSCDimension(_gbs->matrixkit(),ncomp,nao);
+
+  delete[] nao;
+  
   return ret;
 }
 
@@ -319,6 +317,46 @@ PetiteList::print(FILE *o)
   for (i=0; i < _nirrep; i++)
     fprintf(o,"  %5d functions of %s symmetry\n",_nbf_in_ir[i],
             ct.gamma(i).symbol());
+}
+
+// forms the basis function rotation matrix for the g'th symmetry operation
+// in the point group
+RefSCMatrix
+PetiteList::r(int g)
+{
+  SymmetryOperation so =
+    _gbs->molecule()->point_group().char_table().symm_operation(g);
+  GaussianBasisSet& gbs = *_gbs.pointer();
+
+  RefSCMatrix ret = gbs.basisdim()->create_matrix(gbs.basisdim());
+  ret.assign(0.0);
+  
+  // this should be replaced with an element op at some point
+  for (int i=0; i < _natom; i++) {
+    int j = _atom_map[i][g];
+
+    for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
+      int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
+      
+      for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+        int am=gbs(i,s).am(c);
+
+        if (am==0) {
+          ret.set_element(func_j,func_i,1.0);
+        } else {
+          Rotation rr(am,so,gbs(i,s).is_pure(c));
+          for (int ii=0; ii < rr.dim(); ii++)
+            for (int jj=0; jj < rr.dim(); jj++)
+              ret.set_element(func_j+jj,func_i+ii,rr(ii,jj));
+        }
+
+        func_i += gbs(i,s).nfunction(c);
+        func_j += gbs(i,s).nfunction(c);
+      }
+    }
+  }
+  return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -378,7 +416,7 @@ PetiteList::aotoso()
   GaussianBasisSet& gbs = *_gbs.pointer();
   Molecule& mol = *gbs.molecule().pointer();
 
-  RefSCMatrix ret = gbs.basisdim()->create_matrix(gbs.basisdim());
+  RefSCMatrix ret = AO_basisdim()->create_matrix(SO_basisdim());
   ret.assign(0.0);
   
   // create the character table for the point group
@@ -557,11 +595,14 @@ PetiteList::aotoso()
   tim_exit("doit");
 
   tim_enter("finish");
-  int gooble=0;
   for (i=0; i < ncomp; i++) {
     ir = whichir[i];
     int cmp = whichcmp[i];
     RefSCMatrix tmat = tmats[i];
+
+    BlockedSCMatrix *retp = BlockedSCMatrix::castdown(ret);
+    if (!retp)
+      abort();
 
     if (tmat.null())
       continue;
@@ -569,9 +610,7 @@ PetiteList::aotoso()
     if (saoelem[i] == _nbf_in_ir[ir]) {
       // if we found the right number, do nothing else
 
-      ret.assign_subblock(tmat, 0, ret.rowdim().n()-1,
-                          gooble, gooble+tmat.coldim().n()-1);
-      gooble += tmat.coldim().n();
+      retp->mats_[i].assign(tmat);
 
     } else if (saoelem[i] < _nbf_in_ir[ir]) {
       // if we found too few, there are big problems
@@ -590,6 +629,7 @@ PetiteList::aotoso()
       //sprintf(lab,"tmat %s",ct.gamma(ir).symbol());
       //tmat.print(lab);
 
+      printf("calling svd\n");
       RefSCMatrix U(tmat.rowdim(), tmat.rowdim());
       RefSCMatrix V(tmat.coldim(), tmat.coldim());
       RefDiagSCMatrix sigma(tmat.coldim());
@@ -615,18 +655,15 @@ PetiteList::aotoso()
         nonzero=_nbf_in_ir[ir];
       }
         
-      ret.assign_subblock(U, 0, ret.rowdim().n()-1,
-                          gooble, gooble+nonzero-1);
+      retp->mats_[i].assign(U.get_subblock(0, U.rowdim().n()-1, 0, nonzero-1));
 
       //sprintf(lab,"ret %s",ct.gamma(ir).symbol());
-      //ret.print(lab);
-
-      gooble += nonzero;
+      //retp->mats_[i].print(lab);
     }
   }
   tim_exit("finish");
 
-#if 1
+#if 0
   tim_enter("orthog");
   RefSymmSCMatrix S(gbs.basisdim());
   S.assign(0.0);
@@ -638,8 +675,11 @@ PetiteList::aotoso()
   tim_exit("overlap");
 
   tim_enter("schmidt");
-  ret->schmidt_orthog(S.pointer(), gbs.nbasis());
+  RefSCMatrix bs = ret.clone();
+  BlockedSCMatrix::castdown(bs)->block(S);
   S=0;
+  ret->schmidt_orthog(bs.pointer(), gbs.nbasis());
+  bs=0;
   tim_exit("schmidt");
   tim_exit("orthog");
 #endif

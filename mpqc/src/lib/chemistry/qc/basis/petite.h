@@ -6,6 +6,7 @@
 #pragma interface
 #endif
 
+#include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussbas.h>
 
@@ -51,8 +52,10 @@ class PetiteList {
 
     void print(FILE* =stdout);
 
-    RefSCMatrix r(int g);
+    RefBlockedSCDimension AO_basisdim();
+    RefBlockedSCDimension SO_basisdim();
     RefSCMatrix aotoso();
+    RefSCMatrix r(int g);
 };
 
 inline int

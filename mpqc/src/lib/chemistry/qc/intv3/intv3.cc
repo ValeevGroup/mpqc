@@ -162,13 +162,13 @@ IntegralV3::hcore_deriv()
 RefTwoBodyInt
 IntegralV3::electron_repulsion()
 {
-  return new TwoBodyIntV3(bs1_, bs2_, bs3_, bs4_, storage_);
+  return new TwoBodyIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
 }
 
 RefTwoBodyDerivInt
 IntegralV3::electron_repulsion_deriv()
 {
-  return new TwoBodyDerivIntV3(bs1_, bs2_, bs3_, bs4_, storage_);
+  return new TwoBodyDerivIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -328,6 +328,7 @@ class Int2eV3: public VRefCount {
     void delete_int_unit_shell();
 
   protected:
+    // for intermediate storage:
     int used_storage_;
     int used_storage_build_;
     int used_storage_shift_;
@@ -340,9 +341,12 @@ class Int2eV3: public VRefCount {
             int order, int storage);
     ~Int2eV3();
 
-    // storage.cc
+    // storage.cc: for the storage of integrals
     void init_storage(int size);
     void done_storage();
+
+    // for intermediate storage
+    int storage_used() { return used_storage_; }
 
     // bounds.cc
     void init_bounds();

@@ -1,7 +1,7 @@
 % Test -*- KeyVal -*- input for the integrals package.
 
-molecule = $:ne2
-basisset = $:currentbas
+molecule = $:h
+basisset = $:testbas
 
 ne2<Molecule>: (
    { atoms    geometry } = {
@@ -17,6 +17,19 @@ h2o<Molecule>: (
     H  [  -1.5  0.0  -0.3 ]
     O  [   0.0  0.0   1.0 ]
    }
+)
+
+h2odim<Molecule>: (
+  symmetry = C1
+  angstroms = yes
+  { atoms geometry } = {
+    O  [ 0.0  0.0 0.0  ]
+    H  [ 0.0  0.7 0.7  ]
+    H  [ 0.0 -0.7 0.7 ]
+    O  [ 10.0  0.0 0.0  ]
+    H  [ 10.0  0.7 0.7  ]
+    H  [ 10.0 -0.7 0.7 ]
+  }
 )
 
 heh<Molecule>: (
@@ -67,16 +80,16 @@ test: (
    basis = $:basisset
    storage = 1000000
    print_centers = no
-   overlap = yes
-   kinetic = yes
-   hcore = yes
-   nuclear = yes
-   3 = no
+   overlap = no
+   kinetic = no
+   hcore = no
+   nuclear = no
+   3 = yes
    bounds = yes
-   4 = yes
-   4der = no
-   print = yes
-   printbounds = yes
+   4 = no
+   4der = yes
+   print = no
+   printbounds = no
    niter = 1
    permute = no
    %quartet = [0 0 0 1]
@@ -135,6 +148,16 @@ basis:(
             1.0           1.0
             }
      )
+    %(type: [(am = h)]
+    %      { exp           coef:0 } = {
+    %        1.0           1.0
+    %        }
+    % )
+    %(type: [(am = i)]
+    %      { exp           coef:0 } = {
+    %        1.0           1.0
+    %        }
+    % )
    ]
   hydrogen: testd: [
     (type: [(am = s)]

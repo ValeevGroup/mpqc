@@ -58,6 +58,7 @@ Int2eV3::int_init_bounds_nocomp()
   if (int_Qvec) free(int_Qvec);
   
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
+  used_storage_ += sizeof(int_bound_t)*nsht;
   if(int_Qvec==0) {
     cerr << scprintf("int_init_bounds_nocomp: cannot malloc int_Qvec: %d",
                      nsht)
@@ -95,6 +96,7 @@ Int2eV3::int_init_bounds_1der_nocomp()
   
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   int_Rvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
+  used_storage_ += sizeof(int_bound_t)*nsht*2;
   if((int_Qvec==0) || (int_Rvec==0)) {
     cerr << scprintf("int_init_bounds_1der_nocomp: cannot malloc int_{R,Q}vec: %d",nsht) << endl;
     exit(1);

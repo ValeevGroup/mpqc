@@ -36,7 +36,8 @@ class TwoBodyIntV3 : public TwoBodyInt {
     RefInt2eV3 int2ev3_;
 
   public:
-    TwoBodyIntV3(const RefGaussianBasisSet&b1,
+    TwoBodyIntV3(Integral*integral,
+                 const RefGaussianBasisSet&b1,
                  const RefGaussianBasisSet&b2,
                  const RefGaussianBasisSet&b3,
                  const RefGaussianBasisSet&b4,
@@ -45,6 +46,9 @@ class TwoBodyIntV3 : public TwoBodyInt {
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
+
+    int storage_used() { return int2ev3_->storage_used(); }
+    void set_integral_storage(int storage);
 };
 
 class TwoBodyDerivIntV3 : public TwoBodyDerivInt {
@@ -52,7 +56,8 @@ class TwoBodyDerivIntV3 : public TwoBodyDerivInt {
     RefInt2eV3 int2ev3_;
 
   public:
-    TwoBodyDerivIntV3(const RefGaussianBasisSet&b1,
+    TwoBodyDerivIntV3(Integral*integral,
+                      const RefGaussianBasisSet&b1,
                       const RefGaussianBasisSet&b2,
                       const RefGaussianBasisSet&b3,
                       const RefGaussianBasisSet&b4,
@@ -61,6 +66,8 @@ class TwoBodyDerivIntV3 : public TwoBodyDerivInt {
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);
+
+    int storage_used() { return int2ev3_->storage_used(); }
 };
 
 #endif

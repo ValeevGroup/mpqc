@@ -26,20 +26,24 @@
 //
 
 #include <chemistry/qc/intv3/tbintv3.h>
+#include <chemistry/qc/basis/integral.h>
 
-TwoBodyIntV3::TwoBodyIntV3(const RefGaussianBasisSet& b1,
+TwoBodyIntV3::TwoBodyIntV3(Integral*integral,
+                           const RefGaussianBasisSet& b1,
                            const RefGaussianBasisSet& b2,
                            const RefGaussianBasisSet& b3,
                            const RefGaussianBasisSet& b4,
                            int storage):
-  TwoBodyInt(b1,b2,b3,b4)
+  TwoBodyInt(integral,b1,b2,b3,b4)
 {
   int2ev3_ = new Int2eV3(b1,b2,b3,b4,0,storage);
   buffer_ = int2ev3_->buffer();
+  integral_->adjust_storage(int2ev3_->used_storage());
 }
 
 TwoBodyIntV3::~TwoBodyIntV3()
 {
+  integral_->adjust_storage(-int2ev3_->used_storage());
 }
 
 void
@@ -55,21 +59,30 @@ TwoBodyIntV3::log2_shell_bound(int is, int js, int ks, int ls)
   return int2ev3_->erep_4bound(is,js,ks,ls);
 }
 
+void
+TwoBodyIntV3::set_integral_storage(int storage)
+{
+  int2ev3_->init_storage(storage);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
-TwoBodyDerivIntV3::TwoBodyDerivIntV3(const RefGaussianBasisSet& b1,
+TwoBodyDerivIntV3::TwoBodyDerivIntV3(Integral*integral,
+                                     const RefGaussianBasisSet& b1,
                                      const RefGaussianBasisSet& b2,
                                      const RefGaussianBasisSet& b3,
                                      const RefGaussianBasisSet& b4,
                                      int storage):
-  TwoBodyDerivInt(b1,b2,b3,b4)
+  TwoBodyDerivInt(integral,b1,b2,b3,b4)
 {
   int2ev3_ = new Int2eV3(b1,b2,b3,b4,1,storage);
   buffer_ = int2ev3_->buffer();
+  integral_->adjust_storage(int2ev3_->used_storage());
 }
 
 TwoBodyDerivIntV3::~TwoBodyDerivIntV3()
 {
+  integral_->adjust_storage(-int2ev3_->used_storage());
 }
 
 void

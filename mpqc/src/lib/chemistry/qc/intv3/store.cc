@@ -40,8 +40,6 @@
 void
 Int2eV3::init_storage(int size)
 {
-  used_storage_ -= int_integral_storage;
-  used_storage_ += size;
   storer = new IntegralStorer();
   storer->init(size);
   if (size) int_integral_storage = size;
@@ -54,7 +52,6 @@ Int2eV3::done_storage()
   if (storer.nonnull()) {
       storer->done();
     }
-  used_storage_ -= int_integral_storage;
   int_integral_storage = 0;
 }
 

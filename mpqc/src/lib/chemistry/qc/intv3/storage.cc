@@ -220,6 +220,8 @@ IntegralStorer::init(int nbytes)
     }
   done();
   maxsize_ = nbytes;
+  // estimate a 50% loss due to memory fragmentation
+  maxsize_ /= 2;
 }
 
 void

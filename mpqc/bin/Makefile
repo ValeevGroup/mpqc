@@ -10,3 +10,4 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 install::
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) sc-config $(bindir)
+	$(INSTALL) $(INSTALLSCRIPTOPT) sc-libtool $(bindir)

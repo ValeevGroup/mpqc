@@ -21,7 +21,9 @@ clean:
 	/bin/rm -rf *~
 
 install:
+	$(INSTALL) $(INSTALLDIROPT) $(prefix)
 	/bin/cp -r html $(prefix)
 
 install_devel:
+	$(INSTALL) $(INSTALLDIROPT) $(prefix)
 	/bin/cp -r man $(prefix)

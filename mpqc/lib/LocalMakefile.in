@@ -18,9 +18,9 @@ OBJSUF = @OBJSUF@
 # The library suffix
 LIBSUF = @LIBSUF@
 
-LIBTOOL= $(SHELL) $(TOPDIR)/libtool
+LIBTOOL= $(SHELL) $(TOPDIR)/bin/sc-libtool
 LTLINK = $(LIBTOOL) --mode=link
-LTLINKLIBOPTS = -rpath $(libdir) -version $(SC_VERSION)
+LTLINKLIBOPTS = -rpath $(libdir) -release $(SC_VERSION)
 LTLINKBINOPTS = -rpath $(libdir)
 LTCOMP = $(LIBTOOL) --mode=compile
 LTINST = $(LIBTOOL) --mode=install

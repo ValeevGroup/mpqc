@@ -24,7 +24,9 @@ done
 
 cat $FILE >> $TMP
 
-cp -f $TMP $FILE
+/bin/rm -f $FILE
 
-rm -f $TMP
+/bin/cp $TMP $FILE
+
+/bin/rm -f $TMP
 

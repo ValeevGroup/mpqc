@@ -154,6 +154,7 @@ class MessageGrp: public DescribedClass {
     virtual void send(int target, int* data, int ndata);
     virtual void send(int target, char* data, int nbyte);
     virtual void send(int target, unsigned char* data, int nbyte);
+    virtual void send(int target, signed char* data, int nbyte);
     virtual void send(int target, short* data, int ndata);
     virtual void send(int target, long* data, int ndata);
     virtual void send(int target, float* data, int ndata);
@@ -166,6 +167,7 @@ class MessageGrp: public DescribedClass {
     virtual void sendt(int target, int type, int* data, int ndata);
     virtual void sendt(int target, int type, char* data, int nbyte);
     virtual void sendt(int target, int type, unsigned char* data, int nbyte);
+    virtual void sendt(int target, int type, signed char* data, int nbyte);
     virtual void sendt(int target, int type, short* data, int ndata);
     virtual void sendt(int target, int type, long* data, int ndata);
     virtual void sendt(int target, int type, float* data, int ndata);
@@ -178,6 +180,7 @@ class MessageGrp: public DescribedClass {
     virtual void recv(int sender, int* data, int ndata);
     virtual void recv(int sender, char* data, int nbyte);
     virtual void recv(int sender, unsigned char* data, int nbyte);
+    virtual void recv(int sender, signed char* data, int nbyte);
     virtual void recv(int sender, short* data, int ndata);
     virtual void recv(int sender, long* data, int ndata);
     virtual void recv(int sender, float* data, int ndata);
@@ -190,6 +193,7 @@ class MessageGrp: public DescribedClass {
     virtual void recvt(int type, int* data, int ndata);
     virtual void recvt(int type, char* data, int nbyte);
     virtual void recvt(int type, unsigned char* data, int nbyte);
+    virtual void recvt(int type, signed char* data, int nbyte);
     virtual void recvt(int type, short* data, int ndata);
     virtual void recvt(int type, long* data, int ndata);
     virtual void recvt(int type, float* data, int ndata);
@@ -205,6 +209,7 @@ class MessageGrp: public DescribedClass {
     virtual void bcast(int* data, int ndata, int from = 0);
     virtual void bcast(char* data, int nbyte, int from = 0);
     virtual void bcast(unsigned char* data, int nbyte, int from = 0);
+    virtual void bcast(signed char* data, int nbyte, int from = 0);
     virtual void bcast(short* data, int ndata, int from = 0);
     virtual void bcast(long* data, int ndata, int from = 0);
     virtual void bcast(float* data, int ndata, int from = 0);
@@ -224,6 +229,8 @@ class MessageGrp: public DescribedClass {
     virtual void sum(char* data, int n, char* = 0, int target = -1);
     virtual void sum(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
+    virtual void sum(signed char* data, int n,
+                     signed char* = 0, int target = -1);
     void sum(double& data) { sum(&data, 1); }
     void sum(int& data) { sum(&data, 1); }
     virtual void max(double* data, int n, double* = 0, int target = -1);
@@ -231,6 +238,8 @@ class MessageGrp: public DescribedClass {
     virtual void max(char* data, int n, char* = 0, int target = -1);
     virtual void max(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
+    virtual void max(signed char* data, int n,
+                     signed char* = 0, int target = -1);
     void max(double& data) { max(&data, 1); }
     void max(int& data) { max(&data, 1); }
     virtual void min(double* data, int n, double* = 0, int target = -1);
@@ -238,6 +247,8 @@ class MessageGrp: public DescribedClass {
     virtual void min(char* data, int n, char* = 0, int target = -1);
     virtual void min(unsigned char* data, int n,
                      unsigned char* = 0, int target = -1);
+    virtual void min(signed char* data, int n,
+                     signed char* = 0, int target = -1);
     void min(double& data) { min(&data, 1); }
     void min(int& data) { min(&data, 1); }
     virtual void reduce(double*, int n, GrpReduce<double>&,
@@ -248,6 +259,8 @@ class MessageGrp: public DescribedClass {
                         char*scratch = 0, int target = -1);
     virtual void reduce(unsigned char*, int n, GrpReduce<unsigned char>&,
                         unsigned char*scratch = 0, int target = -1);
+    virtual void reduce(signed char*, int n, GrpReduce<signed char>&,
+                        signed char*scratch = 0, int target = -1);
     virtual void reduce(short*, int n, GrpReduce<short>&,
                         short*scratch = 0, int target = -1);
     virtual void reduce(float*, int n, GrpReduce<float>&,

@@ -342,6 +342,11 @@ MessageGrp::send(int target, unsigned char* data, int ndata)
 {
   raw_send(target, data, ndata);
 }
+void
+MessageGrp::send(int target, signed char* data, int ndata)
+{
+  raw_send(target, data, ndata);
+}
 
 // Sequential receive routines
 
@@ -377,6 +382,11 @@ MessageGrp::recv(int sender, char* data, int ndata)
 }
 void
 MessageGrp::recv(int sender, unsigned char* data, int ndata)
+{
+  raw_recv(sender, data, ndata);
+}
+void
+MessageGrp::recv(int sender, signed char* data, int ndata)
 {
   raw_recv(sender, data, ndata);
 }
@@ -418,6 +428,11 @@ MessageGrp::sendt(int target, int type, unsigned char* data, int ndata)
 {
   raw_sendt(target, type, data, ndata);
 }
+void
+MessageGrp::sendt(int target, int type, signed char* data, int ndata)
+{
+  raw_sendt(target, type, data, ndata);
+}
 
 // Typed receive routines
 
@@ -456,6 +471,11 @@ MessageGrp::recvt(int type, unsigned char* data, int ndata)
 {
   raw_recvt(type, data, ndata);
 }
+void
+MessageGrp::recvt(int type, signed char* data, int ndata)
+{
+  raw_recvt(type, data, ndata);
+}
 
 // Broadcast operations
 
@@ -491,6 +511,11 @@ MessageGrp::bcast(char*data, int ndata, int from)
 }
 void
 MessageGrp::bcast(unsigned char*data, int ndata, int from)
+{
+  raw_bcast(data, ndata, from);
+}
+void
+MessageGrp::bcast(signed char*data, int ndata, int from)
 {
   raw_bcast(data, ndata, from);
 }

@@ -147,9 +147,9 @@ R12A_GRT_12Qtr::run()
   double *iqjr_contrib[num_te_types];  // local contributions to integral_iqjr
   double *integral_iqrs[num_te_types]; // quarter transformed two-el integrals
   for(te_type=0;te_type<num_te_types;te_type++) {
-    iqjs_contrib[te_type]  = new double[nbasis2*nfuncmax4];
+    iqjs_contrib[te_type]  = mem->malloc_local_double(nbasis2*nfuncmax4);
     // bs3_eq_bs4
-    iqjr_contrib[te_type]  = new double[nbasis2*nfuncmax4];
+    iqjr_contrib[te_type]  = mem->malloc_local_double(nbasis2*nfuncmax4);
     //  lock->lock();
     integral_iqrs[te_type] = new double[ni*nbasis2*nfuncmax3*nfuncmax4];
     //  lock->unlock();
@@ -414,8 +414,8 @@ R12A_GRT_12Qtr::run()
   //  lock->lock();
   for(te_type=0; te_type<num_te_types; te_type++) {
     delete[] integral_iqrs[te_type];
-    delete[] iqjs_contrib[te_type];
-    delete[] iqjr_contrib[te_type];
+    mem->free_local_double(iqjs_contrib[te_type]);
+    mem->free_local_double(iqjr_contrib[te_type]);
   }
   //  lock->unlock();
 }

@@ -227,9 +227,19 @@ class MemoryGrp: public DescribedClass {
     virtual void sum_reduction_on_node(double *data, size_t doffset, int dsize,
                                        int node = -1);
 
-    /** Synchronizes all the nodes.  Consider using this when the way you
-        you access memory changes. */
+    /** Synchronizes all the nodes.  This is useful after remote memory
+        writes to be certain that all of the writes have completed and the
+        data can be accessed locally, for example. */
     virtual void sync() = 0;
+
+    /** Allocate data that will be accessed locally only.  Using this
+        for data that will be used for global operation can improve
+        efficiency.  Data allocated in this way must be freed with
+        free_local_double.  */
+    virtual double* malloc_local_double(size_t ndouble);
+
+    /** Free data that was allocated with malloc_local_double. */
+    virtual void free_local_double(double *data);
 
     /** Processes outstanding requests. Some memory group implementations
         don't have access to real shared memory or even active messages.

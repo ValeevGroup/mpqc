@@ -150,8 +150,8 @@ CSGradErep12Qtr::run()
 
   const double *intbuf = tbint->buffer();
 
-  iqjs_contrib  = new double[nbasis*nfuncmax];
-  iqjr_contrib  = new double[nbasis*nfuncmax];
+  iqjs_contrib  = mem->malloc_local_double(nbasis*nfuncmax);
+  iqjr_contrib  = mem->malloc_local_double(nbasis*nfuncmax);
 
   double *integral_iqrs; // quarter transformed two-el integrals
   lock->lock();
@@ -383,8 +383,8 @@ CSGradErep12Qtr::run()
 
   lock->lock();
   delete[] integral_iqrs;
-  delete[] iqjs_contrib;
-  delete[] iqjr_contrib;
+  mem->free_local_double(iqjs_contrib);
+  mem->free_local_double(iqjr_contrib);
   lock->unlock();
 }
 

@@ -215,7 +215,11 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
   int length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {
-      ExEnv::errn() << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
+      ExEnv::errn() << "MemoryGrp::sum_reduction: arg out of range:"
+                    << " offset = " << offset
+                    << " length = " << length
+                    << " totalsize() = " << totalsize()
+                    << endl;
       abort();
     }
 
@@ -236,6 +240,18 @@ MemoryGrp::sum_reduction_on_node(double *data, size_t doffset, int dlength,
 
   sum_reduction(data, doffset + offset(node)/sizeof(double),
                 dlength);
+}
+
+double*
+MemoryGrp::malloc_local_double(size_t ndouble)
+{
+  return new double[ndouble];
+}
+
+void
+MemoryGrp::free_local_double(double *data)
+{
+  delete[] data;
 }
 
 void

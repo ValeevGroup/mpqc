@@ -180,6 +180,18 @@ ARMCIMemoryGrp::deactivate()
   ARMCI_AllFence();
 }
 
+double*
+ARMCIMemoryGrp::malloc_local_double(size_t ndouble)
+{
+  return reinterpret_cast<double*>(ARMCI_Malloc_local(ndouble*sizeof(double)));
+}
+
+void
+ARMCIMemoryGrp::free_local_double(double *data)
+{
+  ARMCI_Free_local(data);
+}
+
 ARMCIMemoryGrp::~ARMCIMemoryGrp()
 {
   finalize();

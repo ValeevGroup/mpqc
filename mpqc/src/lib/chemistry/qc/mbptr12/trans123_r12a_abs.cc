@@ -149,7 +149,7 @@ R12A_ABS_123Qtr::run()
     integral_iqrs[te_type] = new double[ni*nbasis2*nfuncmax3*nfuncmax4];
     integral_ikrs[te_type] = new double[ni*nocc*nfuncmax3*nfuncmax4];
   }
-  integral_sk = new double[nocc*nfuncmax4];
+  integral_sk = mem->malloc_local_double(nocc*nfuncmax4);
 
   /*-----------------------------
     Initialize work distribution
@@ -441,7 +441,7 @@ R12A_ABS_123Qtr::run()
     delete[] integral_iqrs[te_type];
     delete[] integral_ikrs[te_type];
   }
-  delete[] integral_sk;
+  mem->free_local_double(integral_sk);
   //  lock->unlock();
 }
 

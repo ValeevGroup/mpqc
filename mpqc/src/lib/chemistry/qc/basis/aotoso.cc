@@ -369,15 +369,6 @@ PetiteList::aotoso_info()
           u[j] = &u[j-1][nfuncuniq];
         }
 
-        // allocate an array to store linear combinations of symmetry
-        // orbitals
-        double **symmorb = new double*[nfuncuniq];
-        symmorb[0] = new double[nfuncuniq*nfuncall];
-        for (j=1; j<nfuncuniq; j++) {
-          symmorb[j] = &symmorb[j-1][nfuncall];
-        }
-        memset(symmorb[0], 0, nfuncuniq*nfuncall*sizeof(8));
-
         // loop through each irrep to form the linear combination
         // of orbitals of that symmetry
         int irnum = 0;

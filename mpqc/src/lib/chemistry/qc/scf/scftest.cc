@@ -12,6 +12,7 @@
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
 #include <util/group/picl.h>
+#include <util/group/pregtime.h>
 
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
@@ -47,6 +48,8 @@ const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
 # endif
 #endif
 
+RefRegionTimer tim;
+
 static RefMessageGrp
 init_mp(const char *inputfile)
 {
@@ -69,6 +72,9 @@ init_mp(const char *inputfile)
   int np, me, host;
   open0_messagegrp(&np, &me, &host, grp);
 
+  tim = new ParallelRegionTimer(grp,"scftest",1,1);
+  RegionTimer::set_default_regiontimer(tim);
+  
   return grp;
 }
 
@@ -83,6 +89,8 @@ main(int argc, char**argv)
 
   init_mp(input);
 
+  tim->enter("input");
+  
   struct stat sb;
   RefMolecularEnergy mole;
   RefOptimize opt;
@@ -101,6 +109,8 @@ main(int argc, char**argv)
     // opt->set_checkpoint_file("scftest.ckpt");
   }
 
+  tim->exit("input");
+
   if (mole.nonnull()) {
     if (mole->gradient_implemented()) {
       if (opt.nonnull()) {
@@ -110,11 +120,15 @@ main(int argc, char**argv)
         mole->gradient().print("gradient");
       }
     } else if (mole->value_implemented()) {
+      tim->enter("energy");
       printf("\n  value of mole is %20.15f\n\n",mole->energy());
+      tim->exit("energy");
     }
 
     mole->print(o);
   }
+
+  tim->print(o);
 
   return 0;
 }

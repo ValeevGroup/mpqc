@@ -16,11 +16,11 @@ main(int argc, char *argv[])
 
   mol->print();
 
-  mol_move_to_com(mol);
+  mol->move_to_com();
   cout << "Molecule at com:\n";
   mol->print();
   
-  mol_transform_to_principal_axes(mol,0);
+  mol->transform_to_principal_axes(0);
   cout << "Molecule wrt principal axes:\n";
   mol->print();
   mol->point_group().symm_frame().print();
@@ -29,12 +29,12 @@ main(int argc, char *argv[])
   cout << "symmetrized molecule\n";
   mol->print();
 
-  mol_cleanup_molecule(mol);
+  mol->cleanup_molecule();
   cout << "cleaned molecule\n";
   mol->print();
   
-  int nunique = mol_num_unique_atoms(mol);
-  int * unique_atoms = mol_find_unique_atoms(mol);
+  int nunique = mol->num_unique_atoms();
+  int * unique_atoms = mol->find_unique_atoms();
 
   cout << scprintf("\nnunique=%d: ",nunique);
   for (i=0; i < nunique; i++) cout << scprintf(" %d",unique_atoms[i]+1);

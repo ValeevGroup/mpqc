@@ -413,7 +413,8 @@ OneBodyWavefunction::init_sym_info()
     nvecperirrep_[i] = d->blocks()->size(i);
 
     for (int j=0; j < nvecperirrep_[i]; j++, ij++) {
-      occupations_[ij] = occupation(i,j);
+      if (!spin_unrestricted()) occupations_[ij] = occupation(i,j);
+      else occupations_[ij] = 0.0;
       alpha_occupations_[ij] = alpha_occupation(i,j);
       beta_occupations_[ij] = beta_occupation(i,j);
     }
@@ -423,6 +424,11 @@ OneBodyWavefunction::init_sym_info()
 double
 OneBodyWavefunction::occupation(int vectornum)
 {
+  if (spin_unrestricted()) {
+    ExEnv::err() << "OneBodyWavefunction::occupation: called for USCF case"
+                 << endl;
+    abort();
+  }
   if (!nirrep_) init_sym_info();
   return occupations_[vectornum];
 }

@@ -2165,7 +2165,8 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   SCVector3 center;           // Cartesian position of center
   SCVector3 integration_point;
 
-  double w,q,int_volume,radial_multiplier,angular_multiplier,total_density;
+  double w,q,int_volume,radial_multiplier,angular_multiplier;
+  double total_density = 0.0;
         
   RefMessageGrp msg = MessageGrp::get_default_messagegrp();
   int nproc = msg->n();
@@ -2204,21 +2205,27 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
               w=weight_->w(icenter, integration_point, w_gradient);
               point_count++;
               double multiplier = angular_multiplier * radial_multiplier;
-              total_density =
-                       do_point(icenter, integration_point, denfunc,
-                       w, multiplier,
-                       nuclear_gradient, f_gradient, w_gradient);
+              total_density
+                  += w * multiplier
+                  * do_point(icenter, integration_point, denfunc,
+                             w, multiplier,
+                             nuclear_gradient, f_gradient, w_gradient);
                   }
         }
       point_count_total+=point_count;
     }
 
   msg->sum(point_count_total);
+  msg->sum(total_density);
   done_integration();
   weight_->done();
 
   ExEnv::out() << node0 << indent
        << "Total integration points = " << point_count_total << endl;
+  ExEnv::out() << node0 << indent
+               << "Integrated electron density error = "
+               << scprintf("%14.12f", total_density-wfn_->nelectron())
+               << endl;
 
   delete[] f_gradient;
   delete[] w_gradient;

@@ -732,6 +732,11 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           init_arrays(1);
           funcs_[0] = new G96XFunctional;
         }
+      else if (!strcmp(name_,"G96LYP")) {
+          init_arrays(2);
+          funcs_[0] = new G96XFunctional;
+          funcs_[1] = new LYPCFunctional;
+        }
       else if (!strcmp(name_,"BLYP")) {
           init_arrays(3);
           funcs_[0] = new SlaterXFunctional;
@@ -757,6 +762,11 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new VWN3LCFunctional;
+        }
+      else if (!strcmp(name_,"SVWN3RPA")) {
+          init_arrays(2);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new VWN3LCFunctional(0,0);
         }
       else if (!strcmp(name_,"SVWN4")) {
           init_arrays(2);
@@ -1791,10 +1801,10 @@ VWN3LCFunctional::VWN3LCFunctional(StateIn& s):
   s.get(monte_carlo_e0_);
 }
 
-VWN3LCFunctional::VWN3LCFunctional()
+VWN3LCFunctional::VWN3LCFunctional(int mcp, int mce0)
 {
-  monte_carlo_prefactor_ = 1;
-  monte_carlo_e0_ = 0;
+  monte_carlo_prefactor_ = mcp;
+  monte_carlo_e0_ = mce0;
 }
 
 VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
@@ -1803,7 +1813,7 @@ VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
     monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
                                                   KeyValValueboolean(1));
     monte_carlo_e0_ = keyval->booleanvalue("monte_carlo_e0",
-                                           KeyValValueboolean(0));
+                                           KeyValValueboolean(1));
 }
 
 VWN3LCFunctional::~VWN3LCFunctional()

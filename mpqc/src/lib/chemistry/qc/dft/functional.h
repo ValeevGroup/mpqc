@@ -472,7 +472,7 @@ class VWN3LCFunctional: public VWNLCFunctional {
     int monte_carlo_prefactor_;
     int monte_carlo_e0_;
   public:
-    VWN3LCFunctional();
+    VWN3LCFunctional(int mcp = 1, int mce0 = 1);
     VWN3LCFunctional(const RefKeyVal &);
     VWN3LCFunctional(StateIn &);
     ~VWN3LCFunctional();

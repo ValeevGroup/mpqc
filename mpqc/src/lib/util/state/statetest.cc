@@ -26,7 +26,7 @@ class A: A_parents {
     double d;
   public:
     A();
-    A(KeyVal&);
+    A(const RefKeyVal&);
     A(StateIn&);
     void save_data_state(StateOut&);
     inline int& a() { return ia; };
@@ -53,8 +53,8 @@ A::A():
   array[2] = 2;
   array[3] = 1;
 }
-A::A(KeyVal&keyval):
-  ia(keyval.intvalue("a")),
+A::A(const RefKeyVal&keyval):
+  ia(keyval->intvalue("a")),
   array(new int[4]),
   d(-1.24)
 
@@ -117,7 +117,7 @@ class B: B_parents {
     int ib;
   public:
     B();
-    B(KeyVal&);
+    B(const RefKeyVal&);
     B(StateIn&);
     void save_data_state(StateOut&);
     inline int& b() { return ib; };
@@ -133,9 +133,9 @@ B::B():
   ib(2)
 {
 }
-B::B(KeyVal&keyval):
-  A(PrefixKeyVal("A",keyval)),
-  ib(keyval.intvalue("b"))
+B::B(const RefKeyVal&keyval):
+  A(new PrefixKeyVal("A",keyval)),
+  ib(keyval->intvalue("b"))
 {
 }
 B::B(StateIn&s):
@@ -178,7 +178,7 @@ class C: C_parents {
     int ic;
   public:
     C();
-    C(KeyVal&keyval);
+    C(const RefKeyVal&keyval);
     C(StateIn&);
     void save_data_state(StateOut&);
     inline int& c() { return ic; };
@@ -193,8 +193,8 @@ C::C():
   ic(3)
 {
 }
-C::C(KeyVal&keyval):
-  ic(keyval.intvalue("c"))
+C::C(const RefKeyVal&keyval):
+  ic(keyval->intvalue("c"))
 {
 }
 C::C(StateIn&s):
@@ -237,7 +237,7 @@ class D: D_parents {
     RefB _b;
   public:
     D();
-    D(KeyVal&);
+    D(const RefKeyVal&);
     D(StateIn&);
     void save_data_state(StateOut&);
     inline int& d() { return id; }
@@ -268,12 +268,12 @@ D::D():
   id(4)
 {
 }
-D::D(KeyVal&keyval):
-  B(PrefixKeyVal("B",keyval)),
-  C(PrefixKeyVal("C",keyval)),
-  id(keyval.intvalue("d")),
-  _a(A::castdown(keyval.describedclassvalue("a"))),
-  _b(B::castdown(keyval.describedclassvalue("b")))
+D::D(const RefKeyVal&keyval):
+  B(new PrefixKeyVal("B",keyval)),
+  C(new PrefixKeyVal("C",keyval)),
+  id(keyval->intvalue("d")),
+  _a(A::castdown(keyval->describedclassvalue("a"))),
+  _b(B::castdown(keyval->describedclassvalue("b")))
 {
 }
 D::D(StateIn&s):
@@ -342,41 +342,41 @@ main()
   cout << "DescribedClass::castdown(&d) = "
        << (void*) DescribedClass::castdown(&d) << '\n';
 
-  AssignedKeyVal akv; akv.unmanage();
+  RefAssignedKeyVal akv (new AssignedKeyVal);
 
-  akv.assign(":x",1);
-  akv.assign(":y",3.0);
+  akv->assign(":x",1);
+  akv->assign(":y",3.0);
 
 #define stringize(arg) # arg
 #define show( arg ) do{cout<<"   " stringize(arg) "="<<(arg);}while(0)
 
-  show( akv.exists(":x") );  show( akv.errormsg() ); cout << '\n';
-  show( akv.exists(":z") );  show (akv.errormsg() ); cout << '\n';
-  show( akv.intvalue(":y") );  show( akv.errormsg() ); cout << '\n';
-  show( akv.doublevalue(":x") );  show( akv.errormsg() ); cout << '\n';
-  show( akv.intvalue(":x") );  show (akv.errormsg() ); cout << '\n';
-  show( akv.intvalue("x") );  show (akv.errormsg() ); cout << '\n';
-  show( akv.intvalue(":z") );  show (akv.errormsg() ); cout << '\n';
+  show( akv->exists(":x") );  show( akv->errormsg() ); cout << '\n';
+  show( akv->exists(":z") );  show (akv->errormsg() ); cout << '\n';
+  show( akv->intvalue(":y") );  show( akv->errormsg() ); cout << '\n';
+  show( akv->doublevalue(":x") );  show( akv->errormsg() ); cout << '\n';
+  show( akv->intvalue(":x") );  show (akv->errormsg() ); cout << '\n';
+  show( akv->intvalue("x") );  show (akv->errormsg() ); cout << '\n';
+  show( akv->intvalue(":z") );  show (akv->errormsg() ); cout << '\n';
 
-  ParsedKeyVal pkv(SRCDIR "/statetest.in"); pkv.unmanage();
+  RefKeyVal pkv = new ParsedKeyVal(SRCDIR "/statetest.in");
 
-  show( pkv.exists(":x") );  show( pkv.errormsg() ); cout << '\n';
-  show( pkv.exists(":z") );  show (pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue(":y") );  show( pkv.errormsg() ); cout << '\n';
-  show( pkv.doublevalue(":x") );  show( pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue(":x") );  show (pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue("x") );  show (pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue(":z") );  show (pkv.errormsg() ); cout << '\n';
+  show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue(":y") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->doublevalue(":x") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue(":x") );  show (pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue("x") );  show (pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue(":z") );  show (pkv->errormsg() ); cout << '\n';
 
-  RefDescribedClass rdc = pkv.describedclassvalue("test:object");
-  show (pkv.errormsg() ); cout << '\n';
+  RefDescribedClass rdc = pkv->describedclassvalue("test:object");
+  show (pkv->errormsg() ); cout << '\n';
   show( rdc.pointer() ); cout << '\n';
   ra = A::castdown(rdc);
   show( ra.pointer() ); cout << '\n';
 
-  show( pkv.intvalue(":test:object:d") ); cout << '\n';
+  show( pkv->intvalue(":test:object:d") ); cout << '\n';
 
-  //pkv.dump();
+  //pkv->dump();
 
   show( ra.pointer() ); cout << '\n';
   if (ra.nonnull()) { ra->print(); cout << '\n'; }
@@ -387,7 +387,7 @@ main()
   cout << " -- saving state --\n";
 
   StateOutType soa("statetest.a.out");
-  ra = new A(PrefixKeyVal("test:object_a",pkv));
+  ra = new A(new PrefixKeyVal("test:object_a",pkv));
   ra->save_object_state(soa);
   soa.forget_references();
   ra->save_object_state(soa);

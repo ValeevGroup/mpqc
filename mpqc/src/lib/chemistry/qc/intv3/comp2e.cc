@@ -299,14 +299,19 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&int_expweight2,&int_expweight4);
     }
 
+  int nc1 = int_shell1->ncontraction();
+  int nc2 = int_shell2->ncontraction();
+  int nc3 = int_shell3->ncontraction();
+  int nc4 = int_shell4->ncontraction();
+
   /* Compute the shell sizes. */
-  for (ii=size1=0; ii<int_shell1->ncontraction(); ii++)
+  for (ii=size1=0; ii<nc1; ii++)
     size1 += INT_NCART(int_shell1->am(ii)+dam1);
-  for (ii=size2=0; ii<int_shell2->ncontraction(); ii++)
+  for (ii=size2=0; ii<nc2; ii++)
     size2 += INT_NCART(int_shell2->am(ii)+dam2);
-  for (ii=size3=0; ii<int_shell3->ncontraction(); ii++)
+  for (ii=size3=0; ii<nc3; ii++)
     size3 += INT_NCART(int_shell3->am(ii)+dam3);
-  for (ii=size4=0; ii<int_shell4->ncontraction(); ii++)
+  for (ii=size4=0; ii<nc4; ii++)
     size4 += INT_NCART(int_shell4->am(ii)+dam4);
   size = size1*size2*size3*size4;
 
@@ -339,22 +344,22 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   /* Begin loop over generalized contractions. */
   ogc1 = 0;
-  for (i=0; i<int_shell1->ncontraction(); i++) {
+  for (i=0; i<nc1; i++) {
     tam1 = int_shell1->am(i) + dam1;
     if (tam1 < 0) continue;
     int tsize1 = INT_NCART_NN(tam1);
     ogc2 = 0;
-    for (j=0; j<int_shell2->ncontraction(); j++) {
+    for (j=0; j<nc2; j++) {
       tam2 = int_shell2->am(j) + dam2;
       if (tam2 < 0) continue;
       int tsize2 = INT_NCART_NN(tam2);
       ogc3 = 0;
-      for (k=0; k<int_shell3->ncontraction(); k++) {
+      for (k=0; k<nc3; k++) {
         tam3 = int_shell3->am(k) + dam3;
         if (tam3 < 0) continue;
         int tsize3 = INT_NCART_NN(tam3);
         ogc4 = 0;
-        for (l=0; l<int_shell4->ncontraction(); l++) {
+        for (l=0; l<nc4; l++) {
           tam4 = int_shell4->am(l) + dam4;
           if (tam4 < 0) continue;
           int tsize4 = INT_NCART_NN(tam4);
@@ -445,8 +450,27 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
         newindex1 += stride1;
         }
       }
+    else if (nc3 == 1 && nc4 == 1) {
+      // this is the p12 only case w/o gen contractions on 3 & 4
+      // this special case collapses the 3rd and 4th indices together
+      for (int ci1=0; ci1<tsize1; ci1++) {
+        for (int ci2=0; ci2<tsize2; ci2++) {
+          int pci1=ci1;
+          int pci2=ci2;
+          if (p12) {
+            int tmp=pci1; pci1=pci2; pci2=tmp;
+            }
+          int newindex123 = newindexoffset + pci1*psize234 + pci2*psize34;
+          double *tmp_int_buffer = &int_buffer[newindex123];
+          double *tmp_shiftbuffer = &shiftbuffer[redundant_index];
+          for (int ci34=0; ci34<psize34; ci34++)
+            tmp_int_buffer[ci34] = tmp_shiftbuffer[ci34];
+          redundant_index += psize34;
+          }
+        }
+      }
     else {
-      // this is the p12 only case
+      // this is the p12 only case w/gen. contr. on 3 & 4
       for (int ci1=0; ci1<tsize1; ci1++) {
         for (int ci2=0; ci2<tsize2; ci2++) {
           int pci1=ci1;
@@ -466,6 +490,26 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
             }
           }
         }
+      }
+    }
+  else if (nc3 == 1 && nc4 == 1) {
+    // this special case collapses the 3rd and 4th indices together
+    int size34 =  size3 * size4;
+    int size234 = size2 * size34;
+    double* redund_ints = shiftbuffer;
+    redundant_index = 0;
+    int newindex1 = ogc1*size234 + ogc2*size34 + ogc3*size4 + ogc4;
+    for (int ci1=0; ci1<tsize1; ci1++) {
+      int newindex12 = newindex1;
+      for (int ci2=0; ci2<tsize2; ci2++) {
+        double *tmp_int_buffer = &int_buffer[newindex12];
+        double *tmp_redund_ints = &redund_ints[redundant_index];
+        for (int ci34=0; ci34<size34; ci34++)
+          tmp_int_buffer[ci34] = tmp_redund_ints[ci34];
+        redundant_index += size34;
+        newindex12 += size34;
+        }
+      newindex1 += size234;
       }
     }
   else {

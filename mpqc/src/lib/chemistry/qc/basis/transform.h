@@ -29,29 +29,47 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_basis_tranform_h
-#define _chemistry_qc_basis_tranform_h
+#ifndef _chemistry_qc_basis_transform_h
+#define _chemistry_qc_basis_transform_h
 
 // ///////////////////////////////////////////////////////////////////////////
 
+/** This is a base class for a container for a component of a sparse
+    Cartesian to solid harmonic basis function transformation.  */
 class SphericalTransformComponent {
   protected:
     double coef_;
     int a_, b_, c_, cartindex_, pureindex_;
 
   public:
+    /// Returns the exponent of x.
     int a() const { return a_; }
+    /// Returns the exponent of y.
     int b() const { return b_; }
+    /// Returns the exponent of z.
     int c() const { return c_; }
+    /// Returns the index of the Cartesian basis function.
     int cartindex() const { return cartindex_; }
+    /// Returns the index solid harmonic basis function.
     int pureindex() const { return pureindex_; }
+    /// Returns the coefficient of this component of the transformation.
     double coef() const { return coef_; }
 
+    /** Initialize this object.  This must be provided in all
+        specializations of this class to establish the ordering between a,
+        b and c and the index of the Cartesian basis function.  Other
+        things such as adjustment of the coefficient to account for
+        normalization differences can be done as well.  The default
+        SphericalTransform::init() implementation requires that only the
+        x<sup>l</sup>, y<sup>l</sup> and z<sup>l</sup> basis functions are
+        normalized to unity. */
     virtual void init(int a, int b, int c, double coef, int pureindex) =0;
 };
 
 // ///////////////////////////////////////////////////////////////////////////
 
+/** This is a base class for a container for a sparse Cartesian to solid
+    harmonic basis function transformation.  */
 class SphericalTransform {
   protected:
     int n_;
@@ -60,28 +78,51 @@ class SphericalTransform {
     SphericalTransformComponent *components_;
 
     SphericalTransform();
+
+    /** This constructs the SphericalTransform for the given Cartesian
+        angular momentum l and solid harmonic angular momentum subl.
+        Usually, l and subl will be the same.  They would differ when the S
+        component of a D Cartesian shell or the P component of an F
+        Cartesian shell is desired, for example (see the natural atomic
+        orbital code for an example of such use).  The init member must be
+        called to complete initialization.  */
     SphericalTransform(int l, int subl = -1);
 
+    /** This determines all of the components of the transformation.  It
+        should be possible to implement the
+        SphericalTransformComponent::init specialization in such a way that
+        the default SphericalTransform::init can be used.  */
     virtual void init();
     
   public:
     virtual ~SphericalTransform();
 
+    /** Adds another SphericalTransformComponent */
     void add(int a, int b, int c, double coef, int pureindex);
 
+    /// Returns the Cartesian basis function index of component i.
     int cartindex(int i) const { return components_[i].cartindex(); }
+    /// Returns the solid harmonic basis function index of component i.
     int pureindex(int i) const { return components_[i].pureindex(); }
+    /// Returns the transform coefficient of component i.
     double coef(int i) const { return components_[i].coef(); }
+    /// Returns the Cartesian basis function's x exponent of component i.
     int a(int i) const { return components_[i].a(); }
+    /// Returns the Cartesian basis function's y exponent of component i.
     int b(int i) const { return components_[i].b(); }
+    /// Returns the Cartesian basis function's z exponent of component i.
     int c(int i) const { return components_[i].c(); }
+    /// Returns the angular momentum.
     int l() const { return l_; }
+    /// Returns the number of components in the transformation.
     int n() const { return n_; }
 
+    /** This must create SphericalTransformComponent's of the
+        appropriate specialization. */
     virtual SphericalTransformComponent * new_components() = 0;
 };
 
-// The inverse transforms
+/// This describes a solid harmonic to Cartesian transform.
 class ISphericalTransform: public SphericalTransform {
   protected:
     ISphericalTransform();
@@ -91,6 +132,7 @@ class ISphericalTransform: public SphericalTransform {
 
 // ///////////////////////////////////////////////////////////////////////////
 
+/// This iterates through the components of a SphericalTransform.
 class SphericalTransformIter {
   private:
     int i_;

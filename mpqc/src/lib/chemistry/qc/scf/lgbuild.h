@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#undef SCF_CHECK_INTS
 #undef SCF_CHECK_BOUNDS
 #undef SCF_DONT_USE_BOUNDS
 
@@ -163,13 +164,15 @@ class LocalGBuild : public GBuild<T> {
 
                     for (L=0, ll=fl; L <= lend; L++, ll++, index++) {
 
-                      if (fabs(intbuf[index]) < 1.0e-15)
-                        continue;
-
                       double pki_int = intbuf[index];
 
+                      if ((pki_int>0?pki_int:-pki_int) < 1.0e-15)
+                        continue;
+
+#ifdef SCF_CHECK_INTS
                       if (isnan(pki_int))
                         abort();
+#endif
                       
                       if (qijkl > 1)
                         pki_int *= qijkl;

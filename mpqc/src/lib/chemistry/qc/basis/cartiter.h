@@ -55,20 +55,20 @@ class CartesianIter {
     virtual operator int() =0;
 
     /// Returns the number of Cartesian functions.
-    int n();
+    int n() { return ((l_>=0)?((((l_)+2)*((l_)+1))>>1):0); }
     /// Returns the exponent of x.
-    int a();
+    int a() { return a_; }
     /// Returns the exponent of y.
-    int b();
+    int b() { return b_; }
     /// Returns the exponent of z.
-    int c();
+    int c() { return c_; }
     /// Returns the angular momentum.
-    int l();
+    int l() { return l_; }
     /// Returns a() if i==0, b() if i==1, and c() if i==2.
-    int l(int i);
+    int l(int i) { return i ? (i==1 ? b_ : c_) : a_; }
     /** Returns the number of the current basis function within the shell.
         This starts at 0 and sequentially increases as next() is called. */
-    int bfn();
+    int bfn() { return bfn_; }
 };
 
 /** RedundantCartesianIter objects loop through all possible combinations
@@ -94,21 +94,56 @@ class RedundantCartesianIter {
     /// Move to the next combination of axes.
     void next();
     /// Returns nonzero if the iterator currently hold valid data.
-    operator int();
+    operator int() { return !done_; }
 
     /// The current exponent of x.
-    int a();
+    int a() { return l(0); }
     /// The current exponent of y.
-    int b();
+    int b() { return l(1); }
     /// The current exponent of z.
-    int c();
+    int c() { return l(2); }
     /// The angular momentum.
-    int l();
+    int l() { return l_; }
     /// Returns a() if i==0, b() if i==1, and c() if i==2.
     int l(int i);
     /// Return the i'th axis.
-    int axis(int i);
+    int axis(int i) { return axis_[i]; }
 };
+
+inline void
+RedundantCartesianIter::start()
+{
+  if (l_==0)
+    done_ = 1;
+  else
+    done_ = 0;
+
+  for (int i=0; i<l_; i++)
+    axis_[i] = 0;
+}
+
+inline void
+RedundantCartesianIter::next()
+{
+  for (int i=0; i<l_; i++) {
+    if (axis_[i] == 2)
+      axis_[i] = 0;
+    else {
+      axis_[i]++;
+      return;
+    }
+  }
+  done_ = 1;
+}
+
+inline int
+RedundantCartesianIter::l(int axis)
+{
+  int i;
+  int r = 0;
+  for (i=0; i<l_; i++) if (axis_[i]==axis) r++;
+  return r;
+}
 
 /** Like RedundantCartesianIter, except a, b, and c are fixed to a given
     value. */
@@ -119,7 +154,11 @@ class RedundantCartesianSubIter {
     int e_[3];
     int *axis_;
 
-    void advance();
+    // the locations of the z's in the axis array
+    int *zloc_;
+    // the locations of the y's in the subarray after the z's are removed
+    int *yloc_;
+
     int valid();
 
   public:
@@ -136,25 +175,21 @@ class RedundantCartesianSubIter {
     /// Move to the next combination of axes.
     void next();
     /// Returns nonzero if the iterator currently hold valid data.
-    operator int();
+    operator int() const { return !done_; }
 
     /// The current exponent of x.
-    int l();
+    int a() const { return e_[0]; }
     /// The current exponent of y.
-    int a();
+    int b() const { return e_[1]; }
     /// The current exponent of z.
-    int b();
+    int c() const { return e_[2]; }
     /// The angular momentum.
-    int c();
+    int l() const { return l_; }
     /// Returns a() if i==0, b() if i==1, and c() if i==2.
-    int l(int i);
+    int l(int i) { return e_[i]; }
     /// Return the i'th axis.
-    int axis(int i);
+    int axis(int i) { return axis_[i]; }
 };
-
-#ifdef INLINE_FUNCTIONS
-#include <chemistry/qc/basis/cartiter_i.h>
-#endif
   
 #endif
 

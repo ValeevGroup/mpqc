@@ -59,10 +59,7 @@ RedundantCartesianIter::RedundantCartesianIter(int l)
 
 RedundantCartesianIter::~RedundantCartesianIter()
 {
-  if (axis_) {
-    delete[] axis_;
-    axis_=0;
-  }
+  delete[] axis_;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -72,14 +69,15 @@ RedundantCartesianSubIter::RedundantCartesianSubIter(int l)
 {
   l_ = l;
   axis_ = new int[l_];
+  zloc_ = new int[l_];
+  yloc_ = new int[l_];
 }
 
 RedundantCartesianSubIter::~RedundantCartesianSubIter()
 {
-  if (axis_) {
-    delete[] axis_;
-    axis_=0;
-  }
+  delete[] axis_;
+  delete[] zloc_;
+  delete[] yloc_;
 }
 
 void
@@ -102,36 +100,80 @@ RedundantCartesianSubIter::start(int a, int b, int c)
   e_[1] = b;
   e_[2] = c;
 
-  for (int i=0; i<l_; i++)
-    axis_[i] = 0;
-
-  while (!done_ && !valid()) {
-    advance();
-  }
+  int ii=0;
+  for (int i=0; i<c; i++,ii++) { axis_[ii] = 2; zloc_[i] = c-i-1; }
+  for (int i=0; i<b; i++,ii++) { axis_[ii] = 1; yloc_[i] = b-i-1; }
+  for (int i=0; i<a; i++,ii++) axis_[ii] = 0;
 }
 
+static bool
+advance(int l, int *loc, int n)
+{
+  int maxloc = l-1;
+  for (int i=0; i<n; i++) {
+    if (loc[i] < maxloc) {
+      loc[i]++;
+      for (int j=i-1; j>=0; j--) loc[j] = loc[j+1] + 1;
+      return true;
+    }
+    else {
+      maxloc = loc[i]-1;
+    }
+  }
+  return false;
+}
+
+// This loops through all unique axis vectors that have a
+// given total a, b, and c.  It is done by looping through
+// all possible positions for z, then y, leaving x to be
+// filled in.
 void
 RedundantCartesianSubIter::next()
 {
-  advance();
-  while (!done_ && !valid()) {
-    advance();
-  }
-}
+  int currentz = 0;
+  int currenty = 0;
+  int nz = c();
+  int ny = b();
 
-void
-RedundantCartesianSubIter::advance()
-{
-  int i;
-  for (i=0; i<l_; i++) {
-    if (axis_[i] == 2)
-      axis_[i] = 0;
-    else {
-      axis_[i]++;
+  if (!::advance(l(),zloc_,nz)) {
+    if (!::advance(l()-nz,yloc_,ny)) {
+      done_ = 1;
       return;
     }
+    else {
+      for (int i=0; i<nz; i++) { zloc_[i] = nz-i-1; }
+    }
   }
-  done_ = 1;
+
+  int nonz = l()-nz-1;
+  for (int i = l()-1; i>=0; i--) {
+    if (currentz<nz && zloc_[currentz]==i) {
+      axis_[i] = 2;
+      currentz++;
+    }
+    else if (currenty<ny && yloc_[currenty]==nonz) {
+      axis_[i] = 1;
+      currenty++;
+      nonz--;
+    }
+    else {
+      axis_[i] = 0;
+      nonz--;
+    }
+  }
+//    for (int i=0; i<3; i++) cout << " " << e_[i];
+//    cout << ": ";
+//    for (int i=0; i<l(); i++) cout << " " << axis_[i];
+//    cout << endl;
+//    if (!valid()) {
+//      cout << "ERROR: invalid" << endl;
+//      cout << "z: ";
+//      for (int i=0; i<c(); i++) cout << " " << zloc_[i];
+//      cout << endl;
+//      cout << "y: ";
+//      for (int i=0; i<b(); i++) cout << " " << yloc_[i];
+//      cout << endl;
+//    }
 }
 
 int

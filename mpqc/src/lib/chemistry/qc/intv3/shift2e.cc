@@ -459,50 +459,46 @@ Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
               int ci3_I0010 = ci2_I0010
                               + (cartindex3 + am3 + 2)*size4m1;
               int ci3_I0000 = ci2_I0000 + cartindex3*size4m1;
-              cartindex4 = 0;
-              for (i4=0; i4<=am4; i4++) {
-                for (k4=0; k4<=am4-i4; k4++) {
-                  int j4 = am4 - i4 - k4;
-
-                  if (i4) {
-                    //note: cartindex4 - am4 - 1 = INT_CARTINDEX(am4-1,i4-1,j4)
-                    int ci4 = cartindex4 - am4 - 1;
-                    I0001[cartindex1234]
-                      =   I0010[ci3_I0010 + ci4]
-                      + I0000[ci3_I0000 + ci4]
-                      * CmD0;
-                    }
-                  else if (j4) {
-                    //note: cartindex4 - i4 = INT_CARTINDEX(am4-1,i4,j4-1)
-                    int ci4 = cartindex4 - i4;
-                    //note: cartindex3 - i3 = INT_CARTINDEX(am3+1,i3,j3+1)
-                    int ci3 = cartindex3 + i3;
-                    I0001[cartindex1234]
-                     =   I0010[ci2_I0010
-                               + ci3 * size4m1
-                               + ci4 ]
-                       + I0000[ci3_I0000
-                               + ci4 ]
-                         * CmD1;
-                    }
-                  else if (k4) {
-                    //note: cartindex4 - i4 - 1 = INT_CARTINDEX(am4-1,i4,j4)
-                    int ci4 = cartindex4 - i4 - 1;
-                    //note: cartindex3 - i3 - 1 = INT_CARTINDEX(am3+1,i3,j3)
-                    int ci3 = cartindex3 + i3 + 1;
-                    I0001[cartindex1234]
-                     =   I0010[ci2_I0010
-                               + ci3 * size4m1
-                               + ci4 ]
-                       + I0000[ci3_I0000
-                               + ci4 ]
-                         * CmD2;
-                    }
-
-                  cartindex1234++;
-                  cartindex4++;
-                  }
+              //cartindex4 = 0;
+              // this routine called only when am4 > 0
+              ///// CASE 1: i4 = 0 k4 = 0 j4 = am4; shift on y
+              //note: j4 = am4;
+              //note: cartindex4 - i4 = INT_CARTINDEX(am4-1,i4,j4-1)
+              //note: cartindex3 - i3 = INT_CARTINDEX(am3+1,i3,j3+1)
+              int ci3 = cartindex3 + i3;
+              I0001[cartindex1234]
+                =   I0010[ci2_I0010 + ci3 * size4m1]
+                + I0000[ci3_I0000]
+                * CmD1;
+              cartindex1234++;
+              //cartindex4++;
+              ///// CASE 2: i4 = 0 k4 > 0; shift on z
+              ci3++;
+              for (int ci4=0; ci4<am4; ci4++) {
+                //note: j4 = am4 - i4 - k4;
+                //note: cartindex4 - i4 - 1 = INT_CARTINDEX(am4-1,i4,j4)
+                //note: ci4 = cartindex4 - i4 - 1;
+                //note: cartindex3 - i3 - 1 = INT_CARTINDEX(am3+1,i3,j3)
+                I0001[cartindex1234]
+                  =   I0010[ci2_I0010 + ci3 * size4m1 + ci4 ]
+                  + I0000[ci3_I0000 + ci4 ]
+                  * CmD2;
+                cartindex1234++;
+                //cartindex4++;
                 }
+              ///// CASE 3: i4 > 0; shift on x
+              int ncart_remain = INT_NCART(am4) - (am4+1);
+              for (int ci4=0; ci4<ncart_remain; ci4++) {
+                  //note: j4 = am4 - i4 - k4;
+                  //note: cartindex4 - am4 - 1 = INT_CARTINDEX(am4-1,i4-1,j4)
+                  //note: ci4 = cartindex4 - am4 - 1;
+                  I0001[cartindex1234]
+                    =   I0010[ci3_I0010 + ci4]
+                    + I0000[ci3_I0000 + ci4]
+                    * CmD0;
+                  cartindex1234++;
+                  //cartindex4++;
+                  }
               cartindex3++;
               }
             }

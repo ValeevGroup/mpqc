@@ -505,6 +505,7 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
    * will accumulate into. */
   for (m=minam1; m<=maxam12; m++) {
     for (n=minam3; n<=maxam34; n++) {
+  int nm_cart = INT_NCART(m)*INT_NCART(n);
   for (ci=0; ci<nc1; ci++) {
     if (m < int_shell1->am(ci)+dam1) continue;
     for (cj=0; cj<nc2; cj++) {
@@ -515,9 +516,8 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
         for (cl=0; cl<nc4; cl++) {
           if (int_shell3->am(ck)+dam3 +int_shell4->am(cl)+dam4 < n)
             continue;
-      for (k=0; k<INT_NCART(m)*INT_NCART(n); k++) {
-        e0f0_con_ints_array[ci][cj][ck][cl](m,n)[k] = 0.0;
-        }
+          double *tmp = e0f0_con_ints_array[ci][cj][ck][cl](m,n);
+          for (int ii=0; ii<nm_cart; ii++) tmp[ii] = 0.0;
           }
         }
       }

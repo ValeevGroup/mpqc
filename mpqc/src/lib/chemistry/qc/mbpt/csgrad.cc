@@ -39,6 +39,7 @@
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/util.h>
+#include <chemistry/qc/mbpt/csgrade12.h>
 
 static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
 static void zero_gradients(double **f, int n1, int n2);
@@ -185,21 +186,15 @@ MBPT2::compute_cs_grad()
   double *PMP2, *WMP2;
   double *pmp2_ptr, *wmp2_ptr;
 
-  double *integral_iqrs; // quarter transformed two-el integrals
   double *ixjs_tmp;      // three-quarter transformed two-el integrals
   double *integral_ixjs;  // all three-quarter transformed two-el integrals
   double *integral_iajy; // mo integrals (y = any MO)
   double *integral_ikja; // mo integrals
-  double *iqjs_contrib;  // local contributions to integral_iqjs
-  double *iqjr_contrib;  // local contributions to integral_iqjr
   double *integral_iqjs_ptr;
   double *iajy_ptr;
   double *ixjs_ptr;
   double *ikja_ptr;
   double *iajs_ptr, *ikjs_ptr;
-  double *iqrs_ptr, *iprs_ptr;
-  double *iqjs_ptr, *iqjr_ptr;
-  const double *pqrs_ptr;
 
   double **gradient=0, *gradient_dat=0;  // The MP2 gradient
   double **hf_gradient=0, *hf_gradient_dat=0;  // The HF gradient
@@ -485,7 +480,11 @@ MBPT2::compute_cs_grad()
 
   // Initialize the integrals
   integral()->set_storage(mem_remaining);
-  tbint_ = integral()->electron_repulsion();
+  RefTwoBodyInt *tbint = new RefTwoBodyInt[thr_->nthread()];
+  for (i=0; i<thr_->nthread(); i++) {
+      tbint[i] = integral()->electron_repulsion();
+    }
+  tbint_ = tbint[0];
   intbuf = tbint_->buffer();
   if (dograd) {
     tbintder_ = integral()->electron_repulsion_deriv();
@@ -493,9 +492,11 @@ MBPT2::compute_cs_grad()
     }
 
   int mem_integral_intermediates = integral()->storage_used();
-  int mem_integral_storage = mem_remaining - mem_integral_intermediates;
+  int mem_integral_storage = (mem_remaining - mem_integral_intermediates) / thr_->nthread();
   if (mem_integral_storage<0) mem_integral_storage = 0;
-  tbint_->set_integral_storage(mem_integral_storage);
+  for (i=0; i<thr_->nthread(); i++) {
+      tbint[i]->set_integral_storage(mem_integral_storage);
+    }
 
   cout << node0 << endl << indent
        << scprintf("Memory used for integral intermediates: %i Bytes",
@@ -517,6 +518,14 @@ MBPT2::compute_cs_grad()
 
   MemoryGrpBuf<double> membuf(mem);
   MemoryGrpBuf<double> membuf_remote(mem);
+
+  RefThreadLock lock = thr_->new_lock();
+  CSGradErep12Qtr** e12thread = new CSGradErep12Qtr*[thr_->nthread()];
+  for (i=0; i<thr_->nthread(); i++) {
+      e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
+                                         mem, lock, basis(), tbint[i],
+                                         ni, nocc, scf_vector, tol);
+    }
 
   tim_enter("mp2 passes");
   for (pass=0; pass<npass; pass++) {
@@ -554,10 +563,6 @@ MBPT2::compute_cs_grad()
 
     // Allocate (and initialize) some arrays
 
-    integral_iqrs = new double[ni*nbasis*nfuncmax*nfuncmax];
-    iqjs_contrib  = new double[nbasis*nfuncmax];
-    iqjr_contrib  = new double[nbasis*nfuncmax];
-
     integral_iqjs = membuf.writeonly_on_node(0, nij*nbasis*nbasis);
 
     bzerofast(integral_iqjs, nij*nbasis*nbasis);
@@ -576,167 +581,17 @@ MBPT2::compute_cs_grad()
       }
     // end of debug print
 
-    for (S=0; S<nshell; S++) {
-      ns = basis()->shell(S).nfunction();
-      s_offset = basis()->shell_to_function(S);
-
-      for (R=0; R<=S; R++) {
-        nr = basis()->shell(R).nfunction();
-        r_offset = basis()->shell_to_function(R);
-
-        if (index++ % nproc == me) {
-
-          bzerofast(integral_iqrs, ni*nbasis*nfuncmax*nfuncmax);
-
-          for (Q=0; Q<nshell; Q++) {
-            nq = basis()->shell(Q).nfunction();
-            q_offset = basis()->shell_to_function(Q);
-            for (P=0; P<=Q; P++) {
-              np = basis()->shell(P).nfunction();
-              p_offset = basis()->shell_to_function(P);
-
-           // if (scf_erep_bound(P,Q,R,S) < tol) {
-           //   continue;  // skip ereps less than tol
-           //   }
-              if (tbint_->log2_shell_bound(P,Q,R,S) < tol) {
-                continue;  // skip ereps less than tol
-                }
-
-              aoint_computed++;
-
-              tim_enter("erep");
-              tbint_->compute_shell(P,Q,R,S);
-              tim_exit("erep");
-
-              mem->catchup();
-
-              tim_enter("1. q.t.");
-              // Begin first quarter transformation;
-              // generate (iq|rs) for i active
-
-              offset = nr*ns*nbasis;
-              pqrs_ptr = intbuf;
-              for (bf1 = 0; bf1 < np; bf1++) {
-                p = p_offset + bf1;
-                for (bf2 = 0; bf2 < nq; bf2++) {
-                  q = q_offset + bf2;
-
-                  if (q < p) {
-                    pqrs_ptr = &intbuf[ns*nr*(bf2+1 + nq*bf1)];
-                    continue; // skip to next q value
-                    }
-
-                  for (bf3 = 0; bf3 < nr; bf3++) {
-                    r = r_offset + bf3;
-
-                    for (bf4 = 0; bf4 < ns; bf4++) {
-                      s = s_offset + bf4;
-
-                      if (s < r) {
-                        pqrs_ptr++;
-                        continue; // skip to next bf4 value
-                        }
-
-                      if (fabs(*pqrs_ptr) > dtol) {
-                        iprs_ptr = &integral_iqrs[bf4 + ns*(p + nbasis*bf3)];
-                        iqrs_ptr = &integral_iqrs[bf4 + ns*(q + nbasis*bf3)];
-                        c_qi = &scf_vector[q][i_offset];
-                        c_pi = &scf_vector[p][i_offset];
-                        tmpval = *pqrs_ptr;
-                        for (i=0; i<ni; i++) {
-                          *iprs_ptr += *c_qi++*tmpval;
-                          iprs_ptr += offset;
-                          if (p != q) {
-                            *iqrs_ptr += *c_pi++*tmpval;
-                            iqrs_ptr += offset;
-                            }
-                          } // exit i loop
-                        }   // endif
-
-                      pqrs_ptr++;
-                      } // exit bf4 loop
-                    }   // exit bf3 loop
-                  }     // exit bf2 loop
-                }       // exit bf1 loop
-              // end of first quarter transformation
-              tim_exit("1. q.t.");
-
-              }           // exit P loop
-            }             // exit Q loop
-
-#if PRINT1Q
-      {
-        double *tmp = integral_iqrs;
-        for (int i = 0; i<ni; i++) {
-            for (int r = 0; r<nr; r++) {
-                for (int q = 0; q<nbasis; q++) {
-                    for (int s = 0; s<ns; s++) {
-                        printf("1Q: (%d %d|%d %d) = %12.8f\n",
-                               i,q,r+r_offset,s+s_offset,*tmp);
-                        tmp++;
-                      }
-                  }
-              }
-          }
+    // Do the two eletron integrals and the first two quarter transformations
+    tim_enter("erep+1.qt+2.qt");
+    for (i=0; i<thr_->nthread(); i++) {
+      e12thread[i]->set_i_offset(pass*ni + nfzc);
+      //e12thread[i]->run();
+      thr_->add_thread(i,e12thread[i]);
       }
-#endif
+    thr_->start_threads();
+    thr_->wait_threads();
+    tim_exit("erep+1.qt+2.qt");
 
-          tim_enter("2. q.t.");
-          // Begin second quarter transformation;
-          // generate (iq|jr) for i active and j active or frozen
-          for (i=0; i<ni; i++) {
-            for (j=0; j<nocc; j++) {
-
-              bzerofast(iqjs_contrib, nbasis*nfuncmax);
-              bzerofast(iqjr_contrib, nbasis*nfuncmax);
-
-              catchup_ctr = 0;
-              for (bf1=0; bf1<ns; bf1++) {
-                s = s_offset + bf1;
-                c_sj = &scf_vector[s][j];
-                iqjr_ptr = iqjr_contrib;
-                for (bf2=0; bf2<nr; bf2++) {
-                  r = r_offset + bf2;
-                  if (r > s) {
-                    break; // skip to next bf1 value
-                    }
-                  c_rj = scf_vector[r][j];
-                  iqjs_ptr = &iqjs_contrib[bf1*nbasis];
-                  iqrs_ptr = &integral_iqrs[bf1 + ns*nbasis*(bf2 + nr*i)];
-                  for (q=0; q<nbasis; q++) {
-                    *iqjs_ptr++ += c_rj * *iqrs_ptr;
-                    if (r != s) *iqjr_ptr += *c_sj * *iqrs_ptr;
-                    iqjr_ptr++;
-                    iqrs_ptr += ns;
-                    } // exit q loop
-                  // every so often process outstanding messages
-                  if ((catchup_ctr++ & catchup_mask) == 0) mem->catchup();
-                  }   // exit bf2 loop
-                }     // exit bf1 loop
-
-              // We now have contributions to iqjs and iqjr for one pair i,j,
-              // all q, r in R and s in S; send iqjs and iqjr to the node
-              // (ij_proc) which is going to have this ij pair
-              ij_proc =  (i*nocc + j)%nproc;
-              ij_index = (i*nocc + j)/nproc;
-
-              // Sum the iqjs_contrib to the appropriate place
-              ij_offset = nbasis*(s_offset + nbasis*ij_index);
-              mem->sum_reduction_on_node(iqjs_contrib,
-                                         ij_offset, ns*nbasis, ij_proc);
-
-              ij_offset = nbasis*(r_offset + nbasis*ij_index);
-              mem->sum_reduction_on_node(iqjr_contrib,
-                                         ij_offset, nr*nbasis, ij_proc);
-
-              }     // exit j loop
-            }       // exit i loop
-          // end of second quarter transformation
-          tim_exit("2. q.t.");
-
-          }     // endif
-        }       // exit R loop
-      }         // exit S loop
     // debug print
     if (debug_ && me == 0) {
       cout << indent << "End of loop over shells" << endl;
@@ -777,10 +632,6 @@ MBPT2::compute_cs_grad()
 //       }
 //     fflush(stdout);
 //     mem->sync();
-
-    delete[] integral_iqrs;
-    delete[] iqjs_contrib;
-    delete[] iqjr_contrib;
 
     // Allocate and initialize some arrays
     ixjs_tmp = new double[nbasis];
@@ -1888,6 +1739,13 @@ MBPT2::compute_cs_grad()
 
     } // if (dograd || dos2_)
 
+  for (i=0; i<thr_->nthread(); i++) {
+      tbint[i] = 0;
+      delete e12thread[i];
+    }
+  delete[] e12thread;
+  delete[] tbint;
+
   // quit here if only the energy is needed
   if (!dograd) {
     if (dos2_) delete[] Laj;
@@ -2829,7 +2687,7 @@ MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
     }
   mem1 = sizeof(double)*(nij*(distsize_t)nbasis*(distsize_t)nbasis
                          + nbasis*(distsize_t)nvir);
-  mem2 = sizeof(double)*(ni*nbasis*nfuncmax*(distsize_t)nfuncmax
+  mem2 = sizeof(double)*(thr_->nthread()*ni*nbasis*nfuncmax*(distsize_t)nfuncmax
                          + nij*(distsize_t)nbasis*(distsize_t)nbasis
                          + ni*(distsize_t)nbasis + nbasis*(distsize_t)nfuncmax
                          + 2*nfuncmax*nfuncmax*nfuncmax*(distsize_t)nfuncmax);

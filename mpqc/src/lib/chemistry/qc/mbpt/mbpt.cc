@@ -123,6 +123,7 @@ MBPT2::MBPT2(StateIn& s):
 
   mem = MemoryGrp::initial_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
+  thr_ = ThreadGrp::get_default_threadgrp();
 
   restart_ecorr_ = 0.0;
   restart_orbital_v1_ = 0;
@@ -159,6 +160,7 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
       mem = MemoryGrp::initial_memorygrp();
     }
   msg_ = MessageGrp::get_default_messagegrp();
+  thr_ = ThreadGrp::get_default_threadgrp();
 
   method_ = keyval->pcharvalue("method");
 

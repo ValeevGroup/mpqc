@@ -34,6 +34,7 @@
 
 #include <util/group/memory.h>
 #include <util/group/message.h>
+#include <util/group/thread.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/scf/scf.h>
@@ -62,6 +63,8 @@ class MBPT2: public Wavefunction {
     int nbasis;
     RefMessageGrp msg_;
     int nvir, nocc, nsocc;
+
+    RefThreadGrp thr_;
 
     // the irreps of the orbitals and the offset within the irrep
     int *symorb_irrep_;

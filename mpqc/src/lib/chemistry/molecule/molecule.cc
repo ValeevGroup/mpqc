@@ -555,6 +555,18 @@ Molecule::Molecule(StateIn& si):
   init_symmetry_info();
 }
 
+int
+Molecule::atom_to_unique_offset(int iatom) const
+{
+  int iuniq = atom_to_uniq_[iatom];
+  int nequiv = nequiv_[iuniq];
+  for (int i=0; i<nequiv; i++) {
+      if (equiv_[iuniq][i] == iatom) return i;
+    }
+  ExEnv::err() << "Molecule::atom_to_unique_offset: internal error"
+               << endl;
+}
+
 void
 Molecule::set_point_group(const RefPointGroup&ppg, double tol)
 {

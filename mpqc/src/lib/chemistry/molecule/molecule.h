@@ -257,11 +257,18 @@ class Molecule: public SavableState
 
     /// Return information about symmetry unique and equivalent atoms.
     int nunique() const { return nuniq_; }
+    /// Returns the overall number of the iuniq'th unique atom.
     int unique(int iuniq) const { return equiv_[iuniq][0]; }
+    /// Returns the number of atoms equivalent to iuniq.
     int nequivalent(int iuniq) const { return nequiv_[iuniq]; }
+    /// Returns the j'th atom equivalent to iuniq.
     int equivalent(int iuniq, int j) const { return equiv_[iuniq][j]; }
-    /// Converts an atom number to the number of its generating unique atom.
+    /** Converts an atom number to the number of its generating unique atom.
+        The return value is in [0, nunique). */
     int atom_to_unique(int iatom) const { return atom_to_uniq_[iatom]; }
+    /** Converts an atom number to the offset of this atom in the list of
+        generated atoms. The unique atom itself is allows offset 0.  */
+    int atom_to_unique_offset(int iatom) const;
 
     /// Return the number of core electrons.
     int n_core_electrons();

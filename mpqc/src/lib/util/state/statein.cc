@@ -462,7 +462,7 @@ StateIn::get(const ClassDesc**cd)
   int classid;
   r += get(classid);
 
-  if (!classdatamap_.contains(classid)) {
+  if (classdatamap_.find(classid) == classdatamap_.end()) {
       ExEnv::errn() << "ERROR: StateIn: couldn't find class descriptor for classid "
            << classid << endl;
       abort();
@@ -479,9 +479,9 @@ StateIn::list_objects(ostream &o)
 {
   if (SCFormIO::getverbose(o)) {
       int ii = 1;
-      for (AVLMap<int,StateInData>::iterator i=ps_.begin(); i!=ps_.end();
+      for (std::map<int,StateInData>::iterator i=ps_.begin(); i!=ps_.end();
            i++,ii++) {
-          const StateInData &num(i.data());
+          const StateInData &num(i->second);
           const char *classname = classdatamap_[num.type].name;
           o << indent
             << "object " << ii
@@ -492,9 +492,9 @@ StateIn::list_objects(ostream &o)
     }
   else {
       int ntot = 0;
-      for (AVLMap<int,StateClassData>::iterator i=classdatamap_.begin();
+      for (std::map<int,StateClassData>::iterator i=classdatamap_.begin();
            i!=classdatamap_.end(); i++) {
-          StateClassData &dat = i.data();
+          StateClassData &dat = i->second;
           if (dat.ninstance > 0) {
               o << indent << dat.ninstance
                 << " "
@@ -552,16 +552,16 @@ StateIn::dir_getobject(Ref<SavableState> &p, const char *name)
   if (cd) classid = classidmap_[(ClassDesc*)cd];
   else classid = -1;
 
-  AVLMap<int,StateInData>::iterator i;
+  std::map<int,StateInData>::iterator i;
   int nfound = 0;
   for (i=ps_.begin(); i!=ps_.end(); i++) {
-      if (classid == -1 || i.data().type == classid) nfound++;
+      if (classid == -1 || i->second.type == classid) nfound++;
       if (nfound == number) {
-          if (i.data().ptr.nonnull()) {
-              p = i.data().ptr;
+          if (i->second.ptr.nonnull()) {
+              p = i->second.ptr;
             }
           else {
-              seek(i.data().offset);
+              seek(i->second.offset);
               r += getobject(p);
             }
           return r;
@@ -594,27 +594,27 @@ StateIn::getobject(Ref<SavableState> &p)
                    << refnum << endl;
       ExEnv::outn() << incindent;
 #endif
-      AVLMap<int,StateInData>::iterator ind = ps_.find(refnum);
+      std::map<int,StateInData>::iterator ind = ps_.find(refnum);
       if (ind == ps_.end() && use_dir) {
           ExEnv::errn() << "ERROR: StateIn: directory missing object number "
                << refnum << endl;
           abort();
         }
-      if (ind == ps_.end() || ind.data().ptr.null()) {
+      if (ind == ps_.end() || ind->second.ptr.null()) {
 #if DEBUG
           ExEnv::outn() << indent << "reading object" << endl;
 #endif
           // object has not yet been read in
           int need_seek = 0;
           if (use_dir) {
-              if (original_loc != ind.data().offset) {
+              if (original_loc != ind->second.offset) {
                   need_seek = 1;
                   original_loc = tell();
 #if DEBUG
                   ExEnv::outn() << indent << "seeking to"
-                       << setw(5) << ind.data().offset << endl;
+                       << setw(5) << ind->second.offset << endl;
 #endif
-                  seek(ind.data().offset);
+                  seek(ind->second.offset);
                   int trefnum;
                   get(trefnum);
                   if (trefnum != refnum) {
@@ -630,7 +630,7 @@ StateIn::getobject(Ref<SavableState> &p)
           DescribedClass *dc = cd->create(*this);
           p = dynamic_cast<SavableState*>(dc);
           if (use_dir) {
-              ind.data().ptr = p;
+              ind->second.ptr = p;
               if (need_seek) seek(original_loc);
             }
 #if DEBUG
@@ -640,22 +640,22 @@ StateIn::getobject(Ref<SavableState> &p)
         }
       else {
           // object already exists
-          p = ind.data().ptr;
+          p = ind->second.ptr;
 #if DEBUG
           ExEnv::outn() << indent << "object already existed, type = "
                << p->class_name() << endl;
           ExEnv::outn() << indent
                << "  use_dir = " << use_dir
                << " tell() = " << setw(5) << tell()
-               << " offset = " << setw(5) << ind.data().offset
+               << " offset = " << setw(5) << ind->second.offset
                << " size_refnum = " << setw(1) << size_refnum
                << endl;
 #endif
-          if (use_dir && tell() - size_refnum == ind.data().offset) {
-              seek(tell() - size_refnum + ind.data().size);
+          if (use_dir && tell() - size_refnum == ind->second.offset) {
+              seek(tell() - size_refnum + ind->second.size);
 #if DEBUG
               ExEnv::outn() << indent << "  seeking to "
-                   << tell() - size_refnum + ind.data().offset
+                   << tell() - size_refnum + ind->second.offset
                    << endl;
 #endif
             }
@@ -685,7 +685,7 @@ StateIn::haveobject(const Ref<SavableState> &p)
 void
 StateIn::haveobject(int objnum,const Ref<SavableState> &p)
 {
-  AVLMap<int,StateInData>::iterator ind = ps_.find(objnum);
+  std::map<int,StateInData>::iterator ind = ps_.find(objnum);
   if (ind == ps_.end()) {
       ps_[objnum].ptr = p;
 #if DEBUG
@@ -693,7 +693,7 @@ StateIn::haveobject(int objnum,const Ref<SavableState> &p)
 #endif
     }
   else {
-      ind.data().ptr = p;
+      ind->second.ptr = p;
 #if DEBUG
       ExEnv::outn() << indent << "have object updating number " << objnum
                    << endl;

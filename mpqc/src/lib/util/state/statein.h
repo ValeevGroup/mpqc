@@ -34,9 +34,9 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include <util/state/state.h>
-#include <util/container/avlmap.h>
 #include <util/keyval/keyval.h>
 
 namespace sc {
@@ -81,10 +81,10 @@ class StateIn:  public DescribedClass {
   protected:
     Ref<KeyVal> override_;
     TranslateDataIn *translate_;
-    AVLMap<int,StateInData> ps_;
+    std::map<int,StateInData> ps_;
     int expected_object_num_;
-    AVLMap<ClassDescP,int> classidmap_;
-    AVLMap<int,StateClassData> classdatamap_;
+    std::map<ClassDescP,int> classidmap_;
+    std::map<int,StateClassData> classdatamap_;
     int nextclassid_;
     int node_to_node_;
     int version_;

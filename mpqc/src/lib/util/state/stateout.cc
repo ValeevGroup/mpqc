@@ -219,14 +219,14 @@ StateOut::put_header()
 void
 StateOut::put_directory()
 {
-  AVLMap<ClassDescP,int>::iterator iid;
-  AVLMap<Ref<SavableState>,StateOutData>::iterator isd;
+  std::map<ClassDescP,int>::iterator iid;
+  std::map<Ref<SavableState>,StateOutData>::iterator isd;
 
   // write the class information
-  put(classidmap_.length());
+  put(classidmap_.size());
   for (iid=classidmap_.begin(); iid!=classidmap_.end(); iid++) {
-      const ClassDesc *cd = iid.key();
-      int classid = iid.data();
+      const ClassDesc *cd = iid->first;
+      int classid = iid->second;
       putstring(cd->name());
       put(cd->version());
       put(classid);
@@ -239,9 +239,9 @@ StateOut::put_directory()
     }
 
   // write the object information
-  put(ps_.length());
+  put(ps_.size());
   for (isd=ps_.begin(); isd!=ps_.end(); isd++) {
-      const StateOutData& ptr = isd.data();
+      const StateOutData& ptr = isd->second;
       put(ptr.num);
       put(ptr.type);
       put(ptr.offset);
@@ -354,7 +354,7 @@ StateOut::put(const ClassDesc*cd)
 {
   int r=0;
   // write out parent info
-  if (!classidmap_.contains((ClassDesc*)cd)) {
+  if (classidmap_.find((ClassDesc*)cd) == classidmap_.end()) {
       r += putparents(cd);
       if (!use_directory()) {
           const char* name = cd->name();
@@ -383,7 +383,7 @@ StateOut::putparents(const ClassDesc*cd)
   for (int i=0; i<parents.n(); i++) {
       // the cast is needed to de-const-ify the class descriptor
       ClassDesc*tmp = (ClassDesc*) parents[i].classdesc();
-      if (!classidmap_.contains(tmp)) {
+      if (classidmap_.find(tmp) == classidmap_.end()) {
           r += putparents(tmp);
           if (!use_directory()) {
               const char* name = tmp->name();
@@ -408,7 +408,7 @@ StateOut::putobject(const Ref<SavableState> &p)
       r += put(0);
     }
   else {
-      AVLMap<Ref<SavableState>,StateOutData>::iterator ind = ps_.find(p);
+      std::map<Ref<SavableState>,StateOutData>::iterator ind = ps_.find(p);
       if (ind == ps_.end() || copy_references_) {
           StateOutData dp;
           // object has not been written yet
@@ -424,12 +424,12 @@ StateOut::putobject(const Ref<SavableState> &p)
           p->save_data_state(*this);
           if (!copy_references_) {
               ind = ps_.find(p);
-              ind.data().size = tell() - ind.data().offset;
+              ind->second.size = tell() - ind->second.offset;
             }
         }
       else {
           // object has already been written
-          r += put(ind.data().num);
+          r += put(ind->second.num);
         }
     }
   return r;

@@ -33,6 +33,7 @@
 #define _util_class_class_h
 
 #include <map>
+#include <set>
 
 #include <stdio.h>
 #include <string.h>
@@ -41,8 +42,6 @@
 #include <iomanip>
 #include <typeinfo>
 #include <util/ref/ref.h>
-#include <util/container/avlset.h>
-#include <util/container/avlmap.h>
 #include <util/misc/exenv.h>
 
 namespace sc {
@@ -158,15 +157,15 @@ class type_info_key {
 class ClassDesc: public Identity {
     friend class ParentClasses;
   private:
-    static AVLMap<std::string,ClassDescP> *all_;
-    static AVLMap<type_info_key,ClassDescP> *type_info_all_;
+    static std::map<std::string,ClassDescP> *all_;
+    static std::map<type_info_key,ClassDescP> *type_info_all_;
     static char * classlib_search_path_;
-    static AVLSet<std::string> *unresolved_parents_;
+    static std::set<std::string> *unresolved_parents_;
 
     char* classname_;
     int version_;
     ParentClasses parents_;
-    AVLSet<std::string> *children_;
+    std::set<std::string> *children_;
     DescribedClass* (*ctor_)();
     DescribedClass* (*keyvalctor_)(const Ref<KeyVal>&);
     DescribedClass* (*stateinctor_)(StateIn&);
@@ -190,7 +189,7 @@ class ClassDesc: public Identity {
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
 
-    static AVLMap<std::string,ClassDescP>& all();
+    static std::map<std::string,ClassDescP>& all();
     const ParentClasses& parents() const { return parents_; }
 
     /// Writes a list of all of the classes to ExEnv::out0().

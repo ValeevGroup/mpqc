@@ -194,13 +194,13 @@ MessageGrp::initialize(int me, int n)
     }
 
   int i;
-  AVLMap<std::string,ClassDescP>::iterator J;
+  std::map<std::string,ClassDescP>::iterator J;
   
   me_ = me;
   n_ = n;
 
   // get all of the classes known on this node
-  AVLMap<std::string,ClassDescP>& classes = ClassDesc::all();
+  std::map<std::string,ClassDescP>& classes = ClassDesc::all();
 
   // Keeps count of how many classes are known.
   int iclass = 0;
@@ -212,23 +212,23 @@ MessageGrp::initialize(int me, int n)
           int n_new_class = 0;
           int buffer_size = 0;
           for (J=classes.begin(); J!=classes.end(); J++) {
-              if (!classdesc_to_index_.contains(J.data())) {
+              if (classdesc_to_index_.find(J->second) == classdesc_to_index_.end()) {
                   n_new_class++;
-                  buffer_size += strlen(J.data()->name()) + 1;
+                  buffer_size += strlen(J->second->name()) + 1;
                 }
             }
           char* buffer = new char[buffer_size];
           char* currentbuffer = buffer;
           for (J=classes.begin(); J!=classes.end(); J++) {
-              if (!classdesc_to_index_.contains(J.data())) {
-                  classdesc_to_index_[J.data()] = iclass;
+              if (classdesc_to_index_.find(J->second) == classdesc_to_index_.end()) {
+                  classdesc_to_index_[J->second] = iclass;
                   iclass++;
 #ifdef DEBUG
                   ExEnv::outn() << scprintf("node %d adding class %d = \"%s\"\n",
-                                   me, iclass, J.data()->name());
+                                   me, iclass, J->second->name());
 #endif
-                  strcpy(currentbuffer,J.data()->name());
-                  currentbuffer += strlen(J.data()->name()) + 1;
+                  strcpy(currentbuffer,J->second->name());
+                  currentbuffer += strlen(J->second->name()) + 1;
                 }
             }
 #ifdef DEBUG
@@ -294,8 +294,8 @@ MessageGrp::initialize(int me, int n)
       index_to_classdesc_[i] = 0;
     }
   for (J=classes.begin(); J!=classes.end(); J++) {
-      if (classdesc_to_index_.contains(J.data())) {
-          index_to_classdesc_[classdesc_to_index_[J.data()]] = J.data();
+      if (classdesc_to_index_.find(J->second) != classdesc_to_index_.end()) {
+          index_to_classdesc_[classdesc_to_index_[J->second]] = J->second;
         }
     }
 
@@ -547,7 +547,7 @@ MessageGrp::bcast(signed char*data, int ndata, int from)
 int
 MessageGrp::classdesc_to_index(const ClassDesc* cdptr)
 {
-  if (classdesc_to_index_.contains((ClassDesc*)cdptr)) {
+  if (classdesc_to_index_.find((ClassDesc*)cdptr) != classdesc_to_index_.end()) {
       return classdesc_to_index_[(ClassDesc*)cdptr];
     }
   else {

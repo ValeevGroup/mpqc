@@ -46,10 +46,10 @@
 using namespace std;
 using namespace sc;
 
-AVLMap<std::string,ClassDescP>* ClassDesc::all_ = 0;
-AVLMap<type_info_key,ClassDescP>* ClassDesc::type_info_all_ = 0;
+std::map<std::string,ClassDescP>* ClassDesc::all_ = 0;
+std::map<type_info_key,ClassDescP>* ClassDesc::type_info_all_ = 0;
 char * ClassDesc::classlib_search_path_ = 0;
-AVLSet<std::string>* ClassDesc::unresolved_parents_ = 0;
+std::set<std::string>* ClassDesc::unresolved_parents_ = 0;
 
 /////////////////////////////////////////////////////////////////
 
@@ -129,7 +129,7 @@ ParentClasses::init(const char* parents)
               ClassDesc *tmp_classdesc = new ClassDesc(token);
               ClassDesc::all()[parentkey] = tmp_classdesc;
               if (ClassDesc::unresolved_parents_ == 0) {
-                  ClassDesc::unresolved_parents_ = new AVLSet<std::string>;
+                  ClassDesc::unresolved_parents_ = new std::set<std::string>;
                 }
               ClassDesc::unresolved_parents_->insert(token);
             }
@@ -220,7 +220,7 @@ ClassDesc::ClassDesc(const type_info &ti,
                      )
 {
   if (!type_info_all_) {
-      type_info_all_ = new AVLMap<type_info_key,ClassDescP>;
+      type_info_all_ = new std::map<type_info_key,ClassDescP>;
     }
   type_info_key key(&ti);
   if (type_info_all_->find(key) != type_info_all_->end()) {
@@ -263,7 +263,7 @@ ClassDesc::init(const char* name, int version,
 
   // make sure that the static members have been initialized
   if (!all_) {
-      all_ = new AVLMap<std::string,ClassDescP>;
+      all_ = new std::map<std::string,ClassDescP>;
       const char* tmp = getenv("LD_LIBRARY_PATH");
       if (tmp) {
           // Needed for misbehaving getenv's.
@@ -309,7 +309,7 @@ ClassDesc::init(const char* name, int version,
   for (int i=0; i<parents_.n(); i++) {
       std::string parentkey(parents_[i].classdesc()->name());
       if (!(*all_)[parentkey]->children_)
-        (*all_)[parentkey]->children_ = new AVLSet<std::string>;
+        (*all_)[parentkey]->children_ = new std::set<std::string>;
       // let the parents know about the child
       ((*all_)[parentkey]->children_)->insert(key);
     }
@@ -331,14 +331,14 @@ ClassDesc::init(const char* name, int version,
 
       // go thru the list of children and correct their
       // parent class descriptors
-      for (AVLSet<std::string>::iterator i=children_->begin();
+      for (std::set<std::string>::iterator i=children_->begin();
            i!=children_->end(); i++) {
           (*all_)[*i]->change_parent((*all_)[key],this);
         }
 
       delete (*all_)[key];
-      unresolved_parents_->remove(key);
-      if (unresolved_parents_->length() == 0) {
+      unresolved_parents_->erase(key);
+      if (unresolved_parents_->size() == 0) {
           delete unresolved_parents_;
           unresolved_parents_ = 0;
         }
@@ -350,18 +350,18 @@ ClassDesc::~ClassDesc()
 {
   // remove references to this class descriptor
   if (children_) {
-      for (AVLSet<std::string>::iterator i=children_->begin();
+      for (std::set<std::string>::iterator i=children_->begin();
            i!=children_->end(); i++) {
-          if (all_->contains(*i)) {
+          if (all_->find(*i) != all_->end()) {
               (*all_)[*i]->change_parent(this,0);
             }
         }
     }
   // delete this ClassDesc from the list of all ClassDesc's
   std::string key(classname_);
-  all_->remove(key);
+  all_->erase(key);
   // if the list of all ClassDesc's is empty, delete it
-  if (all_->length() == 0) {
+  if (all_->size() == 0) {
       delete all_;
       all_ = 0;
       delete[] classlib_search_path_;
@@ -381,7 +381,7 @@ ClassDesc::class_desc(const type_info &ti)
   return (*type_info_all_)[type_info_key(&ti)];
 }
 
-AVLMap<std::string,ClassDescP>&
+std::map<std::string,ClassDescP>&
 ClassDesc::all()
 {
   if (!all_) {
@@ -434,9 +434,9 @@ void
 ClassDesc::list_all_classes()
 {
   ExEnv::out0() << "Listing all classes:" << endl;
-  for (AVLMap<std::string,ClassDescP>::iterator ind=all_->begin();
+  for (std::map<std::string,ClassDescP>::iterator ind=all_->begin();
        ind!=all_->end(); ind++) {
-      ClassDesc* classdesc = ind.data();
+      ClassDesc* classdesc = ind->second;
       ExEnv::out0() << "class " << classdesc->name() << endl;
       ParentClasses& parents = classdesc->parents_;
       if (parents.n()) {
@@ -463,10 +463,10 @@ ClassDesc::list_all_classes()
             }
           ExEnv::out0() << endl;
         }
-      AVLSet<std::string>* children = classdesc->children_;
+      std::set<std::string>* children = classdesc->children_;
       if (children) {
           ExEnv::out0() << "  children:";
-          for (AVLSet<std::string>::iterator pind=children->begin();
+          for (std::set<std::string>::iterator pind=children->begin();
                pind!=children->end(); pind++) {
               ExEnv::out0() << " " << (*pind);
             }
@@ -541,7 +541,7 @@ ClassDesc::load_class(const char* classname)
 
                       // load code for parents
                       while (unresolved_parents_
-                             && unresolved_parents_->length()) {
+                             && unresolved_parents_->size()) {
                           load_class((*unresolved_parents_->begin()).c_str());
                         }
 
@@ -638,16 +638,10 @@ operator <<(ostream&o, const RefBase &ref)
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
-template class EAVLMMapNode<std::string,AVLMapNode<std::string,ClassDescP> >;
-template class EAVLMMap<std::string,AVLMapNode<std::string,ClassDescP> >;
-template class AVLMapNode<std::string,ClassDescP>;
-template class AVLMap<std::string,ClassDescP>;
-
-template class EAVLMMapNode<std::string,AVLMapNode<std::string,int> >;
-template class EAVLMMap<std::string,AVLMapNode<std::string,int> >;
-template class AVLMapNode<std::string,int>;
-template class AVLMap<std::string,int>;
-template class AVLSet<std::string>;
+template class std::map<std::string,ClassDescP>;
+               
+template class std::map<std::string,int>;
+template class std::set<std::string>;
 
 #endif
 

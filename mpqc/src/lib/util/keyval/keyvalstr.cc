@@ -97,7 +97,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
       //ExEnv::outn() << "classname = " << classn << '\n';
       if (classn) {
           std::string truekey(tkw);
-          if (_map.contains(truekey)) {
+          if (_map.find(truekey) != _map.end()) {
               result = _map[truekey];
             }
           else {

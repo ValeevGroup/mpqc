@@ -34,10 +34,10 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
-#include <util/container/avlmap.h>
 
 namespace sc {
 
@@ -71,8 +71,8 @@ class StateOut: public DescribedClass {
     TranslateDataOut *translate_;
     int copy_references_;
     int next_object_number_;
-    AVLMap<Ref<SavableState>,StateOutData> ps_;
-    AVLMap<ClassDescP,int> classidmap_;
+    std::map<Ref<SavableState>,StateOutData> ps_;
+    std::map<ClassDescP,int> classidmap_;
     int nextclassid_;
     int node_to_node_;
     virtual int put_array_void(const void*,int);

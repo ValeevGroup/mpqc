@@ -29,7 +29,6 @@
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
-#include <util/container/avlmap.h>
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
@@ -37,25 +36,13 @@ using namespace sc;
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
-template class EAVLMMapNode<int, AVLMapNode<int, StateInData> >;
-template class EAVLMMap<int, AVLMapNode<int, StateInData> >;
-template class AVLMapNode<int, StateInData>;
-template class AVLMap<int, StateInData>;
+template class std::map<int, StateInData>;
 
-template class EAVLMMapNode<Ref<SavableState>, AVLMapNode<Ref<SavableState>, StateOutData> >;
-template class EAVLMMap<Ref<SavableState>, AVLMapNode<Ref<SavableState>, StateOutData> >;
-template class AVLMapNode<Ref<SavableState>, StateOutData>;
-template class AVLMap<Ref<SavableState>, StateOutData>;
+template class std::map<Ref<SavableState>, StateOutData>;
 
-template class EAVLMMapNode<ClassDescP, AVLMapNode<ClassDescP,int> >;
-template class EAVLMMap<ClassDescP, AVLMapNode<ClassDescP,int> >;
-template class AVLMapNode<ClassDescP,int>;
-template class AVLMap<ClassDescP,int>;
+template class std::map<ClassDescP,int>;
 
-template class EAVLMMapNode<int, AVLMapNode<int,StateClassData> >;
-template class EAVLMMap<int, AVLMapNode<int,StateClassData> >;
-template class AVLMapNode<int,StateClassData>;
-template class AVLMap<int,StateClassData>;
+template class std::map<int,StateClassData>;
 
 #endif
 

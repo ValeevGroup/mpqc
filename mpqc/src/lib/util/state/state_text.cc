@@ -214,7 +214,7 @@ int StateOutText::put(const ClassDesc*cd)
   ostream out(buf_);
   //
   // write out parent info
-  if (!classidmap_.contains((ClassDesc*)cd)) {
+  if (classidmap_.find((ClassDesc*)cd) == classidmap_.end()) {
       putparents(cd);
       out << " version of class " << cd->name()
           << " is " << cd->version() << endl;
@@ -234,7 +234,7 @@ StateOutText::putparents(const ClassDesc*cd)
   for (int i=0; i<parents.n(); i++) {
       // the cast is needed to de-const-ify the class descriptor
       ClassDesc*tmp = (ClassDesc*) parents[i].classdesc();
-      if (!classidmap_.contains(tmp)) {
+      if (classidmap_.find(tmp) == classidmap_.end()) {
           putparents(tmp);
           out << " version of class " << tmp->name()
               << " is " << tmp->version() << endl;
@@ -383,7 +383,7 @@ int StateOutText::putobject(const Ref<SavableState> &p)
       out.flush();
     }
   else {
-      AVLMap<Ref<SavableState>,StateOutData>::iterator ind = ps_.find(p);
+      std::map<Ref<SavableState>,StateOutData>::iterator ind = ps_.find(p);
       if (ind == ps_.end() || copy_references_) {
           // object has not been written yet
           StateOutData dp;
@@ -400,7 +400,7 @@ int StateOutText::putobject(const Ref<SavableState> &p)
           p->save_data_state(*this);
         }
       else {
-          out << "reference to object " << ind.data().num << endl;
+          out << "reference to object " << ind->second.num << endl;
           out.flush();
         }
     }

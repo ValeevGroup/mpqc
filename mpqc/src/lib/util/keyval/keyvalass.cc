@@ -44,7 +44,7 @@ int
 AssignedKeyVal::key_exists(const char * key)
 {
   std::string k(key); 
-  int result = _map.contains(k);
+  int result = (_map.find(k) != _map.end());
   if (!result) {
       seterror(UnknownKeyword);
     }

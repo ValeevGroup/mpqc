@@ -32,12 +32,13 @@
 #ifndef _util_group_message_h
 #define _util_group_message_h
 
+#include <map>
+
 #include <math.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <util/group/topology.h>
-#include <util/container/avlmap.h>
 
 namespace sc {
 
@@ -109,7 +110,7 @@ class MessageGrp: public DescribedClass {
     int n_;
     int nclass_;
     int gop_max_;
-    AVLMap<ClassDescP,int> classdesc_to_index_;
+    std::map<ClassDescP,int> classdesc_to_index_;
     ClassDescP *index_to_classdesc_;
   protected:
     /** The classdesc_to_index_ and index_to_classdesc_ arrays

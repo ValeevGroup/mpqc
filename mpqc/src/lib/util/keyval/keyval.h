@@ -33,12 +33,12 @@
 
 #include <iostream>
 #include <string>
+#include <map>
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include <util/container/avlmap.h>
 #include <util/class/class.h>
 #include <util/keyval/keyvalval.h>
 
@@ -311,7 +311,7 @@ class KeyVal: public RefCount {
     rather than determined by an external file. */
 class AssignedKeyVal: public KeyVal {
   private:
-    AVLMap<std::string,Ref<KeyValValue> > _map;
+    std::map<std::string,Ref<KeyValValue> > _map;
     // do not allow a copy constructor or assignment
     AssignedKeyVal(const AssignedKeyVal&);
     void operator=(const AssignedKeyVal&);
@@ -349,7 +349,7 @@ class StringKeyVal: public KeyVal {
   private:
     // once a described class is found it is kept here so
     // multiple references to it return the same instance
-    AVLMap<std::string,Ref<KeyValValue> > _map;
+    std::map<std::string,Ref<KeyValValue> > _map;
     // do not allow a copy constructor or assignment
     StringKeyVal(const StringKeyVal&);
     void operator=(const StringKeyVal&);

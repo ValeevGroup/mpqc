@@ -307,7 +307,7 @@ main(int argc, char *argv[])
   }
 
   if (object_input == 0 && generic_input == 0) {
-    object_input = "mpqc.in";
+    generic_input = "mpqc.in";
     }
   else if (object_input && generic_input) {
     ExEnv::out() << ExEnv::program_name()

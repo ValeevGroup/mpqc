@@ -31,9 +31,14 @@
 
 #include <math.h>
 
+#include <util/misc/timer.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/dft/integrator.h>
+
+#define COUNT_CONTRIBUTIONS 0 // not mt-safe if 1
+//#define CHECK_ALIGN(v) if(int(&v)&7)cout<<"Bad Alignment: "<< ## v <<endl;
+#define CHECK_ALIGN(v)
 
 ///////////////////////////////////////////////////////////////////////////
 // DenIntegrator
@@ -57,35 +62,51 @@ DenIntegrator::DenIntegrator(StateIn& s):
 
 DenIntegrator::DenIntegrator()
 {
+  contrib_ = 0;
+  contrib_bf_ = 0;
   bs_values_ = 0;
   bsg_values_ = 0;
   bsh_values_ = 0;
   alpha_dmat_ = 0;
   beta_dmat_ = 0;
+  dmat_bound_ = 0;
   alpha_vmat_ = 0;
   beta_vmat_ = 0;
   compute_potential_integrals_ = 0;
+  linear_scaling_ = 1;
+  use_dmat_bound_ = 1;
 }
 
 DenIntegrator::DenIntegrator(const RefKeyVal& keyval)
 {
+  contrib_ = 0;
+  contrib_bf_ = 0;
   bs_values_ = 0;
   bsg_values_ = 0;
   bsh_values_ = 0;
   alpha_dmat_ = 0;
   beta_dmat_ = 0;
+  dmat_bound_ = 0;
   alpha_vmat_ = 0;
   beta_vmat_ = 0;
   compute_potential_integrals_ = 0;
+
+  linear_scaling_ = keyval->booleanvalue("linear_scaling",
+                                         KeyValValueboolean(1));
+  use_dmat_bound_ = keyval->booleanvalue("use_dmat_bound",
+                                         KeyValValueboolean(1));
 }
 
 DenIntegrator::~DenIntegrator()
 {
+  delete[] contrib_;
+  delete[] contrib_bf_;
   delete[] bs_values_;
   delete[] bsg_values_;
   delete[] bsh_values_;
   delete[] alpha_dmat_;
   delete[] beta_dmat_;
+  delete[] dmat_bound_;
   delete[] alpha_vmat_;
   delete[] beta_vmat_;
 }
@@ -98,15 +119,47 @@ DenIntegrator::save_data_state(StateOut& s)
 }
 
 void
-DenIntegrator::set_wavefunction(const RefWavefunction &wfn)
-{
-  wfn_ = wfn;
-}
-
-void
 DenIntegrator::set_compute_potential_integrals(int i)
 {
   compute_potential_integrals_=i;
+}
+
+void
+DenIntegrator::init(const RefWavefunction &wfn)
+{
+  wfn_ = wfn;
+  if (linear_scaling_) {
+      cout << node0 << indent << "Initializing ShellExtent" << endl;
+      extent_ = new ShellExtent;
+      extent_->init(wfn_->basis());
+      cout << node0 << indent
+           << "  nshell = " << wfn_->basis()->nshell() << endl;
+      int ncell = extent_->n(0)*extent_->n(1)*extent_->n(2);
+      cout << node0 << indent << "  ncell = " << ncell << endl;
+      int maxval = 0;
+      double ave = 0;
+      for (int i=0; i<extent_->n(0); i++) {
+          for (int j=0; j<extent_->n(1); j++) {
+              for (int k=0; k<extent_->n(2); k++) {
+                  const ArrayExtentData &e
+                      = extent_->contributing_shells(i,j,k);
+                  int val = e.size();
+                  if (val > maxval) maxval = val;
+                  ave += val;
+                }
+            }
+        }
+      ave /= ncell;
+      cout << node0 << indent << "  ave nsh/cell = " << ave << endl;
+      cout << node0 << indent << "  max nsh/cell = " << maxval << endl;
+    }
+}
+
+void
+DenIntegrator::done()
+{
+  wfn_ = 0;
+  extent_ = 0;
 }
 
 void
@@ -115,6 +168,7 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
                                 const RefSymmSCMatrix& densb,
                                 double *nuclear_gradient)
 {
+  int i;
   value_ = 0.0;
 
   wfn_->basis()->set_integral(wfn_->integral());
@@ -131,7 +185,15 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
 
   natom_ = wfn_->molecule()->natom();
 
+  nshell_ = wfn_->basis()->nshell();
   nbasis_ = wfn_->basis()->nbasis();
+
+  delete[] contrib_;
+  contrib_ = new int[nshell_];
+
+  delete[] contrib_bf_;
+  contrib_bf_ = new int[nbasis_];
+
   delete[] bs_values_;
   bs_values_ = new double[nbasis_];
 
@@ -143,7 +205,6 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   if (need_hessian_ || (need_gradient_ && nuclear_gradient))
       bsh_values_ = new double[6*nbasis_];
    
-
   delete[] alpha_dmat_;
   RefSymmSCMatrix adens = densa;
   if (adens.null())
@@ -172,6 +233,33 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
       if (spin_polarized_) {
           beta_vmat_ = new double[ntri];
           memset(beta_vmat_, 0, sizeof(double)*ntri);
+        }
+    }
+
+  delete[] dmat_bound_;
+  dmat_bound_ = new double[(nshell_*(nshell_+1))/2];
+  int ij = 0;
+  for (i=0; i<nshell_; i++) {
+      int ni = wfn_->basis()->shell(i).nfunction();
+      for (int j=0; j<=i; j++,ij++) {
+          int nj = wfn_->basis()->shell(j).nfunction();
+          double bound = 0.0;
+          int ibf = wfn_->basis()->shell_to_function(i);
+          for (int k=0; k<ni; k++,ibf++) {
+              int lmax = nj-1;
+              if (i==j) lmax = k;
+              int jbf = wfn_->basis()->shell_to_function(j);
+              int ijbf = (ibf*(ibf+1))/2 + jbf;
+              for (int l=0; l<=lmax; l++,ijbf++) {
+                  double a = fabs(alpha_dmat_[ijbf]);
+                  if (a > bound) bound = a;
+                  if (beta_dmat_) {
+                      double b = fabs(beta_dmat_[ijbf]);
+                      if (b > bound) bound = b;
+                    }
+                }
+            }
+          dmat_bound_[ij] = bound;
         }
     }
 }
@@ -207,112 +295,154 @@ dot(double v[3], double w[3])
 void
 DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
 {
-  int i, j;
+  int i, j, ish, jsh;
+
+  tim_enter("get_density");
+
+  GaussianBasisSet *basis = wfn_->basis().pointer();
+
+  double tmp = 0.0;
+  double densij;
+  double bvi, bvix, bviy, bviz;
+  double bvixx, bviyx, bviyy, bvizx, bvizy, bvizz;
+
+  const int X = PointInputData::X;
+  const int Y = PointInputData::Y;
+  const int Z = PointInputData::Z;
+  const int XX = PointInputData::XX;
+  const int YX = PointInputData::YX;
+  const int YY = PointInputData::YY;
+  const int ZX = PointInputData::ZX;
+  const int ZY = PointInputData::ZY;
+  const int ZZ = PointInputData::ZZ;
+
+  double grad[3], hess[6];
+  if (need_gradient_) for (i=0; i<3; i++) grad[i] = 0.0;
+  if (need_hessian_) for (i=0; i<6; i++) hess[i] = 0.0;
+
+  CHECK_ALIGN(tmp);
+  CHECK_ALIGN(grad[0]);
 
   if (need_gradient_) {
-      double tmp = 0.0;
-      double densij;
-      double bvi, bvix, bviy, bviz;
-      double bvixx, bviyx, bviyy, bvizx, bvizy, bvizz;
-
-      const int X = PointInputData::X;
-      const int Y = PointInputData::Y;
-      const int Z = PointInputData::Z;
-      const int XX = PointInputData::XX;
-      const int YX = PointInputData::YX;
-      const int YY = PointInputData::YY;
-      const int ZX = PointInputData::ZX;
-      const int ZY = PointInputData::ZY;
-      const int ZZ = PointInputData::ZZ;
-
-      double grad[3], hess[6];
-      for (i=0; i<3; i++) grad[i] = 0.0;
-      for (i=0; i<6; i++) hess[i] = 0.0;
-
-      int ij=0;
-      for (i=0; i < nbasis_; i++) {
+      for (i=0; i < ncontrib_bf_; i++) {
+          int it = contrib_bf_[i];
           bvi = bs_values_[i];
-          bvix = bsg_values_[i*3+X];
-          bviy = bsg_values_[i*3+Y];
-          bviz = bsg_values_[i*3+Z];
-          if (need_hessian_) {
-            bvixx = bsh_values_[i*6+XX];
-            bviyx = bsh_values_[i*6+YX];
-            bviyy = bsh_values_[i*6+YY];
-            bvizx = bsh_values_[i*6+ZX];
-            bvizy = bsh_values_[i*6+ZY];
-            bvizz = bsh_values_[i*6+ZZ];
-          }
-          for (j=0; j < i; j++,ij++) {
-              densij = dmat[ij];
-              double bvj = bs_values_[j];
-              double bvjx = bsg_values_[j*3+X];
-              double bvjy = bsg_values_[j*3+Y];
-              double bvjz = bsg_values_[j*3+Z];
-
-              tmp += 2.0*densij*bvi*bvj;
-
-              grad[X] += densij*(bvi*bvjx + bvj*bvix);
-              grad[Y] += densij*(bvi*bvjy + bvj*bviy);
-              grad[Z] += densij*(bvi*bvjz + bvj*bviz);
-              if (need_hessian_) {             
-                double bvjxx = bsh_values_[j*6+XX];
-                double bvjyx = bsh_values_[j*6+YX];
-                double bvjyy = bsh_values_[j*6+YY];
-                double bvjzx = bsh_values_[j*6+ZX];
-                double bvjzy = bsh_values_[j*6+ZY];
-                double bvjzz = bsh_values_[j*6+ZZ];
-
-                hess[XX] += densij*(bvi*bvjxx +bvix*bvjx +bvjx*bvix +bvixx*bvj);
-                hess[YX] += densij*(bvi*bvjyx +bviy*bvjx +bvjy*bvix +bviyx*bvj);
-                hess[YY] += densij*(bvi*bvjyy +bviy*bvjy +bvjy*bviy +bviyy*bvj);
-                hess[ZX] += densij*(bvi*bvjzx +bviz*bvjx +bvjz*bvix +bvizx*bvj);
-                hess[ZY] += densij*(bvi*bvjzy +bviz*bvjy +bvjz*bviy +bvizy*bvj);
-                hess[ZZ] += densij*(bvi*bvjzz +bviz*bvjz +bvjz*bviz +bvizz*bvj);
-              }
+          if (need_gradient_) {
+              bvix = bsg_values_[i*3+X];
+              bviy = bsg_values_[i*3+Y];
+              bviz = bsg_values_[i*3+Z];
             }
-
-          densij = dmat[ij]*bvi;
-          tmp += densij*bvi;
-          grad[X] += densij*bvix;
-          grad[Y] += densij*bviy;
-          grad[Z] += densij*bviz;
           if (need_hessian_) {
-            hess[XX] += densij*bvixx;
-            hess[YX] += densij*bviyx;
-            hess[YY] += densij*bviyy;
-            hess[ZX] += densij*bvizx;
-            hess[ZY] += densij*bvizy;
-            hess[ZZ] += densij*bvizz;
-          }
-          ij++;
+              bvixx = bsh_values_[i*6+XX];
+              bviyx = bsh_values_[i*6+YX];
+              bviyy = bsh_values_[i*6+YY];
+              bvizx = bsh_values_[i*6+ZX];
+              bvizy = bsh_values_[i*6+ZY];
+              bvizz = bsh_values_[i*6+ZZ];
+            }
+          int j3 = 0, j6 = 0;
+          int itoff = (it*(it+1))>>1;
+          int itjt;
+          double t = 0.0;
+          for (j=0; j < i; j++) {
+              int jt = contrib_bf_[j];
+              itjt = itoff+jt;
+
+              densij = dmat[itjt];
+              double bvj = bs_values_[j];
+
+              CHECK_ALIGN(densij);
+              CHECK_ALIGN(bvj);
+
+              t += densij*bvi*bvj;
+
+              double bvjx, bvjy, bvjz;
+              if (need_gradient_) {
+                  bvjx = bsg_values_[j3+X];
+                  bvjy = bsg_values_[j3+Y];
+                  bvjz = bsg_values_[j3+Z];
+                  grad[X] += densij*(bvi*bvjx + bvj*bvix);
+                  grad[Y] += densij*(bvi*bvjy + bvj*bviy);
+                  grad[Z] += densij*(bvi*bvjz + bvj*bviz);
+                  j3 += 3;
+                }
+
+              if (need_hessian_) {
+                  double bvjxx = bsh_values_[j6+XX];
+                  double bvjyx = bsh_values_[j6+YX];
+                  double bvjyy = bsh_values_[j6+YY];
+                  double bvjzx = bsh_values_[j6+ZX];
+                  double bvjzy = bsh_values_[j6+ZY];
+                  double bvjzz = bsh_values_[j6+ZZ];
+
+                  hess[XX] += densij*(bvi*bvjxx+bvix*bvjx+bvjx*bvix+bvixx*bvj);
+                  hess[YX] += densij*(bvi*bvjyx+bviy*bvjx+bvjy*bvix+bviyx*bvj);
+                  hess[YY] += densij*(bvi*bvjyy+bviy*bvjy+bvjy*bviy+bviyy*bvj);
+                  hess[ZX] += densij*(bvi*bvjzx+bviz*bvjx+bvjz*bvix+bvizx*bvj);
+                  hess[ZY] += densij*(bvi*bvjzy+bviz*bvjy+bvjz*bviy+bvizy*bvj);
+                  hess[ZZ] += densij*(bvi*bvjzz+bviz*bvjz+bvjz*bviz+bvizz*bvj);
+
+                  j6 += 6;
+                }
+            }
+          densij = dmat[itoff+it]*bvi;
+          tmp += t + 0.5*densij*bvi;
+          if (need_gradient_) {
+              grad[X] += densij*bvix;
+              grad[Y] += densij*bviy;
+              grad[Z] += densij*bviz;
+            }
+          if (need_hessian_) {
+              hess[XX] += densij*bvixx;
+              hess[YX] += densij*bviyx;
+              hess[YY] += densij*bviyy;
+              hess[ZX] += densij*bvizx;
+              hess[ZY] += densij*bvizy;
+              hess[ZZ] += densij*bvizz;
+            }
         }
-
-
-      d.rho = tmp;
-      for (i=0; i<3; i++) d.del_rho[i] = 2.0 * grad[i];
-      for (i=0; i<6; i++) d.hes_rho[i] = 2.0 * hess[i];
-
-      d.lap_rho = d.hes_rho[XX] + d.hes_rho[YY] + d.hes_rho[ZZ];
-
-      d.gamma = dot(d.del_rho,d.del_rho);
     }
   else {
-      double tmp = 0.0;
-      int ij=0;
-      for (i=0; i < nbasis_; i++) {
-          double bvi = 2.0*bs_values_[i];
+      for (i=0; i < ncontrib_bf_; i++) {
+          int it = contrib_bf_[i];
+          bvi = bs_values_[i];
+          int itoff = (it*(it+1))>>1;
+          int itjt;
+          double t = 0.0;
+          for (j=0; j < i; j++) {
+              int jt = contrib_bf_[j];
+              itjt = itoff+jt;
 
-          for (j=0; j < i; j++,ij++)
-              tmp += dmat[ij]*bvi*bs_values_[j];
+              densij = dmat[itjt];
+              double bvj = bs_values_[j];
 
-          tmp += 0.25*dmat[ij]*bvi*bvi;
-          ij++;
+              CHECK_ALIGN(densij);
+              CHECK_ALIGN(bvj);
+
+              t += densij*bvi*bvj;
+            }
+          densij = dmat[itoff+it]*bvi;
+          tmp += t + 0.5*densij*bvi;
         }
-
-      d.rho = tmp;
     }
+  d.rho = 2.0 * tmp;
+
+  if (need_gradient_) {
+      for (i=0; i<3; i++) d.del_rho[i] = 2.0 * grad[i];
+      d.gamma = dot(d.del_rho,d.del_rho);
+    }
+
+  if (need_hessian_) {
+      for (i=0; i<6; i++) d.hes_rho[i] = 2.0 * hess[i];
+      d.lap_rho = d.hes_rho[XX] + d.hes_rho[YY] + d.hes_rho[ZZ];
+    }
+
+  tim_exit("get_density");
 }
+
+#if COUNT_CONTRIBUTIONS
+static int *contrib_array = 0;
+#endif
 
 double
 DenIntegrator::do_point(int acenter, const SCVector3 &r,
@@ -321,18 +451,72 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
                         double *nuclear_gradient,
                         double *f_gradient, double *w_gradient)
 {
+  tim_enter("do_point");
+
   int i,j,k;
   double w_mult = weight * multiplier;
 
-  // compute the basis set values
-  if (need_hessian_ || (need_gradient_ && nuclear_gradient != 0)) {
-      wfn_->basis()->hessian_values(r,bsh_values_,bsg_values_,bs_values_);
+  CHECK_ALIGN(w_mult);
+
+  GaussianBasisSet *basis = wfn_->basis().pointer();
+
+  // only consider those shells for which phi_i * (Max_j D_ij phi_j) > tol
+  if (linear_scaling_ && use_dmat_bound_) {
+      const ArrayExtentData &cs = extent_->contributing_shells(r[0],r[1],r[2]);
+      ncontrib_ = 0;
+      for (i=0; i<cs.size(); i++) {
+          int ish = cs[i].shell;
+          int contrib = 0;
+          for (j=0; j<cs.size(); j++) {
+              int jsh = cs[j].shell;
+              int ijsh = (ish>jsh)?((ish*(ish+1))/2+jsh):((jsh*(jsh+1))/2+ish);
+              if (cs[i].bound*cs[j].bound*dmat_bound_[ijsh] > DBL_EPSILON) {
+                  contrib = 1;
+                  break;
+                }
+            }
+          if (contrib) {
+              contrib_[ncontrib_++] = ish;
+            }
+        }
     }
-  else if (need_gradient_ || nuclear_gradient != 0) {
-      wfn_->basis()->grad_values(r,bsg_values_,bs_values_);
-  }
+  else if (linear_scaling_) {
+      const ArrayExtentData &cs = extent_->contributing_shells(r[0],r[1],r[2]);
+      ncontrib_ = cs.size();
+      for (i=0; i<ncontrib_; i++) {
+          contrib_[i] = cs[i].shell;
+        }
+    }
   else {
-      wfn_->basis()->values(r,bs_values_);
+      ncontrib_ = nshell_;
+      for (i=0; i<nshell_; i++) contrib_[i] = i;
+    }
+  if (ncontrib_ > nshell_) {
+      cout << "DenIntegrator::do_point: ncontrib invalid" << endl;
+      abort();
+    }
+#if COUNT_CONTRIBUTIONS
+  contrib_array[ncontrib_]++;
+#endif
+  if (ncontrib_ == 0) { tim_exit("do_point"); return 0.0; }
+
+  ncontrib_bf_ = 0;
+  for (i=0; i<ncontrib_; i++) {
+      int nbf = basis->shell(contrib_[i]).nfunction();
+      int bf = basis->shell_to_function(contrib_[i]);
+      for (j=0; j<nbf; j++, bf++) {
+          contrib_bf_[ncontrib_bf_++] = bf;
+        }
+    }
+
+  // compute the basis set values
+  double *bsh = bsh_values_, *bsg = bsg_values_, *bsv = bs_values_;
+  for (i=0; i<ncontrib_; i++) {
+      basis->hessian_shell_values(r,contrib_[i],bsh,bsg,bsv);
+      int shsize = basis->shell(contrib_[i]).nfunction();
+      if (bsh) bsh += 6 * shsize;
+      if (bsg) bsg += 3 * shsize;
+      if (bsv) bsv += shsize;
     }
 
   // loop over basis functions adding contributions to the density
@@ -355,12 +539,13 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
           func->point(id, od);
         }
       else {
-          func->gradient(id, od, f_gradient, acenter, wavefunction()->basis(),
+          func->gradient(id, od, f_gradient, acenter, basis,
                          alpha_dmat_, (spin_polarized_?beta_dmat_:alpha_dmat_),
+                         ncontrib_, contrib_, ncontrib_bf_, contrib_bf_,
                          bs_values_, bsg_values_, bsh_values_);
         }
     }
-  else return id.a.rho + id.b.rho;
+  else { tim_exit("do_point"); return id.a.rho + id.b.rho; }
   
   value_ += od.energy * w_mult;
 
@@ -385,8 +570,8 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
                                       od.df_dgamma_ab*id.a.del_rho[2]);
             }
 
-          int jk=0;
-          for (j=0; j < nbasis_; j++) {
+          for (int j=0; j<ncontrib_bf_; j++) {
+              int jt = contrib_bf_[j];
               double dfdra_phi_m = drhoa*bs_values_[j];
               double dfdga_phi_m = gradsa[0]*bsg_values_[j*3+0] +
                                    gradsa[1]*bsg_values_[j*3+1] +
@@ -401,33 +586,43 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
                   vbmu = dfdrb_phi_m + dfdgb_phi_m;
                 }
 
-              for (k=0; k <= j; k++, jk++) {
+              int jtoff = (jt*(jt+1))>>1;
+
+              for (int k=0; k <= j; k++) {
+                  int kt = contrib_bf_[k];
+                  int jtkt = jtoff + kt;
+
                   double dfdga_phi_n = gradsa[0]*bsg_values_[k*3+0] +
                                        gradsa[1]*bsg_values_[k*3+1] +
                                        gradsa[2]*bsg_values_[k*3+2];
-                  alpha_vmat_[jk] += vamu * bs_values_[k] +
+                  alpha_vmat_[jtkt] += vamu * bs_values_[k] +
                                      dfdga_phi_n * bs_values_[j];
                   if (spin_polarized_) {
                       double dfdgb_phi_n = gradsb[0]*bsg_values_[k*3+0] +
                                            gradsb[1]*bsg_values_[k*3+1] +
                                            gradsb[2]*bsg_values_[k*3+2];
-                      beta_vmat_[jk] += vbmu * bs_values_[k] +
-                                         dfdgb_phi_n * bs_values_[j];
+                      beta_vmat_[jtkt] += vbmu * bs_values_[k] +
+                                          dfdgb_phi_n * bs_values_[j];
                     }
                 }
             }
         }
       else {
-          int jk=0;
           double drhoa = w_mult*od.df_drho_a;
           double drhob = w_mult*od.df_drho_b;
-          for (j=0; j < nbasis_; j++) {
-              double dfa_phi_m = drhoa * bs_values_[j];
-              double dfb_phi_m = drhob * bs_values_[j];
-              for (k=0; k <= j; k++, jk++) {
-                  alpha_vmat_[jk] += dfa_phi_m * bs_values_[k];
+          for (int j=0; j<ncontrib_bf_; j++) {
+              int jt = contrib_bf_[j];
+              double bsj = bs_values_[j];
+              double dfa_phi_m = drhoa * bsj;
+              double dfb_phi_m = drhob * bsj;
+              int jtoff = (jt*(jt+1))>>1;
+              for (int k=0; k <= j; k++) {
+                  int kt = contrib_bf_[k];
+                  int jtkt = jtoff + kt;
+                  double bsk = bs_values_[k];
+                  alpha_vmat_[jtkt] += dfa_phi_m * bsk;
                   if (spin_polarized_)
-                      beta_vmat_[jk] += dfb_phi_m * bs_values_[k];
+                      beta_vmat_[jtkt] += dfb_phi_m * bsk;
                 }
             }
         }
@@ -446,6 +641,7 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
         }
     }
 
+  tim_exit("do_point");
   return id.a.rho + id.b.rho;
 }
 
@@ -1009,7 +1205,15 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                               const RefSymmSCMatrix& densb,
                               double *nuclear_gradient)
 {
+  tim_enter("integrate");
+
   init_integration(denfunc, densa, densb, nuclear_gradient);
+
+#if COUNT_CONTRIBUTIONS
+  delete[] contrib_array;
+  contrib_array = new int[nshell_+1];
+  memset(contrib_array, 0, sizeof(int)*(nshell_+1));
+#endif
 
   RefMolecule mol = wavefunction()->molecule();
   weight_->init(mol, DBL_EPSILON);
@@ -1162,6 +1366,24 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
     delete[] dr_dq;
     delete[] nr;
     delete[] centers;
+
+  tim_exit("integrate");
+
+#if COUNT_CONTRIBUTIONS
+  int tot = 0;
+  double sav1 = 0.0;
+  double sav2 = 0.0;
+  for (int i=0; i<nshell_+1; i++) {
+      cout << "contrib_array[" << setw(2) << i << "] = "
+           << contrib_array[i] << endl;
+      tot += contrib_array[i];
+      sav1 += contrib_array[i]*i;
+      sav2 += contrib_array[i]*i*i;
+    }
+  cout << "tot = " << tot << endl;
+  cout << "sav1 = " << sav1/(tot*nshell_) << endl;
+  cout << "sav2 = " << sav2/(tot*nshell_*nshell_) << endl;
+#endif
 }
 
 void

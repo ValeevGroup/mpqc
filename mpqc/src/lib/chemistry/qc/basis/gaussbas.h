@@ -368,6 +368,19 @@ class GaussianBasisSet: public SavableState
         bf1_yy, bf1_zx, bf1_zy, bf1_zz, ... */
     int hessian_values(const SCVector3& r, double *h_values,
                        double*g_values=0,double* basis_values=0) const;
+    /** Compute the values for the given shell functions at position r.
+        See the other values(...) members for more information.  */
+    int shell_values(const SCVector3& r, int sh, double* basis_values) const;
+    /** Like values(...), but computes gradients of the shell function
+        values, too.  See the other grad_values(...)
+        members for more information.  */
+    int grad_shell_values(const SCVector3& r, int sh,
+                          double*g_values, double* basis_values=0) const;
+    /** Like values(...), but computes first and second derivatives of the
+        shell function values, too.  See the other hessian_values(...)
+        members for more information. */
+    int hessian_shell_values(const SCVector3& r, int sh, double *h_values,
+                       double*g_values=0,double* basis_values=0) const;
     /** This must be called before the values, grid_values, and
         hessian_values members to initialize iterators that know the basis
         function order. */

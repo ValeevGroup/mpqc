@@ -406,6 +406,104 @@ GaussianShell::hessian_values(CartesianIter **civec,
   return i_basis;
 }
 
+int
+GaussianShell::test_monobound(double &r, double &bound) const
+{
+  // compute the maximum angular momentum component of the shell
+  // add one since derivatives will be needed
+  int maxam = max_am() + 1;
+
+  // check limitations
+  if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
+      cerr << node0 << indent
+           << "GaussianShell::gaussshval: limit exceeded:\n"
+           << indent
+           << scprintf(
+               "ncon = %d (%d max) nprim = %d (%d max) maxam = %d (%d max)\n",
+               ncon,MAX_NCON,nprim,MAX_NPRIM,maxam,MAX_AM-1);
+      abort();
+    }
+
+  // loop variables
+  int i,j;
+
+  // precompute powers of r
+  double rs[MAX_AM+1];
+  rs[0] = 1.0;
+  if (maxam>0) {
+      rs[1] = r;
+    }
+  for (i=2; i<=maxam; i++) {
+      rs[i] = rs[i-1]*r;
+    }
+
+  // precompute r*r
+  double r2 = r*r;
+
+  // precompute exponentials
+  double exps[MAX_NPRIM];
+  for (i=0; i<nprim; i++) {
+      exps[i]=::exp(-r2*exp[i]);
+    }
+
+  // precompute contractions over exponentials
+  double precon[MAX_NCON];
+  for (i=0; i<ncon; i++) {
+      precon[i] = 0.0;
+      for (j=0; j<nprim; j++) {
+          // using fabs since we want a monotonically decreasing bound
+          precon[i] += fabs(coef[i][j]) * exps[j];
+        }
+    }
+
+  // precompute contractions over exponentials with exponent weighting
+  double precon_w[MAX_NCON];
+  for (i=0; i<ncon; i++) {
+      precon_w[i] = 0.0;
+      for (j=0; j<nprim; j++) {
+          precon_w[i] += exp[j] * fabs(coef[i][j]) * exps[j];
+        }
+    }
+
+  double max_bound = 0.0;
+  bound = 0.0;
+  for (i=0; i<ncon; i++) {
+      // using r^l since r^l >= x^a y^b z^c
+      double component_bound = rs[l[i]]*precon[i];
+      if (l[i] > 0) {
+          double d1 = -2.0*rs[l[i]+1]*precon_w[i];
+          double d2 = l[i]*rs[l[i]-1]*precon[i];
+          if (d1+d2 > 0) {
+              // This bound is no good since the contraction is increasing
+              // at this position.  Move r out and return to let the driver
+              // call again.
+              double rold = r;
+              r = sqrt(l[i]*precon[i]/(2.0*precon_w[i]));
+              if (r<rold+0.01) r = rold+0.01;
+              //cout << "rejected at " << rold << " trying again at "
+              //     << r << endl;
+              return 1;
+            }
+        }
+      if (component_bound > max_bound) {
+          max_bound = component_bound;
+      }
+    }
+
+  bound = max_bound;
+  return 0;
+}
+
+double
+GaussianShell::monobound(double r) const
+{
+  // doesn't work at r <= zero
+  if (r<=0.001) r = 0.001;
+  double b;
+  while (test_monobound(r, b));
+  return b;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

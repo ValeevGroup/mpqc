@@ -120,6 +120,8 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
                         double *grad_f, int acenter,
                         const RefGaussianBasisSet &basis,
                         const double *dmat_a, const double *dmat_b,
+                        int ncontrib, const int *contrib,
+                        int ncontrib_bf_, const int *contrib_bf_,
                         const double *bs, const double *bsg,
                         const double *bsh)
 {
@@ -136,83 +138,117 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
   cout << scprintf("  df_dg_aa= % 12.8f df_dg_bb= % 12.8f df_dg_ab= % 12.8f",
                    od.df_dgamma_aa,od.df_dgamma_bb,od.df_dgamma_ab) << endl;
 #endif
-  int nbasis = basis->nbasis();
-  int jk=0;
-  double drhoa = od.df_drho_a;
-  double drhob = od.df_drho_b;
-  for (int nu=0; nu < nbasis; nu++) {
-      int nuatom
-          = basis->shell_to_center(basis->function_to_shell(nu));
-      double dfa_phi_nu = drhoa * bs[nu];
-      double dfb_phi_nu = drhob * bs[nu];
-      int nush = basis->function_to_shell(nu);
-      for (int mu=0; mu<nbasis; mu++) {
-          int muatom
-              = basis->shell_to_center(basis->function_to_shell(mu));
-          if (muatom!=acenter) {
-              int numu = (nu>mu?((nu*(nu+1))/2+mu):((mu*(mu+1))/2+nu));
-              double rho_a = dmat_a[numu];
-              double rho_b = dmat_b[numu];
-              int ixyz;
-              for (ixyz=0; ixyz<3; ixyz++) {
-                  double contrib = -2.0*bsg[mu*3+ixyz]
-                                 * (rho_a*dfa_phi_nu + rho_b*dfb_phi_nu);
+
+  if (need_gamma_terms) {
+      double drhoa = od.df_drho_a;
+      double drhob = od.df_drho_b;
+      for (int nu=0; nu<ncontrib_bf_; nu++) {
+          int nut = contrib_bf_[nu];
+          int nuatom = basis->shell_to_center(basis->function_to_shell(nut));
+          double dfa_phi_nu = drhoa * bs[nu];
+          double dfb_phi_nu = drhob * bs[nu];
+          for (int mu=0; mu<ncontrib_bf_; mu++) {
+              int mut = contrib_bf_[mu];
+              int muatom
+                  = basis->shell_to_center(basis->function_to_shell(mut));
+              if (muatom!=acenter) {
+                  int nutmut
+                      = (nut>mut?((nut*(nut+1))/2+mut):((mut*(mut+1))/2+nut));
+                  double rho_a = dmat_a[nutmut];
+                  double rho_b = dmat_b[nutmut];
+                  int ixyz;
+                  for (ixyz=0; ixyz<3; ixyz++) {
+                      double contrib = -2.0*bsg[mu*3+ixyz]
+                                     * (rho_a*dfa_phi_nu + rho_b*dfb_phi_nu);
 #define hoff(i,j) ((j)<(i)?((i)*((i)+1))/2+(j):((j)*((j)+1))/2+(i))
-                  // gamma_aa contrib
-                  if (need_gamma_terms) {
-                      contrib += 4.0 * od.df_dgamma_aa * rho_a
-                               * ( - bsg[mu*3+ixyz]
-                                   * ( id.a.del_rho[0]*bsg[nu*3+0]
-                                       +id.a.del_rho[1]*bsg[nu*3+1]
-                                       +id.a.del_rho[2]*bsg[nu*3+2])
-                                   - bs[nu]
-                                   * ( id.a.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
-                                       +id.a.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
-                                       +id.a.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
-                                       )
-                                   );
+                      // gamma_aa contrib
+                      if (need_gamma_terms) {
+                          contrib
+                              += 4.0 * od.df_dgamma_aa * rho_a
+                              * ( - bsg[mu*3+ixyz]
+                                  * ( id.a.del_rho[0]*bsg[nu*3+0]
+                                      +id.a.del_rho[1]*bsg[nu*3+1]
+                                      +id.a.del_rho[2]*bsg[nu*3+2])
+                                  - bs[nu]
+                                  * ( id.a.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
+                                      +id.a.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
+                                      +id.a.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
+                                      )
+                                  );
+                        }
+                      // gamma_ab contrib
+                      if (need_gamma_terms) {
+                          contrib
+                              += 2.0 * od.df_dgamma_ab * rho_a
+                              * ( - bsg[mu*3+ixyz]
+                                  * ( id.b.del_rho[0]*bsg[nu*3+0]
+                                      +id.b.del_rho[1]*bsg[nu*3+1]
+                                      +id.b.del_rho[2]*bsg[nu*3+2])
+                                  - bs[nu]
+                                  * ( id.b.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
+                                      +id.b.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
+                                      +id.b.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
+                                      )
+                                  );
+                          contrib
+                              += 2.0 * od.df_dgamma_ab * rho_b
+                              * ( - bsg[mu*3+ixyz]
+                                  * ( id.a.del_rho[0]*bsg[nu*3+0]
+                                      +id.a.del_rho[1]*bsg[nu*3+1]
+                                      +id.a.del_rho[2]*bsg[nu*3+2])
+                                  - bs[nu]
+                                  * ( id.a.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
+                                      +id.a.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
+                                      +id.a.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
+                                      )
+                                  );
+                        }
+                      // gamma_bb contrib
+                      if (need_gamma_terms) {
+                          contrib
+                              += 4.0 * od.df_dgamma_bb * rho_b
+                              * ( - bsg[mu*3+ixyz]
+                                  * ( id.b.del_rho[0]*bsg[nu*3+0]
+                                      +id.b.del_rho[1]*bsg[nu*3+1]
+                                      +id.b.del_rho[2]*bsg[nu*3+2])
+                                  - bs[nu]
+                                  * ( id.b.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
+                                      +id.b.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
+                                      +id.b.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
+                                      )
+                                  );
+                        }
+                      grad_f[3*muatom+ixyz] += contrib;
+                      grad_f[3*acenter+ixyz] -= contrib;
                     }
-                  // gamma_ab contrib
-                  if (need_gamma_terms) {
-                      contrib += 2.0 * od.df_dgamma_ab * rho_a
-                               * ( - bsg[mu*3+ixyz]
-                                   * ( id.b.del_rho[0]*bsg[nu*3+0]
-                                       +id.b.del_rho[1]*bsg[nu*3+1]
-                                       +id.b.del_rho[2]*bsg[nu*3+2])
-                                   - bs[nu]
-                                   * ( id.b.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
-                                       +id.b.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
-                                       +id.b.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
-                                       )
-                                   );
-                      contrib += 2.0 * od.df_dgamma_ab * rho_b
-                               * ( - bsg[mu*3+ixyz]
-                                   * ( id.a.del_rho[0]*bsg[nu*3+0]
-                                       +id.a.del_rho[1]*bsg[nu*3+1]
-                                       +id.a.del_rho[2]*bsg[nu*3+2])
-                                   - bs[nu]
-                                   * ( id.a.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
-                                       +id.a.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
-                                       +id.a.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
-                                       )
-                                   );
+                }
+            }
+        }
+    }
+  else {
+      double drhoa = od.df_drho_a;
+      double drhob = od.df_drho_b;
+      for (int nu=0; nu<ncontrib_bf_; nu++) {
+          int nut = contrib_bf_[nu];
+          int nuatom = basis->shell_to_center(basis->function_to_shell(nut));
+          double dfa_phi_nu = drhoa * bs[nu];
+          double dfb_phi_nu = drhob * bs[nu];
+          for (int mu=0; mu<ncontrib_bf_; mu++) {
+              int mut = contrib_bf_[mu];
+              int muatom
+                  = basis->shell_to_center(basis->function_to_shell(mut));
+              if (muatom!=acenter) {
+                  int nutmut
+                      = (nut>mut?((nut*(nut+1))/2+mut):((mut*(mut+1))/2+nut));
+                  double rho_a = dmat_a[nutmut];
+                  double rho_b = dmat_b[nutmut];
+                  int ixyz;
+                  for (ixyz=0; ixyz<3; ixyz++) {
+                      double contrib = -2.0*bsg[mu*3+ixyz]
+                                     * (rho_a*dfa_phi_nu + rho_b*dfb_phi_nu);
+                      grad_f[3*muatom+ixyz] += contrib;
+                      grad_f[3*acenter+ixyz] -= contrib;
                     }
-                  // gamma_bb contrib
-                  if (need_gamma_terms) {
-                      contrib += 4.0 * od.df_dgamma_bb * rho_b
-                               * ( - bsg[mu*3+ixyz]
-                                   * ( id.b.del_rho[0]*bsg[nu*3+0]
-                                       +id.b.del_rho[1]*bsg[nu*3+1]
-                                       +id.b.del_rho[2]*bsg[nu*3+2])
-                                   - bs[nu]
-                                   * ( id.b.del_rho[0]*bsh[mu*6+hoff(0,ixyz)]
-                                       +id.b.del_rho[1]*bsh[mu*6+hoff(1,ixyz)]
-                                       +id.b.del_rho[2]*bsh[mu*6+hoff(2,ixyz)]
-                                       )
-                                   );
-                    }
-                  grad_f[3*muatom+ixyz] += contrib;
-                  grad_f[3*acenter+ixyz] -= contrib;
                 }
             }
         }
@@ -688,6 +724,18 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new VWN3LCFunctional;
           funcs_[3] = new LYPCFunctional;
+        }
+      else if (!strcmp(name_,"B3PW91")) {
+          init_arrays(4);
+          a0_ = 0.2;
+          coefs_[0] = 0.8;
+          coefs_[1] = 0.72;
+          coefs_[2] = 0.81;
+          coefs_[3] = 0.19;
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new PW91CFunctional;
+          funcs_[3] = new PW92LCFunctional;
         }
       else if (!strcmp(name_,"PBE")) {
           init_arrays(2);

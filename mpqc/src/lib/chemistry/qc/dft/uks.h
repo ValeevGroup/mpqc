@@ -71,6 +71,9 @@ class UKS: public UnrestrictedSCF {
     double scf_energy();
     RefSCExtrapData extrap_data();
     void two_body_deriv(double*);
+
+    void init_vector();
+    void done_vector();
 };
 
 #endif

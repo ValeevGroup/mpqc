@@ -222,10 +222,8 @@ CLKS::ao_fock()
     abort();
   }
   
-  tim_enter("integrate");
   cl_dens_diff_ = pl->to_AO_basis(cl_dens_);
   cl_dens_diff_.scale(0.5);
-  integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(1);
   integrator_->integrate(functional_, cl_dens_diff_, cl_dens_diff_);
   exc_ = integrator_->value();
@@ -233,10 +231,6 @@ CLKS::ao_fock()
   vxa->assign((double*)integrator_->alpha_vmat());
   vxa = pl->to_SO_basis(vxa);
   vxc_ = vxa;
-  // must unset the wavefunction so we don't have a circular list that
-  // will not be freed with the reference counting memory manager
-  integrator_->set_wavefunction(0);
-  tim_exit("integrate");
 
   tim_enter("symm");
   // get rid of AO delta P
@@ -322,17 +316,13 @@ CLKS::two_body_deriv(double * tbgrad)
 
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
-  tim_enter("integration");
   RefPetiteList pl = integral()->petite_list(basis());
   RefSymmSCMatrix aodens = gradient_density();
   aodens.scale(0.5);
-  integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(0);
+  integrator_->init(this);
   integrator_->integrate(functional_, aodens, aodens, dftgrad);
-  // must unset the wavefunction so we don't have a circular list that
-  // will not be freed with the reference counting memory manager
-  integrator_->set_wavefunction(0);
-  tim_exit("integration");
+  integrator_->done();
   print_natom_3(dftgrad, "E-X contribution to DFT gradient");
 
   for (int i=0; i<natom3; i++) tbgrad[i] += dftgrad[i] + hfgrad[i];
@@ -340,6 +330,22 @@ CLKS::two_body_deriv(double * tbgrad)
   delete[] hfgrad;
 
   tim_exit("grad");
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+CLKS::init_vector()
+{
+  integrator_->init(this);
+  CLSCF::init_vector();
+}
+
+void
+CLKS::done_vector()
+{
+  integrator_->done();
+  CLSCF::done_vector();
 }
 
 /////////////////////////////////////////////////////////////////////////////

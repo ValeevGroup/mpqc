@@ -259,10 +259,8 @@ UKS::ao_fock()
     abort();
   }
   
-  tim_enter("integrate");
   diff_densa_ = pl->to_AO_basis(densa_);
   diff_densb_ = pl->to_AO_basis(densb_);
-  integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(1);
   integrator_->integrate(functional_, diff_densa_, diff_densb_);
   exc_ = integrator_->value();
@@ -274,7 +272,6 @@ UKS::ao_fock()
   vxb = pl->to_SO_basis(vxb);
   vaxc_ = vxa;
   vbxc_ = vxb;
-  tim_exit("integrate");
 
   // get rid of AO delta P
   diff_densa_ = dda;
@@ -329,16 +326,12 @@ UKS::two_body_deriv(double * tbgrad)
 
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
-  tim_enter("integration");
   RefSymmSCMatrix ao_dens_a = alpha_ao_density();
   RefSymmSCMatrix ao_dens_b = beta_ao_density();
-  integrator_->set_wavefunction(this);
+  integrator_->init(this);
   integrator_->set_compute_potential_integrals(0);
   integrator_->integrate(functional_, ao_dens_a, ao_dens_b, dftgrad);
-  // must unset the wavefunction so we don't have a circular list that
-  // will not be freed with the reference counting memory manager
-  integrator_->set_wavefunction(0);
-  tim_exit("integration");
+  integrator_->done();
   print_natom_3(dftgrad, "E-X contribution to DFT gradient");
 
   for (int i=0; i<natom3; i++) tbgrad[i] += dftgrad[i] + hfgrad[i];
@@ -346,6 +339,22 @@ UKS::two_body_deriv(double * tbgrad)
   delete[] hfgrad;
 
   tim_exit("grad");
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+UKS::init_vector()
+{
+  integrator_->init(this);
+  UnrestrictedSCF::init_vector();
+}
+
+void
+UKS::done_vector()
+{
+  integrator_->done();
+  UnrestrictedSCF::done_vector();
 }
 
 /////////////////////////////////////////////////////////////////////////////

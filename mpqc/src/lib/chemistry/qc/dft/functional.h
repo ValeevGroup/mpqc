@@ -119,6 +119,8 @@ class DenFunctional: virtual public SavableState {
                   double *gradient, int acenter,
                   const RefGaussianBasisSet &basis,
                   const double *dmat_a, const double *dmat_b,
+                  int ncontrib_, const int *contrib_,
+                  int ncontrib_bf_, const int *contrib_bf_,
                   const double *bs_values, const double *bsg_values,
                   const double *bsh_values);
 

@@ -75,6 +75,8 @@ class GaussianShell: public SavableState
     PrimitiveType keyval_init(const RefKeyVal&,int,int);
     static const char* amtypes;
     static const char* AMTYPES;
+
+    int test_monobound(double &r, double &bound) const;
   public:
     /** A GaussianShell constructor.
         Users of GaussianShell must pass pointers to newed memory that is kept
@@ -197,6 +199,15 @@ class GaussianShell: public SavableState
 
     /// Returns true if this and the argument are equivalent.
     int equiv(const GaussianShell *s);
+
+    /** Returns a radius.  All functions in the shell are below
+        threshold outside this radius. */
+    double extent(double threshold) const;
+
+    /** Returns a bound for the basis function.  This bound
+        is defined so that it is positive and monotonically
+        decreasing as a function of r. */
+    double monobound(double r) const;
 
     void print(ostream& =cout) const;
 };

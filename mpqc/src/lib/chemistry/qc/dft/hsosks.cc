@@ -270,10 +270,8 @@ HSOSKS::ao_fock()
     abort();
   }
 
-  tim_enter("integrate");
   RefSymmSCMatrix dens_a = alpha_ao_density();
   RefSymmSCMatrix dens_b = beta_ao_density();
-  integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(1);
   integrator_->integrate(functional_, dens_a, dens_b);
   exc_ = integrator_->value();
@@ -283,10 +281,6 @@ HSOSKS::ao_fock()
   vxc_b_ = dens_b.clone();
   vxc_b_->assign((double*)integrator_->beta_vmat());
   vxc_b_ = pl->to_SO_basis(vxc_b_);
-  // must unset the wavefunction so we don't have a circular list that
-  // will not be freed with the reference counting memory manager
-  integrator_->set_wavefunction(0);
-  tim_exit("integrate");
   
   // get rid of AO delta P
   cl_dens_diff_ = dd;
@@ -394,16 +388,14 @@ HSOSKS::two_body_deriv(double * tbgrad)
 
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
-  tim_enter("integration");
   RefSymmSCMatrix dens_a = alpha_ao_density();
   RefSymmSCMatrix dens_b = beta_ao_density();
-  integrator_->set_wavefunction(this);
+  integrator_->init(this);
   integrator_->set_compute_potential_integrals(0);
   integrator_->integrate(functional_, dens_a, dens_b, dftgrad);
   // must unset the wavefunction so we don't have a circular list that
   // will not be freed with the reference counting memory manager
-  integrator_->set_wavefunction(0);
-  tim_exit("integration");
+  integrator_->done();
   print_natom_3(dftgrad, "E-X contribution to DFT gradient");
 
   for (int i=0; i<natom3; i++) tbgrad[i] += dftgrad[i] + hfgrad[i];
@@ -426,6 +418,22 @@ HSOSKS::op_vxc()
 {
   RefSymmSCMatrix r = vxc_a_.copy();
   return r;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+HSOSKS::init_vector()
+{
+  integrator_->init(this);
+  HSOSSCF::init_vector();
+}
+
+void
+HSOSKS::done_vector()
+{
+  integrator_->done();
+  HSOSSCF::done_vector();
 }
 
 /////////////////////////////////////////////////////////////////////////////

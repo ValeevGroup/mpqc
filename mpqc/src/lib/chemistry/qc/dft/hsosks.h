@@ -74,6 +74,9 @@ class HSOSKS: public HSOSSCF {
     double scf_energy();
     RefSCExtrapData extrap_data();
     RefSymmSCMatrix effective_fock();
+
+    void init_vector();
+    void done_vector();
     
     void two_body_deriv(double*);
 

@@ -530,6 +530,45 @@ GaussianShell::equiv(const GaussianShell *s)
   return 1;
 }
 
+double
+GaussianShell::extent(double threshold) const
+{
+  double tol = 0.1;
+  double r0 = tol;
+  double r1 = 3.0*r0;
+  double b0 = monobound(r0);
+  double b1 = monobound(r1);
+  //cout << "r0 = " << r0 << " b0 = " << b0 << endl;
+  //cout << "r1 = " << r0 << " b1 = " << b1 << endl;
+  if (b0 <= threshold) {
+      return r0;
+    }
+  // step out until r0 and r1 bracket the return value
+  while (b1 > threshold) {
+      r0 = r1;
+      r1 = 3.0*r0;
+      b0 = b1;
+      b1 = monobound(r1);
+      //cout << "r0 = " << r0 << " b0 = " << b0 << endl;
+      //cout << "r1 = " << r0 << " b1 = " << b1 << endl;
+    }
+  while (r1 - r0 > 0.1) {
+      double rtest = 0.5*(r0+r1);
+      double btest = monobound(rtest);
+      if (btest <= threshold) {
+          b1 = btest;
+          r1 = rtest;
+          //cout << "r1 = " << r0 << " b1 = " << b0 << endl;
+        }
+      else {
+          b0 = btest;
+          r0 = rtest;
+          //cout << "r0 = " << r0 << " b0 = " << b0 << endl;
+        }
+    }
+  return r1;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -136,11 +136,9 @@ HFACM::compute_energy()
   double escf = scf_->energy();
   cout << decindent;
 
-  integrator_->set_wavefunction(this);
-  tim_enter("integrate");
+  integrator_->init(this);
   integrator_->integrate(functional_);
-  tim_exit("integrate");
-  integrator_->set_wavefunction(0);
+  integrator_->done();
 
   cout << node0
        << indent

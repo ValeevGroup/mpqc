@@ -41,7 +41,7 @@ CXXSRC = gaussbas.cc gaussshell.cc files.cc \
          gaussbaval.cc gaussshval.cc cartiter.cc cartiter_i.cc \
          transform.cc shellrot.cc integral.cc obint.cc petite.cc aotoso.cc \
          symmint.cc tbint.cc dercent.cc \
-         sobasis.cc sointegral.cc
+         sobasis.cc sointegral.cc extent.cc
 
 INC = basis.h gaussbas.h guassshell.h files.h \
       cartiter.h cartiter_i.h transform.h shellrot.h \

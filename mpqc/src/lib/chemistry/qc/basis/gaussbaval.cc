@@ -110,6 +110,45 @@ GaussianBasisSet::hessian_values(const SCVector3& r,
     return ibasis;
 }
 
+int
+GaussianBasisSet::shell_values(const SCVector3& r,
+                               int sh, double* basis_values) const
+{
+  return hessian_shell_values(r, sh, 0, 0, basis_values);
+}
+
+int
+GaussianBasisSet::grad_shell_values(const SCVector3& r, int sh,
+                              double* g_values,
+                              double* basis_values) const
+{
+  return hessian_shell_values(r, sh, 0, g_values, basis_values);
+}
+
+int
+GaussianBasisSet::hessian_shell_values(const SCVector3& r, int sh,
+                                       double* h_values,
+                                       double* g_values,
+                                       double* basis_values) const
+{
+    if (civec_ == 0) {
+        cout << "GaussianBasisSet::hessian_shell_values"
+             << " called but set_integral not"
+             << endl;
+        abort();
+      }
+
+    int icenter = shell_to_center(sh);
+
+    SCVector3 r_diff;
+    for (int i=0; i<3; i++) r_diff[i] = r[i] - GaussianBasisSet::r(icenter,i);
+
+    return operator()(sh).hessian_values(civec_, sivec_, r_diff,
+                                         h_values,
+                                         g_values,
+                                         basis_values);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

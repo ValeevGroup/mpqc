@@ -39,6 +39,7 @@
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/basis/sobasis.h>
 #include <chemistry/qc/basis/sointegral.h>
+#include <chemistry/qc/basis/extent.h>
 
 static void
 do_so_shell_test(const RefSOBasis& sobas, const RefTwoBodySOInt &soer,
@@ -418,6 +419,29 @@ test_func_values(const RefGaussianBasisSet &gbs)
   delete[] h_val;
 }
 
+void
+do_extent_test(const RefGaussianBasisSet &gbs)
+{
+  int i, j;
+  for (i=0; i<gbs->nshell(); i++) {
+      gbs->shell(i).print();
+      for (j=0; j<10; j++) {
+          cout << " " << gbs->shell(i).monobound(0.1*j);
+        }
+      cout << endl;
+      for (j=0; j<10; j++) {
+          double threshold = pow(10.0, -j);
+          //cout << " threshold = " << threshold << endl;
+          cout << " " << gbs->shell(i).extent(threshold);
+        }
+      cout << endl;
+    }
+
+  RefShellExtent extent = new ShellExtent;
+  extent->init(gbs);
+  extent->print();
+}
+
 int
 main(int, char *argv[])
 {
@@ -439,6 +463,7 @@ main(int, char *argv[])
   int doatoms = keyval->booleanvalue("atoms");
   int dopetite = keyval->booleanvalue("petite");
   int dovalues = keyval->booleanvalue("values");
+  int doextent = keyval->booleanvalue("extent");
 
   for (i=0; i<keyval->count("test"); i++) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);
@@ -470,6 +495,10 @@ main(int, char *argv[])
           intgrl->set_basis(gbs);
           gbs->set_integral(intgrl);
           test_func_values(gbs);
+        }
+
+      if (doextent) {
+          do_extent_test(gbs);
         }
     }
 

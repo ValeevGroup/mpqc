@@ -34,6 +34,7 @@
 
 #include <util/state/state.h>
 #include <chemistry/qc/dft/functional.h>
+#include <chemistry/qc/basis/extent.h>
 
 class DenIntegrator: virtual public SavableState {
 #   define CLASSNAME DenIntegrator
@@ -41,26 +42,36 @@ class DenIntegrator: virtual public SavableState {
 #   include <util/class/classda.h>
   protected:
     RefWavefunction wfn_;
+    RefShellExtent extent_;
 
     double value_;
 
     int spin_polarized_;
 
+    int ncontrib_;
+    int *contrib_;
+    int ncontrib_bf_;
+    int *contrib_bf_;
     double *bs_values_;
     double *bsg_values_;
     double *bsh_values_;
     double *alpha_dmat_;
     double *beta_dmat_;
+    double *dmat_bound_;
     double *alpha_vmat_; // lower triangle of xi_i(r) v(r) xi_j(r) integrals
     double *beta_vmat_; // lower triangle of xi_i(r) v(r) xi_j(r) integrals
     int need_density_; // specialization must set to 1 if it needs density_
     double density_;
     int nbasis_;
+    int nshell_;
     int natom_;
     int compute_potential_integrals_; // 1 if potential integrals are needed
 
     int need_gradient_;
     int need_hessian_;
+
+    int linear_scaling_;
+    int use_dmat_bound_;
 
     void get_density(double *dmat, PointInputData::SpinData &d);
     void init_integration(const RefDenFunctional &func,
@@ -78,7 +89,6 @@ class DenIntegrator: virtual public SavableState {
     ~DenIntegrator();
     void save_data_state(StateOut &);
 
-    virtual void set_wavefunction(const RefWavefunction &);
     RefWavefunction wavefunction() const { return wfn_; }
     double value() const { return value_; }
 
@@ -88,6 +98,11 @@ class DenIntegrator: virtual public SavableState {
     const double *alpha_vmat() const { return alpha_vmat_; }
     const double *beta_vmat() const { return beta_vmat_; }
 
+    /** Called before integrate.  Does not need to be called again
+        unless the geometry changes or done is called. */
+    virtual void init(const RefWavefunction &);
+    /// Must be called between calls to init.
+    virtual void done();
     virtual void integrate(const RefDenFunctional &,
                            const RefSymmSCMatrix& densa =0,
                            const RefSymmSCMatrix& densb =0,

@@ -57,6 +57,7 @@ sub initialize {
         }
         close(<OUTFILE>);
     }
+
 }
 
 sub parse_g94 {
@@ -64,6 +65,8 @@ sub parse_g94 {
     my $out = shift;
     my $scfenergy = "";
     my $mp2energy = "";
+    my $ccsd_tenergy = "";
+    my $t1norm = "";
     my $optconverged = 0;
     my $molecule;
     my $havefreq = 0;
@@ -76,10 +79,19 @@ sub parse_g94 {
         elsif (/^\s*E2\s*=\s*$fltrx\s*EUMP2\s*=\s*$fltrx/) {
             $mp2energy = $2;
         }
-        elsif (/^\s*-- Stationary point found./) {
+        elsif (/^\s*CCSD\(T\)\s*=\s*$fltrx/) {
+            $ccsd_tenergy = $1;
+            $ccsd_tenergy =~ s/[DdE]/e/;
+        }
+        elsif (/^\s*T1 Diagnostic\s*=\s*$fltrx/) {
+            $t1norm = $1;
+        }
+        elsif (/^\s*-- Stationary point found./
+               || /CONVERGENCE CRITERIA APPARENTLY SATISFIED/) {
             $optconverged = 1;
         }
-        elsif ($optconverged && /^\s*Input orientation:/) {
+        elsif ($optconverged
+               && (/^\s*Input orientation:/ || /^\s*Standard orientation:/)) {
             <$out>; <$out>; <$out>; <$out>;
             my $molstr = "";
             while (<$out>) {
@@ -123,22 +135,36 @@ sub parse_g94 {
     if ($method eq "MP2") {
         $self->{"energy"} = $mp2energy;
     }
+    elsif ($method eq "CCSD(T)") {
+        $self->{"energy"} = $ccsd_tenergy;
+    }
     elsif ($method eq "SCF"
            || $method eq "ROSCF") {
         $self->{"energy"} = $scfenergy;
     }
 
+    $self->{"t1norm"} = $t1norm;
+
     $self->{"ok"} = 0;
     if ($self->{"energy"} ne "") {
         if ($qcinput->optimize()) {
-            $self->{"ok"} = 1 if $self->{"optconverged"};
+            if ($self->{"optconverged"}) {
+                $self->{"ok"} = 1
+                }
+            else {
+                printf "not ok because not converged\n";
+            }
         }
         else {
             $self->{"ok"} = 1;
         }
         if ($qcinput->frequencies() && ! $havefreq) {
             $self->{"ok"} = 0;
+            printf "not ok because no freq\n";
         }
+    }
+    else {
+        printf "not ok because no energy\n";
     }
 }
 
@@ -160,6 +186,7 @@ sub parse_mpqc {
     my $ngrad;
     my $state = "none";
     my $molecularenergy = "";
+    my $s2norm = "";
     while (<$out>) {
         if ($state eq "read grad" && $wante) {
             if (/^\s*([0-9]+\s+[A-Za-z]+\s+)?([\-\.0-9]+)\s+([\-\.0-9]+)\s+([\-\.0-9]+)/) {
@@ -196,6 +223,9 @@ sub parse_mpqc {
         elsif ($wante && /Value of the MolecularEnergy:\s+$fltrx/) {
             $molecularenergy = $1;
         }
+        elsif ($wante && /S2 norm =\s+$fltrx/) {
+            $s2norm = $1;
+        }
         elsif (/The optimization has converged/) {
             $optconverged = 1;
         }
@@ -205,10 +235,24 @@ sub parse_mpqc {
         }
         elsif ($optconverged
                && /^\s+n\s+atom\s+label\s+x\s+y\s+z\s+mass\s*$/) {
+            # old style geometry
             my $molstr = "";
             while (<$out>) {
                 if (! /^\s+\d+\s+(\w+)\s+$fltrx\s+$fltrx\s+$fltrx\s+/
                  && ! /^\s+\d+\s+(\w+)\s+\S+\s+$fltrx\s+$fltrx\s+$fltrx\s+/) {
+                    last;
+                }
+                $molstr = "${molstr} $1 $2 $3 $4\n";
+            }
+            $molecule = new Molecule($molstr);
+        }
+        elsif ($optconverged
+               && /n\s+atoms\s+(atom_labels\s+)?geometry/) {
+            # new style geometry
+            my $molstr = "";
+            while (<$out>) {
+                if (! /^\s+\d+\s+(\w+)\s+\[\s*$fltrx\s+$fltrx\s+$fltrx\s*\]/
+                 && ! /^\s+\d+\s+(\w+)\s+\"[^\"]*\"+\s+\[\s*$fltrx\s+$fltrx\s+$fltrx\s*\]/) { # " (unconfuse emacs)
                     last;
                 }
                 $molstr = "${molstr} $1 $2 $3 $4\n";
@@ -242,6 +286,7 @@ sub parse_mpqc {
             $havefreq = 1;
         }
     }
+    $self->{"s2norm"} = $s2norm;
     $self->{"scfenergy"} = $scfenergy;
     $self->{"opt1energy"} = $opt1energy;
     $self->{"opt2energy"} = $opt2energy;
@@ -260,6 +305,7 @@ sub parse_mpqc {
     }
     my $qcinput = $self->{"qcinput"};
     my $method = $qcinput->method();
+    # printf "qcinput ok = %d\n", $qcinput->ok();
     if ($method eq "MP2") {
         if ($mp2energy ne "") {
             $self->{"energy"} = $mp2energy;
@@ -293,7 +339,11 @@ sub parse_mpqc {
         }
         if ($qcinput->frequencies() && ! $havefreq) {
             $self->{"ok"} = 0;
+            #printf "not OK because no freq\n";
         }
+    }
+    else {
+        #printf "not OK because no energy\n";
     }
 }
 
@@ -320,6 +370,16 @@ sub inputok {
 sub energy {
     my $self = shift;
     $self->{"energy"}
+}
+
+sub s2norm {
+    my $self = shift;
+    $self->{"s2norm"}
+}
+
+sub t1norm {
+    my $self = shift;
+    $self->{"t1norm"}
 }
 
 sub optmolecule {

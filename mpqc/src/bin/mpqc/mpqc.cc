@@ -286,9 +286,13 @@ main(int argc, char *argv[])
     thread = ThreadGrp::get_default_threadgrp();
 
   cout << node0 << indent
-       << "Using " << grp->class_name() << " for communications." << endl
+       << "Using " << grp->class_name()
+       << " for message passing (nproc = " << grp->n() << ")." << endl
        << indent
-       << "Using " << thread->class_name() << " for threading." << endl;
+       << "Using " << thread->class_name()
+       << " for threading (nthread = " << thread->nthread() << ")." << endl
+       << indent
+       << "Total number of processors = " << grp->n() * thread->nthread() << endl;
 
   // now set up the debugger
   RefDebugger debugger = keyval->describedclassvalue("debug");

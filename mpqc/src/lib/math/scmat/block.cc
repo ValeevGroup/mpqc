@@ -8,6 +8,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixBlock member functions
 
+SavableState_REF_def(SCMatrixBlock);
+
 #define CLASSNAME SCMatrixBlock
 #define PARENTS virtual public SavableState
 #include <util/state/statei.h>

@@ -347,11 +347,10 @@ main(int argc, char *argv[])
   }
 
   cout << node0
-       << indent << scprintf("Architecture is %s.", TARGET_ARCH) << endl
-       << indent << scprintf("Hostname is %s.", ExEnv::hostname()) << endl
-       << indent << scprintf("Username is %s.", ExEnv::username()) << endl
-       << indent << scprintf("Time is %s", tstr);
-  cout.flush();
+       << indent << scprintf("Machine:    %s", TARGET_ARCH) << endl
+       << indent << scprintf("User:       %s@%s",
+                             ExEnv::username(), ExEnv::hostname()) << endl
+       << indent << scprintf("Start Time: %s", tstr) << endl;
 
   // get the thread group.  first try the commandline and environment
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
@@ -763,6 +762,15 @@ main(int argc, char *argv[])
   parsedkv = 0;
   grp = 0;
   clean_up();
+
+#if defined(HAVE_TIME) && defined(HAVE_CTIME)
+  time(&t);
+  tstr = ctime(&t);
+#endif
+  if (!tstr) {
+    tstr = "UNKNOWN";
+  }
+  cout << node0 << endl << indent << scprintf("End Time: %s", tstr) << endl;
 
   return 0;
 }

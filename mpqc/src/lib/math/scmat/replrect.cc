@@ -786,6 +786,9 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
       abort();
     }
 
+#if 0
+  cmat_schmidt(rows,lS->matrix,nrow(),nc);
+#else
   int me = messagegrp()->me();
   int nproc = messagegrp()->n();
   int nr = nrow();
@@ -818,6 +821,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
         if (i==me)
           memcpy(cm, cols[m-csi], sizeof(double)*nr);
         messagegrp()->bcast(cm, nr, i);
+        break;
       }
     }
     
@@ -877,6 +881,10 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
           ci[j] -= vtmp * cm[j];
       }
     }
+
+    // if I own cm then put it back into cols
+    if (m >= cstart && m < cend)
+      memcpy(cols[m-cstart], cm, sizeof(double)*nr);
   }
 
   // now collect columns again
@@ -900,6 +908,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   cmat_delete_matrix(cols);
   delete[] v;
   delete[] cm;
+#endif
 }
 
 void

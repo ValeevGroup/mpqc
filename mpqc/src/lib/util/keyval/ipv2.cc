@@ -35,9 +35,6 @@
 #include <util/keyval/ipv2.h>
 #include <util/keyval/ipv2_parse.h>
 
-// IPV2's static member
-IPV2* IPV2::global_ = 0;
-
 IPV2::IPV2():
 filename_(0),
 table_keywords(0),
@@ -86,28 +83,6 @@ void IPV2::read(istream&in,ostream&out,const char *filename)
 void IPV2::yerror(const char* s)
 {
   error(s);
-}
-
-void
-IPV2::set_global(IPV2* i)
-{
-  global_ = i;
-}
-
-int
-IPV2::have_global()
-{
-  return global_ != 0;
-}
-
-IPV2*
-IPV2::global()
-{
-  if (!global_) {
-      cerr << "IPV2::global: global not set" << endl;
-      abort();
-    }
-  return global_;
 }
 
 /* Show position. */

@@ -91,10 +91,6 @@ class IPV2
   enum { KEYWORD_LENGTH=256 };
   
  private:
-  // this is what is read by the ip_data, etc, func calls
-  // no IPV2 members allocate or delete storage for global_
-  static IPV2* global_;
-
   char *filename_;
     
   // These are needed only when the input is being read in:

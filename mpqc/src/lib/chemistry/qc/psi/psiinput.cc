@@ -612,11 +612,20 @@ PSI_Input_CC::write_input_file(const char *dertype, const char *wavefn,
   write_defaults(dertype, wavefn);
   write_input();
   write_basis();
+  begin_section("cceg");
   if(convergence != 0){
-    begin_section("cceg");
     write_keyword("convergence", convergence);
-    end_section();
     }
+  write_keyword("restart", "no");
+  write_keyword("maxiter", 50);
+  end_section();
+  begin_section("cczv");
+  if(convergence != 0){
+    write_keyword("convergence", convergence);
+    }
+  write_keyword("restart", "no");
+  write_keyword("maxiter", 50);
+  end_section();
 
   fclose(fp);
 }

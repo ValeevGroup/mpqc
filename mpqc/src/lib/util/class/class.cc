@@ -287,6 +287,12 @@ ClassDesc::ClassDesc(char* name, int version,
       children_ = (*all_)[key]->children_;
       (*all_)[key]->children_ = 0;
 
+      if (!children_) {
+          fprintf(stderr, "ClassDesc: inconsistency in initialization"
+                  "--perhaps a duplicated CTOR call\n");
+          abort();
+        }
+
       // go thru the list of children and correct their
       // parent class descriptors
       for (Pix i=children_->first(); i; children_->next(i)) {

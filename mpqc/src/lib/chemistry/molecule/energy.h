@@ -40,9 +40,9 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/hess.h>
 
-//. The \clsnm{MolecularEnergy} abstract class is a \clsnmref{Function}
-//specialization that can optionally transform the cartesian molecule
-//geometry, gradient, and hessian into an internal coordinate system.
+/** The MolecularEnergy abstract class is a Function
+    specialization that can optionally transform the cartesian molecule
+    geometry, gradient, and hessian into an internal coordinate system. */
 class MolecularEnergy: public Function {
 #   define CLASSNAME MolecularEnergy
 #   include <util/state/stated.h>
@@ -61,11 +61,11 @@ class MolecularEnergy: public Function {
 
     void failure(const char *);
 
-    //. This is just a wrapper around set_value().
+    /// This is just a wrapper around set_value().
     virtual void set_energy(double);
 
-    //. These are passed gradients and hessian in cartesian coordinates.
-    //The gradient and hessian in internal coordinates are computed.
+    /** These are passed gradients and hessian in cartesian coordinates.
+        The gradient and hessian in internal coordinates are computed. */
     virtual void set_gradient(RefSCVector&);
     virtual void set_hessian(RefSymmSCMatrix&);
 
@@ -83,7 +83,7 @@ class MolecularEnergy: public Function {
 
     MolecularEnergy & operator=(const MolecularEnergy&);
     
-    //. A wrapper around value();
+    /// A wrapper around value();
     virtual double energy();
 
     virtual RefMolecule molecule() const;
@@ -92,29 +92,29 @@ class MolecularEnergy: public Function {
     void guess_hessian(RefSymmSCMatrix&);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
-    //. If a molecule hessian object is given, it will be used
-    //to provide a hessian.
+    /** If a molecule hessian object is given, it will be used to provide a
+        hessian. */
     RefSymmSCMatrix hessian();
     int hessian_implemented() const;
 
     void set_x(const RefSCVector&);
 
-    //. Return the cartesian coordinates.
+    /// Return the cartesian coordinates.
     RefSCVector get_cartesian_x();
-    //. Return the cartesian gradient.
+    /// Return the cartesian gradient.
     RefSCVector get_cartesian_gradient();
-    //. Return the cartesian hessian.
+    /// Return the cartesian hessian.
     RefSymmSCMatrix get_cartesian_hessian();
 
     RefMolecularCoor molecularcoor() { return mc_; }
 
-    //. Call this if you have changed the molecular symmetry of the
-    // molecule contained by this MolecularEnergy
+    /** Call this if you have changed the molecular symmetry of the
+        molecule contained by this MolecularEnergy. */
     virtual void symmetry_changed();
 
     RefNonlinearTransform change_coordinates();
     
-    //. Nicely print n x 3 data that are stored in a vector.
+    /// Nicely print n x 3 data that are stored in a vector.
     void print_natom_3(const RefSCVector &,
                        const char *t=0, ostream&o=cout) const;
     void print_natom_3(double **, const char *t=0, ostream&o=cout) const;

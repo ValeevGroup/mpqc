@@ -42,7 +42,7 @@
 
 class Integral;
 
-////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////
 
 class EfieldDotVectorData: public VRefCount
 {
@@ -89,8 +89,8 @@ class PointChargeData: public VRefCount
 };
 REF_dec(PointChargeData);
 
-//. \clsnm{OneBodyInt} is an abstract base class for objects that
-// compute integrals between two basis functions.
+/** OneBodyInt is an abstract base class for objects that
+    compute integrals between two basis functions. */
 class OneBodyInt : public VRefCount {
   protected:
     // this is who created me
@@ -108,30 +108,30 @@ class OneBodyInt : public VRefCount {
   public:
     virtual ~OneBodyInt();
   
-    //. Returns the number of basis functions.
+    /// Returns the number of basis functions.
     int nbasis() const;
     int nbasis1() const;
     int nbasis2() const;
 
-    //. Returns the number of basis shells.
+    /// Returns the number of basis shells.
     int nshell() const;
     int nshell1() const;
     int nshell2() const;
 
-    //. Returns the basis sets.
+    /// Returns the basis sets.
     RefGaussianBasisSet basis();
     RefGaussianBasisSet basis1();
     RefGaussianBasisSet basis2();
 
-    //. Returns the buffer where the integrals are placed.
+    /// Returns the buffer where the integrals are placed.
     const double * buffer() const;
     
-    //. Computes the integrals between basis functions in the
-    // given shell pair.
+    /** Computes the integrals between basis functions in the
+        given shell pair. */
     virtual void compute_shell(int,int) = 0;
 
-    //. This is called for one body integrals that take data to let
-    // them know that the data they reference has changed.
+    /** This is called for one body integrals that take data to let
+        them know that the data they reference has changed. */
     virtual void reinitialize();
 
     Integral *integral() const { return integral_; }
@@ -139,7 +139,7 @@ class OneBodyInt : public VRefCount {
 
 REF_dec(OneBodyInt);
 
-////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////
 
 class ShellPairIter {
   private:
@@ -194,7 +194,7 @@ class ShellPairIter {
     double val() const { return buf[index]*scale_; }
 };
 
-////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////
 
 class OneBodyIntIter : public VRefCount {
   protected:
@@ -241,7 +241,7 @@ class OneBodyIntIter : public VRefCount {
 
 REF_dec(OneBodyIntIter);
 
-////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////
 
 class OneBodyIntOp: public SCElementOp {
   protected:
@@ -286,7 +286,7 @@ class OneBody3IntOp: public SCElementOp3 {
 
 };
 
-////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////
 
 class OneBodyDerivInt : public VRefCount {
   protected:

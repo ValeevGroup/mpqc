@@ -103,8 +103,8 @@ class DenFunctional: virtual_base public SavableState {
 };
 SavableState_REF_dec(DenFunctional);
 
-//. The \clsnm{NElFunctional} computes the number of electrons.
-//. It is primarily for testing the integrator.
+/** The NElFunctional computes the number of electrons.
+    It is primarily for testing the integrator. */
 class NElFunctional: public DenFunctional {
 #   define CLASSNAME NElFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -121,8 +121,8 @@ class NElFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-//. The \clsnm{SumDenFunctional} computes energies and densities
-//. using the a sum of energy density functions method.
+/** The SumDenFunctional computes energies and densities
+    using the a sum of energy density functions method. */
 class SumDenFunctional: public DenFunctional {
 #   define CLASSNAME SumDenFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -147,8 +147,8 @@ class SumDenFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-//. The \clsnm{LSDAXFunctional} computes energies and densities
-//. using the LSDA exchange term.
+/** The LSDAXFunctional computes energies and densities
+    using the LSDA exchange term. */
 class LSDAXFunctional: public DenFunctional {
 #   define CLASSNAME LSDAXFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -167,8 +167,8 @@ class LSDAXFunctional: public DenFunctional {
 };
 
 #if 0
-//. The \clsnm{LSDACFunctional} computes energies and densities using the
-//LSDA correlation term (from Vosko, Wilk, and Nusair).
+/** The LSDACFunctional computes energies and densities using the
+    LSDA correlation term (from Vosko, Wilk, and Nusair). */
 class LSDACFunctional: public DenFunctional {
 #   define CLASSNAME LSDACFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -188,8 +188,8 @@ class LSDACFunctional: public DenFunctional {
 };
 #endif
 
-//. The \clsnm{XalphaFunctional} computes energies and densities
-//. using the Xalpha method.
+/** The XalphaFunctional computes energies and densities
+    using the Xalpha method. */
 class XalphaFunctional: public DenFunctional {
 #   define CLASSNAME XalphaFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -209,8 +209,8 @@ class XalphaFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-//. The \clsnm{Becke88Functional} computes energies and densities
-//. using Becke's 1988 exchange functional.
+/** The Becke88Functional computes energies and densities
+    Becke's 1988 exchange functional. */
 class Becke88Functional: public DenFunctional {
 #   define CLASSNAME Becke88Functional
 #   define HAVE_KEYVAL_CTOR
@@ -230,8 +230,8 @@ class Becke88Functional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-//. The \clsnm{LYPFunctional} computes energies and densities
-//. using the Lee, Yang, and Parr functional.
+/** The LYPFunctional computes energies and densities
+    using the Lee, Yang, and Parr functional. */
 class LYPFunctional: public DenFunctional {
 #   define CLASSNAME LYPFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -252,8 +252,8 @@ class LYPFunctional: public DenFunctional {
 };
 
 #if 0
-//. The \clsnm{PW91Functional} computes energies and densities
-//. using the Lee, Yang, and Parr functional.
+/** The PW91Functional computes energies and densities
+    using the Lee, Yang, and Parr functional. */
 class PW91Functional: public DenFunctional {
 #   define CLASSNAME PW91Functional
 #   define HAVE_KEYVAL_CTOR

@@ -73,12 +73,12 @@ class MolecularHessian: virtual_base public SavableState {
                                              RefPointGroup pg = 0,
                                              RefSCMatrixKit kit = 0);
 
-    //. Write the hessian in a simple text format.
+    /// Write the hessian in a simple text format.
     static void write_cartesian_hessian(const char *filename,
                                         const RefMolecule &m,
                                         const RefSymmSCMatrix &hess);
 
-    //. Read the hessian from a simple text format.
+    /// Read the hessian from a simple text format.
     static void read_cartesian_hessian(const char *filename,
                                        const RefMolecule &m,
                                        const RefSymmSCMatrix &hess);

@@ -38,7 +38,7 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/basis.h>
 
-//. Distributes shell pairs either statically or dynamically.
+/// Distributes shell pairs either statically or dynamically.
 class DistShellPair {
   private:
     RefMessageGrp msg_;
@@ -67,24 +67,24 @@ class DistShellPair {
                   const RefThreadLock &,
                   const RefGaussianBasisSet &);
     ~DistShellPair();
-    //. Resets to the first shell.
+    /// Resets to the first shell.
     void init();
-    //. Whether or not to use dynamic load balancing.
+    /// Whether or not to use dynamic load balancing.
     void set_dynamic(int d);
-    //. How much stuff to print out.
+    /// How much stuff to print out.
     void set_debug(int d) { debug_ = d; }
-    //. How often to print status from node 0.
+    /// How often to print status from node 0.
     void set_print_percent(int p) { print_percent_ = p; }
-    //. Puts the current P>=Q shell pair into P and Q and returns 1.
-    // When there are no more shell pairs to be processed by this processor,
-    // 0 is returned.  Once we start doing get_tasks, we have to go to the
-    // end if dyanmic load balancing is used.
+    /** Puts the current P>=Q shell pair into P and Q and returns 1.
+        When there are no more shell pairs to be processed by this processor,
+        0 is returned.  Once we start doing get_tasks, we have to go to the
+        end if dyanmic load balancing is used. */
     int get_task(int &P, int &Q);
 };
 
 #endif
 
-////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

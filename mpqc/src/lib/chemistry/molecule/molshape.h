@@ -38,9 +38,10 @@
 #include <chemistry/molecule/atominfo.h>
 #include <chemistry/molecule/molecule.h>
 
-//. The \clsnm{VDWShape} class describes the surface of a
-//molecule as the union of atom centered spheres, each the
-//van der Waals radius of the atom.
+/** The VDWShape class describes the surface of a
+    molecule as the union of atom centered spheres, each the
+    van der Waals radius of the atom.
+*/
 class VDWShape: public UnionShape {
 #   define CLASSNAME VDWShape
 #   define HAVE_KEYVAL_CTOR
@@ -55,10 +56,10 @@ class VDWShape: public UnionShape {
     void initialize(const RefMolecule&);
 };  
 
-//. \clsnm{DiscreteConnollyShape} and \clsnmref{ConnollyShape}
-//should produce the same result.  The discrete version is
-//a shape union of discrete subshapes and is slower.  These classes
-//describe the solvent accessible surface of a molecule.
+/** DiscreteConnollyShape and ConnollyShape should produce the same result.
+    The discrete version is a shape union of discrete subshapes and is
+    slower.  These classes describe the solvent accessible surface of a
+    molecule.  */
 class DiscreteConnollyShape: public UnionShape {
 #   define CLASSNAME DiscreteConnollyShape
 #   define HAVE_KEYVAL_CTOR
@@ -146,10 +147,10 @@ class CS2Sphere
 };
 
 #define CONNOLLYSHAPE_N_WITH_NSPHERE_DIM 10
-//. \clsnmref{DiscreteConnollyShape} and \clsnm{ConnollyShape}
-//should produce the same result.  The discrete version is
-//a shape union of discrete subshapes and is slower.  These classes
-//describe the solvent accessible surface of a molecule.
+/** DiscreteConnollyShape and ConnollyShape should produce the same result.
+    The discrete version is a shape union of discrete subshapes and is
+    slower.  These classes describe the solvent accessible surface of a
+    molecule. */
 class ConnollyShape: public Shape {
 #   define CLASSNAME ConnollyShape
 #   define HAVE_KEYVAL_CTOR

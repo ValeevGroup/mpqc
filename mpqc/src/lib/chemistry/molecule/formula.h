@@ -32,9 +32,9 @@
 
 #include <chemistry/molecule/molecule.h>
 
-//. The \clsnm{MolecularFormula} class is used to calculate the molecular
-// formula of a \clsnmref{Molecule}.  There is only one constructor which
-// takes \clsnm{RefMolecule} as input.
+/** The MolecularFormula class is used to calculate the molecular
+ formula of a Molecule.  There is only one constructor which
+ takes RefMolecule as input. */
 class MolecularFormula {
   private:
     enum {nelem_ = 105};
@@ -46,19 +46,19 @@ class MolecularFormula {
     void compute_atomtypes(const Molecule *m);
     void compute_form(const Molecule *m);
   public:
-    //. Constructors.  The argument must be nonnull.
+    /// Constructors.  The argument must be nonnull.
     MolecularFormula(const RefMolecule&m);
     MolecularFormula(const Molecule *m);
 
     ~MolecularFormula();
 
-    //. Returns a null terminated string containing the molecular formula.
+    /// Returns a null terminated string containing the molecular formula.
     const char * formula() const;
-    //. Returns the number of atomtypes
+    /// Returns the number of atomtypes
     int natomtypes(); 
-    //. Returns atomic number of given atomtypeindex
+    /// Returns atomic number of given atomtypeindex
     int Z(int itype); 
-    //. Returns number of atoms of given atomtypeindex
+    /// Returns number of atoms of given atomtypeindex
     int nZ(int itype);
 };
 

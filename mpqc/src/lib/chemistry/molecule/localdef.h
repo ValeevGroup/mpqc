@@ -38,7 +38,7 @@ static const double tpi=2.0*pi;
 
 static const double bohr = 0.52917706;
 
-///////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////
 
 static inline void
 delta(double u[], const double a[], const double b[])
@@ -48,7 +48,7 @@ delta(double u[], const double a[], const double b[])
   u[2]=a[2]-b[2];
 }
 
-///////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////
 
 // returns the distance between two points
 static inline double
@@ -58,7 +58,7 @@ dist(const double a[], const double b[])
   return (sqrt((x=a[0]-b[0])*x + (y=a[1]-b[1])*y + (z=a[2]-b[2])*z));
 }
 
-///////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////
 
 // given sin(x) returns cos(x) 
 static inline double
@@ -69,7 +69,7 @@ s2(double x)
   return sqrt(tmp);
 }
 
-///////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////
 
 // returns the dot product for two vectors
 static inline double
@@ -81,7 +81,7 @@ scalar(const double a[], const double b[])
   return x+x1;
 }
 
-///////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////
 
 // given vectors a and b, returns a unit vector directed along the difference
 // of the two vectors
@@ -93,7 +93,7 @@ norm(double u[], const double a[], const double b[])
   u[0] *= x; u[1] *= x; u[2] *= x;
 }
 
-///////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////
 
 // given two vectors, returns the normalized cross product of those vectors
 static inline void

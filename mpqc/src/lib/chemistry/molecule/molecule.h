@@ -45,10 +45,9 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 
-//.  The \clsnm{Molecule} class provides information about the groups of
-//atoms we chemists like to call molecules.  \clsnm{Molecule} is a
-//\clsnmref{SavableState} and has a \clsnmref{StateIn} constructor.
-//\clsnm{Molecule} also has a \clsnmref{KeyVal} constructor.
+/** The Molecule class provides information about a molecule.  Molecule is
+     a SavableState and has a StateIn constructor.  Molecule also has a
+     KeyVal constructor. */
 class Molecule: public SavableState
 {
 #   define CLASSNAME Molecule
@@ -83,22 +82,22 @@ class Molecule: public SavableState
     Molecule();
     Molecule(const Molecule&);
     Molecule(StateIn&);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     Molecule(const RefKeyVal&input);
 
     virtual ~Molecule();
 
     Molecule& operator=(const Molecule&);
 
-    //. Add an \clsnmref{AtomicCenter} to the \clsnm{Molecule}.
+    /// Add an AtomicCenter to the Molecule.
     void add_atom(int Z,double x,double y,double z,
                   const char * = 0, double mass = 0.0,
                   int have_charge = 0, double charge = 0.0);
 
-    //. Print information about the molecule.
+    /// Print information about the molecule.
     virtual void print(ostream& =cout) const;
 
-    //. Returns the number of atoms in the molcule.
+    /// Returns the number of atoms in the molcule.
     int natom() const { return natoms_; }
 
     int Z(int atom) const { return Z_[atom]; }
@@ -109,79 +108,79 @@ class Molecule: public SavableState
     double mass(int atom) const;
     const char *label(int atom) const;
 
-    //. Takes an (x, y, z) postion and finds an atom within the
-    //given tolerance distance.  If no atom is found -1 is returned.
+    /** Takes an (x, y, z) postion and finds an atom within the
+        given tolerance distance.  If no atom is found -1 is returned. */
     int atom_at_position(double *, double tol = 0.05) const;
 
-    //. Returns the index of the atom with the given \vrbl{label}.
-    // If the label cannot be found \srccd{-1} is returned.
+    /** Returns the index of the atom with the given label.
+        If the label cannot be found -1 is returned. */
     int atom_label_to_index(const char *label) const;
 
-    //. Returns a \srccd{double*} containing the nuclear
-    //charges of the atoms.  The caller is responsible for
-    //freeing the return value.
+    /** Returns a double* containing the nuclear
+        charges of the atoms.  The caller is responsible for
+        freeing the return value. */
     double *charges() const;
 
-    //. Return the charge of the atom.
+    /// Return the charge of the atom.
     double charge(int iatom) const;
 
-    //. Returns the total nuclear charge.
+    /// Returns the total nuclear charge.
     double nuclear_charge() const;
 
-    //. Sets the \clsnmref{PointGroup} of the molecule.
+    /// Sets the PointGroup of the molecule.
     void set_point_group(const RefPointGroup&, double tol=1.0e-7);
-    //. Returns the \clsnmref{PointGroup} of the molecule.
+    /// Returns the \clsnmref{PointGroup} of the molecule.
     RefPointGroup point_group() const;
 
-    //. Find this molecules true point group (limited to abelian groups).
-    //If the point group of this molecule is set to the highest point
-    //group, then the origin must first be set to the center of mass.
+    /** Find this molecules true point group (limited to abelian groups).
+        If the point group of this molecule is set to the highest point
+        group, then the origin must first be set to the center of mass. */
     RefPointGroup highest_point_group(double tol = 1.0e-8) const;
 
-    //. Return 1 if this given axis is a symmetry element for the molecule.
-    //The direction vector must be a unit vector.
+    /** Return 1 if this given axis is a symmetry element for the molecule.
+        The direction vector must be a unit vector. */
     int is_axis(SCVector3 &origin,
                 SCVector3 &udirection, int order, double tol=1.0e-8) const;
 
-    //. Return 1 if the given plane is a symmetry element for the molecule.
-    //The perpendicular vector must be a unit vector.
+    /** Return 1 if the given plane is a symmetry element for the molecule.
+        The perpendicular vector must be a unit vector. */
     int is_plane(SCVector3 &origin, SCVector3 &uperp, double tol=1.0e-8) const;
 
-    //. Return 1 if the molecule has an inversion center.
+    /// Return 1 if the molecule has an inversion center.
     int has_inversion(SCVector3 &origin, double tol = 1.0e-8) const;
 
-    //. Returns 1 if the molecule is linear, 0 otherwise.
+    /// Returns 1 if the molecule is linear, 0 otherwise.
     int is_linear(double tolerance = 1.0e-5) const;
-    //. Returns 1 if the molecule is planar, 0 otherwise.
+    /// Returns 1 if the molecule is planar, 0 otherwise.
     int is_planar(double tolerance = 1.0e-5) const;
-    //. Sets linear to 1 if the molecular is linear, 0 otherwise.
-    //Sets planar to 1 if the molecular is planar, 0 otherwise.
+    /** Sets linear to 1 if the molecular is linear, 0 otherwise.
+        Sets planar to 1 if the molecular is planar, 0 otherwise. */
     void is_linear_planar(int&linear,int&planar,double tol = 1.0e-5) const;
 
-    //. Returns a \clsnm{SCVector3} containing the cartesian coordinates of
-    // the center of mass for the molecule
+    /** Returns a SCVector3 containing the cartesian coordinates of
+        the center of mass for the molecule. */
     SCVector3 center_of_mass() const;
 
-    //. Returns the nuclear repulsion energy for the molecule
+    /// Returns the nuclear repulsion energy for the molecule
     double nuclear_repulsion_energy();
     
-    //. Compute the nuclear repulsion energy first derivative with respect
-    //  to the given center. */
+    /** Compute the nuclear repulsion energy first derivative with respect
+        to the given center. */
     void nuclear_repulsion_1der(int center, double xyz[3]);
 
-    //. Compute the electric field due to the nuclei at the given point.
+    /// Compute the electric field due to the nuclei at the given point.
     void nuclear_efield(const double *position, double* efield);
     
-    //. If the molecule contains only symmetry unique atoms, this function
-    //will generate the other, redundant atoms.  The redundant atom
-    //will only be generated if there is no other atoms within a distance
-    //of tol.  If the is another atom and it is not identical, then
-    //abort will be called.
+    /** If the molecule contains only symmetry unique atoms, this function
+        will generate the other, redundant atoms.  The redundant atom
+        will only be generated if there is no other atoms within a distance
+        of tol.  If the is another atom and it is not identical, then
+        abort will be called. */
     void symmetrize(double tol = 0.5);
 
-    //. This will try to carefully correct symmetry errors
-    //in molecules.  If any atom is out of place by more then
-    //tol, abort will be called.
+    /** This will try to carefully correct symmetry errors
+        in molecules.  If any atom is out of place by more then
+        tol, abort will be called. */
     void cleanup_molecule(double tol = 0.1);
 
     void translate(const double *r);
@@ -191,25 +190,25 @@ class Molecule: public SavableState
 
     void read_pdb(const char *filename);
 
-    //. Compute the principal moments of inertia and, possibly, the
-    // principal axes.
+    /** Compute the principal moments of inertia and, possibly, the
+        principal axes. */
     void principal_moments_of_inertia(double *evals, double **evecs=0) const;
 
-    //. Return information about symmetry unique and equivalent atoms.
+    /// Return information about symmetry unique and equivalent atoms.
     int nunique() const { return nuniq_; }
     int unique(int iuniq) const { return equiv_[iuniq][0]; }
     int nequivalent(int iuniq) const { return nequiv_[iuniq]; }
     int equivalent(int iuniq, int j) const { return equiv_[iuniq][j]; }
-    //. Converts an atom number to the number of its generating unique atom.
+    /// Converts an atom number to the number of its generating unique atom.
     int atom_to_unique(int iatom) const { return atom_to_uniq_[iatom]; }
 
-    //. Return the number of core electrons.
+    /// Return the number of core electrons.
     int n_core_electrons();
 
-    //. Return the maximum atomic number.
+    /// Return the maximum atomic number.
     int max_z();
 
-    //. Return the molecules \clsnmref{AtomInfo} object.
+    /// Return the molecules \clsnmref{AtomInfo} object.
     RefAtomInfo atominfo() const { return atominfo_; }
 
     void save_data_state(StateOut&);

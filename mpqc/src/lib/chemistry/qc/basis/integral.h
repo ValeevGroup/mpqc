@@ -98,7 +98,7 @@ class Integral : public SavableState {
                            const RefGaussianBasisSet &b3 = 0,
                            const RefGaussianBasisSet &b4 = 0);
 
-    ///////////////////////////////////////////////////////////////////////
+    // /////////////////////////////////////////////////////////////////////
     // the following must be defined in the specific integral package
 
     virtual CartesianIter * new_cartesian_iter(int) =0;

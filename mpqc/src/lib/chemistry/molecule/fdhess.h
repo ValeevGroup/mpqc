@@ -97,8 +97,8 @@ class FinDispMolecularHessian: public MolecularHessian {
     ~FinDispMolecularHessian();
     void save_data_state(StateOut&);
 
-    //. These members are used to compute a cartesian hessian from
-    //gradients at finite displacements.
+    /** These members are used to compute a cartesian hessian from
+        gradients at finite displacements. */
     RefSymmSCMatrix compute_hessian_from_gradients();
     int ndisplace() const;
     int ndisplacements_done() const { return ndisp_; }
@@ -109,13 +109,13 @@ class FinDispMolecularHessian: public MolecularHessian {
     void checkpoint_displacements(StateOut&);
     void restore_displacements(StateIn&);
 
-    //. This returns the cartesian hessian.  If it has not yet been
-    //computed, it will be computed by finite displacements.
+    /** This returns the cartesian hessian.  If it has not yet been
+        computed, it will be computed by finite displacements. */
     RefSymmSCMatrix cartesian_hessian();
 
-    //. Set checkpoint option.
+    /// Set checkpoint option.
     void set_checkpoint(int c) { checkpoint_ = c; }
-    //. Return the current value of the checkpoint option.
+    /// Return the current value of the checkpoint option.
     int checkpoint() const { return checkpoint_; }
 
     void set_energy(const RefMolecularEnergy &energy);

@@ -37,8 +37,8 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
-//. The \clsnm{HFACM} class performs adiabatic connection method
-//calculations using Hartree-Fock orbitals.
+/** The HFACM class performs adiabatic connection method
+    calculations using Hartree-Fock orbitals. */
 class HFACM: public Wavefunction {
 #   define CLASSNAME HFACM
 #   define HAVE_KEYVAL_CTOR

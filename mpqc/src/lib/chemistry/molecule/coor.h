@@ -42,14 +42,12 @@
 class SSRefIntCoor;
 typedef class SSRefIntCoor RefIntCoor;
 
-//.  \clsnm{IntCoor} is an abstract base class.  From it are derived the
-//simple internal coordinate classes (derivatives of \clsnmref{SimpleCo})
-//and a class describing linear combinations of internal coordinates
-//(\clsnmref{SumIntCoor}).
-//
-// \clsnm{IntCoor} is a \clsnmref{SavableState} and has a
-//clsnmref{StateIn} constructor, as well as a \clsnmref{KeyVal}
-//constructor.
+/** IntCoor is an abstract base class.  From it are derived the simple
+    internal coordinate classes (derivatives of SimpleCo) and a class
+    describing linear combinations of internal coordinates (SumIntCoor).
+
+    IntCoor is a SavableState and has a StateIn constructor, as well as a
+    KeyVal constructor. */
 class IntCoor: public SavableState {
 #   define CLASSNAME IntCoor
 #   include <util/state/stated.h>
@@ -63,48 +61,47 @@ class IntCoor: public SavableState {
   public:
     IntCoor(StateIn&);
     IntCoor(const IntCoor&);
-    //. This constructor takes a string containing a label for the
-    // internal coordinate.  The string is copied.
+    /** This constructor takes a string containing a label for the
+        internal coordinate.  The string is copied. */
     IntCoor(const char* label = 0);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     IntCoor(const RefKeyVal&);
     
     virtual ~IntCoor();
     void save_data_state(StateOut&);
 
-    //. Returns the string containing the label for the internal coordinate.
+    /// Returns the string containing the label for the internal coordinate.
     virtual const char* label() const;
-    //. Returns the value of the coordinate in atomic units or radians.
+    /// Returns the value of the coordinate in atomic units or radians.
     virtual double value() const;
-    //. Sets the value of the coordinate in atomic units or radians.
+    /// Sets the value of the coordinate in atomic units or radians.
     virtual void set_value(double);
-    //. Returns the value of the coordinate in more familiar units.
+    /// Returns the value of the coordinate in more familiar units.
     virtual double preferred_value() const;
-    //. Returns a string representation of the type of coordinate this is.
+    /// Returns a string representation of the type of coordinate this is.
     virtual const char* ctype() const = 0;
-    //. Print information about the coordinate.
+    /// Print information about the coordinate.
     virtual void print(ostream & o=cout) const;
     virtual void print_details(const RefMolecule &, ostream& =cout) const;
-    //. Returns the value of the force constant associated with this
-    // coordinate.
+    /** Returns the value of the force constant associated with this
+        coordinate. */
     virtual double force_constant(RefMolecule&) = 0;
-    //. Recalculate the value of the coordinate.
+    /// Recalculate the value of the coordinate.
     virtual void update_value(const RefMolecule&) = 0;
-    //. Fill in a row the the B matrix.
+    /// Fill in a row the the B matrix.
     virtual void bmat(const RefMolecule&,RefSCVector&bmat,double coef=1.0) = 0;
-    //. Test to see if this internal coordinate is equivalent to that one.
-    // The definition of equivalence is left up to the individual coordinates.
+    /** Test to see if this internal coordinate is equivalent to that one.
+        The definition of equivalence is left up to the individual
+        coordinates. */
     virtual int equivalent(RefIntCoor&) = 0;
 };
 SavableState_REF_dec(IntCoor);
 ARRAY_dec(RefIntCoor);
 
-//.  \clsnm{SumIntCoor} is used to construct linear combinations of
-//internal coordinates.  Normally one will use simple internal coordinates,
-//such as bond lengths and angles.  \clsnm{SumIntCoor} inherits from
-//\clsnmref{IntCoor}, so it is a \clsnmref{SavableState}.
-//\clsnm{SumIntCoor} has \clsnmref{StateIn} and \clsnmref{KeyVal}
-//constructors.
+/** SumIntCoor is used to construct linear combinations of internal
+    coordinates.  Normally one will use simple internal coordinates, such
+    as bond lengths and angles.  SumIntCoor inherits from IntCoor, so it is
+    a SavableState.  SumIntCoor has StateIn and KeyVal constructors. */
 class SumIntCoor: public IntCoor {
 #   define CLASSNAME SumIntCoor
 #   define HAVE_KEYVAL_CTOR
@@ -116,47 +113,46 @@ class SumIntCoor: public IntCoor {
     ArrayRefIntCoor coor_;
   public:
     SumIntCoor(StateIn&);
-    //. This constructor takes a string containing a label for this
-    // coordinate.
+    /** This constructor takes a string containing a label for this
+        coordinate. */
     SumIntCoor(const char *);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     SumIntCoor(const RefKeyVal&);
 
     ~SumIntCoor();
     void save_data_state(StateOut&);
 
-    //. Returns the number of coordinates in this linear combination.
+    /// Returns the number of coordinates in this linear combination.
     int n();
-    //. Add a coordinate to the linear combination.  \vrbl{coef} is the
-    // coefficient for the added coordinate.
+    /** Add a coordinate to the linear combination.  coef is the
+        coefficient for the added coordinate. */
     void add(RefIntCoor&,double coef);
-    //. This function normalizes all the coefficients.
+    /// This function normalizes all the coefficients.
     void normalize();
 
     // IntCoor overrides
-    //. Returns the value of the coordinate in a.u. and radians.
+    /// Returns the value of the coordinate in a.u. and radians.
     double preferred_value() const;
-    //. Always returns ``SUM''.
+    /// Always returns ``SUM''.
     const char* ctype() const;
-    //. Print the individual coordinates in the sum with their coefficients.
+    /// Print the individual coordinates in the sum with their coefficients.
     void print_details(const RefMolecule &, ostream& =cout) const;
-    //. Returns the weighted sum of the individual force constants.
+    /// Returns the weighted sum of the individual force constants.
     double force_constant(RefMolecule&);
-    //. Recalculate the value of the coordinate.
+    /// Recalculate the value of the coordinate.
     void update_value(const RefMolecule&);
-    //. Fill in a row the the B matrix.
+    /// Fill in a row the the B matrix.
     void bmat(const RefMolecule&,RefSCVector&bmat,double coef = 1.0);
-    //. Always returns 0.
+    /// Always returns 0.
     int equivalent(RefIntCoor&);
 };
 
 class SSRefSetIntCoor;
 typedef class SSRefSetIntCoor RefSetIntCoor;
 
-//.  \clsnm{SetIntCoor} is a class which holds sets of internal
-//coordinates, be they simple internal coordinates or combinations of
-//coordinates.  \clsnm{SetIntCoor} is a \clsnmref{SavableState}, and has
-//\clsnmref{StateIn} and \clsnmref{KeyVal} constructors.
+/** SetIntCoor is a class which holds sets of internal coordinates, be they
+    simple internal coordinates or combinations of coordinates.  SetIntCoor
+    is a SavableState, and has StateIn and KeyVal constructors. */
 class SetIntCoor: public SavableState {
 #   define CLASSNAME SetIntCoor
 #   define HAVE_CTOR
@@ -169,47 +165,47 @@ class SetIntCoor: public SavableState {
   public:
     SetIntCoor();
     SetIntCoor(StateIn&);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     SetIntCoor(const RefKeyVal&);
 
     virtual ~SetIntCoor();
     void save_data_state(StateOut&);
 
-    //. Adds an internal coordinate to the set.
+    /// Adds an internal coordinate to the set.
     void add(const RefIntCoor&);
-    //. Adds all the elements of another set to this one.
+    /// Adds all the elements of another set to this one.
     void add(const RefSetIntCoor&);
-    //. Removes the last coordinate from this set.
+    /// Removes the last coordinate from this set.
     void pop();
-    //. Removes all coordinates from the set.
+    /// Removes all coordinates from the set.
     void clear();
-    //. Returns the number of coordinates in the set.
+    /// Returns the number of coordinates in the set.
     int n() const;
-    //. Returns a reference to the i'th coordinate in the set.
+    /// Returns a reference to the i'th coordinate in the set.
     RefIntCoor coor(int i) const;
-    //. Compute the B matrix by finite displacements.
+    /// Compute the B matrix by finite displacements.
     virtual void fd_bmat(const RefMolecule&,RefSCMatrix&);
-    //. Compute the B matrix the old-fashioned way.
+    /// Compute the B matrix the old-fashioned way.
     virtual void bmat(const RefMolecule&, RefSCMatrix&);
-    //. Create an approximate Hessian for this set of coordinates.  This
-    // Hessian is a symmetric matrix whose i'th diagonal is the force constant
-    // for the i'th coordinate in the set.
+    /** Create an approximate Hessian for this set of coordinates.  This
+        Hessian is a symmetric matrix whose i'th diagonal is the force
+        constant for the i'th coordinate in the set. */
     virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);
-    //. Print the coordinates in the set.
+    /// Print the coordinates in the set.
     virtual void print_details(const RefMolecule &,ostream& =cout) const;
-    //. Recalculate the values of the internal coordinates in the set.
+    /// Recalculate the values of the internal coordinates in the set.
     virtual void update_values(const RefMolecule&);
-    //. Copy the values of the internal coordinates to a vector.
+    /// Copy the values of the internal coordinates to a vector.
     virtual void values_to_vector(const RefSCVector&);
 };
 SavableState_REF_dec(SetIntCoor);
 
-//////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////
 
 class BitArrayLTri;
 
-//.  \clsnm{IntCoorGen} generates a set of simple internal coordinates
-//given a molecule.
+/** IntCoorGen generates a set of simple internal coordinates
+    given a molecule. */
 class IntCoorGen: public SavableState
 {
 #   define CLASSNAME IntCoorGen
@@ -239,34 +235,33 @@ class IntCoorGen: public SavableState
     void add_tors(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
     void add_out(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
   public:
-    //. Create an \clsnm{IntCoorGen} given a \clsnmref{Molecule} and,
-    //optionally, extra bonds.  \clsnm{IntCoorGen} keeps a reference to
-    //\vrbl{extra} and deletes it when the destructor is called.
+    /** Create an IntCoorGen given a Molecule and, optionally, extra bonds.
+        IntCoorGen keeps a reference to extra and deletes it when the
+        destructor is called. */
     IntCoorGen(const RefMolecule&, int nextra=0, int *extra=0);
-    //. Standard constructors for \clsnm{IntCoorGen}.
+    /// Standard constructors for IntCoorGen.
     IntCoorGen(const RefKeyVal&);
     IntCoorGen(StateIn&);
 
     ~IntCoorGen();
 
-    //. Standard member.
+    /// Standard member.
     void save_data_state(StateOut&);
 
-    //. This generates a set of internal coordinates.
+    /// This generates a set of internal coordinates.
     virtual void generate(const RefSetIntCoor&);
 
-    //. Print out information about this.
+    /// Print out information about this.
     virtual void print(ostream& out=cout) const;
 };
 SavableState_REF_dec(IntCoorGen);
 
-//////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////
 
-//.  \clsnm{MolecularCoor} is a virtual base class for a set of classes
-//used to describe coordinates for molecules useful in optimizing
-//geometries (among other things).  \clsnm{MolecularCoor} is a
-//\clsnmref{SavableState} and has \clsnmref{StateIn} and \clsnmref{KeyVal}
-//constructors.
+/** MolecularCoor is a virtual base class for a set of classes used to
+    describe coordinates for molecules useful in optimizing geometries
+    (among other things).  MolecularCoor is a SavableState and has StateIn
+    and KeyVal constructors. */
 class MolecularCoor: public SavableState
 {
 #   define CLASSNAME MolecularCoor
@@ -282,91 +277,90 @@ class MolecularCoor: public SavableState
     MolecularCoor(RefMolecule&);
     MolecularCoor(StateIn&);
 
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     MolecularCoor(const RefKeyVal&);
 
     virtual ~MolecularCoor();
 
     void save_data_state(StateOut&);
 
-    //. Returns a smart reference to an \clsnmref{SCDimension} equal to the
-    // number of atoms in the molecule times 3.
+    /** Returns a smart reference to an SCDimension equal to the
+        number of atoms in the molecule times 3. */
     RefSCDimension dim_natom3() { return dnatom3_; }
 
-    //. Returns the molecule.
+    /// Returns the molecule.
     RefMolecule molecule() const { return molecule_; }
 
-    //. Print the coordinate.
+    /// Print the coordinate.
     virtual void print(ostream& =cout) const = 0;
     virtual void print_simples(ostream& =cout) const = 0;
 
-    //. Returns a smart reference to an \clsnmref{SCDimension} equal to the
-    // number of coordinates (be they Cartesian, internal, or whatever)
-    // that are being optimized.
+    /** Returns a smart reference to an SCDimension equal to the number of
+        coordinates (be they Cartesian, internal, or whatever) that are
+        being optimized. */
     virtual RefSCDimension dim() = 0;
     
-    //. Given a set of displaced internal coordinates, update the cartesian
-    // coordinates of the \clsnmref{Molecule} contained herein.  This function
-    // does not change the vector ``internal''.
+    /** Given a set of displaced internal coordinates, update the cartesian
+        coordinates of the Molecule contained herein.  This function does
+        not change the vector ``internal''. */
     int to_cartesian(const RefSCVector&internal);
     virtual int to_cartesian(const RefMolecule&mol,
                              const RefSCVector&internal) = 0;
 
-    //. Fill in the vector ``internal'' with the current internal
-    // coordinates.  Note that this member will update the values of the
-    // variable internal coordinates.
+    /** Fill in the vector ``internal'' with the current internal
+        coordinates.  Note that this member will update the values of the
+        variable internal coordinates. */
     virtual int to_internal(RefSCVector&internal) = 0;
 
-    //. Convert the internal coordinate gradients in ``internal'' to
-    // Cartesian coordinates and copy these Cartesian coordinate gradients
-    // to ``cartesian''. Only the variable internal coordinate gradients
-    // are transformed.
+    /** Convert the internal coordinate gradients in ``internal'' to
+        Cartesian coordinates and copy these Cartesian coordinate gradients
+        to ``cartesian''. Only the variable internal coordinate gradients
+        are transformed. */
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal) = 0;
 
-    //. Convert the Cartesian coordinate gradients in ``cartesian'' to
-    // internal coordinates and copy these internal coordinate gradients
-    // to ``internal''.  Only the variable internal coordinate gradients
-    // are calculated.
+    /** Convert the Cartesian coordinate gradients in ``cartesian'' to
+        internal coordinates and copy these internal coordinate gradients
+        to ``internal''.  Only the variable internal coordinate gradients
+        are calculated. */
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian) = 0;
 
-    //. Convert the internal coordinate Hessian ``internal'' to Cartesian
-    // coordinates and copy the result to ``cartesian''.  Only the variable
-    // internal coordinate force constants are transformed.
+    /** Convert the internal coordinate Hessian ``internal'' to Cartesian
+        coordinates and copy the result to ``cartesian''.  Only the variable
+        internal coordinate force constants are transformed. */
     virtual int to_cartesian(RefSymmSCMatrix&cartesian,
                               RefSymmSCMatrix&internal) =0;
 
-    //. Convert the Cartesian coordinate Hessian ``cartesian'' to internal
-    // coordinates and copy the result to ``internal''.  Only the variable
-    // internal coordinate force constants are calculated.
+    /** Convert the Cartesian coordinate Hessian ``cartesian'' to internal
+        coordinates and copy the result to ``internal''.  Only the variable
+        internal coordinate force constants are calculated. */
     virtual int to_internal(RefSymmSCMatrix&internal,
                              RefSymmSCMatrix&cartesian) = 0;
 
-    //. Calculate an approximate hessian and place the result in
-    // ``hessian''.
+    /** Calculate an approximate hessian and place the result in
+        ``hessian''. */
     virtual void guess_hessian(RefSymmSCMatrix&hessian) = 0;
 
-    //. Given an Hessian, return the inverse of that hessian.  For singular
-    // matrices this should return the generalized inverse.
+    /** Given an Hessian, return the inverse of that hessian.  For singular
+        matrices this should return the generalized inverse. */
     virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&) = 0;
 
-    //. Returns the number of constrained coordinates.
+    /// Returns the number of constrained coordinates.
     virtual int nconstrained();
 
-    //. When this is called, \clsnmref{MoleculeCoor} may select a new
-    // internal coordinate system and return a transform to it.
-    // The default action is
-    // to not change anything and return an \clsnmref{IdentityTransform}.
+    /** When this is called, MoleculeCoor may select a new internal
+        coordinate system and return a transform to it.  The default action
+        is to not change anything and return an IdentityTransform. */
     virtual RefNonlinearTransform change_coordinates();
 
     RefSCMatrixKit matrixkit() const { return matrixkit_; }
 };
 SavableState_REF_dec(MolecularCoor);
 
-//.  \clsnm{IntMolecularCoor} is a virtual base class for the internal
-//coordinate classes.  Internal coordinates are very useful in geometry
-//optimizations, and are also used to describe the normal vibrational modes
-//in spectroscopy.  \clsnm{IntMolecularCoor} is a \clsnmref{SavableState}
-//and has \clsnmref{StateIn} and \clsnmref{KeyVal} constructors.
+/** IntMolecularCoor is a virtual base class for the internal coordinate
+    classes.  Internal coordinates are very useful in geometry
+    optimizations, and are also used to describe the normal vibrational
+    modes in spectroscopy.  IntMolecularCoor is a SavableState and has
+    StateIn and KeyVal constructors. */
 class IntMolecularCoor: public MolecularCoor
 {
 #   define CLASSNAME IntMolecularCoor
@@ -429,14 +423,14 @@ class IntMolecularCoor: public MolecularCoor
     int max_update_steps_;
     double max_update_disp_;
 
-    //. This is called by the constructors of classes derived from
-    // \clsnm{IntMolecularCoor}.  It initialized the lists of simple internal
-    // coordinates, and then calls the \srccd{form\_coordinates()} member.
+    /** This is called by the constructors of classes derived from
+        IntMolecularCoor.  It initialized the lists of simple internal
+        coordinates, and then calls the form_coordinates() member. */
     virtual void init();
-    //. Allocates memory for the \clsnmref{SetIntCoor}s used to store the
-    // simple and internal coordinates.
+    /** Allocates memory for the SetIntCoor's used to store the
+        simple and internal coordinates. */
     virtual void new_coords();
-    //. Reads the \clsnmref{KeyVal} input.
+    /// Reads the KeyVal input.
     virtual void read_keyval(const RefKeyVal&);
 
     // control whether or not to print coordinates when they are formed
@@ -447,25 +441,25 @@ class IntMolecularCoor: public MolecularCoor
   public:
     IntMolecularCoor(StateIn&);
     IntMolecularCoor(RefMolecule&mol);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     IntMolecularCoor(const RefKeyVal&);
 
     virtual ~IntMolecularCoor();
     void save_data_state(StateOut&);
   
-    //. Actually form the variable and constant internal coordinates from
-    // the simple internal coordinates.
+    /** Actually form the variable and constant internal coordinates from
+        the simple internal coordinates. */
     virtual void form_coordinates(int keep_variable=0) =0;
     
-    //. Like \srccd{to\_cartesians()}, except all internal coordinates are
-    // considered, not just the variable ones.
+    /** Like to_cartesians(), except all internal coordinates are
+        considered, not just the variable ones. */
     virtual int all_to_cartesian(const RefMolecule &,RefSCVector&internal);
-    //. Like \srccd{to\_internal()}, except all internal coordinates are
-    // considered, not just the variable ones.
+    /** Like to_internal(), except all internal coordinates are
+        considered, not just the variable ones. */
     virtual int all_to_internal(const RefMolecule &,RefSCVector&internal);
 
-    //. These implement the virtual functions inherited from
-    // \clsnmref{MolecularCoor}.
+    /** These implement the virtual functions inherited from
+        MolecularCoor. */
     virtual RefSCDimension dim();
     virtual int to_cartesian(const RefMolecule &,const RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
@@ -480,13 +474,12 @@ class IntMolecularCoor: public MolecularCoor
     int nconstrained();
 };
 
-/////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////
 
-//.  The \clsnm{SymmMolecularCoor} class implements symmetry adapted linear
-//combinations of internal coordinates. \clsnm{SymmMolecularCoor} is a
-//\clsnmref{SavableState} and has \clsnmref{StateIn} and \clsnmref{KeyVal}
-//constructors.  \clsnm{SymmMolecularCoor} is derived from
-//\clsnmref{IntMolecularCoor}.
+/** The SymmMolecularCoor class implements symmetry adapted linear
+    combinations of internal coordinates.  SymmMolecularCoor is a
+    SavableState and has StateIn and KeyVal constructors.
+    SymmMolecularCoor is derived from IntMolecularCoor. */
 class SymmMolecularCoor: public IntMolecularCoor
 {
 #   define CLASSNAME SymmMolecularCoor
@@ -506,35 +499,34 @@ class SymmMolecularCoor: public IntMolecularCoor
   public:
     SymmMolecularCoor(RefMolecule&mol);
     SymmMolecularCoor(StateIn&);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     SymmMolecularCoor(const RefKeyVal&);
 
     virtual ~SymmMolecularCoor();
     void save_data_state(StateOut&);
 
-    //. Actually form the variable and constant internal coordinates from
-    // the simple internal coordinates.
+    /** Actually form the variable and constant internal coordinates from
+        simple internal coordinates. */
     void form_coordinates(int keep_variable=0);
 
-    //. Form the approximate hessian.
+    /// Form the approximate hessian.
     void guess_hessian(RefSymmSCMatrix&hessian);
-    //. Invert the hessian.
+    /// Invert the hessian.
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
-    //. This overrides \clsnmref{MoleculeCoor}'s \srccd{change\_coordinates}
-    // and might transform to a new set of coordinates.
+    /** This overrides MoleculeCoor's change_coordinates
+        and might transform to a new set of coordinates. */
     RefNonlinearTransform change_coordinates();
 
     void print(ostream& =cout) const;
 };
 
-/////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////
 
-//.  The \clsnm{RedundMolecularCoor} class implements redundant sets of
-//internal coordinates. \clsnm{RedundMolecularCoor} is a
-//\clsnmref{SavableState} and has \clsnmref{StateIn} and \clsnmref{KeyVal}
-//constructors.  \clsnm{RedundMolecularCoor} is derived from
-//\clsnmref{IntMolecularCoor}.
+/** The RedundMolecularCoor class implements redundant sets of internal
+    coordinates. RedundMolecularCoor is a SavableState has StateIn and
+    KeyVal constructors.  RedundMolecularCoor is derived from
+    IntMolecularCoor. */
 class RedundMolecularCoor: public IntMolecularCoor
 {
 #   define CLASSNAME RedundMolecularCoor
@@ -546,29 +538,27 @@ class RedundMolecularCoor: public IntMolecularCoor
   public:
     RedundMolecularCoor(RefMolecule&mol);
     RedundMolecularCoor(StateIn&);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     RedundMolecularCoor(const RefKeyVal&);
 
     virtual ~RedundMolecularCoor();
     void save_data_state(StateOut&);
 
-    //. Actually form the variable and constant internal coordinates from
-    // the simple internal coordinates.
+    /** Actually form the variable and constant internal coordinates from
+        the simple internal coordinates. */
     void form_coordinates(int keep_variable=0);
-    //. Form the approximate hessian.
+    /// Form the approximate hessian.
     void guess_hessian(RefSymmSCMatrix&hessian);
-    //. Invert the hessian.
+    /// Invert the hessian.
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };
 
-/////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////
 
-//.  The \clsnm{CartMolecularCoor} class implements Cartesian coordinates
-//in a way suitable for use in geometry
-//optimizations. \clsnm{CartMolecularCoor} is a \clsnmref{SavableState} and
-//has \clsnmref{StateIn} and \clsnmref{KeyVal}
-//constructors. \clsnm{CartMolecularCoor} is derived from
-//\clsnmref{MolecularCoor}.
+/** The CartMolecularCoor class implements Cartesian coordinates in a way
+    suitable for use in geometry optimizations. CartMolecularCoor is a
+    SavableState has StateIn and KeyVal constructors. CartMolecularCoor is
+    derived from MolecularCoor. */
 class CartMolecularCoor: public MolecularCoor
 {
 #   define CLASSNAME CartMolecularCoor
@@ -580,20 +570,19 @@ class CartMolecularCoor: public MolecularCoor
   protected:
     RefSCDimension dim_; // the number of atoms x 3
 
-    //. Initializes the dimensions.
+    /// Initializes the dimensions.
     virtual void init();
   public:
     CartMolecularCoor(RefMolecule&mol);
     CartMolecularCoor(StateIn&);
-    //. The \clsnmref{KeyVal} constructor.
+    /// The KeyVal constructor.
     CartMolecularCoor(const RefKeyVal&);
 
     virtual ~CartMolecularCoor();
   
     void save_data_state(StateOut&);
 
-    //. These implement the virtual functions inherited from
-    // \clsnmref{MolecularCoor}.
+    /// These implement the virtual functions inherited from MolecularCoor.
     virtual RefSCDimension dim();
     virtual int to_cartesian(const RefMolecule&,const RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);

@@ -40,7 +40,7 @@
 #include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
-////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////
 
 class SCF: public OneBodyWavefunction {
 #   define CLASSNAME SCF
@@ -149,13 +149,13 @@ class SCF: public OneBodyWavefunction {
     RefSCMatrix scf_vectorb_; // only used if !spin_restricted
     RefSymmSCMatrix hcore_;
 
-    ////////////////////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////////////////
     // pure virtual member functions follow
     
     // tries to automagically guess the MO occupations
     virtual void set_occupations(const RefDiagSCMatrix&) =0;
     
-    ////////////////////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////////////////
     // do setup for SCF calculation
     virtual void init_vector() =0;
     virtual void done_vector() =0;
@@ -175,7 +175,7 @@ class SCF: public OneBodyWavefunction {
     // form the AO basis fock matrices
     virtual void ao_fock() =0;
 
-    ////////////////////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////////////////
     // do setup for gradient calculation
     virtual void init_gradient() =0;
     virtual void done_gradient() =0;
@@ -184,7 +184,7 @@ class SCF: public OneBodyWavefunction {
     virtual RefSymmSCMatrix gradient_density() =0;
     virtual void two_body_deriv(double*) =0;
     
-    ////////////////////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////////////////
     // do setup for hessian calculation
     virtual void init_hessian() =0;
     virtual void done_hessian() =0;

@@ -46,8 +46,8 @@ void bzero(void*,int);
 #define IOFF(i,j) ((i)>(j)) ? ioff((i))+(j) : ioff((j))+(i)
 
 static void clean_and_exit(int);
-static void mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec);
-static void read_geometry(centers_t& centers,FILE *outfp);
+static void mkcostvec(centers_t*,sym_struct_t*,int*);
+static void read_geometry(centers_t&,RefKeyVal,FILE*);
 
 int host;
 char* argv0;
@@ -295,7 +295,7 @@ main(int argc, char *argv[])
       geom_code = Geom_init_mpqc(outfile,outfile,&centers,keyval);
       }
     else if (read_geom && stat("geom.dat",&stbuf)==0 && stbuf.st_size!=0) {
-      read_geometry(centers,outfile);
+      read_geometry(centers,keyval,outfile);
       }
     }
 
@@ -679,7 +679,7 @@ double ftn_i_dsign(double a, double b)
 #endif
 
 static void
-read_geometry(centers_t& centers,FILE *outfp)
+read_geometry(centers_t& centers, RefKeyVal keyval, FILE *outfp)
 {
   StateInBinXDR si("geom.dat","r+");
 
@@ -690,6 +690,7 @@ read_geometry(centers_t& centers,FILE *outfp)
 
   RefSymmCoList symm_coords;
   symm_coords = SymmCoList::restore_state(si);
+  symm_coords = 0;
 
   Molecule mol(si);
 
@@ -700,4 +701,34 @@ read_geometry(centers_t& centers,FILE *outfp)
     }
 
   mol.print(outfp);
+
+  RefSimpleCoList list = Geom_form_simples(mol);
+
+  int nadd;
+  if(nadd=keyval->count("add_simp")) {
+    for(int i=0; i < nadd; i++) {
+      char *val = keyval->pcharvalue("add_simp",i,0);
+
+      if (!strcmp("stre",val))
+        list->add(new Stre(keyval.pointer(),"add_simp",i));
+      else if (!strcmp("bend",val))
+        list->add(new Bend(keyval.pointer(),"add_simp",i));
+      else if (!strcmp("tors",val))
+        list->add(new Tors(keyval.pointer(),"add_simp",i));
+      else if (!strcmp("out",val))
+        list->add(new Out(keyval.pointer(),"add_simp",i));
+      else if (!strcmp("linip",val))
+        list->add(new LinIP(keyval.pointer(),"add_simp",i));
+      else if (!strcmp("linop",val))
+        list->add(new LinOP(keyval.pointer(),"add_simp",i));
+      delete[] val;
+      }
+    }
+
+  Geom_calc_simples(list,mol);
+
+  fprintf(outfp,"\n  internal coordinates\n");
+  Geom_print_pretty(list);
+
+  list=0;
 }

@@ -1,8 +1,11 @@
 
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:52:58  etseidl
- * Initial revision
+ * Revision 1.2  1994/05/16 16:33:49  etseidl
+ * refix cnh bug
+ *
+ * Revision 1.1.1.1  1993/12/29  12:52:59  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/09/11  12:14:57  seidl
  * add nrot and ntrans to char table
@@ -401,7 +404,7 @@ FILE *_outfile;
       for(j=si->g/2; j < si->g ; j++) si->ct.gamma[i].rep[j] =
                                                        -si->ct.gamma[1].rep[j];
 
-      for(i=i+1; i <= si->nirrep ; i++) {
+      for(i=i+1; i < si->nirrep ; i++) {
         i0=i-(si->nirrep/2);
         label = (char *) malloc(4);
         if(n==4) sprintf(label,"Eu");

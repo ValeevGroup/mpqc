@@ -646,6 +646,7 @@ if test X$PARALLEL = Xyes; then
   AC_CHECK_LIB(mpi,exit)
   AC_CHECK_LIB(mpi,mpc_rcvncall)
   AC_CHECK_LIB(mpi,p4_initenv)
+  AC_CHECK_LIB(mpi,MPI2_RMA_init)
   AC_CHECK_LIB(pvm,exit)
 
   AC_CHECK_LIB(nx,hrecv,[
@@ -695,6 +696,12 @@ if test X$ac_cv_lib_mpi_p4_initenv = Xyes; then
   AC_DEFINE(HAVE_P4)
 fi
 AC_SUBST(HAVE_P4)
+
+if test X$ac_cv_lib_mpi_MPI2_RMA_init = Xyes; then
+  HAVE_PUMA_MPI2=yes
+  AC_DEFINE(HAVE_PUMA_MPI2)
+fi
+AC_SUBST(HAVE_PUMA_MPI2)
 
 if test X$ac_cv_lib_pvm_exit = Xyes -a X$ac_cv_header_pvm_h = Xyes; then
   HAVE_PVM=yes

@@ -150,7 +150,7 @@ RefSCDimension
 Molecule::dim_natom3()
 {
   if (dnatom3_.nonnull()) {
-      if (dnatom3_.n() != natoms) {  // should this be natoms*3?
+      if (dnatom3_.n() != natoms*3) {
           dnatom3_ = new LocalSCDimension(natoms*3);
         }
     }
@@ -329,6 +329,8 @@ void Molecule::save_data_state(StateOut& so)
   for (int i=0; i < natoms; i++) {
       get_atom(i).save_object_state(so);
     }
+  // call dim_natom3() to make sure dnatom3_ is initialized
+  dim_natom3().save_state(so);
 }
 
 Molecule::Molecule(StateIn& si):
@@ -345,6 +347,7 @@ Molecule::Molecule(StateIn& si):
       AtomicCenter ac(si);
       add_atom(i,ac);
     }
+  dnatom3_.restore_state(si);
 }
 
 PointGroup& Molecule::point_group()

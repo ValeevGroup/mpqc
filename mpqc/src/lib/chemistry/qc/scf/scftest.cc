@@ -103,8 +103,7 @@ main(int argc, char**argv)
         mole->gradient().print("gradient");
       }
     } else if (mole->value_implemented()) {
-      o << " value of mole is ";
-      o << mole->energy() << endl;
+      o << " value of mole is " << mole->energy() << endl;
       printf("%20.15f\n",mole->energy());
     }
 

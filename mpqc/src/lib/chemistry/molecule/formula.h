@@ -55,9 +55,9 @@ class MolecularFormula {
     //. Returns a null terminated string containing the molecular formula.
     const char * formula() const;
     //. Returns the number of atomtypes
-    int natomtypes();
+    int natomtypes(); 
     //. Returns atomic number of given atomtypeindex
-    int Z(int itype);
+    int Z(int itype); 
     //. Returns number of atoms of given atomtypeindex
     int nZ(int itype);
 };

@@ -211,6 +211,8 @@ BEMSolventH::init(const RefWavefunction& wfn)
            << endl;
     }
 
+  edisprep_ = solvent_->disprep();
+
   tim_exit("init");
   tim_exit("solvent");
 }
@@ -312,9 +314,6 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   // the cavitation energy
   ecavitation_ = A * gamma_;
 
-  // the dispersion energy
-  double edisprep = 0.0;
-
   // compute the nuclear-surface interaction energy
   tim_enter("n-s");
   double enucsurf
@@ -391,7 +390,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   //esurfsurf = solvent_->self_interaction_energy(charge_positions_, charges_);
   //tim_exit("s-s");
 
-  escalar_ = enucsurf + esurfsurf + ecavitation_ + edisprep;
+  escalar_ = enucsurf + esurfsurf + ecavitation_ + edisprep_;
   // NOTE: SCF currently only adds h_so to the Fock matrix
   // so a term is missing in the energy.  This term is added here
   // and when SCF is fixed, should no longer be included.
@@ -421,7 +420,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
     }
   cout << node0 << indent
        << scprintf("E(c)=%10.8f ", ecavitation_)
-       << scprintf("E(disp-rep)=%10.8f", edisprep)
+       << scprintf("E(disp-rep)=%10.8f", edisprep_)
        << endl;
   cout << node0 << indent
        << scprintf("E(n-s)=%10.8f ", enucsurf)

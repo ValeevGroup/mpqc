@@ -35,6 +35,14 @@
 #include <util/state/stateio.h>
 
 //////////////////////////////////////////////////////////////////////
+// Utility functions
+
+static inline int eq(const char* a, const char* b)
+{
+  return !strcmp(a,b);
+}
+
+//////////////////////////////////////////////////////////////////////
 // Units class definition
 
 #define CLASSNAME Units
@@ -134,13 +142,18 @@ Units::parse_unit()
       else {
           nchar = strlen(rest);
         }
+      char *unitstring = new char[nchar+1];
+      memcpy(unitstring,rest,nchar);
+      unitstring[nchar] = '\0';
 
       // physical constants used for atomic unit conversion factors
-      const double a0 = 5.2917706e-11; // m
-      //const double hbar = 1.0545887e-34; // J s
-      const double e = 1.6021892e-19; // C
-      const double me = 9.109534e-31; // kg
-      const double e0 = 8.854187818e-12; // F/m
+      // from CRC Handbook 77th Ed. Tables 1&2 (CODATA 1986)
+      const double a0 = 5.29177249e-11; // m
+      //const double hbar = 1.05457266e-34; // J s
+      const double e = 1.60217733e-19; // C
+      const double me = 9.1093897e-31; // kg
+      const double e0 = 8.854187817e-12; // F/m
+      const double NA = 6.0221367e23; // mol-1 (from CRC Handbook)
 
       // derived au conversion factors
       const double Ea = e*e/((4.0*M_PI*e0)*a0); // J
@@ -148,46 +161,63 @@ Units::parse_unit()
 
       // other conversions
       const double amu = 1.6605655e-27; // kg
+      const double cal = 4.184; // J
 
       double factor = 1.0;
-      if (!strncmp(rest, "bohr", nchar)
-          ||!strncmp(rest, "bohrs", nchar)) {
+      if (eq(unitstring, "bohr")
+          ||eq(unitstring, "bohrs")) {
+        } 
+      else if (eq(unitstring, "hartree")
+               ||eq(unitstring, "hartrees")
+               ||eq(unitstring, "Hartree")
+               ||eq(unitstring, "Hartrees")) {
         }
-      else if (!strncmp(rest, "radian", nchar)
-               ||!strncmp(rest, "radians", nchar)) {
+      else if (eq(unitstring, "radian")
+               ||eq(unitstring, "radians")) {
         }
-      else if (!strncmp(rest, "N", nchar)
-               ||!strncmp(rest, "newton", nchar)) {
+      else if (eq(unitstring, "mol")
+               ||eq(unitstring, "mole")) {
+          factor = NA;
+        }
+      else if (eq(unitstring, "kcal")) {
+          factor = 1000.0*cal/Ea;     
+        }
+      else if (eq(unitstring, "kcal_per_mol")) {
+          factor = 1000.0*cal/(Ea*NA);     
+        }
+      else if (eq(unitstring, "N")
+               ||eq(unitstring, "newton")) {
           factor = a0/Ea;
         }
-      else if (!strncmp(rest, "dyne", nchar)) {
+      else if (eq(unitstring, "dyne")) {
           factor = 1.0e-5*a0/Ea;
         }
-      else if (!strncmp(rest, "m", nchar)
-               ||!strncmp(rest, "meter", nchar)) {
+      else if (eq(unitstring, "m")
+               ||eq(unitstring, "meter")) {
           factor = 1.0/a0;
         }
-      else if (!strncmp(rest, "cm", nchar)
-               ||!strncmp(rest, "centimeter", nchar)) {
+      else if (eq(unitstring, "cm")
+               ||eq(unitstring, "centimeter")) {
           factor = 1.0e-2/a0;
         }
-      else if (!strncmp(rest, "angstrom", nchar)
-               ||!strncmp(rest, "angstroms", nchar)
-               ||!strncmp(rest, "aangstrom", nchar)
-               ||!strncmp(rest, "aangstroms", nchar)) {
+      else if (eq(unitstring, "angstrom")
+               ||eq(unitstring, "angstroms")
+               ||eq(unitstring, "aangstrom")
+               ||eq(unitstring, "aangstroms")) {
           factor = 1.0e-10/a0;
         }
-      else if (!strncmp(rest, "amu", nchar)) {
+      else if (eq(unitstring, "amu")) {
           factor = amu/me;
         }
-      else if (!strncmp(rest, "degree", nchar)
-               ||!strncmp(rest, "degrees", nchar)) {
+      else if (eq(unitstring, "degree")
+               ||eq(unitstring, "degrees")) {
           factor = M_PI/180.0;
         }
       else {
-          cerr << "Units: Cannot handle \"" << rest << "\"" << endl;
+          cerr << "Units: Cannot handle \"" << unitstring << "\"" << endl;
           abort();
         }
+      delete[] unitstring;
       if (invert) factor = 1.0/factor;
       to_atomic_units_ *= factor;
       rest = strpbrk(rest, " */");

@@ -60,6 +60,8 @@ class BEMSolventH: public AccumH {
     double *charges_n_;
     double escalar_;
     double ecavitation_;
+    double edisprep_;
+
   public:
     BEMSolventH(StateIn&);
     BEMSolventH(const RefKeyVal&);

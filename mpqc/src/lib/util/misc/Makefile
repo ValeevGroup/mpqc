@@ -39,7 +39,7 @@ CSRC = ieee.c checkalloc.c mtype.c
 
 CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc
 
-TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc
+TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc
 
 INC = libmisc.h memory.h timer.h compute.h ieee.h bug.h exenv.h
 
@@ -69,6 +69,9 @@ bugtest: bugtest.o $(LIBS)
 
 bugtest.o: bugtest.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+unittest: unittest.o $(LIBS) 
+	$(LD) $(LDFLAGS) $^ $(SYSLIBS) -o unittest
 
 formiot: formiot.o $(LIBS)
 	$(LD) $(LDFLAGS) $^ -o formiot $(SYSLIBS)

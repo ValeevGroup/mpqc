@@ -57,6 +57,19 @@ BEMSolvent::BEMSolvent(const RefKeyVal& keyval)
   
   solute_ = keyval->describedclassvalue("solute");
 
+  solvent_ = keyval->describedclassvalue("solvent");
+  // Use the aug-cc-pVQZ MP2 optimum geometry for H2O as default
+  if (solvent_.null()) {
+      solvent_ = new Molecule;
+      solvent_->add_atom(8, 0.0000000000,  0.0000000000, -0.1265941233);
+      solvent_->add_atom(1, 0.0000000000,  1.4304840085,  0.9856159541);
+      solvent_->add_atom(1, 0.0000000000, -1.4304840085,  0.9856159541);
+    }
+
+  solvent_density_ = keyval->doublevalue("solvent_density");
+  // use as default the number density of water in au^-3, T=25 C, P=101325 Pa
+  if (keyval->error() != KeyVal::OK) solvent_density_ = 0.004938887;
+
   surf_ = keyval->describedclassvalue("surface");
 
   dielectric_constant_ = keyval->doublevalue("dielectric_constant");

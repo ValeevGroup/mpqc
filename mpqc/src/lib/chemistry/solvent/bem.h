@@ -47,6 +47,8 @@ class BEMSolvent: public DescribedClass {
     int debug_;
 
     RefMolecule solute_;
+    RefMolecule solvent_;
+    double solvent_density_;
     double dielectric_constant_;
     RefSCMatrixKit matrixkit_;
     RefSCMatrix system_matrix_i_;
@@ -83,6 +85,9 @@ class BEMSolvent: public DescribedClass {
     void done();
 
     int ncharge() { return surf_->nvertex(); }
+
+    RefMolecule solvent() { return solvent_ ;}
+    double solvent_density() { return solvent_density_ ;}
 
     // NOTE: call allocation routines after init and free routines before done
     double** alloc_charge_positions() { return alloc_array(ncharge(), 3); }
@@ -128,6 +133,8 @@ class BEMSolvent: public DescribedClass {
     double computed_enclosed_charge() const {
       return computed_enclosed_charge_;
     }
+
+    double disprep();
 
     // this never needs to be called explicitly, but is here now for debugging
     void init_system_matrix();

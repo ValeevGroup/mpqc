@@ -34,7 +34,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
 LD = $(CXX)
-CXXSRC = bem.cc
+CXXSRC = bem.cc disprep.cc
 CLASSES = BEMSolvent
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)

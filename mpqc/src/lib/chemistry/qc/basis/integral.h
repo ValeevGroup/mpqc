@@ -133,6 +133,8 @@ class Integral : public SavableState {
     virtual RefTwoBodyInt electron_repulsion() =0;
     
     virtual RefTwoBodyDerivInt electron_repulsion_deriv() =0;
+
+    RefMessageGrp messagegrp() { return grp_; }
 };
 SavableState_REF_dec(Integral);
 

@@ -575,7 +575,8 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
   if (!nalpha_) {
     nalpha_=newalpha;
     nbeta_=newbeta;
-  } else {
+  } else if (most_recent_pg_.nonnull()
+             && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from nalpha_
     for (i=0; i < nirrep_; i++) {
       if (nalpha_[i] != newalpha[i]) {
@@ -601,6 +602,19 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     delete[] newalpha;
     delete[] newbeta;
   }
+  most_recent_pg_ = new PointGroup(molecule()->point_group());
+}
+
+void
+UnrestrictedSCF::symmetry_changed()
+{
+  SCF::symmetry_changed();
+  nirrep_ = molecule()->point_group()->char_table().ncomp();
+  oso_eigenvectors_beta_.result_noupdate() = 0;
+  eigenvalues_beta_.result_noupdate() = 0;
+  focka_.result_noupdate() = 0;
+  fockb_.result_noupdate() = 0;
+  set_occupations(0,0);
 }
 
 //////////////////////////////////////////////////////////////////////////////

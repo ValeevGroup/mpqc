@@ -16,7 +16,7 @@ class OneBodyWavefunction: public Wavefunction
  private:
     ResultRefSymmSCMatrix _density;
  public:
-    OneBodyWavefunction(KeyVal&);
+    OneBodyWavefunction(const RefKeyVal&);
     OneBodyWavefunction(StateIn&);
     ~OneBodyWavefunction();
     void save_data_state(StateOut&);

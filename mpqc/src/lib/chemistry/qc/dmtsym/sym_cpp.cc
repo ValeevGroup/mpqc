@@ -71,12 +71,13 @@ sym_struct_from_pg(const PointGroup& pg, centers_t& centers,
 //
 
 int
-sym_init_centers(KeyVal& keyval, centers_t& centers, sym_struct_t& sym_info)
+sym_init_centers(const RefKeyVal& keyval, centers_t& centers,
+                 sym_struct_t& sym_info)
 {
   centers_t unique_centers;
   int errcod;
 
-  char *point_group = keyval.pcharvalue("symmetry");
+  char *point_group = keyval->pcharvalue("symmetry");
 
   int_read_centers(keyval,unique_centers);
 

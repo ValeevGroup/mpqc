@@ -63,6 +63,8 @@ DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 default:: $(DEPENDINCLUDE)
 default:: libintv2.a
 
+interface:: $(DEPENDINCLUDE)
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 inttest: inttest.o libintv2.a \

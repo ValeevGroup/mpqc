@@ -57,7 +57,7 @@ StreSimpleCo::StreSimpleCo(const char *re, int a1, int a2)
   atoms[0]=a1; atoms[1]=a2;
   }
 
-StreSimpleCo::StreSimpleCo(KeyVal &kv)
+StreSimpleCo::StreSimpleCo(const RefKeyVal &kv)
   : SimpleCo(kv,2)
 {
 }

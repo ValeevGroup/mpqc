@@ -9,36 +9,38 @@ extern "C" {
 /////////////////////////////////////////////////////////////////////
 // AggregateKeyVal
 
-AggregateKeyVal::AggregateKeyVal(KeyVal&kv0)
+AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0)
 {
-  kv[0] = &kv0;
+  kv[0] = kv0;
   kv[1] = 0;
   kv[2] = 0;
   kv[3] = 0;
 }
 
-AggregateKeyVal::AggregateKeyVal(KeyVal&kv0,KeyVal&kv1)
+AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1)
 {
-  kv[0] = &kv0;
-  kv[1] = &kv1;
+  kv[0] = kv0;
+  kv[1] = kv1;
   kv[2] = 0;
   kv[3] = 0;
 }
 
-AggregateKeyVal::AggregateKeyVal(KeyVal&kv0,KeyVal&kv1,KeyVal&kv2)
+AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1,
+                                 const RefKeyVal&kv2)
 {
-  kv[0] = &kv0;
-  kv[1] = &kv1;
-  kv[2] = &kv2;
+  kv[0] = kv0;
+  kv[1] = kv1;
+  kv[2] = kv2;
   kv[3] = 0;
 }
 
-AggregateKeyVal::AggregateKeyVal(KeyVal&kv0,KeyVal&kv1,KeyVal&kv2,KeyVal&kv3)
+AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1,
+                                 const RefKeyVal&kv2,const RefKeyVal&kv3)
 {
-  kv[0] = &kv0;
-  kv[1] = &kv1;
-  kv[2] = &kv2;
-  kv[3] = &kv3;
+  kv[0] = kv0;
+  kv[1] = kv1;
+  kv[2] = kv2;
+  kv[3] = kv3;
 }
 
 AggregateKeyVal::~AggregateKeyVal()

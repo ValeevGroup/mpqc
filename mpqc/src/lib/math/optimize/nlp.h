@@ -23,7 +23,7 @@ class NLP0: virtual public SavableState, public Compute {
   public:
     NLP0(const RefSCDimension&);
     NLP0(StateIn&);
-    NLP0(KeyVal&);
+    NLP0(const RefKeyVal&);
     virtual ~NLP0();
 
     virtual RefSCDimension dimension();
@@ -62,7 +62,7 @@ class NLP1: public NLP0 {
   public:
     NLP1(const RefSCDimension&);
     NLP1(StateIn&);
-    NLP1(KeyVal&);
+    NLP1(const RefKeyVal&);
     virtual ~NLP1();
 
     virtual void save_data_state(StateOut&);
@@ -92,7 +92,7 @@ class NLP2: public NLP1 {
   public:
     NLP2(const RefSCDimension&);
     NLP2(StateIn&);
-    NLP2(KeyVal&);
+    NLP2(const RefKeyVal&);
     virtual ~NLP2();
 
     void save_data_state(StateOut&);

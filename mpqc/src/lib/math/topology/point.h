@@ -17,7 +17,7 @@
 #include <util/container/array.h>
 
 class RefSCVector;
-class KeyVal;
+class RefKeyVal;
 
 class Point : virtual public SavableState
 {
@@ -40,7 +40,7 @@ class Point : virtual public SavableState
     Point(double,double);
     Point(double,double,double);
     Point(StateIn&);
-    Point(KeyVal&);
+    Point(const RefKeyVal&);
   
   // Destructor
     ~Point(void);

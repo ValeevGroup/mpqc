@@ -28,8 +28,8 @@ MolecularEnergy::_castdown(const ClassDesc*cd)
 }
 
 static RefKeyVal ugly_CTOR_hack_keyval(0);
-static KeyVal&
-ugly_CTOR_hack_get_keyval(KeyVal&keyval)
+static RefKeyVal
+ugly_CTOR_hack_get_keyval(const RefKeyVal&keyval)
 {
   if (ugly_CTOR_hack_keyval.nonnull()) {
       fprintf(stderr,"MolecularEnergy KeyVal CTOR recursively called:"
@@ -37,37 +37,38 @@ ugly_CTOR_hack_get_keyval(KeyVal&keyval)
       abort();
     }
 
-  if (!keyval.exists("dimension")) {
+  if (!keyval->exists("dimension")) {
       // put the correct dimension in the input
       RefSCDimension dim;
-      if (!keyval.exists("coor")) {
-          RefMolecule mol = keyval.describedclassvalue("molecule");
+      if (!keyval->exists("coor")) {
+          RefMolecule mol = keyval->describedclassvalue("molecule");
           dim = new LocalSCDimension(mol->natom()*3);
         }
       else {
-          RefMolecularCoor coor = keyval.describedclassvalue("coor");
+          RefMolecularCoor coor = keyval->describedclassvalue("coor");
           dim = coor->dim();
         }
-      AssignedKeyVal * assignedkeyval = new AssignedKeyVal;
+      RefAssignedKeyVal assignedkeyval = new AssignedKeyVal;
       RefDescribedClass dc = dim;
       assignedkeyval->assign("dimension",dc);
-      ugly_CTOR_hack_keyval = new AggregateKeyVal(*assignedkeyval,keyval);
+      RefKeyVal akeyval(assignedkeyval.pointer());
+      ugly_CTOR_hack_keyval = new AggregateKeyVal(akeyval, keyval);
 
-      return *ugly_CTOR_hack_keyval;
+      return ugly_CTOR_hack_keyval;
     }
   else {
       return keyval;
     }
 }
-MolecularEnergy::MolecularEnergy(KeyVal&keyval):
+MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
   NLP2(ugly_CTOR_hack_get_keyval(keyval)),
   _energy(_value)
 {
   ugly_CTOR_hack_keyval = 0;
 
-  _mc  = keyval.describedclassvalue("coor");
+  _mc  = keyval->describedclassvalue("coor");
 
-  _mol = keyval.describedclassvalue("molecule");
+  _mol = keyval->describedclassvalue("molecule");
 
   _moldim = _mol->dim_natom3();
   

@@ -330,6 +330,8 @@ class AssignedKeyVal: public KeyVal {
     void assign(const char*, RefDescribedClass&);
 };
 
+REF_dec(AssignedKeyVal);
+
 class StringKeyVal: public KeyVal {
   private:
     // once a described class is found it is kept here so
@@ -365,10 +367,11 @@ class AggregateKeyVal : public KeyVal {
     AggregateKeyVal(const AggregateKeyVal&);
     operator=(const AggregateKeyVal&);
   public:
-    AggregateKeyVal(KeyVal&);
-    AggregateKeyVal(KeyVal&,KeyVal&);
-    AggregateKeyVal(KeyVal&,KeyVal&,KeyVal&);
-    AggregateKeyVal(KeyVal&,KeyVal&,KeyVal&,KeyVal&);
+    AggregateKeyVal(const RefKeyVal&);
+    AggregateKeyVal(const RefKeyVal&,const RefKeyVal&);
+    AggregateKeyVal(const RefKeyVal&,const RefKeyVal&,const RefKeyVal&);
+    AggregateKeyVal(const RefKeyVal&,const RefKeyVal&,const RefKeyVal&,
+                    const RefKeyVal&);
     ~AggregateKeyVal();
     int    key_exists(const char*);
     RefKeyValValue key_value(const char*);
@@ -387,11 +390,11 @@ class PrefixKeyVal : public KeyVal {
     PrefixKeyVal(const PrefixKeyVal&);
     operator=(const PrefixKeyVal&);
   public:
-    PrefixKeyVal(const char*,KeyVal&);
-    PrefixKeyVal(const char*,KeyVal&,int);
-    PrefixKeyVal(const char*,KeyVal&,int,int);
-    PrefixKeyVal(const char*,KeyVal&,int,int,int);
-    PrefixKeyVal(const char*,KeyVal&,int,int,int,int);
+    PrefixKeyVal(const char*,const RefKeyVal&);
+    PrefixKeyVal(const char*,const RefKeyVal&,int);
+    PrefixKeyVal(const char*,const RefKeyVal&,int,int);
+    PrefixKeyVal(const char*,const RefKeyVal&,int,int,int);
+    PrefixKeyVal(const char*,const RefKeyVal&,int,int,int,int);
     ~PrefixKeyVal();
     int    key_exists(const char*);
     RefKeyValValue key_value(const char*);
@@ -419,7 +422,7 @@ class ParsedKeyVal : public StringKeyVal {
     // are used to construct file names that are used to initialize
     // the parsedkeyval.  The keywords sought are string'dir' for the
     // directory prefix and string'files' for an array of file names.
-    ParsedKeyVal(const char*,KeyVal&);
+    ParsedKeyVal(const char*,const RefKeyVal&);
     ~ParsedKeyVal();
     const char* stringvalue(const char*);
     virtual const char* classname(const char*);
@@ -429,5 +432,7 @@ class ParsedKeyVal : public StringKeyVal {
     void errortrace(FILE*fp=stderr, int offset = 0);
     void dump(FILE*fp=stderr,int offset = 0);
 };
+
+REF_dec(ParsedKeyVal);
 
 #endif /* _KeyVal_h */

@@ -250,7 +250,7 @@ ARRAYSET_def(ClassDescP);
 ClassDesc::ClassDesc(char* name, int version,
                      char* parents,
                      DescribedClass* (*ctor)(),
-                     DescribedClass* (*keyvalctor)(KeyVal&),
+                     DescribedClass* (*keyvalctor)(const RefKeyVal&),
                      DescribedClass* (*stateinctor)(StateIn&)
                      ):
   classname_(0),
@@ -324,7 +324,7 @@ ClassDesc::create() const
 }
 
 DescribedClass*
-ClassDesc::create(KeyVal&keyval) const
+ClassDesc::create(const RefKeyVal&keyval) const
 {
   DescribedClass* result;
   if (keyvalctor_) {

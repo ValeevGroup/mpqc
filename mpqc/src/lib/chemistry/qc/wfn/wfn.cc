@@ -27,7 +27,7 @@ Wavefunction::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-Wavefunction::Wavefunction(KeyVal&keyval):
+Wavefunction::Wavefunction(const RefKeyVal&keyval):
   MolecularEnergy(keyval),
   _natural_orbitals(this),
   _natural_density(this),
@@ -38,7 +38,7 @@ Wavefunction::Wavefunction(KeyVal&keyval):
   _natural_density.compute() = 0;
 
   _gbs
-    = GaussianBasisSet::require_castdown(keyval.describedclassvalue("basis").pointer(),
+    = GaussianBasisSet::require_castdown(keyval->describedclassvalue("basis").pointer(),
                                          "Wavefunction::Wavefunction\n");
 
   _basisdim = new LocalSCDimension(_gbs->nbasis());

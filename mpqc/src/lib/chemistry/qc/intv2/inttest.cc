@@ -18,11 +18,11 @@ main()
   sprintf(infile,SRCDIR "/inttest.in");
 
   RefKeyVal pkv(new ParsedKeyVal(infile));
-  RefKeyVal keyval(new PrefixKeyVal(":centers :basis",*pkv.pointer()));
+  RefKeyVal keyval(new PrefixKeyVal(":centers :basis",pkv));
 
   centers_t centers;
 
-  int_read_centers(*keyval.pointer(),centers);
+  int_read_centers(keyval,centers);
 
   pkv = keyval = 0;
 

@@ -51,7 +51,8 @@ newstring(const char *s)
 //
 
 int
-scf_init_scf(KeyVal& keyval, centers_t& centers, scf_struct_t& scf_info,
+scf_init_scf(const RefKeyVal& keyval, centers_t& centers,
+             scf_struct_t& scf_info,
              sym_struct_t& sym_info)
 {
 
@@ -87,7 +88,8 @@ scf_init_scf(KeyVal& keyval, centers_t& centers, scf_struct_t& scf_info,
 //
 
 int
-scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
+scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
+                    scf_struct_t& scf_info)
 {
   int i;
   double nuclear_charge;
@@ -101,10 +103,10 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  // now find out if this is open shell or not
  //
 
-  char* open = keyval.pcharvalue("opentype");
-  if (keyval.error() != KeyVal::OK) open = newstring("none");
+  char* open = keyval->pcharvalue("opentype");
+  if (keyval->error() != KeyVal::OK) open = newstring("none");
 
-  if (keyval.error() == KeyVal::OK) {
+  if (keyval->error() == KeyVal::OK) {
     if (!strcmp(open,"highspin") || /* high-spin open-shell */
         !strcmp(open,"singlet")  || /* open-shell singlet */
         !strcmp(open,"twocon")   || /* TCSCF */
@@ -114,8 +116,8 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
 
      // read in the number of singly occupied MOs.  this is, afterall, an
      // open-shell calculation, so there should be some, right?
-      scf_info.nopen = keyval.intvalue("socc");
-      if (keyval.error() != KeyVal::OK) {
+      scf_info.nopen = keyval->intvalue("socc");
+      if (keyval->error() != KeyVal::OK) {
         fprintf(stderr,"scf_init_scf_struct: "
                        "opentype is %s but there is no socc",open);
         return -1;
@@ -143,8 +145,8 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  // since we don't want to use new for anything contained in the scf struct
  //
 
-  char *ckptdir = keyval.pcharvalue("ckpt_dir");
-  if (keyval.error() != KeyVal::OK) ckptdir = newstring("./");
+  char *ckptdir = keyval->pcharvalue("ckpt_dir");
+  if (keyval->error() != KeyVal::OK) ckptdir = newstring("./");
   scf_info.ckptdir = strdup(ckptdir);
   delete[] ckptdir;
 
@@ -154,8 +156,8 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  // .{scfvec,fock,etc...}
  //
 
-  char *fname = keyval.pcharvalue("filename");
-  if (keyval.error() != KeyVal::OK) fname = newstring("dmtscf");
+  char *fname = keyval->pcharvalue("filename");
+  if (keyval->error() != KeyVal::OK) fname = newstring("dmtscf");
   scf_info.fname = strdup(fname);
   delete[] fname;
 
@@ -164,17 +166,17 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  // convergence
  //
 
-  char *wfn=keyval.pcharvalue("wfn");
-  if (keyval.error() != KeyVal::OK) wfn = newstring("scf");
+  char *wfn=keyval->pcharvalue("wfn");
+  if (keyval->error() != KeyVal::OK) wfn = newstring("scf");
 
-  char *dertype=keyval.pcharvalue("dertype");
-  if (keyval.error() != KeyVal::OK) dertype = newstring("first");
+  char *dertype=keyval->pcharvalue("dertype");
+  if (keyval->error() != KeyVal::OK) dertype = newstring("first");
 
  // set the convergence.  default to 8 for an energy or a gradient,
  // 10 for non-scf, and 12 for second derivs
 
-  scf_info.convergence = keyval.intvalue("convergence");
-  if (keyval.error() != KeyVal::OK) {
+  scf_info.convergence = keyval->intvalue("convergence");
+  if (keyval->error() != KeyVal::OK) {
     scf_info.convergence = 7;
     if (strcmp(wfn,"scf")) scf_info.convergence = 10;
     if (!strcmp(dertype,"second")) scf_info.convergence = 12;
@@ -188,9 +190,9 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  // use it as an intial guess, if there isn't a converged vector about
  //
 
-  scf_info.restart = keyval.booleanvalue("restart");
-  scf_info.warmrestart = keyval.booleanvalue("warmrestart");
-  scf_info.proj_vector = keyval.booleanvalue("projected_guess");
+  scf_info.restart = keyval->booleanvalue("restart");
+  scf_info.warmrestart = keyval->booleanvalue("warmrestart");
+  scf_info.proj_vector = keyval->booleanvalue("projected_guess");
 
  //
  // if the point group is not C1, then perform calculation in the SO basis.
@@ -200,7 +202,7 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  //
   scf_info.use_symmetry = 0;
 #if 0 /* not used currently */
-  scf_info.use_symmetry=keyval.booleanvalue("use_symmetry");
+  scf_info.use_symmetry=keyval->booleanvalue("use_symmetry");
 #endif
 
  //
@@ -208,46 +210,46 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  //
 
  // the maximum number of scf iterations
-  scf_info.maxiter = keyval.intvalue("maxiter");
-  if (keyval.error() != KeyVal::OK) scf_info.maxiter = 40;
+  scf_info.maxiter = keyval->intvalue("maxiter");
+  if (keyval->error() != KeyVal::OK) scf_info.maxiter = 40;
 
  // i don't think these are used anymore
-  scf_info.debug = keyval.booleanvalue("debug");
-  scf_info.debug_node = keyval.booleanvalue("debug_node");
+  scf_info.debug = keyval->booleanvalue("debug");
+  scf_info.debug_node = keyval->booleanvalue("debug_node");
 
  // use (nproc-1) nodes for gmat calculation (better load balance)
-  scf_info.load_bal = keyval.booleanvalue("load_balance_gmat");
+  scf_info.load_bal = keyval->booleanvalue("load_balance_gmat");
 
  // add on dft correction?
-  scf_info.dft = keyval.booleanvalue("dft");
+  scf_info.dft = keyval->booleanvalue("dft");
 
  // use self-consistent dft? means that we only do J part of Gmat
-  scf_info.scdft = keyval.booleanvalue("scdft");
+  scf_info.scdft = keyval->booleanvalue("scdft");
 
  // should the exchange energy be computed separately?
-  scf_info.exchange = keyval.booleanvalue("exchange");
+  scf_info.exchange = keyval->booleanvalue("exchange");
 
  // eliminate integral batches based on size of pmax?
-  scf_info.eliminate = keyval.booleanvalue("eliminate");
-  if (keyval.error() != KeyVal::OK) scf_info.eliminate=1;
+  scf_info.eliminate = keyval->booleanvalue("eliminate");
+  if (keyval->error() != KeyVal::OK) scf_info.eliminate=1;
 
  // should the checkpoint file be deleted?
-  scf_info.ckpt_del = keyval.booleanvalue("ckpt_del");
-  if (keyval.error() != KeyVal::OK) scf_info.ckpt_del=1;
+  scf_info.ckpt_del = keyval->booleanvalue("ckpt_del");
+  if (keyval->error() != KeyVal::OK) scf_info.ckpt_del=1;
 
  // print flag
-  scf_info.print_flg = keyval.intvalue("print_flag");
+  scf_info.print_flg = keyval->intvalue("print_flag");
 
  // how often to checkpoint
-  scf_info.ckpt_freq = keyval.intvalue("ckpt_freq");
-  if (keyval.error() != KeyVal::OK) scf_info.ckpt_freq=5;
+  scf_info.ckpt_freq = keyval->intvalue("ckpt_freq");
+  if (keyval->error() != KeyVal::OK) scf_info.ckpt_freq=5;
 
  // how often to reset the density and fock matrices
-  scf_info.p_reset_freq = keyval.intvalue("density_reset_frequency");
-  if (keyval.error() != KeyVal::OK) scf_info.p_reset_freq=10;
+  scf_info.p_reset_freq = keyval->intvalue("density_reset_frequency");
+  if (keyval->error() != KeyVal::OK) scf_info.p_reset_freq=10;
 
  // use local density matrices?
-  scf_info.local_p = keyval.booleanvalue("local_P");
+  scf_info.local_p = keyval->booleanvalue("local_P");
 
  //
  // integral elimination a la Alrichs.  I don't yet use minimized density
@@ -256,21 +258,21 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  // pmax = MAX( p[ij], p[kl], .25*( p[ik], p[il], p[jk], p[jl])
  // imax = MAX (IJKL), I,J,K,L = shell indices
  //
-  scf_info.intcut = keyval.intvalue("threshold");
-  if (keyval.error() != KeyVal::OK) scf_info.intcut = 12;
+  scf_info.intcut = keyval->intvalue("threshold");
+  if (keyval->error() != KeyVal::OK) scf_info.intcut = 12;
 
  //
  // this is used by version 2 of the integral library.  set int_store to
  // the number of integrals to be kept in memory.
  //
-  scf_info.int_store = keyval.intvalue("integral_storage");
+  scf_info.int_store = keyval->intvalue("integral_storage");
 
  //
  // the number of error matrices to store in the DIIS procedure.
  // 6 is good for closed-shell, 4 for open-shell
  //
-  scf_info.ndiis = keyval.intvalue("ndiis");
-  if (keyval.error() != KeyVal::OK)
+  scf_info.ndiis = keyval->intvalue("ndiis");
+  if (keyval->error() != KeyVal::OK)
     scf_info.ndiis = (scf_info.iopen) ? 4 : 6;
 
  //
@@ -278,23 +280,23 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  // what to use for the diagonal blocks of the effective fock matrix
  // in an open-shell calculation
  //
-  scf_info.fock_typ = keyval.intvalue("fock_type");
+  scf_info.fock_typ = keyval->intvalue("fock_type");
 
 
  //
  // this is a damping factor for the bmat in the diis procedure.
  // the defaults are pretty darn good
  //
-  scf_info.diisdamp = keyval.doublevalue("diisdamp");
-  if (keyval.error() != KeyVal::OK) {
+  scf_info.diisdamp = keyval->doublevalue("diisdamp");
+  if (keyval->error() != KeyVal::OK) {
     scf_info.diisdamp = (scf_info.iopen) ? 0.02 : 0.0;
     if (scf_info.twocon) scf_info.diisdamp = 0.01;
   }
 
  // level shifting, of course
   if (scf_info.iopen) {
-    scf_info.lvl_shift = keyval.doublevalue("levelshift");
-    if (keyval.error() != KeyVal::OK)
+    scf_info.lvl_shift = keyval->doublevalue("levelshift");
+    if (keyval->error() != KeyVal::OK)
       scf_info.lvl_shift = 1.0;
   } else {
     scf_info.lvl_shift = 0.0;
@@ -310,9 +312,9 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
 
  // read in the number of mo's to occupy in each symmetry type
 
-  scf_info.nclosed = keyval.intvalue("docc");
+  scf_info.nclosed = keyval->intvalue("docc");
 
-  if (keyval.error() != KeyVal::OK && !scf_info.iopen) {
+  if (keyval->error() != KeyVal::OK && !scf_info.iopen) {
     scf_info.nclosed = (int) ((nuclear_charge+0.5)/2);
 
     if (fabs(nuclear_charge-2*scf_info.nclosed)> 1.e-5) {
@@ -322,11 +324,11 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
   }
 
  // use diis extrapolation?
-  scf_info.diis_flg = keyval.booleanvalue("diis");
-  if (keyval.error() != KeyVal::OK) scf_info.diis_flg = 1;
+  scf_info.diis_flg = keyval->booleanvalue("diis");
+  if (keyval->error() != KeyVal::OK) scf_info.diis_flg = 1;
  
  // what iteration to begin diis extrapolation at
-  scf_info.it_diis = keyval.intvalue("diisstart");
+  scf_info.it_diis = keyval->intvalue("diisstart");
 
  //
  // set up alpha and beta arrays.  These really aren't needed yet.
@@ -334,11 +336,11 @@ scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
  //
 
   if (scf_info.iopen) {
-    scf_info.alpha = keyval.doublevalue("alpha");
-    if (keyval.error() != KeyVal::OK) scf_info.alpha = 0.0;
+    scf_info.alpha = keyval->doublevalue("alpha");
+    if (keyval->error() != KeyVal::OK) scf_info.alpha = 0.0;
 
-    scf_info.beta = keyval.doublevalue("beta");
-    if (keyval.error() != KeyVal::OK) scf_info.beta = -1.0;
+    scf_info.beta = keyval->doublevalue("beta");
+    if (keyval->error() != KeyVal::OK) scf_info.beta = -1.0;
 
     scf_info.beta = -scf_info.beta;
   }
@@ -484,20 +486,20 @@ input_errors(const char* msg)
 }
 
 int
-scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
-                                        centers_t& oldcenters)
+scf_make_old_centers(const RefKeyVal& topkeyval, centers_t& centers,
+                     centers_t& oldcenters)
 {
   int i;
   int errcod;
 
   if (mynode0() == 0) {
    // create a keyval which will look in the :project section of the input
-    PrefixKeyVal pkv(":project",topkeyval); pkv.unmanage();
-    AggregateKeyVal keyval(pkv,topkeyval); keyval.unmanage();
+    RefKeyVal pkv = new PrefixKeyVal(":project",topkeyval);
+    RefKeyVal keyval = new AggregateKeyVal(pkv,topkeyval);
 
    // read the value of oldbasis.
-    char *oldbasis = keyval.pcharvalue("oldbasis");
-    if (keyval.error() != KeyVal::OK) {
+    char *oldbasis = keyval->pcharvalue("oldbasis");
+    if (keyval->error() != KeyVal::OK) {
       input_errors("scf_make_old_centers: there is no oldbasis");
       return -1;
     }

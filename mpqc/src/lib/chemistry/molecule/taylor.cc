@@ -22,27 +22,27 @@ TaylorMolecularEnergy::_castdown(const ClassDesc*cd)
 
 // Note:  this gets the values of the coordinates from the current molecule
 // rather than the coordinates.
-TaylorMolecularEnergy::TaylorMolecularEnergy(KeyVal&keyval):
+TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
   MolecularEnergy(keyval)
 {
-  coordinates_ = keyval.describedclassvalue("coordinates");
+  coordinates_ = keyval->describedclassvalue("coordinates");
   dim_ = new LocalSCDimension(coordinates_->n());
   expansion_point_ = dim_->create_vector();
   coordinates_->update_values(_mol);
   coordinates_->values_to_vector(expansion_point_);
 
-  e0_ = keyval.doublevalue("e0");
+  e0_ = keyval->doublevalue("e0");
 
-  int n_fc = keyval.count("force_constant_index");
+  int n_fc = keyval->count("force_constant_index");
   force_constant_index_.set_length(n_fc);
   force_constant_value_.set_length(n_fc);
   for (int i=0; i<n_fc; i++) {
-      force_constant_value_[i] = keyval.doublevalue("force_constant_value",i);
-      int order = keyval.intvalue("force_constant_index",i);
+      force_constant_value_[i] = keyval->doublevalue("force_constant_value",i);
+      int order = keyval->intvalue("force_constant_index",i);
       force_constant_index_[i].set_length(order);
       for (int j=0; j<order; j++) {
           force_constant_index_[i][j]
-              = keyval.intvalue("force_constant_index",i,j) - 1;
+              = keyval->intvalue("force_constant_index",i,j) - 1;
         }
     }
 }

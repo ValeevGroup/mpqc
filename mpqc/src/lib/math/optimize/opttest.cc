@@ -20,7 +20,7 @@ class Quadratic: public NLP2
     RefSymmSCMatrix hguess;
   public:
     Quadratic(StateIn&);
-    Quadratic(KeyVal&);
+    Quadratic(const RefKeyVal&);
     void save_data_state(StateOut&);
     void compute();
     void guess_hessian(RefSymmSCMatrix&);
@@ -53,8 +53,8 @@ Quadratic::_castdown(const ClassDesc*cd)
   void* casts[] =  { NLP2::_castdown(cd) };
   return do_castdowns(casts,cd);
 }
-Quadratic::Quadratic(KeyVal&keyval):
-  NLP2(new LocalSCDimension(keyval.count("x0")))
+Quadratic::Quadratic(const RefKeyVal&keyval):
+  NLP2(new LocalSCDimension(keyval->count("x0")))
 {
   x0 = dimension()->create_vector();
   g0 = dimension()->create_vector();
@@ -66,11 +66,11 @@ Quadratic::Quadratic(KeyVal&keyval):
   
   int dim = dimension()->n();
   for (int i=0; i<dim; i++) {
-      x0(i) = keyval.doublevalue("x0",i);
-      g0(i) = keyval.doublevalue("g0",i);
+      x0(i) = keyval->doublevalue("x0",i);
+      g0(i) = keyval->doublevalue("g0",i);
       for (int j=0; j<=i; j++) {
-          h0(i,j) = keyval.doublevalue("h0",i,j);
-          hguess(i,j) = keyval.doublevalue("hguess",i,j);
+          h0(i,j) = keyval->doublevalue("h0",i,j);
+          hguess(i,j) = keyval->doublevalue("hguess",i,j);
         }
     }
 }
@@ -116,15 +116,11 @@ Quadratic::guess_hessian(RefSymmSCMatrix&gh)
 
 main()
 {
-//   RefKeyVal kv = new ParsedKeyVal( SRCDIR "/opttest.in");
-//   RefKeyVal pkv = new PrefixKeyVal("opt",*kv);
-  ParsedKeyVal kv( SRCDIR "/opttest.in");
-  kv.unmanage();
-  PrefixKeyVal pkv("opt",kv);
-  pkv.unmanage();
+  RefKeyVal kv = new ParsedKeyVal( SRCDIR "/opttest.in");
+  RefKeyVal pkv = new PrefixKeyVal("opt",*kv);
 
-  for (int i=0; i<pkv.count(); i++) {
-      RefOptimize opt(pkv.describedclassvalue(i));
+  for (int i=0; i<pkv->count(); i++) {
+      RefOptimize opt(pkv->describedclassvalue(i));
       if (opt.nonnull()) {
           RefSCVector oldx = opt->nlp()->get_x().copy();
           opt->optimize();

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.7  1994/08/26 22:45:36  etseidl
+ * Revision 1.8  1994/10/31 21:30:10  cljanss
+ * Switch KeyVal& args to const RefKeyVal&.
+ *
+ * Revision 1.7  1994/08/26  22:45:36  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -92,9 +95,9 @@ extern "C" {
 #ifdef __cplusplus
 }
 
-class KeyVal;
-int int_read_basis(KeyVal&, char*, const char*, basis_t&);
-int int_read_centers(KeyVal&, centers_t&);
+class RefKeyVal;
+int int_read_basis(const RefKeyVal&, char*, const char*, basis_t&);
+int int_read_centers(const RefKeyVal&, centers_t&);
 
 #endif
 

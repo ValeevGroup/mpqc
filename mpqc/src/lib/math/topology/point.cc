@@ -104,12 +104,12 @@ Point::Point(double a,double b,double c)
   x[2] = c;
 }
 
-Point::Point(KeyVal&k)
+Point::Point(const RefKeyVal&k)
 {
-  dim = k.count();
+  dim = k->count();
   if (dim) x = new double[dim];
   for (int i=0; i<dim; i++) {
-      x[i] = k.doublevalue(i);
+      x[i] = k->doublevalue(i);
     }
 }
 

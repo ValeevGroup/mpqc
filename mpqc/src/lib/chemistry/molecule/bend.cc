@@ -56,7 +56,7 @@ BendSimpleCo::BendSimpleCo(const char *refr, int a1, int a2, int a3)
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3;
   }
 
-BendSimpleCo::BendSimpleCo(KeyVal &kv)
+BendSimpleCo::BendSimpleCo(const RefKeyVal &kv)
   : SimpleCo(kv,3)
 {
 }

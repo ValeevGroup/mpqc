@@ -49,10 +49,10 @@ IntCoor::IntCoor(const IntCoor& c):
   if (c.label_) label_ = strcpy(new char[strlen(c.label_)+1],c.label_);
 }
 
-IntCoor::IntCoor(KeyVal&keyval)
+IntCoor::IntCoor(const RefKeyVal&keyval)
 {
-  label_ = keyval.pcharvalue("label");
-  value_ = keyval.doublevalue("value");
+  label_ = keyval->pcharvalue("label");
+  value_ = keyval->doublevalue("value");
 }
 
 IntCoor::IntCoor(StateIn& si):
@@ -140,16 +140,16 @@ SetIntCoor::SetIntCoor()
 {
 }
 
-SetIntCoor::SetIntCoor(KeyVal& keyval)
+SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
 {
-  int n = keyval.count();
+  int n = keyval->count();
   if (!n) {
       fprintf(stderr,"SetIntCoor::SetIntCoor: bad input\n");
       abort();
     }
 
   for (int i=0; i<n; i++) {
-      coor_.add(keyval.describedclassvalue(i));
+      coor_.add(keyval->describedclassvalue(i));
     }
 }
 
@@ -345,21 +345,21 @@ SumIntCoor::SumIntCoor(const char* label):
 {
 }
 
-SumIntCoor::SumIntCoor(KeyVal&keyval):
+SumIntCoor::SumIntCoor(const RefKeyVal&keyval):
   IntCoor(keyval)
 {
   static const char* coor = "coor";
   static const char* coef = "coef";
-  int n = keyval.count(coor);
-  int ncoef = keyval.count(coef);
+  int n = keyval->count(coor);
+  int ncoef = keyval->count(coef);
   if (n != ncoef || !n) {
       fprintf(stderr,"SumIntCoor::SumIntCoor: bad input\n");
       abort();
     }
 
   for (int i=0; i<n; i++) {
-      double coe = keyval.doublevalue(coef,i);
-      RefIntCoor coo = keyval.describedclassvalue(coor,i);
+      double coe = keyval->doublevalue(coef,i);
+      RefIntCoor coo = keyval->describedclassvalue(coor,i);
       add(coo,coe);
     }
 }
@@ -563,9 +563,9 @@ MolecularCoor::MolecularCoor(RefMolecule&mol):
 {
 }
 
-MolecularCoor::MolecularCoor(KeyVal&keyval)
+MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 {
-  molecule_ = keyval.describedclassvalue("molecule");
+  molecule_ = keyval->describedclassvalue("molecule");
 }
 
 MolecularCoor::MolecularCoor(StateIn&s):

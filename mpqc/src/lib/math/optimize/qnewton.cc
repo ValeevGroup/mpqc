@@ -24,29 +24,29 @@ QNewtonOpt::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-QNewtonOpt::QNewtonOpt(KeyVal&keyval):
+QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
   Optimize(keyval),
   maxabs_gradient(-1.0)
 {
-  nlp_ = keyval.describedclassvalue("function");
-  update_ = keyval.describedclassvalue("update");
-  convergence_ = keyval.doublevalue("convergence");
-  if (keyval.error() != KeyVal::OK) convergence_ = 1.0e-6;
-  lineopt_ = keyval.describedclassvalue("lineopt");
-  accuracy_ = keyval.doublevalue("accuracy");
-  if (keyval.error() != KeyVal::OK) accuracy_ = 0.0001;
+  nlp_ = keyval->describedclassvalue("function");
+  update_ = keyval->describedclassvalue("update");
+  convergence_ = keyval->doublevalue("convergence");
+  if (keyval->error() != KeyVal::OK) convergence_ = 1.0e-6;
+  lineopt_ = keyval->describedclassvalue("lineopt");
+  accuracy_ = keyval->doublevalue("accuracy");
+  if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
 
   RefSymmSCMatrix hessian(nlp_->dimension());
   // get a guess hessian from nlp
   nlp_->guess_hessian(hessian);
   // see if any hessian matrix elements have been given in the input
-  if (keyval.exists("hessian")) {
+  if (keyval->exists("hessian")) {
       int n = hessian.n();
       for (int i=0; i<n; i++) {
-          if (keyval.exists("hessian",i)) {
+          if (keyval->exists("hessian",i)) {
               for (int j=0; j<=i; j++) {
-                  double tmp = keyval.doublevalue("hessian",i,j);
-                  if (keyval.error() == KeyVal::OK) hessian(i,j) = tmp;
+                  double tmp = keyval->doublevalue("hessian",i,j);
+                  if (keyval->error() == KeyVal::OK) hessian(i,j) = tmp;
                 }
             }
         }

@@ -57,7 +57,7 @@ OutSimpleCo::OutSimpleCo(const char *refr, int a1, int a2, int a3, int a4)
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3; atoms[3]=a4;
   }
 
-OutSimpleCo::OutSimpleCo(KeyVal &kv) :
+OutSimpleCo::OutSimpleCo(const RefKeyVal &kv) :
   SimpleCo(kv,4)
 {
 }

@@ -103,7 +103,7 @@ CLASSNAME::create()
 #endif
 #ifdef HAVE_KEYVAL_CTOR
 DescribedClass*
-CLASSNAME::create(KeyVal& keyval)
+CLASSNAME::create(const RefKeyVal& keyval)
 {
   return (DescribedClass*) new CLASSNAME(keyval);
 }

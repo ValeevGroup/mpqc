@@ -21,7 +21,7 @@
 #undef HAVE_CTOR
 #endif
 #ifdef HAVE_KEYVAL_CTOR
-    static DescribedClass* create(KeyVal&);
+    static DescribedClass* create(const RefKeyVal&);
 #undef HAVE_KEYVAL_CTOR
 #endif
 #ifdef HAVE_STATEIN_CTOR

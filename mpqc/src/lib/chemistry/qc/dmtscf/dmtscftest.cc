@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -89,7 +88,7 @@ main(int argc, char *argv[])
     pkv = ppkv = 0;
 
    // initialize all of the structs needed by the SC libraries
-    errcod = scf_init_scf(*keyval.pointer(), centers, scf_info, sym_info); 
+    errcod = scf_init_scf(keyval, centers, scf_info, sym_info); 
 
    // pretty print the scf options
     scf_print_options(stdout, scf_info);
@@ -110,7 +109,7 @@ main(int argc, char *argv[])
 
  // if we need a projected guess, initialize oldcenters
   if (scf_info.proj_vector) {
-    errcod = scf_make_old_centers(*keyval.pointer(), centers, oldcenters);
+    errcod = scf_make_old_centers(keyval, centers, oldcenters);
   }
 
  // close input

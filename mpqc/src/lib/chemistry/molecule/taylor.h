@@ -37,7 +37,7 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     // the energy at the expansion point
     double e0_;
   public:
-    TaylorMolecularEnergy(KeyVal&);
+    TaylorMolecularEnergy(const RefKeyVal&);
     TaylorMolecularEnergy(StateIn&);
     ~TaylorMolecularEnergy();
     void save_data_state(StateOut&);

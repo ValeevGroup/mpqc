@@ -52,13 +52,13 @@ MPSCF::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-MPSCF::MPSCF(KeyVal&keyval):
+MPSCF::MPSCF(const RefKeyVal&keyval):
   OneBodyWavefunction(keyval),
   _scf(this),
   _exchange_energy(this),
   _eigenvectors(this)
 {
-  RefGaussianBasisSet gbs = keyval.describedclassvalue("basis");
+  RefGaussianBasisSet gbs = keyval->describedclassvalue("basis");
   centers_t *tcenters = gbs->convert_to_centers_t(_mol.pointer());
 
   if (!tcenters) {
@@ -85,13 +85,13 @@ MPSCF::MPSCF(KeyVal&keyval):
   _nsocc = scf_info.nopen;
 
  // override the default thresholds
-  if (!keyval.exists("value_accuracy")) {
+  if (!keyval->exists("value_accuracy")) {
     set_desired_value_accuracy(1.0e-10);
   }
-  if (!keyval.exists("gradient_accuracy")) {
+  if (!keyval->exists("gradient_accuracy")) {
     set_desired_gradient_accuracy(1.0e-9);
   }
-  if (!keyval.exists("hessian_accuracy")) {
+  if (!keyval->exists("hessian_accuracy")) {
     set_desired_hessian_accuracy(1.0e-8);
   }
 
@@ -128,15 +128,15 @@ MPSCF::MPSCF(KeyVal&keyval):
 
    // read input, and initialize various structs
 
-    node_timings = keyval.booleanvalue("node_timings");
+    node_timings = keyval->booleanvalue("node_timings");
 
-    throttle = keyval.intvalue("throttle");
+    throttle = keyval->intvalue("throttle");
 
-    sync_loop = keyval.intvalue("sync_loop");
-    if (keyval.error() != KeyVal::OK) sync_loop = 1;
+    sync_loop = keyval->intvalue("sync_loop");
+    if (keyval->error() != KeyVal::OK) sync_loop = 1;
 
-    save_vector = keyval.booleanvalue("save_vector");
-    if (keyval.error() != KeyVal::OK) save_vector=1;
+    save_vector = keyval->booleanvalue("save_vector");
+    if (keyval->error() != KeyVal::OK) save_vector=1;
 
     fprintf(outfile,"\n  mpqc options:\n");
     fprintf(outfile,"    node_timings       = %s\n",(node_timings)?"YES":"NO");
@@ -169,7 +169,7 @@ MPSCF::MPSCF(KeyVal&keyval):
  // if we're using a projected guess vector, then initialize oldcenters
   if (scf_info.proj_vector) {
     if (me==0) {
-      RefGaussianBasisSet gbs = keyval.describedclassvalue("pbasis");
+      RefGaussianBasisSet gbs = keyval->describedclassvalue("pbasis");
       tcenters = gbs->convert_to_centers_t(_mol.pointer());
 
       assign_centers(&oldcenters,tcenters);
@@ -187,9 +187,9 @@ MPSCF::MPSCF(KeyVal&keyval):
  // initialize force and geometry routines
   if (me==0) fprintf(outfile,"\n");
   if (scf_info.iopen)
-    dmt_force_osscf_keyval_init(&keyval,outfile);
+    dmt_force_osscf_keyval_init(keyval,outfile);
   else
-    dmt_force_csscf_keyval_init(&keyval,outfile);
+    dmt_force_csscf_keyval_init(keyval,outfile);
   if (me==0) fprintf(outfile,"\n");
 
  // set the throttle for libdmt loops

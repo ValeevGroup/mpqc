@@ -62,7 +62,7 @@ TorsSimpleCo::~TorsSimpleCo()
 {
 }
 
-TorsSimpleCo::TorsSimpleCo(KeyVal &kv):
+TorsSimpleCo::TorsSimpleCo(const RefKeyVal &kv):
   SimpleCo(kv,4)
 {
 }

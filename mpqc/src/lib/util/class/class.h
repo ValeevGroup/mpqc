@@ -75,7 +75,7 @@ class ParentClasses
 };
     
 
-class KeyVal;
+class RefKeyVal;
 class StateIn;
 
 class ClassDesc {
@@ -85,7 +85,7 @@ class ClassDesc {
     ParentClasses parents_;
     ClassKeySet* children_;
     DescribedClass* (*ctor_)();
-    DescribedClass* (*keyvalctor_)(KeyVal&);
+    DescribedClass* (*keyvalctor_)(const RefKeyVal&);
     DescribedClass* (*stateinctor_)(StateIn&);
 
     void change_parent(ClassDesc*oldcd,ClassDesc*newcd);
@@ -96,7 +96,7 @@ class ClassDesc {
   public:
     ClassDesc(char*,int=1,char* p=0,
               DescribedClass* (*ctor)()=0,
-              DescribedClass* (*keyvalctor)(KeyVal&)=0,
+              DescribedClass* (*keyvalctor)(const RefKeyVal&)=0,
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
     static void list_all_classes();
@@ -110,7 +110,7 @@ class ClassDesc {
     DescribedClass* create() const;
 
     // create an object using the keyval constructor
-    DescribedClass* create(KeyVal&) const;
+    DescribedClass* create(const RefKeyVal&) const;
 
     // create an object using the statein constructor
     DescribedClass* create(StateIn&) const;

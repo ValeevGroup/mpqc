@@ -24,7 +24,7 @@ class Optimize: virtual public SavableState {
   public:
     Optimize();
     Optimize(StateIn&);
-    Optimize(KeyVal&);
+    Optimize(const RefKeyVal&);
     virtual ~Optimize();
     void save_data_state(StateOut&);
 
@@ -50,7 +50,7 @@ class LineOpt: public Optimize {
   public:
     LineOpt();
     LineOpt(StateIn&);
-    LineOpt(KeyVal&);
+    LineOpt(const RefKeyVal&);
     ~LineOpt();
     void save_data_state(StateOut&);
 
@@ -68,7 +68,7 @@ class IHessianUpdate: virtual public SavableState {
   public:
     IHessianUpdate();
     IHessianUpdate(StateIn&);
-    IHessianUpdate(KeyVal&);
+    IHessianUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     virtual ~IHessianUpdate();
     virtual void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
@@ -89,7 +89,7 @@ class DFPUpdate: public IHessianUpdate {
   public:
     DFPUpdate();
     DFPUpdate(StateIn&);
-    DFPUpdate(KeyVal&);
+    DFPUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     ~DFPUpdate();
     void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
@@ -106,7 +106,7 @@ class BFGSUpdate: public DFPUpdate {
   public:
     BFGSUpdate();
     BFGSUpdate(StateIn&);
-    BFGSUpdate(KeyVal&);
+    BFGSUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     ~BFGSUpdate();
     void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
@@ -134,7 +134,7 @@ class QNewtonOpt: public Optimize {
 
     int take_newton_step_;
   public:
-    QNewtonOpt(KeyVal&);
+    QNewtonOpt(const RefKeyVal&);
     QNewtonOpt(StateIn&);
     ~QNewtonOpt();
     void save_data_state(StateOut&);

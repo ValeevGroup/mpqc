@@ -18,7 +18,7 @@ class A: A_parents {
     int i;
   public:
     A();
-    A(KeyVal&keyval);
+    A(const RefKeyVal&keyval);
     inline int& a() { return i; };
     virtual void print (ostream&s = cout)
     {
@@ -31,8 +31,8 @@ A::A():
   i(1)
 {
 }
-A::A(KeyVal&keyval):
-  i(keyval.intvalue("a"))
+A::A(const RefKeyVal& keyval):
+  i(keyval->intvalue("a"))
 {
 }
 
@@ -59,7 +59,7 @@ class B: B_parents {
     int b_;
   public:
     B();
-    B(KeyVal&keyval);
+    B(const RefKeyVal&keyval);
     inline int& b() { return b_; };
     virtual void print (ostream&s = cout)
     {
@@ -73,9 +73,9 @@ B::B():
   b_(2)
 {
 }
-B::B(KeyVal&keyval):
-  A(PrefixKeyVal("A",keyval)),
-  b_(keyval.intvalue("b"))
+B::B(const RefKeyVal&keyval):
+  A(new PrefixKeyVal("A",keyval)),
+  b_(keyval->intvalue("b"))
 {
 }
 
@@ -102,7 +102,7 @@ class C: C_parents {
     int i;
   public:
     C();
-    C(KeyVal&keyval);
+    C(const RefKeyVal&keyval);
     inline int& c() { return i; };
     virtual void print (ostream&s = cout)
     {
@@ -115,8 +115,8 @@ C::C():
   i(3)
 {
 }
-C::C(KeyVal&keyval):
-  i(keyval.intvalue("c"))
+C::C(const RefKeyVal&keyval):
+  i(keyval->intvalue("c"))
 {
 }
 
@@ -145,7 +145,7 @@ class D: D_parents {
     RefB d_b_;
   public:
     D();
-    D(KeyVal&keyval);
+    D(const RefKeyVal&keyval);
     inline int& d() { return d_; }
     inline RefA da() { return d_a_; }
     inline RefB db() { return d_b_; }
@@ -169,12 +169,12 @@ D::D():
   d_(4)
 {
 }
-D::D(KeyVal&keyval):
-  B(PrefixKeyVal("B",keyval)),
-  C(PrefixKeyVal("C",keyval)),
-  d_(keyval.intvalue("d")),
-  d_a_(A::castdown(keyval.describedclassvalue("a"))),
-  d_b_(B::castdown(keyval.describedclassvalue("b")))
+D::D(const RefKeyVal&keyval):
+  B(new PrefixKeyVal("B",keyval)),
+  C(new PrefixKeyVal("C",keyval)),
+  d_(keyval->intvalue("d")),
+  d_a_(A::castdown(keyval->describedclassvalue("a"))),
+  d_b_(B::castdown(keyval->describedclassvalue("b")))
 {
 }
 
@@ -235,43 +235,43 @@ main()
        << (void*) DescribedClass::castdown(&d) << '\n';
 
 
-  AssignedKeyVal akv; akv.unmanage();
+  RefAssignedKeyVal akv = new AssignedKeyVal;
 
-  akv.assign(":x",1);
-  akv.assign(":y",3.0);
+  akv->assign(":x",1);
+  akv->assign(":y",3.0);
 
 #define stringize(arg) # arg
 #define show( arg ) do{cout<<"   " stringize(arg) "="<<(arg);}while(0)
 
-  show( akv.exists(":x") );  show( akv.errormsg() ); cout << '\n';
-  show( akv.exists(":z") );  show (akv.errormsg() ); cout << '\n';
-  show( akv.intvalue(":y") );  show( akv.errormsg() ); cout << '\n';
-  show( akv.doublevalue(":x") );  show( akv.errormsg() ); cout << '\n';
-  show( akv.intvalue(":x") );  show (akv.errormsg() ); cout << '\n';
-  show( akv.intvalue("x") );  show (akv.errormsg() ); cout << '\n';
-  show( akv.intvalue(":z") );  show (akv.errormsg() ); cout << '\n';
+  show( akv->exists(":x") );  show( akv->errormsg() ); cout << '\n';
+  show( akv->exists(":z") );  show (akv->errormsg() ); cout << '\n';
+  show( akv->intvalue(":y") );  show( akv->errormsg() ); cout << '\n';
+  show( akv->doublevalue(":x") );  show( akv->errormsg() ); cout << '\n';
+  show( akv->intvalue(":x") );  show (akv->errormsg() ); cout << '\n';
+  show( akv->intvalue("x") );  show (akv->errormsg() ); cout << '\n';
+  show( akv->intvalue(":z") );  show (akv->errormsg() ); cout << '\n';
 
-  ParsedKeyVal pkv(SRCDIR "/keyvaltest.in"); pkv.unmanage();
+  RefKeyVal pkv = new ParsedKeyVal(SRCDIR "/keyvaltest.in");
 
-  show( pkv.exists(":x") );  show( pkv.errormsg() ); cout << '\n';
-  show( pkv.exists(":z") );  show (pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue(":y") );  show( pkv.errormsg() ); cout << '\n';
-  show( pkv.doublevalue(":x") );  show( pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue(":x") );  show (pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue("x") );  show (pkv.errormsg() ); cout << '\n';
-  show( pkv.intvalue(":z") );  show (pkv.errormsg() ); cout << '\n';
+  show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue(":y") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->doublevalue(":x") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue(":x") );  show (pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue("x") );  show (pkv->errormsg() ); cout << '\n';
+  show( pkv->intvalue(":z") );  show (pkv->errormsg() ); cout << '\n';
 
-  show ( pkv.exists("test:object_d") ); show(pkv.errormsg()); cout << '\n';
+  show ( pkv->exists("test:object_d") ); show(pkv->errormsg()); cout << '\n';
 
-  RefDescribedClass rdc = pkv.describedclassvalue("test:object");
-  show (pkv.errormsg() ); cout << '\n';
+  RefDescribedClass rdc = pkv->describedclassvalue("test:object");
+  show (pkv->errormsg() ); cout << '\n';
   show( rdc.pointer() ); cout << '\n';
   RefA ra(rdc);
   show( ra.pointer() ); cout << '\n';
 
-  show( pkv.intvalue(":test:object:d") ); cout << '\n';
+  show( pkv->intvalue(":test:object:d") ); cout << '\n';
 
-  pkv.dump();
+  pkv->dump();
 
   show( ra.pointer() ); cout << '\n';
   if (ra.nonnull()) { ra->print(); cout << '\n'; }

@@ -73,7 +73,7 @@ StringKeyVal::key_value(const char* key)
         }
       else {
           // create a new instance of this datum
-          PrefixKeyVal pkv(tkw,*this); pkv.unmanage();
+          RefKeyVal pkv = new PrefixKeyVal(tkw, this);
           const ClassDesc* cd = ClassDesc::name_to_class_desc(classn);
           if (!cd) {
               fprintf(stderr,"StringKeyVal: couldn't find a class named \"%s\""

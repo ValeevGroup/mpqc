@@ -17,7 +17,7 @@ OneBodyWavefunction::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-OneBodyWavefunction::OneBodyWavefunction(KeyVal&keyval):
+OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   Wavefunction(keyval),
   _density(this)
 {

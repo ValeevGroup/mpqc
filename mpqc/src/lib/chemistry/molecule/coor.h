@@ -28,7 +28,7 @@ class IntCoor: virtual public SavableState {
     double value_;
   public:
     IntCoor(const char* label = 0);
-    IntCoor(KeyVal&);
+    IntCoor(const RefKeyVal&);
     IntCoor(const IntCoor&);
     IntCoor(StateIn&);
     virtual ~IntCoor();
@@ -64,7 +64,7 @@ class SumIntCoor: public IntCoor {
     ArrayRefIntCoor coor_;
   public:
     SumIntCoor(const char *);
-    SumIntCoor(KeyVal&);
+    SumIntCoor(const RefKeyVal&);
     SumIntCoor(StateIn&);
     ~SumIntCoor();
     void save_data_state(StateOut&);
@@ -100,7 +100,7 @@ class SetIntCoor: virtual public SavableState {
     ArraysetRefIntCoor coor_;
   public:
     SetIntCoor();
-    SetIntCoor(KeyVal&);
+    SetIntCoor(const RefKeyVal&);
     SetIntCoor(StateIn&);
     virtual ~SetIntCoor();
     void save_data_state(StateOut&);
@@ -132,7 +132,7 @@ class MolecularCoor: virtual public SavableState
     RefMolecule molecule_;
   public:
     MolecularCoor(RefMolecule&);
-    MolecularCoor(KeyVal&);
+    MolecularCoor(const RefKeyVal&);
     MolecularCoor(StateIn&);
     virtual ~MolecularCoor();
     void save_data_state(StateOut&);
@@ -205,7 +205,7 @@ class IntMolecularCoor: public MolecularCoor
     virtual void init();
   public:
     IntMolecularCoor(RefMolecule&mol);
-    IntMolecularCoor(KeyVal&);
+    IntMolecularCoor(const RefKeyVal&);
     IntMolecularCoor(StateIn&);
     virtual ~IntMolecularCoor();
     void save_data_state(StateOut&);

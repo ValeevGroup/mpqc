@@ -27,7 +27,7 @@ class Wavefunction: public MolecularEnergy
     double* bsg_values;
     RefGaussianBasisSet _gbs;
  public:
-    Wavefunction(KeyVal&);
+    Wavefunction(const RefKeyVal&);
     Wavefunction(StateIn&);
     virtual ~Wavefunction();
     void save_data_state(StateOut&);

@@ -32,32 +32,35 @@ static void getnewkey(char*newkey,const char*key,int n1,int n2,int n3,int n4)
 ///////////////////////////////////////////////////////////////////////
 // PrefixKeyVal
 
-PrefixKeyVal::PrefixKeyVal(const char *prefix,KeyVal&kv,int n1,int n2,int n3,int n4):
-keyval(&kv)
+PrefixKeyVal::PrefixKeyVal(const char *prefix,const RefKeyVal&kv,
+                           int n1,int n2,int n3,int n4):
+keyval(kv)
 {
   setup(prefix,4,n1,n2,n3,n4);
 }
 
-PrefixKeyVal::PrefixKeyVal(const char *prefix,KeyVal&kv,int n1,int n2,int n3):
-keyval(&kv)
+PrefixKeyVal::PrefixKeyVal(const char *prefix,const RefKeyVal&kv,
+                           int n1,int n2,int n3):
+keyval(kv)
 {
   setup(prefix,3,n1,n2,n3,0);
 }
 
-PrefixKeyVal::PrefixKeyVal(const char *prefix,KeyVal&kv,int n1,int n2):
-keyval(&kv)
+PrefixKeyVal::PrefixKeyVal(const char *prefix,const RefKeyVal&kv,
+                           int n1,int n2):
+keyval(kv)
 {
   setup(prefix,2,n1,n2,0,0);
 }
 
-PrefixKeyVal::PrefixKeyVal(const char *prefix,KeyVal&kv,int n1):
-keyval(&kv)
+PrefixKeyVal::PrefixKeyVal(const char *prefix,const RefKeyVal&kv,int n1):
+keyval(kv)
 {
   setup(prefix,1,n1,0,0,0);
 }
 
-PrefixKeyVal::PrefixKeyVal(const char *prefix,KeyVal&kv):
-keyval(&kv)
+PrefixKeyVal::PrefixKeyVal(const char *prefix,const RefKeyVal&kv):
+keyval(kv)
 {
   setup(prefix,0,0,0,0,0);
 }

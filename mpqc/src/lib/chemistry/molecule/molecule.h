@@ -47,7 +47,7 @@ class Molecule :
     Molecule();
     Molecule(Molecule&);
     Molecule(StateIn&);
-    Molecule(KeyVal&input);
+    Molecule(const RefKeyVal&input);
     virtual ~Molecule();
 
     RefSCDimension dim_natom3(); // return natom3_;

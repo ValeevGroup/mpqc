@@ -85,7 +85,7 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   init();
 }
 
-IntMolecularCoor::IntMolecularCoor(KeyVal& keyval):
+IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
   MolecularCoor(keyval),
   update_bmat_(0),
   only_totally_symmetric_(1),
@@ -106,18 +106,18 @@ IntMolecularCoor::IntMolecularCoor(KeyVal& keyval):
   tors_ = new SetIntCoor;
   outs_ = new SetIntCoor;
   extras_ = new SetIntCoor;
-  fixed_ = keyval.describedclassvalue("fixed");
+  fixed_ = keyval->describedclassvalue("fixed");
   if (fixed_.null()) fixed_ = new SetIntCoor;
 
   // the extra_bonds list is given as a vector of atom numbers
   // (atom numbering starts at 1)
-  nextra_bonds_ = keyval.count("extra_bonds");
+  nextra_bonds_ = keyval->count("extra_bonds");
   nextra_bonds_ /= 2;
   if (nextra_bonds_) {
       extra_bonds_ = new int[nextra_bonds_*2];
       for (int i=0; i<nextra_bonds_*2; i++) {
-          extra_bonds_[i] = keyval.intvalue("extra_bonds",i);
-          if (keyval.error() != KeyVal::OK) {
+          extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
+          if (keyval->error() != KeyVal::OK) {
               fprintf(stderr,"IntMolecularCoor:: keyval CTOR: "
                       "problem reading \"extra_bonds:%d\"\n",i);
               abort();
@@ -129,26 +129,26 @@ IntMolecularCoor::IntMolecularCoor(KeyVal& keyval):
     }
           
 
-  update_bmat_ = keyval.booleanvalue("update_bmat");
+  update_bmat_ = keyval->booleanvalue("update_bmat");
 
-  only_totally_symmetric_ = keyval.booleanvalue("only_totally_symmetric");
-  if (keyval.error() != KeyVal::OK) only_totally_symmetric_ = 1;
+  only_totally_symmetric_ = keyval->booleanvalue("only_totally_symmetric");
+  if (keyval->error() != KeyVal::OK) only_totally_symmetric_ = 1;
 
   double tmp;
-  tmp = keyval.doublevalue("scale_bonds");
-  if (keyval.error() == KeyVal::OK) scale_bonds_ = tmp;
-  tmp = keyval.doublevalue("scale_bends");
-  if (keyval.error() == KeyVal::OK) scale_bends_ = tmp;
-  tmp = keyval.doublevalue("scale_tors");
-  if (keyval.error() == KeyVal::OK) scale_tors_ = tmp;
-  tmp = keyval.doublevalue("scale_outs");
-  if (keyval.error() == KeyVal::OK) scale_outs_ = tmp;
-  tmp = keyval.doublevalue("symmetry_tolerance");
-  if (keyval.error() == KeyVal::OK) symmetry_tolerance_ = tmp;
-  tmp = keyval.doublevalue("simple_tolerance");
-  if (keyval.error() == KeyVal::OK) simple_tolerance_ = tmp;
-  tmp = keyval.doublevalue("coordinate_tolerance");
-  if (keyval.error() == KeyVal::OK) coordinate_tolerance_ = tmp;
+  tmp = keyval->doublevalue("scale_bonds");
+  if (keyval->error() == KeyVal::OK) scale_bonds_ = tmp;
+  tmp = keyval->doublevalue("scale_bends");
+  if (keyval->error() == KeyVal::OK) scale_bends_ = tmp;
+  tmp = keyval->doublevalue("scale_tors");
+  if (keyval->error() == KeyVal::OK) scale_tors_ = tmp;
+  tmp = keyval->doublevalue("scale_outs");
+  if (keyval->error() == KeyVal::OK) scale_outs_ = tmp;
+  tmp = keyval->doublevalue("symmetry_tolerance");
+  if (keyval->error() == KeyVal::OK) symmetry_tolerance_ = tmp;
+  tmp = keyval->doublevalue("simple_tolerance");
+  if (keyval->error() == KeyVal::OK) simple_tolerance_ = tmp;
+  tmp = keyval->doublevalue("coordinate_tolerance");
+  if (keyval->error() == KeyVal::OK) coordinate_tolerance_ = tmp;
   
   init();
 }

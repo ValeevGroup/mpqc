@@ -37,12 +37,12 @@ NLP0::NLP0(const RefSCDimension&dim):
   _value.set_desired_accuracy(DBL_EPSILON);
 }
 
-NLP0::NLP0(KeyVal&kv):
+NLP0::NLP0(const RefKeyVal&kv):
   _value(this)
 {
-  _dim = kv.describedclassvalue("dimension");
+  _dim = kv->describedclassvalue("dimension");
 
-  _value.set_desired_accuracy(kv.doublevalue("value_accuracy"));
+  _value.set_desired_accuracy(kv->doublevalue("value_accuracy"));
   if (_value.desired_accuracy() < DBL_EPSILON)
     _value.set_desired_accuracy(DBL_EPSILON);
 
@@ -163,13 +163,13 @@ NLP1::NLP1(const RefSCDimension&dim):
   _gradient.set_desired_accuracy(DBL_EPSILON);
 }
 
-NLP1::NLP1(KeyVal&kv):
+NLP1::NLP1(const RefKeyVal&kv):
   NLP0(kv),
   _gradient(this)
 {
   RefSCVector gradient(_dim);
 
-  _gradient.set_desired_accuracy(kv.doublevalue("gradient_accuracy"));
+  _gradient.set_desired_accuracy(kv->doublevalue("gradient_accuracy"));
   if (_gradient.desired_accuracy() < DBL_EPSILON)
     _gradient.set_desired_accuracy(DBL_EPSILON);
 
@@ -272,13 +272,13 @@ NLP2::NLP2(const RefSCDimension&dim):
   _hessian.set_desired_accuracy(DBL_EPSILON);
 }
 
-NLP2::NLP2(KeyVal&kv):
+NLP2::NLP2(const RefKeyVal&kv):
   NLP1(kv),
   _hessian(this)
 {
   RefSymmSCMatrix hessian(_dim);
 
-  _hessian.set_desired_accuracy(kv.doublevalue("hessian_accuracy"));
+  _hessian.set_desired_accuracy(kv->doublevalue("hessian_accuracy"));
   if (_hessian.desired_accuracy() < DBL_EPSILON)
     _hessian.set_desired_accuracy(DBL_EPSILON);
 

@@ -44,10 +44,10 @@ Optimize::Optimize(StateIn&s):
   n_iterations_ = 0;
 }
 
-Optimize::Optimize(KeyVal&keyval)
+Optimize::Optimize(const RefKeyVal&keyval)
 {
-  max_iterations_ = keyval.intvalue("max_iterations");
-  if (keyval.error() != KeyVal::OK) max_iterations_ = 10;
+  max_iterations_ = keyval->intvalue("max_iterations");
+  if (keyval->error() != KeyVal::OK) max_iterations_ = 10;
   n_iterations_ = 0;
 }
 
@@ -98,7 +98,7 @@ LineOpt::LineOpt(StateIn&s):
   search_direction_.restore_state(s);
 }
 
-LineOpt::LineOpt(KeyVal&keyval):
+LineOpt::LineOpt(const RefKeyVal&keyval):
   Optimize(keyval)
 {
 }

@@ -52,7 +52,7 @@ class MPSCF: public OneBodyWavefunction
     void compute();
     void init();
   public:
-    MPSCF(KeyVal&);
+    MPSCF(const RefKeyVal&);
     MPSCF(StateIn&);
     virtual ~MPSCF();
     void save_data_state(StateOut&);

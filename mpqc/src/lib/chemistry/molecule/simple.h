@@ -52,7 +52,7 @@ class SimpleCo : public IntCoor {
   public:
     SimpleCo();
     SimpleCo(int,const char* =0);
-    SimpleCo(KeyVal&,int);
+    SimpleCo(const RefKeyVal&,int);
     virtual ~SimpleCo();
 
     int natoms() const;
@@ -135,7 +135,7 @@ SimpleCo_DECLARE(StreSimpleCo)
     StreSimpleCo();
     StreSimpleCo(const StreSimpleCo&);
     StreSimpleCo(const char*, int, int);
-    StreSimpleCo(KeyVal&);
+    StreSimpleCo(const RefKeyVal&);
     //StreSimpleCo(KeyVal*,const char*,int=0);
     ~StreSimpleCo();
 
@@ -164,7 +164,7 @@ SimpleCo_DECLARE(BendSimpleCo)
     BendSimpleCo();
     BendSimpleCo(const BendSimpleCo&);
     BendSimpleCo(const char*, int, int, int);
-    BendSimpleCo(KeyVal&);
+    BendSimpleCo(const RefKeyVal&);
     //BendSimpleCo(KeyVal*,const char*,int=0);
     ~BendSimpleCo();
 
@@ -191,7 +191,7 @@ SimpleCo_DECLARE(TorsSimpleCo)
     TorsSimpleCo();
     TorsSimpleCo(const TorsSimpleCo&);
     TorsSimpleCo(const char *refr, int, int, int, int);
-    TorsSimpleCo(KeyVal&);
+    TorsSimpleCo(const RefKeyVal&);
     //TorsSimpleCo(KeyVal*,const char*,int=0);
     ~TorsSimpleCo();
 
@@ -218,7 +218,7 @@ SimpleCo_DECLARE(OutSimpleCo)
     OutSimpleCo();
     OutSimpleCo(const OutSimpleCo&);
     OutSimpleCo(const char *refr, int, int, int, int);
-    OutSimpleCo(KeyVal&);
+    OutSimpleCo(const RefKeyVal&);
     //OutSimpleCo(KeyVal*,const char*,int=0);
     ~OutSimpleCo();
 
@@ -245,7 +245,7 @@ SimpleCo_DECLARE(LinIPSimpleCo)
     LinIPSimpleCo();
     LinIPSimpleCo(const LinIPSimpleCo&);
     LinIPSimpleCo(const char *refr, int, int, int, int);
-    LinIPSimpleCo(KeyVal&);
+    LinIPSimpleCo(const RefKeyVal&);
     //LinIPSimpleCo(KeyVal*,const char*,int=0);
     ~LinIPSimpleCo();
 
@@ -274,7 +274,7 @@ SimpleCo_DECLARE(LinOPSimpleCo)
     LinOPSimpleCo();
     LinOPSimpleCo(const LinOPSimpleCo&);
     LinOPSimpleCo(const char *refr, int =0, int =0, int =0, int =0);
-    LinOPSimpleCo(KeyVal&);
+    LinOPSimpleCo(const RefKeyVal&);
     //LinOPSimpleCo(KeyVal*,const char*,int=0);
     ~LinOPSimpleCo();
 

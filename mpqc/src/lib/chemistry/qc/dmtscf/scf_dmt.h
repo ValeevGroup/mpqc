@@ -47,9 +47,9 @@ extern "C" {
 }
 
 /* The preferred input reader for C++ programs. */
-int scf_init_scf_struct(KeyVal&, centers_t&, scf_struct_t&);
-int scf_init_scf(KeyVal&, centers_t&, scf_struct_t&, sym_struct_t&);
-int scf_make_old_centers(KeyVal&, centers_t&, centers_t&);
+int scf_init_scf_struct(const RefKeyVal&, centers_t&, scf_struct_t&);
+int scf_init_scf(const RefKeyVal&, centers_t&, scf_struct_t&, sym_struct_t&);
+int scf_make_old_centers(const RefKeyVal&, centers_t&, centers_t&);
 
 void scf_print_options(FILE*, scf_struct_t&);
 

@@ -47,19 +47,20 @@ Molecule::~Molecule()
   natoms=0;
 }
 
-Molecule::Molecule(KeyVal&input) :
+Molecule::Molecule(const RefKeyVal&input) :
   pg(input), atoms(0), natoms(0)
 {
   const double ang_to_bohr = 1.0/0.52917706;
 
-  if (input.exists("pdb_file")) {
+  if (input->exists("pdb_file")) {
       const int LineLength = 85;
       char line[LineLength];
-      char* filename = input.pcharvalue("pdb_file");
+      char* filename = input->pcharvalue("pdb_file");
       FILE*fp = fopen(filename,"r");
       if (!fp) {
           fprintf(stderr,
-                  "Molecule::Molecule(KeyVal&input): pdb file not found\n");
+                  "Molecule::Molecule(const RefKeyVal&input): "
+                  "pdb file not found\n");
           abort();
         }
       int i=0;
@@ -102,9 +103,9 @@ Molecule::Molecule(KeyVal&input) :
     }
   else {
     // first let's see if the input is in bohr or angstrom units
-      int aangstroms = input.booleanvalue("angstrom");
-      if (input.error() != KeyVal::OK) {
-          aangstroms = input.booleanvalue("aangstrom");
+      int aangstroms = input->booleanvalue("angstrom");
+      if (input->error() != KeyVal::OK) {
+          aangstroms = input->booleanvalue("aangstrom");
         }
       double conv = 1.0;
       if (aangstroms) {
@@ -117,8 +118,8 @@ Molecule::Molecule(KeyVal&input) :
       // the length of atoms must still equal the length of geometry, but
       // we'll try to set up atom_labels such that different lengths are
       // possible
-      int natom = input.count("geometry");
-      if (natom != input.count("atoms")) {
+      int natom = input->count("geometry");
+      if (natom != input->count("atoms")) {
         fprintf(stderr,"Molecule: size of \"geometry\" != size of \"atoms\"\n");
         return;
       }
@@ -127,11 +128,11 @@ Molecule::Molecule(KeyVal&input) :
       for (i=0; i<natom; i++) {
           char* name;
           char* labels;
-          AtomicCenter ac(name = input.pcharvalue("atoms",i),
-                          input.doublevalue("geometry",i,0)*conv,
-                          input.doublevalue("geometry",i,1)*conv,
-                          input.doublevalue("geometry",i,2)*conv,
-                          labels = input.pcharvalue("atom_labels",i)
+          AtomicCenter ac(name = input->pcharvalue("atoms",i),
+                          input->doublevalue("geometry",i,0)*conv,
+                          input->doublevalue("geometry",i,1)*conv,
+                          input->doublevalue("geometry",i,2)*conv,
+                          labels = input->pcharvalue("atom_labels",i)
                           );
           delete[] name;
           delete[] labels;
@@ -141,7 +142,7 @@ Molecule::Molecule(KeyVal&input) :
     
  // we'll assume that only unique atoms are given in the input unless
  // told otherwise
-  if (!input.booleanvalue("redundant_atoms"))
+  if (!input->booleanvalue("redundant_atoms"))
     mol_symmetrize_molecule(*this);
 }
 

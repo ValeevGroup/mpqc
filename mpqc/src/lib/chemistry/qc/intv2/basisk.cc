@@ -16,7 +16,8 @@ extern "C" {
 enum whats { READ, COUNT };
 
 static int parse_am(char*, shell_type_t&);
-static int read_shells(KeyVal&, const char*, const char*, basis_t&, int&,
+static int read_shells(const RefKeyVal&, const char*, const char*,
+                       basis_t&, int&,
                        enum whats);
 
 /////////////////////////////////////////////////////////////////////////
@@ -27,7 +28,8 @@ static int read_shells(KeyVal&, const char*, const char*, basis_t&, int&,
 //
 
 int
-int_read_basis(KeyVal& topkeyval,char *atom, const char *bname, basis_t &basis)
+int_read_basis(const RefKeyVal& topkeyval,char *atom, const char *bname,
+               basis_t &basis)
 {
   init_basis(&basis);
 
@@ -41,9 +43,9 @@ int_read_basis(KeyVal& topkeyval,char *atom, const char *bname, basis_t &basis)
 
   // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
   // variables to find out what basis set files are to be read in
-  ParsedKeyVal libkeyval("basis",topkeyval); libkeyval.unmanage();
-  PrefixKeyVal prekeyval(":basis",libkeyval); prekeyval.unmanage();
-  AggregateKeyVal keyval(prekeyval,libkeyval); keyval.unmanage();
+  RefKeyVal libkeyval = new ParsedKeyVal("basis",topkeyval);
+  RefKeyVal prekeyval = new PrefixKeyVal(":basis",libkeyval);
+  RefKeyVal keyval = new AggregateKeyVal(prekeyval,libkeyval);
 
   int tmp=0;
   basis.n = read_shells(keyval,atom,bname,basis,tmp,COUNT);
@@ -75,9 +77,9 @@ int_read_basis(KeyVal& topkeyval,char *atom, const char *bname, basis_t &basis)
 //
 
 int
-int_read_centers(KeyVal& keyval, centers_t& centers)
+int_read_centers(const RefKeyVal& keyval, centers_t& centers)
 {
-  char *basis = keyval.pcharvalue("basis");
+  char *basis = keyval->pcharvalue("basis");
   if (!basis) {
     fprintf(stderr,"int_read_centers: can't read basis\n");
     return -1;
@@ -95,8 +97,8 @@ int_read_centers(KeyVal& keyval, centers_t& centers)
   centers.func_num = 0;
 
  // find out how many atoms there are
-  centers.n = keyval.count("atoms");
-  if (keyval.error() != KeyVal::OK) {
+  centers.n = keyval->count("atoms");
+  if (keyval->error() != KeyVal::OK) {
     fprintf(stderr,"int_read_centers: can't count atoms\n");
     return -1;
   }
@@ -109,8 +111,8 @@ int_read_centers(KeyVal& keyval, centers_t& centers)
   }
 
   for (int i=0; i < centers.n; i++) {
-    char *atom = keyval.pcharvalue("atoms",i);
-    if (keyval.error() != KeyVal::OK) {
+    char *atom = keyval->pcharvalue("atoms",i);
+    if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"int_read_centers: can't read atoms[%d]\n",i);
       return -1;
     }
@@ -122,8 +124,8 @@ int_read_centers(KeyVal& keyval, centers_t& centers)
     }
     delete[] atom;
 
-    centers.center[i].charge = keyval.doublevalue("charges",i);
-    if (keyval.error() != KeyVal::OK)
+    centers.center[i].charge = keyval->doublevalue("charges",i);
+    if (keyval->error() != KeyVal::OK)
       centers.center[i].charge = atom_to_an(centers.center[i].atom);
 
     centers.center[i].r = (double*) malloc(sizeof(double)*3);
@@ -133,8 +135,8 @@ int_read_centers(KeyVal& keyval, centers_t& centers)
     }
 
     for (int j=0; j<3; j++) {
-      centers.center[i].r[j] = keyval.doublevalue("geometry",i,j);
-      if (keyval.error() != KeyVal::OK) {
+      centers.center[i].r[j] = keyval->doublevalue("geometry",i,j);
+      if (keyval->error() != KeyVal::OK) {
         fprintf(stderr,"int_read_centers: can't read r(%d,%d)\n",i,j);
         return -1;
       }
@@ -155,7 +157,7 @@ int_read_centers(KeyVal& keyval, centers_t& centers)
 /////////////////////////////////////////////////////////////////////////////
 
 static int
-read_shells(KeyVal& keyval, const char *atom, const char *bname,
+read_shells(const RefKeyVal& keyval, const char *atom, const char *bname,
             basis_t& basis, int& nsh, enum whats what)
 {
 
@@ -165,8 +167,8 @@ read_shells(KeyVal& keyval, const char *atom, const char *bname,
  // number of shells + get statements
 
   sprintf(key,"%s:%s",atom,bname);
-  int nelem = keyval.count(key);
-  if (keyval.error() != KeyVal::OK) {
+  int nelem = keyval->count(key);
+  if (keyval->error() != KeyVal::OK) {
     fprintf(stderr,"read_shells: could not count %s\n",key);
     return -1;
   }
@@ -179,7 +181,7 @@ read_shells(KeyVal& keyval, const char *atom, const char *bname,
    // shell info (if what==READ), and increment nsh by one.
 
     sprintf(key,"%s:%s:%d:type",atom,bname,i);
-    if (keyval.exists(key)) {
+    if (keyval->exists(key)) {
       if (what==READ) {
         int j;
 
@@ -188,16 +190,16 @@ read_shells(KeyVal& keyval, const char *atom, const char *bname,
         basis.shell[nsh].norm = 0;
         
        // count type to get the number of general contractions
-        int ncon = keyval.count(key);
-        if (keyval.error() != KeyVal::OK) {
+        int ncon = keyval->count(key);
+        if (keyval->error() != KeyVal::OK) {
           fprintf(stderr,"read_shells: could not count %s\n",key);
           return -1;
         }
 
        // count exp to get the number of primitives
         sprintf(key,"%s:%s:%d:exp",atom,bname,i);
-        int nprim = keyval.count(key);
-        if (keyval.error() != KeyVal::OK) {
+        int nprim = keyval->count(key);
+        if (keyval->error() != KeyVal::OK) {
           fprintf(stderr,"read_shells: could not count %s\n",key);
           return -1;
         }
@@ -213,8 +215,8 @@ read_shells(KeyVal& keyval, const char *atom, const char *bname,
         }
 
         for (j=0; j < nprim; j++) {
-          basis.shell[nsh].exp[j] = keyval.doublevalue(key,j);
-          if (keyval.error() != KeyVal::OK) {
+          basis.shell[nsh].exp[j] = keyval->doublevalue(key,j);
+          if (keyval->error() != KeyVal::OK) {
             fprintf(stderr,"read_shells: could not read %s:%d\n",key,j);
             return -1;
           }
@@ -236,8 +238,8 @@ read_shells(KeyVal& keyval, const char *atom, const char *bname,
           }
 
           for (int k=0; k < nprim; k++) {
-            basis.shell[nsh].coef[j][k] = keyval.doublevalue(key,j,k);
-            if (keyval.error() != KeyVal::OK) {
+            basis.shell[nsh].coef[j][k] = keyval->doublevalue(key,j,k);
+            if (keyval->error() != KeyVal::OK) {
               fprintf(stderr,"read_shells: could not read %s:%d:%d\n",key,j,k);
               return -1;
             }
@@ -254,8 +256,8 @@ read_shells(KeyVal& keyval, const char *atom, const char *bname,
 
         for (j=0; j < ncon; j++) {
           sprintf(key,"%s:%s:%d:type:%d:am",atom,bname,i,j);
-          char *am = keyval.pcharvalue(key);
-          if (keyval.error() != KeyVal::OK) {
+          char *am = keyval->pcharvalue(key);
+          if (keyval->error() != KeyVal::OK) {
             fprintf(stderr,"read_shells: could not read %s\n",key);
             return -1;
           }
@@ -273,8 +275,8 @@ read_shells(KeyVal& keyval, const char *atom, const char *bname,
 
     } else {
       sprintf(key,"%s:%s:%d:get",atom,bname,i);
-      char *nbas = keyval.pcharvalue(key);
-      if (keyval.error() != KeyVal::OK) {
+      char *nbas = keyval->pcharvalue(key);
+      if (keyval->error() != KeyVal::OK) {
         fprintf(stderr,"read_shells: "
                        "there is neither a shell nor a get here\n");
         return -1;

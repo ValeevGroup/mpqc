@@ -47,7 +47,7 @@ IHessianUpdate::IHessianUpdate(StateIn&s):
 {
 }
 
-IHessianUpdate::IHessianUpdate(KeyVal&keyval)
+IHessianUpdate::IHessianUpdate(const RefKeyVal&keyval)
 {
 }
 
@@ -75,7 +75,7 @@ DFPUpdate::DFPUpdate()
 {
 }
 
-DFPUpdate::DFPUpdate(KeyVal&keyval):
+DFPUpdate::DFPUpdate(const RefKeyVal&keyval):
   IHessianUpdate(keyval)
 {
 }
@@ -134,7 +134,7 @@ BFGSUpdate::BFGSUpdate()
 {
 }
 
-BFGSUpdate::BFGSUpdate(KeyVal&keyval):
+BFGSUpdate::BFGSUpdate(const RefKeyVal&keyval):
   DFPUpdate(keyval)
 {
 }

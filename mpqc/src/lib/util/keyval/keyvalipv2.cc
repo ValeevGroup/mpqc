@@ -37,7 +37,7 @@ nfp(0)
   read(fp);
 }
 
-ParsedKeyVal::ParsedKeyVal(const char* keyprefix, KeyVal& keyval):
+ParsedKeyVal::ParsedKeyVal(const char* keyprefix, const RefKeyVal& keyval):
 nfile(0),
 file(0),
 nfp(0)
@@ -52,10 +52,10 @@ nfp(0)
   strcpy(dirspec,keyprefix);
   strcat(dirspec,"dir");
 
-  int nfiles = keyval.count(filespec);
+  int nfiles = keyval->count(filespec);
   for (int i=0; i<nfiles; i++) {
-      char* directory = keyval.pcharvalue(dirspec);
-      char* filename = keyval.pcharvalue(filespec,i);
+      char* directory = keyval->pcharvalue(dirspec);
+      char* filename = keyval->pcharvalue(filespec,i);
       char* fullname;
       if (directory) {
           fullname = new char[strlen(directory)+strlen(filename)+1];

@@ -14,32 +14,45 @@ main(int, char**)
   for (int i=0; i<keyval->count("test"); i++) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);
 
+      gbs->molecule()->print();
+      printf("\n");
+
       PetiteList pl(gbs);
-      pl.print();
+      pl.print(stdout,0);
       
-      RefSCMatrix aotoso = pl.aotoso();
+      RefSCMatrix aotoso(pl.AO_basisdim(), pl.SO_basisdim());
+      RefSCElementOp sotrans = new AOSO_Transformation(gbs);
+      aotoso.element_op(sotrans);
+      sotrans=0;
       aotoso.print("aotoso");
 
-      RefSCMatrix sotoao = aotoso.i();
-      sotoao.print("sotoao");
-
-      RefSymmSCMatrix s(gbs->basisdim());
+      RefSymmSCMatrix s(pl.AO_basisdim());
       s.assign(0.0);
-
+#if 1
       RefSCElementOp op = new GaussianOverlapIntv2(gbs);
       s.element_op(op);
+#else
+      RefSCElementOp op = new GaussianKineticIntv2(gbs);
+      s.element_op(op);
+      op=0;
+      op = new GaussianNuclearIntv2(gbs);
+      s.element_op(op);
+#endif      
       op=0;
 
-      s.print("overlap");
-
-      RefSymmSCMatrix ss = s.clone();
+      RefSymmSCMatrix ss(pl.SO_basisdim());
       ss.assign(0.0);
       ss.accumulate_transform(aotoso.t(),s);
+
       ss.print("blocked ss");
+
+      RefSCMatrix sotoao = aotoso.i();
+      RefSymmSCMatrix us = s.clone();
+      us.assign(0.0);
+      us.accumulate_transform(sotoao.t(),ss);
       
-      s.assign(0.0);
-      s.accumulate_transform(sotoao.t(),ss);
-      s.print("unblocked s");
+      us = us-s;
+      us.print("us - s");
       
       gbs->print();
 

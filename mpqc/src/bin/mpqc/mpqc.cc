@@ -123,6 +123,7 @@ trash_stack()
 static void
 clean_up(void)
 {
+  MemoryGrp::set_default_memorygrp(0);
   MessageGrp::set_default_messagegrp(0);
   ThreadGrp::set_default_threadgrp(0);
   SCMatrixKit::set_default_matrixkit(0);
@@ -880,6 +881,7 @@ main(int argc, char *argv[])
   keyval = 0;
   parsedkv = 0;
   grp = 0;
+  memory = 0;
   clean_up();
 
 #if defined(HAVE_TIME) && defined(HAVE_CTIME)

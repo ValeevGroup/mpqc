@@ -1296,6 +1296,20 @@ RefSCVector::accumulate(const RefSCVector&a) const
 }
 
 void
+RefSCVector::accumulate_product(const RefSymmSCMatrix&a, const RefSCVector&b)
+{
+  require_nonnull();
+  pointer()->accumulate_product(a.pointer(), b.pointer());
+}
+
+void
+RefSCVector::accumulate_product(const RefSCMatrix&a, const RefSCVector&b)
+{
+  require_nonnull();
+  pointer()->accumulate_product(a.pointer(), b.pointer());
+}
+
+void
 RefSCVector::element_op(const RefSCElementOp&op) const
 {
   if (nonnull()) pointer()->element_op(op);

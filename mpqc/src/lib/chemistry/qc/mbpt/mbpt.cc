@@ -121,7 +121,7 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
     }
   nfzc = keyval->intvalue("nfzc");
   nfzv = keyval->intvalue("nfzv");
-  mem_alloc = keyval->intvalue("storage");
+  mem_alloc = keyval->intvalue("memory");
   if (keyval->error() != KeyVal::OK) {
       mem_alloc = 8000000;
     }

@@ -32,6 +32,8 @@
 #ifndef _chemistry_qc_intv3_int2e_h
 #define _chemistry_qc_intv3_int2e_h
 
+#include <limits.h>
+
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/oint3/build.h>
@@ -290,6 +292,7 @@ class Int2eV3: public VRefCount {
     // global vars from bounds.h
   protected:
     typedef signed char int_bound_t;
+    enum { int_bound_min = SCHAR_MIN, int_bound_max = SCHAR_MAX };
     int_bound_t int_Q;    
     int_bound_t int_R;    
     int_bound_t *int_Qvec;

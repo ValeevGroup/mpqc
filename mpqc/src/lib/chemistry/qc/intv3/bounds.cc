@@ -68,7 +68,7 @@ Int2eV3::int_init_bounds_nocomp()
 
   int_Rvec = 0;
 
-  int_Q = -126;
+  int_Q = int_bound_min;
   for (i=0; i<nsht; i++) int_Qvec[i] = 0;
 }
 
@@ -102,8 +102,8 @@ Int2eV3::int_init_bounds_1der_nocomp()
     exit(1);
     }
 
-  int_Q = -126;
-  int_R = -126;
+  int_Q = int_bound_min;
+  int_R = int_bound_min;
   for (i=0; i<nsht; i++) int_Qvec[i] = int_Rvec[i] = 0;
   }
 
@@ -170,7 +170,7 @@ int
 Int2eV3::int_erep_2bound(int s1, int s2)
 {
   if (!int_Qvec)
-      return 128;
+      return int_bound_max;
   
   int ij=(s1>s2) ? ((s1*(s1+1))>>1)+s2 : ((s2*(s2+1))>>1)+s1;
 
@@ -190,7 +190,7 @@ int
 Int2eV3::int_erep_2bound_1der(int s1, int s2)
 {
   if (!int_Qvec || !int_Rvec)
-      return 128;
+      return int_bound_max;
 
   int ij=(s1>s2) ? ((s1*(s1+1))>>1)+s2 : ((s2*(s2+1))>>1)+s1;
   int b1 = int_Qvec[ij] + int_R;
@@ -270,14 +270,14 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
     }
 
   int nshell=bs1_->nshell();
-  int nsht=nshell*(nshell+1)/2;
+  int nsht=(nshell*(nshell+1))/2;
 
   int me = grp_->me();
   int n = grp_->n();
 
   for (int i=0; i<nsht; i++) vec[i] = 0;
 
-  *overall = -126;
+  *overall = int_bound_min;
   int sh12 = 0;
   for(sh1=0; sh1 < bs1_->nshell() ; sh1++) {
     for(sh2=0; sh2 <= sh1 ; sh2++,sh12++) {
@@ -286,6 +286,7 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
     }
 
   grp_->sum(vec,nsht);
+  grp_->max(overall,1);
   }
 
 /* Compute the partial bound arrays, either Q or R can be computed
@@ -298,7 +299,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
   int shellij;
   int shells[4],size[4];
   double max;
-  double tol = pow(2.0,-126.0);
+  double tol = pow(2.0,double(int_bound_min));
   double loginv = 1.0/log(2.0);
   int old_int_integral_storage = int_integral_storage;
   int_integral_storage = 0;
@@ -358,7 +359,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
         vec[shellij] = (int_bound_t) (log(max)*loginv + 0.999999999);
         }
       else {
-        vec[shellij] = (int_bound_t) -126;
+        vec[shellij] = (int_bound_t) int_bound_min;
         }
 
     /* Multiply R contributions by a factor of two to account for
@@ -385,12 +386,12 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
 int
 Int2eV3::bound_to_logbound(double value)
 {
-  double tol = pow(2.0,-126.0);
+  double tol = pow(2.0,double(int_bound_min));
   double loginv = 1.0/log(2.0);
   int_bound_t res;
 
   if (value > tol) res = (int_bound_t) (log(value)*loginv);
-  else res = -126;
+  else res = int_bound_min;
   return res;
   }
 

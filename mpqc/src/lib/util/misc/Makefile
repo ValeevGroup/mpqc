@@ -41,12 +41,13 @@ BIN_OR_LIB = LIB
 
 CSRC =
 
-CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc
+CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc \
+         scexception.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc \
           autovectest.cc
 
-TESTPROGS = autovectest comptest formiot bugtest tregtime unittest
+TESTPROGS = autovectest comptest formiot bugtest tregtime unittest scextest
 
 INC = timer.h compute.h ieee.h bug.h exenv.h
 
@@ -86,6 +87,9 @@ scinttest: scinttest.$(OBJSUF) $(LIBS)
 
 bugtest: bugtest.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) $^ $(SYSLIBS) -o bugtest $(LTLINKBINOPTS)
+
+scextest: scextest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) $^ $(SYSLIBS) -o $@ $(LTLINKBINOPTS)
 
 bugtest.$(OBJSUF): bugtest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< $(LTLINKBINOPTS)

@@ -54,7 +54,7 @@ class TwoBodyInt : public VRefCount {
     virtual void compute_shell(int,int,int,int) = 0;
 
     // an index of -1 for any shell indicates any shell
-    virtual int log2_shell_bound(int,int,int,int) = 0;
+    virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 
     // if redundant is true, then keep redundant integrals in buffer_.  The
     // default is true.
@@ -198,7 +198,7 @@ class TwoBodyDerivInt : public VRefCount {
     virtual void compute_shell(int,int,int,int,DerivCenters&) = 0;
 
     // an index of -1 for any shell indicates any shell
-    virtual int log2_shell_bound(int,int,int,int) = 0;
+    virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 };
 
 REF_dec(TwoBodyDerivInt);

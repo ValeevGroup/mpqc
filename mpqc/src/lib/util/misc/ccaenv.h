@@ -34,6 +34,7 @@
 
 #include <ccaffeine_AbstractFramework.hh>
 #include <gov_cca.hh>
+#include <MPQC_ComponentFactory.hh>
 
 namespace sc {
 
@@ -46,6 +47,7 @@ class CCAEnv {
     static gov::cca::ports::BuilderService bs_;
     static gov::cca::TypeMap type_map_;
     static gov::cca::ComponentID my_id_;
+    static MPQC::ComponentFactory component_factory_;
 
   public:
     /// Initialize the framework

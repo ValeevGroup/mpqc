@@ -67,6 +67,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   INC += ccaenv.h
   LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \
     -L$(BABELLIB) -R$(BABELLIB) -lsidl
+  CPPFLAGS += -I../../chemistry/cca
 endif
 
 #####################################################################
@@ -110,3 +111,9 @@ ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
 
+# need babel headers generated
+ifneq ($(DODEPEND),no)
+include ../../chemistry/cca/.babel-stamp
+endif
+../../chemistry/cca/.babel-stamp:
+	cd ../../chemistry/cca; $(MAKE) .babel-stamp

@@ -35,6 +35,7 @@ gov::cca::Services CCAEnv::services_;
 gov::cca::ports::BuilderService CCAEnv::bs_;
 gov::cca::TypeMap CCAEnv::type_map_;
 gov::cca::ComponentID CCAEnv::my_id_;
+MPQC::ComponentFactory CCAEnv::component_factory_;
 
 void 
 CCAEnv::init(std::string &args)
@@ -46,6 +47,9 @@ CCAEnv::init(std::string &args)
   my_id_    = services_.getComponentID();
   services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
   bs_ = services_.getPort("bs");
+  component_factory_ = MPQC::ComponentFactory::_create();
+  services_.addProvidesPort(component_factory_, "MPQC::ComponentFactory",
+                           "ccaffeine.ports.ComponentFactory",type_map_);
   initialized_=1; 
 }
 

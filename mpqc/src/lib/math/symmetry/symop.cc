@@ -2,6 +2,8 @@
 #include <math.h>
 
 #include <math/symmetry/pointgrp.h>
+#include <util/misc/formio.h>
+#include <iomanip.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -86,12 +88,29 @@ SymmetryOperation::rotation(double theta)
 }
 
 void
-SymmetryOperation::print(FILE* outfile) const
+SymmetryOperation::print(ostream& os) const
 {
-  fprintf(outfile,"        1          2          3\n");
-  fprintf(outfile,"  1  %10.7f %10.7f %10.7f\n",d[0][0],d[0][1],d[0][2]);
-  fprintf(outfile,"  2  %10.7f %10.7f %10.7f\n",d[1][0],d[1][1],d[1][2]);
-  fprintf(outfile,"  3  %10.7f %10.7f %10.7f\n",d[2][0],d[2][1],d[2][2]);
-  fprintf(outfile,"\n");
+  ios::fmtflags oldf = os.setf(ios::left);
+
+  os.setf(ios::fixed,ios::floatfield);
+  os.setf(ios::right,ios::adjustfield);
+  
+  os << indent << "        1          2          3\n";
+  os << indent << "  1  "
+     << setw(10) << setprecision(7) << d[0][0] << " "
+     << setw(10) << setprecision(7) << d[0][1] << " "
+     << setw(10) << setprecision(7) << d[0][2] << "\n";
+  os << indent << "  2  "
+     << setw(10) << setprecision(7) << d[1][0] << " "
+     << setw(10) << setprecision(7) << d[1][1] << " "
+     << setw(10) << setprecision(7) << d[1][2] << "\n";
+  os << indent << "  3  "
+     << setw(10) << setprecision(7) << d[2][0] << " "
+     << setw(10) << setprecision(7) << d[2][1] << " "
+     << setw(10) << setprecision(7) << d[2][2] << "\n";
+
+  os << endl;
+
+  os.setf(oldf);
 }
 

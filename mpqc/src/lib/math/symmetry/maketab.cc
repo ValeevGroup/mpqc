@@ -20,9 +20,11 @@
  */
 
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <math/symmetry/pointgrp.h>
+#include <util/misc/formio.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -1023,7 +1025,8 @@ int CharacterTable::make_table()
     }
 
     if (gj==g) {
-      fprintf(stderr,"make_table: uh oh, can't find inverse of %d\n",gi);
+      cerr << indent << "make_table: uh oh, can't find inverse of " << gi
+           << endl;
       abort();
     }
 

@@ -3,6 +3,8 @@
 
 #include <util/misc/newstring.h>
 #include <math/symmetry/pointgrp.h>
+#include <util/misc/formio.h>
+#include <iomanip.h>
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -71,22 +73,30 @@ IrreducibleRepresentation::init(int order, int d, const char *lab)
 }
 
 void
-IrreducibleRepresentation::print(FILE *fp, const char *off)
+IrreducibleRepresentation::print(ostream& os) const
 {
   if (!g)
     return;
 
   int i,d;
   
-  fprintf(fp,"%s%-5s",off,symb);
+  ios::fmtflags oldf = os.setf(ios::left);
+  
+  os << indent << setw(5) << symb;
+
+  os.setf(ios::fixed,ios::floatfield);
+  os.setf(ios::right,ios::adjustfield);
+  
   for (i=0; i < g; i++)
-    fprintf(fp," %6.3f",character(i));
-  fprintf(fp," | %d t, %d R\n",ntrans_,nrot_);
+    os << " " << setw(6) << setprecision(3) << character(i);
+  os << " | " << ntrans_ << " t, " << nrot_ << " R\n";
 
   for (d=0; d < nproj(); d++) {
-    fprintf(fp,"%s     ",off);
+    os << indent << "     ";
     for (i=0; i < g; i++)
-      fprintf(fp," %6.3f",p(d,i));
-    fprintf(fp,"\n");
+      os << " " << setw(6) << setprecision(3) << p(d,i);
+    os << endl;
   }
+
+  os.setf(oldf);
 }

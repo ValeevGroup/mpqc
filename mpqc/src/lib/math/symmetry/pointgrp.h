@@ -6,7 +6,7 @@
 #ifndef _math_symmetry_pointgrp_h
 #define _math_symmetry_pointgrp_h
 
-#include <stdio.h>
+#include <iostream.h>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
@@ -79,7 +79,7 @@ class SymmetryOperation {
     void c2_y() { i(); d[1][1] = 1.0; }
 
     //. print the matrix 
-    void print(FILE* =stdout) const;
+    void print(ostream& =cout) const;
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ class SymRep {
     void c2_y();
 
     //. print the matrix 
-    void print(FILE* =stdout) const;
+    void print(ostream& =cout) const;
 };
 
 inline double
@@ -253,7 +253,7 @@ class IrreducibleRepresentation {
     //.
     // This prints the irrep to the given file, or stdout if none is given.
     // The second argument is an optional string of spaces to offset by.
-    void print(FILE* =stdout, const char * =" ");
+    void print(ostream& =cout) const;
 };
 
 /////////////////////////////////////////////////////////////
@@ -367,7 +367,7 @@ class CharacterTable {
     //. 
     // This prints the irrep to the given file, or stdout if none is given.
     // The second argument is an optional string of spaces to offset by.
-    void print(FILE* =stdout, const char * =" ");
+    void print(ostream& =cout) const;
 };
 
 /////////////////////////////////////////////////////////////

@@ -1,5 +1,6 @@
 
 #include <util/unix/cct_cprot.h>
+#include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 #include <math/symmetry/pointgrp.h>
 
@@ -68,26 +69,28 @@ CharacterTable::operator=(const CharacterTable& ct)
 }
 
 void
-CharacterTable::print(FILE *fp, const char *off)
+CharacterTable::print(ostream& os) const
 {
   if (!g || !nirrep_) return;
 
-  fprintf(fp,"%spoint group %s\n",off,symb);
-
-  char * myoff = new char[strlen(off)+3];
-  sprintf(myoff,"%s  ",off);
-
   int i;
+
+  os << indent << "point group " << symb << endl << endl;
+
   for (i=0; i < nirrep_; i++)
-    gamma_[i].print(fp,myoff);
+    gamma_[i].print(os);
 
+  os << endl << indent << "symmetry operation matrices:"
+     << endl << endl << incindent;
   for (i=0; i < g; i++)
-    symop[i].print();
+    symop[i].print(os);
 
-  fprintf(fp,"\n");
+  os << decindent << indent << "inverse symmetry operation matrices:"
+     << endl << endl << incindent;
   for (i=0; i < g; i++)
-    symop[inverse(i)].print();
-  
+    symop[inverse(i)].print(os);
+
+  os << decindent;
 }
 
 CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)

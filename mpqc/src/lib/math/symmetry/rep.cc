@@ -6,6 +6,8 @@
 #endif
 
 #include <math/symmetry/pointgrp.h>
+#include <util/misc/formio.h>
+#include <iomanip.h>
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -32,8 +34,8 @@ SymRep::~SymRep()
 SymRep::operator SymmetryOperation() const
 {
   if (n != 3) {
-    fprintf(stderr,"SymRep::operator SymmetryOperation(): ");
-    fprintf(stderr,"trying to cast to symop when n == %d\n",n);
+    cerr << indent << "SymRep::operator SymmetryOperation(): "
+         << "trying to cast to symop when n == " << n << endl;
     abort();
   }
     
@@ -50,8 +52,8 @@ SymRep
 SymRep::operate(const SymRep& r) const
 {
   if (r.n != n) {
-    fprintf(stderr,"SymRep::operate(): dimensions don't match\n");
-    fprintf(stderr,"  %d != %d\n",r.n,n);
+    cerr << indent << "SymRep::operate(): dimensions don't match: "
+         << r.n << " != " << n << endl;
     abort();
   }
   
@@ -75,8 +77,8 @@ SymRep::sim_transform(const SymRep& r) const
   int i,j,k;
 
   if (r.n != n) {
-    fprintf(stderr,"SymRep::sim_transform(): dimensions don't match\n");
-    fprintf(stderr,"  %d != %d\n",r.n,n);
+    cerr << indent << "SymRep::sim_transform(): dimensions don't match: "
+         << r.n << " != " << n << endl;
     abort();
   }
   
@@ -204,7 +206,7 @@ SymRep::rotation(double theta)
     break;
 
   default:
-    fprintf(stderr,"SymRep::rotation(): n > 5 (%d)\n",n);
+    cerr << indent << "SymRep::rotation(): n > 5 (" << n << ")\n";
     abort();
   }
   
@@ -240,19 +242,26 @@ SymRep::c2_y()
   
 
 void
-SymRep::print(FILE* outfile) const
+SymRep::print(ostream& os) const
 {
   int i;
+
+  ios::fmtflags oldf = os.setf(ios::left);
+
+  os.setf(ios::fixed,ios::floatfield);
+  os.setf(ios::right,ios::adjustfield);
   
-  for (i=0; i < n; i++)
-    fprintf(outfile,"%11d",i+1);
-  fprintf(outfile,"\n");
+  os << indent;
+  for (i=0; i < n; i++) os << setw(11) << i+1;
+  os << endl;
   
   for (i=0; i < n; i++) {
-    fprintf(outfile,"%3d ",i+1);
+    os << indent << setw(3) << i+1 << " ";
     for (int j=0; j < n; j++)
-      fprintf(outfile," %10.7f",d[i][j]);
-    fprintf(outfile,"\n");
+      os << " " << setw(10) << setprecision(10) << d[i][j];
+    os << endl;
   }
-  fprintf(outfile,"\n");
+  os << endl;
+
+  os.setf(oldf);
 }

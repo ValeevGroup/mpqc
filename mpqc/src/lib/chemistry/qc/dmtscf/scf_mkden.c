@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 #include <tmpl.h>
 #include <util/misc/libmisc.h>
 #include <math/dmt/libdmt.h>

@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <tmpl.h>
 #include <math.h>
 #include <math/dmt/libdmt.h>

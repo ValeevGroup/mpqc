@@ -1,5 +1,8 @@
 %
 % $Log$
+% Revision 1.16  1996/05/31 19:02:38  cljanss
+% Removed the custom assert utility and some other dead code from util/misc.
+%
 % Revision 1.15  1996/05/17 17:11:44  cljanss
 % Remove TENTER and TEXIT macros.
 %
@@ -300,6 +303,7 @@ My own versions of |malloc| and  |free| can detect core leaks.
 All of these things are now in libutil.h.
 @<Include files.@>=
 #include <util/misc/libmisc.h>
+#include <assert.h>
 
 @ I think that the only reason I need this is for |fabs|.
 @<Include files.@> =

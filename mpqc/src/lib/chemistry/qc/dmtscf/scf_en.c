@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <assert.h>
 #include <tmpl.h>
 #include <math.h>
 #include <util/misc/libmisc.h>

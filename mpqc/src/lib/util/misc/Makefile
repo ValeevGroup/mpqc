@@ -8,28 +8,22 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libmisc
 BIN_OR_LIB = LIB
 
-WEBFILES = pathfopen.web rdmatrix.web
-.PRECIOUS: $(WEBFILES:%.web=%.c)
-
-CSRC = ieee.c assert.c checkalloc.c mtype.c
-GENSRC = $(WEBFILES:%.web=%.c)
+CSRC = ieee.c checkalloc.c mtype.c
 
 CXXSRC = compute.cc error.cc formio.cc bug.cc regtime.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc
 
-INC = assert.h libmisc.h memory.h timer.h compute.h ieee.h bug.h
-GENINC = assert.gbl
+INC = libmisc.h memory.h timer.h compute.h ieee.h bug.h
 
-DISTFILES = $(WEBFILES) $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
+DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 
 LIBOBJ= $(CSRC:%.c=%.$(OBJSUF)) \
-        $(CXXSRC:%.cc=%.$(OBJSUF)) \
-        $(GENSRC:%.c=%.$(OBJSUF))
+        $(CXXSRC:%.cc=%.$(OBJSUF))
 
 TESTOBJ= $(TESTSRC:%.cc=%.$(OBJSUF))
 
-DEPENDINCLUDE = $(INC) $(GENINC)
+DEPENDINCLUDE = $(INC)
 
 #####################################################################
 
@@ -59,20 +53,5 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d)
-endif
-
-#########################################################################
-
-ifneq ($(SRCDIR),.)
-%.c: %.web
-	cp $< .
-	$(CTANGLE) $(notdir $<)
-	rm -f $(notdir $<)
-
-distclean::
-	rm -f $(WEBFILES)
-else
-%.c: %.web
-	$(CTANGLE) $<
 endif
 

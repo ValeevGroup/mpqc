@@ -58,7 +58,9 @@
 #undef HAVE_IOS_FMTFLAGS
 
 /* Define if you have the long long type extension.  */
+#ifndef
 #undef HAVE_LONG_LONG
+#endif
 
 /* Define if you have streambuf::pubseekoff (you should).  */
 #undef HAVE_PUBSEEKOFF

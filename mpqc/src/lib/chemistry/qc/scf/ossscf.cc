@@ -427,26 +427,23 @@ OSSSCF::init_vector()
   tbi_ = integral()->electron_repulsion();
   tbi_->set_integral_storage(integral()->storage_unused());
 
-  // calculate the core Hamiltonian
-  cl_hcore_ = core_hamiltonian();
-  
   // allocate storage for other temp matrices
-  cl_dens_ = cl_hcore_.clone();
+  cl_dens_ = hcore_.clone();
   cl_dens_.assign(0.0);
   
-  cl_dens_diff_ = cl_hcore_.clone();
+  cl_dens_diff_ = hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
-  op_densa_ = cl_hcore_.clone();
+  op_densa_ = hcore_.clone();
   op_densa_.assign(0.0);
   
-  op_densa_diff_ = cl_hcore_.clone();
+  op_densa_diff_ = hcore_.clone();
   op_densa_diff_.assign(0.0);
 
-  op_densb_ = cl_hcore_.clone();
+  op_densb_ = hcore_.clone();
   op_densb_.assign(0.0);
   
-  op_densb_diff_ = cl_hcore_.clone();
+  op_densb_diff_ = hcore_.clone();
   op_densb_diff_.assign(0.0);
 
   // gmat is in AO basis
@@ -461,11 +458,11 @@ OSSSCF::init_vector()
 
   // test to see if we need a guess vector.
   if (cl_fock_.result_noupdate().null()) {
-    cl_fock_ = cl_hcore_.clone();
+    cl_fock_ = hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
-    op_focka_ = cl_hcore_.clone();
+    op_focka_ = hcore_.clone();
     op_focka_.result_noupdate().assign(0.0);
-    op_fockb_ = cl_hcore_.clone();
+    op_fockb_ = hcore_.clone();
     op_fockb_.result_noupdate().assign(0.0);
   }
 
@@ -480,7 +477,6 @@ OSSSCF::done_vector()
 {
   tbi_=0;
   
-  cl_hcore_ = 0;
   cl_gmat_ = 0;
   cl_dens_ = 0;
   cl_dens_diff_ = 0;
@@ -601,7 +597,7 @@ double
 OSSSCF::scf_energy()
 {
   RefSymmSCMatrix t = cl_fock_.result_noupdate().copy();
-  t.accumulate(cl_hcore_);
+  t.accumulate(hcore_);
 
   RefSymmSCMatrix ga = op_focka_.result_noupdate().copy();
   ga.scale(-1.0);

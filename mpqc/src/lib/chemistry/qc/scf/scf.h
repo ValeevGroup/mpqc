@@ -52,7 +52,8 @@ class SCF: public OneBodyWavefunction {
     
     RefSelfConsistentExtrapolation extrap_;
     
-    RefAccumH accumh_;
+    RefAccumH accumdih_;
+    RefAccumH accumddh_;
     
     int maxiter_;
     int dens_reset_freq_;
@@ -138,6 +139,7 @@ class SCF: public OneBodyWavefunction {
     // the following are scratch and are not checkpointed
     RefSCMatrix scf_vector_;
     RefSCMatrix scf_vectorb_; // only used if !spin_restricted
+    RefSymmSCMatrix hcore_;
 
     ////////////////////////////////////////////////////////////////////////
     // pure virtual member functions follow

@@ -56,6 +56,12 @@ SCF::compute_vector(double& eelec)
   LevelShift *level_shift = new LevelShift(this);
   level_shift->reference();
   
+  // calculate the core Hamiltonian
+  hcore_ = core_hamiltonian();
+
+  // add density independant contributions to Hcore
+  accumdih_->accum(hcore_);
+
   // set up subclass for vector calculation
   init_vector();
   
@@ -82,7 +88,7 @@ SCF::compute_vector(double& eelec)
     if (iter && !(iter%dens_reset_freq_))
       reset_density();
       
-    // form the AO basis fock matrix
+    // form the AO basis fock matrix & add density dependant H
     tim_enter("fock");
     ao_fock();
     tim_exit("fock");
@@ -144,6 +150,7 @@ SCF::compute_vector(double& eelec)
   
   // now clean up
   done_vector();
+  hcore_ = 0;
 
   level_shift->dereference();
   delete level_shift;

@@ -421,20 +421,17 @@ HSOSSCF::init_vector()
   tbi_ = integral()->electron_repulsion();
   tbi_->set_integral_storage(integral()->storage_unused());
 
-  // calculate the core Hamiltonian
-  cl_hcore_ = core_hamiltonian();
-  
   // allocate storage for other temp matrices
-  cl_dens_ = cl_hcore_.clone();
+  cl_dens_ = hcore_.clone();
   cl_dens_.assign(0.0);
   
-  cl_dens_diff_ = cl_hcore_.clone();
+  cl_dens_diff_ = hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
-  op_dens_ = cl_hcore_.clone();
+  op_dens_ = hcore_.clone();
   op_dens_.assign(0.0);
   
-  op_dens_diff_ = cl_hcore_.clone();
+  op_dens_diff_ = hcore_.clone();
   op_dens_diff_.assign(0.0);
 
   // gmat is in AO basis
@@ -445,9 +442,9 @@ HSOSSCF::init_vector()
   op_gmat_.assign(0.0);
 
   if (cl_fock_.result_noupdate().null()) {
-    cl_fock_ = cl_hcore_.clone();
+    cl_fock_ = hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
-    op_fock_ = cl_hcore_.clone();
+    op_fock_ = hcore_.clone();
     op_fock_.result_noupdate().assign(0.0);
   }
 
@@ -462,7 +459,6 @@ HSOSSCF::done_vector()
 {
   tbi_=0;
   
-  cl_hcore_ = 0;
   cl_gmat_ = 0;
   cl_dens_ = 0;
   cl_dens_diff_ = 0;
@@ -559,7 +555,7 @@ double
 HSOSSCF::scf_energy()
 {
   RefSymmSCMatrix t = cl_fock_.result_noupdate().copy();
-  t.accumulate(cl_hcore_);
+  t.accumulate(hcore_);
 
   RefSymmSCMatrix go = op_fock_.result_noupdate().copy();
   go.scale(-1.0);

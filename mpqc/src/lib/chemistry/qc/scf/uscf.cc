@@ -611,9 +611,6 @@ UnrestrictedSCF::init_vector()
   tbi_ = integral()->electron_repulsion();
   tbi_->set_integral_storage(integral()->storage_unused());
 
-  // calculate the core Hamiltonian
-  hcore_ = core_hamiltonian();
-  
   // allocate storage for other temp matrices
   densa_ = hcore_.clone();
   densa_.assign(0.0);
@@ -882,6 +879,12 @@ UnrestrictedSCF::compute_vector(double& eelec)
   BLevelShift *blevel_shift = new BLevelShift(this);
   blevel_shift->reference();
   
+  // calculate the core Hamiltonian
+  hcore_ = core_hamiltonian();
+
+  // add density independant contributions to Hcore
+  accumdih_->accum(hcore_);
+
   // set up subclass for vector calculation
   init_vector();
   

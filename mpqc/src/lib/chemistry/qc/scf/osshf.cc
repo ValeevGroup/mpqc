@@ -382,7 +382,7 @@ OSSHF::ao_fock()
   pl->symmetrize(skel_gmat,ddb);
   
   // F = H+G
-  cl_fock_.result_noupdate().assign(cl_hcore_);
+  cl_fock_.result_noupdate().assign(hcore_);
   cl_fock_.result_noupdate().accumulate(dd);
 
   // Fa = H+G-Ga
@@ -394,6 +394,12 @@ OSSHF::ao_fock()
   op_fockb_.result_noupdate().assign(cl_fock_.result_noupdate());
   ddb.scale(-1.0);
   op_fockb_.result_noupdate().accumulate(ddb);
+
+  dd.assign(0.0);
+  accumddh_->accum(dd);
+  cl_fock_.result_noupdate().accumulate(dd);
+  op_focka_.result_noupdate().accumulate(dd);
+  op_fockb_.result_noupdate().accumulate(dd);
 
   cl_fock_.computed()=1;
   op_focka_.computed()=1;

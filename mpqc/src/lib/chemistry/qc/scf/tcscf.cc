@@ -474,26 +474,23 @@ TCSCF::init_vector()
   tbi_ = integral()->electron_repulsion();
   tbi_->set_integral_storage(integral()->storage_unused());
 
-  // calculate the core Hamiltonian
-  cl_hcore_ = core_hamiltonian();
-  
   // allocate storage for other temp matrices
-  cl_dens_ = cl_hcore_.clone();
+  cl_dens_ = hcore_.clone();
   cl_dens_.assign(0.0);
   
-  cl_dens_diff_ = cl_hcore_.clone();
+  cl_dens_diff_ = hcore_.clone();
   cl_dens_diff_.assign(0.0);
 
-  op_densa_ = cl_hcore_.clone();
+  op_densa_ = hcore_.clone();
   op_densa_.assign(0.0);
   
-  op_densa_diff_ = cl_hcore_.clone();
+  op_densa_diff_ = hcore_.clone();
   op_densa_diff_.assign(0.0);
 
-  op_densb_ = cl_hcore_.clone();
+  op_densb_ = hcore_.clone();
   op_densb_.assign(0.0);
   
-  op_densb_diff_ = cl_hcore_.clone();
+  op_densb_diff_ = hcore_.clone();
   op_densb_diff_.assign(0.0);
 
   // gmat is in AO basis
@@ -511,13 +508,13 @@ TCSCF::init_vector()
 
   // test to see if we need a guess vector
   if (focka_.result_noupdate().null()) {
-    focka_ = cl_hcore_.clone();
+    focka_ = hcore_.clone();
     focka_.result_noupdate().assign(0.0);
-    fockb_ = cl_hcore_.clone();
+    fockb_ = hcore_.clone();
     fockb_.result_noupdate().assign(0.0);
-    ka_ = cl_hcore_.clone();
+    ka_ = hcore_.clone();
     ka_.result_noupdate().assign(0.0);
-    kb_ = cl_hcore_.clone();
+    kb_ = hcore_.clone();
     kb_.result_noupdate().assign(0.0);
   }
 
@@ -532,7 +529,6 @@ TCSCF::done_vector()
 {
   tbi_=0;
   
-  cl_hcore_ = 0;
   cl_dens_ = 0;
   cl_dens_diff_ = 0;
   op_densa_ = 0;
@@ -671,7 +667,7 @@ TCSCF::scf_energy()
   RefSCElementOp2 op = eop;
 
   RefSymmSCMatrix t = focka_.result_noupdate().copy();
-  t.accumulate(cl_hcore_);
+  t.accumulate(hcore_);
 
   RefSymmSCMatrix d = cl_dens_.copy();
   d.accumulate(op_densa_);
@@ -680,7 +676,7 @@ TCSCF::scf_energy()
   double h11 = eop->result();
 
   t.assign(fockb_.result_noupdate().copy());
-  t.accumulate(cl_hcore_);
+  t.accumulate(hcore_);
 
   d.assign(cl_dens_);
   d.accumulate(op_densb_);

@@ -75,7 +75,8 @@ SCF::SCF(StateIn& s) :
   s.get(level_shift_);
 
   extrap_.restore_state(s);
-  accumh_.restore_state(s);
+  accumdih_.restore_state(s);
+  accumddh_.restore_state(s);
 
   scf_grp_ = basis()->matrixkit()->messagegrp();
 }
@@ -107,9 +108,13 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (extrap_.null())
     extrap_ = new DIIS;
 
-  accumh_ = keyval->describedclassvalue("accumh");
-  if (accumh_.null())
-    accumh_ = new AccumHNull;
+  accumdih_ = keyval->describedclassvalue("accumdih");
+  if (accumdih_.null())
+    accumdih_ = new AccumHNull;
+  
+  accumddh_ = keyval->describedclassvalue("accumddh");
+  if (accumddh_.null())
+    accumddh_ = new AccumHNull;
   
   storage_ = keyval->intvalue("memory");
 
@@ -164,7 +169,8 @@ SCF::save_data_state(StateOut& s)
   s.put(storage_);
   s.put(level_shift_);
   extrap_.save_state(s);
-  accumh_.save_state(s);
+  accumdih_.save_state(s);
+  accumddh_.save_state(s);
 }
 
 RefSCMatrix

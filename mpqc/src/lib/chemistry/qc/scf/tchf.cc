@@ -390,7 +390,6 @@ TCHF::ao_fock()
     abort();
   }
   
-  da=0;
   db=0;
   oda=0;
   odb=0;
@@ -413,10 +412,18 @@ TCHF::ao_fock()
   pl->symmetrize(skel_gmat,kb_.result_noupdate());
   
   // Fa = H+Ga
-  focka_.result_noupdate().accumulate(cl_hcore_);
+  focka_.result_noupdate().accumulate(hcore_);
 
   // Fb = H+Gb
-  fockb_.result_noupdate().accumulate(cl_hcore_);
+  fockb_.result_noupdate().accumulate(hcore_);
+
+  da.assign(0.0);
+  accumddh_->accum(da);
+  focka_.result_noupdate().accumulate(da);
+  fockb_.result_noupdate().accumulate(da);
+  ka_.result_noupdate().accumulate(da);
+  kb_.result_noupdate().accumulate(da);
+  da=0;
 
   focka_.computed()=1;
   fockb_.computed()=1;

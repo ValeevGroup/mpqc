@@ -351,13 +351,20 @@ HSOSHF::ao_fock()
   pl->symmetrize(skel_gmat,ddo);
   
   // F = H+G
-  cl_fock_.result_noupdate().assign(cl_hcore_);
+  cl_fock_.result_noupdate().assign(hcore_);
   cl_fock_.result_noupdate().accumulate(dd);
 
   // Fo = H+G-Go
   op_fock_.result_noupdate().assign(cl_fock_.result_noupdate());
   ddo.scale(-1.0);
   op_fock_.result_noupdate().accumulate(ddo);
+  ddo=0;
+
+  dd.assign(0.0);
+  accumddh_->accum(dd);
+  cl_fock_.result_noupdate().accumulate(dd);
+  op_fock_.result_noupdate().accumulate(dd);
+  dd=0;
 
   cl_fock_.computed()=1;
   op_fock_.computed()=1;

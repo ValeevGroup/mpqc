@@ -75,7 +75,6 @@ class CLSCF: public SCF {
     RefSymmSCMatrix cl_dens_;
     RefSymmSCMatrix cl_dens_diff_;
     RefSymmSCMatrix cl_gmat_;
-    RefSymmSCMatrix cl_hcore_;
 
     void set_occupations(const RefDiagSCMatrix& evals);
 

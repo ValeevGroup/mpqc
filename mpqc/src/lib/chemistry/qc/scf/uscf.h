@@ -102,8 +102,6 @@ class UnrestrictedSCF: public SCF {
     RefSymmSCMatrix diff_densa_;
     RefSymmSCMatrix diff_densb_;;
 
-    RefSymmSCMatrix hcore_;
-
     void set_occupations(const RefDiagSCMatrix&);
     void set_occupations(const RefDiagSCMatrix&, const RefDiagSCMatrix&);
 

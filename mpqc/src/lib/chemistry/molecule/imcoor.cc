@@ -39,8 +39,6 @@
 
 #define DEFAULT_SIMPLE_TOLERANCE 1.0e-3
 
-#define VERBOSE 0
-
 ///////////////////////////////////////////////////////////////////////////
 // members of IntMolecularCoor
 
@@ -760,19 +758,23 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       // compute the old internal coordinates
       all_to_internal(old_internal);
 
-#if VERBOSE
-      cout << node0 << indent << "Coordinates on step " << step << ":" << endl;
-      variable_->print();
-#endif
+      if (debug_) {
+          cout << node0
+               << indent << "Coordinates on step " << step << ":" << endl;
+          variable_->print();
+        }
 
       // the displacements
       RefSCVector displacement = new_internal - old_internal;
+      if (debug_ && step == 0) {
+          displacement.print("Step 0 Internal Coordinate Displacement");
+        }
 
       if ((update_bmat_ && maxabs_cart_diff>update_tolerance)
           || internal_to_cart_disp.null()) {
-#if VERBOSE
-          cout << node0 << indent << "updating bmatrix" << endl;
-#endif
+          if (debug_) {
+              cout << node0 << indent << "updating bmatrix" << endl;
+            }
 
           int i;
           RefSCMatrix bmat(dvc_,dnatom3_,matrixkit_);
@@ -816,6 +818,10 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
 
       // compute the cartesian displacements
       RefSCVector cartesian_displacement = internal_to_cart_disp*displacement;
+      if (debug_ && step == 0) {
+          internal_to_cart_disp.print("Internal to Cartesian Transform");
+          cartesian_displacement.print("Step 0 Cartesian Displacment");
+        }
       // update the geometry
       for (int i=0; i < dnatom3_.n(); i++) {
 #if OLD_BMAT

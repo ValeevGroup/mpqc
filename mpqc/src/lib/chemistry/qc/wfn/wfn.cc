@@ -18,7 +18,8 @@ extern "C" {
 void *
 Wavefunction::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { MolecularEnergy::_castdown(cd) };
+  void* casts[1];
+  casts[0] = MolecularEnergy::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

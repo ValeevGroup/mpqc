@@ -29,7 +29,7 @@ PSI_CI::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-PSI_CI::PSI_CI(KeyVal&keyval):
+PSI_CI::PSI_CI(const RefKeyVal&keyval):
   Wavefunction(keyval), psi_in(keyval)
 {
 }
@@ -39,8 +39,8 @@ PSI_CI::~PSI_CI()
 }
 
 PSI_CI::PSI_CI(StateIn&s):
-  SavableState(s,class_desc_),
   Wavefunction(s)
+  maybe_SavableState(s)
 {
   abort();
 }
@@ -64,7 +64,7 @@ PSI_CI::compute()
   int i;
   int ni = _mol->point_group().char_table().nirrep();
 
-  mol_transform_to_principal_axes(*_mol.pointer());
+  mol_transform_to_principal_axes(_mol);
 
   if (!psi_in.test()){
     psi_in.write_input_file(_gradient.needed() ? "FIRST" : "NONE", "CI",

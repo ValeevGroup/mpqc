@@ -19,7 +19,7 @@ class PSI_CI: public Wavefunction
  protected:
     void compute();
  public:
-    PSI_CI(KeyVal&);
+    PSI_CI(const RefKeyVal&);
     PSI_CI(StateIn&);
     virtual ~PSI_CI();
     void save_data_state(StateOut&);

@@ -27,15 +27,15 @@ PSISCF::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-PSISCF::PSISCF(KeyVal&keyval):
+PSISCF::PSISCF(const RefKeyVal&keyval):
   OneBodyWavefunction(keyval), psi_in(keyval)
 {
   printf("in PSISCF constructor\n");
 }
 
 PSISCF::PSISCF(StateIn&s):
-  SavableState(s,class_desc_),
   OneBodyWavefunction(s)
+  maybe_SavableState(s)
 {
   abort();
 }
@@ -81,7 +81,7 @@ PSISCF::compute()
   int i;
   int ni = _mol->point_group().char_table().nirrep();
 
-  mol_transform_to_principal_axes(*_mol.pointer());
+  mol_transform_to_principal_axes(_mol);
 
   if (!psi_in.test()){
     psi_in.write_input_file(_gradient.needed() ? "FIRST" : "NONE", "SCF",

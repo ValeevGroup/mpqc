@@ -19,7 +19,7 @@ class PSI_CCSD_T: public Wavefunction
  protected:
     void compute();
  public:
-    PSI_CCSD_T(KeyVal&);
+    PSI_CCSD_T(const RefKeyVal&);
     PSI_CCSD_T(StateIn&);
     virtual ~PSI_CCSD_T();
     void save_data_state(StateOut&);
@@ -46,7 +46,7 @@ class PSI_CCSD: public Wavefunction
  protected:
     void compute();
  public:
-    PSI_CCSD(KeyVal&);
+    PSI_CCSD(const RefKeyVal&);
     PSI_CCSD(StateIn&);
     virtual ~PSI_CCSD();
     void save_data_state(StateOut&);
@@ -73,7 +73,7 @@ class PSI_CCSDT: public Wavefunction
  protected:
     void compute();
  public:
-    PSI_CCSDT(KeyVal&);
+    PSI_CCSDT(const RefKeyVal&);
     PSI_CCSDT(StateIn&);
     virtual ~PSI_CCSDT();
     void save_data_state(StateOut&);

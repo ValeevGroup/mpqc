@@ -1,7 +1,7 @@
 
-#include "psi.h"
-#include "psici.h"
-#include "psicc.h"
+#include <chemistry/qc/psi/psi.h>
+#include <chemistry/qc/psi/psici.h>
+#include <chemistry/qc/psi/psicc.h>
 #include <math/optimize/opt.h>
 #include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
@@ -38,7 +38,8 @@ main(int argc, char**argv)
   pkv->read( SRCDIR "/psi.in");
   pkv = 0; // should only use rpkv
 
-  for (int i=0; rpkv->exists("mole",i); i++) {
+  int i;
+  for (i=0; rpkv->exists("mole",i); i++) {
       RefMolecularEnergy mole = rpkv->describedclassvalue("mole",i);
 
       if (mole.nonnull()) {

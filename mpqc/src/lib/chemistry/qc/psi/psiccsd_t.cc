@@ -29,7 +29,7 @@ PSI_CCSD_T::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-PSI_CCSD_T::PSI_CCSD_T(KeyVal&keyval):
+PSI_CCSD_T::PSI_CCSD_T(const RefKeyVal&keyval):
   Wavefunction(keyval), psi_in(keyval)
 {
 }
@@ -39,8 +39,8 @@ PSI_CCSD_T::~PSI_CCSD_T()
 }
 
 PSI_CCSD_T::PSI_CCSD_T(StateIn&s):
-  SavableState(s,class_desc_),
   Wavefunction(s)
+  maybe_SavableState(s)
 {
   abort();
 }
@@ -64,7 +64,7 @@ PSI_CCSD_T::compute()
   int i;
   int ni = _mol->point_group().char_table().nirrep();
 
-  mol_transform_to_principal_axes(*_mol.pointer());
+  mol_transform_to_principal_axes(_mol);
 
   if (!psi_in.test()){
     psi_in.write_input_file(_gradient.needed() ? "FIRST" : "NONE", "CCSD_T",

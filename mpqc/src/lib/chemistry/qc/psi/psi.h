@@ -24,7 +24,7 @@ class PSISCF: public OneBodyWavefunction
   protected:
     void compute();
   public:
-    PSISCF(KeyVal&);
+    PSISCF(const RefKeyVal&);
     PSISCF(StateIn&);
     virtual ~PSISCF();
     void save_data_state(StateOut&);

@@ -26,18 +26,18 @@ PSI_Input::PSI_Input()
 {
   printf("in default constructor\n");
 }
-PSI_Input::PSI_Input(KeyVal&keyval)
+PSI_Input::PSI_Input(const RefKeyVal&keyval)
 {
   int i,n;
   int tmp;
   char *ts;
 
   indentation = 0;
-  _mol = keyval.describedclassvalue("molecule");
-  _gbs = keyval.describedclassvalue("psibasis");
+  _mol = keyval->describedclassvalue("molecule");
+  _gbs = keyval->describedclassvalue("psibasis");
   printf("here it comes\n");
   _gbs->print();
-  // _gbs = keyval.describedclassvalue("basis");
+  // _gbs = keyval->describedclassvalue("basis");
   nirrep = _mol->point_group().char_table().nirrep();
   docc = new int[nirrep];
   socc = new int[nirrep];
@@ -45,8 +45,8 @@ PSI_Input::PSI_Input(KeyVal&keyval)
   frozen_uocc = new int[nirrep];
   RefKeyVal psifiles = new PrefixKeyVal("psifiles",keyval);
 
-  memory = keyval.intvalue("memory");
-  if (keyval.error() != KeyVal::OK) {
+  memory = keyval->intvalue("memory");
+  if (keyval->error() != KeyVal::OK) {
       memory = 10;
     }
   name =  psifiles->pcharvalue("name");
@@ -73,56 +73,56 @@ PSI_Input::PSI_Input(KeyVal&keyval)
       volumes[n][j] = psifiles->pcharvalue("volumes", n, j);
     }
 
-  opentype = keyval.pcharvalue("opentype");
-  label = keyval.pcharvalue("label");
-  _test = keyval.booleanvalue("test");
-  n = keyval.count("docc");
-  if (keyval.error() != KeyVal::OK || n != nirrep) {
+  opentype = keyval->pcharvalue("opentype");
+  label = keyval->pcharvalue("label");
+  _test = keyval->booleanvalue("test");
+  n = keyval->count("docc");
+  if (keyval->error() != KeyVal::OK || n != nirrep) {
       fprintf(stderr, "change size of docc array");
       abort();
     }
   for (i=0; i<nirrep; i++) 
-      docc[i] = keyval.intvalue("docc",i);
+      docc[i] = keyval->intvalue("docc",i);
   
   if (!strcmp(opentype, "NONE")) {
-    n = keyval.count("socc");
-    if (keyval.error() != KeyVal::OK || n != nirrep) {
+    n = keyval->count("socc");
+    if (keyval->error() != KeyVal::OK || n != nirrep) {
         fprintf(stderr, "change size of socc array");
         abort();
         }
     for (int i=0; i<nirrep; i++) {
-      socc[i] = keyval.intvalue("socc",i);
+      socc[i] = keyval->intvalue("socc",i);
       }
     }
   else for (i=0; i<nirrep; i++) 
     socc[i] = 0;
 
 
-  if (keyval.exists("frozen_docc")) {
-    n = keyval.count("frozen_docc");
-    if (keyval.error() != KeyVal::OK || n != nirrep) {
+  if (keyval->exists("frozen_docc")) {
+    n = keyval->count("frozen_docc");
+    if (keyval->error() != KeyVal::OK || n != nirrep) {
         fprintf(stderr, "change size of frozen_docc array");
         abort();
       }
     for (int i=0; i<nirrep; i++) 
-        frozen_docc[i] = keyval.intvalue("frozen_docc",i);
+        frozen_docc[i] = keyval->intvalue("frozen_docc",i);
     }
   else for (i=0; i<nirrep; i++) 
     frozen_docc[i] = 0;
 
-  if (keyval.exists("frozen_uocc")) {
-    n = keyval.count("frozen_uocc");
-    if (keyval.error() != KeyVal::OK || n != nirrep) {
+  if (keyval->exists("frozen_uocc")) {
+    n = keyval->count("frozen_uocc");
+    if (keyval->error() != KeyVal::OK || n != nirrep) {
         fprintf(stderr, "change size of frozen_uocc array");
         abort();
       }
     for (int i=0; i<nirrep; i++) 
-        frozen_uocc[i] = keyval.intvalue("frozen_uocc",i);
+        frozen_uocc[i] = keyval->intvalue("frozen_uocc",i);
     }
   else for (i=0; i<nirrep; i++) 
     frozen_uocc[i] = 0;
 
-  if (keyval.exists("ex_lvl")) ex_lvl = keyval.intvalue("ex_lvl");
+  if (keyval->exists("ex_lvl")) ex_lvl = keyval->intvalue("ex_lvl");
   else ex_lvl = 0;
 }
 
@@ -251,9 +251,9 @@ int errcod;
 char ts[133];
 
     int *unique ;
-    unique = mol_find_unique_atoms(*_mol.pointer());
+    unique = mol_find_unique_atoms(_mol);
     write_string("geometry = (\n");
-    for (int i=0; i < mol_num_unique_atoms(*_mol.pointer()); i++) {
+    for (int i=0; i < mol_num_unique_atoms(_mol); i++) {
         sprintf(ts, "  (%f %f %f)\n", _mol->atom(unique[i])[0],
            _mol->atom(unique[i])[1], _mol->atom(unique[i])[2]);
         write_string(ts);
@@ -273,8 +273,8 @@ PSI_Input::write_basis(void)
 
   begin_section("basis");
   int *unique ;
-  unique = mol_find_unique_atoms(*_mol.pointer());
-  for (i=0; i<mol_num_unique_atoms(*_mol.pointer()); i++) {
+  unique = mol_find_unique_atoms(_mol);
+  for (i=0; i<mol_num_unique_atoms(_mol); i++) {
     sprintf(ts, "%s:SCdefined = (\n", 
 	    _mol->atom(unique[i]).element().name());
     write_string(ts);
@@ -431,9 +431,9 @@ PSI_Input::write_input(void)
   char t2[133];
 
   begin_section("input");
-  unique = mol_find_unique_atoms(*_mol.pointer());
+  unique = mol_find_unique_atoms(_mol);
   sprintf(t1, "atoms = (");
-  for (i=0; i < mol_num_unique_atoms(*_mol.pointer()); i++) {
+  for (i=0; i < mol_num_unique_atoms(_mol); i++) {
     sprintf(t2, "%s ", _mol->atom(unique[i]).element().symbol());
     strcat(t1, t2);
     }

@@ -63,7 +63,7 @@ class PSI_Input {
       int write_key_wq(const char *, const char *);
 
    public:
-      PSI_Input(KeyVal&);
+      PSI_Input(const RefKeyVal&);
       PSI_Input();
       virtual ~PSI_Input();
       void print(SCostream&);
@@ -77,7 +77,7 @@ class PSI_Input_SCF : public PSI_Input
 {
 
    public:
-      PSI_Input_SCF(KeyVal&keyval) : PSI_Input(keyval) {}
+      PSI_Input_SCF(const RefKeyVal&keyval) : PSI_Input(keyval) {}
       PSI_Input_SCF() : PSI_Input() {}
       ~PSI_Input_SCF() {}
       virtual void write_input_file(const char *,const char *,
@@ -90,7 +90,7 @@ class PSI_Input_CI : public PSI_Input
 {
 
    public:
-      PSI_Input_CI(KeyVal&keyval) : PSI_Input(keyval) {}
+      PSI_Input_CI(const RefKeyVal&keyval) : PSI_Input(keyval) {}
       PSI_Input_CI() : PSI_Input() {}
       ~PSI_Input_CI() {}
       virtual void write_input_file(const char *,const char *,
@@ -102,7 +102,7 @@ class PSI_Input_CC : public PSI_Input
 {
 
    public:
-      PSI_Input_CC(KeyVal&keyval) : PSI_Input(keyval) {}
+      PSI_Input_CC(const RefKeyVal&keyval) : PSI_Input(keyval) {}
       PSI_Input_CC() : PSI_Input() {}
       ~PSI_Input_CC() {}
       virtual void write_input_file(const char *,const char *,

@@ -19,7 +19,6 @@ LIBOBJ = $(SRCS:%.cc=%.$(OBJSUF))
 LIBOBJ += $(CSRCS:%.c=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: libpsi.a
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

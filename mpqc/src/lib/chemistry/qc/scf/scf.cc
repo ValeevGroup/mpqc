@@ -36,23 +36,24 @@ SCF::SCF(StateIn& s) :
   maybe_SavableState(s)
 {
   s.get(maxiter_);
-  s.get(int_store_);
   s.get(dens_reset_freq_);
   s.get(reset_occ_);
+  s.get(local_dens_);
+  s.get(storage_);
   s.get(level_shift_);
 
   extrap_.restore_state(s);
 
-  integral()->set_storage(int_store_);
   scf_grp_ = basis()->matrixkit()->messagegrp();
 }
 
 SCF::SCF(const RefKeyVal& keyval) :
   OneBodyWavefunction(keyval),
   maxiter_(40),
-  int_store_(0),
   level_shift_(0),
   reset_occ_(0),
+  local_dens_(1),
+  storage_(0),
   dens_reset_freq_(10)
 {
   if (keyval->exists("maxiter"))
@@ -60,9 +61,6 @@ SCF::SCF(const RefKeyVal& keyval) :
 
   if (keyval->exists("density_reset_frequency"))
     dens_reset_freq_ = keyval->intvalue("density_reset_frequency");
-
-  if (keyval->exists("integral_storage"))
-    int_store_ = keyval->intvalue("integral_storage");
 
   if (keyval->exists("reset_occupations"))
     reset_occ_ = keyval->booleanvalue("reset_occupations");
@@ -74,6 +72,11 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (extrap_.null())
     extrap_ = new DIIS;
   
+  storage_ = keyval->intvalue("memory");
+  
+  if (keyval->exists("local_density"))
+    local_dens_ = keyval->booleanvalue("local_density");
+    
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
@@ -89,8 +92,6 @@ SCF::SCF(const RefKeyVal& keyval) :
     }
   }
   
-  integral()->set_storage(int_store_);
-
   scf_grp_ = basis()->matrixkit()->messagegrp();
 }
 
@@ -103,9 +104,10 @@ SCF::save_data_state(StateOut& s)
 {
   OneBodyWavefunction::save_data_state(s);
   s.put(maxiter_);
-  s.put(int_store_);
   s.put(dens_reset_freq_);
   s.put(reset_occ_);
+  s.put(local_dens_);
+  s.put(storage_);
   s.put(level_shift_);
   extrap_.save_state(s);
 }
@@ -123,17 +125,23 @@ SCF::print(ostream&o)
   if (scf_grp_->me()==0) {
     o << indent << "SCF Parameters:\n" << incindent;
     o << indent << "maxiter = " << maxiter_ << endl;
-    o << indent << "integral_storage = " << int_store_ << endl;
     o << indent << "density_reset_freq = " << dens_reset_freq_ << endl;
+    o << indent << "reset_occupations = " << reset_occ_ << endl;
+    o << indent << "local_density = " << local_dens_ << endl;
+    o << indent << "memory = " << storage_ << endl;
     o << indent << "level_shift = " << level_shift_ << endl;
     o << decindent << endl;
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 void
 SCF::compute()
 {
   int me=scf_grp_->me();
+  
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
   
   if (hessian_needed())
     set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
@@ -261,6 +269,8 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
   return l;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 void
 SCF::initial_vector()
 {
@@ -304,4 +314,33 @@ SCF::initial_vector()
     }
     eigenvectors_ = hcore_guess();
   }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+void
+SCF::init_mem(int nm)
+{
+  // if local_den_ is already 0, then that means it was set to zero by
+  // the user.
+  if (!local_dens_) {
+    integral()->set_storage(storage_);
+    return;
+  }
+  
+  int nmem = i_offset(basis()->nbasis())*nm*sizeof(double);
+
+  // if we're actually using local matrices, then there's no choice
+  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
+    if (nmem > storage_)
+      return;
+  } else {
+    if (nmem > storage_) {
+      local_dens_=0;
+      integral()->set_storage(storage_);
+      return;
+    }
+  }
+
+  integral()->set_storage(storage_-nmem);
 }

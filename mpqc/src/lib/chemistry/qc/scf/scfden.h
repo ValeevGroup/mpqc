@@ -61,5 +61,26 @@ class LevelShift : public BlockedSCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
+// MO lagrangian
+//       c  o  v
+//  c  |FC|FC| 0|
+//     ----------
+//  o  |FC|FO| 0|
+//     ----------
+//  v  | 0| 0| 0|
+//
+class MOLagrangian : public BlockedSCElementOp2 {
+  private:
+    SCF *scf_;
+
+  public:
+    MOLagrangian(SCF* s);
+    ~MOLagrangian();
+
+    int has_side_effects();
+
+    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2);
+};
+
 #endif
 

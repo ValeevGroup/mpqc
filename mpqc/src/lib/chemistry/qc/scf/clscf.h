@@ -21,7 +21,6 @@ class CLSCF: public SCF {
     int tndocc_;
     int nirrep_;
     int *ndocc_;
-    int local_;
 
     ResultRefSymmSCMatrix cl_fock_;
 

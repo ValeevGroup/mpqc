@@ -2,8 +2,10 @@
 molecule = $:ch2
 coor = $:symcoor
 
-matrixkit = $:localmatrixkit
-message = $:messageShm
+nproc = 1
+message = $:message1
+
+basis_matrixkit = $:replmatrixkit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -13,8 +15,8 @@ message = $:messageShm
 %
 
 mole<TCSCF>: (
-  level_shift = 0.5
-  integral_storage=32000000
+  matrixkit = $:localmatrixkit
+  memory=32000000
 
   % Function
   value_accuracy = 1e-9
@@ -24,13 +26,10 @@ mole<TCSCF>: (
   molecule = $:molecule
   basis<GaussianBasisSet>: (
     molecule = $:molecule
-    %name = "6-311G**"
-    name = "6-31G*"
-    %name = "6-31G"
-    %name = "STO-3G"
-    %name = "aug-cc-pVTZ"
+    %name = "6-31G*"
+    name = "STO-3G"
     %puream=yes
-    matrixkit = $:matrixkit
+    matrixkit = $:basis_matrixkit
   )
 
   % comment out coor if molecule is an atom
@@ -39,18 +38,23 @@ mole<TCSCF>: (
   % SCF input
   %total_charge = 1
   %maxiter=2
+  extrap<DIIS>: (
+    n = 4
+  )
 
-  guess_wavefunction = $:guess
+  %guess_wavefunction = "scftest.wfn"
+  %guess_wavefunction = $:guess
 )
 
-guess<TCSCF>: (
+guess<HSOSSCF>: (
   integral_storage=32000000
   value_accuracy = 1e-9
   molecule = $:molecule
   coor = $:coor
 
-  xbasis = $:mole:basis
-  basis<GaussianBasisSet>: (
+  basis = $:mole:basis
+  xbasis<GaussianBasisSet>: (
+    matrixkit = $:basis_matrixkit
     molecule = $:molecule
     name = "STO-3G"
   )
@@ -62,7 +66,6 @@ xopt<QNewtonOpt>: (
   function = $:mole
   transition_state=no
   update<BFGSUpdate>:()
-  matrixkit = $:matrixkit
 )
 
 
@@ -93,7 +96,7 @@ xdebug<Debugger>: (
 message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (
-  n = 2
+  n = $:nproc
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -103,17 +106,14 @@ messageShm<ShmMessageGrp>: (
 
 redcoor<RedundMolecularCoor>: (
   molecule = $:molecule
-  matrixkit = $:matrixkit
 )
 
 symcoor<SymmMolecularCoor>: (
   molecule = $:molecule
-  matrixkit = $:matrixkit
 )
 
 cartcoor<CartMolecularCoor>: (
   molecule = $:molecule
-  matrixkit = $:matrixkit
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

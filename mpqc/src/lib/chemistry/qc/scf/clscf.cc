@@ -67,6 +67,9 @@ CLSCF::CLSCF(StateIn& s) :
   s.get(tndocc_);
   s.get(nirrep_);
   s.get(ndocc_);
+
+  // now take care of memory stuff
+  init_mem(2);
 }
 
 CLSCF::CLSCF(const RefKeyVal& keyval) :
@@ -133,6 +136,9 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
     maxiter_ = 40;
+
+  // now take care of memory stuff
+  init_mem(2);
 }
 
 CLSCF::~CLSCF()
@@ -341,8 +347,6 @@ CLSCF::init_vector()
   }
 
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -447,7 +451,7 @@ CLSCF::ao_fock()
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
 
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *gmat, *pmat;
     RefSymmSCMatrix gtmp = get_local_data(cl_gmat_, gmat, SCF::Accum);
@@ -501,8 +505,6 @@ CLSCF::init_gradient()
   // presumably the eigenvectors have already been computed by the time
   // we get here
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -588,7 +590,7 @@ CLSCF::two_body_deriv(double * tbgrad)
   // now try to figure out the matrix specialization we're dealing with.
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert P to a local matrix
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
     double *pmat;
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
 

@@ -159,3 +159,36 @@ LevelShift::process(SCMatrixBlockIter& i)
       i.set(i.get()-0.5*shift);
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////
+
+MOLagrangian::MOLagrangian(SCF *s) :
+  scf_(s)
+{
+}
+
+MOLagrangian::~MOLagrangian()
+{
+}
+
+int
+MOLagrangian::has_side_effects()
+{
+  return 1;
+}
+
+void
+MOLagrangian::process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2)
+{
+  int ir=current_block();
+
+  for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
+    double occi = scf_->occupation(ir,bi1.i());
+    double occj = scf_->occupation(ir,bi1.j());
+
+    if (occi > 0.0 && occi < 2.0 && occj > 0.0 && occj < 2.0)
+      bi1.set(bi2.get());
+    else if (occi==0.0)
+      bi1.set(0.0);
+  }
+}

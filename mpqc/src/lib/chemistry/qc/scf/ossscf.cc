@@ -83,6 +83,9 @@ OSSSCF::OSSSCF(StateIn& s) :
   s.get(ndocc_);
   s.get(osa_);
   s.get(osb_);
+
+  // now take care of memory stuff
+  init_mem(6);
 }
 
 OSSSCF::OSSSCF(const RefKeyVal& keyval) :
@@ -182,6 +185,9 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
 
   if (!keyval->exists("level_shift"))
     level_shift_ = 1.0;
+
+  // now take care of memory stuff
+  init_mem(6);
 }
 
 OSSSCF::~OSSSCF()
@@ -470,8 +476,6 @@ OSSSCF::init_vector()
   }
 
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -585,129 +589,18 @@ OSSSCF::scf_energy()
 }
 
 ////////////////////////////////////////////////////////////////////////////
-
-class OSSExtrapData : public SCExtrapData {
-#   define CLASSNAME OSSExtrapData
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  private:
-    RefSymmSCMatrix m1;
-    RefSymmSCMatrix m2;
-    RefSymmSCMatrix m3;
-  public:
-    OSSExtrapData(StateIn&);
-    OSSExtrapData(const RefSymmSCMatrix&, const RefSymmSCMatrix&,
-                  const RefSymmSCMatrix&);
-
-    void save_data_state(StateOut&);
-    
-    SCExtrapData* copy();
-    void zero();
-    void accumulate_scaled(double, const RefSCExtrapData&);
-};
-
-#define CLASSNAME OSSExtrapData
-#define PARENTS public SCExtrapData
-#define HAVE_STATEIN_CTOR
-#include <util/class/classi.h>
-void *
-OSSExtrapData::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCExtrapData::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-OSSExtrapData::OSSExtrapData(StateIn&s) :
-  SCExtrapData(s)
-{
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
-  RefSCDimension dim;
-  dim.restore_state(s);
-
-  int blocked;
-  s.get(blocked);
-
-  if (blocked)
-    k = new BlockedSCMatrixKit(SCMatrixKit::default_matrixkit());
-  
-  m1 = k->symmmatrix(dim);
-  m2 = k->symmmatrix(dim);
-  m3 = k->symmmatrix(dim);
-
-  m1.restore(s);
-  m2.restore(s);
-  m3.restore(s);
-}
-
-OSSExtrapData::OSSExtrapData(
-    const RefSymmSCMatrix& mat1,
-    const RefSymmSCMatrix& mat2,
-    const RefSymmSCMatrix& mat3)
-{
-  m1 = mat1;
-  m2 = mat2;
-  m3 = mat3;
-}
-
-void
-OSSExtrapData::save_data_state(StateOut& s)
-{
-  SCExtrapData::save_data_state(s);
-  m1.dim().save_state(s);
-
-  int blocked = (BlockedSymmSCMatrix::castdown(m1)) ? 1 : 0;
-  s.put(blocked);
-  
-  m1.save(s);
-  m2.save(s);
-  m3.save(s);
-}
-
-void
-OSSExtrapData::zero()
-{
-  m1.assign(0.0);
-  m2.assign(0.0);
-  m3.assign(0.0);
-}
-
-SCExtrapData*
-OSSExtrapData::copy()
-{
-  return new OSSExtrapData(m1.copy(), m2.copy(), m3.copy());
-}
-
-void
-OSSExtrapData::accumulate_scaled(double scale, const RefSCExtrapData& data)
-{
-  OSSExtrapData* a = OSSExtrapData::require_castdown(
-          data.pointer(), "OSSExtrapData::accumulate_scaled");
-
-  RefSymmSCMatrix am = a->m1.copy();
-  am.scale(scale);
-  m1.accumulate(am);
-  am = 0;
-
-  am = a->m2.copy();
-  am.scale(scale);
-  m2.accumulate(am);
-
-  am = a->m3.copy();
-  am.scale(scale);
-  m3.accumulate(am);
-}
-
-////////////////////////////////////////////////////////////////////////////
     
 RefSCExtrapData
 OSSSCF::extrap_data()
 {
-  RefSCExtrapData data =
-    new OSSExtrapData(cl_fock_.result_noupdate(),
-                      op_focka_.result_noupdate(),
-                      op_fockb_.result_noupdate());
+  RefSymmSCMatrix *m = new RefSymmSCMatrix[3];
+  m[0] = cl_fock_.result_noupdate();
+  m[1] = op_focka_.result_noupdate();
+  m[2] = op_fockb_.result_noupdate();
+  
+  RefSCExtrapData data = new SymmSCMatrixNSCExtrapData(3, m);
+  delete[] m;
+  
   return data;
 }
 
@@ -767,7 +660,7 @@ OSSSCF::ao_fock()
   // now try to figure out the matrix specialization we're dealing with
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
     double *gmat, *gmata, *gmatb, *pmat, *pmata, *pmatb;
     RefSymmSCMatrix gtmp = get_local_data(cl_gmat_, gmat, SCF::Accum);
@@ -858,8 +751,6 @@ OSSSCF::init_gradient()
   // presumably the eigenvectors have already been computed by the time
   // we get here
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -881,31 +772,6 @@ OSSSCF::done_gradient()
 //     -------------
 //  v  | 0  |  0 |0|
 //
-class OSSLag : public BlockedSCElementOp2 {
-  private:
-    OSSSCF *scf_;
-
-  public:
-    OSSLag(OSSSCF* s) : scf_(s) {}
-    ~OSSLag() {}
-
-    int has_side_effects() { return 1; }
-
-    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2) {
-      int ir=current_block();
-
-      for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
-        double occi = scf_->occupation(ir,bi1.i());
-        double occj = scf_->occupation(ir,bi1.j());
-
-        if (occi==1.0 && occj==1.0)
-          bi1.set(bi2.get());
-        else if (occi==0.0)
-          bi1.set(0.0);
-      }
-    }
-};
-
 RefSymmSCMatrix
 OSSSCF::lagrangian()
 {
@@ -929,7 +795,7 @@ OSSSCF::lagrangian()
   
   mofock.scale(2.0);
   
-  RefSCElementOp2 op = new OSSLag(this);
+  RefSCElementOp2 op = new MOLagrangian(this);
   mofock.element_op(op, mofocka);
   mofocka=0;
 
@@ -999,7 +865,7 @@ OSSSCF::two_body_deriv(double * tbgrad)
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert P to local matrices
 
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
     // grab the data pointers from the P matrices
     double *pmat, *pmata, *pmatb;
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);

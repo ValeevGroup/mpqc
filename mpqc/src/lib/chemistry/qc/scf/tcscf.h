@@ -23,7 +23,6 @@ class TCSCF: public SCF {
     int *ndocc_;
     int osa_;
     int osb_;
-    int local_;
 
     double occa_;
     double occb_;

@@ -77,6 +77,9 @@ HSOSSCF::HSOSSCF(StateIn& s) :
   s.get(nirrep_);
   s.get(ndocc_);
   s.get(nsocc_);
+
+  // now take care of memory stuff
+  init_mem(4);
 }
 
 HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
@@ -173,6 +176,9 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
 
   if (!keyval->exists("level_shift"))
     level_shift_ = 1.0;
+
+  // now take care of memory stuff
+  init_mem(4);
 }
 
 HSOSSCF::~HSOSSCF()
@@ -448,8 +454,6 @@ HSOSSCF::init_vector()
   }
 
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -590,7 +594,7 @@ HSOSSCF::ao_fock()
   // now try to figure out the matrix specialization we're dealing with
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
     double *gmat, *gmato, *pmat, *pmato;
     
     // grab the data pointers from the G and P matrices
@@ -665,8 +669,6 @@ HSOSSCF::init_gradient()
   // presumably the eigenvectors have already been computed by the time
   // we get here
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -687,31 +689,6 @@ HSOSSCF::done_gradient()
 //     -------------
 //  v  | 0  |  0 |0|
 //
-class HSOSLag : public BlockedSCElementOp2 {
-  private:
-    HSOSSCF *scf_;
-
-  public:
-    HSOSLag(HSOSSCF* s) : scf_(s) {}
-    ~HSOSLag() {}
-
-    int has_side_effects() { return 1; }
-
-    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2) {
-      int ir=current_block();
-
-      for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
-        double occi = scf_->occupation(ir,bi1.i());
-        double occj = scf_->occupation(ir,bi1.j());
-
-        if (occi==1.0 && occj==1.0)
-          bi1.set(bi2.get());
-        else if (occi==0.0)
-          bi1.set(0.0);
-      }
-    }
-};
-
 RefSymmSCMatrix
 HSOSSCF::lagrangian()
 {
@@ -725,7 +702,7 @@ HSOSSCF::lagrangian()
 
   mofock.scale(2.0);
   
-  RefSCElementOp2 op = new HSOSLag(this);
+  RefSCElementOp2 op = new MOLagrangian(this);
   mofock.element_op(op, mofocko);
   mofocko=0;
 
@@ -786,7 +763,7 @@ HSOSSCF::two_body_deriv(double * tbgrad)
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert P to local matrices
 
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
     // grab the data pointers from the P matrices
     double *pmat, *pmato;
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);

@@ -66,6 +66,7 @@ SCF::compute_vector(double& eelec)
       cout.unsetf(ios::fixed);
       cout.setf(ios::scientific);
       cout << " delta = " << setw(20) << setprecision(15) << delta << endl;
+      cout.unsetf(ios::scientific);
     }
 
     // now extrapolate the fock matrix

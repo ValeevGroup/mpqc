@@ -89,6 +89,9 @@ TCSCF::TCSCF(StateIn& s) :
   s.get(occb_);
   s.get(ci1_);
   s.get(ci2_);
+
+  // now take care of memory stuff
+  init_mem(8);
 }
 
 TCSCF::TCSCF(const RefKeyVal& keyval) :
@@ -209,6 +212,9 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
 
   if (!keyval->exists("level_shift"))
     level_shift_ = 1.0;
+
+  // now take care of memory stuff
+  init_mem(8);
 }
 
 TCSCF::~TCSCF()
@@ -328,10 +334,6 @@ void
 TCSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
   if (user_occupations_)
-    return;
-  
-  // don't change occupations in mid stream
-  if (ndocc_)
     return;
   
   int i,j;
@@ -523,8 +525,6 @@ TCSCF::init_vector()
   }
 
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -668,10 +668,12 @@ TCSCF::scf_energy()
   ci2_ = hv.get_element(1,0);
   double c1c2 = ci1_*ci2_;
 
-  if (scf_grp_->me()==0)
+  if (scf_grp_->me()==0) {
+    cout.setf(ios::fixed);
     cout << indent
          << "ci1 = " << setprecision(7) << ci1_ << " "
          << "ci2 = " << setprecision(7) << ci2_ << endl;
+  }
   
   occa_ = 2*ci1_*ci1_;
   occb_ = 2*ci2_*ci2_;
@@ -681,142 +683,18 @@ TCSCF::scf_energy()
   return eelec;
 }
 
-////////////////////////////////////////////////////////////////////////////
-
-class TCExtrapData : public SCExtrapData {
-#   define CLASSNAME TCExtrapData
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  private:
-    RefSymmSCMatrix m1;
-    RefSymmSCMatrix m2;
-    RefSymmSCMatrix m3;
-    RefSymmSCMatrix m4;
-  public:
-    TCExtrapData(StateIn&);
-    TCExtrapData(const RefSymmSCMatrix&, const RefSymmSCMatrix&,
-                 const RefSymmSCMatrix&, const RefSymmSCMatrix&);
-
-    void save_data_state(StateOut&);
-    
-    SCExtrapData* copy();
-    void zero();
-    void accumulate_scaled(double, const RefSCExtrapData&);
-};
-
-#define CLASSNAME TCExtrapData
-#define PARENTS public SCExtrapData
-#define HAVE_STATEIN_CTOR
-#include <util/class/classi.h>
-void *
-TCExtrapData::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCExtrapData::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-TCExtrapData::TCExtrapData(StateIn&s) :
-  SCExtrapData(s)
-{
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
-  RefSCDimension dim;
-  dim.restore_state(s);
-
-  int blocked;
-  s.get(blocked);
-
-  if (blocked)
-    k = new BlockedSCMatrixKit(SCMatrixKit::default_matrixkit());
-  
-  m1 = k->symmmatrix(dim);
-  m2 = k->symmmatrix(dim);
-  m3 = k->symmmatrix(dim);
-  m4 = k->symmmatrix(dim);
-
-  m1.restore(s);
-  m2.restore(s);
-  m3.restore(s);
-  m4.restore(s);
-}
-
-TCExtrapData::TCExtrapData(
-    const RefSymmSCMatrix& mat1,
-    const RefSymmSCMatrix& mat2,
-    const RefSymmSCMatrix& mat3,
-    const RefSymmSCMatrix& mat4)
-{
-  m1 = mat1;
-  m2 = mat2;
-  m3 = mat3;
-  m4 = mat4;
-}
-
-void
-TCExtrapData::save_data_state(StateOut& s)
-{
-  SCExtrapData::save_data_state(s);
-  m1.dim().save_state(s);
-
-  int blocked = (BlockedSymmSCMatrix::castdown(m1)) ? 1 : 0;
-  s.put(blocked);
-  
-  m1.save(s);
-  m2.save(s);
-  m3.save(s);
-  m4.save(s);
-}
-
-void
-TCExtrapData::zero()
-{
-  m1.assign(0.0);
-  m2.assign(0.0);
-  m3.assign(0.0);
-  m4.assign(0.0);
-}
-
-SCExtrapData*
-TCExtrapData::copy()
-{
-  return new TCExtrapData(m1.copy(), m2.copy(), m3.copy(), m4.copy());
-}
-
-void
-TCExtrapData::accumulate_scaled(double scale, const RefSCExtrapData& data)
-{
-  TCExtrapData* a = TCExtrapData::require_castdown(
-          data.pointer(), "TCExtrapData::accumulate_scaled");
-
-  RefSymmSCMatrix am = a->m1.copy();
-  am.scale(scale);
-  m1.accumulate(am);
-  am = 0;
-
-  am = a->m2.copy();
-  am.scale(scale);
-  m2.accumulate(am);
-
-  am = a->m3.copy();
-  am.scale(scale);
-  m3.accumulate(am);
-
-  am = a->m4.copy();
-  am.scale(scale);
-  m4.accumulate(am);
-}
-
-////////////////////////////////////////////////////////////////////////////
-    
 RefSCExtrapData
 TCSCF::extrap_data()
 {
-  RefSCExtrapData data =
-    new TCExtrapData(focka_.result_noupdate(),
-                     fockb_.result_noupdate(),
-                     ka_.result_noupdate(),
-                     kb_.result_noupdate());
+  RefSymmSCMatrix *m = new RefSymmSCMatrix[4];
+  m[0] = focka_.result_noupdate();
+  m[1] = fockb_.result_noupdate();
+  m[2] = ka_.result_noupdate();
+  m[3] = kb_.result_noupdate();
+  
+  RefSCExtrapData data = new SymmSCMatrixNSCExtrapData(4, m);
+  delete[] m;
+  
   return data;
 }
 
@@ -932,7 +810,7 @@ TCSCF::ao_fock()
   // now try to figure out the matrix specialization we're dealing with
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
 
     // grab the data pointers from the G and P matrices
     double *gmata, *gmatb, *kmata, *kmatb, *pmata, *pmatb, *opmata, *opmatb;
@@ -1029,8 +907,6 @@ TCSCF::init_gradient()
   // presumably the eigenvectors have already been computed by the time
   // we get here
   scf_vector_ = eigenvectors_.result_noupdate();
-
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -1052,31 +928,6 @@ TCSCF::done_gradient()
 //     -------------
 //  v  | 0  |  0 |0|
 //
-class TCLag : public BlockedSCElementOp2 {
-  private:
-    TCSCF *scf_;
-
-  public:
-    TCLag(TCSCF* s) : scf_(s) {}
-    ~TCLag() {}
-
-    int has_side_effects() { return 1; }
-
-    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2) {
-      int ir=current_block();
-
-      for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
-        double occi = scf_->occupation(ir,bi1.i());
-        double occj = scf_->occupation(ir,bi1.j());
-
-        if (occi > 0.0 && occi < 2.0 && occj > 0.0 && occj < 2.0)
-          bi1.set(bi2.get());
-        else if (occi==0.0)
-          bi1.set(0.0);
-      }
-    }
-};
-
 RefSymmSCMatrix
 TCSCF::lagrangian()
 {
@@ -1114,7 +965,7 @@ TCSCF::lagrangian()
   mofocka.accumulate(mofockb);
   mofockb=0;
   
-  RefSCElementOp2 op = new TCLag(this);
+  RefSCElementOp2 op = new MOLagrangian(this);
   mofocka.element_op(op, moka);
   moka=0;
   mofocka.scale(2.0);
@@ -1189,7 +1040,7 @@ TCSCF::two_body_deriv(double * tbgrad)
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert P to local matrices
 
-  if (local_ || basis()->nbasis() < 700) {
+  if (local_ || local_dens_) {
     // grab the data pointers from the P matrices
     double *pmat, *pmata, *pmatb;
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);

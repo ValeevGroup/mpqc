@@ -23,7 +23,6 @@ class HSOSSCF: public SCF {
     int nirrep_;
     int *ndocc_;
     int *nsocc_;
-    int local_;
 
     ResultRefSymmSCMatrix cl_fock_;
     ResultRefSymmSCMatrix op_fock_;

@@ -23,7 +23,6 @@ class OSSSCF: public SCF {
     int *ndocc_;
     int osa_;
     int osb_;
-    int local_;
 
     ResultRefSymmSCMatrix cl_fock_;
     ResultRefSymmSCMatrix op_focka_;

@@ -27,13 +27,15 @@ class SCF: public OneBodyWavefunction {
     RefSelfConsistentExtrapolation extrap_;
     
     int maxiter_;
-    int int_store_;
     int dens_reset_freq_;
     int reset_occ_;
+    int local_dens_;
+    int storage_;
     
     double level_shift_;
 
     RefMessageGrp scf_grp_;
+    int local_;
     
   protected:
     // implement the Compute::compute() function
@@ -63,6 +65,11 @@ class SCF: public OneBodyWavefunction {
     // create the initial scf vector.  either use the eigenvectors in
     // guess_wfn_, or use a core Hamiltonian guess.
     void initial_vector();
+    
+    // given the total number of density and fock matrices, figure out
+    // how much memory that will require and then set the local_dens_
+    // variable accordingly
+    void init_mem(int);
     
   public:
     SCF(StateIn&);

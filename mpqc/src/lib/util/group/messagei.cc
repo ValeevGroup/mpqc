@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/exenv.h>
 
 #include <util/group/message.h>
 
@@ -162,7 +163,13 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
       return grp;
     }
 
-  // if certain libraries have been compiled in, use those message groups
+#if defined(HAVE_MPI)
+  if (!strcmp(ExEnv::program_name(), "mpqc-mpi")) {
+      grp = new MPIMessageGrp;
+      return grp;
+  }
+#endif
+
 #if defined(HAVE_PUMA_MPI2)
   //grp = new MPIMessageGrp;
   grp = new ParagonMessageGrp;

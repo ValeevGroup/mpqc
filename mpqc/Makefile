@@ -3,7 +3,11 @@ ifndef SRCDIR
   SRCDIR=$(shell pwd)
 endif
 
+LOCALMAKEFILE_OPTIONAL = yes
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+
+ifeq ($(LOCALMAKEFILE_FOUND),yes)
 
 SUBDIRS = lib bin src
 
@@ -19,3 +23,29 @@ distclean:: clean
 	-rm -f config.log
 	-rm -f config.status
 	-rm -f libtool
+
+else
+
+# If the LocalMakefile does not exist we are not in an object directory.
+# Here we only wish to do administrative tasks, such as make tags.
+
+default::
+	@echo "The LocalMakefile was not found.  First run configure in the directory"
+	@echo "you want object code to be placed and then run make there.  However,"
+	@echo "if you would like to run some administrative commands in the source"
+	@echo "tree, the following targets are available:"
+	@echo 
+	@echo "  configure     Update aclocal.m4 and run configure."
+	@echo "  tags          Build a new TAGS file."
+	@echo 
+
+endif
+
+.PHONY: configure
+configure:
+	aclocal -I lib/autoconf
+	autoconf
+
+.PHONY: tags
+tags:
+	etags --members `find . -name "*.[hcfCF]"` `find . -name "*.cc"`

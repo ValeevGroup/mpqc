@@ -116,6 +116,7 @@ class MolecularEnergy: public Function {
     
     //. Nicely print n x 3 data that are stored in a vector.
     void print_natom_3(const RefSCVector &, const char *t=0, ostream&o=cout);
+    void print_natom_3(double **, const char *t=0, ostream&o=cout);
 
     virtual void print(ostream& = cout);
 };
@@ -127,11 +128,10 @@ class SumMolecularEnergy: public MolecularEnergy {
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     int n_;
     RefMolecularEnergy *mole_;
     double *coef_;
-  protected:
     void compute();
   public:
     SumMolecularEnergy(const RefKeyVal &);

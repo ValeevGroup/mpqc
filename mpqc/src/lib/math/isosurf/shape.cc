@@ -38,7 +38,8 @@ closest_distance(SCVector3& X,SCVector3*A,int n,double*grad)
 void *
 Shape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Volume::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Volume::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -163,7 +164,8 @@ Shape::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
 void *
 SphereShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Shape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Shape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -240,7 +242,8 @@ SphereShape::boundingbox(double valuemin, double valuemax,
 void *
 UncappedTorusHoleShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Shape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Shape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -419,7 +422,8 @@ is_in_unbounded_triangle(const SCVector3&XP,const SCVector3&AP,const SCVector3&B
 void *
 ReentrantUncappedTorusHoleShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { UncappedTorusHoleShape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = UncappedTorusHoleShape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -521,7 +525,7 @@ ReentrantUncappedTorusHoleShape::
       else return -1.0;
     }
 
-  return closest_distance(Xv,I,2,grad);
+  return closest_distance(Xv,(SCVector3*)I,2,grad);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -534,7 +538,8 @@ ReentrantUncappedTorusHoleShape::
 void *
 NonreentrantUncappedTorusHoleShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { UncappedTorusHoleShape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = UncappedTorusHoleShape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -600,7 +605,8 @@ double NonreentrantUncappedTorusHoleShape::
 void *
 Uncapped5SphereExclusionShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Shape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Shape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -844,21 +850,21 @@ Uncapped5SphereExclusionShape::
                   //printf("MD[%d]: ",i); MD[i].print();
                   //printf("IABD[%d][0]: ",i); IABD[i][0].print();
                   //printf("IABD[%d][1]: ",i); IABD[i][1].print();
-                  return closest_distance(XD,IABD[i],2,grad);
+                  return closest_distance(XD,(SCVector3*)IABD[i],2,grad);
                 }
               if (_intersects_BC
                   &&is_contained_in_unbounded_pyramid(XD,
                                                       MD[i],
                                                       IBCD[i][0],
                                                       IBCD[i][1])) {
-                  return closest_distance(XD,IBCD[i],2,grad);
+                  return closest_distance(XD,(SCVector3*)IBCD[i],2,grad);
                 }
               if (_intersects_CA
                   &&is_contained_in_unbounded_pyramid(XD,
                                                       MD[i],
                                                       ICAD[i][0],
                                                       ICAD[i][1])) {
-                  return closest_distance(XD,ICAD[i],2,grad);
+                  return closest_distance(XD,(SCVector3*)ICAD[i],2,grad);
                 }
               // at this point we are closest to the ring formed
               // by the intersection of the two probe spheres
@@ -941,7 +947,8 @@ Uncapped5SphereExclusionShape::boundingbox(double valuemin, double valuemax,
 void *
 UnionShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Shape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Shape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

@@ -79,6 +79,8 @@ atom_num(Point& p, Molecule& mol)
 void
 PetiteList::init(const RefGaussianBasisSet &gb)
 {
+  int i;
+
   _gbs = gb;
     
   // grab references to the Molecule and BasisSet for convenience
@@ -99,7 +101,6 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   _lamij = new char[ioff(_nshell)];
 
   _atom_map = new int*[_natom];
-  int i;
   for (i=0; i < _natom; i++)
     _atom_map[i] = new int[_ng];
   
@@ -168,9 +169,9 @@ PetiteList::init(const RefGaussianBasisSet &gb)
       // just the order of the group divided by the number of times ij is
       // mapped into itself
       leave=0;
-      for (int g=0; g < _ng; g++) {
-        int gi = _shell_map[i][g];
-        int gj = _shell_map[j][g];
+      for (int gg=0; gg < _ng; gg++) {
+        int gi = _shell_map[i][gg];
+        int gj = _shell_map[j][gg];
         int gij = ioff(gi,gj);
         if (gij < ij) {
           leave=1;
@@ -266,6 +267,8 @@ PetiteList::r(int g)
 void
 PetiteList::print(FILE *o)
 {
+  int i;
+
   fprintf(o,"PetiteList:\n");
   fprintf(o,"  _natom = %d\n",_natom);
   fprintf(o,"  _nshell = %d\n",_nshell);
@@ -274,7 +277,7 @@ PetiteList::print(FILE *o)
 
   fprintf(o,"\n");
   fprintf(o,"  _atom_map = \n");
-  int i;
+
   for (i=0; i < _natom; i++) {
     fprintf(o,"    ");
     for (int g=0; g < _ng; g++)
@@ -320,8 +323,8 @@ class lin_comb {
     double **c;
   public:
     lin_comb(int nsh, int nbf, int f0) : _nsh(nsh), _nbf(nbf) {
-      fn = new int[_nsh];
       int i;
+      fn = new int[_nsh];
       for (i=0; i < _nsh; i++)
         fn[i] = f0+i;
       
@@ -346,12 +349,21 @@ class lin_comb {
     int numsh() const { return _nsh; }
     int bfnum(int i) const { return fn[i]; }
     double& coef(int i, int j) { return c[i][j]; }
+    void print() const {
+      for (int i=0; i < _nsh; i++) {
+        printf("%2d",fn[i]);
+        for (int j=0; j < _nbf; j++)
+          printf(" %10.7f",c[i][j]);
+        printf("\n");
+      }
+    }
 };
     
 RefSCMatrix
 PetiteList::aotoso()
 {
-  int i;
+  int i, d, ii, jj, g, fn, s, c, ir, f;
+
   GaussianBasisSet& gbs = *_gbs.pointer();
   Molecule& mol = *gbs.molecule().pointer();
 
@@ -361,70 +373,136 @@ PetiteList::aotoso()
   // create the character table for the point group
   CharacterTable ct = mol.point_group().char_table();
   SymmetryOperation so;
+
   ct.print();
   
-  double *red_rep = new double[_ng];
-  int *ninir = new int[_nirrep];
+  int ncomp=0;
+  for (i=0; i < _nirrep; i++)
+    ncomp += ct[i].degeneracy();
+  
+  int *fao = new int[ncomp];
+  int *saoelem = new int[ncomp];
+  int *maxsao = new int[ncomp];
 
-  int *saoelem = new int[_nirrep];
   saoelem[0]=0;
-  for (i=1; i < _nirrep; i++)
-    saoelem[i] = saoelem[i-1]+_nbf_in_ir[i-1];
+  maxsao[0]=_nbf_in_ir[0];
+  fao[0]=0;
+  
+  {
+    // how do x,y transform?
+    printf("  x  x");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(1,so,0);
+      printf(" %8.5f",r(2,2));
+    }
+    printf("\n");
+    printf("  x  y");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(1,so,0);
+      printf(" %8.5f",r(2,0));
+    }
+    printf("\n");
+    printf("  y  x");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(1,so,0);
+      printf(" %8.5f",r(0,2));
+    }
+    printf("\n");
+    printf("  y  y");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(1,so,0);
+      printf(" %8.5f",r(0,0));
+    }
+    printf("\n");
+    printf("\n");
+    
+    // how does yz,xz transform?
+    printf(" xz xz");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(4,4));
+    }
+    printf("\n");
+    printf(" xz yz");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(4,1));
+    }
+    printf("\n");
+    printf(" yz xz");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(1,4));
+    }
+    printf("\n");
+    printf(" yz yz");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(1,1));
+    }
+    printf("\n");
+    printf("\n");
 
-  // loop over unique shells
+    // how does xy,(x^2-y^2) transform?
+    printf(" xy xy");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(3,3));
+    }
+    printf("\n");
+    printf(" xy xx");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(3,5)-r(3,0));
+    }
+    printf("\n");
+    printf(" xx xy");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(5,3));
+    }
+    printf("\n");
+    printf(" xx xx");
+    for (g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      Rotation r(2,so,0);
+      printf(" %8.5f",r(5,5)-r(5,0));
+    }
+    printf("\n");
+    printf("\n");
+  }
+    
+  ii=1;
+  for (i=1; i < _nirrep; i++) {
+    for (d=0; d < ct[i].degeneracy(); d++,ii++) {
+      maxsao[ii] = maxsao[ii-1]+_nbf_in_ir[i];
+      saoelem[ii] = maxsao[ii-1];
+      fao[ii] = saoelem[ii];
+    }
+  }
+
+  double *blc = new double[gbs.nbasis()];
+
+  // loop over all unique shells
   for (i=0; i < _natom; i++) {
-    for (int s=0; s < gbs.nshell_on_center(i); s++) {
-      int g;
+    for (s=0; s < gbs.nshell_on_center(i); s++) {
       int shell_i = gbs.shell_on_center(i,s);
       
       if (!_p1[shell_i])
         continue;
-        
-      // find out how many shells are equivalent to this one
-      int neqs=0;
-      for (g=0; g < _ng; g++)
-        if (shell_i==_shell_map[shell_i][g])
-          neqs++;
-
-      neqs = _ng/neqs;
       
-      // loop over contractions now to get a reducible representation for
-      // the shell
-      memset(red_rep,0,sizeof(double)*_ng);
-
-      for (g=0; g < _ng; g++) {
-        int j = _atom_map[i][g];
-        if (i!=j && _atom_map[j][g]!=j)
-          continue;
-        
-        so = ct.symm_operation(g);
-        
-        for (int c=0; c < gbs(i,s).ncontraction(); c++) {
-          int am=gbs(i,s).am(c);
-          
-          if (am==0)
-            red_rep[g] += neqs*1.0;
-          else {
-            Rotation r(am,so,gbs(i,s).is_pure(c));
-            red_rep[g] += neqs*r.trace();
-          }
-        }
-      }
-
-      // now extract number of functions of each symmetry that we can expect
-      memset(ninir,0,sizeof(int)*_nirrep);
-      int ir;
-      for (ir=0; ir < _nirrep; ir++) {
-        double t=0;
-        for (g=0; g < _ng; g++)
-          t += ct[ir][g]*red_rep[g];
-        
-        ninir[ir] = ((int) (t+0.5))/_ng;
-      }
-
-      // ok, we know how many functions we're looking for now, so start
-      // forming linear combinations of basis functions
-
+      // form linear combinations of the basis functions in this shell
       lin_comb **lc = new lin_comb*[_ng];
       
       for (g=0; g < _ng; g++) {
@@ -438,15 +516,15 @@ PetiteList::aotoso()
         lin_comb& lcg = *lc[g];
         
         int fi=0;
-        for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+        for (c=0; c < gbs(i,s).ncontraction(); c++) {
           int am=gbs(i,s).am(c);
 
           if (am==0) {
             lcg.coef(fi,func_j) = 1.0;
           } else {
             Rotation rr(am,so,gbs(i,s).is_pure(c));
-            for (int ii=0; ii < rr.dim(); ii++)
-              for (int jj=0; jj < rr.dim(); jj++)
+            for (ii=0; ii < rr.dim(); ii++)
+              for (jj=0; jj < rr.dim(); jj++)
                 lcg.coef(fi+ii,func_j+jj) = rr(ii,jj);
           }
 
@@ -454,126 +532,99 @@ PetiteList::aotoso()
           func_i += gbs(i,s).nfunction(c);
           func_j += gbs(i,s).nfunction(c);
         }
-      }
-
-      // form the combinations
-      double *blc = new double[gbs.nbasis()];
-      
-      for (ir=0; ir < ct.nirrep(); ir++) {
-        //printf("irrep %s\n",ct[ir].symbol());
-        
-        for (int fn=0; fn < gbs(i,s).nfunction(); fn++) {
-          memset(blc,0,sizeof(double)*gbs.nbasis());
-
-          for (g=0; g < _ng; g++) {
-            lin_comb& lcg = *lc[g];
-
-            for (int f=0; f < gbs.nbasis(); f++)
-              blc[f] += ct[ir][g]*lcg.coef(fn,f);
-          }
-
-          double c1=0;
-          int ii;
-          for (ii=0; ii < gbs.nbasis(); ii++)
-            c1 += blc[ii]*blc[ii];
-
-          if (c1 < 1.0e-3)
-            continue;
-          
-          c1 = 1.0/sqrt(c1);
-          
-          for (ii=0; ii < gbs.nbasis(); ii++)
-            blc[ii] *= c1;
-
-          // check to see if we already have this SO (it happens sometimes,
-          // so sue me).
-          int break_this=0;
-          int jj;
-          for (jj=0;  jj < saoelem[ir]; jj++) {
-            double t=0;
-            for (ii=0; ii < gbs.nbasis(); ii++)
-              t += blc[ii]*ret.get_element(ii,jj);
-            if (fabs(t) > .9) {
-              break_this=1;
-              break;
-            }
-          }
-
-          if (break_this)
-            break;
-
-          for (ii=0; ii < gbs.nbasis(); ii++) {
-            ret.set_element(ii,saoelem[ir],blc[ii]);
-          }
-          saoelem[ir]++;
-          
-          // if this is a degenerate irrep and this shell is not centered at
-          // the origin, then look for the second component (T's are right
-          // out!).
-          if (neqs==1 || ct[ir].degeneracy() < 1.5)
-            continue;
-          
-          memset(blc,0,sizeof(double)*gbs.nbasis());
-          for (g=0; g < _ng; g++) {
-            lin_comb& lcg = *lc[g];
-
-            for (int f=0; f < gbs.nbasis(); f++)
-              blc[f] += ct[ir](1,g)*lcg.coef(fn,f);
-          }
-
-          c1=0;
-          for (ii=0; ii < gbs.nbasis(); ii++)
-            c1 += blc[ii]*blc[ii];
-
-          if (c1 < 1.0e-3)
-            continue;
-          
-          c1 = 1.0/sqrt(c1);
-          
-          for (ii=0; ii < gbs.nbasis(); ii++)
-            blc[ii] *= c1;
-
-          // check to see if we already have this SO (it happens sometimes,
-          // so sue me).
-          break_this=0;
-          for (jj=0;  jj < saoelem[ir]; jj++) {
-            double t=0;
-            for (ii=0; ii < gbs.nbasis(); ii++)
-              t += blc[ii]*ret.get_element(ii,jj);
-            if (fabs(t) > .9) {
-              break_this=1;
-              break;
-            }
-          }
-
-          if (break_this)
-            break;
-
-          for (ii=0; ii < gbs.nbasis(); ii++) {
-            ret.set_element(ii,saoelem[ir]+_nbf_in_ir[ir],blc[ii]);
-          }
-          //saoelem[ir]++;
-#if 0
-          printf("  %d",lc[0]->bfnum(fn));
-          for (int ii=0; ii < gbs.nbasis(); ii++)
-            printf(" %10.7f",blc[ii]);
-          printf("\n");
+#if 1
+        lcg.print();
 #endif
-        }
       }
 
-      delete[] blc;
+      int irnum=0;
+      for (ir=0; ir < ct.nirrep(); ir++) {
+
+#define DOIRREP 1
+#if DOIRREP
+        printf("irrep %s\n",ct[ir].symbol());
+#endif
+        
+        for (fn=0; fn < gbs(i,s).nfunction(); fn++) {
+          for (d=0; d < ct[ir].nproj(); d++) {
+
+            int comp = d % ct[ir].degeneracy();
+
+            // form the projection for this irrep
+            memset(blc,0,sizeof(double)*gbs.nbasis());
+            for (g=0; g < _ng; g++) {
+              lin_comb& lcg = *lc[g];
+
+              for (f=0; f < gbs.nbasis(); f++)
+                blc[f] += ct[ir](d,g)*lcg.coef(fn,f);
+            }
+
+            // normalize the linear combination if c1 is non-zero
+            double c1=0;
+            for (ii=0; ii < gbs.nbasis(); ii++)
+              c1 += blc[ii]*blc[ii];
+
+#if 1
+            printf(" %2d",lc[0]->bfnum(fn));
+            for (ii=0; ii < gbs.nbasis(); ii++)
+              printf(" %10.7f",blc[ii]);
+            printf("\n");
+#endif
+            if (c1 > 1.0e-3) {
+              c1 = 1.0/sqrt(c1);
+              for (ii=0; ii < gbs.nbasis(); ii++)
+                blc[ii] *= c1;
+            } else {
+              continue;
+            }
+
+            // check to see if this SO has already been generated
+            int saw_so=0;
+            for (jj=fao[irnum];
+                 jj < saoelem[irnum+ct[ir].degeneracy()-1]; jj++) {
+              double t=0;
+              for (ii=0; ii < gbs.nbasis(); ii++)
+                t += blc[ii]*ret.get_element(ii,jj);
+
+              if (fabs(t) > 0.1) {
+                saw_so=1;
+                break;
+              }
+            }
+
+            if (saw_so)
+              continue;
+
+#if DOIRREP
+            printf(" %2d",lc[0]->bfnum(fn));
+            for (ii=0; ii < gbs.nbasis(); ii++)
+              printf(" %10.7f",blc[ii]);
+            printf("\n");
+#endif
+
+            int tir = saoelem[irnum+comp];
+            if (tir >= maxsao[irnum+comp])
+              continue;
+            
+            for (ii=0; ii < gbs.nbasis(); ii++)
+              ret.set_element(ii,tir,blc[ii]);
+
+            saoelem[irnum+comp]++;
+          }
+        }
+
+        irnum += ct[ir].degeneracy();
+      }
+
       for (g=0; g < _ng; g++)
         delete lc[g];
       delete lc;
     }
   }
 
-  delete[] red_rep;
-  delete[] ninir;
+  delete[] blc;
   delete[] saoelem;
+  delete[] maxsao;
 
   return ret;
 }
-    
-////////////////////////////////////////////////////////////////////////////

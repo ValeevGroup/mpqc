@@ -33,26 +33,37 @@
 #endif
 
 #include <util/state/state.h>
+#include <math/scmat/vector3.h>
 #include <chemistry/qc/wfn/wfn.h>
 
-class PointInputData {
-  public:
-    double dens_alpha;
-    double dens_beta;
-    double dens_grad_alpha;
-    double dens_grad_beta;
+struct PointInputData {
+    double rho_a;
+    double rho_b;
+
+    double gamma_aa;
+    double gamma_bb;
+    double gamma_ab;
+
+    double del_rho_a[3];
+    double del_rho_b[3];
 
     // provided for convenience
-    //double dens13;
-    double dens_alpha13;
-    double dens_beta13;
+    double rho_a_13;
+    double rho_b_13;
 };
 
-class PointOutputData {
-  public:
+struct PointOutputData {
+    // energy at r
     double energy;
-    double alpha_pot;
-    double beta_pot;
+
+    // derivative of functional wrt density
+    double df_drho_a;
+    double df_drho_b;
+
+    // derivative of functional wrt density gradient
+    double df_dgamaa;
+    double df_dgambb;
+    double df_dgamab;
 };
 
 class DenFunctional: virtual_base public SavableState {
@@ -62,6 +73,8 @@ class DenFunctional: virtual_base public SavableState {
   protected:
     int spin_polarized_;
     int compute_potential_;
+    double a0_;  // for ACM functionals
+
   public:
     DenFunctional();
     DenFunctional(const RefKeyVal &);
@@ -81,6 +94,8 @@ class DenFunctional: virtual_base public SavableState {
     virtual int need_density_gradient();
 
     virtual void point(const PointInputData&, PointOutputData&) = 0;
+
+    double a0() const { return a0_; }
 };
 SavableState_REF_dec(DenFunctional);
 
@@ -128,27 +143,6 @@ class SumDenFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-//. The \clsnm{XalphaFunctional} computes energies and densities
-//. using the Xalpha method.
-class XalphaFunctional: public DenFunctional {
-#   define CLASSNAME XalphaFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  protected:
-    double alpha_;
-    double factor_;
-  public:
-    XalphaFunctional();
-    XalphaFunctional(const RefKeyVal &);
-    XalphaFunctional(StateIn &);
-    ~XalphaFunctional();
-    void save_data_state(StateOut &);
-
-    void point(const PointInputData&, PointOutputData&);
-};
-
 //. The \clsnm{LSDAXFunctional} computes energies and densities
 //. using the LSDA exchange term.
 class LSDAXFunctional: public DenFunctional {
@@ -168,6 +162,7 @@ class LSDAXFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
+#if 0
 //. The \clsnm{LSDACFunctional} computes energies and densities using the
 //LSDA correlation term (from Vosko, Wilk, and Nusair).
 class LSDACFunctional: public DenFunctional {
@@ -183,6 +178,28 @@ class LSDACFunctional: public DenFunctional {
     LSDACFunctional(const RefKeyVal &);
     LSDACFunctional(StateIn &);
     ~LSDACFunctional();
+    void save_data_state(StateOut &);
+
+    void point(const PointInputData&, PointOutputData&);
+};
+#endif
+
+//. The \clsnm{XalphaFunctional} computes energies and densities
+//. using the Xalpha method.
+class XalphaFunctional: public DenFunctional {
+#   define CLASSNAME XalphaFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double alpha_;
+    double factor_;
+  public:
+    XalphaFunctional();
+    XalphaFunctional(const RefKeyVal &);
+    XalphaFunctional(StateIn &);
+    ~XalphaFunctional();
     void save_data_state(StateOut &);
 
     void point(const PointInputData&, PointOutputData&);
@@ -230,6 +247,7 @@ class LYPFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
+#if 0
 //. The \clsnm{PW91Functional} computes energies and densities
 //. using the Lee, Yang, and Parr functional.
 class PW91Functional: public DenFunctional {
@@ -262,6 +280,7 @@ class PW91Functional: public DenFunctional {
 
     void point(const PointInputData&, PointOutputData&);
 };
+#endif
 
 #endif
 

@@ -30,6 +30,7 @@
 
 #ifndef __PIC__
 
+#include <chemistry/qc/dft/clks.h>
 #include <chemistry/qc/dft/hfacm.h>
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
@@ -37,7 +38,11 @@
 const ClassDesc &dft_force_link_a_ = Murray93Integrator::class_desc_;
 const ClassDesc &dft_force_link_b_ = NElFunctional::class_desc_;
 const ClassDesc &dft_force_link_c_ = XalphaFunctional::class_desc_;
-const ClassDesc &dft_force_link_d_ = HFACM::class_desc_;
+const ClassDesc &dft_force_link_d_ = LSDAXFunctional::class_desc_;
+const ClassDesc &dft_force_link_e_ = Becke88Functional::class_desc_;
+const ClassDesc &dft_force_link_f_ = LYPFunctional::class_desc_;
+const ClassDesc &dft_force_link_g_ = HFACM::class_desc_;
+const ClassDesc &dft_force_link_h_ = CLKS::class_desc_;
 
 #endif /* __PIC__ */
 

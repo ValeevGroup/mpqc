@@ -59,8 +59,10 @@ class DenIntegrator: virtual_base public SavableState {
 
     int need_gradient_;
 
-    void get_density(double *dmat, double &den, double &den_grad_mag);
-    void init_integration(const RefDenFunctional &func);
+    void get_density(double *dmat, double &den, double grad[3]);
+    void init_integration(const RefDenFunctional &func,
+                          const RefSymmSCMatrix& densa,
+                          const RefSymmSCMatrix& densb);
     double do_point(const SCVector3 &r, const RefDenFunctional &,
                     double weight);
   public:
@@ -80,7 +82,9 @@ class DenIntegrator: virtual_base public SavableState {
     const double *alpha_vmat() const { return alpha_vmat_; }
     const double *beta_vmat() const { return beta_vmat_; }
 
-    virtual void integrate(const RefDenFunctional &) = 0;
+    virtual void integrate(const RefDenFunctional &,
+                           const RefSymmSCMatrix& densa =0,
+                           const RefSymmSCMatrix& densb =0) = 0;
 };
 SavableState_REF_dec(DenIntegrator);
 
@@ -104,7 +108,9 @@ class Murray93Integrator: public DenIntegrator {
     ~Murray93Integrator();
     void save_data_state(StateOut &);
 
-    void integrate(const RefDenFunctional &);
+    void integrate(const RefDenFunctional &,
+                   const RefSymmSCMatrix& densa =0,
+                   const RefSymmSCMatrix& densb =0);
 };
 
 #endif

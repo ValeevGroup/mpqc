@@ -34,7 +34,8 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libdft
 BIN_OR_LIB = LIB
 
-SRCS = functional.cc integrator.cc hfacm.cc
+SRCS = functional.cc integrator.cc hfacm.cc \
+       clks.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

@@ -52,7 +52,6 @@ DenIntegrator::_castdown(const ClassDesc*cd)
 DenIntegrator::DenIntegrator(StateIn& s):
   SavableState(s)
 {
-  abort();
 }
 
 DenIntegrator::DenIntegrator()
@@ -85,6 +84,12 @@ DenIntegrator::~DenIntegrator()
   delete[] beta_dmat_;
   delete[] alpha_vmat_;
   delete[] beta_vmat_;
+  bs_values_ = 0;
+  bsg_values_ = 0;
+  alpha_dmat_ = 0;
+  beta_dmat_ = 0;
+  alpha_vmat_ = 0;
+  beta_vmat_ = 0;
 }
 
 void
@@ -101,7 +106,15 @@ DenIntegrator::set_wavefunction(const RefWavefunction &wfn)
 }
 
 void
-DenIntegrator::init_integration(const RefDenFunctional &func)
+DenIntegrator::set_compute_potential_integrals(int i)
+{
+  compute_potential_integrals_=i;
+}
+
+void
+DenIntegrator::init_integration(const RefDenFunctional &func,
+                                const RefSymmSCMatrix& densa,
+                                const RefSymmSCMatrix& densb)
 {
   value_ = 0.0;
 
@@ -116,22 +129,27 @@ DenIntegrator::init_integration(const RefDenFunctional &func)
   nbasis_ = wfn_->basis()->nbasis();
   delete[] bs_values_;
   bs_values_ = new double[nbasis_];
+
   delete[] bsg_values_;
-  bsg_values_ = new double[3*nbasis_];
+  bsg_values_=0;
+  if (need_gradient_)
+      bsg_values_ = new double[3*nbasis_];
 
   delete[] alpha_dmat_;
+  RefSymmSCMatrix adens = densa;
+  if (adens.null())
+      adens = wfn_->alpha_ao_density();
   alpha_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
-  RefSymmSCMatrix admat = wfn_->alpha_density();
-  admat->convert(alpha_dmat_);
-  admat = 0;
+  adens->convert(alpha_dmat_);
 
   delete[] beta_dmat_;
   beta_dmat_ = 0;
-  if (wfn_->spin_polarized()) {
+  if (spin_polarized_) {
+      RefSymmSCMatrix bdens = densb;
+      if (bdens.null())
+          bdens = wfn_->beta_ao_density();
       beta_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
-      RefSymmSCMatrix bdmat = wfn_->beta_density();
-      bdmat->convert(beta_dmat_);
-      bdmat = 0;
+      bdens->convert(beta_dmat_);
     }
 
   delete[] alpha_vmat_;
@@ -141,21 +159,21 @@ DenIntegrator::init_integration(const RefDenFunctional &func)
   if (compute_potential_integrals_) {
       int ntri = (nbasis_*(nbasis_+1))/2;
       alpha_vmat_ = new double[ntri];
-      beta_vmat_ = new double[ntri];
-      for (int i=0; i<ntri; i++) alpha_vmat_[i] = beta_vmat_[i] = 0.0;
+      memset(alpha_vmat_, 0, sizeof(double)*ntri);
+      if (spin_polarized_) {
+          beta_vmat_ = new double[ntri];
+          memset(beta_vmat_, 0, sizeof(double)*ntri);
+        }
     }
 }
 
 void
-DenIntegrator::get_density(double *dmat, double &den, double &den_grad_mag)
+DenIntegrator::get_density(double *dmat, double &den, double dengrad[3])
 {
   int i, j;
   double bvi, bvix, bviy, bviz;
   double densij;
   
-  den = 0.0;
-  den_grad_mag = 0.0;
-
   double tmp = 0.0;
 
   if (need_gradient_) {
@@ -163,7 +181,7 @@ DenIntegrator::get_density(double *dmat, double &den, double &den_grad_mag)
       grad[0] = grad[1] = grad[2] = 0.0;
 
       int ij=0;
-      for (i=0; i<nbasis_; i++) {
+      for (i=0; i < nbasis_; i++) {
           bvi = bs_values_[i];
           bvix = bsg_values_[i*3];
           bviy = bsg_values_[i*3+1];
@@ -191,14 +209,13 @@ DenIntegrator::get_density(double *dmat, double &den, double &den_grad_mag)
 
       den = tmp;
   
-      double x = grad[0] * 2.0;
-      double y = grad[1] * 2.0;
-      double z = grad[2] * 2.0;
-      den_grad_mag = sqrt(x*x+y*y+z*z);
+      dengrad[0] = grad[0] * 2.0;
+      dengrad[1] = grad[1] * 2.0;
+      dengrad[2] = grad[2] * 2.0;
     }
   else {
       int ij=0;
-      for (i=0; i<nbasis_; i++) {
+      for (i=0; i < nbasis_; i++) {
           bvi = 2.0*bs_values_[i];
 
           for (j=0; j < i; j++,ij++)
@@ -210,6 +227,19 @@ DenIntegrator::get_density(double *dmat, double &den, double &den_grad_mag)
 
       den = tmp;
     }
+}
+
+inline static double
+norm(double v[3])
+{
+  double x,y,z;
+  return sqrt((x=v[0])*x + (y=v[1])*y + (z=v[2])*z);
+}
+
+inline static double
+dot(double v[3], double w[3])
+{
+  return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
 }
 
 double
@@ -230,19 +260,28 @@ DenIntegrator::do_point(const SCVector3 &r,
   // loop over basis functions adding contributions to the density
   PointInputData id;
 
-  get_density(alpha_dmat_, id.dens_alpha, id.dens_grad_alpha);
-  id.dens_alpha13 = pow(id.dens_alpha,1./3.);
+  get_density(alpha_dmat_, id.rho_a, id.del_rho_a);
+  id.rho_a_13 = pow(id.rho_a, 1./3.);
+  if (need_gradient_)
+      id.gamma_aa = norm(id.del_rho_a);
 
   if (!spin_polarized_) {
-      id.dens_beta = id.dens_alpha;
-      id.dens_grad_beta = id.dens_grad_alpha;
-      id.dens_beta13 = id.dens_alpha13;
+      id.rho_b = id.rho_a;
+      id.rho_b_13 = id.rho_a_13;
+      if (need_gradient_) {
+          id.del_rho_b = id.del_rho_a;
+          id.gamma_bb = id.gamma_aa;
+          id.gamma_ab = id.gamma_aa;
+        }
     }
   else {
-      get_density(beta_dmat_, id.dens_beta, id.dens_grad_beta);
-      id.dens_beta13 = pow(id.dens_alpha,1./3.);
+      get_density(beta_dmat_, id.rho_b, id.del_rho_b);
+      id.rho_b_13 = pow(id.rho_b,1./3.);
+      if (need_gradient_) {
+          id.gamma_bb = norm(id.del_rho_b);
+          id.gamma_ab = sqrt(dot(id.del_rho_a, id.del_rho_b));
+        }
     }
-  //id.dens13 = pow(id.dens_alpha + id.dens_beta, 1./3.);
 
   PointOutputData od;
   func->point(id, od);
@@ -251,18 +290,46 @@ DenIntegrator::do_point(const SCVector3 &r,
 
   if (compute_potential_integrals_) {
       // the contribution to the potential integrals
-      for (j=0; j<nbasis_; j++) {
-          int joff = (j*(j+1))/2;
-          double tmp = bs_values_[j] * weight;
-          double tmpa = tmp * od.alpha_pot;
-          double tmpb = tmp * od.beta_pot;
-          for (k=0; k<=j; k++) {
-              alpha_vmat_[joff+k] += tmpa * bs_values_[k];
-              beta_vmat_[joff+k] += tmpb * bs_values_[k];
+      if (need_gradient_) {
+          double grads[3];
+          grads[0] = weight*(2.0*od.df_dgamaa*id.del_rho_a[0] +
+                                 od.df_dgamab*id.del_rho_b[0]);
+          grads[1] = weight*(2.0*od.df_dgamaa*id.del_rho_a[1] +
+                                 od.df_dgamab*id.del_rho_b[1]);
+          grads[2] = weight*(2.0*od.df_dgamaa*id.del_rho_a[2] +
+                                 od.df_dgamab*id.del_rho_b[2]);
+          double drhoa = weight*od.df_drho_a;
+
+          int jk=0;
+          for (j=0; j < nbasis_; j++) {
+              double dfdr_phi_m = drhoa*bs_values_[j];
+              double dfdg_phi_m = grads[0]*bsg_values_[j*3+0] +
+                                  grads[1]*bsg_values_[j*3+1] +
+                                  grads[2]*bsg_values_[j*3+2];
+              double vmu = dfdr_phi_m + dfdg_phi_m;
+
+              for (k=0; k <= j; k++, jk++) {
+                  double dfdg_phi_n = grads[0]*bsg_values_[k*3+0] +
+                                      grads[1]*bsg_values_[k*3+1] +
+                                      grads[2]*bsg_values_[k*3+2];
+                  alpha_vmat_[jk] += vmu * bs_values_[k] +
+                                     dfdg_phi_n * bs_values_[j];
+                }
+            }
+        }
+      else {
+          int jk=0;
+          double drhoa = weight*od.df_drho_a;
+          for (j=0; j < nbasis_; j++) {
+              double df_phi_m = drhoa * bs_values_[j];
+              for (k=0; k <= j; k++, jk++) {
+                  alpha_vmat_[jk] += df_phi_m * bs_values_[k];
+                }
             }
         }
     }
-  return id.dens_alpha + id.dens_beta;
+
+  return id.rho_a + id.rho_b;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -304,13 +371,13 @@ gauleg(double x1, double x2, double x[], double w[], int n)
 static double
 calc_s(double m)
 {
-#if 1
+#if 0
   double value, value2;
   double a= -969969./262144.;
   double m2=m*m;
   value2= -3.814697265625e-06*m*(m2*(m2*(m2*(m2*(m2*(m2*(m2*(m2*(m2*(46189.*m2-510510.)+2567565.)-7759752.)+15668730.)-22221108.)+22632610.)-16628040.)+8729721.)-3233230.)+969969.);
 
-  value = (1.+value2)/2.0;
+  value = 0.5*(1.+value2);
     
   return value;
 #else
@@ -418,9 +485,11 @@ Murray93Integrator::save_data_state(StateOut& s)
 
 // taken from Mike Colvin 1997/07/21 and modified
 void
-Murray93Integrator::integrate(const RefDenFunctional &denfunc)
+Murray93Integrator::integrate(const RefDenFunctional &denfunc,
+                              const RefSymmSCMatrix& densa,
+                              const RefSymmSCMatrix& densb)
 {
-  init_integration(denfunc);
+  init_integration(denfunc, densa, densb);
 
   RefMolecule mol = wavefunction()->molecule();
 
@@ -497,66 +566,6 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
   double *r_values = new double[nr_max];
   double *dr_dq = new double[nr_max];
 
-#if 0
-  // Precalcute theta Guass-Legendre abcissas and weights
-  gauleg(0.0, M_PI, theta_quad_points, theta_quad_weights, ntheta);
-
-  for (icenter=0; icenter < ncenters; icenter++) {
-      point_count=0;
-
-      // Precalculate radial integration points
-      for (ir=0; ir < nr[icenter]; ir++) {
-          // Mike Colvin's interpretation of Murray's radial grid
-          q=(double) ir/nr[icenter];
-          double value=q/(1-q);
-          r_values[ir]=bragg_radius[icenter]*value*value;
-          dr_dq[ir]=2.0*bragg_radius[icenter]*q*pow(1.0-q,-3.);
-        }
-
-      center = centers[icenter];
-
-      for (iphi=0; iphi < nphi; iphi++) {
-          point.phi() = (double)iphi/(double)nphi * 2.0 * M_PI;
-
-          for (itheta=0; itheta < ntheta; itheta++) {
-              point.theta() = theta_quad_points[itheta];
-              sin_theta = sin(point.theta());
-
-              for (ir=0; ir < nr[icenter]; ir++) {
-                  point.r() = r_values[ir];
-                    
-                  point.spherical_to_cartesian(integration_point);
-                  integration_point += center;
-
-                  //cout << "  " << integration_point << ": ";
-
-                  // calculate weighting factor
-                  w=calc_w(icenter, integration_point, ncenters,
-                           centers, bragg_radius);
-                    
-                  // calculate integration volume 
-                  int_volume=dr_dq[ir]*point.r()*point.r()*sin_theta;
-
-                  // Update center point count
-                  point_count++;
-
-                  // Make contribution to Euler-Maclaurin formula
-                  double multiplier = w*int_volume
-                                    * theta_quad_weights[itheta]/nr[icenter]
-                                    * 2.0 * M_PI / ((double)nphi);
-
-                  //cout << scprintf("% 10.6f ", int_volume);
-                  //cout << scprintf("% 10.6f ", multiplier);
-                  if (do_point(integration_point, denfunc, multiplier)
-                      * int_volume < DBL_EPSILON
-                      && int_volume > DBL_EPSILON) break;
-                }
-            }
-        }
-      point_count_total+=point_count;
-    }
-#else
-
   for (icenter=0; icenter < ncenters; icenter++) {
       point_count=0;
       center = centers[icenter];
@@ -629,10 +638,9 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
         }
       point_count_total+=point_count;
     }
-#endif  
 
     cout << " Total integration points = " << point_count_total << endl;
-    cout << scprintf(" Value of integral = %16.14f", value()) << endl;
+    //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
 
     delete[] theta_quad_points;
     delete[] theta_quad_weights;

@@ -7,10 +7,9 @@
 #endif
 
 #include <util/misc/exenv.h>
-#include <util/container/array.h>
 
-#include "parse.h"
 #include "mpqcin.h"
+#include "parse.h"
 
 using namespace sc;
 

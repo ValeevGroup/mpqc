@@ -8,7 +8,6 @@
 #include <stdlib.h>
 
 #include <util/misc/formio.h>
-#include <util/container/array.h>
 
 using namespace std;
 using namespace sc;
@@ -17,8 +16,8 @@ using namespace sc;
 #define yyFlexLexer MPQCInFlexLexer
 #include <FlexLexer.h>
 
-#include "parse.h"
 #include "mpqcin.h"
+#include "parse.h"
 
 int MPQCIn::checking_ = 0;
 
@@ -269,52 +268,52 @@ MPQCIn::set_opt_type(int i)
 }
 
 void
-MPQCIn::set_docc(Arrayint *a)
+MPQCIn::set_docc(std::vector<int> *a)
 {
   docc_ = a;
 }
 
 void
-MPQCIn::set_socc(Arrayint *a)
+MPQCIn::set_socc(std::vector<int> *a)
 {
   socc_ = a;
 }
 
 void
-MPQCIn::set_alpha(Arrayint *a)
+MPQCIn::set_alpha(std::vector<int> *a)
 {
   alpha_ = a;
 }
 
 void
-MPQCIn::set_beta(Arrayint *a)
+MPQCIn::set_beta(std::vector<int> *a)
 {
   beta_ = a;
 }
 
 void
-MPQCIn::set_frozen_docc(Arrayint *a)
+MPQCIn::set_frozen_docc(std::vector<int> *a)
 {
   frozen_docc_ = a;
 }
 
 void
-MPQCIn::set_frozen_uocc(Arrayint *a)
+MPQCIn::set_frozen_uocc(std::vector<int> *a)
 {
   frozen_uocc_ = a;
 }
 
-Arrayint *
-MPQCIn::make_nnivec(Arrayint *a, char *ms)
+std::vector<int> *
+MPQCIn::make_nnivec(std::vector<int> *a, char *ms)
 {
-  if (ms == 0) return new Arrayint;
+  if (ms == 0) return new std::vector<int>;
 
   char *mse;
   int m = strtol(ms,&mse,10);
   if (mse == ms || m < 0) yerror2("bad positive integer", ms);
   free(ms);
 
-  if (a == 0) a = new Arrayint;
+  if (a == 0) a = new std::vector<int>;
   a->push_back(m);
   return a;
 }
@@ -424,7 +423,7 @@ MPQCIn::parse_string(const char *s)
 void
 MPQCIn::write_vector(ostream &ostrs,
                      const char *keyvalname,
-                     const char *name, MPQCInDatum<Arrayint *>&vec,
+                     const char *name, MPQCInDatum<std::vector<int> *>&vec,
                      int require_nirrep)
 {
   if (vec.set()) {

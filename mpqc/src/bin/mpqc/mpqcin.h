@@ -2,6 +2,7 @@
 #ifndef _mpqcin_h
 #define _mpqcin_h
 
+#include <vector>
 #include <iostream>
 
 #include <util/keyval/keyval.h>
@@ -44,12 +45,12 @@ class MPQCIn {
     MPQCInDatum<char *> method_xc_;
     MPQCInDatum<char *> method_grid_;
     MPQCInDatum<char *> symmetry_;
-    MPQCInDatum<Arrayint *> alpha_;
-    MPQCInDatum<Arrayint *> beta_;
-    MPQCInDatum<Arrayint *> docc_;
-    MPQCInDatum<Arrayint *> socc_;
-    MPQCInDatum<Arrayint *> frozen_docc_;
-    MPQCInDatum<Arrayint *> frozen_uocc_;
+    MPQCInDatum<std::vector<int> *> alpha_;
+    MPQCInDatum<std::vector<int> *> beta_;
+    MPQCInDatum<std::vector<int> *> docc_;
+    MPQCInDatum<std::vector<int> *> socc_;
+    MPQCInDatum<std::vector<int> *> frozen_docc_;
+    MPQCInDatum<std::vector<int> *> frozen_uocc_;
 
     int nirrep_;
 
@@ -61,7 +62,7 @@ class MPQCIn {
     void write_vector(std::ostream &ostrs,
                       const char *keyvalname,
                       const char *name,
-                      MPQCInDatum<Arrayint *>&vec,
+                      MPQCInDatum<std::vector<int> *>&vec,
                       int require_nirrep);
 
     static int checking_;
@@ -99,13 +100,13 @@ class MPQCIn {
     void set_restart(int);
     void set_checkpoint(int);
     void set_molecule_bohr(int);
-    void set_docc(Arrayint *);
-    void set_socc(Arrayint *);
-    void set_alpha(Arrayint *);
-    void set_beta(Arrayint *);
-    void set_frozen_docc(Arrayint *);
-    void set_frozen_uocc(Arrayint *);
-    Arrayint *make_nnivec(Arrayint *, char *);
+    void set_docc(std::vector<int> *);
+    void set_socc(std::vector<int> *);
+    void set_alpha(std::vector<int> *);
+    void set_beta(std::vector<int> *);
+    void set_frozen_docc(std::vector<int> *);
+    void set_frozen_uocc(std::vector<int> *);
+    std::vector<int> *make_nnivec(std::vector<int> *, char *);
 
     static int checking() { return checking_; }
 };

@@ -1050,6 +1050,8 @@ IntMolecularCoor::nconstrained()
 void
 IntMolecularCoor::print(ostream& os)
 {
+  all_->update_values(molecule_);
+
   os << node0 << indent << "IntMolecularCoor Parameters:\n" << incindent
      << indent << "update_bmat = " << (update_bmat_?"yes":"no") << endl
      << indent << "scale_bonds = " << scale_bonds_ << endl

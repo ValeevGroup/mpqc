@@ -41,9 +41,11 @@ const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
     const ClassDesc &group_force_link_a_ = ShmMessageGrp::class_desc_;
 # endif
 
-# ifdef HAVE_NX_H
+# ifdef HAVE_NX
 #   include <util/group/messpgon.h>
+#   include <util/group/memipgon.h>
     const ClassDesc &group_force_link_b_ = ParagonMessageGrp::class_desc_;
+    const ClassDesc &group_force_link_b1_ = IParagonMemoryGrp::class_desc_;
 # endif
 
 # if defined(HAVE_LIBPTHREAD) || defined(HAVE_LIBPTHREADS)
@@ -54,6 +56,11 @@ const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
 #if defined(HAVE_PUMA_MPI2)
 #   include <util/group/thpuma.h>
     const ClassDesc &group_force_link_d_ = PumaThreadGrp::class_desc_;
+#endif
+
+#if defined(HAVE_MPI)
+#   include <util/group/memmpi.h>
+    const ClassDesc &group_force_link_e_ = MPIMemoryGrp::class_desc_;
 #endif
 
 #endif /* __PIC__ */

@@ -52,7 +52,7 @@ OverlapOrthog::OverlapOrthog(
   const RefSymmSCMatrix &overlap,
   const Ref<SCMatrixKit> &result_kit,
   double lindep_tolerance,
-  int debug)
+  int debug) : nlindep_(0), min_orthog_res_(0.0), max_orthog_res_(0.0)
 {
   reinit(method,overlap,result_kit,lindep_tolerance,debug);
 }

@@ -53,10 +53,14 @@ class MTMPIThread: public Thread {
     MTMPIMemoryGrp *mem_;
     int req_tag_;
     int tag_;
+    unsigned int nreq_recd_;
     double chunk[dbufsize];
   public:
     MTMPIThread(MTMPIMemoryGrp *, int reqtype, int tag);
     void run();
+    int run_one();
+    unsigned int nreq_recd() { return nreq_recd_; }
+    void set_nreq_recd(unsigned int val) { nreq_recd_ = val; }
 };
 
 MTMPIThread::MTMPIThread(MTMPIMemoryGrp *mem,
@@ -65,10 +69,17 @@ MTMPIThread::MTMPIThread(MTMPIMemoryGrp *mem,
   mem_ = mem;
   req_tag_ = reqtype;
   tag_ = tag;
+  nreq_recd_ = 0;
 }
 
 void
 MTMPIThread::run()
+{
+  while(run_one());
+}
+
+int
+MTMPIThread::run_one()
 {
   int i;
   int dsize;
@@ -77,68 +88,70 @@ MTMPIThread::run()
   long l;
   MemoryDataRequest req;
   MPI_Status status;
-  while (1) {
-      MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
-               req_tag_,mem_->comm_,&status);
-      int rtag = req.serial_number();
-      if (mem_->debug_) {
-          mem_->print_lock_->lock();
-          req.print("RECV",mem_->hout);
-          mem_->print_lock_->unlock();
-        }
-      if (req.touches_data()) {
-          assert(req.size() >= 0);
-          if (req.offset()+req.size() > mem_->localsize()) {
-              mem_->print_lock_->lock();
-              req.print("BAD RECV");
-              ExEnv::out() << "mem_->localsize() = " << mem_->localsize() << endl;
-              mem_->print_lock_->lock();
-            }
-          assert(req.offset()+req.size() <= mem_->localsize());
-        }
-      switch (req.request()) {
-      case MemoryDataRequest::Deactivate:
-          return;
-      case MemoryDataRequest::Retrieve:
-          if (req.lock())
-              mem_->obtain_local_lock(req.offset(), req.offset()+req.size());
-          MPI_Send(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
-                   req.node(),rtag,mem_->comm_);
-          break;
-      case MemoryDataRequest::Replace:
-          MPI_Send(&tag_,1,MPI_INTEGER,req.node(),rtag,mem_->comm_);
-          MPI_Recv(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
-                   req.node(),tag_,mem_->comm_,&status);
-          if (req.lock())
-              mem_->release_local_lock(req.offset(), req.offset()+req.size());
-          break;
-      case MemoryDataRequest::DoubleSum:
-          MPI_Send(&tag_,1,MPI_INTEGER,req.node(),rtag,mem_->comm_);
-          dsize = req.size()/sizeof(double);
-          dremain = dsize;
-          doffset = req.offset()/sizeof(double);
-          mem_->obtain_local_lock(req.offset(), req.offset()+req.size());
-          while(dremain>0) {
-              int dchunksize = dbufsize;
-              if (dremain < dchunksize) dchunksize = dremain;
-              MPI_Recv(chunk,dchunksize,MPI_DOUBLE,
-                       req.node(),tag_,mem_->comm_,&status);
-              double *source_data = &((double*)mem_->data_)[doffset];
-              for (i=0; i<dchunksize; i++) {
-                  source_data[i] += chunk[i];
-                }
-              dremain -= dchunksize;
-              doffset += dchunksize;
-            }
-          mem_->release_local_lock(req.offset(), req.offset()+req.size());
-          break;
-      default:
-          mem_->print_lock_->lock();
-          ExEnv::out() << "MTMPIThread: bad memory data request" << endl;
-          mem_->print_lock_->unlock();
-          abort();
-        }
+  MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
+           req_tag_,mem_->comm_,&status);
+  int rtag = req.serial_number();
+  if (mem_->debug_) {
+      mem_->print_lock_->lock();
+      req.print("RECV",mem_->hout);
+      mem_->print_lock_->unlock();
     }
+  if (req.touches_data()) {
+      assert(req.size() >= 0);
+      if (req.offset()+req.size() > mem_->localsize()) {
+          mem_->print_lock_->lock();
+          req.print("BAD RECV");
+          ExEnv::out() << "mem_->localsize() = " << mem_->localsize() << endl;
+          mem_->print_lock_->lock();
+        }
+      assert(req.offset()+req.size() <= mem_->localsize());
+    }
+  switch (req.request()) {
+  case MemoryDataRequest::Deactivate:
+      return 0;
+  case MemoryDataRequest::Retrieve:
+      nreq_recd_++;
+      if (req.lock())
+          mem_->obtain_local_lock(req.offset(), req.offset()+req.size());
+      MPI_Send(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
+               req.node(),rtag,mem_->comm_);
+      break;
+  case MemoryDataRequest::Replace:
+      nreq_recd_++;
+      MPI_Send(&tag_,1,MPI_INTEGER,req.node(),rtag,mem_->comm_);
+      MPI_Recv(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
+               req.node(),tag_,mem_->comm_,&status);
+      if (req.lock())
+          mem_->release_local_lock(req.offset(), req.offset()+req.size());
+      break;
+  case MemoryDataRequest::DoubleSum:
+      nreq_recd_++;
+      MPI_Send(&tag_,1,MPI_INTEGER,req.node(),rtag,mem_->comm_);
+      dsize = req.size()/sizeof(double);
+      dremain = dsize;
+      doffset = req.offset()/sizeof(double);
+      mem_->obtain_local_lock(req.offset(), req.offset()+req.size());
+      while(dremain>0) {
+          int dchunksize = dbufsize;
+          if (dremain < dchunksize) dchunksize = dremain;
+          MPI_Recv(chunk,dchunksize,MPI_DOUBLE,
+                   req.node(),tag_,mem_->comm_,&status);
+          double *source_data = &((double*)mem_->data_)[doffset];
+          for (i=0; i<dchunksize; i++) {
+              source_data[i] += chunk[i];
+            }
+          dremain -= dchunksize;
+          doffset += dchunksize;
+        }
+      mem_->release_local_lock(req.offset(), req.offset()+req.size());
+      break;
+  default:
+      mem_->print_lock_->lock();
+      ExEnv::out() << "MTMPIThread: bad memory data request" << endl;
+      mem_->print_lock_->unlock();
+      abort();
+    }
+  return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -180,6 +193,8 @@ MTMPIMemoryGrp::~MTMPIMemoryGrp()
       delete thread_[i];
     }
   delete[] thread_;
+  delete[] nreq_sent_;
+  delete[] nreq_sent_buf_;
 }
 
 void
@@ -211,19 +226,24 @@ MTMPIMemoryGrp::init_mtmpimg(int nthread)
 
   serial_lock_ = th_->new_lock();
 
-  thread_ = new Thread*[nthread-1];
+  thread_ = new MTMPIThread*[nthread-1];
   th_->add_thread(0,0);
   for (i=1; i<nthread; i++) {
       thread_[i-1] = new MTMPIThread(this,req_tag_,req_tag_ + i);
       th_->add_thread(i,thread_[i-1]);
     }
   print_lock_ = th_->new_lock();
+
+  nreq_sent_ = new unsigned int[n()];
+  memset(nreq_sent_, 0, sizeof(unsigned int)*n());
+  nreq_sent_buf_ = new unsigned int[n()];
 }
 
 int
-MTMPIMemoryGrp::serial()
+MTMPIMemoryGrp::serial(int node)
 {
   serial_lock_->lock();
+  nreq_sent_[node]++;
   int r = serial_;
   serial_++;
   if (serial_ == req_tag_) serial_ = 0;
@@ -236,7 +256,7 @@ MTMPIMemoryGrp::retrieve_data(void *data, int node, int offset, int size,
                               int lock)
 {
   MemoryDataRequest req(MemoryDataRequest::Retrieve,me(),offset,size,lock,
-                        serial());
+                        serial(node));
   int tag = req.serial_number();
 
   // send the request
@@ -257,7 +277,7 @@ MTMPIMemoryGrp::replace_data(void *data, int node, int offset, int size,
                              int unlock)
 {
   MemoryDataRequest req(MemoryDataRequest::Replace,me(),offset,size,unlock,
-                        serial());
+                        serial(node));
   int tag = req.serial_number();
 
   if (debug_) {
@@ -280,7 +300,7 @@ void
 MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
 {
   MemoryDataRequest req(MemoryDataRequest::DoubleSum,me(),offset,size,
-                        0, serial());
+                        0, serial(node));
   int tag = req.serial_number();
 
   // send the request
@@ -343,18 +363,27 @@ MTMPIMemoryGrp::deactivate()
 void
 MTMPIMemoryGrp::sync()
 {
-  // This method for sync eliminates the need for an "all done"
-  // message after a memory operation completes.  However, a
-  // handshake at the beginning of memory transactions are needed
-  // so msg_->sync() complete before all remote memory operations
-  // have at least begun.  Otherwise, I could deactivate before
-  // all messages arrive.
-  MPI_Barrier(comm_);
   if (active_) {
+      MPI_Allreduce(nreq_sent_, nreq_sent_buf_,
+                    n(), MPI_UNSIGNED, MPI_SUM, comm_);
       deactivate();
-      // At this point all memory operations are complete;
-      // start up for the next phase.
+      unsigned int nreq_recd = 0;
+      for (int i=0; i<th_->nthread()-1; i++) {
+          nreq_recd += thread_[i]->nreq_recd();
+          thread_[i]->set_nreq_recd(0);
+        }
+      int n_outstanding = nreq_sent_buf_[me()] - nreq_recd;
+      for (int i=0; i<n_outstanding; i++) {
+          thread_[i]->run_one();
+        }
+      memset(nreq_sent_, 0, sizeof(unsigned int)*n());
+      // Make sure processing of all outstanding requests is finished
+      // before starting the next phase.
+      MPI_Barrier(comm_);
       activate();
+    }
+  else {
+      MPI_Barrier(comm_);
     }
 }
 

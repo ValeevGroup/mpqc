@@ -40,6 +40,8 @@
 #include <util/group/memamsg.h>
 #include <util/group/thread.h>
 
+class MTMPIThread;
+
 /** This MemoryGrp class requires a MT-safe MPI implementation.  The
 default MessageGrp must be a MPIMessageGrp.  MPI must be safe with respect
 to the default ThreadGrp.  Alternately, a MessageGrp and a ThreadGrp can be
@@ -50,7 +52,7 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
 
     Ref<ThreadLock> serial_lock_;
     int serial_;
-    int serial();
+    int serial(int node);
 
     MPI_Comm comm_;
 
@@ -58,7 +60,10 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
 
     int active_;
 
-    Thread **thread_;
+    unsigned int *nreq_sent_;
+    unsigned int *nreq_sent_buf_;
+
+    MTMPIThread **thread_;
     Ref<ThreadLock> print_lock_; // needed for debugging only
     std::ofstream hout; // handler out
     std::ofstream mout; // main thread out

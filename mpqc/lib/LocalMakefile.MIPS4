@@ -10,9 +10,17 @@ RANLIB = @echo "skipping ranlib"
 
 DEFINES += -DSGI -DNO_VIRTUAL_BASES
 
-COPTIONS = -g
+# this works for ointv2 and intv2 C code
+#COPTIONS = -O2 -mips4 -TARG:processor=r8000 -OPT:const_copy_limit=20000:fold_arith_limit=20000:roundoff=2:IEEE_arithmetic=2
+# this works for all the C code
+COPTIONS = -O2 -mips4 -TARG:processor=r8000 -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000
 COPTIONS_NOOPT =
 COPTIONS_DEBUG = -g
+
+# this works for all the C++ code
+CXXOPTIONS = -O2 -mips4 -TARG:processor=r8000 -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000
+CXXOPTIONS_NOOPT =
+CXXOPTIONS_DEBUG = -g
 
 # -acpp gets the ANSI cpp
 ifeq ($(CC),cc)

@@ -41,6 +41,7 @@ mpqc: (
     update<BFGSUpdate>: ()
     convergence<MolEnergyConvergence>: (
       cartesian = yes
+      energy = $..:..:mole
     )
   )
 )

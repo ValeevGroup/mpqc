@@ -81,6 +81,7 @@ mpqc: (
     update<BFGSUpdate>: ()
     convergence<MolEnergyConvergence>: (
       cartesian = yes
+      energy = $..:..:mole
     )
     % give a partial guess hessian in internal coordinates
     % the missing elements will be filled in automatically

@@ -44,6 +44,8 @@ class DIIS: public SelfConsistentExtrapolation {
     int start;
     int ndiis;
     int iter;
+    int ngroup;
+    int ngroupdiis;
     double damping_factor;
 
     double * btemp;
@@ -60,7 +62,7 @@ class DIIS: public SelfConsistentExtrapolation {
 
     void init();
   public:
-    DIIS(int strt=1, int ndi=5, double dmp =0);
+    DIIS(int strt=1, int ndi=5, double dmp =0, int ngr=1, int ngrdiis=1);
     DIIS(StateIn&);
     DIIS(const RefKeyVal&);
     ~DIIS();
@@ -69,6 +71,8 @@ class DIIS: public SelfConsistentExtrapolation {
     
     int extrapolate(const RefSCExtrapData& data,
                     const RefSCExtrapError& error);
+
+    void start_extrapolation();
 
     void reinitialize();
 };

@@ -34,6 +34,7 @@
 #include <math/optimize/diis.h>
 
 #define CLASSNAME DIIS
+#define VERSION 2
 #define PARENTS public SelfConsistentExtrapolation
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -74,12 +75,15 @@ DIIS::init()
   diism_error = new RefSCExtrapError[ndiis];
 }
 
-DIIS::DIIS(int strt, int ndi, double dmp) :
+DIIS::DIIS(int strt, int ndi, double dmp, int ngr, int ngrdiis) :
   btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
   start = strt;
   ndiis = ndi;
   damping_factor = dmp;
+
+  ngroup = ngr;
+  ngroupdiis = ngrdiis;
 
   init();
 }
@@ -93,6 +97,10 @@ DIIS::DIIS(StateIn& s) :
   s.get(start);
   s.get(ndiis);
   s.get(iter);
+  if (s.version(static_class_desc()) >= 2) {
+    s.get(ngroup);
+    s.get(ngroupdiis);
+  }
   s.get(damping_factor);
 
   s.get(btemp);
@@ -122,6 +130,12 @@ DIIS::DIIS(const RefKeyVal& keyval):
 
   start = keyval->intvalue("start");
   if (keyval->error() != KeyVal::OK) start = 1;
+
+  ngroup = keyval->intvalue("ngroup");
+  if (keyval->error() != KeyVal::OK) ngroup = 1;
+
+  ngroupdiis = keyval->intvalue("ngroupdiis");
+  if (keyval->error() != KeyVal::OK) ngroupdiis = 1;
 
   damping_factor = keyval->doublevalue("damping_factor");
   if (keyval->error() != KeyVal::OK) damping_factor = 0;
@@ -180,6 +194,8 @@ DIIS::save_data_state(StateOut& s)
   s.put(start);
   s.put(ndiis);
   s.put(iter);
+  s.put(ngroup);
+  s.put(ngroupdiis);
   s.put(damping_factor);
 
   s.put(btemp, ndiis+1);
@@ -200,6 +216,12 @@ void
 DIIS::reinitialize()
 {
   iter=0;
+}
+
+void
+DIIS::start_extrapolation()
+{
+  if (start > iter) start = iter+1;
 }
 
 int
@@ -310,7 +332,7 @@ DIIS::extrapolate(const RefSCExtrapData& data,
         return -1;
       }
 
-      if (iter >= start) {
+      if (iter >= start && (((iter-start)%ngroup) < ngroupdiis)) {
           int kk=1;
 
           data->zero();

@@ -542,6 +542,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     int newindex;
     int size34 =  size3 * size4;
     int size234 = size2 * size34;
+    double* redund_ints =
+      int_con_ints_array[i][j][k][l].dp[tam1][tam2][tam3][tam4];
     redundant_index = 0;
 #if 0
     printf("Using int_con_ints_array[%d][%d][%d][%d].dp[%d][%d][%d][%d]\n",
@@ -560,9 +562,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
           int_con_ints_array[i][j][k][l]
                  .dp[tam1][tam2][tam3][tam4][redundant_index]);
 #endif
-            int_buffer[newindex]
-              = int_con_ints_array[i][j][k][l]
-                 .dp[tam1][tam2][tam3][tam4][redundant_index];
+            int_buffer[newindex] = redund_ints[redundant_index];
             redundant_index++;
             END_FOR_CART
           END_FOR_CART
@@ -1527,3 +1527,9 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
   printf("after +DCT2 buffer[5] is %12.8f\n",buffer[5]);
 #endif
   }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

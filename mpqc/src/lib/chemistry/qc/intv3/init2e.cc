@@ -20,6 +20,19 @@ fail()
   exit(1);
 }
 
+static int
+ncart_deriv(RefGaussianBasisSet gbs)
+{
+  int ns = gbs->max_nfunction_in_shell();
+  // hack to check for sp shells
+  if (ns==4) {
+      return 9;
+    }
+  else {
+      return INT_NCART(gbs->max_angular_momentum()+1);
+    }
+}
+
 /* Initialize the 2e integral computation routines.
  * storage = the amount of storage available in bytes
  * order = order of derivative, must be zero or one
@@ -199,20 +212,20 @@ Int2eV3::int_initialize_erep(int storage, int order,
   int_init_shiftgc(order,jmax1,jmax2,jmax3,jmax4);
 
   /* Allocate storage for the integral buffer. */
-  int maxsize = INT_NCART(cs1->max_angular_momentum())
-               *INT_NCART(cs2->max_angular_momentum())
-               *INT_NCART(cs3->max_angular_momentum())
-               *INT_NCART(cs4->max_angular_momentum());
+  int maxsize = cs1->max_nfunction_in_shell()
+                *cs2->max_nfunction_in_shell()
+                *cs3->max_nfunction_in_shell()
+                *cs4->max_nfunction_in_shell();
   if (order==0) {
     int_buffer = (double *) malloc(sizeof(double) * maxsize);
     int_derint_buffer = NULL;
     }
   else if (order==1) {
     int nderint;
-    nderint = INT_NCART(cs1->max_angular_momentum()+1)
-             *INT_NCART(cs2->max_angular_momentum()+1)
-             *INT_NCART(cs3->max_angular_momentum()+1)
-             *INT_NCART(cs4->max_angular_momentum()+1);
+    nderint = ncart_deriv(cs1)
+             *ncart_deriv(cs2)
+             *ncart_deriv(cs3)
+             *ncart_deriv(cs4);
  
     /* Allocate the integral buffers. */
     int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
@@ -386,3 +399,9 @@ Int2eV3::compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
       }
     }
   }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

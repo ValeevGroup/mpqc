@@ -325,6 +325,8 @@ MCSCF::compute()
 void
 MCSCF::do_vector(double& eelec, double& nucrep)
 {
+  int i;
+
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
@@ -504,7 +506,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
       gab.accumulate_transform(_gr_vector.t(),_fockab);
       gab.scale(2*sqrt(2.0)*(ci1*ci2+ci3*ci2));
 
-      for (int i=borb+1; i < nbasis; i++) {
+      for (i=borb+1; i < nbasis; i++) {
         for (int j=0; j < _ndocc; j++) {
           mof.accumulate_element(i,j,gab.get_element(i,j));
         }
@@ -544,7 +546,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   RefSCVector ca = _gr_vector.get_column(aorb);
   RefSCVector cb = _gr_vector.get_column(borb);
   
-  for (int i=0; i < nbasis; i++) {
+  for (i=0; i < nbasis; i++) {
     double u = (cos(theta)*ca.get_element(i)+sin(theta)*cb.get_element(i));
     double v = (sin(theta)*ca.get_element(i)-cos(theta)*cb.get_element(i));
     ca.set_element(i,u);

@@ -33,7 +33,7 @@ mole<CLSCF>: (
   )
 )
 
-molecule = $:ozone_c1
+molecule = $:ozone
 
 coor = $:symcoor
 message = $:message1

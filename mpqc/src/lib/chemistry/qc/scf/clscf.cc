@@ -278,6 +278,8 @@ CLSCF::compute()
 void
 CLSCF::do_vector(double& eelec, double& nucrep)
 {
+  int i;
+  
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
@@ -324,7 +326,7 @@ CLSCF::do_vector(double& eelec, double& nucrep)
     // check convergence
     int ij=0;
     double delta=0;
-    for (int i=0; i < _gr_dens_diff->n(); i++)
+    for (i=0; i < _gr_dens_diff->n(); i++)
       for (int j=0; j <= i; j++,ij++)
         delta += _gr_dens_diff.get_element(i,j)*_gr_dens_diff.get_element(i,j);
     delta = sqrt(delta/ij);
@@ -361,7 +363,7 @@ CLSCF::do_vector(double& eelec, double& nucrep)
     mo_error.assign(0.0);
     mo_error.accumulate_transform(_gr_vector.t(),_fock);
 
-    for (int i=0; i < mo_error->n(); i++) {
+    for (i=0; i < mo_error->n(); i++) {
       double occi = occupation(i);
       for (int j=0; j <= i; j++) {
         double occj = occupation(j);

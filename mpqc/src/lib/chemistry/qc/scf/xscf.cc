@@ -340,6 +340,8 @@ XSCF::compute()
 void
 XSCF::do_vector(double& eelec, double& nucrep)
 {
+  int i;
+
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
@@ -423,7 +425,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
 
     RefSCMatrix densb = ovlp.dim()->create_matrix(ovlp.dim());
     RefSCMatrix densa = densb.clone();
-    for (int i=0; i < nbasis; i++) {
+    for (i=0; i < nbasis; i++) {
       for (int j=0; j < i; j++) {
         densb.set_element(i,j,_densb.get_element(i,j));
         densb.set_element(j,i,_densb.get_element(i,j));
@@ -462,7 +464,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
     RefSymmSCMatrix sfr = sfc.copy();
     sfq.accumulate(jbkb);
     sfr.accumulate(jaka);
-    for (int i=0; i < nbasis; i++) {
+    for (i=0; i < nbasis; i++) {
       for (int j=0; j <= i; j++) {
         sfq.accumulate_element(i,j,sbs.get_element(i,j)+fbs.get_element(i,j));
         sfr.accumulate_element(i,j,sas.get_element(i,j)+fas.get_element(i,j));
@@ -477,7 +479,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
 
     fas.accumulate(fbs);
     fas.scale(-alpha/2.0);
-    for (int i=0; i < nbasis; i++) {
+    for (i=0; i < nbasis; i++) {
       for (int j=0; j <= i; j++) {
         sfo.accumulate_element(i,j,fas.get_element(i,j));
       }
@@ -493,7 +495,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
     // grab the active and virtual orbitals from vc
     RefSCMatrix fooc =
       _gr_vector->rowdim()->create_matrix(nvectora->coldim().pointer());
-    for (int i=0; i < fooc->nrow(); i++)
+    for (i=0; i < fooc->nrow(); i++)
       for (int j=0; j < fooc->ncol(); j++)
         if (_ndocc)
           fooc.set_element(i,j,vc.get_element(i,j+_ndocc));
@@ -520,7 +522,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
     _cb = vb.get_column(1);
 
     sab = 0;
-    for (int i=0; i < nbasis; i++) {
+    for (i=0; i < nbasis; i++) {
       for (int j=0; j < nbasis; j++) {
         sab += _ca.get_element(i)*_cb.get_element(j)*ovlp.get_element(i,j);
       }
@@ -534,7 +536,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
 
     _gr_vector.assign(vc);
 
-    for (int i=0; i < nbasis; i++)
+    for (i=0; i < nbasis; i++)
       for (int j=0; j < vb->ncol(); j++)
         _gr_vector.set_element(i,j+_ndocc,vb.get_element(i,j));
                                
@@ -544,7 +546,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
   }
       
   sab=0;
-  for (int i=0; i < nbasis; i++) {
+  for (i=0; i < nbasis; i++) {
     for (int j=0; j < nbasis; j++) {
       sab += _ca.get_element(i)*_cb.get_element(j)*ovlp.get_element(i,j);
     }
@@ -558,7 +560,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
   double ud = 1.0/sqrt(2.0*(1.0+sab));
   double vd = 1.0/sqrt(2.0*(1.0-sab));
   
-  for (int i=0; i < nbasis; i++) {
+  for (i=0; i < nbasis; i++) {
     double u = ud*(_ca.get_element(i)+_cb.get_element(i));
     double v = vd*(_ca.get_element(i)-_cb.get_element(i));
     _ca.set_element(i,u);

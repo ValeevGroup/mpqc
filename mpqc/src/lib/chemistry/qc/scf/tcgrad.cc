@@ -61,6 +61,8 @@ gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens,
 void
 TCSCF::do_gradient(const RefSCVector& gradient)
 {
+  int i,x;
+
   double alpha[4][4], beta[4][4];
 
   memset(alpha,0,sizeof(double)*16);
@@ -126,7 +128,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
                       mobfock.get_element(_ndocc+1,_ndocc+1)+
                       moka.get_element(_ndocc+1,_ndocc+1));
 
-  for (int i=_ndocc+2; i < basis()->nbasis(); i++)
+  for (i=_ndocc+2; i < basis()->nbasis(); i++)
     for (int j=0; j <= i; j++)
       moafock.set_element(i,j,0.0);
   
@@ -170,7 +172,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
   RefSCVector ovlp = gradient.clone();
   ovlp.assign(0.0);
 
-  for (int x=0; x < centers->n; x++) {
+  for (x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
       int istart = centers->func_num[ish];
       int iend = istart + INT_SH_NFUNC((centers),ish);
@@ -184,7 +186,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
         zero_double_vector(&dv);
         
         int index=0;
-        for (int i=istart; i < iend; i++) {
+        for (i=istart; i < iend; i++) {
           for (int j=jstart; j < jend; j++) {
             for (int k=0; k < 3; k++) {
               dv.d[k] += oneebuff[index] * mobfock.get_element(i,j);
@@ -222,7 +224,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
   moafock.accumulate(_gr_opb_dens);
   moafock.accumulate(_gr_dens);
   
-  for (int x=0; x < centers->n; x++) {
+  for (x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
       int istart = centers->func_num[ish];
       int iend = istart + INT_SH_NFUNC((centers),ish);
@@ -240,7 +242,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
         zero_double_vector(&dv);
         
         int index=0;
-        for (int i=istart; i < iend; i++) {
+        for (i=istart; i < iend; i++) {
           for (int j=jstart; j < jend; j++) {
             for (int k=0; k < 3; k++) {
               dv.d[k] += oneebuff[index] * moafock.get_element(i,j);
@@ -293,7 +295,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
   _gr_opa_dens.scale(2.0/occa);
   _gr_opb_dens.scale(2.0/occb);
   
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
 
 #if BOUNDS

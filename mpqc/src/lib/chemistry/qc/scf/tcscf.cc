@@ -314,6 +314,8 @@ TCSCF::compute()
 void
 TCSCF::do_vector(double& eelec, double& nucrep)
 {
+  int i;
+
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
@@ -392,7 +394,7 @@ TCSCF::do_vector(double& eelec, double& nucrep)
     RefSymmSCMatrix efff = mofocka.copy();
     efff.accumulate(mofockb);
     
-    for (int i=0; i < _ndocc; i++) {
+    for (i=0; i < _ndocc; i++) {
       efff.set_element(_ndocc,i,
            mofockb.get_element(_ndocc,i)-mokb.get_element(_ndocc,i));
       efff.set_element(_ndocc+1,i,
@@ -405,7 +407,7 @@ TCSCF::do_vector(double& eelec, double& nucrep)
                      mokb.get_element(_ndocc+1,_ndocc)-
                      moka.get_element(_ndocc+1,_ndocc));
     
-    for (int i=_ndocc+2; i < basis()->nbasis(); i++) {
+    for (i=_ndocc+2; i < basis()->nbasis(); i++) {
       efff.set_element(i,_ndocc,
            mofocka.get_element(i,_ndocc)+mokb.get_element(i,_ndocc));
       efff.set_element(i,_ndocc+1,

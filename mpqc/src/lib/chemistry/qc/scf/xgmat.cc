@@ -63,10 +63,12 @@ dens2(const RefSCMatrix& vec,
 void
 XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
 {
+  int i;
+  
   int inttol = int_bound_log(_energy.desired_accuracy()/100.0);
 
   char *shnfunc = new char[centers->nshell];
-  for (int i=0; i < centers->nshell; i++)
+  for (i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
   dens2(_gr_vector,_densc,_densa,_densb,_densab2,_densab,_ca,_cb,
@@ -88,7 +90,7 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   _ka.assign(0.0);
   _kb.assign(0.0);
   
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
       for (int k=0; k <= i; k++) {
         for (int l=0; l <= ((k==i)?j:k); l++) {
@@ -793,7 +795,7 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   
   double hab = 0;
   double jkab = 0;
-  for (int i=0; i < basis()->nbasis(); i++) {
+  for (i=0; i < basis()->nbasis(); i++) {
     for (int j=0; j < i; j++) {
       hab += _ca.get_element(i)*_cb.get_element(j)*
              _gr_hcore.get_element(i,j);
@@ -813,7 +815,7 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   double e2 = alpha*jkab;
   eop = 2.0*sab*hab+jkab;
   
-  for (int i=0; i < basis()->nbasis(); i++) {
+  for (i=0; i < basis()->nbasis(); i++) {
     for (int j=0; j < i; j++) {
       e1 += (2.0*_densc.get_element(i,j) + alpha*_densab2.get_element(i,j))*
             _gr_hcore.get_element(i,j);

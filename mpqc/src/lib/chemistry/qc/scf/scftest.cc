@@ -48,8 +48,6 @@ const ClassDesc &fl4 = EFCOpt::class_desc_;
 static RefMessageGrp
 init_mp(const char *inputfile)
 {
-  int nproc,me,host;
-  int top,ord,dir;
   RefMessageGrp grp;
 
   // if we are on a paragon then use a ParagonMessageGrp

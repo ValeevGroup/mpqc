@@ -36,14 +36,16 @@ max_den(centers_t *centers, const RefSymmSCMatrix& dens, int s1, int s2)
 void
 CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
 {
+  int i;
+  
   int inttol = int_bound_log(_energy.desired_accuracy()/100.0);
 
   char *shnfunc = new char[centers->nshell];
-  for (int i=0; i < centers->nshell; i++)
+  for (i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
   signed char *pmax = new signed char[ioff(centers->nshell)];
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     int ij=ioff(i);
     for (int j=0; j <= i; j++,ij++) {
       pmax[ij] = max_den(centers,_gr_dens_diff,i,j);
@@ -54,7 +56,7 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   
   PetiteList pl(basis());
   
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     if (!pl.in_p1(i))
       continue;
     

@@ -40,6 +40,7 @@ HSOSSCF::form_density(const RefSCMatrix& vec,
                       const RefSymmSCMatrix& open_density,
                       const RefSymmSCMatrix& open_density_diff)
 {
+  int k;
   int nbasis = basis()->nbasis();
 
   // find out what type of matrices we're dealing with
@@ -58,11 +59,11 @@ HSOSSCF::form_density(const RefSCMatrix& vec,
     for (int i=0; i < nbasis; i++) {
       for (int j=0; j <= i; j++) {
         double pt=0;
-        for (int k=0; k < _ndocc; k++)
+        for (k=0; k < _ndocc; k++)
           pt += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
 
         double pto=0;
-        for (int k=_ndocc; k < _ndocc+_nsocc; k++)
+        for (k=_ndocc; k < _ndocc+_nsocc; k++)
           pto += lvec->get_element(i,k)*lvec->get_element(j,k);
 
         if (lodensd)
@@ -80,14 +81,15 @@ HSOSSCF::form_density(const RefSCMatrix& vec,
 void
 HSOSSCF::form_ao_fock(centers_t *centers, double *intbuf)
 {
+  int i;
   int inttol = int_bound_log(_energy.desired_accuracy()/100.0);
 
   char *shnfunc = new char[centers->nshell];
-  for (int i=0; i < centers->nshell; i++)
+  for (i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
   signed char *pmax = new signed char[ioff(centers->nshell)];
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     int ij=ioff(i);
     for (int j=0; j <= i; j++,ij++) {
       pmax[ij] = max_den(centers,_gr_dens_diff,i,j);
@@ -96,7 +98,7 @@ HSOSSCF::form_ao_fock(centers_t *centers, double *intbuf)
   
   double tnint=0;
   
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
       int ij = ioff(i)+j;
       int ijbnd = int_Qvec[ij];

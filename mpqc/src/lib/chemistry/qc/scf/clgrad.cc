@@ -70,6 +70,8 @@ ew_density(const RefSCMatrix& vec, const RefDiagSCMatrix& evals,
 void
 CLSCF::do_gradient(const RefSCVector& gradient)
 {
+  int x;
+  
   // grab a reference to the scf_vector, presumably it is current
   _gr_vector = _eigenvectors.result_noupdate();
   
@@ -106,7 +108,7 @@ CLSCF::do_gradient(const RefSCVector& gradient)
   RefSCVector ovlp = gradient.clone();
   ovlp.assign(0.0);
 
-  for (int x=0; x < centers->n; x++) {
+  for (x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
       int istart = centers->func_num[ish];
       int iend = istart + INT_SH_NFUNC((centers),ish);
@@ -150,7 +152,7 @@ CLSCF::do_gradient(const RefSCVector& gradient)
   double pmax;
   gr_density(_gr_vector,_gr_dens,_ndocc,pmax);
 
-  for (int x=0; x < centers->n; x++) {
+  for (x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
       int istart = centers->func_num[ish];
       int iend = istart + INT_SH_NFUNC((centers),ish);

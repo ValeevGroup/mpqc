@@ -61,10 +61,12 @@ dens2(const RefSCMatrix& vec,
 void
 MCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
 {
+  int i;
+    
   int inttol = int_bound_log(_energy.desired_accuracy()/100.0);
 
   char *shnfunc = new char[centers->nshell];
-  for (int i=0; i < centers->nshell; i++)
+  for (i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
   dens2(_gr_vector,_densc,_densa,_densb,_densab2,_densab,
@@ -86,7 +88,7 @@ MCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   _ka.assign(0.0);
   _kb.assign(0.0);
   
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
       for (int k=0; k <= i; k++) {
         for (int l=0; l <= ((k==i)?j:k); l++) {
@@ -804,7 +806,7 @@ MCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   fb.accumulate(_gr_hcore);
   fb.accumulate(_fockb);
   
-  for (int i=0; i < basis()->nbasis(); i++) {
+  for (i=0; i < basis()->nbasis(); i++) {
     for (int j=0; j < i; j++) {
       h11 += (_densc.get_element(i,j)+_densa.get_element(i,j))*
              (2*_gr_hcore.get_element(i,j)+_fockc.get_element(i,j)+

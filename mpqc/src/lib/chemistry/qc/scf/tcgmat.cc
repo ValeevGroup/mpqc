@@ -15,6 +15,8 @@ dens2(const RefSCMatrix& vec,
       const RefSymmSCMatrix& dens2,
       int nbasis, int ndocc)
 {
+  int k;
+  
   // find out what type of matrices we're dealing with
   if (LocalSCMatrix::castdown(vec.pointer())) {
     LocalSCMatrix *lvec = LocalSCMatrix::require_castdown(
@@ -29,15 +31,15 @@ dens2(const RefSCMatrix& vec,
     for (int i=0; i < nbasis; i++) {
       for (int j=0; j <= i; j++) {
         double pt=0;
-        for (int k=0; k < ndocc; k++)
+        for (k=0; k < ndocc; k++)
           pt += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
 
         double ptoa=0;
-        for (int k=ndocc; k < ndocc+1; k++)
+        for (k=ndocc; k < ndocc+1; k++)
           ptoa += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
 
         double ptob=0;
-        for (int k=ndocc+1; k < ndocc+2; k++)
+        for (k=ndocc+1; k < ndocc+2; k++)
           ptob += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
 
         ldens->set_element(i,j,pt);
@@ -51,10 +53,12 @@ dens2(const RefSCMatrix& vec,
 void
 TCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
 {
+  int i;
+  
   int inttol = int_bound_log(_energy.desired_accuracy()/100.0);
 
   char *shnfunc = new char[centers->nshell];
-  for (int i=0; i < centers->nshell; i++)
+  for (i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
   dens2(_gr_vector,_gr_dens,_gr_opa_dens,_gr_opb_dens,
@@ -82,7 +86,7 @@ TCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   RefSymmSCMatrix kb = _kb;
   kb.assign(0.0);
   
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
       for (int k=0; k <= i; k++) {
         for (int l=0; l <= ((k==i)?j:k); l++) {
@@ -640,7 +644,7 @@ TCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   double h22 = 0;
   double h12 = 0;
   double h21 = 0;
-  for (int i=0; i < basis()->nbasis(); i++) {
+  for (i=0; i < basis()->nbasis(); i++) {
     for (int j=0; j < i; j++) {
       h11 += dca.get_element(i,j)*
              (_gr_hcore.get_element(i,j)+gca.get_element(i,j));

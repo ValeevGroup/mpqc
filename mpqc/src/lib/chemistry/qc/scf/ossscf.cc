@@ -297,6 +297,8 @@ OSSSCF::compute()
 void
 OSSSCF::do_vector(double& eelec, double& nucrep)
 {
+  int i;
+
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
@@ -364,7 +366,7 @@ OSSSCF::do_vector(double& eelec, double& nucrep)
     // check convergence
     int ij=0;
     double delta=0;
-    for (int i=0; i < _gr_dens_diff->n(); i++)
+    for (i=0; i < _gr_dens_diff->n(); i++)
       for (int j=0; j <= i; j++,ij++)
         delta += _gr_dens_diff.get_element(i,j)*_gr_dens_diff.get_element(i,j);
     delta = sqrt(delta/ij);
@@ -419,7 +421,7 @@ OSSSCF::do_vector(double& eelec, double& nucrep)
 
     mofock.element_op(_accumeffh,moofock);
 
-    for (int i=0; i < mofock->n(); i++) {
+    for (i=0; i < mofock->n(); i++) {
       double occi = occupation(i);
       for (int j=0; j <= i; j++) {
         double occj = occupation(j);
@@ -468,10 +470,10 @@ OSSSCF::do_vector(double& eelec, double& nucrep)
     moobfock.accumulate_transform(_gr_vector.t(),_opb_fock);
 
     int bvec=_ndocc+2-1;
-    for (int i=0; i < _ndocc; i++)
+    for (i=0; i < _ndocc; i++)
       mooafock.set_element(bvec,i,moobfock.get_element(bvec,i));
     
-    for (int i=_ndocc+2; i < basis()->nbasis(); i++) 
+    for (i=_ndocc+2; i < basis()->nbasis(); i++) 
       mooafock.set_element(i,bvec,moobfock.get_element(i,bvec));
 
     mofock.element_op(_accumeffh,mooafock);

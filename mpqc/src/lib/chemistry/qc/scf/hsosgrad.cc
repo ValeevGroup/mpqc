@@ -34,16 +34,18 @@ gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens,
            const RefSymmSCMatrix& opdens,
            int ndocc, int nsocc, double& pmax)
 {
+  int k;
+
   pmax=0.0;
 
   for (int i=0; i < vec->nrow(); i++) {
     for (int j=0; j <= i; j++) {
       double pt=0;
-      for (int k=0; k < ndocc; k++)
+      for (k=0; k < ndocc; k++)
         pt += vec->get_element(i,k)*vec->get_element(j,k);
       
       double po=0;
-      for (int k=ndocc; k < ndocc+nsocc; k++)
+      for (k=ndocc; k < ndocc+nsocc; k++)
         po += vec->get_element(i,k)*vec->get_element(j,k);
       
       dens->set_element(i,j,pt);
@@ -60,6 +62,8 @@ gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens,
 void
 HSOSSCF::do_gradient(const RefSCVector& gradient)
 {
+  int i,x;
+
   double alpha[3][3], beta[3][3];
 
   memset(alpha,0,sizeof(double)*9);
@@ -101,11 +105,11 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
 
   mofock.scale(2.0);
 
-  for (int i=_ndocc; i < _ndocc+_nsocc; i++)
+  for (i=_ndocc; i < _ndocc+_nsocc; i++)
     for (int j=_ndocc; j <= i; j++)
       mofock.set_element(i,j,moofock.get_element(i,j));
 
-  for (int i=_ndocc+_nsocc; i < basis()->nbasis(); i++)
+  for (i=_ndocc+_nsocc; i < basis()->nbasis(); i++)
     for (int j=0; j <= i; j++)
       mofock.set_element(i,j,0.0);
 
@@ -141,7 +145,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
   RefSCVector ovlp = gradient.clone();
   ovlp.assign(0.0);
 
-  for (int x=0; x < centers->n; x++) {
+  for (x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
       int istart = centers->func_num[ish];
       int iend = istart + INT_SH_NFUNC((centers),ish);
@@ -155,7 +159,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
         zero_double_vector(&dv);
         
         int index=0;
-        for (int i=istart; i < iend; i++) {
+        for (i=istart; i < iend; i++) {
           for (int j=jstart; j < jend; j++) {
             for (int k=0; k < 3; k++) {
               dv.d[k] += oneebuff[index] * moofock.get_element(i,j);
@@ -191,7 +195,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
   mofock.scale(0.5);
   mofock.accumulate(_gr_dens);
   
-  for (int x=0; x < centers->n; x++) {
+  for (x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
       int istart = centers->func_num[ish];
       int iend = istart + INT_SH_NFUNC((centers),ish);
@@ -209,7 +213,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
         zero_double_vector(&dv);
         
         int index=0;
-        for (int i=istart; i < iend; i++) {
+        for (i=istart; i < iend; i++) {
           for (int j=jstart; j < jend; j++) {
             for (int k=0; k < 3; k++) {
               dv.d[k] += oneebuff[index] * mofock.get_element(i,j);
@@ -258,7 +262,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
   
   double tnint=0;
 
-  for (int i=0; i < centers->nshell; i++) {
+  for (i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
 
 #if BOUNDS

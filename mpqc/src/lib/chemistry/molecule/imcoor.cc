@@ -86,17 +86,16 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
   s.get(extra_bonds_);
 
   if (s.version(static_class_desc()) >= 2) {
-      printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): new version\n");
-      s.get(max_update_steps_);
-      s.get(max_update_disp_);
-      s.get(given_fixed_values_);
-    }
-  else {
-      printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): old version\n");
-      max_update_steps_ = 100;
-      max_update_disp_ = 0.5;
-      given_fixed_values_ = 0;
-    }
+    //printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): new version\n");
+    s.get(max_update_steps_);
+    s.get(max_update_disp_);
+    s.get(given_fixed_values_);
+  } else {
+    //printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): old version\n");
+    max_update_steps_ = 100;
+    max_update_disp_ = 0.5;
+    given_fixed_values_ = 0;
+  }
 
   dim_.restore_state(s);
   dvc_.restore_state(s);

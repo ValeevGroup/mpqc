@@ -33,6 +33,7 @@ set_scale(double& coulombscale, double& exchangescale,
 void
 SCF::compute_gradient(const RefSCVector& gradient)
 {
+#if 0
   init_gradient();
   gradient.assign(0.0);
 
@@ -153,12 +154,10 @@ SCF::compute_gradient(const RefSCVector& gradient)
   tbints=0;
   
   done_gradient();
+#endif
 }
 
 void
 SCF::compute_hessian(const RefSymmSCMatrix& hessian)
 {
-  init_hessian();
-
-  done_hessian();
 }

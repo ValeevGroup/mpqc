@@ -16,26 +16,40 @@ class CLSCF: public SCF {
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
+    int user_occupations_;
+    int tndocc_;
+    int nirrep_;
+    int *ndocc_;
+
+  public:
+    CLSCF(StateIn&);
+    CLSCF(const RefKeyVal&);
+    ~CLSCF();
+
+    void save_data_state(StateOut&);
+
+    void print(ostream&o=cout);
+
+    double occupation(int irrep, int vectornum);
+
+    int value_implemented();
+    int gradient_implemented();
+    int hessian_implemented();
+
+  protected:
     // these are temporary data, so they should not be checkpointed
+    RefTwoBodyInt tbi_;
+    
     RefSymmSCMatrix cl_fock_;
     RefSymmSCMatrix cl_dens_;
     RefSymmSCMatrix cl_dens_diff_;
     RefSymmSCMatrix cl_gmat_;
     RefSymmSCMatrix cl_hcore_;
 
-    double *gmat_data;
-    double *pmat_data;
+    char *init_pmax(double*);
     
-    int user_occupations_;
-    int tndocc_;
-    
-    void init();
     void set_occupations(const RefDiagSCMatrix& evals);
-    
-  protected:
-    int nirrep_;
-    int *ndocc_;
 
     // scf things
     void init_vector();
@@ -45,8 +59,6 @@ class CLSCF: public SCF {
     double scf_energy();
 
     void ao_fock();
-    void make_contribution(int,int,double,int);
-    void make_contribution(int,int,int,int,double,int);
 
     RefSCExtrapError extrap_error();
     RefSCExtrapData extrap_data();
@@ -64,20 +76,6 @@ class CLSCF: public SCF {
     void init_hessian();
     void done_hessian();
     
-  public:
-    CLSCF(StateIn&);
-    CLSCF(const RefKeyVal&);
-    ~CLSCF();
-
-    void save_data_state(StateOut&);
-
-    void print(ostream&o=cout);
-
-    double occupation(int irrep, int vectornum);
-
-    int value_implemented();
-    int gradient_implemented();
-    int hessian_implemented();
 };
 SavableState_REF_dec(CLSCF);
 

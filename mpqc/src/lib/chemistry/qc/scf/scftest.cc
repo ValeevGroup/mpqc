@@ -13,6 +13,7 @@
 #include <util/group/message.h>
 #include <util/group/picl.h>
 #include <util/group/pregtime.h>
+#include <util/misc/bug.h>
 
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
@@ -51,7 +52,7 @@ const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
 RefRegionTimer tim;
 
 static RefMessageGrp
-init_mp(const char *inputfile)
+init_mp(const RefKeyVal& keyval)
 {
   RefMessageGrp grp;
 
@@ -60,19 +61,26 @@ init_mp(const char *inputfile)
 #ifdef HAVE_NX_H
   grp = new ParagonMessageGrp;
 #else
-  RefKeyVal keyval = new ParsedKeyVal(inputfile);
   grp = keyval->describedclassvalue("message");
-  keyval = 0;
 #endif
 
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
 
+  RefDebugger debugger = keyval->describedclassvalue(":debug");
+  // Let the debugger know the name of the executable and the node
+  if (debugger.nonnull()) {
+    debugger->set_exec("scftest");
+    debugger->set_prefix(grp->me());
+  }
+
+  debugger->debug("curt is a hog");
+  
   // if intv2 is being used, then initialize the picl stuff
   int np, me, host;
-  open0_messagegrp(&np, &me, &host, grp);
+  //open0_messagegrp(&np, &me, &host, grp);
 
-  tim = new ParallelRegionTimer(grp,"scftest",1,1);
+  tim = new ParallelRegionTimer(grp,"scftest",1,0);
   RegionTimer::set_default_regiontimer(tim);
   
   return grp;
@@ -87,7 +95,10 @@ main(int argc, char**argv)
   char *keyword =    (argc > 2)? argv[2] : "mole";
   char *optkeyword = (argc > 3)? argv[3] : "opt";
 
-  init_mp(input);
+  // open keyval input
+  RefKeyVal rpkv(new ParsedKeyVal(input));
+
+  init_mp(rpkv);
 
   tim->enter("input");
   
@@ -100,9 +111,6 @@ main(int argc, char**argv)
     opt.restore_state(si);
     mole = opt->function();
   } else {
-    // open keyval input
-    RefKeyVal rpkv(new ParsedKeyVal(input));
-
     mole = rpkv->describedclassvalue(keyword);
     opt = rpkv->describedclassvalue(optkeyword);
     // opt->set_checkpoint();

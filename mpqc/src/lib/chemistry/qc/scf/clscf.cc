@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <iostream.h>
 #include <math.h>
 
 #include <util/misc/timer.h>
@@ -10,12 +11,63 @@
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/local.h>
+#include <math/scmat/repl.h>
+#include <math/scmat/dist.h>
+
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/wfn/hcore.h>
 #include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/lgbuild.h>
+#include <chemistry/qc/scf/plgbuild.h>
+
+///////////////////////////////////////////////////////////////////////////
+
+class LocalCLContribution {
+  private:
+    double * const gmat;
+    double * const pmat;
+
+  public:
+    LocalCLContribution(double *g, double *p) : gmat(g), pmat(p) {}
+    ~LocalCLContribution() {}
+
+    inline void cont1(int ij, int kl, double val) {
+      gmat[ij] += val*pmat[kl];
+      gmat[kl] += val*pmat[ij];
+    }
+    
+    inline void cont2(int ij, int kl, double val) {
+      val *= -0.25;
+      gmat[ij] += val*pmat[kl];
+      gmat[kl] += val*pmat[ij];
+    }
+    
+    inline void cont3(int ij, int kl, double val) {
+      val *= -0.5;
+      gmat[ij] += val*pmat[kl];
+      gmat[kl] += val*pmat[ij];
+    }
+    
+    inline void cont4(int ij, int kl, double val) {
+      val *= 0.75;
+      gmat[ij] += val*pmat[kl];
+      gmat[kl] += val*pmat[ij];
+    }
+    
+    inline void cont5(int ij, int kl, double val) {
+      val *= 0.5;
+      gmat[ij] += val*pmat[kl];
+      gmat[kl] += val*pmat[ij];
+    }
+};
+    
+#ifdef __GNUC__
+template class GBuild<LocalCLContribution>;
+template class LocalGBuild<LocalCLContribution>;
+template class ParallelLocalGBuild<LocalCLContribution>;
+#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // CLSCF
@@ -31,97 +83,6 @@ CLSCF::_castdown(const ClassDesc*cd)
   void* casts[1];
   casts[0] = SCF::_castdown(cd);
   return do_castdowns(casts,cd);
-}
-
-void
-CLSCF::init()
-{
-}
-
-void
-CLSCF::set_occupations(const RefDiagSCMatrix& ev)
-{
-  if (user_occupations_)
-    return;
-  
-  int i,j;
-  
-  RefDiagSCMatrix evals;
-  
-  if (ev.null())
-    evals = core_hamiltonian().eigvals();
-  else
-    evals = ev;
-
-  // first convert evals to something we can deal with easily
-  LocalDiagSCMatrix *lvals = new LocalDiagSCMatrix(basis()->basisdim(),
-                                                   new LocalSCMatrixKit());
-  lvals->convert(evals);
-
-  RefPetiteList pl = integral()->petite_list(basis());
-  
-  double **vals = new double*[nirrep_];
-  for (i=j=0; i < nirrep_; i++) {
-    int nf=pl->nfunction(i);
-    if (nf) {
-      vals[i] = new double[nf];
-      for (int k=0; k < nf; k++,j++)
-        vals[i][k] = lvals->get_element(j);
-    } else {
-      vals[i] = 0;
-    }
-  }
-
-  delete lvals;
-  
-  // now loop to find the tndocc_ lowest eigenvalues and populate those
-  // MO's
-  int *newocc = new int[nirrep_];
-  memset(newocc,0,sizeof(int)*nirrep_);
-
-  for (i=0; i < tndocc_; i++) {
-    // find lowest eigenvalue
-    int lir,ln;
-    double lowest=999999999;
-
-    for (int ir=0; ir < nirrep_; ir++) {
-      int nf=pl->nfunction(ir);
-      if (!nf)
-        continue;
-      for (j=0; j < nf; j++) {
-        if (vals[ir][j] < lowest) {
-          lowest=vals[ir][j];
-          lir=ir;
-          ln=j;
-        }
-      }
-    }
-    vals[lir][ln]=999999999;
-    newocc[lir]++;
-  }
-
-  // get rid of vals
-  for (i=0; i < nirrep_; i++)
-    if (vals[i])
-      delete[] vals[i];
-  delete[] vals;
-
-  if (!ndocc_) {
-    ndocc_=newocc;
-  } else {
-    // test to see if newocc is different from ndocc_
-    for (i=0; i < nirrep_; i++) {
-      if (ndocc_[i] != newocc[i]) {
-        fprintf(stderr,"  CLSCF::set_occupations:  WARNING!!!!\n");
-        fprintf(stderr,"    occupations for irrep %d have changed\n",i+1);
-        fprintf(stderr,"    ndocc was %d, changed to %d\n",
-                ndocc_[i],newocc[i]);
-      }
-    }
-
-    memcpy(ndocc_,newocc,sizeof(int)*nirrep_);
-    delete[] newocc;
-  }
 }
 
 CLSCF::CLSCF(StateIn& s) :
@@ -240,11 +201,112 @@ CLSCF::print(ostream&o)
 /////////////////////////////////////////////////////////////////////////////
 
 void
+CLSCF::set_occupations(const RefDiagSCMatrix& ev)
+{
+  if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
+    ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp()->sync();
+  } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
+    DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp()->sync();
+  } else {
+    fprintf(stderr,"curt is a hog\n");
+    abort();
+  }
+
+  if (user_occupations_)
+    return;
+  
+  int i,j;
+  
+  RefDiagSCMatrix evals;
+  
+  if (ev.null())
+    evals = core_hamiltonian().eigvals();
+  else
+    evals = ev;
+
+  // first convert evals to something we can deal with easily
+  LocalDiagSCMatrix *lvals = LocalDiagSCMatrix::castdown(evals);
+  if (!lvals) {
+    lvals = new LocalDiagSCMatrix(basis()->basisdim(),
+                                  new LocalSCMatrixKit());
+    lvals->convert(evals);
+  }
+
+  RefPetiteList pl = integral()->petite_list(basis());
+  
+  double **vals = new double*[nirrep_];
+  for (i=j=0; i < nirrep_; i++) {
+    int nf=pl->nfunction(i);
+    if (nf) {
+      vals[i] = new double[nf];
+      for (int k=0; k < nf; k++,j++)
+        vals[i][k] = lvals->get_element(j);
+    } else {
+      vals[i] = 0;
+    }
+  }
+
+  if (!LocalDiagSCMatrix::castdown(evals))
+    delete lvals;
+  
+  // now loop to find the tndocc_ lowest eigenvalues and populate those
+  // MO's
+  int *newocc = new int[nirrep_];
+  memset(newocc,0,sizeof(int)*nirrep_);
+
+  for (i=0; i < tndocc_; i++) {
+    // find lowest eigenvalue
+    int lir,ln;
+    double lowest=999999999;
+
+    for (int ir=0; ir < nirrep_; ir++) {
+      int nf=pl->nfunction(ir);
+      if (!nf)
+        continue;
+      for (j=0; j < nf; j++) {
+        if (vals[ir][j] < lowest) {
+          lowest=vals[ir][j];
+          lir=ir;
+          ln=j;
+        }
+      }
+    }
+    vals[lir][ln]=999999999;
+    newocc[lir]++;
+  }
+
+  // get rid of vals
+  for (i=0; i < nirrep_; i++)
+    if (vals[i])
+      delete[] vals[i];
+  delete[] vals;
+
+  if (!ndocc_) {
+    ndocc_=newocc;
+  } else {
+    // test to see if newocc is different from ndocc_
+    for (i=0; i < nirrep_; i++) {
+      if (ndocc_[i] != newocc[i]) {
+        fprintf(stderr,"  CLSCF::set_occupations:  WARNING!!!!\n");
+        fprintf(stderr,"    occupations for irrep %d have changed\n",i+1);
+        fprintf(stderr,"    ndocc was %d, changed to %d\n",
+                ndocc_[i],newocc[i]);
+      }
+    }
+
+    memcpy(ndocc_,newocc,sizeof(int)*nirrep_);
+    delete[] newocc;
+  }
+}
+
+void
 CLSCF::init_vector()
 {
+  // initialize the two electron integral classes
+  tbi_ = integral()->electron_repulsion();
+
   // calculate the core Hamiltonian
   cl_hcore_ = core_hamiltonian();
-  //cl_hcore_.print("core hamiltonian");
   
   // allocate storage for other temp matrices
   cl_dens_ = cl_hcore_.clone();
@@ -265,12 +327,13 @@ CLSCF::init_vector()
     eigenvectors_ = hcore_guess();
 
   scf_vector_ = eigenvectors_.result_noupdate();
-  //scf_vector_.print("guess vector");
 }
 
 void
 CLSCF::done_vector()
 {
+  tbi_=0;
+  
   // save these if we're doing the gradient or hessian
   if (!gradient_needed() && !hessian_needed())
     cl_fock_ = 0;
@@ -362,122 +425,145 @@ CLSCF::scf_energy()
   return eelec;
 }
 
+char *
+CLSCF::init_pmax(double *pmat_data)
+{
+  double l2inv = 1.0/log(2.0);
+  double tol = pow(2.0,-126.0);
+  
+  GaussianBasisSet& gbs = *basis().pointer();
+  
+  char * pmax = new char[i_offset(gbs.nshell())];
+
+  int ish, jsh, ij;
+  for (ish=ij=0; ish < gbs.nshell(); ish++) {
+    int istart = gbs.shell_to_function(ish);
+    int iend = istart + gbs(ish).nfunction();
+    
+    for (jsh=0; jsh <= ish; jsh++,ij++) {
+      int jstart = gbs.shell_to_function(jsh);
+      int jend = jstart + gbs(jsh).nfunction();
+      
+      double maxp=0, tmp;
+
+      for (int i=istart; i < iend; i++) {
+        int ijoff = i_offset(i);
+        for (int j=jstart; j < ((ish==jsh) ? i+1 : jend); j++,ijoff++)
+          if ((tmp=fabs(pmat_data[ijoff])) > maxp)
+            maxp=tmp;
+      }
+
+      if (maxp <= tol)
+        maxp=tol;
+
+      pmax[ij] = (signed char) (log(maxp)*l2inv);
+    }
+  }
+
+  return pmax;
+}
+
 void
 CLSCF::ao_fock()
 {
   RefPetiteList pl = integral()->petite_list(basis());
   
-  // calculate G
-  //cl_dens_diff_.print("dens diff");
+  // calculate G.  First transform cl_dens_diff_ to the AO basis, then
+  // scale the off-diagonal elements by 2.0
   RefSymmSCMatrix dd = cl_dens_diff_;
   cl_dens_diff_ = pl->to_AO_basis(dd);
   cl_dens_diff_->scale(2.0);
   cl_dens_diff_->scale_diagonal(0.5);
-  //cl_dens_diff_.print("dens diff");
 
-  RefSCMatrixSubblockIter giter =
-    cl_gmat_->local_blocks(SCMatrixSubblockIter::Write);
-  RefSCMatrixSubblockIter piter =
-    cl_dens_diff_->local_blocks(SCMatrixSubblockIter::Read);
   
-  giter->begin();
-  SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
+  // now try to figure out the matrix specialization we're dealing with
+  // if we're using Local matrices, then there's just one subblock
+  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
+    // create block iterators for the G and P matrices
+    RefSCMatrixSubblockIter giter =
+      cl_gmat_->local_blocks(SCMatrixSubblockIter::Write);
+    giter->begin();
+    SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
 
-  piter->begin();
-  SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+    RefSCMatrixSubblockIter piter =
+      cl_dens_diff_->local_blocks(SCMatrixSubblockIter::Read);
+    piter->begin();
+    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
 
-  gmat_data = gblock->data;
-  pmat_data = pblock->data;
+    double *gmat_data = gblock->data;
+    double *pmat_data = pblock->data;
+    char * pmax = init_pmax(pmat_data);
   
-  ao_gmat();
+    LocalCLContribution lclc(gmat_data, pmat_data);
+    LocalGBuild<LocalCLContribution> gb(lclc, tbi_, integral(), basis(), pmax);
+    gb.build_gmat(desired_value_accuracy()/100.0);
 
-  //cl_gmat_.print("ao gmat");
+    delete[] pmax;
+  }
+
+  // see if we can convert G and P to local matrices
+  else if (basis()->nbasis() < 700) {
+    RefSCMatrixKit lkit = new LocalSCMatrixKit();
+    RefSCDimension ldim = new SCDimension(basis()->nbasis());
+    RefSymmSCMatrix gtmp = lkit->symmmatrix(ldim);
+    RefSymmSCMatrix ptmp = lkit->symmmatrix(ldim);
+
+    gtmp->assign(0.0);
+    ptmp->convert(cl_dens_diff_);
+    
+    RefMessageGrp grp;
+    if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
+      grp = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+    } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
+      grp = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+    } else {
+      fprintf(stderr,"don't know the matrix kit\n");
+      abort();
+    }
+    
+    // create block iterators for the G and P matrices
+    RefSCMatrixSubblockIter giter =
+      gtmp->local_blocks(SCMatrixSubblockIter::Write);
+    giter->begin();
+    SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
+
+    RefSCMatrixSubblockIter piter =
+      ptmp->local_blocks(SCMatrixSubblockIter::Read);
+    piter->begin();
+    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+
+    double *gmat_data = gblock->data;
+    double *pmat_data = pblock->data;
+    char * pmax = init_pmax(pmat_data);
+  
+    LocalCLContribution lclc(gmat_data, pmat_data);
+    ParallelLocalGBuild<LocalCLContribution>
+      gb(lclc, tbi_, integral(), basis(), grp, pmax);
+    gb.build_gmat(desired_value_accuracy()/100.0);
+
+    grp->sum(gmat_data, i_offset(basis()->nbasis()));
+    cl_gmat_->convert_accumulate(gtmp);
+    
+    delete[] pmax;
+  }
+
+  // for now quit
+  else {
+    fprintf(stderr,"Cannot yet use anything but Local matrices\n");
+    abort();
+  }
+  
+  // get rid of AO delta P
   cl_dens_diff_ = dd;
+  dd = cl_dens_diff_.clone();
 
-  RefSymmSCMatrix foo = cl_gmat_.copy();
-  foo.scale(1.0/(double)pl->order());
-  //foo.print("foo");
-  
-  pl->symmetrize(foo,dd);
-  //dd.print("SO gmat");
+  // now symmetrize the skeleton G matrix, placing the result in dd
+  RefSymmSCMatrix skel_gmat = cl_gmat_.copy();
+  skel_gmat.scale(1.0/(double)pl->order());
+  pl->symmetrize(skel_gmat,dd);
   
   cl_fock_.assign(cl_hcore_);
   cl_fock_.accumulate(dd);
-
-  //cl_fock_.print("SO fock");
-}
-
-void
-CLSCF::make_contribution(int i, int j, int k, int l, double val, int type)
-{
-  SymmSCMatrix& gmat = *cl_gmat_.pointer();
-  SymmSCMatrix& pmat = *cl_dens_diff_.pointer();
-  
-  switch(type) {
-  case 1:
-    gmat.accumulate_element(i, j, val*pmat.get_element(k,l));
-    gmat.accumulate_element(k, l, val*pmat.get_element(i,j));
-    break;
-    
-  case 2:
-    gmat.accumulate_element(i, j, -0.25*val*pmat.get_element(k,l));
-    gmat.accumulate_element(k, l, -0.25*val*pmat.get_element(i,j));
-    break;
-    
-  case 3:
-    gmat.accumulate_element(i, j, -0.5*val*pmat.get_element(k,l));
-    gmat.accumulate_element(k, l, -0.5*val*pmat.get_element(i,j));
-    break;
-    
-  case 4:
-    gmat.accumulate_element(i, j, 0.75*val*pmat.get_element(k,l));
-    gmat.accumulate_element(k, l, 0.75*val*pmat.get_element(i,j));
-    break;
-    
-  case 5:
-    gmat.accumulate_element(i, j, 0.5*val*pmat.get_element(k,l));
-    gmat.accumulate_element(k, l, 0.5*val*pmat.get_element(i,j));
-    break;
-    
-  default:
-    fprintf(stderr,"  CLSCF::make_contribution: invalid type %d\n",type);
-    abort();
-  }
-}
-
-void
-CLSCF::make_contribution(int ij, int kl, double val, int type)
-{
-  switch(type) {
-  case 1:
-    gmat_data[ij] += val*pmat_data[kl];
-    gmat_data[kl] += val*pmat_data[ij];
-    break;
-    
-  case 2:
-    gmat_data[ij] += -0.25*val*pmat_data[kl];
-    gmat_data[kl] += -0.25*val*pmat_data[ij];
-    break;
-    
-  case 3:
-    gmat_data[ij] += -0.5*val*pmat_data[kl];
-    gmat_data[kl] += -0.5*val*pmat_data[ij];
-    break;
-    
-  case 4:
-    gmat_data[ij] += 0.75*val*pmat_data[kl];
-    gmat_data[kl] += 0.75*val*pmat_data[ij];
-    break;
-    
-  case 5:
-    gmat_data[ij] += 0.5*val*pmat_data[kl];
-    gmat_data[kl] += 0.5*val*pmat_data[ij];
-    break;
-    
-  default:
-    fprintf(stderr,"  CLSCF::make_contribution: invalid type %d\n",type);
-    abort();
-  }
 }
 
 RefSCExtrapError
@@ -612,4 +698,3 @@ void
 CLSCF::done_hessian()
 {
 }
-

@@ -133,7 +133,12 @@ PthreadThreadGrp::wait_threads()
 {
   for (int i=1; i < nthread_; i++) {
     int tn;
-    if (threads_[i]) pthread_join(pthreads_[i], (void**)&tn);
+    if (threads_[i]) {
+      if (pthread_join(pthreads_[i], (void**)&tn)) {
+        cout << "PthreadThreadGrp::wait_threads(): error joining thread"
+             << endl;
+      }
+    }
   }
     
   return 0;

@@ -44,6 +44,8 @@ class PetiteList {
     int in_p4(int ij, int kl, int i, int j, int k, int l) const;
     
     void print(FILE* =stdout);
+
+    RefSCMatrix r(int g);
 };
 
 inline int

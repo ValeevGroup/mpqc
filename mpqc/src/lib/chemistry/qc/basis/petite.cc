@@ -178,6 +178,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
     }
   }
 
+#if 0 // for future reference
   for (int i=0; i < _natom; i++) {
     for (int s=0; s < gbs.nshell_on_center(i); s++) {
       for (int c=0; c < gbs(i,s).ncontraction(); c++) {
@@ -187,32 +188,46 @@ PetiteList::init(const RefGaussianBasisSet &gb)
       }
     }
   }
-
-  for (int g=0; g < _ng; g++) {
-    so = ct.symm_operation(g);
-    
-    printf("gamma(%d)\n",g+1);
-    printf("  p rotation\n");
-    Rotation rp(1,so);
-    rp.print(); 
-    printf("  d rotation\n");
-    Rotation rd(2,so);
-    rd.print(); 
-    printf("  f rotation\n");
-    Rotation rf(3,so);
-    rf.print(); 
-    printf("  g rotation\n");
-    Rotation rg(4,so);
-    rg.print(); 
-    printf("  h rotation\n");
-    Rotation rh(5,so);
-    rh.print(); 
-    printf("  i rotation\n");
-    Rotation ri(6,so);
-    ri.print(); 
-  }
+#endif
 }
 
+RefSCMatrix
+PetiteList::r(int g)
+{
+  SymmetryOperation so =
+    _gbs->molecule()->point_group().char_table().symm_operation(g);
+  GaussianBasisSet& gbs = *_gbs.pointer();
+
+  RefSCMatrix ret = gbs.basisdim()->create_matrix(gbs.basisdim());
+  ret.assign(0.0);
+  
+  for (int i=0; i < _natom; i++) {
+    int j = _atom_map[i][g];
+
+    for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
+      int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
+      
+      for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+        int am=gbs(i,s).am(c);
+
+        if (am==0) {
+          ret.set_element(func_i,func_j,1.0);
+        } else {
+          Rotation rr(am,so);
+          for (int ii=0; ii < rr.dim(); ii++)
+            for (int jj=0; jj < rr.dim(); jj++)
+              ret.set_element(func_i+ii,func_j+jj,rr(ii,jj));
+        }
+
+        func_i += gbs(i,s).nfunction(c);
+        func_j += gbs(i,s).nfunction(c);
+      }
+    }
+  }
+  return ret;
+}
+    
 void
 PetiteList::print(FILE *o)
 {

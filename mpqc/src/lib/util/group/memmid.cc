@@ -120,6 +120,13 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       if (msgid_arg) activate();
       break;
   case MemoryDataRequest::Replace:
+      junk = (me() & 0xff) + (ack_serial_number++ << 8);
+      mid = send(&junk, sizeof(junk), node, from_type);
+      wait(mid);
+      if (debug_) {
+          cout << scprintf("%d: %s sent go-ahead %d:%d to %d\n",
+                           me_, handlerstr, junk&0xff, junk>>8, node);
+        }
       mid = recv(&data_[offset], size, node, to_type);
       wait(mid);
       if (debug_) {
@@ -150,6 +157,14 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
                << ", size = " << size
                << ", fence = " << offsets_[me()+1] << endl;
           abort();
+        }
+      junk = (me() & 0xff) + (ack_serial_number++ << 8);
+      mid = send(&junk, sizeof(junk), node, from_type);
+      wait(mid);
+      if (debug_) {
+          cout << scprintf("%d: %s sent go-ahead %d:%d to %d",
+                           me_, handlerstr, junk&0xff, junk>>8, node)
+               << endl;
         }
       while (remain > 0) {
           int dchunksize = dbufsize;
@@ -389,11 +404,17 @@ MIDMemoryGrp::replace_data(void *data, int node, int offset, int size)
   int mid = send(buf.data(), buf.nbytes(), node, data_request_type_);
   do_wait("replace: send req", mid, q, buf.nbytes(), node);
 
+  int junk;
+  mid = recv(&junk, sizeof(junk), node, data_type_from_handler_);
+  do_wait("replace: recv go-ahead", mid, q, sizeof(junk), node);
+  if (debug_)
+      cout << scprintf("%d: replace: got go-ahead %d:%d\n",
+                       me_,junk&0xff,junk>>8);
+
   mid = send(data, size, node, data_type_to_handler_);
   do_wait("replace: send dat", mid, q, size, node);
 
   if (use_acknowledgments_) {
-      int junk;
       mid = recv(&junk, sizeof(junk), node, data_type_from_handler_);
       do_wait("replace: recv ack", mid, q, sizeof(junk), node);
       if (debug_)
@@ -420,6 +441,12 @@ MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
   int mid = send(buf.data(), buf.nbytes(), node, data_request_type_);
   do_wait("sum: send req", mid, q, buf.nbytes(), node);
 
+  int junk;
+  recv(&junk, sizeof(junk), node, data_type_from_handler_);
+  do_wait("sum: recv go-ahead", mid, q, sizeof(junk), node);
+  if (debug_)
+      cout << scprintf("%d: sum: got go-ahead %d:%d\n",me_,junk&0xff,junk>>8);
+
   int remain = size;
   int dremain = size/sizeof(double);
   int dataoffset = 0;
@@ -435,7 +462,6 @@ MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
     }
 
   if (use_acknowledgments_) {
-      int junk;
       recv(&junk, sizeof(junk), node, data_type_from_handler_);
       do_wait("sum: recv ack", mid, q, sizeof(junk), node);
       if (debug_)

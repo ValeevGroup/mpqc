@@ -15,7 +15,7 @@
 #endif
 
 #include <iostream>
-#include <cmath>
+#include <math.h>
 
 #include <util/misc/formio.h>
 #include <math/symmetry/corrtab.h>

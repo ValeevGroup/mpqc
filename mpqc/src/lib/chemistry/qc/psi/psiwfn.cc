@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include <cmath>
+#include <math.h>
 
 #include <util/keyval/keyval.h>
 #include <util/misc/libmisc.h>

@@ -1,0 +1,102 @@
+
+\chapter{MPQC Class Hierarchies}
+
+The input for some objects can require other objects.  Usually, it doesn't
+matter precisely which object is given, only that it be one of the
+derivatives of a particular class.  Below is summarized all of the
+relationships between the classes.  Classes that are itemized below another
+class derive from that class.  So, for example, if an object of
+\clsnm{Function} is needed, then any concrete class that derives from
+\clsnm{Function} will do.  Thus, \clsnm{MPBT2} and \clsnm{HSOSSCF} will
+work.  However, \clsnm{SCF} will not because it is abstract and
+\clsnm{IntSetCoor} will not because it is not a derivative.
+
+\begin{itemize}
+ \item[\clsnmref{Debugger}]
+ \item[\clsnmref{Convergence}] Concrete
+   \begin{itemize}
+     \item[\clsnmref{MolEnergyConvergence}] Concrete
+   \end{itemize}
+ \item[\clsnmref{Function}]
+   \begin{itemize}
+     \item[\clsnmref{MolecularEnergy}]
+     \begin{itemize}
+       \item[\clsnmref{Wavefunction}]
+       \begin{itemize}
+         \item[\clsnmref{MBPT2}] Concrete
+         \item[\clsnmref{OneBodyWavefunction}]
+         \begin{itemize}
+           \item[\clsnmref{SCF}]
+         \end{itemize}
+           \begin{itemize}
+             \item[\clsnmref{CLSCF}] Concrete
+             \item[\clsnmref{HSOSSCF}] Concrete
+           \end{itemize}
+       \end{itemize}
+     \end{itemize}
+   \end{itemize}
+ \item[\clsnmref{GaussianBasisSet}] Concrete
+ \item[\clsnmref{HessianUpdate}]
+   \begin{itemize}
+     \item[\clsnmref{DFPUpdate}] Concrete
+       \begin{itemize}
+         \item[\clsnmref{BFGSUpdate}] Concrete
+       \end{itemize}
+     \item[\clsnmref{PowellUpdate}] Concrete
+   \end{itemize}
+ \item[\clsnmref{IntCoor}]
+   \begin{itemize}
+     \item[\clsnmref{SimpleCo}]
+       \begin{itemize}
+         \item[\clsnmref{BendSimpleCo}] Concrete
+         \item[\clsnmref{LinIPSimpleCo}] Concrete
+         \item[\clsnmref{LinOPSimpleCo}] Concrete
+         \item[\clsnmref{OutSimpleCo}] Concrete
+         \item[\clsnmref{ScaledTorsSimpleCo}] Concrete
+         \item[\clsnmref{StreSimpleCo}] Concrete
+         \item[\clsnmref{TorsSimpleCo}] Concrete
+       \end{itemize}
+     \item[\clsnmref{SumIntCoor}] Concrete
+   \end{itemize}
+ \item[\clsnmref{IntCoorGen}] Concrete
+ \item[\clsnmref{Integral}]
+   \begin{itemize}
+     \item[\clsnmref{IntegralV3}] Concrete
+   \end{itemize}
+ \item[\clsnmref{MemoryGrp}]
+ \item[\clsnmref{MessageGrp}]
+   \begin{itemize}
+     \item[\clsnmref{ProcMessageGrp}] Concrete
+     \item[\clsnmref{ShmMessageGrp}] Concrete
+   \end{itemize}
+ \item[\clsnmref{MolecularFrequencies}] Concrete
+ \item[\clsnmref{MolecularCoor}]
+   \begin{itemize}
+     \item[\clsnmref{IntMolecularCoor}]
+       \begin{itemize}
+         \item[\clsnmref{RedundMolecularCoor}] Concrete
+         \item[\clsnmref{SymmMolecularCoor}] Concrete
+       \end{itemize}
+   \end{itemize}
+ \item[\clsnmref{Molecule}] Concrete
+ \item[\clsnmref{Optimize}]
+   \begin{itemize}
+     \item[\clsnmref{EFCOpt}] Concrete
+     \item[\clsnmref{LineOpt}]
+     \item[\clsnmref{QNewtonOpt}] Concrete
+   \end{itemize}
+ \item[\clsnmref{PointGroup}] Concrete
+ \item[\clsnmref{SCBlockInfo}] Concrete
+ \item[\clsnmref{SCDimension}] Concrete
+ \item[\clsnmref{SCMatrixKit}]
+   \begin{itemize}
+     \item[\clsnmref{DistSCMatrixKit}] Concrete
+     \item[\clsnmref{LocalSCMatrixKit}] Concrete
+     \item[\clsnmref{ReplSCMatrixKit}] Concrete
+   \end{itemize}
+ \item[\clsnmref{SelfConsistentExtrapolation}]
+   \begin{itemize}
+     \item[\clsnmref{DIIS}] Concrete
+   \end{itemize}
+ \item[\clsnmref{SetIntCoor}]
+\end{itemize}

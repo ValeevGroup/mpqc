@@ -779,6 +779,8 @@ AC_CHECK_HEADER(perf.h,[
 if test X$PARALLEL = Xyes; then
 
   dnl ----- check for the mpi library
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
   dnl Must use try_link since check_header runs cpp which doesn't
   dnl always find mpi.h (if mpicc and no -I is used for example)
   AC_TRY_LINK([#include <mpi.h>],[],
@@ -799,6 +801,7 @@ if test X$PARALLEL = Xyes; then
     AC_CHECK_FUNC(MPI_Win_create,
                  [HAVE_MPI2_ONE_SIDED=yes;AC_DEFINE(HAVE_MPI2_ONE_SIDED)])
   fi
+  AC_LANG_RESTORE
 
   dnl ----- check for the pvm library
   AC_CHECK_HEADER(pvm.h,[
@@ -1146,11 +1149,18 @@ dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])
 case $target in
+  alpha*)
+    if test ! X$GXX = Xyes; then
+      CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      AC_MSG_RESULT("alpha* non-GNU C++")
+    fi
+  ;;
   *-dec-osf*)
     if test ! X$GXX = Xyes; then
       CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
       LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
-      AC_MSG_RESULT("*-dec-osf*")
+      AC_MSG_RESULT("*-dec-osf* non-GNU C++")
     fi
   ;;
   *-solaris*)

@@ -40,7 +40,7 @@ class Compute
 
     // Marks all results as being out of date.  Any subsequent access
     // to results will cause Compute::compute() to be called.
-    void obsolete();
+    virtual void obsolete();
 };
 
 // Usually Result_dec(Type) will be used to create a result that has

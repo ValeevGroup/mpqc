@@ -129,6 +129,16 @@ sub beautify_member {
         }
     }
 
+    # look for underscores in membername
+    @membername = split(/_/,$membername);
+    $item = "";
+    foreach $i (0 .. $#membername) {
+        $item = "$item\@b{$membername[$i]}";
+        if ($i != $#membername) {
+            $item = "$item\_";
+        }
+    }
+
     # parse the arglist
     /\((.*)\)(.*)/;
     $arglist = $1;
@@ -167,7 +177,8 @@ sub beautify_member {
     /[ \t]*(.*)[ \t]*/;
     $qualifiers = $1;
 
-    $item = "\@b{$membername}($arglist)";
+    #$item = "\@b{$membername}($arglist)";
+    $item = "$item($arglist)";
     if ($qualifiers ne '') {
         $item = "$item $qualifiers";
     }

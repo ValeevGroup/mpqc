@@ -29,7 +29,9 @@
 #pragma implementation
 #endif
 
+#include <stdlib.h>
 #include <iostream.h>
+
 #include <util/misc/exenv.h>
 #include <string.h>
 

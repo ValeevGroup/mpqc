@@ -369,19 +369,20 @@ class StateOutFile: public StateOut {
     operator=(const StateOutFile&);
   protected:
     int opened_;
-    FILE* fp_;
+    streambuf *buf_;
+    ostream stream_;
   public:
     //. State information will be written to \srccd{stdout}.
     StateOutFile();
     //. State information will be written to \vrbl{fp}.
-    StateOutFile(FILE*fp);
+    StateOutFile(ostream& s);
     //. State information will be written to \filnm{name}.
-    StateOutFile(const char *name, const char *access = "w");
+    StateOutFile(const char *name);
 
     ~StateOutFile();
 
     //. State information will be written to \filnm{name}.
-    virtual int open(const char *name, const char *access = "w");
+    virtual int open(const char *name);
     //. Miscellaneous file operations.
     virtual void flush();
     virtual void close();
@@ -402,21 +403,21 @@ class StateInFile: public StateIn {
     operator=(const StateInFile&);
   protected:
     int opened_;
-    FILE* fp_;
+    streambuf *buf_;
+    istream stream_;
   public:
     //. State information will be obtained from \srccd{stdin}.
     StateInFile();
     //. State information will be obtained from \vrbl{fp}.
-    StateInFile(FILE*fp);
+    StateInFile(istream& s);
     //. State information will be obtained from \filnm{name}.
-    StateInFile(const char *name, const char *access = "r");
+    StateInFile(const char *name);
 
     ~StateInFile();
 
     //. State information will be obtained from \filnm{name}.
-    virtual int open(const char *name, const char *access = "r");
+    virtual int open(const char *name);
     //. Miscellaneous file operations.
-    virtual void flush();
     virtual void close();
     virtual void rewind();
   };
@@ -434,15 +435,14 @@ class StateOutText: public StateOutFile {
     operator=(const StateOutText&);
   protected:
     void newline();
-    void comment(const char*,...);
     void start_array();
     void end_array();
     int putpointer(void*);
     void putparents(const ClassDesc*);
   public:
     StateOutText();
-    StateOutText(FILE*);
-    StateOutText(const char *, const char * = "w");
+    StateOutText(ostream& s);
+    StateOutText(const char *);
     ~StateOutText();
     int putstring(char*);
     int put_array_char(const char*,int);
@@ -475,7 +475,6 @@ class StateInText: public StateInFile {
     int read(float&);
     int read(double&);
     void newline();
-    void comment();
     void start_array();
     void end_array();
     int  getpointer(void**);
@@ -483,8 +482,8 @@ class StateInText: public StateInFile {
     void abort();
   public:
     StateInText();
-    StateInText(FILE*);
-    StateInText(const char *, const char * = "r");
+    StateInText(istream& s);
+    StateInText(const char *);
     ~StateInText();
     int getstring(char*&);
     int get_array_char(char*,int);
@@ -514,8 +513,8 @@ class StateOutBin: public StateOutFile {
     int put_array_void(const void*,int);
   public:
     StateOutBin();
-    StateOutBin(FILE*);
-    StateOutBin(const char *, const char * = "w");
+    StateOutBin(ostream&);
+    StateOutBin(const char *);
     ~StateOutBin();
   };
 
@@ -530,8 +529,8 @@ class StateInBin: public StateInFile {
     int get_array_void(void*,int);
   public:
     StateInBin();
-    StateInBin(FILE*);
-    StateInBin(const char *, const char * = "r");
+    StateInBin(istream&);
+    StateInBin(const char *);
     ~StateInBin();
   };
 
@@ -550,8 +549,8 @@ class StateOutBinXDR : public StateOutBin, public QCXDR
     int put_array_void(const void*v,int i);
   public:
     StateOutBinXDR();
-    StateOutBinXDR(FILE*);
-    StateOutBinXDR(const char *, const char * = "w");
+    StateOutBinXDR(ostream&);
+    StateOutBinXDR(const char *);
     ~StateOutBinXDR();
     int put_array_char(const char*,int);
     int put_array_int(const int*,int);
@@ -572,8 +571,8 @@ class StateInBinXDR : public StateInBin, public QCXDR
     int get_array_void(void*v,int i);
   public:
     StateInBinXDR();
-    StateInBinXDR(FILE*);
-    StateInBinXDR(const char *, const char * = "r");
+    StateInBinXDR(istream&);
+    StateInBinXDR(const char *);
     ~StateInBinXDR();
     int get_array_char(char*,int);
     int get_array_int(int*,int);

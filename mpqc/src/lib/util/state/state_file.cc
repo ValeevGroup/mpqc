@@ -32,47 +32,62 @@
 #include <util/state/classdImplMap.h>
 
 StateOutFile::StateOutFile() :
-  opened_(0), fp_(stdout)
+  opened_(0), buf_(cout.rdbuf())
 {
+  stream_.rdbuf(buf_);
 }
 
-StateOutFile::StateOutFile(FILE* fp) :
-  opened_(0), fp_(fp)
+StateOutFile::StateOutFile(ostream& s) :
+  opened_(0), buf_(s.rdbuf())
 {
+  stream_.rdbuf(buf_);
 }
 
-StateOutFile::StateOutFile(const char * path, const char * mode) :
+StateOutFile::StateOutFile(const char * path) :
   opened_(1)
 {
-  fp_ = fopen(path,mode);
+  filebuf *fbuf = new filebuf();
+  fbuf->open(path,ios::out);
+  if (!fbuf->is_open()) {
+      cerr << "ERROR: StateOutFile: problems opening " << path << endl;
+      abort();
+    }
+  buf_ = fbuf;
+  stream_.rdbuf(buf_);
 }
 
 StateOutFile::~StateOutFile()
 {
-  if (opened_) close();
+  stream_.rdbuf(0);
+  if (opened_) {
+      delete buf_;
+    }
 }
 
-void StateOutFile::flush() { fflush(fp_); }
+void StateOutFile::flush() { stream_.flush(); }
 void StateOutFile::close()
 {
-  if(opened_) fclose(fp_);
-  opened_=0; fp_=0;
+  if(opened_) delete buf_;
+  opened_=0; buf_=0;
 
   _classidmap->clear(); _nextclassid=0;
   forget_references();
 }
 
-void StateOutFile::rewind() { if(fp_) fseek(fp_,0,0); }
+void StateOutFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
 
-int StateOutFile::open(const char *path, const char * mode)
+int StateOutFile::open(const char *path)
 {
   if (opened_) close();
 
-  if ((fp_ = fopen(path,mode))==0) {
-      cerr << "StateOutFile::open(" << path << "," << mode << ") failed"
-           << endl;
-      return -1;
+  filebuf *fbuf = new filebuf();
+  fbuf->open(path, ios::out);
+  if (!fbuf->is_open()) {
+      cerr << "ERROR: StateOutFile: problems opening " << path << endl;
+      abort();
     }
+  buf_ = fbuf;
+  stream_.rdbuf(buf_);
 
   opened_ = 1;
   return 0;
@@ -81,46 +96,60 @@ int StateOutFile::open(const char *path, const char * mode)
 ////////////////////////////////////
 
 StateInFile::StateInFile() :
-  opened_(0), fp_(stdin)
+  opened_(0), buf_(cin.rdbuf())
 {
+  stream_.rdbuf(buf_);
 }
 
-StateInFile::StateInFile(FILE* fp) :
-  opened_(0), fp_(fp)
+StateInFile::StateInFile(istream& s) :
+  opened_(0), buf_(s.rdbuf())
 {
+  stream_.rdbuf(buf_);
 }
 
-StateInFile::StateInFile(const char * path, const char * mode) :
+StateInFile::StateInFile(const char * path) :
   opened_(1)
 {
-  fp_ = fopen(path,mode);
+  filebuf *fbuf = new filebuf();
+  fbuf->open(path,ios::in);
+  if (!fbuf->is_open()) {
+      cerr << "ERROR: StateInFile: problems opening " << path << endl;
+      abort();
+    }
+  buf_ = fbuf;
+  stream_.rdbuf(buf_);
 }
 
 StateInFile::~StateInFile()
 {
-  if (opened_) close();
+  stream_.rdbuf(0);
+  if (opened_) {
+      delete buf_;
+    }
 }
 
-void StateInFile::flush() { fflush(fp_); }
 void StateInFile::close()
 {
-  if(opened_) fclose(fp_);
-  opened_=0; fp_=0;
+  if(opened_) delete buf_;
+  opened_=0; buf_=0;
 
   _cd.clear();
   forget_references();
 }
-void StateInFile::rewind() { if(fp_) fseek(fp_,0,0); }
+void StateInFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
 
-int StateInFile::open(const char *path, const char * mode)
+int StateInFile::open(const char *path)
 {
   if (opened_) close();
 
-  if ((fp_ = fopen(path,mode))==0) {
-      cerr << "StateInFile::open(" << path << "," << mode << ") failed"
-           << endl;
-      return -1;
+  filebuf *fbuf = new filebuf();
+  fbuf->open(path, ios::in);
+  if (!fbuf->is_open()) {
+      cerr << "ERROR: StateInFile: problems opening " << path << endl;
+      abort();
     }
+  buf_ = fbuf;
+  stream_.rdbuf(buf_);
 
   opened_ = 1;
   return 0;

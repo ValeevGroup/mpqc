@@ -29,13 +29,13 @@ StateOutBinXDR::StateOutBinXDR() :
 {
 }
 
-StateOutBinXDR::StateOutBinXDR(FILE* fp) :
-  StateOutBin(fp)
+StateOutBinXDR::StateOutBinXDR(ostream& s) :
+  StateOutBin(s)
 {
 }
 
-StateOutBinXDR::StateOutBinXDR(const char *path, const char * mode) :
-  StateOutBin(path,mode)
+StateOutBinXDR::StateOutBinXDR(const char *path) :
+  StateOutBin(path)
 {
 }
 
@@ -87,13 +87,13 @@ StateInBinXDR::StateInBinXDR() :
 {
 }
 
-StateInBinXDR::StateInBinXDR(FILE* fp) :
-  StateInBin(fp)
+StateInBinXDR::StateInBinXDR(istream& s) :
+  StateInBin(s)
 {
 }
 
-StateInBinXDR::StateInBinXDR(const char *path, const char * mode) :
-  StateInBin(path,mode)
+StateInBinXDR::StateInBinXDR(const char *path) :
+  StateInBin(path)
 {
 }
 

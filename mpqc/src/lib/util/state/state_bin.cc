@@ -33,13 +33,13 @@ StateOutBin::StateOutBin() :
 {
 }
 
-StateOutBin::StateOutBin(FILE* fp) :
-  StateOutFile(fp)
+StateOutBin::StateOutBin(ostream& s) :
+  StateOutFile(s)
 {
 }
 
-StateOutBin::StateOutBin(const char *path, const char * mode) :
-  StateOutFile(path,mode)
+StateOutBin::StateOutBin(const char *path) :
+  StateOutFile(path)
 {
 }
 
@@ -52,13 +52,13 @@ StateInBin::StateInBin() :
 {
 }
 
-StateInBin::StateInBin(FILE* fp) :
-  StateInFile(fp)
+StateInBin::StateInBin(istream& s) :
+  StateInFile(s)
 {
 }
 
-StateInBin::StateInBin(const char *path, const char * mode) :
-  StateInFile(path,mode)
+StateInBin::StateInBin(const char *path) :
+  StateInFile(path)
 {
 }
 
@@ -70,12 +70,22 @@ StateInBin::~StateInBin()
 
 int StateOutBin::put_array_void(const void*p,int size)
 {
-  return fwrite(p,1,size,fp_);
+  stream_.write((const char *)p, size);
+  if (stream_.fail()) {
+      cerr << "StateOutBin::put_array_void: failed" << endl;
+      abort();
+    }
+  return size;
 }
 
 int StateInBin::get_array_void(void*p,int size)
 {
-  return fread(p,1,size,fp_);
+  stream_.read((char *)p, size);
+  if (stream_.fail()) {
+      cerr << "StateInBin::get_array_void: failed" << endl;
+      abort();
+    }
+  return size;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -42,13 +42,13 @@ StateOutText::StateOutText() :
 {
 }
 
-StateOutText::StateOutText(FILE* fp) :
-  StateOutFile(fp)
+StateOutText::StateOutText(ostream&s) :
+  StateOutFile(s)
 {
 }
 
-StateOutText::StateOutText(const char *path, const char * mode) :
-  StateOutFile(path,mode)
+StateOutText::StateOutText(const char *path) :
+  StateOutFile(path)
 {
 }
 
@@ -62,14 +62,14 @@ StateInText::StateInText() :
 {
 }
 
-StateInText::StateInText(FILE* fp) :
-  StateInFile(fp),
+StateInText::StateInText(istream& s) :
+  StateInFile(s),
   _newlines(0)
 {
 }
 
-StateInText::StateInText(const char *path, const char * mode) :
-  StateInFile(path,mode),
+StateInText::StateInText(const char *path) :
+  StateInFile(path),
   _newlines(0)
 {
 }
@@ -101,7 +101,8 @@ no_array()
 int
 StateInText::read(char*s)
 {
-  if (fscanf(fp_,"%s",s) != 1) {
+  stream_ >> s;
+  if (stream_.fail()) {
       cerr << "StateInText::read(char*): failed" << endl;
       abort();
     }
@@ -111,7 +112,8 @@ StateInText::read(char*s)
 int
 StateInText::read(int&i)
 {
-  if (fscanf(fp_,"%d",&i) != 1) {
+  stream_ >> i;
+  if (stream_.fail()) {
       cerr << "StateInText::read(int&): failed\n" << endl;
       abort();
     }
@@ -121,7 +123,8 @@ StateInText::read(int&i)
 int
 StateInText::read(float&f)
 {
-  if (fscanf(fp_,"%f",&f) != 1) {
+  stream_ >> f;
+  if (stream_.fail()) {
       cerr << "StateInText::read(float&): failed" << endl;
       abort();
     }
@@ -131,7 +134,8 @@ StateInText::read(float&f)
 int
 StateInText::read(double&d)
 {
-  if (fscanf(fp_,"%lf",&d) != 1) {
+  stream_ >> d;
+  if (stream_.fail()) {
       cerr << "StateInText::read(double&): failed" << endl;
       abort();
     }
@@ -155,12 +159,13 @@ int StateOutText::put(const ClassDesc*cd)
   // write out parent info
   if (!_classidmap->contains((ClassDesc*)cd)) {
       putparents(cd);
-      fprintf(fp_," version of class %s is %d\n",cd->name(),cd->version());
-      fflush(fp_);
+      stream_ << " version of class " << cd->name()
+              << " is " << cd->version() << endl;
+      stream_.flush();
       _classidmap->operator[]((ClassDesc*)cd) = _nextclassid++;
     }
-  fprintf(fp_,"object of class %s being written\n", cd->name());
-  fflush(fp_);
+  stream_ << "object of class " << cd->name() << " being written" << endl;
+  stream_.flush();
   return 0;
   }
 void
@@ -173,10 +178,9 @@ StateOutText::putparents(const ClassDesc*cd)
       ClassDesc*tmp = (ClassDesc*) parents[i].classdesc();
       if (!_classidmap->contains(tmp)) {
           putparents(tmp);
-          fprintf(fp_," version of class %s is %d\n",
-                  tmp->name(),
-                  tmp->version());
-          fflush(fp_);
+          stream_ << " version of class " << tmp->name()
+                  << " is " << tmp->version() << endl;
+          stream_.flush();
           _classidmap->operator[](tmp) = _nextclassid++;
         }
     }
@@ -188,7 +192,7 @@ int StateInText::get(const ClassDesc**cd)
 
   // if a list of class descriptors exists then read it in
   
-  fgets(line,line_length,fp_); _newlines++;
+  stream_.getline(line,line_length); _newlines++;
   while (strncmp(line,"object",6)) {
       char name[line_length];
       int version;
@@ -203,7 +207,7 @@ int StateInText::get(const ClassDesc**cd)
           _version.reset_length(position + 10);
         }
       _version[position] = version;
-      fgets(line,line_length,fp_); _newlines++;
+      stream_.getline(line,line_length); _newlines++;
     }
 
   // get the class name for the object
@@ -367,8 +371,8 @@ int StateInText::get(double*&s)
 int StateOutText::putpointer(void*p)
 {
   if (p == 0) {
-      fprintf(fp_,"reference to null\n");
-      fflush(fp_);
+      stream_ << "reference to null" << endl;
+      stream_.flush();
       return 0;
     }
   StateDataPtr dp(p);
@@ -378,13 +382,13 @@ int StateOutText::putpointer(void*p)
           dp.assign_num(next_pointer_number++);
           ps_->add(dp);
         }
-      fprintf(fp_,"writing object %d\n",dp.num());
-      fflush(fp_);
+      stream_ << "writing object " << dp.num() << endl;
+      stream_.flush();
       return 1;
     }
   else {
-      fprintf(fp_,"reference to object %d\n",(*this->ps_)(ind).num());
-      fflush(fp_);
+      stream_ << "reference to object " << (*this->ps_)(ind).num() << endl;
+      stream_.flush();
       return 0;
     }
 }
@@ -393,23 +397,23 @@ int StateInText::getpointer(void**p)
   const int line_length = 512;
   char line[line_length];
 
-  fgets(line,line_length,fp_);
+  stream_.getline(line,line_length);
   _newlines++;
 
-  if (!strcmp("reference to null\n",line)) {
+  if (!strcmp("reference to null",line)) {
       *p = 0;
       return 0;
     }
   else if (!strncmp("writing",line,7)) {
       int refnum;
-      sscanf(line,"writing object %d\n",&refnum);
+      sscanf(line,"writing object %d",&refnum);
       StateDataNum num(refnum);
       *p = 0;
       return refnum;
     }
   else if (!strncmp("reference",line,9)) {
       int refnum;
-      sscanf(line,"reference to object %d\n",&refnum);
+      sscanf(line,"reference to object %d",&refnum);
       StateDataNum num(refnum);
       Pix ind = ps_->seek(num);
       *p = ((*this->ps_)(ind)).ptr();
@@ -426,13 +430,13 @@ int StateInText::getpointer(void**p)
 void
 StateOutText::start_array()
 {
-  if (!_no_array) { putc(' ',fp_); putc('<',fp_); }
+  if (!_no_array) { stream_.put(' '); stream_.put('<'); }
 }
 void
 StateInText::start_array()
 {
   if (!_no_array) {
-      if ((getc(fp_) != ' ') || (getc(fp_) != '<')) {
+      if (stream_.get() != ' ' || stream_.get() != '<') {
           cerr << "StateInText: expected a \" <\"" << endl;
           abort();
         }
@@ -443,7 +447,7 @@ void
 StateOutText::end_array()
 {
   if (!_no_array) {
-      putc(' ',fp_); putc('>',fp_);
+      stream_.put(' '); stream_.put('>');
     }
   else {
       _no_array = 0;
@@ -453,7 +457,7 @@ void
 StateInText::end_array()
 {
   if (!_no_array) {
-      if ((getc(fp_) != ' ') || (getc(fp_) != '>')) {
+      if (stream_.get() != ' ' || stream_.get() != '>') {
           cerr << "StateInText: expected a \"> \"" << endl;
           abort();
         }
@@ -470,8 +474,8 @@ StateOutText::newline()
       _no_newline = 0;
       return;
     }
-  fprintf(fp_,"\n");
-  fflush(fp_);
+  stream_ << endl;
+  stream_.flush();
 }
 void
 StateInText::newline()
@@ -480,39 +484,11 @@ StateInText::newline()
       _no_newline = 0;
       return;
     }
-  if (getc(fp_) != '\n') {
+  if (stream_.get() != '\n') {
       cerr << "StateInText: expected newline" << endl;
       abort();
     }
   _newlines++;
-}
-
-void
-StateOutText::comment(const char* fmt,...)
-{
-  va_list args;
-
-  va_start(args, fmt);
-  fprintf(fp_, "%% ");
-  vfprintf(fp_, fmt, args);
-  fprintf(fp_, "\n");
-  fflush(fp_);
-  va_end(args);
-}
-void
-StateInText::comment()
-{
-  int ch;
-  if (getc(fp_) != '%' || getc(fp_) != ' ') {
-      cerr << "StateInText: couldn't find beginning of comment" << endl;
-      abort();
-    }
-  while((ch = getc(fp_)) != '\n') {
-      if (ch == EOF) {
-          cerr << "StateInText: couldn't find end of comment" << endl;
-          abort();
-        }
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -562,7 +538,7 @@ int StateOutText::put_array_char(const char*d,int size)
 {
   start_array();
   int nwrit=size+1;
-  for (int i=0; i<size; i++) { putc(d[i],fp_); }
+  for (int i=0; i<size; i++) { stream_.put(d[i]); }
   end_array();
   newline();
   return nwrit;
@@ -572,7 +548,7 @@ int StateInText::get_array_char(char*d,int size)
   start_array();
   int ch;
   for (int i=0; i<size; i++) {
-      ch = getc(fp_);
+      ch = stream_.get();
       if (ch == EOF) {
           cerr << "StateInText::get_array_char: EOF while reading array"
                << endl;
@@ -589,8 +565,8 @@ int StateOutText::put_array_int(const int*d,int size)
 {
   start_array();
   int nwrit=0;
-  for (int i=0; i<size; i++) nwrit += fprintf(fp_," %d",d[i]);
-  fflush(fp_);
+  for (int i=0; i<size; i++) { stream_ << ' ' << d[i]; nwrit++; }
+  stream_.flush();
   end_array();
   newline();
   return nwrit;
@@ -612,8 +588,14 @@ int StateOutText::put_array_float(const float*d,int size)
 {
   start_array();
   int nwrit=0;
-  for (int i=0; i<size; i++) nwrit += fprintf(fp_," %20.15e",d[i]);
-  fflush(fp_);
+  for (int i=0; i<size; i++) {
+      stream_.setf(ios::scientific);
+      stream_.width(20);
+      stream_.precision(15);
+      stream_ << ' ' << d[i];
+      nwrit++;
+    }
+  stream_.flush();
   end_array();
   newline();
   return nwrit;
@@ -635,8 +617,14 @@ int StateOutText::put_array_double(const double*d,int size)
 {
   start_array();
   int nwrit=0;
-  for (int i=0; i<size; i++) nwrit += fprintf(fp_," %20.15e",d[i]);
-  fflush(fp_);
+  for (int i=0; i<size; i++) {
+      stream_.setf(ios::scientific);
+      stream_.width(20);
+      stream_.precision(15);
+      stream_ << ' ' << d[i];
+      nwrit++;
+    }
+  stream_.flush();
   end_array();
   newline();
   return nwrit;

@@ -67,19 +67,36 @@ SimpleCo::SimpleCo(int na, const char *re) :
 }
 
 SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
-  IntCoor(0),
+  IntCoor(kv),
   natoms_(na), atoms(0)
 {
   atoms=new int[na];
   memset(atoms,'\0',sizeof(int)*na);
 
-  label_=kv->pcharvalue(0);
-  for (int i=0; i<na; i++) {
-      atoms[i]=kv->intvalue(i+1);
-      if (kv->error() != KeyVal::OK) {
-          fprintf(stderr,"%s::%s(const RefKeyVal&): missing an atom\n",
-                  class_name(),class_name());
-          abort();
+  if (kv->count() == 0) {
+      for (int i=0; i<na; i++) {
+          atoms[i] = kv->intvalue("atoms",i);
+          if (kv->error() != KeyVal::OK) {
+              fprintf(stderr,"%s::%s(const RefKeyVal&): missing an atom\n",
+                      class_name(),class_name());
+              kv->errortrace();
+              abort();
+            }
+        }
+    }
+  else {
+      // This is a shorthand form for the input that doesn't allow
+      // the specification of a value.
+      if (label_) delete[] label_;
+      label_=kv->pcharvalue(0);
+      for (int i=0; i<na; i++) {
+          atoms[i]=kv->intvalue(i+1);
+          if (kv->error() != KeyVal::OK) {
+              fprintf(stderr,"%s::%s(const RefKeyVal&): missing an atom\n",
+                      class_name(),class_name());
+              kv->errortrace();
+              abort();
+            }
         }
     }
 }

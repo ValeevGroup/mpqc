@@ -51,6 +51,7 @@
 
 // Force linkages:
 #include <chemistry/qc/mbpt/linkage.h>
+#include <util/state/linkage.h>
 
 #include "disclaimer.h"
 

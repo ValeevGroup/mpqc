@@ -688,7 +688,9 @@ TriangulatedSurfaceIntegrator::update()
   _s = i->s(_irs);
   _r = i->r(_irs);
   _weight = i->w(_irs);
-  _surface_element = _ts->triangle(_itri)->interpolate(_r,_s,_current);
+  RefTriangle t = _ts->triangle(_itri);
+  RefTriInterpCoef coef = i->coef(t->order(),_irs);
+  _surface_element = t->interpolate(coef, _r,_s,_current);
 
   //printf("%3d: r=%5.3f s=%5.3f w=%8.5f dA=%8.5f ",
   //       _itri, _r, _s, _weight, _surface_element);

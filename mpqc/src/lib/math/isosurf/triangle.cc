@@ -7,20 +7,6 @@
 #include <math/isosurf/triangle.h>
 #include <math/scmat/vector3.h>
 
-static inline int
-ijk_to_index(int i, int j, int k)
-{
-  int n = i + j + k;
-  int ir = n - i;
-  return (ir*(ir+1)>>1) + j;
-}
-
-static inline int
-order_to_nvertex(int order)
-{
-  return ((order+1)*(order+2)>>1);
-}
-
 /////////////////////////////////////////////////////////////////////////
 // Triangle
 
@@ -114,9 +100,9 @@ Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
   _order = 1;
   _vertices = new RefVertex[3];
 
-  _vertices[ijk_to_index(_order, 0, 0)] = vertex(0);
-  _vertices[ijk_to_index(0, _order, 0)] = vertex(1);
-  _vertices[ijk_to_index(0, 0, _order)] = vertex(2);
+  _vertices[TriInterpCoef::ijk_to_index(_order, 0, 0)] = vertex(0);
+  _vertices[TriInterpCoef::ijk_to_index(0, 0, _order)] = vertex(1);
+  _vertices[TriInterpCoef::ijk_to_index(0, 0, _order)] = vertex(2);
 }
 
 Triangle::~Triangle()
@@ -169,60 +155,24 @@ void Triangle::add_edges(SetRefEdge&set)
   for (int i=0; i<3; i++) set.add(_edges[i]);
 }
 
-static inline void
-init_coef_deriv(double L, int order, double *Lcoef, double *Lcoefderiv)
+double
+Triangle::interpolate(double r,double s,const RefVertex&result)
 {
-  int i;
-  Lcoef[0] = 1.0;
-  Lcoefderiv[0] = 0.0;
-  double spacing = 1.0/order;
-  for (i=1; i<=order; i++) {
-      Lcoef[i] = Lcoef[i-1] * (L - (i-1)*spacing)/(i*spacing);
-      Lcoefderiv[i] = Lcoefderiv[i-1] * (L - (i-1)*spacing)/(i*spacing)
-                      + Lcoef[i-1]/(i*spacing);
-    }
+  TriInterpCoefKey key(_order, r, s);
+  RefTriInterpCoef coef = new TriInterpCoef(key);
+  return interpolate(coef, r, s, result);
 }
 
 double
-Triangle::interpolate(double r,double s,const RefVertex&result)
+Triangle::interpolate(const RefTriInterpCoef& coef,
+                      double r, double s,
+                      const RefVertex&result)
 {
   int i, j, k;
 
   double L1 = 1 - r - s;
   double L2 = r;
   double L3 = s;
-
-  double L1coef[max_order+1];
-  double L2coef[max_order+1];
-  double L3coef[max_order+1];
-
-  double L1coefderiv[max_order+1];
-  double L2coefderiv[max_order+1];
-  double L3coefderiv[max_order+1];
-
-  // the r derivatives
-  double L1coef_r[max_order+1];
-  double L2coef_r[max_order+1];
-  double L3coef_r[max_order+1];
-
-  // the s derivatives
-  double L1coef_s[max_order+1];
-  double L2coef_s[max_order+1];
-  double L3coef_s[max_order+1];
-
-  init_coef_deriv(L1, _order, L1coef, L1coefderiv);
-  init_coef_deriv(L2, _order, L2coef, L2coefderiv);
-  init_coef_deriv(L3, _order, L3coef, L3coefderiv);
-
-  // convert into r and s derivatives
-  for (i=0; i<=_order; i++) {
-      L1coef_r[i] = -L1coefderiv[i];
-      L1coef_s[i] = -L1coefderiv[i];
-      L2coef_r[i] =  L2coefderiv[i];
-      L2coef_s[i] =  0.0;
-      L3coef_r[i] =  0.0;
-      L3coef_s[i] =  L3coefderiv[i];
-    }
 
   RefSCVector tmp(_vertices[0]->point()->dim());
   RefSCVector x_s(_vertices[0]->point()->dim());
@@ -233,16 +183,10 @@ Triangle::interpolate(double r,double s,const RefVertex&result)
   for (i=0; i<=_order; i++) {
       for (j=0; j <= _order-i; j++) {
           k = _order - i - j;
-          tmp.accumulate((L1coef[i]*L2coef[j]*L3coef[k])
-                         *_vertices[ijk_to_index(i,j,k)]->point());
-          x_s.accumulate((L1coef_s[i]*L2coef[j]*L3coef[k]
-                          +L1coef[i]*L2coef_s[j]*L3coef[k]
-                          +L1coef[i]*L2coef[j]*L3coef_s[k])
-                         *_vertices[ijk_to_index(i,j,k)]->point());
-          x_r.accumulate((L1coef_r[i]*L2coef[j]*L3coef[k]
-                          +L1coef[i]*L2coef_r[j]*L3coef[k]
-                          +L1coef[i]*L2coef[j]*L3coef_r[k])
-                         *_vertices[ijk_to_index(i,j,k)]->point());
+          int index = TriInterpCoef::ijk_to_index(i,j,k);
+          tmp.accumulate(coef->coef(i,j,k)*_vertices[index]->point());
+          x_s.accumulate(coef->sderiv(i,j,k)*_vertices[index]->point());
+          x_r.accumulate(coef->rderiv(i,j,k)*_vertices[index]->point());
         }
     }
   result->point().assign(tmp);
@@ -252,66 +196,12 @@ Triangle::interpolate(double r,double s,const RefVertex&result)
       for (i=0; i<_order; i++) {
           for (j=0; j <= _order-i; j++) {
               k = _order - i - j;
-              tmp.accumulate((L1coef[i]*L2coef[j]*L3coef[k])
-                             *_vertices[ijk_to_index(i,j,k)]->point());
+              int index = TriInterpCoef::ijk_to_index(i,j,k);
+              tmp.accumulate(coef->coef(i,j,k)*_vertices[index]->point());
             }
         }
       result->normal().assign(tmp);
     }
-
-#undef PRINT_COEFFICIENTS
-#ifdef PRINT_COEFFICIENTS
-  static int print = 0;
-  if (!print) {
-      print = 1;
-      printf(" r = %10.7f s = %10.7f\n", r, s);
-      printf(" L1 = %10.7f L2 = %10.7f L3 = %10.7f\n", L1, L2, L3);
-      printf(" The interpolation coefficients:\n");
-      for (i=0; i<=_order; i++) {
-          printf("  %d   %10.7f %10.7f %10.7f\n",
-                 i, L1coef[i], L2coef[i], L3coef[i]);
-        }
-      printf(" The interpolation coefficients' r derivs:\n");
-      for (i=0; i<=_order; i++) {
-          printf("  %d   %10.7f %10.7f %10.7f\n",
-                 i, L1coef_r[i], L2coef_r[i], L3coef_r[i]);
-        }
-      printf(" The interpolation coefficients' s derivs:\n");
-      for (i=0; i<=_order; i++) {
-          printf("  %d   %10.7f %10.7f %10.7f\n",
-                 i, L1coef_s[i], L2coef_s[i], L3coef_s[i]);
-        }
-
-      printf(" The interpolation coefficient products including derivs:\n");
-      for (i=0; i<=_order; i++) {
-          for (j=0; j<=_order-i; j++) {
-              k = _order - i - j;
-              int index = ijk_to_index(i,j,k);
-              printf("  %2d (%d %d %d)  %10.7f %10.7f %10.7f\n",
-                     index, i, j, k,
-                     L1coef[i]*L2coef[j]*L3coef[k],
-                     (L1coef_r[i]*L2coef[j]*L3coef[k]
-                      +L1coef[i]*L2coef_r[j]*L3coef[k]
-                      +L1coef[i]*L2coef[j]*L3coef_r[k]),
-                     (L1coef_s[i]*L2coef[j]*L3coef[k]
-                      +L1coef[i]*L2coef_s[j]*L3coef[k]
-                      +L1coef[i]*L2coef[j]*L3coef_s[k])
-                     );
-            }
-        }
-
-      printf(" The corner vertices:\n");
-      for (i=0; i<3; i++) {
-          printf(" %d: ", i);
-          SCVector3 v(vertex(i)->point());
-          v.print();
-        }
-
-      printf(" The interpolated vertex: ");
-      SCVector3 interp(result->point());
-      interp.print();
-    }
-#endif // PRINT_COEFFICIENTS
 
   // Find the surface element
   SCVector3 xr3(x_r);
@@ -339,18 +229,6 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
 
   int i, j, k;
 
-  static int print = 0;
-  if (print == 0) {
-      print = 1;
-      printf("order = %d new order = %d\n", _order, order);
-      for (i=0; i<order_to_nvertex(_order); i++) {
-          printf("  _vertices[%d] = 0x%08x\n", i, _vertices[i].pointer());
-        }
-      for (i=0; i<3; i++) {
-          printf("  vertex(%d) = 0x%08x\n", i, vertex(i).pointer());
-        }
-    }
-
   if (edge(0)->order() != order
       ||edge(1)->order() != order
       ||edge(2)->order() != order) {
@@ -361,22 +239,22 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
   _order = order;
   delete[] _vertices;
 
-  _vertices = new RefVertex[order_to_nvertex(_order)];
+  _vertices = new RefVertex[TriInterpCoef::order_to_nvertex(_order)];
 
   // fill in the corner vertices
-  _vertices[ijk_to_index(_order, 0, 0)] = vertex(0);
-  _vertices[ijk_to_index(0, 0, _order)] = vertex(1);
-  _vertices[ijk_to_index(0, _order, 0)] = vertex(2);
+  _vertices[TriInterpCoef::ijk_to_index(_order, 0, 0)] = vertex(0);
+  _vertices[TriInterpCoef::ijk_to_index(0, 0, _order)] = vertex(1);
+  _vertices[TriInterpCoef::ijk_to_index(0, _order, 0)] = vertex(2);
 
   // fill in the interior edge vertices
   for (i = 1; i < _order; i++) {
       j = _order - i;
-      _vertices[ijk_to_index(0, i, j)] = _edges[1]->interior_vertex(
-          _orientation1?i:j);
-      _vertices[ijk_to_index(j, 0, i)] = _edges[0]->interior_vertex(
-          _orientation0?i:j);
-      _vertices[ijk_to_index(i, j, 0)] = _edges[2]->interior_vertex(
-          _orientation2?i:j);
+      _vertices[TriInterpCoef::ijk_to_index(0, i, j)]
+          = _edges[1]->interior_vertex(_orientation1?i:j);
+      _vertices[TriInterpCoef::ijk_to_index(j, 0, i)]
+          = _edges[0]->interior_vertex(_orientation0?i:j);
+      _vertices[TriInterpCoef::ijk_to_index(i, j, 0)]
+          = _edges[2]->interior_vertex(_orientation2?i:j);
     }
 
   if (order != _order) abort();
@@ -401,7 +279,7 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
           k = _order - i - j;
           if (!i || !j || !k) continue; // interior point check
           double K = (1.0*k)/_order;
-          int index = ijk_to_index(i,j,k);
+          int index = TriInterpCoef::ijk_to_index(i,j,k);
           // this get approximate vertices and normals
           trialpoint = I*p0 + J*p1 + K*p2;
           trialnorm = I*norm0 + J*norm1 + K*norm2;
@@ -414,16 +292,6 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
             }
           trialnorm.normalize();
           _vertices[index] = new Vertex(newpoint,trialnorm);
-        }
-    }
-
-  if (print == 1) {
-      print = 2;
-      for (i=0; i<order_to_nvertex(_order); i++) {
-          printf("  _vertices[%d] = 0x%08x\n", i, _vertices[i].pointer());
-        }
-      for (i=0; i<3; i++) {
-          printf("  vertex(%d) = 0x%08x\n", i, vertex(i).pointer());
         }
     }
 }
@@ -500,6 +368,21 @@ TriangleIntegrator::set_s(int i,double s)
   _s[i] = s;
 }
 
+void
+TriangleIntegrator::init_coef()
+{
+  int i, j;
+  
+  coef_ = new RefTriInterpCoef*[Triangle::max_order];
+  for (i=0; i<Triangle::max_order; i++) {
+      coef_[i] = new RefTriInterpCoef[_n];
+      for (j=0; j<_n; j++) {
+          TriInterpCoefKey key(i+1,_r[j],_s[j]);
+          coef_[i][j] = new TriInterpCoef(key);
+        }
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////
 // GaussTriangleIntegrator
 
@@ -521,12 +404,14 @@ GaussTriangleIntegrator::GaussTriangleIntegrator(const RefKeyVal& keyval):
 {
   printf("Created a GaussTriangleIntegrator with n = %d\n", n());
   init_rw(n());
+  init_coef();
 }
 
 GaussTriangleIntegrator::GaussTriangleIntegrator(int order):
   TriangleIntegrator(order)
 {
   init_rw(n());
+  init_coef();
 }
 
 void
@@ -534,6 +419,7 @@ GaussTriangleIntegrator::set_n(int n)
 {
   TriangleIntegrator::set_n(n);
   init_rw(n);
+  init_coef();
 }
 
 void

@@ -6,6 +6,7 @@
 #pragma interface
 #endif
 
+#include <math/isosurf/tricoef.h>
 #include <math/isosurf/edge.h>
 
 class Triangle: public VRefCount {
@@ -44,6 +45,8 @@ class Triangle: public VRefCount {
     // returns the surface area element
     // 0<=r<=1, 0<=s<=1, 0<=r+s<=1
     // RefVertex is the intepolated vertex (both point and normal)
+    double interpolate(const RefTriInterpCoef&,
+                       double r,double s,const RefVertex&v);
     double interpolate(double r,double s,const RefVertex&v);
 
     // returns a corner vertex from the triangle
@@ -77,10 +80,13 @@ class TriangleIntegrator: public DescribedClass {
     double* _r;
     double* _s;
     double* _w;
+    // precomputed interpolation coefficients for triangles of various orders
+    RefTriInterpCoef **coef_; // max_order by _n
   protected:
     void set_r(int i,double r);
     void set_s(int i,double s);
     void set_w(int i,double w);
+    void init_coef();
   public:
     TriangleIntegrator(const RefKeyVal&);
     TriangleIntegrator(int n);
@@ -90,6 +96,7 @@ class TriangleIntegrator: public DescribedClass {
     inline double s(int i) { return _s[i]; }
     inline int n() { return _n; }
     virtual void set_n(int n);
+    RefTriInterpCoef coef(int order, int i) { return coef_[order-1][i]; }
 };
 DescribedClass_REF_dec(TriangleIntegrator);
 

@@ -17,7 +17,8 @@ GENCXXSRC = edgeSet.cc edgeAVLSet.cc \
 GENINC = $(GENCXXSRC:%.cc=%.h)
 CXXSRC = volume.cc shape.cc volume_i.cc \
          surf.cc surfse.cc surfor.cc surfst.cc \
-         vertex.cc edge.cc triangle.cc isosurf.cc
+         vertex.cc edge.cc triangle.cc isosurf.cc \
+         tricoef.cc
 CSRC = implicit.c
 
 CLASSES = Volume Shape UnionShape SphereShape \
@@ -26,7 +27,7 @@ CLASSES = Volume Shape UnionShape SphereShape \
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) $(GENCXXSRC:%.cc=%.o)
 
-INC = volume.h shape.h volume_i.h implicit.h
+INC = volume.h shape.h volume_i.h implicit.h tricoef.h
 
 DEPENDINCLUDE = $(GENINC) $(INC)
 
@@ -57,6 +58,18 @@ include $(LIBOBJ:.o=.d) isotest.d
 endif
 
 ####### Rules for generating source code ######################################
+
+#tricoefMap.cc tricoefMap.h:
+#	$(GENCLASS) -2 TriInterpCoefKey ref RefTriInterpCoef ref Map tricoef
+#	mv tricoefMap.h tmp.tricoefMap.h
+#	grep -v tricoefdefs.h tmp.tricoefMap.h > tricoefMap.h
+#	rm tmp.tricoefMap.h
+#	prepend-header tricoefMap.h "#include <math/isosurf/tricoef.h>"
+#
+#tricoefRAVLMap.cc tricoefRAVLMap.h:
+#	$(GENCLASS) -2 TriInterpCoefKey ref RefTriInterpCoef ref RAVLMap tricoef
+
+#######
 
 veMap.cc veMap.h:
 	$(GENCLASS) -2 RefVertex ref RefEdge ref Map ve

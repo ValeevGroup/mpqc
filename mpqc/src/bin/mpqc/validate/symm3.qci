@@ -8,12 +8,14 @@ test_molecule:          he_d2h_         h2o_c2v_        h2orot_c2v_
                         c2h2_d2h_       ch4_c2v_        hno_cs_
                         nh3_cs_         c2h6_c2h_       c2h4f2_c2h_
                         c2h2cl2f2_ci_   ch2nh_cs_       hcn_c2v_
+                        c2h2_c2h_
 test_molecule_symmetry: auto            auto            auto
                         auto            auto            auto
                         auto            auto            auto
                         auto            auto            auto
                         auto            auto            auto
                         auto            auto            auto
+                        auto
 restart: no
 checkpoint: no
 
@@ -87,6 +89,12 @@ c2h2_d2h_:
       C     0.0000000000     0.0000000000    -0.5838473500
       H     0.0000000000     0.0000000000     1.6481778250
       H     0.0000000000     0.0000000000    -1.6481778250
+
+c2h2_c2h_:
+      C     0.1000000000     0.0000000000     0.5838473500
+      C    -0.1000000000     0.0000000000    -0.5838473500
+      H    -0.1000000000     0.0000000000     1.6481778250
+      H     0.1000000000     0.0000000000    -1.6481778250
 
 ch4_c2v_:
       C     0.0000000000     0.0000000000     0.0000000000

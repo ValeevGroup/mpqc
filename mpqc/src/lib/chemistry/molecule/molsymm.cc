@@ -30,7 +30,7 @@
 #include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
 
-#undef DEBUG
+#define DEBUG
 
 int
 Molecule::has_inversion(SCVector3 &origin, double tol) const
@@ -145,12 +145,29 @@ Molecule::highest_point_group(double tol) const
     c2axis = SCVector3(r(1)) - SCVector3(r(0));
     c2axis.normalize();
     }
+  else if (planar && have_inversion) {
+    // there is a c2 axis that won't be found using the usual algorithm.
+    // find two noncolinear atom-atom vectors (we know that linear==0)
+    SCVector3 BA = SCVector3(r(1))-SCVector3(r(0));
+    BA.normalize();
+    for (i=2; i<natom(); i++) {
+      SCVector3 CA = SCVector3(r(i))-SCVector3(r(0));
+      CA.normalize();
+      SCVector3 BAxCA = BA.cross(CA);
+      if (BAxCA.norm() > tol) {
+        have_c2axis = 1;
+        BAxCA.normalize();
+        c2axis = BAxCA;
+        break;
+        }
+      }
+    }
   else {
     // loop through pairs of atoms to find C2 axis candidates
     for (i=0; i<natom(); i++) {
       SCVector3 A = SCVector3(r(i))-com;
       double AdotA = A.dot(A);
-      for (j=0; j<i; j++) {
+      for (j=0; j<=i; j++) {
         // the atoms must be identical
         if (Z(i) != Z(j) || fabs(mass(i)-mass(j)) > tol) continue;
         SCVector3 B = SCVector3(r(j))-com;

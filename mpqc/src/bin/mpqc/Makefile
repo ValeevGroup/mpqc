@@ -4,6 +4,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+include $(TOPDIR)/lib/Makedirlist
 INCLUDE += -I. -I$(SRCDIR)
 CXXINCLUDE += -I. -I$(SRCDIR)
 
@@ -21,7 +22,15 @@ DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: mpqc
 
-LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+XDEF =
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
+XDEF += -DHAVE_CHEMISTRY_QC_PSI
+endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
+XDEF += -DHAVE_CHEMISTRY_QC_CC
+endif
+
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
 
 ifeq ($(ARCH),I860)
   DEFINES += -DLINPACKD=-lkmath

@@ -95,13 +95,21 @@ ParallelRegionTimer::print(ostream &o)
       abort();
     }
 
+  double *cpu_time = 0;
+  double *wall_time = 0;
+  double *flops = 0;
   double *min_cpu_time = 0;
   double *min_wall_time = 0;
+  double *min_flops = 0;
   double *max_cpu_time = 0;
   double *max_wall_time = 0;
+  double *max_flops = 0;
   double *avg_cpu_time = 0;
   double *avg_wall_time = 0;
+  double *avg_flops = 0;
   if (cpu_time_) {
+      cpu_time = new double[n];
+      get_cpu_times(cpu_time);
       min_cpu_time = new double[n];
       get_cpu_times(min_cpu_time);
       max_cpu_time = new double[n];
@@ -116,6 +124,8 @@ ParallelRegionTimer::print(ostream &o)
         }
     }
   if (wall_time_) {
+      wall_time = new double[n];
+      get_wall_times(wall_time);
       min_wall_time = new double[n];
       get_wall_times(min_wall_time);
       max_wall_time = new double[n];
@@ -127,6 +137,43 @@ ParallelRegionTimer::print(ostream &o)
       msg_->sum(avg_wall_time,n);
       for (i=0; i<n; i++) {
           avg_wall_time[i] /= msg_->n();
+        }
+    }
+  const char *flops_name = 0;
+  if (flops_) {
+      flops= new double[n];
+      get_flops(flops);
+      if (cpu_time_) {
+        for (i=0; i<n; i++) {
+          if (fabs(cpu_time[i]) > 1.0e-10) flops[i] /= cpu_time[i]*1000000.;
+          else flops[i] = 0.0;
+          }
+        flops_name = "MFLOP/S";
+        }
+      else if (wall_time_) {
+        for (i=0; i<n; i++) {
+          if (fabs(wall_time[i]) > 1.0e-10) flops[i] /= wall_time[i]*1000000.;
+          else flops[i] = 0.0;
+          }
+        flops_name = "MFLOP/WS";
+        }
+      else {
+        for (i=0; i<n; i++) {
+          flops[i] /= 1000000.;
+          }
+        flops_name = "mflops";
+        }
+      min_flops= new double[n];
+      memcpy(min_flops, flops, sizeof(double)*n);
+      max_flops= new double[n];
+      memcpy(max_flops, flops, sizeof(double)*n);
+      avg_flops= new double[n];
+      memcpy(avg_flops, flops, sizeof(double)*n);
+      msg_->max(max_flops,n);
+      msg_->min(min_flops,n);
+      msg_->sum(avg_flops,n);
+      for (i=0; i<n; i++) {
+          avg_flops[i] /= msg_->n();
         }
     }
 
@@ -145,10 +192,12 @@ ParallelRegionTimer::print(ostream &o)
               maxtime = max_cpu_time[i];
           if (wall_time_ && max_wall_time[i] > maxtime)
               maxtime = max_wall_time[i];
+          if (flops_ && max_flops[i] > maxtime)
+              maxtime = max_flops[i];
         }
 
       int maxtimewidth = 4;
-      while (maxtime > 1.0) { maxtime/=10.0; maxtimewidth++; }
+      while (maxtime >= 10.0) { maxtime/=10.0; maxtimewidth++; }
 
       o.setf(ios::right);
 
@@ -163,6 +212,11 @@ ParallelRegionTimer::print(ostream &o)
           o << setw(maxtimewidth+1) << " Wall";
           o << setw(maxtimewidth+1) << " ";
         }
+      if (flops_) {
+          o << setw(maxtimewidth+1) << " ";
+          o << " " << setw(maxtimewidth+1) << flops_name;
+          o << setw(maxtimewidth+1) << " ";
+        }
       o << endl;
 
       for (i=0; i<maxwidth; i++) o << " ";
@@ -172,6 +226,11 @@ ParallelRegionTimer::print(ostream &o)
           o << setw(maxtimewidth+1) << " avg";
         }
       if (wall_time_) {
+          o << setw(maxtimewidth+1) << " min";
+          o << setw(maxtimewidth+1) << " max";
+          o << setw(maxtimewidth+1) << " avg";
+        }
+      if (flops_) {
           o << setw(maxtimewidth+1) << " min";
           o << setw(maxtimewidth+1) << " max";
           o << setw(maxtimewidth+1) << " avg";
@@ -195,6 +254,11 @@ ParallelRegionTimer::print(ostream &o)
               o << " " << setw(maxtimewidth) << max_wall_time[i];
               o << " " << setw(maxtimewidth) << avg_wall_time[i];
             }
+          if (flops_) {
+              o << " " << setw(maxtimewidth) << min_flops[i];
+              o << " " << setw(maxtimewidth) << max_flops[i];
+              o << " " << setw(maxtimewidth) << avg_flops[i];
+            }
           o << endl;
         }
 
@@ -202,12 +266,18 @@ ParallelRegionTimer::print(ostream &o)
       delete[] depth;
     }
 
+  delete[] cpu_time;
   delete[] min_cpu_time;
   delete[] max_cpu_time;
   delete[] avg_cpu_time;
+  delete[] wall_time;
   delete[] min_wall_time;
   delete[] max_wall_time;
   delete[] avg_wall_time;
+  delete[] flops;
+  delete[] min_flops;
+  delete[] max_flops;
+  delete[] avg_flops;
 }
 
 /////////////////////////////////////////////////////////////////////////////

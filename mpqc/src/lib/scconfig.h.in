@@ -145,6 +145,9 @@
 /* Define if you have the <mpi.h> header file and library.  */
 #undef HAVE_MPI
 
+/* Define if you have the <perf.h> header file and library.  */
+#undef HAVE_PERF
+
 /* Define if your MPI implementation uses p4 */
 #undef HAVE_P4
 

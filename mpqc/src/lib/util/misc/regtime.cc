@@ -61,6 +61,18 @@
 #define HAVE_CPU_TIME 1
 #endif //HAVE_NX
 
+#ifdef HAVE_PERF
+#  define HAVE_FLOPS 1
+#else
+#  define HAVE_FLOPS 0
+#endif
+
+#if HAVE_FLOPS
+extern "C" {
+#  include <perf.h>
+}
+#endif
+
 // AIX 3.2 has broken include files, likewise SunOS
 #if defined(_AIX32) || defined(__sun)
 extern "C" {
@@ -84,6 +96,10 @@ class TimedRegion {
     double wall_time_;
     double cpu_enter_;
     double wall_enter_;
+#if HAVE_FLOPS
+    double flops_;
+    double flops_enter_;
+#endif
 
     TimedRegion *insert_after(const char *name);
     TimedRegion *insert_before(const char *name);
@@ -94,14 +110,17 @@ class TimedRegion {
     TimedRegion *findinsubregion(const char *);
     void cpu_enter(double);
     void wall_enter(double);
+    void flops_enter(double);
     void cpu_exit(double);
     void wall_exit(double);
+    void flops_exit(double);
     TimedRegion *up() const { return up_; }
 
     int nregion();
     void get_region_names(const char *names[]);
     void get_wall_times(double *);
     void get_cpu_times(double *);
+    void get_flops(double *);
     void get_depth(int *, int depth = 0);
 };
 
@@ -110,7 +129,7 @@ class TimedRegion {
 TimedRegion::TimedRegion(const char *name)
 {
   name_ = strcpy(new char[strlen(name)+1], name);
-  wall_time_ = cpu_time_ = 0.0;
+  flops_ = wall_time_ = cpu_time_ = 0.0;
   up_ = 0;
   subregions_ = 0;
   next_ = prev_ = 0;
@@ -179,6 +198,18 @@ TimedRegion::get_cpu_times(double *t)
   if (subregions_) while (subregions_->prev_) subregions_ = subregions_->prev_;
   for (TimedRegion *i = subregions_; i!=0; i=i->next_) {
       i->get_cpu_times(t + n);
+      n += i->nregion();
+    }
+}
+
+void
+TimedRegion::get_flops(double *t)
+{
+  t[0] = flops_;
+  int n = 1;
+  if (subregions_) while (subregions_->prev_) subregions_ = subregions_->prev_;
+  for (TimedRegion *i = subregions_; i!=0; i=i->next_) {
+      i->get_flops(t + n);
       n += i->nregion();
     }
 }
@@ -252,6 +283,12 @@ TimedRegion::wall_enter(double t)
 }
 
 void
+TimedRegion::flops_enter(double f)
+{
+  flops_enter_ = f;
+}
+
+void
 TimedRegion::cpu_exit(double t)
 {
   cpu_time_ += t - cpu_enter_;
@@ -263,6 +300,13 @@ TimedRegion::wall_exit(double t)
 {
   wall_time_ += t - wall_enter_;
   wall_enter_ = t;
+}
+
+void
+TimedRegion::flops_exit(double f)
+{
+  flops_ += f - flops_enter_;
+  flops_enter_ = f;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -287,17 +331,35 @@ RegionTimer::RegionTimer(const RefKeyVal &keyval)
 
   wall_time_ = keyval->booleanvalue("wall_time",yes);
   cpu_time_ = keyval->booleanvalue("cpu_time",yes);
+  flops_ = keyval->booleanvalue("flops",no);
+
+#if !HAVE_CPU_TIME
+  cpu_time_ = 0;
+#endif
+#if !HAVE_WALL_TIME
+  wall_time_ = 0;
+#endif
+#if !HAVE_FLOPS
+  flops_ = 0;
+#endif
+
+#if HAVE_FLOPS
+  if (perf_reset() || perf_set_config(0, PERF_FLOPS) || perf_start())
+      flops_ = 0;
+#endif
 
   char *topname = keyval->pcharvalue("name", defname);
   top_ = new TimedRegion(topname);
   if (cpu_time_) top_->cpu_enter(get_cpu_time());
   if (wall_time_) top_->wall_enter(get_wall_time());
+  if (flops_) top_->flops_enter(get_flops());
   current_ = top_;
 }
 
 RegionTimer::RegionTimer(const char *topname, int cpu_time, int wall_time):
   cpu_time_(0),
   wall_time_(0),
+  flops_(0),
   default_(0)
 {
 #if HAVE_CPU_TIME
@@ -309,6 +371,7 @@ RegionTimer::RegionTimer(const char *topname, int cpu_time, int wall_time):
   top_ = new TimedRegion(topname);
   if (cpu_time_) top_->cpu_enter(get_cpu_time());
   if (wall_time_) top_->wall_enter(get_wall_time());
+  if (flops_) top_->flops_enter(get_flops());
   current_ = top_;
 }
 
@@ -344,12 +407,26 @@ RegionTimer::get_wall_time()
 #endif
 }
 
+double
+RegionTimer::get_flops()
+{
+#if !HAVE_FLOPS
+  return 0.0;
+#else
+  int config;
+  unsigned long long counter;
+  perf_read(0,&counter);
+  return (double)counter;
+#endif
+}
+
 void
 RegionTimer::enter(const char *name)
 {
   current_ = current_->findinsubregion(name);
   if (cpu_time_) current_->cpu_enter(get_cpu_time());
   if (wall_time_) current_->wall_enter(get_wall_time());
+  if (flops_) current_->flops_enter(get_flops());
 }
 
 void
@@ -365,6 +442,7 @@ RegionTimer::exit(const char *name)
     }
   if (cpu_time_) current_->cpu_exit(get_cpu_time());
   if (wall_time_) current_->wall_exit(get_wall_time());
+  if (flops_) current_->flops_exit(get_flops());
   if (! current_->up()) {
       cerr << "RegionTimer::exit: already at top level" << endl;
       abort();
@@ -377,6 +455,7 @@ RegionTimer::enter_default()
 {
   if (cpu_time_) default_->cpu_enter(get_cpu_time());
   if (wall_time_) default_->wall_enter(get_wall_time());
+  if (flops_) default_->flops_enter(get_flops());
 }
 
 void
@@ -384,6 +463,7 @@ RegionTimer::exit_default()
 {
   if (cpu_time_) default_->cpu_exit(get_cpu_time());
   if (wall_time_) default_->wall_exit(get_wall_time());
+  if (flops_) default_->flops_exit(get_flops());
 }
 
 void
@@ -412,9 +492,10 @@ RegionTimer::change(const char *newname, const char *oldname)
            << endl;
       abort();
     }
-  double cpu, wall;
+  double cpu, wall, flops;
   if (cpu_time_) current_->cpu_exit(cpu = get_cpu_time());
   if (wall_time_) current_->wall_exit(wall = get_wall_time());
+  if (flops_) current_->flops_exit(flops = get_flops());
   if (! current_->up()) {
       cerr << "RegionTimer::change: already at top level" << endl;
       abort();
@@ -423,6 +504,7 @@ RegionTimer::change(const char *newname, const char *oldname)
   current_ = current_->findinsubregion(newname);
   if (cpu_time_) current_->cpu_enter(cpu);
   if (wall_time_) current_->wall_enter(wall);
+  if (flops_) current_->flops_enter(flops);
 }
 
 int
@@ -450,6 +532,12 @@ RegionTimer::get_wall_times(double *wall_time)
 }
 
 void
+RegionTimer::get_flops(double *flops)
+{
+  top_->get_flops(flops);
+}
+
+void
 RegionTimer::get_depth(int *depth)
 {
   top_->get_depth(depth);
@@ -460,6 +548,7 @@ RegionTimer::update_top()
 {
   if (cpu_time_) top_->cpu_exit(get_cpu_time());
   if (wall_time_) top_->wall_exit(get_wall_time());
+  if (flops_) top_->flops_exit(get_flops());
 }
 
 void
@@ -470,6 +559,8 @@ RegionTimer::print(ostream& o)
   int n = nregion();
   double *cpu_time = 0;
   double *wall_time = 0;
+  double *flops = 0;
+  const char *flops_name = 0;
   if (cpu_time_) {
       cpu_time = new double[n];
       get_cpu_times(cpu_time);
@@ -477,6 +568,30 @@ RegionTimer::print(ostream& o)
   if (wall_time_) {
       wall_time = new double[n];
       get_wall_times(wall_time);
+    }
+  if (flops_) {
+      flops = new double[n];
+      get_flops(flops);
+      if (cpu_time_) {
+        for (int i=0; i<n; i++) {
+          if (fabs(cpu_time[i]) > 1.0e-10) flops[i] /= cpu_time[i]*1000000.;
+          else flops[i] = 0.0;
+          }
+        flops_name = "MFLOP/S";
+        }
+      else if (wall_time_) {
+        for (int i=0; i<n; i++) {
+          if (fabs(wall_time[i]) > 1.0e-10) flops[i] /= wall_time[i]*1000000.;
+          else flops[i] = 0.0;
+          }
+        flops_name = "MFLOP/WS";
+        }
+      else {
+        for (int i=0; i<n; i++) {
+          flops[i] /= 1000000.;
+          }
+        flops_name = "mflops";
+        }
     }
   const char **names = new const char*[n];
   get_region_names(names);
@@ -487,23 +602,30 @@ RegionTimer::print(ostream& o)
   int maxwidth = 0;
   double maxcputime = 0.0;
   double maxwalltime = 0.0;
+  double maxflops = 0.0;
   for (i=0; i<n; i++) {
       int width = strlen(names[i]) + 2 * depth[i] + 2;
       if (width > maxwidth) maxwidth = width;
       if (cpu_time_ && cpu_time[i] > maxcputime) maxcputime = cpu_time[i];
       if (wall_time_ && wall_time[i] > maxwalltime) maxwalltime = wall_time[i];
+      if (flops_ && flops[i] > maxflops) maxflops = flops[i];
     }
 
   int maxwallwidth = 4;
-  while (maxwalltime > 1.0) { maxwalltime/=10.0; maxwallwidth++; }
+  while (maxwalltime >= 10.0) { maxwalltime/=10.0; maxwallwidth++; }
 
   int maxcpuwidth = 4;
-  while (maxcputime > 1.0) { maxcputime/=10.0; maxcpuwidth++; }
+  while (maxcputime >= 10.0) { maxcputime/=10.0; maxcpuwidth++; }
+
+  int maxflopswidth = 4;
+  while (maxflops >= 10.0) { maxflops/=10.0; maxflopswidth++; }
+  if (maxflopswidth < strlen(flops_name)) maxflopswidth = strlen(flops_name);
 
   o.setf(ios::right);
   for (i=0; i<maxwidth; i++) o << " ";
-  if (cpu_time_) o << setw(maxcpuwidth+1) << " CPU";
-  if (wall_time_) o << setw(maxwallwidth+1) << " Wall";
+  if (cpu_time_) o << " " << setw(maxcpuwidth) << "CPU";
+  if (wall_time_) o << " " << setw(maxwallwidth) << "Wall";
+  if (flops_) o << " " << setw(maxflopswidth) << flops_name;
   o << endl;
 
   o.setf(ios::fixed);
@@ -519,11 +641,15 @@ RegionTimer::print(ostream& o)
       if (wall_time_) {      
           o << " " << setw(maxwallwidth) << wall_time[i];
         }
+      if (flops_) {      
+          o << " " << setw(maxflopswidth) << flops[i];
+        }
       o << endl;
     }
 
   delete[] cpu_time;
   delete[] wall_time;
+  delete[] flops;
   delete[] names;
   delete[] depth;
 }

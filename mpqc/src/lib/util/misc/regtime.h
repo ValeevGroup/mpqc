@@ -47,6 +47,7 @@ class RegionTimer: public DescribedClass {
   protected:
     int wall_time_;
     int cpu_time_;
+    int flops_;
 
     TimedRegion *top_;
     TimedRegion *current_;
@@ -72,10 +73,12 @@ class RegionTimer: public DescribedClass {
     void get_region_names(const char *names[]);
     void get_wall_times(double *);
     void get_cpu_times(double *);
+    void get_flops(double *);
     void get_depth(int *);
 
     double get_wall_time();
     double get_cpu_time();
+    double get_flops();
 
     static RegionTimer *default_regiontimer();
     static void set_default_regiontimer(const RefRegionTimer &);

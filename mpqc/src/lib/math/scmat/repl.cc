@@ -77,7 +77,7 @@ ReplSCMatrixListSubblockIter::ReplSCMatrixListSubblockIter(
     double *data,
     int ndata
     ):
-  SCMatrixListSubblockIter(access_, list),
+  SCMatrixListSubblockIter(access, list),
   grp_(grp),
   data_(data),
   ndata_(ndata)

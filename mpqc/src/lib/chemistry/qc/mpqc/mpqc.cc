@@ -25,7 +25,7 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
-#include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/intv2/integralv2.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -164,7 +164,7 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
   _exchange_energy(this),
   _eigenvectors(this)
 {
-  centers_t *tcenters = basis()->convert_to_centers_t();
+  centers_t *tcenters = int_centers_from_gbs(basis());
 
   if (!tcenters) {
     exit(3);
@@ -231,7 +231,7 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
   if (scf_info.proj_vector) {
     if (me==0) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("pbasis");
-      tcenters = gbs->convert_to_centers_t();
+      tcenters = int_centers_from_gbs(gbs);
 
       assign_centers(&oldcenters,tcenters);
       free_centers(tcenters);
@@ -291,7 +291,7 @@ MPSCF::MPSCF(StateIn&s):
   init_scf_struct(&scf_info);
   get_scf_struct(s,scf_info);
 
-  centers_t *tcenters = basis()->convert_to_centers_t();
+  centers_t *tcenters = int_centers_from_gbs(basis());
   if (!tcenters)
     exit(3);
 

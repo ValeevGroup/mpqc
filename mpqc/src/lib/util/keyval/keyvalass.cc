@@ -78,8 +78,13 @@ AssignedKeyVal::assign(const char*key,const char* val)
   assign(key,new KeyValValuepchar(val));
 }
 void
-AssignedKeyVal::assign(const char*key,RefDescribedClass&val)
+AssignedKeyVal::assign(const char*key,const RefDescribedClass&val)
 {
   assign(key,new KeyValValueRefDescribedClass(val));
 }
 
+void
+AssignedKeyVal::clear()
+{
+  _map->clear();
+}

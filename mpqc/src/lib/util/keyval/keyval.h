@@ -327,7 +327,9 @@ class AssignedKeyVal: public KeyVal {
     void assign(const char*, char);
     void assign(const char*, int);
     void assign(const char*, const char*);
-    void assign(const char*, RefDescribedClass&);
+    void assign(const char*, const RefDescribedClass&);
+
+    void clear();
 };
 
 REF_dec(AssignedKeyVal);

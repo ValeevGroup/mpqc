@@ -41,6 +41,9 @@
 
 class Integral;
 
+/** This is an abstract base type for classes that
+    compute integrals involving two electrons.
+ */
 class TwoBodyInt : public VRefCount {
   protected:
     // this is who created me
@@ -63,39 +66,63 @@ class TwoBodyInt : public VRefCount {
   public:
     virtual ~TwoBodyInt();
   
+    /// Return the number of basis functions on center one.
     int nbasis() const;
+    
+    /// Return the number of basis functions on the given center.
+    //@{
     int nbasis1() const;
     int nbasis2() const;
     int nbasis3() const;
     int nbasis4() const;
+    //@}
 
+    /// Return the number of shells on center one.
     int nshell() const;
+    
+    /// Return the number of shells on the given center.
+    //@{
     int nshell1() const;
     int nshell2() const;
     int nshell3() const;
     int nshell4() const;
+    //@}
 
+    /// Return the basis set on center one.
     RefGaussianBasisSet basis();
+
+    /// Return the basis set on the given center.
+    //@{
     RefGaussianBasisSet basis1();
     RefGaussianBasisSet basis2();
     RefGaussianBasisSet basis3();
     RefGaussianBasisSet basis4();
+    //@}
 
+    /** The computed shell integrals will be put in the buffer returned
+        by this member.
+    */
     const double * buffer() const;
     
+    /** Given for shell indices, this will cause the integral buffer
+        to be filled in. */
     virtual void compute_shell(int,int,int,int) = 0;
 
-    // an index of -1 for any shell indicates any shell
+    /** Return log base 2 of the maximum magnitude of any integral in a
+        shell block.  An index of -1 for any argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 
-    // if redundant is true, then keep redundant integrals in buffer_.  The
-    // default is true.
+    /** If redundant is true, then keep redundant integrals in the buffer.
+        The default is true. */
+    //@{
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }
+    //@}
 
-    // this storage is used to cache computed integrals
+    /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(int storage);
 
+    /// Return the integral factory that was used to create this object.
     Integral *integral() const { return integral_; }
 };
 
@@ -196,6 +223,9 @@ class TwoBodyIntIter {
 
 // //////////////////////////////////////////////////////////////////////////
 
+/** This is an abstract base type for classes that
+    compute integrals involving two electrons.
+ */
 class TwoBodyDerivInt : public VRefCount {
   protected:
     // this is who created me
@@ -216,29 +246,50 @@ class TwoBodyDerivInt : public VRefCount {
   public:
     virtual ~TwoBodyDerivInt();
   
+    /// Return the number of basis functions on center one.
     int nbasis() const;
+
+    /// Return the number of basis functions on the given center.
+    //@{
     int nbasis1() const;
     int nbasis2() const;
     int nbasis3() const;
     int nbasis4() const;
+    //@}
 
+    /// Return the number of shells on center one.
     int nshell() const;
+
+    /// Return the number of shells on the given center.
+    //@{
     int nshell1() const;
     int nshell2() const;
     int nshell3() const;
     int nshell4() const;
+    //@}
 
+    /// Return the basis set on center one.
     RefGaussianBasisSet basis();
+
+    /// Return the basis set on the given center.
+    //@{
     RefGaussianBasisSet basis1();
     RefGaussianBasisSet basis2();
     RefGaussianBasisSet basis3();
     RefGaussianBasisSet basis4();
+    //@}
 
+    /** The computed shell integrals will be put in the buffer returned
+        by this member.
+    */
     const double * buffer() const;
     
+    /** Given for shell indices, this will cause the integral buffer
+        to be filled in. */
     virtual void compute_shell(int,int,int,int,DerivCenters&) = 0;
 
-    // an index of -1 for any shell indicates any shell
+    /** Return log base 2 of the maximum magnitude of any integral in a
+        shell block.  An index of -1 for any argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 };
 

@@ -38,13 +38,13 @@ Makefile for GNU make similar to the following:
 
 <pre>
 SCCONFIG = /usr/local/mpqc/current/bin/sc-config
-CXX := $(shell $(SCCONFIG) --cxx)
-CXXFLAGS := $(shell $(SCCONFIG) --cxxflags)
-CPPFLAGS := $(shell $(SCCONFIG) --cppflags)
-LIBS := $(shell $(SCCONFIG) --libs)
+CXX := \$(shell \$(SCCONFIG) --cxx)
+CXXFLAGS := \$(shell \$(SCCONFIG) --cxxflags)
+CPPFLAGS := \$(shell \$(SCCONFIG) --cppflags)
+LIBS := \$(shell \$(SCCONFIG) --libs)
 
 myprog: myprog.o
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+	\$(CXX) \$(CXXFLAGS) -o \$@ \$^ \$(LIBS)
 </pre>
 
 \subsection scinit Initializing SC

@@ -784,9 +784,10 @@ BeckeIntegrationWeight::compute_grad_nu(int grad_center, int bcenter,
 
   if (mag_r_g < 10.0 * DBL_EPSILON) r_g_coef = 0.0;
   else r_g_coef = -coef*oorgb/mag_r_g;
-  for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] = r_g_coef * r_g[ixyz];
+  int ixyz;
+  for (ixyz=0; ixyz<3; ixyz++) grad[ixyz] = r_g_coef * r_g[ixyz];
   double r_gb_coef = coef*(mag_r_b - mag_r_g)*oorgb*oorgb*oorgb;
-  for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] += r_gb_coef * r_gb[ixyz];
+  for (ixyz=0; ixyz<3; ixyz++) grad[ixyz] += r_gb_coef * r_gb[ixyz];
 }
 
 // compute t(nu_ij)

@@ -47,7 +47,7 @@
 BiggestContribs biggest_ints_1(4,40);
 #endif
 
-#define WRITE_DOUBLES 1
+#define WRITE_DOUBLES 0
 
 static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
 static void zero_gradients(double **f, int n1, int n2);
@@ -638,7 +638,7 @@ MBPT2::compute_cs_grad()
     ixjs_tmp = new double[nbasis];
 
     // debug print
-    if (debug_ && me == 0) {
+    if (me == 0) {
       cout << indent << "Begin 3. qt" << endl;
       }
     // end of debug print
@@ -694,7 +694,7 @@ MBPT2::compute_cs_grad()
     tim_exit("3. q.t.");
 
     // debug print
-    if (debug_ && me == 0) {
+    if (me == 0) {
       cout << indent << "End of 3. qt" << endl;
       }
     // end of debug print
@@ -712,7 +712,7 @@ MBPT2::compute_cs_grad()
     // in ikja: i,j act; k act or frz; a act.
 
     // debug print
-    if (debug_ && me == 0) {
+    if (me == 0) {
       cout << indent << "Begin 4. qt" << endl;
       }
     // end of debug print
@@ -790,7 +790,7 @@ MBPT2::compute_cs_grad()
     tim_exit("4. q.t.");
 
     // debug print
-    if (debug_ && me == 0) {
+    if (me == 0) {
       cout << indent << "End of 4. qt" << endl;
       }
     // end of debug print

@@ -201,7 +201,7 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
 
   cphf_epsilon_ = keyval->doublevalue("cphf_epsilon",KeyValValuedouble(1.e-8));
 
-  max_norb_ = keyval->doublevalue("max_norb",KeyValValueint(-1));
+  max_norb_ = keyval->intvalue("max_norb",KeyValValueint(-1));
 
   hf_energy_ = 0.0;
 

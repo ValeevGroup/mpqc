@@ -378,12 +378,10 @@ main(int argc, char *argv[])
     grp->bcast(statsize);
   }
 
-  RefMolecularFrequencies molfreq;
-  if (restart && statresult==0 && statsize) {
+  RefMolecularFrequencies molfreq = keyval->describedclassvalue("freq");
+  if (restart && statresult==0 && statsize && molfreq.nonnull()) {
     BcastStateInBin si(grp,freqfile);
-    molfreq.restore_state(si);
-  } else {
-    molfreq = keyval->describedclassvalue("freq");
+    molfreq->restore_displacements(si);
   }
 
   if (molfreq.nonnull() && mole.nonnull())
@@ -552,7 +550,7 @@ main(int argc, char *argv[])
     for (i=molfreq->ndisplacements_done(); i<molfreq->ndisplace(); i++) {
       // This produces side-effects in mol and may even change
       // its symmetry.
-      cout << node0
+      cout << node0 << endl << indent
            << "Beginning displacement " << i << ":" << endl;
       molfreq->displace(i);
 
@@ -561,7 +559,7 @@ main(int argc, char *argv[])
       molfreq->set_gradient(i, gradv);
 
       StateOutBin so(freqfile);
-      molfreq.save_state(so);
+      molfreq->checkpoint_displacements(so);
     }
     molfreq->original_geometry();
     molfreq->compute_frequencies_from_gradients();

@@ -53,6 +53,9 @@ class MPQCIn {
     MPQCInDatum<std::vector<int> *> socc_;
     MPQCInDatum<std::vector<int> *> frozen_docc_;
     MPQCInDatum<std::vector<int> *> frozen_uocc_;
+    MPQCInDatum<const char *> method_ebc_;
+    MPQCInDatum<const char *> method_gbc_;
+    MPQCInDatum<const char *> method_absmethod_;
 
     int nirrep_;
 
@@ -112,6 +115,9 @@ class MPQCIn {
     void set_frozen_docc(std::vector<int> *);
     void set_frozen_uocc(std::vector<int> *);
     std::vector<int> *make_nnivec(std::vector<int> *, char *);
+    void set_method_absmethod(const char *);
+    void set_method_ebc(const char *);
+    void set_method_gbc(const char *);
 
     static int checking() { return checking_; }
 };

@@ -78,11 +78,11 @@ The accepted keywords are:
                 Only available for <tt>multiplicity</tt> = 1.
      <dt><tt>MP2-R12/A</tt><dd> The A version of MP2-R12.
                 Only available for <tt>multiplicity</tt> = 1.
-                An auxiliary basis should be specified.
+                An auxiliary basis may be specified.
                 No gradient, optimization, or frequencies are possible.
      <dt><tt>MP2-R12/A'</tt><dd> The A' version of MP2-R12.
                 Only available for <tt>multiplicity</tt> = 1.
-                An auxiliary basis should be specified.
+                An auxiliary basis may be specified.
                 No gradient, optimization, or frequencies are possible.
      <dt><tt>ZAPT2</tt><dd>  Z-averaged perturbation theory.
                 Only available for <tt>multiplicity</tt> > 1.  No gradient,
@@ -106,6 +106,36 @@ The accepted keywords are:
      <dt><tt>xc</tt><dd> Specifies the exchange-correlation functional.
         There is no default.  See the table in the StdDenFunctional
         class documentation for the possible values.
+   </dl>
+
+   The following options are valid with the <tt>MP2-R12/A</tt> and
+   <tt>MP2-R12/A'</tt> methods.  These options are mutually exclusive:
+
+   <dl>
+     <dt><tt>abs</tt><dd>Use the standard Auxiliary Basis Set method.
+     <dt><tt>abs+</tt><dd>Use the standard Auxiliary Basis Set method,
+                          but use the union of the orbital and the
+                          given auxiliary basis as the actual auxiliary
+                          basis set used.
+     <dt><tt>cabs</tt><dd>Use the Complementary Auxiliary Basis Set method.
+     <dt><tt>cabs+</tt><dd>Use the Complementary Auxiliary Basis Set method,
+                          but use the union of the orbital and the
+                          given auxiliary basis as the actual auxiliary
+                          basis set used.
+   </dl>
+
+   The following options are valid with the
+   <tt>MP2-R12/A'</tt> method:
+
+   <dl>
+     <dt><tt>ebc</tt><dd>Assume the Extended Brillion Condition to hold.
+                         This is the default.
+     <dt><tt>gbc</tt><dd>Assume the Generalized Brillion Condition to hold.
+                         This is the default.
+     <dt><tt>!ebc</tt><dd>Do not assume the Extended Brillion Condition
+                          to hold.
+     <dt><tt>!gbc</tt><dd>Do not assume the Generalized Brillion Condition
+                          to hold.
    </dl>
 
 <dt><tt>basis</tt><dd> Specifies the basis set.  There is no default.  See

@@ -31,6 +31,7 @@ int yydebug =1;
   std::vector<int> *nniv;
   }
 
+%token T_EBC T_GBC T_CABS T_CABSP T_ABS T_ABSP T_NOT
 %token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_AUXBASIS T_EQUALS
 %token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL
 %token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_XC T_SYMMETRY T_MEMORY
@@ -173,6 +174,14 @@ method_options:
 method_option:
                 T_XC T_EQUALS string        { set_method_xc($3); }
             |   T_GRID T_EQUALS string      { set_method_grid($3); }
+            |   T_EBC                       { set_method_ebc("true"); }
+            |   T_GBC                       { set_method_gbc("true"); }
+            |   T_NOT T_EBC                 { set_method_ebc("false"); }
+            |   T_NOT T_GBC                 { set_method_gbc("false"); }
+            |   T_CABS                      { set_method_absmethod("cabs"); }
+            |   T_ABS                       { set_method_absmethod("abs"); }
+            |   T_CABSP                     { set_method_absmethod("cabs+"); }
+            |   T_ABSP                      { set_method_absmethod("abs+"); }
             ;
 
 string:         T_STRING                        { $$ = $1; }

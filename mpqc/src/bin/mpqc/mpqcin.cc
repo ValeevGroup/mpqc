@@ -46,7 +46,10 @@ MPQCIn::MPQCIn():
   docc_(0),
   socc_(0),  
   frozen_docc_(0),
-  frozen_uocc_(0)
+  frozen_uocc_(0),
+  method_absmethod_(0),
+  method_ebc_(0),
+  method_gbc_(0)
 {
   lexer_ = new MPQCInFlexLexer;
 }
@@ -319,6 +322,24 @@ MPQCIn::set_frozen_uocc(std::vector<int> *a)
   frozen_uocc_ = a;
 }
 
+void
+MPQCIn::set_method_absmethod(const char *m)
+{
+  method_absmethod_ = m;
+}
+
+void
+MPQCIn::set_method_ebc(const char *m)
+{
+  method_ebc_ = m;
+}
+
+void
+MPQCIn::set_method_gbc(const char *m)
+{
+  method_gbc_ = m;
+}
+
 std::vector<int> *
 MPQCIn::make_nnivec(std::vector<int> *a, char *ms)
 {
@@ -490,6 +511,8 @@ MPQCIn::write_energy_object(ostream &ostrs,
   int dft = 0;
   int uscf = 0;
   ostringstream o_extra;
+  SCFormIO::init_ostream(o_extra);
+  o_extra << incindent;
   if (method) {
       // Hartree-Fock methods
       if (!strcmp(method, "HF")) {
@@ -539,7 +562,16 @@ MPQCIn::write_energy_object(ostream &ostrs,
           guess_method = 0;
           method_object = "MBPT2_R12";
           reference_method = "HF";
-          o_extra << "stdapprox = \"A\"" << endl;
+          o_extra << indent << "stdapprox = \"A\"" << endl;
+          if (method_absmethod_.val() != 0)
+              o_extra << indent
+                      << "abs_method = " << method_absmethod_.val() << endl;
+          if (method_ebc_.val() != 0)
+              o_extra << indent
+                      << "ebc = " << method_ebc_.val() << endl;
+          if (method_gbc_.val() != 0)
+              o_extra << indent
+                      << "gbc = " << method_gbc_.val() << endl;
           if (mult_.val() != 1) {
               error("MP2-R12 can only be used with multiplicity 1");
             }
@@ -551,7 +583,16 @@ MPQCIn::write_energy_object(ostream &ostrs,
           guess_method = 0;
           method_object = "MBPT2_R12";
           reference_method = "HF";
-          o_extra << "stdapprox = \"A'\"" << endl;
+          o_extra << indent << "stdapprox = \"A'\"" << endl;
+          if (method_absmethod_.val() != 0)
+              o_extra << indent
+                      << "abs_method = " << method_absmethod_.val() << endl;
+          if (method_ebc_.val() != 0)
+              o_extra << indent
+                      << "ebc = " << method_ebc_.val() << endl;
+          if (method_gbc_.val() != 0)
+              o_extra << indent
+                      << "gbc = " << method_gbc_.val() << endl;
           if (mult_.val() != 1) {
               error("MP2-R12 can only be used with multiplicity 1");
             }
@@ -572,7 +613,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
   else error("no method given");
   ostrs << indent << keyword << "<" << method_object << ">: (" << endl;
   ostrs << incindent;
-  if (o_extra.str() != "") ostrs << indent << o_extra.str();
+  ostrs << o_extra.str();
   if (auxbasis_key
       && auxbasis_.val() != 0
       && strcmp(auxbasis_.val(),basis_.val()) != 0) write_basis_object(ostrs, auxbasis_key, auxbasis_.val());

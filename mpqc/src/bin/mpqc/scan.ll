@@ -40,6 +40,13 @@ cstr(char *yytext)
 string  [A-Za-z0-9_\.*+-/']*
 qstring \"[^"\n]+\"
 %%
+"!"             { return T_NOT; }
+"ebc"           { return T_EBC; }
+"gbc"           { return T_GBC; }
+"cabs"          { return T_CABS; }
+"cabs+"         { return T_CABSP; }
+"abs"           { return T_ABS; }
+"abs+"          { return T_ABSP; }
 "memory"        { return T_MEMORY; }
 "molecule"      { return T_MOLECULE; }
 "multiplicity"  { return T_MULTIPLICITY; }

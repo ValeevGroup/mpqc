@@ -173,6 +173,15 @@ rclean::
 	$(CXX) $(CXXFLAGS) -S $<
 
 #
+# sometimes it's nice to get preprocessed source
+#
+%.i: %.c
+	$(CC) $(CFLAGS) -E $< -o $@
+
+%.ii: %.cc
+	$(CXX) $(CXXFLAGS) -E $< -o $@
+
+#
 # remote stuff
 #
 FILES = $(TRUESRC) $(TRUEINCLUDES) Makefile $(OTHERFILES) $(SGENFILE)

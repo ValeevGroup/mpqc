@@ -216,7 +216,10 @@ class Wavefunction: public MolecularEnergy {
     RefSCMatrix so_to_orthog_so_inverse();
 
     /// Returns the orthogonalization method
-    OrthogMethod orthog_method() { return orthog_method_; }
+    OrthogMethod orthog_method() const { return orthog_method_; }
+
+    /// Returns the tolerance for linear dependencies.
+    double lindep_tol() const { return lindep_tol_; }
 
     void obsolete();
 

@@ -362,7 +362,8 @@ SCF::initial_vector(int needv)
       // guess vector into the present basis.
       if (guess_wfn_.nonnull()) {
         if (basis()->equiv(guess_wfn_->basis())
-            &&orthog_method() == guess_wfn_->orthog_method()) {
+            &&orthog_method() == guess_wfn_->orthog_method()
+            &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
           ExEnv::out() << node0 << indent
                << "Using guess wavefunction as starting vector" << endl;
 

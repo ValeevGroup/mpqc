@@ -370,15 +370,14 @@ Molecule::print(ostream& os)
   // pointer that might try to delete this if i'm not referenced.
   reference();
   MolecularFormula *mf = new MolecularFormula(this);
-  cout << node0 << indent
-       << "Molecular formula: " << mf->formula() << endl;
+  os << node0 << indent
+     << "Molecular formula: " << mf->formula() << endl;
   delete mf;
   dereference();
 
   os << node0 << indent << "molecule<Molecule>: (" << endl;
   os << incindent;
-  os << node0 << indent
-     << "symmetry = " << pg_->symbol() << endl;
+  pg_->print(os);
   if (geometry_units_->string_rep()) {
       os << node0 << indent
          << "unit = \"" << geometry_units_->string_rep() << "\""

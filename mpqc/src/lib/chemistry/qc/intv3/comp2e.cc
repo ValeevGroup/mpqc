@@ -43,9 +43,9 @@
 #endif
 
 static inline void
-swtch(RefGaussianBasisSet &i,RefGaussianBasisSet &j)
+swtch(GaussianBasisSet* &i,GaussianBasisSet* &j)
 {
-  RefGaussianBasisSet tmp;
+  GaussianBasisSet *tmp;
   tmp = i;
   i = j;
   j = tmp;
@@ -119,10 +119,10 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 #ifdef EREP_TIMING
   char section[30];
 #endif
-  RefGaussianBasisSet pbs1=bs1_;
-  RefGaussianBasisSet pbs2=bs2_;
-  RefGaussianBasisSet pbs3=bs3_;
-  RefGaussianBasisSet pbs4=bs4_;
+  GaussianBasisSet *pbs1=bs1_.pointer();
+  GaussianBasisSet *pbs2=bs2_.pointer();
+  GaussianBasisSet *pbs3=bs3_.pointer();
+  GaussianBasisSet *pbs4=bs4_.pointer();
   int size;
   int ii;
   int size1, size2, size3, size4;
@@ -658,7 +658,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
                          &bs3_->shell(sh3),
                          int_unit4?int_unit_shell:&bs4_->shell(sh4));
     }
-
 
   /* Remove the redundant integrals, unless redundant_ is set. */
   if (!redundant_) {

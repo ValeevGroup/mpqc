@@ -457,7 +457,7 @@ MBPT2::compute_cs_grad()
     bzerofast(Laj,nvir*nocc);
     }
 
-  if (debug_ && me == 0) {
+  if (debug_ > 2 && me == 0) {
     for (j=0; j<nbasis; j++) {
       cout << indent
            << scprintf("eigenvalue[%3d] = %15.10lf", j, evals[j]);
@@ -526,7 +526,7 @@ MBPT2::compute_cs_grad()
   for (i=0; i<thr_->nthread(); i++) {
       e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
                                          mem, lock, basis(), tbint[i],
-                                         ni, nocc, scf_vector, tol);
+                                         ni, nocc, scf_vector, tol, debug_);
     }
 
   tim_enter("mp2 passes");

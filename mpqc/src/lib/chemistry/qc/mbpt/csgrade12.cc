@@ -32,6 +32,7 @@
 
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
 
@@ -45,7 +46,7 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
                                  const RefTwoBodyInt &tbint_a,
                                  int ni_a, int nocc_a,
                                  double **scf_vector_a,
-                                 double tol_a)
+                                 double tol_a, int debug_a)
 {
   mythread = mythread_a;
   nthread = nthread_a;
@@ -59,6 +60,7 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
   tol = tol_a;
   mem = mem_a;
   scf_vector = scf_vector_a;
+  debug = debug_a;
 
   aoint_computed = 0;
   timer = new RegionTimer();
@@ -103,6 +105,11 @@ CSGradErep12Qtr::run()
   integral_iqrs = new double[ni*nbasis*nfuncmax*nfuncmax];
   lock->unlock();
 
+  int work_per_thread = ((nshell*(nshell+1))/2)/(nproc*nthread);
+  int print_interval = work_per_thread/100;
+  int time_interval = work_per_thread/10;
+  int print_index = 0;
+
   for (S=0; S<nshell; S++) {
     ns = basis->shell(S).nfunction();
     s_offset = basis->shell_to_function(S);
@@ -112,6 +119,20 @@ CSGradErep12Qtr::run()
       r_offset = basis->shell_to_function(R);
 
       if (index++%nproc == me && thindex++%nthread == mythread) {
+
+        if (debug && (print_index++)%print_interval == 0) {
+          lock->lock();
+          cout << scprintf("%d:%d: (PQ|%d %d) %d%%",
+                           me,mythread,R,S,(100*print_index)/work_per_thread)
+               << endl;
+          lock->unlock();
+          }
+        if (debug && (print_index)%time_interval == 0) {
+          lock->lock();
+          cout << scprintf("timer for %d:%d:",me,mythread) << endl;
+          timer->print();
+          lock->unlock();
+          }
 
         bzerofast(integral_iqrs, ni*nbasis*nfuncmax*nfuncmax);
 

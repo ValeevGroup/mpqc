@@ -55,6 +55,7 @@ class CSGradErep12Qtr: public Thread {
     int nproc;
     double tol;
     double **scf_vector;
+    int debug;
   public:
     CSGradErep12Qtr(int mythread_a, int nthread_a,
                     int me_a, int nproc_a,
@@ -64,7 +65,7 @@ class CSGradErep12Qtr: public Thread {
                     const RefTwoBodyInt &tbint_a,
                     int ni_a, int nocc_a,
                     double **scf_vector_a,
-                    double tol_a);
+                    double tol_a, int debug_a);
     ~CSGradErep12Qtr();
 
     void set_i_offset(int ioff) { i_offset = ioff; }

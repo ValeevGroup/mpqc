@@ -25,7 +25,7 @@ SGENSRC = scfasgn.c scfbc0.c scfbrd.c scfbwr.c scfinit.c \
           scfallc.c scffree.c scfzero.c
 GENSRC = $(SGENSRC)
 
-INC = scf_dmt.h masses.h vdw_rad.h
+INC = scf_dmt.h
 
 SGENINC = $(GENSRC:%.c=%.h)
 GENINC = $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)

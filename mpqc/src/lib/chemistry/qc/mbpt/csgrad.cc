@@ -583,7 +583,7 @@ MBPT2::compute_cs_grad()
     e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
                                        mem, msg_, lock, basis(), tbints_[i],
                                        nocc, scf_vector, tol, debug_,
-                                       dynamic_, usep4);
+                                       dynamic_, print_percent_, usep4);
     }
 
     CSGrad34Qbtr** qbt34thread;
@@ -593,7 +593,8 @@ MBPT2::compute_cs_grad()
         qbt34thread[i] = new CSGrad34Qbtr(i, thr_->nthread(), me, nproc,
                                           mem, msg_, lock, basis(), tbints_[i],
                                           tbintder_[i], nocc, nfzc, scf_vector,
-                                          tol, debug_, dynamic_, dograd, natom);
+                                          tol, debug_, dynamic_, print_percent_,
+                                          dograd, natom);
         }
       }
 

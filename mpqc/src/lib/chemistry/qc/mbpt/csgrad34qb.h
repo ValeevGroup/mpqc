@@ -62,6 +62,7 @@ class CSGrad34Qbtr: public Thread {
     double **scf_vector;
     int debug;
     int dynamic_;
+    double print_percent_;
     int dograd;
     int natom;
     double *Lpi;
@@ -78,7 +79,8 @@ class CSGrad34Qbtr: public Thread {
                  int nocc_a, int nfzc_a,
                  double **scf_vector_a,
                  double tol_a, int debug_a,
-                 int dynamic_a, int dograd_a, int natom_a);
+                 int dynamic_a, double print_percent_a,
+                 int dograd_a, int natom_a);
     ~CSGrad34Qbtr();
 
     void set_i_offset(int ioff) { i_offset = ioff; }

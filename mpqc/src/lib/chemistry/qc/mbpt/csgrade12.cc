@@ -36,7 +36,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
-#include <chemistry/qc/mbpt/distsh.h>
+#include <chemistry/qc/basis/distshpair.h>
 
 #include <chemistry/qc/mbpt/util.h>
 
@@ -100,7 +100,7 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
                                  int nocc_a,
                                  double **scf_vector_a,
                                  double tol_a, int debug_a,
-                                 int dynamic_a,
+                                 int dynamic_a, double print_percent_a,
                                  int usep4)
 {
   msg = msg_a;
@@ -117,6 +117,7 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
   scf_vector = scf_vector_a;
   debug = debug_a;
   dynamic_ = dynamic_a;
+  print_percent_ = print_percent_a;
   usep4_ = usep4;
 
   aoint_computed = 0;
@@ -175,8 +176,8 @@ CSGradErep12Qtr::run()
   // Use petite list for symmetry utilization
   Ref<PetiteList> p4list = tbint->integral()->petite_list();
 
-  DistShellPair shellpairs(msg,nthread,mythread,lock,basis);
-  shellpairs.set_dynamic(dynamic_);
+  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
+  shellpairs.set_print_percent(print_percent_);
   shellpairs.set_debug(debug);
   if (debug) shellpairs.set_print_percent(1);
   S = 0;

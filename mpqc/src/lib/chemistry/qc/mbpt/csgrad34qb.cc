@@ -35,8 +35,8 @@
 #include <util/misc/formio.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/csgrad34qb.h>
-#include <chemistry/qc/mbpt/distsh.h>
 #include <chemistry/qc/mbpt/util.h>
+#include <chemistry/qc/basis/distshpair.h>
 
 using namespace std;
 using namespace sc;
@@ -52,7 +52,8 @@ CSGrad34Qbtr::CSGrad34Qbtr(int mythread_a, int nthread_a,
                            int nocc_a, int nfzc_a,
                            double **scf_vector_a,
                            double tol_a, int debug_a,
-                           int dynamic_a, int dograd_a, int natom_a)
+                           int dynamic_a, double print_percent_a,
+                           int dograd_a, int natom_a)
 {
   msg = msg_a;
   mythread = mythread_a;
@@ -70,6 +71,7 @@ CSGrad34Qbtr::CSGrad34Qbtr(int mythread_a, int nthread_a,
   scf_vector = scf_vector_a;
   debug = debug_a;
   dynamic_ = dynamic_a;
+  print_percent_ = print_percent_a;
   dograd = dograd_a;
   natom = natom_a;
 
@@ -155,8 +157,8 @@ CSGrad34Qbtr::run()
   
   DerivCenters der_centers;
 
-  DistShellPair shellpairs(msg,nthread,mythread,lock,basis);
-  shellpairs.set_dynamic(dynamic_);
+  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
+  shellpairs.set_print_percent(print_percent_);
   shellpairs.set_debug(debug);
   if (debug) shellpairs.set_print_percent(1);
   S = 0;

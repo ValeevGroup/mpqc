@@ -14,26 +14,6 @@ extern "C" {
 void msgwait(long);
 }
 
-#define DISABLE do { fflush(stdout); } while(0)
-#define ENABLE do { fflush(stdout); } while(0)
-
-
-#define ACK 0
-
-#define DEBUG 0
-#define DEBREQ 0
-
-#if DEBUG
-#  undef PRINTF
-#  define PRINTF(args) do { DISABLE; \
-                            printf args; \
-                            ENABLE; \
-                           } while(0)
-#else
-#  undef PRINTF
-#  define PRINTF(args)
-#endif
-
 ///////////////////////////////////////////////////////////////////////
 // The IParagonMemoryGrp class
 
@@ -80,13 +60,25 @@ IParagonMemoryGrp::unlock(long oldvalue)
 long
 IParagonMemoryGrp::send(void* data, int nbytes, int node, int type)
 {
-  return isend(type, (char*)data, nbytes, node, 0);
+  long mid = isend(type, (char*)data, nbytes, node, 0);
+  if (debug_) cout << me() << ": IParagonMemoryGrp::send(void*, "
+                   << nbytes << ", "
+                   << node << ", "
+                   << type << "): mid = " << mid
+                   << endl;
+  return mid;
 }
 
 long
 IParagonMemoryGrp::recv(void* data, int nbytes, int node, int type)
 {
-  return irecvx(type, (char*)data, nbytes, node, 0, msginfo);
+  long mid = irecvx(type, (char*)data, nbytes, node, 0, msginfo);
+  if (debug_) cout << me() << ": IParagonMemoryGrp::recv(void*, "
+                   << nbytes << ", "
+                   << node << ", "
+                   << type << "): mid = " << mid
+                   << endl;
+  return mid;
 }
 
 long
@@ -100,21 +92,36 @@ IParagonMemoryGrp::postrecv(void *data, int nbytes, int type)
 long
 IParagonMemoryGrp::wait(long mid1, long mid2)
 {
+  if (debug_) {
+      cout << me() << ": IParagonMemoryGrp::wait("
+           << mid1 << ", "
+           << mid2 << ")"
+           << endl;
+    }
+
   if (mid1 == -1) {
-      fprintf(stderr, "IParagonMemoryGrp::wait: mid1 == -1\n");
+      cerr << me() << ": IParagonMemoryGrp::wait: mid1 == -1" << endl;
       sleep(1);
       abort();
     }
   else if (mid2 == -1) {
       msgwait(mid1);
+      if (debug_)
+          cout << me() << ": IParagonMemoryGrp::wait(): got " << mid1 << endl;
       return mid1;
     }
   else {
       while(1) {
           if (msgdone(mid1)) {
+              if (debug_)
+                  cout << me() << ": IParagonMemoryGrp::wait(): got "
+                       << mid1 << endl;
               return mid1;
             }
           if (msgdone(mid2)) {
+              if (debug_)
+                  cout << me() << ": IParagonMemoryGrp::wait(): got "
+                       << mid2 << endl;
               return mid2;
             }
         }

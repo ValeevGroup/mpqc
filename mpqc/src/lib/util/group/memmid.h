@@ -53,6 +53,8 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
     virtual long recv(void* data, int nbytes, int node, int type) = 0;
     virtual long postrecv(void *data, int nbytes, int type) = 0;
     virtual long wait(long, long = -1) = 0;
+
+    virtual void got_data_request_mid();
   public:
     MemoryDataRequest &data_request_buffer() { return data_request_buffer_; }
 

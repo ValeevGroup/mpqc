@@ -61,6 +61,7 @@ MemoryGrp::MemoryGrp()
 MemoryGrp::MemoryGrp(const RefKeyVal& keyval)
 {
   use_locks_ = 1;
+  debug_ = keyval->intvalue("debug");
 }
 
 MemoryGrp::~MemoryGrp()

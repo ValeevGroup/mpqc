@@ -36,6 +36,9 @@ class MemoryGrp: public DescribedClass {
 
     int use_locks_;
 
+    // set to nonzero for debugging information
+    int debug_;
+
   public:
     MemoryGrp();
     MemoryGrp(const RefKeyVal&);

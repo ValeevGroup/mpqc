@@ -584,6 +584,9 @@ XSCF::do_vector(double& eelec, double& nucrep)
   _gr_vector->schmidt_orthog(ovlp.pointer(),basis()->nbasis());
   
   _gr_vector.print("ortho vector");
+  _fock_evalsc.print("evalsc");
+  _fock_evalsa.print("evalsa");
+  _fock_evalsb.print("evalsb");
   
   _eigenvectors = _gr_vector;
   

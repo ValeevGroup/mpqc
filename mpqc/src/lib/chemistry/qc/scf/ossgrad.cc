@@ -126,13 +126,13 @@ OSSSCF::do_gradient(const RefSCVector& gradient)
     for (int j=0; j <= i; j++)
       mofock.set_element(i,j,0.0);
 
-  mofock.print("mo lag");
+  //mofock.print("mo lag");
   moobfock=0;
   
   mooafock.assign(0.0);
   mooafock.accumulate_transform(_gr_vector,mofock);
   mooafock.scale(-1.0);
-  mooafock.print("ao lag");
+  //mooafock.print("ao lag");
 
   // zero out gradient
   gradient.assign(0.0);
@@ -197,7 +197,7 @@ OSSSCF::do_gradient(const RefSCVector& gradient)
   }
     
   mooafock=0;
-  ovlp.print("overlap contribution");
+  //ovlp.print("overlap contribution");
   gradient.accumulate(ovlp);
   
   // and now the one-electron contributions
@@ -252,9 +252,9 @@ OSSSCF::do_gradient(const RefSCVector& gradient)
   }
   mofock=0;
 
-  oneelec.print("one electron contribution");
+  //oneelec.print("one electron contribution");
   gradient.accumulate(oneelec);
-  gradient.print("gradient sans two electron contribution");
+  //gradient.print("gradient sans two electron contribution");
   
   // done with the one-electron stuff
   int_done_offsets1(centers,centers);
@@ -423,7 +423,7 @@ OSSSCF::do_gradient(const RefSCVector& gradient)
     }
   }
 
-  twoelec.print("two electron contribution");
+  //twoelec.print("two electron contribution");
   gradient.accumulate(twoelec);
   //gradient.print("cartesian gradient");
 

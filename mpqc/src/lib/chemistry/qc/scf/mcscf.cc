@@ -401,77 +401,109 @@ MCSCF::do_vector(double& eelec, double& nucrep)
     RefSymmSCMatrix feff = f1.copy();
     feff.accumulate(f2);
 
-    RefSymmSCMatrix fooa = _kb.copy();
-    fooa.scale(3.0);
-    fooa.accumulate(_fockb);
-    fooa.scale(-1.0);
-    fooa.accumulate(_focka);
-    fooa.accumulate(_ka);
-    fooa.scale(0.25);
-    
-    RefSymmSCMatrix foob = _ka.copy();
-    foob.scale(3.0);
-    foob.accumulate(_focka);
-    foob.scale(-1.0);
-    foob.accumulate(_fockb);
-    foob.accumulate(_kb);
-    foob.scale(0.25);
-    
-    RefSymmSCMatrix mo1 = f1.clone();
-    mo1.assign(0.0);
-    mo1.accumulate_transform(_gr_vector.t(),f1);
-    
-    RefSymmSCMatrix mo2 = f2.clone();
-    mo2.assign(0.0);
-    mo2.accumulate_transform(_gr_vector.t(),f2);
-    
-    RefSymmSCMatrix moa = fooa.clone();
-    moa.assign(0.0);
-    moa.accumulate_transform(_gr_vector.t(),fooa);
-    
-    RefSymmSCMatrix mob = foob.clone();
-    mob.assign(0.0);
-    mob.accumulate_transform(_gr_vector.t(),foob);
-    
-    RefSymmSCMatrix koa = foob.clone();
-    koa.assign(0.0);
-    koa.accumulate_transform(_gr_vector.t(),_ka);
-    koa.scale(2*ci1*ci3);
-    
-    RefSymmSCMatrix kob = foob.clone();
-    kob.assign(0.0);
-    kob.accumulate_transform(_gr_vector.t(),_kb);
-    kob.scale(2*ci1*ci3);
-    
     RefSymmSCMatrix mof = feff.clone();
     mof.assign(0.0);
     mof.accumulate_transform(_gr_vector.t(),feff);
 
+    RefSymmSCMatrix mo1 = f1.clone();
+    mo1.assign(0.0);
+    mo1.accumulate_transform(_gr_vector.t(),f1);
     mo1.scale(2.0);
-    mo2.scale(2.0);
-    moa.scale(2.0*ci2*ci2);
-    mob.scale(2.0*ci2*ci2);
-    
-    for (int j=0; j < _ndocc; j++) {
-      mof.set_element(aorb,j,mo2.get_element(aorb,j)+
-                             moa.get_element(aorb,j)-
-                             kob.get_element(aorb,j)
-                             );
-      mof.set_element(borb,j,mo1.get_element(borb,j)+
-                             mob.get_element(borb,j)-
-                             koa.get_element(borb,j)
-                             );
-    }
 
-    for (int j=borb+1; j < nbasis; j++) {
-      mof.set_element(j,aorb,mo1.get_element(j,aorb)-
-                             moa.get_element(j,aorb)+
-                             kob.get_element(j,aorb)
-                             );
-      mof.set_element(j,borb,mo2.get_element(j,borb)-
-                             mob.get_element(j,borb)+
-                             koa.get_element(j,borb)
-                             );
+    RefSymmSCMatrix mo2 = f2.clone();
+    mo2.assign(0.0);
+    mo2.accumulate_transform(_gr_vector.t(),f2);
+    mo2.scale(2.0);
+    
+    if (fabs(ci1*ci3) < 1.0e-5) {
+      RefSymmSCMatrix fooa = _kb.copy();
+      fooa.scale(3.0);
+      fooa.accumulate(_fockb);
+      fooa.scale(-1.0);
+      fooa.accumulate(_focka);
+      fooa.accumulate(_ka);
+      fooa.scale(0.25);
+    
+      RefSymmSCMatrix foob = _ka.copy();
+      foob.scale(3.0);
+      foob.accumulate(_focka);
+      foob.scale(-1.0);
+      foob.accumulate(_fockb);
+      foob.accumulate(_kb);
+      foob.scale(0.25);
+    
+      RefSymmSCMatrix moa = fooa.clone();
+      moa.assign(0.0);
+      moa.accumulate_transform(_gr_vector.t(),fooa);
+      moa.scale(2.0*ci2*ci2);
+    
+      RefSymmSCMatrix mob = foob.clone();
+      mob.assign(0.0);
+      mob.accumulate_transform(_gr_vector.t(),foob);
+      mob.scale(2.0*ci2*ci2);
+
+      for (int j=0; j < _ndocc; j++) {
+        mof.set_element(aorb,j,mo2.get_element(aorb,j)+
+                               moa.get_element(aorb,j)
+                               );
+        mof.set_element(borb,j,mo1.get_element(borb,j)+
+                               mob.get_element(borb,j)
+                               );
+      }
+
+      for (int j=borb+1; j < nbasis; j++) {
+        mof.set_element(j,aorb,mo1.get_element(j,aorb)-
+                               moa.get_element(j,aorb)
+                               );
+        mof.set_element(j,borb,mo2.get_element(j,borb)-
+                               mob.get_element(j,borb)
+                               );
+      }
+    
+    } else if (ci2*ci2 < 1.0e-7) {
+      RefSymmSCMatrix koa = _ka.clone();
+      koa.assign(0.0);
+      koa.accumulate_transform(_gr_vector.t(),_ka);
+      koa.scale(2*ci1*ci3);
+
+      RefSymmSCMatrix kob = _kb.clone();
+      kob.assign(0.0);
+      kob.accumulate_transform(_gr_vector.t(),_kb);
+      kob.scale(2*ci1*ci3);
+    
+      for (int j=0; j < _ndocc; j++) {
+        mof.set_element(aorb,j,mo2.get_element(aorb,j)-
+                               kob.get_element(aorb,j)
+                               );
+        mof.set_element(borb,j,mo1.get_element(borb,j)-
+                               koa.get_element(borb,j)
+                               );
+      }
+
+      for (int j=borb+1; j < nbasis; j++) {
+        mof.set_element(j,aorb,mo1.get_element(j,aorb)+
+                               kob.get_element(j,aorb)
+                               );
+        mof.set_element(j,borb,mo2.get_element(j,borb)+
+                               koa.get_element(j,borb)
+                               );
+      }
+    
+    } else {
+      fprintf(stderr,"MCSCF::do_vector: oops, cannot do general case yet\n");
+      fprintf(stderr,"ci1 = %g ci2 = %g ci3 = %g\n",ci1,ci2,ci3);
+      abort();
+
+      RefSymmSCMatrix gab = feff.clone();
+      gab.assign(0.0);
+      gab.accumulate_transform(_gr_vector.t(),_fockab);
+      gab.scale(2*sqrt(2.0)*(ci1*ci2+ci3*ci2));
+
+      for (int i=borb+1; i < nbasis; i++) {
+        for (int j=0; j < _ndocc; j++) {
+          mof.accumulate_element(i,j,gab.get_element(i,j));
+        }
+      }
     }
     
     mof.diagonalize(_fock_evals,nvector);
@@ -483,6 +515,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   }
       
   _gr_vector->print("converged vector");
+  _fock_evals.print("evals");
   
   double s = (ci1+ci3)/sqrt((ci1-ci3)*(ci1-ci3) + 2*ci2*ci2);
   if (ci1-ci3 < 0)
@@ -516,7 +549,6 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   _gr_vector.assign_column(ca,aorb);
   _gr_vector.assign_column(cb,borb);
   _gr_vector.print("tcscf vector");
-  
   
   double fooe;
   form_ao_fock(centers,intbuf,fooe);

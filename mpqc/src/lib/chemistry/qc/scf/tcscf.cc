@@ -419,6 +419,8 @@ TCSCF::do_vector(double& eelec, double& nucrep)
   }
       
   _gr_vector.print("vector");
+  _fock_evals.print("evals");
+
   _eigenvectors = _gr_vector;
   
   int_done_bounds();

@@ -457,6 +457,9 @@ HSOSSCF::do_vector(double& eelec, double& nucrep)
     _gr_vector->schmidt_orthog(overlap().pointer(),basis()->nbasis());
   }
       
+  _gr_vector.print("converged vector");
+  _fock_evals.print("evals");
+  
   _eigenvectors = _gr_vector;
   
   int_done_bounds();

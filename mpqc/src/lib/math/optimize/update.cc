@@ -8,6 +8,7 @@ extern "C" {
 
 SavableState_REF_def(IHessianUpdate);
 #define CLASSNAME IHessianUpdate
+#define PARENTS virtual public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -126,7 +127,7 @@ void *
 BFGSUpdate::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = IHessianUpdate::_castdown(cd);
+  casts[0] = DFPUpdate::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

@@ -155,7 +155,7 @@ ReplDiagSCMatrix::accumulate(DiagSCMatrix*a)
     }
 
   int nelem = n();
-  for (int i=0; i<nelem; i++) matrix[i] += matrix[i];
+  for (int i=0; i<nelem; i++) matrix[i] += la->matrix[i];
 }
 
 double

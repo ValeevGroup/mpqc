@@ -14,8 +14,6 @@ extern "C" {
 #include <chemistry/qc/dmtscf/scffree.h>
 #include <chemistry/qc/dmtscf/scfzero.h>
 #include <chemistry/qc/dmtscf/scfasgn.h>
-#include <chemistry/qc/dmtscf/scfbrd.h>
-#include <chemistry/qc/dmtscf/scfbwr.h>
 #include <chemistry/qc/dmtscf/scfinit.h>
 #include <chemistry/qc/dmtscf/scfiseq.h>
 #include <chemistry/qc/dmtscf/scfprnt.h>

@@ -1,6 +1,6 @@
 
-default_modules(assign iseq bread bwrite print alloc free zero
-       init bcast0 rbcast0 sbcast0 recv0 send0 );
+default_modules(assign iseq print alloc free zero
+                init bcast0 rbcast0 sbcast0 recv0 send0 );
 
 scf_struct {
   boolean hsos;           // 1 if high-spin open-shell

@@ -20,7 +20,7 @@ CXXSRC = scf_kinp.cc
 
 SGENFILE = scf.sgen
 
-SGENSRC = scfasgn.c scfbc0.c scfbrd.c scfbwr.c scfinit.c \
+SGENSRC = scfasgn.c scfbc0.c scfinit.c \
           scfiseq.c scfprnt.c scfrbc0.c scfsbc0.c scfsnd0.c scfrcv0.c \
           scfallc.c scffree.c scfzero.c
 GENSRC = $(SGENSRC)

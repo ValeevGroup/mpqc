@@ -10,10 +10,10 @@
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyIntv2
 
-OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs,const RefMolecule&mol):
+OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs):
   OneBodyInt(bs)
 {
-  c1 = c2 = bs->convert_to_centers_t(mol);
+  c1 = c2 = bs->convert_to_centers_t();
   int_normalize_centers(c1);
   int_initialize_1e(0,0,c1,c1);
   int_initialize_offsets1(c1,c1);
@@ -21,12 +21,11 @@ OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs,const RefMolecule&mol):
 }
 
 OneBodyIntv2::OneBodyIntv2(const RefGaussianBasisSet&bs1,
-                           const RefGaussianBasisSet&bs2,
-                           const RefMolecule&mol) :
+                           const RefGaussianBasisSet&bs2) :
   OneBodyInt(bs1,bs2)
 {
-  c1 = bs1->convert_to_centers_t(mol);
-  c2 = bs2->convert_to_centers_t(mol);
+  c1 = bs1->convert_to_centers_t();
+  c2 = bs2->convert_to_centers_t();
   int_normalize_centers(c1);
   int_normalize_centers(c2);
   int_initialize_1e(0,0,c1,c2);
@@ -49,11 +48,10 @@ OneBodyIntv2::~OneBodyIntv2()
 ////////////////////////////////////////////////////////////////////////////
 // OneBody3Intv2
 
-OneBody3Intv2::OneBody3Intv2(const RefGaussianBasisSet&bs,
-                             const RefMolecule&mol) :
+OneBody3Intv2::OneBody3Intv2(const RefGaussianBasisSet&bs) :
   OneBody3Int(bs)
 {
-  c1 = c2 = bs->convert_to_centers_t(mol);
+  c1 = c2 = bs->convert_to_centers_t();
   int_normalize_centers(c1);
   int_initialize_1e(0,0,c1,c1);
   int_initialize_offsets1(c1,c1);
@@ -61,12 +59,11 @@ OneBody3Intv2::OneBody3Intv2(const RefGaussianBasisSet&bs,
 }
 
 OneBody3Intv2::OneBody3Intv2(const RefGaussianBasisSet&bs1,
-                             const RefGaussianBasisSet&bs2,
-                             const RefMolecule&mol) :
+                             const RefGaussianBasisSet&bs2) :
   OneBody3Int(bs1,bs2)
 {
-  c1 = bs1->convert_to_centers_t(mol);
-  c2 = bs2->convert_to_centers_t(mol);
+  c1 = bs1->convert_to_centers_t();
+  c2 = bs2->convert_to_centers_t();
   int_normalize_centers(c1);
   int_normalize_centers(c2);
   int_initialize_1e(0,0,c1,c2);
@@ -90,13 +87,13 @@ OneBody3Intv2::~OneBody3Intv2()
 // GaussianOverlapIntv2
 
 GaussianOverlapIntv2::GaussianOverlapIntv2(const RefGaussianBasisSet&bs_):
-  OneBodyIntv2(bs_,0)
+  OneBodyIntv2(bs_)
 {
 }
 
 GaussianOverlapIntv2::GaussianOverlapIntv2(const RefGaussianBasisSet&bs1,
                                            const RefGaussianBasisSet&bs2) :
-  OneBodyIntv2(bs1,bs2,0)
+  OneBodyIntv2(bs1,bs2)
 {
 }
 
@@ -112,16 +109,14 @@ void GaussianOverlapIntv2::compute_shell(int i, int j, double * buf)
 ////////////////////////////////////////////////////////////////////////////
 // GaussianKineticIntv2
 
-GaussianKineticIntv2::GaussianKineticIntv2(const RefGaussianBasisSet&bs_,
-                                           const RefMolecule&m):
-  OneBodyIntv2(bs_,m)
+GaussianKineticIntv2::GaussianKineticIntv2(const RefGaussianBasisSet&bs_):
+  OneBodyIntv2(bs_)
 {
 }
 
 GaussianKineticIntv2::GaussianKineticIntv2(const RefGaussianBasisSet&bs1,
-                                           const RefGaussianBasisSet&bs2,
-                                           const RefMolecule&m):
-  OneBodyIntv2(bs1,bs2,m)
+                                           const RefGaussianBasisSet&bs2):
+  OneBodyIntv2(bs1,bs2)
 {
 }
 
@@ -159,9 +154,8 @@ GaussianPointChargeIntv2::init(PointBag_double*charges)
 }
 
 GaussianPointChargeIntv2::GaussianPointChargeIntv2(PointBag_double*charges,
-					   const RefGaussianBasisSet&bs_,
-					   const RefMolecule&m) :
-  OneBodyIntv2(bs_,m)
+					   const RefGaussianBasisSet&bs_) :
+  OneBodyIntv2(bs_)
 {
   init(charges);
   delete charges;
@@ -169,9 +163,8 @@ GaussianPointChargeIntv2::GaussianPointChargeIntv2(PointBag_double*charges,
 
 GaussianPointChargeIntv2::GaussianPointChargeIntv2(PointBag_double*charges,
 					   const RefGaussianBasisSet&bs1,
-					   const RefGaussianBasisSet&bs2,
-					   const RefMolecule&m) :
-  OneBodyIntv2(bs1,bs2,m)
+					   const RefGaussianBasisSet&bs2) :
+  OneBodyIntv2(bs1,bs2)
 {
   init(charges);
   delete charges;
@@ -196,16 +189,15 @@ void GaussianPointChargeIntv2::compute_shell(int i,int j,double*buf)
 ////////////////////////////////////////////////////////////////////////////
 // GaussianNuclearIntv2
 
-GaussianNuclearIntv2::GaussianNuclearIntv2(const RefGaussianBasisSet&bs_,
-				           const RefMolecule&m) :
-  GaussianPointChargeIntv2(m->charges(),bs_,m)
+GaussianNuclearIntv2::GaussianNuclearIntv2(const RefGaussianBasisSet&bs_) :
+  GaussianPointChargeIntv2(bs_->molecule()->charges(),bs_)
 {
 }
 
-GaussianNuclearIntv2::GaussianNuclearIntv2(const RefGaussianBasisSet&bs1,
-                                           const RefGaussianBasisSet&bs2,
-				           const RefMolecule&m) :
-  GaussianPointChargeIntv2(m->charges(),bs1,bs2,m)
+GaussianNuclearIntv2::GaussianNuclearIntv2(PointBag_double *charges,
+                                           const RefGaussianBasisSet&bs1,
+                                           const RefGaussianBasisSet&bs2):
+  GaussianPointChargeIntv2(charges,bs1,bs2)
 {
 }
 
@@ -218,10 +210,9 @@ GaussianNuclearIntv2::~GaussianNuclearIntv2()
 
 GaussianEfieldDotVectorIntv2::GaussianEfieldDotVectorIntv2(
     const RefGaussianBasisSet&bs_,
-    const RefMolecule&m,
     double *p,
     double *v):
-  OneBodyIntv2(bs_,m)
+  OneBodyIntv2(bs_)
 {
   int biggest_shell = bs_->max_nfunction_in_shell();
   if (biggest_shell) {
@@ -237,10 +228,9 @@ GaussianEfieldDotVectorIntv2::GaussianEfieldDotVectorIntv2(
 GaussianEfieldDotVectorIntv2::GaussianEfieldDotVectorIntv2(
     const RefGaussianBasisSet&bs1,
     const RefGaussianBasisSet&bs2,
-    const RefMolecule&m,
     double *p,
     double *v):
-  OneBodyIntv2(bs1,bs2,m)
+  OneBodyIntv2(bs1,bs2)
 {
   int biggest_shell = bs1->max_nfunction_in_shell() *
                       bs2->max_nfunction_in_shell();
@@ -299,18 +289,16 @@ GaussianEfieldDotVectorIntv2::compute_shell(int i,int j,double*buf)
 // GaussianDipoleIntv2
 
 GaussianDipoleIntv2::GaussianDipoleIntv2(const RefGaussianBasisSet&bs_,
-                                         const RefMolecule&m,
                                          const double* o):
-  OneBody3Intv2(bs_,m)
+  OneBody3Intv2(bs_)
 {
   if (o) origin(o);
 }
 
 GaussianDipoleIntv2::GaussianDipoleIntv2(const RefGaussianBasisSet&bs1,
                                          const RefGaussianBasisSet&bs2,
-                                         const RefMolecule&m,
                                          const double* o):
-  OneBody3Intv2(bs1,bs2,m)
+  OneBody3Intv2(bs1,bs2)
 {
   if (o) origin(o);
 }

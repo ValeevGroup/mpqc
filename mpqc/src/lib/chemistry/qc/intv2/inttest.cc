@@ -31,9 +31,9 @@ main()
   RefKeyVal keyval(new PrefixKeyVal(":centers :basis",pkv));
   RefKeyVal tkeyval(new PrefixKeyVal(":test", pkv));
 
-  RefMolecule mol = keyval->describedclassvalue("molecule");
   RefGaussianBasisSet basis = keyval->describedclassvalue("basis");
-  centers_t *pcenters = basis->convert_to_centers_t(mol);
+  RefMolecule mol = basis->molecule();
+  centers_t *pcenters = basis->convert_to_centers_t();
   centers_t &centers = *pcenters;
 
   int_normalize_centers(&centers);

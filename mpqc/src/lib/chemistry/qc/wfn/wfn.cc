@@ -43,7 +43,9 @@ Wavefunction::Wavefunction(const Wavefunction& wfn) :
 }
 
 Wavefunction::Wavefunction(const RefKeyVal&keyval):
-  MolecularEnergy(keyval),
+  // this will let molecule be retrieved from basis
+  MolecularEnergy(new AggregateKeyVal(keyval,
+                                      new PrefixKeyVal("basis", keyval))),
   _overlap(this),
   _natural_orbitals(this),
   _natural_density(this),

@@ -49,11 +49,11 @@ void
 AccumHCore::accum(const RefSymmSCMatrix& h)
 {
   h.assign(0.0);
-  RefSCElementOp op = new GaussianKineticIntv2(_basis_set, _molecule);
+  RefSCElementOp op = new GaussianKineticIntv2(_basis_set);
   h.element_op(op);
   op=0;
   
-  op = new GaussianNuclearIntv2(_basis_set, _molecule);
+  op = new GaussianNuclearIntv2(_basis_set);
   h.element_op(op);
   op=0;
 }

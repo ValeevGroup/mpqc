@@ -196,10 +196,10 @@ main(int argc, char *argv[])
 
     pkv = ppkv = 0;
 
-    mol = keyval->describedclassvalue("molecule");
-
     gbs = keyval->describedclassvalue("basis");
-    tcenters = gbs->convert_to_centers_t(mol.pointer());
+    tcenters = gbs->convert_to_centers_t();
+
+    mol = gbs->molecule();
 
     init_centers(&centers);
     init_centers(&oldcenters);
@@ -411,7 +411,7 @@ main(int argc, char *argv[])
   if (scf_info.proj_vector) {
     if (mynode0()==0) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("pbasis");
-      tcenters = gbs->convert_to_centers_t(mol.pointer());
+      tcenters = gbs->convert_to_centers_t();
 
       assign_centers(&oldcenters,tcenters);
       free_centers(tcenters);

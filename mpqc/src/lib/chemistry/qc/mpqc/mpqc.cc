@@ -164,7 +164,7 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
   _exchange_energy(this),
   _eigenvectors(this)
 {
-  centers_t *tcenters = basis()->convert_to_centers_t(_mol.pointer());
+  centers_t *tcenters = basis()->convert_to_centers_t();
 
   if (!tcenters) {
     exit(3);
@@ -231,7 +231,7 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
   if (scf_info.proj_vector) {
     if (me==0) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("pbasis");
-      tcenters = gbs->convert_to_centers_t(_mol.pointer());
+      tcenters = gbs->convert_to_centers_t();
 
       assign_centers(&oldcenters,tcenters);
       free_centers(tcenters);
@@ -293,7 +293,7 @@ MPSCF::MPSCF(StateIn&s):
   init_scf_struct(&scf_info);
   get_scf_struct(s,scf_info);
 
-  centers_t *tcenters = basis()->convert_to_centers_t(_mol.pointer());
+  centers_t *tcenters = basis()->convert_to_centers_t();
   if (!tcenters)
     exit(3);
 

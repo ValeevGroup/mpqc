@@ -53,6 +53,7 @@ mpqc: (
     update<PowellUpdate>: ()
     convergence<MolEnergyConvergence>: (
       cartesian = yes
+      energy = $..:..:mole
     )
   )
 )

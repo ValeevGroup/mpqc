@@ -188,6 +188,112 @@ SymmSCMatrix2SCExtrapData::accumulate_scaled(double scale,
 
 ///////////////////////////////////////////////////////////////////////////
 
+#define CLASSNAME SymmSCMatrix4SCExtrapData
+#define PARENTS public SCExtrapData
+#define HAVE_STATEIN_CTOR
+#include <util/class/classi.h>
+void *
+SymmSCMatrix4SCExtrapData::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCExtrapData::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SymmSCMatrix4SCExtrapData::SymmSCMatrix4SCExtrapData(StateIn&s) :
+  SCExtrapData(s)
+{
+  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  RefSCDimension dim;
+  dim.restore_state(s);
+
+  int blocked;
+  s.get(blocked);
+  
+  if (blocked)
+    k = new BlockedSCMatrixKit(SCMatrixKit::default_matrixkit());
+  
+  m1 = k->symmmatrix(dim);
+  m2 = k->symmmatrix(dim);
+  m3 = k->symmmatrix(dim);
+  m4 = k->symmmatrix(dim);
+  m1.restore(s);
+  m2.restore(s);
+  m3.restore(s);
+  m4.restore(s);
+}
+
+SymmSCMatrix4SCExtrapData::SymmSCMatrix4SCExtrapData(
+    const RefSymmSCMatrix& mat1,
+    const RefSymmSCMatrix& mat2,
+    const RefSymmSCMatrix& mat3,
+    const RefSymmSCMatrix& mat4)
+{
+  m1 = mat1;
+  m2 = mat2;
+  m3 = mat3;
+  m4 = mat4;
+}
+
+void
+SymmSCMatrix4SCExtrapData::save_data_state(StateOut& s)
+{
+  SCExtrapData::save_data_state(s);
+  m1.dim().save_state(s);
+
+  int blocked = (BlockedSymmSCMatrix::castdown(m1.pointer())) ? 1 : 0;
+  s.put(blocked);
+  
+  m1.save(s);
+  m2.save(s);
+  m3.save(s);
+  m4.save(s);
+}
+
+void
+SymmSCMatrix4SCExtrapData::zero()
+{
+  m1.assign(0.0);
+  m2.assign(0.0);
+  m3.assign(0.0);
+  m4.assign(0.0);
+}
+
+SCExtrapData*
+SymmSCMatrix4SCExtrapData::copy()
+{
+  return new SymmSCMatrix4SCExtrapData(m1.copy(), m2.copy(),
+                                       m3.copy(), m4.copy());
+}
+
+void
+SymmSCMatrix4SCExtrapData::accumulate_scaled(double scale,
+                                             const RefSCExtrapData& data)
+{
+  SymmSCMatrix4SCExtrapData* a
+      = SymmSCMatrix4SCExtrapData::require_castdown(
+          data.pointer(), "SymmSCMatrix4SCExtrapData::accumulate_scaled");
+
+  RefSymmSCMatrix am = a->m1.copy();
+  am.scale(scale);
+  m1.accumulate(am);
+  am = 0;
+
+  am = a->m2.copy();
+  am.scale(scale);
+  m2.accumulate(am);
+
+  am = a->m3.copy();
+  am.scale(scale);
+  m3.accumulate(am);
+
+  am = a->m4.copy();
+  am.scale(scale);
+  m4.accumulate(am);
+}
+
+///////////////////////////////////////////////////////////////////////////
+
 #define CLASSNAME SymmSCMatrixNSCExtrapData
 #define PARENTS public SCExtrapData
 #define HAVE_STATEIN_CTOR

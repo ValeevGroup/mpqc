@@ -68,6 +68,28 @@ class SymmSCMatrix2SCExtrapData: public SCExtrapData {
     void accumulate_scaled(double, const RefSCExtrapData&);
 };
 
+class SymmSCMatrix4SCExtrapData: public SCExtrapData {
+#   define CLASSNAME SymmSCMatrix4SCExtrapData
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    RefSymmSCMatrix m1;
+    RefSymmSCMatrix m2;
+    RefSymmSCMatrix m3;
+    RefSymmSCMatrix m4;
+  public:
+    SymmSCMatrix4SCExtrapData(StateIn&);
+    SymmSCMatrix4SCExtrapData(const RefSymmSCMatrix&, const RefSymmSCMatrix&,
+                              const RefSymmSCMatrix&, const RefSymmSCMatrix&);
+
+    void save_data_state(StateOut&);
+    
+    SCExtrapData* copy();
+    void zero();
+    void accumulate_scaled(double, const RefSCExtrapData&);
+};
+
 class SymmSCMatrixNSCExtrapData: public SCExtrapData {
 #   define CLASSNAME SymmSCMatrixNSCExtrapData
 #   define HAVE_STATEIN_CTOR

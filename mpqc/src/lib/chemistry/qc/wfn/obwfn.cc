@@ -342,7 +342,7 @@ RefSymmSCMatrix
 OneBodyWavefunction::density()
 {
   if (!density_.computed()) {
-    RefSCMatrix veci = eigenvectors().i();
+    RefSCMatrix vec = eigenvectors().t();
     RefSymmSCMatrix newdensity(basis_dimension(), basis_matrixkit());
 
     int nbasis = basis()->nbasis();
@@ -352,7 +352,7 @@ OneBodyWavefunction::density()
         int k;
         double pt=0;
         for (k=0; k < nbasis; k++)
-          pt += occupation(k)*veci.get_element(k,i)*veci.get_element(k,j);
+          pt += occupation(k)*vec.get_element(k,i)*vec.get_element(k,j);
 
         newdensity.set_element(i,j,pt);
       }

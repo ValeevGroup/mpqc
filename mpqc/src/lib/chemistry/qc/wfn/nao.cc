@@ -355,15 +355,23 @@ Wavefunction::nao()
   else {
       P = density();
     }
+  // convert between matrix specializations
   double *Pvec = new double[(P.dim().n() * (P.dim().n() + 1))/2];
   P.convert(Pvec);
   P = matrixkit()->symmmatrix(P.dim());
   P.assign(Pvec);
   delete[] Pvec;
+  // why?  good question.
+  RefSymmSCMatrix Ptmp = P->clone();
+  Ptmp.assign(0.0);
+  Ptmp->accumulate_transform(S, P);
 # ifdef DEBUG
   P.print("P");
-  cout << "nelec = " << (mhalf(S) * P * mhalf(S)).trace() << endl;
+  cout << "nelec = " << (mhalf(S) * Ptmp * mhalf(S)).trace() << endl;
+  cout << "nelec(2) = " << (P * S).trace() << endl;
 # endif
+  P = Ptmp;
+  Ptmp = 0;
 
   int i,j,k,l;
   int nb = b->nbasis();

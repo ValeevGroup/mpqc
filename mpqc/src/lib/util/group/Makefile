@@ -8,7 +8,8 @@ REQUIREDCXXSRC = mstate.cc \
          message.cc messagei.cc messproc.cc messint.cc \
          reduce.cc topology.cc hcube.cc picl.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc memoryi.cc \
-         globcnt.cc memamsg.cc memproc.cc memmid.cc
+         globcnt.cc memamsg.cc memproc.cc memmid.cc \
+         pregtime.cc
 
 OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
                  mempgon.cc memipgon.cc memmpl.cc
@@ -37,7 +38,7 @@ endif
 INC = pool.h message.h mstate.h topology.h picl.h \
       messshm.h messpvm.h messmpi.h \
       rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
-      memmpl.h memmpi.h
+      memmpl.h memmpi.h pregtime.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 

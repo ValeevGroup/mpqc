@@ -22,6 +22,7 @@ class SCF: public OneBodyWavefunction {
 #   include <util/class/classda.h>
   protected:
     RefSCMatrix scf_vector_;
+    RefSelfConsistentExtrapolation extrap_;
     
     int maxiter_;
     int int_store_;

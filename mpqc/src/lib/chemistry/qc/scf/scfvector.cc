@@ -25,8 +25,8 @@ SCF::compute_vector(double& eelec)
   tim_enter("vector");
   int i;
 
-  // one day this should be in the input
-  RefSelfConsistentExtrapolation extrap = new DIIS;
+  // reinitialize the extrapolation object
+  extrap_->reinitialize();
   
   // create level shifter
   LevelShift *level_shift = new LevelShift(this);
@@ -59,16 +59,18 @@ SCF::compute_vector(double& eelec)
 
     // calculate the electronic energy
     eelec = scf_energy();
-    if (scf_grp_->me()==0)
+    if (scf_grp_->me()==0) {
+      cout.setf(ios::fixed);
       cout << indent << "iter " << setw(5) << iter+1 <<
         " energy = " << setw(20) << setprecision(15) << eelec+nucrep <<
         " delta = " << setw(20) << setprecision(15) << delta << endl;
+    }
 
     // now extrapolate the fock matrix
     tim_enter("extrap");
     RefSCExtrapData data = extrap_data();
     RefSCExtrapError error = extrap_error();
-    extrap->extrapolate(data,error);
+    extrap_->extrapolate(data,error);
     data=0;
     error=0;
     tim_exit("extrap");
@@ -112,7 +114,6 @@ SCF::compute_vector(double& eelec)
   // now clean up
   done_vector();
 
-  extrap = 0;
   tim_exit("vector");
   //tim_print(0);
 }

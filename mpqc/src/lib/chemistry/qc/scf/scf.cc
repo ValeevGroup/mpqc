@@ -12,6 +12,8 @@
 #include <math/scmat/local.h>
 #include <math/scmat/offset.h>
 
+#include <math/optimize/diis.h>
+
 #include <chemistry/qc/scf/scf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -37,6 +39,8 @@ SCF::SCF(StateIn& s) :
   s.get(dens_reset_freq_);
   s.get(level_shift_);
 
+  extrap_.restore_state(s);
+
   integral()->set_storage(int_store_);
   scf_grp_ = basis()->matrixkit()->messagegrp();
 }
@@ -60,6 +64,10 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (keyval->exists("level_shift"))
     level_shift_ = keyval->doublevalue("level_shift");
 
+  extrap_ = keyval->describedclassvalue("extrap");
+  if (extrap_.null())
+    extrap_ = new DIIS;
+  
   integral()->set_storage(int_store_);
 
   scf_grp_ = basis()->matrixkit()->messagegrp();
@@ -77,6 +85,7 @@ SCF::save_data_state(StateOut& s)
   s.put(int_store_);
   s.put(dens_reset_freq_);
   s.put(level_shift_);
+  extrap_.save_state(s);
 }
 
 RefSCMatrix
@@ -111,18 +120,23 @@ SCF::compute()
     set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
 
   if (value_needed()) {
-    if (me==0)
-      cout << endl << indent << "SCF::compute: energy accuracy = " <<
-        desired_value_accuracy() << endl << endl;
+    if (me==0) {
+      cout.unsetf(ios::fixed);
+      cout << endl << indent << "SCF::compute: energy accuracy = "
+           << setw(10) << setprecision(7) << desired_value_accuracy()
+           << endl << endl;
+    }
 
     double eelec;
     compute_vector(eelec);
       
     // this will be done elsewhere eventually
     double nucrep = molecule()->nuclear_repulsion_energy();
-    if (me==0)
+    if (me==0) {
+      cout.setf(ios::fixed);
       cout << endl << indent << "total scf energy = " <<
         setw(20) << setprecision(15) << eelec+nucrep << endl;
+    }
 
     set_energy(eelec+nucrep);
     set_actual_value_accuracy(desired_value_accuracy());
@@ -131,9 +145,12 @@ SCF::compute()
   if (gradient_needed()) {
     RefSCVector gradient = matrixkit()->vector(moldim());
 
-    if (me==0)
-      cout << endl << indent << "SCF::compute: gradient accuracy = " <<
-        desired_gradient_accuracy() << endl << endl;
+    if (me==0) {
+      cout.unsetf(ios::fixed);
+      cout << endl << indent << "SCF::compute: gradient accuracy = "
+           << setw(10) << setprecision(7) << desired_gradient_accuracy()
+           << endl << endl;
+    }
 
     compute_gradient(gradient);
     gradient.print("cartesian gradient");
@@ -145,9 +162,12 @@ SCF::compute()
   if (hessian_needed()) {
     RefSymmSCMatrix hessian = matrixkit()->symmmatrix(moldim());
     
-    if (me==0)
-      cout << endl << indent << "SCF::compute: hessian accuracy = " <<
-        desired_hessian_accuracy() << endl << endl;
+    if (me==0) {
+      cout.unsetf(ios::fixed);
+      cout << endl << indent << "SCF::compute: hessian accuracy = "
+           << setw(10) << setprecision(7) << desired_hessian_accuracy()
+           << endl << endl;
+    }
 
     compute_hessian(hessian);
     set_hessian(hessian);

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1994/10/18 23:03:48  etseidl
+ * Revision 1.3  1994/10/31 17:55:08  etseidl
+ * include stdlib.h in generated c file
+ *
+ * Revision 1.2  1994/10/18  23:03:48  etseidl
  * fix many warnings, use memset rather than bzero
  *
  * Revision 1.1.1.1  1993/12/29  12:53:57  etseidl
@@ -79,6 +82,7 @@ free_gen()
   /* Include the following files. */
   fprintf(output,"\n");
   fprintf(output,"#include <stdio.h>\n");
+  fprintf(output,"#include <stdlib.h>\n");
   fprintf(output,"#include <util/sgen/sgen.h>\n");
   fprintf(output,"#include \"%s.h\"\n",BaseName);
   fprintf(output,"#include \"%sfree.h\"\n",BaseName);

@@ -9,7 +9,8 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 CXXSRC = atomcent.cc chemelem.cc molecule.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc linip.cc linop.cc \
          energy.cc coor.cc \
-         molshape.cc chmelm_i.cc imcoor.cc cartcoor.cc taylor.cc
+         molshape.cc chmelm_i.cc imcoor.cc cartcoor.cc taylor.cc \
+         molrender.cc molinfo.cc
 
 CLASSES = Molecule \
           AtomicCenter ChemicalElement \
@@ -18,13 +19,17 @@ CLASSES = Molecule \
           MolecularEnergy  TaylorMolecularEnergy \
           VDWShape ConnollyShape \
           SimpleCo StreSimpleCo BendSimpleCo TorsSimpleCo \
-          OutSimpleCo LinIPSimpleCo LinOPSimpleCo
+          OutSimpleCo LinIPSimpleCo LinOPSimpleCo \
+          MolInfo AtomInfo \
+          RenderedMolecule RenderedStickMolecule RenderedBallMolecule \
+          RenderedMolecularSurface
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
       simple.h localdef.h \
-      coor.h energy.h molshape.h chmelm_i.h taylor.h taylor_f.h
+      coor.h energy.h molshape.h chmelm_i.h taylor.h taylor_f.h \
+      molrender.h molinfo.h
 
 DEPENDINCLUDE = $(INC)
 

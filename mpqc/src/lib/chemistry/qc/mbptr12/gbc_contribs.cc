@@ -183,15 +183,15 @@ R12IntEval::compute_B_gbc_1_()
       const int unit_stride = 1;
       rr_klij = F77_DDOT(&nbraket,klMfA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
       B_gbc1_ab.set_element(kl_ab,ij_ab,-rr_klij);
-      if (kl_ab == lk_ab) {
+      if (kl_ab != lk_ab) {
         rr_lkij = F77_DDOT(&nbraket,lkMfA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
         B_gbc1_ab.set_element(lk_ab,ij_ab,-rr_lkij);
       }
-      if (ij_ab == ji_ab) {
+      if (ij_ab != ji_ab) {
         rr_klji = F77_DDOT(&nbraket,klMfA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
         B_gbc1_ab.set_element(kl_ab,ji_ab,-rr_klji);
       }
-      if (kl_ab == lk_ab && ij_ab == ji_ab) {
+      if (kl_ab != lk_ab && ij_ab != ji_ab) {
         rr_lkji = F77_DDOT(&nbraket,lkMfA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
         B_gbc1_ab.set_element(lk_ab,ji_ab,-rr_lkji);
       }
@@ -281,15 +281,15 @@ R12IntEval::compute_B_gbc_1_()
           rr_klij = klMfa_buf_r12[ma]*ijpq_buf_r12[ma_offset];
           B_gbc1_ab.accumulate_element(kl_ab,ij_ab,-rr_klij);
           
-          if (kl_ab == lk_ab) {
+          if (kl_ab != lk_ab) {
             rr_lkij = lkMfa_buf_r12[ma]*ijpq_buf_r12[ma_offset];
             B_gbc1_ab.accumulate_element(lk_ab,ij_ab,-rr_lkij);
           }
-          if (ij_ab == ji_ab) {
+          if (ij_ab != ji_ab) {
             rr_klji = klMfa_buf_r12[ma]*ijpq_buf_r12[am_offset];
             B_gbc1_ab.accumulate_element(kl_ab,ji_ab,-rr_klji);
           }
-          if (kl_ab == lk_ab && ij_ab == ji_ab) {
+          if (kl_ab != lk_ab && ij_ab != ji_ab) {
             rr_lkji = lkMfa_buf_r12[ma]*ijpq_buf_r12[am_offset];
             B_gbc1_ab.accumulate_element(lk_ab,ji_ab,-rr_lkji);
           }
@@ -405,6 +405,7 @@ R12IntEval::compute_B_gbc_2_()
   MOPairIter_SD kl_iter(act_occ_space);
 
   int nbraket = nocc*nribs;
+#if 1
   for(kl_iter.start();int(kl_iter);kl_iter.next()) {
 
     const int kl = kl_iter.ij();
@@ -459,20 +460,20 @@ R12IntEval::compute_B_gbc_2_()
       const int unit_stride = 1;
       X_ijklf += F77_DDOT(&nbraket,lfkmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
       X_ijklf += F77_DDOT(&nbraket,klfmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
-      X_ijklF_ab.set_element(ij_ab,kl_ab,-X_ijklf);
+      X_ijklF_ab.accumulate_element(ij_ab,kl_ab,-X_ijklf);
       if (kl_ab != lk_ab) {
         X_ijlkf += F77_DDOT(&nbraket,kflmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
         X_ijlkf += F77_DDOT(&nbraket,lkfmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
-        X_ijklF_ab.set_element(ij_ab,lk_ab,-X_ijlkf);
+        X_ijklF_ab.accumulate_element(ij_ab,lk_ab,-X_ijlkf);
       }
-      if (ij_ab == ji_ab) {
+      if (ij_ab != ji_ab) {
         X_jiklf += F77_DDOT(&nbraket,lfkmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
         X_jiklf += F77_DDOT(&nbraket,klfmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
-        X_ijklF_ab.set_element(ji_ab,kl_ab,-X_jiklf);
+        X_ijklF_ab.accumulate_element(ji_ab,kl_ab,-X_jiklf);
         if (kl_ab != lk_ab) {
           X_jilkf += F77_DDOT(&nbraket,kflmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
           X_jilkf += F77_DDOT(&nbraket,lkfmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
-          X_ijklF_ab.set_element(ji_ab,lk_ab,-X_jilkf);
+          X_ijklF_ab.accumulate_element(ji_ab,lk_ab,-X_jilkf);
         }
       }
       
@@ -485,8 +486,9 @@ R12IntEval::compute_B_gbc_2_()
     klfmA_acc->release_pair_block(l,k,R12IntsAcc::r12);
     lfkmA_acc->release_pair_block(k,l,R12IntsAcc::r12);
   }
+#endif
 
-
+#if 1
   //
   // Compute contribution X -= r_{ij}^{pq} r_{pq}^{k l_f}
   //
@@ -549,17 +551,17 @@ R12IntEval::compute_B_gbc_2_()
 
       const int unit_stride = 1;
       X_ijklf += F77_DDOT(&nbraket,klfpq_buf_r12,&unit_stride,ijpq_buf_r12,&unit_stride);
-      X_ijklF_ab.set_element(ij_ab,kl_ab,-X_ijklf);
+      X_ijklF_ab.accumulate_element(ij_ab,kl_ab,-X_ijklf);
       if (kl_ab != lk_ab) {
         X_ijlkf += F77_DDOT(&nbraket,lkfpq_buf_r12,&unit_stride,ijpq_buf_r12,&unit_stride);
-        X_ijklF_ab.set_element(ij_ab,lk_ab,-X_ijlkf);
+        X_ijklF_ab.accumulate_element(ij_ab,lk_ab,-X_ijlkf);
       }
-      if (ij_ab == ji_ab) {
+      if (ij_ab != ji_ab) {
         X_jiklf += F77_DDOT(&nbraket,klfpq_buf_r12,&unit_stride,jipq_buf_r12,&unit_stride);
-        X_ijklF_ab.set_element(ji_ab,kl_ab,-X_jiklf);
+        X_ijklF_ab.accumulate_element(ji_ab,kl_ab,-X_jiklf);
         if (kl_ab != lk_ab) {
           X_jilkf += F77_DDOT(&nbraket,lkfpq_buf_r12,&unit_stride,jipq_buf_r12,&unit_stride);
-          X_ijklF_ab.set_element(ji_ab,lk_ab,-X_jilkf);
+          X_ijklF_ab.accumulate_element(ji_ab,lk_ab,-X_jilkf);
         }
       }
       
@@ -570,6 +572,7 @@ R12IntEval::compute_B_gbc_2_()
     klfpq_acc->release_pair_block(k,l,R12IntsAcc::r12);
     klfpq_acc->release_pair_block(l,k,R12IntsAcc::r12);
   }
+#endif
 
   //
   // Compute B_gbc2 = X_ijklF + X_jilkF :
@@ -595,9 +598,13 @@ R12IntEval::compute_B_gbc_2_()
       const double B_ab_jilk = B_ab_ijkl;
 
       B_gbc2_ab.set_element( ij_ab, kl_ab, B_ab_ijkl);
-      B_gbc2_ab.set_element( ij_ab, lk_ab, B_ab_ijlk);
-      B_gbc2_ab.set_element( ji_ab, kl_ab, B_ab_jikl);
-      B_gbc2_ab.set_element( ji_ab, lk_ab, B_ab_jilk);
+      if (kl_ab != lk_ab)
+        B_gbc2_ab.set_element( ij_ab, lk_ab, B_ab_ijlk);
+      if (ij_ab != ji_ab) {
+        B_gbc2_ab.set_element( ji_ab, kl_ab, B_ab_jikl);
+        if (kl_ab != lk_ab)
+          B_gbc2_ab.set_element( ji_ab, lk_ab, B_ab_jilk);
+      }
 
       if (ij_aa != -1 && kl_aa != -1) {
         B_gbc2_aa.set_element( ij_aa, kl_aa, B_ab_ijkl - B_ab_jikl);
@@ -615,6 +622,9 @@ R12IntEval::compute_B_gbc_2_()
   B_gbc2_ab.print("Alpha-beta B(GBC2) contribution");
   Baa_.accumulate(B_gbc2_aa); Baa_.accumulate(B_gbc2_aa.t());
   Bab_.accumulate(B_gbc2_ab); Bab_.accumulate(B_gbc2_ab.t());
+
+  Xaa_.print("Alpha-alpha X");
+  Xab_.print("Alpha-beta X");
 
   globally_sum_intermeds_();
 

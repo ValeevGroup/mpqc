@@ -288,6 +288,8 @@ class SCElementInvert: public SCElementOp {
 #   include <util/class/classd.h>
   private:
     double threshold_;
+    int nbelowthreshold_;
+    int deferred_;
   public:
     SCElementInvert(double threshold = 0.0);
     SCElementInvert(StateIn&);
@@ -295,7 +297,12 @@ class SCElementInvert: public SCElementOp {
     int has_side_effects();
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&);
+    int has_collect();
+    void defer_collect(int);
+    void collect(const RefMessageGrp&);
+    int result() { return nbelowthreshold_; }
 };
+SavableState_REF_dec(SCElementInvert);
 
 class SCElementScaleDiagonal: public SCElementOp {
 #   define CLASSNAME SCElementScaleDiagonal
@@ -349,6 +356,28 @@ class SCElementMaxAbs: public SCElementOp {
     double result();
 };
 SavableState_REF_dec(SCElementMaxAbs);
+
+class SCElementMinAbs: public SCElementOp {
+#   define CLASSNAME SCElementMinAbs
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    int deferred_;
+    double r;
+  public:
+    // rinit must be greater than the magnitude of the smallest element
+    SCElementMinAbs(double rinit);
+    SCElementMinAbs(StateIn&);
+    ~SCElementMinAbs();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+    int has_collect();
+    void defer_collect(int);
+    void collect(const RefMessageGrp&);
+    double result();
+};
+SavableState_REF_dec(SCElementMinAbs);
 
 class SCElementSumAbs: public SCElementOp {
 #   define CLASSNAME SCElementSumAbs

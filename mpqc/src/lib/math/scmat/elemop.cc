@@ -568,21 +568,30 @@ SCDestructiveElementProduct::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementInvert members
 
+SavableState_REF_def(SCElementInvert);
 #define CLASSNAME SCElementInvert
 #define PARENTS   public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
-SCElementInvert::SCElementInvert(double threshold):threshold_(threshold) {}
+SCElementInvert::SCElementInvert(double threshold):
+  threshold_(threshold),
+  nbelowthreshold_(0),
+  deferred_(0)
+{}
 SCElementInvert::SCElementInvert(StateIn&s):
   SCElementOp(s)
 {
   s.get(threshold_);
+  s.get(nbelowthreshold_);
+  s.get(deferred_);
 }
 void
 SCElementInvert::save_data_state(StateOut&s)
 {
   s.put(threshold_);
+  s.put(nbelowthreshold_);
+  s.put(deferred_);
 }
 void *
 SCElementInvert::_castdown(const ClassDesc*cd)
@@ -598,7 +607,7 @@ SCElementInvert::process(SCMatrixBlockIter&i)
   for (i.reset(); i; ++i) {
       double val = i.get();
       if (fabs(val) > threshold_) val = 1.0/val;
-      else val = 0.0;
+      else { val = 0.0; nbelowthreshold_++; }
       i.set(val);
     }
 }
@@ -607,6 +616,22 @@ int
 SCElementInvert::has_side_effects()
 {
   return 1;
+}
+int
+SCElementInvert::has_collect()
+{
+  return 1;
+}
+void
+SCElementInvert::defer_collect(int h)
+{
+  deferred_=h;
+}
+void
+SCElementInvert::collect(const RefMessageGrp&msg)
+{
+  if (!deferred_)
+    msg->sum(nbelowthreshold_);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -707,6 +732,66 @@ SCElementMaxAbs::collect(const RefMessageGrp&msg)
 {
   if (!deferred_)
     msg->max(r);
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementMin members
+
+SavableState_REF_def(SCElementMinAbs);
+#define CLASSNAME SCElementMinAbs
+#define PARENTS   public SCElementOp
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+SCElementMinAbs::SCElementMinAbs(double rinit):deferred_(0), r(rinit) {}
+SCElementMinAbs::SCElementMinAbs(StateIn&s):
+  SCElementOp(s)
+{
+  s.get(r);
+  s.get(deferred_);
+}
+void
+SCElementMinAbs::save_data_state(StateOut&s)
+{
+  s.put(r);
+  s.put(deferred_);
+}
+void *
+SCElementMinAbs::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+SCElementMinAbs::~SCElementMinAbs() {}
+void
+SCElementMinAbs::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      if (fabs(i.get()) < r) r = fabs(i.get());
+    }
+}
+double
+SCElementMinAbs::result()
+{
+  return r;
+}
+int
+SCElementMinAbs::has_collect()
+{
+  return 1;
+}
+void
+SCElementMinAbs::defer_collect(int h)
+{
+  deferred_=h;
+}
+void
+SCElementMinAbs::collect(const RefMessageGrp&msg)
+{
+  if (!deferred_)
+    msg->min(r);
 }
 
 /////////////////////////////////////////////////////////////////////////

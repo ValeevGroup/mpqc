@@ -1170,14 +1170,17 @@ AC_LANG_RESTORE
 
 dnl ----------- check for Scalable BLAS library --------------
 
+LIBSSAV="$LIBS"
+LIBS="$LIBS $FLIBS"
 HAVE_SCALABLE_BLAS=no
 AC_CHECK_FUNC(sB_init,
   HAVE_SCALABLE_BLAS=yes,[
   AC_CHECK_LIB(sB_BLAS,sB_init,[
     HAVE_SCALABLE_BLAS=yes
-    LIBS="-lsB_BLAS $LIBS"
+    LIBSSAV="-lsB_BLAS $LIBSSAV"
   ])]
 )
+LIBS="$LIBSSAV"
 if test $HAVE_SCALABLE_BLAS = yes; then
   AC_DEFINE(HAVE_SCALABLE_BLAS)
 fi

@@ -52,10 +52,14 @@ stack_alignment_check(void *ptr, const char *where)
 #endif
 
 #ifdef __i386__
-#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
+//#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
+#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t"); \
+                  __asm__ __volatile__("addl\t$-4,%esp\n\t")
 //#define FIX_STACK
+#define A8 __attribute__ ((aligned (8)))
 #else
 #define FIX_STACK
+#define A8
 #endif
 
   /* MG is the maximum angular momentum for which we will use

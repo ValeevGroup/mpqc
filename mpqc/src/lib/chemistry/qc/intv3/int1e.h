@@ -35,6 +35,7 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/intv3/array.h>
 
 class Integral;
 
@@ -79,13 +80,24 @@ class Int1eV3: public VRefCount {
     int init_order;
     double *buff;
     double *cartesianbuffer;
+    double *cartesianbuffer_scratch;
     int mu;
+    IntV3Arraydoublep3 inter;
+    IntV3Arraydoublep3 efield_inter;
 
   protected:
     void accum_shell_1der(
         double *buff, int ish, int jsh,
         RefGaussianBasisSet dercs, int centernum,
         double (Int1eV3::*)(int,int,int,int,int,int,int,int)
+        );
+    void accum_shell_block_1der(
+        double *buff, int ish, int jsh,
+        RefGaussianBasisSet dercs, int centernum,
+        void (Int1eV3::*shell_block_function)
+                                  (int gc1, int a, int gc2, int b,
+                                   int gcsize2, int gcoff1, int gcoff2,
+                                   double coef, double *buffer)
         );
     double comp_shell_overlap(int gc1, int i1, int j1, int k1,
                               int gc2, int i2, int j2, int k2);
@@ -98,11 +110,15 @@ class Int1eV3: public VRefCount {
     double comp_shell_nuclear(int gc1, int i1, int j1, int k1,
                               int gc2, int i2, int j2, int k2);
     void accum_shell_efield(double *buff, int ish, int jsh);
+    void accum_shell_block_efield(double *buff, int ish, int jsh);
     double comp_prim_nuclear(int i1, int j1, int k1,
                              int i2, int j2, int k2, int m);
     void comp_shell_efield(double *efield,
                            int gc1, int i1, int j1, int k1,
                            int gc2, int i2, int j2, int k2);
+    void comp_shell_block_efield(int gc1, int a, int gc2, int b,
+                                 int gcsize2, int gcoff1, int gcoff2,
+                                 double coef, double *buffer);
     double comp_prim_efield(int xyz, int i1, int j1, int k1,
                             int i2, int j2, int k2, int m);
     void comp_shell_dipole(double* dipole,
@@ -111,6 +127,15 @@ class Int1eV3: public VRefCount {
     double comp_prim_dipole(int im, int jm, int km,
                             int i1, int j1, int k1,
                             int i2, int j2, int k2);
+    void comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
+                                  int gcsize2, int gcoff1, int gcoff2,
+                                  double coef, double *buffer);
+    void comp_prim_block_nuclear(int a, int b);
+    void comp_prim_block_nuclear_build_a(int a, int b, int m);
+    void comp_prim_block_nuclear_build_b(int b, int m);
+    void comp_prim_block_efield(int a, int b);
+    void comp_prim_block_efield_build_a(int a, int b, int m);
+    void comp_prim_block_efield_build_b(int b, int m);
     // routines from comp_1e:
   protected:
     void int_accum_shell_overlap_1der(int ish, int jsh,
@@ -207,6 +232,7 @@ class Int1eV3: public VRefCount {
     RefGaussianBasisSet basis2() { return bs2_; }
 
     void kinetic(int ish, int jsh);
+    void nuclear_slow(int ish, int jsh);
     void nuclear(int ish, int jsh);
     void overlap(int ish, int jsh);
     void hcore(int ish, int jsh);

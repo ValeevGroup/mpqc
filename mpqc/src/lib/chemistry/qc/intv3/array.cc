@@ -229,6 +229,20 @@ IntV3Arraydoublep3::set_dim(int n1, int n2, int n3)
 }
 
 void
+IntV3Arraydoublep3::delete_data()
+{
+  for (int i=0; i<n1_; i++) {
+      double ***datai = data_[i];
+      for (int j=0; j<n2_; j++) {
+          double **dataj = datai[j];
+          for (int k=0; k<n3_; k++) {
+              delete[] dataj[k];
+            }
+        }
+    }
+}
+
+void
 IntV3Arraydoublep3::print(ostream &o)
 {
   for (int i=0; i<n1_; i++) {

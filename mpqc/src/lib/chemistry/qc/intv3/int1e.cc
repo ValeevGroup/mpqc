@@ -46,6 +46,7 @@ Int1eV3::Int1eV3(Integral *integral,
   init_order = -1;
   buff = 0;
   cartesianbuffer = 0;
+  cartesianbuffer_scratch = 0;
 
   bs1_ = b1;
   bs2_ = b2;

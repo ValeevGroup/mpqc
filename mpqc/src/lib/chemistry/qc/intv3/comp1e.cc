@@ -38,6 +38,12 @@
 #define IN(i,j) ((i)==(j)?1:0)
 #define SELECT(x1,x2,x3,s) (((s)==0)?x1:(((s)==1)?(x2):(x3)))
 
+#define DEBUG_NUC_SHELL_DER 0
+#define DEBUG_NUC_PRIM 0
+#define DEBUG_NUC_SHELL 0
+
+#define DEBUG_EFIELD_PRIM 0
+
 /* ------------ Initialization of 1e routines. ------------------- */
 /* This routine returns a buffer large enough to hold a shell doublet
  * of integrals (if order == 0) or derivative integrals (if order == 1).
@@ -76,6 +82,25 @@ Int1eV3::int_initialize_1e(int flags, int order)
 
   buff = (double *) malloc(scratchsize*sizeof(double));
   cartesianbuffer = (double *) malloc(scratchsize*sizeof(double));
+  cartesianbuffer_scratch = (double *) malloc(scratchsize*sizeof(double));
+
+  inter.set_dim(jmax1+order+1,jmax2+order+1,jmax+2*order+1);
+  efield_inter.set_dim(jmax1+order+1,jmax2+order+1,jmax+2*order+1);
+  int i,j,m;
+  for (i=0; i<=jmax1+order; i++) {
+    int sizei = INT_NCART_NN(i);
+    for (j=0; j<=jmax2+order; j++) {
+      int sizej = INT_NCART_NN(j);
+      for (m=0; m<=jmax+2*order-i-j; m++) {
+        inter(i,j,m) = new double[sizei*sizej];
+        efield_inter(i,j,m) = new double[sizei*sizej*3];
+        }
+      for (; m<=jmax+2*order; m++) {
+        inter(i,j,m) = 0;
+        efield_inter(i,j,m) = 0;
+        }
+      }
+    }
 
   }
 
@@ -85,8 +110,11 @@ Int1eV3::int_done_1e()
   init_order = -1;
   free(buff);
   free(cartesianbuffer);
+  free(cartesianbuffer_scratch);
   buff = 0;
   cartesianbuffer = 0;
+  inter.delete_data();
+  efield_inter.delete_data();
 }
 
 
@@ -481,6 +509,187 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
                          cartesianbuffer, buff, gshell1, gshell2);
   }
 
+/* This computes the basis function part of 
+ * generic derivative integrals between functions
+ * in two shells.  The result is accumulated in the buffer which is ordered
+ * atom 0 x, y, z, atom 1, ... .
+ * The function used to compute the nonderivative integrals is shell_function.
+ */
+void
+Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
+                                RefGaussianBasisSet dercs, int centernum,
+                                void (Int1eV3::*shell_block_function)
+                                  (int gc1, int a, int gc2, int b,
+                                   int gcsize2, int gcoff1, int gcoff2,
+                                   double coef, double *buffer))
+{
+  int i;
+  int gc1,gc2;
+  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int index1,index2,index12;
+
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+
+  int docenter1=0, docenter2=0;
+  int equiv12 = (bs1_==bs2_)&&(c1==c2);
+  int der1 = (bs1_==dercs)&&(c1==centernum);
+  int der2 = (bs2_==dercs)&&(c2==centernum);
+  if (!equiv12) {
+    docenter1 = der1;
+    docenter2 = der2;
+    }
+  else if (three_center) {
+    int equiv123 = (bs1_==third_centers)&&(c1==third_centernum);
+    if (!equiv123) {
+      docenter1 = der1;
+      docenter2 = der2;
+      }
+    }
+
+  if (!docenter1 && !docenter2) return;
+
+  double coef;
+  if (scale_shell_result) {
+    coef = result_scale_factor;
+    }
+  else coef = 1.0;
+
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
+  int gcsize1 = gshell1->ncartesian();
+  int gcsize2 = gshell2->ncartesian();
+  memset(cartesianbuffer,0,sizeof(double)*gcsize1*gcsize2*3);
+  int gcoff1 = 0;
+  for (gc1=0; gc1<gshell1->ncontraction(); gc1++) {
+    int a = gshell1->am(gc1);
+    int sizea = INT_NCART_NN(a);
+    int sizeap1 = INT_NCART_NN(a+1);
+    int sizeam1 = INT_NCART(a-1);
+    int gcoff2 = 0;
+    for (gc2=0; gc2<gshell2->ncontraction(); gc2++) {
+      int b = gshell2->am(gc2);
+      int sizeb = INT_NCART_NN(b);
+      int sizebp1 = INT_NCART_NN(b+1);
+      int sizebm1 = INT_NCART(b-1);
+      /* Derivative wrt first shell. */
+      if (docenter1) {
+        exponent_weighted = 0;
+        memset(cartesianbuffer_scratch,0,sizeof(double)*sizeap1*sizeb);
+        (this->*shell_block_function)(gc1, a+1, gc2, b,
+                                      sizeb, 0, 0,
+                                      coef, cartesianbuffer_scratch);
+        index1=0;
+        FOR_CART(i1,j1,k1,a) {
+          index2=0;
+          FOR_CART(i2,j2,k2,b) {
+            double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+            for (i=0; i<3; i++) {
+              *ctmp++ += 2.0*cartesianbuffer_scratch[INT_CARTINDEX(a+1,i1+IN(i,0),j1+IN(i,1))*sizeb+index2];
+              }
+            index2++;
+            } END_FOR_CART;
+          index1++;
+          } END_FOR_CART;
+
+        if (a) {
+          exponent_weighted = -1;
+          memset(cartesianbuffer_scratch,0,sizeof(double)*sizeam1*sizeb);
+          (this->*shell_block_function)(gc1, a-1, gc2, b,
+                                        sizeb, 0, 0,
+                                        coef, cartesianbuffer_scratch);
+          index1=0;
+          FOR_CART(i1,j1,k1,a) {
+            index2=0;
+            FOR_CART(i2,j2,k2,b) {
+              double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+              for (i=0; i<3; i++) {
+                *ctmp++ -= SELECT(i1,j1,k1,i)
+                           * cartesianbuffer_scratch[INT_CARTINDEX(a-1,i1-IN(i,0),j1-IN(i,1))*sizeb+index2];
+                }
+              index2++;
+              } END_FOR_CART;
+            index1++;
+            } END_FOR_CART;
+          }
+        }
+      if (docenter2) {
+        /* Derviative wrt second shell. */
+        exponent_weighted = 1;
+        memset(cartesianbuffer_scratch,0,sizeof(double)*sizea*sizebp1);
+        (this->*shell_block_function)(gc1, a, gc2, b+1,
+                                      sizebp1, 0, 0,
+                                      coef, cartesianbuffer_scratch);
+        index1=0;
+        FOR_CART(i1,j1,k1,a) {
+          index2=0;
+          FOR_CART(i2,j2,k2,b) {
+            double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+            for (i=0; i<3; i++) {
+              *ctmp++ += 2.0*cartesianbuffer_scratch[index1*sizebp1+INT_CARTINDEX(b+1,i2+IN(i,0),j2+IN(i,1))];
+              }
+            index2++;
+            } END_FOR_CART;
+          index1++;
+          } END_FOR_CART;
+
+        if (b) {
+          exponent_weighted = -1;
+          memset(cartesianbuffer_scratch,0,sizeof(double)*sizea*sizebm1);
+          (this->*shell_block_function)(gc1, a, gc2, b-1,
+                                        sizebm1, 0, 0,
+                                        coef, cartesianbuffer_scratch);
+          index1=0;
+          FOR_CART(i1,j1,k1,a) {
+            index2=0;
+            FOR_CART(i2,j2,k2,b) {
+              double *ctmp = &cartesianbuffer[((index1+gcoff1)*gcsize2+index2+gcoff2)*3];
+              for (i=0; i<3; i++) {
+                *ctmp++ -= SELECT(i2,j2,k2,i)
+                           * cartesianbuffer_scratch[index1*sizebm1+INT_CARTINDEX(b-1,i2-IN(i,0),j2-IN(i,1))];
+                }
+              index2++;
+              } END_FOR_CART;
+            index1++;
+            } END_FOR_CART;
+          }
+        }
+      gcoff2 += INT_NCART_NN(b);
+      }
+    gcoff1 += INT_NCART_NN(a);
+    }
+
+  accum_transform_1e_xyz(integral_,
+                         cartesianbuffer, buff, gshell1, gshell2);
+
+#if DEBUG_NUC_SHELL_DER
+  double *fastbuff = cartesianbuffer;
+  cartesianbuffer = new double[gcsize1*gcsize2*3];
+  double *junkbuff = new double[gcsize1*gcsize2*3];
+  memset(junkbuff,0,sizeof(double)*gcsize1*gcsize2*3);
+  accum_shell_1der(junkbuff,ish,jsh,dercs,centernum,
+                   &Int1eV3::comp_shell_nuclear);
+  delete[] junkbuff;
+  int index = 0;
+  for (i=0; i<gcsize1; i++) {
+      for (int j=0; j<gcsize2; j++, index++) {
+          cout << scprintf(" (%d %d): % 18.15f % 18.15f",
+                           i,j,cartesianbuffer[index],fastbuff[index]);
+          if (fabs(cartesianbuffer[index]-fastbuff[index])>1.0e-12) {
+              cout << " **";
+            }
+          cout << endl;
+        }
+    }
+  delete[] cartesianbuffer;
+  cartesianbuffer = fastbuff;
+#endif
+  }
+
 /* Compute the kinetic energy for the shell.  The arguments are the
  * cartesian exponents for centers 1 and 2.  The shell1 and shell2
  * globals are used. */
@@ -671,7 +880,7 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
     for (int xyz=0; xyz<3; xyz++) {
         C[xyz] = bs1_->r(centernum,xyz);
       }
-    accum_shell_efield(buff,ish,jsh);
+    accum_shell_block_efield(buff,ish,jsh);
     scale_shell_result = 0;
     }
   else if (bs2_ == dercs) {
@@ -680,7 +889,7 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
     for (int xyz=0; xyz<3; xyz++) {
         C[xyz] = bs2_->r(centernum,xyz);
       }
-    accum_shell_efield(buff,ish,jsh);
+    accum_shell_block_efield(buff,ish,jsh);
     scale_shell_result = 0;
     }
 
@@ -707,8 +916,10 @@ Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
       }
     scale_shell_result = 1;
     result_scale_factor = -bs1_->molecule()->charge(i);
-    accum_shell_1der(buff,ish,jsh,dercs,centernum,
-                     &Int1eV3::comp_shell_nuclear);
+    //accum_shell_1der(buff,ish,jsh,dercs,centernum,
+    //                 &Int1eV3::comp_shell_nuclear);
+    accum_shell_block_1der(buff,ish,jsh,dercs,centernum,
+                           &Int1eV3::comp_shell_block_nuclear);
     scale_shell_result = 0;
     }
   if (bs2_!=bs1_) {
@@ -720,8 +931,10 @@ Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
         }
       scale_shell_result = 1;
       result_scale_factor = -bs2_->molecule()->charge(i);
-      accum_shell_1der(buff,ish,jsh,dercs,centernum,
-                       &Int1eV3::comp_shell_nuclear);
+      //accum_shell_1der(buff,ish,jsh,dercs,centernum,
+      //                 &Int1eV3::comp_shell_nuclear);
+      accum_shell_block_1der(buff,ish,jsh,dercs,centernum,
+                             &Int1eV3::comp_shell_block_nuclear);
       scale_shell_result = 0;
       }
     }
@@ -789,6 +1002,62 @@ Int1eV3::accum_shell_efield(double *buff, int ish, int jsh)
   }
 
 /* This computes the efield integrals between functions in two shells.
+ * The result is accumulated in the buffer in the form bf1 x y z, bf2
+ * x y z, etc.  The globals scale_shell_result, result_scale_factor,
+ * and C must be set before this is called.
+ */
+void
+Int1eV3::accum_shell_block_efield(double *buff, int ish, int jsh)
+{
+  int i;
+  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  double efield[3];
+  int gc1,gc2;
+  int index1,index2;
+  double *tmp = cartesianbuffer;
+
+  if (!(init_order >= 1)) {
+    cerr << scprintf("accum_shell_efield: one electron routines are not init'ed\n");
+    exit(1);
+    }
+
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
+
+  double coef;
+  if (scale_shell_result) coef = result_scale_factor;
+  else coef = 1.0;
+
+  int gcsize1 = gshell1->ncartesian();
+  int gcsize2 = gshell2->ncartesian();
+  memset(cartesianbuffer,0,sizeof(double)*gcsize1*gcsize2*3);
+  int gcoff1 = 0;
+  for (gc1=0; gc1<gshell1->ncontraction(); gc1++) {
+    int a = gshell1->am(gc1);
+    int sizea = INT_NCART_NN(a);
+    int gcoff2 = 0;
+    for (gc2=0; gc2<gshell2->ncontraction(); gc2++) {
+      int b = gshell2->am(gc2);
+      int sizeb = INT_NCART_NN(b);
+      comp_shell_block_efield(gc1,a,gc2,b,
+                              gcsize2, gcoff1, gcoff2,
+                              coef, cartesianbuffer);
+      gcoff2 += sizeb;
+      }
+    gcoff1 += sizea;
+    }
+
+  accum_transform_1e_xyz(integral_,
+                         cartesianbuffer, buff, gshell1, gshell2);
+  }
+
+/* This computes the efield integrals between functions in two shells.
  * The result is placed in the buffer in the form bf1 x y z, bf2
  * x y z, etc.
  */
@@ -838,11 +1107,10 @@ Int1eV3::efield(int ish, int jsh, double *position)
                    cartesianbuffer, buff, gshell1, gshell2);
 }
 
-/* This computes the nuc rep energy integrals between functions in two shells.
- * The result is placed in the buffer.
- */
+/* This slowly computes the nuc rep energy integrals between functions in
+ * two shells.  The result is placed in the buffer.  */
 void
-Int1eV3::nuclear(int ish, int jsh)
+Int1eV3::nuclear_slow(int ish, int jsh)
 {
   int i;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
@@ -889,6 +1157,93 @@ Int1eV3::nuclear(int ish, int jsh)
       index++;
       END_FOR_GCCART_GS(cart2)
     END_FOR_GCCART_GS(cart1)
+
+  transform_1e(integral_,
+               cartesianbuffer, buff, gshell1, gshell2);
+  }
+
+/* This computes the nuc rep energy integrals between functions in two
+ * shells.  The result is placed in the buffer.  */
+void
+Int1eV3::nuclear(int ish, int jsh)
+{
+  int i;
+  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int index;
+  int gc1,gc2;
+
+  if (!(init_order >= 0)) {
+    cerr << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
+    exit(1);
+    }
+
+  c1 = bs1_->shell_to_center(ish);
+  c2 = bs2_->shell_to_center(jsh);
+  for (int xyz=0; xyz<3; xyz++) {
+      A[xyz] = bs1_->r(c1,xyz);
+      B[xyz] = bs2_->r(c2,xyz);
+    }
+  gshell1 = &bs1_->shell(ish);
+  gshell2 = &bs2_->shell(jsh);
+
+  int ni = gshell1->ncartesian();
+  int nj = gshell2->ncartesian();
+  memset(cartesianbuffer,0,sizeof(double)*ni*nj);
+
+  int offi = 0;
+  for (gc1=0; gc1<gshell1->ncontraction(); gc1++) {
+    int a = gshell1->am(gc1);
+    int offj = 0;
+    for (gc2=0; gc2<gshell2->ncontraction(); gc2++) {
+      int b = gshell2->am(gc2);
+      /* Loop thru the centers on bs1_. */
+      for (i=0; i<bs1_->ncenter(); i++) {
+        double charge = bs1_->molecule()->charge(i);
+        for (int xyz=0; xyz<3; xyz++) C[xyz] = bs1_->r(i,xyz);
+        comp_shell_block_nuclear(gc1, a, gc2, b,
+                                 nj, offi, offj,
+                                 -charge, cartesianbuffer);
+        }
+      /* Loop thru the centers on bs2_ if necessary. */
+      if (bs2_ != bs1_) {
+        for (i=0; i<bs2_->ncenter(); i++) {
+          double charge = bs2_->molecule()->charge(i);
+          for (int xyz=0; xyz<3; xyz++) C[xyz] = bs2_->r(i,xyz);
+          comp_shell_block_nuclear(gc1, a, gc2, b,
+                                   nj, offi, offj,
+                                   -charge, cartesianbuffer);
+          }
+        }
+      offj += INT_NCART_NN(b);
+      }
+    offi += INT_NCART_NN(a);
+    }
+
+#if DEBUG_NUC_SHELL
+  double *fastbuf = new double[ni*nj];
+  memcpy(fastbuf,cartesianbuffer,sizeof(double)*ni*nj);
+  nuclear_slow(ish,jsh);
+
+  index = 0;
+  int cart1, cart2;
+  FOR_GCCART_GS(gc1,cart1,i1,j1,k1,gshell1) {
+    FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2) {
+      double fast = fastbuf[index];
+      double slow = cartesianbuffer[index];
+      if (fabs(fast-slow)>1.0e-12) {
+        cout << scprintf("NUC SHELL FINAL: %d (%d %d %d) %d (%d %d %d): ",
+                         gc1, i1,j1,k1, gc2, i2,j2,k2)
+             << scprintf(" % 20.15f % 20.15f",
+                         fast, slow)
+             << endl;
+        }
+      index++;
+      } END_FOR_GCCART_GS(cart2);
+    } END_FOR_GCCART_GS(cart1);
+
+  memcpy(cartesianbuffer,fastbuf,sizeof(double)*ni*nj);
+  delete[] fastbuf;
+#endif
 
   transform_1e(integral_,
                cartesianbuffer, buff, gshell1, gshell2);
@@ -1317,6 +1672,330 @@ Int1eV3::comp_shell_nuclear(int gc1, int i1, int j1, int k1,
   return result;
   }
 
+/* Compute the nuclear attraction for the shell.  The arguments are the
+ * cartesian exponents for centers 1 and 2.  The shell1 and shell2
+ * globals are used. */
+void
+Int1eV3::comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
+                                  int gcsize2, int gcoff1, int gcoff2,
+                                  double coef, double *buffer)
+{
+  int i,j,k,xyz;
+  double Pi;
+  double oozeta;
+  double AmB,AmB2;
+  double PmC2;
+  double auxcoef;
+  double tmp;
+  int am = a + b;
+  int size1 = INT_NCART_NN(a);
+  int size2 = INT_NCART_NN(b);
+
+#if DEBUG_NUC_SHELL
+  double *shellints = new double[size1*size2];
+  memset(shellints,0,sizeof(double)*size1*size2);
+#endif
+
+  /* Loop over the primitives in the shells. */
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
+
+      /* Compute the intermediates. */
+      zeta = gshell1->exponent(i) + gshell2->exponent(j);
+      oozeta = 1.0/zeta;
+      oo2zeta = 0.5*oozeta;
+      AmB2 = 0.0;
+      PmC2 = 0.0;
+      for (xyz=0; xyz<3; xyz++) {
+        Pi = oozeta*(gshell1->exponent(i) * A[xyz]
+                     + gshell2->exponent(j) * B[xyz]);
+        PmA[xyz] = Pi - A[xyz];
+        PmB[xyz] = Pi - B[xyz];
+        PmC[xyz] = Pi - C[xyz];
+        AmB = A[xyz] - B[xyz];
+        AmB2 += AmB*AmB;
+        PmC2 += PmC[xyz]*PmC[xyz];
+        }
+
+      /* The auxillary integral coeficients. */
+      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+                                           +gshell2->exponent(j))
+           * exp(- oozeta * gshell1->exponent(i)
+                 * gshell2->exponent(j) * AmB2);
+
+      /* The Fm(U) intermediates. */
+      fjttable_ = fjt_->values(am,zeta*PmC2);
+
+      /* Convert the Fm(U) intermediates into the auxillary
+       * nuclear attraction integrals. */
+      for (k=0; k<=am; k++) {
+        fjttable_[k] *= auxcoef;
+        }
+
+      /* Compute the primitive nuclear attraction integral. */
+      comp_prim_block_nuclear(a,b);
+
+      tmp =  gshell1->coefficient_unnorm(gc1,i)
+             * gshell2->coefficient_unnorm(gc2,j)
+             * coef;
+
+      if (exponent_weighted == 0) tmp *= gshell1->exponent(i);
+      else if (exponent_weighted == 1) tmp *= gshell2->exponent(j);
+
+#if DEBUG_NUC_SHELL
+      double *tprimbuffer = inter(a,b,0);
+      double *tmpshellints = shellints;
+      for (int ip=0; ip<size1; ip++) {
+        for (int jp=0; jp<size2; jp++) {
+          *tmpshellints++ += tmp * *tprimbuffer++ / coef;
+          }
+        }
+#endif
+      double *primbuffer = inter(a,b,0);
+      for (int ip=0; ip<size1; ip++) {
+        for (int jp=0; jp<size2; jp++) {
+          //cout << scprintf("buffer[%d] += %18.15f",
+          //                 (ip+gcoff1)*gcsize2+jp+gcoff2,
+          //                 tmp * *primbuffer)
+          //     << endl;
+          buffer[(ip+gcoff1)*gcsize2+jp+gcoff2] += tmp * *primbuffer++;
+          }
+        }
+      }
+    }
+
+#if DEBUG_NUC_SHELL
+#  if DEBUG_NUC_SHELL > 1
+  cout << scprintf("GC = (%d %d), A = %d, B = %d", gc1, gc2, a, b)
+       << endl;
+#  endif
+  int i1,j1,k1;
+  int i2,j2,k2;
+  int ip = 0;
+  double *tmpshellints = shellints;
+  FOR_CART(i1,j1,k1,a) {
+    int jp = 0;
+    FOR_CART(i2,j2,k2,b) {
+      double fast = *tmpshellints++;
+      double slow = comp_shell_nuclear(gc1, i1, j1, k1,
+                                       gc2, i2, j2, k2);
+      int bad = fabs(fast-slow)>1.0e-12;
+      if (DEBUG_NUC_SHELL > 1 || bad) {
+        cout << scprintf("NUC SHELL: (%d %d %d) (%d %d %d): ",
+                         i1,j1,k1, i2,j2,k2)
+             << scprintf(" % 20.15f % 20.15f",
+                         fast, slow);
+        }
+      if (bad) {
+        cout << " ****" << endl;
+        }
+      else if (DEBUG_NUC_SHELL > 1) {
+        cout << endl;
+        }
+      jp++;
+      } END_FOR_CART;
+    ip++;
+    } END_FOR_CART;
+  delete[] shellints;
+#endif
+  }
+
+void
+Int1eV3::comp_prim_block_nuclear(int a, int b)
+{
+  int im, ia, ib, iab;
+  int l = a + b;
+
+  // fill in the ia+ib=0 integrals
+  for (im=0; im<=l; im++) {
+#if DEBUG_NUC_PRIM > 1
+    cout << "BUILD: M = " << im
+         << " A = " << 0
+         << " B = " << 0
+         << endl;
+#endif
+    inter(0,0,im)[0] = fjttable_[im];
+    }
+
+  for (im=l-1; im>=0; im--) {
+    int lm = l-im;
+    // build the integrals for a = 0
+    for (ib=1; ib<=lm && ib<=b; ib++) {
+#if DEBUG_NUC_PRIM > 1
+      cout << "BUILD: M = " << im
+           << " A = " << 0
+           << " B = " << ib
+           << endl;
+#endif
+      comp_prim_block_nuclear_build_b(ib,im);
+      }
+    for (ia=1; ia<=lm && ia<=a; ia++) {
+      for (ib=0; ib<=lm-ia && ib<=b; ib++) {
+#if DEBUG_NUC_PRIM > 1
+        cout << "BUILD: M = " << im
+             << " A = " << ia
+             << " B = " << ib
+             << endl;
+#endif
+        comp_prim_block_nuclear_build_a(ia,ib,im);
+        }
+      }
+    }
+
+#if DEBUG_NUC_PRIM
+  for (im=0; im<=l; im++) {
+    int lm = l-im;
+    for (ia=0; ia<=lm && ia<=a; ia++) {
+      int na = INT_NCART_NN(a);
+      for (ib=0; ib<=lm-ia && ib<=b; ib++) {
+        int nb = INT_NCART_NN(b);
+#if DEBUG_NUC_PRIM > 1
+        cout << "M = " << im
+             << " A = " << ia
+             << " B = " << ib
+             << endl;
+#endif
+        double *buf = inter(ia,ib,im);
+        int i1,j1,k1, i2,j2,k2;
+        FOR_CART(i1,j1,k1,ia) {
+          FOR_CART(i2,j2,k2,ib) {
+            double fast = *buf++;
+            double slow = comp_prim_nuclear(i1, j1, k1,
+                                            i2, j2, k2, im);
+            if (fast > 999.0) fast = 999.0;
+            if (fast < -999.0) fast = -999.0;
+            if (fabs(fast-slow)>1.0e-12) {
+              cout << scprintf("(%d %d %d) (%d %d %d) (%d): ",
+                               i1,j1,k1, i2,j2,k2, im)
+                   << scprintf(" % 20.15f % 20.15f",
+                               fast, slow)
+                   << endl;
+              }
+            } END_FOR_CART;
+          } END_FOR_CART;
+        }
+      }
+    }
+#endif
+}
+
+void
+Int1eV3::comp_prim_block_nuclear_build_a(int a, int b, int m)
+{
+  double *I000 = inter(a,b,m);
+  double *I100 = inter(a-1,b,m);
+  double *I101 = inter(a-1,b,m+1);
+  double *I200 = (a>1?inter(a-2,b,m):0);
+  double *I201 = (a>1?inter(a-2,b,m+1):0);
+  double *I110 = (b?inter(a-1,b-1,m):0);
+  double *I111 = (b?inter(a-1,b-1,m+1):0);
+  int i1,j1,k1;
+  int i2,j2,k2;
+  int carta=0;
+  int sizeb = INT_NCART_NN(b);
+  int sizebm1 = INT_NCART_DEC(b,sizeb);
+  FOR_CART(i1,j1,k1,a) {
+    int cartb=0;
+    FOR_CART(i2,j2,k2,b) {
+      double result = 0.0;
+      if (i1) {
+        int am1 = INT_CARTINDEX(a-1,i1-1,j1);
+        result  = PmA[0] * I100[am1*sizeb+cartb];
+        result -= PmC[0] * I101[am1*sizeb+cartb];
+        if (i1>1) {
+          int am2 = INT_CARTINDEX(a-2,i1-2,j1);
+          result += oo2zeta * (i1-1)
+                    *(I200[am2*sizeb+cartb] - I201[am2*sizeb+cartb]);
+          }
+        if (i2) {
+          int bm1 = INT_CARTINDEX(b-1,i2-1,j2);
+          result += oo2zeta * i2
+                    *(I110[am1*sizebm1+bm1] - I111[am1*sizebm1+bm1]);
+          }
+        }
+      else if (j1) {
+        int am1 = INT_CARTINDEX(a-1,i1,j1-1);
+        result  = PmA[1] * I100[am1*sizeb+cartb];
+        result -= PmC[1] * I101[am1*sizeb+cartb];
+        if (j1>1) {
+          int am2 = INT_CARTINDEX(a-2,i1,j1-2);
+          result += oo2zeta * (j1-1)
+                    *(I200[am2*sizeb+cartb] - I201[am2*sizeb+cartb]);
+          }
+        if (j2) {
+          int bm1 = INT_CARTINDEX(b-1,i2,j2-1);
+          result += oo2zeta * j2
+                    *(I110[am1*sizebm1+bm1] - I111[am1*sizebm1+bm1]);
+          }
+        }
+      else if (k1) {
+        int am1 = INT_CARTINDEX(a-1,i1,j1);
+        result  = PmA[2] * I100[am1*sizeb+cartb];
+        result -= PmC[2] * I101[am1*sizeb+cartb];
+        if (k1>1) {
+          int am2 = INT_CARTINDEX(a-2,i1,j1);
+          result += oo2zeta * (k1-1)
+                    *(I200[am2*sizeb+cartb] - I201[am2*sizeb+cartb]);
+          }
+        if (k2) {
+          int bm1 = INT_CARTINDEX(b-1,i2,j2);
+          result += oo2zeta * k2
+                    *(I110[am1*sizebm1+bm1] - I111[am1*sizebm1+bm1]);
+          }
+        }
+      I000[carta*sizeb+cartb] = result;
+      cartb++;
+      } END_FOR_CART;
+    carta++;
+    } END_FOR_CART;
+}
+
+void
+Int1eV3::comp_prim_block_nuclear_build_b(int b, int m)
+{
+  double *I000 = inter(0,b,m);
+  double *I010 = inter(0,b-1,m);
+  double *I011 = inter(0,b-1,m+1);
+  double *I020 = (b>1?inter(0,b-2,m):0);
+  double *I021 = (b>1?inter(0,b-2,m+1):0);
+  int i2,j2,k2;
+  int cartb=0;
+  FOR_CART(i2,j2,k2,b) {
+    double result = 0.0;
+
+    if (i2) {
+      int bm1 = INT_CARTINDEX(b-1,i2-1,j2);
+      result  = PmB[0] * I010[bm1];
+      result -= PmC[0] * I011[bm1];
+      if (i2>1) {
+        int bm2 = INT_CARTINDEX(b-2,i2-2,j2);
+        result += oo2zeta * (i2-1) * (I020[bm2] - I021[bm2]);
+        }
+      }
+    else if (j2) {
+      int bm1 = INT_CARTINDEX(b-1,i2,j2-1);
+      result  = PmB[1] * I010[bm1];
+      result -= PmC[1] * I011[bm1];
+      if (j2>1) {
+        int bm2 = INT_CARTINDEX(b-2,i2,j2-2);
+        result += oo2zeta * (j2-1) * (I020[bm2] - I021[bm2]);
+        }
+      }
+    else if (k2) {
+      int bm1 = INT_CARTINDEX(b-1,i2,j2);
+      result  = PmB[2] * I010[bm1];
+      result -= PmC[2] * I011[bm1];
+      if (k2>1) {
+        int bm2 = INT_CARTINDEX(b-2,i2,j2);
+        result += oo2zeta * (k2-1) * (I020[bm2] - I021[bm2]);
+        }
+      }
+
+    I000[cartb] = result;
+    cartb++;
+    } END_FOR_CART;
+}
+
 double
 Int1eV3::comp_prim_nuclear(int i1, int j1, int k1,
                            int i2, int j2, int k2, int m)
@@ -1456,6 +2135,349 @@ Int1eV3::comp_shell_efield(double *efield,
   for (xyz=0; xyz<3; xyz++) efield[xyz] = result[xyz];
 
   }
+
+/* Compute the electric field integral for the shell.  The arguments are the
+ * the electric field vector, the
+ * cartesian exponents for centers 1 and 2.  The shell1 and shell2
+ * globals are used. */
+void
+Int1eV3::comp_shell_block_efield(int gc1, int a, int gc2, int b,
+                                 int gcsize2, int gcoff1, int gcoff2,
+                                 double coef, double *buffer)
+{
+  int i,j,k,xyz;
+  double Pi;
+  double oozeta;
+  double AmB,AmB2;
+  double PmC2;
+  double auxcoef;
+  int am = a + b;
+  int size1 = INT_NCART_NN(a);
+  int size2 = INT_NCART_NN(b);
+
+  /* Loop over the primitives in the shells. */
+  for (i=0; i<gshell1->nprimitive(); i++) {
+    for (j=0; j<gshell2->nprimitive(); j++) {
+
+      /* Compute the intermediates. */
+      zeta = gshell1->exponent(i) + gshell2->exponent(j);
+      oozeta = 1.0/zeta;
+      oo2zeta = 0.5*oozeta;
+      AmB2 = 0.0;
+      PmC2 = 0.0;
+      for (xyz=0; xyz<3; xyz++) {
+        Pi = oozeta*(gshell1->exponent(i) * A[xyz]
+                     + gshell2->exponent(j) * B[xyz]);
+        PmA[xyz] = Pi - A[xyz];
+        PmB[xyz] = Pi - B[xyz];
+        PmC[xyz] = Pi - C[xyz];
+        AmB = A[xyz] - B[xyz];
+        AmB2 += AmB*AmB;
+        PmC2 += PmC[xyz]*PmC[xyz];
+        }
+
+      /* The auxillary integral coeficients. */
+      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+                                           +gshell2->exponent(j))
+           * exp(- oozeta * gshell1->exponent(i)
+                 * gshell2->exponent(j) * AmB2);
+
+      /* The Fm(U) intermediates. */
+      fjttable_ = fjt_->values(am+1,zeta*PmC2);
+
+      /* Convert the Fm(U) intermediates into the auxillary
+       * nuclear attraction integrals. */
+      for (k=0; k<=am+1; k++) {
+        fjttable_[k] *= auxcoef;
+        }
+
+      double tmp = gshell1->coefficient_unnorm(gc1,i)
+                   * gshell2->coefficient_unnorm(gc2,j)
+                   * coef;
+
+      /* Compute the nuclear attraction integral. */
+      comp_prim_block_efield(a,b);
+
+      double *primbuffer = efield_inter(a,b,0);
+      for (int ip=0; ip<size1; ip++) {
+        for (int jp=0; jp<size2; jp++) {
+          for (xyz=0; xyz<3; xyz++) {
+            buffer[((ip+gcoff1)*gcsize2+jp+gcoff2)*3+xyz]
+              += tmp * *primbuffer++;
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+void
+Int1eV3::comp_prim_block_efield(int a, int b)
+{
+  int  xyz;
+  int im, ia, ib, iab;
+  int l = a + b;
+
+  // Fill in the nuclear integrals which are needed as intermediates.
+  // m=0 is not needed.
+
+  // fill in the ia+ib=0 integrals, skipping m=0
+  for (im=1; im<=l; im++) {
+#if DEBUG_EFIELD_PRIM > 1
+    cout << "BUILD NUC: M = " << im
+         << " A = " << 0
+         << " B = " << 0
+         << endl;
+#endif
+    inter(0,0,im)[0] = fjttable_[im];
+    }
+
+  // skipping m=0
+  for (im=l-1; im>0; im--) {
+    int lm = l-im;
+    // build the integrals for a = 0
+    for (ib=1; ib<=lm && ib<=b; ib++) {
+#if DEBUG_EFIELD_PRIM > 1
+      cout << "BUILD NUC: M = " << im
+           << " A = " << 0
+           << " B = " << ib
+           << endl;
+#endif
+      comp_prim_block_nuclear_build_b(ib,im);
+      }
+    for (ia=1; ia<=lm && ia<=a; ia++) {
+      for (ib=0; ib<=lm-ia && ib<=b; ib++) {
+#if DEBUG_EFIELD_PRIM > 1
+        cout << "BUILD NUC: M = " << im
+             << " A = " << ia
+             << " B = " << ib
+             << endl;
+#endif
+        comp_prim_block_nuclear_build_a(ia,ib,im);
+        }
+      }
+    }
+
+  // now complete the efield integrals
+
+  // fill in the ia+ib=0 integrals
+  for (im=0; im<=l; im++) {
+#if DEBUG_EFIELD_PRIM > 1
+    cout << "BUILD EFIELD: M = " << im
+         << " A = " << 0
+         << " B = " << 0
+         << endl;
+#endif
+    double *tmp = efield_inter(0,0,im);
+    for (xyz=0; xyz<3; xyz++) {
+      *tmp++ = 2.0 * zeta * PmC[xyz] * fjttable_[im+1];
+      }
+    }
+
+  for (im=l-1; im>=0; im--) {
+    int lm = l-im;
+    // build the integrals for a = 0
+    for (ib=1; ib<=lm && ib<=b; ib++) {
+#if DEBUG_EFIELD_PRIM > 1
+      cout << "BUILD EFIELD: M = " << im
+           << " A = " << 0
+           << " B = " << ib
+           << endl;
+#endif
+      comp_prim_block_efield_build_b(ib,im);
+      }
+    for (ia=1; ia<=lm && ia<=a; ia++) {
+      for (ib=0; ib<=lm-ia && ib<=b; ib++) {
+#if DEBUG_EFIELD_PRIM > 1
+        cout << "BUILD EFIELD: M = " << im
+             << " A = " << ia
+             << " B = " << ib
+             << endl;
+#endif
+        comp_prim_block_efield_build_a(ia,ib,im);
+        }
+      }
+    }
+
+#if DEBUG_EFIELD_PRIM
+  for (im=0; im<=l; im++) {
+    int lm = l-im;
+    for (ia=0; ia<=lm && ia<=a; ia++) {
+      int na = INT_NCART_NN(a);
+      for (ib=0; ib<=lm-ia && ib<=b; ib++) {
+        int nb = INT_NCART_NN(b);
+#if DEBUG_EFIELD_PRIM > 1
+        cout << "M = " << im
+             << " A = " << ia
+             << " B = " << ib
+             << endl;
+#endif
+        double *buf = efield_inter(ia,ib,im);
+        int i1,j1,k1, i2,j2,k2;
+        FOR_CART(i1,j1,k1,ia) {
+          FOR_CART(i2,j2,k2,ib) {
+            for (xyz=0; xyz<3; xyz++) {
+              double fast = *buf++;
+              double slow = comp_prim_efield(xyz, i1, j1, k1,
+                                             i2, j2, k2, im);
+              if (fast > 999.0) fast = 999.0;
+              if (fast < -999.0) fast = -999.0;
+              if (fabs(fast-slow)>1.0e-12) {
+                cout << scprintf("(%d %d %d) (%d %d %d) (%d): ",
+                                 i1,j1,k1, i2,j2,k2, im)
+                     << scprintf(" % 20.15f % 20.15f",
+                                 fast, slow)
+                     << endl;
+                }
+              }
+            } END_FOR_CART;
+          } END_FOR_CART;
+        }
+      }
+    }
+#endif
+}
+
+void
+Int1eV3::comp_prim_block_efield_build_a(int a, int b, int m)
+{
+  double *I000 = efield_inter(a,b,m);
+  double *I100 = efield_inter(a-1,b,m);
+  double *I101 = efield_inter(a-1,b,m+1);
+  double *I200 = (a>1?efield_inter(a-2,b,m):0);
+  double *I201 = (a>1?efield_inter(a-2,b,m+1):0);
+  double *I110 = (b?efield_inter(a-1,b-1,m):0);
+  double *I111 = (b?efield_inter(a-1,b-1,m+1):0);
+  double *nucI101 = inter(a-1,b,m+1);
+  int i1,j1,k1;
+  int i2,j2,k2;
+  int xyz;
+  int carta=0;
+  int sizeb = INT_NCART_NN(b);
+  int sizebm1 = INT_NCART_DEC(b,sizeb);
+  FOR_CART(i1,j1,k1,a) {
+    int cartb=0;
+    FOR_CART(i2,j2,k2,b) {
+      for (xyz=0; xyz<3; xyz++) {
+        double result = 0.0;
+        if (i1) {
+          int am1 = INT_CARTINDEX(a-1,i1-1,j1);
+          result  = PmA[0] * I100[(am1*sizeb+cartb)*3+xyz];
+          result -= PmC[0] * I101[(am1*sizeb+cartb)*3+xyz];
+          if (i1>1) {
+            int am2 = INT_CARTINDEX(a-2,i1-2,j1);
+            result += oo2zeta * (i1-1)
+                      *(I200[(am2*sizeb+cartb)*3+xyz]
+                        - I201[(am2*sizeb+cartb)*3+xyz]);
+            }
+          if (i2) {
+            int bm1 = INT_CARTINDEX(b-1,i2-1,j2);
+            result += oo2zeta * i2
+                      *(I110[(am1*sizebm1+bm1)*3+xyz]
+                        - I111[(am1*sizebm1+bm1)*3+xyz]);
+            }
+          if (xyz==0) result += nucI101[am1*sizeb+cartb];
+          }
+        else if (j1) {
+          int am1 = INT_CARTINDEX(a-1,i1,j1-1);
+          result  = PmA[1] * I100[(am1*sizeb+cartb)*3+xyz];
+          result -= PmC[1] * I101[(am1*sizeb+cartb)*3+xyz];
+          if (j1>1) {
+            int am2 = INT_CARTINDEX(a-2,i1,j1-2);
+            result += oo2zeta * (j1-1)
+                      *(I200[(am2*sizeb+cartb)*3+xyz]
+                        - I201[(am2*sizeb+cartb)*3+xyz]);
+            }
+          if (j2) {
+            int bm1 = INT_CARTINDEX(b-1,i2,j2-1);
+            result += oo2zeta * j2
+                      *(I110[(am1*sizebm1+bm1)*3+xyz]
+                        - I111[(am1*sizebm1+bm1)*3+xyz]);
+            }
+          if (xyz==1) result += nucI101[am1*sizeb+cartb];
+          }
+        else if (k1) {
+          int am1 = INT_CARTINDEX(a-1,i1,j1);
+          result  = PmA[2] * I100[(am1*sizeb+cartb)*3+xyz];
+          result -= PmC[2] * I101[(am1*sizeb+cartb)*3+xyz];
+          if (k1>1) {
+            int am2 = INT_CARTINDEX(a-2,i1,j1);
+            result += oo2zeta * (k1-1)
+                      *(I200[(am2*sizeb+cartb)*3+xyz]
+                        - I201[(am2*sizeb+cartb)*3+xyz]);
+            }
+          if (k2) {
+            int bm1 = INT_CARTINDEX(b-1,i2,j2);
+            result += oo2zeta * k2
+                      *(I110[(am1*sizebm1+bm1)*3+xyz]
+                        - I111[(am1*sizebm1+bm1)*3+xyz]);
+            }
+          if (xyz==2) result += nucI101[am1*sizeb+cartb];
+          }
+        I000[(carta*sizeb+cartb)*3+xyz] = result;
+        }
+      cartb++;
+      } END_FOR_CART;
+    carta++;
+    } END_FOR_CART;
+}
+
+void
+Int1eV3::comp_prim_block_efield_build_b(int b, int m)
+{
+  double *I000 = efield_inter(0,b,m);
+  double *I010 = efield_inter(0,b-1,m);
+  double *I011 = efield_inter(0,b-1,m+1);
+  double *I020 = (b>1?efield_inter(0,b-2,m):0);
+  double *I021 = (b>1?efield_inter(0,b-2,m+1):0);
+  double *nucI011 = inter(0,b-1,m+1);
+  int xyz;
+  int i2,j2,k2;
+  int cartb=0;
+  FOR_CART(i2,j2,k2,b) {
+    for (xyz=0; xyz<3; xyz++) {
+      double result = 0.0;
+
+      if (i2) {
+        int bm1 = INT_CARTINDEX(b-1,i2-1,j2);
+        result  = PmB[0] * I010[(bm1)*3+xyz];
+        result -= PmC[0] * I011[(bm1)*3+xyz];
+        if (i2>1) {
+          int bm2 = INT_CARTINDEX(b-2,i2-2,j2);
+          result += oo2zeta * (i2-1) * (I020[(bm2)*3+xyz]
+                                        - I021[(bm2)*3+xyz]);
+          }
+        if (xyz==0) result += nucI011[bm1];
+        }
+      else if (j2) {
+        int bm1 = INT_CARTINDEX(b-1,i2,j2-1);
+        result  = PmB[1] * I010[(bm1)*3+xyz];
+        result -= PmC[1] * I011[(bm1)*3+xyz];
+        if (j2>1) {
+          int bm2 = INT_CARTINDEX(b-2,i2,j2-2);
+          result += oo2zeta * (j2-1) * (I020[(bm2)*3+xyz]
+                                        - I021[(bm2)*3+xyz]);
+          }
+        if (xyz==1) result += nucI011[bm1];
+        }
+      else if (k2) {
+        int bm1 = INT_CARTINDEX(b-1,i2,j2);
+        result  = PmB[2] * I010[(bm1)*3+xyz];
+        result -= PmC[2] * I011[(bm1)*3+xyz];
+        if (k2>1) {
+          int bm2 = INT_CARTINDEX(b-2,i2,j2);
+          result += oo2zeta * (k2-1) * (I020[(bm2)*3+xyz]
+                                        - I021[(bm2)*3+xyz]);
+          }
+        if (xyz==2) result += nucI011[bm1];
+        }
+
+      I000[(cartb)*3+xyz] = result;
+      }
+    cartb++;
+    } END_FOR_CART;
+}
 
 double
 Int1eV3::comp_prim_efield(int xyz, int i1, int j1, int k1,

@@ -81,6 +81,10 @@ class IntV3Arraydoublep3 {
   public:
     IntV3Arraydoublep3();
     ~IntV3Arraydoublep3();
+    int n1() const { return n1_; }
+    int n2() const { return n2_; }
+    int n3() const { return n3_; }
+    void delete_data();
     void set_dim(int n1, int n2, int n3);
     double *&operator()(int i,int j,int k) { return data_[i][j][k]; }
     double **operator()(int i,int j) { return data_[i][j]; }

@@ -72,6 +72,9 @@ class MBPT2: public Wavefunction {
 
     int nfuncmax;
 
+    double hf_energy_;
+    RefSCVector hf_gradient_;
+
   protected:
     void init_variables();
 
@@ -109,9 +112,11 @@ class MBPT2: public Wavefunction {
     void cs_cphf(double **scf_vector,
                  double *Laj, double *eigval, RefSCMatrix& P2aj);
     void s2pdm_contrib(const double *intderbuf, double *PHF,
-                       double *P2AO, double **ginter);
-    void hcore_cs_grad(double *PMP2, double **ginter);
-    void overlap_cs_grad(double *WMP2, double **ginter);
+                       double *P2AO, double **hf_ginter, double **ginter);
+    void hcore_cs_grad(double *PHF, double *PMP2,
+                       double **hf_ginter, double **ginter);
+    void overlap_cs_grad(double *WHF, double *WMP2,
+                         double **hf_ginter, double **ginter);
     void compute_cs_grad();
   public:
     MBPT2(StateIn&);
@@ -119,6 +124,12 @@ class MBPT2: public Wavefunction {
     ~MBPT2();
 
     void save_data_state(StateOut&);
+
+    RefSCF ref() { return reference_; }
+    double ref_energy();
+    double corr_energy();
+    RefSCVector ref_energy_gradient();
+    RefSCVector corr_energy_gradient();
 
     int nelectron();
 

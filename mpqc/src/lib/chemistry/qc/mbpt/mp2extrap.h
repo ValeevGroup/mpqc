@@ -1,9 +1,9 @@
 //
-// linkage.h
+// mp2extrap.h
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1998 Limit Point Systems, Inc.
 //
-// Author: Ida Nielsen <ibniels@ca.sandia.gov>
+// Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
 //
 // This file is part of the SC Toolkit.
@@ -25,19 +25,34 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbpt_linkage_h
-#define _chemistry_qc_mbpt_linkage_h
+#ifndef _chemistry_qc_mbpt_mp2extrap_h
+#define _chemistry_qc_mbpt_mp2extrap_h
 
-#ifndef __PIC__
+#ifdef __GNUC__
+#pragma interface
+#endif
 
-#include <chemistry/qc/mbpt/mbpt.h>
-#include <chemistry/qc/mbpt/mp2extrap.h>
+#include <chemistry/molecule/energy.h>
 
-#include <chemistry/qc/scf/linkage.h>
+class MP2BasisExtrap: public SumMolecularEnergy {
+#   define CLASSNAME MP2BasisExtrap
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    void compute();
+  public:
+    MP2BasisExtrap(const RefKeyVal &);
+    MP2BasisExtrap(StateIn&);
+    ~MP2BasisExtrap();
 
-const ClassDesc &mbpt_force_link_a_ = MBPT2::class_desc_;
-const ClassDesc &mbpt_force_link_b_ = MP2BasisExtrap::class_desc_;
-
-#endif /* __PIC__ */
+    void save_data_state(StateOut&);
+};
 
 #endif
+
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ"
+// End:

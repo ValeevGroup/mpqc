@@ -206,7 +206,9 @@ MBPT2::compute_cs_grad()
   const double *pqrs_ptr;
 
   double **gradient, *gradient_dat;  // The MP2 gradient
+  double **hf_gradient, *hf_gradient_dat;  // The HF gradient
   double **ginter;    // Intermediates for the MP2 gradient
+  double **hf_ginter;    // Intermediates for the HF gradient
 
   BiggestContribs biggest_coefs(5,10);
   CharacterTable ct = molecule()->point_group()->char_table();
@@ -277,7 +279,7 @@ MBPT2::compute_cs_grad()
     mem_static = nbasis*nbasis; // scf vector
     mem_static += 2*nbasis*nfuncmax; // iqjs & iqjr
     if (dograd) {
-      mem_static += 6*natom; // gradient & ginter
+      mem_static += 9*natom; // gradient & ginter & hf_ginter
       mem_static += (nocc*(nocc+1))/2; // Pkj
       mem_static += (nvir*(nvir+1))/2; // Pab
       mem_static += nocc*nocc; // Wkj
@@ -369,6 +371,7 @@ MBPT2::compute_cs_grad()
   ////////////////////////////////////////////////
 
   escf = reference_->energy();
+  hf_energy_ = escf;
 
   RefDiagSCMatrix occ;
   RefSCMatrix Scf_Vec;
@@ -424,10 +427,22 @@ MBPT2::compute_cs_grad()
       gradient[i] = &gradient_dat[i*3];
       }
 
+    hf_gradient_dat = new double[natom*3];
+    hf_gradient = new double*[natom];
+    for (i=0; i<natom; i++) {
+      hf_gradient[i] = &hf_gradient_dat[i*3];
+      }
+
     ginter = new double*[natom];
     for (i=0; i<natom; i++) {
       ginter[i] = new double[3];
       for (xyz=0; xyz<3; xyz++) ginter[i][xyz] = 0;
+      }
+
+    hf_ginter = new double*[natom];
+    for (i=0; i<natom; i++) {
+      hf_ginter[i] = new double[3];
+      for (xyz=0; xyz<3; xyz++) hf_ginter[i][xyz] = 0;
       }
 
     //////////////////////////////
@@ -441,6 +456,7 @@ MBPT2::compute_cs_grad()
     bzerofast(Waj,nvir*nocc);
 
     if (me == 0) zero_gradients(gradient, natom, 3);
+    if (me == 0) zero_gradients(hf_gradient, natom, 3);
     }
   else {
     Pkj = 0;
@@ -452,7 +468,10 @@ MBPT2::compute_cs_grad()
 
     gradient_dat = 0;
     gradient = 0;
+    hf_gradient_dat = 0;
+    hf_gradient = 0;
     ginter = 0;
+    hf_ginter = 0;
     }
 
   if (dograd || dos2_) {
@@ -1906,15 +1925,9 @@ MBPT2::compute_cs_grad()
     accum_gradients(gradient, ginter, natom, 3);
 
   // Print out contribution to the gradient from non-sep. 2PDM
-  if (debug_ && me == 0) {
-    cout << indent
-         << "Contribution to MP2 gradient from non-separable 2PDM [au]:"
-         << endl;
-    for (i=0; i<natom; i++) {
-      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf",
-                       ginter[i][0], ginter[i][1], ginter[i][2])
-           << endl;
-      }
+  if (debug_) {
+    print_natom_3(ginter,
+              "Contribution to MP2 gradient from non-separable 2PDM [au]:");
     }
 
   ////////////////////////////////////////////////////////
@@ -2202,7 +2215,6 @@ MBPT2::compute_cs_grad()
       *wmp2_ptr++ = *whf_ptr++ + *w2ao_ptr++;
       }
     }
-  delete[] WHF;
   delete[] W2AO;
 
   if (debug_ > 1) {
@@ -2223,25 +2235,24 @@ MBPT2::compute_cs_grad()
   ////////////////////////////////////////////////
 
   zero_gradients(ginter, natom, 3);
+  zero_gradients(hf_ginter, natom, 3);
   tim_enter("sep 2PDM contrib.");
-  s2pdm_contrib(intderbuf, PHF, P2AO, ginter);
+  s2pdm_contrib(intderbuf, PHF, P2AO, hf_ginter, ginter);
   tim_exit("sep 2PDM contrib.");
-  delete[] PHF;
   delete[] P2AO;
 
   // The separable 2PDM contribution to the gradient has now been
   // accumulated in ginter on node 0; add it to the total gradients
   if (me == 0) {
     accum_gradients(gradient, ginter, natom, 3);
+    accum_gradients(hf_gradient, hf_ginter, natom, 3);
     }
   // Print out the contribution to the gradient from sep. 2PDM
-  if (debug_ && me == 0) {
-    cout <<indent
-         << "Contribution from separable 2PDM to MP2 gradient [au]:" << endl;
-    for (i=0; i<natom; i++) {
-      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                                 ginter[i][0], ginter[i][1], ginter[i][2]);
-      }
+  if (debug_) {
+    print_natom_3(hf_ginter,
+                  "Contribution from separable 2PDM to HF gradient [au]:");
+    print_natom_3(ginter,
+                  "Contribution from separable 2PDM to MP2 gradient [au]:");
     }
 
   // Done with two-electron integrals
@@ -2253,41 +2264,42 @@ MBPT2::compute_cs_grad()
   /////////////////////////////////////////////////////////////
 
   zero_gradients(ginter, natom, 3);
+  zero_gradients(hf_ginter, natom, 3);
   tim_enter("hcore contrib.");
-  hcore_cs_grad(PMP2, ginter);
+  hcore_cs_grad(PHF, PMP2, hf_ginter, ginter);
   tim_exit("hcore contrib.");
+  delete[] PHF;
   delete[] PMP2;
   // The hcore contribution to the gradient has now been accumulated
   // in ginter on node 0; add it to the total gradients
   if (me == 0) {
     accum_gradients(gradient, ginter, natom, 3);
+    accum_gradients(hf_gradient, hf_ginter, natom, 3);
     }
   // Print out the contribution to the gradient from hcore
-  if (debug_ && me == 0) {
-    cout << indent << "Contribution to MP2 gradient from hcore [au]:" << endl;
-    for (i=0; i<natom; i++) {
-      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                                 ginter[i][0], ginter[i][1], ginter[i][2]);
-      }
+  if (debug_) {
+    print_natom_3(hf_ginter, "Contribution to HF gradient from hcore [au]:");
+    print_natom_3(ginter, "Contribution to MP2 gradient from hcore [au]:");
     }
 
   zero_gradients(ginter, natom, 3);
+  zero_gradients(hf_ginter, natom, 3);
   tim_enter("overlap contrib.");
-  overlap_cs_grad(WMP2, ginter);
+  overlap_cs_grad(WHF, WMP2, hf_ginter, ginter);
+  delete[] WHF;
   tim_exit("overlap contrib.");
   delete[] WMP2;
   // The overlap contribution to the gradient has now been accumulated
   // in ginter on node 0; add it to the total gradients
   if (me == 0) {
-    accum_gradients(gradient, ginter, natom, 3);
+      accum_gradients(gradient, ginter, natom, 3);
+      accum_gradients(hf_gradient, hf_ginter, natom, 3);
     }
+
   // Print out the overlap contribution to the gradient
-  if (debug_ && me == 0) {
-    cout << indent << "Overlap contribution to MP2 gradient [au]:" << endl;
-    for (i=0; i<natom; i++) {
-      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                                 ginter[i][0], ginter[i][1], ginter[i][2]);
-      }
+  if (debug_) {
+    print_natom_3(hf_ginter, "Overlap contribution to HF gradient [au]:");
+    print_natom_3(ginter,"Overlap contribution to MP2 gradient [au]:");
     }
 
   ////////////////////////////////////////////////////////
@@ -2300,45 +2312,47 @@ MBPT2::compute_cs_grad()
       molecule()->nuclear_repulsion_1der(i,ginter[i]);
       }
     accum_gradients(gradient, ginter, natom, 3);
+    accum_gradients(hf_gradient, ginter, natom, 3);
 
-    // Print out the nuclear contribution to the gradient
-    if (debug_) {
-      cout << indent
-           << scprintf("Nuclear contribution to MP2 gradient [au]:") << endl;
-      for (i=0; i<natom; i++) {
-        cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                                   ginter[i][0], ginter[i][1], ginter[i][2]);
-        }
-      }
     }
+
+  // Print out the nuclear contribution to the gradient
+  if (debug_)
+    print_natom_3(ginter,"Nuclear contribution to MP2 gradient [au]:");
 
 
   ////////////////////////////////////////////////////////
   // The computation of the MP2 gradient is now complete;
   // print out the gradient
   ////////////////////////////////////////////////////////
-  if (me == 0) {
-    cout << endl << indent << "Total MP2 gradient [au]:" << endl;
-    for (i=0; i<natom; i++) {
-      cout << indent
-           << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                       gradient[i][0], gradient[i][1], gradient[i][2]);
-      }
-    cout.flush();
+  if (debug_) {
+    cout << node0 << "Obtaining HF gradient" << endl;
+    print_natom_3(ref()->gradient(),"HF gradient from HF");
+    print_natom_3(hf_gradient,"Total HF gradient from MP2 [au]:");
     }
+  print_natom_3(gradient,"Total MP2 gradient [au]:");
 
   msg_->bcast(gradient_dat, natom*3);
   RefSCVector gradientvec = matrixkit()->vector(moldim());
   gradientvec->assign(gradient_dat);
   set_gradient(gradientvec);
 
+  msg_->bcast(hf_gradient_dat, natom*3);
+  hf_gradient_ = matrixkit()->vector(moldim());
+  hf_gradient_->assign(hf_gradient_dat);
+
   delete[] gradient;
   delete[] gradient_dat;
 
+  delete[] hf_gradient;
+  delete[] hf_gradient_dat;
+
   for (i=0; i<natom; i++) {
     delete[] ginter[i];
+    delete[] hf_ginter[i];
     }
   delete[] ginter;
+  delete[] hf_ginter;
 
   delete[] scf_vector;
   delete[] scf_vector_dat;
@@ -2352,7 +2366,8 @@ MBPT2::compute_cs_grad()
 // Compute the contribution to the MP2 gradient from hcore
 ///////////////////////////////////////////////////////////
 void 
-MBPT2::hcore_cs_grad(double *PMP2, double **ginter)
+MBPT2::hcore_cs_grad(double *PHF, double *PMP2,
+                     double **hf_ginter, double **ginter)
 {
 
   int i, j, k, l, m;
@@ -2367,8 +2382,9 @@ MBPT2::hcore_cs_grad(double *PMP2, double **ginter)
   int me = msg_->me();
 
   const double *oneebuf; // 1-electron buffer
-  double tmpval1;
+  double tmpval1, tmpval2;
   double gxyz[3];
+  double hf_gxyz[3];
 
   // Initialize 1e object
   RefOneBodyDerivInt obintder_ = integral()->hcore_deriv();
@@ -2395,25 +2411,34 @@ MBPT2::hcore_cs_grad(double *PMP2, double **ginter)
         if (jk_index++%nproc == me) {
           obintder_->compute_shell(j,k,i);
 
-          for (l=0; l<3; l++) gxyz[l] = 0.0;
+          for (l=0; l<3; l++) { gxyz[l] = 0.0; hf_gxyz[l] = 0.0; }
 
           index = 0;
 
           for (jj=0; jj<jsize; jj++) {
             for (kk=0; kk<ksize; kk++) {
               tmpval1 = PMP2[(j_offset + jj)*nbasis + k_offset + kk];
+              tmpval2 = PHF[(j_offset + jj)*nbasis + k_offset + kk];
               for (m=0; m<3; m++) {
                 gxyz[m] += oneebuf[index] * tmpval1;
+                hf_gxyz[m] += oneebuf[index] * tmpval2;
                 index++;
                 } // exit m loop
               }   // exit kk loop
             }     // exit jj loop
 
           if (j != k) {
-            for (l=0; l<3; l++) gxyz[l] *= 2.0; // off-diagonal blocks
+            // off-diagonal blocks
+            for (l=0; l<3; l++) {
+              gxyz[l] *= 2.0;
+              hf_gxyz[l] *= 2.0;
+              }
             }
 
-          for (l=0; l<3; l++) ginter[i][l] += gxyz[l];
+          for (l=0; l<3; l++) {
+            ginter[i][l] += gxyz[l];
+            hf_ginter[i][l] += hf_gxyz[l];
+            }
 
           } // exit "if"
         }   // exit k loop
@@ -2422,6 +2447,7 @@ MBPT2::hcore_cs_grad(double *PMP2, double **ginter)
 
   /* Accumulate the nodes' intermediate gradients on node 0 */
   sum_gradients(msg_, ginter, molecule()->natom(), 3);
+  sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
 }
 
 
@@ -2429,7 +2455,8 @@ MBPT2::hcore_cs_grad(double *PMP2, double **ginter)
 // Compute the overlap contribution to the gradient
 ////////////////////////////////////////////////////
 void 
-MBPT2::overlap_cs_grad(double *WMP2, double **ginter)
+MBPT2::overlap_cs_grad(double *WHF, double *WMP2,
+                       double **hf_ginter, double **ginter)
 {
   int i, j, k, l, m;
   int jj, kk;
@@ -2443,7 +2470,9 @@ MBPT2::overlap_cs_grad(double *WMP2, double **ginter)
 
   const double *oneebuf; // 1-electron buffer
   double tmpval1, tmpval2;
+  double hf_tmpval1, hf_tmpval2;
   double gxyz[3];
+  double hf_gxyz[3];
 
   // Initialize 1e object
   RefOneBodyDerivInt obintder_ = integral()->overlap_deriv();
@@ -2468,7 +2497,10 @@ MBPT2::overlap_cs_grad(double *WMP2, double **ginter)
         if (jk_index++%nproc == me) {
           obintder_->compute_shell(j,k,i);
 
-          for (l=0; l<3; l++) gxyz[l] = 0.0;
+          for (l=0; l<3; l++) {
+            hf_gxyz[l] = 0.0;
+            gxyz[l] = 0.0;
+            }
           index = 0;
 
           for (jj=0; jj<jsize; jj++) {
@@ -2482,20 +2514,27 @@ MBPT2::overlap_cs_grad(double *WMP2, double **ginter)
               // NB. WMP2 is not a symmetrix matrix
               tmpval1 = WMP2[jj_index*nbasis + kk_index];
               tmpval2 = WMP2[kk_index*nbasis + jj_index];
+              hf_tmpval1 = WHF[jj_index*nbasis + kk_index];
+              hf_tmpval2 = WHF[kk_index*nbasis + jj_index];
 
               for (m=0; m<3; m++) {
                 if (jj_index != kk_index) {
                   gxyz[m] += oneebuf[index] * (tmpval1 + tmpval2);
+                  hf_gxyz[m] += oneebuf[index] * (hf_tmpval1 + hf_tmpval2);
                   }
                 else {
                   gxyz[m] += oneebuf[index] * tmpval1;
+                  hf_gxyz[m] += oneebuf[index] * hf_tmpval1;
                   }
                 index++;
                 } // exit m loop
               }   // exit kk loop
             }     // exit jj loop
 
-          for (l=0; l<3; l++) ginter[i][l] += gxyz[l];
+          for (l=0; l<3; l++) {
+            ginter[i][l] += gxyz[l];
+            hf_ginter[i][l] += hf_gxyz[l];
+            }
           } // exit "if"
         }   // exit k loop
       }     // exit j loop
@@ -2503,6 +2542,7 @@ MBPT2::overlap_cs_grad(double *WMP2, double **ginter)
   
   /* Accumulate the nodes' intermediate gradients on node 0 */
   sum_gradients(msg_, ginter, molecule()->natom(), 3);
+  sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
 }
 
 
@@ -2512,7 +2552,7 @@ MBPT2::overlap_cs_grad(double *WMP2, double **ginter)
 //////////////////////////////////////////////////////////////
 void
 MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
-                     double *P2AO, double **ginter)
+                     double *P2AO, double **hf_ginter, double **ginter)
 {               
 
   int P, Q, R, S;
@@ -2531,6 +2571,7 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
   int me = msg_->me();
 
   double *grad_ptr1, *grad_ptr2;
+  double *hf_grad_ptr1, *hf_grad_ptr2;
   double tmpval;
   double *phf_pq, *phf_pr, *phf_ps, *phf_qr, *phf_qs, *phf_rs;
   double *p2ao_pq, *p2ao_pr, *p2ao_ps, *p2ao_qr, *p2ao_qs, *p2ao_rs;
@@ -2542,11 +2583,14 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
                        // integrals within shell quartets when applicable
   double *gammasym_pqrs; // symmetrized sep. 2PDM
   double *gammasym_ptr;
+  double *hf_gammasym_pqrs; // HF only versions of gammsym
+  double *hf_gammasym_ptr;
   const double *integral_ptr;
 
   int tol = (int) (-10.0/log10(2.0));  // discard erep derivatives smaller than 10^-10
 
   gammasym_pqrs = new double[nfuncmax*nfuncmax*nfuncmax*nfuncmax];
+  hf_gammasym_pqrs = new double[nfuncmax*nfuncmax*nfuncmax*nfuncmax];
 
   DerivCenters der_centers;
 
@@ -2589,6 +2633,7 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
             // Symmetrize sep. 2PDM
             //////////////////////////////
             gammasym_ptr = gammasym_pqrs;
+            hf_gammasym_ptr = hf_gammasym_pqrs;
             for (bf1=0; bf1<np; bf1++) {
               p = p_offset + bf1;
               phf_pq =  &PHF [p*nbasis + q_offset];
@@ -2620,6 +2665,11 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
                                         - *phf_ps**p2ao_qr
                                         - *phf_pr**p2ao_qs);
 
+                    *hf_gammasym_ptr++ = gamma_factor*(
+                                          4**phf_pq*(*phf_rs)
+                                        - *phf_qs*(*phf_pr)
+                                        - *phf_qr*(*phf_ps));
+
                     phf_ps++;
                     phf_qs++;
                     phf_rs++;
@@ -2645,17 +2695,25 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
 
               for (xyz=0; xyz<3; xyz++) {
                 grad_ptr1 = &ginter[der_centers.atom(derset)][xyz];
-                if (der_centers.has_omitted_center())
+                hf_grad_ptr1 = &hf_ginter[der_centers.atom(derset)][xyz];
+                if (der_centers.has_omitted_center()) {
                   grad_ptr2 = &ginter[der_centers.omitted_atom()][xyz];
+                  hf_grad_ptr2 = &hf_ginter[der_centers.omitted_atom()][xyz];
+                  }
 
                 gammasym_ptr = gammasym_pqrs;
+                hf_gammasym_ptr = hf_gammasym_pqrs;
                 for (bf1=0; bf1<np; bf1++) {
                   for (bf2=0; bf2<nq; bf2++) {
                     for (bf3=0; bf3<nr; bf3++) {
                       for (bf4=0; bf4<ns; bf4++) {
-                        tmpval = *integral_ptr++ * *gammasym_ptr++;
+                        double intval = *integral_ptr++;
+                        tmpval = intval * *gammasym_ptr++;
                         *grad_ptr1 += tmpval;
                         *grad_ptr2 -= tmpval;
+                        tmpval = intval * *hf_gammasym_ptr++;
+                        *hf_grad_ptr1 += tmpval;
+                        *hf_grad_ptr2 -= tmpval;
                         } // exit bf4 loop
                       }   // exit bf3 loop
                     }     // exit bf2 loop
@@ -2673,9 +2731,11 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
   tim_exit("PQRS loop");
 
   delete[] gammasym_pqrs;
+  delete[] hf_gammasym_pqrs;
 
   // Accumulate intermediate gradients on node 0
   sum_gradients(msg_, ginter, molecule()->natom(), 3);
+  sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
 
 }
 
@@ -2797,7 +2857,7 @@ MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
   mem2 = sizeof(double)*(ni*nbasis*nfuncmax*(distsize_t)nfuncmax
                          + nij*(distsize_t)nbasis*(distsize_t)nbasis
                          + ni*(distsize_t)nbasis + nbasis*(distsize_t)nfuncmax
-                         + nfuncmax*nfuncmax*nfuncmax*(distsize_t)nfuncmax);
+                         + 2*nfuncmax*nfuncmax*nfuncmax*(distsize_t)nfuncmax);
   mem3 = sizeof(double)*(ni*nbasis*nfuncmax*(distsize_t)nfuncmax
                          + nij*(distsize_t)nbasis*(distsize_t)nbasis
                          + 2*(2 + nbasis*(distsize_t)nfuncmax));

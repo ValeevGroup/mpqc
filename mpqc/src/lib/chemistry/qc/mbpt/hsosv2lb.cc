@@ -882,6 +882,7 @@ MBPT2::compute_hsos_v2_lb()
   msg_->sum(aoint_computed);
 
   escf = reference_->energy();
+  hf_energy_ = escf;
 
   if (me == 0) {
     eopt2 = escf + ecorr_opt2;

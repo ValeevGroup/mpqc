@@ -113,6 +113,8 @@ MBPT2::MBPT2(StateIn& s):
       dos2_ = 0;
     }
 
+  hf_energy_ = 0.0;
+
   symorb_irrep_ = 0;
   symorb_num_ = 0;
 
@@ -163,6 +165,8 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   debug_ = keyval->booleanvalue("debug");
   if (keyval->error() == KeyVal::WrongType)
       debug_ = keyval->intvalue("debug");
+
+  hf_energy_ = 0.0;
 
   symorb_irrep_ = 0;
   symorb_num_ = 0;
@@ -497,6 +501,42 @@ int
 MBPT2::nelectron()
 {
   return reference_->nelectron();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+double
+MBPT2::ref_energy()
+{
+  energy();
+  return hf_energy_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+double
+MBPT2::corr_energy()
+{
+  energy();
+  return energy() - hf_energy_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+RefSCVector
+MBPT2::ref_energy_gradient()
+{
+  gradient();
+  return hf_gradient_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+RefSCVector
+MBPT2::corr_energy_gradient()
+{
+  gradient();
+  return get_cartesian_gradient() - hf_gradient_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -30,7 +30,7 @@
 #include "scf_gmat.lcl"
 
 /* this is a pointer to the buffer which holds the integrals */
-static double *intbuf;
+double *scf_gmat_intbuf;
 
 /***************************************************************************
  *
@@ -50,8 +50,9 @@ scf_struct_t *scf_info;
 
   flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
 
-  intbuf = int_initialize_erep(flags,0,centers,centers,centers,centers);
-  if (!intbuf) {
+  scf_gmat_intbuf =
+    int_initialize_erep(flags,0,centers,centers,centers,centers);
+  if (!scf_gmat_intbuf) {
     fprintf(stderr,"scf_init_gmat:  int_initialize_erep() failed\n");
     return -1;
   }
@@ -59,7 +60,7 @@ scf_struct_t *scf_info;
   int_storage(scf_info->int_store);
 
   if (scf_info->eliminate || scf_info->local_p) {
-    if (scf_init_bounds(centers,intbuf) < 0) {
+    if (scf_init_bounds(centers,scf_gmat_intbuf) < 0) {
       fprintf(stderr,"scf_init_gmat:  scf_init_bounds failed\n");
       int_done_erep();
       int_done_offsets2(centers,centers,centers,centers);
@@ -141,19 +142,21 @@ FILE *outfile;
   if (scf_info->local_p) {
     if (scf_info->load_bal) {
       errcod = scf_make_g_d_lb(centers,scf_info,sym_info,
-                               Gmat,GmatO,DPmat,DPmatO,intbuf,outfile);
+                               Gmat,GmatO,DPmat,DPmatO,scf_gmat_intbuf,outfile);
 
     } else if (scf_info->scdft) {
       errcod = scf_make_j_d(centers,scf_info,sym_info,
-                               Gmat,DPmat,intbuf,outfile);
+                               Gmat,DPmat,scf_gmat_intbuf,outfile);
 
+#if 0
      /* this is here until we get the Vxc stuff implemented */
       errcod = scf_make_k_d(centers,scf_info,sym_info,
-                               Gmat,DPmat,intbuf,outfile);
+                               Gmat,DPmat,scf_gmat_intbuf,outfile);
+#endif
 
     } else {
       errcod = scf_make_g_d(centers,scf_info,sym_info,
-                               Gmat,GmatO,DPmat,DPmatO,intbuf,outfile);
+                               Gmat,GmatO,DPmat,DPmatO,scf_gmat_intbuf,outfile);
     }
   }
 
@@ -161,12 +164,12 @@ FILE *outfile;
   else {
     if (scf_info->scdft) {
       errcod = scf_make_j_l(centers,scf_info,sym_info,
-                            Gmat,DPmat,SScr1,intbuf,outfile);
+                            Gmat,DPmat,SScr1,scf_gmat_intbuf,outfile);
       errcod = scf_make_k_l(centers,scf_info,sym_info,
-                            Gmat,DPmat,SScr1,intbuf,outfile);
+                            Gmat,DPmat,SScr1,scf_gmat_intbuf,outfile);
     } else {
       errcod = scf_make_g_l(centers,scf_info,sym_info,Gmat,GmatO,DPmat,DPmatO,
-                            SScr1,SScr2,intbuf,outfile);
+                            SScr1,SScr2,scf_gmat_intbuf,outfile);
     }
   }
 

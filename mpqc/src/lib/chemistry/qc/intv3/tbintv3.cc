@@ -66,11 +66,13 @@ TwoBodyDerivIntV3::compute_shell(int is, int js, int ks, int ls,
       else center = 3;
       c.add_center(center,dercenters.num[i]);
     }
-  if (dercenters.ocs == int2ev3_->cs1()) center = 0;
-  else if (dercenters.ocs == int2ev3_->cs2()) center = 1;
-  else if (dercenters.ocs == int2ev3_->cs3()) center = 2;
-  else center = 3;
-  c.add_omitted(center,dercenters.onum);
+  if (dercenters.n) {
+      if (dercenters.ocs == int2ev3_->cs1()) center = 0;
+      else if (dercenters.ocs == int2ev3_->cs2()) center = 1;
+      else if (dercenters.ocs == int2ev3_->cs3()) center = 2;
+      else center = 3;
+      c.add_omitted(center,dercenters.onum);
+    }
 }
 
 

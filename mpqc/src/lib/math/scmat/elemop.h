@@ -7,6 +7,7 @@
 #endif
 
 #include <util/state/state.h>
+#include <util/group/message.h>
 
 class SCMatrixBlock;
 class SCMatrixBlockIter;
@@ -48,7 +49,7 @@ class SCElementOp: public SavableState {
     // is do nothing.
     virtual int has_collect();
     virtual int has_side_effects();
-    virtual void collect(RefSCElementOp&);
+    virtual void collect(const RefMessageGrp&);
     virtual void process(SCMatrixBlockIter&) = 0;
     void process_base(SCMatrixBlock*);
     virtual void process_spec(SCMatrixRectBlock*);
@@ -79,7 +80,7 @@ class SCElementOp2: public SavableState {
     virtual int has_collect();
     virtual int has_side_effects();
     virtual int has_side_effects_in_arg();
-    virtual void collect(RefSCElementOp2&);
+    virtual void collect(const RefMessageGrp&);
     virtual void process(SCMatrixBlockIter&,SCMatrixBlockIter&) = 0;
     void process_base(SCMatrixBlock*,SCMatrixBlock*);
     virtual void process_spec(SCMatrixRectBlock*,SCMatrixRectBlock*);
@@ -107,7 +108,7 @@ class SCElementOp3: public SavableState {
     virtual int has_side_effects();
     virtual int has_side_effects_in_arg1();
     virtual int has_side_effects_in_arg2();
-    virtual void collect(RefSCElementOp3&);
+    virtual void collect(const RefMessageGrp&);
     virtual void process(SCMatrixBlockIter&,
                          SCMatrixBlockIter&,
                          SCMatrixBlockIter&) = 0;
@@ -142,7 +143,7 @@ class SCElementScalarProduct: public SCElementOp2 {
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
     int has_collect();
-    void collect(RefSCElementOp2&);
+    void collect(const RefMessageGrp&);
     double result();
     void init() { product = 0.0; }
 };
@@ -287,7 +288,7 @@ class SCElementMaxAbs: public SCElementOp {
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&);
     int has_collect();
-    void collect(RefSCElementOp&);
+    void collect(const RefMessageGrp&);
     double result();
 };
 SavableState_REF_dec(SCElementMaxAbs);

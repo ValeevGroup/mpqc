@@ -50,7 +50,7 @@ SCElementOp::has_side_effects()
 }
 
 void
-SCElementOp::collect(RefSCElementOp&)
+SCElementOp::collect(const RefMessageGrp&)
 {
 }
 
@@ -192,7 +192,7 @@ SCElementOp2::has_side_effects_in_arg()
 }
 
 void
-SCElementOp2::collect(RefSCElementOp2&)
+SCElementOp2::collect(const RefMessageGrp&)
 {
 }
 
@@ -298,7 +298,7 @@ SCElementOp3::has_side_effects_in_arg2()
 }
 
 void
-SCElementOp3::collect(RefSCElementOp3&)
+SCElementOp3::collect(const RefMessageGrp&)
 {
 }
 
@@ -462,10 +462,9 @@ SCElementScalarProduct::has_collect()
 }
 
 void
-SCElementScalarProduct::collect(RefSCElementOp2&op)
+SCElementScalarProduct::collect(const RefMessageGrp&grp)
 {
-  RefSCElementScalarProduct ma(op);
-  product += ma->product;
+  grp->sum(product);
 }
 
 double
@@ -645,10 +644,9 @@ SCElementMaxAbs::has_collect()
   return 1;
 }
 void
-SCElementMaxAbs::collect(RefSCElementOp&op)
+SCElementMaxAbs::collect(const RefMessageGrp&msg)
 {
-  RefSCElementMaxAbs ma(op);
-  if (ma->r > r) r = ma->r;
+  msg->max(r);
 }
 
 /////////////////////////////////////////////////////////////////////////

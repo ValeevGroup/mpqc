@@ -651,6 +651,7 @@ ReplSCMatrix::element_op(const RefSCElementOp& op)
       op->process_base(i.block());
     }
   if (op->has_side_effects()) after_elemop();
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -674,6 +675,7 @@ ReplSCMatrix::element_op(const RefSCElementOp2& op,
     }
   if (op->has_side_effects()) after_elemop();
   if (op->has_side_effects_in_arg()) lm->after_elemop();
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -704,6 +706,7 @@ ReplSCMatrix::element_op(const RefSCElementOp3& op,
   if (op->has_side_effects()) after_elemop();
   if (op->has_side_effects_in_arg1()) lm->after_elemop();
   if (op->has_side_effects_in_arg2()) ln->after_elemop();
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 // from Ed Seidl at the NIH

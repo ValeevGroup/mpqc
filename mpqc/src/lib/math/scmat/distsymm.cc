@@ -452,6 +452,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp& op)
   for (i = blocklist->begin(); i != blocklist->end(); i++) {
       op->process_base(i.block());
     }
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -471,6 +472,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp2& op,
        i++, j++) {
       op->process_base(i.block(), j.block());
     }
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 void
@@ -494,6 +496,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp3& op,
        i++, j++, k++) {
       op->process_base(i.block(), j.block(), k.block());
     }
+  if (op->has_collect()) op->collect(messagegrp());
 }
 
 RefSCMatrixSubblockIter

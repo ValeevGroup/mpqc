@@ -87,6 +87,10 @@ class Molecule: public SavableState
     //. \srccd{const} version of the above.
     const AtomicCenter& atom(int) const;
 
+    //. Takes an (x, y, z) postion and finds an atom within the
+    //given tolerance distance.  If no atom is found -1 is returned.
+    int atom_at_position(double *, double tol = 0.05);
+
     //. Returns the index of the atom with the given \vrbl{label}.
     // If the label cannot be found \srccd{-1} is returned.
     int atom_label_to_index(const char *label) const;
@@ -95,9 +99,9 @@ class Molecule: public SavableState
     //charges of the atoms.
     PointBag_double* charges() const;
 
+    //. Sets the \clsnmref{PointGroup} of the molecule.
+    void set_point_group(const PointGroup&);
     //. Returns the \clsnmref{PointGroup} of the molecule.
-    PointGroup& point_group();
-    //. \srccd{const} version of the above.
     const PointGroup& point_group() const;
 
     //. Returns a \clsnm{RefPoint} containing the cartesian coordinates of
@@ -111,17 +115,15 @@ class Molecule: public SavableState
     // will generate the other, redundant atoms.
     void symmetrize();
 
+    void move_to_com();
+    void transform_to_principal_axes(int trans_frame=1);
+    void cleanup_molecule();
+
+    int num_unique_atoms();
+    int *find_unique_atoms();  // returns new'd array
+
     void save_data_state(StateOut&);
 };
 SavableState_REF_dec(Molecule);
-
-/////////////////////////////////////////////////////////////////////
-
-void mol_move_to_com(RefMolecule&);
-void mol_transform_to_principal_axes(RefMolecule&, int trans_frame=1);
-void mol_cleanup_molecule(RefMolecule&);
-
-int mol_num_unique_atoms(const RefMolecule&);
-int * mol_find_unique_atoms(const RefMolecule&);  // returns new'd array
 
 #endif

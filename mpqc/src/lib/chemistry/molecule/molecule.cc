@@ -60,6 +60,7 @@ Molecule::_castdown(const ClassDesc*cd)
 Molecule::Molecule():
   r_(0), natoms_(0), Z_(0), mass_(0), labels_(0)
 {
+  pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
   geometry_units_ = new Units("bohr");
 }

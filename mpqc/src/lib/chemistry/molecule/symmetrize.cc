@@ -49,7 +49,7 @@ main(int argc, char *argv[])
   mol->transform_to_principal_axes(0);
   cout << "Molecule wrt principal axes:\n";
   mol->print();
-  mol->point_group().symm_frame().print();
+  mol->point_group()->symm_frame().print();
 
   mol->symmetrize();
   cout << "symmetrized molecule\n";
@@ -68,7 +68,11 @@ main(int argc, char *argv[])
 
   RefMolecule unique = new Molecule;
   for (i=0; i < nunique; i++)
-    unique->add_atom(i,mol->atom(unique_atoms[i]));
+    unique->add_atom(mol->Z(unique_atoms[i]),
+                     mol->r(unique_atoms[i])[0],
+                     mol->r(unique_atoms[i])[1],
+                     mol->r(unique_atoms[i])[2]
+                     );
 
   cout << "unique atoms\n";
   unique->print();

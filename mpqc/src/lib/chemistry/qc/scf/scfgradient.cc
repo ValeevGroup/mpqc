@@ -1,5 +1,8 @@
 
+#include <iostream.h>
+
 #include <util/misc/timer.h>
+#include <util/misc/formio.h>
 
 #include <math/scmat/offset.h>
 #include <math/scmat/local.h>
@@ -50,7 +53,8 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
 
     ddata = get_tri_block(dblk, istart, iend, jstart, jend, sub);
     if (!ddata) {
-      fprintf(stderr,"ob_gradient: can't figure out what density block is\n");
+      cerr << indent <<
+        "ob_gradient: can't figure out what density block is\n";
       abort();
     }
     
@@ -176,7 +180,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
   
   done_gradient();
   tim_exit("compute gradient");
-  tim_print(0);
+  //tim_print(0);
 }
 
 //////////////////////////////////////////////////////////////////////////////

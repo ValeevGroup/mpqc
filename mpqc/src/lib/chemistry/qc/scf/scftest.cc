@@ -5,6 +5,9 @@
 
 #include <string.h>
 
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <sys/stat.h>
 #include <unistd.h>
 #include <new.h>
@@ -14,6 +17,7 @@
 #include <util/group/picl.h>
 #include <util/group/pregtime.h>
 #include <util/misc/bug.h>
+#include <util/misc/formio.h>
 
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
@@ -50,12 +54,11 @@ const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
 #endif
 
 RefRegionTimer tim;
+RefMessageGrp grp;
 
 static RefMessageGrp
 init_mp(const RefKeyVal& keyval)
 {
-  RefMessageGrp grp;
-
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
 #ifdef HAVE_NX_H
@@ -88,7 +91,8 @@ init_mp(const RefKeyVal& keyval)
 main(int argc, char**argv)
 {
   // the output stream is standard out
-  ostream& o = cout;
+  SCFormIO::setindent(cout, 2);
+  SCFormIO::setindent(cerr, 2);
 
   char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";
   char *keyword =    (argc > 2)? argv[2] : "mole";
@@ -126,23 +130,18 @@ main(int argc, char**argv)
   if (mole.nonnull()) {
     if (mole->gradient_implemented()) {
       if (opt.nonnull()) {
-        //opt->print(o);
         opt->optimize();
       } else {
-        tim->enter("gradient");
         mole->gradient().print("gradient");
-        tim->exit("gradient");
       }
     } else if (mole->value_implemented()) {
-      tim->enter("energy");
-      printf("\n  value of mole is %20.15f\n\n",mole->energy());
-      tim->exit("energy");
+      if (grp->me()==0)
+        cout << indent << "value of mole is " <<
+          setw(20) << setprecision(15) << mole->energy() << endl << endl;
     }
-
-    mole->print(o);
   }
 
-  tim->print(o);
+  tim->print(cout);
 
   return 0;
 }

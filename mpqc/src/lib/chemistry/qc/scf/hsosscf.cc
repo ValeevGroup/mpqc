@@ -5,9 +5,12 @@
 #endif
 
 #include <iostream.h>
+#include <iomanip.h>
+
 #include <math.h>
 
 #include <util/misc/timer.h>
+#include <util/misc/formio.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
@@ -84,6 +87,8 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
   cl_fock_(this),
   op_fock_(this)
 {
+  int me = scf_grp_->me();
+  
   cl_fock_.compute()=0;
   cl_fock_.computed()=0;
   
@@ -120,16 +125,21 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
   } else {
     tndocc_ = (nelectrons-tnsocc_)/2;
     if ((nelectrons-tnsocc_)%2) {
-      fprintf(stderr,
-              "\n  HSOSSCF::init: Warning, there's a leftover electron.\n");
-      fprintf(stderr,"    total_charge = %d\n",charge);
-      fprintf(stderr,"    total nuclear charge = %d\n", Znuc);
-      fprintf(stderr,"    ndocc_ = %d\n", tndocc_);
-      fprintf(stderr,"    nsocc_ = %d\n", tnsocc_);
+      if (me==0) {
+        cerr << endl << indent <<
+          "HSOSSCF::init: Warning, there's a leftover electron.\n";
+        cerr << incindent;
+        cerr << indent << "total_charge = " << charge << endl;
+        cerr << indent << "total nuclear charge = " << Znuc << endl;
+        cerr << indent << "ndocc_ = " << tndocc_ << endl;
+        cerr << indent << "nsocc_ = " << tnsocc_ << endl << decindent;
+      }
     }
   }
 
-  printf("\n  HSOSSCF::init: total charge = %d\n\n", Znuc-2*tndocc_-tnsocc_);
+  if (me==0)
+    cout << endl << indent << "HSOSSCF::init: total charge = " <<
+      Znuc-2*tndocc_-tnsocc_ << endl << endl;
 
   nirrep_ = molecule()->point_group().char_table().ncomp();
 
@@ -148,15 +158,17 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
     set_occupations(0);
   }
 
-  printf("  docc = [");
-  for (int i=0; i < nirrep_; i++)
-    printf(" %d",ndocc_[i]);
-  printf(" ]\n");
+  if (me==0) {
+    cout << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      cout << " " << ndocc_[i];
+    cout << " ]\n";
 
-  printf("  socc = [");
-  for (int i=0; i < nirrep_; i++)
-    printf(" %d",nsocc_[i]);
-  printf(" ]\n");
+    cout << indent << "socc = [";
+    for (int i=0; i < nirrep_; i++)
+      cout << " " << nsocc_[i];
+    cout << " ]\n";
+  }
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -215,7 +227,8 @@ RefSymmSCMatrix
 HSOSSCF::fock(int n)
 {
   if (n > 1) {
-    fprintf(stderr,"HSOSSCF::fock: there are only 2 fock matrices %d\n",n);
+    cerr << indent << "HSOSSCF::fock: there are only two fock matrices, ";
+    cerr << "but fock(" << n << ") was requested" << endl;
     abort();
   }
 
@@ -357,17 +370,19 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
   } else {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
-      if (ndocc_[i] != newdocc[i]) {
-        fprintf(stderr,"  HSOSSCF::set_occupations:  WARNING!!!!\n");
-        fprintf(stderr,"    occupations for irrep %d have changed\n",i+1);
-        fprintf(stderr,"    ndocc was %d, changed to %d\n",
-                ndocc_[i],newdocc[i]);
+      if (ndocc_[i] != newdocc[i] && scf_grp_->me()==0) {
+        cerr << indent << "HSOSSCF::set_occupations:  WARNING!!!!\n";
+        cerr << incindent << indent <<
+          "occupations for irrep " << i+1 << " have changed\n";
+        cerr << indent << "ndocc was " << ndocc_[i] << ", changed to "
+             << newdocc[i] << endl << decindent;
       }
-      if (nsocc_[i] != newsocc[i]) {
-        fprintf(stderr,"  HSOSSCF::set_occupations:  WARNING!!!!\n");
-        fprintf(stderr,"    occupations for irrep %d have changed\n",i+1);
-        fprintf(stderr,"    nsocc was %d, changed to %d\n",
-                nsocc_[i],newsocc[i]);
+      if (nsocc_[i] != newsocc[i] && scf_grp_->me()==0) {
+        cerr << indent << "HSOSSCF::set_occupations:  WARNING!!!!\n";
+        cerr << incindent << indent <<
+          "occupations for irrep " << i+1 << " have changed\n";
+        cerr << indent << "nsocc was " << nsocc_[i] << ", changed to "
+             << newsocc[i] << endl << decindent;
       }
     }
 
@@ -647,7 +662,7 @@ HSOSSCF::ao_fock()
 
   // for now quit
   else {
-    fprintf(stderr,"Cannot yet use anything but Local matrices\n");
+    cerr << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -849,7 +864,7 @@ HSOSSCF::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    fprintf(stderr,"can't do gradient yet\n");
+    cerr << indent << "HSOSSCF::two_body_deriv: can't do gradient yet\n";
     abort();
   }
 }

@@ -6,11 +6,6 @@
 #pragma interface
 #endif
 
-#include <math.h>
-
-#include <util/misc/timer.h>
-
-#include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/gbuild.h>
 
 template<class T>
@@ -307,7 +302,7 @@ class LocalGBuild : public GBuild<T> {
 
       grp_->sum(&tnint, 1, 0, 0);
       if (me==0)
-        printf("%20.0f integrals\n",tnint);
+        cout << setw(20) << tnint << " integrals" << endl;
 
       tim_exit("ao_gmat");
     }

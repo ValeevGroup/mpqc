@@ -1,5 +1,9 @@
 
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <util/misc/timer.h>
+#include <util/misc/formio.h>
 
 #include <math/scmat/offset.h>
 #include <math/scmat/blocked.h>
@@ -55,8 +59,10 @@ SCF::compute_vector(double& eelec)
 
     // calculate the electronic energy
     eelec = scf_energy();
-    printf("  iter %5d energy = %20.15f delta = %15.10g\n",
-           iter+1,eelec+nucrep,delta);
+    if (scf_grp_->me()==0)
+      cout << indent << "iter " << setw(5) << iter+1 <<
+        " energy = " << setw(20) << setprecision(15) << eelec+nucrep <<
+        " delta = " << setw(20) << setprecision(15) << delta << endl;
 
     // now extrapolate the fock matrix
     tim_enter("extrap");
@@ -108,7 +114,7 @@ SCF::compute_vector(double& eelec)
 
   extrap = 0;
   tim_exit("vector");
-  tim_print(0);
+  //tim_print(0);
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -5,9 +5,12 @@
 #endif
 
 #include <iostream.h>
+#include <iomanip.h>
+
 #include <math.h>
 
 #include <util/misc/timer.h>
+#include <util/misc/formio.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
@@ -73,6 +76,8 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   SCF(keyval),
   cl_fock_(this)
 {
+  int me = scf_grp_->me();
+  
   cl_fock_.compute()=0;
   cl_fock_.computed()=0;
   
@@ -90,16 +95,19 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
     tndocc_ = keyval->intvalue("ndocc");
   } else {
     tndocc_ = (Znuc-charge)/2;
-    if ((Znuc-charge)%2) {
-      fprintf(stderr,
-              "\n  CLSCF::init: Warning, there's a leftover electron.\n");
-      fprintf(stderr,"    total_charge = %d\n",charge);
-      fprintf(stderr,"    total nuclear charge = %d\n", Znuc);
-      fprintf(stderr,"    ndocc_ = %d\n", tndocc_);
+    if ((Znuc-charge)%2 && me==0) {
+      cerr << endl;
+      cerr << indent << "CLSCF::init: Warning, there's a leftover electron.\n";
+      cerr << incindent << indent << "total_charge = " << charge << endl;
+      cerr << indent << "total nuclear charge = " << Znuc << endl;
+      cerr << indent << "ndocc_ = " << tndocc_ << endl << decindent;
     }
   }
 
-  printf("\n  CLSCF::init: total charge = %d\n\n", Znuc-2*tndocc_);
+  if (me==0) {
+    cout << endl << indent << "CLSCF::init: total charge = " << Znuc-2*tndocc_;
+    cout << endl << endl;
+  }
 
   nirrep_ = molecule()->point_group().char_table().ncomp();
 
@@ -118,10 +126,12 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
     set_occupations(0);
   }
 
-  printf("  docc = [");
-  for (int i=0; i < nirrep_; i++)
-    printf(" %d",ndocc_[i]);
-  printf(" ]\n");
+  if (me==0) {
+    cout << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      cout << " " << ndocc_[i];
+    cout << " ]\n";
+  }
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -167,7 +177,8 @@ RefSymmSCMatrix
 CLSCF::fock(int n)
 {
   if (n > 0) {
-    fprintf(stderr,"CLSCF::fock: there is only one fock matrix %d\n",n);
+    cerr << indent << "CLSCF::fock: there is only one fock matrix, ";
+    cerr << "but fock(" << n << ") was requested" << endl;
     abort();
   }
 
@@ -277,11 +288,12 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
   } else {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
-      if (ndocc_[i] != newocc[i]) {
-        fprintf(stderr,"  CLSCF::set_occupations:  WARNING!!!!\n");
-        fprintf(stderr,"    occupations for irrep %d have changed\n",i+1);
-        fprintf(stderr,"    ndocc was %d, changed to %d\n",
-                ndocc_[i],newocc[i]);
+      if (ndocc_[i] != newocc[i] && scf_grp_->me()==0) {
+        cerr << indent << "CLSCF::set_occupations:  WARNING!!!!\n";
+        cerr << incindent << indent <<
+          "occupations for irrep " << i+1 << " have changed\n";
+        cerr << indent << "ndocc was " << ndocc_[i] << ", changed to "
+             << newocc[i] << endl << decindent;
       }
     }
 
@@ -484,7 +496,7 @@ CLSCF::ao_fock()
 
   // for now quit
   else {
-    fprintf(stderr,"Cannot yet use anything but Local matrices\n");
+    cerr << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -627,7 +639,7 @@ CLSCF::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    fprintf(stderr,"can't do gradient yet\n");
+    cerr << indent << "CLSCF::two_body_deriv: can't do gradient yet\n";
     abort();
   }
 }

@@ -21,11 +21,9 @@ elsif ($ARGV[0] eq "-d") {
     opendir(DIR,"$dir");
     my @files = sort(readdir(DIR));
     closedir(DIR);
-    foreach $file1 (@files) {
-        if ($file1 =~ /.out$/) {
-            $file2 = $file1;
-            $file1 =~ s/run\//ref\//;
-            check("$dir/$file1", "$dir/$file2");
+    foreach $file (@files) {
+        if ($file =~ /.out$/) {
+            check("$dir/$file", "run/$file");
         }
     }
 }

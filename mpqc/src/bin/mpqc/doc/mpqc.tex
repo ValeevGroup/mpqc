@@ -1,5 +1,5 @@
 
-\documentclass[letterpaper%,twoside
+\documentclass[notitlepage,letterpaper%,twoside
               ]{report}
 
 \tolerance=1500
@@ -25,24 +25,44 @@
 \title{The MPQC User Manual \\
        Version pre-1.2 experimental}
 \end{htmlonly}
-\begin{latexonly}
-\title{The MPQC User Manual \\
-       Version \input{version.tex}}
-\end{latexonly}
+%\begin{latexonly}
+%\title{The MPQC User Manual \\
+%       Version \input{version.tex}}
+%\end{latexonly}
+%
+%\author{Curtis L. Janssen \and Edward T. Seidl \and Ida M. B. Nielsen
+%        \and Michael E. Colvin}
 
-\author{Curtis L. Janssen \and Edward T. Seidl \and Ida M. B. Nielsen
-        \and Michael E. Colvin}
+%\date{\today}
 
-\date{\today}
+%\maketitle
 
-\maketitle
+\begin{titlepage}
 
-\begin{abstract}
+\begin{center}
+\LARGE\bfseries The MPQC User Manual \\
+Version \input{version.tex}
+\end{center}
+
+\begin{center}
+{\large\itshape Curtis L. Janssen, Edward T. Seidl, Ida M. B. Nielsen, and
+Michael E. Colvin}
+\end{center}
+
+\begin{center}
+\today
+\end{center}
+
+\vfill
+
+\begin{center}
+\textbf{Abstract}
+\end{center}
+
 The Massively Parallel Quantum Chemistry program (MPQC) computes
 the properties of molecules, {\it ab initio}, on a wide variety
 of computer architectures.
 
-\begin{sloppypar}
 MPQC can compute closed shell and general restricted open-shell
 Hartree-Fock energies and gradients, second order open-shell
 perturbation theory (OPT2[2]) and Z-averaged perturbation theory
@@ -50,12 +70,31 @@ perturbation theory (OPT2[2]) and Z-averaged perturbation theory
 perturbation theory energies and gradients.  It also includes a
 robust internal coordinate geometry optimizer that efficiently
 optimizes molecules with many degrees of freedom.
-\end{sloppypar}
 
 MPQC runs on Unix compatible workstations (Intel/Linux, SGI/IRIX,
 IBM RS/6000), symmetric multi-processors (Intel/Linux, SGI/IRIX), and
 massively parallel computers (IBM SP2, Intel Paragon).
-\end{abstract}
+
+
+\begin{center}
+\textbf{License}
+\end{center}
+
+MPQC is open-source software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your option)
+any later version.
+
+\begin{center}
+\textbf{Warranty}
+\end{center}
+
+MPQC is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+\end{titlepage}
 
 \tableofcontents
 \listoftables

@@ -8,8 +8,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 EXTRA_TEXINPUTS=$(SRCTOPDIR)/src/lib:$(SRCDIR):$(SRCTOPDIR)/lib/texinputs:$(TOPDIR)/src/lib:$(shell pwd)
 LATEX=latex
 XDVI=xdvi
+PSPREVIEW=gv
 LATEX2HTML=latex2html
-L2HFLAGS=-dir mpqcuser \
+L2HFLAGS=-dir mpqcuser -verbosity 0 \
          -up_url ".." \
          -up_title "The MPQC Home Page" -html_version 3.2 \
          -split 4 -link 4 -local_icons -no_math -no_reuse \
@@ -31,6 +32,9 @@ mpqc.see: mpqc.dvi
 
 mpqc.ps: mpqc.dvi
 	dvips -o $@ $^
+
+mpqc.pssee: mpqc.ps
+	$(PSPREVIEW) $^
 
 mpqc.dvi: mpqc.tex $(SAMPLEINPUTS) $(DOCFILES)
 	@echo env TEXINPUTS=$$TEXINPUTS

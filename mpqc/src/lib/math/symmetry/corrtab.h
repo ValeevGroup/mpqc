@@ -36,10 +36,11 @@
 
 #include <math/symmetry/pointgrp.h>
 
-////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////
  
-//.  The \clsnm{CorrelationTable} class provides a correlation
-//table between two point groups.
+/** The CorrelationTable class provides a correlation
+    table between two point groups.
+*/
 class CorrelationTable: public VRefCount {
   private:
     RefPointGroup group_;
@@ -54,39 +55,39 @@ class CorrelationTable: public VRefCount {
   public:
     CorrelationTable();
 
-    //. Create a correlation table for the two groups.
+    /// Create a correlation table for the two groups.
     CorrelationTable(const RefPointGroup& group,
                      const RefPointGroup& subgroup);
 
     ~CorrelationTable();
 
-    //. Returns the higher order point group.
+    /// Returns the higher order point group.
     RefPointGroup group() const { return group_; }
-    //. Returns the lower order point group.
+    /// Returns the lower order point group.
     RefPointGroup subgroup() const { return subgroup_; }
 
-    //. Initalize the correlation table.  Returns 0 for success and nonzero
-    //for failure.  This will fail if the subgroup is not really a subgroup
-    //of group.
+    /** Initalize the correlation table.  Returns 0 for success and nonzero
+        for failure.  This will fail if the subgroup is not really a subgroup
+        of group. */
     int initialize_table(const RefPointGroup& group,
                          const RefPointGroup& subgroup);
 
-    //. Converts error codes from initialize\_table into a text string.
+    /// Converts error codes from initialize\_table into a text string.
     const char *error(int errcod);
 
-    //. Returns the number of irreps in the high order group.
+    /// Returns the number of irreps in the high order group.
     int n() const { return n_; }
-    //. Returns the number of irreps in the subgroup.
+    /// Returns the number of irreps in the subgroup.
     int subn() const { return subn_; }
-    //. Returns the degeneracy of the irrep.
+    /// Returns the degeneracy of the irrep.
     int degen(int igamma) const;
-    //. Returns the degeneracy of the subgroup irrep.
+    /// Returns the degeneracy of the subgroup irrep.
     int subdegen(int igamma) const;
-    //. Returns the number of irreps in the low order group that an irrep
+    /// Returns the number of irreps in the low order group that an irrep
     //from the high order group can be reduced to.
     int ngamma(int igamma) const { return ngamma_[igamma]; }
-    //. Returns the irreps in the low order group that an irrep from the
-    //high order group can be reduced to.
+    /** Returns the irreps in the low order group that an irrep from the
+        high order group can be reduced to. */
     int gamma(int igamma, int i) const { return gamma_[igamma][i]; }
 
     void print(ostream &o=cout) const;

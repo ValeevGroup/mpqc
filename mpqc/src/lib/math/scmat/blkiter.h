@@ -43,28 +43,28 @@ class SCElementOp;
 class SCElementOp2;
 class SCElementOp3;
 
-//. The \clsnm{SCMatrixBlockIter} class is used to described iterates that
-//loop through the elements in a block.
+/** The SCMatrixBlockIter class is used to described iterates that
+    loop through the elements in a block. */
 class SCMatrixBlockIter {
   public:
     SCMatrixBlockIter() {}
     virtual ~SCMatrixBlockIter();
-    //. Returns the row index.
+    /// Returns the row index.
     virtual int i() = 0;
-    //. Returns the column index.
+    /// Returns the column index.
     virtual int j() = 0;
-    //. Set the current element to \vrbl{val}.
+    /// Set the current element to \vrbl{val}.
     virtual void set(double val) = 0;
-    //. Add \vrbl{val} to the current element.
+    /// Add \vrbl{val} to the current element.
     virtual void accum(double val);
-    //. Return the value of the current element.
+    /// Return the value of the current element.
     virtual double get() = 0;
-    //. Return nonzero if there are more elements.
+    /// Return nonzero if there are more elements.
     virtual operator int() = 0;
-    //. Move to the next element.
+    /// Move to the next element.
     virtual void operator++() = 0; // prefix ++
     void operator++(int) { operator++(); }
-    //. Start the iteration over.
+    /// Start the iteration over.
     virtual void reset() = 0;
 };
 

@@ -60,11 +60,10 @@ typedef class SSRefSCElementOp2 RefSCElementOp2;
 class SSRefSCElementOp3;
 typedef class SSRefSCElementOp3 RefSCElementOp3;
 
-//. Objects of class \clsnm{SCElementOp} are used to perform operations on
-//the elements of matrices.  When the \clsnm{SCElementOp} object is given
-//to the \srccd{element\_op} member of a matrix, each block the matrix is
-//passed to one of the \srccd{process}, \srccd{process\_base}, or
-//\srccd{process\_base} members.
+/** Objects of class SCElementOp are used to perform operations on the
+    elements of matrices.  When the SCElementOp object is given to the
+    element_op member of a matrix, each block the matrix is passed to one
+    of the process, process_base, or process_base members. */
 class SCElementOp: public SavableState {
 #   define CLASSNAME SCElementOp
 #   include <util/state/stated.h>
@@ -73,36 +72,35 @@ class SCElementOp: public SavableState {
     SCElementOp();
     SCElementOp(StateIn&s): SavableState(s) {}
     virtual ~SCElementOp();
-    //. If duplicates of the \clsnm{SCElementOp} exist (that is, there is
-    //more than one node), then if \srccd{has\_collect} returns nonzero
-    //then collect is called with a \clsnmref{MessageGrp} reference after
-    //all of the blocks have been processed.  The default return value of
-    //\srccd{has\_collect} is 0 and \srccd{collect}'s default action is do
-    //nothing.  If \srccd{defer\_collect} member is called with nonzero,
-    //\srccd{collect} will do nothing (this is only used by the blocked
-    //matrices).
+    /** If duplicates of the SCElementOp exist (that is, there is more than
+        one node), then if has_collect returns nonzero then collect is
+        called with a MessageGrp reference after all of the blocks have
+        been processed.  The default return value of has_collect is 0 and
+        collect's default action is do nothing.  If defer_collect member is
+        called with nonzero, collect will do nothing (this is only used by
+        the blocked matrices). */
     virtual int has_collect();
     virtual void defer_collect(int);
     virtual void collect(const RefMessageGrp&);
-    //. By default this returns nonzero.  If the \clsnm{ElementOp}
-    //specialization will change any elements of the matrix, then
-    //this must be overridden to return nonzero.
+    /** By default this returns nonzero.  If the ElementOp specialization
+        will change any elements of the matrix, then this must be
+        overridden to return nonzero. */
     virtual int has_side_effects();
 
-    //. This is the fallback routine to process blocks and is called
-    //by \srccd{process\_spec} members that are not overridden.
+    /** This is the fallback routine to process blocks and is called
+        by process_spec members that are not overridden. */
     virtual void process(SCMatrixBlockIter&) = 0;
 
-    //. Lazy matrix implementors can call this member when the
-    //type of block specialization is unknown.  However, this
-    //will attempt to castdown \vrbl{block} to a block specialization
-    //and will thus be less efficient.
+    /** Lazy matrix implementors can call this member when the
+        type of block specialization is unknown.  However, this
+        will attempt to castdown block to a block specialization
+        and will thus be less efficient. */
     void process_base(SCMatrixBlock*block);
 
-    //. Matrices should call these members when the type of block is known.
-    //\clsnm{ElementOp} specializations should override these when
-    //efficiency is important, since these give the most efficient access
-    //to the elements of the block.
+    /** Matrices should call these members when the type of block is known.
+        ElementOp specializations should override these when
+        efficiency is important, since these give the most efficient access
+        to the elements of the block. */
     virtual void process_spec_rect(SCMatrixRectBlock*);
     virtual void process_spec_ltri(SCMatrixLTriBlock*);
     virtual void process_spec_diag(SCMatrixDiagBlock*);
@@ -115,11 +113,10 @@ class SCElementOp: public SavableState {
 DCRef_declare(SCElementOp);
 SSRef_declare(SCElementOp);
 
-//. The \clsnm{SCElementOp2} class is very similar to the
-//\clsnmref{SCElementOp} class except that pairs of blocks
-//are treated simultaneously.  The two matrices involved must
-//have identical storage layout, which will be the case if
-//both matrices are of the same type and dimensions.
+/** The SCElementOp2 class is very similar to the SCElementOp class except
+    that pairs of blocks are treated simultaneously.  The two matrices
+    involved must have identical storage layout, which will be the case if
+    both matrices are of the same type and dimensions.  */
 class SCElementOp2: public SavableState {
 #   define CLASSNAME SCElementOp2
 #   include <util/state/stated.h>
@@ -143,11 +140,10 @@ class SCElementOp2: public SavableState {
 DCRef_declare(SCElementOp2);
 SSRef_declare(SCElementOp2);
 
-//. The \clsnm{SCElementOp3} class is very similar to the
-//\clsnmref{SCElementOp} class except that a triplet of blocks
-//is treated simultaneously.  The three matrices involved must
-//have identical storage layout, which will be the case if
-//all matrices are of the same type and dimensions.
+/** The SCElementOp3 class is very similar to the SCElementOp class except
+    that a triplet of blocks is treated simultaneously.  The three matrices
+    involved must have identical storage layout, which will be the case if
+    all matrices are of the same type and dimensions.  */
 class SCElementOp3: public SavableState {
 #   define CLASSNAME SCElementOp3
 #   include <util/state/stated.h>

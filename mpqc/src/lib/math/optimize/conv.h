@@ -37,10 +37,10 @@
 #include <math/scmat/matrix.h>
 #include <math/optimize/function.h>
 
-////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
 
-//. The \clsnm{Convergence} class is used to check for the
-//convergence of an optimization.
+/** The Convergence class is used to check for the
+    convergence of an optimization. */
 class Convergence: virtual_base public SavableState {
 #   define CLASSNAME Convergence
 #   define HAVE_KEYVAL_CTOR
@@ -68,7 +68,7 @@ class Convergence: virtual_base public SavableState {
 
     void set_defaults();
   public:
-    //. Standard constructors and destructor.
+    /// Standard constructors and destructor.
     Convergence();
     Convergence(double tolerance);
     Convergence(StateIn&);
@@ -77,15 +77,15 @@ class Convergence: virtual_base public SavableState {
 
     void save_data_state(StateOut&);
 
-    //. Set the current gradient and displacement.
+    /// Set the current gradient and displacement.
     virtual void get_grad(const RefFunction &);
     virtual void get_x(const RefFunction &);
     virtual void set_nextx(const RefSCVector &);
 
-    //. Set the current gradient and displacement to null.
+    /// Set the current gradient and displacement to null.
     virtual void reset();
 
-    //. Return nonzero if the optimization has converged.
+    /// Return nonzero if the optimization has converged.
     virtual int converged();
 };
 SavableState_REF_dec(Convergence);

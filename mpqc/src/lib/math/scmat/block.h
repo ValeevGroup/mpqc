@@ -38,8 +38,8 @@ class SCElementOp;
 class SCElementOp2;
 class SCElementOp3;
 
-//. \clsnm{SCMatrixBlock} is the base clase for all types of blocks
-//that comprise matrices and vectors.
+/** SCMatrixBlock is the base clase for all types of blocks
+    that comprise matrices and vectors. */
 class SCMatrixBlock: public SavableState {
 #   define CLASSNAME SCMatrixBlock
 #   include <util/state/stated.h>
@@ -52,19 +52,19 @@ class SCMatrixBlock: public SavableState {
     virtual ~SCMatrixBlock();
     void save_data_state(StateOut&s);
 
-    //. Return of copy of \vrbl{this}.  A runtime error will be generated
-    //for blocks that cannot do a deepcopy.  These routines are only used
-    //internally in the matrix library.
+    /** Return of copy of this.  A runtime error will be generated
+        for blocks that cannot do a deepcopy.  These routines are only used
+        internally in the matrix library. */
     virtual SCMatrixBlock *deepcopy() const;
 
-    //. Return a pointer to the block's data and the number of elements
-    //in the block.  Some blocks cannot provide this information and
-    //a runtime error will be generated if these members are called.
-    //These routines are only used internally in the matrix library.
+    /** Return a pointer to the block's data and the number of elements
+        in the block.  Some blocks cannot provide this information and
+        a runtime error will be generated if these members are called.
+        These routines are only used internally in the matrix library. */
     virtual double *dat();
     virtual int ndat() const;
 
-    //. These routines are obsolete.
+    // These routines are obsolete.
     virtual void process(SCElementOp*) = 0;
     virtual void process(SCElementOp2*, SCMatrixBlock*) = 0;
     virtual void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*) = 0;
@@ -120,18 +120,17 @@ class SCMatrixBlockList: public SavableState {
 };
 SavableState_REF_dec(SCMatrixBlockList);
 
-//. The \clsnm{SCVectorSimpleBlock} describes a piece of a
-//vector.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double *vector, SCVectorSimpleBlock &b)
-//{
-//  int i,offset=0;
-//  for (i=b.istart; i<b.iend; i++,offset++) {
-//      vector[i] = b.data[offset];
-//    }
-//  }
-//}
-//\end{verbatim}
+/** The SCVectorSimpleBlock describes a piece of a
+vector.  The following bit of code illustrates the data layout:
+fill(double *vector, SCVectorSimpleBlock &b)
+{
+  int i,offset=0;
+  for (i=b.istart; i<b.iend; i++,offset++) {
+      vector[i] = b.data[offset];
+    }
+  }
+}
+*/
 class SCVectorSimpleBlock: public SCMatrixBlock {
 #   define CLASSNAME SCVectorSimpleBlock
 #   define HAVE_STATEIN_CTOR
@@ -157,18 +156,17 @@ class SCVectorSimpleBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCVectorSimpleBlock);
 
-//. The \clsnm{SCVectorSimpleSubBlock} describes a subblock of a
-//vector.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double *vector, SCVectorSimpleSubBlock &b)
-//{
-//  int i,offset=b.offset;
-//  for (i=b.istart; i<b.iend; i++,offset++) {
-//      vector[i] = b.data[offset];
-//    }
-//  }
-//}
-//\end{verbatim}
+/** The SCVectorSimpleSubBlock describes a subblock of a
+vector.  The following bit of code illustrates the data layout:
+fill(double *vector, SCVectorSimpleSubBlock &b)
+{
+  int i,offset=b.offset;
+  for (i=b.istart; i<b.iend; i++,offset++) {
+      vector[i] = b.data[offset];
+    }
+  }
+}
+*/
 class SCVectorSimpleSubBlock: public SCMatrixBlock {
 #   define CLASSNAME SCVectorSimpleSubBlock
 #   define HAVE_STATEIN_CTOR
@@ -190,19 +188,18 @@ class SCVectorSimpleSubBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCVectorSimpleSubBlock);
 
-//. The \clsnm{SCMatrixRectBlock} describes a rectangular piece of a
-//matrix.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double **matrix, SCMatrixRectBlock &b)
-//{
-//  int offset=0;
-//  for (int i=b.istart; i<b.iend; i++) {
-//    for (int j=b.jstart; j<b.jend; j++,offset++) {
-//      matrix[i][j] = b.data[offset];
-//    }
-//  }
-//}
-//\end{verbatim}
+/** The SCMatrixRectBlock describes a rectangular piece of a
+matrix.  The following bit of code illustrates the data layout:
+fill(double **matrix, SCMatrixRectBlock &b)
+{
+  int offset=0;
+  for (int i=b.istart; i<b.iend; i++) {
+    for (int j=b.jstart; j<b.jend; j++,offset++) {
+      matrix[i][j] = b.data[offset];
+    }
+  }
+}
+*/
 class SCMatrixRectBlock: public SCMatrixBlock {
 #   define CLASSNAME SCMatrixRectBlock
 #   define HAVE_STATEIN_CTOR
@@ -230,20 +227,19 @@ class SCMatrixRectBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixRectBlock);
 
-//. The \clsnm{SCMatrixRectSubBlock} describes a rectangular piece of a
-//matrix.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double **matrix, SCMatrixRectSubBlock &b)
-//{
-//  int offset=b.istart * b.istride + b.jstart;
-//  for (int i=b.istart; i<b.iend; i++) {
-//    for (int j=b.jstart; j<b.jend; j++,offset++) {
-//      matrix[i][j] = b.data[offset];
-//    }
-//  offset += b.istride - (b.jend - b.jstart);
-//  }
-//}
-//\end{verbatim}
+/** The SCMatrixRectSubBlock describes a rectangular piece of a
+matrix.  The following bit of code illustrates the data layout:
+fill(double **matrix, SCMatrixRectSubBlock &b)
+{
+  int offset=b.istart * b.istride + b.jstart;
+  for (int i=b.istart; i<b.iend; i++) {
+    for (int j=b.jstart; j<b.jend; j++,offset++) {
+      matrix[i][j] = b.data[offset];
+    }
+  offset += b.istride - (b.jend - b.jstart);
+  }
+}
+*/
 class SCMatrixRectSubBlock: public SCMatrixBlock {
 #   define CLASSNAME SCMatrixRectSubBlock
 #   define HAVE_STATEIN_CTOR
@@ -270,19 +266,18 @@ class SCMatrixRectSubBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixRectSubBlock);
 
-//. The \clsnm{SCMatrixLTriBlock} describes a triangular piece of a
-//matrix.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double **matrix, SCMatrixLTriBlock &b)
-//{
-//  int offset=0;
-//  for (int i=b.start; i<b.end; i++) {
-//    for (int j=b.start; j<=i; j++,offset++) {
-//      matrix[i][j] = b.data[offset];
-//    }
-//  }
-//}
-//\end{verbatim}
+/** The SCMatrixLTriBlock describes a triangular piece of a
+matrix.  The following bit of code illustrates the data layout:
+fill(double **matrix, SCMatrixLTriBlock &b)
+{
+  int offset=0;
+  for (int i=b.start; i<b.end; i++) {
+    for (int j=b.start; j<=i; j++,offset++) {
+      matrix[i][j] = b.data[offset];
+    }
+  }
+}
+*/
 class SCMatrixLTriBlock: public SCMatrixBlock {
 #   define CLASSNAME SCMatrixLTriBlock
 #   define HAVE_STATEIN_CTOR
@@ -308,21 +303,20 @@ class SCMatrixLTriBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixLTriBlock);
 
-//. The \clsnm{SCMatrixLTriSubBlock} describes a triangular subblock of a
-//matrix.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double **matrix, SCMatrixLTriSubBlock &b)
-//{
-//  int offset=(b.istart*(b.istart+1)>>1) + b.jstart;
-//  for (int i=b.start; i<b.end; i++) {
-//    for (int j=b.start; j<=i && j<b.jend; j++,offset++) {
-//      matrix[i][j] = b.data[offset];
-//    }
-//  if (j>i) offset += b.istart;
-//  else offset += i + b.jstart - b.jend;
-//  }
-//}
-//\end{verbatim}
+/** The SCMatrixLTriSubBlock describes a triangular subblock of a
+matrix.  The following bit of code illustrates the data layout:
+fill(double **matrix, SCMatrixLTriSubBlock &b)
+{
+  int offset=(b.istart*(b.istart+1)>>1) + b.jstart;
+  for (int i=b.start; i<b.end; i++) {
+    for (int j=b.start; j<=i && j<b.jend; j++,offset++) {
+      matrix[i][j] = b.data[offset];
+    }
+  if (j>i) offset += b.istart;
+  else offset += i + b.jstart - b.jend;
+  }
+}
+*/
 class SCMatrixLTriSubBlock: public SCMatrixBlock {
 #   define CLASSNAME SCMatrixLTriSubBlock
 #   define HAVE_STATEIN_CTOR
@@ -347,18 +341,17 @@ class SCMatrixLTriSubBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixLTriSubBlock);
 
-//. The \clsnm{SCMatrixDiagBlock} describes a diagonal piece of a
-//matrix.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double **matrix, SCMatrixDiagBlock &b)
-//{
-//  int i,j,offset=0;
-//  for (i=b.istart,j=b.jstart; i<b.iend; i++,j++,offset++) {
-//      matrix[i][j] = b.data[offset];
-//    }
-//  }
-//}
-//\end{verbatim}
+/** The SCMatrixDiagBlock describes a diagonal piece of a
+matrix.  The following bit of code illustrates the data layout:
+fill(double **matrix, SCMatrixDiagBlock &b)
+{
+  int i,j,offset=0;
+  for (i=b.istart,j=b.jstart; i<b.iend; i++,j++,offset++) {
+      matrix[i][j] = b.data[offset];
+    }
+  }
+}
+*/
 class SCMatrixDiagBlock: public SCMatrixBlock {
 #   define CLASSNAME SCMatrixDiagBlock
 #   define HAVE_STATEIN_CTOR
@@ -386,18 +379,17 @@ class SCMatrixDiagBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixDiagBlock);
 
-//. The \clsnm{SCMatrixDiagSubBlock} describes a diagonal subblock of a
-//matrix.  The following bit of code illustrates the data layout:
-//\begin{verbatim}
-//fill(double **matrix, SCMatrixDiagSubBlock &b)
-//{
-//  int i,j,offset=b.offset;
-//  for (i=b.istart,j=b.jstart; i<b.iend; i++,j++,offset++) {
-//      matrix[i][j] = b.data[offset];
-//    }
-//  }
-//}
-//\end{verbatim}
+/** The SCMatrixDiagSubBlock describes a diagonal subblock of a
+matrix.  The following bit of code illustrates the data layout:
+fill(double **matrix, SCMatrixDiagSubBlock &b)
+{
+  int i,j,offset=b.offset;
+  for (i=b.istart,j=b.jstart; i<b.iend; i++,j++,offset++) {
+      matrix[i][j] = b.data[offset];
+    }
+  }
+}
+*/
 class SCMatrixDiagSubBlock: public SCMatrixBlock {
 #   define CLASSNAME SCMatrixDiagSubBlock
 #   define HAVE_STATEIN_CTOR
@@ -424,32 +416,30 @@ class SCMatrixDiagSubBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixDiagSubBlock);
 
-////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////
 // Classes that iterate through the blocks of a matrix.
 
-//. Objects of class \clsnm{SCMatrixSubblockIter} are used to iterate
-//through the blocks of a matrix.  The object must be deleted before using
-//the matrix that owns the blocks that \clsnm{SCMatrixSubblockIter} is
-//iterating through.
+/** Objects of class SCMatrixSubblockIter are used to iterate through the
+    blocks of a matrix.  The object must be deleted before using the matrix
+    that owns the blocks that SCMatrixSubblockIter is iterating through. */
 class SCMatrixSubblockIter: public VRefCount {
   public:
     enum Access { Read, Write, Accum, None };
   protected:
     Access access_;
   public:
-    //. The \vrbl{access} variable should be one of \srccd{Read},
-    //\srccd{Write}, \srccd{Accum}, and \srccd{None}, with the
-    //\srccd{SCMatrixSubblockIter::} scope operator applied.
+    /** The access variable should be one of Read, Write, Accum, and None,
+        with the SCMatrixSubblockIter:: scope operator applied. */
     SCMatrixSubblockIter(Access access): access_(access) {}
-    //. Start at the beginning.
+    /// Start at the beginning.
     virtual void begin() = 0;
-    //. Returns nonzero if there is another block.
+    /// Returns nonzero if there is another block.
     virtual int ready() = 0;
-    //. Proceed to the next block.
+    /// Proceed to the next block.
     virtual void next() = 0;
-    //. Return the current block.
+    /// Return the current block.
     virtual SCMatrixBlock *block() = 0;
-    //. Return the type of \srccd{Access} allowed for these blocks.
+    /// Return the type of Access allowed for these blocks.
     Access access() const { return access_; }
 };
 REF_dec(SCMatrixSubblockIter);

@@ -38,10 +38,10 @@
 #include <math/optimize/function.h>
 #include <math/optimize/conv.h>
 
-////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////
 
-//. The \clsnm{Optimize} class is an abstract base class for classes
-//that find the extreme points of \clsnmref{Function}'s.
+/** The Optimize class is an abstract base class for classes
+    that find the extreme points of Function's. */
 class Optimize: virtual_base public SavableState {
 #   define CLASSNAME Optimize
 #   include <util/state/stated.h>
@@ -56,7 +56,7 @@ class Optimize: virtual_base public SavableState {
     RefFunction function_;
     RefConvergence conv_;
   public:
-    //. Standard constructors and destructor.
+    /// Standard constructors and destructor.
     Optimize();
     Optimize(StateIn&);
     Optimize(const RefKeyVal&);
@@ -64,29 +64,29 @@ class Optimize: virtual_base public SavableState {
 
     void save_data_state(StateOut&);
 
-    //. Do the optimization.  Returns nonzero if the optimization
-    //. is complete.
+    /** Do the optimization.  Returns nonzero if the optimization
+        is complete. */
     virtual int optimize();
 
-    //. Set up for checkpointing.
+    /// Set up for checkpointing.
     void set_checkpoint();
     void set_checkpoint_file(const char*);
 
-    //. Set the function to be optimized
+    /// Set the function to be optimized
     void set_function(const RefFunction&);
     
-    //. Set the iteration limit.
+    /// Set the iteration limit.
     void set_max_iterations(int);
   
-    //. Initialize the optimizer.
+    /// Initialize the optimizer.
     virtual void init();
-    //. Take a step.  Returns 1 if the optimization has converged,
-    //otherwise 0.
+    /** Take a step.  Returns 1 if the optimization has converged,
+        otherwise 0. */
     virtual int update() = 0;
 
     virtual void apply_transform(const RefNonlinearTransform&);
 
-    //. Returns information about the \clsnmref{Function} being optimized.
+    /// Returns information about the Function being optimized.
     RefFunction function() const { return function_; }
     RefSCMatrixKit matrixkit() const { return function_->matrixkit(); }
     RefSCDimension dimension() const { return function_->dimension(); }

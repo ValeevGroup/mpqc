@@ -9,6 +9,7 @@
 #include <chemistry/qc/cints/integraljf.h>
 #include <chemistry/qc/cints/int2jf.h>
 #include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/intv2/int_libv2.h>
 
 // force linkage...this MUST be fixed
 const ClassDesc &fl0  = SymmGaussianBasisSet::class_desc_;
@@ -132,8 +133,8 @@ main(int argc, char *argv[])
   tim_print(0);
   
   ///////////////////////////////////////////////////////////////////////
-  tim_enter("2ei");
 
+  tim_enter("2ei");
   tim_enter("init");
   TwoBodyIntJF twos(gbs);
   tim_exit("init");
@@ -149,8 +150,39 @@ main(int argc, char *argv[])
   }
   
   tim_exit("2ei");
-
   tim_print(0);
 
+  tim_enter("2ei v2");
+  tim_enter("init");
+
+  centers_t *centers = gbs->convert_to_centers_t();
+  
+  if (!centers) {
+    fprintf(stderr,"hoot man!  no centers\n");
+    abort();
+  }
+
+  int_initialize_offsets2(centers,centers,centers,centers);
+
+  tim_exit("init");
+
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+  double *intbuf = 
+    int_initialize_erep(flags,0,centers,centers,centers,centers);
+
+  for (i=0; i < centers->nshell; i++) {
+    for (int j=0; j <= i; j++) {
+      for (int k=0; k <= i; k++) {
+        for (int l=0; l <= ((k==i)?j:k); l++) {
+          int s1=i, s2=j, s3=k, s4=l;
+          int_erep(INT_REDUND|INT_EREP|INT_NOBCHK|INT_NOPERM,&s1,&s2,&s3,&s4);
+        }
+      }
+    }
+  }
+
+  tim_exit("2ei v2");
+  tim_print(0);
+  
   return 0;
 }

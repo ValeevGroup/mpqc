@@ -428,10 +428,16 @@ void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orb
   vecs = so_ao.t() * vecs_so_mo1;
 
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
-  act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, noso_ - nocc_);
   occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, noso_ - nocc_);
-  act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, nfzv_);
+  if (nfzc_ == 0)
+    act_occ_space_ = occ_space_;
+  else
+    act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, noso_ - nocc_);
   vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, 0);
+  if (nfzv_ == 0)
+    act_vir_space_ = vir_space_;
+  else
+    act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, nfzv_);
 
   vecs = obs_space_->coefs().t();
   vals = obs_space_->evals();

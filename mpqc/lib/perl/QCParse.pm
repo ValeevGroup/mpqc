@@ -102,6 +102,7 @@ sub new {
 sub initialize {
     my $self = shift;
     $self->{'keyval'} = {};
+    $self->{'error'} = "";
 }
 
 sub parse_file {
@@ -109,6 +110,7 @@ sub parse_file {
     my $file = shift;
     if (! -f "$file") {
         $self->{"ok"} = 0;
+        $self->error("File $file not found.");
         return;
     }
     open(INPUT, "<$file");
@@ -278,6 +280,12 @@ sub doprint {
     }
 }
 
+sub error {
+    my $self = shift;
+    my $msg = shift;
+    $self->{"error"} = "$self->{'error'}$msg";
+}
+
 ##########################################################################
 
 package QCInput;
@@ -299,7 +307,7 @@ sub initialize {
         $parser = new QCParse;
     }
     $self->{"parser"} = $parser;
-    $self->{"error"} = "";
+    $self->{"error"} = $parser->error();
 
     $self->{"molecule"} = new Molecule($parser->value("molecule"));
 }

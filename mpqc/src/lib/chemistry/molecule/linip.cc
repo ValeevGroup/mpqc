@@ -152,7 +152,26 @@ LinIPSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 double
 LinIPSimpleCo::calc_force_con(Molecule&m)
 {
-  return 1.0;
+  int a=atoms[1]-1; int b=atoms[0]-1; int c=atoms[2]-1;
+
+  double rad_ab =   m[a].element().atomic_radius()
+                  + m[b].element().atomic_radius();
+
+  double rad_ac =   m[a].element().atomic_radius()
+                  + m[c].element().atomic_radius();
+
+  double r_ab = dist(m[a].point(),m[b].point());
+  double r_ac = dist(m[a].point(),m[c].point());
+
+  double k = 0.089 + 0.11/pow((rad_ab*rad_ac),-0.42) *
+                           exp(-0.44*(r_ab+r_ac-rad_ab-rad_ac));
+
+#if OLD_BMAT
+  // return force constant in mdyn*ang/rad^2
+  return k*4.359813653;
+#else  
+  return k;
+#endif  
 }
 
 const char *

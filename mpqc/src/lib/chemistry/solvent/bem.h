@@ -58,6 +58,8 @@ class BEMSolvent: public DescribedClass {
     double area_;
     double volume_;
     double computed_enclosed_charge_;
+    double edisp_;
+    double erep_;
 
     RefTriangulatedImplicitSurface surf_;
 
@@ -134,6 +136,8 @@ class BEMSolvent: public DescribedClass {
       return computed_enclosed_charge_;
     }
 
+    double disp() {return edisp_;}
+    double rep()  {return erep_;}
     double disprep();
 
     // this never needs to be called explicitly, but is here now for debugging

@@ -54,6 +54,7 @@ class AccumH: virtual_base public SavableState {
     
     virtual void init(const RefWavefunction&);
     virtual void accum(const RefSymmSCMatrix& h) =0;
+    virtual void print_summary();
     virtual void done();
 
     // Returns the scalar contribution to the energy.

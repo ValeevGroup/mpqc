@@ -398,7 +398,10 @@ CLSCF::init_vector()
 void
 CLSCF::done_vector()
 {
-  if (accumddh_.nonnull()) accumddh_->done();
+  if (accumddh_.nonnull()) {
+      accumddh_->print_summary();
+      accumddh_->done();
+  }
 
   tbi_=0;
   

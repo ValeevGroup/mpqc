@@ -58,6 +58,9 @@ class BEMSolventH: public AccumH {
     double *efield_dot_normals_;
     double *charges_;
     double *charges_n_;
+    double enucsurf_;
+    double eelecsurf_;
+    double esurfsurf_;
     double escalar_;
     double ecavitation_;
     double edisprep_;
@@ -72,6 +75,7 @@ class BEMSolventH: public AccumH {
     void init(const RefWavefunction&);
     void accum(const RefSymmSCMatrix& h);
     void done();
+    void print_summary();
 
     double e();
 };

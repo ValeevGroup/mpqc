@@ -316,7 +316,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
 
   // compute the nuclear-surface interaction energy
   tim_enter("n-s");
-  double enucsurf
+  enucsurf_
       = solvent_->nuclear_interaction_energy(charge_positions_, charges_);
   tim_exit("n-s");
 
@@ -325,7 +325,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
       tim_enter("n-qn");
       enqn = solvent_->nuclear_interaction_energy(charge_positions_,
                                                   charges_n_);
-      enqe = enucsurf - enqn;
+      enqe = enucsurf_ - enqn;
       tim_exit("n-qn");
     }
 
@@ -352,7 +352,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   so_density->scale(2.0);
   so_density->scale_diagonal(0.5);
   h_so->element_op(generic_sp, so_density);
-  double eelecsurf = sp->result();
+  eelecsurf_ = sp->result();
   tim_exit("e-s");
 
   double eeqn = 0.0, eeqe = 0.0;
@@ -371,7 +371,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
       sp->init();
       h_so->element_op(generic_sp, so_density);
       eeqn = sp->result();
-      eeqe = eelecsurf - eeqn;
+      eeqe = eelecsurf_ - eeqn;
       tim_exit("e-qn");
     }
 
@@ -379,24 +379,24 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
       // Remove the y term (enqe) and add the j term (eeqn).  Formally,
       // they are equal, but they are not because some e-density is outside
       // the surface and because of the numerical approximations.
-      enucsurf += eeqn - enqe;
+      enucsurf_ += eeqn - enqe;
     }
 
   // compute the surface-surface interaction energy
-  double esurfsurf = -0.5*(eelecsurf+enucsurf);
+  esurfsurf_ = -0.5*(eelecsurf_+enucsurf_);
   // (this can also be computed as below, but is much more expensive)
   //tim_enter("s-s");
-  //double esurfsurf;
-  //esurfsurf = solvent_->self_interaction_energy(charge_positions_, charges_);
+  //double esurfsurf_;
+  //esurfsurf_ = solvent_->self_interaction_energy(charge_positions_, charges_);
   //tim_exit("s-s");
 
-  escalar_ = enucsurf + esurfsurf + ecavitation_ + edisprep_;
+  escalar_ = enucsurf_ + esurfsurf_ + ecavitation_ + edisprep_;
   // NOTE: SCF currently only adds h_so to the Fock matrix
   // so a term is missing in the energy.  This term is added here
   // and when SCF is fixed, should no longer be included.
-  if (onebody_) escalar_ += 0.5 * eelecsurf;
+  if (onebody_) escalar_ += 0.5 * eelecsurf_;
 
-  if (!onebody_) escalar_ += eelecsurf;
+  if (!onebody_) escalar_ += eelecsurf_;
 
   cout << incindent;
   cout << node0 << indent
@@ -423,9 +423,9 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
        << scprintf("E(disp-rep)=%10.8f", edisprep_)
        << endl;
   cout << node0 << indent
-       << scprintf("E(n-s)=%10.8f ", enucsurf)
-       << scprintf("E(e-s)=%10.8f ", eelecsurf)
-       << scprintf("E(s-s)=%10.8f ", esurfsurf)
+       << scprintf("E(n-s)=%10.8f ", enucsurf_)
+       << scprintf("E(e-s)=%10.8f ", eelecsurf_)
+       << scprintf("E(s-s)=%10.8f ", esurfsurf_)
        << endl;
   cout << decindent;
   cout << decindent;
@@ -448,6 +448,48 @@ BEMSolventH::done()
   solvent_->free_charge_positions(charge_positions_);
   charge_positions_ = 0;
   solvent_->done();
+}
+
+void
+BEMSolventH::print_summary()
+{
+  RefUnits unit = new Units("kcal/mol");
+  cout << endl;
+  cout << "Summary of solvation calculation:" << endl;
+  cout << "_______________________________________________" << endl;
+  cout << endl;
+  cout.setf(ios::scientific,ios::floatfield); // use scientific format
+  cout.precision(5);
+  cout << node0 << indent << "E(nuc-surf):              " 
+       << setw(12) << setfill(' ')
+       << enucsurf_*unit->from_atomic_units() << " kcal/mol" << endl; 
+  cout << node0 << indent << "E(elec-surf):             " 
+       << setw(12) << setfill(' ')
+       << eelecsurf_*unit->from_atomic_units() << " kcal/mol" << endl; 
+  cout << node0 << indent << "E(surf-surf):             " 
+       << setw(12) << setfill(' ')
+       << esurfsurf_*unit->from_atomic_units() << " kcal/mol" << endl; 
+  cout << node0 << indent << "Electrostatic energy:     " 
+       << setw(12) << setfill(' ')
+       << (enucsurf_+eelecsurf_+esurfsurf_)*unit->from_atomic_units()
+       << " kcal/mol" << endl; 
+  cout << "_______________________________________________" << endl;
+  cout << endl;
+  cout << node0 << indent << "E(cav):                   " 
+       << setw(12) << setfill(' ')
+       << ecavitation_*unit->from_atomic_units() << " kcal/mol" << endl; 
+  cout << node0 << indent << "E(disp):                  " 
+       << setw(12) << setfill(' ')
+       << solvent_->disp()*unit->from_atomic_units() << " kcal/mol" << endl; 
+  cout << node0 << indent << "E(rep):                   " 
+       << setw(12) << setfill(' ')
+       << solvent_->rep()*unit->from_atomic_units() << " kcal/mol" << endl; 
+  cout << node0 << indent << "Non-electrostatic energy: "
+       << setw(12) << setfill(' ')
+       << (ecavitation_+solvent_->disp()+solvent_->rep())
+          *unit->from_atomic_units() << " kcal/mol" << endl; 
+  cout << "_______________________________________________" << endl;
+
 }
 
 double

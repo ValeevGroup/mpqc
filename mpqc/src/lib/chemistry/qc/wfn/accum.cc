@@ -85,6 +85,11 @@ AccumH::done()
   wfn_ = 0;
 }
 
+void
+AccumH::print_summary()
+{
+}
+
 double
 AccumH::e()
 {

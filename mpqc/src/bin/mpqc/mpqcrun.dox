@@ -33,15 +33,24 @@ mpqcrun takes the following command line options:
   <dt><tt>--nprocperjob</tt> n<dd>Run with n processes per job.
   <dt><tt>--nprocpernode</tt> n<dd>Run with n processes per node.
   <dt><tt>--nthreadperproc</tt> n<dd>Use n threads per process.
-  <dt><tt>--thread</tt> grp<dd>Use the given threading layer.
+  <dt><tt>--threadgrp</tt> grp<dd>Use the given threading layer.
   <dl>
+       <dt>grp=<tt>none</tt><dd>Use MPQC's default.
        <dt>grp=<tt>proc</tt><dd>Do a single threaded run.
        <dt>grp=<tt>posix</tt><dd>Use POSIX threads.
   </dl>
-  <dt><tt>--messagegrp</tt> grp<dd>Use the given communication layer
+  <dt><tt>--messagegrp</tt> grp<dd>Use the given communication layer.
   <dl>
-        <dt>grp=<tt>proc</tt><dd>Does a single processor run.
-        <dt>grp=<tt>mpi</tt><dd>Use MPI.
+       <dt>grp=<tt>none</tt><dd>Use MPQC's default.
+       <dt>grp=<tt>proc</tt><dd>Does a single processor run.
+       <dt>grp=<tt>mpi</tt><dd>Use MPI.
+  </dl>
+  <dt><tt>--memorygrp</tt> grp<dd>Use the given remote memory communication layer.
+  <dl>
+       <dt>grp=<tt>none</tt><dd>Use MPQC's default.
+       <dt>grp=<tt>proc</tt><dd>Does a single processor run.
+       <dt>grp=<tt>mtmpi</tt><dd>Use multi-threaded MPI.
+       <dt>grp=<tt>armci</tt><dd>Use ARMCI.
   </dl>
   <dt><tt>--launch</tt> cmd<dd>Use the given command to launch jobs. See below.
   <dt><tt>--nodefile</tt> file<dd>Specifies a file listing nodes to use.

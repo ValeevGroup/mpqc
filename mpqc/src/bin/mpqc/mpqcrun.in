@@ -38,12 +38,15 @@ else {
 $maxjobs = "1";
 
 # The threadgrp specialization
-$threadgrp = "proc";
+$threadgrp = "none";
+
+# The memorygrp specialization
+$memorygrp = "none";
 
 # The message specialization
-$messagegrp = "proc";
-$have_mpi = '@HAVE_MPI@';
-if ("$have_mpi" eq "yes") {
+$messagegrp = "none";
+$always_use_mpi = '@ALWAYS_USE_MPI@';
+if ("$always_use_mpi" eq "yes") {
     $messagegrp = "mpi";
 }
 
@@ -118,7 +121,8 @@ use Getopt::Long;
 
 if (!GetOptions("small!" => \$small,
                 "launch=s" => \$launch,
-                "thread=s" => \$thread,
+                "threadgrp=s" => \$threadgrp,
+                "memorygrp=s" => \$memorygrp,
                 "messagegrp=s" => \$messagegrp,
                 "nprocperjob=i" => \$nprocperjob,
                 "nthreadperproc=i" => \$nthreadperproc,
@@ -165,12 +169,19 @@ if ($help) {
     print  "  --nprocperjob n    run with n procs per job (value: $nprocperjob)\n";
     print  "  --nprocpernode n   run with n procs per node (value: $nprocpernode)\n";
     print  "  --nthreadperproc n use n threads per process (value: $nthreadperproc)\n";
-    print  "  --thread grp       use the given threading layer (value: $thread)\n";
+    print  "  --threadgrp grp    use the given threading layer (value: $threadgrp)\n";
+    print  "                     none: uses MPQC's default\n";
     print  "                     proc: does a single threaded run\n";
     print  "                     posix: use POSIX threads\n";
     print  "  --messagegrp grp   use the given communication layer (value: $messagegrp)\n";
+    print  "                     none: uses MPQC's default\n";
     print  "                     proc: does a single processor run\n";
     print  "                     mpi: use MPI\n";
+    print  "  --memorygrp grp    use the given remote memory layer (value: $messagegrp)\n";
+    print  "                     none: uses MPQC's default\n";
+    print  "                     proc: does a single processor run\n";
+    print  "                     mtmpi: use multi-threaded MPI\n";
+    print  "                     armci: use ARMCI\n";
     printf "  --launch cmd       use the given cmd to launch jobs--see below (value: %s)\n",
           (($launch eq "")?"<not set>":$launch);
     printf "  --nodefile file    a file listing nodes to use (value: %s)\n",
@@ -219,7 +230,7 @@ if ($objdir) {
 
 ######################################################################
 
-if ($messagegrp eq "proc" && $nprocperjob > 1) {
+if ($messagegrp eq "none" && $nprocperjob > 1) {
     $messagegrp = "mpi";
 }
 
@@ -280,7 +291,7 @@ foreach my $i (0..$maxjobs-1) {
 
 ######################################################################
 
-if ($threadgrp eq "proc" && $nthreadperproc > 1) {
+if ($threadgrp eq "none" && $nthreadperproc > 1) {
     $threadgrp = "posix";
 }
 
@@ -288,7 +299,19 @@ if ($threadgrp eq "proc") {
   $ENV{"THREADGRP"} = "<ProcThreadGrp>:()";
 }
 elsif ($threadgrp eq "posix") {
-  $ENV{"MEMORYGRP"} = "<PthreadThreadGrp>:(num_threads=$nthreadperproc)";
+  $ENV{"THREADGRP"} = "<PthreadThreadGrp>:(num_threads=$nthreadperproc)";
+}
+
+######################################################################
+
+if ($memorygrp eq "proc") {
+  $ENV{"MEMORYGRP"} = "<ProcMemoryGrp>:()";
+}
+elsif ($memorygrp eq "mtmpi") {
+  $ENV{"MEMORYGRP"} = "<MTMPIMemoryGrp>:()";
+}
+elsif ($memorygrp eq "armci") {
+  $ENV{"MEMORYGRP"} = "<ARMCIMemoryGrp>:()";
 }
 
 ######################################################################

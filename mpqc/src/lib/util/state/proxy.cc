@@ -23,7 +23,7 @@ SavableStateProxy::SavableStateProxy(const RefKeyVal &keyval)
 {
   char *filename = keyval->pcharvalue("file");
   if (filename) {
-      StateInBinXDR si(filename);
+      StateInBin si(filename);
       object_.restore_state(si);
       delete[] filename;
     }

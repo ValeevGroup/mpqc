@@ -33,6 +33,10 @@
 #include <util/misc/formio.h>
 #include <util/group/mstate.h>
 
+#include <util/state/translate.h>
+#include <util/state/stateptrImplSet.h>
+#include <util/state/statenumImplSet.h>
+
 // This sets up a communication buffer.  It is made up of a of
 // an integer that gives the number of bytes used in the buffer
 // by the data region of size bufsize.
@@ -116,56 +120,56 @@ int
 MsgStateSend::put(const ClassDesc*cd)
 {
   int index = grp->classdesc_to_index(cd);
-  return StateOutBinXDR::put(index);
+  return StateOut::put(index);
 }
 
 int
 MsgStateSend::put(char d)
 {
-  return StateOutBinXDR::put(d);
+  return StateOut::put(d);
 }
 
 int
 MsgStateSend::put(int d)
 {
-  return StateOutBinXDR::put(d);
+  return StateOut::put(d);
 }
 
 int
 MsgStateSend::put(float d)
 {
-  return StateOutBinXDR::put(d);
+  return StateOut::put(d);
 }
 
 
 int
 MsgStateSend::put(double d)
 {
-  return StateOutBinXDR::put(d);
+  return StateOut::put(d);
 }
 
 int
 MsgStateSend::put(char* d, int n)
 {
-  return StateOutBinXDR::put(d, n);
+  return StateOut::put(d, n);
 }
 
 int
 MsgStateSend::put(int* d, int n)
 {
-  return StateOutBinXDR::put(d, n);
+  return StateOut::put(d, n);
 }
 
 int
 MsgStateSend::put(float* d, int n)
 {
-  return StateOutBinXDR::put(d, n);
+  return StateOut::put(d, n);
 }
 
 int
 MsgStateSend::put(double* d, int n)
 {
-  return StateOutBinXDR::put(d, n);
+  return StateOut::put(d, n);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -249,7 +253,7 @@ int
 MsgStateRecv::get(const ClassDesc**cd)
 {
   int index;
-  int r = StateInBinXDR::get(index);
+  int r = StateIn::get(index);
   *cd = grp->index_to_classdesc(index);
   if (!*cd) {
       cerr << "MsgStateRecvt::get(const ClassDesc**cd): "
@@ -264,49 +268,49 @@ MsgStateRecv::get(const ClassDesc**cd)
 int
 MsgStateRecv::get(char& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 int
 MsgStateRecv::get(int& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 int
 MsgStateRecv::get(float& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 int
 MsgStateRecv::get(double& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 int
 MsgStateRecv::get(char*& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 int
 MsgStateRecv::get(int*& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 int
 MsgStateRecv::get(float*& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 int
 MsgStateRecv::get(double*& d)
 {
-  return StateInBinXDR::get(d);
+  return StateIn::get(d);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -328,7 +332,7 @@ StateSend::flush()
 {
   if (nbuf == 0) return;
   *nbuf_buffer = nbuf;
-  translate(nbuf_buffer);
+  translate_->translator()->to_external(nbuf_buffer,1);
   grp->raw_send(target_, send_buffer, nbuf + nheader);
   nbuf = 0;
 }
@@ -337,7 +341,7 @@ void
 StateSend::target(int t)
 {
   target_ = t;
-  forget_references();
+  ps_->clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -353,7 +357,7 @@ void
 StateRecv::next_buffer()
 {
   grp->raw_recv(source_, send_buffer, bufsize+nheader);
-  translate(nbuf_buffer);
+  translate_->translator()->to_native(nbuf_buffer,1);
   nbuf = *nbuf_buffer;
   ibuf = 0;
 }
@@ -362,7 +366,7 @@ void
 StateRecv::source(int s)
 {
   source_ = s;
-  forget_references();
+  ps_->clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -383,7 +387,7 @@ BcastStateSend::flush()
 {
   if (nbuf == 0) return;
   *nbuf_buffer = nbuf;
-  translate(nbuf_buffer);
+  translate_->translator()->to_external(nbuf_buffer,1);
   grp->raw_bcast(send_buffer, nbuf + nheader, grp->me());
   nbuf = 0;
 }
@@ -406,14 +410,14 @@ BcastStateRecv::source(int s)
       abort();
     }
   source_ = s;
-  forget_references();
+  ps_->clear();
 }
 
 void
 BcastStateRecv::next_buffer()
 {
   grp->raw_bcast(send_buffer, bufsize+nheader, source_);
-  translate(nbuf_buffer);
+  translate_->translator()->to_native(nbuf_buffer,1);
   nbuf = *nbuf_buffer;
   ibuf = 0;
 }
@@ -497,46 +501,100 @@ void
 BcastState::forget_references()
 {
   if (send_) send_->forget_references();
-  if (recv_) recv_->forget_references();
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // BcastStateRecv member functions
 
-BcastStateInBinXDR::BcastStateInBinXDR(const RefMessageGrp&grp_,
-                                       const char *filename):
+BcastStateInBin::BcastStateInBin(const RefMessageGrp&grp_,
+                                 const char *filename):
   MsgStateBufRecv(grp_)
 {
-  if (grp->me() == 0) {
-      filebuf *fbuf = new filebuf;
-      fbuf->open(filename, ios::in);
-      buf_ = fbuf;
-    }
+  opened_ = 0;
+  open(filename);
 }
 
-BcastStateInBinXDR::~BcastStateInBinXDR()
+BcastStateInBin::~BcastStateInBin()
 {
-  if (grp->me() == 0) {
-      delete buf_;
-    }
+  close();
 }
 
 void
-BcastStateInBinXDR::next_buffer()
+BcastStateInBin::next_buffer()
 {
   if (grp->me() == 0) {
       // fill the buffer
       *nbuf_buffer = buf_->xsgetn(buffer,bufsize);
       if (*nbuf_buffer == 0) {
-          cerr << "BcastStateInBinXDR: read failed" << endl;
+          cerr << "BcastStateInBin: read failed" << endl;
           abort();
         }
-      translate(nbuf_buffer);
+      translate_->translator()->to_external(nbuf_buffer,1);
     }
   grp->raw_bcast(send_buffer, bufsize+nheader);
-  translate(nbuf_buffer);
+  translate_->translator()->to_native(nbuf_buffer,1);
   nbuf = *nbuf_buffer;
   ibuf = 0;
+}
+
+void
+BcastStateInBin::close()
+{
+  if(opened_) delete buf_;
+  opened_=0; buf_=0;
+  nbuf = 0;
+  ibuf = 0;
+
+  _cd.clear();
+  ps_->clear();
+}
+
+void
+BcastStateInBin::rewind()
+{
+  if (grp->me() == 0 && buf_) {
+      buf_->seekoff(0,ios::beg);
+    }
+  nbuf = 0;
+  ibuf = 0;
+}
+
+int
+BcastStateInBin::open(const char *path)
+{
+  if (grp->me() == 0) { 
+      if (opened_) close();
+
+      filebuf *fbuf = new filebuf();
+      fbuf->open(path, ios::in);
+      if (!fbuf->is_open()) {
+          cerr << "ERROR: BcastStateInBin: problems opening " << path << endl;
+          abort();
+        }
+      buf_ = fbuf;
+      opened_ = 1;
+    }
+
+  nbuf = 0;
+  ibuf = 0;
+
+  get_header();
+
+  return 0;
+}
+
+void
+BcastStateInBin::seek(int loc)
+{
+  buf_->pubseekoff(loc,ios::beg,ios::in);
+  nbuf = 0;
+  ibuf = 0;
+}
+
+int
+BcastStateInBin::seekable()
+{
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

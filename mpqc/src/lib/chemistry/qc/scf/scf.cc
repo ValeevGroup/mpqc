@@ -142,7 +142,7 @@ SCF::SCF(const RefKeyVal& keyval) :
       char *path = keyval->pcharvalue("guess_wavefunction");
       struct stat sb;
       if (path && stat(path, &sb)==0 && sb.st_size) {
-        StateInBinXDR s(path);
+        StateInBin s(path);
 
         // reset the default matrixkit so that the matrices in the guess
         // wavefunction will match those in this wavefunction

@@ -387,15 +387,15 @@ int StateOutText::putpointer(void*p)
   Pix ind = (ps_?ps_->seek(dp):0);
   if (ind == 0) {
       if (ps_) {
-          dp.assign_num(next_pointer_number++);
+          dp.num = next_pointer_number++;
           ps_->add(dp);
         }
-      out << "writing object " << dp.num() << endl;
+      out << "writing object " << dp.num << endl;
       out.flush();
       return 1;
     }
   else {
-      out << "reference to object " << (*this->ps_)(ind).num() << endl;
+      out << "reference to object " << (*this->ps_)(ind).num << endl;
       out.flush();
       return 0;
     }
@@ -425,7 +425,7 @@ int StateInText::getpointer(void**p)
       sscanf(line,"reference to object %d",&refnum);
       StateDataNum num(refnum);
       Pix ind = ps_->seek(num);
-      *p = ((*this->ps_)(ind)).ptr();
+      *p = ((*this->ps_)(ind)).ptr;
       return 0;
     }
   else {

@@ -30,9 +30,12 @@
 #endif
 
 #include <stdlib.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
+#include <util/state/translate.h>
 #include <util/state/state_ptr.h>
 #include <util/state/stateptrSet.h>
 #include <util/state/statenumSet.h>
@@ -92,19 +95,25 @@ SavableState::~SavableState()
 void
 SavableState::save_state(StateOut&so)
 {
+  save_state(this,so);
+}
+
+void
+SavableState::save_state(SavableState*th,StateOut&so)
+{
   // save the pointer
-  if (so.putpointer(this)) {
+  if (so.putpointer(th)) {
       // The pointer hasn't been written yet, so write it.
       
       // Save the class descriptor for the exact type and all base classes
       // (base classes are needed to get the version information correct).
-      so.put(class_desc());
+      so.put(th->class_desc());
 
       so.have_classdesc();
       
       // save the object
-      save_vbase_state(so);
-      save_data_state(so);
+      th->save_vbase_state(so);
+      th->save_data_state(so);
     }
 }
 
@@ -174,10 +183,12 @@ StateOut::_castdown(const ClassDesc*cd)
 StateOut::StateOut() :
   next_pointer_number(1),
   ps_(new StateDataPtr_CTOR),
+  copy_references_(0),
   _classidmap(new ClassDescPintMap_CTOR),
   _nextclassid(0),
   have_cd_(0),
-  node_to_node_(0)
+  node_to_node_(0),
+  translate_(new TranslateDataOut(this, new TranslateDataBigEndian))
 {
 }
 
@@ -196,8 +207,9 @@ StateOut::operator=(const StateOut&)
 
 StateOut::~StateOut()
 {
-  if(ps_) delete ps_; ps_=0;
+  delete ps_;
   delete _classidmap;
+  delete translate_;
 }
 
 void
@@ -205,14 +217,47 @@ StateOut::flush()
 {
 }
 
-int StateOut::put_array_char(const char*p,int size)
-    { return put_array_void((const void*)p,size*sizeof(char)); }
-int StateOut::put_array_int(const int*p,int size)
-    { return put_array_void((const void*)p,size*sizeof(int)); }
-int StateOut::put_array_float(const float*p,int size)
-    { return put_array_void((const void*)p,size*sizeof(float)); }
-int StateOut::put_array_double(const double*p,int size)
-    { return put_array_void((const void*)p,size*sizeof(double)); }
+int
+StateOut::tell()
+{
+  return 0;
+}
+
+void
+StateOut::seek(int loc)
+{
+}
+
+int
+StateOut::seekable()
+{
+  return 0;
+}
+
+int
+StateOut::put_array_char(const char*p,int size)
+{
+  return translate_->put(p,size);
+}
+
+int
+StateOut::put_array_int(const int*p,int size)
+{
+  return translate_->put(p,size);
+}
+
+int
+StateOut::put_array_float(const float*p,int size)
+{
+  return translate_->put(p,size);
+}
+
+int
+StateOut::put_array_double(const double*p,int size)
+{
+  return translate_->put(p,size);
+}
+
 int StateOut::put(char r) { return put_array_char((char*)&r,1); }
 int StateOut::put(int r) { return put_array_int((int*)&r,1); }
 int StateOut::put(float r) { return put_array_float((float*)&r,1); }
@@ -250,23 +295,52 @@ StateIn::StateIn() :
   ps_(new StateDataNum_CTOR),
   _nextobject(0),
   have_cd_(0),
-  node_to_node_(0)
+  node_to_node_(0),
+  translate_(new TranslateDataIn(this, new TranslateDataBigEndian))
 {
 }
 
 StateIn::~StateIn()
 {
-  if(ps_) delete ps_; ps_=0;
+  delete ps_;
+  delete translate_;
 }
 
-int StateIn::get_array_char(char*p,int size)
-{ return get_array_void((void*)p,size*sizeof(char)); }
-int StateIn::get_array_int(int*p,int size)
-{ return get_array_void((void*)p,size*sizeof(int)); }
-int StateIn::get_array_float(float*p,int size)
-{ return get_array_void((void*)p,size*sizeof(float)); }
-int StateIn::get_array_double(double*p,int size)
-{ return get_array_void((void*)p,size*sizeof(double)); }
+void
+StateIn::seek(int loc)
+{
+}
+
+int
+StateIn::seekable()
+{
+  return 0;
+}
+
+int
+StateIn::get_array_char(char*p,int size)
+{
+  return translate_->get(p,size);
+}
+
+int
+StateIn::get_array_int(int*p,int size)
+{
+  return translate_->get(p,size);
+}
+
+int
+StateIn::get_array_float(float*p,int size)
+{
+  return translate_->get(p,size);
+}
+
+int
+StateIn::get_array_double(double*p,int size)
+{
+  return translate_->get(p,size);
+}
+
 int StateIn::get(char&r) { return get_array_char(&r,1); }
 int StateIn::get(int&r) { return get_array_int(&r,1); }
 int StateIn::get(float&r) { return get_array_float(&r,1); }
@@ -278,13 +352,9 @@ int StateIn::get(double&r) { return get_array_double(&r,1); }
 // again, they will be written in their entirety.
 void StateOut::forget_references()
 {
-  next_pointer_number = 1;
-  if (ps_) ps_->clear();
-}
-
-void StateIn::forget_references()
-{
-  if (ps_) ps_->clear();
+  for (Pix i=ps_->first(); i; ps_->next(i)) {
+      ps_->operator()(i).can_refer = 0;
+    }
 }
 
 // This deletes all references to objects, so if they are output
@@ -293,20 +363,7 @@ void StateIn::forget_references()
 // referenced objects will be copied.
 void StateOut::copy_references()
 {
-  if (ps_) {
-      ps_->clear();
-      delete ps_;
-    }
-  ps_ = 0;
-}
-
-void StateIn::copy_references()
-{
-  if (ps_) {
-      ps_->clear();
-      delete ps_;
-    }
-  ps_ = 0;
+  copy_references_ = 1;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -331,13 +388,73 @@ int StateIn::get_array_void(void*p,int s)
 
 /////////////////////////////////////////////////////////////////
 
+void
+StateOut::put_header()
+{
+  const char *magic = "\001SCSO\002";
+  put_array_char(magic,6);
+
+  // Switch to the native format and get_header will figure it out when read
+  delete translate_;
+  translate_ = new TranslateDataOut(this,new TranslateData);
+
+  char format = translate_->translator()->format_code();
+  put_array_char(&format,1);
+
+  const int version = 1;
+  put_array_int(&version,1);
+
+  char userid[L_cuserid+9];
+  memset(userid, 0, 9);
+  cuserid(userid);
+  userid[8] = 0;
+  put_array_char(userid,9);
+
+  timeval tv;
+  gettimeofday(&tv,0);
+  int date = (int) tv.tv_sec;
+  put_array_int(&date,1);
+}
+
+void
+StateIn::get_header()
+{
+  const char *magic = "\001SCSO\002";
+  char tmp[7];
+  get_array_char(tmp,6);
+  tmp[6] = '\0';
+  if (strcmp(tmp,magic)) {
+      cerr << "StateIn: bad magic number" << endl;
+      abort();
+    }
+
+  char format;
+  get_array_char(&format,1);
+  // switch to the new format
+  if (translate_->translator()->format_code() != format) {
+      delete translate_;
+      translate_ = new TranslateDataIn(this,TranslateData::vctor(format));
+    }
+
+  int version;
+  get_array_int(&version,1);
+
+  char userid[9];
+  get_array_char(userid,9);
+
+  int date;
+  get_array_int(&date,1);
+}
+
+/////////////////////////////////////////////////////////////////
+
 int StateOut::putstring(char*s)
 {
   if (putpointer((void*)s)) {
       if (s) {
 	  int size = strlen(s)+1;
 	  put(size);
-	  return put_array_void((void*)s,size);
+	  return put_array_char(s,size);
 	}
       else {
 	  put((int)0);
@@ -587,9 +704,7 @@ SSRefBase::save_data_state(StateOut&s)
 void
 SSRefBase::save_state(StateOut&so)
 {
-  SavableState *ssp = sspointer();
-  if (ssp) ssp->save_state(so);
-  else so.putpointer(ssp);
+  SavableState::save_state(sspointer(),so);
 }
 
 void

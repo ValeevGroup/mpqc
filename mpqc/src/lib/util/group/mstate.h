@@ -37,7 +37,7 @@
 
 //. The \clsnm{MsgStateSend} is an abstract base class that sends objects
 //to nodes in a \clsnmref{MessageGrp}.
-class MsgStateSend: public StateOutBinXDR {
+class MsgStateSend: public StateOut {
   private:
     // do not allow copy constructor or assignment
     MsgStateSend(const MsgStateSend&);
@@ -78,7 +78,7 @@ class MsgStateSend: public StateOutBinXDR {
 
 //. The \clsnm{MsgStateBufRecv} is an abstract base class that
 //buffers objects sent through a \clsnm{MessageGrp}.
-class MsgStateBufRecv: public StateInBinXDR {
+class MsgStateBufRecv: public StateIn {
   private:
     // do not allow copy constructor or assignment
     MsgStateBufRecv(const MsgStateBufRecv&);
@@ -252,21 +252,31 @@ class BcastState {
     void set_buffer_size(int);
 };
 
-//.  \clsnm{BcastStateBinXDR} reads a file in written by
-//StateInBinXDR on node 0 and broadcasts it to all nodes
+//.  \clsnm{BcastStateBin} reads a file in written by
+//StateInBin on node 0 and broadcasts it to all nodes
 //so state can be simultaneously restored on all nodes.
-class BcastStateInBinXDR: public MsgStateBufRecv {
+class BcastStateInBin: public MsgStateBufRecv {
   private:
     // do not allow copy constructor or assignment
-    BcastStateInBinXDR(const BcastStateRecv&);
+    BcastStateInBin(const BcastStateRecv&);
     void operator=(const BcastStateRecv&);
   protected:
+    int opened_;
+    streambuf *buf_;
+
     void next_buffer();
   public:
     //. Create the \clsnm{BcastStateRecv}.
-    BcastStateInBinXDR(const RefMessageGrp&, const char *filename);
+    BcastStateInBin(const RefMessageGrp&, const char *filename);
 
-    ~BcastStateInBinXDR();
+    ~BcastStateInBin();
+
+    virtual int open(const char *name);
+    virtual void close();
+    virtual void rewind();
+
+    void seek(int loc);
+    int seekable();
 };
 
 #endif

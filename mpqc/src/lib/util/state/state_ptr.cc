@@ -54,7 +54,7 @@ int StateIn::getpointer(void**p)
     return refnum;
     }
   else {
-    *p = ((*this->ps_)(ind)).ptr();
+    *p = ((*this->ps_)(ind)).ptr;
     //cout << "StateOut::getpointer: pointer is made 0x"
     //     << setbase(16) << *p << endl;
     return 0;
@@ -77,11 +77,12 @@ void StateIn::havepointer(void*p)
 void StateIn::havepointer(int objnum,void*p)
 {
   StateDataNum num(objnum,p);
-  if (ps_) ps_->add(num);
+  ps_->add(num);
 }
 
 // Returns 0 if the object has already been written.
-// Returns 1 if the object must yet be written.
+// Returns the object number if the object must yet be written.
+// Otherwise 0 is returned.
 int StateOut::putpointer(void*p)
 {
   if (p == 0) {
@@ -89,21 +90,51 @@ int StateOut::putpointer(void*p)
     return 0;
     }
   StateDataPtr dp(p);
-  Pix ind = (ps_?ps_->seek(dp):0);
+  Pix ind = ps_->seek(dp);
   //cout << "StateOut::putpointer: ind = " << (int)ind << " for 0x"
   //     << setbase(16) << p << endl;
-  if (ind == 0) {
-      if (ps_) {
-          dp.assign_num(next_pointer_number++);
-          ps_->add(dp);
-        }
-      put(dp.num());
-      return 1;
+  if (ind == 0 || (*this->ps_)(ind).can_refer == 0) {
+      int current_pointer_number = next_pointer_number++;
+      dp.num = current_pointer_number;
+      dp.can_refer = !copy_references_;
+      dp.offset = tell();
+      dp.size = dp.offset; // this must be corrected later
+      ps_->add(dp);
+      put(dp.num);
+      return current_pointer_number;
     }
   else {
-      put((*this->ps_)(ind).num());
+      put((*this->ps_)(ind).num);
       return 0;
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// StateData members
+
+StateData::StateData(int n): num(n), ptr(0)
+{
+  init();
+}
+
+StateData::StateData(void *p): num(0), ptr(p)
+{
+  init();
+}
+
+StateData::StateData(int n, void *p): num(n), ptr(p)
+{
+  init();
+}
+
+void
+StateData::init()
+{
+  size = 0;
+  type = 0;
+  offset = 0;
+  next_reference = 0;
+  can_refer = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

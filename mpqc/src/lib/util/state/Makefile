@@ -36,7 +36,7 @@ SETIMPL = AVL
 MAPIMPL = RAVL
 
 CXXSRC = state.cc state_bin.cc proxy.cc \
-         state_ptr.cc state_text.cc state_xdr.cc state_file.cc qc_xdr_i.cc
+         state_ptr.cc state_text.cc state_file.cc translate.cc
 
 GENCXXSRC = stateptrSet.cc \
             stateptr$(SETIMPL)Set.cc statenumSet.cc statenum$(SETIMPL)Set.cc \
@@ -46,8 +46,8 @@ LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 GENSRC = $(GENCXXSRC)
 
 INC =  LIBS.h state.h state_debug.h state_net.h state_ptr.h \
-       statenumdefs.h stateptrdefs.h qc_xdr.h classddefs.h \
-       qc_xdr_i.h stattmpl.h
+       statenumdefs.h stateptrdefs.h translate.h classddefs.h \
+       stattmpl.h
 GENINC = stateptrImplSet.h statenumImplSet.h \
          stateptrSet.h stateptr$(SETIMPL)Set.h statenumSet.h \
          statenum$(SETIMPL)Set.h \

@@ -31,21 +31,57 @@
 StateOutBin::StateOutBin() :
   StateOutFile()
 {
+  file_position_ = 0;
 }
 
-StateOutBin::StateOutBin(ostream& s) :
+StateOutBin::StateOutBin(ostream& s):
   StateOutFile(s)
 {
+  file_position_ = 0;
+  // needed here since only StateOutFile::open has been called so far
+  put_header();
 }
 
 StateOutBin::StateOutBin(const char *path) :
   StateOutFile(path)
 {
+  file_position_ = 0;
+  // needed here since only StateOutFile::open has been called so far
+  put_header();
 }
 
 StateOutBin::~StateOutBin()
 {
 }
+
+int
+StateOutBin::open(const char *f)
+{
+  int r = StateOutFile::open(f);
+  put_header();
+  return r;
+}
+
+int
+StateOutBin::tell()
+{
+  return file_position_;
+}
+
+void
+StateOutBin::seek(int loc)
+{
+  file_position_ = loc;
+  buf_->pubseekoff(loc,ios::beg,ios::out);
+}
+
+int
+StateOutBin::seekable()
+{
+  return 1;
+}
+
+////////////////////////////////////////////////////////////////
 
 StateInBin::StateInBin() :
   StateInFile()
@@ -55,15 +91,29 @@ StateInBin::StateInBin() :
 StateInBin::StateInBin(istream& s) :
   StateInFile(s)
 {
+  get_header();
 }
 
 StateInBin::StateInBin(const char *path) :
   StateInFile(path)
 {
+  get_header();
 }
 
 StateInBin::~StateInBin()
 {
+}
+
+void
+StateInBin::seek(int loc)
+{
+  buf_->pubseekoff(loc,ios::beg,ios::in);
+}
+
+int
+StateInBin::seekable()
+{
+  return 1;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -74,6 +124,7 @@ int StateOutBin::put_array_void(const void*p,int size)
       cerr << "StateOutBin::put_array_void: failed" << endl;
       abort();
     }
+  file_position_ += size;
   return size;
 }
 

@@ -298,7 +298,7 @@ main(int argc, char *argv[])
     grp->bcast(statsize);
   }
   if (restart && statresult==0 && statsize) {
-    BcastStateInBinXDR si(grp,restartfile);
+    BcastStateInBin si(grp,restartfile);
     char *suf = strrchr(restartfile,'.');
     if (!strcmp(suf,".wfn")) {
       mole.restore_state(si);
@@ -341,7 +341,7 @@ main(int argc, char *argv[])
 
   RefMolecularFrequencies molfreq;
   if (restart && statresult==0 && statsize) {
-    BcastStateInBinXDR si(grp,freqfile);
+    BcastStateInBin si(grp,freqfile);
     molfreq.restore_state(si);
   } else {
     molfreq = keyval->describedclassvalue("freq");
@@ -453,7 +453,7 @@ main(int argc, char *argv[])
       RefSCVector gradv = mole->get_cartesian_gradient();
       molfreq->set_gradient(i, gradv);
 
-      StateOutBinXDR so(freqfile);
+      StateOutBin so(freqfile);
       molfreq.save_state(so);
     }
     molfreq->original_geometry();
@@ -544,7 +544,7 @@ main(int argc, char *argv[])
         strcpy(ckptfile, devnull);
       }
 
-      StateOutBinXDR so(ckptfile);
+      StateOutBin so(ckptfile);
       opt.save_state(so);
       so.close();
 
@@ -561,7 +561,7 @@ main(int argc, char *argv[])
         strcpy(ckptfile, devnull);
       }
   
-      StateOutBinXDR so(ckptfile);
+      StateOutBin so(ckptfile);
       mole.save_state(so);
       so.close();
 

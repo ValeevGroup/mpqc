@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _libqc_state_h
-#define _libqc_state_h
+#ifndef _util_state_state_h
+#define _util_state_state_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -38,7 +38,6 @@
 #include <iomanip.h>
 
 #include <util/class/class.h>
-#include <util/state/qc_xdr.h>
 #include <util/container/array.h>
 
 #define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
@@ -64,6 +63,8 @@
 
 class StateIn;
 class StateOut;
+class TranslateDataIn;
+class TranslateDataOut;
 
 // If multiple inheritance is used, SavableState should be a virtual
 // parent.  This breaks some compilers so the virtual_base macro should
@@ -71,7 +72,7 @@ class StateOut;
 // CTORs the SavableState base class must be initialized with the
 // StateIn object, the following macro should be used to determine if
 // nondirect descendants of SavableState need to call the SavableState
-// CTOR.  b might be a : or , and s is the StateIn
+// CTOR.  s is the StateIn
 #ifdef NO_VIRTUAL_BASES
 #  define maybe_SavableState(s)
 #else
@@ -101,6 +102,9 @@ class SavableState: public DescribedClass {
     //. the virtual bases, and type information.  The default
     //. implementation should be adequate.
     void save_state(StateOut&);
+
+    // Like save_state(StateOut&), but will handle null pointers correctly.
+    static void save_state(SavableState*s, StateOut&);
 
     //. This can be used for saving state when the exact type of
     //. the object is known for both the save and the restore.  To
@@ -181,12 +185,16 @@ class ClassDescPintMap;
 class StateOut: public DescribedClass {
 #   define CLASSNAME StateOut
 #   include <util/class/classda.h>
+    friend class SavableState;
+    friend class TranslateDataOut;
   private:
     // do not allow copy constructor or assignment
     StateOut(const StateOut&);
     void operator=(const StateOut&);
     int have_cd_;
   protected:
+    TranslateDataOut *translate_;
+    int copy_references_;
     int next_pointer_number;
     StateDataPtrSet* ps_;
     ClassDescPintMap* _classidmap;
@@ -194,9 +202,8 @@ class StateOut: public DescribedClass {
     int node_to_node_;
     virtual int put_array_void(const void*,int);
     virtual void putparents(const ClassDesc*);
-  public:
-    StateOut();
-    virtual ~StateOut();
+
+    // The following members are called by friend SavableState
 
     void have_classdesc() { have_cd_ = 1; }
     int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return !tmp; }
@@ -209,19 +216,23 @@ class StateOut: public DescribedClass {
     //. pointer.
     virtual int putpointer(void*);
 
+    //. Write the version of the given \clsnmref{ClassDesc}, if
+    //. it has not already been written.
+    virtual int put_version(const ClassDesc*);
+
+    //. Write out information about the given \clsnmref{ClassDesc}.
+    virtual int put(const ClassDesc*);
+  public:
+    StateOut();
+    virtual ~StateOut();
+
+    //. Write out header information.
+    virtual void put_header();
+
     //. This is like \srccd{put} except the length of the \srccd{char}
     //. array is determined by interpreting the character array as
     //. a character string.
     virtual int putstring(char*);
-
-    //. Write the version of the given \clsnmref{ClassDesc}, if
-    //. it has not already been written.
-    //. It shouldn't be necessary to call this member.
-    virtual int put_version(const ClassDesc*);
-
-    //. Write out information about the given \clsnmref{ClassDesc}.
-    //. It shouldn't be necessary to call this member.
-    virtual int put(const ClassDesc*);
 
     //. Write the given data.
     //. The member functions taking both a pointer and integer
@@ -260,6 +271,16 @@ class StateOut: public DescribedClass {
     //to files that can otherwise be read in, but want to avoid
     //reading the database from disk on all nodes.
     int node_to_node() const { return node_to_node_; }
+
+    //. Returns the current position in the file.  The default
+    //implementation returns 0.
+    virtual int tell();
+    //. Set the current position in the file.  The default implementation
+    //does nothing.
+    virtual void seek(int loc);
+    //. Return non-zero if tell and seek do anything sensible.  The
+    //default implementation returns 0.
+    virtual int seekable();
   };
 DescribedClass_REF_dec(StateOut);
 
@@ -268,21 +289,23 @@ DescribedClass_REF_dec(StateOut);
 class StateIn: public DescribedClass {
 #   define CLASSNAME StateIn
 #   include <util/class/classda.h>
+    friend class SavableState;
+    friend class TranslateDataIn;
   private:
     // do not allow copy constructor or assignment
     StateIn(const StateIn&);
     void operator=(const StateIn&);
     int have_cd_;
   protected:
+    TranslateDataIn *translate_;
     StateDataNumSet* ps_;
     int _nextobject;
     ArraysetCClassDescP _cd;
     Arrayint _version;
     int node_to_node_;
     virtual int get_array_void(void*,int);
-  public:
-    StateIn();
-    virtual ~StateIn();
+
+    // The following members are called by friend SavableState
 
     //. This is used to restore a pointer.  It is called with the
     //. pointer to the pointer being restored.  If the data being
@@ -312,14 +335,6 @@ class StateIn: public DescribedClass {
     void have_classdesc() { have_cd_ = 1; }
     int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return !tmp; }
 
-    //. Returns the version of the ClassDesc in the persistent object
-    //. or -1 if info on the ClassDesc doesn't exist
-    virtual int version(const ClassDesc*);
-    
-    //. This restores strings saved with
-    //. \srccd{\clsnmref{StateOut}::putstring}.
-    virtual int getstring(char*&);
-
     //. If the version of the ClassDesc in the persistent object
     //. has been read in yet, read it in.
     //. It shouldn't be necessary to call this member.
@@ -329,9 +344,23 @@ class StateIn: public DescribedClass {
     //. pointer to the address of the static \srccd{ClassDesc} for
     //. the class which has the same name as the class that had
     //. the \clsnm{ClassDesc} that was saved by \srccd{put(const
-    //. \clsnmref{ClassDesc}*)}.  It is not necessary for the user
-    //. call this member.
+    //. \clsnmref{ClassDesc}*)}.
     virtual int get(const ClassDesc**);
+  public:
+    StateIn();
+    virtual ~StateIn();
+
+    //. Read in the header information.  Changes the translation
+    //scheme if necessary.
+    virtual void get_header();
+
+    //. Returns the version of the ClassDesc in the persistent object
+    //. or -1 if info on the ClassDesc doesn't exist
+    virtual int version(const ClassDesc*);
+    
+    //. This restores strings saved with
+    //. \srccd{\clsnmref{StateOut}::putstring}.
+    virtual int getstring(char*&);
 
     //. These restore data saved with \srccd{\clsnmref{StateOut}::put}.
     virtual int get(char&r);
@@ -347,19 +376,18 @@ class StateIn: public DescribedClass {
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
 
-    //. Don't keep track of pointers to objects.  Calling this
-    //. causes duplicated references to objects to be copied.
-    void forget_references();
-    //. If a reference to an object that has already been written
-    //. is encountered, copy it instead of generating a reference
-    //. to the first object.
-    void copy_references();
-
     //. True if this is a node to node save/restore.  This is
     //necessary for classes that try to avoid saving databases
     //to files that can otherwise be read in, but want to avoid
     //reading the database from disk on all nodes.
     int node_to_node() const { return node_to_node_; }
+
+    //. Set the current position in the file.  The default implementation
+    //does nothing.
+    virtual void seek(int);
+    //. Return non-zero if seek does anything sensible.  The
+    //default implementation returns 0.
+    virtual int seekable();
   };
 DescribedClass_REF_dec(StateIn);
 
@@ -517,16 +545,25 @@ class StateInText: public StateInFile {
 //. \clsnm{StateOutBin} is used to write binary files.
 class StateOutBin: public StateOutFile {
   private:
+    int file_position_;
     // do not allow copy constructor or assignment
     StateOutBin(const StateOutBin&);
     void operator=(const StateOutBin&);
-  protected:
+    //. This cannot be overridden, since it is called
+    //by this classes ctor (implicitly, through put_header()).
+    //This goes for some other members too.
     int put_array_void(const void*,int);
   public:
     StateOutBin();
     StateOutBin(ostream&);
     StateOutBin(const char *);
     ~StateOutBin();
+
+    int open(const char *name);
+
+    int tell();
+    void seek(int loc);
+    int seekable();
   };
 
 //. \clsnm{StateInBin} is used to read objects written with
@@ -536,59 +573,18 @@ class StateInBin: public StateInFile {
     // do not allow copy constructor or assignment
     StateInBin(const StateInBin&);
     void operator=(const StateInBin&);
-  protected:
+    //. This cannot be overridden, since it is called
+    //by this classes ctor (implicitly, through get_header()).
+    //This goes for other some members too.
     int get_array_void(void*,int);
   public:
     StateInBin();
     StateInBin(istream&);
     StateInBin(const char *);
     ~StateInBin();
-  };
 
-////////////////////////////////////////////////////////////////////
-
-//. \clsnm{StateOutBinXDR} is used to write binary files that
-//. can be moved between machines with different endianess.
-class StateOutBinXDR : public StateOutBin, public QCXDR
-{
-  private:
-    // do not allow copy constructor or assignment
-    StateOutBinXDR(const StateOutBinXDR&);
-    void operator=(const StateOutBinXDR&);
-  protected:
-    //this is needed for a mips-sgi-irix4 gcc 2.5.2 bug
-    int put_array_void(const void*v,int i);
-  public:
-    StateOutBinXDR();
-    StateOutBinXDR(ostream&);
-    StateOutBinXDR(const char *);
-    ~StateOutBinXDR();
-    int put_array_char(const char*,int);
-    int put_array_int(const int*,int);
-    int put_array_float(const float*,int);
-    int put_array_double(const double*,int);
-};
-
-//. \clsnm{StateInBinXDR} is used to read objects written with
-//. \clsnm{StateOutBinXDR}.
-class StateInBinXDR : public StateInBin, public QCXDR
-{
-  private:
-    // do not allow copy constructor or assignment
-    StateInBinXDR(const StateInBinXDR&);
-    void operator=(const StateInBinXDR&);
-  protected:
-    //this is needed for a mips-sgi-irix4 gcc 2.5.2 bug
-    int get_array_void(void*v,int i);
-  public:
-    StateInBinXDR();
-    StateInBinXDR(istream&);
-    StateInBinXDR(const char *);
-    ~StateInBinXDR();
-    int get_array_char(char*,int);
-    int get_array_int(int*,int);
-    int get_array_float(float*,int);
-    int get_array_double(double*,int);
+    void seek(int loc);
+    int seekable();
   };
 
 #ifndef __GNUC__

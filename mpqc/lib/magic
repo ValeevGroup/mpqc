@@ -1,0 +1,13 @@
+#------------------------------------------------------------------------------
+# SC Toolkit StateOut File
+
+0	string		\001SCSO\002	SC data
+>6	string		l		little endian
+>>7	lelong		x		v%d
+>>11	string		x		%s
+>>20	ledate		x		%s
+>6	string		b		big endian
+>>7	belong		x		v%d
+>>11	string		x		%s
+>>20	bedate		x		%s
+

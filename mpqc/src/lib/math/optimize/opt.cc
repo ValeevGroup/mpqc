@@ -165,7 +165,7 @@ Optimize::set_checkpoint_file(const char *path)
   
 
 #ifndef OPTSTATEOUT
-#define OPTSTATEOUT StateOutBinXDR
+#define OPTSTATEOUT StateOutBin
 #endif
 
 int

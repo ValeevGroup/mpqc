@@ -69,7 +69,7 @@ main(int argc, char**argv)
 
   if (stat("g92test.ckpt",&sb)==0 && sb.st_size) {
     //StateInText si("g92test.ckpt");
-    StateInBinXDR si("g92test.ckpt");
+    StateInBin si("g92test.ckpt");
     opt.restore_state(si);
     mole = opt->nlp();
   } else {

@@ -275,10 +275,13 @@ class D: D_parents {
     int id;
     RefA _a;
     RefB _b;
+    double *d1;
+    double *d2;
   public:
     D();
     D(const RefKeyVal&);
     D(StateIn&);
+    ~D();
     void save_data_state(StateOut&);
     inline int& d() { return id; }
     inline RefA da() { return _a; }
@@ -309,6 +312,7 @@ SavableState_REF_def(D);
 D::D():
   id(4)
 {
+  d1 = d2 = new double[4];
 }
 D::D(const RefKeyVal&keyval):
   B(new PrefixKeyVal("B",keyval)),
@@ -317,6 +321,8 @@ D::D(const RefKeyVal&keyval):
   _a(A::castdown(keyval->describedclassvalue("a"))),
   _b(B::castdown(keyval->describedclassvalue("b")))
 {
+  d1 = d2 = new double[4];
+  for (int i=0; i<4; i++) d1[i] = 0.5*i;
 }
 D::D(StateIn&s):
   B(s),
@@ -328,6 +334,8 @@ D::D(StateIn&s):
   s.get(id);
   _a.restore_state(s);
   _b.restore_state(s);
+  s.get(d1);
+  s.get(d2);
 }
 void
 D::save_data_state(StateOut&s)
@@ -338,6 +346,12 @@ D::save_data_state(StateOut&s)
   s.put(id);
   _a.save_state(s);
   _b.save_state(s);
+  s.put(d1,4);
+  s.put(d2,4);
+}
+D::~D()
+{
+  delete[] d1;
 }
 
 #define CLASSNAME D
@@ -361,8 +375,8 @@ D::_castdown(const ClassDesc*cd)
 #  define StateOutType StateOutText
 #  define StateInType StateInText
 #else
-#  define StateOutType StateOutBinXDR
-#  define StateInType StateInBinXDR
+#  define StateOutType StateOutBin
+#  define StateInType StateInBin
 #endif
 
 int
@@ -460,7 +474,6 @@ main()
   StateInType sia("statetest.a.out");
   cout << "  first a" << endl;
   ra = new A(sia);
-  sia.forget_references();
   cout << "  second a" << endl;
   ra = new A(sia);
   if (ra.nonnull()) { ra->print(); cout << endl; }

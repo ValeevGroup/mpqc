@@ -123,7 +123,6 @@ DistSCMatrixListSubblockIter::DistSCMatrixListSubblockIter(
   in_.source(grp->me() == 0 ? grp->n()-1: grp->me()-1);
 
   out_.copy_references();
-  in_.copy_references();
 }
 
 void

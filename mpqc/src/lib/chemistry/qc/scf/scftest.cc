@@ -115,7 +115,7 @@ main(int argc, char**argv)
   RefOptimize opt;
 
   if (stat("scftest.ckpt",&sb)==0 && sb.st_size) {
-    StateInBinXDR si("scftest.ckpt");
+    StateInBin si("scftest.ckpt");
     opt.restore_state(si);
     mole = opt->function();
   } else {
@@ -144,7 +144,7 @@ main(int argc, char**argv)
 
   mole->print(cout);
 
-  StateOutBinXDR so("scftest.wfn");
+  StateOutBin so("scftest.wfn");
   mole.save_state(so);
   
   tim->print(cout);

@@ -106,12 +106,12 @@ main(int argc, char **argv)
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
       cout << node0 << "saving/restoring atominfo" << endl;
       ostrstream ostrs;
-      StateOutBinXDR so(ostrs);
+      StateOutBin so(ostrs);
       atominfo.save_state(so);
       atominfo = 0;
       so.flush();
       istream istrs(ostrs.rdbuf());
-      StateInBinXDR si(istrs);
+      StateInBin si(istrs);
       atominfo.restore_state(si);
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
       if (grp->n() > 1) {
@@ -148,13 +148,13 @@ main(int argc, char **argv)
       cout << "---------- testing molecule save/restore ----------" << endl;
 
       ostrstream ostrs;
-      StateOutBinXDR so(ostrs);
+      StateOutBin so(ostrs);
       cout << "saveing ..." << endl;
       mol.save_state(so);
       mol = 0;
       so.flush();
       istream istrs(ostrs.rdbuf());
-      StateInBinXDR si(istrs);
+      StateInBin si(istrs);
       cout << "restoring ..." << endl;
       mol.restore_state(si);
       cout << "printing restored molecule:" << endl;

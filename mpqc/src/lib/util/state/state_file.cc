@@ -32,6 +32,7 @@
 
 #include <util/state/statenumSet.h>
 #include <util/state/classdImplMap.h>
+#include <util/state/stateptrImplSet.h>
 
 StateOutFile::StateOutFile() :
   opened_(0), buf_(cout.rdbuf())
@@ -43,23 +44,15 @@ StateOutFile::StateOutFile(ostream& s) :
 {
 }
 
-StateOutFile::StateOutFile(const char * path) :
-  opened_(1)
+StateOutFile::StateOutFile(const char * path)
 {
-  filebuf *fbuf = new filebuf();
-  fbuf->open(path,ios::out);
-  if (!fbuf->is_open()) {
-      cerr << "ERROR: StateOutFile: problems opening " << path << endl;
-      abort();
-    }
-  buf_ = fbuf;
+  opened_ = 0;
+  open(path);
 }
 
 StateOutFile::~StateOutFile()
 {
-  if (opened_) {
-      delete buf_;
-    }
+  close();
 }
 
 void StateOutFile::flush()
@@ -73,8 +66,11 @@ void StateOutFile::close()
   if(opened_) delete buf_;
   opened_=0; buf_=0;
 
-  _classidmap->clear(); _nextclassid=0;
-  forget_references();
+  _classidmap->clear();
+  _nextclassid=0;
+
+  ps_->clear();
+  next_pointer_number = 1;
 }
 
 void StateOutFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
@@ -110,20 +106,13 @@ StateInFile::StateInFile(istream& s) :
 StateInFile::StateInFile(const char * path) :
   opened_(1)
 {
-  filebuf *fbuf = new filebuf();
-  fbuf->open(path,ios::in);
-  if (!fbuf->is_open()) {
-      cerr << "ERROR: StateInFile: problems opening " << path << endl;
-      abort();
-    }
-  buf_ = fbuf;
+  opened_ = 0;
+  open(path);
 }
 
 StateInFile::~StateInFile()
 {
-  if (opened_) {
-      delete buf_;
-    }
+  close();
 }
 
 void StateInFile::close()
@@ -132,7 +121,7 @@ void StateInFile::close()
   opened_=0; buf_=0;
 
   _cd.clear();
-  forget_references();
+  ps_->clear();
 }
 void StateInFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
 

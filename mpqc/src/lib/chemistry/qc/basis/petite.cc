@@ -91,11 +91,12 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   _lamij = new char[ioff(_nshell)];
 
   _atom_map = new int*[_natom];
-  for (int i=0; i < _natom; i++)
+  int i;
+  for (i=0; i < _natom; i++)
     _atom_map[i] = new int[_ng];
   
   _shell_map = new int*[_nshell];
-  for (int i=0; i < _nshell; i++)
+  for (i=0; i < _nshell; i++)
     _shell_map[i] = new int[_ng];
   
   // set up atom and shell mappings
@@ -103,7 +104,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   SymmetryOperation so;
   
   // loop over all centers
-  for (int i=0; i < _natom; i++) {
+  for (i=0; i < _natom; i++) {
     AtomicCenter ac = mol.atom(i);
 
     // then for each symop in the pointgroup, transform the coordinates of
@@ -134,7 +135,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   memset(_lamij,0,ioff(_nshell));
   
   // now we do _p1 and _lamij
-  for (int i=0; i < _nshell; i++) {
+  for (i=0; i < _nshell; i++) {
     int leave=0;
 
     // we want the highest numbered shell in a group of equivalent shells
@@ -238,7 +239,8 @@ PetiteList::print(FILE *o)
 
   fprintf(o,"\n");
   fprintf(o,"  _atom_map = \n");
-  for (int i=0; i < _natom; i++) {
+  int i;
+  for (i=0; i < _natom; i++) {
     fprintf(o,"    ");
     for (int g=0; g < _ng; g++)
       fprintf(o,"%5d ",_atom_map[i][g]);
@@ -247,7 +249,7 @@ PetiteList::print(FILE *o)
 
   fprintf(o,"\n");
   fprintf(o,"  _shell_map = \n");
-  for (int i=0; i < _nshell; i++) {
+  for (i=0; i < _nshell; i++) {
     fprintf(o,"    ");
     for (int g=0; g < _ng; g++)
       fprintf(o,"%5d ",_shell_map[i][g]);
@@ -256,11 +258,11 @@ PetiteList::print(FILE *o)
 
   fprintf(o,"\n");
   fprintf(o,"  _p1 = \n");
-  for (int i=0; i < _nshell; i++)
+  for (i=0; i < _nshell; i++)
     fprintf(o,"    %5d\n",_p1[i]);
     
   fprintf(o,"  _lamij = \n");
-  for (int i=0; i < _nshell; i++) {
+  for (i=0; i < _nshell; i++) {
     fprintf(o,"    ");
     for (int j=0; j <= i; j++)
       fprintf(o,"%5d ",_lamij[ioff(i)+j]);

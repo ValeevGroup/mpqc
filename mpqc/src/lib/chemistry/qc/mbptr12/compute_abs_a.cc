@@ -922,13 +922,12 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	r12intsacc->release_pair_block(l,k,R12IntsAcc::r12t2);
       }
   }
-  else {
-    // tasks that have nothing to do should still create timers
-    tim_enter("MO ints retrieve");
-    tim_exit("MO ints retrieve");
-    tim_enter("MO ints contraction");
-    tim_exit("MO ints contraction");
-  }
+  // tasks that have nothing to do should still create timers
+  tim_enter("MO ints retrieve");
+  tim_exit("MO ints retrieve");
+  tim_enter("MO ints contraction");
+  tim_exit("MO ints contraction");
+
   delete[] proc_with_ints;
   tim_exit("mp2-r12a intermeds");
   ExEnv::out0() << indent << "End of computation of intermediates" << endl;

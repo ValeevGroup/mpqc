@@ -42,9 +42,10 @@ CSRC =
 
 CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc
 
-TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc
+TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc \
+          autovectest.cc
 
-TESTPROGS = comptest formiot bugtest tregtime unittest
+TESTPROGS = autovectest comptest formiot bugtest tregtime unittest
 
 INC = timer.h compute.h ieee.h bug.h exenv.h
 
@@ -62,6 +63,9 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 #####################################################################
 
 default:: $(DEPENDINCLUDE)
+
+autovectest: autovectest.$(OBJSUF)
+	$(LTLINK) $(LD) $(LDFLAGS) $^ -o $@ $(LTLINKBINOPTS)
 
 comptest: comptest.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) $^ -o comptest $(SYSLIBS) $(LTLINKBINOPTS)
@@ -84,7 +88,7 @@ formiot: formiot.$(OBJSUF) $(LIBS)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
-	/bin/rm -f comptest tregtime bugtest formiot unittest
+	/bin/rm -f autovectest comptest tregtime bugtest formiot unittest
 
 $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

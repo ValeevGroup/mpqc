@@ -27,7 +27,7 @@ static int read_shells(KeyVal&, const char*, const char*, basis_t&, int&,
 //
 
 int
-int_read_basis(KeyVal& keyval,char *atom, const char *bname, basis_t &basis)
+int_read_basis(KeyVal& topkeyval,char *atom, const char *bname, basis_t &basis)
 {
   init_basis(&basis);
 
@@ -36,6 +36,14 @@ int_read_basis(KeyVal& keyval,char *atom, const char *bname, basis_t &basis)
     fprintf(stderr,"read_basis: could not strdup(%s)\n",bname);
     return -1;
   }
+
+  // construct a keyval that contains the basis library
+
+  // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
+  // variables to find out what basis set files are to be read in
+  ParsedKeyVal libkeyval("basis",topkeyval); libkeyval.unmanage();
+  PrefixKeyVal prekeyval(":basis",libkeyval); prekeyval.unmanage();
+  AggregateKeyVal keyval(prekeyval,libkeyval); keyval.unmanage();
 
   int tmp=0;
   basis.n = read_shells(keyval,atom,bname,basis,tmp,COUNT);
@@ -61,13 +69,17 @@ int_read_basis(KeyVal& keyval,char *atom, const char *bname, basis_t &basis)
 }
 
 /////////////////////////////////////////////////////////////////////////
+//
+// given a keyval, fill in centers.  this is really obsolete and will
+// disappear eventually.
+//
 
 int
-int_read_centers(KeyVal&keyval, centers_t& centers)
+int_read_centers(KeyVal& keyval, centers_t& centers)
 {
   char *basis = keyval.pcharvalue("basis");
   if (!basis) {
-    fprintf(stderr,"int_read_centers: can't read basis");
+    fprintf(stderr,"int_read_centers: can't read basis\n");
     return -1;
   }
 
@@ -84,25 +96,55 @@ int_read_centers(KeyVal&keyval, centers_t& centers)
 
  // find out how many atoms there are
   centers.n = keyval.count("atoms");
+  if (keyval.error() != KeyVal::OK) {
+    fprintf(stderr,"int_read_centers: can't count atoms\n");
+    return -1;
+  }
 
  // and alloc memory for centers
   centers.center = (center_t*) malloc(sizeof(center_t)*centers.n);
+  if (!centers.center) {
+    fprintf(stderr,"int_read_centers: could not malloc center\n");
+    return -1;
+  }
 
   for (int i=0; i < centers.n; i++) {
     char *atom = keyval.pcharvalue("atoms",i);
+    if (keyval.error() != KeyVal::OK) {
+      fprintf(stderr,"int_read_centers: can't read atoms[%d]\n",i);
+      return -1;
+    }
+
     centers.center[i].atom = strdup(atom);
+    if (!centers.center[i].atom) {
+      fprintf(stderr,"int_read_centers: can't strdup atoms[%d]\n",i);
+      return -1;
+    }
+    delete[] atom;
 
     centers.center[i].charge = keyval.doublevalue("charges",i);
     if (keyval.error() != KeyVal::OK)
       centers.center[i].charge = atom_to_an(centers.center[i].atom);
 
     centers.center[i].r = (double*) malloc(sizeof(double)*3);
-    for (int j=0; j<3; j++) {
-      centers.center[i].r[j] = keyval.doublevalue("geometry",i,j);
+    if (!centers.center[i].atom) {
+      fprintf(stderr,"int_read_centers: can't malloc r for atom %d\n",i);
+      return -1;
     }
 
-    int_read_basis(keyval, sym_to_atom(centers.center[i].atom), basis,
-                   centers.center[i].basis);
+    for (int j=0; j<3; j++) {
+      centers.center[i].r[j] = keyval.doublevalue("geometry",i,j);
+      if (keyval.error() != KeyVal::OK) {
+        fprintf(stderr,"int_read_centers: can't read r(%d,%d)\n",i,j);
+        return -1;
+      }
+    }
+
+    if (int_read_basis(keyval, sym_to_atom(centers.center[i].atom), basis,
+                       centers.center[i].basis) < 0) {
+      fprintf(stderr,"int_read_centers: can't read basis %d\n",i);
+      return -1;
+    }
   }
 
   delete[] basis;
@@ -113,16 +155,9 @@ int_read_centers(KeyVal&keyval, centers_t& centers)
 /////////////////////////////////////////////////////////////////////////////
 
 static int
-read_shells(KeyVal& topkeyval, const char *atom, const char *bname,
+read_shells(KeyVal& keyval, const char *atom, const char *bname,
             basis_t& basis, int& nsh, enum whats what)
 {
-  // construct a keyval that contains the basis library
-
-  // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
-  // variables to find out what basis set files are to be read in
-  ParsedKeyVal libkeyval("basis",topkeyval); libkeyval.unmanage();
-  PrefixKeyVal prekeyval(":basis",libkeyval); prekeyval.unmanage();
-  AggregateKeyVal keyval(prekeyval,libkeyval); keyval.unmanage();
 
   char key[512];
 

@@ -178,6 +178,11 @@ class CharacterTable {
     //texi Shorthand for @code{gamma}.
     IrreducibleRepresentation& operator[](int i) { return gamma_[i]; }
 
+    //texi Cn, Cnh, and Sn point groups have complex representations.
+    // This function returns 1 if the point group has a complex representation,
+    // 0 otherwise.
+    int complex() const { if(pg==CN || pg==SN || pg==CNH) return 1; return 0; }
+
     //texi 
     // This prints the irrep to the given file, or stdout if none is given.
     // The second argument is an optional string of spaces to offset by.

@@ -7,6 +7,8 @@ $exec_prefix = "@exec_prefix@";
 $bindir = "@bindir@";
 
 use POSIX;
+use threads;
+use threads::shared;
 
 if ($prefix eq '@' . 'prefix@') {
     $configurerun = 0;
@@ -115,6 +117,7 @@ $objdir = 0;
 use Getopt::Long;
 
 if (!GetOptions("small!" => \$small,
+                "launch=s" => \$launch,
                 "thread=s" => \$thread,
                 "messagegrp=s" => \$messagegrp,
                 "nprocperjob=i" => \$nprocperjob,
@@ -249,7 +252,7 @@ if ("$nodefile" ne "" && -f "$nodefile") {
 %nodelist = {};
 %nodefile = {};
 $ijob = 0;
-foreach my $i (0..$#nodelist-1) {
+foreach my $i (0..$#nodelist) {
     $jobnnodes[$ijob++]++;
     if ($ijob >= $maxjobs) { $ijob = 0; }
 }
@@ -293,15 +296,26 @@ elsif ($threadgrp eq "posix") {
 # autoflush output
 $| = 1;
 
-@files = get_file_list();
+@allfiles = reverse(get_file_list());
+
+my @seqfiles : shared = ();
+my @files : shared = ();
+foreach my $file (@allfiles) {
+    if ("$seq" ne "" && ($file =~ /$seq/)) {
+        $seqfiles[$#seqfiles+1] = $file;
+    }
+    else {
+        $files[$#files+1] = $file;
+    }
+}
 
 if ($count) {
-    printf "%d\n", $#files + 1;
+    printf "%d\n", $#allfiles + 1;
     exit;
 }
 
 if ($printfiles) {
-    foreach my $i (@files) {
+    foreach my $i (@allfiles) {
         printf "%s\n", "$i";
     }
     exit;
@@ -321,67 +335,66 @@ foreach my $i (0..$maxjobs-1) {
 printenvvar("MESSAGEGRP");
 printenvvar("THREADGRP");
 printenvvar("MEMORYGRP");
-
-# this is the list of available run slots
-# each slot permits running on the nodes listed in jobnodes
-@availjobs = (0..$maxjobs-1);
-%pidtojob = {};
+printenvvar("SCLIBDIR");
 
 $thecount = 0;
 $n = 0;
 
-foreach my $file (@files) {
-    my $out = outfile("$file");
-    if ("$seq" ne "") {
-        $can_run_concurrent = ! ($file =~ /$seq/);
+@threads = ();
+
+foreach my $jobnum (0..$maxjobs-1) {
+    my $thr = threads->new(\&jobrunner, $jobnum);
+    $threads[$#threads+1] = $thr;
+}
+
+foreach my $thr (@threads) {
+    $thr->join();
+}
+
+@threads = ();
+
+foreach $i (values(%nodefile)) {
+    unlink "$i";
+}
+
+sub get_next_file {
+    my $jobnum = shift;
+    lock(@seqfiles);
+    if ($#seqfiles >= 0 && $jobnum == 0) {
+        return pop(@seqfiles);
     }
-    my $cmd = "$launch";
-    $cmd =~ s/%MPQC%/$mpqc/;
-    $cmd =~ s/%NPROC%/$nprocperjob/;
-    $cmd =~ s/%INPUT%/$file/;
-    $cmd =~ s/%OUTPUT%/$out/;
+    lock(@files);
+    if ($#files >= 0) {
+        return pop(@files);
+    }
+    return "";
+}
 
-    $jobslot = pop(@availjobs);
-    $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
-    $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
+sub jobrunner {
+    my $jobslot = shift;
 
-    if (! $can_run_concurrent || $maxjobs == 1) {
+    my $file;
+
+    while ( ($file = get_next_file($jobslot)) ne "") {
+        my $out = outfile("$file");
+        my $cmd = "$launch";
+        $cmd =~ s/%MPQC%/$mpqc/;
+        $cmd =~ s/%NPROC%/$nprocperjob/;
+        $cmd =~ s/%INPUT%/$file/;
+        $cmd =~ s/%OUTPUT%/$out/;
+
+        $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
+        $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
+
         printf "starting in slot %d: %s\n", $jobslot, "$cmd";
         $cmd = "true" if ($debug);
         $pid = fork();
-        $pidtojob{$pid} = $jobslot;
         if ($pid == 0) {
             exec("$cmd");
             die "exec returned";
         }
         waitpid($pid,'');
-        delete $pidtojob{$pid};
-        push @availjobs, $jobslot;
     }
-    else {
-        printf "backgrounding in slot %d: %s\n", $jobslot, "$cmd";
-        $cmd = "true" if ($debug);
-        $pid = fork();
-        $pidtojob{$pid} = $jobslot;
-        if ($pid == 0) {
-            exec("$cmd");
-            die "exec returned";
-        }
-        $n = $n + 1;
-    }
-    while ($n >= $maxjobs) {
-        $pid = wait();
-        $jobslot = $pidtojob{$pid};
-        delete $pidtojob{$pid};
-        push @availjobs, $jobslot;
-        $n = $n - 1;
-    }
-}
-
-foreach $i (1..$n) { wait(); }
-
-foreach $i (values(%nodefile)) {
-    unlink "$i";
 }
 
 sub get_file_list {
@@ -392,8 +405,8 @@ sub get_file_list {
         opendir(DIR,"$readdir");
         @tdirfiles = sort(readdir(DIR));
         foreach my $j (@tdirfiles) {
-            if (!($j =~ /\.in$/)) {
-                $dirfiles[$#dirfiles] = $j;
+            if ($j =~ /\.in$/) {
+                $dirfiles[$#dirfiles+1] = $j;
             }
         }
         closedir(DIR);

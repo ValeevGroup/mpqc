@@ -27,4 +27,23 @@ class AccumHCore: public AccumDIH {
 };
 SavableState_REF_dec(AccumHCore);
 
+class SymmAccumHCore: public AccumDIH {
+#   define CLASSNAME SymmAccumHCore
+#   define HAVE_CTOR
+#   define HAVE_STATEIN_CTOR
+#   define HAVE_KEYVAL_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    SymmAccumHCore();
+    SymmAccumHCore(StateIn&);
+    SymmAccumHCore(const RefKeyVal&);
+    ~SymmAccumHCore();
+
+    void save_data_state(StateOut&);
+    
+    void accum(const RefSymmSCMatrix& h);
+};
+SavableState_REF_dec(SymmAccumHCore);
+
 #endif

@@ -5,6 +5,7 @@
 #include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
+#include <math/scmat/offset.h>
 
 /////////////////////////////////////////////////////////////////////////////
 // LocalSymmSCMatrix member functions
@@ -48,10 +49,7 @@ LocalSymmSCMatrix::compute_offset(int i,int j)
       fprintf(stderr,"LocalSymmSCMatrix: index out of bounds\n");
       abort();
     }
-  if (i<j) {
-      int tmp = j; j=i; i=tmp;
-    }
-  return (i*(i+1))/2 + j;
+  return ij_offset(i,j);
 }
 
 void

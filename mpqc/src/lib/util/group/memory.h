@@ -100,5 +100,9 @@ class MemoryGrpBuf {
     int length() const { return length_; }
 };
 
+#ifndef __GNUG__
+#  include <util/group/memory.cc>
+#endif
+
 #endif
 

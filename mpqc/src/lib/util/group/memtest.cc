@@ -96,6 +96,29 @@ do_int_tests()
   const int intbufsize = 10;
   RefMemoryGrp mem = MemoryGrp::create_memorygrp(intbufsize*sizeof(int));
 
+  //sleep(1);
+  fflush(stdout);
+  printf("111111111111111111111111111111111\n");
+  fflush(stdout);
+  //sleep(1);
+
+  mem->sync();
+
+  //sleep(1);
+  fflush(stdout);
+  printf("222222222222222222222222222222222\n");
+  fflush(stdout);
+  //sleep(1);
+
+  //mem->deactivate();
+  //sleep(1);
+  fflush(stdout);
+  printf("333333333333333333333333333333333\n");
+  fflush(stdout);
+  //sleep(1);
+  //mem = 0;
+  //return;
+
   int uselocks = 0;
 
   mem->lock(uselocks);
@@ -194,8 +217,8 @@ do_int_tests()
   PRINTF(("==========================================================\n"));
   mem->sync();
 
+  mem->deactivate();
   mem = 0;
-
 }
 
 void
@@ -283,4 +306,6 @@ do_double_tests()
   mem->sync();
   PRINTF(("==========================================================\n"));
   mem->sync();
+
+  mem->deactivate();
 }

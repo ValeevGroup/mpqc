@@ -11,7 +11,7 @@ REQUIREDCXXSRC = mstate.cc \
          globcnt.cc memamsg.cc memproc.cc
 
 OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
-                 mempgon.cc
+                 mempgon.cc memmpl.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
 ifneq ($(ARCH),SUNMOS)
@@ -29,10 +29,14 @@ endif
 ifeq ($(HAVE_MPI),yes)
   CXXSRC += messmpi.cc
 endif
+ifeq ($(HAVE_MPL),yes)
+  CXXSRC += memmpl.cc
+endif
 
 INC = pool.h message.h mstate.h topology.h picl.h \
       messshm.h messpvm.h messmpi.h \
-      rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h
+      rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
+      memmpl.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 

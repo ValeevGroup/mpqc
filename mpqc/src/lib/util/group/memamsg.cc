@@ -51,6 +51,8 @@ MemoryLockRequest::assign(Request r, int node,
 ///////////////////////////////////////////////////////////////////////
 // The MemoryDataRequest class
 
+static int request_serial_number;
+
 MemoryDataRequest::MemoryDataRequest(Request r, int node,
                                      int offset, int size)
 {
@@ -65,6 +67,7 @@ MemoryDataRequest::assign(Request r, int node,
   data_[1] = node;
   data_[2] = offset;
   data_[3] = size;
+  data_[4] = request_serial_number++;
 }
 
 const char *
@@ -79,8 +82,27 @@ MemoryDataRequest::request_string()
       return "Replace";
   case MemoryDataRequest::DoubleSum:
       return "DoubleSum";
+  case MemoryDataRequest::Sync:
+      return "Sync";
   default:
       return "BadRequest";
+    }
+}
+
+void
+MemoryDataRequest::print(const char *msg)
+{
+  if (msg == 0) msg = "";
+
+  if (request() == Sync) {
+      printf("%s request = \"%s\" serial = %d\n",
+              msg, request_string(), serial_number());
+    }
+  else {
+      printf("%s request = \"%s\" byte offset = %d, "
+              "byte size = %d, node = %d, serial = %d\n",
+              msg, request_string(),
+              offset(), size(), node(), serial_number());
     }
 }
 

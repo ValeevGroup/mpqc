@@ -22,6 +22,11 @@
 #  include <util/group/memshm.h>
 #endif
 
+#if defined(HAVE_MPL) && defined(HAVE_MPI)
+#  include <util/group/memmpl.h>
+#  include <util/group/messmpi.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // MemoryGrpBuf template instantiations
 
@@ -68,6 +73,11 @@ MemoryGrp::create_memorygrp(int localsize)
 #ifdef HAVE_PGON
   else if (msg->class_desc() == ParagonMessageGrp::static_class_desc()) {
       ret = new ParagonMemoryGrp(msg, localsize);
+    }
+#endif
+#if defined(HAVE_MPL) && defined(HAVE_MPI)
+  else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
+      ret = new MPLMemoryGrp(msg, localsize);
     }
 #endif
 #ifdef HAVE_SHM

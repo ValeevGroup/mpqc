@@ -49,6 +49,12 @@ extern BiggestContribs biggest_ints_1;
 #define PRINT_NUM_TE_TYPES 1
 #define PRINT_BIGGEST_INTS_NUM_TE_TYPES 1
 
+// The FAST_BUT_WRONG flags is useful for exercising the communications
+// layer.  It causes the first and second quarter transformation to be
+// omitted, but all communication is still performed.  This permits
+// problems in communications libraries to be more quickly identified.
+#define FAST_BUT_WRONG 0
+
 R12A_GRT_12Qtr::R12A_GRT_12Qtr(int mythread_a, int nthread_a,
                                  int me_a, int nproc_a,
                                  const Ref<MemoryGrp> &mem_a,
@@ -184,6 +190,14 @@ R12A_GRT_12Qtr::run()
   Ref<GPetite4<canonical_aaaa> > p4list
     = new GPetite4<canonical_aaaa>(bs1_,bs2_,bs3_,bs4_,c4);
 
+#if FAST_BUT_WRONG
+  for(te_type=0;te_type<num_te_types;te_type++) {
+    bzerofast(integral_iqrs[te_type], ni*nbasis2*nfuncmax3*nfuncmax4);
+    bzerofast(iqjs_contrib[te_type], nbasis2*nfuncmax4);
+    bzerofast(iqjr_contrib[te_type], nbasis2*nfuncmax4);
+    }
+#endif
+
   R = 0;
   S = 0;
   while (shellpairs.get_task(S,R)) {
@@ -207,8 +221,10 @@ R12A_GRT_12Qtr::run()
       lock->unlock();
     }
 
+#if !FAST_BUT_WRONG
     for(te_type=0;te_type<num_te_types;te_type++)
-      bzerofast(integral_iqrs[te_type], ni*nbasis2*nfuncmax3*nfuncmax4);
+      bzerofast(integral_iqrs[te_type], ni*nbasis2*ns*nr);
+//       bzerofast(integral_iqrs[te_type], ni*nbasis2*nfuncmax3*nfuncmax4);
 
     for (P=0; P<nsh1; P++) {
       np = bs1_->shell(P).nfunction();
@@ -274,6 +290,7 @@ R12A_GRT_12Qtr::run()
 		    tmpval = *pqrs_ptr;
 		    // multiply each integral by its symmetry degeneracy factor
 		    tmpval *= symfac;
+#if 1 // this code has conditionals in the inner loop (apparently can be faster)
 		    for (i=0; i<ni; i++) {
 		      // bs1_eq_bs2
 		      if (te_type!=2)
@@ -287,6 +304,46 @@ R12A_GRT_12Qtr::run()
 			iqrs_ptr += offset;
                       }
                     } // exit i loop
+#else // this code has conditionals moved out of the inner loop
+                    if (te_type!=2) {
+                      // bs1_eq_bs2
+		      if (p == q) {
+                        // te_type != 2, p == q
+                        for (i=0; i<ni; i++) {
+                          *iprs_ptr += *c_qi++*tmpval;
+                          iprs_ptr += offset;
+                          }
+                        }
+                      else {
+                        // te_type != 2, p != q
+                        for (i=0; i<ni; i++) {
+                          *iprs_ptr += *c_qi++*tmpval;
+                          iprs_ptr += offset;
+                          *iqrs_ptr += *c_pi++*tmpval;
+                          iqrs_ptr += offset;
+                          }
+                        }
+                      }
+                    else {
+                      // bs1_eq_bs2
+		      if (p == q) {
+                        // te_type == 2, p == q
+                        for (i=0; i<ni; i++) {
+                          *iprs_ptr -= *c_qi++*tmpval;
+                          iprs_ptr += offset;
+                          }
+                        }
+                      else {
+                        // te_type == 2, p != q
+                        for (i=0; i<ni; i++) {
+                          *iprs_ptr -= *c_qi++*tmpval;
+                          iprs_ptr += offset;
+                          *iqrs_ptr += *c_pi++*tmpval;
+                          iqrs_ptr += offset;
+                          }
+                        }
+                      }
+#endif
                   }   // endif
 
 		  pqrs_ptr++;
@@ -300,6 +357,7 @@ R12A_GRT_12Qtr::run()
 
         }           // exit P loop
       }             // exit Q loop
+#endif // !FAST_BUT_WRONG
 
 #if PRINT1Q
       {
@@ -356,9 +414,13 @@ R12A_GRT_12Qtr::run()
 	  if (te_type)
 	    ijsq_start[te_type] = ijsq_start[te_type-1] + nbasis2*nbasis4;
 
-	  bzerofast(iqjs_contrib[te_type], nbasis2*nfuncmax4);
+#if !FAST_BUT_WRONG
+	  bzerofast(iqjs_contrib[te_type], nbasis2*ns);
 	  // bs3_eq_bs4
-	  bzerofast(iqjr_contrib[te_type], nbasis2*nfuncmax4);
+	  bzerofast(iqjr_contrib[te_type], nbasis2*nr);
+// 	  bzerofast(iqjs_contrib[te_type], nbasis2*nfuncmax4);
+// 	  // bs3_eq_bs4
+// 	  bzerofast(iqjr_contrib[te_type], nbasis2*nfuncmax4);
 
 	  for (bf1=0; bf1<ns; bf1++) {
 	    s = s_offset + bf1;
@@ -375,6 +437,7 @@ R12A_GRT_12Qtr::run()
 	      double c_rj = scf_vector[r][j+j_offset];
 	      iqjs_ptr = &iqjs_contrib[te_type][bf1*nbasis2];
 	      iqrs_ptr = &integral_iqrs[te_type][bf1 + ns*nbasis2*(bf2 + nr*i)];
+#if 1 // this code has conditionals in the inner loop (apparently can be faster)
 	      for (q=0; q<nbasis2; q++) {
 		*iqjs_ptr++ += c_rj * *iqrs_ptr;
 		// bs3_eq_bs4
@@ -382,8 +445,28 @@ R12A_GRT_12Qtr::run()
 		iqjr_ptr++;
 		iqrs_ptr += ns;
               } // exit q loop
+#else // this code has conditionals removed from the inner loop
+              // bs3_eq_bs4
+              if (r == s) {
+                for (q=0; q<nbasis2; q++) {
+                  *iqjs_ptr++ += c_rj * *iqrs_ptr;
+                  iqrs_ptr += ns;
+                  }
+                }
+              else {
+                double c_sj_val = *c_sj;
+                for (q=0; q<nbasis2; q++) {
+                  double iqrs_val = *iqrs_ptr;
+                  *iqjs_ptr++ += c_rj * iqrs_val;
+                  *iqjr_ptr += c_sj_val * iqrs_val;
+                  iqjr_ptr++;
+                  iqrs_ptr += ns;
+                  }
+                }
+#endif
             }   // exit bf2 loop
           }     // exit bf1 loop
+#endif // !FAST_BUT_WRONG
 	  
 	  // We now have contributions to iqjs and iqjr for one pair i,j,
 	  // all q, r in R and s in S; send iqjs and iqjr to the node

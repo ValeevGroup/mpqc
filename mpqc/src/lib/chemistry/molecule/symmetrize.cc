@@ -38,5 +38,12 @@ main(int argc, char *argv[])
   for (int i=0; i < nunique; i++) printf(" %d",unique_atoms[i]+1);
   printf("\n");
 
+  RefMolecule unique = new Molecule;
+  for (i=0; i < nunique; i++)
+    unique->add_atom(i,mol->atom(unique_atoms[i]));
+
+  printf("unique atoms\n");
+  unique->print();
+  
   exit(0);
 }

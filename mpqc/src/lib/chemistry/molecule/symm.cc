@@ -38,7 +38,7 @@ static RefSymmCoList make_symm_from_simple(RefSimpleCoList, int =0);
 
 ///////////////////////////////////////////////////////////////////////
 
-DescribedClass_REF_def(SymmCo);
+SavableState_REF_def(SymmCo);
 
 #define CLASSNAME SymmCo
 #define PARENTS virtual public SavableState
@@ -546,6 +546,8 @@ Geom_form_symm(Molecule& m,
    // nonzero is the number of simples which will be in this coordinate
     for(j=0,p=0; j < nred; j++,p++)
       if(fabs(K[j][i]) > 1.0e-12) nonzero += p->nsimple();
+    for(j=0,fixed_i=0; j < nfixed; j++,fixed_i++)
+      if(fabs(Kfixed[j][i]) > 1.0e-12) nonzero += fixed_i->nsimple();
 
     char label[80];
     sprintf(label,"gencoord%10d",i+1);
@@ -564,7 +566,7 @@ Geom_form_symm(Molecule& m,
     // now put the contribution from the fixed coordinates in the
     // coordinate list
     for(j=0,fixed_i=0; j < nfixed; j++,fixed_i++) {
-      if(fabs(K[j][i]) > 1.0e-12) {
+      if(fabs(Kfixed[j][i]) > 1.0e-12) {
         for(int k=0; k < fixed_i->nsimple(); k++) {
           sp->simple[sim] = fixed_i.this_object()->simple[k];
 	  sp->coeff_[sim] = Kfixed[j][i]*fixed_i.this_object()->coeff_[k];
@@ -613,6 +615,7 @@ DMatrix
 Geom_form_K(Molecule& m, RefSymmCoList list, int just_a1,
             RefSymmCoList fixed, DMatrix* Kfixed)
 {
+  const double Tolerance = 1.0e-8;
   int i,j;
 
   if(!list) {
@@ -638,27 +641,33 @@ Geom_form_K(Molecule& m, RefSymmCoList list, int just_a1,
     }
 
   // form the fixed part of the b matrix
-  if (nfixed && Kfixed) {
-    DMatrix bmat_fixed = Geom_make_bmat(fixed,m);
-    DMatrix bmbt_fixed = bmat_fixed * bmat_fixed.transpose();
+  DMatrix bmat_fixed = Geom_make_bmat(fixed,m);
+  DMatrix bmbt_fixed = bmat_fixed * bmat_fixed.transpose();
 
-    // need the cross terms in bmbt also
-    DMatrix bmbt_fix_red = bmat_fixed * bmat.transpose();
+//   printf("DEBUG: bmat\n");
+//   bmat.print();
+//   printf("DEBUG: bmat_fixed\n");
+//   bmat_fixed.print();
 
-    // orthogalize the redundant coordinates to the fixed coordinates
-    DMatrix redundant_ortho(nfixed,nred);
-    for (i=0; i<nred; i++) {
+  // need the cross terms in bmbt also
+  DMatrix bmbt_fix_red;
+  if (nfixed != 0) bmbt_fix_red = bmat_fixed * bmat.transpose();
+
+  // orthogonalize the redundant coordinates to the fixed coordinates
+  DMatrix redundant_ortho(nfixed,nred);
+  for (i=0; i<nred; i++) {
       for (j=0; j<nfixed; j++) {
-        redundant_ortho(j,i) = - bmbt_fix_red(j,i)/bmbt_fixed(j,j);
+          redundant_ortho(j,i) = - bmbt_fix_red(j,i)/bmbt_fixed(j,j);
         }
-      }
-    if (Kfixed) *Kfixed = redundant_ortho;
+    }
+  // wrong: if (Kfixed) *Kfixed = redundant_ortho;
 
-    // convert bmbt to the new coordinate system
-    bmbt = bmbt
-      + redundant_ortho.transpose() * bmbt_fixed * redundant_ortho
-      + redundant_ortho.transpose() * bmbt_fix_red
-      + bmbt_fix_red.transpose() * redundant_ortho;
+  // convert bmbt to the new coordinate system
+  if (nfixed != 0) {
+      bmbt = bmbt
+        + redundant_ortho.transpose() * bmbt_fixed * redundant_ortho
+        + redundant_ortho.transpose() * bmbt_fix_red
+        + bmbt_fix_red.transpose() * redundant_ortho;
     }
 
  // now diagonalize bmbt, this should give you the 3n-6(5) symmetrized
@@ -688,22 +697,27 @@ Geom_form_K(Molecule& m, RefSymmCoList list, int just_a1,
 
   int nonzero=0;
   if(just_a1) {
-    for(i=0; i < coords.dim(); i++) if(fabs(coords[i])>1.0e-8) nonzero++;
+    for(i=0; i < coords.dim(); i++) {
+        if (fabs(coords[i])>Tolerance && vals[i] > Tolerance) nonzero++;
+      }
     }
   else {
-    for(i=0; i < vals.dim(); i++) if(vals[i] > 1.0e-8) nonzero++;
+    for(i=0; i < vals.dim(); i++) if(vals[i] > Tolerance) nonzero++;
     }
-    
-  DMatrix ret(nred,nonzero);
 
+  // size K (= ret) and Kfixed
+  DMatrix ret(nred,nonzero);
+  if (Kfixed) Kfixed->resize(nfixed,nonzero);
+
+  // generate K
   int coordno=0;
   for(i=0; i < nred; i++) {
 
    // nonzero eigenvalues are the non-redundant coordinates
-    if(vals[i] > 1.0e-8) {
+    if(vals[i] > Tolerance) {
 
       int nonzero=0;
-      for(j=0; j < nred; j++) if(fabs(vecs[j][i]) > 1.0e-8) nonzero++;
+      for(j=0; j < nred; j++) if(fabs(vecs[j][i]) > Tolerance) nonzero++;
 
       if(!nonzero) {
 	err_msg("Geom_form_K: no nonzero coordinates");
@@ -714,10 +728,17 @@ Geom_form_K(Molecule& m, RefSymmCoList list, int just_a1,
      // if we only want the totally symmetric coords, eliminate coords
      // for which bmat[i]*cart_coords is zero
 
-      if(!just_a1 || (fabs(coords[i]) > 1.0e-8)) {
-	for(int ii=0; ii < nred; ii++)
-	  ret(ii,coordno) = vecs(ii,i);
-	coordno++;
+     // if(!just_a1 || (fabs(coords[i]) > Tolerance))
+      if ((just_a1?(fabs(coords[i])>Tolerance && vals[i] > Tolerance)
+           :(vals[i] > Tolerance))) {
+        int ii;
+        for(ii=0; ii < nred; ii++)
+          ret(ii,coordno) = vecs(ii,i);
+        if (Kfixed) {
+          for(ii=0; ii < nfixed; ii++)
+            Kfixed->operator()(ii,coordno) = redundant_ortho(ii,i);
+          }
+        coordno++;
         }
       }
     }
@@ -752,9 +773,6 @@ Geom_form_hessian(Molecule& m, RefSimpleCoList list)
 
   DMatrix hess(count,count);
   hess.zero();
-
-  printf("Geom_form_hessian: the reference count for list is %d\n",
-         list->nreference());
 
   int i;
   for(i=0,p=0; p; p++,i++)

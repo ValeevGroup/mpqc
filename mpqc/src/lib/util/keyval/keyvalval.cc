@@ -186,12 +186,12 @@ KeyValValuepchar::pcharvalue(char*&val)
 }
 
 KeyValValueRefDescribedClass::
-  KeyValValueRefDescribedClass(RefDescribedClass& val):
+  KeyValValueRefDescribedClass(const RefDescribedClass& val):
   _val(val)
 {
 }
 KeyValValueRefDescribedClass::
-  KeyValValueRefDescribedClass(KeyValValueRefDescribedClass& val):
+  KeyValValueRefDescribedClass(const KeyValValueRefDescribedClass& val):
   _val(val._val)
 {
 }

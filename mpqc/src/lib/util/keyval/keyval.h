@@ -284,8 +284,8 @@ class KeyValValueRefDescribedClass: public KeyValValue {
   private:
     RefDescribedClass _val;
   public:
-    KeyValValueRefDescribedClass(RefDescribedClass&);
-    KeyValValueRefDescribedClass(KeyValValueRefDescribedClass&);
+    KeyValValueRefDescribedClass(const RefDescribedClass&);
+    KeyValValueRefDescribedClass(const KeyValValueRefDescribedClass&);
     ~KeyValValueRefDescribedClass();
     KeyVal::KeyValError describedclassvalue(RefDescribedClass&);
 };

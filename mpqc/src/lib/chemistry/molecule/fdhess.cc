@@ -210,6 +210,15 @@ FinDispMolecularHessian::restart()
     BcastStateInBin si(grp,restart_file_);
     restore_displacements(si);
     mol_ = mole_->molecule();
+
+    // make sure we change the symmetry info everywhere in the MolE
+    int irrep, index;
+    double coef;
+    get_disp(ndisplacements_done(), irrep, index, coef);
+    if (irrep != 0 && index != 0) {
+        displace(ndisplacements_done());
+        mole_->symmetry_changed();
+      }
     }
   else {
     init();
@@ -380,11 +389,13 @@ FinDispMolecularHessian::displace(int disp)
     if (corrtab.initialize_table(original_point_group_, newpg)) {
       // something went wrong so use c1 symmetry
       mol_->set_point_group(new PointGroup("c1"));
+      mole_->symmetry_changed();
       }
     else {
       mol_->set_point_group(newpg);
+      if (index==0)
+        mole_->symmetry_changed();
       }
-    mole_->symmetry_changed();
     }
 
 #ifdef DEBUG

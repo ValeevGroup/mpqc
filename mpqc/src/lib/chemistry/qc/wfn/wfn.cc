@@ -563,16 +563,21 @@ Wavefunction::compute_overlap_eig()
     }
 
   ExEnv::out() << node0 << indent
-       << scprintf("independent overlap eigenvalue max/min = %12.8f/%12.8f",
+       << scprintf("independent overlap eigenvalue max/min = %12.8f/%16.12f",
                    maxabs, minabs)
        << endl;
   max_overlap_eigval_ = maxabs;
   min_overlap_eigval_ = minabs;
 
   if (debug_ > 1) {
+    overlap().print("S");
     overlap_eigvec_.result_noupdate().print("S eigvec");
     overlap_isqrt_eigval_.result_noupdate().print("s^(-1/2) eigvec");
+    overlap_sqrt_eigval_.result_noupdate().print("s^(1/2) eigvec");
+    so_to_orthog_so_inverse().print("oSO to SO");
     so_to_orthog_so().print("SO to oSO");
+    (so_to_orthog_so()
+     *so_to_orthog_so_inverse()).print("X*X^(-1)",ExEnv::out(),14);
   }
 }
 

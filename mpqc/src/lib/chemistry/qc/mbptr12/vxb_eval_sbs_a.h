@@ -39,15 +39,15 @@ namespace sc {
 
 class R12IntEvalInfo;
 
-  /** Class R12IntEval_sbs_A evaluates R12 intermediates for one-basis or the small-basis part of
-      the two-basis MP2-R12 theory in standard approximations A and A' */
+  /** Class R12IntEval_sbs_A evaluates R12 intermediates for one-basis MP2-R12 theory
+      or the OBS part of the R12 intermediates for the ABS and CABS MP2-R12 theory
+      in standard approximations A and A' */
 
 class R12IntEval_sbs_A : virtual public SavableState {
 
   // Calculation information (number of basis functions, R12 approximation, etc.)
   Ref<R12IntEvalInfo> r12info_;
 
-  //
   bool evaluated_;
   int current_orbital_;
   int restart_orbital_;

@@ -238,6 +238,7 @@ MBPT2::compute_cs_grad()
     abort();
     }
 
+  escf = reference_->energy();
 
   ////////////////////////////////////////////////////////
   // Compute batch size ni for mp2 loops;
@@ -1609,7 +1610,6 @@ MBPT2::compute_cs_grad()
   msg_->sum(aointder_computed);
 
   if (me == 0) {
-    escf = reference_->energy();
     emp2 = escf + ecorr_mp2;
 
     // Print out various energies etc.

@@ -597,7 +597,6 @@ opt2_v2(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
           for (a=0; a<nvir; a++) {
             iajb = &trans_int4[a*nvir];
-            iajr = trans_int3[((j*nbf[me] + index)*ni + i)*nvir + a];
             iajr = trans_int3[i*(i+1)/2 + i*i_offset + j + dim_ij*(a+nvir*index)];
             c_rb = &scf_vector[r][nocc];
 

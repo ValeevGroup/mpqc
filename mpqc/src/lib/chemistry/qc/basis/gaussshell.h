@@ -138,6 +138,10 @@ class GaussianShell: public SavableState
                     const SCVector3& R,
                     double* g_values,
                     double* basis_values=0) const;
+    int hessian_values(CartesianIter **, SphericalTransformIter **,
+                       const SCVector3& R,
+                       double* h_values, double* g_values=0,
+                       double* basis_values=0) const;
 
     // returns the intra-generalized-contraction overlap
     // matrix element <con func1|con func2> within an arbitrary

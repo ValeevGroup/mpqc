@@ -38,13 +38,22 @@
 int
 GaussianBasisSet::values(const SCVector3& r, double* basis_values) const
 {
-  return grad_values(r, 0, basis_values);
+  return hessian_values(r, 0, 0, basis_values);
 }
 
 int
 GaussianBasisSet::grad_values(const SCVector3& r,
                               double* g_values,
                               double* basis_values) const
+{
+  return hessian_values(r, 0, g_values, basis_values);
+}
+
+int
+GaussianBasisSet::hessian_values(const SCVector3& r,
+                                 double* h_values,
+                                 double* g_values,
+                                 double* basis_values) const
 {
     if (civec_ == 0) {
         cerr << "GaussianBasisSet::grad_values called but set_integral not"
@@ -59,6 +68,10 @@ GaussianBasisSet::grad_values(const SCVector3& r,
 
     // for convenience
     const GaussianBasisSet& gbs = *this;
+
+    double *b_values_i = 0;
+    double *h_values_i = 0;
+    double *g_values_i = 0;
 
     // calculate the value of each basis
     for (int icenter=0; icenter < ncenter_; icenter++) 
@@ -81,25 +94,14 @@ GaussianBasisSet::grad_values(const SCVector3& r,
                              r_center(center,1),r_center(center,2));
 	}
 #endif
-
 	for (int ish=0; ish < nshell; ish++) {
-            if (basis_values && g_values)
-              {
-	        nreturns=gbs(ishell).grad_values(civec_, sivec_, r_diff,
-                                                 &g_values[ibasis*3],
-                                                 &basis_values[ibasis]);
-              }
-            else if (g_values)
-              {
-	        nreturns=gbs(ishell).grad_values(civec_, sivec_, r_diff,
-                                                 &g_values[ibasis*3],
-                                                 &basis_values[ibasis]);
-              }
-            else if (basis_values)
-              {
-	        nreturns=gbs(ishell).grad_values(civec_, sivec_, r_diff, 0,
-                                                 &basis_values[ibasis]);
-              }
+            if (basis_values) b_values_i = &basis_values[ibasis];
+            if (g_values)     g_values_i = &g_values[3*ibasis];
+            if (h_values)     h_values_i = &h_values[6*ibasis];
+            nreturns=gbs(ishell).hessian_values(civec_, sivec_, r_diff,
+                                                h_values_i,
+                                                g_values_i,
+                                                b_values_i);
             ibasis += nreturns;
 	    ishell++;
 	}

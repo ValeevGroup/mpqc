@@ -39,16 +39,15 @@
 
 #define MAX_NPRIM 20
 #define MAX_NCON  10
-#define MAX_AM    6
+#define MAX_AM    8
 
 int
 GaussianShell::values(CartesianIter **civec, SphericalTransformIter **sivec,
                       const SCVector3& r, double* basis_values)
 {
-  return grad_values(civec, sivec, r, 0, basis_values);
+  return hessian_values(civec, sivec, r, 0, 0, basis_values);
 }
 
-// Returns a pointer to a vector of values of basis 
 int
 GaussianShell::grad_values(CartesianIter **civec,
                            SphericalTransformIter **sivec,
@@ -56,10 +55,22 @@ GaussianShell::grad_values(CartesianIter **civec,
                            double* g_values,
                            double* basis_values) const
 {
+  return hessian_values(civec, sivec, r, 0, g_values, basis_values);
+}
+
+int
+GaussianShell::hessian_values(CartesianIter **civec,
+                           SphericalTransformIter **sivec,
+                           const SCVector3& r,
+                           double* h_values,
+                           double* g_values,
+                           double* basis_values) const
+{
 
   // compute the maximum angular momentum component of the shell
   int maxam = max_am();
   if (g_values) maxam++;
+  if (h_values) maxam++;
 
   // check limitations
   if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
@@ -120,13 +131,25 @@ GaussianShell::grad_values(CartesianIter **civec,
 
   // precompute contractions over exponentials with exponent weighting
   double precon_g[MAX_NCON];
-  if (g_values) {
+  if (g_values || h_values) {
       for (i=0; i<ncon; i++) {
           precon_g[i] = 0.0;
           for (j=0; j<nprim; j++) {
               precon_g[i] += exp[j] * coef[i][j] * exps[j];
             }
           precon_g[i] *= 2.0;
+        }
+    }
+
+  // precompute contractions over exponentials with exponent^2 weighting
+  double precon_h[MAX_NCON];
+  if (h_values) {
+      for (i=0; i<ncon; i++) {
+          precon_g[i] = 0.0;
+          for (j=0; j<nprim; j++) {
+              precon_g[i] += exp[j] * exp[j] * coef[i][j] * exps[j];
+            }
+          precon_g[i] *= 4.0;
         }
     }
 
@@ -248,6 +271,134 @@ GaussianShell::grad_values(CartesianIter **civec,
                     }
                 }
               i_grad += 3*n;
+            }
+        }
+    }
+
+  // compute the hessian of the shell values
+  if (h_values) {
+      int i_hess=0;                // Basis function counter
+      for (i=0; i<ncon; i++) {
+          // handle s functions with a special case to speed things up
+          if (l[i] == 0) {
+              double norm_precon_g = precon_g[i];
+              double norm_precon_h = precon_h[i];
+              // xx
+              h_values[i_hess] = norm_precon_h*xs[2] + norm_precon_g;
+              i_hess++;
+              // yx
+              h_values[i_hess] = norm_precon_h*xs[1]*ys[1];
+              i_hess++;
+              // yy
+              h_values[i_hess] = norm_precon_h*ys[2] + norm_precon_g;
+              i_hess++;
+              // zx
+              h_values[i_hess] = norm_precon_h*zs[1]*xs[1];
+              i_hess++;
+              // zy
+              h_values[i_hess] = norm_precon_h*zs[1]*ys[1];
+              i_hess++;
+              // zz
+              h_values[i_hess] = norm_precon_h*zs[2] + norm_precon_g;
+              i_hess++;
+            }
+          else {
+              double *cart_h;
+              double tmp_cart_h[6*((MAX_AM+1)*(MAX_AM+2))/2];
+              if (!puream[i]) {
+                  cart_h = &h_values[i_hess];
+                }
+              else {
+                  cart_h = tmp_cart_h;
+                }
+              CartesianIter *jp = civec[l[i]];
+              CartesianIter& j = *jp;
+              int i_cart = 0;
+              for (j.start(); j; j.next()) {
+                  double pre = precon[i];
+                  double pre_g = precon_g[i];
+                  double pre_h = precon_h[i];
+                  int a = j.a();
+                  int b = j.b();
+                  int c = j.c();
+                  // xx
+                  cart_h[i_cart] = pre_h * xs[a+2]*ys[b]*zs[c]
+                                 + pre_g * (a+1) * xs[a]*ys[b]*zs[c];
+                  if (a>0) {
+                      cart_h[i_cart] += pre_g * a*xs[a]*ys[b]*zs[c];
+                      if (a>1) cart_h[i_cart] += pre * a*(a-1)
+                                               * xs[a-2]*ys[b]*zs[c];
+                    }
+                  i_cart++;
+
+                  // yx
+                  cart_h[i_cart] = pre_h * xs[a+1]*ys[b+1]*zs[c];
+                  if (a>0)
+                      cart_h[i_cart] = pre_g * a * xs[a-1]*ys[b]*zs[c];
+                  if (b>0)
+                      cart_h[i_cart] = pre_g * b * xs[a]*ys[b-1]*zs[c];
+                  if (a>0 && b>0)
+                      cart_h[i_cart] = pre * a*b * xs[a-1]*ys[b-1]*zs[c];
+                  i_cart++;
+
+                  // yy
+                  cart_h[i_cart] = pre_h * xs[a]*ys[b+2]*zs[c]
+                                 + pre_g * (b+1) * xs[a]*ys[b]*zs[c];
+                  if (b>0) {
+                      cart_h[i_cart] += pre_g * b*xs[a]*ys[b]*zs[c];
+                      if (b>1) cart_h[i_cart] += pre * b*(b-1)
+                                               * xs[a]*ys[b-2]*zs[c];
+                    }
+                  i_cart++;
+
+                  // zx
+                  cart_h[i_cart] = pre_h * xs[a+1]*ys[b]*zs[c+1];
+                  if (a>0)
+                      cart_h[i_cart] = pre_g * a * xs[a-1]*ys[b]*zs[c];
+                  if (c>0)
+                      cart_h[i_cart] = pre_g * c * xs[a]*ys[b]*zs[c-1];
+                  if (a>0 && c>0)
+                      cart_h[i_cart] = pre * a*c * xs[a-1]*ys[b]*zs[c-1];
+                  i_cart++;
+
+                  // zy
+                  cart_h[i_cart] = pre_h * xs[a]*ys[b+1]*zs[c+1];
+                  if (c>0)
+                      cart_h[i_cart] = pre_g * a * xs[a]*ys[b]*zs[c-1];
+                  if (b>0)
+                      cart_h[i_cart] = pre_g * b * xs[a]*ys[b-1]*zs[c];
+                  if (c>0 && b>0)
+                      cart_h[i_cart] = pre * c*b * xs[a]*ys[b-1]*zs[c-1];
+                  i_cart++;
+
+                  // zz
+                  cart_h[i_cart] = pre_h * xs[a]*ys[b]*zs[c+2]
+                                 + pre_g * (c+1) * xs[a]*ys[b]*zs[c];
+                  if (a>0) {
+                      cart_h[i_cart] += pre_g * c*xs[a]*ys[b]*zs[c];
+                      if (a>1) cart_h[i_cart] += pre * c*(c-1)
+                                               * xs[a]*ys[b]*zs[c-2];
+                    }
+                  i_cart++;
+                }
+              if (puream[i]) {
+                  SphericalTransformIter *ti = sivec[l[i]];
+                  int n = ti->n();
+                  memset(&h_values[i_hess], 0, sizeof(double)*n*6);
+                  for (ti->start(); ti->ready(); ti->next()) {
+                      double coef = ti->coef();
+                      int pi = ti->pureindex();
+                      int ci = ti->cartindex();
+                      for (int xyz2=0; xyz2<6; xyz2++) {
+                          h_values[i_hess + pi*6 + xyz2]
+                              += coef * cart_h[ci*6 + xyz2];
+                        }
+                    }
+                  i_hess += 6*n;
+                }
+              else {
+                  i_hess += 3*(l[i]+1)*(l[i]+2);
+                }
             }
         }
     }

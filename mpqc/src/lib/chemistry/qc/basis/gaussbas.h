@@ -149,9 +149,17 @@ class GaussianBasisSet: public SavableState
     double r(int icenter,int xyz) const;
     
     // compute the value for this basis set at position r
+    // basis_values must be vector of length nbasis 
     int values(const SCVector3& r, double* basis_values) const;
+    // g_values must be vector of length 3*nbasis
+    // the data will be written in the order bf1_x, bf1_y, bf1_z, ...
     int grad_values(const SCVector3& r,
                     double*g_values,double* basis_values=0) const;
+    // h_values must be vector of length 6*nbasis
+    // the data will be written in the order bf1_xx, bf1_yx, bf1_yy,
+    // bf1_zx, bf1_zy, bf1_zz, ...
+    int hessian_values(const SCVector3& r, double *h_values,
+                       double*g_values=0,double* basis_values=0) const;
     // this must be called before the above two routines to initialize
     // iterators that know the basis function order
     void set_integral(const RefIntegral&);

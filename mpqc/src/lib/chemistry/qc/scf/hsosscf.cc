@@ -49,6 +49,9 @@
 #include <chemistry/qc/scf/effh.h>
 #include <chemistry/qc/scf/hsosscf.h>
 
+#include <chemistry/qc/scf/ltbgrad.h>
+#include <chemistry/qc/scf/hsoshftmpl.h>
+
 ///////////////////////////////////////////////////////////////////////////
 // HSOSSCF
 
@@ -794,6 +797,44 @@ HSOSSCF::init_hessian()
 void
 HSOSSCF::done_hessian()
 {
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
+{
+  RefSCElementMaxAbs m = new SCElementMaxAbs;
+  cl_dens_.element_op(m);
+  double pmax = m->result();
+  m=0;
+
+  // now try to figure out the matrix specialization we're dealing with.
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert P to local matrices
+
+  if (local_ || local_dens_) {
+    // grab the data pointers from the P matrices
+    double *pmat, *pmato;
+    RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
+    RefSymmSCMatrix potmp = get_local_data(op_dens_, pmato, SCF::Read);
+  
+    LocalHSOSGradContribution l(pmat,pmato);
+    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
+    RefPetiteList pl = integral()->petite_list();
+    LocalTBGrad<LocalHSOSGradContribution>
+      tb(l, tbi, pl, basis(), scf_grp_, tbgrad,
+         pmax, desired_gradient_accuracy(), exchange_fraction);
+    tb.run();
+    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
+  }
+
+  // for now quit
+  else {
+    cerr << node0 << indent
+         << "HSOSSCF::two_body_deriv: can't do gradient yet\n";
+    abort();
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -53,6 +53,8 @@
 #include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/scflocal.h>
 #include <chemistry/qc/scf/uscf.h>
+#include <chemistry/qc/scf/ltbgrad.h>
+#include <chemistry/qc/scf/uhftmpl.h>
 
 ///////////////////////////////////////////////////////////////////////////
 // UnrestrictedSCF
@@ -1151,6 +1153,44 @@ UnrestrictedSCF::init_hessian()
 void
 UnrestrictedSCF::done_hessian()
 {
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+void
+UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
+{
+  RefSCElementMaxAbs m = new SCElementMaxAbs;
+  densa_.element_op(m);
+  double pmax = m->result();
+  m=0;
+
+  // now try to figure out the matrix specialization we're dealing with.
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert P to local matrices
+
+  if (local_ || local_dens_) {
+    // grab the data pointers from the P matrices
+    double *pmata, *pmatb;
+    RefSymmSCMatrix ptmpa = get_local_data(densa_, pmata, SCF::Read);
+    RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
+  
+    LocalUHFGradContribution l(pmata,pmatb);
+    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
+    RefPetiteList pl = integral()->petite_list();
+    LocalTBGrad<LocalUHFGradContribution>
+      tb(l, tbi, pl, basis(), scf_grp_,
+         tbgrad, pmax, desired_gradient_accuracy(), 1, 0, exchange_fraction);
+    tb.run();
+    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
+  }
+
+  // for now quit
+  else {
+    cerr << node0 << indent
+         << "USCF::two_body_deriv_hf: can't do gradient yet\n";
+    abort();
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

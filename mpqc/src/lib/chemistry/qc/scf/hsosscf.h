@@ -160,6 +160,9 @@ class HSOSSCF: public SCF {
     // hessian things
     void init_hessian();
     void done_hessian();
+
+    // The Hartree-Fock derivatives
+    void two_body_deriv_hf(double*grad,double exchange_fraction);
 };
 
 #endif

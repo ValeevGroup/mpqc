@@ -39,8 +39,6 @@
 
 #include <chemistry/qc/scf/uhf.h>
 #include <chemistry/qc/scf/lgbuild.h>
-#include <chemistry/qc/scf/ltbgrad.h>
-
 #include <chemistry/qc/scf/uhftmpl.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -245,36 +243,7 @@ UHF::ao_fock()
 void
 UHF::two_body_deriv(double * tbgrad)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  densa_.element_op(m);
-  double pmax = m->result();
-  m=0;
-
-  // now try to figure out the matrix specialization we're dealing with.
-  // if we're using Local matrices, then there's just one subblock, or
-  // see if we can convert P to local matrices
-
-  if (local_ || local_dens_) {
-    // grab the data pointers from the P matrices
-    double *pmata, *pmatb;
-    RefSymmSCMatrix ptmpa = get_local_data(densa_, pmata, SCF::Read);
-    RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
-  
-    LocalUHFGradContribution l(pmata,pmatb);
-    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
-    RefPetiteList pl = integral()->petite_list();
-    LocalTBGrad<LocalUHFGradContribution> tb(l, tbi, pl, basis(), scf_grp_,
-                                             tbgrad, pmax, desired_gradient_accuracy());
-    tb.run();
-    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
-  }
-
-  // for now quit
-  else {
-    cerr << node0 << indent
-         << "UHF::two_body_deriv: can't do gradient yet\n";
-    abort();
-  }
+  two_body_deriv_hf(tbgrad, 1.0);
 }
 
 /////////////////////////////////////////////////////////////////////////////

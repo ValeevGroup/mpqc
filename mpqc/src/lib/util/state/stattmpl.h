@@ -22,6 +22,7 @@ class SSRef: public DCRef<T> {
     void save_state(StateOut&so) {
         if (so.putpointer(pointer())) {
             so.put(pointer()->class_desc());
+            so.have_classdesc();
             pointer()->save_vbase_state(so);
             pointer()->save_data_state(so);
           }
@@ -33,6 +34,7 @@ class SSRef: public DCRef<T> {
             const ClassDesc* cd;
             si.get(&cd);
             si.nextobject(objnum);
+            si.have_classdesc();
             DescribedClass* dc = cd->create(si);
             ss = SavableState::castdown(dc);
           }

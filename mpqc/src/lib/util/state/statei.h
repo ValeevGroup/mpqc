@@ -15,7 +15,7 @@ CLASSNAME::save_object_state(StateOut&so)
       return;
     }
   // save the version info
-  so.put_version(static_class_desc());
+  //so.put_version(static_class_desc());
   save_vbase_state(so);
   save_data_state(so);
 }

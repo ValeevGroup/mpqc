@@ -44,7 +44,7 @@ statmacr.h: stattmpl.h $(TMPL2MACDEP)
 statetest.o: statetest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-statetest: statetest.o libstate.a ../keyval/libkeyval.a ../class/libclass.a ../container/libcontainer.a
+statetest: statetest.o libstate.a ../keyval/libkeyval.a ../class/libclass.a ../container/libcontainer.a ../misc/libmisc.a
 	$(CXX) $(CXXFLAGS) -o statetest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
@@ -83,6 +83,10 @@ statenumImplSet.h:
 classdMap.cc classdMap.h:
 	$(GENCLASS) -2 ClassDescP val int val Map classd
 	prepend-header classdMap.h "#include <util/class/class.h>"
+	prepend-header classdMap.h "#include <util/state/classddefs.h>"
+	/bin/mv classdMap.h tmp.classdMap.h
+	grep -v "#include \"classddefs.h\"" < tmp.classdMap.h > classdMap.h
+	/bin/rm tmp.classdMap.h
 
 classd$(MAPIMPL)Map.cc classd$(MAPIMPL)Map.h:
 	$(GENCLASS) -2 ClassDescP val int val $(MAPIMPL)Map classd

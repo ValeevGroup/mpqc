@@ -94,6 +94,7 @@ class StateOut: virtual public DescribedClass {
     // do not allow copy constructor or assignment
     StateOut(const StateOut&);
     void operator=(const StateOut&);
+    int have_cd_;
   protected:
     int next_pointer_number;
     StateDataPtrSet* ps_;
@@ -107,6 +108,8 @@ class StateOut: virtual public DescribedClass {
     virtual int putpointer(void*);
     virtual int putstring(char*);
     virtual int put_version(const ClassDesc*);
+    void have_classdesc() { have_cd_ = 1; }
+    int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return tmp; }
     virtual int put(const ClassDesc*);
     virtual int put(char r);
     virtual int put(int r);
@@ -136,6 +139,7 @@ class StateIn: virtual public DescribedClass {
     // do not allow copy constructor or assignment
     StateIn(const StateIn&);
     void operator=(const StateIn&);
+    int have_cd_;
   protected:
     StateDataNumSet* ps_;
     int _nextobject;
@@ -152,6 +156,9 @@ class StateIn: virtual public DescribedClass {
     // to havepointer(int,void**);
     virtual void nextobject(int);
     virtual void havepointer(void*);
+
+    void have_classdesc() { have_cd_ = 1; }
+    int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return tmp; }
     
     virtual int getstring(char*&);
     virtual int get_version(const ClassDesc*);

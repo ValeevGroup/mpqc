@@ -48,10 +48,26 @@ SavableState::SavableState(StateIn&si,const ClassDesc& cd)
   // In case si is looking for the next pointer, let it know i
   // have one.
   si.havepointer(this);
-  si.get_version(&cd);
+  //si.get_version(&cd);
   // the order of the above two doesn't matter since when i are looking
   // for a pointer i already have the version info and the get_version
   // is ignored
+
+  // The following gets the version of this class and all of the
+  // parent classes.  This is only needed for restoring objects
+  // that were saved with save_object_state and don't necessarily
+  // have all of their version information already restored.
+  if (si.need_classdesc()) {
+      const ClassDesc* tcd;
+      si.get(&tcd);
+      if (!eq(&cd,tcd)) {
+          fprintf(stderr,"SavableState:\n");
+          fprintf(stderr,"  Restored object \"%s\" "
+                  "doesn't match saved object %s\n",
+                  tcd?tcd->name():"(null)", cd.name());
+          abort();
+        }
+    }
 }
 
 SavableState::~SavableState()
@@ -69,6 +85,8 @@ SavableState::save_state(StateOut&so)
       // (base classes are needed to get the version information correct).
       so.put(class_desc());
 
+      so.have_classdesc();
+      
       // save the object
       save_vbase_state(so);
       save_data_state(so);
@@ -94,6 +112,7 @@ SavableState::restore_state(StateIn&si)
       // with the this pointer.)
       si.nextobject(objnum);
 
+      si.have_classdesc();
       DescribedClass* dc = cd->create(si);
       //printf("dc = 0x%x\n",dc);
       ss = SavableState::castdown(dc);
@@ -112,12 +131,14 @@ SavableState::save_object_state(StateOut&)
 }
 
 void
-SavableState::save_vbase_state(StateOut&)
+SavableState::save_vbase_state(StateOut&so)
 {
+  SavableState::save_data_state(so);
 }
 void
-SavableState::save_data_state(StateOut&)
+SavableState::save_data_state(StateOut& so)
 {
+  if (so.need_classdesc()) so.put(class_desc());
 }
 
 /////////////////////////////////////////////////////////////////
@@ -139,7 +160,8 @@ StateOut::StateOut() :
   next_pointer_number(1),
   ps_(new StateDataPtr_CTOR),
   _classidmap(new ClassDescPintMap_CTOR),
-  _nextclassid(0)
+  _nextclassid(0),
+  have_cd_(0)
 {
 }
 
@@ -201,7 +223,8 @@ void StateIn::operator=(const StateIn&) {
 
 StateIn::StateIn() :
   ps_(new StateDataNum_CTOR),
-  _nextobject(0)
+  _nextobject(0),
+  have_cd_(0)
 {
 }
 

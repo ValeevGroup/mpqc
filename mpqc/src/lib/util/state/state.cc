@@ -45,6 +45,8 @@
 #include <util/state/classdImplMap.h>
 #include <util/state/classdatImplMap.h>
 
+#define DEBUG 0
+
 /////////////////////////////////////////////////////////////////
 
 DescribedClass_REF_def(SavableState);
@@ -617,10 +619,12 @@ StateOut::put_directory()
       putstring(cd->name());
       put(cd->version());
       put(classid);
-      //cout << "PUT CLASS:"
-      //     << " NAME = " << cd->name()
-      //     << " VERSION = " << cd->version()
-      //     << " ID = " << classid << endl;
+#if DEBUG
+      cout << "PUT CLASS:"
+           << " NAME = " << cd->name()
+           << " VERSION = " << cd->version()
+           << " ID = " << classid << endl;
+#endif
     }
 
   // write the object information
@@ -631,12 +635,14 @@ StateOut::put_directory()
       put(ptr.type);
       put(ptr.offset);
       put(ptr.size);
-      //cout << "PUT OBJECT:"
-      //     << " NUM = " << ptr.num
-      //     << " TYPE = " << ptr.type
-      //     << " OFFSET = " << ptr.offset
-      //     << " SIZE = " << ptr.size
-      //     << endl;
+#if DEBUG
+      cout << "PUT OBJECT:"
+           << " NUM = " << ptr.num
+           << " TYPE = " << ptr.type
+           << " OFFSET = " << ptr.offset
+           << " SIZE = " << ptr.size
+           << endl;
+#endif
     }
 }
 
@@ -653,10 +659,12 @@ StateIn::get_directory()
       getstring(name);
       get(version);
       get(classid);
-      //cout << "GET CLASS:"
-      //     << " NAME = " << name
-      //     << " VERSION = " << version
-      //     << " ID = " << classid << endl;
+#if DEBUG
+      cout << "GET CLASS:"
+           << " NAME = " << name
+           << " VERSION = " << version
+           << " ID = " << classid << endl;
+#endif
       ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
 
       classidmap_->operator[](tmp) = classid;
@@ -673,12 +681,15 @@ StateIn::get_directory()
       get(num.type);
       get(num.offset);
       get(num.size);
-      //cout << "GET OBJECT:"
-      //     << " NUM = " << num.num
-      //     << " TYPE = " << num.type
-      //     << " OFFSET = " << num.offset
-      //     << " SIZE = " << num.size
-      //     << endl;
+#if DEBUG
+      cout << "GET OBJECT:"
+           << " NUM=" << setw(2) << num.num
+           << " OFF=" << setw(5) << num.offset
+           << " SZ=" << setw(4) << num.size
+           << " ID=" << setw(2) << num.type
+           << " (" << classdatamap_->operator[](num.type).name << ")"
+           << endl;
+#endif
       ps_->add(num);
       classdatamap_->operator[](num.type).ninstance++;
     }

@@ -31,12 +31,15 @@
 
 #include <ctype.h>
 
+#include <util/misc/formio.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/stateptrImplSet.h>
 #include <util/state/statenumImplSet.h>
 #include <util/state/classdImplMap.h>
 #include <util/state/classdatImplMap.h>
+
+#define DEBUG 0
 
 int
 StateIn::dir_getobject(RefSavableState &p, const char *name)
@@ -105,12 +108,20 @@ StateIn::getobject(RefSavableState &p)
   int refnum;
   int original_loc;
   if (use_dir) original_loc = tell();
-  r += get(refnum);
+  int size_refnum;
+  r += (size_refnum = get(refnum));
   if (refnum == 0) {
       // reference to null
+#if DEBUG
+      cout << indent << "getting null object" << endl;
+#endif
       p = 0;
     }
   else {
+#if DEBUG
+      cout << indent << "getting object number " << setw(2) << refnum << endl;
+      cout << incindent;
+#endif
       StateDataNum num(refnum);
       Pix ind = ps_->seek(num);
       if (ind == 0 && use_dir) {
@@ -119,12 +130,19 @@ StateIn::getobject(RefSavableState &p)
           abort();
         }
       if (ind == 0 || ps_->operator()(ind).ptr.null()) {
+#if DEBUG
+          cout << indent << "reading object" << endl;
+#endif
           // object has not yet been read in
           int need_seek = 0;
           if (use_dir) {
               if (original_loc != ps_->operator()(ind).offset) {
                   need_seek = 1;
                   original_loc = tell();
+#if DEBUG
+                  cout << indent << "seeking to"
+                       << setw(5) << ps_->operator()(ind).offset << endl;
+#endif
                   seek(ps_->operator()(ind).offset);
                   int trefnum;
                   get(trefnum);
@@ -144,14 +162,36 @@ StateIn::getobject(RefSavableState &p)
               ps_->operator()(ind).ptr = p;
               if (need_seek) seek(original_loc);
             }
+#if DEBUG
+          cout << indent << "got object with type = "
+               << p->class_name() << endl;
+#endif
         }
       else {
           // object already exists
           p = ps_->operator()(ind).ptr;
-          if (use_dir && tell() == ps_->operator()(ind).offset) {
-              seek(tell() + ps_->operator()(ind).size);
+#if DEBUG
+          cout << indent << "object already existed, type = "
+               << p->class_name() << endl;
+          cout << indent
+               << "  use_dir = " << use_dir
+               << " tell() = " << setw(5) << tell()
+               << " offset = " << setw(5) << ps_->operator()(ind).offset
+               << " size_refnum = " << setw(1) << size_refnum
+               << endl;
+#endif
+          if (use_dir && tell() - size_refnum == ps_->operator()(ind).offset) {
+              seek(tell() - size_refnum + ps_->operator()(ind).size);
+#if DEBUG
+              cout << indent << "  seeking to "
+                   << tell() - size_refnum + ps_->operator()(ind).offset
+                   << endl;
+#endif
             }
         }
+#if DEBUG
+      cout << decindent;
+#endif
     }
   return r;
 }
@@ -178,9 +218,15 @@ StateIn::haveobject(int objnum,const RefSavableState &p)
   Pix ind = ps_->seek(num);
   if (ind == 0) {
       ps_->add(num);
+#if DEBUG
+      cout << indent << "have object adding number " << objnum << endl;
+#endif
     }
   else {
       ps_->operator()(ind).ptr = p;
+#if DEBUG
+      cout << indent << "have object updating number " << objnum << endl;
+#endif
     }
 }
 

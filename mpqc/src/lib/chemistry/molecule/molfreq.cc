@@ -691,55 +691,63 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   // Print out results of thermodynamic analysis
   ////////////////////////////////////////////////
 
-  cout << "THERMODYNAMIC ANALYSIS:" << endl;
-  cout << endl;
-  cout << scprintf("Contributions to the nonelectronic enthalpy at %.2lf K:\n",T);
-  cout << "                   kJ/mol       kcal/mol"<< endl;
-  cout << scprintf("  E0vib        = %9.4lf    %9.4lf\n",
+  cout << node0 << "THERMODYNAMIC ANALYSIS:" << endl;
+  cout << node0 << endl;
+  cout << node0 << scprintf("Contributions to the nonelectronic enthalpy at %.2lf K:\n",T);
+  cout << node0 << "                   kJ/mol       kcal/mol"<< endl;
+  cout << node0 << scprintf("  E0vib        = %9.4lf    %9.4lf\n",
           E0vib/1000, E0vib/(4.184*1000));
-  cout << scprintf("  Evib(T)      = %9.4lf    %9.4lf\n",
+  cout << node0 << scprintf("  Evib(T)      = %9.4lf    %9.4lf\n",
           EvibT/1000, EvibT/(4.184*1000));
-  cout << scprintf("  Erot(T)      = %9.4lf    %9.4lf\n",
+  cout << node0 << scprintf("  Erot(T)      = %9.4lf    %9.4lf\n",
           Erot/1000, Erot/(4.184*1000));
-  cout << scprintf("  Etrans(T)    = %9.4lf    %9.4lf\n",
+  cout << node0 << scprintf("  Etrans(T)    = %9.4lf    %9.4lf\n",
           Etrans/1000, Etrans/(4.184*1000));
-  cout << scprintf("  PV(T)        = %9.4lf    %9.4lf\n",
+  cout << node0 << scprintf("  PV(T)        = %9.4lf    %9.4lf\n",
           EPV/1000, EPV/(4.184*1000));
-  cout << scprintf("  Total nonelectronic enthalpy:\n");
-  cout << scprintf("  H_nonel(T)   = %9.4lf    %9.4lf\n",
+  cout << node0 << scprintf("  Total nonelectronic enthalpy:\n");
+  cout << node0 << scprintf("  H_nonel(T)   = %9.4lf    %9.4lf\n",
          (E0vib+EvibT+Erot+Etrans+EPV)/1000,
          (E0vib+EvibT+Erot+Etrans+EPV)/(4.184*1000));
-  cout << endl;
+  cout << node0 << endl;
 
-  cout << scprintf("Contributions to the entropy at %.2lf K and %.1lf atm:\n",
-          T, P);
-  cout << "                   J/(mol*K)    cal/(mol*K)"<< endl;
-  cout << scprintf("  S_trans(T,P) = %9.4lf    %9.4lf\n", S_trans,S_trans/4.184);
-  cout << scprintf("  S_rot(T)     = %9.4lf    %9.4lf\n", S_rot,S_rot/4.184);
-  cout << scprintf("  S_vib(T)     = %9.4lf    %9.4lf\n", S_vib,S_vib/4.184);
-  cout << scprintf("  S_el         = %9.4lf    %9.4lf\n", S_el,S_el/4.184);
-  cout << scprintf("  Total entropy:\n");
-  cout << scprintf("  S_total(T,P) = %9.4lf    %9.4lf\n", S, S/4.184);
-  cout << endl;
+  cout << node0
+       << scprintf("Contributions to the entropy at %.2lf K and %.1lf atm:\n",
+                   T, P);
+  cout << node0 << "                   J/(mol*K)    cal/(mol*K)"<< endl;
+  cout << node0
+       << scprintf("  S_trans(T,P) = %9.4lf    %9.4lf\n",
+                   S_trans, S_trans/4.184);
+  cout << node0
+       << scprintf("  S_rot(T)     = %9.4lf    %9.4lf\n", S_rot,S_rot/4.184);
+  cout << node0
+       << scprintf("  S_vib(T)     = %9.4lf    %9.4lf\n", S_vib,S_vib/4.184);
+  cout << node0
+       << scprintf("  S_el         = %9.4lf    %9.4lf\n", S_el,S_el/4.184);
+  cout << node0 << scprintf("  Total entropy:\n");
+  cout << node0 << scprintf("  S_total(T,P) = %9.4lf    %9.4lf\n", S, S/4.184);
+  cout << node0 << endl;
 
-  cout << "Various data used for thermodynamic analysis:" << endl;
-  cout << endl;
-  if (linear) cout << "Linear molecule" << endl;
-  else cout << "Nonlinear molecule" << endl;
-  cout << scprintf("Principal moments of inertia (amu*angstrom^2):"
+  cout << node0 << "Various data used for thermodynamic analysis:" << endl;
+  cout << node0 << endl;
+  if (linear) cout << node0 << "Linear molecule" << endl;
+  else cout << node0 << "Nonlinear molecule" << endl;
+  cout << node0 << scprintf("Principal moments of inertia (amu*angstrom^2):"
           " %.5lf, %.5lf, %.5lf\n", pmi[0], pmi[1], pmi[2]);
-  cout << "Point group: " << original_point_group_.symbol() << endl;
-  cout << "Order of point group: " << ct.order() << endl;
-  cout << "Rotational symmetry number: " << sigma << endl;
+  cout << node0 << "Point group: " << original_point_group_.symbol() << endl;
+  cout << node0 << "Order of point group: " << ct.order() << endl;
+  cout << node0 << "Rotational symmetry number: " << sigma << endl;
   if (linear) {
-      cout << scprintf("Rotational temperature (K): %.4lf\n", theta[1]);
+      cout << node0
+           << scprintf("Rotational temperature (K): %.4lf\n", theta[1]);
     }
   else {
-      cout << scprintf("Rotational temperatures (K): %.4lf, %.4lf, %.4lf\n",
-              theta[0], theta[1], theta[2]);
+      cout << node0
+           << scprintf("Rotational temperatures (K): %.4lf, %.4lf, %.4lf\n",
+                       theta[0], theta[1], theta[2]);
     }
-  cout << "Electronic degeneracy: " << degeneracy << endl;
-  cout << endl;
+  cout << node0 << "Electronic degeneracy: " << degeneracy << endl;
+  cout << node0 << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -338,6 +338,22 @@ LIBS=$withval
 echo Using extra libraries: $withval
 )
 
+XTRA_FLIBS=
+AC_ARG_WITH(extra-flibs,
+[  --with-extra-flibs      Specifies libs needing a F77 runtime (-llib1 -llib2).],
+XTRA_FLIBS=$withval
+echo Using extra FORTRAN libraries: $withval
+)
+
+FLIBS=
+have_flibs=no
+AC_ARG_WITH(flibs,
+[  --with-flibs            Specifies the F77 runtime (by default, will guess).],
+FLIBS=$withval
+have_flibs=yes
+echo Using FORTRAN runtime libraries: $withval
+)
+
 LDFLAGS=
 LIBDIRS=
 AC_ARG_WITH(libdirs,
@@ -367,12 +383,13 @@ dnl ac_prog_cxx's order isn't what i need
 AC_CHECK_PROGS(CXX, g++ c++ gcc CC cxx xlC_r, gcc)
 dnl sees if CXX is a GNU compiler
 AC_PROG_CXX
-changequote(<<, >>)dnl
-if [ ! "$F77" = no ]; then
-changequote([, ])dnl
+if test ! "$F77" = no ; then
   AC_PROG_F77
-  AC_F77_LIBRARY_LDFLAGS
+  if test "X$have_flibs" = no; then
+    AC_F77_LIBRARY_LDFLAGS
+  fi
 fi
+FLIBS="$XTRA_FLIBS $FLIBS"
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AC_CHECK_PROG(AR,ar,ar)
@@ -960,7 +977,9 @@ if test X$PARALLEL = Xyes; then
   AC_LANG_CPLUSPLUS
   dnl Must use try_link since check_header runs cpp which doesn't
   dnl always find mpi.h (if mpicc and no -I is used for example)
+  AC_MSG_CHECKING(for mpi.h)
   AC_TRY_LINK([#include <mpi.h>],[],have_mpi_h=yes,have_mpi_h=no)
+  AC_MSG_RESULT($have_mpi_h)
   if test "$have_mpi_h" = yes; then
     AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,HAVE_MPI=no)
     if test "$HAVE_MPI" = no; then

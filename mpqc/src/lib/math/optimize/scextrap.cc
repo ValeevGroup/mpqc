@@ -145,6 +145,11 @@ SelfConsistentExtrapolation::save_data_state(StateOut& s)
   s.put(tolerance_);
 }
 
+void
+SelfConsistentExtrapolation::start_extrapolation()
+{
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

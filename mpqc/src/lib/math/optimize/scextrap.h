@@ -101,6 +101,12 @@ class SelfConsistentExtrapolation: public SavableState {
     virtual int extrapolate(const RefSCExtrapData& data,
                             const RefSCExtrapError& error) = 0;
 
+    // Extrapolation should be started when this is called,
+    // if it hasn't already started.  The default starting
+    // point is implemenation dependent.  This member might
+    // do nothing in some implementations.
+    virtual void start_extrapolation();
+
     virtual void reinitialize() =0;
 };
 SavableState_REF_dec(SelfConsistentExtrapolation);

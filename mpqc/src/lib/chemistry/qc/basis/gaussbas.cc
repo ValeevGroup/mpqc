@@ -312,6 +312,12 @@ GaussianBasisSet::init(RefMolecule&molecule,
       delete[] sbasisname;
      }
 
+  // delete the name_ if the basis set is customized
+  if (have_custom) {
+      delete[] name_;
+      name_ = 0;
+    }
+
   // finish with the initialization steps that don't require any
   // external information
   init2();
@@ -569,12 +575,25 @@ GaussianBasisSet::operator()(int icenter,int ishell)
 }
 
 void
-GaussianBasisSet::print(ostream& os) const
+GaussianBasisSet::print_brief(ostream& os) const
 {
   os << node0 << indent
      << "GaussianBasisSet:" << endl << incindent
+     << indent << "nbasis = " << nbasis_ << endl
      << indent << "nshell = " << nshell_ << endl
-     << indent << "nbasis = " << nbasis_ << endl;
+     << indent << "nprim  = " << nprim_ << endl;
+  if (name_) {
+      os << node0 << indent
+         << "name = \"" << name_ << "\"" << endl;
+    }
+  os << decindent;
+}
+
+void
+GaussianBasisSet::print(ostream& os) const
+{
+  print_brief(os);
+  os << incindent;
 
   // Loop over centers
   int icenter = 0;

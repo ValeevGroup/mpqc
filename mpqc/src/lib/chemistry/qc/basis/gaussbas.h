@@ -151,6 +151,7 @@ class GaussianBasisSet: public SavableState
     void ortho(const RefIntegral&,
                const RefSCMatrix&ortho, const RefSCMatrix&ortho_inverse);
 
+    void print_brief(ostream& =cout) const;
     void print(ostream& =cout) const;
 };
 

@@ -60,6 +60,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12ap_energy_ << SavableState::restore_state(s);
   r12b_energy_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
+  vir_basis_ << SavableState::restore_state(s);
   if (s.version(::class_desc<MBPT2_R12>()) >= 3) {
     int gbc; s.get(gbc); gbc_ = (bool)gbc;
     int ebc; s.get(ebc); ebc_ = (bool)ebc;
@@ -94,6 +95,13 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     );
   if (aux_basis_.pointer() == NULL)
     aux_basis_ = basis();
+
+  vir_basis_ = require_dynamic_cast<GaussianBasisSet*>(
+    keyval->describedclassvalue("vir_basis").pointer(),
+    "MBPT2_R12::MBPT2_R12\n"
+    );
+  if (vir_basis_.pointer() == NULL)
+    vir_basis_ = basis();
 
   // Default is to assume GBC
   gbc_ = keyval->booleanvalue("gbc",KeyValValueboolean((int)true));
@@ -133,7 +141,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   delete[] abs_method_str;
 
   // Default method is MBPT2-R12/A
-  char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A"));
+  char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A'"));
   if ( !strcmp(sa_string,"A") ||
        !strcmp(sa_string,"a") ) {
     stdapprox_ = LinearR12::StdApprox_A;
@@ -163,6 +171,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (must_use_cabs &&
       (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
+    
+  // Standard approximation A is not valid when gbc_ = false or ebc_ = false
+  if ( (!gbc_ || !ebc_) && stdapprox_ == LinearR12::StdApprox_A )
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- stdapprox=A is not valid when gbc_ = false or ebc_ = false");
     
 
   // Determine how to store MO integrals
@@ -246,6 +258,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12ap_energy_.pointer(),s);
   SavableState::save_state(r12b_energy_.pointer(),s);
   SavableState::save_state(aux_basis_.pointer(),s);
+  SavableState::save_state(vir_basis_.pointer(),s);
   s.put((int)gbc_);
   s.put((int)ebc_);
   s.put((int)abs_method_);
@@ -311,8 +324,10 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "How to Store Transformed Integrals: " << r12ints_str << endl << endl;
   free(r12ints_str);
   o << indent << "Transformed Integrals file: " << r12ints_file_ << endl << endl;
-  o << indent << "Auxiliary Basis:" << endl;
+  o << indent << "Auxiliary Basis Set (ABS):" << endl;
   o << incindent; aux_basis_->print(o); o << decindent << endl;
+  o << indent << " Virtuals Basis Set (VBS):" << endl;
+  o << incindent; vir_basis_->print(o); o << decindent << endl;
   MBPT2::print(o);
   o << decindent;
 }
@@ -373,6 +388,14 @@ Ref<GaussianBasisSet>
 MBPT2_R12::aux_basis() const
 {
   return aux_basis_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+Ref<GaussianBasisSet>
+MBPT2_R12::vir_basis() const
+{
+  return vir_basis_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -67,6 +67,7 @@ class MBPT2_R12: public MBPT2 {
     Ref<MP2R12Energy> r12b_energy_;
 
     Ref<GaussianBasisSet> aux_basis_;   // This is the auxiliary basis set (ABS)
+    Ref<GaussianBasisSet> vir_basis_;   // This is the virtuals basis set (VBS)
     Ref<SCVector> epair_0_, epair_1_;   // Singlet/triplet pair energies if spin-adapted
                                         // Alpha-beta/alpha-alpha pair energies if spin-orbital
 
@@ -101,15 +102,19 @@ class MBPT2_R12: public MBPT2 {
         <dl>
 
         <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
-        Condition (GBC) is assumed to hold. The default is "true".
-        <tt>gbc=false</tt> has not been implemented yet.
+        Condition (GBC) is assumed to hold. The default is "true". This keyword is
+        only valid if stdapprox=A'.
+        The effect of setting this keyword to true is rather small --
+        hence it is not recommended to use this keyword.
 
         <dt><tt>ebc</tt><dd> This boolean specifies whether Extended Brillouin
-        Condition (EBC) is assumed to hold. The default is "true".
-        <tt>ebc=false</tt> has not been implemented yet.
+        Condition (EBC) is assumed to hold. The default is "true". This keyword
+        is only valid if stdapprox=A'.
+        The effect of setting this keyword to true is rather small --
+        hence it is not recommended to use this keyword.
       
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
-        of the values below.  The default is A.
+        of the values below.  The default is A'.
 
         <dl>
 
@@ -128,14 +133,15 @@ class MBPT2_R12: public MBPT2 {
 
         </dl>
         
-        Keyword <tt>stdapprox</tt> only makes sense when <tt>gebc</tt> is set to true.
-        
 
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies.
 
 	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary basis to be used for the resolution
 	of the identity. Default is to use the same basis as for the orbital expansion.
+
+	<dt><tt>vir_basis</tt><dd> This specifies the basis to be used for the virtual orbitals.
+	Default is to use the same basis as for the orbital expansion.
 
         <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
         by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.
@@ -198,6 +204,7 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     Ref<GaussianBasisSet> aux_basis() const;
+    Ref<GaussianBasisSet> vir_basis() const;
     const bool gbc() const;
     const bool ebc() const;
     LinearR12::ABSMethod abs_method() const;

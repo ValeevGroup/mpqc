@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.2  1994/01/19 13:15:00  seidl
+ * Revision 1.3  1994/04/01 21:15:05  etseidl
+ * add the ability to do the gmat formation in two steps, one for J and one
+ * for K.  this will eventually be used by the dft stuff
+ *
+ * Revision 1.2  1994/01/19  13:15:00  seidl
  * add option to use a more load balanced gmat routine.
  *
  * Revision 1.1.1.1  1993/12/29  12:53:15  etseidl
@@ -241,10 +245,24 @@ FILE *_outfile;
  /* are the coordinates in angstrom units? */
   angs=0;
   errcod = ip_boolean("angstrom",&angs,0);
+  if (errcod == IPE_KEY_NOT_FOUND) 
+    errcod = ip_boolean("angstroms",&angs,0);
+  if (errcod == IPE_KEY_NOT_FOUND) 
+    errcod = ip_boolean("aangstrom",&angs,0);
+  if (errcod == IPE_KEY_NOT_FOUND) 
+    errcod = ip_boolean("aangstroms",&angs,0);
 
  /* use (nproc-1) nodes for gmat calculation (better load balance) */
   _scf_info->load_bal=0;
   errcod = ip_boolean("load_balance_gmat",&_scf_info->load_bal,0);
+
+ /* use self-consistent dft? means that we only do J part of Gmat */
+  _scf_info->scdft=0;
+  errcod = ip_boolean("scdft",&_scf_info->scdft,0);
+
+ /* or should we tack on the dft energy at the end? */
+  _scf_info->dft=0;
+  errcod = ip_boolean("dft",&_scf_info->dft,0);
 
  /* should the exchange energy be computed separately? */
   _scf_info->exchange=0;
@@ -441,6 +459,10 @@ FILE *_outfile;
     fprintf(_outfile,"    print_flag       = %d\n",_scf_info->print_flg);
   if(_scf_info->load_bal) 
     fprintf(_outfile,"    load_balance_gmat= %s\n",PBOOL(_scf_info->load_bal));
+  if(_scf_info->dft) 
+    fprintf(_outfile,"    dft              = %s\n",PBOOL(_scf_info->dft));
+  if(_scf_info->scdft) 
+    fprintf(_outfile,"    scdft            = %s\n",PBOOL(_scf_info->scdft));
   if(_scf_info->exchange) 
     fprintf(_outfile,"    exchange         = %s\n",PBOOL(_scf_info->exchange));
   if(_scf_info->cheat) 

@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.2  1994/01/19 13:14:52  seidl
+ * Revision 1.3  1994/04/01 21:15:02  etseidl
+ * add the ability to do the gmat formation in two steps, one for J and one
+ * for K.  this will eventually be used by the dft stuff
+ *
+ * Revision 1.2  1994/01/19  13:14:52  seidl
  * add option to use a more load balanced gmat routine.
  *
  * Revision 1.1.1.1  1993/12/29  12:53:16  etseidl
@@ -193,9 +197,6 @@ FILE *_outfile;
     int_initialize_offsets2(_centers,_centers,_centers,_centers);
 
     flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
-#if 0
-    if(!_scf_info->local_p) flags |= (INT_NOSTR1|INT_NOSTR2);
-#endif
 
     intbuf = 
       int_initialize_erep(flags,0,_centers,_centers,_centers,_centers);
@@ -211,12 +212,21 @@ FILE *_outfile;
   if(_scf_info->local_p) {
 
   /* calculate integrals directly and stuff into the g matrix */
-    if (_scf_info->load_bal)
+    if (_scf_info->load_bal) {
       errcod = scf_make_g_d_lb(_centers,_irreps,_scf_info,_sym_info,
                &gtmp,&gtmpo,&ptmp,&ptmpo,maxp,intbuf,_iter,_outfile);
-    else
+      }
+    else if (_scf_info->scdft) {
+      errcod = scf_make_j_d(_centers,_irreps,_scf_info,_sym_info,
+               &gtmp,&ptmp,maxp,intbuf,_iter,_outfile);
+     /* this is here until we get the Vxc stuff implemented */
+      errcod = scf_make_k_d(_centers,_irreps,_scf_info,_sym_info,
+               &gtmp,&ptmp,maxp,intbuf,_iter,_outfile);
+      }
+    else {
       errcod = scf_make_g_d(_centers,_irreps,_scf_info,_sym_info,
                &gtmp,&gtmpo,&ptmp,&ptmpo,maxp,intbuf,_iter,_outfile);
+      }
 
     if(errcod != 0) {
       fprintf(_outfile,"scf_iter: trouble forming gmat 2\n");

@@ -1,4 +1,6 @@
 
+#ifndef PARAGON
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -468,3 +470,4 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
   put_send(dest);
 }
 
+#endif PARAGON

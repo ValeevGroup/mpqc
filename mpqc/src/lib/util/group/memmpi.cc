@@ -63,8 +63,9 @@ long
 MPIMemoryGrp::get_mid()
 {
   for (int i=0; i<max_mid; i++) {
-      if (!mid_ready_[i]) {
+      if (mid_ready_[i]) {
           mid_ready_[i] = 0;
+          if (debug_) cout << "MPIMemoryGrp::get_mid(): got " << i << endl;
           return i;
         }
     }
@@ -77,7 +78,8 @@ MPIMemoryGrp::get_mid()
 void
 MPIMemoryGrp::free_mid(long mid)
 {
-  mid_ready_[i] = 1;
+  if (debug_) cout << "MPIMemoryGrp::free_mid(): freeing " << mid << endl;
+  mid_ready_[mid] = 1;
 }
 
 long
@@ -97,6 +99,8 @@ MPIMemoryGrp::send(void* data, int nbytes, int node, int type)
   int mid = get_mid();
   //int MPI_Ibsend(void* buf, int count, MPI_Datatype datatype,
   //int dest, int tag, MPI_Comm comm, MPI_Request *request) 
+  if (debug_) cout << ">>>> MPI_Ibsend for mid " << mid
+                   << " type " << type << endl;
   MPI_Ibsend(data, nbytes, MPI_BYTE, node, type,
              MPI_COMM_WORLD, &handles_[mid]);
   return mid;
@@ -112,6 +116,8 @@ MPIMemoryGrp::recv(void* data, int nbytes, int node, int type)
   int mid = get_mid();
   // int MPI_Irecv(void* buf, int count, MPI_Datatype datatype, int
   // source, int tag, MPI_Comm comm, MPI_Request *request) 
+  if (debug_) cout << ">>>> MPI_Irecv for mid " << mid
+                   << " type " << type << endl;
   MPI_Irecv(data, nbytes, MPI_BYTE, n, t,
             MPI_COMM_WORLD, &handles_[mid]);
   if (debug_) cerr << "MPIMemoryGrp:: recv mid = " << mid << endl;
@@ -143,7 +149,8 @@ MPIMemoryGrp::wait(long mid1, long mid2)
       abort();
     }
   else if (mid2 == -1) {
-      MPI_Wait(&handle_[mid1], &status);
+      if (debug_) cout << ">>>> MPI_Wait for " << mid1 << endl;
+      MPI_Wait(&handles_[mid1], &status);
       free_mid(mid1);
       if (debug_)
           cout << me() << ": MPIMemoryGrp::wait(): got(1) " << mid1 << endl;
@@ -152,7 +159,8 @@ MPIMemoryGrp::wait(long mid1, long mid2)
   else {
       while(1) {
           int flag;
-          MPI_Test(&handle_[mid1], &flag, &status);
+          if (debug_) cout << ">>>> MPI_Test for " << mid1 << endl;
+          MPI_Test(&handles_[mid1], &flag, &status);
           if (flag) {
               free_mid(mid1);
               if (debug_)
@@ -160,7 +168,8 @@ MPIMemoryGrp::wait(long mid1, long mid2)
                        << mid1 << endl;
               return mid1;
             }
-          MPI_Test(&handle_[mid2], &flag, &status);
+          if (debug_) cout << ">>>> MPI_Test for " << mid2 << endl;
+          MPI_Test(&handles_[mid2], &flag, &status);
           if (flag) {
               free_mid(mid2);
               if (debug_)
@@ -169,6 +178,19 @@ MPIMemoryGrp::wait(long mid1, long mid2)
               return mid2;
             }
         }
+    }
+}
+
+void
+MPIMemoryGrp::deactivate()
+{
+  if (active_) {
+      if (debug_) cout << "MPIMemoryGrp::deactivate()" << endl;
+      sync();
+      if (debug_) cout << ">>>> MPI_Cancel for " << data_request_mid_ << endl;
+      MPI_Cancel(&handles_[data_request_mid_]);
+      free_mid(data_request_mid_);
+      active_ = 0;
     }
 }
 

@@ -6,13 +6,13 @@
 #include "pointbag.h"
 
 PointBagElem_double::PointBagElem_double(const Point&p, const double&t):
-  pnt(p),
-  obj(t)
+  obj(t),
+  pnt(p)
 {
 }
 PointBagElem_double::PointBagElem_double(const PointBagElem_double&b):
-  pnt(b.pnt),
-  obj(b.obj)
+  obj(b.obj),
+  pnt(b.pnt)
 {
 }
 PointBagElem_double::~PointBagElem_double()

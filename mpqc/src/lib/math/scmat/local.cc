@@ -130,9 +130,9 @@ LocalSCMatrix::LocalSCMatrix(): rows(0)
 }
 
 LocalSCMatrix::LocalSCMatrix(LocalSCDimension*a,LocalSCDimension*b):
-  rows(0),
   d1(a),
-  d2(b)
+  d2(b),
+  rows(0)
 {
   resize(a->n(),b->n());
 }
@@ -456,8 +456,8 @@ LocalSymmSCMatrix::LocalSymmSCMatrix(): rows(0)
 }
 
 LocalSymmSCMatrix::LocalSymmSCMatrix(LocalSCDimension*a):
-  rows(0),
-  d(a)
+  d(a),
+  rows(0)
 {
   resize(a->n());
 }

@@ -30,9 +30,9 @@ NLP0::_castdown(const ClassDesc*cd)
 }
 
 NLP0::NLP0(const RefSCDimension&dim):
-  _value(this),
   _dim(dim),
-  _x(dim)
+  _x(dim),
+  _value(this)
 {
   _value.set_desired_accuracy(DBL_EPSILON);
 }

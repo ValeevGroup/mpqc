@@ -144,16 +144,16 @@ SavableState_REF_def(SCMatrixDiagBlock);
 
 SCMatrixDiagBlock::SCMatrixDiagBlock(int s, int e):
   istart(s),
-  iend(e),
-  jstart(s)
+  jstart(s),
+  iend(e)
 {
   data = new double[e-s];
 }
 
 SCMatrixDiagBlock::SCMatrixDiagBlock(int is, int ie,int js):
   istart(is),
-  iend(ie),
-  jstart(js)
+  jstart(js),
+  iend(ie)
 {
   data = new double[ie-is];
 }

@@ -47,7 +47,7 @@ INC = function.h opt.h gdiis.h efc.h update.h qnewton.h newton.h \
 DEPENDINCLUDE =
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = liboptimize
+TARGET_TO_MAKE = libSCoptimize
 
 DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
@@ -59,7 +59,7 @@ opttest: opttest.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 opttest.$(OBJSUF): opttest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-scextest: scextest.$(OBJSUF) liboptimize.$(LIBSUF) \
+scextest: scextest.$(OBJSUF) libSCoptimize.$(LIBSUF) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(LD) $(LDFLAGS) -o scextest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 

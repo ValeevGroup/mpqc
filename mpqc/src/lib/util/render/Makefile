@@ -45,7 +45,7 @@ INC = render.h oogl.h object.h sphere.h color.h \
 DEPENDINCLUDE = $(INC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = librender
+TARGET_TO_MAKE = libSCrender
 
 TESTSRC = rentest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))

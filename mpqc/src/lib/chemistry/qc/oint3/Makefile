@@ -5,7 +5,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE=liboint3
+TARGET_TO_MAKE=libSCoint3
 
 LIBSRC1 = \
 build.cc \

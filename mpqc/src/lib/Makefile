@@ -21,3 +21,7 @@ install_devel::
 	$(INSTALL) $(INSTALLDIROPT) $(includedir)
 	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(includedir)
 	-$(INSTALL) $(INSTALLLIBOPT) *.h $(includedir)
+
+distclean::
+	/bin/rm -f scconfig.h
+	/bin/rm -f scdirlist.h

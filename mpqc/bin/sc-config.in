@@ -3,6 +3,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+includedir=@includedir@
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
 libs="@LIBDIRS@ @LIBS@ @FLIBS@"
@@ -16,6 +17,9 @@ cxx="@CXX@"
 cc="@CC@"
 f77="@F77@"
 version="@SC_VERSION@"
+soversion="@SC_SO_VERSION@"
+buildid="@BUILDID@"
+scdatadir=@scdatadir@
 
 sclibs=""
 for i in $all_sclibs; do
@@ -26,15 +30,15 @@ for i in $all_sclibs; do
 done
 
 usage="\
-Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
+Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
 
 if test $# -eq 0; then
       echo "${usage}" 1>&2
       exit 1
 fi
 
-if test ${prefix}/include != /usr/include ; then
-  includes=-I${prefix}/include
+if test ${includedir} != /usr/include ; then
+  includes=-I${includedir}
 fi
 
 while test $# -gt 0; do
@@ -62,6 +66,15 @@ while test $# -gt 0; do
       ;;
     --version)
       echo $version
+      ;;
+    --so-version)
+      echo $soversion | sed s/:/./g
+      ;;
+    --scdatadir)
+      echo $scdatadir
+      ;;
+    --buildid)
+      echo $buildid
       ;;
     --cppflags)
       echo $includes $cppflags

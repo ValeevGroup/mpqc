@@ -42,7 +42,7 @@ INC =  pointgrp.h
 DEPENDINCLUDE = $(INC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libsymmetry
+TARGET_TO_MAKE = libSCsymmetry
 
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
 

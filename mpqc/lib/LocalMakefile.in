@@ -11,6 +11,8 @@ target_vendor = @target_vendor@
 target_os = @target_os@
 
 SC_VERSION = @SC_VERSION@
+SC_SO_VERSION = @SC_SO_VERSION@
+BUILDID = @BUILDID@
 
 # The template repository
 TMPLREPO = @TMPLREPO@
@@ -29,10 +31,15 @@ ENABLESHARED = @ENABLESHARED@
 ifeq ($(ENABLESHARED),yes)
   LIBTOOL= $(SHELL) $(TOPDIR)/bin/sc-libtool
   LTLINK = $(LIBTOOL) --mode=link
-  LTLINKLIBOPTS = -rpath $(libdir) -release $(SC_VERSION)
-  LTLINKBINOPTS = -rpath $(libdir)
+  ifneq ($(BUILDID),"")
+    LTLINKLIBOPTS = -rpath $(libdir) -release $(BUILDID) -version-info $(SC_SO_VERSION)
+  else
+    LTLINKLIBOPTS = -rpath $(libdir) -version-info $(SC_SO_VERSION)
+  endif
+  LTLINKBINOPTS =
   LTCOMP = $(LIBTOOL) --mode=compile
   LTINST = $(LIBTOOL) --mode=install
+  
 else
   LIBTOOL= 
   LTLINK = 
@@ -72,6 +79,8 @@ exec_prefix=@exec_prefix@
 bindir=@bindir@
 libdir=@libdir@
 includedir=@includedir@
+datadir=@datadir@
+scdatadir=@scdatadir@
 
 WISH = @WISH@
 FLEX = @FLEX@

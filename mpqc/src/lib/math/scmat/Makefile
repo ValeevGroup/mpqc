@@ -65,7 +65,7 @@ GENINC =
 DEPENDINCLUDE = $(INC) $(GENINC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libscmat
+TARGET_TO_MAKE = libSCscmat
 
 TESTOBJ = matrixtest.$(OBJSUF)
 

@@ -98,11 +98,10 @@ class ThreadGrp: public DescribedClass {
     /// Return a local object.
     virtual Ref<ThreadLock> new_lock() =0;
 
-    /** Create a ThreadGrp like the current one.  If
-        nthread is given it will be the number of threads
-        in the new group.  If nthread is -1, the number of
-        threads in the current group will be used.  If cloning
-        is not supported 0 will be returned. */
+    /** Create a ThreadGrp like the current one.  If nthread is given, the
+        new ThreadGrp will attempt to support that number of threads, but
+        the actual number supported may be less.  If nthread is -1, the
+        number of threads in the current group will be used. */
     virtual ThreadGrp* clone(int nthread = -1);
 
     static void set_default_threadgrp(const Ref<ThreadGrp>&);
@@ -126,6 +125,8 @@ class ProcThreadGrp: public ThreadGrp {
     void add_thread(int i, Thread*t, int sched, int priority) { ThreadGrp::add_thread(i,t); }
     
     Ref<ThreadLock> new_lock();
+
+    ThreadGrp* clone(int nthread = -1);
 };
 
 #endif

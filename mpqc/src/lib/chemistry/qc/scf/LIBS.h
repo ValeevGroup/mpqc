@@ -1,4 +1,4 @@
-libscf.LIBSUF
+libSCscf.LIBSUF
 #include <chemistry/qc/intv3/LIBS.h>
 #include <chemistry/qc/wfn/LIBS.h>
 #include <chemistry/molecule/LIBS.h>

@@ -50,16 +50,17 @@ GENINC = ipv2_parse.h
 DEPENDINCLUDE = $(INC) $(GENINC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libkeyval
+TARGET_TO_MAKE = libSCkeyval
 
 DISTFILES = Makefile $(CXXSRC) $(INC) ipv2_parse.yy ipv2_scan.ll LIBS.h
 
 default:: $(DEPENDINCLUDE)
 
-keyvaltest: keyvaltest.$(OBJSUF) libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) \
-            libmisc.$(LIBSUF) libgroup.$(LIBSUF) \
-            libclass.$(LIBSUF) libstate.$(LIBSUF) \
-            libref.$(LIBSUF)
+keyvaltest: keyvaltest.$(OBJSUF) libSCkeyval.$(LIBSUF) \
+	    libSCcontainer.$(LIBSUF) \
+            libSCmisc.$(LIBSUF) libSCgroup.$(LIBSUF) \
+            libSCclass.$(LIBSUF) libSCstate.$(LIBSUF) \
+            libSCref.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o keyvaltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 keyvaltest.$(OBJSUF): keyvaltest.cc

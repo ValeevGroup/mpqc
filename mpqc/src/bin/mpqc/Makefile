@@ -61,7 +61,7 @@ install:: mpqc
 
 install::
 	/bin/rm -f $(bindir)/chkmpqcout
-	sed "s+exec perl+exec perl -I$(prefix)/lib/perl+" \
+	sed "s+exec perl+exec perl -I$(scdatadir)/perl+" \
 		< $(SRCDIR)/validate/checkout.pl \
 		> $(bindir)/chkmpqcout
 	chmod 555 $(bindir)/chkmpqcout

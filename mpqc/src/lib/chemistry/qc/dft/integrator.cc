@@ -2072,7 +2072,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const Ref<KeyVal>& keyval)
 {
   int i, j;
 
-  prune_grid_ = keyval->intvalue("prune_grid");
+  prune_grid_ = keyval->booleanvalue("prune_grid");
   if (keyval->error() != KeyVal::OK) prune_grid_ = 1;
 
   // ExEnv::out() << "prune_grid = " << prune_grid_ << endl;

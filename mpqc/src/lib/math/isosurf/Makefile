@@ -47,7 +47,7 @@ INC = volume.h shape.h volume_i.h implicit.h tricoef.h
 DEPENDINCLUDE = $(INC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libisosurf
+TARGET_TO_MAKE = libSCisosurf
 
 DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 

@@ -32,7 +32,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libintv3
+TARGET_TO_MAKE = libSCintv3
 BIN_OR_LIB = LIB
 
 TESTCSRC = inttest.cc fjttest.cc

@@ -142,7 +142,7 @@ endif
 #
 # cleans
 #
-clean:: oclean targetclean miscclean
+clean:: oclean targetclean dclean miscclean
 
 distclean:: oclean targetclean dclean genclean miscclean
 

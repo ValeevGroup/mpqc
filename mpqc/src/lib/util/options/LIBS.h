@@ -1,1 +1,1 @@
-liboptions.LIBSUF
+libSCoptions.LIBSUF

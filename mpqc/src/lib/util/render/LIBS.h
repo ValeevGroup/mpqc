@@ -1,4 +1,4 @@
-librender.LIBSUF
+libSCrender.LIBSUF
 #include <util/misc/LIBS.h>
 #include <util/keyval/LIBS.h>
 #include <util/class/LIBS.h>

@@ -49,7 +49,7 @@ INC = molecule.h \
 DEPENDINCLUDE = $(INC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libmolecule
+TARGET_TO_MAKE = libSCmolecule
 
 TESTSRC = moltest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))

@@ -40,7 +40,7 @@ INC = class.h proxy.h
 DEPENDINCLUDE = $(INC) $(GENINC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = libclass
+TARGET_TO_MAKE = libSCclass
 
 TESTCXXSRC = classtest.cc
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
@@ -51,7 +51,7 @@ interface:: $(DEPENDINCLUDE)
 
 # a test program
 LD = $(CXX)
-classtest: classtest.$(OBJSUF) libclass.$(LIBSUF) libcontainer.$(LIBSUF) libref.$(LIBSUF) libmisc.$(LIBSUF) libstate.$(LIBSUF) libkeyval.$(LIBSUF)
+classtest: classtest.$(OBJSUF) libSCclass.$(LIBSUF) libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF) libSCmisc.$(LIBSUF) libSCstate.$(LIBSUF) libSCkeyval.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o classtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 bug: bug.cc

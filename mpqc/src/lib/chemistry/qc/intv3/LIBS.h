@@ -1,4 +1,4 @@
-libintv3.LIBSUF
+libSCintv3.LIBSUF
 #include <util/keyval/LIBS.h>
 #include <util/misc/LIBS.h>
 #include <chemistry/molecule/LIBS.h>

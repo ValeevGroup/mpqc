@@ -182,6 +182,9 @@ int Lebedev_Laikov_npoint(int lvalue)
   return 0;
 }
 
+int Lebedev_Laikov_Oh (int n, double a, double b, double v,
+                       double *x, double *y, double *z, double *w);
+
 int
 Lebedev_Laikov_sphere (int N, double *X, double *Y, double *Z, double *W)
 {

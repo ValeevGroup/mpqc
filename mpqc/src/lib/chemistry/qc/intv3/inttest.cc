@@ -218,11 +218,11 @@ do_shell_test_1e(const Ref<Int1eV3> &int1ev3,
   int ii = 0;
   int a;
   double *buffer = int1ev3->buffer();
-  (int1ev3->*int_shell_1e)(i, j);
+  (int1ev3.pointer()->*int_shell_1e)(i, j);
   for (a=0; a<na*nb; a++) {
       buf[a] = buffer[a];
     }
-  (int1ev3->*int_shell_1e)(j, i);
+  (int1ev3.pointer()->*int_shell_1e)(j, i);
   for (a=0; a<na*nb; a++) {
       pbuf[a] = buffer[a];
     }

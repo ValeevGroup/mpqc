@@ -7,7 +7,11 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-install::
+install_devel::
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) sc-config $(bindir)
 	-$(INSTALL) $(INSTALLSCRIPTOPT) sc-libtool $(bindir)
+
+distclean::
+	-/bin/rm -f sc-config
+	-/bin/rm -f mkf77sym.pl

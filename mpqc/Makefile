@@ -9,5 +9,9 @@ SUBDIRS = lib bin src
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 
-miscclean::
+clean::
+	-rm -f depcheck.cc
+
+distclean:: clean
 	-rm -f config.log
+	-rm -f config.status

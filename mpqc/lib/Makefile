@@ -15,9 +15,11 @@ oclean::
 	/bin/rm -f lib*.la
 	/bin/rm -rf .libs
 
+clean:: oclean
+
 distclean:: oclean
 
 install:: atominfo.kv magic
-	$(INSTALL) $(INSTALLDIROPT) $(libdir)
-	$(INSTALL) $(INSTALLLIBOPT) $^ $(libdir)
+	$(INSTALL) $(INSTALLDIROPT) $(scdatadir)
+	$(INSTALL) $(INSTALLLIBOPT) $^ $(scdatadir)
 

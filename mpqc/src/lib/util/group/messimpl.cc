@@ -38,6 +38,7 @@
 #  include <util/group/messpgon.h>
 #endif
 #ifdef HAVE_MPI
+#  include <mpi.h>
 #  include <util/group/messmpi.h>
 #endif
 
@@ -162,7 +163,10 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
     }
 
 #if defined(HAVE_MPI)
-  if (ExEnv::initialized() && !strcmp(ExEnv::program_name(), "mpqc-mpi")) {
+  int mpiinited;
+  MPI_Initialized(&mpiinited);
+  if (mpiinited
+      || (ExEnv::initialized() && !strcmp(ExEnv::program_name(),"mpqc-mpi"))) {
       grp = new MPIMessageGrp;
       return grp;
   }

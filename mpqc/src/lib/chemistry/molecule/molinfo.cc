@@ -103,6 +103,11 @@ AtomInfo::AtomInfo(const RefKeyVal& pkeyval):
       radius_vals[i] = 0.0;
     }
   preload_values();
+
+  // see if pkeyval has a radius scale factor that should override
+  // the one in the database
+  double tmp = pkeyval->doublevalue("radius_scale_factor");
+  if (pkeyval->error() == KeyVal::OK) radius_scale_factor_ = tmp;
 }
 
 void

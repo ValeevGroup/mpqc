@@ -277,10 +277,8 @@ dnl --------- This is at the top since its likely to cause problems. ---------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-CPPFLAGS="$CPPFLAGS"
-AC_CHECK_HEADER(FlexLexer.h,,[
-AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include])
-])
+AC_TRY_COMPILE([#include <FlexLexer.h>],[],[
+],AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include]))
 AC_LANG_RESTORE
 
 dnl -------- Checks for cross compiling. ----------

@@ -107,6 +107,10 @@ class Molecule: public SavableState
     //texi Returns a @code{RefPoint} containing the cartesian coordinates of
     // the center of mass for the molecule
     RefPoint center_of_mass();
+
+    //texi Returns the nuclear repulsion energy for the molecule
+    double nuclear_repulsion_energy();
+    
     //texi If the molecule contains only symmetry unique atoms, this function
     // will generate the other, redundant atoms.
     void symmetrize();

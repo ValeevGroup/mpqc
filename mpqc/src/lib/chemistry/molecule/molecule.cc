@@ -395,6 +395,27 @@ RefPoint Molecule::center_of_mass()
 #endif
 }
 
+double
+Molecule::nuclear_repulsion_energy()
+{
+  int i, j;
+  double r, e=0;
+
+  for (i=1; i < natoms; i++) {
+    AtomicCenter& ai = get_atom(i);
+    double Zi = ai.element().charge();
+    
+    for (j=0; j < i; j++) {
+      AtomicCenter& aj = get_atom(j);
+
+      r = dist(ai.point(), aj.point());
+      e += Zi * aj.element().charge() / dist(ai.point(), aj.point());
+    }
+  }
+
+  return e;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 
 // pass in natoms if you don't want to search through the entire molecule

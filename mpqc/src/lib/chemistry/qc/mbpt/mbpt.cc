@@ -198,7 +198,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
     }
   mem << keyval->describedclassvalue("memorygrp");
   if (mem.null()) {
-      mem = MemoryGrp::initial_memorygrp();
+      mem = MemoryGrp::get_default_memorygrp();
     }
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();

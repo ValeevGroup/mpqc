@@ -47,6 +47,9 @@
 #if defined(HAVE_MPI)
 #  include <util/group/messmpi.h>
 #  include <util/group/memmtmpi.h>
+#  if defined(DEFAULT_MPI2)
+#    include <util/group/memmpi2.h>
+#  endif
 #endif
 
 using namespace std;
@@ -273,6 +276,8 @@ MemoryGrp::set_default_memorygrp(const Ref<MemoryGrp>& grp)
 MemoryGrp*
 MemoryGrp::get_default_memorygrp()
 {
+  if (default_memorygrp.nonnull()) return default_memorygrp.pointer();
+
   Ref<MessageGrp> msg;
 
 #if defined(HAVE_MPI) && defined(DEFAULT_MPI2)

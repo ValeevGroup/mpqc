@@ -405,7 +405,10 @@ DescribedClass* ClassDesc::create_described_class() const
 
 ClassDesc DescribedClass::class_desc_("DescribedClass");
 
-DescribedClass::DescribedClass() {}
+DescribedClass::DescribedClass()
+{
+}
+
 DescribedClass::DescribedClass(const DescribedClass&) {}
 DescribedClass& DescribedClass::operator=(const DescribedClass&)
 {

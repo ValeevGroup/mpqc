@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include "compute.h"
+#include <util/misc/compute.h>
 #include <util/state/state.h>
 
 Result_def_nc(int);

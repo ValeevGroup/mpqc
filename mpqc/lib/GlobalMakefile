@@ -44,8 +44,8 @@ THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src.lib/,,$(shell pwd))
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory
 #
-INCLUDE = -I. -I$(SRCDIR) -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
-CXXINCLUDE = -I. -I$(SRCDIR) -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
+INCLUDE = -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
+CXXINCLUDE = -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
 
 # The perl language processor.
 PERL = perl

@@ -6,7 +6,7 @@
 #include <math/topology/point.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
-#include "wfn.h"
+#include <chemistry/qc/wfn/wfn.h>
 
 // Function for returning an orbital value at a point
 double Wavefunction::natural_orbital(cart_point& r, int iorb)

@@ -4,7 +4,7 @@
 #endif
 
 #include <stdio.h>
-#include "pool.h"
+#include <util/group/pool.h>
 
 void
 PoolData::check(void* lower_bound, void* upper_bound)

@@ -21,7 +21,7 @@ int yydebug =1;
 #if defined(SGI)
 #include <alloca.h>
 #endif
-#include "ipv2.h"
+#include <util/keyval/ipv2.h>
 %}
 
 %union {

@@ -1,5 +1,5 @@
 
-#include "pointgrp.h"
+#include <math/symmetry/pointgrp.h>
 
 main(int argc, char *argv[])
 {

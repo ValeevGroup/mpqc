@@ -4,8 +4,8 @@
 #include <tmpl.h>
 #include <math/dmt/libdmt.h>
 
-#include "ewdensity.gbl"
-#include "ewdensity.lcl"
+#include <chemistry/qc/dmtqc/ewdensity.gbl>
+#include <chemistry/qc/dmtqc/ewdensity.lcl>
 
 /* This computes the energy weight density for clscf
  * wavefunctions. */

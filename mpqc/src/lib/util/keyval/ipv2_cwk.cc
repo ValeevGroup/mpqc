@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ipv2.h"
+#include <util/keyval/ipv2.h>
 
 /* This sets up the current working keyword path to the declaration
  * list. */

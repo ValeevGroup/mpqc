@@ -1,8 +1,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "render.h"
-#include "object.h"
+#include <util/render/render.h>
+#include <util/render/object.h>
 
 #define CLASSNAME RenderedObject
 #define PARENTS public DescribedClass

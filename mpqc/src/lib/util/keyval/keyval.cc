@@ -9,7 +9,7 @@ extern "C" {
 
 }
 #include <iostream.h>
-#include "keyval.h"
+#include <util/keyval/keyval.h>
 
 #if defined(I860) && !defined(PARAGON)
 #include <util/unix/cct_cprot.h>

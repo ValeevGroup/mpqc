@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.2  1994/08/25 22:48:21  etseidl
+ * Revision 1.3  1995/03/17 01:51:39  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.2  1994/08/25  22:48:21  etseidl
  * remove rcsids and fix some warnings
  *
  * Revision 1.1.1.1  1993/12/29  12:53:41  etseidl
@@ -26,7 +33,7 @@
 #define NO_TEMPLATES
 #include <stdio.h>
 #include <math.h>
-#include "sgen.h"
+#include <util/sgen/sgen.h>
 
 
 int

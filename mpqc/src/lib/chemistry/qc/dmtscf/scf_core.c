@@ -11,10 +11,10 @@
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 
 
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_core.gbl"
-#include "scf_core.lcl"
+#include <chemistry/qc/dmtscf/scf_core.gbl>
+#include <chemistry/qc/dmtscf/scf_core.lcl>
 
 /***********************************************************************
  * 

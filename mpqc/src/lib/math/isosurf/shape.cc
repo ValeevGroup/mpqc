@@ -8,7 +8,7 @@ extern "C" {
   }
 
 #include <util/keyval/keyval.h>
-#include "shape.h"
+#include <math/isosurf/shape.h>
 
 const double infinity = 1.0e23;
 

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <ostream.h>
-#include "pool.h"
+#include <util/group/pool.h>
 
 class Double {
   private:

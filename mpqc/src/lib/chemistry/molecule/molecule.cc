@@ -6,8 +6,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "molecule.h"
-#include "localdef.h"
+#include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/localdef.h>
 #include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
 

@@ -1,15 +1,15 @@
 
 #include <math/scmat/local.h>
-#include "molecule.h"
-#include "energy.h"
-#include "coor.h"
+#include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/energy.h>
+#include <chemistry/molecule/coor.h>
 #include <util/render/object.h>
 #include <util/render/oogl.h>
 
 // force linkage of the taylor expansion energy evaluator
-#include "taylor_f.h"
+#include <chemistry/molecule/taylor_f.h>
 // and of the renderer
-#include "molrender.h"
+#include <chemistry/molecule/molrender.h>
 
 __builtin_delete(void*ptr)
 {

@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include  "cct_cprot.h"
+#include  <util/unix/cct_cprot.h>
 
 static void  err_doit(int, const char *, va_list);
 

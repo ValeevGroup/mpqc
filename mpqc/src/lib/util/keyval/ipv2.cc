@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 
-#include "ipv2.h"
+#include <util/keyval/ipv2.h>
 #include <util/keyval/ipv2_parse.h>
 
 // IPV2's static member

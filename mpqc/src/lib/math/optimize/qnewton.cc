@@ -7,7 +7,7 @@ extern "C" {
 #  include <math.h>
 }
 
-#include "qnewton.h"
+#include <math/optimize/qnewton.h>
 #include <util/keyval/keyval.h>
 
 #define CLASSNAME QNewtonOpt

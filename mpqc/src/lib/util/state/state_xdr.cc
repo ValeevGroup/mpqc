@@ -20,7 +20,7 @@
  */
 
 #include <util/class/class.h>
-#include "state.h"
+#include <util/state/state.h>
 
 ///////////////////////////////////////////////////////////////////
 

@@ -5,7 +5,7 @@
 #pragma implementation
 #endif
 
-#include "GetLongOpt.h"
+#include <util/options/GetLongOpt.h>
 
 GetLongOpt::GetLongOpt(const char optmark)
 {

@@ -3,7 +3,7 @@
 #define _refset_h
 
 #include <Pix.h>
-#include "ref.h"
+#include <util/container/ref.h>
 #include <stdlib.h>
 
 #define REFARRAY(Type)							      \

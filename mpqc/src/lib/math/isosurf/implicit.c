@@ -201,7 +201,7 @@ double x, y, z;
 
 #ifdef SGIGFX /**************************************************************/
 
-#include "gl.h"
+#include <math/isosurf/gl.h>
 
 /* triangle: called by polygonize() for each triangle; set SGI lines */
 

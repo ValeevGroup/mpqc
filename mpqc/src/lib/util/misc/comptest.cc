@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include "compute.h"
+#include <util/misc/compute.h>
 
 //Result_dec(int);
 

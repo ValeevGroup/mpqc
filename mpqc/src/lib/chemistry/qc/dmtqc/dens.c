@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.2  1994/08/26 22:47:59  etseidl
+ * Revision 1.3  1995/03/17 01:48:27  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.2  1994/08/26  22:47:59  etseidl
  * get rid of rcsids
  *
  * Revision 1.1.1.1  1993/12/29  12:53:00  etseidl
@@ -15,8 +22,8 @@
 #include <tmpl.h>
 #include <math/dmt/libdmt.h>
 
-#include "dens.gbl"
-#include "dens.lcl"
+#include <chemistry/qc/dmtqc/dens.gbl>
+#include <chemistry/qc/dmtqc/dens.lcl>
 
 /* This computes the density */
 

@@ -1,7 +1,7 @@
 
-#include "message.h"
-#include "topology.h"
-#include "hcube.h"
+#include <util/group/message.h>
+#include <util/group/topology.h>
+#include <util/group/hcube.h>
 
 #define CLASSNAME HypercubeGMI
 #define PARENTS public GlobalMsgIter

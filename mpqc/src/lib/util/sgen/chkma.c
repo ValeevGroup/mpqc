@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include "sgen.h"
+#include <util/sgen/sgen.h>
 
 void
 sgen_chkmalloc(buf)

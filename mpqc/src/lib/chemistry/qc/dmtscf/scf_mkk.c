@@ -16,17 +16,17 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 
-#include "scf.h"
-#include "scf_bnd.gbl"
-#include "scf_gmat.gbl"
+#include <chemistry/qc/dmtscf/scf.h>
+#include <chemistry/qc/dmtscf/scf_bnd.gbl>
+#include <chemistry/qc/dmtscf/scf_gmat.gbl>
 
 #define ioff(i) (((i)*((i)+1))>>1)
 #define IOFF(a,b) (((a)>(b))?(ioff(a)+(b)):(ioff(b)+(a)))
 
 extern signed char *scf_bnd_Qvec;
 
-#include "scf_mkk.gbl"
-#include "scf_mkk.lcl"
+#include <chemistry/qc/dmtscf/scf_mkk.gbl>
+#include <chemistry/qc/dmtscf/scf_mkk.lcl>
 
 /**************************************************************************
  *

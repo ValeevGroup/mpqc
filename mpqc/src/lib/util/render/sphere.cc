@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "render.h"
-#include "object.h"
-#include "sphere.h"
+#include <util/render/render.h>
+#include <util/render/object.h>
+#include <util/render/sphere.h>
 
 #define CLASSNAME RenderedSphere
 #define HAVE_KEYVAL_CTOR

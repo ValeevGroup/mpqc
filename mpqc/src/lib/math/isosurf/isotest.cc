@@ -9,10 +9,10 @@ extern "C" {
 #include <util/misc/ieee.h>
 
 #include <util/keyval/keyval.h>
-#include "volume.h"
-#include "shape.h"
-#include "surf.h"
-#include "isosurf.h"
+#include <math/isosurf/volume.h>
+#include <math/isosurf/shape.h>
+#include <math/isosurf/surf.h>
+#include <math/isosurf/isosurf.h>
 
 // Force linkages:
 #ifndef __PIC__

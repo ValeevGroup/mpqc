@@ -22,8 +22,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "simple.h"
-#include "localdef.h"
+#include <chemistry/molecule/simple.h>
+#include <chemistry/molecule/localdef.h>
 
 #define CLASSNAME LinIPSimpleCo
 #define PARENTS public SimpleCo

@@ -4,8 +4,8 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/molecule/molecule.h>
 #include <math/topology/pointbag.h>
-#include "integral.h"
-#include "integralv2.h"
+#include <chemistry/qc/integral/integral.h>
+#include <chemistry/qc/integral/integralv2.h>
 
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyIntv2

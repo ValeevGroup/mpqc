@@ -12,18 +12,18 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_oeis.gbl"
-#include "scf_core.gbl"
-#include "scf_iter.gbl"
-#include "scf_orth.gbl"
-#include "scf_proj.gbl"
-#include "scf_mkden.gbl"
-#include "scf_ex.gbl"
+#include <chemistry/qc/dmtscf/scf_oeis.gbl>
+#include <chemistry/qc/dmtscf/scf_core.gbl>
+#include <chemistry/qc/dmtscf/scf_iter.gbl>
+#include <chemistry/qc/dmtscf/scf_orth.gbl>
+#include <chemistry/qc/dmtscf/scf_proj.gbl>
+#include <chemistry/qc/dmtscf/scf_mkden.gbl>
+#include <chemistry/qc/dmtscf/scf_ex.gbl>
 
-#include "scf_vect.gbl"
-#include "scf_vect.lcl"
+#include <chemistry/qc/dmtscf/scf_vect.gbl>
+#include <chemistry/qc/dmtscf/scf_vect.lcl>
 
 /************************************************************************
  *

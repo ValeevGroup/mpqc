@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.4  1994/08/26 22:45:11  etseidl
+ * Revision 1.5  1995/03/17 01:49:21  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.4  1994/08/26  22:45:11  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -52,18 +59,18 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include "atoms.h"
-#include "int_types.h"
-#include "int_flags.h"
-#include "inter.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_types.h>
+#include <chemistry/qc/intv2/int_flags.h>
+#include <chemistry/qc/intv2/inter.h>
 
 #define ALLOC_BOUND_GLOBALS
-#include "bounds.h"
+#include <chemistry/qc/intv2/bounds.h>
 
-#include "bounds.gbl"
-#include "bounds.lcl"
+#include <chemistry/qc/intv2/bounds.gbl>
+#include <chemistry/qc/intv2/bounds.lcl>
 
-#include "comp_erep.gbl"
+#include <chemistry/qc/intv2/comp_erep.gbl>
 
 #define COMPUTE_Q  1
 #define COMPUTE_R 2

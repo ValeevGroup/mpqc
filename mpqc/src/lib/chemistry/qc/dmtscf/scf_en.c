@@ -6,10 +6,10 @@
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 #include <math/dmt/libdmt.h>
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_en.gbl"
-#include "scf_en.lcl"
+#include <chemistry/qc/dmtscf/scf_en.gbl>
+#include <chemistry/qc/dmtscf/scf_en.lcl>
 
 /*****************************************************************************
  *

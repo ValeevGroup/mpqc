@@ -3,9 +3,9 @@
 #include <stdarg.h>
 #include <strings.h>
 #include <util/sgen/sgen.h>
-#include "atoms.h"
-#include "atomsfree.h"
-#include "atomsinit.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/atomsfree.h>
+#include <chemistry/qc/intv2/atomsinit.h>
 #define NAMES_LENGTH 256
 
 /* Generated free function for shell_type: */

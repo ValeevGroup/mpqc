@@ -3,7 +3,7 @@ extern "C" {
 #  include <math.h>
 }
 
-#include "update.h"
+#include <math/optimize/update.h>
 #include <util/keyval/keyval.h>
 
 #define CLASSNAME PowellUpdate

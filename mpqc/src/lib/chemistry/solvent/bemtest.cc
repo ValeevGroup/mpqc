@@ -3,7 +3,7 @@
 #include <util/misc/ieee.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molshape.h>
-#include "bem.h"
+#include <chemistry/solvent/bem.h>
 
 int
 main()

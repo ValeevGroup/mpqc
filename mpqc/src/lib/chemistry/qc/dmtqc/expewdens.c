@@ -4,8 +4,8 @@
 #include <tmpl.h>
 #include <math/dmt/libdmt.h>
 
-#include "expewdens.gbl"
-#include "expewdens.lcl"
+#include <chemistry/qc/dmtqc/expewdens.gbl>
+#include <chemistry/qc/dmtqc/expewdens.lcl>
 
 /* Computes occupied and virtual density matrices with a weighting
  * factor exp(-epsilon * t) for virtuals and exp(epsilon*t) for

@@ -6,10 +6,10 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <math/dmt/libdmt.h>
 
-#include "symm.h"
+#include <chemistry/qc/dmtsym/symm.h>
 
-#include "skeleton.gbl"
-#include "skeleton.lcl"
+#include <chemistry/qc/dmtsym/skeleton.gbl>
+#include <chemistry/qc/dmtsym/skeleton.lcl>
 
 /************************************************************************
  * 

@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.4  1994/08/26 22:45:31  etseidl
+ * Revision 1.5  1995/03/17 01:49:31  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.4  1994/08/26  22:45:31  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -66,24 +73,24 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include "atoms.h"
-#include "int_flags.h"
-#include "int_macros.h"
-#include "int_types.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_flags.h>
+#include <chemistry/qc/intv2/int_macros.h>
+#include <chemistry/qc/intv2/int_types.h>
 
 #define ALLOC_INTERMEDIATES
-#include "inter.h"
+#include <chemistry/qc/intv2/inter.h>
 
-#include "init2e.gbl"
-#include "init2e.lcl"
+#include <chemistry/qc/intv2/init2e.gbl>
+#include <chemistry/qc/intv2/init2e.lcl>
 
-#include "buildgc.gbl"
-#include "shiftgc.gbl"
-#include "int_fjt.gbl"
-#include "comp_erep.gbl"
-#include "utils.gbl"
+#include <chemistry/qc/intv2/buildgc.gbl>
+#include <chemistry/qc/intv2/shiftgc.gbl>
+#include <chemistry/qc/intv2/int_fjt.gbl>
+#include <chemistry/qc/intv2/comp_erep.gbl>
+#include <chemistry/qc/intv2/utils.gbl>
 
-#include "atomsallc.h"
+#include <chemistry/qc/intv2/atomsallc.h>
 
 /* The NCUBE exp function cannot handle large negative arguments. */
 #ifndef NCUBE

@@ -10,7 +10,7 @@
 #include <math/scmat/matrix.h>
 #include <util/keyval/keyval.h>
 
-#include "nlp.h"
+#include <math/optimize/nlp.h>
 
 ////////////////////////////////////////////////////////////////////////
 

@@ -6,7 +6,7 @@
 
 #include <util/keyval/keyval.h>
 #include <new.h>
-#include "mpqc.h"
+#include <chemistry/qc/mpqc/mpqc.h>
 #include <chemistry/molecule/coor.h>
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>

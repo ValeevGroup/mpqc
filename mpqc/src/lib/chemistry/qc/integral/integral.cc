@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <chemistry/qc/basis/basis.h>
-#include "integral.h"
+#include <chemistry/qc/integral/integral.h>
 #include <math/scmat/block.h>
 
 ///////////////////////////////////////////////////////////////////////

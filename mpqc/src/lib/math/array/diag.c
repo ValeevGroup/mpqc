@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.2  1994/08/26 17:57:40  etseidl
+ * Revision 1.3  1995/03/17 01:50:05  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.2  1994/08/26  17:57:40  etseidl
  * get rid of rcs id's and fix a few warnings
  *
  * Revision 1.1.1.1  1993/12/29  12:53:29  etseidl
@@ -28,12 +35,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <tmpl.h>
-#include "matrix.h"
-#include "matrixallc.h"
-#include "matrixfree.h"
+#include <math/array/matrix.h>
+#include <math/array/matrixallc.h>
+#include <math/array/matrixfree.h>
 
-#include "diag.gbl"
-#include "diag.lcl"
+#include <math/array/diag.gbl>
+#include <math/array/diag.lcl>
 
 
 /* translation into c of a translation into FORTRAN77 of the EISPACK */

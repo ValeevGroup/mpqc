@@ -4,9 +4,9 @@
 #endif
 
 #include <util/class/class.h>
-#include "state.h"
-#include "stateptrImplSet.h"
-#include "statenumImplSet.h"
+#include <util/state/state.h>
+#include <util/state/stateptrImplSet.h>
+#include <util/state/statenumImplSet.h>
 
 // Returns the number of the new object, if this object is new.
 // If the object is found then zero is returned.

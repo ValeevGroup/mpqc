@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include "array.h"
+#include <util/container/array.h>
 #include <util/state/state.h>
 
 main()

@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.4  1994/08/26 22:45:14  etseidl
+ * Revision 1.5  1995/03/17 01:49:23  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.4  1994/08/26  22:45:14  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -54,17 +61,17 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include "atoms.h"
-#include "inter.h"
-#include "fjttable.h"
-#include "int_macros.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/inter.h>
+#include <chemistry/qc/intv2/fjttable.h>
+#include <chemistry/qc/intv2/int_macros.h>
 
 #define ALLOC_BUILDINTER
-#include "buildinter.h"
+#include <chemistry/qc/intv2/buildinter.h>
 
-#include "int_fjt.gbl"
-#include "int_print.gbl"
-#include "utils.gbl"
+#include <chemistry/qc/intv2/int_fjt.gbl>
+#include <chemistry/qc/intv2/int_print.gbl>
+#include <chemistry/qc/intv2/utils.gbl>
 
 /* these statics are needed by add_store and free_store */
 #define STORAGE_CHUNK 4096
@@ -76,8 +83,8 @@ typedef struct store_list store_list_t;
 static int n_store_last;
 static store_list_t* store=NULL;
 
-#include "buildgc.gbl"
-#include "buildgc.lcl"
+#include <chemistry/qc/intv2/buildgc.gbl>
+#include <chemistry/qc/intv2/buildgc.lcl>
 
 /* The NCUBE exp function cannot handle large negative arguments. */
 #ifndef NCUBE
@@ -107,7 +114,7 @@ static int saved_am12,saved_am34,saved_ncon;
 
   /* MG is the maximum angular momentum for which we will use
    * the generated build routines. */
-#include "MG.h"
+#include <chemistry/qc/intv2/MG.h>
 #define MINA(x) (((x)<MG)?(x):MG)
 typedef int (*intfunc)();
 static intfunc build_routine[4][4][4][4][2];

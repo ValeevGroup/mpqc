@@ -3,8 +3,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ipv2.h"
-#include "ipv2c.h"
+#include <util/keyval/ipv2.h>
+#include <util/keyval/ipv2c.h>
 
 void
 ip_initialize(FILE*in,FILE*out)

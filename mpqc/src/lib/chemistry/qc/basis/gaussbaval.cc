@@ -6,8 +6,8 @@
 #include <util/keyval/keyval.h>
 
 #include <math/topology/point.h>
-#include "gaussbas.h"
-#include "gaussshell.h"
+#include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/gaussshell.h>
 
 int GaussianBasisSet::values(cart_point& r, double* basis_values) const
 {

@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "ipv2.h"
+#include <util/keyval/ipv2.h>
 
 ip_keyword_tree_t *
 IPV2::ip_alloc_keyword_tree()

@@ -14,10 +14,10 @@
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtqc/libdmtqc.h>
 
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_ex.gbl"
-#include "scf_ex.lcl"
+#include <chemistry/qc/dmtscf/scf_ex.gbl>
+#include <chemistry/qc/dmtscf/scf_ex.lcl>
 
 /*********************************************************************
  *

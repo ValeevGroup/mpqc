@@ -12,9 +12,9 @@ extern "C" {
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <math/dmt/libdmt.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
-#include "mpcsscf.gbl"
-#include "mposscf.gbl"
-#include "read.h"
+#include <chemistry/qc/force/mpcsscf.gbl>
+#include <chemistry/qc/force/mposscf.gbl>
+#include <chemistry/qc/force/read.h>
 
 void
 dmt_force_osscf_keyval_init(KeyVal*keyval,FILE*fp)

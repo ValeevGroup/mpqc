@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include <voidptr.h>
+#include <util/container/voidptr.h>
 
 VoidPtr::VoidPtr(): ptr_(0) {}
 VoidPtr::VoidPtr(void* d): ptr_(d) {}

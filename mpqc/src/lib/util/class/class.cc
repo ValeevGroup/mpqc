@@ -10,13 +10,13 @@
 #include <dlfcn.h>
 #endif // HAVE_DLFCN
 
-#include "class.h"
+#include <util/class/class.h>
 
-#include "classMap.h"
-#include "classImplMap.h"
+#include <util/class/classMap.h>
+#include <util/class/classImplMap.h>
 
-#include "classkeySet.h"
-#include "classkeyImplSet.h"
+#include <util/class/classkeySet.h>
+#include <util/class/classkeyImplSet.h>
 
 ClassKeyClassDescPMap* ClassDesc::all_ = 0;
 char * ClassDesc::classlib_search_path_ = 0;

@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "message.h"
-#include "topology.h"
-#include "hcube.h"
+#include <util/group/message.h>
+#include <util/group/topology.h>
+#include <util/group/hcube.h>
 #include <util/class/classMap.h>
 
 #define CLASSNAME MessageGrp

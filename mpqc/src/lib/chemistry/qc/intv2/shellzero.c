@@ -1,5 +1,12 @@
 /* $Log$
- * Revision 1.4  1994/10/13 22:26:45  etseidl
+ * Revision 1.5  1995/03/17 01:49:41  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.4  1994/10/13  22:26:45  etseidl
  * replace bzero with memset
  *
  * Revision 1.3  1994/08/26  22:45:53  etseidl
@@ -28,11 +35,11 @@
 #include <tmpl.h>
 #include <util/sgen/sgen.h>
 
-#include "int_macros.h"
+#include <chemistry/qc/intv2/int_macros.h>
 
-#include "atoms.h"
+#include <chemistry/qc/intv2/atoms.h>
 
-#include "atomszero.h"
+#include <chemistry/qc/intv2/atomszero.h>
 
 void
 zero_shell(_shell)

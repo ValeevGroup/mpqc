@@ -53,33 +53,41 @@ statetest: statetest.o libstate.$(LIBSUF) libkeyval.$(LIBSUF) libclass.$(LIBSUF)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+statetest.d $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d) statetest.d
 endif
 
 stateptrSet.cc stateptrSet.h:
 	$(GENCLASS) StateDataPtr val Set stateptr
-	prepend-header stateptrSet.h "#include \"state_ptr.h\""
+	prepend-header stateptrSet.h "#include <util/state/state_ptr.h>"
+	prepend-header stateptrSet.h "#include <util/state/stateptrdefs.h>"
+	/bin/mv stateptrSet.h tmp.stateptrSet.h
+	grep -v "#include \"stateptrdefs.h\"" < tmp.stateptrSet.h > stateptrSet.h
+	/bin/rm tmp.stateptrSet.h
 
 stateptr$(SETIMPL)Set.cc stateptr$(SETIMPL)Set.h:
 	$(GENCLASS) StateDataPtr val $(SETIMPL)Set stateptr
-	prepend-header stateptr$(SETIMPL)Set.h "#include \"state_ptr.h\""
+	prepend-header stateptr$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
 
 stateptrImplSet.h:
-	echo "#include "\"stateptr$(SETIMPL)Set.h\" > stateptrImplSet.h
+	echo "#include <util/state/stateptr$(SETIMPL)Set.h>" > stateptrImplSet.h
 	echo "#define StateDataPtr_CTOR StateDataPtr"$(SETIMPL)"Set()" >> stateptrImplSet.h
 
 statenumSet.cc statenumSet.h:
 	$(GENCLASS) StateDataNum val Set statenum
-	prepend-header statenumSet.h "#include \"state_ptr.h\""
+	prepend-header statenumSet.h "#include <util/state/state_ptr.h>"
+	prepend-header statenumSet.h "#include <util/state/statenumdefs.h>"
+	/bin/mv statenumSet.h tmp.statenumSet.h
+	grep -v "#include \"statenumdefs.h\"" < tmp.statenumSet.h > statenumSet.h
+	/bin/rm tmp.statenumSet.h
 
 statenum$(SETIMPL)Set.cc statenum$(SETIMPL)Set.h:
 	$(GENCLASS) StateDataNum val $(SETIMPL)Set statenum
-	prepend-header statenum$(SETIMPL)Set.h "#include \"state_ptr.h\""
+	prepend-header statenum$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
 
 statenumImplSet.h:
-	echo "#include "\"statenum$(SETIMPL)Set.h\" > statenumImplSet.h
+	echo "#include <util/state/statenum$(SETIMPL)Set.h>" > statenumImplSet.h
 	echo "#define StateDataNum_CTOR StateDataNum"$(SETIMPL)"Set()" >> statenumImplSet.h
 
 ##########################################################################
@@ -97,6 +105,6 @@ classd$(MAPIMPL)Map.cc classd$(MAPIMPL)Map.h:
 	prepend-header classd$(MAPIMPL)Map.h "#include <util/class/class.h>"
 
 classdImplMap.h:
-	echo "#include "\"classd$(MAPIMPL)Map.h\" > classdImplMap.h
+	echo "#include <util/state/classd$(MAPIMPL)Map.h>" > classdImplMap.h
 	echo "#define ClassDescPintMap_CTOR ClassDescPint"$(MAPIMPL)"Map(0)" >> classdImplMap.h
 

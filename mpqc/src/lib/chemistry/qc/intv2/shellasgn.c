@@ -1,5 +1,12 @@
 /* $Log$
- * Revision 1.4  1994/08/26 22:45:43  etseidl
+ * Revision 1.5  1995/03/17 01:49:36  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.4  1994/08/26  22:45:43  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -28,11 +35,11 @@
 #include <tmpl.h>
 #include <util/sgen/sgen.h>
 
-#include "int_macros.h"
+#include <chemistry/qc/intv2/int_macros.h>
 
-#include "atoms.h"
+#include <chemistry/qc/intv2/atoms.h>
 
-#include "atomsasgn.h"
+#include <chemistry/qc/intv2/atomsasgn.h>
 
 
 int

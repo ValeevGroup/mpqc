@@ -31,9 +31,9 @@
 #include <bstring.h>
 #endif
 
-#include "simple.h"
-#include "chemelem.h"
-#include "localdef.h"
+#include <chemistry/molecule/simple.h>
+#include <chemistry/molecule/chemelem.h>
+#include <chemistry/molecule/localdef.h>
 
 #include <math/topology/bitarray.h>
 

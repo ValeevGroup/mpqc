@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include "array.h"
+#include <util/container/array.h>
 #include <util/state/state.h>
 
 ARRAY_def(int);

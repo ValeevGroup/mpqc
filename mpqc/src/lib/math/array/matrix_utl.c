@@ -3,9 +3,9 @@
 
 #include <stdio.h>
 #include <tmpl.h>
-#include "matrix.h"
-#include "matrix_utl.gbl"
-#include "matrix_utl.lcl"
+#include <math/array/matrix.h>
+#include <math/array/matrix_utl.gbl>
+#include <math/array/matrix_utl.lcl>
 
 /* Read a column ordered matrix on disk into a double matrix array.  The
  * storage for the matrix array must be preallocated.

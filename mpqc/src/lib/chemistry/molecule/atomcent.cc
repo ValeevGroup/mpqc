@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#include "atomcent.h"
+#include <chemistry/molecule/atomcent.h>
 
 DescribedClass_REF_def(AtomicCenter);
 

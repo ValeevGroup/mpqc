@@ -10,7 +10,7 @@ extern "C" {
 #include <math/scmat/local.h>
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
-#include "density.h"
+#include <chemistry/qc/wfn/density.h>
 
 ElectronDensity::ElectronDensity(Wavefunction&wfn):
   Volume(),

@@ -3,7 +3,14 @@
  */
 
 /* $Log$
- * Revision 1.5  1994/10/21 20:45:12  cljanss
+ * Revision 1.6  1995/03/17 01:49:28  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.5  1994/10/21  20:45:12  cljanss
  * Minor cleanup.
  *
  * Revision 1.4  1994/08/26  22:45:26  etseidl
@@ -87,20 +94,20 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include "atoms.h"
-#include "int_macros.h"
-#include "int_flags.h"
-#include "int_types.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_macros.h>
+#include <chemistry/qc/intv2/int_flags.h>
+#include <chemistry/qc/intv2/int_types.h>
 
-#include "inter.h"
+#include <chemistry/qc/intv2/inter.h>
 
-#include "comp_erep.gbl"
-#include "comp_erep.lcl"
+#include <chemistry/qc/intv2/comp_erep.gbl>
+#include <chemistry/qc/intv2/comp_erep.lcl>
 
-#include "buildgc.gbl"
-#include "shiftgc.gbl"
-#include "storage.gbl"
-#include "utils.gbl"
+#include <chemistry/qc/intv2/buildgc.gbl>
+#include <chemistry/qc/intv2/shiftgc.gbl>
+#include <chemistry/qc/intv2/storage.gbl>
+#include <chemistry/qc/intv2/utils.gbl>
 
 /* This returns a quick upperbound for an integral in the given
  * shell quartet. */

@@ -19,7 +19,7 @@ to see if it is preceeded by such a construct.
 
 @c
 #include <stdio.h>
-#include "assert.h"
+#include <util/misc/assert.h>
 @<The |read_matrix| routine.@> @;@/
 
 @ The routine takes three arguments: The name of the

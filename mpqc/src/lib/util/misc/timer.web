@@ -43,11 +43,11 @@ was, in fact, a count of some event.  Handy.
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 #define UTIL_ASSERT
-#include "assert.h"
+#include <util/misc/assert.h>
 #define TIMING
 @<Outer block declarations.@> @;@/
-#include "timer.gbl"
-#include "timer.lcl"
+#include <util/misc/timer.gbl>
+#include <util/misc/timer.lcl>
 @<Support routines.@> @;@/
 @<Public routines.@> @;@/
 

@@ -1,8 +1,8 @@
 
 #include <stdio.h>
 #include <util/sgen/sgen.h>
-#include "atoms.h"
-#include "atomsfwr.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/atomsfwr.h>
 
 /* Generated fwrite function for shell_type: */
 int

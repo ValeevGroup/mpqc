@@ -4,7 +4,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <math/scmat/local.h>
-#include "bem.h"
+#include <chemistry/solvent/bem.h>
 
 #define CLASSNAME BEMSolvent
 #define PARENTS public DescribedClass

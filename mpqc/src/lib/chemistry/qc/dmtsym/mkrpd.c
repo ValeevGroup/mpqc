@@ -8,13 +8,13 @@
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
-#include "symm.h"
-#include "symm_mac.h"
-#include "symmallc.h"
-#include "symmfree.h"
+#include <chemistry/qc/dmtsym/symm.h>
+#include <chemistry/qc/dmtsym/symm_mac.h>
+#include <chemistry/qc/dmtsym/symmallc.h>
+#include <chemistry/qc/dmtsym/symmfree.h>
 
-#include "mkrpd.gbl"
-#include "mkrpd.lcl"
+#include <chemistry/qc/dmtsym/mkrpd.gbl>
+#include <chemistry/qc/dmtsym/mkrpd.lcl>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

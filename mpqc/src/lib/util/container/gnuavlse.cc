@@ -23,7 +23,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include <stream.h>
 #include <stdlib.h>
-#include "gnuavlse.h"
+#include <util/container/gnuavlse.h>
 
 AVLSetBase::~AVLSetBase()
 {

@@ -4,7 +4,7 @@
 #include <math/topology/point.h>
 #include <chemistry/qc/basis/basis.h>
 
-#include "wfn.h"
+#include <chemistry/qc/wfn/wfn.h>
 
 // Function for returning electron charge density at a point
 double Wavefunction::density(cart_point&r)

@@ -13,7 +13,7 @@ extern "C" {
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
-#include "wfn.h"
+#include <chemistry/qc/wfn/wfn.h>
 
 #define CLASSNAME Wavefunction
 #define PARENTS public MolecularEnergy

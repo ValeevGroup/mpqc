@@ -11,10 +11,10 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_orth.gbl"
-#include "scf_orth.lcl"
+#include <chemistry/qc/dmtscf/scf_orth.gbl>
+#include <chemistry/qc/dmtscf/scf_orth.lcl>
 
 GLOBAL_FUNCTION int
 scf_schmidt(scf_info,Scf_Vec,S,all)

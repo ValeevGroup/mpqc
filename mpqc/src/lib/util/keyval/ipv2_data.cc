@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include "ipv2.h"
+#include <util/keyval/ipv2.h>
 
 IPV2::Status
 IPV2::boolean(const char *keyword,int *boolean,int n,...)

@@ -12,6 +12,7 @@ BIN_OR_LIB = LIB
 #FFLAGS := $(FFLAGS_DEBUG)
 
 WEBFILES = debug.web pathfopen.web rdmatrix.web timer.web
+.PRECIOUS: $(WEBFILES:%.web=%.c)
 
 CSRC = ieee.c prober.c assert.c machtype.c checkalloc.c mtype.c
 GENSRC = $(WEBFILES:%.web=%.c)
@@ -59,6 +60,9 @@ ifneq ($(SRCDIR),.)
 	cp $< .
 	$(CTANGLE) $(notdir $<)
 	rm -f $(notdir $<)
+
+distclean::
+	rm -f $(WEBFILES)
 else
 %.c: %.web
 	$(CTANGLE) $<

@@ -1,5 +1,5 @@
 
-#include "scostream.h"
+#include <util/misc/scostream.h>
 
 main()
 {

@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:38  etseidl
+ * Revision 1.4  1995/03/17 01:49:33  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.3  1994/08/26  22:45:38  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -36,14 +43,14 @@
 #include <stdio.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include "atoms.h"
-#include "int_macros.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_macros.h>
 
-#include "atomsprnt.h"
-#include "inter.h"
+#include <chemistry/qc/intv2/atomsprnt.h>
+#include <chemistry/qc/intv2/inter.h>
 
-#include "int_print.gbl"
-#include "int_print.lcl"
+#include <chemistry/qc/intv2/int_print.gbl>
+#include <chemistry/qc/intv2/int_print.lcl>
 
 /* Prints out information about the basis set. */
 GLOBAL_FUNCTION VOID

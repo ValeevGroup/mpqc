@@ -87,8 +87,8 @@ given in the \.{libdmt} library.
 @ The templates for the global and local function definitions are found
 in |csscf.gbl| and |csscf.lcl|, respectively.
 @<Include files.@>=
-#include "spcsscf.gbl"
-#include "spcsscf.lcl"
+#include <chemistry/qc/force/spcsscf.gbl>
+#include <chemistry/qc/force/spcsscf.lcl>
 
 @* The global functions.
 

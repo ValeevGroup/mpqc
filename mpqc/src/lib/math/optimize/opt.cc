@@ -7,7 +7,7 @@ extern "C" {
 #  include <math.h>
 }
 
-#include "opt.h"
+#include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 
 SavableState_REF_def(Optimize);

@@ -11,10 +11,10 @@
 #include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_diis.gbl"
-#include "scf_diis.lcl"
+#include <chemistry/qc/dmtscf/scf_diis.gbl>
+#include <chemistry/qc/dmtscf/scf_diis.lcl>
 
 /* keep around the bmatrix so we don't have to recompute the whole thing
  * every iteration

@@ -12,16 +12,16 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_mkden.gbl"
-#include "scf_gmat.gbl"
-#include "scf_en.gbl"
-#include "scf_diis.gbl"
-#include "scf_orth.gbl"
+#include <chemistry/qc/dmtscf/scf_mkden.gbl>
+#include <chemistry/qc/dmtscf/scf_gmat.gbl>
+#include <chemistry/qc/dmtscf/scf_en.gbl>
+#include <chemistry/qc/dmtscf/scf_diis.gbl>
+#include <chemistry/qc/dmtscf/scf_orth.gbl>
 
-#include "scf_iter.gbl"
-#include "scf_iter.lcl"
+#include <chemistry/qc/dmtscf/scf_iter.gbl>
+#include <chemistry/qc/dmtscf/scf_iter.lcl>
 
 /* these are pointer copies of the core hamiltonian and overlap integrals */
 static dmt_matrix Hcore, S;

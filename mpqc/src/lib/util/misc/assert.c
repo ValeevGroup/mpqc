@@ -1,8 +1,8 @@
 
 #include <stdio.h>
 #include <tmpl.h>
-#include "assert.gbl"
-#include "assert.lcl"
+#include <util/misc/assert.gbl>
+#include <util/misc/assert.lcl>
 
 GLOBAL_FUNCTION VOID
 util_assert(file,line)

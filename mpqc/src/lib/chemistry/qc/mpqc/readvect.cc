@@ -1,5 +1,5 @@
 
-#include "mpqc.h"
+#include <chemistry/qc/mpqc/mpqc.h>
 #include <math/newmat7/newmat.h>
 
 void MPSCF::read_vector(char *fname,int n_basis, RefSCMatrix &scf_vector)

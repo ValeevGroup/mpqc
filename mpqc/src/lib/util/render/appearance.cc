@@ -1,5 +1,5 @@
 
-#include "appearance.h"
+#include <util/render/appearance.h>
 
 #define CLASSNAME Appearance
 #define HAVE_KEYVAL_CTOR

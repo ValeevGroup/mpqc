@@ -4,6 +4,8 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+INCLUDE += -I. -I$(SRCDIR)
+CXXINCLUDE += -I. -I$(SRCDIR)
 
 LD = $(CXX)
 

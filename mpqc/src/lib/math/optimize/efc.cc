@@ -7,7 +7,7 @@ extern "C" {
 #  include <math.h>
 }
 
-#include "efc.h"
+#include <math/optimize/efc.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 

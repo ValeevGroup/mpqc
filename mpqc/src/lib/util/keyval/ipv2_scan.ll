@@ -6,8 +6,8 @@
 #if !defined(SUN4)
 #include <string.h>
 #endif
-#include "ipv2.h"
-#include "ipv2_parse.h"
+#include <util/keyval/ipv2.h>
+#include <util/keyval/ipv2_parse.h>
 #define YY_USE_PROTOS
 #define yyrestart IPV2::yrestart
 #ifndef OLD_FLEX_SCANNER

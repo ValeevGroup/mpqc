@@ -22,9 +22,9 @@
 #include <string.h>
 #include <math.h>
 
-#include "simple.h"
-#include "localdef.h"
-#include "chemelem.h"
+#include <chemistry/molecule/simple.h>
+#include <chemistry/molecule/localdef.h>
+#include <chemistry/molecule/chemelem.h>
 
 
 #define CLASSNAME OutSimpleCo

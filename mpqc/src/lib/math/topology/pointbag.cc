@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include "pointbag.h"
+#include <math/topology/pointbag.h>
 
 PointBagElem_double::PointBagElem_double(const Point&p, const double&t):
   obj(t),

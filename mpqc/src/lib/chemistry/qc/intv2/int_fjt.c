@@ -7,7 +7,14 @@
  */
 
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:34  etseidl
+ * Revision 1.4  1995/03/17 01:49:32  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.3  1994/08/26  22:45:34  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -51,10 +58,10 @@
 #include <math/array/math_lib.h>
 
 #define ALLOC_FJTTABLE
-#include "fjttable.h"
+#include <chemistry/qc/intv2/fjttable.h>
 
-#include "int_fjt.gbl"
-#include "int_fjt.lcl"
+#include <chemistry/qc/intv2/int_fjt.gbl>
+#include <chemistry/qc/intv2/int_fjt.lcl>
 
 static int maxj;
 static double_matrix_t gtable;

@@ -5,8 +5,8 @@
 
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
-#include "gaussshell.h"
-#include "gaussbas.h"
+#include <chemistry/qc/basis/gaussshell.h>
+#include <chemistry/qc/basis/gaussbas.h>
 
 SavableState_REF_def(GaussianBasisSet);
 

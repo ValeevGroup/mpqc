@@ -1,7 +1,7 @@
 
 #include <math.h>
 #include <math/scmat/matrix.h>
-#include "integralv2.h"
+#include <chemistry/qc/integral/integralv2.h>
 
 void ortho(const RefGaussianBasisSet&t,
            const RefSCMatrix&or,

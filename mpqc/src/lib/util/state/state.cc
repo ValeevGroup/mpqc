@@ -6,14 +6,14 @@
 #include <stdlib.h>
 
 #include <util/class/class.h>
-#include "state.h"
-#include "state_ptr.h"
-#include "stateptrSet.h"
-#include "statenumSet.h"
-#include "stateptrImplSet.h"
-#include "statenumImplSet.h"
+#include <util/state/state.h>
+#include <util/state/state_ptr.h>
+#include <util/state/stateptrSet.h>
+#include <util/state/statenumSet.h>
+#include <util/state/stateptrImplSet.h>
+#include <util/state/statenumImplSet.h>
 
-#include "classdImplMap.h"
+#include <util/state/classdImplMap.h>
 
 /////////////////////////////////////////////////////////////////
 

@@ -14,10 +14,10 @@
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_mkden.gbl"
-#include "scf_mkden.lcl"
+#include <chemistry/qc/dmtscf/scf_mkden.gbl>
+#include <chemistry/qc/dmtscf/scf_mkden.lcl>
 
 GLOBAL_FUNCTION int
 scf_make_density(scf_info,Scf_Vec,Pmat,DPmat,PmatO,DPmatO,occnum)

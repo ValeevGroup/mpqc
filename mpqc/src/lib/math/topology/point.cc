@@ -4,7 +4,7 @@
 #endif
 
 #include <stdlib.h>
-#include "point.h"
+#include <math/topology/point.h>
 #include <math/scmat/matrix.h>
 #include <util/keyval/keyval.h>
 

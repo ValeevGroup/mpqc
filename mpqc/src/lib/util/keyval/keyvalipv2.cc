@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ipv2.h"
-#include "keyval.h"
+#include <util/keyval/ipv2.h>
+#include <util/keyval/keyval.h>
 
 ParsedKeyVal::ParsedKeyVal(IPV2*i):
 nfile(0),

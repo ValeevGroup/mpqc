@@ -1,6 +1,13 @@
 %
 % $Log$
-% Revision 1.7  1994/11/18 01:54:33  etseidl
+% Revision 1.8  1995/03/17 01:49:04  cljanss
+% Removed -I. and -I$(SRCDIR) from the default include path in
+% GlobalMakefile to avoid name conflicts with system include files.
+% Modified files under src.lib to include all files relative to src.lib.
+% Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+% INCLUDE and CXXINCLUDE or make other arrangements.
+%
+% Revision 1.7  1994/11/18  01:54:33  etseidl
 % add code to save the state of the force library
 %
 % Revision 1.6  1994/11/07  19:39:16  etseidl
@@ -216,7 +223,7 @@ the libraries, so we must include its header file.
 @ The input reading routines in read.cc let us read with either ipv2 or
 keyval.
 @<Include files.@>=
-#include "read.h"
+#include <chemistry/qc/force/read.h>
 
 @ The \.{libmath} library provides support for several of the data types used
 here and by the \.{libint} library.
@@ -248,8 +255,8 @@ given in the \.{libdmt} library.
 @ The templates for the global and local function definitions are found
 in |csscf.gbl| and |csscf.lcl|, respectively.
 @<Include files.@>=
-#include "mpcsscf.gbl"
-#include "mpcsscf.lcl"
+#include <chemistry/qc/force/mpcsscf.gbl>
+#include <chemistry/qc/force/mpcsscf.lcl>
 
 @* The global variables.
 @ All of these variables are set up by the |dmt_force_csscf_init| routine.

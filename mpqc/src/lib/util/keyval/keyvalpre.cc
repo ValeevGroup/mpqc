@@ -4,7 +4,7 @@ extern "C" {
 #include <ctype.h>
 #include <stdlib.h>
 }
-#include "keyval.h"
+#include <util/keyval/keyval.h>
 
 //////////////////////////////////////////////////////////////////////
 // utility functions

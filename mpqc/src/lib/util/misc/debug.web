@@ -81,7 +81,7 @@ example where |assert| is used for range checking on
 the variable |i|.
 
 @<Usage example.@>=
-#include "assert.h"
+#include <util/misc/assert.h>
 foo(i)
 int i;
 {

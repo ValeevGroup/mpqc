@@ -2,8 +2,8 @@
 #ifndef _ptrset_h
 #define _ptrset_h
 
-#include "voidptrSet.h"
-#include "voidptrAVLSet.h"
+#include <util/container/voidptrSet.h>
+#include <util/container/voidptrAVLSet.h>
 
 template <class Type>
 class PtrSet

@@ -3,7 +3,14 @@
  */
 
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:57  etseidl
+ * Revision 1.4  1995/03/17 01:49:43  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.3  1994/08/26  22:45:57  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -29,12 +36,12 @@
 #include <stdlib.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include "atoms.h"
-#include "int_macros.h"
-#include "int_flags.h"
-#include "int_types.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_macros.h>
+#include <chemistry/qc/intv2/int_flags.h>
+#include <chemistry/qc/intv2/int_types.h>
 
-#include "inter.h"
+#include <chemistry/qc/intv2/inter.h>
 
 #define HASH_SIZE 4
 #define MASK 0x3
@@ -53,8 +60,8 @@ struct intlist_struct {
   };
 typedef struct intlist_struct intlist_t;
 
-#include "storage.gbl"
-#include "storage.lcl"
+#include <chemistry/qc/intv2/storage.gbl>
+#include <chemistry/qc/intv2/storage.lcl>
 
 static intlist_t *hash_table[HASH_SIZE][HASH_SIZE][HASH_SIZE][HASH_SIZE];
 

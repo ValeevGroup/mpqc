@@ -6,7 +6,7 @@
 #include <util/keyval/keyval.h>
 
 #include <math/topology/point.h>
-#include "gaussshell.h"
+#include <chemistry/qc/basis/gaussshell.h>
 
 #define MAX_NPRIM 20
 #define MAX_NCON  10

@@ -1,6 +1,6 @@
 
-#include "machtype.gbl"
-#include "machtype.lcl"
+#include <util/misc/machtype.gbl>
+#include <util/misc/machtype.lcl>
 
 GLOBAL_FUNCTION char *
 machine_type()

@@ -9,7 +9,7 @@
 
 #include <util/keyval/keyval.h>
 
-#include "gaussshell.h"
+#include <chemistry/qc/basis/gaussshell.h>
 
 const char* GaussianShell::amtypes = "spdfghijkl";
 const char* GaussianShell::AMTYPES = "SPDFGHIJKL";

@@ -5,8 +5,8 @@ extern "C" {
 #include <stdlib.h>
 }
 #include <iostream.h>
-#include "keyval.h"
-#include "keyvalImplMap.h"
+#include <util/keyval/keyval.h>
+#include <util/keyval/keyvalImplMap.h>
 
 
 ////////////////////////////////////////////////////////////////////////

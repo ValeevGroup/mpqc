@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.4  1995/03/05 06:05:29  cljanss
+ * Revision 1.5  1995/03/17 01:49:24  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.4  1995/03/05  06:05:29  cljanss
  * Added efield integrals.  Changed the dipole moment integral interface.
  *
  * Revision 1.3  1994/08/26  22:45:17  etseidl
@@ -37,11 +44,11 @@
 #include <math.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include "atoms.h"
-#include "int_macros.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_macros.h>
 
-#include "comp_0e.gbl"
-#include "comp_0e.lcl"
+#include <chemistry/qc/intv2/comp_0e.gbl>
+#include <chemistry/qc/intv2/comp_0e.lcl>
 
 /* Compute the nuclear repulsion energy between two sets of centers. */
 GLOBAL_FUNCTION double

@@ -7,10 +7,10 @@
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
-#include "scf_oeis.gbl"
-#include "scf_oeis.lcl"
+#include <chemistry/qc/dmtscf/scf_oeis.gbl>
+#include <chemistry/qc/dmtscf/scf_oeis.lcl>
 
 /*************************************************************************
  *

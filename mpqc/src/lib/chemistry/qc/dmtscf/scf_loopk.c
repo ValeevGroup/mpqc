@@ -12,11 +12,11 @@
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/mgd.h>
 
-#include "scf.h"
-#include "scf_bnd.gbl"
+#include <chemistry/qc/dmtscf/scf.h>
+#include <chemistry/qc/dmtscf/scf_bnd.gbl>
 
-#include "scf_loopg.gbl"
-#include "scf_loopg.lcl"
+#include <chemistry/qc/dmtscf/scf_loopg.gbl>
+#include <chemistry/qc/dmtscf/scf_loopg.lcl>
 
 /*************************************************************************
  *

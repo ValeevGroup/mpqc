@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include "mpqc.h"
+#include <chemistry/qc/mpqc/mpqc.h>
 
 extern "C" {
 

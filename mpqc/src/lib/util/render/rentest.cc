@@ -1,8 +1,8 @@
 
 #include <util/keyval/keyval.h>
-#include "oogl.h"
-#include "object.h"
-#include "sphere.h"
+#include <util/render/oogl.h>
+#include <util/render/object.h>
+#include <util/render/sphere.h>
 
 int
 main()

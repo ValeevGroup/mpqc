@@ -27,7 +27,7 @@
 #include <string.h>
 #include <util/unix/cct_cprot.h>
 #include <util/class/class.h>
-#include "state_net.h"
+#include <util/state/state_net.h>
 
 /*
  * include <netdb.h>  for struct hostent

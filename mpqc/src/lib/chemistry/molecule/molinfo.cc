@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "molinfo.h"
+#include <chemistry/molecule/molinfo.h>
 
 ////////////////////////////////////////////////////////////////////////
 // MolInfo

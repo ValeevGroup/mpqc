@@ -1,6 +1,13 @@
 
 /* $Log$
- * Revision 1.6  1995/03/05 06:05:27  cljanss
+ * Revision 1.7  1995/03/17 01:49:26  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.6  1995/03/05  06:05:27  cljanss
  * Added efield integrals.  Changed the dipole moment integral interface.
  *
  * Revision 1.5  1995/02/15  20:33:33  cljanss
@@ -64,16 +71,16 @@
 #include <math.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include "atoms.h"
-#include "int_macros.h"
-#include "fjttable.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_macros.h>
+#include <chemistry/qc/intv2/fjttable.h>
 
-#include "comp_1e.gbl"
-#include "comp_1e.lcl"
+#include <chemistry/qc/intv2/comp_1e.gbl>
+#include <chemistry/qc/intv2/comp_1e.lcl>
 
 /*#include "initialize.gbl"*/
-#include "int_fjt.gbl"
-#include "utils.gbl"
+#include <chemistry/qc/intv2/int_fjt.gbl>
+#include <chemistry/qc/intv2/utils.gbl>
 
 /* The NCUBE exp function cannot handle large negative arguments. */
 #ifndef NCUBE

@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include "obwfn.h"
+#include <chemistry/qc/wfn/obwfn.h>
 
 #define CLASSNAME OneBodyWavefunction
 #define PARENTS public Wavefunction

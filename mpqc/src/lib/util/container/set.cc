@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include "set.h"
+#include <util/container/set.h>
 
 SET_def(int);
 ARRAYSET_def(int);

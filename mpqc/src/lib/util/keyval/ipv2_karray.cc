@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include "ipv2.h"
+#include <util/keyval/ipv2.h>
 
 void
 IPV2::ip_cwk_karray_add_v(int n,int*v)

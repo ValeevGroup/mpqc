@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "render.h"
-#include "object.h"
-#include "polylines.h"
-#include "color.h"
+#include <util/render/render.h>
+#include <util/render/object.h>
+#include <util/render/polylines.h>
+#include <util/render/color.h>
 
 #define CLASSNAME RenderedPolylines
 #define HAVE_KEYVAL_CTOR

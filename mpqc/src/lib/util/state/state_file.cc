@@ -1,10 +1,10 @@
 
 #include <stdio.h>
 #include <util/class/class.h>
-#include "state.h"
+#include <util/state/state.h>
 
-#include "statenumSet.h"
-#include "classdImplMap.h"
+#include <util/state/statenumSet.h>
+#include <util/state/classdImplMap.h>
 
 StateOutFile::StateOutFile() :
   opened_(0), fp_(stdout)

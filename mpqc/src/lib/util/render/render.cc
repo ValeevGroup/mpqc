@@ -1,10 +1,10 @@
 
 #include <stdio.h>
-#include "render.h"
-#include "object.h"
-#include "find.h"
-#include "polygons.h"
-#include "polysphere.h"
+#include <util/render/render.h>
+#include <util/render/object.h>
+#include <util/render/find.h>
+#include <util/render/polygons.h>
+#include <util/render/polysphere.h>
 
 #define CLASSNAME Render
 #define PARENTS public DescribedClass

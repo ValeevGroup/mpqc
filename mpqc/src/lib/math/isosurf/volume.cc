@@ -11,7 +11,7 @@ extern "C" {
 #include <util/keyval/keyval.h>
 #include <math/scmat/vector3.h>
 #include <math/scmat/local.h>
-#include "volume.h"
+#include <math/isosurf/volume.h>
 
 #define CLASSNAME Volume
 #define PARENTS public NLP2

@@ -11,8 +11,8 @@
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 
-#include "scf_bnd.gbl"
-#include "scf_bnd.lcl"
+#include <chemistry/qc/dmtscf/scf_bnd.gbl>
+#include <chemistry/qc/dmtscf/scf_bnd.lcl>
 
 /* this is a globally accessible variable on purpose */
 signed char *scf_bnd_Qvec;

@@ -1,6 +1,13 @@
 %
 % $Log$
-% Revision 1.9  1994/10/21 20:47:12  cljanss
+% Revision 1.10  1995/03/17 01:50:12  cljanss
+% Removed -I. and -I$(SRCDIR) from the default include path in
+% GlobalMakefile to avoid name conflicts with system include files.
+% Modified files under src.lib to include all files relative to src.lib.
+% Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+% INCLUDE and CXXINCLUDE or make other arrangements.
+%
+% Revision 1.9  1994/10/21  20:47:12  cljanss
 % Allow sizeof(void*) != sizeof(int).
 %
 % Revision 1.8  1994/09/24  01:45:08  cljanss
@@ -326,7 +333,7 @@ Fix up some lint gripes.
 
 @ Get some public typedefs and macros.
 @<Outer block...@>=
-#include "matrix.h"
+#include <math/dmt/matrix.h>
 
 @ We'll need a routine to
 handle errors.  
@@ -675,8 +682,8 @@ dmt_num_mats ()
 we can include the prototype files.
 @<Include prototypes@> =
 #include <tmpl.h>
-#include "matrix.gbl"
-#include "matrix.lcl"
+#include <math/dmt/matrix.gbl>
+#include <math/dmt/matrix.lcl>
 
 
 

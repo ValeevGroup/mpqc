@@ -7,11 +7,11 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <math/dmt/libdmt.h>
 
-#include "symm.h"
-#include "symm_mac.h"
+#include <chemistry/qc/dmtsym/symm.h>
+#include <chemistry/qc/dmtsym/symm_mac.h>
 
-#include "mksym.gbl"
-#include "mksym.lcl"
+#include <chemistry/qc/dmtsym/mksym.gbl>
+#include <chemistry/qc/dmtsym/mksym.lcl>
 
 /* ok, here's the plan.  given a skeleton matrix M, we want to form
  * the symmetrized matrix M'. According to D&K, M' = 1/g* [sum(g) R~ * M * R].

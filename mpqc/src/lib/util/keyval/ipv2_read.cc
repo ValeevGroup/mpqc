@@ -9,7 +9,7 @@
 #else
 #include <stdlib.h>
 #endif
-#include "ipv2.h"
+#include <util/keyval/ipv2.h>
 
 /* Set the ip_uppercase global. */
 void

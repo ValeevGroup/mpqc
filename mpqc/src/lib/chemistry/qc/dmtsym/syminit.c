@@ -14,16 +14,16 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#include "symm.h"
-#include "symm_mac.h"
-#include "symmallc.h"
-#include "symmfree.h"
-#include "symmzero.h"
+#include <chemistry/qc/dmtsym/symm.h>
+#include <chemistry/qc/dmtsym/symm_mac.h>
+#include <chemistry/qc/dmtsym/symmallc.h>
+#include <chemistry/qc/dmtsym/symmfree.h>
+#include <chemistry/qc/dmtsym/symmzero.h>
 
-#include "mkrpd.gbl"
+#include <chemistry/qc/dmtsym/mkrpd.gbl>
 
-#include "syminit.gbl"
-#include "syminit.lcl"
+#include <chemistry/qc/dmtsym/syminit.gbl>
+#include <chemistry/qc/dmtsym/syminit.lcl>
 
 /***************************************************************************
  *

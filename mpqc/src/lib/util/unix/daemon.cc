@@ -38,8 +38,8 @@
 
 #include <iostream.h>
 
-#include "cct_cprot.h"
-#include "daemon.h"
+#include <util/unix/cct_cprot.h>
+#include <util/unix/daemon.h>
 
 #if defined(SUN) || (defined(SGI) && defined __GNUC__ && __GNUC_MINOR__ < 6)
 extern "C" int syslog(int,char*,...);

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "vector3.h"
+#include <math/scmat/vector3.h>
 class RefSCmatrix;
 
 class SCMatrix3

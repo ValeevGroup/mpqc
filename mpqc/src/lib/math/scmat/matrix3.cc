@@ -4,8 +4,8 @@
 #endif
 
 #include <stdio.h>
-#include "matrix3.h"
-#include "vector3.h"
+#include <math/scmat/matrix3.h>
+#include <math/scmat/vector3.h>
 #include <math.h>
 
 ////////////////////////////////////////////////////////////////////////

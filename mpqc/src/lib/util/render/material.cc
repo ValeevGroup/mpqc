@@ -1,5 +1,5 @@
 
-#include "material.h"
+#include <util/render/material.h>
 
 #define CLASSNAME Material
 #define HAVE_KEYVAL_CTOR

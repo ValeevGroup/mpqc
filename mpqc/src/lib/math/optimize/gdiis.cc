@@ -7,7 +7,7 @@ extern "C" {
 #  include <math.h>
 }
 
-#include "gdiis.h"
+#include <math/optimize/gdiis.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 

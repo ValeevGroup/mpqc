@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "chemelem.h"
+#include <chemistry/molecule/chemelem.h>
 
 DescribedClass_REF_def(ChemicalElement);
 

@@ -19,11 +19,11 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 
-#include "scf.h"
-#include "scf_orth.gbl"
+#include <chemistry/qc/dmtscf/scf.h>
+#include <chemistry/qc/dmtscf/scf_orth.gbl>
 
-#include "scf_proj.gbl"
-#include "scf_proj.lcl"
+#include <chemistry/qc/dmtscf/scf_proj.gbl>
+#include <chemistry/qc/dmtscf/scf_proj.lcl>
 
 #define MAX0(a,b) ((a)>(b))?(a):(b)
 #define MIN0(a,b) ((a)<(b))?(a):(b)

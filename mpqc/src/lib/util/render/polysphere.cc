@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "polysphere.h"
-#include "polygons.h"
+#include <util/render/polysphere.h>
+#include <util/render/polygons.h>
 
 static inline void
 switch2(int& i, int& j)

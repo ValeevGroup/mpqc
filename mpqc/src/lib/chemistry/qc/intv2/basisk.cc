@@ -7,10 +7,10 @@
 
 extern "C" {
 #include <util/sgen/sgen.h>
-#include "atoms.h"
-#include "atomsinit.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/atomsinit.h>
 
-#include "atominfo.gbl"
+#include <chemistry/qc/intv2/atominfo.gbl>
 }
 
 enum whats { READ, COUNT };

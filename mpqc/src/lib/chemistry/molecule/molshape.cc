@@ -7,8 +7,8 @@ extern "C" {
 # include <math.h>
   }
 
-#include "molshape.h"
-#include "molecule.h"
+#include <chemistry/molecule/molshape.h>
+#include <chemistry/molecule/molecule.h>
 #include <math/scmat/matrix3.h>
 
 ////////////////////////////////////////////////////////////////////////

@@ -16,13 +16,13 @@ extern "C" {
 #include <chemistry/qc/intv2/int_libv2.h>
 
 extern "C" {
-#include "symm_mac.h"
-#include "symm.h"
+#include <chemistry/qc/dmtsym/symm_mac.h>
+#include <chemistry/qc/dmtsym/symm.h>
 
-#include "symmzero.h"
-#include "symmallc.h"
+#include <chemistry/qc/dmtsym/symmzero.h>
+#include <chemistry/qc/dmtsym/symmallc.h>
 
-#include "syminit.gbl"
+#include <chemistry/qc/dmtsym/syminit.gbl>
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -1,11 +1,11 @@
 
 #include <util/keyval/keyval.h>
-#include "oogl.h"
-#include "object.h"
-#include "sphere.h"
-#include "polygons.h"
-#include "polylines.h"
-#include "material.h"
+#include <util/render/oogl.h>
+#include <util/render/object.h>
+#include <util/render/sphere.h>
+#include <util/render/polygons.h>
+#include <util/render/polylines.h>
+#include <util/render/material.h>
 
 #define CLASSNAME OOGLRender
 #define PARENTS public Render

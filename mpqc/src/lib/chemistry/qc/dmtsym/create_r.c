@@ -9,11 +9,11 @@
 #include <math/dmt/libdmt.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
-#include "symm.h"
-#include "symm_mac.h"
+#include <chemistry/qc/dmtsym/symm.h>
+#include <chemistry/qc/dmtsym/symm_mac.h>
 
-#include "create_r.gbl"
-#include "create_r.lcl"
+#include <chemistry/qc/dmtsym/create_r.gbl>
+#include <chemistry/qc/dmtsym/create_r.lcl>
 
 /************************************************************************
  *	

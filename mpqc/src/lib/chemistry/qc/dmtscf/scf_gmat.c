@@ -11,23 +11,23 @@
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
-#include "scf.h"
+#include <chemistry/qc/dmtscf/scf.h>
 
 #ifndef IOFF
 #define IOFF(a,b) ((a)>(b))?(a)*((a)+1)/2+(b):(b)*((b)+1)/2+(a)
 #endif
 
-#include "scf_mkj.gbl"
-#include "scf_mkk.gbl"
-#include "scf_mkgd.gbl"
-#include "scf_mkgdlb.gbl"
-#include "scf_loopg.gbl"
-#include "scf_loopj.gbl"
-#include "scf_loopk.gbl"
-#include "scf_bnd.gbl"
+#include <chemistry/qc/dmtscf/scf_mkj.gbl>
+#include <chemistry/qc/dmtscf/scf_mkk.gbl>
+#include <chemistry/qc/dmtscf/scf_mkgd.gbl>
+#include <chemistry/qc/dmtscf/scf_mkgdlb.gbl>
+#include <chemistry/qc/dmtscf/scf_loopg.gbl>
+#include <chemistry/qc/dmtscf/scf_loopj.gbl>
+#include <chemistry/qc/dmtscf/scf_loopk.gbl>
+#include <chemistry/qc/dmtscf/scf_bnd.gbl>
 
-#include "scf_gmat.gbl"
-#include "scf_gmat.lcl"
+#include <chemistry/qc/dmtscf/scf_gmat.gbl>
+#include <chemistry/qc/dmtscf/scf_gmat.lcl>
 
 /* this is a pointer to the buffer which holds the integrals */
 double *scf_gmat_intbuf;

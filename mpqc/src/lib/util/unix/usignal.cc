@@ -24,8 +24,8 @@
 #endif
 
 #include <signal.h>
-#include "usignal.h"
-#include "cct_cprot.h"
+#include <util/unix/usignal.h>
+#include <util/unix/cct_cprot.h>
 
 ////////////////////////////////////////////////////////////////////////
 

@@ -3,7 +3,14 @@
  * integrals. */
 
 /* $Log$
- * Revision 1.1  1994/05/27 23:51:25  cljanss
+ * Revision 1.2  1995/03/17 01:49:30  cljanss
+ * Removed -I. and -I$(SRCDIR) from the default include path in
+ * GlobalMakefile to avoid name conflicts with system include files.
+ * Modified files under src.lib to include all files relative to src.lib.
+ * Makefiles under src.bin need to add the -I. and -I$(SRCDIR) back onto
+ * INCLUDE and CXXINCLUDE or make other arrangements.
+ *
+ * Revision 1.1  1994/05/27  23:51:25  cljanss
  * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
  *
  */
@@ -14,17 +21,17 @@
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 
-#include "atoms.h"
-#include "int_flags.h"
-#include "int_macros.h"
-#include "int_types.h"
+#include <chemistry/qc/intv2/atoms.h>
+#include <chemistry/qc/intv2/int_flags.h>
+#include <chemistry/qc/intv2/int_macros.h>
+#include <chemistry/qc/intv2/int_types.h>
 
-#include "inter.h"
+#include <chemistry/qc/intv2/inter.h>
 
-#include "comp_erep.gbl"
+#include <chemistry/qc/intv2/comp_erep.gbl>
 
-#include "comp_erep23.gbl"
-#include "comp_erep23.lcl"
+#include <chemistry/qc/intv2/comp_erep23.gbl>
+#include <chemistry/qc/intv2/comp_erep23.lcl>
 
 LOCAL_FUNCTION VOID
 make_int_unit_shell()

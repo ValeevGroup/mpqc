@@ -1,6 +1,6 @@
 
-#include "message.h"
-#include "topology.h"
+#include <util/group/message.h>
+#include <util/group/topology.h>
 
 #define CLASSNAME GlobalMsgIter
 #define PARENTS public DescribedClass

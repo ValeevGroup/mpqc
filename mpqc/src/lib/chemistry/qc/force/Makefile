@@ -15,6 +15,7 @@ override COPTIONS = -O2
 endif
 
 WEBSRC = spcsscf.web mpcsscf.web mposscf.web
+.PRECIOUS: $(WEBSRC:%.web=%.c)
 CXXSRC = read.cc
 
 GENSRC = $(WEBSRC:%.web=%.c)

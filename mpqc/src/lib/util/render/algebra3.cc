@@ -1,5 +1,5 @@
 #include <math.h>
-#include "algebra3.h"
+#include <util/render/algebra3.h>
 #include <ctype.h>
 
 /****************************************************************

@@ -220,6 +220,12 @@ GRSCF::compute()
     basis()->r(i,2) = molecule()->atom(i)[2];
   }
     
+  if (_hessian.needed())
+    set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
+
+  if (_gradient.needed())
+    set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
+
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
       // start from core guess
@@ -233,14 +239,15 @@ GRSCF::compute()
     _eigenvectors.result_noupdate()->schmidt_orthog(overlap().pointer(),
                                                     _ndocc+_nsocc);
 
-    if (_fock.null()) {
+    if (_fock.null())
       _fock = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
-    }
     
-    if (_fock_evals.null()) {
+    if (_fock_evals.null())
       _fock_evals = _fock->dim()->create_diagmatrix();
-    }
     
+    printf("\n  GRSCF::compute: energy accuracy = %g\n\n",
+           _energy.desired_accuracy());
+
     double eelec,nucrep;
     do_vector(eelec,nucrep);
       
@@ -253,9 +260,14 @@ GRSCF::compute()
 
   if (_gradient.needed()) {
     RefSCVector gradient = _moldim->create_vector();
+
+    printf("\n  GRSCF::compute: gradient accuracy = %g\n\n",
+           _gradient.desired_accuracy());
+
     do_gradient(gradient);
     gradient.print("cartesian gradient");
     set_gradient(gradient);
+
     _gradient.set_actual_accuracy(_gradient.desired_accuracy());
   }
   
@@ -283,11 +295,33 @@ GRSCF::do_vector(double& eelec, double& nucrep)
   _gr_dens_diff.assign(0.0);
   
   _gr_gmat = _gr_dens->clone();
+  _gr_gmat.assign(0.0);
+
   _gr_hcore = _gr_dens->clone();
 
   // form Hcore
   _gr_hcore.assign(0.0);
   _accumdih->accum(_gr_hcore);
+
+  // initialize some junk
+  centers_t *centers = basis()->convert_to_centers_t(molecule());
+  if (!centers) {
+    fprintf(stderr,"hoot man!  no centers\n");
+    abort();
+  }
+
+  int_normalize_centers(centers);
+  int_initialize_offsets2(centers,centers,centers,centers);
+
+  nucrep = int_nuclear_repulsion(centers,centers);
+  
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+  double *intbuf = 
+    int_initialize_erep(flags,0,centers,centers,centers,centers);
+
+  int_storage(1000000);
+
+  int_init_bounds();
 
   for (int iter=0; iter < _maxiter; iter++) {
     // form the density from the current vector 
@@ -301,18 +335,24 @@ GRSCF::do_vector(double& eelec, double& nucrep)
         delta += _gr_dens_diff.get_element(i,j)*_gr_dens_diff.get_element(i,j);
     delta = sqrt(delta/ij);
 
-    if (delta < 1.0e-8) break;
+    if (delta < _energy.desired_accuracy()) break;
 
+    // reset the density from time to time
+    if (iter && !iter%10) {
+      _gr_gmat.assign(0.0);
+      _gr_dens_diff.assign(_gr_dens);
+    }
+      
     // scale the off-diagonal elements of the density matrix
-    _gr_dens->scale(2.0);
-    _gr_dens->scale_diagonal(0.5);
+    _gr_dens_diff->scale(2.0);
+    _gr_dens_diff->scale_diagonal(0.5);
     
     // form the AO basis fock matrix
-    form_ao_fock(nucrep);
+    form_ao_fock(centers,intbuf);
 
     // unscale the off-diagonal elements of the density matrix
-    _gr_dens->scale(0.5);
-    _gr_dens->scale_diagonal(2.0);
+    _gr_dens_diff->scale(0.5);
+    _gr_dens_diff->scale_diagonal(2.0);
 
     // calculate the electronic energy
     eelec = scf_energy();
@@ -368,6 +408,13 @@ GRSCF::do_vector(double& eelec, double& nucrep)
       
   _eigenvectors = _gr_vector;
   
+  int_done_bounds();
+  int_done_erep();
+  int_done_offsets2(centers,centers,centers,centers);
+  int_done_storage();
+  free_centers(centers);
+  free(centers);
+
   _gr_dens = 0;
   _gr_dens_diff = 0;
   _gr_gmat = 0;

@@ -1,5 +1,5 @@
 
-#define BOUNDS 0
+#define BOUNDS 1
 
 #include <util/misc/newstring.h>
 #include <math/optimize/diis.h>
@@ -30,8 +30,11 @@ set_scale(double& coulombscale, double& exchangescale,
 }
 
 static void
-gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens, int ndocc)
+gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens, int ndocc,
+           double& pmax)
 {
+  pmax=0.0;
+
   for (int i=0; i < vec->nrow(); i++) {
     for (int j=0; j <= i; j++) {
       double pt=0;
@@ -39,6 +42,8 @@ gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens, int ndocc)
         pt += vec->get_element(i,k)*vec->get_element(j,k);
       
       dens->set_element(i,j,pt);
+      if (fabs(pt)>pmax)
+        pmax=fabs(pt);
     }
   }
   dens->scale(2.0);
@@ -142,7 +147,8 @@ GRSCF::do_gradient(const RefSCVector& gradient)
   oneelec.assign(0.0);
 
   // form density
-  gr_density(_gr_vector,_gr_dens,_ndocc);
+  double pmax;
+  gr_density(_gr_vector,_gr_dens,_ndocc,pmax);
 
   for (int x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
@@ -190,21 +196,40 @@ GRSCF::do_gradient(const RefSCVector& gradient)
   int_done_1e();
 
   // now for the tricky part
-  int flags = INT_EREP|INT_NOSTR1|INT_NOSTR2|INT_NOSTRB|INT_NODERB;
+  int flags = INT_EREP|INT_NOSTR1|INT_NOSTR2|INT_NOSTRB;
+#if !BOUNDS
+  flags |= INT_NODERB;
+#endif
 
   int_initialize_offsets2(centers,centers,centers,centers);
   double *ints = int_initialize_erep(flags,1,centers,centers,centers,centers);
 #if BOUNDS
-  int_inite_bounds_1der();
+  int_init_bounds_1der();
+  int Pmax = int_bound_log(pmax);
+  int PPmax = int_bound_log(6.0*pmax*pmax);
+  int threshold = int_bound_log(_gradient.desired_accuracy());
 #endif
   
   RefSCVector twoelec = oneelec;
   twoelec.assign(0.0);
   
+  double tnint=0;
+
   for (int i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
+
+#if BOUNDS
+      if (int_erep_2bound_1der(i,j)+PPmax < threshold)
+        continue;
+#endif
+
       for (int k=0; k <= i; k++) {
         for (int l=0; l <= ((i==k)?j:k); l++) {
+
+#if BOUNDS
+          if (int_erep_4bound_1der(i,j,k,l)+PPmax < threshold)
+            continue;
+#endif
           int sh[4], sz[4];
           double coulombscale,exchangescale;
           der_centers_t dercenters;
@@ -213,6 +238,8 @@ GRSCF::do_gradient(const RefSCVector& gradient)
 
           int_erep_all1der_v(INT_EREP|INT_REDUND|INT_NOPERM,
                              sh,sz,&dercenters);
+
+          tnint += (double) sz[0]*sz[1]*sz[2]*sz[3];
 
           set_scale(coulombscale,exchangescale,i,j,k,l);
           
@@ -227,6 +254,11 @@ GRSCF::do_gradient(const RefSCVector& gradient)
                     int ko = kp + centers->func_num[k];
                     for (int lp=0; lp < sz[3]; lp++) {
                       int lo = lp + centers->func_num[l];
+
+                      if (fabs(ints[indexijkl]) < 1.0e-14) {
+                        indexijkl++;
+                        continue;
+                      }
 
                       double contrib;
 
@@ -273,6 +305,8 @@ GRSCF::do_gradient(const RefSCVector& gradient)
   //twoelec.print("two electron contribution");
   gradient.accumulate(twoelec);
   //gradient.print("cartesian gradient");
+
+  printf("%20.0f derivative integrals\n",tnint);
 
 #if BOUNDS
   int_done_bounds_1der();

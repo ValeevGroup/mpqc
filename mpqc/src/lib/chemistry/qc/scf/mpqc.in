@@ -32,10 +32,10 @@ mole<GRSCF>: (
 
   % Wavefunction input
   basis<GaussianBasisSet>: (
-    %basisdir = "/usr/people/cljanss/src/SC/lib/"
-    %basisfiles = [ v2g90supp.ipv2 v2g90.ipv2 ]
+    basisdir = "/net/midway/usr/people/etseidl/basis/"
+    basisfiles = [ v2g90.ipv2 ]
     molecule = $:molecule
-    name = sto3g
+    name = 631gss
   )
 
   % OneBodyWavefunction input

@@ -7,38 +7,77 @@
 #define ioff(i) (((i)*((i)+1))>>1)
 #define IOFF(a,b) (((a)>(b))?(ioff(a)+(b)):(ioff(b)+(a)))
 
-void
-GRSCF::form_ao_fock(double&nucrep)
+static signed char
+max_den(centers_t *centers, const RefSymmSCMatrix& dens, int s1, int s2)
 {
-  _gr_gmat.assign(0.0);
+  double t,max=0.0;
 
-  centers_t *centers = basis()->convert_to_centers_t(molecule());
-  if (!centers) {
-    fprintf(stderr,"hoot man!  no centers\n");
-    abort();
+  int s1i = centers->func_num[s1];
+  int s1u = s1i + INT_SH_NFUNC((centers),s1);
+
+  int s2i = centers->func_num[s2];
+  int s2u = s2i + INT_SH_NFUNC((centers),s1);
+
+  for (int i=s1i; i < s1u; i++) {
+    for (int j=s2i; j < s2u; j++) {
+      if ((t=fabs(dens.get_element(i,j))) > max)
+        max=t;
+    }
   }
 
-  int_normalize_centers(centers);
-  int_initialize_offsets2(centers,centers,centers,centers);
+  int ret = (int) (log(max)/log(2.0));
+  if (ret < -126) ret=-126;
 
-  nucrep = int_nuclear_repulsion(centers,centers);
-  
-  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
-  double *intbuf = 
-    int_initialize_erep(flags,0,centers,centers,centers,centers);
+  return (signed char) ret;
+}
 
-  int_storage(1000000);
+void
+GRSCF::form_ao_fock(centers_t *centers, double *intbuf)
+{
+  int inttol = int_bound_log(_energy.desired_accuracy()/100.0);
 
   char *shnfunc = new char[centers->nshell];
   for (int i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
+
+  signed char *pmax = new signed char[ioff(centers->nshell)];
+  for (int i=0; i < centers->nshell; i++) {
+    int ij=ioff(i);
+    for (int j=0; j <= i; j++,ij++) {
+      pmax[ij] = max_den(centers,_gr_dens_diff,i,j);
+    }
+  }
   
   double tnint=0;
   
   for (int i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
+      int ij = ioff(i)+j;
+      int ijbnd = int_Qvec[ij];
+      int ijpmx = pmax[ij];
+
       for (int k=0; k <= i; k++) {
+        int ijkpmx=ijpmx;
+        if (pmax[(ioff(i)+k)]-2 > ijkpmx)
+          ijkpmx = pmax[(ioff(i)+k)]-2;
+
+        if (pmax[IOFF(j,k)]-2 > ijkpmx)
+          ijkpmx = pmax[IOFF(j,k)]-2;
+        
         for (int l=0; l <= ((k==i)?j:k); l++) {
+          int kl = ioff(k)+l;
+          int klbnd = int_Qvec[kl];
+          int ijklpmx = (pmax[kl]>ijkpmx) ? pmax[kl] : ijkpmx;
+
+          if (pmax[(ioff(i)+l)]-2 > ijklpmx)
+            ijklpmx = pmax[(ioff(i)+l)]-2;
+
+          if (pmax[IOFF(j,l)]-2 > ijklpmx)
+            ijklpmx = pmax[IOFF(j,k)]-2;
+
+          if (ijklpmx+ijbnd+klbnd < inttol)
+            continue;
+
           int s1=i, s2=j, s3=k, s4=l;
 
           int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM,&s1,&s2,&s3,&s4);
@@ -95,9 +134,9 @@ GRSCF::form_ao_fock(double&nucrep)
                           lkl=ioff(kk)+ll;
                           pkval = (lij==lkl) ? 0.25*pki_int: 0.5*pki_int;
                           _gr_gmat.accumulate_element(ii,jj,pkval*
-                                                  _gr_dens.get_element(kk,ll));
+                                             _gr_dens_diff.get_element(kk,ll));
                           _gr_gmat.accumulate_element(kk,ll,pkval*
-                                                  _gr_dens.get_element(ii,jj));
+                                             _gr_dens_diff.get_element(ii,jj));
                         } else {
                           /*
                            * if j=k, then this integral contributes
@@ -111,9 +150,9 @@ GRSCF::form_ao_fock(double&nucrep)
                           pkval = (lij==lkl) ? 0.375*pki_int: 0.75*pki_int;
 
                           _gr_gmat.accumulate_element(ii,jj,pkval*
-                                                  _gr_dens.get_element(kk,ll));
+                                             _gr_dens_diff.get_element(kk,ll));
                           _gr_gmat.accumulate_element(kk,ll,pkval*
-                                                  _gr_dens.get_element(ii,jj));
+                                             _gr_dens_diff.get_element(ii,jj));
 
                           /*
                            * this integral also contributes to K1 and K2 of
@@ -127,9 +166,9 @@ GRSCF::form_ao_fock(double&nucrep)
                           pkval = (lij==lkl)? 0.25*pki_int: 0.5*pki_int;
 
                           _gr_gmat.accumulate_element(ii,ll,-pkval*
-                                                  _gr_dens.get_element(kk,jj));
+                                             _gr_dens_diff.get_element(kk,jj));
                           _gr_gmat.accumulate_element(kk,jj,-pkval*
-                                                  _gr_dens.get_element(ii,ll));
+                                             _gr_dens_diff.get_element(ii,ll));
                         }
                       } else if (ii == kk || jj == ll) {
                         /*
@@ -143,9 +182,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         lkl=ioff(kk)+ll;
                         pkval = (lij==lkl) ? 0.375*pki_int: 0.75*pki_int;
                         _gr_gmat.accumulate_element(ii,jj,pkval*
-                                                  _gr_dens.get_element(kk,ll));
+                                             _gr_dens_diff.get_element(kk,ll));
                         _gr_gmat.accumulate_element(kk,ll,pkval*
-                                                  _gr_dens.get_element(ii,jj));
+                                             _gr_dens_diff.get_element(ii,jj));
 
                         /*
                          * this integral also contributes to K1 and K2 of
@@ -159,9 +198,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval = (lij==lkl) ? 0.25*pki_int : 0.5*pki_int;
 
                         _gr_gmat.accumulate_element(ii,kk,-pkval*
-                                                  _gr_dens.get_element(jj,ll));
+                                             _gr_dens_diff.get_element(jj,ll));
                         _gr_gmat.accumulate_element(jj,ll,-pkval*
-                                                  _gr_dens.get_element(ii,kk));
+                                             _gr_dens_diff.get_element(ii,kk));
                       } else {
                         /*
                          * This integral contributes to J of G(ij)
@@ -173,9 +212,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval = (lij==lkl)? 0.5*pki_int : pki_int;
 
                         _gr_gmat.accumulate_element(ii,jj,pkval*
-                                                  _gr_dens.get_element(kk,ll));
+                                             _gr_dens_diff.get_element(kk,ll));
                         _gr_gmat.accumulate_element(kk,ll,pkval*
-                                                  _gr_dens.get_element(ii,jj));
+                                             _gr_dens_diff.get_element(ii,jj));
 
                         /*
                          * and to K1 of G(ik)
@@ -187,9 +226,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval = (lij==lkl) ? 0.125*pki_int : 0.25*pki_int;
 
                         _gr_gmat.accumulate_element(ii,kk,-pkval*
-                                                  _gr_dens.get_element(jj,ll));
+                                             _gr_dens_diff.get_element(jj,ll));
                         _gr_gmat.accumulate_element(jj,ll,-pkval*
-                                                  _gr_dens.get_element(ii,kk));
+                                             _gr_dens_diff.get_element(ii,kk));
 
                         if ((ii != jj) && (kk != ll)) {
                           /*
@@ -205,9 +244,9 @@ GRSCF::form_ao_fock(double&nucrep)
                           lkl=IOFF(kk,jj);
 
                           _gr_gmat.accumulate_element(ii,ll,-pkval*
-                                                  _gr_dens.get_element(kk,jj));
+                                             _gr_dens_diff.get_element(kk,jj));
                           _gr_gmat.accumulate_element(kk,jj,-pkval*
-                                                  _gr_dens.get_element(ii,ll));
+                                             _gr_dens_diff.get_element(ii,ll));
                         }
                       }
                     }
@@ -249,9 +288,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval = 0.75*pki_int;
 
                         _gr_gmat.accumulate_element(ii,jj,pkval*
-                                                  _gr_dens.get_element(kk,ll));
+                                             _gr_dens_diff.get_element(kk,ll));
                         _gr_gmat.accumulate_element(kk,ll,pkval*
-                                                  _gr_dens.get_element(ii,jj));
+                                             _gr_dens_diff.get_element(ii,jj));
 
                         /*
                          * this integral also contributes to K1 and K2 of
@@ -264,9 +303,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         lkl=IOFF(kk,jj);
                         pkval *= 0.666666666666666;
                         _gr_gmat.accumulate_element(ii,ll,-pkval*
-                                                  _gr_dens.get_element(kk,jj));
+                                             _gr_dens_diff.get_element(kk,jj));
                         _gr_gmat.accumulate_element(kk,jj,-pkval*
-                                                  _gr_dens.get_element(ii,ll));
+                                             _gr_dens_diff.get_element(ii,ll));
                       } else if (ii == kk || jj == ll) {
                         /*
                          * if i=k or j=l, then this integral contributes
@@ -280,9 +319,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval = 0.75*pki_int;
 
                         _gr_gmat.accumulate_element(ii,jj,pkval*
-                                                  _gr_dens.get_element(kk,ll));
+                                             _gr_dens_diff.get_element(kk,ll));
                         _gr_gmat.accumulate_element(kk,ll,pkval*
-                                                  _gr_dens.get_element(ii,jj));
+                                             _gr_dens_diff.get_element(ii,jj));
 
                         /*
                          * this integral also contributes to K1 and K2 of
@@ -296,9 +335,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval *= 0.666666666666666;
 
                         _gr_gmat.accumulate_element(ii,kk,-pkval*
-                                                  _gr_dens.get_element(jj,ll));
+                                             _gr_dens_diff.get_element(jj,ll));
                         _gr_gmat.accumulate_element(jj,ll,-pkval*
-                                                  _gr_dens.get_element(ii,kk));
+                                             _gr_dens_diff.get_element(ii,kk));
                       } else {
                         /*
                          * This integral contributes to J of G(ij)
@@ -310,9 +349,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval = pki_int;
 
                         _gr_gmat.accumulate_element(ii,jj,pkval*
-                                                  _gr_dens.get_element(kk,ll));
+                                             _gr_dens_diff.get_element(kk,ll));
                         _gr_gmat.accumulate_element(kk,ll,pkval*
-                                                  _gr_dens.get_element(ii,jj));
+                                             _gr_dens_diff.get_element(ii,jj));
 
                         /*
                          * and to K1 of G(ik)
@@ -324,9 +363,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         pkval *= 0.25;
 
                         _gr_gmat.accumulate_element(ii,kk,-pkval*
-                                                  _gr_dens.get_element(jj,ll));
+                                             _gr_dens_diff.get_element(jj,ll));
                         _gr_gmat.accumulate_element(jj,ll,-pkval*
-                                                  _gr_dens.get_element(ii,kk));
+                                             _gr_dens_diff.get_element(ii,kk));
 
                         /*
                          * and to K2 of G(il)
@@ -337,9 +376,9 @@ GRSCF::form_ao_fock(double&nucrep)
                         lkl=IOFF(kk,jj);
 
                         _gr_gmat.accumulate_element(ii,ll,-pkval*
-                                                  _gr_dens.get_element(kk,jj));
+                                             _gr_dens_diff.get_element(kk,jj));
                         _gr_gmat.accumulate_element(kk,jj,-pkval*
-                                                  _gr_dens.get_element(ii,ll));
+                                             _gr_dens_diff.get_element(ii,ll));
                       }
                     }
                     index++;
@@ -354,12 +393,12 @@ GRSCF::form_ao_fock(double&nucrep)
     }
   }
   
-  int_done_erep();
-  int_done_offsets2(centers,centers,centers,centers);
-  int_done_storage();
-  free_centers(centers);
-  free(centers);
+  int_reduce_storage_threshold();
+
+  printf("%20.0f integrals\n",tnint);
+
   delete[] shnfunc;
+  delete[] pmax;
 
   _fock.assign(_gr_gmat);
   _fock.accumulate(_gr_hcore);

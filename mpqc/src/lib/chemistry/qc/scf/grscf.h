@@ -13,6 +13,9 @@
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/wfn/effh.h>
 
+#include <math/array/math_lib.h>
+#include <chemistry/qc/intv2/int_libv2.h>
+
 ////////////////////////////////////////////////////////////////////////////
 
 class GRSCF: public OneBodyWavefunction
@@ -58,7 +61,7 @@ class GRSCF: public OneBodyWavefunction
     void init();
     virtual void compute();
     virtual void do_vector(double&,double&);
-    virtual void form_ao_fock(double&);
+    virtual void form_ao_fock(centers_t *, double*);
     virtual double scf_energy();
     virtual void do_gradient(const RefSCVector&);
     

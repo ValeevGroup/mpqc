@@ -48,6 +48,10 @@ extern "C" {
 #   include <util/group/messmpi.h>
     const ClassDesc &fl3 = MPIMessageGrp::class_desc_;
 # endif
+# ifdef HAVE_NX
+#   include <util/group/memipgon.h>
+    const ClassDesc &fl4 = IParagonMemoryGrp::class_desc_;
+# endif
 #endif
 
 //////////////////////////////////////////////////////////////////////////////

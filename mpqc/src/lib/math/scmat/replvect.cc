@@ -168,6 +168,26 @@ ReplSCVector::accumulate(SCVector*a)
 }
 
 void
+ReplSCVector::accumulate(SCMatrix*a)
+{
+  // make sure that the argument is of the correct type
+  ReplSCMatrix *la
+    = ReplSCMatrix::require_castdown(a,"ReplSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
+        || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
+      fprintf(stderr,"ReplSCVector::accumulate(SCMatrix*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = d->n();
+  int i;
+  for (i=0; i<nelem; i++) vector[i] += la->matrix[i];
+}
+
+void
 ReplSCVector::assign(double a)
 {
   int nelem = d->n();

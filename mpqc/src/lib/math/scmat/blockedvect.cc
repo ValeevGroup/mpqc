@@ -230,6 +230,26 @@ BlockedSCVector::accumulate(SCVector*a)
       vecs_[i]->accumulate(la->vecs_[i]);
 }
 
+void
+BlockedSCVector::accumulate(SCMatrix*a)
+{
+  // make sure that the argument is of the correct type
+  BlockedSCMatrix* la
+    = BlockedSCMatrix::require_castdown(a,"BlockedSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
+        || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
+    fprintf(stderr,"BlockedSCVector::accumulate(SCMatrix*a):\n");
+    fprintf(stderr,"dimensions don't match\n");
+    abort();
+  }
+
+  for (int i=0; i < d->nblocks(); i++)
+    if (vecs_[i].nonnull())
+      vecs_[i]->accumulate(la->mats_[i]);
+}
+
 double
 BlockedSCVector::scalar_product(SCVector*a)
 {

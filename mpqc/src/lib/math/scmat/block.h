@@ -17,9 +17,16 @@ class SCMatrixBlock: public SavableState {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
+    int blocki, blockj;
+  public:
     SCMatrixBlock();
-    SCMatrixBlock(StateIn&s): SavableState(s) {}
+    SCMatrixBlock(StateIn&s);
     virtual ~SCMatrixBlock();
+    void save_data_state(StateOut&s);
+
+    virtual SCMatrixBlock *deepcopy() const;
+    virtual double *dat();
+    virtual int ndat() const;
 
     virtual void process(SCElementOp*) = 0;
     virtual void process(SCElementOp2*, SCMatrixBlock*) = 0;
@@ -72,6 +79,7 @@ class SCMatrixBlockList: public SavableState {
     void append(SCMatrixBlock*);
     SCMatrixBlockListIter begin() { return _begin; }
     SCMatrixBlockListIter end() { return 0; }
+    SCMatrixBlockList *deepcopy();
 };
 SavableState_REF_dec(SCMatrixBlockList);
 
@@ -89,9 +97,14 @@ class SCVectorSimpleBlock: public SCMatrixBlock {
     int iend;
     double* data;
 
+    SCMatrixBlock *deepcopy() const;
+
     void process(SCElementOp*);
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
+
+    double *dat();
+    int ndat() const;
 };
 SavableState_REF_dec(SCVectorSimpleBlock);
 
@@ -132,9 +145,14 @@ class SCMatrixRectBlock: public SCMatrixBlock {
     int jend;
     double* data;
 
+    SCMatrixBlock *deepcopy() const;
+
     void process(SCElementOp*);
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
+
+    double *dat();
+    int ndat() const;
 };
 SavableState_REF_dec(SCMatrixRectBlock);
 
@@ -178,9 +196,14 @@ class SCMatrixLTriBlock: public SCMatrixBlock {
     int end;
     double* data;
 
+    SCMatrixBlock *deepcopy() const;
+
     void process(SCElementOp*);
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
+
+    double *dat();
+    int ndat() const;
 };
 SavableState_REF_dec(SCMatrixLTriBlock);
 
@@ -225,9 +248,14 @@ class SCMatrixDiagBlock: public SCMatrixBlock {
     int iend;
     double* data;
 
+    SCMatrixBlock *deepcopy() const;
+
     void process(SCElementOp*);
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
+
+    double *dat();
+    int ndat() const;
 };
 SavableState_REF_dec(SCMatrixDiagBlock);
 

@@ -4,6 +4,7 @@
 #endif
 
 #include <iostream.h>
+#include <string.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
@@ -20,6 +21,21 @@ SavableState_REF_def(SCMatrixBlock);
 
 SCMatrixBlock::SCMatrixBlock()
 {
+  blocki = blockj = -1;
+}
+
+SCMatrixBlock::SCMatrixBlock(StateIn&s):
+  SavableState(s)
+{
+  s.get(blocki);
+  s.get(blockj);
+}
+
+void
+SCMatrixBlock::save_data_state(StateOut&s)
+{
+  s.put(blocki);
+  s.put(blockj);
 }
 
 void *
@@ -32,6 +48,30 @@ SCMatrixBlock::_castdown(const ClassDesc*cd)
 
 SCMatrixBlock::~SCMatrixBlock()
 {
+}
+
+SCMatrixBlock *
+SCMatrixBlock::deepcopy() const
+{
+  cerr << "SCMatrixBlock of type " << class_name()
+       << " cannot be deep copied" << endl;
+  abort();
+}
+
+double *
+SCMatrixBlock::dat()
+{
+  cerr << "SCMatrixBlock of type " << class_name()
+       << " cannot provide internal data" << endl;
+  abort();
+}
+
+int
+SCMatrixBlock::ndat() const
+{
+  cerr << "SCMatrixBlock of type " << class_name()
+       << " cannot provide size of internal data" << endl;
+  abort();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -85,6 +125,7 @@ SCMatrixBlockList::SCMatrixBlockList(StateIn& s):
 {
   int i, count;
   s.get(count);
+  _begin = 0;
   for (i=0; i<count; i++) {
       append(SCMatrixBlock::restore_state(s));
     }
@@ -126,6 +167,17 @@ SCMatrixBlockList::append(SCMatrixBlock* b)
     }
 }
 
+SCMatrixBlockList *
+SCMatrixBlockList::deepcopy()
+{
+  SCMatrixBlockListIter i;
+  SCMatrixBlockList *ret = new SCMatrixBlockList();
+  for (i=begin(); i!=end(); i++) {
+      ret->append(i.block()->deepcopy());
+    }
+  return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixRectBlock member functions
 
@@ -159,11 +211,34 @@ SCMatrixRectBlock::SCMatrixRectBlock(StateIn&s):
 void
 SCMatrixRectBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(istart);
   s.put(jstart);
   s.put(iend);
   s.put(jend);
   s.put(data,(iend-istart)*(jend-jstart));
+}
+
+SCMatrixBlock *
+SCMatrixRectBlock::deepcopy() const
+{
+  SCMatrixRectBlock *ret = new SCMatrixRectBlock(istart,iend,jstart,jend);
+  ret->blocki = blocki;
+  ret->blockj = blockj;
+  memcpy(ret->data, data, sizeof(double)*ndat());
+  return ret;
+}
+
+double *
+SCMatrixRectBlock::dat()
+{
+  return data;
+}
+
+int
+SCMatrixRectBlock::ndat() const
+{
+  return (iend-istart)*(jend-jstart);
 }
 
 void *
@@ -241,6 +316,7 @@ SCMatrixRectSubBlock::SCMatrixRectSubBlock(StateIn&s):
 void
 SCMatrixRectSubBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(istart);
   s.put(istride);
   s.put(jstart);
@@ -316,9 +392,32 @@ SCMatrixLTriBlock::SCMatrixLTriBlock(StateIn&s):
 void
 SCMatrixLTriBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(start);
   s.put(end);
   s.put(data,((end-start)*(end-start+1))/2);
+}
+
+SCMatrixBlock *
+SCMatrixLTriBlock::deepcopy() const
+{
+  SCMatrixLTriBlock *ret = new SCMatrixLTriBlock(start,end);
+  ret->blocki = blocki;
+  ret->blockj = blockj;
+  memcpy(ret->data, data, sizeof(double)*ndat());
+  return ret;
+}
+
+double *
+SCMatrixLTriBlock::dat()
+{
+  return data;
+}
+
+int
+SCMatrixLTriBlock::ndat() const
+{
+  return ((end-start)*(end-start+1))/2;
 }
 
 void *
@@ -395,6 +494,7 @@ SCMatrixLTriSubBlock::SCMatrixLTriSubBlock(StateIn&s):
 void
 SCMatrixLTriSubBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(istart);
   s.put(iend);
   s.put(jstart);
@@ -479,10 +579,33 @@ SCMatrixDiagBlock::SCMatrixDiagBlock(StateIn&s):
 void
 SCMatrixDiagBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(istart);
   s.put(jstart);
   s.put(iend);
   s.put(data,iend-istart);
+}
+
+SCMatrixBlock *
+SCMatrixDiagBlock::deepcopy() const
+{
+  SCMatrixDiagBlock *ret = new SCMatrixDiagBlock(istart,iend,jstart);
+  ret->blocki = blocki;
+  ret->blockj = blockj;
+  memcpy(ret->data, data, sizeof(double)*ndat());
+  return ret;
+}
+
+double *
+SCMatrixDiagBlock::dat()
+{
+  return data;
+}
+
+int
+SCMatrixDiagBlock::ndat() const
+{
+  return iend-istart;
 }
 
 void *
@@ -568,6 +691,7 @@ SCMatrixDiagSubBlock::SCMatrixDiagSubBlock(StateIn&s):
 void
 SCMatrixDiagSubBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(istart);
   s.put(jstart);
   s.put(iend);
@@ -642,9 +766,32 @@ SCVectorSimpleBlock::SCVectorSimpleBlock(StateIn&s):
 void
 SCVectorSimpleBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(istart);
   s.put(iend);
   s.put(data,iend-istart);
+}
+
+SCMatrixBlock *
+SCVectorSimpleBlock::deepcopy() const
+{
+  SCVectorSimpleBlock *ret = new SCVectorSimpleBlock(istart,iend);
+  ret->blocki = blocki;
+  ret->blockj = blockj;
+  memcpy(ret->data, data, sizeof(double)*ndat());
+  return ret;
+}
+
+double *
+SCVectorSimpleBlock::dat()
+{
+  return data;
+}
+
+int
+SCVectorSimpleBlock::ndat() const
+{
+  return iend-istart;
 }
 
 void *
@@ -719,6 +866,7 @@ SCVectorSimpleSubBlock::SCVectorSimpleSubBlock(StateIn&s):
 void
 SCVectorSimpleSubBlock::save_data_state(StateOut&s)
 {
+  SCMatrixBlock::save_data_state(s);
   s.put(istart);
   s.put(iend);
   s.put(offset);

@@ -110,10 +110,12 @@ class SCVector: public SavableState {
     //texi Return the value of element @var{i}.
     virtual double get_element(int) = 0;
     //texi Sum the result of @var{m} times @var{v} into @code{this}.
-    virtual void accumulate_product(SymmSCMatrix* m, SCVector* v) = 0;
+    virtual void accumulate_product(SymmSCMatrix* m, SCVector* v);
     virtual void accumulate_product(SCMatrix* m, SCVector* v) = 0;
     //texi Sum @var{v} into this.
     virtual void accumulate(SCVector*v) = 0;
+    //texi Sum @var{m} into this.  One of @var{m}'s dimensions must be 1.
+    virtual void accumulate(SCMatrix*m) = 0;
     //texi Return the dot product.
     virtual double scalar_product(SCVector*) = 0;
     //texi Perform the element operation @var{op} on each element of this.
@@ -224,11 +226,14 @@ class SCMatrix: public SavableState {
     
     //texi Sum @var{m} into this.
     virtual void accumulate(SCMatrix* m) = 0;
+    virtual void accumulate(SymmSCMatrix* m) = 0;
+    virtual void accumulate(DiagSCMatrix* m) = 0;
+    virtual void accumulate(SCVector*) = 0;
     //texi Sum into @code{this} the products of various vectors or matrices.
     virtual void accumulate_outer_product(SCVector*,SCVector*) = 0;
     virtual void accumulate_product(SCMatrix*,SCMatrix*) = 0;
-    virtual void accumulate_product(SCMatrix*,SymmSCMatrix*) = 0;
-    virtual void accumulate_product(SCMatrix*,DiagSCMatrix*) = 0;
+    virtual void accumulate_product(SCMatrix*,SymmSCMatrix*);
+    virtual void accumulate_product(SCMatrix*,DiagSCMatrix*);
     virtual void accumulate_product(SymmSCMatrix*,SCMatrix*);
     virtual void accumulate_product(DiagSCMatrix*,SCMatrix*);
     //texi Transpose @code{this}.
@@ -353,14 +358,14 @@ class SymmSCMatrix: public SavableState {
     //texi Sum @var{m} into this.
     virtual void accumulate(SymmSCMatrix* m) = 0;
     //texi Sum into @code{this} the products of various vectors or matrices.
-    virtual void accumulate_symmetric_product(SCMatrix*) = 0;
     virtual void accumulate_symmetric_sum(SCMatrix*) = 0;
-    virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*) = 0;
-    virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*) = 0;
-    virtual void accumulate_symmetric_outer_product(SCVector*) = 0;
+    virtual void accumulate_symmetric_product(SCMatrix*);
+    virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*);
+    virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*);
+    virtual void accumulate_symmetric_outer_product(SCVector*);
     //texi Return the scalar obtained by multiplying @code{this} on the
     // left and right by @var{v}.
-    virtual double scalar_product(SCVector* v) = 0;
+    virtual double scalar_product(SCVector* v);
     //texi Return the trace.
     virtual double trace() = 0;
     //texi Invert @code{this}.
@@ -379,7 +384,7 @@ class SymmSCMatrix: public SavableState {
                             SymmSCMatrix*,SymmSCMatrix*) = 0;
     //texi Print out the matrix.
     virtual void print(ostream&);
-    virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+    virtual void print(const char* title=0,ostream& out=cout, int =10);
 
     //texi Returns iterators for the local (rapidly accessible)
     // blocks used in this matrix.
@@ -454,7 +459,7 @@ class DiagSCMatrix: public SavableState {
                             DiagSCMatrix*,DiagSCMatrix*) = 0;
     //texi Print out the matrix.
     virtual void print(ostream&);
-    virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+    virtual void print(const char* title=0,ostream& out=cout, int =10);
 
     //texi Returns iterators for the local (rapidly accessible)
     // blocks used in this matrix.

@@ -119,6 +119,7 @@ class BlockedSCVector: public SCVector {
     void accumulate_product(SymmSCMatrix*,SCVector*);
 
     void accumulate(SCVector*);
+    void accumulate(SCMatrix*);
     double scalar_product(SCVector*);
 
     void element_op(const RefSCElementOp&);
@@ -189,6 +190,9 @@ class BlockedSCMatrix: public SCMatrix {
     void accumulate_product(SCMatrix*,SymmSCMatrix*);
     void accumulate_product(SCMatrix*,DiagSCMatrix*);
     void accumulate(SCMatrix*);
+    void accumulate(SymmSCMatrix*);
+    void accumulate(DiagSCMatrix*);
+    void accumulate(SCVector*);
 
     void transpose_this();
     double invert_this();

@@ -26,7 +26,7 @@ RefSCDimension::RefSCDimension (const RefSCDimension & o):
              
 RefSCDimension::RefSCDimension (SCDimension * o): SSRefSCDimension (o) {}
              
-RefSCDimension::RefSCDimension (const RefDescribedClassBase&o):
+RefSCDimension::RefSCDimension (const DCRefBase&o):
   SSRefSCDimension (o) {}
 
 RefSCDimension::~RefSCDimension () {}
@@ -39,7 +39,7 @@ RefSCDimension::operator=(SCDimension* cr)
 }
 
 RefSCDimension&
-RefSCDimension::operator=(const RefDescribedClassBase & c)
+RefSCDimension::operator=(const DCRefBase & c)
 {
   SSRefSCDimension::operator=(c);
   return *this;
@@ -76,8 +76,6 @@ RefSCMatrix::RefSCMatrix (const RefSCMatrix & o): RefSSSCMatrix (o) {}
 RefSCMatrix::RefSCMatrix (StateIn & o): RefSSSCMatrix (o) {}
              
 RefSCMatrix::RefSCMatrix (SCMatrix * o): RefSSSCMatrix (o) {}
-             
-// RefSCMatrix::RefSCMatrix (RefDescribedClassBase&o): RefSSSCMatrix (o) {}
 
 RefSCMatrix::~RefSCMatrix () {}
 
@@ -87,13 +85,6 @@ RefSCMatrix::operator=(SCMatrix* cr)
   RefSSSCMatrix::operator=(cr);
   return *this;
 }
-
-// RefSCMatrix&
-// RefSCMatrix::operator=( RefDescribedClassBase & c)
-// {
-//   RefSSSCMatrix::operator=(c);
-//   return *this;
-// }
 
 RefSCMatrix&
 RefSCMatrix::operator=(const RefSCMatrix & c)
@@ -559,11 +550,6 @@ RefSymmSCMatrix::RefSymmSCMatrix (SymmSCMatrix * o):
   RefSSSymmSCMatrix (o)
 {
 }
-             
-// RefSymmSCMatrix::RefSymmSCMatrix (RefDescribedClassBase&o):
-//   RefSSSymmSCMatrix (o)
-// {
-// }
 
 RefSymmSCMatrix::~RefSymmSCMatrix ()
 {
@@ -575,13 +561,6 @@ RefSymmSCMatrix::operator=(SymmSCMatrix* cr)
   RefSSSymmSCMatrix::operator=(cr);
   return *this;
 }
-
-// RefSymmSCMatrix&
-// RefSymmSCMatrix::operator=( RefDescribedClassBase & c)
-// {
-//   RefSSSymmSCMatrix::operator=(c);
-//   return *this;
-// }
 
 RefSymmSCMatrix&
 RefSymmSCMatrix::operator=(const RefSymmSCMatrix & c)
@@ -1043,11 +1022,6 @@ RefDiagSCMatrix::RefDiagSCMatrix (DiagSCMatrix * o):
   RefSSDiagSCMatrix (o)
 {
 }
-             
-// RefDiagSCMatrix::RefDiagSCMatrix (RefDescribedClassBase&o):
-//   RefSSDiagSCMatrix (o)
-// {
-// }
 
 RefDiagSCMatrix::~RefDiagSCMatrix ()
 {
@@ -1059,13 +1033,6 @@ RefDiagSCMatrix::operator=(DiagSCMatrix* cr)
   RefSSDiagSCMatrix::operator=(cr);
   return *this;
 }
-
-// RefDiagSCMatrix&
-// RefDiagSCMatrix::operator=( RefDescribedClassBase & c)
-// {
-//   RefSSDiagSCMatrix::operator=(c);
-//   return *this;
-// }
 
 RefDiagSCMatrix&
 RefDiagSCMatrix::operator=(const RefDiagSCMatrix & c)
@@ -1341,11 +1308,6 @@ RefSCVector::RefSCVector (SCVector * o):
 {
 }
 
-// RefSCVector::RefSCVector (RefDescribedClassBase&o):
-//   RefSSSCVector (o)
-// {
-// }
-
 RefSCVector::~RefSCVector ()
 {
 }
@@ -1356,13 +1318,6 @@ RefSCVector::operator=(SCVector* cr)
   RefSSSCVector::operator=(cr);
   return *this;
 }
-
-// RefSCVector&
-// RefSCVector::operator=( RefDescribedClassBase & c)
-// {
-//   RefSSSCVector::operator=(c);
-//   return *this;
-// }
 
 RefSCVector&
 RefSCVector::operator=(const RefSCVector & c)

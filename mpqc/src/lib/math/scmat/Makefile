@@ -13,6 +13,8 @@ default:: $(TOPDIR)/lib/libscmat.so
 endif
 
 CXXSRC = \
+	 disthql.cc \
+         dist.cc       distrect.cc   distdiag.cc   distsymm.cc   distvect.cc \
          repl.cc       replrect.cc   repldiag.cc   replsymm.cc   replvect.cc \
          local.cc      localrect.cc  localdiag.cc  localsymm.cc  localvect.cc \
          abstract.cc   matrix.cc     matrix_i.cc    blocked.cc \
@@ -20,7 +22,6 @@ CXXSRC = \
          block.cc      blkiter.cc    elemop.cc     result.cc \
          matrix3.cc    vector3.cc    vector3_i.cc
 
-#         dist.cc       distrect.cc   distdiag.cc   distsymm.cc   distvect.cc 
 
 CSRC = cmatrix.c svd.c
 
@@ -28,7 +29,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
 INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
        result.h vector3.h vector3_i.h block.h matrix3.h elemop.h repl.h \
-       blocked.h
+       blocked.h disthql.h
 
 GENINC =
 
@@ -55,11 +56,18 @@ repltest: repltest.o $(TESTOBJ) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(CXXFLAGS) -o repltest $^ $(SYSLIBS) 
 
+disttest: disttest.o $(TESTOBJ) \
+	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(CXX) $(CXXFLAGS) -o disttest $^ $(SYSLIBS) 
+
 blockedtest: blockedtest.o $(TESTOBJ) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(CXXFLAGS) -o blockedtest $^ $(SYSLIBS) 
 
 repltest.o: repltest.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
+
+disttest.o: disttest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
 
 TAGS: $(CXXSRC) $(CSRC)

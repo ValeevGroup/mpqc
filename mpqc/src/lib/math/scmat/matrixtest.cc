@@ -141,6 +141,8 @@ matrixtest(
   RefSCMatrix d = c * b.t();
   tim_exit("mxm");
 
+  d.print("d");
+
   int nd4 = keyval->intvalue("n4");
   if (!nd4) nd4 = 1;
   cout << "n4 = " << nd4 << endl;
@@ -153,7 +155,7 @@ matrixtest(
   RefSCMatrix ccc = aaa*bbb;
   tim_exit("mxm2");
 
-  d.print("d");
+  d.print("d later");
 
   RefSymmSCMatrix e(d3);
 

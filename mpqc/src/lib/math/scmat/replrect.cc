@@ -501,6 +501,79 @@ ReplSCMatrix::accumulate(SCMatrix*a)
 }
 
 void
+ReplSCMatrix::accumulate(SymmSCMatrix*a)
+{
+  // make sure that the arguments is of the correct type
+  ReplSymmSCMatrix* la
+    = ReplSymmSCMatrix::require_castdown(a,"ReplSCMatrix::accumulate");
+
+  // make sure that the dimensions match
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
+      fprintf(stderr,"ReplSCMatrix::accumulate(SymmSCMatrix*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int n = this->ncol();
+  double *dat = la->matrix;
+  int i, j;
+  for (i=0; i<n; i++) {
+      for (j=0; j<i; j++) {
+          double tmp = *dat;
+          matrix[i*n+j] += tmp;
+          matrix[j*n+i] += tmp;
+          dat++;
+        }
+      matrix[i*n+i] += *dat++;
+    }
+}
+
+void
+ReplSCMatrix::accumulate(DiagSCMatrix*a)
+{
+  // make sure that the arguments is of the correct type
+  ReplDiagSCMatrix* la
+    = ReplDiagSCMatrix::require_castdown(a,"ReplSCMatrix::accumulate");
+
+  // make sure that the dimensions match
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
+      fprintf(stderr,"ReplSCMatrix::accumulate(DiagSCMatrix*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int n = this->ncol();
+  double *dat = la->matrix;
+  int i, j;
+  for (i=0; i<n; i++) {
+      matrix[i*n+i] += *dat++;
+    }
+}
+
+void
+ReplSCMatrix::accumulate(SCVector*a)
+{
+  // make sure that the arguments is of the correct type
+  ReplSCVector* la
+    = ReplSCVector::require_castdown(a,"ReplSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
+        || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
+      fprintf(stderr,"ReplSCMatrix::accumulate(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int n = this->ncol();
+  int i;
+  double *dat = la->vector;
+  for (i=0; i<n; i++) {
+      matrix[i*n+i] += dat[i];
+    }
+}
+
+void
 ReplSCMatrix::transpose_this()
 {
   cmat_transpose_matrix(rows,nrow(),ncol());

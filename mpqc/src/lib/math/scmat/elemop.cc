@@ -3,9 +3,17 @@
 #pragma implementation
 #endif
 
+#include <iostream.h>
+#include <stdlib.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
+
+#ifdef PARAGON
+extern "C" {
+    double drand48();
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp member functions

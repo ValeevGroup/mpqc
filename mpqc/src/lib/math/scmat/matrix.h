@@ -39,12 +39,12 @@ class RefSCDimension: public SSRefSCDimension {
     //texi Make this refer to @var{d}.
     RefSCDimension(SCDimension *d);
 
-    RefSCDimension(const RefDescribedClassBase&);
+    RefSCDimension(const DCRefBase&);
     ~RefSCDimension();
     //texi Make this refer to @var{d}.
     RefSCDimension& operator=(SCDimension* d);
 
-    RefSCDimension& operator=(const RefDescribedClassBase & c);
+    RefSCDimension& operator=(const DCRefBase & c);
     //texi Make this and @var{d} refer to the same @code{SCDimension}.
     RefSCDimension& operator=(const RefSCDimension & d);
 
@@ -75,11 +75,9 @@ class RefSCVector: public RefSSSCVector {
     RefSCVector(SCVector *v);
     // don't allow automatic conversion from any reference to a
     // described class
-    //RefSCVector(RefDescribedClassBase&);
     ~RefSCVector();
     //texi Make this refer to @var{v}.
     RefSCVector& operator=(SCVector* v);
-    //RefSCVector& operator=( RefDescribedClassBase & c);
     //texi Make this and @var{v} refer to the same @code{SCVector}.
     RefSCVector& operator=(const RefSCVector& v);
 
@@ -156,11 +154,9 @@ class RefSCMatrix: public RefSSSCMatrix {
     RefSCMatrix(const RefSCMatrix& m);
     //texi Make this refer to @var{m}.
      RefSCMatrix(SCMatrix* m);
-    //RefSCMatrix(RefDescribedClassBase&);
     ~RefSCMatrix();
     //texi Make this refer to @var{m}.
     RefSCMatrix& operator=(SCMatrix* m);
-    //RefSCMatrix& operator=( RefDescribedClassBase & c);
     //texi Make this and @var{m} refer to the same matrix.
     RefSCMatrix& operator=(const RefSCMatrix& m);
 
@@ -272,11 +268,9 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     RefSymmSCMatrix(const RefSymmSCMatrix& m);
     //texi Make this refer to @var{m}.
     RefSymmSCMatrix(SymmSCMatrix *m);
-    //RefSymmSCMatrix(RefDescribedClassBase&);
     ~RefSymmSCMatrix();
     //texi Make this refer to @var{m}.
     RefSymmSCMatrix& operator=(SymmSCMatrix* m);
-    //RefSymmSCMatrix& operator=( RefDescribedClassBase & c);
     //texi Make this and @var{m} refer to the same matrix.
     RefSymmSCMatrix& operator=(const RefSymmSCMatrix& m);
 
@@ -377,11 +371,9 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     RefDiagSCMatrix(const RefDiagSCMatrix& m);
     //texi Make this refer to @var{m}.
     RefDiagSCMatrix(DiagSCMatrix *m);
-    //RefDiagSCMatrix(RefDescribedClassBase&);
     ~RefDiagSCMatrix();
     //texi Make this refer to @var{m}.
     RefDiagSCMatrix& operator=(DiagSCMatrix* m);
-    //RefDiagSCMatrix& operator=( RefDescribedClassBase & c);
     //texi Make this and @var{m} refer to the same matrix.
     RefDiagSCMatrix& operator=(const RefDiagSCMatrix & m);
 

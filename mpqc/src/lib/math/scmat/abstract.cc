@@ -405,6 +405,26 @@ SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
   abort();
 }
 
+void
+SCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
+{
+  SCMatrix *brect = b->dim()->create_matrix(b->dim());
+  brect->assign(0.0);
+  brect->accumulate(b);
+  accumulate_product(a,brect);
+  delete brect;
+}
+
+void
+SCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
+{
+  SCMatrix *brect = b->dim()->create_matrix(b->dim());
+  brect->assign(0.0);
+  brect->accumulate(b);
+  accumulate_product(a,brect);
+  delete brect;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // SymmSCMatrix member functions
 
@@ -597,6 +617,15 @@ SymmSCMatrix::print(ostream&o)
   print(0, o, 10);
 }
 
+void
+SymmSCMatrix::print(const char* title, ostream& out, int i)
+{
+  RefSCMatrix m = dim()->create_matrix(dim());
+  m->assign(0.0);
+  m->accumulate(this);
+  m->print(title, out, i);
+}
+
 SymmSCMatrix*
 SymmSCMatrix::clone()
 {
@@ -609,6 +638,96 @@ SymmSCMatrix::copy()
   SymmSCMatrix* result = clone();
   result->assign(this);
   return result;
+}
+
+void
+SymmSCMatrix::accumulate_symmetric_product(SCMatrix *a)
+{
+  RefSCMatrix at = a->copy();
+  at->transpose_this();
+  RefSCMatrix m = a->rowdim()->create_matrix(a->rowdim());
+  m->assign(0.0);
+  m->accumulate_product(a, at.pointer());
+  scale(2.0);
+  accumulate_symmetric_sum(m.pointer());
+  scale(0.5);
+}
+
+void
+SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
+{
+  RefSCMatrix m = a->rowdim()->create_matrix(a->rowdim());
+  RefSCMatrix brect = b->dim()->create_matrix(b->dim());
+  brect->assign(0.0);
+  brect->accumulate(b);
+
+  RefSCMatrix tmp = a->clone();
+  tmp->assign(0.0);
+  tmp->accumulate_product(a,brect);
+  brect = 0;
+
+  RefSCMatrix at = a->copy();
+  at->assign(0.0);
+  at->transpose_this();
+
+  RefSCMatrix res = dim()->create_matrix(dim());
+  res->assign(0.0);
+  res->accumulate_product(tmp.pointer(), at.pointer());
+  tmp = 0;
+  at = 0;
+
+  scale(2.0);
+  accumulate_symmetric_sum(res.pointer());
+  scale(0.5);
+}
+
+void
+SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
+{
+  RefSCMatrix m = a->rowdim()->create_matrix(a->rowdim());
+  RefSCMatrix brect = b->dim()->create_matrix(b->dim());
+  brect->assign(0.0);
+  brect->accumulate(b);
+
+  RefSCMatrix tmp = a->clone();
+  tmp->assign(0.0);
+  tmp->accumulate_product(a,brect);
+  brect = 0;
+
+  RefSCMatrix at = a->copy();
+  at->assign(0.0);
+  at->transpose_this();
+
+  RefSCMatrix res = dim()->create_matrix(dim());
+  res->assign(0.0);
+  res->accumulate_product(tmp.pointer(), at.pointer());
+  tmp = 0;
+  at = 0;
+
+  scale(2.0);
+  accumulate_symmetric_sum(res.pointer());
+  scale(0.5);
+}
+
+void
+SymmSCMatrix::accumulate_symmetric_outer_product(SCVector *v)
+{
+  RefSCMatrix m = dim()->create_matrix(dim());
+  m->assign(0.0);
+  m->accumulate_outer_product(v,v);
+
+  scale(2.0);
+  accumulate_symmetric_sum(m.pointer());
+  scale(0.5);
+}
+
+double
+SymmSCMatrix::scalar_product(SCVector *v)
+{
+  RefSCVector v2 = dim()->create_vector();
+  v2->assign(0.0);
+  v2->accumulate_product(this,v);
+  return v2->scalar_product(v);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -735,6 +854,15 @@ void
 DiagSCMatrix::print(ostream&o)
 {
   print(0, o, 10);
+}
+
+void
+DiagSCMatrix::print(const char* title, ostream& out, int i)
+{
+  RefSCMatrix m = dim()->create_matrix(dim());
+  m->assign(0.0);
+  m->accumulate(this);
+  m->print(title, out, i);
 }
 
 DiagSCMatrix*
@@ -906,4 +1034,13 @@ SCVector::copy()
   SCVector* result = clone();
   result->assign(this);
   return result;
+}
+
+void
+SCVector::accumulate_product(SymmSCMatrix *m, SCVector *v)
+{
+  RefSCMatrix mrect = m->dim()->create_matrix(m->dim());
+  mrect->assign(0.0);
+  mrect->accumulate(m);
+  accumulate_product(mrect.pointer(), v);
 }

@@ -186,6 +186,26 @@ LocalSCVector::accumulate(SCVector*a)
 }
 
 void
+LocalSCVector::accumulate(SCMatrix*a)
+{
+  // make sure that the argument is of the correct type
+  LocalSCMatrix* la
+    = LocalSCMatrix::require_castdown(a,"LocalSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
+        || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
+      fprintf(stderr,"LocalSCVector::accumulate(SCMatrix*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = d->n();
+  int i;
+  for (i=0; i<nelem; i++) block->data[i] += la->block->data[i];
+}
+
+void
 LocalSCVector::assign(double a)
 {
   int nelem = d->n();

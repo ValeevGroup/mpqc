@@ -403,6 +403,64 @@ BlockedSCMatrix::accumulate(SCMatrix*a)
 }
 
 void
+BlockedSCMatrix::accumulate(SymmSCMatrix*a)
+{
+  // make sure that the arguments is of the correct type
+  BlockedSymmSCMatrix* la
+    = BlockedSymmSCMatrix::require_castdown(a,"BlockedSCMatrix::accumulate");
+
+  // make sure that the dimensions match
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
+    fprintf(stderr,"BlockedSCMatrix::accumulate(SymmSCMatrix*a):\n");
+    fprintf(stderr,"dimensions don't match\n");
+    abort();
+  }
+
+  for (int i=0; i < nblocks_; i++)
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate(la->mats_[i]);
+}
+
+void
+BlockedSCMatrix::accumulate(DiagSCMatrix*a)
+{
+  // make sure that the arguments is of the correct type
+  BlockedDiagSCMatrix* la
+    = BlockedDiagSCMatrix::require_castdown(a,"BlockedSCMatrix::accumulate");
+
+  // make sure that the dimensions match
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
+    fprintf(stderr,"BlockedSCMatrix::accumulate(DiagSCMatrix*a):\n");
+    fprintf(stderr,"dimensions don't match\n");
+    abort();
+  }
+
+  for (int i=0; i < nblocks_; i++)
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate(la->mats_[i]);
+}
+
+void
+BlockedSCMatrix::accumulate(SCVector*a)
+{
+  // make sure that the arguments is of the correct type
+  BlockedSCVector* la
+    = BlockedSCVector::require_castdown(a,"BlockedSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
+        || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
+    fprintf(stderr,"BlockedSCMatrix::accumulate(SCVector*a):\n");
+    fprintf(stderr,"dimensions don't match\n");
+    abort();
+  }
+
+  for (int i=0; i < nblocks_; i++)
+    if (mats_[i].nonnull())
+      mats_[i]->accumulate(la->vecs_[i]);
+}
+
+void
 BlockedSCMatrix::transpose_this()
 {
   for (int i=0; i < nblocks_; i++)

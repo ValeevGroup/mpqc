@@ -488,6 +488,79 @@ LocalSCMatrix::accumulate(SCMatrix*a)
 }
 
 void
+LocalSCMatrix::accumulate(SymmSCMatrix*a)
+{
+  // make sure that the arguments is of the correct type
+  LocalSymmSCMatrix* la
+    = LocalSymmSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
+
+  // make sure that the dimensions match
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalSCMatrix::accumulate(SymmSCMatrix*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int n = this->ncol();
+  double *dat = la->block->data;
+  int i, j;
+  for (i=0; i<n; i++) {
+      for (j=0; j<i; j++) {
+          double tmp = *dat;
+          block->data[i*n+j] += tmp;
+          block->data[j*n+i] += tmp;
+          dat++;
+        }
+      block->data[i*n+i] += *dat++;
+    }
+}
+
+void
+LocalSCMatrix::accumulate(DiagSCMatrix*a)
+{
+  // make sure that the arguments is of the correct type
+  LocalDiagSCMatrix* la
+    = LocalDiagSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
+
+  // make sure that the dimensions match
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalSCMatrix::accumulate(DiagSCMatrix*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int n = this->ncol();
+  double *dat = la->block->data;
+  int i, j;
+  for (i=0; i<n; i++) {
+      block->data[i*n+i] += *dat++;
+    }
+}
+
+void
+LocalSCMatrix::accumulate(SCVector*a)
+{
+  // make sure that the arguments is of the correct type
+  LocalSCVector* la
+    = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
+        || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
+      fprintf(stderr,"LocalSCMatrix::accumulate(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int n = this->ncol();
+  double *dat = la->block->data;
+  int i, j;
+  for (i=0; i<n; i++) {
+      block->data[i*n+i] += *dat++;
+    }
+}
+
+void
 LocalSCMatrix::transpose_this()
 {
   cmat_transpose_matrix(rows,nrow(),ncol());

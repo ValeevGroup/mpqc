@@ -107,7 +107,7 @@ main(int argc, char *argv[])
   int errcod, geom_code=-1;
   
   int do_scf, do_grad, do_mp2, read_geom, opt_geom, nopt, proper;
-  int save_fock, save_vector, restart, print_geometry;
+  int save_fock, save_vector, print_geometry;
   int localp, throttle, sync_loop, node_timings;
   int geometry_converged;
 
@@ -150,7 +150,7 @@ main(int argc, char *argv[])
 
    // initialize keyval
     RefKeyVal pkv(new ParsedKeyVal(filename));
-    RefKeyVal ppkv(new PrefixKeyVal(":intco :scf :default",pkv));
+    RefKeyVal ppkv(new PrefixKeyVal(":mpqc :default",pkv));
     pkv = new ParsedKeyVal("input",ppkv);
     keyval = new AggregateKeyVal(ppkv,pkv);
 
@@ -166,10 +166,12 @@ main(int argc, char *argv[])
       exit(1);
     }
 
-    if (scf_init_scf_struct(keyval, *centers, scf_info) < 0) {
+    RefKeyVal scfkv = new PrefixKeyVal(":scf :default",keyval);
+    if (scf_init_scf_struct(scfkv, *centers, scf_info) < 0) {
       fprintf(stderr,"mpqcic:  could not form scf_info\n");
       exit(1);
     }
+    scfkv=0;
 
    // read input, and initialize various structs
 
@@ -228,10 +230,6 @@ main(int argc, char *argv[])
     if (keyval->exists("node_timings"))
       node_timings = keyval->booleanvalue("node_timings");
 
-    restart=1;
-    if (keyval->exists("restart"))
-      restart = keyval->booleanvalue("restart");
-
     dens=2.5;
     if (keyval->exists("points_per_ang"))
       dens = keyval->doublevalue("points_per_ang");
@@ -246,7 +244,6 @@ main(int argc, char *argv[])
     fprintf(outfile,"    nopt               = %d\n",nopt);
     fprintf(outfile,"    properties         = %s\n",(proper)?"YES":"NO");
     fprintf(outfile,"    points_per_ang     = %f\n",dens);
-    fprintf(outfile,"    restart            = %s\n",(restart)?"YES":"NO");
     fprintf(outfile,"    save_vector        = %s\n",(save_vector)?"YES":"NO");
     fprintf(outfile,"    save_fock          = %s\n",(save_fock)?"YES":"NO");
     fprintf(outfile,"    node_timings       = %s\n",(node_timings)?"YES":"NO");
@@ -294,7 +291,6 @@ main(int argc, char *argv[])
   bcast0(&opt_geom,sizeof(int),mtype_get(),0);
   bcast0(&throttle,sizeof(int),mtype_get(),0);
   bcast0(&sync_loop,sizeof(int),mtype_get(),0);
-  bcast0(&restart,sizeof(int),mtype_get(),0);
   bcast0(&save_fock,sizeof(int),mtype_get(),0);
   bcast0(&save_vector,sizeof(int),mtype_get(),0);
   bcast0(&node_timings,sizeof(int),mtype_get(),0);
@@ -321,13 +317,18 @@ main(int argc, char *argv[])
  // initialize force and geometry routines
 
   if (do_grad) {
-    if (mynode0()==0)
+    RefKeyVal fkv;
+    
+    if (mynode0()==0) {
       fprintf(outfile,"\n");
     
+      fkv = new PrefixKeyVal(":force :default",keyval);
+    }
+    
     if (scf_info.iopen)
-      dmt_force_osscf_keyval_init(keyval.pointer(),outfile);
+      dmt_force_osscf_keyval_init(fkv.pointer(),outfile);
     else
-      dmt_force_csscf_keyval_init(keyval.pointer(),outfile);
+      dmt_force_csscf_keyval_init(fkv.pointer(),outfile);
 
     allocbn_double_matrix(&gradient,"n1 n2",3,centers->n);
   }
@@ -416,8 +417,6 @@ main(int argc, char *argv[])
           fprintf(outfile,"\n");
           geom_code = Geom_update_mpqc(&gradient, keyval);
           reset_centers(centers,mol);
-          fprintf(outfile,"New molecular coordinates:\n");
-          mol->print();
         }
       }
     

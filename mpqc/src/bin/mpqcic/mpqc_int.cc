@@ -39,12 +39,12 @@
 
 #include "mpqc_int.h"
 
-#define STATEOUT StateOutBinXDR
-#define STATEIN StateInBinXDR
+// #define STATEOUT StateOutBinXDR
+// #define STATEIN StateInBinXDR
 //#define STATEOUT StateOutBin
 //#define STATEIN StateInBin
-//#define STATEOUT StateOutText
-//#define STATEIN StateInText
+#define STATEOUT StateOutText
+#define STATEIN StateInText
 
 /////////////////////////////////////////////////////////////////
 
@@ -190,15 +190,18 @@ get_input(const RefKeyVal& keyval)
 ////////////////////////////////////////////////////////////////////////////
 
 int
-Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& keyval)
+Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
 {
   int i;
 
+ // create a new keyval which adds :intco to the search list 
+  RefKeyVal keyval = new PrefixKeyVal(":intco :default",topkeyval);
+  
   get_input(keyval);
 
  // set mol = molecule
   mol = molecule;
-  
+
  // if geom.dat exists, then read in all of the hooey stored there,
  // otherwise read intco stuff from mpqc.in
 
@@ -209,13 +212,21 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& keyval)
 
    // read coor and update from the input
     coor = keyval->describedclassvalue("coor");
-    update = keyval->describedclassvalue("update");
+    if (coor.null())
+      coor = new IntMolecularCoor(mol);
     
+   // for now, always read the update from the input. default to bfgs
+    update = keyval->describedclassvalue("update");
+    if (update.null())
+      update = new BFGSUpdate;
+
     dc = mol->dim_natom3();
     di = coor->dim();
 
+   // create the inverted hessian 
     hessian = new LocalSymmSCMatrix(di.pointer());
     coor->guess_hessian(hessian);
+    hessian = hessian.i();
 
     xn = new LocalSCVector(di.pointer());
     gn = new LocalSCVector(di.pointer());
@@ -227,12 +238,24 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& keyval)
     so.put(iter);
     mol.save_state(so);
     coor.save_state(so);
+    update.save_state(so);
+    dc.save_state(so);
+    di.save_state(so);
+    xn.save_state(so);
+    gn.save_state(so);
+    hessian.save_state(so);
   }  else {
     STATEIN si("geom.dat","r+");
 
     si.get(iter);
     mol.restore_state(si); 
     coor.restore_state(si);
+    update.restore_state(si);
+    dc.restore_state(si);
+    di.restore_state(si);
+    xn.restore_state(si);
+    gn.restore_state(si);
+    hessian.restore_state(si);
 
    // make sure molecule and mol refer to the same object
     molecule = mol;
@@ -248,6 +271,9 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& keyval)
   fprintf(outfp,"\n Initial simple internal coordinates\n\n");
   coor->print_simples();
   fprintf(outfp,"\n");
+
+  coor->print();
+  hessian.print("inverse hessian");
 
   return GEOM_COMPUTE_GRADIENT;
 }
@@ -294,220 +320,80 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
     }
   rmsforce = sqrt(rmsforce/(grad->n1*grad->n2));
 
-  cgrad.print("cgrad");
+  coor->to_internal(xn);
   coor->to_internal(gn,cgrad);
 
-  gn.print("gn");
-  exit(0);
-#if 0  
-  int nfixed = (fixed?fixed->length():0);
+  xn.print("internal coordinates");
+  gn.print("internal coordinate gradients");
 
-  oldiforce = iforce;
-  oldintco = intco;
-  oldidisp = idisp;
-  oldhessian = hessian;
-    
-  int i;
-  DMatrix bmat;
+  RefNLP2 nlp = 0;
+  update->update(hessian,nlp,xn,gn);
 
-      
-  if (!cartesians) {
+  RefSCVector xdisp = -1.0*(hessian * gn);
+  xdisp.print("internal coordinate displacements");
 
-   // calculate new internal coordinates and the b matrix
-    bmat = Geom_make_bmat(symm_coords,mol);
+  maxdisp = xdisp.maxabs();
+  rmsdisp = 0;
+  for (i=0; i < xdisp->n(); i++)
+    rmsdisp += xdisp(i) * xdisp(i);
+  rmsdisp = sqrt(rmsdisp/xdisp->n());
 
-   // and now the new internal forces
-    internal_forces(bmat,mol,grad);
-
-    fprintf(outfp,"\n internal coordinates and forces\n");
-
-    i=0;
-    for(SymmCoListIter scp=symm_coords; scp; scp++,i++) {
-      intco[i] = scp->value();
-      fprintf(outfp," %5d %15.10f %15.10f\n",i+1,intco[i],iforce[i]);
-      }
-    }
-  else {
-    for (int i=0; i < iforce.dim(); i++) {
-      iforce[i] = grad->d[i%3][i/3]*8.2388575;
-      intco[i] = mol[i/3][i%3] * 0.52917706;
-      }
-    }
-
-  // if there are fixed coordinates, set their force to zero
-  for (i=0; i<nfixed; i++) {
-      iforce[i] = 0.0;
-      // use a nonzero diagonal
-      hessian(i,i) = 1.0;
-      oldhessian(i,i) = 1.0;
-      // and zero the coupling terms
-      for (int j=i+1;j<hessian.nrow(); j++) {
-          hessian(i,j) = 0.0;
-          hessian(j,i) = 0.0;
-          oldhessian(i,j) = 0.0;
-          oldhessian(j,i) = 0.0;
-        }
-    }
-
-  if (update_hess)
-    update_hessian(keyval);
-
-  if (print_hessian) {
-      printf("The hessian is (after udpate):\n");
-      hessian.print();
-    }
-
-  if (use_gdiis) {
-    gdiis_disp();
-    }
-  else { // the NR step
-    idisp = -1*(hessian * iforce);
-    }
-
-  // if there are fixed coordinates, set their displacement to zero
-  for (i=0; i<nfixed; i++) {
-      idisp[i] = 0.0;
-    }
-
-  // Compute the rms and max force in internal coordinates if
-  // there are fixed coordinates.  Otherwise rms and max force
-  // correspond to cartesian coords.  Really the forces with
-  // the fixed coordinate forces set to zero should be backtransformed
-  // to cartesian coordinates to compute rms and max force.
-  if (fixed) {
-      double imaxforce_all = 0.0;
-      double irmsforce_all = 0.0;
-      double imaxforce_nonfixed = 0.0;
-      double irmsforce_nonfixed = 0.0;
-      int i;
-      for (i=0; i<nfixed; i++) {
-          if (fabs(iforce[i]) > imaxforce_all)
-            imaxforce_all = fabs(iforce[i]);
-          irmsforce_all += iforce[i]*iforce[i];
-        }
-      for (; i<iforce.dim(); i++) {
-          if (fabs(iforce[i]) > imaxforce_all)
-            imaxforce_all = fabs(iforce[i]);
-          irmsforce_all += iforce[i]*iforce[i];
-          if (fabs(iforce[i]) > imaxforce_nonfixed)
-            imaxforce_nonfixed = fabs(iforce[i]);
-          irmsforce_nonfixed += iforce[i]*iforce[i];
-        }
-      maxforce = irmsforce_nonfixed;
-      rmsforce = irmsforce_nonfixed;
-    }
-
-  // test the size of the displacement, and the other convergence criteria
-  // return if converged without changing the geometry...that's just plain
-  // stupid, ed
-  if (((idisp * iforce).maxval()/2) < conv_crit &&
-      rmsforce < conv_rmsf &&
-      maxforce < conv_maxf) {
-
-    fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",
-			      (idisp * iforce).maxval()/2);
+  // this should probably be done with element ops, but I'm too lazy to
+  // do that now
+  double iconv=0;
+  for (i=0; i < xdisp->n(); i++) {
+    double xg = fabs(xdisp(i)*gn(i));
+    iconv = (xg>iconv) ? xg : iconv;
+  }
+  iconv /= 2.0;
+  
+  if (iconv < conv_crit && rmsforce < conv_rmsf && maxforce < conv_maxf) {
+    fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",iconv);
     fprintf(outfp," max force               = %15.10g\n",maxforce);
     fprintf(outfp," rms force               = %15.10g\n",rmsforce);
     fprintf(outfp,"\n the geometry is converged\n");
 
     fprintf(outfp,"\n converged geometry\n");
-    mol.print(outfp);
-
-    if (keyval->booleanvalue("output_pdb")) write_pdb(keyval);
+    mol->print();
 
     return GEOM_DONE;
-    }
+  }
 
- // scale the displacement vector if too large
-  {
-     double tot=0,scal=1.0;
-     tot = sqrt(idisp.dot(idisp));
-     //for(i=0; i < idisp.dim(); i++) tot += fabs(idisp[i]);
-     if(tot>maxstepsize) {
-       scal=maxstepsize/tot;
-       fprintf(outfp,"\n stepsize of %f is too big, scaling by %f\n",tot,scal);
-       }
-     fprintf(outfp,"\n taking step of size %f\n",tot*scal);
-     for(i=0; i < idisp.dim(); i++) idisp[i] *= scal;
-     }
-
-  if (cartesians) {
-    rmsdisp=0;
-    for (i=0; i < idisp.dim(); i++) {
-      mol[i/3][i%3] += idisp[i] / 0.52917706;
-      rmsdisp += (idisp[i] / 0.52917706)*(idisp[i] / 0.52917706);
-      }
-    
-    rmsdisp = sqrt(rmsdisp/idisp.dim());
-    maxdisp = idisp.maxval()/0.52917706;
-    }
-
-  // abort if the displacement fails
-  if (!cartesians && cartesian_disp(bmat) < 0) {
-    fprintf(outfp,"\n could not update geometry, saving state and exiting\n");
-    STATEOUT so("geom.dat");
-    so.put(iter);
-    symm_coords->save_state(so);
-    so.put(fixed.nonnull());
-    if (fixed.nonnull()) fixed->save_state(so);
-    mol.save_object_state(so);
-    intco.save_object_state(so);
-    iforce.save_object_state(so);
-    idisp.save_object_state(so);
-    hessian.save_object_state(so);
-    return GEOM_ABORT;
-    }
-  fprintf(outfp,"\n displacements and new internal coordinates\n");
-  for(i=0; i < intco.dim(); i++)
-    fprintf(outfp," %5d %15.10f %15.10f\n",i+1,idisp[i],intco[i]);
+ // scale the displacement vector if it's too large
+  double tot = xdisp.scalar_product(xdisp);
+  if (tot > maxstepsize) {
+    double scal = maxstepsize/tot;
+    fprintf(outfp,"\n stepsize of %f is too big, scaling by %f\n",tot,scal);
+    xdisp.scale(scal);
+    tot *= scal;
+  }
+  fprintf(outfp,"\n taking step of size %f\n",tot);
   
-  fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",
-          (idisp * iforce).maxval()/2);
+  xn.accumulate(xdisp);
+  xn.print("new internal coordinates");
+  
+  fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",iconv);
   fprintf(outfp," max force               = %15.10g\n",maxforce);
   fprintf(outfp," rms force               = %15.10g\n",rmsforce);
   fprintf(outfp," max disp                = %15.10g\n",maxdisp);
   fprintf(outfp," rms disp                = %15.10g\n",rmsdisp);
 
-  fprintf(outfp,"\n updated geometry\n");
-  mol.print(outfp);
+  coor->to_cartesian(xn);
 
-  if (keyval->booleanvalue("output_pdb")) write_pdb(keyval);
+  printf("\nnew molecular coordinates\n");
+  mol->print();
 
-  if (print_internal) {
-      Geom_form_and_print_simples(keyval,
-                                  "Updated Simple Internal Coordinates");
-    }
-
-  // now that we have a geometry, let's make the list of symm coordinates
-  // if the user asks for it or fixed is nonnull
-  if(recompute_internal || fixed) {
-     if(get_symmco(keyval) < 0) {
-        err_msg("Geom_init_mpqc: yikes!  can't make symm coords");
-        return GEOM_ABORT;
-        }
-     }
-
-  //StateOutBinXDR so("geom.dat");
-  STATEOUT so("geom.dat");
-
+  STATEOUT so("geom.dat","w+");
   iter++;
-
   so.put(iter);
-  symm_coords->save_state(so);
-  so.put(fixed.nonnull());
-  if (fixed.nonnull()) fixed->save_state(so);
-  mol.save_object_state(so);
-  intco.save_object_state(so);
-  iforce.save_object_state(so);
-  idisp.save_object_state(so);
-  hessian.save_object_state(so);
-
-  for(i=0; i < centers->n; i++) {
-    centers->center[i].r[0] = mol[i][0];
-    centers->center[i].r[1] = mol[i][1];
-    centers->center[i].r[2] = mol[i][2];
-    }
-
-#endif
+  mol.save_state(so);
+  coor.save_state(so);
+  update.save_state(so);
+  dc.save_state(so);
+  di.save_state(so);
+  xn.save_state(so);
+  gn.save_state(so);
+  hessian.save_state(so);
+  
   return GEOM_COMPUTE_GRADIENT;
 }

@@ -161,7 +161,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int jloop, kloop;
   int ntri;
 
-  long ni;
+  int ni;
 
   double *evals = _evals->d;  // scf eigenvalues (passed in)
   double *intbuf;             // 2-electron AO integral buffer
@@ -332,7 +332,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     }
 
   // Send value of ni to other nodes
-  bcast0(&ni,sizeof(int),mtype_get(),0);
+  msg->bcast(ni);
 
   if (nocc == ni) {
     npass = 1;
@@ -391,7 +391,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   Waj            = (double*) malloc(nvir*nocc*sizeof(double));
   Laj            = (double*) malloc(nvir*nocc*sizeof(double));
 
-
   if (me == 0) allocbn_double_matrix(gradient, "n1 n2", natom, 3);
   allocbn_double_matrix(ginter, "n1 n2", natom, 3);
 
@@ -430,7 +429,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     fflush(outfile);
     }
   // end of debug print
-
 
   int nijmax = 0;
   index = 0;

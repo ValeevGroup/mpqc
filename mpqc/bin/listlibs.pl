@@ -1,7 +1,6 @@
 
 @libraries = ();
 @includes = ();
-@excludes = ();
 %defines = ();
 %read_files = ();
 
@@ -23,9 +22,6 @@ foreach $arg (@ARGV) {
     }
     elsif ($arg =~ /^-I(.*)$/) {
         $includes[++$#includes] = $1;
-    }
-    elsif ($arg =~ /^-X(.*)$/) {
-        $excludes[++$#excludes] = $1;
     }
     else {
         $filename = $arg;

@@ -269,15 +269,18 @@ checkerror(const char *name, int shell, int func,
 {
   double mag = fabs(check);
   double err = fabs(numerical - check);
+  cout << scprintf("%2s %2d %2d %12.8f %12.8f er = %6.4f",
+                   name, shell, func,
+                   numerical, check, err/mag) << endl;
   if (mag > 0.001) {
       if (err/mag > 0.05) {
-          cout << scprintf("%2s %2d %2d %12.8f %12.8f er = %6.4f",
+          cout << scprintf("ERROR %2s %2d %2d %12.8f %12.8f er = %6.4f",
                            name, shell, func,
                            numerical, check, err/mag) << endl;
         }
     }
   else if (err > 0.02) {
-      cout << scprintf("%2s %2d %2d %12.8f %12.8f ea = %16.14f",
+      cout << scprintf("ERROR %2s %2d %2d %12.8f %12.8f ea = %16.14f",
                        name, shell, func, numerical, check, err) << endl;
     }
 }

@@ -143,7 +143,11 @@ ExtendedHuckelWfn::h_eht_oso()
                 int i2 = funcoff2+func2;
                   double val = h_ao(i1,i2);
                 if (atom1 == atom2 && func1 == func2) {
-                  val = -I1;
+                  // The overlap integral is not a part of the diagonal
+                  // element in standard EHT formulae.  It is here though,
+                  // since basis functions are not always normalized (some
+                  // d shell components for example).
+                  val *= -I1;
                 }
                 else {
                   val *= -0.5*K*(I1+I2);

@@ -370,7 +370,7 @@ OneBodyIntOp::process_spec_rectsub(SCMatrixRectSubBlock* b)
   int ishend = (iend ? bs1->function_to_shell(iend-1) + 1 : 0);
   int jshend = (jend ? bs2->function_to_shell(jend-1) + 1 : 0);
 
-  int njdata = jend - jstart;
+  int njdata = b->istride;
 
   iter->set_redundant(0);
 

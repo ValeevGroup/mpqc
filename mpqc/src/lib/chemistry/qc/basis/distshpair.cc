@@ -214,10 +214,10 @@ DistShellPair::serve_tasks()
       msg_->sendt(node,ans_type_,SR,2);
       if (current_shellpair_%print_interval_ == 0) {
         ExEnv::outn() << indent
-		     << scprintf("sent shell pair (%3d %3d) to %3d, %6.3f%% complete",
-				 SR[0],SR[1],node,(double)current_shellpair_*100.0/nreq)
-                     << " (" << current_shellpair_ << " of " << ntask_ << ")"
-		     << endl;
+                      << scprintf("sent shell pair (%3d %3d) to %3d, %6.3f%% complete",
+                                  SR[0],SR[1],node,(double)current_shellpair_*100.0/nreq)
+                      << " (" << current_shellpair_ << " of " << ntask_ << ")"
+                      << endl;
       }
       current_shellpair_++;
     }

@@ -199,6 +199,11 @@ SavableState_REF_dec(SetIntCoor);
 
 //////////////////////////////////////////////////////////////////////////
 
+//texi
+// @code{MolecularCoor} is a virtual base class for a set of classes used
+// to describe coordinates for molecules useful in optimizing geometries
+// (among other things).  @code{MolecularCoor} is a @code{SavableState} and
+// has @code{StateIn} and @code{KeyVal} constructors.
 class MolecularCoor: public SavableState
 {
 #   define CLASSNAME MolecularCoor
@@ -210,30 +215,78 @@ class MolecularCoor: public SavableState
     RefSCMatrixKit matrixkit_; // used to construct matrices
   public:
     MolecularCoor(RefMolecule&);
-    MolecularCoor(const RefKeyVal&);
     MolecularCoor(StateIn&);
+
+    //texi The KeyVal constructor (@ref{The MolecularCoor KeyVal Constructor}).
+    MolecularCoor(const RefKeyVal&);
+
     virtual ~MolecularCoor();
+
     void save_data_state(StateOut&);
+
+    //texi Returns a smart reference to an @code{SCDimension} equal to the
+    // number of atoms in the molecule times 3.
     RefSCDimension dim_natom3() { return dnatom3_; }
+
+    //texi Print the coordinate.
     virtual void print(SCostream& =SCostream::cout) = 0;
     virtual void print_simples(SCostream& =SCostream::cout) = 0;
+
+    //texi Returns a smart reference to an @code{SCDimension} equal to the
+    // number of coordinates (be they Cartesian, internal, or whatever)
+    // that are being optimized.
     virtual RefSCDimension dim() = 0;
-    // convert molecular coordinates to and from cartesians
+    
+    //texi Given a set of displaced internal coordinates, update the cartesian
+    // coordinates of the @code{Molecule} contained herein.  This function
+    // does not change the vector ``internal''.
     virtual int to_cartesian(RefSCVector&internal) = 0;
+
+    //texi Fill in the vector ``internal'' with the current internal
+    // coordinates.  Note that this member will update the values of the
+    // variable internal coordinates.
     virtual int to_internal(RefSCVector&internal) = 0;
-    // convert the gradients
+
+    //texi Convert the Cartesian coordinate gradients in ``cartesian'' to
+    // internal coordinates and copy these internal coordinate gradients
+    // to ``internal''.  Only the variable internal coordinate gradients
+    // are calculated.
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal) = 0;
+
+    //texi Convert the internal coordinate gradients in ``internal'' to
+    // Cartesian coordinates and copy these Cartesian coordinate gradients
+    // to ``cartesian''. Only the variable internal coordinate gradients
+    // are transformed.
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian) = 0;
-    // convert the hessian
+
+    //texi Convert the internal coordinate Hessian ``internal'' to Cartesian
+    // coordinates and copy the result to ``cartesian''.  Only the variable
+    // internal coordinate force constants are transformed.
     virtual int to_cartesian(RefSymmSCMatrix&cartesian,
                               RefSymmSCMatrix&internal) =0;
-    virtual int to_internal(RefSymmSCMatrix&cartesian,
-                             RefSymmSCMatrix&hessian) = 0;
+
+    //texi Convert the Cartesian coordinate Hessian ``cartesian'' to internal
+    // coordinates and copy the result to ``internal''.  Only the variable
+    // internal coordinate force constants are calculated.
+    virtual int to_internal(RefSymmSCMatrix&internal,
+                             RefSymmSCMatrix&cartesian) = 0;
+
+    //texi Calculate an approximate hessian and place the result in
+    // ``hessian''.
     virtual void guess_hessian(RefSymmSCMatrix&hessian) = 0;
+
+    //texi Given an Hessian, return the inverse of that hessian.  For singular
+    // matrices this should return the generalized inverse.
     virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&) = 0;
 };
 SavableState_REF_dec(MolecularCoor);
 
+//texi
+// @code{IntMolecularCoor} is a virtual base class for the internal coordinate
+// classes.  Internal coordinates are very useful in geometry optimizations,
+// and are also used to describe the normal vibrational modes in spectroscopy.
+// @code{IntMolecularCoor} is a @code{SavableState} and has @code{StateIn}
+// and @code{KeyVal} constructors.
 class IntMolecularCoor: public MolecularCoor
 {
 #   define CLASSNAME IntMolecularCoor
@@ -289,21 +342,39 @@ class IntMolecularCoor: public MolecularCoor
     int max_update_steps_;
     double max_update_disp_;
 
+    //texi This is called by the constructors of classes derived from
+    // @code{IntMolecularCoor}.  It initialized the lists of simple internal
+    // coordinates, and then calls the @code{form_coordinates()} member.
     virtual void init();
+    //texi Allocates memory for the @code{SetIntCoor}s used to store the
+    // simple and internal coordinates.
     virtual void new_coords();
+    //texi Reads the @code{KeyVal} input.
     virtual void read_keyval(const RefKeyVal&);
   public:
-    IntMolecularCoor(RefMolecule&mol);
-    IntMolecularCoor(const RefKeyVal&);
     IntMolecularCoor(StateIn&);
+    IntMolecularCoor(RefMolecule&mol);
+    //texi The KeyVal constructor (@ref{The IntMolecularCoor KeyVal
+    // Constructor}).
+    IntMolecularCoor(const RefKeyVal&);
+
     virtual ~IntMolecularCoor();
     void save_data_state(StateOut&);
   
+    //texi Actually form the variable and constant internal coordinates from
+    // the simple internal coordinates.
     virtual void form_coordinates() =0;
     
-    virtual RefSCDimension dim();
+    //texi Like @code{to_cartesians()}, except all internal coordinates are
+    // considered, not just the variable ones.
     virtual int all_to_cartesian(RefSCVector&internal);
+    //texi Like @code{to_internal()}, except all internal coordinates are
+    // considered, not just the variable ones.
     virtual int all_to_internal(RefSCVector&internal);
+
+    //texi These implement the virtual functions inherited from
+    // @code{MolecularCoor} (@ref{The MolecularCoor Public Interface}).
+    virtual RefSCDimension dim();
     virtual int to_cartesian(RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
@@ -316,6 +387,11 @@ class IntMolecularCoor: public MolecularCoor
 
 /////////////////////////////////////////////////////////////////////////
 
+//texi
+// The @code{SymmMolecularCoor} class implements symmetry adapted linear
+// combinations of internal coordinates. @code{SymmMolecularCoor} is a
+// @code{SavableState} and has @code{StateIn} and @code{KeyVal} constructors.
+// @code{SymmMolecularCoor} is derived from @code{IntMolecularCoor}.
 class SymmMolecularCoor: public IntMolecularCoor
 {
 #   define CLASSNAME SymmMolecularCoor
@@ -326,17 +402,31 @@ class SymmMolecularCoor: public IntMolecularCoor
 
   public:
     SymmMolecularCoor(RefMolecule&mol);
-    SymmMolecularCoor(const RefKeyVal&);
     SymmMolecularCoor(StateIn&);
+    //texi The KeyVal constructor (@ref{The SymmMolecularCoor KeyVal
+    // Constructor}).
+    SymmMolecularCoor(const RefKeyVal&);
+
     virtual ~SymmMolecularCoor();
     void save_data_state(StateOut&);
+
+    //texi Actually form the variable and constant internal coordinates from
+    // the simple internal coordinates.
     void form_coordinates();
+
+    //texi Form the approximate hessian.
     void guess_hessian(RefSymmSCMatrix&hessian);
+    //texi Invert the hessian.
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };
 
 /////////////////////////////////////////////////////////////////////////
 
+//texi
+// The @code{RedundMolecularCoor} class implements redundant sets of internal
+// coordinates. @code{RedundMolecularCoor} is a
+// @code{SavableState} and has @code{StateIn} and @code{KeyVal} constructors.
+// @code{RedundMolecularCoor} is derived from @code{IntMolecularCoor}.
 class RedundMolecularCoor: public IntMolecularCoor
 {
 #   define CLASSNAME RedundMolecularCoor
@@ -347,17 +437,31 @@ class RedundMolecularCoor: public IntMolecularCoor
 
   public:
     RedundMolecularCoor(RefMolecule&mol);
-    RedundMolecularCoor(const RefKeyVal&);
     RedundMolecularCoor(StateIn&);
+    //texi The KeyVal constructor (@ref{The RedundMolecularCoor KeyVal
+    // Constructor}).
+    RedundMolecularCoor(const RefKeyVal&);
+
     virtual ~RedundMolecularCoor();
     void save_data_state(StateOut&);
+
+    //texi Actually form the variable and constant internal coordinates from
+    // the simple internal coordinates.
     void form_coordinates();
+    //texi Form the approximate hessian.
     void guess_hessian(RefSymmSCMatrix&hessian);
+    //texi Invert the hessian.
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };
 
 /////////////////////////////////////////////////////////////////////////
 
+//texi
+// The @code{CartMolecularCoor} class implements Cartesian coordinates in
+// a way suitable for use in geometry optimizations. @code{CartMolecularCoor}
+// is a @code{SavableState} and has @code{StateIn} and @code{KeyVal}
+// constructors. @code{RedundMolecularCoor} is derived from
+// @code{MolecularCoor}.
 class CartMolecularCoor: public MolecularCoor
 {
 #   define CLASSNAME CartMolecularCoor
@@ -369,14 +473,21 @@ class CartMolecularCoor: public MolecularCoor
   protected:
     RefSCDimension dim_; // the number of atoms x 3
 
+    //texi Initializes the dimensions.
     virtual void init();
   public:
     CartMolecularCoor(RefMolecule&mol);
-    CartMolecularCoor(const RefKeyVal&);
     CartMolecularCoor(StateIn&);
+    //texi The KeyVal constructor (@ref{The CartMolecularCoor KeyVal
+    // Constructor}).
+    CartMolecularCoor(const RefKeyVal&);
+
     virtual ~CartMolecularCoor();
   
     void save_data_state(StateOut&);
+
+    //texi These implement the virtual functions inherited from
+    // @code{MolecularCoor} (@ref{The MolecularCoor Public Interface}).
     virtual RefSCDimension dim();
     virtual int to_cartesian(RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);

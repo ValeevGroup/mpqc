@@ -37,6 +37,15 @@
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#include <util/group/messmpi.h>
+#endif
+
+#ifdef HAVE_FENV_H
+#  include <fenv.h>
+#endif
+
 using namespace std;
 using namespace sc;
 
@@ -476,27 +485,49 @@ do_valtest(const Ref<DenFunctional> &valtest)
     }
 }
 
-void sigfpe_handler(int)
-{
-  cout << "SIGFPE" << endl;
-}
-
 int
 main(int argc, char**argv)
 {
+
+
+  ExEnv::init(argc, argv);
+
+  Ref<MessageGrp> grp;
+#if defined(HAVE_MPI) && defined(ALWAYS_USE_MPI)
+  grp = new MPIMessageGrp(&argc, &argv);
+  MessageGrp::set_default_messagegrp(grp);
+#endif
+
+#if 0
+#ifdef HAVE_FEENABLEEXCEPT
+// this uses a glibc extension to trap on individual exceptions
+# ifdef FE_DIVBYZERO
+  feenableexcept(FE_DIVBYZERO);
+# endif
+# ifdef FE_INVALID
+  feenableexcept(FE_INVALID);
+# endif
+# ifdef FE_OVERFLOW
+  feenableexcept(FE_OVERFLOW);
+# endif
+#endif
+#endif
+
+#ifdef HAVE_FEDISABLEEXCEPT
+// this uses a glibc extension to not trap on individual exceptions
+# ifdef FE_UNDERFLOW
+  fedisableexcept(FE_UNDERFLOW);
+# endif
+# ifdef FE_INEXACT
+  fedisableexcept(FE_INEXACT);
+# endif
+#endif
 
   int i;
   const char *input = (argc > 1)? argv[1] : SRCDIR "/dfttest.in";
 
   // open keyval input
   Ref<KeyVal> keyval(new ParsedKeyVal(input));
-
-#if defined(__i386__) && defined(__GNUC__)
-  //make floating point errors cause an exception (except for denormalized
-  //operands, since small numbers are denormalized)
-  if (keyval->booleanvalue("trap_fpes")) asm("fldcw %0" : : "o" (0x372));
-  //signal(SIGFPE,sigfpe_handler);
-#endif
 
   cout << "=========== Value f Tests ===========" << endl;
   int nvaltest = keyval->count("valtest");

@@ -64,7 +64,7 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
   MPI_Recv(data,nbyte,MPI_BYTE,sender,0,MPI_COMM_WORLD,&status);
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
-  rlen = status.nbytes;
+  rlen = nbyte;
   //printf("Node %d recvd %d bytes\n", me(), rlen);
 }
 
@@ -89,7 +89,7 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
   MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&status);
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
-  rlen = status.nbytes;
+  rlen = nbyte;
   //printf("Node %d recvd %d bytes\n", me(), rlen);
 }
 
@@ -105,7 +105,7 @@ MPIMessageGrp::probet(int type)
   if (flag) {
     rnode = status.MPI_SOURCE;
     rtag = status.MPI_TAG;
-    rlen = status.nbytes;
+    rlen = 0;
     return 1;
     }
   else {

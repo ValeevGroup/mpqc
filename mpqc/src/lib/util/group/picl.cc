@@ -20,6 +20,14 @@
 #  endif
 #endif
 
+#if defined(AIX)
+extern "C" {
+int getrusage (
+  int Who,
+  struct rusage *RUsage); }
+#endif
+
+
 static RefMessageGrp global_messagegrp;
 
 int

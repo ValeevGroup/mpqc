@@ -84,6 +84,7 @@ SCF::ao_gmat()
   double tnint=0;
   
   TwoBodyIntIter tbii(tbi);
+  tbi->set_redundant(0);
 
   for (tbii.start(); tbii.ready(); tbii.next()) {
     ShellQuartetIter& q = tbii.current_quartet();

@@ -7,10 +7,10 @@ mole: [
     % MolecularEnergy input
     molecule<Molecule>: (
         % pdb_file = "input.pdb" % use this to get info from a pdb file
+        symmetry=c2v
         {atoms geometry} = {
-          H  [  -1.5  0.0  -0.3 ]
+          H  [   1.5  0.0  -0.3 ]
           O  [   0.0  0.0   1.0 ]
-         %H  [   1.5  0.0  -0.3 ]
          }
       )
     coor<IntMolecularCoor>: (
@@ -19,14 +19,20 @@ mole: [
       )
     % Wavefunction input
     basis<GaussianBasisSet>: (
+        basisdir = "/usr/people/etseidl/basis/"
+        basisfiles = [ basis.ipv2 v2g90.ipv2 ]
         molecule = $..:molecule
-        name = sto3g
+        name = dz
       )
     % OneBodyWavefunction input
     % MPSCF input
     local_P = yes
-    % eventually, symmetry will be in the molecule input
-    symmetry = c2v
+    restart = no
+    projected_guess = yes
+    pbasis<GaussianBasisSet>: (
+        molecule = $..:molecule
+        name = sto3g
+      )
     )
   ]
 

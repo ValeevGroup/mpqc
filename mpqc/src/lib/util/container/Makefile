@@ -32,7 +32,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXSRC = array.cc avl.cc bitarray.cc
+CXXSRC = array.cc avl.cc bitarray.cc carray.cc
 
 TESTCXX = avltest.cc artest.cc
 

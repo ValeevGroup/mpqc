@@ -10,10 +10,12 @@
 #include <util/container/array.h>
 
 #include "parse.h"
+#include "mpqcin.h"
 
 static inline char *
 cstr(char *yytext)
 {
+  if (MPQCIn::checking()) return 0;
   char *ret;
   int strlenyytext = strlen(yytext);
   ret = (char *)malloc(strlenyytext+1);
@@ -60,10 +62,13 @@ qstring \"[^"\n]+\"
 ":"             { return T_COLON; }
 "("             { return T_BEG_OPT; }
 ")"             { return T_END_OPT; }
+"<"             { return T_OO_INPUT_KEYWORD; }
+"mpqc"          { return T_OO_INPUT_KEYWORD; }
 {string}        { yylval.str = cstr(yytext);
                   return T_STRING;
                   }
-{qstring}       { yylval.str = (char *)malloc(strlen(yytext));
+{qstring}       { if (MPQCIn::checking()) return T_STRING;
+                  yylval.str = (char *)malloc(strlen(yytext));
                   if (!yylval.str) {
                     ExEnv::out() << "MPQC: {qstring} rule: malloc failed"
                                  << endl;

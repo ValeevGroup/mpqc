@@ -213,7 +213,7 @@ main(int argc, char *argv[])
 
   options.usage("[options] [filename]");
   options.enroll("f", GetLongOpt::MandatoryValue,
-                 "the name of the object format input file", 0);
+                 "the name of an object format input file", 0);
   options.enroll("o", GetLongOpt::MandatoryValue,
                  "the name of the output file", 0);
   options.enroll("messagegrp", GetLongOpt::MandatoryValue,
@@ -291,12 +291,12 @@ main(int argc, char *argv[])
 
   // initialize keyval input
   const char *object_input = options.retrieve("f");
-  const char *simple_input;
+  const char *generic_input;
   if (argc - optind == 0) {
-    simple_input = 0;
+    generic_input = 0;
   }
   else if (argc - optind == 1) {
-    simple_input = argv[optind];
+    generic_input = argv[optind];
   }
   else {
     ExEnv::out() << ExEnv::program_name()
@@ -305,10 +305,11 @@ main(int argc, char *argv[])
     options.usage();
     abort();
   }
-  if (object_input == 0 && simple_input == 0) {
+
+  if (object_input == 0 && generic_input == 0) {
     object_input = "mpqc.in";
     }
-  else if (object_input && simple_input) {
+  else if (object_input && generic_input) {
     ExEnv::out() << ExEnv::program_name()
                  << ": only one of -f and a file argument can be given" <<endl;
     abort();
@@ -316,7 +317,7 @@ main(int argc, char *argv[])
 
   const char *input;
   if (object_input) input = object_input;
-  if (simple_input) input = simple_input;
+  if (generic_input) input = generic_input;
 
   RefParsedKeyVal parsedkv;
   // read the input file on only node 0
@@ -337,7 +338,17 @@ main(int argc, char *argv[])
     in_char_array = new char[n];
     grp->bcast(in_char_array, n);
     }
-  if (simple_input) {
+
+  int use_simple_input;
+  if (generic_input) {
+    MPQCIn mpqcin;
+    use_simple_input = mpqcin.check_string(in_char_array);
+  }
+  else {
+    use_simple_input = 0;
+  }
+
+  if (use_simple_input) {
     MPQCIn mpqcin;
     char *simple_input_text = mpqcin.parse_string(in_char_array);
     if (options.retrieve("i")) {

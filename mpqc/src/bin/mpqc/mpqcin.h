@@ -7,10 +7,6 @@
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
 
-#undef yyFlexLexer
-#define yyFlexLexer MPQCInFlexLexer
-#include <FlexLexer.h>
-
 class IPV2;
 
 template <class T>
@@ -25,6 +21,7 @@ class MPQCInDatum {
     T val() const { return val_; }
 };
 
+class MPQCInFlexLexer;
 class MPQCIn {
     MPQCInFlexLexer *lexer_;
     RefMolecule mol_;
@@ -61,13 +58,16 @@ class MPQCIn {
                       const char *name,
                       MPQCInDatum<Arrayint *>&vec,
                       int require_nirrep);
+
+    static int checking_;
   public:
     MPQCIn();
     ~MPQCIn();
 
     char *parse_string(const char *s);
+    int check_string(const char *s);
 
-    int ylex() { return lexer_->yylex(); }
+    int ylex();
     int yparse();
     void error(const char* s);
     void error2(const char* s, const char* s2);
@@ -101,6 +101,8 @@ class MPQCIn {
     void set_frozen_docc(Arrayint *);
     void set_frozen_uocc(Arrayint *);
     Arrayint *make_nnivec(Arrayint *, char *);
+
+    static int checking() { return checking_; }
 };
 
 #endif

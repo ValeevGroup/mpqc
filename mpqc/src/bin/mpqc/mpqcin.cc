@@ -3,9 +3,16 @@
 #include <stdlib.h>
 
 #include <util/misc/formio.h>
+#include <util/container/array.h>
 
-#include "mpqcin.h"
+#undef yyFlexLexer
+#define yyFlexLexer MPQCInFlexLexer
+#include <FlexLexer.h>
+
 #include "parse.h"
+#include "mpqcin.h"
+
+int MPQCIn::checking_ = 0;
 
 MPQCIn::MPQCIn():
   nirrep_(0),
@@ -87,6 +94,12 @@ MPQCIn::yerror2(const char* s, const char *s2)
                << " \"" << s2 << "\" at line " << lexer_->lineno()+1
                << endl;
   abort();
+}
+
+int
+MPQCIn::ylex()
+{
+  return lexer_->yylex();
 }
 
 void
@@ -296,6 +309,20 @@ MPQCIn::make_nnivec(Arrayint *a, char *ms)
   if (a == 0) a = new Arrayint;
   a->push_back(m);
   return a;
+}
+
+int
+MPQCIn::check_string(const char *s)
+{
+  checking_ = 1;
+  istrstream in(s);
+  lexer_->switch_streams(&in, &ExEnv::out());
+  int token;
+  while ((token = ylex())) {
+      if (token == T_OO_INPUT_KEYWORD) return 0;
+    }
+  checking_ = 0;
+  return 1;
 }
 
 char *

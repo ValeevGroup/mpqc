@@ -35,6 +35,7 @@
 #include <chemistry/molecule/molfreq.h>
 
 #define CLASSNAME MolecularFrequencies
+#define VERSION 2
 #define PARENTS public SavableState
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -65,7 +66,12 @@ MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
     }
   if (d3natom_.null()) d3natom_ = new SCDimension(3*mol_->natom());
 
-  nirrep_ = mol_->point_group().char_table().nirrep();
+  displacement_point_group_ = keyval->describedclassvalue("point_group");
+  if (displacement_point_group_.null()) {
+      displacement_point_group_ = new PointGroup(mol_->point_group());
+    }
+
+  nirrep_ = displacement_point_group_->char_table().nirrep();
   displacements_ = new RefSCMatrix[nirrep_];
 
   disp_ = keyval->doublevalue("displacement");
@@ -95,6 +101,10 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
   original_point_group_(si)
 {
   int i;
+
+  if (si.version(static_class_desc()) >= 2) {
+      displacement_point_group_.restore_state(si);
+    }
 
   mol_.restore_state(si);
   mole_.restore_state(si);
@@ -130,6 +140,8 @@ void
 MolecularFrequencies::save_data_state(StateOut& so)
 {
   original_point_group_.save_object_state(so);
+
+  displacement_point_group_.save_state(so);
   mol_.save_state(so);
   mole_.save_state(so);
   so.put(disp_);
@@ -145,7 +157,7 @@ void
 MolecularFrequencies::compute_displacements()
 {
   // create the character table for the point group
-  CharacterTable ct = mol_->point_group().char_table();
+  CharacterTable ct = displacement_point_group_->char_table();
 
   int ng = ct.order();
   int natom = mol_->natom();
@@ -547,7 +559,7 @@ MolecularFrequencies::do_freq_for_irrep(int irrep,
       freq_[irrep][i] = freqs(i);
       freqs(i) = freqs(i) * 219474.63;
     }
-  freqs.print(original_point_group_.char_table().gamma(irrep).symbol());
+  freqs.print(displacement_point_group_->char_table().gamma(irrep).symbol());
 }
 
 void
@@ -604,13 +616,13 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   // for linear molecules: sigma = 2 (D_inf_h), sigma = 1 (C_inf_v)
   // for non-linear molecules: sigma = # of rot. in pt. grp, including E
   int sigma;
-  CharacterTable ct = original_point_group_.char_table();
+  CharacterTable ct = displacement_point_group_->char_table();
   if (linear) {
       //if (D_inf_h) sigma = 2;
-      if (original_point_group_.symbol()[0] == 'D' ||
-          original_point_group_.symbol()[0] == 'd') sigma = 2;
-      else if (original_point_group_.symbol()[0] == 'C' ||
-               original_point_group_.symbol()[0] == 'c') sigma = 1;
+      if (displacement_point_group_->symbol()[0] == 'D' ||
+          displacement_point_group_->symbol()[0] == 'd') sigma = 2;
+      else if (displacement_point_group_->symbol()[0] == 'C' ||
+               displacement_point_group_->symbol()[0] == 'c') sigma = 1;
       else {
           cerr << "MolecularFrequencies: For linear molecules"
                << " the specified point group must be Cnv or Dnh"
@@ -618,23 +630,23 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
           abort();
           }
       }
-  else if ((original_point_group_.symbol()[0] == 'C' ||
-            original_point_group_.symbol()[0] == 'c') &&
-           (original_point_group_.symbol()[1] >= '1'  &&
-            original_point_group_.symbol()[1] <= '8') &&
-            original_point_group_.symbol()[2] == '\0') {
+  else if ((displacement_point_group_->symbol()[0] == 'C' ||
+            displacement_point_group_->symbol()[0] == 'c') &&
+           (displacement_point_group_->symbol()[1] >= '1'  &&
+            displacement_point_group_->symbol()[1] <= '8') &&
+            displacement_point_group_->symbol()[2] == '\0') {
       sigma = ct.order();  // group is a valid CN
       }
-  else if ((original_point_group_.symbol()[0] == 'D' ||
-            original_point_group_.symbol()[0] == 'd') &&
-           (original_point_group_.symbol()[1] >= '2'  &&
-            original_point_group_.symbol()[1] <= '6') &&
-            original_point_group_.symbol()[2] == '\0') {
+  else if ((displacement_point_group_->symbol()[0] == 'D' ||
+            displacement_point_group_->symbol()[0] == 'd') &&
+           (displacement_point_group_->symbol()[1] >= '2'  &&
+            displacement_point_group_->symbol()[1] <= '6') &&
+            displacement_point_group_->symbol()[2] == '\0') {
       sigma = ct.order();  // group is a valid DN
       }
-  else if ((original_point_group_.symbol()[0] == 'T' ||
-            original_point_group_.symbol()[0] == 't') &&
-            original_point_group_.symbol()[1] == '\0') {
+  else if ((displacement_point_group_->symbol()[0] == 'T' ||
+            displacement_point_group_->symbol()[0] == 't') &&
+            displacement_point_group_->symbol()[1] == '\0') {
       sigma = ct.order();  // group is T
       }
   else sigma = (int)(0.5*ct.order()); // group is not pure rot. group (CN, DN, or T)
@@ -774,7 +786,8 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   else cout << node0 << "Nonlinear molecule" << endl;
   cout << node0 << scprintf("Principal moments of inertia (amu*angstrom^2):"
           " %.5lf, %.5lf, %.5lf\n", pmi[0], pmi[1], pmi[2]);
-  cout << node0 << "Point group: " << original_point_group_.symbol() << endl;
+  cout << node0 << "Point group: " << displacement_point_group_->symbol()
+       << endl;
   cout << node0 << "Order of point group: " << ct.order() << endl;
   cout << node0 << "Rotational symmetry number: " << sigma << endl;
   if (linear) {

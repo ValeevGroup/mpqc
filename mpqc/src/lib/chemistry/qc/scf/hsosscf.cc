@@ -442,6 +442,7 @@ HSOSSCF::init_vector()
 {
   // initialize the two electron integral classes
   tbi_ = integral()->electron_repulsion();
+  tbi_->set_integral_storage(integral()->storage_unused());
 
   // calculate the core Hamiltonian
   cl_hcore_ = core_hamiltonian();

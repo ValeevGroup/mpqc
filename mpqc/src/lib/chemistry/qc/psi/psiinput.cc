@@ -15,6 +15,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <math/symmetry/corrtab.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/basis/basis.h>
@@ -40,6 +41,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   _gbs = keyval->describedclassvalue("psibasis");
   _gbs->print();
   // _gbs = keyval->describedclassvalue("basis");
+  _origpg = new PointGroup(*_mol->point_group().pointer());
   nirrep = _mol->point_group()->char_table().nirrep();
   docc = new int[nirrep];
   socc = new int[nirrep];
@@ -413,6 +415,25 @@ PSI_Input::write_basis(void)
           
 }
 
+void
+PSI_Input::write_orbvec(const CorrelationTable &corrtab,
+                        const char *orbvec_name,
+                        const int *orbvec)
+{
+  int *orbvecnew = new int[corrtab.subn()];
+  memset(orbvecnew,0,sizeof(int)*corrtab.subn());
+
+  for (int i=0; i<corrtab.n(); i++) {
+      for (int j=0; j<corrtab.ngamma(i); j++) {
+          int gam = corrtab.gamma(i,j);
+          orbvecnew[gam] += (corrtab.subdegen(gam)*orbvec[i])/corrtab.degen(i);
+        }
+    }
+
+  write_keyword(orbvec_name, corrtab.subn(), orbvecnew);
+
+  delete[] orbvecnew;
+}
 
 int
 PSI_Input::write_defaults(const char *dertype, const char *wavefn)
@@ -452,19 +473,22 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    delete[] x_vec;
    delete[] y_vec;
    delete[] z_vec;
-   
-   if (_mol->point_group()->char_table().nirrep() == 1) {
+
+   if (!_mol->point_group()->equiv(_origpg)) {
        // perhaps the symmetry has been lowered
        // make sure that the occupation vectors are still correct
-       int norb;
-       for (norb=i=0; i<nirrep; i++) norb+=docc[i];
-       write_keyword("docc", 1, &norb);
-       for (norb=i=0; i<nirrep; i++) norb+=socc[i];
-       write_keyword("socc", 1, &norb);
-       for (norb=i=0; i<nirrep; i++) norb+=frozen_docc[i];
-       write_keyword("frozen_docc", 1, &norb);
-       for (norb=i=0; i<nirrep; i++) norb+=frozen_uocc[i];
-       write_keyword("frozen_uocc", 1, &norb);
+       CorrelationTable corrtab;
+       int rc;
+       if (rc = corrtab.initialize_table(_origpg, _mol->point_group())) {
+           cerr << node0
+                << "ERROR: couldn't initialize correlation table:" << endl
+                << "  " << corrtab.error(rc) << endl;
+           abort();
+         }
+       write_orbvec(corrtab, "docc", docc);
+       write_orbvec(corrtab, "socc", socc);
+       write_orbvec(corrtab, "frozen_docc", frozen_docc);
+       write_orbvec(corrtab, "frozen_uocc", frozen_uocc);
      }
    else {
        write_keyword("docc", nirrep, docc);

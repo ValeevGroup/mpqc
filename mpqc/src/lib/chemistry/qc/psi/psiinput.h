@@ -19,6 +19,8 @@
 #include<chemistry/molecule/molecule.h>
 #include<chemistry/qc/basis/basis.h>
 
+class CorrelationTable;
+
 class PSI_Input {
 
    private:
@@ -40,6 +42,7 @@ class PSI_Input {
       int _test;
 
    protected:
+      RefPointGroup _origpg;
       RefMolecule _mol;
       RefGaussianBasisSet _gbs;
       FILE *fp;
@@ -60,6 +63,9 @@ class PSI_Input {
       int write_defaults(const char *, const char *);
       void write_input();
       int write_key_wq(const char *, const char *);
+      void write_orbvec(const CorrelationTable &corrtab,
+                        const char *orbvec_name,
+                        const int *orbvec);
 
    public:
       PSI_Input(const RefKeyVal&);

@@ -110,6 +110,7 @@ sub process_file {
 
     my $test_vars = {};
     init_var($test_vars, $parse, "basis", "STO-3G");
+    init_var($test_vars, $parse, "grid", "default");
     init_var($test_vars, $parse, "symmetry", "C1");
     init_var($test_vars, $parse, "method", "SCF");
     init_var($test_vars, $parse, "calc", "energy");
@@ -141,6 +142,7 @@ sub process_file {
     # but is much easier to maintain
     do {
         my $basis = $test_vars->{"basis"}->[$index->{"basis"}];
+        my $grid = $test_vars->{"grid"}->[$index->{"grid"}];
         my $fzc = $test_vars->{"fzc"}->[$index->{"fzc"}];
         my $fzv = $test_vars->{"fzv"}->[$index->{"fzv"}];
         my $docc = $test_vars->{"docc"}->[$index->{"docc"}];
@@ -229,6 +231,7 @@ sub process_file {
         }
 
         $parse->set_value("basis", $basis);
+        $parse->set_value("grid", $grid);
         $parse->set_value("method", $method);
         $parse->set_value("symmetry", $symmetry);
         $parse->set_value("fzc", $fzc);
@@ -265,7 +268,8 @@ sub process_file {
         $method = tofilename($method);
         $basis = tofilename($basis);
         $symmetry = tofilename($symmetry);
-        my $basename = "$dir$file\_$fmol$method$fzc$fzv$basis$symmetry$fcalc";
+        if ($grid eq "default") {$grid = "";}
+        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$symmetry$fcalc";
         my $writer;
 
         if ($package eq "g94") {

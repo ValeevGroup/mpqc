@@ -37,6 +37,10 @@ BASIS1MASTER=basis1.qci
 BASIS1INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(BASIS1MASTER))
 BASIS1OUTPUTS = $(BASIS1INPUTS:%.$(INSUF)=%.out)
 
+DFTMASTER=dft.qci
+DFTINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(DFTMASTER))
+DFTOUTPUTS = $(DFTINPUTS:%.$(INSUF)=%.out)
+
 BASIS2MASTER=basis2.qci
 BASIS2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(BASIS2MASTER))
 BASIS2OUTPUTS = $(BASIS2INPUTS:%.$(INSUF)=%.out)
@@ -123,6 +127,7 @@ INPUTINPUTS := $(INPUTINPUTS:%=run/input_%)
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(BASIS1INPUTS) $(BASIS2INPUTS) \
+            $(DFTINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) \
@@ -141,7 +146,7 @@ default::
 
 .PHONY: inputs
 inputs:: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf input
+inputs:: methods clscf uscf hsosscf input dft
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -154,6 +159,9 @@ h2ofrq: stamp-h2ofrq
 
 .PHONY: basis1
 basis1: stamp-basis1
+
+.PHONY: dft
+dft: stamp-dft
 
 .PHONY: basis2
 basis2: stamp-basis2
@@ -210,6 +218,10 @@ stamp-basis1: $(RUN) $(BASIS1MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(BASIS1MASTER)
 	touch stamp-basis1
 
+stamp-dft: $(RUN) $(DFTMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(DFTMASTER)
+	touch stamp-dft
+
 stamp-basis2: $(RUN) $(BASIS2MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(BASIS2MASTER)
 	touch stamp-basis2
@@ -249,7 +261,7 @@ stamp-hsosscf: $(RUN) $(HSOSSCFMASTER) $(INPUTGENDEPS)
 ##############################################################################
 
 .PHONY: checkrun
-checkrun: checkckpt checkmbpt checksymm1 checksymm2 checksymm3
+checkrun: checkckpt checkmbpt checksymm1 checksymm2 checksymm3 checkdft
 	@echo Check for complete outputs in the run directory:
 	for file in $(ALLOUTPUTS); \
 	  do \
@@ -308,6 +320,15 @@ checkmbpt:
 	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem}.out
 	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem_c1}.out
 	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem_auto}.out
+
+.PHONY: checkdft
+checkdft:
+	@echo Consistency checks on DFT tests:
+	for mol in h2 lih beh2 b2h6 nh3 ch4 c2h4 c2h2 h2o hf \
+                   nah mgh2 alh sih2 ph3 h2s hcl; \
+	do (\
+	  $(CHECKOUT) $(RUN)/dft_$${mol}hfs{ultrafine,}631gs*.out \
+	); done
 
 .PHONY: checksymm1
 checksymm1:

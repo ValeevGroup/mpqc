@@ -427,6 +427,17 @@ sub basis {
     $_;
 }
 
+sub grid {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("grid");
+    s/^\s+//;
+    s/\s+$//;
+    if ($_ eq "") {
+        $_ = "default";
+    }
+    $_;
+}
+
 sub gradient {
     my $self = shift;
     my $bval = $self->{"parser"}->boolean_value("gradient");
@@ -758,6 +769,8 @@ sub input_string() {
     my $docc = $self->docc_string();
     my $socc = $self->socc_string();
 
+    my $grid = $qcinput->grid();
+
     my $memory = $qcinput->memory();
     my $inputmethod = $methodmap{uc($qcinput->method())};
     my $method = "$inputmethod";
@@ -831,6 +844,10 @@ sub input_string() {
     }
     if ($method eq "CLKS" || $method eq "UKS" || $method eq "HSOSKS") {
         $mole = "$mole\n    functional<StdDenFunctional>: name = \"$functional\"";
+    }
+    if (($method eq "CLKS" || $method eq "UKS" || $method eq "HSOSKS")
+        && $grid ne "default") {
+        $mole = "$mole\n    integrator<RadialAngularIntegrator>: (grid = $grid)";
     }
     if ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();

@@ -8,6 +8,7 @@
 #include <chemistry/molecule/coor.h>
 #include <math/optimize/opt.h>
 #include <math/optimize/gdiis.h>
+#include <math/optimize/efc.h>
 
 // Force linkages:
 #ifndef __PIC__
@@ -15,6 +16,7 @@ const ClassDesc &fl0 = MPSCF::class_desc_;
 const ClassDesc &fl1 = IntMolecularCoor::class_desc_;
 const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 const ClassDesc &fl3 = GDIISOpt::class_desc_;
+const ClassDesc &fl4 = EFCOpt::class_desc_;
 #endif
 
 void die()

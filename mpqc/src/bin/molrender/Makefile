@@ -31,6 +31,13 @@ main.o: main.cc
 molrender: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
+install:: molrender
+	$(INSTALL) $(INSTALLDIROPT) $(bindir)
+	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
+	cd $(TOPDIR); CONFIG_FILES=src/bin/molrender/tkmolrender CONFIG_HEADERS= ./config.status
+	$(INSTALL) $(INSTALLBINOPT) tkmolrender $(bindir)
+	/bin/rm -f tkmolrender
+
 $(BINOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(BINOBJ:.o=.d)

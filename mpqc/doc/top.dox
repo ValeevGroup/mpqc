@@ -21,6 +21,7 @@ parallel communication, matrix algebra, among others.
   <li> \ref mpqc
   <li> \ref scpr
   <li> \ref scls
+  <li> \ref molrender
 </ul>
 
 \section develref Developer's Reference

@@ -1,4 +1,4 @@
-# Emacs should use -*- tcl -*- mode.
+#!@WISH@
 
 wm title . "MolRender"
 
@@ -42,16 +42,16 @@ proc make_level { w } {
 proc render {} {
   global model inputoption inputfile level keyvalkey
   #puts stdout "molrender -quiet -model $model -keyword $keyvalkey $inputoption $inputfile -level $level"
-  set result [exec molrender -quiet -render oogl -model $model -keyword $keyvalkey $inputoption $inputfile -level $level]
-  puts stdout "(geometry $model $result)"
+  set result [exec @prefix@/bin/molrender -quiet -render oogl -model $model -keyword $keyvalkey $inputoption $inputfile -level $level]
+  #puts stdout "(geometry $model $result)"
   flush stdout
 }
 
 proc clear {} {
-  puts stdout "(geometry ball {})"
-  puts stdout "(geometry stick {})"
-  puts stdout "(geometry connolly {})"
-  flush stdout
+  #puts stdout "(geometry ball {})"
+  #puts stdout "(geometry stick {})"
+  #puts stdout "(geometry connolly {})"
+  #flush stdout
 }
 
 proc done {} {

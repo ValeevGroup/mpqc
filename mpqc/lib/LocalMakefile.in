@@ -47,6 +47,7 @@ bindir=@bindir@
 libdir=@libdir@
 includedir=@includedir@
 
+WISH = @WISH@
 FLEX = @FLEX@
 BISON = @BISON@
 RANLIB = @RANLIB@

@@ -90,7 +90,7 @@ main(int argc, char** argv)
   else if (!strcmp(model,"connolly")) {
       tmpkv->assign("molecule", mol);
       tmpkv->assign("atominfo", atominfo);
-      RefDescribedClass volume = new ConnollyShape2(tmpkv.pointer());
+      RefDescribedClass volume = new ConnollyShape(tmpkv.pointer());
       tmpkv->clear();
       tmpkv->assignboolean("verbose", !quiet);
       RefDescribedClass trisurf = new TriangulatedSurface(tmpkv.pointer());
@@ -138,7 +138,7 @@ main(int argc, char** argv)
     }
 
   if (!quiet) {
-      ConnollyShape2::print_counts();
+      ConnollyShape::print_counts();
       CS2Sphere::print_counts();
     }
 

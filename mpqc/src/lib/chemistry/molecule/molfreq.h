@@ -129,7 +129,7 @@ class MolFreqAnimate: public AnimatedObject {
     MolFreqAnimate(const RefKeyVal &);
     virtual ~MolFreqAnimate();
 
-    int set_mode(int i, int j) { irrep_ = i; mode_ = j; }
+    void set_mode(int i, int j) { irrep_ = i; mode_ = j; }
     int nobject();
     RefRenderedObject object(int iobject);
 };

@@ -296,8 +296,14 @@ sub parse_mpqc {
         elsif ($wante && /S2\(ov\) matrix 1-norm\s*=\s*$fltrx/) {
             $self->{"s2matrix1norm"} = $1;
         }
-        elsif ($wante && /S2 matrix 2-norm\s*=\s*$fltrx/) {
-            $self->{"s2matrix2norm"} = $1;
+        elsif ($wante && /There are degenerate orbitals within an irrep/) {
+            $self->{"degenerate"} = 1;
+        }
+        elsif ($wante && /D1\(MP2\)\s*=\s*$fltrx/) {
+            $self->{"d1mp2"} = $1;
+        }
+        elsif ($wante && /D2\(MP1\)\s*=\s*$fltrx/) {
+            $self->{"d2mp1"} = $1;
         }
         elsif ($wante && /S2\(ov\) matrix inf-norm\s*=\s*$fltrx/) {
             $self->{"s2matrixinfnorm"} = $1;
@@ -584,9 +590,19 @@ sub s2matrix1norm {
     $self->{"s2matrix1norm"}
 }
 
-sub s2matrix2norm {
+sub degenerate {
     my $self = shift;
-    $self->{"s2matrix2norm"}
+    $self->{"degenerate"}
+}
+
+sub d1mp2 {
+    my $self = shift;
+    $self->{"d1mp2"}
+}
+
+sub d2mp1 {
+    my $self = shift;
+    $self->{"d2mp1"}
 }
 
 sub s2matrixinfnorm {

@@ -595,7 +595,6 @@ SymmSCMatrix::accumulate_symmetric_product(SCMatrix *a)
 void
 SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
 {
-  RefSCMatrix m = kit()->matrix(a->rowdim(),a->rowdim());
   RefSCMatrix brect = kit()->matrix(b->dim(),b->dim());
   brect->assign(0.0);
   brect->accumulate(b);
@@ -606,7 +605,6 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b)
   brect = 0;
 
   RefSCMatrix at = a->copy();
-  at->assign(0.0);
   at->transpose_this();
 
   RefSCMatrix res = kit()->matrix(dim(),dim());

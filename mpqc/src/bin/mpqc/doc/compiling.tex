@@ -49,9 +49,11 @@ found at any GNU software FTP repository.
     \item GNU gmake (version 3.70 or greater): GNU specific extensions to make
           are used extensively.
 
-    \item perl (5.003 works, maybe older versions work too): This is used to
-          convert template classes to macros, generate documentation,
-          generate and check the validation suite etc.
+    \item perl: This is used to convert template classes to macros,
+          generate documentation, generate and check the validation suite
+          etc.  To compile the code, either perl 4 or perl 5 will work.  To
+          generate the validation inputs and automatically check the
+          outputs, perl 5.003 is needed.
 
   \end{itemize}
 
@@ -99,25 +101,6 @@ should be sought.
   If you would like to further customize your target directory,
 you can edit \filnm{src/lib/config.h} and \filnm{lib/LocalMakefile} to
 suit your needs.
-
-\section{Compiling the Utility Program}
-
- There is one utility program that determines what libraries an executable
-needs.  There are two versions, a shell script, \exenm{listlibs.sh} and a
-C++ program \exenm{listlibs}.  If the configure script does not find
-\exenm{listlibs} in your path it will automatically use
-\exenm{listlibs.sh}, so it is not necessary to compile \exenm{listlibs}.
-However, \exenm{listlibs.sh} is wretchedly slow so if you can compile
-\exenm{listlibs} you ought to.  The C++ \exenm{listlibs} uses the C++
-Standard Template Library and, thus, might not compile with your compiler.
-It will compile with GNU gcc 2.7.2, however.  To compile \exenm{listlibs},
-change directory to the \filnm{src/tools/listlibs} subdirectory of your
-target directory and run make.
-
- After you compile \exenm{listlibs} move it into your path and
-rerun \exenm{configure} so it will find the new executable.  Alternately,
-you can modify \filnm{lib/LocalMakefile} in your target directory.
-Change the line beginning with \type{LISTLIBS=} appropriately.
 
 \section{Compiling MPQC}
 

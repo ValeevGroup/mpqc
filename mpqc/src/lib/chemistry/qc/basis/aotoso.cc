@@ -673,10 +673,7 @@ PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
     aomatrix->accumulate_transform(aotoso().i(), somatrix,
                                    SCMatrix::TransposeTransform);
 
-  RefSymmSCMatrix aom(gbs_->basisdim(), gbs_->matrixkit());
-  aom->convert(aomatrix);
-
-  return aom;
+  return aomatrix;
 }
 
 RefSCMatrix
@@ -710,10 +707,7 @@ PetiteList::evecs_to_AO_basis(const RefSCMatrix& soevecs)
   
   RefSCMatrix aoev = aotoso() * soevecs;
 
-  RefSCMatrix aoevecs(gbs_->basisdim(), gbs_->basisdim(), gbs_->matrixkit());
-  aoevecs->convert(aoev);
-
-  return aoevecs;
+  return aoev;
 }
 
 /////////////////////////////////////////////////////////////////////////////

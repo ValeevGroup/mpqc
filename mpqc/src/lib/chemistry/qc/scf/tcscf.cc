@@ -184,9 +184,9 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
       ndocc_[i] = keyval->intvalue("docc",i);
       int nsi = keyval->intvalue("socc",i);
       if (nsi && osa_<0)
-        osa_==i;
+        osa_=i;
       else if (nsi && osb_<0)
-        osb_==i;
+        osb_=i;
       else if (nsi) {
         cerr << node0 << indent << "TCSCF::init: too many open shells\n";
         abort();

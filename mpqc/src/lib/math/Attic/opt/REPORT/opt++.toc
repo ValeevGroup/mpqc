@@ -1,5 +1,0 @@
-\contentsline {section}{\numberline {1.}Introduction}{7}
-\contentsline {section}{\numberline {2.}A First Pass}{8}
-\contentsline {section}{\numberline {3.}Nonlinear Problem Classes}{10}
-\contentsline {section}{\numberline {4.}Optimization Algorithm Classes}{11}
-\contentsline {section}{\numberline {5.}Summary}{12}

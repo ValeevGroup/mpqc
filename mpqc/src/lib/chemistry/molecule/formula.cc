@@ -27,7 +27,7 @@
 #pragma implementation
 #endif
 
-#include <util/container/avlmap.h>
+#include <map>
 #include <chemistry/molecule/formula.h>
 
 using namespace sc;
@@ -116,7 +116,7 @@ MolecularFormula::compute_form(const Molecule *m)
 void
 MolecularFormula::compute_atomtypes(const Molecule *m)
 {
-  AVLMap<int, int> atomtypeinfo;
+  std::map<int, int> atomtypeinfo;
   int natoms = m->natom();
   int i, Z;
 
@@ -127,16 +127,16 @@ MolecularFormula::compute_atomtypes(const Molecule *m)
     else atomtypeinfo[Z] = 1;
     }
 
-  natomtypes_ = atomtypeinfo.length();
+  natomtypes_ = atomtypeinfo.size();
 
   Z_ = new int[natomtypes_];
   nZ_ = new int[natomtypes_];
 
-  AVLMap<int, int>::iterator iter;
+  std::map<int, int>::iterator iter;
 
   for (iter = atomtypeinfo.begin(), i=0; iter != atomtypeinfo.end(); iter++, i++) {
-    Z_[i] = iter.key();
-    nZ_[i] = iter.data();
+    Z_[i] = iter->first;
+    nZ_[i] = iter->second;
     }
 
 }

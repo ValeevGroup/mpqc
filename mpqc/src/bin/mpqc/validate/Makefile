@@ -78,9 +78,14 @@ MBPTINPUTS = \
 MBPTINPUTS := $(MBPTINPUTS:%=run/%)
 MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 
+METHODSINPUTS = \
+  clks_lsdax.in clks_xa.in uks_lsdax.in uks_xa.in \
+  clhf.in hsoshf.in uhf.in osshf.in tchf.in
+METHODSINPUTS := $(METHODSINPUTS:%=run/methods_%)
+
 ##############################################################################
 
-ALLINPUTS = $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
+ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
@@ -97,7 +102,8 @@ default::
 	@echo \'make diff\' to use the diff program to compare outputs
 
 .PHONY: inputs
-inputs: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
+inputs:: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
+inputs:: methods
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -134,6 +140,9 @@ ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
 
 .PHONY: mbpt
 mbpt: $(MBPTINPUTS) $(MBPTINPUTS:%.in=%.qci)
+
+.PHONY: methods
+methods: $(METHODSINPUTS) $(METHODSINPUTS:%.in=%.qci)
 
 stamp-h2o: $(RUN) $(H2OMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OMASTER)
@@ -305,6 +314,14 @@ $(RUN)/mbpt_%.in: mbpt/mbpt_%.in
 	/bin/cp $< $@
 
 $(RUN)/mbpt_%.qci: mbpt/mbpt_%.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/methods_%.in: methods/%.in
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/methods_%.qci: methods/%.qci
 	@mkdir -p $(RUN)
 	/bin/cp $< $@
 

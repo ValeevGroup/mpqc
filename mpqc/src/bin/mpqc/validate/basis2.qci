@@ -12,8 +12,9 @@ test_basis:
 test_method: scf
 #test_calc: opt
 gradient: yes
-test_molecule:          nah mgh2 al2h6 si2h2 ph3 h2s hcl ar
-test_molecule_symmetry: c2v d2h  d2h   d2h   cs  c2v c2v d2h
+test_molecule:          nah mgh2 alh  sih2 ph3 h2s hcl ar
+test_molecule_symmetry: c2v d2h  c2v  c2v  cs  c2v c2v d2h
+test_molecule_docc:     -   -     -   5,0,1,2 - -   -   -
 
 restart: no
 checkpoint: no
@@ -29,6 +30,10 @@ mgh2:
   H  0.00 0.00  1.63
   H  0.00 0.00 -1.63
 
+alh:
+  Al  0.00  0.00  0.00
+   H  0.00  0.00  1.65
+
 al2h6:
   H   1.4266912574   0.0000000000   1.9754060128
   H  -1.4266912574   0.0000000000   1.9754060128
@@ -38,6 +43,11 @@ al2h6:
  Al   0.0000000000   0.0000000000  -1.2786127653
   H   1.4266912574   0.0000000000  -1.9754060128
   H  -1.4266912574   0.0000000000  -1.9754060128
+
+sih2:
+ Si  0.00   0.00   0.02
+  H  0.00  -1.10  -1.01
+  H  0.00   1.10  -1.01
 
 si2h2:
   H   0.0000000000   0.0000000000   2.4523138425

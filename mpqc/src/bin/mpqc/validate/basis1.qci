@@ -12,8 +12,9 @@ test_basis:
 test_method: scf
 gradient: yes
 #test_calc: opt
-test_molecule:          h2  he  lih beh2 b2h6 nh3 c2h2 h2o hf  ne 
-test_molecule_symmetry: d2h d2h c2v d2h  d2h  cs  d2h  c2v c2v d2h
+test_molecule:          h2  he  lih beh2 bh  nh3 ch2 h2o hf  ne 
+test_molecule_symmetry: d2h d2h c2v d2h  c2v cs  c2v c2v c2v d2h
+test_molecule_docc:     -   -   -   -  3,0,0,0 - 3,0,0,1 - -  -
 
 restart: no
 checkpoint: no
@@ -36,6 +37,10 @@ beh2:
   H  0.00 0.00  1.30
   H  0.00 0.00 -1.30
 
+bh:
+  B  0.00 0.00 0.00
+  H  0.00 0.00 1.23
+
 b2h6:
   H  1.00  0.00  1.46
   H -1.00  0.00  1.46
@@ -51,6 +56,11 @@ nh3:
   H -0.486150513 -0.084121957  0.824716866
   H -0.486150513 -0.084121957 -0.824716866
   H  0.952301025 -0.084121957  0.000000000
+
+ch2:
+  C  0.00  0.00 -0.10
+  H  0.00  0.86  0.60
+  H  0.00 -0.86  0.60
 
 c2h2:
   H  0.00 0.00  1.65

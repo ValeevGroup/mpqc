@@ -48,8 +48,8 @@
 using namespace std;
 
 #define SINGLE_THREAD_E12   0
-#define SINGLE_THREAD_QBT34 1
-#define SINGLE_THREAD_S2PDM 1
+#define SINGLE_THREAD_QBT34 0
+#define SINGLE_THREAD_S2PDM 0
 
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);

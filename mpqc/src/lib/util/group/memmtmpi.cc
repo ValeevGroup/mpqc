@@ -89,8 +89,10 @@ MTMPIThread::run()
       if (req.touches_data()) {
           assert(req.size() >= 0);
           if (req.offset()+req.size() > mem_->localsize()) {
+              mem_->print_lock_->lock();
               req.print("BAD RECV");
               cout << "mem_->localsize() = " << mem_->localsize() << endl;
+              mem_->print_lock_->lock();
             }
           assert(req.offset()+req.size() <= mem_->localsize());
         }
@@ -181,9 +183,9 @@ MTMPIMemoryGrp::~MTMPIMemoryGrp()
 {
   deactivate();
   for (int i=0; i<th_->nthread()-1; i++) {
-      delete[] thread_[i];
+      delete thread_[i];
     }
-  delete thread_;
+  delete[] thread_;
 }
 
 void
@@ -193,7 +195,8 @@ MTMPIMemoryGrp::init_mtmpimg(int nthread)
   active_ = 0;
 
   th_ = th_->clone(nthread);
-  if (th_->nthread() < 2) {
+  nthread = th_->nthread();
+  if (nthread < 2) {
       cout << "MTMPIMemoryGrp didn't get enough threads" << endl;
       abort();
     }

@@ -73,6 +73,63 @@ MPLMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+
+void
+MPLMemoryGrp::init_mid()
+{
+  for (int i=0; i<max_mid; i++) mid_ready_[i] = 1;
+}
+
+long
+MPLMemoryGrp::get_mid(char info)
+{
+  for (int i=0; i<max_mid; i++) {
+      if (mid_ready_[i]) {
+          mid_ready_[i] = 0;
+          info_[i] = info;
+          if (debug_) {
+              cout << "MPLMemoryGrp::get_mid(): got " << i
+                   << ", current mids:";
+              for (int ii=0; ii<max_mid; ii++) {
+                  if (!mid_ready_[ii]) {
+                      cout << " " << ii << info_[ii]
+                           << "(" << handles_[ii] << ")";
+                    }
+                }
+              cout << endl;
+            }
+          return i;
+        }
+    }
+
+  cerr << "MPLMemoryGrp::get_mid(): ran out of mid's" << endl;
+  abort();
+  return 0;
+}
+
+long
+MPLMemoryGrp::grp_mid(int mpc_mid)
+{
+  int i;
+  for (i=0; i<max_mid; i++) {
+      if (!mid_ready_[i] && handles_[i] == mpc_mid) return i;
+    }
+
+  cerr << "MPLMemoryGrp::grp_mid(): invalid mid: " << mpc_mid << endl;
+  for (i=0; i<max_mid; i++) {
+      if (mid_ready_[i]) cout << "mid " << i << " is unused" << endl;
+      else cout << "mid " << i << " has handle " << handles_[i] << endl;
+    }
+  abort();
+  return 0;
+}
+
+void
+MPLMemoryGrp::free_mid(long mid)
+{
+  if (debug_) cout << "MPLMemoryGrp::free_mid(): freeing " << mid << endl;
+  mid_ready_[mid] = 1;
+}
 long
 MPLMemoryGrp::lockcomm()
 {
@@ -94,13 +151,13 @@ MPLMemoryGrp::unlockcomm(long oldvalue)
 long
 MPLMemoryGrp::send(void* data, int nbytes, int node, int type)
 {
-  int mid;
-  mpc_send(data, nbytes, node, type, &mid);
+  int mid = get_mid('S');
+  mpc_send(data, nbytes, node, type, &mpc_mid(mid));
   if (debug_) cout << ">>>> mpc_send(,"
                    << nbytes << ","
                    << node << ","
                    << type << ","
-                   << mid << ")" << endl;
+                   << mpc_mid(mid) << ")" << endl;
   return mid;
 }
 
@@ -111,13 +168,13 @@ MPLMemoryGrp::recv(void* data, int nbytes, int node, int type)
   if (node == -1) n = DONTCARE;
   else n = node;
   int t = type;
-  int mid;
-  mpc_recv(data, nbytes, &n, &t, &mid);
+  int mid = get_mid('R');
+  mpc_recv(data, nbytes, &n, &t, &mpc_mid(mid));
   if (debug_) cout << ">>>> mpc_recv(,"
                    << nbytes << ","
                    << n << ","
                    << t << ","
-                   << mid << ")" << endl;
+                   << mpc_mid(mid) << ")" << endl;
   return mid;
 }
 
@@ -126,8 +183,9 @@ MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
   global_type = type;
   global_source = DONTCARE; 
+  global_mid = get_mid('P');
   mpc_rcvncall(data, nbytes,
-               (int*)&global_source, (int*)&global_type, (int*)&global_mid,
+               (int*)&global_source, (int*)&global_type, &mpc_mid(global_mid),
                mpl_memory_handler);
   if (debug_) cout << ">>>> mpc_rcvncall(,"
                    << nbytes << ","
@@ -142,20 +200,35 @@ long
 MPLMemoryGrp::wait(long mid1, long mid2)
 {
   int imid;
-  if (mid2 == -1) imid = (int)mid1;
+  if (mid2 == -1) imid = mpc_mid(mid1);
   else imid = DONTCARE;
   size_t count;
-  if (debug_)
-      cout << scprintf("MPLMemoryGrp: waiting on %d\n", imid);
+  if (debug_) {
+      cout << "MPLMemoryGrp::wait(" << mid1 << "," << mid2
+           << "): waiting on " << imid << ": current mids:";
+      for (int i=0; i<max_mid; i++) {
+          if (!mid_ready_[i]) {
+              cout << " " << i << info_[i] << "(" << handles_[i] << ")";
+            }
+        }
+      cout << endl;
+    }
   if (mpc_wait(&imid,&count)) {
       cerr << scprintf("MPLMemoryGrp: mpc_wait failed\n");
       sleep(1);
       abort();
     }
-  if (debug_) cout << ">>>> mpc_wait("
+  if (debug_) cout << ">>>> (after call) mpc_wait("
                    << imid << ","
                    << count << ")" << endl;
-  return (long)imid;
+  // mpc_wait might clobber imid, so avoid its use
+  if (mid2 == -1) {
+      free_mid(mid1);
+      return mid1;
+    }
+  long grpmid = grp_mid(imid);
+  free_mid(grpmid);
+  return grpmid;
 }
 
 MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
@@ -173,6 +246,8 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
 
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
+
+  init_mid();
 
   if (debug_) 
       cout << scprintf("MPLMemoryGrp activating\n");
@@ -193,6 +268,8 @@ MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
     }
 
   global_mpl_mem = this;
+
+  init_mid();
 
   if (debug_) 
       cout << scprintf("MPLMemoryGrp activating\n");

@@ -39,6 +39,17 @@ class MPLMemoryGrp: public MIDMemoryGrp {
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
+    enum { max_mid = 3 };
+    int mid_ready_[max_mid];
+    int handles_[max_mid];
+    char info_[max_mid];
+
+    int &mpc_mid(long mid) { return handles_[mid]; }
+    long grp_mid(int mpc_mid);
+    long get_mid(char info = '?');
+    void free_mid(long mid);
+    void init_mid();
+
     long lockcomm();
     void unlockcomm(long oldvalue);
     long send(void* data, int nbytes, int node, int type);

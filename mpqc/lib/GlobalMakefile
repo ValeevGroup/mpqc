@@ -81,6 +81,11 @@ LISTLIBS=listlibs -DLIBSUF=$(LIBSUF)
 # The object directory maker
 OBJECTDIR=$(SRCDIR)/$(TOPDIR)/bin/objectdir
 
+# Map a library name to a set of classes (for dynamic loading)
+#MKCLASSES = $(TOPDIR)/bin/mkclasses
+MKCLASSES = mkclasses
+CLASSES=none
+
 # The dependency maker
 MAKEDEPEND=makedep
 APPENDDEPEND=appenddepend

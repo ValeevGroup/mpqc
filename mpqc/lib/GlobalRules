@@ -47,6 +47,18 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
+.PHONY:	dlinfo
+dlinfo::
+ifneq ($(CLASSES),none)
+dlinfo:: # $(TOPDIR)/lib/$(TARGET_TO_MAKE).dep
+	$(MKCLASSES) $(TOPDIR)/lib/classes $(TARGET_TO_MAKE).so $(CLASSES)
+
+#$(TOPDIR)/lib/$(TARGET_TO_MAKE).dep: LIBS.h
+#	/bin/rm -f $@
+#	echo $(shell $(LISTLIBS) $(DEFINES) $(INCLUDE) $(SRCDIR)/LIBS.h) \
+#                > $@
+endif
+
 $(TOPDIR)/lib/$(TARGET_TO_MAKE).so: $(LIBOBJ)
 	$(SH_LD) $(SH_LDFLAGS) \
           -o $(TOPDIR)/lib/$(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) $^

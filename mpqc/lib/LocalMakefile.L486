@@ -27,9 +27,11 @@ AR = /usr/i486-linuxelf/bin/ar
 RANLIB = /usr/i486-linuxelf/bin/ranlib
 SH_LD = gcc-elf
 
+DEFINES += -DHAVE_DLFCN
+
 LIBSUF = so
 
-SYSLIBS = -lg++ -lm -lfl -lc
+SYSLIBS = -lg++ -ldl -lm -lfl -lc
 
 SH_LDFLAGS = -shared -Wl,-soname -Wl,$(TARGET_TO_MAKE).so.$(ELF_MAJOR)
 

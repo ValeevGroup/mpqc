@@ -120,9 +120,14 @@ public:
   /// Returns MOIndexSpace object 4
   Ref<MOIndexSpace> space4() const;
 
-  /// Creates an TwoBodyMOIntsTransform object
-  Ref<TwoBodyMOIntsTransform> twobody_transform(const std::string& id);
-	       
+  /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
+      stored in qs blocks for each pr */
+  Ref<TwoBodyMOIntsTransform> twobody_transform_13(const std::string& id);
+
+  /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
+    stored in rs blocks for each pq */
+  Ref<TwoBodyMOIntsTransform> twobody_transform_12(const std::string& id);
+  
 };
 
 }

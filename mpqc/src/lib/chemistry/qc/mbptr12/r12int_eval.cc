@@ -261,13 +261,13 @@ R12IntEval::init_tforms_()
   if (ipjq_tform_.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->obs_space(),
                          r12info_->act_occ_space(),r12info_->obs_space());
-    ipjq_tform_ = tfactory->twobody_transform("(ip|jq)");
+    ipjq_tform_ = tfactory->twobody_transform_13("(ip|jq)");
   }
 
   if (ikjy_tform_.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                          r12info_->act_occ_space(),r12info_->ribs_space());
-    ikjy_tform_ = tfactory->twobody_transform("(ik|jy)");
+    ikjy_tform_ = tfactory->twobody_transform_13("(ik|jy)");
   }
 }
 
@@ -406,6 +406,11 @@ R12IntEval::compute()
   obs_contrib_to_VXB_gebc_();
   if (r12info_->basis() != r12info_->basis_ri())
     abs1_contrib_to_VXB_gebc_();
+  if (!evaluated_) {
+    RefSCMatrix F = fock_(r12info_->occ_space(),r12info_->obs_space(),r12info_->obs_space());
+    F.print("Fock matrix in OBS");
+    r12info_->obs_space()->evals().print("OBS eigenvalues");
+  }
   evaluated_ = true;
 }
 

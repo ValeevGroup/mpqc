@@ -69,7 +69,16 @@ class R12IntEval : virtual public SavableState {
   /// Set intermediates to zero + add the "diagonal" contributions
   void init_intermeds_();
   /// Compute r^2 contribution to X
-  void r2_contrib_to_X_();  
+  void r2_contrib_to_X_();
+  /// Compute the Fock matrix between 2 spaces
+  RefSCMatrix fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
+                    const Ref<MOIndexSpace>& ket_space);
+  /// Compute the coulomb matrix between 2 spaces
+  RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
+                       const Ref<MOIndexSpace>& ket_space);
+  /// Compute the exchange matrix between 2 spaces
+  RefSCMatrix exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
+                        const Ref<MOIndexSpace>& ket_space);
   /// Checkpoint the top-level molecular energy
   void checkpoint_() const;
 

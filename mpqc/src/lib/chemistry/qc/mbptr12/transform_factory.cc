@@ -138,27 +138,34 @@ MOIntsTransformFactory::set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MO
 }
 
 Ref<TwoBodyMOIntsTransform>
-MOIntsTransformFactory::twobody_transform(const std::string& name)
+MOIntsTransformFactory::twobody_transform_13(const std::string& name)
 {
   Ref<TwoBodyMOIntsTransform> result;
 
   
-  if (space1_ == space3_ && space2_->rank() <= space2_->basis()->nbasis()) {
+  if (space2_->rank() <= space2_->basis()->nbasis()) {
     result = new TwoBodyMOIntsTransform_ikjy(name,this,space1_,space2_,space3_,space4_);
   }
-  else if (space1_ == space3_) {
+  else {
     result = new TwoBodyMOIntsTransform_ixjy(name,this,space1_,space2_,space3_,space4_);
   }
-  else if (space1_ == space2_) {
-    result = new TwoBodyMOIntsTransform_ijxy(name,this,space1_,space2_,space3_,space4_);
-  }
-  else
-    throw std::runtime_error("MOIntsTransformFactory::twobody_transform() -- desired \
-TwoBodyMOIntsTransform hasn't been implemented yet");
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
   
+  return result;
+}
+
+Ref<TwoBodyMOIntsTransform>
+MOIntsTransformFactory::twobody_transform_12(const std::string& name)
+{
+  Ref<TwoBodyMOIntsTransform> result;
+
+  result = new TwoBodyMOIntsTransform_ijxy(name,this,space1_,space2_,space3_,space4_);
+
+  if (top_mole_.nonnull())
+    result->set_top_mole(top_mole_);
+
   return result;
 }
 

@@ -1,2 +1,3 @@
 
 #define F77_DGEMM
+#define F77_DAXPY

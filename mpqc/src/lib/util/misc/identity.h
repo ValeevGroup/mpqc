@@ -3,7 +3,7 @@
 #define _util_misc_identity_h
 
 #ifdef __GNUG__
-#pragma implementation
+#pragma interface
 #endif
 
 // Identifier's are used to distinguish and order objects.  On

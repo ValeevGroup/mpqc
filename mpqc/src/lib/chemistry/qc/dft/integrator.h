@@ -394,7 +394,7 @@ class RadialAngularIntegrator: public DenIntegrator {
     int prune_grid_;
     double **Alpha_coeffs_;
     int gridtype_;
-    int **nr_points_, *nw_lvalue_;
+    int **nr_points_, *xcoarse_l_;
     int npruned_partitions_;
     int user_defined_grids_;
     double *grid_accuracy_;

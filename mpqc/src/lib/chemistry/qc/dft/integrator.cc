@@ -34,9 +34,20 @@
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
+#include <util/container/carray.h>
 #include <chemistry/qc/dft/integrator.h>
 
-#define MAX_DOUBLE 1e+14
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
+template void delete_c_array2<RefRadialIntegrator>(RefRadialIntegrator**);
+template RefRadialIntegrator** new_c_array2<RefRadialIntegrator>(int,int);
+template void delete_c_array3<RefRadialIntegrator>(RefRadialIntegrator***);
+template RefRadialIntegrator*** new_c_array3<RefRadialIntegrator>(int,int,int);
+
+template void delete_c_array2<RefAngularIntegrator>(RefAngularIntegrator**);
+template RefAngularIntegrator** new_c_array2<RefAngularIntegrator>(int,int);
+template void delete_c_array3<RefAngularIntegrator>(RefAngularIntegrator***);
+template RefAngularIntegrator*** new_c_array3<RefAngularIntegrator>(int,int,int);
+#endif
 
 //#define CHECK_ALIGN(v) if(int(&v)&7)ExEnv::out()<<"Bad Alignment: "<< ## v <<endl;
 #define CHECK_ALIGN(v)
@@ -1338,7 +1349,7 @@ LebedevLaikovIntegrator::save_data_state(StateOut& s)
 extern "C" {
     int Lebedev_Laikov_sphere (int N, double *X, double *Y, double *Z,
                                double *W);
-    int Lebedev_Laikov_lvalue (int lvalue);
+    int Lebedev_Laikov_npoint (int lvalue);
 }
 
 int
@@ -1671,10 +1682,7 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   grid_accuracy_[0] = 1e-4;
   for (i=1; i<max_gridtype_; i++) grid_accuracy_[i] = grid_accuracy_[i-1]*1e-1;
 
-  double *tmp = new double[natomic_rows_*(npruned_partitions_-1)];
-  memset((void *)tmp, 0, sizeof(double)*natomic_rows_*(npruned_partitions_-1));
-  Alpha_coeffs_ = new double*[natomic_rows_];
-  for (i=0; i<natomic_rows_; i++) Alpha_coeffs_[i] = tmp + i*(npruned_partitions_-1);
+  Alpha_coeffs_ = new_c_array2<double>(natomic_rows_,npruned_partitions_-1);
   s.get_array_double(Alpha_coeffs_[0], natomic_rows_*(npruned_partitions_-1));
 
   if (user_defined_grids_) {
@@ -1727,16 +1735,11 @@ RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
 
 RadialAngularIntegrator::~RadialAngularIntegrator()
 {
-  delete[] Alpha_coeffs_[0];
-  delete[] Alpha_coeffs_;
-  delete[] radial_grid_[0];
-  delete[] radial_grid_;
-  delete[] angular_grid_[0][0];
-  delete[] angular_grid_[0];
-  delete[] angular_grid_;
-  delete[] nr_points_[0];
-  delete[] nr_points_;
-  delete[] nw_lvalue_;
+  delete_c_array2<double>(Alpha_coeffs_);
+  delete_c_array2<RefRadialIntegrator>(radial_grid_);
+  delete_c_array3<RefAngularIntegrator>(angular_grid_);
+  delete_c_array2<int>(nr_points_);
+  delete[] xcoarse_l_;
   delete[] grid_accuracy_;
 }
 
@@ -1749,7 +1752,7 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
   s.put(prune_grid_);
   s.put(gridtype_);
 //  s.put(nr_points_[0], natomic_rows_*max_gridtype_);
-//  s.put(nw_lvalue_, natomic_rows_);
+//  s.put(xcoarse_l_, natomic_rows_);
   s.put(npruned_partitions_);
   s.put(user_defined_grids_);
   s.put(dynamic_grids_);
@@ -1845,77 +1848,63 @@ RadialAngularIntegrator::set_grids(void)
 {
   int i, j, k;
 
-  // Allocate memory for grids
-  radial_grid_ = new RefRadialIntegrator*[natomic_rows_];
-  RefRadialIntegrator *tmprad = new RefRadialIntegrator[natomic_rows_*(gridtype_+1)];
-  for (i=0; i<natomic_rows_; i++) radial_grid_[i] = tmprad + i*(gridtype_+1);
-
-  angular_grid_ = new RefAngularIntegrator**[natomic_rows_];
-  RefAngularIntegrator **tmpang2 =
-                                  new RefAngularIntegrator*[natomic_rows_*npruned_partitions_];
-  RefAngularIntegrator *tmpang1 =
-            new RefAngularIntegrator[natomic_rows_*npruned_partitions_*(gridtype_+1)];
-
-  for (i=0; i<natomic_rows_*npruned_partitions_; i++) tmpang2[i] = tmpang1 + i*(gridtype_+1);
-  for (i=0; i<natomic_rows_; i++) angular_grid_[i] = tmpang2 + i*npruned_partitions_;
+  radial_grid_ = new_c_array2<RefRadialIntegrator>(natomic_rows_,gridtype_+1);
+  angular_grid_ = new_c_array3<RefAngularIntegrator>(natomic_rows_,
+                                                     npruned_partitions_,
+                                                     gridtype_+1);
   
-  // Set up pruning grids regardless of whether they are used
-
-  int offset;
+  // zeroth and first row shifts for for pruning large l
   int prune_formula_1[5] = {26, 18, 12, 0, 12};
-  int prune_formula_2[5] = {36, 24, 12, 0, 12};
-  double prune_percentage[5] = {0.1, 0.4, 0.6, 1.0, 0.6};
-  
-  int lvalue, offset_gridtype;
 
-  offset_gridtype = angular_grid_offset(gridtype_);
-  // ExEnv::out() << " offset_gridtype = " << offset_gridtype << endl;
+  // second row and higher shifts for pruning large l
+  int prune_formula_2[5] = {36, 24, 12, 0, 12};
+
+  // multiplicative factors for pruning small l
+  double prune_factor[5] = {0.1, 0.4, 0.6, 1.0, 0.6};
+
+  if (npruned_partitions_ == 1) {
+      prune_factor[0] = 1.0;
+      prune_formula_1[0] = 0;
+      prune_formula_2[0] = 0;
+    }
+  else if (npruned_partitions_ != 5) {
+      ExEnv::err() << "RadialAngularIntegrator::set_grids: "
+                   << "npruned_partitations must be 1 or 5" << endl;
+      abort();
+    }
 
   for (i=0; i<natomic_rows_; i++) {
-      lvalue = nw_lvalue_[i];
-      // ExEnv::out() << " i = " << i << " lvalue = " << lvalue << endl;
       for (j=0; j<=gridtype_; j++)
-          radial_grid_[i][j] = new EulerMaclaurinRadialIntegrator(nr_points_[i][j]);
-      
+          radial_grid_[i][j]
+              = new EulerMaclaurinRadialIntegrator(nr_points_[i][j]);
+
       for (j=0; j<npruned_partitions_; j++) {
-          // ExEnv::out() << "\t j = " << j << endl;
           for (k=0; k<=gridtype_; k++) {
-              // ExEnv::out << "i = " << i << " j = " << j << " k = " << k << " lvalue = " << lvalue << endl;
-              offset_gridtype = angular_grid_offset(k);
-              // ExEnv::out << " offset_gridtype = " << offset_gridtype << endl;
-              //ExEnv::out() << " offset = " << offset << endl;
-              if ( (lvalue+offset_gridtype)<29 && i<=1 ) {
-                  // First row grid too small for pruning
-                  double n = (prune_percentage[j]*(double)(lvalue+offset_gridtype));
-                  int m = (int)n;
-                  if ( (n-m) > 0.5 ) m++;
-                  // int m = (int) (prune_percentage[j]*(double)(lvalue+offset_gridtype));
-                  // ExEnv::out() << " m = " << m << endl;
-                  // int m = lvalue+offset_gridtype;
-                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
-                      Lebedev_Laikov_lvalue(m));
+              int grid_l = xcoarse_l_[i] + angular_grid_offset(k);
+              int use_l;
+              if (i <=1 ) { // H to Ne
+                  if (grid_l < 29) use_l = int(prune_factor[j]*grid_l + 0.5);
+                  else use_l = grid_l-prune_formula_1[j];
                 }
-              else if ( (lvalue+offset_gridtype)<39 && i>1 )
-                  // Second or larger grid too small for pruning
-                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
-                      Lebedev_Laikov_lvalue(lvalue+offset_gridtype));
-              else if (i<=1) // H -> Ne and lvalue >=29
-                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
-                      Lebedev_Laikov_lvalue(lvalue+offset_gridtype-prune_formula_1[j]));
-              else // for Sodium or larger and lvalue >= 29
-                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
-                      Lebedev_Laikov_lvalue(lvalue+offset_gridtype-prune_formula_2[j]));
+              else { // Na and up
+                  if (grid_l < 39) use_l = grid_l;
+                  else use_l = grid_l-prune_formula_2[j];
+                }
+              angular_grid_[i][j][k]
+                  = new LebedevLaikovIntegrator(Lebedev_Laikov_npoint(use_l));
+//                ExEnv::out() << " angular_grid_["
+//                             << i << "]["
+//                             << j << "]["
+//                             << k
+//                             << "]->nw = " << angular_grid_[i][j][k]->nw()
+//                             << " xc_l = " << xcoarse_l_[i]
+//                             << " off = " << angular_grid_offset(k)
+//                             << " grid_l = " << grid_l
+//                             << " use_l = " << use_l
+//                             << endl;
             }
         }
     }
-
-/*
-  for (i=0; i<atomic_rows; i++)
-      for (j=0; j<npruned_partitions_; j++)
-          for (k=0; k<=gridtype_; k++)
-              ExEnv::out << " angular_grid_[" << i << "][" << j << "][" << k << "]->nw = "
-                   << angular_grid_[i][j][k]->nw() << endl;
-*/
 }
 
 void
@@ -1927,10 +1916,7 @@ RadialAngularIntegrator::init_pruning_coefficients(void)
   //ExEnv::out() << "npruned_partitions = " << npruned_partitions_ << endl;
   //ExEnv::out() << "natomic_rows = " << natomic_rows_ << endl;
   int num_boundaries = npruned_partitions_-1;
-  double *tmp = new double[natomic_rows_*num_boundaries];
-  memset((void *)tmp, 0, sizeof(double)*natomic_rows_*num_boundaries);
-  Alpha_coeffs_ = new double*[natomic_rows_];
-  for (i=0; i<natomic_rows_; i++) Alpha_coeffs_[i] = tmp + i*num_boundaries;
+  Alpha_coeffs_ = new_zero_c_array2<double>(natomic_rows_, num_boundaries);
 
   // set pruning cutoff variables - Alpha -> radial shell cutoffs
   init_alpha_coefficients();
@@ -1954,11 +1940,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
 
       // set pruning cutoff variables - Alpha -> radial shell cutoffs
       int num_boundaries = npruned_partitions_-1;
-      double *tmp = new double[natomic_rows_*num_boundaries];
-      memset((void *)tmp, 0, sizeof(double)*natomic_rows_*num_boundaries);
-      Alpha_coeffs_ = new double*[natomic_rows_];
-      for (i=0; i<natomic_rows_; i++) Alpha_coeffs_[i] = tmp + i*num_boundaries;
-      
+      Alpha_coeffs_ = new_zero_c_array2<double>(natomic_rows_, num_boundaries);
       int alpha_rows = keyval->count("alpha_coeffs");
       if (keyval->error() != KeyVal::OK) {
           if (npruned_partitions_ != 5) {
@@ -1984,10 +1966,8 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
         }
     }
   else {
-      double *tmp = new double[1];
-      memset((void *)tmp, 0, sizeof(double));
-      Alpha_coeffs_ = new double*[1];
-      Alpha_coeffs_[0] = tmp;
+      npruned_partitions_ = 1;
+      Alpha_coeffs_ = new_zero_c_array2<double>(natomic_rows_,0);
     }
 }
 
@@ -2003,24 +1983,20 @@ RadialAngularIntegrator::init_alpha_coefficients(void)
 
   //  No pruning for atoms past second row
   int i;
-  for (i=3; i<max_gridtype_; i++) Alpha_coeffs_[i][2] = MAX_DOUBLE;
+  for (i=3; i<natomic_rows_; i++) Alpha_coeffs_[i][2] = DBL_MAX;
 
 }
 
 void
 RadialAngularIntegrator::init_default_grids(void)
 {
-  nw_lvalue_ = new int[natomic_rows_];
+  xcoarse_l_ = new int[natomic_rows_];
 
-  int *tmp = new int[natomic_rows_*max_gridtype_];
-  memset((void *)tmp, 0, sizeof(int)*natomic_rows_*max_gridtype_);
-  nr_points_ = new int*[natomic_rows_];
-  int i;
-  for (i=0; i<natomic_rows_; i++) nr_points_[i] = tmp + i*max_gridtype_;
+  nr_points_ = new_c_array2<int>(natomic_rows_,max_gridtype_);
 
   // Set angular momentum level of reference xcoarse grids for each atomic row
-  nw_lvalue_[0] = 11; nw_lvalue_[1] = 17; nw_lvalue_[2] = 21;
-  nw_lvalue_[3] = 25; nw_lvalue_[4] = 31;
+  xcoarse_l_[0] = 11; xcoarse_l_[1] = 17; xcoarse_l_[2] = 21;
+  xcoarse_l_[3] = 25; xcoarse_l_[4] = 31;
 
   // Set number of radial points for each atomic row and grid type
   nr_points_[0][0] = 20; nr_points_[0][1] = 30; nr_points_[0][2] = 50;
@@ -2098,6 +2074,7 @@ RadialAngularIntegrator::select_dynamic_grid(void)
   // ExEnv::out << " select_grid = " << select_grid << endl;
   return select_grid;
 }  
+
 int
 RadialAngularIntegrator::get_atomic_row(int i)
 {
@@ -2107,17 +2084,18 @@ RadialAngularIntegrator::get_atomic_row(int i)
   else if (i<37) return 3;
   else if (i<55) return 4;
   else if (i<87) return 5;
-  else {
-      ExEnv::out() << " RadialAngularIntegrator::get_atomic_row - failed with int value " << i << endl;
-    }
 
+  ExEnv::out() << " RadialAngularIntegrator::get_atomic_row: Z too large: "
+               << i << endl;
+  abort();
+  return 0;
 }
 
 RefAngularIntegrator
 RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
-                                          int charge)
+                                          int Z)
 {
-  int atomic_row, i, maxgrid=0, nw, maxgrid_index;
+  int atomic_row, i;
 
   int select_grid;
   if (dynamic_grids_) select_grid = select_dynamic_grid();
@@ -2126,43 +2104,21 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
   //ExEnv::out << "RAI::get_angular_grid -> select_grid = " << select_grid;
   //ExEnv::out << " prune_grid_ = " << prune_grid_
   //     << "  user_defined_grids_ = " << user_defined_grids_ << endl;
-  atomic_row = get_atomic_row(charge);
-  if (!prune_grid_ && !user_defined_grids_) {
-      for (i=0; i<npruned_partitions_; i++) {
-          nw = angular_grid_[atomic_row][i][gridtype_]->nw();
-          if (nw>maxgrid) { maxgrid = nw; maxgrid_index = i; }
-        }
-      // should double check to see if largest grid is in partition 4
-      switch (atomic_row) {
-      case 0: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
-      case 1: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
-      case 2: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
-      case 3: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
-      case 4: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
-      default: ExEnv::out() << " No default angular grids for atomic charge " << charge << endl;
-        }
-    }
-  else if (prune_grid_ && !user_defined_grids_) {  
+  atomic_row = get_atomic_row(Z);
+  if (!user_defined_grids_) {
       // Seleted Alpha's
-      double *Alpha;
-      if (charge<3) Alpha = Alpha_coeffs_[0];
-      else if (charge<11) Alpha = Alpha_coeffs_[1];
-      else if (charge<19) Alpha = Alpha_coeffs_[2];
-      else {
-          ExEnv::out() << " No partitioning parameters for atomic number " << charge << endl;
-          exit(0);
-        }
+      double *Alpha = Alpha_coeffs_[atomic_row];
       // gridtype_ will need to be adjusted for dynamic grids  
-      if (radius<Alpha[0]*bragg_radius) return angular_grid_[atomic_row][0][select_grid];
-      if (radius<Alpha[1]*bragg_radius) return angular_grid_[atomic_row][1][select_grid];
-      if (radius<Alpha[2]*bragg_radius) return angular_grid_[atomic_row][2][select_grid];
-      if (radius<Alpha[3]*bragg_radius) return angular_grid_[atomic_row][3][select_grid];
-      else return angular_grid_[atomic_row][4][select_grid];
+      for (i=0; i<npruned_partitions_-1; i++) {
+          if (radius/bragg_radius < Alpha[i]) {
+              return angular_grid_[atomic_row][i][select_grid];
+            }
+        }
+      return angular_grid_[atomic_row][npruned_partitions_-1][select_grid];
     }
 
   else {
-      // ExEnv::out() << " get_angular_grid: returning angular_user_" << endl;
-      return angular_user_;  // (user_defined_grids_=1) returning user defined angular grid
+      return angular_user_;
     }
 }
 

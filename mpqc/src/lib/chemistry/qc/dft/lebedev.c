@@ -108,23 +108,20 @@ main ()
 
 #ifdef INTHISFILE
 /*
-** Lebedev_Laikov_lvalue
+** Lebedev_Laikov_npoint
 **
 ** lvalue : grid complete through this value of angular momentum quantum number l.
 **
 ** return value : number of points in sought Lebedev-Laikov grid.
 **
 */
-int Lebedev_Laikov_lvalue(int lvalue)
+int Lebedev_Laikov_npoint(int lvalue)
 {
 
   int fraction, tmp_lvalue;
   tmp_lvalue = lvalue;
   
   if (lvalue <3) {
-      /* printf(" Lebedev_Laikov_lvalue: angular momentum value too low (%d < 3).\n", lvalue);
-      printf(" Using smallest Lebedev-Laikov grid -> 3.\n");
-      */
       return 6;
     }
   else if (lvalue <= 31) {
@@ -179,7 +176,7 @@ int Lebedev_Laikov_lvalue(int lvalue)
         }
     }
   else {
-      printf(" Lebedev_Laikov_lvalue: lvalue > 131.  No grids of this type available.\n");
+      printf(" Lebedev_Laikov_npoint: lvalue > 131.  No grids of this type available.\n");
       exit(1);
     }
 }

@@ -6,7 +6,7 @@
 #include <chemistry/qc/intv2/transform.h>
 #include <chemistry/qc/basis/rot.h>
 
-Rotation::Rotation(int a, SymmetryOperation& so, int pure = 0):
+Rotation::Rotation(int a, SymmetryOperation& so, int pure):
   _am(0),
   _n(0),
   r(0)

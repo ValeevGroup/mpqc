@@ -123,12 +123,11 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   
   int debug_ = r12info()->debug_level();
 
-  MolecularEnergy* mole = r12info()->mole();
+  Wavefunction* wfn = r12info()->wfn();
   Ref<SCF> reference = r12info()->ref();
   Ref<Integral> integral = r12info()->integral();
   Ref<GaussianBasisSet> bs = r12info()->basis();
   Ref<GaussianBasisSet> bs_aux = r12info()->basis_ri();
-  Ref<GaussianBasisSet> bs_abs = bs_aux;
   bool two_basis_form = (bs != bs_aux);
   if (!two_basis_form)
     throw std::runtime_error("R12IntEval_abs_A::compute called when basis sets are identical");
@@ -336,383 +335,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   // or simply project out MOs from ABS
   ////////////////////////////////////////////////
 
-  RefSCMatrix orthog_aux;
-  RefSCDimension osodim_aux;
-
-  bs_aux = r12info()->basis_ri();
-
-  {
-  // Make an Integral and initialize with bs_aux
-  Ref<Integral> integral_aux = integral->clone();
-  
-  //
-  // Compute ABS-ABS overlap matrix
-  //
-  integral_aux->set_basis(bs_aux);
-  Ref<PetiteList> plist2 = integral_aux->petite_list();
-  Ref<OneBodyInt> ov_22_engine = integral_aux->overlap();
-  
-  // form skeleton s matrix
-  RefSymmSCMatrix s(bs_aux->basisdim(), matrixkit_aux);
-  Ref<SCElementOp> ov =
-    new OneBodyIntOp(new SymmOneBodyIntIter(ov_22_engine, plist2));
-  
-  s.assign(0.0);
-  s.element_op(ov);
-  ov=0;
-  if (debug_ > 1) s.print("AO skeleton overlap (ABS/ABS)");
-  
-  // then symmetrize it
-  RefSCDimension sodim_aux = plist2->SO_basisdim();
-  RefSymmSCMatrix overlap_aux(sodim_aux, so_matrixkit_aux);
-  plist2->symmetrize(s,overlap_aux);
-    
-  // and clean up a bit
-  ov_22_engine = 0;
-  s = 0;
-
-  //
-  // Compute orthogonalizer for the auxiliary basis
-  //
-  ExEnv::out0() << indent << "Orthogonalizing UBS:" << endl << incindent;
-  OverlapOrthog orthog(reference->orthog_method(),
-		       overlap_aux,
-		       so_matrixkit_aux,
-		       reference->lindep_tol(),
-		       0);
-  
-  RefSCMatrix orthog_aux_so = orthog.basis_to_orthog_basis();
-  orthog_aux_so = orthog_aux_so.t();
-  osodim_aux = orthog_aux_so.coldim();
-  orthog_aux = plist2->evecs_to_AO_basis(orthog_aux_so);
-  orthog_aux_so = 0;
-  ExEnv::out0() << decindent;
-  
-  if (debug_ > 1) {
-    orthog_aux.print("Aux orthogonalizer");
-    RefSCMatrix tmp = orthog_aux.t() * plist2->to_AO_basis(overlap_aux) * orthog_aux;
-    tmp.print("Xt * S * X (Aux)");
-  }
-  
-
-  //
-  // In the new ABS method need to orthogonalize ABS against OBS
-  //
-  if (abs_method == LinearR12::ABS_EV || abs_method == LinearR12::ABS_EVPlus) {
-    
-    ExEnv::out0() << indent << "Projecting out OBS and final UBS orthonormalization:" << endl << incindent;
-
-    //
-    // Compute OBS-ABS overlap matrix
-    //
-    integral_aux->set_basis(bs,bs_aux);
-    Ref<OneBodyInt> ov_12_engine = integral_aux->overlap();
-      
-    // form AO s matrix
-    RefSCMatrix s12(bs->basisdim(), bs_aux->basisdim(), matrixkit_aux);
-    Ref<SCElementOp> ov_op12 =
-      new OneBodyIntOp(new OneBodyIntIter(ov_12_engine));
-    
-    s12.assign(0.0);
-    s12.element_op(ov_op12);
-    ov_op12=0;
-    if (debug_ > 1) s12.print("AO overlap (OBS/UBS)");
-    
-    //
-    // Compute orthogonalizer for the auxiliary basis
-    //
-    
-    // Convert blocked basisdim into a nonblocked basisdim
-    RefSCMatrix ao2so_aux = plist2->aotoso();
-    RefSCMatrix s12_nb(Scf_Vec.coldim(),ao2so_aux->rowdim(), matrixkit_aux);
-    s12_nb->convert(s12);
-    s12 = 0;
-    
-    // MOs (in terms of AOs) "transformed" into the auxiliary AO basis
-    //RefSCMatrix Scf_Vec_ao_aux = Scf_Vec * s12_nb;
-    RefSCMatrix Scf_Vec_aux_bm(Scf_Vec.rowdim(),plist2->AO_basisdim(), so_matrixkit_aux);
-    Scf_Vec_aux_bm.assign(0.0);
-    for(int k=0;k <noso; k++)
-      for(int l=0; l<nbasis; l++)
-	Scf_Vec_aux_bm.set_element(k, nbasis_aux+l, Scf_Vec.get_element(k,l));
-
-    RefSCMatrix CtSC = Scf_Vec_aux_bm * plist2->to_AO_basis(overlap_aux) * Scf_Vec_aux_bm.t();
-    CtSC.print("CtSC in UBS");
-
-    /*s12_nb = 0;
-    // Need blocked representations
-    RefSCMatrix Scf_Vec_aux_bm(Scf_Vec_ao_aux.rowdim(),Scf_Vec_ao_aux.coldim(), so_matrixkit_aux);
-    Scf_Vec_aux_bm->convert(Scf_Vec_ao_aux);
-    RefSCMatrix C1S12(Scf_Vec_ao_aux.rowdim(),Scf_Vec_ao_aux.coldim(), so_matrixkit_aux);
-    C1S12->convert(Scf_Vec_ao_aux);
-    Scf_Vec_ao_aux = 0;
-    
-    Scf_Vec_aux_bm = Scf_Vec_aux_bm * orthog_aux * orthog_aux.t();
-    */
-
-    // Transform MOs into the auxiliary SO basis
-    RefSCMatrix Scf_Vec_aux = Scf_Vec_aux_bm * ao2so_aux;
-    //Scf_Vec_ao_aux = 0;
-    
-    // Prepare the initial set of vectors in ABS
-    int ng = orthog_aux.coldim()->blocks()->nblock();
-    RefSCMatrix oso_aux(orthog_aux.coldim(), sodim_aux, so_matrixkit_aux);
-    oso_aux.assign(orthog_aux.t()*ao2so_aux);
-    ao2so_aux = 0;
-
-    // Project out MOs from the ABS vectors (a la Gram-Schmidt)
-    for(int g=0; g<ng; g++) {
-      
-      RefSCMatrix scfvec_block = Scf_Vec_aux.block(g);
-      RefSCMatrix oso_aux_block = oso_aux.block(g);
-      RefSymmSCMatrix overlap_aux_block = overlap_aux.block(g);
-      
-      // Gram-Schmidt orthogonalize MOs against each other first
-      /*      for(int mo=0; mo<noso; mo++) {
-	if (mo_irrep[mo] == g) {
-	  RefSCVector movec = scfvec_block.get_row(mo);
-	  
-	  for(int omo=0; omo<mo; omo++) {
-	    if (mo_irrep[omo] == g) {
-	      RefSCVector omovec = scfvec_block.get_row(omo);
-	      double overlap = movec.scalar_product(overlap_aux_block * omovec);
-	      movec.accumulate(-overlap*omovec);
-	    }
-	  }
-	  
-	  // Normalize
-	  double norm = movec.scalar_product(overlap_aux_block * movec);
-	  if (fabs(norm) > 1.0E-8) {
-	    double oonorm = 1.0/sqrt(norm);
-	    movec.scale(oonorm);
-	    scfvec_block.assign_row(movec,mo);
-	    }
-	  else {
-	    throw std::runtime_error("MOs projected onto UBS have negligible norm. Modify/increase the auxiliary basis set");
-	  }
-	}
-	}*/
-      
-      int nso_aux = oso_aux_block.rowdim()->n();
-      for(int so=0; so<nso_aux; so++) {
-	
-	// Get the vector -- don't need to normalize here because oso_aux are already orthonormal
-	RefSCVector tmpvec_block = oso_aux_block.get_row(so);
-	
-	// Project against MOs
-	for(int mo=0; mo<noso; mo++) {
-	  if (mo_irrep[mo] == g) {
-	    RefSCVector movec = scfvec_block.get_row(mo);
-	    double overlap = tmpvec_block.scalar_product(overlap_aux_block * movec);
-	    tmpvec_block.accumulate(-overlap*movec);
-	  }
-	}
-	
-	// Project against previously added OSOs
-	/*for(int oso=0; oso<current_oso_in_symblk; oso++) {
-	  RefSCVector osovec_block = oso_aux_block.get_row(oso);
-	  double overlap = osovec_block.scalar_product(overlap_aux_block * tmpvec_block);
-	  tmpvec_block.accumulate(-overlap*osovec_block);
-	}*/
-	
-	/*
-	// Normalize again
-	norm = tmpvec_block.scalar_product(overlap_aux_block * tmpvec_block);
-	//cout << "After orthogon: so = " << so << " norm = " << norm << endl;
-	if (fabs(norm) > 1.0E-15) {
-	  tmpvec_block.scale(sqrt(1.0/norm));
-	  oso_aux_block.assign_row(tmpvec_block,current_oso_in_symblk);
-	  ++noso_per_irrep[g];
-	  ++current_oso;
-	  ++current_oso_in_symblk;
-	}
-	else {
-	  ++nlindep;
-	  continue;
-	}
-	*/
-
-	oso_aux_block.assign_row(tmpvec_block,so);
-	
-      }
-    }
-    
-    //
-    // SVD-orthonormalize ABS vectors from which OBS has already been projected out
-    //
-    RefSymmSCMatrix UtSU(oso_aux.rowdim(), so_matrixkit_aux);
-    UtSU.assign(0.0);
-    UtSU.accumulate_transform(oso_aux, overlap_aux);
-    OverlapOrthog svdorthog(reference->orthog_method(),
-			    UtSU,
-			    so_matrixkit_aux,
-			    reference->lindep_tol(),
-			    0);
-    
-    oso_aux = svdorthog.basis_to_orthog_basis() * oso_aux;
-    oso_aux = oso_aux.t();
-    osodim_aux = oso_aux.coldim();
-    orthog_aux = plist2->evecs_to_AO_basis(oso_aux);
-    if (osodim_aux.n() == 0)
-      throw std::runtime_error("Number of linearly independent functions in ABS orthogonal to OBS is zero. Modify/increase your auxiliary basis.");
-    
-    // Create the SCDimension for new OSOs
-    /*osodim_aux = new SCDimension(current_oso, ng, noso_per_irrep, "OBS-orthogonal SO (ABS)");
-    for(int g=0; g<ng; g++)
-      osodim_aux->blocks()->set_subdim(g, new SCDimension(noso_per_irrep[g]));
-    delete[] noso_per_irrep;
-    
-    orthog_aux = so_matrixkit_aux->matrix(sodim_aux, osodim_aux);
-    oso_aux = oso_aux.t();
-    for(int b=0; b<ng; b++) {
-      RefSCMatrix B_new = orthog_aux.block(b);
-      int nrow = B_new.rowdim().n();
-      int ncol = B_new.coldim().n();
-      RefSCMatrix B = oso_aux.block(b).get_subblock(0,nrow-1,0,ncol-1);
-      B_new.assign(B);
-    }
-    oso_aux = 0;
-    if (debug_ > 1) (orthog_aux.t() * overlap_aux * Scf_Vec_aux.t()).print("Ut * S12 * C");
-    orthog_aux = plist2->evecs_to_AO_basis(orthog_aux);
-    */
-    if (debug_ > 1) (orthog_aux.t() * plist2->to_AO_basis(overlap_aux) * orthog_aux).print("Ut * S22 * U");
-
-    //
-    // Now need to project functions from the "union" BS (bs_aux) into AUX (bs_abs)
-    //
-
-    //
-    // Compute ABS-ABS overlap matrix
-    //
-    integral_aux->set_basis(bs_abs);
-    Ref<PetiteList> plist3 = integral_aux->petite_list();
-    Ref<OneBodyInt> ov_33_engine = integral_aux->overlap();
-    
-    // form skeleton s matrix
-    RefSymmSCMatrix s33(bs_abs->basisdim(), matrixkit_aux);
-    Ref<SCElementOp> ov_op33 =
-      new OneBodyIntOp(new SymmOneBodyIntIter(ov_33_engine, plist3));
-  
-    s33.assign(0.0);
-    s33.element_op(ov_op33);
-    ov_op33=0;
-    if (debug_ > 1) s33.print("AO skeleton overlap (ABS/ABS)");
-  
-    // then symmetrize it
-    RefSCDimension sodim_abs = plist3->SO_basisdim();
-    RefSymmSCMatrix overlap_abs(sodim_abs, so_matrixkit_aux);
-    plist3->symmetrize(s33,overlap_abs);
-    
-    // and clean up a bit
-    ov_33_engine = 0;
-    s33 = 0;
-
-    //
-    // Compute orthogonalizer for the auxiliary basis
-    //
-    ExEnv::out0() << indent << "Orthogonalizing ABS:" << endl << incindent;
-    OverlapOrthog orthog3(reference->orthog_method(),
-			     overlap_abs,
-			     so_matrixkit_aux,
-			     reference->lindep_tol(),
-			     0);
-  
-    RefSCMatrix orthog_abs_so = orthog3.basis_to_orthog_basis();
-    orthog_abs_so = orthog_abs_so.t();
-    RefSCDimension osodim_abs_so = orthog_abs_so.coldim();
-    RefSCMatrix orthog_abs = plist3->evecs_to_AO_basis(orthog_abs_so);
-    orthog_abs_so = 0;
-    ExEnv::out0() << decindent;
-  
-    if (debug_ >= 0) {
-      //      orthog_abs.print("ABS orthogonalizer");
-      RefSCMatrix tmp = orthog_abs.t() * plist3->to_AO_basis(overlap_abs) * orthog_abs;
-      tmp.print("Xt * S * X (ABS)");
-    }
-
-    //
-    // Compute ABS-AUX overlap matrix
-    //
-    integral_aux->set_basis(bs_aux,bs_abs);
-    Ref<OneBodyInt> ov_23_engine = integral_aux->overlap();
-      
-    // form AO s matrix
-    RefSCMatrix s23(bs_aux->basisdim(), bs_abs->basisdim(), matrixkit_aux);
-    Ref<SCElementOp> ov_op23 =
-      new OneBodyIntOp(new OneBodyIntIter(ov_23_engine));
-    
-    s23.assign(0.0);
-    s23.element_op(ov_op23);
-    ov_op23=0;
-    if (debug_ > 1) s23.print("AO overlap (UBS/ABS)");
-
-    // Need blocked representations
-    RefSCMatrix s23_bm(plist2->AO_basisdim(), plist3->AO_basisdim(), so_matrixkit_aux);
-    s23_bm->convert(s23);
-    s23 = 0;
-    
-    //
-    // Compute orthogonalizer for the auxiliary basis
-    //
-    RefSCMatrix X_abs = orthog_aux.t() * s23_bm * orthog_abs;
-    s23_bm = 0;
-
-    // Test XtX = 1
-    RefSymmSCMatrix XtSX(X_abs.rowdim(), so_matrixkit_aux);
-    XtSX.assign(0.0);
-    RefDiagSCMatrix I(X_abs.coldim(), so_matrixkit_aux);
-    I->assign(1.0);
-    XtSX.accumulate_transform(X_abs, I);
-    XtSX.print("Should be a unit mat");
-    
-    OverlapOrthog svd3orthog(reference->orthog_method(),
-			     XtSX,
-			     so_matrixkit_aux,
-			     reference->lindep_tol(),
-			     0);
-    
-    orthog_aux = svd3orthog.basis_to_orthog_basis() * X_abs * orthog_abs.t();
-    orthog_aux = orthog_aux.t();
-    //orthog_aux = plist3->evecs_to_AO_basis(orthog_aux);
-
-    RefSCMatrix tmp = orthog_aux.t() * plist3->to_AO_basis(overlap_abs) * orthog_aux;
-    //tmp.print("Xt * S * X (ABS)");
-
-
-
-    //
-    // Compute OBS-ABS overlap matrix
-    //
-    integral_aux->set_basis(bs,bs_abs);
-    Ref<OneBodyInt> ov_13_engine = integral_aux->overlap();
-      
-    // form AO s matrix
-    RefSCMatrix s13(bs->basisdim(), bs_abs->basisdim(), matrixkit_aux);
-    Ref<SCElementOp> ov_op13 =
-      new OneBodyIntOp(new OneBodyIntIter(ov_13_engine));
-    
-    s13.assign(0.0);
-    s13.element_op(ov_op13);
-    ov_op13=0;
-    if (debug_ > 1) s13.print("AO overlap (OBS/ABS)");
-    
-    RefSCMatrix s13_bm(Scf_Vec.coldim(), orthog_aux.rowdim(), so_matrixkit_aux);
-    RefSCMatrix Scf_Vec_bm(Scf_Vec.rowdim(), Scf_Vec.coldim(), so_matrixkit_aux);
-    s13_bm->convert(s13);
-    Scf_Vec_bm->convert(Scf_Vec);
-    s13 = 0;
-    tmp = Scf_Vec_bm * s13_bm * orthog_aux;
-    tmp.print("C * S * X (ABS)");
-    
-
-
-    ExEnv::out0() << decindent;
-  }
-  }
-
-  bs_aux = bs_abs;
-
-  osodim_aux = orthog_aux.coldim();
+  RefSCMatrix orthog_aux = r12info()->orthog_ri();
+  RefSCDimension osodim_aux = orthog_aux.coldim();
   int noso_aux = osodim_aux.n();
   double *orthog_aux_vector = new double[nbasis_aux*noso_aux];
   orthog_aux.convert(orthog_aux_vector);
@@ -828,9 +452,9 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
    -----------------------------------*/
   tim_enter("mp2-r12/a passes");
-  if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
+  if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
+    StateOutBin stateout(wfn->checkpoint_file());
+    SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 
@@ -1036,10 +660,10 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     tim_exit("MO ints store");
     mem->sync();
 
-    if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
+    if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
       current_orbital_ += ni;
-      StateOutBin stateout(mole->checkpoint_file());
-      SavableState::save_state(mole,stateout);
+      StateOutBin stateout(wfn->checkpoint_file());
+      SavableState::save_state(wfn,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
     }
 
@@ -1370,9 +994,9 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     }
   msg->sum(aoint_computed);
 
-  if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
+  if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
+    StateOutBin stateout(wfn->checkpoint_file());
+    SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 
@@ -1479,9 +1103,9 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   evaluated_ = true;
 
-  if (me == 0 && mole->if_to_checkpoint()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
+  if (me == 0 && wfn->if_to_checkpoint()) {
+    StateOutBin stateout(wfn->checkpoint_file());
+    SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
   

@@ -241,11 +241,11 @@ void R12IntEval::compute()
   r12info_->set_absmethod(abs_method_);
 
   int me = r12info()->msg()->me();
-  MolecularEnergy* mole = r12info()->mole();
+  Wavefunction* wfn = r12info()->wfn();
 
-  if (me == 0 && mole->if_to_checkpoint()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
+  if (me == 0 && wfn->if_to_checkpoint()) {
+    StateOutBin stateout(wfn->checkpoint_file());
+    SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 
@@ -313,9 +313,9 @@ void R12IntEval::compute()
 
   evaluated_ = true;
 
-  if (me == 0 && mole->if_to_checkpoint()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
+  if (me == 0 && wfn->if_to_checkpoint()) {
+    StateOutBin stateout(wfn->checkpoint_file());
+    SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 }

@@ -51,12 +51,17 @@ static ClassDesc R12IntEvalInfo_cd(
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 {
-  mole_ = mbptr12;
+  // Default values
+  memory_ = DEFAULT_SC_MEMORY;
+  debug_ = 0;
+  dynamic_ = false;
+  print_percent_ = 10.0;
+
+  wfn_ = mbptr12;
   ref_ = mbptr12->ref();
   integral_ = mbptr12->integral();
   bs_ = mbptr12->basis();
   bs_aux_ = mbptr12->aux_basis();
-  bs_ri_ = mbptr12->ri_basis();
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -75,29 +80,25 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   nocc_act_ = nocc_ - nfzc_;
   noso_ = oso_dim.n();
 
-  abs_method_ = mbptr12->abs_method();
-
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();
 
-  // Default values
-  memory_ = DEFAULT_SC_MEMORY;
-  debug_ = 0;
-  dynamic_ = false;
-  print_percent_ = 10.0;
-
   orbsym_ = 0;
   eigen_(evals_,scf_vec_,occs_,orbsym_);
+
+  abs_method_ = mbptr12->abs_method();
+  construct_ri_basis_(false);
 }
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 {
-  mole_ = require_dynamic_cast<MolecularEnergy*>(SavableState::restore_state(si),
-                                                 "R12IntEvalInfo::R12IntEvalInfo");
+  wfn_ = require_dynamic_cast<Wavefunction*>(SavableState::restore_state(si),
+					     "R12IntEvalInfo::R12IntEvalInfo");
   ref_ << SavableState::restore_state(si);
   integral_ << SavableState::restore_state(si);
   bs_ << SavableState::restore_state(si);
   bs_aux_ << SavableState::restore_state(si);
+  bs_ri_ << SavableState::restore_state(si);
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -137,11 +138,12 @@ R12IntEvalInfo::~R12IntEvalInfo()
 
 void R12IntEvalInfo::save_data_state(StateOut& so)
 {
-  SavableState::save_state(mole_,so);
+  SavableState::save_state(wfn_,so);
   SavableState::save_state(ref_.pointer(),so);
   SavableState::save_state(integral_.pointer(),so);
   SavableState::save_state(bs_.pointer(),so);
   SavableState::save_state(bs_aux_.pointer(),so);
+  SavableState::save_state(bs_ri_.pointer(),so);
 
   so.put(nocc_);
   so.put(nocc_act_);
@@ -163,6 +165,24 @@ char* R12IntEvalInfo::ints_file() const
 {
   return strdup(ints_file_);
 }
+
+void
+R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)
+{
+  if (abs_method != abs_method_) {
+    abs_method = abs_method_;
+    construct_ri_basis_(false);
+  }
+}
+
+RefSCMatrix
+R12IntEvalInfo::orthog_ri() {
+  
+  if (orthog_ri_.null())
+    construct_orthog_ri_();
+  return orthog_ri_;
+ };
+
 
 /////////////////////////////////////////////////////////////////
 // Function dquicksort performs a quick sort (smaller -> larger) 
@@ -229,8 +249,9 @@ void R12IntEvalInfo::eigen_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCM
 
   if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_" << endl;
   if (debug_) ExEnv::out0() << indent << "getting fock matrix" << endl;
-  // get the closed shell AO fock matrices
+  // get the closed shell AO fock matrices -- this is where SCF is computed
   RefSymmSCMatrix fock_c_so = ref_->fock(0);
+  ExEnv::out0() << endl;
   
   // transform the AO fock matrices to the MO basis
   RefSymmSCMatrix fock_c_mo1 = so_matrixkit->symmmatrix(oso_dim);

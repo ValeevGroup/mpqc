@@ -66,8 +66,6 @@ class MBPT2_R12: public MBPT2 {
     Ref<MP2R12Energy> r12b_energy_;
 
     Ref<GaussianBasisSet> aux_basis_;   // This is the auxiliary basis set (ABS)
-    Ref<GaussianBasisSet> ri_basis_;    // This is the basis set used for the approximate resolution of the identity (either same
-                                        // as ABS or the usion of OBS and ABS) or for the resolution of the orthogonal complement to OBS
     Ref<SCVector> epair_0_, epair_1_;   // Singlet/triplet pair energies if spin-adapted
                                         // Alpha-beta/alpha-alpha pair energies if spin-orbital
 
@@ -89,17 +87,6 @@ class MBPT2_R12: public MBPT2 {
 
     // calculate the MP2-R12 energy in std approximations A and A'
     void compute_energy_a_();
-
-    // construct the RI basis based on abs_method
-    void construct_ri_basis_(bool safe);
-    void construct_ri_basis_ks_(bool safe);
-    void construct_ri_basis_ksplus_(bool safe);
-    void construct_ri_basis_ev_(bool safe);
-    void construct_ri_basis_evplus_(bool safe);
-    // Uses ri_basis to construct a basis that spans the orthogonal complement to the OBS
-    void construct_ortho_comp_();
-    // Returns true if ABS spans OBS
-    bool abs_spans_obs_();
 
   protected:
     // implement the Compute::compute() function,
@@ -199,7 +186,6 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     Ref<GaussianBasisSet> aux_basis() const;
-    Ref<GaussianBasisSet> ri_basis() const;
     bool gebc() const;
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;

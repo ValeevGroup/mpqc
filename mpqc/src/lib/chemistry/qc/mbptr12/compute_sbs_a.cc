@@ -126,7 +126,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   
   int debug_ = r12info()->debug_level();
 
-  MolecularEnergy* mole = r12info()->mole();
+  Wavefunction* wfn = r12info()->wfn();
   Ref<Integral> integral = r12info()->integral();
   Ref<GaussianBasisSet> bs = r12info()->basis();
   bool two_basis_form = (bs != r12info()->basis_ri());
@@ -170,7 +170,8 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   double pfac_xy_1, pfac_xy_2;
   if (two_basis_form &&
-      abs_method == LinearR12::ABS_KS) {
+      ( abs_method == LinearR12::ABS_KS ||
+        abs_method == LinearR12::ABS_KSPlus ) ) {
     pfac_xy_1 = 0.5;
     pfac_xy_2 = -0.5;
   }
@@ -446,9 +447,9 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
    -----------------------------------*/
   tim_enter("mp2-r12/a passes");
-  if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
+  if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
+    StateOutBin stateout(wfn->checkpoint_file());
+    SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 
@@ -819,10 +820,10 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     tim_exit("MO ints store");
     mem->sync();
 
-    if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
+    if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
       current_orbital_ += ni;
-      StateOutBin stateout(mole->checkpoint_file());
-      SavableState::save_state(mole,stateout);
+      StateOutBin stateout(wfn->checkpoint_file());
+      SavableState::save_state(wfn,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
     }
 
@@ -1320,9 +1321,9 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   evaluated_ = true;
 
-  if (me == 0 && mole->if_to_checkpoint()) {
-    StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole,stateout);
+  if (me == 0 && wfn->if_to_checkpoint()) {
+    StateOutBin stateout(wfn->checkpoint_file());
+    SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
   

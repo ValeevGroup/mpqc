@@ -54,7 +54,7 @@ public:
 
 private:
 
-  MolecularEnergy* mole_;     // MolecularEnergy that owns this
+  Wavefunction* wfn_;     // Wavefunction that owns this
   Ref<SCF> ref_;
   Ref<Integral> integral_;
   Ref<GaussianBasisSet> bs_;
@@ -83,8 +83,29 @@ private:
   RefDiagSCMatrix evals_;
   RefDiagSCMatrix occs_;
   int* orbsym_;
+  RefSCMatrix orthog_aux_;
+  int nlindep_aux_;
+  RefSymmSCMatrix overlap_aux_;
+  RefSCMatrix orthog_ri_;
+  int nlindep_ri_;
+  RefSymmSCMatrix overlap_ri_;
 
+  // construct the RI basis based on abs_method
+  void construct_ri_basis_(bool safe);
+  void construct_ri_basis_ks_(bool safe);
+  void construct_ri_basis_ksplus_(bool safe);
+  void construct_ri_basis_ev_(bool safe);
+  void construct_ri_basis_evplus_(bool safe);
+  // Uses ri_basis to construct a basis that spans the orthogonal complement to the OBS
+  void construct_ortho_comp_();
+  // Returns true if ABS spans OBS
+  bool abs_spans_obs_();
+  // Construct eigenvector and eigenvalues sorted by energy
   void eigen_(RefDiagSCMatrix& evals, RefSCMatrix& scf_vec, RefDiagSCMatrix& occs, int*& orbsym);
+  // Construct orthog_aux_
+  void construct_orthog_aux_();
+  // Construct orthog_ri_
+  void construct_orthog_ri_();
 
 public:
   R12IntEvalInfo(StateIn&);
@@ -99,9 +120,9 @@ public:
   void set_ints_method(const StoreMethod method) { ints_method_ = method; };
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
   void set_memory(size_t nbytes) { if (nbytes >= 0) memory_ = nbytes; };
-  void set_absmethod(LinearR12::ABSMethod abs_method) { abs_method_ = abs_method; };
+  void set_absmethod(LinearR12::ABSMethod abs_method);
 
-  MolecularEnergy* mole() const { return mole_; };
+  Wavefunction* wfn() const { return wfn_; };
   Ref<SCF> ref() const { return ref_; };
   Ref<Integral> integral() const { return integral_; };
   Ref<GaussianBasisSet> basis() const { return bs_; };
@@ -129,7 +150,8 @@ public:
   RefSCMatrix scf_vec() const { return scf_vec_; };
   RefDiagSCMatrix evals() const { return evals_; };
   int *orbsym() const { return orbsym_; };
-  
+  RefSCMatrix orthog_ri();
+
   /// Compute dipole and quadrupole moment matrices in active MO basis
   void compute_multipole_ints(RefSymmSCMatrix& MX,
 			      RefSymmSCMatrix& MY,

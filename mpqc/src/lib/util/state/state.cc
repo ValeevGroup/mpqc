@@ -21,7 +21,8 @@ DescribedClass_REF_def(SavableState);
 void *
 SavableState::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DescribedClass::_castdown(cd) };
+  void* casts[1];
+  casts[0] =  DescribedClass::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -125,7 +126,8 @@ DescribedClass_REF_def(StateOut);
 void *
 StateOut::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DescribedClass::_castdown(cd) };
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -140,7 +142,7 @@ StateOut::StateOut(const StateOut&) {
     fprintf(stderr,"StateOut: private copy ctor called???\n");
     abort();
 }
-StateOut::operator=(const StateOut&) {
+void StateOut::operator=(const StateOut&) {
     fprintf(stderr,"StateOut: private assignment called???\n");
     abort();
 }
@@ -173,7 +175,8 @@ DescribedClass_REF_def(StateIn);
 void *
 StateIn::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DescribedClass::_castdown(cd) };
+  void* casts[1];
+  casts[0] =  DescribedClass::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -181,7 +184,7 @@ StateIn::StateIn(const StateIn&) {
     fprintf(stderr,"StateIn: private copy ctor called???\n");
     abort();
 }
-StateIn::operator=(const StateIn&) {
+void StateIn::operator=(const StateIn&) {
     fprintf(stderr,"StateIn: private assignment called???\n");
     abort();
 }
@@ -418,7 +421,7 @@ int StateIn::get(double*&s)
 
 int StateIn::get_version(const ClassDesc*cd)
 {
-  if (!_cd.contains(cd)) {
+  if (!_cd.contains((const ClassDescP&)cd)) {
       ClassDesc *tmp;
       get(&tmp);
     }
@@ -437,7 +440,7 @@ int StateIn::get(const ClassDesc**cd)
       int version;
       get(version);
       //printf("just got \"%s\" %d\n",name,version);
-      const ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
+      ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
       // save the class descriptor and the version
       _cd.add(tmp);
       _version.add(version);
@@ -484,7 +487,7 @@ int StateOut::put(const ClassDesc*cd)
 void
 StateOut::putparents(const ClassDesc*cd)
 {
-  ParentClasses& parents = cd->parents();
+  const ParentClasses& parents = cd->parents();
 
   for (int i=0; i<parents.n(); i++) {
       // the cast is needed to de-const-ify the class descriptor

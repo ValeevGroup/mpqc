@@ -251,6 +251,10 @@ main(int argc, char *argv[])
   if (keyval->error() != KeyVal::OK)
     do_opt=1;
   
+  int do_pdb = keyval->booleanvalue("write_pdb");
+  if (keyval->error() != KeyVal::OK)
+    do_pdb=0;
+  
   int ready_for_freq = 1;
   if (mole.nonnull()) {
     if ((do_opt || do_grad) && !mole->gradient_implemented()) {
@@ -309,6 +313,15 @@ main(int argc, char *argv[])
 
   if (mole.nonnull()) {
     mole->print(cout);
+
+    if (do_pdb) {
+      ckptfile = new char[strlen(molname)+5];
+      sprintf(ckptfile, "%s.pdb", molname);
+      ofstream pdbfile(ckptfile);
+      mole->molecule()->print_pdb(pdbfile);
+      delete[] ckptfile;
+    }
+    
   }
   else {
     cout << node0 << "mpqc: The molecular energy object is null" << endl

@@ -116,9 +116,9 @@ class LocalGBuild : public GBuild<T> {
               if (!qijkl)
                 continue;
 
-              tim_enter("quartet");
+              //tim_enter("quartet");
               tbi.compute_shell(i,j,k,l);
-              tim_exit("quartet");
+              //tim_exit("quartet");
 
               int e12 = (i==j);
               int e34 = (k==l);
@@ -135,9 +135,9 @@ class LocalGBuild : public GBuild<T> {
               for (I=0, ii=fi; I < ni; I++, ii++) {
                 for (J=0, jj=fj; J <= (e12 ? I : nj-1); J++, jj++) {
                   for (K=0, kk=fk; K <= (e13e24 ? I : nk-1); K++, kk++) {
-           
                     int lend = (e34 ? ((e13e24)&&(K==I) ? J : K)
                                 : ((e13e24)&&(K==I)) ? J : nl-1);
+
                     for (L=0, ll=fl; L <= lend; L++, ll++, index++) {
 
                       if (fabs(intbuf[index]) < 1.0e-15)
@@ -336,7 +336,6 @@ class LocalGBuild : public GBuild<T> {
 
       tim_exit("ao_gmat");
     }
-    
 };
 
 #endif

@@ -579,7 +579,8 @@ SumIntCoor::print(RefMolecule mol, ostream& os)
   int i;
 
   os << node0 << indent
-     << scprintf("%-5s %10s %14.10f\n",ctype(), label(), preferred_value());
+     << scprintf("%-5s %10s %14.10f\n",ctype(),
+                 (label()?label():""), preferred_value());
 
   for(i=0; i<coor_.length(); i++) {
       os << node0 << incindent

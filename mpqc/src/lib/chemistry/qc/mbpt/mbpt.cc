@@ -33,6 +33,7 @@ MBPT2::MBPT2(StateIn& s):
   s.get(nfzv);
   s.get(mem_alloc);
   s.getstring(method_);
+  s.getstring(algorithm_);
   s.get(debug_);
 
   eliminate_in_gmat_ = 1;
@@ -60,6 +61,8 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
 
   method_ = keyval->pcharvalue("method");
 
+  algorithm_ = keyval->pcharvalue("algorithm");
+
   debug_ = keyval->booleanvalue("debug");
 
   eliminate_in_gmat_ = 1;
@@ -68,6 +71,7 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
 MBPT2::~MBPT2()
 {
   delete[] method_;
+  delete[] algorithm_;
 }
 
 void
@@ -79,6 +83,7 @@ MBPT2::save_data_state(StateOut& s)
   s.put(nfzv);
   s.put(mem_alloc);
   s.putstring(method_);
+  s.putstring(algorithm_);
   s.put(debug_);
 
   mem = MemoryGrp::initial_memorygrp();
@@ -119,7 +124,19 @@ MBPT2::compute()
       compute_cs_grad();
     }
   else {
-      compute_hsos_v1();
+      if (!algorithm_ || !strcmp(algorithm_,"v2")) {
+          compute_hsos_v2();
+        }
+      else if (!strcmp(algorithm_,"v1")) {
+          compute_hsos_v1();
+        }
+      else if (!strcmp(algorithm_,"v2lb")) {
+          compute_hsos_v2_lb();
+        }
+      else {
+          cerr << "MBPT2: unknown algorithm: " << algorithm_ << endl;
+          abort();
+        }
     }
 }
 

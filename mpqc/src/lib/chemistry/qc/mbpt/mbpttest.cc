@@ -112,6 +112,8 @@ main(int argc, char**argv)
 
   tim->enter("input");
   
+  int do_gradient = rpkv->booleanvalue("gradient");
+
   if (rpkv->exists("matrixkit"))
     SCMatrixKit::set_default_matrixkit(rpkv->describedclassvalue("matrixkit"));
   
@@ -136,7 +138,7 @@ main(int argc, char**argv)
 
   if (mole.nonnull()) {
     cout << "energy: " << mole->energy() << endl;
-    if (mole->gradient_implemented()) {
+    if (do_gradient && mole->gradient_implemented()) {
       if (opt.nonnull()) {
         opt->optimize();
       } else {

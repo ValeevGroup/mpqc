@@ -36,6 +36,7 @@ class MBPT2: public Wavefunction {
     int nvir, nocc, nsocc;
 
     char *method_;
+    char *algorithm_;
 
   protected:
     void init_variables();
@@ -54,7 +55,7 @@ class MBPT2: public Wavefunction {
     void compute_hsos_v2();
 
     // calculate the opt2 energy using the load balanced version of v2
-    //void compute_hsos_v2_lb();
+    void compute_hsos_v2_lb();
 
     // calculate the closed shell mp2 energy and gradient
     int compute_cs_batchsize(int mem_static, int nocc_act);

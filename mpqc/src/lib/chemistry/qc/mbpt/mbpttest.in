@@ -3,23 +3,38 @@
 
 mpqc:(
   frozen_docc = 1
+  frozen_uocc = 1
 )
 
 default:(
+  % for open shell
+  %opentype = highspin
+  %docc = 3
+  %socc = 2
+  %mp2 = yes
+  %dertype = none
+
+  % for closed shell
+  mp2 = yes
+  dertype = first
+
   basis = $:basis
   molecule = $:molecule
-  dertype = first
-  mp2 = yes
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+gradient = yes
 nproc = 2
-molecule = $:water_c1
 coor = $:symcoor
 message = $:message1
-basis = $:321gbasis
+basis = $:sto3gbasis
 basis_matrixkit = $:localmatrixkit
+% open shell
+%molecule = $:ch2_c1
+%reference = $:hsosscf_reference
+% closed shell
+molecule = $:water_c1
 reference = $:clscf_reference
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,6 +59,7 @@ mole<MBPT2>: (
   debug = no
   reference = $:reference
   nfzc = 1
+  nfzv = 1
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

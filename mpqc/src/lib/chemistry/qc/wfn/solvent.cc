@@ -98,6 +98,8 @@ BEMSolventH::save_data_state(StateOut&s)
 void
 BEMSolventH::init(const RefWavefunction& wfn)
 {
+  tim_enter("solvent");
+  tim_enter("init");
   wfn_ = wfn;
   // just in case
   done();
@@ -112,17 +114,21 @@ BEMSolventH::init(const RefWavefunction& wfn)
 
   // get the surface normals
   solvent_->normals(normals_);
+  tim_exit("init");
+  tim_exit("solvent");
 }
 
 void
 BEMSolventH::accum(const RefSymmSCMatrix& h)
 {
   tim_enter("solvent");
+  tim_enter("accum");
   int i,j;
 
   //// compute the polarization charges
 
   // compute the e-field at each point and dot with normals
+  tim_enter("efield");
   int ncharge = solvent_->ncharge();
   RefEfieldDotVectorData efdn_dat = new EfieldDotVectorData;
   RefOneBodyInt efdn = wfn_->integral()->efield_dot_vector(efdn_dat);
@@ -155,31 +161,43 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   RefSCMatrixKit aokit = ao_density.kit();
   ao_density = 0;
   efdn_mat = 0;
+  tim_exit("efield");
 
   // compute a new set of charges
+  tim_enter("charges");
   solvent_->compute_charges(efield_dot_normals_, charges_);
+  tim_exit("charges");
 
   // normalize the charges
+  tim_enter("norm");
   solvent_->normalize_charge(wfn_->charge(), charges_);
+  tim_exit("norm");
 
   //// compute scalar contributions
+  double A = solvent_->area();
 
   // the cavitation energy
-  ecavitation_ = solvent_->area() * gamma_;
+  ecavitation_ = A * gamma_;
+
+  // the dispersion energy
+  double edisprep = 0.0;
 
   // compute the nuclear-surface interaction energy
+  tim_enter("n-s");
   double enucsurf
       = solvent_->nuclear_interaction_energy(charge_positions_, charges_);
+  tim_exit("n-s");
 
   // compute the surface-surface interaction energy
+  tim_enter("s-s");
   double esurfsurf
       = solvent_->self_interaction_energy(charge_positions_, charges_);
-
-  escalar_ = enucsurf + esurfsurf + ecavitation_;
+  tim_exit("s-s");
 
   //// compute one body contributions
 
   // compute the electron-surface interaction matrix elements
+  tim_enter("e-s");
   RefPointChargeData pc_dat = new PointChargeData(ncharge,
                                                   charge_positions_, charges_);
   RefOneBodyInt pc = wfn_->integral()->efield_dot_vector(efdn_dat);
@@ -199,6 +217,12 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   so_density->scale_diagonal(0.5);
   h_so->element_op(generic_sp, so_density);
   double eelecsurf = sp->result();
+  tim_exit("e-s");
+
+  // the solvent charging term
+  double esurfcharging = -0.5*(eelecsurf+enucsurf);
+
+  escalar_ = enucsurf + esurfsurf + ecavitation_ + esurfcharging + edisprep;
 
   cout << incindent;
   cout << node0 << indent
@@ -208,6 +232,10 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   cout <<  incindent;
   cout << node0 << indent
        << scprintf("E(c)=%10.8f ", ecavitation_)
+       << scprintf("E(sc)=%10.8f ", esurfcharging)
+       << scprintf("E(disp-rep)=%10.8f", edisprep)
+       << endl;
+  cout << node0 << indent
        << scprintf("E(n-s)=%10.8f ", enucsurf)
        << scprintf("E(s-s)=%10.8f ", esurfsurf)
        << scprintf("E(e-s)=%10.8f", eelecsurf)
@@ -215,6 +243,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   cout << decindent;
   cout << decindent;
 
+  tim_exit("accum");
   tim_exit("solvent");
 }
 

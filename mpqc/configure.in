@@ -551,7 +551,7 @@ dnl -- special optimization options --
 
 AC_MSG_CHECKING([for special optimization options])
 case $target in
-  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
+  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.* | powerpc-ibm-aix5.*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O -qnolm"
     fi

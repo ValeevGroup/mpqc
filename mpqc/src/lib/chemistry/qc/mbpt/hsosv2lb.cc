@@ -122,13 +122,14 @@ MBPT2::compute_hsos_v2_lb()
 
   if (molecule()->point_group().char_table().order() != 1) {
     // need to reorder the eigenvalues and possibly fix some bugs
-    cout << "MP2 closed shell gradients only works for C1 symmetry" << endl;
+    cout << node0 << indent
+         << "MP2 closed shell gradients only works for C1 symmetry" << endl;
     abort();
     }
 
   me = msg_->me();
  
-  cout << node0 << "Just entered OPT2 program (opt2v2lb)" << endl;
+  cout << node0 << indent << "Just entered OPT2 program (opt2v2lb)" << endl;
 
   tbint_ = integral()->electron_repulsion();
   intbuf = tbint_->buffer();
@@ -136,7 +137,7 @@ MBPT2::compute_hsos_v2_lb()
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
 
   nproc = msg_->n();
-  cout << node0 << "nproc = " << nproc << endl;
+  cout << node0 << indent << "nproc = " << nproc << endl;
 
   ndocc = nsocc = 0;
   for (i=0; i<nbasis; i++) {
@@ -210,8 +211,9 @@ MBPT2::compute_hsos_v2_lb()
     nbf[iproc] += shellsize[sorted_shells[i]];
     }
   if (me == 0) {
-    cout << "Distribution of basis functions between nodes:" << endl;
+    cout << indent << "Distribution of basis functions between nodes:" << endl;
     for (i=0; i<nproc; i++) {
+      if (i%12 == 0) cout << indent;
       cout << scprintf(" %4i",nbf[i]);
       if ((i+1)%12 == 0) cout << endl;
       }
@@ -250,7 +252,7 @@ MBPT2::compute_hsos_v2_lb()
   // Find the processor with the most/fewest basis functions
   findprocminmax(nbf,nproc,&procmin,&procmax,&minbf,&maxbf);
   if (maxbf > nbfav) {
-    cout << node0 << "Redistributing basis functions" << endl;
+    cout << node0 << indent << "Redistributing basis functions" << endl;
     }
 
   while (maxbf > nbfav) {
@@ -302,8 +304,10 @@ MBPT2::compute_hsos_v2_lb()
     }
 
   if (me == 0) {
-    cout << "New distribution of basis functions between nodes:" << endl;
+    cout << indent
+         << "New distribution of basis functions between nodes:" << endl;
     for (i=0; i<nproc; i++) {
+      if (i%12 == 0) cout << indent;
       cout << scprintf(" %4i",nbf[i]);
       if ((i+1)%12 == 0) cout << endl;
       }
@@ -352,7 +356,7 @@ MBPT2::compute_hsos_v2_lb()
     abort();
     }
 
-  cout << node0 << "Computed batchsize: " << ni << endl;
+  cout << node0 << indent << "Computed batchsize: " << ni << endl;
 
   if (nocc == ni) {
     npass = 1;
@@ -365,20 +369,24 @@ MBPT2::compute_hsos_v2_lb()
     }
 
   if (me == 0) {
-    cout << node0 << " npass  rest  nbasis  nshell  nfuncmax"
+    cout << indent << " npass  rest  nbasis  nshell  nfuncmax"
                      "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
-    cout << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i"
+    cout << indent
+         << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i"
                      "     %-3i    %-3i    %-3i    %-3i   %-3i\n",
              npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
-    cout << scprintf("Using %i bytes of memory",mem_alloc) << endl;
+    cout << indent
+         << scprintf("Using %i bytes of memory",mem_alloc) << endl;
     }
 
   //////////////////////
   // Test that ni is OK
   //////////////////////
   if (me == 0) {
-    cout << scprintf("Memory allocated: %i", mem_alloc) << endl;
-    cout << scprintf("Memory used     : %lf", A*ni*ni+B*ni+C) << endl;
+    cout << indent
+         << scprintf("Memory allocated: %i", mem_alloc) << endl;
+    cout << indent
+         << scprintf("Memory used     : %lf", A*ni*ni+B*ni+C) << endl;
     if (A*ni*ni + B*ni +C > mem_alloc) {
       cerr << "Problems with memory allocation: "
            << "Using more memory than allocated" << endl;
@@ -876,20 +884,28 @@ MBPT2::compute_hsos_v2_lb()
     ezapt2 = escf + ecorr_zapt2;
 
     // Print out various energies etc.
-    cout << scprintf("Number of shell quartets for which AO integrals would\n"
+    cout << indent
+         << scprintf("Number of shell quartets for which AO integrals would\n"
             "have been computed without bounds checking: %i\n",
              npass*nshell*nshell*(nshell+1)*(nshell+1)/2);
-    cout << scprintf("Number of shell quartets for which AO integrals\n"
+    cout << indent
+         << scprintf("Number of shell quartets for which AO integrals\n"
             "were computed: %i\n",aoint_computed);
             
-    cout << scprintf("ROHF energy [au]:                  %13.8lf\n", escf);
-    cout << scprintf("OPT1 energy [au]:                  %13.8lf\n", eopt1);
-    cout << scprintf("OPT2 second order correction [au]: %13.8lf\n",
+    cout << indent
+         << scprintf("ROHF energy [au]:                  %13.8lf\n", escf);
+    cout << indent
+         << scprintf("OPT1 energy [au]:                  %13.8lf\n", eopt1);
+    cout << indent
+         << scprintf("OPT2 second order correction [au]: %13.8lf\n",
                      ecorr_opt2);
-    cout << scprintf("OPT2 energy [au]:                  %13.8lf\n", eopt2);
-    cout << scprintf("ZAPT2 correlation energy [au]:     %13.8lf\n",
+    cout << indent
+         << scprintf("OPT2 energy [au]:                  %13.8lf\n", eopt2);
+    cout << indent
+         << scprintf("ZAPT2 correlation energy [au]:     %13.8lf\n",
                      ecorr_zapt2);
-    cout << scprintf("ZAPT2 energy [au]:                 %13.8lf\n", ezapt2);
+    cout << indent
+         << scprintf("ZAPT2 energy [au]:                 %13.8lf\n", ezapt2);
     cout.flush();
     }
 
@@ -905,7 +921,8 @@ MBPT2::compute_hsos_v2_lb()
     }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
-      cout << "MBPT2: bad method for closed shell case: " << method_
+      cout << node0 << indent
+           << "MBPT2: bad method for closed shell case: " << method_
            << ", using zapt" << endl;
       }
     set_energy(ezapt2);

@@ -163,7 +163,7 @@ main(int argc, char**argv)
   tim->exit("input");
 
   if (mole.nonnull()) {
-    cout << "energy: " << mole->energy() << endl;
+    cout << node0 << indent << "energy: " << mole->energy() << endl;
     if (do_gradient && mole->gradient_implemented()) {
       if (opt.nonnull()) {
         opt->optimize();

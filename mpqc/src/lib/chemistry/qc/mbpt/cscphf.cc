@@ -93,7 +93,7 @@ MBPT2::cs_cphf(double **scf_vector,
   double maxabs;
 
   // Debug print
-  cout << node0 << "Entered cphf" << endl;
+  cout << node0 << indent << "Entered cphf" << endl;
   // End of debug print
 
   ////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ MBPT2::cs_cphf(double **scf_vector,
 
     niter++;
     i++;
-    cout << node0 << scprintf("niter: %i\n", niter);
+    cout << node0 << indent << scprintf("niter: %i\n", niter);
 
     // First expand AP_matrix_tot, alpha and P with an extra row
 
@@ -256,11 +256,12 @@ MBPT2::cs_cphf(double **scf_vector,
        tmp_val1 += tmp_val2*tmp_val2;
        if (abs(tmp_val2) > maxabs) maxabs = abs(tmp_val2);
        }
-    cout << node0 << scprintf("RMS(P2aj_new-P2aj_old) = %12.10lf",
-                               sqrt((tmp_val1)/dimP))
+    cout << node0 << indent << scprintf("RMS(P2aj_new-P2aj_old) = %12.10lf",
+                                        sqrt((tmp_val1)/dimP))
          << endl;
-    cout << node0 << scprintf("max. abs. element of (P2aj_new-P2aj_old) = %12.10lf",
-                              maxabs)
+    cout << node0 << indent
+         << scprintf("max. abs. element of (P2aj_new-P2aj_old) = %12.10lf",
+                     maxabs)
          << endl;
     if (sqrt(tmp_val1)/dimP < epsilon && maxabs < epsilon) break; // Converged
 
@@ -315,7 +316,8 @@ MBPT2::cs_cphf(double **scf_vector,
       tmp_val1 += P[niter][l]*P[niter][l];
       }
     tmp_val1 = sqrt(tmp_val1);
-    cout << node0 << scprintf("norm(P[niter]) = %12.10lf", tmp_val1) << endl;
+    cout << node0 << indent
+         << scprintf("norm(P[niter]) = %12.10lf", tmp_val1) << endl;
     if (tmp_val1 < epsilon) {  // Converged
       // if new vector is zero
       break;
@@ -327,7 +329,8 @@ MBPT2::cs_cphf(double **scf_vector,
   // If CPHF equations did not converge, exit with error message
   ///////////////////////////////////////////////////////////////
   if (niter == 20) {
-    cout << node0 << "CPHF equations did not converge in 20 iterations" << endl;
+    cout << node0 << indent
+         << "CPHF equations did not converge in 20 iterations" << endl;
     abort();
     }
 
@@ -344,7 +347,7 @@ MBPT2::cs_cphf(double **scf_vector,
     }
 
   // Debug print
-  cout << node0 << "Exiting cphf" << endl;
+  cout << node0 << indent << "Exiting cphf" << endl;
   // End of debug print
 
   // Deallocate various arrays

@@ -65,6 +65,8 @@ class ShmMemoryGrp: public MsgMemoryGrp {
     void release_lock();
 
     void cleanup();
+    int attach_memory(void *ataddress, int size);
+    void detach_memory();
   public:
     ShmMemoryGrp(const RefMessageGrp& msg);
     ShmMemoryGrp(const RefKeyVal&);

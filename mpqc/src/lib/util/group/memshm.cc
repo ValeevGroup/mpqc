@@ -39,7 +39,12 @@
 #include <errno.h>
 
 #ifndef SHMMAX
-#define SHMMAX INT_MAX
+// glibc 2.0.3 isn't defining SHMMAX so make set it here
+#  ifdef __linux__
+#    define SHMMAX 0x1000000
+#  else
+#    define SHMMAX INT_MAX
+#  endif
 #endif
 
 #ifndef SHMMIN
@@ -90,6 +95,72 @@ ShmMemoryGrp::ShmMemoryGrp(const RefKeyVal& keyval):
   attach_address_ = 0;
 }
 
+int
+ShmMemoryGrp::attach_memory(void *ataddress, int size)
+{
+  int i;
+  int fail = 0;
+  int isize;
+  int rsize = size;
+  for (i=0; i<nregion_; i++) {
+      attach_address_[i] = 0;
+    }
+  for (i=0; rsize>0; i++,rsize-=isize) {
+      isize = rsize;
+      if (isize > SHMMAX) isize = SHMMAX;
+      else if (isize < SHMMIN) isize = SHMMIN;
+      if (debug_) {
+          cout << me() << ": ";
+          cout << "ShmMemoryGrp: attaching segment with "
+               << isize << " bytes at address " << (void*)ataddress
+               << " on node " << me()
+               << endl;
+        }
+      attach_address_[i] = shmat(shmid_[i],(SHMTYPE)ataddress,0);
+      if (debug_) {
+          cout << me() << ": ";
+          cout << "ShmMemoryGrp: got address "
+               << (void*)attach_address_[i]
+               << " on node " << me()
+               << endl;
+        }
+      if (attach_address_[i] == 0
+          || attach_address_[i] == (void*) -1
+          || ataddress && attach_address_[i] != ataddress) {
+          //cout << "ShmMemoryGrp: shmat: problem attaching using address: "
+          //     << " " << (void*) ataddress
+          //     << ": got address: "
+          //     << (void*) attach_address_[i]
+          //     << " on node " << me()
+          //     << endl;
+          fail = 1;
+        }
+      ataddress = (void*)((char*)(attach_address_[i]) + isize);
+    }
+
+  memory_ = (void*) attach_address_[0];
+
+  if (fail) detach_memory();
+
+  return fail;
+}
+
+void
+ShmMemoryGrp::detach_memory()
+{
+  int i;
+  for (i=0; i<nregion_; i++) {
+      if (attach_address_[i] != 0 && attach_address_[i] != (void*) -1) {
+          if (debug_) {
+              cout << "detaching " << (void*)attach_address_[i]
+                   << " on node " << me() << endl;
+            }
+          shmdt((SHMTYPE)attach_address_[i]);
+        }
+      attach_address_[i] = 0;
+    }
+}
+
 void
 ShmMemoryGrp::set_localsize(int localsize)
 {
@@ -111,8 +182,8 @@ ShmMemoryGrp::set_localsize(int localsize)
   shmid_ = new int[nregion_];
   attach_address_ = new void*[nregion_];
 
+  // get the shared memory segments
   if (me() == 0) {
-
       int rsize = size;
       int isize;
       for (i=0; rsize>0; i++,rsize-=isize) {
@@ -133,44 +204,6 @@ ShmMemoryGrp::set_localsize(int localsize)
               abort();
             }
         }
-
-      rsize = size;
-      void *ataddress = 0;
-      for (i=0; rsize>0; i++,rsize-=isize) {
-          isize = rsize;
-          if (isize > SHMMAX) isize = SHMMAX;
-          else if (isize < SHMMIN) isize = SHMMIN;
-          if (debug_) {
-              cout << me() << ": ";
-              cout << "ShmMemoryGrp: attaching segment with "
-                   << isize << " bytes at address " << (void*)ataddress
-                   << endl;
-            }
-          attach_address_[i] = shmat(shmid_[i],(SHMTYPE)ataddress,0);
-          if (debug_) {
-              cout << me() << ": ";
-              cout << "ShmMemoryGrp: got address "
-                   << (void*)attach_address_[i]
-                   << endl;
-            }
-          if (attach_address_[i] == 0
-              || ataddress && attach_address_[i] != ataddress) {
-              cout << "ShmMemoryGrp: shmat: problem attaching using address: "
-                   << " " << (void*) ataddress
-                   << ": got address: "
-                   << (void*) attach_address_[i]
-                   << endl;
-              abort();
-            }
-          ataddress = (void*)((char*)(attach_address_[i]) + isize);
-        }
-
-      // attach the shared segments.
-      memory_ = (void*) attach_address_[0];
-
-      // initialize the pool
-      pool_ = new(memory_) Pool(poolallocation);
-      rangelock_ = new(pool_->allocate(sizeof(RangeLock))) RangeLock(pool_);
     }
 
   if (me() == 0) {
@@ -226,40 +259,59 @@ ShmMemoryGrp::set_localsize(int localsize)
         }
     }
 
+  // get an initial starting address on node 0
+  int ntry = 20;
+  int itry;
+  void *address;
+  if (me() == 0) {
+      address = 0;
+      itry = 0;
+      while (attach_memory(address,size) && itry < ntry) {
+          if (address == 0) address = memory_;
+          else address += 0x1000000;
+          itry++;
+        }
+      if (itry == ntry) {
+          cerr << "ShmMemoryGrp: ntry exhausted on node 0" << endl;
+          abort();
+        }
+      // detach again, since we all try together below
+      detach_memory();
+    }
+
   msg_->bcast(shmid_, nregion_);
-  msg_->raw_bcast((void*)attach_address_, nregion_*sizeof(void*));
   msg_->raw_bcast((void*)&memory_, sizeof(void*));
+
+  address = memory_;
+  itry = 0;
+  int fail;
+  do {
+      fail = attach_memory(address,size);
+      msg_->max(fail);
+      if (fail) {
+          detach_memory();
+        }
+      address += 0x1000000;
+      itry++;
+    } while(fail && itry < ntry);
+  if (itry == ntry) {
+      cerr << "ShmMemoryGrp: ntry exhausted on node " << me()
+           << " on joint attach phase" << endl;
+      abort();
+    }
+
+  if (me() == 0) {
+      // initialize the pool
+      pool_ = new(memory_) Pool(poolallocation);
+      rangelock_ = new(pool_->allocate(sizeof(RangeLock))) RangeLock(pool_);
+    }
+
   msg_->raw_bcast((void*)&pool_, sizeof(void*));
   msg_->raw_bcast((void*)&rangelock_, sizeof(void*));
 
   if (debug_) {
       cout << scprintf("%d: memory_ = 0x%x shmid_[0] = %d\n",
                        me(), memory_, shmid_[0]);
-    }
-  
-  if (me() != 0) {
-      for (i=0; i<nregion_; i++) {
-          if (debug_) {
-              cout << me() << ": ";
-              cout << "ShmMemoryGrp: attaching segment at address "
-                   << (void*)attach_address_[i] << endl;
-            }
-          // some versions of shmat return -1 for errors, 64 bit
-          // compilers with 32 bit int's will complain.
-          void *tmp = shmat(shmid_[i],(SHMTYPE)attach_address_[i],0);
-          if (tmp != attach_address_[i]) {
-              cout << me() << ": ";
-              cout << "ShmMemoryGrp: shmat: problem attaching using address: "
-                   << " " << (void*) attach_address_[i]
-                   << ": got address: "
-                   << (void*) tmp
-                   << endl;
-              abort();
-            }
-#ifdef DEBUG
-          cerr << scprintf("%d: attached at 0x%x\n", me(), attach_address_[i]);
-#endif // DEBUG
-        }
     }
 
   data_ = (void *) &((char*)memory_)[poolallocation];

@@ -56,7 +56,7 @@ Thread::~Thread()
 void *
 Thread::run_Thread_run(void* vth)
 {
-  ((Thread*)vth)->run();
+  if (vth) ((Thread*)vth)->run();
   return 0;
 }
 
@@ -76,6 +76,13 @@ ThreadGrp::_castdown(const ClassDesc*cd)
 
 ThreadGrp::ThreadGrp() : threads_(0),  nthread_(1)
 {
+  threads_ = new Thread*[nthread_];
+}
+
+ThreadGrp::ThreadGrp(const ThreadGrp &tg, int nthread)
+{
+  if (nthread == -1) nthread_ = tg.nthread_;
+  else nthread_ = nthread;
   threads_ = new Thread*[nthread_];
 }
 
@@ -196,6 +203,13 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
   return 0;
 }
 
+ThreadGrp*
+ThreadGrp::clone(int nthread)
+{
+  cout << "ThreadGrp::clone not support for " << class_name() << endl;
+  abort();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // ProcThreadLock class
 
@@ -245,7 +259,7 @@ ProcThreadGrp::~ProcThreadGrp()
 int
 ProcThreadGrp::start_threads()
 {
-  threads_[0]->run();
+  if (threads_[0]) threads_[0]->run();
   return 0;
 }
 

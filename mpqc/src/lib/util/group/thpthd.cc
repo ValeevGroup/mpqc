@@ -96,6 +96,13 @@ PthreadThreadGrp::PthreadThreadGrp()
   pthreads_ = new pthread_t[nthread_];
 }
 
+
+PthreadThreadGrp::PthreadThreadGrp(const PthreadThreadGrp &tg,int nthread):
+  ThreadGrp(tg, nthread)
+{
+  pthreads_ = new pthread_t[nthread_];
+}
+
 PthreadThreadGrp::PthreadThreadGrp(const RefKeyVal& keyval)
   : ThreadGrp(keyval)
 {
@@ -113,7 +120,7 @@ PthreadThreadGrp::~PthreadThreadGrp()
 int
 PthreadThreadGrp::start_threads()
 {
-  for (int i=0; i < nthread_; i++) {
+  for (int i=1; i < nthread_; i++) {
     int res = pthread_create(&pthreads_[i], 0,
                              Thread::run_Thread_run,
                              (void*) threads_[i]);
@@ -122,6 +129,7 @@ PthreadThreadGrp::start_threads()
       return -1;
     }
   }
+  if (threads_[0]) threads_[0]->run();
 
   return 0;
 }
@@ -129,7 +137,7 @@ PthreadThreadGrp::start_threads()
 int
 PthreadThreadGrp::wait_threads()
 {
-  for (int i=0; i < nthread_; i++) {
+  for (int i=1; i < nthread_; i++) {
     int tn;
     pthread_join(pthreads_[i], (void**)&tn);
   }
@@ -141,6 +149,12 @@ RefThreadLock
 PthreadThreadGrp::new_lock()
 {
   return new PthreadThreadLock;
+}
+
+ThreadGrp*
+PthreadThreadGrp::clone(int nthread)
+{
+  return new PthreadThreadGrp(*this,nthread);
 }
 
 /////////////////////////////////////////////////////////////////////////////

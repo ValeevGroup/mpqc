@@ -41,7 +41,9 @@ class ThreadLock : public VRefCount {
     ThreadLock();
     virtual ~ThreadLock();
 
+    //. Obtain the lock.
     virtual void lock() =0;
+    //. Release the lock.
     virtual void unlock() =0;
 };
 REF_dec(ThreadLock);
@@ -54,12 +56,14 @@ class Thread {
     virtual ~Thread();
 
     static void *run_Thread_run(void*thread);
+
+    //. This is called with the Thread is run from a ThreadGrp.
     virtual void run() =0;
 };
     
 DescribedClass_REF_fwddec(ThreadGrp);
 
-//. The \clsnm{ThreadGrp} abstract class privides a means to manage separate
+//. The \clsnm{ThreadGrp} abstract class provides a means to manage separate
 //. threads of control.
 class ThreadGrp: public DescribedClass {
 #define CLASSNAME ThreadGrp
@@ -71,14 +75,30 @@ class ThreadGrp: public DescribedClass {
   public:
     ThreadGrp();
     ThreadGrp(const RefKeyVal&);
+    ThreadGrp(const ThreadGrp&, int nthread = -1);
     virtual ~ThreadGrp();
 
+    //. Assigns a Thread object to each thread.  If 0 is assigned to
+    //a thread, then that thread will be skipped.
     void add_thread(int, Thread*);
+    //. The number of threads that will be run by start_thread.
     int nthread() const { return nthread_; }
 
+    //. Starts the threads running.  Thread 0 will be run by the
+    //thread that calls start_threads.
     virtual int start_threads() =0;
+    //. Wait for all the threads to complete.  This must be called
+    //before start_threads is called again or the object is destroyed.
     virtual int wait_threads() =0;
+    //. Return a local object.
     virtual RefThreadLock new_lock() =0;
+
+    //. Create a ThreadGrp like the current one.  If
+    //nthread is given it will be the number of threads
+    //in the new group.  If nthread is -1, the number of
+    //threads in the current group will be used.  If cloning
+    //is not supported 0 will be returned.
+    virtual ThreadGrp* clone(int nthread = -1);
 
     static void set_default_threadgrp(const RefThreadGrp&);
     static ThreadGrp * get_default_threadgrp();

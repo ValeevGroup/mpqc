@@ -46,12 +46,15 @@ class PthreadThreadGrp: public ThreadGrp {
     
   public:
     PthreadThreadGrp();
+    PthreadThreadGrp(const PthreadThreadGrp&, int nthread = -1);
     PthreadThreadGrp(const RefKeyVal&);
     ~PthreadThreadGrp();
 
     int start_threads();
     int wait_threads();
     RefThreadLock new_lock();
+
+    ThreadGrp* clone(int nthread = -1);
 };
 #endif
 

@@ -111,7 +111,12 @@ class HSOSSCF: public SCF {
     double beta_occupation(int irrep, int vectornum);
 
     int n_fock_matrices() const;
-    RefSymmSCMatrix fock(int);
+    /** Returns closed-shell (i==0) or open-shell (i==1) Fock matrix in AO basis
+        (excluding XC contribution in KS DFT).
+	Use effective_fock() if you want the full KS Fock matrix.
+    */
+    RefSymmSCMatrix fock(int i);
+    /** Returns effective Fock matrix in MO basis (including XC contribution for KS DFT). */
     RefSymmSCMatrix effective_fock();
 
     void symmetry_changed();

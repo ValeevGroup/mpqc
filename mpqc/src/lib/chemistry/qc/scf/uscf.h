@@ -96,7 +96,12 @@ class UnrestrictedSCF: public SCF {
     void print(std::ostream&o=ExEnv::out0()) const;
 
     int n_fock_matrices() const;
-    RefSymmSCMatrix fock(int);
+    /** Returns alpha (i==0) or beta (i==1) Fock matrix in AO basis (including XC contribution in KS DFT --
+	compare this to CLSCF and HSOSSCF!). Argument i must be 0.
+    */
+    RefSymmSCMatrix fock(int i);
+    /** Spin-unrestricted SCF methods do not define effective Fock matrix,
+	thus this function should never be called. */
     RefSymmSCMatrix effective_fock();
     
   protected:

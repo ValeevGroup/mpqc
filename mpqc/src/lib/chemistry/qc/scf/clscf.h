@@ -76,7 +76,12 @@ class CLSCF: public SCF {
     double occupation(int irrep, int vectornum);
 
     int n_fock_matrices() const;
-    RefSymmSCMatrix fock(int);
+    /** Returns closed-shell Fock matrix in AO basis (excluding XC contribution in KS DFT).
+	Use effective_fock() if you want the full KS Fock matrix.
+	Argument i must be 0.
+    */
+    RefSymmSCMatrix fock(int i);
+    /** Returns closed-shell Fock matrix in MO basis (including XC contribution for KS DFT). */
     RefSymmSCMatrix effective_fock();
 
     RefSymmSCMatrix density();

@@ -56,6 +56,7 @@ class DenIntegrator: virtual public SavableState {
     int need_density_; // specialization must set to 1 if it needs density_
     double density_;
     int nbasis_;
+    int natom_;
     int compute_potential_integrals_; // 1 if potential integrals are needed
 
     int need_gradient_;
@@ -67,8 +68,9 @@ class DenIntegrator: virtual public SavableState {
                           const RefSymmSCMatrix& densb,
                           double *nuclear_gradient);
     void done_integration();
-    double do_point(const SCVector3 &r, const RefDenFunctional &,
-                    double weight, double *nuclear_gradient);
+    double do_point(int acenter, const SCVector3 &r, const RefDenFunctional &,
+                    double weight, double multiplier, double *nuclear_gradient,
+                    double *w_gradient);
   public:
     DenIntegrator();
     DenIntegrator(const RefKeyVal &);
@@ -97,6 +99,14 @@ class IntegrationWeight: virtual public SavableState {
 #   define CLASSNAME IntegrationWeight
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
+
+  protected:
+
+    RefMolecule mol_;
+    double tol_;
+
+    void fd_w(int icenter, SCVector3 &point, double *fd_grad_w);
+
   public:
     IntegrationWeight();
     IntegrationWeight(const RefKeyVal &);
@@ -104,8 +114,10 @@ class IntegrationWeight: virtual public SavableState {
     ~IntegrationWeight();
     void save_data_state(StateOut &);
 
-    virtual void init(const RefMolecule &, double tolerance) = 0;
-    virtual void done() = 0;
+    void test(int icenter, SCVector3 &point);
+
+    virtual void init(const RefMolecule &, double tolerance);
+    virtual void done();
     virtual double w(int center, SCVector3 &point, double *grad_w = 0) = 0;
 };
 SavableState_REF_dec(IntegrationWeight);
@@ -123,6 +135,12 @@ class BeckeIntegrationWeight: public IntegrationWeight {
 
     double **a_mat;
     double **oorab;
+
+    void compute_grad_s(int ic, int jc, int wc, SCVector3 &r, SCVector3 &grad);
+    void compute_grad_p(int gradc, int ic, int wc, SCVector3&r, SCVector3&g);
+    double compute_partial_p(int icenter, int kcenter, SCVector3&point);
+    double compute_p(int icenter, SCVector3&point);
+
   public:
     BeckeIntegrationWeight();
     BeckeIntegrationWeight(const RefKeyVal &);

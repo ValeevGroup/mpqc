@@ -129,6 +129,8 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   spin_polarized_ = wfn_->spin_polarized();
   func->set_spin_polarized(spin_polarized_);
 
+  natom_ = wfn_->molecule()->natom();
+
   nbasis_ = wfn_->basis()->nbasis();
   delete[] bs_values_;
   bs_values_ = new double[nbasis_];
@@ -335,12 +337,13 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
 }
 
 double
-DenIntegrator::do_point(const SCVector3 &r,
+DenIntegrator::do_point(int acenter, const SCVector3 &r,
                         const RefDenFunctional &func,
-                        double weight,
-                        double *nuclear_gradient)
+                        double weight, double multiplier,
+                        double *nuclear_gradient, double *w_gradient)
 {
   int i,j,k;
+  double w_mult = weight * multiplier;
 
   // compute the basis set values
   if (need_hessian_ || (need_gradient_ && nuclear_gradient != 0)) {
@@ -370,26 +373,26 @@ DenIntegrator::do_point(const SCVector3 &r,
     func->point(id, od);
   else return id.a.rho + id.b.rho;
   
-  value_ += od.energy * weight;
+  value_ += od.energy * w_mult;
 
   if (compute_potential_integrals_) {
       // the contribution to the potential integrals
       if (need_gradient_) {
           double gradsa[3], gradsb[3];
-          gradsa[0] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[0] +
+          gradsa[0] = w_mult*(2.0*od.df_dgamma_aa*id.a.del_rho[0] +
                                   od.df_dgamma_ab*id.b.del_rho[0]);
-          gradsa[1] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[1] +
+          gradsa[1] = w_mult*(2.0*od.df_dgamma_aa*id.a.del_rho[1] +
                                  od.df_dgamma_ab*id.b.del_rho[1]);
-          gradsa[2] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[2] +
+          gradsa[2] = w_mult*(2.0*od.df_dgamma_aa*id.a.del_rho[2] +
                                   od.df_dgamma_ab*id.b.del_rho[2]);
-          double drhoa = weight*od.df_drho_a, drhob=0.0;
+          double drhoa = w_mult*od.df_drho_a, drhob=0.0;
           if (spin_polarized_) {
-              drhob = weight*od.df_drho_b;
-              gradsb[0] = weight*(2.0*od.df_dgamma_bb*id.b.del_rho[0] +
+              drhob = w_mult*od.df_drho_b;
+              gradsb[0] = w_mult*(2.0*od.df_dgamma_bb*id.b.del_rho[0] +
                                       od.df_dgamma_ab*id.a.del_rho[0]);
-              gradsb[1] = weight*(2.0*od.df_dgamma_bb*id.b.del_rho[1] +
+              gradsb[1] = w_mult*(2.0*od.df_dgamma_bb*id.b.del_rho[1] +
                                       od.df_dgamma_ab*id.a.del_rho[1]);
-              gradsb[2] = weight*(2.0*od.df_dgamma_bb*id.b.del_rho[2] +
+              gradsb[2] = w_mult*(2.0*od.df_dgamma_bb*id.b.del_rho[2] +
                                       od.df_dgamma_ab*id.a.del_rho[2]);
             }
 
@@ -427,8 +430,8 @@ DenIntegrator::do_point(const SCVector3 &r,
         }
       else {
           int jk=0;
-          double drhoa = weight*od.df_drho_a;
-          double drhob = weight*od.df_drho_b;
+          double drhoa = w_mult*od.df_drho_a;
+          double drhob = w_mult*od.df_drho_b;
           for (j=0; j < nbasis_; j++) {
               double dfa_phi_m = drhoa * bs_values_[j];
               double dfb_phi_m = drhob * bs_values_[j];
@@ -442,18 +445,25 @@ DenIntegrator::do_point(const SCVector3 &r,
     }
 
   if (nuclear_gradient != 0) {
-      // the contribution to the potential integrals
+      // the contribution from f dw/dx
+      if (w_gradient) {
+          for (i=0; i<natom_*3; i++) {
+              nuclear_gradient[i] += w_gradient[i] * od.energy * multiplier;
+            }
+        }
+      // the contribution from (df/dx) w
       if (need_gradient_) {
           RefGaussianBasisSet basis = wavefunction()->basis();
           int jk=0;
-          double drhoa = weight*od.df_drho_a;
-          double drhob = weight*od.df_drho_b;
+          double drhoa = w_mult*od.df_drho_a;
+          double drhob = w_mult*od.df_drho_b;
           for (int nu=0; nu < nbasis_; nu++) {
               double dfa_phi_nu = drhoa * bs_values_[nu];
               double dfb_phi_nu = drhob * bs_values_[nu];
               for (int mu=0; mu<nbasis_; mu++) {
-                  int atom3
-                      = 3*basis->shell_to_center(basis->function_to_shell(mu));
+                  int atom
+                      = basis->shell_to_center(basis->function_to_shell(mu));
+                  if (atom==acenter) continue;
                   int numu = (nu>mu?((nu*(nu+1))/2+mu):((mu*(mu+1))/2+nu));
                   double rho_b, rho_a = alpha_dmat_[numu];
                   if (spin_polarized_) rho_b = beta_dmat_[numu];
@@ -466,15 +476,16 @@ DenIntegrator::do_point(const SCVector3 &r,
                              + bs_values_[nu]*bsh_values_[mu*6+iixyz];
                       iixyz += ixyz+2;
                     }
-                  xnumu *= weight;
+                  xnumu *= w_mult;
                   for (ixyz=0; ixyz<3; ixyz++) {
-       nuclear_gradient[atom3+ixyz]
-           -= 2.0 * (rho_a * (dfa_phi_nu*bsg_values_[mu*3+ixyz]
+     double contrib = 
+            - 2.0 * (rho_a * (dfa_phi_nu*bsg_values_[mu*3+ixyz]
                               -xnumu*(2.0*od.df_dgamma_aa * id.a.del_rho[ixyz]
                                       +od.df_dgamma_ab * id.b.del_rho[ixyz]))
                     +rho_b * (dfb_phi_nu*bsg_values_[mu*3+ixyz]
                               -xnumu*(2.0*od.df_dgamma_bb * id.b.del_rho[ixyz]
                                 +od.df_dgamma_ab * id.a.del_rho[ixyz])));
+     nuclear_gradient[3*atom+ixyz] += contrib;
                     }
                 }
             }
@@ -482,8 +493,8 @@ DenIntegrator::do_point(const SCVector3 &r,
       else {
           RefGaussianBasisSet basis = wavefunction()->basis();
           int jk=0;
-          double drhoa = weight*od.df_drho_a;
-          double drhob = weight*od.df_drho_b;
+          double drhoa = w_mult*od.df_drho_a;
+          double drhob = w_mult*od.df_drho_b;
           double coef;
           if (spin_polarized_) coef = 2.0;
           else coef = 4.0;
@@ -491,19 +502,20 @@ DenIntegrator::do_point(const SCVector3 &r,
               double dfa_phi_nu = drhoa * bs_values_[nu];
               double dfb_phi_nu = drhob * bs_values_[nu];
               for (int mu=0; mu<nbasis_; mu++) {
-                  int atom3
-                      = 3*basis->shell_to_center(basis->function_to_shell(mu));
+                  int atom
+                      = basis->shell_to_center(basis->function_to_shell(mu));
+                  if (atom==acenter) continue;
                   int numu = (nu>mu?((nu*(nu+1))/2+mu):((mu*(mu+1))/2+nu));
                   double rho_a = alpha_dmat_[numu];
                   for (int ixyz=0; ixyz<3; ixyz++) {
-                      nuclear_gradient[atom3+ixyz]
+                      nuclear_gradient[3*atom+ixyz]
                           -= coef * rho_a * dfa_phi_nu
                           * bsg_values_[mu*3+ixyz];
                     }
                   if (spin_polarized_) {
                       double rho_b = beta_dmat_[numu];
                       for (int ixyz=0; ixyz<3; ixyz++) {
-                          nuclear_gradient[atom3+ixyz]
+                          nuclear_gradient[3*atom+ixyz]
                               -= coef * rho_b * dfb_phi_nu
                               * bsg_values_[mu*3+ixyz];
                         }
@@ -555,6 +567,103 @@ IntegrationWeight::save_data_state(StateOut& s)
   abort();
 }
 
+void
+IntegrationWeight::init(const RefMolecule &mol, double tolerance)
+{
+  mol_ = mol;
+  tol_ = tolerance;
+}
+
+void
+IntegrationWeight::done()
+{
+}
+
+void
+IntegrationWeight::fd_w(int icenter, SCVector3 &point,
+                        double *fd_grad_w)
+{
+  if (!fd_grad_w) return;
+  double delta = 0.001;
+  int natom = mol_->natom();
+  RefMolecule molsav = mol_;
+  RefMolecule dmol = new Molecule(*mol_.pointer());
+  for (int i=0; i<natom; i++) {
+      for (int j=0; j<3; j++) {
+          dmol->r(i,j) += delta;
+          if (icenter == i) point[j] += delta;
+          init(dmol,tol_);
+          double w_plus = w(icenter, point);
+          dmol->r(i,j) -= 2*delta;
+          if (icenter == i) point[j] -= 2*delta;
+          init(dmol,tol_);
+          double w_minus = w(icenter, point);
+          dmol->r(i,j) += delta;
+          if (icenter == i) point[j] += delta;
+          fd_grad_w[i*3+j] = (w_plus-w_minus)/(2.0*delta);
+//            cout << scprintf("%d,%d %12.10f %12.10f %12.10f",
+//                             i,j,w_plus,w_minus,fd_grad_w[i*3+j])
+//                 << endl;
+        }
+    }
+  init(molsav, tol_);
+}
+
+void
+IntegrationWeight::test(int icenter, SCVector3 &point)
+{
+  int natom = mol_->natom();
+  int natom3 = natom*3;
+
+  // tests over sums of weights and weight derivatives
+  double *grad_w = new double[natom3];
+  double *sum_grad_w = new double[natom3];
+  memset(sum_grad_w,0,sizeof(double)*natom3);
+  int i;
+  double sum_weight = 0.0;
+  for (i=0; i<natom; i++) {
+      double weight = w(i,point,grad_w);
+      sum_weight += weight;
+      for (int j=0; j<natom3; j++) sum_grad_w[j] += grad_w[j];
+    }
+  if (fabs(1.0 - sum_weight) > DBL_EPSILON) {
+      cout << "IntegrationWeight::test: failed on weight" << endl;
+          cout << "sum_w = " << sum_weight << endl;
+    }
+  for (i=0; i<natom3; i++) {
+      if (fabs(sum_grad_w[i]) > DBL_EPSILON) {
+          cout << "IntegrationWeight::test: failed on grad" << endl;
+          cout << "sum_grad_w[" << i << "] = " << sum_grad_w[i] << endl;
+        }
+    }
+  delete[] grad_w;
+  delete[] sum_grad_w;
+
+  // finite displacement tests of weight gradients
+  double *fd_grad_w = new double[natom3];
+  double *an_grad_w = new double[natom3];
+  w(icenter, point, an_grad_w);
+  fd_w(icenter, point, fd_grad_w);
+  for (i=0; i<natom3; i++) {
+      double mag = fabs(fd_grad_w[i]);
+      double err = fabs(fd_grad_w[i]-an_grad_w[i]);
+      int bad = 0;
+      if (mag > 0.00001 && err/mag > 0.01) bad = 1;
+      else if (err > 0.00001) bad = 1;
+      if (bad) {
+          cout << "iatom = " << i/3
+               << " ixyx = " << i%3
+               << " icenter = " << icenter << " point = " << point << endl;
+          cout << scprintf("dw/dx bad: fd_val=%16.13f an_val=%16.13f err=%16.13f",
+                           fd_grad_w[i], an_grad_w[i],
+                           fd_grad_w[i]-an_grad_w[i])
+               << endl;
+        }
+    }
+  delete[] fd_grad_w;
+  delete[] an_grad_w;  
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // BeckeIntegrationWeight
 
@@ -567,6 +676,17 @@ calc_s(double m)
   double m2 = 1.5*m1 - 0.5*m1*m1*m1;
   double m3 = 1.5*m2 - 0.5*m2*m2*m2;
   return 0.5*(1.0-m3);
+}
+
+inline static double
+calc_f3_prime(double m)
+{
+  double m1 = 1.5*m - 0.5*m*m*m;
+  double m2 = 1.5*m1 - 0.5*m1*m1*m1;
+  double m3 = 1.5 *(1.0 - m2*m2);
+  double n2 = 1.5 *(1.0 - m1*m1);
+  double o1 = 1.5 *(1.0 - m*m);
+  return m3*n2*o1;
 }
 
 #define CLASSNAME BeckeIntegrationWeight
@@ -627,6 +747,7 @@ void
 BeckeIntegrationWeight::init(const RefMolecule &mol, double tolerance)
 {
   done();
+  IntegrationWeight::init(mol, tolerance);
 
   ncenters = mol->natom();
 
@@ -695,39 +816,154 @@ BeckeIntegrationWeight::done()
 }
 
 double
-BeckeIntegrationWeight::w(int this_center, SCVector3 &point, double *grad_w)
+BeckeIntegrationWeight::compute_p(int icenter, SCVector3&point)
 {
-  int icenter, jcenter;
-  double p_sum=0.0, p_point=0.0, p_tmp;
-    
-  for (icenter=0; icenter<ncenters; icenter++) {
-      double ra = point.dist(centers[icenter]);
-      double *ooraba = oorab[icenter];
-      double *aa = a_mat[icenter];
+  double ra = point.dist(centers[icenter]);
+  double *ooraba = oorab[icenter];
+  double *aa = a_mat[icenter];
 
-      p_tmp = 1.0;
-      for (jcenter=0; jcenter < ncenters; jcenter++) {
-	if (icenter != jcenter) {
-            double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
+  double p = 1.0;
+  for (int jcenter=0; jcenter < ncenters; jcenter++) {
+      if (icenter != jcenter) {
+          double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
 
-            if (mu < -1.)
-                continue; // s(-1) == 1.0
-            else if (mu > 1.) {
-                p_tmp = 0; // s(1) == 0.0
-                break;
-              }
-            else
-                p_tmp *= calc_s(mu + aa[jcenter]*(1.-mu*mu));
-          }
-      }
-
-      if (icenter==this_center)
-          p_point=p_tmp; 
-
-      p_sum += p_tmp;
+          if (mu <= -1.)
+              continue; // s(-1) == 1.0
+          else if (mu >= 1.) {
+              return 0.0; // s(1) == 0.0
+            }
+          else
+              p *= calc_s(mu + aa[jcenter]*(1.-mu*mu));
+        }
     }
 
-  return p_point/p_sum;
+  return p;
+}
+
+double
+BeckeIntegrationWeight::compute_partial_p(int icenter, int kcenter,
+                                          SCVector3&point)
+{
+  double ra = point.dist(centers[icenter]);
+  double *ooraba = oorab[icenter];
+  double *aa = a_mat[icenter];
+
+  double p = 1.0;
+  for (int jcenter=0; jcenter < ncenters; jcenter++) {
+      if (icenter != jcenter && kcenter != jcenter) {
+          double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
+
+          if (mu < -1.)
+              continue; // s(-1) == 1.0
+          else if (mu > 1.) {
+              return 0.0; // s(1) == 0.0
+            }
+          else
+              p *= calc_s(mu + aa[jcenter]*(1.-mu*mu));
+        }
+    }
+
+  return p;
+}
+
+// derivative is taken wrt jcenter
+void
+BeckeIntegrationWeight::compute_grad_s(int icenter, int jcenter, int wcenter,
+                                       SCVector3 &point, SCVector3 &grad)
+{
+  int point_moves_with_jcenter = (wcenter == jcenter);
+  SCVector3 r_j = point - centers[jcenter];
+  SCVector3 r_ij = centers[icenter] - centers[jcenter];
+  double mag_r_j = r_j.norm();
+  double mag_r_i = point.dist(centers[icenter]);
+  double mu = (mag_r_i-mag_r_j)*oorab[icenter][jcenter];
+  double a_ij = a_mat[icenter][jcenter];
+  double nu = mu + a_ij*(1.-mu*mu);
+  double oorij = oorab[icenter][jcenter];
+  double coef = -0.5
+              * calc_f3_prime(nu)
+              * (1.0-2.0*a_ij*mu);
+
+  if (!point_moves_with_jcenter) {
+      double r_j_coef;
+      if (mag_r_j < 10.0 * DBL_EPSILON) r_j_coef = 0.0;
+      else r_j_coef = coef*oorij/mag_r_j;
+      for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] = r_j_coef * r_j[ixyz];
+    }
+  else {
+      grad = 0.0;
+    }
+  double r_ij_coef = -coef*mag_r_j*oorij*oorij*oorij;
+  for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] += r_ij_coef * r_ij[ixyz];
+}
+
+void
+BeckeIntegrationWeight::compute_grad_p(int grad_center,
+                                       int bcenter, int wcenter,
+                                       SCVector3&point,
+                                       SCVector3&grad)
+{
+  double ra = point.dist(centers[bcenter]);
+  double *ooraba = oorab[bcenter];
+  double *aa = a_mat[bcenter];
+
+  if (grad_center != bcenter) {
+      double p = compute_partial_p(bcenter, grad_center, point);
+      SCVector3 grad_s;
+      compute_grad_s(bcenter, grad_center, wcenter, point, grad_s);
+      for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] = p * grad_s[ixyz];
+    }
+  else {
+      grad = 0.0;
+      for (int dcenter=0; dcenter<ncenters; dcenter++) {
+          if (dcenter == bcenter) continue;
+          double p = compute_partial_p(dcenter, bcenter, point);
+          SCVector3 grad_s;
+          compute_grad_s(dcenter, bcenter, wcenter, point, grad_s);
+          for (int ixyz=0; ixyz<3; ixyz++) grad[ixyz] += p * grad_s[ixyz];
+        }
+    }
+}
+
+double
+BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
+                          double *w_gradient)
+{
+  int icenter, jcenter;
+  double p_sum=0.0, p_a=0.0;
+    
+  for (icenter=0; icenter<ncenters; icenter++) {
+      double p_tmp = compute_p(icenter, point);
+      if (icenter==acenter) p_a=p_tmp;
+      p_sum += p_tmp;
+    }
+  double w_a = p_a/p_sum;
+
+  if (w_gradient) {
+      fd_w(acenter, point, w_gradient);
+//        cout << point << " ";
+//        for (int i=0; i<ncenters*3; i++) {
+//            cout << scprintf(" %10.6f", w_gradient[i]);
+//          }
+//        cout << endl;
+      return w_a;
+      int i;
+      for (int ccenter = 0; ccenter < ncenters; ccenter++) {
+          SCVector3 grad_c_w_a;
+          SCVector3 grad_c_p_a;
+          compute_grad_p(ccenter, acenter, acenter, point, grad_c_p_a);
+          for (i=0; i<3; i++) grad_c_w_a[i] = grad_c_p_a[i]/p_sum;
+          for (int bcenter=0; bcenter<ncenters; bcenter++) {
+              SCVector3 grad_c_p_b;
+              compute_grad_p(ccenter, bcenter, acenter, point, grad_c_p_b);
+              for (i=0; i<3; i++)
+                  grad_c_w_a[i] -= w_a*grad_c_p_b[i]/p_sum;
+            }
+          for (i=0; i<3; i++) w_gradient[ccenter*3+i] = grad_c_w_a[i];
+        }
+    }
+
+  return w_a;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -843,6 +1079,11 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
   int nphi = nphi_;
   for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = nr_;
 
+  double *w_gradient = 0;
+  if (nuclear_gradient) {
+      w_gradient = new double[ncenters*3];
+    }
+
   SCVector3 *centers = new SCVector3[ncenters];
   for (icenter=0; icenter<ncenters; icenter++) {
       centers[icenter].x() = mol->r(icenter,0);
@@ -928,18 +1169,20 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                   integration_point += center;
 
                   // calculate weighting factor
-                  w=weight_->w(icenter, integration_point);
+                  w=weight_->w(icenter, integration_point, w_gradient);
+                  //if (w_gradient) weight_->test(icenter, integration_point);
                     
                   // Update center point count
                   point_count++;
 
                   // Make contribution to Euler-Maclaurin formula
-                  double multiplier = w*int_volume
+                  double multiplier = int_volume
                                     * theta_quad_weights[itheta]/nr[icenter]
                                     * 2.0 * M_PI / ((double)nphi);
 
-                  if (do_point(integration_point, denfunc, multiplier,
-                               nuclear_gradient)
+                  if (do_point(icenter, integration_point, denfunc,
+                               w, multiplier,
+                               nuclear_gradient, w_gradient)
                       * int_volume < 1e2*DBL_EPSILON
                       && int_volume > 1e2*DBL_EPSILON) {
                       r_done=1;
@@ -965,6 +1208,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
           << "Total integration points = " << point_count_total << endl;
     //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
 
+    delete[] w_gradient;
     delete[] theta_quad_points;
     delete[] bragg_radius;
     delete[] theta_quad_weights;

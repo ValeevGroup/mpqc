@@ -24,6 +24,9 @@
 /* Define if you have <sys/types.h>.  */
 #undef HAVE_SYS_TYPES_H
 
+/* Define if you have <pwd.h>.  */
+#undef HAVE_PWD_H
+
 /* Define if you have <termios.h>.  */
 #undef HAVE_TERMIOS_H
 
@@ -81,8 +84,11 @@
 /* Define if you have the fchdir function.  */
 #undef HAVE_FCHDIR
 
-/* Define if you have the cuserid function.  */
-#undef HAVE_CUSERID
+/* Define if you have the getpwuid function.  */
+#undef HAVE_GETPWUID
+
+/* Define if you have the geteuid function.  */
+#undef HAVE_GETEUID
 
 /* Define if you have functioning SYSV IPC.  */
 #undef HAVE_SYSV_IPC

@@ -29,9 +29,19 @@
 #pragma implementation
 #endif
 
+#include <scconfig.h>
+
 #include <unistd.h>
 #include <string.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 
 #include <util/state/translate.h>
 #include <util/state/stateout.h>
@@ -185,15 +195,17 @@ StateOut::put_header()
   const int version = 1;
   put_array_int(&version,1);
 
-#ifdef HAVE_CUSERID
-  char userid[L_cuserid+9];
-  memset(userid, 0, 9);
-  cuserid(userid);
-#else
   char userid[9];
-  sprintf(userid,"pumauser");
+  memset(userid,0,9);
+#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
+  const char *pw_name = getpwuid(geteuid())->pw_name;
+  if (pw_name) {
+      strncpy(userid, pw_name, 9);
+      userid[8] = 0;
+    }
+#else
+  strcpy(userid,"UNKNOWN");
 #endif
-  userid[8] = 0;
   put_array_char(userid,9);
 
   timeval tv;

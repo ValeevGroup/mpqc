@@ -77,32 +77,38 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
   if (topkeyval->error() != KeyVal::OK) pure = -1;
 
   // construct a keyval that contains the basis library
+  RefKeyVal keyval;
 
-  // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
-  // variables to find out what basis set files are to be read in
-  // the files are read the on only node 0
-  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
-  RefParsedKeyVal parsedkv = new ParsedKeyVal();
-  char *in_char_array;
-  if (grp->me() == 0) {
-      ostrstream ostrs;
-      ParsedKeyVal::cat_files("basis",topkeyval,ostrs);
-      ostrs << ends;
-      in_char_array = ostrs.str();
-      int n = ostrs.pcount();
-      grp->bcast(n);
-      grp->bcast(in_char_array, n);
+  if (topkeyval->exists("basisfiles")) {
+      RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+      RefParsedKeyVal parsedkv = new ParsedKeyVal();
+      char *in_char_array;
+      if (grp->me() == 0) {
+          ostrstream ostrs;
+          // Look at the basisdir and basisfiles variables to find out what
+          // basis set files are to be read in.  The files are read on node
+          // 0 only.
+          ParsedKeyVal::cat_files("basis",topkeyval,ostrs);
+          ostrs << ends;
+          in_char_array = ostrs.str();
+          int n = ostrs.pcount();
+          grp->bcast(n);
+          grp->bcast(in_char_array, n);
+        }
+      else {
+          int n;
+          grp->bcast(n);
+          in_char_array = new char[n];
+          grp->bcast(in_char_array, n);
+        }
+      parsedkv->parse_string(in_char_array);
+      delete[] in_char_array;
+      RefKeyVal libkeyval = parsedkv.pointer();
+      keyval = new AggregateKeyVal(topkeyval,libkeyval);
     }
   else {
-      int n;
-      grp->bcast(n);
-      in_char_array = new char[n];
-      grp->bcast(in_char_array, n);
+      keyval = topkeyval;
     }
-  parsedkv->parse_string(in_char_array);
-  delete[] in_char_array;
-  RefKeyVal libkeyval = parsedkv.pointer();
-  RefKeyVal keyval = new AggregateKeyVal(topkeyval,libkeyval);
 
   // if there isn't a matrixkit in the input, init2() will assign the
   // default matrixkit

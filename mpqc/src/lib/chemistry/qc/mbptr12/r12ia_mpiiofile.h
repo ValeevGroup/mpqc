@@ -69,8 +69,8 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     void init(bool restart);
     
   public:
-    R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
-			 int nocc_act);
+    R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char *filename, int num_te_types,
+                         int ni, int nj, int nx, int ny);
     R12IntsAcc_MPIIOFile(StateIn&);
     ~R12IntsAcc_MPIIOFile();
     void save_data_state(StateOut&);
@@ -95,7 +95,7 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     bool can_restart() const { return true; };
 
     // Utility functions
-    int ij_index(int i, int j) const { return i*nocc_act_ + j; };
+    int ij_index(int i, int j) const { return i*nj_ + j; };
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -109,8 +109,8 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
 class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
 
   public:
-    R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
-			     int nocc_act);
+    R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char *filename, int num_te_types,
+                             int ni, int nj, int nx, int ny);
     R12IntsAcc_MPIIOFile_Ind(StateIn&);
     ~R12IntsAcc_MPIIOFile_Ind();
     void save_data_state(StateOut&);

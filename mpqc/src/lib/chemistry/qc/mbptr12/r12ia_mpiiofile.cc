@@ -44,9 +44,9 @@ static ClassDesc R12IntsAcc_MPIIOFile_cd(
   typeid(R12IntsAcc_MPIIOFile),"R12IntsAcc_MPIIOFile",1,"public R12IntsAcc",
   0, 0, 0);
 
-R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int nte_types, int nbasis1, int nbasis2,
-					   int nocc_act) :
-    R12IntsAcc(nte_types, nbasis1, nbasis2, nocc_act), datafile_(MPI_FILE_NULL)
+R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int nte_types,
+                                           int ni, int nj, int nx, int ny) :
+    R12IntsAcc(nte_types, ni, nj, nx, ny), datafile_(MPI_FILE_NULL)
 {
   mem_ = mem;
   filename_ = strdup(filename);
@@ -65,8 +65,8 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(StateIn& si) :
 
 R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
 {
-  for(int i=0;i<nocc_act_;i++)
-    for(int j=0;j<nocc_act_;j++) {
+  for(int i=0;i<ni_;i++)
+    for(int j=0;j<nj_;j++) {
       int ij = ij_index(i,j);
       for(int oper_type=0; oper_type<num_te_types(); oper_type++)
 	if (pairblk_[ij].ints_[oper_type] != NULL) {
@@ -90,12 +90,12 @@ R12IntsAcc_MPIIOFile::init(bool restart)
 {
   int errcod;
   errcod = MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
-  nints_per_block_ = nbasis__2_*num_te_types();
+  nints_per_block_ = nxy_*num_te_types();
 
-  pairblk_ = new struct PairBlkInfo[nocc_act_*nocc_act_];
+  pairblk_ = new struct PairBlkInfo[ni_*nj_];
   int i, j, ij;
-  for(i=0,ij=0;i<nocc_act_;i++)
-    for(j=0;j<nocc_act_;j++,ij++) {
+  for(i=0,ij=0;i<ni_;i++)
+    for(j=0;j<nj_;j++,ij++) {
       pairblk_[ij].ints_[eri] = NULL;
       pairblk_[ij].ints_[r12] = NULL;
       pairblk_[ij].ints_[r12t1] = NULL;
@@ -197,9 +197,9 @@ R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(StateIn& si) :
 {
 }
 
-R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char* filename, int num_te_types, int nbasis1, int nbasis2,
-						   int nocc_act) :
-  R12IntsAcc_MPIIOFile(mem,filename,num_te_types,nbasis1,nbasis2,nocc_act)
+R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char* filename, int num_te_types,
+                                                   int ni, int nj, int nx, int ny) :
+  R12IntsAcc_MPIIOFile(mem,filename,num_te_types,ni,nj,nx,ny)
 {
 }
 
@@ -226,14 +226,14 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
       "mem != R12IntsAcc_MemoryGrp::mem_" << endl;
     abort();
   }
-  else if (ni > nocc_act_) {
+  else if (ni > ni_) {
     ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni > R12IntsAcc_MPIIOFile_Ind::nocc_act_" << endl;
+      "ni > R12IntsAcc_MPIIOFile_Ind::ni_" << endl;
     abort();
   }
-  else if (next_orbital() + ni > nocc_act_) {
+  else if (next_orbital() + ni > ni_) {
     ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+next_orbital() > R12IntsAcc_MPIIOFile_Ind::nocc_act_" << endl;
+      "ni+next_orbital() > R12IntsAcc_MPIIOFile_Ind::ni_" << endl;
     abort();
   }
   else {
@@ -252,7 +252,7 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
     check_error_code_(errcod);
     
     for (int i=0; i<ni; i++)
-      for (int j=0; j<nocc_act_; j++) {
+      for (int j=0; j<nj_; j++) {
 	int ij = ij_index(i,j);
 	int proc = ij%nproc;
         if (proc != me) continue;
@@ -263,7 +263,7 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const siz
           int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_+(MPI_Offset)te_type*blksize_, MPI_SEEK_SET);
           check_error_code_(errcod);
           MPI_Status status;
-          errcod = MPI_File_write(datafile_, (void *)data, nbasis__2_, MPI_DOUBLE, &status);
+          errcod = MPI_File_write(datafile_, (void *)data, nxy_, MPI_DOUBLE, &status);
           check_error_code_(errcod);
           data = (double*) ((size_t) data + blksize_memgrp);
         }
@@ -286,9 +286,9 @@ R12IntsAcc_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
     MPI_Offset offset = pb->offset_ + (MPI_Offset)oper_type*blksize_;
     int errcod = MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
     check_error_code_(errcod);
-    double *buffer = new double[nbasis__2_];
+    double *buffer = new double[nxy_];
     MPI_Status status;
-    errcod = MPI_File_read(datafile_, (void *)buffer, nbasis__2_, MPI_DOUBLE, &status);
+    errcod = MPI_File_read(datafile_, (void *)buffer, nxy_, MPI_DOUBLE, &status);
     check_error_code_(errcod);
     pb->ints_[oper_type] = buffer;
   }

@@ -69,8 +69,8 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     void check_filedescr_();
 
   public:
-    R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
-			 int nocc_act);
+    R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int ni, int nj,
+                         int nx, int ny);
     R12IntsAcc_Node0File(StateIn&);
     ~R12IntsAcc_Node0File();
     void save_data_state(StateOut&);
@@ -105,7 +105,7 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     bool can_restart() const { return true; };
 
     // Utility functions
-    int ij_index(int i, int j) const { return i*nocc_act_ + j; };
+    int ij_index(int i, int j) const { return i*nj_ + j; };
     int ij_proc(int i, int j) const { return 0;};
 };
 

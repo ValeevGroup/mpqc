@@ -41,12 +41,16 @@
 namespace sc {
 
 /////////////////////////////////////////////////////////////////
-/** R12IntsAcc accumulates transformed (MO) integrals of (ix|jy) type
-   where i and j are in the active occupied MO space O and x and y are in any
-   spaces X and Y, respectively. Transformed integrals are usually computed
+/** R12IntsAcc accumulates transformed (MO) integrals stored as (ijxy)
+   where i, j, x, and, y lie in spaces I, J, X, and Y, respectively.
+   ijxy is only the storage format, the actual type may be (ix|jy),
+   (ij|xy), etc.
+
+   Transformed integrals are usually computed
    using a parallel MO integrals transformation procedure. In general, such
    transformations will require multiple passes through AO integrals. Each pass
-   produces a batch of transformed integrals. A batch is a set of integrals {(ix|jy)}
+   produces a batch of transformed integrals. For example, a batch in direct parallel MP2 energy
+   algorithm is a set of integrals {(ix|jy)}
    in which i indices are in a finite subrange of O
    and x, j, and y take any of their allowed values. For example, if batch I contains
    all integrals (ix|jy) with i greater than or equal m but less than n, then batch I+1
@@ -65,9 +69,9 @@ class R12IntsAcc: virtual public SavableState {
     int num_te_types_;  // Number of types of integrals in a block (in R12 theories -- usually 3)
 
    protected:
-    int nocc_act_;
-    int nbasis1_, nbasis2_;
-    size_t nbasis__2_;  // nbasis1_ * nbasis2_  - the size of a block of integrals of one type
+    int ni_, nj_;
+    int nx_, ny_;
+    size_t nxy_;        // nx_ * ny_  - the number of integrals of one type in a block
     size_t blksize_;    // the same in bytes
     size_t blocksize_;  // hence the size of the block of num_te_types of integrals is blksize_ * num_te_types
     
@@ -78,7 +82,7 @@ class R12IntsAcc: virtual public SavableState {
     void inc_next_orbital(int ni);
 
   public:
-    R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc_act);
+    R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny);
     R12IntsAcc(StateIn&);
     ~R12IntsAcc();
     void save_data_state(StateOut&);
@@ -89,7 +93,7 @@ class R12IntsAcc: virtual public SavableState {
 
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };
-    /// Size of each block of the integrals of the same type, in double words
+    /// Size of each block of the integrals of one type, in double words
     size_t blocksize() const { return blksize_; };
     /// The index of the first orbital in the next integrals batch to be stored
     int next_orbital() const;

@@ -44,8 +44,8 @@ static ClassDesc R12IntsAcc_MemoryGrp_cd(
   typeid(R12IntsAcc_MemoryGrp),"R12IntsAcc_MemoryGrp",1,"public R12IntsAcc",
   0, 0, create<R12IntsAcc_MemoryGrp>);
 
-R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types, int nbasis1, int nbasis2, int nocc_act) :
-  R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc_act), blksize_memgrp_(blksize_)
+R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types, int ni, int nj, int nx, int ny) :
+  R12IntsAcc(num_te_types, ni, nj, nx, ny), blksize_memgrp_(blksize_)
 {
   mem_ = mem;
   
@@ -62,8 +62,8 @@ R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(StateIn& si) : R12IntsAcc(si)
 
 R12IntsAcc_MemoryGrp::~R12IntsAcc_MemoryGrp()
 {
-  for(int i=0;i<nocc_act_;i++)
-    for(int j=0;j<nocc_act_;j++)
+  for(int i=0;i<ni_;i++)
+    for(int j=0;j<nj_;j++)
       if (!is_local(i,j)) {
 	int ij = ij_index(i,j);
 	for(int oper_type=0; oper_type<num_te_types(); oper_type++)
@@ -89,9 +89,9 @@ R12IntsAcc_MemoryGrp::init()
   // Now do some extra work to figure layout of data in MemoryGrp
   // Compute global offsets to each processor's data
   int i,j,ij;
-  pairblk_ = new struct PairBlkInfo[nocc_act_*nocc_act_];
-  for(i=0,ij=0;i<nocc_act_;i++)
-    for(j=0;j<nocc_act_;j++,ij++) {
+  pairblk_ = new struct PairBlkInfo[ni_*nj_];
+  for(i=0,ij=0;i<ni_;i++)
+    for(j=0;j<nj_;j++,ij++) {
       pairblk_[ij].ints_[eri] = NULL;
       pairblk_[ij].ints_[r12] = NULL;
       pairblk_[ij].ints_[r12t1] = NULL;
@@ -119,9 +119,9 @@ R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
       "mem != R12IntsAcc_MemoryGrp::mem_" << endl;
     abort();
   }
-  else if (ni != nocc_act_) {
+  else if (ni != ni_) {
     ExEnv::out0() << "R12IntsAcc_MemoryGrp::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni != R12IntsAcc_MemoryGrp::nocc_act_" << endl;
+      "ni != R12IntsAcc_MemoryGrp::ni_" << endl;
     abort();
   }
   else {
@@ -130,8 +130,8 @@ R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
       init();
     }
     
-    for (int i=0; i<nocc_act_; i++)
-      for (int j=0; j<nocc_act_; j++)
+    for (int i=0; i<ni_; i++)
+      for (int j=0; j<nj_; j++)
 	if (is_local(i,j)) {
 	  int local_ij_index = ij_index(i,j)/nproc_;
 	  double *integral_ij_offset = (double *) ((size_t)mem_->localdata() +

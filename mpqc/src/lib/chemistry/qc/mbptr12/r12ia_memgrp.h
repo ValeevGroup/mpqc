@@ -62,7 +62,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     void init();
 
   public:
-    R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int nbasis1, int nbasis2, int nocc_act);
+    R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int ni, int nj, int nx, int ny);
     R12IntsAcc_MemoryGrp(StateIn&);
     ~R12IntsAcc_MemoryGrp();
     void save_data_state(StateOut&);
@@ -92,7 +92,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     bool can_restart() const { return false; };
 
     // Utility functions
-    int ij_index(int i, int j) const { return i*nocc_act_ + j; };
+    int ij_index(int i, int j) const { return i*nj_ + j; };
     int ij_proc(int i, int j) const { return ij_index(i,j)%nproc_;};
 };
 

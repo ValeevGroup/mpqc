@@ -49,8 +49,8 @@ static ClassDesc R12IntsAcc_Node0File_cd(
   0, 0, create<R12IntsAcc_Node0File>);
 
 R12IntsAcc_Node0File::R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char* filename, int num_te_types,
-					   int nbasis1, int nbasis2, int nocc_act) :
-  R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc_act)
+					   int ni, int nj, int nx, int ny) :
+  R12IntsAcc(num_te_types, ni, nj, nx, ny)
 {
   mem_ = mem;
   filename_ = strdup(filename);
@@ -69,8 +69,8 @@ R12IntsAcc_Node0File::R12IntsAcc_Node0File(StateIn& si) :
 
 R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
 {
-  for(int i=0;i<nocc_act_;i++)
-    for(int j=0;j<nocc_act_;j++) {
+  for(int i=0;i<ni_;i++)
+    for(int j=0;j<nj_;j++) {
       if (!is_avail(i,j)) {
 	int ij = ij_index(i,j);
 	for(int oper_type=0; oper_type<num_te_types(); oper_type++)
@@ -97,10 +97,10 @@ R12IntsAcc_Node0File::save_data_state(StateOut& so)
 void
 R12IntsAcc_Node0File::init(bool restart)
 {
-  pairblk_ = new struct PairBlkInfo[nocc_act_*nocc_act_];
+  pairblk_ = new struct PairBlkInfo[ni_*nj_];
   int i, j, ij;
-  for(i=0,ij=0;i<nocc_act_;i++)
-    for(j=0;j<nocc_act_;j++,ij++) {
+  for(i=0,ij=0;i<ni_;i++)
+    for(j=0;j<nj_;j++,ij++) {
       pairblk_[ij].ints_[eri] = NULL;
       pairblk_[ij].ints_[r12] = NULL;
       pairblk_[ij].ints_[r12t1] = NULL;
@@ -156,14 +156,14 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
   // Will store integrals on node 0
   else if (mem->me() != 0)
     return;
-  else if (ni > nocc_act_) {
+  else if (ni > ni_) {
     ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni > R12IntsAcc_Node0File::nocc_act_" << endl;
+      "ni > R12IntsAcc_Node0File::ni_" << endl;
     abort();
   }
-  else if (next_orbital() + ni > nocc_act_) {
+  else if (next_orbital() + ni > ni_) {
     ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+next_orbital() > R12IntsAcc_Node0File::nocc_act_" << endl;
+      "ni+next_orbital() > R12IntsAcc_Node0File::ni_" << endl;
     abort();
   }
   else {
@@ -180,7 +180,7 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
     // Append the data to the file
     datafile_ = open(filename_,O_WRONLY|O_APPEND,0644);
     for (int i=0; i<ni; i++)
-      for (int j=0; j<nocc_act_; j++) {
+      for (int j=0; j<nj_; j++) {
 	double *data;
 	int ij = ij_index(i,j);
 	int proc = ij%nproc;
@@ -244,7 +244,7 @@ R12IntsAcc_Node0File::retrieve_pair_block(int i, int j, tbint_type oper_type)
     if (pb->ints_[oper_type] == 0) {
       off_t offset = pb->offset_ + (off_t)oper_type*blksize_;
       lseek(datafile_,offset,SEEK_SET);
-      pb->ints_[oper_type] = new double[nbasis__2_];
+      pb->ints_[oper_type] = new double[nxy_];
       read(datafile_,pb->ints_[oper_type],blksize_);
     }
     pb->refcount_[oper_type] += 1;

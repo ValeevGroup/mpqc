@@ -167,6 +167,8 @@ CorrelationTable::initialize_table(const RefPointGroup& group,
       return -3;
       }
     }
+
+  return 0;
 }
 
 void

@@ -4,7 +4,7 @@
 #ifndef _chemistry_qc_cints_integraljf_h
 #define _chemistry_qc_cints_integraljf_h
 
-#include <chemistry/qc/integral/integral.h>
+#include <chemistry/qc/basis/integral.h>
 #include <math/topology/pointbag.h>
 
 class OneBodyIntJF : public OneBodyInt

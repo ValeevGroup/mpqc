@@ -4,11 +4,11 @@
 #include <util/misc/timer.h>
 #include <util/group/picl.h>
 
-#include <chemistry/qc/basis/symgaussbas.h>
+#include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/cints/cints.h>
 #include <chemistry/qc/cints/integraljf.h>
 #include <chemistry/qc/cints/int2jf.h>
-#include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/intv2/integralv2.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
 // force linkage...this MUST be fixed

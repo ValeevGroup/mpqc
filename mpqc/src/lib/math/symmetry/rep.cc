@@ -7,7 +7,6 @@
 
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/formio.h>
-#include <iomanip.h>
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -34,7 +33,7 @@ SymRep::~SymRep()
 SymRep::operator SymmetryOperation() const
 {
   if (n != 3) {
-    cerr << indent << "SymRep::operator SymmetryOperation(): "
+    cerr << node0 << indent << "SymRep::operator SymmetryOperation(): "
          << "trying to cast to symop when n == " << n << endl;
     abort();
   }
@@ -52,7 +51,7 @@ SymRep
 SymRep::operate(const SymRep& r) const
 {
   if (r.n != n) {
-    cerr << indent << "SymRep::operate(): dimensions don't match: "
+    cerr << node0 << indent << "SymRep::operate(): dimensions don't match: "
          << r.n << " != " << n << endl;
     abort();
   }
@@ -77,7 +76,8 @@ SymRep::sim_transform(const SymRep& r) const
   int i,j,k;
 
   if (r.n != n) {
-    cerr << indent << "SymRep::sim_transform(): dimensions don't match: "
+    cerr << node0 << indent
+         << "SymRep::sim_transform(): dimensions don't match: "
          << r.n << " != " << n << endl;
     abort();
   }
@@ -206,7 +206,7 @@ SymRep::rotation(double theta)
     break;
 
   default:
-    cerr << indent << "SymRep::rotation(): n > 5 (" << n << ")\n";
+    cerr << node0 << indent << "SymRep::rotation(): n > 5 (" << n << ")\n";
     abort();
   }
   
@@ -246,27 +246,21 @@ SymRep::print(ostream& os) const
 {
   int i;
 
-#ifdef HAVE_IOS_FMTFLAGS
-  ios::fmtflags oldf;
-#else
-  long oldf;
-#endif
-  oldf = os.setf(ios::left);
-
-  os.setf(ios::fixed,ios::floatfield);
-  os.setf(ios::right,ios::adjustfield);
-  
-  os << indent;
-  for (i=0; i < n; i++) os << setw(11) << i+1;
-  os << endl;
+  os << node0 << indent;
+  for (i=0; i < n; i++) os << node0 << scprintf("%11d",i+1);
+  os << node0 << endl;
   
   for (i=0; i < n; i++) {
-    os << indent << setw(3) << i+1 << " ";
+    os << node0 << indent << scprintf("%3d ",i+1);
     for (int j=0; j < n; j++)
-      os << " " << setw(10) << setprecision(10) << d[i][j];
-    os << endl;
+      os << node0 << scprintf(" %10.7f",d[i][j]);
+    os << node0 << endl;
   }
-  os << endl;
-
-  os.setf(oldf);
+  os << node0 << endl;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

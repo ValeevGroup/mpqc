@@ -75,22 +75,22 @@ CharacterTable::print(ostream& os) const
 
   int i;
 
-  os << indent << "point group " << symb << endl << endl;
+  os << node0 << indent << "point group " << symb << endl << endl;
 
   for (i=0; i < nirrep_; i++)
     gamma_[i].print(os);
 
-  os << endl << indent << "symmetry operation matrices:"
+  os << node0 << endl << indent << "symmetry operation matrices:"
      << endl << endl << incindent;
   for (i=0; i < g; i++)
     symop[i].print(os);
 
-  os << decindent << indent << "inverse symmetry operation matrices:"
+  os << node0 << decindent << indent << "inverse symmetry operation matrices:"
      << endl << endl << incindent;
   for (i=0; i < g; i++)
     symop[inverse(i)].print(os);
 
-  os << decindent;
+  os << node0 << decindent;
 }
 
 CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
@@ -275,3 +275,9 @@ CharacterTable::parse_symbol()
 
   return -1;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

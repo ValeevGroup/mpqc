@@ -4,7 +4,6 @@
 #include <util/misc/newstring.h>
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/formio.h>
-#include <iomanip.h>
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -80,28 +79,22 @@ IrreducibleRepresentation::print(ostream& os) const
 
   int i,d;
   
-#ifdef HAVE_IOS_FMTFLAGS
-  ios::fmtflags oldf;
-#else
-  long oldf;
-#endif
-  oldf = os.setf(ios::left);
-  
-  os << indent << setw(5) << symb;
+  os << node0 << indent << scprintf("%-5s",symb);
 
-  os.setf(ios::fixed,ios::floatfield);
-  os.setf(ios::right,ios::adjustfield);
-  
   for (i=0; i < g; i++)
-    os << " " << setw(6) << setprecision(3) << character(i);
-  os << " | " << ntrans_ << " t, " << nrot_ << " R\n";
+    os << node0 << scprintf(" %6.3f",character(i));
+  os << node0 << " | " << ntrans_ << " t, " << nrot_ << " R\n";
 
   for (d=0; d < nproj(); d++) {
-    os << indent << "     ";
+    os << node0 << indent << "     ";
     for (i=0; i < g; i++)
-      os << " " << setw(6) << setprecision(3) << p(d,i);
-    os << endl;
+      os << node0 << scprintf(" %6.3f",p(d,i));
+    os << node0 << endl;
   }
-
-  os.setf(oldf);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

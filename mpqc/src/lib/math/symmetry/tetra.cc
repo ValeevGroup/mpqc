@@ -541,3 +541,9 @@ void CharacterTable::oh()
     ireu.rep[j+24] = ireg.rep[j].operate(sr);
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -3,7 +3,6 @@
 
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/formio.h>
-#include <iomanip.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -90,32 +89,24 @@ SymmetryOperation::rotation(double theta)
 void
 SymmetryOperation::print(ostream& os) const
 {
-#if HAVE_IOS_FMTFLAGS
-  ios::fmtflags oldf;
-#else
-  long oldf;
-#endif
-  oldf = os.setf(ios::left);
-
-  os.setf(ios::fixed,ios::floatfield);
-  os.setf(ios::right,ios::adjustfield);
-  
-  os << indent << "        1          2          3\n";
-  os << indent << "  1  "
-     << setw(10) << setprecision(7) << d[0][0] << " "
-     << setw(10) << setprecision(7) << d[0][1] << " "
-     << setw(10) << setprecision(7) << d[0][2] << "\n";
-  os << indent << "  2  "
-     << setw(10) << setprecision(7) << d[1][0] << " "
-     << setw(10) << setprecision(7) << d[1][1] << " "
-     << setw(10) << setprecision(7) << d[1][2] << "\n";
-  os << indent << "  3  "
-     << setw(10) << setprecision(7) << d[2][0] << " "
-     << setw(10) << setprecision(7) << d[2][1] << " "
-     << setw(10) << setprecision(7) << d[2][2] << "\n";
-
-  os << endl;
-
-  os.setf(oldf);
+  os << node0 << indent << "        1          2          3\n"
+     << indent << "  1  "
+     << scprintf("%10.7f ", d[0][0])
+     << scprintf("%10.7f ", d[0][1])
+     << scprintf("%10.7f ", d[0][2]) << endl
+     << indent << "  2  "
+     << scprintf("%10.7f ", d[1][0])
+     << scprintf("%10.7f ", d[1][1])
+     << scprintf("%10.7f ", d[1][2]) << endl
+     << indent << "  3  "
+     << scprintf("%10.7f ", d[2][0])
+     << scprintf("%10.7f ", d[2][1])
+     << scprintf("%10.7f ", d[2][2]) << endl << endl;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")
 

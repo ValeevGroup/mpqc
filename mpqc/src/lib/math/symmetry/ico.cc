@@ -377,3 +377,9 @@ void CharacterTable::ih()
     symop[i+60] = ir1u.rep[i+60];
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -164,3 +164,9 @@ PointGroup::char_table() const
   CharacterTable ret(symb,frame);
   return ret;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

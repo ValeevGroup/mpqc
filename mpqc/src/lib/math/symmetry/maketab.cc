@@ -1025,8 +1025,8 @@ int CharacterTable::make_table()
     }
 
     if (gj==g) {
-      cerr << indent << "make_table: uh oh, can't find inverse of " << gi
-           << endl;
+      cerr << node0 << indent
+           << "make_table: uh oh, can't find inverse of " << gi << endl;
       abort();
     }
 
@@ -1035,3 +1035,9 @@ int CharacterTable::make_table()
     
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

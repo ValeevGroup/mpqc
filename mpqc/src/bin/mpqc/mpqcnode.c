@@ -1,7 +1,4 @@
 
-static char rcsid[]="$Id$";
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -29,11 +26,13 @@ static char rcsid[]="$Id$";
 #define IOFF(i,j) ((i)>(j)) ? ioff((i))+(j) : ioff((j))+(i)
 
 static void clean_and_exit();
-static void mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec);
+static void mkcostvec(centers_t* ,sym_struct_t* ,dmt_cost_t*);
+extern void do_mp2(centers_t*, scf_struct_t*, dmt_matrix, dmt_matrix, FILE*);
 
 int host;
 char* argv0;
 
+void
 main(argc,argv)
 int argc;
 char *argv[];
@@ -50,7 +49,7 @@ char *argv[];
   int size,count,use_dip;
   int *shellmap;
   double energy,dens;
-  int_vector_t costvec;
+  dmt_cost_t *costvec;
   int mp2;
   int ij=0;
 
@@ -131,7 +130,7 @@ char *argv[];
     ip_string("dertype",&dertype,0);
     if(strcmp(dertype,"none")) do_grad=1;
 
-    proper = 1;
+    proper = 0;
     errcod = ip_boolean("properties",&proper,0);
 
     use_dip = 1;
@@ -299,55 +298,13 @@ char *argv[];
 
   for(i=0; i < centers.nshell ; i++) shellmap[i] = INT_SH_NFUNC(&centers,i);
 
-  if(!localp) {
-    allocbn_int_vector(&costvec,"n",nshtr);
-    zero_int_vector(&costvec);
+  costvec = (dmt_cost_t*) malloc(sizeof(dmt_cost_t)*nshtr);
 
-#if 1
-    mkcostvec(&centers,&sym_info,costvec.i);
+  mkcostvec(&centers,&sym_info,costvec);
 
-#if 0
-    gsum0(costvec.i,costvec.n,2,mtype_get(),0);
-    bcast0_int_vector(&costvec,0,0);
-#endif
+  dmt_def_map2(scf_info.nbfao,centers.nshell,shellmap,costvec,0);
 
-    for(i=0; i < nshtr ; i++) costvec.i[i]+=1;
-#else
-    for (i=0; i < nshell; i++) {
-      int j;
-      int nconi = centers.center[centers.center_num[i]].
-                         basis.shell[centers.shell_num[i]].ncon;
-      int nprimi = centers.center[centers.center_num[i]].
-                         basis.shell[centers.shell_num[i]].nprim;
-      int ami = centers.center[centers.center_num[i]].
-                         basis.shell[centers.shell_num[i]].type[0].am;
-
-      for (j=0; j <= i; j++,ij++) {
-        int nconj = centers.center[centers.center_num[j]].
-                           basis.shell[centers.shell_num[j]].ncon;
-        int nprimj = centers.center[centers.center_num[j]].
-                           basis.shell[centers.shell_num[j]].nprim;
-        int amj = centers.center[centers.center_num[j]].
-                           basis.shell[centers.shell_num[j]].type[0].am;
-
-        /* best so far
-         * costvec[ij] = shellmap[i]*shellmap[j] + ami*amj + nprimi + nprimj;
-         */
-
-        /* close second */
-        costvec.i[ij] = shellmap[i]*shellmap[j] + (1+ami*amj)*(nprimi + nprimj);
-        }
-      }
-#endif
-
-    dmt_def_map2(scf_info.nbfao,centers.nshell,shellmap,costvec.i,0);
-    free_int_vector(&costvec);
-    }
-  else {
-    costvec.n=0;
-    costvec.i=NULL;
-    dmt_def_map2(scf_info.nbfao,centers.nshell,shellmap,costvec.i,1);
-    }
+  free(costvec);
 
   free(shellmap);
   if(me==0) printf("\n");
@@ -384,7 +341,7 @@ char *argv[];
   tim_exit("input");
 
 /* release memory used by the input parser */
-    if(!scf_info.proj_vector) ip_done();
+    /* if(!scf_info.proj_vector) ip_done(); */
 
 /* begin iterations here */
 
@@ -437,7 +394,7 @@ char *argv[];
     scf_info.restart=1;
 
   /* release memory used by the input parser */
-    if(iter==0 && scf_info.proj_vector) ip_done();
+    /* if(iter==0 && scf_info.proj_vector) ip_done(); */
 
     energy = scf_info.nuc_rep+scf_info.e_elec;
 
@@ -580,6 +537,12 @@ char *argv[];
     free_expts(&mulpts);
     }
 
+  if (mp2) {
+    tim_enter("mp2");
+    do_mp2(&centers,&scf_info,SCF_VEC,FOCK,outfile);
+    tim_exit("mp2");
+    }
+
   tim_print(node_timings);
 
   clean_and_exit(host);
@@ -605,7 +568,7 @@ int host;
 
 
 static void
-mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec)
+mkcostvec(centers_t *centers,sym_struct_t *sym_info,dmt_cost_t *costvec)
 {
   int flags;
   int i,j,k,l;
@@ -634,7 +597,6 @@ mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec)
 
   scf_init_bounds(centers,intbuf);
 
-#if 1
   for (i=ij=0; i<centers->nshell; i++) {
     int nconi = centers->center[centers->center_num[i]].
                        basis.shell[centers->shell_num[i]].ncon;
@@ -650,70 +612,19 @@ mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec)
       int amj = centers->center[centers->center_num[j]].
                          basis.shell[centers->shell_num[j]].type[0].am;
 
-#if 0
-      costvec[ij] = Qvec[ij];
-      costvec[ij] *= 2;
-      costvec[ij] += 26;
-#endif
-
-      if (ami+amj==0) costvec[ij]=1;
-      else if (ami+amj==1) costvec[ij]=15;
-      else if (ami+amj==2) costvec[ij]=180;
-      else costvec[ij]=680;
-
-      if (costvec[ij]<0) costvec[ij]=1;
+      costvec[ij].i = i;
+      costvec[ij].j = j;
+      costvec[ij].magnitude = (int) Qvec[ij];
+      costvec[ij].ami = ami;
+      costvec[ij].amj = amj;
+      costvec[ij].nconi = nconi;
+      costvec[ij].nconj = nconj;
+      costvec[ij].nprimi = nprimi;
+      costvec[ij].nprimj = nprimj;
+      costvec[ij].dimi = INT_SH_NFUNC(centers,i);;
+      costvec[ij].dimj = INT_SH_NFUNC(centers,j);;
       }
     }
-#else
- /* loop over shell blocks and figure out where they fit in */
-  for (i=me; i<centers->nshell; i+=nproc) {
-    if(use_symmetry && !sym_info->p1[i]) continue;
-    ioffi=ioff(i);
-
-    for (j=0; j<=i; j++) {
-      ij=ioffi+j;
-      if(use_symmetry) {
-        if (!sym_info->lamij[ij]) continue;
-        else ioffij=ioff(ij);
-        leavel=0;
-        }
-      Qvecij=(int)Qvec[ij];
-
-      for (k=0; k<=i; k++) {
-        kl=ioff(k);
-        for (l=0; l<=(k==i?j:k); l++,kl++) {
-          if(use_symmetry) {
-            ijkl=ioffij+kl;
-            leavel=0;
-            for(g=0; g < sym_info->g ; g++) {
-              gi = sym_info->shell_map[i][g];
-              gj = sym_info->shell_map[j][g];
-              gk = sym_info->shell_map[k][g];
-              gl = sym_info->shell_map[l][g];
-              gij = IOFF(gi,gj);
-              gkl = IOFF(gk,gl);
-              gijkl = IOFF(gij,gkl);
-              if(gijkl > ijkl) leavel=1;
-              }
-            if(leavel) continue;
-            }
-
-        /* this tell us how likely it is we'll calculate the integral */
-          bound = Qvecij + (int) Qvec[kl];
-          bound += bound;
-          bound += 26;
-
-        /* this tells us how many times we'll have to do the bugger */
-          if(j==k && (i==j || k==l)) nb=1;
-          else if (i==j||i==k||j==k||j==l||k==l) nb=2;
-          else nb=3;
-
-          costvec[ij] += nb;
-          }
-        }
-      }
-    }
-#endif
 
   int_done_erep();
   int_done_offsets2(centers,centers,centers,centers);

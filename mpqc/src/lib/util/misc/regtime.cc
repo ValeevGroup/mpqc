@@ -387,9 +387,9 @@ RegionTimer::~RegionTimer()
 double
 RegionTimer::get_cpu_time() const
 {
-#ifdef HAVE_NX
+#if defined(HAVE_NX)
   return 0.0;
-#else
+#elif defined(HAVE_SYS_RESOURCE)
   double res;
   struct rusage r;
   getrusage(RUSAGE_SELF,&r);
@@ -402,9 +402,9 @@ RegionTimer::get_cpu_time() const
 double
 RegionTimer::get_wall_time() const
 {
-#ifdef HAVE_NX
+#if defined(HAVE_NX)
   return dclock();
-#else
+#elif defined(HAVE_SYS_RESOURCE)
   struct timeval tod;
   gettimeofday(&tod,0);
   return tod.tv_sec + 0.000001 * tod.tv_usec;

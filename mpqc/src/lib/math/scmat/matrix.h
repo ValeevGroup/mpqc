@@ -357,7 +357,8 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     /// Returns the eigenvectors of the reference matrix.
     RefSCMatrix eigvecs() const;
     /** Sets eigvals to the eigenvalues and eigvecs
-        to the eigenvalues and eigenvectors of the referenced matrix. */
+        to the eigenvalues and eigenvectors of the referenced matrix.
+        The result satisfies eigvecs * eigvals * eigvecs.t() = (*this).  */
     void diagonalize(const RefDiagSCMatrix& eigvals,
                      const RefSCMatrix& eigvecs) const;
     /// Assign and examine matrix elements.

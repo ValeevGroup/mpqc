@@ -42,10 +42,9 @@ MPI_Comm global_commgrp;
 using namespace std;
 using namespace sc;
 
-//#define MPI_SEND_ROUTINE MPI_Ssend // hangs
-#define MPI_SEND_ROUTINE MPI_Send // hangs in old MPI implementations
-//#define MPI_SEND_ROUTINE MPI_Bsend // works requires the attach and detach
-#define MPI_SEND_ROUTINE_NAME "MPI_Send"
+// Define this to use immediate mode.  This was added added to work
+// around bugs in non-immediate mode optimizations in an MPI impl.
+#undef USE_IMMEDIATE_MODE
 
 // OP_COMMUTES is zero to work around a bug in MPI/Pro 1.5b5 and earlier
 #define OP_COMMUTES 1
@@ -249,14 +248,21 @@ void
 MPIMessageGrp::raw_send(int target, void* data, int nbyte)
 {
   if (debug_) {
-      ExEnv::outn() << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
+      ExEnv::outn() << scprintf("%3d: MPI_Send"
                        "(0x%08x, %5d, MPI_BYTE, %3d, 0, commgrp)",
                        me(), data, nbyte, target)
            << endl;
     }
   int ret;
-  if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,0,commgrp))
-      != MPI_SUCCESS) {
+#ifndef USE_IMMEDIATE_MODE
+  ret = MPI_Send(data,nbyte,MPI_BYTE,target,0,commgrp);
+#else
+  MPI_Request mpireq;
+  MPI_Status status;
+  ret = MPI_Isend(data,nbyte,MPI_BYTE,target,0,commgrp,&mpireq);
+  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
+  if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_send("
           << target << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
@@ -276,8 +282,14 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
            << endl;
     }
   int ret;
-  if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,0,commgrp,&status))
-      != MPI_SUCCESS) {
+#ifndef USE_IMMEDIATE_MODE
+  ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,0,commgrp,&status);
+#else
+  MPI_Request mpireq;
+  ret = MPI_Irecv(data,nbyte,MPI_BYTE,sender,0,commgrp,&mpireq);
+  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
+  if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_recv("
           << sender << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
@@ -293,14 +305,21 @@ MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
 {
   type = (type<<1) + 1;
   if (debug_) {
-      ExEnv::outn() << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
+      ExEnv::outn() << scprintf("%3d: MPI_Send"
                        "(0x%08x, %5d, MPI_BYTE, %3d, %5d, commgrp)",
                        me(), data, nbyte, target, type)
            << endl;
     }
   int ret;
-  if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,type,commgrp))
-      != MPI_SUCCESS) {
+#ifndef USE_IMMEDIATE_MODE
+  ret = MPI_Send(data,nbyte,MPI_BYTE,target,type,commgrp);
+#else
+  MPI_Request mpireq;
+  MPI_Status status;
+  ret = MPI_Isend(data,nbyte,MPI_BYTE,target,type,commgrp,&mpireq);
+  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
+#endif
+  if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_sendt("
           << target << "," << type << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
@@ -321,8 +340,14 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
            << endl;
     }
   int ret;
-  if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,
-                      type,commgrp,&status)) != MPI_SUCCESS) {
+#ifndef USE_IMMEDIATE_MODE
+  ret = MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,type,commgrp,&status);
+#else
+  MPI_Request mpireq;
+  ret = MPI_Irecv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,type,commgrp,&mpireq);
+  if (ret == MPI_SUCCESS) ret = MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
+  if (ret != MPI_SUCCESS) {
       ExEnv::outn() << me() << ": MPIMessageGrp::raw_recvt("
           << type << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);

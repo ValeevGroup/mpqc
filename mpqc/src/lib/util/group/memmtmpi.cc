@@ -43,6 +43,10 @@
 
 using namespace std;
 
+// Define this to use immediate mode.  This was added added to work
+// around bugs in non-immediate mode optimizations in an MPI impl.
+#undef USE_IMMEDIATE_MODE
+
 namespace sc {
 
 static const int dbufsize = 32768;
@@ -90,8 +94,15 @@ MTMPIThread::run_one()
   long l;
   MemoryDataRequest req;
   MPI_Status status;
+#ifndef USE_IMMEDIATE_MODE
   MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
            req_tag_,mem_->comm_comm_,&status);
+#else
+  MPI_Request mpireq;
+  MPI_Irecv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
+           req_tag_,mem_->comm_comm_,&mpireq);
+  MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
   int rtag = req.serial_number();
   if (mem_->debug_) {
       mem_->print_lock_->lock();
@@ -137,8 +148,15 @@ MTMPIThread::run_one()
       while(dremain>0) {
           int dchunksize = dbufsize;
           if (dremain < dchunksize) dchunksize = dremain;
+#ifndef USE_IMMEDIATE_MODE
           MPI_Recv(chunk,dchunksize,MPI_DOUBLE,
                    req.node(),rtag ,mem_->comm_comm_,&status);
+#else
+          MPI_Request mpireq;
+          MPI_Irecv(chunk,dchunksize,MPI_DOUBLE,
+                   req.node(),rtag ,mem_->comm_comm_,&mpireq);
+          MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
           double *source_data = &((double*)mem_->data_)[doffset];
           for (i=0; i<dchunksize; i++) {
               source_data[i] += chunk[i];
@@ -311,7 +329,14 @@ MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
       req.print("SEND",mout);
       print_lock_->unlock();
     }
+#ifndef USE_IMMEDIATE_MODE
   MPI_Send(req.data(),req.nbytes(),MPI_BYTE,node,req_tag_,comm_comm_);
+#else
+  MPI_Status status;
+  MPI_Request mpireq;
+  MPI_Isend(req.data(),req.nbytes(),MPI_BYTE,node,req_tag_,comm_comm_,&mpireq);
+  MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
 
   // wait for the go ahead message
 //  MPI_Status status;
@@ -325,8 +350,15 @@ MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
       int dchunksize = dbufsize;
       if (dremain < dchunksize) dchunksize = dremain;
       // send the data
+#ifndef USE_IMMEDIATE_MODE
       MPI_Send(&data[dcurrent],dchunksize,MPI_DOUBLE,
                node,tag,comm_comm_);
+#else
+      MPI_Request mpireq;
+      MPI_Isend(&data[dcurrent],dchunksize,MPI_DOUBLE,
+               node,tag,comm_comm_,&mpireq);
+      MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
       dcurrent += dchunksize;
       dremain -= dchunksize;
     }
@@ -364,7 +396,14 @@ MTMPIMemoryGrp::deactivate()
       print_lock_->unlock();
     }
   for (int i=1; i<th_->nthread(); i++) {
+#ifndef USE_IMMEDIATE_MODE
       MPI_Send(req.data(),req.nbytes(),MPI_BYTE,me(),req_tag_,comm_comm_);
+#else
+      MPI_Request mpireq;
+      MPI_Status status;
+      MPI_Isend(req.data(),req.nbytes(),MPI_BYTE,me(),req_tag_,comm_comm_,&mpireq);
+      MPI_Wait(&mpireq,&status);
+#endif // USE_IMMEDIATE_MODE
     }
 
   // wait on the thread to shutdown

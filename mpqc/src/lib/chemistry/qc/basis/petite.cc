@@ -191,7 +191,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   double *red_rep = new double[_ng];
   memset(red_rep,0,sizeof(double)*_ng);
   
-  for (int i=0; i < _natom; i++) {
+  for (i=0; i < _natom; i++) {
     for (int g=0; g < _ng; g++) {
       so = ct.symm_operation(g);
       int j= _atom_map[i][g];
@@ -215,7 +215,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   }
 
   _nbf_in_ir = new int[_nirrep];
-  for (int i=0; i < _nirrep; i++) {
+  for (i=0; i < _nirrep; i++) {
     double t=0;
     for (int g=0; g < _ng; g++)
       t += ct[i][g]*red_rep[g];
@@ -306,7 +306,7 @@ PetiteList::print(FILE *o)
   
   fprintf(o,"\n");
   CharacterTable ct = _gbs->molecule()->point_group().char_table();
-  for (int i=0; i < _nirrep; i++)
+  for (i=0; i < _nirrep; i++)
     fprintf(o,"  %5d functions of %s symmetry\n",_nbf_in_ir[i],ct[i].symbol());
 }
 
@@ -321,11 +321,12 @@ class lin_comb {
   public:
     lin_comb(int nsh, int nbf, int f0) : _nsh(nsh), _nbf(nbf) {
       fn = new int[_nsh];
-      for (int i=0; i < _nsh; i++)
+      int i;
+      for (i=0; i < _nsh; i++)
         fn[i] = f0+i;
       
       c = new double*[_nsh];
-      for (int i=0; i < _nsh; i++) {
+      for (i=0; i < _nsh; i++) {
         c[i] = new double[_nbf];
         memset(c[i],0,sizeof(double)*_nbf);
       }
@@ -350,6 +351,7 @@ class lin_comb {
 RefSCMatrix
 PetiteList::aotoso()
 {
+  int i;
   GaussianBasisSet& gbs = *_gbs.pointer();
   Molecule& mol = *gbs.molecule().pointer();
 
@@ -366,12 +368,13 @@ PetiteList::aotoso()
 
   int *saoelem = new int[_nirrep];
   saoelem[0]=0;
-  for (int i=1; i < _nirrep; i++)
+  for (i=1; i < _nirrep; i++)
     saoelem[i] = saoelem[i-1]+_nbf_in_ir[i-1];
 
   // loop over unique shells
-  for (int i=0; i < _natom; i++) {
+  for (i=0; i < _natom; i++) {
     for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      int g;
       int shell_i = gbs.shell_on_center(i,s);
       
       if (!_p1[shell_i])
@@ -379,7 +382,7 @@ PetiteList::aotoso()
         
       // find out how many shells are equivalent to this one
       int neqs=0;
-      for (int g=0; g < _ng; g++)
+      for (g=0; g < _ng; g++)
         if (shell_i==_shell_map[shell_i][g])
           neqs++;
 
@@ -389,7 +392,7 @@ PetiteList::aotoso()
       // the shell
       memset(red_rep,0,sizeof(double)*_ng);
 
-      for (int g=0; g < _ng; g++) {
+      for (g=0; g < _ng; g++) {
         int j = _atom_map[i][g];
         if (i!=j && _atom_map[j][g]!=j)
           continue;
@@ -410,9 +413,10 @@ PetiteList::aotoso()
 
       // now extract number of functions of each symmetry that we can expect
       memset(ninir,0,sizeof(int)*_nirrep);
-      for (int ir=0; ir < _nirrep; ir++) {
+      int ir;
+      for (ir=0; ir < _nirrep; ir++) {
         double t=0;
-        for (int g=0; g < _ng; g++)
+        for (g=0; g < _ng; g++)
           t += ct[ir][g]*red_rep[g];
         
         ninir[ir] = ((int) (t+0.5))/_ng;
@@ -423,7 +427,7 @@ PetiteList::aotoso()
 
       lin_comb **lc = new lin_comb*[_ng];
       
-      for (int g=0; g < _ng; g++) {
+      for (g=0; g < _ng; g++) {
         so = ct.symm_operation(g);
         int j = _atom_map[i][g];
 
@@ -455,13 +459,13 @@ PetiteList::aotoso()
       // form the combinations
       double *blc = new double[gbs.nbasis()];
       
-      for (int ir=0; ir < ct.nirrep(); ir++) {
+      for (ir=0; ir < ct.nirrep(); ir++) {
         //printf("irrep %s\n",ct[ir].symbol());
         
         for (int fn=0; fn < gbs(i,s).nfunction(); fn++) {
           memset(blc,0,sizeof(double)*gbs.nbasis());
 
-          for (int g=0; g < _ng; g++) {
+          for (g=0; g < _ng; g++) {
             lin_comb& lcg = *lc[g];
 
             for (int f=0; f < gbs.nbasis(); f++)
@@ -469,7 +473,8 @@ PetiteList::aotoso()
           }
 
           double c1=0;
-          for (int ii=0; ii < gbs.nbasis(); ii++)
+          int ii;
+          for (ii=0; ii < gbs.nbasis(); ii++)
             c1 += blc[ii]*blc[ii];
 
           if (c1 < 1.0e-3)
@@ -477,15 +482,16 @@ PetiteList::aotoso()
           
           c1 = 1.0/sqrt(c1);
           
-          for (int ii=0; ii < gbs.nbasis(); ii++)
+          for (ii=0; ii < gbs.nbasis(); ii++)
             blc[ii] *= c1;
 
           // check to see if we already have this SO (it happens sometimes,
           // so sue me).
           int break_this=0;
-          for (int jj=0;  jj < saoelem[ir]; jj++) {
+          int jj;
+          for (jj=0;  jj < saoelem[ir]; jj++) {
             double t=0;
-            for (int ii=0; ii < gbs.nbasis(); ii++)
+            for (ii=0; ii < gbs.nbasis(); ii++)
               t += blc[ii]*ret.get_element(ii,jj);
             if (fabs(t) > .9) {
               break_this=1;
@@ -496,7 +502,7 @@ PetiteList::aotoso()
           if (break_this)
             break;
 
-          for (int ii=0; ii < gbs.nbasis(); ii++) {
+          for (ii=0; ii < gbs.nbasis(); ii++) {
             ret.set_element(ii,saoelem[ir],blc[ii]);
           }
           saoelem[ir]++;
@@ -508,7 +514,7 @@ PetiteList::aotoso()
             continue;
           
           memset(blc,0,sizeof(double)*gbs.nbasis());
-          for (int g=0; g < _ng; g++) {
+          for (g=0; g < _ng; g++) {
             lin_comb& lcg = *lc[g];
 
             for (int f=0; f < gbs.nbasis(); f++)
@@ -516,7 +522,7 @@ PetiteList::aotoso()
           }
 
           c1=0;
-          for (int ii=0; ii < gbs.nbasis(); ii++)
+          for (ii=0; ii < gbs.nbasis(); ii++)
             c1 += blc[ii]*blc[ii];
 
           if (c1 < 1.0e-3)
@@ -524,15 +530,15 @@ PetiteList::aotoso()
           
           c1 = 1.0/sqrt(c1);
           
-          for (int ii=0; ii < gbs.nbasis(); ii++)
+          for (ii=0; ii < gbs.nbasis(); ii++)
             blc[ii] *= c1;
 
           // check to see if we already have this SO (it happens sometimes,
           // so sue me).
           break_this=0;
-          for (int jj=0;  jj < saoelem[ir]; jj++) {
+          for (jj=0;  jj < saoelem[ir]; jj++) {
             double t=0;
-            for (int ii=0; ii < gbs.nbasis(); ii++)
+            for (ii=0; ii < gbs.nbasis(); ii++)
               t += blc[ii]*ret.get_element(ii,jj);
             if (fabs(t) > .9) {
               break_this=1;
@@ -543,7 +549,7 @@ PetiteList::aotoso()
           if (break_this)
             break;
 
-          for (int ii=0; ii < gbs.nbasis(); ii++) {
+          for (ii=0; ii < gbs.nbasis(); ii++) {
             ret.set_element(ii,saoelem[ir]+_nbf_in_ir[ir],blc[ii]);
           }
           //saoelem[ir]++;
@@ -557,7 +563,7 @@ PetiteList::aotoso()
       }
 
       delete[] blc;
-      for (int g=0; g < _ng; g++)
+      for (g=0; g < _ng; g++)
         delete lc[g];
       delete lc;
     }

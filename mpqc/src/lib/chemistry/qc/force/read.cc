@@ -79,7 +79,7 @@ dmt_force_read_string(KeyVal*keyval,FILE*fp,char*name,char**stringptr)
   if (mynode0()==0) {
       if (keyval) {
           char* saved_stringptr = *stringptr;
-          *stringptr = keyval.pcharvalue(name);
+          *stringptr = keyval->pcharvalue(name);
           errcod = (keyval->error() != KeyVal::OK);
           if (errcod) {
               *stringptr = saved_stringptr;

@@ -3,7 +3,10 @@
  */
 
 /* $Log$
- * Revision 1.4  1994/08/26 22:45:26  etseidl
+ * Revision 1.5  1994/10/21 20:45:12  cljanss
+ * Minor cleanup.
+ *
+ * Revision 1.4  1994/08/26  22:45:26  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -1065,18 +1068,11 @@ int dercenter;
   int oc1,oc2,oc3,oc4;
   int ii;
   int c1,c2,c3,c4;
-  int osh[4];
   int i[4],j[4],k[4],am[4];
   int index;
   int sizem234,sizem34,sizem2,sizem3,sizem4;
   int sizep234,sizep34,sizep2,sizep3,sizep4;
   shell_t *shell1,*shell2,*shell3,*shell4;
-
-  /* Compute the offset shell numbers. */
-  osh[0] = *psh1 + int_cs1->shell_offset;
-  osh[1] = *psh2 + int_cs2->shell_offset;
-  osh[2] = *psh3 + int_cs3->shell_offset;
-  osh[3] = *psh4 + int_cs4->shell_offset;
 
   /* Set up pointers to the current shells. */
   shell1 = &int_cs1->center[int_cs1->center_num[*psh1]]
@@ -1459,11 +1455,8 @@ int *size;
   double *current_buffer;
   int nints;
   double *user_int_buffer;
-  centers_t *cs[4];
-  int sh[4];
   int i;
   shell_t *shell1,*shell2,*shell3,*shell4;
-  int am[4];
   int osh[4];
   int sh1 = bsh1;
   int sh2 = bsh2;
@@ -1474,16 +1467,6 @@ int *size;
   int *psh3 = &sh3;
   int *psh4 = &sh4;
 
-  cs[0] = int_cs1;
-  cs[1] = int_cs2;
-  cs[2] = int_cs3;
-  cs[3] = int_cs4;
-
-  sh[0] = *psh1;
-  sh[1] = *psh2;
-  sh[2] = *psh3;
-  sh[3] = *psh4;
-
   /* Set up pointers to the current shells. */
   shell1 = &int_cs1->center[int_cs1->center_num[*psh1]]
                   .basis.shell[int_cs1->shell_num[*psh1]];
@@ -1493,11 +1476,6 @@ int *size;
                   .basis.shell[int_cs3->shell_num[*psh3]];
   shell4 = &int_cs4->center[int_cs4->center_num[*psh4]]
                   .basis.shell[int_cs4->shell_num[*psh4]];
-
-  am[0] = int_find_jmax_shell(shell1);
-  am[1] = int_find_jmax_shell(shell2);
-  am[2] = int_find_jmax_shell(shell3);
-  am[3] = int_find_jmax_shell(shell4);
 
   /* Compute the offset shell numbers. */
   osh[0] = *psh1 + int_cs1->shell_offset;
@@ -1577,19 +1555,12 @@ int *psh4;
   int oc1,oc2,oc3,oc4;
   int ii;
   int c1,c2,c3,c4;
-  int osh[4];
   int i[4],j[4],k[4],am[4];
   int index;
   int sizem234,sizem34,sizem2,sizem3,sizem4;
   int sizep234,sizep34,sizep2,sizep3,sizep4;
   int sizepm234,sizepm34,sizepm2,sizepm3,sizepm4;
   shell_t *shell1,*shell2,*shell3,*shell4;
-
-  /* Compute the offset shell numbers. */
-  osh[0] = *psh1 + int_cs1->shell_offset;
-  osh[1] = *psh2 + int_cs2->shell_offset;
-  osh[2] = *psh3 + int_cs3->shell_offset;
-  osh[3] = *psh4 + int_cs4->shell_offset;
 
   /* Set up pointers to the current shells. */
   shell1 = &int_cs1->center[int_cs1->center_num[*psh1]]

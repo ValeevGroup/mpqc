@@ -401,7 +401,7 @@ LocalSCMatrix::element_op(const RefSCRectElementOp& op)
 void
 LocalSCMatrix::print(const char *title, ostream& os, int prec)
 {
-  int ii,jj,kk,nn,ll;
+  int ii,jj,kk,nn;
   int i,j;
   int lwidth,width;
   double max=this->maxabs();
@@ -422,7 +422,6 @@ LocalSCMatrix::print(const char *title, ostream& os, int prec)
   for(ii=jj=0;;) {
     ii++; jj++; kk=width*jj;
     nn=(ncol()>kk)?kk:ncol();
-    ll=2*(nn-ii+1)+1;
 
  // print column indices
     for(i=ii; i <= nn; i++) { os.width(lwidth); os << i; }
@@ -731,7 +730,7 @@ LocalSymmSCMatrix::element_op(const RefSCSymmElementOp& op)
 void
 LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
 {
-  int ii,jj,kk,nn,ll;
+  int ii,jj,kk,nn;
   int i,j;
   int lwidth,width;
   double max=this->maxabs();
@@ -752,7 +751,6 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
   for(ii=jj=0;;) {
     ii++; jj++; kk=width*jj;
     nn=(n()>kk)?kk:n();
-    ll=2*(nn-ii+1)+1;
 
  // print column indices
     for(i=ii; i <= nn; i++) { os.width(lwidth); os << i; }
@@ -889,13 +887,13 @@ void
 LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
 {
   int i;
-  int lwidth,width;
+  int lwidth;
   double max=this->maxabs();
 
   max=(max==0.0)?1.0:log10(max);
   if(max < 0.0) max=1.0;
 
-  lwidth = prec+5+(int) max; width = 75/lwidth;
+  lwidth = prec+5+(int) max;
 
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);
@@ -1109,13 +1107,13 @@ void
 LocalSCVector::print(const char *title, ostream& os, int prec)
 {
   int i;
-  int lwidth,width;
+  int lwidth;
   double max=this->maxabs();
 
   max=(max==0.0)?1.0:log10(max);
   if(max < 0.0) max=1.0;
 
-  lwidth = prec+5+(int) max; width = 75/lwidth;
+  lwidth = prec+5+(int) max;
 
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);

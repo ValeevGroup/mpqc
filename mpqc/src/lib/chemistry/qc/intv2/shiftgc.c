@@ -4,7 +4,10 @@
  * center 3 to 4. */
 
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:54  etseidl
+ * Revision 1.4  1994/10/21 20:45:16  cljanss
+ * Minor cleanup.
+ *
+ * Revision 1.3  1994/08/26  22:45:54  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -170,7 +173,6 @@ int tam4;
 int peAB;
 {
   int am1,am2,am3,am4;
-  double *buffer;
 
   /* Copy the gc{1,2,3,4} into g{1,2,3,4} (static globals). */
   g1 = gc1;
@@ -199,7 +201,7 @@ int peAB;
   init_shiftinthave(am1,am2,am3,am4);
 
   /* Construct the target integrals. */
-  buffer = shiftint(am1,am2,am3,am4);
+  shiftint(am1,am2,am3,am4);
 
   }
 

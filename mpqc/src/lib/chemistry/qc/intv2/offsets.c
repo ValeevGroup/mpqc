@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:42  etseidl
+ * Revision 1.4  1994/10/21 20:45:14  cljanss
+ * Minor cleanup.
+ *
+ * Revision 1.3  1994/08/26  22:45:42  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -51,26 +54,20 @@ centers_t *cs1;
 centers_t *cs2;
 {
   int shell_offset1;
-  int shell_offset2;
   int prim_offset1;
-  int prim_offset2;
   int func_offset1;
-  int func_offset2;
 
   /* Shell offset arrays. */
   shell_offset1 = shell_offset(cs1,0);
-  if   (cs2 == cs1) shell_offset2 = shell_offset1;
-  else              shell_offset2 = shell_offset(cs2,shell_offset1);
+  if (cs2 != cs1) shell_offset(cs2,shell_offset1);
 
   /* Primitive offset arrays. */
   prim_offset1 = prim_offset(cs1,0);
-  if   (cs2 == cs1) prim_offset2 = prim_offset1;
-  else              prim_offset2 = prim_offset(cs2,prim_offset1);
+  if (cs2 != cs1) prim_offset(cs2,prim_offset1);
 
   /* Function offset arrays. */
   func_offset1 = func_offset(cs1,0);
-  if   (cs2 == cs1) func_offset2 = func_offset1;
-  else              func_offset2 = func_offset(cs2,func_offset1);
+  if (cs2 != cs1) func_offset(cs2,func_offset1);
   }
 
 /* This is called to free the offsets. */

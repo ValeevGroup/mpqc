@@ -14,8 +14,9 @@ ARRAY_def(RefTriangle);
 SET_def(RefTriangle);
 ARRAYSET_def(RefTriangle);
 
-Triangle::Triangle(RefEdge v1, RefEdge v2, RefEdge v3,
-                   unsigned int orientation0)
+Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
+                   unsigned int orientation0):
+  _norm(v1->vertex(0)->dimension())
 {
   _orientation[0] = orientation0;
   
@@ -66,6 +67,20 @@ Triangle::Triangle(RefEdge v1, RefEdge v2, RefEdge v3,
       abort();
     }
 
+  // compute the normal to the surface
+  SCVector3 BA = vertex(1)->point() - vertex(0)->point();
+  SCVector3 CA = vertex(2)->point() - vertex(0)->point();
+  SCVector3 N = BA.cross(CA);
+  double n = N.norm();
+  if (n < 1.0e-15) {
+      _norm.assign(0.0);
+    }
+  else {
+      n = 1.0/n;
+      for (int i=0; i<3; i++) {
+          _norm[i] = N[i]*n;
+        }
+    }
 };
 
 Triangle::~Triangle()
@@ -76,6 +91,23 @@ RefVertex
 Triangle::vertex(int i)
 {
   return _edges[i]->vertex(_orientation[i]);
+}
+
+unsigned int
+Triangle::orientation(const RefEdge& e) const
+{
+  if (e == _edges[0]) return orientation(0);
+  if (e == _edges[1]) return orientation(1);
+  return orientation(2);
+}
+
+int
+Triangle::contains(const RefEdge& e) const
+{
+  if (_edges[0] == e) return 1;
+  if (_edges[1] == e) return 1;
+  if (_edges[2] == e) return 1;
+  return 0;
 }
 
 double Triangle::area()
@@ -142,6 +174,22 @@ Triangle::interpolate(double r,double s,RefVertex&result)
   return (x21.cross(x31)).norm();
 }
 
+void
+Triangle::normal(double r,double s,const RefSCVector&v)
+{
+  v.assign(_norm);
+}
+
+void
+Triangle::flip()
+{
+  int i;
+  for (i=0; i<3; i++) {
+      _orientation[i] = 1 - _orientation[i];
+    }
+  _norm = -1.0 * _norm;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // Triangle10
 
@@ -154,11 +202,16 @@ Triangle10::~Triangle10()
 {
 }
 
-Triangle10::Triangle10(RefEdge4 v1, RefEdge4 v2, RefEdge4 v3,
-                       RefVolume vol,
+Triangle10::Triangle10(const RefEdge4& v1,
+                       const RefEdge4& av2,
+                       const RefEdge4& av3,
+                       const RefVolume& vol,
                        double isovalue, unsigned int orientation0):
-  Triangle(v1.pointer(),v2.pointer(),v3.pointer(),orientation0)
+  Triangle(v1.pointer(),av2.pointer(),av3.pointer(),orientation0)
 {
+  // Refs to edges 2 and 3 might get swapped so copy.
+  RefEdge4 v2(av2);
+  RefEdge4 v3(av3);
   // set up the 10 vertex array using the 9 vertices from the edges
   // and the midvertices
   //

@@ -30,7 +30,7 @@ class Edge4: public Edge {
   private:
     RefVertex _interiorvertices[2];
   public:
-    Edge4(RefVertex p1,RefVertex p2,RefVolume vol,double isovalue);
+    Edge4(RefVertex p1,RefVertex p2,const RefVolume&,double isovalue);
     inline RefVertex interior_vertex(int i) { return _interiorvertices[i]; };
     ~Edge4();
     double length();

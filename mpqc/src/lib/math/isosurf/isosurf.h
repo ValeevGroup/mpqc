@@ -30,9 +30,6 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
   protected:
     RefVolume _volume;
 
-    //RAVLMap<RefVertex,AVLSet<RefEdge>> _tmp_edges;
-    RefVertexRefEdgeAVLSetRAVLMap _tmp_edges;
-
     ArraysetRefVertex  _tmp_vertices;
     TriangulatedSurface* _surf;
     double _value;

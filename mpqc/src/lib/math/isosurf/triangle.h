@@ -12,9 +12,14 @@ class Triangle: public VRefCount {
   protected:
     unsigned int _orientation[3];
     RefEdge _edges[3];
+    RefSCVector _norm;
   public:
-    Triangle(RefEdge v1, RefEdge v2, RefEdge v3, unsigned int orient0 = 0);
-    inline RefEdge edge(int i) { return _edges[i]; };
+    Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
+             unsigned int orient0 = 0);
+    RefEdge edge(int i) { return _edges[i]; };
+    int contains(const RefEdge&) const;
+    unsigned int orientation(int i) const { return _orientation[i]; }
+    unsigned int orientation(const RefEdge&) const;
     virtual ~Triangle();
     void add_edges(SetRefEdge&);
     void add_vertices(SetRefVertex&);
@@ -23,6 +28,8 @@ class Triangle: public VRefCount {
     // 0<=r<=1, 0<=s<=1, 0<=r+s<=1
     // RefVertex is the intepolated vertex (both point and gradient)
     virtual double interpolate(double r,double s,RefVertex&v);
+    // computes the surface normal
+    virtual void normal(double r,double s,const RefSCVector&v);
 
     // returns a vertex in the triangle
     // i = 0 is the (0,0) vertex
@@ -31,6 +38,9 @@ class Triangle: public VRefCount {
     RefVertex vertex(int i);
 
     virtual double area();
+
+    // flip the orientation
+    void flip();
 };
 
 REF_dec(Triangle);
@@ -43,8 +53,8 @@ class Triangle10: public Triangle {
   protected:
     RefVertex _vertices[10];
   public:
-    Triangle10(RefEdge4 v1, RefEdge4 v2, RefEdge4 v3,
-               RefVolume vol,
+    Triangle10(const RefEdge4& v1, const RefEdge4& v2, const RefEdge4& v3,
+               const RefVolume& vol,
                double isovalue, unsigned int orientation0 = 0);
     virtual ~Triangle10();
     double interpolate(double r,double s,RefVertex&v);

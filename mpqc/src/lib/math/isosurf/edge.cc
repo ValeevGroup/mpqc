@@ -45,7 +45,7 @@ Edge4::~Edge4()
 {
 }
 
-Edge4::Edge4(RefVertex p1,RefVertex p2,RefVolume vol,double isovalue):
+Edge4::Edge4(RefVertex p1,RefVertex p2,const RefVolume&vol,double isovalue):
   Edge(p1,p2)
 {
   //// find the initial guess for the interior vertices
@@ -77,10 +77,11 @@ Edge4::Edge4(RefVertex p1,RefVertex p2,RefVolume vol,double isovalue):
 
 }
 
+// Returns a length assuming linearity for now.
 double
 Edge4::length()
 {
-  fprintf(stderr,"Edge4::length(): not implemented\n");
-  abort();
-  return 0.0;
+  //fprintf(stderr,"Edge4::length(): not implemented\n");
+  //abort();
+  return Edge::length();
 }

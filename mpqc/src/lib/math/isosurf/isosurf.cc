@@ -28,8 +28,7 @@ IsosurfaceGen::set_resolution(double r)
 // ImplicitSurfacePolygonizer members
 
 ImplicitSurfacePolygonizer::ImplicitSurfacePolygonizer(const RefVolume&vol):
-  _volume(vol),
-  _tmp_edges(RefEdgeAVLSet())
+  _volume(vol)
 {
 }
 
@@ -99,7 +98,6 @@ ImplicitSurfacePolygonizer::isosurface(double value,
 
   // Clean up temporaries.
   _tmp_vertices.clear();
-  _tmp_edges.clear();
 
   // finish the surface
   surf.complete_surface();
@@ -131,62 +129,8 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
   RefVertex v1 = current->_tmp_vertices[i1];
   RefVertex v2 = current->_tmp_vertices[i2];
   RefVertex v3 = current->_tmp_vertices[i3];
-
-  // Find this triangles edges if they have already be created
-  // for some other triangle.
-#if 0
-  // this is rather slow
-  RefEdge e0 = current->_surf->find_edge(v1,v2);
-  RefEdge e1 = current->_surf->find_edge(v2,v3);
-  RefEdge e2 = current->_surf->find_edge(v3,v1);
-#else
-  RefEdge e0, e1, e2;
-  RefEdgeAVLSet& v1edges = current->_tmp_edges[v1];
-  RefEdgeAVLSet& v2edges = current->_tmp_edges[v2];
-
-  Pix ix;
-  for (ix = v1edges.first(); ix; v1edges.next(ix)) {
-      RefEdge& e = v1edges(ix);
-      if (e->vertex(0) == v2 || e->vertex(1) == v2) {
-          e0 = e;
-        }
-      else if (e->vertex(0) == v3 || e->vertex(1) == v3) {
-          e2 = e;
-        }
-    }
-  for (ix = v2edges.first(); ix; v1edges.next(ix)) {
-      RefEdge& e = v2edges(ix);
-      if (e->vertex(0) == v3 || e->vertex(1) == v3) {
-          e1 = e;
-        }
-    }
-#endif
-
-  if (e0.null()) {
-      e0 = new Edge(v1,v2);
-      current->_tmp_edges[v1].add(e0);
-      current->_tmp_edges[v2].add(e0);
-    }
-  if (e1.null()) {
-      e1 = new Edge(v2,v3);
-      current->_tmp_edges[v2].add(e1);
-      current->_tmp_edges[v3].add(e1);
-    }
-  if (e2.null()) {
-      e2 = new Edge(v3,v1);
-      current->_tmp_edges[v3].add(e2);
-      current->_tmp_edges[v1].add(e2);
-    }
   
-  int orientation;
-  if (e0->vertex(0) == v1) {
-      orientation = 0;
-    }
-  else {
-      orientation = 1;
-    }
-  
-  current->_surf->add_triangle(new Triangle(e0,e1,e2,orientation));
+  current->_surf->add_triangle(v1,v2,v3);
 
   return 1;
 }

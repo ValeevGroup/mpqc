@@ -32,8 +32,14 @@ main(int argc,char** argv)
   GetLongOpt option;
   option.enroll("help",GetLongOpt::NoValue,
                 "print this option summary",0);
+  option.enroll("noclean",GetLongOpt::NoValue,
+                "don't clean up the surface",0);
+  option.enroll("simple",GetLongOpt::NoValue,
+                "use simple triangles","");
   option.enroll("resolution", GetLongOpt::MandatoryValue,
                 "set the resolution", "0.5");
+  option.enroll("short",  GetLongOpt::MandatoryValue,
+                "set the short edge length to resolution * this", "0.1");
   option.enroll("maxval", GetLongOpt::MandatoryValue,
                 "set the maximum value used for the bounding box", "1.0");
   int optind = option.parse(argc,argv);
@@ -47,34 +53,41 @@ main(int argc,char** argv)
   center[0] = center[1] = center[2] = 0.0;
   double radius = 1.0;
   RefVolume vol(new SphereShape(center,radius));
-  //double resolution = 0.5;
   double resolution = atof(option.retrieve("resolution"));
-  double minval = 0.0;
   double maxval = atof(option.retrieve("maxval"));
-
-// the tesselation stuff is producing strange results
-//   ArraysetRefPoint points;
-//   vol->pointset(resolution, minval, maxval, points);
-// 
-//   DirichletTesselation tess(points);
-// 
-//   printf("points:\n");
-//   for (int i=0; i<points.length(); i++) {
-//       fprintf(stderr," %d ",i);
-//       points[i]->print(stderr);
-//     }
-// 
-//   tess.print();
 
   ImplicitSurfacePolygonizer isogen(vol);
   isogen.set_resolution(resolution);
 
   double distance_from_surface = 0.5;
-  TriangulatedSurface10 surf(vol,distance_from_surface);
-  //TriangulatedSurface surf;
-  surf.set_integrator(new GaussTriangleIntegrator(7));
-  //surf.set_integrator(new TestTriangleIntegrator());
+  TriangulatedSurface * surfptr;
+  if (option.retrieve("simple")) {
+      printf("using 10 point triangles\n");
+      surfptr = new TriangulatedSurface10(vol,distance_from_surface);
+    }
+  else {
+      surfptr = new TriangulatedSurface();
+    }
+  TriangulatedSurface& surf = *surfptr;
   isogen.isosurface(distance_from_surface,surf);
+
+  surf.fix_orientation();
+  if (!option.retrieve("noclean")) {
+      double shortl = atof(option.retrieve("short")) * resolution;
+
+      FILE* fp = fopen("isotestse.off","w");
+      surf.print_geomview_format(fp);
+      fclose(fp);
+      
+      surf.remove_short_edges(shortl);
+
+      fp = fopen("isotestst.off","w");
+      surf.print_geomview_format(fp);
+      fclose(fp);
+
+      surf.remove_slender_triangles(shortl);
+    }
+  surf.fix_orientation();
 
   FILE* fp = fopen("isotest.off","w");
   //surf.print_vertices_and_triangles(fp);
@@ -86,8 +99,8 @@ main(int argc,char** argv)
   printf("surface is written\n");
 
   //surf.print();
-  printf("surf.area() = %f, surf.volume() = %f\n",
-         surf.area(),surf.volume());
+  printf("surf.area() = %f\n", surf.area());
+  printf("surf.volume() = %f\n", surf.volume());
 
   double area = 0.0;
   for (int i=0; i<surf.ntriangle(); i++) {
@@ -100,4 +113,7 @@ main(int argc,char** argv)
   double sa = 4.0 * M_PI * sr * sr;
   double sv = sa * sr / 3.0;
   printf("expected area = %f, expected volume = %f\n",sa,sv);
+
+  delete surfptr;
+  return 0;
 }

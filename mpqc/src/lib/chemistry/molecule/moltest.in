@@ -1,8 +1,6 @@
 % Emacs should use -*- keyval -*- mode.
 
 atominfo<AtomInfo>: (
-    molinfodir = /net/munin/usr/people/cljanss/src/SC/lib/
-    molinfofiles = [ molinfo.ipv2 ]
   )
 
 energy<TaylorMolecularEnergy>: (
@@ -298,15 +296,42 @@ simp = $:generated_simp
 
 bmat_test = $:simp
 
-xrenderer<OOGLRender>: (
+renderer<OOGLRender>: (
     filename = "moltest.oogl"
   )
 
-xrenderedmolecule<RenderedMolecule>: (
+ball<RenderedBallMolecule>: (
     appearance<Appearance>: (
         level = 3
       )
     molecule = $..:molecule
     atominfo = $..:atominfo
-    model = ball
   )
+
+surf<RenderedMolecularSurface>: (
+    surface<TriangulatedImplicitSurface>: (
+        surface<TriangulatedSurface>: (
+            verbose = yes
+          )
+        vdw<VDWShape>: (
+            molecule = $:molecule
+            atominfo = $:atominfo
+          )
+        con2<ConnollyShape2>: (
+            molecule = $:molecule
+            probe_radius = 2.6456173
+            atominfo = $:atominfo
+          )
+        volume = $con2
+        resolution = 0.5
+        remove_short_edges = 1
+        remove_slender_triangles = 1
+        short_edge_factor = 0.4
+        slender_triangle_factor = 0.2
+        initialize = yes
+      )
+    molecule = $:molecule
+    atominfo = $:atominfo
+  )
+
+renderedmolecule = $:surf

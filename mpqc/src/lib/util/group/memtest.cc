@@ -49,16 +49,10 @@ extern "C" {
                           ENABLE; \
                          } while(0)
 
-void do_simple_tests(const RefMessageGrp&);
-void do_int_tests(const RefMessageGrp&);
-void do_double_tests(const RefMessageGrp&);
-void do_double2_tests(const RefMessageGrp&);
-
-#ifdef HAVE_HRECV
-#  define MemoryGrp_CTOR(msg) new IParagonMemoryGrp(msg)
-#else
-#  define MemoryGrp_CTOR(msg) MemoryGrp::create_memorygrp()
-#endif
+void do_simple_tests(const RefMessageGrp&,const RefMemoryGrp&);
+void do_int_tests(const RefMessageGrp&,const RefMemoryGrp&);
+void do_double_tests(const RefMessageGrp&,const RefMemoryGrp&);
+void do_double2_tests(const RefMessageGrp&,const RefMemoryGrp&);
 
 int
 main(int argc, char**argv)
@@ -86,34 +80,35 @@ main(int argc, char**argv)
 
   MessageGrp::set_default_messagegrp(msg);
 
-  do_simple_tests(msg);
+  RefMemoryGrp mem = MemoryGrp::initial_memorygrp(argc, argv);
 
-  do_double_tests(msg);
-  do_double2_tests(msg);
+  do_simple_tests(msg, mem);
 
-  do_int_tests(msg);
+  do_double_tests(msg, mem);
+  do_double2_tests(msg, mem);
+
+  do_int_tests(msg, mem);
 
   return 0;
 }
 
 void
-do_simple_tests(const RefMessageGrp&msg)
+do_simple_tests(const RefMessageGrp&msg,
+                const RefMemoryGrp&mem)
 {
-  RefMemoryGrp mem = MemoryGrp_CTOR(msg);
-
   mem->set_localsize(8);
 
   printf("Using memory group \"%s\".\n", mem->class_name());
 
   mem->sync();
-  mem = 0;
+  mem->set_localsize(0);
 }
 
 void
-do_int_tests(const RefMessageGrp&msg)
+do_int_tests(const RefMessageGrp&msg,
+             const RefMemoryGrp&mem)
 {
   const int intbufsize = 10;
-  RefMemoryGrp mem = MemoryGrp_CTOR(msg);
 
   mem->set_localsize(intbufsize*sizeof(int));
 
@@ -240,21 +235,18 @@ do_int_tests(const RefMessageGrp&msg)
   PRINTF(("==========================================================\n"));
   mem->sync();
 
-  //mem->deactivate();
-  mem = 0;
+  mem->set_localsize(0);
 }
 
 void
-do_double_tests(const RefMessageGrp&msg)
+do_double_tests(const RefMessageGrp&msg,
+                const RefMemoryGrp&mem)
 {
   PRINTF(("double tests entered\n"));
 
   int i,j;
 
-  RefMemoryGrp mem;
-
   const int doublebufsize = 4;
-  mem = MemoryGrp_CTOR(msg);
 
   mem->set_localsize(doublebufsize*sizeof(double));
 
@@ -335,20 +327,18 @@ do_double_tests(const RefMessageGrp&msg)
   PRINTF(("==========================================================\n"));
   mem->sync();
 
-  //mem->deactivate();
+  mem->set_localsize(0);
 }
 
 void
-do_double2_tests(const RefMessageGrp&msg)
+do_double2_tests(const RefMessageGrp&msg,
+                 const RefMemoryGrp&mem)
 {
   PRINTF(("double2 tests entered\n"));
 
   int i,j;
 
-  RefMemoryGrp mem;
-
   const int doublebufsize = 4;
-  mem = MemoryGrp_CTOR(msg);
   mem->set_localsize(doublebufsize*sizeof(double));
   printf("Using memory group \"%s\".\n", mem->class_name());
 
@@ -405,5 +395,5 @@ do_double2_tests(const RefMessageGrp&msg)
   PRINTF(("==========================================================\n"));
   mem->sync();
 
-  //mem->deactivate();
+  mem->set_localsize(0);
 }

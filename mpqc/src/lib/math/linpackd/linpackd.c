@@ -1,6 +1,8 @@
 
 /* Modified by c janssen to be a standalone C program. */
 
+#include <math/linpackd/linpackd.h>
+
 /* linpackd.f -- translated by f2c (version 19940305).
    You must link the resulting object file with the libraries:
 	-lf2c -lm   (in that order)

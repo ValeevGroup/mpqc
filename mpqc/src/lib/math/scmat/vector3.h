@@ -24,7 +24,7 @@ class SCVector3
     double dot(const SCVector3&) const;
     SCVector3 cross(const SCVector3&) const;
     void rotate(double theta,SCVector3 &v);
-    double norm();
+    double norm() const;
     double& elem(int xyz);
     const double& elem(int xyz) const;
     double& operator [] (int i);

@@ -35,7 +35,7 @@ SCVector3::SCVector3(const SCVector3&p)
 };
 
 INLINE double
-SCVector3::norm()
+SCVector3::norm() const
 {
   return sqrt(this->dot(*this));
 };

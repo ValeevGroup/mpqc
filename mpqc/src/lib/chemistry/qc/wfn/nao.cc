@@ -836,7 +836,7 @@ Wavefunction::nao()
       else index = i;
       cout << node0 << "    ne(" << am[index] << ") ";
     }
-  cout << endl;
+  cout << node0 << endl;
   for (i=0; i<natom; i++) {
       double e = 0.0;
       for (j=0; j<=maxam_on_atom[i]; j++) {

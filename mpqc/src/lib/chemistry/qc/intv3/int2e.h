@@ -121,8 +121,6 @@ class Int2eV3: public VRefCount {
     int osh1, osh2, osh3, osh4;
     /* Offset primitive numbers. */
     int opr1, opr2, opr3, opr4;
-    /* Boolean array which gives whether or not an array is computed. */
-    IntV3Arrayint3 inthave;
     /* Saved initialization parameters used to free data. */
     int saved_am12,saved_am34,saved_ncon;
     /* Stores the length of the inner loop for integral contraction. */
@@ -202,13 +200,9 @@ class Int2eV3: public VRefCount {
     void gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
                                  int am, double norm);
     void gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4);
-    double * buildprim(int am12, int am34, int m);
-    double * buildprim(int am12, int am34, int m,
-                       int&haveint, double *buffer);
-    void buildprim_1(double *I00, int am12, int am34, int m);
-    void buildprim_3(double *I00, int am12, int am34, int m);
-    void init_inthave(int am12, int am34);
-    int choose_center(int am12, int am34, int m);
+    void blockbuildprim(int minam1, int maxam12, int minam3, int maxam34);
+    void blockbuildprim_1(int am12min, int am12max, int am34, int m);
+    void blockbuildprim_3(int am34min, int am34max, int m);
 
     // globals from vrr.cc
   protected:
@@ -454,13 +448,6 @@ class Int2eV3: public VRefCount {
     GaussianBasisSet * pcs4() const { return int_cs4.pointer(); }
 };
 REF_dec(Int2eV3);
-
-inline double *
-Int2eV3::buildprim(int am12, int am34, int m)
-{
-  return buildprim(am12,am34,m,
-                   inthave(am12,am34,m), build.int_v_list(am12,am34,m));
-}
 
 #endif
 

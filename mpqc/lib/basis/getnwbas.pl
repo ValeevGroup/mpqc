@@ -65,7 +65,7 @@ $basisurl =~ s/\(/\%28/g;
 $basisurl =~ s/\)/\%29/g;
 $basisurl =~ s/,/\%2C/g;
 printf "Basis is %s\n", $basis;
-$data = sprintf "BasisSets=%s&Atoms=H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr&Optimize=on&ECP=on&Codes=NWCHEM&Email=%s", $basisurl, $email;
+$data = sprintf "BasisSets=%s&Atoms=H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr&Optimize=on&ECP=on&Codes=NWChem&Email=%s", $basisurl, $email;
 printf S "POST %s HTTP/1.0\n", $script;
 printf S "Content-length: %d\n", length($data);
 printf S "Content-type: application/x-www-form-urlencoded\n";

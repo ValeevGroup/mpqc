@@ -330,6 +330,12 @@ Wavefunction::nao()
   int nsh = b->nshell();
   int natom = molecule()->natom();
 
+# ifdef DEBUG
+  cout << "nb = " << nb << endl;
+  cout << "nsh = " << nsh << endl;
+  cout << "natom = " << natom << endl;
+# endif
+
   // Step 2a. Transform to solid harmonics.
   // -- for now program will abort if basis does not use only S.H.
   RefSCDimension aodim = P.dim();

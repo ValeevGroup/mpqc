@@ -51,6 +51,20 @@ throw ()
 }
 
 /**
+ * Method:  initialize_opaque[]
+ */
+void
+MPQC::IntegralEvaluator2_impl::initialize_opaque (
+  /*in*/ void* integral ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize_opaque)
+  //opaque_ = 1;
+  //integral_ = static_cast< Ref<Integral> > integral;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize_opaque)
+}
+
+/**
  * Method:  initialize_by_name[]
  */
 void
@@ -148,24 +162,25 @@ throw ()
     bs2_.assign_pointer( bs1_.pointer() );
   else 
     bs2_ = basis_cca_to_sc( bs2 );
-
-  std::cout << "  initializing " << package_ << " " << evaluator_label_
-            << " integral evaluator\n";
-  if ( package_ == "intv3" ) 
-    integral_ = new IntegralV3( bs1_, bs2_ );
+  
+  //if( !opaque_ ) {
+    std::cout << "  initializing " << package_ << " " << evaluator_label_
+              << " integral evaluator\n";
+    if ( package_ == "intv3" ) 
+      integral_ = new IntegralV3( bs1_, bs2_ );
 #ifdef HAVE_CINTS
-  else if ( package_ == "cints" )
-    integral_ = new IntegralCints( bs1_, bs2_ );
+    else if ( package_ == "cints" )
+      integral_ = new IntegralCints( bs1_, bs2_ );
 #endif
-  else {
-    std::cout << "\nbad integral package name" << std::endl;
-    abort();
-  }
+    else {
+      std::cout << "\nbad integral package name" << std::endl;
+      abort();
+    }
+  //}
   
   max_nshell2_ = bs1_->max_ncartesian_in_shell() * 
     bs2_->max_ncartesian_in_shell();
-  //sidl_buffer_ = sidl::array<double>::create1d(max_nshell2_);
-
+    //sidl_buffer_ = sidl::array<double>::create1d(max_nshell2_);
 
   int error = 0;
   if(evaluator_label_ == "overlap") 
@@ -257,7 +272,7 @@ throw ()
   }
   
   sc_buffer_ = eval_->buffer();
-  std::cout << "\nbuffer pointer transfered" << endl;
+  std::cerr << "\nbuffer pointer transfered" << endl;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize)
 }
@@ -271,6 +286,7 @@ throw ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.buffer)
+  std::cout << "buffer called (too early?)\n";
   return const_cast<double*>( sc_buffer_ );
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.buffer)
 }

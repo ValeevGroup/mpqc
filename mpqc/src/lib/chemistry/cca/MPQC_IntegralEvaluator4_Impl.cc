@@ -50,6 +50,20 @@ throw ()
 }
 
 /**
+ * Method:  initialize_opaque[]
+ */
+void
+MPQC::IntegralEvaluator4_impl::initialize_opaque (
+  /*in*/ void* integral ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize_opaque)
+  //opaque_ = 1;
+  //integral_ = static_cast< Ref<Integral> > integral;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize_opaque)
+}
+
+/**
  * Method:  initialize_by_name[]
  */
 void
@@ -140,12 +154,14 @@ throw ()
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize)
 
   evaluator_label_ = evaluator_label;
+  int deriv_level = max_deriv;
 
   bs1_ = basis_cca_to_sc( bs1 );
   bs2_ = basis_cca_to_sc( bs2 );
   bs3_ = basis_cca_to_sc( bs3 );
   bs4_ = basis_cca_to_sc( bs4 );
 
+  //if( !opaque_ ) {
   std::cout << "  initializing " << package_ << " " << evaluator_label_
             << " integral evaluator\n";
   if ( package_ == "intv3" ) 
@@ -158,6 +174,48 @@ throw ()
     std::cout << "\nbad integral package name" << std::endl;
     abort();
   }
+
+  int error = 0;
+
+  integral_->set_storage(200000000);
+
+  if(evaluator_label_ == "eri2")
+    switch( deriv_level ) {
+    case 0:
+      { eval_ = integral_->electron_repulsion(); break; }
+    case 1:
+      { deriv_eval_ = integral_->electron_repulsion_deriv(); break; }
+    case 2:
+      { deriv_eval_ = integral_->electron_repulsion_deriv(); break; }
+    default:
+      ++error;
+    }
+
+  if(evaluator_label_ == "grt")
+    switch( deriv_level ) {
+    case 0:
+        { eval_ = integral_->grt(); break; }
+    default:
+      ++error;
+    }
+
+  if( error ) {
+    std::cerr << "Error in MPQC::integralEvaluator4:\n"
+              << "  integral type is either unrecognized or not supported\n";
+    abort();
+  }
+
+  if( eval_.nonnull() )
+    int_type_ = two_body;
+  else if( deriv_eval_.nonnull() )
+    int_type_ = two_body_deriv;
+  else {
+    std::cerr << "Error in MPQC::IntegralEvaluator4:\n"
+              << "  bad integral evaluator pointer\n";
+    abort();
+  }
+
+  sc_buffer_ = eval_->buffer();
 
   max_nshell4_ = bs1_->max_ncartesian_in_shell();
   max_nshell4_ *= bs2_->max_ncartesian_in_shell();
@@ -177,7 +235,7 @@ throw ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.buffer)
-  // insert implementation here
+  return const_cast<double*>( sc_buffer_ );
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.buffer)
 }
 
@@ -195,6 +253,7 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
 
+/*
   //std::cout << "Evaluator4: computing shell quartet" << std::endl;
 
   // Do we have the proper evaluator?
@@ -204,6 +263,7 @@ throw ()
     eval_.clear();
     deriv_eval_.clear();
     deriv_level_ = deriv_level;
+
     int error = 0;
 
     integral_->set_storage(200000000);
@@ -243,10 +303,8 @@ throw ()
 		<< "  bad integral evaluator pointer\n";
       abort();
     }
-
-    sc_buffer_ = eval_->buffer();
-
   }
+*/
 
   if( int_type_ == two_body ) {
     //eval_->set_redundant(0);

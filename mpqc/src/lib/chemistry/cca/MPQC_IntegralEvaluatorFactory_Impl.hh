@@ -58,6 +58,7 @@
 
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory._includes)
+#include <chemistry/qc/basis/gaussbas.h>
 #include "cca.h"
 #include "dc/babel/babel-cca/server/ccaffeine_TypeMap.hh"
 #include "dc/babel/babel-cca/server/ccaffeine_ports_PortTranslator.hh"
@@ -92,6 +93,9 @@ namespace MPQC {
     StringParameter *package_param_;
     ConfigurableParameterPort* setup_parameters(
       ConfigurableParameterFactory *cpf);
+    //sc::Ref<sc::Integral> ob_integral_;
+    //sc::Ref<sc::Integral> tb_integral_;
+    bool opaque_;
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._implementation)
 
   private:
@@ -115,6 +119,32 @@ namespace MPQC {
     void _dtor();
 
   public:
+
+    /**
+     * user defined non-static method.
+     */
+    void*
+    get_one_body_buffer (
+      /*in*/ int32_t deriv,
+      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2
+    )
+    throw () 
+    ;
+
+    /**
+     * user defined non-static method.
+     */
+    void*
+    get_two_body_buffer (
+      /*in*/ int32_t deriv,
+      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4
+    )
+    throw () 
+    ;
 
 
     /**

@@ -119,6 +119,16 @@ namespace MPQC {
      * user defined non-static method.
      */
     void
+    initialize_opaque (
+      /*in*/ void* integral
+    )
+    throw () 
+    ;
+
+    /**
+     * user defined non-static method.
+     */
+    void
     initialize_by_name (
       /*in*/ ::Chemistry::Molecule molecule,
       /*in*/ const ::std::string& basis_name,

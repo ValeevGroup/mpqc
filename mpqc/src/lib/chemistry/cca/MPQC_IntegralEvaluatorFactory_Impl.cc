@@ -13,11 +13,18 @@
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory._includes)
 using namespace std;
+using namespace sc;
+using namespace Chemistry::QC;
 string get_Integral_keyval(string);
 #include <iostream>
+#include <chemistry/qc/intv3/intv3.h>
+#ifdef HAVE_CINTS
+  #include <chemistry/qc/cints/cints.h>
+#endif
 #include "MPQC_IntegralEvaluator2.hh"
 #include "MPQC_IntegralEvaluator3.hh"
 #include "MPQC_IntegralEvaluator4.hh"
+sc::Ref<sc::GaussianBasisSet> basis_cca_to_sc(GaussianBasis::Molecular&);
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._includes)
 
 // user defined constructor
@@ -37,6 +44,95 @@ void MPQC::IntegralEvaluatorFactory_impl::_dtor() {
 // user defined static methods: (none)
 
 // user defined non-static methods:
+/**
+ * Method:  get_one_body_buffer[]
+ */
+void*
+MPQC::IntegralEvaluatorFactory_impl::get_one_body_buffer (
+  /*in*/ int32_t deriv,
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2 ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_one_body_buffer)
+
+  // this only gets called if integral expects opaque buffer
+/*
+  opaque_ = 1;
+
+  sc::Ref<sc::GaussianBasisSet> sc_bs1  = basis_cca_to_sc( bs1 );
+  sc::Ref<sc::GaussianBasisSet> sc_bs2;
+  if( bs1.isSame(bs2) )
+    sc_bs2.assign_pointer( sc_bs1.pointer() );
+  else
+    sc_bs2 = basis_cca_to_sc( bs2 );
+
+  // for opaque, we need to hold a copy of the integral class so only
+  // one buffer gets allocated
+  string package( package_param_->getValueString() );
+  cout << "  initializing 1-e " << package << " class for opaque buffers\n";
+  if ( package == "intv3" )
+    ob_integral_ = new IntegralV3( sc_bs1, sc_bs2 );
+#ifdef HAVE_CINTS
+  else if ( package == "cints" )
+    ob_integral_ = new IntegralCints( sc_bs1, sc_bs2 );
+#endif
+  else {
+    cout << "\nbad integral package name" << endl;
+    abort();
+  }
+
+  return (void*) ob_integral_->buffer();
+*/
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_one_body_buffer)
+}
+
+/**
+ * Method:  get_two_body_buffer[]
+ */
+void*
+MPQC::IntegralEvaluatorFactory_impl::get_two_body_buffer (
+  /*in*/ int32_t deriv,
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4 ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_two_body_buffer)
+
+/*
+  // this only gets called if integral expects opaque buffer
+  opaque_ = 1;
+
+  Ref<GaussianBasisSet> sc_bs2;
+  sc_bs1 = basis_cca_to_sc( bs1 );
+  sc_bs2 = basis_cca_to_sc( bs2 );
+  sc_bs3 = basis_cca_to_sc( bs3 );
+  sc_bs4 = basis_cca_to_sc( bs4 );
+
+  // for opaque, we need to hold a copy of the integral class so only
+  // one buffer gets allocated
+  string package( package_param_->getValueString() );
+  std::cout << "  initializing 2-e " << package << " class for opaque buffers\n";
+  if ( package == "intv3" )
+    tb_integral_ = new IntegralV3( sc_bs1, sc_bs2, sc_bs3, sc_bs4 );
+#ifdef HAVE_CINTS
+  else if ( package_ == "cints" )
+    tb_integral_ = new IntegralCints( sc_bs1, sc_bs2, sc_bs3, sc_bs4 );
+#endif
+  else {
+    std::cout << "\nbad integral package name" << std::endl;
+    abort();
+  }
+
+  return (void*) integral_.buffer();
+*/
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_two_body_buffer)
+}
+
 /**
  * Starts up a component presence in the calling framework.
  * @param Svc the component instance's handle on the framework world.
@@ -212,6 +308,8 @@ throw ()
   string package( package_param_->getValueString() );
   eval.set_integral_package( package );
   //eval.initialize_by_name( molecule_, basis_name_, label, max_deriv);
+  //if( opaque_ )
+  //  eval.initialize_opaque( (void*) ob_integral_ );
   eval.initialize( bs1, bs2, label, max_deriv );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
@@ -257,6 +355,8 @@ throw ()
   string package = std::string( package_param_->getValueString() );
   eval.set_integral_package( package );
   //eval.initialize_by_name( molecule_, basis_name_, label, max_deriv );
+  //if( opaque_ ) 
+  //  eval.initialize_opaque( (void*) tb_integral_ );
   eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
@@ -296,3 +396,10 @@ MPQC::IntegralEvaluatorFactory_impl::setup_parameters(
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._misc)
 
+/**
+ * ================= BEGIN UNREFERENCED METHOD(S) ================
+ * The following code segment(s) belong to unreferenced method(s).
+ * This can result from a method rename/removal in the sidl file.
+ * Move or remove the code in order to compile cleanly.
+ */
+// ================== END UNREFERENCED METHOD(S) =================

@@ -46,6 +46,19 @@ throw ()
 }
 
 /**
+ * Method:  initialize_opaque[]
+ */
+void
+MPQC::IntegralEvaluator3_impl::initialize_opaque (
+  /*in*/ void* integral ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.initialize_opaque)
+  // insert implementation here
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.initialize_opaque)
+}
+
+/**
  * Method:  initialize_by_name[]
  */
 void

@@ -7,12 +7,7 @@
 
 #include <util/keyval/keyval.h>
 
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
-#include <chemistry/qc/scf/ossscf.h>
-#include <chemistry/qc/scf/tcscf.h>
-#include <chemistry/qc/scf/xscf.h>
-#include <chemistry/qc/scf/mcscf.h>
+#include <chemistry/qc/scf/fock.h>
 #include <chemistry/molecule/coor.h>
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
@@ -22,12 +17,7 @@
 
 // Force linkages:
 #ifndef __PIC__
-const ClassDesc &fl0  = CLSCF::class_desc_;
-const ClassDesc &fl0a = HSOSSCF::class_desc_;
-const ClassDesc &fl0b = OSSSCF::class_desc_;
-const ClassDesc &fl0c = TCSCF::class_desc_;
-const ClassDesc &fl0d = XSCF::class_desc_;
-const ClassDesc &fl0e = MCSCF::class_desc_;
+//const ClassDesc &fl0  = CLSCF::class_desc_;
 const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
 const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
 const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
@@ -78,6 +68,7 @@ main(int argc, char**argv)
 
   init_mp(input);
 
+#if 0
   struct stat sb;
   RefMolecularEnergy mole;
   RefOptimize opt;
@@ -112,6 +103,12 @@ main(int argc, char**argv)
 
     mole->print(o);
   }
+#else
+
+  RefKeyVal rpkv(new ParsedKeyVal(input));
+  RefOccupation occ = rpkv->describedclassvalue("occupation");
+  
+#endif
 
   return 0;
 }

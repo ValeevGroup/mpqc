@@ -1,4 +1,8 @@
 
+occupation<Occupation>: (
+  basis = $:gbasis
+)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % molecular energy
@@ -51,7 +55,7 @@ xopt<QNewtonOpt>: (
 % basis sets
 %
 
-gbasis<GaussianBasisSet>: (
+gbasis<SymmGaussianBasisSet>: (
   molecule = $:molecule
   %name = "6-31G*"
   name = "STO-3G"

@@ -8,11 +8,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
-SRCS = clscf.cc clgmat.cc clgrad.cc hsosscf.cc hsosgmat.cc hsosgrad.cc \
-       ossscf.cc ossgmat.cc ossgrad.cc tcscf.cc tcgmat.cc tcgrad.cc \
-       xscf.cc xgmat.cc xgrad.cc mcscf.cc mcgrad.cc mcgmat.cc
+SRCS = fock.cc
 
-CLASSES = CLSCF HSOSSCF OSSSCF TCSCF XSCF MCSCF
+CLASSES = Fock
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

@@ -133,7 +133,7 @@ AC_CHECK_PROG(CWEAVE,cweave,cweave)
 AC_CHECK_PROG(GENCLASS,genclass,genclass)
 AC_CHECK_PROG(SGEN,sgen,sgen,sgen)
 AC_CHECK_PROG(TMPL,tmpl,tmpl,tmpl)
-AC_CHECK_PROG(LISTLIBS,listlibs,listlibs,listlibs)
+AC_CHECK_PROG(LISTLIBS,listlibs,listlibs,$srcdir/bin/listlibs.sh)
 
 dnl --------- This is at the top since its likely to cause problems. ---------
 

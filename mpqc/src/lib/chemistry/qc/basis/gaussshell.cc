@@ -22,12 +22,13 @@ SavableState_REF_def(GaussianShell);
 void *
 GaussianShell::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
 int
-GaussianShell::max_am()
+GaussianShell::max_am() const
 {
   int r = 0;
   for (int i=0; i<ncon; i++) if (r<l[i]) r = l[i];
@@ -224,7 +225,7 @@ GaussianShell::keyval_init(KeyVal& keyval,int havepure,int pure)
   else return Unnormalized;
 }
 
-int GaussianShell::nfunction(int con)
+int GaussianShell::nfunction(int con) const
 {
   return puream[con]?
            (l[con]<<1+1):
@@ -267,7 +268,7 @@ void GaussianShell::convert_coef()
     }
 }
 
-double GaussianShell::coefficient_norm(int con,int prim)
+double GaussianShell::coefficient_norm(int con,int prim) const
 {
   double c = 0.25/exp[prim];
   double ss = pow(3.141592653589793/(exp[prim]+exp[prim]),1.5);
@@ -356,7 +357,7 @@ void GaussianShell::normalize_shell()
 
 }
 
-void GaussianShell::print(FILE* fp)
+void GaussianShell::print(FILE* fp) const
 {
   int i,j;
 

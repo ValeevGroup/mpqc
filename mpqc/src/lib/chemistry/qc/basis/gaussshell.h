@@ -93,27 +93,27 @@ class GaussianShell: virtual public SavableState
     GaussianShell(KeyVal&,int pure);
     ~GaussianShell();
     void save_data_state(StateOut&);
-    int nprimitive();
-    int ncontraction();
-    int nfunction();
-    int am(int con);
-    int max_am();
-    char amchar(int con);
-    int nfunction(int con);
-    int is_cartesian(int con);
-    int is_pure(int con);
+    int nprimitive() const;
+    int ncontraction() const;
+    int nfunction() const;
+    int am(int con) const;
+    int max_am() const;
+    char amchar(int con) const;
+    int nfunction(int con) const;
+    int is_cartesian(int con) const;
+    int is_pure(int con) const;
     // returns the con coef for unnormalized primitives
-    double coefficient_unnorm(int con,int prim);
+    double coefficient_unnorm(int con,int prim) const;
     // returns the con coef for normalized primitives
-    double coefficient_norm(int con,int prim);
-    double normalization(int con,int bfn);
-    double exponent(int iprim);
+    double coefficient_norm(int con,int prim) const;
+    double normalization(int con,int bfn) const;
+    double exponent(int iprim) const;
 
     // compute the value of this shell at offset r
     int values(cart_point& r, double* basis_values);
     int grad_values(cart_point& r, double* g_values, double* basis_values=0);
 
-    void print(FILE*fp=stdout);
+    void print(FILE*fp=stdout) const;
 };
 
 SavableState_REF_dec(GaussianShell);

@@ -80,7 +80,9 @@ dist(const double a[], const double b[])
 static inline double
 s2(double x)
 {
-  return (sqrt(1.0-x*x));
+  double tmp = 1.0 - x*x;
+  if (tmp < 0.0) tmp = 0.0;
+  return sqrt(tmp);
 }
 
 ///////////////////////////////////////////////////////////

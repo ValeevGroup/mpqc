@@ -687,7 +687,7 @@ dnl --------- Checks for libraries. ---------
 dnl -- libpthread should be linked in last
 if test "(" X$PARALLEL = Xyes -a X$THREADS != Xno ")" -o X$THREADS = Xyes; then
   dnl see if posix threads are automatically linked ...
-  AC_CHECK_HEADER(pthread,[
+  AC_CHECK_HEADER(pthread.h,[
     AC_CHECK_FUNC(pthread_create,HAVE_PTHREAD=yes,[
       dnl ... otherwise see if posix threads are in -lpthread ...
       AC_CHECK_LIB(pthread,pthread_create,HAVE_PTHREAD=yes,[

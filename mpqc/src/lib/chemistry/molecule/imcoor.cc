@@ -658,9 +658,12 @@ IntMolecularCoor::to_internal(RefSCVector&internal)
 int
 IntMolecularCoor::to_cartesian(RefSCVector&gradient,RefSCVector&internal)
 {
-  fprintf(stderr, "IntMolecularCoor::to_cartesian(RefSCVector&,RefSCVector&):"
-          " not available\n");
-  return -1;
+  RefSCMatrix bmat(dim_,gradient.dim());
+  variable_->bmat(molecule_,bmat);
+
+  gradient = bmat.t() * internal;
+  
+  return 0;
 }
 
 // converts the gradient in cartesian coordinates to internal coordinates
@@ -711,9 +714,18 @@ IntMolecularCoor::to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal)
 int
 IntMolecularCoor::to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart)
 {
-  fprintf(stderr, "IntMolecularCoor::"
-          "to_internal(RefSymmSCMatrix&,RefSymmSCMatrix&): not ready\n");
-  return -1;
+  // form bmat
+  RefSCMatrix bmat(dim_,cart.dim());
+  variable_->bmat(molecule_,bmat);
+  // and (B*B+)^-1
+  RefSymmSCMatrix bmbt(dim_);
+  bmbt.assign(0.0);
+  bmbt.accumulate_symmetric_product(bmat);
+  bmbt = bmbt.gi();
+
+  internal.assign(0.0);
+  internal.accumulate_transform(bmbt*bmat,cart);
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////

@@ -191,15 +191,13 @@ MolecularEnergy::x_to_molecule()
   else {
       _mc->to_cartesian(_x);
     }
-
 }
 
 void
 MolecularEnergy::molecule_to_x()
 {
-  RefSCVector cartesian(_moldim);
-
   if (_mc.null()) {
+      RefSCVector cartesian(_moldim);
       int c = 0;
       for (int i=0; i<_mol->natom(); i++) {
           cartesian(c) = _mol->operator[](i)[0]; c++;

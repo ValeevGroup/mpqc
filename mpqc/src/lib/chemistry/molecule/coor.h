@@ -163,13 +163,12 @@ class IntMolecularCoor: public MolecularCoor
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     void form_K_matrices(RefSCDimension& dredundant,
                          RefSCDimension& dfixed,
                          RefSCMatrix& K,
                          RefSCMatrix& Kfixed,
                          int*& is_totally_symmetric);
-  protected:
     RefSCDimension dim_; // corresponds to the number of variable coordinates
     RefSCDimension dnatom3_; // the number of atoms x 3
     RefSCDimension dvc_; // the number of variable + constant coordinates
@@ -224,6 +223,26 @@ class IntMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
     virtual void print(SCostream& =SCostream::cout);
     virtual void print_simples(SCostream& =SCostream::cout);
+    void guess_hessian(RefSymmSCMatrix&hessian);
+};
+
+/////////////////////////////////////////////////////////////////////////
+
+class RedundMolecularCoor: public IntMolecularCoor
+{
+#   define CLASSNAME RedundMolecularCoor
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+
+  public:
+    RedundMolecularCoor(RefMolecule&mol);
+    RedundMolecularCoor(const RefKeyVal&);
+    RedundMolecularCoor(StateIn&);
+    virtual ~RedundMolecularCoor();
+    void save_data_state(StateOut&);
+    void form_coordinates();
     void guess_hessian(RefSymmSCMatrix&hessian);
 };
 

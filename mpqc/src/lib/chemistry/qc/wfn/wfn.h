@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>
-#include <math/topology/point.h>
+#include <math/scmat/vector3.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/basis.h>
 
@@ -33,12 +33,13 @@ class Wavefunction: public MolecularEnergy
     void save_data_state(StateOut&);
 
     void print(SCostream& =SCostream::cout);
-    double density(cart_point&);
-    double density_gradient(cart_point&,double*);
-    double natural_orbital(cart_point& r, int iorb);
-    double natural_orbital_density(cart_point& r, int orb, double* orbval = 0);
-    double orbital(cart_point& r, int iorb, const RefSCMatrix& orbs);
-    double orbital_density(cart_point& r,
+    double density(const SCVector3&);
+    double density_gradient(const SCVector3&,double*);
+    double natural_orbital(const SCVector3& r, int iorb);
+    double natural_orbital_density(const SCVector3& r,
+                                   int orb, double* orbval = 0);
+    double orbital(const SCVector3& r, int iorb, const RefSCMatrix& orbs);
+    double orbital_density(const SCVector3& r,
                            int iorb,
                            const RefSCMatrix& orbs,
                            double* orbval = 0);

@@ -42,7 +42,7 @@ OneBodyWavefunction::save_data_state(StateOut&s)
   //abort();
 }
 
-double OneBodyWavefunction::density(cart_point&c)
+double OneBodyWavefunction::density(const SCVector3 &c)
 {
   return Wavefunction::density(c);
 }
@@ -81,14 +81,14 @@ OneBodyWavefunction::density()
 
 // Function for returning an orbital value at a point
 double
-OneBodyWavefunction::orbital(cart_point& r, int iorb)
+OneBodyWavefunction::orbital(const SCVector3& r, int iorb)
 {
   return Wavefunction::orbital(r,iorb,eigenvectors());
 }
 
 // Function for returning an orbital value at a point
 double
-OneBodyWavefunction::orbital_density(cart_point& r,
+OneBodyWavefunction::orbital_density(const SCVector3& r,
                                             int iorb,
                                             double* orbval)
 {

@@ -7,7 +7,7 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 // Function for returning electron charge density at a point
-double Wavefunction::density(cart_point&r)
+double Wavefunction::density(const SCVector3&r)
 {
   int nbasis = basis()->nbasis();
   if (!bs_values) bs_values=new double[nbasis];
@@ -40,7 +40,7 @@ double Wavefunction::density(cart_point&r)
 
 // Function for returning electron charge density at a point.
 // The grad at that point is also computed and put into double grad[3].
-double Wavefunction::density_gradient(cart_point&r,double*grad)
+double Wavefunction::density_gradient(const SCVector3&r,double*grad)
 {
   int nbasis = basis()->nbasis();
   if (!bs_values) bs_values=new double[nbasis];

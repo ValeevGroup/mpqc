@@ -9,13 +9,13 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 // Function for returning an orbital value at a point
-double Wavefunction::natural_orbital(cart_point& r, int iorb)
+double Wavefunction::natural_orbital(const SCVector3& r, int iorb)
 {
   return orbital(r,iorb,natural_orbitals());
 }
 
 // Function for returning an orbital value at a point
-double Wavefunction::natural_orbital_density(cart_point& r,
+double Wavefunction::natural_orbital_density(const SCVector3& r,
                                              int iorb,
                                              double* orbval)
 {
@@ -23,7 +23,7 @@ double Wavefunction::natural_orbital_density(cart_point& r,
 }
 
 // Function for returning an orbital value at a point
-double Wavefunction::orbital(cart_point& r,
+double Wavefunction::orbital(const SCVector3& r,
                              int iorb,
                              const RefSCMatrix& orbs)
 {
@@ -41,7 +41,7 @@ double Wavefunction::orbital(cart_point& r,
     return orb_value;
 }     
 
-double Wavefunction::orbital_density(cart_point& r,
+double Wavefunction::orbital_density(const SCVector3& r,
                                      int iorb,
                                      const RefSCMatrix& orbs,
                                      double* orbvalue)

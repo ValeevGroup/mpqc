@@ -27,17 +27,15 @@ ElectronDensity::compute()
 {
   SCVector3 r;
   get_x(r);
-  cart_point rc;
-  rc[0] = r[0]; rc[1] = r[1]; rc[2] = r[2];
   // do_gradient will automatically cause the value to be computed
   if (do_gradient()) {
       double v[3];
-      set_value(_wfn.density_gradient(rc,v));
+      set_value(_wfn.density_gradient(r,v));
       SCVector3 d(v);
       set_gradient(d);
     }
   else if (do_value()) {
-      set_value(_wfn.density(rc));
+      set_value(_wfn.density(r));
     }
   if (do_hessian()) {
       fprintf(stderr,"ElectronDensity::compute(): "

@@ -76,10 +76,7 @@ StringKeyVal::key_value(const char* key)
           RefKeyVal pkv = new PrefixKeyVal(tkw, this);
           const ClassDesc* cd = ClassDesc::name_to_class_desc(classn);
           if (!cd) {
-              fprintf(stderr,"StringKeyVal: couldn't find a class named \"%s\""
-                      " to create\n",
-                      classn);
-              abort();
+              ClassDesc::load_class(classn);
             }
           // the original error status must be saved
           KeyValError original_error = error();

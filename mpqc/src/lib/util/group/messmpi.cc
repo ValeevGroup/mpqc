@@ -129,6 +129,14 @@ MPIMessageGrp::init(int argc,char **argv)
       // This dot business is to work around problems with some MPI
       // implementations.
       int dot = open(".",O_RDONLY);
+      if (debug_) {
+          cout << indent
+               << "Calling MPI_Init with";
+          for (int i=0; i<argc; i++) {
+              cout << " " << argv[i];
+            }
+          cout << endl;
+        }
       MPI_Init(&argc, &argv);
 #ifdef HAVE_FCHDIR
       fchdir(dot);

@@ -268,14 +268,16 @@ main(int argc, char *argv[])
   RefMolecularEnergy mole;
   RefOptimize opt;
 
-  int statresult;
+  int statresult, statsize;
   if (restart) {
     if (grp->me() == 0) {
       statresult = stat(ckptfile,&sb);
+      statsize = (statresult==0) ? sb.st_size : 0;
     }
     grp->bcast(statresult);
+    grp->bcast(statsize);
   }
-  if (restart && statresult==0 && sb.st_size) {
+  if (restart && statresult==0 && statsize) {
     if (grp->me() == 0) {
       StateInBinXDR si(ckptfile);
       opt.restore_state(si);

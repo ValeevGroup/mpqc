@@ -84,8 +84,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 
   factory_type_ = keyval->stringvalue("evaluator_factory");
   if ( keyval->error() != KeyVal::OK ) {
-    ExEnv::err0() << indent << "evaluator factory is required" << endl;
-    abort();
+    factory_type_ = string("MPQC.IntegralEvaluatorFactory");
   }
 
   sc_molecule_ << keyval->describedclassvalue("molecule");

@@ -48,7 +48,7 @@ using namespace Chemistry::QC::GaussianBasis;
 
 namespace sc {
 
-/** IntegralCCA computes integrals between Gaussian basis functions. */
+/** IntegralCCA provides an MPQC client for CCA IntegralEvaluator components. */
 class IntegralCCA : public Integral {
   private:
     int maxl_;
@@ -72,13 +72,32 @@ class IntegralCCA : public Integral {
     IntegralEvaluatorFactory eval_factory_;
 
   public:
+
+    /** This constructor is used when the framework is not embedded. */
     IntegralCCA(IntegralEvaluatorFactory eval_factory, bool use_opaque,
                 const Ref<GaussianBasisSet> &b1=0,
                 const Ref<GaussianBasisSet> &b2=0,
                 const Ref<GaussianBasisSet> &b3=0,
                 const Ref<GaussianBasisSet> &b4=0);
+
     IntegralCCA(StateIn&);
+
+    /** The KeyVal constructor.
+        This constructor is used when the framework is embedded.
+        The following keywords are read:
+
+        <dl>
+        <dt><tt>evaluator_factory</tt><dd> This gives the symbol name of a 
+        CCA IntegralEvaluatorFactory component.  This symbol name should
+        also appear in the cca-load argument.  The default is
+        <tt>MPQC.IntegralEvaluatorFactory</tt>.
+
+        <dt><tt>molecule</tt><dd> This gives a molecule object, it is required.
+        </dl>
+    */
+
     IntegralCCA(const Ref<KeyVal>&);
+
     ~IntegralCCA();
 
     void save_data_state(StateOut&);

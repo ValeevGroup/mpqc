@@ -14,6 +14,15 @@
 #include <util/container/array.h>
 #include <util/container/set.h>
 
+template <class T, class C>
+class DescribedDataMember {
+  private:
+    T C::*member_;
+  public:
+    DescribedDataMember(T C::*member): member_(member) {}
+    //T &member(C *c) { return c->*member_; }
+};
+
 class ClassKeyClassDescPMap;
 class ClassKeySet;
 class DescribedClass;
@@ -116,13 +125,13 @@ class ClassDesc: public Identity {
     DescribedClass* create_described_class() const;
 
     // create an object using the default constructor
-    DescribedClass* create() const;
+    virtual DescribedClass* create() const;
 
     // create an object using the keyval constructor
-    DescribedClass* create(const RefKeyVal&) const;
+    virtual DescribedClass* create(const RefKeyVal&) const;
 
     // create an object using the statein constructor
-    DescribedClass* create(StateIn&) const;
+    virtual DescribedClass* create(StateIn&) const;
 
     static int load_class(const char* classname);
 };

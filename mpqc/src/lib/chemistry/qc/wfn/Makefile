@@ -56,6 +56,6 @@ wfntest.$(OBJSUF): wfntest.cc
 
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTPROGS:%=%.d)
 endif
 

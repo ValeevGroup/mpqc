@@ -138,7 +138,6 @@ OSSHF::ao_fock()
     signed char * pmax = init_pmax(pmat);
   
     LocalOSSContribution lclc(gmat, pmat, gmata, pmata, gmatb, pmatb);
-    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalOSSContribution>
       gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
     gb.run();

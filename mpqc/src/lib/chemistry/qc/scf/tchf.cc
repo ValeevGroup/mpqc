@@ -155,7 +155,6 @@ TCHF::ao_fock()
     
     LocalTCContribution lclc(gmata, pmata, gmatb, pmatb,
                              kmata, opmata, kmatb, opmatb);
-    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalTCContribution>
       gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
     gb.run();

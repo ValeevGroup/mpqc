@@ -86,6 +86,7 @@ SCF::SCF(StateIn& s) :
   accumddh_.restore_state(s);
 
   scf_grp_ = basis()->matrixkit()->messagegrp();
+  threadgrp_ = ThreadGrp::get_default_threadgrp();
 }
 
 SCF::SCF(const RefKeyVal& keyval) :
@@ -134,6 +135,7 @@ SCF::SCF(const RefKeyVal& keyval) :
   print_occ_evals_ = keyval->booleanvalue("print_occupied_evals");
   
   scf_grp_ = basis()->matrixkit()->messagegrp();
+  threadgrp_ = ThreadGrp::get_default_threadgrp();
   
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.

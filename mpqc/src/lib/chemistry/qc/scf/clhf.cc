@@ -100,8 +100,38 @@ CLHF::print(ostream&o) const
 //////////////////////////////////////////////////////////////////////////////
 
 void
+CLHF::init_vector()
+{
+  CLSCF::init_vector();
+  
+  int nthread = threadgrp_->nthread();
+  int int_store = integral()->storage_unused()/nthread;
+  
+  // initialize the two electron integral classes
+  tbis_ = new RefTwoBodyInt[nthread];
+  for (int i=0; i < nthread; i++) {
+    tbis_[i] = integral()->electron_repulsion();
+    tbis_[i]->set_integral_storage(int_store);
+  }
+
+}
+
+void
+CLHF::done_vector()
+{
+  CLSCF::done_vector();
+  
+  for (int i=0; i < threadgrp_->nthread(); i++) tbis_[i] = 0;
+  delete[] tbis_;
+  tbis_ = 0;
+}
+
+void
 CLHF::ao_fock()
 {
+  int i;
+  int nthread = threadgrp_->nthread();
+
   RefPetiteList pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
@@ -129,13 +159,69 @@ CLHF::ao_fock()
     signed char * pmax = init_pmax(pmat);
     tim_exit("init pmax");
   
-    LocalCLHFContribution lclc(gmat, pmat);
-    RefPetiteList pl = integral()->petite_list();
-    LocalGBuild<LocalCLHFContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
-    gb.run();
+    tim_enter("ao_gmat");
+    LocalGBuild<LocalCLHFContribution> **gblds =
+      new LocalGBuild<LocalCLHFContribution>*[nthread];
+    LocalCLHFContribution **conts = new LocalCLHFContribution*[nthread];
+    
+    double **gmats = new double*[nthread];
+    gmats[0] = gmat;
+    
+    RefGaussianBasisSet bs = basis();
+    int ntri = i_offset(bs->nbasis());
 
+    for (i=0; i < nthread; i++) {
+      if (i) {
+        gmats[i] = new double[ntri];
+        memset(gmats[i], 0, sizeof(double)*ntri);
+      }
+      conts[i] = new LocalCLHFContribution(gmats[i], pmat);
+      gblds[i] = new LocalGBuild<LocalCLHFContribution>(*conts[i], tbis_[i],
+        pl, bs, scf_grp_, pmax, desired_value_accuracy()/100.0, nthread, i
+        );
+
+      threadgrp_->add_thread(i, gblds[i]);
+    }
+
+    tim_enter("start thread");
+    if (threadgrp_->start_threads() < 0) {
+      cerr << node0 << indent
+           << "CLHF: error starting threads" << endl;
+      abort();
+    }
+    tim_exit("start thread");
+
+    tim_enter("stop thread");
+    if (threadgrp_->wait_threads() < 0) {
+      cerr << node0 << indent
+           << "CLHF: error waiting for threads" << endl;
+      abort();
+    }
+    tim_exit("stop thread");
+      
+    double tnint=0;
+    for (i=0; i < nthread; i++) {
+      tnint += gblds[i]->tnint;
+
+      if (i) {
+        for (int j=0; j < ntri; j++)
+          gmat[j] += gmats[i][j];
+        delete[] gmats[i];
+      }
+
+      delete gblds[i];
+      delete conts[i];
+    }
+
+    delete[] gmats;
+    delete[] gblds;
+    delete[] conts;
     delete[] pmax;
+      
+    scf_grp_->sum(&tnint, 1, 0, 0);
+    cout << node0 << indent << scprintf("%20.0f integrals\n", tnint);
+
+    tim_exit("ao_gmat");
 
     // if we're running on multiple processors, then sum the G matrix
     tim_enter("sum");
@@ -227,11 +313,28 @@ CLHF::two_body_energy(double &ec, double &ex)
 void
 CLHF::two_body_deriv(double * tbgrad)
 {
+  int i;
+  int na3 = molecule()->natom()*3;
+  int nthread = threadgrp_->nthread();
+
+  tim_enter("setup");
   RefSCElementMaxAbs m = new SCElementMaxAbs;
   cl_dens_.element_op(m);
   double pmax = m->result();
   m=0;
 
+  double **grads = new double*[nthread];
+  RefTwoBodyDerivInt *tbis = new RefTwoBodyDerivInt[nthread];
+  for (i=0; i < nthread; i++) { 
+    tbis[i] = integral()->electron_repulsion_deriv();
+    grads[i] = new double[na3];
+    memset(grads[i], 0, sizeof(double)*na3);
+  }
+  
+  RefPetiteList pl = integral()->petite_list();
+  
+  tim_change("contribution");
+  
   // now try to figure out the matrix specialization we're dealing with.
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert P to a local matrix
@@ -240,13 +343,52 @@ CLHF::two_body_deriv(double * tbgrad)
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
 
     LocalCLHFGradContribution l(pmat);
-    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
-    RefPetiteList pl = integral()->petite_list();
-    LocalTBGrad<LocalCLHFGradContribution>
-      tb(l, tbi, pl, basis(), scf_grp_, tbgrad,
-         pmax, desired_gradient_accuracy());
-    tb.run();
-    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
+    LocalTBGrad<LocalCLHFGradContribution> **tblds =
+      new LocalTBGrad<LocalCLHFGradContribution>*[nthread];
+
+    for (i=0; i < nthread; i++) {
+      tblds[i] = new LocalTBGrad<LocalCLHFGradContribution>(
+        l, tbis[i], pl, basis(), scf_grp_, grads[i], pmax,
+        desired_gradient_accuracy(), nthread, i);
+      threadgrp_->add_thread(i, tblds[i]);
+    }
+
+    tim_enter("start thread");
+    if (threadgrp_->start_threads() < 0) {
+      cerr << node0 << indent
+           << "CLSCF: error starting threads" << endl;
+      abort();
+    }
+    tim_exit("start thread");
+
+    tim_enter("stop thread");
+    if (threadgrp_->wait_threads() < 0) {
+      cerr << node0 << indent
+           << "CLSCF: error waiting for threads" << endl;
+      abort();
+    }
+    tim_exit("stop thread");
+
+    for (i=0; i < nthread; i++) {
+      if (i) {
+        for (int j=0; j < na3; j++)
+          grads[0][j] += grads[i][j];
+
+        delete[] grads[i];
+      }
+
+      delete tblds[i];
+    }
+
+    if (scf_grp_->n() > 1)
+      scf_grp_->sum(grads[0], na3);
+
+    for (i=0; i < na3; i++)
+      tbgrad[i] += grads[0][i];
+    
+    delete[] grads[0];
+    delete[] tblds;
+    delete[] grads;
   }
 
   // for now quit
@@ -255,6 +397,12 @@ CLHF::two_body_deriv(double * tbgrad)
          << "CLHF::two_body_deriv: can't do gradient yet\n";
     abort();
   }
+
+  for (i=0; i < nthread; i++)
+    tbis[i] = 0;
+  delete[] tbis;
+  
+  tim_exit("contribution");
 }
 
 /////////////////////////////////////////////////////////////////////////////

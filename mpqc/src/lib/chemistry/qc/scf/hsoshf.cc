@@ -182,7 +182,6 @@ HSOSHF::ao_fock()
     signed char * pmax = init_pmax(pmat);
   
     LocalHSOSContribution lclc(gmat, pmat, gmato, pmato);
-    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalHSOSContribution>
       gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
     gb.run();

@@ -222,7 +222,6 @@ UKS::ao_fock()
     signed char * pmax = init_pmax(pmat);
   
     LocalUKSContribution lclc(gmat, pmat, gmato, pmato, 0);
-    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalUKSContribution>
       gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
     gb.run();

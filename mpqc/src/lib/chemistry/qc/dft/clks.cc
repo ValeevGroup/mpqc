@@ -185,7 +185,6 @@ CLKS::ao_fock()
     tim_exit("init pmax");
   
     LocalCLKSContribution lclc(gmat, pmat, functional_->a0());
-    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalCLKSContribution>
       gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
     gb.run();

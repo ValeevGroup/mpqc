@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <util/group/thread.h>
+
 #include <math/optimize/scextrap.h>
 
 #include <chemistry/qc/basis/tbint.h>
@@ -66,6 +68,7 @@ class SCF: public OneBodyWavefunction {
     double level_shift_;
 
     RefMessageGrp scf_grp_;
+    RefThreadGrp threadgrp_;
     int local_;
 
     int debug_;

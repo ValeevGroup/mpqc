@@ -842,7 +842,15 @@ MBPT2::compute_cs_grad()
               iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
               bb = b+nocc;
               for (a=0; a<nvir_act; a++) {
-               *iajb_ptr++ /= evals[ii]+evals[j]-evals[a+nocc]-evals[bb];
+		// Zero out nonsymmetric integral, else divide by denominators
+	        if (( symorb_irrep_[ii] ^
+		      symorb_irrep_[j] ^
+		      symorb_irrep_[a+nocc] ^
+		      symorb_irrep_[bb]) ) {
+		  *iajb_ptr++ = 0.0;
+		}
+		else
+		  *iajb_ptr++ /= evals[ii]+evals[j]-evals[a+nocc]-evals[bb];
                 } // exit a loop
               }   // exit b loop
             }     // endif

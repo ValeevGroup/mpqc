@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
 #include <chemistry/qc/mbpt/distsh.h>
@@ -169,6 +170,9 @@ CSGradErep12Qtr::run()
     lock->unlock();
     }
 
+  // Use petite list for symmetry utilization
+  Ref<PetiteList> p4list = tbint->integral()->petite_list();
+
   DistShellPair shellpairs(msg,nthread,mythread,lock,basis);
   shellpairs.set_dynamic(dynamic_);
   shellpairs.set_debug(debug);
@@ -204,6 +208,12 @@ CSGradErep12Qtr::run()
       for (P=0; P<=Q; P++) {
         np = basis->shell(P).nfunction();
         p_offset = basis->shell_to_function(P);
+
+	// check if symmetry unique and compute degeneracy
+	int deg = p4list->in_p4(P,Q,R,S);
+	double symfac = (double) deg;
+	if (deg == 0)
+	  continue;
 
         if (tbint->log2_shell_bound(P,Q,R,S) < tol) {
           continue;  // skip ereps less than tol
@@ -248,6 +258,8 @@ CSGradErep12Qtr::run()
                   c_qi = &scf_vector[q][i_offset];
                   c_pi = &scf_vector[p][i_offset];
                   tmpval = *pqrs_ptr;
+		  // multiply each integral by its symmetry degeneracy factor
+		  tmpval *= symfac;
                   for (i=0; i<ni; i++) {
                     *iprs_ptr += *c_qi++*tmpval;
                     iprs_ptr += offset;

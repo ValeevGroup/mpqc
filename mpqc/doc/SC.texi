@@ -22,6 +22,9 @@ Copyright @copyright{} 1994 Sandia Corporation
 @c set up a classname input
 @defindex cl
 
+@c set up a macro index
+@defindex mc
+
 @node Top, , (dir), (dir)
 
 @ifinfo
@@ -30,6 +33,7 @@ This document describes the Scientific Computing Toolkit.
 
 @menu
 --- Utility Libraries ---
+* The Ref Library:: A library for maintaining reference counts to objects.
 * The Class Library:: A library for describing classes.
 * The State Library:: A library for saving and restoring the state of objects.
 * The KeyVal Library:: A library for making keyword/value associations.
@@ -44,23 +48,30 @@ This document describes the Scientific Computing Toolkit.
 --- Indices ---
 * Concept Index::          The concept index.
 * Class Index::            The index to class names.
+* Macro Index::            The index to macros definitions.
 
 @end menu
 
+@include ../src.lib/util/container/ref.texi
 @include ../src.lib/util/class/class.texi
 @include ../src.lib/util/state/state.texi
 @include ../src.lib/util/keyval/keyval.texi
 @include ../src.lib/math/scmat/scmat.texi
 
-@node    Concept Index,     , , Top
+@node    Concept Index, , , Top
 @unnumbered Concept Index
 
 @printindex cp
 
-@node    Class Index,     , , Top
+@node    Class Index, , , Top
 @unnumbered Class Index
 
 @printindex cl
+
+@node    Macro Index, , , Top
+@unnumbered Macro Index
+
+@printindex mc
 
 @contents
 @bye

@@ -171,7 +171,7 @@ ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
       else zz = 0.0;
       vv = (r1*cos_abc/r2-1.0)*uu-zz*r3*cos_bcd/r2;
       // use the chain rule to get the values for the scaled torsion
-      static int first = 1;
+      static int first = 0;
       if (first) {
           cout << node0 << indent
                << scprintf("uu = %12.8f colin = %12.8f sin_abc = %12.8f\n",

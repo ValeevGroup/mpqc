@@ -17,10 +17,6 @@ class Volume: public NLP2 {
   private:
     double _interp_acc;
   protected:
-    void set_value(double);
-    void set_gradient(RefSCVector&);
-    void set_hessian(RefSymmSCMatrix&);
-
     double& interpolation_accuracy();
 
     virtual void compute() = 0;

@@ -50,7 +50,7 @@ main(int argc,char** argv)
                  _ABORT_ON_ERROR,
                  0);
 #endif
-  Point3 center;
+  SCVector3 center;
   center[0] = center[1] = center[2] = 0.0;
   double radius = 1.0;
   RefVolume vol(new SphereShape(center,radius));

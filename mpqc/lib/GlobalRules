@@ -67,27 +67,29 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
 
 else
 
-.PHONY: tmplinst
-tmplinst::
 ifeq ($(TMPLINST),yes)
+
 SCLIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 SCLIBSOTHER := $(SCLIBS:$(TARGET_TO_MAKE).$(LIBSUF)=)
 SCLIBSEXIST := $(wildcard $(SCLIBSOTHER:%=$(TOPDIR)/lib/%))
-tmplinst:: $(LIBOBJ) $(SCLIBSEXIST)
-	@echo LISTLIBS = $(LISTLIBS) $(SRCDIR)/LIBS.h
-	@echo SCLIBS = $(SCLIBS)
-	@echo SCLIBSOTHER = $(SCLIBSOTHER)
-	@echo SCLIBSEXIST = $(SCLIBSEXIST)
+
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ) $(SCLIBSEXIST)
 	@echo "Doing template instantiations (expect errors)."
 	-$(LD) $(LDFLAGS) -o a.out.tmplinst $^ $(SYSLIBS) 2> /dev/null
 	/bin/rm -f a.out.tmplinst
 	@echo "Finished template instantiations (errors were expected)."
-endif
-
-$(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ) tmplinst
 	/bin/rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBOBJ)
 	$(RANLIB) $@
+
+else
+
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
+	/bin/rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBOBJ)
+	$(RANLIB) $@
+
+endif
 
 $(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
 	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)

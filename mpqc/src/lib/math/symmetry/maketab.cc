@@ -618,7 +618,7 @@ int CharacterTable::make_table()
           ir.rep[j] = ir.rep[j-1].operate(ir.rep[1]);
         
         // C2(x)
-        ir.rep[nt].c2_x();
+        ir.rep[nt].c2_y();
         
         SymRep sr(2);
         sr.rotation(ei*theta/2.0);
@@ -638,7 +638,7 @@ int CharacterTable::make_table()
       symop[i] = symop[i-1].operate(symop[1]);
 
     // C2(x)
-    symop[nt].c2_x();
+    symop[nt].c2_y();
     
     so.rotation(theta/2.0);
 
@@ -707,7 +707,7 @@ int CharacterTable::make_table()
           ir1.rep[j] = ir1.rep[j-1].operate(ir1.rep[1]);
         
         // C2(x)
-        ir1.rep[nt].c2_x();
+        ir1.rep[nt].c2_y();
         
         for (j=nt+1; j < 2*nt; j++)
           ir1.rep[j] = ir1.rep[j-1].sim_transform(ir1.rep[1]);
@@ -735,7 +735,7 @@ int CharacterTable::make_table()
         symop[i] = symop[i-1].operate(symop[1]);
 
       // C2(x)
-      symop[nt].c2_x();
+      symop[nt].c2_y();
 
       for (i=nt+1; i < 2*nt; i++)
         symop[i] = symop[i-1].sim_transform(symop[1]);
@@ -792,7 +792,7 @@ int CharacterTable::make_table()
           ir.rep[j] = ir.rep[j-1].operate(ir.rep[1]);
         
         // C2(x) + sigma_d
-        ir.rep[2*nt].c2_x();
+        ir.rep[2*nt].c2_y();
         
         for (j=2*nt+1; j < g; j++)
           ir.rep[j] = ir.rep[j-1].operate(ir.rep[1]);
@@ -809,7 +809,7 @@ int CharacterTable::make_table()
         symop[i] = symop[i-1].operate(symop[1]);
 
       // C2(x)
-      symop[2*nt].c2_x();
+      symop[2*nt].c2_y();
 
       for (i=2*nt+1; i < g; i++)
         symop[i] = symop[i-1].operate(symop[1]);
@@ -934,7 +934,7 @@ int CharacterTable::make_table()
         ir1.rep[j] = ir1.rep[j-1].operate(ir1.rep[1]);
         
       // n C2's
-      ir1.rep[nt].c2_x();
+      ir1.rep[nt].c2_y();
         
       SymRep sr(2);
       sr.rotation(ei*theta/2.0);
@@ -960,7 +960,7 @@ int CharacterTable::make_table()
       symop[i] = symop[i-1].operate(symop[1]);
     
     // n C2's
-    symop[nt].c2_x();
+    symop[nt].c2_y();
 
     so.rotation(theta/2.0);
     for (i=nt+1; i < 2*nt; i++)

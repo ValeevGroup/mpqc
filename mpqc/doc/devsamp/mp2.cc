@@ -1,4 +1,7 @@
 
+#include <stddef.h>
+#include <util/misc/autovec.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/scf/clhf.h>
 
@@ -27,8 +30,9 @@ static ClassDesc MP2_cd(typeid(MP2), "MP2", 1, "public Wavefunction",
 MP2::MP2(const Ref<KeyVal> &keyval):Wavefunction(keyval) {
   ref_mp2_wfn_ << keyval->describedclassvalue("reference");
   if(ref_mp2_wfn_.null()) {
-    ExEnv::out0() << "reference is null" << endl;
-    abort();
+      throw InputError("require a OneBodyWavefunction object",
+                       __FILE__, __LINE__, "reference", 0,
+                       class_desc());
   }
 }
 
@@ -48,8 +52,8 @@ void
 MP2::compute(void)
 {
   if(gradient_needed()) {
-    ExEnv::out0() << "No gradients yet" << endl;
-    abort();
+      throw FeatureNotImplemented("no gradients yet",
+                                  __FILE__, __LINE__, class_desc());
   }
 
   double extra_hf_acc = 10.;
@@ -78,8 +82,8 @@ MP2::nelectron(void) {
 
 RefSymmSCMatrix
 MP2::density(void) {
-  ExEnv::out0() << "No density yet" << endl;
-  abort();
+  throw FeatureNotImplemented("no density yet",
+                              __FILE__, __LINE__, class_desc());
   return 0;
 }
 
@@ -97,8 +101,8 @@ double
 MP2::compute_mp2_energy()
 {
   if(molecule()->point_group()->char_table().order() != 1) {
-    ExEnv::out0() << "C1 symmetry only" << endl;
-    abort();
+      throw FeatureNotImplemented("C1 symmetry only",
+                                  __FILE__, __LINE__, class_desc());
   }
 
   RefSCMatrix vec = ref_mp2_wfn_->eigenvectors();
@@ -108,10 +112,12 @@ MP2::compute_mp2_energy()
   int nocc = ref_mp2_wfn_->nelectron()/2;
   int nvir = nmo - nocc;
 
-  double *cvec = new double [vec.nrow() * vec.ncol()];
+  auto_vec<double> cvec_av(new double [vec.nrow() * vec.ncol()]);
+  double *cvec = cvec_av.get();
   vec->convert(cvec);
 
-  double *pqrs = new double [nao * nao * nao * nao];
+  auto_vec<double> pqrs_av(new double [nao * nao * nao * nao]);
+  double *pqrs = pqrs_av.get();
   for(int n = 0; n < nao*nao*nao*nao; n++) pqrs[n] = 0.0;
 
   Ref<TwoBodyInt> twoint = integral()->electron_repulsion();
@@ -163,7 +169,8 @@ MP2::compute_mp2_energy()
 
   twoint = 0;
 
-  double *ijkl = new double [nmo * nmo * nmo * nmo];
+  auto_vec<double> ijkl_av(new double [nmo * nmo * nmo * nmo]);
+  double *ijkl = ijkl_av.get();
 
   int idx = 0;
   for(int i = 0; i < nmo; i++) {
@@ -193,10 +200,11 @@ MP2::compute_mp2_energy()
     }
   }
 
-  delete [] pqrs;
-  delete [] cvec;
+  pqrs_av.release(); pqrs = 0;
+  cvec_av.release(); cvec = 0;
 
-  double *evals = new double [nmo];
+  auto_vec<double> evals_av(new double [nmo]);
+  double *evals = evals_av.get();
   ref_mp2_wfn_->eigenvalues()->convert(evals);
 
   double energy = 0.0;
@@ -216,8 +224,8 @@ MP2::compute_mp2_energy()
     }
   }
 
-  delete [] ijkl;
-  delete [] evals;
+  ijkl_av.release(); ijkl = 0;
+  evals_av.release(); evals = 0;
 
   return energy;
 }

@@ -269,8 +269,8 @@ if(me==0) printf(" %5d\n",R);
 
                       if (p==q) pqrs *= 0.5;
 
-                      double *rsqi = &T1[bf3*ns*nbasis*ni+bf4*nbasis*ni+q*ni];
-                      double *rspi = &T1[bf3*ns*nbasis*ni+bf4*nbasis*ni+p*ni];
+                      double *rsqi = &T1[((bf3*ns+bf4)*nbasis+q)*ni];
+                      double *rspi = &T1[((bf3*ns+bf4)*nbasis+p)*ni];
                       double *c_p = &scf_vector[p][firsti];
                       double *c_q = &scf_vector[q][firsti];
 
@@ -301,8 +301,8 @@ if(me==0) printf(" %5d\n",R);
 
             for (bf3=0; bf3 < nr ; bf3++) {
               for (bf4=0; bf4 <= ((R==S) ? bf3 : ns-1) ; bf4++) {
-                double *a2ars = &T2[a*nr*ns*ni+bf3*ns*ni+bf4*ni];
-                double *a1rsq = &T1[bf3*ns*nbasis*ni+bf4*nbasis*ni+q*ni];
+                double *a2ars = &T2[((a*nr+bf3)*ns+bf4)*ni];
+                double *a1rsq = &T1[((bf3*ns+bf4)*nbasis+q)*ni];
 
                 for (i=ni; i; i--) *a2ars++ += c_qa * *a1rsq++;
                 }

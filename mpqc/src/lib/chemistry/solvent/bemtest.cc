@@ -52,8 +52,6 @@ main()
   ConnollyShape2::print_counts();
   CS2Sphere::print_counts();
 
-  fflush(stdout);
-  fflush(stderr);
   return 0;
 }
 

@@ -50,7 +50,7 @@ extern "C" {
 
 //////////////////////////////////////////////////////////////////////////////
 
-static void read_geometry(centers_t&, const RefKeyVal&, FILE*);
+static void read_geometry(centers_t&, const RefKeyVal&, FILE*, const char *);
 static void mkcostvec(centers_t*, sym_struct_t*, dmt_cost_t*);
 
 ///////////////////////////////////////////////////////////////////////////
@@ -167,6 +167,18 @@ main(int argc, char *argv[])
   FILE *outfile = stdout;
   
   char *filename = (argv[1]) ? argv[1] : "mpqc.in";
+
+  int nfilebase = (int) (strrchr(filename, '.') - filename);
+
+  char *geomfile = new char[nfilebase + 6];
+  strncpy(geomfile, filename, nfilebase);
+  geomfile[nfilebase] = '\0';
+  strcat(geomfile, ".geom");
+
+  char *pdbfile = new char[nfilebase + 5];
+  strncpy(pdbfile, filename, nfilebase);
+  pdbfile[nfilebase] = '\0';
+  strcat(pdbfile, ".pdb");
 
  // initialize the picl routines
   RefMessageGrp grp = init_mp(filename, argc, argv);
@@ -391,9 +403,9 @@ main(int argc, char *argv[])
    // initialize the geometry optimization stuff
     if (opt_geom) {
       fprintf(outfile,"\n");
-      geom_code = Geom_init_mpqc(mol,keyval);
-    } else if (read_geom && stat("geom.dat",&stbuf)==0 && stbuf.st_size!=0) {
-      read_geometry(centers,keyval,outfile);
+      geom_code = Geom_init_mpqc(mol,keyval,geomfile);
+    } else if (read_geom && stat(geomfile,&stbuf)==0 && stbuf.st_size!=0) {
+      read_geometry(centers,keyval,outfile,geomfile);
     }
 
    // we may have changed the geometry in mol, so reform centers
@@ -401,7 +413,7 @@ main(int argc, char *argv[])
 
    // write pdb file if requested
     if (make_pdb)
-      Geom_write_pdb(keyval,mol,"initial geometry");
+      Geom_write_pdb(keyval,mol,pdbfile,"initial geometry");
 
   }
 
@@ -576,7 +588,7 @@ main(int argc, char *argv[])
             }
           }
           
-          geom_code = Geom_update_mpqc(energy, gradv, keyval);
+          geom_code = Geom_update_mpqc(energy, gradv, keyval, geomfile);
           reset_centers(centers,mol);
         }
       }
@@ -625,13 +637,13 @@ main(int argc, char *argv[])
   }
 
   if (opt_geom && mynode0()==0) {
-    Geom_done_mpqc(keyval, geometry_converged);
+    Geom_done_mpqc(keyval, geometry_converged, geomfile);
 
    // write pdb file if requested
     if (make_pdb && geometry_converged)
-      Geom_write_pdb(keyval,mol,"final geometry");
+      Geom_write_pdb(keyval,mol,pdbfile,"final geometry");
     else if (make_pdb)
-      Geom_write_pdb(keyval,mol,"converged geometry");
+      Geom_write_pdb(keyval,mol,pdbfile,"converged geometry");
   }
 
   if (do_grad) {
@@ -759,14 +771,17 @@ main(int argc, char *argv[])
 
   clean_and_exit(grp);
 
+  delete[] pdbfile;
+  delete[] geomfile;
   return 0;
 }
 
 static void
-read_geometry(centers_t& centers, const RefKeyVal& keyval, FILE *outfp)
+read_geometry(centers_t& centers, const RefKeyVal& keyval, FILE *outfp,
+              const char *geomfile)
 {
 #if 0  
-  StateInBinXDR si("geom.dat","r+");
+  StateInBinXDR si(geomfile,"r+");
 
   int iter;
   si.get(iter);

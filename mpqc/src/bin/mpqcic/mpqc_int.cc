@@ -169,7 +169,8 @@ get_input(const RefKeyVal& keyval)
 ////////////////////////////////////////////////////////////////////////////
 
 int
-Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
+Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval,
+               const char *geomfile)
 {
   int i;
 
@@ -188,7 +189,7 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
 
   struct stat buf;
 
-  if (stat("geom.dat",&buf) < 0 || buf.st_size==0) {
+  if (stat(geomfile,&buf) < 0 || buf.st_size==0) {
    // read coor and update from the input
     coor = keyval->describedclassvalue("coor");
     if (coor.null())
@@ -224,7 +225,7 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
     
    // save it all to disk
     if (checkpoint_geom) {
-        STATEOUT so("geom.dat","w+");
+        STATEOUT so(geomfile,"w+");
         so.put(iter);
         mol.save_state(so);
         coor.save_state(so);
@@ -237,7 +238,7 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
         hessian.save_state(so);
       }
   }  else {
-    STATEIN si("geom.dat","r+");
+    STATEIN si(geomfile,"r+");
 
     si.get(iter);
     mol.restore_state(si);
@@ -285,7 +286,8 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
 }
 
 void
-Geom_done_mpqc(const RefKeyVal& keyval, int converged)
+Geom_done_mpqc(const RefKeyVal& keyval, int converged,
+               const char *geomfile)
 {
   const char *msg;
 
@@ -316,7 +318,8 @@ Geom_dim_natom3()
 }
 
 int
-Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval)
+Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval,
+                 const char *geomfile)
 {
   int i,j,ij;
 
@@ -552,7 +555,7 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval)
   // checkpoint
   iter++;
   if (checkpoint_geom) {
-      STATEOUT so("geom.dat","w+");
+      STATEOUT so(geomfile,"w+");
       so.put(iter);
       mol.save_state(so);
       coor.save_state(so);
@@ -569,7 +572,8 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval)
 }
 
 void
-Geom_write_pdb(const RefKeyVal& keyval, RefMolecule& mol, char *title)
+Geom_write_pdb(const RefKeyVal& keyval, RefMolecule& mol,
+               const char *pdbfile, char *title)
 {
   double bohr = 0.52917706;
 
@@ -582,7 +586,7 @@ Geom_write_pdb(const RefKeyVal& keyval, RefMolecule& mol, char *title)
     pdbf = fopen(path,"a+");
     delete[] fn;
   }  else
-    pdbf = fopen("mpqc.pdb","a+");
+    pdbf = fopen(pdbfile,"a+");
 
   if (!pdbf) return;
 

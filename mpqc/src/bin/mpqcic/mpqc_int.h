@@ -42,12 +42,12 @@ extern "C" {
 
 RefSCDimension Geom_dim_natom3();
 
-int Geom_init_mpqc(RefMolecule&, const RefKeyVal&);
+int Geom_init_mpqc(RefMolecule&, const RefKeyVal&, const char *);
 
-int Geom_update_mpqc(double, RefSCVector&, const RefKeyVal&);
+int Geom_update_mpqc(double, RefSCVector&, const RefKeyVal&, const char *);
 
-void Geom_done_mpqc(const RefKeyVal&, int converged);
-void Geom_write_pdb(const RefKeyVal&, RefMolecule&, char * =0);
+void Geom_done_mpqc(const RefKeyVal&, int converged, const char *);
+void Geom_write_pdb(const RefKeyVal&, RefMolecule&, const char *, char * =0);
 
 int Scf_charges_from_esp(centers_t*,int,double_vector_t*,
                          double_vector_t*, expts_t*, double, int, FILE*,

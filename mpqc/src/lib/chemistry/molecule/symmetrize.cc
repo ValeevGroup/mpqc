@@ -41,12 +41,15 @@ main(int argc, char *argv[])
   char *keyword = argc>2?argv[2]:"molecule";
   RefMolecule mol = kv->describedclassvalue(keyword);
 
+  cout << "Original molecule:" << endl;
+  mol->print();
+  
   RefPointGroup highestpg = mol->highest_point_group(1.0e-4);
   cout << "Point Group is " << highestpg->symbol() << endl;
 
   mol->set_point_group(highestpg, 1.0e-3);
 
-  cout << "Molecule at com in highest point group:\n";
+  cout << "Molecule at center of mass in highest point group:" << endl;
   mol->print();
   
   //mol->transform_to_principal_axes(0);

@@ -41,6 +41,12 @@ LocalDiagSCMatrix::resize(int n)
   block = new SCMatrixDiagBlock(0,n);
 }
 
+double *
+LocalDiagSCMatrix::get_data()
+{
+  return block->data;
+}
+
 double
 LocalDiagSCMatrix::get_element(int i)
 {

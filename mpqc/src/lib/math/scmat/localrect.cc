@@ -70,6 +70,18 @@ LocalSCMatrix::resize(int nr, int nc)
   rows = init_rect_rows(block->data,nr,nc);
 }
 
+double *
+LocalSCMatrix::get_data()
+{
+  return block->data;
+}
+
+double **
+LocalSCMatrix::get_rows()
+{
+  return rows;
+}
+
 double
 LocalSCMatrix::get_element(int i,int j)
 {

@@ -63,6 +63,18 @@ LocalSymmSCMatrix::resize(int n)
   rows = init_symm_rows(block->data,n);
 }
 
+double *
+LocalSymmSCMatrix::get_data()
+{
+  return block->data;
+}
+
+double **
+LocalSymmSCMatrix::get_rows()
+{
+  return rows;
+}
+
 double
 LocalSymmSCMatrix::get_element(int i,int j)
 {

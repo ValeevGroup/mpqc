@@ -41,6 +41,12 @@ LocalSCVector::~LocalSCVector()
 {
 }
 
+double *
+LocalSCVector::get_data()
+{
+  return block->data;
+}
+
 double
 LocalSCVector::get_element(int i)
 {

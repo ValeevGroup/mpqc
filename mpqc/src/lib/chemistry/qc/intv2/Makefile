@@ -71,7 +71,7 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-inttest: inttest.o \
+inttest: inttest.o libbasis.a \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS)
 

@@ -15,7 +15,8 @@ extern "C" {
 void *
 Volume::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { NLP2::_castdown(cd) };
+  void* casts[1];
+  casts[0] = NLP2::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

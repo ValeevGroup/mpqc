@@ -689,7 +689,7 @@ if (open(FILE, "> $docu_toc")) {
     print FILE <<EOT;
 $header
 <TITLE>$value{'title'} - Table of Contents</TITLE>
-Go to the <A HREF="$docu_top"> top.
+Go to the <A HREF="$docu_top"> top</A>.
 <H1>$value{'title'}</H1>
 <H2>$value{'subtitle'}</H2>
 <ADDRESS>$value{'author'}</ADDRESS>
@@ -707,7 +707,7 @@ if (open(FILE, "> $docu_top")) {
     print FILE <<EOT;
 $header
 <TITLE>$value{'title'} - Top of Document</TITLE>
-Go to the <A HREF="$docu_toc"> table of contents.
+Go to the <A HREF="$docu_toc"> table of contents</A>.
 <H1>$value{'title'}</H1>
 <H2>$value{'subtitle'}</H2>
 <ADDRESS>$value{'author'}</ADDRESS>

@@ -10,21 +10,21 @@
 #include <util/container/set.h>
 #include <util/state/state.h>
 
-class ResultBase;
+class ResultInfo;
 class StateIn;
 class StateOut;
 
-typedef ResultBase* ResultBaseP;
+typedef ResultInfo* ResultInfoP;
 
-ARRAY_dec(ResultBaseP);
-SET_dec(ResultBaseP);
+ARRAY_dec(ResultInfoP);
+SET_dec(ResultInfoP);
 
 class Compute
 {
-   friend class ResultBase;
+   friend class ResultInfo;
   private:
-    SetResultBaseP _results;
-    void add(ResultBase*);
+    SetResultInfoP _results;
+    void add(ResultInfo*);
 
     // Prohibit copy
     Compute(const Compute&) {};
@@ -47,7 +47,7 @@ class Compute
 // a particular datum associated with it, however simple Result's can
 // also be declared to keep track of datum's for which it is awkward
 // to use Result_dec.
-class ResultBase
+class ResultInfo
 {
   private:
     int _compute;
@@ -58,13 +58,13 @@ class ResultBase
     // Compute::compute() will be called.
     void update();
   protected:
-    ResultBase(StateIn&,Compute*);
-    ResultBase(const ResultBase&,Compute*);
+    ResultInfo(StateIn&,Compute*);
+    ResultInfo(const ResultInfo&,Compute*);
     virtual void save_data_state(StateOut&);
-    ResultBase& operator=(const ResultBase&);
+    ResultInfo& operator=(const ResultInfo&);
   public:
-    ResultBase(Compute*c);
-    virtual ~ResultBase();
+    ResultInfo(Compute*c);
+    virtual ~ResultInfo();
     int& compute() { return _compute; }
     int compute(int c) { int r = _compute; _compute = c; return r; }
     int& computed() { return _computed; }
@@ -74,19 +74,19 @@ class ResultBase
 // This is like result but the accuracy with which a result was computed
 // as well as the desired accuracy are stored.  A computed_ datum always
 // has an actual accuracy greater than or equal to the computed accuracy.
-class AccResultBase: public ResultBase
+class AccResultInfo: public ResultInfo
 {
   private:
     double _actual_accuracy;
     double _desired_accuracy;
   protected:
-    AccResultBase(StateIn&,Compute*);
-    AccResultBase(const AccResultBase&,Compute*);
+    AccResultInfo(StateIn&,Compute*);
+    AccResultInfo(const AccResultInfo&,Compute*);
     virtual void save_data_state(StateOut&);
-    AccResultBase& operator=(const AccResultBase&);
+    AccResultInfo& operator=(const AccResultInfo&);
   public:
-    AccResultBase(Compute*c);
-    ~AccResultBase();
+    AccResultInfo(Compute*c);
+    ~AccResultInfo();
     double actual_accuracy() const;
     double desired_accuracy() const;
     void set_desired_accuracy(double);

@@ -1,11 +1,11 @@
 
 template <class T>
-class Result: public ResultBase {
+class Result: public ResultInfo {
   private:
     T _result;
   public:
-    Result(Compute*c):ResultBase(c) {};
-    Result(const Result<T> &r, Compute*c):ResultBase(c)
+    Result(Compute*c):ResultInfo(c) {};
+    Result(const Result<T> &r, Compute*c):ResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
     operator T() { update(); return _result; };
@@ -21,12 +21,12 @@ class Result: public ResultBase {
 // Accuracy result with any type.  The result datum is not saved
 // or restored.
 template <class T>
-class AccResult: public AccResultBase {
+class AccResult: public AccResultInfo {
   private:
     T _result;
   public:
-    AccResult(Compute*c):AccResultBase(c) {};
-    AccResult(const AccResult<T> &r, Compute*c):AccResultBase(c)
+    AccResult(Compute*c):AccResultInfo(c) {};
+    AccResult(const AccResult<T> &r, Compute*c):AccResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
     operator T() { update(); return _result; };
@@ -36,22 +36,22 @@ class AccResult: public AccResultBase {
     const T& result_noupdate() const { return _result; };
     void operator=(const T& a) { _result = a; }
     void operator=(const AccResult<T> &r)
-       { AccResultBase::operator=(r); _result = r._result; };
+       { AccResultInfo::operator=(r); _result = r._result; };
     void save_data_state(StateOut&s)
     {
-      AccResultBase::save_data_state(s);
+      AccResultInfo::save_data_state(s);
     }
-    AccResult(StateIn&s,Compute*c): AccResultBase(s,c) {}
+    AccResult(StateIn&s,Compute*c): AccResultInfo(s,c) {}
 };
 
 // Accuracy Result with SavableState type
 template <class T>
-class SSAccResult: public AccResultBase {
+class SSAccResult: public AccResultInfo {
   private:
     T _result;
   public:
-    SSAccResult(Compute*c):AccResultBase(c) {};
-    SSAccResult(const SSAccResult<T> &r, Compute*c):AccResultBase(c)
+    SSAccResult(Compute*c):AccResultInfo(c) {};
+    SSAccResult(const SSAccResult<T> &r, Compute*c):AccResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
     operator T() { update(); return _result; };
@@ -61,23 +61,23 @@ class SSAccResult: public AccResultBase {
     const T& result_noupdate() const { return _result; };
     void operator=(const T& a) { _result = a; }
     void operator=(const SSAccResult<T> &r)
-       { AccResultBase::operator=(r); _result = r._result; };
+       { AccResultInfo::operator=(r); _result = r._result; };
     void save_data_state(StateOut&s)
     {
-      AccResultBase::save_data_state(s);
+      AccResultInfo::save_data_state(s);
       _result.save_data_state(s);
     }
-    SSAccResult(StateIn&s,Compute*c): AccResultBase(s,c), _result(s) {}
+    SSAccResult(StateIn&s,Compute*c): AccResultInfo(s,c), _result(s) {}
 };
 
 // Accuracy Result with non-class type
 template <class T>
-class NCAccResult: public AccResultBase {
+class NCAccResult: public AccResultInfo {
   private:
     T _result;
   public:
-    NCAccResult(Compute*c):AccResultBase(c) {};
-    NCAccResult(const NCAccResult<T> &r, Compute*c):AccResultBase(c)
+    NCAccResult(Compute*c):AccResultInfo(c) {};
+    NCAccResult(const NCAccResult<T> &r, Compute*c):AccResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
     operator T() { update(); return _result; };
@@ -87,11 +87,11 @@ class NCAccResult: public AccResultBase {
     const T& result_noupdate() const { return _result; };
     void operator=(const T& a) { _result = a; }
     void operator=(const NCAccResult<T> &r)
-       { AccResultBase::operator=(r); _result = r._result; };
+       { AccResultInfo::operator=(r); _result = r._result; };
     void save_data_state(StateOut&s)
     {
-      AccResultBase::save_data_state(s);
+      AccResultInfo::save_data_state(s);
       s.put(_result);
     }
-    NCAccResult(StateIn&s,Compute*c): AccResultBase(s,c) {s.get(_result);}
+    NCAccResult(StateIn&s,Compute*c): AccResultInfo(s,c) {s.get(_result);}
 };

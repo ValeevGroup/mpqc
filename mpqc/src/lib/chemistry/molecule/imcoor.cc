@@ -648,7 +648,7 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
     }
   if (Kall.nonnull()) {
       if (debug_) Kall.print("Kall");
-      K.assign_subblock(Kall, istart, istart+Kall.nrow()-1,
+      K.assign_subblock(Kall, 0, Kall.nrow()-1,
                         jstart, jstart+Kall.ncol()-1, 0, 0);
     }
   if (debug_) K.print("K");

@@ -146,6 +146,9 @@ class Molecule: public SavableState
     //. Compute the nuclear repulsion energy first derivative with respect
     //  to the given center. */
     void nuclear_repulsion_1der(int center, double xyz[3]);
+
+    //. Compute the electric field due to the nuclei at the given point.
+    void nuclear_efield(const double *position, double* efield);
     
     //. If the molecule contains only symmetry unique atoms, this function
     // will generate the other, redundant atoms.

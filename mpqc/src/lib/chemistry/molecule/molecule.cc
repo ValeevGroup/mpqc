@@ -514,6 +514,29 @@ Molecule::nuclear_repulsion_1der(int center, double xyz[3])
   }
 }
 
+void
+Molecule::nuclear_efield(const double *position, double *efield)
+{
+  int i,j;
+  double tmp;
+  double r[3];
+
+  for (i=0; i<3; i++) efield[i] = 0.0;
+
+  for (i=0; i<natoms; i++) {
+      AtomicCenter& a = get_atom(i);
+      tmp = 0.0;
+      for (j=0; j<3; j++) {
+          r[j] = position[j] - a[j];
+          tmp += r[j]*r[j];
+        }
+      tmp = double(a.element().number())/(tmp*sqrt(tmp));
+      for (j=0; j<3; j++) {
+          efield[j] +=  r[j] * tmp;
+        }
+    }
+}
+
 int
 Molecule::atom_at_position(double *v, double tol)
 {

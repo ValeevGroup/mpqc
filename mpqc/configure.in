@@ -1,4 +1,4 @@
-define([sc_version],[2.0.beta.6])
+define([sc_version],[2.0.0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in

@@ -36,9 +36,12 @@ class MolInfo: public DescribedClass {
 #   define CLASSNAME MolInfo
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
+  private:
+    void initialize_molinfo();
   protected:
     RefKeyVal keyval;
   public:
+    MolInfo();
     MolInfo(const RefKeyVal&);
     virtual ~MolInfo();
     double doublevalue(const char * sym, const char * property);
@@ -65,7 +68,9 @@ class AtomInfo: public MolInfo {
     double radius_to_bohr_;
 
     void preload_values();
+    void initialize_atominfo();
   public:
+    AtomInfo();
     AtomInfo(const RefKeyVal&);
     ~AtomInfo();
     double doublevalue(const ChemicalElement& atom,

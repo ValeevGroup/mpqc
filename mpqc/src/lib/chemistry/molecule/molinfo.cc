@@ -46,14 +46,27 @@ MolInfo::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+MolInfo::MolInfo()
+{
+  initialize_molinfo();
+}
+
 MolInfo::MolInfo(const RefKeyVal& pkeyval)
 {
-  const char* libdir;
   if (pkeyval->exists("molinfofiles")) {
       RefKeyVal libkeyval = new ParsedKeyVal("molinfo",pkeyval);
       keyval = new AggregateKeyVal(pkeyval,libkeyval);
     }
-  else if (libdir = getenv("SCLIBDIR")) {
+  else {
+      initialize_molinfo();
+    }
+}
+
+void
+MolInfo::initialize_molinfo()
+{
+  const char* libdir;
+  if (libdir = getenv("SCLIBDIR")) {
       const char* molinfo = "/molinfo.ipv2";
       const char *eq = strchr(libdir,'=');
       if (eq) libdir = eq + 1;
@@ -121,8 +134,24 @@ AtomInfo::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+AtomInfo::AtomInfo()
+{
+  initialize_atominfo();
+}
+
 AtomInfo::AtomInfo(const RefKeyVal& pkeyval):
   MolInfo(pkeyval)
+{
+  initialize_atominfo();
+
+  // see if pkeyval has a radius scale factor that should override
+  // the one in the database
+  double tmp = pkeyval->doublevalue("radius_scale_factor");
+  if (pkeyval->error() == KeyVal::OK) radius_scale_factor_ = tmp;
+}
+
+void
+AtomInfo::initialize_atominfo()
 {
   keyval = new PrefixKeyVal(":molinfo:atoms", keyval);
   for (int i=0; i<ATOMINFO_MAXZ; i++) {
@@ -131,11 +160,6 @@ AtomInfo::AtomInfo(const RefKeyVal& pkeyval):
       radius_vals[i] = 0.0;
     }
   preload_values();
-
-  // see if pkeyval has a radius scale factor that should override
-  // the one in the database
-  double tmp = pkeyval->doublevalue("radius_scale_factor");
-  if (pkeyval->error() == KeyVal::OK) radius_scale_factor_ = tmp;
 }
 
 void

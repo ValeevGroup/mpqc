@@ -424,7 +424,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
           if (tam4 < 0) continue;
 
   /* Shift angular momentum from 1 to 2 and from 3 to 4. */
-  int_shiftgcam(i,j,k,l,tam1,tam2,tam3,tam4, eAB);
+  double *shiftbuffer = int_shiftgcam(i,j,k,l,tam1,tam2,tam3,tam4, eAB);
 
   /* Place the integrals in the integral buffer. */
   /* If permute_ is not set, then repack the integrals while copying. */
@@ -501,8 +501,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
                       + (pogc3 + INT_CARTINDEX(pam3,pi3,pj3)) * psize4
                       + (pogc4 + INT_CARTINDEX(pam4,pi4,pj4));
             int_buffer[newindex]
-              = int_con_ints_array[i][j][k][l]
-                 (tam1,tam2,tam3,tam4)[redundant_index];
+              = shiftbuffer[redundant_index];
             redundant_index++;
             END_FOR_CART
           END_FOR_CART
@@ -513,8 +512,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     int newindex;
     int size34 =  size3 * size4;
     int size234 = size2 * size34;
-    double* redund_ints =
-      int_con_ints_array[i][j][k][l](tam1,tam2,tam3,tam4);
+    double* redund_ints = shiftbuffer;
     redundant_index = 0;
     FOR_CART(i1,j1,k1,tam1)
       FOR_CART(i2,j2,k2,tam2)

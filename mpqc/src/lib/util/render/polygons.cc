@@ -40,7 +40,8 @@ RenderedPolygons::RenderedPolygons(const RefKeyVal& keyval):
     }
   initialize(nvertex, nface, coloring);
 
-  for (int i=0; i<nvertex; i++) {
+  int i;
+  for (i=0; i<nvertex; i++) {
       set_vertex(i,
                  keyval->doublevalue("vertices", i, 0),
                  keyval->doublevalue("vertices", i, 1),
@@ -98,7 +99,8 @@ RenderedPolygons::initialize(int nvertex, int nface,
   
   vertices_ = new double*[nvertex];
   double* tmp = vertices_[0] = new double[3*nvertex];
-  for (int i=1; i<nvertex; i++) {
+  int i;
+  for (i=1; i<nvertex; i++) {
       tmp += 3;
       vertices_[i] = tmp;
     }

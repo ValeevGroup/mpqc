@@ -527,7 +527,8 @@ Geom_write_pdb(const RefKeyVal& keyval, RefMolecule& mol, char *title)
   if (title)
     fprintf(pdbf,"REMARK   %s\n",title);
 
-  for (int i=0; i < mol->natom(); i++) {
+  int i;
+  for (i=0; i < mol->natom(); i++) {
     char symb[4];
     sprintf(symb,"%s1",(*mol)[i].element().symbol());
 

@@ -149,7 +149,8 @@ OOGLRender::polygons(const RefRenderedPolygons& poly)
       fprintf(fp_," = OFF\n");
     }
   fprintf(fp_, "%d %d 0\n", poly->nvertex(), poly->nface());
-  for (int i=0; i<poly->nvertex(); i++) {
+  int i;
+  for (i=0; i<poly->nvertex(); i++) {
       fprintf(fp_, " %10.4f %10.4f %10.4f",
               poly->vertex(i,0),
               poly->vertex(i,1),

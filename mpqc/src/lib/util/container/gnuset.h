@@ -68,26 +68,32 @@ class Set
     // is i a valid Pix  ?
     virtual int owns(Pix idx) {
         if (idx == 0) return 0;
-        for (Pix i = first(); i; next(i)) if (i == idx) return 1;
+        Pix i;
+        for (i = first(); i; next(i)) if (i == idx) return 1;
         return 0;
       }
 
     // Pix of item
     virtual Pix seek(T& item) {
-        for (Pix i = first(); i != 0 && !((*this)(i) == item); next(i));
+        Pix i;
+        for (i = first(); i != 0 && !((*this)(i) == item); next(i));
         return i;
       }
     // add all items in b
     void operator |= (Set<T>& b) {
-        if (&b != this)
-            for (Pix i = b.first(); i; b.next(i)) add(b(i));
+        if (&b != this) {
+            Pix i;
+            for (i = b.first(); i; b.next(i)) add(b(i));
+          }
       }
     // delete items also in b
     void operator -= (Set<T>& b) {
         if (&b == this)
             clear();
-        else
-            for (Pix i = b.first(); i; b.next(i)) del(b(i));
+        else {
+            Pix i;
+            for (i = b.first(); i; b.next(i)) del(b(i));
+          }
       }
     // delete items not in b
     void operator &= (Set<T>& b) {
@@ -124,7 +130,8 @@ class Set
     int operator <= (Set<T>& b) {
         if (length() > b.length()) return 0;
         if (length() == 0) return 1;
-        for (Pix i = first(); i; next(i))
+        Pix i;
+        for (i = first(); i; next(i))
             if (b.seek((*this)(i)) == 0) return 0;
         return 1;
       }

@@ -869,7 +869,8 @@ void AVLSetBase::operator -=(AVLSetBase& y)
 int AVLSetBase::owns(Pix i)
 {
   if (i == 0) return 0;
-  for (AVLNodeBase* t = leftmost(); t != 0; t = succ(t)) 
+  AVLNodeBase* t;
+  for (t = leftmost(); t != 0; t = succ(t)) 
     if (Pix(t) == i) return 1;
   return 0;
 }

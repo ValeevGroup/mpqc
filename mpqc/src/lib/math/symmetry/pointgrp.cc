@@ -169,7 +169,8 @@ void CharacterTable::print(FILE *fp, const char *off)
   char * myoff = new char[strlen(off)+3];
   sprintf(myoff,"%s  ",off);
 
-  for (int i=0; i < nirrep_; i++)
+  int i;
+  for (i=0; i < nirrep_; i++)
     gamma_[i].print(fp,myoff);
 
   for(i=0; i < g; i++) symop[i].print();
@@ -184,7 +185,8 @@ sim_transform(SymmetryOperation& so, const SymmetryOperation& frame)
   SymmetryOperation foo;
 
  // foo = ~E*R 
-  for (int i=0; i < 3; i++) {
+  int i;
+  for (i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
       double t=0;
       for (int k=0; k < 3; k++) t += frame(k,i)*so(k,j);
@@ -213,7 +215,8 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
     err_quit("CharacterTable::CharacterTable: null point group");
 
   symb = new char[strlen(cpg)+1];
-  for (int i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
+  int i;
+  for (i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
   symb[i] = '\0';
 
   if (parse_symbol() < 0)
@@ -236,7 +239,8 @@ CharacterTable::CharacterTable(const char *cpg)
     err_quit("CharacterTable::CharacterTable: null point group");
 
   symb = new char[strlen(cpg)+1];
-  for (int i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
+  int i;
+  for (i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
   symb[i] = '\0';
 
   if (parse_symbol() < 0)

@@ -48,7 +48,8 @@ class Set {
           array_length = nelement;
           element = new Type[nelement];
         }
-      for (int i=0; i<nelement; i++) element[i] = s.element[i];
+      int i;
+      for (i=0; i<nelement; i++) element[i] = s.element[i];
       return *this;
     }
     ~Set() { clear(); }
@@ -85,7 +86,8 @@ class Set {
       for (i=0; i<nelement; i++) {
           if (e == element[i]) {
               nelement--;
-              for (int j=i; j<nelement; j++) {
+              int j;
+              for (j=i; j<nelement; j++) {
                   element[j] = element[j+1];
                 }
               element[j] = 0;

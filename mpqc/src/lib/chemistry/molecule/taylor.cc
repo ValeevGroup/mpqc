@@ -101,7 +101,8 @@ static double
 factor(Arrayint&indices)
 {
   Arraysetint nonredundant;
-  for (int i=0; i<indices.length(); i++) {
+  int i;
+  for (i=0; i<indices.length(); i++) {
       nonredundant.add(indices[i]);
     }
   Arrayint n_occur;

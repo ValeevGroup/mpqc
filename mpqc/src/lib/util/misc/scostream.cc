@@ -53,7 +53,8 @@ SCfilebuf::do_system_write(const char* s, streamsize n)
   streamsize ret = filebuf::do_system_write(s, n);
 
   // find the last newline in s
-  for (int i=n-1; i>=0; i--) {
+  int i;
+  for (i=n-1; i>=0; i--) {
       if (s[i] == '\n') break;
     }
   if (i == -1) _column += n;

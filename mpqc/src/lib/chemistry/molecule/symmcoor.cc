@@ -136,7 +136,8 @@ SymmMolecularCoor::form_coordinates()
         }
       SumIntCoor* coordinate = new SumIntCoor(label);
 
-      for(int j=0; j < nredundant; j++) {
+      int j;
+      for(j=0; j < nredundant; j++) {
           if(pow(K(j,i),2.0) > simple_tolerance_) {
               RefIntCoor c = all_->coor(j);
               coordinate->add(c,K(j,i));

@@ -62,7 +62,8 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
   grad[0] = grad[1] = grad[2] = 0.0;
   for (int i=0; i<nbasis; i++) {
       double tmp = 0.0;
-      for (int j=0; j<nbasis; j++) {
+      int j;
+      for (j=0; j<nbasis; j++) {
           tmp += nos.get_element(j,i)*bs_values[j];
         }
       elec_density += nd.get_element(i)*tmp*tmp;

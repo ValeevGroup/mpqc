@@ -765,7 +765,8 @@ Uncapped5SphereExclusionShape::
   //B().print();
   //C().print();
 
-  for (int i=0; i<2; i++) {
+  int i;
+  for (i=0; i<2; i++) {
       SCVector3 AD = A() - D[i];
       SCVector3 BD = B() - D[i];
       SCVector3 CD = C() - D[i];

@@ -1,9 +1,7 @@
 
-extern "C" {
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-};
 
 #include <iostream.h>
 #include <util/keyval/keyval.h>

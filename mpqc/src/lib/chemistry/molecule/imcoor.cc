@@ -217,7 +217,8 @@ IntMolecularCoor::init()
 
   BitArray bonds(m.natom(),m.natom());
 
-  for(int i=0; i < m.natom(); i++) {
+  int i;
+  for(i=0; i < m.natom(); i++) {
       double at_rad_i = m[i].element().atomic_radius();
 
       for(int j=0; j < i; j++) {
@@ -282,7 +283,8 @@ IntMolecularCoor::init()
           for (i=0; i<variable_->n(); i++) {
               new_internal_coordinates(i) = variable_->coor(i)->value();
             }
-          for (int j=0; j<original_dfixed.n(); j++,i++) {
+          int j;
+          for (j=0; j<original_dfixed.n(); j++,i++) {
               new_internal_coordinates(i)
                   = istep * double(given_fixed_coords(j));
             }
@@ -650,7 +652,8 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
       // convert displacement to a displacement over all coordinates
       RefSCVector vc_displacement(dvc_);
       vc_displacement.assign(0.0);
-      for (int i=0; i<variable_->n(); i++) {
+      int i;
+      for (i=0; i<variable_->n(); i++) {
           vc_displacement(i) = displacement(i);
         }
 
@@ -680,7 +683,8 @@ IntMolecularCoor::all_to_internal(RefSCVector&internal)
   constant_->update_values(molecule_);
    
   int n = dim_.n();
-  for (int i=0; i<n; i++) {
+  int i;
+  for (i=0; i<n; i++) {
       internal(i) = variable_->coor(i)->value();
     }
   n = dvc_.n();

@@ -72,7 +72,8 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
   s.getstring(name_);
 
   nshell_ = 0;
-  for (int i=0; i<ncenter_; i++) {
+  int i;
+  for (i=0; i<ncenter_; i++) {
       nshell_ += center_to_nshell_(i);
     }
   
@@ -118,7 +119,8 @@ GaussianBasisSet::init(RefMolecule&molecule,
   nbasis_ = 0;
   int ishell = 0;
   ncenter_ = molecule->natom();
-  for (int iatom=0; iatom < ncenter_; iatom++) {
+  int iatom;
+  for (iatom=0; iatom < ncenter_; iatom++) {
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
       if (have_userkeyval) {

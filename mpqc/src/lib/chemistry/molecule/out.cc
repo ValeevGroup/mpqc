@@ -117,7 +117,8 @@ double OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     sthta2 /= bohr;
     sthta3 /= bohr;
 #endif
-    for(int j=0; j < 3; j++) {
+    int j;
+    for(j=0; j < 3; j++) {
       ww[j] = z1[j]*sthta2;
       zz[j] = z1[j]*sthta3;
     }

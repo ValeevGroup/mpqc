@@ -96,7 +96,8 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 {
   _shapes.clear();
   ArraysetRefSphereShape spheres;
-  for (int i=0; i<mol->natom(); i++) {
+  int i;
+  for (i=0; i<mol->natom(); i++) {
       SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
       RefSphereShape
@@ -622,7 +623,8 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres) const
     // the center of s0 and that s0 is not contained inside
     // one of the spheres
     int center_is_contained = 0;
-    for (int i=0; i<n_spheres; i++)
+    int i;
+    for (i=0; i<n_spheres; i++)
     {
         double d=s0.distance(s[i]);
         if (d+s0.radius() < s[i].radius()) {
@@ -802,7 +804,8 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres) const
     for (i=0; i<n_spheres; i++)
     {
         // For my own sanity, let's put s[i] at the origin 
-        for (int k=0; k<n_spheres; k++)
+        int k;
+        for (k=0; k<n_spheres; k++)
             if (k != i)
                 s[k].recenter(s[i].center());
         s0.recenter(s[i].center());

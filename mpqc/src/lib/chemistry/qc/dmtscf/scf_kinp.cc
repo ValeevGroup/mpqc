@@ -1,15 +1,11 @@
 
-extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 
-#include <tmpl.h>
-
 #include <math/array/math_lib.h>
 #include <util/misc/libmisc.h>
-}
 
 #include <util/group/picl.h>
 

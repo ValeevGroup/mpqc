@@ -504,7 +504,8 @@ mol_transform_to_principal_axes(RefMolecule& mol, int trans_frame)
   double *inert[3], *evecs[3];
   double evals[3];
 
-  for (int i=0; i < 3; i++) {
+  int i;
+  for (i=0; i < 3; i++) {
     inert[i] = new double[3];
     evecs[i] = new double[3];
     memset(inert[i],'\0',sizeof(double)*3);
@@ -604,7 +605,8 @@ mol_find_unique_atoms(const RefMolecule& inmol)
   Point np;
 
   int nu=1;
-  for (int i=1; i < mol->natom(); i++) {
+  int i;
+  for (i=1; i < mol->natom(); i++) {
     ac = mol->atom(i);
     int i_is_unique=1;
 

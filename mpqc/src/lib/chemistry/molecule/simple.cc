@@ -211,7 +211,8 @@ SimpleCo::print(RefMolecule mol, SCostream& os)
   os.setf(ios::right,ios::adjustfield);
   os          << preferred_value();
 
-  for (int i=0; i<natoms(); i++) {
+  int i;
+  for (i=0; i<natoms(); i++) {
       os.width(2);
       os << " " << atoms[i];
     }

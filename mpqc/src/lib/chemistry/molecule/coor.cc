@@ -290,7 +290,8 @@ SetIntCoor::fd_bmat(RefMolecule& mol,RefSCMatrix& fd_bmatrix)
       // the plus displacement
       m[i/3][i%3] += cart_disp;
       update_values(mol);
-      for (int j=0; j<nc; j++) {
+      int j;
+      for (j=0; j<nc; j++) {
           internal_p(j) = coor_[j]->value();
         }
       // the minus displacement

@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <string>
+
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/container/avlmap.h>

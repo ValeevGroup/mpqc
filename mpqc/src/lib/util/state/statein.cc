@@ -341,7 +341,7 @@ StateIn::get(std::string&s)
   char *cstr;
   int r = getstring(cstr);
   if (cstr) s = cstr;
-  else s.clear();
+  else s = "";
   delete[] cstr;
   return r;
 }

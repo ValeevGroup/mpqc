@@ -142,7 +142,7 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   grp = new ParagonMessageGrp;
   if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
   else return grp;
-#elif defined(HAVE_MPI)
+#elif defined(HAVE_MPI) && !defined(HAVE_P4)
   grp = new MPIMessageGrp;
   if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
   else return grp;

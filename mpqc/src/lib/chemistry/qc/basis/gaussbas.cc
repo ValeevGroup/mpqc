@@ -146,6 +146,7 @@ GaussianBasisSet::GaussianBasisSet(UnitType)
                       1, 0.0         // no charge
       );
   name_ = new_string("Unit");
+  label_ = new_string(name_);
   shell_ = new GaussianShell*[1];
 
   double *exp = new double[1];
@@ -177,6 +178,7 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
   int i,j;
   
   name_ = new_string(gbs.name_);
+  label_ = new_string(gbs.label_);
 
   center_to_nshell_.resize(ncenter_);
   for (i=0; i < ncenter_; i++) {
@@ -214,6 +216,7 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
 }
 
 GaussianBasisSet::GaussianBasisSet(const char* name,
+                                   const char* label,
                                    const Ref<Molecule>& molecule,
                                    const Ref<SCMatrixKit>& matrixkit,
                                    const RefSCDimension& basisdim,
@@ -230,6 +233,7 @@ GaussianBasisSet::GaussianBasisSet(const char* name,
   center_to_nshell_(center_to_nshell)
 {
   name_ = new_string(name);
+  label_ = new_string(label);
   
   init2();
 }
@@ -298,23 +302,34 @@ GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
 
   const char* A_name = name();
   const char* B_name = B->name();
-  std::string AplusB_name;
+  const char* AplusB_name = 0;
   if (!A_name && !B_name) {
-    AplusB_name += "[";
-    AplusB_name += A_name;
-    AplusB_name += "]+[";
-    AplusB_name += B_name;
-    AplusB_name += "]";
+    ostringstream oss;
+    oss << "[" << A_name << "]+[" << B_name << "]";
+    std::string tmpname = oss.str();
+    AplusB_name = strcpy(new char[tmpname.size()+1],tmpname.c_str());
+  }
+  const char* AplusB_label = 0;
+  if (AplusB_name) {
+    AplusB_label = AplusB_name;
   }
   else {
-    AplusB_name = "[Composite Basis Set]";
+    ostringstream oss;
+    const char* A_label = label();
+    const char* B_label = B->label();
+    oss << "[" << A_label << "]+[" << B_label << "]";
+    std::string tmpname = oss.str();
+    AplusB_label = strcpy(new char[tmpname.size()+1],tmpname.c_str());
   }
   Ref<GaussianBasisSet> AplusB
-      = new GaussianBasisSet(AplusB_name.c_str(), molecule,
+      = new GaussianBasisSet(AplusB_name, AplusB_label, molecule,
                              matrixkit, basisdim, ncenter,
                              nshell, shell, center_to_nshell);
 
   delete[] func_per_shell;
+  delete[] AplusB_name;
+  if (AplusB_name != AplusB_label)
+    delete[] AplusB_label;
 
   return AplusB;
 }
@@ -337,6 +352,7 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
 
   ncenter_ = center_to_nshell_.size();
   s.getstring(name_);
+  s.getstring(label_);
 
   nshell_ = 0;
   int i;
@@ -361,6 +377,7 @@ GaussianBasisSet::save_data_state(StateOut&s)
   SavableState::save_state(basisdim_.pointer(),s);
   
   s.putstring(name_);
+  s.putstring(label_);
   for (int i=0; i<nshell_; i++) {
       shell_[i]->save_object_state(s);
     }
@@ -402,6 +419,44 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
           abort();
         }
     }
+
+  // Construct label_
+  if (name_)
+    label_ = new_string(name_);
+  else {
+    if (have_custom) {
+      ostringstream oss;
+      Ref<AtomInfo> atominfo = molecule->atominfo();
+      // If element is given then construct label_ using element symbol and basis name
+      // combinations, e.g. "{ [Fe S1] [Ni S2] [C aug-cc-pVDZ] }"
+      if (nelement) {
+        oss << "{ ";
+        for(int e=0; e<nelement; e++) {
+          char* tmpelementname = keyval->pcharvalue("element", e);
+          int Z = atominfo->string_to_Z(tmpelementname);
+          std::string elemsymbol = atominfo->symbol(Z);
+          char* basisname = keyval->pcharvalue("basis", e);
+          oss << "[" << elemsymbol << " " << basisname << "] ";
+        }
+        oss << "}";
+      }
+      // If element is not given then construct label_ using basis names for each atom
+      // e.g. "[ aug-cc-pVDZ cc-pVDZ cc-pVDZ ]"
+      else {
+        int natom = molecule->natom();
+        oss << "[ ";
+        for(int a=0; a<natom; a++) {
+          char* basisname = keyval->pcharvalue("basis", a);
+          oss << basisname << " ";
+        }
+        oss << "]";
+      }
+      std::string label = oss.str();
+      label_ = new char[label.size() + 1];
+      strcpy(label_,label.c_str());
+    }
+  }
+
 
   // construct prefixes for each atom: :basis:<atom>:<basisname>:<shell#>
   // and read in the shell
@@ -1035,7 +1090,11 @@ GaussianBasisSet::print_brief(ostream& os) const
   if (name_) {
       os << indent
          << "name = \"" << name_ << "\"" << endl;
-    }
+  }
+  else {
+    os << indent
+       << "label = \"" << label_ << "\"" << endl;
+  }
   os << decindent;
 }
 

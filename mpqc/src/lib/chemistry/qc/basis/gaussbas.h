@@ -145,7 +145,10 @@ J. Chem. Phys. 121 (2004) 3463.
 class GaussianBasisSet: public SavableState
 {
   private:
+    // nonnull if keyword "name" was provided
     char* name_;
+    // same as name_ if name_!=0, else something else
+    char* label_;
     GaussianShell** shell_;
     std::vector<int> shell_to_function_;
     std::vector<int> function_to_shell_;
@@ -169,7 +172,7 @@ class GaussianBasisSet: public SavableState
     int nprim_;
     bool has_pure_;
 
-    GaussianBasisSet(const char* name, const Ref<Molecule>& molecule,
+    GaussianBasisSet(const char* name, const char* label, const Ref<Molecule>& molecule,
                      const Ref<SCMatrixKit>& matrixkit,
                      const RefSCDimension& basisdim,
                      const int ncenter, const int nshell,
@@ -392,8 +395,12 @@ class GaussianBasisSet: public SavableState
 
     void save_data_state(StateOut&);
 
-    /// Return the name of the basis set.
+    /// Return the name of the basis set (is nonnull only if keyword "name" was provided)
     const char* name() const { return name_; }
+    /** Return the label of the basis set. label() return the same string as name() if
+        keyword "name" was provided, otherwise it is a unique descriptive string which
+        can be arbitrarily long. */
+    const char* label() const { if (name()) { return name(); } else { return label_; } }
 
     /// Return the Molecule object.
     Ref<Molecule> molecule() const { return molecule_; }

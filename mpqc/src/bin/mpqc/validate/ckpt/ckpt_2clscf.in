@@ -1,0 +1,7 @@
+mpqc: (
+  savestate = no
+  restart = yes
+  restart_file = "ckpt_1clscf.wfn"
+  do_energy = yes
+  do_gradient = yes
+)

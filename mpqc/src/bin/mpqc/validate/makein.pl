@@ -117,6 +117,8 @@ sub process_file {
     init_var($test_vars, $parse, "fzv", 0);
     init_var($test_vars, $parse, "molecule", "molecule");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
+    my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
+    my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");
     my @molecule_followed = $parse->value_as_array("test_molecule_followed");
     my @molecule_fixed = $parse->value_as_array("test_molecule_fixed");
 
@@ -139,26 +141,36 @@ sub process_file {
         my $calc = $test_vars->{"calc"}->[$index->{"calc"}];
         my $symmetry = $test_vars->{"symmetry"}->[$index->{"symmetry"}];
         my $molecule = $test_vars->{"molecule"}->[$index->{"molecule"}];
+        my $fixed = $molecule_fixed[$index->{"fixed"}];
+        my $followed = $molecule_fixed[$index->{"followed"}];
         # if i got an array of molecule names then i expect
         # an array of point groups, one for each molecule
         if ($molecule ne "molecule") {
-            $symmetry = $molecule_symmetry[$index->{"molecule"}];
+            my $molindex = $index->{"molecule"};
+            $symmetry = $molecule_symmetry[$molindex];
             if ($symmetry eq "") {
                 printf "\n";
-                printf "index = %d\n", $index->{"molecule"};
+                printf "index = %d\n", $molindex;
                 printf "symmetry not set for a molecule array\n";
                 exit 1;
             }
-        }
-        # check for fixed coordinates
-        my $fixed = $molecule_fixed[$index->{"molecule"}];
-        if ($fixed eq "-") {
-            $fixed = "";
-        }
-        # check for followed coordinates
-        my $followed = $molecule_followed[$index->{"molecule"}];
-        if ($followed eq "-") {
-            $followed = "";
+            # check for frozen orbitals
+            if ($#molecule_fzc >= $molindex) {
+                $fzc = $molecule_fzc[$molindex];
+            }
+            if ($#molecule_fzv >= $molindex) {
+                $fzv = $molecule_fzv[$molindex];
+            }
+            # check for fixed coordinates
+            $fixed = $molecule_fixed[$molindex];
+            if ($fixed eq "-") {
+                $fixed = "";
+            }
+            # check for followed coordinates
+            $followed = $molecule_followed[$molindex];
+            if ($followed eq "-") {
+                $followed = "";
+            }
         }
 
         # the filename to use for the calc
@@ -311,6 +323,8 @@ sub tofilename {
     my $raw = shift;
     $raw =~ tr/A-Z/a-z/;
     $raw =~ s/-//g;
+    $raw =~ s/ //g;
     $raw =~ s/\*/s/g;
+    $raw =~ s/\+/p/g;
     $raw;
 }

@@ -23,14 +23,26 @@ sub check {
 
     my $result = new QCResult("$filein","$fileout");
     my $ok = "failed";
-    $ok = "ok" if ($result->ok());
+    if ($result->ok()) {
+        if ($result->inputok()) {
+            $ok = "ok";
+        }
+        else {
+            $ok = "(ok)";
+        }
+    }
+    else {
+        if (! $result->inputok()) {
+            $ok = "(failed)";
+        }
+    }
     $ok = "missing" if (! $result->exists());
     my $basename = $file;
     $basename =~ s=^.*/([^/]*)$=\1=;
-    $basename = "$basename:";
-    printf "%-28s %s", $basename, $ok;
 
     if ($comparefileout eq "") {
+        $basename = "$basename:";
+        printf "%-28s %s", $basename, $ok;
         if ($result->ok()) {
             printf " %14.8f", $result->energy();
         }
@@ -38,6 +50,16 @@ sub check {
     else {
         my $comparefile = "$comparefileout";
         $comparefile =~ s/\.out$//;
+        my $comparebasename = $comparefile;
+        $comparebasename =~ s=^.*/([^/]*)$=\1=;
+        if ($basename eq $comparebasename) {
+            $basename = "$basename:";
+            printf "%-28s %s", $basename, $ok;
+        }
+        else {
+            my $files = "$basename/$comparebasename:";
+            printf "%-35s %s", $files, $ok;
+        }
         if (-f "$comparefile.out") {
             my $comparefileout = "$comparefile.out";
             my $comparefilein = "$comparefile.qci";

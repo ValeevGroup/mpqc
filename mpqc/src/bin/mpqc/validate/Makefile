@@ -9,27 +9,38 @@ INSUF=in
 PROGRAM=mpqc
 RUN=run
 REF=ref
-
 MPQC=../../mpqc
+
+INPUTGENDEPS=$(SRCTOPDIR)/lib/perl/QCParse.pm \
+             $(SRCTOPDIR)/lib/perl/QCResult.pm \
+             $(SRCTOPDIR)/lib/perl/Molecule.pm \
+             $(SRCDIR)/makein.pl
 
 MAKEIN=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/makein.pl
 CHECKOUT=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/checkout.pl
 
+########################################################################
+
 H2OMASTER=h2o.qci
 H2OINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(H2OMASTER))
 H2OOUTPUTS = $(H2OINPUTS:%.$(INSUF)=%.out)
+
 H2OMP2MASTER=h2omp2.qci
 H2OMP2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(H2OMP2MASTER))
 H2OMP2OUTPUTS = $(H2OMP2INPUTS:%.$(INSUF)=%.out)
+
 H2OFRQMASTER=h2ofrq.qci
 H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(H2OFRQMASTER))
 H2OFRQOUTPUTS = $(H2OFRQINPUTS:%.$(INSUF)=%.out)
+
 BASIS1MASTER=basis1.qci
 BASIS1INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(BASIS1MASTER))
 BASIS1OUTPUTS = $(BASIS1INPUTS:%.$(INSUF)=%.out)
+
 BASIS2MASTER=basis2.qci
 BASIS2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(BASIS2MASTER))
 BASIS2OUTPUTS = $(BASIS2INPUTS:%.$(INSUF)=%.out)
+
 OPTMASTER=opt.qci
 OPTINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(OPTMASTER))
 OPTOUTPUTS = $(OPTINPUTS:%.$(INSUF)=%.out)
@@ -37,60 +48,236 @@ OPTTSMASTER=optts.qci
 OPTTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(OPTTSMASTER))
 OPTTSOUTPUTS = $(OPTTSINPUTS:%.$(INSUF)=%.out)
 
+SYMM1MASTER=symm1.qci
+SYMM1INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(SYMM1MASTER))
+SYMM1OUTPUTS = $(SYMM1INPUTS:%.$(INSUF)=%.out)
+
+SYMM2MASTER=symm2.qci
+SYMM2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(SYMM2MASTER))
+SYMM2OUTPUTS = $(SYMM2INPUTS:%.$(INSUF)=%.out)
+
+CKPTINPUTS = \
+ ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_2mp2.in \
+ ckpt_0efcopt.in    ckpt_1clscf.in     ckpt_1qnewtopt.in  ckpt_2qnewtopt.in \
+ ckpt_0hsosscf.in   ckpt_1efcopt.in    ckpt_2clscf.in     ckpt_efcopt.in \
+ ckpt_0mp2.in       ckpt_1hsosscf.in   ckpt_2efcopt.in    ckpt_qnewtopt.in \
+ ckpt_0zapt2.in     ckpt_1mp2.in       ckpt_2hsosscf.in
+CKPTINPUTS := $(CKPTINPUTS:%=run/%)
+CKPTOUTPUTS = $(CKPTINPUTS:%.$(INSUF)=%.out)
+
+MBPTINPUTS = \
+ mbpt_mp2mem.in     mbpt_opt12v1.in    mbpt_opt22v2.in    mbpt_zapt2v2lb.in \
+ mbpt_mp2v1.in      mbpt_opt12v2.in    mbpt_opt22v2lb.in \
+ mbpt_mp2v2.in      mbpt_opt12v2lb.in  mbpt_zapt2v1.in \
+ mbpt_mp2v2lb.in    mbpt_opt22v1.in    mbpt_zapt2v2.in
+MBPTINPUTS := $(MBPTINPUTS:%=run/%)
+MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
+
+##############################################################################
+
 ALLINPUTS = $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(BASIS1INPUTS) $(BASIS2INPUTS) \
-            $(OPTINPUTS) $(OPTTSINPUTS)
-ALLINPUTS = $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
-            $(BASIS1INPUTS) $(BASIS2INPUTS) \
-            $(OPTINPUTS) $(OPTTSINPUTS)
+            $(OPTINPUTS) $(OPTTSINPUTS) \
+            $(SYMM1INPUTS) $(SYMM2INPUTS) \
+            $(CKPTINPUTS) $(MBPTINPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
+##############################################################################
+
+.PHONY: default
 default::
 	@echo \'make inputs\' to make a run directory containing all inputs
 	@echo \'make checkrun\' to check outputs of the run directory
 	@echo \'make check\' to compare the outputs in run with those in ref
 	@echo \'make diff\' to use the diff program to compare outputs
 
-h2o $(H2OINPUTS): $(RUN) $(H2OMASTER)
+.PHONY: inputs
+inputs: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 ckpt mbpt
+
+.PHONY: h2o
+h2o: stamp-h2o
+
+.PHONY: h2omp2
+h2omp2: stamp-h2omp2
+
+.PHONY: h2ofrq
+h2ofrq: stamp-h2ofrq
+
+.PHONY: basis1
+basis1: stamp-basis1
+
+.PHONY: basis2
+basis2: stamp-basis2
+
+.PHONY: symm1
+symm1: stamp-symm1
+
+.PHONY: symm2
+symm2: stamp-symm2
+
+.PHONY: opt
+opt: stamp-opt
+
+.PHONY: optts
+optts: stamp-optts
+
+.PHONY: ckpt
+ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
+
+.PHONY: mbpt
+mbpt: $(MBPTINPUTS) $(MBPTINPUTS:%.in=%.qci)
+
+stamp-h2o: $(RUN) $(H2OMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OMASTER)
+	touch stamp-h2o
 
-h2omp2 $(H2OMP2INPUTS): $(RUN) $(H2OMP2MASTER)
+stamp-h2omp2: $(RUN) $(H2OMP2MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OMP2MASTER)
+	touch stamp-h2omp2
 
-h2ofrq $(H2OFRQINPUTS): $(RUN) $(H2OFRQMASTER)
+stamp-h2ofrq: $(RUN) $(H2OFRQMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OFRQMASTER)
+	touch stamp-h2ofrq
 
-basis1 $(BASIS1INPUTS): $(RUN) $(BASIS1MASTER)
+stamp-basis1: $(RUN) $(BASIS1MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(BASIS1MASTER)
+	touch stamp-basis1
 
-basis2 $(BASIS2INPUTS): $(RUN) $(BASIS2MASTER)
+stamp-basis2: $(RUN) $(BASIS2MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(BASIS2MASTER)
+	touch stamp-basis2
 
-opt $(OPTINPUTS): $(RUN) $(OPTMASTER)
+stamp-opt: $(RUN) $(OPTMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(OPTMASTER)
+	touch stamp-opt
 
-optts $(OPTTSINPUTS): $(RUN) $(OPTTSMASTER)
+stamp-optts: $(RUN) $(OPTTSMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(OPTTSMASTER)
+	touch stamp-optts
 
-$(RUN):
-	mkdir -p $(RUN)
+stamp-symm1: $(RUN) $(SYMM1MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(SYMM1MASTER)
+	touch stamp-symm1
 
-inputs: $(ALLINPUTS)
+stamp-symm2: $(RUN) $(SYMM2MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(SYMM2MASTER)
+	touch stamp-symm2
 
-checkrun:
+##############################################################################
+
+.PHONY: checkrun
+checkrun: checkckpt checkmbpt checksymm1 checksymm2
+	@echo Check for complete outputs in the run directory:
 	for file in $(ALLOUTPUTS); \
 	  do \
 	    ($(CHECKOUT) $${file} ); \
 	  done
 
+.PHONY: checkckpt
+checkckpt:
+	@echo Consistency checks on checkpoint tests:
+	@$(CHECKOUT) $(RUN)/ckpt_1hsosscf.out $(RUN)/ckpt_2hsosscf.out
+	@$(CHECKOUT) $(RUN)/ckpt_1clscf.out $(RUN)/ckpt_2clscf.out
+	@$(CHECKOUT) $(RUN)/ckpt_1mp2.out $(RUN)/ckpt_2mp2.out
+	@$(CHECKOUT) $(RUN)/ckpt_qnewtopt.out $(RUN)/ckpt_2qnewtopt.out
+	@$(CHECKOUT) $(RUN)/ckpt_efcopt.out $(RUN)/ckpt_2efcopt.out
+	@$(CHECKOUT) $(RUN)/ckpt_0zapt2.out $(RUN)/ckpt_1zapt2.out
+
+.PHONY: checkmbpt
+checkmbpt:
+	@echo Consistency checks on MBPT tests:
+	@$(CHECKOUT) $(RUN)/mbpt_zapt2{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_zapt2{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt12{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt12{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt22{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt22{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem}.out
+
+.PHONY: checksymm1
+checksymm1:
+	@echo Consistency checks on symmetry test series 1:
+	@for b in sto3g; \
+	do (\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}d2h}.out;\
+	); done
+
+.PHONY: checksymm2
+checksymm2:
+	@echo Consistency checks on symmetry test series 2:
+	@for b in ccpvdz ccpvtz ccpvqz; \
+	do (\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}d2h}.out;\
+	); done
+
+.PHONY: check
 check:
+	@echo Comparing outputs in run and ref directories:
 	for file in $(ALLOUTPUTS:$(RUN)/%=%); \
 	  do \
 	    ($(CHECKOUT) $(REF)/$${file} $(RUN)/$${file} ); \
 	  done
 
+.PHONY: diff
 diff:
 	-diff -ur $(REF) $(RUN)
 
+##############################################################################
+
+$(RUN):
+	mkdir -p $(RUN)
+
+$(RUN)/ckpt_%.in: ckpt/ckpt_%.in
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_%.qci: ckpt/ckpt_%.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/mbpt_%.in: mbpt/mbpt_%.in
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/mbpt_%.qci: mbpt/mbpt_%.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
 $(RUN)/%.out: $(RUN)/%.in
 	(cd $(RUN); $(MPQC) -f `basename $<` >& `basename $@`)
+
+##############################################################################
+
+.PHONY: clean
+clean:
+	/bin/rm stamp-*

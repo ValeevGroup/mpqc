@@ -25,6 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+// This is needed to make GNU extensions available, such as
+// feenableexcept and fedisableexcept.
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
@@ -144,7 +150,7 @@ clean_up(void)
 #include <signal.h>
 
 #ifdef HAVE_FENV_H
-#include <fenv.h>
+#  include <fenv.h>
 #endif
 
 int

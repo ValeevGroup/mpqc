@@ -157,8 +157,8 @@ TwoBodyMOIntsTransform_123Inds::run()
    -----------------------------------------------------*/
   double *ijsx_contrib;  // local contributions to integral_ijsx
   double *ijrx_contrib;  // local contributions to integral_ijrx
-  double *rsiq_ints[num_te_types];     // quarter-transformed integrals for each RS pair
-  double *rsix_ints[num_te_types];     // 2 quarter-transformed integrals for each RS pair
+  double **rsiq_ints = new double*[num_te_types];     // quarter-transformed integrals for each RS pair
+  double **rsix_ints = new double*[num_te_types];     // 2 quarter-transformed integrals for each RS pair
   for(int te_type=0;te_type<num_te_types;te_type++) {
     rsiq_ints[te_type] = new double[ni*nbasis2*nfuncmax3*nfuncmax4];
     rsix_ints[te_type] = new double[ni*rank2*nfuncmax3*nfuncmax4];
@@ -560,6 +560,8 @@ TwoBodyMOIntsTransform_123Inds::run()
     delete[] rsiq_ints[te_type];
     delete[] rsix_ints[te_type];
   }
+  delete[] rsiq_ints;
+  delete[] rsix_ints;
   mem->free_local_double(ijsx_contrib);
   if (bs3_eq_bs4)
     mem->free_local_double(ijrx_contrib);

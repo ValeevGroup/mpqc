@@ -148,7 +148,7 @@ TwoBodyMOIntsTransform_12Inds::run()
     Allocate buffers for partially transformed integrals
    -----------------------------------------------------*/
   double *ijrs_contrib;  // local contributions to integral_ijrs
-  double *rsiq_ints[num_te_types];     // quarter-transformed integrals for each RS pair
+  double **rsiq_ints = new double*[num_te_types];     // quarter-transformed integrals for each RS pair
   for(int te_type=0;te_type<num_te_types;te_type++) {
     rsiq_ints[te_type] = new double[ni*nbasis2*nfuncmax3*nfuncmax4];
   }
@@ -430,6 +430,7 @@ TwoBodyMOIntsTransform_12Inds::run()
   for(int te_type=0; te_type<num_te_types; te_type++) {
     delete[] rsiq_ints[te_type];
   }
+  delete[] rsiq_ints;
   mem->free_local_double(ijrs_contrib);
   delete[] vector1[0]; delete[] vector1;
   delete[] vector2[0]; delete[] vector2;

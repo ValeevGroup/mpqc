@@ -10,6 +10,10 @@ LD=$(CXX)
 CXXSRC = nlp.cc opt.cc update.cc qnewton.cc gdiis.cc
 CSRC = 
 
+CLASSES = Optimize QNewtonOpt GDIISOpt LineOpt \
+          NLP0 NLP1 NLP2 \
+          IHessianUpdate DFPUpdate BFGSUpdate
+
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
 INC = nlp.h opt.h gdiis.h
@@ -22,6 +26,7 @@ TARGET_TO_MAKE = optimize
 DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
+default:: dlinfo
 default:: $(TOPDIR)/lib/optimize.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/optimize.so
@@ -34,10 +39,13 @@ opttest: opttest.o optimize.a util/options/liboptions.a \
 opttest.o: opttest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
+kvopt: kvopt.o $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(LD) $(LDFLAGS) -o kvopt $^ $(SYSLIBS)
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-opttest.d $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+kvopt.d opttest.d $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) opttest.d
+include $(LIBOBJ:.o=.d) kvopt.d opttest.d
 endif
 

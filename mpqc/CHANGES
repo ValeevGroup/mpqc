@@ -1,0 +1,207 @@
+
+                           MPQC REVISION HISTORY
+
+Following is a brief summary of changes made in each release of MPQC.
+
+  * 2004-04-28: MPQC-2.2.2
+     o Can now compile with GCC 3.4.0.
+     o Switched from ieee_{set,get}_fp_control to fenv functions.
+     o More architecture types recognized, including pentium4.
+     o The getnwbas.pl and parsenwbas.pl work with recent versions
+       of the EMSL Basis Set Database.
+     o Libtool flags are now accessible with sc-config.
+     o Psi 3 compatibility classes have been updated.
+
+  * 2003-12-26: MPQC-2.2.1
+     o Fixed a problem where FORTRAN files caused builds of shared
+       libraries to fail.
+     o Duplicate identifiers for AMD64 shared library builds have been fixed.
+     o The SONAME of this release is 5:1:0. GCC 3.2 is the official C++ ABI.
+
+  * 2003-12-04: MPQC-2.2.0
+     o (ABS) MP2-R12 method added (Edward Valeev).
+     o ARMCIMemoryGrp added.
+     o Better threading parallelism.
+     o The SONAME of this release is 5:0:0. GCC 3.2 is the official C++ ABI.
+
+  * 2003-09-26: MPQC-2.1.5
+     o Fixes for shared library support (Michael Banck)
+     o Minor documentation updates.
+
+  * 2003-07-22: MPQC-2.1.4
+     o Fixes a problem that occurs when optimizing with GCC 3.3.
+     o Now works with more recent versions of bison, flex, and autoconf.
+     o Upgraded libtool to 1.5 (this requires recent versions of
+       automake/autoconf).
+     o Bug in the charge computation for Extended Huckel is fixed.
+     o sc-config --cppflags should always give the correct include path now.
+     o The SONAME of this release is 4:1:0. GCC 3.2 is the official C++ ABI.
+
+  * 2003-01-10: MPQC-2.1.3
+     o Fixes a problem that occurred with recent versions of bison. Note
+       however that a new problem has emerged in bison 1.875 which is not
+       fixed in this release.
+     o Applied changes to make RPM's easier to build.
+       + The installroot=path assignment can be given on the make command
+         line to specify a temporary install root.
+       + --with-sc-includedir=dir can be used to specify an installation
+         directory for the include files.
+
+  * 2002-10-14: MPQC-2.1.2
+     o Bumped SONAME to 4:0:0. GCC 3.2 is the official C++ ABI for
+       4:0:0. See the --with-build-id configuration documentation for more
+       info.
+     o Remove use of MPI-2 1-sided as this has proved inadequate.
+     o Minor documentation updates.
+
+  * 2002-04-21: MPQC-2.1.1
+     o Support recent versions of bison and flex.
+
+  * 2002-04-18: MPQC-2.1.0
+     o Everything is now in the "sc" namespace.
+     o Fixed a problem causing redundant output lines with gcc3.
+     o Added extended H?ckel theory guesses.
+     o Added configure options:
+       + --enable-always-use-mpi
+       + --with-default-parallel={mpi2,mtmpi}
+     o Begin conversion to use exceptions instead of abort.
+     o Improved MP2 gradient code performance.
+     o Greater than 2GB support for memory keywords.
+     o Symbolic notation for memory keyword supported. Examples: 2KB, 1MB,
+       1.3GB, 8KIB, 1MIB, 6GIB.
+     o Thread safety issues addressed in MessageGrp classes.
+     o Obsolete code removed.
+     o Fixed accuracy problem affecting mainly single point DFT gradients.
+
+  * 2002-03-01: MPQC-2.0.4
+     o Fixed a checkpoint/restart bug introduced in 2.0.2.
+
+  * 2002-02-17: MPQC-2.0.3
+     o Problems using newer versions of bison were fixed. Versions up to
+       1.33 should work.
+     o Avoid duplicate MemoryGrp constructor calls.
+
+  * 2002-01-24: MPQC-2.0.2
+     o Several configure problems were fixed.
+     o The keep_guess_wavefunction option was added. This is used to allow
+       the guess wavefunction to be reused for lower symmetry displacements
+       during a frequency calculation.
+     o Unrestricted wavefunctions will now correctly recompute occupations
+       when displaced into lower symmetry.
+     o A stack overflow for very large calculations was fixed.
+
+  * 2002-01-08: MPQC-2.0.1
+     o Incorporate some of Michael Banck's Debian porting work.
+     o Improve usability on parallel machines without pthreads.
+     o Minor portability enhancements.
+
+  * 2001-10-04: MPQC-2.0.0
+     o Add support for KAI KCC.
+     o Put template instantiations in libraries for Compaq C++.
+
+  * 2001-08-31: MPQC-2.0.beta.6 html build 2
+     o Inheritance and collaboration diagrams added to documentation.
+
+  * 2001-08-29: MPQC-2.0.beta.6
+     o Make sure MPI_Finalize gets called.
+     o Fixed scpr.
+     o Fixed parallel DFT printing.
+     o Added --enable-production configure option.
+     o Improved MP2 performance.
+
+  * 2001-07-10: MPQC-2.0.beta.5
+     o Added Gram-Schmidt orthogonalization of basis functions.
+     o Changed the following basis sets to use 5D instead of 6D:
+       6-311++G(2d,2p), 6-311++G(3df,3pd), 6-311++G**.
+     o Fixed bugs in MTMPIMemoryGrp exposed by MPI/Pro 1.6.3.
+     o Improved multi-threaded MP2 code.
+
+  * 2001-04-06: MPQC-2.0.beta.4
+     o Major API changes
+        + Use RTTI for dynamic casts
+        + Uses smart pointer templates instead of macros
+        + Requires ISO standard C++ compiler
+        + May require patched flex
+     o Clean up geometries when symmetry is specified
+
+  * 2001-03-08: MPQC-2.0.beta.3
+     o Object directory can be a subdirectory of the source directory.
+     o Documentation updates.
+     o --enable-stl fixed for standard C++ compilers.
+
+  * 2001-03-03: MPQC-2.0.beta.2
+     o New, simplified input format is supported in addition to the
+       objected-oriented input.
+     o Many improvements to the Density Functional Theory code. It is now
+       ready for production use.
+     o Documentation converted to doxygen.
+     o Supports ISO 14882 standard C++. MPQC now might not work with some
+       older compilers.
+     o Nonstandard symmetry frames now work.
+     o All HF and DFT objects can use multi-threading.
+
+  * 2001-02-25: MPQC-1.2.5
+     o "make install_devel" fixed for unified source and object dirs.
+     o Symmetry detection in presence of ghost atoms fixed.
+     o GCC 2.95.2 now can be used to compile MPQC. GCC 3.0 and above will
+       not work (this will be fixed in next major release).
+     o Nonstandard symmetry frames do not work. They are detected and will
+       cause an abort (this will be fixed in next major release).
+     o "make -j2" problems fixed.
+
+  * 2000-09-07: MPQC-1.2.4
+     o MTMPIMessageGrp will be linked into MPQC if threads and MPI are
+       available.
+
+  * 2000-01-31: MPQC-1.2.3
+     o install_devel will now install scconfig.h
+
+  * 1999-11-04: MPQC-1.2.2
+     o Turned off core dumps. These could cause problems on the IBM SP.
+
+  * 1999-10-24: MPQC-1.2.1
+     o Fix minor problem preventing a smooth compile on AIX.
+
+  * 1999-10-20: MPQC-1.2
+     o The 1.1 input files will not work with 1.2
+     o Ported to IRIX and IRIX64
+     o Documentation improvements
+     o "make interface" no longer needed
+
+  * 1999-08-19: MPQC-1.2alpha6
+     o Use DOC++ for all documentation
+     o Bug fixes and ports to glibc 2.1 and gcc 2.95
+     o Canonical orthogonalization option
+
+  * 1998-10-23: MPQC-1.2alpha5
+     o Multi-threaded CLHF and MP2 gradients
+     o Removed all use of libg++
+
+  * 1998-05-25: MPQC-1.2alpha4
+     o Save/restore and result accuracy bug fixes
+     o Reducing memory requirement for integrals
+     o configure improvements
+
+  * 1998-04-03: MPQC-1.2alpha3
+     o Faster integrals with arbitrary angular momentum
+     o Finite displacement Hessian can be used as guess Hessian
+     o Checkpoint override capability added
+
+  * 1997-10-30: MPQC-1.2alpha2
+     o Fix a bug affecting optimizations
+
+  * 1997-10-29: MPQC-1.2alpha1
+     o Checkpoint files have directory information that can be used to
+       selectively restore objects
+     o Class hierarchy changed under SCF
+     o The molecule class was cleaned up
+     o Many other bug fixes and enhancements
+
+  * 1997-6-11: MPQC-1.1.2
+     o Fixed SYSV IPC configuration problem on sgi-irix platforms.
+     o Fixed sample inputs in HTML user manual.
+
+  * 1997-5-23: MPQC-1.1.1
+     o GNU-CC specific construct removed.
+
+  * 1997-5-22: MPQC-1.1.0

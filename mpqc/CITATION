@@ -1,0 +1,29 @@
+                     CITING RESULTS PRODUCED WITH MPQC
+
+If you publish results using MPQC, please cite it using:
+
+An unmodified standard release:
+
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 2.2.2,
+Curtis L. Janssen, Ida B. Nielsen, Matt L. Leininger, Edward F. Valeev,
+Edward T. Seidl, Sandia National Laboratories, Livermore, CA, USA, 2004.
+
+A modified release:
+
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 2.2.2,
+Curtis L. Janssen, Ida B. Nielsen, Matt L. Leininger, Edward F. Valeev,
+Edward T. Seidl, Sandia National Laboratories, Livermore, CA, 2004.
+Modified by An Author, institution, location, year.
+
+The literature citation in bibtex format is:
+
+@InProceedings{Janssen95,
+  Author = "C. Janssen and E. Seidl and M. Colvin",
+  title = "Object-Oriented Implementation of Parallel Ab Initio Programs",
+  booktitle = "ACS Symposium Series, Parallel Computing in Computational Chemistry",
+  volume = 592,
+  year   = 1995
+}
+
+Also, please include the scientific citations for the methods and basis
+sets you use.

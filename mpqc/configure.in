@@ -1,6 +1,6 @@
 define([sc_mmm_version],[2.3.0])
 define([sc_buildid],[alpha])
-define([sc_so_version],[5:0:0])
+define([sc_so_version],[7:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -645,6 +645,36 @@ esac
 
 dnl -- special architecture options --
 
+case $target_cpu in
+     i786)
+        opt_target_cpu=pentium4
+     ;;
+     *)
+        opt_target_cpu=$target_cpu
+     ;;
+esac
+
+if test X$GXX == Xyes; then
+  AC_MSG_CHECKING([for C++ cpu tuning flag])
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  CXXFLAGS_SAV=$CXXFLAGS
+  CXXFLAGS="-mtune=$opt_target_cpu $CXXFLAGS_SAV"
+  AC_COMPILE_IFELSE([int main(){}],cxx_tuneflag="-mtune",cxx_tuneflag="-mcpu")
+  CXXFLAGS=$CXXFLAGS_SAV
+  AC_LANG_RESTORE
+  AC_MSG_RESULT($cxx_tuneflag)
+fi
+
+if test X$GCC == Xyes; then
+  AC_MSG_CHECKING([for C cpu tuning flag])
+  CFLAGS_SAV=$CFLAGS
+  CFLAGS="-mtune=$opt_target_cpu $CFLAGS_SAV"
+  AC_COMPILE_IFELSE([int main(){}],cc_tuneflag="-mtune",cc_tuneflag="-mcpu")
+  CFLAGS=$CFLAGS_SAV
+  AC_MSG_RESULT($cc_tuneflag)
+fi
+
 AC_MSG_CHECKING([for special architecture options])
 case $target in
   *-solaris2*)
@@ -671,18 +701,21 @@ case $target in
     AC_MSG_RESULT(teraflop cougar)
   ;;
 changequote(<<, >>)dnl
-  i[456]86-* | pentium | pentiumpro | k6 | athlon)
+  i[4567]86-* | pentium-* | pentium4-* | pentiumpro-* | k6-* | athlon-*)
 changequote([, ])dnl
+
     if test X$STRICT_ARCH = Xyes; then
-      cpu_arch_option="-march=$target_cpu"
+      cxx_cpu_arch_option="-march=$opt_target_cpu"
+      cc_cpu_arch_option="-march=$opt_target_cpu"
     else
-      cpu_arch_option="-mcpu=$target_cpu"
+      cxx_cpu_arch_option="$cxx_tuneflag=$opt_target_cpu"
+      cc_cpu_arch_option="$cc_tuneflag=$opt_target_cpu"
     fi
     if test X$GCC = Xyes; then
-      COPTIONS_OPT="$COPTIONS_OPT $cpu_arch_option"
+      COPTIONS_OPT="$COPTIONS_OPT $cc_cpu_arch_option"
     fi
     if test X$GXX = Xyes; then
-      CXXOPTIONS_OPT="$CXXOPTIONS_OPT $cpu_arch_option"
+      CXXOPTIONS_OPT="$CXXOPTIONS_OPT $cxx_cpu_arch_option"
     fi
     AC_MSG_RESULT(IA-32: $cpu_arch_option)
   ;;
@@ -1124,8 +1157,13 @@ dnl --------- Checks for library functions. ---------
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
-AC_CHECK_FUNCS(gethostname time ctime ieee_set_fp_control ieee_get_fp_control)
+AC_CHECK_FUNCS(gethostname time ctime)
 AC_CHECK_FUNCS(setrlimit setenv)
+
+dnl --------- Check for the glibc extensions to C99 fenv.h. ---------
+
+AC_CHECK_HEADERS(fenv.h)
+AC_CHECK_FUNCS(feenableexcept fedisableexcept)
 
 dnl --------- Checks for a C++ linkable fchdir. ---------
 AC_LANG_SAVE

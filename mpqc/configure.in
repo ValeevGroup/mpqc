@@ -333,6 +333,8 @@ AC_ARG_WITH(sc-datadir,
 [  --with-sc-datadir       Specifies arch-independent install subdir.],
 scdatadir=$withval
 )
+dnl scdatadir contains a quoted reference to prefix which must be resolved:
+eval scdatadir=$scdatadir
 AC_SUBST(scdatadir)
 
 AC_ARG_WITH(include,

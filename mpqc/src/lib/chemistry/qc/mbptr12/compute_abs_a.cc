@@ -650,7 +650,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     integral_ijsk = 0;
     mem->sync();
     ExEnv::out0() << indent
-		  << scprintf("Begin loop over shells (grt, 1.+2. q.t.)") << endl;
+		  << scprintf("Begin loop over shells (grt, 1.+2.+3. q.t.)") << endl;
 
     // Do the two electron integrals and the first three quarter transformations
     tim_enter("grt+1.qt+2.qt+3.qt");
@@ -846,6 +846,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     Compute MP2-R12/A intermediates
     and collect on node0
    --------------------------------*/
+  ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("mp2-r12a intermeds");
   int naa = (nocc_act*(nocc_act-1))/2;          // Number of alpha-alpha pairs
   int nab = nocc_act*nocc_act;                  // Number of alpha-beta pairs
@@ -886,9 +887,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     }
     else
       proc_with_ints[proc] = -1;
-  if (debug_)
-    ExEnv::out0() << indent << "Computing intermediates on " << nproc_with_ints
-		  << " processors" << endl;
+  ExEnv::out0() << indent << "Computing intermediates on " << nproc_with_ints
+		<< " processors" << endl;
   
   
   //////////////////////////////////////////////////////////////
@@ -1090,9 +1090,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   }
   delete[] proc_with_ints;
   tim_exit("mp2-r12a intermeds");
+  ExEnv::out0() << indent << "End of computation of intermediates" << endl;
   r12intsacc->deactivate();
-  if (debug_)
-    ExEnv::out0() << indent << "Computed intermediates V, X, and T" << endl;
 
   if (nproc > 1) {
     // Use MemoryGrp to accumulate contributions to intermediates V, X, and T on all nodes

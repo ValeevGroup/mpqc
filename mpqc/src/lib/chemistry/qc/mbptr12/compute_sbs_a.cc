@@ -175,7 +175,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   }
 
   ExEnv::out0() << endl << indent
-	       << "Entered SBS A intermediates evaluator" << endl;
+	       << "Entered OBS A intermediates evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
 
@@ -838,6 +838,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     Compute MP2-R12/A intermediates
     and collect on node0
    --------------------------------*/
+  ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("mp2-r12a intermeds");
   int naa = (nocc_act*(nocc_act-1))/2;          // Number of alpha-alpha pairs
   int nab = nocc_act*nocc_act;                  // Number of alpha-beta pairs
@@ -879,9 +880,8 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     }
     else
       proc_with_ints[proc] = -1;
-  if (debug_)
-    ExEnv::out0() << indent << "Computing intermediates on " << nproc_with_ints
-		  << " processors" << endl;
+  ExEnv::out0() << indent << "Computing intermediates on " << nproc_with_ints
+		<< " processors" << endl;
 
   
   //////////////////////////////////////////////////////////////
@@ -912,14 +912,20 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	int kl_aa = k*(k-1)/2 + l;
 	int kl_ab = k*nocc_act + l;
 	int lk_ab = l*nocc_act + k;
-        
-        // Get (|r12|) and (|[r12,T1]|) integrals only
+
+        if (debug_)
+          ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
+
+         // Get (|r12|) and (|[r12,T1]|) integrals only
         tim_enter("MO ints retrieve");
         double *klyx_buf_eri = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::eri);
         double *klyx_buf_r12 = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::r12);
         double *klyx_buf_r12t1 = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
 	double *lkyx_buf_r12t1 = r12intsacc->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
         tim_exit("MO ints retrieve");
+
+	if (debug_)
+          ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
 
 	int ij = 0;
         for(int i=0;i<nocc_act;i++)
@@ -929,10 +935,16 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	    int ij_aa = i*(i-1)/2 + j;
 	    int ij_ab = i*nocc_act + j;
 	    int ji_ab = j*nocc_act + i;
+
+            if (debug_)
+              ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
             
             tim_enter("MO ints retrieve");
             double *ijyx_buf_r12 = r12intsacc->retrieve_pair_block(i,j,R12IntsAcc::r12);
             tim_exit("MO ints retrieve");
+
+            if (debug_)
+              ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
 	    double *Vaa_ij = Vaa_ijkl + ij_aa*naa;
             double *Vab_ij = Vab_ijkl + ij_ab*nab;
@@ -1106,9 +1118,9 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   }
   delete[] proc_with_ints;
   tim_exit("mp2-r12a intermeds");
+  ExEnv::out0() << indent << "End of computation of intermediates" << endl;
   r12intsacc->deactivate();
-  if (debug_)
-    ExEnv::out0() << indent << "Computed intermediates V, X, and T" << endl;
+
   
   // If running in distributed environment use Message group to collect intermediates and pair energies on node 0
   if (nproc > 1) {

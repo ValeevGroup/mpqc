@@ -2,8 +2,8 @@
 nproc = 2
 molecule = $:ch2
 coor = $:symcoor
-message = $:messageShm
-basis_matrixkit = $:replmatrixkit
+message = $:message1
+basis_matrixkit = $:localmatrixkit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -12,8 +12,8 @@ basis_matrixkit = $:replmatrixkit
 % can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
 %
 
-mole<HSOSSCF>: (
-  matrixkit = $:localmatrixkit
+mole<TCSCF>: (
+  %matrixkit = $:localmatrixkit
   memory=32000000
 
   % Function
@@ -25,7 +25,9 @@ mole<HSOSSCF>: (
   basis<GaussianBasisSet>: (
     molecule = $:molecule
     %name = "6-31G*"
-    name = "STO-3G"
+    %name = "6-311++G**"
+    %name = "STO-3G"
+    name = "DZP (Dunning)"
     %puream=yes
     matrixkit = $:basis_matrixkit
   )
@@ -297,4 +299,5 @@ basis:(
 %
 % Local Variables:
 % mode: keyval
+% End:
 %

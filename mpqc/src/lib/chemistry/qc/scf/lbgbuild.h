@@ -1,5 +1,5 @@
 //
-// lgbuild.h --- definition of the local G matrix builder
+// lbgbuild.h --- definitino of the load-balanced local G matrix builder
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_lgbuild_h
-#define _chemistry_qc_scf_lgbuild_h
+#ifndef _chemistry_qc_scf_lbgbuild_h
+#define _chemistry_qc_scf_lbgbuild_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -35,7 +35,7 @@
 #include <chemistry/qc/scf/gbuild.h>
 
 template<class T>
-class LocalGBuild : public GBuild<T> {
+class LocalLBGBuild : public GBuild<T> {
   protected:
     RefMessageGrp grp_;
     RefTwoBodyInt tbi_;
@@ -44,11 +44,11 @@ class LocalGBuild : public GBuild<T> {
     char *pmax;
     
   public:
-    LocalGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral& ints,
+    LocalLBGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral& ints,
                 const RefGaussianBasisSet& bs, const RefMessageGrp& g,
                 char *pm) :
       GBuild<T>(t), grp_(g), tbi_(tbi), integral_(ints), gbs_(bs), pmax(pm) {}
-    ~LocalGBuild() {}
+    ~LocalLBGBuild() {}
 
     void build_gmat(double accuracy) {
       tim_enter("ao_gmat");
@@ -68,79 +68,117 @@ class LocalGBuild : public GBuild<T> {
       tbi.set_redundant(0);
       const double *intbuf = tbi.buffer();
 
-      int ijklind=0;
-      for (int i=0; i < gbs.nshell(); i++) {
-        if (!pl.in_p1(i))
-          continue;
+      int inds[4];
 
-        int fi=gbs.shell_to_function(i);
-        int ni=gbs(i).nfunction();
-        
-        for (int j=0; j <= i; j++) {
-          int oij = i_offset(i)+j;
-          
-          if (!pl.in_p2(oij))
+      // node zero passes out indices
+      if (me==0) {
+        int i;
+        for (i=0; i < gbs.nshell(); i++) {
+          if (!pl.in_p1(i))
             continue;
 
+          inds[0]=i;
+          
+          for (int j=0; j <= i; j++) {
+            int oij = i_offset(i)+j;
+          
+            if (!pl.in_p2(oij))
+              continue;
+            
+            inds[1]=j;
+
+            tim_enter("quartet");
+            int from;
+            grp_->recvt(2323, &from, 1);
+            grp_->sendt(from, 3232, inds, 4);
+            tim_exit("quartet");
+          }
+        }
+
+        // now clean up
+        inds[0] = inds[1] = inds[2] = inds[3] = -1;
+        
+        for (i=1; i < nproc; i++) {
+          int from;
+          grp_->recvt(2323, &from, 1);
+          grp_->sendt(from, 3232, inds, 4);
+        }
+      }
+      
+      // all other nodes do the work
+      else {
+        do {
+          grp_->sendt(0, 2323, &me, 1);
+          grp_->recvt(3232, inds, 4);
+
+          int i=inds[0];
+          int j=inds[1];
+          
+          if (i < 0)
+            break;
+          
+          int fi=gbs.shell_to_function(i);
+          int ni=gbs(i).nfunction();
+        
+          int oij = i_offset(i)+j;
+          
           int fj=gbs.shell_to_function(j);
           int nj=gbs(j).nfunction();
           int pmaxij = pmax[oij];
 
-          for (int k=0; k <= i; k++, ijklind++) {
-            if (ijklind%nproc != me)
-              continue;
-            
-            int fk=gbs.shell_to_function(k);
-            int nk=gbs(k).nfunction();
+          for (int k=0; k <= i; k++) {
+          int fk=gbs.shell_to_function(k);
+          int nk=gbs(k).nfunction();
 
-            int pmaxijk=pmaxij, ptmp;
-            if ((ptmp=pmax[i_offset(i)+k]-2) > pmaxijk) pmaxijk=ptmp;
-            if ((ptmp=pmax[ij_offset(j,k)]-2) > pmaxijk) pmaxijk=ptmp;
+          int pmaxijk=pmaxij, ptmp;
+          if ((ptmp=pmax[i_offset(i)+k]-2) > pmaxijk) pmaxijk=ptmp;
+          if ((ptmp=pmax[ij_offset(j,k)]-2) > pmaxijk) pmaxijk=ptmp;
         
-            int okl = i_offset(k);
-            for (int l=0; l <= (k==i?j:k); l++,okl++) {
-              int pmaxijkl = pmaxijk;
-              if ((ptmp=pmax[okl]) > pmaxijkl) pmaxijkl=ptmp;
-              if ((ptmp=pmax[i_offset(i)+l]-2) > pmaxijkl) pmaxijkl=ptmp;
-              if ((ptmp=pmax[ij_offset(j,l)]-2) > pmaxijkl) pmaxijkl=ptmp;
+          int okl = i_offset(k);
+          for (int l=0; l <= (k==i?j:k); l++,okl++) {
+            
+            int pmaxijkl = pmaxijk;
+            if ((ptmp=pmax[okl]) > pmaxijkl) pmaxijkl=ptmp;
+            if ((ptmp=pmax[i_offset(i)+l]-2) > pmaxijkl) pmaxijkl=ptmp;
+            if ((ptmp=pmax[ij_offset(j,l)]-2) > pmaxijkl) pmaxijkl=ptmp;
               
-              if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
-                continue;
+            if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
+              continue;
 
-              int qijkl = pl.in_p4(oij,okl,i,j,k,l);
-              if (!qijkl)
-                continue;
+            int qijkl = pl.in_p4(oij,okl,i,j,k,l);
+            if (!qijkl)
+              continue;
 
-              tim_enter("quartet");
-              tbi.compute_shell(i,j,k,l);
-              tim_exit("quartet");
+            tim_enter("quartet");
+            tbi.compute_shell(i,j,k,l);
+            tim_exit("quartet");
 
-              int e12 = (i==j);
-              int e34 = (k==l);
-              int e13e24 = (i==k) && (j==l);
-              int e_any = e12||e34||e13e24;
+            int e12 = (i==j);
+            int e34 = (k==l);
+            int e13e24 = (i==k) && (j==l);
+            int e_any = e12||e34||e13e24;
     
-              int fl=gbs.shell_to_function(l);
-              int nl=gbs(l).nfunction();
+            int fl=gbs.shell_to_function(l);
+            int nl=gbs(l).nfunction();
      
-              int ii,jj,kk,ll;
-              int I,J,K,L;
-              int index=0;
+            int ii,jj,kk,ll;
+            int I,J,K,L;
+            int index=0;
 
-              for (I=0, ii=fi; I < ni; I++, ii++) {
-                for (J=0, jj=fj; J <= (e12 ? I : nj-1); J++, jj++) {
-                  for (K=0, kk=fk; K <= (e13e24 ? I : nk-1); K++, kk++) {
+            for (I=0, ii=fi; I < ni; I++, ii++) {
+              for (J=0, jj=fj; J <= (e12 ? I : nj-1); J++, jj++) {
+                for (K=0, kk=fk; K <= (e13e24 ? I : nk-1); K++, kk++) {
            
-                    int lend = (e34 ? ((e13e24)&&(K==I) ? J : K)
-                                : ((e13e24)&&(K==I)) ? J : nl-1);
-                    for (L=0, ll=fl; L <= lend; L++, ll++, index++) {
+                  int lend = (e34 ? ((e13e24)&&(K==I) ? J : K)
+                              : ((e13e24)&&(K==I)) ? J : nl-1);
+                  for (L=0, ll=fl; L <= lend; L++, ll++, index++) {
 
-                      if (fabs(intbuf[index]) < 1.0e-15)
-                        continue;
+                    if (fabs(intbuf[index]) < 1.0e-15)
+                      continue;
 
-                      double pki_int = intbuf[index];
-                      if (qijkl > 1)
-                        pki_int *= qijkl;
+                    double pki_int = intbuf[index];
+                    if (qijkl > 1)
+                      pki_int *= qijkl;
 
       if (e_any) {
         int ij,kl;
@@ -315,15 +353,15 @@ class LocalGBuild : public GBuild<T> {
           contribution.cont2(ij_offset(ii,ll),ij_offset(kk,jj),pki_int);
         }
       }
-                    }
                   }
                 }
               }
-
-              tnint += (double) ni*nj*nk*nl;
             }
+
+            tnint += (double) ni*nj*nk*nl;
           }
-        }
+          }
+        } while (inds[0] > -1);
       }
 
       grp_->sum(&tnint, 1, 0, 0);

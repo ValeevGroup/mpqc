@@ -1,9 +1,9 @@
 
 ARCH = SGI
 
-FC = f2c
-CC = cc
-GCC=gcc
+FC  = f2c
+CC  = cc
+GCC = gcc
 CXX = g++
 
 RANLIB = @echo "skipping ranlib"
@@ -23,16 +23,37 @@ ifeq ($(CC),gcc)
   COPTIONS_DEBUG = -g $(MORE_COPTIONS)
 endif
 ifeq ($(CXX),g++)
-  GXXOPTIONS = -fansi-overloading
+  GXXOPTIONS =
   CXXOPTIONS = -O -fstrength-reduce -finline-functions -fdelayed-branch \
              $(GXXOPTIONS) $(MORE_COPTIONS)
   CXXOPTIONS_NOOPT = $(GXXOPTIONS) $(MORE_COPTIONS)
   CXXOPTIONS_DEBUG = -g $(GXXOPTIONS) $(MORE_COPTIONS)
+  DEFINES += -DPRAGMA_IMPLEMENTATION_BUG -DTYPE_CONV_BUG
 endif
-
 ifeq ($(CXX),CC)
-  CXXOPTIONS += -I$(TOPDIR)/g++-include
+  CXXOPTIONS = -O -Olimit 2000 -I$(TOPDIR)/g++-include
 endif
 
-SYSLIBS = -lm
+SYSLIBS = -lm -lfl
+
+ELF = yes
+
+ifeq ($(ELF),yes)
+LD = g++
+SH_LD = ld
+
+LIBSUF = so
+
+SH_LDFLAGS = -elf -shared -rdata_shared -rpath $(LIBDIR) \
+             -soname $(TARGET_TO_MAKE).so.$(ELF_MAJOR)
+LDFLAGS += -Wl,-rpath -Wl,$(LIBDIR)
+
+COPTIONS += -KPIC
+COPTIONS_NOOPT += -KPIC
+COPTIONS_DEBUG += -KPIC
+
+CXXOPTIONS += -fPIC
+CXXOPTIONS_NOOPT += -fPIC
+CXXOPTIONS_DEBUG += -fPIC
+endif
 

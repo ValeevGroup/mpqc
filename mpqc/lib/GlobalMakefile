@@ -26,6 +26,11 @@ vpath %.a $(TOPDIR)/src.lib:$(TOPDIR)/lib
 vpath %.so $(TOPDIR)/lib
 
 #
+# LIBDIR is the full path to where the libraries are
+#
+LIBDIR = $(shell $(SRCDIR)/$(TOPDIR)/bin/rmdotdot `pwd`/$(TOPDIR)/lib)
+
+#
 # THISDIR is the name of the current directory relative to TOPDIR/src.lib/
 #
 THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src.lib/,,$(shell pwd))

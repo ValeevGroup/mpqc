@@ -53,7 +53,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
+#include <util/misc/formio.h>
 #include <math/symmetry/pointgrp.h>
 
 ////////////////////////////////////////////////////////////////////////
@@ -193,6 +195,62 @@ PointGroup::char_table() const
 {
   CharacterTable ret(symb,frame);
   return ret;
+}
+
+int
+PointGroup::equiv(const RefPointGroup &grp, double tol) const
+{
+  if (strcmp(symb,grp->symb)) return 0;
+
+  for (int i=0; i < 3; i++) {
+    if (fabs(origin_[i] - grp->origin_[i]) > tol) return 0;
+    for (int j=0; j < 3; j++) {
+      if (fabs(frame(i,j) - grp->frame(i,j)) > tol) return 0;
+    }
+  }
+
+  return 1;
+}
+
+void
+PointGroup::print(ostream &o) const
+{
+  int i,j;
+
+  o << node0 << indent << "symmetry = " << symb << endl;
+
+  int unit_frame = 1;
+  int zero_origin = 1;
+  for (i=0; i<3; i++) {
+    for (j=0; j<3; j++) {
+      if (i==j && fabs(frame(i,j)-1.0) > 1.0e-10) unit_frame = 0;
+      else if (i != j && fabs(frame(i,j)) > 1.0e-10) unit_frame = 0;
+    }
+    if (fabs(origin_[i]) > 1.0e-10) zero_origin = 0;
+  }
+
+  if (!unit_frame) {
+    cout << node0 << indent << "symmetry_frame = [";
+    cout << incindent;
+    for (i=0; i<3; i++) {
+      cout << node0 << endl << indent;
+      cout << node0 << "[";
+      for (j=0; j<3; j++) {
+        cout << node0 << scprintf(" % 18.16f", frame(i,j));
+      }
+      cout << node0 << "]";
+    }
+    cout << node0 << "]" << endl;
+    cout << decindent;
+  }
+
+  if (!zero_origin) {
+    cout << node0 << indent << "origin = [";
+    for (i=0; i<3; i++) {
+      cout << node0 << scprintf(" % 18.16f", origin_[j]);
+    }
+    cout << node0 << endl;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -419,6 +419,8 @@ class CharacterTable {
 
 /////////////////////////////////////////////////////////////
 
+SavableState_REF_fwddec(PointGroup);
+
 //.
 // The \clsnm{PointGroup} class is really a place holder for a
 // \clsnmref{CharacterTable}.  It contains a string representation of the
@@ -465,6 +467,9 @@ class PointGroup: public SavableState {
 
     PointGroup& operator=(const PointGroup&);
 
+    //. Returns 1 if the point groups are equivalent, 0 otherwise.
+    int equiv(const RefPointGroup &, double tol = 1.0e-6) const;
+
     //. Returns the \clsnmref{CharacterTable} for this point group.
     CharacterTable char_table() const;
     //. Returns the Schoenflies symbol for this point group.
@@ -482,6 +487,8 @@ class PointGroup: public SavableState {
     void set_symbol(const char*);
 
     void save_data_state(StateOut& so);
+
+    void print(ostream&o=cout) const;
 };
 SavableState_REF_dec(PointGroup);
 

@@ -25,11 +25,21 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
+#include <util/misc/formio.h>
+
 #include <util/render/render.h>
 #include <util/render/object.h>
+#include <util/render/animate.h>
 #include <util/render/find.h>
 #include <util/render/polygons.h>
 #include <util/render/polysphere.h>
+
+/////////////////////////////////////////////////////////////////////////////
+// Render
 
 #define CLASSNAME Render
 #define PARENTS public DescribedClass
@@ -124,6 +134,173 @@ Render::sphere(const RefRenderedSphere& sphere)
   polysphere(level, poly.pointer());
 
   render(poly.pointer());
+}
+
+void
+Render::animate(const RefAnimatedObject &animated_object)
+{
+  for (int i=0; i<animated_object->nobject(); i++) {
+      RefRenderedObject object = animated_object->object(i);
+      render(object);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// FileRender
+
+#define CLASSNAME FileRender
+#define PARENTS public Render
+#include <util/class/classia.h>
+void *
+FileRender::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = Render::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+FileRender::FileRender(const char * filename)
+{
+  filename_ = 0;
+  basename_ = 0;
+  depth_ = 0;
+  sbuf_ = 0;
+  delete_sbuf_ = 0;
+  set_filename(filename);
+}
+
+FileRender::FileRender(ostream &o)
+{
+  filename_ = 0;
+  basename_ = 0;
+  depth_ = 0;
+  sbuf_ = o.rdbuf();
+  delete_sbuf_ = 0;
+}
+
+FileRender::FileRender(const RefKeyVal& keyval):
+  Render(keyval)
+{
+  char *filename = keyval->pcharvalue("filename");
+  char *basename = keyval->pcharvalue("basename");
+  if (!filename && !basename) {
+      const char *cbasename = SCFormIO::default_basename();
+      if (cbasename) {
+          basename = strcpy(new char[strlen(cbasename)+1],cbasename);
+        }
+    }
+  depth_ = 0;
+  sbuf_ = 0;
+  delete_sbuf_ = 0;
+  filename_ = 0;
+  basename_ = 0;
+  if (basename) {
+      set_basename(basename);
+      delete[] basename;
+    }
+  // filename overrides basename
+  if (filename) {
+      set_filename(filename);
+      delete[] filename;
+    }
+}
+
+void
+FileRender::set_filename(const char *filename)
+{
+  delete[] basename_;
+  delete[] filename_;
+  filename_ = 0;
+  basename_ = 0;
+  if (filename) filename_ = strcpy(new char[strlen(filename)+1],filename);
+}
+
+void
+FileRender::set_basename(const char *basename)
+{
+  delete[] filename_;
+  delete[] basename_;
+  filename_ = 0;
+  basename_ = 0;
+  if (basename) basename_ = strcpy(new char[strlen(basename)+1],basename);
+}
+
+FileRender::~FileRender()
+{
+  delete[] filename_;
+  delete[] basename_;
+  if (delete_sbuf_) delete sbuf_;
+}
+
+void
+FileRender::clear()
+{
+}
+
+char *
+FileRender::get_filename(const char *objectname)
+{
+  char *file = 0;
+
+  if (filename_) {
+      // if a file name is given then it is the entire name of the file
+      file = strcpy(new char[strlen(filename_) + 1],filename_);
+    }
+  else if (basename_) {
+      // if we have a base name, it is used to construct a filename
+      const char *ext = file_extension();
+      int lenobjectname;
+      if (objectname == 0) lenobjectname = 0;
+      else lenobjectname = strlen(objectname);
+      if (lenobjectname) lenobjectname++;
+      file = new char[strlen(basename_)+lenobjectname+strlen(ext)+1];
+      strcpy(file, basename_);
+      if (lenobjectname) {
+          strcat(file, ".");
+          strcat(file, objectname);
+        }
+      strcat(file, ext);
+    }
+
+  return file;
+}
+
+void
+FileRender::open_sbuf(const char *objectname)
+{
+  if (depth_++) return;
+
+  char *file = get_filename(objectname);
+
+  if (file) {
+      filebuf *fbuf = new filebuf();
+      fbuf->open(file,ios::out);
+      if (!fbuf->is_open()) {
+          cerr << scprintf("FileRender: couldn't open \"%s\"\n", filename_);
+          abort();
+        }
+      sbuf_ = fbuf;
+      delete_sbuf_ = 1;
+      delete[] file;
+    }
+}
+
+void
+FileRender::close_sbuf()
+{
+  if (--depth_ > 0) return;
+
+  if (delete_sbuf_) {
+      delete sbuf_;
+      sbuf_ = 0;
+      delete_sbuf_ = 0;
+    }
+}
+
+const char *
+FileRender::file_extension()
+{
+  return ".ren";
 }
 
 /////////////////////////////////////////////////////////////////////////////

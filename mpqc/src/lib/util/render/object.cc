@@ -62,6 +62,14 @@ RenderedObject::~RenderedObject()
 }
 
 void
+RenderedObject::set_name(const char *name)
+{
+  delete[] name_;
+  if (name) name_ = strcpy(new char[strlen(name)+1],name);
+  else name_ = 0;
+}
+
+void
 RenderedObject::print(ostream& os)
 {
   os << "RenderedObject:" << endl;

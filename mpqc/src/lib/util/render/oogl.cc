@@ -33,80 +33,109 @@
 #include <util/render/polygons.h>
 #include <util/render/polylines.h>
 #include <util/render/material.h>
+#include <util/render/animate.h>
 
 #define CLASSNAME OOGLRender
-#define PARENTS public Render
+#define PARENTS public FileRender
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classi.h>
 void *
 OOGLRender::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = Render::_castdown(cd);
+  casts[0] = FileRender::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-OOGLRender::OOGLRender(const char * filename)
+OOGLRender::OOGLRender(const char * filename):
+  FileRender(filename)
 {
-  filename_ = strcpy(new char[strlen(filename)+1], filename);
   oogl_spheres_ = 0;
-  sbuf_ = 0;
-  delete_sbuf_ = 0;
-  clear();
 }
 
-OOGLRender::OOGLRender(ostream &o)
+OOGLRender::OOGLRender(ostream &o):
+  FileRender(o)
 {
   oogl_spheres_ = 0;
-  filename_ = 0;
-  sbuf_ = o.rdbuf();
-  delete_sbuf_ = 0;
-  clear();
 }
 
 OOGLRender::OOGLRender(const RefKeyVal& keyval):
-  Render(keyval)
+  FileRender(keyval)
 {
-  filename_ = keyval->pcharvalue("filename");
   oogl_spheres_ = keyval->booleanvalue("oogl_spheres");
-  if (filename_) {
-      sbuf_ = 0;
-      delete_sbuf_ = 0;
-    }
-  else {
-      sbuf_ = cout.rdbuf();
-      delete_sbuf_ = 0;
-    }
-  clear();
 }
 
 OOGLRender::~OOGLRender()
 {
-  delete[] filename_;
-  if (delete_sbuf_) delete sbuf_;
+}
+
+const char *
+OOGLRender::file_extension()
+{
+  return ".oogl";
 }
 
 void
-OOGLRender::clear()
+OOGLRender::animate(const RefAnimatedObject& animated_object)
 {
-  if (filename_) {
-      if (delete_sbuf_) {
-          delete sbuf_;
-        }
-      filebuf *fbuf = new filebuf();
-      fbuf->open(filename_,ios::out);
-      if (!fbuf->is_open()) {
-          cerr << scprintf("OOGLRender: couldn't open \"%s\"\n", filename_);
-          abort();
-        }
-      sbuf_ = fbuf;
-      delete_sbuf_ = 1;
+  // save the old filename_ and basename_
+  char *old_filename = filename_;
+  char *old_basename = basename_;
+
+  // construct a script name based on the animated object name
+  const char *base;
+  if (old_filename) base = old_filename;
+  else if (old_basename) base = old_basename;
+  else base = "anim";
+  int lenobjname;
+  if (animated_object->name() != 0) {
+      lenobjname = strlen(animated_object->name());
     }
+  else lenobjname = 0;
+  if (lenobjname) lenobjname++;
+  const char *suf = ".scr";
+  char *file = new char[strlen(base)+lenobjname+strlen(suf)+1];
+  strcpy(file, base);
+  if (lenobjname) {
+      strcat(file,".");
+      strcat(file,animated_object->name());
+    }
+  strcat(file,suf);
+
+  // construct a base name based on the animated object name
+  filename_ = 0;
+  basename_ = new char[strlen(base)+lenobjname];
+  strcpy(basename_, base);
+  if (lenobjname) {
+      strcat(basename_,".");
+      strcat(basename_,animated_object->name());
+    }
+
+  ofstream anim(file);
+  delete[] file;
+  for (int i=0; i<animated_object->nobject(); i++) {
+      RefRenderedObject object = animated_object->object(i);
+      if (object->name() == 0) {
+          char ic[64];
+          sprintf(ic,"%03d",i);
+          object->set_name(ic);
+        }
+      file = get_filename(object->name());
+      anim << file << endl;
+      delete[] file;
+      render(object);
+    }
+
+  delete[] filename_;
+  delete[] basename_;
+  filename_ = old_filename;
+  basename_ = old_basename;
 }
 
 void
 OOGLRender::render(const RefRenderedObject& object)
 {
+  open_sbuf(object->name());
   ostream o(sbuf_);
   o << "{" << endl;
   if (object->name()) {
@@ -156,6 +185,7 @@ OOGLRender::render(const RefRenderedObject& object)
       o << "}" << endl;
     }
   o << "}" << endl;
+  close_sbuf();
 }
 
 void
@@ -226,8 +256,8 @@ OOGLRender::polylines(const RefRenderedPolylines& poly)
   for (i=0; i<poly->npolyline(); i++) nvertex += poly->nvertex_in_polyline(i);
   o << " = VECT" << endl;
   o << poly->npolyline()
-    << nvertex
-    << (poly->have_vertex_rgb()? nvertex:0)
+    << " " << nvertex
+    << " " << (poly->have_vertex_rgb()? nvertex:0)
     << endl;
   for (i=0; i<poly->npolyline(); i++) {
       o << " " << poly->nvertex_in_polyline(i);
@@ -250,7 +280,8 @@ OOGLRender::polylines(const RefRenderedPolylines& poly)
           o << scprintf(" %10.4f %10.4f %10.4f",
                         poly->vertex(ivertex,0),
                         poly->vertex(ivertex,1),
-                        poly->vertex(ivertex,2));
+                        poly->vertex(ivertex,2))
+            << endl;
         }
     }
   o << endl;
@@ -261,7 +292,8 @@ OOGLRender::polylines(const RefRenderedPolylines& poly)
               o << scprintf(" %10.4f %10.4f %10.4f 1.0",
                             poly->vertex_rgb(ivertex,0),
                             poly->vertex_rgb(ivertex,1),
-                            poly->vertex_rgb(ivertex,2));
+                            poly->vertex_rgb(ivertex,2))
+                << endl;
             }
         }
       o << endl;

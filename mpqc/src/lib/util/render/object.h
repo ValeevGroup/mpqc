@@ -52,6 +52,7 @@ class RenderedObject: public DescribedClass {
     RenderedObject(const RefKeyVal&);
     ~RenderedObject();
     const char* name() const { return name_; }
+    void set_name(const char *);
     RefMaterial material() const { return material_; }
     RefAppearance appearance() const { return appearance_; }
     RefTransform transform() const { return transform_; }

@@ -1,7 +1,7 @@
 //
-// oogl.h
+// animate.cc
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1997 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
@@ -25,37 +25,52 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_render_oogl_h
-#define _util_render_oogl_h
-
-#include <iostream.h>
-#include <util/render/render.h>
-
-class OOGLRender: public FileRender {
-#   define CLASSNAME OOGLRender
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
-  private:
-    int oogl_spheres_;
-  public:
-    OOGLRender(const char * filename);
-    OOGLRender(ostream &o = cout);
-    OOGLRender(const RefKeyVal&);
-    virtual ~OOGLRender();
-
-    void render(const RefRenderedObject&);
-    void animate(const RefAnimatedObject&);
-
-    const char *file_extension();
-
-    void set(const RefRenderedObjectSet&);
-    void sphere(const RefRenderedSphere&);
-    void polygons(const RefRenderedPolygons&);
-    void polylines(const RefRenderedPolylines&);
-};
-DescribedClass_REF_dec(OOGLRender);
-
+#ifdef __GNUC__
+#pragma implementation
 #endif
+
+#include <util/misc/formio.h>
+#include <util/render/animate.h>
+#include <util/render/object.h>
+
+/////////////////////////////////////////////////////////////////////////////
+// AnimatedObject
+
+#define CLASSNAME AnimatedObject
+#define PARENTS public DescribedClass
+#include <util/class/classia.h>
+void *
+AnimatedObject::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+AnimatedObject::AnimatedObject()
+{
+  name_ = 0;
+}
+
+AnimatedObject::AnimatedObject(const RefKeyVal& keyval)
+{
+  name_ = keyval->pcharvalue("name");
+}
+
+AnimatedObject::~AnimatedObject()
+{
+  delete[] name_;
+}
+
+void
+AnimatedObject::set_name(const char *name)
+{
+  delete[] name_;
+  if (name) name_ = strcpy(new char[strlen(name)+1],name);
+  else name_ = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

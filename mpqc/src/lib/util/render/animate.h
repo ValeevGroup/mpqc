@@ -1,7 +1,7 @@
 //
-// oogl.h
+// animate.h
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1997 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
@@ -25,35 +25,32 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_render_oogl_h
-#define _util_render_oogl_h
+#ifdef __GNUC__
+#pragma interface
+#endif
 
-#include <iostream.h>
+#ifndef _util_render_animate_h
+#define _util_render_animate_h
+
 #include <util/render/render.h>
 
-class OOGLRender: public FileRender {
-#   define CLASSNAME OOGLRender
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
-  private:
-    int oogl_spheres_;
+class AnimatedObject: public DescribedClass {
+#   define CLASSNAME AnimatedObject
+#   include <util/class/classda.h>
+  protected:
+    char *name_;
   public:
-    OOGLRender(const char * filename);
-    OOGLRender(ostream &o = cout);
-    OOGLRender(const RefKeyVal&);
-    virtual ~OOGLRender();
+    AnimatedObject();
+    AnimatedObject(const RefKeyVal&);
+    virtual ~AnimatedObject();
 
-    void render(const RefRenderedObject&);
-    void animate(const RefAnimatedObject&);
+    const char *name() const { return name_; }
+    void set_name(const char *name);
 
-    const char *file_extension();
-
-    void set(const RefRenderedObjectSet&);
-    void sphere(const RefRenderedSphere&);
-    void polygons(const RefRenderedPolygons&);
-    void polylines(const RefRenderedPolylines&);
+    virtual int nobject() = 0;
+    virtual RefRenderedObject object(int iobject) = 0;
 };
-DescribedClass_REF_dec(OOGLRender);
+DescribedClass_REF_dec(AnimatedObject);
 
 #endif
 

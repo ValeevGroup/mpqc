@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #ifndef _util_render_render_h
 #define _util_render_render_h
 
@@ -34,6 +38,7 @@
 #include <util/render/transform.h>
 #include <util/render/stack.h>
 
+DescribedClass_REF_fwddec(AnimatedObject);
 DescribedClass_REF_fwddec(RenderedObject);
 DescribedClass_REF_fwddec(RenderedObjectSet);
 DescribedClass_REF_fwddec(RenderedSphere);
@@ -74,6 +79,7 @@ class Render: public DescribedClass {
     virtual void clear() = 0;
 
     virtual void render(const RefRenderedObject&);
+    virtual void animate(const RefAnimatedObject &);
 
     virtual void set(const RefRenderedObjectSet&);
     virtual void sphere(const RefRenderedSphere&);
@@ -81,6 +87,33 @@ class Render: public DescribedClass {
     virtual void polylines(const RefRenderedPolylines&) = 0;
 };
 DescribedClass_REF_dec(Render);
+
+class FileRender: public Render {
+#   define CLASSNAME FileRender
+#   include <util/class/classd.h>
+  protected:
+    char* filename_;
+    char* basename_;
+    streambuf *sbuf_;
+    int delete_sbuf_;
+    int depth_;
+
+    char *get_filename(const char *objectname);
+    void open_sbuf(const char *objectname);
+    void close_sbuf();
+  public:
+    FileRender(const char * filename);
+    FileRender(ostream &o = cout);
+    FileRender(const RefKeyVal&);
+    virtual ~FileRender();
+
+    void clear();
+
+    virtual void set_filename(const char *name);
+    virtual void set_basename(const char *name);
+    virtual const char *file_extension();
+};
+DescribedClass_REF_dec(FileRender);
 
 #endif
 

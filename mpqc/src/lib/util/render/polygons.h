@@ -65,6 +65,7 @@ class RenderedPolygons: public RenderedObject {
     int nvertex() const { return nvertex_; }
     int nface() const { return nface_; }
     int nvertex_in_face(int iface) const { return nvertex_in_face_[iface]; }
+    const double *vertex(int i) const { return vertices_[i]; }
     double vertex(int i, int j) const { return vertices_[i][j]; }
     int face(int i,int j) const { return faces_[i][j]; }
     double vertex_rgb(int i, int j) const { return vertex_rgb_[i][j]; }

@@ -35,7 +35,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 LD=$(CXX)
 
 CXXSRC = function.cc opt.cc update.cc qnewton.cc \
-         gdiis.cc efc.cc dfp.cc powell.cc \
+         gdiis.cc efc.cc steep.cc dfp.cc powell.cc \
          scextrap.cc scextrapmat.cc diis.cc transform.cc conv.cc
 CSRC = 
 

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.3  1994/08/26 18:04:44  etseidl
+ * Revision 1.4  1994/10/11 17:49:35  etseidl
+ * fix up for c++
+ *
+ * Revision 1.3  1994/08/26  18:04:44  etseidl
  * eliminate binary and formatted io modules
  *
  * Revision 1.2  1994/08/26  17:57:42  etseidl
@@ -40,6 +43,10 @@
 #ifndef _math_lib_h
 #define _math_lib_h
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include <math/array/matrix.h>
 #include <math/array/matrix_utl.gbl>
 #include <math/array/diag.gbl>
@@ -60,5 +67,9 @@
 #include <math/array/matrixzero.h>
 #include <math/array/matrixsnd0.h>
 #include <math/array/matrixrcv0.h>
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* _math_lib_h */

@@ -2488,8 +2488,8 @@ PBECFunctional::PBECFunctional(StateIn& s):
 
 PBECFunctional::PBECFunctional()
 {
-  gamma_ = 0.031091;
-  beta_ = 0.066725;
+  gamma_ = 0.03109069086965489503494086371273;
+  beta_ = 0.06672455060314922;
   local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
 }
@@ -2500,8 +2500,12 @@ PBECFunctional::PBECFunctional(const RefKeyVal& keyval):
   local_ = keyval->describedclassvalue("local");
   if (local_.null()) local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
-  gamma_ = keyval->doublevalue("gamma", KeyValValuedouble(0.031091));
-  beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.066725));
+  // in paper
+  //gamma_ = keyval->doublevalue("gamma", KeyValValuedouble(0.031091));
+  //beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.066725));
+  // in PBE.f
+  gamma_ = keyval->doublevalue("gamma", KeyValValuedouble(0.03109069086965489503494086371273));
+  beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.06672455060314922));
 }
 
 PBECFunctional::~PBECFunctional()
@@ -2519,6 +2523,12 @@ int
 PBECFunctional::need_density_gradient()
 {
   return 1;
+}
+
+void
+PBECFunctional::set_spin_polarized(int a)
+{
+  local_->set_spin_polarized(a);
 }
 
 void
@@ -2556,7 +2566,7 @@ PBECFunctional::point(const PointInputData &id,
   double X = 1. + ratio*t2*q1/q2;
   double Hpbe = gamma_*phi3*log(X);
   double ec = rho * Hpbe;
-  od.energy = ec;
+  od.energy += ec;
 
   if (compute_potential_) {
       // d_drhoa part
@@ -2581,7 +2591,7 @@ PBECFunctional::point(const PointInputData &id,
                                       + A2*dt4_drhoa) );
       double dHpbe_drhoa = 3.*phi2*gamma_*dphi_drhoa*log(X) + gamma_*phi3/X*dX_drhoa;
       double dfpbe_drhoa = Hpbe + rho*dHpbe_drhoa;
-      od.df_drho_a = dfpbe_drhoa;
+      od.df_drho_a += dfpbe_drhoa;
       
       // d_drhob part
       double dzeta_drhob = 1./rho * (-1. - zeta);
@@ -2603,7 +2613,7 @@ PBECFunctional::point(const PointInputData &id,
                                       + A2*dt4_drhob) );
       double dHpbe_drhob = 3.*phi2*gamma_*dphi_drhob*log(X) + gamma_*phi3/X*dX_drhob;
       double dfpbe_drhob = Hpbe + rho*dHpbe_drhob;
-      od.df_drho_b = dfpbe_drhob;
+      od.df_drho_b += dfpbe_drhob;
       
       // d_dgamma_aa part
       double tdt_dgamma_aa = 0.5/( (2.*ks*phi*rho)*(2.*ks*phi*rho) );
@@ -2696,6 +2706,12 @@ int
 PW91CFunctional::need_density_gradient()
 {
   return 1;
+}
+
+void
+PW91CFunctional::set_spin_polarized(int a)
+{
+  local_->set_spin_polarized(a);
 }
 
 double
@@ -2927,14 +2943,17 @@ PBEXFunctional::PBEXFunctional(StateIn& s):
 
 PBEXFunctional::PBEXFunctional()
 {
-  mu_ = 0.21951;
+  mu_ = 0.2195149727645171;
   kappa_ = 0.804;
 }
 
 PBEXFunctional::PBEXFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
-  mu_ = keyval->doublevalue("mu", KeyValValuedouble(0.21951));
+  // in PBE.f
+  mu_ = keyval->doublevalue("mu", KeyValValuedouble(0.2195149727645171));
+  // in paper
+  //mu_ = keyval->doublevalue("mu", KeyValValuedouble(0.21951));
   kappa_ = keyval->doublevalue("kappa", KeyValValuedouble(0.804));
   int revPBEX = keyval->intvalue("revPBEX", KeyValValueint(0));
   if (revPBEX) kappa_ = 1.245;
@@ -2966,7 +2985,7 @@ void
   double rhoa = 2. * id.a.rho;
   double k_Fa = pow( (3.*M_PI*M_PI*rhoa), (1./3.) );
   double e_xa_unif = -3. * k_Fa / (4.*M_PI);
-  double gamma_aa = sqrt(2.*id.a.gamma);
+  double gamma_aa = 2.*sqrt(id.a.gamma);
   double sa = gamma_aa/(2. * k_Fa * rhoa);
   double sa2 = sa*sa;
 
@@ -2991,7 +3010,7 @@ void
     double rhob = 2. * id.b.rho;
     double k_Fb = pow( (3.*M_PI*M_PI*rhob), (1./3.) );
     double e_xb_unif = -3.*k_Fb/(4.*M_PI);
-    double gamma_bb = sqrt(2.*id.b.gamma);
+    double gamma_bb = 2.*sqrt(id.b.gamma);
     double sb = gamma_bb/(2.*k_Fb*rhob);
     double sb2 = sb*sb;
     double f_xb = 1. + kappa_ - kappa_ /( 1. + (mu_*sb2/kappa_) );

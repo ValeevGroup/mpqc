@@ -72,6 +72,10 @@ h2o<Molecule>: (
 
 nel<NElFunctional>:()
 
+slaterx<SlaterXFunctional>: ()
+
+pw92lc<PW92LCFunctional>: ()
+
 xalpha<XalphaFunctional>: ()
 
 hfb<SumDenFunctional>: (
@@ -101,6 +105,28 @@ b3lyp<SumDenFunctional>: (
      <LYPCFunctional>: ()
     ]
 )
+
+pbex<PBEXFunctional>: ()
+
+pbec<PBECFunctional>: ()
+
+pbe<SumDenFunctional>: (
+  coefs = [ 1.0 1.0 ]
+  funcs: [
+     <PBEXFunctional>: ()
+     <PBECFunctional>: ()
+    ]
+)
+
+pbecnl<SumDenFunctional>: (
+  coefs = [ 1.0 -1.0 ]
+  funcs: [
+     <PBECFunctional>: ()
+     <PW92LCFunctional>: ()
+    ]
+)
+
+valtest = $:pbe
 
 basis<GaussianBasisSet>: (
   %name = test

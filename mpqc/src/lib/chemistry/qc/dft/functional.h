@@ -217,6 +217,7 @@ class PBECFunctional: public DenFunctional {
     void save_data_state(StateOut &);
     int need_density_gradient();
     void point(const PointInputData&, PointOutputData&);
+    void set_spin_polarized(int);
   
 };
 
@@ -241,6 +242,7 @@ class PW91CFunctional: public DenFunctional {
     double dCxc_drho(double rs, double drs_drho, double Cxcrs);
 
     void point(const PointInputData&, PointOutputData&);
+    void set_spin_polarized(int);
   
 };
 

@@ -299,11 +299,168 @@ fd_e_test(const RefWavefunction &wfn)
   delete[] an_grad_e;
 }
 
+#define USE_ORIGINAL_CODE 0
+#define USE_MPQC_CODE 1
+#if USE_ORIGINAL_CODE
+extern "C" easypbe_(double *up,double *agrup,double *delgrup,double *uplap,
+                    double *dn,double *agrdn,double *delgrdn,double *dnlap,
+                    double *agr,double *delgr,int *lcor,int *lpot,
+                    double *exlsd,double *vxuplsd,double *vxdnlsd,
+                    double *eclsd,double *vcuplsd,double *vcdnlsd,
+                    double *expw91,double *vxuppw91,double *vxdnpw91,
+                    double *ecpw91,double *vcuppw91,double *vcdnpw91,
+                    double *expbe,double *vxuppbe,double *vxdnpbe,
+                    double *ecpbe,double *vcuppbe,double *vcdnpbe);
+#endif
+
+void
+do_valtest(const RefDenFunctional &valtest)
+{
+  valtest->set_spin_polarized(1);
+
+  SCVector3 point = 0.0;
+  PointInputData id(point);
+  // zero out data that is never used
+  int ii=0;
+  for (ii=0; ii<3; ii++) id.a.del_rho[ii] = 0.0;
+  for (ii=0; ii<3; ii++) id.b.del_rho[ii] = 0.0;
+  id.a.lap_rho = 0.0;
+  id.b.lap_rho = 0.0;
+  for (ii=0; ii<6; ii++) id.a.hes_rho[ii] = 0.0;
+  for (ii=0; ii<6; ii++) id.b.hes_rho[ii] = 0.0;
+
+  // taken from PBE.f (PBE alpha2.1)
+  const double thrd = 1.0/3.0;
+  const double thrd2 = 2.0/3.0;
+  const double pi = M_PI;
+  double conf=pow((3.0*pi*pi),thrd);
+  double conrs=pow((3.0/(4.0*pi)),thrd);
+  cout << "     Fup Fdn Zup Zdn             Exc" << endl;
+  // BEGIN THE LOOP THAT SELECTS A TRIAL DENSITY
+  // spin-densities are of the form
+  //          rho(r)=f*(Z**3/pi)*dexp(-2*Z*r)
+  // delzdn=small change in zdn to test potentials
+  // jdens=counter for which density
+  for (int jdens = 1; jdens <= 10; jdens++) {
+    double fup=1.0;
+    double fdn=0.2*(jdens-1);
+    double zup=1.0;
+    double zdn=0.5;
+    if (jdens > 6) {
+      fdn=1.0;
+      zup=0.5+0.5*(jdens-7);
+      zdn=zup;
+      }
+    double delzdn=1e-5;
+    double sumexc, mpqc_sumexc;
+    double sumexco;
+    // BEGIN THE LOOP THAT INCREMENTS THE DENSITY DIFFERENTIALLY
+    // kdif=1=>density as above
+    // kdif=2=>Zdn changed by DELZDN
+    for (int kdif=1; kdif<=2; kdif++) {
+      if (kdif == 2) zdn=zdn+delzdn;
+      // BEGIN THE RADIAL LOOP
+      // sumexc=integrated exchange-correlation energy 
+      // chng1=integrated xc energy change, based on vxc
+      // nr=number of points in radial loop
+      // rf=final value of r in integrals
+      // dr=change in r
+      // wt=weight of r in trapezoidal rule
+      // dup=up density
+      // agrup=|grad up|
+      // delgrup=(grad up).(grad |grad up|) 
+      // uplap=grad^2 up=Laplacian of up
+      // dn,agrdn,delgrdn,dnlap=corresponding down quantities
+      // d=up+dn
+      // agrad=|grad rho|
+      // delgrad=(grad rho).(grad |grad rho|) 
+      sumexc=0.0;
+      mpqc_sumexc = 0.0;
+      sumexco=0.0;
+      double chng1=0.0;
+      int nr=10000;
+      double rf=20.0;
+      double dr=rf/nr;
+      for (int i=1; i<=nr; i++) {
+        double r=i*dr;
+        double wt=4.*pi*r*r*dr;
+        double dup=fup*(zup*zup*zup/pi)*exp(-2.0*zup*r);
+        double ddn=fdn*(zdn*zdn*zdn/pi)*exp(-2.0*zdn*r);
+        double zdnnu=zdn+delzdn;
+        double delddn=fdn*(zdnnu*zdnnu*zdnnu/pi)*exp(-2.0*zdnnu*r)-ddn;
+        double agrup=2.0*zup*dup;
+        double delgrup=8.0*(zup*zup*zup)*dup*dup;
+        double uplap=4.0*zup*dup*(zup-1.0/r);
+        double agrdn=2.0*zdn*ddn;
+        double delgrdn=8.0*(zdn*zdn*zdn)*ddn*ddn;
+        double dnlap=4.0*zdn*ddn*(zdn-1.0/r);
+        double d=dup+ddn;
+        double agrad=2.0*(zup*dup+zdn*ddn);
+        double delgrad=4.0*agrad*(zup*zup*dup+zdn*zdn*ddn);
+#if USE_ORIGINAL_CODE
+        double exlsd;
+        double vxuplsd;
+        double vxdnlsd;
+        double exclsd;
+        double vxcuplsd;
+        double vxcdnlsd;
+        double expw91,vxuppw91,vxdnpw91,ecpw91;
+        double expbe,vxuppbe,vxdnpbe,ecpbe;
+        double eclsd, vcuplsd, vcdnlsd, vcuppw91, vcdnpw91, vcuppbe, vcdnpbe;
+        int ione=1;
+        easypbe_(&dup,&agrup,&delgrup,&uplap,&ddn,&agrdn,&delgrdn,
+                 &dnlap,&agrad,&delgrad,&ione,&ione,
+                 &exlsd,&vxuplsd,&vxdnlsd,&eclsd,&vcuplsd,&vcdnlsd,
+                 &expw91,&vxuppw91,&vxdnpw91,&ecpw91,&vcuppw91,&vcdnpw91,
+                 &expbe,&vxuppbe,&vxdnpbe,&ecpbe,&vcuppbe,&vcdnpbe);
+        //sumexc=sumexc+d*(expbe+ecpbe)*wt;
+        sumexc=sumexc+d*(expbe+ecpbe)*wt;
+        // CHNG1=CHNG1+(vxdnpbe+vcdnpbe)*DELDDN*WT/DELZDN
+#endif
+#if USE_MPQC_CODE
+        PointOutputData od;
+        id.a.rho = dup;
+        id.a.gamma = agrup*agrup;
+        id.b.rho = ddn;
+        id.b.gamma = agrdn*agrdn;
+        id.gamma_ab = 0.5*(agrad*agrad-id.a.gamma-id.b.gamma);
+        if (id.gamma_ab > sqrt(id.a.gamma*id.b.gamma))
+          id.gamma_ab = sqrt(id.a.gamma*id.b.gamma);
+        if (id.gamma_ab < -sqrt(id.a.gamma*id.b.gamma))
+          id.gamma_ab = -sqrt(id.a.gamma*id.b.gamma);
+        if (id.gamma_ab < -0.5*(id.a.gamma*id.b.gamma))
+          id.gamma_ab = -0.5*(id.a.gamma*id.b.gamma);
+        id.compute_derived(1);
+        valtest->point(id,od);
+        mpqc_sumexc += od.energy*wt;
+#endif
+//          cout << scprintf("d = %12.8f wt = %12.8f OK = %12.8f MPQC = %12.8f",
+//                           d, wt, expbe, od.energy/d) << endl;
+        }
+      if(kdif==1) {
+        sumexco=sumexc;
+        }
+      }
+    // CHNG: DIRECT XC ENERGY INCREMENT
+    // IF THE FUNCTIONAL DERIVATIVE IS CORRECT, THEN CHNG1=CHNG
+//      CHNG=(sumEXC-sumEXCO)/DELZDN
+//      PRINT 200,FUP,FDN,ZUP,ZDN,sumEXC,CHNG1,chng
+#if USE_ORIGINAL_CODE
+    cout << scprintf("orig %3.1f %3.1f %3.1f %3.1f %16.12f",
+                     fup,fdn,zup,zdn,sumexc) << endl;
+#endif
+#if USE_MPQC_CODE
+    cout << scprintf("mpqc %3.1f %3.1f %3.1f %3.1f %16.12f",
+                     fup,fdn,zup,zdn,mpqc_sumexc) << endl;
+#endif
+    }
+}
+
 int
 main(int argc, char**argv)
 {
 
-// #if defined(__i386__) && defined(__GNUC__)
+//#if defined(__i386__) && defined(__GNUC__)
   // make floating point errors cause an exception (except for denormalized
   // operands, since small numbers are denormalized)
 //  asm("fldcw %0" : : "o" (0x372));
@@ -314,6 +471,10 @@ main(int argc, char**argv)
 
   // open keyval input
   RefKeyVal keyval(new ParsedKeyVal(input));
+
+  cout << "=========== Value f Tests ===========" << endl;
+  RefDenFunctional valtest = keyval->describedclassvalue("valtest");
+  do_valtest(valtest);
 
   RefWavefunction  dft        = keyval->describedclassvalue("dft");
   if (dft.nonnull()) {

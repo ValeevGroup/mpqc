@@ -112,6 +112,8 @@ public:
 
   void save_data_state(StateOut&);
 
+  /// Returns the name of the transform
+  std::string name() const {return name_;}
   /// Returns the MemoryGrp object
   Ref<MemoryGrp> mem() const;
   /// Returns the MessageGrp object

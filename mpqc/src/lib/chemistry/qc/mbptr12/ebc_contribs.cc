@@ -59,10 +59,10 @@ R12IntEval::compute_T2_()
   if (evaluated_)
     return;
 
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform_->ints_acc();
-
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    throw std::runtime_error("R12IntEval::compute_T2_() -- ipjq_tform_ hasn't been computed yet");
+    ipjq_tform->compute();
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -82,8 +82,8 @@ R12IntEval::compute_T2_()
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
   Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
   
-  MOPairIter_SD ij_iter(act_occ_space);
-  MOPairIter_SD ab_iter(act_vir_space);
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq ab_iter(act_vir_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -122,7 +122,7 @@ R12IntEval::compute_T2_()
     const int j = ij_iter.j();
     const int ij_aa = ij_iter.ij_aa();
     const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ji_ab();
+    const int ji_ab = ij_iter.ij_ba();
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -147,7 +147,7 @@ R12IntEval::compute_T2_()
       const int b = ab_iter.j();
       const int ab_aa = ab_iter.ij_aa();
       const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ji_ab();
+      const int ba_ab = ab_iter.ij_ba();
 
       const int aa = a + nocc;
       const int bb = b + nocc;
@@ -203,10 +203,16 @@ R12IntEval::compute_R_()
   if (evaluated_)
     return;
 
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform_->ints_acc();
+  // This functions assumes that virtuals are expanded in the same basis
+  // as the occupied orbitals
+  if (!r12info_->basis_vir()->equiv(r12info_->basis()))
+    throw std::runtime_error("R12IntEval::compute_R_() -- should not be called when the basis set for virtuals \
+differs from the basis set for occupieds");
 
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    throw std::runtime_error("R12IntEval::compute_R_() -- ipjq_tform_ hasn't been computed yet");
+    ipjq_tform->compute();
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -226,8 +232,8 @@ R12IntEval::compute_R_()
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
   Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
 
-  MOPairIter_SD ij_iter(act_occ_space);
-  MOPairIter_SD ab_iter(act_vir_space);
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq ab_iter(act_vir_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -266,7 +272,7 @@ R12IntEval::compute_R_()
     const int j = ij_iter.j();
     const int ij_aa = ij_iter.ij_aa();
     const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ji_ab();
+    const int ji_ab = ij_iter.ij_ba();
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -291,7 +297,7 @@ R12IntEval::compute_R_()
       const int b = ab_iter.j();
       const int ab_aa = ab_iter.ij_aa();
       const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ji_ab();
+      const int ba_ab = ab_iter.ij_ba();
 
       const int aa = a + nocc;
       const int bb = b + nocc;
@@ -368,8 +374,8 @@ R12IntEval::compute_A_simple_()
   iajBf_tform->compute();
   Ref<R12IntsAcc> ijaBf_acc = iajBf_tform->ints_acc();
   
-  MOPairIter_SD ij_iter(act_occ_space);
-  MOPairIter_SD ab_iter(act_vir_space);
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq ab_iter(act_vir_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -408,7 +414,7 @@ R12IntEval::compute_A_simple_()
     const int j = ij_iter.j();
     const int ij_aa = ij_iter.ij_aa();
     const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ji_ab();
+    const int ji_ab = ij_iter.ij_ba();
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -429,7 +435,7 @@ R12IntEval::compute_A_simple_()
       const int b = ab_iter.j();
       const int ab_aa = ab_iter.ij_aa();
       const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ji_ab();
+      const int ba_ab = ab_iter.ij_ba();
 
       const int ab_offset = a*nvir_act+b;
       const int ba_offset = b*nvir_act+a;

@@ -35,6 +35,7 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12_amps.h>
 
 namespace sc {
 
@@ -51,6 +52,7 @@ class R12IntEval : virtual public SavableState {
 
   RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_, Aaa_, Aab_, T2aa_, T2ab_;
   RefSCMatrix Raa_, Rab_;    // Not sure if I'll compute and keep these explicitly later
+  Ref<R12Amplitudes> Amps_;  // Amplitudes of various R12-contributed terms in pair functions
   RefSCVector emp2pair_aa_, emp2pair_ab_;
   RefSCDimension dim_ij_aa_, dim_ij_ab_, dim_ij_s_, dim_ij_t_;
   RefSCDimension dim_ab_aa_, dim_ab_ab_;
@@ -61,6 +63,13 @@ class R12IntEval : virtual public SavableState {
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
   int debug_;
+
+  // Map to TwoBodyMOIntsTransform objects that have been computed previously
+  typedef std::map<std::string, Ref<TwoBodyMOIntsTransform> > TformMap;
+  TformMap tform_map_;
+  // Returns pointer to the appropriate transform.
+  // If the transform is not found then throw runtime_error
+  Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
 
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> focc_space_;
@@ -75,12 +84,7 @@ class R12IntEval : virtual public SavableState {
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
 
-  // (act.occ. OBS| act.occ. OBS) transform (used when OBS == VBS)
-  Ref<TwoBodyMOIntsTransform> ipjq_tform_;
-  // (act.occ. VBS| act.occ. VBS) transform (used when VBS != OBS)
-  Ref<TwoBodyMOIntsTransform> iajb_tform_;
-
-  /// Initialize transforms
+  /// Initialize standard transforms
   void init_tforms_();
   /// Set intermediates to zero + add the "diagonal" contributions
   void init_intermeds_();
@@ -109,19 +113,18 @@ class R12IntEval : virtual public SavableState {
   const int tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi);
   
   /** Compute contribution to V, X, and B of the following form:
-      0.5 * \bar{g}_{ij}^{pq} * \bar{r}_{pq}^{kl}, where p and q span mospace
-      Returns transform object referred to by tform_name which stores integrals in ijpq order
+      0.5 * \bar{g}_{ij}^{pq} * \bar{r}_{pq}^{kl}, where p and q span mospace.
+      tform_name is the name of the transform to be used to get the integrals.
+      mospace is either space2() or space4() of that transform
   */
-  Ref<TwoBodyMOIntsTransform> contrib_to_VXB_a_symm_(const std::string& tform_name,
-                                                     const Ref<MOIndexSpace>& mospace);
+  void contrib_to_VXB_a_symm_(const std::string& tform_name);
 
   /** Compute contribution to V, X, and B of the following form:
-      \bar{g}_{ij}^{am} * \bar{r}_{am}^{kl}, where m and a span mospace1 and mospace2, respectively
-      Returns transform object referred to by tform_name which stores integrals in ijma order
+      \bar{g}_{ij}^{am} * \bar{r}_{am}^{kl}, where m and a span space1 and space2, respectively.
+      tform_name is the name of the transform to be used to get the integrals.
+      mospace1 and mospace2 are space2() and space4() of that transform, respectively
   */
-  Ref<TwoBodyMOIntsTransform> contrib_to_VXB_a_asymm_(const std::string& tform_name,
-                                                      const Ref<MOIndexSpace>& mospace1,
-                                                      const Ref<MOIndexSpace>& mospace2);
+  void contrib_to_VXB_a_asymm_(const std::string& tform_name);
 
   /// Compute OBS contribution to V, X, and B (these contributions are independent of the method)
   void obs_contrib_to_VXB_gebc_vbseqobs_();
@@ -160,11 +163,30 @@ class R12IntEval : virtual public SavableState {
   
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
-  
+ 
+  /// This function computes T2 amplitudes
+  void compute_T2_vbsneqobs_();
+
+  /** New general function to compute <ij|r<sub>12</sub>|pq> integrals. ipjq_tform
+      is the source of the integrals.*/
+  void compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform,
+                            RefSCMatrix& Raa, RefSCMatrix& Rab);
+
+  /** Initialize amplitude objects */
+  void compute_amps_();
+
+  /** Sum contributions to SCMatrix A from all nodes and broadcast so
+      every node has the correct SCMatrix */
+  void globally_sum_scmatrix_(RefSCMatrix& A);
+
+  /** Sum contributions to SCVector A from all nodes and broadcast so
+      every node has the correct SCVector */
+  void globally_sum_scvector_(RefSCVector& A);
+
   /** Sum contributions to the intermediates from all nodes and broadcast so
       every node has the correct matrices */
   void globally_sum_intermeds_();
-  
+
 public:
   R12IntEval(StateIn&);
   R12IntEval(const Ref<R12IntEvalInfo>&);
@@ -222,6 +244,8 @@ public:
   RefSCVector emp2_aa();
   /// Returns alpha-beta MP2 pair energies.
   RefSCVector emp2_ab();
+  /// Returns amplitudes of pair correlation functions
+  Ref<R12Amplitudes> amps();
 
   RefDiagSCMatrix evals() const;  
 };

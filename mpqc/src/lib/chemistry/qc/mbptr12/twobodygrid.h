@@ -49,7 +49,6 @@ namespace sc {
 class TwoBodyGrid : virtual public SavableState {
 
   std::string name_;               // String identifier for the grid
-  Ref<Molecule> mol_;              // The molecule
   vector<SCVector3> r1_;           // Cartesian coordinates of particle 1
   vector<SCVector3> r2_;           // Cartesian coordinates of particle 2
   SCVector3 O_;                   // The origin with respect to which r1 and r2 are defined
@@ -63,8 +62,8 @@ public:
 
   void save_data_state(StateOut&);
 
-  Ref<Molecule> molecule() const;
   const std::string& name() const;
+  int nelem() const;
   const SCVector3& origin() const;
 
   /// Cartesian coordinates of particle 1 at grid point i with respect to origin O

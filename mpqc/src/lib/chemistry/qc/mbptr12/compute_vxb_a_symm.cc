@@ -51,11 +51,11 @@ using namespace sc;
 
 #define PRINT_R12_INTERMED 0
 
-Ref<TwoBodyMOIntsTransform>
-R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name, const Ref<MOIndexSpace>& mospace)
+void
+R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
 {
   if (evaluated_)
-    return NULL;
+    return;
   LinearR12::ABSMethod abs_method = r12info_->abs_method();
   Ref<MessageGrp> msg = r12info_->msg();
   Ref<MemoryGrp> mem = r12info_->mem();
@@ -68,21 +68,24 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name, const Ref<MOIn
   int me = msg->me();
   int nproc = msg->n();
   
+  // Do the AO->MO transform
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_(tform_name);
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
+  if (ijpq_acc.null() || !ijpq_acc->is_committed())
+    ipjq_tform->compute();
+  if (!ijpq_acc->is_active())
+    ijpq_acc->activate();
+  if (num_te_types != ijpq_acc->num_te_types())
+    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- number of MO integral types is wrong");
+
+  if (ipjq_tform->space2() != ipjq_tform->space4())
+    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- wrong type of transform is requested (space2 != space4)");
+  Ref<MOIndexSpace> mospace = ipjq_tform->space2();
+
   ExEnv::out0() << endl << indent
                 << "Entered " << mospace->name()
                 << " A (GEBC) intermediates evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
-
-  // Do the AO->MO transform
-  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  tfactory->set_spaces(r12info_->act_occ_space(),mospace,
-                       r12info_->act_occ_space(),mospace);
-  Ref<TwoBodyMOIntsTransform> ipjq_tform = tfactory->twobody_transform_13(tform_name.c_str());
-  ipjq_tform->set_num_te_types(num_te_types);
-  ipjq_tform->compute();
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
-  if (num_te_types != ijpq_acc->num_te_types())
-    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- number of MO integral types is wrong");
 
   int nocc_act = r12info_->nocc_act();
   int noso = mospace->rank();
@@ -93,8 +96,8 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name, const Ref<MOIn
    --------------------------------*/
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("intermediates");
-  MOPairIter_SD ij_iter(r12info_->act_occ_space());
-  MOPairIter_SD kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -143,7 +146,7 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name, const Ref<MOIn
       const int l = kl_iter.j();
       const int kl_aa = kl_iter.ij_aa();
       const int kl_ab = kl_iter.ij_ab();
-      const int lk_ab = kl_iter.ji_ab();
+      const int lk_ab = kl_iter.ij_ba();
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
@@ -166,7 +169,7 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name, const Ref<MOIn
         const int j = ij_iter.j();
         const int ij_aa = ij_iter.ij_aa();
         const int ij_ab = ij_iter.ij_ab();
-        const int ji_ab = ij_iter.ji_ab();
+        const int ji_ab = ij_iter.ij_ba();
 
         if (debug_)
           ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
@@ -334,7 +337,7 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name, const Ref<MOIn
   tim_exit("mp2-r12a intermeds (symmetric term)");
   checkpoint_();
   
-  return ipjq_tform;
+  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////

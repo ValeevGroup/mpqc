@@ -50,8 +50,8 @@ MOPairIter::~MOPairIter()
 {
 }
 
-MOPairIter_SD::MOPairIter_SD(const Ref<MOIndexSpace>& space) :
-  MOPairIter(space,space)
+SpatialMOPairIter_eq::SpatialMOPairIter_eq(const Ref<MOIndexSpace>& space) :
+  SpatialMOPairIter(space,space)
 {
   nij_ = ni_*(ni_+1)/2;
   ij_ = 0;
@@ -63,38 +63,38 @@ MOPairIter_SD::MOPairIter_SD(const Ref<MOIndexSpace>& space) :
   ij_ab_ = 0;
 }
 
-MOPairIter_SD::~MOPairIter_SD()
+SpatialMOPairIter_eq::~SpatialMOPairIter_eq()
 {
 }
 
-MOPairIter_SD_neq::MOPairIter_SD_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2) :
-MOPairIter(space1,space2)
+SpatialMOPairIter_neq::SpatialMOPairIter_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2) :
+SpatialMOPairIter(space1,space2)
 {
   if (space1 == space2)
-    throw std::runtime_error("MOPairIter_SD_neq::MOPairIter_SD_neq() -- space1 == space2");
+    throw std::runtime_error("SpatialMOPairIter_neq::SpatialMOPairIter_neq() -- space1 == space2");
   nij_ = ni_*nj_;
   ij_ = 0;
   IJ_ = 0;
 }
 
-MOPairIter_SD_neq::~MOPairIter_SD_neq()
+SpatialMOPairIter_neq::~SpatialMOPairIter_neq()
 {
 }
 
 
-Ref<MOPairIter>
+Ref<SpatialMOPairIter>
 MOPairIterFactory::mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
 {
   if (space1 == space2)
-    return new MOPairIter_SD(space1);
+    return new SpatialMOPairIter_eq(space1);
   else
-    return new MOPairIter_SD_neq(space1, space2);
+    return new SpatialMOPairIter_neq(space1, space2);
 }
 
 RefSCDimension
 MOPairIterFactory::scdim_aa(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
 {
-  if (space1 == space2)
+  if (space1 != space2)
     return scdim_ab(space1,space2);
   else {
     const int n = space1->rank();

@@ -85,7 +85,7 @@ R12IntEval::compute_dualEmp2_()
   int ncanonvir = canonvir_space_->rank();
 
   ExEnv::out0() << indent << "Begin computation of energies" << endl;
-  MOPairIter_SD kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
   int naa = kl_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = kl_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -114,7 +114,7 @@ R12IntEval::compute_dualEmp2_()
       const int l = kl_iter.j();
       const int kl_aa = kl_iter.ij_aa();
       const int kl_ab = kl_iter.ij_ab();
-      const int lk_ab = kl_iter.ji_ab();
+      const int lk_ab = kl_iter.ij_ba();
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;

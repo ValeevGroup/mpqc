@@ -202,13 +202,7 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
    construct_orthog_vir_();
    construct_orthog_ri_();
 
-   ExEnv::out0() << indent << "SVD-projecting out occupied MOs from " << ribs_space_->name()
-                 << ":" << endl << incindent;
-
    ribs_space_ = orthog_comp(occ_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
-
-   ExEnv::out0() << indent << "SVD-projecting out VBS from " << ribs_space_->name()
-                 << ":" << endl << incindent;
    ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
 }
 
@@ -276,6 +270,10 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   // Both spaces must be ordered in the same way
   if (space1->moorder() != space2->moorder())
     throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 are ordered differently ");
+
+  ExEnv::out0() << indent
+                << "SVD-projecting out " << space1->name() << " out of " << space2->name()
+                << " to obtain space " << name << endl << incindent;
 
   // C12 = C1 * S12 * C2
   RefSCMatrix C12;

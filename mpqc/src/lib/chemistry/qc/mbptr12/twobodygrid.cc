@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <cmath>
 #include <stdexcept>
 #include <util/misc/formio.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
@@ -46,7 +47,6 @@ static ClassDesc TwoBodyGrid_cd(
 TwoBodyGrid::TwoBodyGrid(StateIn& si) : SavableState(si), O_(0.0)
 {
   si.get(name_);
-  mol_ << SavableState::restore_state(si);
   int npts; si.get(npts); r1_.resize(npts); r2_.resize(npts);
   for(int pt=0; pt<npts; pt++) {
     si.get(r1_[pt].x());
@@ -66,12 +66,6 @@ TwoBodyGrid::TwoBodyGrid(StateIn& si) : SavableState(si), O_(0.0)
 TwoBodyGrid::TwoBodyGrid(const Ref<KeyVal>& keyval)
 {
   name_ = keyval->stringvalue("name",KeyValValuestring("two-body grid"));
-  mol_ = require_dynamic_cast<Molecule*>(
-                                         keyval->describedclassvalue("molecule").pointer(),
-                                         "TwoBodyGrid::TwoBodyGrid\n"
-                                         );
-  if (mol_.null())
-    throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword molecule is not specified");
 
   // Default is to assume Cartesian coordinates
   bool polar = keyval->booleanvalue("polar",KeyValValueboolean((int)false));
@@ -192,7 +186,6 @@ void
 TwoBodyGrid::save_data_state(StateOut& so)
 {
   so.put(name_);
-  SavableState::save_state(mol_.pointer(),so);
   const int npts = r1_.size();
   so.put(npts);
   for(int pt=0; pt<npts; pt++) {
@@ -213,12 +206,49 @@ TwoBodyGrid::save_data_state(StateOut& so)
 const std::string&
 TwoBodyGrid::name() const { return name_; }
 
-Ref<Molecule>
-TwoBodyGrid::molecule() const { return mol_; }
+int
+TwoBodyGrid::nelem() const { return r1_.size(); }
 
 const SCVector3&
 TwoBodyGrid::origin() const { return O_; }
 
+
+SCVector3
+TwoBodyGrid::xyz1(int i, const SCVector3& O) const
+{
+  return r1_[i] - O;
+}
+
+SCVector3
+TwoBodyGrid::xyz2(int i, const SCVector3& O) const
+{
+  return r2_[i] - O;
+}
+
+SCVector3
+TwoBodyGrid::rtp1(int i, const SCVector3& O) const
+{
+  SCVector3 RO = r1_[i] - O;
+  double r = RO.norm();
+  double theta = acos(RO.z()/r);
+  double phi = acos(RO.x()/(r*sin(theta)));
+  return SCVector3(r,theta,phi);
+}
+
+SCVector3
+TwoBodyGrid::rtp2(int i, const SCVector3& O) const
+{
+  SCVector3 RO = r2_[i] - O;
+  double r = RO.norm();
+  double theta = acos(RO.z()/r);
+  double phi = acos(RO.x()/(r*sin(theta)));
+  return SCVector3(r,theta,phi);
+}
+
+void
+TwoBodyGrid::print(std::ostream& os) const
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -59,25 +59,50 @@ class MOPairIter : public RefCount {
     /// Move to the next pair.
     virtual void next() =0;
     /// Returns nonzero if the iterator currently hold valid data.
-    virtual operator int() =0;
+    virtual operator int() const =0;
 
     /// Returns the number of functions in space i.
-    int ni() { return ni_; }
+    int ni() const { return ni_; }
     /// Returns the number of functions in space j.
-    int nj() { return nj_; }
+    int nj() const { return nj_; }
     /// Returns index i.
-    int i() { return i_; }
+    int i() const { return i_; }
     /// Returns index j.
-    int j() { return j_; }
+    int j() const { return j_; }
     /// Returns the number of pair combinations for this iterator
-    int nij() { return nij_; }
+    int nij() const { return nij_; }
     /// Returns the current iteration
-    int ij() { return ij_; }
+    int ij() const { return ij_; }
 };
 
-/** MOPairIter_SD gives the ordering of same-spin and different-spin orbital pairs.
+
+/** SpatialMOPairIter gives the ordering of pairs of spatial orbitals.
+    Different spin cases appear. */
+class SpatialMOPairIter : public MOPairIter {
+
+public:
+  /// Initialize a spatial pair iterator for the given MO spaces.
+  SpatialMOPairIter(const Ref<MOIndexSpace>& space_i, const Ref<MOIndexSpace>& space_j) :
+    MOPairIter(space_i,space_j) {};
+  ~SpatialMOPairIter() {};
+
+  /// Returns the number of functions in alpha-alpha space.
+  virtual int nij_aa() const =0;
+  /// Returns the number of functions in alpha-beta space.
+  virtual int nij_ab() const =0;
+  /** Returns compound index ij for alpha-alpha case. If the combintaion is
+      not allowed then return -1 */
+  virtual int ij_aa() const =0;
+  /// Returns compound index ij for alpha-beta case
+  virtual int ij_ab() const =0;
+  /// Returns compound index ij for beta-alpha case
+  virtual int ij_ba() const =0;
+};
+
+/** SpatialMOPairIter_eq gives the ordering of same-spin and different-spin orbital pairs
+    if both orbitals of the pairs are from the same space.
     It iterates over all i >= j combinations (total of (ni_+1)*(ni_+2)/2 pairs). */
-class MOPairIter_SD : public MOPairIter {
+class SpatialMOPairIter_eq : public SpatialMOPairIter {
 
   int nij_aa_;
   int nij_ab_;
@@ -88,7 +113,7 @@ class MOPairIter_SD : public MOPairIter {
   void init_ij(const int ij) {
 
     if (ij<0)
-      throw std::runtime_error("MOPairIter_SD::start() -- argument ij out of range");
+      throw std::runtime_error("SpatialMOPairIter_eq::start() -- argument ij out of range");
 
     ij_ = 0;
     const int renorm_ij = ij%nij_;
@@ -139,8 +164,8 @@ class MOPairIter_SD : public MOPairIter {
 
 public:
   /// Initialize an iterator for the given MO spaces.
-  MOPairIter_SD(const Ref<MOIndexSpace>& space1);
-  ~MOPairIter_SD();
+  SpatialMOPairIter_eq(const Ref<MOIndexSpace>& space1);
+  ~SpatialMOPairIter_eq();
 
   /// Initialize the iterator assuming that iteration will start with pair ij_offset
   void start(const int ij_offset=0)
@@ -154,32 +179,32 @@ public:
     inc_ij();
   };
   /// Returns nonzero if the iterator currently hold valid data.
-  operator int() { return (nij_ > ij_);};
+  operator int() const { return (nij_ > ij_);};
 
   /// Returns the number of functions in alpha-alpha space.
-  int nij_aa() { return nij_aa_; }
+  int nij_aa() const { return nij_aa_; }
   /// Returns the number of functions in alpha-beta space.
-  int nij_ab() { return nij_ab_; }
+  int nij_ab() const { return nij_ab_; }
   /** Returns compound index ij for alpha-alpha case. The i == j
       combination doesn't make sense, so ij_aa() will return -1 for such pairs. */
-  int ij_aa() { return (i_ == j_) ? -1 : ij_aa_; }
+  int ij_aa() const { return (i_ == j_) ? -1 : ij_aa_; }
   /// Returns compound index ij for alpha-beta case
-  int ij_ab() { return ij_ab_; }
-  /// Returns compound index ji for alpha-beta case
-  int ji_ab() { return ji_ab_; }
+  int ij_ab() const { return ij_ab_; }
+  /// Returns compound index ij for beta-alpha case
+  int ij_ba() const { return ji_ab_; }
 };
 
 
-/** MOPairIter_SD_neq gives the ordering of pairs of orbitals from different spaces.
-It iterates over all ij combinations (total of ni_*nj_ pairs). */
-class MOPairIter_SD_neq : public MOPairIter {
+/** SpatialMOPairIter_neq gives the ordering of pairs of spatial orbitals from different spaces.
+    It iterates over all ij combinations (total of ni_*nj_ pairs). */
+class SpatialMOPairIter_neq : public SpatialMOPairIter {
 
   int IJ_;
 
   void init_ij(const int ij) {
 
     if (ij<0)
-      throw std::runtime_error("MOPairIter_SD_neq::start() -- argument ij out of range");
+      throw std::runtime_error("SpatialMOPairIter_neq::start() -- argument ij out of range");
 
     IJ_ = 0;
     const int renorm_ij = ij%nij_;
@@ -212,8 +237,8 @@ class MOPairIter_SD_neq : public MOPairIter {
 
 public:
   /// Initialize an iterator for the given MO spaces.
-  MOPairIter_SD_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space1);
-  ~MOPairIter_SD_neq();
+  SpatialMOPairIter_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space1);
+  ~SpatialMOPairIter_neq();
 
   /// Initialize the iterator assuming that iteration will start with pair ij_offset
   void start(const int ij_offset=0)
@@ -227,18 +252,18 @@ public:
     inc_ij();
   };
   /// Returns nonzero if the iterator currently hold valid data.
-  operator int() { return (nij_ > ij_);};
+  operator int() const { return (nij_ > ij_);};
 
   /// Returns the number of functions in alpha-alpha space.
-  int nij_aa() { return nij_; }
+  int nij_aa() const { return nij_; }
   /// Returns the number of functions in alpha-beta space.
-  int nij_ab() { return nij_; }
+  int nij_ab() const { return nij_; }
   /// Returns compound index ij for alpha-alpha case
-  int ij_aa() { return IJ_; }
+  int ij_aa() const { return IJ_; }
   /// Returns compound index ij for alpha-beta case
-  int ij_ab() { return IJ_; }
+  int ij_ab() const { return IJ_; }
   /// Returns compound index ij for beta-alpha case
-  int ij_ba() { return IJ_; }
+  int ij_ba() const { return IJ_; }
 };
 
 
@@ -251,7 +276,7 @@ public:
   ~MOPairIterFactory() {}
 
   /// Constructs an appropriate MOPairIter object
-  Ref<MOPairIter> mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  Ref<SpatialMOPairIter> mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
   /// Constructs an appropriate RefSCDimension object for same-spin pair
   RefSCDimension scdim_aa(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
   /// Constructs an appropriate RefSCDimension object for different-spin pair

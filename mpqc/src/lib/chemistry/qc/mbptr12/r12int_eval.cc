@@ -89,6 +89,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info) :
     spinadapted_ = true;
     evaluated_ = false;
     debug_ = 0;
+
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -132,8 +133,16 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   emp2pair_aa_.restore(si);
   emp2pair_ab_.restore(si);
 
-  ipjq_tform_ << SavableState::restore_state(si);
-  iajb_tform_ << SavableState::restore_state(si);
+  int num_tforms;
+  si.get(num_tforms);
+  for(int t=0; t<num_tforms; t++) {
+    std::string tform_name;
+    si.get(tform_name);
+    Ref<TwoBodyMOIntsTransform> tform;
+    tform << SavableState::restore_state(si);
+    tform_map_[tform_name] = tform;
+  }
+
   init_tforms_();
 
   int gbc; si.get(gbc); gbc_ = (bool) gbc;
@@ -154,8 +163,6 @@ R12IntEval::~R12IntEval()
   dim_ij_t_ = 0;
   dim_ab_aa_ = 0;
   dim_ab_ab_ = 0;
-  ipjq_tform_ = 0;
-  iajb_tform_ = 0;
 }
 
 void
@@ -184,8 +191,14 @@ R12IntEval::save_data_state(StateOut& so)
   emp2pair_aa_.save(so);
   emp2pair_ab_.save(so);
 
-  SavableState::save_state(ipjq_tform_.pointer(),so);
-  SavableState::save_state(iajb_tform_.pointer(),so);
+  int num_tforms = tform_map_.size();
+  so.put(num_tforms);
+  TformMap::iterator first_tform = tform_map_.begin();
+  TformMap::iterator last_tform = tform_map_.end();
+  for(TformMap::iterator t=first_tform; t!=last_tform; t++) {
+    so.put((*t).first);
+    SavableState::save_state((*t).second.pointer(),so);
+  }
 
   so.put((int)gbc_);
   so.put((int)ebc_);
@@ -200,8 +213,14 @@ void
 R12IntEval::obsolete()
 {
   evaluated_ = false;
-  ipjq_tform_->obsolete();
-  iajb_tform_->obsolete();
+
+  // make all transforms obsolete
+  TformMap::iterator first_tform = tform_map_.begin();
+  TformMap::iterator last_tform = tform_map_.end();
+  for(TformMap::iterator t=first_tform; t!=last_tform; t++) {
+    (*t).second->obsolete();
+  }
+
   init_intermeds_();
 }
 
@@ -304,11 +323,73 @@ R12IntEval::init_tforms_()
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   tfactory->set_ints_method((MOIntsTransformFactory::StoreMethod)r12info_->ints_method());
 
-  if (ipjq_tform_.null()) {
+  const std::string ipjq_name = "(ip|jq)";
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = tform_map_[ipjq_name];
+  if (ipjq_tform.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->obs_space(),
                          r12info_->act_occ_space(),r12info_->obs_space());
-    ipjq_tform_ = tfactory->twobody_transform_13("(ip|jq)");
+    ipjq_tform = tfactory->twobody_transform_13(ipjq_name);
+    tform_map_[ipjq_name] = ipjq_tform;
+    tform_map_[ipjq_name]->set_num_te_types(3);
   }
+
+  const std::string iajb_name = "(ia|jb)";
+  Ref<TwoBodyMOIntsTransform> iajb_tform = tform_map_[iajb_name];
+  if (iajb_tform.null()) {
+    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->act_vir_space(),
+                         r12info_->act_occ_space(),r12info_->act_vir_space());
+    iajb_tform = tfactory->twobody_transform_13(iajb_name);
+    tform_map_[iajb_name] = iajb_tform;
+    tform_map_[iajb_name]->set_num_te_types(3);
+  }
+
+  const std::string imja_name = "(im|ja)";
+  Ref<TwoBodyMOIntsTransform> imja_tform = tform_map_[imja_name];
+  if (imja_tform.null()) {
+    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
+                         r12info_->act_occ_space(),r12info_->act_vir_space());
+    imja_tform = tfactory->twobody_transform_13(imja_name);
+    tform_map_[imja_name] = imja_tform;
+    tform_map_[imja_name]->set_num_te_types(4);
+  }
+
+  const std::string imjn_name = "(im|jn)";
+  Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_[imjn_name];
+  if (imjn_tform.null()) {
+    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
+                         r12info_->act_occ_space(),r12info_->occ_space());
+    imjn_tform = tfactory->twobody_transform_13(imjn_name);
+    tform_map_[imjn_name] = imjn_tform;
+    tform_map_[imjn_name]->set_num_te_types(3);
+  }
+
+  const std::string imjy_name = "(im|jy)";
+  Ref<TwoBodyMOIntsTransform> imjy_tform = tform_map_[imjy_name];
+  if (imjy_tform.null()) {
+    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
+                         r12info_->act_occ_space(),r12info_->ribs_space());
+    imjy_tform = tfactory->twobody_transform_13(imjy_name);
+    tform_map_[imjy_name] = imjy_tform;
+    tform_map_[imjy_name]->set_num_te_types(4);
+  }
+
+  iajb_tform = tform_map_[iajb_name];
+  imjn_tform = tform_map_[imjn_name];
+  ipjq_tform = tform_map_[ipjq_name];
+}
+
+Ref<TwoBodyMOIntsTransform>
+R12IntEval::get_tform_(const std::string& tform_name)
+{
+  TformMap::const_iterator tform_iter = tform_map_.find(tform_name);
+  TwoBodyMOIntsTransform* tform = (*tform_iter).second.pointer();
+  if (tform == NULL) {
+    std::string errmsg = "R12IntEval::get_tform_() -- transform " + tform_name + " is not known";
+    throw std::runtime_error(errmsg.c_str());
+  }
+  tform->compute();
+
+  return tform;
 }
 
 void
@@ -429,8 +510,8 @@ R12IntEval::r2_contrib_to_X_orig_()
   const int nproc = r12info_->msg()->n();
   const int me = r12info_->msg()->me();
 
-  MOPairIter_SD ij_iter(r12info_->act_occ_space());
-  MOPairIter_SD kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
 
   for(kl_iter.start();int(kl_iter);kl_iter.next()) {
 
@@ -442,7 +523,7 @@ R12IntEval::r2_contrib_to_X_orig_()
     const int l = kl_iter.j();
     const int kl_aa = kl_iter.ij_aa();
     const int kl_ab = kl_iter.ij_ab();
-    const int lk_ab = kl_iter.ji_ab();
+    const int lk_ab = kl_iter.ij_ba();
 
     for(ij_iter.start();int(ij_iter);ij_iter.next()) {
 
@@ -450,7 +531,7 @@ R12IntEval::r2_contrib_to_X_orig_()
       const int j = ij_iter.j();
       const int ij_aa = ij_iter.ij_aa();
       const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ji_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       /*----------------------------------
         Compute (r12)^2 contribution to X
@@ -506,8 +587,8 @@ R12IntEval::r2_contrib_to_X_new_()
 
   Xab_.accumulate(R2);
 
-  MOPairIter_SD ij_iter(r12info_->act_occ_space());
-  MOPairIter_SD kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
 
   for(kl_iter.start();int(kl_iter);kl_iter.next()) {
 
@@ -520,7 +601,7 @@ R12IntEval::r2_contrib_to_X_new_()
 
       const int ij_aa = ij_iter.ij_aa();
       const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ji_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       if (ij_aa != -1) {
         double Xaa_ijkl = R2.get_element(ij_ab,kl_ab) - R2.get_element(ji_ab,kl_ab);
@@ -666,6 +747,11 @@ R12IntEval::compute()
 #endif
 
   if (!ebc_) {
+    // These functions assume that virtuals are expanded in the same basis
+    // as the occupied orbitals
+    if (!r12info_->basis_vir()->equiv(r12info_->basis()))
+      throw std::runtime_error("R12IntEval::compute() -- ebc=false is only supported when basis_vir == basis");
+
     compute_A_simple_();
     compute_T2_();
     AT2_contrib_to_V_();
@@ -674,6 +760,11 @@ R12IntEval::compute()
   }
   
   if (!gbc_) {
+    // These functions assume that virtuals are expanded in the same basis
+    // as the occupied orbitals
+    if (!r12info_->basis_vir()->equiv(r12info_->basis()))
+      throw std::runtime_error("R12IntEval::compute() -- gbc=false is only supported when basis_vir == basis");
+
     compute_B_gbc_1_();
     compute_B_gbc_2_();
   }
@@ -682,93 +773,63 @@ R12IntEval::compute()
 }
 
 void
-R12IntEval::globally_sum_intermeds_()
+R12IntEval::globally_sum_scmatrix_(RefSCMatrix& A)
 {
   Ref<MessageGrp> msg = r12info_->msg();
   // If there's only one task then there's nothing to do
   if (msg->n() == 1)
     return;
 
-  const int naa_oo = dim_ij_aa_.n();
-  const int nab_oo = dim_ij_ab_.n();
-  const int naa_vv = dim_ab_aa_.n();
-  const int nab_vv = dim_ab_ab_.n();
-  
-  double *Vaa_ijkl = new double[naa_oo*naa_oo];
-  double *Baa_ijkl = new double[naa_oo*naa_oo];
-  double *Xaa_ijkl = new double[naa_oo*naa_oo];
-  double *Aaa_ijkl = new double[naa_oo*naa_vv];
-  double *T2aa_ijkl = new double[naa_oo*naa_vv];
-  double *Raa_ijkl = new double[naa_oo*naa_vv];
-  double *Vab_ijkl = new double[nab_oo*nab_oo];
-  double *Bab_ijkl = new double[nab_oo*nab_oo];
-  double *Xab_ijkl = new double[nab_oo*nab_oo];
-  double *Aab_ijkl = new double[nab_oo*nab_vv];
-  double *T2ab_ijkl = new double[nab_oo*nab_vv];
-  double *Rab_ijkl = new double[nab_oo*nab_vv];
-  double *emp2_aa = new double[naa_oo];
-  double *emp2_ab = new double[nab_oo];
+  const int nelem = A.ncol() * A.nrow();
+  double *A_array = new double[nelem];
+  A.convert(A_array);
+  msg->sum(A_array,nelem,0,-1);
+  A.assign(A_array);
 
-  Vaa_.convert(Vaa_ijkl);
-  Xaa_.convert(Xaa_ijkl);
-  Baa_.convert(Baa_ijkl);
-  Aaa_.convert(Aaa_ijkl);
-  T2aa_.convert(T2aa_ijkl);
-  Raa_.convert(Raa_ijkl);
-  Vab_.convert(Vab_ijkl);
-  Xab_.convert(Xab_ijkl);
-  Bab_.convert(Bab_ijkl);
-  Aab_.convert(Aab_ijkl);
-  T2ab_.convert(T2ab_ijkl);
-  Rab_.convert(Rab_ijkl);
-  emp2pair_aa_.convert(emp2_aa);
-  emp2pair_ab_.convert(emp2_ab);
+  delete[] A_array;
+}
 
-  msg->sum(Vaa_ijkl,naa_oo*naa_oo,0,-1);
-  msg->sum(Vab_ijkl,nab_oo*nab_oo,0,-1);
-  msg->sum(Xaa_ijkl,naa_oo*naa_oo,0,-1);
-  msg->sum(Xab_ijkl,nab_oo*nab_oo,0,-1);
-  msg->sum(Baa_ijkl,naa_oo*naa_oo,0,-1);
-  msg->sum(Bab_ijkl,nab_oo*nab_oo,0,-1);
-  msg->sum(Aaa_ijkl,naa_oo*naa_vv,0,-1);
-  msg->sum(Aab_ijkl,nab_oo*nab_vv,0,-1);
-  msg->sum(T2aa_ijkl,naa_oo*naa_vv,0,-1);
-  msg->sum(T2ab_ijkl,nab_oo*nab_vv,0,-1);
-  msg->sum(Raa_ijkl,naa_oo*naa_vv,0,-1);
-  msg->sum(Rab_ijkl,nab_oo*nab_vv,0,-1);
-  msg->sum(emp2_aa,naa_oo,0,-1);
-  msg->sum(emp2_aa,nab_oo,0,-1);
+void
+R12IntEval::globally_sum_scvector_(RefSCVector& A)
+{
+  Ref<MessageGrp> msg = r12info_->msg();
+  // If there's only one task then there's nothing to do
+  if (msg->n() == 1)
+    return;
 
-  Vaa_.assign(Vaa_ijkl);
-  Xaa_.assign(Xaa_ijkl);
-  Baa_.assign(Baa_ijkl);
-  Aaa_.assign(Aaa_ijkl);
-  T2aa_.assign(T2aa_ijkl);
-  Raa_.assign(Raa_ijkl);
-  Vab_.assign(Vab_ijkl);
-  Xab_.assign(Xab_ijkl);
-  Bab_.assign(Bab_ijkl);
-  Aab_.assign(Aab_ijkl);
-  T2ab_.assign(T2ab_ijkl);
-  Rab_.assign(Rab_ijkl);
-  emp2pair_aa_.assign(emp2_aa);
-  emp2pair_ab_.assign(emp2_ab);
+  const int nelem = A.dim().n();
+  double *A_array = new double[nelem];
+  A.convert(A_array);
+  msg->sum(A_array,nelem,0,-1);
+  A.assign(A_array);
 
-  delete[] Vaa_ijkl;
-  delete[] Xaa_ijkl;
-  delete[] Baa_ijkl;
-  delete[] Aaa_ijkl;
-  delete[] T2aa_ijkl;
-  delete[] Raa_ijkl;
-  delete[] Vab_ijkl;
-  delete[] Xab_ijkl;
-  delete[] Bab_ijkl;
-  delete[] Aab_ijkl;
-  delete[] T2ab_ijkl;
-  delete[] Rab_ijkl;
-  delete[] emp2_aa;
-  delete[] emp2_ab;
-  
+  delete[] A_array;
+}
+
+void
+R12IntEval::globally_sum_intermeds_()
+{
+  globally_sum_scmatrix_(Vaa_);
+  globally_sum_scmatrix_(Vab_);
+
+  globally_sum_scmatrix_(Xaa_);
+  globally_sum_scmatrix_(Xab_);
+
+  globally_sum_scmatrix_(Baa_);
+  globally_sum_scmatrix_(Bab_);
+
+  globally_sum_scmatrix_(Aaa_);
+  globally_sum_scmatrix_(Aab_);
+
+  globally_sum_scmatrix_(T2aa_);
+  globally_sum_scmatrix_(T2ab_);
+
+  globally_sum_scmatrix_(Raa_);
+  globally_sum_scmatrix_(Rab_);
+
+  globally_sum_scvector_(emp2pair_aa_);
+  globally_sum_scvector_(emp2pair_ab_);
+
   if (debug_)
     ExEnv::out0() << indent << "Collected contributions to the intermediates from all tasks" << endl;
 }

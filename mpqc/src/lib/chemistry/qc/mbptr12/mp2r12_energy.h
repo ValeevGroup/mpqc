@@ -36,6 +36,7 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 //#include <chemistry/qc/mbptr12/vxb_eval.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/twobodygrid.h>
 
 namespace sc {
 
@@ -50,11 +51,22 @@ class MP2R12Energy : virtual public SavableState {
   bool evaluated_;
   
   RefSCVector er12_aa_, er12_ab_, emp2r12_aa_, emp2r12_ab_;
+  RefSCMatrix Caa_, Cab_;
 
   double emp2tot_aa_() const;
   double emp2tot_ab_() const;
   double er12tot_aa_();
   double er12tot_ab_();
+
+  // Initialize SCVectors and SCMatrices
+  void init_();
+
+  // Computes values of all 2-body products from
+  // space1 and space2 if electron 1 is at r1 and
+  // electron 2 is at r2. equiv specifies whether electrons
+  // are equivalent (same spin) or not
+  RefSCVector compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                                    const SCVector3& r1, const SCVector3& r2) const;
 
 public:
 
@@ -69,6 +81,11 @@ public:
 
   Ref<R12IntEval> r12eval() const;
   LinearR12::StandardApproximation stdapp() const;
+  /** Returns whether Generalized Brillouin Condition (GBC) was used in evaluation of
+      the MP2-R12 intermediates */
+  const bool gbc() const;
+  /** Returns whether Extended Brillouin Condition (EBC) was used in evaluation of
+      the MP2-R12 intermediates and the MP2-R12 energy */
   const bool ebc() const;
   void set_debug(int debug);
   int get_debug() const;
@@ -78,17 +95,55 @@ public:
   RefSCDimension dim_s() const;
   RefSCDimension dim_t() const;
 
+  /// Computes the first-order R12 wave function and MP2-R12 energy
   void compute();
-  
-  RefSCVector emp2_aa() const;
-  RefSCVector emp2_ab() const;
-  RefSCVector er12_aa() const;
-  RefSCVector er12_ab() const;
-  RefSCVector emp2r12_aa() const;
-  RefSCVector emp2r12_ab() const;
+  /** Computes the value of the alpha-alpha pair function ij
+      when electrons 1 and 2 reside at r1 and r2 */
+  double compute_pair_function_aa(int ij, const SCVector3& r1, const SCVector3& r2);
+  /** Computes the value of the alpha-beta pair function ij
+      when electrons 1 and 2 reside at r1 and r2 */
+  double compute_pair_function_ab(int ij, const SCVector3& r1, const SCVector3& r2);
+  /** Computes values of the alpha-alpha pair function ij on tbgrid */
+  void compute_pair_function_aa(int ij, const Ref<TwoBodyGrid>& tbgrid);
+  /** Computes values of the alpha-beta pair function ij on tbgrid */
+  void compute_pair_function_ab(int ij, const Ref<TwoBodyGrid>& tbgrid);
 
-  /// Total MP2-R12 correlation energy
+  /// Returns the vector of MP2 alpha-alpha pair energies
+  RefSCVector emp2_aa() const;
+  /// Returns the vector of MP2 alpha-beta pair energies
+  RefSCVector emp2_ab() const;
+  /// Returns the vector of R12 corrections to MP2-R12 alpha-alpha pair energies
+  RefSCVector er12_aa() const;
+  /// Returns the vector of R12 correction to MP2-R12 alpha-beta pair energies
+  RefSCVector er12_ab() const;
+  /// Returns the vector of MP2-R12 alpha-alpha pair energies
+  RefSCVector emp2r12_aa() const;
+  /// Returns the vector of MP2-R12 alpha-beta pair energies
+  RefSCVector emp2r12_ab() const;
+  /// Returns total MP2-R12 correlation energy
   double energy();
+
+  /** Returns the matrix of amplitudes of
+      alpha-alpha r12-multiplied occupied orbital pairs in the first-order
+      pair function
+  */
+  RefSCMatrix C_aa();
+  /** Returns the matrix of amplitudes of
+      alpha-beta r12-multiplied occupied orbital pairs in the first-order
+      pair function
+  */
+  RefSCMatrix C_ab();
+  /** Returns the matrix of amplitudes of
+      alpha-alpha virtuals orbital pairs in the first-order
+      pair function
+  */
+  RefSCMatrix T2_aa();
+  /** Returns the matrix of amplitudes of
+      alpha-beta virtuals orbital pairs in the first-order
+      pair function
+  */
+  RefSCMatrix T2_ab();
+
 };
 
 }

@@ -59,13 +59,13 @@ R12IntEval::compute_B_gbc_1_()
   if (evaluated_)
     return;
 
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform_->ints_acc();
-
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    throw std::runtime_error("R12IntEval::compute_B_gbc_1_() -- ipjq_tform_ hasn't been computed yet");
+    ipjq_tform->compute();
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
-  
+
   tim_enter("B(GBC1) intermediate");
 
   const int num_te_types = 2;
@@ -112,8 +112,8 @@ R12IntEval::compute_B_gbc_1_()
   iMfjA_tform->compute();
   Ref<R12IntsAcc> ijMfA_acc = iMfjA_tform->ints_acc();
   
-  MOPairIter_SD ij_iter(act_occ_space);
-  MOPairIter_SD kl_iter(act_occ_space);
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -140,7 +140,7 @@ R12IntEval::compute_B_gbc_1_()
     const int l = kl_iter.j();
     const int kl_aa = kl_iter.ij_aa();
     const int kl_ab = kl_iter.ij_ab();
-    const int lk_ab = kl_iter.ji_ab();
+    const int lk_ab = kl_iter.ij_ba();
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
@@ -161,7 +161,7 @@ R12IntEval::compute_B_gbc_1_()
       const int j = ij_iter.j();
       const int ij_aa = ij_iter.ij_aa();
       const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ji_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -231,7 +231,7 @@ R12IntEval::compute_B_gbc_1_()
     const int l = kl_iter.j();
     const int kl_aa = kl_iter.ij_aa();
     const int kl_ab = kl_iter.ij_ab();
-    const int lk_ab = kl_iter.ji_ab();
+    const int lk_ab = kl_iter.ij_ba();
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
@@ -252,7 +252,7 @@ R12IntEval::compute_B_gbc_1_()
       const int j = ij_iter.j();
       const int ij_aa = ij_iter.ij_aa();
       const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ji_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -330,10 +330,10 @@ R12IntEval::compute_B_gbc_2_()
   if (evaluated_)
     return;
 
-  Ref<R12IntsAcc> ijpq_acc = ipjq_tform_->ints_acc();
-
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    throw std::runtime_error("R12IntEval::compute_B_gbc_1_() -- ipjq_tform_ hasn't been computed yet");
+    ipjq_tform->compute();
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -401,8 +401,8 @@ R12IntEval::compute_B_gbc_2_()
   vector<int> proc_with_ints;
   int nproc_with_ints = tasks_with_ints_(ijmA_acc,proc_with_ints);
 
-  MOPairIter_SD ij_iter(act_occ_space);
-  MOPairIter_SD kl_iter(act_occ_space);
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
 
   int nbraket = nocc*nribs;
 #if 1
@@ -416,7 +416,7 @@ R12IntEval::compute_B_gbc_2_()
     const int k = kl_iter.i();
     const int l = kl_iter.j();
     const int kl_ab = kl_iter.ij_ab();
-    const int lk_ab = kl_iter.ji_ab();
+    const int lk_ab = kl_iter.ij_ba();
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
@@ -438,7 +438,7 @@ R12IntEval::compute_B_gbc_2_()
       const int i = ij_iter.i();
       const int j = ij_iter.j();
       const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ji_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -510,7 +510,7 @@ R12IntEval::compute_B_gbc_2_()
     const int k = kl_iter.i();
     const int l = kl_iter.j();
     const int kl_ab = kl_iter.ij_ab();
-    const int lk_ab = kl_iter.ji_ab();
+    const int lk_ab = kl_iter.ij_ba();
 
     if (debug_)
       ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
@@ -530,7 +530,7 @@ R12IntEval::compute_B_gbc_2_()
       const int i = ij_iter.i();
       const int j = ij_iter.j();
       const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ji_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -584,13 +584,13 @@ R12IntEval::compute_B_gbc_2_()
 
     const int kl_aa = kl_iter.ij_aa();
     const int kl_ab = kl_iter.ij_ab();
-    const int lk_ab = kl_iter.ji_ab();
+    const int lk_ab = kl_iter.ij_ba();
 
     for(ij_iter.start();int(ij_iter);ij_iter.next()) {
 
       const int ij_aa = ij_iter.ij_aa();
       const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ji_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       const double B_ab_ijkl = X_ijklF_ab.get_element(ij_ab,kl_ab) + X_ijklF_ab.get_element(ji_ab,lk_ab);
       const double B_ab_ijlk = X_ijklF_ab.get_element(ij_ab,lk_ab) + X_ijklF_ab.get_element(ji_ab,kl_ab);

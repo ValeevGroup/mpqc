@@ -468,9 +468,25 @@ main(int argc, char *argv[])
       cout << node0 << endl << indent
            << scprintf("Value of the MolecularEnergy: %15.10f",
                        mole->energy())
-           << endl << endl;
-      // the mole should have printed out the gradient since do_gradient == 1
-      //mole->gradient().print("Gradient of the MolecularEnergy:");
+           << endl;
+      if (mole->value_result().actual_accuracy()
+          > mole->value_result().desired_accuracy()) {
+        cout << node0 << indent
+             << "WARNING: desired accuracy not achieved in energy" << endl;
+      }
+      cout << node0 << endl;
+      // use result_noupdate since the energy might not have converged
+      // to the desired accuracy in which case grabbing the result will
+      // start up the calculation again
+      if (mole->gradient_result().computed()) {
+        mole->gradient_result()
+          .result_noupdate().print("Gradient of the MolecularEnergy:");
+        if (mole->gradient_result().actual_accuracy()
+            > mole->gradient_result().desired_accuracy()) {
+          cout << node0 << indent
+               << "WARNING: desired accuracy not achieved in gradient" << endl;
+      }
+      }
     } else if (do_energy && mole->value_implemented()) {
       cout << node0 << endl << indent
            << scprintf("Value of the MolecularEnergy: %15.10f",

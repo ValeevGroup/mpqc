@@ -125,6 +125,7 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   need_gradient_ = func->need_density_gradient();
 
   spin_polarized_ = wfn_->spin_polarized();
+  func->set_spin_polarized(spin_polarized_);
 
   nbasis_ = wfn_->basis()->nbasis();
   delete[] bs_values_;
@@ -291,39 +292,67 @@ DenIntegrator::do_point(const SCVector3 &r,
   if (compute_potential_integrals_) {
       // the contribution to the potential integrals
       if (need_gradient_) {
-          double grads[3];
-          grads[0] = weight*(2.0*od.df_dgamaa*id.del_rho_a[0] +
-                                 od.df_dgamab*id.del_rho_b[0]);
-          grads[1] = weight*(2.0*od.df_dgamaa*id.del_rho_a[1] +
-                                 od.df_dgamab*id.del_rho_b[1]);
-          grads[2] = weight*(2.0*od.df_dgamaa*id.del_rho_a[2] +
-                                 od.df_dgamab*id.del_rho_b[2]);
-          double drhoa = weight*od.df_drho_a;
+          double gradsa[3], gradsb[3];
+          gradsa[0] = weight*(2.0*od.df_dgamaa*id.del_rho_a[0] +
+                                  od.df_dgamab*id.del_rho_b[0]);
+          gradsa[1] = weight*(2.0*od.df_dgamaa*id.del_rho_a[1] +
+                                  od.df_dgamab*id.del_rho_b[1]);
+          gradsa[2] = weight*(2.0*od.df_dgamaa*id.del_rho_a[2] +
+                                  od.df_dgamab*id.del_rho_b[2]);
+          double drhoa = weight*od.df_drho_a, drhob;
+          if (spin_polarized_) {
+              drhob = weight*od.df_drho_b;
+              gradsb[0] = weight*(2.0*od.df_dgambb*id.del_rho_b[0] +
+                                      od.df_dgamab*id.del_rho_a[0]);
+              gradsb[1] = weight*(2.0*od.df_dgambb*id.del_rho_b[1] +
+                                      od.df_dgamab*id.del_rho_a[1]);
+              gradsb[2] = weight*(2.0*od.df_dgambb*id.del_rho_b[2] +
+                                      od.df_dgamab*id.del_rho_a[2]);
+            }
 
           int jk=0;
           for (j=0; j < nbasis_; j++) {
-              double dfdr_phi_m = drhoa*bs_values_[j];
-              double dfdg_phi_m = grads[0]*bsg_values_[j*3+0] +
-                                  grads[1]*bsg_values_[j*3+1] +
-                                  grads[2]*bsg_values_[j*3+2];
-              double vmu = dfdr_phi_m + dfdg_phi_m;
+              double dfdra_phi_m = drhoa*bs_values_[j];
+              double dfdga_phi_m = gradsa[0]*bsg_values_[j*3+0] +
+                                   gradsa[1]*bsg_values_[j*3+1] +
+                                   gradsa[2]*bsg_values_[j*3+2];
+              double vamu = dfdra_phi_m + dfdga_phi_m, vbmu;
+              double dfdrb_phi_m, dfdgb_phi_m;
+              if (spin_polarized_) {
+                  dfdrb_phi_m = drhob*bs_values_[j];
+                  dfdgb_phi_m = gradsb[0]*bsg_values_[j*3+0] +
+                                       gradsb[1]*bsg_values_[j*3+1] +
+                                       gradsb[2]*bsg_values_[j*3+2];
+                  vbmu = dfdrb_phi_m + dfdgb_phi_m;
+                }
 
               for (k=0; k <= j; k++, jk++) {
-                  double dfdg_phi_n = grads[0]*bsg_values_[k*3+0] +
-                                      grads[1]*bsg_values_[k*3+1] +
-                                      grads[2]*bsg_values_[k*3+2];
-                  alpha_vmat_[jk] += vmu * bs_values_[k] +
-                                     dfdg_phi_n * bs_values_[j];
+                  double dfdga_phi_n = gradsa[0]*bsg_values_[k*3+0] +
+                                       gradsa[1]*bsg_values_[k*3+1] +
+                                       gradsa[2]*bsg_values_[k*3+2];
+                  alpha_vmat_[jk] += vamu * bs_values_[k] +
+                                     dfdga_phi_n * bs_values_[j];
+                  if (spin_polarized_) {
+                      double dfdgb_phi_n = gradsb[0]*bsg_values_[k*3+0] +
+                                           gradsb[1]*bsg_values_[k*3+1] +
+                                           gradsb[2]*bsg_values_[k*3+2];
+                      beta_vmat_[jk] += vbmu * bs_values_[k] +
+                                         dfdgb_phi_n * bs_values_[j];
+                    }
                 }
             }
         }
       else {
           int jk=0;
           double drhoa = weight*od.df_drho_a;
+          double drhob = weight*od.df_drho_b;
           for (j=0; j < nbasis_; j++) {
-              double df_phi_m = drhoa * bs_values_[j];
+              double dfa_phi_m = drhoa * bs_values_[j];
+              double dfb_phi_m = drhob * bs_values_[j];
               for (k=0; k <= j; k++, jk++) {
-                  alpha_vmat_[jk] += df_phi_m * bs_values_[k];
+                  alpha_vmat_[jk] += dfa_phi_m * bs_values_[k];
+                  if (spin_polarized_)
+                      beta_vmat_[jk] += dfb_phi_m * bs_values_[k];
                 }
             }
         }

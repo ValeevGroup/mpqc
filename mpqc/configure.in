@@ -196,7 +196,6 @@ AC_CHECK_PROG(PERL,perl,perl)
 AC_CHECK_PROG(BISON,bison,bison)
 AC_CHECK_PROG(FLEX,flex,flex)
 AC_CHECK_PROG(GENCLASS,genclass,genclass)
-AC_CHECK_PROG(LISTLIBS,listlibs,listlibs,$srcdir/bin/listlibs.sh)
 
 dnl The lack of certain tools is a show stopper
 

@@ -40,12 +40,12 @@ BISON = @BISON@
 RANLIB = @RANLIB@
 PERL = @PERL@
 GENCLASS = @GENCLASS@
-PREPEND_HEADER = $(SRCDIR)/$(TOPDIR)/bin/prepend-header
-TMPL2MACDEP = $(SRCDIR)/$(TOPDIR)/bin/tmpl2mac.pl
+PREPEND_HEADER = $(SRCTOPDIR)/bin/prepend-header
+TMPL2MACDEP = $(SRCTOPDIR)/bin/tmpl2mac.pl
 TMPL2MAC = $(PERL) $(TMPL2MACDEP)
 COMPRESS = gzip
 UNCOMPRESS = gzip -d
-LISTLIBS=@LISTLIBS@ -DLIBSUF=$(LIBSUF)
+LISTLIBS= $(PERL) $(SRCTOPDIR)/bin/listlibs.pl -DLIBSUF=$(LIBSUF)
 
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory

@@ -2651,14 +2651,14 @@ P86CFunctional::point(const PointInputData &id,
   double gamma_total2 = gamma_total*gamma_total;
   double Phi = a_ * C_infin * gamma_total / (C_rho * rho76);
   double fp86 = exp(-Phi) * C_rho * gamma_total2 / (fzeta*rho43);
-    
+  if (rho < MIN_DENSITY) fp86 = 0.;    
   od.energy = fp86;
 
   if (compute_potential_) {
       double drs_drhoa = -rs/(3.*rho);
       double drs_drhob = drs_drhoa;
       double dCrho_drhoa = drs_drhoa/denom *
-      (C3_+2.*C4_*rs - numer/denom * (C5_+2.*C6_*rs+3.*C7_*rs2));
+                           (C3_+2.*C4_*rs - numer/denom * (C5_+2.*C6_*rs+3.*C7_*rs2));
       double dCrho_drhob = dCrho_drhoa;
       double dzeta_drhoa = 1./rho * (1.-zeta);
       double dzeta_drhob = 1./rho * (-1.-zeta);
@@ -2674,6 +2674,7 @@ P86CFunctional::point(const PointInputData &id,
       - fp86/(fzeta*rho43)*(dfzeta_drhoa*rho43 + fzeta*(4./3.)*rho13);
       double dfp86_drhob = fp86/C_rho*(-dPhi_drhob*C_rho + dCrho_drhob)
       - fp86/(fzeta*rho43)*(dfzeta_drhob*rho43 + fzeta*(4./3.)*rho13);
+      if (rho < MIN_DENSITY) dfp86_drhoa = dfp86_drhob = 0.;
       od.df_drho_a = dfp86_drhoa;
       od.df_drho_b = dfp86_drhob;
 
@@ -2684,12 +2685,14 @@ P86CFunctional::point(const PointInputData &id,
       double prefactor = exp(-Phi)*C_rho/( fzeta*rho43 );
       double dfp86_dgamma_aa = prefactor * (1.-Phi/2.);
       double dfp86_dgamma_bb = dfp86_dgamma_aa;
+      if (rho < MIN_DENSITY) dfp86_dgamma_aa = dfp86_dgamma_bb = 0.;
       od.df_dgamma_aa = dfp86_dgamma_aa;
       od.df_dgamma_bb = dfp86_dgamma_bb;
 
       // double dPhi_dgamma_ab = 2.*dPhi_dgamma_aa;
       // double dfp86_dgamma_ab = fp86*(2./gamma_total2 - dPhi_dgamma_ab);
       double dfp86_dgamma_ab = prefactor * (2.-Phi);
+      if (rho < MIN_DENSITY) dfp86_dgamma_ab= 0.;
       od.df_dgamma_ab = dfp86_dgamma_ab;
 
    }   
@@ -3247,12 +3250,13 @@ void
       od.df_drho_a = 0.5 * dEx_drhoa;
       //od.df_dgamma_aa = 0.5 * rhoa * e_xa_unif * mu_ * sa2 / id.a.gamma * 
       //                  pow( (1. + mu_*sa2/kappa_), -2.);
-      od.df_dgamma_aa = 0.5 * rhoa * e_xa_unif * mu_ * 4./(2.*k_Fa*rhoa) *
+      od.df_dgamma_aa = 0.5 * rhoa * e_xa_unif * mu_ * 4./pow((2.*k_Fa*rhoa),2.) *
                         pow( (1. + mu_*sa2/kappa_), -2.);
       od.df_drho_b = od.df_drho_a;
       od.df_dgamma_bb = od.df_dgamma_aa;
       }
-    else od.df_drho_a = od.df_dgamma_aa = od.df_dgamma_bb = od.df_drho_b = 0.;     od.df_dgamma_ab = 0.;
+    else od.df_drho_a = od.df_dgamma_aa = od.df_dgamma_bb = od.df_drho_b = 0.;
+    od.df_dgamma_ab = 0.;
 
   }
 
@@ -3276,7 +3280,7 @@ void
                      + rhob*e_xb_unif*dFs_drhob;
       if (rhob > MIN_DENSITY) {
         od.df_drho_b = 0.5 * dEx_drhob;
-        od.df_dgamma_bb = 0.5 * rhob * e_xb_unif * mu_ * 4./(2.*k_Fb*rhob) *
+        od.df_dgamma_bb = 0.5 * rhob * e_xb_unif * mu_ * 4./pow((2.*k_Fb*rhob),2.) *
                 pow( (1. + mu_*sb2/kappa_), -2.);
         }
       else od.df_drho_b = od.df_dgamma_bb = 0.;
@@ -3549,8 +3553,9 @@ void
     od.df_drho_a = 0.5 * dfpw86xa_drhoa; 
 
     double dsa_dgamma_aa = 2./(2.*k_fa*rhoa*gamma_aa);
+    double sa_dsa_dgamma_aa = 2./pow( (2.*k_fa*rhoa), 2.);
     double dFxa_dgamma_aa = m_ * pow(F1a, (m_-1.)) *
-                    ( 2.*a_*sa + 4.*b_*sa3 + 6.*c_*sa5) * dsa_dgamma_aa ;
+                    ( 2.*a_ + 4.*b_*sa2 + 6.*c_*sa4 ) * sa_dsa_dgamma_aa ;
     double dfpw86xa_dgamma_aa = Ax * rhoa43 * dFxa_dgamma_aa;
     od.df_dgamma_aa = 0.5 * dfpw86xa_dgamma_aa;
 
@@ -3583,8 +3588,9 @@ void
           od.df_drho_b = 0.5 * dfpw86xb;
 
           double dsb_dgamma_bb = 2./(2.*k_fb*rhob*gamma_bb);
+          double sb_dsb_dgamma_bb = 2./pow( (2.*k_fb*rhob), 2.);
           double dFxb_dgamma_bb = m_ * pow(F1b, (m_-1.)) *
-                    ( 2.*a_*sb + 4.*b_*sb3 + 6.*c_*sb5) * dsb_dgamma_bb;
+                    ( 2.*a_ + 4.*b_*sb2 + 6.*c_*sb4) * sb_dsb_dgamma_bb;
           double dfpw86xb_dgamma_bb = Ax * rhob43 * dFxb_dgamma_bb;
           od.df_dgamma_bb = 0.5 * dfpw86xb_dgamma_bb;
        }
@@ -3662,17 +3668,25 @@ void
   double alpha = -1.5 * pow( (3./(4.*M_PI)), (1./3.) );
   double gg96a = alpha - b_*gamma_aa32/(rhoa*rhoa);
   double fxg96a = rhoa43 * gg96a;
+  if (rhoa < MIN_DENSITY) fxg96a = 0.;
   double ex = fxg96a;
 
   if (compute_potential_) {
 
       double dgg96a_drhoa = 2.*b_*gamma_aa32/(rhoa*rhoa*rhoa);
       double dfxg96a_drhoa = 4./3.*rhoa13*gg96a + rhoa43*dgg96a_drhoa;
+      if (rhoa < MIN_DENSITY) dfxg96a_drhoa = 0.;
       od.df_drho_a = dfxg96a_drhoa;
       od.df_drho_b = od.df_drho_a;
       
       double dgg96a_dgamma_aa = -3.*b_ / ( 4.*rhoa*rhoa*sqrt(gamma_aa) );
       double dfxg96a_dgamma_aa = rhoa43 * dgg96a_dgamma_aa;
+      // The derivative of the G96X functional with respect to gamma_aa or bb
+      // as implemented should go to infinity as gamma goes to zero.
+      // However, the derivative gamma terms are eventually contracted with quantities
+      // that have a sqrt(gamma) in the numerator and therefore the overall limit
+      // is zero.
+      if (gamma_aa < MIN_DENSITY || rhoa < MIN_DENSITY ) dfxg96a_dgamma_aa = 0.;
       od.df_dgamma_aa = dfxg96a_dgamma_aa;
       od.df_dgamma_bb = od.df_dgamma_aa;
       od.df_dgamma_ab = 0.;
@@ -3686,15 +3700,19 @@ void
       double gamma_bb32 = pow(gamma_bb, 1.5);
       double gg96b = alpha - b_*gamma_bb32/(rhob*rhob);
       double fxg96b = rhob43 * gg96b;
+      if (rhob < MIN_DENSITY) fxg96b = 0.;
       ex += fxg96b;
     
       if (compute_potential_) {
           double dgg96b_drhob = 2.*b_*gamma_bb32/(rhob*rhob*rhob);
           double dfxg96b_drhob = 4./3.*rhob13*gg96b + rhob43*dgg96b_drhob;
+          if (rhob < MIN_DENSITY) dfxg96b_drhob = 0.;
           od.df_drho_b = dfxg96b_drhob;
 
           double dgg96b_dgamma_bb = -3.*b_ / ( 4.*rhob*rhob*sqrt(gamma_bb) );
           double dfxg96b_dgamma_bb = rhob43 * dgg96b_dgamma_bb;
+          // See comment above with regard to correct limits.
+          if (gamma_bb < MIN_DENSITY || rhob < MIN_DENSITY ) dfxg96b_dgamma_bb = 0.;
           od.df_dgamma_bb = dfxg96b_dgamma_bb;
         }
       }

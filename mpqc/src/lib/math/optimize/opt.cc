@@ -32,7 +32,7 @@ Optimize::Optimize()
 }
 
 Optimize::Optimize(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,Optimize::class_desc_)
 {
   s.get(max_iterations_);
   n_iterations_ = 0;
@@ -141,7 +141,7 @@ IHessianUpdate::IHessianUpdate()
 }
 
 IHessianUpdate::IHessianUpdate(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,IHessianUpdate::class_desc_)
 {
 }
 
@@ -252,7 +252,7 @@ BFGSUpdate::BFGSUpdate(KeyVal&keyval):
 }
 
 BFGSUpdate::BFGSUpdate(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,BFGSUpdate::class_desc_),
   DFPUpdate(s)
 {
 }
@@ -339,7 +339,7 @@ QNewtonOpt::QNewtonOpt(KeyVal&keyval):
 }
 
 QNewtonOpt::QNewtonOpt(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,QNewtonOpt::class_desc_),
   Optimize(s)
 {
   nlp_.restore_state(s);
@@ -416,7 +416,7 @@ QNewtonOpt::update()
       // the current gcurrent.maxabs() a bit smaller than the previous,
       // which would make the current required accuracy less than the
       // gradient's actual accuracy and cause everything to be recomputed.
-      int accurate_enough = (
+      accurate_enough = (
         nlp_->actual_gradient_accuracy() <= accuracy_*roundoff_error_factor);
 
       if (!accurate_enough) {

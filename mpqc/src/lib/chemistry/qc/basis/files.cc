@@ -12,10 +12,11 @@ BasisFileSet::BasisFileSet(const RefKeyVal& keyval)
   dir_[0] = keyval->pcharvalue("basisdir");
   dir_[1] = getenv("SCLIBDIR");
   if (dir_[1]) {
-      char *tmp = strchr(dir_[1],'=') + 1;
+      char *tmp = strchr(dir_[1],'=');
       if (!tmp) tmp = dir_[1];
       else tmp = &tmp[1];
-      dir_[1] = strcpy(new char[strlen(tmp)+1], tmp);
+      dir_[1] = strcpy(new char[strlen(tmp)+6+1], tmp);
+      strcat(dir_[1], "/basis");
     }
   else {
       dir_[1] = strcpy(new char[strlen(BASISDIR)+1], BASISDIR);

@@ -31,6 +31,14 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/f77sym.h>
+
+extern "C" {
+  F77_DGESVD(const char * JOBU, const char *JOBVT,
+             int *M, int *N, double *A, int *LDA,
+             double *S, double *U, int *LDU, double *VT, int *LDVT,
+             double *WORK, int *LWORK, int *INFO );
+}
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +73,7 @@ SO::~SO()
 SO&
 SO::operator=(const SO& so)
 {
-  set_length(so.len);
+  set_length(so.length);
   length = so.length;
   for (int i=0; i < length; i++)
     cont[i] = so.cont[i];
@@ -164,6 +172,8 @@ SO_block::set_length(int l)
 void
 SO_block::reset_length(int l)
 {
+  if (len == l) return;
+
   SO *newso = new SO[l];
   
   if (so) {
@@ -257,7 +267,7 @@ struct lin_comb {
 SO_block *
 PetiteList::aotoso_info()
 {
-  int i, d, ii, jj, g, fn, s, c, ir, f;
+  int iuniq, i, d, ii, jj, g, fn, s, c, ir, f;
 
   GaussianBasisSet& gbs = *gbs_.pointer();
   Molecule& mol = *gbs.molecule().pointer();
@@ -305,159 +315,188 @@ PetiteList::aotoso_info()
     SOs[i].set_length(len);
   }
   
-  double *blc = new double[gbs.nbasis()];
-  lin_comb **lc = new lin_comb*[ng_];
-
   // loop over all unique shells
-  for (i=0; i < natom_; i++) {
+  for (iuniq=0; iuniq < gbs.molecule()->nunique(); iuniq++) {
+    int nequiv = gbs.molecule()->nequivalent(iuniq);
+    i = gbs.molecule()->unique(iuniq);
     for (s=0; s < gbs.nshell_on_center(i); s++) {
       int shell_i = gbs.shell_on_center(i,s);
       
-      // here I'm looking for the first shell in a group of equivalent
-      // shells
-      for (g=0; g < ng_; g++)
-        if (shell_map_[shell_i][g] < shell_i)
-          break;
-      
-      // means I broke out of the above loop
-      if (g != ng_)
-        continue;
-      
-      // we now have a unique shell.  now operate on this shell with all
-      // ng_ symmetry operations.  the basis function that each basis
-      // function in this shell is mapped to by symmetry operation g
-      // is stored in lc[g]
-      
       // test to see if there are any high am cartesian functions in this
-      // shell
-      int cartfunc=0;
+      // shell.  for now don't allow symmetry with cartesian functions...I
+      // just can't seem to get them working.
       for (c=0; c < gbs(i,s).ncontraction(); c++) {
         if (gbs(i,s).am(c) > 1 && gbs(i,s).is_cartesian(c)) {
-          cartfunc=1;
-          break;
-        }
-      }
-
-      // for now don't allow symmetry with cartesian functions...I just can't
-      // seem to get them working.
-      if (cartfunc && ng_ != nirrep_) {
-        ExEnv::err() << node0 << indent
-             << "PetiteList::aotoso: cannot yet handle symmetry for "
-             << " angular momentum >= 2\n";
-        abort();
-      }
-
-      for (g=0; g < ng_; g++) {
-        so = ct.symm_operation(g);
-        int j = atom_map_[i][g];
-
-        int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
-        int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
-
-        lc[g] = new lin_comb(gbs(i,s).nfunction(),func_i,func_j);
-        lin_comb& lcg = *lc[g];
-        
-        int fi=0;
-        for (c=0; c < gbs(i,s).ncontraction(); c++) {
-          int am=gbs(i,s).am(c);
-
-          if (am==0) {
-            lcg.c[fi][fi] = 1.0;
-          } else {
-            ShellRotation rr =
-              ints_->shell_rotation(am,so,gbs(i,s).is_pure(c));
-            for (ii=0; ii < rr.dim(); ii++) {
-              for (jj=0; jj < rr.dim(); jj++)
-                lcg.c[fi+ii][fi+jj] = rr(ii,jj);
-            }
+          if (ng_ != nirrep_) {
+            ExEnv::err() << node0 << indent
+                         << "PetiteList::aotoso: cannot yet handle"
+                         << " symmetry for angular momentum >= 2\n";
+            abort();
           }
-
-          fi += gbs(i,s).nfunction(c);
-          func_i += gbs(i,s).nfunction(c);
-          func_j += gbs(i,s).nfunction(c);
         }
       }
 
-      // now operate on the linear combinations with the projection operators
-      // for each irrep to form the SO's
-      int irnum=0;
-      for (ir=0; ir < ct.nirrep(); ir++) {
-        int cmplx = (ct.complex() && ct.gamma(ir).complex());
-        
-        for (fn=0; fn < gbs(i,s).nfunction(); fn++) {
-          for (d=0; d < ct.gamma(ir).degeneracy(); d++) {
-            // if this is a point group with a complex E representation,
-            // then only do the first set of projections for E
-            if (d && cmplx)
-              break;
-            
-            for (int comp=0; comp < ct.gamma(ir).degeneracy(); comp++) {
+      // the functions do not mix between contractions
+      // so the contraction loop can be done outside the symmetry
+      // operation loop
+      int bfn_offset_in_shell = 0;
+      for (c=0; c < gbs(i,s).ncontraction(); c++) {
+        int nfuncuniq = gbs(i,s).nfunction(c);
+        int nfuncall = nfuncuniq * nequiv;
 
-              // form the projection for this irrep
-              memset(blc,0,sizeof(double)*gbs.nbasis());
+        // allocate an array to store linear combinations of orbitals
+        // this is destroyed by the SVD routine
+        double **linorb = new double*[nfuncuniq];
+        linorb[0] = new double[nfuncuniq*nfuncall];
+        for (int j=1; j<nfuncuniq; j++) {
+          linorb[j] = &linorb[j-1][nfuncall];
+        }
 
-              for (g=0; g < ng_; g++) {
+        // a copy of linorb
+        double **linorbcop = new double*[nfuncuniq];
+        linorbcop[0] = new double[nfuncuniq*nfuncall];
+        for (int j=1; j<nfuncuniq; j++) {
+          linorbcop[j] = &linorbcop[j-1][nfuncall];
+        }
+
+        // allocate an array for the SVD routine
+        double **u = new double*[nfuncuniq];
+        u[0] = new double[nfuncuniq*nfuncuniq];
+        for (int j=1; j<nfuncuniq; j++) {
+          u[j] = &u[j-1][nfuncuniq];
+        }
+
+        // allocate an array to store linear combinations of symmetry
+        // orbitals
+        double **symmorb = new double*[nfuncuniq];
+        symmorb[0] = new double[nfuncuniq*nfuncall];
+        for (int j=1; j<nfuncuniq; j++) {
+          symmorb[j] = &symmorb[j-1][nfuncall];
+        }
+        memset(symmorb[0], 0, nfuncuniq*nfuncall*sizeof(8));
+
+        // loop through each irrep to form the linear combination
+        // of orbitals of that symmetry
+        int irnum = 0;
+        for (ir=0; ir<ct.nirrep(); ir++) {
+          int cmplx = (ct.complex() && ct.gamma(ir).complex());
+          for (int comp=0; comp < ct.gamma(ir).degeneracy(); comp++) {
+            memset(linorb[0], 0, nfuncuniq*nfuncall*sizeof(double));
+            for (d=0; d < ct.gamma(ir).degeneracy(); d++) {
+              // if this is a point group with a complex E representation,
+              // then only do the first set of projections for E
+              if (d && cmplx) break;
+
+              // operate on each function in this contraction with each
+              // symmetry operation to form symmetrized linear combinations
+              // of orbitals
+
+              for (g=0; g<ng_; g++) {
+                // the character
                 double ccdg = ct.gamma(ir).p(comp,d,g);
 
-                if (fabs(ccdg) < 1.0e-5)
-                  continue;
-                
-                double *coef_fn = lc[g]->c[fn];
-                double *blcp = &blc[lc[g]->mapf0];
+                so = ct.symm_operation(g);
+                int equivatom = atom_map_[i][g];
+                int atomoffset
+                  = gbs.molecule()->atom_to_unique_offset(equivatom);
+        
+                ShellRotation rr
+                  = ints_->shell_rotation(gbs(i,s).am(c),
+                                          so,gbs(i,s).is_pure(c));
 
-                for (f=0; f < lc[g]->ns; f++)
-                  *blcp++ += ccdg * *coef_fn++;
-              }
-
-              // find out how many nonzero elements there are
-              int nonzero=0;
-              double *blcp = blc;
-              for (ii=gbs.nbasis(); ii; ii--,blcp++)
-                if ((*blcp* *blcp) > 0.0009)
-                  nonzero++;
-
-              if (!nonzero)
-                continue;
-              
-              // copy the nonzero bits to tso
-              SO tso;
-              tso.set_length(nonzero);
-              ii=jj=0; blcp = blc;
-              for (int iii=gbs.nbasis(); iii; iii--, ii++, blcp++) {
-                if ((*blcp* *blcp) > 0.0009) {
-                  tso.cont[jj].bfn = ii;
-                  tso.cont[jj].coef = *blcp;
-                  jj++;
+                for (ii=0; ii < rr.dim(); ii++) {
+                  for (jj=0; jj < rr.dim(); jj++) {
+                    linorb[ii][atomoffset*nfuncuniq+jj] += ccdg * rr(ii,jj);
+                  }
                 }
               }
-
-              // normalize the linear combination
-              double c1=0;
-              for (ii=0; ii < tso.length; ii++)
-                c1 += tso.cont[ii].coef*tso.cont[ii].coef;
-
-              c1 = 1.0/sqrt(c1);
-              
-              for (ii=0; ii < tso.length; ii++)
-                tso.cont[ii].coef *= c1;
-
-              // add this SO to the appropriate block
-              if (SOs[irnum+comp].add(tso,saoelem[irnum+comp]))
-                saoelem[irnum+comp]++;
             }
+            // find the linearly independent SO's for this irrep/component
+            memcpy(linorbcop[0], linorb[0], nfuncuniq*nfuncall*sizeof(double));
+            double *singval = new double[nfuncuniq];
+            double djunk=0; int ijunk=1;
+            int lwork = 5*nfuncall;
+            double *work = new double[lwork];
+            int info;
+            // solves At = V SIGMA Ut (since FORTRAN array layout is used)
+            F77_DGESVD("N","A",&nfuncall,&nfuncuniq,linorb[0],&nfuncall,
+                       singval, &djunk, &ijunk, u[0], &nfuncuniq,
+                       work, &lwork, &info);
+            // put the lin indep symm orbs into the so array
+            for (int j=0; j<nfuncuniq; j++) {
+              if (singval[j] > 1.0e-6) {
+                SO tso;
+                tso.set_length(nfuncall);
+                int ll = 0, llnonzero = 0;
+                for (int k=0; k<nequiv; k++) {
+                  for (int l=0; l<nfuncuniq; l++,ll++) {
+                    double tmp = 0.0;
+                    for (int m=0; m<nfuncuniq; m++) {
+                      tmp += u[m][j] * linorbcop[m][ll] / singval[j];
+                    }
+                    if (fabs(tmp) > DBL_EPSILON) {
+                      int equivatom = gbs.molecule()->equivalent(iuniq,k);
+                      tso.cont[llnonzero].bfn
+                        = l
+                        + bfn_offset_in_shell
+                        + gbs.shell_to_function(gbs.shell_on_center(equivatom,
+                                                                    s));
+                      tso.cont[llnonzero].coef = tmp;
+                      llnonzero++;
+                    }
+                  }
+                }
+                tso.reset_length(llnonzero);
+                if (llnonzero == 0) {
+                  ExEnv::err() << "aotoso: internal error: no bfns in SO"
+                               << endl;
+                  abort();
+                }
+                if (SOs[irnum+comp].add(tso,saoelem[irnum+comp])) {
+                  saoelem[irnum+comp]++;
+                }
+                else {
+                  ExEnv::err() << "aotoso: internal error: "
+                               << "impossible duplicate SO"
+                               << endl;
+                  abort();
+                }
+              }
+            }
+            delete[] singval;
+            delete[] work;
           }
+          irnum += ct.gamma(ir).degeneracy();
         }
+        bfn_offset_in_shell += gbs(i,s).nfunction(c);
 
-        irnum += ct.gamma(ir).degeneracy();
+        delete[] linorb[0];
+        delete[] linorb;
+        delete[] linorbcop[0];
+        delete[] linorbcop;
+        delete[] u[0];
+        delete[] u;
       }
-
-      for (g=0; g < ng_; g++)
-        delete lc[g];
     }
   }
 
-  delete[] lc;
-  delete[] blc;
+  // Make sure all the nodes agree on what the symmetry orbitals are.
+  // (All the above work for me > 0 is ignored.)
+  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+  for (i=0; i<ncomp; i++) {
+    int len = SOs[i].len;
+    grp->bcast(len);
+    SOs[i].reset_length(len);
+    for (int j=0; j<len; j++) {
+      int solen = SOs[i].so[j].length;
+      grp->bcast(solen);
+      SOs[i].so[j].reset_length(solen);
+      for (int k=0; k<solen; k++) {
+        grp->bcast(SOs[i].so[j].cont[k].bfn);
+        grp->bcast(SOs[i].so[j].cont[k].coef);
+      }
+    }
+  }
 
   for (i=0; i < ncomp; i++) {
     ir = whichir[i];
@@ -601,7 +640,7 @@ PetiteList::aotoso()
   }
   
   delete[] sos;
-  
+
   return aoso;
 }
 

@@ -130,24 +130,24 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   hso[1][1] = (1.0-2.0*sqrt(5.0))/10.0;
   
   // now rotate the first C5's by 2pi/3 degrees about the zx axis (sort of)
-  t1rep[3] = t1rep[1].sim_transform(t1so);
-  t1rep[4] = t1rep[2].sim_transform(t1so);
+  t1rep[3] = t1rep[1].transform(t1so);
+  t1rep[4] = t1rep[2].transform(t1so);
 
-  grep[3] = grep[1].sim_transform(gso);
-  grep[4] = grep[2].sim_transform(gso);
+  grep[3] = grep[1].transform(gso);
+  grep[4] = grep[2].transform(gso);
 
-  hrep[3] = hrep[1].sim_transform(hso);
-  hrep[4] = hrep[2].sim_transform(hso);
+  hrep[3] = hrep[1].transform(hso);
+  hrep[4] = hrep[2].transform(hso);
 
   // rotate twice to get the first one aligned along the x axis
-  t1rep[3] = t1rep[3].sim_transform(t1rep[1]).sim_transform(t1rep[1]);
-  t1rep[4] = t1rep[4].sim_transform(t1rep[1]).sim_transform(t1rep[1]);
+  t1rep[3] = t1rep[3].transform(t1rep[1]).transform(t1rep[1]);
+  t1rep[4] = t1rep[4].transform(t1rep[1]).transform(t1rep[1]);
 
-  grep[3] = grep[3].sim_transform(grep[1]).sim_transform(grep[1]);
-  grep[4] = grep[4].sim_transform(grep[1]).sim_transform(grep[1]);
+  grep[3] = grep[3].transform(grep[1]).transform(grep[1]);
+  grep[4] = grep[4].transform(grep[1]).transform(grep[1]);
 
-  hrep[3] = hrep[3].sim_transform(hrep[1]).sim_transform(hrep[1]);
-  hrep[4] = hrep[4].sim_transform(hrep[1]).sim_transform(hrep[1]);
+  hrep[3] = hrep[3].transform(hrep[1]).transform(hrep[1]);
+  hrep[4] = hrep[4].transform(hrep[1]).transform(hrep[1]);
 
   t2rep[3] = t1rep[4].operate(t1rep[4]);
   t2rep[4] = t1rep[3].operate(t1rep[3]);
@@ -160,12 +160,12 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   
   // and then rotate those by 2pi/5 about the z axis 4 times
   for (i=5; i < 13; i++) {
-    t1rep[i] = t1rep[i-2].sim_transform(t1rep[1]);
-    grep[i] = grep[i-2].sim_transform(grep[1]);
-    hrep[i] = hrep[i-2].sim_transform(hrep[1]);
+    t1rep[i] = t1rep[i-2].transform(t1rep[1]);
+    grep[i] = grep[i-2].transform(grep[1]);
+    hrep[i] = hrep[i-2].transform(hrep[1]);
 
-    t2rep[i] = t2rep[i-2].sim_transform(t2rep[1]);
-    t2rep[i+12] = t2rep[i+10].sim_transform(t2rep[1]);
+    t2rep[i] = t2rep[i-2].transform(t2rep[1]);
+    t2rep[i+12] = t2rep[i+10].transform(t2rep[1]);
   }
 
   //
@@ -193,39 +193,39 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   
   // and then rotate those by 2pi/5 about the z axis 4 times
   for (i=27; i < 35; i++) {
-    t1rep[i] = t1rep[i-2].sim_transform(t1rep[1]);
-    grep[i] = grep[i-2].sim_transform(grep[1]);
-    hrep[i] = hrep[i-2].sim_transform(hrep[1]);
+    t1rep[i] = t1rep[i-2].transform(t1rep[1]);
+    grep[i] = grep[i-2].transform(grep[1]);
+    hrep[i] = hrep[i-2].transform(hrep[1]);
   }
 
   // now rotate one of the above C3's by 2pi/3 about the zx axis
-  t1rep[35] = t1rep[27].sim_transform(t1so);
-  t1rep[36] = t1rep[28].sim_transform(t1so);
+  t1rep[35] = t1rep[27].transform(t1so);
+  t1rep[36] = t1rep[28].transform(t1so);
 
-  grep[35] = grep[27].sim_transform(gso);
-  grep[36] = grep[28].sim_transform(gso);
-
-  hrep[35] = hrep[27].sim_transform(hso);
-  hrep[36] = hrep[28].sim_transform(hso);
+  grep[35] = grep[27].transform(gso);
+  grep[36] = grep[28].transform(gso);
+                      
+  hrep[35] = hrep[27].transform(hso);
+  hrep[36] = hrep[28].transform(hso);
 
   // and then rotate those by 2pi/5 about the z axis 4 times
   for (i=37; i < 45; i++) {
-    t1rep[i] = t1rep[i-2].sim_transform(t1rep[1]);
-    grep[i] = grep[i-2].sim_transform(grep[1]);
-    hrep[i] = hrep[i-2].sim_transform(hrep[1]);
+    t1rep[i] = t1rep[i-2].transform(t1rep[1]);
+    grep[i] = grep[i-2].transform(grep[1]);
+    hrep[i] = hrep[i-2].transform(hrep[1]);
   }
 
   t2rep[25] = t1rep[35];
   t2rep[26] = t1rep[36];
   
   for (i=27; i < 35; i++)
-    t2rep[i] = t2rep[i-2].sim_transform(t2rep[1]);
+    t2rep[i] = t2rep[i-2].transform(t2rep[1]);
   
   t2rep[35] = t1rep[26];
   t2rep[36] = t1rep[25];
   
   for (i=37; i < 45; i++)
-    t2rep[i] = t2rep[i-2].sim_transform(t2rep[1]);
+    t2rep[i] = t2rep[i-2].transform(t2rep[1]);
 
   //
   // 15 C2's
@@ -250,48 +250,48 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   
   // and rotate that by 2pi/5 about the z axis 4 times
   for (i=46; i < 50; i++) {
-    t1rep[i] = t1rep[i-1].sim_transform(t1rep[1]);
-    t2rep[i] = t2rep[i-1].sim_transform(t2rep[1]);
-    grep[i] = grep[i-1].sim_transform(grep[1]);
-    hrep[i] = hrep[i-1].sim_transform(hrep[1]);
+    t1rep[i] = t1rep[i-1].transform(t1rep[1]);
+    t2rep[i] = t2rep[i-1].transform(t2rep[1]);
+    grep[i] = grep[i-1].transform(grep[1]);
+    hrep[i] = hrep[i-1].transform(hrep[1]);
   }
 
   // now take the C2 about the y axis and rotate it by 2pi/3 about the zx axis
-  t1rep[50] = t1rep[45].sim_transform(t1so);
-  grep[50] = grep[45].sim_transform(gso);
-  hrep[50] = hrep[45].sim_transform(hso);
+  t1rep[50] = t1rep[45].transform(t1so);
+  grep[50] = grep[45].transform(gso);
+  hrep[50] = hrep[45].transform(hso);
 
   // align this c2 along the x axis
-  t1rep[50] = t1rep[50].sim_transform(t1rep[2]).sim_transform(t1rep[2]);
-  grep[50] = grep[50].sim_transform(grep[2]).sim_transform(grep[2]);
-  hrep[50] = hrep[50].sim_transform(hrep[2]).sim_transform(hrep[2]);
+  t1rep[50] = t1rep[50].transform(t1rep[2]).transform(t1rep[2]);
+  grep[50] = grep[50].transform(grep[2]).transform(grep[2]);
+  hrep[50] = hrep[50].transform(hrep[2]).transform(hrep[2]);
 
   // and rotate that by 2pi/5 about the z axis 4 times
   for (i=51; i < 55; i++) {
-    t1rep[i] = t1rep[i-1].sim_transform(t1rep[1]);
-    grep[i] = grep[i-1].sim_transform(grep[1]);
-    hrep[i] = hrep[i-1].sim_transform(hrep[1]);
+    t1rep[i] = t1rep[i-1].transform(t1rep[1]);
+    grep[i] = grep[i-1].transform(grep[1]);
+    hrep[i] = hrep[i-1].transform(hrep[1]);
   }
 
   // finally, take a C2 about the y axis, and rotate it by 2pi/3 about the
   // xz axis, and align it along the x axis
-  t1rep[55] = t1rep[45].sim_transform(t1rep[35]).sim_transform(t1rep[1]);
-  grep[55] = grep[45].sim_transform(grep[35]).sim_transform(grep[1]);
-  hrep[55] = hrep[45].sim_transform(hrep[35]).sim_transform(hrep[1]);
+  t1rep[55] = t1rep[45].transform(t1rep[35]).transform(t1rep[1]);
+  grep[55] = grep[45].transform(grep[35]).transform(grep[1]);
+  hrep[55] = hrep[45].transform(hrep[35]).transform(hrep[1]);
 
   // and then rotate that by 2pi/5 about the z axis 4 times
   for (i=56; i < 60; i++) {
-    t1rep[i] = t1rep[i-1].sim_transform(t1rep[1]);
-    grep[i] = grep[i-1].sim_transform(grep[1]);
-    hrep[i] = hrep[i-1].sim_transform(hrep[1]);
+    t1rep[i] = t1rep[i-1].transform(t1rep[1]);
+    grep[i] = grep[i-1].transform(grep[1]);
+    hrep[i] = hrep[i-1].transform(hrep[1]);
   }
 
   t2rep[50] = t1rep[55];
   t2rep[55] = t1rep[50];
   
   for (i=51; i < 55; i++) {
-    t2rep[i] = t2rep[i-1].sim_transform(t2rep[1]);
-    t2rep[i+5] = t2rep[i+4].sim_transform(t2rep[1]);
+    t2rep[i] = t2rep[i-1].transform(t2rep[1]);
+    t2rep[i+5] = t2rep[i+4].transform(t2rep[1]);
   }
 }
 

@@ -58,14 +58,22 @@ LIBOBJ= $(CXXSRC:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
 
+aotoso.o aotoso.d: f77sym.h
+
+f77sym.h: f77sym.in
+	$(MKF77SYM) $< $@
+
 btest: $(TESTOBJ) libintv3.$(LIBSUF) liboint3.$(LIBSUF) \
                   $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
 
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
 clean::
 	rm -f btest btest.out
 
-include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+distclean::
+	/bin/rm -f f77sym.h
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

@@ -171,7 +171,7 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
 
   int ig;
   for (ig=0; ig < g; ig++)
-    symop[ig] = symop[ig].sim_transform(frame);
+    symop[ig] = symop[ig].transform(frame);
 }
 
 CharacterTable::CharacterTable(const char *cpg)

@@ -79,7 +79,7 @@ class ShellRotation {
     /// Returns the result of rot*this.
     ShellRotation operate(const ShellRotation&rot) const;
     /// Returns the result of rot*this*transpose(rot).
-    ShellRotation sim_transform(const ShellRotation&rot) const;
+    ShellRotation transform(const ShellRotation&rot) const;
     
     /// Return the trace of the transformation.
     double trace() const;

@@ -239,7 +239,7 @@ CLHF::ao_fock(double accuracy)
     dd.print("dd after symmetrize");
   }
   tim_exit("symm");
-  
+
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
   cl_fock_.result_noupdate().accumulate(dd);

@@ -71,6 +71,7 @@ class SymmetryOperation {
 
   public:
     SymmetryOperation();
+    SymmetryOperation(const SymmetryOperation &);
     ~SymmetryOperation();
 
     /// returns the trace of the transformation matrix
@@ -96,7 +97,7 @@ class SymmetryOperation {
     SymmetryOperation operate(const SymmetryOperation& r) const;
 
     /// This performs the transform r * this * r~
-    SymmetryOperation sim_transform(const SymmetryOperation& r) const;
+    SymmetryOperation transform(const SymmetryOperation& r) const;
     
     /// Set equal to a unit matrix
     void unit() { zero(); d[0][0] = d[1][1] = d[2][2] = 1.0; }
@@ -125,6 +126,8 @@ class SymmetryOperation {
 
     /// Set equal to C2 about the x axis
     void c2_y() { i(); d[1][1] = 1.0; }
+
+    void transpose();
 
     /// print the matrix 
     void print(ostream& =ExEnv::out()) const;
@@ -174,7 +177,7 @@ class SymRep {
     SymRep operate(const SymRep& r) const;
 
     /// This performs the transform r * this * r~
-    SymRep sim_transform(const SymRep& r) const;
+    SymRep transform(const SymRep& r) const;
     
     /// Set equal to a unit matrix
     void unit() {

@@ -61,13 +61,13 @@ t_ops(SymmetryOperation *symop)
   symop[1][2][1] =  1.0;
 
   // C3 (b)
-  symop[2] = symop[1].sim_transform(symop[11]);
+  symop[2] = symop[1].transform(symop[11]);
 
   // C3 (c)
-  symop[3] = symop[1].sim_transform(symop[9]);
+  symop[3] = symop[1].transform(symop[9]);
 
   // C3 (d)
-  symop[4] = symop[1].sim_transform(symop[10]);
+  symop[4] = symop[1].transform(symop[10]);
 
   // C3^2 (a)
   symop[5][0][1] =  1.0;
@@ -75,13 +75,13 @@ t_ops(SymmetryOperation *symop)
   symop[5][2][0] =  1.0;
 
   // C3^2 (b)
-  symop[6] = symop[5].sim_transform(symop[11]);
+  symop[6] = symop[5].transform(symop[11]);
 
   // C3^2 (c)
-  symop[7] = symop[5].sim_transform(symop[9]);
+  symop[7] = symop[5].transform(symop[9]);
 
   // C3^2 (d)
-  symop[8] = symop[5].sim_transform(symop[10]);
+  symop[8] = symop[5].transform(symop[10]);
 }
 
 // this gives us the operations in Td which aren't in T.

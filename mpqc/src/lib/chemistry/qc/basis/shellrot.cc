@@ -75,7 +75,7 @@ ShellRotation::ShellRotation(int a, SymmetryOperation& so,
   am_(0),
   r(0)
 {
-  if (pure)
+  if (a > 1 && pure)
     init_pure(a,so,ints);
   else
     init(a,so,ints);
@@ -115,6 +115,14 @@ ShellRotation::init(int a, SymmetryOperation& so, const RefIntegral& ints)
   done();
 
   am_=a;
+
+  if (a == 0) {
+    n_ = 1;
+    r = new double*[1];
+    r[0] = new double[1];
+    r[0][0] = 1.0;
+    return;
+  }
   
   CartesianIter *ip = ints->new_cartesian_iter(am_);
   RedundantCartesianIter *jp = ints->new_redundant_cartesian_iter(am_);
@@ -141,8 +149,8 @@ ShellRotation::init(int a, SymmetryOperation& so, const RefIntegral& ints)
       for (k=0; k < am_; k++) {
         for (iI=0; lI[iI]==0; iI++);
         lI[iI]--;
-        //tmp *= so(iI,J.axis(k));
-        tmp *= so(J.axis(k),iI);
+        double contrib = so(J.axis(k),iI);
+        tmp *= contrib;
       }
 
       r[I.bfn()][J.bfn()] += tmp;
@@ -246,13 +254,13 @@ ShellRotation::operate(const ShellRotation& rot) const
 }
 
 ShellRotation
-ShellRotation::sim_transform(const ShellRotation& rot) const
+ShellRotation::transform(const ShellRotation& rot) const
 {
   int i,j,k;
 
   if (rot.n_ != n_) {
     ExEnv::err() << node0 << indent
-         << "ShellRotation::sim_transform(): dimensions don't match" << endl
+         << "ShellRotation::transform(): dimensions don't match" << endl
          << indent << scprintf("%d != %d\n",rot.n_,n_);
     abort();
   }

@@ -264,7 +264,7 @@ int CharacterTable::make_table()
       
       // the other n-1 sigma's
       for (j=nt+1; j < g; j++)
-        ir.rep[j] = ir.rep[j-1].sim_transform(sr);
+        ir.rep[j] = ir.rep[j-1].transform(sr);
     }
 
     // identity
@@ -284,7 +284,7 @@ int CharacterTable::make_table()
 
     // the other n-1 sigma's
     for (j=nt+1; j < g; j++)
-      symop[j] = symop[j-1].sim_transform(so);
+      symop[j] = symop[j-1].transform(so);
 
     for (i=0; i < nt ; i++) {
       rot[i] = trans[i] = symop[i].trace();
@@ -624,7 +624,7 @@ int CharacterTable::make_table()
         sr.rotation(ei*theta/2.0);
       
         for (j=nt+1; j < 2*nt; j++)
-          ir.rep[j] = ir.rep[j-1].sim_transform(sr);
+          ir.rep[j] = ir.rep[j-1].transform(sr);
       }
     }
     
@@ -643,7 +643,7 @@ int CharacterTable::make_table()
     so.rotation(theta/2.0);
 
     for (i=nt+1; i < 2*nt; i++)
-      symop[i] = symop[i-1].sim_transform(so);
+      symop[i] = symop[i-1].transform(so);
     
     for (i=0; i < 2*nt ; i++)
       rot[i] = trans[i] = symop[i].trace();
@@ -710,7 +710,7 @@ int CharacterTable::make_table()
         ir1.rep[nt].c2_y();
         
         for (j=nt+1; j < 2*nt; j++)
-          ir1.rep[j] = ir1.rep[j-1].sim_transform(ir1.rep[1]);
+          ir1.rep[j] = ir1.rep[j-1].transform(ir1.rep[1]);
         
         for (j=0; j < 2*nt; j++)
           ir2.rep[j] = ir1.rep[j];
@@ -738,7 +738,7 @@ int CharacterTable::make_table()
       symop[nt].c2_y();
 
       for (i=nt+1; i < 2*nt; i++)
-        symop[i] = symop[i-1].sim_transform(symop[1]);
+        symop[i] = symop[i-1].transform(symop[1]);
       
       // i + n-1 S2n + n sigma
       so.i();
@@ -940,7 +940,7 @@ int CharacterTable::make_table()
       sr.rotation(ei*theta/2.0);
       
       for (j=nt+1; j < 2*nt; j++)
-        ir1.rep[j] = ir1.rep[j-1].sim_transform(sr);
+        ir1.rep[j] = ir1.rep[j-1].transform(sr);
         
       sr.i();
       for (j=0; j < 2*nt; j++) {
@@ -964,7 +964,7 @@ int CharacterTable::make_table()
 
     so.rotation(theta/2.0);
     for (i=nt+1; i < 2*nt; i++)
-      symop[i] = symop[i-1].sim_transform(so);
+      symop[i] = symop[i-1].transform(so);
 
     if (nt%2)
       so.sigma_h();

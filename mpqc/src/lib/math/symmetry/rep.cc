@@ -97,13 +97,13 @@ SymRep::operate(const SymRep& r) const
 }
 
 SymRep
-SymRep::sim_transform(const SymRep& r) const
+SymRep::transform(const SymRep& r) const
 {
   int i,j,k;
 
   if (r.n != n) {
     ExEnv::err() << node0 << indent
-         << "SymRep::sim_transform(): dimensions don't match: "
+         << "SymRep::symm_transform(): dimensions don't match: "
          << r.n << " != " << n << endl;
     abort();
   }

@@ -41,6 +41,15 @@ SymmetryOperation::SymmetryOperation()
   zero();
 }
 
+SymmetryOperation::SymmetryOperation(const SymmetryOperation &so)
+{
+  for (int i=0; i<3; i++) {
+    for (int j=0; j<3; j++) {
+      d[i][j] = so.d[i][j];
+    }
+  }
+}
+
 SymmetryOperation::~SymmetryOperation()
 {
 }
@@ -60,7 +69,7 @@ SymmetryOperation::operate(const SymmetryOperation& r) const
 }
 
 SymmetryOperation
-SymmetryOperation::sim_transform(const SymmetryOperation& r) const
+SymmetryOperation::transform(const SymmetryOperation& r) const
 {
   int i,j,k;
   SymmetryOperation ret,foo;
@@ -110,6 +119,18 @@ SymmetryOperation::rotation(double theta)
   d[1][0] = -stheta;
   d[1][1] = ctheta;
   d[2][2] = 1.0;
+}
+
+void
+SymmetryOperation::transpose()
+{
+  for (int i=1; i<3; i++) {
+    for (int j=0; j<i; j++) {
+      double tmp = d[i][j];
+      d[i][j] = d[j][i];
+      d[j][i] = tmp;
+    }
+  }
 }
 
 void

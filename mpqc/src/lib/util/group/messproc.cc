@@ -2,6 +2,24 @@
 #include <stdio.h>
 #include <util/group/message.h>
 
+#define CLASSNAME ProcMessageGrp
+#define PARENTS public MessageGrp
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+ProcMessageGrp::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  MessageGrp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+ProcMessageGrp::ProcMessageGrp(const RefKeyVal& keyval):
+  MessageGrp(keyval)
+{
+  initialize(0,1);
+}
+
 ProcMessageGrp::ProcMessageGrp()
 {
   initialize(0,1);
@@ -61,7 +79,7 @@ sendit(message_t *& messages, int dest, int msgtype, void* buf, int bytes)
 static
 void
 recvit(message_t *& messages, int source, int type, void* buf, int bytes,
-       int& last_size)
+       int& last_size, int& last_type)
 {
   message_t *i;
   message_t *last;
@@ -76,7 +94,8 @@ recvit(message_t *& messages, int source, int type, void* buf, int bytes,
         }
       memcpy(buf,i->buf,i->size);
       last_size = i->size;
-      
+      last_type = i->type;
+
       // Remove the message from the list.
       if (last) {
           last->p = i->p;
@@ -113,13 +132,21 @@ ProcMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
 void
 ProcMessageGrp::raw_recv(int sender, void* data, int nbyte)
 {
-  recvit(sync_messages, sender, -1, data, nbyte, last_size_);
+  int last_size, last_type;
+  recvit(sync_messages, sender, -1, data, nbyte, last_size, last_type);
+  set_last_size(last_size);
+  set_last_type(last_type);
+  set_last_source(0);
 }
 
 void
 ProcMessageGrp::raw_recvt(int type, void* data, int nbyte)
 {
-  recvit(type_messages, -1, type, data, nbyte, last_size_);
+  int last_size, last_type;
+  recvit(type_messages, -1, type, data, nbyte, last_size, last_type);
+  set_last_size(last_size);
+  set_last_type(last_type);
+  set_last_source(0);
 }
 
 void
@@ -127,7 +154,42 @@ ProcMessageGrp::raw_bcast(void* data, int nbyte, int from)
 {
 }
 
+int
+ProcMessageGrp::probet(int type)
+{
+  message_t *i;
+
+  for (i=type_messages; i!=0; i = i->p) {
+      if (i->type == type || type == -1) {
+          set_last_source(0);
+          set_last_size(i->size);
+          set_last_type(i->type);
+          return 1;
+        }
+    }
+
+  return 0;
+}
+
 void
 ProcMessageGrp::sync()
 {
+}
+
+int
+ProcMessageGrp::last_source()
+{
+  return last_source_;
+}
+
+int
+ProcMessageGrp::last_size()
+{
+  return last_size_;
+}
+
+int
+ProcMessageGrp::last_type()
+{
+  return last_type_;
 }

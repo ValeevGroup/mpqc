@@ -1,7 +1,23 @@
 
 #include <util/group/message.h>
 
+#define CLASSNAME intMessageGrp
+#define PARENTS public MessageGrp
+#include <util/class/classia.h>
+void *
+intMessageGrp::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  MessageGrp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
 intMessageGrp::intMessageGrp()
+{
+}
+
+intMessageGrp::intMessageGrp(const RefKeyVal& keyval):
+  MessageGrp(keyval)
 {
 }
 
@@ -57,6 +73,12 @@ intMessageGrp::initialize(int me, int n, int nbits)
 }
 
 int
+intMessageGrp::msgtype_typ(int source, int msgtype)
+{
+  return msgtype>>typ_shift & typ_mask;
+}
+
+int
 intMessageGrp::typ_msgtype(int source, int usrtype)
 {
   return source<<src_shift | usrtype<<typ_shift | 1<<ctl_shift;
@@ -73,8 +95,10 @@ intMessageGrp::raw_send(int target, void* data, int nbyte)
 {
   int& seq = target_seq[target];
   int msgtype = seq_msgtype(me(),seq);
+#ifdef DEBUG
   printf("node %d sending to %d(%d) msgtype = %d\n",
-         me_,target,seq,msgtype);
+         me(),target,seq,msgtype);
+#endif
   basic_send(target, msgtype, data, nbyte);
   if (seq >= seq_mask) seq = 0;
   else seq++;
@@ -85,10 +109,14 @@ intMessageGrp::raw_recv(int sender, void* data, int nbyte)
 {
   int& seq = source_seq[sender];
   int msgtype = seq_msgtype(sender,seq);
+#ifdef DEBUG
   printf("node %d receiving from %d(%d) msgtype = %d\n",
-         me_,sender,seq,msgtype);
+         me(),sender,seq,msgtype);
+#endif
   basic_recv(msgtype, data, nbyte);
-  printf("node %d received %d\n",me_,msgtype);
+#ifdef DEBUG
+  printf("node %d received %d\n",me(),msgtype);
+#endif
   if (seq >= seq_mask) seq = 0;
   else seq++;
 }
@@ -103,4 +131,10 @@ void
 intMessageGrp::raw_recvt(int type, void* data, int nbyte)
 {
   basic_recv(typ_msgtype(me(),type), data, nbyte);
+}
+
+int
+intMessageGrp::probet(int type)
+{
+  return basic_probe(typ_msgtype(me(),type));
 }

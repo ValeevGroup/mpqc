@@ -1,0 +1,9 @@
+% Emacs should use -*- KeyVal -*- mode.
+
+procmessage<ProcMessageGrp>: ()
+
+shmmessage<ShmMessageGrp>: (
+  n = 4
+  )
+
+message = $:shmmessage

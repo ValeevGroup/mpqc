@@ -39,7 +39,7 @@ release_buffer(char* send_buffer)
 ///////////////////////////////////////////////////////////////////////////
 // MsgStateSend member functions
 
-MsgStateSend::MsgStateSend(MessageGrp&grp_):
+MsgStateSend::MsgStateSend(const RefMessageGrp&grp_):
   grp(grp_)
 {
   nbuf = 0;
@@ -87,7 +87,7 @@ int
 MsgStateSend::put(const ClassDesc*cd)
 {
   printf("putting ClassDesc index\n"); fflush(stdout);
-  return StateOutBinXDR::put(grp.classdesc_to_index(cd));
+  return StateOutBinXDR::put(grp->classdesc_to_index(cd));
 }
 
 int
@@ -142,7 +142,7 @@ MsgStateSend::put(double* d, int n)
 ///////////////////////////////////////////////////////////////////////////
 // MsgStateRecv member functions
 
-MsgStateRecv::MsgStateRecv(MessageGrp&grp_):
+MsgStateRecv::MsgStateRecv(const RefMessageGrp&grp_):
   grp(grp_)
 {
   nbuf = 0;
@@ -200,7 +200,7 @@ MsgStateRecv::get(const ClassDesc**cd)
   int index;
   printf("getting ClassDesc index\n"); fflush(stdout);
   int r = StateInBinXDR::get(index);
-  *cd = grp.index_to_classdesc(index);
+  *cd = grp->index_to_classdesc(index);
   if (!*cd) {
       fprintf(stderr,"MsgStateRecvt::get(const ClassDesc**cd): "
               "class not available on this processor\n");
@@ -260,7 +260,7 @@ MsgStateRecv::get(double*& d)
 ///////////////////////////////////////////////////////////////////////////
 // StateSend member functions
 
-StateSend::StateSend(MessageGrp&grp_):
+StateSend::StateSend(const RefMessageGrp&grp_):
   MsgStateSend(grp_),
   target_(0)
 {
@@ -277,7 +277,7 @@ StateSend::flush()
   if (nbuf == 0) return;
   *nbuf_buffer = nbuf;
   translate(nbuf_buffer);
-  grp.raw_send(target_, send_buffer, nbuf + nheader);
+  grp->raw_send(target_, send_buffer, nbuf + nheader);
   nbuf = 0;
 }
 
@@ -291,7 +291,7 @@ StateSend::target(int t)
 ///////////////////////////////////////////////////////////////////////////
 // StateRecv member functions
 
-StateRecv::StateRecv(MessageGrp&grp_):
+StateRecv::StateRecv(const RefMessageGrp&grp_):
   MsgStateRecv(grp_),
   source_(0)
 {
@@ -300,7 +300,7 @@ StateRecv::StateRecv(MessageGrp&grp_):
 void
 StateRecv::next_buffer()
 {
-  grp.raw_recv(source_, send_buffer, bufsize+nheader);
+  grp->raw_recv(source_, send_buffer, bufsize+nheader);
   translate(nbuf_buffer);
   nbuf = *nbuf_buffer;
   ibuf = 0;
@@ -316,7 +316,7 @@ StateRecv::source(int s)
 ///////////////////////////////////////////////////////////////////////////
 // BcastStateSend member functions
 
-BcastStateSend::BcastStateSend(MessageGrp&grp_):
+BcastStateSend::BcastStateSend(const RefMessageGrp&grp_):
   MsgStateSend(grp_)
 {
 }
@@ -332,14 +332,14 @@ BcastStateSend::flush()
   if (nbuf == 0) return;
   *nbuf_buffer = nbuf;
   translate(nbuf_buffer);
-  grp.raw_bcast(send_buffer, nbuf + nheader, grp.me());
+  grp->raw_bcast(send_buffer, nbuf + nheader, grp->me());
   nbuf = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // BcastStateRecv member functions
 
-BcastStateRecv::BcastStateRecv(MessageGrp&grp_, int s):
+BcastStateRecv::BcastStateRecv(const RefMessageGrp&grp_, int s):
   MsgStateRecv(grp_)
 {
   source(s);
@@ -348,7 +348,7 @@ BcastStateRecv::BcastStateRecv(MessageGrp&grp_, int s):
 void
 BcastStateRecv::source(int s)
 {
-  if (s == grp.me()) {
+  if (s == grp->me()) {
       fprintf(stderr,"BcastStateRecv::source(%d): cannot receive my own"
               " broadcast\n", s);
       abort();
@@ -360,7 +360,7 @@ BcastStateRecv::source(int s)
 void
 BcastStateRecv::next_buffer()
 {
-  grp.raw_bcast(send_buffer, bufsize+nheader, source_);
+  grp->raw_bcast(send_buffer, bufsize+nheader, source_);
   translate(nbuf_buffer);
   nbuf = *nbuf_buffer;
   ibuf = 0;

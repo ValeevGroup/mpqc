@@ -1,17 +1,30 @@
 
-#ifndef PARAGON
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
 
-#include <util/group/message.h>
+#include <util/group/messshm.h>
+
+#ifndef SEM_A
+#  define SEM_A 0200
+#endif
+
+#ifndef SEM_R
+#  define SEM_R 0400
+#endif
 
 #ifdef L486
-#  define SEM_A 0200
-#  define SEM_R 0400
+#  define SEMCTL_REQUIRES_SEMUN
+#endif
+
+#if defined(L486) || defined(PARAGON)
+#  define SHMCTL_REQUIRES_SHMID
+#endif
+
+#if defined(L486) || defined(PARAGON)
+#  define SHMDT_CHAR
 #endif
 
 /* Set the maximum number of processors (including the host). */
@@ -64,6 +77,36 @@ NEXT_MESSAGE(msgbuf_t *m)
   return r;
 }
 
+#define CLASSNAME ShmMessageGrp
+#define PARENTS public intMessageGrp
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+ShmMessageGrp::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  intMessageGrp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+ShmMessageGrp::ShmMessageGrp()
+{
+  initialize();
+}
+
+ShmMessageGrp::ShmMessageGrp(int nprocs)
+{
+  initialize(nprocs);
+}
+
+ShmMessageGrp::ShmMessageGrp(const RefKeyVal& keyval):
+  intMessageGrp(keyval)
+{
+  int nprocs = keyval->intvalue("n");
+  if (keyval->error() != KeyVal::OK) initialize();
+  else initialize(nprocs);
+}
+
 // sync_semid must have semval = 0 on entry.
 void
 ShmMessageGrp::sync()
@@ -89,7 +132,7 @@ ShmMessageGrp::~ShmMessageGrp()
 {
   static struct sembuf semndec;
 
-#ifdef L486
+#ifdef SHMDT_CHAR
   shmdt((char*)sharedmem);
 #else
   shmdt(sharedmem);
@@ -113,19 +156,22 @@ ShmMessageGrp::~ShmMessageGrp()
 
   // Release resources.
   if (me() == 0) {
-#ifdef L486
+#ifdef SHMCTL_REQUIRES_SHMID
+      shmctl(shmid,IPC_RMID,0);
+#else
+      shmctl(shmid,IPC_RMID);
+#endif
+#ifdef SEMCTL_REQUIRES_SEMUN
       semun junk;
       junk.val = 0;
-      shmctl(shmid,IPC_RMID,0);
       semctl(sync_semid,0,IPC_RMID,junk);
       semctl(sync2_semid,0,IPC_RMID,junk);
 #else
-      shmctl(shmid,IPC_RMID);
       semctl(sync_semid,0,IPC_RMID);
       semctl(sync2_semid,0,IPC_RMID);
 #endif
     }
-#ifdef L486
+#ifdef SEMCTL_REQUIRES_SEMUN
   semun junk;
   junk.val = 0;
   semctl(semid,me(),IPC_RMID,junk);
@@ -138,15 +184,11 @@ ShmMessageGrp::~ShmMessageGrp()
 #endif
 }
 
-ShmMessageGrp::ShmMessageGrp()
+void
+ShmMessageGrp::initialize()
 {
   int nprocs = atoi(getenv("NUMPROC"));
   if (!nprocs) nprocs = 1;
-  initialize(nprocs);
-}
-
-ShmMessageGrp::ShmMessageGrp(int nprocs)
-{
   initialize(nprocs);
 }
 
@@ -185,7 +227,7 @@ ShmMessageGrp::initialize(int nprocs)
       perror("semget");
       exit(-1);
     }
-  if (semctl(sync_semid,0,SETVAL,semzero) == -1) {
+  if (semctl(sync_semid,0,SETVAL,semzero.val) == -1) {
       perror("semctl");
       exit(-1);
     }
@@ -194,7 +236,7 @@ ShmMessageGrp::initialize(int nprocs)
       perror("semget");
       exit(-1);
     }
-  if (semctl(sync2_semid,0,SETVAL,semzero) == -1) {
+  if (semctl(sync2_semid,0,SETVAL,semzero.val) == -1) {
       perror("semctl");
       exit(-1);
     }
@@ -221,17 +263,17 @@ ShmMessageGrp::initialize(int nprocs)
   for (i=0; i<nprocs; i++) {
 
       // Mark all of the segments as available for writing.
-      if (semctl(semid,i,SETVAL,semone) == -1) {
+      if (semctl(semid,i,SETVAL,semone.val) == -1) {
           perror("semctl");
           exit(-1);
         }
 
-      if (semctl(recv_semid,i,SETVAL,semzero) == -1) {
+      if (semctl(recv_semid,i,SETVAL,semzero.val) == -1) {
           perror("semctl");
           exit(-1);
         }
 
-      if (semctl(send_semid,i,SETVAL,semzero) == -1) {
+      if (semctl(send_semid,i,SETVAL,semzero.val) == -1) {
           perror("semctl");
           exit(-1);
         }
@@ -261,7 +303,7 @@ static void reset_recv(int node)
 {
   semun semzero;
   semzero.val = 0;
-  semctl(recv_semid,node,SETVAL,semzero);
+  semctl(recv_semid,node,SETVAL,semzero.val);
 }
 
 static void get_recv(int node)
@@ -282,7 +324,7 @@ static void reset_send(int node)
 {
   semun semzero;
   semzero.val = 0;
-  semctl(send_semid,node,SETVAL,semzero);
+  semctl(send_semid,node,SETVAL,semzero.val);
 }
 
 static void get_send(int node)
@@ -345,8 +387,9 @@ ShmMessageGrp::basic_probe(int msgtype)
   message = (msgbuf_t*)commbuf[me()]->buf;
   for (i=0; i<commbuf[me()]->nmsg; i++) {
       if ((msgtype == -1) || (msgtype == message->type)) {
-          last_size_ = message->size;
-          last_source_ = message->from;
+          set_last_size(message->size);
+          set_last_source(message->from);
+          set_last_type(message->type);
           release_write(me());
           return 1;
         }
@@ -365,8 +408,10 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   int i;
   msgbuf_t *message,*lastmessage;
 
+#ifdef DEBUG
   print_buffer(0);
   print_buffer(1);
+#endif
 
   reset_send(me());
 
@@ -397,8 +442,9 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   // Copy the data.
   memcpy(buf,((char*)message) + sizeof(msgbuf_t),size);
 
-  last_size_ = size;
-  last_source_ = message->from;
+  set_last_size(size);
+  set_last_source(message->from);
+  set_last_type(message->type);
 
   // Find the lastmessage.
   lastmessage = (msgbuf_t*)commbuf[me()]->buf;
@@ -470,4 +516,20 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
   put_send(dest);
 }
 
-#endif PARAGON
+int
+ShmMessageGrp::last_source()
+{
+  return last_source_;
+}
+
+int
+ShmMessageGrp::last_size()
+{
+  return last_size_;
+}
+
+int
+ShmMessageGrp::last_type()
+{
+  return msgtype_typ(last_source_, last_type_);
+}

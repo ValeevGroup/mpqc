@@ -7,15 +7,34 @@
 #include <string.h>
 
 #include "message.h"
+#include "topology.h"
+#include "hcube.h"
 #include <util/class/classMap.h>
+
+#define CLASSNAME MessageGrp
+#define PARENTS public DescribedClass
+#include <util/class/classia.h>
+void *
+MessageGrp::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+MessageGrp::MessageGrp(const RefKeyVal&):
+  me_(-1),
+  n_(-1),
+  classdesc_to_index_(-1),
+  index_to_classdesc_(0)
+{
+}
 
 MessageGrp::MessageGrp():
   me_(-1),
   n_(-1),
   classdesc_to_index_(-1),
-  index_to_classdesc_(0),
-  last_source_(0),
-  last_size_(0)
+  index_to_classdesc_(0)
 {
 }
 
@@ -27,6 +46,16 @@ MessageGrp::~MessageGrp()
 void
 MessageGrp::initialize(int me, int n)
 {
+  // This member is called by a CTOR and, ultimately, causes
+  // 'this' to be converted into a temporary Ref which causes
+  // this to be deleted (very bad), so reference 'this'
+  // (and dereference this down below).
+  this->reference();
+
+  if (topology_.null()) {
+      topology_ = new HypercubeTopology();
+    }
+
   int i;
   Pix J;
   
@@ -61,13 +90,21 @@ MessageGrp::initialize(int me, int n)
               if (!classdesc_to_index_.contains(classes.contents(J))) {
                   classdesc_to_index_[classes.contents(J)] = iclass;
                   iclass++;
+#ifdef DEBUG
+                  printf("node %d adding class %d = \"%s\"\n",
+                         me, iclass, classes.contents(J)->name());
+#endif
                   strcpy(currentbuffer,classes.contents(J)->name());
                   currentbuffer += strlen(classes.contents(J)->name()) + 1;
                 }
             }
+#ifdef DEBUG
           printf("node %d bcast n_new_class = %d\n",me,n_new_class);
+#endif
           bcast(&n_new_class,1,i);
+#ifdef DEBUG
           printf("node %d finished bcast\n",me);
+#endif
           if (n_new_class) {
               bcast(&buffer_size,1,i);
               bcast(buffer,buffer_size,i);
@@ -78,9 +115,13 @@ MessageGrp::initialize(int me, int n)
           int j;
           // Get new classnames and indices from node i.
           int n_new_class;
+#ifdef DEBUG
           printf("node %d begin recv bcast\n",me);
+#endif
           bcast(&n_new_class,1,i);
+#ifdef DEBUG
           printf("node %d recv bcast n_new_class = %d\n",me,n_new_class);
+#endif
           if (n_new_class) {
               int buffer_size;
               bcast(&buffer_size,1,i);
@@ -89,10 +130,22 @@ MessageGrp::initialize(int me, int n)
               bcast(buffer,buffer_size,i);
               for (j=0; j<n_new_class; j++) {
                   ClassDescP cd = ClassDesc::name_to_class_desc(currentbuffer);
-                  if (cd) classdesc_to_index_[cd] = iclass;
+                  if (cd) {
+#ifdef DEBUG
+                      printf("node %d adding \"%s\"\n", me, currentbuffer);
+#endif
+                      classdesc_to_index_[cd] = iclass;
+                    }
+#ifdef DEBUG
+                  else {
+                      printf("node %d failed to add \"%s\"\n",
+                             me, currentbuffer);
+                    }
+#endif
                   iclass++;
                   // advance the currentbuffer to the next classname
                   while(*currentbuffer != '\0') currentbuffer++;
+                  currentbuffer++;
                 }
               delete[] buffer;
             }
@@ -115,6 +168,8 @@ MessageGrp::initialize(int me, int n)
       printf("MessageGrp: registered %d classes and %d nodes\n",
              nclass_, n_);
     }
+
+  this->dereference();
 }
 
 // Sequential send routines
@@ -125,12 +180,32 @@ MessageGrp::send(int target, double* data, int ndata)
   raw_send(target, data, ndata*sizeof(double));
 }
 void
+MessageGrp::send(int target, short* data, int ndata)
+{
+  raw_send(target, data, ndata*sizeof(short));
+}
+void
+MessageGrp::send(int target, long* data, int ndata)
+{
+  raw_send(target, data, ndata*sizeof(long));
+}
+void
+MessageGrp::send(int target, float* data, int ndata)
+{
+  raw_send(target, data, ndata*sizeof(float));
+}
+void
 MessageGrp::send(int target, int* data, int ndata)
 {
   raw_send(target, data, ndata*sizeof(int));
 }
 void
 MessageGrp::send(int target, char* data, int ndata)
+{
+  raw_send(target, data, ndata);
+}
+void
+MessageGrp::send(int target, unsigned char* data, int ndata)
 {
   raw_send(target, data, ndata);
 }
@@ -143,12 +218,32 @@ MessageGrp::recv(int sender, double* data, int ndata)
   raw_recv(sender, data, ndata*sizeof(double));
 }
 void
+MessageGrp::recv(int sender, short* data, int ndata)
+{
+  raw_recv(sender, data, ndata*sizeof(short));
+}
+void
+MessageGrp::recv(int sender, long* data, int ndata)
+{
+  raw_recv(sender, data, ndata*sizeof(long));
+}
+void
+MessageGrp::recv(int sender, float* data, int ndata)
+{
+  raw_recv(sender, data, ndata*sizeof(float));
+}
+void
 MessageGrp::recv(int sender, int* data, int ndata)
 {
   raw_recv(sender, data, ndata*sizeof(int));
 }
 void
 MessageGrp::recv(int sender, char* data, int ndata)
+{
+  raw_recv(sender, data, ndata);
+}
+void
+MessageGrp::recv(int sender, unsigned char* data, int ndata)
 {
   raw_recv(sender, data, ndata);
 }
@@ -161,12 +256,32 @@ MessageGrp::sendt(int target, int type, double* data, int ndata)
   raw_sendt(target, type, data, ndata*sizeof(double));
 }
 void
+MessageGrp::sendt(int target, int type, short* data, int ndata)
+{
+  raw_sendt(target, type, data, ndata*sizeof(short));
+}
+void
+MessageGrp::sendt(int target, int type, long* data, int ndata)
+{
+  raw_sendt(target, type, data, ndata*sizeof(long));
+}
+void
+MessageGrp::sendt(int target, int type, float* data, int ndata)
+{
+  raw_sendt(target, type, data, ndata*sizeof(float));
+}
+void
 MessageGrp::sendt(int target, int type, int* data, int ndata)
 {
   raw_sendt(target, type, data, ndata*sizeof(int));
 }
 void
 MessageGrp::sendt(int target, int type, char* data, int ndata)
+{
+  raw_sendt(target, type, data, ndata);
+}
+void
+MessageGrp::sendt(int target, int type, unsigned char* data, int ndata)
 {
   raw_sendt(target, type, data, ndata);
 }
@@ -179,12 +294,32 @@ MessageGrp::recvt(int type, double* data, int ndata)
   raw_recvt(type, data, ndata*sizeof(double));
 }
 void
+MessageGrp::recvt(int type, short* data, int ndata)
+{
+  raw_recvt(type, data, ndata*sizeof(short));
+}
+void
+MessageGrp::recvt(int type, long* data, int ndata)
+{
+  raw_recvt(type, data, ndata*sizeof(long));
+}
+void
+MessageGrp::recvt(int type, float* data, int ndata)
+{
+  raw_recvt(type, data, ndata*sizeof(float));
+}
+void
 MessageGrp::recvt(int type, int* data, int ndata)
 {
   raw_recvt(type, data, ndata*sizeof(int));
 }
 void
 MessageGrp::recvt(int type, char* data, int ndata)
+{
+  raw_recvt(type, data, ndata);
+}
+void
+MessageGrp::recvt(int type, unsigned char* data, int ndata)
 {
   raw_recvt(type, data, ndata);
 }
@@ -197,12 +332,32 @@ MessageGrp::bcast(double*data, int ndata, int from)
   raw_bcast(data, ndata*sizeof(double), from);
 }
 void
+MessageGrp::bcast(short*data, int ndata, int from)
+{
+  raw_bcast(data, ndata*sizeof(short), from);
+}
+void
+MessageGrp::bcast(long*data, int ndata, int from)
+{
+  raw_bcast(data, ndata*sizeof(long), from);
+}
+void
+MessageGrp::bcast(float*data, int ndata, int from)
+{
+  raw_bcast(data, ndata*sizeof(float), from);
+}
+void
 MessageGrp::bcast(int*data, int ndata, int from)
 {
   raw_bcast(data, ndata*sizeof(int), from);
 }
 void
 MessageGrp::bcast(char*data, int ndata, int from)
+{
+  raw_bcast(data, ndata, from);
+}
+void
+MessageGrp::bcast(unsigned char*data, int ndata, int from)
 {
   raw_bcast(data, ndata, from);
 }
@@ -231,17 +386,40 @@ MessageGrp::index_to_classdesc(int index)
     }
 }
 
-// A simple default broadcast member.
 void
 MessageGrp::raw_bcast(void* data, int nbyte, int from)
 {
-  if (me() == from) {
-      for (int i=0; i<n(); i++) {
-          if (i == from) continue;
-          raw_send(i, data, nbyte);
+  RefGlobalMsgIter i(topology_->global_msg_iter(this, from));
+  for (i->forwards(); !i->done(); i->next()) {
+      if (i->send()) {
+          raw_send(i->sendto(), data, nbyte);
+        }
+      if (i->recv()) {
+          raw_recv(i->recvfrom(), data, nbyte);
         }
     }
-  else {
-      raw_recv(from, data, nbyte);
+}
+
+void
+MessageGrp::sync()
+{
+  RefGlobalMsgIter i(topology_->global_msg_iter(this, 0));
+
+  for (i->backwards(); !i->done(); i->next()) {
+      if (i->send()) {
+          raw_send(i->sendto(), 0, 0);
+        }
+      if (i->recv()) {
+          raw_recv(i->recvfrom(), 0, 0);
+        }
+    }
+  
+  for (i->forwards(); !i->done(); i->next()) {
+      if (i->send()) {
+          raw_send(i->sendto(), 0, 0);
+        }
+      if (i->recv()) {
+          raw_recv(i->recvfrom(), 0, 0);
+        }
     }
 }

@@ -15,7 +15,7 @@ class MsgStateSend: public StateOutBinXDR {
     MsgStateSend(const MsgStateSend&);
     operator=(const MsgStateSend&);
   protected:
-    MessageGrp& grp;
+    const RefMessageGrp& grp;
     int nbuf; // the number of bytes used in the buffer
     int bufsize; // the allocated size of the data buffer
     char* buffer; // the data buffer
@@ -25,7 +25,7 @@ class MsgStateSend: public StateOutBinXDR {
 
     put_array_void(const void*, int);
   public:
-    MsgStateSend(MessageGrp&);
+    MsgStateSend(const RefMessageGrp&);
     virtual ~MsgStateSend();
     virtual void flush() = 0;
 
@@ -53,7 +53,7 @@ class MsgStateRecv: public StateInBinXDR {
     MsgStateRecv(const MsgStateRecv&);
     operator=(const MsgStateRecv&);
   protected:
-    MessageGrp& grp;
+    const RefMessageGrp& grp;
     int nbuf; // the number of bytes used in the buffer
     int ibuf; // the current pointer withing the buffer
     int bufsize; // the allocated size of the buffer
@@ -66,7 +66,7 @@ class MsgStateRecv: public StateInBinXDR {
 
     virtual void next_buffer() = 0;
   public:
-    MsgStateRecv(MessageGrp&);
+    MsgStateRecv(const RefMessageGrp&);
     virtual ~MsgStateRecv();
 
     // The buffer size of statein and stateout objects that
@@ -97,7 +97,7 @@ class StateSend: public MsgStateSend {
   private:
     int target_;
   public:
-    StateSend(MessageGrp&);
+    StateSend(const RefMessageGrp&);
     ~StateSend();
     void target(int);
     void flush();
@@ -113,7 +113,7 @@ class StateRecv: public MsgStateRecv {
   protected:
     void next_buffer();
   public:
-    StateRecv(MessageGrp&);
+    StateRecv(const RefMessageGrp&);
     void source(int);
 };
 
@@ -125,7 +125,7 @@ class BcastStateSend: public MsgStateSend {
     BcastStateSend(const BcastStateSend&);
     operator=(const BcastStateSend&);
   public:
-    BcastStateSend(MessageGrp&);
+    BcastStateSend(const RefMessageGrp&);
     ~BcastStateSend();
     void flush();
 };
@@ -139,7 +139,7 @@ class BcastStateRecv: public MsgStateRecv {
     int source_;
     void next_buffer();
   public:
-    BcastStateRecv(MessageGrp&, int source = 0);
+    BcastStateRecv(const RefMessageGrp&, int source = 0);
     void source(int s);
 };
 

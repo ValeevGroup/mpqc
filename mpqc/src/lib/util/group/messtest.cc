@@ -7,11 +7,23 @@
 #include <util/state/state.h>
 #include <util/group/message.h>
 #include <util/group/mstate.h>
+#include <util/group/hcube.h>
 
-#define A_parents virtual public SavableState
+// Force linkages:
+#ifndef __PIC__
+# ifndef PARAGON
+#   include <util/group/messshm.h>
+    const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
+# endif
+# ifdef PARAGON
+#   include <util/group/messpgon.h>
+    const ClassDesc &fl1 = ParagonMessageGrp::class_desc_;
+# endif
+#endif
+
+#define A_parents virtual_base public SavableState
 class A: A_parents {
 #   define CLASSNAME A
-#   define HAVE_CTOR
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -56,7 +68,7 @@ A::A(const RefKeyVal&keyval):
   for (int i=0; i<n; i++) array[i] = i + 10000;
 }
 A::A(StateIn&s):
-  SavableState(s,A::class_desc_)
+  SavableState(s)
 {
   printf("getting d\n"); fflush(stdout);
   s.get(d);
@@ -86,7 +98,6 @@ A::save_data_state(StateOut&s)
 
 #define CLASSNAME A
 #define PARENTS A_parents
-#define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -99,26 +110,111 @@ A::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-void test(MessageGrp&, int source, int target);
+void test(const RefMessageGrp&, int source, int target);
+void test_hcube(int nproc, int root, int fwd);
 
 int
-main()
+main(int argc, char**argv)
 {
-  //ProcMessageGrp grp;
-  //test(grp, 0, 0);
+  RefMessageGrp grp;
 
-  ShmMessageGrp grp(4);
-  test(grp, 2, 1);
+  const char* input = SRCDIR "/messtest.in";
+  const char* keyword = "message";
 
+  if (argc >= 2) input = argv[1];
+  if (argc >= 3) keyword = argv[2];
+
+  RefKeyVal keyval = new ParsedKeyVal(input);
+
+  grp = keyval->describedclassvalue(keyword);
+
+  if (grp.null()) {
+      fprintf(stderr,"Couldn't initialize MessageGrp\n");
+      abort();
+    }
+
+  grp->sync();
+
+  if (grp->me() == 0) {
+      test_hcube(39, 0, 1);
+      test_hcube(16, 0, 1);
+      test_hcube(17, 4, 1);
+      test_hcube(17, 4, 0);
+      test_hcube(1, 0, 0);
+    }
+
+  grp->sync();
+
+  if (grp->n() >= 3) {
+      test(grp, 2, 1);
+    }
+  else {
+      test(grp, 0, 0);
+    }
+
+  grp->sync();
   return 0;
 }
 
 void
-test(MessageGrp& grp, int source, int target)
+test_hcube(int nproc, int root, int fwd)
+{
+  int i, j;
+  RefGlobalMsgIter *gmi = new RefGlobalMsgIter[nproc];
+  for (i=0; i<nproc; i++) {
+      gmi[i] =  new HypercubeGMI(nproc, i, root);
+    }
+  int iter = 1;
+  for (j=0; j<nproc; j++) {
+      if (fwd) {
+          gmi[j]->forwards();
+        }
+      else {
+          gmi[j]->backwards();
+        }
+    }
+  while (!gmi[0]->done()) {
+      printf("------ step %d of %d ------\n", iter, gmi[0]->n());
+      for (j=0; j<nproc; j++) {
+          if (gmi[j]->send()) {
+              if (0 <= gmi[j]->sendto() && gmi[j]->sendto() < nproc) {
+                  if (gmi[gmi[j]->sendto()]->recvfrom() == j) {
+                      printf(" %d -> %d\n", j, gmi[j]->sendto());
+                    }
+                  else {
+                      printf(" %d -> (%d)\n", j, gmi[j]->sendto());
+                    }
+                }
+              else {
+                  printf(" %d -> %d?\n", j, gmi[j]->sendto());
+                }
+            }
+          else if (gmi[j]->recv()) {
+              if (0 <= gmi[j]->recvfrom() && gmi[j]->recvfrom() < nproc) {
+                  if (gmi[gmi[j]->recvfrom()]->sendto() == j) {
+                      // to be printed by sender
+                    }
+                  else {
+                      printf(" (%d) -> %d\n", gmi[j]->recvfrom(), j);
+                    }
+                }
+              else {
+                  printf(" %d? -> %d\n", gmi[j]->recvfrom(), j);
+                }
+            }
+        }
+      for (j=0; j<nproc; j++) gmi[j]->next();
+      iter++;
+    }
+  fflush(stdout);
+}
+
+void
+test(const RefMessageGrp& grp, int source, int target)
 {
   RefA a,b;
   
-  if (grp.me() == source) {
+  if (grp->me() == source) {
       StateSend so(grp);
       so.set_buffer_size(5);
       so.target(target);
@@ -127,43 +223,46 @@ test(MessageGrp& grp, int source, int target)
       so.flush();
     }
 
-  if (grp.me() == target) {
+  if (grp->me() == target) {
       StateRecv si(grp);
       si.set_buffer_size(5);
       si.source(source);
       b.restore_state(si);
     }
 
-  if (grp.me() == target) {
+  if (grp->me() == target) {
       printf("target:\n");
       b->print();
     }
 
-  grp.sync();
+  grp->sync();
 
-  if (grp.me() == source) {
+  if (grp->me() == source) {
       printf("source:\n");
       a->print();
     }
 
   ///////////////////////////////////////////////////
   // Test broadcast
-  grp.sync();
 
-  b = 0;
+  if (source != target) {
+      grp->sync();
+
+      b = 0;
   
-  if (grp.me() == source) {
-      BcastStateSend so(grp);
-      a.save_state(so);
-    }
-  else {
-      BcastStateRecv si(grp,source);
-      b.restore_state(si);
-    }
+      if (grp->me() == source) {
+          BcastStateSend so(grp);
+          a.save_state(so);
+        }
+      else {
+          BcastStateRecv si(grp,source);
+          b.restore_state(si);
+        }
 
-  if (grp.me() == target) {
-      printf("bcast target:\n");
-      b->print();
+      if (grp->me() == target) {
+          printf("bcast target:\n");
+          b->print();
+        }
     }
 
 }

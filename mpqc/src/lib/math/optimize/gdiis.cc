@@ -214,10 +214,6 @@ GDIISOpt::update()
                      old_maxabs_gradient, maxabs_gradient) << endl;
   }
 
-  // make the next gradient computed more accurate, since it will
-  // be smaller
-  accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
-  
   // update the hessian
   if (update_.nonnull()) {
     update_->update(ihessian_,function(),xcurrent,gcurrent);
@@ -257,20 +253,31 @@ GDIISOpt::update()
       tot *= scal;
     }
                     
-    cout << node0 << endl << indent
-         << scprintf("taking step of size %f", tot) << endl;
-    
     RefSCVector xnext = xcurrent + xdisp;
     
     conv_->reset();
     conv_->get_grad(function());
     conv_->get_x(function());
 
+    // check for conergence before resetting the geometry...this means we
+    // can't check convergence based on displacements (unless we pass xdisp
+    // to conv_)
+    int converged = conv_->converged();
+    if (converged)
+      return converged;
+
+    cout << node0 << endl << indent
+         << scprintf("taking step of size %f", tot) << endl;
+    
     function()->set_x(xnext);
   
-    conv_->get_nextx(function());
+    //conv_->get_nextx(function());
 
-    return conv_->converged();
+    // make the next gradient computed more accurate, since it will
+    // be smaller
+    accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
+  
+    return converged;
   }
 
   // form the error vectors
@@ -335,20 +342,31 @@ GDIISOpt::update()
     tot *= scal;
   }
 
-  cout << node0 << endl << indent
-       << scprintf("taking step of size %f", tot) << endl;
-    
   RefSCVector xnext = xcurrent + xdisp;
 
   conv_->reset();
   conv_->get_grad(function());
   conv_->get_x(function());
 
-  function()->set_x(xnext);
-  
-  conv_->get_nextx(function());
+  // check for conergence before resetting the geometry...this means we
+  // can't check convergence based on displacements (unless we pass xdisp
+  // to conv_)
+  int converged = conv_->converged();
+  if (converged)
+    return converged;
 
-  return conv_->converged();
+  cout << node0 << endl << indent
+       << scprintf("taking step of size %f", tot) << endl;
+  
+  function()->set_x(xnext);
+    
+  //conv_->get_nextx(function());
+
+  // make the next gradient computed more accurate, since it will
+  // be smaller
+  accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
+  
+  return converged;
 }
 
 /////////////////////////////////////////////////////////////////////////////

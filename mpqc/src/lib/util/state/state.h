@@ -172,6 +172,10 @@ class StateIn: public DescribedClass {
 
     void have_classdesc() { have_cd_ = 1; }
     int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return tmp; }
+
+    // returns the version of the ClassDesc in the persistent object
+    // or -1 if info on the ClassDesc doesn't exist
+    int version(const ClassDesc*);
     
     virtual int getstring(char*&);
     virtual int get_version(const ClassDesc*);

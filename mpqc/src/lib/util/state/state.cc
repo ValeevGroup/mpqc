@@ -464,6 +464,15 @@ int StateIn::get(double*&s)
 // 
 /////////////////////////////////////////////////////////////////
 
+int StateIn::version(const ClassDesc* cd)
+{
+  int position = _cd.iseek(cd);
+  if (position >= 0) {
+      return _version[position];
+    }
+  return -1;
+}
+
 int StateIn::get_version(const ClassDesc*cd)
 {
   if (!_cd.contains((const ClassDescP&)cd)) {

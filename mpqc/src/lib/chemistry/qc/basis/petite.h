@@ -33,6 +33,7 @@
 #endif
 
 #include <iostream>
+#include <scconfig.h>
 
 #include <util/misc/scint.h>
 #include <util/ref/ref.h>
@@ -144,6 +145,8 @@ class PetiteList : public RefCount {
     int in_p1(int n) const { return (c1_) ? 1 : (int) p1_[n]; }
     int in_p2(int ij) const { return (c1_) ? 1 : (int) lamij_[ij]; }
     int in_p4(int ij, int kl, int i, int j, int k, int l) const;
+    /// Same as previous, except for doesn't assume ij > kl and recomputes them
+    int in_p4(int i, int j, int k, int l) const;
     
     int nfunction(int i) const
                             { return (c1_) ? gbs_->nbasis() : nbf_in_ir_[i]; }
@@ -188,6 +191,31 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
     return 1;
   
   sc_int_least64_t ijkl = i_offset64(ij)+kl;
+  int nijkl=0;
+
+  for (int g=0; g < ng_; g++) {
+    int gij = ij_offset(shell_map_[i][g],shell_map_[j][g]);
+    int gkl = ij_offset(shell_map_[k][g],shell_map_[l][g]);
+    sc_int_least64_t gijkl = ij_offset64(gij,gkl);
+
+    if (gijkl > ijkl)
+      return 0;
+    else if (gijkl == ijkl)
+      nijkl++;
+  }
+
+  return ng_/nijkl;
+}
+
+inline int
+PetiteList::in_p4(int i, int j, int k, int l) const
+{
+  if (c1_)
+    return 1;
+  
+  int ij = ij_offset(i,j);
+  int kl = ij_offset(k,l);
+  sc_int_least64_t ijkl = ij_offset64(ij,kl);
   int nijkl=0;
 
   for (int g=0; g < ng_; g++) {

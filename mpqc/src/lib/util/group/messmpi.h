@@ -68,10 +68,6 @@ class MPIMessageGrp: public MessageGrp {
 
     int probet(int type);
 
-    int last_source();
-    int last_size();
-    int last_type();
-
     void sync();
 
     void reduce(double*, int n, GrpReduce<double>&,

@@ -81,11 +81,6 @@ class ShmMessageGrp: public intMessageGrp {
     void initialize(int nprocs);
     void initialize();
 
-    // Information about the last message received or probed.
-    int last_type_;
-    int last_source_;
-    int last_size_; // the size in bytes
-
     // previously static variables
     commbuf_t *commbuf[MAXPROCS];
     int shmid;
@@ -104,20 +99,12 @@ class ShmMessageGrp: public intMessageGrp {
 #ifdef DEBUG
     void print_buffer(int node, int me);
 #endif
-    
-    void set_last_type(int a) { last_type_ = a; }
-    void set_last_source(int a) { last_source_ = a; }
-    void set_last_size(int a) { last_size_ = a; }
   public:
     ShmMessageGrp(); // read nprocs from environmental variable NUMPROC
     ShmMessageGrp(const Ref<KeyVal>&);
     ShmMessageGrp(int nprocs);
     ~ShmMessageGrp();
     void sync();
- 
-    int last_source();
-    int last_size();
-    int last_type();
 };
      
 #endif

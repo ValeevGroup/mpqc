@@ -49,42 +49,9 @@ using namespace std;
 #  define SEM_R 0400
 #endif
 
-/* Set the maximum number of processors (including the host). */
-//#define MAXPROCS 17
-
 /* NALIGN is the byte boundary that we align data on. */
 #define NALIGN 8
 #define ROUNDUPTOALIGN(n) (((n) + (NALIGN-1)) & ~(NALIGN-1))
-
-/*
-#define SHMCOMMBUFSIZE 1500000
-
-struct commbuf_struct {
-    int nmsg;
-    int n_wait_for_change;
-    int n_sync;
-    char buf[SHMCOMMBUFSIZE];
-};
-typedef struct commbuf_struct commbuf_t;
-
-struct msgbuf_struct {
-    int type;
-    int from;
-    int size;
-};
-typedef struct msgbuf_struct msgbuf_t;
-
-static commbuf_t *commbuf[MAXPROCS]; // used by ShmMessageGrp and static functions 
-static int shmid;  // Only used by ShmMessageGrp
-static int semid;  // Used in static functions and ShmMessageGrp
-static int change_semid; // Used in static functions and ShmMessageGrp
-static void* sharedmem;  // only in ShmMessageGrp
-
-static struct sembuf semdec;  // ShmMessageGrp and static functions
-static struct sembuf seminc;  // ShmMessageGrp and static functions
-
-*/
-
 
 static ClassDesc ShmMessageGrp_cd(
   typeid(ShmMessageGrp),"ShmMessageGrp",1,"public intMessageGrp",
@@ -143,7 +110,7 @@ ShmMessageGrp::~ShmMessageGrp()
   // sync the nodes
   sync();
 
-  // make sure node zero is last to touch the shared memory
+  // make sure node zero is las to touch the shared memory
   if (me() == 0) {
       wait_for_write(0);
       while (commbuf[0]->n_sync < n()-1) {
@@ -277,9 +244,6 @@ int ShmMessageGrp::basic_probe(int msgtype)
   message = (msgbuf_t*)commbuf[me()]->buf;
   for (i=0; i<commbuf[me()]->nmsg; i++) {
       if ((msgtype == -1) || (msgtype == message->type)) {
-          set_last_size(message->size);
-          set_last_source(message->from);
-          set_last_type(message->type);
           release_write(me());
           return 1;
         }
@@ -331,10 +295,6 @@ void ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
 
   // Copy the data.
   memcpy(buf,((char*)message) + sizeof(msgbuf_t),size);
-
-  set_last_size(size);
-  set_last_source(message->from);
-  set_last_type(message->type);
 
   // Find the lastmessage.
   lastmessage = (msgbuf_t*)commbuf[me()]->buf;
@@ -420,21 +380,6 @@ void ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
 
   // Release write access to the dest's buffer.
   release_write(dest);
-}
-
-int ShmMessageGrp::last_source()
-{
-  return last_source_;
-}
-
-int ShmMessageGrp::last_size()
-{
-  return last_size_;
-}
-
-int ShmMessageGrp::last_type()
-{
-  return msgtype_typ(last_type_);
 }
 
 msgbuf_t * ShmMessageGrp::NEXT_MESSAGE(msgbuf_t *m)

@@ -131,6 +131,10 @@ class MessageGrp: public DescribedClass {
     /// Returns my processor number.  In the range [0,n()).
     int me() { return me_; }
 
+    // MLL added functions
+    //MessageGrp(const MessageGrp&);
+    //MessageGrp* clone(Ref<MessageGrp>&)=0;
+    
     /** The default message group contains the primary message group to
         be used by an application. */
     static void set_default_messagegrp(const Ref<MessageGrp>&);
@@ -291,11 +295,6 @@ class MessageGrp: public DescribedClass {
     /// Synchronize all of the processors.
     virtual void sync();
 
-    /// Returns information about the last message received or probed.
-    virtual int last_source() = 0;
-    virtual int last_size() = 0;
-    virtual int last_type() = 0;
-
     /** Each message group maintains an association of ClassDesc with
         a global index so SavableState information can be sent between
         nodes without needing to send the classname and look up the
@@ -306,19 +305,27 @@ class MessageGrp: public DescribedClass {
     int nclass() const { return nclass_; }
 };
 
+struct message_struct {
+  void *buf;
+  int size;
+  int type;
+  struct message_struct *p;
+  };
+typedef struct message_struct message_t;
+
 
 /** ProcMessageGrp provides a concrete specialization
     of MessageGrp that supports only one node. */
 class ProcMessageGrp: public MessageGrp {
   private:
-    // Information about the last message received or probed.
-    int last_type_;
-    int last_source_;
-    int last_size_; // the size in bytes
+    // Messages are stored in these linked lists
+    message_t *sync_messages;
+    message_t *type_messages;
 
-    void set_last_type(int a) { last_type_ = a; }
-    void set_last_source(int a) { last_source_ = a; }
-    void set_last_size(int a) { last_size_ = a; }
+    void sendit(message_t *& messages, int dest, int msgtype, void* buf, int bytes);
+    void recvit(message_t *& messages, int source, int type, void* buf, int bytes,
+                int& last_size, int& last_type);
+        
   public:
     ProcMessageGrp();
     ProcMessageGrp(const Ref<KeyVal>&);
@@ -330,10 +337,6 @@ class ProcMessageGrp: public MessageGrp {
     void raw_bcast(void* data, int nbyte, int from);
     int probet(int type);
     void sync();
- 
-    int last_source();
-    int last_size();
-    int last_type();
 };
 
 /** Uses integer message types to send and receive messages.

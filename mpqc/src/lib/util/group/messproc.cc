@@ -35,11 +35,15 @@ static ClassDesc ProcMessageGrp_cd(
 ProcMessageGrp::ProcMessageGrp(const Ref<KeyVal>& keyval):
   MessageGrp(keyval)
 {
+  sync_messages=0;
+  type_messages=0;
   initialize(0,1);
 }
 
 ProcMessageGrp::ProcMessageGrp()
 {
+  sync_messages=0;
+  type_messages=0;
   initialize(0,1);
 }
 
@@ -47,21 +51,8 @@ ProcMessageGrp::~ProcMessageGrp()
 {
 }
 
-struct message_struct {
-  void *buf;
-  int size;
-  int type;
-  struct message_struct *p;
-  };
-typedef struct message_struct message_t;
-
-// Messages are stored in these linked lists.
-static message_t *sync_messages=0;
-static message_t *type_messages=0;
-
-static
-void
-sendit(message_t *& messages, int dest, int msgtype, void* buf, int bytes)
+void ProcMessageGrp::sendit(message_t *& messages, int dest, int msgtype, void* buf,
+                            int bytes)
 {
   message_t *msg;
   message_t *I;
@@ -94,10 +85,8 @@ sendit(message_t *& messages, int dest, int msgtype, void* buf, int bytes)
   msg->size = bytes;
 }
 
-static
-void
-recvit(message_t *& messages, int source, int type, void* buf, int bytes,
-       int& last_size, int& last_type)
+void ProcMessageGrp::recvit(message_t *& messages, int source, int type, void* buf,
+                            int bytes, int& last_size, int& last_type)
 {
   message_t *i;
   message_t *last;
@@ -111,8 +100,6 @@ recvit(message_t *& messages, int source, int type, void* buf, int bytes,
         abort();
         }
       memcpy(buf,i->buf,i->size);
-      last_size = i->size;
-      last_type = i->type;
 
       // Remove the message from the list.
       if (last) {
@@ -152,9 +139,6 @@ ProcMessageGrp::raw_recv(int sender, void* data, int nbyte)
 {
   int last_size, last_type;
   recvit(sync_messages, sender, -1, data, nbyte, last_size, last_type);
-  set_last_size(last_size);
-  set_last_type(last_type);
-  set_last_source(0);
 }
 
 void
@@ -162,9 +146,6 @@ ProcMessageGrp::raw_recvt(int type, void* data, int nbyte)
 {
   int last_size, last_type;
   recvit(type_messages, -1, type, data, nbyte, last_size, last_type);
-  set_last_size(last_size);
-  set_last_type(last_type);
-  set_last_source(0);
 }
 
 void
@@ -179,9 +160,6 @@ ProcMessageGrp::probet(int type)
 
   for (i=type_messages; i!=0; i = i->p) {
       if (i->type == type || type == -1) {
-          set_last_source(0);
-          set_last_size(i->size);
-          set_last_type(i->type);
           return 1;
         }
     }
@@ -192,24 +170,6 @@ ProcMessageGrp::probet(int type)
 void
 ProcMessageGrp::sync()
 {
-}
-
-int
-ProcMessageGrp::last_source()
-{
-  return last_source_;
-}
-
-int
-ProcMessageGrp::last_size()
-{
-  return last_size_;
-}
-
-int
-ProcMessageGrp::last_type()
-{
-  return last_type_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

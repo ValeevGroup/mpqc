@@ -146,6 +146,7 @@ MPIMessageGrp::init(int argc,char **argv)
   buf = 0;
   //buf = (void*) new char[bufsize];
   //MPI_Buffer_attach(buf,bufsize);
+  
   initialize(me, nproc);
 
   //MPIL_Trace_on();
@@ -285,24 +286,6 @@ MPIMessageGrp::probet(int type)
     }
     
   return 0;
-}
-
-int
-MPIMessageGrp::last_source()
-{
-  return rnode;
-}
-
-int
-MPIMessageGrp::last_size()
-{
-  return rlen;
-}
-
-int
-MPIMessageGrp::last_type()
-{
-  return rtag>>1;
 }
 
 void

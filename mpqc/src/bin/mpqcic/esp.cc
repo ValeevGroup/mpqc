@@ -71,8 +71,14 @@ Scf_charges_from_esp(centers_t *centers, dmt_matrix scf_vec,
   int errcod;
   int nat=centers->n;
 
+#define USE_DIPOLE 0
+#if USE_DIPOLE
   DMatrix A(nat+4,nat+4);
   DVector B(nat+4);
+#else
+  DMatrix A(nat+1,nat+1);
+  DVector B(nat+1);
+#endif
 
   A.zero(); B.zero();
 
@@ -80,9 +86,11 @@ Scf_charges_from_esp(centers_t *centers, dmt_matrix scf_vec,
   * dipole components in it now.
   */
 
+#if USE_DIPOLE
   B[nat+1]=dipole->d[0];
   B[nat+2]=dipole->d[1];
   B[nat+3]=dipole->d[2];
+#endif
 
  // now lets make another molecule
 
@@ -180,6 +188,7 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
 
  /* set up file for avs */
 
+  //StateOutBin avsfil((FILE*)0);
   StateOutBinXDR avsfil((FILE*)0);
 
   if (me==0) {
@@ -323,9 +332,11 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
   for(i=0; i < nat; i++) {
     A(i,nat)=A(nat,i)=1.0;
 
+#if USE_DIPOLE
     A(i,nat+1) = A(nat+1,i) = center.p[i].r[0];
     A(i,nat+2) = A(nat+2,i) = center.p[i].r[1];
     A(i,nat+3) = A(nat+3,i) = center.p[i].r[2];
+#endif
     }
  
   A.solve_lin(B);

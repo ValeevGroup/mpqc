@@ -436,6 +436,7 @@ changequote([, ])dnl
   i686-intel-cougar*)
     COPTIONS_MISC="$COPTIONS_MISC -mcougar"
     CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mcougar"
+    EXTRADEFINES="-D_REENTRANT $EXTRADEFINES"
     if test X$cross_compiling = Xyes; then
       AR=tflop-ar
     fi

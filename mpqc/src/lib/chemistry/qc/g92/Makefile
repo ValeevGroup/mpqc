@@ -1,0 +1,53 @@
+TOPDIR = ../../../..
+ifndef SRCDIR
+  SRCDIR=.
+endif
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+
+TARGET_TO_MAKE = libg92
+BIN_OR_LIB = LIB
+
+SRCS = g92.cc g92scf.cc g92uhf.cc
+
+CLASSES = Gaussian92 Gaussian92SCF
+
+TESTSRCS = g92test.cc
+
+LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
+
+ifeq ($(ARCH),PARAGON)
+  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
+  DEFAULT=mpqcic
+endif
+ifeq ($(ARCH),SUNMOS)
+  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
+  DEFAULT=mpqcic
+endif
+
+default:: $(DEPENDINCLUDE)
+default:: dlinfo
+default:: $(TOPDIR)/lib/libg92.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libg92.so
+endif
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+libs: $(SRCDIR)/LIBS.h
+	$(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+
+g92test:: libs
+	@echo "makeing g92test"
+
+g92test:: g92test.o $(shell cat libs)
+	$(CXX) $(LDFLAGS) -o g92test $^ $(SYSLIBS)
+
+g92test.o: g92test.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(LIBOBJ:.o=.d) $(TESTSRCS:%.cc=%.d)
+endif
+

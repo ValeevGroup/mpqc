@@ -35,7 +35,7 @@
 #include <util/group/memamsg.h>
 
 // This is used for memory handler that use message identifiers to
-// keep trace of messages.
+// keep track of messages.
 
 class MIDMemoryGrp: public ActiveMsgMemoryGrp {
 #define CLASSNAME MIDMemoryGrp
@@ -89,7 +89,7 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
 
     virtual void got_data_request_mid();
 
-    // this sync can optionally not reactivate the hander
+    // this sync can optionally not reactivate the handler
     void sync_act(int reactivate);
   public:
     MemoryDataRequest &data_request_buffer() { return data_request_buffer_; }

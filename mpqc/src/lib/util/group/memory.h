@@ -164,13 +164,19 @@ class MemoryGrpBuf {
     //. \srccd{data\_t}.
     MemoryGrpBuf(const RefMemoryGrp &);
     //. Request write only access to global memory at the global address
-    //. \vrbl{offset} and with size \vrbl{length}.
+    //. \vrbl{offset} and with size \vrbl{length}.  Writing the same
+    //. bit of memory twice without an intervening sync of the MemoryGrp
+    //. will have undefined results.
     data_t *writeonly(int offset, int length);
     //. Request read write access to global memory at the global address
-    //. \vrbl{offset} and with size \vrbl{length}.
+    //. \vrbl{offset} and with size \vrbl{length}.  This will lock the
+    //. memory it uses until release is called unless locking has been
+    //. turned off in the MemoryGrp object.
     data_t *readwrite(int offset, int length);
     //. Request read only access to global memory at the global address
-    //. \vrbl{offset} and with size \vrbl{length}.
+    //. \vrbl{offset} and with size \vrbl{length}.  Writing to the
+    //. specified region without an intervening sync of the MemoryGrp
+    //. will have undefined results.
     const data_t *readonly(int offset, int length);
     //. These behave like \srccd{writeonly}, \srccd{readwrite}, and
     //. \srccd{readonly}, except the \vrbl{offset} is local to the

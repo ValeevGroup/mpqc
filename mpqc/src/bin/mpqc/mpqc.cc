@@ -44,6 +44,7 @@
 #include <util/group/pregtime.h>
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
+#include <util/misc/exenv.h>
 
 #include <math/optimize/opt.h>
 
@@ -56,6 +57,10 @@
 #include <chemistry/qc/mbpt/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 #include "disclaimer.h"
 
@@ -73,7 +78,19 @@ int
 main(int argc, char *argv[])
 {
   atexit(clean_up);
-  
+
+  ExEnv::set_args(argc, argv);
+
+#ifdef HAVE_MPI
+  // MPI is allowed wait until MPI_Init to fill in argc and argv,
+  // so we may have to call MPI_Init before we even know that we
+  // want an MPIMessageGrp.  The command name is used to let mpqc
+  // know that an early init is needed.
+  if (!strcmp(ExEnv::program_name(), "mpqc-mpi")) {
+    MPI_Init(&argc, &argv);
+  }
+#endif
+
   // parse commandline options
   GetLongOpt options;
 

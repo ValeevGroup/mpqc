@@ -10,7 +10,7 @@ Int2eV3::Int2eV3(const RefGaussianBasisSet& b1,
                  const RefGaussianBasisSet& b3,
                  const RefGaussianBasisSet& b4,
                  int order, int storage) :
-  store(0)
+  store(0), int_Qvec(0), int_Rvec(0)
 {
 
   bs1_ = b1;
@@ -54,10 +54,18 @@ Int2eV3::Int2eV3(const RefGaussianBasisSet& b1,
 
   int_initialize_offsets2(int_cs1,int_cs2,int_cs3,int_cs4);
   int_initialize_erep(storage,order,int_cs1,int_cs2,int_cs3,int_cs4);
+  if ((storage-used_storage_) > 0) {
+    init_bounds();
+    init_storage(storage-used_storage_);
+  }
 }
 
 Int2eV3::~Int2eV3()
 {
   int_done_offsets2(int_cs1,int_cs2,int_cs3,int_cs4);
   int_done_erep();
+  if (int_integral_storage) {
+    done_storage();
+    done_bounds();
+  }
 }

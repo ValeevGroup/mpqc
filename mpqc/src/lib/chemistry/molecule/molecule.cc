@@ -59,7 +59,7 @@ Molecule::Molecule(const RefKeyVal&input) :
       if (!fp) {
           fprintf(stderr,
                   "Molecule::Molecule(const RefKeyVal&input): "
-                  "pdb file not found\n");
+                  "pdb file not found: \"%s\"\n", filename);
           abort();
         }
       int i=0;

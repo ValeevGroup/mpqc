@@ -71,13 +71,14 @@ IntMolecularCoor::_castdown(const ClassDesc*cd)
 IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   MolecularCoor(mol),
   update_bmat_(0),
+  only_totally_symmetric_(1),
+  symmetry_tolerance_(1.0e-5),
+  simple_tolerance_(1.0e-3),
+  coordinate_tolerance_(1.0e-7),
   scale_bonds_(1.0),
   scale_bends_(1.0),
   scale_tors_(1.0),
   scale_outs_(1.0),
-  simple_tolerance_(1.0e-3),
-  symmetry_tolerance_(1.0e-5),
-  coordinate_tolerance_(1.0e-7),
   nextra_bonds_(0),
   extra_bonds_(0)
 {
@@ -87,13 +88,14 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
 IntMolecularCoor::IntMolecularCoor(KeyVal& keyval):
   MolecularCoor(keyval),
   update_bmat_(0),
+  only_totally_symmetric_(1),
+  symmetry_tolerance_(1.0e-5),
+  simple_tolerance_(1.0e-3),
+  coordinate_tolerance_(1.0e-7),
   scale_bonds_(1.0),
   scale_bends_(1.0),
   scale_tors_(1.0),
-  scale_outs_(1.0),
-  simple_tolerance_(1.0e-3),
-  symmetry_tolerance_(1.0e-5),
-  coordinate_tolerance_(1.0e-7)
+  scale_outs_(1.0)
 {
   // intialize the coordinate sets
   all_ = new SetIntCoor; // all redundant coors
@@ -128,6 +130,9 @@ IntMolecularCoor::IntMolecularCoor(KeyVal& keyval):
           
 
   update_bmat_ = keyval.booleanvalue("update_bmat");
+
+  only_totally_symmetric_ = keyval.booleanvalue("only_totally_symmetric");
+  if (keyval.error() != KeyVal::OK) only_totally_symmetric_ = 1;
 
   double tmp;
   tmp = keyval.doublevalue("scale_bonds");

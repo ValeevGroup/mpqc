@@ -13,10 +13,6 @@
 #include <util/state/qc_xdr.h>
 #include <util/container/array.h>
 
-// Include the smart pointer to SavableState templates and macros.
-#include <util/state/stattmpl.h>
-#include <util/state/statmacr.h>
-
 #define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
 #define SavableState_REF_def(T) SavableState_named_REF_def(Ref ## T,T)
 
@@ -96,6 +92,23 @@ class SavableState: public DescribedClass {
   protected:
     SavableState(StateIn&);
   };
+
+////////////////////////////////////////////////////////////////////
+
+class SSRefBase {
+  protected:
+    void check_castdown_result(void*, SavableState *);
+  public:
+    virtual SavableState *sspointer() = 0;
+    virtual void restore_state(StateIn&) = 0;
+    void save_data_state(StateOut&);
+    void save_state(StateOut&);
+    SavableState *restore_ss(StateIn&);
+};
+
+// Include the smart pointer to SavableState templates and macros.
+#include <util/state/stattmpl.h>
+#include <util/state/statmacr.h>
 
 ////////////////////////////////////////////////////////////////////
 

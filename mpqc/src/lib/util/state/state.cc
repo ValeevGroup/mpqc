@@ -563,4 +563,49 @@ StateOut::putparents(const ClassDesc*cd)
 
 }
 
-  
+////////////////////////////////////////////////////////////////////////
+// SSRefBase members
+
+void
+SSRefBase::save_data_state(StateOut&s)
+{
+  save_state(s);
+}
+
+void
+SSRefBase::save_state(StateOut&so)
+{
+  if (so.putpointer(sspointer())) {
+      so.put(sspointer()->class_desc());
+      so.have_classdesc();
+      sspointer()->save_vbase_state(so);
+      sspointer()->save_data_state(so);
+    }
+}
+
+SavableState *
+SSRefBase::restore_ss(StateIn&si)
+{
+  SavableState* ss;
+  int objnum = si.getpointer((void**)&ss);
+  if (objnum) {
+      const ClassDesc* cd;
+      si.get(&cd);
+      si.nextobject(objnum);
+      si.have_classdesc();
+      DescribedClass* dc = cd->create(si);
+      ss = SavableState::castdown(dc);
+    }
+  return ss;
+}
+
+void
+SSRefBase::check_castdown_result(void* t, SavableState *ss)
+{
+  if (!t && ss) {
+      fprintf(stderr,
+              "SSRef::restore_state() got type \"%s\"\n",
+              ss->class_name());
+        abort();
+    }
+}

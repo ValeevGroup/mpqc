@@ -33,13 +33,22 @@ if ($filename eq "") {
     exit 1;
 }
 
-&process_file($filename);
+if (-d "$filename") {
+    %current_includes = ();
+    @libraries = ();
+    %known_libs = ();
+    %known_includes = ();
+    &process_directory($filename);
+}
+else {
+    &process_file($filename);
+    %current_includes = ();
+    @libraries = ();
+    %known_libs = ();
+    %known_includes = ();
+    &find_libraries($filename);
+}
 
-%current_includes = ();
-@libraries = ();
-%known_libs = ();
-%known_includes = ();
-&find_libraries($filename);
 @libraries = reverse(@libraries);
 
 print "got $#libraries of them\n" if ($debug);
@@ -171,3 +180,22 @@ sub substitute_defines {
     }
 }
 
+sub process_directory {
+    local ($dir) = shift;
+    opendir(DIR,"$dir");
+    local (@files) = readdir(DIR);
+    closedir(DIR);
+    local ($i);
+    foreach $i (@files) {
+        if ("$i" eq "." || "$i" eq "..") {
+            # skip
+        }
+        elsif (-d "$dir/$i") {
+            process_directory("$dir/$i");
+        }
+        elsif ("$i" eq "LIBS.h") {
+            process_file("$dir/$i");
+            &find_libraries("$dir/$i");
+        }
+    }
+}

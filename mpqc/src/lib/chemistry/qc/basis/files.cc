@@ -30,7 +30,9 @@
 #include <stdio.h>
 #include <fstream.h>
 #include <strstream.h>
+#include <sys/stat.h>
 
+#include <util/misc/formio.h>
 #include <util/group/message.h>
 #include <chemistry/qc/basis/files.h>
 
@@ -49,7 +51,14 @@ BasisFileSet::BasisFileSet(const RefKeyVal& keyval)
       strcat(dir_[1], "/basis");
     }
   else {
-      dir_[1] = strcpy(new char[strlen(BASISDIR)+1], BASISDIR);
+      struct stat sb;
+      const char *bdir = INSTALLED_SCLIBDIR "/basis";
+      if (stat(bdir, &sb) != 0) {
+          cout << node0 << indent
+               << "WARNING: could not find " << bdir << endl;
+          bdir = SRC_SCLIBDIR "/basis";
+        }
+      dir_[1] = strcpy(new char[strlen(bdir)+1], bdir);
     }
 }
 

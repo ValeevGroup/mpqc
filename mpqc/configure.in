@@ -991,8 +991,19 @@ changequote([, ])dnl
   ;;
 esac
 
+dnl --------- Find the list of all sc libraries. ---------
+
+SCLIBS=`$PERL $srcdir/bin/listlibs.pl -I$srcdir/src/lib -DLIBSUF=$LIBSUF $srcdir/src/lib`
+AC_SUBST(SCLIBS)
+
+dnl --------- Defined the library directory macros. ---------
+
+AC_DEFINE_UNQUOTED(SRC_SCLIBDIR, "$srcdir/lib")
+AC_DEFINE_UNQUOTED(INSTALLED_SCLIBDIR, "$prefix/lib")
+
 dnl --------- Create the stub Makefiles. ---------
 
 $PERL $srcdir/bin/objectdir.pl $srcdir
 
-AC_OUTPUT(lib/LocalMakefile)
+AC_OUTPUT(lib/LocalMakefile bin/sc-config)
+chmod +x bin/sc-config

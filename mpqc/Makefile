@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = lib src
+SUBDIRS = lib bin src
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

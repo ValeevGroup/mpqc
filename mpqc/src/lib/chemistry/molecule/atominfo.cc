@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #include <util/misc/units.h>
 #include <util/misc/formio.h>
@@ -242,7 +243,13 @@ AtomInfo::load_library_values()
           delete[] filename;
         }
       else {
-          keyval = new ParsedKeyVal(SRCLIBDIR "atominfo.kv");
+          struct stat sb;
+          const char *ainfo = INSTALLED_SCLIBDIR "/atominfo.kv";
+          if (stat(ainfo, &sb) != 0) {
+              cout << indent << "WARNING: could not find " << ainfo << endl;
+              ainfo = SRC_SCLIBDIR "/atominfo.kv";
+            }
+          keyval = new ParsedKeyVal(ainfo);
         }
       RefKeyVal pkeyval = new PrefixKeyVal(keyval, "atominfo");
       load_values(pkeyval,0);

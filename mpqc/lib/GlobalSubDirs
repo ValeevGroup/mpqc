@@ -17,6 +17,24 @@ interface::
 	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) interface) || exit 1; \
 	  done
 
+install::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) install) || exit 1; \
+	  done
+
+install_inc::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) install_inc) || exit 1; \
+	  done
+
+install_target::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) install_target) || exit 1; \
+	  done
+
 doc::
 	for dir in $(SUBDIRS); \
 	  do \

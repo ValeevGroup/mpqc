@@ -179,6 +179,12 @@
 /* The target architecture. */
 #undef TARGET_ARCH
 
+/* The library directory in the src distribution. */
+#undef SRC_SCLIBDIR
+
+/* The installed location of the library directory. */
+#undef INSTALLED_SCLIBDIR
+
 /* Define if template should be explicitly instantiated.  */
 #undef EXPLICIT_TEMPLATE_INSTANTIATION
 

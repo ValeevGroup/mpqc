@@ -30,6 +30,7 @@
 #include <fstream.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
@@ -95,7 +96,14 @@ nfp(0)
           directory = strcpy(new char[strlen(tmp)+1], tmp);
         }
       else {
-          directory = strcpy(new char[strlen(SRCLIBDIR)+1], SRCLIBDIR);
+          struct stat sb;
+          const char *dir = INSTALLED_SCLIBDIR;
+          if (stat(dir, &sb) != 0) {
+              cout << node0 << indent << "WARNING: could not find "
+                   << dir << endl;
+              dir = SRC_SCLIBDIR;
+            }
+          directory = strcpy(new char[strlen(dir)+1], dir);
         }
     }
 
@@ -148,7 +156,14 @@ ParsedKeyVal::cat_files(const char* keyprefix, const RefKeyVal& keyval,
           directory = strcpy(new char[strlen(tmp)+1], tmp);
         }
       else {
-          directory = strcpy(new char[strlen(SRCLIBDIR)+1], SRCLIBDIR);
+          struct stat sb;
+          const char *dir = INSTALLED_SCLIBDIR;
+          if (stat(dir, &sb) != 0) {
+              cout << node0 << indent << "WARNING: could not find "
+                   << dir << endl;
+              dir = SRC_SCLIBDIR;
+            }
+          directory = strcpy(new char[strlen(dir)+1], dir);
         }
     }
 

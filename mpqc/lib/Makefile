@@ -5,8 +5,15 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+SUBDIRS = basis elisp perl texinputs
+
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 
 distclean::
 	/bin/rm -f lib*.a
 	/bin/rm -f lib*.so*
+
+install:: atominfo.kv magic
+	$(INSTALL) $(INSTALLDIROPT) $(libdir)
+	$(INSTALL) $(INSTALLLIBOPT) $^ $(libdir)
+

@@ -31,7 +31,6 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
-DEFINES += -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 LD = $(CXX)
 
 CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \

@@ -32,8 +32,10 @@ LD = $(CXX)
 LDFLAGS = @LDFLAGS@
 
 INSTALL = @INSTALL@
+INSTALLDIROPT = -d -m 0755
 INSTALLLIBOPT = -m 0644
 INSTALLBINOPT = -m 0755 -s
+INSTALLSCRIPTOPT = -m 0755
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@

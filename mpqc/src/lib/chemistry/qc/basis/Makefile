@@ -30,11 +30,9 @@ ifndef SRCDIR
   SRCDIR=.
 endif
 
-BASISDIR = $(shell $(SRCDIR)/$(TOPDIR)/bin/rmdotdot $(SRCDIR)/$(TOPDIR)/lib)
-
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-DEFINES += -DBASISDIR=\"$(BASISDIR)/basis\" -DSRCDIR=\"$(SRCDIR)\"
+DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
 TARGET_TO_MAKE = libbasis
 BIN_OR_LIB = LIB

@@ -42,11 +42,12 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-install_mpqcic:: mpqc
-	$(INSTALL) $(INSTALLBINOPTS) $< $(BINDIR)
-
 mpqc: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+
+install: mpqc
+	$(INSTALL) $(INSTALLDIROPT) $(bindir)
+	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 
 distclean::
 	/bin/rm -f mpqc

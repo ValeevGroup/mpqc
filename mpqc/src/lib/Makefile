@@ -9,3 +9,8 @@ SUBDIRS = util math chemistry
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 
+install:: install_inc
+
+install_inc::
+	$(INSTALL) $(INSTALLDIROPT) $(includedir)
+	$(INSTALL) $(INSTALLLIBOPT) $(wildcard *.h) $(wildcard $(SRCDIR)/*.h) $(includedir)

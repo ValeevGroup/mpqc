@@ -216,7 +216,7 @@ int
 PthreadThreadGrp::wait_threads()
 {
   for (int i=1; i < nthread_; i++) {
-    int tn;
+    void *tn;
     if (threads_[i]) {
       if (pthread_join(pthreads_[i], (void**)&tn)) {
         ExEnv::errn()

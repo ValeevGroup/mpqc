@@ -106,7 +106,6 @@ QNewtonOpt::update()
   double old_maxabs_gradient = maxabs_gradient;
   RefSCVector xcurrent;
   RefSCVector gcurrent;
-  double value;
 
   SCostream::cout.flush();
     
@@ -120,7 +119,7 @@ QNewtonOpt::update()
 
       xcurrent = nlp_->get_x().copy();
       gcurrent = nlp_->gradient().copy();
-      value = nlp_->value();
+      nlp_->value();
 
       // compute the gradient convergence criterion now so i can see if
       // the accuracy needs to be tighter

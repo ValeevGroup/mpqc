@@ -53,7 +53,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
   _values.clear();
   
   if (_verbose) {
-      ExEnv::out() << "TriangulatedSurface::remove_short_edges:" << endl
+      ExEnv::outn() << "TriangulatedSurface::remove_short_edges:" << endl
            << "initial: ";
       topology_info();
     }
@@ -235,12 +235,12 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                   Ref<Edge> e2 = new_edge_map[v0];
                   Ref<Edge> e3 = new_edge_map[v1];
                   if (e1.null() || e2.null() || e3.null()) {
-                      ExEnv::err() << "TriangulatedSurface::remove_short_edges: "
+                      ExEnv::errn() << "TriangulatedSurface::remove_short_edges: "
                            << "building new triangle but edges are null:"
                            << endl;
-                      if (e1.null()) ExEnv::err() << "  e1" << endl;
-                      if (e2.null()) ExEnv::err() << "  e2" << endl;
-                      if (e3.null()) ExEnv::err() << "  e3" << endl;
+                      if (e1.null()) ExEnv::errn() << "  e1" << endl;
+                      if (e2.null()) ExEnv::errn() << "  e2" << endl;
+                      if (e3.null()) ExEnv::errn() << "  e3" << endl;
                       abort();
                     }
                   // Compute the correct orientation of e1 within the new
@@ -291,7 +291,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
     }
 
   if (_verbose) {
-      ExEnv::out() << "final: ";
+      ExEnv::outn() << "final: ";
       topology_info();
     }
 }

@@ -203,7 +203,7 @@ class GaussianShell: public SavableState
         decreasing as a function of r. */
     double monobound(double r) const;
 
-    void print(std::ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out0()) const;
 };
 
 

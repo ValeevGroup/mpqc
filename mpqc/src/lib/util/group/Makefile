@@ -99,7 +99,7 @@ pooltest: pooltest.$(OBJSUF) \
 	libSCref.$(LIBSUF)
 	$(LTLINK) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-rnglocktest: rnglocktest.$(OBJSUF) libSCgroup.$(LIBSUF)
+rnglocktest: rnglocktest.$(OBJSUF) libSCmisc.$(LIBSUF) libSCgroup.$(LIBSUF)
 	$(LTLINK) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 messtest.$(OBJSUF): messtest.cc

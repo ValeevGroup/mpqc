@@ -107,7 +107,7 @@ nfp(0)
           const char *dir = INSTALLED_SCLIBDIR;
 #ifdef SRC_SCLIBDIR
           if (stat(dir, &sb) != 0) {
-              ExEnv::out() << node0 << indent << "WARNING: could not find "
+              ExEnv::out0() << indent << "WARNING: could not find "
                    << dir << endl;
               dir = SRC_SCLIBDIR;
             }
@@ -169,7 +169,7 @@ ParsedKeyVal::cat_files(const char* keyprefix, const Ref<KeyVal>& keyval,
           const char *dir = INSTALLED_SCLIBDIR;
 #ifdef SRC_SCLIBDIR
           if (stat(dir, &sb) != 0) {
-              ExEnv::out() << node0 << indent << "WARNING: could not find "
+              ExEnv::out0() << indent << "WARNING: could not find "
                    << dir << endl;
               dir = SRC_SCLIBDIR;
             }
@@ -210,7 +210,7 @@ ParsedKeyVal::read(const char* name)
 {
   ifstream infp(name,ios::in);
   if (infp.bad()) {
-    ExEnv::err() << "ParsedKeyVal couldn't open " << name << endl;
+    ExEnv::errn() << "ParsedKeyVal couldn't open " << name << endl;
     exit(1);
     }
 
@@ -229,7 +229,7 @@ ParsedKeyVal::read(const char* name)
 void ParsedKeyVal::read(istream&infp)
 {
   nfp++;
-  ipv2->read(infp,ExEnv::err(),"<stream>");
+  ipv2->read(infp,ExEnv::errn(),"<stream>");
 }
 
 void
@@ -240,7 +240,7 @@ ParsedKeyVal::parse_string(const char *str)
 #else
   istrstream in(str);
 #endif
-  ipv2->read(in,ExEnv::err(),"<string>");
+  ipv2->read(in,ExEnv::errn(),"<string>");
 }
 
 ParsedKeyVal::~ParsedKeyVal()

@@ -37,7 +37,8 @@ main(int argc, char**argv)
 
   int i;
   for (i=0; rpkv->exists("mole",i); i++) {
-      Ref<MolecularEnergy> mole = rpkv->describedclassvalue("mole",i);
+      Ref<MolecularEnergy> mole;
+      mole << rpkv->describedclassvalue("mole",i);
 
       if (mole.nonnull()) {
           mole->print(o);
@@ -52,7 +53,8 @@ main(int argc, char**argv)
     }
 
   for (i=0; rpkv->exists("opt",i); i++) {
-      Ref<Optimize> opt = rpkv->describedclassvalue("opt",i);
+      Ref<Optimize> opt;
+      opt << rpkv->describedclassvalue("opt",i);
 
       if (opt.nonnull()) {
           //opt->print(o);

@@ -68,7 +68,7 @@ TriangulatedSurface::remove_slender_triangles(
   _values.clear();
   
   if (_verbose) {
-      ExEnv::out() << "TriangulatedSurface::remove_slender_triangles:" << endl
+      ExEnv::outn() << "TriangulatedSurface::remove_slender_triangles:" << endl
            << "initial: ";
       topology_info();
     }
@@ -118,7 +118,7 @@ TriangulatedSurface::remove_slender_triangles(
           for (j=0; j<3; j++) {
               l[j] = tri->edge(j)->straight_length();
               if (l[j] <= 0.0) {
-                  ExEnv::err() << "TriangulatedSurface::"
+                  ExEnv::errn() << "TriangulatedSurface::"
                        << "remove_slender_triangles: bad edge length"
                        << endl;
                   abort();
@@ -340,7 +340,7 @@ TriangulatedSurface::remove_slender_triangles(
           char filename[100];
           static int pass = 0;
           sprintf(filename, "surfst%04d.oogl", pass);
-          ExEnv::out() << scprintf("PASS = %04d\n", pass);
+          ExEnv::outn() << scprintf("PASS = %04d\n", pass);
           Ref<Render> render = new OOGLRender(filename);
           Ref<RenderedPolygons> poly = new RenderedPolygons;
           poly->initialize(_vertices.length(), _triangles.length(),
@@ -391,7 +391,7 @@ TriangulatedSurface::remove_slender_triangles(
           for (iv = _vertices.begin(); iv != _vertices.end(); iv++, i++) {
               Ref<Vertex> v = *iv;
               if (n_triangle[i] != n_edge[i]) {
-                  ExEnv::out() << "found bad vertex"
+                  ExEnv::outn() << "found bad vertex"
                        << " nedge = " << n_edge[i]
                        << " ntriangle = " << n_triangle[i]
                        << endl;
@@ -419,7 +419,7 @@ TriangulatedSurface::remove_slender_triangles(
       _vertices |= new_vertices;
 
       if (_verbose) {
-          ExEnv::out() << "intermediate: ";
+          ExEnv::outn() << "intermediate: ";
           topology_info();
         }
 
@@ -460,7 +460,7 @@ TriangulatedSurface::remove_slender_triangles(
     }
 
   if (_verbose) {
-      ExEnv::out() << "final: ";
+      ExEnv::outn() << "final: ";
       topology_info();
     }
 }

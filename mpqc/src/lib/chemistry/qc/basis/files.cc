@@ -135,7 +135,7 @@ BasisFileSet::keyval(const Ref<KeyVal> &keyval, const char *basisname)
           ifstream is(path);
           if (is.good()) {
               int status = 1;
-              ExEnv::out() << indent << "Reading file " << path << "." << endl;
+              ExEnv::out0() << indent << "Reading file " << path << "." << endl;
               grp->bcast(status);
 #ifdef HAVE_SSTREAM
               ostringstream ostrs;

@@ -55,7 +55,7 @@ MsgMemoryGrp::MsgMemoryGrp(const Ref<KeyVal> &keyval):
       msg = MessageGrp::get_default_messagegrp();
     }
   if (msg.null()) {
-      ExEnv::err() << "MsgMemoryGrp(const Ref<KeyVal>&): couldn't find MessageGrp"
+      ExEnv::errn() << "MsgMemoryGrp(const Ref<KeyVal>&): couldn't find MessageGrp"
            << endl;
       abort();
     }
@@ -87,7 +87,7 @@ MsgMemoryGrp::set_localsize(size_t localsize)
   for (i=1; i<=n_; i++) {
       offsets_[i] = sizes[i-1] + offsets_[i-1];
       if (offsets_[i] < offsets_[i-1]) {
-          ExEnv::out() << "MsgMemoryGrp::set_localsize: distsize_t cannot handle biggest size" << endl;
+          ExEnv::errn() << "MsgMemoryGrp::set_localsize: distsize_t cannot handle biggest size" << endl;
           abort();
         }
     }

@@ -125,19 +125,19 @@ ReplSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
-      ExEnv::out() << node0 << indent << "dim():" << endl << incindent;
+      ExEnv::out0() << indent << "dim():" << endl << incindent;
       dim().print();
-      ExEnv::out() << node0 << decindent;
-      ExEnv::out() << node0 << indent << "la->rowdim():" << endl << incindent;
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "la->rowdim():" << endl << incindent;
       la->rowdim().print();
-      ExEnv::out() << node0 << decindent;
-      ExEnv::out() << node0 << indent << "la->coldim():" << endl << incindent;
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "la->coldim():" << endl << incindent;
       la->coldim().print();
-      ExEnv::out() << node0 << decindent;
-      ExEnv::out() << node0 << indent << "lb->dim():" << endl << incindent;
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "lb->dim():" << endl << incindent;
       lb->dim().print();
-      ExEnv::out() << node0 << decindent;
-      ExEnv::err() << indent
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent
            << "ReplSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
@@ -160,7 +160,7 @@ ReplSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "ReplSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
@@ -192,7 +192,7 @@ ReplSCVector::accumulate(const SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSCVector::accumulate(SCVector*a): "
+      ExEnv::errn() << indent << "ReplSCVector::accumulate(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -212,7 +212,7 @@ ReplSCVector::accumulate(const SCMatrix*a)
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
         || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
-      ExEnv::err() << indent << "ReplSCVector::accumulate(SCMatrix*a): "
+      ExEnv::errn() << indent << "ReplSCVector::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -239,7 +239,7 @@ ReplSCVector::assign_v(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSCVector::assign_v(SCVector*a): "
+      ExEnv::errn() << indent << "ReplSCVector::assign_v(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -266,7 +266,7 @@ ReplSCVector::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSCVector::scalar_product(SCVector*a): "
+      ExEnv::errn() << indent << "ReplSCVector::scalar_product(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -298,7 +298,7 @@ ReplSCVector::element_op(const Ref<SCElementOp2>& op,
       = require_dynamic_cast<ReplSCVector*>(m, "ReplSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      ExEnv::err() << indent << "ReplSCVector: bad element_op\n";
+      ExEnv::errn() << indent << "ReplSCVector: bad element_op\n";
       abort();
     }
 
@@ -325,7 +325,7 @@ ReplSCVector::element_op(const Ref<SCElementOp3>& op,
       = require_dynamic_cast<ReplSCVector*>(n, "ReplSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      ExEnv::err() << indent << "ReplSCVector: bad element_op\n";
+      ExEnv::errn() << indent << "ReplSCVector: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -392,7 +392,7 @@ Ref<SCMatrixSubblockIter>
 ReplSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      ExEnv::err() << indent << "ReplSCVector::all_blocks: "
+      ExEnv::errn() << indent << "ReplSCVector::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

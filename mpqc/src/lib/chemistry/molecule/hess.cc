@@ -142,7 +142,7 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
   for (i=0; i<nmin; i++) {
       if (sigmaext(i) > epsilonext) rankext++;
     }
-  ExEnv::out() << node0 << indent << "The external rank is " << rankext << endl;
+  ExEnv::out0() << indent << "The external rank is " << rankext << endl;
   // find the projection onto the externalbasis perp space
   if (rankext) {
       RefSCDimension drankext_tilde = new SCDimension(d3natom.n() - rankext);
@@ -174,7 +174,7 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
             }
           atom_map[i][g] = mol->atom_at_position(np, 0.05);
           if (atom_map[i][g] < 0) {
-              ExEnv::err() << node0 << indent
+              ExEnv::err0() << indent
                    << "MolecularHessian: atom mapping bad" << endl;
               abort();
             }
@@ -342,13 +342,13 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
       char linebuf[nline];
       in.getline(linebuf, nline);
       if (strcmp(linebuf,"Hessian VT1")) {
-          ExEnv::out() << "MolecularHessian: not given a hessian file" << endl;
+          ExEnv::errn() << "MolecularHessian: not given a hessian file" << endl;
           abort();
         }
       int natom;
       in >> natom;
       if (natom != mol->natom()) {
-          ExEnv::out() << "MolecularHessian: wrong number of atoms in hessianfile"
+          ExEnv::errn() << "MolecularHessian: wrong number of atoms in hessianfile"
                << endl;
           abort();
         }
@@ -371,7 +371,7 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
           in.getline(linebuf, nline);
           if (strcmp(linebuf,"End Hessian")) {
               //ExEnv::out() << "READ: last line = " << linebuf << endl;
-              ExEnv::out() << "MolecularHessian: hessian file seems to be truncated"
+              ExEnv::errn() << "MolecularHessian: hessian file seems to be truncated"
                    << endl;
               abort();
             }

@@ -97,7 +97,7 @@ class SCBlockInfo: public SavableState {
     void set_subdim(int i, const RefSCDimension &dim);
 
     /// Print the object to the stream o.
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 };
 
 
@@ -146,7 +146,7 @@ class SCDimension: public SavableState {
     Ref<SCBlockInfo> blocks() { return blocks_; }
 
     /// Print information about this dimension to o.
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 };
 
 /** The RefSCDimension class is a smart pointer to an SCDimension
@@ -177,7 +177,7 @@ class RefSCDimension: public Ref<SCDimension> {
     operator int() const;
     int n() const;
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 };
 
 #endif

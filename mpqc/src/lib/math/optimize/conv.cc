@@ -153,7 +153,7 @@ Convergence::converged()
   RefSCVector disp;
   if (x_.nonnull() && nextx_.nonnull()) disp = nextx_ - x_;
 
-  ExEnv::out() << node0 << endl;
+  ExEnv::out0() << endl;
   
   if (use_max_grad_ && grad_.nonnull()) {
       check_conv("Max Gradient     ", grad_.maxabs(), max_grad_, pass, fail);
@@ -176,12 +176,12 @@ Convergence::converged()
                  graddisp_, pass, fail);
     }
   if (fail + pass == 0) {
-      ExEnv::err() << "ERROR: Convergence::converged: no applicable convergence tests"
+      ExEnv::errn() << "ERROR: Convergence::converged: no applicable convergence tests"
            << endl;
       abort();
     }
   if (!fail) {
-      ExEnv::out() << node0 << endl
+      ExEnv::out0() << endl
            << indent << "All convergence criteria have been met."
            << endl;
     }
@@ -194,7 +194,7 @@ Convergence::check_conv(const char *heading,
                         int &pass, int &fail)
 {
   int converged = val <= bound;
-  ExEnv::out() << node0 << indent << heading << ": "
+  ExEnv::out0() << indent << heading << ": "
        << scprintf("%14.10f ", val)
        << scprintf("%14.10f  ", bound)
        << (converged?"yes":"no")

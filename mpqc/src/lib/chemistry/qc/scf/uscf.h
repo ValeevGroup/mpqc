@@ -91,7 +91,7 @@ class UnrestrictedSCF: public SCF {
     int spin_polarized();
     int spin_unrestricted();
     
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 
     int n_fock_matrices() const;
     RefSymmSCMatrix fock(int);

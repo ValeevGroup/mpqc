@@ -157,10 +157,10 @@ FJT::values(int J,double wval)
   int i, itable, irange;
 
   if (J>maxj) {
-    ExEnv::err()
+    ExEnv::errn()
       << scprintf("the int_fjt routine has been incorrectly used")
       << endl;
-    ExEnv::err()
+    ExEnv::errn()
       << scprintf("J = %d but maxj = %d",J,maxj)
       << endl;
     abort();

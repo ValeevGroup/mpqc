@@ -28,7 +28,7 @@ ArrayExtentData &
 ShellExtent::data(int x, int y, int z)
 {
   if (x>=n_[0] || y>=n_[1] || z>= n_[2] || x<0 || y<0 || z<0) {
-      ExEnv::out() << "ShellExtent::data: out of bounds" << endl;
+      ExEnv::outn() << "ShellExtent::data: out of bounds" << endl;
       abort();
     }
   return contributing_shells_[z + n_[2]*(y + n_[1]*x)];
@@ -156,22 +156,22 @@ ShellExtent::print(ostream &o)
 {
   int i,j,k,l;
 
-  o << node0
+  o
     << indent << "ShellExent:" << endl;
 
-  o << node0 << incindent;
+  o << incindent;
 
-  o << node0
+  o
     << indent << "n = " << n_[0] << " " << n_[1] << " " << n_[2] << endl;;
 
-  o << node0 << indent << "resolution = " << resolution_ << endl;
+  o << indent << "resolution = " << resolution_ << endl;
 
-  o << node0 << indent
+  o << indent
     << "lower = " << lower_[0]
     << " " << lower_[1]
     << " " << lower_[2] << endl;;
 
-  o << node0 << indent
+  o << indent
     << "upper = " << lower_[0] + n_[0] * resolution_
     << " " << lower_[1] + n_[1] * resolution_
     << " " << lower_[2] + n_[2] * resolution_ << endl;;
@@ -181,10 +181,10 @@ ShellExtent::print(ostream &o)
           for (k=0; k<n_[2]; k++) {
               const ArrayExtentData &d = data(i,j,k);
               if (d.size()) {
-                  ExEnv::out() << node0 << indent
+                  o << indent
                        << i << " " << j << " " << k << ":" << endl;
                   for (l=0; l<d.size(); l++) {
-                      ExEnv::out() << node0 << indent
+                      o << indent
                            << "  " << d[l].shell << " " << d[l].bound << endl;
                     }
                 }

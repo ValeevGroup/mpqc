@@ -148,7 +148,7 @@ class PetiteList : public RefCount {
 
     int nblocks() const { return nblocks_; }
 
-    void print(std::ostream& =ExEnv::out(), int verbose=1);
+    void print(std::ostream& =ExEnv::out0(), int verbose=1);
 
     // these return blocked dimensions
     RefSCDimension AO_basisdim();

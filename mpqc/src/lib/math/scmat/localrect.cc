@@ -74,7 +74,7 @@ int
 LocalSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d1->n() || j>=d2->n()) {
-      ExEnv::err() << indent << "LocalSCMatrix: index out of bounds\n";
+      ExEnv::errn() << indent << "LocalSCMatrix: index out of bounds\n";
       abort();
     }
   return i*(d2->n()) + j;
@@ -128,7 +128,7 @@ LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::get_subblock: trying to get too big a subblock (" <<
           nsrow << "," << nscol << ") from (" <<
           nrow() << "," << ncol() << ")\n";
@@ -167,7 +167,7 @@ LocalSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::assign_subblock: trying to assign too big a " <<
           "subblock (" << nsrow << "," << nscol << " to (" <<
           nrow() << "," << ncol() << ")\n";
@@ -190,7 +190,7 @@ LocalSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-      ExEnv::err() << indent << "LocalSCMatrix::accumulate_subblock: " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::accumulate_subblock: " <<
           "trying to accumulate too big a subblock (" <<
           nsrow << "," << nscol << " to (" <<
           nrow() << "," << ncol() << ")\n";
@@ -206,7 +206,7 @@ SCVector *
 LocalSCMatrix::get_row(int i)
 {
   if (i >= nrow()) {
-      ExEnv::err() << indent << "LocalSCMatrix::get_row: trying to get invalid row " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::get_row: trying to get invalid row " <<
           i << " max " << nrow() << endl;
       abort();
     }
@@ -226,14 +226,14 @@ void
 LocalSCMatrix::assign_row(SCVector *v, int i)
 {
   if (i >= nrow()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::assign_row: trying to assign invalid row " <<
           i << " max " << nrow() << endl;
       abort();
     }
   
   if (v->n() != ncol()) {
-      ExEnv::err() << indent << "LocalSCMatrix::assign_row: vector is wrong size " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::assign_row: vector is wrong size " <<
           " is " << v->n() << ", should be " << ncol() << endl;
       abort();
     }
@@ -249,14 +249,14 @@ void
 LocalSCMatrix::accumulate_row(SCVector *v, int i)
 {
   if (i >= nrow()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::accumulate_row: trying to assign invalid row " <<
           i << " max " << nrow() << endl;
       abort();
     }
   
   if (v->n() != ncol()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::accumulate_row: vector is wrong size " <<
           "is " << v->n() << ", should be " << ncol() << endl;
       abort();
@@ -273,7 +273,7 @@ SCVector *
 LocalSCMatrix::get_column(int i)
 {
   if (i >= ncol()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::get_column: trying to get invalid column " <<
           i << " max " << ncol() << endl;
       abort();
@@ -294,14 +294,14 @@ void
 LocalSCMatrix::assign_column(SCVector *v, int i)
 {
   if (i >= ncol()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::assign_column: trying to assign invalid column " <<
           i << " max " << ncol() << endl;
       abort();
     }
   
   if (v->n() != nrow()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::assign_column: vector is wrong size " <<
           "is " << v->n() << ", should be " << nrow() << endl;
       abort();
@@ -318,14 +318,14 @@ void
 LocalSCMatrix::accumulate_column(SCVector *v, int i)
 {
   if (i >= ncol()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::accumulate_column: trying to assign invalid column "
            << i << " max " << ncol() << endl;
       abort();
     }
   
   if (v->n() != nrow()) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::accumulate_column: vector is wrong size " <<
           "is " << v->n() << ", should be " << nrow() << endl;
       abort();
@@ -357,16 +357,16 @@ LocalSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
-      ExEnv::err() << indent << "LocalSCMatrix::accumulate_product: bad dim" << endl;
-      ExEnv::err() << indent << "this row and col dimension:" << endl;
-      rowdim()->print(ExEnv::err());
-      coldim()->print(ExEnv::err());
-      ExEnv::err() << indent << "a row and col dimension:" << endl;
-      a->rowdim()->print(ExEnv::err());
-      a->coldim()->print(ExEnv::err());
-      ExEnv::err() << indent << "b row and col dimension:" << endl;
-      b->rowdim()->print(ExEnv::err());
-      b->coldim()->print(ExEnv::err());
+      ExEnv::errn() << indent << "LocalSCMatrix::accumulate_product: bad dim" << endl;
+      ExEnv::errn() << indent << "this row and col dimension:" << endl;
+      rowdim()->print(ExEnv::errn());
+      coldim()->print(ExEnv::errn());
+      ExEnv::errn() << indent << "a row and col dimension:" << endl;
+      a->rowdim()->print(ExEnv::errn());
+      a->coldim()->print(ExEnv::errn());
+      ExEnv::errn() << indent << "b row and col dimension:" << endl;
+      b->rowdim()->print(ExEnv::errn());
+      b->coldim()->print(ExEnv::errn());
       abort();
     }
 
@@ -389,7 +389,7 @@ LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b): " <<
           "dimensions don't match" << endl;
       abort();
@@ -419,7 +419,7 @@ LocalSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): " <<
           "dimensions don't match" << endl;
       abort();
@@ -454,7 +454,7 @@ LocalSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
           "LocalSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b): " <<
           "dimensions don't match" << endl;
       abort();
@@ -482,7 +482,7 @@ LocalSCMatrix::accumulate(const SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-      ExEnv::err() << indent << "LocalSCMatrix::accumulate(SCMatrix*a): " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::accumulate(SCMatrix*a): " <<
           "dimensions don't match" << endl;
       abort();
     }
@@ -501,7 +501,7 @@ LocalSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "LocalSCMatrix::accumulate(SymmSCMatrix*a): " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::accumulate(SymmSCMatrix*a): " <<
           "dimensions don't match" << endl;
       abort();
     }
@@ -529,7 +529,7 @@ LocalSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "LocalSCMatrix::accumulate(DiagSCMatrix*a): " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::accumulate(DiagSCMatrix*a): " <<
           "dimensions don't match\n";
       abort();
     }
@@ -552,7 +552,7 @@ LocalSCMatrix::accumulate(const SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-      ExEnv::err() << indent << "LocalSCMatrix::accumulate(SCVector*a): " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::accumulate(SCVector*a): " <<
           "dimensions don't match" << endl;
       abort();
     }
@@ -589,7 +589,7 @@ double
 LocalSCMatrix::invert_this()
 {
   if (nrow() != ncol()) {
-      ExEnv::err() << indent << "LocalSCMatrix::invert_this: matrix is not square\n";
+      ExEnv::errn() << indent << "LocalSCMatrix::invert_this: matrix is not square\n";
       abort();
     }
   return cmat_invert(rows,0,nrow());
@@ -599,7 +599,7 @@ double
 LocalSCMatrix::determ_this()
 {
   if (nrow() != ncol()) {
-      ExEnv::err() << indent << "LocalSCMatrix::determ_this: matrix is not square\n";
+      ExEnv::errn() << indent << "LocalSCMatrix::determ_this: matrix is not square\n";
       abort();
     }
   return cmat_determ(rows,0,nrow());
@@ -609,7 +609,7 @@ double
 LocalSCMatrix::trace()
 {
   if (nrow() != ncol()) {
-      ExEnv::err() << indent << "LocalSCMatrix::trace: matrix is not square\n";
+      ExEnv::errn() << indent << "LocalSCMatrix::trace: matrix is not square\n";
       abort();
     }
   double ret=0;
@@ -649,7 +649,7 @@ LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
       !ndim->equiv(lV->rowdim()) ||
       !ndim->equiv(lV->coldim()) ||
       !pdim->equiv(sigma->dim())) {
-      ExEnv::err() << indent << "LocalSCMatrix: svd_this: dimension mismatch\n";
+      ExEnv::errn() << indent << "LocalSCMatrix: svd_this: dimension mismatch\n";
       abort();
     }
 
@@ -702,7 +702,7 @@ LocalSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
-      ExEnv::err() << indent << "LocalSCMatrix::solve_this(SCVector*v): " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::solve_this(SCVector*v): " <<
           "dimensions don't match" << endl;
       abort();
     }
@@ -718,7 +718,7 @@ LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-      ExEnv::err() << indent << "LocalSCMatrix::schmidt_orthog(): " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::schmidt_orthog(): " <<
           "dimensions don't match\n";
       abort();
     }
@@ -734,7 +734,7 @@ LocalSCMatrix::schmidt_orthog_tol(SymmSCMatrix *S, double tol, double *res)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-      ExEnv::err() << indent << "LocalSCMatrix::schmidt_orthog(): " <<
+      ExEnv::errn() << indent << "LocalSCMatrix::schmidt_orthog(): " <<
           "dimensions don't match\n";
       abort();
     }
@@ -756,7 +756,7 @@ LocalSCMatrix::element_op(const Ref<SCElementOp2>& op,
       = require_dynamic_cast<LocalSCMatrix*>(m,"LocalSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-      ExEnv::err() << indent << "LocalSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "LocalSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_rect(block.pointer(), lm->block.pointer());
@@ -773,7 +773,7 @@ LocalSCMatrix::element_op(const Ref<SCElementOp3>& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-      ExEnv::err() << indent << "LocalSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "LocalSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_rect(block.pointer(),
@@ -796,12 +796,12 @@ LocalSCMatrix::vprint(const char *title, ostream& os, int prec) const
   width = 75/(lwidth+SCFormIO::getindent(os));
 
   if (title)
-    os << node0 << endl << indent << title << endl;
+    os << endl << indent << title << endl;
   else
-    os << node0 << endl;
+    os << endl;
 
   if (nrow()==0 || ncol()==0) {
-    os << node0 << indent << "empty matrix\n";
+    os << indent << "empty matrix\n";
     return;
   }
 
@@ -811,19 +811,19 @@ LocalSCMatrix::vprint(const char *title, ostream& os, int prec) const
     nn = (ncol()>kk) ? kk : ncol();
 
     // print column indices
-    os << node0 << indent;
+    os << indent;
     for (i=ii; i <= nn; i++)
-      os << node0 << scprintf("%*d",lwidth,i);
-    os << node0 << endl;
+      os << scprintf("%*d",lwidth,i);
+    os << endl;
 
     // print the rows
     for (i=0; i < nrow() ; i++) {
-      os << node0 << indent << scprintf("%5d",i+1);
+      os << indent << scprintf("%5d",i+1);
       for (j=ii-1; j < nn; j++)
-        os << node0 << scprintf("%*.*f",lwidth,prec,rows[i][j]);
-      os << node0 << endl;
+        os << scprintf("%*.*f",lwidth,prec,rows[i][j]);
+      os << endl;
     }
-    os << node0 << endl;
+    os << endl;
 
     if (ncol() <= kk) {
       os.flush();
@@ -838,7 +838,7 @@ Ref<SCMatrixSubblockIter>
 LocalSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "LocalSCMatrix::local_blocks: not valid for local matrices"
            << endl;
       abort();
@@ -852,7 +852,7 @@ Ref<SCMatrixSubblockIter>
 LocalSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      ExEnv::err() << indent << "LocalSCMatrix::all_blocks: "
+      ExEnv::errn() << indent << "LocalSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

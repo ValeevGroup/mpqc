@@ -68,7 +68,7 @@ MPQCIn::~MPQCIn()
 void
 MPQCIn::error(const char* s)
 {
-  ExEnv::out() << ExEnv::program_name()
+  ExEnv::outn() << ExEnv::program_name()
                << ": error: " << s
                << endl;
   abort();
@@ -77,7 +77,7 @@ MPQCIn::error(const char* s)
 void
 MPQCIn::error2(const char* s, const char *s2)
 {
-  ExEnv::out() << ExEnv::program_name()
+  ExEnv::outn() << ExEnv::program_name()
                << ": error: " << s << "\"" << s2 << "\""
                << endl;
   abort();
@@ -86,7 +86,7 @@ MPQCIn::error2(const char* s, const char *s2)
 void
 MPQCIn::yerror(const char* s)
 {
-  ExEnv::out() << ExEnv::program_name()
+  ExEnv::outn() << ExEnv::program_name()
                << ": " << s
                << " at line " << lexer_->lineno()+1
                << endl;
@@ -96,7 +96,7 @@ MPQCIn::yerror(const char* s)
 void
 MPQCIn::yerror2(const char* s, const char *s2)
 {
-  ExEnv::out() << ExEnv::program_name()
+  ExEnv::outn() << ExEnv::program_name()
                << ": " << s
                << " \"" << s2 << "\" at line " << lexer_->lineno()+1
                << endl;
@@ -113,7 +113,7 @@ void
 MPQCIn::begin_molecule()
 {
   if (mol_.nonnull()) {
-      ExEnv::out() << ExEnv::program_name()
+      ExEnv::outn() << ExEnv::program_name()
                    << ": error: second molecule given at line "
                    << lexer_->lineno()+1
                    << endl;
@@ -327,7 +327,7 @@ MPQCIn::check_string(const char *s)
 #else
   istrstream in(s);
 #endif
-  lexer_->switch_streams(&in, &ExEnv::out());
+  lexer_->switch_streams(&in, &ExEnv::outn());
   int token;
   while ((token = ylex())) {
       if (token == T_OO_INPUT_KEYWORD) return 0;
@@ -345,7 +345,7 @@ MPQCIn::parse_string(const char *s)
 #else
   istrstream in(s);
 #endif
-  lexer_->switch_streams(&in, &ExEnv::out());
+  lexer_->switch_streams(&in, &ExEnv::outn());
   yparse();
 
   // form the oo input

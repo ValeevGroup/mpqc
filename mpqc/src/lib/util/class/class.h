@@ -266,7 +266,7 @@ class DescribedClass : public RefCount {
     /// Return the version of the class.
     int class_version() const;
     /// Print the object.
-    virtual void print(std::ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out0()) const;
   };
 
 /** Return the ClassDesc corresponding to template argument. */

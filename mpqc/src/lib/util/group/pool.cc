@@ -38,38 +38,38 @@ void
 PoolData::check(void* lower_bound, void* upper_bound)
 {
   if ((void*)this < lower_bound || (void*)this >= upper_bound) {
-      ExEnv::err() << scprintf("PoolData::check: this out of bounds\n");
+      ExEnv::errn() << scprintf("PoolData::check: this out of bounds\n");
       abort();
     }
   if (next_) {
       if ((void*)next_ < lower_bound || (void*)next_ >= upper_bound) {
-          ExEnv::err() << scprintf("PoolData::check: next_ out of bounds\n");
+          ExEnv::errn() << scprintf("PoolData::check: next_ out of bounds\n");
           abort();
         }
       if (next_->prev_ != this) {
-          ExEnv::err() << scprintf("PoolData::check: next pd doesn't point back\n");
+          ExEnv::errn() << scprintf("PoolData::check: next pd doesn't point back\n");
           abort();
         }
       if ((char*)next_ != (char*)this + size_ + PoolData_aligned_size) {
-          ExEnv::err() << scprintf("PoolData::check: next_ not consistent with size\n");
+          ExEnv::errn() << scprintf("PoolData::check: next_ not consistent with size\n");
           abort();
         }
       if (free_ && next_->free_) {
-          ExEnv::err() << scprintf("PoolData::check: free and next is free\n");
+          ExEnv::errn() << scprintf("PoolData::check: free and next is free\n");
           abort();
         }
     }
   if (prev_) {
       if ((void*)prev_ < lower_bound || (void*)prev_ >= upper_bound) {
-          ExEnv::err() << scprintf("PoolData::check: prev_ out of bounds\n");
+          ExEnv::errn() << scprintf("PoolData::check: prev_ out of bounds\n");
           abort();
         }
       if (prev_->next_ != this) {
-          ExEnv::err() << scprintf("PoolData::check: prev pd doesn't point back\n");
+          ExEnv::errn() << scprintf("PoolData::check: prev pd doesn't point back\n");
           abort();
         }
       if (free_ && prev_->free_) {
-          ExEnv::err() << scprintf("PoolData::check: free and prev is free\n");
+          ExEnv::errn() << scprintf("PoolData::check: free and prev is free\n");
           abort();
         }
     }
@@ -78,22 +78,22 @@ PoolData::check(void* lower_bound, void* upper_bound)
       PoolData* p = f.prev_free_;
       if (n) {
           if ((void*)n < lower_bound || (void*)n >= upper_bound) {
-              ExEnv::err() << scprintf("PoolData::check: next free out of bounds\n");
+              ExEnv::errn() << scprintf("PoolData::check: next free out of bounds\n");
               abort();
             }
           if (n->f.prev_free_ != this) {
-              ExEnv::err() << scprintf(
+              ExEnv::errn() << scprintf(
                       "PoolData::check: next free pd doesn't point back\n");
               abort();
             }
         }
       if (p) {
           if ((void*)p < lower_bound || (void*)p >= upper_bound) {
-              ExEnv::err() << scprintf("PoolData::check: prev free out of bounds\n");
+              ExEnv::errn() << scprintf("PoolData::check: prev free out of bounds\n");
               abort();
             }
           if (p->f.next_free_ != this) {
-              ExEnv::err() << scprintf(
+              ExEnv::errn() << scprintf(
                       "PoolData::check: prev free pd doesn't point back\n");
               abort();
             }
@@ -109,7 +109,7 @@ Pool::Pool(size_t size):
   firstdatum_ = (PoolData*)align_pool_data((void*)((char*)this+sizeof(Pool)));
 
   if ((char*)this + size <= (char*) firstdatum_) {
-      ExEnv::err() << scprintf("Pool::Pool: not given enough space\n");
+      ExEnv::errn() << scprintf("Pool::Pool: not given enough space\n");
       abort();
     }
   
@@ -286,9 +286,9 @@ Pool::check()
     }
   
   if (size != size_) {
-      ExEnv::err() << scprintf("Pool::check(): inconsistent sizes\n");
-      ExEnv::err() << scprintf("  computed: %d\n",size);
-      ExEnv::err() << scprintf("  actual:   %d\n",size_);
+      ExEnv::errn() << scprintf("Pool::check(): inconsistent sizes\n");
+      ExEnv::errn() << scprintf("  computed: %d\n",size);
+      ExEnv::errn() << scprintf("  actual:   %d\n",size_);
       abort();
     }
 
@@ -303,7 +303,7 @@ Pool::check()
     }
   for (j=firstdatum_; j; j = j->next()) {
       if (j->free_ && j->flags_) {
-          ExEnv::err() << scprintf("Pool::check: free data not in freelist\n");
+          ExEnv::errn() << scprintf("Pool::check: free data not in freelist\n");
           abort();
         }
     }

@@ -43,14 +43,14 @@ static ClassDesc StateIn_cd(
 
 StateIn::StateIn(const StateIn&)
 {
-  ExEnv::err() << "StateIn: private copy ctor called???" << endl;
+  ExEnv::errn() << "StateIn: private copy ctor called???" << endl;
   abort();
 }
 
 void
 StateIn::operator=(const StateIn&)
 {
-  ExEnv::err() << "StateIn: private assignment called???" << endl;
+  ExEnv::errn() << "StateIn: private assignment called???" << endl;
   abort();
 }
 
@@ -77,7 +77,7 @@ StateIn::push_key(const char *keyword)
 
   int length = strlen(keyword);
   if (keylength_ + length + 1 >= KeyVal::MaxKeywordLength) {
-      ExEnv::err() << "StateIn: KeyVal::MaxKeywordLength exceeded" << endl;
+      ExEnv::errn() << "StateIn: KeyVal::MaxKeywordLength exceeded" << endl;
       abort();
     }
   int old_keylength = keylength_;
@@ -151,7 +151,7 @@ StateIn::get(char&r, const char *keyword)
       int p = push_key(keyword);
       char roverride = override()->charvalue(key());
       if (override()->error() == KeyVal::OK) {
-          ExEnv::out() << node0 << indent << "overriding \"" << key()
+          ExEnv::out0() << indent << "overriding \"" << key()
                        << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
@@ -168,7 +168,7 @@ StateIn::get(unsigned int&r, const char *keyword)
       int p = push_key(keyword);
       int roverride = override()->intvalue(key());
       if (override()->error() == KeyVal::OK) {
-          ExEnv::out() << node0 << indent << "overriding \"" << key()
+          ExEnv::out0() << indent << "overriding \"" << key()
                        << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
@@ -185,7 +185,7 @@ StateIn::get(int&r, const char *keyword)
       int p = push_key(keyword);
       int roverride = override()->intvalue(key());
       if (override()->error() == KeyVal::OK) {
-          ExEnv::out() << node0 << indent << "overriding \"" << key()
+          ExEnv::out0() << indent << "overriding \"" << key()
                        << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
@@ -202,7 +202,7 @@ StateIn::get(float&r, const char *keyword)
       int p = push_key(keyword);
       float roverride = override()->floatvalue(key());
       if (override()->error() == KeyVal::OK) {
-          ExEnv::out() << node0 << indent << "overriding \"" << key()
+          ExEnv::out0() << indent << "overriding \"" << key()
                        << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
@@ -219,7 +219,7 @@ StateIn::get(double&r, const char *keyword)
       int p = push_key(keyword);
       double roverride = override()->doublevalue(key());
       if (override()->error() == KeyVal::OK) {
-          ExEnv::out() << node0 << indent << "overriding \"" << key()
+          ExEnv::out0() << indent << "overriding \"" << key()
                        << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
@@ -231,7 +231,7 @@ StateIn::get(double&r, const char *keyword)
 int
 StateIn::get_array_void(void*p,int s)
 {
-  ExEnv::err() << "StateIn::get_array_void(void*p,int s) "
+  ExEnv::errn() << "StateIn::get_array_void(void*p,int s) "
        << "is a derived class responsiblility" << endl
        << "  exact type is \"" << class_name() << "\"" << endl;
   abort();
@@ -451,7 +451,7 @@ StateIn::get(const ClassDesc**cd)
   r += get(classid);
 
   if (!classdatamap_.contains(classid)) {
-      ExEnv::err() << "ERROR: StateIn: couldn't find class descriptor for classid "
+      ExEnv::errn() << "ERROR: StateIn: couldn't find class descriptor for classid "
            << classid << endl;
       abort();
     }
@@ -503,12 +503,12 @@ StateIn::dir_getobject(Ref<SavableState> &p, const char *name)
   p = 0;
 
   if (!has_directory()) {
-      ExEnv::err() << "ERROR: StateIn: no directory to get object from" << endl;
+      ExEnv::errn() << "ERROR: StateIn: no directory to get object from" << endl;
       abort();
     }
 
   if (!seekable()) {
-      ExEnv::err() << "ERROR: StateIn: cannot get object because cannot seek" << endl;
+      ExEnv::errn() << "ERROR: StateIn: cannot get object because cannot seek" << endl;
       abort();
     }
 
@@ -530,7 +530,7 @@ StateIn::dir_getobject(Ref<SavableState> &p, const char *name)
   if (classname) {
       cd = ClassDesc::name_to_class_desc(classname);
       if (!cd) {
-          ExEnv::err() << "ERROR: StateIn: class " << classname << " unknown" << endl;
+          ExEnv::errn() << "ERROR: StateIn: class " << classname << " unknown" << endl;
           abort();
         }
       delete[] classname;
@@ -584,7 +584,7 @@ StateIn::getobject(Ref<SavableState> &p)
 #endif
       AVLMap<int,StateInData>::iterator ind = ps_.find(refnum);
       if (ind == ps_.end() && use_dir) {
-          ExEnv::err() << "ERROR: StateIn: directory missing object number "
+          ExEnv::errn() << "ERROR: StateIn: directory missing object number "
                << refnum << endl;
           abort();
         }
@@ -606,7 +606,7 @@ StateIn::getobject(Ref<SavableState> &p)
                   int trefnum;
                   get(trefnum);
                   if (trefnum != refnum) {
-                      ExEnv::err() << "StateIn: didn't find expected reference"<<endl;
+                      ExEnv::errn() << "StateIn: didn't find expected reference"<<endl;
                       abort();
                     }
                 }
@@ -697,7 +697,7 @@ StateIn::get_header()
   get_array_char(tmp,6);
   tmp[6] = '\0';
   if (strcmp(tmp,magic)) {
-      ExEnv::err() << "StateIn: bad magic number" << endl;
+      ExEnv::errn() << "StateIn: bad magic number" << endl;
       abort();
     }
 
@@ -717,7 +717,7 @@ StateIn::get_header()
   // get the directory location
   get_array_int(&dir_loc_,1);
   if (dir_loc_ == -1) {
-      ExEnv::err() << "ERROR: StateIn: directory corrupted" << endl;
+      ExEnv::errn() << "ERROR: StateIn: directory corrupted" << endl;
       abort();
     }
 }

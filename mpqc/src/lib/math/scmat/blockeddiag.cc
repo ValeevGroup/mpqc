@@ -109,7 +109,7 @@ BlockedDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    ExEnv::err() << indent << "BlockedDiagSCMatrix:: accumulate(SCMatrix*a): "
+    ExEnv::errn() << indent << "BlockedDiagSCMatrix:: accumulate(SCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -188,7 +188,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
   BlockedDiagSCMatrix *lm = require_dynamic_cast<BlockedDiagSCMatrix*>(m,
                                     "BlockedDiagSCMatrix::element_op");
   if (!dim()->equiv(lm->dim())) {
-    ExEnv::err() << indent << "BlockedDiagSCMatrix: bad element_op\n";
+    ExEnv::errn() << indent << "BlockedDiagSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -217,7 +217,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
                                       "BlockedDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-    ExEnv::err() << indent << "BlockedDiagSCMatrix: bad element_op\n";
+    ExEnv::errn() << indent << "BlockedDiagSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -320,7 +320,7 @@ BlockedDiagSCMatrix::restore(StateIn& s)
   int ndimt, ndim = n();
   s.get(ndimt);
   if (ndimt != ndim) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "BlockedDiagSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
@@ -330,7 +330,7 @@ BlockedDiagSCMatrix::restore(StateIn& s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          ExEnv::err() << indent
+          ExEnv::errn() << indent
                << "BlockedDiagSCMatrix::restore(): nblock differs\n" << endl;
           abort();
         }
@@ -339,7 +339,7 @@ BlockedDiagSCMatrix::restore(StateIn& s)
         }
     }
   else {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "BlockedDiagSCMatrix::restore(): no subblocks--cannot restore"
            << endl;
       abort();

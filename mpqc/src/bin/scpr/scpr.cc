@@ -63,7 +63,7 @@ clean_up(void)
 static void
 out_of_memory()
 {
-  cerr << "ERROR: out of memory" << endl;
+  ExEnv::errn() << "ERROR: out of memory" << endl;
   abort();
 }
 
@@ -74,6 +74,7 @@ main(int argc, char *argv[])
   std::set_new_handler(out_of_memory);
 
   ExEnv::init(argc, argv);
+  ExEnv::set_out(&cout);
 
 #ifdef HAVE_MPI
   // MPI is allowed wait until MPI_Init to fill in argc and argv,
@@ -104,7 +105,7 @@ main(int argc, char *argv[])
       else if (!strcmp(arg,"-W")) working_dir = argv[++i];
       else if (!strcmp(arg,"-d")) debug = 1;
       else if (!strcmp(arg,"-h")) help = 1;
-      else if (!strcmp(arg,"-l")) SCFormIO::setverbose(cout,1);
+      else if (!strcmp(arg,"-l")) SCFormIO::setverbose(ExEnv::outn(),1);
       else if (!strcmp(arg,"-v")) version = 1;
       else if (!strcmp(arg,"-w")) warranty = 1;
       else if (!strcmp(arg,"-L")) license = 1;
@@ -128,7 +129,7 @@ main(int argc, char *argv[])
     }
 
   if (help || nobject == 0 || nfile == 0) {
-      cout << node0
+      ExEnv::out0()
            << indent << "scpr version " << SC_VERSION << endl
            << SCFormIO::copyright << endl
            << indent << "usage: " << argv[0] << " [options] file ..." << endl
@@ -145,7 +146,7 @@ main(int argc, char *argv[])
            << indent << "-L (print the license)" << endl
            << indent << "-h (print this help)" << endl;
 
-      cout << node0 << endl
+      ExEnv::out0() << endl
            << indent << "object names take the form classname:ordinal_number"
            << endl
            << indent << "at least one file and object name must be given"
@@ -154,14 +155,14 @@ main(int argc, char *argv[])
     }
   
   if (version) {
-    cout << node0
+      ExEnv::out0()
          << indent << "scpr version " << SC_VERSION << endl
          << SCFormIO::copyright;
     exit(0);
   }
   
   if (warranty) {
-    cout << node0
+      ExEnv::out0()
          << indent << "scpr version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
@@ -169,7 +170,7 @@ main(int argc, char *argv[])
   }
   
   if (license) {
-    cout << node0
+      ExEnv::out0()
          << indent << "scpr version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
@@ -195,6 +196,8 @@ main(int argc, char *argv[])
     thread = ThreadGrp::get_default_threadgrp();
 
   // set up output classes
+  SCFormIO::setindent(ExEnv::outn(), 0);
+  SCFormIO::setindent(ExEnv::errn(), 0);
   SCFormIO::setindent(cout, 0);
   SCFormIO::setindent(cerr, 0);
 
@@ -207,21 +210,21 @@ main(int argc, char *argv[])
 
   for (i=0; i<nfile; i++) {
       if (nfile > 1) {
-          cout << node0 << indent << files[i] << ":" << endl;
-          cout << incindent;
+          ExEnv::out0() << indent << files[i] << ":" << endl;
+          ExEnv::out0() << incindent;
         }
       BcastStateInBin s(grp,files[i]);
       for (int j=0; j<nobject; j++) {
           if (nobject > 1) {
-              cout << node0 << indent << objects[j] << ":" << endl;
-              cout << incindent;
+              ExEnv::out0() << indent << objects[j] << ":" << endl;
+              ExEnv::out0() << incindent;
             }
           Ref<SavableState> o;
           o << SavableState::dir_restore_state(s,objects[j]);
-          o->print(cout << node0);
-          if (nobject > 1) cout << decindent;
+          o->print(ExEnv::out0());
+          if (nobject > 1) ExEnv::out0() << decindent;
         }
-      if (nfile > 1) cout << decindent;
+      if (nfile > 1) ExEnv::out0() << decindent;
     }
 
   delete[] files;

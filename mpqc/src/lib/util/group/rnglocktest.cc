@@ -29,6 +29,7 @@
 #define VERBOSE 0
 
 #include <math.h>
+#include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/group/rnglock.h>
 
@@ -53,7 +54,7 @@ main()
       int val = random()%2 ? -1:1;
       val = 1;
 #if VERBOSE
-      ExEnv::out() << scprintf("adding block %d: start = %d, fence = %d, val = %d\n",
+      ExEnv::out0() << scprintf("adding block %d: start = %d, fence = %d, val = %d\n",
                        i, start, fence, val);
 #endif
       lock.sum(start, fence, val);
@@ -62,11 +63,11 @@ main()
         }
     }
 
-  ExEnv::out() << "printing nonzero deltas" << endl;
+  ExEnv::out0() << "printing nonzero deltas" << endl;
 
   for (i=0; i<size; i++) {
       int delta = bin[i] - lock.lockvalue(i);
-      if (delta) ExEnv::out() << scprintf(" %5d: %8d (%8d %8d)\n", i, delta,
+      if (delta) ExEnv::out0() << scprintf(" %5d: %8d (%8d %8d)\n", i, delta,
                                   bin[i], lock.lockvalue(i));
     }
 

@@ -70,7 +70,7 @@ Orbital::compute()
       set_actual_value_accuracy(desired_value_accuracy());
     }
   if (gradient_needed() || hessian_needed()) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "Orbital::compute(): gradient & hessian not implemented\n";
       abort();
     }

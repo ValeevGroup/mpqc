@@ -79,7 +79,7 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
   KeyValValuedouble lindep_tol_def(1.e-8);
   lindep_tol_ = keyval->doublevalue("lindep_tol", lindep_tol_def);
   if (keyval->exists("symm_orthog")) {
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
                    << "WARNING: using obsolete \"symm_orthog\" keyword"
                    << endl;
       if (keyval->booleanvalue("symm_orthog")) {
@@ -104,7 +104,7 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
       orthog_method_ = GramSchmidt;
     }
     else {
-      ExEnv::err() << "ERROR: bad orthog_method: \""
+      ExEnv::errn() << "ERROR: bad orthog_method: \""
                    << orthog_name << "\"" << endl;
       abort();
     }
@@ -481,7 +481,7 @@ Wavefunction::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
   double minabs = maxabs;
   BlockedDiagSCMatrix *bm = dynamic_cast<BlockedDiagSCMatrix*>(m.pointer());
   if (bm == 0) {
-      ExEnv::out() << node0 << "Wfn: orthog: expected blocked overlap" << endl;
+      ExEnv::out0() << "Wfn: orthog: expected blocked overlap" << endl;
     }
   int i, j;
   double *pm_sqrt = new double[bm->dim()->n()];
@@ -521,7 +521,7 @@ Wavefunction::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
     }
 
   if (nlindep > 0 && orthog_method_ == Symmetric) {
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
                  << "WARNING: " << nlindep
                  << " basis function"
                  << (sodim_.n()-osodim_.n()>1?"s":"")
@@ -719,55 +719,55 @@ Wavefunction::compute_orthog_trans()
 {
   switch(orthog_method_) {
   case GramSchmidt:
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
                  << "Using Gram-Schmidt orthogonalization."
                  << endl;
     compute_gs_orthog();
     break;
   case Symmetric:
     compute_symmetric_orthog();
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
                  << "Using symmetric orthogonalization."
                  << endl;
     break;
   case Canonical:
     compute_canonical_orthog();
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
                  << "Using canonical orthogonalization."
                  << endl;
     break;
   default:
-    ExEnv::out() << "Wavefunction::compute_orthog_trans(): bad orthog method"
+    ExEnv::outn() << "Wavefunction::compute_orthog_trans(): bad orthog method"
                  << endl;
     abort();
   }
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
                << "n(SO):        ";
   for (int i=0; i<sodim_->blocks()->nblock(); i++) {
-    ExEnv::out() << node0 << scprintf(" %5d", sodim_->blocks()->size(i));
+    ExEnv::out0() << scprintf(" %5d", sodim_->blocks()->size(i));
   }
-  ExEnv::out() << node0 << endl;
+  ExEnv::out0() << endl;
 
   if (sodim_.n() != osodim_.n()) {
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
                  << "n(orthog SO): ";
     for (int i=0; i<osodim_->blocks()->nblock(); i++) {
-      ExEnv::out() << node0 << scprintf(" %5d", osodim_->blocks()->size(i));
+      ExEnv::out0() << scprintf(" %5d", osodim_->blocks()->size(i));
       }
-    ExEnv::out() << node0 << endl;
+    ExEnv::out0() << endl;
 
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
                  << "WARNING: " << sodim_.n() - osodim_.n()
                  << " basis function"
                  << (sodim_.n()-osodim_.n()>1?"s":"")
                  << " discarded."
                  << endl;
     }
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
                << "Maximum orthogonalization residual = "
                << max_orthog_res_ << endl
-               << node0 << indent
+               << indent
                << "Minimum orthogonalization residual = "
                << min_orthog_res_ << endl;
 
@@ -777,12 +777,12 @@ Wavefunction::compute_orthog_trans()
       orthog_trans_.print("SO to OSO");
       orthog_trans_inverse_.print("SO to OSO inverse");
       (orthog_trans_*overlap()
-       *orthog_trans_.t()).print("X*S*X'",ExEnv::out(),14);
+       *orthog_trans_.t()).print("X*S*X'",ExEnv::out0(),14);
       (orthog_trans_inverse_.t()*overlap().gi()
        *orthog_trans_inverse_).print("X'^(-1)*S^(-1)*X^(-1)",
-                                     ExEnv::out(),14);
+                                     ExEnv::out0(),14);
       (orthog_trans_
-       *orthog_trans_inverse_).print("X*X^(-1)",ExEnv::out(),14);
+       *orthog_trans_inverse_).print("X*X^(-1)",ExEnv::out0(),14);
     }
   }
 }
@@ -865,7 +865,7 @@ Wavefunction::alpha_density()
     result.scale(0.5);
     return result;
   }
-  ExEnv::err() << class_name() << "::alpha_density not implemented" << endl;
+  ExEnv::errn() << class_name() << "::alpha_density not implemented" << endl;
   abort();
   return 0;
 }
@@ -878,7 +878,7 @@ Wavefunction::beta_density()
     result.scale(0.5);
     return result;
   }
-  ExEnv::err() << class_name() << "::beta_density not implemented" << endl;
+  ExEnv::errn() << class_name() << "::beta_density not implemented" << endl;
   abort();
   return 0;
 }
@@ -909,7 +909,7 @@ void
 Wavefunction::copy_orthog_info(const Ref<Wavefunction>&wfn)
 {
   if (orthog_trans_.nonnull() || orthog_trans_inverse_.nonnull()) {
-    ExEnv::err() << "WARNING: Wavefunction: orthogonalization info changing"
+    ExEnv::errn() << "WARNING: Wavefunction: orthogonalization info changing"
                  << endl;
   }
   orthog_trans_ = wfn->so_to_orthog_so().copy();

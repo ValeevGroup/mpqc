@@ -101,7 +101,7 @@ RenderedObjectSet::RenderedObjectSet(const Ref<KeyVal>& keyval):
 {
   capacity_ = keyval->count("objects");
   if (keyval->error() != KeyVal::OK) {
-      ExEnv::err() << "RenderedObjectSet: error counting objects" << endl;
+      ExEnv::errn() << "RenderedObjectSet: error counting objects" << endl;
       abort();
     }
   n_ = capacity_;
@@ -109,7 +109,7 @@ RenderedObjectSet::RenderedObjectSet(const Ref<KeyVal>& keyval):
   for (int i=0; i<n_; i++) {
       array_[i] << keyval->describedclassvalue("objects",i);
       if (keyval->error() != KeyVal::OK) {
-          ExEnv::err() << "RenderedObjectSet: error reading objects" << endl;
+          ExEnv::errn() << "RenderedObjectSet: error reading objects" << endl;
           abort();
         }
     }

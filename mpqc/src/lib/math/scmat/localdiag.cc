@@ -92,7 +92,7 @@ LocalDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "LocalDiagSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::errn() << indent << "LocalDiagSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -165,7 +165,7 @@ LocalDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
       = require_dynamic_cast<LocalDiagSCMatrix*>(m,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      ExEnv::err() << indent << "LocalDiagSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_diag(block.pointer(), lm->block.pointer());
@@ -181,7 +181,7 @@ LocalDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
       = require_dynamic_cast<LocalDiagSCMatrix*>(n,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      ExEnv::err() << indent << "LocalDiagSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec_diag(block.pointer(),
@@ -202,19 +202,19 @@ LocalDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
   lwidth = prec + 5 + (int) max;
 
   if (title)
-    os << node0 << endl << indent << title << endl;
+    os << endl << indent << title << endl;
   else
-    os << node0 << endl;
+    os << endl;
 
   if (n()==0) {
-    os << node0 << indent << "empty matrix\n";
+    os << indent << "empty matrix\n";
     return;
   }
 
   for (i=0; i<n(); i++)
-    os << node0 << indent
+    os << indent
        << scprintf("%5d %*.*f\n",i+1,lwidth,prec,block->data[i]);
-  os << node0 << endl;
+  os << endl;
 
   os.flush();
 }
@@ -223,7 +223,7 @@ Ref<SCMatrixSubblockIter>
 LocalDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "LocalDiagSCMatrix::local_blocks: not valid for local matrices"
            << endl;
       abort();
@@ -237,7 +237,7 @@ Ref<SCMatrixSubblockIter>
 LocalDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      ExEnv::err() << indent << "LocalDiagSCMatrix::all_blocks: "
+      ExEnv::errn() << indent << "LocalDiagSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

@@ -39,10 +39,10 @@ main(int argc, char *argv[])
   int i;
 
   if (argc < 2) {
-    ExEnv::err() << "usage: " << argv[0]
+    ExEnv::err0() << "usage: " << argv[0]
          << " input_file { keyword { tolerance } }" << endl;
-    ExEnv::err() << "  default keyword = \"molecule\"" << endl;
-    ExEnv::err() << "  default tolerance = \"1.0e-4\"" << endl;
+    ExEnv::err0() << "  default keyword = \"molecule\"" << endl;
+    ExEnv::err0() << "  default tolerance = \"1.0e-4\"" << endl;
     return 1;
   }
 
@@ -55,15 +55,15 @@ main(int argc, char *argv[])
   const char *ctol = argc>3?argv[3]:"1.0e-4";
   double tol = atof(ctol);
 
-  ExEnv::out() << "Original molecule:" << endl;
+  ExEnv::out0() << "Original molecule:" << endl;
   mol->print();
   
   Ref<PointGroup> highestpg = mol->highest_point_group(tol);
-  ExEnv::out() << "Point Group is " << highestpg->symbol() << endl;
+  ExEnv::out0() << "Point Group is " << highestpg->symbol() << endl;
 
   mol->set_point_group(highestpg, 10*tol);
 
-  ExEnv::out() << "Molecule at center of mass in highest point group:" << endl;
+  ExEnv::out0() << "Molecule at center of mass in highest point group:" << endl;
   mol->print();
   
   //mol->transform_to_principal_axes(0);
@@ -72,26 +72,26 @@ main(int argc, char *argv[])
   //mol->point_group()->symm_frame().print();
 
   mol->cleanup_molecule();
-  ExEnv::out() << "cleaned molecule\n";
+  ExEnv::out0() << "cleaned molecule\n";
   mol->print();
   
   int nunique = mol->nunique();
 
   mol->transform_to_principal_axes();
-  ExEnv::out() << "cleaned molecule transformed to principle axes\n";
+  ExEnv::out0() << "cleaned molecule transformed to principle axes\n";
   mol->print();
 
-  ExEnv::out() << "resymmetrized molecule\n";
+  ExEnv::out0() << "resymmetrized molecule\n";
   mol->symmetrize();
   mol->print();
 
   mol->transform_to_symmetry_frame();
-  ExEnv::out() << "cleaned molecule transformed to symmetry frame\n";
+  ExEnv::out0() << "cleaned molecule transformed to symmetry frame\n";
   mol->print();
 
-  ExEnv::out() << scprintf("\nnunique=%d: ",nunique);
-  for (i=0; i < nunique; i++) ExEnv::out() << scprintf(" %d",mol->unique(i)+1);
-  ExEnv::out() << endl;
+  ExEnv::out0() << scprintf("\nnunique=%d: ",nunique);
+  for (i=0; i < nunique; i++) ExEnv::out0() << scprintf(" %d",mol->unique(i)+1);
+  ExEnv::out0() << endl;
   
   return 0;
 }

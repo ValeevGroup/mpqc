@@ -275,11 +275,11 @@ class KeyVal: public RefCount {
     /// Return a textual representation of the current error.
     const char*  errormsg();
 
-    virtual void errortrace(std::ostream&fp=ExEnv::err());
-    virtual void dump(std::ostream&fp=ExEnv::err());
+    virtual void errortrace(std::ostream&fp=ExEnv::err0());
+    virtual void dump(std::ostream&fp=ExEnv::err0());
 
     /// Print keywords that were never looked at, if possible.
-    virtual void print_unseen(std::ostream&fp=ExEnv::out());
+    virtual void print_unseen(std::ostream&fp=ExEnv::out0());
     /** Return 1 if there were unseen keywords, 0 if there are
         none, or -1 this keyval doesn't keep track of unseen
         keywords. */
@@ -346,8 +346,8 @@ class StringKeyVal: public KeyVal {
     // references to the same object work in input files)
     virtual const char* truekeyword(const char*);
 
-    virtual void errortrace(std::ostream&fp=ExEnv::err());
-    virtual void dump(std::ostream&fp=ExEnv::err());
+    virtual void errortrace(std::ostream&fp=ExEnv::err0());
+    virtual void dump(std::ostream&fp=ExEnv::err0());
 };
 
 class AggregateKeyVal : public KeyVal {
@@ -369,8 +369,8 @@ class AggregateKeyVal : public KeyVal {
     AggregateKeyVal(const Ref<KeyVal>&,const Ref<KeyVal>&,const Ref<KeyVal>&,
                     const Ref<KeyVal>&);
     ~AggregateKeyVal();
-    void errortrace(std::ostream&fp=ExEnv::err());
-    void dump(std::ostream&fp=ExEnv::err());
+    void errortrace(std::ostream&fp=ExEnv::err0());
+    void dump(std::ostream&fp=ExEnv::err0());
 };
 
 class PrefixKeyVal : public KeyVal {
@@ -402,8 +402,8 @@ class PrefixKeyVal : public KeyVal {
     PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int);
     PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int,int);
     ~PrefixKeyVal();
-    void errortrace(std::ostream&fp=ExEnv::err());
-    void dump(std::ostream&fp=ExEnv::err());
+    void errortrace(std::ostream&fp=ExEnv::err0());
+    void dump(std::ostream&fp=ExEnv::err0());
 };
 
 class IPV2;
@@ -453,9 +453,9 @@ class ParsedKeyVal : public StringKeyVal {
     const char* stringvalue(const char*);
     const char* classname(const char*);
     const char* truekeyword(const char*);
-    void errortrace(std::ostream&fp=ExEnv::err());
-    void dump(std::ostream&fp=ExEnv::err());
-    void print_unseen(std::ostream&fp=ExEnv::out());
+    void errortrace(std::ostream&fp=ExEnv::err0());
+    void dump(std::ostream&fp=ExEnv::err0());
+    void print_unseen(std::ostream&fp=ExEnv::out0());
     int have_unseen();
 };
 

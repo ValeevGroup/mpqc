@@ -91,12 +91,12 @@ void IPV2::yerror(const char* s)
 void
 IPV2::showpos()
 {
-  ExEnv::err() << "error occurred at line number "
+  ExEnv::errn() << "error occurred at line number "
        << lexer->lineno() << " (roughly)" << endl;
   if (filename_) {
-      ExEnv::err() << "in file \"" << filename_ << "\"";
+      ExEnv::errn() << "in file \"" << filename_ << "\"";
     }
-  ExEnv::err() << endl;
+  ExEnv::errn() << endl;
 }
 
 int

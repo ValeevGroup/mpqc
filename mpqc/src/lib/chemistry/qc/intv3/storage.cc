@@ -81,7 +81,7 @@ IntegralLink::operator delete(void* ptr)
 void
 IntegralLink::print()
 {
-  ExEnv::out() << scprintf("(%d %d|%d %d)[%d%d%d]",
+  ExEnv::outn() << scprintf("(%d %d|%d %d)[%d%d%d]",
          intlist.key.sh0(),
          intlist.key.sh1(),
          intlist.key.sh2(),
@@ -241,21 +241,21 @@ void
 IntegralStorer::print_stats()
 {
   if (currentsize_ == 0) return;
-  ExEnv::out() << scprintf("IntegralStorer: n_integrals  = %d\n", n_integrals_);
-  ExEnv::out() << scprintf("IntegralStorer: n_shellquart = %d\n", n_shellquart_);
-  ExEnv::out() << scprintf("IntegralStorer: currentsize = %d\n", currentsize_);
-  ExEnv::out() << scprintf("IntegralStorer: maxsize     = %d\n", maxsize_);
+  ExEnv::outn() << scprintf("IntegralStorer: n_integrals  = %d\n", n_integrals_);
+  ExEnv::outn() << scprintf("IntegralStorer: n_shellquart = %d\n", n_shellquart_);
+  ExEnv::outn() << scprintf("IntegralStorer: currentsize = %d\n", currentsize_);
+  ExEnv::outn() << scprintf("IntegralStorer: maxsize     = %d\n", maxsize_);
 #if 0
-  ExEnv::out() << scprintf("IntegralStorer: hash table distribution:\n");
+  ExEnv::outn() << scprintf("IntegralStorer: hash table distribution:\n");
   int tlength = 0;
   int i;
   for (i=0; i<table_size_; i++) {
       int length = table_[i].length();
       tlength += length;
-      ExEnv::out() << scprintf(" %5d", length);
-      if ((i+1)%13 == 0) ExEnv::out() << scprintf("\n");
+      ExEnv::outn() << scprintf(" %5d", length);
+      if ((i+1)%13 == 0) ExEnv::outn() << scprintf("\n");
     }
-  if (i%13 != 0) ExEnv::out() << scprintf("\n");
+  if (i%13 != 0) ExEnv::outn() << scprintf("\n");
   ExEnv::out() << scprintf("IntegralStorer: hash table length sum = %d\n", tlength);
   ExEnv::out() << scprintf("IntegralStorer: cost list length      = %d\n", costlist.length());
 #endif

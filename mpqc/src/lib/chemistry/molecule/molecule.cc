@@ -142,7 +142,7 @@ Molecule::Molecule(const Ref<KeyVal>&input):
       // possible
       int natom = input->count("geometry");
       if (natom != input->count("atoms")) {
-          ExEnv::err() << node0 << indent
+          ExEnv::err0() << indent
                << "Molecule: size of \"geometry\" != size of \"atoms\"\n";
           abort();
         }
@@ -408,23 +408,23 @@ Molecule::print(ostream& os) const
   int i;
 
   MolecularFormula *mf = new MolecularFormula(this);
-  os << node0 << indent
+  os << indent
      << "Molecular formula: " << mf->formula() << endl;
   delete mf;
 
-  os << node0 << indent << "molecule<Molecule>: (" << endl;
+  os << indent << "molecule<Molecule>: (" << endl;
   os << incindent;
-  print_parsedkeyval(os << node0);
+  print_parsedkeyval(os);
   os << decindent;
-  os << node0 << indent << ")" << endl;
+  os << indent << ")" << endl;
 
-  os << node0 << indent << "Atomic Masses:" << endl;
+  os << indent << "Atomic Masses:" << endl;
   for (i=0; i<natom(); i+=5) {
-      os << node0 << indent;
+      os << indent;
       for (int j=i; j<i+5 && j<natom(); j++) {
-          os << node0 << scprintf(" %10.5f", mass(j));
+          os << scprintf(" %10.5f", mass(j));
         }
-      os << node0 << endl;
+      os << endl;
     }
 }
 
@@ -503,7 +503,7 @@ Molecule::Molecule(StateIn& si):
   natoms_(0), r_(0), Z_(0), mass_(0), labels_(0)
 {
   if (si.version(::class_desc<Molecule>()) < 4) {
-      ExEnv::err() << "Molecule: cannot restore from old molecules" << endl;
+      ExEnv::errn() << "Molecule: cannot restore from old molecules" << endl;
       abort();
     }
   si.get(natoms_);
@@ -554,7 +554,7 @@ Molecule::atom_to_unique_offset(int iatom) const
   for (int i=0; i<nequiv; i++) {
       if (equiv_[iuniq][i] == iatom) return i;
     }
-  ExEnv::err() << "Molecule::atom_to_unique_offset: internal error"
+  ExEnv::errn() << "Molecule::atom_to_unique_offset: internal error"
                << endl;
   return -1;
 }
@@ -562,7 +562,7 @@ Molecule::atom_to_unique_offset(int iatom) const
 void
 Molecule::set_point_group(const Ref<PointGroup>&ppg, double tol)
 {
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Molecule: setting point group to " << ppg->symbol()
        << endl;
   pg_ = new PointGroup(*ppg.pointer());
@@ -773,7 +773,7 @@ Molecule::symmetrize(double tol)
       else {
         if (Z(i) != newmol->Z(atom)
             || fabs(mass(i)-newmol->mass(atom))>1.0e-10) {
-            ExEnv::err() << node0 << "Molecule: symmetrize: atom mismatch" << endl;
+            ExEnv::err0() << "Molecule: symmetrize: atom mismatch" << endl;
             abort();
         }
       }
@@ -989,11 +989,11 @@ Molecule::cleanup_molecule(double tol)
                 }
             }
           if (!found) {
-              ExEnv::err() << node0
+              ExEnv::err0()
                    << "Molecule: cleanup: couldn't find atom at " << np << endl
                    << "  transforming uniq atom " << i << " at " << up << endl
                    << "  with symmetry op " << g << ":" << endl;
-              so.print(ExEnv::err() << node0);
+              so.print(ExEnv::err0());
               abort();
             }
         }
@@ -1079,7 +1079,7 @@ Molecule::n_core_electrons()
       if (z > 48) n += 10;
       if (z > 54) n += 8;
       if (z > 72) {
-          ExEnv::err() << "Molecule::n_core_electrons: atomic number too large"
+          ExEnv::errn() << "Molecule::n_core_electrons: atomic number too large"
                << endl;
           abort();
         }
@@ -1203,19 +1203,19 @@ Molecule::print_pdb(ostream& os, char *title) const
   double bohr = u->from_atomic_units();
 
   if (title)
-      os << node0 << scprintf("%-10s%-60s\n","COMPND",title);
+      os << scprintf("%-10s%-60s\n","COMPND",title);
   else
-      os << node0 << scprintf("%-10s%-60s\n","COMPND","Title");
+      os << scprintf("%-10s%-60s\n","COMPND","Title");
 
   if (title)
-      os << node0 << scprintf("REMARK   %s\n", title);
+      os << scprintf("REMARK   %s\n", title);
 
   int i;
   for (i=0; i < natom(); i++) {
     char symb[4];
     sprintf(symb,"%s1",AtomInfo::symbol(Z_[i]));
 
-    os << node0 << scprintf(
+    os << scprintf(
         "HETATM%5d  %-3s UNK %5d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
         i+1, symb, 0, r(i,0)*bohr, r(i,1)*bohr, r(i,2)*bohr);
   }
@@ -1224,7 +1224,7 @@ Molecule::print_pdb(ostream& os, char *title) const
     double at_rad_i = atominfo_->atomic_radius(Z_[i]);
     SCVector3 ai(r(i));
 
-    os << node0 << scprintf("CONECT%5d",i+1);
+    os << scprintf("CONECT%5d",i+1);
 
     for (int j=0; j < natom(); j++) {
 
@@ -1234,13 +1234,13 @@ Molecule::print_pdb(ostream& os, char *title) const
       SCVector3 aj(r(j));
 
       if (ai.dist(aj) < 1.1*(at_rad_i+at_rad_j))
-          os << node0 << scprintf("%5d",j+1);
+          os << scprintf("%5d",j+1);
     }
 
-    os << node0 << endl;
+    os << endl;
   }
 
-  os << node0 << "END" << endl;
+  os << "END" << endl;
   os.flush();
 }
 

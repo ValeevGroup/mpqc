@@ -136,7 +136,7 @@ int
 ReplSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d1->n() || j>=d2->n()) {
-      ExEnv::err() << indent << "ReplSCMatrix: index out of bounds" << endl;
+      ExEnv::errn() << indent << "ReplSCMatrix: index out of bounds" << endl;
       abort();
     }
   return i*(d2->n()) + j;
@@ -170,7 +170,7 @@ ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-    ExEnv::err() << indent << "ReplSCMatrix::get_subblock: trying to get too big a"
+    ExEnv::errn() << indent << "ReplSCMatrix::get_subblock: trying to get too big a"
          << "subblock (" << nsrow << "," << nscol
          << ") from (" << nrow() << "," << ncol() << ")" << endl;
     abort();
@@ -205,7 +205,7 @@ ReplSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSCMatrix::assign_subblock: trying to assign too big a"
          << "subblock (" << nsrow << "," << nscol
          << ") to (" << nrow() << "," << ncol() << ")" << endl;;
@@ -228,7 +228,7 @@ ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSCMatrix::accumulate_subblock: trying to accumulate to big a"
          << "subblock (" << nsrow << "," << nscol
          << ") to (" << nrow() << "," << ncol() << ")" << endl;
@@ -244,7 +244,7 @@ SCVector *
 ReplSCMatrix::get_row(int i)
 {
   if (i >= nrow()) {
-    ExEnv::err() << indent << "ReplSCMatrix::get_row: trying to get invalid row "
+    ExEnv::errn() << indent << "ReplSCMatrix::get_row: trying to get invalid row "
          << i << " max " << nrow() << endl;
     abort();
   }
@@ -264,13 +264,13 @@ void
 ReplSCMatrix::assign_row(SCVector *v, int i)
 {
   if (i >= nrow()) {
-    ExEnv::err() << indent << "ReplSCMatrix::assign_row: trying to assign invalid row "
+    ExEnv::errn() << indent << "ReplSCMatrix::assign_row: trying to assign invalid row "
          << i << " max " << nrow() << endl;
     abort();
   }
   
   if (v->n() != ncol()) {
-    ExEnv::err() << indent << "ReplSCMatrix::assign_row: vector is wrong size, "
+    ExEnv::errn() << indent << "ReplSCMatrix::assign_row: vector is wrong size, "
          << "is " << v->n() << ", should be " << ncol() << endl;
     abort();
   }
@@ -286,14 +286,14 @@ void
 ReplSCMatrix::accumulate_row(SCVector *v, int i)
 {
   if (i >= nrow()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSCMatrix::accumulate_row: trying to accumulate invalid row "
          << i << " max " << nrow() << endl;
     abort();
   }
   
   if (v->n() != ncol()) {
-    ExEnv::err() << indent << "ReplSCMatrix::accumulate_row: vector is wrong size, "
+    ExEnv::errn() << indent << "ReplSCMatrix::accumulate_row: vector is wrong size, "
          << "is " << v->n() << ", should be " << ncol() << endl;
     abort();
   }
@@ -309,7 +309,7 @@ SCVector *
 ReplSCMatrix::get_column(int i)
 {
   if (i >= ncol()) {
-    ExEnv::err() << indent << "ReplSCMatrix::get_column: trying to get invalid column "
+    ExEnv::errn() << indent << "ReplSCMatrix::get_column: trying to get invalid column "
          << i << " max " << ncol() << endl;
     abort();
   }
@@ -329,14 +329,14 @@ void
 ReplSCMatrix::assign_column(SCVector *v, int i)
 {
   if (i >= ncol()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSCMatrix::assign_column: trying to assign invalid column "
          << i << " max " << ncol() << endl;
     abort();
   }
   
   if (v->n() != nrow()) {
-    ExEnv::err() << indent << "ReplSCMatrix::assign_column: vector is wrong size, "
+    ExEnv::errn() << indent << "ReplSCMatrix::assign_column: vector is wrong size, "
          << "is " << v->n() << ", should be " << nrow() << endl;
     abort();
   }
@@ -352,14 +352,14 @@ void
 ReplSCMatrix::accumulate_column(SCVector *v, int i)
 {
   if (i >= ncol()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSCMatrix::accumulate_column: trying to accumulate invalid"
          << " column" << i << " max " << ncol() << endl;
     abort();
   }
   
   if (v->n() != nrow()) {
-    ExEnv::err() << indent << "ReplSCMatrix::accumulate_column: vector is wrong size, "
+    ExEnv::errn() << indent << "ReplSCMatrix::accumulate_column: vector is wrong size, "
          << "is " << v->n() << ", should be " << nrow() << endl;
     abort();
   }
@@ -389,7 +389,7 @@ ReplSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "ReplSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
            << "dimensions don't match" << endl;
       abort();
@@ -481,7 +481,7 @@ ReplSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "ReplSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b): "
            << "dimensions don't match" << endl;
       abort();
@@ -511,18 +511,18 @@ ReplSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "ReplSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): "
            << "dimensions don't match" << endl;
-      ExEnv::err() << node0 << indent << "rowdim():" << endl;
+      ExEnv::err0() << indent << "rowdim():" << endl;
       rowdim().print();
-      ExEnv::err() << node0 << indent << "coldim():" << endl;
+      ExEnv::err0() << indent << "coldim():" << endl;
       coldim().print();
-      ExEnv::err() << node0 << indent << "la->rowdim():" << endl;
+      ExEnv::err0() << indent << "la->rowdim():" << endl;
       la->rowdim().print();
-      ExEnv::err() << node0 << indent << "la->coldim():" << endl;
+      ExEnv::err0() << indent << "la->coldim():" << endl;
       la->coldim().print();
-      ExEnv::err() << node0 << indent << "lb->dim():" << endl;
+      ExEnv::err0() << indent << "lb->dim():" << endl;
       lb->dim().print();
       abort();
     }
@@ -556,7 +556,7 @@ ReplSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "ReplSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b): "
            << "dimensions don't match" << endl;
       abort();
@@ -584,7 +584,7 @@ ReplSCMatrix::accumulate(const SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-      ExEnv::err() << indent << "ReplSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::errn() << indent << "ReplSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match" << endl;
       abort();
     }
@@ -603,7 +603,7 @@ ReplSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSCMatrix::accumulate(SymmSCMatrix*a): "
+      ExEnv::errn() << indent << "ReplSCMatrix::accumulate(SymmSCMatrix*a): "
            << "dimensions don't match" << endl;
       abort();
     }
@@ -631,7 +631,7 @@ ReplSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSCMatrix::accumulate(DiagSCMatrix*a): "
+      ExEnv::errn() << indent << "ReplSCMatrix::accumulate(DiagSCMatrix*a): "
            << "dimensions don't match" << endl;
       abort();
     }
@@ -654,7 +654,7 @@ ReplSCMatrix::accumulate(const SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-      ExEnv::err() << indent << "ReplSCMatrix::accumulate(SCVector*a): "
+      ExEnv::errn() << indent << "ReplSCMatrix::accumulate(SCVector*a): "
            << "dimensions don't match" << endl;
       abort();
     }
@@ -684,7 +684,7 @@ double
 ReplSCMatrix::invert_this()
 {
   if (nrow() != ncol()) {
-      ExEnv::err() << indent << "ReplSCMatrix::invert_this: matrix is not square" << endl;
+      ExEnv::errn() << indent << "ReplSCMatrix::invert_this: matrix is not square" << endl;
       abort();
     }
   return cmat_invert(rows,0,nrow());
@@ -694,7 +694,7 @@ double
 ReplSCMatrix::determ_this()
 {
   if (nrow() != ncol()) {
-    ExEnv::err() << indent << "ReplSCMatrix::determ_this: matrix is not square" << endl;
+    ExEnv::errn() << indent << "ReplSCMatrix::determ_this: matrix is not square" << endl;
     abort();
   }
   return cmat_determ(rows,0,nrow());
@@ -704,7 +704,7 @@ double
 ReplSCMatrix::trace()
 {
   if (nrow() != ncol()) {
-    ExEnv::err() << indent << "ReplSCMatrix::trace: matrix is not square" << endl;
+    ExEnv::errn() << indent << "ReplSCMatrix::trace: matrix is not square" << endl;
     abort();
   }
   double ret=0;
@@ -744,7 +744,7 @@ ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
       !ndim->equiv(lV->rowdim()) ||
       !ndim->equiv(lV->coldim()) ||
       !pdim->equiv(sigma->dim())) {
-      ExEnv::err() << indent << "ReplSCMatrix: svd_this: dimension mismatch" << endl;
+      ExEnv::errn() << indent << "ReplSCMatrix: svd_this: dimension mismatch" << endl;
       abort();
     }
 
@@ -797,7 +797,7 @@ ReplSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
-      ExEnv::err() << indent << "ReplSCMatrix::solve_this(SCVector*v): "
+      ExEnv::errn() << indent << "ReplSCMatrix::solve_this(SCVector*v): "
            << "dimensions don't match" << endl;
       abort();
     }
@@ -816,7 +816,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-      ExEnv::err() << indent << "ReplSCMatrix::schmidt_orthog(): "
+      ExEnv::errn() << indent << "ReplSCMatrix::schmidt_orthog(): "
            << "dimensions don't match" << endl;
       abort();
     }
@@ -885,7 +885,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
       vtmp += v[i]*cm[i];
 
     if (!vtmp) {
-      ExEnv::err() << "cmat_schmidt: bogus" << endl;
+      ExEnv::errn() << "cmat_schmidt: bogus" << endl;
       abort();
     }
 
@@ -953,7 +953,7 @@ ReplSCMatrix::schmidt_orthog_tol(SymmSCMatrix *S, double tol, double *res)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-      ExEnv::err() << indent << "ReplSCMatrix::schmidt_orthog_tol(): " <<
+      ExEnv::errn() << indent << "ReplSCMatrix::schmidt_orthog_tol(): " <<
           "dimensions don't match" << endl;
       abort();
     }
@@ -994,7 +994,7 @@ ReplSCMatrix::element_op(const Ref<SCElementOp2>& op,
       = require_dynamic_cast<ReplSCMatrix*>(m,"ReplSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-      ExEnv::err() << indent << "ReplSCMatrix: bad element_op" << endl;
+      ExEnv::errn() << indent << "ReplSCMatrix: bad element_op" << endl;
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -1021,7 +1021,7 @@ ReplSCMatrix::element_op(const Ref<SCElementOp3>& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-      ExEnv::err() << indent << "ReplSCMatrix: bad element_op" << endl;
+      ExEnv::errn() << indent << "ReplSCMatrix: bad element_op" << endl;
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -1112,7 +1112,7 @@ Ref<SCMatrixSubblockIter>
 ReplSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      ExEnv::err() << indent << "ReplSCMatrix::all_blocks: "
+      ExEnv::errn() << indent << "ReplSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

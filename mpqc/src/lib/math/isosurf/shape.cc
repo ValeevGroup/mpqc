@@ -89,7 +89,7 @@ Shape::compute()
   get_x(r);
   if (gradient_needed()) {
       if (!gradient_implemented()) {
-          ExEnv::err() << "Shape::compute: gradient not implemented" << endl;
+          ExEnv::errn() << "Shape::compute: gradient not implemented" << endl;
           abort();
         }
       SCVector3 v;
@@ -103,7 +103,7 @@ Shape::compute()
       set_actual_value_accuracy(desired_value_accuracy());
     }
   if (hessian_needed()) {
-      ExEnv::err() << "Shape::compute(): can't do hessian yet" << endl;
+      ExEnv::errn() << "Shape::compute(): can't do hessian yet" << endl;
       abort();
     }
 }
@@ -487,7 +487,7 @@ ReentrantUncappedTorusHoleShape::ReentrantUncappedTorusHoleShape(double r,
       sb2m4ac = 0.0;
     }
   else {
-      ExEnv::err() << "ReentrantUncappedTorusHoleShape:: imaginary point" << endl;
+      ExEnv::errn() << "ReentrantUncappedTorusHoleShape:: imaginary point" << endl;
       abort();
     }
   double zA = (minus_b - sb2m4ac)/(2.0*a);
@@ -890,7 +890,7 @@ Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
 {
   SCVector3 Xv(X);
 
-  if (verbose) ExEnv::out() << scprintf("point %14.8f %14.8f %14.8f\n",X(0),X(1),X(2));
+  if (verbose) ExEnv::outn() << scprintf("point %14.8f %14.8f %14.8f\n",X(0),X(1),X(2));
 
   // The folded case isn't handled correctly here, so use
   // the less efficient distance_to_surface routine.
@@ -910,7 +910,7 @@ Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
       if (w <= 0.0) return 1;
     }
 
-  if (verbose) ExEnv::out() << "is_inside" << endl;
+  if (verbose) ExEnv::outn() << "is_inside" << endl;
 
   return 0;
 }
@@ -944,25 +944,25 @@ Uncapped5SphereExclusionShape::
   else side = 0;
 
   if (verbose) {
-      ExEnv::out() << scprintf("distance_to_surface: folded = %d, side = %d\n",
+      ExEnv::outn() << scprintf("distance_to_surface: folded = %d, side = %d\n",
                        _folded, side);
-      ExEnv::out() << "XM = "; XM.print();
-      ExEnv::out() << "MD[0] = "; MD[0].print();
-      ExEnv::out() << "MD[0].dot(XM) = " << MD[0].dot(XM) << endl;
+      ExEnv::outn() << "XM = "; XM.print();
+      ExEnv::outn() << "MD[0] = "; MD[0].print();
+      ExEnv::outn() << "MD[0].dot(XM) = " << MD[0].dot(XM) << endl;
     }
 
   SCVector3 XD = Xv - D[side];
   double u = BDxCD[side].dot(XD)/BDxCDdotAD[side];
-  if (verbose) ExEnv::out() << scprintf("u = %14.8f\n", u);
+  if (verbose) ExEnv::outn() << scprintf("u = %14.8f\n", u);
   if (u <= 0.0) return shape_infinity;
   double v = CDxAD[side].dot(XD)/CDxADdotBD[side];
-  if (verbose) ExEnv::out() << scprintf("v = %14.8f\n", v);
+  if (verbose) ExEnv::outn() << scprintf("v = %14.8f\n", v);
   if (v <= 0.0) return shape_infinity;
   double w = ADxBD[side].dot(XD)/ADxBDdotCD[side];
-  if (verbose) ExEnv::out() << scprintf("w = %14.8f\n", w);
+  if (verbose) ExEnv::outn() << scprintf("w = %14.8f\n", w);
   if (w <= 0.0) return shape_infinity;
   double rXD = XD.norm();
-  if (verbose) ExEnv::out() << scprintf("r() - rXD = %14.8f\n", r() - rXD);
+  if (verbose) ExEnv::outn() << scprintf("r() - rXD = %14.8f\n", r() - rXD);
   if (rXD <= r()) {
       if (!_reentrant) return r() - rXD;
       // this shape is reentrant
@@ -1043,7 +1043,7 @@ Uncapped5SphereExclusionShape::
         }
     }
 
-  if (verbose) ExEnv::out() << "returning -1.0" << endl;
+  if (verbose) ExEnv::outn() << "returning -1.0" << endl;
   return -1.0;
 }
 

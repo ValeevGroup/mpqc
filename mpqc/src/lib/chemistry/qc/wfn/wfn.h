@@ -223,7 +223,7 @@ class Wavefunction: public MolecularEnergy {
 
     void obsolete();
 
-    void print(std::ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 

@@ -103,7 +103,7 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
               char *messagegrp_string = argv[i];
               i++;
               if (i >= argc) {
-                  ExEnv::err() << "-messagegrp must be following by an argument"
+                  ExEnv::errn() << "-messagegrp must be following by an argument"
                        << endl;
                   abort();
                 }
@@ -143,12 +143,12 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
       Ref<DescribedClass> dc = strkv->describedclassvalue();
       grp = dynamic_cast<MessageGrp*>(dc.pointer());
       if (dc.null()) {
-          ExEnv::err() << "initial_messagegrp: couldn't find a MessageGrp in "
+          ExEnv::errn() << "initial_messagegrp: couldn't find a MessageGrp in "
                << keyval_string << endl;
           abort();
         }
       else if (!grp) {
-          ExEnv::err() << "initial_messagegrp: wanted MessageGrp but got "
+          ExEnv::errn() << "initial_messagegrp: wanted MessageGrp but got "
                << dc->class_name() << endl;
           abort();
         }

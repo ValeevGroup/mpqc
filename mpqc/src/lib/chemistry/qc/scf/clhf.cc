@@ -158,7 +158,7 @@ CLHF::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "CLHF: error starting threads" << endl;
       abort();
     }
@@ -166,7 +166,7 @@ CLHF::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "CLHF: error waiting for threads" << endl;
       abort();
     }
@@ -192,7 +192,7 @@ CLHF::ao_fock(double accuracy)
     delete[] pmax;
       
     scf_grp_->sum(&tnint, 1, 0, 0);
-    ExEnv::out() << node0 << indent << scprintf("%20.0f integrals\n", tnint);
+    ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
 
     tim_exit("ao_gmat");
 
@@ -212,7 +212,7 @@ CLHF::ao_fock(double accuracy)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -280,7 +280,7 @@ CLHF::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("clhf e2");

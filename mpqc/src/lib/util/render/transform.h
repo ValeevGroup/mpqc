@@ -46,7 +46,7 @@ class Transform: public DescribedClass {
     void translate(const vec3&);
     void rotate(const vec3&, double angle_degrees);
     void scale(double);
-    void print(std::ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 

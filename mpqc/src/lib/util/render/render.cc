@@ -271,7 +271,7 @@ FileRender::open_sbuf(const char *objectname)
       filebuf *fbuf = new filebuf();
       fbuf->open(file,ios::out);
       if (!fbuf->is_open()) {
-          ExEnv::err() << scprintf("FileRender: couldn't open \"%s\"\n", filename_);
+          ExEnv::errn() << scprintf("FileRender: couldn't open \"%s\"\n", filename_);
           abort();
         }
       sbuf_ = fbuf;

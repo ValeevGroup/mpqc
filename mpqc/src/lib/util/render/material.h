@@ -45,7 +45,7 @@ class Material: public DescribedClass {
     ~Material();
     Parameter<Color>& diffuse() { return diffuse_; }
     Parameter<Color>& ambient() { return ambient_; }
-    void print(std::ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 

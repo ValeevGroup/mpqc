@@ -113,9 +113,9 @@ main(int argc, char **argv)
   Ref<AtomInfo> atominfo; atominfo << kv->describedclassvalue("atominfo");
   if (atominfo.nonnull()) {
       Ref<AtomInfo> refatominfo = new AtomInfo;
-      cout << node0<< "-------------- testing atominfo --------------" << endl;
+      cout << "-------------- testing atominfo --------------" << endl;
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
-      cout << node0 << "saving/restoring atominfo" << endl;
+      cout << "saving/restoring atominfo" << endl;
       StateOutBin so("moltest.1.ckpt");
       SavableState::save_state(atominfo.pointer(), so);
       atominfo = 0;

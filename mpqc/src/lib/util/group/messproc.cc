@@ -64,14 +64,14 @@ void ProcMessageGrp::sendit(message_t *& messages, int dest, int msgtype, void* 
   message_t *I;
 
   if (dest != 0) {
-      ExEnv::err() << scprintf("messproc.cc:sendit: can only send to 0\n");
+      ExEnv::errn() << scprintf("messproc.cc:sendit: can only send to 0\n");
       abort();
     }
 
   msg = (message_t *) malloc(sizeof(message_t));
   if (msg) msg->buf = (char *) malloc(bytes);
   if (!msg || !msg->buf) {
-      ExEnv::err() << scprintf("messproc.cc:sendit: allocation failed\n");
+      ExEnv::errn() << scprintf("messproc.cc:sendit: allocation failed\n");
       abort();
     }
 
@@ -101,7 +101,7 @@ void ProcMessageGrp::recvit(message_t *& messages, int source, int type, void* b
   for (i=messages; i!=0; i = i->p) {
     if (i->type == type || type == -1) {
       if (i->size > bytes) {
-        ExEnv::err() << scprintf(
+        ExEnv::errn() << scprintf(
                 "messproc.cc:recvit: message buffer isn't big enough\n");
         abort();
         }
@@ -122,9 +122,9 @@ void ProcMessageGrp::recvit(message_t *& messages, int source, int type, void* b
     last = i;
     }
 
-  ExEnv::err() << scprintf(
+  ExEnv::errn() << scprintf(
           "messproc.cc:recvit: tried to receive something that isn't there\n");
-  ExEnv::err() << scprintf("messproc:recvit: tried %d bytes of type %d, ",bytes,type);
+  ExEnv::errn() << scprintf("messproc:recvit: tried %d bytes of type %d, ",bytes,type);
   abort();
 }
 

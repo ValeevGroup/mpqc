@@ -74,7 +74,7 @@ iswtch(int *i,int *j)
 static void
 fail()
 {
-  ExEnv::err() << scprintf("failing module:\n%s",__FILE__) << endl;
+  ExEnv::errn() << scprintf("failing module:\n%s",__FILE__) << endl;
   abort();
 }
 
@@ -156,8 +156,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       ||( !int_unit2 && (sh2 < 0 || sh2 >= bs2_->nbasis()))
       || sh3 < 0 || sh3 >= bs3_->nbasis()
       ||( !int_unit4 && (sh4 < 0 || sh4 >= bs4_->nbasis()))) {
-    ExEnv::err() << scprintf("compute_erep has been incorrectly used\n");
-    ExEnv::err() << scprintf("shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
+    ExEnv::errn() << scprintf("compute_erep has been incorrectly used\n");
+    ExEnv::errn() << scprintf("shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
             sh1,bs1_->nbasis()-1,
             sh2,bs2_->nbasis()-1,
             sh3,bs3_->nbasis()-1,
@@ -320,7 +320,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       tim_change("check storage");
 #endif
     if (dam1 || dam2 || dam3 || dam4) {
-      ExEnv::err() << scprintf("cannot use integral storage and dam\n");
+      ExEnv::errn() << scprintf("cannot use integral storage and dam\n");
       fail();
       }
     if (    !int_unit2
@@ -610,7 +610,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     int redundant_offset = 0;
     int nonredundant_offset = 0;
     if ((osh1 == osh4)&&(osh2 == osh3)&&(osh1 != osh2)) {
-      ExEnv::err() << scprintf("nonredundant integrals cannot be generated\n");
+      ExEnv::errn() << scprintf("nonredundant integrals cannot be generated\n");
       fail();
       }
     e12 = (int_unit2?0:(osh1 == osh2));
@@ -832,7 +832,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
     int i;
 
     if ((osh[0] == osh[3])&&(osh[1] == osh[2])&&(osh[0] != osh[1])) {
-      ExEnv::err() << scprintf("nonredundant integrals cannot be generated (1der)\n");
+      ExEnv::errn() << scprintf("nonredundant integrals cannot be generated (1der)\n");
       fail();
       }
 
@@ -891,7 +891,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
   shell4 = &bs4_->shell(*psh4);
 
   if ((dercenter<0) || (dercenter > 3)) {
-    ExEnv::err() << scprintf("illegal derivative center -- must be 0, 1, 2, or 3\n");
+    ExEnv::errn() << scprintf("illegal derivative center -- must be 0, 1, 2, or 3\n");
     fail();
     }
 
@@ -1864,7 +1864,7 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
     int i;
 
     if ((osh[0] == osh[3])&&(osh[1] == osh[2])&&(osh[0] != osh[1])) {
-      ExEnv::err() << scprintf("nonredundant integrals cannot be generated (1der)\n");
+      ExEnv::errn() << scprintf("nonredundant integrals cannot be generated (1der)\n");
       fail();
       }
 

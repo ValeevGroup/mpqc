@@ -90,7 +90,7 @@ class CorrelationTable: public RefCount {
         high order group can be reduced to. */
     int gamma(int igamma, int i) const { return gamma_[igamma][i]; }
 
-    void print(std::ostream &o=ExEnv::out()) const;
+    void print(std::ostream &o=ExEnv::out0()) const;
 };
 
 

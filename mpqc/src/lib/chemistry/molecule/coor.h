@@ -86,8 +86,8 @@ class IntCoor: public SavableState {
     /// Returns a string representation of the type of coordinate this is.
     virtual const char* ctype() const = 0;
     /// Print information about the coordinate.
-    virtual void print(std::ostream & o=ExEnv::out()) const;
-    virtual void print_details(const Ref<Molecule> &, std::ostream& =ExEnv::out()) const;
+    virtual void print(std::ostream & o=ExEnv::out0()) const;
+    virtual void print_details(const Ref<Molecule> &, std::ostream& =ExEnv::out0()) const;
     /** Returns the value of the force constant associated with this
         coordinate. */
     virtual double force_constant(Ref<Molecule>&) = 0;
@@ -153,7 +153,7 @@ class SumIntCoor: public IntCoor {
     /// Always returns ``SUM''.
     const char* ctype() const;
     /// Print the individual coordinates in the sum with their coefficients.
-    void print_details(const Ref<Molecule> &, std::ostream& =ExEnv::out()) const;
+    void print_details(const Ref<Molecule> &, std::ostream& =ExEnv::out0()) const;
     /// Returns the weighted sum of the individual force constants.
     double force_constant(Ref<Molecule>&);
     /// Recalculate the value of the coordinate.
@@ -226,7 +226,7 @@ class SetIntCoor: public SavableState {
         constant for the i'th coordinate in the set. */
     virtual void guess_hessian(Ref<Molecule>&,RefSymmSCMatrix&);
     /// Print the coordinates in the set.
-    virtual void print_details(const Ref<Molecule> &,std::ostream& =ExEnv::out()) const;
+    virtual void print_details(const Ref<Molecule> &,std::ostream& =ExEnv::out0()) const;
     /// Recalculate the values of the internal coordinates in the set.
     virtual void update_values(const Ref<Molecule>&);
     /// Copy the values of the internal coordinates to a vector.
@@ -323,7 +323,7 @@ class IntCoorGen: public SavableState
     virtual void generate(const Ref<SetIntCoor>&);
 
     /// Print out information about this.
-    virtual void print(std::ostream& out=ExEnv::out()) const;
+    virtual void print(std::ostream& out=ExEnv::out0()) const;
 };
 
 
@@ -374,8 +374,8 @@ class MolecularCoor: public SavableState
     Ref<Molecule> molecule() const { return molecule_; }
 
     /// Print the coordinate.
-    virtual void print(std::ostream& =ExEnv::out()) const = 0;
-    virtual void print_simples(std::ostream& =ExEnv::out()) const = 0;
+    virtual void print(std::ostream& =ExEnv::out0()) const = 0;
+    virtual void print_simples(std::ostream& =ExEnv::out0()) const = 0;
 
     /** Returns a smart reference to an SCDimension equal to the number of
         coordinates (be they Cartesian, internal, or whatever) that are
@@ -644,10 +644,10 @@ class IntMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
     virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
-    virtual void print(std::ostream& =ExEnv::out()) const;
-    virtual void print_simples(std::ostream& =ExEnv::out()) const;
-    virtual void print_variable(std::ostream& =ExEnv::out()) const;
-    virtual void print_constant(std::ostream& =ExEnv::out()) const;
+    virtual void print(std::ostream& =ExEnv::out0()) const;
+    virtual void print_simples(std::ostream& =ExEnv::out0()) const;
+    virtual void print_variable(std::ostream& =ExEnv::out0()) const;
+    virtual void print_constant(std::ostream& =ExEnv::out0()) const;
     int nconstrained();
 };
 
@@ -712,7 +712,7 @@ class SymmMolecularCoor: public IntMolecularCoor
         and might transform to a new set of coordinates. */
     Ref<NonlinearTransform> change_coordinates();
 
-    void print(std::ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out0()) const;
 };
 
 // ///////////////////////////////////////////////////////////////////////
@@ -772,8 +772,8 @@ class CartMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
     virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
-    virtual void print(std::ostream& =ExEnv::out()) const;
-    virtual void print_simples(std::ostream& =ExEnv::out()) const;
+    virtual void print(std::ostream& =ExEnv::out0()) const;
+    virtual void print_simples(std::ostream& =ExEnv::out0()) const;
     void guess_hessian(RefSymmSCMatrix&hessian);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };

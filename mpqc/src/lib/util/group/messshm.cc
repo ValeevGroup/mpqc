@@ -293,7 +293,7 @@ void ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
     }
 
   if (bytes < message->size) {
-      ExEnv::err() << scprintf("messshm.cc: recv buffer too small\n");
+      ExEnv::errn() << scprintf("messshm.cc: recv buffer too small\n");
       abort();
     }
   if (bytes < message->size) size = bytes;
@@ -338,7 +338,7 @@ void ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
 
   if (dest>=n()) {
       //debug_start("bad destination");
-      ExEnv::err() << scprintf("ShmMessageGrp::basic_send: bad destination\n");
+      ExEnv::errn() << scprintf("ShmMessageGrp::basic_send: bad destination\n");
       abort();
     }
 
@@ -356,11 +356,11 @@ void ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
       if (me() == dest) {
           // sending a message to myself and the buffer is full
           // --cannot recover
-          ExEnv::err() << scprintf("commbuf size exceeded on %d\n",me());
-          ExEnv::err() << scprintf(" availmsg = 0x%x\n",availmsg);
-          ExEnv::err() << scprintf(" commbuf[%d] + sizeof(commbuf_t) = 0x%x\n",
+          ExEnv::errn() << scprintf("commbuf size exceeded on %d\n",me());
+          ExEnv::errn() << scprintf(" availmsg = 0x%x\n",availmsg);
+          ExEnv::errn() << scprintf(" commbuf[%d] + sizeof(commbuf_t) = 0x%x\n",
                            dest,((char*)commbuf[dest]) + sizeof(commbuf_t));
-          ExEnv::err() << scprintf(" size = %d\n",bytes);
+          ExEnv::errn() << scprintf(" size = %d\n",bytes);
           abort();
         }
       else {
@@ -392,10 +392,10 @@ msgbuf_t * ShmMessageGrp::NEXT_MESSAGE(msgbuf_t *m)
 {
   msgbuf_t *r;
   if (m->size < 0) {
-      ExEnv::out() << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
+      ExEnv::errn() << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
                        m->size,sizeof(msgbuf_t) + m->size + m->size%8);
       //debug_start("m->size < 0");
-      ExEnv::err() << scprintf("messshm.cc: m->size < 0\n");
+      ExEnv::errn() << scprintf("messshm.cc: m->size < 0\n");
       abort();
     }
   r = ((msgbuf_t*)(((char*)m) + ROUNDUPTOALIGN(sizeof(msgbuf_t) + m->size)));

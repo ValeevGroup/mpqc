@@ -893,14 +893,14 @@ SCElementDot::SCElementDot(double**a, double**b, int n):
 
 SCElementDot::SCElementDot(StateIn&s)
 {
-  ExEnv::err() << indent << "SCElementDot does not permit StateIn CTOR\n";
+  ExEnv::errn() << indent << "SCElementDot does not permit StateIn CTOR\n";
   abort();
 }
 
 void
 SCElementDot::save_data_state(StateOut&s)
 {
-  ExEnv::err() << indent << "SCElementDot does not permit save_data_state\n";
+  ExEnv::errn() << indent << "SCElementDot does not permit save_data_state\n";
   abort();
 }
 

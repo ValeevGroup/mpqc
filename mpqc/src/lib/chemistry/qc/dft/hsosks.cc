@@ -79,7 +79,7 @@ HSOSKS::HSOSKS(const Ref<KeyVal>& keyval) :
 
   functional_ << keyval->describedclassvalue("functional");
   if (functional_.null()) {
-    ExEnv::out() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
+    ExEnv::outn() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
   }
 }
@@ -113,19 +113,19 @@ HSOSKS::gradient_implemented() const
 void
 HSOSKS::print(ostream&o) const
 {
-  o << node0 << indent
+  o << indent
     << "Restricted Open Shell Kohn-Sham (HSOSKS) Parameters:" << endl;
-  o << node0 << incindent;
-  HSOSSCF::print(o << node0);
-  o << node0 << indent << "Functional:" << endl;
-  o << node0 << incindent;
-  functional_->print(o << node0);
-  o << node0 << decindent;
-  o << node0 << indent << "Integrator:" << endl;
-  o << node0 << incindent;
-  integrator_->print(o << node0);
-  o << node0 << decindent;
-  o << node0 << decindent;
+  o << incindent;
+  HSOSSCF::print(o);
+  o << indent << "Functional:" << endl;
+  o << incindent;
+  functional_->print(o);
+  o << decindent;
+  o << indent << "Integrator:" << endl;
+  o << incindent;
+  integrator_->print(o);
+  o << decindent;
+  o << decindent;
 }
 
 double
@@ -286,7 +286,7 @@ HSOSKS::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "HSOSKS: error starting threads" << endl;
       abort();
     }
@@ -294,7 +294,7 @@ HSOSKS::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "HSOSKS: error waiting for threads" << endl;
       abort();
     }
@@ -340,7 +340,7 @@ HSOSKS::ao_fock(double accuracy)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
 
@@ -437,7 +437,7 @@ HSOSKS::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("hsoshf e2");

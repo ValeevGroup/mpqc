@@ -84,7 +84,7 @@ void
 RedundantCartesianSubIter::start(int a, int b, int c)
 {
   if (l_ != a + b + c) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "RedundantCartesianSubIter::start: bad args\n";
     abort();
   }

@@ -43,7 +43,7 @@ class Appearance: public DescribedClass {
     ~Appearance();
     Parameter<int>& level() { return level_; }
 
-    void print(std::ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 

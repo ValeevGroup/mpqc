@@ -53,7 +53,7 @@ DIIS::init()
   bold = new double*[ndiis];
   
   if (!btemp || !bmat || !bold) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "DIIS::init: alloc of bmat, bold, and btemp failed\n";
     abort();
   }
@@ -149,7 +149,7 @@ DIIS::DIIS(const Ref<KeyVal>& keyval):
   if (keyval->error() != KeyVal::OK) damping_factor = 0;
   
   if (ndiis <= 0) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "DIIS::DIIS(const Ref<KeyVal>& keyval): got ndiis = 0\n";
     abort();
   }
@@ -338,7 +338,7 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
         }
 
       if (fabs(determ) < 10.0e-20) {
-        ExEnv::err() << node0 << indent
+        ExEnv::err0() << indent
              << "DIIS::extrapolate:  trial " << trial << " no good\n";
         return -1;
       }

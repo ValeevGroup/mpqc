@@ -126,7 +126,7 @@ class SimpleCo : public IntCoor {
 
     /// Print the coordinate.
     void print_details(const Ref<Molecule> &,
-                       std::ostream& = ExEnv::out()) const;
+                       std::ostream& = ExEnv::out0()) const;
     
     /** Tests to see if two coordinates are equivalent to each other.
         This is false if the atoms don't match. */

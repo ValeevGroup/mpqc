@@ -142,13 +142,13 @@ CSGrad34Qbtr::run()
 
   gamma_iqrs = new double[ni*nbasis*nfuncmax*nfuncmax];
   if (!gamma_iqrs) {
-    ExEnv::err() << "Could not allocate gamma_iqrs" << endl;
+    ExEnv::errn() << "Could not allocate gamma_iqrs" << endl;
     abort();
     }
 
   gamma_pqrs = new double[nfuncmax*nfuncmax*nfuncmax*nfuncmax];
   if (!gamma_pqrs) {
-    ExEnv::err() << "Could not allocate gamma_pqrs" << endl;
+    ExEnv::errn() << "Could not allocate gamma_pqrs" << endl;
     abort();
     }
   

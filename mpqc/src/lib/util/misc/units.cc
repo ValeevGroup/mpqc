@@ -210,7 +210,7 @@ Units::parse_unit()
           factor = M_PI/180.0;
         }
       else {
-          ExEnv::err() << "Units: Cannot handle \"" << unitstring << "\"" << endl;
+          ExEnv::errn() << "Units: Cannot handle \"" << unitstring << "\"" << endl;
           abort();
         }
       delete[] unitstring;

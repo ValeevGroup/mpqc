@@ -184,7 +184,7 @@ class StateIn:  public DescribedClass {
 
     /** List all the objects to the stream.  Only StateIn
         specializations with directories can list objects. */
-    virtual void list_objects(std::ostream& = ExEnv::out());
+    virtual void list_objects(std::ostream& = ExEnv::out0());
 
     /** Give this StateIn a KeyVal object
         that is used to override values. */

@@ -125,7 +125,7 @@ int
 ReplSymmSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d->n() || j>=d->n()) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix: index out of bounds\n";
+      ExEnv::errn() << indent << "ReplSymmSCMatrix: index out of bounds\n";
       abort();
     }
   return ij_offset(i,j);
@@ -156,7 +156,7 @@ ReplSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > n() || nscol > n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSymmSCMatrix::get_subblock: trying to get too big a "
          << "subblock (" << nsrow << "," << nscol
          << ") from (" << n() << "," << n() << ")\n";
@@ -185,7 +185,7 @@ ReplSymmSCMatrix::get_subblock(int br, int er)
   int nsrow = er-br+1;
 
   if (nsrow > n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSymmSCMatrix::get_subblock: trying to get too big a "
          << "subblock (" << nsrow << "," << nsrow
          << ") from (" << n() << "," << n() << ")\n";
@@ -217,7 +217,7 @@ ReplSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > n() || nscol > n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSymmSCMatrix::assign_subblock: trying to assign too big a "
          << "subblock (" << nsrow << "," << nscol
          << ") to (" << n() << "," << n() << ")\n";
@@ -238,7 +238,7 @@ ReplSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
   int nsrow = er-br+1;
 
   if (nsrow > n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSymmSCMatrix::assign_subblock: trying to assign too big a "
          << "subblock (" << nsrow << "," << nsrow
          << ") to (" << n() << "," << n() << ")\n";
@@ -260,7 +260,7 @@ ReplSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int e
   int nscol = ec-bc+1;
 
   if (nsrow > n() || nscol > n()) {
-    ExEnv::err() << indent << "ReplSymmSCMatrix::accumulate_subblock: "
+    ExEnv::errn() << indent << "ReplSymmSCMatrix::accumulate_subblock: "
          << "trying to accumulate too big a "
          << "subblock (" << nsrow << "," << nscol
          << ") to (" << n() << "," << n() << ")\n";
@@ -281,7 +281,7 @@ ReplSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
   int nsrow = er-br+1;
 
   if (nsrow > n()) {
-    ExEnv::err() << indent << "ReplSymmSCMatrix::accumulate_subblock: trying to "
+    ExEnv::errn() << indent << "ReplSymmSCMatrix::accumulate_subblock: trying to "
          << "accumulate too big a "
          << "subblock (" << nsrow << "," << nsrow
          << ") to (" << n() << "," << n() << ")\n";
@@ -297,7 +297,7 @@ SCVector *
 ReplSymmSCMatrix::get_row(int i)
 {
   if (i >= n()) {
-    ExEnv::err() << indent << "ReplSymmSCMatrix::get_row: trying to get invalid row "
+    ExEnv::errn() << indent << "ReplSymmSCMatrix::get_row: trying to get invalid row "
          << i << " max " << n() << endl;
     abort();
   }
@@ -317,14 +317,14 @@ void
 ReplSymmSCMatrix::assign_row(SCVector *v, int i)
 {
   if (i >= n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSymmSCMatrix::assign_row: trying to assign invalid row "
          << i << " max " << n() << endl;
     abort();
   }
   
   if (v->n() != n()) {
-    ExEnv::err() << indent << "ReplSymmSCMatrix::assign_row: vector is wrong size, "
+    ExEnv::errn() << indent << "ReplSymmSCMatrix::assign_row: vector is wrong size, "
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
   }
@@ -340,14 +340,14 @@ void
 ReplSymmSCMatrix::accumulate_row(SCVector *v, int i)
 {
   if (i >= n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSymmSCMatrix::accumulate_row: trying to assign invalide row "
          << i << " max " << n() << endl;
     abort();
   }
   
   if (v->n() != n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "ReplSymmSCMatrix::accumulate_row: vector is wrong size, "
          << "is " << v->n() << ", should be " << n() << endl;
     abort();
@@ -410,7 +410,7 @@ ReplSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -475,7 +475,7 @@ ReplSymmSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::solve_this(SCVector*v): "
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::solve_this(SCVector*v): "
            << "dimensions don't match\n";
       abort();
     }
@@ -518,7 +518,7 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 
   if (!dim()->equiv(la->dim()) ||
       !dim()->equiv(lb->coldim()) || !dim()->equiv(lb->rowdim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b): "
            << "bad dims\n";
       abort();
@@ -605,7 +605,7 @@ ReplSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
                                           "accumulate_symmetric_product");
 
   if (!dim()->equiv(la->rowdim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::"
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::"
            << "accumulate_symmetric_product(SCMatrix*a): bad dim\n";
       abort();
     }
@@ -623,7 +623,7 @@ ReplSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
                                           "accumulate_symmetric_sum");
 
   if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::"
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::"
            << "accumulate_symmetric_sum(SCMatrix*a): bad dim\n";
       abort();
     }
@@ -647,7 +647,7 @@ ReplSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
                                       "accumulate_symmetric_outer_product");
 
   if (!dim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::"
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::"
            << "accumulate_symmetric_outer_product(SCMatrix*a): bad dim\n";
       abort();
     }
@@ -681,7 +681,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
   // check the dimensions
   if (t == SCMatrix::NormalTransform) {
     if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
       abort();
     }
 
@@ -689,7 +689,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
     nr = la->nrow();
   } else {
     if (!dim()->equiv(la->coldim()) || !lb->dim()->equiv(la->rowdim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
       abort();
     }
 
@@ -911,7 +911,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b,
 
   // check the dimensions
   if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::accumulate_transform: bad dim\n";
       abort();
     }
 
@@ -933,7 +933,7 @@ ReplSymmSCMatrix::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "ReplSCVector::scale_product(SCVector*a): "
+      ExEnv::errn() << indent << "ReplSCVector::scale_product(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -970,7 +970,7 @@ ReplSymmSCMatrix::element_op(const Ref<SCElementOp2>& op,
       = require_dynamic_cast<ReplSymmSCMatrix*>(m,"ReplSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "ReplSymmSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -996,7 +996,7 @@ ReplSymmSCMatrix::element_op(const Ref<SCElementOp3>& op,
       = require_dynamic_cast<ReplSymmSCMatrix*>(n,"ReplSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "ReplSymmSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -1087,7 +1087,7 @@ Ref<SCMatrixSubblockIter>
 ReplSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      ExEnv::err() << indent << "ReplSymmSCMatrix::all_blocks: "
+      ExEnv::errn() << indent << "ReplSymmSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

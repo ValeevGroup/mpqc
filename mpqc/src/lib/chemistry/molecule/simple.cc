@@ -85,7 +85,7 @@ SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
             }
         }
       if (i != na) {
-          ExEnv::err() << node0 << indent
+          ExEnv::err0() << indent
                << scprintf(
                    "%s::%s(const Ref<KeyVal>&): missing one of the atoms "
                    "or atom_labels (requires a molecule too) "
@@ -103,7 +103,7 @@ SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
       for (int i=0; i<na; i++) {
           atoms[i]=kv->intvalue(i+1);
           if (kv->error() != KeyVal::OK) {
-              ExEnv::err() << node0 << indent
+              ExEnv::err0() << indent
                    << scprintf("%s::%s(const Ref<KeyVal>&): missing an atom\n",
                                class_name(),class_name());
               kv->errortrace();
@@ -200,27 +200,27 @@ SimpleCo::update_value(const Ref<Molecule>&mol)
 void
 SimpleCo::print_details(const Ref<Molecule> &mol, ostream& os) const
 {
-  os << node0 << indent
+  os << indent
      << scprintf("%-5s %7s %11.5f", ctype(), (label()?label():""),
                  preferred_value());
   
   int i;
   for (i=0; i<natoms(); i++)
-      os << node0 << scprintf(" %4d", atoms[i]);
+      os << scprintf(" %4d", atoms[i]);
 
   if (mol.nonnull()) {
       char *separator = " ";
-      os << node0 << "  ";
+      os << "  ";
       for (i=0; i<(4-natoms()); i++) {
-          os << node0 << "   ";
+          os << "   ";
         }
       for (i=0; i<natoms(); i++) {
-          os << node0 << separator << AtomInfo::symbol(mol->Z(atoms[i]-1));
+          os << separator << AtomInfo::symbol(mol->Z(atoms[i]-1));
           separator = "-";
         }
     }
 
-  os << node0 << endl;
+  os << endl;
   
 }
 

@@ -130,17 +130,17 @@ main(int argc, char**argv)
         mole->gradient().print("gradient");
       }
     } else if (mole->value_implemented()) {
-      cout << node0 << indent
+      ExEnv::out0() << indent
            << scprintf("value of mole is %15.10f\n\n", mole->energy());
     }
   }
 
-  mole->print(cout);
+  mole->print(ExEnv::out0());
 
   StateOutBin so("scftest.wfn");
   SavableState::save_state(mole.pointer(),so);
   
-  tim->print(cout);
+  tim->print(ExEnv::out0());
 
   return 0;
 }

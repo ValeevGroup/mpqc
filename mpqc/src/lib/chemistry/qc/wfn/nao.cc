@@ -83,7 +83,7 @@ nnmb_atom(int z, int l)
   else {
       return 0;
     }
-  ExEnv::err() << "NAO: z too big" << endl;
+  ExEnv::errn() << "NAO: z too big" << endl;
   abort();
   return 0;
 }
@@ -180,7 +180,7 @@ assemble(const RefSCDimension dim,
   int nr2 = (Nr2.null()?0:Nr2.ncol());
   int nb = dim.n();
   if (nb != nnmb + nr1 + nr2) {
-      ExEnv::err() << "assemble: dim mismatch" << endl;
+      ExEnv::errn() << "assemble: dim mismatch" << endl;
       abort();
     }
   RefSCMatrix N(Nm.rowdim(), Nm.rowdim(), Nm.kit());
@@ -188,21 +188,21 @@ assemble(const RefSCDimension dim,
   int i;
   for (i=0; i<nnmb; i++) {
       if (Nm_map[i] < 0 || Nm_map[i] >= nb) {
-          ExEnv::err() << "assemble: bad Nm_map" << endl;
+          ExEnv::errn() << "assemble: bad Nm_map" << endl;
           abort();
         }
       N.assign_column(Nm.get_column(i), Nm_map[i]);
     }
   for (i=0; i<nr1; i++) {
       if (Nr1_map[i] < 0 || Nr1_map[i] >= nb) {
-          ExEnv::err() << "assemble: bad Nr1_map" << endl;
+          ExEnv::errn() << "assemble: bad Nr1_map" << endl;
           abort();
         }
       N.assign_column(Nr1.get_column(i), Nr1_map[i]);
     }
   for (i=0; i<nr2; i++) {
       if (Nr2_map[i] < 0 || Nr2_map[i] >= nb) {
-          ExEnv::err() << "assemble: bad Nr2_map" << endl;
+          ExEnv::errn() << "assemble: bad Nr2_map" << endl;
           abort();
         }
       N.assign_column(Nr2.get_column(i), Nr2_map[i]);
@@ -376,7 +376,7 @@ Wavefunction::nao(double *atom_charges)
               delete sti;
             }
           else if (shell.am(j) > 2 && ! shell.is_pure(j)) {
-              ExEnv::err() << "NAOs can only be computed for puream if am > 2" << endl;
+              ExEnv::errn() << "NAOs can only be computed for puream if am > 2" << endl;
               abort();
             }
           off += shell.nfunction(j);
@@ -607,7 +607,7 @@ Wavefunction::nao(double *atom_charges)
       for (j=0; j<=r_maxam_on_atom[i]; j++) {
           r_nam_on_atom[i][j] = nam_on_atom[i][j] - nnmb_atom(z,j);
           if (r_nam_on_atom[i][j] < 0) {
-              ExEnv::err() << "NAO: < 0 rydberg orbitals of a given type" << endl;
+              ExEnv::errn() << "NAO: < 0 rydberg orbitals of a given type" << endl;
               abort();
             }
         }
@@ -828,17 +828,17 @@ Wavefunction::nao(double *atom_charges)
   ExEnv::out() << "nr2  = " << nr2 << endl;
 # endif
 
-  ExEnv::out() << node0 << indent << "Natural Population Analysis:" << endl;
-  ExEnv::out() << incindent;
-  ExEnv::out() << node0 << indent << " n   atom    charge ";
+  ExEnv::out0() << indent << "Natural Population Analysis:" << endl;
+  ExEnv::out0() << incindent;
+  ExEnv::out0() << indent << " n   atom    charge ";
   for (i=0; i<=maxam; i++) {
       const char *am = "SPDFGH?";
       int index;
       if (i>6) index = 6;
       else index = i;
-      ExEnv::out() << node0 << "    ne(" << am[index] << ") ";
+      ExEnv::out0() << "    ne(" << am[index] << ") ";
     }
-  ExEnv::out() << node0 << endl;
+  ExEnv::out0() << endl;
   for (i=0; i<natom; i++) {
       double e = 0.0;
       for (j=0; j<=maxam_on_atom[i]; j++) {
@@ -849,7 +849,7 @@ Wavefunction::nao(double *atom_charges)
                 }
             }
         }
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << scprintf("%3d   %2s   % 8.6f",i + 1,
                        AtomInfo::symbol(molecule()->Z(i)),
                        double(molecule()->Z(i)) - e);
@@ -864,12 +864,12 @@ Wavefunction::nao(double *atom_charges)
                                           amoff_on_atom[i][j][k] + l);
                 }
             }
-          ExEnv::out() << node0 << scprintf(" % 8.6f",e);
+          ExEnv::out0() << scprintf(" % 8.6f",e);
         }
-      ExEnv::out() << node0 << endl;
+      ExEnv::out0() << endl;
     }
-  ExEnv::out() << node0 << endl;
-  ExEnv::out() << decindent;
+  ExEnv::out0() << endl;
+  ExEnv::out0() << decindent;
 
   delete[] Nm_map;
   delete[] Nr_map;

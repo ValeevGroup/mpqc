@@ -64,7 +64,7 @@ Int2eV3::int_init_bounds_nocomp()
   int_Qvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   used_storage_ += sizeof(int_bound_t)*nsht;
   if(int_Qvec==0) {
-    ExEnv::err() << scprintf("int_init_bounds_nocomp: cannot malloc int_Qvec: %d",
+    ExEnv::errn() << scprintf("int_init_bounds_nocomp: cannot malloc int_Qvec: %d",
                      nsht)
          << endl;
     exit(1);
@@ -91,7 +91,7 @@ Int2eV3::int_init_bounds_1der_nocomp()
   int nsht=nshell*(nshell+1)/2;
 
   if (!int_derivative_bounds) {
-    ExEnv::err() << "requested der bounds but space not allocated" << endl;
+    ExEnv::errn() << "requested der bounds but space not allocated" << endl;
     exit(1);
     }
 
@@ -102,7 +102,7 @@ Int2eV3::int_init_bounds_1der_nocomp()
   int_Rvec = (int_bound_t *) malloc(sizeof(int_bound_t)*nsht);
   used_storage_ += sizeof(int_bound_t)*nsht*2;
   if((int_Qvec==0) || (int_Rvec==0)) {
-    ExEnv::err() << scprintf("int_init_bounds_1der_nocomp: cannot malloc int_{R,Q}vec: %d",nsht) << endl;
+    ExEnv::errn() << scprintf("int_init_bounds_1der_nocomp: cannot malloc int_{R,Q}vec: %d",nsht) << endl;
     exit(1);
     }
 
@@ -268,7 +268,7 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
   int sh1,sh2;
 
   if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
-    ExEnv::err() << scprintf("bounds.compute_bounds: all centers must be the same")
+    ExEnv::errn() << scprintf("bounds.compute_bounds: all centers must be the same")
          << endl;
     exit(1);
     }
@@ -314,7 +314,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
   set_redundant(1);
 
   if ((bs1_ != bs2_)&&(bs1_ != bs3_)&&(bs1_ != bs4_)) {
-    ExEnv::err() << scprintf("bounds.compute_bounds: all centers must be the same")
+    ExEnv::errn() << scprintf("bounds.compute_bounds: all centers must be the same")
          << endl;
     exit(1);
     }
@@ -354,7 +354,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
         max = (max1>max2)?max1:max2;
         }
       else {
-        ExEnv::out() << scprintf("bad bound flag\n"); exit(1);
+        ExEnv::outn() << scprintf("bad bound flag\n"); exit(1);
         }
 
     /* Compute the partial bound value. */

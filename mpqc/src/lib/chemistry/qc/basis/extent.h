@@ -41,7 +41,7 @@ class ShellExtent: public RefCount {
     const ArrayExtentData &contributing_shells(int x, int y, int z)
         { return data(x,y,z); }
     const ArrayExtentData &contributing_shells(double x, double y, double z);
-    void print(std::ostream &o = ExEnv::out());
+    void print(std::ostream &o = ExEnv::out0());
     const int *n() const { return n_; }
     int n(int ixyz) const { return n_[ixyz]; }
     double lower(int ixyz) const { return lower_[ixyz]; }

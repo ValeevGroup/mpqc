@@ -78,7 +78,7 @@ Int1eV3::int_initialize_1e(int flags, int order)
     scratchsize = nshell2*3;
     }
   else {
-    ExEnv::err() << scprintf("int_initialize_1e: invalid order: %d\n",order);
+    ExEnv::errn() << scprintf("int_initialize_1e: invalid order: %d\n",order);
     exit(1);
     }
 
@@ -165,7 +165,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_overlap: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_overlap: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -990,7 +990,7 @@ Int1eV3::accum_shell_efield(double *buff, int ish, int jsh)
   double *tmp = cartesianbuffer;
 
   if (!(init_order >= 1)) {
-    ExEnv::err() << scprintf("accum_shell_efield: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("accum_shell_efield: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1030,7 +1030,7 @@ Int1eV3::accum_shell_block_efield(double *buff, int ish, int jsh)
   int gc1,gc2;
 
   if (!(init_order >= 1)) {
-    ExEnv::err() << scprintf("accum_shell_efield: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("accum_shell_efield: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1092,7 +1092,7 @@ Int1eV3::efield(int ish, int jsh, double *position)
   double *tmp = cartesianbuffer;
 
   if (!(init_order >= 1)) {
-    ExEnv::err() << scprintf("Int1eV3::efield one electron routines are not ready\n");
+    ExEnv::errn() << scprintf("Int1eV3::efield one electron routines are not ready\n");
     exit(1);
     }
 
@@ -1132,7 +1132,7 @@ Int1eV3::nuclear_slow(int ish, int jsh)
   int cart1,cart2;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1185,7 +1185,7 @@ Int1eV3::nuclear(int ish, int jsh)
   int gc1,gc2;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1278,7 +1278,7 @@ Int1eV3::int_accum_shell_point_charge(int ish, int jsh,
   double tmp;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_pointcharge: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_pointcharge: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1328,7 +1328,7 @@ Int1eV3::point_charge(int ish, int jsh,
   int cart1,cart2;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("Int1eV3::point_charge: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("Int1eV3::point_charge: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1375,7 +1375,7 @@ Int1eV3::hcore(int ish, int jsh)
   int gc1,gc2;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("hcore: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("hcore: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1430,7 +1430,7 @@ Int1eV3::hcore_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_hcore: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_hcore: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1470,7 +1470,7 @@ Int1eV3::kinetic_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_kinetic: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_kinetic: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1508,7 +1508,7 @@ Int1eV3::nuclear_1der(int ish, int jsh, int idercs, int centernum)
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1548,7 +1548,7 @@ Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_nuclear_hf_1der: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_nuclear_hf_1der: one electron routines are not init'ed\n");
     exit(1);
     }
 
@@ -1584,7 +1584,7 @@ Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
   int ni,nj;
 
   if (!(init_order >= 0)) {
-    ExEnv::err() << scprintf("int_shell_nuclear_nonhf_1der: one electron routines are not init'ed\n");
+    ExEnv::errn() << scprintf("int_shell_nuclear_nonhf_1der: one electron routines are not init'ed\n");
     exit(1);
     }
 

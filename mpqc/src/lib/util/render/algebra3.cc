@@ -10,7 +10,7 @@ using namespace std;
 #define MAX(A,B) ((A) > (B) ? (A) : (B))
 
 // error handling macro
-#define V_ERROR(E) { ExEnv::err() << E; exit(1); }
+#define V_ERROR(E) { ExEnv::errn() << E; exit(1); }
 
 /****************************************************************
 *								*

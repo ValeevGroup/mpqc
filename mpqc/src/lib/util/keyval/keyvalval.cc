@@ -331,7 +331,7 @@ KeyValValueString::KeyValValueString(
       _val = _val_to_delete;
       break;
   case Steal:
-      ExEnv::err() << "KeyValValueString: CTOR: cannot steal const string" << endl;
+      ExEnv::errn() << "KeyValValueString: CTOR: cannot steal const string" << endl;
       abort();
       break;
   case Use:

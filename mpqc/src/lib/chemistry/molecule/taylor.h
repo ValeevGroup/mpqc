@@ -63,7 +63,7 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     TaylorMolecularEnergy(StateIn&);
     ~TaylorMolecularEnergy();
     void save_data_state(StateOut&);
-    void print(std::ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out0()) const;
     void compute();
     int value_implemented() const;
     int gradient_implemented() const;

@@ -105,7 +105,7 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   current = 0;
   _surf = 0;
   if (msg) {
-      ExEnv::err() << "ImplicitSurfacePolygonizer::isosurface: failed: "
+      ExEnv::errn() << "ImplicitSurfacePolygonizer::isosurface: failed: "
            << msg << endl;
       abort();
     }
@@ -113,22 +113,22 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   // Clean up temporaries.
   _tmp_vertices.clear();
 
-  ExEnv::out() << "about to complete the surface" << endl;
+  ExEnv::out0() << "about to complete the surface" << endl;
 
   // finish the surface
   surf.complete_surface();
 
-  ExEnv::out() << "completed the surface" << endl;
-  ExEnv::out() << "flat area = " << surf.flat_area() << endl;
-  ExEnv::out() << "  ntri = " << setw(10) << surf.ntriangle()
+  ExEnv::out0() << "completed the surface" << endl;
+  ExEnv::out0() << "flat area = " << surf.flat_area() << endl;
+  ExEnv::out0() << "  ntri = " << setw(10) << surf.ntriangle()
        << " bytes = "
        << setw(10) << surf.ntriangle() * sizeof(Triangle)
        << endl;
-  ExEnv::out() << "  nedg = " << setw(10) << surf.nedge()
+  ExEnv::out0() << "  nedg = " << setw(10) << surf.nedge()
        << " bytes = "
        << setw(10) << surf.nedge() * sizeof(Edge)
        << endl;
-  ExEnv::out() << "  nver = " << setw(10) << surf.nvertex()
+  ExEnv::out0() << "  nver = " << setw(10) << surf.nvertex()
        << " bytes = "
        << setw(10) << surf.nvertex() * sizeof(Vertex)
        << endl;
@@ -175,7 +175,7 @@ ImplicitSurfacePolygonizer::isosurface(double value,
               v->set_normal(n);
             }
           else {
-              ExEnv::out() << "ERROR: isosurf has a vertex without a triangle" << endl;
+              ExEnv::outn() << "ERROR: isosurf has a vertex without a triangle" << endl;
               abort();
             }
         }
@@ -219,8 +219,8 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
   
   static int tricnt = 0;
   if (++tricnt%100 == 0) {
-      ExEnv::out() << "adding triangle " << tricnt << endl;
-      ExEnv::out() << "  ntri = " << setw(10) << current->_surf->ntriangle()
+      ExEnv::out0() << "adding triangle " << tricnt << endl;
+      ExEnv::out0() << "  ntri = " << setw(10) << current->_surf->ntriangle()
            << " bytes = "
            << setw(10) << current->_surf->ntriangle() * sizeof(Triangle)
            << endl;

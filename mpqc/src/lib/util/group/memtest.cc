@@ -95,7 +95,7 @@ main(int argc, char**argv)
       if (argc >= 2) input = argv[1];
       if (argc >= 3) keyword = argv[2];
 
-      msg = keyval->describedclassvalue(keyword);
+      msg << keyval->describedclassvalue(keyword);
 
       if (msg.null()) {
           cerr << scprintf("Couldn't initialize MessageGrp\n");
@@ -104,7 +104,8 @@ main(int argc, char**argv)
     }
 
   // now set up the debugger
-  Ref<Debugger> debugger = keyval->describedclassvalue(":debug");
+  Ref<Debugger> debugger;
+  debugger << keyval->describedclassvalue(":debug");
   if (debugger.nonnull()) {
     debugger->set_exec(argv[0]);
     debugger->set_prefix(msg->me());
@@ -173,10 +174,6 @@ do_int_tests(const Ref<MessageGrp>&msg,
   //mem = 0;
   //return;
 
-  int uselocks = 0;
-
-  mem->lock(uselocks);
-
   PRINTF(("creating MemoryGrpBuf\n"));
 
   MemoryGrpBuf<int> buf(mem);
@@ -222,11 +219,9 @@ do_int_tests(const Ref<MessageGrp>&msg,
           data[i] += 10 * (mem->me() + 1);
         }
       buf.release();
-      if (!uselocks) {
-          mem->sync();
-          PRINTF(("------------------------------------------------------\n"));
-          mem->sync();
-        }
+      mem->sync();
+      PRINTF(("------------------------------------------------------\n"));
+      mem->sync();
       data = buf.readwrite(start[1-mem->me()], length[1-mem->me()]);
       PRINTF(("%d: adding %d to [%d, %d)\n",
               mem->me(), 100 * (mem->me()+1),
@@ -235,21 +230,17 @@ do_int_tests(const Ref<MessageGrp>&msg,
           data[i] += 100 * (mem->me() + 1);
         }
       buf.release();
-      if (!uselocks) {
-          mem->sync();
-          PRINTF(("------------------------------------------------------\n"));
-          mem->sync();
-        }
+      mem->sync();
+      PRINTF(("------------------------------------------------------\n"));
+      mem->sync();
     }
   else {
-      if (!uselocks) {
-          mem->sync();
-          PRINTF(("------------------------------------------------------\n"));
-          mem->sync();
-          mem->sync();
-          PRINTF(("------------------------------------------------------\n"));
-          mem->sync();
-        }
+      mem->sync();
+      PRINTF(("------------------------------------------------------\n"));
+      mem->sync();
+      mem->sync();
+      PRINTF(("------------------------------------------------------\n"));
+      mem->sync();
    }
 
   if (mem->me() == 0) {
@@ -289,7 +280,6 @@ do_double_tests(const Ref<MessageGrp>&msg,
   cout << scprintf("Using memory group \"%s\".\n", mem->class_name());
 
   mem->sync();
-  mem->lock(0);
 
   MemoryGrpBuf<double> dbuf(mem);
 
@@ -319,13 +309,11 @@ do_double_tests(const Ref<MessageGrp>&msg,
 
   PRINTF(("%d: starting sum reduction\n", mem->me()));
 
-  mem->lock(1);
   for (i=0; i<mem->n(); i++) {
       mem->sum_reduction_on_node(contrib, mem->me(),
                                  doublebufsize-mem->me(),
                                  i);
     }
-  mem->lock(0);
 
   PRINTF(("%d: done with sum reduction\n", mem->me()));
 
@@ -379,7 +367,6 @@ do_double2_tests(const Ref<MessageGrp>&msg,
   cout << scprintf("Using memory group \"%s\".\n", mem->class_name());
 
   mem->sync();
-  mem->lock(0);
 
   MemoryGrpBuf<double> dbuf(mem);
 
@@ -402,13 +389,11 @@ do_double2_tests(const Ref<MessageGrp>&msg,
 
   PRINTF(("%d: starting sum reduction\n", mem->me()));
 
-  mem->lock(1);
   for (i=0; i<200; i++) {
       mem->sum_reduction_on_node(contrib, 0,
                                  doublebufsize,
                                  target);
     }
-  mem->lock(0);
 
   PRINTF(("%d: done with sum reduction\n", mem->me()));
 

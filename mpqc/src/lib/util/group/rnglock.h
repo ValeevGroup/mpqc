@@ -76,7 +76,7 @@ class RangeLock {
     int checkgr(int start, int fence, int value);
 
     void check();
-    void print(std::ostream &o = ExEnv::out()) const;
+    void print(std::ostream &o = ExEnv::out0()) const;
 
     int lockvalue(int i);
 };

@@ -190,13 +190,13 @@ MBPT2::make_cs_gmat_new(RefSymmSCMatrix& Gmat,
     }
 
   if (thr_->start_threads() < 0) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "MBPT: csgmat: error starting threads" << std::endl;
     abort();
     }
 
   if (thr_->wait_threads() < 0) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "MBPT: csgmat: error waiting for threads" << std::endl;
     abort();
     }
@@ -221,7 +221,7 @@ MBPT2::make_cs_gmat_new(RefSymmSCMatrix& Gmat,
   delete[] pmax;
       
   msg_->sum(&tnint, 1, 0, 0);
-  //ExEnv::out() << node0 << indent << scprintf("%20.0f integrals\n", tnint);
+  //ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
 
   // if we're running on multiple processors, then sum the G matrix
   if (msg_->n() > 1)
@@ -250,7 +250,7 @@ MBPT2::make_cs_gmat_new(RefSymmSCMatrix& Gmat,
   }
   BlockedSymmSCMatrix *blocked_Gmat = dynamic_cast<BlockedSymmSCMatrix*>(Gmat.pointer());
   if (!blocked_Gmat || blocked_Gmat->nblocks() != 1) {
-    ExEnv::out() << "csgmat.cc: Gmat is wrong type" << std::endl;
+    ExEnv::outn() << "csgmat.cc: Gmat is wrong type" << std::endl;
     abort();
     }
   Gmat = blocked_Gmat->block(0);

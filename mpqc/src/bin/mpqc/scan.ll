@@ -20,7 +20,7 @@ cstr(char *yytext)
   int strlenyytext = strlen(yytext);
   ret = (char *)malloc(strlenyytext+1);
   if (!ret) {
-    ExEnv::out() << "MPQC: malloc failed"
+    ExEnv::outn() << "MPQC: malloc failed"
                  << endl;
     abort();
   }
@@ -70,7 +70,7 @@ qstring \"[^"\n]+\"
 {qstring}       { if (MPQCIn::checking()) return T_STRING;
                   yylval.str = (char *)malloc(strlen(yytext));
                   if (!yylval.str) {
-                    ExEnv::out() << "MPQC: {qstring} rule: malloc failed"
+                    ExEnv::outn() << "MPQC: {qstring} rule: malloc failed"
                                  << endl;
                     abort();
                     }
@@ -81,7 +81,7 @@ qstring \"[^"\n]+\"
 [ \t]+          ; 
 %.*$            ;
 [\n\r\f]        ;
-.               { ExEnv::out() << "MPQC: Illegal character: \""
+.               { ExEnv::outn() << "MPQC: Illegal character: \""
                                << yytext[0] <<"\"" << endl; }
 %%
 

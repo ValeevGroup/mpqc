@@ -333,7 +333,7 @@ Function::print(ostream&o) const
 {
   const char *computed = " (computed)";
   const char *notcomputed = "";
-  o << node0 << indent << "Function Parameters:\n" << incindent
+  o << indent << "Function Parameters:\n" << incindent
     << indent << scprintf("value_accuracy    = %e (%e)%s\n",
                           actual_value_accuracy(), desired_value_accuracy(),
                           (value_.computed()?computed:notcomputed))

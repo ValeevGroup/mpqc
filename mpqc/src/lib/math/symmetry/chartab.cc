@@ -125,22 +125,22 @@ CharacterTable::print(ostream& os) const
 
   int i;
 
-  os << node0 << indent << "point group " << symb << endl << endl;
+  os << indent << "point group " << symb << endl << endl;
 
   for (i=0; i < nirrep_; i++)
     gamma_[i].print(os);
 
-  os << node0 << endl << indent << "symmetry operation matrices:"
+  os << endl << indent << "symmetry operation matrices:"
      << endl << endl << incindent;
   for (i=0; i < g; i++)
     symop[i].print(os);
 
-  os << node0 << decindent << indent << "inverse symmetry operation matrices:"
+  os << decindent << indent << "inverse symmetry operation matrices:"
      << endl << endl << incindent;
   for (i=0; i < g; i++)
     symop[inverse(i)].print(os);
 
-  os << node0 << decindent;
+  os << decindent;
 }
 
 CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
@@ -151,7 +151,7 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
   // rotation axis (nt), and the number of irreps (nirrep_)
 
   if (!cpg) {
-    ExEnv::err() << "CharacterTable::CharacterTable: null point group" << endl;
+    ExEnv::errn() << "CharacterTable::CharacterTable: null point group" << endl;
     exit(1);
   }
 
@@ -161,13 +161,13 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
   symb[i] = '\0';
 
   if (parse_symbol() < 0) {
-    ExEnv::err() << "CharacterTable::CharacterTable: invalid point group "
+    ExEnv::errn() << "CharacterTable::CharacterTable: invalid point group "
          << cpg << endl;
     exit(1);
   }
 
   if (make_table() < 0) {
-    ExEnv::err() << "CharacterTable::CharacterTable: could not make table" << endl;
+    ExEnv::errn() << "CharacterTable::CharacterTable: could not make table" << endl;
     exit(1);
   }
 
@@ -184,7 +184,7 @@ CharacterTable::CharacterTable(const char *cpg)
   // rotation axis (nt), and the number of irreps (nirrep_)
 
   if (!cpg) {
-    ExEnv::err() << "CharacterTable::CharacterTable: null point group" << endl;
+    ExEnv::errn() << "CharacterTable::CharacterTable: null point group" << endl;
     exit(1);
   }
 
@@ -194,13 +194,13 @@ CharacterTable::CharacterTable(const char *cpg)
   symb[i] = '\0';
 
   if (parse_symbol() < 0) {
-    ExEnv::err() << "CharacterTable::CharacterTable: invalid point group "
+    ExEnv::errn() << "CharacterTable::CharacterTable: invalid point group "
          << cpg << endl;
     exit(1);
   }
 
   if (make_table() < 0) {
-    ExEnv::err() << "CharacterTable::CharacterTable: could not make table" << endl;
+    ExEnv::errn() << "CharacterTable::CharacterTable: could not make table" << endl;
     exit(1);
   }
 }

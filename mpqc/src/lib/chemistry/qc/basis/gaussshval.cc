@@ -75,7 +75,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
 
   // check limitations
   if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "GaussianShell::grad_values: limit exceeded:\n"
            << indent
            << scprintf(
@@ -416,7 +416,7 @@ GaussianShell::test_monobound(double &r, double &bound) const
 
   // check limitations
   if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "GaussianShell::gaussshval: limit exceeded:\n"
            << indent
            << scprintf(

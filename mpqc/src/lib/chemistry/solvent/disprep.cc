@@ -24,7 +24,7 @@ get_ki(int z)
   double ki;
   
   if (z <= 0) {
-      ExEnv::err() << "Non-positive nuclear charge encountered in computation of"
+      ExEnv::errn() << "Non-positive nuclear charge encountered in computation of"
            << " dispersion coefficient" << endl;
       abort();
     }
@@ -34,12 +34,12 @@ get_ki(int z)
   else if (z == 8) ki = 1.36;  // from Huron & Claverie, J.Phys.Chem v78, 1974, p1862
   else if (z > 1 && z < 6) {
       ki = 1.0;
-      ExEnv::out() << "Warning: No d6 dispersion coefficient available for atomic number " <<
+      ExEnv::out0() << "Warning: No d6 dispersion coefficient available for atomic number " <<
               z << "; using value for carbon instead" << endl;
     }
   else {
       ki = 1.18;
-      ExEnv::out() << "Warning: No d6 dispersion coefficient available for atomic number " <<
+      ExEnv::out0() << "Warning: No d6 dispersion coefficient available for atomic number " <<
               z << "; using value for nitrogen instead" << endl;
     }
   
@@ -238,8 +238,8 @@ BEMSolvent::disprep()
 //          ts->print_geomview_format(geomviewfile);
 //        }
       
-      ExEnv::out().setf(ios::scientific,ios::floatfield); // use scientific format
-      ExEnv::out() << "Area of disp-rep surface generated with atom number "
+      ExEnv::out0().setf(ios::scientific,ios::floatfield); // use scientific format
+      ExEnv::out0() << "Area of disp-rep surface generated with atom number "
            << setw(3) << setfill(' ') << z_solvent_atom
            << " as probe: " << setprecision(4) << ts->area()
            << " bohr^2" << endl;
@@ -311,20 +311,20 @@ BEMSolvent::disprep()
   // Multiply energies by number density of solvent
   // Print out individual energy contributions in kcal/mol
   
-  ExEnv::out().setf(ios::scientific,ios::floatfield); // use scientific format
-  ExEnv::out().precision(5);
-  ExEnv::out() << "Edisp6:  " << edisp6*solvent_density_*unit->from_atomic_units()
+  ExEnv::out0().setf(ios::scientific,ios::floatfield); // use scientific format
+  ExEnv::out0().precision(5);
+  ExEnv::out0() << "Edisp6:  " << edisp6*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl; 
-  ExEnv::out() << "Edisp8:  " << edisp8*solvent_density_*unit->from_atomic_units()
+  ExEnv::out0() << "Edisp8:  " << edisp8*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl;
-  ExEnv::out() << "Edisp10: " << edisp10*solvent_density_*unit->from_atomic_units()
+  ExEnv::out0() << "Edisp10: " << edisp10*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl;
 
 
-  ExEnv::out() << "Total dispersion energy: "
+  ExEnv::out0() << "Total dispersion energy: "
        << (edisp6 + edisp8 + edisp10)*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl;
-  ExEnv::out() << "Repulsion energy:        " << setw(12) << setfill(' ') 
+  ExEnv::out0() << "Repulsion energy:        " << setw(12) << setfill(' ') 
        << erep*solvent_density_*unit->from_atomic_units() << " kcal/mol" << endl;
   
   return edisprep*solvent_density_; // atomic units

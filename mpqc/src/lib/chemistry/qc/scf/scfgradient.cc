@@ -76,7 +76,7 @@ ob_gradient(const Ref<OneBodyDerivInt>& derint, double * gradient,
 
     ddata = get_tri_block(dblk, istart, iend, jstart, jend, sub);
     if (!ddata) {
-      ExEnv::err() << indent <<
+      ExEnv::errn() << indent <<
         "ob_gradient: can't figure out what density block is\n";
       abort();
     }

@@ -99,7 +99,7 @@ StateInText::StateInText(const Ref<KeyVal> &keyval):
 {
   char *path = keyval->pcharvalue("file");
   if (!path) {
-      ExEnv::err() << "StateInText(const Ref<KeyVal>&): no path given" << endl;
+      ExEnv::errn() << "StateInText(const Ref<KeyVal>&): no path given" << endl;
     }
   open(path);
   delete[] path;
@@ -143,7 +143,7 @@ StateInText::read(char*s)
   istream in(buf_);
   in >> s;
   if (in.fail()) {
-      ExEnv::err() << "StateInText::read(char*): failed" << endl;
+      ExEnv::errn() << "StateInText::read(char*): failed" << endl;
       abort();
     }
   return strlen(s)+1;
@@ -155,7 +155,7 @@ StateInText::read(unsigned int&i)
   istream in(buf_);
   in >> i;
   if (in.fail()) {
-      ExEnv::err() << "StateInText::read(unsigned int&): failed\n" << endl;
+      ExEnv::errn() << "StateInText::read(unsigned int&): failed\n" << endl;
       abort();
     }
   return (sizeof(int));
@@ -167,7 +167,7 @@ StateInText::read(int&i)
   istream in(buf_);
   in >> i;
   if (in.fail()) {
-      ExEnv::err() << "StateInText::read(int&): failed\n" << endl;
+      ExEnv::errn() << "StateInText::read(int&): failed\n" << endl;
       abort();
     }
   return (sizeof(int));
@@ -179,7 +179,7 @@ StateInText::read(float&f)
   istream in(buf_);
   in >> f;
   if (in.fail()) {
-      ExEnv::err() << "StateInText::read(float&): failed" << endl;
+      ExEnv::errn() << "StateInText::read(float&): failed" << endl;
       abort();
     }
   return sizeof(float);
@@ -191,7 +191,7 @@ StateInText::read(double&d)
   istream in(buf_);
   in >> d;
   if (in.fail()) {
-      ExEnv::err() << "StateInText::read(double&): failed" << endl;
+      ExEnv::errn() << "StateInText::read(double&): failed" << endl;
       abort();
     }
   return sizeof(double);
@@ -200,7 +200,7 @@ StateInText::read(double&d)
 void
 StateInText::abort()
 {
-  ExEnv::err() << "StateInText aborting at line " << newlines_+1 << " in the input"
+  ExEnv::errn() << "StateInText aborting at line " << newlines_+1 << " in the input"
        << endl;
   ::abort();
 }
@@ -433,7 +433,7 @@ int StateInText::getobject(Ref<SavableState> &p)
       p = ps_[refnum].ptr;
     }
   else {
-      ExEnv::err() << "StateInText: couldn't find a reference object" << endl;
+      ExEnv::errn() << "StateInText: couldn't find a reference object" << endl;
       abort();
     }
 
@@ -452,7 +452,7 @@ StateInText::start_array()
   istream in(buf_);
   if (!no_array_) {
       if (in.get() != ' ' || in.get() != '<') {
-          ExEnv::err() << "StateInText: expected a \" <\"" << endl;
+          ExEnv::errn() << "StateInText: expected a \" <\"" << endl;
           abort();
         }
     }
@@ -475,7 +475,7 @@ StateInText::end_array()
   istream in(buf_);
   if (!no_array_) {
       if (in.get() != ' ' || in.get() != '>') {
-          ExEnv::err() << "StateInText: expected a \"> \"" << endl;
+          ExEnv::errn() << "StateInText: expected a \"> \"" << endl;
           abort();
         }
     }
@@ -504,7 +504,7 @@ StateInText::newline()
       return;
     }
   if (in.get() != '\n') {
-      ExEnv::err() << "StateInText: expected newline" << endl;
+      ExEnv::errn() << "StateInText: expected newline" << endl;
       abort();
     }
   newlines_++;
@@ -565,7 +565,7 @@ int StateInText::get_array_char(char*d,int size)
   for (int i=0; i<size; i++) {
       ch = in.get();
       if (ch == EOF) {
-          ExEnv::err() << "StateInText::get_array_char: EOF while reading array"
+          ExEnv::errn() << "StateInText::get_array_char: EOF while reading array"
                << endl;
           abort();
         }

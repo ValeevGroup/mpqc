@@ -47,22 +47,23 @@ class SCFormIO {
     static int debug_;
     static int parallel_;
     static int me_;
-    static std::ofstream nullstream_;
     static void init();
   public:
     static std::ios& indent(std::ios&o);
     static std::ios& decindent(std::ios&o);
     static std::ios& incindent(std::ios&o);
     static std::ios& skipnextindent(std::ios&o);
-    static std::ostream& node0(std::ostream&o);
 
     static void setverbose(std::ios&o, long v);
     static long getverbose(std::ios&o);
     static void setindent(std::ios&o, long column);
     static long getindent(std::ios&o);
     static int  set_printnode(int);
+    static int  get_printnode() { return node_to_print_; }
     static void set_debug(int);
+    static int  get_debug() { return debug_; }
     static void init_mp(int me);
+    static int  get_node() { return me_; }
 
     static void set_default_basename(const char *);
     static const char *default_basename();
@@ -82,8 +83,6 @@ std::ios& decindent(std::ios&);
 std::ios& incindent(std::ios&);
 
 std::ios& skipnextindent(std::ios&);
-
-std::ostream& node0(std::ostream&);
 
 // ///////////////////////////////////////////////////////////////////////////
 

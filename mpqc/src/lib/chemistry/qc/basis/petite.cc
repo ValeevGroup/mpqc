@@ -151,15 +151,15 @@ PetiteList::init()
 
       atom_map_[i][g] = mol.atom_at_position(np, 0.05);
       if (atom_map_[i][g] < 0) {
-        ExEnv::out() << "ERROR: Symmetry operation " << g << " did not map atom "
+        ExEnv::out0() << "ERROR: Symmetry operation " << g << " did not map atom "
              << i+1 << " to another atom:" << endl;
-        ExEnv::out() << indent << "Molecule:" << endl;
-        ExEnv::out() << incindent;
+        ExEnv::out0() << indent << "Molecule:" << endl;
+        ExEnv::out0() << incindent;
         mol.print();
-        ExEnv::out() << decindent;
-        ExEnv::out() << indent << "attempted to find atom at" << endl;
-        ExEnv::out() << incindent;
-        ExEnv::out() << indent << np[0] << " " << np[1] << " " << np[2] << endl;
+        ExEnv::out0() << decindent;
+        ExEnv::out0() << indent << "attempted to find atom at" << endl;
+        ExEnv::out0() << incindent;
+        ExEnv::out0() << indent << np[0] << " " << np[1] << " " << np[2] << endl;
         abort();
       }
     }
@@ -338,15 +338,15 @@ PetiteList::print(ostream& o, int verbose)
 {
   int i;
 
-  o << node0 << indent << "PetiteList:" << endl << incindent;
+  o << indent << "PetiteList:" << endl << incindent;
 
   if (c1_) {
-    o << node0 << indent << "is c1\n" << decindent;
+    o << indent << "is c1\n" << decindent;
     return;
   }
   
   if (verbose) {
-    o << node0
+    o
       << indent << "natom_ = " << natom_ << endl
       << indent << "nshell_ = " << nshell_ << endl
       << indent << "ng_ = " << ng_ << endl
@@ -354,40 +354,40 @@ PetiteList::print(ostream& o, int verbose)
       << indent << "atom_map_ =" << endl << incindent;
 
     for (i=0; i < natom_; i++) {
-      o << node0 << indent;
+      o << indent;
       for (int g=0; g < ng_; g++)
-        o << node0 << scprintf("%5d ",atom_map_[i][g]);
-      o << node0 << endl;
+        o << scprintf("%5d ",atom_map_[i][g]);
+      o << endl;
     }
 
-    o << node0 << endl << decindent
+    o << endl << decindent
       << indent << "shell_map_ =" << endl << incindent;
     for (i=0; i < nshell_; i++) {
-      o << node0 << indent;
+      o << indent;
       for (int g=0; g < ng_; g++)
-        o << node0 << scprintf("%5d ",shell_map_[i][g]);
-      o << node0 << endl;
+        o << scprintf("%5d ",shell_map_[i][g]);
+      o << endl;
     }
 
-    o << node0 << endl << decindent
+    o << endl << decindent
       << indent << "p1_ =" << endl << incindent;
     for (i=0; i < nshell_; i++)
-      o << node0 << indent << scprintf("%5d\n",p1_[i]);
+      o << indent << scprintf("%5d\n",p1_[i]);
 
-    o << node0 << decindent
+    o << decindent
       << indent << "lamij_ =" << endl << incindent;
     for (i=0; i < nshell_; i++) {
-      o << node0 << indent;
+      o << indent;
       for (int j=0; j <= i; j++)
-        o << node0 << scprintf("%5d ",lamij_[i_offset(i)+j]);
-      o << node0 << endl;
+        o << scprintf("%5d ",lamij_[i_offset(i)+j]);
+      o << endl;
     }
-    o << node0 << endl << decindent;
+    o << endl << decindent;
   }
 
   CharacterTable ct = gbs_->molecule()->point_group()->char_table();
   for (i=0; i < nirrep_; i++)
-    o << node0 << indent 
+    o << indent 
       << scprintf("%5d functions of %s symmetry\n",
                   nbf_in_ir_[i], ct.gamma(i).symbol());
 }

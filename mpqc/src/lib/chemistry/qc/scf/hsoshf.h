@@ -45,7 +45,7 @@ class HSOSHF: public HSOSSCF {
 
     void save_data_state(StateOut&);
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 
     void two_body_energy(double &ec, double &ex);
 

@@ -70,7 +70,7 @@ iswtch(int *i, int *j)
 static void
 fail()
 {
-  ExEnv::err() << scprintf("failing module:\n%s",__FILE__) << endl;
+  ExEnv::errn() << scprintf("failing module:\n%s",__FILE__) << endl;
   abort();
   }
 
@@ -191,7 +191,7 @@ Int2eV3::int_init_buildgc(int order,
   int_v0_buf = (double*) malloc(sizeof(double)*int_v_bufsize);
   used_storage_build_ += sizeof(double)*int_v_bufsize;
   if (!int_v0_buf) {
-    ExEnv::err() << scprintf("couldn't allocate all integral intermediates\n");
+    ExEnv::errn() << scprintf("couldn't allocate all integral intermediates\n");
     fail();
     }
   add_store(int_v0_buf);
@@ -269,7 +269,7 @@ Int2eV3::int_init_buildgc(int order,
   ExEnv::out() << "e0f0_int_buf: " << e0f0_con_int_bufsize * sizeof(double) << endl;
 #endif
   if (!e0f0_con_int_buf) {
-    ExEnv::err() << scprintf("couldn't allocate contracted integral storage\n");
+    ExEnv::errn() << scprintf("couldn't allocate contracted integral storage\n");
     fail();
     }
   add_store(e0f0_con_int_buf);
@@ -625,14 +625,14 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              [maxam12]
                              [minam3]
                              [maxam34][eAB]==&BuildIntV3::impossible_integral){
-              ExEnv::err() << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
+              ExEnv::errn() << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
             if (!(build.*build_routine[minam1]
                                       [maxam12]
                                       [minam3]
                                       [maxam34][eAB])()) {
-              ExEnv::out() << "build2e.cc: did not succeed in building all integrals"
+              ExEnv::outn() << "build2e.cc: did not succeed in building all integrals"
                    << endl;
               abort();
               }
@@ -728,11 +728,11 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
           else if ((minam1<=MG)&&(minam3<=MG)&&(maxam12<=MG)&&(maxam34<=MG)) {
             intfunc brptr=build_routine[minam1][maxam12][minam3][maxam34][eAB];
             if (brptr == &BuildIntV3::impossible_integral) {
-              ExEnv::err() << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
+              ExEnv::errn() << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
             if (!(build.*brptr)()) {
-              ExEnv::out() << "build2e.cc: did not succeed in building all integrals"
+              ExEnv::outn() << "build2e.cc: did not succeed in building all integrals"
                    << endl;
               abort();
               }

@@ -135,8 +135,8 @@ class Molecule: public SavableState
                   int have_charge = 0, double charge = 0.0);
 
     /// Print information about the molecule.
-    virtual void print(std::ostream& =ExEnv::out()) const;
-    virtual void print_parsedkeyval(std::ostream& =ExEnv::out(),
+    virtual void print(std::ostream& =ExEnv::out0()) const;
+    virtual void print_parsedkeyval(std::ostream& =ExEnv::out0(),
                                     int print_pg = 1,
                                     int print_unit = 1,
                                     int number_atoms = 1) const;
@@ -239,7 +239,7 @@ class Molecule: public SavableState
     void move_to_com();
     void transform_to_principal_axes(int trans_frame=1);
     void transform_to_symmetry_frame();
-    void print_pdb(std::ostream& =ExEnv::out(), char *title =0) const;
+    void print_pdb(std::ostream& =ExEnv::out0(), char *title =0) const;
 
     void read_pdb(const char *filename);
 

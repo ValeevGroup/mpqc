@@ -148,7 +148,7 @@ Edge::interpolate(double r, SCVector3&point, SCVector3&norm,
   int has_norm = interpolate(r,point,norm);
 
   if (!has_norm) {
-      ExEnv::err() << "Edge::interpolate with volume requires norm"
+      ExEnv::errn() << "Edge::interpolate with volume requires norm"
            << endl;
       abort();
     }

@@ -138,7 +138,7 @@ SymmetryOperation::transpose()
 void
 SymmetryOperation::print(ostream& os) const
 {
-  os << node0 << indent << "        1          2          3\n"
+  os << indent << "        1          2          3\n"
      << indent << "  1  "
      << scprintf("%10.7f ", d[0][0])
      << scprintf("%10.7f ", d[0][1])

@@ -122,7 +122,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
               char *memorygrp_string = argv[i];
               i++;
               if (i >= argc) {
-                  ExEnv::err() << "-memorygrp must be following by an argument"
+                  ExEnv::errn() << "-memorygrp must be following by an argument"
                        << endl;
                   abort();
                 }
@@ -161,12 +161,12 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       Ref<DescribedClass> dc = strkv->describedclassvalue();
       grp = dynamic_cast<MemoryGrp*>(dc.pointer());
       if (dc.null()) {
-          ExEnv::err() << "initial_memorygrp: couldn't find a MemoryGrp in "
+          ExEnv::errn() << "initial_memorygrp: couldn't find a MemoryGrp in "
                << keyval_string << endl;
           abort();
         }
       else if (!grp) {
-          ExEnv::err() << "initial_memorygrp: wanted MemoryGrp but got "
+          ExEnv::errn() << "initial_memorygrp: wanted MemoryGrp but got "
                << dc->class_name() << endl;
           abort();
         }
@@ -182,7 +182,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {
-      ExEnv::err() << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
+      ExEnv::errn() << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
       abort();
     }
 #if defined(HAVE_MPI)
@@ -200,13 +200,13 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       grp = new ProcMemoryGrp();
     }
   else {
-      ExEnv::err() << scprintf("MemoryGrp::create_memorygrp: cannot create "
+      ExEnv::errn() << scprintf("MemoryGrp::create_memorygrp: cannot create "
               "default for \"%s\"\n.", msg->class_name());
       abort();
     }
 
   if (!grp) {
-      ExEnv::err() << scprintf("WARNING: MemoryGrp::initial_memorygrp(): failed\n");
+      ExEnv::errn() << scprintf("WARNING: MemoryGrp::initial_memorygrp(): failed\n");
     }
 
   return grp;
@@ -239,7 +239,7 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
   int length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {
-      ExEnv::err() << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
+      ExEnv::errn() << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
       abort();
     }
 

@@ -131,7 +131,7 @@ UHF::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("uhf e2");
@@ -209,7 +209,7 @@ UHF::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "UHF: error starting threads" << endl;
       abort();
     }
@@ -217,7 +217,7 @@ UHF::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "UHF: error waiting for threads" << endl;
       abort();
     }
@@ -263,7 +263,7 @@ UHF::ao_fock(double accuracy)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   

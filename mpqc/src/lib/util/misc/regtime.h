@@ -59,7 +59,7 @@ class RegionTimer: public DescribedClass {
     void unset_default();
     void enter_default();
     void exit_default();
-    virtual void print(std::ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out0()) const;
 
     void update_top() const;
 

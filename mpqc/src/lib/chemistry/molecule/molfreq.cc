@@ -51,7 +51,7 @@ MolecularFrequencies::MolecularFrequencies(const Ref<KeyVal>& keyval)
 {
   mol_ << keyval->describedclassvalue("molecule");
   if (mol_.null()) {
-      ExEnv::err() << node0 << "MolecularFrequencies: KeyVal CTOR requires molecule"
+      ExEnv::err0() << "MolecularFrequencies: KeyVal CTOR requires molecule"
            << endl;
       abort();
     }
@@ -80,7 +80,7 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
   int i;
 
   if (si.version(::class_desc<MolecularFrequencies>()) < 3) {
-      ExEnv::err() << "MolecularFrequencies: cannot restore from old version" << endl;
+      ExEnv::errn() << "MolecularFrequencies: cannot restore from old version" << endl;
       abort();
     }
 
@@ -120,7 +120,7 @@ MolecularFrequencies::compute_frequencies(const RefSymmSCMatrix &xhessian)
   bd3natom_ = symmbasis->coldim();
   disym_ = symmbasis->rowdim();
 
-  ExEnv::out() << node0 << endl
+  ExEnv::out0() << endl
                << indent << "Frequencies (cm-1; negative is imaginary):"
                << endl;
 
@@ -180,7 +180,7 @@ MolecularFrequencies::do_freq_for_irrep(
   ncbasis.svd(basU, bassigma, basV);
   for (i=0; i<ddim.n(); i++) {
       if (bassigma(i) < 1.e0-3) {
-          ExEnv::err() << node0 << indent
+          ExEnv::err0() << indent
                << "MolecularFrequencies: displacements don't span"
                << " normal coordinates"
                << endl;
@@ -209,17 +209,17 @@ MolecularFrequencies::do_freq_for_irrep(
       freqs(i) = freqs->get_element(i) * 219474.63;
     }
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
                << pg_->char_table().gamma(irrep).symbol() << endl;
   int ifreqoff = 1;
   for (i=0; i<irrep; i++) ifreqoff += nfreq_[i];
   for (i=0; i<freqs.n(); i++) {
       double freq = freqs(freqs.n()-i-1);
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
                    << scprintf("%4d % 8.2f",i+ifreqoff,freq)
                    << endl;
     }
-  ExEnv::out() << node0 << endl;
+  ExEnv::out0() << endl;
 
   if (debug_) {
       eigvecs.print("eigenvectors");
@@ -292,7 +292,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
       else if (ct.symbol()[0] == 'C' ||
                ct.symbol()[0] == 'c') sigma = 1;
       else {
-          ExEnv::err() << "MolecularFrequencies: For linear molecules"
+          ExEnv::errn() << "MolecularFrequencies: For linear molecules"
                << " the specified point group must be Cnv or Dnh"
                << endl;
           abort();
@@ -407,7 +407,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
       Erot = 1.5 * EPV;
     }
   else {
-      ExEnv::err() << "Strange number of external coordinates: " << nexternal
+      ExEnv::errn() << "Strange number of external coordinates: " << nexternal
            << ".  Setting Erot to 0.0" << endl;
       Erot = 0.0;
     }
@@ -418,7 +418,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   // Print out results of thermodynamic analysis
   ////////////////////////////////////////////////
 
-  ExEnv::out() << node0 << indent << "THERMODYNAMIC ANALYSIS:" << endl << endl
+  ExEnv::out0() << indent << "THERMODYNAMIC ANALYSIS:" << endl << endl
        << indent << scprintf("Contributions to the nonelectronic enthalpy at %.2lf K:\n",T)
        << indent << "                   kJ/mol       kcal/mol"<< endl
        << indent << scprintf("  E0vib        = %9.4lf    %9.4lf\n",
@@ -456,10 +456,10 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
        << indent << "Various data used for thermodynamic analysis:" << endl
        << indent << endl;
 
-  if (linear) ExEnv::out() << node0 << indent << "Linear molecule" << endl;
-  else ExEnv::out() << node0 << indent << "Nonlinear molecule" << endl;
+  if (linear) ExEnv::out0() << indent << "Linear molecule" << endl;
+  else ExEnv::out0() << indent << "Nonlinear molecule" << endl;
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << scprintf("Principal moments of inertia (amu*angstrom^2):"
           " %.5lf, %.5lf, %.5lf\n", pmi[0], pmi[1], pmi[2])
        << indent << "Point group: " << ct.symbol()
@@ -468,16 +468,16 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
        << indent << "Rotational symmetry number: " << sigma << endl;
 
   if (linear) {
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << scprintf("Rotational temperature (K): %.4lf\n", theta[1]);
     }
   else {
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << scprintf("Rotational temperatures (K): %.4lf, %.4lf, %.4lf\n",
                        theta[0], theta[1], theta[2]);
     }
 
-  ExEnv::out() << node0 << indent << "Electronic degeneracy: " << degeneracy
+  ExEnv::out0() << indent << "Electronic degeneracy: " << degeneracy
        << endl << endl;
 }
 

@@ -99,7 +99,7 @@ class FileRender: public Render {
     void close_sbuf();
   public:
     FileRender(const char * filename);
-    FileRender(std::ostream &o = ExEnv::out());
+    FileRender(std::ostream &o = ExEnv::out0());
     FileRender(const Ref<KeyVal>&);
     virtual ~FileRender();
 

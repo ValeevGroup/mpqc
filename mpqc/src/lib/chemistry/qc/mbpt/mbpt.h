@@ -246,7 +246,7 @@ class MBPT2: public Wavefunction {
     // override compute's obsolete so we can call the reference's obsolete
     void obsolete();
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 };
 
 

@@ -83,7 +83,7 @@ ParallelRegionTimer::print(ostream &o) const
   msg_->min(minn);
 
   if (maxn != minn) {
-      ExEnv::err() << node0
+      ExEnv::err0()
            << "ParallelRegionTimer::print: differing number of regions"
            << endl;
       abort();

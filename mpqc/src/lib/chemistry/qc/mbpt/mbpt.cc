@@ -169,7 +169,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
 {
   reference_ << keyval->describedclassvalue("reference");
   if (reference_.null()) {
-      ExEnv::err() << node0 << "MBPT2::MBPT2: no reference wavefunction" << endl;
+      ExEnv::err0() << "MBPT2::MBPT2: no reference wavefunction" << endl;
       abort();
     }
   copy_orthog_info(reference_);
@@ -177,12 +177,12 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
   char *nfzc_charval = keyval->pcharvalue("nfzc");
   if (nfzc_charval && !strcmp(nfzc_charval, "auto")) {
       if (molecule()->max_z() > 30) {
-          ExEnv::err() << node0
+          ExEnv::err0()
                << "MBPT2: cannot use \"nfzc = auto\" for Z > 30" << endl;
           abort();
         }
       nfzc = molecule()->n_core_electrons()/2;
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << "MBPT2: auto-freezing " << nfzc << " core orbitals" << endl;
     }
   delete[] nfzc_charval;
@@ -257,11 +257,11 @@ MBPT2::save_data_state(StateOut& s)
 void
 MBPT2::print(ostream&o) const
 {
-  o << node0 << indent << "MBPT2:" << endl;
+  o << indent << "MBPT2:" << endl;
   o << incindent;
   Wavefunction::print(o);
-  o << node0 << indent << "Reference Wavefunction:" << endl;
-  o << incindent; reference_->print(o); o << decindent << node0 << endl;
+  o << indent << "Reference Wavefunction:" << endl;
+  o << incindent; reference_->print(o); o << decindent << endl;
   o << decindent;
 }
 
@@ -290,14 +290,14 @@ MBPT2::compute()
                                          / ref_to_mp2_acc);
   if (gradient_needed()) {
       if (nsocc) {
-          ExEnv::err() << "MBPT2: cannot compute open shell gradients" << endl;
+          ExEnv::errn() << "MBPT2: cannot compute open shell gradients" << endl;
           abort();
         }
       compute_cs_grad();
     }
   else {
       if (nsocc && algorithm_ && !strcmp(algorithm_,"memgrp")) {
-          ExEnv::err() << "MBPT2: memgrp algorithm cannot compute open shell energy"
+          ExEnv::errn() << "MBPT2: memgrp algorithm cannot compute open shell energy"
                << endl;
           abort();
         }
@@ -315,7 +315,7 @@ MBPT2::compute()
           compute_hsos_v2_lb();
         }
       else {
-          ExEnv::err() << "MBPT2: unknown algorithm: " << algorithm_ << endl;
+          ExEnv::errn() << "MBPT2: unknown algorithm: " << algorithm_ << endl;
           abort();
         }
     }
@@ -365,7 +365,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   int i, j;
   if (nsocc) {
       if (reference_->n_fock_matrices() != 2) {
-          ExEnv::err() << "MBPT2: given open reference with"
+          ExEnv::errn() << "MBPT2: given open reference with"
                << " wrong number of Fock matrices" << endl;
           abort();
         }
@@ -450,7 +450,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       vecs = vecs_mo1_mo2.t() * vecs_so_mo1.t() * so_ao;
     }
   else {
-      if (debug_) ExEnv::out() << node0 << indent << "getting fock matrix" << endl;
+      if (debug_) ExEnv::out0() << indent << "getting fock matrix" << endl;
       // get the closed shell AO fock matrices
       RefSymmSCMatrix fock_c_so = reference_->fock(0);
 
@@ -463,12 +463,12 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       fock_c_mo1.accumulate_transform(vecs_so_mo1.t(), fock_c_so);
       fock_c_so = 0;
 
-      if (debug_) ExEnv::out() << node0 << indent << "diagonalizing" << endl;
+      if (debug_) ExEnv::out0() << indent << "diagonalizing" << endl;
       // diagonalize the fock matrix
       vals = fock_c_mo1.eigvals();
 
       // compute the AO to new MO scf vector
-      if (debug_) ExEnv::out() << node0 << indent << "AO to MO" << endl;
+      if (debug_) ExEnv::out0() << indent << "AO to MO" << endl;
       RefSCMatrix so_ao = reference_->integral()->petite_list()->sotoao();
       vecs = vecs_so_mo1.t() * so_ao;
     }
@@ -488,7 +488,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       RefDiagSCMatrix valsi = bvals->block(i);
       for (j=1; j<valsi.n(); j++) {
           if (fabs(valsi(j)-valsi(j-1)) < 1.0e-7) {
-              ExEnv::out() << node0 << indent
+              ExEnv::out0() << indent
                    << "NOTE: There are degenerate orbitals within an irrep."
                    << "  This will make"
                    << endl
@@ -504,7 +504,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
     }
   // sort the eigenvectors and values if symmetry is not c1
   if (molecule()->point_group()->char_table().order() != 1) {
-      if (debug_) ExEnv::out() << node0 << indent << "sorting eigenvectors" << endl;
+      if (debug_) ExEnv::out0() << indent << "sorting eigenvectors" << endl;
       double *evals = new double[noso];
       vals->convert(evals);
       int *indices = new int[noso];
@@ -557,7 +557,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   if (nfzc && nfzc < noso) {
       double split = vals(nfzc) - vals(nfzc-1);
       if (split < 0.2) {
-          ExEnv::out() << node0 << endl
+          ExEnv::out0() << endl
                << indent << "WARNING: "
                << "MBPT2: gap between frozen and active occupied orbitals is "
                << split << " au" << endl << endl;
@@ -566,13 +566,13 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   if (nfzv && noso-nfzv-1 >= 0) {
       double split = vals(nbasis-nfzv) - vals(nbasis-nfzv-1);
       if (split < 0.2) {
-          ExEnv::out() << node0 << endl
+          ExEnv::out0() << endl
                << indent << "WARNING: "
                << "MBPT2: gap between frozen and active virtual orbitals is "
                << split << " au" << endl << endl;
         }
     }
-  if (debug_) ExEnv::out() << node0 << indent << "eigen done" << endl;
+  if (debug_) ExEnv::out0() << indent << "eigen done" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

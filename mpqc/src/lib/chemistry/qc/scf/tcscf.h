@@ -63,7 +63,7 @@ class TCSCF: public SCF {
 
     void save_data_state(StateOut&);
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 
     double occupation(int ir, int vectornum);
     double alpha_occupation(int irrep, int vectornum);

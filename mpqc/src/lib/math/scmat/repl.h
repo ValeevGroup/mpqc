@@ -97,7 +97,7 @@ class ReplSCVector: public SCVector {
     void element_op(const Ref<SCElementOp3>&,
                     SCVector*,SCVector*);
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return vector; }
@@ -165,7 +165,7 @@ class ReplSCMatrix: public SCMatrix {
     void element_op(const Ref<SCElementOp3>&,
                     SCMatrix*,SCMatrix*);
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return matrix; }
@@ -240,7 +240,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void element_op(const Ref<SCElementOp3>&,
                     SymmSCMatrix*,SymmSCMatrix*);
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return matrix; }
@@ -284,7 +284,7 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     void element_op(const Ref<SCElementOp3>&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return matrix; }

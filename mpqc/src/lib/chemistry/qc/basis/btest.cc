@@ -109,7 +109,7 @@ do_so_test(const Ref<KeyVal> &keyval,
   intgrl->set_basis(gbs);
 
   Ref<SOBasis> sobas = new SOBasis(gbs, intgrl);
-  sobas->print(cout << node0);
+  sobas->print(cout);
 
   Ref<TwoBodyInt> aoer = intgrl->electron_repulsion();
   Ref<TwoBodySOInt> soer = new TwoBodySOInt(aoer);
@@ -118,7 +118,7 @@ do_so_test(const Ref<KeyVal> &keyval,
   Ref<OneBodySOInt> soov = new OneBodySOInt(aoov);
 
   sobas = soer->basis();
-  sobas->print(cout << node0);
+  sobas->print(cout);
 
   if (keyval->exists(":shell")) {
     do_so_shell_test(sobas, soer,

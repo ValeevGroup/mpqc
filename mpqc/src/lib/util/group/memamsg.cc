@@ -135,7 +135,7 @@ void
 MemoryDataRequestQueue::push(MemoryDataRequest&r)
 {
   if (n_ == MaxDepth) {
-      ExEnv::err() << scprintf("MemoryDataRequestQueue: MaxDepth exceeded\n");
+      ExEnv::errn() << scprintf("MemoryDataRequestQueue: MaxDepth exceeded\n");
       abort();
     }
   q_[n_] = r;
@@ -146,7 +146,7 @@ void
 MemoryDataRequestQueue::pop(MemoryDataRequest&r)
 {
   if (n_ == 0) {
-      ExEnv::err() << scprintf("MemoryDataRequestQueue: nothing to pop\n");
+      ExEnv::errn() << scprintf("MemoryDataRequestQueue: nothing to pop\n");
       abort();
     }
   n_--;
@@ -176,7 +176,7 @@ void
 ActiveMsgMemoryGrp::set_localsize(size_t localsize)
 {
   if (debug_) {
-      ExEnv::out() << "ActiveMsgMemoryGrp::set_localsize(" << localsize << ")" << endl;
+      ExEnv::out0() << "ActiveMsgMemoryGrp::set_localsize(" << localsize << ")" << endl;
     }
   deactivate();
   MsgMemoryGrp::set_localsize(localsize);
@@ -184,11 +184,11 @@ ActiveMsgMemoryGrp::set_localsize(size_t localsize)
   data_ = new char[localsize];
   activate();
   if (debug_) {
-      ExEnv::out() << "ActiveMsgMemoryGrp::set_localsize done: offsets:";
+      ExEnv::out0() << "ActiveMsgMemoryGrp::set_localsize done: offsets:";
       for (int i=0; i<=n(); i++) {
-          ExEnv::out() << " " << offset(i);
+          ExEnv::out0() << " " << offset(i);
         }
-      ExEnv::out() << endl;
+      ExEnv::out0() << endl;
     }
 }
 

@@ -187,7 +187,7 @@ class Function: virtual public SavableState, public Compute {
     virtual Ref<NonlinearTransform> change_coordinates();
 
     /// Print information about the object.
-    virtual void print(std::ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out0()) const;
 };
 
 

@@ -197,7 +197,7 @@ EAVLMMap<K,T>::remove(T* node)
       next(r);
 
       if (r == 0 || llink(r) != 0) {
-          ExEnv::err() << "EAVLMMap::remove: inconsistency" << std::endl;
+          ExEnv::errn() << "EAVLMMap::remove: inconsistency" << std::endl;
           abort();
         }
 
@@ -252,11 +252,11 @@ EAVLMMap<K,T>::print()
 {
   for (T*n=start(); n; next(n)) {
       int d = depth(n) + 1;
-      for (int i=0; i<d; i++) ExEnv::out() << "     ";
-      if (balance(n) == 1) ExEnv::out() << " (+)" << std::endl;
-      else if (balance(n) == -1) ExEnv::out() << " (-)" << std::endl;
-      else if (balance(n) == 0) ExEnv::out() << " (.)" << std::endl;
-      else ExEnv::out() << " (" << balance(n) << ")" << std::endl;
+      for (int i=0; i<d; i++) ExEnv::out0() << "     ";
+      if (balance(n) == 1) ExEnv::out0() << " (+)" << std::endl;
+      else if (balance(n) == -1) ExEnv::out0() << " (-)" << std::endl;
+      else if (balance(n) == 0) ExEnv::out0() << " (.)" << std::endl;
+      else ExEnv::out0() << " (" << balance(n) << ")" << std::endl;
     }
 }
 
@@ -316,7 +316,7 @@ EAVLMMap<K,T>::check()
   for (node = start(); node; next(node)) {
       check_node(node);
       if (prev && compare(prev,node) > 0) {
-          ExEnv::err() << "nodes out of order" << std::endl;
+          ExEnv::errn() << "nodes out of order" << std::endl;
           abort();
         }
       prev = node;
@@ -324,16 +324,16 @@ EAVLMMap<K,T>::check()
     }
   for (node = start(); node; next(node)) {
       if (balance(node) != height(rlink(node)) - height(llink(node))) {
-          ExEnv::err() << "balance inconsistency" << std::endl;
+          ExEnv::errn() << "balance inconsistency" << std::endl;
           abort();
         }
       if (balance(node) < -1 || balance(node) > 1) {
-          ExEnv::err() << "balance out of range" << std::endl;
+          ExEnv::errn() << "balance out of range" << std::endl;
           abort();
         }
     }
   if (length_ != computed_length) {
-      ExEnv::err() << "length error" << std::endl;
+      ExEnv::errn() << "length error" << std::endl;
       abort();
     }
 }

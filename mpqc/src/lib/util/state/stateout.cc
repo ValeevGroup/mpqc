@@ -63,14 +63,14 @@ StateOut::StateOut() :
 
 StateOut::StateOut(const StateOut&)
 {
-  ExEnv::err() << "StateOut: private copy ctor called???" << endl;
+  ExEnv::errn() << "StateOut: private copy ctor called???" << endl;
   abort();
 }
 
 void
 StateOut::operator=(const StateOut&)
 {
-  ExEnv::err() << "StateOut: private assignment called???" << endl;
+  ExEnv::errn() << "StateOut: private assignment called???" << endl;
   abort();
 }
 
@@ -164,7 +164,7 @@ StateOut::copy_references()
 int
 StateOut::put_array_void(const void*p,int s)
 {
-  ExEnv::err() << "StateOut::put_array_void(const void*p,int s) "
+  ExEnv::errn() << "StateOut::put_array_void(const void*p,int s) "
        << "is a derived class responsiblility" << endl
        << "  exact type is \"" << class_name() << "\"" << endl;
   abort();

@@ -98,7 +98,7 @@ class BlockedSCVector: public SCVector {
     void element_op(const Ref<SCElementOp3>&,
                     SCVector*,SCVector*);
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // BlockedSCVector specific functions
     RefSCDimension dim() const { return d; }
@@ -172,7 +172,7 @@ class BlockedSCMatrix: public SCMatrix {
                     SCMatrix*,SCMatrix*);
 
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // BlockedSCMatrix specific functions
     RefSCDimension rowdim() const { return d1; }
@@ -249,7 +249,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
                     SymmSCMatrix*,SymmSCMatrix*);
 
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // BlockedSymmSCMatrix specific functions
     RefSCDimension dim() const { return d; }
@@ -295,7 +295,7 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     void element_op(const Ref<SCElementOp3>&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void vprint(const char* title=0,
-                std::ostream& out=ExEnv::out(), int =10) const;
+                std::ostream& out=ExEnv::out0(), int =10) const;
 
     // BlockedDiagSCMatrix specific functions
     RefSCDimension dim() const { return d; }

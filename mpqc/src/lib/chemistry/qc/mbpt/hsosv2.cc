@@ -112,7 +112,7 @@ MBPT2::compute_hsos_v2()
 
   me = msg_->me();
 
-  ExEnv::out() << node0 << indent << "Just entered OPT2 program (opt2_v2)" << endl;
+  ExEnv::out0() << indent << "Just entered OPT2 program (opt2_v2)" << endl;
 
   tol = (int) (-10.0/log10(2.0));  /* discard ereps smaller than 10^-10 */
 
@@ -129,19 +129,19 @@ MBPT2::compute_hsos_v2()
    * can be done (and appears to be meaningful!)                     */
 
   if (ndocc == 0 && nsocc == 0) {
-    ExEnv::err() << node0 << "There are no occupied orbitals; program exiting" << endl;
+    ExEnv::err0() << "There are no occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzc > ndocc) {
-    ExEnv::err() << node0
+    ExEnv::err0()
          << "The number of frozen core orbitals exceeds the number" << endl
          << "of doubly occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzv > noso - ndocc - nsocc) {
-    ExEnv::err() << node0
+    ExEnv::err0()
          << "The number of frozen virtual orbitals exceeds the number" << endl
          << "of unoccupied orbitals; program exiting" << endl;
     abort();
@@ -191,13 +191,13 @@ MBPT2::compute_hsos_v2()
     nbf[iproc] += shellsize[sorted_shells[i]];
     }
   if (me == 0) {
-    ExEnv::out() << indent << "Distribution of basis functions between nodes:" << endl;
+    ExEnv::out0() << indent << "Distribution of basis functions between nodes:" << endl;
     for (i=0; i<nproc; i++) {
-      if (i%12 == 0) ExEnv::out() << indent;
-      ExEnv::out() << scprintf(" %4i",nbf[i]);
-      if ((i+1)%12 == 0) ExEnv::out() << endl;
+      if (i%12 == 0) ExEnv::out0() << indent;
+      ExEnv::out0() << scprintf(" %4i",nbf[i]);
+      if ((i+1)%12 == 0) ExEnv::out0() << endl;
       }
-    ExEnv::out() << endl;
+    ExEnv::out0() << endl;
     }
 
   /* determine which shells are to be processed by node me */
@@ -247,45 +247,45 @@ MBPT2::compute_hsos_v2()
   msg_->max(nbfmax);
 
   if (me == 0) {
-    ExEnv::out() << indent << " nproc  nbasis  nshell  nfuncmax"
+    ExEnv::out0() << indent << " nproc  nbasis  nshell  nfuncmax"
                       "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
-    ExEnv::out() << indent << scprintf("  %-4i   %-5i    %-4i     %-3i"
+    ExEnv::out0() << indent << scprintf("  %-4i   %-5i    %-4i     %-3i"
                      "     %-3i    %-3i    %-3i    %-3i   %-3i\n",
             nproc,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
     }
 
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Memory available per node:      " << mem_alloc << " Bytes"
        << endl;
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Total memory used per node:     " << memused << " Bytes"
        << endl;
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Memory required for one pass:   "
        << compute_v2_memory(nocc,
                             nfuncmax, nbfmax, nshell,
                             ndocc, nsocc, nvir, nproc)
        << " Bytes"
        << endl;
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Minimum memory required:        "
        << compute_v2_memory(1,
                             nfuncmax, nbfmax, nshell,
                             ndocc, nsocc, nvir, nproc)
        << " Bytes"
        << endl;
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Batch size:                     " << ni
        << endl;
 
   if (ni < nsocc) {
-    ExEnv::err() << node0 << "Not enough memory allocated" << endl;
+    ExEnv::err0() << "Not enough memory allocated" << endl;
     abort();
     }
 
   if (ni < 1) {     /* this applies only to a closed shell case */
-    ExEnv::err() << node0 << "Not enough memory allocated" << endl;
+    ExEnv::err0() << "Not enough memory allocated" << endl;
     abort();
     }
 
@@ -299,7 +299,7 @@ MBPT2::compute_hsos_v2()
     if (rest == 0) npass--;
     }
 
-  ExEnv::out() << indent << node0
+  ExEnv::out0() << indent
        << "npass = " << npass
        << " rest = " << rest
        << endl;
@@ -745,12 +745,12 @@ MBPT2::compute_hsos_v2()
     if (nsocc == 0 && npass > 1 && pass < npass - 1) {
       double passe = ecorr_opt2;
       msg_->sum(passe);
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << "Partial correlation energy for pass " << pass << ":" << endl;
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << scprintf("  restart_ecorr      = %14.10f", passe)
            << endl;
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << scprintf("  restart_orbital_v2 = %d", ((pass+1) * ni))
            << endl;
       }
@@ -813,29 +813,29 @@ MBPT2::compute_hsos_v2()
 
     /* print out various energies etc.*/
 
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << "Number of shell quartets for which AO integrals would" << endl
          << indent << "have been computed without bounds checking: "
          << npass*nshell*nshell*(nshell+1)*(nshell+1)/2 << endl;
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << "Number of shell quartets for which AO integrals" << endl
          << indent << "were computed: " << aoint_computed << endl;
             
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << scprintf("ROHF energy [au]:                  %17.12lf\n", escf);
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << scprintf("OPT1 energy [au]:                  %17.12lf\n", eopt1);
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << scprintf("OPT2 second order correction [au]: %17.12lf\n",
                      ecorr_opt2);
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << scprintf("OPT2 energy [au]:                  %17.12lf\n", eopt2);
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << scprintf("ZAPT2 correlation energy [au]:     %17.12lf\n",
                      ecorr_zapt2);
-    ExEnv::out() << indent
+    ExEnv::out0() << indent
          << scprintf("ZAPT2 energy [au]:                 %17.12lf\n", ezapt2);
-    ExEnv::out().flush();
+    ExEnv::out0().flush();
     }
 
   msg_->bcast(eopt1);
@@ -859,7 +859,7 @@ MBPT2::compute_hsos_v2()
     }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }
     set_energy(ezapt2);

@@ -104,16 +104,16 @@ ShmMemoryGrp::attach_memory(void *ataddress, int size)
       if (isize > SHMMAX) isize = SHMMAX;
       else if (isize < SHMMIN) isize = SHMMIN;
       if (debug_) {
-          ExEnv::out() << me() << ": ";
-          ExEnv::out() << "ShmMemoryGrp: attaching segment with "
+          ExEnv::outn() << me() << ": ";
+          ExEnv::outn() << "ShmMemoryGrp: attaching segment with "
                << isize << " bytes at address " << (void*)ataddress
                << " on node " << me()
                << endl;
         }
       attach_address_[i] = shmat(shmid_[i],(SHMTYPE)ataddress,0);
       if (debug_) {
-          ExEnv::out() << me() << ": ";
-          ExEnv::out() << "ShmMemoryGrp: got address "
+          ExEnv::outn() << me() << ": ";
+          ExEnv::outn() << "ShmMemoryGrp: got address "
                << (void*)attach_address_[i]
                << " on node " << me()
                << endl;
@@ -146,7 +146,7 @@ ShmMemoryGrp::detach_memory()
   for (i=0; i<nregion_; i++) {
       if (attach_address_[i] != 0 && attach_address_[i] != (void*) -1) {
           if (debug_) {
-              ExEnv::out() << "detaching " << (void*)attach_address_[i]
+              ExEnv::outn() << "detaching " << (void*)attach_address_[i]
                    << " on node " << me() << endl;
             }
           shmdt((SHMTYPE)attach_address_[i]);
@@ -185,14 +185,14 @@ ShmMemoryGrp::set_localsize(size_t localsize)
           if (isize > SHMMAX) isize = SHMMAX;
           else if (isize < SHMMIN) isize = SHMMIN;
           if (debug_) {
-              ExEnv::out() << me() << ": ";
-              ExEnv::out() << "ShmMemoryGrp: getting segment with " << isize
+              ExEnv::outn() << me() << ": ";
+              ExEnv::outn() << "ShmMemoryGrp: getting segment with " << isize
                    << " bytes" << endl;
             }
           shmid_[i] = shmget(IPC_PRIVATE, isize, IPC_CREAT | SHM_R | SHM_W);
           if (shmid_[i] == -1) {
-              ExEnv::out() << me() << ": ";
-              ExEnv::out() << "ShmMemoryGrp: shmget failed for "
+              ExEnv::outn() << me() << ": ";
+              ExEnv::outn() << "ShmMemoryGrp: shmget failed for "
                    << isize << " bytes: "
                    << strerror(errno) << endl;
               abort();
@@ -266,7 +266,7 @@ ShmMemoryGrp::set_localsize(size_t localsize)
           itry++;
         }
       if (itry == ntry) {
-          ExEnv::err() << "ShmMemoryGrp: ntry exhausted on node 0" << endl;
+          ExEnv::errn() << "ShmMemoryGrp: ntry exhausted on node 0" << endl;
           abort();
         }
       // detach again, since we all try together below
@@ -289,7 +289,7 @@ ShmMemoryGrp::set_localsize(size_t localsize)
       itry++;
     } while(fail && itry < ntry);
   if (itry == ntry) {
-      ExEnv::err() << "ShmMemoryGrp: ntry exhausted on node " << me()
+      ExEnv::errn() << "ShmMemoryGrp: ntry exhausted on node " << me()
            << " on joint attach phase" << endl;
       abort();
     }
@@ -304,7 +304,7 @@ ShmMemoryGrp::set_localsize(size_t localsize)
   msg_->raw_bcast((void*)&rangelock_, sizeof(void*));
 
   if (debug_) {
-      ExEnv::out() << scprintf("%d: memory_ = 0x%x shmid_[0] = %d\n",
+      ExEnv::outn() << scprintf("%d: memory_ = 0x%x shmid_[0] = %d\n",
                        me(), memory_, shmid_[0]);
     }
 
@@ -361,7 +361,7 @@ void *
 ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
-      ExEnv::err() << scprintf("ShmMemoryGrp::obtain_readwrite: arg out of range\n");
+      ExEnv::errn() << scprintf("ShmMemoryGrp::obtain_readwrite: arg out of range\n");
       abort();
     }
 
@@ -408,7 +408,7 @@ void *
 ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
-      ExEnv::err() << scprintf("ShmMemoryGrp::obtain_readonly: arg out of range\n");
+      ExEnv::errn() << scprintf("ShmMemoryGrp::obtain_readonly: arg out of range\n");
       abort();
     }
 
@@ -419,7 +419,7 @@ void *
 ShmMemoryGrp::obtain_writeonly(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
-      ExEnv::err() << scprintf("ShmMemoryGrp::obtain_writeonly: arg out of range\n");
+      ExEnv::errn() << scprintf("ShmMemoryGrp::obtain_writeonly: arg out of range\n");
       abort();
     }
 

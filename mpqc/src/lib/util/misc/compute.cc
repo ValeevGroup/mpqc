@@ -86,7 +86,7 @@ ResultInfo::update() {
       _c->compute();
       compute() = oldcompute;
       if (!computed()) {
-          ExEnv::err() << "ResultInfo::update: nothing was computed" << endl;
+          ExEnv::errn() << "ResultInfo::update: nothing was computed" << endl;
           abort();
         }
     }
@@ -236,12 +236,12 @@ AccResultInfo::update() {
       _c->compute();
       compute() = oldcompute;
       if (!computed()) {
-          ExEnv::out() << "AccResultInfo::update: nothing was computed"
+          ExEnv::outn() << "AccResultInfo::update: nothing was computed"
                        << endl;
           abort();
         }
       if (_actual_accuracy > _desired_accuracy) {
-          ExEnv::out() << node0 << indent
+          ExEnv::out0() << indent
                << "WARNING: AccResultInfo::update: desired accuracy not achieved"
                << endl;
         }

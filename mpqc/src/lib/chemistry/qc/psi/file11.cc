@@ -31,7 +31,7 @@ FILE11::FILE11(int num)
   
  int errcod = read(num);
  if (!errcod)
-     ExEnv::err()
+     ExEnv::errn()
          << "failed to read gradient #" << num <<  "from file11" << endl;
 }
 FILE11::~FILE11()

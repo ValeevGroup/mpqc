@@ -130,7 +130,7 @@ class SymmetryOperation {
     void transpose();
 
     /// print the matrix 
-    void print(std::ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out0()) const;
 };
 
 // //////////////////////////////////////////////////////////////////
@@ -210,7 +210,7 @@ class SymRep {
     void c2_y();
 
     /// print the matrix 
-    void print(std::ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out0()) const;
 };
 
 inline double
@@ -308,7 +308,7 @@ class IrreducibleRepresentation {
     /** This prints the irrep to the given file, or stdout if none is
      given.  The second argument is an optional string of spaces to offset
      by. */
-    void print(std::ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out0()) const;
 };
 
 // ///////////////////////////////////////////////////////////
@@ -419,7 +419,7 @@ class CharacterTable {
     }
     
     /// This prints the irrep to the given file, or stdout if none is given.
-    void print(std::ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out0()) const;
 };
 
 // ///////////////////////////////////////////////////////////
@@ -511,7 +511,7 @@ class PointGroup: public SavableState {
 
     void save_data_state(StateOut& so);
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 };
 
 

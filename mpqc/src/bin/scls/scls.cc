@@ -70,6 +70,7 @@ main(int argc, char *argv[])
   std::set_new_handler(out_of_memory);
 
   ExEnv::init(argc, argv);
+  ExEnv::set_out(&cout);
 
 #ifdef HAVE_MPI
   // MPI is allowed wait until MPI_Init to fill in argc and argv,
@@ -112,7 +113,7 @@ main(int argc, char *argv[])
     }
 
   if (help) {
-      cout << node0
+      ExEnv::out0()
            << indent << "scls version " << SC_VERSION << endl
            << SCFormIO::copyright << endl
            << indent << "-memorygrp <$val> (which memory group to use)" << endl
@@ -129,14 +130,14 @@ main(int argc, char *argv[])
     }
   
   if (version) {
-    cout << node0
+      ExEnv::out0()
          << indent << "scls version " << SC_VERSION << endl
          << SCFormIO::copyright;
     exit(0);
   }
   
   if (warranty) {
-    cout << node0
+      ExEnv::out0()
          << indent << "scls version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
@@ -144,7 +145,7 @@ main(int argc, char *argv[])
   }
   
   if (license) {
-    cout << node0
+      ExEnv::out0()
          << indent << "scls version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
@@ -170,6 +171,8 @@ main(int argc, char *argv[])
     thread = ThreadGrp::get_default_threadgrp();
 
   // set up output classes
+  SCFormIO::setindent(ExEnv::outn(), 0);
+  SCFormIO::setindent(ExEnv::errn(), 0);
   SCFormIO::setindent(cout, 0);
   SCFormIO::setindent(cerr, 0);
 
@@ -182,14 +185,14 @@ main(int argc, char *argv[])
 
 
   for (i=0; i<nfile; i++) {
-      cout << node0 << indent << files[i] << ":" << endl;
+      ExEnv::out0() << indent << files[i] << ":" << endl;
       BcastStateInBin s(grp,files[i]);
-      cout << incindent;
-      s.list_objects(cout << node0);
+      ExEnv::out0() << incindent;
+      s.list_objects(ExEnv::out0());
       if (s.has_directory() && !s.seekable()) {
-          cout << "(objects cannot be listed since cannot seek file)" << endl;
+          ExEnv::out0() << "(objects cannot be listed since cannot seek file)" << endl;
         }
-      cout << decindent;
+      ExEnv::out0() << decindent;
     }
 
   delete[] files;

@@ -109,7 +109,7 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
   } else {
     tndocc_ = nelectron/2;
     if (nelectron%2 && me==0) {
-      ExEnv::err() << node0 << endl
+      ExEnv::err0() << endl
            << indent << "CLSCF::init: Warning, there's a leftover electron.\n"
            << incindent << indent << "total_charge = " << charge << endl
            << indent << "total nuclear charge = " << Znuc << endl
@@ -117,7 +117,7 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
     }
   }
 
-  ExEnv::out() << node0 << endl << indent
+  ExEnv::out0() << endl << indent
        << "CLSCF::init: total charge = " << Znuc-2*tndocc_ << endl << endl;
 
   nirrep_ = molecule()->point_group()->char_table().ncomp();
@@ -134,12 +134,12 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
     set_occupations(0);
   }
 
-  ExEnv::out() << node0 << indent << "docc = [";
+  ExEnv::out0() << indent << "docc = [";
   for (i=0; i < nirrep_; i++)
-    ExEnv::out() << node0 << " " << ndocc_[i];
-  ExEnv::out() << node0 << " ]\n";
+    ExEnv::out0() << " " << ndocc_[i];
+  ExEnv::out0() << " ]\n";
 
-  ExEnv::out() << node0 << indent << "nbasis = " << basis()->nbasis() << endl;
+  ExEnv::out0() << indent << "nbasis = " << basis()->nbasis() << endl;
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -191,7 +191,7 @@ RefSymmSCMatrix
 CLSCF::fock(int n)
 {
   if (n > 0) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "CLSCF::fock: there is only one fock matrix, "
          << scprintf("but fock(%d) was requested\n",n);
     abort();
@@ -210,13 +210,13 @@ void
 CLSCF::print(ostream&o) const
 {
   SCF::print(o);
-  o << node0 << indent << "CLSCF Parameters:\n" << incindent
+  o << indent << "CLSCF Parameters:\n" << incindent
     << indent << "charge = " << molecule()->nuclear_charge()-2*tndocc_ << endl
     << indent << "ndocc = " << tndocc_ << endl
     << indent << "docc = [";
   for (int i=0; i < nirrep_; i++)
-    o << node0 << " " << ndocc_[i];
-  o << node0 << " ]" << endl << decindent << endl;
+    o << " " << ndocc_[i];
+  o << " ]" << endl << decindent << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -229,7 +229,7 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
       most_recent_pg_ = new PointGroup(molecule()->point_group());
       return;
     }
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
          << "CLSCF: WARNING: reforming occupation vector from scratch" << endl;
   }
   
@@ -309,7 +309,7 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
       if (ndocc_[i] != newocc[i]) {
-        ExEnv::err() << node0 << indent << "CLSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err0() << indent << "CLSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << scprintf("occupations for irrep %d have changed\n",i+1)
              << indent
@@ -352,10 +352,10 @@ CLSCF::init_vector()
   init_threads();
 
   // initialize the two electron integral classes
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "integral intermediate storage = " << integral()->storage_used()
        << " bytes" << endl;
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "integral cache = " << integral()->storage_unused()
        << " bytes" << endl;
 
@@ -635,7 +635,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "CLSCF: error starting threads" << endl;
       abort();
     }
@@ -643,7 +643,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "CLSCF: error waiting for threads" << endl;
       abort();
     }
@@ -673,7 +673,7 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "CLHF::two_body_deriv: can't do gradient yet\n";
     abort();
   }

@@ -85,7 +85,7 @@ main()
 {
   ClassDesc::list_all_classes();
 
-  cout << node0 << indent << "using 0" << endl;
+  cout << indent << "using 0" << endl;
   const Ref<DescribedClass> descl2(0);
   Ref<A> aaa;
   cout << "getting aaaa" << endl;

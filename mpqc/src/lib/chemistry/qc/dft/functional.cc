@@ -334,7 +334,7 @@ DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
   // fill in the energy at the initial density values
   point(id,od);
 
-  ExEnv::out() << scprintf("ra=%7.5f rb=%7.5f gaa=%7.5f gbb=%7.5f gab= % 9.7f",
+  ExEnv::out0() << scprintf("ra=%7.5f rb=%7.5f gaa=%7.5f gbb=%7.5f gab= % 9.7f",
                    id.a.rho, id.b.rho, id.a.gamma, id.b.gamma, id.gamma_ab)
        << endl;
 
@@ -371,12 +371,12 @@ check(const char *name, double fd, double an, const char *class_name)
   if (fd == -135711.) return 0;
 
   double err = fabs(fd - an);
-  ExEnv::out() << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
+  ExEnv::out0() << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
        << endl;
   if ((fabs(an) > 0.03 && err/fabs(an) > 0.03)
       || ((fabs(an) <= 0.03) && err > 0.03)
       || isnan(an)) {
-      ExEnv::out() << scprintf("Error: %12s: fd = % 12.8f an = % 12.8f (%s)",
+      ExEnv::out0() << scprintf("Error: %12s: fd = % 12.8f an = % 12.8f (%s)",
                        name, fd, an, class_name)
            << endl;
       return 1;
@@ -421,7 +421,7 @@ DenFunctional::test()
 
   int ret = 0;
 
-  ExEnv::out() << "Testing with rho_a == rho_b" << endl;
+  ExEnv::out0() << "Testing with rho_a == rho_b" << endl;
   for (i=0; testrho[i] != -1.0; i++) {
       if (testrho[i] == 0.0) continue;
       id.a.rho=testrho[i];
@@ -434,7 +434,7 @@ DenFunctional::test()
     }
 
   set_spin_polarized(1);
-  ExEnv::out() << "Testing with rho_a != rho_b" << endl;
+  ExEnv::out0() << "Testing with rho_a != rho_b" << endl;
   for (i=0; testrho[i] != -1.0; i++) {
       id.a.rho=testrho[i];
       for (j=0; testrho[j] != -1.0; j++) {
@@ -546,7 +546,7 @@ SumDenFunctional::SumDenFunctional(const Ref<KeyVal>& keyval):
   int ncoef = keyval->count("coefs");
   int nfunc = keyval->count("funcs");
   if (ncoef != nfunc && ncoef != 0) {
-      ExEnv::out() << "SumDenFunctional: number of coefs and funcs differ" << endl;
+      ExEnv::out0() << "SumDenFunctional: number of coefs and funcs differ" << endl;
       abort();
     }
   
@@ -635,16 +635,16 @@ SumDenFunctional::point(const PointInputData &id,
 void
 SumDenFunctional::print(ostream& o) const
 {
-  o << node0
+  o
     << indent << "Sum of Functionals:" << endl;
-  o << node0 << incindent;
+  o << incindent;
   for (int i=0; i<n_; i++) {
-      o << node0 << indent << scprintf("%+18.16f",coefs_[i]) << endl;
-      o << node0 << incindent;
-      funcs_[i]->print(o << node0);
-      o << node0 << decindent;
+      o << indent << scprintf("%+18.16f",coefs_[i]) << endl;
+      o << incindent;
+      funcs_[i]->print(o);
+      o << decindent;
     }
-  o << node0 << decindent;
+  o << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -830,7 +830,7 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
           funcs_[1] = new PW91CFunctional;
         }
       else {
-          ExEnv::out() << "StdDenFunctional: bad name: " << name_ << endl;
+          ExEnv::out0() << "StdDenFunctional: bad name: " << name_ << endl;
           abort();
         }
     }
@@ -854,7 +854,7 @@ StdDenFunctional::print(ostream& o) const
   const char *n = name_;
   if (!n) n = "Null";
 
-  o << node0
+  o
     << indent << "Standard Density Functional: " << n << endl;
   SumDenFunctional::print(o);
 }
@@ -2094,7 +2094,7 @@ XalphaFunctional::point(const PointInputData &id,
 void
 XalphaFunctional::print(ostream& o) const
 {
-  o << node0
+  o
     << indent << scprintf("XalphaFunctional: alpha = %12.8f", alpha_) << endl;
 }
 
@@ -3924,7 +3924,7 @@ mPW91XFunctional::mPW91XFunctional(const Ref<KeyVal>& keyval):
           init_constants(mPW91);
         }
       else {
-          ExEnv::out() << "mPW91XFunctional: bad \"constants\": " << t << endl;
+          ExEnv::outn() << "mPW91XFunctional: bad \"constants\": " << t << endl;
           abort();
         }
       delete[] t;

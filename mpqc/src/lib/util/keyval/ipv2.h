@@ -218,9 +218,9 @@ class IPV2
   IPV2::Status count_v(const char*,int*,int,int*);
 
   // some routines for debugging
-  void print_keyword(std::ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
-  void print_tree(std::ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
-  void print_unseen(std::ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
+  void print_keyword(std::ostream&f=ExEnv::out0(),ip_keyword_tree_t*k=0);
+  void print_tree(std::ostream&f=ExEnv::out0(),ip_keyword_tree_t*k=0);
+  void print_unseen(std::ostream&f=ExEnv::out0(),ip_keyword_tree_t*k=0);
   int have_unseen(ip_keyword_tree_t*k=0);
 };
 

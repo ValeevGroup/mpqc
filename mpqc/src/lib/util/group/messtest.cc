@@ -139,9 +139,9 @@ main(int argc, char**argv)
 
       Ref<KeyVal> keyval = new ParsedKeyVal(input);
 
-      grp = keyval->describedclassvalue(keyword);
+      grp << keyval->describedclassvalue(keyword);
 
-      debugger = keyval->describedclassvalue(":debug");
+      debugger << keyval->describedclassvalue(":debug");
 
       if (grp.null()) {
           cerr << scprintf("Couldn't initialize MessageGrp\n");
@@ -268,7 +268,7 @@ test(const Ref<MessageGrp>& grp, int source, int target)
       //so.set_buffer_size(5);
       so.target(target);
       a = new A(10);
-      a.save_state(so);
+      SavableState::save_state(a,so);
       so.flush();
       grp->send(target, ca, nca);
       if (source != target) grp->recv(target, ca, nca);
@@ -278,7 +278,7 @@ test(const Ref<MessageGrp>& grp, int source, int target)
       StateRecv si(grp);
       //si.set_buffer_size(5);
       si.source(source);
-      b.restore_state(si);
+      b << SavableState::restore_state(si);
       if (source != target) grp->send(source, ca, nca);
       grp->recv(source, ca, nca);
     }
@@ -305,11 +305,11 @@ test(const Ref<MessageGrp>& grp, int source, int target)
   
       if (grp->me() == source) {
           BcastStateSend so(grp);
-          a.save_state(so);
+          SavableState::save_state(a,so);
         }
       else {
           BcastStateRecv si(grp,source);
-          b.restore_state(si);
+          b << SavableState::restore_state(si);
         }
 
       if (grp->me() == target) {

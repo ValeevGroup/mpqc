@@ -85,9 +85,9 @@ main(int argc, char**argv)
 
       Ref<KeyVal> keyval = new ParsedKeyVal(input);
 
-      grp = keyval->describedclassvalue(keyword);
+      grp << keyval->describedclassvalue(keyword);
 
-      debugger = keyval->describedclassvalue(":debug");
+      debugger << keyval->describedclassvalue(":debug");
 
       if (grp.null()) {
           cerr << scprintf("Couldn't initialize ThreadGrp\n");

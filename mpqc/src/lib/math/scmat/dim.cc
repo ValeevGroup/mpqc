@@ -42,7 +42,7 @@ using namespace std;
 static void
 fail(const char *s)
 {
-  ExEnv::err() << indent << "math/scmat/dim.cc: " << s << endl;
+  ExEnv::errn() << indent << "math/scmat/dim.cc: " << s << endl;
   abort();
 }
 

@@ -81,7 +81,7 @@ class ShmMemoryGrp: public MsgMemoryGrp {
     void release_writeonly(void *data, distsize_t offset, int size);
     void release_readwrite(void *data, distsize_t offset, int size);
 
-    void print(std::ostream &o = ExEnv::out()) const;
+    void print(std::ostream &o = ExEnv::out0()) const;
 };
 
 #endif

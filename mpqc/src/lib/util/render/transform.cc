@@ -39,7 +39,7 @@ Transform::Transform(const Ref<KeyVal>& keyval)
   transform_ = identity3D();
   if (keyval->exists("translate")) {
       if (keyval->count("translate") != 3) {
-          ExEnv::err() << "Transform: error in translation" << endl;
+          ExEnv::errn() << "Transform: error in translation" << endl;
           abort();
         }
       translate(keyval->doublevalue("translate",0),
@@ -49,7 +49,7 @@ Transform::Transform(const Ref<KeyVal>& keyval)
   if (keyval->exists("rotate")) {
       if (keyval->count("rotate:axis") != 3
           || !keyval->exists("rotate:angle")) {
-          ExEnv::err() << "Transform: error in rotation" << endl;
+          ExEnv::errn() << "Transform: error in rotation" << endl;
           abort();
         }
       vec3 axis(keyval->doublevalue("rotate:axis",0),

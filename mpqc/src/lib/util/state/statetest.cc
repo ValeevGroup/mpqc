@@ -78,7 +78,7 @@ class A: virtual public SavableState {
     ~A();
     void save_data_state(StateOut&);
     inline int& a() { return ia; };
-    virtual void print (ostream&s = cout)
+    virtual void print (ostream&s = ExEnv::out0())
     {
       s << "A::t1c = " << t1c << '\n';
       s << "A::t2c = " << t2c << '\n';
@@ -461,19 +461,19 @@ main()
 
   if (sia.use_directory()) {
       sia.open("statetest.a.out");
-      cout << node0 << indent
+      ExEnv::out0() << indent
            << " --- restoring from A's directory (2) ---" << endl;
       ra << SavableState::dir_restore_state(sia,"B:1");
-      cout << node0 << indent
+      ExEnv::out0() << indent
            << "B:1 classname = " << ra->class_name() << endl;
       Ref<A> ra3;
       ra3 << SavableState::dir_restore_state(sia,"B:1");
-      cout << node0 << indent
+      ExEnv::out0() << indent
            <<"first B:1: " << (void*) ra.pointer()
            << " second B:1: " << (void*) ra3.pointer()
            << endl;
     }
-  cout << node0 << indent << "objects in sia" << endl;
+  ExEnv::out0() << indent << "objects in sia" << endl;
   sia.list_objects();
 
   if (sia.use_directory()) {

@@ -76,7 +76,7 @@ UKS::UKS(const Ref<KeyVal>& keyval) :
 
   functional_ << keyval->describedclassvalue("functional");
   if (functional_.null()) {
-    ExEnv::out() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
+    ExEnv::outn() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
   }
 }
@@ -140,18 +140,18 @@ UKS::extrap_data()
 void
 UKS::print(ostream&o) const
 {
-  o << node0 << indent << "Unrestricted Kohn-Sham (UKS) Parameters:" << endl;
-  o << node0 << incindent;
-  UnrestrictedSCF::print(o << node0);
-  o << node0 << indent << "Functional:" << endl;
-  o << node0 << incindent;
-  functional_->print(o << node0);
-  o << node0 << decindent;
-  o << node0 << indent << "Integrator:" << endl;
-  o << node0 << incindent;
-  integrator_->print(o << node0);
-  o << node0 << decindent;
-  o << node0 << decindent;
+  o << indent << "Unrestricted Kohn-Sham (UKS) Parameters:" << endl;
+  o << incindent;
+  UnrestrictedSCF::print(o);
+  o << indent << "Functional:" << endl;
+  o << incindent;
+  functional_->print(o);
+  o << decindent;
+  o << indent << "Integrator:" << endl;
+  o << incindent;
+  integrator_->print(o);
+  o << decindent;
+  o << decindent;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -195,7 +195,7 @@ UKS::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    ExEnv::out() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::out0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("uks e2");
@@ -273,7 +273,7 @@ UKS::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "UKS: error starting threads" << endl;
       abort();
     }
@@ -281,7 +281,7 @@ UKS::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "UKS: error waiting for threads" << endl;
       abort();
     }
@@ -327,7 +327,7 @@ UKS::ao_fock(double accuracy)
 
   // for now quit
   else {
-    ExEnv::out() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::out0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   

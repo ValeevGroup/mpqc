@@ -150,14 +150,14 @@ OneBodyWavefunction::projected_eigenvectors(const Ref<OneBodyWavefunction>& owfn
   }
   else oldP_so = owfn->density();
 
-  ExEnv::out() << node0 << endl << indent
+  ExEnv::out0() << endl << indent
        << "Projecting the guess density.\n"
        << endl;
-  ExEnv::out() << incindent;
+  ExEnv::out0() << incindent;
 
   // The old overlap
   RefSymmSCMatrix oldS = owfn->overlap();
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "The number of electrons in the guess density = "
        << (oldP_so*oldS).trace() << endl;
 
@@ -205,7 +205,7 @@ OneBodyWavefunction::projected_eigenvectors(const Ref<OneBodyWavefunction>& owfn
   oldP_oso = 0;
   //newP_oso.print("projected orthoSO density");
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "The number of electrons in the projected density = "
        << newP_oso.trace() << endl;
 
@@ -233,7 +233,7 @@ OneBodyWavefunction::projected_eigenvectors(const Ref<OneBodyWavefunction>& owfn
       so_to_oso.print("SO to ortho SO transformation");
     }
 
-  ExEnv::out() << decindent;
+  ExEnv::out0() << decindent;
   return newvec_oso;
 }
 
@@ -441,7 +441,7 @@ double
 OneBodyWavefunction::occupation(int vectornum)
 {
   if (spin_unrestricted()) {
-    ExEnv::err() << "OneBodyWavefunction::occupation: called for USCF case"
+    ExEnv::errn() << "OneBodyWavefunction::occupation: called for USCF case"
                  << endl;
     abort();
   }
@@ -469,7 +469,7 @@ OneBodyWavefunction::alpha_occupation(int irrep, int vectornum)
   if (!spin_polarized())
     return 0.5*occupation(irrep, vectornum);
   
-  ExEnv::err() << class_name() << "::alpha_occupation not implemented" << endl;
+  ExEnv::errn() << class_name() << "::alpha_occupation not implemented" << endl;
   abort();
   return 0;
 }
@@ -480,7 +480,7 @@ OneBodyWavefunction::beta_occupation(int irrep, int vectornum)
   if (!spin_polarized())
     return 0.5*occupation(irrep, vectornum);
   
-  ExEnv::err() << class_name() << "::beta_occupation not implemented" << endl;
+  ExEnv::errn() << class_name() << "::beta_occupation not implemented" << endl;
   abort();
   return 0;
 }
@@ -491,7 +491,7 @@ OneBodyWavefunction::oso_alpha_eigenvectors()
   if (!spin_unrestricted())
     return oso_eigenvectors().copy();
 
-  ExEnv::err() << class_name() << "::oso_alpha_eigenvectors not implemented" << endl;
+  ExEnv::errn() << class_name() << "::oso_alpha_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -502,7 +502,7 @@ OneBodyWavefunction::oso_beta_eigenvectors()
   if (!spin_unrestricted())
     return oso_eigenvectors().copy();
 
-  ExEnv::err() << class_name() << "::oso_beta_eigenvectors not implemented" << endl;
+  ExEnv::errn() << class_name() << "::oso_beta_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -513,7 +513,7 @@ OneBodyWavefunction::alpha_eigenvectors()
   if (!spin_unrestricted())
     return eigenvectors().copy();
 
-  ExEnv::err() << class_name() << "::alpha_eigenvectors not implemented" << endl;
+  ExEnv::errn() << class_name() << "::alpha_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -524,7 +524,7 @@ OneBodyWavefunction::beta_eigenvectors()
   if (!spin_unrestricted())
     return eigenvectors().copy();
 
-  ExEnv::err() << class_name() << "::beta_eigenvectors not implemented" << endl;
+  ExEnv::errn() << class_name() << "::beta_eigenvectors not implemented" << endl;
   abort();
   return 0;
 }
@@ -535,7 +535,7 @@ OneBodyWavefunction::alpha_eigenvalues()
   if (!spin_unrestricted())
     return eigenvalues().copy();
 
-  ExEnv::err() << class_name() << "::alpha_eigenvalues not implemented" << endl;
+  ExEnv::errn() << class_name() << "::alpha_eigenvalues not implemented" << endl;
   abort();
   return 0;
 }
@@ -546,7 +546,7 @@ OneBodyWavefunction::beta_eigenvalues()
   if (!spin_unrestricted())
     return eigenvalues().copy();
 
-  ExEnv::err() << class_name() << "::beta_eigenvalues not implemented" << endl;
+  ExEnv::errn() << class_name() << "::beta_eigenvalues not implemented" << endl;
   abort();
   return 0;
 }

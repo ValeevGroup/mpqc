@@ -289,7 +289,7 @@ class Pool {
     void release(double*d);
     int* allocate_int(size_t n);
     void release(int*d);
-    void print(std::ostream&o=ExEnv::out());
+    void print(std::ostream&o=ExEnv::out0());
     void check();
 };
 

@@ -85,7 +85,7 @@ BlockedSCMatrix::resize(SCDimension *a, SCDimension *b)
                                   d2->blocks()->subdim(i));
 
   } else {
-    ExEnv::err() << indent << "BlockedSCMatrix::resize: wrong number of blocks\n";
+    ExEnv::errn() << indent << "BlockedSCMatrix::resize: wrong number of blocks\n";
     abort();
   }
 
@@ -181,7 +181,7 @@ BlockedSCMatrix::accumulate_element(int i,int j,double a)
 SCMatrix *
 BlockedSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {
-  ExEnv::err() << indent << "BlockedSCMatrix::get_subblock: cannot get subblock\n";
+  ExEnv::errn() << indent << "BlockedSCMatrix::get_subblock: cannot get subblock\n";
   abort();
   return 0;
 }
@@ -190,7 +190,7 @@ void
 BlockedSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
                                int source_br, int source_bc)
 {
-  ExEnv::err() << indent
+  ExEnv::errn() << indent
        << "BlockedSCMatrix::assign_subblock: cannot assign subblock\n";
   abort();
 }
@@ -200,7 +200,7 @@ BlockedSCMatrix::accumulate_subblock(SCMatrix*sb,
                                      int br, int er, int bc, int ec,
                                      int source_br, int source_bc)
 {
-  ExEnv::err() << indent << "BlockedSCMatrix::accumulate_subblock:"
+  ExEnv::errn() << indent << "BlockedSCMatrix::accumulate_subblock:"
        << " cannot accumulate subblock\n";
   abort();
 }
@@ -208,7 +208,7 @@ BlockedSCMatrix::accumulate_subblock(SCMatrix*sb,
 SCVector *
 BlockedSCMatrix::get_row(int i)
 {
-  ExEnv::err() << indent << "BlockedSCMatrix::get_row: cannot get row\n";
+  ExEnv::errn() << indent << "BlockedSCMatrix::get_row: cannot get row\n";
   abort();
 
   return 0;
@@ -217,21 +217,21 @@ BlockedSCMatrix::get_row(int i)
 void
 BlockedSCMatrix::assign_row(SCVector *v, int i)
 {
-  ExEnv::err() << indent << "BlockedSCMatrix::assign_row: cannot assign row\n";
+  ExEnv::errn() << indent << "BlockedSCMatrix::assign_row: cannot assign row\n";
   abort();
 }
 
 void
 BlockedSCMatrix::accumulate_row(SCVector *v, int i)
 {
-  ExEnv::err() << indent << "BlockedSCMatrix::accumulate_row: cannot accumulate row\n";
+  ExEnv::errn() << indent << "BlockedSCMatrix::accumulate_row: cannot accumulate row\n";
   abort();
 }
 
 SCVector *
 BlockedSCMatrix::get_column(int i)
 {
-  ExEnv::err() << indent << "BlockedSCMatrix::get_column: cannot get column\n";
+  ExEnv::errn() << indent << "BlockedSCMatrix::get_column: cannot get column\n";
   abort();
 
   return 0;
@@ -240,14 +240,14 @@ BlockedSCMatrix::get_column(int i)
 void
 BlockedSCMatrix::assign_column(SCVector *v, int i)
 {
-  ExEnv::err() << indent << "BlockedSCMatrix::assign_column: cannot assign column\n";
+  ExEnv::errn() << indent << "BlockedSCMatrix::assign_column: cannot assign column\n";
   abort();
 }
 
 void
 BlockedSCMatrix::accumulate_column(SCVector *v, int i)
 {
-  ExEnv::err() << indent
+  ExEnv::errn() << indent
        << "BlockedSCMatrix::accumulate_column: cannot accumulate column\n";
   abort();
 }
@@ -264,7 +264,7 @@ BlockedSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "BlockedSCMatrix::accumulate_outer_product(SCVector*,SCVector*): "
          << "dimensions don't match\n";
     abort();
@@ -288,7 +288,7 @@ BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
          << "dimensions don't match\n";
     abort();
@@ -326,7 +326,7 @@ BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): "
          << "dimensions don't match\n";
     abort();
@@ -355,7 +355,7 @@ BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b): "
          << "dimensions don't match\n";
     abort();
@@ -379,7 +379,7 @@ BlockedSCMatrix::accumulate(const SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-    ExEnv::err() << indent << "BlockedSCMatrix::accumulate(SCMatrix*a): "
+    ExEnv::errn() << indent << "BlockedSCMatrix::accumulate(SCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -398,7 +398,7 @@ BlockedSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-    ExEnv::err() << indent << "BlockedSCMatrix::accumulate(SymmSCMatrix*a): "
+    ExEnv::errn() << indent << "BlockedSCMatrix::accumulate(SymmSCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -417,7 +417,7 @@ BlockedSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-    ExEnv::err() << indent << "BlockedSCMatrix::accumulate(DiagSCMatrix*a): "
+    ExEnv::errn() << indent << "BlockedSCMatrix::accumulate(DiagSCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -437,7 +437,7 @@ BlockedSCMatrix::accumulate(const SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-    ExEnv::err() << indent << "BlockedSCMatrix::accumulate(SCVector*a): "
+    ExEnv::errn() << indent << "BlockedSCMatrix::accumulate(SCVector*a): "
          << "dimensions don't match\n";
     abort();
   }
@@ -475,7 +475,7 @@ BlockedSCMatrix::invert_this()
 
   // ok, let's make sure that the matrix is at least square
   if (d1->n() != d2->n()) {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "BlockedSCMatrix::invert_this: SVD not implemented yet\n";
     abort();
   }
@@ -514,7 +514,7 @@ BlockedSCMatrix::invert_this()
     return res;
 
   } else {
-    ExEnv::err() << indent
+    ExEnv::errn() << indent
          << "BlockedSCMatrix::invert_this: SVD not implemented yet\n";
     abort();
   }
@@ -525,7 +525,7 @@ BlockedSCMatrix::invert_this()
 void
 BlockedSCMatrix::gen_invert_this()
 {
-  ExEnv::err() << indent
+  ExEnv::errn() << indent
        << "BlockedSCMatrix::gen_invert_this: SVD not implemented yet\n";
   abort();
 }
@@ -578,7 +578,7 @@ BlockedSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
-    ExEnv::err() << indent << "BlockedSCMatrix::solve_this(SCVector*v): "
+    ExEnv::errn() << indent << "BlockedSCMatrix::solve_this(SCVector*v): "
          << "dimensions don't match\n";
     abort();
   }
@@ -598,7 +598,7 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-    ExEnv::err() << indent << "BlockedSCMatrix::schmidt_orthog(): "
+    ExEnv::errn() << indent << "BlockedSCMatrix::schmidt_orthog(): "
          << "dimensions don't match\n";
     abort();
   }
@@ -612,7 +612,7 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 int
 BlockedSCMatrix::schmidt_orthog_tol(SymmSCMatrix *S, double tol, double *res)
 {
-  ExEnv::err() << node0
+  ExEnv::err0()
                << "ERROR: BlockedSCMatrix::schmidt_orthog_tol doesn't exist"
                << endl;
   abort();
@@ -643,7 +643,7 @@ BlockedSCMatrix::element_op(const Ref<SCElementOp2>& op,
     = require_dynamic_cast<BlockedSCMatrix*>(m,"BlockedSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-    ExEnv::err() << indent << "BlockedSCMatrix: bad element_op\n";
+    ExEnv::errn() << indent << "BlockedSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -671,7 +671,7 @@ BlockedSCMatrix::element_op(const Ref<SCElementOp3>& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-    ExEnv::err() << indent << "BlockedSCMatrix: bad element_op\n";
+    ExEnv::errn() << indent << "BlockedSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -786,7 +786,7 @@ BlockedSCMatrix::restore(StateIn& s)
   s.get(nrt);
   s.get(nct);
   if (nrt != nr || nct != nc) {
-      ExEnv::err() << indent << "BlockedSCMatrix::restore(): bad dimensions" << endl;
+      ExEnv::errn() << indent << "BlockedSCMatrix::restore(): bad dimensions" << endl;
       abort();
     }
   int has_subblocks;
@@ -795,7 +795,7 @@ BlockedSCMatrix::restore(StateIn& s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          ExEnv::err() << indent
+          ExEnv::errn() << indent
                << "BlockedSCMatrix::restore(): nblock differs\n" << endl;
           abort();
         }
@@ -804,7 +804,7 @@ BlockedSCMatrix::restore(StateIn& s)
         }
     }
   else {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "BlockedSCMatrix::restore(): no subblocks--cannot restore"
            << endl;
       abort();

@@ -138,7 +138,7 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
   } else {
     tndocc_ = (nelectrons-tnsocc_)/2;
     if ((nelectrons-tnsocc_)%2) {
-      ExEnv::err() << node0 << endl << indent
+      ExEnv::err0() << endl << indent
            << "HSOSSCF::init: Warning, there's a leftover electron.\n"
            << incindent << indent << "total_charge = " << charge << endl
            << indent << "total nuclear charge = " << Znuc << endl
@@ -147,7 +147,7 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
     }
   }
 
-  ExEnv::out() << node0 << endl << indent
+  ExEnv::out0() << endl << indent
        << "HSOSSCF::init: total charge = " << Znuc-2*tndocc_-tnsocc_
        << endl << endl;
 
@@ -163,7 +163,7 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
     memcpy(initial_nsocc_, nsocc_, sizeof(int)*nirrep_);
   }
   else if (ndocc_ && !nsocc_ || !ndocc_ && nsocc_) {
-    ExEnv::out() << "ERROR: HSOSSCF: only one of docc and socc specified: "
+    ExEnv::outn() << "ERROR: HSOSSCF: only one of docc and socc specified: "
                  << "give both or none" << endl;
     abort();
   }
@@ -176,15 +176,15 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
     set_occupations(0);
   }
 
-  ExEnv::out() << node0 << indent << "docc = [";
+  ExEnv::out0() << indent << "docc = [";
   for (i=0; i < nirrep_; i++)
-    ExEnv::out() << node0 << " " << ndocc_[i];
-  ExEnv::out() << node0 << " ]\n";
+    ExEnv::out0() << " " << ndocc_[i];
+  ExEnv::out0() << " ]\n";
 
-  ExEnv::out() << node0 << indent << "socc = [";
+  ExEnv::out0() << indent << "socc = [";
   for (i=0; i < nirrep_; i++)
-    ExEnv::out() << node0 << " " << nsocc_[i];
-  ExEnv::out() << node0 << " ]\n";
+    ExEnv::out0() << " " << nsocc_[i];
+  ExEnv::out0() << " ]\n";
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -265,7 +265,7 @@ RefSymmSCMatrix
 HSOSSCF::fock(int n)
 {
   if (n > 1) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "HSOSSCF::fock: there are only two fock matrices, "
          << scprintf("but fock(%d) was requested\n",n);
     abort();
@@ -289,20 +289,20 @@ HSOSSCF::print(ostream&o) const
   int i;
   
   SCF::print(o);
-  o << node0 << indent << "HSOSSCF Parameters:\n" << incindent
+  o << indent << "HSOSSCF Parameters:\n" << incindent
     << indent << "charge = " << molecule()->nuclear_charge()
                                 - 2*tndocc_ - tnsocc_ << endl
     << indent << "ndocc = " << tndocc_ << endl
     << indent << "nsocc = " << tnsocc_ << endl
     << indent << "docc = [";
   for (i=0; i < nirrep_; i++)
-    o << node0 << " " << ndocc_[i];
-  o << node0 << " ]" << endl;
+    o << " " << ndocc_[i];
+  o << " ]" << endl;
 
-  o << node0 << indent << "socc = [";
+  o << indent << "socc = [";
   for (i=0; i < nirrep_; i++)
-    o << node0 << " " << nsocc_[i];
-  o << node0 << " ]" << endl << decindent << endl;
+    o << " " << nsocc_[i];
+  o << " ]" << endl << decindent << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -318,7 +318,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
     }
     delete[] ndocc_; ndocc_ = 0;
     delete[] nsocc_; nsocc_ = 0;
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
          << "HSOSSCF: WARNING: reforming occupation vectors from scratch"
          << endl;
   }
@@ -433,7 +433,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
       if (ndocc_[i] != newdocc[i]) {
-        ExEnv::err() << node0 << indent << "HSOSSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err0() << indent << "HSOSSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << scprintf("occupations for irrep %d have changed\n",i+1)
              << indent
@@ -441,7 +441,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
              << endl << decindent;
       }
       if (nsocc_[i] != newsocc[i]) {
-        ExEnv::err() << node0 << indent << "HSOSSCF::set_occupations:  WARNING!!!!\n"
+        ExEnv::err0() << indent << "HSOSSCF::set_occupations:  WARNING!!!!\n"
              << incindent << indent
              << scprintf("occupations for irrep %d have changed\n",i+1)
              << indent
@@ -840,7 +840,7 @@ HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
     if (threadgrp_->start_threads() < 0
         ||threadgrp_->wait_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "HSOSSCF: error running threads" << endl;
       abort();
     }
@@ -858,7 +858,7 @@ HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "HSOSSCF::two_body_deriv: can't do gradient yet\n";
     abort();
   }

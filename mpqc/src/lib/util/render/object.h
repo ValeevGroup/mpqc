@@ -62,7 +62,7 @@ class RenderedObject: public DescribedClass {
     void appearance(const Ref<Appearance>&a) { appearance_ = a; }
     void transform(const Ref<Transform>&t) { transform_ = t; }
 
-    virtual void print(std::ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out0()) const;
 
     // to be called only by derivatives of Render
     virtual void render(const Ref<Render>&) = 0;

@@ -133,7 +133,7 @@ PointGroup::PointGroup(StateIn& si) :
 {
   int i;
   if (si.version(::class_desc<PointGroup>()) < 2) {
-    ExEnv::err() << "PointGroup: checkpoint file is too old: cannot read"
+    ExEnv::errn() << "PointGroup: checkpoint file is too old: cannot read"
                  << endl;
     abort();
   }
@@ -228,7 +228,7 @@ PointGroup::print(ostream &o) const
 {
   int i,j;
 
-  o << node0 << indent << "symmetry = " << symb << endl;
+  o << indent << "symmetry = " << symb << endl;
 
   int unit_frame = 1;
   int zero_origin = 1;
@@ -241,26 +241,26 @@ PointGroup::print(ostream &o) const
   }
 
   if (!unit_frame) {
-    o << node0 << indent << "symmetry_frame = [";
+    o << indent << "symmetry_frame = [";
     o << incindent;
     for (i=0; i<3; i++) {
-      o << node0 << endl << indent;
-      o << node0 << "[";
+      o << endl << indent;
+      o << "[";
       for (j=0; j<3; j++) {
-        o << node0 << scprintf(" % 18.16f", frame(i,j));
+        o << scprintf(" % 18.16f", frame(i,j));
       }
-      o << node0 << "]";
+      o << "]";
     }
-    o << node0 << "]" << endl;
+    o << "]" << endl;
     o << decindent;
   }
 
   if (!zero_origin) {
-    o << node0 << indent << "origin = [";
+    o << indent << "origin = [";
     for (i=0; i<3; i++) {
-      o << node0 << scprintf(" % 18.16f", origin_[i]);
+      o << scprintf(" % 18.16f", origin_[i]);
     }
-    o << node0 << "]" << endl;
+    o << "]" << endl;
   }
 }
 

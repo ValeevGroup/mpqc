@@ -92,12 +92,12 @@ SphericalTransformIter *
 IntegralV3::new_spherical_transform_iter(int l, int inv, int subl)
 {
   if (l>maxl_ || l<0) {
-      ExEnv::err() << "IntegralV3::new_spherical_transform_iter: bad l" << endl;
+      ExEnv::errn() << "IntegralV3::new_spherical_transform_iter: bad l" << endl;
       abort();
     }
   if (subl == -1) subl = l;
   if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::err() << "IntegralV3::new_spherical_transform_iter: bad subl" << endl;
+      ExEnv::errn() << "IntegralV3::new_spherical_transform_iter: bad subl" << endl;
       abort();
     }
   if (inv) {
@@ -110,12 +110,12 @@ const SphericalTransform *
 IntegralV3::spherical_transform(int l, int inv, int subl)
 {
   if (l>maxl_ || l<0) {
-      ExEnv::err() << "IntegralV3::spherical_transform_iter: bad l" << endl;
+      ExEnv::errn() << "IntegralV3::spherical_transform_iter: bad l" << endl;
       abort();
     }
   if (subl == -1) subl = l;
   if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::err() << "IntegralV3::spherical_transform_iter: bad subl" << endl;
+      ExEnv::errn() << "IntegralV3::spherical_transform_iter: bad subl" << endl;
       abort();
     }
   if (inv) {

@@ -152,7 +152,7 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
-    ExEnv::out() << incindent << incindent;
+    ExEnv::out0() << incindent << incindent;
     guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
     compute_guess_=1;
     if (guess_wfn_.null()) {
@@ -174,7 +174,7 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
         delete[] path;
       }
     }
-    ExEnv::out() << decindent << decindent;
+    ExEnv::out0() << decindent << decindent;
   }
 }
 
@@ -233,7 +233,7 @@ void
 SCF::print(ostream&o) const
 {
   OneBodyWavefunction::print(o);
-  o << node0 << indent << "SCF Parameters:\n" << incindent
+  o << indent << "SCF Parameters:\n" << incindent
     << indent << "maxiter = " << maxiter_ << endl
     << indent << "density_reset_frequency = " << dens_reset_freq_ << endl
     << indent << scprintf("level_shift = %f\n",level_shift_)
@@ -258,7 +258,7 @@ SCF::compute()
 
   double delta;
   if (value_needed()) {
-    ExEnv::out() << node0 << endl << indent
+    ExEnv::out0() << endl << indent
          << scprintf("SCF::compute: energy accuracy = %10.7e\n",
                      desired_value_accuracy())
          << endl;
@@ -270,7 +270,7 @@ SCF::compute()
     double nucrep = molecule()->nuclear_repulsion_energy();
     double eother = 0.0;
     if (accumddh_.nonnull()) eother = accumddh_->e();
-    ExEnv::out() << node0 << endl << indent
+    ExEnv::out0() << endl << indent
          << scprintf("total scf energy = %15.10f", eelec+eother+nucrep)
          << endl;
 
@@ -284,7 +284,7 @@ SCF::compute()
   if (gradient_needed()) {
     RefSCVector gradient = matrixkit()->vector(moldim());
 
-    ExEnv::out() << node0 << endl << indent
+    ExEnv::out0() << endl << indent
          << scprintf("SCF::compute: gradient accuracy = %10.7e\n",
                      desired_gradient_accuracy())
          << endl;
@@ -299,7 +299,7 @@ SCF::compute()
   if (hessian_needed()) {
     RefSymmSCMatrix hessian = matrixkit()->symmmatrix(moldim());
     
-    ExEnv::out() << node0 << endl << indent
+    ExEnv::out0() << endl << indent
          << scprintf("SCF::compute: hessian accuracy = %10.7e\n",
                      desired_hessian_accuracy())
          << endl;
@@ -396,11 +396,11 @@ SCF::initial_vector(int needv)
         if (basis()->equiv(guess_wfn_->basis())
             &&orthog_method() == guess_wfn_->orthog_method()
             &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
-          ExEnv::out() << node0 << indent
+          ExEnv::out0() << indent
                << "Using guess wavefunction as starting vector" << endl;
 
           // indent output of eigenvectors() call if there is any
-          ExEnv::out() << incindent << incindent;
+          ExEnv::out0() << incindent << incindent;
           SCF *g = dynamic_cast<SCF*>(guess_wfn_.pointer());
           if (!g || compute_guess_) {
             oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
@@ -409,27 +409,27 @@ SCF::initial_vector(int needv)
             oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
             eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
           }
-          ExEnv::out() << decindent << decindent;
+          ExEnv::out0() << decindent << decindent;
         } else {
-          ExEnv::out() << node0 << indent
+          ExEnv::out0() << indent
                << "Projecting guess wavefunction into the present basis set"
                << endl;
 
           // indent output of projected_eigenvectors() call if there is any
-          ExEnv::out() << incindent << incindent;
+          ExEnv::out0() << incindent << incindent;
           oso_eigenvectors_ = projected_eigenvectors(guess_wfn_);
           eigenvalues_ = projected_eigenvalues(guess_wfn_);
-          ExEnv::out() << decindent << decindent;
+          ExEnv::out0() << decindent << decindent;
         }
 
         // we should only have to do this once, so free up memory used
         // for the old wavefunction, unless told otherwise
         if (!keep_guess_wfn_) guess_wfn_=0;
 
-        ExEnv::out() << node0 << endl;
+        ExEnv::out0() << endl;
       
       } else {
-        ExEnv::out() << node0 << indent << "Starting from core Hamiltonian guess\n"
+        ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
              << endl;
         oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
       }
@@ -616,7 +616,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
     // for now quit
     else {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "Cannot yet use anything but Local matrices"
            << endl;
       abort();
@@ -624,7 +624,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   }
 
   if (debug_ > 0) {
-    ExEnv::out() << node0 << indent
+    ExEnv::out0() << indent
          << "Nelectron = " << 2.0 * (d * overlap()).trace() << endl;
   }
 
@@ -643,12 +643,12 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
     d2.accumulate_transform(vector, occ);
     if (debug_ > 2) {
       d2.print("d2 density");
-      ExEnv::out() << node0 << indent << "d2 Nelectron = "
+      ExEnv::out0() << indent << "d2 Nelectron = "
                    << 2.0 * (d2 * overlap()).trace() << endl;
     }
     if (use_alternate_density) {
       d.assign(d2);
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
                    << "using alternate density algorithm" << endl;
     }
   }
@@ -686,7 +686,7 @@ SCF::one_body_energy()
 void
 SCF::two_body_energy(double &ec, double &ex)
 {
-  ExEnv::err() << class_name() << ": two_body_energy not implemented" << endl;
+  ExEnv::errn() << class_name() << ": two_body_energy not implemented" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -720,7 +720,7 @@ SCF::read_occ(const Ref<KeyVal> &keyval, const char *name, int nirrep)
   int *occ = 0;
   if (keyval->exists(name)) {
     if (keyval->count(name) != nirrep) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
                    << "ERROR: SCF: have " << nirrep << " irreps but "
                    << name << " vector is length " << keyval->count(name)
                    << endl;

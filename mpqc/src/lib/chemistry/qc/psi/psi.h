@@ -26,7 +26,7 @@ class PsiWfn: public Wavefunction {
     double density(const SCVector3&);
     RefSymmSCMatrix density();
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 
     int spin_polarized();
     int nelectron();

@@ -404,7 +404,7 @@ TriangulatedSurface::add_vertex(const Ref<Vertex>&t)
       _index_to_vertex.push_back(t);
       _vertex_to_index[t] = i;
       if (_index_to_vertex.size() != _vertex_to_index.length()) {
-          ExEnv::err() << "TriangulatedSurface::add_vertex: length mismatch" << endl;
+          ExEnv::errn() << "TriangulatedSurface::add_vertex: length mismatch" << endl;
           abort();
         }
     }
@@ -419,7 +419,7 @@ TriangulatedSurface::add_edge(const Ref<Edge>&t)
       _index_to_edge.push_back(t);
       _edge_to_index[t] = i;
       if (_index_to_edge.size() != _edge_to_index.length()) {
-          ExEnv::err() << "TriangulatedSurface::add_edge: length mismatch" << endl;
+          ExEnv::errn() << "TriangulatedSurface::add_edge: length mismatch" << endl;
           abort();
         }
     }
@@ -435,7 +435,7 @@ TriangulatedSurface::add_triangle(const Ref<Triangle>&t)
       _index_to_triangle.push_back(t);
       _triangle_to_index[t] = i;
       if (_index_to_triangle.size() != _triangle_to_index.length()) {
-          ExEnv::err() << "TriangulatedSurface::add_triangle: length mismatch" << endl;
+          ExEnv::errn() << "TriangulatedSurface::add_triangle: length mismatch" << endl;
           abort();
         }
     }
@@ -865,7 +865,7 @@ TriangulatedImplicitSurface(const Ref<KeyVal>&keyval):
 
   vol_ << keyval->describedclassvalue("volume");
   if (keyval->error() != KeyVal::OK) {
-      ExEnv::err() << "TriangulatedImplicitSurface(const Ref<KeyVal>&keyval): "
+      ExEnv::errn() << "TriangulatedImplicitSurface(const Ref<KeyVal>&keyval): "
            << "requires \"volume\"" << endl;
       abort();
     }
@@ -907,18 +907,18 @@ TriangulatedImplicitSurface(const Ref<KeyVal>&keyval):
 void
 TriangulatedImplicitSurface::init()
 {
-  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: init start" << endl;
+  if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: init start" << endl;
   ImplicitSurfacePolygonizer isogen(vol_);
   isogen.set_resolution(resolution_);
 
-  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: isosurface" << endl;
+  if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: isosurface" << endl;
   isogen.isosurface(isovalue_,*this);
 #if WRITE_OOGL
   if (_debug) {
       render(new OOGLRender("surfiso.oogl"));
     }
 #endif
-  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: orientation" << endl;
+  if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: orientation" << endl;
   if (fix_orientation_) fix_orientation();
 #if WRITE_OOGL
   if (_debug) {
@@ -926,25 +926,25 @@ TriangulatedImplicitSurface::init()
     }
 #endif
   if (remove_short_edges_) {
-      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: short edges" << endl;
+      if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: short edges" << endl;
       remove_short_edges(short_edge_factor_*resolution_,vol_,isovalue_);
-      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: orientation" << endl;
+      if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: orientation" << endl;
       if (fix_orientation_) fix_orientation();
     }
   if (remove_slender_triangles_ || remove_small_triangles_) {
-      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: slender" << endl;
+      if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: slender" << endl;
       double height_cutoff = slender_triangle_factor_ * resolution_;
       double area_cutoff = small_triangle_factor_*resolution_*resolution_*0.5;
       remove_slender_triangles(remove_slender_triangles_, height_cutoff,
                                remove_small_triangles_, area_cutoff,
                                vol_,isovalue_);
-      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: orientation" << endl;
+      if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: orientation" << endl;
       if (fix_orientation_) fix_orientation();
     }
 
   // see if a higher order approximation to the surface is required
   if (order_ > 1) {
-      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: order" << endl;
+      if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: order" << endl;
       int i;
       for (i=0; i<nedge(); i++) {
           edge(i)->set_order(order_, vol_, isovalue_);
@@ -954,7 +954,7 @@ TriangulatedImplicitSurface::init()
         }
     }
   inited_ = 1;
-  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: init done" << endl;
+  if (_verbose) ExEnv::outn() << "TriangulatedImplicitSurface: init done" << endl;
 }
 
 TriangulatedImplicitSurface::~TriangulatedImplicitSurface()

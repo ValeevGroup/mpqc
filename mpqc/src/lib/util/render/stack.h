@@ -40,14 +40,14 @@ class Stack {
     Stack(): nobjects(0) {}
     void push(const T&a) {
         if (nobjects >= STACK_MAX_STACK_SIZE) {
-            ExEnv::err() << "Stack: overflow" << std::endl;
+            ExEnv::errn() << "Stack: overflow" << std::endl;
             abort();
           }
         objects[nobjects++] = a;
       }
     T pop() {
         if (!nobjects) {
-            ExEnv::err() << "Stack: underflow" << std::endl;
+            ExEnv::errn() << "Stack: underflow" << std::endl;
             abort();
           }
         nobjects -= 1;
@@ -55,7 +55,7 @@ class Stack {
       }
     T top() const {
         if (!nobjects) {
-            ExEnv::err() << "Stack: underflow" << std::endl;
+            ExEnv::errn() << "Stack: underflow" << std::endl;
             abort();
           }
         return objects[nobjects - 1];

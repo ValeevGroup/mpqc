@@ -38,7 +38,7 @@ using namespace std;
 static void
 no_storage(const char *msg)
 {
-  ExEnv::err() << msg << ": ran out of memory" << endl;
+  ExEnv::errn() << msg << ": ran out of memory" << endl;
   abort();
 }
 

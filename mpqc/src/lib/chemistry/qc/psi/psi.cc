@@ -66,11 +66,11 @@ PsiWfn::compute()
   if (!psi_in.test()){
       write_input((int)-log10(energy_acc));
       if (system("inputth")) {
-          ExEnv::out() << "PsiWfn: inputth failed" << endl;
+          ExEnv::outn() << "PsiWfn: inputth failed" << endl;
           abort();
         }
       if (system("psi")) {
-          ExEnv::out() << "PsiWfn: psi failed" << endl;
+          ExEnv::outn() << "PsiWfn: psi failed" << endl;
           abort();
         }
     }
@@ -94,13 +94,13 @@ PsiWfn::compute()
                 }
             }
           if (!gotj) {
-              ExEnv::err() << "ERROR: Psi: atom "<<i<<" not found in file11" << endl;
+              ExEnv::errn() << "ERROR: Psi: atom "<<i<<" not found in file11" << endl;
               abort();
             }
         }
-      ExEnv::out() << node0 << indent << " Psi<->MPQC atom reordering:";
-      for(i=0; i<molecule()->natom(); i++) ExEnv::out() << node0 << " " << reorder[i];
-      ExEnv::out() << node0 << endl;
+      ExEnv::out0() << indent << " Psi<->MPQC atom reordering:";
+      for(i=0; i<molecule()->natom(); i++) ExEnv::out0() << " " << reorder[i];
+      ExEnv::out0() << endl;
 
       RefSCVector g(moldim(),matrixkit());
 
@@ -237,13 +237,13 @@ PsiCCSD::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"CCSD \" energy.dat > psitmp.energy")) {
-          ExEnv::out() << "PsiWfn: could not find CCSD energy in output file" << endl;
+          ExEnv::outn() << "PsiWfn: could not find CCSD energy in output file" << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      ExEnv::err() << "PsiCCSD::read_energy(): cannot open psitmp.energy" << endl;
+      ExEnv::errn() << "PsiCCSD::read_energy(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -312,14 +312,14 @@ PsiCCSD_T::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"CCT \" energy.dat > psitmp.energy")) {
-          ExEnv::out() << "PsiWfn: could not find CCSD(T) energy in output file"
+          ExEnv::outn() << "PsiWfn: could not find CCSD(T) energy in output file"
                << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      ExEnv::err() << "PsiCCSD_T::read_energy(): cannot open psitmp.energy" << endl;
+      ExEnv::errn() << "PsiCCSD_T::read_energy(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -388,14 +388,14 @@ PsiCCSDT::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"FSDT \" energy.dat > psitmp.energy")) {
-          ExEnv::out() << "PsiWfn: could not find CCSDT energy in output file"
+          ExEnv::outn() << "PsiWfn: could not find CCSDT energy in output file"
                << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      ExEnv::err() << "PsiCCSDT::read_energy(): cannot open psitmp.energy" << endl;
+      ExEnv::errn() << "PsiCCSDT::read_energy(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -460,14 +460,14 @@ PsiCI::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"1 ECI \" output.dat > psitmp.energy")) {
-          ExEnv::out() << "PsiWfn: could not find CI energy in output file"
+          ExEnv::outn() << "PsiWfn: could not find CI energy in output file"
                << endl;
           abort();
         }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
-      ExEnv::err() << "PsiCI::compute(): cannot open psitmp.energy" << endl;
+      ExEnv::errn() << "PsiCI::compute(): cannot open psitmp.energy" << endl;
       abort();
     }
   double r;
@@ -525,7 +525,7 @@ PsiHF::read_energy()
   remove("psitmp.energy");
   if(!psi_in.test()){
       if (system("grep \"total energy *=\" output.dat > psitmp.energy")) {
-          ExEnv::out() << "PsiWfn: could not find Hartree-Fock energy in output file"
+          ExEnv::outn() << "PsiWfn: could not find Hartree-Fock energy in output file"
                << endl;
           abort();
         }

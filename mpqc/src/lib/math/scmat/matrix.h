@@ -119,7 +119,7 @@ class RefSCVector: public Ref<SCVector> {
                     const RefSCVector&) const;
     void print(std::ostream&out) const;
     void print(const char*title=0,
-               std::ostream&out=ExEnv::out(), int precision=10) const;
+               std::ostream&out=ExEnv::out0(), int precision=10) const;
     void save(StateOut&);
     void restore(StateIn&);
 };
@@ -222,7 +222,7 @@ class RefSCMatrix: public Ref<SCMatrix> {
     double get_element(int,int) const;
     void print(std::ostream&) const;
     void print(const char*title=0,
-               std::ostream&out=ExEnv::out(), int =10) const;
+               std::ostream&out=ExEnv::out0(), int =10) const;
     double trace() const;
     void save(StateOut&);
     void restore(StateIn&);
@@ -331,7 +331,7 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     Ref<SCMatrixKit> kit() const;
     void print(std::ostream&) const;
     void print(const char*title=0,
-               std::ostream&out=ExEnv::out(), int =10) const;
+               std::ostream&out=ExEnv::out0(), int =10) const;
     void save(StateOut&);
     void restore(StateIn&);
 
@@ -412,7 +412,7 @@ class RefDiagSCMatrix: public Ref<DiagSCMatrix> {
     double trace() const;
     void print(std::ostream&) const;
     void print(const char*title=0,
-               std::ostream&out=ExEnv::out(), int =10) const;
+               std::ostream&out=ExEnv::out0(), int =10) const;
     void save(StateOut&);
     void restore(StateIn&);
     /// Returns the determinant of the referenced matrix.

@@ -86,7 +86,7 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
 
   mol_ << keyval->describedclassvalue("molecule");
   if (mol_.null()) {
-      ExEnv::err() << indent << "MolecularEnergy(Keyval): no molecule found"
+      ExEnv::errn() << indent << "MolecularEnergy(Keyval): no molecule found"
            << endl;
       abort();
     }
@@ -181,7 +181,7 @@ MolecularEnergy::save_data_state(StateOut&s)
 void
 MolecularEnergy::failure(const char * msg)
 {
-  ExEnv::err() << node0 << indent << "MolecularEnergy::failure: " << msg << endl;
+  ExEnv::err0() << indent << "MolecularEnergy::failure: " << msg << endl;
   abort();
 }
 
@@ -264,7 +264,7 @@ MolecularEnergy::set_x(const RefSCVector&v)
   Function::set_x(v);
   x_to_molecule();
   if (print_molecule_when_changed_) {
-      ExEnv::out() << node0 << endl << indent << class_name()
+      ExEnv::out0() << endl << indent << class_name()
            << ": changing atomic coordinates:" << endl;
       molecule()->print();
     }
@@ -288,7 +288,7 @@ MolecularEnergy::get_cartesian_gradient()
 {
   gradient();
   if (cartesian_gradient_.null()) {
-      ExEnv::err() << "MolecularEnergy::get_cartesian_gradient(): "
+      ExEnv::errn() << "MolecularEnergy::get_cartesian_gradient(): "
            << "cartesian gradient not available"
            << endl;
       abort();
@@ -301,7 +301,7 @@ MolecularEnergy::get_cartesian_hessian()
 {
   hessian();
   if (cartesian_hessian_.null()) {
-      ExEnv::err() << "MolecularEnergy::get_cartesian_hessian(): "
+      ExEnv::errn() << "MolecularEnergy::get_cartesian_hessian(): "
            << "cartesian hessian not available"
            << endl;
       abort();
@@ -403,20 +403,20 @@ MolecularEnergy::print_natom_3(const RefSCVector &v,
   int lwidth = precision + 4;
   int n = v.n()/3;
   if (title) {
-    o << node0 << indent << title << endl;
-    o << node0 << incindent;
+    o << indent << title << endl;
+    o << incindent;
   }
   for (int i=0,ii=0; i<n; i++) {
-    o << node0 << indent
+    o << indent
       << scprintf("%4d %3s",
                   i+1,AtomInfo::symbol(molecule()->Z(i)));
     for (int j=0; j<3; j++,ii++) {
-      o << node0 << scprintf(" % *.*f", lwidth,precision,double(v(ii)));
+      o << scprintf(" % *.*f", lwidth,precision,double(v(ii)));
     }
-    o << node0 << endl;
+    o << endl;
   }
   if (title) {
-    o << node0 << decindent;
+    o << decindent;
   }
   o.flush();
 }
@@ -429,20 +429,20 @@ MolecularEnergy::print_natom_3(double **vn3,
   int lwidth = precision + 4;
   int n = molecule()->natom();
   if (title) {
-    o << node0 << indent << title << endl;
-    o << node0 << incindent;
+    o << indent << title << endl;
+    o << incindent;
   }
   for (int i=0; i<n; i++) {
-    o << node0 << indent
+    o << indent
       << scprintf("%4d %3s",
                   i+1,AtomInfo::symbol(molecule()->Z(i)));
     for (int j=0; j<3; j++) {
-      o << node0 << scprintf(" % *.*f", lwidth,precision,double(vn3[i][j]));
+      o << scprintf(" % *.*f", lwidth,precision,double(vn3[i][j]));
     }
-    o << node0 << endl;
+    o << endl;
   }
   if (title) {
-    o << node0 << decindent;
+    o << decindent;
   }
   o.flush();
 }
@@ -455,20 +455,20 @@ MolecularEnergy::print_natom_3(double *vn3,
   int lwidth = precision + 4;
   int n = molecule()->natom();
   if (title) {
-    o << node0 << indent << title << endl;
-    o << node0 << incindent;
+    o << indent << title << endl;
+    o << incindent;
   }
   for (int i=0; i<n; i++) {
-    o << node0 << indent
+    o << indent
       << scprintf("%4d %3s",
                   i+1,AtomInfo::symbol(molecule()->Z(i)));
     for (int j=0; j<3; j++) {
-      o << node0 << scprintf(" % *.*f", lwidth,precision,double(vn3[3*i+j]));
+      o << scprintf(" % *.*f", lwidth,precision,double(vn3[3*i+j]));
     }
-    o << node0 << endl;
+    o << endl;
   }
   if (title) {
-    o << node0 << decindent;
+    o << decindent;
   }
   o.flush();
 }
@@ -478,14 +478,14 @@ MolecularEnergy::print(ostream&o) const
 {
   Function::print(o);
   if (mc_.nonnull()) {
-      o << node0 << indent << "Molecular Coordinates:\n" << incindent;
+      o << indent << "Molecular Coordinates:\n" << incindent;
       mc_->print(o);
-      o << node0 << decindent;
+      o << decindent;
     }
   else {
-      o << node0 << indent << "Molecule:\n" << incindent;
+      o << indent << "Molecule:\n" << incindent;
       mol_->print(o);
-      o << node0 << decindent << endl;
+      o << decindent << endl;
     }
 }
 
@@ -507,7 +507,7 @@ SumMolecularEnergy::SumMolecularEnergy(const Ref<KeyVal> &keyval):
       coef_[i] = keyval->intvalue("coef",i);
       if (mole_[i].null()
           || mole_[i]->molecule()->natom() != molecule()->natom()) {
-          ExEnv::err() << "SumMolecularEnergy: a mole is null or has a molecule"
+          ExEnv::errn() << "SumMolecularEnergy: a mole is null or has a molecule"
                << " with the wrong number of atoms" << endl;
           abort();
         }
@@ -595,26 +595,26 @@ SumMolecularEnergy::compute()
   for (i=0; i<n_; i++)
       old_do_hessian[i] = mole_[i]->do_hessian(hessian_.compute());
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "SumMolecularEnergy: compute" << endl;
 
-  ExEnv::out() << incindent;
+  ExEnv::out0() << incindent;
 
   if (value_needed()) {
       double val = 0.0;
       for (i=0; i<n_; i++) {
           val += coef_[i] * mole_[i]->value();
         }
-      ExEnv::out() << node0 << endl << indent
+      ExEnv::out0() << endl << indent
            << "SumMolecularEnergy =" << endl;
       for (i=0; i<n_; i++) {
-          ExEnv::out() << node0 << indent
+          ExEnv::out0() << indent
                << scprintf("  %c % 16.12f * % 16.12f",
                            (i==0?' ':'+'),
                            coef_[i], mole_[i]->value())
                << endl;
         }
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << scprintf("  = % 16.12f", val) << endl;
       set_energy(val);
     }
@@ -633,7 +633,7 @@ SumMolecularEnergy::compute()
       set_hessian(hessianmat);
     }
 
-  ExEnv::out() << decindent;
+  ExEnv::out0() << decindent;
 
   for (i=0; i<n_; i++) mole_[i]->do_value(old_do_value[i]);
   for (i=0; i<n_; i++) mole_[i]->do_gradient(old_do_gradient[i]);
@@ -670,7 +670,7 @@ MolEnergyConvergence::MolEnergyConvergence(const Ref<KeyVal>&keyval)
 {
   mole_ << keyval->describedclassvalue("energy");
   if (mole_.null()) {
-      ExEnv::err() << "MolEnergyConvergence(const Ref<KeyVal>&keyval): "
+      ExEnv::errn() << "MolEnergyConvergence(const Ref<KeyVal>&keyval): "
            << "require an energy keyword of type MolecularEnergy"
            << endl;
       abort();

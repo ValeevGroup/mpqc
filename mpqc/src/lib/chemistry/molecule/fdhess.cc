@@ -344,7 +344,7 @@ FinDispMolecularHessian::get_disp(int disp, int &irrep,
       }
     disp_offset += displacements(i).ncol();
     }
-  ExEnv::err() << node0 << indent
+  ExEnv::err0() << indent
        << "FinDispMolecularHessian::get_disp: bad disp number" << endl;
   abort();
 }
@@ -412,7 +412,7 @@ FinDispMolecularHessian::displace(int disp)
        << incindent << mol_ << decindent;
 #endif
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Displacement is "
        << displacement_point_group_->char_table().gamma(irrep).symbol()
        << " in " << displacement_point_group_->symbol()
@@ -541,25 +541,25 @@ FinDispMolecularHessian::cartesian_hessian()
   if (restart_) restart();
   else init();
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Computing molecular hessian from "
        << ndisplace() << " displacements:" << endl
        << indent << "Starting at displacement: "
        << ndisplacements_done() << endl;
-  ExEnv::out() << node0 << indent << "Hessian options: " << endl;
-  ExEnv::out() << node0 << indent << "  displacement: " << disp_
+  ExEnv::out0() << indent << "Hessian options: " << endl;
+  ExEnv::out0() << indent << "  displacement: " << disp_
                << " bohr" << endl;
-  ExEnv::out() << node0 << indent << "  gradient_accuracy: "
+  ExEnv::out0() << indent << "  gradient_accuracy: "
                << accuracy_ << " au" << endl;
-  ExEnv::out() << node0 << indent << "  eliminate_cubic_terms: "
+  ExEnv::out0() << indent << "  eliminate_cubic_terms: "
                << (eliminate_cubic_terms_==0?"no":"yes") << endl;
-  ExEnv::out() << node0 << indent << "  only_totally_symmetric: "
+  ExEnv::out0() << indent << "  only_totally_symmetric: "
                << (only_totally_symmetric_==0?"no":"yes") << endl;
 
   for (int i=ndisplacements_done(); i<ndisplace(); i++) {
     // This produces side-effects in mol and may even change
     // its symmetry.
-    ExEnv::out() << node0 << endl << indent
+    ExEnv::out0() << endl << indent
          << "Beginning displacement " << i << ":" << endl;
     displace(i);
 

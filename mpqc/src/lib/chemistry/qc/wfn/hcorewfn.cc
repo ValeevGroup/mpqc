@@ -88,13 +88,13 @@ HCoreWfn::HCoreWfn(const Ref<KeyVal>&keyval):
     else total_charge_ = 0;
     }
   else if (total_charge_ != computed_charge && user_occ_) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
                  << "ERROR: HCoreWfn: total_charge != computed_charge"
                  << endl;
     abort();
     }
   if (total_charge_ > nuclear_charge) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
                  << "ERROR: HCoreWfn: total_charge > nuclear_charge"
                  << endl;
     abort();
@@ -155,13 +155,13 @@ HCoreWfn::oso_eigenvectors()
       int nsocc = nelectron%2;
       fill_occ(val, ndocc, docc_, nsocc, socc_);
 
-      ExEnv::out() << node0 << indent << "docc = [";
-      for (int i=0; i<nirrep_; i++) ExEnv::out() << node0 << " " << docc_[i];
-      ExEnv::out() << node0 << "]" << endl;
+      ExEnv::out0() << indent << "docc = [";
+      for (int i=0; i<nirrep_; i++) ExEnv::out0() << " " << docc_[i];
+      ExEnv::out0() << "]" << endl;
 
-      ExEnv::out() << node0 << indent << "socc = [";
-      for (int i=0; i<nirrep_; i++) ExEnv::out() << node0 << " " << socc_[i];
-      ExEnv::out() << node0 << "]" << endl;
+      ExEnv::out0() << indent << "socc = [";
+      for (int i=0; i<nirrep_; i++) ExEnv::out0() << " " << socc_[i];
+      ExEnv::out0() << "]" << endl;
       }
   }
   
@@ -187,7 +187,7 @@ HCoreWfn::density()
     BlockedDiagSCMatrix *modens
       = dynamic_cast<BlockedDiagSCMatrix*>(mo_density.pointer());
     if (!modens) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
                    << "HCoreWfn::density: wrong MO matrix kit" << endl;
       abort();
     }
@@ -211,7 +211,7 @@ HCoreWfn::density()
     if (debug_ > 1) {
       mo_density.print("MO Density");
       dens.print("SO Density");
-      ExEnv::out() << node0
+      ExEnv::out0()
                    << indent << "Nelectron(MO) = " << mo_density.trace()
                    << endl
                    << indent << "Nelectron(SO) = "
@@ -262,17 +262,17 @@ HCoreWfn::compute()
   if (debug_ > 1) h_oso.print("OSO Hamiltonian");
   double e = (h_oso*p_oso).trace();
   if (debug_ > 0) {
-    ExEnv::out() << node0 << indent << "HCoreWfn: e(OSO) = " << e << endl;
+    ExEnv::out0() << indent << "HCoreWfn: e(OSO) = " << e << endl;
     RefSymmSCMatrix h_so(core_hamiltonian());
     RefSymmSCMatrix p_so(density());
     RefSymmSCMatrix s_so(overlap());
     double e2 = (s_so.gi()*h_so*s_so.gi()*p_so).trace();
-    ExEnv::out() << node0 << indent << "HCoreWfn: e(SO)  = " << e2 << endl;
+    ExEnv::out0() << indent << "HCoreWfn: e(SO)  = " << e2 << endl;
     RefSymmSCMatrix h_ao(integral()->petite_list()->to_AO_basis(h_so));
     RefSymmSCMatrix p_ao(integral()->petite_list()->to_AO_basis(p_so));
     RefSymmSCMatrix s_ao(integral()->petite_list()->to_AO_basis(s_so));
     double e3 = (s_ao.gi()*h_ao*s_ao.gi()*p_ao).trace();
-    ExEnv::out() << node0 << indent << "HCoreWfn: e(AO)  = " << e3 << endl;
+    ExEnv::out0() << indent << "HCoreWfn: e(AO)  = " << e3 << endl;
   }
   set_energy(e);
   set_actual_value_accuracy(desired_value_accuracy());
@@ -294,7 +294,7 @@ HCoreWfn::fill_occ(const RefDiagSCMatrix &evals,int ndocc,int *docc,
                                            "HCoreWave: getting occupations");
   int nblock = bval->nblocks();
   if (nblock != nirrep_) {
-    ExEnv::err() << "ERROR: HCoreWfn: fill_occ: nblock != nirrep" << endl
+    ExEnv::errn() << "ERROR: HCoreWfn: fill_occ: nblock != nirrep" << endl
                  << "  nblock = " << nblock << endl
                  << "  nirrep = " << nirrep_ << endl;
     abort();

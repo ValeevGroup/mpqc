@@ -52,6 +52,7 @@ class ExEnv {
     static int nproc_;
 
     static std::ostream *out_;
+    static std::ostream *nullstream_;
   public:
     /// Set the argument count and vector.
     static void init(int &argcref, char **&argvref);
@@ -65,16 +66,23 @@ class ExEnv {
     static const char *program_name();
     /// Return the host name.
     static const char *hostname() { return hostname_; }
+    /// Return the user name.
     static const char *username() { return username_; }
 
     static void set_out(std::ostream *o) { SCFormIO::init_ostream(*o);out_=o; }
-    static std::ostream &out() { if (!out_)set_out(&std::cout);return *out_; }
-    static std::ostream &err() { return out(); }
+    /// Return an ostream that writes from all nodes.
+    static std::ostream &outn() { if (!out_)set_out(&std::cout);return *out_; }
+    /// Return an ostream for error messages that writes from all nodes.
+    static std::ostream &errn() { return outn(); }
+    /// Return an ostream that writes from node 0.
+    static std::ostream &out0();
+    /// Return an ostream for error messages that writes from node 0.
+    static std::ostream &err0() { return out0(); }
 
     /// The amount of memory on this node.
-    static size_t memory() { if (!initialized_) err(); return mem_; }
+    static size_t memory() { return mem_; }
     /// The number of processors on this node.
-    static int nproc() { if (!initialized_) err(); return nproc_; }
+    static int nproc() { return nproc_; }
 };
 
 #endif

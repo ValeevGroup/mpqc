@@ -292,13 +292,13 @@ DenIntegrator::init(const Ref<Wavefunction> &wfn)
 {
   wfn_ = wfn;
   if (linear_scaling_) {
-      ExEnv::out() << node0 << indent << "Initializing ShellExtent" << endl;
+      ExEnv::out0() << indent << "Initializing ShellExtent" << endl;
       extent_ = new ShellExtent;
       extent_->init(wfn_->basis());
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << "  nshell = " << wfn_->basis()->nshell() << endl;
       int ncell = extent_->n(0)*extent_->n(1)*extent_->n(2);
-      ExEnv::out() << node0 << indent << "  ncell = " << ncell << endl;
+      ExEnv::out0() << indent << "  ncell = " << ncell << endl;
       int maxval = 0;
       double ave = 0;
       for (int i=0; i<extent_->n(0); i++) {
@@ -313,8 +313,8 @@ DenIntegrator::init(const Ref<Wavefunction> &wfn)
             }
         }
       ave /= ncell;
-      ExEnv::out() << node0 << indent << "  ave nsh/cell = " << ave << endl;
-      ExEnv::out() << node0 << indent << "  max nsh/cell = " << maxval << endl;
+      ExEnv::out0() << indent << "  ave nsh/cell = " << ave << endl;
+      ExEnv::out0() << indent << "  max nsh/cell = " << maxval << endl;
     }
 }
 
@@ -619,7 +619,7 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
       for (i=0; i<nshell_; i++) contrib_[i] = i;
     }
   if (ncontrib_ > nshell_) {
-      ExEnv::out() << "DenIntegratorThread::do_point: ncontrib invalid"
+      ExEnv::outn() << "DenIntegratorThread::do_point: ncontrib invalid"
                    << endl;
       abort();
     }
@@ -855,8 +855,8 @@ IntegrationWeight::test(int icenter, SCVector3 &point)
       sum_weight += weight;
     }
   if (fabs(1.0 - sum_weight) > DBL_EPSILON) {
-      ExEnv::out() << "IntegrationWeight::test: failed on weight" << endl;
-          ExEnv::out() << "sum_w = " << sum_weight << endl;
+      ExEnv::out0() << "IntegrationWeight::test: failed on weight" << endl;
+      ExEnv::out0() << "sum_w = " << sum_weight << endl;
     }
 
   // finite displacement tests of weight gradients
@@ -871,10 +871,10 @@ IntegrationWeight::test(int icenter, SCVector3 &point)
       if (mag > 0.00001 && err/mag > 0.01) bad = 1;
       else if (err > 0.00001) bad = 1;
       if (bad) {
-          ExEnv::out() << "iatom = " << i/3
+          ExEnv::out0() << "iatom = " << i/3
                << " ixyx = " << i%3
                << " icenter = " << icenter << " point = " << point << endl;
-          ExEnv::out() << scprintf("dw/dx bad: fd_val=%16.13f an_val=%16.13f err=%16.13f",
+          ExEnv::out0() << scprintf("dw/dx bad: fd_val=%16.13f an_val=%16.13f err=%16.13f",
                            fd_grad_w[i], an_grad_w[i],
                            fd_grad_w[i]-an_grad_w[i])
                << endl;
@@ -1329,7 +1329,7 @@ EulerMaclaurinRadialIntegrator::radial_value(int ir, int nr, double radii,
 void
 EulerMaclaurinRadialIntegrator::print(ostream &o) const
 {
-  o << node0 << indent
+  o << indent
     << scprintf("%s: nr = %d", class_name(), nr()) << endl;
 }
 
@@ -1407,7 +1407,7 @@ LebedevLaikovIntegrator::init(int n)
   
   npoint_ = Lebedev_Laikov_sphere(n, x_, y_, z_, w_);
   if (npoint_ != n) {
-      ExEnv::out() << class_name() << ": bad number of points given: " << n << endl;
+      ExEnv::outn() << class_name() << ": bad number of points given: " << n << endl;
       abort();
     }
 }
@@ -1434,7 +1434,7 @@ LebedevLaikovIntegrator
 void
 LebedevLaikovIntegrator::print(ostream &o) const
 {
-  o << node0 << indent
+  o << indent
     << scprintf("%s:  n = %d", class_name(), npoint_) << endl;
 }
 
@@ -1656,11 +1656,11 @@ GaussLegendreAngularIntegrator
 void
 GaussLegendreAngularIntegrator::print(ostream &o) const
 {
-  o << node0 << indent << class_name() << ":" << endl;
+  o << indent << class_name() << ":" << endl;
   o << incindent;
-  o << node0 << indent << scprintf("ntheta   = %5d", get_ntheta()) << endl;
-  o << node0 << indent << scprintf("nphi     = %5d", get_nphi()) << endl;
-  o << node0 << indent << scprintf("Ktheta   = %5d", get_Ktheta()) << endl;
+  o << indent << scprintf("ntheta   = %5d", get_ntheta()) << endl;
+  o << indent << scprintf("nphi     = %5d", get_nphi()) << endl;
+  o << indent << scprintf("Ktheta   = %5d", get_Ktheta()) << endl;
   o << decindent;
 }
 
@@ -1949,7 +1949,7 @@ RadialAngularIntegrator::init_parameters(const Ref<KeyVal>& keyval)
       else if (!strcmp(grid,"xfine"))     gridtype_ = 4;
       else if (!strcmp(grid,"ultrafine")) gridtype_ = 5;
       else {
-          ExEnv::out() << node0
+          ExEnv::out0()
                        << indent
                        << "ERROR: grid = \"" << grid << "\" not recognized."
                        << endl
@@ -2007,7 +2007,7 @@ RadialAngularIntegrator::set_grids(void)
       prune_formula_2[0] = 0;
     }
   else if (npruned_partitions_ != 5) {
-      ExEnv::err() << "RadialAngularIntegrator::set_grids: "
+      ExEnv::errn() << "RadialAngularIntegrator::set_grids: "
                    << "npruned_partitations must be 1 or 5" << endl;
       abort();
     }
@@ -2089,7 +2089,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const Ref<KeyVal>& keyval)
       int alpha_rows = keyval->count("alpha_coeffs");
       if (keyval->error() != KeyVal::OK) {
           if (npruned_partitions_ != 5) {
-              ExEnv::out() << " RadialAngularIntegrator:: Need to supply alpha coefficients "
+              ExEnv::outn() << " RadialAngularIntegrator:: Need to supply alpha coefficients "
                    << "for the " << num_boundaries << " partition boundaries " << endl;
               abort();
             }
@@ -2100,7 +2100,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const Ref<KeyVal>& keyval)
           for (i=0; i<alpha_rows; i++) {
               check = keyval->count("alpha_coeffs", i);
               if (check != num_boundaries) {
-                  ExEnv::out() << "RadialAngularIntegrator:: Number of alpha coefficients does "
+                  ExEnv::outn() << "RadialAngularIntegrator:: Number of alpha coefficients does "
                        << "not match the number of boundaries (" << check << " != "
                        << num_boundaries << ")" << endl;
                   abort();
@@ -2197,7 +2197,7 @@ RadialAngularIntegrator::get_radial_grid(int charge)
       else if (charge<37) return radial_grid_[3][select_grid].pointer();
       else if (charge<55) return radial_grid_[4][select_grid].pointer();
       else {
-          ExEnv::out() << " No default radial grids for atomic charge " << charge << endl;
+          ExEnv::outn() << " No default radial grids for atomic charge " << charge << endl;
           abort();
         }
     }
@@ -2236,7 +2236,7 @@ RadialAngularIntegrator::get_atomic_row(int i)
   else if (i<55) return 4;
   else if (i<87) return 5;
 
-  ExEnv::out() << " RadialAngularIntegrator::get_atomic_row: Z too large: "
+  ExEnv::outn() << " RadialAngularIntegrator::get_atomic_row: Z too large: "
                << i << endl;
   abort();
   return 0;
@@ -2371,9 +2371,9 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
   done_integration();
   weight_->done();
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << "Total integration points = " << point_count_total << endl;
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
                << "Integrated electron density error = "
                << scprintf("%14.12f", total_density-wfn_->nelectron())
                << endl;
@@ -2384,32 +2384,32 @@ RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
 void
 RadialAngularIntegrator::print(ostream &o) const
 {
-  o << node0 << indent << class_name() << ":" << endl;
+  o << indent << class_name() << ":" << endl;
   o << incindent;
   if (radial_user_.nonnull()) {
-      cout << node0 << indent << "User defined radial grid:" << endl;
+      o << indent << "User defined radial grid:" << endl;
       o << incindent;
       radial_user_->print(o);
       o << decindent;
     }
   if (angular_user_.nonnull()) {
-      cout << node0 << indent << "User defined angular grid:" << endl;
+      o << indent << "User defined angular grid:" << endl;
       o << incindent;
       angular_user_->print(o);
       o << decindent;
     }
   if (angular_user_.null() || radial_user_.null()) {
-      if (prune_grid_) o << node0 << indent << "Pruned ";
+      if (prune_grid_) o << indent << "Pruned ";
       switch (gridtype_) {
-      case 0: o << node0 << "xcoarse"; break;
-      case 1: o << node0 << "coarse"; break;
-      case 2: o << node0 << "medium"; break;
-      case 3: o << node0 << "fine"; break;
-      case 4: o << node0 << "xfine"; break;
-      case 5: o << node0 << "ultrafine"; break;
-      default: o << node0 << "unknown"; break;
+      case 0: o << "xcoarse"; break;
+      case 1: o << "coarse"; break;
+      case 2: o << "medium"; break;
+      case 3: o << "fine"; break;
+      case 4: o << "xfine"; break;
+      case 5: o << "ultrafine"; break;
+      default: o << "unknown"; break;
         }
-      o << node0 << " grid employed" << endl;
+      o << " grid employed" << endl;
     }
   
   o << decindent;

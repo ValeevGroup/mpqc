@@ -88,13 +88,13 @@ ExtendedHuckelWfn::ExtendedHuckelWfn(const Ref<KeyVal>&keyval):
     else total_charge_ = 0;
     }
   else if (total_charge_ != computed_charge && user_occ_) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
                  << "ERROR: ExtendedHuckelWfn: total_charge != computed_charge"
                  << endl;
     abort();
     }
   if (total_charge_ > nuclear_charge) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
                  << "ERROR: ExtendedHuckelWfn: total_charge > nuclear_charge"
                  << endl;
     abort();
@@ -211,13 +211,13 @@ ExtendedHuckelWfn::oso_eigenvectors()
       int nsocc = nelectron%2;
       fill_occ(val, ndocc, docc_, nsocc, socc_);
 
-      ExEnv::out() << node0 << indent << "docc = [";
-      for (int i=0; i<nirrep_; i++) ExEnv::out() << node0 << " " << docc_[i];
-      ExEnv::out() << node0 << "]" << endl;
+      ExEnv::out0() << indent << "docc = [";
+      for (int i=0; i<nirrep_; i++) ExEnv::out0() << " " << docc_[i];
+      ExEnv::out0() << "]" << endl;
 
-      ExEnv::out() << node0 << indent << "socc = [";
-      for (int i=0; i<nirrep_; i++) ExEnv::out() << node0 << " " << socc_[i];
-      ExEnv::out() << node0 << "]" << endl;
+      ExEnv::out0() << indent << "socc = [";
+      for (int i=0; i<nirrep_; i++) ExEnv::out0() << " " << socc_[i];
+      ExEnv::out0() << "]" << endl;
       }
   }
   
@@ -243,7 +243,7 @@ ExtendedHuckelWfn::density()
     BlockedDiagSCMatrix *modens
       = dynamic_cast<BlockedDiagSCMatrix*>(mo_density.pointer());
     if (!modens) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
                    << "ExtendedHuckelWfn::density: wrong MO matrix kit" << endl;
       abort();
     }
@@ -267,7 +267,7 @@ ExtendedHuckelWfn::density()
     if (debug_ > 1) {
       mo_density.print("MO Density");
       dens.print("SO Density");
-      ExEnv::out() << node0
+      ExEnv::out0()
                    << indent << "Nelectron(MO) = " << mo_density.trace()
                    << endl
                    << indent << "Nelectron(SO) = "
@@ -335,7 +335,7 @@ ExtendedHuckelWfn::fill_occ(const RefDiagSCMatrix &evals,int ndocc,int *docc,
                                            "ExtendedHuckelWfn: getting occupations");
   int nblock = bval->nblocks();
   if (nblock != nirrep_) {
-    ExEnv::err() << "ERROR: ExtendedHuckelWfn: fill_occ: nblock != nirrep" << endl
+    ExEnv::errn() << "ERROR: ExtendedHuckelWfn: fill_occ: nblock != nirrep" << endl
                  << "  nblock = " << nblock << endl
                  << "  nirrep = " << nirrep_ << endl;
     abort();

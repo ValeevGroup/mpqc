@@ -51,7 +51,7 @@ CorrelationTable::CorrelationTable(const Ref<PointGroup>& group,
 {
   int rc = initialize_table(group,subgroup);
   if (rc != 0) {
-    ExEnv::err() << node0
+    ExEnv::err0()
          << "ERROR: CorrelationTable: " << error(rc) << endl;
     abort();
     }
@@ -219,7 +219,7 @@ CorrelationTable::subdegen(int i) const
 void
 CorrelationTable::print(ostream &o) const
 {
-  o << node0 << indent
+  o << indent
     << "Correlation Table from "
     << group_->symbol() << " to " << subgroup_->symbol() << ":" << endl;
 
@@ -228,10 +228,10 @@ CorrelationTable::print(ostream &o) const
 
   o << incindent;
   for (int i=0; i<n(); i++) {
-    o << node0 << indent
+    o << indent
       << ct.gamma(i).symbol() << ":";
     for (int j=0; j<ngamma(i); j++) {
-      o << node0 << indent
+      o << indent
         << " " << subct.gamma(gamma(i,j)).symbol();
       }
     o << endl;

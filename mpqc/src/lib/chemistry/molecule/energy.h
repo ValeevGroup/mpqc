@@ -138,11 +138,11 @@ class MolecularEnergy: public Function {
     
     /// Nicely print n x 3 data that are stored in a vector.
     void print_natom_3(const RefSCVector &,
-                       const char *t=0, std::ostream&o=ExEnv::out()) const;
-    void print_natom_3(double **, const char *t=0, std::ostream&o=ExEnv::out()) const;
-    void print_natom_3(double *, const char *t=0, std::ostream&o=ExEnv::out()) const;
+                       const char *t=0, std::ostream&o=ExEnv::out0()) const;
+    void print_natom_3(double **, const char *t=0, std::ostream&o=ExEnv::out0()) const;
+    void print_natom_3(double *, const char *t=0, std::ostream&o=ExEnv::out0()) const;
 
-    virtual void print(std::ostream& = ExEnv::out()) const;
+    virtual void print(std::ostream& = ExEnv::out0()) const;
 };
 
 

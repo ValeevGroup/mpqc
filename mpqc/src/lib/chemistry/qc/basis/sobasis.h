@@ -143,7 +143,7 @@ class SOBasis : public RefCount {
     /// Return the SOTransform object for the given shell.
     const SOTransform &trans(int i) const { return trans_[i]; }
 
-    void print(std::ostream &o=ExEnv::out()) const;
+    void print(std::ostream &o=ExEnv::out0()) const;
 };
 
 

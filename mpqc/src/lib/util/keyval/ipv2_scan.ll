@@ -50,7 +50,7 @@ qstring \"[^"\n]+\"
                     }
                   yylval.str = (char *)malloc(strlenyytext+1);
                   if (!yylval.str) {
-                    ExEnv::err() << "IPV2: {string} rule: malloc failed" << endl;
+                    ExEnv::errn() << "IPV2: {string} rule: malloc failed" << endl;
                     abort();
                     }
                   strcpy(yylval.str,yytext);
@@ -58,7 +58,7 @@ qstring \"[^"\n]+\"
                   }
 {qstring}       { yylval.str = (char *)malloc(strlen(yytext));
                   if (!yylval.str) {
-                    ExEnv::err() << "IPV2: {qstring} rule: malloc failed" << endl;
+                    ExEnv::errn() << "IPV2: {qstring} rule: malloc failed" << endl;
                     abort();
                     }
                   strcpy(yylval.str,&yytext[1]);
@@ -75,7 +75,7 @@ qstring \"[^"\n]+\"
 "{"             { return(T_TABLE_LEFT); }
 "}"             { return(T_TABLE_RIGHT); }
 [,<>;=:\$]      { return((int) yytext[0]); }
-.               { ExEnv::err()<<"IPV2: Illegal character: \""<<yytext[0]<<"\"\n"; }
+.               { ExEnv::errn()<<"IPV2: Illegal character: \""<<yytext[0]<<"\"\n"; }
 %%
 
 int

@@ -163,7 +163,7 @@ RefCount::use_locks(bool inVal)
 void
 RefCount::error(const char * w) const
 {
-  ExEnv::err() << "RefCount: ERROR: " << w << endl;
+  ExEnv::errn() << "RefCount: ERROR: " << w << endl;
   abort();
 }
 
@@ -193,7 +193,7 @@ RefCount::~RefCount()
 void
 RefBase::warn ( const char * msg) const
 {
-  ExEnv::err() << "WARNING: " << msg << endl;
+  ExEnv::errn() << "WARNING: " << msg << endl;
 }
 void
 RefBase::warn_ref_to_stack() const
@@ -223,7 +223,7 @@ void
 RefBase::require_nonnull() const
 {
   if (parentpointer() == 0) {
-      ExEnv::err() << "RefBase: needed a nonnull pointer but got null"
+      ExEnv::errn() << "RefBase: needed a nonnull pointer but got null"
            << endl;
       abort();
     }

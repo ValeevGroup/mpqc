@@ -56,7 +56,7 @@ RenderedMolecule::RenderedMolecule(const Ref<KeyVal>& keyval):
     }
 
   if (mol_.null()) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "RenderedMolecule: no \"molecule\" in keyval\n";
       abort();
     }

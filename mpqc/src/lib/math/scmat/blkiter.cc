@@ -439,7 +439,7 @@ SCVectorSimpleBlockIter::i()
 int
 SCVectorSimpleBlockIter::j()
 {
-  ExEnv::err() << indent << "SCVectorSimpleBlockIter::j() attempted to find j value\n";
+  ExEnv::errn() << indent << "SCVectorSimpleBlockIter::j() attempted to find j value\n";
   abort();
   return 0;
 }
@@ -498,7 +498,7 @@ SCVectorSimpleSubBlockIter::i()
 int
 SCVectorSimpleSubBlockIter::j()
 {
-  ExEnv::err() << indent
+  ExEnv::errn() << indent
        << "SCVectorSimpleSubBlockIter::j(): attempted to find j value\n";
   abort();
   return 0;

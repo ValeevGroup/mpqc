@@ -140,7 +140,7 @@ PthreadThreadGrp::init_attr()
 void PthreadThreadGrp::add_thread(int ithread, Thread* t, int priority)
 {
   if (ithread >= nthread_) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
                  << "PthreadThreadGrp::add_thread(int, Thread*, int, int): trying to"
                  << "add too many threads" << endl;
   }
@@ -199,7 +199,7 @@ PthreadThreadGrp::start_threads()
                                Thread__run_Thread_run,
                                (void*) threads_[i]);
       if (res) {
-        ExEnv::err() << indent << "thread death " << res << endl;
+        ExEnv::errn() << indent << "thread death " << res << endl;
         return -1;
       }
     }
@@ -216,7 +216,7 @@ PthreadThreadGrp::wait_threads()
     int tn;
     if (threads_[i]) {
       if (pthread_join(pthreads_[i], (void**)&tn)) {
-        ExEnv::out()
+        ExEnv::errn()
           << "PthreadThreadGrp::wait_threads(): error joining thread"
           << endl;
         abort();

@@ -61,7 +61,7 @@ GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
 {
   molecule_ << topkeyval->describedclassvalue("molecule");
   if (molecule_.null()) {
-      ExEnv::err() << node0 << indent << "GaussianBasisSet: no \"molecule\"\n";
+      ExEnv::err0() << indent << "GaussianBasisSet: no \"molecule\"\n";
       abort();
     }
 
@@ -239,7 +239,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
       have_custom = 0;
       nelement = 0;
       if (!name_) {
-          ExEnv::err() << node0 << indent
+          ExEnv::err0() << indent
                << "GaussianBasisSet: No name given for basis set\n";
           abort();
         }
@@ -273,7 +273,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       if (!sbasisname) {
           if (!name_) {
-              ExEnv::err() << node0 << indent << "GaussianBasisSet: "
+              ExEnv::err0() << indent << "GaussianBasisSet: "
                    << scprintf("no basis name for atom %d (%s)\n",
                                iatom, AtomInfo::name(Z));
               abort();
@@ -314,7 +314,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       if (!sbasisname) {
           if (!name_) {
-              ExEnv::err() << node0 << indent << "GaussianBasisSet: "
+              ExEnv::err0() << indent << "GaussianBasisSet: "
                    << scprintf("no basis name for atom %d (%s)\n",
                                iatom, AtomInfo::name(Z));
               abort();
@@ -439,9 +439,9 @@ GaussianBasisSet::
     }
   count = keyval->count(keyword);
   if (keyval->error() != KeyVal::OK) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << scprintf("GaussianBasisSet:: couldn't find \"%s\":\n", keyword);
-      keyval->errortrace(ExEnv::err());
+      keyval->errortrace(ExEnv::err0());
       exit(1);
     }
   if (!count) return;
@@ -452,9 +452,9 @@ GaussianBasisSet::
       if (prefixkeyval->exists("get")) {
           char* newbasis = prefixkeyval->pcharvalue("get");
           if (!newbasis) {
-	      ExEnv::err() << node0 << indent << "GaussianBasisSet: "
+	      ExEnv::err0() << indent << "GaussianBasisSet: "
                    << scprintf("error processing get for \"%s\"\n", prefix);
-              keyval->errortrace(ExEnv::err());
+              keyval->errortrace(ExEnv::err0());
 	      exit(1);
 	    }
 	  recursively_get_shell(ishell,keyval,element,newbasis,bases,
@@ -608,13 +608,13 @@ GaussianBasisSet::equiv(const Ref<GaussianBasisSet> &b)
 void
 GaussianBasisSet::print_brief(ostream& os) const
 {
-  os << node0 << indent
+  os << indent
      << "GaussianBasisSet:" << endl << incindent
      << indent << "nbasis = " << nbasis_ << endl
      << indent << "nshell = " << nshell_ << endl
      << indent << "nprim  = " << nprim_ << endl;
   if (name_) {
-      os << node0 << indent
+      os << indent
          << "name = \"" << name_ << "\"" << endl;
     }
   os << decindent;
@@ -632,7 +632,7 @@ GaussianBasisSet::print(ostream& os) const
   int icenter = 0;
   int ioshell = 0;
   for (icenter=0; icenter < ncenter_; icenter++) {
-      os << node0 << endl << indent
+      os << endl << indent
          << scprintf(
              "center %d: %12.8f %12.8f %12.8f, nshell = %d, shellnum = %d\n",
              icenter,
@@ -642,17 +642,17 @@ GaussianBasisSet::print(ostream& os) const
              center_to_nshell_[icenter],
              center_to_shell_[icenter]);
       for (int ishell=0; ishell < center_to_nshell_[icenter]; ishell++) {
-	  os << node0 << indent
+	  os << indent
              << scprintf("Shell %d: functionnum = %d\n",
                          ishell,shell_to_function_[ioshell]);
-          os << node0 << incindent;
+          os << incindent;
 	  operator()(icenter,ishell).print(os);
-          os << node0 << decindent;
+          os << decindent;
           ioshell++;
 	}
     }
 
-  os << node0 << decindent;
+  os << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

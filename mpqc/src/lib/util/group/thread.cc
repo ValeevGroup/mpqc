@@ -120,7 +120,7 @@ void
 ThreadGrp::add_thread(int i, Thread*t)
 {
   if (i >= nthread_) {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "ThreadGrp::add_thread: trying to add too many threads"
          << endl;
   } else {
@@ -160,7 +160,7 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
         char *threadgrp_string = argv[i];
         i++;
         if (i >= argc) {
-          ExEnv::err() << "-threadgrp must be following by an argument"
+          ExEnv::errn() << "-threadgrp must be following by an argument"
                << endl;
           abort();
         }
@@ -199,11 +199,11 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
     Ref<DescribedClass> dc = strkv->describedclassvalue();
     grp = dynamic_cast<ThreadGrp*>(dc.pointer());
     if (dc.null()) {
-      ExEnv::err() << "initial_threadgrp: couldn't find a ThreadGrp in "
+      ExEnv::errn() << "initial_threadgrp: couldn't find a ThreadGrp in "
            << keyval_string << endl;
       abort();
     } else if (!grp) {
-      ExEnv::err() << "initial_threadgrp: wanted ThreadGrp but got "
+      ExEnv::errn() << "initial_threadgrp: wanted ThreadGrp but got "
            << dc->class_name() << endl;
       abort();
     }
@@ -223,7 +223,7 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
 ThreadGrp*
 ThreadGrp::clone(int nthread)
 {
-  ExEnv::out() << "ThreadGrp::clone not supported for " << class_name()
+  ExEnv::errn() << "ThreadGrp::clone not supported for " << class_name()
                << endl;
   abort();
   return 0;

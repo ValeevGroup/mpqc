@@ -45,7 +45,7 @@ using namespace std;
 static void
 fail(const char *m)
 {
-  ExEnv::err() << indent << "distrect.cc: error: " << m << endl;
+  ExEnv::errn() << indent << "distrect.cc: error: " << m << endl;
   abort();
 }
 
@@ -83,7 +83,7 @@ DistSCMatrix::block_to_block(int i, int j) const
           return I.block();
     }
 
-  ExEnv::err() << indent << "DistSCMatrix::block_to_block: internal error" << endl;
+  ExEnv::errn() << indent << "DistSCMatrix::block_to_block: internal error" << endl;
   abort();
   return 0;
 }
@@ -266,7 +266,7 @@ DistSCMatrix::accumulate(const SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::errn() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -277,7 +277,7 @@ DistSCMatrix::accumulate(const SCMatrix*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          ExEnv::err() << indent
+          ExEnv::errn() << indent
                << "DistSCMatrixListSubblockIter::accumulate block mismatch: "
                << "internal error" << endl;
           abort();
@@ -299,7 +299,7 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::errn() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -308,7 +308,7 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
   for (I->begin(); I->ready(); I->next()) {
       Ref<SCMatrixBlock> block = I->block();
       if (DEBUG)
-          ExEnv::out() << messagegrp()->me() << ": "
+          ExEnv::outn() << messagegrp()->me() << ": "
                << block->class_name()
                << "(" << block->blocki << ", " << block->blockj << ")"
                << endl;
@@ -367,7 +367,7 @@ DistSCMatrix::accumulate(const DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+      ExEnv::errn() << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -399,7 +399,7 @@ DistSCMatrix::accumulate(const SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-      ExEnv::err() << indent << "DistSCMatrix::accumulate(SCVector*a): "
+      ExEnv::errn() << indent << "DistSCMatrix::accumulate(SCVector*a): "
            << "dimensions don't match\n";
       abort();
     }
@@ -410,7 +410,7 @@ DistSCMatrix::accumulate(const SCVector*a)
        I++,J++) {
       int n = I.block()->ndat();
       if (n != J.block()->ndat()) {
-          ExEnv::err() << indent << "DistSCMatrix::accumulate(SCVector*a): "
+          ExEnv::errn() << indent << "DistSCMatrix::accumulate(SCVector*a): "
                << "block lists do not match" << endl;
           abort();
         }
@@ -431,20 +431,20 @@ DistSCMatrix::accumulate_product_rr(SCMatrix*pa,SCMatrix*pb)
   // make sure that the dimensions match
   if (!rowdim()->equiv(a->rowdim()) || !coldim()->equiv(b->coldim()) ||
       !a->coldim()->equiv(b->rowdim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "DistSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b): "
            << "dimensions don't match\n";
-      ExEnv::err() << node0 << indent << "rowdim():" << endl;
+      ExEnv::err0() << indent << "rowdim():" << endl;
       rowdim().print();
-      ExEnv::err() << node0 << indent << "coldim():" << endl;
+      ExEnv::err0() << indent << "coldim():" << endl;
       coldim().print();
-      ExEnv::err() << node0 << indent << "a->rowdim():" << endl;
+      ExEnv::err0() << indent << "a->rowdim():" << endl;
       a->rowdim().print();
-      ExEnv::err() << node0 << indent << "a->coldim():" << endl;
+      ExEnv::err0() << indent << "a->coldim():" << endl;
       a->coldim().print();
-      ExEnv::err() << node0 << indent << "b->rowdim():" << endl;
+      ExEnv::err0() << indent << "b->rowdim():" << endl;
       b->rowdim().print();
-      ExEnv::err() << node0 << indent << "b->coldim():" << endl;
+      ExEnv::err0() << indent << "b->coldim():" << endl;
       b->coldim().print();
       abort();
     }
@@ -550,7 +550,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
   for (i->begin(); i->ready(); i->next()) {
       Ref<SCMatrixRectBlock> b = dynamic_cast<SCMatrixRectBlock*>(i->block());
       if (DEBUG)
-          ExEnv::out() << messagegrp()->me() << ": "
+          ExEnv::outn() << messagegrp()->me() << ": "
                << "got block " << b->blocki << ' ' << b->blockj << endl;
       int b1start, b2start, b1end, b2end;
       if (form == Row) {
@@ -586,7 +586,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
                 }
               if (!vecj) continue;
               if (DEBUG)
-                  ExEnv::out() << messagegrp()->me() << ": getting ["
+                  ExEnv::outn() << messagegrp()->me() << ": getting ["
                                << j << ","
                                << b2start << "-" << b2end << ")" << endl;
             }
@@ -596,13 +596,13 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
           for (int k=b2start; k<b2end; k++) {
               int blockoffset;
               if (DEBUG)
-                  ExEnv::out() << messagegrp()->me() << ": "
+                  ExEnv::outn() << messagegrp()->me() << ": "
                        << "using vec[" << j-vecoff << "]"
                        << "[" << k << "]" << endl;
               if (form == Row) {
                   blockoffset = (j+off)*nbj+k - b2start;
                   if (DEBUG)
-                      ExEnv::out() << messagegrp()->me() << ": "
+                      ExEnv::outn() << messagegrp()->me() << ": "
                            << "Row datum offset is "
                            << "(" << j << "+" << off << ")*" << nbj << "+" << k
                            << "-" << b2start
@@ -618,7 +618,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
               double *datum = &dat[blockoffset];
               if (op == CopyToVec) {
                   if (DEBUG)
-                      ExEnv::out() << messagegrp()->me() << ": "
+                      ExEnv::outn() << messagegrp()->me() << ": "
                            << "copying " << *datum << " "
                            << "to " << j << " " << k << endl;
                   vecj[k] = *datum;
@@ -649,7 +649,7 @@ DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b): "
            << "dimensions don't match\n";
       abort();
@@ -720,7 +720,7 @@ double
 DistSCMatrix::invert_this()
 {
   if (nrow() != ncol()) {
-      ExEnv::err() << indent << "DistSCMatrix::invert_this: matrix is not square\n";
+      ExEnv::errn() << indent << "DistSCMatrix::invert_this: matrix is not square\n";
       abort();
     }
   RefSymmSCMatrix refs = kit()->symmmatrix(d1);
@@ -744,7 +744,7 @@ double
 DistSCMatrix::determ_this()
 {
   if (nrow() != ncol()) {
-    ExEnv::err() << indent << "DistSCMatrix::determ_this: matrix is not square\n";
+    ExEnv::errn() << indent << "DistSCMatrix::determ_this: matrix is not square\n";
     abort();
   }
   return invert_this();
@@ -754,7 +754,7 @@ double
 DistSCMatrix::trace()
 {
   if (nrow() != ncol()) {
-    ExEnv::err() << indent << "DistSCMatrix::trace: matrix is not square\n";
+    ExEnv::errn() << indent << "DistSCMatrix::trace: matrix is not square\n";
     abort();
   }
 
@@ -781,7 +781,7 @@ DistSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(v->dim())) {
-      ExEnv::err() << indent << "DistSCMatrix::solve_this(SCVector*v): "
+      ExEnv::errn() << indent << "DistSCMatrix::solve_this(SCVector*v): "
            << "dimensions don't match\n";
       abort();
     }
@@ -822,7 +822,7 @@ DistSCMatrix::element_op(const Ref<SCElementOp2>& op,
       = require_dynamic_cast<DistSCMatrix*>(m,"DistSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-      ExEnv::err() << indent << "DistSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "DistSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j;
@@ -845,7 +845,7 @@ DistSCMatrix::element_op(const Ref<SCElementOp3>& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-      ExEnv::err() << indent << "DistSCMatrix: bad element_op\n";
+      ExEnv::errn() << indent << "DistSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -939,7 +939,7 @@ DistSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 void
 DistSCMatrix::error(const char *msg)
 {
-  ExEnv::err() << "DistSCMatrix: error: " << msg << endl;
+  ExEnv::errn() << "DistSCMatrix: error: " << msg << endl;
 }
 
 Ref<DistSCMatrixKit>

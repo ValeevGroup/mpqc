@@ -127,7 +127,7 @@ IPV2::append_from_input(const char*prefix,ostream&outfile)
 	  strcat(dirfile,file);
           ifstream infile(dirfile, ios::in);
 	  if (infile.bad()) {
-              ExEnv::err() << "WARNING: IPV2::append_from_input: "
+              ExEnv::errn() << "WARNING: IPV2::append_from_input: "
                    << "couldn't open the file "
                    << dirfile
                    << endl;
@@ -416,7 +416,7 @@ IPV2::ip_get_variable_kt(char* variable)
   /* This should never be the case since variable keyword trees are
    * created as needed. */
   if (!kt) {
-      ExEnv::err() << "WARNING: couldn't find the variable "
+      ExEnv::errn() << "WARNING: couldn't find the variable "
            << variable
            << endl;
       return NULL;

@@ -54,7 +54,7 @@ class SafeUInt {
     SafeUInt(): i_(0) {}
     SafeUInt(unsigned long i): i_(i) {}
     void error() const {
-      ExEnv::err() << "SafeUInt: integer size exceeded" << endl;
+      ExEnv::errn() << "SafeUInt: integer size exceeded" << endl;
       abort();
     }
     SafeUInt &operator ++ () { i_++; return *this; }

@@ -47,7 +47,6 @@ int SCFormIO::node_to_print_ = 0;
 int SCFormIO::debug_ = 0;
 int SCFormIO::parallel_ = 0;
 int SCFormIO::me_ = 0;
-ofstream SCFormIO::nullstream_;
 
 char *
 SCFormIO::fileext_to_filename(const char *ext)
@@ -129,12 +128,8 @@ SCFormIO::init()
 {
   ready_ = 1;
 
-  if (nullstream_.bad() || nullstream_.fail())
-    nullstream_.open("/dev/null");
-
   init_ostream(cout);
   init_ostream(cerr);
-  init_ostream(nullstream_);
 }
 
 ios&
@@ -218,18 +213,6 @@ SCFormIO::skipnextindent(ios&o)
 }
 
 ostream&
-SCFormIO::node0(ostream& o)
-{
-  if (!ready_) init();
-  
-  if (!debug_ && node_to_print_ >= 0
-      && parallel_ && node_to_print_ != me_)
-    return nullstream_;
-
-  return o;
-}
-
-ostream&
 SCFormIO::copyright(ostream& o)
 {
   o << indent
@@ -296,12 +279,6 @@ skipnextindent(ios& o)
 }
 
 ostream&
-node0(ostream& o)
-{
-  return SCFormIO::node0(o);
-}
-
-ostream&
 copyright(ostream& o)
 {
   return SCFormIO::copyright(o);
@@ -332,7 +309,7 @@ scprintf::scprintf(const char *fmt, ...)
   // hopefully this won't overflow
   if (fmt && fmt[0]!='\0') {
     if (vsprintf(str, fmt, args) > 1023) {
-      ExEnv::err() << indent << "scprintf overflow\n";
+      ExEnv::errn() << indent << "scprintf overflow\n";
       abort();
     }
   }

@@ -140,7 +140,7 @@ class OneBodyWavefunction: public Wavefunction {
     double orbital(const SCVector3& r, int iorb);
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 };
 
 

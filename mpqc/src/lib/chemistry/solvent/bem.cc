@@ -217,14 +217,14 @@ BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
     }
 
   if (fabs(new_charge - expected_charge) > 1.0e-3) {
-      ExEnv::out() << "BEMSolvent:normalize_charge: failed:" << endl
+      ExEnv::outn() << "BEMSolvent:normalize_charge: failed:" << endl
            << "new_charge = " << new_charge << endl
            << "expected_charge = " << expected_charge << endl;
       abort();
     }
 
   if (debug_) {
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
            << "BEMSolvent:normalize_charge:"
            << endl << indent
            << scprintf("  integrated surface charge = %20.15f", charge)
@@ -289,7 +289,7 @@ BEMSolvent::init_system_matrix()
               // The self term must not be included here.  This
               // case shouldn't occur for the usual integrators
               // so abort.
-              ExEnv::err() << "BEMSolvent: integrator gave the self term" << endl;
+              ExEnv::errn() << "BEMSolvent: integrator gave the self term" << endl;
               abort();
             }
           double denom = diff2*sqrt(diff2);
@@ -323,7 +323,7 @@ BEMSolvent::init_system_matrix()
   volume_ = V;
   tim_exit("AV");
 
-  ExEnv::out() << node0 << indent
+  ExEnv::out0() << indent
        << scprintf("Solvent Accessible Surface:") << endl
        << indent
        << scprintf("  Area = %15.10f ", A)
@@ -365,7 +365,7 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
       double computed_expected_charge = computed_enclosed_charge_
                                       * (1.0/dielectric_constant_ - 1.0);
 
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
          << scprintf("BEMSolvent:compute_charges: encl q = %20.15f",
                      computed_enclosed_charge_)
          << endl << indent

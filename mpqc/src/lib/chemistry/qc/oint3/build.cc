@@ -21,7 +21,7 @@ BuildIntV3::~BuildIntV3()
 int
 BuildIntV3::impossible_integral()
 {
-  ExEnv::err()
+  ExEnv::errn()
       << "oint3/build.cc: tried to build a impossible integral" << endl;
   abort();
   return(0);

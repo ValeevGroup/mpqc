@@ -198,22 +198,22 @@ int ConnollyShape::n_with_nsphere_[CONNOLLYSHAPE_N_WITH_NSPHERE_DIM];
 void
 ConnollyShape::print_counts(ostream& os)
 {
-  os << node0 << indent << "ConnollyShape::print_counts():\n" << incindent;
+  os << indent << "ConnollyShape::print_counts():\n" << incindent;
 #if COUNT_CONNOLLY
-  os << node0
+  os
      << indent << "n_total = " << n_total_ << endl
      << indent << "n_inside_vdw = " << n_inside_vdw_ << endl;
   for (int i=0; i<CONNOLLYSHAPE_N_WITH_NSPHERE_DIM-1; i++) {
-      os << node0 << indent
+      os << indent
          << scprintf("n with nsphere = %2d: %d\n", i, n_with_nsphere_[i]);
     }
-  os << node0 << indent
+  os << indent
      << scprintf("n with nsphere >= %d: %d\n",
                  CONNOLLYSHAPE_N_WITH_NSPHERE_DIM-1,
                  n_with_nsphere_[CONNOLLYSHAPE_N_WITH_NSPHERE_DIM-1])
      << decindent;
 #else
-  os << node0 << indent << "No count information is available.\n" << decindent;
+  os << indent << "No count information is available.\n" << decindent;
 #endif
 }
 
@@ -361,7 +361,7 @@ ConnollyShape::distance_to_surface(const SCVector3&r, SCVector3*grad) const
                   return inside;
                 }
               if (n_local_spheres == max_local_spheres) {
-                  ExEnv::err() << node0 << indent
+                  ExEnv::err0() << indent
                        << "ConnollyShape::distance_to_surface:"
                        << " max_local_spheres exceeded\n";
                   abort();
@@ -393,7 +393,7 @@ ConnollyShape::boundingbox(double valuemin,
 {
   int i,j;
   if (valuemin < -1.0 || valuemax > 1.0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "ConnollyShape::boundingbox: value out of range\n";
       abort();
     }
@@ -542,7 +542,7 @@ class interval
         }
 
         // Shouldn't get here!
-        ExEnv::err() << node0 << indent
+        ExEnv::err0() << indent
              << "Found no matching cases in interval::compact()\n";
         print();
         exit(1);
@@ -591,10 +591,10 @@ class interval
     // Print out the currect state of the interval
     void print()
     {
-        ExEnv::out() << node0 << indent
+        ExEnv::out0() << indent
              << scprintf(" _nsegs=%d; _max_segs=%d\n",_nsegs, _max_segs);
         for (int i=0; i<_nsegs; i++)
-            ExEnv::out() << node0 << indent
+            ExEnv::out0() << indent
                  << scprintf("min[%d]=%7.4lf, max[%d]=%7.4lf\n",
                              i,_min[i],i,_max[i]); 
     }
@@ -618,9 +618,9 @@ int CS2Sphere::n_totally_covered_ = 0;
 void
 CS2Sphere::print_counts(ostream& os)
 {
-  os << node0 << indent << "CS2Sphere::print_counts():\n" << incindent;
+  os << indent << "CS2Sphere::print_counts():\n" << incindent;
 #if COUNT_CONNOLLY
-  os << node0
+  os
      << indent << "n_no_spheres = " << n_no_spheres_ << endl
      << indent << "n_probe_enclosed_by_a_sphere = "
                << n_probe_enclosed_by_a_sphere_ << endl
@@ -635,7 +635,7 @@ CS2Sphere::print_counts(ostream& os)
      << indent << "n_totally_covered = " << n_totally_covered_ << endl
      << decindent;
 #else
-  os << node0 << indent << "No count information is available.\n"
+  os << indent << "No count information is available.\n"
      << decindent;
 #endif
 }

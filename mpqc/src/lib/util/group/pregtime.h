@@ -46,7 +46,7 @@ class ParallelRegionTimer: public RegionTimer {
     ParallelRegionTimer(const Ref<KeyVal>&);
     ~ParallelRegionTimer();
 
-    void print(std::ostream& = ExEnv::out()) const;
+    void print(std::ostream& = ExEnv::out0()) const;
 };
 
 #endif

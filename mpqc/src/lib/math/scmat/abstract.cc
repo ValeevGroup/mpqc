@@ -148,7 +148,7 @@ SCMatrix::restore(StateIn& s)
   s.get(nrt);
   s.get(nct);
   if (nrt != nr || nct != nc) {
-      ExEnv::err() << "SCMatrix::restore(): bad dimensions" << endl;
+      ExEnv::errn() << "SCMatrix::restore(): bad dimensions" << endl;
       abort();
     }
   int has_subblocks;
@@ -163,7 +163,7 @@ SCMatrix::restore(StateIn& s)
         }
     }
   else {
-      ExEnv::err() << "SCMatrix::restore(): matrix has subblocks--cannot restore"
+      ExEnv::errn() << "SCMatrix::restore(): matrix has subblocks--cannot restore"
            << endl;
       abort();
     }
@@ -391,7 +391,7 @@ SCMatrix::gen_invert_this()
 void
 SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 {
-  ExEnv::err() << indent << class_name() << ": SVD not implemented\n";
+  ExEnv::errn() << indent << class_name() << ": SVD not implemented\n";
   abort();
 }
 
@@ -466,7 +466,7 @@ SymmSCMatrix::restore(StateIn& s)
   int nrt, nr = n();
   s.get(nrt);
   if (nrt != nr) {
-      ExEnv::err() << "SymmSCMatrix::restore(): bad dimension" << endl;
+      ExEnv::errn() << "SymmSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
   for (int i=0; i<nr; i++) {
@@ -816,7 +816,7 @@ DiagSCMatrix::restore(StateIn& s)
   int nrt, nr = n();
   s.get(nrt);
   if (nrt != nr) {
-      ExEnv::err() << "DiagSCMatrix::restore(): bad dimension" << endl;
+      ExEnv::errn() << "DiagSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
   for (int i=0; i<nr; i++) {
@@ -972,7 +972,7 @@ SCVector::restore(StateIn& s)
   int nrt, nr = n();
   s.get(nrt);
   if (nrt != nr) {
-      ExEnv::err() << "SCVector::restore(): bad dimension" << endl;
+      ExEnv::errn() << "SCVector::restore(): bad dimension" << endl;
       abort();
     }
   for (int i=0; i<nr; i++) {
@@ -1071,7 +1071,7 @@ SCVector::normalize()
   double norm = sqrt(scalar_product(this));
   if (norm > 1.e-20) norm = 1.0/norm;
   else {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "SCVector::normalize: tried to normalize tiny vector\n";
       abort();
     }

@@ -105,7 +105,7 @@ DistSCMatrixListSubblockIter::DistSCMatrixListSubblockIter(
   locallist_(list)
 {
   if (access == Write) {
-      ExEnv::err() << indent
+      ExEnv::errn() << indent
            << "DistSCMatrixListSubblockIter: write access not allowed"
            << endl;
       abort();
@@ -124,7 +124,7 @@ DistSCMatrixListSubblockIter::begin()
 {
   if (step_ == grp_->n()) step_ = 0;
   else if (step_ != 0) {
-      ExEnv::err() << indent << "DistSCMatrixListSubblockIter::begin(): "
+      ExEnv::errn() << indent << "DistSCMatrixListSubblockIter::begin(): "
            << "step != 0: tried to begin in middle of iteration"
            << endl;
       abort();
@@ -170,7 +170,7 @@ DistSCMatrixListSubblockIter::~DistSCMatrixListSubblockIter()
            i1++,i2++) {
           int n = i1.block()->ndat();
           if (n != i2.block()->ndat()) {
-              ExEnv::err() << indent
+              ExEnv::errn() << indent
                    << "DistSCMatrixListSubblockIter: block mismatch: "
                    << "internal error" << endl;
               abort();

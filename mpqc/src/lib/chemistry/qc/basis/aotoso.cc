@@ -211,15 +211,15 @@ void
 SO_block::print(const char *title)
 {
   int i,j;
-  ExEnv::out() << node0 << indent << "SO block " << title << endl;
+  ExEnv::out0() << indent << "SO block " << title << endl;
   for (i=0; i < len; i++) {
-    ExEnv::out() << node0 << indent << "SO " << i+1 << endl << indent;
+    ExEnv::out0() << indent << "SO " << i+1 << endl << indent;
     for (j=0; j < so[i].length; j++)
-      ExEnv::out() << node0 << scprintf(" %10d",so[i].cont[j].bfn);
-    ExEnv::out() << node0 << endl << indent;
+      ExEnv::out0() << scprintf(" %10d",so[i].cont[j].bfn);
+    ExEnv::out0() << endl << indent;
     for (j=0; j < so[i].length; j++)
-      ExEnv::out() << node0 << scprintf(" %10.7f",so[i].cont[j].coef);
-    ExEnv::out() << node0 << endl;
+      ExEnv::out0() << scprintf(" %10.7f",so[i].cont[j].coef);
+    ExEnv::out0() << endl;
   }
 }
 
@@ -253,16 +253,16 @@ struct lin_comb {
 
     void print() const {
       int i;
-      ExEnv::out() << node0 << indent;
+      ExEnv::out0() << indent;
       for (i=0; i < ns; i++)
-        ExEnv::out() << node0 << scprintf(" %10d",mapf0+i);
-      ExEnv::out() << node0 << endl;
+        ExEnv::out0() << scprintf(" %10d",mapf0+i);
+      ExEnv::out0() << endl;
       
       for (i=0; i < ns; i++) {
-        ExEnv::out() << node0 << indent << scprintf("%2d",f0+i);
+        ExEnv::out0() << indent << scprintf("%2d",f0+i);
         for (int j=0; j < ns; j++)
-          ExEnv::out() << node0 << scprintf(" %10.7f",c[i][j]);
-        ExEnv::out() << node0 << endl;
+          ExEnv::out0() << scprintf(" %10.7f",c[i][j]);
+        ExEnv::out0() << endl;
       }
     }
 };
@@ -333,7 +333,7 @@ PetiteList::aotoso_info()
       for (c=0; c < gbs(i,s).ncontraction(); c++) {
         if (gbs(i,s).am(c) > 1 && gbs(i,s).is_cartesian(c)) {
           if (ng_ != nirrep_) {
-            ExEnv::err() << node0 << indent
+            ExEnv::err0() << indent
                          << "PetiteList::aotoso: cannot yet handle"
                          << " symmetry for angular momentum >= 2\n";
             abort();
@@ -444,7 +444,7 @@ PetiteList::aotoso_info()
                 }
                 tso.reset_length(llnonzero);
                 if (llnonzero == 0) {
-                  ExEnv::err() << "aotoso: internal error: no bfns in SO"
+                  ExEnv::errn() << "aotoso: internal error: no bfns in SO"
                                << endl;
                   abort();
                 }
@@ -452,7 +452,7 @@ PetiteList::aotoso_info()
                   saoelem[irnum+comp]++;
                 }
                 else {
-                  ExEnv::err() << "aotoso: internal error: "
+                  ExEnv::errn() << "aotoso: internal error: "
                                << "impossible duplicate SO"
                                << endl;
                   abort();
@@ -501,10 +501,10 @@ PetiteList::aotoso_info()
     if (saoelem[i] < nbf_in_ir_[ir]/scal) {
       // if we found too few, there are big problems
       
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << scprintf("trouble making SO's for irrep %s\n",
                        ct.gamma(ir).symbol());
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << scprintf("  only found %d out of %d SO's\n",
                        saoelem[i], nbf_in_ir_[ir]/scal);
       SOs[i].print("");
@@ -514,10 +514,10 @@ PetiteList::aotoso_info()
       // there are some redundant so's left...need to do something to get
       // the elements we want
       
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << scprintf("trouble making SO's for irrep %s\n",
                        ct.gamma(ir).symbol());
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << scprintf("  found %d SO's, but there should only be %d\n",
                        saoelem[i], nbf_in_ir_[ir]/scal);
       SOs[i].print("");
@@ -695,7 +695,7 @@ PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
 RefSCMatrix
 PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
 {
-  ExEnv::err() << node0 << indent
+  ExEnv::err0() << indent
        << "PetiteList::evecs_to_SO_basis: don't work yet\n";
   abort();
   

@@ -55,7 +55,7 @@ BitArrayLTri::BitArrayLTri(int i, int j)
   : a(0), n(0), nm(0), na(0)
 {
   if (i!=j) {
-    ExEnv::err() << node0 << indent << "BitArrayLTri(int,int): i != j"
+    ExEnv::err0() << indent << "BitArrayLTri(int,int): i != j"
                  << endl;
     abort();
   }

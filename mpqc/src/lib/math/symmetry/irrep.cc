@@ -132,17 +132,17 @@ IrreducibleRepresentation::print(ostream& os) const
 
   int i,d;
   
-  os << node0 << indent << scprintf("%-5s",symb);
+  os << indent << scprintf("%-5s",symb);
 
   for (i=0; i < g; i++)
-    os << node0 << scprintf(" %6.3f",character(i));
-  os << node0 << " | " << ntrans_ << " t, " << nrot_ << " R\n";
+    os << scprintf(" %6.3f",character(i));
+  os << " | " << ntrans_ << " t, " << nrot_ << " R\n";
 
   for (d=0; d < nproj(); d++) {
-    os << node0 << indent << "     ";
+    os << indent << "     ";
     for (i=0; i < g; i++)
-      os << node0 << scprintf(" %6.3f",p(d,i));
-    os << node0 << endl;
+      os << scprintf(" %6.3f",p(d,i));
+    os << endl;
   }
 }
 

@@ -174,7 +174,7 @@ OSSHF::ao_fock(double accuracy)
 
     tim_enter("start thread");
     if (threadgrp_->start_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "OSSHF: error starting threads" << endl;
       abort();
     }
@@ -182,7 +182,7 @@ OSSHF::ao_fock(double accuracy)
 
     tim_enter("stop thread");
     if (threadgrp_->wait_threads() < 0) {
-      ExEnv::err() << node0 << indent
+      ExEnv::err0() << indent
            << "OSSHF: error waiting for threads" << endl;
       abort();
     }
@@ -233,7 +233,7 @@ OSSHF::ao_fock(double accuracy)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -357,7 +357,7 @@ OSSHF::two_body_energy(double& ec, double& ex)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    ExEnv::err0() << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   tim_exit("oshf e2");
@@ -395,7 +395,7 @@ OSSHF::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    ExEnv::err() << node0 << indent
+    ExEnv::err0() << indent
          << "OSSHF::two_body_deriv: can't do gradient yet\n";
     abort();
   }

@@ -184,7 +184,7 @@ class SCF: public OneBodyWavefunction {
 
     void symmetry_changed();
 
-    void print(std::ostream&o=ExEnv::out()) const;
+    void print(std::ostream&o=ExEnv::out0()) const;
 
   protected:
     // the following are scratch and are not checkpointed

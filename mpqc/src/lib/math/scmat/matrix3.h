@@ -71,7 +71,7 @@ class SCMatrix3
     double& operator() (int i, int j) { return _m[i+3*j]; }
     const double& operator() (int i, int j) const { return _m[i+3*j]; }
     const double* data() const { return _m; }
-    void print(std::ostream& =ExEnv::out()) const;
+    void print(std::ostream& =ExEnv::out0()) const;
 };
 SCMatrix3 operator*(double,const SCMatrix3&);
 SCMatrix3 rotation_mat(const SCVector3&, const SCVector3&, double theta);

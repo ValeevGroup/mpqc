@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 
 #include <scconfig.h>
 
@@ -60,6 +61,7 @@ char ***ExEnv::argv_ = 0;
 char ExEnv::hostname_[256] = { '\0' };
 char ExEnv::username_[9] = { '\0' };
 ostream *ExEnv::out_ = 0;
+ostream *ExEnv::nullstream_ = 0;
 
 const char *
 ExEnv::program_name()
@@ -69,6 +71,23 @@ ExEnv::program_name()
   if (!start) start = (*argv_)[0];
   else start++;
   return start;
+}
+
+std::ostream &
+ExEnv::out0()
+{
+  if (!SCFormIO::get_debug()
+      && SCFormIO::get_printnode() != SCFormIO::get_node()) {
+      if (!nullstream_) {
+          ofstream *nullofstream = new ofstream;
+          if (nullofstream->bad() || nullofstream->fail())
+              nullofstream->open("/dev/null");
+          nullstream_ = nullofstream;
+        }
+    return *nullstream_;
+    }
+
+  return outn();
 }
 
 void

@@ -10,7 +10,7 @@ CXXSRC = atomcent.cc chemelem.cc molecule.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc stors.cc linip.cc linop.cc \
          energy.cc coor.cc imcoor.cc symmcoor.cc redund.cc cartcoor.cc \
          molshape.cc chmelm_i.cc taylor.cc \
-         molrender.cc molinfo.cc
+         molrender.cc molinfo.cc molfreq.cc
 
 CLASSES = Molecule \
           AtomicCenter ChemicalElement \
@@ -29,7 +29,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o)
 INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
       simple.h localdef.h \
       coor.h energy.h molshape.h chmelm_i.h taylor.h taylor_f.h \
-      molrender.h molinfo.h
+      molrender.h molinfo.h molfreq.h
 
 DEPENDINCLUDE = $(INC)
 

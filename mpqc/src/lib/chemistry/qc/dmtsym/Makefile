@@ -10,7 +10,9 @@ SGENFLAGS = -ifndef _chemistry_qc_dmtsym_sym_h
 TARGET_TO_MAKE = libdmtsym
 BIN_OR_LIB = LIB
 
-CSRC = create_r.c skeleton.c syminit.c mkrpd.c mksym.c symerr.c symutil.c
+CSRC = create_r.c skeleton.c syminit.c mkrpd.c mksym.c
+
+CXXSRC = sym_cpp.cc
 
 SGENFILE = symm.sgen
 SGENSRC = symmallc.c symmasgn.c symmfree.c symmbc0.c symmrbc0.c symmsbc0.c \
@@ -21,8 +23,9 @@ INC = sym_dmt.h symm_mac.h
 SGENINC = $(SGENSRC:%.c=%.h)
 GENINC = $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)
 
-LIBSRC = $(CSRC) $(SGENSRC)
+LIBSRC = $(CSRC) $(SGENSRC) $(CXXSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
+LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
 
 DISTFILES = $(CSRC) $(INC) symm.sgen Makefile LIBS.h
 

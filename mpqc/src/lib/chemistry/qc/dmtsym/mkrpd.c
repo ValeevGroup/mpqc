@@ -1,54 +1,4 @@
 
-
-/* $Log$
- * Revision 1.2  1994/05/16 16:33:49  etseidl
- * refix cnh bug
- *
- * Revision 1.1.1.1  1993/12/29  12:52:59  etseidl
- * SC source tree 0.1
- *
- * Revision 1.3  1992/09/11  12:14:57  seidl
- * add nrot and ntrans to char table
- *
- * Revision 1.2  1992/06/17  21:55:59  jannsen
- * cleaned up for saber-c
- *
- * Revision 1.1.1.1  1992/03/17  16:27:24  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:27:12  seidl
- * Initial revision
- *
- * Revision 1.3  1992/02/13  00:44:42  seidl
- * fix small bug for pg=c2h which caused program to hang
- *
- * Revision 1.2  1992/01/27  15:13:55  seidl
- * fix small bug in formation of F function rotation matrix
- *
- * Revision 1.1  1992/01/27  12:53:04  seidl
- * Initial revision
- *
- * Revision 1.2  1992/01/21  11:31:53  seidl
- * use int_libv2
- *
- * Revision 1.1  1991/12/20  15:45:23  seidl
- * Initial revision
- *
- * Revision 1.1  1991/12/17  21:55:18  seidl
- * Initial revision
- *
- * Revision 1.1  1991/12/03  16:50:10  etseidl
- * Initial revision
- *
- * Revision 1.2  1991/12/02  19:53:33  seidl
- * *** empty log message ***
- *
- * Revision 1.1  1991/11/22  18:28:13  seidl
- * Initial revision
- * */
-
-static char rcsid[] = "$Id$";
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -56,32 +6,43 @@ static char rcsid[] = "$Id$";
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
-#ifndef IOFF
-#define IOFF(a,b) (a>b)?a*(a+1)/2+b:b*(b+1)/2+a
-#endif
+#include "symm.h"
+#include "symm_mac.h"
+#include "symmallc.h"
+#include "symmfree.h"
+
+#include "mkrpd.gbl"
+#include "mkrpd.lcl"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-#include "symm.h"
-#include "symm_mac.h"
-#include "symmallc.h"
-#include "symmfree.h"
-#include "symerr.gbl"
-
-#include "mkrpd.gbl"
-#include "mkrpd.lcl"
+/***************************************************************************
+ * 
+ * given some info about the point group, create the basis set transformation
+ * files, and fill in the character table information in si
+ *
+ * input:
+ *   si = partially constructed sym_struct
+ *   n  = order of the principal rotation axis
+ *   pg = generic point group type
+ *   f_exist = are there f type functions
+ *   g_exist = are there g type functions
+ *
+ * on return:
+ *   si contains all symmetry information
+ *
+ * return 0 on success, -1 on failure
+ */
 
 GLOBAL_FUNCTION int
-make_rp_d(si, n, theta, pg, f_exist, g_exist, _outfile)
+sym_make_rp_d(si, n, pg, f_exist, g_exist)
 sym_struct_t *si;
 int n;
-double theta;
 enum pgroups pg;
 int f_exist;
 int g_exist;
-FILE *_outfile;
 {
   int i,j,k,l,m;
   int i0,j0;
@@ -96,6 +57,7 @@ FILE *_outfile;
   double **rpn;
   double xynorm = sqrt(3.0);
   double xynormi = 1.0/sqrt(3.0);
+  double theta = 2.0*M_PI/(double) n;
 
   check_alloc(rot,"rot in make_rp_d");
   bzero(rot,sizeof(double)*si->g);
@@ -129,7 +91,7 @@ FILE *_outfile;
 
     errcod = allocbn_character(&si->ct.gamma[0],"g degen label nrot ntrans",
                                                           si->g,1,"A",3,3);
-    if(errcod != 0) return rperr(_outfile,0);
+    if(errcod != 0) return rperr(stderr,0);
 
     si->ct.gamma[0].rep[0]=1.0;
     break;
@@ -140,10 +102,10 @@ FILE *_outfile;
 
     errcod = allocbn_character(&si->ct.gamma[0],"g degen label nrot ntrans",
                                                         si->g,1,"Ag",3,0);
-    if(errcod != 0) return rperr(_outfile,0);
+    if(errcod != 0) return rperr(stderr,0);
     errcod = allocbn_character(&si->ct.gamma[1],"g degen label nrot ntrans",
                                                         si->g,1,"Au",0,3);
-    if(errcod != 0) return rperr(_outfile,1);
+    if(errcod != 0) return rperr(stderr,1);
 
     si->ct.gamma[0].rep[0]=  1.0;
     si->ct.gamma[0].rep[1]=  1.0;
@@ -158,10 +120,10 @@ FILE *_outfile;
 
     errcod = allocbn_character(&si->ct.gamma[0],"g degen label nrot ntrans",
                                                          si->g,1,"A\'",1,2);
-    if(errcod != 0) return rperr(_outfile,0);
+    if(errcod != 0) return rperr(stderr,0);
     errcod = allocbn_character(&si->ct.gamma[1],"g degen label nrot ntrans",
                                                          si->g,1,"A\"",2,1);
-    if(errcod != 0) return rperr(_outfile,1);
+    if(errcod != 0) return rperr(stderr,1);
 
     si->ct.gamma[0].rep[0]=  1.0;
     si->ct.gamma[0].rep[1]=  1.0;
@@ -184,7 +146,7 @@ FILE *_outfile;
       }
 
     errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A");
-    if(errcod != 0) return rperr(_outfile,0);
+    if(errcod != 0) return rperr(stderr,0);
     for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
     if(n%2) {
@@ -194,7 +156,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g ; j++) 
@@ -203,7 +165,7 @@ FILE *_outfile;
       }
     else {
       errcod = allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"B");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g ; i++) si->ct.gamma[1].rep[i] = pow(-1.0,(double)i);
 
       for(i=2; i < si->nirrep ; i++) {
@@ -212,7 +174,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i-1);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         for(j=0; j < si->g ; j++) 
           si->ct.gamma[i].rep[j] = 2.0*cos((double)theta*j*(i-1));
         }
@@ -249,11 +211,11 @@ FILE *_outfile;
       }
 
     errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A1");
-    if(errcod != 0) return rperr(_outfile,0);
+    if(errcod != 0) return rperr(stderr,0);
     for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
     errcod = allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"A2");
-    if(errcod != 0) return rperr(_outfile,1);
+    if(errcod != 0) return rperr(stderr,1);
     for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 1.0;
     for(i=si->g/2; i < si->g ; i++) si->ct.gamma[1].rep[i] = -1.0;
 
@@ -264,7 +226,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i-1);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g/2 ; j++) 
@@ -274,12 +236,12 @@ FILE *_outfile;
       }
     else {
       errcod = allocbn_character(&si->ct.gamma[2],"g degen label",si->g,1,"B1");
-      if(errcod != 0) return rperr(_outfile,2);
+      if(errcod != 0) return rperr(stderr,2);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[2].rep[i] = pow(-1.0,(double)i);
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[2].rep[i] = 
                                                            pow(-1.0,(double)i);
       errcod = allocbn_character(&si->ct.gamma[3],"g degen label",si->g,1,"B2");
-      if(errcod != 0) return rperr(_outfile,3);
+      if(errcod != 0) return rperr(stderr,3);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[3].rep[i] = pow(-1.0,(double)i);
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[3].rep[i] = 
                                                    pow(-1.0,(double)(i+1));
@@ -290,7 +252,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i-3);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         for(j=0; j < si->g/2 ; j++) 
           si->ct.gamma[i].rep[j] = 2.0*cos((double)theta*j*(i-3));
         for(j=si->g/2; j < si->g ; j++) si->ct.gamma[i].rep[j] = 0.0;
@@ -319,7 +281,7 @@ FILE *_outfile;
     if(n%2) {
       errcod = 
         allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A\'");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       for(i=1; i < si->nirrep/2 ; i++) {
@@ -328,7 +290,7 @@ FILE *_outfile;
         else sprintf(label,"E%d\'",i);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g/2 ; j++) 
@@ -340,7 +302,7 @@ FILE *_outfile;
       i=si->nirrep/2;
       errcod = 
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"A\"");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       for(j=0; j < si->g/2 ; j++) si->ct.gamma[i].rep[j] = 1.0;
       for(j=si->g/2; j < si->g ; j++) si->ct.gamma[i].rep[j] = -1.0;
 
@@ -351,7 +313,7 @@ FILE *_outfile;
         else sprintf(label,"E%d\"",i0);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         for(j=0; j < si->g/2 ; j++) si->ct.gamma[i].rep[j] = 
                                                        si->ct.gamma[i0].rep[j];
         for(j=si->g/2; j < si->g ; j++) si->ct.gamma[i].rep[j] = 
@@ -363,11 +325,11 @@ FILE *_outfile;
 
       errcod = 
         allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"Ag");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
       errcod = 
         allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"Bg");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 
                                                         pow(-1.0,(double) i);
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[1].rep[i] = 
@@ -380,7 +342,7 @@ FILE *_outfile;
         else sprintf(label,"E%dg",i-1);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g/2 ; j++) 
@@ -392,13 +354,13 @@ FILE *_outfile;
       i=si->nirrep/2;
       errcod = 
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"Au");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       for(j=0; j < si->g/2 ; j++) si->ct.gamma[i].rep[j] = 1.0;
       for(j=si->g/2; j < si->g ; j++) si->ct.gamma[i].rep[j] = -1.0;
       i++;
       errcod = 
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"Bu");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       for(j=0; j < si->g/2 ; j++) si->ct.gamma[i].rep[j] = 
                                                         si->ct.gamma[1].rep[j];
       for(j=si->g/2; j < si->g ; j++) si->ct.gamma[i].rep[j] =
@@ -411,7 +373,7 @@ FILE *_outfile;
         else sprintf(label,"E%du",i0-1);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         for(j=0; j < si->g/2 ; j++) si->ct.gamma[i].rep[j] = 
                                                      si->ct.gamma[i0].rep[j];
@@ -440,7 +402,7 @@ FILE *_outfile;
 
     if((n/2)%2) {
       errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"Ag");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       for(i=1; i < si->nirrep/2 ; i++) {
@@ -449,7 +411,7 @@ FILE *_outfile;
         else sprintf(label,"E%dg",i);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g ; j++) 
@@ -458,7 +420,7 @@ FILE *_outfile;
 
       i=si->nirrep/2;
       errcod = allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"Au");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       for(j=0; j < si->g ; j++) si->ct.gamma[i].rep[j] = pow(-1.0,(double)j);
 
       for(i=i+1; i < si->nirrep ; i++) {
@@ -468,7 +430,7 @@ FILE *_outfile;
         else sprintf(label,"E%du",i);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         for(j=0; j < si->g ; j++) si->ct.gamma[i].rep[j] = 
                                 pow(-1.0,(double) j)*si->ct.gamma[i0].rep[j];
@@ -476,11 +438,11 @@ FILE *_outfile;
       }
     else {
       errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"B");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g ; i++) si->ct.gamma[1].rep[i] = pow(-1.0,(double)i);
 
       for(i=2; i < si->nirrep ; i++) {
@@ -489,7 +451,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i-1);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         for(j=0; j < si->g ; j++) 
           si->ct.gamma[i].rep[j] = 2.0*cos((double)theta*j*(i-1));
         }
@@ -526,31 +488,31 @@ FILE *_outfile;
 
     if(n==2) {
       errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"B1");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       si->ct.gamma[1].rep[0] = si->ct.gamma[1].rep[1] = 1.0;
       si->ct.gamma[1].rep[2] = si->ct.gamma[1].rep[3] = -1.0;
 
       errcod = allocbn_character(&si->ct.gamma[2],"g degen label",si->g,1,"B2");
-      if(errcod != 0) return rperr(_outfile,2);
+      if(errcod != 0) return rperr(stderr,2);
       si->ct.gamma[2].rep[0] = si->ct.gamma[2].rep[3] = 1.0;
       si->ct.gamma[2].rep[1] = si->ct.gamma[2].rep[2] = -1.0;
 
       errcod = allocbn_character(&si->ct.gamma[3],"g degen label",si->g,1,"B3");
-      if(errcod != 0) return rperr(_outfile,3);
+      if(errcod != 0) return rperr(stderr,3);
       si->ct.gamma[3].rep[0] = si->ct.gamma[3].rep[2] = 1.0;
       si->ct.gamma[3].rep[1] = si->ct.gamma[3].rep[3] = -1.0;
       }
     else if(n%2) {
       errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A1");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"A2");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 1.0;
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[1].rep[i] = -1.0;
 
@@ -560,7 +522,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i-1);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g/2 ; j++) 
@@ -570,22 +532,22 @@ FILE *_outfile;
       }
     else {
       errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A1");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"A2");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 1.0;
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[1].rep[i] = -1.0;
 
       errcod = allocbn_character(&si->ct.gamma[2],"g degen label",si->g,1,"B1");
-      if(errcod != 0) return rperr(_outfile,2);
+      if(errcod != 0) return rperr(stderr,2);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[2].rep[i] = pow(-1.0,(double)i);
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[2].rep[i] = 
                                                            pow(-1.0,(double)i);
 
       errcod = allocbn_character(&si->ct.gamma[3],"g degen label",si->g,1,"B2");
-      if(errcod != 0) return rperr(_outfile,3);
+      if(errcod != 0) return rperr(stderr,3);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[3].rep[i] = pow(-1.0,(double)i);
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[3].rep[i] = 
                                                    pow(-1.0,(double)(i+1));
@@ -596,7 +558,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i-3);
         errcod = 
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         for(j=0; j < si->g/2 ; j++) 
           si->ct.gamma[i].rep[j] = 2.0*cos((double)theta*j*(i-3));
         for(j=si->g/2; j < si->g ; j++) si->ct.gamma[i].rep[j] = 0.0;
@@ -651,12 +613,12 @@ FILE *_outfile;
     if(n%2) {
       errcod = 
         allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A1g");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"A2g");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 1.0;
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[1].rep[i] = -1.0;
 
@@ -666,7 +628,7 @@ FILE *_outfile;
         else sprintf(label,"E%dg",i-1);
         errcod =
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g/2 ; j++)
@@ -677,11 +639,11 @@ FILE *_outfile;
       i=si->nirrep/2;
       errcod = 
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"A1u");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       i++;
       errcod = 
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"A2u");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       i++;
 
       for(; i < si->nirrep ; i++) {
@@ -691,7 +653,7 @@ FILE *_outfile;
         else sprintf(label,"E%du",i0-1);
         errcod =
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         }
 
       for(i=si->nirrep/2,i0=0; i < si->nirrep; i++,i0++) {
@@ -706,18 +668,18 @@ FILE *_outfile;
     else {
       errcod = 
         allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A1");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"A2");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 1.0;
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[1].rep[i] = -1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[2],"g degen label",si->g,1,"B1");
-      if(errcod != 0) return rperr(_outfile,2);
+      if(errcod != 0) return rperr(stderr,2);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[2].rep[i] = 
                                                         pow(-1.0,(double) i);
       for(i=si->g/2; i < 3*si->g/4 ; i++) si->ct.gamma[2].rep[i] =  1.0;
@@ -725,7 +687,7 @@ FILE *_outfile;
                                                    
       errcod = 
         allocbn_character(&si->ct.gamma[3],"g degen label",si->g,1,"B2");
-      if(errcod != 0) return rperr(_outfile,3);
+      if(errcod != 0) return rperr(stderr,3);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[3].rep[i] = 
                                                         pow(-1.0,(double) i);
       for(i=si->g/2; i < 3*si->g/4 ; i++) si->ct.gamma[3].rep[i] = -1.0;
@@ -737,7 +699,7 @@ FILE *_outfile;
         else sprintf(label,"E%d",i-3);
         errcod =
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g/2 ; j++)
@@ -795,18 +757,18 @@ FILE *_outfile;
 
     if(n==2) {
       errcod = allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"Ag");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < 8 ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"B1g");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < 4 ; i++) si->ct.gamma[1].rep[i] = 1.0;
       for(i=4; i < 8 ; i++) si->ct.gamma[1].rep[i] = -1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[2],"g degen label",si->g,1,"B2g");
-      if(errcod != 0) return rperr(_outfile,2);
+      if(errcod != 0) return rperr(stderr,2);
       si->ct.gamma[2].rep[0] = si->ct.gamma[2].rep[3] =
        si->ct.gamma[2].rep[5] = si->ct.gamma[2].rep[6] = 1.0;
       si->ct.gamma[2].rep[1] = si->ct.gamma[2].rep[2] =
@@ -814,14 +776,14 @@ FILE *_outfile;
 
       errcod = 
         allocbn_character(&si->ct.gamma[3],"g degen label",si->g,1,"B3g");
-      if(errcod != 0) return rperr(_outfile,3);
+      if(errcod != 0) return rperr(stderr,3);
       si->ct.gamma[3].rep[0] = si->ct.gamma[3].rep[3] =
        si->ct.gamma[3].rep[4] = si->ct.gamma[3].rep[7] = 1.0;
       si->ct.gamma[3].rep[1] = si->ct.gamma[3].rep[2] =
        si->ct.gamma[3].rep[5] = si->ct.gamma[3].rep[6] = -1.0;
 
       errcod = allocbn_character(&si->ct.gamma[4],"g degen label",si->g,1,"Au");
-      if(errcod != 0) return rperr(_outfile,4);
+      if(errcod != 0) return rperr(stderr,4);
       for(i=0; i < 2 ; i++) si->ct.gamma[4].rep[i] = 1.0;
       for(i=2; i < 4 ; i++) si->ct.gamma[4].rep[i] = -1.0;
       for(i=4; i < 6 ; i++) si->ct.gamma[4].rep[i] = 1.0;
@@ -829,31 +791,31 @@ FILE *_outfile;
 
       errcod = 
         allocbn_character(&si->ct.gamma[5],"g degen label",si->g,1,"B1u");
-      if(errcod != 0) return rperr(_outfile,5);
+      if(errcod != 0) return rperr(stderr,5);
       for(i=0; i < 2 ; i++) si->ct.gamma[5].rep[i] = 1.0;
       for(i=2; i < 6 ; i++) si->ct.gamma[5].rep[i] = -1.0;
       for(i=6; i < 8 ; i++) si->ct.gamma[5].rep[i] = 1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[6],"g degen label",si->g,1,"B2u");
-      if(errcod != 0) return rperr(_outfile,6);
+      if(errcod != 0) return rperr(stderr,6);
       for(i=0; i < 4 ; i++) si->ct.gamma[6].rep[i] =  pow(-1.0,(double)i);
       for(i=4; i < 8 ; i++) si->ct.gamma[6].rep[i] = -pow(-1.0,(double)i);
 
       errcod = 
         allocbn_character(&si->ct.gamma[7],"g degen label",si->g,1,"B3u");
-      if(errcod != 0) return rperr(_outfile,7);
+      if(errcod != 0) return rperr(stderr,7);
       for(i=0; i < 8 ; i++) si->ct.gamma[7].rep[i] = pow(-1.0,(double)i);
       }
     else if(n%2) {
       errcod = 
         allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A1\'");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"A2\'");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 1.0;
       for(i=si->g/2,i0=0; i < si->g ; i++,i0++) si->ct.gamma[1].rep[i] = -1.0;
 
@@ -863,7 +825,7 @@ FILE *_outfile;
         else sprintf(label,"E%d\'",i-1);
         errcod =
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
 
         si->ct.gamma[i].rep[0] = 2.0;
         for(j=1; j < si->g/4 ; j++)
@@ -876,10 +838,10 @@ FILE *_outfile;
       i=si->nirrep/2;
       errcod = 
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"A1\"");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       errcod = 
         allocbn_character(&si->ct.gamma[i+1],"g degen label",si->g,1,"A2\"");
-      if(errcod != 0) return rperr(_outfile,i+1);
+      if(errcod != 0) return rperr(stderr,i+1);
 
       for(i=i+2; i < si->nirrep ; i++) {
         i0=i-(si->nirrep/2);
@@ -888,7 +850,7 @@ FILE *_outfile;
         else sprintf(label,"E%d\"",i0-1);
         errcod =
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         }
 
       for(i=si->nirrep/2,i0=0; i < si->nirrep ; i0++,i++) {
@@ -906,23 +868,23 @@ FILE *_outfile;
     else {
       errcod = 
         allocbn_character(&si->ct.gamma[0],"g degen label",si->g,1,"A1g");
-      if(errcod != 0) return rperr(_outfile,0);
+      if(errcod != 0) return rperr(stderr,0);
       for(i=0; i < si->g ; i++) si->ct.gamma[0].rep[i] = 1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[1],"g degen label",si->g,1,"A2g");
-      if(errcod != 0) return rperr(_outfile,1);
+      if(errcod != 0) return rperr(stderr,1);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[1].rep[i] = 1.0;
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[1].rep[i] = -1.0;
 
       errcod = 
         allocbn_character(&si->ct.gamma[2],"g degen label",si->g,1,"B1g");
-      if(errcod != 0) return rperr(_outfile,2);
+      if(errcod != 0) return rperr(stderr,2);
       for(i=0; i < si->g ; i++) si->ct.gamma[2].rep[i] = pow(-1.0,(double)i);
 
       errcod =
         allocbn_character(&si->ct.gamma[3],"g degen label",si->g,1,"B2g");
-      if(errcod != 0) return rperr(_outfile,3);
+      if(errcod != 0) return rperr(stderr,3);
       for(i=0; i < si->g/2 ; i++) si->ct.gamma[3].rep[i] = pow(-1.0,(double)i);
       for(i=si->g/2; i < si->g ; i++) si->ct.gamma[3].rep[i] = 
                                                        pow(-1.0,(double)(i+1));
@@ -933,7 +895,7 @@ FILE *_outfile;
         else sprintf(label,"E%dg",i-3);
         errcod =
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         for(j=0; j < si->g/4 ; j++)
           si->ct.gamma[i].rep[j] = 2.0*cos((double)theta*j*(i-3));
         for(j=si->g/4; j < si->g/2 ; j++) si->ct.gamma[i].rep[j] = 
@@ -944,19 +906,19 @@ FILE *_outfile;
       i=si->nirrep/2;
       errcod =
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"A1u");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       i++;
       errcod =
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"A2u");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       i++;
       errcod =
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"B1u");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       i++;
       errcod =
         allocbn_character(&si->ct.gamma[i],"g degen label",si->g,1,"B2u");
-      if(errcod != 0) return rperr(_outfile,i);
+      if(errcod != 0) return rperr(stderr,i);
       i++;
       for(; i < si->nirrep ; i++) {
         i0=i-(si->nirrep/2);
@@ -965,7 +927,7 @@ FILE *_outfile;
         else sprintf(label,"E%du",i0-3);
         errcod =
           allocbn_character(&si->ct.gamma[i],"g degen label",si->g,2,label);
-        if(errcod != 0) return rperr(_outfile,i);
+        if(errcod != 0) return rperr(stderr,i);
         }
 
       for(i=si->nirrep/2,i0=0; i < si->nirrep ; i0++,i++) {
@@ -1209,13 +1171,13 @@ FILE *_outfile;
   }
 
 LOCAL_FUNCTION int
-rperr(_outfile,i)
-FILE *_outfile;
+rperr(outfile,i)
+FILE *outfile;
 int i;
 {
-  fprintf(_outfile,"sym_init_centers: make_rp_d:\n");
-  fprintf(_outfile,"could not allocate memory for gamma[%d]\n",i);
-  fflush(_outfile);
-  return(-1);
-  }
+  fprintf(outfile,"sym_init_centers: make_rp_d:\n");
+  fprintf(outfile,"could not allocate memory for gamma[%d]\n",i);
+  fflush(outfile);
+  return -1;
+}
 

@@ -55,20 +55,3 @@ sym_struct {
 
   char_tab ct;            // character table not in Cotton order
   } ;
-
-scf_irrep {
-  int num_so;
-  int num_so_tri;
-  int nclosed;
-  int nopen;
-  int degeneracy;
-  int os_num;
-  int ideg;
-  string irrep_label;
-  };
-
-scf_irreps {
-  int nirrep;
-
-  scf_irrep ir[nirrep];
-  };

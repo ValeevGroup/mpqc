@@ -1,53 +1,4 @@
 
-/* $Log$
- * Revision 1.1  1993/12/29 12:52:57  etseidl
- * Initial revision
- *
- * Revision 1.2  1992/06/17  21:55:55  jannsen
- * cleaned up for saber-c
- *
- * Revision 1.1.1.1  1992/03/17  16:27:10  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:27:09  seidl
- * Initial revision
- *
- * Revision 1.4  1992/01/27  16:47:47  seidl
- * libint needs libmath
- *
- * Revision 1.3  1992/01/27  16:41:51  seidl
- * remove some unnecessary includes
- *
- * Revision 1.2  1992/01/27  11:55:30  seidl
- * forming true R matrix seems to be working
- *
- * Revision 1.1.1.1  92/01/22  18:20:15  seidl
- * try to form the correct trans matrix
- * 
- * Revision 1.1  1992/01/22  17:47:00  seidl
- * Initial revision
- */
-
-/* log from libsym
- *
- * Revision 1.2  1992/01/21  11:34:46  seidl
- * use libintv2
- *
- * Revision 1.1  1991/12/20  15:45:23  seidl
- * Initial revision
- *
- * Revision 1.1  1991/12/03  16:41:54  etseidl
- * Initial revision
- *
- * Revision 1.2  1991/12/02  19:54:05  seidl
- * *** empty log message ***
- *
- * Revision 1.1  1991/11/22  18:28:40  seidl
- * Initial revision
- * */
-
-static char rcsid[] = "$Id$";
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -58,33 +9,48 @@ static char rcsid[] = "$Id$";
 
 #include "symm.h"
 #include "symm_mac.h"
-#include "symerr.gbl"
 
 #include "create_r.gbl"
 #include "create_r.lcl"
 
+/************************************************************************
+ *	
+ * this creates the full basis set transformation matrix R for a given
+ * symmetry operation g
+ *
+ * input:
+ *   centers = pointer to centers struct
+ *   sym_info = pointer to symmetry struct
+ *   r = dmt column distributed matrix
+ *   g = the index of the symmetry operation
+ *
+ * on return:
+ *   r contains R
+ *
+ * return 0 on success, -1 on failure
+ */
+
 GLOBAL_FUNCTION int
-sym_create_r(_centers,_sym_info,r,g,_outfile)
-centers_t *_centers;
-sym_struct_t *_sym_info;
+sym_create_r(centers,sym_info,r,g)
+centers_t *centers;
+sym_struct_t *sym_info;
 dmt_matrix r;
 int g;
-FILE *_outfile;
 {
   int i,j;
   int atom,shell,bfunc,ffunc,gc;
   int gffunc,glfunc,msize,nlocal,lffunc;
   center_t *c;
-  int nat = _centers->n;
-  double **rp = _sym_info->Rp[g];
-  double **rd = _sym_info->Rd[g];
+  int nat = centers->n;
+  double **rp = sym_info->Rp[g];
+  double **rd = sym_info->Rd[g];
   double **rf;
   double **rg;
   double *rcol,**lr;
   char errmsg[81];
 
-  if(_sym_info->Rf != NULL) rf = _sym_info->Rf[g];
-  if(_sym_info->Rg != NULL) rg = _sym_info->Rg[g];
+  if (sym_info->Rf != NULL) rf = sym_info->Rf[g];
+  if (sym_info->Rg != NULL) rg = sym_info->Rg[g];
 
   dmt_fill(r,0.0);
   dmt_get_col(r,0,&gffunc,&rcol);
@@ -95,88 +61,87 @@ FILE *_outfile;
   glfunc = gffunc+nlocal;
 
   lr = (double **) malloc(sizeof(double *)*nlocal);
-  if(lr==NULL) return(-1);
+  if (lr==NULL) return(-1);
 
-  for(i=0; i < nlocal ; i++) lr[i] = &rcol[i*msize];
+  for (i=0; i < nlocal ; i++) lr[i] = &rcol[i*msize];
 
   lffunc=ffunc=0;
-  for(atom=0; atom < nat ; atom++) {
-    c = &_centers->center[atom];
-    bfunc = _sym_info->first[_sym_info->atom_map[atom][g]];
+  for (atom=0; atom < nat ; atom++) {
+    c = &centers->center[atom];
+    bfunc = sym_info->first[sym_info->atom_map[atom][g]];
 
-    for(shell=0; shell < c->basis.n ; shell++) {
-      for(gc=0; gc < c->basis.shell[shell].ncon ; gc++) {
+    for (shell=0; shell < c->basis.n ; shell++) {
+      for (gc=0; gc < c->basis.shell[shell].ncon ; gc++) {
         switch(c->basis.shell[shell].type[gc].am) {
         case _AM_S:
-          if(ffunc >= gffunc && ffunc < glfunc) {
+          if (ffunc >= gffunc && ffunc < glfunc) {
             lr[lffunc][bfunc]=1.0;
             lffunc++;
-            }
+          }
           bfunc++; ffunc++;
           break;
 
         case _AM_P:
-          for(i=0; i < 3 ; i++) {
-            for(j=0; j < 3 ; j++) {
-              if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
+          for (i=0; i < 3 ; i++) {
+            for (j=0; j < 3 ; j++) {
+              if ((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
                 lr[lffunc][bfunc+j] = rp[i][j];
-                }
               }
-            if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
             }
+            if ((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
+          }
           bfunc+=3;
           ffunc+=3;
           break;
 
         case _AM_D:
-          for(i=0; i < 6 ; i++) {
-            for(j=0; j < 6 ; j++) {
-              if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
+          for (i=0; i < 6 ; i++) {
+            for (j=0; j < 6 ; j++) {
+              if ((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
                 lr[lffunc][bfunc+j] = rd[i][j];
-                }
               }
-            if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
             }
+            if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
+          }
           bfunc+=6;
           ffunc+=6;
           break;
 
         case _AM_F:
-          for(i=0; i < 10 ; i++) {
-            for(j=0; j < 10 ; j++) {
-              if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
+          for (i=0; i < 10 ; i++) {
+            for (j=0; j < 10 ; j++) {
+              if ((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
                 lr[lffunc][bfunc+j] = rf[i][j];
-                }
               }
-            if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
             }
+            if ((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
+          }
           bfunc+=10;
           ffunc+=10;
           break;
 
         case _AM_G:
-          for(i=0; i < 15 ; i++) {
-            for(j=0; j < 15 ; j++) {
-              if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
+          for (i=0; i < 15 ; i++) {
+            for (j=0; j < 15 ; j++) {
+              if ((ffunc+i) >= gffunc && (ffunc+i) < glfunc) {
                 lr[lffunc][bfunc+j] = rg[i][j];
-                }
               }
-            if((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
             }
+            if ((ffunc+i) >= gffunc && (ffunc+i) < glfunc) lffunc++;
+          }
           bfunc+=15;
           ffunc+=15;
           break;
 
         default:
-          sprintf(errmsg,"cannot yet handle shells with am = %d",
-            c->basis.shell[shell].type[gc].am);
-          serror(_outfile,__FILE__,errmsg,__LINE__);
-          return(-1);
-          }
+          fprintf(stderr,"sym_create_r: cannot yet handle shells with am = %d",
+                          c->basis.shell[shell].type[gc].am);
+          return -1;
         }
       }
     }
+  }
 
   free(lr);
-  return(0);
-  }
+  return 0;
+}

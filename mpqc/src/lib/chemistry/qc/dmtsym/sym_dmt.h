@@ -1,6 +1,11 @@
 #ifndef _sym_dmt_h
 #define _sym_dmt_h
 
+#ifdef __cplusplus
+
+extern "C" {
+#endif
+
 #include <math/dmt/libdmt.h>
 
 #include <chemistry/qc/dmtsym/symm.h>
@@ -25,7 +30,15 @@
 #include <chemistry/qc/dmtsym/create_r.gbl>
 #include <chemistry/qc/dmtsym/mksym.gbl>
 #include <chemistry/qc/dmtsym/skeleton.gbl>
-#include <chemistry/qc/dmtsym/symerr.gbl>
 #include <chemistry/qc/dmtsym/syminit.gbl>
+
+#ifdef __cplusplus
+}
+
+class PointGroup;
+
+int sym_struct_from_pg(const PointGroup&, centers_t&, sym_struct_t&);
+
+#endif
 
 #endif

@@ -296,8 +296,8 @@ value of the coordinate, $\tau$, is given by
                        {\| \bar{u}_{ab} \times \bar{u}_{cb} \|} \]
 \[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{bc}}
                        {\| \bar{u}_{cd} \times \bar{u}_{bc} \|} \]
-\[ s            = \cases{1, &if $(\bar{n}_{abc}\times\bar{n}_{bcd})
-                                  \cdot \bar{u}_{cb} > 0$;\cr
+\[ s            = \cases{1, &if (\bar{n}_{abc}\times\bar{n}_{bcd})
+                                  \cdot \bar{u}_{cb} > 0;\cr
                          -1, &otherwise.\cr} \]
 \[ \tau         = s \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} ) \]
 
@@ -355,8 +355,8 @@ value of the coordinate, $\tau_s$, is given by
                        {\| \bar{u}_{ab} \times \bar{u}_{cb} \|}\]
 \[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{cb}}
                        {\| \bar{u}_{cd} \times \bar{u}_{cb} \|}\]
-\[ s            = \cases{-1, &if $(\bar{n}_{abc}\times\bar{n}_{bcd})
-                                  \cdot \bar{u}_{cb} > 0$;\cr
+\[ s            = \cases{-1, &if (\bar{n}_{abc}\times\bar{n}_{bcd})
+                                  \cdot \bar{u}_{cb} > 0;\cr
                          1, &otherwise.\cr}\]
 \[ \tau_s       = s \sqrt{\left(1-(\bar{u}_{ab} \cdot \bar{u}_{cb}\right)^2)
                         \left(1-(\bar{u}_{cb} \cdot \bar{u}_{cd}\right)^2)}

@@ -22,6 +22,23 @@ class ParagonMessageGrp: public intMessageGrp {
     int last_source();
     int last_size();
     int last_type();
+
+    void reduce(double*, int n, GrpReduce<double>&,
+                double*scratch = 0, int target = -1);
+    void reduce(int*, int n, GrpReduce<int>&,
+                int*scratch = 0, int target = -1);
+    void reduce(char*, int n, GrpReduce<char>&,
+                char*scratch = 0, int target = -1);
+    void reduce(unsigned char*, int n, GrpReduce<unsigned char>&,
+                unsigned char*scratch = 0, int target = -1);
+    void reduce(short*, int n, GrpReduce<short>&,
+                short*scratch = 0, int target = -1);
+    void reduce(float*, int n, GrpReduce<float>&,
+                float*scratch = 0, int target = -1);
+    void reduce(long*, int n, GrpReduce<long>&,
+                long*scratch = 0, int target = -1);
+
+    void raw_bcast(void* data, int nbyte, int from);
 };
 
 #endif

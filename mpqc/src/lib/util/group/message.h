@@ -136,6 +136,11 @@ class MessageGrp: public DescribedClass {
     static void set_default_messagegrp(const RefMessageGrp&);
     static MessageGrp* get_default_messagegrp();
 
+    // The initial message group is the group that starts up a process.
+    // This returns null if this process is first and it is up to the
+    // programmer to create a messagegrp.
+    static MessageGrp* initial_messagegrp();
+
     // send messages sequentially to the target
     virtual void send(int target, double* data, int ndata);
     virtual void send(int target, int* data, int ndata);
@@ -309,11 +314,6 @@ class intMessageGrp: public MessageGrp {
     int *source_seq;
     int *target_seq;
     
-    void raw_send(int target, void* data, int nbyte);
-    void raw_recv(int sender, void* data, int nbyte);
-    void raw_sendt(int target, int type, void* data, int nbyte);
-    void raw_recvt(int type, void* data, int nbyte);
-
     virtual void basic_send(int target, int type, void* data, int nbyte) = 0;
     virtual void basic_recv(int type, void* data, int nbyte) = 0;
     virtual int basic_probe(int type) = 0;
@@ -323,6 +323,11 @@ class intMessageGrp: public MessageGrp {
     void initialize(int me, int n, int nbits);
   public:
     ~intMessageGrp();
+
+    void raw_send(int target, void* data, int nbyte);
+    void raw_recv(int sender, void* data, int nbyte);
+    void raw_sendt(int target, int type, void* data, int nbyte);
+    void raw_recvt(int type, void* data, int nbyte);
 
     int probet(int);
 };

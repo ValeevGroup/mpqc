@@ -1,10 +1,15 @@
 
+#define IN_PICL_CC
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <util/group/picl.h>
 #include <util/group/message.h>
 
-#ifndef OLDCLOCK
+#if defined(PARAGON)
+#  include <nx.h>
+#elif defined(OLDCLOCK)
+#else
 #  include <sys/types.h>
 #  include <sys/time.h>
 #  include <sys/resource.h>
@@ -26,10 +31,30 @@ check0(int)
 {
 }
 
+
 #ifndef CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC ((int) 1000000)
 #endif
-#ifndef OLDCLOCK
+
+#if defined(PARAGON)
+double clock0()
+{
+  static double first;
+  static initp = 0;
+  double t;
+  if (!initp) {
+    first = dclock();
+    initp = 1;
+  }
+  t = dclock();
+  return (t - first);
+}
+#elif defined(OLDCLOCK)
+double clock0()
+{
+  return(((double)clock())/CLOCKS_PER_SEC);
+}
+#else
 double clock0()
 {
   double res;
@@ -40,11 +65,6 @@ double clock0()
   res = r.ru_utime.tv_sec + r.ru_stime.tv_sec;
   res += 0.000001 * ( r.ru_utime.tv_usec + r.ru_stime.tv_usec );
   return res;
-}
-#else
-double clock0()
-{
-  return(((double)clock())/CLOCKS_PER_SEC);
 }
 #endif
 
@@ -70,10 +90,13 @@ load0(char* file, int node)
 void
 open0(int*numproc, int*me, int*host)
 {
-  *numproc = 1;
-  *me = 0;
+  global_messagegrp = MessageGrp::initial_messagegrp();
+  if (global_messagegrp.null()) {
+      global_messagegrp = MessageGrp::get_default_messagegrp();
+    }
+  *numproc = global_messagegrp->n();
+  *me = global_messagegrp->me();
   *host = -1;
-  global_messagegrp = MessageGrp::get_default_messagegrp();
 }
 
 void
@@ -129,7 +152,9 @@ void
 setarc0(int*nprocs,int*,int*,int*)
 {
   if (*nprocs != global_messagegrp->n()) {
-      fprintf(stderr,"setarc0: ignored attempt to change nprocs\n");
+      fprintf(stderr,"setarc0: ignored attempt to change nprocs:\n");
+      fprintf(stderr," nprocs = %d, attempted to set to %d\n",
+              global_messagegrp->n(), *nprocs);
     }
 }
 

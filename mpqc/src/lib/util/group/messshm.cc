@@ -7,7 +7,7 @@
 
 #include <util/group/messshm.h>
 
-#if defined(OSF)
+#if defined(OSF) || defined(SUNMOS)
 union semun {
   int val;
   struct semid_ds *buf;
@@ -30,11 +30,15 @@ union semun {
 #endif
 
 #if defined(L486) || defined(PARAGON)
+#ifndef SHMCTL_REQUIRES_SHMID
 #  define SHMCTL_REQUIRES_SHMID
+#endif
 #endif
 
 #if defined(L486) || defined(PARAGON)
+#ifndef SHMDT_CHAR
 #  define SHMDT_CHAR
+#endif
 #endif
 
 /* Set the maximum number of processors (including the host). */

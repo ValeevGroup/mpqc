@@ -1,4 +1,6 @@
 
+#ifndef IN_PICL_CC
+
 #ifdef __GNUC__
 #pragma implementation
 #endif
@@ -10,6 +12,9 @@
 #include <util/group/topology.h>
 #include <util/group/hcube.h>
 #include <util/class/classMap.h>
+#if defined(PARAGON)
+#  include <util/group/messpgon.h>
+#endif
 
 #define CLASSNAME MessageGrp
 #define PARENTS public DescribedClass
@@ -58,6 +63,39 @@ MessageGrp::get_default_messagegrp()
       default_messagegrp = new ProcMessageGrp;
     }
   return default_messagegrp.pointer();
+}
+
+MessageGrp*
+MessageGrp::initial_messagegrp()
+{
+#if defined(PARAGON)
+  // the initial message group on the paragon is always ParagonMessageGrp
+  return new ParagonMessageGrp;
+#else
+  // find out if the environment gives the containing message group
+  char *groupname = getenv("MessageGrp");
+  if (!groupname) return 0;
+  if (strchr(groupname, '=')) {
+      groupname = strchr(groupname, '=');
+    }
+  if (*groupname == '=') groupname++;
+  ClassDesc *cd = ClassDesc::name_to_class_desc(groupname);
+  if (!cd) {
+      fprintf(stderr,
+              "MessageGrp::initial_messagegrp: failed to find ClassDesc"
+              " for \"%s\"\n",
+              groupname);
+      abort();
+    }
+  MessageGrp* grp = MessageGrp::castdown(cd->create());
+  if (!grp) {
+      fprintf(stderr,
+              "MessageGrp::initial_messagegrp: failed to create \"%s\"\n",
+              groupname);
+      abort();
+    }
+  return grp;
+#endif
 }
 
 void
@@ -440,3 +478,5 @@ MessageGrp::sync()
         }
     }
 }
+
+#endif

@@ -10,17 +10,23 @@ REQUIREDCXXSRC = mstate.cc \
 # pool.cc
 # memory.cc
 
-OPTIONALCXXSRC = messshm.cc messpgon.cc
+OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.h
 
 CXXSRC := $(REQUIREDCXXSRC)
-ifneq ($(ARCH),PARAGON)
+ifneq ($(ARCH),SUNMOS)
   CXXSRC += messshm.cc
 endif
 ifeq ($(ARCH),PARAGON)
   CXXSRC += messpgon.cc
 endif
+ifeq ($(ARCH),SUNMOS)
+  CXXSRC += messpgon.cc
+endif
+ifeq ($(HAVE_PVM),yes)
+  CXXSRC += messpvm.cc
+endif
 
-INC = pool.h message.h mstate.h topology.h picl.h messshm.h
+INC = pool.h message.h mstate.h topology.h picl.h messshm.h messpvm.h
 # memory.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
@@ -49,8 +55,7 @@ messtest: messtest.o \
 	libstate.a \
 	libclass.a \
 	libcontainer.a \
-	libmisc.a \
-	-lfl
+	libmisc.a
 	$(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

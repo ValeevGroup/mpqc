@@ -11,13 +11,13 @@
 
 // Force linkages:
 #ifndef __PIC__
-# ifndef PARAGON
+#ifndef PUMAGON
 #   include <util/group/messshm.h>
     const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
-# endif
-# ifdef PARAGON
-#   include <util/group/messpgon.h>
-    const ClassDesc &fl1 = ParagonMessageGrp::class_desc_;
+#endif
+# ifdef HAVE_PVM
+#   include <util/group/messpvm.h>
+    const ClassDesc &fl2 = PVMMessageGrp::class_desc_;
 # endif
 #endif
 
@@ -116,21 +116,23 @@ void test_hcube(int nproc, int root, int fwd);
 int
 main(int argc, char**argv)
 {
-  RefMessageGrp grp;
-
-  const char* input = SRCDIR "/messtest.in";
-  const char* keyword = "message";
-
-  if (argc >= 2) input = argv[1];
-  if (argc >= 3) keyword = argv[2];
-
-  RefKeyVal keyval = new ParsedKeyVal(input);
-
-  grp = keyval->describedclassvalue(keyword);
+  RefMessageGrp grp = MessageGrp::initial_messagegrp();
 
   if (grp.null()) {
-      fprintf(stderr,"Couldn't initialize MessageGrp\n");
-      abort();
+      const char* input = SRCDIR "/messtest.in";
+      const char* keyword = "message";
+
+      if (argc >= 2) input = argv[1];
+      if (argc >= 3) keyword = argv[2];
+
+      RefKeyVal keyval = new ParsedKeyVal(input);
+
+      grp = keyval->describedclassvalue(keyword);
+
+      if (grp.null()) {
+          fprintf(stderr,"Couldn't initialize MessageGrp\n");
+          abort();
+        }
     }
 
   grp->sync();
@@ -153,7 +155,14 @@ main(int argc, char**argv)
       test(grp, 0, 0);
     }
 
+  int testsum = 1;
+  grp->sum(&testsum,1);
+  if (testsum != grp->n()) {
+      fprintf(stderr,"WARNING: sum wrong\n");
+    }
+
   grp->sync();
+  grp = 0;
   return 0;
 }
 

@@ -37,6 +37,7 @@ default::
 	@echo 
 	@echo "  configure     Update aclocal.m4 and run configure."
 	@echo "  tags          Build a new TAGS file."
+	@echo "  ebrowse       Build a new BROWSE file for emacs ebrowse."
 	@echo "  clean         Remove emacs backup files in this and all subdirectories."
 	@echo 
 
@@ -51,6 +52,10 @@ configure:
 .PHONY: tags
 tags:
 	etags --members `find . -name "*.[hcfCF]"` `find . -name "*.cc"`
+
+.PHONY: ebrowse
+ebrowse:
+	ebrowse `find . -name "*.[hcC]"` `find . -name "*.cc"`
 
 .PHONY: clean
 clean::

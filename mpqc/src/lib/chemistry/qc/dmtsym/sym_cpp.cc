@@ -7,7 +7,6 @@
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/libmisc.h>
 #include <util/keyval/keyval.h>
-#include <util/keyval/ipv2c.h>
 
 extern "C" {
 #include <tmpl.h>

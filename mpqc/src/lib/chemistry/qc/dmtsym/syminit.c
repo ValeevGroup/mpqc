@@ -4,7 +4,6 @@
 #include <math.h>
 #include <tmpl.h>
 #include <math/array/math_lib.h>
-#include <util/keyval/ipv2c.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
 #ifndef IOFF

@@ -11,7 +11,6 @@
 #include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <util/keyval/ipv2c.h>
 #include "scf.h"
 
 #include "scf_diis.gbl"

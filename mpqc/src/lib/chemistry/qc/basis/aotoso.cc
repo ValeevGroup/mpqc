@@ -313,7 +313,7 @@ PetiteList::aotoso_info()
 
       // for now don't allow symmetry with cartesian functions...I just can't
       // seem to get them working.
-      if (cartfunc) {
+      if (cartfunc && ng_ != nirrep_) {
         fprintf(stderr,"PetiteList::aotoso:  cannot yet handle symmetry for"
                 " angular momentum >= 2\n");
         abort();

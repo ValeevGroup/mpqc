@@ -26,6 +26,9 @@ CC  = @CC@
 CXX = @CXX@
 FC = @F77@
 
+CCDEPEND = @CC@
+CXXDEPEND = @CXX@
+
 AR = @AR@
 ARFLAGS = r
 

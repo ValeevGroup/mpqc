@@ -241,6 +241,16 @@ int GaussianShell::max_angular_momentum() const
   return max;
 }
 
+int GaussianShell::min_angular_momentum() const
+{
+  int min = 0;
+  for (int i=0; i<ncontraction(); i++) {
+      int mini = l[i];
+      if (min > mini) min = mini;
+    }
+  return min;
+}
+
 int GaussianShell::max_cartesian() const
 {
   int max = 0;

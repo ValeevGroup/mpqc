@@ -75,8 +75,9 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
   name_ = new_string(gbs.name_);
 
   center_to_nshell_.set_length(ncenter_);
-  for (i=0; i < ncenter_; i++)
+  for (i=0; i < ncenter_; i++) {
       center_to_nshell_(i) = gbs.center_to_nshell_(i);
+    }
   
   shell_ = new GaussianShell*[nshell_];
   for (i=0; i<nshell_; i++) {
@@ -280,11 +281,17 @@ GaussianBasisSet::init2()
   // center_to_shell_ and shell_to_center_
   shell_to_center_.set_length(nshell_);
   center_to_shell_.set_length(ncenter_);
+  center_to_nbasis_.set_length(ncenter_);
   int ishell = 0;
   for (int icenter=0; icenter<ncenter_; icenter++) {
+      int j;
       center_to_shell_[icenter] = ishell;
+      center_to_nbasis_[icenter] = 0;
+      for (j = 0; j<center_to_nshell_[icenter]; j++) {
+          center_to_nbasis_[icenter] += shell_[ishell+j]->nfunction();
+        }
       ishell += center_to_nshell_[icenter];
-      for (int j = center_to_shell_[icenter]; j<ishell; j++) {
+      for (j = center_to_shell_[icenter]; j<ishell; j++) {
 	  shell_to_center_[j] = icenter;
 	}
      }
@@ -410,6 +417,17 @@ GaussianBasisSet::max_nfunction_in_shell() const
 }
 
 int
+GaussianBasisSet::max_ncontraction() const
+{
+  int i;
+  int max = 0;
+  for (i=0; i<nshell_; i++) {
+      if (max < shell_[i]->ncontraction()) max = shell_[i]->ncontraction();
+    }
+  return max;
+}
+
+int
 GaussianBasisSet::max_angular_momentum() const
 {
   int i;
@@ -462,6 +480,12 @@ int
 GaussianBasisSet::nshell_on_center(int icenter) const
 {
   return center_to_nshell_[icenter];
+}
+
+int
+GaussianBasisSet::nbasis_on_center(int icenter) const
+{
+  return center_to_nbasis_[icenter];
 }
 
 int

@@ -42,6 +42,7 @@ class GaussianBasisSet: public SavableState
     SSBArrayint shell_to_center_;
     SSBArrayint center_to_shell_;
     SSBArrayint center_to_nshell_;
+    SSBArrayint center_to_nbasis_;
 
     int nshell_;
     int nbasis_;
@@ -81,12 +82,14 @@ class GaussianBasisSet: public SavableState
     int shell_on_center(int icenter, int shell) const;
     int shell_to_center(int shell) const;
     int nbasis() const;
+    int nbasis_on_center(int icenter) const;
     int nprimitive() const;
 
     int max_nfunction_in_shell() const;
     int max_angular_momentum() const;
     // This is only need by integrals routines to set up
     // intermediate arrays.
+    int max_ncontraction() const;
     int max_am_for_contraction(int con) const;
     int max_cartesian() const;
 
@@ -104,6 +107,8 @@ class GaussianBasisSet: public SavableState
     // access to shells thru center number and relative shell number
     const GaussianShell& operator()(int icenter,int ishell) const;
     GaussianShell& operator()(int icenter,int ishell);
+    const GaussianShell& shell(int i,int j) const { return operator()(i,j); }
+    GaussianShell& shell(int i,int j) { return operator()(i,j); }
 
     // access to r thru center number
     double r(int icenter,int xyz) const;

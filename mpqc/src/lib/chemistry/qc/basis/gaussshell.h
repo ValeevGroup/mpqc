@@ -82,9 +82,11 @@ class GaussianShell: public SavableState
     int ncontraction() const;
     int nfunction() const;
     int max_angular_momentum() const;
+    int min_angular_momentum() const;
     int max_cartesian() const;
     int am(int con) const;
     int max_am() const { return max_angular_momentum(); }
+    int min_am() const { return min_angular_momentum(); }
     char amchar(int con) const;
     int nfunction(int con) const;
     int ncartesian() const;

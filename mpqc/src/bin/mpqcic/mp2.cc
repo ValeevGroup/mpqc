@@ -58,7 +58,11 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
   tim_enter("init");
 
   int nfzc=0,nfzv=0;
+#if defined(PARAGON)
+  int bmem=20000000;
+#else
   int bmem=10000000;
+#endif
 
   int me=mynode0();
   int nproc=numnodes0();
@@ -159,13 +163,20 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
   *       ni = m / npass
   */
 
+  // mem use is N + N^2 + V^2 + ni*(2*nmx^2*N + OVN/nproc)
+
+  // let's first allocate the rest of the bits that don't depend on ni
+  double *ijab = new double[nvir*nvir];
+  int *a2_lengths = new int[nproc];
+  int *a2_lens = new int[nproc];
+
   int nstatic = (nbasis*(nvir+nocc+1)+nvir*nvir)*sizeof(double);
   int mem = bmem-nstatic;
 
   int nj = nocc*nvir*nbasis/nproc;
-  int nperi = (2*nfuncmax*nfuncmax*nbasis+nj)*sizeof(double);
+  int nperi = (2*nfuncmax*nfuncmax*nbasis+nj);
 
-  int npass = nperi*nocc/mem;
+  int npass = nperi*nocc*sizeof(double)/mem;
   if (nperi*nocc%mem) npass++;
 
   int ni = nocc/npass;
@@ -181,6 +192,11 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
     fprintf(outfile,  "       npass = %d\n",npass);
     fprintf(outfile,  "          ni = %d\n",ni);
     fprintf(outfile,  "         nij = %d\n",nij);
+    fprintf(outfile,  "      nshell = %d\n",centers->nshell);
+    fprintf(outfile,  "        nfzc = %d\n",nfzc);
+    fprintf(outfile,  "        nfzv = %d\n",nfzv);
+    fprintf(outfile,  "        nocc = %d\n",nocc);
+    fprintf(outfile,  "        nvir = %d\n",nvir);
     }
 
  // first we must determine how big each nodes chunk will be
@@ -192,10 +208,6 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
   int firsta;
   if (me < remaina) firsta = me*mylena;
   else firsta = remaina*(mylena+1) + (me-remaina)*mylena;
-
-  double *ijab = new double[nvir*nvir];
-  int *a2_lengths = new int[nproc];
-  int *a2_lens = new int[nproc];
 
  // fill the a2_lengths vector for gcollect
   for (int ii=0; ii < nproc; ii++)

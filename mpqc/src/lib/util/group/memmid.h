@@ -43,6 +43,7 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
   public:
     // This is public so memory handler functions can call it.
     void handler(long *mid = 0);
+    int ctl_mask_;
   protected:
     void handler(MemoryDataRequest&, long *mid = 0);
     

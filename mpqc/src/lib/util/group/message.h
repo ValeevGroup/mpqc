@@ -373,6 +373,8 @@ class intMessageGrp: public MessageGrp {
     void raw_recvt(int type, void* data, int nbyte);
 
     int probet(int);
+
+    int leftover_ctl_bits();
 };
 
 #ifndef __GNUG__

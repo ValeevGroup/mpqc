@@ -171,6 +171,12 @@ intMessageGrp::probet(int type)
   return basic_probe(typ_msgtype(type));
 }
 
+int
+intMessageGrp::leftover_ctl_bits()
+{
+  return 3 << ctl_shift;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -193,13 +193,28 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
   ActiveMsgMemoryGrp(msg)
 {
   if (debug_) cout << scprintf("%d: MIDMemoryGrp CTOR\n", me());
-  data_request_type_ = 113;
-  data_type_to_handler_ = 114;
-  data_type_from_handler_ = 115;
+
+  ctl_mask_ = 0x10000;
+  intMessageGrp *img = intMessageGrp::castdown(msg_.pointer());
+  if (img) {
+      ctl_mask_ = img->leftover_ctl_bits();
+    }
+  data_request_type_ = ctl_mask_ | 113;
+  data_type_to_handler_ = ctl_mask_ | 114;
+  data_type_from_handler_ = ctl_mask_ | 115;
   nsync_ = 0;
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
   active_ = 0;
+
+  if (debug_) {
+      cout << node0 << indent << "data_request_type = "
+           << data_request_type_ << endl;
+      cout << node0 << indent << "data_type_to_handler = "
+           << data_type_to_handler_ << endl;
+      cout << node0 << indent << "data_type_from_handler = "
+           << data_type_from_handler_ << endl;
+    }
 }
 
 MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
@@ -209,12 +224,21 @@ MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
   
   nsync_ = 0;
 
+  int default_ctl_mask = 0x10000;
+  intMessageGrp *img = intMessageGrp::castdown(msg_.pointer());
+  if (img) {
+      default_ctl_mask = img->leftover_ctl_bits();
+    }
+
+  ctl_mask_ = keyval->intvalue("ctl_mask");
+  if (keyval->error() != KeyVal::OK) ctl_mask_ = default_ctl_mask;
+
   data_request_type_ = keyval->intvalue("request_type");
-  if (keyval->error() != KeyVal::OK) data_request_type_ = 113;
+  if (keyval->error() != KeyVal::OK) data_request_type_ = ctl_mask_ | 113;
   data_type_to_handler_ = keyval->intvalue("to_type");
-  if (keyval->error() != KeyVal::OK) data_type_to_handler_ = 114;
+  if (keyval->error() != KeyVal::OK) data_type_to_handler_ = ctl_mask_ | 114;
   data_type_from_handler_ = keyval->intvalue("from_type");
-  if (keyval->error() != KeyVal::OK) data_type_from_handler_ = 115;
+  if (keyval->error() != KeyVal::OK) data_type_from_handler_ = ctl_mask_ | 115;
 
   use_acknowledgments_ = keyval->booleanvalue("ack");
   if (keyval->error() != KeyVal::OK) use_acknowledgments_ = 0;

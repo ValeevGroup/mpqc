@@ -46,11 +46,17 @@ ParagonMessageGrp::_castdown(const ClassDesc*cd)
 
 ParagonMessageGrp::ParagonMessageGrp(const RefKeyVal&)
 {
+  // an extra control bit is needed for the bcast type
+  ctl_nbit = 3;
+  ctl_mask = 0x7;
   initialize();
 }
 
 ParagonMessageGrp::ParagonMessageGrp()
 {
+  // an extra control bit is needed for the bcast type
+  ctl_nbit = 3;
+  ctl_mask = 0x7;
   initialize();
 }
 
@@ -283,7 +289,7 @@ ParagonMessageGrp::raw_bcast(void* data, int nbyte, int from)
   if (bcast_type > typ_mask) bcast_type = 0;
 
   // find an unused message type
-  int type = bcast_type<<typ_shift | 3<<ctl_shift;
+  int type = bcast_type<<typ_shift | 4<<ctl_shift;
   if (from == mynode()) {
       csend(type,(char*)data,nbyte,-1,0);
     }

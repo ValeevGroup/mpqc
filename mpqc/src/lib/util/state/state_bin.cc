@@ -82,7 +82,7 @@ StateOutBin::open(const char *f)
 void
 StateOutBin::close()
 {
-  if (buf_) {
+  if (buf_ && use_directory()) {
       int dir_loc = tell();
       seek(dir_loc_loc_);
       put_array_int(&dir_loc,1);
@@ -103,9 +103,9 @@ void
 StateOutBin::seek(int loc)
 {
   file_position_ = loc;
-#if defined(HAS_PUBSEEKOFF)
+#if defined(HAVE_PUBSEEKOFF)
   buf_->pubseekoff(loc,ios::beg,ios::out);
-#elif defined(HAS_SEEKOFF)
+#elif defined(HAVE_SEEKOFF)
   buf_->seekoff(loc,ios::beg,ios::out);
 #endif
 }
@@ -113,7 +113,7 @@ StateOutBin::seek(int loc)
 int
 StateOutBin::seekable()
 {
-#if defined(HAS_PUBSEEKOFF) || defined(HAS_SEEKOFF)
+#if defined(HAVE_PUBSEEKOFF) || defined(HAVE_SEEKOFF)
   return 1;
 #else
   return 0;
@@ -196,9 +196,9 @@ void
 StateInBin::seek(int loc)
 {
   file_position_ = loc;
-#if defined(HAS_PUBSEEKOFF)
+#if defined(HAVE_PUBSEEKOFF)
   buf_->pubseekoff(loc,ios::beg,ios::in);
-#elif defined(HAS_SEEKOFF)
+#elif defined(HAVE_SEEKOFF)
   buf_->seekoff(loc,ios::beg,ios::in);
 #endif
 }
@@ -206,7 +206,7 @@ StateInBin::seek(int loc)
 int
 StateInBin::seekable()
 {
-#if defined(HAS_PUBSEEKOFF) || defined(HAS_SEEKOFF)
+#if defined(HAVE_PUBSEEKOFF) || defined(HAVE_SEEKOFF)
   return 1;
 #else
   return 0;

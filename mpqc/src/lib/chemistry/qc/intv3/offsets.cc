@@ -36,6 +36,8 @@ using namespace sc;
 static int
 shell_offset(Ref<GaussianBasisSet> cs, int off)
 {
+  // unit shells have null cs's
+  if (cs.null()) return off + 1;
   return off + cs->nshell();
 }
 
@@ -43,6 +45,8 @@ shell_offset(Ref<GaussianBasisSet> cs, int off)
 static int
 prim_offset(Ref<GaussianBasisSet> cs, int off)
 {
+  // unit shells have null cs's
+  if (cs.null()) return off + 1;
   return off + cs->nprimitive();
 }
 
@@ -50,6 +54,8 @@ prim_offset(Ref<GaussianBasisSet> cs, int off)
 static int
 func_offset(Ref<GaussianBasisSet> cs, int off)
 {
+  // unit shells have null cs's
+  if (cs.null()) return off + 1;
   return off + cs->nbasis();
 }
 

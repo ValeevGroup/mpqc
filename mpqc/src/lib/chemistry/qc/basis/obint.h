@@ -159,7 +159,81 @@ class OneBodyInt : public RefCount {
     Integral *integral() const { return integral_; }
 };
 
+// //////////////////////////////////////////////////////////////////////////
 
+/** OneBodyOneCenterInt is an abstract base class for objects that
+    compute integrals between two basis functions. */
+class OneBodyOneCenterInt : public RefCount {
+  protected:
+    // this is who created me
+    Integral *integral_;
+
+    Ref<GaussianBasisSet> bs1_;
+
+    double *buffer_;
+
+    OneBodyOneCenterInt(Integral *integral,
+               const Ref<GaussianBasisSet>&b1);
+
+  public:
+    virtual ~OneBodyOneCenterInt();
+  
+    /// Returns the number of basis functions on center one.
+    int nbasis() const;
+
+    /// Returns the number of basis functions on the given center.
+    //@{
+    int nbasis1() const;
+    //@}
+
+    /// Return the number of shells on center one.
+    int nshell() const;
+
+    /// Return the number of shells on the given center.
+    //@{
+    int nshell1() const;
+    //@}
+
+    /// Return the basis set on center one.
+    Ref<GaussianBasisSet> basis();
+
+    /// Return the basis set on the given center.
+    //@{
+    Ref<GaussianBasisSet> basis1();
+    //@}
+
+    /// Returns the buffer where the integrals are placed.
+    const double * buffer() const;
+    
+    /** Computes the integrals for basis functions on the
+        given shell. */
+    virtual void compute_shell(int) = 0;
+
+    /** This is called for one body integrals that take data to let
+        them know that the data they reference has changed. */
+    virtual void reinitialize();
+
+    /** Return true if the clone member can be called.  The default
+     * implementation returns false. */
+    virtual bool cloneable();
+
+    /** Returns a clone of this.  The default implementation throws an
+     * exception. */
+    virtual Ref<OneBodyOneCenterInt> clone();
+
+    Integral *integral() const { return integral_; }
+};
+
+// //////////////////////////////////////////////////////////////////////////
+
+class OneBodyOneCenterWrapper : public OneBodyOneCenterInt {
+    Ref<OneBodyInt> ob_;
+    int jsh_;
+  public:
+    OneBodyOneCenterWrapper(const Ref<OneBodyInt>& ob,
+                            int sh2 = 0);
+    void compute_shell(int);
+};
 
 // //////////////////////////////////////////////////////////////////////////
 

@@ -27,6 +27,8 @@
 
 #include <iostream>
 
+#include <stdexcept>
+
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
 
@@ -41,20 +43,6 @@
 using namespace sc;
 
 //////////////////////////////////////////////////////////////////////////////
-
-static void
-nuc_repulsion(double * g, const Ref<Molecule>& m)
-{
-  // handy things
-  Molecule& mol = *m.pointer();
-
-  for (int x=0; x < mol.natom(); x++) {
-    double xyz[3];
-    mol.nuclear_repulsion_1der(x, xyz);
-    for (int x1=0, x3=x*3; x1 < 3; x1++,x3++)
-      g[x3] += xyz[x1];
-  }
-}
 
 static void
 ob_gradient(const Ref<OneBodyDerivInt>& derint, double * gradient,
@@ -150,13 +138,16 @@ SCF::compute_gradient(const RefSCVector& gradient)
   init_gradient();
 
   int n3=gradient.n();
-  
-  double *g = new double[n3];
-  memset(g,0,sizeof(double)*gradient.n());
+
+  if (atom_basis().nonnull()) {
+    throw std::runtime_error("SCF::compute_gradient: atom_basis not supported");
+  }
 
   // do the nuclear contribution
   tim_enter("nuc rep");
-  nuc_repulsion(g, molecule());
+  
+  double *g = new double[n3];
+  nuclear_repulsion_energy_gradient(g);
 
   if (debug_) {
     gradient.assign(g);

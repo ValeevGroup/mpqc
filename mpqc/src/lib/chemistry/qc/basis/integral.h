@@ -178,8 +178,14 @@ class Integral : public SavableState {
         with point charges. */
     virtual Ref<OneBodyInt> point_charge(const Ref<PointChargeData>&) =0;
 
+    /** Return a OneBodyInt that computes the integrals for interactions
+        with point charges. */
+    virtual Ref<OneBodyOneCenterInt> point_charge1(const Ref<PointChargeData>&);
+
     /** Return a OneBodyInt that computes the nuclear repulsion integrals.
-        Charges from the atoms on the center one are used. */
+        Charges from the atoms on center one are used.  If center two is
+        not identical to center one, then the charges on center two are
+        included as well.  */
     virtual Ref<OneBodyInt> nuclear() = 0;
 
     /// Return a OneBodyInt that computes the core Hamiltonian integrals.
@@ -208,17 +214,27 @@ class Integral : public SavableState {
                                      
     /// Return a OneBodyDerivInt that computes core Hamiltonian derivatives.
     virtual Ref<OneBodyDerivInt> hcore_deriv() =0;
-                                             
+
+    /** Return a TwoBodyThreeCenterInt that computes electron repulsion
+        integrals.  If this is not re-implemented it will throw. */
+    virtual Ref<TwoBodyThreeCenterInt> electron_repulsion3();
+
+    /** Return a TwoBodyTwoCenterInt that computes electron repulsion
+        integrals. If this is not re-implemented it will throw. */
+    virtual Ref<TwoBodyTwoCenterInt> electron_repulsion2();
+
     /// Return a TwoBodyInt that computes electron repulsion integrals.
     virtual Ref<TwoBodyInt> electron_repulsion() =0;
-    
+
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv() =0;
 
-    /** Return a TwoBodyInt that computes two-electron integrals specific to linear R12 methods.
-        According to the convention in the literature, "g" stands for electron repulsion integral,
-	"r" for the integral of r12 operator, and "t" for the commutator integrals. Implementation
-        for this kind of TwoBodyInt is optional. */
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to linear R12 methods.  According to the convention in the
+        literature, "g" stands for electron repulsion integral, "r" for the
+        integral of r12 operator, and "t" for the commutator
+        integrals. Implementation for this kind of TwoBodyInt is
+        optional. */
     virtual Ref<TwoBodyInt> grt();
     
     /// Return the MessageGrp used by the integrals objects.

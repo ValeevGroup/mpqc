@@ -178,10 +178,10 @@ class GaussianBasisSet: public SavableState
 
     // Counts shells in this basis for this chemical element
     int count_shells_(Ref<KeyVal>& keyval, const char* elemname, const char* sbasisname, BasisFileSet& bases,
-		      int havepure, int pure);
+		      int havepure, int pure, bool missing_ok);
     // Constructs this basis
     void get_shells_(int& ishell, Ref<KeyVal>& keyval, const char* elemname, const char* sbasisname, BasisFileSet& bases,
-		     int havepure, int pure);
+		     int havepure, int pure, bool missing_ok);
     // Counts shells in an even-tempered primitive basis
     int count_even_temp_shells_(Ref<KeyVal>& keyval, const char* elemname, const char* sbasisname,
                                 int havepure, int pure);
@@ -191,13 +191,13 @@ class GaussianBasisSet: public SavableState
     // Constructs basis set specified as an array of shells
     void recursively_get_shell(int&,Ref<KeyVal>&,
                                const char*,const char*,BasisFileSet&,
-                               int,int,int);
+                               int,int,int,bool missing_ok);
 
     void init(Ref<Molecule>&,Ref<KeyVal>&,
               BasisFileSet&,
               int have_userkeyval,
               int pure);
-    void init2(int skip_ghosts=0);
+    void init2(int skip_ghosts=0,bool include_q=0);
     
   protected:
     GaussianBasisSet(const GaussianBasisSet&);
@@ -216,6 +216,9 @@ class GaussianBasisSet: public SavableState
         CartesianIter **civec() { return civec_; }
         SphericalTransformIter **sivec() { return sivec_; }
     };
+
+    /// This can be given to a CTOR to construct a unit basis function.
+    enum UnitType {Unit};
 
     /** The KeyVal constructor.
 
@@ -373,6 +376,11 @@ class GaussianBasisSet: public SavableState
 
         */
     GaussianBasisSet(const Ref<KeyVal>&);
+    /** This can be given GaussianBasisSet::Unit to construct a basis
+        set with a single basis function that is one everywhere.  This
+        can be used with integral evaluators to compute certain classes
+        of integrals, with limitations. */
+    GaussianBasisSet(UnitType);
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();
 

@@ -83,7 +83,7 @@ class SCF: public OneBodyWavefunction {
     virtual void compute();
 
     // calculate the scf vector, returning the accuracy
-    virtual double compute_vector(double&);
+    virtual double compute_vector(double&, double enuclear);
 
     // return the DIIS error matrices
     virtual Ref<SCExtrapError> extrap_error();

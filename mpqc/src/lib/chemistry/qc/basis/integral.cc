@@ -263,6 +263,24 @@ Integral::grt()
   throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
 }
 
+Ref<OneBodyOneCenterInt>
+Integral::point_charge1(const Ref<PointChargeData>&)
+{
+  throw std::runtime_error("Integral::point_charge1(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyThreeCenterInt>
+Integral::electron_repulsion3()
+{
+  throw std::runtime_error("Integral::electron_repulsion3(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyTwoCenterInt>
+Integral::electron_repulsion2()
+{
+  throw std::runtime_error("Integral::electron_repulsion2(): not implemented in this particular integrals factory.");
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -132,7 +132,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   int tam1,tam2,tam3,tam4;
   int i,j,k,l;
   int ogc1,ogc2,ogc3,ogc4;
-  int osh1,osh2,osh3,osh4;
   int sh1,sh2,sh3,sh4;
   int am1,am2,am3,am4,am12, am34;
   int minam1,minam2,minam3,minam4;
@@ -143,14 +142,14 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   /* Compute the offset shell numbers. */
   osh1 = *psh1 + bs1_shell_offset_;
-  if (!int_unit2) osh2 = *psh2 + bs2_shell_offset_;
+  osh2 = *psh2 + bs2_shell_offset_;
   osh3 = *psh3 + bs3_shell_offset_;
-  if (!int_unit4) osh4 = *psh4 + bs4_shell_offset_;
+  osh4 = *psh4 + bs4_shell_offset_;
 
   sh1 = *psh1;
-  if (!int_unit2) sh2 = *psh2;
+  sh2 = *psh2;
   sh3 = *psh3;
-  if (!int_unit4) sh4 = *psh4;
+  sh4 = *psh4;
 
   /* Test the arguments to make sure that they are sensible. */
   if (   sh1 < 0 || sh1 >= bs1_->nbasis()
@@ -160,9 +159,9 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     ExEnv::errn() << scprintf("compute_erep has been incorrectly used\n");
     ExEnv::errn() << scprintf("shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
             sh1,bs1_->nbasis()-1,
-            sh2,bs2_->nbasis()-1,
+            sh2,(bs2_.null()?0:bs2_->nbasis())-1,
             sh3,bs3_->nbasis()-1,
-            sh4,bs4_->nbasis()-1);
+            sh4,(bs4_.null()?0:bs4_->nbasis())-1);
     fail();
     }
 
@@ -227,7 +226,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     sswtch(&int_shell3,&int_shell4);
     swtch(pbs3,pbs4);
     }
-  if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
+  if ((osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
     /* Don't make the permutation unless we won't override what was
      * decided above about p34. */
     if (am4 == am3) {
@@ -278,9 +277,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     swtch(pbs2,pbs4);
     }
 
-  if (  int_unit2
-        ||((pbs1 == pbs2)
-          &&(pbs1->shell_to_center(sh1)==pbs2->shell_to_center(sh2)))) {
+  if ((pbs1 == pbs2)
+      &&(pbs1->shell_to_center(sh1)==pbs2->shell_to_center(sh2))) {
     eAB = 1;
     }
   else {
@@ -299,6 +297,11 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&int_expweight1,&int_expweight3);
     iswtch(&int_expweight2,&int_expweight4);
     }
+
+  pbs1_ = pbs1;
+  pbs2_ = pbs2;
+  pbs3_ = pbs3;
+  pbs4_ = pbs4;
 
   int nc1 = int_shell1->ncontraction();
   int nc2 = int_shell2->ncontraction();
@@ -338,7 +341,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   int_buildgcam(minam1,minam2,minam3,minam4,
                 am1,am2,am3,am4,
                 dam1,dam2,dam3,dam4,
-                sh1,sh2,sh3,sh4, eAB);
+                sh1,sh2,sh3,sh4,
+                eAB);
 #ifdef EREP_TIMING
   tim_change("cleanup");
 #endif
@@ -596,6 +600,11 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       iswtch(&int_expweight1,&int_expweight2);
       }
     }
+
+  pbs1_ = 0;
+  pbs2_ = 0;
+  pbs3_ = 0;
+  pbs4_ = 0;
 
   /* Transform to pure am (if requested in the centers structure). */
   if (!(flags&INT_NOPURE)) {

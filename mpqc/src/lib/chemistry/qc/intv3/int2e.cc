@@ -52,17 +52,19 @@ Int2eV3::Int2eV3(Integral *integral,
   bs3_ = b3;
   bs4_ = b4;
 
-  if (bs2_.null()) bs2_ = bs1_;
-  if (bs3_.null()) bs3_ = bs2_;
-  if (bs4_.null()) bs4_ = bs3_;
+  int_unit2 = bs2_.null();
+  int_unit4 = bs4_.null();
 
   transform_init();
   int_initialize_offsets2();
   int_initialize_erep(storage,order,bs1_,bs2_,bs3_,bs4_);
-  if (order==0) {
-    init_bounds();
-  } else if (order==1) {
-    init_bounds_1der();
+  if (!(int_unit2 || int_unit4)) {
+    if (order==0) {
+      init_bounds();
+      }
+    else if (order==1) {
+      init_bounds_1der();
+    }
   }
 }
 

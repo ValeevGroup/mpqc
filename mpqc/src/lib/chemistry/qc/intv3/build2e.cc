@@ -129,13 +129,13 @@ Int2eV3::int_init_buildgc(int order,
     int tmp;
     jmax_for_con[i] = bs1_->max_am_for_contraction(i);
     if (  (bs2_ != bs1_)
-        &&((tmp=bs2_->max_am_for_contraction(i))>jmax_for_con[i]))
+        &&((tmp=(int_unit2?0:bs2_->max_am_for_contraction(i)))>jmax_for_con[i]))
       jmax_for_con[i] = tmp;
     if (  (bs3_ != bs1_) && (bs3_ != bs2_)
         &&((tmp=bs3_->max_am_for_contraction(i))>jmax_for_con[i]))
       jmax_for_con[i] = tmp;
     if (  (bs4_ != bs1_) && (bs4_ != bs2_) && (bs4_ != bs3_)
-        &&((tmp=bs4_->max_am_for_contraction(i))>jmax_for_con[i]))
+        &&((tmp=(int_unit4?0:bs4_->max_am_for_contraction(i)))>jmax_for_con[i]))
       jmax_for_con[i] = tmp;
     }
 
@@ -245,7 +245,7 @@ Int2eV3::int_init_buildgc(int order,
   ExEnv::outn() << "am34_for_con: " << am34_for_con << endl;
 #endif
 
-  e0f0_con_ints_array[ci][cj][ck][cl].set_dim(am12+1,am34+1);
+  e0f0_con_ints_array[ci][cj][ck][cl].set_dim(am12_for_con+1,am34_for_con+1);
   used_storage_build_ += e0f0_con_ints_array[ci][cj][ck][cl].nbyte();
 #if CHECK_INTEGRAL_ALGORITHM
   ExEnv::outn() << "e0f0_con_ints_array: "
@@ -292,8 +292,8 @@ Int2eV3::int_init_buildgc(int order,
     am34_for_con = jmax_for_con[ck] + jmax_for_con[cl];
     }
 
-  for (i=0; i<=am12; i++) {
-    for (k=0; k<=am34; k++) {
+  for (i=0; i<=am12_for_con; i++) {
+    for (k=0; k<=am34_for_con; k++) {
       e0f0_con_ints_array[ci][cj][ck][cl](i,k) = 0;
       }
     }
@@ -490,18 +490,12 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
   maxam12 = maxam1 + maxam2;
   maxam34 = maxam3 + maxam4;
 
-  /* Compute the offset shell numbers. */
-  osh1 = sh1 + bs1_shell_offset_;
-  if (!int_unit2) osh2 = sh2 + bs2_shell_offset_;
-  osh3 = sh3 + bs3_shell_offset_;
-  if (!int_unit4) osh4 = sh4 + bs4_shell_offset_;
-
-  nc1 = bs1_->shell(sh1).ncontraction();
-  if (int_unit2) nc2 = 1;
-  else nc2 = bs2_->shell(sh2).ncontraction();
-  nc3 = bs3_->shell(sh3).ncontraction();
-  if (int_unit4) nc4 = 1;
-  else nc4 = bs4_->shell(sh4).ncontraction();
+  nc1 = pbs1_->shell(sh1).ncontraction();
+  if (pbs2_.null()) nc2 = 1;
+  else nc2 = pbs2_->shell(sh2).ncontraction();
+  nc3 = pbs3_->shell(sh3).ncontraction();
+  if (pbs4_.null()) nc4 = 1;
+  else nc4 = pbs4_->shell(sh4).ncontraction();
 
   /* Zero the target contracted integrals that the build routine
    * will accumulate into. */
@@ -833,7 +827,7 @@ Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
   const double sqrt2pi54 = 5.9149671727956129;
   double conv_to_s;
 
-  if (int_store2 && !int_unit2 && !int_unit4) {
+  if (int_store2) {
     double *tmp;
     build.int_v_zeta12 = int_prim_zeta(opr1,opr2);
     build.int_v_zeta34 = int_prim_zeta(opr3,opr4);
@@ -1056,7 +1050,7 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
 void
 Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 {
-  if (int_store1 && !int_unit2 && !int_unit4) {
+  if (int_store1) {
     build.int_v_r10 = int_shell_r(osh1,0);
     build.int_v_r11 = int_shell_r(osh1,1);
     build.int_v_r12 = int_shell_r(osh1,2);
@@ -1071,31 +1065,31 @@ Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
     build.int_v_r42 = int_shell_r(osh4,2);
     }
   else {
-    build.int_v_r10 = bs1_->r(bs1_->shell_to_center(sh1),0);
-    build.int_v_r11 = bs1_->r(bs1_->shell_to_center(sh1),1);
-    build.int_v_r12 = bs1_->r(bs1_->shell_to_center(sh1),2);
-    if (int_unit2) {
-        build.int_v_r20 = build.int_v_r10;
-        build.int_v_r21 = build.int_v_r11;
-        build.int_v_r22 = build.int_v_r12;
+    build.int_v_r10 = pbs1_->r(pbs1_->shell_to_center(sh1),0);
+    build.int_v_r11 = pbs1_->r(pbs1_->shell_to_center(sh1),1);
+    build.int_v_r12 = pbs1_->r(pbs1_->shell_to_center(sh1),2);
+    if (pbs2_.null()) {
+        build.int_v_r20 = 0.0;
+        build.int_v_r21 = 0.0;
+        build.int_v_r22 = 0.0;
       }
     else {
-        build.int_v_r20 = bs2_->r(bs2_->shell_to_center(sh2),0);
-        build.int_v_r21 = bs2_->r(bs2_->shell_to_center(sh2),1);
-        build.int_v_r22 = bs2_->r(bs2_->shell_to_center(sh2),2);
+        build.int_v_r20 = pbs2_->r(pbs2_->shell_to_center(sh2),0);
+        build.int_v_r21 = pbs2_->r(pbs2_->shell_to_center(sh2),1);
+        build.int_v_r22 = pbs2_->r(pbs2_->shell_to_center(sh2),2);
       }
-    build.int_v_r30 = bs3_->r(bs3_->shell_to_center(sh3),0);
-    build.int_v_r31 = bs3_->r(bs3_->shell_to_center(sh3),1);
-    build.int_v_r32 = bs3_->r(bs3_->shell_to_center(sh3),2);
-    if (int_unit4) {
-        build.int_v_r40 = build.int_v_r30;
-        build.int_v_r41 = build.int_v_r31;
-        build.int_v_r42 = build.int_v_r32;
+    build.int_v_r30 = pbs3_->r(pbs3_->shell_to_center(sh3),0);
+    build.int_v_r31 = pbs3_->r(pbs3_->shell_to_center(sh3),1);
+    build.int_v_r32 = pbs3_->r(pbs3_->shell_to_center(sh3),2);
+    if (pbs4_.null()) {
+        build.int_v_r40 = 0.0;
+        build.int_v_r41 = 0.0;
+        build.int_v_r42 = 0.0;
       }
     else {
-        build.int_v_r40 = bs4_->r(bs4_->shell_to_center(sh4),0);
-        build.int_v_r41 = bs4_->r(bs4_->shell_to_center(sh4),1);
-        build.int_v_r42 = bs4_->r(bs4_->shell_to_center(sh4),2);
+        build.int_v_r40 = pbs4_->r(pbs4_->shell_to_center(sh4),0);
+        build.int_v_r41 = pbs4_->r(pbs4_->shell_to_center(sh4),1);
+        build.int_v_r42 = pbs4_->r(pbs4_->shell_to_center(sh4),2);
       }
     }
   }

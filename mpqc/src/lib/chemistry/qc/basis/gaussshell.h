@@ -89,6 +89,9 @@ class GaussianShell: public SavableState
           <li> pt describes whether the primitive functions are to be
             considered normalized or unnormalized.  This effects whether
             or not c is manipulated to give the correct normalization.
+          <li> If do_normalize_shell is true (the default), then the
+            shell normalization constants will be folded into the
+            coefficients.
         </ul>
     */
     GaussianShell(
@@ -98,7 +101,8 @@ class GaussianShell: public SavableState
                   int* am,
                   int* pure,
                   double** c,
-                  PrimitiveType pt = GaussianShell::Normalized);
+                  PrimitiveType pt = GaussianShell::Normalized,
+                  bool do_normalize_shell = true);
     /** A GaussianShell constructor.  In this ctor pure is either
      GaussianShell::Cartesian or Gaussian::Pure and all of the contracted
      functions are treated in that way. (The user doesn\'t need to compute

@@ -32,11 +32,14 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <stdexcept>
 #include <iostream>
+#include <iterator>
 
 #include <util/keyval/keyval.h>
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
+#include <util/misc/autovec.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
@@ -49,8 +52,99 @@ using namespace sc;
 
 #define CHECK_SYMMETRIZED_INTEGRALS 0
 
+/////////////////////////////////////////////////////////////////////////
+
+// This maps a TwoBodyThreeCenterInt into a OneBodyInt
+namespace sc {
+class ChargeDistInt: public OneBodyInt {
+    Ref<TwoBodyThreeCenterInt> tbint_;
+    Ref<Molecule> mol_;
+    Ref<GaussianBasisSet> ebasis0_;
+    Ref<GaussianBasisSet> ebasis1_;
+    Ref<GaussianBasisSet> atom_basis_;
+    std::vector<int> i_cd_;
+    const double *coef_;
+  public:
+    // The electronic basis are bs1 and bs2 in tbint and the
+    // nuclear basis is bs3.
+    ChargeDistInt(const Ref<TwoBodyThreeCenterInt>& tbint,
+                  const double *coef);
+
+    void compute_shell(int,int);
+
+    bool cloneable();
+};
+
+ChargeDistInt::ChargeDistInt(const Ref<TwoBodyThreeCenterInt>& tbint,
+                             const double *coef):
+  OneBodyInt(tbint->integral(),tbint->basis1(),tbint->basis2()),
+  tbint_(tbint),
+  coef_(coef)
+{
+  ebasis0_ = tbint->basis1();
+  ebasis1_ = tbint->basis2();
+  atom_basis_ = tbint->basis3();
+  mol_ = atom_basis_->molecule();
+  buffer_ = new double[tbint->basis1()->max_nfunction_in_shell()
+                       *tbint->basis2()->max_nfunction_in_shell()];
+
+  for (int i=0; i<atom_basis_->ncenter(); i++) {
+    if (atom_basis_->nshell_on_center(i) > 0) i_cd_.push_back(i);
+  }
+}
+
+void
+ChargeDistInt::compute_shell(int ish,int jsh)
+{
+//   std::cout << "starting " << ish << " " << jsh << std::endl;
+  int nijbf
+    = ebasis0_->shell(ish).nfunction()
+    * ebasis1_->shell(jsh).nfunction();
+  memset(buffer_,0,nijbf*sizeof(buffer_[0]));
+  const double *tbbuffer = tbint_->buffer();
+  int ksh = 0;
+  int coef_offset = 0;
+  for (int ii=0; ii<i_cd_.size(); ii++) {
+    int i = i_cd_[ii];
+    int nshell = atom_basis_->nshell_on_center(i);
+    for (int j=0; j<nshell; j++, ksh++) {
+      std::cout << "computing " << ish << " " << jsh << " " << ksh << std::endl;
+      tbint_->compute_shell(ish,jsh,ksh);
+      int nbfk = atom_basis_->shell(i).nfunction();
+      for (int ijbf=0; ijbf<nijbf; ijbf++) {
+        for (int kbf=0; kbf<nbfk; kbf++) {
+          buffer_[ijbf]
+            -= coef_[coef_offset+kbf] * tbbuffer[ijbf*nbfk + kbf];
+//           std::cout << "  adding "
+//                     << coef_[coef_offset+kbf] * tbbuffer[ijbf*nbfk + kbf]
+//                     << " = "
+//                     << coef_[coef_offset+kbf]
+//                     << " * "
+//                     << tbbuffer[ijbf*nbfk + kbf]
+//                     << " at location "
+//                     << ijbf
+//                     << std::endl;
+        }
+      }
+    }
+    coef_offset += nshell;
+  }
+//   std::cout << "done with " << ish << " " << jsh << std::endl;
+}
+
+bool
+ChargeDistInt::cloneable()
+{
+  // not cloneable because tbint is not cloneable
+  return false;
+}
+
+}
+
+/////////////////////////////////////////////////////////////////////////
+
 static ClassDesc Wavefunction_cd(
-  typeid(Wavefunction),"Wavefunction",6,"public MolecularEnergy",
+  typeid(Wavefunction),"Wavefunction",7,"public MolecularEnergy",
   0, 0, 0);
 
 Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
@@ -118,6 +212,19 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
     keyval->describedclassvalue("basis").pointer(),
     "Wavefunction::Wavefunction\n"
     );
+
+  atom_basis_ << keyval->describedclassvalue("atom_basis");
+  if (atom_basis_.nonnull()) {
+    atom_basis_coef_ = new double[atom_basis_->nbasis()];
+    for (int i=0; i<atom_basis_->nbasis(); i++) {
+      atom_basis_coef_[i] = keyval->doublevalue("atom_basis_coef",i);
+    }
+    scale_atom_basis_coef();
+
+  }
+  else {
+    atom_basis_coef_ = 0;
+  }
 
   integral_ << keyval->describedclassvalue("integrals");
   if (integral_.null()) {
@@ -201,6 +308,16 @@ Wavefunction::Wavefunction(StateIn&s):
     s.set_override(original_override);
   }
 
+  if (s.version(::class_desc<Wavefunction>()) >= 7) {
+    atom_basis_ << SavableState::restore_state(s);
+    if (atom_basis_.nonnull()) {
+      s.get_array_double(atom_basis_coef_, atom_basis_->nbasis());
+    }
+  }
+  else {
+    atom_basis_coef_ = 0;
+  }
+
   integral_->set_basis(gbs_);
   Ref<PetiteList> pl = integral_->petite_list();
 
@@ -251,6 +368,10 @@ Wavefunction::save_data_state(StateOut&s)
   SavableState::save_state(gbs_.pointer(),s);
   SavableState::save_state(integral_.pointer(),s);
   SavableState::save_state(orthog_.pointer(),s);
+  SavableState::save_state(atom_basis_.pointer(), s);
+  if (atom_basis_.nonnull()) {
+    s.put_array_double(atom_basis_coef_,atom_basis_->nbasis());
+  }
 }
 
 double
@@ -398,11 +519,59 @@ Wavefunction::core_hamiltonian()
     hao.element_op(hc);
     hc=0;
 
-    Ref<OneBodyInt> nuc = integral_->nuclear();
-    nuc->reinitialize();
-    hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
-    hao.element_op(hc);
-    hc=0;
+    if (atom_basis_.null()) {
+      Ref<OneBodyInt> nuc = integral_->nuclear();
+      nuc->reinitialize();
+      hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
+      hao.element_op(hc);
+      hc=0;
+    }
+    else {
+      // we have an atom_basis, so some nuclear charges will be computed
+      // with the two electron integral code and some will be computed
+      // with the point charge code
+
+      // find out which atoms are point charges and which ones are charge
+      // distributions
+      std::vector<int> i_pc; // point charge centers
+      for (int i=0; i<atom_basis_->ncenter(); i++) {
+        if (atom_basis_->nshell_on_center(i) == 0) i_pc.push_back(i);
+      }
+      int n_pc = i_pc.size();
+
+      // initialize the point charge data
+      auto_vec<double> pc_charges(new double[n_pc]);
+      auto_vec<double*> pc_xyz(new double*[n_pc]);
+      auto_vec<double> pc_xyz0(new double[n_pc*3]);
+      pc_xyz[0] = pc_xyz0.get();
+      for (int i=1; i<n_pc; i++) pc_xyz[i] = pc_xyz[i-1] + 3;
+      for (int i=0; i<n_pc; i++) {
+        pc_charges[i] = molecule()->charge(i_pc[i]);
+        for (int j=0; j<3; j++) pc_xyz[i][j] = molecule()->r(i_pc[i],j);
+      }
+      Ref<PointChargeData> pc_data
+        = new PointChargeData(n_pc, pc_xyz.get(), pc_charges.get());
+
+      // compute the point charge contributions
+      Ref<OneBodyInt> pc_int = integral_->point_charge(pc_data);
+      hc = new OneBodyIntOp(new SymmOneBodyIntIter(pc_int,pl));
+      hao.element_op(hc);
+      hc=0;
+      pc_int=0;
+
+      // compute the charge distribution contributions
+      // H_ij += sum_A -q_A sum_k N_A_k (ij|A_k)
+      integral()->set_basis(gbs_,gbs_,atom_basis_);
+      Ref<TwoBodyThreeCenterInt> cd_tbint
+        = integral_->electron_repulsion3();
+      Ref<OneBodyInt> cd_int = new ChargeDistInt(cd_tbint, atom_basis_coef_);
+      hc = new OneBodyIntOp(new SymmOneBodyIntIter(cd_int,pl));
+      hao.element_op(hc);
+      integral()->set_basis(gbs_);
+      hc=0;
+      cd_int=0;
+      cd_tbint=0;
+    }
 
     // now symmetrize Hso
     RefSymmSCMatrix h(so_dimension(), basis_matrixkit());
@@ -420,6 +589,7 @@ Wavefunction::core_hamiltonian()
     hao.element_op(hc);
     hc=0;
 
+//     std::cout << "null atom_basis" << std::endl;
     Ref<OneBodyInt> nuc = integral_->nuclear();
     nuc->reinitialize();
     hc = new OneBodyIntOp(new OneBodyIntIter(nuc));
@@ -472,6 +642,251 @@ Wavefunction::core_hamiltonian()
   return hcore_.result_noupdate();
 }
 
+double
+Wavefunction::nuclear_repulsion_energy()
+{
+  if (atom_basis_.null()) return molecule()->nuclear_repulsion_energy();
+
+  double nucrep = 0.0;
+
+  // Compute lists of centers that are point charges and lists that
+  // are charge distributions.
+  std::vector<int> q_pc;
+  std::vector<int> q_cd;
+  std::vector<int> n_pc;
+  std::vector<int> n_cd;
+
+  for (int i=0; i<atom_basis_->ncenter(); i++) {
+    bool is_Q = (molecule()->atom_symbol(i) == "Q");
+    if (atom_basis_->nshell_on_center(i) > 0) {
+      if (is_Q) q_cd.push_back(i);
+      else      n_cd.push_back(i);
+    }
+    else {
+      if (is_Q) q_pc.push_back(i);
+      else      n_pc.push_back(i);
+    }
+  }
+
+//   std::cout << "nuc_rep: q_pc: ";
+//   std::copy(q_pc.begin(), q_pc.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << std::endl;
+
+//   std::cout << "nuc_rep: q_cd: ";
+//   std::copy(q_cd.begin(), q_cd.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << std::endl;
+
+//   std::cout << "nuc_rep: n_cd: ";
+//   std::copy(n_pc.begin(), n_pc.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << std::endl;
+
+//   std::cout << "nuc_rep: n_cd: ";
+//   std::copy(n_cd.begin(), n_cd.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << std::endl;
+
+  // compute point charge - point charge contribution
+  nucrep += nuc_rep_pc_pc(n_pc, n_pc, true /* i > j  */);
+  nucrep += nuc_rep_pc_pc(q_pc, n_pc, false /* all i j */);
+  if (molecule()->include_qq()) {
+    nucrep += nuc_rep_pc_pc(q_pc, q_pc, true /* i > j */);
+  }
+
+  // compute point charge - charge distribution contribution
+  nucrep += nuc_rep_pc_cd(n_pc, n_cd);
+  nucrep += nuc_rep_pc_cd(q_pc, n_cd);
+  nucrep += nuc_rep_pc_cd(n_pc, q_cd);
+  if (molecule()->include_qq()) {
+    nucrep += nuc_rep_pc_cd(q_pc, q_cd);
+  }
+
+  // compute the charge distribution - charge distribution contribution
+  nucrep += nuc_rep_cd_cd(n_cd, n_cd, true /* i > j  */);
+  nucrep += nuc_rep_cd_cd(q_cd, n_cd, false /* all i j  */);
+  if (molecule()->include_qq()) {
+    nucrep += nuc_rep_cd_cd(q_cd, q_cd, true /* i > j */);
+  }
+
+  return nucrep;
+}
+
+double
+Wavefunction::nuc_rep_pc_pc(const std::vector<int>&c1,
+                            const std::vector<int>&c2,
+                            bool uniq)
+{
+  double e = 0.0;
+
+  if (c1.size() == 0 || c2.size() == 0) return e;
+
+  for (int ii=0; ii<c1.size(); ii++) {
+    int i = c1[ii];
+    SCVector3 ai(molecule()->r(i));
+    double Zi = molecule()->charge(i);
+    int jfence = (uniq?ii:c2.size());
+    for (int jj=0; jj<jfence; jj++) {
+      int j = c2[jj];
+      SCVector3 aj(molecule()->r(j));
+      e += Zi * molecule()->charge(j) / ai.dist(aj);
+    }
+  }
+
+//   std::cout << "nuc_rep_pc_pc: pc1: ";
+//   std::copy(c1.begin(), c1.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << " pc2: ";
+//   std::copy(c2.begin(), c2.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << " e = " << e;
+//   std::cout << std::endl;
+
+  return e;
+}
+
+double
+Wavefunction::nuc_rep_pc_cd(const std::vector<int>&pc,
+                            const std::vector<int>&cd)
+{
+  double e = 0.0;
+
+  if (pc.size() == 0 || cd.size() == 0) return e;
+
+  Ref<GaussianBasisSet> unit = new GaussianBasisSet(GaussianBasisSet::Unit);
+  integral()->set_basis(atom_basis());
+
+  sc::auto_vec<double> charges(new double[pc.size()]);
+  sc::auto_vec<double*> positions(new double*[pc.size()]);
+  sc::auto_vec<double> xyz(new double[pc.size()*3]);
+  for (int i=0; i<pc.size(); i++) {
+    positions.get()[i] = &xyz.get()[i*3];
+  }
+
+  for (int ii=0; ii<pc.size(); ii++) {
+    int i=pc[ii];
+    charges.get()[ii] = molecule()->charge(i);
+    for (int j=0; j<3; j++) positions.get()[ii][j] = molecule()->r(i,j);
+  }
+
+  Ref<PointChargeData> pcdata = new PointChargeData(pc.size(),
+                                                    positions.get(),
+                                                    charges.get());
+  Ref<OneBodyOneCenterInt> ob = integral()->point_charge1(pcdata);
+
+  const double *buffer = ob->buffer();
+
+  for (int ii=0,icoef=0; ii<cd.size(); ii++) {
+    int icenter = cd[ii];
+    int joff = atom_basis()->shell_on_center(icenter,0);
+    for (int j=0; j<atom_basis()->nshell_on_center(icenter); j++) {
+      int jsh = j + joff;
+      ob->compute_shell(jsh);
+      int nfunc = atom_basis()->shell(jsh).nfunction();
+      for (int k=0; k<nfunc; k++,icoef++) {
+        e -= atom_basis_coef_[icoef] * buffer[k];
+      }
+    }
+  }
+
+  integral()->set_basis(basis());
+
+//   std::cout << "nuc_rep_pc_cd: pc: ";
+//   std::copy(pc.begin(), pc.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << " cd: ";
+//   std::copy(cd.begin(), cd.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << " e = " << e;
+//   std::cout << std::endl;
+
+  return e;
+}
+
+double
+Wavefunction::nuc_rep_cd_cd(const std::vector<int>&c1,
+                            const std::vector<int>&c2,
+                            bool uniq)
+{
+  double e = 0.0;
+
+  if (c1.size() == 0 || c2.size() == 0) return e;
+
+  Ref<GaussianBasisSet> unit = new GaussianBasisSet(GaussianBasisSet::Unit);
+  integral()->set_basis(atom_basis());
+
+  Ref<TwoBodyTwoCenterInt> tb = integral()->electron_repulsion2();
+
+  const double *buffer = tb->buffer();
+
+  for (int ii=0; ii<c1.size(); ii++) {
+    int icenter = c1[ii];
+    int inshell = atom_basis()->nshell_on_center(icenter);
+    int ish = atom_basis()->shell_on_center(icenter,0);
+    for (int iish=0; iish<inshell; iish++,ish++) {
+      int infunc = atom_basis()->shell(ish).nfunction();
+      int ifuncoff = atom_basis()->shell_to_function(ish);
+      int jjfence = (uniq?ii:c2.size());
+      for (int jj=0; jj<jjfence; jj++) {
+        int jcenter = c2[jj];
+        int jnshell = atom_basis()->nshell_on_center(jcenter);
+        int jsh = atom_basis()->shell_on_center(jcenter,0);
+        for (int jjsh=0; jjsh<jnshell; jjsh++,jsh++) {
+          int jnfunc = atom_basis()->shell(jsh).nfunction();
+          int jfuncoff = atom_basis()->shell_to_function(jsh);
+          tb->compute_shell(ish,jsh);
+          for (int ifunc=0, ijfunc=0; ifunc<infunc; ifunc++) {
+            for (int jfunc=0; jfunc<jnfunc; jfunc++, ijfunc++) {
+              e += atom_basis_coef_[ifuncoff+ifunc]
+                * atom_basis_coef_[jfuncoff+jfunc]
+                * buffer[ijfunc];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  integral()->set_basis(basis());
+
+//   std::cout << "nuc_rep_cd_cd: cd1: ";
+//   std::copy(c1.begin(), c1.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << " cd2: ";
+//   std::copy(c2.begin(), c2.end(),
+//             std::ostream_iterator<int>(std::cout, " "));
+//   std::cout << " e = " << e;
+//   std::cout << std::endl;
+
+  return e;
+}
+
+void
+Wavefunction::nuclear_repulsion_energy_gradient(double *g)
+{
+  int natom = molecule()->natom();
+  sc::auto_vec<double*> gp(new double*[natom]);
+  for (int i=0; i<natom; i++) {
+    gp.get()[i] = &g[i*3];
+  }
+  nuclear_repulsion_energy_gradient(gp.get());
+}
+
+void
+Wavefunction::nuclear_repulsion_energy_gradient(double **g)
+{
+  if (atom_basis_.null()) {
+    int natom = molecule()->natom();
+    for (int i=0; i<natom; i++) {
+      molecule()->nuclear_repulsion_1der(i,g[i]);
+    }
+    return;
+  }
+
+  throw std::runtime_error("Wavefunction::nuclear_repulsion_energy_gradient: not done");
+}
+
 // returns the orthogonalization matrix
 RefSCMatrix
 Wavefunction::so_to_orthog_so()
@@ -491,6 +906,24 @@ Ref<GaussianBasisSet>
 Wavefunction::basis() const
 {
   return gbs_;
+}
+
+Ref<Molecule>
+Wavefunction::molecule() const
+{
+  return basis()->molecule();
+}
+
+Ref<GaussianBasisSet>
+Wavefunction::atom_basis() const
+{
+  return atom_basis_;
+}
+
+const double *
+Wavefunction::atom_basis_coef() const
+{
+  return atom_basis_coef_;
 }
 
 Ref<Integral>
@@ -528,7 +961,16 @@ void
 Wavefunction::print(ostream&o) const
 {
   MolecularEnergy::print(o);
+  ExEnv::out0() << indent << "Electronic basis:" << std::endl;
+  ExEnv::out0() << incindent;
   basis()->print_brief(o);
+  ExEnv::out0() << decindent;
+  if (atom_basis_.nonnull()) {
+    ExEnv::out0() << indent << "Nuclear basis:" << std::endl;
+    ExEnv::out0() << incindent;
+    atom_basis_->print_brief(o);
+    ExEnv::out0() << decindent;
+  }
   // the other stuff is a wee bit too big to print
   if (print_nao_ || print_npa_) {
     tim_enter("NAO");
@@ -631,6 +1073,59 @@ double
 Wavefunction::lindep_tol() const
 {
   return lindep_tol_;
+}
+
+void
+Wavefunction::scale_atom_basis_coef()
+{
+  std::vector<int> i_cd;
+  for (int i=0; i<atom_basis_->ncenter(); i++) {
+    if (atom_basis_->nshell_on_center(i) > 0) i_cd.push_back(i);
+  }
+
+  if (atom_basis_->max_angular_momentum() > 0) {
+    // Only s functions will preserve the full symmetry.
+    // Can only normalize functions that don't integrate to zero.
+    throw std::runtime_error("ChargeDistInt: max am larger than 0");
+  }
+
+  int coef_offset = 0;
+  int icoef = 0;
+  for (int ii=0; ii<i_cd.size(); ii++) {
+    int i = i_cd[ii];
+    int nshell = atom_basis_->nshell_on_center(i);
+    int nfunc = 0;
+    if (nshell > 0) {
+      double raw_charge = 0.0;
+      for (int jj=0, icoef=coef_offset; jj<nshell; jj++) {
+        int j = atom_basis_->shell_on_center(i,jj);
+        const GaussianShell &shell = atom_basis_->shell(j);
+        // loop over the contractions
+        // the number of functions in each contraction is 1
+        // since only s functions are allowed
+        for (int k=0; k<shell.ncontraction(); k++, icoef++) {
+          for (int l=0; l<shell.nprimitive(); l++) {
+            double alpha = shell.exponent(l);
+            double con_coef = shell.coefficient_unnorm(k,l);
+            // The exponent is halved because the normalization
+            // formula is for the s function squared.
+            double integral = ::pow(M_PI/alpha,1.5);
+            raw_charge += atom_basis_coef_[icoef] * con_coef * integral;
+//             std::cout << "con_coef = " << con_coef
+//                       << " integral = " << integral
+//                       << std::endl;
+          }
+        }
+        nfunc += shell.ncontraction();
+      }
+      double charge = atom_basis_->molecule()->charge(i);
+      double correction = charge/raw_charge;
+      for (int icoef=coef_offset; icoef<coef_offset+nfunc; icoef++) {
+        atom_basis_coef_[icoef] = correction * atom_basis_coef_[icoef];
+      }
+    }
+    coef_offset += nshell;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

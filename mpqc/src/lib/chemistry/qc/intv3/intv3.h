@@ -74,6 +74,8 @@ class IntegralV3 : public Integral {
 
     Ref<OneBodyInt> point_charge(const Ref<PointChargeData>& =0);
 
+    Ref<OneBodyOneCenterInt> point_charge1(const Ref<PointChargeData>&);
+
     Ref<OneBodyInt> nuclear();
 
     Ref<OneBodyInt> hcore();
@@ -93,6 +95,10 @@ class IntegralV3 : public Integral {
     Ref<OneBodyDerivInt> hcore_deriv();
                                      
     Ref<TwoBodyInt> electron_repulsion();
+
+    Ref<TwoBodyTwoCenterInt> electron_repulsion2();
+
+    Ref<TwoBodyThreeCenterInt> electron_repulsion3();
 
     Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 

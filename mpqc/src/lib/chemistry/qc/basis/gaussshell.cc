@@ -53,7 +53,8 @@ static ClassDesc GaussianShell_cd(
 // this GaussianShell ctor allocates and computes normalization constants
 // and computes nfunc
 GaussianShell::GaussianShell(
-  int ncn,int nprm,double*e,int*am,int*pure,double**c,PrimitiveType pt
+  int ncn,int nprm,double*e,int*am,int*pure,double**c,PrimitiveType pt,
+  bool do_normalize_shell
   ):
 nprim(nprm),
 ncon(ncn),
@@ -70,7 +71,7 @@ coef(c)
   if (pt == Normalized) convert_coef();
 
   // Compute the normalization constants
-  normalize_shell();
+  if (do_normalize_shell) normalize_shell();
 }
 
 // this GaussianShell ctor is much like the above except the puream

@@ -54,6 +54,47 @@ class TwoBodyIntV3 : public TwoBodyInt {
     void set_integral_storage(size_t storage);
 };
 
+/** This implements electron repulsion integrals involving three centers in
+ * the IntV3 library. */
+class TwoBodyThreeCenterIntV3 : public TwoBodyThreeCenterInt {
+  protected:
+    Ref<Int2eV3> int2ev3_;
+
+  public:
+    TwoBodyThreeCenterIntV3(Integral*integral,
+                            const Ref<GaussianBasisSet>&b1,
+                            const Ref<GaussianBasisSet>&b2,
+                            const Ref<GaussianBasisSet>&b3,
+                            size_t storage);
+    ~TwoBodyThreeCenterIntV3();
+
+    int log2_shell_bound(int,int,int);
+    void compute_shell(int,int,int);
+
+    size_t storage_used() { return int2ev3_->storage_used(); }
+    void set_integral_storage(size_t storage);
+};
+
+/** This implements electron repulsion integrals involving two centers in
+ * the IntV3 library. */
+class TwoBodyTwoCenterIntV3 : public TwoBodyTwoCenterInt {
+  protected:
+    Ref<Int2eV3> int2ev3_;
+
+  public:
+    TwoBodyTwoCenterIntV3(Integral*integral,
+                          const Ref<GaussianBasisSet>&b1,
+                          const Ref<GaussianBasisSet>&b2,
+                          size_t storage);
+    ~TwoBodyTwoCenterIntV3();
+
+    int log2_shell_bound(int,int);
+    void compute_shell(int,int);
+
+    size_t storage_used() { return int2ev3_->storage_used(); }
+    void set_integral_storage(size_t storage);
+};
+
 /** This implements electron repulsion derivative integrals in the IntV3
     library. */
 class TwoBodyDerivIntV3 : public TwoBodyDerivInt {

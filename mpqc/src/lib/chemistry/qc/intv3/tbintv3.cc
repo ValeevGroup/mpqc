@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <stdexcept>
+
 #include <chemistry/qc/intv3/tbintv3.h>
 #include <chemistry/qc/basis/integral.h>
 
@@ -63,6 +65,87 @@ TwoBodyIntV3::log2_shell_bound(int is, int js, int ks, int ls)
 
 void
 TwoBodyIntV3::set_integral_storage(size_t storage)
+{
+  int2ev3_->init_storage(storage);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+TwoBodyThreeCenterIntV3::TwoBodyThreeCenterIntV3(
+    Integral*integral,
+    const Ref<GaussianBasisSet>& b1,
+    const Ref<GaussianBasisSet>& b2,
+    const Ref<GaussianBasisSet>& b3,
+    size_t storage):
+  TwoBodyThreeCenterInt(integral,b1,b2,b3)
+{
+  Ref<GaussianBasisSet> null;
+  int2ev3_ = new Int2eV3(integral,b1,b2,b3,null,0,storage);
+  buffer_ = int2ev3_->buffer();
+  integral_->adjust_storage(int2ev3_->used_storage());
+}
+
+TwoBodyThreeCenterIntV3::~TwoBodyThreeCenterIntV3()
+{
+  integral_->adjust_storage(-int2ev3_->used_storage());
+}
+
+void
+TwoBodyThreeCenterIntV3::compute_shell(int is, int js, int ks)
+{
+  int2ev3_->set_redundant(redundant());
+  int2ev3_->erep_3center(is,js,ks);
+}
+
+int
+TwoBodyThreeCenterIntV3::log2_shell_bound(int is, int js, int ks)
+{
+  throw std::runtime_error("TwoBodyThreeCenterIntv3: doesn't support bounds");
+  return 0;
+}
+
+void
+TwoBodyThreeCenterIntV3::set_integral_storage(size_t storage)
+{
+  int2ev3_->init_storage(storage);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+TwoBodyTwoCenterIntV3::TwoBodyTwoCenterIntV3(
+    Integral*integral,
+    const Ref<GaussianBasisSet>& b1,
+    const Ref<GaussianBasisSet>& b2,
+    size_t storage):
+  TwoBodyTwoCenterInt(integral,b1,b2)
+{
+  Ref<GaussianBasisSet> null;
+  int2ev3_ = new Int2eV3(integral,b1,null,b2,null,0,storage);
+  buffer_ = int2ev3_->buffer();
+  integral_->adjust_storage(int2ev3_->used_storage());
+}
+
+TwoBodyTwoCenterIntV3::~TwoBodyTwoCenterIntV3()
+{
+  integral_->adjust_storage(-int2ev3_->used_storage());
+}
+
+void
+TwoBodyTwoCenterIntV3::compute_shell(int is, int js)
+{
+  int2ev3_->set_redundant(redundant());
+  int2ev3_->erep_2center(is,js);
+}
+
+int
+TwoBodyTwoCenterIntV3::log2_shell_bound(int is, int js)
+{
+  throw std::runtime_error("TwoBodyTwoCenterIntv3: doesn't support bounds");
+  return 0;
+}
+
+void
+TwoBodyTwoCenterIntV3::set_integral_storage(size_t storage)
 {
   int2ev3_->init_storage(storage);
 }

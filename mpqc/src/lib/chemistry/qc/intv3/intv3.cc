@@ -169,6 +169,13 @@ IntegralV3::hcore()
   return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::hcore);
 }
 
+Ref<OneBodyOneCenterInt>
+IntegralV3::point_charge1(const Ref<PointChargeData>& dat)
+{
+  Ref<GaussianBasisSet> unit(new GaussianBasisSet(GaussianBasisSet::Unit));
+  return new OneBodyOneCenterWrapper(new PointChargeIntV3(this, bs1_, unit ,dat));
+}
+
 Ref<OneBodyInt>
 IntegralV3::point_charge(const Ref<PointChargeData>& dat)
 {
@@ -221,6 +228,18 @@ Ref<TwoBodyInt>
 IntegralV3::electron_repulsion()
 {
   return new TwoBodyIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
+}
+
+Ref<TwoBodyThreeCenterInt>
+IntegralV3::electron_repulsion3()
+{
+  return new TwoBodyThreeCenterIntV3(this, bs1_, bs2_, bs3_, storage_);
+}
+
+Ref<TwoBodyTwoCenterInt>
+IntegralV3::electron_repulsion2()
+{
+  return new TwoBodyTwoCenterIntV3(this, bs1_, bs2_, storage_);
 }
 
 Ref<TwoBodyDerivInt>

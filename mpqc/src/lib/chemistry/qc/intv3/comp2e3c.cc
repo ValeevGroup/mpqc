@@ -28,6 +28,8 @@
 /* These routines compute two and three center electron repulsion
  * integrals. */
 
+#include <stdexcept>
+
 #include <stdlib.h>
 #include <math.h>
 
@@ -53,7 +55,9 @@ Int2eV3::make_int_unit_shell()
   pure[0] = 0;
   c[0][0] = 1.0;
 
-  int_unit_shell = new GaussianShell(1,1,exp,am,pure,c);
+  int_unit_shell = new GaussianShell(1,1,exp,am,pure,c,
+                                     GaussianShell::Unnormalized,
+                                     false);
 }
 
 void
@@ -70,19 +74,15 @@ Int2eV3::delete_int_unit_shell()
 void
 Int2eV3::erep_2center(int &psh1, int &psh2)
 {
-  Ref<GaussianBasisSet> cs2 = bs2_;
-  Ref<GaussianBasisSet> cs4 = bs4_;
-  int shd = 0x11111111; /* a dummy shell that will cause death if used */
-  if (!int_unit_shell) make_int_unit_shell();
-  bs2_ = 0;
-  bs4_ = 0;
-  int_unit2 = 1;
-  int_unit4 = 1;
+  if (bs2_.nonnull() || bs4_.nonnull()) {
+      throw std::runtime_error("erep_2center: bs2 or bs4 not null");
+    }
+  //int shd = 0x11111111; /* a dummy shell that will cause death if used */
+  int shd = 0; // shell = 0 is used so intermediate lookup will work
+  int oldperm = permute();
+  set_permute(0);
   erep(psh1,shd,psh2,shd);
-  int_unit2 = 0;
-  int_unit4 = 0;
-  bs2_ = cs2;
-  bs4_ = cs4;
+  set_permute(oldperm);
 }
 
 /* This is an alternate interface to int_erep2.  It takes
@@ -101,18 +101,20 @@ Int2eV3::erep_2center(int *shells, int  *sizes)
 
 
 /* Computes a 3 center two electron integral.  Electron 1 is in psh1
- * and electron 2 is in psh2 and psh3, that is (1 | 2 3).  To avoid
+ * and electron 2 is in psh2 and psh3, that is (1 2 | 3).  To avoid
  * confusing the user of these routines, the INT_NOPERM is set.
  */
 void
 Int2eV3::erep_3center(int &psh1, int &psh2, int &psh3)
 {
-  int shd = 0x11111111; /* a dummy shell that will cause death if used */
+  if (bs4_.nonnull()) {
+      throw std::runtime_error("erep_3center: bs4 not null");
+    }
+  //int shd = 0x11111111; /* a dummy shell that will cause death if used */
+  int shd = 0; // shell = 0 is used so intermediate lookup will work
   int oldperm = permute();
-  if (!int_unit_shell) make_int_unit_shell();
-  int_unit2 = 1;
-  erep(psh1,shd,psh2,psh3);
-  int_unit2 = 0;
+  set_permute(0);
+  erep(psh1,psh2,psh3,shd);
   set_permute(oldperm);
 }
 
@@ -126,8 +128,8 @@ Int2eV3::erep_3center(int *shells, int  *sizes)
   erep_3center(shells[0],shells[1],shells[2]);
   if (sizes) {
       sizes[0] = bs1_->shell(shells[0]).nfunction();
-      sizes[1] = bs3_->shell(shells[1]).nfunction();
-      sizes[2] = bs4_->shell(shells[2]).nfunction();
+      sizes[1] = bs2_->shell(shells[1]).nfunction();
+      sizes[2] = bs3_->shell(shells[2]).nfunction();
     }
 }
 

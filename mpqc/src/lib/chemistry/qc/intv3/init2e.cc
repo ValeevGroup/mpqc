@@ -71,10 +71,6 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
 
   int_unit_shell = 0;
 
-  /* Reset the variables used to get two and three center integrals. */
-  int_unit2 = 0;
-  int_unit4 = 0;
-
   /* Reset the integral storage variables. */
   int_integral_storage = 0;
   used_storage_ = 0;
@@ -97,14 +93,6 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
     int_derivative_bounds = 0;
     }
 
-  /* A noncritical limitation for now. */
-  if ((cs1.operator!=(cs2))||(cs2.operator!=(cs3))||(cs3.operator!=(cs4))) {
-    ExEnv::errn() << scprintf("libint: because the int_compute_erep routine\n");
-    ExEnv::errn() << scprintf("might permute centers around, different centers\n");
-    ExEnv::errn() << scprintf("cannot be given (but this can be easily fixed)\n");
-    fail();
-    }
-
   /* Put the center pointers into the global centers pointers. */
   int_cs1 = cs1;
   int_cs2 = cs2;
@@ -113,15 +101,19 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
 
   /* Find the max angular momentum on each center. */
   jmax1 = cs1->max_angular_momentum();
-  jmax2 = cs2->max_angular_momentum();
+  if (!int_unit2) jmax2 = cs2->max_angular_momentum();
+  else jmax2 = 0;
   jmax3 = cs3->max_angular_momentum();
-  jmax4 = cs4->max_angular_momentum();
+  if (!int_unit4) jmax4 = cs4->max_angular_momentum();
+  else jmax4 = 0;
 
   /* Find the maximum number of contractions in a shell on each center. */
   nc1 = cs1->max_ncontraction();
-  nc2 = cs2->max_ncontraction();
+  if (!int_unit2) nc2 = cs2->max_ncontraction();
+  else nc2 = 1;
   nc3 = cs3->max_ncontraction();
-  nc4 = cs4->max_ncontraction();
+  if (!int_unit4) nc4 = cs4->max_ncontraction();
+  else nc4 = 1;
 
   /* Initialize the Fj(T) routine. */
   jmax = jmax1+jmax2+jmax3+jmax4;
@@ -138,9 +130,9 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
 
   /* Allocate storage for the integral buffer. */
   int maxsize = cs1->max_ncartesian_in_shell()
-                *cs2->max_ncartesian_in_shell()
+                *(int_unit2?1:cs2->max_ncartesian_in_shell())
                 *cs3->max_ncartesian_in_shell()
-                *cs4->max_ncartesian_in_shell();
+                *(int_unit4?1:cs4->max_ncartesian_in_shell());
   if (order==0) {
     int_buffer = (double *) malloc(sizeof(double) * maxsize);
     int_derint_buffer = 0;
@@ -148,9 +140,9 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
   else if (order==1) {
     int nderint;
     nderint = cs1->max_ncartesian_in_shell(1)
-             *cs2->max_ncartesian_in_shell(1)
+             *(int_unit2?1:cs2->max_ncartesian_in_shell(1))
              *cs3->max_ncartesian_in_shell(1)
-             *cs4->max_ncartesian_in_shell(1);
+             *(int_unit4?1:cs4->max_ncartesian_in_shell(1));
  
     /* Allocate the integral buffers. */
     int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
@@ -209,9 +201,23 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
          << endl;
     }
 
+  int prim_inter_size = bs1_prim_offset_ + cs1->nprimitive();
+  int shell_inter_size = bs1_shell_offset_ + cs1->nshell();
+  if (bs2_prim_offset_ + (int_unit2?1:cs2->nprimitive()) > prim_inter_size) {
+    prim_inter_size = bs2_prim_offset_ + (int_unit2?1:cs2->nprimitive());
+    shell_inter_size = bs2_shell_offset_ + (int_unit2?1:cs2->nshell());
+    }
+  if (bs3_prim_offset_ + cs3->nprimitive() > prim_inter_size) {
+    prim_inter_size = bs3_prim_offset_ + cs3->nprimitive();
+    shell_inter_size = bs3_shell_offset_ + cs3->nshell();
+    }
+  if (bs4_prim_offset_ + (int_unit4?1:cs4->nprimitive()) > prim_inter_size) {
+    prim_inter_size = bs4_prim_offset_ + (int_unit4?1:cs4->nprimitive());
+    shell_inter_size = bs4_shell_offset_ + (int_unit4?1:cs4->nshell());
+    }
+
   /* Allocate storage for the intermediates. */
-  alloc_inter(bs4_prim_offset_ + cs4->nprimitive(),
-              bs4_shell_offset_ + bs4_->nshell());
+  alloc_inter(prim_inter_size, shell_inter_size);
 
   /* Set up the one shell intermediates, block by block. */
   if (int_store1) {
@@ -222,63 +228,52 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
         compute_shell_1(cs3, bs3_shell_offset_, bs3_prim_offset_);
     if (cs4.operator!=(cs3) && cs4.operator!=(cs2)&& cs4.operator!=(cs1))
         compute_shell_1(cs4, bs4_shell_offset_, bs4_prim_offset_);
-  
-    /* Set up the one primitive intermediates, block by block. */
-    compute_prim_1(cs1);
-    if (cs2.operator!=(cs1)) compute_prim_1(cs2);
-    if (cs3.operator!=(cs2) && cs3.operator!=(cs1)) compute_prim_1(cs3);
-    if (cs4.operator!=(cs3)
-        && cs4.operator!=(cs2)
-        && cs4.operator!=(cs1)) compute_prim_1(cs4);
     }
 
   /* Compute the two shell intermediates, block by block. */
   if (int_store2) {
-    compute_shell_2(cs1,cs1);
-    if (cs2.operator!=(cs1)) {
-      compute_shell_2(cs1,cs2);
-      compute_shell_2(cs2,cs1);
-      compute_shell_2(cs2,cs2);
-      }
-    if (cs3.operator!=(cs2) && cs3.operator!=(cs1)) {
-      compute_shell_2(cs1,cs3);
-      compute_shell_2(cs3,cs1);
-      compute_shell_2(cs2,cs3);
-      compute_shell_2(cs3,cs2);
-      compute_shell_2(cs3,cs3);
-      }
-    if (cs4.operator!=(cs3) && cs4.operator!=(cs2) && cs4.operator!=(cs1)) {
-      compute_shell_2(cs1,cs4);
-      compute_shell_2(cs4,cs1);
-      compute_shell_2(cs2,cs4);
-      compute_shell_2(cs4,cs2);
-      compute_shell_2(cs3,cs4);
-      compute_shell_2(cs4,cs3);
-      compute_shell_2(cs4,cs4);
-      }
-  
     /* Compute the two primitive intermediates, block by block. */
-    compute_prim_2(cs1,cs1);
+    // Some unnecessary pairs of intermediates are avoided, but
+    // some unnecessary pairs are still being computed.
+    compute_prim_2(cs1,bs1_shell_offset_,bs1_prim_offset_,
+                   cs1,bs1_shell_offset_,bs1_prim_offset_);
     if (cs2.operator!=(cs1)) {
-      compute_prim_2(cs1,cs2);
-      compute_prim_2(cs2,cs1);
-      compute_prim_2(cs2,cs2);
+      compute_prim_2(cs1,bs1_shell_offset_,bs1_prim_offset_,
+                     cs2,bs2_shell_offset_,bs2_prim_offset_);
+      compute_prim_2(cs2,bs2_shell_offset_,bs2_prim_offset_,
+                     cs1,bs1_shell_offset_,bs1_prim_offset_);
+      // cs2 cs2 terms are not needed since cs1 != cs2
+      //compute_prim_2(cs2,bs2_shell_offset_,bs2_prim_offset_,
+      //               cs2,bs2_shell_offset_,bs2_prim_offset_);
       }
     if (cs3.operator!=(cs2) && cs3.operator!=(cs1)) {
-      compute_prim_2(cs1,cs3);
-      compute_prim_2(cs3,cs1);
-      compute_prim_2(cs2,cs3);
-      compute_prim_2(cs3,cs2);
-      compute_prim_2(cs3,cs3);
+      compute_prim_2(cs1,bs1_shell_offset_,bs1_prim_offset_,
+                     cs3,bs3_shell_offset_,bs3_prim_offset_);
+      compute_prim_2(cs3,bs3_shell_offset_,bs3_prim_offset_,
+                     cs1,bs1_shell_offset_,bs1_prim_offset_);
+      compute_prim_2(cs2,bs2_shell_offset_,bs2_prim_offset_,
+                     cs3,bs3_shell_offset_,bs3_prim_offset_);
+      compute_prim_2(cs3,bs3_shell_offset_,bs3_prim_offset_,
+                     cs2,bs2_shell_offset_,bs2_prim_offset_);
+      compute_prim_2(cs3,bs3_shell_offset_,bs3_prim_offset_,
+                     cs3,bs3_shell_offset_,bs3_prim_offset_);
       }
     if (cs4.operator!=(cs3) && cs4.operator!=(cs2) && cs4.operator!=(cs1)) {
-      compute_prim_2(cs1,cs4);
-      compute_prim_2(cs4,cs1);
-      compute_prim_2(cs2,cs4);
-      compute_prim_2(cs4,cs2);
-      compute_prim_2(cs3,cs4);
-      compute_prim_2(cs4,cs3);
-      compute_prim_2(cs4,cs4);
+      compute_prim_2(cs1,bs1_shell_offset_,bs1_prim_offset_,
+                     cs4,bs4_shell_offset_,bs4_prim_offset_);
+      compute_prim_2(cs4,bs4_shell_offset_,bs4_prim_offset_,
+                     cs1,bs1_shell_offset_,bs1_prim_offset_);
+      compute_prim_2(cs2,bs2_shell_offset_,bs2_prim_offset_,
+                     cs4,bs4_shell_offset_,bs4_prim_offset_);
+      compute_prim_2(cs4,bs4_shell_offset_,bs4_prim_offset_,
+                     cs2,bs2_shell_offset_,bs2_prim_offset_);
+      compute_prim_2(cs3,bs3_shell_offset_,bs3_prim_offset_,
+                     cs4,bs4_shell_offset_,bs4_prim_offset_);
+      compute_prim_2(cs4,bs4_shell_offset_,bs4_prim_offset_,
+                     cs3,bs3_shell_offset_,bs3_prim_offset_);
+      // cs4 cs4 terms are never needed since cs4 != cs3
+      //compute_prim_2(cs4,bs4_shell_offset_,bs_prim_offset_,
+      //               cs4,bs4_shell_offset_,bs_prim_offset_);
       }
     }
 
@@ -327,6 +322,14 @@ void
 Int2eV3::compute_shell_1(Ref<GaussianBasisSet> cs,
                          int shell_offset, int prim_offset)
 {
+  if (cs.null()) {
+    for (int i=0; i<3; i++) {
+      int_shell_r(shell_offset,i) = 0.0;
+      }
+    int_shell_to_prim[shell_offset] = prim_offset;
+    return;
+    }
+
   int i,j;
   int offset;
   int iprim;
@@ -350,20 +353,12 @@ Int2eV3::compute_shell_1(Ref<GaussianBasisSet> cs,
     }
   }
 
-void
-Int2eV3::compute_prim_1(Ref<GaussianBasisSet> cs1)
-{
-}
-
-void
-Int2eV3::compute_shell_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2)
-{
-  /* There are no 2 shell intermediates. */
-}
-
 /* The 2 primitive intermediates. */
 void
-Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2)
+Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,
+                        int shell_offset1, int prim_offset1,
+                        Ref<GaussianBasisSet> cs2,
+                        int shell_offset2, int prim_offset2)
 {
   int offset1, offset2;
   int i1,j1,k1,i2,j2,k2;
@@ -373,15 +368,23 @@ Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2)
   const double sqrt2pi54 = 5.9149671727956129;
   double AmB,AmB2;
 
-  offset1 = bs1_prim_offset_;
-  for (i1=0; i1<cs1->ncenter(); i1++) {
-    for (j1=0; j1<cs1->nshell_on_center(i1); j1++) {
-      shell1 = &cs1->shell(i1,j1);
+  if (cs2.null() && !int_unit_shell) make_int_unit_shell();
+
+  offset1 = prim_offset1;
+  int cs1_ncenter = (cs1.null()?1:cs1->ncenter());
+  for (i1=0; i1<cs1_ncenter; i1++) {
+    int cs1_nshell_on_center = (cs1.null()?1:cs1->nshell_on_center(i1));
+    for (j1=0; j1<cs1_nshell_on_center; j1++) {
+      if (cs1.nonnull()) shell1 = &cs1->shell(i1,j1);
+      else               shell1 = int_unit_shell;
       for (k1=0; k1<shell1->nprimitive(); k1++) {
-        offset2 = bs2_prim_offset_;
-        for (i2=0; i2<cs2->ncenter(); i2++) {
-          for (j2=0; j2<cs2->nshell_on_center(i2); j2++) {
-            shell2 = &cs2->shell(i2,j2);
+        offset2 = prim_offset2;
+        int cs2_ncenter = (cs2.null()?1:cs2->ncenter());
+        for (i2=0; i2<cs2_ncenter; i2++) {
+          int cs2_nshell_on_center = (cs2.null()?1:cs2->nshell_on_center(i2));
+          for (j2=0; j2<cs2_nshell_on_center; j2++) {
+            if (cs2.nonnull()) shell2 = &cs2->shell(i2,j2);
+            else               shell2 = int_unit_shell;
             for (k2=0; k2<shell2->nprimitive(); k2++) {
 
               /* The zeta = alpha + beta intermediate. */
@@ -395,16 +398,18 @@ Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2)
               /* The p = (alpha A + beta B) / zeta */
               for (i=0; i<3; i++) {
                 int_prim_p(offset1,offset2,i) =
-                  (  shell1->exponent(k1) * cs1->molecule()->r(i1,i)
-                   + shell2->exponent(k2) * cs2->molecule()->r(i2,i))
+                  (  shell1->exponent(k1) * (cs1.null()?0.0
+                                             :cs1->molecule()->r(i1,i))
+                   + shell2->exponent(k2) * (cs2.null()?0.0
+                                             :cs2->molecule()->r(i2,i)))
                   *  int_prim_oo2zeta(offset1,offset2);
                 }
 
               /* Compute AmB^2 */
               AmB2 = 0.0;
               for (i=0; i<3; i++) {
-                AmB = cs2->molecule()->r(i2,i)
-                    - cs1->molecule()->r(i1,i);
+                AmB = (cs2.null()?0.0:cs2->molecule()->r(i2,i))
+                    - (cs1.null()?0.0:cs1->molecule()->r(i1,i));
                 AmB2 += AmB*AmB;
                 }
 

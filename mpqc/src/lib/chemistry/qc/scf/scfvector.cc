@@ -106,7 +106,7 @@ SCF::savestate_iter(int iter)
 
 }
 double
-SCF::compute_vector(double& eelec)
+SCF::compute_vector(double& eelec, double nucrep)
 {
   tim_enter("vector");
   int i;
@@ -126,12 +126,6 @@ SCF::compute_vector(double& eelec)
 
   // set up subclass for vector calculation
   init_vector();
-  
-  // calculate the nuclear repulsion energy
-  double nucrep = molecule()->nuclear_repulsion_energy();
-  ExEnv::out0() << indent
-       << scprintf("nuclear repulsion energy = %15.10f", nucrep)
-       << endl << endl;
 
   RefDiagSCMatrix evals(oso_dimension(), basis_matrixkit());
 

@@ -161,6 +161,193 @@ TwoBodyInt::set_integral_storage(size_t storage)
 
 ///////////////////////////////////////////////////////////////////////
 
+TwoBodyThreeCenterInt::TwoBodyThreeCenterInt(Integral *integral,
+                       const Ref<GaussianBasisSet>&b1,
+                       const Ref<GaussianBasisSet>&b2,
+                       const Ref<GaussianBasisSet>&b3) :
+  integral_(integral),
+  bs1_(b1), bs2_(b2), bs3_(b3), redundant_(1)
+{
+  integral_->reference();
+  buffer_ = 0;
+}
+
+TwoBodyThreeCenterInt::~TwoBodyThreeCenterInt()
+{
+  integral_->dereference();
+  if (integral_->nreference() == 0) delete integral_;
+}
+
+int
+TwoBodyThreeCenterInt::nbasis() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyThreeCenterInt::nbasis1() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyThreeCenterInt::nbasis2() const
+{
+  return bs2_->nbasis();
+}
+
+int
+TwoBodyThreeCenterInt::nbasis3() const
+{
+  return bs3_->nbasis();
+}
+
+int
+TwoBodyThreeCenterInt::nshell() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyThreeCenterInt::nshell1() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyThreeCenterInt::nshell2() const
+{
+  return bs2_->nshell();
+}
+
+int
+TwoBodyThreeCenterInt::nshell3() const
+{
+  return bs3_->nshell();
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterInt::basis()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterInt::basis1()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterInt::basis2()
+{
+  return bs2_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterInt::basis3()
+{
+  return bs3_;
+}
+
+const double *
+TwoBodyThreeCenterInt::buffer(tbint_type i) const
+{
+  if (i==eri) return buffer_;
+  return 0;
+}
+
+void
+TwoBodyThreeCenterInt::set_integral_storage(size_t storage)
+{
+}
+
+///////////////////////////////////////////////////////////////////////
+
+TwoBodyTwoCenterInt::TwoBodyTwoCenterInt(Integral *integral,
+                       const Ref<GaussianBasisSet>&b1,
+                       const Ref<GaussianBasisSet>&b2) :
+  integral_(integral),
+  bs1_(b1), bs2_(b2), redundant_(1)
+{
+  integral_->reference();
+  buffer_ = 0;
+}
+
+TwoBodyTwoCenterInt::~TwoBodyTwoCenterInt()
+{
+  integral_->dereference();
+  if (integral_->nreference() == 0) delete integral_;
+}
+
+int
+TwoBodyTwoCenterInt::nbasis() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyTwoCenterInt::nbasis1() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyTwoCenterInt::nbasis2() const
+{
+  return bs2_->nbasis();
+}
+
+int
+TwoBodyTwoCenterInt::nshell() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyTwoCenterInt::nshell1() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyTwoCenterInt::nshell2() const
+{
+  return bs2_->nshell();
+}
+
+Ref<GaussianBasisSet>
+TwoBodyTwoCenterInt::basis()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyTwoCenterInt::basis1()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyTwoCenterInt::basis2()
+{
+  return bs2_;
+}
+
+const double *
+TwoBodyTwoCenterInt::buffer(tbint_type i) const
+{
+  if (i==eri) return buffer_;
+  return 0;
+}
+
+void
+TwoBodyTwoCenterInt::set_integral_storage(size_t storage)
+{
+}
+
+///////////////////////////////////////////////////////////////////////
+
 ShellQuartetIter::ShellQuartetIter()
 {
 }

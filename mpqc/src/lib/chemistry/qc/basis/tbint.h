@@ -114,13 +114,15 @@ class TwoBodyInt : public RefCount {
 	one buffer:  The type arguments selects which buffer is returned.
 	If the requested type is not supported, then 0 is returned. */
     virtual const double * buffer(tbint_type type = eri) const;
-    
-    /** Given for shell indices, this will cause the integral buffer
-        to be filled in. */
+
+    /** Given four shell indices, integrals will be computed and placed in
+        the buffer.  The first two indices correspond to electron 1 and the
+        second two indices correspond to electron 2.*/
     virtual void compute_shell(int,int,int,int) = 0;
 
     /** Return log base 2 of the maximum magnitude of any integral in a
-        shell block.  An index of -1 for any argument indicates any shell.  */
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 
     /** If redundant is true, then keep redundant integrals in the buffer.
@@ -128,6 +130,190 @@ class TwoBodyInt : public RefCount {
     //@{
     virtual int redundant() const { return redundant_; }
     virtual void set_redundant(int i) { redundant_ = i; }
+    //@}
+
+    /// This storage is used to cache computed integrals.
+    virtual void set_integral_storage(size_t storage);
+
+    /// Return the integral factory that was used to create this object.
+    Integral *integral() const { return integral_; }
+
+};
+
+// //////////////////////////////////////////////////////////////////////////
+
+/** This is an abstract base type for classes that compute integrals
+    involving two electrons in three Gaussian functions.
+ */
+class TwoBodyThreeCenterInt : public RefCount {
+  protected:
+    // this is who created me
+    Integral *integral_;
+
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+    Ref<GaussianBasisSet> bs3_;
+
+    double *buffer_;
+
+    int redundant_;
+    
+    TwoBodyThreeCenterInt(Integral *integral,
+                          const Ref<GaussianBasisSet>&bs1,
+                          const Ref<GaussianBasisSet>&bs2,
+                          const Ref<GaussianBasisSet>&bs3);
+  public:
+    virtual ~TwoBodyThreeCenterInt();
+  
+    /// Return the number of basis functions on center one.
+    int nbasis() const;
+    
+    /// Return the number of basis functions on the given center.
+    //@{
+    int nbasis1() const;
+    int nbasis2() const;
+    int nbasis3() const;
+    //@}
+
+    /// Return the number of shells on center one.
+    int nshell() const;
+    
+    /// Return the number of shells on the given center.
+    //@{
+    int nshell1() const;
+    int nshell2() const;
+    int nshell3() const;
+    //@}
+
+    /// Return the basis set on center one.
+    Ref<GaussianBasisSet> basis();
+
+    /// Return the basis set on the given center.
+    //@{
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis3();
+    //@}
+
+  /** Types of two-body integrals that TwoBodyInt understands:
+      eri stands for electron repulsion integral, r12 stands for integrals
+      of r12 operator, r12t1 and r12t2 are integrals of [r12,T1] and
+      [r12,T2] operators */
+    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
+  /// The total number of such types
+    static const int num_tbint_types = 4;
+
+    /** The computed shell integrals will be put in the buffer returned
+        by this member.  Some TwoBodyInt specializations have more than
+	one buffer:  The type arguments selects which buffer is returned.
+	If the requested type is not supported, then 0 is returned. */
+    virtual const double * buffer(tbint_type type = eri) const;
+
+    /** Given three shell indices, integrals will be computed and placed in
+        the buffer.  The first two indices correspond to electron 1 and the
+        second index corresponds to electron 2.*/
+    virtual void compute_shell(int,int,int) = 0;
+
+    /** Return log base 2 of the maximum magnitude of any integral in a
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
+    virtual int log2_shell_bound(int= -1,int= -1,int= -1) = 0;
+
+    /** If redundant is true, then keep redundant integrals in the buffer.
+        The default is true. */
+    //@{
+    int redundant() const { return redundant_; }
+    void set_redundant(int i) { redundant_ = i; }
+    //@}
+
+    /// This storage is used to cache computed integrals.
+    virtual void set_integral_storage(size_t storage);
+
+    /// Return the integral factory that was used to create this object.
+    Integral *integral() const { return integral_; }
+
+};
+
+// //////////////////////////////////////////////////////////////////////////
+
+/** This is an abstract base type for classes that
+    compute integrals involving two electrons in two
+    Gaussian functions.
+ */
+class TwoBodyTwoCenterInt : public RefCount {
+  protected:
+    // this is who created me
+    Integral *integral_;
+
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+
+    double *buffer_;
+
+    int redundant_;
+    
+    TwoBodyTwoCenterInt(Integral *integral,
+                        const Ref<GaussianBasisSet>&bs1,
+                        const Ref<GaussianBasisSet>&bs2);
+  public:
+    virtual ~TwoBodyTwoCenterInt();
+  
+    /// Return the number of basis functions on center one.
+    int nbasis() const;
+    
+    /// Return the number of basis functions on the given center.
+    //@{
+    int nbasis1() const;
+    int nbasis2() const;
+    //@}
+
+    /// Return the number of shells on center one.
+    int nshell() const;
+    
+    /// Return the number of shells on the given center.
+    //@{
+    int nshell1() const;
+    int nshell2() const;
+    //@}
+
+    /// Return the basis set on center one.
+    Ref<GaussianBasisSet> basis();
+
+    /// Return the basis set on the given center.
+    //@{
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
+    //@}
+
+  /** Types of two-body integrals that TwoBodyInt understands:
+      eri stands for electron repulsion integral, r12 stands for integrals
+      of r12 operator, r12t1 and r12t2 are integrals of [r12,T1] and
+      [r12,T2] operators */
+    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
+  /// The total number of such types
+    static const int num_tbint_types = 4;
+
+    /** The computed shell integrals will be put in the buffer returned
+        by this member.  Some TwoBodyInt specializations have more than
+	one buffer:  The type arguments selects which buffer is returned.
+	If the requested type is not supported, then 0 is returned. */
+    virtual const double * buffer(tbint_type type = eri) const;
+
+    /** Given four shell indices, integrals will be computed and placed in
+        the buffer.  The first index corresponds to electron 1 and the
+        second index corresponds to electron 2.*/
+    virtual void compute_shell(int,int) = 0;
+
+    /** Return log base 2 of the maximum magnitude of any integral in a
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
+    virtual int log2_shell_bound(int= -1,int= -1) = 0;
+
+    /** If redundant is true, then keep redundant integrals in the buffer.
+        The default is true. */
+    //@{
+    int redundant() const { return redundant_; }
+    void set_redundant(int i) { redundant_ = i; }
     //@}
 
     /// This storage is used to cache computed integrals.

@@ -60,11 +60,12 @@ static ClassDesc GaussianBasisSet_cd(
   0, create<GaussianBasisSet>, create<GaussianBasisSet>);
 
 static bool
-skip_atom(bool skip_ghosts, const Ref<Molecule> &mol, int iatom)
+skip_atom(bool skip_ghosts, bool include_q,
+          const Ref<Molecule> &mol, int iatom)
 {
   if (skip_ghosts && mol->charge(iatom) == 0.0) return true;
   // charges do not have basis functions
-  if (mol->atom_symbol(iatom) == "Q") return true;
+  if (!include_q && mol->atom_symbol(iatom) == "Q") return true;
   return false;
 }
 
@@ -133,6 +134,37 @@ GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
   // names to file names.
   BasisFileSet bases(keyval);
   init(molecule_,keyval,bases,1,pure);
+}
+
+GaussianBasisSet::GaussianBasisSet(UnitType)
+{
+  molecule_ = new Molecule;
+  molecule_->add_atom(molecule()->atominfo()->string_to_Z("Q"),
+                      0.0, 0.0, 0.0, // xyz
+                      "dummy",       // label
+                      0.0,           // no mass
+                      1, 0.0         // no charge
+      );
+  name_ = new_string("Unit");
+  shell_ = new GaussianShell*[1];
+
+  double *exp = new double[1];
+  int *am = new int[1];
+  int *pure = new int[1];
+  double **c = new double*[1];
+  *c = new double[1];
+  exp[0] = 0.0;
+  am[0] = 0;
+  pure[0] = 0;
+  c[0][0] = 1.0;
+  shell_[0] = new GaussianShell(1,1,exp,am,pure,c,
+                                GaussianShell::Unnormalized,
+                                false);
+
+  ncenter_ = 1;
+  nshell_ = 1;
+  center_to_nshell_.push_back(1);
+  init2(0,1);
 }
 
 GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
@@ -344,6 +376,8 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
     }
 
   int skip_ghosts = keyval->booleanvalue("skip_ghosts");
+  bool missing_ok = keyval->booleanvalue("missing_ok");
+  bool include_q = keyval->booleanvalue("include_q");
 
   name_ = keyval->pcharvalue("name");
   int have_custom, nelement;
@@ -369,7 +403,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   ncenter_ = molecule->natom();
   int iatom;
   for (iatom=0; iatom < ncenter_; iatom++) {
-      if (skip_atom(skip_ghosts,molecule,iatom)) continue;
+      if (skip_atom(skip_ghosts,include_q,molecule,iatom)) continue;
       int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
@@ -401,7 +435,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       std::string name(molecule->atominfo()->name(Z));
       ishell += count_shells_(keyval, name.c_str(),
-                              sbasisname, bases, havepure, pure);
+                              sbasisname, bases, havepure, pure, missing_ok);
       delete[] sbasisname;
     }
   nshell_ = ishell;
@@ -409,7 +443,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   ishell = 0;
   center_to_nshell_.resize(ncenter_);
   for (iatom=0; iatom<ncenter_; iatom++) {
-      if (skip_atom(skip_ghosts,molecule,iatom)) {
+      if (skip_atom(skip_ghosts,include_q,molecule,iatom)) {
           center_to_nshell_[iatom] = 0;
           continue;
         }
@@ -446,7 +480,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
       int ishell_old = ishell;
       std::string name(molecule->atominfo()->name(Z));
       get_shells_(ishell, keyval, name.c_str(),
-                  sbasisname, bases, havepure, pure);
+                  sbasisname, bases, havepure, pure, missing_ok);
 
       center_to_nshell_[iatom] = ishell - ishell_old;
 
@@ -461,7 +495,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
 
   // finish with the initialization steps that don't require any
   // external information
-  init2(skip_ghosts);
+  init2(skip_ghosts,include_q);
 }
 
 double
@@ -471,7 +505,7 @@ GaussianBasisSet::r(int icenter, int xyz) const
 }
 
 void
-GaussianBasisSet::init2(int skip_ghosts)
+GaussianBasisSet::init2(int skip_ghosts,bool include_q)
 {
   // center_to_shell_ and shell_to_center_
   shell_to_center_.resize(nshell_);
@@ -479,7 +513,7 @@ GaussianBasisSet::init2(int skip_ghosts)
   center_to_nbasis_.resize(ncenter_);
   int ishell = 0;
   for (int icenter=0; icenter<ncenter_; icenter++) {
-      if (skip_atom(skip_ghosts,molecule(),icenter)) {
+      if (skip_atom(skip_ghosts,include_q,molecule(),icenter)) {
           center_to_shell_[icenter] = -1;
           center_to_nbasis_[icenter] = 0;
           continue;
@@ -551,7 +585,7 @@ GaussianBasisSet::set_matrixkit(const Ref<SCMatrixKit>& mk)
 
 int
 GaussianBasisSet::count_shells_(Ref<KeyVal>& keyval, const char* element, const char* basisname, BasisFileSet& bases,
-				int havepure, int pure)
+				int havepure, int pure, bool missing_ok)
 {
   int nshell = 0;
   char keyword[KeyVal::MaxKeywordLength];
@@ -562,6 +596,7 @@ GaussianBasisSet::count_shells_(Ref<KeyVal>& keyval, const char* element, const 
     keyval = bases.keyval(keyval, basisname);
     exists = keyval->exists(keyword);
     if (!exists) {
+      if (missing_ok) return 0;
       ExEnv::err0() << indent
                     << scprintf("GaussianBasisSet::count_shells_ couldn't find \"%s\":\n", keyword);
       keyval->errortrace(ExEnv::err0());
@@ -576,7 +611,7 @@ GaussianBasisSet::count_shells_(Ref<KeyVal>& keyval, const char* element, const 
   }
   else {
     recursively_get_shell(nshell, keyval, element, basisname,
-                          bases, havepure, pure, 0);
+                          bases, havepure, pure, 0, false);
   }
 
   return nshell;
@@ -584,7 +619,7 @@ GaussianBasisSet::count_shells_(Ref<KeyVal>& keyval, const char* element, const 
 
 void
 GaussianBasisSet::get_shells_(int& ishell, Ref<KeyVal>& keyval, const char* element, const char* basisname, BasisFileSet& bases,
-			      int havepure, int pure)
+			      int havepure, int pure, bool missing_ok)
 {
   char keyword[KeyVal::MaxKeywordLength];
 
@@ -595,7 +630,7 @@ GaussianBasisSet::get_shells_(int& ishell, Ref<KeyVal>& keyval, const char* elem
   }
   else {
     recursively_get_shell(ishell, keyval, element, basisname,
-                          bases, havepure, pure, 1);
+                          bases, havepure, pure, 1, missing_ok);
   }
 }
 
@@ -792,7 +827,7 @@ GaussianBasisSet::
 			const char*basisname,
                         BasisFileSet &bases,
 			int havepure,int pure,
-			int get)
+			int get, bool missing_ok)
 {
   char keyword[KeyVal::MaxKeywordLength],prefix[KeyVal::MaxKeywordLength];
 
@@ -804,6 +839,7 @@ GaussianBasisSet::
     }
   count = keyval->count(keyword);
   if (keyval->error() != KeyVal::OK) {
+      if (missing_ok) return;
       ExEnv::err0() << indent
            << scprintf("GaussianBasisSet:: couldn't find \"%s\":\n", keyword);
       keyval->errortrace(ExEnv::err0());
@@ -823,7 +859,7 @@ GaussianBasisSet::
 	      exit(1);
 	    }
 	  recursively_get_shell(ishell,keyval,element,newbasis,bases,
-                                havepure,pure,get);
+                                havepure,pure,get,missing_ok);
           delete[] newbasis;
 	}
       else {

@@ -64,6 +64,12 @@ class Int2eV3: public RefCount {
     Ref<GaussianBasisSet> bs3_;
     Ref<GaussianBasisSet> bs4_;
 
+    // the permuted bases
+    Ref<GaussianBasisSet> pbs1_;
+    Ref<GaussianBasisSet> pbs2_;
+    Ref<GaussianBasisSet> pbs3_;
+    Ref<GaussianBasisSet> pbs4_;
+
     Ref<MessageGrp> grp_;
 
     int bs1_shell_offset_;
@@ -235,9 +241,8 @@ class Int2eV3: public RefCount {
   protected:
     void alloc_inter(int nprim,int nshell);
     void compute_shell_1(Ref<GaussianBasisSet> cs, int, int);
-    void compute_prim_1(Ref<GaussianBasisSet> cs1);
-    void compute_shell_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2);
-    void compute_prim_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2);
+    void compute_prim_2(Ref<GaussianBasisSet> cs1,int,int,
+                        Ref<GaussianBasisSet> cs2,int,int);
 
 
     // globals from init2e.cc
@@ -344,11 +349,14 @@ class Int2eV3: public RefCount {
     int used_storage_shift_;
 
   public:
+    // bs4 must be null for 3 center integrals
+    // bs2 must be null for 2 center integrals
+    // bs1 and bs3 must be nonnull.
     Int2eV3(Integral *,
-            const Ref<GaussianBasisSet>&,
-            const Ref<GaussianBasisSet>&,
-            const Ref<GaussianBasisSet>&,
-            const Ref<GaussianBasisSet>&,
+            const Ref<GaussianBasisSet>&bs1,
+            const Ref<GaussianBasisSet>&bs2,
+            const Ref<GaussianBasisSet>&bs3,
+            const Ref<GaussianBasisSet>&bs4,
             int order, size_t storage);
     ~Int2eV3();
 

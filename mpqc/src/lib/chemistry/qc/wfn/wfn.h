@@ -62,6 +62,9 @@ class Wavefunction: public MolecularEnergy {
     Ref<GaussianBasisSet> gbs_;
     Ref<Integral> integral_;
 
+    Ref<GaussianBasisSet> atom_basis_;
+    double * atom_basis_coef_;
+
     double lindep_tol_;
     OverlapOrthog::OrthogMethod orthog_method_;
     Ref<OverlapOrthog> orthog_;
@@ -70,6 +73,11 @@ class Wavefunction: public MolecularEnergy {
     int print_npa_;
 
     void init_orthog();
+
+    double nuc_rep_pc_pc(const std::vector<int>&,const std::vector<int>&,bool);
+    double nuc_rep_pc_cd(const std::vector<int>&,const std::vector<int>&);
+    double nuc_rep_cd_cd(const std::vector<int>&,const std::vector<int>&,bool);
+    void scale_atom_basis_coef();
 
   protected:
 
@@ -165,6 +173,21 @@ class Wavefunction: public MolecularEnergy {
     /// Returns the SO core Hamiltonian.
     virtual RefSymmSCMatrix core_hamiltonian();
 
+    /** Returns the nuclear repulsion energy.  This must be used instead of
+        Molecule::nuclear_repulsion_energy() since there may be diffuse
+        atomic charges. */
+    virtual double nuclear_repulsion_energy();
+    /** Computes the nuclear repulsion gradient.  This must be used instead
+        of Molecule::nuclear_repulsion_1der() since there may be diffuse
+        atomic charges.  The gradient, g, is zeroed and set to x_0, y_0,
+        z_0, x_1, ... . */
+    void nuclear_repulsion_energy_gradient(double *g);
+    /** Computes the nuclear repulsion gradient.  This must be used instead
+        of Molecule::nuclear_repulsion_1der() since there may be diffuse
+        atomic charges.  The gradient, g, is first zeroed.  Its dimensions
+        are g[natom][3]. */
+    virtual void nuclear_repulsion_energy_gradient(double **g);
+
     /// Atomic orbital dimension.
     RefSCDimension ao_dimension();
     /// Symmetry adapted orbital dimension.
@@ -173,8 +196,15 @@ class Wavefunction: public MolecularEnergy {
     RefSCDimension oso_dimension();
     /// Matrix kit for AO, SO, orthogonalized SO, and MO dimensioned matrices.
     Ref<SCMatrixKit> basis_matrixkit();
+    /// Returns the Molecule.
+    Ref<Molecule> molecule() const;
     /// Returns the basis set.
     Ref<GaussianBasisSet> basis() const;
+    /// Returns the basis set describing the nuclear charge distributions
+    Ref<GaussianBasisSet> atom_basis() const;
+    /** Returns the coefficients of the nuclear charge distribution basis
+     * functions. */
+    const double *atom_basis_coef() const;
     /// Returns the integral evaluator.
     Ref<Integral> integral();
 

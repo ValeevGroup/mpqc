@@ -2209,10 +2209,7 @@ MBPT2::compute_cs_grad()
   ////////////////////////////////////////////////////////
 
   if (me == 0) {
-    zero_gradients(ginter, natom, 3);
-    for (i=0; i<natom; i++) {
-      molecule()->nuclear_repulsion_1der(i,ginter[i]);
-      }
+    nuclear_repulsion_energy_gradient(ginter);
     accum_gradients(gradient, ginter, natom, 3);
     accum_gradients(hf_gradient, ginter, natom, 3);
 

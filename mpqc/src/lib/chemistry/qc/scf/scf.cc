@@ -274,11 +274,15 @@ SCF::compute()
                      desired_value_accuracy())
          << endl;
 
+    // calculate the nuclear repulsion energy
+    double nucrep = nuclear_repulsion_energy();
+    ExEnv::out0() << indent
+                  << scprintf("nuclear repulsion energy = %15.10f", nucrep)
+                  << endl << endl;
+
     double eelec;
-    delta = compute_vector(eelec);
+    delta = compute_vector(eelec,nucrep);
       
-    // this will be done elsewhere eventually
-    double nucrep = molecule()->nuclear_repulsion_energy();
     double eother = 0.0;
     if (accumddh_.nonnull()) eother = accumddh_->e();
     ExEnv::out0() << endl << indent

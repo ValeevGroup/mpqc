@@ -204,6 +204,97 @@ OneBodyInt::clone()
 
 ///////////////////////////////////////////////////////////////////////
 
+OneBodyOneCenterInt::OneBodyOneCenterInt(Integral* integral,
+                                         const Ref<GaussianBasisSet>&bs1) :
+  integral_(integral),
+  bs1_(bs1)
+{
+  buffer_ = 0;
+}
+
+OneBodyOneCenterInt::~OneBodyOneCenterInt()
+{
+}
+
+int
+OneBodyOneCenterInt::nbasis() const
+{
+  return bs1_->nbasis();
+}
+
+int
+OneBodyOneCenterInt::nbasis1() const
+{
+  return bs1_->nbasis();
+}
+
+int
+OneBodyOneCenterInt::nshell() const
+{
+  return bs1_->nshell();
+}
+
+int
+OneBodyOneCenterInt::nshell1() const
+{
+  return bs1_->nshell();
+}
+
+Ref<GaussianBasisSet>
+OneBodyOneCenterInt::basis()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+OneBodyOneCenterInt::basis1()
+{
+  return bs1_;
+}
+
+const double *
+OneBodyOneCenterInt::buffer() const
+{
+  return buffer_;
+}
+
+void
+OneBodyOneCenterInt::reinitialize()
+{
+}
+
+bool
+OneBodyOneCenterInt::cloneable()
+{
+  return false;
+}
+
+Ref<OneBodyOneCenterInt>
+OneBodyOneCenterInt::clone()
+{
+  throw std::runtime_error("OneBodyOneCenterInt::clone() not implemented");
+}
+
+///////////////////////////////////////////////////////////////////////
+
+OneBodyOneCenterWrapper::OneBodyOneCenterWrapper(const Ref<OneBodyInt>& ob,
+                                                 int jsh):
+  OneBodyOneCenterInt(ob->integral(),ob->basis1()),
+  ob_(ob),
+  jsh_(jsh)
+{
+  buffer_ = const_cast<double*>(ob_->buffer());
+}
+
+void
+OneBodyOneCenterWrapper::compute_shell(int ish)
+{
+  ob_->compute_shell(ish,jsh_);
+}
+
+
+///////////////////////////////////////////////////////////////////////
+
 ShellPairIter::ShellPairIter()
 {
 }

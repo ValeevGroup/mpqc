@@ -508,17 +508,6 @@ void PointGroup::save_data_state(StateOut& so)
       so.put(frame(i,j));
 }
 
-void PointGroup::restore_data_state(int version, StateIn& si)
-{
-  Point p(si); 
-  origin_=p;
-
-  si.getstring(symb);
-  for (int i=0; i < 3; i++)
-    for (int j=0; j < 3; j++)
-      si.get(frame(i,j));
-}
-
 CharacterTable PointGroup::char_table() const
 {
   CharacterTable ret(symb,frame);

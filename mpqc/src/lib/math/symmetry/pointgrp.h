@@ -163,7 +163,6 @@ class PointGroup
     void set_symbol(const char*);
 
     void save_data_state(StateOut& so);
-    void restore_data_state(int, StateIn& si);
 };
 
 #endif

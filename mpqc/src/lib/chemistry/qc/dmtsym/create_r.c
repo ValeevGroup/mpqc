@@ -46,10 +46,9 @@ int g;
   int nat = centers->n;
   double **rp = sym_info->Rp[g];
   double **rd = sym_info->Rd[g];
-  double **rf;
-  double **rg;
+  double **rf=0;
+  double **rg=0;
   double *rcol,**lr;
-  char errmsg[81];
 
   assert(dmt_distribution(r) == COLUMNS);
 

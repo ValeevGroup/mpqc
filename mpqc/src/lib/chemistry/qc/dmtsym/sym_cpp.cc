@@ -75,8 +75,6 @@ sym_init_centers(KeyVal& keyval, centers_t& centers, sym_struct_t& sym_info)
 {
   centers_t unique_centers;
   int errcod;
-  int nat;
-  int i,j;
 
   char *point_group = keyval.pcharvalue("symmetry");
 

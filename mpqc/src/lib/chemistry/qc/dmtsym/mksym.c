@@ -114,9 +114,8 @@ int g;
   int nat = centers->n;
   double **rp = sym_info->Rp[g];
   double **rd = sym_info->Rd[g];
-  double **rf;
-  double **rg;
-  char errmsg[81];
+  double **rf=0;
+  double **rg=0;
 
   if (sym_info->Rf != NULL) rf = sym_info->Rf[g];
   if (sym_info->Rg != NULL) rg = sym_info->Rg[g];

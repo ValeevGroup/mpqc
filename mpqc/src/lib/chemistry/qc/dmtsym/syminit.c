@@ -20,6 +20,8 @@
 #include "symmfree.h"
 #include "symmzero.h"
 
+#include "mkrpd.gbl"
+
 #include "syminit.gbl"
 #include "syminit.lcl"
 
@@ -48,23 +50,10 @@ centers_t *centers;
 sym_struct_t *sym_info;
 char *point_group;
 {
-  int i,j,ij;
-  int g, ng, nirr,gc;
-  int gi,gj,gij,nij;
-  int leave;
-  int nsh, ns;
-  int atom, nb;
+  int g,n,nirr;
   int errcod;
-  int n;
-  int nat,totnat;
-  int f_exist=0;
-  int g_exist=0;
-  int h_exist=0;
-  double_array3_t trans;
-
-  double tr[3];
   enum pgroups pg;
-  char errmsg[81];
+  double_array3_t trans;
 
  /* the first order of business is to find out what point group we're
   * dealing with
@@ -828,4 +817,6 @@ double_array3_t *trans;
 
   int_done_1e();
   int_done_offsets1(centers,centers);
+
+  return 0;
 }

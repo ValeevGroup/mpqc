@@ -175,9 +175,6 @@ FILE *_outfile;
     if(iopen) dmt_copy(GMATO,SSCR2);
     }
 
-  int_done_offsets2(_centers,_centers,_centers,_centers);
-  int_done_erep();
-
   tim_enter("scf_oeis (again)");
 /* errcod = scf_oeis(_scf_info,_sym_info,_irreps,_centers,S,T,V,HCORE,_outfile);
    IMBN: changed to following line to conform with new 082294 scf */

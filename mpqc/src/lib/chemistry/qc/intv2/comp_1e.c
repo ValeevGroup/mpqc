@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.5  1995/02/15 20:33:33  cljanss
+ * Revision 1.6  1995/03/05 06:05:27  cljanss
+ * Added efield integrals.  Changed the dipole moment integral interface.
+ *
+ * Revision 1.5  1995/02/15  20:33:33  cljanss
  * Modified the dipole integral routines to be a bit more efficient
  * and consistent with buffer usage for the efield routines.
  *
@@ -131,6 +134,11 @@ centers_t *cs2;
 {
   int jmax1,jmax2,jmax;
   int scratchsize,nshell2;
+
+  /* The efield routines look like derivatives so bump up order if
+   * it is zero to allow efield integrals to be computed.
+   */
+  if (order == 0) order = 1;
 
   jmax1 = int_find_jmax(cs1);
   jmax2 = int_find_jmax(cs2);
@@ -979,7 +987,7 @@ int centernum;
   scale_shell_result = 1;
   result_scale_factor = -cs1->center[centernum].charge;
   C = cs1->center[centernum].r;
-  int_accum_shell_efield(cs1,cs2,buff,ish,jsh);
+  accum_shell_efield(cs1,cs2,buff,ish,jsh);
   scale_shell_result = 0;
 
   }
@@ -1012,14 +1020,14 @@ int centernum;
     scale_shell_result = 1;
     result_scale_factor = -cs1->center[centernum].charge;
     C = cs1->center[centernum].r;
-    int_accum_shell_efield(cs1,cs2,buff,ish,jsh);
+    accum_shell_efield(cs1,cs2,buff,ish,jsh);
     scale_shell_result = 0;
     }
   else if (cs2 == dercs) {
     scale_shell_result = 1;
     result_scale_factor = -cs2->center[centernum].charge;
     C = cs2->center[centernum].r;
-    int_accum_shell_efield(cs1,cs2,buff,ish,jsh);
+    accum_shell_efield(cs1,cs2,buff,ish,jsh);
     scale_shell_result = 0;
     }
 
@@ -1076,7 +1084,26 @@ int centernum;
  * x y z, etc.
  */
 GLOBAL_FUNCTION VOID
-int_accum_shell_efield(cs1,cs2,buff,ish,jsh)
+int_accum_shell_efield(cs1,cs2,buff,ish,jsh,position)
+centers_t *cs1;
+centers_t *cs2;
+double *buff;
+int ish;
+int jsh;
+double *position;
+{
+  scale_shell_result = 0;
+  C = position;
+  accum_shell_efield(cs1,cs2,buff,ish,jsh);
+}
+
+/* This computes the efield integrals between functions in two shells.
+ * The result is accumulated in the buffer in the form bf1 x y z, bf2
+ * x y z, etc.  The globals scale_shell_result, result_scale_factor,
+ * and C must be set before this is called.
+ */
+LOCAL_FUNCTION VOID
+accum_shell_efield(cs1,cs2,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
 double *buff;
@@ -2164,16 +2191,17 @@ int m;
 
 /* This computes the dipole integrals between functions in two shells.
  * The result is accumulated in the buffer in the form bf1 x y z, bf2
- * x y z, etc.
+ * x y z, etc.  The last arg, com, is the origin of the coordinate
+ * system used to compute the dipole moment.
  */
 GLOBAL_FUNCTION VOID
-int_accum_shell_dipole(cs1,cs2,com,buff,ish,jsh)
+int_accum_shell_dipole(cs1,cs2,buff,ish,jsh,com)
 centers_t *cs1;
 centers_t *cs2;
-double *com;
 double *buff;
 int ish;
 int jsh;
+double *com;
 {
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
   int im,jm,km;

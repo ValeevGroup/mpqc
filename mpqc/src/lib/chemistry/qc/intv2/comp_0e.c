@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:17  etseidl
+ * Revision 1.4  1995/03/05 06:05:29  cljanss
+ * Added efield integrals.  Changed the dipole moment integral interface.
+ *
+ * Revision 1.3  1994/08/26  22:45:17  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -64,6 +67,41 @@ centers_t *cs2;
 
   return result;
   }
+
+/* This computes the efield at position due to the nuclei.  The result
+ * is written to efield.
+ */
+GLOBAL_FUNCTION VOID
+int_nuclear_efield(cs1,cs2,position,efield)
+centers_t *cs1;
+centers_t *cs2;
+double *position;
+double *efield;
+{
+  int i,j;
+  double tmp;
+  double r[3];
+  centers_t *centers;
+
+  for (i=0; i<3; i++) efield[i] = 0.0;
+
+  centers = cs1;
+  while(centers) {
+      for (i=0; i<centers->n; i++) {
+          tmp = 0.0;
+          for (j=0; j<3; j++) {
+              r[j] = position[j] - centers->center[i].r[j];
+              tmp += r[j]*r[j];
+            }
+          tmp = centers->center[i].charge/(tmp*sqrt(tmp));
+          for (j=0; j<3; j++) {
+              efield[j] +=  r[j] * tmp;
+            }
+        }
+      if (centers == cs2) centers = NULL;
+      else centers = cs2;
+    }
+}
 
 /* Compute the nuclear repulsion energy first derivative with respect
  * to the given center. */

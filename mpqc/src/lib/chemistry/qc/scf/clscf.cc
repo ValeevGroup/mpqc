@@ -405,8 +405,12 @@ CLSCF::new_density()
   cl_dens_diff_.scale(-1.0);
   
   cl_dens_.assign(0.0);
+#if 0
   RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
   cl_dens_.element_op(op);
+#else
+  so_density(cl_dens_, 2.0);
+#endif
   cl_dens_.scale(2.0);
 
   cl_dens_diff_.accumulate(cl_dens_);
@@ -470,9 +474,7 @@ CLSCF::effective_fock()
 void
 CLSCF::ao_fock()
 {
-  tim_enter("petite");
   RefPetiteList pl = integral()->petite_list(basis());
-  tim_exit("petite");
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0

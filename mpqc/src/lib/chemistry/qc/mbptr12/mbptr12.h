@@ -159,7 +159,8 @@ class MBPT2_R12: public MBPT2 {
 
         <dt><tt>r12ints_file</tt><dd> This specifies which file to use to store transformed
 	MO integrals if <tt>r12ints=posix-io</tt> or <tt>r12ints=mpi-io</tt> is used.
-	Default is /tmp/r12ints.dat. If MPI-I/O is used then it is user's responsibility to ensure
+	Default is "./<inputbasename>.r12ints.dat", where <inputbasename> is the name of the input
+	file without ".in". If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
 
         </dl> */

@@ -399,6 +399,13 @@ CPPFLAGS=$withval
 echo Using extra include directories: $withval
 )
 
+template_instantiation=none
+AC_ARG_WITH(template,
+[  --with-template         Specifies template instantation model.],
+template_instantiation=$withval
+echo Using extra include directories: $withval
+)
+
 scincludedir=$includedir
 AC_ARG_WITH(sc-includedir,
 [  --with-sc-includedir    Specifies include file install subdir.],
@@ -881,28 +888,6 @@ AC_LANG_RESTORE
 fi
 
 dnl -- other options --
-
-AC_MSG_CHECKING([GNU c++ library/template flags])
-if test X$GXX = Xyes; then
-  # automatic template instantiation causes problems with libstc++-v3
-  #CXXOPTIONS_MISC="$CXXOPTIONS_MISC -fno-implicit-templates"
-  #EXPLICIT_TEMPLATE_INSTANTIATION=yes
-  #AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
-  AC_MSG_RESULT("GNU")
-else
-  case $target in
-    *-sgi-irix6.0*)
-      AC_MSG_RESULT("*-sgi-irix6.0*")
-    ;;
-    *-sgi-irix*)
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -ptused"
-      AC_MSG_RESULT("*-sgi-irix*")
-      ;;
-    *)
-      AC_MSG_RESULT("generic non GNU")
-      ;;
-    esac
-fi
 
 if test $DEBUG = yes; then
   CFLAGS="$COPTIONS_DBG $COPTIONS_MISC"
@@ -1551,41 +1536,94 @@ if test ! X$HAVE_LIBR12 = Xyes -o ! X$HAVE_LIBINT = Xyes; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS -x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
 fi
 
+dnl --------- Template instantiation. ---------
+
+if test $template_instantiation = auto; then
+AC_MSG_CHECKING(choosing template instantiation method)
+  if test X$GXX = Xyes; then
+    AC_MSG_RESULT("gcc (none)")
+  else
+    case $target in
+      *-sgi-irix6.0*)
+        AC_MSG_RESULT("*-sgi-irix6.0* (none)")
+        ;;
+      *-sgi-irix*)
+        template_instantiation=ptused
+        AC_MSG_RESULT("*-sgi-irix* (ptused)")
+        ;;
+      *-cray-unicos*)
+        template_instantiation=craysimp
+        AC_MSG_RESULT("*-cray-unicos* (craysimp)")
+        ;;
+      *-dec-osf*)
+        template_instantiation=repodir
+        AC_MSG_RESULT("*-dec-osf* (repodir)")
+        ;;
+      alpha*)
+        template_instantiation=repodir
+        AC_MSG_RESULT("alpha* non-GNU C++ (repodir)")
+        ;;
+      *-solaris*)
+        template_instantiation=sunexpl
+        AC_MSG_RESULT("*-solaris* (sunexpl)")
+        ;;
+      *)
+        AC_MSG_RESULT("generic non GNU (none)")
+        ;;
+    esac
+  fi
+fi
+
+if test $template_instantiation = auto; then
+  template_instantiation=none
+fi
+
+AC_MSG_CHECKING(template instantiation flags)
+TMPLINST=no
+TMPLREPO=
+TMPLINLIB=no
+case $template_instantiation in
+  repodir)
+    TMPLREPO=cxx_repository
+    TMPLINLIB=yes
+    ;;
+  craysimp)
+    CXXFLAGS="$CXXFLAGS -h simple_templates"
+    ;;
+  gnurepo)
+    TMPLINST=yes
+    CXXFLAGS="$CXXFLAGS -frepo"
+    AC_MSG_RESULT(gnurepo)
+    ;;
+  gnuexpl)
+    # automatic template instantiation causes problems with libstc++-v3
+    CXXFLAGS="$CXXFLAGS -fno-implicit-templates"
+    EXPLICIT_TEMPLATE_INSTANTIATION=yes
+    AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
+    ;;
+  sunexpl)
+    CXXFLAGS="$CXXFLAGS -instances=explicit"
+    AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
+    ;;
+  ptused)
+    CXXFLAGS="$CXXFLAGS -ptused"
+    ;;
+  none)
+    AC_MSG_RESULT(none)
+    ;;
+  *)
+    AC_MSG_RESULT($template_instantiation)
+    AC_MSG_ERROR(unknown template instantiation method)
+esac
+
+AC_SUBST(TMPLINST)
+AC_SUBST(TMPLREPO)
+AC_SUBST(TMPLINLIB)
+
 dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])
-TMPLREPO=
-TMPLINLIB=no
 case $target in
-  alpha*)
-    if test ! X$GXX = Xyes; then
-      TMPLREPO=cxx_repository
-      TMPLINLIB=yes
-    fi
-    AC_MSG_RESULT("alpha* non-GNU C++")
-  ;;
-  *-cray-unicos*)
-    if test ! X$GXX = Xyes; then
-      # This is to quickly get things running.
-      # A more sophisticated template instantiation model would be better.
-      CXXFLAGS="$CXXFLAGS -h simple_templates"
-    fi
-    AC_MSG_RESULT(cray)
-  ;;
-  *-dec-osf*)
-    if test ! X$GXX = Xyes; then
-      TMPLREPO=cxx_repository
-      TMPLINLIB=yes
-    fi
-    AC_MSG_RESULT("*-dec-osf* non-GNU C++")
-  ;;
-  *-solaris*)
-    if test ! X$GXX = Xyes; then
-      CXXFLAGS="$CXXFLAGS -instances=explicit"
-      AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
-    fi
-    AC_MSG_RESULT("*-solaris*")
-  ;;
   i860-intel-puma*)
     LDFLAGS="$LDFLAGS -mpuma -mnoieee"
     AC_MSG_RESULT(paragon puma)
@@ -1606,8 +1644,6 @@ case $target in
     AC_MSG_RESULT(none)
   ;;
 esac
-AC_SUBST(TMPLREPO)
-AC_SUBST(TMPLINLIB)
 
 dnl --------- Shared library configuration. ---------
 

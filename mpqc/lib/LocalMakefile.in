@@ -25,6 +25,10 @@ TMPLREPO = @TMPLREPO@
 # "yes", if the contents of TMPLREPO should be put into libraries
 TMPLINLIB = @TMPLINLIB@
 
+# "yes", if libraries should be prelinked to force templates to
+# be instantiated
+TMPLINST = @TMPLINST@
+
 # The object code suffix
 OBJSUF = @OBJSUF@
 

@@ -67,9 +67,26 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
 
 else
 
-$(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
+.PHONY: tmplinst
+tmplinst::
+ifeq ($(TMPLINST),yes)
+SCLIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+SCLIBSOTHER := $(SCLIBS:$(TARGET_TO_MAKE).$(LIBSUF)=)
+SCLIBSEXIST := $(wildcard $(SCLIBSOTHER:%=$(TOPDIR)/lib/%))
+tmplinst:: $(LIBOBJ) $(SCLIBSEXIST)
+	@echo LISTLIBS = $(LISTLIBS) $(SRCDIR)/LIBS.h
+	@echo SCLIBS = $(SCLIBS)
+	@echo SCLIBSOTHER = $(SCLIBSOTHER)
+	@echo SCLIBSEXIST = $(SCLIBSEXIST)
+	@echo "Doing template instantiations (expect errors)."
+	-$(LD) $(LDFLAGS) -o a.out.tmplinst $^ $(SYSLIBS) 2> /dev/null
+	/bin/rm -f a.out.tmplinst
+	@echo "Finished template instantiations (errors were expected)."
+endif
+
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ) tmplinst
 	/bin/rm -f $@
-	$(AR) $(ARFLAGS) $@ $^
+	$(AR) $(ARFLAGS) $@ $(LIBOBJ)
 	$(RANLIB) $@
 
 $(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
@@ -160,6 +177,7 @@ miscclean::
 
 oclean::
 	-rm -rf *.o $(TMPLREPO) cxx_tmpl_repo ti_files *.lo
+	-rm -rf *.rpo
 	-rm -rf .libs
 
 dclean::

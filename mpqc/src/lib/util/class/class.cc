@@ -33,6 +33,8 @@
 #include <scconfig.h>
 #endif
 
+#include <string>
+
 #include <stdlib.h>
 #include <string.h>
 #if defined(HAVE_DLFCN_H)

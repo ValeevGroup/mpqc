@@ -163,7 +163,7 @@ void
 TriangulatedSurface::clear_int_arrays()
 {
   if (_triangle_vertex) {
-      for (int i=0; i<_triangles.length(); i++) {
+      for (int i=0; i<_triangles.size(); i++) {
           delete[] _triangle_vertex[i];
         }
       delete[] _triangle_vertex;
@@ -171,7 +171,7 @@ TriangulatedSurface::clear_int_arrays()
   _triangle_vertex = 0;
 
   if (_triangle_edge) {
-      for (int i=0; i<_triangles.length(); i++) {
+      for (int i=0; i<_triangles.size(); i++) {
           delete[] _triangle_edge[i];
         }
       delete[] _triangle_edge;
@@ -179,7 +179,7 @@ TriangulatedSurface::clear_int_arrays()
   _triangle_edge = 0;
 
   if (_edge_vertex) {
-      for (int i=0; i<_edges.length(); i++) {
+      for (int i=0; i<_edges.size(); i++) {
           delete[] _edge_vertex[i];
         }
       delete[] _edge_vertex;
@@ -288,7 +288,7 @@ TriangulatedSurface::complete_int_arrays()
 void
 TriangulatedSurface::compute_values(Ref<Volume>&vol)
 {
-  int n = _vertices.length();
+  int n = _vertices.size();
   _values.resize(n);
 
   for (int i=0; i<n; i++) {
@@ -302,7 +302,7 @@ double
 TriangulatedSurface::flat_area()
 {
   double result = 0.0;
-  for (AVLSet<Ref<Triangle> >::iterator i=_triangles.begin();
+  for (std::set<Ref<Triangle> >::iterator i=_triangles.begin();
        i!=_triangles.end(); i++) {
       result += (*i)->flat_area();
     }
@@ -313,7 +313,7 @@ double
 TriangulatedSurface::flat_volume()
 {
   double result = 0.0;
-  for (int i=0; i<_triangles.length(); i++) {
+  for (int i=0; i<_triangles.size(); i++) {
 
       // get the vertices of the triangle
       SCVector3 A(vertex(triangle_vertex(i,0))->point());
@@ -399,12 +399,12 @@ TriangulatedSurface::volume()
 void
 TriangulatedSurface::add_vertex(const Ref<Vertex>&t)
 {
-  int i = _vertices.length();
+  int i = _vertices.size();
   _vertices.insert(t);
-  if (i != _vertices.length()) {
+  if (i != _vertices.size()) {
       _index_to_vertex.push_back(t);
       _vertex_to_index[t] = i;
-      if (_index_to_vertex.size() != _vertex_to_index.length()) {
+      if (_index_to_vertex.size() != _vertex_to_index.size()) {
           ExEnv::errn() << "TriangulatedSurface::add_vertex: length mismatch" << endl;
           abort();
         }
@@ -414,12 +414,12 @@ TriangulatedSurface::add_vertex(const Ref<Vertex>&t)
 void
 TriangulatedSurface::add_edge(const Ref<Edge>&t)
 {
-  int i = _edges.length();
+  int i = _edges.size();
   _edges.insert(t);
-  if (i != _edges.length()) {
+  if (i != _edges.size()) {
       _index_to_edge.push_back(t);
       _edge_to_index[t] = i;
-      if (_index_to_edge.size() != _edge_to_index.length()) {
+      if (_index_to_edge.size() != _edge_to_index.size()) {
           ExEnv::errn() << "TriangulatedSurface::add_edge: length mismatch" << endl;
           abort();
         }
@@ -430,12 +430,12 @@ void
 TriangulatedSurface::add_triangle(const Ref<Triangle>&t)
 {
   if (_completed_surface) clear();
-  int i = _triangles.length();
+  int i = _triangles.size();
   _triangles.insert(t);
-  if (i != _triangles.length()) {
+  if (i != _triangles.size()) {
       _index_to_triangle.push_back(t);
       _triangle_to_index[t] = i;
-      if (_index_to_triangle.size() != _triangle_to_index.length()) {
+      if (_index_to_triangle.size() != _triangle_to_index.size()) {
           ExEnv::errn() << "TriangulatedSurface::add_triangle: length mismatch" << endl;
           abort();
         }
@@ -451,11 +451,11 @@ TriangulatedSurface::add_triangle(const Ref<Vertex>& v1,
   // for some other triangle.
   Ref<Edge> e0, e1, e2;
 
-  const AVLSet<Ref<Edge> > &v1edges = _tmp_edges[v1];
+  const std::set<Ref<Edge> > &v1edges = _tmp_edges[v1];
 
-  const AVLSet<Ref<Edge> > &v2edges = _tmp_edges[v2];
+  const std::set<Ref<Edge> > &v2edges = _tmp_edges[v2];
 
-  AVLSet<Ref<Edge> >::iterator ix;
+  std::set<Ref<Edge> >::const_iterator ix;
   for (ix = v1edges.begin(); ix != v1edges.end(); ix++) {
       const Ref<Edge>& e = *ix;
       if (e->vertex(0) == v2 || e->vertex(1) == v2) {
@@ -505,7 +505,7 @@ TriangulatedSurface::add_triangle(const Ref<Vertex>& v1,
 Ref<Edge>
 TriangulatedSurface::find_edge(const Ref<Vertex>& v1, const Ref<Vertex>& v2)
 {
-  AVLSet<Ref<Triangle> >::iterator i;
+  std::set<Ref<Triangle> >::iterator i;
 
   for (i=_triangles.begin(); i!=_triangles.end(); i++) {
       Ref<Triangle> t = *i;
@@ -546,10 +546,10 @@ TriangulatedSurface::print(ostream&o) const
       Ref<Edge> e = edge(i);
       Ref<Vertex> v0 = e->vertex(0);
       Ref<Vertex> v1 = e->vertex(1);
-      AVLMap<Ref<Vertex>,int>::iterator v0i = _vertex_to_index.find(v0);
-      AVLMap<Ref<Vertex>,int>::iterator v1i = _vertex_to_index.find(v1);
-      int v0int = v0i==_vertex_to_index.end()? -1: v0i.data();
-      int v1int = v1i==_vertex_to_index.end()? -1: v1i.data();
+      std::map<Ref<Vertex>,int>::const_iterator v0i=_vertex_to_index.find(v0);
+      std::map<Ref<Vertex>,int>::const_iterator v1i=_vertex_to_index.find(v1);
+      int v0int = v0i==_vertex_to_index.end()? -1: v0i->second;
+      int v1int = v1i==_vertex_to_index.end()? -1: v1i->second;
       o << indent
         << scprintf("  %3d: %3d %3d",i, v0int, v1int)
         << endl;
@@ -562,12 +562,12 @@ TriangulatedSurface::print(ostream&o) const
       Ref<Edge> e0 = tri->edge(0);
       Ref<Edge> e1 = tri->edge(1);
       Ref<Edge> e2 = tri->edge(2);
-      AVLMap<Ref<Edge>,int>::iterator e0i = _edge_to_index.find(e0);
-      AVLMap<Ref<Edge>,int>::iterator e1i = _edge_to_index.find(e1);
-      AVLMap<Ref<Edge>,int>::iterator e2i = _edge_to_index.find(e2);
-      int e0int = e0i==_edge_to_index.end()? -1: e0i.data();
-      int e1int = e1i==_edge_to_index.end()? -1: e1i.data();
-      int e2int = e2i==_edge_to_index.end()? -1: e2i.data();
+      std::map<Ref<Edge>,int>::const_iterator e0i = _edge_to_index.find(e0);
+      std::map<Ref<Edge>,int>::const_iterator e1i = _edge_to_index.find(e1);
+      std::map<Ref<Edge>,int>::const_iterator e2i = _edge_to_index.find(e2);
+      int e0int = e0i==_edge_to_index.end()? -1: e0i->second;
+      int e1int = e1i==_edge_to_index.end()? -1: e1i->second;
+      int e2int = e2i==_edge_to_index.end()? -1: e2i->second;
       o << indent
         << scprintf("  %3d: %3d %3d %3d",i, e0int, e1int, e2int)
         << endl;
@@ -608,11 +608,11 @@ void
 TriangulatedSurface::render(const Ref<Render> &render)
 {
   Ref<RenderedPolygons> poly = new RenderedPolygons;
-  poly->initialize(_vertices.length(), _triangles.length(),
+  poly->initialize(_vertices.size(), _triangles.size(),
                    RenderedPolygons::Vertex);
-  AVLSet<Ref<Vertex> >::iterator iv;
-  AVLSet<Ref<Triangle> >::iterator it;
-  AVLMap<Ref<Vertex>, int> vertex_to_index;
+  std::set<Ref<Vertex> >::iterator iv;
+  std::set<Ref<Triangle> >::iterator it;
+  std::map<Ref<Vertex>, int> vertex_to_index;
   int i = 0;
   for (iv = _vertices.begin(); iv != _vertices.end(); iv++, i++) {
       Ref<Vertex> v = *iv;
@@ -666,9 +666,9 @@ void
 TriangulatedSurface::recompute_index_maps()
 {
   int i;
-  AVLSet<Ref<Vertex> >::iterator iv;
-  AVLSet<Ref<Edge> >::iterator ie;
-  AVLSet<Ref<Triangle> >::iterator it;
+  std::set<Ref<Vertex> >::iterator iv;
+  std::set<Ref<Edge> >::iterator ie;
+  std::set<Ref<Triangle> >::iterator it;
 
   // fix the index maps
   _vertex_to_index.clear();
@@ -679,19 +679,19 @@ TriangulatedSurface::recompute_index_maps()
   _index_to_edge.clear();
   _index_to_triangle.clear();
 
-  _index_to_vertex.resize(_vertices.length());
+  _index_to_vertex.resize(_vertices.size());
   for (i=0, iv = _vertices.begin(); iv != _vertices.end(); i++, iv++) {
       _vertex_to_index[*iv] = i;
       _index_to_vertex[i] = *iv;
     }
 
-  _index_to_edge.resize(_edges.length());
+  _index_to_edge.resize(_edges.size());
   for (i=0, ie = _edges.begin(); ie != _edges.end(); i++, ie++) {
       _edge_to_index[*ie] = i;
       _index_to_edge[i] = *ie;
     }
 
-  _index_to_triangle.resize(_triangles.length());
+  _index_to_triangle.resize(_triangles.size());
   for (i=0, it = _triangles.begin(); it != _triangles.end(); i++, it++) {
       _triangle_to_index[*it] = i;
       _index_to_triangle[i] = *it;

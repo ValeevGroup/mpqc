@@ -1107,10 +1107,10 @@ UnionShape::add_shape(Ref<Shape> s)
 double
 UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 {
-  std::set<Ref<Shape> >::iterator imin = _shapes.begin();
+  std::set<Ref<Shape> >::const_iterator imin = _shapes.begin();
   if (imin == _shapes.end()) return 0.0;
   double min = (*imin)->distance_to_surface(p);
-  for (std::set<Ref<Shape> >::iterator i=imin; i!=_shapes.end(); i++) {
+  for (std::set<Ref<Shape> >::const_iterator i=imin; i!=_shapes.end(); i++) {
       double d = (*i)->distance_to_surface(p);
       if (min <= 0.0) {
           if (d < 0.0 && d > min) { min = d; imin = i; }
@@ -1129,7 +1129,8 @@ UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 int
 UnionShape::is_outside(const SCVector3&p) const
 {
-  for (std::set<Ref<Shape> >::iterator i=_shapes.begin(); i!=_shapes.end(); i++) {
+  for (std::set<Ref<Shape> >::const_iterator i=_shapes.begin();
+       i!=_shapes.end(); i++) {
       if (!(*i)->is_outside(p)) return 0;
     }
 
@@ -1164,7 +1165,8 @@ UnionShape::boundingbox(double valuemin, double valuemax,
 int
 UnionShape::gradient_implemented() const
 {
-  for (std::set<Ref<Shape> >::iterator j=_shapes.begin(); j!=_shapes.end(); j++) {
+  for (std::set<Ref<Shape> >::const_iterator j=_shapes.begin();
+       j!=_shapes.end(); j++) {
       if (!(*j)->gradient_implemented()) return 0;
     }
   return 1;

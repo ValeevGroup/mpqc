@@ -170,12 +170,12 @@ double Triangle::flat_area()
                       - c2*c2 - b2*b2 - a2*a2);
 }
 
-void Triangle::add_vertices(AVLSet<Ref<Vertex> >&set)
+void Triangle::add_vertices(std::set<Ref<Vertex> >&set)
 {
   for (int i=0; i<3; i++) set.insert(_edges[i]->vertex(orientation(i)));
 }
 
-void Triangle::add_edges(AVLSet<Ref<Edge> >&set)
+void Triangle::add_edges(std::set<Ref<Edge> >&set)
 {
   for (int i=0; i<3; i++) set.insert(_edges[i]);
 }

@@ -36,6 +36,8 @@
 #include <scconfig.h>
 #endif
 
+#include <map>
+#include <set>
 #include <vector>
 
 #include <math/isosurf/triangle.h>
@@ -43,6 +45,15 @@
 #include <util/render/render.h>
 
 namespace sc {
+
+template <class C, class I>
+inline void
+erase_elements_by_value(C &container, I begin, I end)
+{
+  for (I i=begin; i!=end; i++) {
+      container.erase(*i);
+    }
+}
 
 class TriangulatedSurface: public DescribedClass {
   protected:
@@ -52,14 +63,14 @@ class TriangulatedSurface: public DescribedClass {
     int _completed_surface;
 
     // sets of objects that make up the surface
-    AVLSet<Ref<Vertex> > _vertices;
-    AVLSet<Ref<Edge> > _edges;
-    AVLSet<Ref<Triangle> > _triangles;
+    std::set<Ref<Vertex> > _vertices;
+    std::set<Ref<Edge> > _edges;
+    std::set<Ref<Triangle> > _triangles;
 
     // map objects to an integer index
-    AVLMap<Ref<Vertex>,int> _vertex_to_index;
-    AVLMap<Ref<Edge>,int> _edge_to_index;
-    AVLMap<Ref<Triangle>,int> _triangle_to_index;
+    std::map<Ref<Vertex>,int> _vertex_to_index;
+    std::map<Ref<Edge>,int> _edge_to_index;
+    std::map<Ref<Triangle>,int> _triangle_to_index;
 
     // map integer indices to an object
     std::vector<Ref<Vertex> > _index_to_vertex;
@@ -104,7 +115,7 @@ class TriangulatedSurface: public DescribedClass {
     virtual Edge* newEdge(const Ref<Vertex>&,const Ref<Vertex>&) const;
 
     // this map of edges to vertices is used to construct the surface
-    AVLMap<Ref<Vertex>,AVLSet<Ref<Edge> > > _tmp_edges;
+    std::map<Ref<Vertex>,std::set<Ref<Edge> > > _tmp_edges;
   public:
     TriangulatedSurface();
     TriangulatedSurface(const Ref<KeyVal>&);
@@ -140,25 +151,25 @@ class TriangulatedSurface: public DescribedClass {
     virtual void clear();
 
     // get information from the object sets
-    int nvertex() const { return _vertices.length(); };
+    int nvertex() const { return _vertices.size(); };
     Ref<Vertex> vertex(int i) const { return _index_to_vertex[i]; };
     int vertex_index(const Ref<Vertex> &o) {
-      AVLMap<Ref<Vertex>,int>::iterator i = _vertex_to_index.find(o);
-      if (i != _vertex_to_index.end()) return i.data();
+      std::map<Ref<Vertex>,int>::iterator i = _vertex_to_index.find(o);
+      if (i != _vertex_to_index.end()) return i->second;
       return -1;
     }
-    int nedge() const { return _edges.length(); };
+    int nedge() const { return _edges.size(); };
     Ref<Edge> edge(int i) const { return _index_to_edge[i]; };
     int edge_index(const Ref<Edge> &o) {
-      AVLMap<Ref<Edge>,int>::iterator i = _edge_to_index.find(o);
-      if (i != _edge_to_index.end()) return i.data();
+      std::map<Ref<Edge>,int>::iterator i = _edge_to_index.find(o);
+      if (i != _edge_to_index.end()) return i->second;
       return -1;
     }
-    int ntriangle() const { return _triangles.length(); };
+    int ntriangle() const { return _triangles.size(); };
     Ref<Triangle> triangle(int i) const { return _index_to_triangle[i]; }
     int triangle_index(const Ref<Triangle> &o) {
-      AVLMap<Ref<Triangle>,int>::iterator i = _triangle_to_index.find(o);
-      if (i != _triangle_to_index.end()) return i.data();
+      std::map<Ref<Triangle>,int>::iterator i = _triangle_to_index.find(o);
+      if (i != _triangle_to_index.end()) return i->second;
       return -1;
     }
 

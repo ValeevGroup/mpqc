@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <set>
+
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -40,7 +42,6 @@
 #include <chemistry/molecule/localdef.h>
 
 #include <util/container/bitarray.h>
-#include <util/container/avlset.h>
 
 using namespace std;
 using namespace sc;
@@ -796,14 +797,14 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
     }
 
   // check for groups of atoms bound to nothing
-  AVLSet<int> boundatoms;
-  AVLSet<int> newatoms, nextnewatoms;
+  std::set<int> boundatoms;
+  std::set<int> newatoms, nextnewatoms;
   // start out with atom 0
   newatoms.insert(0);
-  AVLSet<int>::iterator iatom;
+  std::set<int>::iterator iatom;
   int warning_printed = 0;
-  while (newatoms.length() > 0) {
-    while (newatoms.length() > 0) {
+  while (newatoms.size() > 0) {
+    while (newatoms.size() > 0) {
       // newatoms gets merged into boundatoms
       for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
         boundatoms.insert(*iatom);
@@ -814,7 +815,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
       for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
         int atom = *iatom;
         for (i=0; i<m.natom(); i++) {
-          if (bonds(i,atom) && !boundatoms.contains(i)) {
+          if (bonds(i,atom) && boundatoms.find(i) == boundatoms.end()) {
             nextnewatoms.insert(i);
             }
           }
@@ -826,7 +827,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
         }
       }
 
-    if (boundatoms.length() != m.natom()) {
+    if (boundatoms.size() != m.natom()) {
       if (!warning_printed) {
         warning_printed = 1;
         ExEnv::out0()
@@ -838,7 +839,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
       double nearest_dist;
       int nearest_bound = -1, nearest_unbound = -1;
       for(i=0; i < m.natom(); i++) {
-        if (!boundatoms.contains(i)) {
+        if (boundatoms.find(i) == boundatoms.end()) {
           SCVector3 ri(m.r(i));
           for (iatom=boundatoms.begin(); iatom!=boundatoms.end(); iatom++) {
             SCVector3 rj(m.r(*iatom));

@@ -37,7 +37,7 @@ void
 TriangulatedSurface::fix_orientation()
 {
   int i,j;
-  AVLSet<Ref<Triangle> >::iterator I;
+  std::set<Ref<Triangle> >::iterator I;
   int nflip = 0;
   
   int ne = nedge();
@@ -66,18 +66,18 @@ TriangulatedSurface::fix_orientation()
         }
     }
 
-  AVLSet<Ref<Triangle> > unfixed;
-  AVLSet<Ref<Triangle> > fixed;
-  AVLSet<Ref<Triangle> > finished;
+  std::set<Ref<Triangle> > unfixed;
+  std::set<Ref<Triangle> > fixed;
+  std::set<Ref<Triangle> > finished;
 
-  unfixed |= _triangles;
+  unfixed.insert(_triangles.begin(), _triangles.end());
 
-  while (unfixed.length()) {
+  while (unfixed.size()) {
       // define unfixed.first()'s orientation to be the fixed orientation
-      AVLSet<Ref<Triangle> >::iterator first = unfixed.begin();
+      std::set<Ref<Triangle> >::iterator first = unfixed.begin();
       fixed.insert(*first);
-      unfixed.remove(*first);
-      while (fixed.length()) {
+      unfixed.erase(*first);
+      while (fixed.size()) {
           Ref<Triangle> tri = *fixed.begin();
           // make all neighbors of tri oriented the same as tri
           for (i=0; i<3; i++) {
@@ -99,8 +99,8 @@ TriangulatedSurface::fix_orientation()
                   abort();
                 }
               if (tri->orientation(i) == othertri->orientation(j)) {
-                  if (unfixed.contains(othertri)) {
-                      unfixed.remove(othertri);
+                  if (unfixed.find(othertri) != unfixed.end()) {
+                      unfixed.erase(othertri);
                       fixed.insert(othertri);
                       othertri->flip();
                       nflip++;
@@ -111,14 +111,14 @@ TriangulatedSurface::fix_orientation()
                       abort();
                     }
                 }
-              else if (unfixed.contains(othertri)) {
-                  unfixed.remove(othertri);
+              else if (unfixed.find(othertri) != unfixed.end()) {
+                  unfixed.erase(othertri);
                   fixed.insert(othertri);
                 }
             }
           // by this point all of tri's neighbors have had their
           // orientation fixed to match that of tri
-          fixed.remove(tri);
+          fixed.erase(tri);
           finished.insert(tri);
         }
     }

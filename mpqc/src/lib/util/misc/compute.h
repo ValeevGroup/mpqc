@@ -32,8 +32,8 @@
 #ifndef _util_misc_compute_h
 #define _util_misc_compute_h
 
-#include <stdio.h>
-#include <util/container/avlset.h>
+#include <set>
+
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
@@ -57,7 +57,7 @@ class Compute
    friend class ResultInfo;
    friend class AccResultInfo;
   private:
-    AVLSet<ResultInfoP> _results;
+    std::set<ResultInfoP> _results;
     void add(ResultInfo*);
 
     // Prohibit copy

@@ -66,7 +66,7 @@ void
 Compute::obsolete()
 {
   // go thru all of the results and mark them as obsolete
-  for (AVLSet<ResultInfoP>::iterator i = _results.begin();
+  for (std::set<ResultInfoP>::iterator i = _results.begin();
        i!=_results.end(); i++) {
       (*i)->computed() = 0;
     }
@@ -248,11 +248,6 @@ AccResultInfo::update() {
         }
     }
 }
-
-#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-template class EAVLMMap<ResultInfoP, AVLMapNode<ResultInfoP, int> >;
-template class AVLMapNode<ResultInfoP, int>;
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -260,7 +260,7 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, double*grad) const
 
   CS2Sphere probe_centers(r,probe_r);
 
-  const int max_local_spheres = 30;
+  const int max_local_spheres = 60;
   CS2Sphere local_sphere[max_local_spheres];
 
   const double outside = 1.0;
@@ -498,7 +498,7 @@ class interval
         for (int i=0; i < _nsegs; i++)
         {
             if (min > _min[i] && max < _max[i]) return 1;
-            if (min > _max[i]) return 0;
+            if (max < _min[i]) return 0;
         }
         return 0;
     }
@@ -551,6 +551,47 @@ CS2Sphere::print_counts(FILE*fp)
 #endif
 }
 
+// Function to determine if the centers of a bunch of spheres are separated
+// by a plane from the center of another plane
+
+// s0 is assumed to be at the origin.
+
+// Return 1 if all of the points can be placed on the same side of a
+// plane passing through s0's center.
+static int
+same_side(const CS2Sphere& s0, CS2Sphere *s, int n_spheres)
+{
+  if (n_spheres <= 3) return 1;
+
+  SCVector3 perp;
+  int sign;
+
+  for (int i=0; i<n_spheres; i++)
+    {
+      for (int j=0; j<i; j++)
+        {
+          perp = s[i].center().perp_unit(s[j].center());
+          int old_sign=0;
+          for (int k=0; k < n_spheres; k++)
+            {
+              if (i != k && j != k)
+                {
+                  sign=(perp.dot(s[k].center()) < 0)? -1:1;
+                  if (old_sign && old_sign != sign)
+                      goto next_plane;
+                  old_sign=sign;
+                }
+            }
+          // We found a  plane with all centers on one side
+          return 1;
+          next_plane:
+          continue;
+        }
+    }
+  // All of the planes had points on both sides.
+  return 0;
+}
+
 double
 CS2Sphere::common_radius(CS2Sphere &asphere)
 {
@@ -561,6 +602,38 @@ CS2Sphere::common_radius(CS2Sphere &asphere)
   if (p <= 0.0) return 0.0;
   return 2.*sqrt(p)/d;
 }
+
+#define PRINT_SPECIAL_CASES 0
+#if PRINT_SPECIAL_CASES
+static void
+print_spheres(const CS2Sphere& s0, CS2Sphere* s, int n_spheres)
+{
+  static int output_number;
+  char filename[80];
+  sprintf(filename,"spherelist_%d.oogl",output_number);
+  FILE* fp = fopen(filename,"w");
+  fprintf(fp,"LIST\n");
+  fprintf(fp,"{\n");
+  fprintf(fp,"  appearance {\n");
+  fprintf(fp,"      material {\n");
+  fprintf(fp,"         ambient 0.5 0.1 0.1\n");
+  fprintf(fp,"         diffuse 1.0 0.2 0.2\n");
+  fprintf(fp,"       }\n");
+  fprintf(fp,"    }\n");
+  fprintf(fp," = SPHERE\n");
+  fprintf(fp," %15.8f %15.8f %15.8f %15.8f\n",
+          s0.radius(), s0.x(), s0.y(), s0.z());
+  fprintf(fp,"}\n");
+  for (int i=0; i<n_spheres; i++) {
+      fprintf(fp,"{ = SPHERE\n");
+      fprintf(fp," %15.8f %15.8f %15.8f %15.8f\n",
+              s[i].radius(), s[i].x(), s[i].y(), s[i].z());
+      fprintf(fp,"}\n");
+    }
+  fclose(fp);
+  output_number++;
+}
+#endif
 
 // These tables are used to speed up cos and sin calls
 static double table_angular_res = 0.0;
@@ -778,9 +851,10 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
           }
     }
 
-    // for the special case of all spheres in a plane we don't
-    // need to do the internal coverage test
-    if (n_spheres <= 3) {
+    // for the special case of all sphere's centers on one side of
+    // a plane passing through s0's center we are done; the probe
+    // must be completely intersected.
+    if (same_side(s0,s,n_spheres)) {
         n_plane_totally_covered_++;
         return 1;
       }
@@ -876,6 +950,9 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
 
                 // If we reach this line, then the "point" is not
                 // included in another sphere in s[].
+#if PRINT_SPECIAL_CASES
+                print_spheres(s0,s,n_spheres);
+#endif
                 n_point_was_not_in_a_sphere_++;
                 return 0;
 
@@ -889,7 +966,7 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres, double angular_res) const
         }
     }
     
-    // Since we made it past all of the sphere, intersections, the
+    // Since we made it past all of the sphere intersections, the
     // surface is totally covered
     n_totally_covered_++;
     return 1;

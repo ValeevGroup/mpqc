@@ -40,8 +40,8 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/cartiter.h>
 
-const char* GaussianShell::amtypes = "spdfghijkl";
-const char* GaussianShell::AMTYPES = "SPDFGHIJKL";
+const char* GaussianShell::amtypes = "spdfghiklmn";
+const char* GaussianShell::AMTYPES = "SPDFGHIKLMN";
 
 SavableState_REF_def(GaussianShell);
 

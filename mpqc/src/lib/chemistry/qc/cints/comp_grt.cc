@@ -461,10 +461,10 @@ GRTCints::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 	      Libr12_.te_ptr[2] = Libr12_.te_ptr[3];
 	      Libr12_.te_ptr[3] = tmp_ptr;
 	    }
-	    target_ints_buffer_[0][buffer_offset] = ssss;
-	    target_ints_buffer_[1][buffer_offset] = ss_r12_ss;
-	    target_ints_buffer_[2][buffer_offset] = (double) Libr12_.te_ptr[2][0];
-	    target_ints_buffer_[3][buffer_offset] = (double) Libr12_.te_ptr[3][0];
+	    prim_ints_[0][buffer_offset] = ssss;
+	    prim_ints_[1][buffer_offset] = ss_r12_ss;
+	    prim_ints_[2][buffer_offset] = (double) Libr12_.te_ptr[2][0];
+	    prim_ints_[3][buffer_offset] = (double) Libr12_.te_ptr[3][0];
 	  }
 	  buffer_offset += size;
 	}}}}

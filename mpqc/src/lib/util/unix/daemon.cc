@@ -41,7 +41,7 @@
 #include "cct_cprot.h"
 #include "daemon.h"
 
-#if defined(SUN) || (defined(SGI) && defined __GNUC__)
+#if defined(SUN) || (defined(SGI) && defined __GNUC__ && __GNUC_MINOR__ < 6)
 extern "C" int syslog(int,char*,...);
 #endif
 

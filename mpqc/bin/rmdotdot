@@ -1,12 +1,20 @@
-#!/bin/sh
+#
+eval 'exec perl $0 $*'
+    if 0;
 
-sub='s_/[^/.]*/\.\.\(/\)\?_\1_'
-originalpath=$1
-newpath=`echo $originalpath | sed "$sub"`
+$path = shift;
+$newpath = rmdd($path);
 
-while [ $newpath != $originalpath ]; do
-  originalpath=$newpath
-  newpath=`echo $originalpath | sed "$sub"`
-done
+while ($path ne $newpath) {
+    $path = $newpath;
+    $newpath = rmdd($path);
+}
 
-echo $newpath
+print $newpath;
+
+sub rmdd {
+    my $path = shift;
+    $path =~ s/\/[^\/.]*\/\.\.//;
+    return $path;
+}
+

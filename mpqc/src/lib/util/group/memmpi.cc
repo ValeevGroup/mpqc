@@ -48,6 +48,8 @@ print_error_and_abort(int me, int mpierror)
   MPI_Error_string(mpierror, msg, &size);
   msg[size] = '\0';
   cerr << me << ": " << msg << endl;
+  cout.flush();
+  cerr.flush();
   MPI_Abort(MPI_COMM_WORLD, mpierror);
   abort();
 }

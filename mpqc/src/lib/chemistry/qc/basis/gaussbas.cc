@@ -173,16 +173,16 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
 }
 
 GaussianBasisSet::GaussianBasisSet(const char* name, const Ref<Molecule>& molecule, const Ref<SCMatrixKit>& matrixkit, const RefSCDimension& basisdim,
-				   const int ncenter, const int nshell, GaussianShell** shell) :
+				   const int ncenter, const int nshell, GaussianShell** shell, const std::vector<int>& center_to_nshell) :
   molecule_(molecule),
   matrixkit_(matrixkit),
   basisdim_(basisdim),
   ncenter_(ncenter),
   nshell_(nshell),
-  shell_(shell)
+  shell_(shell),
+  center_to_nshell_(center_to_nshell)
 {
   name_ = new_string(name);
-  center_to_nshell_.resize(ncenter_);
   
   init2();
 }
@@ -198,44 +198,58 @@ GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
   Ref<SCMatrixKit> matrixkit = matrixkit_;
   const int ncenter = ncenter_;
   const int nshell = nshell_ + b->nshell_;
+  std::vector<int> center_to_nshell(ncenter);
 
   GaussianShell** shell = new GaussianShell*[nshell];
   int* func_per_shell = new int[nshell];
-  for (int i=0; i<nshell; i++) {
-     const GaussianShell* gsi;
-    if (i < nshell_)
-      gsi = shell_[i];
-    else
-      gsi = b->shell_[i];
 
-    int nc=gsi->ncontraction();
-    int np=gsi->nprimitive();
-    func_per_shell[i] = gsi->nfunction();
-    
-    int *ams = new int[nc];
-    int *pure = new int[nc];
-    double *exps = new double[np];
-    double **coefs = new double*[nc];
-    
-    for (int j=0; j < nc; j++) {
-      ams[j] = gsi->am(j);
-      pure[j] = gsi->is_pure(j);
-      coefs[j] = new double[np];
-      for (int k=0; k < np; k++)
-	coefs[j][k] = gsi->coefficient_unnorm(j,k);
+  for(int c=0; c<ncenter; c++) {
+
+    int ns1 = center_to_nshell_[c];
+    int ns2 = b->center_to_nshell_[c];
+    int ns = ns1+ns2;
+    int s1off = center_to_shell_[c];
+    int s2off = b->center_to_shell_[c];
+    int soff = s1off + s2off;
+    center_to_nshell[c] = ns;
+
+    for (int i=0; i<ns; i++) {
+      const GaussianShell* gsi;
+      if (i < ns1)
+	gsi = shell_[s1off + i];
+      else
+	gsi = b->shell_[s2off + i - ns1];
+
+      int nc=gsi->ncontraction();
+      int np=gsi->nprimitive();
+      func_per_shell[soff + i] = gsi->nfunction();
+      
+      int *ams = new int[nc];
+      int *pure = new int[nc];
+      double *exps = new double[np];
+      double **coefs = new double*[nc];
+      
+      for (int j=0; j < nc; j++) {
+	ams[j] = gsi->am(j);
+	pure[j] = gsi->is_pure(j);
+	coefs[j] = new double[np];
+	for (int k=0; k < np; k++)
+	  coefs[j][k] = gsi->coefficient_unnorm(j,k);
+      }
+      
+      for (int j=0; j < np; j++)
+	exps[j] = gsi->exponent(j);
+      
+      shell[soff + i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
+					  GaussianShell::Unnormalized);
     }
-    
-    for (int j=0; j < np; j++)
-      exps[j] = gsi->exponent(j);
-    
-    shell[i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
-				 GaussianShell::Unnormalized);
   }
 
   int nbas = nbasis() + b->nbasis();
   RefSCDimension basisdim = new SCDimension(nbas, nshell, func_per_shell, "basis set dimension");
 
-  Ref<GaussianBasisSet> AplusB = new GaussianBasisSet("", molecule, matrixkit, basisdim, ncenter, nshell, shell);
+  Ref<GaussianBasisSet> AplusB = new GaussianBasisSet("", molecule, matrixkit, basisdim, ncenter,
+						      nshell, shell, center_to_nshell);
 
   delete[] func_per_shell;
 

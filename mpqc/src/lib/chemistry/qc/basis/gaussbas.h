@@ -139,7 +139,7 @@ class GaussianBasisSet: public SavableState
     bool has_pure_;
 
     GaussianBasisSet(const char* name, const Ref<Molecule>& molecule, const Ref<SCMatrixKit>& matrixkit, const RefSCDimension& basisdim,
-		     const int ncenter, const int nshell, GaussianShell** shell);
+		     const int ncenter, const int nshell, GaussianShell** shell, const std::vector<int>& center_to_nshell);
 
     void recursively_get_shell(int&,Ref<KeyVal>&,
                                const char*,const char*,BasisFileSet&,

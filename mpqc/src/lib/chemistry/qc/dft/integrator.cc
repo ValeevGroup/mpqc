@@ -1784,7 +1784,7 @@ RadialAngularIntegrator::init_parameters(void)
 {
 
   prune_grid_ = 1;
-  gridtype_ = 2;
+  gridtype_ = 3;
   user_defined_grids_ = 0;
   npruned_partitions_ = 5;
   dynamic_grids_ = 1;
@@ -1809,7 +1809,6 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
   natomic_rows_ = 5;
   
   grid = keyval->pcharvalue("grid");
-  if (keyval->error() != KeyVal::OK) gridtype_ = 2;
 
   if (grid) {
       if (!strcmp(grid,"xcoarse"))     gridtype_ = 0;
@@ -1818,18 +1817,23 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
       else if (!strcmp(grid,"fine"))   gridtype_ = 3;
       else if (!strcmp(grid,"xfine"))  gridtype_ = 4;
       else {
-          ExEnv::out() << " Grid type " << grid << " not recognized. " << endl;
-          ExEnv::out() <<
-              " Choices are: xcoarse, coarse, medium(default), fine, xfine. " << endl;
-          ExEnv::out() <<
-              " The computed energies are accuracy to 1e-4, 1e-5, 1e-6, 1e-7, and 1e-8 E_h,"
-              " respectively." << endl;
-          ExEnv::out() << " Using medium default grids. " << endl;
-          gridtype_ = 2;
+          ExEnv::out() << node0
+                       << indent
+                       << "ERROR: grid = \"" << grid << "\" not recognized."
+                       << endl
+                       << indent
+                       << "Choices are: xcoarse, coarse, medium, fine, xfine."
+                       << endl
+                       << indent
+                       << "The default is grid = fine."
+                       << endl;
+          abort();
         }
 
     }
-  else gridtype_ = 2;
+  else {
+      gridtype_ = 3;
+    }
 
 
   

@@ -48,7 +48,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",3,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",4,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -129,6 +129,13 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
   }
 
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 4) {
+    obs_space_ << SavableState::restore_state(si);
+    abs_space_ << SavableState::restore_state(si);
+    ribs_space_ << SavableState::restore_state(si);
+    act_occ_space_ << SavableState::restore_state(si);
+  }
+
   orbsym_ = 0;
   //eigen_(evals_,scf_vec_,occs_,orbsym_);
   eigen2_(evals_,scf_vec_,orbsym_);
@@ -163,6 +170,11 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((int)dynamic_);
   so.put(print_percent_);
   so.put((int)abs_method_);
+  
+  SavableState::save_state(obs_space_.pointer(),so);
+  SavableState::save_state(abs_space_.pointer(),so);
+  SavableState::save_state(ribs_space_.pointer(),so);
+  SavableState::save_state(act_occ_space_.pointer(),so);
 }
 
 char* R12IntEvalInfo::ints_file() const
@@ -406,6 +418,7 @@ void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orb
   vecs = so_ao.t() * vecs_so_mo1;
 
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
+  act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, noso_ - nocc_);
 
   vecs = obs_space_->coefs().t();
   vals = obs_space_->evals();

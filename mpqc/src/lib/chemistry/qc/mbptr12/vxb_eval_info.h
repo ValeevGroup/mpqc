@@ -96,6 +96,7 @@ private:
   Ref<MOIndexSpace> obs_space_;
   Ref<MOIndexSpace> abs_space_;
   Ref<MOIndexSpace> ribs_space_;
+  Ref<MOIndexSpace> act_occ_space_;
 
   // construct the RI basis based on abs_method
   void construct_ri_basis_(bool safe);
@@ -179,6 +180,15 @@ public:
   RefDiagSCMatrix evals() const { return evals_; };
   int *orbsym() const { return orbsym_; };
   RefSCMatrix orthog_ri();
+  
+  /// Returns the MOIndexSpace object for OBS
+  Ref<MOIndexSpace> obs_space() const;
+  /// Returns the MOIndexSpace object for the occupied MOs
+  Ref<MOIndexSpace> occ_space() const;
+  /// Returns the MOIndexSpace object for ABS
+  Ref<MOIndexSpace> abs_space() const;
+  /// Returns the MOIndexSpace object for RI-BS
+  Ref<MOIndexSpace> ribs_space() const;
 
   /// Compute dipole and quadrupole moment matrices in active MO basis
   void compute_multipole_ints(RefSymmSCMatrix& MX,

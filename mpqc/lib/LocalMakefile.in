@@ -57,7 +57,8 @@ LISTLIBS= $(PERL) $(SRCTOPDIR)/bin/listlibs.pl -DLIBSUF=$(LIBSUF)
 
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory
-INCLUDE = -I$(TOPDIR)/src/lib @CPPFLAGS@
+INCLUDE = -I$(TOPDIR)/src/lib -I$(SRCTOPDIR)/include -I$(SRCTOPDIR)/src/lib \
+	  @CPPFLAGS@
 DEFINES = @DEFS@ @EXTRADEFINES@
 
 CPPFLAGS = $(DEFINES) $(INCLUDE)

@@ -204,9 +204,11 @@ echo Using extra libraries: $withval
 )
 
 LDFLAGS=
+LIBDIRS=
 SH_LDFLAGS=
 AC_ARG_WITH(libdirs,
 [  --with-libdirs          Specifies library directories (-Ldir1 -Ldir2).],
+LIBDIRS=$withval
 LDFLAGS=$withval
 SH_LDFLAGS=$withval
 echo Using extra library directories: $withval
@@ -267,7 +269,7 @@ dnl --------- This is at the top since its likely to cause problems. ---------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-CPPFLAGS="-I$srcdir/include -I$srcdir/src/lib $CPPFLAGS"
+CPPFLAGS="$CPPFLAGS"
 AC_CHECK_HEADER(FlexLexer.h,,[
 AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include])
 ])
@@ -645,6 +647,7 @@ AC_SUBST(ELF_MAJOR)
 AC_SUBST(ELF_MINOR)
 AC_SUBST(SH_LD)
 AC_SUBST(SH_LDFLAGS)
+AC_SUBST(LIBDIRS)
 
 AC_SUBST(OBJSUF)
 AC_SUBST(LIBSUF)

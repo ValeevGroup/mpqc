@@ -5,10 +5,11 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
-libs="@LIBS@"
+libs="@LIBDIRS@ @LIBS@"
 all_sclibs="@SCLIBS@"
 cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CXXFLAGS@"
+cppflags="@CPPFLAGS@"
 cflags="@CFLAGS@"
 cxx="@CXX@"
 cc="@CC@"
@@ -60,7 +61,7 @@ while test $# -gt 0; do
       echo pre-1.2 experimental
       ;;
     --cppflags)
-      echo $includes
+      echo $includes $cppflags
       ;;
     --cflags)
       echo $cflags

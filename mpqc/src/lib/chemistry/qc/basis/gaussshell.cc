@@ -44,6 +44,7 @@ const char* GaussianShell::AMTYPES = "SPDFGHIJKL";
 
 SavableState_REF_def(GaussianShell);
 
+#define VERSION 2
 #define CLASSNAME GaussianShell
 #define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
@@ -72,7 +73,7 @@ exp(e),
 coef(c)
 {
   // Compute the number of basis functions in this shell
-  compute_nfunc();
+  init_computed_data();
 
   // Convert the coefficients to coefficients for unnormalized primitives,
   // if needed.
@@ -97,7 +98,7 @@ GaussianShell::GaussianShell(
   for (int i=0; i<ncontraction(); i++) puream[i] = (pure == Pure);
 
   // Compute the number of basis functions in this shell
-  compute_nfunc();
+  init_computed_data();
 
   // Convert the coefficients to coefficients for unnormalized primitives,
   // if needed.
@@ -113,7 +114,7 @@ GaussianShell::GaussianShell(const RefKeyVal&keyval)
   PrimitiveType pt = keyval_init(keyval,0,0);
 
   // Compute the number of basis functions in this shell
-  compute_nfunc();
+  init_computed_data();
 
   // Convert the coefficients to coefficients for unnormalized primitives,
   // if needed.
@@ -128,7 +129,7 @@ GaussianShell::GaussianShell(StateIn&s):
 {
   s.get(nprim);
   s.get(ncon);
-  s.get(nfunc);
+  if (s.version(static_class_desc()) < 2) s.get(nfunc);
   s.get(l);
   s.get(puream);
   s.get(exp);
@@ -136,6 +137,7 @@ GaussianShell::GaussianShell(StateIn&s):
   for (int i=0; i<ncon; i++) {
       s.get(coef[i]);
     }
+  init_computed_data();
 }
 
 void
@@ -143,7 +145,6 @@ GaussianShell::save_data_state(StateOut&s)
 {
   s.put(nprim);
   s.put(ncon);
-  s.put(nfunc);
   s.put(l,ncon);
   s.put(puream,ncon);
   s.put(exp,nprim);
@@ -158,7 +159,7 @@ GaussianShell::GaussianShell(const RefKeyVal&keyval,int pure)
   PrimitiveType pt = keyval_init(keyval,1,pure);
 
   // Compute the number of basis functions in this shell
-  compute_nfunc();
+  init_computed_data();
 
   // Convert the coefficients to coefficients for unnormalized primitives,
   // if needed.
@@ -257,24 +258,31 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
   else return Unnormalized;
 }
 
-int GaussianShell::max_angular_momentum() const
+void
+GaussianShell::init_computed_data()
 {
   int max = 0;
+  int min = 0;
+  int nc = 0;
+  int nf = 0;
+  has_pure_ = 0;
   for (int i=0; i<ncontraction(); i++) {
       int maxi = l[i];
       if (max < maxi) max = maxi;
-    }
-  return max;
-}
 
-int GaussianShell::min_angular_momentum() const
-{
-  int min = 0;
-  for (int i=0; i<ncontraction(); i++) {
       int mini = l[i];
       if (min > mini) min = mini;
+
+      nc += ncartesian(i);
+
+      nf += nfunction(i);
+
+      if (is_pure(i)) has_pure_ = 1;
     }
-  return min;
+  max_am_ = max;
+  min_am_ = min;
+  ncart_ = nc;
+  nfunc = nf;
 }
 
 int GaussianShell::max_cartesian() const
@@ -287,15 +295,6 @@ int GaussianShell::max_cartesian() const
   return max;
 }
 
-int GaussianShell::ncartesian() const
-{
-  int ret = 0;
-  for (int i=0; i<ncontraction(); i++) {
-      ret += ncartesian(i);
-    }
-  return ret;
-}
-
 int GaussianShell::ncartesian_with_aminc(int aminc) const
 {
   int ret = 0;
@@ -303,32 +302,6 @@ int GaussianShell::ncartesian_with_aminc(int aminc) const
       ret += (((l[i]+2+aminc)*(l[i]+1+aminc))>>1);
     }
   return ret;
-}
-
-int GaussianShell::has_pure() const
-{
-  for (int i=0; i<ncontraction(); i++) {
-      if (is_pure(i)) return 1;
-    }
-  return 0;
-}
-
-int GaussianShell::nfunction(int con) const
-{
-  return puream[con]?
-           ((l[con]<<1)+1):
-           (((l[con]+2)*(l[con]+1))>>1);
-}
-
-int GaussianShell::ncartesian(int con) const
-{
-  return ((l[con]+2)*(l[con]+1))>>1;
-}
-
-void GaussianShell::compute_nfunc()
-{
-  nfunc = 0;
-  for (int i=0; i<ncontraction(); i++) nfunc += nfunction(i);
 }
 
 /* Compute the norm for ((x^x1)||(x^x2)).  This is slower than need be. */
@@ -530,6 +503,14 @@ GaussianShell::~GaussianShell()
     }
 
   delete[] coef;
+}
+
+int
+GaussianShell::nfunction(int con) const
+{
+  return puream[con]?
+           ((l[con]<<1)+1):
+           (((l[con]+2)*(l[con]+1))>>1);
 }
 
 /////////////////////////////////////////////////////////////////////////////

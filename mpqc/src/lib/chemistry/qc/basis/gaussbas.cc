@@ -578,11 +578,6 @@ GaussianBasisSet::shell_on_center(int icenter, int ishell) const
 {
   return center_to_shell_(icenter) + ishell;
 }
-int
-GaussianBasisSet::shell_to_center(int ishell) const
-{
-  return shell_to_center_(ishell);
-}
 
 const GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell) const

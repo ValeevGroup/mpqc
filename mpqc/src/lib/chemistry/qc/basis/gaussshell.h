@@ -55,16 +55,22 @@ class GaussianShell: public SavableState
   private:
     int nprim;
     int ncon;
-    int nfunc;
     int* l;
     int* puream;
     double* exp;
     double** coef;  // contraction coefficients for unnormalized primitives
 
+    // computed data:
+    int nfunc;
+    int min_am_;
+    int max_am_;
+    int ncart_;
+    int has_pure_;
+    void init_computed_data();
+
     double shell_normalization(int);
     void convert_coef();
     void normalize_shell();
-    void compute_nfunc();
     PrimitiveType keyval_init(const RefKeyVal&,int,int);
     static const char* amtypes;
     static const char* AMTYPES;
@@ -110,21 +116,21 @@ class GaussianShell: public SavableState
     int nprimitive() const { return nprim; }
     int ncontraction() const { return ncon; }
     int nfunction() const { return nfunc; }
-    int max_angular_momentum() const;
-    int min_angular_momentum() const;
+    int max_angular_momentum() const { return max_am_; }
+    int min_angular_momentum() const { return min_am_; }
     int max_cartesian() const;
     int am(int con) const { return l[con]; }
-    int max_am() const { return max_angular_momentum(); }
-    int min_am() const { return min_angular_momentum(); }
+    int max_am() const { return max_am_; }
+    int min_am() const { return min_am_; }
     char amchar(int con) const { return amtypes[l[con]]; }
     int nfunction(int con) const;
-    int ncartesian() const;
+    int ncartesian() const { return ncart_; }
     // this is given a shift for all of the angular momentums
     int ncartesian_with_aminc(int aminc) const;
-    int ncartesian(int con) const;
+    int ncartesian(int con) const { return ((l[con]+2)*(l[con]+1))>>1; }
     int is_cartesian(int con) const { return !puream[con]; }
     int is_pure(int con) const { return puream[con]; }
-    int has_pure() const;
+    int has_pure() const { return has_pure_; }
     // returns the con coef for unnormalized primitives
     double coefficient_unnorm(int con,int prim) const {return coef[con][prim];}
     // returns the con coef for normalized primitives

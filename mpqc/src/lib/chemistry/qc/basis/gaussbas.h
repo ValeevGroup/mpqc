@@ -114,7 +114,7 @@ class GaussianBasisSet: public SavableState
     int nshell() const { return nshell_; }
     int nshell_on_center(int icenter) const;
     int shell_on_center(int icenter, int shell) const;
-    int shell_to_center(int shell) const;
+    int shell_to_center(int ishell) const { return shell_to_center_(ishell); }
     int nbasis() const { return nbasis_; }
     int nbasis_on_center(int icenter) const;
     int nprimitive() const { return nprim_; }

@@ -21,25 +21,25 @@ clean:
 	/bin/rm -rf *~
 
 install:
-	$(INSTALL) $(INSTALLDIROPT) $(prefix)
-	/bin/cp -r html $(prefix)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)
+	/bin/cp -r html $(installroot)$(prefix)
 
 install_devel: install_man install_samples
 
 .PHONY: install_man
 install_man:
-	$(INSTALL) $(INSTALLDIROPT) $(prefix)
-	/bin/cp -r man $(prefix)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)
+	/bin/cp -r man $(installroot)$(prefix)
 
 .PHONY: install_samples
 install_samples:
-	$(INSTALL) $(INSTALLDIROPT) $(prefix)
-	$(INSTALL) $(INSTALLDIROPT) $(prefix)/examples
-	$(INSTALL) $(INSTALLDIROPT) $(prefix)/examples/mp2
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)/examples
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(prefix)/examples/mp2
 	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2.cc \
-		$(prefix)/examples/mp2
+		$(installroot)$(prefix)/examples/mp2
 	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2.in \
-		$(prefix)/examples/mp2
+		$(installroot)$(prefix)/examples/mp2
 	sed "s+/usr/local/mpqc/current+$(prefix)+" < \
 		$(SRCDIR)/devsamp/Makefile \
-		> $(prefix)/examples/mp2/Makefile
+		> $(installroot)$(prefix)/examples/mp2/Makefile

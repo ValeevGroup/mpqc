@@ -8,10 +8,10 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install_devel::
-	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(INSTALL) $(INSTALLSCRIPTOPT) sc-config $(bindir)
-	$(INSTALL) $(INSTALLSCRIPTOPT) mkf77sym.pl $(bindir)/sc-mkf77sym
-	-$(INSTALL) $(INSTALLSCRIPTOPT) sc-libtool $(bindir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(INSTALL) $(INSTALLSCRIPTOPT) sc-config $(installroot)$(bindir)
+	$(INSTALL) $(INSTALLSCRIPTOPT) mkf77sym.pl $(installroot)$(bindir)/sc-mkf77sym
+	-$(INSTALL) $(INSTALLSCRIPTOPT) sc-libtool $(installroot)$(bindir)
 
 distclean::
 	-/bin/rm -f sc-config

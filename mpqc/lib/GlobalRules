@@ -96,13 +96,13 @@ install:: install_target
 endif
 
 install_inc::
-	$(INSTALL) $(INSTALLDIROPT) $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
-	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
-	-$(INSTALL) $(INSTALLLIBOPT) *.h $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
+	-$(INSTALL) $(INSTALLLIBOPT) *.h $(installroot)$(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
 
 install_target:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).$(LIBSUF)
-	$(INSTALL) $(INSTALLDIROPT) $(libdir)
-	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(libdir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)
+	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(installroot)$(libdir)
 endif
 
 ifeq ($(BIN_OR_LIB),BIN)
@@ -115,8 +115,8 @@ install_devel::
 install:: install_target
 
 install_target:: $(TARGET_TO_MAKE)
-	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(bindir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(installroot)$(bindir)
 
 endif
 

@@ -52,19 +52,19 @@ $(TOPDIR)/lib/libmpqc.la: $(BINOBJ)
 	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)
 
 install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
-	$(INSTALL) $(INSTALLDIROPT) $(libdir)
-	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(libdir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(libdir)
+	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(installroot)$(libdir)
 
 install:: mpqc
-	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 
 install::
-	/bin/rm -f $(bindir)/chkmpqcout
+	/bin/rm -f $(installroot)$(bindir)/chkmpqcout
 	sed "s+exec perl+exec perl -I$(scdatadir)/perl+" \
 		< $(SRCDIR)/validate/checkout.pl \
-		> $(bindir)/chkmpqcout
-	chmod 555 $(bindir)/chkmpqcout
+		> $(installroot)$(bindir)/chkmpqcout
+	chmod 555 $(installroot)$(bindir)/chkmpqcout
 
 clean::
 	/bin/rm -f mpqc

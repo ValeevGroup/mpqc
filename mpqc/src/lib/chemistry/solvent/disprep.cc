@@ -131,7 +131,8 @@ disp_contrib(double rasnorm, double d6, double d8, double d10)
 }
 
 static inline double
-rep_contrib(double rasnorm, double ri_vdw, double rj_vdw, int zi, int zj)
+rep_contrib(double rasnorm, double ri_vdw, double rj_vdw, double ki, double kj,
+            double kcalpermol_to_hartree)
 {
   // The expression and the parameters used for the repulsion energy
   // were taken from Vigne-Maeder and Claverie, JACS 1987, v109, pp24-28
@@ -141,16 +142,11 @@ rep_contrib(double rasnorm, double ri_vdw, double rj_vdw, int zi, int zj)
   const double gamma = 12.35;
   double erep_contrib;
   double tmp;
-  double ki, kj;
-
-  RefUnits unit = new Units("kcal/mol");
   
   tmp = gamma*rasnorm/(2.0*sqrt(ri_vdw*rj_vdw));
 
-  ki = get_ki(zi);
-  kj = get_ki(zj);
   erep_contrib = -ki*kj*c*(1.0/tmp + 2.0/(tmp*tmp) + 2.0/(tmp*tmp*tmp))*exp(-tmp);
-  erep_contrib *= unit->to_atomic_units(); // convert from kcal/mol to atomic units
+  erep_contrib *= kcalpermol_to_hartree; // convert from kcal/mol to atomic units
   
   return erep_contrib;
 }
@@ -178,6 +174,8 @@ BEMSolvent::disprep()
   int z_solvent_atom;
   int z_solute_atom;
 
+  RefUnits unit = new Units("kcal/mol");
+  double kcalpermol_to_hartree = unit->to_atomic_units();
 
   RefAtomInfo atominfo = solute_->atominfo();
   RefAtomInfo solventatominfo = solvent_->atominfo();
@@ -185,6 +183,20 @@ BEMSolvent::disprep()
 
   // Compute number of different atom types in solvent molecule
   natomtypes = formula.natomtypes();
+
+  double *solute_d6ii  = new double[solute_->natom()];
+  double *solute_d8ii  = new double[solute_->natom()];
+  double *solute_d10ii = new double[solute_->natom()];
+  double *solute_ki = new double[solute_->natom()];
+
+  for (isolute=0; isolute<solute_->natom(); isolute++) {
+      int Z_solute = solute_->Z(isolute);
+      double radius = atominfo->vdw_radius(Z_solute);
+      solute_d6ii[isolute] = get_d6ii(Z_solute,radius);
+      solute_d8ii[isolute] = get_d8ii(solute_d6ii[isolute],radius);
+      solute_d10ii[isolute] = get_d10ii(solute_d6ii[isolute],radius);
+      solute_ki[isolute] = get_ki(Z_solute);
+    }
   
   // Loop over atom types in solvent molecule
   for (iloop=0; iloop<natomtypes; iloop++) {
@@ -230,6 +242,7 @@ BEMSolvent::disprep()
       erep_contrib = 0.0;
       TriangulatedSurfaceIntegrator triint(ts.pointer());
 
+      double solvent_ki = get_ki(z_solvent_atom);
       d6ss = get_d6ii(z_solvent_atom,proberadius);
       d8ss = get_d8ii(d6ss, proberadius);
       d10ss = get_d10ii(d6ss, proberadius);
@@ -248,24 +261,29 @@ BEMSolvent::disprep()
               SCVector3 ras = location - atom;
               rasnorm = ras.norm();
               radius = atominfo->vdw_radius(solute_->Z(isolute));
-              d6aa = get_d6ii(z_solute_atom,radius);
-              d8aa = get_d8ii(d6aa,radius);
-              d10aa = get_d10ii(d6aa,radius);
+              d6aa = solute_d6ii[isolute];
+              d8aa = solute_d8ii[isolute];
+              d10aa = solute_d10ii[isolute];
               d6 = sqrt(d6aa*d6ss);
               d8 = sqrt(d8aa*d8ss);
               d10 = sqrt(d10aa*d10ss);
 
+              double f = ras.dot(dA)*weight;
+              double tdisp6 = f*disp6_contrib(rasnorm,d6);
+              double tdisp8 = f*disp8_contrib(rasnorm,d8);
+              double tdisp10 = f*disp10_contrib(rasnorm,d10);
+              double trep = f*rep_contrib(rasnorm,radius,proberadius,
+                                          solute_ki[isolute],solvent_ki,
+                                          kcalpermol_to_hartree);
+              double tdisp = tdisp6+tdisp8+tdisp10;
+
               // add in contributions to various energies; the minus sign
               // is there to get the normal pointing into the cavity
-              edisprep_contrib -= (disp_contrib(rasnorm,d6,d8,d10) +
-                                   rep_contrib(rasnorm,radius,proberadius,z_solute_atom,
-                                               z_solvent_atom))
-                                 *ras.dot(dA)*weight;
-              edisp6_contrib -= disp6_contrib(rasnorm,d6)*ras.dot(dA)*weight;
-              edisp8_contrib -= disp8_contrib(rasnorm,d8)*ras.dot(dA)*weight;
-              edisp10_contrib -= disp10_contrib(rasnorm,d10)*ras.dot(dA)*weight;
-              erep_contrib -= rep_contrib(rasnorm,radius,proberadius,z_solute_atom,
-                                          z_solvent_atom)*ras.dot(dA)*weight;
+              edisprep_contrib -= tdisp+trep;
+              edisp6_contrib -= tdisp6;
+              edisp8_contrib -= tdisp8;
+              edisp10_contrib -= tdisp10;
+              erep_contrib -= trep;
               
             }
         }
@@ -277,10 +295,14 @@ BEMSolvent::disprep()
       erep += erep_contrib*formula.nZ(iloop);
     }
 
+  delete[] solute_d6ii;
+  delete[] solute_d8ii;
+  delete[] solute_d10ii;
+  delete[] solute_ki;
+
   // Multiply energies by number density of solvent
   // Print out individual energy contributions in kcal/mol
   
-  RefUnits unit = new Units("kcal/mol");
   cout.setf(ios::scientific,ios::floatfield); // use scientific format
   cout.precision(5);
   cout << "Edisp6:  " << edisp6*solvent_density_*unit->from_atomic_units()

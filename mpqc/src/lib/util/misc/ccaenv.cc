@@ -30,8 +30,6 @@
 using namespace sc;
 
 int CCAEnv::initialized_ = 0;
-//ccaffeine::AbstractFramework CCAEnv::fw_ = 
-//  ccaffeine::AbstractFramework::AbstractFramework();
 ccaffeine::AbstractFramework CCAEnv::fw_;
 
 void 
@@ -47,9 +45,9 @@ CCAEnv::initialized()
   return initialized_; 
 }
 
-gov::cca::AbstractFramework 
+ccaffeine::AbstractFramework*
 CCAEnv::get_framework() 
 { 
-  return fw_; 
+  return &fw_; 
 }
 

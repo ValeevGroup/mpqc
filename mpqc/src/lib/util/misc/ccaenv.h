@@ -32,12 +32,6 @@
 #ifndef _util_misc_ccaenv_h
 #define _util_misc_ccaenv_h
 
-// #include <scconfig.h>
-
-// #include <iostream>
-
-// #include <util/misc/formio.h>
-
 #include <ccaffeine_AbstractFramework.hh>
 
 namespace sc {
@@ -54,7 +48,8 @@ class CCAEnv {
     /// Return nonzero if CCAEnv has been initialized.
     static int initialized();
     /// Returns reference to framework
-    static gov::cca::AbstractFramework get_framework();
+    static ccaffeine::AbstractFramework* get_framework();
+    /// Returns
 };
 
 }

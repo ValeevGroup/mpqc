@@ -237,18 +237,17 @@ class IrreducibleRepresentation {
       return complex_ ? 0.5*rep[i].trace() : rep[i].trace();
     }
 
-    //texi This is equivalent to the @b{character} member.
-    double operator[](int i) const { return character(i); }
-
     //texi
-    // Returns the character for the d'th contribution to the i'th symmetry
-    // operation of the point group.
+    // Returns the element (x1,x2) of the i'th representation matrix.
+    double p(int x1, int x2, int i) const { return rep[i](x1,x2); }
+    
+    //texi
+    // Returns the character for the d'th contribution to the i'th 
+    // representation matrix.
     double p(int d, int i) const {
       int dc=d/degen; int dr=d%degen;
       return rep[i](dr,dc);
     }
-
-    double operator()(int d, int i) const { return p(d,i); }
 
     //texi
     // This prints the irrep to the given file, or stdout if none is given.
@@ -320,13 +319,14 @@ class CharacterTable {
     //texi Returns the i'th symmetry operation.
     SymmetryOperation& symm_operation(int i) { return symop[i]; }
 
-    //texi Shorthand for @code{gamma}.
-    IrreducibleRepresentation& operator[](int i) { return gamma_[i]; }
-
-    //texi Cn, Cnh, and Sn point groups have complex representations.
+    //texi Cn, Cnh, Sn, T, and Th point groups have complex representations.
     // This function returns 1 if the point group has a complex representation,
     // 0 otherwise.
-    int complex() const { if(pg==CN || pg==SN || pg==CNH) return 1; return 0; }
+    int complex() const {
+      if (pg==CN || pg==SN || pg==CNH || pg==T || pg==TH)
+        return 1;
+      return 0;
+    }
 
     //texi Returns the index of the symop which is the inverse of symop[i].
     int inverse(int i) const { return _inv[i]; }

@@ -28,7 +28,8 @@ main()
   sprintf(infile,SRCDIR "/inttest.in");
 
   RefKeyVal pkv(new ParsedKeyVal(infile));
-  RefKeyVal keyval(new PrefixKeyVal(":centers :basis",pkv));
+  RefKeyVal keyval(new AggregateKeyVal(new PrefixKeyVal(":centers",pkv),
+                                       new PrefixKeyVal(":basis",pkv)));
   RefKeyVal tkeyval(new PrefixKeyVal(":test", pkv));
 
   RefGaussianBasisSet basis = keyval->describedclassvalue("basis");

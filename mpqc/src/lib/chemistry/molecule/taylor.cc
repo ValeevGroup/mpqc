@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <math/scmat/local.h>
 #include <chemistry/molecule/taylor.h>
 

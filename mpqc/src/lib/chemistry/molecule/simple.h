@@ -22,6 +22,10 @@
 #ifndef _intco_simple_h
 #define _intco_simple_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 
 #include <iostream.h>
 #include <stdio.h>

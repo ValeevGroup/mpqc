@@ -2,6 +2,10 @@
 #ifndef _chemistry_molecule_taylor_h
 #define _chemistry_molecule_taylor_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/coor.h>
 

@@ -3,8 +3,10 @@
 #define _chemistry_molecule_coor_h
 
 #ifdef __GNUC__
+#pragma interface
 #include <ostream.h>
 #endif
+
 #include <util/misc/scostream.h>
 #include <util/container/ref.h>
 #include <util/container/array.h>

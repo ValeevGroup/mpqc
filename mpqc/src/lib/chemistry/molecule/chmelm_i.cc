@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #undef INLINE_FUNCTIONS
 
 #include <chemistry/molecule/chemelem.h>

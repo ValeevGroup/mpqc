@@ -2,6 +2,10 @@
 #ifndef _chemistry_molecule_chemelem_h
 #define _chemistry_molecule_chemelem_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 // This class is a repository of element information
 #include <stdio.h>
 #include <string.h>

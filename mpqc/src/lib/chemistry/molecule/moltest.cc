@@ -20,8 +20,24 @@ main()
   RefKeyVal kv(new ParsedKeyVal(SRCDIR "/moltest.in"));
 
   RefMolecule mol = new Molecule(PrefixKeyVal("molecule",*kv.pointer()));
-  printf("Molecule:\n");
+
+  mol_cleanup_molecule(*mol);
+  printf("Clean Molecule:\n");
   mol->print();
+
+  mol_transform_to_principal_axes(*mol);
+  printf("Clean Molecule wrt principal axes:\n");
+  mol->print();
+
+  int nunique = mol_num_unique_atoms(*mol);
+  int * unique_atoms = mol_find_unique_atoms(*mol);
+
+  printf("nunique=%d: ",nunique);
+  for (int i=0; i < nunique; i++) printf(" %d",unique_atoms[i]+1);
+  printf("\n");
+
+  mol->point_group().char_table().print();
+exit(0);
 
   printf("getting simp:\n");
   SetIntCoor simp(PrefixKeyVal("simp",*kv.pointer()));

@@ -1,3 +1,8 @@
+
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>

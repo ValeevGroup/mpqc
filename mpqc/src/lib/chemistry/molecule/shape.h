@@ -2,6 +2,10 @@
 #ifndef _chemistry_molecule_shape_h
 #define _chemistry_molecule_shape_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <math/isosurf/shape.h>
 #include <chemistry/molecule/molecule.h>
 

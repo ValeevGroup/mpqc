@@ -2,6 +2,10 @@
 #ifndef _chemistry_molecule_atomcent_h
 #define _chemistry_molecule_atomcent_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <stdio.h>
 
 #include <chemistry/molecule/chemelem.h>

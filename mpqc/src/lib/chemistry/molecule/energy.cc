@@ -65,18 +65,8 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
 }
 
 MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
-  Function(keyval)
+  Function(keyval,1.0e-6,1.0e-6,1.0e-4)
 {
-  if (!keyval->exists("value_accuracy")) {
-      value_.set_desired_accuracy(1.0e-6);
-    }
-  if (!keyval->exists("gradient_accuracy")) {
-      gradient_.set_desired_accuracy(1.0e-6);
-    }
-  if (!keyval->exists("hessian_accuracy")) {
-      hessian_.set_desired_accuracy(1.0e-4);
-    }
-
   print_molecule_when_changed_
       = keyval->booleanvalue("print_molecule_when_changed");
   if (keyval->error() != KeyVal::OK) print_molecule_when_changed_ = 1;

@@ -32,6 +32,8 @@
 #ifndef _math_optimize_function_h
 #define _math_optimize_function_h
 
+#include <math.h>
+
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/result.h>
@@ -76,7 +78,8 @@ class Function: virtual_base public SavableState, public Compute {
     Function();
     Function(StateIn&);
     Function(const Function&);
-    Function(const RefKeyVal&);
+    Function(const RefKeyVal&, double funcacc = DBL_EPSILON,
+             double gradacc = DBL_EPSILON, double hessacc = DBL_EPSILON);
     virtual ~Function();
 
     Function & operator=(const Function&);

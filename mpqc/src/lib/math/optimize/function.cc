@@ -78,7 +78,8 @@ Function::Function(const Function& func):
   x_ = func.x_;
 }
 
-Function::Function(const RefKeyVal&kv):
+Function::Function(const RefKeyVal&kv, double funcacc,
+                   double gradacc, double hessacc):
   value_(this),
   gradient_(this),
   hessian_(this)
@@ -87,15 +88,20 @@ Function::Function(const RefKeyVal&kv):
 
   if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
 
-  value_.set_desired_accuracy(kv->doublevalue("value_accuracy"));
+  KeyValValuedouble funcaccval(funcacc);
+  value_.set_desired_accuracy(kv->doublevalue("value_accuracy",funcaccval));
   if (value_.desired_accuracy() < DBL_EPSILON)
     value_.set_desired_accuracy(DBL_EPSILON);
 
-  gradient_.set_desired_accuracy(kv->doublevalue("gradient_accuracy"));
+  KeyValValuedouble gradaccval(gradacc);
+  gradient_.set_desired_accuracy(kv->doublevalue("gradient_accuracy",
+                                                 gradaccval));
   if (gradient_.desired_accuracy() < DBL_EPSILON)
     gradient_.set_desired_accuracy(DBL_EPSILON);
 
-  hessian_.set_desired_accuracy(kv->doublevalue("hessian_accuracy"));
+  KeyValValuedouble hessaccval(hessacc);
+  hessian_.set_desired_accuracy(kv->doublevalue("hessian_accuracy",
+                                                hessaccval));
   if (hessian_.desired_accuracy() < DBL_EPSILON)
     hessian_.set_desired_accuracy(DBL_EPSILON);
 }

@@ -48,6 +48,7 @@ class ShiftIntermediates {
     double *data_;
     int ndata_;
     int nused_;
+    int maxused_;
     IntV3Arraydoublep4 shell_;
     int l1_,l2_,l3_,l4_;
 

@@ -49,6 +49,7 @@ fail()
 
 ShiftIntermediates::ShiftIntermediates()
 {
+  maxused_ = 0;
   data_ = 0;
   ndata_ = 0;
   nused_ = 0;
@@ -102,6 +103,7 @@ ShiftIntermediates::allocate(int i,int j,int k,int l)
   shell_(i,j,k,l) = data;
   if (nused_ + size > ndata_) out_of_memory(i,j,k,l);
   nused_ += size;
+  if (nused_ > maxused_) maxused_ = nused_;
   return data;
 }
 
@@ -109,9 +111,9 @@ void
 ShiftIntermediates::set_l(int l1,int l2,int l3,int l4)
 {
 #if CHECK_INTEGRAL_ALGORITHM
-  if (ndata_ && (nused_ != ndata_)) {
+  if (ndata_ && (maxused_ != ndata_)) {
     cout << "ShiftIntermediates: wasted "
-         << ndata_ - nused_
+         << ndata_ - maxused_
          << " of " << ndata_
          << endl;
     }
@@ -282,8 +284,12 @@ Int2eV3::shiftint(int am1, int am2, int am3, int am4)
 
   /* Should we shift to 2 or to 4? */
   if (choose_shift(am1,am2,am3,am4) == 2) {
+#if CHECK_INTEGRAL_ALGORITHM
+    shiftam_12(buffer,am1,am2,am3,am4);
+#else
     if (eAB) shiftam_12eAB(buffer,am1,am2,am3,am4);
     else     shiftam_12(buffer,am1,am2,am3,am4);
+#endif
     }
   else {
     shiftam_34(buffer,am1,am2,am3,am4);

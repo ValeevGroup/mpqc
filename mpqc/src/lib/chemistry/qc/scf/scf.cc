@@ -264,8 +264,6 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 void
 SCF::initial_vector()
 {
-  int me=scf_grp_->me();
-  
   // if guess_wfn_ is non-null then try to get a guess vector from it.
   // First check that the same basis is used...if not, then project the
   // guess vector into the present basis.

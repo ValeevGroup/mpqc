@@ -32,12 +32,17 @@ class SCfilebuf: public filebuf {
     streamsize do_system_write(const char*, streamsize);
   public:
     SCfilebuf(int);
+    ~SCfilebuf();
     int get_column();
 };
 
 SCfilebuf::SCfilebuf(int fd):
   filebuf(fd),
   _column(0)
+{
+}
+
+SCfilebuf::~SCfilebuf()
 {
 }
 

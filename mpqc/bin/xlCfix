@@ -1,5 +1,6 @@
 #!/bin/csh -f
 
+set CC = `shift`
 set options = ()
 foreach i ($*)
   if ("$i:e" == cc) then
@@ -9,4 +10,4 @@ foreach i ($*)
     endif
   end
 
-xlC $options
+$CC $options

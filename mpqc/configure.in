@@ -342,6 +342,18 @@ case $target in
     fi
     AC_MSG_RESULT("mips-sgi-irix5")
   ;;
+  mips4-sgi-irix6.[01]* | r8000-sgi-irix6.[01]* | r10000-sgi-irix6.[01]*)
+    if test X$GCC != Xyes; then
+      COPTIONS_OPT="-O2 \
+        -OPT:const_copy_limit=40000:fold_arith_limit=40000:global_limit=40000"
+    fi
+    if test X$GXX != Xyes; then
+      CXXOPTIONS_OPT="-O2 \
+        -OPT:const_copy_limit=40000:fold_arith_limit=40000:global_limit=40000"
+      AC_DEFINE(NO_VIRTUAL_BASES)
+    fi
+    AC_MSG_RESULT("old mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
+  ;;
   mips4-sgi-irix* | r8000-sgi-irix* | r10000-sgi-irix*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O2 \
@@ -842,12 +854,18 @@ case $target in
     LDFLAGS="$LDFLAGS -mnx -mnoieee"
     AC_MSG_RESULT(osf paragon)
   ;;
+  mips4-sgi-irix6.[01]* | r8000-sgi-irix6.[01]* | r10000-sgi-irix6.[01]*)
+    if test X$CXX = XCC; then
+      CXX="\$(SRCTOPDIR)/bin/CCfix CC"
+    fi
+    AC_MSG_RESULT("old mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
+  ;;
   rs6000-*)
     if test X$CXX = XmpCC; then
-      CXX="\$(SRCTOPDIR)/bin/mpCCfix"
+      CXX="\$(SRCTOPDIR)/bin/xlCfix mpCC"
     fi
     if test X$CXX = XxlC; then
-      CXX="\$(SRCTOPDIR)/bin/xlCfix"
+      CXX="\$(SRCTOPDIR)/bin/xlCfix xlC"
     fi
     AC_MSG_RESULT(rs6000)
   ;;

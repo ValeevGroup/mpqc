@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.8  1994/09/24 01:45:08  cljanss
+% Revision 1.9  1994/10/21 20:47:12  cljanss
+% Allow sizeof(void*) != sizeof(int).
+%
+% Revision 1.8  1994/09/24  01:45:08  cljanss
 % A few cleanups and made it work with cweave from cweb-3.1 and tex.
 %
 % Revision 1.7  1994/09/01  18:42:24  cljanss
@@ -732,14 +735,14 @@ private map maps[MAX_MAPS];
 private int num_maps = 0;
 
 @ This little routine returns the index of the map for matrices of
-size |n|.  Returns |-1| if no such map exists.
+size |n|.  Returns |0| if no such map exists.
 
 @<Map-related routines.@>=
 private map * find_map(n) int n; {
     register int i;
     for (i=0;i<num_maps; i++) 
         if (maps[i].mat_size == n) return (&maps[i]);
-    return ((map *) -1);
+    return (0);
 }
 
 @ Public access to the fields in the map. User may want to know, for
@@ -1108,8 +1111,8 @@ of the data it will send everybody a block length of zero.
 {
     int i, nsum;
     assert(num_maps + 1< MAX_MAPS);
-    assert (find_map (n) == (map *) -1);
-    assert (find_map (nblocks) == (map *) -1);
+    assert (find_map (n) == 0);
+    assert (find_map (nblocks) == 0);
     nsum = 0;
     for (i=0;i<nblocks; i++) nsum += blksize[i];
     assert (nsum == n);
@@ -1259,7 +1262,7 @@ dmt_dump_map(n)
 int n;
 {
   map *m;
-  if ((m=find_map(n)) != (map *) -1) dump_map(m);
+  if ((m=find_map(n)) != 0) dump_map(m);
   else {
     Printf ("No map for size %d to dump.\n", n);
 @.No map for size...@>
@@ -1359,7 +1362,7 @@ upon structures and routines described previously.
 We'll deal with creating, opening, closing, and
 deleting matrices, first of all.
 
-Return the index of a matrix, given its title.  Return $-1$ if no such
+Return the index of a matrix, given its title.  Return $0$ if no such
 matrix exists.
 
 @<Matrix-related routines.@>=
@@ -1371,7 +1374,7 @@ char *title;
     for(j=0; j<MAX_MATRICES; j++)
     	if (matrices[j].state != STATE_UNDEF && 
 	    (!strcmp(title, matrices[j].title))) return (&matrices[j]);
-    return ((matrix *) -1);
+    return (0);
 }
 
 @ Here is the public version of this operation.  This routine,
@@ -1387,7 +1390,7 @@ char *title;
 {
   matrix *m;
   m = loc_mat (title);
-  if (m != (matrix *) -1) return (ENCODE_DESCR(m));
+  if (m != 0) return (ENCODE_DESCR(m));
   assert (0);
   fatal (); return (-1);
 }
@@ -1444,7 +1447,7 @@ int distrib;
     nmat -> state = STATE_OK;
     nmat -> size = size;
     nmat -> distribution = distrib;
-    if ((nmat -> map_ptr = find_map (size)) == (map *)-1){fatal();}
+    if ((nmat -> map_ptr = find_map (size)) == 0){fatal();}
     needspace = localsize(nmat);
     nmat -> data = (double *) Malloc (sizeof(double) * needspace);
     if (nmat -> data == (double *) 0) {

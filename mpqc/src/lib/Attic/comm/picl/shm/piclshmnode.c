@@ -487,7 +487,7 @@ recv0(buf,bytes,type)
    *    (int)((char*)lastmessage)-(int)((char*)NEXT_MESSAGE(message)));
    */
   memmove(message,NEXT_MESSAGE(message),
-        (int)((char*)lastmessage)-(int)((char*)NEXT_MESSAGE(message)));
+        (size_t)((char*)lastmessage)-(size_t)((char*)NEXT_MESSAGE(message)));
 
   commbuf[mynodeid]->nmsg--;
 

@@ -36,6 +36,7 @@
 #include <util/state/stateptrImplSet.h>
 #include <util/state/statenumImplSet.h>
 #include <util/state/classdImplMap.h>
+#include <util/state/classdatImplMap.h>
 
 int
 StateIn::dir_getobject(RefSavableState &p, const char *name)
@@ -99,8 +100,11 @@ StateIn::dir_getobject(RefSavableState &p, const char *name)
 int
 StateIn::getobject(RefSavableState &p)
 {
+  int use_dir = use_directory();
   int r=0;
   int refnum;
+  int original_loc;
+  if (use_dir) original_loc = tell();
   r += get(refnum);
   if (refnum == 0) {
       // reference to null
@@ -109,20 +113,25 @@ StateIn::getobject(RefSavableState &p)
   else {
       StateDataNum num(refnum);
       Pix ind = ps_->seek(num);
-      if (ind == 0 && use_directory()) {
+      if (ind == 0 && use_dir) {
           cerr << "ERROR: StateIn: directory missing object number "
                << refnum << endl;
           abort();
         }
       if (ind == 0 || ps_->operator()(ind).ptr.null()) {
           // object has not yet been read in
-          if (use_directory()) {
-              seek(ps_->operator()(ind).offset);
-              int trefnum;
-              get(trefnum);
-              if (trefnum != refnum) {
-                  cerr << "StateIn: didn't find expected reference" << endl;
-                  abort();
+          int need_seek = 0;
+          if (use_dir) {
+              if (original_loc != ps_->operator()(ind).offset) {
+                  need_seek = 1;
+                  original_loc = tell();
+                  seek(ps_->operator()(ind).offset);
+                  int trefnum;
+                  get(trefnum);
+                  if (trefnum != refnum) {
+                      cerr << "StateIn: didn't find expected reference"<<endl;
+                      abort();
+                    }
                 }
             }
           const ClassDesc *cd;
@@ -131,14 +140,15 @@ StateIn::getobject(RefSavableState &p)
           nextobject(refnum);
           DescribedClass *dc = cd->create(*this);
           p = SavableState::castdown(dc);
-          if (use_directory()) {
+          if (use_dir) {
               ps_->operator()(ind).ptr = p;
+              if (need_seek) seek(original_loc);
             }
         }
       else {
           // object already exists
           p = ps_->operator()(ind).ptr;
-          if (use_directory() && tell() == ps_->operator()(ind).offset) {
+          if (use_dir && tell() == ps_->operator()(ind).offset) {
               seek(tell() + ps_->operator()(ind).size);
             }
         }

@@ -37,6 +37,8 @@ extern "C" {
 #include <armci.h>
 }
 
+#include <stdexcept>
+
 #include <util/misc/formio.h>
 #include <util/group/memarmci.h>
 
@@ -167,7 +169,20 @@ ARMCIMemoryGrp::sum_data(double *data, int node, int offset, int size)
     }
 
   if (armci_lock_.nonnull()) armci_lock_->lock();
-  ARMCI_AccV(ARMCI_ACC_DBL, &scale, &acc_dat, 1, node);
+  // original code sending all data at once:
+  // ARMCI_AccV(ARMCI_ACC_DBL, &scale, &acc_dat, 1, node);
+  // hack to send smaller chunks to not overflow buffers in ARMCI:
+  int incr = 32768;
+  for (int i=0; i<size; i+=incr) {
+      void *tsrc = (&(((char*)src)[i]));
+      void *tdst = (&(((char*)dst)[i]));
+      acc_dat.src_ptr_array = &tsrc;
+      acc_dat.dst_ptr_array = &tdst;
+      if (size - i > incr) acc_dat.bytes = incr;
+      else acc_dat.bytes = (size-i);
+      acc_dat.ptr_array_len = 1;
+      ARMCI_AccV(ARMCI_ACC_DBL, &scale, &acc_dat, 1, node);
+    }
   if (armci_lock_.nonnull()) armci_lock_->unlock();
 }
 

@@ -22,8 +22,4 @@ SRCLIBDIR = $(SRCTOPDIR)/lib/
 # THISDIR is the name of the current directory relative to TOPDIR/src/lib/
 THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src/lib/,,$(shell pwd))
 
-# first check for generated include files in the machine dependent directories
-# and then for include files in the src directory
-INCLUDE = -I$(TOPDIR)/src/lib -I$(SRCTOPDIR)/src/lib -I$(SRCTOPDIR)/include
-
 include $(TOPDIR)/lib/LocalMakefile

@@ -44,9 +44,11 @@ SGEN=@SGEN@
 LISTLIBS=@LISTLIBS@ -DLIBSUF=$(LIBSUF)
 TMPL=@TMPL@
 
+# first check for generated include files in the machine dependent directories
+# and then for include files in the src directory
+INCLUDE = -I$(TOPDIR)/src/lib @CPPFLAGS@
 DEFINES = @DEFS@
 
-INCLUDE += @EXTRAINCLUDE@
 CPPFLAGS = $(DEFINES) $(INCLUDE)
 
 COPTIONS_OPT = @COPTIONS_OPT@

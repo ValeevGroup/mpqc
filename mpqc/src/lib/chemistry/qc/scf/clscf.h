@@ -24,10 +24,15 @@ class CLSCF: public SCF {
     RefSymmSCMatrix cl_gmat_;
     RefSymmSCMatrix cl_hcore_;
     
+    int user_occupations_;
+    int tndocc_;
+    
     void init();
+    void set_occupations(const RefDiagSCMatrix& evals);
     
   protected:
-    int ndocc_;
+    int nirrep_;
+    int *ndocc_;
 
     // scf things
     void init_vector();
@@ -64,7 +69,7 @@ class CLSCF: public SCF {
 
     void print(ostream&o=cout);
 
-    double occupation(int vectornum);
+    double occupation(int irrep, int vectornum);
 
     int value_implemented();
     int gradient_implemented();

@@ -3,8 +3,7 @@
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 
-#include <chemistry/qc/basis/obint.h>
-#include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/basis/symmint.h>
 
 #include <chemistry/qc/scf/scf.h>
 
@@ -57,6 +56,7 @@ SCF::compute_vector(double& eelec)
   
     RefSymmSCMatrix eff = effective_fock();
     eff.diagonalize(evals,nvector);
+    set_occupations(evals);
     eff=0;
     evals=0;
     
@@ -83,7 +83,7 @@ SCF::ao_gmat()
 {
   double tnint=0;
   
-  TwoBodyIntIter tbii(tbi);
+  SymmTwoBodyIntIter tbii(tbi,integral()->petite_list(basis()));
   tbi->set_redundant(0);
 
   for (tbii.start(); tbii.ready(); tbii.next()) {

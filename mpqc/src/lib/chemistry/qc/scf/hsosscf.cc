@@ -73,7 +73,7 @@ HSOSSCF::save_data_state(StateOut& s)
 }
 
 double
-HSOSSCF::occupation(int i)
+HSOSSCF::occupation(int ir, int i)
 {
   if (i < ndocc_) return 2.0;
   if (i < ndocc_ + nsocc_) return 1.0;

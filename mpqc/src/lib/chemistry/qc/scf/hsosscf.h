@@ -70,7 +70,7 @@ class HSOSSCF: public SCF {
 
     void print(ostream&o=cout);
 
-    double occupation(int vectornum);
+    double occupation(int irrep, int vectornum);
 
     int value_implemented();
     int gradient_implemented();

@@ -137,6 +137,7 @@ class MolecularCoor: virtual public SavableState
     virtual ~MolecularCoor();
     void save_data_state(StateOut&);
     virtual void print(SCostream& =SCostream::cout) = 0;
+    virtual void print_simples(SCostream& =SCostream::cout) = 0;
     virtual RefSCDimension dim() = 0;
     // convert molecular coordinates to and from cartesians
     virtual void to_cartesian(RefSCVector&internal) = 0;
@@ -218,6 +219,7 @@ class IntMolecularCoor: public MolecularCoor
     virtual void to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
     virtual void to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
     virtual void print(SCostream& =SCostream::cout);
+    virtual void print_simples(SCostream& =SCostream::cout);
     void guess_hessian(RefSymmSCMatrix&hessian);
 };
 

@@ -82,6 +82,17 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   nextra_bonds_(0),
   extra_bonds_(0)
 {
+  // intialize the coordinate sets
+  all_ = new SetIntCoor; // all redundant coors
+  variable_ = new SetIntCoor; // internal coors to be varied
+  constant_ = new SetIntCoor; // internal coors to be head fixed
+  bonds_ = new SetIntCoor;
+  bends_ = new SetIntCoor;
+  tors_ = new SetIntCoor;
+  outs_ = new SetIntCoor;
+  extras_ = new SetIntCoor;
+  fixed_ = new SetIntCoor;
+  
   init();
 }
 
@@ -178,6 +189,7 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
   extras_.restore_state(s);
 
   s.get(update_bmat_);
+  s.get(only_totally_symmetric_);
   s.get(scale_bonds_);
   s.get(scale_bends_);
   s.get(scale_tors_);
@@ -527,6 +539,8 @@ IntMolecularCoor::save_data_state(StateOut&s)
   dnatom3_.save_state(s);
   dvc_.save_state(s);
 
+  all_.save_state(s);
+  
   variable_.save_state(s);
   constant_.save_state(s);
 
@@ -539,6 +553,7 @@ IntMolecularCoor::save_data_state(StateOut&s)
   extras_.save_state(s);
 
   s.put(update_bmat_);
+  s.put(only_totally_symmetric_);
   s.put(scale_bonds_);
   s.put(scale_bends_);
   s.put(scale_tors_);
@@ -879,16 +894,33 @@ IntMolecularCoor::print(SCostream& os)
   
   os.indent() << "Molecule:\n"; os++; molecule_->print(os); os--;
 
-  os.indent() << "Bonds:\n"; os++; bonds_->print(molecule_,os); os--;
-  os.indent() << "Bends:\n";  os++; bends_->print(molecule_,os); os--;
-  os.indent() << "Torsions:\n";  os++; tors_->print(molecule_,os); os--;
-  os.indent() << "Out of Plane:\n";  os++; outs_->print(molecule_,os); os--;
-  os.indent() << "Extras:\n";  os++; extras_->print(molecule_,os); os--;
-  os.indent() << "Fixed:\n";  os++; fixed_->print(molecule_,os); os--;
+  print_simples(os);
 
   os.indent() << "Variables:\n"; os++; variable_->print(molecule_,os); os--;
   os.indent() << "Constants:\n"; os++; constant_->print(molecule_,os); os--;
+}
 
+void
+IntMolecularCoor::print_simples(SCostream& os)
+{
+  if (bonds_->n()) {
+    os.indent() << "Bonds:\n"; os++; bonds_->print(molecule_,os); os--;
+  }
+  if (bends_->n()) {
+    os.indent() << "Bends:\n";  os++; bends_->print(molecule_,os); os--;
+  }
+  if (tors_->n()) {
+    os.indent() << "Torsions:\n";  os++; tors_->print(molecule_,os); os--;
+  }
+  if (outs_->n()) {
+    os.indent() << "Out of Plane:\n";  os++; outs_->print(molecule_,os); os--;
+  }
+  if (extras_->n()) {
+    os.indent() << "Extras:\n";  os++; extras_->print(molecule_,os); os--;
+  }
+  if (fixed_->n()) {
+    os.indent() << "Fixed:\n";  os++; fixed_->print(molecule_,os); os--;
+  }
 }
 
 void

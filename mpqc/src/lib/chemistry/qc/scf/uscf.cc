@@ -725,7 +725,8 @@ UnrestrictedSCF::density()
     densb=0;
     
     density_ = densa;
-    density_.computed() = 1;
+    // only flag the density as computed if the calc is converged
+    if (!value_needed()) density_.computed() = 1;
   }
 
   return density_.result_noupdate();

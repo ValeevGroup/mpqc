@@ -555,7 +555,8 @@ HSOSSCF::density()
     dens1=0;
     
     density_ = dens;
-    density_.computed() = 1;
+    // only flag the density as computed if the calc is converged
+    if (!value_needed()) density_.computed() = 1;
   }
 
   return density_.result_noupdate();

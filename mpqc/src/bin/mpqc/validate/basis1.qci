@@ -1,0 +1,68 @@
+
+test_basis:
+     STO-2G STO-3G STO-3G* STO-6G
+     3-21G 3-21G* 3-21++G 3-21++G*
+     4-31G 4-31G* 4-31G**
+     6-31G 6-31G* 6-31G** 6-31++G 6-31++G* 6-31++G**
+     6-311G 6-311G* 6-311G** 6-311++G**
+     cc-pVDZ cc-pVTZ cc-pVQZ
+     aug-cc-pVDZ aug-cc-pVTZ aug-cc-pVQZ
+test_method: scf
+gradient: yes
+#test_calc: opt
+test_molecule:          h2  he  lih beh2 b2h6 nh3 c2h2 h2o hf  ne 
+test_molecule_symmetry: d2h d2h c2v d2h  d2h  cs  d2h  c2v c2v d2h
+
+checkpoint: no
+
+label: basis set test series 1
+
+h2:
+  H 0 0  0.37
+  H 0 0 -0.37
+
+he:
+  He 0 0 0
+
+lih:
+  Li 0 0  0.70
+  H  0 0 -0.70
+
+beh2:
+  Be 0.00 0.00  0.00
+  H  0.00 0.00  1.30
+  H  0.00 0.00 -1.30
+
+b2h6:
+  H  1.00  0.00  1.46
+  H -1.00  0.00  1.46
+  B  0.00  0.00  0.90
+  H  0.00  0.94  0.00
+  H  0.00 -0.94  0.00
+  B  0.00  0.00 -0.90
+  H  1.00  0.00 -1.46
+  H -1.00  0.00 -1.46
+
+nh3:
+  N  0.000000000  0.252365857  0.000000000
+  H -0.486150513 -0.084121957  0.824716866
+  H -0.486150513 -0.084121957 -0.824716866
+  H  0.952301025 -0.084121957  0.000000000
+
+c2h2:
+  H  0.00 0.00  1.65
+  C  0.00 0.00  0.58
+  C  0.00 0.00 -0.58
+  H  0.00 0.00 -1.65
+
+h2o:
+  O  0.00 0.00  0.37
+  H  0.78 0.00 -0.18
+  H -0.78 0.00 -0.18
+
+hf:
+  H  0 0  0.50
+  F  0 0 -0.50
+
+ne:
+  Ne 0 0 0

@@ -1,0 +1,16 @@
+
+test_basis: 6-31G*
+test_method: mp2
+test_symmetry: c2v
+test_calc: energy opt
+test_fzc: 0 1
+test_fzv: 0 1
+
+checkpoint: no
+
+label: water mp2 test series
+
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472

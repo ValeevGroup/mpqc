@@ -1,0 +1,316 @@
+#
+eval 'exec perl $0 $*'
+    if 0;
+
+require QCParse;
+
+$prefix = "";
+@files = ();
+%files = ();
+$writefiles = 1;
+$echonames = 0;
+$dir = "";
+%basissets = (
+  "STO-2G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+  "STO-3G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
+  "STO-3G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "STO-6G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
+  "MINI (Huzinaga)" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+  "MINI (Scaled)" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+  "MIDI (Huzinaga)" => [1,2,3,4,5,6,7,8,9,10,11],
+  "DZ (Dunning)" => [1,3,5,6,7,8,9,10,13,14,15,16,17],
+  "DZP (Dunning)" => [1,3,5,6,7,8,9,10,13,14,15,16,17],
+  "DZP + Diffuse (Dunning)" => [1,5,6,7,8,9,10],
+  "3-21G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
+  "3-21G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "3-21++G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "3-21++G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "4-31G" => [1,2,3,4,5,6,7,8,9,10,15,16,17],
+  "4-31G*" => [1,2,3,4,5,6,7,8,9,10,15,16,17],
+  "4-31G**" => [1,2,3,4,5,6,7,8,9,10,15,16,17],
+  "6-31G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "6-31G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "6-31G**" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "6-31+G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "6-31++G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "6-31++G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "6-31++G**" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "6-311G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,31,32,33,34,35,36],
+  "6-311G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,31,32,33,34,35,36],
+  "6-311G**" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,31,32,33,34,35,36],
+  "6-311G(2df,2pd)" => [1,2,3,4,5,6,7,8,9,10],
+  "6-311++G**" => [1,2,3,4,5,6,7,8,9,10],
+  "6-311++G(2d,2p)" => [1,2,3,4,5,6,7,8,9,10],
+  "6-311++G(3df,3pd)" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
+  "cc-pVDZ" => [1,2,5,6,7,8,9,10,13,14,15,16,17,18],
+  "cc-pVTZ" => [1,2,5,6,7,8,9,10,13,14,15,16,17,18],
+  "cc-pVQZ" => [1,2,5,6,7,8,9,10,13,14,15,16,17,18],
+  "cc-pV5Z" => [1,2,3,4,5,6,7,8,9,10,13,14,15,16,17,18],
+  "aug-cc-pVDZ" => [1,2,5,6,7,8,9,10,13,14,15,16,17,18],
+  "aug-cc-pVTZ" => [1,2,5,6,7,8,9,10,13,14,15,16,17,18],
+  "aug-cc-pVQZ" => [1,2,5,6,7,8,9,10,13,14,15,16,17,18],
+  "aug-cc-pV5Z" => [1,2,5,6,7,8,9,10,13,14,15,16,17,18],
+  "cc-pCVDZ" => [5,6,7,8,9,10],
+  "cc-pCVTZ" => [5,6,7,8,9,10],
+  "cc-pCVQZ" => [5,6,7,8,9,10],
+  "cc-pCV5Z" => [5,6,7,8,9,10],
+  "aug-cc-pCVDZ" => [5,6,7,8,9],
+  "aug-cc-pCVTZ" => [5,6,7,8,9,10],
+  "aug-cc-pCVQZ" => [5,6,7,8,9,10],
+  "aug-cc-pCV5Z" => [5,6,7,8,9],
+  "NASA Ames ANO" => [1,5,6,7,8,9,10,13,15,22,26,28]
+);
+
+while ($_ = shift) {
+    if (/^-I(.*)/) {
+        $prefix = $1;
+    }
+    elsif (/^-p(.+)$/) {
+        $package = $1;
+    }
+    elsif (/^-p$/) {
+        $package = shift;
+    }
+    elsif (/^-e$/) {
+        $writefiles = 0;
+        $echonames = 1;
+    }
+    elsif (/^-d$/) {
+        $dir = shift;
+        $dir = "$dir/";
+    }
+    else {
+        unshift @files, $_;
+    }
+}
+
+foreach $i (@files) {
+    process_file($i, $package);
+}
+
+if ($echonames) {
+    for $i (keys(%files)) {
+        print "$i\n";
+    }
+}
+
+sub process_file {
+    my $file = shift;
+    my $package = shift;
+    my $parse = new QCParse;
+
+    my $fullfile = "$prefix/$file";
+    $parse->parse_file($fullfile);
+    if (! $echonames) {
+        print "File: $fullfile\n";
+    }
+
+    $file =~ s/^.*\/([^\/]*)$/\1/;
+    $file =~ s/\..*$//;
+
+    my $test_vars = {};
+    init_var($test_vars, $parse, "basis", "STO-3G");
+    init_var($test_vars, $parse, "symmetry", "C1");
+    init_var($test_vars, $parse, "method", "SCF");
+    init_var($test_vars, $parse, "calc", "energy");
+    init_var($test_vars, $parse, "fzc", 0);
+    init_var($test_vars, $parse, "fzv", 0);
+    init_var($test_vars, $parse, "molecule", "molecule");
+    my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
+    my @molecule_followed = $parse->value_as_array("test_molecule_followed");
+    my @molecule_fixed = $parse->value_as_array("test_molecule_fixed");
+
+    my @keys = keys(%{$test_vars});
+    my $index = {};
+    my $size = {};
+    my $i;
+    foreach $i (@keys) {
+        $index->{$i} = 0;
+        $size->{$i} = scalar(@{$test_vars->{$i}});
+    }
+    for ($i=0; $i < $nkeys; $i++) { $vals->{$i} = 0; }
+    # this is equivalent to a nested loop for each test var,
+    # but is much easier to maintain
+    do {
+        my $basis = $test_vars->{"basis"}->[$index->{"basis"}];
+        my $fzc = $test_vars->{"fzc"}->[$index->{"fzc"}];
+        my $fzv = $test_vars->{"fzv"}->[$index->{"fzv"}];
+        my $method = $test_vars->{"method"}->[$index->{"method"}];
+        my $calc = $test_vars->{"calc"}->[$index->{"calc"}];
+        my $symmetry = $test_vars->{"symmetry"}->[$index->{"symmetry"}];
+        my $molecule = $test_vars->{"molecule"}->[$index->{"molecule"}];
+        # if i got an array of molecule names then i expect
+        # an array of point groups, one for each molecule
+        if ($molecule ne "molecule") {
+            $symmetry = $molecule_symmetry[$index->{"molecule"}];
+            if ($symmetry eq "") {
+                printf "\n";
+                printf "index = %d\n", $index->{"molecule"};
+                printf "symmetry not set for a molecule array\n";
+                exit 1;
+            }
+        }
+        # check for fixed coordinates
+        my $fixed = $molecule_fixed[$index->{"molecule"}];
+        if ($fixed eq "-") {
+            $fixed = "";
+        }
+        # check for followed coordinates
+        my $followed = $molecule_followed[$index->{"molecule"}];
+        if ($followed eq "-") {
+            $followed = "";
+        }
+
+        # the filename to use for the calc
+        my $fcalc;
+
+        # only need fzc and fzv for correlated calculations
+        if (!($method =~ /MP2/i)
+            && !($method =~ /OPT1/i)
+            && !($method =~ /OPT2[2]/i)
+            && !($method =~ /ZAPT2/i)) {
+            $fzc = "";
+            $fzv = "";
+        }
+        if ($calc eq "energy") {
+            $parse->set_value("optimize", "no");
+            $parse->set_value("frequencies", "no");
+            $fcalc = "";
+        }
+        elsif ($calc eq "opt") {
+            $parse->set_value("optimize", "yes");
+            $parse->set_value("frequencies", "no");
+            $fcalc = "opt";
+        }
+        elsif ($calc eq "freq") {
+            $parse->set_value("optimize", "no");
+            $parse->set_value("frequencies", "yes");
+            $fcalc = "frq";
+        }
+        elsif ($calc eq "optfreq") {
+            $parse->set_value("optimize", "yes");
+            $parse->set_value("frequencies", "yes");
+            $fcalc = "optfrq";
+        }
+        else {
+            print "Bad value for calc: $calc\n";
+            exit 1;
+        }
+
+        $parse->set_value("basis", $basis);
+        $parse->set_value("method", $method);
+        $parse->set_value("symmetry", $symmetry);
+        $parse->set_value("fzc", $fzc);
+        $parse->set_value("fzv", $fzv);
+        $parse->set_value("molecule", $parse->value($molecule));
+        $parse->set_value("fixed", $parse->value($fixed));
+        $parse->set_value("followed", $parse->value($followed));
+        my $qcinput = new QCInput($parse);
+        my $fmol = $molecule;
+        $fmol = "" if ($molecule eq "molecule");
+        $fmol = tofilename($fmol);
+
+        # make sure that the basis set exists for all of the
+        # atoms in the molecule
+        my $molobject = $qcinput->molecule();
+        my $allowedatoms = $basissets{$basis};
+        my $ok = 1;
+        for $symbol (0..($molobject->n_atom()-1)) {
+            my $z = $molobject->z($symbol);
+            my $gotit = 0;
+            for $ztmp (@{$allowedatoms}) {
+                if ($ztmp == $z) {
+                    $gotit = 1;
+                    last;
+                }
+            }
+            $ok = 0 if (! $gotit);
+        }
+
+        my $inputfile;
+        my $method = tofilename($method);
+        my $basis = tofilename($basis);
+        my $symmetry = tofilename($symmetry);
+        my $basename = "$dir$file\_$fmol$method$fzc$fzv$basis$symmetry$fcalc";
+        my $writer;
+
+        if ($package eq "g94") {
+            $writer = new G94InputWriter($qcinput);
+            $inputfile = "$basename.com";
+        }
+        elsif ($package eq "mpqc") {
+            $writer = new MPQCInputWriter($qcinput);
+            $inputfile = "$basename.in";
+        }
+
+        if (! $ok) {
+            if (! $echonames) {
+                printf "skipping $inputfile since basis not available\n";
+            }
+        }
+        else {
+            if ($writefiles) {
+                $writer->write_input("$inputfile.tmp");
+                $writer->write_qcinput("$basename.qci");
+                if ($files{"$inputfile"}) {
+                    unlink("$inputfile.tmp");
+                }
+                else {
+                    $files{"$inputfile"} = 1;
+                    my $ret = 1;
+                    $ret = system("cmp $inputfile $inputfile.tmp >& /dev/null")/256
+                        if (-f "$inputfile");
+                    if ($ret != 0) {
+                        print "writing $inputfile\n";
+                        rename("$inputfile.tmp", "$inputfile");
+                    }
+                    else {
+                        unlink("$inputfile.tmp");
+                        print "$inputfile is unchanged\n";
+                    }
+                }
+            }
+            else {
+                $files{"$inputfile"} = 1;
+            }
+        }
+
+    } while (incr($index,$size));
+}
+
+sub incr {
+    my $index = shift;
+    my $size = shift;
+    my @keys = keys(%{$index});
+    my $i;
+    my $dozero = 0;
+    while ($i = shift(@keys)) {
+        if ($index->{$i} < $size->{$i} - 1) {
+            $index->{$i}++;
+            return 1;
+        }
+        else {
+            $index->{$i} = 0;
+        }
+    }
+    return 0;
+}
+
+sub init_var {
+    my $vars = shift;
+    my $parse = shift;
+    my $name = shift;
+    my $default = shift;
+    my $testname = "test_$name";
+    my @ar = $parse->value_as_array($testname);
+    if ($#ar < 0) { @ar = ( $default ); }
+    $vars->{$name} = \@ar;
+}
+
+sub tofilename {
+    my $raw = shift;
+    $raw =~ tr/A-Z/a-z/;
+    $raw =~ s/-//g;
+    $raw =~ s/\*/s/g;
+    $raw;
+}

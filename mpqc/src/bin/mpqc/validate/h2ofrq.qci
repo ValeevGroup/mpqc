@@ -1,0 +1,14 @@
+
+test_basis: STO-3G 6-311G**
+test_method: scf mp2
+test_symmetry: c1
+test_calc: freq optfreq
+
+checkpoint: no
+
+label: water test series
+
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472

@@ -37,7 +37,8 @@ at any GNU software FTP repository.
                 -D__USE_STD_IOSTREAM'</tt>
 
            <li> The Intel 5.0.1 Linux compilers for IA-32 work.  Version
-                5.0.1 for IA-64 will not work.
+                5.0.1 for IA-64 will not work.  More recent Intel compilers
+                should work as well.
 
            <li> The KAI version 4.0e1 compiler works.  Special configure
                 options are needed: <tt>--with-cxx='KCC
@@ -68,13 +69,10 @@ at any GNU software FTP repository.
          not installed in the default library search path, then configure
          must be given --with-libs, --with-libdirs, or both.
 
-    <li> A lexical analyzer generator is required to generate code to read
-         input files.  Currently, <a
-         href="ftp://ftp.gnu.org/non-gnu/flex/">GNU flex, version
-         2.5.4a</a>, with a patch applied to the source, <a
-         href="http://aros.ca.sandia.gov/~cljanss/mpqc/distrib/patch-flex-2.5.4a-snl.gz">patch-flex-2.5.4a-snl.gz</a>,
-         is required.  Future versions of flex are under development that
-         will not require this patch.
+    <li> A recent version of the flex lexical analyzer generator is
+         required to generate the code to read input files.  Version 2.5.31
+         is known to work.  It is available at <a
+         href="http://sourceforge.net/projects/lex">http://sourceforge.net/projects/lex</a>.
 
          Make sure that <tt>FlexLexer.h</tt> from flex is in your include
          path. You may need to give the path to <tt>FlexLexer.h</tt> to

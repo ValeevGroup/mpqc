@@ -29,6 +29,7 @@
 #include <scconfig.h>
 #endif
 
+#include <unistd.h>
 #include <new.h>
 
 #include <util/misc/exenv.h>

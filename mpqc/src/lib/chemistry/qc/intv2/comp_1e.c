@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.4  1995/01/17 18:11:53  cljanss
+ * Revision 1.5  1995/02/15 20:33:33  cljanss
+ * Modified the dipole integral routines to be a bit more efficient
+ * and consistent with buffer usage for the efield routines.
+ *
+ * Revision 1.4  1995/01/17  18:11:53  cljanss
  * Added routine int_accum_shell_point_charge.
  *
  * Revision 1.3  1994/08/26  22:45:21  etseidl
@@ -2158,59 +2162,16 @@ int m;
 /* ------------- Routines for dipole moment integrals ------------ */
 /* --------------------------------------------------------------- */
 
-GLOBAL_FUNCTION VOID
-int_dipole(cs1,cs2,com,dipole)
-centers_t *cs1;
-centers_t *cs2;
-double *com;
-double_array3_t *dipole;
-{
-  int c1,s1,i1,j1,k1;
-  int c2,s2,i2,j2,k2;
-  int im,jm,km;
-  int cart1,cart2;
-  int gc1,gc2;
-  int index1,index2;
-  double shell1norm,shell2norm;
-
-  C = com;
-
-  cart1 = 0;
-  FOR_SHELLS(cs1,c1,s1)
-    A = cs1->center[c1].r;
-    shell1 = &(cs1->center[c1].basis.shell[s1]);
-    FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-      shell1norm = shell1->norm[gc1][index1];
-      cart2 = 0;
-      FOR_SHELLS(cs2,c2,s2)
-        B = cs2->center[c2].r;
-        shell2 = &(cs2->center[c2].basis.shell[s2]);
-        FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
-          shell2norm = shell2->norm[gc2][index2];
-          for(mu=0; mu < 3; mu++) {
-            if(mu==0)      {im=1;jm=0;km=0;}
-            else if(mu==1) {im=0;jm=1;km=0;}
-            else           {im=0;jm=0;km=1;}
-            dipole->d[mu][cart1][cart2] = shell1norm * shell2norm * 
-               comp_shell_dipole(im,jm,km,gc1,i1,j1,k1,gc2,i2,j2,k2);
-            }
-          cart2++;
-          END_FOR_GCCART(index2)
-        END_FOR_SHELLS
-      cart1++;
-      END_FOR_GCCART(index1)
-    END_FOR_SHELLS
-  }
-
-/* This computes the overlap integrals between functions in two shells.
- * The result is placed in the buffer.
+/* This computes the dipole integrals between functions in two shells.
+ * The result is accumulated in the buffer in the form bf1 x y z, bf2
+ * x y z, etc.
  */
 GLOBAL_FUNCTION VOID
-int_shell_dipole(cs1,cs2,com,buff,ish,jsh)
+int_accum_shell_dipole(cs1,cs2,com,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
 double *com;
-double **buff;
+double *buff;
 int ish;
 int jsh;
 {
@@ -2219,6 +2180,7 @@ int jsh;
   int gc1,gc2;
   int index,index1,index2;
   double shell1norm,shell2norm;
+  double dipole[3];
 
   C = com;
 
@@ -2235,23 +2197,18 @@ int jsh;
     shell1norm = shell1->norm[gc1][index1];
     FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
       shell2norm = shell2->norm[gc2][index2];
+      comp_shell_dipole(dipole,gc1,i1,j1,k1,gc2,i2,j2,k2);
       for(mu=0; mu < 3; mu++) {
-        if(mu==0)      {im=1;jm=0;km=0;}
-        else if(mu==1) {im=0;jm=1;km=0;}
-        else           {im=0;jm=0;km=1;}
-        buff[mu][index] = shell1norm * shell2norm * 
-          comp_shell_dipole(im,jm,km,gc1,i1,j1,k1,gc2,i2,j2,k2);
+        buff[index] += shell1norm * shell2norm * dipole[mu];
+        index++;
         }
-      index++;
       END_FOR_GCCART(index2)
     END_FOR_GCCART(index1)
   }
 
-LOCAL_FUNCTION double
-comp_shell_dipole(im,jm,km,gc1,i1,j1,k1,gc2,i2,j2,k2)
-int im;
-int jm;
-int km;
+LOCAL_FUNCTION void
+comp_shell_dipole(dipole,gc1,i1,j1,k1,gc2,i2,j2,k2)
+double* dipole;
 int gc1;
 int i1;
 int j1;
@@ -2263,16 +2220,16 @@ int k2;
 {
   double exp1,exp2;
   int i,j,xyz;
-  double result;
   double Pi;
   double oozeta;
   double AmB,AmB2;
   double tmp;
 
-  if ((i1<0)||(j1<0)||(k1<0)||(i2<0)||(j2<0)||(k2<0)) return 0.0;
+  dipole[0] = dipole[1] = dipole[2] = 0.0;
+
+  if ((i1<0)||(j1<0)||(k1<0)||(i2<0)||(j2<0)||(k2<0)) return;
 
   /* Loop over the primitives in the shells. */
-  result = 0.0;
   for (i=0; i<shell1->nprim; i++) {
     for (j=0; j<shell2->nprim; j++) {
 
@@ -2293,15 +2250,15 @@ int k2;
       ss =   pow(3.141592653589793/(exp1+exp2),1.5)
            * exp_cutoff(- oozeta * exp1 * exp2 * AmB2);
       sMus = ss * PmC[mu];
-      tmp     =  shell1->coef[gc1][i] * shell2->coef[gc2][j]
-               * comp_prim_dipole(im,jm,km,i1,j1,k1,i2,j2,k2);
+      tmp     =  shell1->coef[gc1][i] * shell2->coef[gc2][j];
       if (exponent_weighted == 0) tmp *= exp1;
       else if (exponent_weighted == 1) tmp *= exp2;
-      result += tmp;
+      dipole[0] += tmp * comp_prim_dipole(1,0,0,i1,j1,k1,i2,j2,k2);
+      dipole[1] += tmp * comp_prim_dipole(0,1,0,i1,j1,k1,i2,j2,k2);
+      dipole[2] += tmp * comp_prim_dipole(0,0,1,i1,j1,k1,i2,j2,k2);
       }
     }
 
-  return result;
   }
 
 LOCAL_FUNCTION double

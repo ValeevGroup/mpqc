@@ -63,6 +63,11 @@ scf_struct {
 
   double alpha;
   double beta;
+
+  int ncharge;                     // the number of point charges to use
+  int nxyz;                        // 3 (for an sgen limitation)
+  double charge[ncharge];          // the charges
+  double chargex[ncharge][nxyz];   // the positions of the charges
   } ;
 
 exmul {

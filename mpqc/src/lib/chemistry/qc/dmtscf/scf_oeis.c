@@ -78,6 +78,12 @@ FILE *outfile;
   for (i=0; i < nlocal ; i++) {
     dmt_get_block(V,i,&li,&lj,&data);
     int_shell_nuclear(centers,centers,data,li,lj);
+    if (scf_info->ncharge) {
+        int_accum_shell_point_charge(centers,centers,data,li,lj,
+                                     scf_info->ncharge,
+                                     scf_info->charge,
+                                     scf_info->chargex);
+      }
   }
 
   dmt_copy(V,H);

@@ -208,6 +208,60 @@ scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
   scf_info.use_symmetry=keyval->booleanvalue("use_symmetry");
 #endif
 
+  //
+  // see if point charges are to be included in the calculation
+  //
+
+  scf_info.ncharge = keyval->count("charges:q");
+  if (scf_info.ncharge) {
+      printf("reading in %d point charges\n", scf_info.ncharge);
+      scf_info.nxyz = 0;
+      scf_info.charge = (double*) malloc(sizeof(double)*scf_info.ncharge);
+      scf_info.chargex = (double**) malloc(sizeof(double*)*scf_info.ncharge);
+      for (int i=0; i<scf_info.ncharge; i++) {
+          scf_info.chargex[i] = (double*) malloc(sizeof(double)*3);
+          scf_info.charge[i] = keyval->doublevalue("charges:q",i);
+          for (int j=0; j<3; j++) {
+              scf_info.chargex[i][j] = keyval->doublevalue("charges:x",i,j);
+            }
+//           printf(" %15.8f [ %15.8f %15.8f %15.8f ]\n",
+//                  scf_info.charge[i],
+//                  scf_info.chargex[i][0],
+//                  scf_info.chargex[i][1],
+//                  scf_info.chargex[i][2]);
+        }
+      double echarge = 0.0;
+      double q = 0.0;
+      for (i=0; i<scf_info.ncharge; i++) {
+          q += scf_info.charge[i];
+          for (int j=0; j<i; j++) {
+              double dist = 0.0;
+              for (int k=0; k<3; k++) {
+                  double d = scf_info.chargex[i][k] - scf_info.chargex[j][k];
+                  dist += d*d;
+                }
+              echarge += scf_info.charge[i]*scf_info.charge[j]/sqrt(dist);
+            }
+        }
+      double enuccharge = 0.0;
+      for (i=0; i<scf_info.ncharge; i++) {
+          for (int j=0; j<centers.n; j++) {
+              double dist = 0.0;
+              for (int k=0; k<3; k++) {
+                  double d = scf_info.chargex[i][k] - centers.center[j].r[k];
+                  dist += d*d;
+                }
+              enuccharge += scf_info.charge[i]*centers.center[j].charge
+                            /sqrt(dist);
+            }
+        }
+      printf("the total charge of the point charges is %15.8f\n", q);
+      printf("the point charge-nuclear charge interaction energy is %15.8f\n",
+             enuccharge);
+      printf("the point charge interaction energy is %15.8f\n", echarge);
+      printf("  (these will not be included in scf energy)\n");
+    }
+
  //
  // more mundane members follow
  //

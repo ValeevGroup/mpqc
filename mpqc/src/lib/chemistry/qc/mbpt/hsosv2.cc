@@ -110,13 +110,6 @@ MBPT2::compute_hsos_v2()
   double eopt2,eopt1,ezapt2;
   double tol;          /* log2 of the erep tolerance (erep < 2^tol => discard) */
 
-  if (molecule()->point_group().char_table().order() != 1) {
-    // need to reorder the eigenvalues and possibly fix some bugs
-    cout << node0 << indent
-         << "MP2 closed shell gradients only works for C1 symmetry" << endl;
-    abort();
-    }
-
   me = msg_->me();
 
   cout << node0 << indent << "Just entered OPT2 program (opt2_v2)" << endl;
@@ -130,9 +123,10 @@ MBPT2::compute_hsos_v2()
   cout << node0 << indent << "nproc = " << nproc << endl;
 
   ndocc = nsocc = 0;
+  const double epsilon = 1.0e-4;
   for (i=0; i<nbasis; i++) {
-    if      (reference_->occupation(i) == 2.0) ndocc++;
-    else if (reference_->occupation(i) == 1.0) nsocc++;
+    if      (reference_->occupation(i) >= 2.0 - epsilon) ndocc++;
+    else if (reference_->occupation(i) >= 1.0 - epsilon) nsocc++;
     }
 
   /* do a few preliminary tests to make sure the desired calculation *
@@ -321,13 +315,10 @@ MBPT2::compute_hsos_v2()
   double** scf_vectort = new double*[nocc + nvir];
 
   int idoc = 0, ivir = 0, isoc = 0;
-  const double epsilon = 1.0e-4;
-  for (i=0; i<nbasis; i++) {
+  for (i=nfzc; i<nbasis-nfzv; i++) {
     if (occ(i) >= 2.0 - epsilon) {
-      if (idoc >= nfzc) {
-        evals_open[idoc-nfzc+nsocc] = evals(i);
-        scf_vectort[idoc-nfzc+nsocc] = &scf_vectort_dat[i*nbasis];
-        }
+      evals_open[idoc+nsocc] = evals(i);
+      scf_vectort[idoc+nsocc] = &scf_vectort_dat[i*nbasis];
       idoc++;
       }
     else if (occ(i) >= 1.0 - epsilon) {
@@ -795,19 +786,19 @@ MBPT2::compute_hsos_v2()
             "were computed: %i\n",aoint_computed);
             
     cout << indent
-         << scprintf("ROHF energy [au]:                  %13.8lf\n", escf);
+         << scprintf("ROHF energy [au]:                  %17.12lf\n", escf);
     cout << indent
-         << scprintf("OPT1 energy [au]:                  %13.8lf\n", eopt1);
+         << scprintf("OPT1 energy [au]:                  %17.12lf\n", eopt1);
     cout << indent
-         << scprintf("OPT2 second order correction [au]: %13.8lf\n",
+         << scprintf("OPT2 second order correction [au]: %17.12lf\n",
                      ecorr_opt2);
     cout << indent
-         << scprintf("OPT2 energy [au]:                  %13.8lf\n", eopt2);
+         << scprintf("OPT2 energy [au]:                  %17.12lf\n", eopt2);
     cout << indent
-         << scprintf("ZAPT2 correlation energy [au]:     %13.8lf\n",
+         << scprintf("ZAPT2 correlation energy [au]:     %17.12lf\n",
                      ecorr_zapt2);
     cout << indent
-         << scprintf("ZAPT2 energy [au]:                 %13.8lf\n", ezapt2);
+         << scprintf("ZAPT2 energy [au]:                 %17.12lf\n", ezapt2);
     cout.flush();
     }
 

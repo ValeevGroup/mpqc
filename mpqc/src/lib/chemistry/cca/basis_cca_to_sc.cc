@@ -51,9 +51,10 @@ Ref<GaussianBasisSet> basis_cca_to_sc( Molecular &cca_basis ) {
 
   // form atomic set for each individual center (possibly redundant)
   // <atomname>: <basisname>: [
+  AtomInfo empty_info;
   for(int i=0; i<cca_mol.get_n_atom(); ++i) {
     Atomic atomic = cca_basis.get_atomic(i);
-    input << " " << AtomInfo::name( cca_mol.get_atomic_number(i) ) << ": "
+    input << " " << empty_info.name( cca_mol.get_atomic_number(i) ) << ": "
 	  << " basis" << i << ": [\n";
     
     // form shells

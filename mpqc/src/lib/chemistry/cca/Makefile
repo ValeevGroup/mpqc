@@ -92,6 +92,9 @@ TARGET_TO_MAKE = cca/libSCchemistry
 
 LIBOBJ = $(CCA_OBJS)
 CPPFLAGS += -I./ -I$(CLASSIC_pkgincludedir)
+ifeq ($(HAVE_LIBINT),yes)
+  DEFINES += -DHAVE_CINTS
+endif
 tmp_libdir := $(libdir)
 SCLIBS = $(shell echo `ls ../../../../lib/*.$(LIBSUF)`)
 SCLINK = $(SCLIBS:lib%.$(LIBSUF)=-l%)

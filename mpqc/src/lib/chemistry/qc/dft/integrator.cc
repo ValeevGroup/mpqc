@@ -259,7 +259,7 @@ DenIntegrator::do_point(const SCVector3 &r,
     }
 
   // loop over basis functions adding contributions to the density
-  PointInputData id;
+  PointInputData id(r);
 
   get_density(alpha_dmat_, id.rho_a, id.del_rho_a);
   id.rho_a_13 = pow(id.rho_a, 1./3.);

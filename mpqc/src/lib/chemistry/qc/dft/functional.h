@@ -50,6 +50,10 @@ struct PointInputData {
     // provided for convenience
     double rho_a_13;
     double rho_b_13;
+
+    const SCVector3 &r;
+
+    PointInputData(const SCVector3& r_): r(r_) {}
 };
 
 struct PointOutputData {

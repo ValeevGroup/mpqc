@@ -518,7 +518,7 @@ ginv0(int i)
 # include <cube.h>
 #endif
 
-#ifdef I860
+#if defined(I860) && !defined(PARAGON)
 /* the following is a fast global sum for long vectors.
  * It was written by Stan Erwin, an Intel employee at the NIH.
  *
@@ -588,6 +588,30 @@ gdcomb(int n, double* x, double* y, int dim, int idim)
 
 #endif // I860
 
+#if defined(SUNMOS)
+
+#define PUMA_LEN 10240
+
+static void
+puma_sum(double *val, int len, double *tmp)
+{
+  if (len < PUMA_LEN) {
+    gdsum(val,len,tmp);
+    return;
+  }
+  
+  // this will be slow, but maybe will use less comm buffer space
+  for (int i=0; i < len; i += PUMA_LEN) {
+    if ((len-i) > PUMA_LEN) {
+      gdsum(&val[i], PUMA_LEN, &tmp[i]);
+    } else {
+      gdsum(&val[i], (len-i), &tmp[i]);
+    }
+    gsync();
+  }
+}
+#endif
+
 void gop1(double* val, int len, double* tmp, int op, int type)
 {
 #if defined(PARAGON)
@@ -599,7 +623,11 @@ void gop1(double* val, int len, double* tmp, int op, int type)
       gdhigh(val,len,tmp);
       break;
     case '+':
+#if defined(SUNMOS)
+      puma_sum(val,len,tmp);
+#else      
       gdsum(val,len,tmp);
+#endif
       break;
     }
 #elif defined(I860)

@@ -128,6 +128,7 @@ dnl --------- This is at the top since its likely to cause problems. ---------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
+CPPFLAGS="-I$srcdir/include -I$srcdir/src/lib $CPPFLAGS"
 AC_CHECK_HEADER(FlexLexer.h,,[
 AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include])
 ])
@@ -284,7 +285,7 @@ dnl -- other options --
 if test X$GXX = Xyes; then
   CXXOPTIONS_MISC="$CXXOPTIONS_MISC -fno-implicit-templates"
 else
-  EXTRAINCLUDE="$EXTRAINCLUDE -I\$(SRCTOPDIR)/include/libg++-stub"
+  CPPFLAGS="$CPPFLAGS -I$srcdir/include/libg++-stub"
 fi
 
 if test $DEBUG = yes; then

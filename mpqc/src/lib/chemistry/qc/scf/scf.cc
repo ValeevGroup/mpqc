@@ -38,9 +38,11 @@
 #include <math/scmat/local.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/offset.h>
+#include <math/scmat/blocked.h>
 
 #include <math/optimize/diis.h>
 
+#include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/scf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -63,6 +65,7 @@ SCF::SCF(StateIn& s) :
 {
   debug_ = 0;
   need_vec_ = 1;
+  compute_guess_ = 0;
 
   s.get(maxiter_);
   s.get(dens_reset_freq_);
@@ -79,6 +82,7 @@ SCF::SCF(StateIn& s) :
 SCF::SCF(const RefKeyVal& keyval) :
   OneBodyWavefunction(keyval),
   need_vec_(1),
+  compute_guess_(0),
   maxiter_(40),
   level_shift_(0),
   reset_occ_(0),
@@ -114,7 +118,9 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (keyval->exists("guess_wavefunction")) {
     cout << incindent << incindent;
     guess_wfn_ = keyval->describedclassvalue("guess_wavefunction");
+    compute_guess_=1;
     if (guess_wfn_.null()) {
+      compute_guess_=0;
       char *path = keyval->pcharvalue("guess_wavefunction");
       struct stat sb;
       if (path && stat(path, &sb)==0 && sb.st_size) {
@@ -358,8 +364,16 @@ SCF::initial_vector(int needv)
 
           // indent output of eigenvectors() call if there is any
           cout << incindent << incindent;
-          eigenvectors_ = guess_wfn_->eigenvectors();
-          eigenvalues_ = guess_wfn_->eigenvalues();
+          SCF *g = SCF::castdown(guess_wfn_.pointer());
+          if (!g || compute_guess_) {
+            eigenvectors_ = guess_wfn_->eigenvectors();
+            eigenvalues_ = guess_wfn_->eigenvalues();
+          } else {
+            eigenvectors_ = g->eigenvectors_.result_noupdate();
+            eigenvalues_ = g->eigenvalues_.result_noupdate();
+            eigenvectors_.result_noupdate()->schmidt_orthog(
+              overlap().pointer(), basis()->nbasis());
+          }
           cout << decindent << decindent;
         } else {
           cout << node0 << indent
@@ -427,21 +441,122 @@ SCF::init_mem(int nm)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if 0
 void
-SCF::so_density(const RefSymmSCMatrix d, double scale)
+SCF::so_density(const RefSymmSCMatrix& d, double occ)
 {
-  BlockedSCMatrix *bvec = BlockedSCMatrix::required_castdown(
-    scf_vector_, "SCF::so_density: blocked vector");
+  int i,j,k;
+  int me=scf_grp_->me();
+  int nproc=scf_grp_->n();
   
-  if (local_ || local_dens_) {
-    // first lets get the occupied bits of the scf vector
+  RefPetiteList pl = integral()->petite_list(basis());
+  
+  BlockedSCMatrix *bvec = BlockedSCMatrix::require_castdown(
+    scf_vector_, "SCF::so_density: blocked vector");
+
+  BlockedSymmSCMatrix *bd = BlockedSymmSCMatrix::require_castdown(
+    d, "SCF::so_density: blocked density");
+  
+  for (int ir=0; ir < pl->nirrep(); ir++) {
+    RefSCMatrix vir = bvec->block(ir);
+    RefSymmSCMatrix dir = bd->block(ir);
     
-    double *pmat;
-    RefSymmSCMatrix ptmp = get_local_data(d, pmat, SCF::Accum);
+    if (vir.null() || vir.ncol()==0)
+      continue;
+    
+    int nbasis = vir.ncol();
+    
+    // figure out which columns of the scf vector we'll need
+    int col0 = -1, coln = -1;
+    for (i=0; i < nbasis; i++) {
+      double occi = occupation(ir, i);
+
+      if (fabs(occi-occ) < 1.0e-8) {
+        if (col0 == -1)
+          col0 = i;
+        continue;
+      } else if (col0 != -1) {
+        coln = i-1;
+        break;
+      }
+    }
+
+    if (col0 == -1)
+      continue;
+
+    if (coln == -1)
+      coln = nbasis-1;
+    
+    if (local_ || local_dens_) {
+      RefSymmSCMatrix ldir = dir;
+
+      RefSCMatrix occbits; // holds the occupied bits of the scf vector
+
+      // get local copies of vector and density matrix
+      if (!local_) {
+        RefSCMatrixKit rk = new ReplSCMatrixKit;
+        RefSCMatrix lvir = rk->matrix(vir.rowdim(), vir.coldim());
+        lvir->convert(vir);
+        occbits = lvir->get_subblock(0, nbasis-1, col0, coln);
+        lvir = 0;
+
+        ldir = rk->symmmatrix(dir.dim());
+        ldir->convert(dir);
+
+      } else {
+        occbits = vir->get_subblock(0, nbasis-1, col0, coln);
+      }
+    
+      double **c;
+      double *dens;
+      
+      if (LocalSCMatrix::castdown(occbits.pointer()))
+        c = LocalSCMatrix::castdown(occbits.pointer())->get_rows();
+      else if (ReplSCMatrix::castdown(occbits.pointer()))
+        c = ReplSCMatrix::castdown(occbits.pointer())->get_rows();
+      else
+        abort();
+
+      if (LocalSymmSCMatrix::castdown(ldir.pointer()))
+        dens = LocalSymmSCMatrix::castdown(ldir.pointer())->get_data();
+      else if (ReplSymmSCMatrix::castdown(ldir.pointer()))
+        dens = ReplSymmSCMatrix::castdown(ldir.pointer())->get_data();
+      else
+        abort();
+
+      int ij=0;
+      for (i=0; i < nbasis; i++) {
+        for (j=0; j <= i; j++, ij++) {
+          if (ij%nproc != me)
+            continue;
+          
+          double dv = 0;
+
+          int kk=0;
+          for (k=col0; k <= coln; k++, kk++)
+            dv += c[i][kk]*c[j][kk];
+
+          dens[ij] = dv;
+        }
+      }
+
+      if (nproc > 1)
+        scf_grp_->sum(dens, i_offset(nbasis));
+
+      if (!local_) {
+        dir->convert(ldir);
+      }
+    }
+
+    // for now quit
+    else {
+      cerr << node0 << indent
+           << "Cannot yet use anything but Local matrices"
+           << endl;
+      abort();
+    }
   }
 }
-#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

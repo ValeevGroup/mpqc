@@ -50,6 +50,7 @@ class SCF: public OneBodyWavefunction {
 #   include <util/class/classda.h>
   private:
     int need_vec_;
+    int compute_guess_;
     
   protected:
     RefOneBodyWavefunction guess_wfn_;
@@ -105,6 +106,8 @@ class SCF: public OneBodyWavefunction {
     // how much memory that will require and then set the local_dens_
     // variable accordingly
     void init_mem(int);
+    
+    void so_density(const RefSymmSCMatrix& d, double scale);
     
   public:
     SCF(StateIn&);

@@ -337,7 +337,9 @@ Int2eV3::source_space(int nsource)
 {
   if (nsourcemax < nsource) {
       if (source) free(source);
-      source = (double*) malloc(sizeof(double)*nsource);
+      source = (double*) malloc(sizeof(double)*nsource*3);
+      target = &source[nsource];
+      scratch = &source[nsource*2];
       nsourcemax = nsource;
     }
 }
@@ -742,9 +744,9 @@ Int2eV3::do_gencon_sparse_transform_2e(Integral*integ,
 }
 
 void
-Int2eV3::transform_2e(Integral *integ, double *integrals, double *target,
-                      GaussianShell *sh1, GaussianShell *sh2,
-                      GaussianShell *sh3, GaussianShell *sh4)
+Int2eV3::transform_2e_slow(Integral *integ, double *integrals, double *target,
+                           GaussianShell *sh1, GaussianShell *sh2,
+                           GaussianShell *sh3, GaussianShell *sh4)
 {
   int pure1 = sh1->has_pure();
   int pure2 = sh2->has_pure();
@@ -781,7 +783,336 @@ Int2eV3::transform_2e(Integral *integ, double *integrals, double *target,
 
 /////////////////////////////////////////////////////////////////////////////
 
+static void
+do_sparse_transform2_1new(double *source, double *target,
+                          SphericalTransformIter& trans,
+                          int stcart, int stpure,
+                          int n2,
+                          int n3,
+                          int n4)
+{
+  int i234, n234=n2*n3*n4;
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+    double coef = trans.coef();
+    int pure = trans.pureindex();
+    int cart = trans.cartindex();
+    int offtarget4 = pure*n234;
+    int offsource4 = cart*n234;
+    for (i234=0; i234<n234; i234++,offtarget4++,offsource4++) {
+      target[offtarget4] += coef * source[offsource4];
+      }
+    }
+}
+
+static void
+do_sparse_transform2_2new(double *source, double *target,
+                          SphericalTransformIter& trans,
+                          int stcart, int stpure,
+                          int n1,
+                          int n3,
+                          int n4)
+{
+  int i1, i34, n34=n3*n4;
+  int n34stpure=n34*(stpure-1); // -1 because of the increment int the loop
+  int n34stcart=n34*(stcart-1); // ditto
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+    double coef = trans.coef();
+    int pure = trans.pureindex();
+    int cart = trans.cartindex();
+    int offtarget4 = pure*n34;
+    int offsource4 = cart*n34;
+    for (i1=0; i1<n1; i1++) {
+      for (i34=0; i34<n34; i34++,offtarget4++,offsource4++) {
+        target[offtarget4] += coef * source[offsource4];
+        }
+      offtarget4 += n34stpure;
+      offsource4 += n34stcart;
+      }
+    }
+}
+
+static void
+do_sparse_transform2_3new(double *source, double *target,
+                          SphericalTransformIter& trans,
+                          int stcart, int stpure,
+                          int n1,
+                          int n2,
+                          int n4)
+{
+  int i12, i4, n12=n1*n2, n4stpure=n4*stpure, n4stcart=n4*stcart;
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+    double coef = trans.coef();
+    int pure = trans.pureindex();
+    int cart = trans.cartindex();
+    int offtarget3 = pure*n4;
+    int offsource3 = cart*n4;
+    for (i12=0; i12<n12; i12++) {
+      int offtarget4 = offtarget3;
+      int offsource4 = offsource3;
+      for (i4=0; i4<n4; i4++,offtarget4++,offsource4++) {
+        target[offtarget4] += coef * source[offsource4];
+        }
+      offtarget3 += n4stpure;
+      offsource3 += n4stcart;
+      }
+    }
+}
+
+static void
+do_sparse_transform2_4new(double *source, double *target,
+                          SphericalTransformIter& trans,
+                          int stcart, int stpure,
+                          int n1,
+                          int n2,
+                          int n3)
+{
+  int n123=n1*n2*n3;
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+    double coef = trans.coef();
+    int pure = trans.pureindex();
+    int cart = trans.cartindex();
+    int off1 = 0;
+    int offtarget4 = pure;
+    int offsource4 = cart;
+    for (int i123=0; i123<n123; i123++) {
+      target[offtarget4] += coef * source[offsource4];
+      offtarget4 += stpure;
+      offsource4 += stcart;
+      }
+    }
+}
+
+// Cartint and pureint may overlap.  The must be enough space
+// in pureint to hold all the cartints.  The cartint buffer
+// will be overwritten in any case.
+void
+Int2eV3::transform_2e(Integral *integ,
+                      double *cartint, double *pureint,
+                      GaussianShell *sh1, GaussianShell *sh2,
+                      GaussianShell *sh3, GaussianShell *sh4)
+{
+  int pure1 = sh1->has_pure();
+  int pure2 = sh2->has_pure();
+  int pure3 = sh3->has_pure();
+  int pure4 = sh4->has_pure();
+
+  int nfunc1=sh1->nfunction();
+  int nfunc2=sh2->nfunction();
+  int nfunc3=sh3->nfunction();
+  int nfunc4=sh4->nfunction();
+  int nfunc34 =  nfunc3 * nfunc4;
+  int nfunc234 = nfunc2 * nfunc34;
+  int nfunc1234 = nfunc1 * nfunc234;
+
+  if (!pure1 && !pure2 && !pure3 && !pure4) {
+    if (pureint!=cartint) memmove(pureint, cartint, sizeof(double)*nfunc1234);
+    return;
+    }
+
+  int ncart1=sh1->ncartesian();
+  int ncart2=sh2->ncartesian();
+  int ncart3=sh3->ncartesian();
+  int ncart4=sh4->ncartesian();
+  int ncart34 =  ncart3 * ncart4;
+  int ncart234 = ncart2 * ncart34;
+
+  // allocate the scratch arrays, if needed
+  source_space(ncart1*ncart234);
+
+  int ncon1 = sh1->ncontraction();
+  int ncon2 = sh2->ncontraction();
+  int ncon3 = sh3->ncontraction();
+  int ncon4 = sh4->ncontraction();
+
+  if (ncon1==1 && ncon2==1 && ncon3==1 && ncon4==1) {
+    double *sourcebuf = cartint;
+    double *targetbuf = target;
+    // transform indices
+    if (pure1) {
+      SphericalTransformIter transi(integ->spherical_transform(sh1->am(0)));
+      memset(targetbuf,0,sizeof(double)*nfunc1*ncart2*ncart3*ncart4);
+      do_sparse_transform2_1new(sourcebuf, targetbuf, transi,
+                                ncart1, nfunc1,
+                                ncart2,
+                                ncart3,
+                                ncart4);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    if (pure2) {
+      SphericalTransformIter transj(integ->spherical_transform(sh2->am(0)));
+      memset(targetbuf,0,sizeof(double)*nfunc1*nfunc2*ncart3*ncart4);
+      do_sparse_transform2_2new(sourcebuf, targetbuf, transj,
+                                ncart2, nfunc2,
+                                nfunc1,
+                                ncart3,
+                                ncart4);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    if (pure3) {
+      SphericalTransformIter transk(integ->spherical_transform(sh3->am(0)));
+      memset(targetbuf,0,sizeof(double)*nfunc1*nfunc2*nfunc3*ncart4);
+      do_sparse_transform2_3new(sourcebuf, targetbuf, transk,
+                                ncart3, nfunc3,
+                                nfunc1,
+                                nfunc2,
+                                ncart4);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    if (pure4) {
+      SphericalTransformIter transl(integ->spherical_transform(sh4->am(0)));
+      memset(targetbuf,0,sizeof(double)*nfunc1234);
+      do_sparse_transform2_4new(sourcebuf, targetbuf, transl,
+                                ncart4, nfunc4,
+                                nfunc1,
+                                nfunc2,
+                                nfunc3);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    if (sourcebuf!=pureint)
+      memmove(pureint, sourcebuf, sizeof(double)*nfunc1234);
+    }
+  else {
+    // begin gc loop
+    int ogccart1 = 0;
+    int ogcfunc1 = 0;
+    for (int i=0; i<ncon1; i++) {
+      int am1 = sh1->am(i);
+      int nfunci = sh1->nfunction(i);
+      int ispurei = sh1->is_pure(i);
+      int ncarti = INT_NCART_NN(am1);
+      int ogccart2 = 0;
+      int ogcfunc2 = 0;
+      SphericalTransformIter transi(integ->spherical_transform(am1));
+      for (int j=0; j<ncon2; j++) {
+        int am2 = sh2->am(j);
+        int nfuncj = sh2->nfunction(j);
+        int ispurej = sh2->is_pure(j);
+        int ncartj = INT_NCART_NN(am2);
+        int ogccart3 = 0;
+        int ogcfunc3 = 0;
+        SphericalTransformIter transj(integ->spherical_transform(am2));
+        for (int k=0; k<ncon3; k++) {
+          int am3 = sh3->am(k);
+          int nfunck = sh3->nfunction(k);
+          int ispurek = sh3->is_pure(k);
+          int ncartk = INT_NCART_NN(am3);
+          int ogccart4 = 0;
+          int ogcfunc4 = 0;
+          SphericalTransformIter transk(integ->spherical_transform(am3));
+          for (int l=0; l<ncon4; l++) {
+            int am4 = sh4->am(l);
+            int nfuncl = sh4->nfunction(l);
+            int ispurel = sh4->is_pure(l);
+            int ncartl = INT_NCART_NN(am4);
+    
+    ;
+    // copy to source buffer
+    int cartindex1 = ogccart1*ncart234
+                   + ogccart2*ncart34 + ogccart3*ncart4 + ogccart4;
+    double *tmp_source = source;
+    for (int is=0; is<ncarti; is++) {
+      int cartindex12 = cartindex1;
+      for (int js=0; js<ncartj; js++) {
+        int cartindex123 = cartindex12;
+        for (int ks=0; ks<ncartk; ks++) {
+          double *tmp_cartint = &cartint[cartindex123];
+          for (int ls=0; ls<ncartl; ls++) {
+            *tmp_source++ = *tmp_cartint++;
+            }
+          cartindex123 += ncart4;
+          }
+        cartindex12 += ncart34;
+        }
+      cartindex1 += ncart234;
+      }
+    
+    
+    double *sourcebuf = source;
+    double *targetbuf = target;
+    
+    // transform indices
+    if (ispurei) {
+      memset(targetbuf,0,sizeof(double)*nfunci*ncartj*ncartk*ncartl);
+      do_sparse_transform2_1new(sourcebuf, targetbuf, transi,
+                                ncarti, nfunci,
+                                ncartj,
+                                ncartk,
+                                ncartl);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    if (ispurej) {
+      memset(targetbuf,0,sizeof(double)*nfunci*nfuncj*ncartk*ncartl);
+      do_sparse_transform2_2new(sourcebuf, targetbuf, transj,
+                                ncartj, nfuncj,
+                                nfunci,
+                                ncartk,
+                                ncartl);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    if (ispurek) {
+      memset(targetbuf,0,sizeof(double)*nfunci*nfuncj*nfunck*ncartl);
+      do_sparse_transform2_3new(sourcebuf, targetbuf, transk,
+                                ncartk, nfunck,
+                                nfunci,
+                                nfuncj,
+                                ncartl);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    if (ispurel) {
+      memset(targetbuf,0,sizeof(double)*nfunci*nfuncj*nfunck*nfuncl);
+      SphericalTransformIter transl(integ->spherical_transform(am4));
+      do_sparse_transform2_4new(sourcebuf, targetbuf, transl,
+                                ncartl, nfuncl,
+                                nfunci,
+                                nfuncj,
+                                nfunck);
+      double*tmp=sourcebuf; sourcebuf=targetbuf; targetbuf=tmp;
+      }
+    
+    // copy to scratch buffer
+    int funcindex1 = ogcfunc1*nfunc234
+                   + ogcfunc2*nfunc34 + ogcfunc3*nfunc4 + ogcfunc4;
+    tmp_source = sourcebuf;
+    for (int is=0; is<nfunci; is++) {
+      int funcindex12 = funcindex1;
+      for (int js=0; js<nfuncj; js++) {
+        int funcindex123 = funcindex12;
+        for (int ks=0; ks<nfunck; ks++) {
+          double *tmp_scratch = &scratch[funcindex123];
+          for (int ls=0; ls<nfuncl; ls++) {
+            *tmp_scratch++ = *tmp_source++;
+            }
+          funcindex123 += nfunc4;
+          }
+        funcindex12 += nfunc34;
+        }
+      funcindex1 += nfunc234;
+      }
+    
+    // end gc loop
+            ogccart4 += ncartl;
+            ogcfunc4 += nfuncl;
+            }
+          ogccart3 += ncartk;
+          ogcfunc3 += nfunck;
+          }
+        ogccart2 += ncartj;
+        ogcfunc2 += nfuncj;
+        }
+      ogccart1 += ncarti;
+      ogcfunc1 += nfunci;
+      }
+    memcpy(pureint, scratch, sizeof(double)*nfunc1234);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 // Local Variables:
 // mode: c++
-// c-file-style: "CLJ"
+// c-file-style: "CLJ-CONDENSED"
 // End:

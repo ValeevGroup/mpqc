@@ -280,6 +280,8 @@ class Int2eV3: public VRefCount {
     // from tformv3.cc
   protected:
     double *source;
+    double *target;
+    double *scratch;
     int nsourcemax;
     // transform implementation functions:
     void transform_init();
@@ -293,6 +295,10 @@ class Int2eV3: public VRefCount {
                                        GaussianShell *sh3, GaussianShell *sh4);
     // functions for general use outside of tformv3.cc:
     // integrals and target may overlap
+    void transform_2e_slow(Integral *,
+                      double *integrals, double *target,
+                      GaussianShell *sh1, GaussianShell *sh2,
+                      GaussianShell *sh3, GaussianShell *sh4);
     void transform_2e(Integral *,
                       double *integrals, double *target,
                       GaussianShell *sh1, GaussianShell *sh2,

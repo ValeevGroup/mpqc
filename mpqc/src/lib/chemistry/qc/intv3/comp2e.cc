@@ -428,22 +428,22 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   for (i=0; i<int_shell1->ncontraction(); i++) {
     tam1 = int_shell1->am(i) + dam1;
     if (tam1 < 0) continue;
-    int tsize1 = INT_NCART(tam1);
+    int tsize1 = INT_NCART_NN(tam1);
     ogc2 = 0;
     for (j=0; j<int_shell2->ncontraction(); j++) {
       tam2 = int_shell2->am(j) + dam2;
       if (tam2 < 0) continue;
-      int tsize2 = INT_NCART(tam2);
+      int tsize2 = INT_NCART_NN(tam2);
       ogc3 = 0;
       for (k=0; k<int_shell3->ncontraction(); k++) {
         tam3 = int_shell3->am(k) + dam3;
         if (tam3 < 0) continue;
-        int tsize3 = INT_NCART(tam3);
+        int tsize3 = INT_NCART_NN(tam3);
         ogc4 = 0;
         for (l=0; l<int_shell4->ncontraction(); l++) {
           tam4 = int_shell4->am(l) + dam4;
           if (tam4 < 0) continue;
-          int tsize4 = INT_NCART(tam4);
+          int tsize4 = INT_NCART_NN(tam4);
 
 #ifdef EREP_TIMING
   tim_change("shift");
@@ -585,13 +585,13 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     }
 
     /* End loop over generalized contractions. */
-          ogc4 += INT_NCART(tam4);
+          ogc4 += tsize4;
           }
-        ogc3 += INT_NCART(tam3);
+        ogc3 += tsize3;
         }
-      ogc2 += INT_NCART(tam2);
+      ogc2 += tsize2;
       }
-    ogc1 += INT_NCART(tam1);
+    ogc1 += tsize1;
     }
 #if 0
   cout << scprintf("\n");

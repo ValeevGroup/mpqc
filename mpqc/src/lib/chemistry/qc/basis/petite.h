@@ -9,6 +9,7 @@
 #include <util/ref/ref.h>
 #include <util/container/array.h>
 #include <math/scmat/blocked.h>
+#include <math/scmat/offset.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussbas.h>
 
@@ -79,10 +80,6 @@ class PetiteList : public VRefCount {
 
     int *nbf_in_ir_;
 
-    inline int ioff(int i) const { return i*(i+1)>>1; }
-    inline int ioff(int i, int j) const
-      { return (i>=j) ? ioff(i)+j : ioff(j)+i; }
-    
     void init();
 
   public:
@@ -94,7 +91,7 @@ class PetiteList : public VRefCount {
     int atom_map(int n, int g) const { return atom_map_[n][g]; }
     int shell_map(int n, int g) const { return shell_map_[n][g]; }
     int lambda(int ij) const { return (int) lamij_[ij]; }
-    int lambda(int i, int j) const { return (int) lamij_[ioff(i,j)]; }
+    int lambda(int i, int j) const { return (int) lamij_[ij_offset(i,j)]; }
 
     int in_p1(int n) const { return (int) p1_[n]; }
     int in_p2(int ij) const { return (int) lamij_[ij]; }
@@ -117,13 +114,13 @@ class PetiteList : public VRefCount {
 inline int
 PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
 {
-  int ijkl = ioff(ij)+kl;
+  int ijkl = i_offset(ij)+kl;
   int nijkl=0;
 
   for (int g=0; g < ng_; g++) {
-    int gij = ioff(shell_map_[i][g],shell_map_[j][g]);
-    int gkl = ioff(shell_map_[k][g],shell_map_[l][g]);
-    int gijkl = ioff(gij,gkl);
+    int gij = ij_offset(shell_map_[i][g],shell_map_[j][g]);
+    int gkl = ij_offset(shell_map_[k][g],shell_map_[l][g]);
+    int gijkl = ij_offset(gij,gkl);
 
     if (gijkl > ijkl)
       return 0;

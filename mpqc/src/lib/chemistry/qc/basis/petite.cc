@@ -90,7 +90,7 @@ PetiteList::init()
 
   // allocate storage for arrays
   p1_ = new char[nshell_];
-  lamij_ = new char[ioff(nshell_)];
+  lamij_ = new char[i_offset(nshell_)];
 
   atom_map_ = new int*[natom_];
   for (i=0; i < natom_; i++)
@@ -133,7 +133,7 @@ PetiteList::init()
   }
 
   memset(p1_,0,nshell_);
-  memset(lamij_,0,ioff(nshell_));
+  memset(lamij_,0,i_offset(nshell_));
   
   // now we do p1_ and lamij_
   for (i=0; i < nshell_; i++) {
@@ -151,7 +151,7 @@ PetiteList::init()
     p1_[i] = 1;
 
     for (int j=0; j <= i; j++) {
-      int ij = ioff(i)+j;
+      int ij = i_offset(i)+j;
       int nij = 0;
 
       // test to see if IJ is in the group P2, if it is, then set lambda(ij)
@@ -162,7 +162,7 @@ PetiteList::init()
       for (gg=0; gg < ng_; gg++) {
         int gi = shell_map_[i][gg];
         int gj = shell_map_[j][gg];
-        int gij = ioff(gi,gj);
+        int gij = ij_offset(gi,gj);
         if (gij > ij)
           break;
         else if (gij == ij)
@@ -299,7 +299,7 @@ PetiteList::print(FILE *o, int verbose)
     for (i=0; i < nshell_; i++) {
       fprintf(o,"    ");
       for (int j=0; j <= i; j++)
-        fprintf(o,"%5d ",lamij_[ioff(i)+j]);
+        fprintf(o,"%5d ",lamij_[i_offset(i)+j]);
       fprintf(o,"\n");
     }
     fprintf(o,"\n");

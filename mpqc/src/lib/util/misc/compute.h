@@ -47,7 +47,7 @@ class Result
     // Compute::compute() will be called.
     void update();
   public:
-    inline Result(Compute*c):_c(c) { c->add(this); };
+    inline Result(Compute*c):_c(c),_compute(0),_computed(0) { c->add(this); };
     inline int& compute() { return _compute; };
     inline int compute(int c) { int r = _compute; _compute = c; return r; };
     inline int& computed() { return _computed; };
@@ -66,6 +66,7 @@ class Result ## T: public Result {					      \
     inline T* operator ->() { update(); return &_result; };		      \
     inline T& result() { update(); return _result; };			      \
     inline T& result_noupdate() { return _result; };			      \
+    inline void operator=(T& a) { _result = a; };			      \
 }
 
 // Results for some common type

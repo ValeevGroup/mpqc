@@ -47,7 +47,7 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libkeyval.so
 endif
 
-keyvaltest: keyvaltest.o libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) libclass.$(LIBSUF) libmisc.$(LIBSUF)
+keyvaltest: keyvaltest.o libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o keyvaltest $^ $(SYSLIBS)
 
 keyvaltest.o: keyvaltest.cc

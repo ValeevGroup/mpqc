@@ -41,7 +41,7 @@
 
 #include <mpi.h>
 
-static const int dbufsize = 8192;
+static const int dbufsize = 32768;
 
 ///////////////////////////////////////////////////////////////////////
 // The MTMPIThread class
@@ -49,14 +49,21 @@ static const int dbufsize = 8192;
 class MTMPIThread: public Thread {
   private:
     MTMPIMemoryGrp *mem_;
+    int req_type_;
+    int to_type_;
+    int fr_type_;
   public:
-    MTMPIThread(MTMPIMemoryGrp *);
+    MTMPIThread(MTMPIMemoryGrp *, int reqtype, int totype, int fromtype);
     void run();
 };
 
-MTMPIThread::MTMPIThread(MTMPIMemoryGrp *mem)
+MTMPIThread::MTMPIThread(MTMPIMemoryGrp *mem,
+                         int reqtype, int totype, int fromtype)
 {
   mem_ = mem;
+  req_type_ = reqtype;
+  to_type_ = totype;
+  fr_type_ = fromtype;
 }
 
 void
@@ -73,7 +80,7 @@ MTMPIThread::run()
   char junk;
   while (1) {
       MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
-               mem_->req_type_,MPI_COMM_WORLD,&status);
+               req_type_,MPI_COMM_WORLD,&status);
       if (mem_->debug_) {
           mem_->print_lock_->lock();
           req.print("RECV",mem_->hout);
@@ -92,16 +99,16 @@ MTMPIThread::run()
           return;
       case MemoryDataRequest::Retrieve:
           MPI_Send(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
-                   req.node(),mem_->fr_type_,MPI_COMM_WORLD);
+                   req.node(),fr_type_,MPI_COMM_WORLD);
           break;
       case MemoryDataRequest::Replace:
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),fr_type_,MPI_COMM_WORLD);
           MPI_Recv(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
-                   req.node(),mem_->to_type_,MPI_COMM_WORLD,&status);
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
+                   req.node(),to_type_,MPI_COMM_WORLD,&status);
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),fr_type_,MPI_COMM_WORLD);
           break;
       case MemoryDataRequest::DoubleSum:
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),fr_type_,MPI_COMM_WORLD);
           dsize = req.size()/sizeof(double);
           dremain = dsize;
           doffset = req.offset()/sizeof(double);
@@ -110,7 +117,7 @@ MTMPIThread::run()
               int dchunksize = dbufsize;
               if (dremain < dchunksize) dchunksize = dremain;
               MPI_Recv(chunk,dchunksize,MPI_DOUBLE,
-                       req.node(),mem_->to_type_,MPI_COMM_WORLD,&status);
+                       req.node(),to_type_,MPI_COMM_WORLD,&status);
               double *source_data = &((double*)mem_->data_)[doffset];
               for (i=0; i<dchunksize; i++) {
                   source_data[i] += chunk[i];
@@ -119,7 +126,7 @@ MTMPIThread::run()
               doffset += dchunksize;
             }
           mem_->unlockcomm(l);
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),fr_type_,MPI_COMM_WORLD);
           break;
       default:
           mem_->print_lock_->lock();
@@ -153,7 +160,7 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefMessageGrp& msg,
 
   th_ = th;
 
-  init_mtmpimg();
+  init_mtmpimg(th_->nthread() + 1);
 }
 
 MTMPIMemoryGrp::MTMPIMemoryGrp(const RefKeyVal& keyval):
@@ -163,23 +170,31 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefKeyVal& keyval):
 
   th_ = ThreadGrp::get_default_threadgrp();
 
-  init_mtmpimg();
+  KeyValValueint nthreaddef(th_->nthread() + 1);
+  int nthread = keyval->intvalue("num_threads",nthreaddef);
+  cout << node0 << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
+
+  init_mtmpimg(nthread);
 }
 
 MTMPIMemoryGrp::~MTMPIMemoryGrp()
 {
   deactivate();
+  for (int i=0; i<th_->nthread()-1; i++) {
+      delete[] thread_[i];
+    }
   delete thread_;
 }
 
 void
-MTMPIMemoryGrp::init_mtmpimg()
+MTMPIMemoryGrp::init_mtmpimg(int nthread)
 {
+  int i;
   active_ = 0;
 
-  th_ = th_->clone(2);
-  if (th_->nthread() != 2) {
-      cout << "MTMPIMemoryGrp didn't get the right number of threads" << endl;
+  th_ = th_->clone(nthread);
+  if (th_->nthread() < 2) {
+      cout << "MTMPIMemoryGrp didn't get enough threads" << endl;
       abort();
     }
 
@@ -195,11 +210,14 @@ MTMPIMemoryGrp::init_mtmpimg()
   to_type_ = 9126;
   fr_type_ = 9127;
 
-  thread_ = new MTMPIThread(this);
+  thread_ = new Thread*[nthread-1];
+  th_->add_thread(0,0);
+  for (i=1; i<nthread; i++) {
+      thread_[i-1] = new MTMPIThread(this,req_type_,to_type_,fr_type_);
+      th_->add_thread(i,thread_[i-1]);
+    }
   mem_lock_ = th_->new_lock();
   print_lock_ = th_->new_lock();
-  th_->add_thread(0,0);
-  th_->add_thread(1,thread_);
 }
 
 long
@@ -314,7 +332,9 @@ MTMPIMemoryGrp::deactivate()
       req.print("SEND",mout);
       print_lock_->unlock();
     }
-  MPI_Send(req.data(),req.nbytes(),MPI_BYTE,me(),req_type_,MPI_COMM_WORLD);
+  for (int i=1; i<th_->nthread(); i++) {
+      MPI_Send(req.data(),req.nbytes(),MPI_BYTE,me(),req_type_,MPI_COMM_WORLD);
+    }
 
   // wait on the thread to shutdown
   th_->wait_threads();

@@ -113,7 +113,7 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
 
     // the defaults for these produce an error
     virtual void send_lock_request(MemoryLockRequest::Request,
-                                   int offset, int size);
+                                   distsize_t offset, int size);
     virtual void wait_for_lock();
 
     virtual void retrieve_data(void *, int node, int offset, int size) = 0;
@@ -129,13 +129,13 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     virtual long lockcomm();
     virtual void unlockcomm(long oldvalue);
 
-    void *obtain_writeonly(int offset, int size);
-    void *obtain_readwrite(int offset, int size);
-    void *obtain_readonly(int offset, int size);
-    void release_read(void *data, int offset, int size);
-    void release_write(void *data, int offset, int size);
+    void *obtain_writeonly(distsize_t offset, int size);
+    void *obtain_readwrite(distsize_t offset, int size);
+    void *obtain_readonly(distsize_t offset, int size);
+    void release_read(void *data, distsize_t offset, int size);
+    void release_write(void *data, distsize_t offset, int size);
 
-    void sum_reduction(double *data, int doffset, int dsize);
+    void sum_reduction(double *data, distsize_t doffset, int dsize);
 
     void print(ostream &o = cout) const;
 };

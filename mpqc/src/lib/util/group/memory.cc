@@ -46,7 +46,7 @@ MemoryGrpBuf<data_t>::MemoryGrpBuf(const RefMemoryGrp & grp)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::writeonly(int offset, int length)
+MemoryGrpBuf<data_t>::writeonly(distsize_t offset, int length)
 {
   if (locktype_ != None) release();
   data_ = (data_t *) grp_->obtain_writeonly(sizeof(data_t)*offset,
@@ -59,7 +59,7 @@ MemoryGrpBuf<data_t>::writeonly(int offset, int length)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::readwrite(int offset, int length)
+MemoryGrpBuf<data_t>::readwrite(distsize_t offset, int length)
 {
   if (locktype_ != None) release();
   data_ = (data_t *) grp_->obtain_readwrite(sizeof(data_t)*offset,
@@ -72,7 +72,7 @@ MemoryGrpBuf<data_t>::readwrite(int offset, int length)
 
 template <class data_t>
 const data_t *
-MemoryGrpBuf<data_t>::readonly(int offset, int length)
+MemoryGrpBuf<data_t>::readonly(distsize_t offset, int length)
 {
   if (locktype_ != None) release();
   data_ = (data_t *) grp_->obtain_readonly(sizeof(data_t)*offset,

@@ -40,7 +40,8 @@
 #ifdef __GNUC__
 typedef unsigned long long distsize_t;
 #else
-typedef unsigned long distsize_t;
+typedef unsigned long long distsize_t;
+//typedef unsigned long distsize_t;
 #endif
 
 //. The \clsnm{MemoryGrp} abstract class provides the appearance of global
@@ -56,16 +57,16 @@ class MemoryGrp: public DescribedClass {
     // ~MemoryGrp deletes the arrays
     int me_;
     int n_;
-    int *offsets_; // offsets_[n_] is the fence for all data
+    distsize_t *offsets_; // offsets_[n_] is the fence for all data
 
     // release locks to the local memory
-    void release_read_(int offset, int size);
-    void release_write_(int offset, int size);
+    void release_read_(distsize_t offset, int size);
+    void release_write_(distsize_t offset, int size);
 
     // obtains locks to the local memory
     // return 1 if the lock was obtained, otherwise 0
-    int obtain_read_(int offset, int size);
-    int obtain_write_(int offset, int size);
+    int obtain_read_(distsize_t offset, int size);
+    int obtain_write_(distsize_t offset, int size);
 
     int use_locks_;
 
@@ -88,13 +89,13 @@ class MemoryGrp: public DescribedClass {
     //. Returns the amount of memory residing locally on \srccd{me()};
     int localsize() { return offsets_[me_+1] - offsets_[me_]; }
     //. Returns the global offset to this node's memory.
-    int localoffset() { return offsets_[me_]; }
+    distsize_t localoffset() { return offsets_[me_]; }
     //. Returns the amount of memory residing on \vrbl{node}.
     int size(int node) { return offsets_[node+1] - offsets_[node]; }
     //. Returns the global offset to \vrbl{node}'s memory.
-    int offset(int node) { return offsets_[node]; }
+    distsize_t offset(int node) { return offsets_[node]; }
     //. Returns the sum of all memory allocated on all nodes.
-    int totalsize() { return offsets_[n_]; }
+    distsize_t totalsize() { return offsets_[n_]; }
 
     //. Activate is called before the memory is to be used and
     //. deactivate is called afterwards.  (Necessary to avoid
@@ -109,13 +110,13 @@ class MemoryGrp: public DescribedClass {
     virtual void lock(int truefalse);
 
     //. These are should only used by MemoryGrpBuf objects.
-    virtual void *obtain_writeonly(int offset, int size);
-    virtual void *obtain_readwrite(int offset, int size) = 0;
-    virtual void *obtain_readonly(int offset, int size) = 0;
-    virtual void release_read(void *data, int offset, int size) = 0;
-    virtual void release_write(void *data, int offset, int size) = 0;
+    virtual void *obtain_writeonly(distsize_t offset, int size);
+    virtual void *obtain_readwrite(distsize_t offset, int size) = 0;
+    virtual void *obtain_readonly(distsize_t offset, int size) = 0;
+    virtual void release_read(void *data, distsize_t offset, int size) = 0;
+    virtual void release_write(void *data, distsize_t offset, int size) = 0;
 
-    virtual void sum_reduction(double *data, int doffset, int dsize);
+    virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
     virtual void sum_reduction_on_node(double *data, int doffset, int dsize,
                                        int node = -1);
 
@@ -167,17 +168,17 @@ class MemoryGrpBuf {
     //. \vrbl{offset} and with size \vrbl{length}.  Writing the same
     //. bit of memory twice without an intervening sync of the MemoryGrp
     //. will have undefined results.
-    data_t *writeonly(int offset, int length);
+    data_t *writeonly(distsize_t offset, int length);
     //. Request read write access to global memory at the global address
     //. \vrbl{offset} and with size \vrbl{length}.  This will lock the
     //. memory it uses until release is called unless locking has been
     //. turned off in the MemoryGrp object.
-    data_t *readwrite(int offset, int length);
+    data_t *readwrite(distsize_t offset, int length);
     //. Request read only access to global memory at the global address
     //. \vrbl{offset} and with size \vrbl{length}.  Writing to the
     //. specified region without an intervening sync of the MemoryGrp
     //. will have undefined results.
-    const data_t *readonly(int offset, int length);
+    const data_t *readonly(distsize_t offset, int length);
     //. These behave like \srccd{writeonly}, \srccd{readwrite}, and
     //. \srccd{readonly}, except the \vrbl{offset} is local to the
     //. node specified by \vrbl{node}.  If \vrbl{node} = -1, then

@@ -69,7 +69,7 @@ ProcMemoryGrp::set_localsize(int localsize)
 {
   delete[] offsets_;
   delete[] data_;
-  offsets_ = new int[2];
+  offsets_ = new distsize_t[2];
   offsets_[0] = 0;
   offsets_[1] = localsize;
   n_ = 1;
@@ -78,24 +78,24 @@ ProcMemoryGrp::set_localsize(int localsize)
 }
 
 void *
-ProcMemoryGrp::obtain_readwrite(int offset, int size)
+ProcMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   return &data_[offset];
 }
 
 void *
-ProcMemoryGrp::obtain_readonly(int offset, int size)
+ProcMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   return &data_[offset];
 }
 
 void
-ProcMemoryGrp::release_read(void *data, int offset, int size)
+ProcMemoryGrp::release_read(void *data, distsize_t offset, int size)
 {
 }
 
 void
-ProcMemoryGrp::release_write(void *data, int offset, int size)
+ProcMemoryGrp::release_write(void *data, distsize_t offset, int size)
 {
 }
 

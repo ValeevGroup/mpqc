@@ -79,7 +79,7 @@ MsgMemoryGrp::set_localsize(int localsize)
 {
   delete[] offsets_;
 
-  offsets_ = new int[n_ + 1];
+  offsets_ = new distsize_t[n_ + 1];
   int *sizes = new int[n_];
 
   int i;

@@ -239,7 +239,7 @@ AlphaMMapMemoryGrp::~AlphaMMapMemoryGrp()
 }
 
 void *
-AlphaMMapMemoryGrp::obtain_readwrite(int offset, int size)
+AlphaMMapMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
     cerr << scprintf("AlphaMMapMemoryGrp::obtain_readwrite: arg out of range\n");
@@ -288,7 +288,7 @@ AlphaMMapMemoryGrp::obtain_readwrite(int offset, int size)
 }
 
 void *
-AlphaMMapMemoryGrp::obtain_readonly(int offset, int size)
+AlphaMMapMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
     cerr << "AlphaMMapMemoryGrp::obtain_readonly: arg out of range" << endl;
@@ -325,7 +325,7 @@ AlphaMMapMemoryGrp::obtain_readonly(int offset, int size)
 }
 
 void
-AlphaMMapMemoryGrp::release_read(void *data, int offset, int size)
+AlphaMMapMemoryGrp::release_read(void *data, distsize_t offset, int size)
 {
   if (use_locks_) {
 #if SIMPLE_LOCK
@@ -345,7 +345,7 @@ AlphaMMapMemoryGrp::release_read(void *data, int offset, int size)
 }
 
 void
-AlphaMMapMemoryGrp::release_write(void *data, int offset, int size)
+AlphaMMapMemoryGrp::release_write(void *data, distsize_t offset, int size)
 {
   if (use_locks_) {
 #if SIMPLE_LOCK
@@ -438,7 +438,7 @@ AlphaMMapMemoryGrp::print(ostream &o)
 }
 
 void
-AlphaMMapMemoryGrp::sum_reduction(double *data, int doffset, int dlength)
+AlphaMMapMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 {
   int offset = doffset * sizeof(double);
   int length = dlength * sizeof(double);

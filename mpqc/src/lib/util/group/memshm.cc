@@ -358,7 +358,7 @@ ShmMemoryGrp::~ShmMemoryGrp()
 }
 
 void *
-ShmMemoryGrp::obtain_readwrite(int offset, int size)
+ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
       cerr << scprintf("ShmMemoryGrp::obtain_readwrite: arg out of range\n");
@@ -407,7 +407,7 @@ ShmMemoryGrp::obtain_readwrite(int offset, int size)
 }
 
 void *
-ShmMemoryGrp::obtain_readonly(int offset, int size)
+ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   if (offset + size > totalsize()) {
       cerr << scprintf("ShmMemoryGrp::obtain_readonly: arg out of range\n");
@@ -444,7 +444,7 @@ ShmMemoryGrp::obtain_readonly(int offset, int size)
 }
 
 void
-ShmMemoryGrp::release_read(void *data, int offset, int size)
+ShmMemoryGrp::release_read(void *data, distsize_t offset, int size)
 {
   if (use_locks_) {
 #if SIMPLE_LOCK
@@ -464,7 +464,7 @@ ShmMemoryGrp::release_read(void *data, int offset, int size)
 }
 
 void
-ShmMemoryGrp::release_write(void *data, int offset, int size)
+ShmMemoryGrp::release_write(void *data, distsize_t offset, int size)
 {
   if (use_locks_) {
 #if SIMPLE_LOCK
@@ -557,7 +557,7 @@ ShmMemoryGrp::print(ostream &o) const
 }
 
 void
-ShmMemoryGrp::sum_reduction(double *data, int doffset, int dlength)
+ShmMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 {
   int offset = doffset * sizeof(double);
   int length = dlength * sizeof(double);

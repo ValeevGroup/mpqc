@@ -172,7 +172,7 @@ MemoryDataRequestQueue::pop(MemoryDataRequest&r)
 
 class ActiveMsgMemoryIter {
   private:
-    int *offsets_;
+    distsize_t *offsets_;
     int n_;
 
     void *data_;
@@ -184,13 +184,13 @@ class ActiveMsgMemoryIter {
 
     int ready_;
 
-    int offset_;
+    distsize_t offset_;
     int size_;
   public:
-    ActiveMsgMemoryIter(void *data, int *offsets, int n);
+    ActiveMsgMemoryIter(void *data, distsize_t *offsets, int n);
 
     // iteration control
-    void begin(int offset, int size);
+    void begin(distsize_t offset, int size);
     int ready() { return ready_; }
     void next();
 
@@ -213,7 +213,7 @@ ActiveMsgMemoryIter::local(int offset, int size, int node)
 }
 
 ActiveMsgMemoryIter::ActiveMsgMemoryIter(void *data,
-                                         int *offsets,
+                                         distsize_t *offsets,
                                          int n):
   offsets_(offsets),
   n_(n),
@@ -223,14 +223,14 @@ ActiveMsgMemoryIter::ActiveMsgMemoryIter(void *data,
 }
 
 void
-ActiveMsgMemoryIter::begin(int offset, int size)
+ActiveMsgMemoryIter::begin(distsize_t offset, int size)
 {
   offset_ = offset;
   size_ = size;
 
   current_data_ = (char *) data_;
 
-  int fence = offset + size;
+  distsize_t fence = offset + size;
 
   for (node_ = 0; node_ < n_; node_++) {
       if (offset_ < offsets_[node_ + 1]) {
@@ -254,7 +254,7 @@ ActiveMsgMemoryIter::begin(int offset, int size)
 void
 ActiveMsgMemoryIter::next()
 {
-  int fence = offset_ + size_;
+  distsize_t fence = offset_ + size_;
 
   if (fence <= offsets_[node_ + 1]) {
       ready_ = 0;
@@ -327,7 +327,7 @@ ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()
 }
 
 void *
-ActiveMsgMemoryGrp::obtain_writeonly(int offset, int size)
+ActiveMsgMemoryGrp::obtain_writeonly(distsize_t offset, int size)
 {
   if (use_locks_) {
       send_lock_request(MemoryLockRequest::WriteOnly, offset, size);
@@ -338,7 +338,7 @@ ActiveMsgMemoryGrp::obtain_writeonly(int offset, int size)
 }
 
 void *
-ActiveMsgMemoryGrp::obtain_readwrite(int offset, int size)
+ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite entered\n"));
   if (use_locks_) {
@@ -364,7 +364,7 @@ ActiveMsgMemoryGrp::obtain_readwrite(int offset, int size)
 }
 
 void *
-ActiveMsgMemoryGrp::obtain_readonly(int offset, int size)
+ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
   if (use_locks_) {
       send_lock_request(MemoryLockRequest::ReadOnly, offset, size);
@@ -395,7 +395,7 @@ ActiveMsgMemoryGrp::obtain_readonly(int offset, int size)
 }
 
 void
-ActiveMsgMemoryGrp::sum_reduction(double *data, int doffset, int dsize)
+ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 {
   int offset = doffset * sizeof(double);
   int size = dsize * sizeof(double);
@@ -429,7 +429,7 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, int doffset, int dsize)
 }
 
 void
-ActiveMsgMemoryGrp::release_read(void *data, int offset, int size)
+ActiveMsgMemoryGrp::release_read(void *data, distsize_t offset, int size)
 {
   if (use_locks_) {
       send_lock_request(MemoryLockRequest::RelRead, offset, size);
@@ -438,7 +438,7 @@ ActiveMsgMemoryGrp::release_read(void *data, int offset, int size)
 }
 
 void
-ActiveMsgMemoryGrp::release_write(void *data, int offset, int size)
+ActiveMsgMemoryGrp::release_write(void *data, distsize_t offset, int size)
 {
   if (use_locks_) {
       send_lock_request(MemoryLockRequest::RelWrite, offset, size);
@@ -470,7 +470,7 @@ ActiveMsgMemoryGrp::print(ostream &o) const
 
 void
 ActiveMsgMemoryGrp::send_lock_request(MemoryLockRequest::Request req,
-                                      int offset, int size)
+                                      distsize_t offset, int size)
 {
   cerr << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
   abort();

@@ -249,7 +249,7 @@ MemoryGrp::lock(int b)
 }
 
 void
-MemoryGrp::release_read_(int offset, int size)
+MemoryGrp::release_read_(distsize_t offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
@@ -261,7 +261,7 @@ MemoryGrp::release_read_(int offset, int size)
 }
 
 void
-MemoryGrp::release_write_(int offset, int size)
+MemoryGrp::release_write_(distsize_t offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
@@ -274,7 +274,7 @@ MemoryGrp::release_write_(int offset, int size)
 
 // return 1 if the lock was obtained, otherwise 0
 int
-MemoryGrp::obtain_read_(int offset, int size)
+MemoryGrp::obtain_read_(distsize_t offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
@@ -289,7 +289,7 @@ MemoryGrp::obtain_read_(int offset, int size)
 
 // return 1 if the lock was obtained, otherwise 0
 int
-MemoryGrp::obtain_write_(int offset, int size)
+MemoryGrp::obtain_write_(distsize_t offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
@@ -324,13 +324,13 @@ MemoryGrp::print(ostream&o) const
 }
 
 void *
-MemoryGrp::obtain_writeonly(int offset, int size)
+MemoryGrp::obtain_writeonly(distsize_t offset, int size)
 {
   return obtain_readwrite(offset, size);
 }
 
 void
-MemoryGrp::sum_reduction(double *data, int doffset, int dlength)
+MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 {
   int offset = doffset * sizeof(double);
   int length = dlength * sizeof(double);

@@ -51,18 +51,18 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     RefThreadGrp th_;
 
     int req_type_;
-    int to_type_;
     int fr_type_;
+    int to_type_;
 
     int active_;
 
-    Thread *thread_;
+    Thread **thread_;
     RefThreadLock mem_lock_;
     RefThreadLock print_lock_; // needed for debugging only
     ofstream hout; // handler out
     ofstream mout; // main thread out
 
-    void init_mtmpimg();
+    void init_mtmpimg(int nthreads);
 
     // parent class pure virtuals
     void retrieve_data(void *, int node, int offset, int size);

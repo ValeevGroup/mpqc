@@ -13,45 +13,15 @@ initialized in your <tt>main</tt> subroutine.
 <ul>
   <li> \ref scconfig
   <li> \ref scinit
-  <li> \ref devsampsrc
-  <li> \ref devsampmak
-  <li> \ref devsampinp
+  <li> \ref devsamp
 </ul>
 
-\subsection scconfig The sc-config Program
+\section scconfig The sc-config Program
 
 The sc-config program returns information about how SC was compiled
-and installed.  The following information is available:
+and installed.  See \ref sc-config for more information.                        
 
-<dl>
-     <dt><tt>--prefix</tt><dd> The directory where SC is installed.
-     <dt><tt>--version</tt><dd> The version of SC.
-     <dt><tt>--libdir</tt><dd> The directory were the libraries are found.
-     <dt><tt>--libs</tt><dd> The libraries and library paths needed to link.
-     <dt><tt>--cppflags</tt><dd> The include directories.
-     <dt><tt>--cc</tt><dd> The C compiler.
-     <dt><tt>--cflags</tt><dd> The C compiler flags.
-     <dt><tt>--cxx</tt><dd> The C++ compiler.
-     <dt><tt>--cxxflags</tt><dd> The C++ compiler flags.
-     <dt><tt>--f77</tt><dd> The FORTRAN 77 compiler.
-     <dt><tt>--f77flags</tt><dd> The FORTRAN 77 compiler flags.
-</dl>
-
-To use the sc-config program to link your executable to SC, use a
-Makefile for GNU make similar to the following:
-
-<pre>
-SCCONFIG = /usr/local/mpqc/current/bin/sc-config
-CXX := \$(shell \$(SCCONFIG) --cxx)
-CXXFLAGS := \$(shell \$(SCCONFIG) --cxxflags)
-CPPFLAGS := \$(shell \$(SCCONFIG) --cppflags)
-LIBS := \$(shell \$(SCCONFIG) --libs)
-
-myprog: myprog.o
-	\$(CXX) \$(CXXFLAGS) -o \$@ \$^ \$(LIBS)
-</pre>
-
-\subsection scinit Initializing SC
+\section scinit Initializing SC
 
 First the execution environment must be initialized using
 the ExEnv init member.
@@ -115,6 +85,10 @@ This segment of code sets up the message passing object:
   else
     grp = MessageGrp::get_default_messagegrp();
 </pre>
+
+\section devsamp MP2 Implementation Example
+
+This section illustrates how to add a new method a new method to MPQC.
 
 \subsection devsampsrc MP2 Implementation Example: Source
 

@@ -165,7 +165,7 @@ class MBPT2: public Wavefunction {
 
         <dl>
 
-          <dt><tt>mp</tt><dd> Use M\o{}ller-Plesset perturbation theory.
+          <dt><tt>mp</tt><dd> Use M&oslash;ller-Plesset perturbation theory.
           This is only valid for closed-shell systems.  Energies and
           gradients can be computed with this method.
 

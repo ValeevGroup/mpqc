@@ -16,12 +16,15 @@ parallel communication, matrix algebra, among others.
   <li> \ref compile
 </ul>
 
-\section userref User's Reference
+\section userref Command Reference
 <ul>
   <li> \ref mpqc
   <li> \ref scpr
   <li> \ref scls
   <li> \ref molrender
+  <li> \ref sc-config
+  <li> \ref sc-libtool
+  <li> \ref sc-mkf77sym
 </ul>
 
 \section develref Developer's Reference

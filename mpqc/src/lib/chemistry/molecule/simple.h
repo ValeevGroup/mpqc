@@ -146,8 +146,7 @@ class SimpleCo : public IntCoor {
     double calc_force_con(Molecule&);					      \
     double calc_intco(Molecule&, double* =0, double =1);		      \
     classname(StateIn&);						      \
-    void save_data_state(StateOut&);                                          \
-  private:
+    void save_data_state(StateOut&)
 
 #define SimpleCo_IMPL_eq(classname)					      \
 SimpleCo& classname::operator=(const SimpleCo& c)			      \
@@ -192,7 +191,7 @@ Designating the two atoms as \f$a\f$ and \f$b\f$ and their cartesian
 positions as \f$\bar{r}_a\f$ and \f$\bar{r}_b\f$, the value of the
 coordinate, \f$r\f$, is \f[ r = \| \bar{r}_a - \bar{r}_b \| \f] */
 class StreSimpleCo : public SimpleCo {
-SimpleCo_DECLARE(StreSimpleCo)
+    SimpleCo_DECLARE(StreSimpleCo);
   public:
     StreSimpleCo();
     StreSimpleCo(const StreSimpleCo&);
@@ -237,7 +236,7 @@ cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
 
 */
 class BendSimpleCo : public SimpleCo { 
-SimpleCo_DECLARE(BendSimpleCo)
+    SimpleCo_DECLARE(BendSimpleCo);
   public:
     BendSimpleCo();
     BendSimpleCo(const BendSimpleCo&);
@@ -295,7 +294,7 @@ their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
 
 */
 class TorsSimpleCo : public SimpleCo { 
-SimpleCo_DECLARE(TorsSimpleCo)
+    SimpleCo_DECLARE(TorsSimpleCo);
   public:
     TorsSimpleCo();
     TorsSimpleCo(const TorsSimpleCo&);
@@ -356,7 +355,7 @@ their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
 
  */
 class ScaledTorsSimpleCo : public SimpleCo { 
-SimpleCo_DECLARE(ScaledTorsSimpleCo)
+    SimpleCo_DECLARE(ScaledTorsSimpleCo);
   private:
     double old_torsion_;
   public:
@@ -406,7 +405,7 @@ their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
 
 */
 class OutSimpleCo : public SimpleCo { 
-SimpleCo_DECLARE(OutSimpleCo)
+    SimpleCo_DECLARE(OutSimpleCo);
   public:
     OutSimpleCo();
     OutSimpleCo(const OutSimpleCo&);
@@ -458,7 +457,7 @@ cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
 
 */
 class LinIPSimpleCo : public SimpleCo { 
-SimpleCo_DECLARE(LinIPSimpleCo)
+    SimpleCo_DECLARE(LinIPSimpleCo);
   private:
     SCVector3 u2;
   public:
@@ -516,7 +515,7 @@ cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
 
 */
 class LinOPSimpleCo : public SimpleCo { 
-SimpleCo_DECLARE(LinOPSimpleCo)
+    SimpleCo_DECLARE(LinOPSimpleCo);
   private:
     SCVector3 u2;
   public:

@@ -13,7 +13,7 @@ The interface between Psi and MPQC is intended mainly for
 Psi users who wish to exploit MPQC's geometry optimization and frequency analyses
 capabilities with Psi energies and gradients.
 
-This chapter explains how to use Psi from MPQC.
+The following sections explain how to use Psi from MPQC:
 
 <ul>
   <li> \ref psiworks
@@ -94,6 +94,7 @@ Here's an example:
     scratch = [ "/scratch1/" "/scratch2/" ]
   )
 </pre>
+<br>
 
 
 \section psiwfn PsiWavefunction specializations
@@ -137,14 +138,14 @@ will require such an object.
 
 Here are a few examples of PsiWavefunctions:
 <pre>
-  %
-  % ROHF DZ on F atom
-  %
+  \%
+  \% ROHF DZ on F atom
+  \%
   mole<PsiHSOSHF>: (
     docc = [ 2 0 0 0 0 1 1 0 ] socc = [ 0 0 0 0 0 0 0 1]
     memory = 10000000
 
-    % Psi Environment data
+    \% Psi Environment data
     psienv<PsiExEnv>: (
       cwd = ./
       fileprefix = f.dz.test
@@ -154,14 +155,14 @@ Here are a few examples of PsiWavefunctions:
       scratch = [ "/scratch/mpqc/" ]
     )
 
-    % MolecularEnergy input
+    \% MolecularEnergy input
     molecule<Molecule>: (
         {atoms geometry} = {
           F  [   0.0  0.0   0.0 ]
          }
       )
 
-    % Basis input
+    \% Basis input
     basis<GaussianBasisSet>: (
         molecule = $..:molecule
         name = "DZ (Dunning)"
@@ -169,16 +170,17 @@ Here are a few examples of PsiWavefunctions:
 
   )
 </pre>
+<br>
 
 <pre>
-  %
-  % RHF CCSD/cc-pVDZ on water
-  %
+  \%
+  \% RHF CCSD/cc-pVDZ on water
+  \%
   mole<PsiCCSD>: (
     frozen_docc = [1 0 0 0]
     memory = 40000000
 
-    % Psi Environment data
+    \% Psi Environment data
     psienv<PsiExEnv>: (
       cwd = ./
       fileprefix = h2o.ccpvdz.ccsd.test
@@ -186,7 +188,7 @@ Here are a few examples of PsiWavefunctions:
       scratch = [ "/tmp/" ]
     )
 
-    % MolecularEnergy input
+    \% MolecularEnergy input
     molecule<Molecule>: (
         {atoms geometry} = {
           H  [  -1.5  0.0  -0.3 ]
@@ -195,7 +197,7 @@ Here are a few examples of PsiWavefunctions:
          }
       )
 
-    % Basis input
+    \% Basis input
     basis<GaussianBasisSet>: (
         molecule = $..:molecule
         name = "cc-pVDZ"
@@ -210,6 +212,7 @@ Here are a few examples of PsiWavefunctions:
     )
   )
 </pre>
+<br>
 
 
 \section examples More examples
@@ -219,10 +222,10 @@ This section contains some examples of complete inputs that specify an MPQC/Psi 
 Here's an optimization + subsequent frequency analysis on water molecule
 at the RHF CCSD 6-311G** level:
 <pre>
-% Emacs should use -*- KeyVal -*- mode
-% this file was automatically generated
-% label: water test series
-% molecule specification
+\% Emacs should use -*- KeyVal -*- mode
+\% this file was automatically generated
+\% label: water test series
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -232,12 +235,12 @@ molecule<Molecule>: (
      H     [    -0.783975899000     0.000000000000    -0.184686472000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "6-311G**"
   molecule = $:molecule
 )
-% Psi environment specification
+\% Psi environment specification
 psienv<PsiExEnv>: (
       cwd = ./
       fileprefix = mpqcpsi
@@ -257,9 +260,9 @@ mpqc: (
       molecule = $:molecule
     )
   )
-  % molecular coordinates for optimization  do_energy = yes
+  \% molecular coordinates for optimization  do_energy = yes
   do_gradient = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<PsiCCSD>: (
     molecule = $:molecule
     basis = $:basis
@@ -281,7 +284,7 @@ mpqc: (
     )
   )
   optimize = yes
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     max_iterations = 20
     function = $..:mole
@@ -291,12 +294,13 @@ mpqc: (
       energy = $..:..:mole
     )
   )
-% vibrational frequency input
+\% vibrational frequency input
   freq<MolecularFrequencies>: (
     point_group<PointGroup>: symmetry = C2V
     molecule = $:molecule
   )
 )
 </pre>
+<br>
 
 */

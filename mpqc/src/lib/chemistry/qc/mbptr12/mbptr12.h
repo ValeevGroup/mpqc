@@ -101,16 +101,16 @@ class MBPT2_R12: public MBPT2 {
 
         <dl>
 
-          <dt><tt>A</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
+          <dt><tt>A</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation A (MP2-R12/A).
           Only energies can be computed with the MP2-R12/A method.
 
-          <dt><tt>A'</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
+          <dt><tt>A'</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation A' (MP2-R12/A').
           This will cause MP2-R12/A energies to be computed also.
           Only energies can be computed with the MP2-R12/A' method.
 
-          <dt><tt>B</tt><dd> Use second order M\o{}ller-Plesset perturbation theory
+          <dt><tt>B</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
 	  with linear R12 terms in standard approximation B. 
 	  This method is not implemented yet.
 
@@ -159,8 +159,8 @@ class MBPT2_R12: public MBPT2 {
 
         <dt><tt>r12ints_file</tt><dd> This specifies which file to use to store transformed
 	MO integrals if <tt>r12ints=posix-io</tt> or <tt>r12ints=mpi-io</tt> is used.
-	Default is "./<inputbasename>.r12ints.dat", where <inputbasename> is the name of the input
-	file without ".in". If MPI-I/O is used then it is user's responsibility to ensure
+	Default is <tt>./<i>inputbasename</i>.r12ints.dat</tt>, where <i>inputbasename</i> is the name of the input
+	file without <tt>.in</tt>. If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
 
         </dl> */

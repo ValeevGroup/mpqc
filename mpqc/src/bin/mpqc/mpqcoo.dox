@@ -8,6 +8,9 @@ However, most calculations should be quite similar to the one of the
 examples given later in this chapter.  The best way to get started is to
 use one of the example input files and modify it to meet your needs.
 
+The object-oriented input format is described in the following
+sections:
+
 <ul>
  <li> \ref mpqcooover
  <li> \ref mpqcoowalk
@@ -18,7 +21,7 @@ use one of the example input files and modify it to meet your needs.
 
 MPQC starts off by creating a ParsedKeyVal object that parses the
 input file specified on the command line.  The format of the input file
-is documented in \ref keyval.  It is basically a free
+is documented in the KeyVal documentation\if html (see \ref keyval)\endif.  It is basically a free
 format input that associates keywords and logical groupings of keywords
 with values.  The values can be scalars, arrays, or objects.
 
@@ -146,7 +149,7 @@ Following is the entire input, followed by a breakdown with
 descriptions.
 
 <pre>
-% This input does a Hartree-Fock calculation on water.
+\% This input does a Hartree-Fock calculation on water.
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -167,13 +170,15 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 We start with a descriptive comment.  Comments begin with a <tt>%</tt>.
 Everything from the <tt>%</tt> to the end of the line is ignored.
 
 <pre>
-% This input does a Hartree-Fock calculation on water.
+\% This input does a Hartree-Fock calculation on water.
 </pre>
+<br>
 
 Now lets set up a Molecule object.  The name of the object comes first, it
 is <tt>molecule</tt>.  Then, in angle brackets, comes the type of the
@@ -185,6 +190,7 @@ that will be given to Molecule KeyVal constructor.
 <pre>
 molecule<Molecule>: (
 </pre>
+<br>
 
 The point group of the molecule is needed.  This is done by assigning
 <tt>symmetry</tt> to a case insensitive Schoenflies symbol that is used to
@@ -193,6 +199,7 @@ initialize a PointGroup object.  An Abelian point group should be used.
 <pre>
   symmetry = C2V
 </pre>
+<br>
 
 The default unit for the Cartesian coordinates is Bohr.  You can
 specify other units by assigned <tt>unit</tt> to a string that will be
@@ -201,6 +208,7 @@ used to initialize a Units object.
 <pre>
   unit = angstrom
 </pre>
+<br>
 
 Finally, the atoms and coordinates are given.  This can be given in the
 shorthand table syntax shown below.  The headings of the table are the
@@ -220,6 +228,7 @@ atom.
   }
 )
 </pre>
+<br>
 
 Next, a basis set object is given.
 
@@ -229,6 +238,7 @@ basis<GaussianBasisSet>: (
   molecule = $:molecule
 )
 </pre>
+<br>
 
 Now we will give the main body of input.  All the subsequent
 keywords will be grouped in the <tt>mpqc</tt> section of the input
@@ -237,6 +247,7 @@ keywords will be grouped in the <tt>mpqc</tt> section of the input
 <pre>
 mpqc: (
 </pre>
+<br>
 
 Next we give the <tt>mole</tt> keyword which provides a specialization of
 the MolecularEnergy class.  In this case we will do a closed-shell
@@ -250,6 +261,7 @@ input is included with the rest of the input for the child class.
 <pre>
   mole<CLHF>: (
 </pre>
+<br>
 
 The next line specifies the molecule to be used.  There are two things to
 note, first that this is actually a reference to complete molecule
@@ -270,6 +282,7 @@ follow its parent classes up to MolecularEnergy, you'll find that
 <pre>
     molecule = $:molecule
 </pre>
+<br>
 
 Just as we gave <tt>molecule</tt>, specify the basis set with the <tt>basis</tt> keyword
 as follows:
@@ -277,6 +290,7 @@ as follows:
 <pre>
     basis = $:basis
 </pre>
+<br>
 
 Now we close off the parentheses we opened above and we are finished.
 
@@ -284,13 +298,13 @@ Now we close off the parentheses we opened above and we are finished.
   )
 )
 </pre>
+<br>
 
 \section mpqcoosamp Sample Object-Oriented Input Files
 
-The easiest way to get started with mpqc is to start with
-one of sample inputs that most nearly matches your problem.  All
-of the samples inputs shown here can be found in the directory
-<tt>src/bin/mpqc/samples</tt>.
+The easiest way to get started with mpqc is to start with one of sample
+inputs that most nearly matches your problem.  The
+<tt>src/bin/mpqc/samples</tt> contains all of the sample inputs below:
 
 <ul>
   <li> \ref mpqcoosamphf
@@ -316,8 +330,8 @@ of the samples inputs shown here can be found in the directory
 The following input will compute the Hartree-Fock energy of water.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -327,7 +341,7 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
@@ -335,7 +349,7 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
@@ -343,14 +357,15 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosampmp2 MP2 Energy
 
 The following input will compute the MP2 energy of water.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -360,7 +375,7 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
@@ -368,12 +383,12 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<MBPT2>: (
     molecule = $:molecule
     basis = $:basis
     memory = 16000000
-    % reference wavefunction
+    \% reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
@@ -382,6 +397,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosampmp2r12 MP2-R12 energy
 
@@ -389,8 +405,8 @@ The following will compute the MP2-R12 energy of water in standard approximation
 (MP2-R12/A').
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -400,12 +416,12 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "cc-pVDZ"
   molecule = $:molecule
 )
-% auxiliary basis set specification
+\% auxiliary basis set specification
 abasis<GaussianBasisSet>: (
   name = "aug-cc-pVDZ"
   molecule = $:molecule
@@ -413,7 +429,7 @@ abasis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<MBPT2_R12>: (
     molecule = $:molecule
     basis = $:basis
@@ -422,7 +438,7 @@ mpqc: (
     nfzc = 1
     memory = 16000000
     integrals<IntegralCints>:()
-    % reference wavefunction
+    \% reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
@@ -432,6 +448,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosamphfopt Hartree-Fock Optimization
 
@@ -439,8 +456,8 @@ The following input will optimize the geometry of water using
 the quasi-Newton method.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -450,7 +467,7 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "6-31G*"
   molecule = $:molecule
@@ -458,21 +475,21 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
     generator<IntCoorGen>: (
       molecule = $:molecule
     )
   )
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
     memory = 16000000
   )
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     function = $..:mole
     update<BFGSUpdate>: ()
@@ -483,6 +500,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosamphessopt Optimization with a Computed Guess Hessian
 
@@ -491,8 +509,8 @@ the quasi-Newton method.  The guess Hessian will be computed
 at a lower level of theory.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -502,7 +520,7 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "6-31G*"
   molecule = $:molecule
@@ -510,14 +528,14 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
     generator<IntCoorGen>: (
       molecule = $:molecule
     )
   )
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
@@ -538,7 +556,7 @@ mpqc: (
       )
     )
   )
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     function = $..:mole
     update<BFGSUpdate>: ()
@@ -549,6 +567,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosampoptnewt Optimization Using Newton's Method
 
@@ -559,8 +578,8 @@ computed Hessian as a guess Hessian for a quasi-Newton method before
 resorting to a Newton optimization.
 
 <pre>
-% Emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% Emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = c2v
   unit = angstrom
@@ -570,7 +589,7 @@ molecule<Molecule>: (
      H     [    -0.78397590     0.00000000    -0.18468647 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "3-21G"
   molecule = $:molecule
@@ -579,7 +598,7 @@ mpqc: (
   checkpoint = no
   savestate = no
   restart = no
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
     generator<IntCoorGen>: (
@@ -588,7 +607,7 @@ mpqc: (
   )
   do_energy = no
   do_gradient = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
@@ -610,7 +629,7 @@ mpqc: (
     )
   )
   optimize = yes
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<NewtonOpt>: (
     print_hessian = yes
     max_iterations = 20
@@ -622,6 +641,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosamphffreq Hartree-Fock Frequencies
 
@@ -631,8 +651,8 @@ performed.  If optimization input is also provided, then the
 optimization will be run first, then the frequencies.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C1
   { atoms geometry } = {
@@ -641,7 +661,7 @@ molecule<Molecule>: (
     H     [ -1.4325589285    0.0000000000   -0.3941980761 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
@@ -649,18 +669,19 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     memory = 16000000
   )
-% vibrational frequency input
+\% vibrational frequency input
   freq<MolecularFrequencies>: (
     molecule = $:molecule
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosampcoor Giving Coordinates and a Guess Hessian
 
@@ -673,8 +694,8 @@ values using a guess the Hessian provided by the MolecularEnergy
 object.  Also, fixed coordinates are given in this sample input.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C1
   { atoms geometry } = {
@@ -686,7 +707,7 @@ molecule<Molecule>: (
       H    [ 3.812    7.691   -0.000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
@@ -694,64 +715,64 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
     memory = 16000000
   )
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
     generator<IntCoorGen>: (
       molecule = $:molecule
       extra_bonds = [ 2 5 ]
     )
-    % use these instead of generated coordinates
+    \% use these instead of generated coordinates
     variable<SetIntCoor>: [
-      <StreSimpleCo>:( atoms = [ 2 5 ] )
-      <BendSimpleCo>:( atoms = [ 2 5 4 ] )
-      <OutSimpleCo>: ( atoms = [ 5 2 1 3 ] )
-      <SumIntCoor>: (
+      \<StreSimpleCo>:( atoms = [ 2 5 ] )
+      \<BendSimpleCo>:( atoms = [ 2 5 4 ] )
+      \<OutSimpleCo>: ( atoms = [ 5 2 1 3 ] )
+      \<SumIntCoor>: (
         coor: [
-          <StreSimpleCo>:( atoms = [ 1 2 ] )
-          <StreSimpleCo>:( atoms = [ 2 3 ] )
+          \<StreSimpleCo>:( atoms = [ 1 2 ] )
+          \<StreSimpleCo>:( atoms = [ 2 3 ] )
           ]
         coef = [ 1.0 1.0 ]
         )
-      <SumIntCoor>: (
+      \<SumIntCoor>: (
         coor: [
-          <StreSimpleCo>:( atoms = [ 4 5 ] )
-          <StreSimpleCo>:( atoms = [ 4 6 ] )
+          \<StreSimpleCo>:( atoms = [ 4 5 ] )
+          \<StreSimpleCo>:( atoms = [ 4 6 ] )
           ]
         coef = [ 1.0 1.0 ]
         )
-      <BendSimpleCo>:( atoms = [ 1 2 3 ] )
-      <BendSimpleCo>:( atoms = [ 5 4 6 ] )
+      \<BendSimpleCo>:( atoms = [ 1 2 3 ] )
+      \<BendSimpleCo>:( atoms = [ 5 4 6 ] )
     ]
-    % these are fixed by symmetry anyway,
+    \% these are fixed by symmetry anyway,
     fixed<SetIntCoor>: [
-      <SumIntCoor>: (
+      \<SumIntCoor>: (
         coor: [
-          <StreSimpleCo>:( atoms = [ 1 2 ] )
-          <StreSimpleCo>:( atoms = [ 2 3 ] )
+          \<StreSimpleCo>:( atoms = [ 1 2 ] )
+          \<StreSimpleCo>:( atoms = [ 2 3 ] )
           ]
         coef = [ 1.0 -1.0 ]
         )
-      <SumIntCoor>: (
+      \<SumIntCoor>: (
         coor: [
-          <StreSimpleCo>:( atoms = [ 4 5 ] )
-          <StreSimpleCo>:( atoms = [ 4 6 ] )
+          \<StreSimpleCo>:( atoms = [ 4 5 ] )
+          \<StreSimpleCo>:( atoms = [ 4 6 ] )
           ]
         coef = [ 1.0 -1.0 ]
         )
-      <TorsSimpleCo>:( atoms = [ 2 5 4 6] )
-      <OutSimpleCo>:( atoms = [ 3 2 6 4 ] )
-      <OutSimpleCo>:( atoms = [ 1 2 6 4 ] )
+      \<TorsSimpleCo>:( atoms = [ 2 5 4 6] )
+      \<OutSimpleCo>:( atoms = [ 3 2 6 4 ] )
+      \<OutSimpleCo>:( atoms = [ 1 2 6 4 ] )
     ]
   )
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     function = $..:mole
     update<BFGSUpdate>: ()
@@ -759,8 +780,8 @@ mpqc: (
       cartesian = yes
       energy = $..:..:mole
     )
-    % give a partial guess hessian in internal coordinates
-    % the missing elements will be filled in automatically
+    \% give a partial guess hessian in internal coordinates
+    \% the missing elements will be filled in automatically
     hessian = [
         [  0.0109261670 ]
         [ -0.0004214845    0.0102746106  ]
@@ -773,6 +794,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosamphb Optimization with a Hydrogen Bond
 
@@ -782,8 +804,8 @@ coordinate generator must be explicitly created in the input and given
 extra connectivity information, as is shown below.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C1
   { atoms geometry } = {
@@ -795,7 +817,7 @@ molecule<Molecule>: (
       H    [ 3.812    7.691   -0.000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
@@ -803,24 +825,24 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
     memory = 16000000
   )
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
-    % give an internal coordinate generator that knows about the
-    % hydrogen bond between atoms 2 and 5
+    \% give an internal coordinate generator that knows about the
+    \% hydrogen bond between atoms 2 and 5
     generator<IntCoorGen>: (
       molecule = $:molecule
       extra_bonds = [ 2 5 ]
     )
   )
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     function = $..:mole
     update<BFGSUpdate>: ()
@@ -831,6 +853,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosampfixopt Fixed Coordinate Optimization
 
@@ -850,8 +873,8 @@ of the variable coordinates will be frozen to their original values during
 the initial displacement.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = CS
   { atoms geometry } = {
@@ -864,7 +887,7 @@ molecule<Molecule>: (
     H [ -1.41 -1.04  1.64 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "4-31G*"
   molecule = $:molecule
@@ -872,7 +895,7 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
     generator<IntCoorGen>: (
@@ -880,19 +903,19 @@ mpqc: (
     )
     have_fixed_values = yes
     fixed<SetIntCoor>: [
-      <OutSimpleCo>: ( value = -0.1
+      \<OutSimpleCo>: ( value = -0.1
                        label = "N-inversion"
                        atoms = [4 3 2 1] )
       ]
   )
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
     memory = 16000000
   )
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<QNewtonOpt>: (
     max_iterations = 20
     function = $..:mole
@@ -904,6 +927,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosampts Transition State Optimization
 
@@ -913,8 +937,8 @@ was obtained by doing a few fixed coordinate optimizations along the
 inversion coordinate.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = CS
   { atoms geometry } = {
@@ -927,7 +951,7 @@ molecule<Molecule>: (
     H [ -1.417337 -1.042238  1.647529 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "4-31G*"
   molecule = $:molecule
@@ -935,7 +959,7 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
     generator<IntCoorGen>: (
@@ -943,14 +967,14 @@ mpqc: (
     )
     followed<OutSimpleCo> = [ "N-inversion" 4 3 2 1 ]
   )  
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor
     memory = 16000000
   )
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<EFCOpt>: (
     transition_state = yes
     mode_following = yes
@@ -964,6 +988,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 \subsection mpqcoosamptshess Transition State Optimization with a Computed Guess Hessian
 
@@ -974,8 +999,8 @@ inversion coordinate.  An approximate guess Hessian will be computed, which
 makes the optimiziation converge much faster in this case.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = CS
   { atoms geometry } = {
@@ -988,7 +1013,7 @@ molecule<Molecule>: (
     H [ -1.417337 -1.042238  1.647529 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "4-31G*"
   molecule = $:molecule
@@ -996,7 +1021,7 @@ basis<GaussianBasisSet>: (
 mpqc: (
   checkpoint = no
   savestate = no
-  % molecular coordinates for optimization
+  \% molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
     generator<IntCoorGen>: (
@@ -1004,7 +1029,7 @@ mpqc: (
     )
     followed<OutSimpleCo> = [ "N-inversion" 4 3 2 1 ]
   )  
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
@@ -1025,7 +1050,7 @@ mpqc: (
       )
     )
   )
-  % optimizer object for the molecular geometry
+  \% optimizer object for the molecular geometry
   opt<EFCOpt>: (
     transition_state = yes
     mode_following = yes
@@ -1039,6 +1064,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 
 \subsection mpqcoosamphfckpt Hartree-Fock energy with intermediate checkpointing
@@ -1049,8 +1075,8 @@ This input will compute the Hartree-Fock energy of water while saving
 the <tt>mole</tt> object every 3 iterations.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -1060,7 +1086,7 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
@@ -1070,7 +1096,7 @@ mpqc: (
   filename = "h2o-rhf-STO3G"
   checkpoint_freq = 3
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
@@ -1078,6 +1104,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 The <tt>mole</tt> object will be saved to files named "h2o-rhf-STO3G.wfn.<iter#>.tmp"
 where <iter#> is the SCF iteration number (3, 6, etc.). Only the most recent file is kept,
@@ -1090,8 +1117,8 @@ The following input will compute the MP2-R12 energy of water in standard approxi
 (MP2-R12/A') while saving the <tt>mole</tt> object at intermediate checkpoints.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -1101,12 +1128,12 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "cc-pVDZ"
   molecule = $:molecule
 )
-% auxiliary basis set specification
+\% auxiliary basis set specification
 abasis<GaussianBasisSet>: (
   name = "aug-cc-pVDZ"
   molecule = $:molecule
@@ -1115,7 +1142,7 @@ mpqc: (
   checkpoint = yes
   filename = "h2o-mp2r12ap-vdz-avdz"
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<MBPT2_R12>: (
     molecule = $:molecule
     basis = $:basis
@@ -1124,7 +1151,7 @@ mpqc: (
     nfzc = 1
     memory = 16000000
     integrals<IntegralCints>:()
-    % reference wavefunction
+    \% reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
@@ -1134,6 +1161,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 The <tt>mole</tt> object will be saved to a file named <tt>h2o-mp2r12ap-vdz-avdz.wfn"</tt>.
 Keyword <tt>filename</tt> here is used to set the default file name prefix.
@@ -1148,8 +1176,8 @@ in subsequent computations. The first input computes Hartree-Fock energy for wat
 and saves the <tt>mole</tt> object to file <tt>h2o-rhf-sto3g.wfn</tt>.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -1159,7 +1187,7 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
@@ -1168,7 +1196,7 @@ mpqc: (
   checkpoint = no
   savestate = yes
   filename = "h2o-rhf-sto3g"
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
@@ -1176,12 +1204,13 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 The second input reuses the <tt>mole</tt> object from the previous run
 to compute the gradient of the Hartree-Fock energy.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
+\% emacs should use -*- KeyVal -*- mode
 mpqc: (
   checkpoint = no
   savestate = no
@@ -1190,6 +1219,7 @@ mpqc: (
   do_gradient = yes
 )
 </pre>
+<br>
 
 \subsection mpqcoosampmp2usinghfwfn MP2 Energy computed using precomputed Hartree-Fock wave function
 
@@ -1197,8 +1227,8 @@ The following input will compute the MP2 energy of water using a saved Hartree-F
 obtained using the first input from \ref mpqcoosamphfgradfromwfn.
 
 <pre>
-% emacs should use -*- KeyVal -*- mode
-% molecule specification
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
@@ -1208,22 +1238,22 @@ molecule<Molecule>: (
     H     [    -0.78000000     0.00000000    -0.18000000 ]
   }
 )
-% basis set specification
+\% basis set specification
 basis<GaussianBasisSet>: (
   name = "STO-3G"
   molecule = $:molecule
 )
-% wave function file object specification
+\% wave function file object specification
 wfnfile<BcastStateInBin>:file = "h2o-rhf-sto3g.wfn"
 mpqc: (
   checkpoint = no
   savestate = no
-  % method for computing the molecule's energy
+  \% method for computing the molecule's energy
   mole<MBPT2>: (
     molecule = $:molecule
     basis = $:basis
     memory = 16000000
-    % reference wavefunction
+    \% reference wavefunction
     reference<SavableStateProxy>: (
       statein = $:wfnfile
       object = "CLHF"
@@ -1231,6 +1261,7 @@ mpqc: (
   )
 )
 </pre>
+<br>
 
 Note that now object <tt>reference</tt> is of type <tt>SavableStateProxy</tt>,
 rather than <tt>CLHF</tt>. <tt>SavableStateProxy</tt> is a special object type

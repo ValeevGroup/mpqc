@@ -219,7 +219,7 @@ mpqc -threadgrp "<PthreadThreadGrp>:(num_threads = 4)" input_file
 Alternately, the PthreadThreadGrp object can
 be given as an environmental variable:
 <pre>
-setenv THREADGRP "<PthreadThreadGrp>:(n = 4)"
+setenv THREADGRP "<PthreadThreadGrp>:(num_threads = 4)"
 mpqc input_file
 </pre>
 
@@ -307,11 +307,12 @@ to a file on a GPFS file system.
 
 <p>
 <b>Integral object</b>
+<br>
 
 At the moment, MBPT2_R12 objects require specific specialization of Integral,
 IntegralCints. Thus in order to compute MP2-R12 energies, your version of MPQC
-needs to be compiled with support for IntegralCints. A free, open-source
-library called <tt>libint</tt> is a prerequisite for IntegralCints (see \ref compile).
+needs to be compiled with support for IntegralCints.  A free, open-source
+library called <tt>libint</tt> is a prerequisite for IntegralCints\if html (see \ref compile)\endif.
 In order to use IntegralCints as the default Integral object,
 add <tt>-integral "<IntegralCints>:()"</tt> to the command line,
 or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralCints>:()"</tt>.

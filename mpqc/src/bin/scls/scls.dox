@@ -1,23 +1,27 @@
 
-/** \page scls The scls Program
+/** \page scls
 
 The scpr program is used to list objects in checkpoint files.
+\if html
 See \ref state for more information.
+\endif
 
+\if html
 <h1>Compiling scls</h1>
  scls is distributed with the SC Toolkit.  scls will automatically
 be compiled when SC is compiled.  See \ref compile
 for more information.
+\endif
 
 <h1>Running scls</h1>
 
 scls takes the following command line options followed by a list of files.
 
 <dl>
- <dt><tt>-memorygrp <val></tt><dd>Which memory group to use.
- <dt><tt>-threadgrp <val></tt><dd>Which thread group to use.
- <dt><tt>-messagegrp <val></tt><dd>Which message group to use.
- <dt><tt>-W <val></tt><dd>Set the working directory.
+ <dt><tt>-memorygrp</tt> <i>val</i><dd>Which memory group to use.
+ <dt><tt>-threadgrp</tt> <i>val</i><dd>Which thread group to use.
+ <dt><tt>-messagegrp</tt> <i>val</i><dd>Which message group to use.
+ <dt><tt>-W</tt> <i>val</i><dd>Set the working directory.
  <dt><tt>-d</tt><dd>Turn on debugging.
  <dt><tt>-v</tt><dd>Print the version.
  <dt><tt>-w</tt><dd>Print the warranty.

@@ -34,8 +34,8 @@ provided.
  <li> \ref stateex
  <li> \ref stateexin
  <li> \ref stateexvin
- <li> \ref stateexvpoint
- <li> \ref stateexvsmart
+ <li> \ref stateexpoint
+ <li> \ref stateexsmart
  <li> \ref stateexdata
 </ul>
 

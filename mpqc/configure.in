@@ -1600,5 +1600,5 @@ dnl --------- Create the stub Makefiles. ---------
 
 $PERL $srcdir/bin/objectdir.pl $EXCLUDED_DIRS $srcdir
 
-AC_OUTPUT(lib/LocalMakefile bin/sc-config bin/mkf77sym.pl doc/doxygen.cfg)
+AC_OUTPUT(lib/LocalMakefile bin/sc-config bin/mkf77sym.pl doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
 chmod +x bin/sc-config

@@ -74,7 +74,7 @@ class CorrelationTable: public RefCount {
     int initialize_table(const Ref<PointGroup>& group,
                          const Ref<PointGroup>& subgroup);
 
-    /// Converts error codes from initialize\_table into a text string.
+    /// Converts error codes from initialize_table into a text string.
     const char *error(int errcod);
 
     /// Returns the number of irreps in the high order group.

@@ -1,16 +1,18 @@
 
-/** \page molrender The molrender Program
+/** \page molrender
 
 The molrender program reads a molecule from an input file and can render it
 in a variety of ways.  The output is an OOGL file that the <a
 href="http://www.geom.umn.edu/software/download/geomview.html">Geomview</a>
 program can read and display.
 
+\if html
 <h1>Compiling molrender</h1>
 
  molrender is distributed with the SC Toolkit.  molrender will automatically
 be compiled when SC is compiled.  See \ref compile
 for more information.
+\endif
 
 <h1>Running molrender</h1>
 

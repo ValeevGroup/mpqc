@@ -1,10 +1,12 @@
 
-/** \page mpqc The MPQC Program
+/** \page mpqc
 
-The Massively Parallel Quantum Chemistry program (MPQC) computes
-the properties of molecules, <i>ab initio</i>, on a wide variety
-of computer architectures.
+The Massively Parallel Quantum Chemistry program (MPQC) computes the
+properties of molecules from first principles.
 
+This documentation is divided into the following chapters:
+
+\if html
 <ul>
   <li> \ref mpqcover
   <li> \ref mpqccomp
@@ -15,5 +17,19 @@ of computer architectures.
   <li> \ref mpqclic
   <li> \ref mpqcwar
 </ul>
+\endif
+
+\if man
+<ul>
+  <li> \ref mpqcover
+  <li> \ref mpqcrun
+  <li> \ref mpqcinp
+  <li> \ref mpqcval
+  <li> \ref mpqcpsi
+  <li> \ref mpqclic
+  <li> \ref mpqcwar
+</ul>
+<br>
+\endif
 
 */

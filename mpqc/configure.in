@@ -1095,8 +1095,13 @@ dnl --------- Checks for library functions. ---------
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
-AC_CHECK_FUNCS(gethostname time ctime ieee_set_fp_control ieee_get_fp_control)
+AC_CHECK_FUNCS(gethostname time ctime)
 AC_CHECK_FUNCS(setrlimit setenv)
+
+dnl --------- Check for the glibc extensions to C99 fenv.h. ---------
+
+AC_CHECK_HEADERS(fenv.h)
+AC_CHECK_FUNCS(feenableexcept fedisableexcept)
 
 dnl --------- Checks for a C++ linkable fchdir. ---------
 AC_LANG_SAVE

@@ -129,11 +129,14 @@
 /* Define if you have the ctime function.  */
 #undef HAVE_CTIME
 
-/* Define if you have the ieee_set_fp_control function.  */
-#undef HAVE_IEEE_SET_FP_CONTROL
+/* Define if you have the C99 <fenv.h>.  */
+#undef HAVE_FENV_H
 
-/* Define if you have the ieee_get_fp_control function.  */
-#undef HAVE_IEEE_GET_FP_CONTROL
+/* Define if you have the glibc feenableexcept extension.  */
+#undef HAVE_FEENABLEEXCEPT
+
+/* Define if you have the glibc fedisableexcept extension.  */
+#undef HAVE_FEDISABLEEXCEPT
 
 /* Define if you have the setrlimit function.  */
 #undef HAVE_SETRLIMIT

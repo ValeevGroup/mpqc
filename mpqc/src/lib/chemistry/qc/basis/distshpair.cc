@@ -205,8 +205,9 @@ DistShellPair::serve_tasks()
       SR[1] = Rvec[Ivec[current_shellpair_]];
       if (current_shellpair_%print_interval_ == 0) {
         ExEnv::outn() << indent
-		     << scprintf("sending shell pair (%3d %3d) to %3d, %4.1f%% complete",
+		     << scprintf("sending shell pair (%3d %3d) to %3d, %6.3f%% complete",
 				 SR[0],SR[1],node,(double)current_shellpair_*100.0/nreq)
+                     << " (" << current_shellpair_ << " of " << ntask_ << ")"
 		     << endl;
       }
       current_shellpair_++;
@@ -216,7 +217,7 @@ DistShellPair::serve_tasks()
       SR[1] = -1;
       if (current_shellpair_%print_interval_ == 0) {
         ExEnv::outn() << indent
-		     << scprintf("sending no more tasks message to %3d, %4.1f%% complete",
+		     << scprintf("sending no more tasks message to %3d, %6.3f%% complete",
 				 node,(double)current_shellpair_*100.0/nreq)
 		     << endl;
       }
@@ -282,8 +283,9 @@ DistShellPair::get_task(int &S, int &R)
     if (current_shellpair_%print_interval_ == 0) {
       if (mythread_ == 0 && msg_->me() == 0) {
         ExEnv::outn() << indent 
-		     << scprintf("  working on shell pair (%3d %3d), %4.1f%% complete",
+		     << scprintf("  working on shell pair (%3d %3d), %6.3f%% complete",
 				 S,R,((double)current_shellpair_*100.0)/ntask_)
+                     << " (" << current_shellpair_ << " of " << ntask_ << ")"
 		     << endl;
       }
     }

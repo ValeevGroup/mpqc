@@ -20,6 +20,8 @@
 // work if Type is a basic type like int, double, etc.
 // The SSB macros and templates cannot be used unless <util/state/state.h>
 // is included.  This cannot be done here since state.h grabs this file.
+class StateIn;
+class StateOut;
 #include <util/container/ssartem.h>
 #include <util/container/ssarmac.h>
 #define SSB_ARRAY_dec(Type) SSBArray_declare(Type)

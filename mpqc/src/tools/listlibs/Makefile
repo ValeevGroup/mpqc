@@ -4,6 +4,7 @@ ifndef SRCDIR
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 INCLUDE += -I. -I$(SRCDIR)
+CXXFLAGS := $(CXXFLAGS:-fno-implicit-templates=)
 
 #BIN_OR_LIB = BIN
 TARGET_TO_MAKE = listlibs
@@ -18,6 +19,10 @@ LD = $(CXX)
 
 listlibs: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+
+.PHONY: test
+test: listlibs
+	./listlibs -DLIBSUF=so -I$(SRCDIR) -I$(SRCDIR)/$(TOPDIR)/src/lib LIBS.h
 
 install:: listlibs
 	$(INSTALL) $(INSTALLBINOPTS) $< $(BINDIR)

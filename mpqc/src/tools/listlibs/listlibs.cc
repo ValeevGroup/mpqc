@@ -1,217 +1,221 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <iostream.h>
+#include <fstream.h>
+#include <string>
+#include <list>
+#include <map>
+#include <set>
 
-////////////////////////////////////////////////////////////////////////
+static const bool debug = false;
 
-class node {
-  public:
-    char * val_;
-    node * n;
-    node * p;
-
-    node(const char *s);
-    ~node() { if (val_) free(val_); }
-
-    void print();
-  };
-
-node::node(const char *s) : val_(0), n(0), p(0)
+bool
+include_to_filename(string &filename)
 {
-  // remove quotes and newlines from s if they exist
-  if (s[0] == '"') {
-    val_ = strdup(&s[1]);
-    val_[strlen(val_)-2] = '\0';
+  if (filename.substr(0,8) == "#include") {
+    filename.remove(0,filename.find("<")+1);
+    filename.remove(filename.find(">"),
+                    filename.size() - filename.find(">") + 1);
+    return true;
     }
-  else {
-    val_ = strdup(s);
-    val_[strlen(val_)-1] = '\0';
-    }
-  }
-
-void node::print()
-{
-  if (val_) printf("%s ",val_);
-  if (n) n->print();
+  return false;
 }
-
-//////////////////////////////////////////////////////////////////////
-
-class list {
-  private:
-    node * head_;
-    node * cur_;
-  
-  public:
-    list() : head_(0), cur_(0) {}
-
-    void add(node*);
-    void del_cur();
-
-    node * current() { return cur_; }
-    int cur_is_on_list_after_cur();
-
-    void rewind() { cur_ = head_; }
-    void ff() { while(cur_->n) cur_ = cur_->n; }
-    void backspace() { cur_ = cur_->p; }
-    void space() { cur_ = cur_->n; }
-    void print();
-
-  };
-
-void list::print()
-{
-  if (head_) head_->print();
-}
-
-void list::add(node*nd)
-{
-  if (!head_) {
-    head_ = nd;
-    cur_ = head_;
-    }
-  else {
-    ff();
-    cur_->n = nd;
-    nd->p = cur_;
-    cur_ = cur_->n;
-    }
-  }
-
-void list::del_cur()
-{
-  node *t;
-  if (cur_->n && cur_->p) { // somewhere in the middle
-    cur_->p->n = cur_->n;
-    cur_->n->p = cur_->p;
-    t = cur_;
-    cur_ = cur_->n;
-    delete t;
-    }
-  else if (!cur_->n && !cur_->p) { // all done
-    delete cur_;
-    head_=cur_=0;
-    }
-  else if (!cur_->n) { // the end
-    cur_->p->n = 0;
-    t = cur_;
-    cur_ = cur_->p;
-    delete t;
-    }
-  else if(!cur_->p) { // the head
-    cur_->n->p = 0;
-    t = cur_;
-    cur_ = cur_->n;
-    head_ = cur_;
-    delete t;
-    }
-  else {
-    fprintf(stderr,"what? where are you?\n");
-    exit (1);
-    }
-  }
-
-int list::cur_is_on_list_after_cur()
-{
-  node *l;
-
-  // start from cur->n, and test to see if the current val already exists
-
-  for (l=cur_->n; l; l=l->n)
-    if (!strcmp(cur_->val_,l->val_)) return 1;
-
-  return 0;
-  }
-
-////////////////////////////////////////////////////////////////////////
-
-int
-run_child(int argc, char *argv[])
-{
-  int fd[2];
-
-  if (pipe(fd) < 0) {
-    fprintf(stderr,"pipe() failed\n");
-    exit(1);
-    }
-
-  int pid;
-  if ((pid=fork()) < 0) {
-    fprintf(stderr,"fork() failed\n");
-    exit(1);
-    }
-
-  if (!pid) { /* child */
-
-    // we don't need the read end of the FIFO
-    close(fd[0]);
-
-    // want stdout to go into the FIFO
-    dup2(fd[1],1);
-    
-    // create the arguments for execvp
-    char **args = new char*[argc+2];
-    args[0] = strdup("gcc");
-    args[1] = strdup("-E");
-
-    for (int i=0; i < argc-1 ; i++)
-      args[i+2] = strdup(argv[i+1]);
-
-    args[argc+1] = 0;
-
-    // and do it
-    execvp("gcc",args);
-
-    // this no good, you fix
-    exit(1);
-    }
-
-  close(fd[1]);
-  return(fd[0]);
-
-  }
 
 void
-read_junk(int fd)
+process_file(const string &passedfilename,
+             map<string,list<string>,less<string> > &read_files,
+             const list<string> &includes)
 {
-  char line[1024];
-  FILE *str = fdopen(fd,"r");
+  string filename(passedfilename);
 
-  list l;
+  if (debug) cout << "process_file: filename: " << filename << endl;
 
-  while(!feof(str)) {
-    fgets(line,1023,str);
-    if (line[0] != '#' && line[0] != '\n')
-      l.add(new node(line));
+  // find and open the file
+  string ifile;
+  ifstream file;
+  for (list<string>::const_iterator i = includes.begin();
+       i != includes.end();
+       i++) {
+    ifile = filename;
+    if (filename[0] != '/') {
+      ifile = string(*i) + "/" + ifile;
+      }
+    if (debug) cout << "process_file: trying: " << ifile << endl;
+    file.open(ifile.c_str());
+    if (file.good()) break;
     }
 
-  //l.print();
-  //printf("\n\n");
-
-  l.ff();
-  l.backspace();
-
-  while (l.current()) {
-    if (l.cur_is_on_list_after_cur()) l.del_cur();
-    l.backspace();
+  if (!file.good()) {
+    cerr << "listlibs: couldn't find " << filename << endl;
+    exit(1);
     }
 
-  l.print();
-  printf("\n\n");
-  }
-    
+  if (debug) cout << "process_file: ifile: " << ifile << endl;
+
+  // read the contents of the file and insert into the file contents map
+  list<string> filecontents;
+  const int max_line_length = 100;
+  char c_line[max_line_length];
+  while (file.good()) {
+    file.getline(c_line, max_line_length);
+    string line(c_line);
+    if (line == "" ) continue;
+    filecontents.push_back(line);
+    if (debug) cout << "process_file: contents: " << line << endl;
+    }
+  file.close();
+  read_files[filename] = filecontents;
+
+  // read in any other referenced files that have not yet been read
+  for (list<string>::iterator i = filecontents.begin();
+       i != filecontents.end();
+       i++) {
+    string line(*i);
+    if (include_to_filename(line)
+        && read_files.find(line) == read_files.end()) {
+      process_file(line, read_files, includes);
+      }
+    }
+}
+
+void
+find_libraries(list<string> &libraries,
+               const string &passedfilename,
+               const map<string,list<string>,less<string> > &read_files,
+               set<string,less<string> > &current_includes)
+{
+  if (current_includes.find(passedfilename) != current_includes.end()) {
+    cerr << "listlibs: recursive include detected for "
+         << passedfilename << ":" << endl;
+    for (set<string,less<string> >::iterator i = current_includes.begin();
+         i != current_includes.end();
+         i++) {
+      cerr << "  " << (*i) << endl;
+      }
+    exit(1);
+    }
+#ifndef sgi
+  current_includes.insert(passedfilename);
+#endif
+  string filename(passedfilename);
+  const list<string> &filecontents = (*(read_files.find(filename))).second;
+  for (list<string>::const_iterator i = filecontents.begin();
+       i != filecontents.end();
+       i++) {
+    string line(*i);
+    if (include_to_filename(line)) {
+      find_libraries(libraries, line, read_files, current_includes);
+      }
+    else {
+      if (debug) cout << "listlibs: find_libraries: found: " << line << endl;
+      libraries.push_back(line);
+      }
+    }
+#ifndef sgi
+  current_includes.erase(passedfilename);
+#endif
+}
+
+void
+eliminate_redundant(list<string> &libraries)
+{
+  list<string> nonredund_libraries;
+  set<string,less<string> > known_libs;
+  for (list<string>::reverse_iterator inext, i = libraries.rbegin();
+       i != libraries.rend();
+       i++) {
+    if (known_libs.find(*i) == known_libs.end()) {
+      known_libs.insert(*i);
+      nonredund_libraries.push_front(*i);
+      }
+    }
+  libraries = nonredund_libraries;
+}
+
+void
+substibute_defines(list<string> &libraries,
+                   map<string,string,less<string> > &defines)
+{
+  for (map<string,string,less<string> >::iterator i = defines.begin();
+       i != defines.end();
+       i++) {
+    const string &macro = (*i).first;
+    const string &value = (*i).second;
+    int macrosize = macro.size();
+    for (list<string>::iterator j = libraries.begin();
+         j != libraries.end();
+         j++) {
+      string &lib = (*j);
+      for (int npass = 0, index = lib.find(macro);
+           index != lib.npos;
+           npass++,index = lib.find(macro)) {
+        lib.replace(index,macrosize,value);
+        if (npass > 20) {
+          cerr << "lib = " << lib << endl;
+          cerr << "listlibs: recursive macro replacement "
+               << macro << "=" << value
+               << endl;
+          exit(1);
+          }
+        }
+      }
+    }
+}
+
+int
 main(int argc, char *argv[])
 {
-  int fd = run_child(argc,argv);
+  list<string> libraries;
+  list<string> includes;
+  map<string,string,less<string> > defines;
+  map<string,list<string>,less<string> > read_files;
+  string filename;
+  includes.push_back(".");
 
-  read_junk(fd);
+  // process the arguments
+  for (int i=1; i<argc; i++) {
+    string arg(argv[i]);
+    if (arg.substr(0,2) == "-D") {
+      string def(&argv[i][2]);
+      string symbol(def);
+      string value(def);
+      symbol.remove(symbol.find("="),symbol.size()-symbol.find("=")+1);
+      def.remove(0, def.find("=") + 1);
+      if (debug) cout << "Defining " << symbol << " to be " << def << endl;
+      defines[symbol] = def;
+      }
+    else if (arg.substr(0,2) == "-I") {
+      string incdir(arg.substr(2,arg.size()-2));
+      if (debug) cout << "main: incdir: " << incdir << endl;
+      includes.push_back(incdir);
+      }
+    else {
+      filename = arg;
+      }
+    }
 
-  /* clean up zombies */
+  if (filename.size() == 0) {
+    cerr << "listlibs: requires a filename" << endl;
+    exit(1);
+    }
 
-  while(wait(&argc) > -1) ;
+  process_file(filename, read_files, includes);
 
-  exit(0);
-  }
+  set<string,less<string> > current_includes;
+  find_libraries(libraries, filename, read_files, current_includes);
+
+  eliminate_redundant(libraries);
+
+  substibute_defines(libraries, defines);
+
+  for (list<string>::iterator i = libraries.begin();
+       i != libraries.end();
+       i++) {
+    if (i != libraries.begin()) cout << " ";
+    cout << (*i);
+    }
+  cout << endl;
+
+  return 0;
+}

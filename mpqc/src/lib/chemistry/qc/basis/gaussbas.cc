@@ -161,15 +161,21 @@ GaussianBasisSet::init(RefMolecule&molecule,
   // compute center_to_r_
   center_to_r_.set_lengths(ncenter_,3);
   ishell = 0;
-  for (iatom=0; iatom<ncenter_; iatom++) {
-      center_to_r_(iatom,0) = molecule->operator[](iatom)[0];
-      center_to_r_(iatom,1) = molecule->operator[](iatom)[1];
-      center_to_r_(iatom,2) = molecule->operator[](iatom)[2];
-     }
+  init_center_to_r(molecule.pointer());
 
   // finish with the initialization steps that don't require any
   // external information
   init2();
+}
+
+void
+GaussianBasisSet::init_center_to_r(const Molecule* molecule)
+{
+  for (int iatom=0; iatom<ncenter_; iatom++) {
+    center_to_r_(iatom,0) = molecule->atom(iatom).point()[0];
+    center_to_r_(iatom,1) = molecule->atom(iatom).point()[1];
+    center_to_r_(iatom,2) = molecule->atom(iatom).point()[2];
+  }
 }
 
 void
@@ -309,7 +315,7 @@ GaussianBasisSet::operator()(int icenter,int ishell)
 }
 
 centers_t*
-GaussianBasisSet::convert_to_centers_t(const Molecule*mol) const
+GaussianBasisSet::convert_to_centers_t(const Molecule*mol)
 {
   centers_t* c;
   c = (centers_t*)malloc(sizeof(centers_t));
@@ -324,6 +330,10 @@ GaussianBasisSet::convert_to_centers_t(const Molecule*mol) const
   c->func_offset = 0;
   c->prim_offset = 0;
   c->shell_offset = 0;
+
+  if (mol)
+    init_center_to_r(mol);
+  
   for (int icenter = 0; icenter < ncenter_; icenter++) {
       if (mol) {
           const Molecule& molr = *mol;

@@ -61,6 +61,8 @@ class GaussianBasisSet: public SavableState
               int have_userkeyval,
               int pure);
     void init2();
+    void init_center_to_r(const Molecule*);
+    
   public:
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);
@@ -99,8 +101,8 @@ class GaussianBasisSet: public SavableState
     // converts the basis set to a centers_t for compatibility with libintv2
     // If the molecule is 0 then fake molecule information is included--
     // this is useful in computing the overlap, for example.
-    centers_t* convert_to_centers_t(const Molecule*) const;
-    centers_t* convert_to_centers_t(const RefMolecule&mol) const {
+    centers_t* convert_to_centers_t(const Molecule*);
+    centers_t* convert_to_centers_t(const RefMolecule&mol) {
         return convert_to_centers_t(mol.pointer());
       }
     //operator struct struct_centers*();

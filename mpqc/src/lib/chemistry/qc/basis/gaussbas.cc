@@ -7,6 +7,7 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/files.h>
 
 SavableState_REF_def(GaussianBasisSet);
 
@@ -32,8 +33,6 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
     Molecule::require_castdown(topkeyval
                                ->describedclassvalue("molecule").pointer(),
                                "molecule of wrong type");
-  
-  char* basisname = topkeyval->pcharvalue("name");
 
   // see if the user requests pure am or cartesian functions
   int pure;
@@ -47,21 +46,11 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
   RefKeyVal libkeyval = new ParsedKeyVal("basis",topkeyval);
   RefKeyVal keyval = new AggregateKeyVal(topkeyval,libkeyval);
 
-  init(molecule_,keyval,basisname,1,pure);
-
-  delete[] basisname;
-}
-
-GaussianBasisSet::GaussianBasisSet(RefMolecule&molecule,
-                                   const char*basisname,
-                                   int pure)
-{
-  // construct a keyval that contains the basis library
-  RefParsedKeyVal libkeyval = new ParsedKeyVal(BASISDIR "/v2g90.ipv2");
-  libkeyval->read(BASISDIR "/v2g90supp.ipv2");
-
-  RefKeyVal keyval(libkeyval.pointer());
-  init(molecule,keyval,basisname,0,pure);
+  // Bases keeps track of what basis set data bases have already
+  // been read in.  It also handles the conversion of basis
+  // names to file names.
+  BasisFileSet bases(keyval);
+  init(molecule_,keyval,bases,1,pure);
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
@@ -101,8 +90,8 @@ GaussianBasisSet::save_data_state(StateOut&s)
 
 void
 GaussianBasisSet::init(RefMolecule&molecule,
-                       const RefKeyVal&keyval,
-                       const char*basisname,
+                       RefKeyVal&keyval,
+                       BasisFileSet& bases,
                        int have_userkeyval,
                        int pur)
 {
@@ -115,7 +104,21 @@ GaussianBasisSet::init(RefMolecule&molecule,
       havepure = 1;
     }
 
-  name_ = strcpy(new char[strlen(basisname)+1], basisname);
+  name_ = keyval->pcharvalue("name");
+  int have_custom, nelement;
+
+  if (keyval->exists("basis")) {
+      have_custom = 1;
+      nelement = keyval->count("element");
+    }
+  else {
+      have_custom = 0;
+      nelement = 0;
+      if (!name_) {
+          fprintf(stderr,"GaussianBasisSet: No name given for basis set\n");
+          abort();
+        }
+    }
 
   // construct prefixes for each atom: :basis:<atom>:<basisname>:<shell#>
   // and read in the shell
@@ -124,17 +127,36 @@ GaussianBasisSet::init(RefMolecule&molecule,
   ncenter_ = molecule->natom();
   int iatom;
   for (iatom=0; iatom < ncenter_; iatom++) {
+      ChemicalElement currentelement(molecule->operator[](iatom).element());
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
-      if (have_userkeyval) {
+      if (have_custom && !nelement) {
           sbasisname = keyval->pcharvalue("basis",iatom);
         }
+      else if (nelement) {
+          int i;
+          for (i=0; i<nelement; i++) {
+              char *tmpelementname = keyval->pcharvalue("element", i);
+              ChemicalElement tmpelement(tmpelementname);
+              if (tmpelement == currentelement) {
+                  sbasisname = keyval->pcharvalue("basis", i);
+                  break;
+                }
+              delete[] tmpelementname;
+            }
+        }
       if (!sbasisname) {
-          sbasisname = strcpy(new char[strlen(basisname)+1],basisname);
+          if (!name_) {
+              fprintf(stderr,
+                      "GaussianBasisSet: no basis name for atom %d (%s)\n",
+                      iatom, currentelement.name());
+              abort();
+            }
+          sbasisname = strcpy(new char[strlen(name_)+1],name_);
         }
       recursively_get_shell(ishell,keyval,
-                            molecule->operator[](iatom).element().name(),
-			    sbasisname,havepure,pure,0);
+                            currentelement.name(),
+                            sbasisname,bases,havepure,pure,0);
       delete[] sbasisname;
     }
   nshell_ = ishell;
@@ -142,19 +164,38 @@ GaussianBasisSet::init(RefMolecule&molecule,
   ishell = 0;
   center_to_nshell_.set_length(ncenter_);
   for (iatom=0; iatom<ncenter_; iatom++) {
+      ChemicalElement currentelement(molecule->operator[](iatom).element());
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
-      if (have_userkeyval) {
+      if (have_custom && !nelement) {
           sbasisname = keyval->pcharvalue("basis",iatom);
         }
+      else if (nelement) {
+          int i;
+          for (i=0; i<nelement; i++) {
+              char *tmpelementname = keyval->pcharvalue("element", i);
+              ChemicalElement tmpelement(tmpelementname);
+              if (tmpelement == currentelement) {
+                  sbasisname = keyval->pcharvalue("basis", i);
+                  break;
+                }
+              delete[] tmpelementname;
+            }
+        }
       if (!sbasisname) {
-          sbasisname = strcpy(new char[strlen(basisname)+1],basisname);
+          if (!name_) {
+              fprintf(stderr,
+                      "GaussianBasisSet: no basis name for atom %d (%s)\n",
+                      iatom, currentelement.name());
+              abort();
+            }
+          sbasisname = strcpy(new char[strlen(name_)+1],name_);
         }
 
       int ishell_old = ishell;
       recursively_get_shell(ishell,keyval,
-                            molecule->operator[](iatom).element().name(),
-			    sbasisname,havepure,pure,1);
+                            currentelement.name(),
+                            sbasisname,bases,havepure,pure,1);
 
       center_to_nshell_[iatom] = ishell - ishell_old;
 
@@ -213,9 +254,10 @@ GaussianBasisSet::init2()
 
 void
 GaussianBasisSet::
-  recursively_get_shell(int&ishell,const RefKeyVal&keyval,
+  recursively_get_shell(int&ishell,RefKeyVal&keyval,
 			const char*element,
 			const char*basisname,
+                        BasisFileSet &bases,
 			int havepure,int pure,
 			int get)
 {
@@ -224,6 +266,10 @@ GaussianBasisSet::
   sprintf(keyword,":basis:%s:%s",
 	  element,basisname);
   int count = keyval->count(keyword);
+  if (keyval->error() != KeyVal::OK) {
+      keyval = bases.keyval(keyval, basisname);
+    }
+  count = keyval->count(keyword);
   if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"GaussianBasisSet:: couldn't find \"%s\":\n",
 	      keyword);
@@ -243,7 +289,8 @@ GaussianBasisSet::
               keyval->errortrace(cerr);
 	      exit(1);
 	    }
-	  recursively_get_shell(ishell,keyval,element,newbasis,havepure,pure,get);
+	  recursively_get_shell(ishell,keyval,element,newbasis,bases,
+                                havepure,pure,get);
           delete[] newbasis;
 	}
       else {

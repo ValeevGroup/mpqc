@@ -1,0 +1,35 @@
+
+molecule<Molecule>: (
+  symmetry = c1
+  { atoms geometry } = {
+    N  [ 0.0  0.0  0.0 ]
+    C  [ 1.0  0.0  0.0 ]
+    C  [ 2.0  0.0  0.0 ]
+    H  [ 3.0  0.0  0.0 ]
+    He [ 4.0  0.0  0.0 ]
+    }
+ )
+
+test: [
+ <GaussianBasisSet>: (
+   molecule = $:molecule
+   name = "STO-3G"
+   )
+
+ <GaussianBasisSet>: (
+   molecule = $:molecule
+   name = "STO-3G"
+   {element basis} = {
+      C   "STO-2G"
+     }
+   )
+ <GaussianBasisSet>: (
+   molecule = $:molecule
+   basis = [ "STO-2G"
+             "STO-3G"
+             "STO-2G"
+             "STO-3G"
+             "STO-2G"
+             ]
+   )
+ ]

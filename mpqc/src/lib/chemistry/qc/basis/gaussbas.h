@@ -18,6 +18,7 @@
 
 class GaussianShell;
 class RefKeyVal;
+class BasisFileSet;
 
 class GaussianBasisSet: public SavableState
 {
@@ -43,11 +44,12 @@ class GaussianBasisSet: public SavableState
     int nbasis_;
     int nprim_;
 
-    void recursively_get_shell(int&,const RefKeyVal&,
-                               const char*,const char*,int,int,int);
+    void recursively_get_shell(int&,RefKeyVal&,
+                               const char*,const char*,BasisFileSet&,
+                               int,int,int);
 
-    void init(RefMolecule&,const RefKeyVal&,
-              const char* basisname,
+    void init(RefMolecule&,RefKeyVal&,
+              BasisFileSet&,
               int have_userkeyval,
               int pure);
     void init2();
@@ -55,9 +57,6 @@ class GaussianBasisSet: public SavableState
   public:
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);
-    // pure is -1 if the pure from the basis set data is used.
-    // Otherwise 0 is cartesian and 1 is pure am.
-    GaussianBasisSet(RefMolecule&,const char*basisname,int pure = -1);
     virtual ~GaussianBasisSet();
     void save_data_state(StateOut&);
     const char* name() const;

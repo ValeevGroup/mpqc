@@ -7,19 +7,19 @@ BASISDIR = $(shell $(SRCDIR)/$(TOPDIR)/bin/rmdotdot $(SRCDIR)/$(TOPDIR)/lib)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-DEFINES += -DBASISDIR=\"$(BASISDIR)\" -DSRCDIR=\"$(SRCDIR)\"
+DEFINES += -DBASISDIR=\"$(BASISDIR)/basis\" -DSRCDIR=\"$(SRCDIR)\"
 
 TARGET_TO_MAKE = libbasis
 BIN_OR_LIB = LIB
 
 CXXSRC = gaussbas.cc gaussshell.cc gaussshval.cc gaussbaval.cc \
-       gaussbas_i.cc gaussshe_i.cc
+       gaussbas_i.cc gaussshe_i.cc files.cc
 
-INC = gaussbas.h gaussshe_i.h basis.h gaussbas_i.h gaussshell.h
+INC = gaussbas.h gaussshe_i.h basis.h gaussbas_i.h gaussshell.h files.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.o)
-TESTFILES = btest.in
+TESTFILES = btest.kv
 
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
@@ -31,9 +31,8 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libbasis.so
 endif
 
-btest: $(TESTOBJ) libbasis.a \
-	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(CXX) $(CXXFLAGS) -o btest $^ $(SYSLIBS)
+btest: $(TESTOBJ) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -4,23 +4,24 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/basis.h>
 
-main()
+int
+main(int, char**)
 {
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/btest.in");
+  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/btest.kv");
 
-  RefMolecule molecule = keyval->describedclassvalue("molecule");
+  for (int i=0; i<keyval->count("test"); i++) {
+      RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);
+      gbs->print();
 
-  RefGaussianBasisSet gbs = new GaussianBasisSet(molecule,"sto-3g");
+      fflush(stdout);
+      cout.flush();
 
-  gbs->print();
+      StateOutText out("btest.out");
+      gbs.save_state(out);
+      StateInText in("btest.out");
+      gbs.restore_state(in);
+      gbs->print();
+    }
 
-  StateOutText out("btest.out");
-
-  gbs.save_state(out);
-
-  StateInText in("btest.out");
-
-  gbs.restore_state(in);
-
-  gbs->print();
+  return 0;
 }

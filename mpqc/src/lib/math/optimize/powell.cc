@@ -4,6 +4,7 @@ extern "C" {
 }
 
 #include <math/optimize/update.h>
+#include <math/optimize/transform.h>
 #include <util/keyval/keyval.h>
 
 #define CLASSNAME PowellUpdate
@@ -90,4 +91,12 @@ PowellUpdate::update(RefSymmSCMatrix&hessian,RefNLP2&nlp,
     xprev = xnew.copy();
     gprev = gnew.copy();
   }
+}
+
+void
+PowellUpdate::apply_transform(const RefNonlinearTransform& trans)
+{
+  if (trans.null()) return;
+  trans->transform_coordinates(xprev);
+  trans->transform_gradient(gprev);
 }

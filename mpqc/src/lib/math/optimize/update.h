@@ -11,6 +11,8 @@
 #include <math/scmat/matrix.h>
 #include <math/optimize/nlp.h>
 
+class RefNonlinearTransform;
+
 ////////////////////////////////////////////////////////////////////////
 //  hessian update classes.  based on the value of inverse_hessian_
 //  x and g may be reversed (see Schlegel, ab initio Methods in Quantum
@@ -31,6 +33,7 @@ class HessianUpdate: virtual_base public SavableState {
     virtual void update(RefSymmSCMatrix&hessian,RefNLP2&nlp,
                         RefSCVector&xnew,RefSCVector&gnew) = 0;
     void set_inverse();
+    virtual void apply_transform(const RefNonlinearTransform&);
 };
 SavableState_REF_dec(HessianUpdate);
 
@@ -52,6 +55,7 @@ class DFPUpdate: public HessianUpdate {
     ~DFPUpdate();
     void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
                 RefSCVector&xnew,RefSCVector&gnew);
+    void apply_transform(const RefNonlinearTransform&);
 };
 
 class BFGSUpdate: public DFPUpdate {
@@ -89,6 +93,7 @@ class PowellUpdate: public HessianUpdate {
     ~PowellUpdate();
     void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
                 RefSCVector&xnew,RefSCVector&gnew);
+    void apply_transform(const RefNonlinearTransform&);
 };
 
 #endif

@@ -57,3 +57,8 @@ HessianUpdate::set_inverse(void)
 {
   inverse_hessian_ = 1;
 }
+
+void
+HessianUpdate::apply_transform(const RefNonlinearTransform&)
+{
+}

@@ -4,6 +4,7 @@ extern "C" {
 }
 
 #include <math/optimize/update.h>
+#include <math/optimize/transform.h>
 #include <util/keyval/keyval.h>
 
 #define CLASSNAME DFPUpdate
@@ -96,6 +97,14 @@ DFPUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
   }
 }
 
+void
+DFPUpdate::apply_transform(const RefNonlinearTransform& trans)
+{
+  if (trans.null()) return;
+  trans->transform_coordinates(xprev);
+  trans->transform_gradient(gprev);
+}
+
 /////////////////////////////////////////////////////////////////////////
 // BFGSUpdate
 
@@ -170,3 +179,4 @@ BFGSUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
     gprev = gnew.copy();
   }
 }
+

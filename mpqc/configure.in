@@ -380,6 +380,19 @@ case $target in
     fi
     AC_MSG_RESULT("rs6000 or powerpc")
   ;;
+  alphaev6-*)
+    if test X$GCC = Xyes; then
+      COPTIONS_OPT="-O3 -mcpu=ev6"
+    else
+      COPTIONS_OPT="-O5 -arch ev6"
+    fi
+    if test X$GXX = Xyes; then
+      CXXOPTIONS_OPT="-O3 -mcpu=ev6"
+    else
+      CXXOPTIONS_OPT="-O5 -arch ev6"
+    fi
+    AC_MSG_RESULT("alphaev6")
+  ;;
   alphaev56-*)
     if test X$GCC = Xyes; then
       COPTIONS_OPT="-O3 -mcpu=ev56"

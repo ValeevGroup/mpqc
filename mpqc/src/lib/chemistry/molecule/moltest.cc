@@ -30,8 +30,10 @@
 
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/hess.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/coor.h>
+#include <util/state/state_bin.h>
 #include <util/render/object.h>
 #include <util/render/oogl.h>
 #include <util/misc/formio.h>
@@ -265,14 +267,20 @@ main(int argc, char **argv)
       me->print();
     }
 
-  RefMolecularFrequencies mf = kv->describedclassvalue("freq");
-  if (mf.nonnull()) {
+  RefMolecularHessian molhess = kv->describedclassvalue("hess");
+  RefSymmSCMatrix xhessian;
+  if (molhess.nonnull()) {
+      xhessian = molhess->cartesian_hessian();
+    }
+
+  RefMolecularFrequencies molfreq = kv->describedclassvalue("freq");
+  if (molfreq.nonnull() && xhessian.nonnull()) {
       cout << "-------------- testing freq  --------------" << endl;
-      mf->compute_displacements();
+      molfreq->compute_frequencies(xhessian);
     }
 
   return 0;
-    }
+}
 
 
 void

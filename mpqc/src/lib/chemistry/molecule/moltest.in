@@ -48,8 +48,11 @@ energy<TaylorMolecularEnergy>: (
 %    ]
   )
 
-freq<MolecularFrequencies>: (
+hess<FinDispMolecularHessian>: (
     energy = $:energy
+  )
+
+freq<MolecularFrequencies>: (
   )
 
 big_molecule<Molecule>: (

@@ -53,6 +53,7 @@ Integral::Integral(const RefGaussianBasisSet &b1,
                    const RefGaussianBasisSet &b3,
                    const RefGaussianBasisSet &b4)
 {
+  storage_ = 0;
   grp_ = MessageGrp::get_default_messagegrp();
   set_basis(b1,b2,b3,b4);
 }
@@ -70,6 +71,7 @@ Integral::Integral(StateIn& s) :
 
 Integral::Integral(const RefKeyVal&)
 {
+  storage_ = 0;
   grp_ = MessageGrp::get_default_messagegrp();
 }
 

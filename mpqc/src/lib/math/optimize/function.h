@@ -48,39 +48,46 @@ class Function: virtual public SavableState, public Compute {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    RefSCMatrixKit matrixkit_;
+    RefSCMatrixKit matrixkit_;          ///< Used to construct new matrices.
 
-    RefSCVector x_;                     // variables
-    RefSCDimension dim_;                // dimension of x_
-    AccResultdouble value_;             // value of function at x_
-    AccResultRefSCVector gradient_;     // gradient at x_
-    AccResultRefSymmSCMatrix hessian_;  // hessian at x_
+    RefSCVector x_;                     ///< The variables.
+    RefSCDimension dim_;                ///< The dimension of x_.
+    AccResultdouble value_;             ///< The value of the function at x_.
+    AccResultRefSCVector gradient_;     ///< The gradient at x_
+    AccResultRefSymmSCMatrix hessian_;  ///< The hessian at x_.
 
-    /// Update the various computable results.
+    /** @name Update Members
+        Update the various computable results.
+    */
+    //@{
     virtual void set_value(double);
     virtual void set_gradient(RefSCVector&);
     virtual void set_hessian(RefSymmSCMatrix&);
+    //@}
 
     /** Set the SCMatrixKit that should be used to
         construct the requisite vectors and matrices. */
     virtual void set_matrixkit(const RefSCMatrixKit&);
     virtual void set_dimension(const RefSCDimension&);
 
-    /** Set the accuracies with which the various computables
-        must be computed. */
+    /** @name Accuracy Setting Members
+        Set the accuracies with which the various computables
+        have been computed. */
+    //@{
     virtual void set_actual_value_accuracy(double);
     virtual void set_actual_gradient_accuracy(double);
     virtual void set_actual_hessian_accuracy(double);
+    //@}
 
     /// Get read/write access to the coordinates for modification.
     RefSCVector& get_x_reference() { obsolete(); return x_; }
 
+    /** Change the coordinate system and apply the given transform to
+        intermediates matrices and vectors. */
     void do_change_coordinates(const RefNonlinearTransform&);
   public:
     Function();
-    /// Restore the state of a Function object.
     Function(StateIn&);
-    /// Make a copy of the argument.
     Function(const Function&);
 
     /** The keyval constructor reads the following keywords:
@@ -130,8 +137,10 @@ class Function: virtual public SavableState, public Compute {
     /// Return the accuracy with which the value is to be computed.
     virtual double desired_value_accuracy() const;
 
-    /** These are analogous to the routines that deal with values,
+    /** @name Gradient Members
+        These are analogous to the routines that deal with values,
         but work with gradients instead. */
+    //@{
     virtual RefSCVector gradient();
     int gradient_needed() const;
     int do_gradient(int);
@@ -139,9 +148,12 @@ class Function: virtual public SavableState, public Compute {
     virtual double actual_gradient_accuracy() const;
     virtual double desired_gradient_accuracy() const;
     AccResultRefSCVector& gradient_result() { return gradient_; }
+    //@}
 
-    /** These are analogous to the routines that deal with values,
+    /** @name Hessian Members
+        These are analogous to the routines that deal with values,
         but work with the hessian instead. */
+    //@{
     virtual RefSymmSCMatrix hessian();
     int hessian_needed() const;
     int do_hessian(int);
@@ -149,6 +161,7 @@ class Function: virtual public SavableState, public Compute {
     virtual double actual_hessian_accuracy() const;
     virtual double desired_hessian_accuracy() const;
     AccResultRefSymmSCMatrix& hessian_result() { return hessian_; }
+    //@}
 
     // hessian by gradients at finite displacements
     // virtual RefSCMatrix fd1_hessian();

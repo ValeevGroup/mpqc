@@ -18,19 +18,6 @@ fail()
   exit(1);
 }
 
-static int
-ncart_deriv(RefGaussianBasisSet gbs)
-{
-  int ns = gbs->max_nfunction_in_shell();
-  // hack to check for sp shells
-  if (ns==4) {
-      return 9;
-    }
-  else {
-      return INT_NCART(gbs->max_angular_momentum()+1);
-    }
-}
-
 /* Initialize the 2e integral computation routines.
  * storage = the amount of storage available in bytes
  * order = order of derivative, must be zero or one
@@ -220,10 +207,10 @@ Int2eV3::int_initialize_erep(int storage, int order,
     }
   else if (order==1) {
     int nderint;
-    nderint = ncart_deriv(cs1)
-             *ncart_deriv(cs2)
-             *ncart_deriv(cs3)
-             *ncart_deriv(cs4);
+    nderint = cs1->max_ncartesian_in_shell(1)
+             *cs2->max_ncartesian_in_shell(1)
+             *cs3->max_ncartesian_in_shell(1)
+             *cs4->max_ncartesian_in_shell(1);
  
     /* Allocate the integral buffers. */
     int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);

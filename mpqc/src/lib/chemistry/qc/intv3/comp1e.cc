@@ -35,7 +35,7 @@ Int1eV3::int_initialize_1e(int flags, int order)
 
   fjt_ = new FJT(jmax + 2*order);
 
-  nshell2 = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell();
+  nshell2 = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell();
 
   if (order == 0) {
     init_order = 0;

@@ -97,6 +97,7 @@ class SCVector3
     SCVector3 perp_unit(const SCVector3&) const;
     void spherical_coord(double theta, double phi, 
                          double r);
+    void spherical_to_cartesian(SCVector3&cart) const;
     double maxabs() const;
     // this returns the length of the difference vector
     double dist(const SCVector3&) const;
@@ -115,9 +116,16 @@ class SCVector3
     const double& x() const { return _v[0]; }
     const double& y() const { return _v[1]; }
     const double& z() const { return _v[2]; }
+    double& r() { return _v[0]; }
+    double& theta() { return _v[1]; }
+    double& phi() { return _v[2]; }
+    const double& r() const { return _v[0]; }
+    const double& theta() const { return _v[1]; }
+    const double& phi() const { return _v[2]; }
     void print(ostream& =cout) const;
 };
 SCVector3 operator*(double,const SCVector3&);
+ostream &operator<<(ostream&, const SCVector3 &);
 
 #ifdef INLINE_FUNCTIONS
 #include <math/scmat/vector3_i.h>

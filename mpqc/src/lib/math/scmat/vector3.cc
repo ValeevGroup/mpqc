@@ -194,12 +194,25 @@ SCVector3::maxabs() const
   return result;
 }
 
+void
+SCVector3::spherical_to_cartesian(SCVector3&cart) const
+{
+  cart.spherical_coord(theta(), phi(), r());
+}
+
 void SCVector3::print(ostream& os) const
 {
   os << indent
      << setw(8) << setprecision(5) << x() << " "
      << setw(8) << setprecision(5) << y() << " "
      << setw(8) << setprecision(5) << z() << "}\n";
+}
+
+ostream &
+operator<<(ostream&o, const SCVector3 &v)
+{
+  o << scprintf("{% 8.5f % 8.5f % 8.5f}", v.x(), v.y(), v.z());
+  return o;
 }
 
 /////////////////////////////////////////////////////////////////////////////

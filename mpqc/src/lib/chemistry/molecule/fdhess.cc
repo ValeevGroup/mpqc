@@ -384,17 +384,16 @@ FinDispMolecularHessian::displace(int disp)
     mol_->set_point_group(original_point_group_);
     }
   else {
+    RefPointGroup oldpg = mol_->point_group();
     RefPointGroup newpg = mol_->highest_point_group();
     CorrelationTable corrtab;
     if (corrtab.initialize_table(original_point_group_, newpg)) {
       // something went wrong so use c1 symmetry
-      mol_->set_point_group(new PointGroup("c1"));
-      mole_->symmetry_changed();
+      newpg = new PointGroup("c1");
       }
-    else {
+    if (!oldpg->equiv(newpg)) {
       mol_->set_point_group(newpg);
-      if (index==0)
-        mole_->symmetry_changed();
+      mole_->symmetry_changed();
       }
     }
 
@@ -428,8 +427,10 @@ FinDispMolecularHessian::original_geometry()
       }
     }
 
-  mol_->set_point_group(original_point_group_);
-  mole_->symmetry_changed();
+  if (!mol_->point_group()->equiv(original_point_group_)) {
+    mol_->set_point_group(original_point_group_);
+    mole_->symmetry_changed();
+    }
 }
 
 void

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-sub='s_/[^/]*/\.\.\(/\)\?_\1_'
+sub='s_/[^/.]*/\.\.\(/\)\?_\1_'
 originalpath=$1
 newpath=`echo $originalpath | sed "$sub"`
 

@@ -38,7 +38,7 @@ extern "C" {
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
 
-const double infinity = 1.0e23;
+static const double shape_infinity = 1.0e23;
 
 // given a vector X find which of the points in the vector of
 // vectors, A, is closest to it and return the distance
@@ -571,12 +571,12 @@ ReentrantUncappedTorusHoleShape::
   in_plane_sphere(X,P);
   SCVector3 XP = Xv - P;
   double rXP = XP.norm();
-  if (rXP > rAP || rXP > rBP) return infinity;
+  if (rXP > rAP || rXP > rBP) return shape_infinity;
 
   SCVector3 AP = A() - P;
   SCVector3 BP = B() - P;
 
-  if (!is_in_unbounded_triangle(XP,AP,BP)) return infinity;
+  if (!is_in_unbounded_triangle(XP,AP,BP)) return shape_infinity;
 
   SCVector3 I1P = I[0] - P;
   SCVector3 I2P = I[1] - P;
@@ -639,7 +639,7 @@ double NonreentrantUncappedTorusHoleShape::
   in_plane_sphere(X,P);
   SCVector3 PX = P - Xv;
   double rPX = PX.norm();
-  if (rPX > rAP || rPX > rBP) return infinity;
+  if (rPX > rAP || rPX > rBP) return shape_infinity;
 
   SCVector3 PA = P - A();
   SCVector3 XA = Xv - A();
@@ -648,14 +648,14 @@ double NonreentrantUncappedTorusHoleShape::
 
   SCVector3 BA_perp = BA; BA_perp.rotate(M_PI_2,axis);
   double u = BA_perp.dot(XA)/BA_perp.dot(PA);
-  if (u<0.0 || u>1.0) return infinity;
+  if (u<0.0 || u>1.0) return shape_infinity;
 
   SCVector3 PA_perp = PA; PA_perp.rotate(M_PI_2,axis);
   double w = PA_perp.dot(XA)/PA_perp.dot(BA);
-  if (w<0.0 || w>1.0) return infinity;
+  if (w<0.0 || w>1.0) return shape_infinity;
 
   double uw = u+w;
-  if (uw<0.0 || uw>1.0) return infinity;
+  if (uw<0.0 || uw>1.0) return shape_infinity;
 
   if (rPX < radius()) {
       if (grad) {
@@ -1010,13 +1010,13 @@ Uncapped5SphereExclusionShape::
   SCVector3 XD = Xv - D[side];
   double u = BDxCD[side].dot(XD)/BDxCDdotAD[side];
   if (verbose) cout << scprintf("u = %14.8f\n", u);
-  if (u <= 0.0) return infinity;
+  if (u <= 0.0) return shape_infinity;
   double v = CDxAD[side].dot(XD)/CDxADdotBD[side];
   if (verbose) cout << scprintf("v = %14.8f\n", v);
-  if (v <= 0.0) return infinity;
+  if (v <= 0.0) return shape_infinity;
   double w = ADxBD[side].dot(XD)/ADxBDdotCD[side];
   if (verbose) cout << scprintf("w = %14.8f\n", w);
-  if (w <= 0.0) return infinity;
+  if (w <= 0.0) return shape_infinity;
   double rXD = XD.norm();
   if (verbose) cout << scprintf("r() - rXD = %14.8f\n", r() - rXD);
   if (rXD <= r()) {

@@ -8,7 +8,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
-SRCS = grscf.cc
+SRCS = grscf.cc gmat.cc grad.cc
 
 CLASSES = GRSCF
 
@@ -37,6 +37,6 @@ scftest.o: scftest.cc
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.o=.d) scftest.d
 endif
 

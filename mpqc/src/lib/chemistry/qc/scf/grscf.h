@@ -31,6 +31,10 @@ class GRSCF: public OneBodyWavefunction
     RefAccumDDH _accumddh;
     RefAccumEffectiveH _accumeffh;
 
+    RefSymmSCMatrix _fock;
+    RefSymmSCMatrix _op_fock;
+    RefDiagSCMatrix _fock_evals;
+    
     int _ndocc;
     int _nsocc;
     int _density_reset_freq;
@@ -49,9 +53,6 @@ class GRSCF: public OneBodyWavefunction
     RefSymmSCMatrix _gr_gmat;
     RefSymmSCMatrix _gr_op_gmat;
     RefSymmSCMatrix _gr_hcore;
-    RefSymmSCMatrix _gr_fock;
-    RefSymmSCMatrix _gr_op_fock;
-    RefDiagSCMatrix _gr_evals;
     RefSCMatrix _gr_vector;
     RefSCMatrix _gr_nvector;
     
@@ -60,6 +61,7 @@ class GRSCF: public OneBodyWavefunction
     virtual void do_vector(double&,double&);
     virtual void form_ao_fock(double&);
     virtual double scf_energy();
+    virtual void do_gradient(const RefSCVector&);
     
   public:
     GRSCF(StateIn&);

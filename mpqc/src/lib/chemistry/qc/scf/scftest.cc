@@ -83,7 +83,7 @@ main(int argc, char**argv)
     RefKeyVal rpkv(new ParsedKeyVal(input));
 
     mole = rpkv->describedclassvalue(keyword);
-    // opt = rpkv->describedclassvalue(optkeyword);
+    opt = rpkv->describedclassvalue(optkeyword);
     // opt->set_checkpoint();
     // opt->set_checkpoint_file("mpqctest.ckpt");
   }
@@ -97,10 +97,13 @@ main(int argc, char**argv)
         o << "opt is null\n";
       }
     } else if (mole->value_implemented()) {
+      mole->gradient();
       o << " value of mole is ";
       o << mole->energy() << endl;
       printf("%20.15f\n",mole->energy());
     }
+
+    mole->print(o);
   }
 
   return 0;

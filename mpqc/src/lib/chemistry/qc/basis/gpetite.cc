@@ -85,6 +85,92 @@ canonical_abcd::canonical_abcd(const Ref<GaussianBasisSet> bi,
   nk_ = bk->nshell();
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+GenPetite4::GenPetite4(const Ref<GaussianBasisSet> &b1,
+                       const Ref<GaussianBasisSet> &b2,
+                       const Ref<GaussianBasisSet> &b3,
+                       const Ref<GaussianBasisSet> &b4)
+{
+  int **atom_map;
+  b1_ = b1;
+  b2_ = b2;
+  b3_ = b3;
+  b4_ = b4;
+
+  ng_ = b1->molecule()->point_group()->char_table().order();
+  if (b2->molecule()->point_group()->char_table().order() != ng_
+      || b3->molecule()->point_group()->char_table().order() != ng_
+      || b4->molecule()->point_group()->char_table().order() != ng_) {
+    throw std::runtime_error("GPetite4: not all point groups are the same");
+  }
+  c1_ =  (ng_ == 1);
+
+  atom_map = compute_atom_map(b1);
+  shell_map_i_ = compute_shell_map(atom_map,b1);
+  delete_atom_map(atom_map,b1);
+
+  atom_map = compute_atom_map(b2);
+  shell_map_j_ = compute_shell_map(atom_map,b2);
+  delete_atom_map(atom_map,b2);
+
+  atom_map = compute_atom_map(b3);
+  shell_map_k_ = compute_shell_map(atom_map,b3);
+  delete_atom_map(atom_map,b3);
+
+  atom_map = compute_atom_map(b4);
+  shell_map_l_ = compute_shell_map(atom_map,b4);
+  delete_atom_map(atom_map,b4);
+}
+
+GenPetite4::~GenPetite4() {
+  delete_shell_map(shell_map_i_,b1_);
+  delete_shell_map(shell_map_j_,b2_);
+  delete_shell_map(shell_map_k_,b3_);
+  delete_shell_map(shell_map_l_,b4_);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+template <class C4> GPetite4<C4>::GPetite4(const Ref<GaussianBasisSet> &b1,
+         const Ref<GaussianBasisSet> &b2,
+         const Ref<GaussianBasisSet> &b3,
+         const Ref<GaussianBasisSet> &b4,
+         const C4& c): GenPetite4(b1,b2,b3,b4), c_(c)
+{
+}
+
+template <class C4> GPetite4<C4>::~GPetite4()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+Ref<GenPetite4>
+sc::construct_gpetite(const Ref<GaussianBasisSet> &b1,
+                  const Ref<GaussianBasisSet> &b2,
+                  const Ref<GaussianBasisSet> &b3,
+                  const Ref<GaussianBasisSet> &b4)
+{
+  if (b1 == b2 && b1 == b3 && b1 == b4) {
+    canonical_aaaa c4(b1,b2,b3,b4);
+    return new GPetite4<canonical_aaaa>(b1,b2,b3,b4,c4);
+  }
+  else if (b1 == b2 && b3 != b4) {
+    canonical_aabc c4(b1,b2,b3,b4);
+    return new GPetite4<canonical_aabc>(b1,b2,b3,b4,c4);
+  }
+  else if (b1 == b2 && b3 == b4) {
+    canonical_aabb c4(b1,b2,b3,b4);
+    return new GPetite4<canonical_aabb>(b1,b2,b3,b4,c4);
+  }
+  else {
+    canonical_abcd c4(b1,b2,b3,b4);
+    return new GPetite4<canonical_abcd>(b1,b2,b3,b4,c4);
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

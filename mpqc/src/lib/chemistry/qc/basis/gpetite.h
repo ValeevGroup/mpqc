@@ -115,6 +115,34 @@ class canonical_abcd {
     }
 };
 
+/** This class is an abstract base to a generalized four index petite list.
+*/
+class GenPetite4: public RefCount {
+protected:
+  bool c1_;
+  int ng_;
+  int **shell_map_i_;
+  int **shell_map_j_;
+  int **shell_map_k_;
+  int **shell_map_l_;
+  Ref<GaussianBasisSet> b1_, b2_, b3_, b4_;
+public:
+  GenPetite4(const Ref<GaussianBasisSet> &b1,
+             const Ref<GaussianBasisSet> &b2,
+             const Ref<GaussianBasisSet> &b3,
+             const Ref<GaussianBasisSet> &b4);
+  ~GenPetite4();
+  virtual int in_p4(int i, int j, int k, int l) = 0;
+};
+
+/** This is a "factory" that prodces generalized four index petite list objects.
+*/
+extern Ref<GenPetite4>
+construct_gpetite(const Ref<GaussianBasisSet> &b1,
+                  const Ref<GaussianBasisSet> &b2,
+                  const Ref<GaussianBasisSet> &b3,
+                  const Ref<GaussianBasisSet> &b4);
+
 /** This class provides a generalized four index petite list.
  * The template argument is a class that computes an canonical offset
  * given four indices for the particular shell loop structure employed.
@@ -122,58 +150,15 @@ class canonical_abcd {
  * canonical_aabb, and canonical_abcd.
  */
 template <class C4>
-class GPetite4: public RefCount {
-    bool c1_;
-    int ng_;
+class GPetite4: public GenPetite4 {
     C4 c_;
-    int **shell_map_i_;
-    int **shell_map_j_;
-    int **shell_map_k_;
-    int **shell_map_l_;
-    Ref<GaussianBasisSet> b1_, b2_, b3_, b4_;
   public:
     GPetite4(const Ref<GaussianBasisSet> &b1,
              const Ref<GaussianBasisSet> &b2,
              const Ref<GaussianBasisSet> &b3,
              const Ref<GaussianBasisSet> &b4,
-             const C4& c): c_(c) {
-      int **atom_map;
-      b1_ = b1;
-      b2_ = b2;
-      b3_ = b3;
-      b4_ = b4;
-
-      ng_ = b1->molecule()->point_group()->char_table().order();
-      if (b2->molecule()->point_group()->char_table().order() != ng_
-          || b3->molecule()->point_group()->char_table().order() != ng_
-          || b4->molecule()->point_group()->char_table().order() != ng_) {
-          throw
-              std::runtime_error("GPetite4: not all point groups are the same");
-        }
-      c1_ =  (ng_ == 1);
-
-      atom_map = compute_atom_map(b1);
-      shell_map_i_ = compute_shell_map(atom_map,b1);
-      delete_atom_map(atom_map,b1);
-
-      atom_map = compute_atom_map(b2);
-      shell_map_j_ = compute_shell_map(atom_map,b2);
-      delete_atom_map(atom_map,b2);
-
-      atom_map = compute_atom_map(b3);
-      shell_map_k_ = compute_shell_map(atom_map,b3);
-      delete_atom_map(atom_map,b3);
-
-      atom_map = compute_atom_map(b4);
-      shell_map_l_ = compute_shell_map(atom_map,b4);
-      delete_atom_map(atom_map,b4);
-    }
-    ~GPetite4() {
-      delete_shell_map(shell_map_i_,b1_);
-      delete_shell_map(shell_map_j_,b2_);
-      delete_shell_map(shell_map_k_,b3_);
-      delete_shell_map(shell_map_l_,b4_);
-    }
+             const C4& c);
+    ~GPetite4();
     int in_p4(int i, int j, int k, int l);
 };
 

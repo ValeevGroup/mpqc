@@ -105,6 +105,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   // now form the overlap between the old basis and the new one
   RefSCMatrix s2(basis_dimension(), ovec.rowdim());
   RefSCElementOp op = new GaussianOverlapIntv2(basis(), owfn->basis());
+  s2.assign(0.0);
   s2.element_op(op);
   op = 0;
 
@@ -156,7 +157,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   HCoreWfn hcwfn(*this);
   RefSCMatrix vec = hcwfn.eigenvectors();
   vec.assign_subblock(Cpp,0,Cpp.nrow()-1,0,nocc-1);
-  // vec.print("new vector");
+  //vec.print("new vector");
 
   vec->schmidt_orthog(overlap().pointer(),vec.ncol());
   

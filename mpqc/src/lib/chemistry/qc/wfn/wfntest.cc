@@ -26,9 +26,20 @@ main()
 
   RefOneBodyWavefunction oldwfn = rpkv->describedclassvalue("pwavefunction");
   
-  RefSCMatrix evecs = wfn->projected_eigenvectors(*(oldwfn.pointer()));
+  RefSCMatrix evecs = wfn->projected_eigenvectors(oldwfn);
 
   evecs.print("projected wavefunction");
 
+  StateOutText so("wfn.ckpt");
+  wfn.save_state(so);
+  so.close();
+
+  RefMolecularEnergy me;
+  StateInText si("wfn.ckpt");
+  me.restore_state(si);
+  
+  me->print(o);
+  o << me->value();
+  
   return 0;
 }

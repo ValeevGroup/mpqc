@@ -7,6 +7,7 @@
 #endif
 
 #include <chemistry/qc/wfn/wfn.h>
+#include <chemistry/qc/wfn/hcore.h>
 
 SavableState_REF_fwddec(OneBodyWavefunction);
 class OneBodyWavefunction: public Wavefunction
@@ -57,6 +58,10 @@ class HCoreWfn: public OneBodyWavefunction {
     int ndocc;
     int nsocc;
     
+    RefAccumHCore _accumh;
+    
+    void compute();
+
   public:
     HCoreWfn(const OneBodyWavefunction&);
     HCoreWfn(const RefKeyVal&);
@@ -69,7 +74,6 @@ class HCoreWfn: public OneBodyWavefunction {
     void save_data_state(StateOut&);
 
     double occupation(int vectornum);
-    void compute();
 
     RefSCMatrix eigenvectors();
 };

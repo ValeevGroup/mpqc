@@ -158,7 +158,8 @@ void
 AccResultInfo::set_desired_accuracy(double a)
 {
   _desired_accuracy = a;
-  if (_desired_accuracy < _actual_accuracy) {
+  if (_desired_accuracy < _actual_accuracy &&
+      (fabs(_actual_accuracy)-fabs(_desired_accuracy)) > DBL_EPSILON) {
       computed() = 0;
     }
 }

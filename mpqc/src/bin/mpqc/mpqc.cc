@@ -40,6 +40,7 @@
 #include <util/misc/newstring.h>
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
+#include <util/group/mstate.h>
 #include <util/group/thread.h>
 #include <util/group/pregtime.h>
 #include <util/misc/bug.h>

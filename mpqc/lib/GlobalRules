@@ -136,7 +136,7 @@ miscclean::
 	-rm -f *~
 
 oclean::
-	-rm -rf *.o cxx_tmpl_repo *.lo
+	-rm -rf *.o cxx_tmpl_repo ti_files *.lo
 	-rm -rf .libs
 
 dclean::

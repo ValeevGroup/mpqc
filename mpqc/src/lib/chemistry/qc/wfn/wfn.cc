@@ -44,6 +44,8 @@
 
 #include <chemistry/qc/wfn/wfn.h>
 
+#define CHECK_SYMMETRIZED_INTEGRALS 0
+
 SavableState_REF_def(Wavefunction);
 
 #define CLASSNAME Wavefunction
@@ -286,6 +288,7 @@ Wavefunction::overlap()
     integral()->set_basis(gbs_);
     RefPetiteList pl = integral()->petite_list();
 
+#if ! CHECK_SYMMETRIZED_INTEGRALS
     // first form skeleton s matrix
     RefSymmSCMatrix s(basis()->basisdim(), basis()->matrixkit());
     RefSCElementOp ov =
@@ -300,6 +303,51 @@ Wavefunction::overlap()
     pl->symmetrize(s,sb);
 
     overlap_ = sb;
+#else
+    ExEnv::out() << "Checking symmetrized overlap" << endl;
+
+    RefSymmSCMatrix s(basis()->basisdim(), basis()->matrixkit());
+    RefSCElementOp ov =
+      new OneBodyIntOp(new OneBodyIntIter(integral()->overlap()));
+
+    s.assign(0.0);
+    s.element_op(ov);
+    ov=0;
+
+    overlap_ = pl->to_SO_basis(s);
+
+    //// use petite list to form saopl
+
+    // form skeleton Hcore in AO basis
+    RefSymmSCMatrix saopl(basis()->basisdim(), basis()->matrixkit());
+    saopl.assign(0.0);
+
+    ov = new OneBodyIntOp(new SymmOneBodyIntIter(integral_->overlap(), pl));
+    saopl.element_op(ov);
+    ov=0;
+
+    // also symmetrize using pl->symmetrize():
+    RefSymmSCMatrix spl(so_dimension(), basis_matrixkit());
+    pl->symmetrize(saopl,spl);
+
+    //// compare the answers
+
+    int n = overlap_.result_noupdate().dim().n();
+    int me = MessageGrp::get_default_messagegrp()->me();
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<=i; j++) {
+        double val1 = overlap_.result_noupdate().get_element(i,j);
+        double val2 = spl.get_element(i,j);
+        if (me == 0) {
+          if (fabs(val1-val2) > 1.0e-6) {
+            ExEnv::out() << "bad overlap vals for " << i << " " << j
+                         << ": " << val1 << " " << val2 << endl;
+          }
+        }
+      }
+    }
+#endif
+
     overlap_.computed() = 1;
   }
 
@@ -313,6 +361,7 @@ Wavefunction::core_hamiltonian()
     integral()->set_basis(gbs_);
     RefPetiteList pl = integral()->petite_list();
 
+#if ! CHECK_SYMMETRIZED_INTEGRALS
     // form skeleton Hcore in AO basis
     RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
     hao.assign(0.0);
@@ -333,6 +382,63 @@ Wavefunction::core_hamiltonian()
     pl->symmetrize(hao,h);
 
     hcore_ = h;
+#else
+    ExEnv::out() << "Checking symmetrized hcore" << endl;
+
+    RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
+    hao.assign(0.0);
+
+    RefSCElementOp hc =
+      new OneBodyIntOp(new OneBodyIntIter(integral_->kinetic()));
+    hao.element_op(hc);
+    hc=0;
+
+    RefOneBodyInt nuc = integral_->nuclear();
+    nuc->reinitialize();
+    hc = new OneBodyIntOp(new OneBodyIntIter(nuc));
+    hao.element_op(hc);
+    hc=0;
+
+    hcore_ = pl->to_SO_basis(hao);
+
+    //// use petite list to form haopl
+
+    // form skeleton Hcore in AO basis
+    RefSymmSCMatrix haopl(basis()->basisdim(), basis()->matrixkit());
+    haopl.assign(0.0);
+
+    hc = new OneBodyIntOp(new SymmOneBodyIntIter(integral_->kinetic(), pl));
+    haopl.element_op(hc);
+    hc=0;
+
+    nuc = integral_->nuclear();
+    nuc->reinitialize();
+    hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
+    haopl.element_op(hc);
+    hc=0;
+
+    // also symmetrize using pl->symmetrize():
+    RefSymmSCMatrix h(so_dimension(), basis_matrixkit());
+    pl->symmetrize(haopl,h);
+
+    //// compare the answers
+
+    int n = hcore_.result_noupdate().dim().n();
+    int me = MessageGrp::get_default_messagegrp()->me();
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<=i; j++) {
+        double val1 = hcore_.result_noupdate().get_element(i,j);
+        double val2 = h.get_element(i,j);
+        if (me == 0) {
+          if (fabs(val1-val2) > 1.0e-6) {
+            ExEnv::out() << "bad hcore vals for " << i << " " << j
+                         << ": " << val1 << " " << val2 << endl;
+          }
+        }
+      }
+    }
+#endif
+
     hcore_.computed() = 1;
   }
 

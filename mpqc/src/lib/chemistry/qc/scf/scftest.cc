@@ -74,7 +74,7 @@ init_mp(const RefKeyVal& keyval)
     debugger->set_prefix(grp->me());
   }
 
-  debugger->debug("curt is a hog");
+  //debugger->debug("curt is a hog");
   
   // if intv2 is being used, then initialize the picl stuff
   int np, me, host;

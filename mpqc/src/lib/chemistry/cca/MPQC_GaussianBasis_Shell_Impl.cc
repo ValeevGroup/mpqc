@@ -69,7 +69,8 @@ throw ()
 }
 
 /**
- * Method:  get_n_contraction[]
+ * Get the number of contractions in the shell. 
+ * @return Number of contractions. 
  */
 int64_t
 MPQC::GaussianBasis_Shell_impl::get_n_contraction () 
@@ -82,7 +83,8 @@ throw ()
 }
 
 /**
- * Method:  get_n_primitive[]
+ * Get the number of primitives in the shell.
+ * @return Number of primitives. 
  */
 int64_t
 MPQC::GaussianBasis_Shell_impl::get_n_primitive () 
@@ -95,7 +97,10 @@ throw ()
 }
 
 /**
- * Method:  get_contraction_coef[]
+ * Get the coefficient for an unnormalized primitive in a contraction.
+ * @param connum Contraction number.
+ * @param expnum Primitive number.
+ * @return The contraction coefficient. 
  */
 double
 MPQC::GaussianBasis_Shell_impl::get_contraction_coef (
@@ -110,7 +115,9 @@ throw ()
 }
 
 /**
- * Method:  get_exponent[]
+ * Get the exponent for a primitive.
+ * @param expnum The primitive number.
+ * @return The exponent. 
  */
 double
 MPQC::GaussianBasis_Shell_impl::get_exponent (
@@ -123,7 +130,9 @@ throw ()
 }
 
 /**
- * Method:  get_angular_momentum[]
+ * Get the angular momentum for a single contraction.
+ * @param connum Contraction number.
+ * @return Angular momentum value. 
  */
 int64_t
 MPQC::GaussianBasis_Shell_impl::get_angular_momentum (
@@ -136,7 +145,8 @@ throw ()
 }
 
 /**
- * Method:  get_max_angular_momentum[]
+ * Get the max angular momentum of any contraction in the shell.
+ * @return Maximum angular momentum value. 
  */
 int64_t
 MPQC::GaussianBasis_Shell_impl::get_max_angular_momentum () 
@@ -149,20 +159,9 @@ throw ()
 }
 
 /**
- * Method:  get_angular_type[]
- */
-::Chemistry::QC::GaussianBasis::AngularType
-MPQC::GaussianBasis_Shell_impl::get_angular_type () 
-throw () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_angular_type)
-  return angular_type_;
-  // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell.get_angular_type)
-}
-
-/**
- * Method:  get_contraction_angular_type[]
+ * Get the angular type for a single contraction.
+ * @param connum Contraction number.
+ * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
  */
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Shell_impl::get_contraction_angular_type (
@@ -184,7 +183,21 @@ throw ()
 }
 
 /**
- * Method:  print_shell[]
+ * Get the angular type for the shell.
+ * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
+ */
+::Chemistry::QC::GaussianBasis::AngularType
+MPQC::GaussianBasis_Shell_impl::get_angular_type () 
+throw () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_angular_type)
+  return angular_type_;
+  // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell.get_angular_type)
+}
+
+/**
+ * Print the shell data. 
  */
 void
 MPQC::GaussianBasis_Shell_impl::print_shell () 

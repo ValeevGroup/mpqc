@@ -51,73 +51,33 @@ throw ()
 }
 
 /**
- * Method:  initialize_opaque[]
+ * Initialize the evaluator.
+ * @param bs1 Molecular basis on center 1.
+ * @param bs2 Molecular basis on center 2.
+ * @param label String specifying integral type.
+ * @param max_deriv Max derivative to compute. 
  */
 void
-MPQC::IntegralEvaluator2_impl::initialize_opaque (
-  /*in*/ void* integral ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize_opaque)
-  //opaque_ = 1;
-  //integral_ = static_cast< Ref<Integral> > integral;
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize_opaque)
-}
-
-/**
- * Method:  initialize_by_name[]
- */
-void
-MPQC::IntegralEvaluator2_impl::initialize_by_name (
-  /*in*/ ::Chemistry::Molecule molecule,
-  /*in*/ const ::std::string& basis_name,
-  /*in*/ const ::std::string& evaluator_label,
+MPQC::IntegralEvaluator2_impl::initialize (
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /*in*/ const ::std::string& label,
   /*in*/ int64_t max_deriv ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize_by_name)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize)
 
-  //cout << "Initializing MPQC::IntegralEvaluator2 by name\n"
-  //     << "  evaluator type is " << evaluator_label << endl;
+  evaluator_label_ = label;
 
-  molecule_ = molecule;
-  evaluator_label_ = evaluator_label;
-
-  // Create an sc::GaussianBasisSet
-  ostringstream input;
-
-  double conv = molecule_.get_units().convert_to("bohr");
-  input
-    << "  molecule<Molecule>: (\n"
-    << "    symmetry = auto\n"
-    << "    unit = bohr\n"
-    << "    {n atoms geometry } = {\n";
-  for(int i=0;i<molecule_.get_n_atom();++i) {
-    input
-      << "\t" << i << "\t" << molecule_.get_atomic_number(i)
-      << "\t[  " << molecule_.get_cart_coor(i,0)*conv
-      << "  " << molecule_.get_cart_coor(i,1)*conv
-      << "  " << molecule_.get_cart_coor(i,2)*conv << "  ]\n";
-  }
-  input << "    }\n" << "  )\n";
-
-  input << "  basis<GaussianBasisSet>:(\n"
-        << "    name = \"" << basis_name << "\"\n"
-        << "    molecule = $:molecule\n"
-        << "  )\n";
-
-  sc::Ref<sc::ParsedKeyVal> kv = new sc::ParsedKeyVal();
-  kv->parse_string(input.str().c_str());
-  sc::Ref<sc::DescribedClass> dc = kv->describedclassvalue("basis");
-  bs1_ = dynamic_cast< sc::GaussianBasisSet* >(dc.pointer());
-
-  //cout << "Number of Basis Functions: " << basis_->nbasis() << endl;
-  //basis_->print_brief();
-
-  // Initialize the sc::Integral factory
+  bs1_ = basis_cca_to_sc( bs1 );
+  if( bs1.isSame(bs2) ) 
+    bs2_.assign_pointer( bs1_.pointer() );
+  else 
+    bs2_ = basis_cca_to_sc( bs2 );
+  
   std::cout << "  initializing " << package_ << " " << evaluator_label_
             << " integral evaluator\n";
-  if ( package_ == "intv3" )
+  if ( package_ == "intv3" ) 
     integral_ = new IntegralV3( bs1_, bs2_ );
 #ifdef HAVE_CINTS
   else if ( package_ == "cints" )
@@ -127,60 +87,9 @@ throw ()
     std::cout << "\nbad integral package name" << std::endl;
     abort();
   }
-  //integral_->set_basis(*basis_);
-  // need set_storage() too?
-
-  // create a sidl buffer
-  //cout << "Max ncartesian in shell: " 
-  //     << basis_->max_ncartesian_in_shell() << endl;
-  max_nshell2_ = bs1_->max_ncartesian_in_shell();
-  max_nshell2_ *= max_nshell2_;
-  //sidl_buffer_ = sidl::array<double>::create1d(max_nshell2_);
-
-  //cout << "MPQC Evaluator2: initialization by name finished\n";
-
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize_by_name)
-}
-
-/**
- * Method:  initialize[]
- */
-void
-MPQC::IntegralEvaluator2_impl::initialize (
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /*in*/ const ::std::string& evaluator_label,
-  /*in*/ int64_t max_deriv ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize)
-
-  evaluator_label_ = evaluator_label;
-
-  bs1_ = basis_cca_to_sc( bs1 );
-  if( bs1.isSame(bs2) ) 
-    bs2_.assign_pointer( bs1_.pointer() );
-  else 
-    bs2_ = basis_cca_to_sc( bs2 );
-  
-  //if( !opaque_ ) {
-    std::cout << "  initializing " << package_ << " " << evaluator_label_
-              << " integral evaluator\n";
-    if ( package_ == "intv3" ) 
-      integral_ = new IntegralV3( bs1_, bs2_ );
-#ifdef HAVE_CINTS
-    else if ( package_ == "cints" )
-      integral_ = new IntegralCints( bs1_, bs2_ );
-#endif
-    else {
-      std::cout << "\nbad integral package name" << std::endl;
-      abort();
-    }
-  //}
   
   max_nshell2_ = bs1_->max_ncartesian_in_shell() * 
     bs2_->max_ncartesian_in_shell();
-    //sidl_buffer_ = sidl::array<double>::create1d(max_nshell2_);
 
   int error = 0;
   if(evaluator_label_ == "overlap") 
@@ -277,20 +186,24 @@ throw ()
 }
 
 /**
- * Method:  buffer[]
+ * Get the buffer pointer
+ * @return Buffer pointer 
  */
 void*
-MPQC::IntegralEvaluator2_impl::buffer () 
+MPQC::IntegralEvaluator2_impl::get_buffer () 
 throw () 
 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.buffer)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_buffer)
   return const_cast<double*>( sc_buffer_ );
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.buffer)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_buffer)
 }
 
 /**
- * Method:  compute[]
+ * Compute a shell doublet of integrals.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param deriv_level Derivative level. 
  */
 void
 MPQC::IntegralEvaluator2_impl::compute (
@@ -317,7 +230,12 @@ throw ()
 }
 
 /**
- * Method:  compute_array[]
+ * Compute a shell doublet of integrals and return as a borrowed
+ * sidl array.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param deriv_level Derivative level.
+ * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator2_impl::compute_array (

@@ -110,38 +110,51 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the canonical basis set name. 
+     * @return Canonical basis set name. 
      */
     ::std::string
     get_name() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the number of basis functions.
+     * @return Number of basis functions. 
      */
     int64_t
     get_n_basis() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the number of shells.
+     * @return Number of shells. 
      */
     int64_t
     get_n_shell() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the max angular momentum for any shell on the atom.
+     * @return Max angular momentum value. 
      */
     int64_t
     get_max_angular_momentum() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the angular type for the atom.
+     * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
     get_angular_type() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get a gaussian shell. 
+     * @param shellnum Shell number to return.
+     * @return Shell. 
      */
     ::Chemistry::QC::GaussianBasis::Shell
     get_shell (
@@ -150,8 +163,9 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Print the atomic basis data. 
      */
     void
     print_atomic() throw () 

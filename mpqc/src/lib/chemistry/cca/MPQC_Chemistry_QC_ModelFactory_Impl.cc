@@ -246,7 +246,6 @@ throw (
     else if(buffer_str == "array") use_opaque=false;
     else { std::cerr << "\bunrecognized integral buffer option"; abort(); }
     intcca_ = new IntegralCCA(eval_factory_,use_opaque);
-    eval_factory_.set_basis_name(basis_);
     eval_factory_.set_molecule(molecule_);
     Integral::set_default_integral( Ref<Integral>(intcca_.pointer()) );
   }

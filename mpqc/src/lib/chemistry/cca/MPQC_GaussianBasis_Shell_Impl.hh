@@ -100,20 +100,28 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the number of contractions in the shell. 
+     * @return Number of contractions. 
      */
     int64_t
     get_n_contraction() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the number of primitives in the shell.
+     * @return Number of primitives. 
      */
     int64_t
     get_n_primitive() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the coefficient for an unnormalized primitive in a contraction.
+     * @param connum Contraction number.
+     * @param expnum Primitive number.
+     * @return The contraction coefficient. 
      */
     double
     get_contraction_coef (
@@ -123,8 +131,11 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the exponent for a primitive.
+     * @param expnum The primitive number.
+     * @return The exponent. 
      */
     double
     get_exponent (
@@ -133,8 +144,11 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the angular momentum for a single contraction.
+     * @param connum Contraction number.
+     * @return Angular momentum value. 
      */
     int64_t
     get_angular_momentum (
@@ -143,20 +157,19 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the max angular momentum of any contraction in the shell.
+     * @return Maximum angular momentum value. 
      */
     int64_t
     get_max_angular_momentum() throw () 
     ;
+
     /**
-     * user defined non-static method.
-     */
-    ::Chemistry::QC::GaussianBasis::AngularType
-    get_angular_type() throw () 
-    ;
-    /**
-     * user defined non-static method.
+     * Get the angular type for a single contraction.
+     * @param connum Contraction number.
+     * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
     get_contraction_angular_type (
@@ -165,8 +178,17 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the angular type for the shell.
+     * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
+     */
+    ::Chemistry::QC::GaussianBasis::AngularType
+    get_angular_type() throw () 
+    ;
+
+    /**
+     * Print the shell data. 
      */
     void
     print_shell() throw () 

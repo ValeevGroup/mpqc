@@ -90,10 +90,7 @@ throw ()
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_Molecule.get_units)
   MPQC::Physics_Units units = MPQC::Physics_Units::_create();
   MPQC::Physics_Units_impl *unitsi
-      = reinterpret_cast<MPQC::Physics_Units_impl*>(
-          units._get_ior()->d_data
-          );
-  //unitsi->set_units(mol->get_units());
+      = reinterpret_cast<MPQC::Physics_Units_impl*>(units._get_ior()->d_data);
   unitsi->set_units(new sc::Units("bohr"));
   return units;
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_Molecule.get_units)

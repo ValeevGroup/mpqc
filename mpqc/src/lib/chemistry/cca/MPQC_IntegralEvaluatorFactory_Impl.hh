@@ -89,13 +89,9 @@ namespace MPQC {
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory._implementation)
     gov::cca::Services services_;
     Chemistry::Molecule molecule_;
-    std::string basis_name_;
     StringParameter *package_param_;
     ConfigurableParameterPort* setup_parameters(
       ConfigurableParameterFactory *cpf);
-    //sc::Ref<sc::Integral> ob_integral_;
-    //sc::Ref<sc::Integral> tb_integral_;
-    bool opaque_;
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._implementation)
 
   private:
@@ -119,32 +115,6 @@ namespace MPQC {
     void _dtor();
 
   public:
-
-    /**
-     * user defined non-static method.
-     */
-    void*
-    get_one_body_buffer (
-      /*in*/ int32_t deriv,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2
-    )
-    throw () 
-    ;
-
-    /**
-     * user defined non-static method.
-     */
-    void*
-    get_two_body_buffer (
-      /*in*/ int32_t deriv,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4
-    )
-    throw () 
-    ;
 
 
     /**
@@ -172,24 +142,10 @@ namespace MPQC {
       ::gov::cca::CCAException
     );
 
-    /**
-     * user defined non-static method.
-     */
-    void
-    set_basis_name (
-      /*in*/ const ::std::string& basis_name
-    )
-    throw () 
-    ;
 
     /**
-     * user defined non-static method.
-     */
-    ::std::string
-    get_basis_name() throw () 
-    ;
-    /**
-     * user defined non-static method.
+     * Set the molecular basis 
+     * @param molbasis The molecular basis 
      */
     void
     set_molecular (
@@ -198,18 +154,18 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the molecular basis
+     * @return The molecular basis 
      */
     ::Chemistry::QC::GaussianBasis::Molecular
-    get_molecular (
-      /*in*/ int64_t center
-    )
-    throw () 
+    get_molecular() throw () 
     ;
 
     /**
-     * user defined non-static method.
+     * Set the molecule
+     * @param The molecule 
      */
     void
     set_molecule (
@@ -218,14 +174,22 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the molecule
+     * @return The molecule 
      */
     ::Chemistry::Molecule
     get_molecule() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get a 2-center integral evaluator
+     * @param label String specifying integral type
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @return 2-center integral evaluator 
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
     get_integral_evaluator2 (
@@ -237,8 +201,15 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get a 3-center integral evaluator
+     * @param label String specifying integral type
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @param bs3 Molecular basis set on center 3
+     * @return 3-center integral evaluator 
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator3
     get_integral_evaluator3 (
@@ -251,8 +222,16 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get a 4-center integral evaluator
+     * @param label String defining integral type
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @param bs3 Molecular basis set on center 3
+     * @param bs4 Molecular basis set on center 4
+     * @return 4-center integral evaluator 
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator4
     get_integral_evaluator4 (
@@ -266,8 +245,10 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the contraction transform
+     * @return The contraction transform 
      */
     ::Chemistry::QC::GaussianBasis::ContractionTransform
     get_contraction_transform() throw () 

@@ -259,8 +259,6 @@ throw ()
   switch(coorType_) {
   case cart:
     sidlCoor = molecule_.get_coor();
-    //sidlCoor = ::sidl::array<double>::create1d(natom3_);
-    //sidlCoor.copy( molecule_.get_coor() );
     break;
   default:
     sc::Ref<sc::SCMatrixKit> kit = new sc::LocalSCMatrixKit;

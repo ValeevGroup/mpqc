@@ -50,96 +50,13 @@ throw ()
 }
 
 /**
- * Method:  initialize_opaque[]
- */
-void
-MPQC::IntegralEvaluator4_impl::initialize_opaque (
-  /*in*/ void* integral ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize_opaque)
-  //opaque_ = 1;
-  //integral_ = static_cast< Ref<Integral> > integral;
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize_opaque)
-}
-
-/**
- * Method:  initialize_by_name[]
- */
-void
-MPQC::IntegralEvaluator4_impl::initialize_by_name (
-  /*in*/ ::Chemistry::Molecule molecule,
-  /*in*/ const ::std::string& basis_name,
-  /*in*/ const ::std::string& evaluator_label,
-  /*in*/ int64_t max_deriv ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize_by_name)
-
-  std::cout << "Initializing MPQC::IntegralEvaluator4 by name\n"
-            << "  evaluator type is " << evaluator_label << std::endl;
-
-  molecule_ = molecule;
-  evaluator_label_ = evaluator_label;
-
-  // Create an sc::GaussianBasisSet
-  std::ostringstream input;
-
-  double conv = molecule_.get_units().convert_to("bohr");
-  input
-    << "  molecule<Molecule>: (\n"
-    << "    symmetry = auto\n"
-    << "    unit = bohr\n"
-    << "    {n atoms geometry } = {\n";
-  for(int i=0;i<molecule_.get_n_atom();++i) {
-    input
-      << "\t" << i << "\t" << molecule_.get_atomic_number(i)
-      << "\t[  " << molecule_.get_cart_coor(i,0)*conv
-      << "  " << molecule_.get_cart_coor(i,1)*conv
-      << "  " << molecule_.get_cart_coor(i,2)*conv << "  ]\n";
-  }
-  input << "    }\n" << "  )\n";
-
-  input << "  basis<GaussianBasisSet>:(\n"
-        << "    name = \"" << basis_name << "\"\n"
-        << "    molecule = $:molecule\n"
-        << "  )\n";
-
-  sc::Ref<sc::ParsedKeyVal> kv = new sc::ParsedKeyVal();
-  kv->parse_string(input.str().c_str());
-  sc::Ref<sc::DescribedClass> dc = kv->describedclassvalue("basis");
-  bs1_ = dynamic_cast< sc::GaussianBasisSet* >(dc.pointer());
-
-  // Initialize the sc::Integral factory
-  // not supporting mixed basis sets yet
-  std::cout << "  initializing " << package_ << " " << evaluator_label_
-            << " integral evaluator by basis name\n";
-  if ( package_ == "intv3" )
-    integral_ = new IntegralV3( bs1_ );
-#ifdef HAVE_CINTS
-  else if ( package_ == "cints" )
-    integral_ = new IntegralCints( bs1_ );
-#endif
-  else {
-    std::cout << "\nbad integral package name" << std::endl;
-    abort();
-  }
-  //integral_->set_basis(*basis_);
-  // need set_storage() too?
-
-  // create a sidl buffer
-  int max_nshell = bs1_->max_ncartesian_in_shell();
-  max_nshell4_ = max_nshell;
-  max_nshell4_ *= max_nshell;
-  max_nshell4_ *= max_nshell;
-  max_nshell4_ *= max_nshell;
-  //sidl_buffer_ = sidl::array<double>::create1d(max_nshell4_);
-
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize_by_name)
-}
-
-/**
- * Method:  initialize[]
+ * Initialize the evaluator.
+ * @param bs1 Molecular basis on center 1.
+ * @param bs2 Molecular basis on center 2.
+ * @param bs3 Molecular basis on center 3.
+ * @param bs4 Molecular basis on center 4.
+ * @param label String specifying integral type.
+ * @param max_deriv Max derivative to compute. 
  */
 void
 MPQC::IntegralEvaluator4_impl::initialize (
@@ -147,13 +64,13 @@ MPQC::IntegralEvaluator4_impl::initialize (
   /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
   /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4,
-  /*in*/ const ::std::string& evaluator_label,
+  /*in*/ const ::std::string& label,
   /*in*/ int64_t max_deriv ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize)
 
-  evaluator_label_ = evaluator_label;
+  evaluator_label_ = label;
   int deriv_level = max_deriv;
 
   bs1_ = basis_cca_to_sc( bs1 );
@@ -220,26 +137,31 @@ throw ()
   max_nshell4_ *= bs2_->max_ncartesian_in_shell();
   max_nshell4_ *= bs3_->max_ncartesian_in_shell();
   max_nshell4_ *= bs4_->max_ncartesian_in_shell();
-  //sidl_buffer_ = sidl::array<double>::create1d(max_nshell4_);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize)
 }
 
 /**
- * Method:  buffer[]
+ * Get the buffer pointer.
+ * @return Buffer pointer. 
  */
 void*
-MPQC::IntegralEvaluator4_impl::buffer () 
+MPQC::IntegralEvaluator4_impl::get_buffer () 
 throw () 
 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.buffer)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_buffer)
   return const_cast<double*>( sc_buffer_ );
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.buffer)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_buffer)
 }
 
 /**
- * Method:  compute[]
+ * Compute a shell quartet of integrals.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param shellnum3 Gaussian shell number 3.
+ * @param shellnum4 Gaussian shell number 4.
+ * @param deriv_level Derivative level. 
  */
 void
 MPQC::IntegralEvaluator4_impl::compute (
@@ -252,59 +174,6 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
 
-/*
-  //std::cout << "Evaluator4: computing shell quartet" << std::endl;
-
-  // Do we have the proper evaluator?
-  if( (eval_.null() && deriv_eval_.null()) || (deriv_level_ != deriv_level) ) {
-
-    // No, get the evaluator
-    eval_.clear();
-    deriv_eval_.clear();
-    deriv_level_ = deriv_level;
-
-    int error = 0;
-
-    integral_->set_storage(200000000);
-    
-    if(evaluator_label_ == "eri2")
-      switch( deriv_level ) {
-      case 0:
-	{ eval_ = integral_->electron_repulsion(); break; }
-      case 1:
-	{ deriv_eval_ = integral_->electron_repulsion_deriv(); break; }
-      case 2:
-	{ deriv_eval_ = integral_->electron_repulsion_deriv(); break; }
-      default:
-	++error;
-      }
-
-    if(evaluator_label_ == "grt")
-      switch( deriv_level ) {
-      case 0:
-	  { eval_ = integral_->grt(); break; }
-      default:
-	++error;
-      }    
-    
-    if( error ) {
-      std::cerr << "Error in MPQC::integralEvaluator4:\n"
-		<< "  integral type is either unrecognized or not supported\n";
-      abort();
-    }
-    
-    if( eval_.nonnull() )
-      int_type_ = two_body;
-    else if( deriv_eval_.nonnull() )
-      int_type_ = two_body_deriv;
-    else {
-      std::cerr << "Error in MPQC::IntegralEvaluator4:\n"
-		<< "  bad integral evaluator pointer\n";
-      abort();
-    }
-  }
-*/
-
   if( int_type_ == two_body ) {
     //eval_->set_redundant(0);
     eval_->compute_shell( (int) shellnum1, (int) shellnum2,
@@ -316,6 +185,7 @@ throw ()
               << " ... aborting\n";
     abort();
   }
+
   /* deriv wrt what center? interface needs work
   else if( int_type == two_body_deriv ) {
     deriv_eval_ptr_->compute_shell( shellnum1, shellnum2, ??? );
@@ -323,18 +193,18 @@ throw ()
   }
   */
 
-  // copy sc_buffer into a sidl array
-  // for now, just copy entire buffer
-  // worry about efficiency and reordering later
-
-  //for( int i=0; i<max_nshell4_; ++i) 
-  //  sidl_buffer_.set(i, sc_buffer[i]);  
-
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute)
 }
 
 /**
- * Method:  compute_array[]
+ * Compute a shell quartet of integrals and return as a borrowed
+ * sidl array.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param shellnum3 Guassian shell number 3.
+ * @param shellnum4 Gaussian shell number 4.
+ * @param deriv_level Derivative level.
+ * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator4_impl::compute_array (

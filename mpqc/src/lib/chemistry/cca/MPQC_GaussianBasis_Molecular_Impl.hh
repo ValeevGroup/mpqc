@@ -117,38 +117,51 @@ namespace MPQC {
     void*
     sc_gbs_pointer() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the user specified name.
+     * @return User specified name. 
      */
     ::std::string
     get_label() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the number of basis functions.
+     * @return Number of basis functions. 
      */
     int64_t
     get_n_basis() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the number of shells.
+     * @return Number of shells. 
      */
     int64_t
     get_n_shell() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the max angular momentum for any contraction in the basis set.
+     * @return Max angular momentum value. 
      */
     int64_t
     get_max_angular_momentum() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get the angular type.
+     * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
     get_angular_type() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Get an atomic basis set.
+     * @param atomnum Atom number. 
+     * @return Atomic basis set. 
      */
     ::Chemistry::QC::GaussianBasis::Atomic
     get_atomic (
@@ -157,14 +170,17 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the molecule.
+     * @return The molecule. 
      */
     ::Chemistry::Molecule
     get_molecule() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Print the molecular basis data. 
      */
     void
     print_molecular() throw () 

@@ -22,9 +22,6 @@
 // 
 // Includes for all method dependencies.
 // 
-#ifndef included_Chemistry_Molecule_hh
-#include "Chemistry_Molecule.hh"
-#endif
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
 #endif
@@ -115,31 +112,15 @@ namespace MPQC {
     throw () 
     ;
 
-    /**
-     * user defined non-static method.
-     */
-    void
-    initialize_opaque (
-      /*in*/ void* integral
-    )
-    throw () 
-    ;
 
     /**
-     * user defined non-static method.
-     */
-    void
-    initialize_by_name (
-      /*in*/ ::Chemistry::Molecule molecule,
-      /*in*/ const ::std::string& basis_name,
-      /*in*/ const ::std::string& evaluator_label,
-      /*in*/ int64_t max_deriv
-    )
-    throw () 
-    ;
-
-    /**
-     * user defined non-static method.
+     * Initialize the evaluator.
+     * @param bs1 Molecular basis on center 1.
+     * @param bs2 Molecular basis on center 2.
+     * @param bs3 Molecular basis on center 3.
+     * @param bs4 Molecular basis on center 4.
+     * @param label String specifying integral type.
+     * @param max_deriv Max derivative to compute. 
      */
     void
     initialize (
@@ -147,20 +128,28 @@ namespace MPQC {
       /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
       /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4,
-      /*in*/ const ::std::string& evaluator_label,
+      /*in*/ const ::std::string& label,
       /*in*/ int64_t max_deriv
     )
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Get the buffer pointer.
+     * @return Buffer pointer. 
      */
     void*
-    buffer() throw () 
+    get_buffer() throw () 
     ;
+
     /**
-     * user defined non-static method.
+     * Compute a shell quartet of integrals.
+     * @param shellnum1 Gaussian shell number 1.
+     * @param shellnum2 Gaussian shell number 2.
+     * @param shellnum3 Gaussian shell number 3.
+     * @param shellnum4 Gaussian shell number 4.
+     * @param deriv_level Derivative level. 
      */
     void
     compute (
@@ -173,8 +162,16 @@ namespace MPQC {
     throw () 
     ;
 
+
     /**
-     * user defined non-static method.
+     * Compute a shell quartet of integrals and return as a borrowed
+     * sidl array.
+     * @param shellnum1 Gaussian shell number 1.
+     * @param shellnum2 Gaussian shell number 2.
+     * @param shellnum3 Guassian shell number 3.
+     * @param shellnum4 Gaussian shell number 4.
+     * @param deriv_level Derivative level.
+     * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
     compute_array (

@@ -46,43 +46,19 @@ throw ()
 }
 
 /**
- * Method:  initialize_opaque[]
- */
-void
-MPQC::IntegralEvaluator3_impl::initialize_opaque (
-  /*in*/ void* integral ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.initialize_opaque)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.initialize_opaque)
-}
-
-/**
- * Method:  initialize_by_name[]
- */
-void
-MPQC::IntegralEvaluator3_impl::initialize_by_name (
-  /*in*/ ::Chemistry::Molecule molecule,
-  /*in*/ const ::std::string& basis_name,
-  /*in*/ const ::std::string& evaluator_label,
-  /*in*/ int64_t max_deriv ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.initialize_by_name)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.initialize_by_name)
-}
-
-/**
- * Method:  initialize[]
+ * Initialize the evaluator.
+ * @param bs1 Molecular basis on center 1.
+ * @param bs2 Molecular basis on center 2.
+ * @param bs3 Molecular basis on center 3.
+ * @param label String specifying integral type.
+ * @param max_deriv Max derivative to compute. 
  */
 void
 MPQC::IntegralEvaluator3_impl::initialize (
   /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-  /*in*/ const ::std::string& evaluator_label,
+  /*in*/ const ::std::string& label,
   /*in*/ int64_t max_deriv ) 
 throw () 
 {
@@ -92,20 +68,25 @@ throw ()
 }
 
 /**
- * Method:  buffer[]
+ * Get the buffer pointer
+ * @return Buffer pointer 
  */
 void*
-MPQC::IntegralEvaluator3_impl::buffer () 
+MPQC::IntegralEvaluator3_impl::get_buffer () 
 throw () 
 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.buffer)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_buffer)
   // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.buffer)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_buffer)
 }
 
 /**
- * Method:  compute[]
+ * Compute a shell triplet of integrals.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param shellnum3 Gaussian shell number 3.
+ * @param deriv_level Derivative level. 
  */
 void
 MPQC::IntegralEvaluator3_impl::compute (
@@ -121,7 +102,13 @@ throw ()
 }
 
 /**
- * Method:  compute_array[]
+ * Compute a shell triplet of integrals and return as a borrowed
+ * sidl array.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param shellnum3 Gaussian shell number 3.
+ * @param deriv_level Derivative level.
+ * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator3_impl::compute_array (

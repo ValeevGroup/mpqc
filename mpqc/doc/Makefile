@@ -19,3 +19,9 @@ veryclean:
 .PHONY: clean
 clean:
 	/bin/rm -rf *~
+
+install:
+	/bin/cp -r html $(prefix)
+
+install_devel:
+	/bin/cp -r man $(prefix)

@@ -907,7 +907,7 @@ MBPT2::compute_cs_grad()
           ecorr_i += ecorr_ij;
           cout << node0 << indent
                << scprintf("correlation energy for pair %3d %3d = %16.12f",
-                           i, j, ecorr_ij)
+                           i+i_offset, j, ecorr_ij)
                << endl;
           }
         }         // exit j loop

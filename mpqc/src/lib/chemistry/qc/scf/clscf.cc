@@ -1,6 +1,7 @@
 
 #ifdef __GNUC__
 #pragma implementation
+#pragma implementation "clcont.h"
 #endif
 
 #include <iostream.h>
@@ -19,53 +20,18 @@
 
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/clcont.h>
 #include <chemistry/qc/scf/lgbuild.h>
 #include <chemistry/qc/scf/ltbgrad.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
-class LocalCLContribution {
-  private:
-    double * const gmat;
-    double * const pmat;
-
-  public:
-    LocalCLContribution(double *g, double *p) : gmat(g), pmat(p) {}
-    ~LocalCLContribution() {}
-
-    inline void cont1(int ij, int kl, double val) {
-      gmat[ij] += val*pmat[kl];
-      gmat[kl] += val*pmat[ij];
-    }
-    
-    inline void cont2(int ij, int kl, double val) {
-      val *= -0.25;
-      gmat[ij] += val*pmat[kl];
-      gmat[kl] += val*pmat[ij];
-    }
-    
-    inline void cont3(int ij, int kl, double val) {
-      val *= -0.5;
-      gmat[ij] += val*pmat[kl];
-      gmat[kl] += val*pmat[ij];
-    }
-    
-    inline void cont4(int ij, int kl, double val) {
-      val *= 0.75;
-      gmat[ij] += val*pmat[kl];
-      gmat[kl] += val*pmat[ij];
-    }
-    
-    inline void cont5(int ij, int kl, double val) {
-      val *= 0.5;
-      gmat[ij] += val*pmat[kl];
-      gmat[kl] += val*pmat[ij];
-    }
-};
-    
 #ifdef __GNUC__
 template class GBuild<LocalCLContribution>;
 template class LocalGBuild<LocalCLContribution>;
+
+template class TBGrad<LocalCLGradContribution>;
+template class LocalTBGrad<LocalCLGradContribution>;
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
@@ -197,7 +163,7 @@ CLSCF::print(ostream&o)
   SCF::print(o);
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 void
 CLSCF::set_occupations(const RefDiagSCMatrix& ev)
@@ -288,6 +254,11 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
     delete[] newocc;
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// scf things
+//
 
 void
 CLSCF::init_vector()
@@ -606,30 +577,9 @@ CLSCF::effective_fock()
   RefSymmSCMatrix mofock = cl_fock_.clone();
   mofock.assign(0.0);
   mofock.accumulate_transform(scf_vector_.t(), cl_fock_);
-  //mofock.print("MO fock");
+
   return mofock;
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-class LocalCLGradContribution {
-  private:
-    double * const pmat;
-
-  public:
-    LocalCLGradContribution(double *p) : pmat(p) {}
-    ~LocalCLGradContribution() {}
-
-    inline double cont(int ij, int kl) {
-      return pmat[ij]*pmat[kl];
-    }
-};
-
-#ifdef __GNUC__
-template class TBGrad<LocalCLGradContribution>;
-template class LocalTBGrad<LocalCLGradContribution>;
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -649,6 +599,7 @@ CLSCF::done_gradient()
     cl_fock_=0;
   }
 
+  cl_dens_=0;
   scf_vector_ = 0;
 }
 

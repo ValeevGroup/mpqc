@@ -9,9 +9,9 @@ TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
 SRCS = scf.cc scfvector.cc scfgradient.cc \
-       clscf.cc
+       clscf.cc hsosscf.cc
 
-CLASSES = SCF CLSCF
+CLASSES = SCF CLSCF HSOSSCF
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

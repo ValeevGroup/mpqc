@@ -1,12 +1,22 @@
 
-#include <math/scmat/offset.h>
-
 #include <chemistry/qc/basis/obint.h>
-#include <chemistry/qc/basis/tbint.h>
-
 #include <chemistry/qc/scf/scf.h>
 
 //////////////////////////////////////////////////////////////////////////////
+
+static void
+nuc_repulsion(const RefSCVector& g, const RefMolecule& m)
+{
+  // handy things
+  Molecule& mol = *m.pointer();
+
+  for (int x=0; x < mol.natom(); x++) {
+    double xyz[3];
+    mol.nuclear_repulsion_1der(x, xyz);
+    for (int x1=0, x3=x*3; x1 < 3; x1++,x3++)
+      g.accumulate_element(x3, xyz[x1]);
+  }
+}
 
 static void
 ob_gradient(const RefOneBodyDerivInt& derint, const RefSCVector& gradient,
@@ -62,40 +72,29 @@ SCF::compute_gradient(const RefSCVector& gradient)
 {
   init_gradient();
 
-  // handy things
-  GaussianBasisSet& gbs = *basis().pointer();
-  Molecule& mol = *molecule().pointer();
-
   // do the nuclear contribution
   gradient.assign(0.0);
-  double xyz[3];
-  for (int x=0; x < mol.natom(); x++) {
-    mol.nuclear_repulsion_1der(x, xyz);
-    for (int x1=0; x1 < 3; x1++)
-      gradient.accumulate_element(x*3+x1,xyz[x1]);
-  }
-  //gradient.print("nuclear-nuclear term");
+  nuc_repulsion(gradient, molecule());
+  //gradient.print("nuclear contribution");
 
   // form overlap contribution
   RefSymmSCMatrix dens = lagrangian();
   RefOneBodyDerivInt derint = integral()->overlap_deriv();
   RefSCVector obint = gradient.clone();
   obint.assign(0.0);
-  ob_gradient(derint, gradient, dens, basis());
-  //dens.print("lag");
-  //obint.print("overlap term");
+  ob_gradient(derint, obint, dens, basis());
   gradient.accumulate(obint);
+  //dens.print("lagrangian");
+  //obint.print("overlap contribution");
   
   // other one electron contributions
   obint.assign(0.0);
   dens = gradient_density();
   derint = integral()->hcore_deriv();
-  ob_gradient(derint, gradient, dens, basis());
-  //dens.print("density");
-  //obint.print("one electron term");
+  ob_gradient(derint, obint, dens, basis());
   gradient.accumulate(obint);
-
-  //gradient.print("one electron contribution");
+  //dens.print("dens");
+  //obint.print("one electron contribution");
 
   dens=0;
   derint=0;
@@ -107,7 +106,6 @@ SCF::compute_gradient(const RefSCVector& gradient)
   
   gradient.accumulate(obint);
   
-  // clean up
   obint=0;
   
   done_gradient();

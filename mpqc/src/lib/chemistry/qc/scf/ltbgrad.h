@@ -6,6 +6,9 @@
 #pragma interface
 #endif
 
+#include <math.h>
+
+#include <util/misc/timer.h>
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/tbint.h>
@@ -33,11 +36,13 @@ class LocalTBGrad : public TBGrad<T> {
     
     void build_tbgrad(const RefSCVector& tbgrad,
                       double pmax, double accuracy) {
+      tim_enter("two electron gradient");
       // grab ref for convenience
       GaussianBasisSet& gbs = *gbs_.pointer();
       Molecule& mol = *gbs.molecule().pointer();
       RefPetiteList rpl = integral_->petite_list();
       PetiteList& pl = *rpl.pointer();
+      TwoBodyDerivInt& tbi = *tbi_.pointer();
       
       // create vector to hold skeleton gradient
       RefSCVector tbint = tbgrad.clone();
@@ -59,7 +64,7 @@ class LocalTBGrad : public TBGrad<T> {
           if (!pl.in_p2(ij))
             continue;
       
-          if (tbi_->log2_shell_bound(i,j,-1,-1)+PPmax < threshold)
+          if (tbi.log2_shell_bound(i,j,-1,-1)+PPmax < threshold)
             continue;
       
           int nj=gbs(j).nfunction();
@@ -70,7 +75,7 @@ class LocalTBGrad : public TBGrad<T> {
             int fk=gbs.shell_to_function(k);
     
             for (int l=0; l <= ((i==k)?j:k); l++) {
-              if (tbi_->log2_shell_bound(i,j,k,l)+PPmax < threshold)
+              if (tbi.log2_shell_bound(i,j,k,l)+PPmax < threshold)
                 continue;
           
               int kl=i_offset(k)+l;
@@ -82,9 +87,11 @@ class LocalTBGrad : public TBGrad<T> {
               int fl=gbs.shell_to_function(l);
 
               DerivCenters cent;
-              tbi_->compute_shell(i,j,k,l,cent);
+              tim_enter("quartet");
+              tbi.compute_shell(i,j,k,l,cent);
+              tim_exit("quartet");
 
-              const double * buf = tbi_->buffer();
+              const double * buf = tbi.buffer();
           
               double cscl, escl;
 
@@ -105,23 +112,23 @@ class LocalTBGrad : public TBGrad<T> {
                           double qint = buf[indijkl]*qijkl;
 
                           contrib = cscl*qint*
-                            contribution.cont(ij_offset(ii,jj),
-                                              ij_offset(kk,ll));
+                            contribution.cont1(ij_offset(ii,jj),
+                                               ij_offset(kk,ll));
 
                           tbint.accumulate_element(ixyz+ix*3,  contrib);
                           tbint.accumulate_element(ixyz+io*3, -contrib);
 
                           contrib = escl*qint*
-                            contribution.cont(ij_offset(ii,kk),
-                                              ij_offset(jj,ll));
+                            contribution.cont2(ij_offset(ii,kk),
+                                               ij_offset(jj,ll));
 
                           tbint.accumulate_element(ixyz+ix*3,  contrib);
                           tbint.accumulate_element(ixyz+io*3, -contrib);
 
                           if (i!=j && k!=l) {
                             contrib = escl*qint*
-                              contribution.cont(ij_offset(ii,ll),
-                                                ij_offset(jj,kk));
+                              contribution.cont2(ij_offset(ii,ll),
+                                                 ij_offset(jj,kk));
 
                             tbint.accumulate_element(ixyz+ix*3,  contrib);
                             tbint.accumulate_element(ixyz+io*3, -contrib);
@@ -131,17 +138,12 @@ class LocalTBGrad : public TBGrad<T> {
                     }
                   }
                 }
-
-                if (cent.atom(x) == cent.omitted_atom())
-                  x++;
               }
             }
           }
         }
       }
       
-      tbint.print("two electron contribution");
-
       tbgrad.assign(tbint);
       CharacterTable ct = mol.point_group().char_table();
       SymmetryOperation so;
@@ -167,7 +169,8 @@ class LocalTBGrad : public TBGrad<T> {
       }
     
       tbgrad.scale(1.0/ct.order());
-      tbgrad.print("two electron contribution");
+
+      tim_exit("two electron gradient");
     }
 };
 

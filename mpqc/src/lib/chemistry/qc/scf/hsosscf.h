@@ -16,51 +16,14 @@ class HSOSSCF: public SCF {
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
- private:
-    // these are temporary data, so they should not be checkpointed
-    RefSymmSCMatrix cl_fock_;
-    RefSymmSCMatrix cl_dens_;
-    RefSymmSCMatrix cl_dens_diff_;
-    RefSymmSCMatrix cl_gmat_;
-    RefSymmSCMatrix cl_hcore_;
+  protected:
+    int user_occupations_;
+    int tndocc_;
+    int tnsocc_;
+    int nirrep_;
+    int *ndocc_;
+    int *nsocc_;
 
-    RefSymmSCMatrix op_fock_;
-    RefSymmSCMatrix op_dens_;
-    RefSymmSCMatrix op_dens_diff_;
-    RefSymmSCMatrix op_gmat_;
-    
-    void init();
-    
- protected:
-    int ndocc_;
-    int nsocc_;
-
-    // scf things
-    void init_vector();
-    void done_vector();
-    void reset_density();
-    double new_density();
-    double scf_energy();
-
-    void ao_fock();
-    void make_contribution(int,int,int,int,double,int);
-
-    RefSCExtrapError extrap_error();
-    RefSCExtrapData extrap_data();
-    RefSymmSCMatrix effective_fock();
-    
-    // gradient things
-    void init_gradient();
-    void done_gradient();
-
-    RefSymmSCMatrix lagrangian();
-    RefSymmSCMatrix gradient_density();
-    void make_gradient_contribution();
-
-    // hessian things
-    void init_hessian();
-    void done_hessian();
-    
   public:
     HSOSSCF(StateIn&);
     HSOSSCF(const RefKeyVal&);
@@ -75,6 +38,51 @@ class HSOSSCF: public SCF {
     int value_implemented();
     int gradient_implemented();
     int hessian_implemented();
+
+  protected:
+    // these are temporary data, so they should not be checkpointed
+    RefTwoBodyInt tbi_;
+    
+    RefSymmSCMatrix cl_fock_;
+    RefSymmSCMatrix cl_dens_;
+    RefSymmSCMatrix cl_dens_diff_;
+    RefSymmSCMatrix cl_gmat_;
+    RefSymmSCMatrix op_fock_;
+    RefSymmSCMatrix op_dens_;
+    RefSymmSCMatrix op_dens_diff_;
+    RefSymmSCMatrix op_gmat_;
+
+    RefSymmSCMatrix cl_hcore_;
+
+    char *init_pmax(double*);
+    
+    void set_occupations(const RefDiagSCMatrix& evals);
+
+    // scf things
+    void init_vector();
+    void done_vector();
+    void reset_density();
+    double new_density();
+    double scf_energy();
+
+    void ao_fock();
+
+    RefSCExtrapError extrap_error();
+    RefSCExtrapData extrap_data();
+    RefSymmSCMatrix effective_fock();
+    
+    // gradient things
+    void init_gradient();
+    void done_gradient();
+
+    RefSymmSCMatrix lagrangian();
+    RefSymmSCMatrix gradient_density();
+    void two_body_deriv(const RefSCVector&);
+
+    // hessian things
+    void init_hessian();
+    void done_hessian();
+    
 };
 SavableState_REF_dec(HSOSSCF);
 

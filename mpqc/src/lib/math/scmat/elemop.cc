@@ -43,6 +43,11 @@ SCElementOp::has_collect()
   return 0;
 }
 
+void
+SCElementOp::defer_collect(int)
+{
+}
+
 int
 SCElementOp::has_side_effects()
 {
@@ -179,6 +184,11 @@ SCElementOp2::has_collect()
   return 0;
 }
 
+void
+SCElementOp2::defer_collect(int)
+{
+}
+
 int
 SCElementOp2::has_side_effects()
 {
@@ -277,6 +287,11 @@ int
 SCElementOp3::has_collect()
 {
   return 0;
+}
+
+void
+SCElementOp3::defer_collect(int)
+{
 }
 
 int
@@ -426,7 +441,7 @@ SCElementScalarProduct::_castdown(const ClassDesc*cd)
 }
 
 SCElementScalarProduct::SCElementScalarProduct():
-  product(0.0)
+  product(0.0), deferred_(0)
 {
 }
 
@@ -434,12 +449,14 @@ SCElementScalarProduct::SCElementScalarProduct(StateIn&s):
   SCElementOp2(s)
 {
   s.get(product);
+  s.get(deferred_);
 }
 
 void
 SCElementScalarProduct::save_data_state(StateOut&s)
 {
   s.put(product);
+  s.put(deferred_);
 }
 
 SCElementScalarProduct::~SCElementScalarProduct()
@@ -462,9 +479,16 @@ SCElementScalarProduct::has_collect()
 }
 
 void
+SCElementScalarProduct::defer_collect(int h)
+{
+  deferred_=h;
+}
+
+void
 SCElementScalarProduct::collect(const RefMessageGrp&grp)
 {
-  grp->sum(product);
+  if (!deferred_)
+    grp->sum(product);
 }
 
 double
@@ -607,16 +631,18 @@ SavableState_REF_def(SCElementMaxAbs);
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
-SCElementMaxAbs::SCElementMaxAbs():r(0.0) {}
+SCElementMaxAbs::SCElementMaxAbs():r(0.0), deferred_(0) {}
 SCElementMaxAbs::SCElementMaxAbs(StateIn&s):
   SCElementOp(s)
 {
   s.get(r);
+  s.get(deferred_);
 }
 void
 SCElementMaxAbs::save_data_state(StateOut&s)
 {
   s.put(r);
+  s.put(deferred_);
 }
 void *
 SCElementMaxAbs::_castdown(const ClassDesc*cd)
@@ -644,9 +670,15 @@ SCElementMaxAbs::has_collect()
   return 1;
 }
 void
+SCElementMaxAbs::defer_collect(int h)
+{
+  deferred_=h;
+}
+void
 SCElementMaxAbs::collect(const RefMessageGrp&msg)
 {
-  msg->max(r);
+  if (!deferred_)
+    msg->max(r);
 }
 
 /////////////////////////////////////////////////////////////////////////

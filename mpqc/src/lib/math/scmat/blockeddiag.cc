@@ -145,7 +145,14 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp& op)
 {
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
-  for (int i=0; i < d->blocks()->nblock(); i++) {
+  int nb = d->blocks()->nblock();
+  
+  for (int i=0; i < nb; i++) {
+    if (i < nb-1)
+      op->defer_collect(1);
+    else
+      op->defer_collect(0);
+
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
@@ -164,9 +171,16 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp2& op,
     abort();
   }
 
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
+  BlockedSCElementOp2 *bop = BlockedSCElementOp2::castdown(op.pointer());
 
-  for (int i=0; i < d->blocks()->nblock(); i++) {
+  int nb = d->blocks()->nblock();
+  
+  for (int i=0; i < nb; i++) {
+    if (i < nb-1)
+      op->defer_collect(1);
+    else
+      op->defer_collect(0);
+
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())
@@ -188,9 +202,16 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
+  BlockedSCElementOp3 *bop = BlockedSCElementOp3::castdown(op.pointer());
 
-  for (int i=0; i < d->blocks()->nblock(); i++) {
+  int nb = d->blocks()->nblock();
+  
+  for (int i=0; i < nb; i++) {
+    if (i < nb-1)
+      op->defer_collect(1);
+    else
+      op->defer_collect(0);
+
     if (bop)
       bop->working_on(i);
     if (mats_[i].nonnull())

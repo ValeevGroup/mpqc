@@ -46,8 +46,11 @@ class SCElementOp: public SavableState {
     // true then collect is called in such a way that each duplicated
     // |SCElementOp| is the argument of |collect| once.  The default
     // return value of |has_collect| is 0 and |collect|'s default action
-    // is do nothing.
+    // is do nothing.  If the block being operated on is from a blocked
+    // matrix, then the |defer_collect| member can be called so that the
+    // collection is done after all blocks have been operated on.
     virtual int has_collect();
+    virtual void defer_collect(int);
     virtual int has_side_effects();
     virtual void collect(const RefMessageGrp&);
     virtual void process(SCMatrixBlockIter&) = 0;
@@ -76,8 +79,11 @@ class SCElementOp2: public SavableState {
     // true then collect is called in such a way that each duplicated
     // |SCElementOp| is the argument of |collect| once.  The default
     // return value of |has_collect| is 0 and |collect|'s default action
-    // is do nothing.
+    // is do nothing. If the block being operated on is from a blocked
+    // matrix, then the |defer_collect| member can be called so that the
+    // collection is done after all blocks have been operated on. 
     virtual int has_collect();
+    virtual void defer_collect(int);
     virtual int has_side_effects();
     virtual int has_side_effects_in_arg();
     virtual void collect(const RefMessageGrp&);
@@ -103,8 +109,11 @@ class SCElementOp3: public SavableState {
     // true then collect is called in such a way that each duplicated
     // |SCElementOp| is the argument of |collect| once.  The default
     // return value of |has_collect| is 0 and |collect|'s default action
-    // is do nothing.
+    // is do nothing. If the block being operated on is from a blocked
+    // matrix, then the |defer_collect| member can be called so that the
+    // collection is done after all blocks have been operated on.
     virtual int has_collect();
+    virtual void defer_collect(int);
     virtual int has_side_effects();
     virtual int has_side_effects_in_arg1();
     virtual int has_side_effects_in_arg2();
@@ -135,6 +144,7 @@ class SCElementScalarProduct: public SCElementOp2 {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
+    int deferred_;
     double product;
   public:
     SCElementScalarProduct();
@@ -143,6 +153,7 @@ class SCElementScalarProduct: public SCElementOp2 {
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
     int has_collect();
+    void defer_collect(int);
     void collect(const RefMessageGrp&);
     double result();
     void init() { product = 0.0; }
@@ -280,6 +291,7 @@ class SCElementMaxAbs: public SCElementOp {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
+    int deferred_;
     double r;
   public:
     SCElementMaxAbs();
@@ -288,6 +300,7 @@ class SCElementMaxAbs: public SCElementOp {
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&);
     int has_collect();
+    void defer_collect(int);
     void collect(const RefMessageGrp&);
     double result();
 };

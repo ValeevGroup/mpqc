@@ -44,34 +44,43 @@ extern "C" {
  int cubedim0();
  void gop1(double*,int,double*,char,int);
  int gcollect(double*,int*,double*);
+#if defined(I860)
+ void bzero(void*,int);
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////
 
 int
 mp2_hah(centers_t *centers, scf_struct_t *scf_info,
-        dmt_matrix Scf_Vec, dmt_matrix Fock, FILE* outfile)
+        dmt_matrix Scf_Vec, dmt_matrix Fock, FILE* outfile, RefKeyVal keyval)
 {
   tim_enter("init");
 
-  ParsedKeyVal rawin("mpqc.in");
-  PrefixKeyVal pref1(":mp2",rawin);
-  PrefixKeyVal pref2(":default",rawin);
-  AggregateKeyVal keyval(pref1,pref2);
-
   int nfzc=0,nfzv=0;
+  int bmem=10000000;
 
   int me=mynode0();
   int nproc=numnodes0();
   int dim=cubedim0();
 
-  if (keyval.exists("frozen_docc")) {
-    nfzc = keyval.intvalue("frozen_docc");
+  if (me==0) {
+    if (keyval->exists("base_memory")) {
+      bmem = keyval->intvalue("frozen_docc");
+      }
+
+    if (keyval->exists("frozen_uocc")) {
+      nfzv = keyval->intvalue("frozen_uocc");
+      }
+
+    if (keyval->exists("frozen_uocc")) {
+      nfzv = keyval->intvalue("frozen_uocc");
+      }
     }
 
-  if (keyval.exists("frozen_uocc")) {
-    nfzv = keyval.intvalue("frozen_uocc");
-    }
+  bcast0(&bmem,sizeof(int),mtype_get(),0);
+  bcast0(&nfzc,sizeof(int),mtype_get(),0);
+  bcast0(&nfzv,sizeof(int),mtype_get(),0);
 
   int_initialize_offsets2(centers,centers,centers,centers);
 
@@ -143,7 +152,7 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
   */
 
   int nstatic = (nbasis*(nvir+nocc+1)+nvir*nvir)*sizeof(double);
-  int mem = 10000000-nstatic;
+  int mem = bmem-nstatic;
 
   int nj = nocc*nvir*nbasis/nproc;
   int nperi = (2*nfuncmax*nfuncmax*nbasis+nj)*sizeof(double);

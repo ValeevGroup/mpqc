@@ -46,7 +46,7 @@ static int atomic_charges_from_esp(centers_t *centers, Molecule& mol,
   dmt_matrix,
   double_vector_t *charges, expts_t *mulpts,
   DMatrix& A, DVector& B,
-  double density, int use_dip, FILE *outfile);
+  double density, int use_dip, FILE *outfile, RefKeyVal keyval);
 
 #ifndef M_PI
 #define M_PI    3.14159265358979323846
@@ -65,7 +65,7 @@ static int atomic_charges_from_esp(centers_t *centers, Molecule& mol,
 int
 Scf_charges_from_esp(centers_t *centers, dmt_matrix scf_vec,
     double_vector_t *charges, double_vector_t *dipole, expts_t *mulpts,
-    double density, int use_dip, FILE *outfile)
+    double density, int use_dip, FILE *outfile, RefKeyVal keyval)
 {
 
   int errcod;
@@ -113,7 +113,7 @@ Scf_charges_from_esp(centers_t *centers, dmt_matrix scf_vec,
   dmt_scale(pmat,2.0);
 
   atomic_charges_from_esp(centers,mol,pmat,charges,mulpts,A,B,
-                          density,use_dip,outfile);
+                          density,use_dip,outfile,keyval);
 
   int_done_offsets1(centers,centers);
   int_done_1e();
@@ -128,7 +128,7 @@ static int
 atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
   double_vector_t *charges, expts_t *mulpts,
   DMatrix& A, DVector& B,
-  double density, int use_dip, FILE *outfile)
+  double density, int use_dip, FILE *outfile, RefKeyVal keyval)
 {
   int i,j,k,l,m,n;
   int errcod;
@@ -163,26 +163,28 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
   if(errcod!=0) return(-1);
 
  /* read in some input junk */
-  ParsedKeyVal rawin("mpqc.in");
-  PrefixKeyVal pref1(":scf",rawin);
-  PrefixKeyVal pref2(":default",rawin);
-  AggregateKeyVal keyval(pref1,pref2);
+  if (me==0) {
+    if (keyval->exists("num_shell"))
+      num_shell=keyval->intvalue("num_shell");
 
-  if (keyval.exists("num_shell"))
-    num_shell=keyval.intvalue("num_shell");
+    if (keyval->exists("vdw_scale"))
+      vdw_scale = keyval->doublevalue("vdw_scale");
 
-  if (keyval.exists("vdw_scale"))
-    vdw_scale = keyval.doublevalue("vdw_scale");
+    if (keyval->exists("vdw_spacing"))
+      vdw_spacing = keyval->doublevalue("vdw_spacing");
+    }
 
-  if (keyval.exists("vdw_spacing"))
-    vdw_spacing = keyval.doublevalue("vdw_spacing");
+  bcast0(&num_shell,sizeof(int),mtype_get(),0);
+  bcast0(&vdw_scale,sizeof(double),mtype_get(),0);
+  bcast0(&vdw_spacing,sizeof(double),mtype_get(),0);
 
  /* set up file for avs */
 
-  StateOutBinXDR avsfil("esp.dat","w");
-  sync0();
-  if (me) avsfil.close();
-  sync0();
+  StateOutBinXDR avsfil((FILE*)0);
+
+  if (me==0) {
+    avsfil.open("esp.dat","w");
+    }
 
   if (me==0) {
     avsfil.put(mol.natom());
@@ -196,8 +198,6 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
       }
     avsfil.flush();
     }
-
-  sync0();
 
  /* determine total charge of the molecule and place in B */
 
@@ -283,7 +283,6 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
             avsfil.put(zp);
             avsfil.flush();
             }
-          sync0();
 #endif
           npoints++;
           }
@@ -291,8 +290,6 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
       }
     vdw_scale+=vdw_spacing;
     }
-
-  sync0();
 
   if (me==0) {
     vdw_scale=-99999.0;

@@ -34,6 +34,11 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 
+#include <scconfig.h>
+#ifdef HAVE_PTHREAD
+#  include <util/group/thpthd.h>
+#endif
+
 using namespace std;
 using namespace sc;
 
@@ -145,8 +150,13 @@ ThreadGrp::set_default_threadgrp(const Ref<ThreadGrp>& grp)
 ThreadGrp*
 ThreadGrp::get_default_threadgrp()
 {
-  if (default_threadgrp.null())
+  if (default_threadgrp.null()) {
+#ifdef HAVE_PTHREAD
+    default_threadgrp = new PthreadThreadGrp;
+#else
     default_threadgrp = new ProcThreadGrp;
+#endif
+  }
 
   return default_threadgrp;
 }

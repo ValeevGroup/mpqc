@@ -264,7 +264,9 @@ class MemoryGrp: public DescribedClass {
         argument, then the environmental variable MEMORYGRP, and, finally,
         the default MessageGrp object to decide which specialization of
         MemoryGrp would be appropriate.  The argument to -memorygrp should
-        be either string for a ParsedKeyVal constructor or a classname. */
+        be either string for a ParsedKeyVal constructor or a classname.
+        The default ThreadGrp and MessageGrp objects should be initialized
+        before this is called. */
     static MemoryGrp* initial_memorygrp(int &argc, char** argv);
     static MemoryGrp* initial_memorygrp();
     /** The default memory group contains the primary memory group to

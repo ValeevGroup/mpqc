@@ -95,6 +95,7 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include <util/group/messmpi.h>
 #endif
 
 using namespace std;
@@ -202,7 +203,10 @@ try_main(int argc, char *argv[])
 
   ExEnv::init(argc, argv);
 
-#ifdef HAVE_MPI
+  Ref<MessageGrp> grp;
+#if defined(HAVE_MPI) && defined(DEFAULT_MPI)
+  grp = new MPIMessageGrp(argc, argv);
+#elif defined(HAVE_MPI)
   // MPI is allowed wait until MPI_Init to fill in argc and argv,
   // so we may have to call MPI_Init before we even know that we
   // want an MPIMessageGrp.  The command name is used to let mpqc
@@ -301,7 +305,7 @@ try_main(int argc, char *argv[])
   }
 
   // get the message group.  first try the commandline and environment
-  Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
   if (grp.nonnull())
     MessageGrp::set_default_messagegrp(grp);
   else

@@ -184,6 +184,15 @@
 /* Define if your MPI implementation has the real MPI2 one-sided calls */
 #undef HAVE_MPI2_ONE_SIDED
 
+/* Define if MPIMessageGrp should be used by default. */
+#undef DEFAULT_MPI
+
+/* Define if MTMPIMemoryGrp should be used by default. */
+#undef DEFAULT_MTMPI
+
+/* Define if MPI2MemorGrp should be used by default. */
+#undef DEFAULT_MPI2
+
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
 

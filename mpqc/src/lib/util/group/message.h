@@ -147,7 +147,7 @@ class MessageGrp: public DescribedClass {
         argument to -messagegrp should be either string for a
         ParsedKeyVal constructor or a classname.  If this returns
         null, it is up to the programmer to create a MessageGrp. */
-    static MessageGrp* initial_messagegrp(int &argc, char** argv);
+    static MessageGrp* initial_messagegrp(int &argc, char** &argv);
 
     /** Send messages sequentially to the target processor.
         Similar members exist for each of the basic types. */

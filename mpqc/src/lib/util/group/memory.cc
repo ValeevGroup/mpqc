@@ -181,35 +181,6 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       return grp;
     }
 
-  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
-  if (msg.null()) {
-      ExEnv::errn() << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
-      abort();
-    }
-#if defined(HAVE_MPI)
-  else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
-      Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp();
-      grp = new MTMPIMemoryGrp(msg,thr);
-    }
-#endif
-#ifdef HAVE_SYSV_IPC
-  else if (msg->class_desc() == ::class_desc<ShmMessageGrp>()) {
-      grp = new ShmMemoryGrp(msg);
-    }
-#endif
-  else if (msg->n() == 1) {
-      grp = new ProcMemoryGrp();
-    }
-  else {
-      ExEnv::errn() << scprintf("MemoryGrp::create_memorygrp: cannot create "
-              "default for \"%s\"\n.", msg->class_name());
-      abort();
-    }
-
-  if (!grp) {
-      ExEnv::errn() << scprintf("WARNING: MemoryGrp::initial_memorygrp(): failed\n");
-    }
-
   return grp;
 }
 
@@ -302,7 +273,47 @@ MemoryGrp::set_default_memorygrp(const Ref<MemoryGrp>& grp)
 MemoryGrp*
 MemoryGrp::get_default_memorygrp()
 {
+#if defined(HAVE_MPI) && defined(DEFAULT_MPI2)
+  default_memorygrp = new MPI2MemoryGrp;
+  return default_memorygrp.pointer();
+#endif
+#if defined(HAVE_MPI) && defined(DEFAULT_MTMPI)
+  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+  Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp();
+  default_memorygrp = new MTMPIMemoryGrp(msg,thr);
+  return default_memorygrp.pointer();
+#endif
+
+  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+  if (msg.null()) {
+      ExEnv::errn() << scprintf("MemoryGrp::get_default_memorygrp: requires default MessageGrp if default behavior not configured\n");
+      abort();
+    }
+#if defined(HAVE_MPI)
+  else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
+      Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp();
+      default_memorygrp = new MTMPIMemoryGrp(msg,thr);
+      return default_memorygrp.pointer();
+    }
+#endif
+#ifdef HAVE_SYSV_IPC
+  else if (msg->class_desc() == ::class_desc<ShmMessageGrp>()) {
+      default_memorygrp = new ShmMemoryGrp(msg);
+      return default_memorygrp.pointer();
+    }
+#endif
+  else if (msg->n() == 1) {
+      default_memorygrp = new ProcMemoryGrp();
+      return default_memorygrp.pointer();
+    }
+  else {
+      ExEnv::errn() << scprintf("MemoryGrp::get_default_memorygrp: cannot create "
+              "default for \"%s\"\n.", msg->class_name());
+      abort();
+    }
+
   if (default_memorygrp.null()) {
+      ExEnv::err0() << scprintf("WARNING: MemoryGrp::get_default_memorygrp(): failed\n");
       default_memorygrp = new ProcMemoryGrp;
     }
   return default_memorygrp.pointer();

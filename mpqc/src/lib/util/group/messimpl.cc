@@ -85,13 +85,17 @@ MessageGrp*
 MessageGrp::get_default_messagegrp()
 {
   if (default_messagegrp.null()) {
+#if defined(HAVE_MPI) && defined(DEFAULT_MPI)
+      default_messagegrp = new MPIMessageGrp;
+#else
       default_messagegrp = new ProcMessageGrp;
+#endif
     }
   return default_messagegrp.pointer();
 }
 
 MessageGrp *
-MessageGrp::initial_messagegrp(int &argc, char** argv)
+MessageGrp::initial_messagegrp(int &argc, char** &argv)
 {
   MessageGrp *grp = 0;
 
@@ -168,21 +172,11 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   MPI_Initialized(&mpiinited);
   if (mpiinited
       || (ExEnv::initialized() && !strcmp(ExEnv::program_name(),"mpqc-mpi"))) {
-      grp = new MPIMessageGrp;
+      grp = new MPIMessageGrp(&argc,&argv);
       return grp;
   }
 #endif
 
-#if defined(HAVE_PUMA_MPI2)
-  //grp = new MPIMessageGrp;
-  grp = new ParagonMessageGrp;
-  if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
-  else return grp;
-#elif defined(HAVE_NX)
-  grp = new ParagonMessageGrp;
-  if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
-  else return grp;
-#endif
   return 0;
 }
 

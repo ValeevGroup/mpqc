@@ -49,6 +49,7 @@ MBPT2_R12::compute_energy_a_()
     r12eval_->set_spinadapted(false);
     r12eval_->set_debug(debug_);
     r12eval_->set_dynamic(dynamic_);
+    r12eval_->set_print_percent(print_percent_);
     r12eval_->set_memory(mem_alloc);
   }
   // This will actually compute the intermediates

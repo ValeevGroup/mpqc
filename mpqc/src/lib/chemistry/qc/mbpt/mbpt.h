@@ -72,6 +72,9 @@ class MBPT2: public Wavefunction {
     // memorygrp needs catchup to work)
     int dynamic_;
 
+    // control how frequently progress is printed
+    double print_percent_;
+
     // The maximum number of orbitals in a pass.
     int max_norb_;
 

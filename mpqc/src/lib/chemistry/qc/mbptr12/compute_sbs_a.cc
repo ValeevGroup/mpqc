@@ -369,7 +369,8 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     e12thread[i] = new R12A_GRT_12Qtr(i, thr->nthread(), me, nproc,
 				      mem, msg, lock, bs, bs, tbints_[i],
 				      nocc, nocc_act, scf_vector, tol, debug_,
-				      r12info()->dynamic());
+				      r12info()->dynamic(),
+                                      r12info()->print_percent());
   }
 
   

@@ -46,7 +46,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",1,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",2,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -81,6 +81,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   memory_ = DEFAULT_SC_MEMORY;
   debug_ = 0;
   dynamic_ = false;
+  print_percent_ = 10.0;
 
   orbsym_ = 0;
   eigen_(evals_,scf_vec_,occs_,orbsym_);
@@ -113,6 +114,10 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
 
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 2) {
+    si.get(print_percent_);
+  }
+
   orbsym_ = 0;
   eigen_(evals_,scf_vec_,occs_,orbsym_);
 }
@@ -143,6 +148,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);
+  so.put(print_percent_);
 }
 
 char* R12IntEvalInfo::ints_file() const

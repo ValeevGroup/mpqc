@@ -38,7 +38,7 @@
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/mbptr12/trans12_grt.h>
-#include <chemistry/qc/mbptr12/distsh.h>
+#include <chemistry/qc/basis/distshpair.h>
 
 using namespace std;
 using namespace sc;
@@ -60,7 +60,7 @@ R12A_GRT_12Qtr::R12A_GRT_12Qtr(int mythread_a, int nthread_a,
 			         int nocc_a, int nocc_act_a,
                                  double **scf_vector_a,
                                  double tol_a, int debug_a,
-                                 int dynamic_a)
+                                 int dynamic_a, double print_percent_a)
 {
   msg = msg_a;
   mythread = mythread_a;
@@ -79,6 +79,7 @@ R12A_GRT_12Qtr::R12A_GRT_12Qtr(int mythread_a, int nthread_a,
   scf_vector = scf_vector_a;
   debug = debug_a;
   dynamic_ = dynamic_a;
+  print_percent_ = print_percent_a;
 
   // Use the same basis for now
   bs1_ = basis;
@@ -158,10 +159,10 @@ R12A_GRT_12Qtr::run()
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  DistShellPairR12 shellpairs(msg,nthread,mythread,lock,bs3_,bs4_);
-  shellpairs.set_dynamic(dynamic_);
+  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,bs3_,bs4_,dynamic_);
   shellpairs.set_debug(debug);
-  if (debug) shellpairs.set_print_percent(1);
+  if (debug) shellpairs.set_print_percent(print_percent_/10.0);
+  else shellpairs.set_print_percent(print_percent_);
   int work_per_thread = bs3_eq_bs4 ? 
     ((nsh3*(nsh3+1))/2)/(nproc*nthread) :
     (nsh3*nsh4)/(nproc*nthread) ;

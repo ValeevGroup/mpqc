@@ -166,6 +166,7 @@ void R12IntEval::set_stdapprox(LinearR12::StandardApproximation stdapprox) { std
 void R12IntEval::set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted; };
 void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
 void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
+void R12IntEval::set_print_percent(double pp) { r12info_->set_print_percent(pp); };
 void R12IntEval::set_memory(size_t nbytes) { r12info_->set_memory(nbytes); };
 
 Ref<R12IntEvalInfo> R12IntEval::r12info() const { return r12info_; };

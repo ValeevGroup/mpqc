@@ -63,6 +63,7 @@ class R12A_ABS_123Qtr: public Thread {
     double **scf_vector;
     int debug;
     int dynamic_;
+    double print_percent_;
 
     Ref<GaussianBasisSet> bs1_;
     Ref<GaussianBasisSet> bs2_;
@@ -81,7 +82,7 @@ class R12A_ABS_123Qtr: public Thread {
 		    int nocc, int nocc_act,
 		    double **scf_vector,
 		    double tol, int debug,
-		    int dynamic);
+		    int dynamic, double print_percent);
     ~R12A_ABS_123Qtr();
 
     void set_i_offset(int ioff) { i_offset = ioff; }

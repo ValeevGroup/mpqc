@@ -551,7 +551,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     e123thread[i] = new R12A_ABS_123Qtr(i, thr->nthread(), me, nproc,
 					mem, msg, lock, bs, bs_aux, tbints[i],
 					nocc, nocc_act, scf_vector, tol, debug_,
-					r12info()->dynamic());
+					r12info()->dynamic(),
+                                        r12info()->print_percent());
   }
 
   ///////////////////////////////////////////////////////////

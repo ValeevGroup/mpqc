@@ -86,7 +86,7 @@ dquicksort(double *item,int *index,int n)
 // MBPT2
 
 static ClassDesc MBPT2_cd(
-  typeid(MBPT2),"MBPT2",8,"public Wavefunction",
+  typeid(MBPT2),"MBPT2",9,"public Wavefunction",
   0, create<MBPT2>, create<MBPT2>);
 
 MBPT2::MBPT2(StateIn& s):
@@ -126,6 +126,13 @@ MBPT2::MBPT2(StateIn& s):
     }
   else {
       dynamic_ = 0;
+    }
+
+  if (s.version(::class_desc<MBPT2>()) >= 9) {
+      s.get(print_percent_);
+    }
+  else {
+      print_percent_ = 10.0;
     }
 
   if (s.version(::class_desc<MBPT2>()) >= 4) {
@@ -217,6 +224,9 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
   KeyValValueint default_dynamic(0);
   dynamic_ = keyval->booleanvalue("dynamic", default_dynamic);
 
+  KeyValValuedouble default_print_percent(10.0);
+  print_percent_ = keyval->doublevalue("print_percent", default_print_percent);
+
   cphf_epsilon_ = keyval->doublevalue("cphf_epsilon",KeyValValuedouble(1.e-8));
 
   max_norb_ = keyval->intvalue("max_norb",KeyValValueint(-1));
@@ -250,6 +260,7 @@ MBPT2::save_data_state(StateOut& s)
   s.putstring(algorithm_);
   s.put(do_d1_);
   s.put(dynamic_);
+  s.put(print_percent_);
   s.put(cphf_epsilon_);
   s.put(max_norb_);
   s.put(do_d2_);

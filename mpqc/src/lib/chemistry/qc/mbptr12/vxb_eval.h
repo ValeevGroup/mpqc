@@ -80,6 +80,7 @@ public:
   void set_spinadapted(bool spinadapted);
   void set_debug(int debug);
   void set_dynamic(bool dynamic);
+  void set_print_percent(double print_percent);
   void set_memory(size_t nbytes);
 
   Ref<R12IntEvalInfo> r12info() const;

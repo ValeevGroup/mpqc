@@ -71,6 +71,7 @@ private:
 
   size_t memory_;
   bool dynamic_;
+  double print_percent_;
   int debug_;
   StoreMethod ints_method_;
   char* ints_file_;
@@ -90,6 +91,7 @@ public:
   void save_data_state(StateOut&);
 
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; };
+  void set_print_percent(double print_percent) { print_percent_ = print_percent; };
   void set_debug_level(int debug) { debug_ = debug; };
   void set_ints_method(const StoreMethod method) { ints_method_ = method; };
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
@@ -106,6 +108,7 @@ public:
   Ref<ThreadGrp> thr() const { return thr_;};
 
   bool dynamic() const { return dynamic_; };
+  double print_percent() const { return print_percent_; };
   int debug_level() const { return debug_; };
   const StoreMethod ints_method() const { return ints_method_; };
   char* ints_file() const;

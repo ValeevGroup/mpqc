@@ -30,7 +30,7 @@ mpqc: (
     nfzv = 2
     method = mp
     algorithm = memgrp
-    reference<CLSCF>: (
+    reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000

@@ -19,11 +19,11 @@ mpqc: (
   do_energy = yes
   do_gradient = no
   % method for computing the molecule's energy
-  mole<CLSCF>: (
+  mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     memory = 16000000
-    guess_wavefunction<CLSCF>: (
+    guess_wavefunction<CLHF>: (
       molecule = $:molecule
       basis<GaussianBasisSet>: (
         molecule = $:molecule

@@ -30,7 +30,7 @@ mpqc: (
     nfzv = 2
     method = opt2
     algorithm = v2
-    reference<HSOSSCF>: (
+    reference<HSOSHF>: (
       multiplicity = 3
       molecule = $:molecule
       basis = $:basis

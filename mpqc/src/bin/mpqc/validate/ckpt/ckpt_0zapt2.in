@@ -24,7 +24,7 @@ mpqc: (
     memory = 16000000
     nfzc = 0
     nfzv = 0
-    reference<HSOSSCF>: (
+    reference<HSOSHF>: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000

@@ -22,7 +22,7 @@ mpqc: (
     molecule = $:molecule
     basis = $:basis
     % reference wavefunction
-    reference<CLSCF>: (
+    reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
     )

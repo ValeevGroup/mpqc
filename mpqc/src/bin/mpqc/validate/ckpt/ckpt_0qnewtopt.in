@@ -27,7 +27,7 @@ mpqc: (
   do_energy = yes
   do_gradient = no
   % method for computing the molecule's energy
-  mole<CLSCF>: (
+  mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor

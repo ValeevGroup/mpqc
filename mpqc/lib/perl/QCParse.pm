@@ -648,10 +648,10 @@ sub input_string() {
     $method = "SCF" if ($method eq "");
     if ($method eq "SCF") {
         if ($qcinput->mult() == 1) {
-            $method = "CLSCF";
+            $method = "CLHF";
         }
         else {
-            $method = "HSOSSCF";
+            $method = "HSOSHF";
         }
     }
     my $mole = "  do_energy = yes";
@@ -679,10 +679,10 @@ sub input_string() {
         $mole = "$mole\n    nfzv = $fzv";
         my $refmethod = "";
         if ($qcinput->mult() == 1) {
-            $refmethod = "CLSCF";
+            $refmethod = "CLHF";
         }
         else {
-            $refmethod = "HSOSSCF";
+            $refmethod = "HSOSHF";
         }
         $mole = "$mole\n    reference<$refmethod>: (";
         $mole = "$mole\n      molecule = \$:molecule";

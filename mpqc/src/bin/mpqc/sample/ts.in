@@ -29,7 +29,7 @@ mpqc: (
     followed<OutSimpleCo> = [ "N-inversion" 4 3 2 1 ]
   )  
   % method for computing the molecule's energy
-  mole<CLSCF>: (
+  mole<CLHF>: (
     molecule = $:molecule
     basis = $:basis
     coor = $..:coor

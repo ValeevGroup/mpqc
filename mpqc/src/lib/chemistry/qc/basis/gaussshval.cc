@@ -69,7 +69,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
 
   // compute the maximum angular momentum component of the shell
   int maxam = max_am();
-  if (g_values) maxam++;
+  if (g_values || h_values) maxam++;
   if (h_values) maxam++;
 
   // check limitations
@@ -145,11 +145,11 @@ GaussianShell::hessian_values(CartesianIter **civec,
   double precon_h[MAX_NCON];
   if (h_values) {
       for (i=0; i<ncon; i++) {
-          precon_g[i] = 0.0;
+          precon_h[i] = 0.0;
           for (j=0; j<nprim; j++) {
-              precon_g[i] += exp[j] * exp[j] * coef[i][j] * exps[j];
+              precon_h[i] += exp[j] * exp[j] * coef[i][j] * exps[j];
             }
-          precon_g[i] *= 4.0;
+          precon_h[i] *= 4.0;
         }
     }
 
@@ -284,13 +284,13 @@ GaussianShell::hessian_values(CartesianIter **civec,
               double norm_precon_g = precon_g[i];
               double norm_precon_h = precon_h[i];
               // xx
-              h_values[i_hess] = norm_precon_h*xs[2] + norm_precon_g;
+              h_values[i_hess] = norm_precon_h*xs[2] - norm_precon_g;
               i_hess++;
               // yx
               h_values[i_hess] = norm_precon_h*xs[1]*ys[1];
               i_hess++;
               // yy
-              h_values[i_hess] = norm_precon_h*ys[2] + norm_precon_g;
+              h_values[i_hess] = norm_precon_h*ys[2] - norm_precon_g;
               i_hess++;
               // zx
               h_values[i_hess] = norm_precon_h*zs[1]*xs[1];
@@ -299,7 +299,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
               h_values[i_hess] = norm_precon_h*zs[1]*ys[1];
               i_hess++;
               // zz
-              h_values[i_hess] = norm_precon_h*zs[2] + norm_precon_g;
+              h_values[i_hess] = norm_precon_h*zs[2] - norm_precon_g;
               i_hess++;
             }
           else {
@@ -316,7 +316,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
               int i_cart = 0;
               for (j.start(); j; j.next()) {
                   double pre = precon[i];
-                  double pre_g = precon_g[i];
+                  double pre_g = - precon_g[i];
                   double pre_h = precon_h[i];
                   int a = j.a();
                   int b = j.b();
@@ -334,11 +334,11 @@ GaussianShell::hessian_values(CartesianIter **civec,
                   // yx
                   cart_h[i_cart] = pre_h * xs[a+1]*ys[b+1]*zs[c];
                   if (a>0)
-                      cart_h[i_cart] = pre_g * a * xs[a-1]*ys[b]*zs[c];
+                      cart_h[i_cart] += pre_g * a * xs[a-1]*ys[b+1]*zs[c];
                   if (b>0)
-                      cart_h[i_cart] = pre_g * b * xs[a]*ys[b-1]*zs[c];
+                      cart_h[i_cart] += pre_g * b * xs[a+1]*ys[b-1]*zs[c];
                   if (a>0 && b>0)
-                      cart_h[i_cart] = pre * a*b * xs[a-1]*ys[b-1]*zs[c];
+                      cart_h[i_cart] += pre * a*b * xs[a-1]*ys[b-1]*zs[c];
                   i_cart++;
 
                   // yy
@@ -354,29 +354,29 @@ GaussianShell::hessian_values(CartesianIter **civec,
                   // zx
                   cart_h[i_cart] = pre_h * xs[a+1]*ys[b]*zs[c+1];
                   if (a>0)
-                      cart_h[i_cart] = pre_g * a * xs[a-1]*ys[b]*zs[c];
+                      cart_h[i_cart] += pre_g * a * xs[a-1]*ys[b]*zs[c+1];
                   if (c>0)
-                      cart_h[i_cart] = pre_g * c * xs[a]*ys[b]*zs[c-1];
+                      cart_h[i_cart] += pre_g * c * xs[a+1]*ys[b]*zs[c-1];
                   if (a>0 && c>0)
-                      cart_h[i_cart] = pre * a*c * xs[a-1]*ys[b]*zs[c-1];
+                      cart_h[i_cart] += pre * a*c * xs[a-1]*ys[b]*zs[c-1];
                   i_cart++;
 
                   // zy
                   cart_h[i_cart] = pre_h * xs[a]*ys[b+1]*zs[c+1];
                   if (c>0)
-                      cart_h[i_cart] = pre_g * a * xs[a]*ys[b]*zs[c-1];
+                      cart_h[i_cart] += pre_g * c * xs[a]*ys[b+1]*zs[c-1];
                   if (b>0)
-                      cart_h[i_cart] = pre_g * b * xs[a]*ys[b-1]*zs[c];
+                      cart_h[i_cart] += pre_g * b * xs[a]*ys[b-1]*zs[c+1];
                   if (c>0 && b>0)
-                      cart_h[i_cart] = pre * c*b * xs[a]*ys[b-1]*zs[c-1];
+                      cart_h[i_cart] += pre * c*b * xs[a]*ys[b-1]*zs[c-1];
                   i_cart++;
 
                   // zz
                   cart_h[i_cart] = pre_h * xs[a]*ys[b]*zs[c+2]
                                  + pre_g * (c+1) * xs[a]*ys[b]*zs[c];
-                  if (a>0) {
+                  if (c>0) {
                       cart_h[i_cart] += pre_g * c*xs[a]*ys[b]*zs[c];
-                      if (a>1) cart_h[i_cart] += pre * c*(c-1)
+                      if (c>1) cart_h[i_cart] += pre * c*(c-1)
                                                * xs[a]*ys[b]*zs[c-2];
                     }
                   i_cart++;

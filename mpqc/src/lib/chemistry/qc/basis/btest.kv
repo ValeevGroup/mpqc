@@ -52,26 +52,29 @@ basislist = [
  "NASA Ames ANO"
  ]
 
-molecule<Molecule>: (
+h2o<Molecule>: (
   symmetry = c2v
-  %angstrom=yes
   { atoms geometry } = {
     o  [ 0.0  0.0  0.0 ]
     h  [ 1.5  0.0  1.0 ]
-    %h  [-1.5  0.0  1.0 ]
-    %C  [ 1.0  0.0  0.0 ]
-    %N  [  0.675333  0.0  0.8753333 ]
-    %N  [  1.0129995 0.0  1.31299995]
-    %N  [ -1.25 0 3.4 ]
-    %N  [  0.0 0.0  1.4 ]
-    %C  [ 1.0  0.0  0.0 ]
-    %C  [ 2.0  0.0  0.0 ]
-    %H  [ 0.0  0.0  1.0 ]
-    %H  [ -0.72360679775  0.0  1.17082039325 ]
-    %H  [ -1.0  0.0  1.0 ]
-    %He [ 4.0  0.0  0.0 ]
     }
  )
+
+he<Molecule>: (
+  symmetry = c1
+  { atoms geometry } = {
+    he  [ 0.0  0.0  0.0 ]
+    }
+ )
+
+ne<Molecule>: (
+  symmetry = c1
+  { atoms geometry } = {
+    he  [ 0.0  0.0  0.0 ]
+    }
+ )
+
+molecule = $:he
 
 test2 : [
  <GaussianBasisSet>: (
@@ -88,9 +91,10 @@ test : [
  <GaussianBasisSet>: (
    molecule = $:molecule
    %name = "foo"
-   name = "STO-3G"
+   %name = "STO-3G"
    %name = "6-31G**"
-   %name = "aug-cc-pVTZ"
+   %name = "aug-cc-pVDZ"
+   name = "aug-cc-pVTZ"
    %puream=yes
  )
 ]

@@ -27,6 +27,7 @@
 
 #include <strstream.h>
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/files.h>
@@ -154,6 +155,158 @@ test_eigvals(const RefGaussianBasisSet& gbs, const RefIntegral& intgrl)
   pl->to_AO_basis(hcore_so).print("Hcore (AO) again");
 }
 
+void
+checkerror(const char *name, int shell, int func,
+           double numerical, double check)
+{
+  double mag = fabs(check);
+  double err = fabs(numerical - check);
+  if (mag > 0.001) {
+      if (err/mag > 0.05) {
+          cout << scprintf("%2s %2d %2d %12.8f %12.8f er = %6.4f",
+                           name, shell, func,
+                           numerical, check, err/mag) << endl;
+        }
+    }
+  else if (err > 0.02) {
+      cout << scprintf("%2s %2d %2d %12.8f %12.8f ea = %16.14f",
+                       name, shell, func, numerical, check, err) << endl;
+    }
+}
+
+void
+test_func_values(const RefGaussianBasisSet &gbs)
+{
+  cout << "testing basis function value gradient and hessian numerically"
+       << endl;
+
+  int nbasis = gbs->nbasis();
+  double *b_val = new double[nbasis];
+  double *b_val_plsx = new double[nbasis];
+  double *b_val_mnsx = new double[nbasis];
+  double *b_val_plsy = new double[nbasis];
+  double *b_val_mnsy = new double[nbasis];
+  double *b_val_plsz = new double[nbasis];
+  double *b_val_mnsz = new double[nbasis];
+  double *b_val_plsyx = new double[nbasis];
+  double *b_val_mnsyx = new double[nbasis];
+  double *b_val_plszy = new double[nbasis];
+  double *b_val_mnszy = new double[nbasis];
+  double *b_val_plszx = new double[nbasis];
+  double *b_val_mnszx = new double[nbasis];
+  double *g_val = new double[3*nbasis];
+  double *h_val = new double[6*nbasis];
+
+  const int x_ = 0;
+  const int y_ = 1;
+  const int z_ = 2;
+  const int xx_ = 0;
+  const int yx_ = 1;
+  const int yy_ = 2;
+  const int zx_ = 3;
+  const int zy_ = 4;
+  const int zz_ = 5;
+
+  SCVector3 r;
+  SCVector3 d;
+  double delta = 0.001;
+  SCVector3 dx(delta, 0., 0.);
+  SCVector3 dy(0., delta, 0.);
+  SCVector3 dz(0., 0., delta);
+  SCVector3 dxy(delta, delta, 0.);
+  SCVector3 dxz(delta, 0., delta);
+  SCVector3 dyz(0., delta, delta);
+  double deltax = 0.1;
+  for (r.x()=0.0; r.x() < 1.0; r.x() += deltax) {
+      deltax *= 2.;
+      double deltay = 0.1;
+      for (r.y()=0.0; r.y() < 1.0; r.y() += deltay) {
+          deltay *= 2.;
+          double deltaz = 0.1;
+          for (r.z()=0.0; r.z() < 1.0; r.z() += deltaz) {
+              deltaz *= 2.;
+              cout << "R = " << r << endl;
+              gbs->hessian_values(r, h_val, g_val, b_val);
+              gbs->values(r + dx, b_val_plsx);
+              gbs->values(r - dx, b_val_mnsx);
+              gbs->values(r + dy, b_val_plsy);
+              gbs->values(r - dy, b_val_mnsy);
+              gbs->values(r + dz, b_val_plsz);
+              gbs->values(r - dz, b_val_mnsz);
+              gbs->values(r + dxy, b_val_plsyx);
+              gbs->values(r - dxy, b_val_mnsyx);
+              gbs->values(r + dyz, b_val_plszy);
+              gbs->values(r - dyz, b_val_mnszy);
+              gbs->values(r + dxz, b_val_plszx);
+              gbs->values(r - dxz, b_val_mnszx);
+              for (int i=0; i<nbasis; i++) {
+                  int shell = gbs->function_to_shell(i);
+                  int func = i - gbs->shell_to_function(shell);
+                  double g_val_test[3];
+                  double h_val_test[6];
+                  int x = i*3+x_;
+                  int y = i*3+y_;
+                  int z = i*3+z_;
+                  g_val_test[x_] = 0.5*(b_val_plsx[i] - b_val_mnsx[i])/delta;
+                  g_val_test[y_] = 0.5*(b_val_plsy[i] - b_val_mnsy[i])/delta;
+                  g_val_test[z_] = 0.5*(b_val_plsz[i] - b_val_mnsz[i])/delta;
+                  int xx = i*6+xx_;
+                  int yx = i*6+yx_;
+                  int yy = i*6+yy_;
+                  int zx = i*6+zx_;
+                  int zy = i*6+zy_;
+                  int zz = i*6+zz_;
+                  h_val_test[xx_]
+                      = (b_val_plsx[i] + b_val_mnsx[i] - 2. * b_val[i])
+                        * 1./(delta*delta);
+                  h_val_test[yy_]
+                      = (b_val_plsy[i] + b_val_mnsy[i] - 2. * b_val[i])
+                        * 1./(delta*delta);
+                  h_val_test[zz_]
+                      = (b_val_plsz[i] + b_val_mnsz[i] - 2. * b_val[i])
+                        * 1./(delta*delta);
+                  h_val_test[yx_]
+                      = 0.5 * ((b_val_plsyx[i]+b_val_mnsyx[i]-2.*b_val[i])
+                               * 1. / (delta * delta)
+                               - h_val_test[xx_] - h_val_test[yy_]);
+                  h_val_test[zx_]
+                      = 0.5 * ((b_val_plszx[i]+b_val_mnszx[i]-2.*b_val[i])
+                               * 1. / (delta * delta)
+                               - h_val_test[xx_] - h_val_test[zz_]);
+                  h_val_test[zy_]
+                      = 0.5 * ((b_val_plszy[i]+b_val_mnszy[i]-2.*b_val[i])
+                               * 1. / (delta * delta)
+                               - h_val_test[zz_] - h_val_test[yy_]);
+                  checkerror("x", shell, func, g_val_test[x_], g_val[x]);
+                  checkerror("y", shell, func, g_val_test[y_], g_val[y]);
+                  checkerror("z", shell, func, g_val_test[z_], g_val[z]);
+                  checkerror("xx", shell, func, h_val_test[xx_], h_val[xx]);
+                  checkerror("yy", shell, func, h_val_test[yy_], h_val[yy]);
+                  checkerror("zz", shell, func, h_val_test[zz_], h_val[zz]);
+                  checkerror("yx", shell, func, h_val_test[yx_], h_val[yx]);
+                  checkerror("zx", shell, func, h_val_test[zx_], h_val[zx]);
+                  checkerror("zy", shell, func, h_val_test[zy_], h_val[zy]);
+                }
+            }
+        }
+    }
+  delete[] b_val;
+  delete[] b_val_plsx;
+  delete[] b_val_mnsx;
+  delete[] b_val_plsy;
+  delete[] b_val_mnsy;
+  delete[] b_val_plsz;
+  delete[] b_val_mnsz;
+  delete[] b_val_plsyx;
+  delete[] b_val_mnsyx;
+  delete[] b_val_plszy;
+  delete[] b_val_mnszy;
+  delete[] b_val_plszx;
+  delete[] b_val_mnszx;
+  delete[] g_val;
+  delete[] h_val;
+}
+
 int
 main(int, char *argv[])
 {
@@ -182,6 +335,9 @@ main(int, char *argv[])
       gbs.restore_state(in);
       gbs->print();
       intgrl->petite_list()->print();
+
+      gbs->set_integral(intgrl);
+      test_func_values(gbs);
     }
 
   const int nelem = 37;

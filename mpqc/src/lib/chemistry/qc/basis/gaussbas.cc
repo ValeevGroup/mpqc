@@ -453,6 +453,9 @@ GaussianBasisSet::
 
 GaussianBasisSet::~GaussianBasisSet()
 {
+  RefIntegral nullint;
+  set_integral(nullint);
+
   delete[] name_;
 
   int ii;
@@ -460,9 +463,6 @@ GaussianBasisSet::~GaussianBasisSet()
       delete shell_[ii];
     }
   delete[] shell_;
-
-  RefIntegral nullint;
-  set_integral(nullint);
 }
 
 int

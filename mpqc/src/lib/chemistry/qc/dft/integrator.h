@@ -95,6 +95,8 @@ class Murray93Integrator: public DenIntegrator {
     int nr_;
     int ntheta_;
     int nphi_;
+    int Ktheta_;
+    
   public:
     Murray93Integrator();
     Murray93Integrator(const RefKeyVal &);

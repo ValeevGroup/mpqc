@@ -386,7 +386,8 @@ Murray93Integrator::Murray93Integrator()
 {
   nr_ = 64;
   ntheta_ = 16;
-  nphi_ = 16;
+  nphi_ = 32;
+  Ktheta_ = 5;
 }
 
 Murray93Integrator::Murray93Integrator(const RefKeyVal& keyval):
@@ -398,6 +399,9 @@ Murray93Integrator::Murray93Integrator(const RefKeyVal& keyval):
   if (ntheta_ == 0) ntheta_ = 16;
   nphi_ = keyval->intvalue("nphi");
   if (nphi_ == 0) nphi_ = 2*ntheta_;
+  Ktheta_ = keyval->intvalue("Ktheta");
+  if (keyval->error() != KeyVal::OK)
+      Ktheta_ = 5;
 }
 
 Murray93Integrator::~Murray93Integrator()
@@ -493,6 +497,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
   double *r_values = new double[nr_max];
   double *dr_dq = new double[nr_max];
 
+#if 0
   // Precalcute theta Guass-Legendre abcissas and weights
   gauleg(0.0, M_PI, theta_quad_points, theta_quad_weights, ntheta);
 
@@ -501,21 +506,11 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
 
       // Precalculate radial integration points
       for (ir=0; ir < nr[icenter]; ir++) {
-#if 0
-          // Gill's description of Murray's radial grid 
-          // CPL 209 p 506
-          double ii = ir+1.0;
-          r_values[ir]=bragg_radius[icenter]*
-                       ii*ii/pow((double)nr[icenter]+1.0-ii,2.);
-          dr_dq[ir]=2.0*bragg_radius[icenter]*(nr[icenter]+1.0)*
-                    (nr[icenter]+1.0)*ii/pow(((double)nr[icenter]+1.0-ii),3.);
-#else
           // Mike Colvin's interpretation of Murray's radial grid
           q=(double) ir/nr[icenter];
           double value=q/(1-q);
           r_values[ir]=bragg_radius[icenter]*value*value;
           dr_dq[ir]=2.0*bragg_radius[icenter]*q*pow(1.0-q,-3.);
-#endif
         }
 
       center = centers[icenter];
@@ -560,6 +555,81 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
         }
       point_count_total+=point_count;
     }
+#else
+
+  for (icenter=0; icenter < ncenters; icenter++) {
+      point_count=0;
+      center = centers[icenter];
+      int r_done = 0;
+
+      for (ir=0; ir < nr[icenter]; ir++) {
+          // Mike Colvin's interpretation of Murray's radial grid
+          q=(double) ir/nr[icenter];
+          double value=q/(1-q);
+          double r = bragg_radius[icenter]*value*value;
+          double dr_dq = 2.0*bragg_radius[icenter]*q*pow(1.0-q,-3.);
+          double drdqr2 = dr_dq*r*r;
+          point.r() = r;
+
+          // Precalcute theta Guass-Legendre abcissas and weights
+          if (ir==0) {
+              ntheta=1;
+              nphi=1;
+            }
+          else {
+              ntheta = (int) (r/bragg_radius[icenter] * Ktheta_*ntheta_);
+              if (ntheta > ntheta_)
+                  ntheta = ntheta_;
+              if (ntheta < 6)
+                  ntheta=6;
+              nphi = 2*ntheta;
+            }
+
+          gauleg(0.0, M_PI, theta_quad_points, theta_quad_weights, ntheta);
+
+          for (itheta=0; itheta < ntheta; itheta++) {
+              point.theta() = theta_quad_points[itheta];
+              sin_theta = sin(point.theta());
+
+              // calculate integration volume 
+              int_volume=drdqr2*sin_theta;
+
+              for (iphi=0; iphi < nphi; iphi++) {
+                  point.phi() = (double)iphi/(double)nphi * 2.0 * M_PI;
+
+                  point.spherical_to_cartesian(integration_point);
+                  integration_point += center;
+
+                  // calculate weighting factor
+                  w=calc_w(icenter, integration_point, ncenters,
+                           centers, bragg_radius);
+                    
+                  // Update center point count
+                  point_count++;
+
+                  // Make contribution to Euler-Maclaurin formula
+                  double multiplier = w*int_volume
+                                    * theta_quad_weights[itheta]/nr[icenter]
+                                    * 2.0 * M_PI / ((double)nphi);
+
+                  if (do_point(integration_point, denfunc, multiplier)
+                      * int_volume < DBL_EPSILON
+                      && int_volume > DBL_EPSILON) {
+                      r_done=1;
+                      break;
+                    }
+                }
+
+              if (r_done)
+                  break;
+            }
+
+          if (r_done)
+              break;
+        }
+      point_count_total+=point_count;
+    }
+#endif  
 
     cout << " Total integration points = " << point_count_total << endl;
     cout << scprintf(" Value of integral = %16.14f", value()) << endl;

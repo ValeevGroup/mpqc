@@ -38,7 +38,7 @@ CXXSRC = state.cc statein.cc stateout.cc state_bin.cc proxy.cc \
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
-INC =  LIBS.h state.h state_debug.h statein.h stateout.h \
+INC =  LIBS.h state.h statein.h stateout.h \
        translate.h array.h \
        stattmpl.h state_bin.h state_file.h state_text.h
 GENINC = statmacr.h

@@ -36,6 +36,9 @@ install:: scls
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 
+clean::
+	/bin/rm -f scls
+
 distclean::
 	/bin/rm -f scls
 

@@ -66,6 +66,9 @@ install::
 		> $(bindir)/chkmpqcout
 	chmod 555 $(bindir)/chkmpqcout
 
+clean::
+	/bin/rm -f mpqc
+
 distclean::
 	/bin/rm -f mpqc
 	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output

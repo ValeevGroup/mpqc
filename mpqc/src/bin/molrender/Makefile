@@ -35,6 +35,9 @@ install:: molrender
 	$(INSTALL) $(INSTALLBINOPT) tkmolrender $(bindir)
 	/bin/rm -f tkmolrender
 
+clean::
+	/bin/rm -f molrender
+
 distclean::
 	/bin/rm -f molrender
 

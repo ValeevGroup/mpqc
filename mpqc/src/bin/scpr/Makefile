@@ -36,6 +36,9 @@ install:: scpr
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 
+clean::
+	/bin/rm -f scpr
+
 distclean::
 	/bin/rm -f scpr
 

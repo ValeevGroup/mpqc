@@ -82,8 +82,8 @@ class AccResult: public Result
   public:
     AccResult(Compute*c);
     ~AccResult();
-    double actual_accuracy();
-    double desired_accuracy();
+    double actual_accuracy() const;
+    double desired_accuracy() const;
     void set_desired_accuracy(double);
     void set_actual_accuracy(double);
 };
@@ -101,6 +101,7 @@ class Result ## T: public Result {					      \
     inline T* operator ->() { update(); return &_result; };		      \
     inline T& result() { update(); return _result; };			      \
     inline T& result_noupdate() { return _result; };			      \
+    inline const T& result_noupdate() const { return _result; };              \
     inline void operator=(const T& a) { _result = a; };			      \
 }
 
@@ -114,6 +115,7 @@ class PREFIX ## T: public BASE {					      \
     T* operator ->();							      \
     T& result();							      \
     T& result_noupdate();						      \
+    const T& result_noupdate() const;					      \
     void operator=(const T& a);						      \
     PUBLIC								      \
 }
@@ -130,7 +132,8 @@ PREFIX ## T::operator T&() { update(); return _result; };		      \
 T* PREFIX ## T::operator ->() { update(); return &_result; };		      \
 T& PREFIX ## T::result() { update(); return _result; };			      \
 T& PREFIX ## T::result_noupdate() { return _result; };			      \
-void PREFIX ## T::operator=(const T& a) { _result = a; };			      \
+const T& PREFIX ## T::result_noupdate() const { return _result; };	      \
+void PREFIX ## T::operator=(const T& a) { _result = a; };		      \
 OTHER
 
 #define Result_def(T) _Result_def(Result,Result,T,)
@@ -158,6 +161,7 @@ class Result ## T: public Result {					      \
     inline T* pointer() { update(); return &_result; };		              \
     inline T& result() { update(); return _result; };			      \
     inline T& result_noupdate() { return _result; };			      \
+    inline const T& result_noupdate() const { return _result; };	      \
     inline void operator=(const T& a) { _result = a; };			      \
 }
 
@@ -171,6 +175,7 @@ class PREFIX ## T: public BASE {					      \
     T* pointer();							      \
     T& result();							      \
     T& result_noupdate();						      \
+    const T& result_noupdate() const;					      \
     void operator=(const T& a);						      \
     PUBLIC								      \
 }
@@ -187,6 +192,7 @@ PREFIX ## T::operator T&() { update(); return _result; };		      \
 T* PREFIX ## T::pointer() { update(); return &_result; };		      \
 T& PREFIX ## T::result() { update(); return _result; };			      \
 T& PREFIX ## T::result_noupdate() { return _result; };			      \
+const T& PREFIX ## T::result_noupdate() const { return _result; };	      \
 void PREFIX ## T::operator=(const T& a) { _result = a; };		      \
 OTHER
 

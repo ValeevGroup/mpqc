@@ -82,13 +82,13 @@ AccResult::~AccResult()
 }
 
 double
-AccResult::actual_accuracy()
+AccResult::actual_accuracy() const
 {
   return _actual_accuracy;
 }
 
 double
-AccResult::desired_accuracy()
+AccResult::desired_accuracy() const
 {
   return _desired_accuracy;
 }

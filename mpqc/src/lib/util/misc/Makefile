@@ -41,14 +41,14 @@ BIN_OR_LIB = LIB
 
 CSRC =
 
-CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc ccaenv.cc units.cc ieee.cc
+CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc \
           autovectest.cc
 
 TESTPROGS = autovectest comptest formiot bugtest tregtime unittest
 
-INC = timer.h compute.h ieee.h bug.h exenv.h ccaenv.h
+INC = timer.h compute.h ieee.h bug.h exenv.h
 
 DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 
@@ -62,8 +62,9 @@ DEPENDINCLUDE = $(INC)
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  LTLINKLIBOPTS += \
-    -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccaffeine -lccafeCore \
+  CXXSRC += ccaenv.cc
+  INC += ccaenv.h
+  LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccaffeine -lccafeCore \
     -L$(BABELLIB) -R$(BABELLIB) -lsidl
 endif
 

@@ -20,6 +20,9 @@
  */
 
 #include <math.h>
+#if defined(SGI)
+#include <bstring.h>
+#endif
 
 #include <math/symmetry/pointgrp.h>
 

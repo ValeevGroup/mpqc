@@ -30,7 +30,8 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libclass
 
-DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
+TESTCXXSRC = classtest.cc
+DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
 default:: $(DEPENDINCLUDE)
 default:: libclass.a
@@ -43,9 +44,9 @@ bug: bug.cc
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d)
 endif
 
 ####### Rules for generating source code ######################################

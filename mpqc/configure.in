@@ -94,6 +94,25 @@ case $enableval in
 esac
 ])
 
+AC_ARG_ENABLE(sysv-ipc,
+[  --disable-sysv-ipc      Disable use of SysV IPC.],
+[
+case $enableval in
+  yes)
+    SYSVIPC=yes
+  ;;
+  no)
+    SYSVIPC=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-sysv-ipc ($enableval)])
+  ;;
+esac
+],[
+    SYSVIPC=yes
+]
+)
+
 AC_ARG_ENABLE(parallel,
 [  --disable-parallel      Compile for serial execution.],
 [
@@ -345,7 +364,6 @@ XTRA_FLIBS=$withval
 echo Using extra FORTRAN libraries: $withval
 )
 
-FLIBS=
 have_flibs=no
 AC_ARG_WITH(flibs,
 [  --with-flibs            Specifies the F77 runtime (by default, will guess).],
@@ -385,7 +403,7 @@ dnl sees if CXX is a GNU compiler
 AC_PROG_CXX
 if test ! "$F77" = no ; then
   AC_PROG_F77
-  if test "X$have_flibs" = no; then
+  if test "X$have_flibs" = Xno; then
     AC_F77_LIBRARY_LDFLAGS
   fi
 fi
@@ -1175,21 +1193,26 @@ AC_CHECK_FUNCS(drand48)
 
 dnl --------- Checks for SYSV IPC. ---------
 
-AC_CHECK_FUNCS(shmget semget)
-AC_CHECK_HEADERS(sys/ipc.h sys/sem.h sys/shm.h)
-AC_MSG_CHECKING([for SYSV IPC])
-if test X$ac_cv_func_shmget = Xyes -a \
-        X$ac_cv_func_semget = Xyes -a \
-        X$ac_cv_header_sys_ipc_h = Xyes -a \
-        X$ac_cv_header_sys_sem_h = Xyes -a \
-        X$ac_cv_header_sys_shm_h = Xyes; then
-  HAVE_SYSV_IPC=yes
-  AC_DEFINE(HAVE_SYSV_IPC)
+if test "X$SYSVIPC" = Xyes; then
+  AC_CHECK_FUNCS(shmget semget)
+  AC_CHECK_HEADERS(sys/ipc.h sys/sem.h sys/shm.h)
+  AC_MSG_CHECKING([for SYSV IPC])
+  if test X$ac_cv_func_shmget = Xyes -a \
+          X$ac_cv_func_semget = Xyes -a \
+          X$ac_cv_header_sys_ipc_h = Xyes -a \
+          X$ac_cv_header_sys_sem_h = Xyes -a \
+          X$ac_cv_header_sys_shm_h = Xyes; then
+    HAVE_SYSV_IPC=yes
+    AC_DEFINE(HAVE_SYSV_IPC)
+  else
+    HAVE_SYSV_IPC=no
+  fi
+  AC_MSG_RESULT($HAVE_SYSV_IPC)
+  AC_SUBST(HAVE_SYSV_IPC)
 else
   HAVE_SYSV_IPC=no
+  AC_SUBST(HAVE_SYSV_IPC)
 fi
-AC_MSG_RESULT($HAVE_SYSV_IPC)
-AC_SUBST(HAVE_SYSV_IPC)
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS

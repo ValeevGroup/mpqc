@@ -143,6 +143,58 @@ SCF::compute_vector(double& eelec)
       
   eigenvalues_ = evals;
   eigenvalues_.computed() = 1;
+
+  // search for HOMO and LUMO
+  // first convert evals to something we can deal with easily
+  BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
+                                                 "SCF::compute_vector");
+  
+  RefPetiteList pl = integral()->petite_list(basis());
+  
+  int homo_ir, lumo_ir;
+  int homo_mo, lumo_mo;
+  double homo=-1e99, lumo=1e99;
+  for (i=0; i < pl->nirrep(); i++) {
+    int nf=pl->nfunction(i);
+    if (nf) {
+      double *vals = new double[nf];
+      evalsb->block(i)->convert(vals);
+
+      for (int mo=0; mo < nf; mo++) {
+        if (occupation(i, mo) > 0.0) {
+          if (vals[mo] > homo) {
+            homo = vals[mo];
+            homo_ir = i;
+            homo_mo = mo;
+          }
+        } else {
+          if (vals[mo] < lumo) {
+            lumo = vals[mo];
+            lumo_ir = i;
+            lumo_mo = mo;
+          }
+        }
+      }
+
+      delete[] vals;
+    }
+  }
+
+  CharacterTable ct = molecule()->point_group().char_table();
+  
+  cout << node0 << endl << indent
+       << scprintf("HOMO is %d %s = %10.6f",
+                   homo_mo+1, 
+                   ct.gamma(homo_ir).symbol(),
+                   homo)
+       << endl << indent
+       << scprintf("LUMO is %d %s = %10.6f",
+                   lumo_mo+1, 
+                   ct.gamma(lumo_ir).symbol(),
+                   lumo)
+       << endl;
+
+  // free up evals
   evals = 0;
   
   eigenvectors_ = scf_vector_;

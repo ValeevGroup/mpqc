@@ -820,9 +820,91 @@ IntCoorGen::print(ostream& out) const
       << decindent;
 }
 
+static
+find_bonds(Molecule &m, BitArrayLTri &bonds,
+           double radius_scale_factor_)
+{
+  int i, j;
+  for(i=0; i < m.natom(); i++) {
+    double at_rad_i = m.atominfo()->atomic_radius(m.Z(i));
+    SCVector3 ri(m.r(i));
+
+    for(j=0; j < i; j++) {
+      double at_rad_j = m.atominfo()->atomic_radius(m.Z(j));
+      SCVector3 rj(m.r(j));
+
+      if (ri.dist(rj)
+          < radius_scale_factor_*(at_rad_i+at_rad_j))
+        bonds.set(i,j);
+      }
+    }
+
+  // check for groups of atoms bound to nothing
+  AVLSet<int> boundatoms;
+  AVLSet<int> newatoms, nextnewatoms;
+  // start out with atom 0
+  newatoms.insert(0);
+  while (boundatoms.length() != m.natom()) {
+    AVLSet<int>::iterator iatom;
+    while (newatoms.length() > 0) {
+      // newatoms gets merged into boundatoms
+      for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
+        boundatoms.insert(*iatom);
+        }
+      // set nextnewatoms to atoms bound to boundatoms that are not already
+      // in boundatoms
+      nextnewatoms.clear();
+      for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
+        int atom = *iatom;
+        for (i=0; i<m.natom(); i++) {
+          if (bonds(i,atom) && !boundatoms.contains(i)) {
+            nextnewatoms.insert(i);
+            }
+          }
+        }
+      // set newatoms to nextnewatoms to start off the next iteration
+      newatoms.clear();
+      for (iatom=nextnewatoms.begin(); iatom!=nextnewatoms.end(); iatom++) {
+        newatoms.insert(*iatom);
+        }
+      }
+    if (boundatoms.length() != m.natom()) {
+      cout << node0
+           << indent << "WARNING: two unbound groups of atoms" << endl
+           << indent << "         consider using extra_bonds input" << endl
+           << endl;
+      // find an unbound group
+      for(i=0; i < m.natom(); i++) {
+        if (!boundatoms.contains(i)) {
+          SCVector3 ri(m.r(i));
+          double nearest;
+          int nearest_j = -1;
+          for (iatom=boundatoms.begin(); iatom!=boundatoms.end(); iatom++) {
+            SCVector3 rj(m.r(*iatom));
+            double d = ri.dist(rj);
+            if (nearest_j == -1 || d < nearest) {
+              d = nearest;
+              nearest_j = *iatom;
+              }
+            }
+          cout << node0 << indent
+               << "         adding bond between "
+               << i << " and " << nearest_j << endl;
+          bonds.set(i,nearest_j);
+          newatoms.insert(nearest_j);
+          // now that we have something in newatoms break the for loop
+          // to continue processing everthing bound to nearest_j
+          break;
+          }
+        }
+      }
+    }
+}
+
 void
 IntCoorGen::generate(const RefSetIntCoor& sic)
 {
+  int i;
   Molecule& m = *molecule_.pointer();
 
   // let's go through the geometry and find all the close contacts
@@ -831,90 +913,11 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
 
   BitArrayLTri bonds(m.natom(),m.natom());
 
-  int i;
-  for(i=0; i < m.natom(); i++) {
-      double at_rad_i = m.atominfo()->atomic_radius(m.Z(i));
-      SCVector3 ri(m.r(i));
-
-      for(int j=0; j < i; j++) {
-          double at_rad_j = m.atominfo()->atomic_radius(m.Z(j));
-          SCVector3 rj(m.r(j));
-
-          if (ri.dist(rj)
-              < radius_scale_factor_*(at_rad_i+at_rad_j))
-            bonds.set(i,j);
-        }
-    }
-
   for (i=0; i<nextra_bonds_; i++) {
-      bonds.set(extra_bonds_[i*2]-1,extra_bonds_[i*2+1]-1);
-    }
+    bonds.set(extra_bonds_[i*2]-1,extra_bonds_[i*2+1]-1);
+  }
 
-  // check for atoms bound to nothing
-  for (i=0; i < m.natom(); i++) {
-      SCVector3 ri(m.r(i));
-      int bound=0;
-      for (int j=0; j < m.natom(); j++) {
-          if (bonds(i,j)) {
-              bound=1;
-              break;
-            }
-        }
-      if (m.natom() > 1 && !bound) {
-          int j = nearest_contact(i,m);
-          SCVector3 rj(m.r(j));
-          // the distance to the nearest contact in angstroms
-          double d = bohr*ri.dist(rj);
-          // as a last resort add the nearest contact
-          if (d > 0.5 && d < 5.0) {
-              bonds.set(i,j);
-            }
-          else {
-              cerr << node0 << endl << indent
-                 << "Warning!:  atom " << i+1 << " is not bound to anything.\n"
-                 << "           You may wish to add an entry to extra_bonds.\n"
-                 << "           Atom " << j+1 << " is only "
-                 << d
-                 << " angstroms away...\n\n";
-            }
-        }
-    }
-
-  // check for groups of atoms bound to nothing
-  if (m.natom() > 0) {
-    AVLSet<int> atoms;
-    AVLSet<int> newatoms, nextnewatoms;
-    newatoms.insert(0);
-    AVLSet<int>::iterator iatom;
-    while (newatoms.length() > 0) {
-      for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
-        atoms.insert(*iatom);
-        }
-      nextnewatoms.clear();
-      for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
-        int atom = *iatom;
-        for (i=0; i<m.natom(); i++) {
-          if (bonds(i,atom) && !atoms.contains(i)) {
-            nextnewatoms.insert(i);
-            }
-          }
-        }
-      newatoms.clear();
-      for (iatom=nextnewatoms.begin(); iatom!=nextnewatoms.end(); iatom++) {
-        newatoms.insert(*iatom);
-        }
-      }
-    if (atoms.length() != m.natom()) {
-      cerr << node0 << "ERROR: there are two unbound groups of atoms" << endl
-           << "You must add an entry to extra_bonds." << endl
-           << "One of the groups consists of atoms:";
-      for (iatom=atoms.begin(); iatom!=atoms.end(); iatom++) {
-        cerr << node0 << " " << *iatom + 1;
-        }
-      cerr << node0 << endl;
-      abort();
-      }
-    }
+  find_bonds(m, bonds, radius_scale_factor_);
       
   // compute the simple internal coordinates by type
   add_bonds(sic,bonds,m);

@@ -7,6 +7,8 @@
 #include <math/scmat/elemop.h>
 #include <math/scmat/disthql.h>
 
+extern "C" { int DBmalloc_chain_check(const char *, int, int); }
+
 /////////////////////////////////////////////////////////////////////////////
 // DistSymmSCMatrix member functions
 
@@ -131,12 +133,13 @@ DistSymmSCMatrix::init_blocklist()
           b->blockj = j;
           blocklist->insert(b);
         }
-      if (index%nproc != me) continue;
-      b = new SCMatrixLTriBlock(d->blocks()->start(i),
-                                d->blocks()->fence(i));
-      b->blocki = i;
-      b->blockj = i;
-      blocklist->insert(b);
+      if (index%nproc == me) {
+          b = new SCMatrixLTriBlock(d->blocks()->start(i),
+                                    d->blocks()->fence(i));
+          b->blocki = i;
+          b->blockj = i;
+          blocklist->insert(b);
+        }
       index++;
     }
 }
@@ -276,16 +279,27 @@ DistSymmSCMatrix::accumulate(SymmSCMatrix*a)
 double
 DistSymmSCMatrix::invert_this()
 {
-  cerr << "DistSymmSCMatrix: no inversion" << endl;
+  DistDiagSCMatrix *a = new DistDiagSCMatrix(d.pointer());
+  DistSCMatrix *b = new DistSCMatrix(d.pointer(),d.pointer());
+  RefDiagSCMatrix refa = (a = new DistDiagSCMatrix(d.pointer()));
+  RefSCMatrix refb = (b = new DistSCMatrix(d.pointer(),d.pointer()));
+  diagonalize(a,b);
+  double determ = 1.0;
+  for (int i=0; i<dim()->n(); i++) {
+      double val = a->get_element(i);
+      determ *= val;
+    }
+  RefSCElementOp op = new SCElementInvert(1.0e-12);
+  a->element_op(op.pointer());
   assign(0.0);
-  return 0.0;
+  accumulate_transform(b, a);
+  return determ;
 }
 
 double
 DistSymmSCMatrix::determ_this()
 {
-  cerr << "DistSymmSCMatrix: no determ" << endl;
-  return 0.0;
+  return invert_this();
 }
 
 double
@@ -330,37 +344,49 @@ DistSymmSCMatrix::solve_this(SCVector*v)
 void
 DistSymmSCMatrix::gen_invert_this()
 {
-  error("no gen_invert_this");
+  invert_this();
 }
 
 void
 DistSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 {
   const char* name = "DistSymmSCMatrix::diagonalize";
-  // make sure that the arguments is of the correct type
+  // make sure that the argument are of the correct type
   DistDiagSCMatrix* la = DistDiagSCMatrix::require_castdown(a,name);
   DistSCMatrix* lb = DistSCMatrix::require_castdown(b,name);
+
+  int n = dim()->n();
+  int me = messagegrp()->me();
+  int nproc = messagegrp()->n();
 
   RefSCMatrix arect = dim()->create_matrix(dim());
   DistSCMatrix *rect = DistSCMatrix::castdown(arect.pointer());
   rect->assign(0.0);
   rect->accumulate(this);
 
-  rect->create_vecform(DistSCMatrix::Col);
-  rect->vecform_op(DistSCMatrix::CopyToVec);
-  lb->create_vecform(DistSCMatrix::Col);
+  // This sets up the index list of columns to be stored on this node
+  int nvec = n/nproc + (me<(n%nproc)?1:0);
+  int *ivec = new int[nvec];
+  for (int i=0; i<nvec; i++) {
+      ivec[i] = i*nproc + me;
+    }
 
-  double *d = new double[dim()->n()];
-  dist_diagonalize(dim()->n(), rect->nvec, rect->vec[0], d, lb->vec[0],
+  rect->create_vecform(DistSCMatrix::Col,nvec);
+  rect->vecform_op(DistSCMatrix::CopyToVec,ivec);
+  lb->create_vecform(DistSCMatrix::Col,nvec);
+
+  double *d = new double[n];
+  dist_diagonalize(n, rect->nvec, rect->vec[0], d, lb->vec[0],
                    messagegrp());
 
   // put d into the diagonal matrix
   a->assign(d);
 
-  lb->vecform_op(DistSCMatrix::CopyFromVec);
+  lb->vecform_op(DistSCMatrix::CopyFromVec, ivec);
   lb->delete_vecform();
   rect->delete_vecform();
   arect = 0;
+  delete[] ivec;
 }
 
 // computes this += a + a.t

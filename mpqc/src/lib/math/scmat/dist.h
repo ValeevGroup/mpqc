@@ -154,9 +154,9 @@ class DistSCMatrix: public SCMatrix {
     
     enum VecOp {CopyFromVec, CopyToVec, AccumFromVec, AccumToVec};
     enum Form { Row, Col } form;
-    void create_vecform(Form);
+    void create_vecform(Form, int nvec = -1);
     void delete_vecform();
-    void vecform_op(VecOp op);
+    void vecform_op(VecOp op, int *ivec = 0);
     void vecform_zero();
   public:
     DistSCMatrix(DistSCDimension*,DistSCDimension*);
@@ -318,6 +318,7 @@ class DistSCMatrixListSubblockIter: public SCMatrixListSubblockIter {
     RefSCMatrixBlockList locallist_;
 
     void maybe_advance_list();
+    void advance_list();
   public:
     DistSCMatrixListSubblockIter(Access,
                                  const RefSCMatrixBlockList &locallist,

@@ -6,6 +6,8 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 
+#define DEBUG 0
+
 /////////////////////////////////////////////////////////////////////////////
 // DistDiagSCMatrix member functions
 
@@ -58,11 +60,26 @@ DistDiagSCMatrix::find_element(int i)
   int bi, oi;
   d->blocks()->elem_to_block(i, bi, oi);
 
+  if (DEBUG)
+      cout << messagegrp()->me() << ": " << "find_element(" << i << "): "
+           << "block = " << bi << ", "
+           << "offset = " << oi
+           << endl;
+
   RefSCMatrixDiagBlock blk = block_to_block(bi);
   if (blk.nonnull()) {
+      if (DEBUG)
+          cout << messagegrp()->me() << ": ndat = " << blk->ndat() << endl;
+      if (oi >= blk->ndat()) {
+          cerr << messagegrp()->me() << ": DistDiagSCMatrix::find_element"
+               << ": internal error" << endl;
+          abort();
+        }
       return &blk->dat()[oi];
     }
   else {
+      if (DEBUG)
+          cout << messagegrp()->me() << ": can't find" << endl;
       return 0;
     }
 }

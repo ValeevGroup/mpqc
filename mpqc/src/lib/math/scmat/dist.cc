@@ -197,7 +197,7 @@ SCBlockInfo::equiv(SCBlockInfo *bi)
 void
 SCBlockInfo::elem_to_block(int elem, int &block, int &offset)
 {
-  for (int i=0; i<nblocks_; i++) {
+  for (int i=nblocks_-1; i>=0; i--) {
       if (start_[i] <= elem) {
           block = i;
           offset = elem-start_[i];
@@ -260,13 +260,19 @@ DistSCMatrixListSubblockIter::begin()
 void
 DistSCMatrixListSubblockIter::maybe_advance_list()
 {
-  while (!ready() && grp_->n() > 1 && step_ < grp_->n()) {
-      list_.save_state(out_);
-      out_.flush();
-      list_.restore_state(in_);
-      SCMatrixListSubblockIter::begin();
-      step_++;
+  while (!ready() && grp_->n() > 1 && step_ < grp_->n() - 1) {
+      advance_list();
     }
+}
+
+void
+DistSCMatrixListSubblockIter::advance_list()
+{
+  list_.save_state(out_);
+  out_.flush();
+  list_.restore_state(in_);
+  SCMatrixListSubblockIter::begin();
+  step_++;
 }
 
 void
@@ -278,13 +284,10 @@ DistSCMatrixListSubblockIter::next()
 
 DistSCMatrixListSubblockIter::~DistSCMatrixListSubblockIter()
 {
-  if (step_%grp_->n() != 0) {
-      cerr << "DistSCMatrixListSubblockIter: DTOR: "
-           << "step != 0: tried to end in middle of iteration"
-           << endl;
-      abort();
-    }
   if (access_ == Accum) {
+      while (step_%grp_->n() != 0) {
+          advance_list();
+        }
       SCMatrixBlockListIter i1, i2;
       for (i1=list_->begin(),i2=locallist_->begin();
            i1!=list_->end() && i2!=locallist_->end();

@@ -8,6 +8,17 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 
+#define DEBUG 0
+
+/////////////////////////////////////////////////////////////////////////////
+
+static void
+fail(const char *m)
+{
+  cerr << "distrect.cc: error: " << m << endl;
+  abort();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // DistSCMatrix member functions
 
@@ -271,6 +282,11 @@ DistSCMatrix::accumulate(SymmSCMatrix*a)
   RefSCMatrixSubblockIter I = a->all_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       RefSCMatrixBlock block = I->block();
+      if (DEBUG)
+          cout << messagegrp()->me() << ": "
+               << block->class_name()
+               << "(" << block->blocki << ", " << block->blockj << ")"
+               << endl;
       // see if i've got this block
       RefSCMatrixBlock localblock
           = block_to_block(block->blocki,block->blockj);
@@ -428,7 +444,7 @@ DistSCMatrix::accumulate_product(SCMatrix*pa,SCMatrix*pb)
 }
 
 void
-DistSCMatrix::create_vecform(Form f)
+DistSCMatrix::create_vecform(Form f, int nvectors)
 {
   // determine with rows/cols go on this node
   form = f;
@@ -437,15 +453,21 @@ DistSCMatrix::create_vecform(Form f)
   int n1, n2;
   if (form == Row) { n1 = nrow(); n2 = ncol(); }
   if (form == Col) { n1 = ncol(); n2 = nrow(); }
-  nvec = n1/nproc;
-  vecoff = nvec*me;
-  int nremain = n1%nproc;
-  if (me < nremain) {
-      vecoff += me;
-      nvec++;
+  if (nvectors == -1) {
+      nvec = n1/nproc;
+      vecoff = nvec*me;
+      int nremain = n1%nproc;
+      if (me < nremain) {
+          vecoff += me;
+          nvec++;
+        }
+      else {
+          vecoff += nremain;
+        }
     }
   else {
-      vecoff += nremain;
+      nvec = nvectors;
+      vecoff = 0;
     }
 
   // allocate storage
@@ -478,7 +500,7 @@ DistSCMatrix::delete_vecform()
 }
 
 void
-DistSCMatrix::vecform_op(VecOp op)
+DistSCMatrix::vecform_op(VecOp op, int *ivec)
 {
   RefSCMatrixSubblockIter i;
   if (op == CopyToVec || op == AccumToVec) {
@@ -490,8 +512,9 @@ DistSCMatrix::vecform_op(VecOp op)
     }
   for (i->begin(); i->ready(); i->next()) {
       RefSCMatrixRectBlock b = SCMatrixRectBlock::castdown(i->block());
-      cout << messagegrp()->me() << ": "
-           << "got block " << b->blocki << ' ' << b->blockj << endl;
+      if (DEBUG)
+          cout << messagegrp()->me() << ": "
+               << "got block " << b->blocki << ' ' << b->blockj << endl;
       int b1start, b2start, b1end, b2end;
       if (form == Row) {
           b1start = b->istart;
@@ -506,29 +529,60 @@ DistSCMatrix::vecform_op(VecOp op)
           b2end = b->iend;
         }
       int nbj = b->jend - b->jstart;
-      int start = b1start > vecoff ? b1start : vecoff;
-      int end = b1end > vecoff+nvec ? vecoff+nvec : b1end;
+      int start, end;
+      if (ivec) {
+          start = b1start;
+          end = b1end;
+        }
+      else {
+          start = b1start > vecoff ? b1start : vecoff;
+          end = b1end > vecoff+nvec ? vecoff+nvec : b1end;
+        }
       double *dat = b->data;
-      int off = start - b->istart;
+      int off = (start - b1start) - b1start;
       for (int j=start; j<end; j++) {
-          double *vecj = vec[j-vecoff];
+          double *vecj;
+          if (ivec) {
+              vecj = 0;
+              for (int ii=0; ii<nvec; ii++) {
+                  if (ivec[ii] == j) { vecj = vec[ii]; break; }
+                }
+              if (!vecj) continue;
+              if (DEBUG)
+                  cout << messagegrp()->me() << ": getting [" << j << ","
+                       << b2start << "-" << b2end << ")" << endl;
+            }
+          else {
+              vecj = vec[j-vecoff];
+            }
           for (int k=b2start; k<b2end; k++) {
-              double *datum;
-              cout << messagegrp()->me() << ": "
-                   << "using vec[" << j-vecoff << "]"
-                   << "[" << k << "]" << endl;
-              if (form == Row) {
-                  datum = &dat[(j+off)*nbj+k];
+              int blockoffset;
+              if (DEBUG)
                   cout << messagegrp()->me() << ": "
-                       << "Row datum offset is "
-                       << "(" << j << "+" << off << ")*" << nbj << "+" << k
-                       << " = " << (j+off)*nbj+k << "(" << b->ndat() << ") "
-                       << " -> " << *datum << endl;
+                       << "using vec[" << j-vecoff << "]"
+                       << "[" << k << "]" << endl;
+              if (form == Row) {
+                  blockoffset = (j+off)*nbj+k - b2start;
+                  if (DEBUG)
+                      cout << messagegrp()->me() << ": "
+                           << "Row datum offset is "
+                           << "(" << j << "+" << off << ")*" << nbj << "+" << k
+                           << "-" << b2start
+                           << " = " << blockoffset << "(" << b->ndat() << ") "
+                           << " -> " << dat[blockoffset] << endl;
                 }
               else {
-                  datum = &dat[(k+off)*nbj+j];
+                  blockoffset = (k-b2start)*nbj+j+off; 
                 }
+              if (blockoffset >= b->ndat()) {
+                  fail("bad offset");
+                }
+              double *datum = &dat[blockoffset];
               if (op == CopyToVec) {
+                  if (DEBUG)
+                      cout << messagegrp()->me() << ": "
+                           << "copying " << *datum << " "
+                           << "to " << j << " " << k << endl;
                   vecj[k] = *datum;
                 }
               else if (op == CopyFromVec) {
@@ -627,30 +681,35 @@ DistSCMatrix::transpose_this()
 double
 DistSCMatrix::invert_this()
 {
-  cerr << "DistSCMatrix: no inversion" << endl;
   if (nrow() != ncol()) {
       fprintf(stderr,"DistSCMatrix::invert_this: matrix is not square\n");
       abort();
     }
-  return 0.0;
+  RefSymmSCMatrix refs = new DistSymmSCMatrix(d1.pointer());
+  refs->assign(0.0);
+  refs->accumulate_symmetric_product(this);
+  double determ2 = refs->invert_this();
+  transpose_this();
+  RefSCMatrix reft = copy();
+  assign(0.0);
+  ((SCMatrix*)this)->accumulate_product(reft.pointer(), refs.pointer());
+  return sqrt(fabs(determ2));
 }
 
 void
 DistSCMatrix::gen_invert_this()
 {
-  fprintf(stderr,"DistSCMatrix::gen_invert_this: SVD not implemented yet");
-  abort();
+  invert_this();
 }
 
 double
 DistSCMatrix::determ_this()
 {
-  cerr << "DistSCMatrix: no determ" << endl;
   if (nrow() != ncol()) {
     fprintf(stderr,"DistSCMatrix::determ_this: matrix is not square\n");
     abort();
   }
-  return 0.0;
+  return invert_this();
 }
 
 double

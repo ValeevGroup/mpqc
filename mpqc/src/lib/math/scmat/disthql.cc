@@ -285,7 +285,7 @@ static void
 ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
         double *d, double *e, double *z, double *work)
 {
-  if (*p==1) ptred_single(a, lda, n, m, p, id, d, e, z, work);
+  if (0 && *p==1) ptred_single(a, lda, n, m, p, id, d, e, z, work);
   else ptred_parallel(a, lda, n, m, p, id, d, e, z, work);
 }
 

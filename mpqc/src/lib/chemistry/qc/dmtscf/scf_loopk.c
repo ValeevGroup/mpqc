@@ -3,74 +3,6 @@
  * appropriate part of the G matrix
  */
 
-/* $Log$
- * Revision 1.2  1994/05/17 15:36:33  etseidl
- * add scf_loopj and scf_loopk
- *
- * Revision 1.1.1.1  1993/12/29  12:53:16  etseidl
- * SC source tree 0.1
- *
- * Revision 1.13  1992/06/23  20:04:37  seidl
- * change dmt matrices to uppercase,
- * get rid of unnecessary matrice
- *
- * Revision 1.12  1992/06/17  21:54:20  jannsen
- * cleaned up for saber-c
- *
- * Revision 1.11  1992/05/26  20:17:56  jannsen
- * use mtype_get to get message types for global operations
- * check results of memory allocations
- *
- * Revision 1.10  1992/05/19  20:56:52  seidl
- * use message types 7000-7999
- *
- * Revision 1.9  1992/05/04  11:07:37  seidl
- * print out number of integrals if print_flg&4==1
- *
- * Revision 1.8  1992/04/16  16:56:30  jannsen
- * use new loop routines (for throttle and sync_loop capability)
- * also, made sure that tim_enter("erep") was called on all nodes
- *
- * Revision 1.7  1992/04/08  20:41:25  seidl
- * use double tnint, add kludge for intel in put_it
- *
- * Revision 1.6  1992/04/07  18:06:56  jannsen
- *   took out the filter and loop tim_enter's  changed the way tnint is
- *   computed
- *
- * Revision 1.5  1992/04/07  18:04:16  jannsen
- *
- * Revision 1.4  1992/04/01  01:03:57  seidl
- * fix bounds checking
- *
- * Revision 1.3  1992/03/31  22:26:03  seidl
- * use new bounds checking
- *
- * Revision 1.2  1992/03/21  00:39:32  seidl
- * change sym_libv2.h to chemistry/qc/dmtsym/sym_dmt.h
- *
- * Revision 1.1.1.1  1992/03/17  16:26:29  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:26:27  seidl
- * Initial revision
- *
- * Revision 1.4  1992/03/09  13:02:49  seidl
- * make max_den stuff a little more efficient
- *
- * Revision 1.3  1992/03/04  15:57:50  seidl
- * add bounds checking, make loop kl, and local ij to (hopefully)
- * improve load balance
- *
- * Revision 1.2  1992/03/03  12:52:01  seidl
- * first working version
- *
- * Revision 1.1  1992/02/28  19:26:59  seidl
- * Initial revision
- * */
-
-static char rcsid[] = "$Id$";
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <tmpl.h>
@@ -119,7 +51,7 @@ struct mgd {
 #include "scf_loopg.lcl"
 
 GLOBAL_FUNCTION int
-scf_make_g_l(_centers,_scf_info,_sym_info,
+scf_make_k_l(_centers,_scf_info,_sym_info,
                  GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,_mgdbuff,iter,_outfile)
 centers_t *_centers;
 scf_struct_t *_scf_info;
@@ -150,7 +82,7 @@ FILE *_outfile;
 
   check_alloc(maxp,"maxp");
 
-  tim_enter("scf_mkgl");
+  tim_enter("scf_mkkl");
 
 /* make sure "erep" is entered on all nodes */
   tim_enter("erep");
@@ -239,10 +171,10 @@ FILE *_outfile;
   if(_scf_info->print_flg & 4) {
     gsum0(&tnint,1,5,mtype_get(),0);
     if(mynode0()==0)
-      fprintf(_outfile,"  %8.0f integrals in scf_make_g_l\n",tnint);
+      fprintf(_outfile,"  %8.0f integrals in scf_make_k_l\n",tnint);
     }
 
-  tim_exit("scf_mkgl");
+  tim_exit("scf_mkkl");
 
   free(maxp);
 
@@ -295,7 +227,7 @@ double *tnint;
     switch(m) {
     case 0:
       s1=i; s2=j; s3=k; s4=l;
-      scale=0;
+      scale=-2;
       break;
     case 1:
       if(j==k) {
@@ -349,11 +281,9 @@ double *tnint;
     e13e24 = (s3==s1) && (s4==s2);
     e34    = (s4==s3);
 
-#if 1
     tim_enter("erep");
     int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM,&s1,&s2,&s3,&s4);
     tim_exit("erep");
-#endif
 
     /* tim_enter("filter"); */
     index = 0;
@@ -389,7 +319,6 @@ double *tnint;
                 ii=bf1; jj=bf4; kk=bf3; ll=bf2;
                 }
 
-#if 1
               lij = ii*gdb->jsz+jj;
               lkl = kk*gdb->lsz+ll;
 
@@ -427,8 +356,6 @@ double *tnint;
                   put_it(_scf_info,lij,lkl,i2,l2,j2,k2,pki_int,gdb,4);
                   }
                 else if(i2==j2 || k2==l2) {
-                  put_it(_scf_info,lij,lkl,i2,j2,k2,l2,pki_int,gdb,1);
-
                   if(keql) {
                     lij=ii*gdb->ksz+kk;
                     lkl=(MAX0(jj,ll))*gdb->lsz+(MIN0(jj,ll));
@@ -440,8 +367,6 @@ double *tnint;
                   put_it(_scf_info,lij,lkl,i2,k2,j2,l2,pki_int,gdb,2);
                   }
                 else {
-                  put_it(_scf_info,lij,lkl,i2,j2,k2,l2,pki_int,gdb,1);
-
                   if(k==l) {
                     lij=ii*gdb->jsz+kk;
                     lkl=(MAX0(jj,ll))*gdb->lsz+(MIN0(jj,ll));
@@ -468,12 +393,7 @@ double *tnint;
                   if(i2==k2 || j2==l2 || j2==k2) {
                     put_it(_scf_info,lij,lkl,i2,j2,k2,l2,pki_int,gdb,3);
                     }
-                  else if(i2==j2 || k2==l2) {
-                    put_it(_scf_info,lij,lkl,i2,j2,k2,l2,pki_int,gdb,1);
-                    }
                   else {
-                    put_it(_scf_info,lij,lkl,i2,j2,k2,l2,pki_int,gdb,1);
-                  
                     if(j==k) {
                       lij=ii*gdb->ksz+kk;
                       lkl=jj*gdb->lsz+ll;
@@ -528,9 +448,6 @@ double *tnint;
                   if(i2==k2 || j2==l2 || j2==k2) {
                     put_it(_scf_info,lij,lkl,i2,j2,k2,l2,pki_int,gdb,3);
                     }
-                  else {
-                    put_it(_scf_info,lij,lkl,i2,j2,k2,l2,pki_int,gdb,1);
-                    }
                   }
                 else {
                   if(i2==j2 || k2==l2) {
@@ -545,7 +462,6 @@ double *tnint;
               default:
                 fprintf(gdb->outfile,"scf_mkgl: num=%d! Huh? \n",num);
                 }
-#endif             
               }
             index++;
             }
@@ -554,7 +470,6 @@ double *tnint;
       }
 
     (*tnint)+= (double) (n1*n2*n3*n4);
-    /* tim_exit("filter"); */
     }
   }
 
@@ -576,48 +491,22 @@ int iab;
 
   switch(iab) {
   case 1:
-    gdb->gloc[lij] += gdb->plp[lkl]*pki_int;
-    gdb->glp[lkl] += gdb->ploc[lij]*pki_int;
     break;
   case 2:
     gdb->gloc[lij] -= 0.25*gdb->plp[lkl]*pki_int;
     gdb->glp[lkl] -= 0.25*gdb->ploc[lij]*pki_int;
-    if(_scf_info->iopen) {
-      if(_scf_info->hsos) {
-        gdb->gloco[lij] += 0.25*gdb->plpo[lkl]*pki_int;
-        gdb->glpo[lkl] += 0.25*gdb->ploco[lij]*pki_int;
-        }
-      }
     break;
   case 3:
-    gdb->gloc[lij] += 0.75*gdb->plp[lkl]*pki_int;
-    gdb->glp[lkl] += 0.75*gdb->ploc[lij]*pki_int;
-    if(_scf_info->iopen) {
-      if(_scf_info->hsos) {
-        gdb->gloco[lij] += 0.25*gdb->plpo[lkl]*pki_int;
-        gdb->glpo[lkl] += 0.25*gdb->ploco[lij]*pki_int;
-        }
-      }
+    gdb->gloc[lij] -= 0.25*gdb->plp[lkl]*pki_int;
+    gdb->glp[lkl] -= 0.25*gdb->ploc[lij]*pki_int;
     break;
   case 4:
     gdb->gloc[lij] -= 0.5*gdb->plp[lkl]*pki_int;
     gdb->glp[lkl] -= 0.5*gdb->ploc[lij]*pki_int;
-    if(_scf_info->iopen) {
-      if(_scf_info->hsos) {
-        gdb->gloco[lij] += 0.5*gdb->plpo[lkl]*pki_int;
-        gdb->glpo[lkl] += 0.5*gdb->ploco[lij]*pki_int;
-        }
-      }
     break;
   case 5:
-    gdb->gloc[lij] += 0.5*gdb->plp[lkl]*pki_int;
-    gdb->glp[lkl] += 0.5*gdb->ploc[lij]*pki_int;
-    if(_scf_info->iopen) {
-      if(_scf_info->hsos) {
-        gdb->gloco[lij] += 0.5*gdb->plpo[lkl]*pki_int;
-        gdb->glpo[lkl] += 0.5*gdb->ploco[lij]*pki_int;
-        }
-      }
+    gdb->gloc[lij] -= 0.5*gdb->plp[lkl]*pki_int;
+    gdb->glp[lkl] -= 0.5*gdb->ploc[lij]*pki_int;
     break;
   default:
     printf("you shouldn't be here\n");

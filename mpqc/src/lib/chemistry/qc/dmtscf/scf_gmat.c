@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.3  1994/04/01 21:15:02  etseidl
+ * Revision 1.4  1994/05/17 15:36:32  etseidl
+ * add scf_loopj and scf_loopk
+ *
+ * Revision 1.3  1994/04/01  21:15:02  etseidl
  * add the ability to do the gmat formation in two steps, one for J and one
  * for K.  this will eventually be used by the dft stuff
  *
@@ -104,9 +107,13 @@ static char rcsid[] = "$Id$";
 #define IOFF(a,b) ((a)>(b))?(a)*((a)+1)/2+(b):(b)*((b)+1)/2+(a)
 #endif
 
+#include "scf_mkj.gbl"
+#include "scf_mkk.gbl"
 #include "scf_mkgd.gbl"
 #include "scf_mkgdlb.gbl"
 #include "scf_loopg.gbl"
+#include "scf_loopj.gbl"
+#include "scf_loopk.gbl"
 #include "scf_bnd.gbl"
 
 #include "scf_gmat.gbl"
@@ -236,11 +243,19 @@ FILE *_outfile;
 
 /* if not using local density, then form the g matrix loopwise */
   else {
-    errcod = scf_make_g_l(_centers,_scf_info,_sym_info,
+    if (_scf_info->scdft) {
+      errcod = scf_make_j_l(_centers,_scf_info,_sym_info,
                GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,intbuf,_iter,_outfile);
-    if(errcod != 0) {
-      fprintf(_outfile,"scf_iter: trouble forming gmat 3\n");
-      return(-1);
+      errcod = scf_make_k_l(_centers,_scf_info,_sym_info,
+               GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,intbuf,_iter,_outfile);
+      }
+    else {
+      errcod = scf_make_g_l(_centers,_scf_info,_sym_info,
+               GMAT,GMATO,DPMAT,DPMATO,SSCR1,SSCR2,intbuf,_iter,_outfile);
+      if(errcod != 0) {
+        fprintf(_outfile,"scf_iter: trouble forming gmat 3\n");
+        return(-1);
+        }
       }
     }
 

@@ -13,7 +13,8 @@ BIN_OR_LIB = LIB
 CSRC = scf_bnd.c scf_core.c scf_diis.c scf_dip.c scf_en.c scf_esp.c \
        scf_fock.c scf_gmat.c scf_init.c scf_inp.c scf_iter.c scf_loopg.c \
        scf_lowd.c scf_mkden.c scf_mkgd.c scf_mull.c scf_oeis.c scf_orth.c \
-       scf_proj.c scf_vect.c scf_ex.c scf_mkgdlb.c scf_mkk.c scf_mkj.c
+       scf_proj.c scf_vect.c scf_ex.c scf_mkgdlb.c scf_mkk.c scf_mkj.c \
+       scf_loopj.c scf_loopk.c
 
 SGENFILE = scf.sgen
 

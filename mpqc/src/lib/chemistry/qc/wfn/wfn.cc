@@ -578,6 +578,8 @@ Wavefunction::copy_orthog_info(const Ref<Wavefunction>&wfn)
     ExEnv::errn() << "WARNING: Wavefunction: orthogonalization info changing"
                  << endl;
   }
+  if (wfn->orthog_.null())
+    wfn->init_orthog();
   orthog_ = wfn->orthog_->copy();
 }
 

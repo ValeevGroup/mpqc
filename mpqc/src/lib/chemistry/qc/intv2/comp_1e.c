@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:21  etseidl
+ * Revision 1.4  1995/01/17 18:11:53  cljanss
+ * Added routine int_accum_shell_point_charge.
+ *
+ * Revision 1.3  1994/08/26  22:45:21  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -1162,6 +1165,62 @@ int jsh;
           }
         }
       buff[index] *= norm1 * norm2;
+      index++;
+      END_FOR_GCCART(cart2)
+    END_FOR_GCCART(cart1)
+
+  }
+
+/* This computes the integrals between functions in two shells for
+ * a point charge interaction operator.
+ * The result is placed in the buffer.
+ */
+GLOBAL_FUNCTION VOID
+int_accum_shell_point_charge(cs1,cs2,buff,ish,jsh,ncharge,charge,position)
+centers_t *cs1;
+centers_t *cs2;
+double *buff;
+int ish;
+int jsh;
+int ncharge;
+double* charge;
+double** position;
+{
+  int i;
+  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int index;
+  int gc1,gc2;
+  int cart1,cart2;
+  double norm1,norm2;
+  double tmp;
+
+  if (!(init_order >= 0)) {
+    fprintf(stderr,"int_shell_pointcharge: one electron routines are not init'ed\n");
+    exit(1);
+    }
+
+  c1 = cs1->center_num[ish];
+  c2 = cs2->center_num[jsh];
+  s1 = cs1->shell_num[ish];
+  s2 = cs2->shell_num[jsh];
+  A = cs1->center[c1].r;
+  B = cs2->center[c2].r;
+  shell1 = &(cs1->center[c1].basis.shell[s1]);
+  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  index = 0;
+
+  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
+    norm1 = shell1->norm[gc1][cart1];
+    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+      norm2 = shell2->norm[gc2][cart2];
+      /* Loop thru the point charges. */
+      tmp = 0.0;
+      for (i=0; i<ncharge; i++) {
+        C = position[i];
+        tmp -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
+                       * charge[i];
+        }
+      buff[index] += tmp * norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)

@@ -116,6 +116,11 @@ BlockedSCElementOp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+BlockedSCElementOp::BlockedSCElementOp()
+{
+  current_block_=0;
+}
+
 void
 BlockedSCElementOp::working_on(int b)
 {
@@ -140,6 +145,11 @@ BlockedSCElementOp2::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+BlockedSCElementOp2::BlockedSCElementOp2()
+{
+  current_block_=0;
+}
+
 void
 BlockedSCElementOp2::working_on(int b)
 {
@@ -162,6 +172,11 @@ BlockedSCElementOp3::_castdown(const ClassDesc*cd)
   void* casts[1];
   casts[0] = SCElementOp3::_castdown(cd);
   return do_castdowns(casts,cd);
+}
+
+BlockedSCElementOp3::BlockedSCElementOp3()
+{
+  current_block_=0;
 }
 
 void

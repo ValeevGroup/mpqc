@@ -288,6 +288,7 @@ class BlockedSCElementOp : public SCElementOp {
     int current_block_;
     
   public:
+    BlockedSCElementOp();
     void working_on(int);
     int current_block() const;
 };
@@ -300,6 +301,7 @@ class BlockedSCElementOp2 : public SCElementOp2 {
     int current_block_;
     
   public:
+    BlockedSCElementOp2();
     void working_on(int);
     int current_block() const;
 };
@@ -312,6 +314,7 @@ class BlockedSCElementOp3 : public SCElementOp3 {
     int current_block_;
     
   public:
+    BlockedSCElementOp3();
     void working_on(int);
     int current_block() const;
 };

@@ -55,16 +55,6 @@ PetiteList::~PetiteList()
   nbf_in_ir_=0;
 }
 
-static int
-atom_num(Point& p, Molecule& mol)
-{
-  for (int i=0; i < mol.natom(); i++) {
-    if (dist(p,mol.atom(i).point()) < 0.05)
-      return i;
-  }
-  return -1;
-}
-
 void
 PetiteList::init()
 {
@@ -96,7 +86,7 @@ PetiteList::init()
     shell_map_[i] = new int[ng_];
   
   // set up atom and shell mappings
-  Point np;
+  double np[3];
   SymmetryOperation so;
   
   // loop over all centers
@@ -114,7 +104,7 @@ PetiteList::init()
           np[ii] += so(ii,jj) * ac[jj];
       }
 
-      atom_map_[i][g] = atom_num(np,mol);
+      atom_map_[i][g] = mol.atom_at_position(np, 0.05);
     }
 
     // hopefully, shells on equivalent centers will be numbered in the same

@@ -44,7 +44,10 @@ DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
 DEPENDINCLUDE =
 
 default:: $(DEPENDINCLUDE)
-default:: libgroup.a
+default:: $(TOPDIR)/lib/libgroup.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libgroup.so
+endif
 
 pooltest: pooltest.o libgroup.a
 	$(CXX) $(CXXFLAGS) -o pooltest $^

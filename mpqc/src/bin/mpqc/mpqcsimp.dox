@@ -2,9 +2,10 @@
 /** \page mpqcsimp Simple Input
 
 The simple input format consists of keywords followed by a ":" followed by
-a value.  The values might be modified by options found in parenthesis.
-For example, the following input performs an optimization of water using
-density functional theory with the B3LYP exchange-correlation functional:
+a value.  The keywords are case sensitive.  The values might be modified by
+options found in parenthesis.  For example, the following input performs an
+optimization of water using density functional theory with the B3LYP
+exchange-correlation functional:
 
 <pre>
 % B3LYP optimization of water

@@ -570,8 +570,9 @@ AC_MSG_CHECKING([for miscellaneous flags])
 case $target in
   *-cray-unicos*)
     if test ! X$GXX = Xyes; then
-      CXXFLAGS_MISC="$CXXFLAGS_MISC -h conform"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -h new_for_init"
     fi
+    AC_MSG_RESULT(cray)
   ;;
   *)
     AC_MSG_RESULT(none)
@@ -1520,8 +1521,8 @@ case $target in
     if test ! X$GXX = Xyes; then
       TMPLREPO=cxx_repository
       TMPLINLIB=yes
-      AC_MSG_RESULT("alpha* non-GNU C++")
     fi
+    AC_MSG_RESULT("alpha* non-GNU C++")
   ;;
   *-cray-unicos*)
     if test ! X$GXX = Xyes; then
@@ -1529,20 +1530,21 @@ case $target in
       # A more sophisticated template instantiation model would be better.
       CXXFLAGS="$CXXFLAGS -h simple_templates"
     fi
+    AC_MSG_RESULT(cray)
   ;;
   *-dec-osf*)
     if test ! X$GXX = Xyes; then
       TMPLREPO=cxx_repository
       TMPLINLIB=yes
-      AC_MSG_RESULT("*-dec-osf* non-GNU C++")
     fi
+    AC_MSG_RESULT("*-dec-osf* non-GNU C++")
   ;;
   *-solaris*)
     if test ! X$GXX = Xyes; then
       CXXFLAGS="$CXXFLAGS -instances=explicit"
       AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
-      AC_MSG_RESULT("*-solaris*")
     fi
+    AC_MSG_RESULT("*-solaris*")
   ;;
   i860-intel-puma*)
     LDFLAGS="$LDFLAGS -mpuma -mnoieee"

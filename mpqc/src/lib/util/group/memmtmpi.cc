@@ -206,10 +206,6 @@ MTMPIMemoryGrp::init_mtmpimg(int nthread)
   if (nthread < 2) nthread = 2;
   th_ = th_->clone(nthread);
   nthread = th_->nthread();
-  if (nthread < 2) {
-      ExEnv::out() << "MTMPIMemoryGrp didn't get enough threads" << endl;
-      abort();
-    }
 
   if (debug_) {
       char name[256];
@@ -336,6 +332,11 @@ MTMPIMemoryGrp::activate()
   // Only remote requests require the handler.  There are only remote
   // requests if there is more than one node.
   if (n() == 1) return;
+
+  if (th_->nthread() < 2) {
+      ExEnv::out() << "MTMPIMemoryGrp didn't get enough threads" << endl;
+      abort();
+    }
 
   if (active_) return;
   active_ = 1;

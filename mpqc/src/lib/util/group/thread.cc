@@ -284,6 +284,12 @@ ProcThreadGrp::new_lock()
   return new ProcThreadLock;
 }
 
+ThreadGrp*
+ProcThreadGrp::clone(int nthread)
+{
+  return new ProcThreadGrp;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

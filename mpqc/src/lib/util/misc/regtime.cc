@@ -61,8 +61,8 @@
 #define HAVE_CPU_TIME 1
 #endif //HAVE_NX
 
-// AIX 3.2 has broken include files
-#if defined(_AIX32)
+// AIX 3.2 has broken include files, likewise SunOS
+#if defined(_AIX32) || defined(__sun)
 extern "C" {
 int getrusage (
   int Who,

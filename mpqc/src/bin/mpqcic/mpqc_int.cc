@@ -160,6 +160,8 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
     update = keyval->describedclassvalue("update");
     if (update.null())
       update = new BFGSUpdate;
+   // we only use quasi-Newton methods, so update the inverse hessian
+    update->set_inverse();
 
     dc = mol->dim_natom3();
     di = coor->dim();

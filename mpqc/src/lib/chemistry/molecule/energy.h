@@ -144,6 +144,7 @@ class MolecularEnergy: public Function {
     void print_natom_3(const RefSCVector &,
                        const char *t=0, ostream&o=cout) const;
     void print_natom_3(double **, const char *t=0, ostream&o=cout) const;
+    void print_natom_3(double *, const char *t=0, ostream&o=cout) const;
 
     virtual void print(ostream& = cout) const;
 };

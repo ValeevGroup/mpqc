@@ -725,6 +725,14 @@ if test X$PARALLEL = Xyes; then
 
 fi
 
+AC_CHECK_LIB(blas,exit)
+AC_CHECK_LIB(dgemm,exit)
+AC_CHECK_LIB(sB_BLAS,sB_init,[
+  HAVE_SCALABLE_BLAS=yes
+  LIBS="-lsB_BLAS $LIBS"
+  AC_DEFINE(HAVE_SCALABLE_BLAS)
+])
+
 AC_SUBST(HAVE_HRECV)
 
 dnl ---------- Checks for header files. -----------

@@ -27,6 +27,7 @@
 
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/files.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
@@ -154,13 +155,15 @@ test_eigvals(const RefGaussianBasisSet& gbs, const RefIntegral& intgrl)
 int
 main(int, char *argv[])
 {
+  int i, j;
+
   char *filename = (argv[1]) ? argv[1] : SRCDIR "/btest.kv";
   
   RefKeyVal keyval = new ParsedKeyVal(filename);
   
   RefIntegral intgrl = new IntegralV3;
 
-  for (int i=0; i<keyval->count("test"); i++) {
+  for (i=0; i<keyval->count("test"); i++) {
       RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);
       RefGaussianBasisSet gbs2 = keyval->describedclassvalue("test2", i);
 
@@ -174,6 +177,86 @@ main(int, char *argv[])
       gbs.restore_state(in);
       gbs->print();
       intgrl->petite_list()->print();
+    }
+
+  const int nelem = 37;
+  RefChemicalElement elements[nelem];
+  for (i=0; i<nelem; i++) {
+      elements[i] = new ChemicalElement(i+1);
+    }
+
+  // Make H, C, and Si molecules
+  AtomicCenter hatomcent("H",0,0,0);
+  AtomicCenter catomcent("C",0,0,0);
+  AtomicCenter patomcent("P",0,0,0);
+  RefMolecule hmol = new Molecule(); hmol->add_atom(0,hatomcent);
+  RefMolecule cmol = new Molecule(); cmol->add_atom(0,catomcent);
+  RefMolecule pmol = new Molecule(); pmol->add_atom(0,patomcent);
+
+  int nbasis = keyval->count("basislist");
+  RefKeyVal nullkv = new AssignedKeyVal();
+  RefAssignedKeyVal atombaskv_a(new AssignedKeyVal());
+  RefKeyVal atombaskv(atombaskv_a);
+  for (i=0; i<nbasis; i++) {
+      char *basisname = keyval->pcharvalue("basislist",i);
+      BasisFileSet bfs(nullkv);
+      RefKeyVal basiskv = bfs.keyval(nullkv, basisname);
+      char elemstr[512];
+      elemstr[0] = '\0';
+      int last_elem_exists = 0;
+      int n0 = 0;
+      int n1 = 0;
+      int n2 = 0;
+      for (j=0; j<nelem; j++) {
+          char keyword[256];
+          strcpy(keyword,":basis:");
+          strcat(keyword,elements[j]->name());
+          strcat(keyword,":");
+          strcat(keyword,basisname);
+          if (basiskv->exists(keyword)) {
+              if (!last_elem_exists) {
+                  if (elemstr[0] != '\0') strcat(elemstr,", ");
+                  strcat(elemstr,elements[j]->symbol());
+                }
+              else if (last_elem_exists == 2) {
+                  strcat(elemstr,"-");
+                }
+              last_elem_exists++;
+              if (j+1 == 1) {
+                  atombaskv_a->assign("name", basisname);
+                  atombaskv_a->assign("molecule", hmol);
+                  RefGaussianBasisSet gbs = new GaussianBasisSet(atombaskv);
+                  n0 = gbs->nbasis();
+                }
+              if (j+1 == 6) {
+                  atombaskv_a->assign("name", basisname);
+                  atombaskv_a->assign("molecule", cmol);
+                  RefGaussianBasisSet gbs = new GaussianBasisSet(atombaskv);
+                  n1 = gbs->nbasis();
+                }
+              if (j+1 == 15) {
+                  atombaskv_a->assign("name", basisname);
+                  atombaskv_a->assign("molecule", pmol);
+                  RefGaussianBasisSet gbs = new GaussianBasisSet(atombaskv);
+                  n2 = gbs->nbasis();
+                }
+            }
+          else {
+              if (last_elem_exists > 1) {
+                  if (last_elem_exists == 2) strcat(elemstr,", ");
+                  strcat(elemstr, elements[j-1]->symbol());
+                }
+              last_elem_exists = 0;
+            }
+        }
+      cout << "\\verb*|" << basisname << "| & " << elemstr << " & ";
+      if (n0>0) cout << n0;
+      cout << " & ";
+      if (n1>0) cout << n1;
+      cout << " & ";
+      if (n2>0) cout << n2;
+      cout << " \\\\" << endl;
+      delete[] basisname;
     }
 
   return 0;

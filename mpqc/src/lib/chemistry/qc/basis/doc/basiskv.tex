@@ -112,41 +112,161 @@ basis: (
 )
 \end{alltt}
 
+\begin{htmlonly}
 \begin{table}
-\caption{Available Basis Sets}
-\begin{center}
-\begin{tabular}{l}
-  \multicolumn{1}{c}{Basis Set} \\
- \keywd{STO-2G} \\
- \keywd{STO-3G} \\
- \keywd{STO-6G} \\
- \keywd{3-21G} \\
- \keywd{3-21G*} \\
- \keywd{3-21++G} \\
- \keywd{3-21++G*} \\
- \keywd{4-31G} \\
- \keywd{4-31G*} \\
- \keywd{4-31G**} \\
- \keywd{6-31G} \\
- \keywd{6-31G*} \\
- \keywd{6-31G**} \\
- \keywd{6-31+G*} \\
- \keywd{6-31++G} \\
- \keywd{6-31++G*} \\
- \keywd{6-311G} \\
- \keywd{6-311G*} \\
- \keywd{6-311G**} \\
- \keywd{6-311++G**} \\
- \keywd{cc-pVDZ} \\
- \keywd{cc-pVTZ} \\
- \keywd{cc-pVQZ} \\
- \keywd{aug-cc-pVDZ} \\
- \keywd{aug-cc-pVTZ} \\
- \keywd{aug-cc-pVQZ} \\
+\caption{Available Basis Sets with the supported elements for each basis
+and the number of basis functions for H, $n_0$, first row, $n_1$, and
+second row, $n_2$, atoms.}
+\begin{tabular}{lcrrr}
+  \multicolumn{1}{c}{Basis Set}&
+   \multicolumn{1}{c}{Elements}&
+   \multicolumn{1}{c}{$n_0$}&
+   \multicolumn{1}{c}{$n_1$}&
+   \multicolumn{1}{c}{$n_2$} \\
+\verb*|STO-2G| & H-Ca & 1 & 5 & 9 \\
+\verb*|STO-3G| & H-Kr & 1 & 5 & 9 \\
+\verb*|STO-3G*| & H-Ar & 1 & 5 & 15 \\
+\verb*|STO-6G| & H-Kr & 1 & 5 & 9 \\
+\verb*|MINI (Huzinaga)| & H-Ca & 1 & 5 & 9 \\
+\verb*|MINI (Scaled)| & H-Ca & 1 & 5 & 9 \\
+\verb*|MIDI (Huzinaga)| & H-Na & 2 & 9 &  \\
+\verb*|DZ (Dunning)| & H, Li, B-Ne, Al-Cl & 2 & 10 & 18 \\
+\verb*|DZP (Dunning)| & H, Li, B-Ne, Al-Cl & 5 & 16 & 24 \\
+\verb*|DZP + Diffuse (Dunning)| & H, B-Ne & 6 & 19 &  \\
+\verb*|3-21G| & H-Kr & 2 & 9 & 13 \\
+\verb*|3-21G*| & H-Ar & 2 & 9 & 19 \\
+\verb*|3-21++G| & H-Ar & 3 & 13 & 17 \\
+\verb*|3-21++G*| & H-Ar & 3 & 13 & 23 \\
+\verb*|4-31G| & H-Ne, P-Cl & 2 & 9 & 13 \\
+\verb*|4-31G*| & H-Ne, P-Cl & 2 & 15 & 19 \\
+\verb*|4-31G**| & H-Ne, P-Cl & 5 & 15 & 19 \\
+\verb*|6-31G| & H-Ar & 2 & 9 & 13 \\
+\verb*|6-31G*| & H-Ar & 2 & 15 & 19 \\
+\verb*|6-31G**| & H-Ar & 5 & 15 & 19 \\
+\verb*|6-31+G*| & H-Ar & 2 & 19 & 23 \\
+\verb*|6-31++G| & H-Ar & 3 & 13 & 17 \\
+\verb*|6-31++G*| & H-Ar & 3 & 19 & 23 \\
+\verb*|6-31++G**| & H-Ar & 6 & 19 & 23 \\
+\verb*|6-311G| & H-Ar, Ga-Kr & 3 & 13 & 21 \\
+\verb*|6-311G*| & H-Ar, Ga-Kr & 3 & 19 & 27 \\
+\verb*|6-311G**| & H-Ar, Ga-Kr & 6 & 19 & 27 \\
+\verb*|6-311G(2df,2pd)| & H-Ne & 15 & 35 &  \\
+\verb*|6-311++G**| & H-Ne & 7 & 23 &  \\
+\verb*|6-311++G(2d,2p)| & H-Ne & 10 & 29 &  \\
+\verb*|6-311++G(3df,3pd)| & H-Ar & 19 & 45 & 53 \\
+\verb*|cc-pVDZ| & H, He, B-Ne, Al-Ar & 5 & 14 & 18 \\
+\verb*|cc-pVTZ| & H, He, B-Ne, Al-Ar & 14 & 30 & 34 \\
+\verb*|cc-pVQZ| & H, He, B-Ne, Al-Ar & 30 & 55 & 59 \\
+\verb*|cc-pV5Z| & H-Ne, Al-Ar & 55 & 91 & 95 \\
+\verb*|aug-cc-pVDZ| & H, He, B-Ne, Al-Ar & 9 & 23 & 27 \\
+\verb*|aug-cc-pVTZ| & H, He, B-Ne, Al-Ar & 23 & 46 & 50 \\
+\verb*|aug-cc-pVQZ| & H, He, B-Ne, Al-Ar & 46 & 80 & 84 \\
+\verb*|aug-cc-pV5Z| & H, He, B-Ne, Al-Ar & 80 & 127 & 131 \\
+\verb*|cc-pCVDZ| & B-Ne &  & 18 &  \\
+\verb*|cc-pCVTZ| & B-Ne &  & 43 &  \\
+\verb*|cc-pCVQZ| & B-Ne &  & 84 &  \\
+\verb*|cc-pCV5Z| & B-Ne &  & 145 &  \\
+\verb*|aug-cc-pCVDZ| & B-F &  & 27 &  \\
+\verb*|aug-cc-pCVTZ| & B-Ne &  & 59 &  \\
+\verb*|aug-cc-pCVQZ| & B-Ne &  & 109 &  \\
+\verb*|aug-cc-pCV5Z| & B-F &  & 181 &  \\
+\verb*|NASA Ames ANO| & H, B-Ne, Al, P, Ti, Fe, Ni & 30 & 55 & 59 \\
 \end{tabular}
 \end{center}
 \label{basissets}
 \end{table}
+\end{htmlonly}
+
+\begin{latexonly}
+\begin{longtable}{lcrrr}
+\label{basissets}
+\caption{Available Basis Sets with the supported elements for each basis
+and the number of basis functions for H, $n_0$, first row, $n_1$, and
+second row, $n_2$, atoms.} \\
+\hline\hline
+  \multicolumn{1}{c}{Basis Set}&
+   \multicolumn{1}{c}{Elements}&
+   \multicolumn{1}{c}{$n_0$}&
+   \multicolumn{1}{c}{$n_1$}&
+   \multicolumn{1}{c}{$n_2$} \\
+\hline
+\endfirsthead
+\multicolumn{5}{l}{\small\sl continued from previous page} \\ \hline
+\endhead
+\hline \multicolumn{5}{r}{\small\sl continued on next page} \\
+\endfoot
+\hline\hline
+\endlastfoot
+\verb*|STO-2G| & H-Ca & 1 & 5 & 9 \\
+\verb*|STO-3G| & H-Kr & 1 & 5 & 9 \\
+\verb*|STO-3G*| & H-Ar & 1 & 5 & 15 \\
+\verb*|STO-6G| & H-Kr & 1 & 5 & 9 \\
+\verb*|MINI (Huzinaga)| & H-Ca & 1 & 5 & 9 \\
+\verb*|MINI (Scaled)| & H-Ca & 1 & 5 & 9 \\
+\verb*|MIDI (Huzinaga)| & H-Na & 2 & 9 &  \\
+\verb*|DZ (Dunning)| & H, Li, B-Ne, Al-Cl & 2 & 10 & 18 \\
+\verb*|DZP (Dunning)| & H, Li, B-Ne, Al-Cl & 5 & 16 & 24 \\
+\verb*|DZP + Diffuse (Dunning)| & H, B-Ne & 6 & 19 &  \\
+\verb*|3-21G| & H-Kr & 2 & 9 & 13 \\
+\verb*|3-21G*| & H-Ar & 2 & 9 & 19 \\
+\verb*|3-21++G| & H-Ar & 3 & 13 & 17 \\
+\verb*|3-21++G*| & H-Ar & 3 & 13 & 23 \\
+\verb*|4-31G| & H-Ne, P-Cl & 2 & 9 & 13 \\
+\verb*|4-31G*| & H-Ne, P-Cl & 2 & 15 & 19 \\
+\verb*|4-31G**| & H-Ne, P-Cl & 5 & 15 & 19 \\
+\verb*|6-31G| & H-Ar & 2 & 9 & 13 \\
+\verb*|6-31G*| & H-Ar & 2 & 15 & 19 \\
+\verb*|6-31G**| & H-Ar & 5 & 15 & 19 \\
+\verb*|6-31+G*| & H-Ar & 2 & 19 & 23 \\
+\verb*|6-31++G| & H-Ar & 3 & 13 & 17 \\
+\verb*|6-31++G*| & H-Ar & 3 & 19 & 23 \\
+\verb*|6-31++G**| & H-Ar & 6 & 19 & 23 \\
+\verb*|6-311G| & H-Ar, Ga-Kr & 3 & 13 & 21 \\
+\verb*|6-311G*| & H-Ar, Ga-Kr & 3 & 19 & 27 \\
+\verb*|6-311G**| & H-Ar, Ga-Kr & 6 & 19 & 27 \\
+\verb*|6-311G(2df,2pd)| & H-Ne & 15 & 35 &  \\
+\verb*|6-311++G**| & H-Ne & 7 & 23 &  \\
+\verb*|6-311++G(2d,2p)| & H-Ne & 10 & 29 &  \\
+\verb*|6-311++G(3df,3pd)| & H-Ar & 19 & 45 & 53 \\
+\verb*|cc-pVDZ| & H, He, B-Ne, Al-Ar & 5 & 14 & 18 \\
+\verb*|cc-pVTZ| & H, He, B-Ne, Al-Ar & 14 & 30 & 34 \\
+\verb*|cc-pVQZ| & H, He, B-Ne, Al-Ar & 30 & 55 & 59 \\
+\verb*|cc-pV5Z| & H-Ne, Al-Ar & 55 & 91 & 95 \\
+\verb*|aug-cc-pVDZ| & H, He, B-Ne, Al-Ar & 9 & 23 & 27 \\
+\verb*|aug-cc-pVTZ| & H, He, B-Ne, Al-Ar & 23 & 46 & 50 \\
+\verb*|aug-cc-pVQZ| & H, He, B-Ne, Al-Ar & 46 & 80 & 84 \\
+\verb*|aug-cc-pV5Z| & H, He, B-Ne, Al-Ar & 80 & 127 & 131 \\
+\verb*|cc-pCVDZ| & B-Ne &  & 18 &  \\
+\verb*|cc-pCVTZ| & B-Ne &  & 43 &  \\
+\verb*|cc-pCVQZ| & B-Ne &  & 84 &  \\
+\verb*|cc-pCV5Z| & B-Ne &  & 145 &  \\
+\verb*|aug-cc-pCVDZ| & B-F &  & 27 &  \\
+\verb*|aug-cc-pCVTZ| & B-Ne &  & 59 &  \\
+\verb*|aug-cc-pCVQZ| & B-Ne &  & 109 &  \\
+\verb*|aug-cc-pCV5Z| & B-F &  & 181 &  \\
+\verb*|NASA Ames ANO| & H, B-Ne, Al, P, Ti, Fe, Ni & 30 & 55 & 59 \\
+\end{longtable}
+\end{latexonly}
+
+Nearly all the basis sets provided with the distribution were obtained from
+the the Pacific Northwest Laboratory basis set database.  They were then
+translated to the \clsnmref{ParsedKeyVal} format.  If you find an error
+please report it to the mpqc development team.  Here is the citation for
+the database:
+\begin{quote}
+Basis sets were obtained from the Extensible Computational Chemistry
+Environment Basis Set Database, Version 1.0, as developed and
+distributed by the Molecular Science Computing Facility, Environmental
+and Molecular Sciences Laboratory which is part of the Pacific
+Northwest Laboratory, P.O. Box 999, Richland, Washington 99352, USA,
+and funded by the U.S. Department of Energy. The Pacific Northwest
+Laboratory is a multi-program laboratory operated by Battelle Memorial
+Institue for the U.S. Department of Energy under contract
+DE-AC06-76RLO 1830. Contact David Feller, Karen Schuchardt, or Don
+Jones for further information.
+\end{quote}
+The original scientific citations for each basis set is at the top of its
+data file.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -399,6 +399,35 @@ PetiteList::aotoso()
   delete[] lc;
   delete[] blc;
 
+  for (i=0; i < ncomp; i++) {
+    ir = whichir[i];
+    int cmp = whichcmp[i];
+    int scal = ct.gamma(ir).complex() ? 2 : 1;
+
+    if (saoelem[i] < nbf_in_ir_[ir]/scal) {
+      // if we found too few, there are big problems
+      
+      fprintf(stderr,"trouble making SO's for irrep %s\n",
+              ct.gamma(ir).symbol());
+      fprintf(stderr,"  only found %d out of %d SO's\n",
+              saoelem[i], nbf_in_ir_[ir]/scal);
+      SOs[i].print("");
+
+      abort();
+
+    } else if (saoelem[i] > nbf_in_ir_[ir]/scal) {
+      // there are some redundant so's left...need to do something to get
+      // the elements we want
+      
+      fprintf(stderr,"trouble making SO's for irrep %s\n",
+              ct.gamma(ir).symbol());
+      fprintf(stderr,"  found %d SO's, but there should only be %d\n",
+              saoelem[i], nbf_in_ir_[ir]/scal);
+      SOs[i].print("");
+      abort();
+    }
+  }
+
   if (ct.complex()) {
     SO_block *nSOs = new SO_block[nblocks_];
 
@@ -429,35 +458,6 @@ PetiteList::aotoso()
     SO_block *tmp= SOs;
     SOs = nSOs;
     delete[] tmp;
-
-  } else {
-    for (i=0; i < ncomp; i++) {
-      ir = whichir[i];
-      int cmp = whichcmp[i];
-
-      if (saoelem[i] < nbf_in_ir_[ir]) {
-        // if we found too few, there are big problems
-      
-        fprintf(stderr,"trouble making SO's for irrep %s\n",
-                ct.gamma(ir).symbol());
-        fprintf(stderr,"  only found %d out of %d SO's\n",
-                saoelem[i], nbf_in_ir_[ir]);
-        SOs[i].print("");
-
-        abort();
-
-      } else if (saoelem[i] > nbf_in_ir_[ir]) {
-        // there are some redundant so's left...need to do something to get
-        // the elements we want
-      
-        fprintf(stderr,"trouble making SO's for irrep %s\n",
-                ct.gamma(ir).symbol());
-        fprintf(stderr,"  found %d SO's, but there should only be %d\n",
-                saoelem[i], nbf_in_ir_[ir]);
-        SOs[i].print("");
-        abort();
-      }
-    }
   }
 
   delete[] saoelem;

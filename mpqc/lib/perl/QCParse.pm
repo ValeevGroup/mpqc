@@ -400,7 +400,6 @@ sub basis {
         $self->error("No basis given (using default).\n");
         $_ = "STO-3G";
     }
-    tr/a-z/A-Z/;
     $_;
 }
 

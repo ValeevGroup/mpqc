@@ -1,5 +1,5 @@
 
-/* maketab.cc --
+/* maketab.cc
  *
  *      THIS SOFTWARE FITS THE DESCRIPTION IN THE U.S. COPYRIGHT ACT OF A
  *      "UNITED STATES GOVERNMENT WORK".  IT WAS WRITTEN AS A PART OF THE
@@ -15,7 +15,7 @@
  *      Division of Computer Research and Technology
  *      National Institutes of Health
  *      Bethesda, Maryland 20892
- *      Internet: seidl@alw.nih.gov
+ *      Internet: seidl@janed.com
  *      June, 1993
  */
 
@@ -1041,3 +1041,4 @@ int CharacterTable::make_table()
 // Local Variables:
 // mode: c++
 // eval: (c-set-style "ETS")
+// End:

@@ -1,5 +1,24 @@
 
-#include <util/unix/cct_cprot.h>
+/* chartab.cc -- implementation of the point group classes
+ *
+ *      THIS SOFTWARE FITS THE DESCRIPTION IN THE U.S. COPYRIGHT ACT OF A
+ *      "UNITED STATES GOVERNMENT WORK".  IT WAS WRITTEN AS A PART OF THE
+ *      AUTHOR'S OFFICIAL DUTIES AS A GOVERNMENT EMPLOYEE.  THIS MEANS IT
+ *      CANNOT BE COPYRIGHTED.  THIS SOFTWARE IS FREELY AVAILABLE TO THE
+ *      PUBLIC FOR USE WITHOUT A COPYRIGHT NOTICE, AND THERE ARE NO
+ *      RESTRICTIONS ON ITS USE, NOW OR SUBSEQUENTLY.
+ *
+ *  Author:
+ *      E. T. Seidl
+ *      Bldg. 12A, Rm. 2033
+ *      Computer Systems Laboratory
+ *      Division of Computer Research and Technology
+ *      National Institutes of Health
+ *      Bethesda, Maryland 20892
+ *      Internet: seidl@janed.com
+ *      June, 1993
+ */
+
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 #include <math/symmetry/pointgrp.h>
@@ -100,19 +119,26 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
   // point group(g), the type of point group (pg), the order of the principle
   // rotation axis (nt), and the number of irreps (nirrep_)
 
-  if (!cpg)
-    err_quit("CharacterTable::CharacterTable: null point group");
+  if (!cpg) {
+    cerr << "CharacterTable::CharacterTable: null point group" << endl;
+    exit(1);
+  }
 
   symb = new char[strlen(cpg)+1];
   int i;
   for (i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
   symb[i] = '\0';
 
-  if (parse_symbol() < 0)
-    err_quit("CharacterTable::CharacterTable: invalid point group %s",cpg);
+  if (parse_symbol() < 0) {
+    cerr << "CharacterTable::CharacterTable: invalid point group "
+         << cpg << endl;
+    exit(1);
+  }
 
-  if (make_table() < 0)
-    err_quit("CharacterTable::CharacterTable: could not make table");
+  if (make_table() < 0) {
+    cerr << "CharacterTable::CharacterTable: could not make table" << endl;
+    exit(1);
+  }
 
   for (i=0; i < g; i++)
     symop[i] = symop[i].sim_transform(frame);
@@ -125,19 +151,26 @@ CharacterTable::CharacterTable(const char *cpg)
   // point group(g), the type of point group (pg), the order of the principle
   // rotation axis (nt), and the number of irreps (nirrep_)
 
-  if (!cpg)
-    err_quit("CharacterTable::CharacterTable: null point group");
+  if (!cpg) {
+    cerr << "CharacterTable::CharacterTable: null point group" << endl;
+    exit(1);
+  }
 
   symb = new char[strlen(cpg)+1];
   int i;
   for (i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
   symb[i] = '\0';
 
-  if (parse_symbol() < 0)
-    err_quit("CharacterTable::CharacterTable: invalid point group %s",cpg);
+  if (parse_symbol() < 0) {
+    cerr << "CharacterTable::CharacterTable: invalid point group "
+         << cpg << endl;
+    exit(1);
+  }
 
-  if (make_table() < 0)
-    err_quit("CharacterTable::CharacterTable: could not make table");
+  if (make_table() < 0) {
+    cerr << "CharacterTable::CharacterTable: could not make table" << endl;
+    exit(1);
+  }
 }
 
 int
@@ -281,3 +314,4 @@ CharacterTable::parse_symbol()
 // Local Variables:
 // mode: c++
 // eval: (c-set-style "ETS")
+// End:

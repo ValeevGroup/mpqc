@@ -15,7 +15,7 @@
  *      Division of Computer Research and Technology
  *      National Institutes of Health
  *      Bethesda, Maryland 20892
- *      Internet: seidl@alw.nih.gov
+ *      Internet: seidl@janed.com
  *      June, 1993
  */
 
@@ -26,8 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
-#include <util/unix/cct_cprot.h>
 
 #include <math/symmetry/pointgrp.h>
 
@@ -172,3 +170,4 @@ PointGroup::char_table() const
 // Local Variables:
 // mode: c++
 // eval: (c-set-style "ETS")
+// End:

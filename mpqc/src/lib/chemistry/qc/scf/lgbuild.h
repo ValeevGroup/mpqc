@@ -302,7 +302,7 @@ class LocalGBuild : public GBuild<T> {
 
       grp_->sum(&tnint, 1, 0, 0);
       if (me==0)
-        cout << setw(20) << tnint << " integrals" << endl;
+        cout << setw(20) << setprecision(0) << tnint << " integrals" << endl;
 
       tim_exit("ao_gmat");
     }

@@ -207,6 +207,14 @@ void
 CLSCF::print(ostream&o)
 {
   SCF::print(o);
+  if (scf_grp_->me()==0) {
+    o << indent << "CLSCF Parameters:\n" << incindent;
+    o << indent << "ndocc = " << tndocc_ << endl;
+    o << indent << "docc = [";
+    for (int i=0; i < nirrep_; i++)
+      o << " " << ndocc_[i];
+    o << " ]" << endl << decindent << endl;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -335,6 +343,9 @@ CLSCF::init_vector()
   }
 
   scf_vector_ = eigenvectors_.result_noupdate();
+
+  scf_vector_.print("init vec");
+  cl_hcore_.print("hcore");
 
   local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }

@@ -38,18 +38,7 @@ SCF::SCF(StateIn& s) :
   s.get(level_shift_);
 
   integral()->set_storage(int_store_);
-
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
-    scf_grp_ = MessageGrp::get_default_messagegrp();
-  } else if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
-    scf_grp_ = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-  } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
-    scf_grp_ = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-  } else {
-    cerr << indent <<
-      "SCF::SCF: cannot figure out which message group to use\n";
-    abort();
-  }
+  scf_grp_ = basis()->matrixkit()->messagegrp();
 }
 
 SCF::SCF(const RefKeyVal& keyval) :
@@ -73,17 +62,7 @@ SCF::SCF(const RefKeyVal& keyval) :
 
   integral()->set_storage(int_store_);
 
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
-    scf_grp_ = MessageGrp::get_default_messagegrp();
-  } else if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
-    scf_grp_ = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-  } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
-    scf_grp_ = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-  } else {
-    cerr << indent <<
-      "SCF::SCF: cannot figure out which message group to use\n";
-    abort();
-  }
+  scf_grp_ = basis()->matrixkit()->messagegrp();
 }
 
 SCF::~SCF()
@@ -110,6 +89,14 @@ void
 SCF::print(ostream&o)
 {
   OneBodyWavefunction::print(o);
+  if (scf_grp_->me()==0) {
+    o << indent << "SCF Parameters:\n" << incindent;
+    o << indent << "maxiter = " << maxiter_ << endl;
+    o << indent << "integral_storage = " << int_store_ << endl;
+    o << indent << "density_reset_freq = " << dens_reset_freq_ << endl;
+    o << indent << "level_shift = " << level_shift_ << endl;
+    o << decindent << endl;
+  }
 }
 
 void

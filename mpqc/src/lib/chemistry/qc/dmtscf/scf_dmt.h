@@ -30,6 +30,7 @@ extern "C" {
 #include <chemistry/qc/dmtscf/scf_lowd.gbl>
 #include <chemistry/qc/dmtscf/scf_mull.gbl>
 #include <chemistry/qc/dmtscf/scf_vect.gbl>
+#include <chemistry/qc/dmtscf/scf_bnd.gbl>
 
 #ifdef __cplusplus
 }

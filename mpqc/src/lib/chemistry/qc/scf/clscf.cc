@@ -344,9 +344,6 @@ CLSCF::init_vector()
 
   scf_vector_ = eigenvectors_.result_noupdate();
 
-  scf_vector_.print("init vec");
-  cl_hcore_.print("hcore");
-
   local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 

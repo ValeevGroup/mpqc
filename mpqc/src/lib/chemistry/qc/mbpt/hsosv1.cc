@@ -1,53 +1,29 @@
 
 typedef int dmt_matrix;
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
-#include <util/group/picl.h>
-#include <math/array/math_lib.h>
-#include <math/dmt/libdmt.h>
+#include <util/misc/formio.h>
+#include <util/misc/timer.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
+#include <util/group/message.h>
+#include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/qc/intv2/int_libv2.h>
-#include <chemistry/qc/dmtsym/sym_dmt.h>
-#include <chemistry/qc/dmtscf/scf_dmt.h>
-
-extern "C" {
-#include <chemistry/qc/dmtqc/libdmtqc.h>
-#include <util/misc/libmisc.h>
-}
-
-extern "C" {
- int scf_erep_bound(int,int,int,int);
- int int_find_nfuncmax(centers_t*);
- int scf_init_bounds(centers_t*,double*);
- void scf_done_bounds();
- void gcollect(double *x, int *lens, double *y);
-}
-
-#include <chemistry/qc/mbpt/opt2.h>
+#include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 
-int
-mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
-             double_vector_t *_evals, int nfzc, int nfzv, int mem_alloc,
-             FILE* outfile)
+void
+MBPT2::compute_hsos_v1()
 {
-
-  int_initialize_offsets2(centers,centers,centers,centers);
-
   int i, j, k;
   int s1, s2;
   int a, b;
   int isocc, asocc;   /* indices running over singly occupied orbitals */
-  int nfuncmax = int_find_nfuncmax(centers);
-  int nbasis = centers->nfunc;
+  int nfuncmax = basis()->max_nfunction_in_shell();
+  int nbasis = basis()->nbasis();
   int nvir;
   int nocc=0;
   int ndocc=0,nsocc=0;
@@ -61,7 +37,6 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int index;
   int col_index;
   int docc_index, socc_index, vir_index;
-  int flags;
   int me;
   int nproc;
   int rest;
@@ -76,16 +51,15 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int aoint_computed = 0;
   int nshell;
   double A, B, C, ni_top, max, ni_double; /* Variables used to compute ni  */
-  double *evals = _evals->d;  /* scf eigenvalues (passed in)               */
   double *evals_open;    /* reordered scf eigenvalues                      */
-  double *intbuf;        /* 2-electron AO integral buffer                  */
+  const double *intbuf;  /* 2-electron AO integral buffer                  */
   double *trans_int1;    /* partially transformed integrals                */
   double *trans_int2;    /* partially transformed integrals                */
   double *trans_int3;    /* partially transformed integrals                */
   double *trans_int4_node;/* each node's subset of fully transf. integrals */
   double *trans_int4;    /* fully transformed integrals                    */
   double *mo_int_do_so_vir; /*mo integral (is|sa); i:d.o.,s:s.o.,a:vir     */
-  double *mo_int_tmp;    /* scratch array used in gop1                     */
+  double *mo_int_tmp;    /* scratch array used in global summations        */
   double *socc_sum;      /* sum of 2-el integrals involving only s.o.'s    */
   double *iqrs, *iprs;
   double *iars_ptr, *iajs_ptr, *iajr_ptr;
@@ -102,53 +76,46 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   double ecorr_zapt2;
   double ecorr_opt2_contrib=0, ecorr_zapt2_contrib=0;
   double escf;
-  double eopt2,eopt1;
+  double eopt2,eopt1,ezapt2;
   double tol;     /* log2 of the erep tolerance (erep < 2^tol => discard) */
-  loop_t *loop;
 
+  me = msg_->me();
+  
+  cout << node0 << "Just entered OPT2 program (opt2_v1)" << endl;
 
-  me = mynode0();
-
-  if (me == 0) {
-    fprintf(outfile,"Just entered OPT2 program (opt2_v1)\n");
-    }
-
-  flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
-  intbuf = int_initialize_erep(flags,0,centers,centers,centers,centers);
-
-  scf_init_bounds(centers,intbuf);
+  tbint_ = integral()->electron_repulsion();
+  intbuf = tbint_->buffer();
 
   tol = (int) (-10.0/log10(2.0));  /* discard ereps smaller than 10^-10 */
 
-  nproc = numnodes0();
-  if (me == 0) fprintf(outfile,"nproc = %i\n", nproc);
+  nproc = msg_->n();
+  cout << node0 << "nproc = " << nproc << endl;
 
-  ndocc = scf_info->nclosed;
-  nsocc = scf_info->nopen;
+  ndocc = nsocc = 0;
+  for (i=0; i<nbasis; i++) {
+    if      (reference_->occupation(i) == 2.0) ndocc++;
+    else if (reference_->occupation(i) == 1.0) nsocc++;
+    }
 
   /* do a few preliminary tests to make sure the desired calculation *
    * can be done (and appears to be meaningful!)                     */
 
   if (ndocc == 0 && nsocc == 0) {
-    if (me == 0) {
-      fprintf(outfile,"There are no occupied orbitals; program exiting\n");
-      }
+    cerr << node0 << "There are no occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzc > ndocc) {
-    if (me == 0) {
-      fprintf(outfile,"The number of frozen core orbitals exceeds the number\n"
-                      "of doubly occupied orbitals; program exiting\n");
-      }
+    cerr << node0
+         << "The number of frozen core orbitals exceeds the number" << endl
+         << "of doubly occupied orbitals; program exiting" << endl;
     abort();
     }
 
   if (nfzv > nbasis - ndocc - nsocc) {
-    if (me == 0) {
-      fprintf(outfile,"The number of frozen virtual orbitals exceeds the number\n"
-                      "of unoccupied orbitals; program exiting\n");
-      }
+    cerr << node0
+         << "The number of frozen virtual orbitals exceeds the number" << endl
+         << "of unoccupied orbitals; program exiting" << endl;
     abort();
     }
 
@@ -166,7 +133,7 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   if (me < a_rest) a_number++;
 
   if (a_number < nsocc) { 
-    if (me == 0) fprintf(outfile,"not enough memory allocated\n");
+    cerr << "not enough memory allocated" << endl;
     /* must have all socc's on node 0 for computation of socc_sum*/
     abort();
     }
@@ -178,7 +145,7 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
   a_vector = (int*) malloc(nproc*sizeof(int));
   if (!a_vector) {
-    fprintf(stderr,"could not allocate storage for a_vector\n");
+    cerr << "could not allocate storage for a_vector" << endl;
     abort();
     }
   for (i=0; i<nproc; i++) {
@@ -224,93 +191,107 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       if (rest == 0) npass--;
       }
     }
-  bcast0(&ni,sizeof(int),mtype_get(),0);
-  bcast0(&npass,sizeof(int),mtype_get(),0);
-  bcast0(&rest,sizeof(int),mtype_get(),0);
+  msg_->bcast(ni);
+  msg_->bcast(npass);
+  msg_->bcast(rest);
 
   if (ni < nsocc) {
-    if (me == 0) fprintf(outfile,"Not enough memory allocated\n");
+    cerr << "Not enough memory allocated" << endl;
     abort();
     }
 
   if (ni < 1) {     /* this applies only to a closed shell case */
-    if (me == 0) fprintf(outfile,"Not enough memory allocated\n");
+    cerr << "Not enough memory allocated" << endl;
     abort();
     }
 
+  cout << node0 << "computed batchsize: " << ni << endl;
+
+  nshell = basis()->nshell();
   if (me == 0) {
-    fprintf(outfile,"computed batchsize: %i\n", ni);
+    cout << " npass  rest  nbasis  nshell  nfuncmax"
+         << "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
+    cout << scprintf("   %-4i   %-3i   %-5i   %-4i     %-3i"
+                     "     %-3i     %-3i   %-3i    %-3i   %-3i",
+                     npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv)
+         << endl;
+    cout << scprintf("Using %i bytes of memory", mem_alloc) << endl;
     }
 
-  nshell = centers->nshell;
-  if (me == 0) {
-    fprintf(outfile," npass  rest  nbasis  nshell  nfuncmax"
-                    "  ndocc  nsocc  nvir  nfzc  nfzv\n");
-    fprintf(outfile,"   %-4i   %-3i   %-5i   %-4i     %-3i"
-                    "     %-3i     %-3i   %-3i    %-3i   %-3i\n",
-            npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
-    fprintf(outfile,"Using %i bytes of memory\n", mem_alloc);
-    }
-
-
-  /* rearrange scf eigenvalues as [socc docc socc unocc]    *
-   * want socc first to get the socc's in the first batch   *
-   * (need socc's to compute energy denominators - see      *
-   * socc_sum comment below)                                */
+  /* the scf vector might be distributed between the nodes, but for OPT2 *
+   * each node needs its own copy of the vector;                         *
+   * therefore, put a copy of the scf vector on each node;               * 
+   * while doing this, duplicate columns corresponding to singly         *
+   * occupied orbitals and order columns as [socc docc socc unocc]       */
+  /* also rearrange scf eigenvalues as [socc docc socc unocc]            *
+   * want socc first to get the socc's in the first batch                *
+   * (need socc's to compute energy denominators - see                   *
+   * socc_sum comment below)                                             */
 
   evals_open = (double*) malloc((nbasis+nsocc-nfzc-nfzv)*sizeof(double));
   if (!evals_open) {
-    fprintf(stderr,"could not allocate storage for evals_open\n");
+    cerr << "could not allocate storage for evals_open" << endl;
     abort();
     }
-  for (i=0; i < nsocc; i++) evals_open[i] = evals[i+nfzc+ndocc];
-  for (i=nsocc; i < nocc; i++) evals_open[i] = evals[i-nsocc+nfzc];
-  for (i=nocc; i < nvir+nocc; i++) evals_open[i] = evals[i+nfzc-nsocc];
 
-  /* the scf vector is distributed between the nodes, but for OPT2  *
-   * each node needs its own copy of the vector;                    *
-   * therefore, put a copy of the scf vector on each node;          * 
-   * while doing this, duplicate columns corresponding to singly    *
-   * occupied orbitals and order columns as [socc docc socc unocc]  */
+  RefDiagSCMatrix evals;
+  RefSCMatrix Scf_Vec;
+  eigen(evals, Scf_Vec);
 
-  double** scf_vector = new double*[nbasis];
-  for (i=0; i<nbasis; i++) {
-      scf_vector[i] = new double[nocc+nvir];
+  if (debug_) {
+    evals.print("eigenvalues");
+    Scf_Vec.print("eigenvectors");
     }
 
-  loop = dmt_ngl_create("%mr",Scf_Vec);
-  while(dmt_ngl_next(loop)) {
-    int iind,isize,jsize;
-    double *col;
+  double *scf_vectort_dat = new double[nbasis*nbasis];
+  Scf_Vec->convert(scf_vectort_dat);
 
-    dmt_ngl_create_inner(loop,0);
-    while(dmt_ngl_next_inner_m(loop,&iind,&isize,&k,&jsize,&col)) {
-      if (k >= nfzc && k < ndocc+nfzc) {
-        for (i=0; i < nbasis; i++) scf_vector[i][k-nfzc+nsocc] = col[i];
-        }
-      if (k >= ndocc+nfzc && k < ndocc+nfzc+nsocc) {
-        for (i=0; i < nbasis; i++) {
-          scf_vector[i][k-ndocc-nfzc] = col[i];
-          scf_vector[i][k-nfzc+nsocc] = col[i];
-          }
-        }
-      if (k >= ndocc+nsocc+nfzc && k < nbasis-nfzv) {
-        for (i=0; i < nbasis; i++) scf_vector[i][k-nfzc+nsocc] = col[i];
-        }
+  double** scf_vectort = new double*[nocc + nvir];
+
+  int idoc = 0, ivir = 0, isoc = 0;
+  for (i=0; i<nbasis; i++) {
+    if (reference_->occupation(i) == 2.0) {
+      evals_open[idoc+nsocc] = evals(i);
+      scf_vectort[idoc+nsocc] = &scf_vectort_dat[i*nbasis];
+      idoc++;
+      }
+    else if (reference_->occupation(i) == 1.0) {
+      evals_open[isoc] = evals(i);
+      scf_vectort[isoc] = &scf_vectort_dat[i*nbasis];
+      evals_open[isoc+nocc] = evals(i);
+      scf_vectort[isoc+nocc] = &scf_vectort_dat[i*nbasis];
+      isoc++;
+      }
+    else if (reference_->occupation(i) == 0.0) {
+      evals_open[ivir+nocc+nsocc] = evals(i);
+      scf_vectort[ivir+nocc+nsocc] = &scf_vectort_dat[i*nbasis];
+      ivir++;
       }
     }
 
-  dmt_ngl_kill(loop);
-
-  cout << "Final eigenvalues and vectors" << endl;
-  for (i=0; i<nocc+nvir; i++) {
-      cout << evals_open[i];
-      for (j=0; j<nbasis; j++) {
-          cout << " " << scf_vector[j][i];
-        }
-      cout << endl;
+  // need the transpose of the vector
+  double **scf_vector = new double*[nbasis];
+  double *scf_vector_dat = new double[(nocc+nvir)*nbasis];
+  for (i=0; i<nbasis; i++) {
+    scf_vector[i] = &scf_vector_dat[(nocc+nvir)*i];
+    for (j=0; j<nocc+nvir; j++) {
+      scf_vector[i][j] = scf_vectort[j][i];
+      }
     }
-  cout << endl;
+  delete[] scf_vectort;
+  delete[] scf_vectort_dat;
+
+  if (debug_) {
+    cout << "Final eigenvalues and vectors" << endl;
+    for (i=0; i<nocc+nvir; i++) {
+      cout << evals_open[i];
+        for (j=0; j<nbasis; j++) {
+          cout << " " << scf_vector[j][i];
+          }
+      cout << endl;
+      }
+    cout << endl;
+    }
 
   /* allocate storage for integral arrays */
 
@@ -345,33 +326,33 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     shell_index = 0;
 
     tim_enter("RS loop");
-    for (R = 0; R < centers->nshell; R++) {
-      nr = INT_SH_NFUNC((centers),R);
+    for (R = 0; R < basis()->nshell(); R++) {
+      nr = basis()->shell(R).nfunction();
 
       for (S = 0; S <= R; S++) {
-        ns = INT_SH_NFUNC((centers),S);
+        ns = basis()->shell(S).nfunction();
         tim_enter("bzerofast trans_int1");
         bzerofast(trans_int1,nfuncmax*nfuncmax*nbasis*ni);
         tim_exit("bzerofast trans_int1");
 
         tim_enter("PQ loop");
-        for (P = 0; P < centers->nshell; P++) {
-          np = INT_SH_NFUNC((centers),P);
+        for (P = 0; P < basis()->nshell(); P++) {
+          np = basis()->shell(P).nfunction();
 
           for (Q = 0; Q <= P; Q++) {
             shell_index++;
             if (shell_index%nproc != me) continue; 
 
-            if (scf_erep_bound(P,Q,R,S) < tol) {
+            if (tbint_->log2_shell_bound(P,Q,R,S) < tol) {
               continue;                           /* skip ereps less than tol */
               }
 
             aoint_computed++;
 
-            nq = INT_SH_NFUNC((centers),Q);
+            nq = basis()->shell(Q).nfunction();
 
             tim_enter("erep");
-            int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM|INT_REDUND,&P,&Q,&R,&S);
+            tbint_->compute_shell(P,Q,R,S);
             tim_exit("erep");
 
             tim_enter("1. quart. tr."); 
@@ -379,10 +360,10 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
             index = 0;
 
             for (bf1 = 0; bf1 < np; bf1++) {
-              p = centers->func_num[P] + bf1;
+              p = basis()->shell_to_function(P) + bf1;
  
               for (bf2 = 0; bf2 < nq; bf2++) {
-                q = centers->func_num[Q] + bf2;
+                q = basis()->shell_to_function(Q) + bf2;
                 if (q > p) {
                   /* if q > p: want to skip the loops over bf3-4  */
                   /* and larger bf2 values, so increment bf1 by 1 */
@@ -399,7 +380,7 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
                       break; 
                       }
 
-                    if (INT_NONZERO(intbuf[index])) {
+                    if (fabs(intbuf[index])>1.0e-15) {
                       pqrs = intbuf[index];
 
                       iqrs = &trans_int1[((bf4*nr + bf3)*nbasis + q)*ni];
@@ -426,9 +407,9 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
         tim_exit("PQ loop");
 
-        tim_enter("gop1 int");
-        gop1(trans_int1,nr*ns*nbasis*ni,trans_int2,'+',3);
-        tim_exit("gop1 int");
+        tim_enter("sum int");
+        msg_->sum(trans_int1,nr*ns*nbasis*ni,trans_int2);
+        tim_exit("sum int");
 
         /* begin second quarter transformation */
 
@@ -467,10 +448,10 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
 
         for (bf3 = 0; bf3<nr; bf3++) {
-          r = centers->func_num[R] + bf3;
+          r = basis()->shell_to_function(R) + bf3;
 
           for (bf4 = 0; bf4 <= (R == S ? bf3:(ns-1)); bf4++) {
-            s = centers->func_num[S] + bf4;
+            s = basis()->shell_to_function(S) + bf4;
 
             for (i=0; i<ni; i++) {
               tmp_index = i*(i+1)/2 + i*i_offset;
@@ -523,7 +504,7 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       }
 
     tim_enter("bcast0 socc_sum");
-    if (nsocc) bcast0(socc_sum,nsocc*sizeof(double),mtype_get(),0);
+    if (nsocc) msg_->bcast(socc_sum,nsocc);
     tim_exit("bcast0 socc_sum");
 
     tim_exit("4. quart. tr.");
@@ -559,9 +540,9 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
         tim_exit("4. quart. tr.");
 
         /* collect each node's part of fully transf. int. into trans_int4 */
-        tim_enter("gcollect");
-        gcollect(trans_int4_node,a_vector,trans_int4);
-        tim_exit("gcollect");
+        tim_enter("collect");
+        msg_->collect(trans_int4_node,a_vector,trans_int4);
+        tim_exit("collect");
 
 
         /* we now have the fully transformed integrals (ia|jb)      *
@@ -682,20 +663,20 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       }         /* exit i loop */
     }           /* exit loop over i-batches (pass) */
 
-
+  // don't need the AO integrals anymore
+  tbint_ = 0;
 
   /* compute contribution from excitations of the type is1 -> s1a where   *
    * i=d.o., s1=s.o. and a=unocc; single excitations of the type i -> a,  *
    * where i and a have the same spin, contribute to this term;           *
-   * (Brillouin's theorem not satisfied for ROHF wave functions);         *
-   * do this only is nsocc > 0 since gop1 will fail otherwise             */
+   * (Brillouin's theorem not satisfied for ROHF wave functions);         */
 
   tim_enter("compute ecorr");
 
   if (nsocc > 0) {
-    tim_enter("gop1 mo_int_do_so_vir");
-    gop1(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc),mo_int_tmp,'+',3);
-    tim_exit("gop1 mo_int_do_so_vir");
+    tim_enter("sum mo_int_do_so_vir");
+    msg_->sum(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc),mo_int_tmp);
+    tim_exit("sum mo_int_do_so_vir");
     }
 
   /* add extra contribution for triplet and higher spin multiplicities *
@@ -724,35 +705,49 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
   ecorr_zapt2 = ecorr_opt2 + ecorr_zapt2_contrib;
   ecorr_opt2 += ecorr_opt2_contrib;
-  gsum0(&ecorr_opt1,1,5,mtype_get(),0);
-  gsum0(&ecorr_opt2,1,5,mtype_get(),0);
-  gsum0(&ecorr_zapt2,1,5,mtype_get(),0);
-  gsum0(&aoint_computed,1,2,mtype_get(),0);
+  msg_->sum(ecorr_opt1);
+  msg_->sum(ecorr_opt2);
+  msg_->sum(ecorr_zapt2);
+  msg_->sum(aoint_computed);
+
+  escf = reference_->energy();
 
   if (me == 0) {
-    escf = scf_info->e_elec + scf_info->nuc_rep;
     eopt2 = escf + ecorr_opt2;
     eopt1 = escf + ecorr_opt1;
+    ezapt2 = escf + ecorr_zapt2;
 
     /* print out various energies etc.*/
 
-    fprintf(outfile,"Number of shell quartets for which AO integrals would\n"
-                    "have been computed without bounds checking: %i\n",
+    cout << scprintf("Number of shell quartets for which AO integrals would\n"
+                     "have been computed without bounds checking: %i\n",
                      npass*nshell*nshell*(nshell+1)*(nshell+1)/4);
-    fprintf(outfile,"Number of shell quartets for which AO integrals\n"
-                    "were computed: %i\n",aoint_computed);
-    fprintf(outfile,"ROHF energy [au]:                  %13.8lf\n", escf);
-    fprintf(outfile,"OPT1 energy [au]:                  %13.8lf\n", eopt1);
-    fprintf(outfile,"OPT2 second order correction [au]: %13.8lf\n", ecorr_opt2);
-    fprintf(outfile,"OPT2 energy [au]:                  %13.8lf\n", eopt2);
-    fprintf(outfile,"ZAPT2 correlation energy [au]:     %13.8lf\n", ecorr_zapt2);
-    fprintf(outfile,"ZAPT2 energy [au]:                 %13.8lf\n", 
-                     escf + ecorr_zapt2);
+    cout << scprintf("Number of shell quartets for which AO integrals\n"
+                     "were computed: %i\n",aoint_computed);
+    cout << scprintf("ROHF energy [au]:                  %13.8lf\n", escf);
+    cout << scprintf("OPT1 energy [au]:                  %13.8lf\n", eopt1);
+    cout << scprintf("OPT2 second order correction [au]: %13.8lf\n", ecorr_opt2);
+    cout << scprintf("OPT2 energy [au]:                  %13.8lf\n", eopt2);
+    cout << scprintf("ZAPT2 correlation energy [au]:     %13.8lf\n", ecorr_zapt2);
+    cout << scprintf("ZAPT2 energy [au]:                 %13.8lf\n", ezapt2);
     }
+  msg_->bcast(eopt1);
+  msg_->bcast(eopt2);
+  msg_->bcast(ezapt2);
 
-  int_done_erep();
-  int_done_offsets2(centers,centers,centers,centers);
-  scf_done_bounds();
+  if (method_ && !strcmp(method_,"opt1")) {
+    set_energy(eopt1);
+    }
+  else if (method_ && !strcmp(method_,"opt2")) {
+    set_energy(eopt2);
+    }
+  else {
+    if (!(!method_ || !strcmp(method_,"zapt"))) {
+      cout << "MBPT2: bad method for closed shell case: " << method_
+           << ", using zapt" << endl;
+      }
+    set_energy(ezapt2);
+    }
 
   free(trans_int1);
   free(trans_int2);
@@ -765,11 +760,10 @@ mbpt_opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   if (nsocc) free(mo_int_tmp);
   free(evals_open);
 
-  for (i=0; i<nbasis; i++) {
-      delete[] scf_vector[i];
-    }
   delete[] scf_vector;
-
-  return(0);
-
+  delete[] scf_vector_dat;
   }
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ-CONDENSED")

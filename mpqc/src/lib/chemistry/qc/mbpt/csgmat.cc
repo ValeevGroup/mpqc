@@ -1,0 +1,475 @@
+
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <tmpl.h>
+
+#include <util/misc/timer.h>
+#include <math/scmat/matrix.h>
+#include <chemistry/qc/mbpt/mbpt.h>
+
+#define ioff(i) (((i)*((i)+1))>>1)
+#define IOFF(a,b) (((a)>(b))?(ioff(a)+(b)):(ioff(b)+(a)))
+
+#define INT_MAX1(n1) ((n1)-1)
+#define INT_MAX2(e12,i,n2) ((e12)?(i):((n2)-1))
+#define INT_MAX3(e13e24,i,n3) ((e13e24)?(i):((n3)-1))
+#define INT_MAX4(e13e24,e34,i,j,k,n4) \
+  ((e34)?(((e13e24)&&((k)==(i)))?(j):(k)) \
+        :((e13e24)&&((k)==(i)))?(j):(n4)-1)
+
+/**************************************************************************
+ *
+ * calculate the closed shell G matrix
+ * assume all matrices are held locally -- IMBN
+ *
+ * input:
+ *   Gmat     = matrix containing old G matrix
+ *   DPmat    = matrix containing density diff matrix
+ *
+ * on return:
+ *   Gmat contains the new G matrix
+ *
+ * return 0 on success and -1 on failure
+ */
+
+int
+MBPT2::make_cs_gmat(RefSymmSCMatrix& Gmat, double *DPmat)
+{
+  int errcod;
+
+  tim_enter("gmat");
+
+  errcod = make_g_d_nor(Gmat, DPmat, intbuf_);
+
+  if (errcod != 0) {
+    fprintf(stderr,"mbpt_gmat: trouble forming gmat 3\n");
+    return -1;
+    }
+
+  tim_exit("gmat");
+
+  return 0;
+}
+
+/************************************************************************
+ *
+ * Form the vector maxp; each element of maxp is the 2-based log of the
+ * largest element (absolute value) in a block of the density matrix
+ * (DPmat). The density matrix is of dimension nbasis x nbasis
+ *
+ ************************************************************************/
+
+void
+MBPT2::form_max_dens(double *DPmat, signed char *maxp)
+{
+
+  int i, j, k, l, ij;
+  int isize, jsize, ioffset, joffset;
+  double linv = 1.0/log(2.0);
+  double tol = pow(2.0,-126.0);
+  double ftmp, tmp;
+  double *dpmat_ptr;
+
+  for (i=0; i<basis()->nshell(); i++) {
+    isize = basis()->shell(i).nfunction();
+    ioffset = basis()->shell_to_function(i);
+    for (j=0; j<=i; j++) {
+      jsize = basis()->shell(j).nfunction();
+      joffset = basis()->shell_to_function(j);
+      tmp = 0.0;
+      for (k=0; k<isize; k++) {
+        dpmat_ptr = &DPmat[nbasis*(ioffset+k) + joffset];
+        for (l=0; l<jsize; l++) {
+          ftmp = fabs(*dpmat_ptr++);
+          if (ftmp > tmp) tmp = ftmp;
+          }
+        }
+      tmp = (tmp > tol) ? tmp : tol;
+      ij = i*(i+1)/2 +j;
+      maxp[ij] = (signed char) (log(tmp)*linv);
+             /* log(tmp)/linv equals the 2-based log of tmp */
+      }
+    }
+
+}
+
+int
+MBPT2::init_cs_gmat()
+{
+  integral()->set_storage(mem_alloc);
+  tbint_ = integral()->electron_repulsion();
+  tbint_->set_redundant(0);
+  intbuf_ = tbint_->buffer();
+}
+
+void
+MBPT2::done_cs_gmat()
+{
+  integral()->set_storage(0);
+  tbint_ = 0;
+  intbuf_ = 0;
+}
+
+int
+MBPT2::make_g_d_nor(RefSymmSCMatrix& Gmat,
+                    double *DPmat, const double *mgdbuff)
+{
+  int tmax,imax,cpmax,pmaxijk;
+  int pmaxik,pmaxjk,pmaxij;
+  int i,j,k,l;
+  int ij,kl;
+  int n1,n2,n3,n4;
+  int e12,e34,e13e24,e_any;
+  int bf1,bf2,bf3,bf4;
+  int i1,j1,k1,l1;
+  int i2,j2,k2,l2;
+  int ii,jj,kk,ll;
+  int ij1;
+  int lij,lkl;
+  int index;
+  int int_index,kindex;
+  int nproc=msg_->n();
+  int me=msg_->me();
+  int s1,s2,s3,s4;
+  int inttol = (int) (-10.0/log10(2.0));
+  int nshellt;
+  int nbatri = (nbasis*(nbasis+1))/2;
+
+
+  double tnint=0.0;
+  double pki_int,value;
+  double *gtmp=0, *ptmp=0;
+  double *dpmat_ptr;
+
+  char *shnfunc=0;
+  signed char *maxp=0;
+
+
+  // Scale DPmat; this is necessary when using the gmat formation
+  // program from scf (modified slightly), since this program assumes
+  // that the off-diagonal elements have been scaled by a factor of 2.0
+  dpmat_ptr = DPmat;
+  for (i=0; i<nbasis; i++) {
+    for (j=0; j<nbasis; j++) {
+      if (i != j) *dpmat_ptr++ *= 2.0;
+      else dpmat_ptr++;
+      }
+    }
+
+  // Allocate and assign maxp
+  if (eliminate_in_gmat_) {
+    nshellt = basis()->nshell()*(basis()->nshell()+1)/2;
+    maxp = (signed char*) malloc(sizeof(signed char)*nshellt);
+    if (!(maxp)) {
+      fprintf(stderr,"mkgdlb: could not malloc maxp\n");
+      return -1;
+      }
+    form_max_dens(DPmat, maxp);
+    }
+
+  // Allocate and assign ptmp (contains lower triangle of DPmat
+  ptmp = (double*) malloc(sizeof(double)*nbatri);
+  if (!(ptmp)) {
+    fprintf(stderr,"mkgdlb: could not malloc ptmp\n");
+    return -1;
+    }
+  for (i=0; i<nbasis; i++) {
+    dpmat_ptr = &DPmat[i*nbasis];
+    for (j=0; j<=i; j++) {
+      ptmp[i*(i+1)/2 + j] = *dpmat_ptr++;
+      }
+    }
+
+
+  // "Unscale" DPmat to get the original DPmat
+  dpmat_ptr = DPmat;
+  for (i=0; i<nbasis; i++) {
+    for (j=0; j<nbasis; j++) {
+      if (i != j)  *dpmat_ptr++ *= 0.50;
+      else dpmat_ptr++;
+      }
+    }
+
+  // Allocate and initialize gtmp
+  gtmp = (double *) malloc(sizeof(double)*nbatri);
+  for (i=0; i<nbatri; i++) gtmp[i] = 0.0;
+ 
+  // Allocate and assign shnfunc
+  shnfunc = (char *) malloc(basis()->nshell());
+  if (!shnfunc) {
+    fprintf(stderr,"make_g_d_lb: could not malloc shnfunc\n");
+    return -1;
+    }
+  for (i=0; i < basis()->nshell(); i++) shnfunc[i]=basis()->shell(i).nfunction();
+
+
+  /********************************************************
+   * Start the actual formation of the G matrix:          *
+   * Loop over all shells, calculate a bunch of integrals *
+   * from each shell quartet, and stick those integrals   *
+   * where they belong                                    *
+   ********************************************************/
+
+
+  kindex=int_index=0;
+  for (i=0; i<basis()->nshell(); i++) {
+
+    for (j=0; j<=i; j++) {
+      ij = ioff(i)+j;
+      if(eliminate_in_gmat_) pmaxij=maxp[ij];
+
+      for (k=0; k<=i; k++,kindex++) {
+        if(kindex%nproc!=me) {
+          continue;
+          }
+
+        kl=ioff(k);
+        if(eliminate_in_gmat_) {
+          pmaxijk=pmaxij;
+          if((pmaxik=maxp[(ioff(i)+k)]-2)>pmaxijk) pmaxijk=pmaxik;
+          if((pmaxjk=maxp[IOFF(j,k)]-2)>pmaxijk) pmaxijk=pmaxjk;
+          }
+
+        for (l=0; l<=(k==i?j:k); l++) {
+
+          imax = (int) tbint_->log2_shell_bound(i,j,k,l);
+
+          if(eliminate_in_gmat_) {
+            cpmax = (maxp[kl]>pmaxijk) ? maxp[kl] : pmaxijk;
+            if((tmax=maxp[(ioff(i)+l)]-2)>cpmax) cpmax=tmax;
+            if((tmax=maxp[IOFF(j,l)]-2)>cpmax) cpmax=tmax;
+
+            if(cpmax+imax < inttol) {
+        //    /* If we are trying to save integrals on this node, then
+        //     * int_index must be incremented now. */
+        //    if (scf_info->int_store) int_index++;
+              kl++;
+              continue;
+              }
+            }
+
+            s1 = i; s2 = j; s3 = k; s4 = l;
+
+            tbint_->compute_shell(s1,s2,s3,s4);
+
+            n1 = shnfunc[s1];
+            n2 = shnfunc[s2];
+            n3 = shnfunc[s3];
+            n4 = shnfunc[s4];
+
+           // Shell equivalence information
+            e12    = (s2==s1);
+            e13e24 = (s3==s1) && (s4==s2);
+            e34    = (s4==s3);
+
+            index = 0;
+
+            e_any = (e12||e13e24||e34);
+            if(e_any) {
+              for (bf1=0; bf1<=INT_MAX1(n1) ; bf1++) {
+                i2 = basis()->shell_to_function(s1) + bf1;
+
+                for (bf2=0; bf2<=INT_MAX2(e12,bf1,n2) ; bf2++) {
+                  j2 = basis()->shell_to_function(s2) + bf2;
+                  if(i2>=j2) { i1=i2; j1=j2; }
+                  else { i1=j2; j1=i2; }
+                  ij1=ioff(i1)+j1;
+
+                  for (bf3=0; bf3<=INT_MAX3(e13e24,bf1,n3) ; bf3++) {
+                    k2 = basis()->shell_to_function(s3) + bf3;
+
+                    for (bf4=0;bf4<=INT_MAX4(e13e24,e34,bf1,bf2,bf3,n4);bf4++){
+                      if (fabs(mgdbuff[index])>1.0e-10) {
+                        l2 = basis()->shell_to_function(s4) + bf4;
+
+                        if(k2>=l2) { k1=k2; l1=l2; }
+                        else { k1=l2; l1=k2; }
+
+                        if(ij1 >= ioff(k1)+l1) {
+                          ii = i1; jj = j1; kk = k1; ll = l1;
+                          }
+                        else {
+                          ii = k1; jj = l1; kk = i1; ll = j1;
+                          }
+
+                        pki_int = mgdbuff[index];
+
+                        if (jj == kk) {
+                          if (ii == jj || kk == ll) {
+                            lij=ioff(ii)+jj;
+                            lkl=ioff(kk)+ll;
+                            value=(lij==lkl)? 0.25*pki_int: 0.5*pki_int;
+                            gtmp[lij] += ptmp[lkl]*value;
+                            gtmp[lkl] += ptmp[lij]*value;
+                            }
+                          else {
+                            lij=ioff(ii)+jj;
+                            lkl=ioff(kk)+ll;
+                            value=(lij==lkl)? 0.375*pki_int: 0.75*pki_int;
+                            gtmp[lij] += ptmp[lkl]*value;
+                            gtmp[lkl] += ptmp[lij]*value;
+
+                            lij=ioff(ii)+ll;
+                            lkl=IOFF(kk,jj);
+                            value=(lij==lkl)? 0.25*pki_int: 0.5*pki_int;
+                            gtmp[lij] -= ptmp[lkl]*value;
+                            gtmp[lkl] -= ptmp[lij]*value;
+                            }
+                          }
+                        else if (ii == kk || jj == ll) {
+                          lij=ioff(ii)+jj;
+                          lkl=ioff(kk)+ll;
+                          value=(lij==lkl)? 0.375*pki_int: 0.75*pki_int;
+                          gtmp[lij] += ptmp[lkl]*value;
+                          gtmp[lkl] += ptmp[lij]*value;
+
+                          lij=ioff(ii)+kk;
+                          lkl=IOFF(jj,ll);
+                          value=(lij==lkl)? 0.25*pki_int : 0.5*pki_int;
+                          gtmp[lij] -= ptmp[lkl]*value;
+                          gtmp[lkl] -= ptmp[lij]*value;
+                          }
+                        else {
+                          lij=ioff(ii)+jj;
+                          lkl=ioff(kk)+ll;
+                          value=(lij==lkl)? 0.5*pki_int : pki_int;
+                          gtmp[lij] += ptmp[lkl]*value;
+                          gtmp[lkl] += ptmp[lij]*value;
+
+                          lij=ioff(ii)+kk;
+                          lkl=IOFF(jj,ll);
+                          value=(lij==lkl)? 0.125*pki_int: 0.25*pki_int;
+                          gtmp[lij] -= ptmp[lkl]*value;
+                          gtmp[lkl] -= ptmp[lij]*value;
+
+                          if((ii != jj) && (kk != ll)) {
+                            lij=ioff(ii)+ll;
+                            lkl=IOFF(kk,jj);
+                            value=(lij==lkl)? 0.125*pki_int: 0.25*pki_int;
+                            gtmp[lij] -= ptmp[lkl]*value;
+                            gtmp[lkl] -= ptmp[lij]*value;
+                            }
+                          }
+                        }
+                      index++;
+                      }
+                    }
+                  }
+                }
+              }
+            else {
+              for (bf1=0; bf1<n1 ; bf1++) {
+                i2 = basis()->shell_to_function(s1) + bf1;
+
+                for (bf2=0; bf2<n2 ; bf2++) {
+                  j2 = basis()->shell_to_function(s2) + bf2;
+                  if(i2>=j2) { i1=i2; j1=j2; }
+                  else { i1=j2; j1=i2; }
+                  ij1=ioff(i1)+j1;
+
+                  for (bf3=0; bf3<n3 ; bf3++) {
+                    k2 = basis()->shell_to_function(s3) + bf3;
+
+                    for (bf4=0; bf4<n4; bf4++) {
+                      if (fabs(mgdbuff[index])>1.0e-10) {
+                        l2 = basis()->shell_to_function(s4) + bf4;
+
+                        if(k2>=l2) { k1=k2; l1=l2; }
+                        else { k1=l2; l1=k2; }
+
+                        if(ij1 >= ioff(k1)+l1) {
+                          ii = i1; jj = j1; kk = k1; ll = l1;
+                          }
+                        else {
+                          ii = k1; jj = l1; kk = i1; ll = j1;
+                          }
+
+                        pki_int = mgdbuff[index];
+
+                        if (jj == kk) {
+                          lij=ioff(ii)+jj;
+                          lkl=ioff(kk)+ll;
+                          value=0.75*pki_int;
+                          gtmp[lij] += ptmp[lkl]*value;
+                          gtmp[lkl] += ptmp[lij]*value;
+
+                          lij=ioff(ii)+ll;
+                          lkl=IOFF(kk,jj);
+                          value=0.5*pki_int;
+                          gtmp[lij] -= ptmp[lkl]*value;
+                          gtmp[lkl] -= ptmp[lij]*value;
+                          }
+                        else if (ii == kk || jj == ll) {
+                          lij=ioff(ii)+jj;
+                          lkl=ioff(kk)+ll;
+                          value=0.75*pki_int;
+                          gtmp[lij] += ptmp[lkl]*value;
+                          gtmp[lkl] += ptmp[lij]*value;
+
+                          lij=ioff(ii)+kk;
+                          lkl=IOFF(jj,ll);
+                          value=0.5*pki_int;
+                          gtmp[lij] -= ptmp[lkl]*value;
+                          gtmp[lkl] -= ptmp[lij]*value;
+                          }
+                        else {
+                          lij=ioff(ii)+jj;
+                          lkl=ioff(kk)+ll;
+                          value=pki_int;
+                          gtmp[lij] += ptmp[lkl]*value;
+                          gtmp[lkl] += ptmp[lij]*value;
+  
+                          lij=ioff(ii)+kk;
+                          lkl=IOFF(jj,ll);
+                          value*=0.25;
+                          gtmp[lij] -= ptmp[lkl]*value;
+                          gtmp[lkl] -= ptmp[lij]*value;
+
+                          lij=ioff(ii)+ll;
+                          lkl=IOFF(kk,jj);
+                          gtmp[lij] -= ptmp[lkl]*value;
+                          gtmp[lkl] -= ptmp[lij]*value;
+                          }
+                        }
+                      index++;
+                      }
+                    }
+                  }
+                }
+              }
+            tnint += (double) (n1*n2*n3*n4);
+          kl++;
+          int_index++;
+          } // exit l loop
+        }   // exit k loop
+      }     // exit j loop
+    }       // exit i loop
+
+  // Sum up contributions to gtmp
+  msg_->sum(gtmp,nbatri,ptmp);
+
+
+  // Put gtmp back into Gmat
+  for (i=0; i<nbasis; i++) {
+    for (j=0; j<=i; j++) {
+      ij = i*(i+1)/2 + j;
+      Gmat->set_element(i,j,gtmp[ij]);
+//    Gmat->set_element(j,i,gtmp[ij]);  don't do this - only lower triangle
+      }
+    }
+
+
+  // Free up memory
+  if (gtmp) free(gtmp);
+  if (maxp) free(maxp);
+  if (ptmp) free(ptmp);
+  if (shnfunc) free(shnfunc);
+
+  return 0;
+}
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ-CONDENSED")
+// End:

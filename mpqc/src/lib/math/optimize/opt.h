@@ -112,7 +112,7 @@ class BFGSUpdate: public DFPUpdate {
 ////////////////////////////////////////////////////////////////////////
 // newton and related methods
 
-class QNewtonOpt: public public Optimize {
+class QNewtonOpt: public Optimize {
 #   define CLASSNAME QNewtonOpt
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR

@@ -37,6 +37,9 @@
 #include <chemistry/qc/mbpt/csgrade12.h>
 #include <chemistry/qc/mbpt/distsh.h>
 
+#include <chemistry/qc/mbpt/util.h>
+extern BiggestContribs biggest_ints_1(4,40);
+
 #define PRINT1Q 0
 
 /////////////////////////////////////////////////////////////////
@@ -285,6 +288,23 @@ CSGradErep12Qtr::run()
       lock->unlock();
       }
 #endif
+      {
+      lock->lock();
+      double *tmp = integral_iqrs;
+      for (int i = 0; i<ni; i++) {
+        for (int r = 0; r<nr; r++) {
+          for (int q = 0; q<nbasis; q++) {
+            for (int s = 0; s<ns; s++) {
+              if (i+i_offset==104) {
+                biggest_ints_1.insert(*tmp,i+i_offset,q,r+r_offset,s+s_offset);
+                }
+              tmp++;
+              }
+            }
+          }
+        }
+      lock->unlock();
+      }
 
     timer->enter("2. q.t.");
     // Begin second quarter transformation;

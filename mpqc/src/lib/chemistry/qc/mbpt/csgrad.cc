@@ -42,6 +42,11 @@
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
 
+#define PRINT_BIGGEST_INTS 1
+#if PRINT_BIGGEST_INTS
+BiggestContribs biggest_ints_1(4,40);
+#endif
+
 #define WRITE_DOUBLES 0
 
 static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
@@ -206,9 +211,9 @@ MBPT2::compute_cs_grad()
   BiggestContribs biggest_coefs(5,10);
   CharacterTable ct = molecule()->point_group()->char_table();
 
-#define PRINT_BIGGEST_INTS 1
 #if PRINT_BIGGEST_INTS
   BiggestContribs biggest_ints_2(4,40);
+  BiggestContribs biggest_ints_2s(4,40);
   BiggestContribs biggest_ints_3a(4,40);
   BiggestContribs biggest_ints_3(4,40);
 #endif
@@ -654,6 +659,10 @@ MBPT2::compute_cs_grad()
               tmpval = *integral_iqjs_ptr;
 #if PRINT_BIGGEST_INTS
               biggest_ints_2.insert(tmpval,i+i_offset,j,s,q);
+              if ((i+i_offset==104 && j == 1)
+                  ||(i+i_offset==104 && j == 2)) {
+                biggest_ints_2s.insert(tmpval,i+i_offset,j,s,q);
+                }
 #endif
               for (x=0; x<nbasis; x++) {
                 *ixjs_ptr++ += *c_qx++ * tmpval;
@@ -667,7 +676,9 @@ MBPT2::compute_cs_grad()
             ixjs_ptr = ixjs_tmp;
             for (x=0; x<nbasis; x++) {
 #if PRINT_BIGGEST_INTS
-              biggest_ints_3a.insert(*ixjs_ptr,i+i_offset,j,s,x);
+              if (x>=nocc) {
+                biggest_ints_3a.insert(*ixjs_ptr,i+i_offset,j,s,x-nocc);
+                }
 #endif
               *integral_iqjs_ptr++ = *ixjs_ptr++;
               }
@@ -720,7 +731,13 @@ MBPT2::compute_cs_grad()
               iajy_ptr = integral_iajy;
               tmpval = *iajs_ptr;
 #if PRINT_BIGGEST_INTS
-              biggest_ints_3.insert(tmpval,i+i_offset,j,a,s);
+              biggest_ints_3.insert(tmpval,i+i_offset,j,s,a);
+              if ((i+i_offset==105 && j == 2 && s == 170 && a == 3)
+                  ||(i+i_offset==102 && j == 2 && s == 170 && a == 2)) {
+                cout << scprintf("3/4: %3d %3d %3d %3d: %16.10f",
+                                 i+i_offset, j, s, x-nocc)
+                     << endl;
+                }
 #endif
               for (y=0; y<nbasis; y++) {
                 *iajy_ptr++ += *c_sy++ * tmpval;
@@ -851,7 +868,9 @@ MBPT2::compute_cs_grad()
     index = 0;
     ij_index = 0;
     for (i=0; i<ni; i++) {
+      double ecorr_i = 0.0;
       for (j=0; j<nocc; j++) {
+        double ecorr_ij = 0.0;
         if (index++ % nproc == me) {
 
           if (j>=nfzc) {
@@ -868,21 +887,36 @@ MBPT2::compute_cs_grad()
                                          i_offset+i,j,a,b,1111);
                     // aabb or bbaa or abba or baab
                     biggest_coefs.insert(*ibja_ptr,i_offset+i,j,b,a,1212);
-                    }
+                    } // endif
                   // aabb or bbaa or abba or baab
                   biggest_coefs.insert(*iajb_ptr,i_offset+i,j,a,b,1212);
-                  }
+                  } // endif
 
-                ecorr_mp2 += *iajb_ptr*(2**iajb_ptr - *ibja_ptr)*delta_ijab;
+                tmpval = *iajb_ptr*(2**iajb_ptr - *ibja_ptr)*delta_ijab;
+                ecorr_mp2 += tmpval;
+                if (debug_) ecorr_ij += tmpval;
                 iajb_ptr++;
                 ibja_ptr += nbasis;;
                 } // exit a loop
               }   // exit b loop
             }     // endif
-
           ij_index++;
           }       // endif
+        if (debug_) {
+          msg_->sum(ecorr_ij);
+          ecorr_i += ecorr_ij;
+          cout << node0 << indent
+               << scprintf("correlation energy for pair %3d %3d = %16.12f",
+                           i, j, ecorr_ij)
+               << endl;
+          }
         }         // exit j loop
+      if (debug_) {
+        cout << node0 << indent
+             << scprintf("correlation energy for orbital %3d = %16.12f",
+                         i+i_offset, ecorr_i)
+             << endl;
+        }
       }           // exit i loop
     tim_exit("compute ecorr");
 
@@ -1625,7 +1659,9 @@ MBPT2::compute_cs_grad()
 
   biggest_coefs.combine(msg_);
 #if PRINT_BIGGEST_INTS
+  biggest_ints_1.combine(msg_);
   biggest_ints_2.combine(msg_);
+  biggest_ints_2s.combine(msg_);
   biggest_ints_3a.combine(msg_);
   biggest_ints_3.combine(msg_);
 #endif
@@ -1634,6 +1670,17 @@ MBPT2::compute_cs_grad()
     emp2 = escf + ecorr_mp2;
 
 #if PRINT_BIGGEST_INTS
+    cout << "biggest 1/4 transformed ints" << endl;
+    for (i=0; i<biggest_ints_1.ncontrib(); i++) {
+      cout << scprintf("%3d %3d %3d %3d %16.12f",
+                       biggest_ints_1.indices(i)[0],
+                       biggest_ints_1.indices(i)[1],
+                       biggest_ints_1.indices(i)[2],
+                       biggest_ints_1.indices(i)[3],
+                       biggest_ints_1.val(i)
+                       )
+           << endl;
+      }
     cout << "biggest 2/4 transformed ints" << endl;
     for (i=0; i<biggest_ints_2.ncontrib(); i++) {
       cout << scprintf("%3d %3d %3d %3d %16.12f",
@@ -1642,6 +1689,17 @@ MBPT2::compute_cs_grad()
                        biggest_ints_2.indices(i)[2],
                        biggest_ints_2.indices(i)[3],
                        biggest_ints_2.val(i)
+                       )
+           << endl;
+      }
+    cout << "restricted 2/4 transformed ints" << endl;
+    for (i=0; i<biggest_ints_2s.ncontrib(); i++) {
+      cout << scprintf("%3d %3d %3d %3d %16.12f",
+                       biggest_ints_2s.indices(i)[0],
+                       biggest_ints_2s.indices(i)[1],
+                       biggest_ints_2s.indices(i)[2],
+                       biggest_ints_2s.indices(i)[3],
+                       biggest_ints_2s.val(i)
                        )
            << endl;
       }

@@ -116,6 +116,7 @@ class RefSCVector: public RefSSSCVector {
     double scalar_product(const RefSCVector&) const;
     double dot(const RefSCVector&) const;
     void normalize() const;
+    void randomize() const;
     void assign(const RefSCVector& v) const;
     void assign(double val) const;
     void assign(const double* v) const;
@@ -210,6 +211,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     void accumulate_product(const RefSCMatrix&,const RefSCMatrix&) const;
     void assign(const RefSCMatrix&) const;
     void scale(double) const;
+    void randomize() const;
     void assign(double) const;
     void assign(const double*) const;
     void assign(const double**) const;
@@ -233,6 +235,14 @@ class RefSCMatrix: public RefSSSCMatrix {
     void print(const char*title=0,ostream&out=cout, int =10) const;
     double trace() const;
 
+    //texi Compute the singular value decomposition.
+    // @code{this} = @var{U} @var{sigma} @var{V}@code{.t()}.
+    // The dimension of @var{sigma} is the smallest dimension of
+    // @code{this}.  @var{U}, @var{V}, and @var{sigma} must already
+    // have the correct dimensions and are overwritten.
+    void svd(const RefSCMatrix &U,
+             const RefDiagSCMatrix &sigma,
+             const RefSCMatrix &V);
     //texi Solves @code{this} @var{x} = @var{v}.  Overwrites
     // @var{v} with @var{x}.
     double solve_lin(const RefSCVector& v) const;
@@ -309,6 +319,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void accumulate_symmetric_sum(const RefSCMatrix&) const;
     void accumulate_transform(const RefSCMatrix&,const RefSymmSCMatrix&) const;
     void accumulate_transform(const RefSCMatrix&,const RefDiagSCMatrix&) const;
+    void randomize() const;
     void assign(const RefSymmSCMatrix&) const;
     void scale(double) const;
     void assign(double) const;
@@ -394,6 +405,7 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     void set_element(int,double) const;
     void accumulate_element(int,double) const;
     double get_element(int) const;
+    void randomize() const;
     void assign(const RefDiagSCMatrix&) const;
     void scale(double) const;
     void assign(double) const;

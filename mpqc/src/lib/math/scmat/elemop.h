@@ -165,6 +165,22 @@ class SCElementScale: public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
+class SCElementRandomize: public SCElementOp {
+#   define CLASSNAME SCElementRandomize
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    double assign;
+  public:
+    SCElementRandomize();
+    SCElementRandomize(StateIn&);
+    ~SCElementRandomize();
+    int has_side_effects();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+};
+
 class SCElementAssign: public SCElementOp {
 #   define CLASSNAME SCElementAssign
 #   define HAVE_STATEIN_CTOR

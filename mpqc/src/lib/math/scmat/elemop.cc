@@ -636,6 +636,45 @@ SCElementAssign::has_side_effects()
 }
 
 /////////////////////////////////////////////////////////////////////////
+// SCElementRandomize members
+
+#define CLASSNAME SCElementRandomize
+#define PARENTS   public SCElementOp
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+SCElementRandomize::SCElementRandomize() {}
+SCElementRandomize::SCElementRandomize(StateIn&s):
+  SCElementOp(s)
+{
+}
+void
+SCElementRandomize::save_data_state(StateOut&s)
+{
+}
+void *
+SCElementRandomize::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+SCElementRandomize::~SCElementRandomize() {}
+void
+SCElementRandomize::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      i.set(drand48()*(drand48()<0.5?1.0:-1.0));
+    }
+}
+
+int
+SCElementRandomize::has_side_effects()
+{
+  return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////
 // SCElementShiftDiagonal members
 
 #define CLASSNAME SCElementShiftDiagonal

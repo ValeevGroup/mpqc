@@ -378,6 +378,13 @@ RefSCMatrix::copy() const
 }
 
 void
+RefSCMatrix::randomize() const
+{
+  require_nonnull();
+  pointer()->randomize();
+}
+
+void
 RefSCMatrix::assign(const RefSCMatrix&a) const
 {
   require_nonnull();
@@ -473,6 +480,17 @@ RefSCMatrix::operator *(double a) const
   RefSCMatrix r(copy());
   r.scale(a);
   return r;
+}
+
+void
+RefSCMatrix::svd(const RefSCMatrix &U,
+                 const RefDiagSCMatrix &sigma,
+                 const RefSCMatrix &V)
+{
+  require_nonnull();
+  RefSCMatrix c = clone();
+  c->assign(pointer());
+  c->svd_this(U.pointer(), sigma.pointer(), V.pointer());
 }
 
 double
@@ -845,6 +863,13 @@ RefSymmSCMatrix::copy() const
 }
 
 void
+RefSymmSCMatrix::randomize() const
+{
+  require_nonnull();
+  pointer()->randomize();
+}
+
+void
 RefSymmSCMatrix::assign(const RefSymmSCMatrix&a) const
 {
   require_nonnull();
@@ -1167,6 +1192,13 @@ RefDiagSCMatrix::copy() const
 }
 
 void
+RefDiagSCMatrix::randomize() const
+{
+  require_nonnull();
+  pointer()->randomize();
+}
+
+void
 RefDiagSCMatrix::assign(const RefDiagSCMatrix&a) const
 {
   require_nonnull();
@@ -1433,6 +1465,13 @@ RefSCVector::scalar_product(const RefSCVector&a) const
 {
   require_nonnull();
   return pointer()->scalar_product(a.pointer());
+}
+
+void
+RefSCVector::randomize() const
+{
+  require_nonnull();
+  pointer()->randomize();
 }
 
 void

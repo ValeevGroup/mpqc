@@ -176,6 +176,13 @@ SCMatrix::maxabs()
 }
 
 void
+SCMatrix::randomize()
+{
+  RefSCElementOp op = new SCElementRandomize();
+  this->element_op(op);
+}
+
+void
 SCMatrix::assign(double a)
 {
   RefSCElementOp op = new SCElementAssign(a);
@@ -323,6 +330,13 @@ SCMatrix::copy()
   return result;
 }
 
+void
+SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
+{
+  fprintf(stderr,"%s: SVD not implemented\n", class_name());
+  abort();
+}
+
 /////////////////////////////////////////////////////////////////////////
 // SymmSCMatrix member functions
 
@@ -367,6 +381,13 @@ SymmSCMatrix::maxabs()
   RefSCElementOp abop = op;
   this->element_op(abop);
   return op->result();
+}
+
+void
+SymmSCMatrix::randomize()
+{
+  RefSCElementOp op = new SCElementRandomize();
+  this->element_op(op);
 }
 
 void
@@ -539,6 +560,13 @@ DiagSCMatrix::maxabs()
 }
 
 void
+DiagSCMatrix::randomize()
+{
+  RefSCElementOp op = new SCElementRandomize();
+  this->element_op(op);
+}
+
+void
 DiagSCMatrix::assign(double a)
 {
   RefSCElementOp op = new SCElementAssign(a);
@@ -648,6 +676,13 @@ SCVector::maxabs()
   RefSCElementOp abop = op;
   this->element_op(abop);
   return op->result();
+}
+
+void
+SCVector::randomize()
+{
+  RefSCElementOp op = new SCElementRandomize();
+  this->element_op(op);
 }
 
 void

@@ -19,7 +19,7 @@ CXXSRC = \
          block.cc      blkiter.cc    elemop.cc     result.cc \
          matrix3.cc    vector3.cc    vector3_i.cc
 
-CSRC = cmatrix.c
+CSRC = cmatrix.c svd.c
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) 
 

@@ -6,6 +6,12 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 
+extern "C" {
+    int sing_(double *q, int *lq, int *iq, double *s, double *p,
+              int *lp, int *ip, double *a, int *la, int *m, int *n,
+              double *w);
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCMatrix member functions
 
@@ -536,6 +542,78 @@ LocalSCMatrix::trace()
   for (i=0; i < nrow(); i++)
     ret += rows[i][i];
   return ret;
+}
+
+void
+LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
+{
+  LocalSCMatrix* lU =
+    LocalSCMatrix::require_castdown(U,"LocalSCMatrix::svd_this");
+  LocalSCMatrix* lV =
+    LocalSCMatrix::require_castdown(V,"LocalSCMatrix::svd_this");
+  LocalDiagSCMatrix* lsigma =
+    LocalDiagSCMatrix::require_castdown(sigma,"LocalSCMatrix::svd_this");
+
+  RefSCDimension mdim = rowdim();
+  RefSCDimension ndim = coldim();
+  int m = mdim.n();
+  int n = ndim.n();
+
+  RefSCDimension pdim = ((m<n)?mdim:ndim);
+  if (m == n) {
+      // make sure I get the right dimension if m equals n
+      pdim = U->coldim();
+    }
+  int p = pdim.n();
+
+  if (   U->rowdim() != mdim
+      || U->coldim() != pdim
+      || V->rowdim() != ndim
+      || V->coldim() != pdim
+      || sigma->dim() != pdim) {
+      fprintf(stderr,"LocalSCMatrix: svd_this: dimension mismatch\n");
+      abort();
+    }
+
+  // form a fortran style matrix for the SVD routines
+  double *dA = new double[m*n];
+  double *dU = new double[m*p];
+  double *dV = new double[n*p];
+  double *dsigma = new double[n];
+  double *w = new double[(3*p-1>m)?(3*p-1):m];
+
+  int i,j;
+  for (i=0; i<m; i++) {
+      for (j=0; j<n; j++) {
+          dA[i + j*m] = this->block->data[i*n + j];
+        }
+    }
+
+  int three = 3;
+
+  sing_(dU, &m, &three, dsigma, dV, &n, &three, dA, &m, &m, &n, w);
+
+  for (i=0; i<m; i++) {
+      for (j=0; j<p; j++) {
+          lU->block->data[i*p + j] = dU[i + j*m];
+        }
+    }
+
+  for (i=0; i<n; i++) {
+      for (j=0; j<p; j++) {
+          lV->block->data[i*p + j] = dV[i + j*n];
+        }
+    }
+
+  for (i=0; i<p; i++) {
+      lsigma->block->data[i] = dsigma[i];
+    }
+
+  delete[] dA;
+  delete[] dU;
+  delete[] dV;
+  delete[] dsigma;
+  delete[] w;
 }
 
 double

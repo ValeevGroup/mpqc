@@ -79,6 +79,8 @@ class SCVector: public SavableState {
     virtual double maxabs();
     //texi Normalize this.
     virtual void normalize();
+    //texi Assign each element to a random number between -1 and 1
+    virtual void randomize();
     //texi Assign all elements of this to @var{val}.
     virtual void assign(double val);
     //texi Assign element @var{i} to @var{v[i]} for all @var{i}.
@@ -138,6 +140,8 @@ class SCMatrix: public SavableState {
     virtual int ncol();
     //texi Return the maximum absolute value element.
     virtual double maxabs();
+    //texi Assign each element to a random number between -1 and 1
+    virtual void randomize();
     //texi Set all elements to @var{val}.
     virtual void assign(double val);
     //texi Assign element @var{i}, @var{j} to
@@ -215,6 +219,9 @@ class SCMatrix: public SavableState {
     //texi Return the determinant of @code{this}.  @code{this} is overwritten.
     virtual double determ_this() = 0;
 
+    //texi Compute the singular value decomposition for @code{this},
+    // possibly destroying this.
+    virtual void svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V);
     virtual double solve_this(SCVector*) = 0;
     virtual void gen_invert_this() = 0;
 
@@ -245,6 +252,8 @@ class SymmSCMatrix: public SavableState {
     void save_data_state(StateOut&);
     //texi Return the maximum absolute value element of this vector.
     virtual double maxabs();
+    //texi Assign each element to a random number between -1 and 1
+    virtual void randomize();
     //texi Set all elements to @var{val}.
     virtual void assign(double val);
     //texi Assign element @var{i}, @var{j} to
@@ -353,6 +362,8 @@ class DiagSCMatrix: public SavableState {
 
     //texi Return the maximum absolute value element of this vector.
     virtual double maxabs();
+    //texi Assign each element to a random number between -1 and 1
+    virtual void randomize();
     //texi Set all elements to @var{val}.
     virtual void assign(double val);
     //texi Assign element @var{i}, @var{i} to

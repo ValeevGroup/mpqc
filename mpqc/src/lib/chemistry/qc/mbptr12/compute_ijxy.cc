@@ -1,5 +1,5 @@
 //
-// compute_ixjy.cc
+// compute_ijxy.cc
 //
 // Copyright (C) 2004 Edward Valeev
 //
@@ -40,16 +40,16 @@
 #include <util/state/state_bin.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
-#include <chemistry/qc/mbptr12/transform_ixjy.h>
+#include <chemistry/qc/mbptr12/transform_ijxy.h>
 #include <chemistry/qc/mbptr12/blas.h>
-#include <chemistry/qc/mbptr12/transform_13inds.h>
+#include <chemistry/qc/mbptr12/transform_12inds.h>
 
 using namespace std;
 using namespace sc;
 
-#define SINGLE_THREAD_E13   0
+#define SINGLE_THREAD_E12   0
 #define PRINT2Q 0
-#define PRINT3Q 1
+#define PRINT3Q 0
 #define PRINT4Q 0
 #define PRINT_NUM_TE_TYPES 1
 #define WRITE_DOUBLES 0
@@ -59,7 +59,7 @@ using namespace sc;
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
 void
-TwoBodyMOIntsTransform_ixjy::compute()
+TwoBodyMOIntsTransform_ijxy::compute()
 {
   init_acc();
   if (ints_acc_->is_committed())
@@ -70,6 +70,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
   Ref<GaussianBasisSet> bs2 = space2_->basis();
   Ref<GaussianBasisSet> bs3 = space3_->basis();
   Ref<GaussianBasisSet> bs4 = space4_->basis();
+  const bool bs3_eq_bs4 = (bs3 == bs4);
   int rank1 = space1_->rank();
   int rank2 = space2_->rank();
   int rank3 = space3_->rank();
@@ -102,7 +103,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
   if (debug_ >= 0)
     ExEnv::out0() << endl << indent
-                  << "Entered " << name_ << " integrals evaluator (type ixjy)" << endl;
+                  << "Entered " << name_ << " integrals evaluator (type ijxy)" << endl;
   if (debug_ >= 1)
     ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
@@ -164,13 +165,13 @@ TwoBodyMOIntsTransform_ixjy::compute()
   vector<int> mosym2 = space2_->mosym();
   vector<int> mosym3 = space3_->mosym();
   vector<int> mosym4 = space4_->mosym();
-  double** vector2 = new double*[nbasis2];
+  double** vector3 = new double*[nbasis3];
   double** vector4 = new double*[nbasis4];
-  vector2[0] = new double[rank2*nbasis2];
+  vector3[0] = new double[rank3*nbasis3];
   vector4[0] = new double[rank4*nbasis4];
-  for(int i=1; i<nbasis2; i++) vector2[i] = vector2[i-1] + rank2;
+  for(int i=1; i<nbasis3; i++) vector3[i] = vector3[i-1] + rank3;
   for(int i=1; i<nbasis4; i++) vector4[i] = vector4[i-1] + rank4;
-  space2_->coefs().convert(vector2);
+  space3_->coefs().convert(vector3);
   space4_->coefs().convert(vector4);
 
   /////////////////////////////////////
@@ -196,9 +197,9 @@ TwoBodyMOIntsTransform_ixjy::compute()
       integral->storage_used()) << endl;
 
   Ref<ThreadLock> lock = thr_->new_lock();
-  TwoBodyMOIntsTransform_13Inds** e13thread = new TwoBodyMOIntsTransform_13Inds*[thr_->nthread()];
+  TwoBodyMOIntsTransform_12Inds** e12thread = new TwoBodyMOIntsTransform_12Inds*[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    e13thread[i] = new TwoBodyMOIntsTransform_13Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug_);
+    e12thread[i] = new TwoBodyMOIntsTransform_12Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug_);
   }
   
   /*-----------------------------------
@@ -237,10 +238,10 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
     // Allocate (and initialize) some arrays
 
-    double* integral_ijsq = (double*) mem_->localdata();
+    double* integral_ijrs = (double*) mem_->localdata();
     //bzerofast(integral_ijsx, (num_te_types_*nij*memgrp_blocksize/sizeof(double)));
-    memset(integral_ijsq, 0, num_te_types_*nij*memgrp_blocksize);
-    integral_ijsq = 0;
+    memset(integral_ijrs, 0, num_te_types_*nij*memgrp_blocksize);
+    integral_ijrs = 0;
     mem_->sync();
     ExEnv::out0() << indent
 		  << scprintf("Begin loop over shells (ints, 1+2 q.t.)") << endl;
@@ -248,14 +249,14 @@ TwoBodyMOIntsTransform_ixjy::compute()
     // Do the two electron integrals and the first two quarter transformations
     tim_enter("ints+1qt+2qt");
     for (int i=0; i<thr_->nthread(); i++) {
-      e13thread[i]->set_i_offset(i_offset);
-      e13thread[i]->set_ni(ni);
-      thr_->add_thread(i,e13thread[i]);
-#     if SINGLE_THREAD_E13
-      e13thread[i]->run();
+      e12thread[i]->set_i_offset(i_offset);
+      e12thread[i]->set_ni(ni);
+      thr_->add_thread(i,e12thread[i]);
+#     if SINGLE_THREAD_E12
+      e12thread[i]->run();
 #     endif
     }
-#   if !SINGLE_THREAD_E13
+#   if !SINGLE_THREAD_E12
     thr_->start_threads();
     thr_->wait_threads();
 #   endif
@@ -263,22 +264,51 @@ TwoBodyMOIntsTransform_ixjy::compute()
     ExEnv::out0() << indent << "End of loop over shells" << endl;
 
     mem_->sync();  // Make sure ijsq is complete on each node before continuing
-    integral_ijsq = (double*) mem_->localdata();
+    integral_ijrs = (double*) mem_->localdata();
+    
+    // If bs3_eq_bs4 -- only s>r integrals are produced
+    // Produce ijsr integrals, if needed
+    if (bs3_eq_bs4) {
+      for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+        for (int i = 0; i<ni; i++) {
+          for (int j = 0; j<rank2; j++) {
+            int ij = i*rank2+j;
+            int ij_local = ij/nproc;
+            if (ij%nproc == me) {
+              double* ijrs_ints = (double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              const double* rs_ptr = ijrs_ints;
+              double* sr_ptr = ijrs_ints;
+              for (int r = 0; r<nbasis3; r++) {
+                const int smin = r+1;
+                rs_ptr += smin;
+                sr_ptr += smin*nbasis3;
+                for (int s = smin; s<nbasis4; s++) {
+                  const double ijrs = *rs_ptr++;
+                  *sr_ptr = ijrs;
+                  sr_ptr += nbasis3;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
 
 #if PRINT2Q
     {
       for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
         for (int i = 0; i<ni; i++) {
-          for (int q = 0; q<nbasis2; q++) {
-            for (int j = 0; j<rank3; j++) {
-              int ij = i*rank3+j;
-              int ij_local = ij/nproc;
-              if (ij%nproc == me) {
-                const double* ijsq_ints = (const double*) ((size_t)integral_ijsq + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+          for (int j = 0; j<rank2; j++) {
+            int ij = i*rank2+j;
+            int ij_local = ij/nproc;
+            if (ij%nproc == me) {
+              const double* ijrs_ints = (const double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              for (int r = 0; r<nbasis3; r++) {
                 for (int s = 0; s<nbasis4; s++) {
-                  double value = ijsx_ints[s*rank2+x];
+                  double value = ijrs_ints[r*nbasis4+s];
                   printf("2Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orbital,x,j,s,value);
+                         te_type,i+restart_orbital,j,r,s,value);
                 }
               }
             }
@@ -291,54 +321,55 @@ TwoBodyMOIntsTransform_ixjy::compute()
     // Third quarter transform
     tim_enter("3. q.t.");
     // Begin third quarter transformation;
-    // from (iq|js) stored as ijsq
-    // generate (ix|js) stored as ijsx
+    // from (ij|rs) stored as ijrs
+    // generate (ij|xs) stored as ijxs
 
-    const int sx_size = nbasis4 * rank2 * sizeof(double);
-    double* sx_ints = new double[nbasis4 * rank2];
+    const int xs_size = rank3 * nbasis4 * sizeof(double);
+    double* xs_ints = new double[rank3*nbasis4];
     for (int i = 0; i<ni; i++) {
-      for (int j = 0; j<rank3; j++) {
-        int ij = i*rank3+j;
+      for (int j = 0; j<rank2; j++) {
+        int ij = i*rank2+j;
         int ij_local = ij/nproc;
         if (ij%nproc == me) {
 
           for(int te_type=0; te_type<num_te_types_; te_type++) {
 
-            const double *sq_ptr = (const double*) ((size_t)integral_ijsq + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+            const double *rs_ptr = (const double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
 
-            // fourth quarter transform
-            // sx = sq * qx
+            // third quarter transform
+            // xs = xr * rq
             const char notransp = 'n';
+            const char transp = 't';
             const double one = 1.0;
             const double zero = 0.0;
-            F77_DGEMM(&notransp,&notransp,&rank2,&nbasis4,&nbasis2,&one,vector2[0],&rank2,
-                      sq_ptr,&nbasis2,&zero,sx_ints,&rank2);
+            F77_DGEMM(&notransp,&transp,&nbasis4,&rank3,&nbasis3,&one,rs_ptr,&nbasis4,
+                      vector3[0],&rank3,&zero,xs_ints,&nbasis4);
 
             // copy the result back to integrals_ijsq
-            memcpy((void*)sx_ints,(const void*)sq_ptr,sx_size);
+            memcpy((void*)xs_ints,(const void*)rs_ptr,xs_size);
           }
         }
       }
     }
-    delete[] sx_ints;
+    delete[] xs_ints;
     tim_exit("3. q.t.");
-    integral_ijsq = 0;
+    integral_ijrs = 0;
 
-    double* integral_ijsx = (double*) mem_->localdata();
+    double* integral_ijxs = (double*) mem_->localdata();
 #if PRINT3Q
     {
       for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
         for (int i = 0; i<ni; i++) {
-          for (int x = 0; x<rank2; x++) {
-            for (int j = 0; j<rank3; j++) {
-              int ij = i*rank3+j;
+            for (int j = 0; j<rank2; j++) {
+              int ij = i*rank2+j;
               int ij_local = ij/nproc;
               if (ij%nproc == me) {
-                const double* ijsx_ints = (const double*) ((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
-                for (int s = 0; s<nbasis4; s++) {
-                  double value = ijsx_ints[s*rank2+x];
+                const double* ijxs_ints = (const double*) ((size_t)integral_ijxs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+                for (int x = 0; x<rank3; x++) {
+                  for (int s = 0; s<nbasis4; s++) {
+                  double value = ijxs_ints[x*nbasis4+s];
                   printf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orbital,x,j,s,value);
+                         te_type,i+restart_orbital,j,x,s,value);
                 }
               }
             }
@@ -358,24 +389,23 @@ TwoBodyMOIntsTransform_ixjy::compute()
     for(int te_type=0; te_type<num_te_types_; te_type++) {
 
       for (int i = 0; i<ni; i++) {
-        for (int j = 0; j<rank3; j++) {
-          int ij = i*rank3+j;
+        for (int j = 0; j<rank2; j++) {
+          int ij = i*rank2+j;
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
 
-            const double *sx_ptr = (const double*) ((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+            const double *xs_ptr = (const double*) ((size_t)integral_ijxs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
 
             // fourth quarter transform
-            // xy = sx^t * sy
+            // xy = xs * sy
             const char notransp = 'n';
-            const char transp = 't';
             const double one = 1.0;
             const double zero = 0.0;
-            F77_DGEMM(&notransp,&transp,&rank4,&rank2,&nbasis4,&one,vector4[0],&rank4,
-                      sx_ptr,&rank2,&zero,ijxy_ints,&rank4);
+            F77_DGEMM(&notransp,&notransp,&rank4,&rank3,&nbasis4,&one,vector4[0],&rank4,
+                      xs_ptr,&nbasis4,&zero,ijxy_ints,&rank4);
 
             // copy the result back to integrals_ijsx
-            memcpy((void*)sx_ptr,(const void*)ijxy_ints,xy_size);
+            memcpy((void*)xs_ptr,(const void*)ijxy_ints,xy_size);
           }
         }
       }
@@ -383,21 +413,21 @@ TwoBodyMOIntsTransform_ixjy::compute()
     delete[] ijxy_ints;
     tim_exit("4. q.t.");
 
-    integral_ijsx = 0;
+    integral_ijxs = 0;
     double* integral_ijxy = (double*) mem_->localdata();
 
     // Zero out nonsymmetric integrals -- Pitzer theorem in action
     {
       for (int i = 0; i<ni; i++) {
-        for (int j = 0; j<rank3; j++) {
-          int ij = i*rank3+j;
+        for (int j = 0; j<rank2; j++) {
+          int ij = i*rank2+j;
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
-            const int ij_sym = mosym1[i+restart_orbital] ^ mosym3[j];
+            const int ij_sym = mosym1[i+restart_orbital] ^ mosym2[j];
             for(int te_type=0; te_type<num_te_types_; te_type++) {
               double* ijxy_ptr = (double*) ((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
-              for (int x = 0; x<rank2; x++) {
-                const int ijx_sym = ij_sym ^ mosym2[x];
+              for (int x = 0; x<rank3; x++) {
+                const int ijx_sym = ij_sym ^ mosym3[x];
                 for (int y = 0; y<rank4; y++, ijxy_ptr++) {
                   if (ijx_sym ^ mosym4[y])
                     *ijxy_ptr = 0.0;
@@ -413,16 +443,16 @@ TwoBodyMOIntsTransform_ixjy::compute()
     {
       for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
         for (int i = 0; i<ni; i++) {
-          for (int x = 0; x<rank2; x++) {
-            for (int j = 0; j<rank3; j++) {
-              int ij = i*rank3+j;
-              int ij_local = ij/nproc;
-              if (ij%nproc == me) {
-                const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+          for (int j = 0; j<rank2; j++) {
+            int ij = i*rank2+j;
+            int ij_local = ij/nproc;
+            if (ij%nproc == me) {
+              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              for (int x = 0; x<rank3; x++) {
                 for (int y = 0; y<rank4; y++) {
                   double value = ijxy_ints[x*rank4+y];
                   printf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orbital,x,j,y,value);
+                         te_type,i+restart_orbital,j,x,y,value);
                 }
               }
             }
@@ -456,11 +486,11 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
   
   for (int i=0; i<thr_->nthread(); i++) {
-    delete e13thread[i];
+    delete e12thread[i];
   }
-  delete[] e13thread;
+  delete[] e12thread;
   delete[] tbints; tbints = 0;
-  delete[] vector2[0]; delete[] vector2;
+  delete[] vector3[0]; delete[] vector3;
   delete[] vector4[0]; delete[] vector4;
 
   tim_exit("r12a-sbs-mem");

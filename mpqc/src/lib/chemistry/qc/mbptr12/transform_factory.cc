@@ -124,10 +124,10 @@ MOIntsTransformFactory::twobody_transform(const std::string& name)
   Ref<TwoBodyMOIntsTransform> result;
 
   
-  if (space1_ == space3_ && space2_->rank() <= space3_->rank()) {
+  /*if (space1_ == space3_ && space2_->rank() <= space2_->basis()->nbasis()) {
     result = new TwoBodyMOIntsTransform_ikjy(name,this,space1_,space2_,space3_,space4_);
   }
-  else if (space1_ == space3_) {
+  else */if (space1_ == space3_) {
     result = new TwoBodyMOIntsTransform_ixjy(name,this,space1_,space2_,space3_,space4_);
   }
   else if (space1_ == space2_) {

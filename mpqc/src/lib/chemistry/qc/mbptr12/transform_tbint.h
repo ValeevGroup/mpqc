@@ -104,7 +104,7 @@ protected:
 
   // Compute the number of ij-pairs per this task
   static int compute_nij(const int rank_i, const int rank_j, const int nproc, const int me);
-
+  
 public:
 
   TwoBodyMOIntsTransform(StateIn&);
@@ -140,7 +140,11 @@ public:
   bool dynamic() const;
   /// Returns the number of types of two body integrals computed
   int num_te_types() const;
-
+  /** Returns the number of bytes allocated for each ij-block of integrals of one type
+      in MemoryGrp. It's guaranteed to be divisible by sizeof(double).
+    */
+  virtual const size_t memgrp_blksize() const =0;
+  
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
 

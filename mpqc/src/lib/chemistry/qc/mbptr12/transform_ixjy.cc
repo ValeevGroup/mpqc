@@ -120,6 +120,17 @@ TwoBodyMOIntsTransform_ixjy::compute_transform_dynamic_memory_(int ni) const
   return memsize;
 }
 
+const size_t
+TwoBodyMOIntsTransform_ixjy::memgrp_blksize() const
+{
+  const int nbasis2 = space2_->basis()->nbasis();
+  const int rank2 = space2_->rank();
+  const int dim2 = (nbasis2 > rank2) ? nbasis2 : rank2;
+  const int nbasis4 = space4_->basis()->nbasis();
+  const int rank4 = space4_->rank();
+  const int dim4 = (nbasis4 > rank4) ? nbasis4 : rank4;
+  return dim2*dim4*sizeof(double);
+}
 
 void
 TwoBodyMOIntsTransform_ixjy::init_acc()
@@ -128,7 +139,8 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
     return;
 
   int nij = compute_nij(batchsize_, space3_->rank(), msg_->n(), msg_->me());
-  alloc_mem((size_t)num_te_types_*nij*space2_->rank()*space4_->rank()*sizeof(double));
+
+  alloc_mem((size_t)num_te_types_*nij*memgrp_blksize());
 
   // R12IntsAcc cannot work yet in cases when i and j are different spaces
   if (space1_ != space3_)
@@ -173,7 +185,7 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
   }
 }
 
-void
+/*void
 TwoBodyMOIntsTransform_ixjy::compute()
 {
   init_acc();
@@ -185,7 +197,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
   Ref<TwoBodyMOIntsTransform> this_tform = this;
   TwoBodyMOIntsTransform_123Inds* tform_123 = new TwoBodyMOIntsTransform_123Inds(this_tform,0,1,lock,tbint,-100.0,0);
   tform_123->run();
-}
+}*/
 
 /////////////////////////////////////////////////////////////////////////////
 

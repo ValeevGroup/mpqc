@@ -49,7 +49,7 @@ class TwoBodyMOIntsTransform_ikjy : public TwoBodyMOIntsTransform {
   void init_acc();
   // Compute required dynamic memory for a given batch size
   distsize_t compute_transform_dynamic_memory_(int ni) const;
-
+  
 public:
 
   TwoBodyMOIntsTransform_ikjy(StateIn&);
@@ -59,6 +59,10 @@ public:
   ~TwoBodyMOIntsTransform_ikjy();
 
   void save_data_state(StateOut&);
+
+  /** Returns the number of bytes allocated for each ij-block of integrals of one type
+      in MemoryGrp */
+  const size_t memgrp_blksize() const;
 
   /// Computes transformed integrals
   void compute();

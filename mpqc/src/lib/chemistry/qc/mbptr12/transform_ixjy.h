@@ -60,6 +60,10 @@ public:
 
   void save_data_state(StateOut&);
 
+  /** Returns the number of bytes allocated for each ij-block of integrals of one type
+    in MemoryGrp */
+  const size_t memgrp_blksize() const;
+
   /// Computes transformed integrals
   void compute();
 };

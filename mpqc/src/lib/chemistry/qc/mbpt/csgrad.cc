@@ -368,8 +368,9 @@ MBPT2::compute_cs_grad()
   evals = new double[nbasis];
   double** scf_vector = new double*[nbasis];
   int idoc=0, ivir=0;
+  const double epsilon = 1.0e-4;
   for (i=0; i<nbasis; i++) {
-    if (occ(i) == 2.0) {
+    if (occ(i) >= 2.0 - epsilon) {
       evals[idoc] = evalmat(i);
       scf_vector[idoc] = &scf_vector_dat[i*nbasis];
       idoc++;
@@ -1715,14 +1716,14 @@ MBPT2::compute_cs_grad()
       }
 
     cout<<endl<<indent
-        <<scprintf("RHF energy [au]:                   %13.8lf\n", escf);
+        <<scprintf("RHF energy [au]:                   %17.12lf\n", escf);
     cout<<indent
-        <<scprintf("MP2 correlation energy [au]:       %13.8lf\n", ecorr_mp2);
+        <<scprintf("MP2 correlation energy [au]:       %17.12lf\n", ecorr_mp2);
     cout<<indent
-        <<scprintf("MP2 energy [au]:                   %13.8lf\n", emp2);
+        <<scprintf("MP2 energy [au]:                   %17.12lf\n", emp2);
     cout.flush();
     }
-  if (method_ && !strcmp(method_,"mp")) {
+  if (method_ && strcmp(method_,"mp")) {
     cout << node0 << indent
          << "MBPT2: bad method for closed shell case: " << method_
          << ", using mp" << endl;

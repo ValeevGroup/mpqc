@@ -31,7 +31,7 @@ ENABLESHARED = @ENABLESHARED@
 ifeq ($(ENABLESHARED),yes)
   LIBTOOL= $(SHELL) $(TOPDIR)/bin/sc-libtool
   LTLINK = $(LIBTOOL) --mode=link
-  ifneq ($(BUILDID),"")
+  ifneq ($(BUILDID),)
     LTLINKLIBOPTS = -rpath $(libdir) -release $(BUILDID) -version-info $(SC_SO_VERSION)
   else
     LTLINKLIBOPTS = -rpath $(libdir) -version-info $(SC_SO_VERSION)

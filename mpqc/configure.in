@@ -1,6 +1,6 @@
-define([sc_version],[2.0.1])
-define([sc_buildid],[""])
-define([sc_so_version],[1:0:0])
+define([sc_version],[2.0.2])
+define([sc_buildid],[pre])
+define([sc_so_version],[2:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -14,9 +14,15 @@ AC_CANONICAL_SYSTEM
 
 AC_DEFINE_UNQUOTED(HOST_ARCH, "$host")
 AC_DEFINE_UNQUOTED(TARGET_ARCH, "$target")
-define([default_prefix],builtin(format,"/usr/local/mpqc/%s",sc_version))
-AC_PREFIX_DEFAULT(default_prefix)
 
+define([default_prefix_dash],ifelse(sc_buildid, ,[],[-]))
+ifelse(sc_buildid, ,
+  define([default_prefix],builtin(format,"/usr/local/mpqc/%s",sc_version)),
+  define([default_prefix],builtin(format,"/usr/local/mpqc/%s%s%s",
+                          sc_version,default_prefix_dash,sc_buildid)))
+
+AC_PREFIX_DEFAULT(default_prefix)
+[default_prefix: ]default_prefix
 SC_VERSION=sc_version
 AC_DEFINE_UNQUOTED(SC_VERSION, "$SC_VERSION")
 AC_SUBST(SC_VERSION)
@@ -283,13 +289,13 @@ esac
 )
 AC_SUBST(DOXYGEN_MAN)
 
-BUILDID=sc_buildid
+BUILDID="sc_buildid"
 AC_ARG_WITH(build-id,
 [  --with-build-id         Gives an identifier for the build.],
 BUILDID=$withval
 )
 AC_SUBST(BUILDID)
-AC_DEFINE_UNQUOTED(SC_BUILDID,sc_buildid)
+AC_DEFINE_UNQUOTED(SC_BUILDID,"sc_buildid")
 
 AC_ARG_WITH(cc,
 [  --with-cc               Gives the name of the C compiler to use.],
@@ -334,8 +340,7 @@ AC_ARG_WITH(ld,
 LD=$withval
 )
 
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-if test $prefix = default_prefix; then
+if test $prefix = default_prefix -o $prefix = NONE; then
   scdatadir=$datadir
 else
   scdatadir=$datadir/mpqc/$SC_VERSION
@@ -344,8 +349,6 @@ AC_ARG_WITH(sc-datadir,
 [  --with-sc-datadir       Specifies arch-independent install subdir.],
 scdatadir=$withval
 )
-dnl scdatadir contains a quoted reference to prefix which must be resolved:
-eval scdatadir=$scdatadir
 AC_SUBST(scdatadir)
 
 AC_ARG_WITH(include,
@@ -698,7 +701,7 @@ dnl undefined symbol problems.
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("checking for C++ typename keyword")
+AC_MSG_CHECKING("for C++ typename keyword")
 AC_TRY_LINK([
   class X { public: typedef int t; X(){} };
   template <class T> void f(T i) {typename T::t x;}
@@ -732,7 +735,7 @@ dnl ----------- check for namespace std ---------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("checking for namespace std")
+AC_MSG_CHECKING("for namespace std")
 AC_TRY_LINK([
 #include <$iostream>
 using namespace std;
@@ -754,7 +757,7 @@ dnl ----------- check for GNU libc++-v3 prerelease bug ---------------
 if test X$GXX = Xyes; then
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("checking for GNU libc++-v3 prerelease bug")
+AC_MSG_CHECKING("for GNU libc++-v3 prerelease bug")
 AC_TRY_LINK([
 #include <stdio.h>
 #include <$iostream>
@@ -1406,10 +1409,10 @@ AC_SUBST(SCLIBS)
 dnl --------- Define the library directory macros. ---------
 
 if test "$enableproduction" = "no"; then
-AC_DEFINE_UNQUOTED(SRC_SCLIBDIR, "$srcdir/lib")
+AC_DEFINE_DIR(SRC_SCLIBDIR, srcdir/lib)
 fi
-AC_DEFINE_UNQUOTED(INSTALLED_SCLIBDIR, "$prefix/lib")
-AC_DEFINE_UNQUOTED(SCDATADIR, "$scdatadir")
+AC_DEFINE_DIR(INSTALLED_SCLIBDIR, prefix/lib)
+AC_DEFINE_DIR(SCDATADIR, scdatadir)
 
 dnl --------- Create the stub Makefiles. ---------
 

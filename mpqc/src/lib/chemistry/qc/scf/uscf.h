@@ -96,11 +96,11 @@ class UnrestrictedSCF: public SCF {
     RefTwoBodyInt tbi_;
     
     RefSymmSCMatrix densa_;
-    RefSymmSCMatrix densb_;;
+    RefSymmSCMatrix densb_;
     RefSymmSCMatrix gmata_;
     RefSymmSCMatrix gmatb_;
     RefSymmSCMatrix diff_densa_;
-    RefSymmSCMatrix diff_densb_;;
+    RefSymmSCMatrix diff_densb_;
 
     void set_occupations(const RefDiagSCMatrix&);
     void set_occupations(const RefDiagSCMatrix&, const RefDiagSCMatrix&);

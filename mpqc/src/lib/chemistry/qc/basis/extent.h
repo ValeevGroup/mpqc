@@ -47,6 +47,7 @@ class ShellExtent: public RefCount {
     const int *n() const { return n_; }
     int n(int ixyz) const { return n_[ixyz]; }
     double lower(int ixyz) const { return lower_[ixyz]; }
+    double upper(int ixyz) const { return resolution_*n_[ixyz] + lower_[ixyz]; }
     double resolution() const { return resolution_; }
 };
 

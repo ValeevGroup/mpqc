@@ -336,7 +336,7 @@ R12IntEvalInfo::construct_ortho_comp_()
    // Compute orthogonalizer for the RI basis
    //
     
-   // Convert blocked basisdim into a nonblocked basisdim
+   // Convert blocked overlap into a nonblocked overlap
    integral_aux->set_basis(ri_bs);
    Ref<PetiteList> plist_ri = integral_aux->petite_list();
    RefSCMatrix ao2so_ri = plist_ri->aotoso();
@@ -344,7 +344,8 @@ R12IntEvalInfo::construct_ortho_comp_()
    s12_nb->convert(s12);
    s12 = 0;
 
-   // MOs (in terms of AOs) "transformed" into the RI AO basis
+   // MOs (in terms of AOs) "transformed" into the RI AO basis:
+   // C2 = C1 * S12 * X2 * X2^t
    RefSCMatrix scf_vec_ri_bm = scf_vec * s12_nb * orthog_ri_ * orthog_ri_.t();  
 
    // Transform MOs into the auxiliary SO basis
@@ -396,18 +397,18 @@ R12IntEvalInfo::construct_ortho_comp_()
    }
     
    //
-   // SVD-orthonormalize RI-BS vectors from which OBS has already been projected out
+   // Orthonormalize RI-BS vectors from which OBS has already been projected out
    //
    RefSymmSCMatrix UtSU(oso_ri.rowdim(), so_matrixkit);
    UtSU.assign(0.0);
    UtSU.accumulate_transform(oso_ri, overlap_ri_);
-   OverlapOrthog svdorthog(ref_->orthog_method(),
-			   UtSU,
-			   so_matrixkit,
-			   ref_->lindep_tol(),
-			   0);
+   OverlapOrthog riorthog(ref_->orthog_method(),
+                          UtSU,
+                          so_matrixkit,
+                          ref_->lindep_tol(),
+                          0);
    
-   oso_ri = svdorthog.basis_to_orthog_basis() * oso_ri;
+   oso_ri = riorthog.basis_to_orthog_basis() * oso_ri;
    oso_ri = oso_ri.t();
    RefSCDimension osodim_ri = oso_ri.coldim();
    orthog_ri_ = plist_ri->evecs_to_AO_basis(oso_ri);

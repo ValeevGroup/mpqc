@@ -15,12 +15,36 @@ struct iclass {
     int done;
 };
 
-struct base_eri{
+struct base_eri {
     int i;
     int j;
-    int  k;
-    int  l;
+    int k;
+    int l;
     double val;
+};
+
+struct shell {
+    int shl;
+    int atom;
+    int nc;
+    double Z;
+    GaussianShell *gs;
+    Point& p;
+
+    shell(int a, int s, int n, GaussianBasisSet& gbs) :
+      p(gbs.molecule()->atom(a).point())
+    {
+      atom=a;
+      shl=s;
+      nc=n;
+      gs = &gbs(s);
+      Z = gbs.molecule()->atom(a).element().charge();
+    }
+
+    int am() const { return gs->am(nc); }
+    double exp(int prim) const { return gs->exponent(prim); }
+    double coef(int prim) const { return gs->coefficient_unnorm(nc,prim); }
+    double nprim() const { return gs->nprimitive(); }
 };
 
 class FJTable {
@@ -59,6 +83,9 @@ class TwoBodyIntJF
     FJTable fjt;
     
     void init();
+    void List_HRR(iclass*, int[4], int&, double*&);
+    void Top_VRR(int, iclass*, iclass*, int&, double*&);
+    void Init_VRR(iclass*, iclass*, int);
 
   public:
     TwoBodyIntJF(const RefGaussianBasisSet&);

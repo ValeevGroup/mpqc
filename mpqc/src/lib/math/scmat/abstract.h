@@ -44,14 +44,9 @@ class SymmSCMatrix;
 class DiagSCMatrix;
 class SCVector;
 
-class SSRefSCElementOp;
-typedef class SSRefSCElementOp RefSCElementOp;
-
-class SSRefSCElementOp2;
-typedef class SSRefSCElementOp2 RefSCElementOp2;
-
-class SSRefSCElementOp3;
-typedef class SSRefSCElementOp3 RefSCElementOp3;
+SavableState_REF_fwddec(SCElementOp);
+SavableState_REF_fwddec(SCElementOp2);
+SavableState_REF_fwddec(SCElementOp3);
 
 class RefSCDimension;
 

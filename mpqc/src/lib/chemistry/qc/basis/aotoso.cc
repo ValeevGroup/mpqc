@@ -408,6 +408,8 @@ PetiteList::aotoso()
               ct.gamma(ir).symbol());
       fprintf(stderr,"  only found %d out of %d SO's\n",
               saoelem[i], nbf_in_ir_[ir]);
+      SOs[i].print("");
+
       abort();
 
     } else if (saoelem[i] > nbf_in_ir_[ir]) {
@@ -418,6 +420,7 @@ PetiteList::aotoso()
               ct.gamma(ir).symbol());
       fprintf(stderr,"  found %d SO's, but there should only be %d\n",
               saoelem[i], nbf_in_ir_[ir]);
+      SOs[i].print("");
       abort();
     }
   }

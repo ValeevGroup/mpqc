@@ -5,6 +5,8 @@
 #ifndef _chemistry_qc_psi_file11_h
 #define _chemistry_qc_psi_file11_h
 
+using namespace std;
+
 #include <fstream>
 #include <string>
 #include<util/ref/ref.h>

@@ -5,6 +5,7 @@
 
 #include <string>
 #include <string.h>
+#include <stdlib.h>
 #include <scconfig.h>
 #include <util/ref/ref.h>
 #include <util/keyval/keyval.h>
@@ -132,6 +133,7 @@ int PsiExEnv::run_psi()
     return errcod;
   if (errcod = run_psi_module("psi"))
     return errcod;
+  return 0;
 }
 
 int PsiExEnv::run_psi_module(char *module)
@@ -146,7 +148,7 @@ int PsiExEnv::run_psi_module(char *module)
   return errcod;
 }
 
-void PsiExEnv::print(std::ostream&o=ExEnv::out0()) const
+void PsiExEnv::print(std::ostream&o) const
 {
   o << endl;
   o << indent << "PsiExEnv:" << endl << incindent;

@@ -40,7 +40,7 @@ PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval):
   int bytes = keyval->intvalue("memory");
   if (bytes <= 2000000)
     bytes = 2000000;
-  int bytes_str_len = (int)ceil(log10(bytes));
+  int bytes_str_len = (int)ceil(log10((long double)bytes));
   memory_ = new char[bytes_str_len+5];
   sprintf(memory_,"(%ld B)",bytes);
 }

@@ -6,6 +6,8 @@
 #ifndef _chemistry_qc_psi_exenv_h
 #define _chemistry_qc_psi_exenv_h
 
+using namespace std;
+
 #include <string>
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/psi/psifile11.h>

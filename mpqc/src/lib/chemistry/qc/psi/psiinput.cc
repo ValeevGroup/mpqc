@@ -188,7 +188,7 @@ PsiInput::write_basis(const Ref<GaussianBasisSet>& basis)
       if (name[i] == ' ')
 	name[i] = '_';
 
-    char *basisname = new char[strlen(basis->name()) + ((int)ceil(log10(uatom+2))) + 5];
+    char *basisname = new char[strlen(basis->name()) + ((int)ceil(log10((long double)uatom+2))) + 5];
     sprintf(basisname,"\"%s%d\" \n",name,uatom);
     write_string(basisname);
     delete[] name;
@@ -216,7 +216,7 @@ PsiInput::write_basis_sets(const Ref<GaussianBasisSet>& basis)
       if (name[i] == ' ')
 	name[i] = '_';
 
-    char *psibasisname = new char[strlen(atomname) + strlen(basis->name()) + ((int)ceil(log10(uatom+2))) + 9];
+    char *psibasisname = new char[strlen(atomname) + strlen(basis->name()) + ((int)ceil(log10((long double)uatom+2))) + 9];
     sprintf(psibasisname,"%s:\"%s%d\" = (\n",atomname,name,uatom);
     write_string(psibasisname);
     delete[] name;

@@ -182,13 +182,13 @@ public:
   RefSCMatrix orthog_ri();
   
   /// Returns the MOIndexSpace object for OBS
-  Ref<MOIndexSpace> obs_space() const;
-  /// Returns the MOIndexSpace object for the occupied MOs
-  Ref<MOIndexSpace> occ_space() const;
+  Ref<MOIndexSpace> obs_space() const { return obs_space_; };
+  /// Returns the MOIndexSpace object for the active occupied MOs
+  Ref<MOIndexSpace> act_occ_space() const { return act_occ_space_; };
   /// Returns the MOIndexSpace object for ABS
-  Ref<MOIndexSpace> abs_space() const;
+  Ref<MOIndexSpace> abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS
-  Ref<MOIndexSpace> ribs_space() const;
+  Ref<MOIndexSpace> ribs_space() const { return ribs_space_; };
 
   /// Compute dipole and quadrupole moment matrices in active MO basis
   void compute_multipole_ints(RefSymmSCMatrix& MX,

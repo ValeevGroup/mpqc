@@ -24,6 +24,8 @@ class OneBodyInt: public SCElementOp
   virtual void process(SCMatrixRectBlock*);
   virtual void process(SCMatrixLTriBlock*);
 
+  int has_side_effects();
+
   virtual ~OneBodyInt();
 };
 
@@ -50,6 +52,10 @@ class OneBody3Int: public SCElementOp3
   virtual void process(SCMatrixLTriBlock*,
                        SCMatrixLTriBlock*,
                        SCMatrixLTriBlock*);
+
+  int has_side_effects();
+  int has_side_effects_in_arg1();
+  int has_side_effects_in_arg2();
 
   virtual ~OneBody3Int();
 };

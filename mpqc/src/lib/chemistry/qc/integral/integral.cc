@@ -131,6 +131,12 @@ OneBodyInt::process(SCMatrixLTriBlock* b)
     }
 }
 
+int
+OneBodyInt::has_side_effects()
+{
+  return 1;
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b):
@@ -266,4 +272,22 @@ OneBody3Int::process(SCMatrixLTriBlock* a,
           
         }
     }
+}
+
+int
+OneBody3Int::has_side_effects()
+{
+  return 1;
+}
+
+int
+OneBody3Int::has_side_effects_in_arg1()
+{
+  return 1;
+}
+
+int
+OneBody3Int::has_side_effects_in_arg2()
+{
+  return 1;
 }

@@ -29,7 +29,7 @@ LIBSUF = @LIBSUF@
 ENABLESHARED = @ENABLESHARED@
 
 ifeq ($(ENABLESHARED),yes)
-  LIBTOOL= $(SHELL) $(TOPDIR)/bin/sc-libtool
+  LIBTOOL= $(SHELL) $(TOPDIR)/libtool
   LTLINK = $(LIBTOOL) --mode=link
   ifneq ($(BUILDID),)
     LTLINKLIBOPTS = -rpath $(libdir) -release $(BUILDID) -version-info $(SC_SO_VERSION)

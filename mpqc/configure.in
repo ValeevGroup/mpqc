@@ -248,54 +248,6 @@ case $enableval in
 esac
 ])
 
-enableshared=no
-AC_ARG_ENABLE(shared,
-[  --enable-shared         Build shared libraries.],
-[
-case $enableval in
-  yes)
-    enableshared=yes
-  ;;
-  no)
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --(dis|en)able-shared ($enableval)])
-  ;;
-esac
-])
-
-enablestatic=yes
-AC_ARG_ENABLE(static,
-[  --disable-static        Do not build static libraries.],
-[
-case $enableval in
-  yes)
-  ;;
-  no)
-    enablestatic=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --(dis|en)able-static ($enableval)])
-  ;;
-esac
-])
-
-enablelibtool=yes
-AC_ARG_ENABLE(libtool,
-[  --disable-libtool       Do not use libtool.],
-[
-case $enableval in
-  yes)
-  ;;
-  no)
-    enablelibtool=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --(dis|en)able-libtool ($enableval)])
-  ;;
-esac
-])
-
 DOXYGEN_MAN=YES
 AC_ARG_ENABLE(doxygen-man,
 [  --disable-doxygen-man   Disable doxygen man pages.],
@@ -1410,42 +1362,38 @@ AC_SUBST(TMPLINLIB)
 
 dnl --------- Shared library configuration. ---------
 
-if test "$enableshared" = no; then
-  enablelibtool=no
-fi
+enablelibtool=yes
+AC_ARG_ENABLE(libtool,
+[  --disable-libtool       Do not use libtool.],
+[
+case $enableval in
+  yes)
+  ;;
+  no)
+    enablelibtool=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --(dis|en)able-libtool ($enableval)])
+  ;;
+esac
+])
 
 if test "$enablelibtool" = yes; then
 
-case "$target" in
-NONE) lt_target="$host" ;;
-*) lt_target="$target" ;;
-esac
-
-libtool_flags=
-test "$enableshared" = no && libtool_flags="$libtool_flags --disable-shared"
-test "$enablestatic" = no && libtool_flags="$libtool_flags --disable-static"
-
-test -d bin || mkdir bin
-
-CC="$CXX" CFLAGS="$CXXFLAGS" CPPFLAGS="$CPPFLAGS" \
-LD="$LD" LDFLAGS="$LDFLAGS" LIBS="$LIBS $FLIBS" \
-LN_S="$LN_S" NM="$NM" RANLIB="$RANLIB" \
-DLLTOOL="$DLLTOOL" AS="$AS" OBJDUMP="$OBJDUMP" \
-${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
---output=bin/sc-libtool \
-$libtool_flags --no-verify $ac_aux_dir/ltmain.sh $lt_target \
-|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
+dnl by default make only static libraries
+AC_DISABLE_SHARED
+AC_PROG_LIBTOOL
 
 OBJSUF=lo
 LIBSUF=la
 
 else
 
-enableshared=no
+enable_shared=no
 
 fi
 
-ENABLESHARED=$enableshared
+ENABLESHARED=$enable_shared
 AC_SUBST(ENABLESHARED)
 
 dnl --------- Find the list of all sc libraries. ---------

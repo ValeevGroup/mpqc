@@ -43,7 +43,7 @@ clasmacr.h: clastmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > clasmacr.h
 
 # a test program
-classtest: classtest.cc libclass.a ../container/libcontainer.a
+classtest: classtest.o libclass.a ../container/libcontainer.a
 	$(CXX) $(CXXFLAGS) -o classtest $^ $(SYSLIBS)
 bug: bug.cc
 	$(CXX) $(CXXFLAGS) -o bug $^
@@ -58,11 +58,11 @@ endif
 ####### Rules for generating source code ######################################
 
 classMap.cc classMap.h:
-	genclass -2 ClassKey val ClassDescP val Map class
+	$(GENCLASS) -2 ClassKey val ClassDescP val Map class
 	prepend-header classMap.h "#include \"class.h\""
 
 class$(MAPIMPL)Map.cc class$(MAPIMPL)Map.h:
-	genclass -2 ClassKey val ClassDescP val $(MAPIMPL)Map class
+	$(GENCLASS) -2 ClassKey val ClassDescP val $(MAPIMPL)Map class
 	prepend-header class$(MAPIMPL)Map.h "#include \"class.h\""
 
 classImplMap.h:
@@ -70,19 +70,19 @@ classImplMap.h:
 	echo "#define MAPCTOR ClassKeyClassDescP"$(MAPIMPL)"Map(0)" >> classImplMap.h
 
 classkeyPlex.cc classkeyPlex.h:
-	genclass ClassKey val Plex classkey
+	$(GENCLASS) ClassKey val Plex classkey
 	prepend-header classkeyPlex.h "#include \"class.h\""
 
 classkeyXPlex.cc classkeyXPlex.h:
-	genclass ClassKey val XPlex classkey
+	$(GENCLASS) ClassKey val XPlex classkey
 	prepend-header classkeyXPlex.h "#include \"class.h\""
 
 classkeySet.cc classkeySet.h:
-	genclass ClassKey val Set classkey
+	$(GENCLASS) ClassKey val Set classkey
 	prepend-header classkeySet.h "#include \"class.h\""
 
 classkey$(SETIMPL)Set.cc classkey$(SETIMPL)Set.h:
-	genclass ClassKey val $(SETIMPL)Set classkey
+	$(GENCLASS) ClassKey val $(SETIMPL)Set classkey
 	prepend-header classkey$(SETIMPL)Set.h "#include \"class.h\""
 
 classkeyImplSet.h:
@@ -90,19 +90,19 @@ classkeyImplSet.h:
 	echo "#define SETCTOR ClassKey"$(SETIMPL)"Set()" >> classkeyImplSet.h
 
 classStack.cc classStack.h:
-	genclass ClassDescP val Stack class
+	$(GENCLASS) ClassDescP val Stack class
 	prepend-header classStack.h "#include \"class.h\""
 
 class$(STACKIMPL)Stack.cc class$(STACKIMPL)Stack.h:
-	genclass ClassDescP val $(STACKIMPL)Stack class
+	$(GENCLASS) ClassDescP val $(STACKIMPL)Stack class
 	prepend-header class$(STACKIMPL)Stack.h "#include \"class.h\""
 
 classSLList.cc classSLList.h:
-	genclass ClassDescP val SLList class
+	$(GENCLASS) ClassDescP val SLList class
 	prepend-header classSLList.h "#include \"class.h\""
 
 classlSLList.cc classlSLList.h:
-	genclass ClassDescPSLList val SLList classl
+	$(GENCLASS) ClassDescPSLList val SLList classl
 	prepend-header classlSLList.h "#include \"classSLList.h\""
 	prepend-header classlSLList.h "#include \"class.h\""
 

@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <math/scmat/cmatrix.h>
@@ -73,7 +74,6 @@ void
 cmat_transpose_matrix(double**a, int nr, int nc)
 {
   int i,j;
-  int ij = 0;
   double* tmpp;
   double* tmp;
 
@@ -283,7 +283,6 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
 {
   int odd_nr,odd_nc;
   int i,j,k;
-  int errcod;
   double t00,t01,t10,t11;
   double *att,*bt;
   double *at1,*bt1;

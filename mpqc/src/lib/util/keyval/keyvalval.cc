@@ -473,11 +473,11 @@ KeyValValueString::sizevalue(size_t&val) const
   int gotdigit = 0;
   int gotdecimal = 0;
   int denom = 1;
-  val = 0;
+  double dval = 0;
   for (int i=0; i<n; i++) {
       if (isdigit(_val[i]) && !gotdigitspace) {
           char tmp[2]; tmp[0] = _val[i]; tmp[1] = '\0';
-          val = val * 10 + atoi(tmp);
+          dval = dval * 10 + atoi(tmp);
           gotdigit = 1;
           if (gotdecimal) denom *= 10;
         }
@@ -488,27 +488,27 @@ KeyValValueString::sizevalue(size_t&val) const
           if (gotdigit) gotdigitspace = 1;
         }
       else if (strcmp(&_val[i],"KIB") == 0) {
-          val *= 1024;
+          dval *= 1024;
           i+=2;
         }
       else if (strcmp(&_val[i],"MIB") == 0) {
-          val *= 1048576;
+          dval *= 1048576;
           i+=2;
         }
       else if (strcmp(&_val[i],"GIB") == 0) {
-          val *= 1073741824;
+          dval *= 1073741824;
           i+=2;
         }
       else if (strcmp(&_val[i],"KB") == 0) {
-          val *= 1000;
+          dval *= 1000;
           i++;
         }
       else if (strcmp(&_val[i],"MB") == 0) {
-          val *= 1000000;
+          dval *= 1000000;
           i++;
         }
       else if (strcmp(&_val[i],"GB") == 0) {
-          val *= 1000000000;
+          dval *= 1000000000;
           i++;
         }
       else {
@@ -516,7 +516,8 @@ KeyValValueString::sizevalue(size_t&val) const
           return KeyValValue::WrongType;
         }
     }
-  val /= denom;
+  dval /= denom;
+  val = size_t(dval);
   return KeyValValue::OK;
 }
 KeyValValue::KeyValValueError

@@ -1149,6 +1149,12 @@ if test X$PARALLEL = Xyes; then
                  [HAVE_MPIIO=yes;AC_DEFINE(HAVE_MPIIO)])
     AC_CHECK_FUNC(MPI_Init_thread,
                  [AC_DEFINE(HAVE_MPI_INIT_THREAD)])
+    HAVE_MPIPP=no; 
+    AC_CHECK_LIB(mpi++,MPI_Abort,[HAVE_MPIPP=yes;LIBS="-lmpi++ $LIBS"])
+    if test X$HAVE_MPIPP = Xno; then
+      AC_CHECK_LIB(pmpich++,MPI_Abort,[HAVE_MPIPP=yes;LIBS="-lpmpich++ $LIBS"])
+    fi
+    AC_DEFINE(HAVE_MPIPP)
   fi
   AC_LANG_RESTORE
 fi
@@ -1740,6 +1746,10 @@ dnl --------- CCA component configuration ---------
 
 if test $components == "yes"; then
 
+  if test $HAVE_MPIPP == "no"; then
+    AC_MSG_ERROR([libmpi++ needed for cca components])
+  fi
+
   if test $enable_shared == "no"; then
     AC_MSG_ERROR([shared libraries (libtool) must be enabled for cca components])
   fi
@@ -1827,6 +1837,13 @@ if test $components == "yes"; then
   fi
   AC_SUBST(CCAFE_INCLUDEDIR)
 
+  CCAFE_LIBDIR=`$CCAFE_CONFIG --var CCAFE_pkglibdir`
+  if test -z $CCAFE_LIBDIR || ! test -d $CCAFE_LIBDIR; then
+    AC_MSG_ERROR([invalid result from $CCAFE_CONFIG --var CCAFE_pkglibdir])
+  fi
+  AC_SUBST(CCAFE_LIBDIR)
+  LIBS="-L$CCAFE_LIBDIR $LIBS"
+
   CCAFE_CLASSIC_CCA_CONFIG=`$CCAFE_CONFIG --var CCAFE_CLASSIC_CCA_CONFIG`
   if test -z $CCAFE_CLASSIC_CCA_CONFIG ||
    ! test -e $CCAFE_CLASSIC_CCA_CONFIG; then
@@ -1838,7 +1855,7 @@ if test $components == "yes"; then
   CCA_CHEM_INCLUDE=-I$CCA_CHEM_INCLUDE
   SIDL_INCLUDE=-I$SIDL_INCLUDE
   CCA_SPEC_BABEL_INCLUDE=-I$CCA_SPEC_BABEL_INCLUDE
-  CCAFE_INCLUDE=-I$CCAFE_INCLUDEDIR
+  CCAFE_INCLUDE="-I$CCAFE_INCLUDEDIR -I$CCAFE_INCLUDEDIR/dc/babel/babel-cca/server"
   CPPFLAGS="$CPPFLAGS $SIDL_INCLUDE $CCA_SPEC_BABEL_INCLUDE $CCA_CHEM_INCLUDE $CCAFE_INCLUDE"
   AC_CHECK_HEADER(sidl.h,
     AC_DEFINE(HAVE_SIDL_HEADERS),

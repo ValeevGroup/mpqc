@@ -182,7 +182,7 @@ MBPT2::compute_cs_grad()
   double **gradient, *gradient_dat;  // The MP2 gradient
   double **ginter;    // Intermediates for the MP2 gradient
 
-  if (molecule()->point_group().order() != 1) {
+  if (molecule()->point_group().char_table().order() != 1) {
     // need to reorder the eigenvalues and possibly fix some bugs
     cout << "MP2 closed shell gradients only works for C1 symmetry" << endl;
     abort();

@@ -2,7 +2,11 @@
 /* These utility routines assist in reading in the basis functions. */
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:43  etseidl
+ * Revision 1.3  1994/05/27 23:44:12  cljanss
+ * Changed some char* to const char*.  Included ipv2 interface from
+ * keyval/ipv2c.h.  Fixed a bug with basis->n not being initialized.
+ *
+ * Revision 1.2  1993/12/30  13:32:43  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.4  1993/04/28  00:30:13  jannsen
@@ -43,7 +47,7 @@ static char *rcsid = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 #include <util/sgen/sgen.h>
-#include <util/ipv2/ip_libv2.h>
+#include <util/keyval/ipv2c.h>
 
 #include "atoms.h"
 #include "atomsip.h"
@@ -62,7 +66,7 @@ static char *prb = "encountered a problem while reading the basis set:\n ";
 GLOBAL_FUNCTION int
 int_read_basis(atom,basisname,_basis)
 char *atom;
-char *basisname;
+const char *basisname;
 basis_t *_basis;
 {
   read_basis(atom,basisname,_basis);
@@ -71,7 +75,7 @@ basis_t *_basis;
 LOCAL_FUNCTION int
 read_basis(atom,basisname,_basis)
 char *atom;
-char *basisname;
+const char *basisname;
 basis_t *_basis;
 {
   int errcod;
@@ -88,6 +92,7 @@ basis_t *_basis;
     return IPE_OK;
     }
 
+  _basis->n = 0;
   if ((errcod = read_basis_(COUNT,atom,basisname,_basis))!=IPE_OK) return errcod;
 
   _basis->shell = (shell_t *) malloc(sizeof(shell_t)*_basis->n);
@@ -100,13 +105,13 @@ LOCAL_FUNCTION int
 read_basis_(what,atom,basisname,basis)
 int what;
 char *atom;
-char *basisname;
+const char *basisname;
 basis_t *basis;
 {
   int i;
   int errcod;
   char key[KEYWORD_LENGTH];
-  char *val;
+  const char *val;
 
   i = 0;
 
@@ -168,7 +173,7 @@ int *v;
   int i;
   int errcod;
   char newkey[KEYWORD_LENGTH],basekey[KEYWORD_LENGTH];
-  char *val;
+  const char *val;
 
   init_center(_center);
   ip_construct_key_v(keyword,basekey,n,v);
@@ -231,7 +236,7 @@ shell_type_t *_shell_type;
 int n;
 int *v;
 {
-  char *val;
+  const char *val;
   char newkey[KEYWORD_LENGTH], basekey[KEYWORD_LENGTH];
 
   ip_construct_key_v(keyword,basekey,n,v);

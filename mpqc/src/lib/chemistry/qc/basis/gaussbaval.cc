@@ -29,9 +29,9 @@ int GaussianBasisSet::grad_values(const SCVector3& r,
         int nshell = center_to_nshell_[icenter];
 
 	// Calculate r_diff
-	r_diff.x()=r.x()-center_to_r_(icenter,0);
-	r_diff.y()=r.y()-center_to_r_(icenter,1);
-	r_diff.z()=r.z()-center_to_r_(icenter,2);
+	r_diff.x()=r.x()-GaussianBasisSet::r(icenter,0);
+	r_diff.y()=r.y()-GaussianBasisSet::r(icenter,1);
+	r_diff.z()=r.z()-GaussianBasisSet::r(icenter,2);
 
 #ifdef EXTRA_PRINT
         static int iflag=0;

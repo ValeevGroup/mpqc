@@ -14,6 +14,7 @@ SavableState_REF_def(GaussianBasisSet);
 #define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
+#define VERSION 2
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
@@ -27,7 +28,7 @@ GaussianBasisSet::_castdown(const ClassDesc*cd)
 
 GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
 {
-  RefMolecule molecule =
+  molecule_ =
     Molecule::require_castdown(topkeyval
                                ->describedclassvalue("molecule").pointer(),
                                "molecule of wrong type");
@@ -46,7 +47,7 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
   RefKeyVal libkeyval = new ParsedKeyVal("basis",topkeyval);
   RefKeyVal keyval = new AggregateKeyVal(topkeyval,libkeyval);
 
-  init(molecule,keyval,basisname,1,pure);
+  init(molecule_,keyval,basisname,1,pure);
 
   delete[] basisname;
 }
@@ -65,9 +66,10 @@ GaussianBasisSet::GaussianBasisSet(RefMolecule&molecule,
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
   SavableState(s),
-  center_to_r_(s),
   center_to_nshell_(s)
 {
+  molecule_.restore_state(s);
+
   ncenter_ = center_to_nshell_.length();
   s.getstring(name_);
 
@@ -88,8 +90,9 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
 void
 GaussianBasisSet::save_data_state(StateOut&s)
 {
-  center_to_r_.save_object_state(s);
   center_to_nshell_.save_object_state(s);
+
+  molecule_.save_state(s);
   s.putstring(name_);
   for (int i=0; i<nshell_; i++) {
       shell[i]->save_object_state(s);
@@ -158,24 +161,15 @@ GaussianBasisSet::init(RefMolecule&molecule,
       delete[] sbasisname;
      }
 
-  // compute center_to_r_
-  center_to_r_.set_lengths(ncenter_,3);
-  ishell = 0;
-  init_center_to_r(molecule.pointer());
-
   // finish with the initialization steps that don't require any
   // external information
   init2();
 }
 
-void
-GaussianBasisSet::init_center_to_r(const Molecule* molecule)
+double
+GaussianBasisSet::r(int icenter, int xyz) const
 {
-  for (int iatom=0; iatom<ncenter_; iatom++) {
-    center_to_r_(iatom,0) = molecule->atom(iatom).point()[0];
-    center_to_r_(iatom,1) = molecule->atom(iatom).point()[1];
-    center_to_r_(iatom,2) = molecule->atom(iatom).point()[2];
-  }
+  return molecule_->atom(icenter).point()[xyz];
 }
 
 void
@@ -315,7 +309,7 @@ GaussianBasisSet::operator()(int icenter,int ishell)
 }
 
 centers_t*
-GaussianBasisSet::convert_to_centers_t(const Molecule*mol)
+GaussianBasisSet::convert_to_centers_t()
 {
   centers_t* c;
   c = (centers_t*)malloc(sizeof(centers_t));
@@ -331,8 +325,7 @@ GaussianBasisSet::convert_to_centers_t(const Molecule*mol)
   c->prim_offset = 0;
   c->shell_offset = 0;
 
-  if (mol)
-    init_center_to_r(mol);
+  Molecule *mol = molecule_.pointer();
   
   for (int icenter = 0; icenter < ncenter_; icenter++) {
       if (mol) {
@@ -346,7 +339,7 @@ GaussianBasisSet::convert_to_centers_t(const Molecule*mol)
         }
       c->center[icenter].r = (double*)malloc(sizeof(double)*3);
       for (int xyz=0; xyz<3; xyz++)
-        c->center[icenter].r[xyz]=center_to_r_(icenter,xyz);
+        c->center[icenter].r[xyz]=r(icenter,xyz);
       c->center[icenter].basis.n = nshell_on_center(icenter);
       c->center[icenter].basis.name = strdup(name());
       c->center[icenter].basis.shell =
@@ -394,9 +387,9 @@ void GaussianBasisSet::print(FILE*fp) const
   for (icenter=0; icenter < ncenter_; icenter++) {
       fprintf(fp,"center %d: %12.8f %12.8f %12.8f, nshell = %d, shellnum = %d\n",
 	      icenter,
-	      center_to_r_(icenter,0),
-	      center_to_r_(icenter,1),
-	      center_to_r_(icenter,2),
+	      r(icenter,0),
+	      r(icenter,1),
+	      r(icenter,2),
 	      center_to_nshell_[icenter],
 	      center_to_shell_[icenter]);
       for (int ishell=0; ishell < center_to_nshell_[icenter]; ishell++) {

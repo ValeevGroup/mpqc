@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <util/container/ref.h>
-//#include <util/container/pixmap.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
@@ -33,20 +32,11 @@ class GaussianBasisSet: public SavableState
     Arrayint shell_to_function_;
     Arrayint function_to_shell_;
 
-    // Not using pixes anymore.  This is because they refer to molecule
-    // pixes which are not really a part of the basis set class.  They
-    // also make it difficult to restore state without molecule being a
-    // member of GaussianBasisSet, which I don't really like.
-    // Pix* shell_to_centerpix;
-    // PixMap<int> centerpix_to_shellnum; // the number of the first shell is 0
-    // PixMap<double*> centerpix_to_r;
-    // PixMap<int> centerpix_to_nshell;
+    RefMolecule molecule_;
 
-    // pix replacments (using center numbers instead of center pixes):
     int ncenter_;
     SSBArrayint shell_to_center_;
     SSBArrayint center_to_shell_;
-    SSBArray2double center_to_r_;
     SSBArrayint center_to_nshell_;
 
     int nshell_;
@@ -61,7 +51,6 @@ class GaussianBasisSet: public SavableState
               int have_userkeyval,
               int pure);
     void init2();
-    void init_center_to_r(const Molecule*);
     
   public:
     GaussianBasisSet(const RefKeyVal&);
@@ -72,6 +61,7 @@ class GaussianBasisSet: public SavableState
     virtual ~GaussianBasisSet();
     void save_data_state(StateOut&);
     const char* name() const;
+    RefMolecule molecule() const { return molecule_; }
 
     int ncenter() const;
     int nshell() const;
@@ -95,17 +85,10 @@ class GaussianBasisSet: public SavableState
     GaussianShell& operator()(int icenter,int ishell);
 
     // access to r thru center number
-    const double& r(int icenter,int xyz) const;
-    double& r(int icenter,int xyz);
+    double r(int icenter,int xyz) const;
     
     // converts the basis set to a centers_t for compatibility with libintv2
-    // If the molecule is 0 then fake molecule information is included--
-    // this is useful in computing the overlap, for example.
-    centers_t* convert_to_centers_t(const Molecule*);
-    centers_t* convert_to_centers_t(const RefMolecule&mol) {
-        return convert_to_centers_t(mol.pointer());
-      }
-    //operator struct struct_centers*();
+    centers_t* convert_to_centers_t();
 
     // compute the value for this basis set at position r
     int values(const SCVector3& r, double* basis_values) const;

@@ -51,12 +51,6 @@ GaussianBasisSet::operator[](int i) const
   return *shell[i];
 }
 
-INLINE const double&
-GaussianBasisSet::r(int icenter,int xyz) const
-{
-  return this->center_to_r_(icenter,xyz);
-}
-
 INLINE GaussianShell&
 GaussianBasisSet::operator()(int i)
 {
@@ -67,10 +61,4 @@ INLINE GaussianShell&
 GaussianBasisSet::operator[](int i)
 {
   return *shell[i];
-}
-
-INLINE double&
-GaussianBasisSet::r(int i,int xyz)
-{
-  return this->center_to_r_(i,xyz);
 }

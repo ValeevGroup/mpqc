@@ -31,18 +31,21 @@ double *intbuf;
 {
   int nshell=cs1->nshell;
   int nsht=nshell*(nshell+1)/2;
-  
-  scf_bnd_Qvec = (signed char *) malloc(sizeof(signed char)*nsht);
-  if (scf_bnd_Qvec==NULL) {
-    fprintf(stderr,"scf_init_bounds: cannot malloc Qvec: %d\n",nsht);
-    return -1;
-  }
+  int sh1,sh2,shellij;
+  int nproc = numnodes0();
+  int me = mynode0();
 
-  memset(scf_bnd_Qvec,'\0',sizeof(signed char)*nsht);
+  int_init_bounds_nocomp();
+  scf_bnd_Qvec = int_Qvec;
 
-  compute_Q(cs1,intbuf);
+  for (shellij=0,sh1=0; sh1 < nshell ; sh1++) {
+    for (sh2=0; sh2 <= sh1 ; sh2++,shellij++) {
+      if (shellij%nproc != me) continue;
+      int_bounds_comp(sh1,sh2);
+      }
+    }
 
-  gop0_sc(scf_bnd_Qvec,nsht,'+',mtype_get());
+  gop0_sc(int_Qvec,nsht,'+',mtype_get());
 
   return 0;
 }
@@ -56,8 +59,7 @@ double *intbuf;
 GLOBAL_FUNCTION VOID
 scf_done_bounds()
 {
-  free(scf_bnd_Qvec);
-  scf_bnd_Qvec = 0;
+  int_done_bounds();
 }
 
 /*************************************************************************
@@ -77,58 +79,5 @@ int l;
   int ij=(i>j) ? i*(i+1)/2+j : j*(j+1)/2+i;
   int kl=(k>l) ? k*(k+1)/2+l : l*(l+1)/2+k;
 
-  return((int) scf_bnd_Qvec[ij]+scf_bnd_Qvec[kl]);
-}
-
-/* ripped off from clj's libintv2 */
-
-LOCAL_FUNCTION VOID
-compute_Q(cs1,intbuf)
-centers_t *cs1;
-double *intbuf;
-{
-  int shellij;
-  int sh1,sh2;
-  int shells[4],size[4];
-  int nfunc1,nfunc2;
-  double max;
-  double tol = pow(2.0,-126.0);
-  double loginv = 1.0/log(2.0);
-  double integral;
-  int i,j;
-  int me=mynode0();
-  int nproc=numnodes0();
-
-  shellij=0;
-  for (sh1=0; sh1 < cs1->nshell ; sh1++) {
-    shells[0]=shells[2]=sh1;
-    for (sh2=0; sh2 <= sh1 ; sh2++,shellij++) {
-      if (shellij%nproc != me) continue;
-
-      shells[1]=shells[3]=sh2;
-
-      int_erep_v(INT_EREP|INT_REDUND|INT_NOPERM|INT_NOBCHK,shells,size);
-
-      nfunc1=size[0];
-      nfunc2=size[1];
-
-    /* Find the biggest (ij|ij) integral. */
-      max = 0.0;
-      for (i=0; i<nfunc1; i++) {
-        for (j=0; j<nfunc2; j++) {
-          int index = i * nfunc2 * nfunc1 * nfunc2
-                    + j * nfunc1 * nfunc2
-                    + i * nfunc2
-                    + j;
-          integral = intbuf[ index ];
-          if (fabs(integral) > max) max = fabs(integral);
-        }
-      }
-
-    /* Compute the Q value. */
-      max = sqrt(max);
-      max = (max>tol) ? max : tol;
-      scf_bnd_Qvec[shellij] = (signed char) (log(max)*loginv);
-    }
-  }
+  return((int) int_Qvec[ij]+int_Qvec[kl]);
 }

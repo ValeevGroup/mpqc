@@ -107,6 +107,61 @@ Int2eV3::int_initialize_erep(int storage, int order,
   int_cs3 = cs3;
   int_cs4 = cs4;
 
+  /* Find the max angular momentum on each center. */
+  jmax1 = cs1->max_angular_momentum();
+  jmax2 = cs2->max_angular_momentum();
+  jmax3 = cs3->max_angular_momentum();
+  jmax4 = cs4->max_angular_momentum();
+
+  /* Find the maximum number of contractions in a shell on each center. */
+  nc1 = cs1->max_ncontraction();
+  nc2 = cs2->max_ncontraction();
+  nc3 = cs3->max_ncontraction();
+  nc4 = cs4->max_ncontraction();
+
+  /* Initialize the Fj(T) routine. */
+  jmax = jmax1+jmax2+jmax3+jmax4;
+  if (int_derivative_bounds) {
+      fjt_ = new FJT(jmax + 2*order); /* The 2 is for bounds checking */
+    }
+  else {
+      fjt_ = new FJT(jmax + order);
+    }
+
+  /* Initialize the build and shift routines. */
+  int_init_buildgc(order,jmax1,jmax2,jmax3,jmax4,nc1,nc2,nc3,nc4);
+  int_init_shiftgc(order,jmax1,jmax2,jmax3,jmax4);
+
+  /* Allocate storage for the integral buffer. */
+  int maxsize = cs1->max_ncartesian_in_shell()
+                *cs2->max_ncartesian_in_shell()
+                *cs3->max_ncartesian_in_shell()
+                *cs4->max_ncartesian_in_shell();
+  if (order==0) {
+    int_buffer = (double *) malloc(sizeof(double) * maxsize);
+    int_derint_buffer = 0;
+    }
+  else if (order==1) {
+    int nderint;
+    nderint = cs1->max_ncartesian_in_shell(1)
+             *cs2->max_ncartesian_in_shell(1)
+             *cs3->max_ncartesian_in_shell(1)
+             *cs4->max_ncartesian_in_shell(1);
+ 
+    /* Allocate the integral buffers. */
+    int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
+    int_derint_buffer = (double *) malloc(sizeof(double) * nderint);
+    if (!int_derint_buffer) {
+      cerr << scprintf("couldn't malloc intermed storage for derivative ints\n");
+      fail();
+      }
+    }
+
+  if (!int_buffer) {
+    cerr << scprintf("couldn't allocate integrals\n");
+    fail();
+    }
+
   /* See if the intermediates are to be computed and set global variables
    * accordingly. */
 
@@ -116,7 +171,12 @@ Int2eV3::int_initialize_erep(int storage, int order,
       int_store1 = 1;
       used_storage_ += size_inter_1;
     }
-  else int_store1 = 0;
+  else {
+    cout << node0 << indent
+         << "Int2eV3: not storing O(N) intemediates due to lack of memory"
+         << endl;
+    int_store1 = 0;
+    }
 
   // this size estimate is only accurate if all centers are the same
   int size_inter_2 = cs1->nprimitive() * cs1->nprimitive() * (7*sizeof(double));
@@ -124,7 +184,12 @@ Int2eV3::int_initialize_erep(int storage, int order,
       int_store2 = 1;
       used_storage_ += size_inter_2;
     }
-  else int_store2 = 0;
+  else {
+    cout << node0 << indent
+         << "Int2eV3: not storing O(N^2) intemediates due to lack of memory"
+         << endl;
+    int_store2 = 0;
+    }
 
   /* Allocate storage for the intermediates. */
   alloc_inter(bs4_prim_offset_ + cs4->nprimitive(),
@@ -197,59 +262,14 @@ Int2eV3::int_initialize_erep(int storage, int order,
       }
     }
 
-  /* Find the max angular momentum on each center. */
-  jmax1 = cs1->max_angular_momentum();
-  jmax2 = cs2->max_angular_momentum();
-  jmax3 = cs3->max_angular_momentum();
-  jmax4 = cs4->max_angular_momentum();
-
-  /* Find the maximum number of contractions in a shell on each center. */
-  nc1 = cs1->max_ncontraction();
-  nc2 = cs2->max_ncontraction();
-  nc3 = cs3->max_ncontraction();
-  nc4 = cs4->max_ncontraction();
-
-  /* Initialize the Fj(T) routine. */
-  jmax = jmax1+jmax2+jmax3+jmax4;
-  if (int_derivative_bounds) {
-      fjt_ = new FJT(jmax + 2*order); /* The 2 is for bounds checking */
-    }
-  else {
-      fjt_ = new FJT(jmax + order);
-    }
-
-  /* Initialize the build and shift routines. */
-  int_init_buildgc(order,jmax1,jmax2,jmax3,jmax4,nc1,nc2,nc3,nc4);
-  int_init_shiftgc(order,jmax1,jmax2,jmax3,jmax4);
-
-  /* Allocate storage for the integral buffer. */
-  int maxsize = cs1->max_ncartesian_in_shell()
-                *cs2->max_ncartesian_in_shell()
-                *cs3->max_ncartesian_in_shell()
-                *cs4->max_ncartesian_in_shell();
-  if (order==0) {
-    int_buffer = (double *) malloc(sizeof(double) * maxsize);
-    int_derint_buffer = 0;
-    }
-  else if (order==1) {
-    int nderint;
-    nderint = cs1->max_ncartesian_in_shell(1)
-             *cs2->max_ncartesian_in_shell(1)
-             *cs3->max_ncartesian_in_shell(1)
-             *cs4->max_ncartesian_in_shell(1);
- 
-    /* Allocate the integral buffers. */
-    int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
-    int_derint_buffer = (double *) malloc(sizeof(double) * nderint);
-    if (!int_derint_buffer) {
-      cerr << scprintf("couldn't malloc intermed storage for derivative ints\n");
-      fail();
-      }
-    }
-
-  if (!int_buffer) {
-    cerr << scprintf("couldn't allocate integrals\n");
-    fail();
+  if (used_storage_ > storage) {
+    cout << node0
+         << indent << "Int2eV3: required more storage than given" << endl
+         << indent << "  given storage = " << storage << endl
+         << indent << "  build storage = " << used_storage_build_ << endl
+         << indent << "  shift storage = " << used_storage_shift_ << endl
+         << indent << "  used  storage = " << used_storage_ << endl
+         << endl;
     }
 
   return int_buffer;

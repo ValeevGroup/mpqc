@@ -18,7 +18,8 @@ SavableState_REF_def(Optimize);
 void *
 Optimize::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -77,7 +78,8 @@ SavableState_REF_def(LineOpt);
 void *
 LineOpt::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Optimize::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Optimize::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -125,7 +127,8 @@ SavableState_REF_def(IHessianUpdate);
 void *
 IHessianUpdate::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -164,7 +167,8 @@ IHessianUpdate::save_data_state(StateOut&s)
 void *
 DFPUpdate::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { IHessianUpdate::_castdown(cd) };
+  void* casts[1];
+  casts[0] = IHessianUpdate::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -229,7 +233,8 @@ DFPUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
 void *
 BFGSUpdate::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { IHessianUpdate::_castdown(cd) };
+  void* casts[1];
+  casts[0] = IHessianUpdate::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -294,7 +299,8 @@ BFGSUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
 void *
 QNewtonOpt::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { Optimize::_castdown(cd) };
+  void* casts[1];
+  casts[0] = Optimize::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -304,10 +310,10 @@ QNewtonOpt::QNewtonOpt(KeyVal&keyval):
   nlp_ = keyval.describedclassvalue("function");
   update_ = keyval.describedclassvalue("update");
   convergence_ = keyval.doublevalue("convergence");
-  if (keyval.error() != OK) convergence_ = 1.0e-6;
+  if (keyval.error() != KeyVal::OK) convergence_ = 1.0e-6;
   lineopt_ = keyval.describedclassvalue("lineopt");
   accuracy_ = keyval.doublevalue("accuracy");
-  if (keyval.error() != OK) accuracy_ = 0.0001;
+  if (keyval.error() != KeyVal::OK) accuracy_ = 0.0001;
 
   RefSymmSCMatrix hessian(nlp_->dimension());
   // get a guess hessian from nlp

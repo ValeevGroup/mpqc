@@ -22,7 +22,8 @@ SavableState_REF_def(NLP0);
 void *
 NLP0::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -151,7 +152,8 @@ SavableState_REF_def(NLP1);
 void *
 NLP1::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { NLP0::_castdown(cd) };
+  void* casts[1];
+  casts[0] = NLP0::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -262,7 +264,8 @@ SavableState_REF_def(NLP2);
 void *
 NLP2::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { NLP1::_castdown(cd) };
+  void* casts[1];
+  casts[0] = NLP1::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

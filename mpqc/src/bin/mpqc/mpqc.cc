@@ -81,6 +81,8 @@ main(int argc, char *argv[])
                  "the name of the input file", "mpqc.in");
   options.enroll("messagegrp", GetLongOpt::MandatoryValue,
                  "which message group to use", 0);
+  options.enroll("threadgrp", GetLongOpt::MandatoryValue,
+                 "which thread group to use", 0);
   options.enroll("l", GetLongOpt::MandatoryValue, "basis set limit", "0");
   options.enroll("W", GetLongOpt::MandatoryValue,
                  "set the working directory", ".");

@@ -12,130 +12,33 @@
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBodyIntIter::OneBodyIntIter()
-{
-  reset(0,0,0,0);
-}
-
-OneBodyIntIter::OneBodyIntIter(int is, int ie, int js, int je)
-{
-  reset(is,ie,js,je);
-}
-
-OneBodyIntIter::~OneBodyIntIter()
-{
-}
-
-void
-OneBodyIntIter::reset(int is, int ie, int js, int je)
-{
-  istart=is;
-  jstart=js;
-  iend=ie;
-  jend=je;
-}
-
-void
-OneBodyIntIter::start()
-{
-  icur=istart;
-  jcur=jstart;
-}
-
-int
-OneBodyIntIter::ready()
-{
-  return (icur < iend);
-}
-
-void
-OneBodyIntIter::next()
-{
-  if (jcur < jend-1) {
-    jcur++;
-  } else {
-    jcur=jstart;
-    icur++;
-  }
-}
-
-void
-OneBodyIntIter::start_ltri()
-{
-  icur=istart;
-  jcur=istart;
-}
-
-int
-OneBodyIntIter::ready_ltri()
-{
-  return (icur < iend);
-}
-
-void
-OneBodyIntIter::next_ltri()
-{
-  if (jcur < icur) {
-    jcur++;
-  } else {
-    jcur=istart;
-    icur++;
-  }
-}
-
-int
-OneBodyIntIter::ishell() const
-{
-  return icur;
-}
-
-int
-OneBodyIntIter::jshell() const
-{
-  return jcur;
-}
-
-double
-OneBodyIntIter::scale() const
-{
-  return 1.0;
-}
-
-///////////////////////////////////////////////////////////////////////
-
-OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b, OneBodyIntIter *it):
-  bs1(b), bs2(b), iter(it)
+OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b) :
+  bs1(b), bs2(b)
 {
   // allocate a buffer
   int biggest_shell = b->max_nfunction_in_shell();
-  if (biggest_shell) {
-      buffer_ = new double[biggest_shell * biggest_shell];
-    }
-  else {
-      buffer_ = 0;
-    }
+  biggest_shell *= biggest_shell;
 
-  if (!iter)
-    iter = new OneBodyIntIter;
+  if (biggest_shell) {
+    buffer_ = new double[biggest_shell];
+  } else {
+    buffer_ = 0;
+  }
 }
 
 OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b1,
-                       const RefGaussianBasisSet&b2,
-                       OneBodyIntIter *it) :
-  bs1(b1), bs2(b2), iter(it)
+                       const RefGaussianBasisSet&b2) :
+  bs1(b1), bs2(b2)
 {
   // allocate a buffer
   int biggest_shell = b1->max_nfunction_in_shell() *
                       b2->max_nfunction_in_shell();
+    
   if (biggest_shell) {
-      buffer_ = new double[biggest_shell];
-    }
-  else {
-      buffer_ = 0;
-    }
-
-  if (!iter)
-    iter = new OneBodyIntIter;
+    buffer_ = new double[biggest_shell];
+  } else {
+    buffer_ = 0;
+  }
 }
 
 OneBodyInt::~OneBodyInt()
@@ -144,271 +47,324 @@ OneBodyInt::~OneBodyInt()
     delete[] buffer_;
     buffer_=0;
   }
-  if (iter) {
-    delete iter;
-    iter=0;
-  }
 }
 
-int OneBodyInt::nbasis()
+int
+OneBodyInt::nbasis() const
 {
   return bs1->nbasis();
 }
 
-int OneBodyInt::nbasis1()
+int
+OneBodyInt::nbasis1() const
 {
   return bs1->nbasis();
 }
 
-int OneBodyInt::nbasis2()
+int
+OneBodyInt::nbasis2() const
 {
   return bs2->nbasis();
 }
 
-int OneBodyInt::nshell()
+int
+OneBodyInt::nshell() const
 {
   return bs1->nshell();
 }
 
-int OneBodyInt::nshell1()
+int
+OneBodyInt::nshell1() const
 {
   return bs1->nshell();
 }
 
-int OneBodyInt::nshell2()
+int
+OneBodyInt::nshell2() const
 {
   return bs2->nshell();
 }
 
-void
-OneBodyInt::process(SCMatrixBlockIter&)
+///////////////////////////////////////////////////////////////////////
+
+ShellPairIter::ShellPairIter()
 {
-  fprintf(stderr,"OneBodyInt::process(SCMatrixBlockIter&):"
+}
+
+ShellPairIter::~ShellPairIter()
+{
+}
+
+void
+ShellPairIter::init(const double * b, int ishell, int jshell,
+                    int fi, int fj, int ni, int nj,
+                    int red, double scl)
+{
+  e12 = ((ishell==jshell) && red);
+  
+  ioffset=fi;
+  joffset=fj;
+
+  iend=ni;
+  jend=nj;
+
+  buf=b;
+  scale_=scl;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+OneBodyIntIter::OneBodyIntIter()
+{
+}
+
+OneBodyIntIter::OneBodyIntIter(const RefOneBodyInt& o) :
+  obi(o)
+{
+}
+
+OneBodyIntIter::~OneBodyIntIter()
+{
+}
+
+void
+OneBodyIntIter::start(int ist, int jst, int ien, int jen)
+{
+  istart=ist;
+  jstart=jst;
+  iend=ien;
+  jend=jen;
+  
+  icur=istart;
+  jcur=jstart;
+
+  if (!iend) {
+    iend=obi->nshell1();
+    jend=obi->nshell2();
+  }
+
+  ij = (icur*(icur+1)>>1) + jcur;
+}
+
+static inline int
+min(int i, int j)
+{
+  return (i<j) ? i : j;
+}
+
+void
+OneBodyIntIter::next()
+{
+  int jlast = (redund) ? min(icur,jend-1) : jend-1;
+  
+  if (jcur < jlast) {
+    jcur++;
+    ij++;
+    return;
+  }
+
+  jcur=jstart;
+  icur++;
+
+  ij = (icur*(icur+1)>>1) + jcur;
+}
+
+double
+OneBodyIntIter::scale() const
+{
+  return 1.0;
+}
+
+ShellPairIter&
+OneBodyIntIter::current_pair()
+{
+  obi->compute_shell(icur,jcur);
+  spi.init(obi->buffer(), icur, jcur,
+           obi->basis1()->shell_to_function(icur),
+           obi->basis2()->shell_to_function(jcur),
+           obi->basis1()->operator()(icur).nfunction(),
+           obi->basis2()->operator()(jcur).nfunction(),
+           redund, scale()
+           );
+
+  return spi;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+OneBodyIntOp::OneBodyIntOp(const RefOneBodyInt& it)
+{
+  iter = new OneBodyIntIter(it);
+}
+
+OneBodyIntOp::OneBodyIntOp(const RefOneBodyIntIter& it) :
+  iter(it)
+{
+}
+
+OneBodyIntOp::~OneBodyIntOp()
+{
+}
+
+void
+OneBodyIntOp::process(SCMatrixBlockIter&)
+{
+  fprintf(stderr,"OneBodyIntOp::process(SCMatrixBlockIter&):"
           " cannot handle generic case\n");
   abort();
 }
 
 void
-OneBodyInt::process(SCMatrixRectBlock* b)
+OneBodyIntOp::process(SCMatrixRectBlock* b)
 {
+  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
+  RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
+  
   // convert basis function indices into shell indices
   int ishstart = bs1->function_to_shell(b->istart);
   int jshstart = bs2->function_to_shell(b->jstart);
+
   int b1end = b->iend;
   int ishend = (b1end?bs1->function_to_shell(b1end-1) + 1 : 0);
+
   int b2end = b->jend;
   int jshend = (b2end?bs2->function_to_shell(b2end-1) + 1 : 0);
 
   int njdata = b->jend - b->jstart;
 
-  iter->reset(ishstart, ishend, jshstart, jshend);
-  for (iter->start(); iter->ready(); iter->next()) {
-      int ish=iter->ishell();
-      int jsh=iter->jshell();
+  iter->redundant(0);
 
-      int nish = bs1->operator[](ish).nfunction();
-      int njsh = bs2->operator[](jsh).nfunction();
+  for (iter->start(ishstart,jshstart,ishend,jshend);
+       iter->ready(); iter->next()) {
+    int ish=iter->ishell();
+    int jsh=iter->jshell();
 
-      double scale = iter->scale();
-    
-      // compute a set of shell integrals
-      compute_shell(ish,jsh,buffer_);
+    ShellPairIter& spi = iter->current_pair();
 
-      double *tmp = buffer_;
-      int ifn = bs1->shell_to_function(ish);
-      int jfnsave = bs2->shell_to_function(jsh);
-      for (int i=0; i<nish; i++,ifn++) {
-          if (ifn < b->istart || ifn >= b->iend) {
-              tmp += njsh;
-            }
-          else {
-              int jfn = jfnsave;
-              int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
-              for (int j=0; j<njsh; j++,jfn++) {
-                  if (jfn >= b->jstart && jfn < b->jend) {
-                      b->data[data_index] += *tmp * scale;
-                      data_index++;
-                    }
-                  tmp++;
-                }
-            }
-        }
+    for (spi.start(); spi.ready(); spi.next()) {
+      int ifn = spi.i();
+      int jfn = spi.j();
+      
+      if (ifn < b->istart || ifn >= b->iend ||
+          jfn < b->jstart || jfn >= b->jend)
+        continue;
+      
+      int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
+      b->data[data_index] += spi.val();
     }
+  }
 }
 
 void
-OneBodyInt::process(SCMatrixLTriBlock* b)
+OneBodyIntOp::process(SCMatrixLTriBlock* b)
 {
+  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
+
   // convert basis function indices into shell indices
   int fnstart = b->start;
   int fnend = b->end;
   int shstart = bs1->function_to_shell(fnstart);
   int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
 
+  iter->redundant(1);
+
   // loop over all needed shells
-  iter->reset(shstart, shend, 0, 0);
-  for (iter->start_ltri(); iter->ready_ltri(); iter->next_ltri()) {
-      int ish=iter->ishell();
-      int jsh=iter->jshell();
+  for (iter->start(shstart,shstart,shend,shend); iter->ready(); iter->next()) {
+    int ish=iter->ishell();
+    int jsh=iter->jshell();
 
-      int nish = bs1->operator[](ish).nfunction();
-      int njsh = bs1->operator[](jsh).nfunction();
+    ShellPairIter& spi = iter->current_pair();
 
-      double scale = iter->scale();
-
-      // compute a set of shell integrals
-      compute_shell(ish,jsh,buffer_);
-
-      // take the integrals from buffer and put them into the LTri block
-      double*tmp = buffer_;
-      int ifn = bs1->shell_to_function(ish);
-      int jfnsave = bs1->shell_to_function(jsh);
-      for (int i=0; i<nish; i++,ifn++) {
-        // skip over basis functions that are not needed
-          if (ifn < fnstart || ifn >= fnend) {
-              tmp += njsh;
-            }
-          else {
-              int jfn = jfnsave;
-              int irelfn = ifn - fnstart;
-              int data_index = ((irelfn+1)*irelfn>>1) + jfn - fnstart;
-              for (int j=0; j<njsh; j++,jfn++) {
-                  // skip over basis functions that are not needed
-                  if (jfn <= ifn && jfn >= fnstart) {
-                      b->data[data_index] += *tmp * scale;
-                      data_index++;
-                    }
-                  tmp++;
-                }
-            }
-        }
+    // compute a set of shell integrals
+    for (spi.start(); spi.ready(); spi.next()) {
+      int ifn = spi.i();
+      int jfn = spi.j();
+      
+      if (ifn < fnstart || ifn >= fnend)
+        continue;
+      
+      int ioff = ifn-fnstart;
+      int joff = jfn-fnstart;
+      
+      int data_index = (ioff*(ioff+1)>>1)+joff;
+      
+      //printf("%d %d %f\n",ifn,jfn,spi.val());
+      b->data[data_index] += spi.val();
+      data_index++;
     }
+  }
 }
 
 int
-OneBodyInt::has_side_effects()
+OneBodyIntOp::has_side_effects()
 {
   return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b, OneBodyIntIter *it) :
-  bs1(b), bs2(b), iter(it)
+OneBody3IntOp::OneBody3IntOp(const RefOneBodyInt& it)
 {
-  // allocate a buffer
-  int biggest_shell = b->max_nfunction_in_shell();
-  if (biggest_shell) {
-      buffer_ = new double[biggest_shell * biggest_shell * 3];
-    }
-  else {
-      buffer_ = 0;
-    }
-
-  if (!iter)
-    iter = new OneBodyIntIter;
+  iter = new OneBodyIntIter(it);
 }
 
-OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b1,
-                         const RefGaussianBasisSet&b2,
-                         OneBodyIntIter *it) :
-  bs1(b1), bs2(b2), iter(it)
+OneBody3IntOp::OneBody3IntOp(const RefOneBodyIntIter& it) :
+  iter(it)
 {
-  // allocate a buffer
-  int biggest_shell = b1->max_nfunction_in_shell() *
-                      b2->max_nfunction_in_shell();
-  if (biggest_shell) {
-      buffer_ = new double[biggest_shell * 3];
-    }
-  else {
-      buffer_ = 0;
-   }
-
-  if (!iter)
-    iter = new OneBodyIntIter;
 }
 
-OneBody3Int::~OneBody3Int()
+OneBody3IntOp::~OneBody3IntOp()
 {
-  if (buffer_) {
-    delete[] buffer_;
-    buffer_=0;
-  }
-  if (iter) {
-    delete iter;
-    iter=0;
-  }
-}
-
-int OneBody3Int::nbasis()
-{
-  return bs1->nbasis();
-}
-
-int OneBody3Int::nbasis1()
-{
-  return bs1->nbasis();
-}
-
-int OneBody3Int::nbasis2()
-{
-  return bs2->nbasis();
-}
-
-int OneBody3Int::nshell()
-{
-  return bs1->nshell();
-}
-
-int OneBody3Int::nshell1()
-{
-  return bs1->nshell();
-}
-
-int OneBody3Int::nshell2()
-{
-  return bs2->nshell();
 }
 
 void
-OneBody3Int::process(SCMatrixBlockIter&,
-                     SCMatrixBlockIter&,
-                     SCMatrixBlockIter&)
+OneBody3IntOp::process(SCMatrixBlockIter&,
+                       SCMatrixBlockIter&,
+                       SCMatrixBlockIter&)
 {
-  fprintf(stderr,"OneBody3Int::process(SCMatrixBlockIter&):"
+  fprintf(stderr,"OneBody3IntOp::process(SCMatrixBlockIter&):"
           " cannot handle generic case\n");
   abort();
 }
 
 void
-OneBody3Int::process(SCMatrixRectBlock* a,
-                     SCMatrixRectBlock* b,
-                     SCMatrixRectBlock* c)
+OneBody3IntOp::process(SCMatrixRectBlock* a,
+                       SCMatrixRectBlock* b,
+                       SCMatrixRectBlock* c)
 {
+  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
+  RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
+
   // convert basis function indices into shell indices
   int ishstart = bs1->function_to_shell(b->istart);
   int jshstart = bs2->function_to_shell(b->jstart);
+
   int ishend = bs1->function_to_shell(b->iend);
   int jshend = bs2->function_to_shell(b->jend);
 
   int njdata = b->jend - b->jstart;
 
-  iter->reset(ishstart, ishend, jshstart, jshend);
-  for (iter->start(); iter->ready(); iter->next()) {
-      int ish=iter->ishell();
-      int jsh=iter->jshell();
+  iter->redundant(0);
 
-      int nish = bs1->operator[](ish).nfunction();
-      int njsh = bs2->operator[](jsh).nfunction();
+  for (iter->start(ishstart,jshstart,ishend,jshend);
+       iter->ready(); iter->next()) {
+    int ish=iter->ishell();
+    int jsh=iter->jshell();
 
-      double scale = iter->scale();
+    // compute a set of shell integrals
+    ShellPairIter& spi = iter->current_pair();
 
-      // compute a set of shell integrals
-      compute_shell(ish,jsh,buffer_);
+    for (spi.start(); spi.ready(); spi.next()) {
+      int ifn = spi.i();
+      int jfn = spi.j();
+        
+      if (ifn < b->istart || ifn >= b->iend ||
+          jfn < b->jstart || jfn >= b->jend)
+        continue;
+      
+      int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
 
-      double*tmp = buffer_;
-      int ifn = bs1->shell_to_function(ish);
-      int jfnsave = bs2->shell_to_function(jsh);
+#if 0
       for (int i=0; i<nish; i++,ifn++) {
           if (ifn < b->istart || ifn >= b->iend) {
               tmp += njsh * 3;
@@ -427,14 +383,19 @@ OneBody3Int::process(SCMatrixRectBlock* a,
                 }
             }
         }
+#endif
     }
+  }
 }
 
 void
-OneBody3Int::process(SCMatrixLTriBlock* a,
-                     SCMatrixLTriBlock* b,
-                     SCMatrixLTriBlock* c)
+OneBody3IntOp::process(SCMatrixLTriBlock* a,
+                       SCMatrixLTriBlock* b,
+                       SCMatrixLTriBlock* c)
 {
+#if 0
+  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
+
   // convert basis function indices into shell indices
   int fnstart = b->start;
   int fnend = b->end;
@@ -481,22 +442,23 @@ OneBody3Int::process(SCMatrixLTriBlock* a,
             }
         }
     }
+#endif
 }
 
 int
-OneBody3Int::has_side_effects()
+OneBody3IntOp::has_side_effects()
 {
   return 1;
 }
 
 int
-OneBody3Int::has_side_effects_in_arg1()
+OneBody3IntOp::has_side_effects_in_arg1()
 {
   return 1;
 }
 
 int
-OneBody3Int::has_side_effects_in_arg2()
+OneBody3IntOp::has_side_effects_in_arg2()
 {
   return 1;
 }

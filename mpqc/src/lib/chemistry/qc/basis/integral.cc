@@ -6,6 +6,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/obint.h>
 
 SavableState_REF_def(Integral);
 

@@ -2,10 +2,12 @@
 xmolecule = $:ico_d5
 
 molecule<Molecule>: (
-  symmetry = d3
-  angstrom=yes
+  symmetry = c2v
+  %angstrom=yes
   { atoms geometry } = {
-    C  [ 1.0  0.0  0.0 ]
+    o  [ 0.0  0.0  0.0 ]
+    h  [ 1.5  0.0  1.0 ]
+    %C  [ 1.0  0.0  0.0 ]
     %N  [  0.675333  0.0  0.8753333 ]
     %N  [  1.0129995 0.0  1.31299995]
     %N  [ -1.25 0 3.4 ]
@@ -19,11 +21,22 @@ molecule<Molecule>: (
     }
  )
 
+test2 : [
+ <GaussianBasisSet>: (
+   molecule = $:molecule
+   %name = "foo"
+   %name = "STO-3G"
+   name = "6-31G**"
+   %name = "aug-cc-pVTZ"
+   %puream=yes
+ )
+]
+
 test : [
  <GaussianBasisSet>: (
    molecule = $:molecule
-   name = "foo"
-   %name = "STO-3G"
+   %name = "foo"
+   name = "STO-3G"
    %name = "6-31G**"
    %name = "aug-cc-pVTZ"
    %puream=yes

@@ -12,6 +12,7 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
+#if 0
 class SymmOneBodyIntIter : public OneBodyIntIter {
   protected:
     RefPetiteList pl;
@@ -28,6 +29,7 @@ class SymmOneBodyIntIter : public OneBodyIntIter {
 
     double scale() const;
 };
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -48,19 +50,19 @@ class SymmetryOrbitals {
 
     void print(FILE* =stdout);
 
-    RefBlockedSCDimension AO_basisdim();
-    RefBlockedSCDimension SO_basisdim();
+    RefSCDimension AO_basisdim();
+    RefSCDimension SO_basisdim();
 };
     
 ////////////////////////////////////////////////////////////////////////////
 
 class AOSO_Unit : public BlockedSCElementOp {
   private:
-    RefBlockedSCDimension d1;
-    RefBlockedSCDimension d2;
+    RefSCDimension d1;
+    RefSCDimension d2;
 
   public:
-    AOSO_Unit(const RefBlockedSCDimension&,const RefBlockedSCDimension&);
+    AOSO_Unit(const RefSCDimension&,const RefSCDimension&);
 
     void process(SCMatrixBlockIter&);
     void process(SCMatrixRectBlock*);

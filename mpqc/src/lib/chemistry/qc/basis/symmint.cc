@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 // SymmOneBodyIntIter
 
+#if 0
 SymmOneBodyIntIter::SymmOneBodyIntIter(const RefPetiteList& p) :
   pl(p)
 {
@@ -54,6 +55,7 @@ SymmOneBodyIntIter::scale() const
 {
   return (double) pl->lambda(icur,jcur) / (double) pl->order();
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -111,16 +113,13 @@ SymmetryOrbitals::print(FILE *out)
   }
 }
     
-RefBlockedSCDimension
+RefSCDimension
 SymmetryOrbitals::AO_basisdim()
 {
-  RefBlockedSCDimension ret =
-    new BlockedSCDimension(gbs_->matrixkit(),gbs_->nbasis());
-
-  return ret;
+  return pl_->AO_basisdim();
 }
 
-RefBlockedSCDimension
+RefSCDimension
 SymmetryOrbitals::SO_basisdim()
 {
   return pl_->SO_basisdim();
@@ -172,8 +171,8 @@ AOSO_Transformation::process(SCMatrixRectBlock* blk)
 
 ////////////////////////////////////////////////////////////////////////////
 
-AOSO_Unit::AOSO_Unit(const RefBlockedSCDimension& rd1,
-                     const RefBlockedSCDimension& rd2)
+AOSO_Unit::AOSO_Unit(const RefSCDimension& rd1,
+                     const RefSCDimension& rd2)
   : d1(rd1), d2(rd2)
 {
 }
@@ -189,6 +188,7 @@ AOSO_Unit::process(SCMatrixBlockIter&)
 void
 AOSO_Unit::process(SCMatrixRectBlock* blk)
 {
+#if 0
   int fi = (d1->nblocks()==1) ? d1->first(0) : d1->first(current_block());
   int fj = (d2->nblocks()==1) ? d2->first(0) : d2->first(current_block());
 
@@ -201,5 +201,6 @@ AOSO_Unit::process(SCMatrixRectBlock* blk)
     for (int j=blk->jstart; j < blk->jend; j++)
       if (i+fi==j+fj)
         blk->data[(i-blk->istart)*jsize+j-blk->jstart]=1;
+#endif
 }
 

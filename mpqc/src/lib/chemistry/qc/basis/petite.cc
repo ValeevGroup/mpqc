@@ -224,16 +224,13 @@ PetiteList::init()
   delete[] red_rep;
 }
 
-RefBlockedSCDimension
+RefSCDimension
 PetiteList::AO_basisdim()
 {
-  RefBlockedSCDimension ret =
-    new BlockedSCDimension(gbs_.matrixkit(),gbs_.nbasis());
-
-  return ret;
+  return gbs_.basisdim();
 }
 
-RefBlockedSCDimension
+RefSCDimension
 PetiteList::SO_basisdim()
 {
   int i, j, ii;
@@ -254,8 +251,7 @@ PetiteList::SO_basisdim()
       nao[ii] = nbf_in_ir_[i];
   }
 
-  RefBlockedSCDimension ret =
-    new BlockedSCDimension(gbs_.matrixkit(),ncomp,nao);
+  RefSCDimension ret = new SCDimension(gbs_.nbasis(),ncomp,nao);
 
   delete[] nao;
   
@@ -323,7 +319,7 @@ PetiteList::r(int g)
   SymmetryOperation so =
     gbs_.molecule()->point_group().char_table().symm_operation(g);
 
-  RefSCMatrix ret = gbs_.basisdim()->create_matrix(gbs_.basisdim());
+  RefSCMatrix ret = gbs_.matrixkit()->matrix(gbs_.basisdim(), gbs_.basisdim());
   ret.assign(0.0);
   
   // this should be replaced with an element op at some point

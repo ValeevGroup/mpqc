@@ -3,6 +3,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/integral.h>
 
 static void
@@ -19,13 +20,14 @@ ortho(const RefIntegral& ints, const RefGaussianBasisSet&t,
       abort();
     }
 
-  RefSCElementOp overlap = ints->overlap_op(t);
+  RefSCElementOp overlap = new OneBodyIntOp(ints->overlap_int(t));
   
-  RefSymmSCMatrix ov(dim);
+  RefSymmSCMatrix ov(dim, t->matrixkit());
   ov.element_op(overlap);
+  overlap=0;
 
-  RefSCMatrix trans(dim,dim);
-  RefDiagSCMatrix eigval(dim);
+  RefSCMatrix trans(dim,dim,t->matrixkit());
+  RefDiagSCMatrix eigval(dim,t->matrixkit());
 
   ov.diagonalize(eigval,trans);
 

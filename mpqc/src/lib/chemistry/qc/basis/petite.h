@@ -106,8 +106,8 @@ class PetiteList : public VRefCount {
 
     void print(FILE* =stdout, int verbose=1);
 
-    RefBlockedSCDimension AO_basisdim();
-    RefBlockedSCDimension SO_basisdim();
+    RefSCDimension AO_basisdim();
+    RefSCDimension SO_basisdim();
     SO_block * aotoso();
     RefSCMatrix r(int g);
 

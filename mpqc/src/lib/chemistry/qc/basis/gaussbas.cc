@@ -108,8 +108,9 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
   SavableState(s),
   center_to_nshell_(s)
 {
+  matrixkit_ = SCMatrixKit::default_matrixkit();
+
   molecule_.restore_state(s);
-  matrixkit_.restore_state(s);
   basisdim_.restore_state(s);
 
   ncenter_ = center_to_nshell_.length();
@@ -135,7 +136,6 @@ GaussianBasisSet::save_data_state(StateOut&s)
   center_to_nshell_.save_object_state(s);
 
   molecule_.save_state(s);
-  matrixkit_.save_state(s);
   basisdim_.save_state(s);
   
   s.putstring(name_);
@@ -311,7 +311,7 @@ GaussianBasisSet::init2()
     matrixkit_ = SCMatrixKit::default_matrixkit();
 
   if (basisdim_.null())
-    basisdim_ = matrixkit_->dimension(nbasis());
+    basisdim_ = new SCDimension(nbasis(), "basis set dimension");
 }
 
 void

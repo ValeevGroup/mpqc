@@ -10,12 +10,15 @@
 
 class SymmetryOperation;
 class RefPetiteList;
+class RefOneBodyInt;
+class RefOneBodyIntIter;
+class RefTwoBodyInt;
+class RefSymmSCMatrix;
 class ShellRotation;
 class CartesianIter;
 class RedundantCartesianIter;
 class RedundantCartesianSubIter;
 class SphericalTransformIter;
-class OneBodyIntIter;
 class PointBag_double;
 
 SavableState_REF_fwddec(SCElementOp)
@@ -43,7 +46,9 @@ class Integral : public SavableState {
     ShellRotation shell_rotation(int am, SymmetryOperation&, int pure=0);
 
 
+    ///////////////////////////////////////////////////////////////////////
     // the following must be defined in the specific integral package
+
     virtual CartesianIter * new_cartesian_iter(int) =0;
     virtual RedundantCartesianIter * new_redundant_cartesian_iter(int) =0;
     virtual RedundantCartesianSubIter *
@@ -51,50 +56,45 @@ class Integral : public SavableState {
     virtual SphericalTransformIter *
                               new_spherical_transform_iter(int, int=0) =0;
     
-    virtual RefSCElementOp overlap_op(const RefGaussianBasisSet&,
-                                      OneBodyIntIter* = 0) =0;
-    virtual RefSCElementOp overlap_op(const RefGaussianBasisSet&,
-                                      const RefGaussianBasisSet&,
-                                      OneBodyIntIter* = 0) =0;
+    virtual RefOneBodyInt overlap_int(const RefGaussianBasisSet&) =0;
+    virtual RefOneBodyInt overlap_int(const RefGaussianBasisSet&,
+                                      const RefGaussianBasisSet&) =0;
+    
+    virtual RefOneBodyInt kinetic_int(const RefGaussianBasisSet&) =0;
+    virtual RefOneBodyInt kinetic_int(const RefGaussianBasisSet&,
+                                      const RefGaussianBasisSet&) =0;
+    
 
-    virtual RefSCElementOp kinetic_op(const RefGaussianBasisSet&,
-                                      OneBodyIntIter* = 0) =0;
-    virtual RefSCElementOp kinetic_op(const RefGaussianBasisSet&,
-                                      const RefGaussianBasisSet&,
-                                      OneBodyIntIter* = 0) =0;
-
-    virtual RefSCElementOp point_charge_op(PointBag_double*,
+    virtual RefOneBodyInt point_charge_int(PointBag_double*,
+                                           const RefGaussianBasisSet&) =0;
+    virtual RefOneBodyInt point_charge_int(PointBag_double*,
                                            const RefGaussianBasisSet&,
-                                           OneBodyIntIter* = 0) =0;
-    virtual RefSCElementOp point_charge_op(PointBag_double*,
-                                           const RefGaussianBasisSet&,
-                                           const RefGaussianBasisSet&,
-                                           OneBodyIntIter* = 0) =0;
+                                           const RefGaussianBasisSet&) =0;
 
-    virtual RefSCElementOp nuclear_op(const RefGaussianBasisSet&,
-                                      OneBodyIntIter* =0) =0;
-    virtual RefSCElementOp nuclear_op(PointBag_double*,
+    virtual RefOneBodyInt nuclear_int(const RefGaussianBasisSet&) =0;
+    virtual RefOneBodyInt nuclear_int(PointBag_double*,
                                       const RefGaussianBasisSet&,
-                                      const RefGaussianBasisSet&,
-                                      OneBodyIntIter* = 0) =0;
+                                      const RefGaussianBasisSet&) =0;
 
-    virtual RefSCElementOp efield_dot_vector_op(const RefGaussianBasisSet&,
+    virtual RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
                                                 double *position = 0,
-                                                double *vector = 0,
-                                                OneBodyIntIter* =0) =0;
-    virtual RefSCElementOp efield_dot_vector_op(const RefGaussianBasisSet&,
+                                                double *vector = 0) =0;
+    virtual RefOneBodyInt efield_dot_vector_int(const RefGaussianBasisSet&,
                                                 const RefGaussianBasisSet&,
                                                 double *position = 0,
-                                                double *vector = 0,
-                                                OneBodyIntIter* = 0) =0;
+                                                double *vector = 0) =0;
 
-    virtual RefSCElementOp3 dipole_op(const RefGaussianBasisSet&,
-                                      double *origin = 0,
-                                      OneBodyIntIter* =0) =0;
-    virtual RefSCElementOp3 dipole_op(const RefGaussianBasisSet&,
-                                      const RefGaussianBasisSet&,
-                                      double *origin = 0,
-                                      OneBodyIntIter* = 0) =0;
+    virtual RefOneBodyInt dipole_int(const RefGaussianBasisSet&,
+                                     double *origin = 0) =0;
+    virtual RefOneBodyInt dipole_int(const RefGaussianBasisSet&,
+                                     const RefGaussianBasisSet&,
+                                     double *origin = 0) =0;
+
+    virtual RefTwoBodyInt two_body_int(const RefGaussianBasisSet&) =0;
+    virtual RefTwoBodyInt two_body_int(const RefGaussianBasisSet&,
+                                       const RefGaussianBasisSet&,
+                                       const RefGaussianBasisSet&,
+                                       const RefGaussianBasisSet&) =0;
 };
 SavableState_REF_dec(Integral);
 

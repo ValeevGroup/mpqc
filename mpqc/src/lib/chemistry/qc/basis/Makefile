@@ -15,11 +15,11 @@ BIN_OR_LIB = LIB
 CXXSRC = gaussbas.cc gaussbas_i.cc gaussshell.cc gaussshe_i.cc files.cc \
          gaussbaval.cc gaussshval.cc cartiter.cc cartiter_i.cc \
          transform.cc shellrot.cc integral.cc obint.cc petite.cc aotoso.cc \
-         symmint.cc ortho.cc
+         symmint.cc ortho.cc tbint.cc
 
 INC = basis.h gaussbas.h guassshell.h gaussbas_i.h gaussshe_i.h files.h \
       cartiter.h cartiter_i.h transform.h shellrot.h \
-      integral.h obint.h petite.h symmint.h
+      integral.h obint.h petite.h symmint.h tbint.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.o)
@@ -35,7 +35,7 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libbasis.so
 endif
 
-btest: $(TESTOBJ) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+btest: $(TESTOBJ) libintv2.a liboint2.a $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
 
 clean::

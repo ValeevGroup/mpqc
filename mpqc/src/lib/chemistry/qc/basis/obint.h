@@ -6,6 +6,7 @@
 #pragma interface
 #endif
 
+#include <util/ref/ref.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
@@ -14,99 +15,166 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-class OneBodyIntIter {
+class OneBodyInt : public VRefCount {
   protected:
-    int istart;
+    RefGaussianBasisSet bs1;
+    RefGaussianBasisSet bs2;
+
+    double *buffer_;
+
+  public:
+    OneBodyInt(const RefGaussianBasisSet&b);
+    OneBodyInt(const RefGaussianBasisSet&b1,
+               const RefGaussianBasisSet&b2);
+    virtual ~OneBodyInt();
+  
+    int nbasis() const;
+    int nbasis1() const;
+    int nbasis2() const;
+
+    int nshell() const;
+    int nshell1() const;
+    int nshell2() const;
+
+    RefGaussianBasisSet basis() { return bs1; }
+    RefGaussianBasisSet basis1() { return bs1; }
+    RefGaussianBasisSet basis2() { return bs2; }
+
+    const double * buffer() const { return buffer_; }
+    
+    virtual void compute_shell(int,int) = 0;
+};
+
+REF_dec(OneBodyInt);
+
+////////////////////////////////////////////////////////////////////////////
+
+class ShellPairIter {
+  private:
+    const double * buf;
+    double scale_;
+
+    int e12;
+
+    int index;
+    
+    int ioffset;
+    int joffset;
+
     int iend;
-    int jstart;
     int jend;
 
     int icur;
     int jcur;
     
   public:
-    OneBodyIntIter();
-    OneBodyIntIter(int,int,int,int);
-    virtual ~OneBodyIntIter();
+    ShellPairIter();
+    ~ShellPairIter();
+
+    void init(const double * buffer, int ishell, int jshell,
+              int ioff, int joff, int nfunci, int nfunci, int redund=0,
+              double scale=1.0);
+
+    void start() { icur=jcur=index=0; }
+    int ready() const { return (icur < iend); }
+
+    void next() {
+      if (jcur < ((e12)?(icur):((jend)-1))) {
+        index++;
+        jcur++;
+        return;
+      }
+
+      jcur=0;
+      icur++;
+
+      index = icur*jend;
+    }
+
+    int current_i() const { return icur; }
+    int current_j() const { return jcur; }
+
+    int i() const { return icur+ioffset; }
+    int j() const { return jcur+joffset; }
+
+    int nint() const { return iend*jend; }
     
-    virtual void reset(int,int,int,int);
-    
-    virtual void start();
-    virtual int ready();
-    virtual void next();
-
-    virtual void start_ltri();
-    virtual int ready_ltri();
-    virtual void next_ltri();
-
-    virtual int ishell() const;
-    virtual int jshell() const;
-
-    virtual double scale() const;
+    double val() const { return buf[index]*scale_; }
 };
 
 ////////////////////////////////////////////////////////////////////////////
 
-class OneBodyInt: public SCElementOp {
+class OneBodyIntIter : public VRefCount {
   protected:
-    OneBodyIntIter *iter;
-    RefGaussianBasisSet bs1;
-    RefGaussianBasisSet bs2;
-    double *buffer_;
+    RefOneBodyInt obi; // help me obi wan
+    ShellPairIter spi;
+    
+    int redund;
+    
+    int istart;
+    int jstart;
+    
+    int iend;
+    int jend;
+
+    int icur;
+    int jcur;
+
+    int ij;
+    
+  public:
+    OneBodyIntIter();
+    OneBodyIntIter(const RefOneBodyInt&);
+    virtual ~OneBodyIntIter();
+    
+    virtual void start(int ist=0, int jst=0, int ien=0, int jen=0);
+    virtual void next();
+
+    int ready() const { return (icur < iend); }
+
+    int ishell() const { return icur; }
+    int jshell() const { return jcur; }
+
+    int ijshell() const { return ij; }
+
+    int redundant(int i) { int ret=redund; redund=i; return ret; }
+    
+    virtual double scale() const;
+
+    RefOneBodyInt one_body_int() { return obi; }
+
+    ShellPairIter& current_pair();
+};
+
+REF_dec(OneBodyIntIter);
+
+////////////////////////////////////////////////////////////////////////////
+
+class OneBodyIntOp: public SCElementOp {
+  protected:
+    RefOneBodyIntIter iter;
 
   public:
-    OneBodyInt(const RefGaussianBasisSet&b, OneBodyIntIter* =0);
-    OneBodyInt(const RefGaussianBasisSet&b1, const RefGaussianBasisSet&b2,
-               OneBodyIntIter* =0);
+    OneBodyIntOp(const RefOneBodyInt&);
+    OneBodyIntOp(const RefOneBodyIntIter&);
+    virtual ~OneBodyIntOp();
   
-    virtual int nbasis();
-    virtual int nbasis1();
-    virtual int nbasis2();
-
-    virtual int nshell();
-    virtual int nshell1();
-    virtual int nshell2();
-
-    RefGaussianBasisSet basis() { return bs1; }
-    RefGaussianBasisSet basis1() { return bs1; }
-    RefGaussianBasisSet basis2() { return bs2; }
-
-    virtual void compute_shell(int,int,double*) = 0;
-
     virtual void process(SCMatrixBlockIter&);
     virtual void process(SCMatrixRectBlock*);
     virtual void process(SCMatrixLTriBlock*);
 
     int has_side_effects();
-
-    virtual ~OneBodyInt();
 };
 
-class OneBody3Int: public SCElementOp3 {
+class OneBody3IntOp: public SCElementOp3 {
   private:
-    OneBodyIntIter *iter;
-    RefGaussianBasisSet bs1;
-    RefGaussianBasisSet bs2;
-    double *buffer_;
+    RefOneBodyIntIter iter;
 
   public:
-    OneBody3Int(const RefGaussianBasisSet&b, OneBodyIntIter* =0);
-    OneBody3Int(const RefGaussianBasisSet&b1,const RefGaussianBasisSet&b2,
-                OneBodyIntIter* =0);
+    OneBody3IntOp(const RefOneBodyInt&b);
+    OneBody3IntOp(const RefOneBodyIntIter&);
+    virtual ~OneBody3IntOp();
   
-    virtual int nbasis();
-    virtual int nbasis1();
-    virtual int nbasis2();
-    virtual int nshell();
-    virtual int nshell1();
-    virtual int nshell2();
-
-    RefGaussianBasisSet basis() { return bs1; }
-    RefGaussianBasisSet basis1() { return bs1; }
-    RefGaussianBasisSet basis2() { return bs2; }
-
-    virtual void compute_shell(int,int,double*) = 0;
-
     virtual void process(SCMatrixBlockIter&,
                          SCMatrixBlockIter&,
                          SCMatrixBlockIter&);
@@ -121,7 +189,6 @@ class OneBody3Int: public SCElementOp3 {
     int has_side_effects_in_arg1();
     int has_side_effects_in_arg2();
 
-    virtual ~OneBody3Int();
 };
 
 #endif

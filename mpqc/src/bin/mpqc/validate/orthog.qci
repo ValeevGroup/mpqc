@@ -1,0 +1,26 @@
+
+gradient: yes
+test_basis: 6-311++G**
+test_method:        scf hfs  mp2   mp2 mp2 mp2
+test_method_option:  -   -  memgrp v1  v2  v2lb
+test_molecule:          h2o ch2
+test_molecule_symmetry: c2v c2v
+test_multiplicity:       0   1
+test_orthog_method: gramschmidt canonical symmetric
+test_lindep_tol: 0.0001 0.0010 0.0100 0.0200 0.0300 0.0400 0.0500
+
+restart: no
+checkpoint: no
+
+label: orthogonalization set series
+
+
+h2o:
+  O  0.00 0.00  0.37
+  H  0.78 0.00 -0.18
+  H -0.78 0.00 -0.18
+
+ch2:
+  C  0.00  0.00 -0.10
+  H  0.00  0.86  0.60
+  H  0.00 -0.86  0.60

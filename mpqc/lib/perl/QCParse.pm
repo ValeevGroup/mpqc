@@ -502,6 +502,20 @@ sub optimize {
     $bval;
 }
 
+# returns "" if orthog_method not set
+sub orthog_method {
+    my $self = shift;
+    my $bval = $self->{"parser"}->value("orthog_method");
+    $bval;
+}
+
+# returns "" if lindep_tol not set
+sub lindep_tol {
+    my $self = shift;
+    my $bval = $self->{"parser"}->value("lindep_tol");
+    $bval;
+}
+
 sub transition_state {
     my $self = shift;
     my $bval = $self->{"parser"}->boolean_value("transition_state");
@@ -837,6 +851,8 @@ sub input_string() {
             $openmethod = "U";
         }
     }
+    my $orthog_method = $qcinput->orthog_method();
+    my $lindep_tol = $qcinput->lindep_tol();
     my $mole = "  do_energy = yes";
     if ($qcinput->gradient()) {
         $mole = "$mole\n  do_gradient = yes";
@@ -857,6 +873,12 @@ sub input_string() {
         $mole = "$mole\n    print_npa = yes";
         if ($docc ne "") {$mole = "$mole\n    $docc";}
         if ($socc ne "") {$mole = "$mole\n    $socc";}
+        if ($orthog_method ne "" ) {
+            $mole = "$mole\n    orthog_method = $orthog_method";
+        }
+        if ($lindep_tol ne "" ) {
+            $mole = "$mole\n    lindep_tol = $lindep_tol";
+        }
     }
     if ($method eq "CLKS" || $method eq "UKS" || $method eq "HSOSKS") {
         $mole = "$mole\n    functional<StdDenFunctional>: name = \"$functional\"";
@@ -885,6 +907,12 @@ sub input_string() {
         $mole = "$mole\n      total_charge = $charge";
         $mole = "$mole\n      multiplicity = $mult";
         $mole = "$mole\n      memory = $memory";
+        if ($orthog_method ne "" ) {
+            $mole = "$mole\n      orthog_method = $orthog_method";
+        }
+        if ($lindep_tol ne "" ) {
+            $mole = "$mole\n      lindep_tol = $lindep_tol";
+        }
         if ($docc ne "") {$mole = "$mole\n      $docc";}
         if ($socc ne "") {$mole = "$mole\n      $socc";}
         if (! ($basis =~ /^STO/

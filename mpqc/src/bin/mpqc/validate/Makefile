@@ -33,6 +33,10 @@ H2OFRQMASTER=h2ofrq.qci
 H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(H2OFRQMASTER))
 H2OFRQOUTPUTS = $(H2OFRQINPUTS:%.$(INSUF)=%.out)
 
+ORTHOGMASTER=orthog.qci
+ORTHOGINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(ORTHOGMASTER))
+ORTHOGOUTPUTS = $(ORTHOGINPUTS:%.$(INSUF)=%.out)
+
 BASIS1MASTER=basis1.qci
 BASIS1INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(BASIS1MASTER))
 BASIS1OUTPUTS = $(BASIS1INPUTS:%.$(INSUF)=%.out)
@@ -126,7 +130,7 @@ INPUTINPUTS := $(INPUTINPUTS:%=run/input_%)
 ##############################################################################
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
-            $(BASIS1INPUTS) $(BASIS2INPUTS) \
+            $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(DFTINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
@@ -146,7 +150,7 @@ default::
 
 .PHONY: inputs
 inputs:: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf input dft
+inputs:: methods clscf uscf hsosscf input dft orthog
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -156,6 +160,9 @@ h2omp2: stamp-h2omp2
 
 .PHONY: h2ofrq
 h2ofrq: stamp-h2ofrq
+
+.PHONY: orthog
+orthog: stamp-orthog
 
 .PHONY: basis1
 basis1: stamp-basis1
@@ -213,6 +220,10 @@ stamp-h2omp2: $(RUN) $(H2OMP2MASTER) $(INPUTGENDEPS)
 stamp-h2ofrq: $(RUN) $(H2OFRQMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OFRQMASTER)
 	touch stamp-h2ofrq
+
+stamp-orthog: $(RUN) $(ORTHOGMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(ORTHOGMASTER)
+	touch stamp-orthog
 
 stamp-basis1: $(RUN) $(BASIS1MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(BASIS1MASTER)

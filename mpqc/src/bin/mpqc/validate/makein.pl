@@ -113,6 +113,7 @@ sub process_file {
     init_var($test_vars, $parse, "grid", "default");
     init_var($test_vars, $parse, "symmetry", "C1");
     init_var($test_vars, $parse, "method", "SCF");
+    init_var($test_vars, $parse, "method_option", "-");
     init_var($test_vars, $parse, "calc", "energy");
     init_var($test_vars, $parse, "fzc", 0);
     init_var($test_vars, $parse, "fzv", 0);
@@ -121,6 +122,8 @@ sub process_file {
     init_var($test_vars, $parse, "multiplicity", 1);
     init_var($test_vars, $parse, "gradient", "default");
     init_var($test_vars, $parse, "molecule", "molecule");
+    init_var($test_vars, $parse, "orthog_method", "default");
+    init_var($test_vars, $parse, "lindep_tol", "default");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
     my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");
@@ -152,11 +155,14 @@ sub process_file {
         my $mult = $test_vars->{"multiplicity"}->[$index->{"multiplicity"}];
         my $gradient = $test_vars->{"gradient"}->[$index->{"gradient"}];
         my $method = $test_vars->{"method"}->[$index->{"method"}];
+        my $method_option = $test_vars->{"method_option"}->[$index->{"method_option"}];
         my $calc = $test_vars->{"calc"}->[$index->{"calc"}];
         my $symmetry = $test_vars->{"symmetry"}->[$index->{"symmetry"}];
         my $molecule = $test_vars->{"molecule"}->[$index->{"molecule"}];
         my $fixed = $molecule_fixed[$index->{"fixed"}];
         my $followed = $molecule_fixed[$index->{"followed"}];
+        my $orthog_method = $test_vars->{"orthog_method"}->[$index->{"orthog_method"}];
+        my $lindep_tol = $test_vars->{"lindep_tol"}->[$index->{"lindep_tol"}];
         # if i got an array of molecule names then i expect
         # an array of point groups, one for each molecule
         if ($molecule ne "molecule") {
@@ -236,6 +242,8 @@ sub process_file {
             exit 1;
         }
 
+        # extra filename modifiers
+        my $fextra = "";
         $parse->set_value("basis", $basis);
         $parse->set_value("grid", $grid);
         $parse->set_value("method", $method);
@@ -247,6 +255,26 @@ sub process_file {
         $parse->set_value("state", $mult);
         if ($gradient ne "default") {
             $parse->set_value("gradient", $gradient);
+        }
+        if ($orthog_method ne "default") {
+            $parse->set_value("orthog_method", $orthog_method);
+            if ($orthog_method eq "gramschmidt") {
+                $fextra = "gs$fextra";
+            }
+            elsif ($orthog_method eq "canonical") {
+                $fextra = "can$fextra";
+            }
+            elsif ($orthog_method eq "symmetric") {
+                $fextra = "sym$fextra";
+            }
+            else {
+                $fextra = "$orthog_method$fextra";
+            }
+        }
+        if ($lindep_tol ne "default") {
+            $parse->set_value("lindep_tol", $lindep_tol);
+            my $ldtolindex = $index->{"lindep_tol"};
+            $fextra = "t$ldtolindex$fextra";
         }
         $parse->set_value("molecule", $parse->value($molecule));
         $parse->set_value("fixed", $parse->value($fixed));
@@ -278,7 +306,7 @@ sub process_file {
         $basis = tofilename($basis);
         $symmetry = tofilename($symmetry);
         if ($grid eq "default") {$grid = "";}
-        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$symmetry$fcalc";
+        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$symmetry$fcalc$fextra";
         my $writer;
 
         if ($package eq "g94") {

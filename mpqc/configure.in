@@ -899,17 +899,6 @@ if test X$PARALLEL = Xyes; then
                  [HAVE_MPI2_ONE_SIDED=yes;AC_DEFINE(HAVE_MPI2_ONE_SIDED)])
   fi
   AC_LANG_RESTORE
-
-  dnl ----- check for the pvm library
-  AC_CHECK_HEADER(pvm.h,[
-    AC_CHECK_LIB(pvm,exit,HAVE_PVM=yes)
-    ]
-  )
-  if test X$HAVE_PVM = Xyes; then
-    AC_DEFINE(HAVE_PVM)
-    LIBS="-lpvm $LIBS"
-  fi
-
 fi
 
 AC_SUBST(HAVE_PERF)
@@ -917,7 +906,6 @@ AC_SUBST(HAVE_MPL)
 AC_SUBST(HAVE_P4)
 AC_SUBST(HAVE_MPI2_ONE_SIDED)
 AC_SUBST(HAVE_MPI)
-AC_SUBST(HAVE_PVM)
 AC_SUBST(HAVE_PTHREAD)
 AC_SUBST(EXTRADEFINES)
 

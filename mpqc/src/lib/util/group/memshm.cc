@@ -268,7 +268,7 @@ ShmMemoryGrp::set_localsize(int localsize)
       itry = 0;
       while (attach_memory(address,size) && itry < ntry) {
           if (address == 0) address = memory_;
-          else address += 0x1000000;
+          else address = (void*) &((char*)address)[0x1000000];
           itry++;
         }
       if (itry == ntry) {
@@ -291,7 +291,7 @@ ShmMemoryGrp::set_localsize(int localsize)
       if (fail) {
           detach_memory();
         }
-      address += 0x1000000;
+      address = (void*) &((char*)address)[0x1000000];
       itry++;
     } while(fail && itry < ntry);
   if (itry == ntry) {

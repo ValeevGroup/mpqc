@@ -28,6 +28,7 @@ extern "C" {
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/molfreq.h>
 
 #include <chemistry/qc/mbpt/opt2.h>
 #include <chemistry/qc/mbpt/mp2grad.h>
@@ -193,6 +194,7 @@ main(int argc, char *argv[])
   char *pdbfile = SCFormIO::fileext_to_filename(".pdb");
 
   RefDebugger debugger;
+  RefMolecularFrequencies molfreq;
 
  // initialize the picl routines
   RefMessageGrp msg = init_mp(filename, argc, argv);
@@ -224,6 +226,8 @@ main(int argc, char *argv[])
     pkv = new ParsedKeyVal("input",ppkv);
     keyval = new AggregateKeyVal(ppkv,pkv);
 
+    pkv = ppkv = 0;
+
     debugger = keyval->describedclassvalue(":debug");
     // Let the debugger know the name of the executable and the node
     if (debugger.nonnull()) {
@@ -231,11 +235,13 @@ main(int argc, char *argv[])
         debugger->set_prefix(msg->me());
       }
 
-    pkv = ppkv = 0;
+    molfreq = keyval->describedclassvalue("freq");
 
     gbs = keyval->describedclassvalue("basis");
     if (gbs.null()) {
-        fprintf(stderr,"mpqcic: couldn't read \"basis\"\n");
+        cerr << argv[0] << ": couldn't read \"basis\":" << endl;
+        cerr << "Make sure the keyword mpqc:basis exists and is" << endl;
+        cerr << "of type GaussianBasisSet" << endl;
         abort();
       }
     tcenters = int_centers_from_gbs(gbs);
@@ -455,7 +461,9 @@ main(int argc, char *argv[])
   bcaststate.bcast(nfzv);
   bcaststate.bcast(mem_alloc);
   bcaststate.bcast(debugger);
+  bcaststate.bcast(mol);
   bcaststate.bcast(gbs);
+  bcaststate.bcast(molfreq);
   bcaststate.flush();
 
   // set up the basis set on this center
@@ -805,6 +813,55 @@ main(int argc, char *argv[])
                 nfzc,nfzv,mem_alloc,
                 do_opt2_v1, do_opt2_v2, do_opt2v2lb,
                 outfile);
+    }
+
+  if (molfreq.nonnull()) {
+      tim->enter("frequencies");
+      cout << "Computing molecular frequencies from "
+           << molfreq->ndisplace() << " displacements:" << endl;
+      molfreq->compute_displacements();
+      for (int i=0; i<molfreq->ndisplace(); i++) {
+          // This produces side-effects in mol and may even change
+          // its symmetry.
+          cout << "Beginning displacement " << i << ":" << endl;
+          molfreq->displace(i);
+          if (sym_struct_from_gbs(gbs, sym_info) < 0) {
+              fprintf(stderr,"mpqcic: could not form sym_info for disp\n");
+              exit(1);
+            }
+          reset_centers(centers,mol);
+          errcod = scf_vector(&scf_info,
+                              &sym_info, &centers, Fock, FockO, Scf_Vec,
+                              &oldcenters, outfile);
+          if (do_mp2) {
+              mbpt_mp2_gradient(scf_info, sym_info, centers,
+                                nfzc, nfzv,
+                                Scf_Vec, Fock, FockO,
+                                mem_alloc, outfile, msg, mem,
+                                energy, gradient);
+            }
+          else if (!scf_info.iopen) {
+              dmt_force_csscf(outfile, Fock, Scf_Vec,
+                              &centers, &sym_info, scf_info.nclosed,
+                              &gradient);
+            }
+          else {
+              dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
+                              &centers, &sym_info, scf_info.nclosed,
+                              scf_info.nopen, &gradient);
+            }
+          // convert the gradient to a SCVector
+          RefSCVector gradv(molfreq->d3natom(), gbs->matrixkit());
+          int ii,jj,ij;
+          for (jj=ij=0; jj < gradient.n2; jj++) {
+            for (ii=0; ii < gradient.n1; ii++,ij++) {
+              gradv->set_element(ij,gradient.d[ii][jj]);
+            }
+          }
+          molfreq->set_gradient(i, gradv);
+        }
+      molfreq->compute_frequencies_from_gradients();
+      tim->exit("frequencies");
     }
 
   if (msg->me() == 0) cout << "Timing Summary:" << endl;

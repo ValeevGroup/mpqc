@@ -59,6 +59,12 @@ install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 
+install::
+	sed "s+exec perl+exec perl -I$(prefix)/lib/perl+" \
+		< $(SRCDIR)/validate/checkout.pl \
+		> $(bindir)/chkmpqcout
+	chmod 555 $(bindir)/chkmpqcout
+
 distclean::
 	/bin/rm -f mpqc
 	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output

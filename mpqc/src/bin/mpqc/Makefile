@@ -75,17 +75,22 @@ distclean::
 
 # (only works with bison and flex)
 parse.cc: parse.yy
-	$(BISON) -v -d -o parse.tmp $^
-	cat parse.tmp \
+	$(BISON) -v -d -o parse.tmp.cc $^
+	cat parse.tmp.cc \
 		| sed "s/^int yyparse.*;$$//" \
 		| sed "s/^YYPARSE_RETURN_TYPE yyparse.*;$$//" \
 		| sed "s/yylval/MPQCInylval/g" \
 		> parse.cc
-	cat parse.tmp.h \
-		| sed "s/yylval/MPQCInylval/g" \
-		> parse.h
-	/bin/mv parse.tmp.output parse.output
-	-@rm -f parse.tmp parse.tmp.h
+	if test -f parse.tmp.cc.h; then \
+	  echo "Older bison detected."; \
+	  cat parse.tmp.cc.h | sed "s/yylval/MPQCInylval/g" > parse.h; \
+	  /bin/mv parse.tmp.cc.output parse.output; \
+	else \
+	  echo "Newer bison detected."; \
+	  cat parse.tmp.hh | sed "s/yylval/MPQCInylval/g" > parse.h; \
+	  /bin/mv parse.tmp.output parse.output; \
+	fi
+	#-@rm -f parse.tmp*
 
 scan.cc: scan.ll
 	echo "#ifdef HAVE_CONFIG_H"  > scan.cc

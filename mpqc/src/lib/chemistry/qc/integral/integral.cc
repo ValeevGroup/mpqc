@@ -7,12 +7,27 @@
 ///////////////////////////////////////////////////////////////////////
 
 OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b):
-  bs(b)
+  bs1(b), bs2(b)
 {
   // allocate a buffer
   int biggest_shell = b->max_nfunction_in_shell();
   if (biggest_shell) {
       buffer_ = new double[biggest_shell * biggest_shell];
+    }
+  else {
+      buffer_ = 0;
+    }
+}
+
+OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b1,
+                       const RefGaussianBasisSet&b2) :
+  bs1(b1), bs2(b2)
+{
+  // allocate a buffer
+  int biggest_shell = b1->max_nfunction_in_shell() *
+                      b2->max_nfunction_in_shell();
+  if (biggest_shell) {
+      buffer_ = new double[biggest_shell];
     }
   else {
       buffer_ = 0;
@@ -26,12 +41,32 @@ OneBodyInt::~OneBodyInt()
 
 int OneBodyInt::nbasis()
 {
-  return bs->nbasis();
+  return bs1->nbasis();
+}
+
+int OneBodyInt::nbasis1()
+{
+  return bs1->nbasis();
+}
+
+int OneBodyInt::nbasis2()
+{
+  return bs2->nbasis();
 }
 
 int OneBodyInt::nshell()
 {
-  return bs->nshell();
+  return bs1->nshell();
+}
+
+int OneBodyInt::nshell1()
+{
+  return bs1->nshell();
+}
+
+int OneBodyInt::nshell2()
+{
+  return bs2->nshell();
 }
 
 void
@@ -46,24 +81,26 @@ void
 OneBodyInt::process(SCMatrixRectBlock* b)
 {
   // convert basis function indices into shell indices
-  int ishstart = bs->function_to_shell(b->istart);
-  int jshstart = bs->function_to_shell(b->jstart);
-  int ishend = bs->function_to_shell(b->iend);
-  int jshend = bs->function_to_shell(b->jend);
+  int ishstart = bs1->function_to_shell(b->istart);
+  int jshstart = bs2->function_to_shell(b->jstart);
+  int b1end = b->iend;
+  int ishend = (b1end?bs1->function_to_shell(b1end-1) + 1 : 0);
+  int b2end = b->jend;
+  int jshend = (b2end?bs2->function_to_shell(b2end-1) + 1 : 0);
 
   int njdata = b->jend - b->jstart;
 
   for (int ish=ishstart;ish<ishend;ish++) {
-      int nish = bs->operator[](ish).nfunction();
+      int nish = bs1->operator[](ish).nfunction();
       for (int jsh=jshstart;jsh<jshend;jsh++) {
-          int njsh = bs->operator[](jsh).nfunction();
+          int njsh = bs2->operator[](jsh).nfunction();
 
           // compute a set of shell integrals
           compute_shell(ish,jsh,buffer_);
 
           double*tmp = buffer_;
-          int ifn = bs->shell_to_function(ish);
-          int jfnsave = bs->shell_to_function(jsh);
+          int ifn = bs1->shell_to_function(ish);
+          int jfnsave = bs2->shell_to_function(jsh);
           for (int i=0; i<nish; i++,ifn++) {
               if (ifn < b->istart || ifn >= b->iend) {
                   tmp += njsh;
@@ -91,22 +128,22 @@ OneBodyInt::process(SCMatrixLTriBlock* b)
   // convert basis function indices into shell indices
   int fnstart = b->start;
   int fnend = b->end;
-  int shstart = bs->function_to_shell(fnstart);
-  int shend = (fnend?bs->function_to_shell(fnend - 1) + 1 : 0);
+  int shstart = bs1->function_to_shell(fnstart);
+  int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
 
   // loop over all needed shells
   for (int ish=shstart;ish<shend;ish++) {
-      int nish = bs->operator[](ish).nfunction();
+      int nish = bs1->operator[](ish).nfunction();
       for (int jsh=shstart;jsh<=ish;jsh++) {
-          int njsh = bs->operator[](jsh).nfunction();
+          int njsh = bs1->operator[](jsh).nfunction();
 
           // compute a set of shell integrals
           compute_shell(ish,jsh,buffer_);
 
           // take the integrals from buffer and put them into the LTri block
           double*tmp = buffer_;
-          int ifn = bs->shell_to_function(ish);
-          int jfnsave = bs->shell_to_function(jsh);
+          int ifn = bs1->shell_to_function(ish);
+          int jfnsave = bs1->shell_to_function(jsh);
           for (int i=0; i<nish; i++,ifn++) {
               // skip over basis functions that are not needed
               if (ifn < fnstart || ifn >= fnend) {
@@ -140,7 +177,7 @@ OneBodyInt::has_side_effects()
 ///////////////////////////////////////////////////////////////////////
 
 OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b):
-  bs(b)
+  bs1(b), bs2(b)
 {
   // allocate a buffer
   int biggest_shell = b->max_nfunction_in_shell();
@@ -152,6 +189,21 @@ OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b):
     }
 }
 
+OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b1,
+                         const RefGaussianBasisSet&b2) :
+  bs1(b1), bs2(b2)
+{
+  // allocate a buffer
+  int biggest_shell = b1->max_nfunction_in_shell() *
+                      b2->max_nfunction_in_shell();
+  if (biggest_shell) {
+      buffer_ = new double[biggest_shell * 3];
+    }
+  else {
+      buffer_ = 0;
+   }
+}
+
 OneBody3Int::~OneBody3Int()
 {
   if (buffer_) delete[] buffer_;
@@ -159,12 +211,32 @@ OneBody3Int::~OneBody3Int()
 
 int OneBody3Int::nbasis()
 {
-  return bs->nbasis();
+  return bs1->nbasis();
+}
+
+int OneBody3Int::nbasis1()
+{
+  return bs1->nbasis();
+}
+
+int OneBody3Int::nbasis2()
+{
+  return bs2->nbasis();
 }
 
 int OneBody3Int::nshell()
 {
-  return bs->nshell();
+  return bs1->nshell();
+}
+
+int OneBody3Int::nshell1()
+{
+  return bs1->nshell();
+}
+
+int OneBody3Int::nshell2()
+{
+  return bs2->nshell();
 }
 
 void
@@ -183,24 +255,24 @@ OneBody3Int::process(SCMatrixRectBlock* a,
                      SCMatrixRectBlock* c)
 {
   // convert basis function indices into shell indices
-  int ishstart = bs->function_to_shell(b->istart);
-  int jshstart = bs->function_to_shell(b->jstart);
-  int ishend = bs->function_to_shell(b->iend);
-  int jshend = bs->function_to_shell(b->jend);
+  int ishstart = bs1->function_to_shell(b->istart);
+  int jshstart = bs2->function_to_shell(b->jstart);
+  int ishend = bs1->function_to_shell(b->iend);
+  int jshend = bs2->function_to_shell(b->jend);
 
   int njdata = b->jend - b->jstart;
 
   for (int ish=ishstart;ish<ishend;ish++) {
-      int nish = bs->operator[](ish).nfunction();
+      int nish = bs1->operator[](ish).nfunction();
       for (int jsh=jshstart;jsh<jshend;jsh++) {
-          int njsh = bs->operator[](jsh).nfunction();
+          int njsh = bs2->operator[](jsh).nfunction();
 
           // compute a set of shell integrals
           compute_shell(ish,jsh,buffer_);
 
           double*tmp = buffer_;
-          int ifn = bs->shell_to_function(ish);
-          int jfnsave = bs->shell_to_function(jsh);
+          int ifn = bs1->shell_to_function(ish);
+          int jfnsave = bs2->shell_to_function(jsh);
           for (int i=0; i<nish; i++,ifn++) {
               if (ifn < b->istart || ifn >= b->iend) {
                   tmp += njsh * 3;
@@ -232,22 +304,22 @@ OneBody3Int::process(SCMatrixLTriBlock* a,
   // convert basis function indices into shell indices
   int fnstart = b->start;
   int fnend = b->end;
-  int shstart = bs->function_to_shell(fnstart);
-  int shend = (fnend?bs->function_to_shell(fnend - 1) + 1 : 0);
+  int shstart = bs1->function_to_shell(fnstart);
+  int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
 
   // loop over all needed shells
   for (int ish=shstart;ish<shend;ish++) {
-      int nish = bs->operator[](ish).nfunction();
+      int nish = bs1->operator[](ish).nfunction();
       for (int jsh=shstart;jsh<=ish;jsh++) {
-          int njsh = bs->operator[](jsh).nfunction();
+          int njsh = bs1->operator[](jsh).nfunction();
 
           // compute a set of shell integrals
           compute_shell(ish,jsh,buffer_);
 
           // take the integrals from buffer and put them into the LTri block
           double*tmp = buffer_;
-          int ifn = bs->shell_to_function(ish);
-          int jfnsave = bs->shell_to_function(jsh);
+          int ifn = bs1->shell_to_function(ish);
+          int jfnsave = bs1->shell_to_function(jsh);
           for (int i=0; i<nish; i++,ifn++) {
               // skip over basis functions that are not needed
               if (ifn < fnstart || ifn >= fnend) {

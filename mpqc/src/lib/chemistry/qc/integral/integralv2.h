@@ -7,65 +7,80 @@
 #include <chemistry/qc/integral/integral.h>
 #include <math/topology/pointbag.h>
 
-class OneBodyIntv2:
-  public OneBodyInt
+class OneBodyIntv2 : public OneBodyInt
 {
- protected:
-  struct struct_centers* c;
- public:
-  OneBodyIntv2(const RefGaussianBasisSet&,const RefMolecule&);
-  ~OneBodyIntv2();
+  private:
+    int same_center;
+  protected:
+    struct struct_centers* c1;
+    struct struct_centers* c2;
+  public:
+    OneBodyIntv2(const RefGaussianBasisSet&,const RefMolecule&);
+    OneBodyIntv2(const RefGaussianBasisSet&, const RefGaussianBasisSet&,
+                 const RefMolecule&);
+    ~OneBodyIntv2();
 };
 
-class OneBody3Intv2:
-  public OneBody3Int
+class OneBody3Intv2 : public OneBody3Int
 {
- protected:
-  struct struct_centers* c;
- public:
-  OneBody3Intv2(const RefGaussianBasisSet&,const RefMolecule&);
-  ~OneBody3Intv2();
+  private:
+    int same_center;
+  protected:
+    struct struct_centers* c1;
+    struct struct_centers* c2;
+  public:
+    OneBody3Intv2(const RefGaussianBasisSet&,const RefMolecule&);
+    OneBody3Intv2(const RefGaussianBasisSet&, const RefGaussianBasisSet&,
+                  const RefMolecule&);
+    ~OneBody3Intv2();
 };
 
-class GaussianOverlapIntv2:
-  public OneBodyIntv2
+class GaussianOverlapIntv2 : public OneBodyIntv2
 {
- private:
- public:
-  GaussianOverlapIntv2(const RefGaussianBasisSet&);
-  ~GaussianOverlapIntv2();
-  void compute_shell(int,int,double*);
+  public:
+    GaussianOverlapIntv2(const RefGaussianBasisSet&);
+    GaussianOverlapIntv2(const RefGaussianBasisSet&,
+                         const RefGaussianBasisSet&);
+    ~GaussianOverlapIntv2();
+    void compute_shell(int,int,double*);
 };
 
-class GaussianKineticIntv2:
-  public OneBodyIntv2
+class GaussianKineticIntv2 : public OneBodyIntv2
 {
- private:
- public:
-  GaussianKineticIntv2(const RefGaussianBasisSet&,const RefMolecule&);
-  ~GaussianKineticIntv2();
-  void compute_shell(int,int,double*);
+  public:
+    GaussianKineticIntv2(const RefGaussianBasisSet&,const RefMolecule&);
+    GaussianKineticIntv2(const RefGaussianBasisSet&,
+                         const RefGaussianBasisSet&,
+                         const RefMolecule&);
+    ~GaussianKineticIntv2();
+    void compute_shell(int,int,double*);
 };
 
-class GaussianPointChargeIntv2:
-  public OneBodyIntv2
+class GaussianPointChargeIntv2 : public OneBodyIntv2
 {
- private:
-  int ncharge;
-  double** position;
-  double* charge;
- public:
-  GaussianPointChargeIntv2(PointBag_double*,const RefGaussianBasisSet&,const RefMolecule&);
-  ~GaussianPointChargeIntv2();
-  void compute_shell(int,int,double*);
+  private:
+    int ncharge;
+    double** position;
+    double* charge;
+
+    void init(PointBag_double*);
+    
+  public:
+    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&,
+                             const RefMolecule&);
+    GaussianPointChargeIntv2(PointBag_double*, const RefGaussianBasisSet&,
+                             const RefGaussianBasisSet&, const RefMolecule&);
+    ~GaussianPointChargeIntv2();
+    void compute_shell(int,int,double*);
 };
 
-class GaussianNuclearIntv2:
-  public GaussianPointChargeIntv2
+class GaussianNuclearIntv2 : public GaussianPointChargeIntv2
 {
- public:
-  GaussianNuclearIntv2(const RefGaussianBasisSet&,const RefMolecule&);
-  ~GaussianNuclearIntv2();
+  public:
+    GaussianNuclearIntv2(const RefGaussianBasisSet&,const RefMolecule&);
+    GaussianNuclearIntv2(const RefGaussianBasisSet&,const RefGaussianBasisSet&,
+                         const RefMolecule&);
+    ~GaussianNuclearIntv2();
 };
 
 class GaussianEfieldDotVectorIntv2: public OneBodyIntv2
@@ -76,6 +91,11 @@ class GaussianEfieldDotVectorIntv2: public OneBodyIntv2
     double vector_[3];
   public:
     GaussianEfieldDotVectorIntv2(const RefGaussianBasisSet&,
+                                 const RefMolecule&,
+                                 double *postion = 0,
+                                 double *vector = 0);
+    GaussianEfieldDotVectorIntv2(const RefGaussianBasisSet&,
+                                 const RefGaussianBasisSet&,
                                  const RefMolecule&,
                                  double *postion = 0,
                                  double *vector = 0);
@@ -91,6 +111,10 @@ class GaussianDipoleIntv2: public OneBody3Intv2
     double origin_[3];
   public:
     GaussianDipoleIntv2(const RefGaussianBasisSet&,
+                        const RefMolecule&,
+                        const double *origin = 0);
+    GaussianDipoleIntv2(const RefGaussianBasisSet&,
+                        const RefGaussianBasisSet&,
                         const RefMolecule&,
                         const double *origin = 0);
     ~GaussianDipoleIntv2();

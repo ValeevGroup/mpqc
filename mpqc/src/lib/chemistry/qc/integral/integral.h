@@ -9,14 +9,24 @@
 class OneBodyInt: public SCElementOp
 {
  private:
-  RefGaussianBasisSet bs;
+  RefGaussianBasisSet bs1;
+  RefGaussianBasisSet bs2;
   double *buffer_;
  public:
   OneBodyInt(const RefGaussianBasisSet&b);
+  OneBodyInt(const RefGaussianBasisSet&b1, const RefGaussianBasisSet&b2);
   
   virtual int nbasis();
+  virtual int nbasis1();
+  virtual int nbasis2();
+
   virtual int nshell();
-  RefGaussianBasisSet basis() { return bs; }
+  virtual int nshell1();
+  virtual int nshell2();
+
+  RefGaussianBasisSet basis() { return bs1; }
+  RefGaussianBasisSet basis1() { return bs1; }
+  RefGaussianBasisSet basis2() { return bs2; }
 
   virtual void compute_shell(int,int,double*) = 0;
 
@@ -32,14 +42,23 @@ class OneBodyInt: public SCElementOp
 class OneBody3Int: public SCElementOp3
 {
  private:
-  RefGaussianBasisSet bs;
+  RefGaussianBasisSet bs1;
+  RefGaussianBasisSet bs2;
   double *buffer_;
  public:
   OneBody3Int(const RefGaussianBasisSet&b);
+  OneBody3Int(const RefGaussianBasisSet&b1,const RefGaussianBasisSet&b2);
   
   virtual int nbasis();
+  virtual int nbasis1();
+  virtual int nbasis2();
   virtual int nshell();
-  RefGaussianBasisSet basis() { return bs; }
+  virtual int nshell1();
+  virtual int nshell2();
+
+  RefGaussianBasisSet basis() { return bs1; }
+  RefGaussianBasisSet basis1() { return bs1; }
+  RefGaussianBasisSet basis2() { return bs2; }
 
   virtual void compute_shell(int,int,double*) = 0;
 

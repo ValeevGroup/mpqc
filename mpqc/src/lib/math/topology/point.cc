@@ -161,7 +161,7 @@ double &Point::operator[](int i)
     if (i < 0 || i >= dim)
     {
 	fprintf(stderr," Dimension out of bounds in Point[]\n");
-	exit(1);
+	abort();
     }
     return x[i];
 }
@@ -172,7 +172,7 @@ const double &Point::operator[](int i) const
     if (i < 0 || i >= dim)
     {
 	fprintf(stderr," Dimension out of bounds in Point[]\n");
-	exit(1);
+	abort();
     }
     return x[i];
 }

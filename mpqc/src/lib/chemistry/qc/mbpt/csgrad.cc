@@ -279,7 +279,7 @@ MBPT2::compute_cs_grad()
     }
     
   if (restart_orbital_memgrp_) {
-    if (!dograd && !do_d1_) {
+    if (!dograd && !do_d1_ && !do_d2_) {
       cout << node0 << indent
            << scprintf("Restarting at orbital %d with partial energy %18.14f",
                        restart_orbital_memgrp_, restart_ecorr_)
@@ -288,7 +288,7 @@ MBPT2::compute_cs_grad()
       }
     else {
       cout << node0 << indent
-           << "Restart requested but not possible with gradients or D1"
+           << "Restart requested but not possible with gradients, D1, or D2"
            << endl;
       restart_ecorr_ = 0.0;
       restart_orbital_memgrp_ = 0;

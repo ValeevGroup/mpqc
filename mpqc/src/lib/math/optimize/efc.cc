@@ -37,6 +37,7 @@
 #include <math/scmat/local.h>
 
 #define CLASSNAME EFCOpt
+#define VERSION 2
 #define PARENTS public Optimize
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -59,9 +60,6 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
   maxabs_gradient(-1.0)
 {
   update_ = keyval->describedclassvalue("update");
-  
-  convergence_ = keyval->doublevalue("convergence");
-  if (keyval->error() != KeyVal::OK) convergence_ = 1.0e-6;
   
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
@@ -107,7 +105,10 @@ EFCOpt::EFCOpt(StateIn&s):
   update_.restore_state(s);
   last_mode_ = matrixkit()->vector(dimension());
   last_mode_.restore(s);
-  s.get(convergence_);
+  if (s.version(static_class_desc()) < 2) {
+    double convergence;
+    s.get(convergence);
+  }
   s.get(accuracy_);
   s.get(maxabs_gradient);
 }
@@ -125,7 +126,6 @@ EFCOpt::save_data_state(StateOut&s)
   hessian_.save(s);
   update_.save_state(s);
   last_mode_.save(s);
-  s.put(convergence_);
   s.put(accuracy_);
   s.put(maxabs_gradient);
 }
@@ -351,16 +351,16 @@ EFCOpt::update()
   // try steepest descent
   // RefSCVector xdisp = -1.0*gcurrent;
   RefSCVector xnext = xcurrent + xdisp;
-  function()->set_x(xnext);
-    
-  // compute the convergence criteria
-  double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
-  double con_crit2 = maxabs_gradient;
-  double con_crit3 = xdisp.maxabs();
 
-  return ((con_crit1 <= convergence_)
-          && (con_crit2 <= convergence_)
-          && (con_crit3 <= convergence_));
+  conv_->reset();
+  conv_->get_grad(function());
+  conv_->get_x(function());
+
+  function()->set_x(xnext);
+
+  conv_->get_nextx(function());
+
+  return conv_->converged();
 }
 
 /////////////////////////////////////////////////////////////////////////////

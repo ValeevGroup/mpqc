@@ -619,7 +619,7 @@ MBPT2::compute_cs_grad()
     bzerofast(integral_iqjs, nij*nbasis*nbasis);
 
     integral_iqjs = 0;
-    mem->lock(1);
+
     mem->sync();
 
     index = 0;

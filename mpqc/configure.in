@@ -23,6 +23,9 @@ case $enableval in
   no)
     DEBUG=no
   ;;
+  opt)
+    DEBUG=opt
+  ;;
   *)
     AC_MSG_ERROR([Invalid value for --enable-debug ($enableval)])
   ;;
@@ -100,7 +103,7 @@ case $enableval in
   ;;
 esac
 ],[
-  if test $DEBUG = no; then
+  if test $DEBUG = no -o $DEBUG = opt; then
     AC_DEFINE(REF_OPTIMIZE)
   fi
 ]
@@ -589,6 +592,10 @@ if test $DEBUG = yes; then
   CFLAGS="$COPTIONS_DBG $COPTIONS_MISC"
   CXXFLAGS="$CXXOPTIONS_DBG $CXXOPTIONS_MISC"
   LDFLAGS="$LDFLAGS -g"
+elif test $DEBUG = opt; then
+  CFLAGS="$COPTIONS_DBG $COPTIONS_OPT $COPTIONS_MISC"
+  CXXFLAGS="$CXXOPTIONS_DBG $COPTIONS_OPT $CXXOPTIONS_MISC"
+  LDFLAGS="$LDFLAGS -g"
 else
   CFLAGS="$COPTIONS_OPT $COPTIONS_MISC"
   CXXFLAGS="$CXXOPTIONS_OPT $CXXOPTIONS_MISC"
@@ -756,6 +763,8 @@ if test X$PARALLEL = Xyes; then
     AC_CHECK_FUNC(p4_initenv,[HAVE_P4=yes;AC_DEFINE(HAVE_P4)])
     AC_CHECK_FUNC(MPI2_RMA_init,
                  [HAVE_PUMA_MPI2=yes;AC_DEFINE(HAVE_PUMA_MPI2)])
+    AC_CHECK_FUNC(MPI_Win_create,
+                 [HAVE_MPI2_ONE_SIDED=yes;AC_DEFINE(HAVE_MPI2_ONE_SIDED)])
   fi
 
   dnl ----- check for the pvm library
@@ -801,6 +810,7 @@ AC_SUBST(HAVE_PERF)
 AC_SUBST(HAVE_MPL)
 AC_SUBST(HAVE_P4)
 AC_SUBST(HAVE_PUMA_MPI2)
+AC_SUBST(HAVE_MPI2_ONE_SIDED)
 AC_SUBST(HAVE_MPI)
 AC_SUBST(HAVE_PVM)
 AC_SUBST(HAVE_NX)

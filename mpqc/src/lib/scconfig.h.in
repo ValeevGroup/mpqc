@@ -148,6 +148,9 @@
 /* Define if your MPI implementation has the cougar MPI2 one-sided calls */
 #undef HAVE_PUMA_MPI2
 
+/* Define if your MPI implementation has the real MPI2 one-sided calls */
+#undef HAVE_MPI2_ONE_SIDED
+
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
 

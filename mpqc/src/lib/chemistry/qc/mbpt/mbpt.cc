@@ -381,6 +381,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       vecs = vecs_mo1_mo2.t() * vecs_so_mo1.t() * so_ao;
     }
   else {
+      if (debug_) cout << node0 << indent << "getting fock matrix" << endl;
       // get the closed shell AO fock matrices
       RefSymmSCMatrix fock_c_so = reference_->fock(0);
 
@@ -392,10 +393,12 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       fock_c_mo1.accumulate_transform(vecs_so_mo1.t(), fock_c_so);
       fock_c_so = 0;
 
+      if (debug_) cout << node0 << indent << "diagonalizing" << endl;
       // diagonalize the fock matrix
       vals = fock_c_mo1.eigvals();
 
       // compute the AO to new MO scf vector
+      if (debug_) cout << node0 << indent << "AO to MO" << endl;
       RefSCMatrix so_ao = reference_->integral()->petite_list()->sotoao();
       vecs = vecs_so_mo1.t() * so_ao;
     }
@@ -409,6 +412,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   if (!symorb_num_) symorb_num_ = new int[nbasis];
   // sort the eigenvectors and values if symmetry is not c1
   if (molecule()->point_group()->char_table().order() != 1) {
+      if (debug_) cout << node0 << indent << "sorting eigenvectors" << endl;
       int n = vals.n();
       double *evals = new double[n];
       vals->convert(evals);
@@ -478,6 +482,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
                << split << " au" << endl << endl;
         }
     }
+  if (debug_) cout << node0 << indent << "eigen done" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

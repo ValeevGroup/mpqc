@@ -289,7 +289,6 @@ MBPT2::compute_hsos_v1()
                      "     %-3i     %-3i   %-3i    %-3i   %-3i",
                      npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv)
          << endl;
-    cout << indent << scprintf("Using %i bytes of memory", mem_alloc) << endl;
     }
 
   /* the scf vector might be distributed between the nodes, but for OPT2 *
@@ -313,10 +312,9 @@ MBPT2::compute_hsos_v1()
   RefSCMatrix Scf_Vec;
   eigen(evals, Scf_Vec, occ);
 
-  if (debug_) {
-    evals.print("eigenvalues");
-    Scf_Vec.print("eigenvectors");
-    }
+  if (debug_>0) cout << node0 << indent << "eigvenvectors computed" << endl;
+  if (debug_>1) evals.print("eigenvalues");
+  if (debug_>2) Scf_Vec.print("eigenvectors");
 
   double *scf_vectort_dat = new double[nbasis*nbasis];
   Scf_Vec->convert(scf_vectort_dat);
@@ -347,6 +345,7 @@ MBPT2::compute_hsos_v1()
     }
 
   // need the transpose of the vector
+  if (debug_>0) cout << node0 << indent << "allocating scf_vector" << endl;
   double **scf_vector = new double*[nbasis];
   double *scf_vector_dat = new double[(nocc+nvir)*nbasis];
   for (i=0; i<nbasis; i++) {
@@ -358,7 +357,7 @@ MBPT2::compute_hsos_v1()
   delete[] scf_vectort;
   delete[] scf_vectort_dat;
 
-  if (debug_) {
+  if (debug_>2) {
     cout << node0 << indent << "Final eigenvalues and vectors" << endl;
     for (i=0; i<nocc+nvir; i++) {
       cout << node0 << indent << evals_open[i];
@@ -371,7 +370,7 @@ MBPT2::compute_hsos_v1()
     }
 
   /* allocate storage for integral arrays */
-
+  if (debug_>0) cout << node0 << indent << "allocating intermediates" << endl;
   dim_ij = nocc*ni - ni*(ni-1)/2;
 
   trans_int1 = (double*) malloc(nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
@@ -394,9 +393,12 @@ MBPT2::compute_hsos_v1()
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
   // create the integrals object
+  if (debug_>0) cout << node0 << indent << "allocating integrals" << endl;
   integral()->set_storage((int)mem_remaining);
   tbint_ = integral()->electron_repulsion();
   intbuf = tbint_->buffer();
+
+  if (debug_>0) cout << node0 << indent << "beginning passes" << endl;
 
 /**************************************************************************
 *    begin opt2 loops                                                     *

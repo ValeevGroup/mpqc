@@ -47,12 +47,12 @@ DIIS::init()
   diism_error = new RefSCExtrapError[ndiis];
 }
 
-DIIS::DIIS() :
+DIIS::DIIS(int strt, int ndi, double dmp) :
   btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
-  ndiis = 5;
-  start = 1;
-  damping_factor = 0;
+  ndiis = strt;
+  start = ndi;
+  damping_factor = dmp;
 
   init();
 }

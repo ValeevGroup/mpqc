@@ -34,7 +34,7 @@ class DIIS: public SelfConsistentExtrapolation {
 
     void init();
   public:
-    DIIS();
+    DIIS(int strt=1, int ndi=5, double dmp =0);
     DIIS(StateIn&);
     DIIS(const RefKeyVal&);
     ~DIIS();

@@ -68,7 +68,7 @@ class PetiteList : public VRefCount {
     int nirrep_;
     int nblocks_;
 
-    GaussianBasisSet& gbs_;
+    RefGaussianBasisSet gbs_;
     RefIntegral ints_;
     
     char *p1_;        // p1[n] is 1 if shell n is in the group P1
@@ -83,7 +83,6 @@ class PetiteList : public VRefCount {
     void init();
 
   public:
-    PetiteList(GaussianBasisSet&, const RefIntegral&);
     PetiteList(const RefGaussianBasisSet&, const RefIntegral&);
     ~PetiteList();
 
@@ -103,12 +102,27 @@ class PetiteList : public VRefCount {
 
     void print(FILE* =stdout, int verbose=1);
 
+    // these return blocked dimensions
     RefSCDimension AO_basisdim();
     RefSCDimension SO_basisdim();
-    SO_block * aotoso();
+
+    // return the basis function rotation matrix R(g)
     RefSCMatrix r(int g);
 
+    // return information about the transformation from AOs to SOs
+    SO_block * aotoso_info();
+    RefSCMatrix aotoso();
+    RefSCMatrix sotoao();
+
+    // given a skeleton matrix, form the symmetrized matrix in the SO basis
     void symmetrize(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym);
+
+    // transform a matrix from AO->SO or SO->AO.
+    // this can take either a blocked or non-blocked AO basis matrix.
+    RefSymmSCMatrix to_SO_basis(const RefSymmSCMatrix&);
+
+    // this returns a non-blocked AO basis matrix.
+    RefSymmSCMatrix to_AO_basis(const RefSymmSCMatrix&);
 };
 
 inline int

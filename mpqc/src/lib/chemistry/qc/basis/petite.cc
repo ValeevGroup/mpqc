@@ -14,13 +14,6 @@
 
 PetiteList::PetiteList(const RefGaussianBasisSet &gbs,
                        const RefIntegral& ints) :
-  gbs_(*gbs.pointer()),
-  ints_(ints)
-{
-  init();
-}
-
-PetiteList::PetiteList(GaussianBasisSet &gbs, const RefIntegral& ints) :
   gbs_(gbs),
   ints_(ints)
 {
@@ -78,7 +71,8 @@ PetiteList::init()
   int i;
 
   // grab references to the Molecule and BasisSet for convenience
-  Molecule& mol = *gbs_.molecule().pointer();
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  Molecule& mol = *gbs.molecule().pointer();
 
   // create the character table for the point group
   CharacterTable ct = mol.point_group().char_table();
@@ -86,7 +80,7 @@ PetiteList::init()
   // initialize private members
   ng_ = ct.order();
   natom_ = mol.natom();
-  nshell_ = gbs_.nshell();
+  nshell_ = gbs.nshell();
   nirrep_ = ct.nirrep();
 
   // allocate storage for arrays
@@ -125,10 +119,10 @@ PetiteList::init()
 
     // hopefully, shells on equivalent centers will be numbered in the same
     // order
-    for (int s=0; s < gbs_.nshell_on_center(i); s++) {
-      int shellnum = gbs_.shell_on_center(i,s);
+    for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      int shellnum = gbs.shell_on_center(i,s);
       for (int g=0; g < ng_; g++) {
-        shell_map_[shellnum][g] = gbs_.shell_on_center(atom_map_[i][g],s);
+        shell_map_[shellnum][g] = gbs.shell_on_center(atom_map_[i][g],s);
       }
     }
   }
@@ -189,14 +183,14 @@ PetiteList::init()
       if (i!=j)
         continue;
       
-      for (int s=0; s < gbs_.nshell_on_center(i); s++) {
-        for (int c=0; c < gbs_(i,s).ncontraction(); c++) {
-          int am=gbs_(i,s).am(c);
+      for (int s=0; s < gbs.nshell_on_center(i); s++) {
+        for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+          int am=gbs(i,s).am(c);
 
           if (am==0)
             red_rep[g] += 1.0;
           else {
-            ShellRotation r(am,so,ints_,gbs_(i,s).is_pure(c));
+            ShellRotation r(am,so,ints_,gbs(i,s).is_pure(c));
             red_rep[g] += r.trace();
           }
         }
@@ -228,7 +222,9 @@ PetiteList::init()
 RefSCDimension
 PetiteList::AO_basisdim()
 {
-  return gbs_.basisdim();
+  RefSCDimension dim = new SCDimension(gbs_->nbasis(),1);
+  dim->blocks()->set_subdim(0, new SCDimension(gbs_->nbasis()));
+  return dim;
 }
 
 RefSCDimension
@@ -236,8 +232,11 @@ PetiteList::SO_basisdim()
 {
   int i, j, ii;
   
+  // grab a reference to the basis set
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  
   // create the character table for the point group
-  CharacterTable ct = gbs_.molecule()->point_group().char_table();
+  CharacterTable ct = gbs.molecule()->point_group().char_table();
 
   // ncomp is the number of symmetry blocks we have
   int ncomp=nblocks();
@@ -252,10 +251,18 @@ PetiteList::SO_basisdim()
       nao[ii] = nbf_in_ir_[i];
   }
 
-  RefSCDimension ret = new SCDimension(gbs_.nbasis(),ncomp,nao);
-
+  RefSCDimension ret = new SCDimension(gbs.nbasis(),ncomp,nao);
   delete[] nao;
-  
+
+  for (i=ii=0; i < nirrep_; i++) {
+    int je = ct.gamma(i).complex() ? 1 : ct.gamma(i).degeneracy();
+    for (j=0; j < je; j++,ii++) {
+      char lab[24];
+      sprintf(lab,"irrep %s comp %d", ct.gamma(i).symbol(), j);
+      ret->blocks()->set_subdim(ii, new SCDimension(nbf_in_ir_[i]));
+    }
+  }
+
   return ret;
 }
 
@@ -306,7 +313,7 @@ PetiteList::print(FILE *o, int verbose)
     fprintf(o,"\n");
   }
 
-  CharacterTable ct = gbs_.molecule()->point_group().char_table();
+  CharacterTable ct = gbs_->molecule()->point_group().char_table();
   for (i=0; i < nirrep_; i++)
     fprintf(o,"  %5d functions of %s symmetry\n",
             nbf_in_ir_[i], ct.gamma(i).symbol());
@@ -317,37 +324,39 @@ PetiteList::print(FILE *o, int verbose)
 RefSCMatrix
 PetiteList::r(int g)
 {
+  // grab a reference to the basis set
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  
   SymmetryOperation so =
-    gbs_.molecule()->point_group().char_table().symm_operation(g);
+    gbs.molecule()->point_group().char_table().symm_operation(g);
 
-  RefSCMatrix ret = gbs_.matrixkit()->matrix(gbs_.basisdim(), gbs_.basisdim());
+  RefSCMatrix ret = gbs.matrixkit()->matrix(gbs.basisdim(), gbs.basisdim());
   ret.assign(0.0);
   
   // this should be replaced with an element op at some point
   for (int i=0; i < natom_; i++) {
     int j = atom_map_[i][g];
 
-    for (int s=0; s < gbs_.nshell_on_center(i); s++) {
-      int func_i = gbs_.shell_to_function(gbs_.shell_on_center(i,s));
-      int func_j = gbs_.shell_to_function(gbs_.shell_on_center(j,s));
+    for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
+      int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
       
-      for (int c=0; c < gbs_(i,s).ncontraction(); c++) {
-        int am=gbs_(i,s).am(c);
+      for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+        int am=gbs(i,s).am(c);
 
         if (am==0) {
           ret.set_element(func_j,func_i,1.0);
         } else {
-          ShellRotation rr(am,so,ints_,gbs_(i,s).is_pure(c));
+          ShellRotation rr(am,so,ints_,gbs(i,s).is_pure(c));
           for (int ii=0; ii < rr.dim(); ii++)
             for (int jj=0; jj < rr.dim(); jj++)
               ret.set_element(func_j+jj,func_i+ii,rr(ii,jj));
         }
 
-        func_i += gbs_(i,s).nfunction(c);
-        func_j += gbs_(i,s).nfunction(c);
+        func_i += gbs(i,s).nfunction(c);
+        func_j += gbs(i,s).nfunction(c);
       }
     }
   }
   return ret;
 }
-

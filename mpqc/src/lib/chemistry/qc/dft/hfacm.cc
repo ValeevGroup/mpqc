@@ -32,6 +32,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/timer.h>
 #include <chemistry/qc/dft/functional.h>
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/hfacm.h>
@@ -135,7 +136,9 @@ HFACM::compute_energy()
   cout << decindent;
 
   integrator_->set_wavefunction(this);
+  tim_enter("integrate");
   integrator_->integrate(functional_);
+  tim_exit("integrate");
 
   cout << node0 << indent
        << scprintf("E1           = % 14.10f", e1) << endl

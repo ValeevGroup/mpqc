@@ -696,7 +696,7 @@ dnl undefined symbol problems.
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("for C++ typename keyword")
+AC_MSG_CHECKING(for C++ typename keyword)
 AC_TRY_LINK([
   class X { public: typedef int t; X(){} };
   template <class T> void f(T i) {typename T::t x;}
@@ -730,7 +730,7 @@ dnl ----------- check for namespace std ---------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("for namespace std")
+AC_MSG_CHECKING(for namespace std)
 AC_TRY_LINK([
 #include <$iostream>
 using namespace std;
@@ -752,7 +752,7 @@ dnl ----------- check for GNU libc++-v3 prerelease bug ---------------
 if test X$GXX = Xyes; then
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING("for GNU libc++-v3 prerelease bug")
+AC_MSG_CHECKING(for GNU libc++-v3 prerelease bug)
 AC_TRY_LINK([
 #include <stdio.h>
 #include <$iostream>

@@ -137,6 +137,9 @@ ifeq ($(FC),f2c)
 else
 %.$(OBJSUF): %.f
 	$(FC) $(FFLAGS) -c $< $(OUTPUT_OPTION)
+
+%.lo: %.f
+	$(LTCOMP) $(FC) $(FFLAGS) -c $< $(OUTPUT_OPTION)
 endif
 
 %.$(OBJSUF): %.C

@@ -313,8 +313,13 @@ GaussianBasisSet::init2()
 
   so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
   
-  if (basisdim_.null())
-    basisdim_ = new SCDimension(nbasis(), "basis set dimension");
+  if (basisdim_.null()) {
+    int nb = nshell();
+    int *bs = new int[nb];
+    for (int s=0; s < nb; s++)
+      bs[s] = shell(s).nfunction();
+    basisdim_ = new SCDimension(nbasis(), nb, bs, "basis set dimension");
+  }
 }
 
 void

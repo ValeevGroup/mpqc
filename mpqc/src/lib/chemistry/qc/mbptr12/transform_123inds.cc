@@ -156,20 +156,20 @@ TwoBodyMOIntsTransform_123Inds::run()
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals
    -----------------------------------------------------*/
-  double *ijsx_contrib[num_te_types];  // local contributions to integral_ijsx
-  double *ijrx_contrib[num_te_types];  // local contributions to integral_ijrx
+  double *ijsx_contrib;  // local contributions to integral_ijsx
+  double *ijrx_contrib;  // local contributions to integral_ijrx
   double *rsiq_ints[num_te_types];     // quarter-transformed integrals for each RS pair
   double *rsix_ints[num_te_types];     // 2 quarter-transformed integrals for each RS pair
   for(int te_type=0;te_type<num_te_types;te_type++) {
-    ijsx_contrib[te_type]  = mem->malloc_local_double(nbasis2*nfuncmax4);
-    if (bs3_eq_bs4)
-      ijrx_contrib[te_type]  = mem->malloc_local_double(nbasis2*nfuncmax4);
-    else
-      ijrx_contrib[te_type]  = NULL;
     rsiq_ints[te_type] = new double[ni_*nbasis2*nfuncmax3*nfuncmax4];
     rsix_ints[te_type] = new double[ni_*rank2*nfuncmax3*nfuncmax4];
   }
-
+  ijsx_contrib  = mem->malloc_local_double(rank2*nfuncmax4);
+  if (bs3_eq_bs4)
+    ijrx_contrib  = mem->malloc_local_double(rank2*nfuncmax4);
+  else
+    ijrx_contrib  = NULL;
+  
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
@@ -199,9 +199,9 @@ TwoBodyMOIntsTransform_123Inds::run()
 #if FAST_BUT_WRONG
   for(int te_type=0;te_type<num_te_types;te_type++) {
     bzerofast(rsiq_ints[te_type], ni_*nbasis2*nfuncmax3*nfuncmax4);
-    bzerofast(ijsx_contrib[te_type], nbasis2*nfuncmax4);
+    bzerofast(ijsx_contrib[te_type], rank2*nfuncmax4);
     if (bs3_eq_bs4)
-      bzerofast(ijrx_contrib[te_type], nbasis2*nfuncmax4);
+      bzerofast(ijrx_contrib[te_type], rank2*nfuncmax4);
     }
 #endif
 
@@ -431,14 +431,14 @@ TwoBodyMOIntsTransform_123Inds::run()
         for (int j=0; j<rank3; j++) {
 
 #if !FAST_BUT_WRONG
-          bzerofast(ijsx_contrib[te_type], rank2*ns);
+          bzerofast(ijsx_contrib, rank2*ns);
           if (bs3_eq_bs4)
-            bzerofast(ijrx_contrib[te_type], rank2*nr);
+            bzerofast(ijrx_contrib, rank2*nr);
 
           int ij_proc =  (i*rank3 + j)%nproc;
           int ij_index = (i*rank3 + j)/nproc;
           const size_t ijqx_start = (size_t)(num_te_types*ij_index + te_type) * ints_acc->blocksize();
-          const double *rsix_ptr = rsix_ints[te_type];
+          const double *rsix_ptr = rsix_ints[te_type] + i*rank2;
 
           if (bs3_eq_bs4) {
 
@@ -447,16 +447,16 @@ TwoBodyMOIntsTransform_123Inds::run()
               int smin = (bs3_eq_bs4 && R == S) ? bf3 : 0;
               rsix_ptr += smin*ni_*rank2;
 
-              for (int bf4 = smin; bf4 <ns; bf4++) {
+              for (int bf4 = smin; bf4 <ns; bf4++, rsix_ptr+=ni_*rank2) {
                 int s = s_offset + bf4;
 
                 // third quarter transform
                 // rs = js
                 // rs = jr
                 
-                double* ijsx_ptr = ijsx_contrib[te_type] + bf4*rank2;
-                double* ijrx_ptr = ijrx_contrib[te_type] + bf3*rank2;
-                const double* i_ptr = rsix_ptr + i*rank2;
+                double* ijsx_ptr = ijsx_contrib + bf4*rank2;
+                double* ijrx_ptr = ijrx_contrib + bf3*rank2;
+                const double* i_ptr = rsix_ptr;
 
                 const double c_rj = vector3[r][j];
                 const double c_sj = vector3[s][j];
@@ -485,12 +485,12 @@ TwoBodyMOIntsTransform_123Inds::run()
 
             for (int bf3 = 0; bf3 < nr; bf3++) {
               int r= r_offset + bf3;
-              for (int bf4 = 0; bf4 <ns; bf4++) {
+              for (int bf4 = 0; bf4 <ns; bf4++, rsix_ptr+=ni_*rank2) {
 
                 // third quarter transform
                 // rs = js
-                double* ijsx_ptr = ijsx_contrib[te_type] + bf4*rank2;
-                const double* i_ptr = rsix_ptr + i*rank2;
+                double* ijsx_ptr = ijsx_contrib + bf4*rank2;
+                const double* i_ptr = rsix_ptr;
 
                 const double c_rj = vector3[r][j];
 
@@ -511,12 +511,12 @@ TwoBodyMOIntsTransform_123Inds::run()
 
           // Sum the ijxs_contrib to the appropriate place
           size_t ij_offset = (size_t)rank2*s_offset + ijqx_start;
-          mem->sum_reduction_on_node(ijsx_contrib[te_type],
+          mem->sum_reduction_on_node(ijsx_contrib,
                                      ij_offset, ns*rank2, ij_proc);
 
           if (bs3_eq_bs4) {
             size_t ij_offset = (size_t)rank2*r_offset + ijqx_start;
-            mem->sum_reduction_on_node(ijrx_contrib[te_type],
+            mem->sum_reduction_on_node(ijrx_contrib,
                                        ij_offset, nr*rank2, ij_proc);
           }
 
@@ -534,15 +534,13 @@ TwoBodyMOIntsTransform_123Inds::run()
     lock_->unlock();
   }
 
-  //  lock_->lock();
   for(int te_type=0; te_type<num_te_types; te_type++) {
     delete[] rsiq_ints[te_type];
     delete[] rsix_ints[te_type];
-    mem->free_local_double(ijsx_contrib[te_type]);
-    if (bs3_eq_bs4)
-      mem->free_local_double(ijrx_contrib[te_type]);
   }
-  //  lock_->unlock();
+  mem->free_local_double(ijsx_contrib);
+  if (bs3_eq_bs4)
+    mem->free_local_double(ijrx_contrib);
 }
 
 ////////////////////////////////////////////////////////////////////////////

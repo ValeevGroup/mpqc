@@ -52,6 +52,7 @@ char *argv[];
   double energy,dens;
   int_vector_t costvec;
   int mp2;
+  int ij=0;
 
   char *dertype="none";
   char *filename="mpqc";
@@ -68,10 +69,6 @@ char *argv[];
   double_matrix_t gradient;
 
 /* turn out the lights */
-
-#if defined(I860)
-  led(0);
-#endif
 
 /* some PICL emulators need argv0 */
   argv0 = argv[0];
@@ -306,14 +303,42 @@ char *argv[];
     allocbn_int_vector(&costvec,"n",nshtr);
     zero_int_vector(&costvec);
 
-    if(sym_info.g>1) {
-      mkcostvec(&centers,&sym_info,costvec.i);
+#if 1
+    mkcostvec(&centers,&sym_info,costvec.i);
 
-      gsum0(costvec.i,costvec.n,2,mtype_get(),0);
-      bcast0_int_vector(&costvec,0,0);
-      }
+#if 0
+    gsum0(costvec.i,costvec.n,2,mtype_get(),0);
+    bcast0_int_vector(&costvec,0,0);
+#endif
 
     for(i=0; i < nshtr ; i++) costvec.i[i]+=1;
+#else
+    for (i=0; i < nshell; i++) {
+      int j;
+      int nconi = centers.center[centers.center_num[i]].
+                         basis.shell[centers.shell_num[i]].ncon;
+      int nprimi = centers.center[centers.center_num[i]].
+                         basis.shell[centers.shell_num[i]].nprim;
+      int ami = centers.center[centers.center_num[i]].
+                         basis.shell[centers.shell_num[i]].type[0].am;
+
+      for (j=0; j <= i; j++,ij++) {
+        int nconj = centers.center[centers.center_num[j]].
+                           basis.shell[centers.shell_num[j]].ncon;
+        int nprimj = centers.center[centers.center_num[j]].
+                           basis.shell[centers.shell_num[j]].nprim;
+        int amj = centers.center[centers.center_num[j]].
+                           basis.shell[centers.shell_num[j]].type[0].am;
+
+        /* best so far
+         * costvec[ij] = shellmap[i]*shellmap[j] + ami*amj + nprimi + nprimj;
+         */
+
+        /* close second */
+        costvec.i[ij] = shellmap[i]*shellmap[j] + (1+ami*amj)*(nprimi + nprimj);
+        }
+      }
+#endif
 
     dmt_def_map2(scf_info.nbfao,centers.nshell,shellmap,costvec.i,0);
     free_int_vector(&costvec);
@@ -578,19 +603,68 @@ int host;
   exit(0);
   }
 
+
 static void
 mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec)
 {
+  int flags;
   int i,j,k,l;
   int ij,kl,ijkl;
   int ioffi,ioffij;
   int g,gi,gj,gk,gl,gij,gkl,gijkl;
+  int Qvecij,bound,cost;
   int nb;
   int leavel;
   int use_symmetry=(sym_info->g>1);
   int nproc=numnodes0();
   int me=mynode0();
+  double *intbuf;
+  extern signed char *Qvec;
 
+ /* free these up for now */
+  int_done_offsets1(centers,centers);
+  int_done_1e();
+
+  int_initialize_offsets2(centers,centers,centers,centers);
+
+  flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+
+  intbuf =
+    int_initialize_erep(flags,0,centers,centers,centers,centers);
+
+  scf_init_bounds(centers,intbuf);
+
+#if 1
+  for (i=ij=0; i<centers->nshell; i++) {
+    int nconi = centers->center[centers->center_num[i]].
+                       basis.shell[centers->shell_num[i]].ncon;
+    int nprimi = centers->center[centers->center_num[i]].
+                       basis.shell[centers->shell_num[i]].nprim;
+    int ami = centers->center[centers->center_num[i]].
+                       basis.shell[centers->shell_num[i]].type[0].am;
+    for (j=0; j<=i; j++,ij++) {
+      int nconj = centers->center[centers->center_num[j]].
+                         basis.shell[centers->shell_num[j]].ncon;
+      int nprimj = centers->center[centers->center_num[j]].
+                         basis.shell[centers->shell_num[j]].nprim;
+      int amj = centers->center[centers->center_num[j]].
+                         basis.shell[centers->shell_num[j]].type[0].am;
+
+#if 0
+      costvec[ij] = Qvec[ij];
+      costvec[ij] *= 2;
+      costvec[ij] += 26;
+#endif
+
+      if (ami+amj==0) costvec[ij]=1;
+      else if (ami+amj==1) costvec[ij]=15;
+      else if (ami+amj==2) costvec[ij]=180;
+      else costvec[ij]=680;
+
+      if (costvec[ij]<0) costvec[ij]=1;
+      }
+    }
+#else
  /* loop over shell blocks and figure out where they fit in */
   for (i=me; i<centers->nshell; i+=nproc) {
     if(use_symmetry && !sym_info->p1[i]) continue;
@@ -603,6 +677,7 @@ mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec)
         else ioffij=ioff(ij);
         leavel=0;
         }
+      Qvecij=(int)Qvec[ij];
 
       for (k=0; k<=i; k++) {
         kl=ioff(k);
@@ -623,14 +698,26 @@ mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec)
             if(leavel) continue;
             }
 
+        /* this tell us how likely it is we'll calculate the integral */
+          bound = Qvecij + (int) Qvec[kl];
+          bound += bound;
+          bound += 26;
+
+        /* this tells us how many times we'll have to do the bugger */
           if(j==k && (i==j || k==l)) nb=1;
           else if (i==j||i==k||j==k||j==l||k==l) nb=2;
           else nb=3;
 
           costvec[ij] += nb;
-          costvec[kl] += nb;
           }
         }
       }
     }
+#endif
+
+  int_done_erep();
+  int_done_offsets2(centers,centers,centers,centers);
+  int_initialize_1e(0,0,centers,centers);
+  int_initialize_offsets1(centers,centers);
+  scf_done_bounds();
   }

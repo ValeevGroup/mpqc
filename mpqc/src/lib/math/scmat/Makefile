@@ -16,6 +16,7 @@ CXXSRC = \
          repl.cc       replrect.cc   repldiag.cc   replsymm.cc   replvect.cc \
          local.cc      localrect.cc  localdiag.cc  localsymm.cc  localvect.cc \
          abstract.cc   matrix.cc     matrix_i.cc \
+         blocked.cc blockedvect.cc blockedrect.cc \
          block.cc      blkiter.cc    elemop.cc     result.cc \
          matrix3.cc    vector3.cc    vector3_i.cc
 
@@ -24,7 +25,8 @@ CSRC = cmatrix.c svd.c
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) 
 
 INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
-       result.h vector3.h vector3_i.h block.h matrix3.h elemop.h repl.h
+       result.h vector3.h vector3_i.h block.h matrix3.h elemop.h repl.h \
+       blocked.h
 
 GENINC =
 

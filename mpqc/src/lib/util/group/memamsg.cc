@@ -123,8 +123,8 @@ MemoryDataRequest::print(const char *msg)
 
   cout.flush();
   if (request() == Sync) {
-      cout << scprintf("%s \"%s\" %d-%d\n",
-              msg, request_string(), node(), serial_number());
+      cout << scprintf("%s \"%s\" %d-%d reactivate = %d\n",
+              msg, request_string(), node(), serial_number(), reactivate());
     }
   else {
       cout << scprintf("%s \"%s\" offset = %5d, %5d bytes, %d-%d\n",
@@ -303,11 +303,21 @@ ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const RefKeyVal& keyval):
 void
 ActiveMsgMemoryGrp::set_localsize(int localsize)
 {
+  if (debug_) {
+      cout << "ActiveMsgMemoryGrp::set_localsize(" << localsize << ")" << endl;
+    }
   deactivate();
   MsgMemoryGrp::set_localsize(localsize);
   delete[] data_;
   data_ = new char[localsize];
   activate();
+  if (debug_) {
+      cout << "ActiveMsgMemoryGrp::set_localsize done: offsets:";
+      for (int i=0; i<=n(); i++) {
+          cout << " " << offset(i);
+        }
+      cout << endl;
+    }
 }
 
 ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()

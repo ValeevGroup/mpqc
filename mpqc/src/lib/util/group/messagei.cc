@@ -33,6 +33,7 @@ MessageGrp::MessageGrp(const RefKeyVal& keyval):
 {
   gop_max_ = keyval->intvalue("gop_max");
   if (keyval->error() != KeyVal::OK) gop_max_ = 320000;
+  debug_ = keyval->booleanvalue("debug");
 }
 
 MessageGrp::MessageGrp():
@@ -42,6 +43,7 @@ MessageGrp::MessageGrp():
   index_to_classdesc_(0)
 {
   gop_max_ = 320000;
+  debug_ = 0;
 }
 
 MessageGrp::~MessageGrp()

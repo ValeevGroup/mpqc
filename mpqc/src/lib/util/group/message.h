@@ -97,6 +97,8 @@ class MessageGrp: public DescribedClass {
     void initialize(int me, int n);
 
     RefMachineTopology topology_;
+
+    int debug_;
   public:
     //. Constructors and destructors.
     MessageGrp();

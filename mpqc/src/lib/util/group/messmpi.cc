@@ -1,8 +1,8 @@
 
-#include <stdio.h>
 #include <mpi.h>
 #include <util/keyval/keyval.h>
 #include <util/group/messmpi.h>
+#include <util/misc/formio.h>
 
 //#define MPI_SEND_ROUTINE MPI_Ssend // hangs
 //#define MPI_SEND_ROUTINE MPI_Send // hangs
@@ -42,6 +42,10 @@ MPIMessageGrp::init()
   argv[0] = "-mpiB4"; // reduce the internal buffer since a user buffer is used
   argv[1] = 0;
 
+  if (debug_) {
+      cerr << "MPIMessageGrp::init: entered" << endl;
+    }
+
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -49,6 +53,10 @@ MPIMessageGrp::init()
   buf = (void*) new char[bufsize];
   MPI_Buffer_attach(buf,bufsize);
   initialize(me, nproc);
+
+  if (debug_) {
+      cerr << me << ": MPIMessageGrp::init: done" << endl;
+    }
 }
 
 MPIMessageGrp::~MPIMessageGrp()
@@ -61,10 +69,13 @@ MPIMessageGrp::~MPIMessageGrp()
 void
 MPIMessageGrp::raw_send(int target, void* data, int nbyte)
 {
-  //printf("Node %d sending %d bytes to %d with tag %d\n",
-  //       me(), nbyte, target, 0);
+  if (debug_) {
+      cerr << scprintf("Node %d sending %d bytes to %d with tag %d\n",
+                       me(), nbyte, target, 0)
+           << endl;
+    }
   MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,0,MPI_COMM_WORLD); 
-  //printf("Node %d sent\n", me());
+  if (debug_) cerr << scprintf("Node %d sent\n", me()) << endl;
 }
 
 void
@@ -72,23 +83,29 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
 {
   MPI_Status status;
   if (sender == -1) sender = MPI_ANY_SOURCE;
-  //printf("Node %d recving %d bytes from %d with tag %d\n",
-  //       me(), nbyte, sender, 0);
+  if (debug_) {
+      cerr << scprintf("Node %d recving %d bytes from %d with tag %d\n",
+                       me(), nbyte, sender, 0)
+           << endl;
+    }
   MPI_Recv(data,nbyte,MPI_BYTE,sender,0,MPI_COMM_WORLD,&status);
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
   rlen = nbyte;
-  //printf("Node %d recvd %d bytes\n", me(), rlen);
+  if (debug_) cerr << scprintf("Node %d recvd %d bytes\n", me(), rlen) << endl;
 }
 
 void
 MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
 {
   type = (type<<1) + 1;
-  //printf("Node %d sending %d bytes to %d with tag %d\n",
-  //       me(), nbyte, target, type);
+  if (debug_) {
+      cerr << scprintf("Node %d sending %d bytes to %d with tag %d\n",
+                       me(), nbyte, target, type)
+           << endl;
+    }
   MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,type,MPI_COMM_WORLD); 
-  //printf("Node %d sent\n", me());
+  if (debug_) cerr << scprintf("Node %d sent\n", me()) << endl;
 }
 
 void
@@ -97,13 +114,16 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
   MPI_Status status;
   if (type == -1) type = MPI_ANY_TAG;
   else type = (type<<1) + 1;
-  //printf("Node %d recving %d bytes from %d with tag %d\n",
-  //       me(), nbyte, MPI_ANY_SOURCE, type);
+  if (debug_ ) {
+      cerr << scprintf("Node %d recving %d bytes from %d with tag %d\n",
+                       me(), nbyte, MPI_ANY_SOURCE, type)
+           << endl;
+    }
   MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&status);
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
   rlen = nbyte;
-  //printf("Node %d recvd %d bytes\n", me(), rlen);
+  if (debug_) cerr << scprintf("Node %d recvd %d bytes\n", me(), rlen) << endl;
 }
 
 int
@@ -193,5 +213,12 @@ MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)
 {
   if (n() == 1) return;
 
+  if (debug_) {
+      cerr << scprintf("Node %d bcast %d bytes from %d", me(), nbyte, from)
+           << endl;
+    }
   MPI_Bcast(data, nbyte, MPI_BYTE, from, MPI_COMM_WORLD);
+  if (debug_) {
+      cerr << scprintf("Node %d done with bcast", me()) << endl;
+    }
 }

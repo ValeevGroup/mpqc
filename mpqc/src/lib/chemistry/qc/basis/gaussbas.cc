@@ -296,12 +296,19 @@ GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
   RefSCDimension basisdim
       = new SCDimension(nbas, nshell, func_per_shell, "basis set dimension");
 
+  const char* A_name = name();
+  const char* B_name = B->name();
   std::string AplusB_name;
-  AplusB_name += "[";
-  AplusB_name += name();
-  AplusB_name += "]+[";
-  AplusB_name += B->name();
-  AplusB_name += "]";
+  if (!A_name && !B_name) {
+    AplusB_name += "[";
+    AplusB_name += A_name;
+    AplusB_name += "]+[";
+    AplusB_name += B_name;
+    AplusB_name += "]";
+  }
+  else {
+    AplusB_name = "[Composite Basis Set]";
+  }
   Ref<GaussianBasisSet> AplusB
       = new GaussianBasisSet(AplusB_name.c_str(), molecule,
                              matrixkit, basisdim, ncenter,

@@ -48,10 +48,8 @@ SCVector3::spherical_coord(double theta, double phi,
 INLINE  double
 SCVector3::dist(const SCVector3 &s) const
 {
-  double x,y,z;
-  return sqrt((x=_v[0]-s._v[0])*x +
-              (y=_v[1]-s._v[1])*y +
-              (z=_v[2]-s._v[2])*z);
+  double x=_v[0]-s._v[0],y=_v[1]-s._v[1],z=_v[2]-s._v[2];
+  return sqrt(x*x + y*y + z*z);
 }
 
 #undef INLINE

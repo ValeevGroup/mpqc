@@ -7,12 +7,12 @@
 /* Define to empty if the keyword does not work.  */
 #undef const
 
-/* Define if the C++ restrict keyword extension exists.  */
-#undef CXX_RESTRICT
-
 #endif /* __cplusplus */
 
 #ifdef __cplusplus
+
+/* Define if the C++ restrict keyword extension exists.  */
+#undef CXX_RESTRICT
 
 #ifdef CXX_RESTRICT
 #define restrictxx restrict

@@ -687,7 +687,7 @@ dnl  ----------- check for C++ restrict extension ---------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_TRY_LINK(,restrict double *x=new double[10],x[0]=4.0,AC_DEFINE(CXX_RESTRICT))
+AC_TRY_LINK(,[double *restrict x=0;],AC_DEFINE(CXX_RESTRICT))
 AC_LANG_RESTORE
 
 dnl ---------- Checks for C++ header files. -----------

@@ -38,6 +38,7 @@
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/svd.h>
 
 using namespace sc;
 using namespace std;
@@ -202,6 +203,15 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
    construct_orthog_vir_();
    construct_orthog_ri_();
 
+   if (debug_ > 1) {
+     occ_space_symblk_->coefs().print("Occupied MOs (symblocked)");
+     vir_space_symblk_->coefs().print("Virtual MOs (symblocked)");
+     obs_space_->coefs().print("All MOs");
+     act_occ_space_->coefs().print("Active occupied MOs");
+     act_vir_space_->coefs().print("Active virtual MOs");
+     ribs_space_->coefs().print("Orthogonal RI-BS");
+   }
+
    ribs_space_ = orthog_comp(occ_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
    ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
 }
@@ -314,7 +324,8 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
       RefSCMatrix V(cold, cold, ao_matrixkit);
       RefDiagSCMatrix Sigma(sigd, ao_matrixkit);
 
-      C12_b.svd(U,Sigma,V);
+      // C12_b.svd(U,Sigma,V);
+      exp::lapack_svd(C12_b,U,Sigma,V);
 
       // Transform V into AO basis and transpose so that vectors are in rows
       RefSCMatrix orthog2_b = orthog2.block(b);

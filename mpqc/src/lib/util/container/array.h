@@ -41,16 +41,12 @@
 // yet.  Use the template versions instead.
 
 ARRAY_dec(int);
-//SSB_ARRAY_dec(int);
 ARRAY2_dec(int);
-//SSB_ARRAY2_dec(int);
 
 ARRAY_dec(Arrayint);
 
 ARRAY_dec(double);
-//SSB_ARRAY_dec(double);
 ARRAY2_dec(double);
-//SSB_ARRAY2_dec(double);
 
 ARRAY_dec(Arraydouble);
 

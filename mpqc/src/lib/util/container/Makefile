@@ -9,9 +9,11 @@ SETIMPL = AVL
 MAPIMPL = RAVL
 
 GENCXXSRC = pixvpMap.cc pixvp$(MAPIMPL)Map.cc \
-            voidptrSet.cc voidptr$(SETIMPL)Set.cc
+            voidptrSet.cc voidptr$(SETIMPL)Set.cc \
+            pixintMap.cc pixint$(MAPIMPL)Map.cc \
+            intpixMap.cc intpix$(MAPIMPL)Map.cc
 
-REALCXXSRC = array.cc set.cc ref.cc voidptr.cc
+REALCXXSRC = array.cc set.cc ref.cc voidptr.cc gnuavlse.cc
 
 GENSRC = $(GENCXXSRC)
 
@@ -21,7 +23,8 @@ TESTCXX = settest.cc settestt.cc reftest.cc reftestx.cc
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
-      set.h array.h ref.h reftestx.h artem.h ar2tem.h ssarmac.h ssar2mac.h
+      set.h array.h ref.h reftestx.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
+      gnuset.h gnuavlse.h pixintdefs.h
 
 GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h refmacr.h \
          armac.h ar2mac.h ssarmac.h ssar2mac.h
@@ -62,6 +65,9 @@ refmacr.h: reftmpl.h $(TMPL2MACDEP)
 settest: settest.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o settest $^
 
+gnutest: gnutest.o libcontainer.a
+	$(CXX) $(CXXFLAGS) -o gnutest $^
+
 artest: artest.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o artest $^
 
@@ -87,8 +93,24 @@ ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d)
 endif
 
+pixintMap.cc pixintMap.h:
+	$(GENCLASS) -2 Pix val int val Map pixint
+	prepend-header pixintMap.h "#include <Pix.h>"
+	prepend-header pixintMap.h "#include <util/container/pixintdefs.h>"
+	/bin/mv pixintMap.h tmp.pixintMap.h
+	egrep -v "#include <pixinth>|#include \"pixintdefs.h\"" < tmp.pixintMap.h > pixintMap.h
+	/bin/rm tmp.pixintMap.h
+
+intpixMap.cc intpixMap.h:
+	$(GENCLASS) -2 int val Pix val Map intpix
+	prepend-header intpixMap.h "#include <Pix.h>"
+	prepend-header intpixMap.h "#include <util/container/pixintdefs.h>"
+	/bin/mv intpixMap.h tmp.intpixMap.h
+	egrep -v "#include <intpixh>|#include \"intpixdefs.h\"" < tmp.intpixMap.h > intpixMap.h
+	/bin/rm tmp.intpixMap.h
+
 pixvpMap.cc pixvpMap.h:
-	genclass -2 Pix val VoidPtr val Map pixvp
+	$(GENCLASS) -2 Pix val VoidPtr val Map pixvp
 	prepend-header pixvpMap.h "#include <Pix.h>"
 	prepend-header pixvpMap.h "#include <util/container/voidptr.h>"
 	prepend-header pixvpMap.h "#include <util/container/pixvpdefs.h>"
@@ -97,17 +119,25 @@ pixvpMap.cc pixvpMap.h:
 	/bin/rm tmp.pixvpMap.h
 
 pixvp$(MAPIMPL)Map.cc pixvp$(MAPIMPL)Map.h:
-	genclass -2 Pix val VoidPtr val $(MAPIMPL)Map pixvp
+	$(GENCLASS) -2 Pix val VoidPtr val $(MAPIMPL)Map pixvp
 	prepend-header pixvp$(MAPIMPL)Map.h "#include <Pix.h>"
 	prepend-header pixvp$(MAPIMPL)Map.h "#include <util/container/voidptr.h>"
 
+pixint$(MAPIMPL)Map.cc pixint$(MAPIMPL)Map.h:
+	$(GENCLASS) -2 Pix val int val $(MAPIMPL)Map pixint
+	prepend-header pixint$(MAPIMPL)Map.h "#include <Pix.h>"
+
+intpix$(MAPIMPL)Map.cc intpix$(MAPIMPL)Map.h:
+	$(GENCLASS) -2 int val Pix val $(MAPIMPL)Map intpix
+	prepend-header intpix$(MAPIMPL)Map.h "#include <Pix.h>"
+
 voidptrSet.cc voidptrSet.h:
-	genclass VoidPtr val Set voidptr
+	$(GENCLASS) VoidPtr val Set voidptr
 	prepend-header voidptrSet.h "#include <util/container/voidptr.h>"
 	mv voidptrSet.h foo.h
 	cat foo.h | sed 's/\"voidptrdefs.h\"/<util\/container\/voidptrdefs.h>/g' > voidptrSet.h
 	/bin/rm foo.h
 
 voidptr$(SETIMPL)Set.cc voidptr$(SETIMPL)Set.h:
-	genclass VoidPtr val $(SETIMPL)Set voidptr
+	$(GENCLASS) VoidPtr val $(SETIMPL)Set voidptr
 	prepend-header voidptr$(SETIMPL)Set.h "#include <util/container/voidptr.h>"

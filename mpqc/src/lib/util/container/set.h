@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include <util/container/array.h>
 
-#include <util/container/settmpl.h> // The template set declaration.
+//#include <util/container/settmpl.h> // The template set declaration.
+#include <util/container/gnuset.h>
+#include <util/container/gnuavlse.h>
 #include <util/container/setmacr.h> // The macro set declaration.
 #define SET_dec(Type) Set_declare(Type)
 #define SET_def(Type)
@@ -19,7 +21,8 @@
 // It is basically a set with the iseek and operator[](int i) members
 // added.  At the moment, it requires that Set use an array internally.
 // When Set is improved, Arrayset must be updated.
-#include <util/container/asettmpl.h> // The template set declaration.
+//#include <util/container/asettmpl.h> // The template set declaration.
+#include <util/container/avlaset.h>
 #include <util/container/asetmacr.h> // The macro set declaration.
 #define ARRAYSET_dec(Type) Arrayset_declare(Type)
 #define ARRAYSET_def(Type)

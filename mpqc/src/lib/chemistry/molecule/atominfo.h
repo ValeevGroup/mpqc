@@ -33,6 +33,9 @@
 
 SavableState_REF_fwddec(Units);
 
+//. The \clsnmref{AtomInfo} class provides information about atoms.  The
+//information is kept in a file named \filnm{atominfo.kv} in the SC
+//library directory.  That information can be overridden by the user.
 class AtomInfo: public SavableState {
 #   define CLASSNAME AtomInfo
 #   define HAVE_KEYVAL_CTOR
@@ -73,21 +76,27 @@ class AtomInfo: public SavableState {
     ~AtomInfo();
     void save_data_state(StateOut& s);
 
-    // (vdw_radius used to be the radius member)
+    //. These return various measures of the atom's radius.
     double vdw_radius(int Z) const { return vdw_radius_[Z]; }
     double bragg_radius(int Z) const { return bragg_radius_[Z]; }
     double atomic_radius(int Z) const { return atomic_radius_[Z]; }
 
+    //. These return information about the color of the atom
+    //for visualization programs.
     double rgb(int Z, int color) const { return rgb_[Z][color]; }
     double red(int Z) const { return rgb_[Z][0]; }
     double green(int Z) const { return rgb_[Z][1]; }
     double blue(int Z) const { return rgb_[Z][2]; }
 
+    //. This returns the mass of the most abundant isotope.
     double mass(int Z) const { return mass_[Z]; }
 
+    //. This returns the full name of the element.
     static const char *name(int Z) { return names_[Z].name; }
+    //. This returns the symbol for the element.
     static const char *symbol(int Z) { return names_[Z].symbol; }
 
+    //. This converts a name or symbol to the atomic number.
     static int string_to_Z(const char *);
 };
 SavableState_REF_dec(AtomInfo);

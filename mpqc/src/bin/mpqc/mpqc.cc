@@ -36,6 +36,7 @@
 #include <scdirlist.h>
 
 #include <new>
+#include <stdexcept>
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -132,16 +133,6 @@ clean_up(void)
   RegionTimer::set_default_regiontimer(0);
 }
 
-static void
-out_of_memory()
-{
-  ExEnv::outn() << "ERROR: mpqc: out of memory" << endl;
-  ExEnv::outn().flush();
-  cout.flush();
-  cerr.flush();
-  abort();
-}
-
 #include <signal.h>
 #if defined(HAVE_MACHINE_FPU_H)
 #include <machine/fpu.h>
@@ -176,12 +167,13 @@ void sigfpe_handler(int)
   if (fp_control & IEEE_STATUS_INE) {
       //ExEnv::outn() << "SGIFPE: inexact" << endl;;
     }
+  // throw'ing due to an FPE will violate nothrow guarantees, so abort
   if (fatal) abort();
 }
 #endif
 
 int
-main(int argc, char *argv[])
+try_main(int argc, char *argv[])
 {
   //trash_stack();
 
@@ -189,7 +181,6 @@ main(int argc, char *argv[])
   int i;
   const char *devnull = "/dev/null";
   atexit(clean_up);
-  std::set_new_handler(out_of_memory);
 
 #if defined(__i386__) && defined(__GNUC__)
   // make floating point errors cause an exception (except for denormalized
@@ -305,11 +296,8 @@ main(int argc, char *argv[])
     generic_input = argv[optind];
   }
   else {
-    ExEnv::out0() << ExEnv::program_name()
-                 << ": extra arguments given"
-                 << endl;
     options.usage();
-    abort();
+    throw invalid_argument("extra arguments given");
   }
 
   // get the message group.  first try the commandline and environment
@@ -323,9 +311,8 @@ main(int argc, char *argv[])
     generic_input = "mpqc.in";
     }
   else if (object_input && generic_input) {
-    ExEnv::out0() << ExEnv::program_name()
-                 << ": only one of -f and a file argument can be given" <<endl;
-    abort();
+    options.usage();
+    throw invalid_argument("only one of -f and a file argument can be given");
     }
 
   const char *input;
@@ -903,6 +890,34 @@ main(int argc, char *argv[])
     delete outstream;
   }
 
+  return 0;
+}
+
+int
+main(int argc, char *argv[])
+{
+  try {
+    try_main(argc, argv);
+  }
+  catch (bad_alloc &e) {
+    cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
+         << e.what()
+         << endl;
+    clean_up();
+    throw;
+  }
+  catch (exception &e) {
+    cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl
+         << e.what()
+         << endl;
+    clean_up();
+    throw;
+  }
+  catch (...) {
+    cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
+    clean_up();
+    throw;
+  }
   return 0;
 }
 

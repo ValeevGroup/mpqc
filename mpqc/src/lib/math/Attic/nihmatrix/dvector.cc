@@ -218,14 +218,10 @@ void DVector::print(ostream& os) const { print(0,os); }
 
 void DVector::print(const char *title, ostream& os, int prec) const
 {
-os << "in print n==" << this->n << ", d==" << d << endl;
-
   int ii,jj,kk,nn,ll;
   int i,j;
   int lwidth,width;
   double max=this->maxval();
-
-os << "afger maxval\n";
 
   max=(max==0.0)?1.0:log10(max);
   if(max < 0.0) max=1.0;

@@ -485,8 +485,10 @@ R12IntEval::AT2_contrib_to_V_()
   if (evaluated_)
     return;
   if (r12info_->msg()->me() == 0) {
-    Vaa_.accumulate(Aaa_*T2aa_.t());
-    Vab_.accumulate(Aab_*T2ab_.t());  
+    RefSCMatrix Vaa = Aaa_*T2aa_.t();
+    Vaa_.accumulate(Vaa);
+    RefSCMatrix Vab = Aab_*T2ab_.t();
+    Vab_.accumulate(Vab);  
   }
 }
 
@@ -498,8 +500,12 @@ R12IntEval::AR_contrib_to_B_()
   if (r12info_->msg()->me() == 0) {
     RefSCMatrix AR_aa = Aaa_*Raa_.t();
     RefSCMatrix AR_ab = Aab_*Rab_.t();
-    AR_aa.scale(-1.0); Baa_.accumulate(AR_aa); Baa_.accumulate(AR_aa.t());
-    AR_ab.scale(-1.0); Bab_.accumulate(AR_ab); Bab_.accumulate(AR_ab.t());
+    AR_aa.scale(-1.0); Baa_.accumulate(AR_aa);
+    RefSCMatrix AR_aa_t = AR_aa.t();
+    Baa_.accumulate(AR_aa_t);
+    AR_ab.scale(-1.0); Bab_.accumulate(AR_ab);
+    RefSCMatrix AR_ab_t = AR_ab.t();
+    Bab_.accumulate(AR_ab_t);
   }
 }
 

@@ -312,8 +312,10 @@ R12IntEval::compute_B_gbc_1_()
     B_gbc1_aa.print("Alpha-alpha B(GBC1) contribution");
     B_gbc1_ab.print("Alpha-beta B(GBC1) contribution");
   }
-  Baa_.accumulate(B_gbc1_aa); Baa_.accumulate(B_gbc1_aa.t());
-  Bab_.accumulate(B_gbc1_ab); Bab_.accumulate(B_gbc1_ab.t());
+  RefSCMatrix B_gbc1_aa_t = B_gbc1_aa.t();
+  Baa_.accumulate(B_gbc1_aa); Baa_.accumulate(B_gbc1_aa_t);
+  RefSCMatrix B_gbc1_ab_t = B_gbc1_ab.t();
+  Bab_.accumulate(B_gbc1_ab); Bab_.accumulate(B_gbc1_ab_t);
 
   globally_sum_intermeds_();
 
@@ -625,8 +627,10 @@ R12IntEval::compute_B_gbc_2_()
     B_gbc2_aa.print("Alpha-alpha B(GBC2) contribution");
     B_gbc2_ab.print("Alpha-beta B(GBC2) contribution");
   }
-  Baa_.accumulate(B_gbc2_aa); Baa_.accumulate(B_gbc2_aa.t());
-  Bab_.accumulate(B_gbc2_ab); Bab_.accumulate(B_gbc2_ab.t());
+  RefSCMatrix B_gbc2_aa_t = B_gbc2_aa.t();
+  Baa_.accumulate(B_gbc2_aa); Baa_.accumulate(B_gbc2_aa_t);
+  RefSCMatrix B_gbc2_ab_t = B_gbc2_ab.t();
+  Bab_.accumulate(B_gbc2_ab); Bab_.accumulate(B_gbc2_ab_t);
 
   globally_sum_intermeds_();
 

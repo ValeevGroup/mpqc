@@ -506,13 +506,25 @@ mol_transform_to_principal_axes(Molecule& mol)
   inert[0][2] = inert[2][0];
   inert[1][2] = inert[2][1];
 
+ // cleanup inert
+  for (i=0; i < 3; i++) {
+    for (int j=0; j <= i; j++) {
+      if (fabs(inert[i][j]) < 1.0e-5) {
+        inert[i][j]=inert[j][i]=0.0;
+      }
+    }
+  }
+
   cmat_diag(inert, evals, evecs, 3, 1, 1e-14);
 
  // cleanup evecs
-  for (i=0; i < 3; i++)
-    for (int j=0; j <= i; j++)
-      if (fabs(evecs[i][j]) < 1.0e-5)
+  for (i=0; i < 3; i++) {
+    for (int j=0; j <= i; j++) {
+      if (fabs(evecs[i][j]) < 1.0e-5) {
         evecs[i][j]=evecs[j][i]=0.0;
+      }
+    }
+  }
 
   double x,y,z;
   for (i=0; i < mol.natom(); i++) {
@@ -659,6 +671,20 @@ mol_num_unique_atoms(Molecule& inmol)
   return nu;
 }
 
+// I hate small numbers...they make my teeth itch.  Let's go through
+// all the atoms, and find coordinates which are close to zero ( < 1.0e-5)
+// and set these to zero.  this is cheating, but who cares
+
+static void
+get_rid_of_annoying_numbers(Molecule& mol)
+{
+  for (int i=0; i < mol.natom(); i++) {
+    for (int j=0; j < 3; j++) {
+      if (fabs(mol.atom(i)[j]) < 1.0e-5) mol.atom(i).point()[j]=0;
+    }
+  }
+}
+
 // given a molecule, make sure that equivalent centers have coordinates
 // that really map into each other
 
@@ -672,13 +698,7 @@ mol_cleanup_molecule(Molecule& mol)
  // if symmetry is c1, do nothing else
   if (!strcmp(mol.point_group().symbol(),"c1")) return;
 
- // go through all atoms, and find coordinates which are close to zero
- // ( < 1.0e-5) and set these to zero.  this is cheating, but who cares
-  for (int i=0; i < mol.natom(); i++) {
-    for (int j=0; j < 3; j++) {
-      if (fabs(mol.atom(i)[j]) < 1.0e-5) mol.atom(i).point()[j]=0;
-    }
-  }
+  get_rid_of_annoying_numbers(mol);
 
  // now let's find out how many unique atoms there are and who they are
   int nuniq = mol_num_unique_atoms(mol);
@@ -689,7 +709,7 @@ mol_cleanup_molecule(Molecule& mol)
   CharacterTable ct = mol.point_group().char_table();
 
  // grab the coordinates of each unique atom and stuff into up
-  for (i=0; i < nuniq; i++) {
+  for (int i=0; i < nuniq; i++) {
     up = mol.atom(uniq[i]).point();
 
    // subject up to all symmetry ops...find the atom this maps to and
@@ -714,4 +734,7 @@ mol_cleanup_molecule(Molecule& mol)
       }
     }
   }
+
+ // one last pass to make me happy
+  get_rid_of_annoying_numbers(mol);
 }

@@ -47,6 +47,8 @@ class Wavefunction: public MolecularEnergy
     virtual RefSCMatrix natural_orbitals();
     virtual RefDiagSCMatrix natural_density();
     RefGaussianBasisSet basis();
+
+    RefSCDimension basis_dimension() { return _basisdim; }
 };
 
 #endif

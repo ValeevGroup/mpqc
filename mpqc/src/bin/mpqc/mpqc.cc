@@ -80,12 +80,20 @@ clean_up(void)
   RegionTimer::set_default_regiontimer(0);
 }
 
+static void
+out_of_memory()
+{
+  cerr << "ERROR: out of memory" << endl;
+  abort();
+}
+
 int
 main(int argc, char *argv[])
 {
   int i;
   const char *devnull = "/dev/null";
   atexit(clean_up);
+  set_new_handler(out_of_memory);
 
   ExEnv::set_args(argc, argv);
 

@@ -722,6 +722,8 @@ int edge, face;
 	case TN: return (face == T)? LT : RN;
 	case TF: return (face == T)? RT : LF;
     }
+
+    return -1;
 }
 
 
@@ -875,12 +877,10 @@ static void _myfree(ptr, lineno)
     void* ptr;
     int lineno;
 {
-  int i;
-
 #ifdef CHECK_MALLOC
   size_t size = del_mallocdata(ptr,lineno);
   char*tmp = ptr;
-  for (i=0; i<size; i++) {
+  for (int i=0; i<size; i++) {
       *tmp++ = 0x00;
     }
 #endif

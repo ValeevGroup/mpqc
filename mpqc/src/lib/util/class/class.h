@@ -62,7 +62,9 @@ class ParentClasses
   public:
     ParentClasses(const char*);
     ~ParentClasses();
+    ParentClass& parent(int i);
     const ParentClass& parent(int i) const;
+    ParentClass& operator[](int i);
     const ParentClass& operator[](int i) const;
     int n() const;
     void change_parent(ClassDesc*oldcd,ClassDesc*newcd);
@@ -94,7 +96,7 @@ class ClassDesc {
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
     static void list_all_classes();
-    static const ClassDesc* name_to_class_desc(const char*);
+    static ClassDesc* name_to_class_desc(const char*);
     const ParentClasses& parents() const;
     const char* name() const;
     int version() const;
@@ -158,7 +160,7 @@ class  refname : public RefDescribedClassBase  {			      \
     T* pointer();							      \
     const T* pointer() const;						      \
     operator T*();							      \
-    const operator T*() const;						      \
+    operator const T*() const;						      \
     T& operator *();							      \
     const T& operator *() const;					      \
     refname ();								      \
@@ -184,7 +186,7 @@ const T* refname :: operator->() const { return p; };			      \
 T* refname :: pointer() { return p; };					      \
 const T* refname :: pointer() const { return p; };			      \
 refname :: operator T*() { return p; };					      \
-refname :: const operator T*() const { return p; };			      \
+refname :: operator const T*() const { return p; };			      \
 T& refname :: operator *() { return *p; };				      \
 const T& refname :: operator *() const { return *p; };			      \
 int refname :: null() { return p == 0; };				      \
@@ -278,7 +280,7 @@ void refname :: check_pointer()						      \
       warn("Ref" # T ": bad reference count in referenced object\n");	      \
     }									      \
 }									      \
-void refname :: ref_info(FILE*fp=stdout)				      \
+void refname :: ref_info(FILE*fp)					      \
 {									      \
   if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
   else fprintf(fp,"reference is null\n");				      \

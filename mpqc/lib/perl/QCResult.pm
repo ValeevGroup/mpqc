@@ -271,6 +271,25 @@ sub parse_mpqc {
             }
             $ccsd_energy = $ecorr + $scfenergy;
         }
+# IMBN: Added the following elsif to handle new cc output 
+        elsif ($psioutput && $wante
+               && /\s*ITER\s+CORRELATION ENERGY\s+T1 DIAG\s+D1\(CCSD\)/) {
+            # this is a PSI CC output embedded in an MPQC output
+            # grab iteration 0
+            my $ecorr;
+            <$out>;
+            while (<$out>) {
+                if (/^\s*\d+\s+$fltrx\s+$fltrx\s+$fltrx/) {
+                    $ecorr = $1;
+                    $t1norm = $2;
+                    $t12norm = $3;
+                }
+                else {
+                    last;
+                }
+            }
+            $ccsd_energy = $ecorr + $scfenergy;
+        }
         elsif ($wante && /Value of the MolecularEnergy:\s+$fltrx/) {
             $molecularenergy = $1;
         }

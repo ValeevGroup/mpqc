@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.4  1994/05/17 15:33:14  etseidl
+% Revision 1.5  1994/08/16 19:53:15  etseidl
+% fix small bug with null costvec
+%
+% Revision 1.4  1994/05/17  15:33:14  etseidl
 % change the way blocks are distributed by dmt_def_map2().  dmt_def_map2 now
 % takes a cost struct rather than an int array
 %
@@ -968,7 +971,7 @@ of the data it will send everybody a block length of zero.
   }
 
  /* determine how many blocks each node will hold */
-  if (!blkcost) {
+  if (use_size) {
     for (i=ij=0; i<nblocks; i++) {
       for (j=0; j<=i; j++,ij++) {
         sblocksize = mp -> blksize[i] * mp -> blksize[j];
@@ -1024,7 +1027,7 @@ of the data it will send everybody a block length of zero.
   leastbusy=0;
   for (i=0; i<nproc; i++) size1[i] = 0;
 
-  if (!costvec) {
+  if (use_size) {
     for (i=ij=0; i<nblocks; i++) {
       for (j=0; j<=i; j++,ij++) {
         sblocksize = mp -> blksize[i] * mp -> blksize[j];

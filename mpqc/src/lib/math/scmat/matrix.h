@@ -121,6 +121,7 @@ class SCElementScalarProduct: public SCElementOp2 {
     int has_collect();
     void collect(RefSCElementOp&);
     double result();
+    double init() { product = 0.0; }
 };
 SavableState_REF_dec(SCElementScalarProduct);
 

@@ -165,19 +165,63 @@ Wavefunction::save_data_state(StateOut&s)
   integral_.save_state(s);
 }
 
+RefSymmSCMatrix
+Wavefunction::ao_density()
+{
+#if 1
+  return integral()->petite_list()->to_AO_basis(density());
+#else
+  // sym is 1 if not C1 symmetry, 0 otherwise
+  int sym = (molecule()->point_group().char_table().nirrep()==1?0:1);
+
+  // so_ao is the so to ao basis transform
+  RefSCMatrix so_ao;
+  if (sym) {
+    so_ao = integral()->petite_list()->sotoao();
+  }
+
+  RefSymmSCMatrix dens;
+  if (sym) {
+    RefSymmSCMatrix dens_so = density();
+    // compute dens, the ao basis density
+    dens = dens_so.kit()->symmmatrix(so_ao.coldim());
+    dens.assign(0.0);
+    // (assuming so_ao is unitary)
+    dens.accumulate_transform(so_ao.t(), dens_so);
+  }
+  else {
+    dens = density();
+  }
+  return dens;
+#endif
+}
+
 RefSCMatrix
 Wavefunction::natural_orbitals()
 {
   if (!natural_orbitals_.computed()) {
-      RefSymmSCMatrix dens = density();
+      RefSymmSCMatrix dens = ao_density();
+
+      // convert dens between matrix specializations
+      double *dvec = new double[(dens.dim().n() * (dens.dim().n() + 1))/2];
+      dens.convert(dvec);
+      dens = basis_matrixkit()->symmmatrix(basis_dimension());
+      dens.assign(dvec);
+      delete[] dvec;
 
       // transform the density into an orthogonal basis
       RefSymmSCMatrix ortho = ao_to_orthog_ao();
-      RefSymmSCMatrix orthoi = ortho.i();
+
+      // convert ortho between matrix specializations
+      double *ovec = new double[(ortho.dim().n() * (ortho.dim().n() + 1))/2];
+      ortho.convert(ovec);
+      ortho = basis_matrixkit()->symmmatrix(basis_dimension());
+      ortho.assign(ovec);
+      delete[] ovec;
 
       RefSymmSCMatrix densortho(basis_dimension(), basis_matrixkit());
       densortho.assign(0.0);
-      densortho.accumulate_transform(orthoi,dens);
+      densortho.accumulate_transform(ortho.i(),dens);
 
       RefSCMatrix natorb(basis_dimension(), basis_dimension(),
                          basis_matrixkit());
@@ -185,11 +229,12 @@ Wavefunction::natural_orbitals()
       natural_orbitals_ = natorb;
       natural_density_ = natden;
 
-      densortho.diagonalize(natural_density_,natural_orbitals_);
+      densortho.diagonalize(natural_density_.result_noupdate(),
+                            natural_orbitals_.result_noupdate());
 
       // _natural_orbitals is the ortho to NO basis transform
       // make _natural_orbitals the AO to the NO basis transform
-      natural_orbitals_ = ortho * natural_orbitals_;
+      natural_orbitals_ = ortho * natural_orbitals_.result_noupdate();
 
       natural_orbitals_.computed() = 1;
       natural_density_.computed() = 1;

@@ -687,16 +687,33 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
 
           /* Contract the primitive target integrals. */
           /* Throw out all unneeded contractions. */
-          for (m=mlower; m<=mupper; m++) {
-            int o;
-            int sizec = contract_length(m,nlower,nupper);
-            con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
-            bufferprim = build.int_v_list(m,nlower,0);
+          if (i||j||k||l) {
+            for (m=mlower; m<=mupper; m++) {
+              int o;
+              int sizec = contract_length(m,nlower,nupper);
+              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              bufferprim = build.int_v_list(m,nlower,0);
 
-            for (o=sizec; o!=0; o--) {
-              *con_ints++ += *bufferprim++;
+              for (o=sizec; o!=0; o--) {
+                *con_ints++ += *bufferprim++;
+                }
+
               }
+            }
+          else {
+            // for the first primitive write to con_ints rather
+            // than accumulate into it
+            for (m=mlower; m<=mupper; m++) {
+              int o;
+              int sizec = contract_length(m,nlower,nupper);
+              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              bufferprim = build.int_v_list(m,nlower,0);
 
+              for (o=sizec; o!=0; o--) {
+                *con_ints++ = *bufferprim++;
+                }
+
+              }
             }
 
           }
@@ -847,23 +864,44 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
           coef3 = int_shell4->coefficient_unnorm(cl,l)*coef2;
 
           /* Contract the primitive target integrals. */
-          for (m=mlower; m<=mupper; m++) {
-            int o;
-            int sizec = contract_length(m,nlower,nupper);
-            con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
-            bufferprim = build.int_v_list(m,nlower,0);
+          if (i||j||k||l) {
+            for (m=mlower; m<=mupper; m++) {
+              int o;
+              int sizec = contract_length(m,nlower,nupper);
+              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              bufferprim = build.int_v_list(m,nlower,0);
 
-            /* Sum the integrals into the contracted integrals. */
+              /* Sum the integrals into the contracted integrals. */
 #ifdef SUNMOS
-            for (o=0; o < sizec; o++) {
+              for (o=0; o < sizec; o++) {
                 con_ints[o] += coef3 * bufferprim[o];
-              }
+                }
 #else
-            for (o=sizec; o; o--) {
+              for (o=sizec; o; o--) {
                 *con_ints++ += coef3 * *bufferprim++;
-              }
+                }
 #endif
+              }
 
+            }
+          else {
+            for (m=mlower; m<=mupper; m++) {
+              int o;
+              int sizec = contract_length(m,nlower,nupper);
+              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              bufferprim = build.int_v_list(m,nlower,0);
+
+              /* Write the integrals to the contracted integrals. */
+#ifdef SUNMOS
+              for (o=0; o < sizec; o++) {
+                con_ints[o] = coef3 * bufferprim[o];
+                }
+#else
+              for (o=sizec; o; o--) {
+                *con_ints++ = coef3 * *bufferprim++;
+                }
+#endif
+              }
             }
           }
         }
@@ -1199,7 +1237,6 @@ Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
   double *I20; /* = [a-1 0|c0](m) */
   double *I21; /* = [a-1 0|c0](m+1) */
   double *I31; /* = [a0|c-1 0](m+1) */
-  int cartindex12;
   int cartindex34;
   int cartindex1234;
   int size34,size34m1;
@@ -1218,93 +1255,204 @@ Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
   /* The size of the group of primitives with ang. mom. = am34 - 1 */
   size34m1 = INT_NCART(am34-1);
 
+  // Some local intermediates
+  double half_ooze = 0.5 * build.int_v_ooze;
+  double zeta34_ooze = build.int_v_zeta34 * build.int_v_ooze;
+  double W0_m_p120 = build.int_v_W0 - build.int_v_p120;
+  double p120_m_r10 = build.int_v_p120 - build.int_v_r10;
+  double oo2zeta12 = build.int_v_oo2zeta12;
+
   /* Construct the new integrals. */
-  cartindex12 = 0;
   cartindex1234 = 0;
-  for (i12=0; i12<=am12; i12++) {
-    for (k12=0; k12<=am12-i12; k12++) {
-      j12 = am12 - i12 - k12;
+  if (am12>0) {
+    // the i12==0, k12==0, j12=am12 case (build on y)
+    i12 = 0;
+    j12 = am12;
+    k12 = 0;
+
+    double p121_m_r11 = build.int_v_p121 - build.int_v_r11;
+    double W1_m_p121 = build.int_v_W1 - build.int_v_p121;
+    int i12y1 = INT_CARTINDEX(am12-1,i12,j12-1);
+    int i12y1s34 = i12y1*size34;
+    int i12y1s34m1 = i12y1*size34m1;
+    double *I10i = &I10[i12y1s34];
+    double *I11i = &I11[i12y1s34];
+    double *I31i = &I31[i12y1s34m1];
+    double *I00i = &I00[cartindex1234];
+    if (j12==1) {
+      for (cartindex34=0; cartindex34<size34; cartindex34++) {
+        I00i[cartindex34]
+          = I10i[cartindex34] * p121_m_r11
+          + I11i[cartindex34] * W1_m_p121;
+        }
+      }
+    else { // j12 > 1
+      int i12y2s34 = INT_CARTINDEX(am12-2,i12,j12-2)*size34;
+      double *I20i = &I20[i12y2s34];
+      double *I21i = &I21[i12y2s34];
+      for (cartindex34=0; cartindex34<size34; cartindex34++) {
+        I00i[cartindex34]
+          = I10i[cartindex34] * p121_m_r11
+          + I11i[cartindex34] * W1_m_p121
+          + (j12 - 1) * oo2zeta12 * (I20i[cartindex34]
+                                     - I21i[cartindex34]
+                                     * zeta34_ooze);
+        }
+      }
+    cartindex34 = 0;
+    for (i34=0; i34<=am34; i34++) {
+      for (k34=0; k34<=am34-i34; k34++) {
+        j34 = am34 - i34 - k34;
+
+        if (j34) {
+          I00i[cartindex34]
+            +=  j34 * half_ooze
+            * I31i[INT_CARTINDEX(am34-1,i34,j34-1)];
+          }
+
+        /* cartindex34 == INT_CARTINDEX(am34,i34,j34) */
+        cartindex34++;
+        }
+      }
+    cartindex1234+=size34;
+
+    // the i12==0, j12==am12-1, k12==1 case (build on z)
+    i12 = 0;
+    j12 = am12 - 1;
+    k12 = 1;
+    double p122_m_r12 = build.int_v_p122 - build.int_v_r12;
+    double W2_m_p122 = build.int_v_W2 - build.int_v_p122;
+    int i12z1 = INT_CARTINDEX(am12-1,i12,j12);
+    int i12z1s34 = i12z1*size34;
+    int i12z1s34m1 = i12z1*size34m1;
+    I10i = &I10[i12z1s34];
+    I11i = &I11[i12z1s34];
+    I31i = &I31[i12z1s34m1];
+    I00i = &I00[cartindex1234];
+    for (cartindex34=0; cartindex34<size34; cartindex34++) {
+      I00i[cartindex34]
+        = I10i[cartindex34] * p122_m_r12
+        + I11i[cartindex34] * W2_m_p122;
+      }
+    cartindex34 = 0;
+    for (i34=0; i34<=am34; i34++) {
+      // skip k34 == 0
+      cartindex34++;
+      for (k34=1; k34<=am34-i34; k34++) {
+        j34 = am34 - i34 - k34;
+
+        I00i[cartindex34]
+          +=  k34 * half_ooze * I31i[INT_CARTINDEX(am34-1,i34,j34)];
+
+        cartindex34++;
+        }
+      }
+    cartindex1234+=size34;
+    // the i12==0, j12==am12-k12, k12>1 case (build on z)
+    double k12m1_oo2zeta12 = oo2zeta12;
+    for (k12=2; k12<=am12-i12; k12++) {
+      j12 = am12 - k12;
+      i12z1 = INT_CARTINDEX(am12-1,i12,j12);
+      i12z1s34 = i12z1*size34;
+      i12z1s34m1 = i12z1*size34m1;
+      int i12z2s34 = INT_CARTINDEX(am12-2,i12,j12)*size34;
+      I10i = &I10[i12z1s34];
+      I11i = &I11[i12z1s34];
+      double *I20i = &I20[i12z2s34];
+      double *I21i = &I21[i12z2s34];
+      I31i = &I31[i12z1s34m1];
+      I00i = &I00[cartindex1234];
+      for (cartindex34=0; cartindex34<size34; cartindex34++) {
+          I00i[cartindex34]
+            = I10i[cartindex34] * p122_m_r12
+            + I11i[cartindex34] * W2_m_p122
+            + k12m1_oo2zeta12 * (I20i[cartindex34]
+                                 - I21i[cartindex34]
+                                 * zeta34_ooze);
+        }
       cartindex34 = 0;
       for (i34=0; i34<=am34; i34++) {
-        for (k34=0; k34<=am34-i34; k34++) {
+        // skip k34 == 0
+        cartindex34++;
+        for (k34=1; k34<=am34-i34; k34++) {
           j34 = am34 - i34 - k34;
-
-          /* I10 I11 I20 I21 and I31 contrib */
-
-          /* ------------------ Build from the x position. */
-          if (i12) {
-            /* I10 and I11 */
-            I00[cartindex1234]
-              = I10[INT_CARTINDEX(am12-1,i12-1,j12)*size34 + cartindex34]
-                * ( build.int_v_p120 - build.int_v_r10)
-               + I11[INT_CARTINDEX(am12-1,i12-1,j12)*size34 + cartindex34]
-                 * ( build.int_v_W0 - build.int_v_p120);
-            if (i12 > 1) {
-              /* I20 and I21 */
-              I00[cartindex1234]
-               +=  (i12 - 1) * build.int_v_oo2zeta12
-                 * (  I20[INT_CARTINDEX(am12-2,i12-2,j12)*size34 + cartindex34]
-                    - I21[INT_CARTINDEX(am12-2,i12-2,j12)*size34 + cartindex34]
-                      * build.int_v_zeta34 * build.int_v_ooze);
-              }
-            if (i34) {
-              /* I31 */
-              I00[cartindex1234]
-               +=  i34 * 0.5 * build.int_v_ooze
-                  * I31[  INT_CARTINDEX(am12-1,i12-1,j12)*size34m1
-                        + INT_CARTINDEX(am34-1,i34-1,j34)];
-              }
-            }
-          /* ------------------ Build from the y position. */
-          else if (j12) {
-            I00[cartindex1234]
-              = I10[INT_CARTINDEX(am12-1,i12,j12-1)*size34 + cartindex34]
-                * ( build.int_v_p121 - build.int_v_r11)
-               + I11[INT_CARTINDEX(am12-1,i12,j12-1)*size34 + cartindex34]
-                 * ( build.int_v_W1 - build.int_v_p121);
-            if (j12 > 1) {
-              I00[cartindex1234]
-               +=  (j12 - 1) * build.int_v_oo2zeta12
-                 * (  I20[INT_CARTINDEX(am12-2,i12,j12-2)*size34 + cartindex34]
-                    - I21[INT_CARTINDEX(am12-2,i12,j12-2)*size34 + cartindex34]
-                      * build.int_v_zeta34 * build.int_v_ooze);
-              }
-            if (j34) {
-              I00[cartindex1234]
-               +=  j34 * 0.5 * build.int_v_ooze
-                  * I31[  INT_CARTINDEX(am12-1,i12,j12-1)*size34m1
-                        + INT_CARTINDEX(am34-1,i34,j34-1)];
-              }
-            }
-          /* ------------------ Build from the z position. */
-          else if (k12) {
-            I00[cartindex1234]
-              = I10[INT_CARTINDEX(am12-1,i12,j12)*size34 + cartindex34]
-                * ( build.int_v_p122 - build.int_v_r12)
-               + I11[INT_CARTINDEX(am12-1,i12,j12)*size34 + cartindex34]
-                 * ( build.int_v_W2 - build.int_v_p122);
-            if (k12 > 1) {
-              I00[cartindex1234]
-               +=  (k12 - 1) * build.int_v_oo2zeta12
-                 * (  I20[INT_CARTINDEX(am12-2,i12,j12)*size34 + cartindex34]
-                    - I21[INT_CARTINDEX(am12-2,i12,j12)*size34 + cartindex34]
-                      * build.int_v_zeta34 * build.int_v_ooze);
-              }
-            if (k34) {
-              I00[cartindex1234]
-               +=  k34 * 0.5 * build.int_v_ooze
-                  * I31[  INT_CARTINDEX(am12-1,i12,j12)*size34m1
-                        + INT_CARTINDEX(am34-1,i34,j34)];
-              }
-            }
-
-          /* cartindex34 == INT_CARTINDEX(am34,i34,j34) */
+          I00i[cartindex34]
+            +=  k34 * half_ooze * I31i[INT_CARTINDEX(am34-1,i34,j34)];
           cartindex34++;
-          cartindex1234++;
           }
         }
-      /* cartindex12 == INT_CARTINDEX(am12,i12,j12) */
-      cartindex12++;
+      cartindex1234+=size34;
+      k12m1_oo2zeta12 += oo2zeta12;
+      }
+
+    // the i12==1 case (build on x)
+    i12 = 1;
+    for (k12=0; k12<=am12-i12; k12++) {
+      j12 = am12 - i12 - k12;
+      int i12x1 = INT_CARTINDEX(am12-1,i12-1,j12);
+      int i12x1s34 = i12x1*size34;
+      int i12x1s34m1 = i12x1*size34m1;
+      double *I10i = &I10[i12x1s34];
+      double *I11i = &I11[i12x1s34];
+      double *I31i = &I31[i12x1s34m1];
+      double *I00i = &I00[cartindex1234];
+      for (cartindex34=0; cartindex34<size34; cartindex34++) {
+        I00i[cartindex34]
+          = I10i[cartindex34] * p120_m_r10
+          + I11i[cartindex34] * W0_m_p120;
+        }
+      // skip over i34==0
+      cartindex34 = am34+1;
+      double i34_half_ooze = half_ooze;
+      for (i34=1; i34<=am34; i34++) {
+        for (k34=0; k34<=am34-i34; k34++) {
+          j34 = am34 - i34 - k34;
+          I00i[cartindex34]
+            +=  i34_half_ooze * I31i[INT_CARTINDEX(am34-1,i34-1,j34)];
+          cartindex34++;
+          }
+        i34_half_ooze += half_ooze;
+        }
+      cartindex1234+=size34;
+      }
+    // the i12>1 case (build on x)
+    double i12m1_oo2zeta12 = oo2zeta12;
+    for (i12=2; i12<=am12; i12++) {
+      for (k12=0; k12<=am12-i12; k12++) {
+        j12 = am12 - i12 - k12;
+        int i12x1 = INT_CARTINDEX(am12-1,i12-1,j12);
+        int i12x1s34 = i12x1*size34;
+        int i12x1s34m1 = i12x1*size34m1;
+        int i12x2s34 = INT_CARTINDEX(am12-2,i12-2,j12)*size34;
+        double *I10i = &I10[i12x1s34];
+        double *I11i = &I11[i12x1s34];
+        double *I20i = &I20[i12x2s34];
+        double *I21i = &I21[i12x2s34];
+        double *I31i = &I31[i12x1s34m1];
+        double *I00i = &I00[cartindex1234];
+        for (cartindex34=0; cartindex34<size34; cartindex34++) {
+          I00i[cartindex34]
+            = I10i[cartindex34] * p120_m_r10
+            + I11i[cartindex34] * W0_m_p120
+            + i12m1_oo2zeta12 * (I20i[cartindex34]
+                                 - I21i[cartindex34]
+                                 * zeta34_ooze);
+          }
+        // skip over i34==0
+        cartindex34 = am34+1;
+        double i34_half_ooze = half_ooze;
+        for (i34=1; i34<=am34; i34++) {
+          for (k34=0; k34<=am34-i34; k34++) {
+            j34 = am34 - i34 - k34;
+            I00i[cartindex34]
+              +=  i34_half_ooze * I31i[INT_CARTINDEX(am34-1,i34-1,j34)];
+            cartindex34++;
+            }
+          i34_half_ooze += half_ooze;
+          }
+        cartindex1234+=size34;
+        }
+      i12m1_oo2zeta12 += oo2zeta12;
       }
     }
 
@@ -1327,6 +1475,9 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
   int i12, j12, k12;
   int i34, j34, k34;
 
+  // These temporaries point to subblocks within the integrals arrays.
+  double *I10o,*I11o,*I20o,*I21o;
+
   /* Construct the needed intermediate integrals. */
   I10 = buildprim(am12, am34 - 1, m);
   I11 = buildprim(am12, am34 - 1, m + 1);
@@ -1338,12 +1489,27 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
   size34m1 = INT_NCART(am34-1);
   size34m2 = INT_NCART(am34-2);
 
+  // Useful constants
+  double p340_m_r30 = build.int_v_p340 - build.int_v_r30;
+  double W0_m_p340 = build.int_v_W0 - build.int_v_p340;
+  double p341_m_r31 = build.int_v_p341 - build.int_v_r31;
+  double W1_m_p341 = build.int_v_W1 - build.int_v_p341;
+  double p342_m_r32 = build.int_v_p342 - build.int_v_r32;
+  double W2_m_p342 = build.int_v_W2 - build.int_v_p342;
+  double oo2zeta34 = build.int_v_oo2zeta34;
+  double zeta12_ooze = build.int_v_zeta12 * build.int_v_ooze;
+  double half_ooze = 0.5 * build.int_v_ooze;
+
   /* Construct the new integrals. */
   cartindex12 = 0;
   cartindex1234 = 0;
   for (i12=0; i12<=am12; i12++) {
     for (k12=0; k12<=am12-i12; k12++) {
       j12 = am12 - i12 - k12;
+      I10o = &I10[cartindex12*size34m1];
+      I11o = &I11[cartindex12*size34m1];
+      if (I20) I20o = &I20[cartindex12*size34m2];
+      if (I21) I21o = &I21[cartindex12*size34m2];
       cartindex34 = 0;
       for (i34=0; i34<=am34; i34++) {
         for (k34=0; k34<=am34-i34; k34++) {
@@ -1353,91 +1519,65 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
 
           /* ------------------ Build from the x position. */
           if (i34) {
+            //note: cartindex34 - am34 - 1 = INT_CARTINDEX(am34-1,i34-1,j34)
+            int ci34 = cartindex34 - am34 - 1;
             /* I10 and I11 */
             I00[cartindex1234]
-        /*
-         *    = I10[INT_CARTINDEX(am12-1,i12-1,j12)*size34 + cartindex34]
-         *      * ( build.int_v_p120 - build.int_v_r10)
-         *     + I11[INT_CARTINDEX(am12-1,i12-1,j12)*size34 + cartindex34]
-         *       * ( build.int_v_W0 - build.int_v_p120);
-         */
-              = I10[cartindex12*size34m1 + INT_CARTINDEX(am34-1,i34-1,j34)]
-                * ( build.int_v_p340 - build.int_v_r30)
-               + I11[cartindex12*size34m1 + INT_CARTINDEX(am34-1,i34-1,j34)]
-                 * ( build.int_v_W0 - build.int_v_p340);
+              = I10o[ci34] * p340_m_r30 + I11o[ci34] * W0_m_p340;
             if (i34 > 1) {
+              //note: cartindex34-(am34+am34+1)=INT_CARTINDEX(am34-2,i34-2,j34)
+              int ci34b = cartindex34-(am34+am34+1);
+              //int ci34b = INT_CARTINDEX(am34-2,i34-2,j34);
               /* I20 and I21 */
               I00[cartindex1234]
-         /*
-          *    +=  (i12 - 1) * build.int_v_oo2zeta12
-          *      * (  I20[INT_CARTINDEX(am12-2,i12-2,j12)*size34 + cartindex34]
-          *         - I21[INT_CARTINDEX(am12-2,i12-2,j12)*size34 + cartindex34]
-          *           * build.int_v_zeta34 * build.int_v_ooze);
-          */
-               +=  (i34 - 1) * build.int_v_oo2zeta34
-                 * (  I20[cartindex12*size34m2 +INT_CARTINDEX(am34-2,i34-2,j34)]
-                    - I21[cartindex12*size34m2 +INT_CARTINDEX(am34-2,i34-2,j34)]
-                      * build.int_v_zeta12 * build.int_v_ooze);
+               +=  (i34 - 1) * oo2zeta34 * (I20o[ci34b]
+                                            - I21o[ci34b] * zeta12_ooze);
               }
             if (i12) {
+              int ci12c = cartindex12-am12-1; // = CARTINDEX(am12-1,i12-1,j12);
               /* I31 */
               I00[cartindex1234]
-        /*  
-         *     +=  (i34 - 1) * 0.5 * build.int_v_ooze
-         *        * I31[  INT_CARTINDEX(am12-1,i12-1,j12)*size34m1
-         *              + INT_CARTINDEX(am34-1,i34-1,j34)];
-         */
-               +=  i12 * 0.5 * build.int_v_ooze
-                  * I31[  INT_CARTINDEX(am12-1,i12-1,j12)*size34m1
-                        + INT_CARTINDEX(am34-1,i34-1,j34)];
+               +=  i12 * half_ooze * I31[ci12c*size34m1 + ci34];
               }
             }
           /* ------------------ Build from the y position. */
           else if (j34) {
+            int ci34 = cartindex34 - i34;//=INT_CARTINDEX(am34-1,i34,j34-1)
             /* I10 and I11 */
             I00[cartindex1234]
-              = I10[cartindex12*size34m1 + INT_CARTINDEX(am34-1,i34,j34-1)]
-                * ( build.int_v_p341 - build.int_v_r31)
-               + I11[cartindex12*size34m1 + INT_CARTINDEX(am34-1,i34,j34-1)]
-                 * ( build.int_v_W1 - build.int_v_p341);
+              = I10o[ci34] * p341_m_r31 + I11o[ci34] * W1_m_p341;
             if (j34 > 1) {
+              int ci34b = cartindex34-i34-i34;//=CARTINDEX(am34-2,i34,j34-2)
               /* I20 and I21 */
               I00[cartindex1234]
-               +=  (j34 - 1) * build.int_v_oo2zeta34
-                 * (  I20[cartindex12*size34m2 +INT_CARTINDEX(am34-2,i34,j34-2)]
-                    - I21[cartindex12*size34m2 +INT_CARTINDEX(am34-2,i34,j34-2)]
-                      * build.int_v_zeta12 * build.int_v_ooze);
+               +=  (j34 - 1) * oo2zeta34 * (I20o[ci34b]
+                                            - I21o[ci34b] * zeta12_ooze);
               }
             if (j12) {
+              int ci12c = cartindex12-i12;//=INT_CARTINDEX(am12-1,i12,j12-1)
               /* I31 */
               I00[cartindex1234]
-               +=  j12 * 0.5 * build.int_v_ooze
-                  * I31[  INT_CARTINDEX(am12-1,i12,j12-1)*size34m1
-                        + INT_CARTINDEX(am34-1,i34,j34-1)];
+               +=  j12 * half_ooze * I31[ci12c*size34m1 + ci34];
               }
             }
           /* ------------------ Build from the z position. */
           else if (k34) {
+            int ci34 = cartindex34 - i34 - 1;//=INT_CARTINDEX(am34-1,i34,j34)
             /* I10 and I11 */
             I00[cartindex1234]
-              = I10[cartindex12*size34m1 + INT_CARTINDEX(am34-1,i34,j34)]
-                * ( build.int_v_p342 - build.int_v_r32)
-               + I11[cartindex12*size34m1 + INT_CARTINDEX(am34-1,i34,j34)]
-                 * ( build.int_v_W2 - build.int_v_p342);
+              = I10o[ci34] * p342_m_r32 + I11o[ci34] * W2_m_p342;
             if (k34 > 1) {
+              int ci34b = cartindex34-i34-i34-2;//=CARTINDEX(am34-2,i34,j34)
               /* I20 and I21 */
               I00[cartindex1234]
-               +=  (k34 - 1) * build.int_v_oo2zeta34
-                 * (  I20[cartindex12*size34m2 +INT_CARTINDEX(am34-2,i34,j34)]
-                    - I21[cartindex12*size34m2 +INT_CARTINDEX(am34-2,i34,j34)]
-                      * build.int_v_zeta12 * build.int_v_ooze);
+               +=  (k34 - 1) * oo2zeta34 * (I20o[ci34b]
+                                            - I21o[ci34b] * zeta12_ooze);
               }
             if (k12) {
+              int ci12c = cartindex12-i12-1;//=INT_CARTINDEX(am12-1,i12,j12)
               /* I31 */
               I00[cartindex1234]
-               +=  k12 * 0.5 * build.int_v_ooze
-                  * I31[  INT_CARTINDEX(am12-1,i12,j12)*size34m1
-                        + INT_CARTINDEX(am34-1,i34,j34)];
+               +=  k12 * half_ooze * I31[ci12c*size34m1 + ci34];
               }
             }
 

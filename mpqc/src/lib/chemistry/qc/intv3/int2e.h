@@ -58,8 +58,8 @@ class ShiftIntermediates {
   public:
     ShiftIntermediates();
     ~ShiftIntermediates();
-    // marks all data as unused
-    void clear();
+    // marks all data as unused and zeros the necessary elements of shell
+    void clear(int am1,int am2,int am3,int am4);
     // allocates the memory
     void set_l(int,int,int,int);
     // the amount of memory used

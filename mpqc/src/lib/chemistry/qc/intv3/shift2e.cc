@@ -81,14 +81,18 @@ ShiftIntermediates::out_of_memory(int i,int j,int k,int l)
 }
 
 void
-ShiftIntermediates::clear()
+ShiftIntermediates::clear(int am1,int am2,int am3,int am4)
 {
   nused_ = 0;
-  for (int i=0; i<=l1_+l2_; i++) {
-    for (int j=0; j<=l2_; j++) {
-      for (int k=0; k<=l3_+l4_; k++) {
-        for (int l=0; l<=l4_; l++) {
-          shell_(i,j,k,l) = 0;
+  double *****data = shell_.data();
+  for (int i=0; i<=am1+am2; i++) {
+    double ****datai = data[i];
+    for (int j=0; j<=am2; j++) {
+      double ***dataij = datai[j];
+      for (int k=0; k<=am3+am4; k++) {
+        double **dataijk = dataij[k];
+        for (int l=0; l<=am4; l++) {
+          dataijk[l] = 0;
           }
         }
       }
@@ -248,7 +252,7 @@ Int2eV3::int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
   CmD[2] =  build.int_v_r32 - build.int_v_r42;
 
   /* Mark all of the intermediates as being noncomputed. */
-  shiftinter_.clear();
+  shiftinter_.clear(am1,am2,am3,am4);
 
 #if CHECK_INTEGRAL_ALGORITHM
   cout << "generating ("
@@ -374,49 +378,54 @@ Int2eV3::shiftam_12(double *I0100, int am1, int am2, int am3, int am4)
   size2m134 = INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
   size34    = INT_NCART(am3)*INT_NCART(am4);
 
+  double AmB0 = AmB[0];
+  double AmB1 = AmB[1];
+  double AmB2 = AmB[2];
+
   /* Loop over the target integrals. */
   cartindex1234 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
       j1 = am1 - i1 - k1;
+      int ci1x1 = INT_CARTINDEX(am1+1,i1+1,j1) * size2m134;
+      int ci1y1 = INT_CARTINDEX(am1+1,i1,j1+1) * size2m134;
+      int ci1z1 = INT_CARTINDEX(am1+1,i1,j1) * size2m134;
+      int ci1 = INT_CARTINDEX(am1,i1,j1) * size2m134;
       for (i2=0; i2<=am2; i2++) {
         for (k2=0; k2<=am2-i2; k2++) {
           j2 = am2 - i2 - k2;
-          for (cartindex34=0; cartindex34<size34; cartindex34++) {
+          int ci2x1 = INT_CARTINDEX(am2-1,i2-1,j2) * size34;
+          int ci2y1 = INT_CARTINDEX(am2-1,i2,j2-1) * size34;
+          int ci2z1 = INT_CARTINDEX(am2-1,i2,j2) * size34;
 
-            if (i2) {
-              I0100[cartindex1234]
-               =   I1000[  INT_CARTINDEX(am1+1,i1+1,j1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2-1,j2) * size34
-                         + cartindex34 ]
-                 + I0000[  INT_CARTINDEX(am1,i1,j1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2-1,j2) * size34
-                         + cartindex34 ]
-                   * AmB[0];
-              }
-            else if (j2) {
-              I0100[cartindex1234]
-               =   I1000[  INT_CARTINDEX(am1+1,i1,j1+1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2,j2-1) * size34
-                         + cartindex34 ]
-                 + I0000[  INT_CARTINDEX(am1,i1,j1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2,j2-1) * size34
-                         + cartindex34 ]
-                   * AmB[1];
-              }
-            else {
-              I0100[cartindex1234]
-               =   I1000[  INT_CARTINDEX(am1+1,i1,j1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2,j2) * size34
-                         + cartindex34 ]
-                 + I0000[  INT_CARTINDEX(am1,i1,j1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2,j2) * size34
-                         + cartindex34 ]
-                   * AmB[2];
-              }
+          double *I0100i=&I0100[cartindex1234];
 
-            cartindex1234++;
+          if (i2) {
+            double *I1000i=&I1000[ci1x1+ci2x1];
+            double *I0000i=&I0000[ci1+ci2x1];
+            for (cartindex34=0; cartindex34<size34; cartindex34++) {
+              I0100i[cartindex34]
+                = I1000i[cartindex34] + I0000i[cartindex34] * AmB0;
+              }
             }
+          else if (j2) {
+            double *I1000i=&I1000[ci1y1+ci2y1];
+            double *I0000i=&I0000[ci1+ci2y1];
+            for (cartindex34=0; cartindex34<size34; cartindex34++) {
+              I0100i[cartindex34]
+                = I1000i[cartindex34] + I0000i[cartindex34] * AmB1;
+              }
+            }
+          else {
+            double *I1000i=&I1000[ci1z1+ci2z1];
+            double *I0000i=&I0000[ci1+ci2z1];
+            for (cartindex34=0; cartindex34<size34; cartindex34++) {
+              I0100i[cartindex34]
+                = I1000i[cartindex34] + I0000i[cartindex34] * AmB2;
+              }
+            }
+
+          cartindex1234+=size34;
           }
         }
       }
@@ -518,60 +527,70 @@ Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
   size234m1 = INT_NCART(am2)*INT_NCART(am3)*INT_NCART(am4-1);
   size34m1 = INT_NCART(am3)*INT_NCART(am4-1);
 
+  double CmD0 = CmD[0];
+  double CmD1 = CmD[1];
+  double CmD2 = CmD[2];
+
   /* Loop over the target integrals. */
-  cartindex1 = 0;
   cartindex1234 = 0;
+  cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
       j1 = am1 - i1 - k1;
+      int ci1_I0010 = cartindex1 * size23p14m1;
+      int ci1_I0000 = cartindex1 * size234m1;
       cartindex2 = 0;
       for (i2=0; i2<=am2; i2++) {
         for (k2=0; k2<=am2-i2; k2++) {
           j2 = am2 - i2 - k2;
+          int ci2_I0010 = ci1_I0010 + cartindex2 * size3p14m1;
+          int ci2_I0000 = ci1_I0000 + cartindex2 * size34m1;
           cartindex3 = 0;
           for (i3=0; i3<=am3; i3++) {
             for (k3=0; k3<=am3-i3; k3++) {
               j3 = am3 - i3 - k3;
+              //note: cartindex3 + am3 + 2 = INT_CARTINDEX(am3+1,i3+1,j3)
+              int ci3_I0010 = ci2_I0010
+                              + (cartindex3 + am3 + 2)*size4m1;
+              int ci3_I0000 = ci2_I0000 + cartindex3*size4m1;
               cartindex4 = 0;
               for (i4=0; i4<=am4; i4++) {
                 for (k4=0; k4<=am4-i4; k4++) {
                   j4 = am4 - i4 - k4;
 
                   if (i4) {
+                    //note: cartindex4 - am4 - 1 = INT_CARTINDEX(am4-1,i4-1,j4)
+                    int ci4 = cartindex4 - am4 - 1;
                     I0001[cartindex1234]
-                     =   I0010[  INT_CARTINDEX(am1,i1,j1) * size23p14m1
-                               + INT_CARTINDEX(am2,i2,j2) * size3p14m1
-                               + INT_CARTINDEX(am3+1,i3+1,j3) * size4m1
-                               + INT_CARTINDEX(am4-1,i4-1,j4) ]
-                       + I0000[  INT_CARTINDEX(am1,i1,j1) * size234m1
-                               + INT_CARTINDEX(am2,i2,j2) * size34m1
-                               + INT_CARTINDEX(am3,i3,j3) * size4m1
-                               + INT_CARTINDEX(am4-1,i4-1,j4) ]
-                         * CmD[0];
+                      =   I0010[ci3_I0010 + ci4]
+                      + I0000[ci3_I0000 + ci4]
+                      * CmD0;
                     }
                   else if (j4) {
+                    //note: cartindex4 - i4 = INT_CARTINDEX(am4-1,i4,j4-1)
+                    int ci4 = cartindex4 - i4;
+                    //note: cartindex3 - i3 = INT_CARTINDEX(am3+1,i3,j3+1)
+                    int ci3 = cartindex3 + i3;
                     I0001[cartindex1234]
-                     =   I0010[  INT_CARTINDEX(am1,i1,j1) * size23p14m1
-                               + INT_CARTINDEX(am2,i2,j2) * size3p14m1
-                               + INT_CARTINDEX(am3+1,i3,j3+1) * size4m1
-                               + INT_CARTINDEX(am4-1,i4,j4-1) ]
-                       + I0000[  INT_CARTINDEX(am1,i1,j1) * size234m1
-                               + INT_CARTINDEX(am2,i2,j2) * size34m1
-                               + INT_CARTINDEX(am3,i3,j3) * size4m1
-                               + INT_CARTINDEX(am4-1,i4,j4-1) ]
-                         * CmD[1];
+                     =   I0010[ci2_I0010
+                               + ci3 * size4m1
+                               + ci4 ]
+                       + I0000[ci3_I0000
+                               + ci4 ]
+                         * CmD1;
                     }
                   else if (k4) {
+                    //note: cartindex4 - i4 - 1 = INT_CARTINDEX(am4-1,i4,j4)
+                    int ci4 = cartindex4 - i4 - 1;
+                    //note: cartindex3 - i3 - 1 = INT_CARTINDEX(am3+1,i3,j3)
+                    int ci3 = cartindex3 + i3 + 1;
                     I0001[cartindex1234]
-                     =   I0010[  INT_CARTINDEX(am1,i1,j1) * size23p14m1
-                               + INT_CARTINDEX(am2,i2,j2) * size3p14m1
-                               + INT_CARTINDEX(am3+1,i3,j3) * size4m1
-                               + INT_CARTINDEX(am4-1,i4,j4) ]
-                       + I0000[  INT_CARTINDEX(am1,i1,j1) * size234m1
-                               + INT_CARTINDEX(am2,i2,j2) * size34m1
-                               + INT_CARTINDEX(am3,i3,j3) * size4m1
-                               + INT_CARTINDEX(am4-1,i4,j4) ]
-                         * CmD[2];
+                     =   I0010[ci2_I0010
+                               + ci3 * size4m1
+                               + ci4 ]
+                       + I0000[ci3_I0000
+                               + ci4 ]
+                         * CmD2;
 #if 0
    if (cartindex1234 == 4) {
      cout << scprintf(" building with % f + % f * % f ",

@@ -98,6 +98,7 @@ class IntV3Arraydoublep4 {
     double *&operator()(int i,int j,int k,int l) { return data_[i][j][k][l]; }
     void print(ostream &);
     int nbyte() const;
+    double *****data() { return data_; }
 };
 
 class IntV3Arrayint3 {

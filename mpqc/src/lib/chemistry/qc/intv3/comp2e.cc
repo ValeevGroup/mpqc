@@ -470,42 +470,42 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     psize34 = psize4 * psize3;
     psize234 = psize34 * psize2;
     redundant_index = 0;
+    int ci1=0;
     FOR_CART(i1,j1,k1,tam1)
+      int ci2=0;
       FOR_CART(i2,j2,k2,tam2)
+        int ci3=0;
         FOR_CART(i3,j3,k3,tam3)
+          int ci4=0;
           FOR_CART(i4,j4,k4,tam4)
-            pi1=i1; pj1=j1; pk1=k1;
-            pi2=i2; pj2=j2; pk2=k2;
-            pi3=i3; pj3=j3; pk3=k3;
-            pi4=i4; pj4=j4; pk4=k4;
+            int pci1=ci1;
+            int pci2=ci2;
+            int pci3=ci3;
+            int pci4=ci4;
             if (p13p24) {
-              iswtch(&pi1,&pi3);
-              iswtch(&pj1,&pj3);
-              iswtch(&pk1,&pk3);
-              iswtch(&pi2,&pi4);
-              iswtch(&pj2,&pj4);
-              iswtch(&pk2,&pk4);
+              iswtch(&pci1,&pci3);
+              iswtch(&pci2,&pci4);
               }
             if (p34) {
-              iswtch(&pi3,&pi4);
-              iswtch(&pj3,&pj4);
-              iswtch(&pk3,&pk4);
+              iswtch(&pci3,&pci4);
               }
             if (p12) {
-              iswtch(&pi1,&pi2);
-              iswtch(&pj1,&pj2);
-              iswtch(&pk1,&pk2);
+              iswtch(&pci1,&pci2);
               }
-            newindex =  (pogc1 + INT_CARTINDEX(pam1,pi1,pj1)) * psize234
-                      + (pogc2 + INT_CARTINDEX(pam2,pi2,pj2)) * psize34
-                      + (pogc3 + INT_CARTINDEX(pam3,pi3,pj3)) * psize4
-                      + (pogc4 + INT_CARTINDEX(pam4,pi4,pj4));
+            newindex =  (pogc1 + pci1) * psize234
+                      + (pogc2 + pci2) * psize34
+                      + (pogc3 + pci3) * psize4
+                      + (pogc4 + pci4);
             int_buffer[newindex]
               = shiftbuffer[redundant_index];
             redundant_index++;
+            ci4++;
             END_FOR_CART
+          ci3++;
           END_FOR_CART
+        ci2++;
         END_FOR_CART
+      ci1++;
       END_FOR_CART
     }
   else {

@@ -64,6 +64,114 @@ ParallelRegionTimer::~ParallelRegionTimer()
 {
 }
 
+static void
+send_string(const Ref<MessageGrp>& msg, int node, const char *s)
+{
+  int l = strlen(s);
+  msg->send(node, l);
+  msg->send(node, s, l);
+}
+
+static char *
+recv_string(const Ref<MessageGrp>& msg, int node)
+{
+  int l;
+  msg->recv(node, l);
+  char *s = new char[l+1];
+  s[l] = '\0';
+  msg->recv(node, s, l);
+  return s;
+}
+
+void
+ParallelRegionTimer::send_region(int node, const TimedRegion *r) const
+{
+  int have_subregions = (r->subregions() != 0);
+  msg_->send(node, have_subregions);
+  if (have_subregions) {
+      send_string(msg_,node,r->name());
+      send_region(node, r->subregions());
+    }
+
+  int have_next = (r->next() != 0);
+  msg_->send(node, have_next);
+  while (have_next) {
+      send_string(msg_,node,r->name());
+      send_region(node, r->next());
+      r = r->next();
+      have_next = (r->next() != 0);
+      msg_->send(node, have_next);
+    }
+}
+
+void
+ParallelRegionTimer::recv_region(int node, TimedRegion *r, TimedRegion *up) const
+{
+  int have_subregions;
+  msg_->recv(node, have_subregions);
+  if (have_subregions) {
+      char *name = recv_string(msg_,node);
+      TimedRegion *subregion = r->findinsubregion(name);
+      recv_region(node, subregion, r);
+      delete[] name;
+    }
+  int have_next;
+  msg_->recv(node, have_next);
+  while (have_next) {
+      char *name = recv_string(msg_,node);
+      TimedRegion *region = up->findinsubregion(name);
+      delete[] name;
+      msg_->recv(node, have_next);
+    }
+}
+
+void
+ParallelRegionTimer::send_regions(int node) const
+{
+  int top_has_subregions = (top_->subregions() != 0);
+  msg_->send(node, top_has_subregions);
+  if (!top_has_subregions) return;
+  send_region(node, top_->subregions());
+}
+
+void
+ParallelRegionTimer::recv_regions(int node) const
+{
+  int top_has_subregions;
+  msg_->recv(node, top_has_subregions);
+  if (!top_has_subregions) return;
+  recv_region(node, top_->subregions(), top_);
+}
+
+void
+ParallelRegionTimer::all_reduce_regions() const
+{
+  Ref<MachineTopology> topology = msg_->topology();
+
+  // accumulate all the regions onto node zero
+  Ref<GlobalMsgIter> i_reduce(topology->global_msg_iter(msg_, 0));
+  for (i_reduce->backwards(); !i_reduce->done(); i_reduce->next()) {
+      if (i_reduce->send()) {
+          send_regions(i_reduce->sendto());
+        }
+      if (i_reduce->recv()) {
+          recv_regions(i_reduce->recvfrom());
+        }
+    }
+
+  // broadcast the regions to all the nodes
+  Ref<GlobalMsgIter> i_bcast(topology->global_msg_iter(msg_, 0));
+  for (i_bcast->forwards(); !i_bcast->done(); i_bcast->next()) {
+      if (i_bcast->send()) {
+          send_regions(i_bcast->sendto());
+        }
+      if (i_bcast->recv()) {
+          recv_regions(i_bcast->recvfrom());
+        }
+    }
+
+}
+
 void
 ParallelRegionTimer::print(ostream &o) const
 {
@@ -75,6 +183,9 @@ ParallelRegionTimer::print(ostream &o) const
     }
 
   update_top();
+
+  // make sure all the nodes have the same regions
+  all_reduce_regions();
 
   int n = nregion();
 

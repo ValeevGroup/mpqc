@@ -41,6 +41,13 @@ namespace sc {
 class ParallelRegionTimer: public RegionTimer {
   protected:
     Ref<MessageGrp> msg_;
+
+    void send_region(int node, const TimedRegion *r) const;
+    void recv_region(int node, TimedRegion *r, TimedRegion *up) const;
+    void send_regions(int node) const;
+    void recv_regions(int node) const;
+    void all_reduce_regions() const;
+
   public:
     ParallelRegionTimer(const Ref<MessageGrp>&,
                         const char *topname = "total",

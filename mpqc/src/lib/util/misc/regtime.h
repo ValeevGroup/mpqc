@@ -38,7 +38,48 @@
 
 namespace sc {
 
-class TimedRegion;
+class TimedRegion {
+  private:
+    char *name_;
+    TimedRegion *up_;
+    TimedRegion *subregions_;
+    TimedRegion *next_;
+    TimedRegion *prev_;
+    double cpu_time_;
+    double wall_time_;
+    double cpu_enter_;
+    double wall_enter_;
+    double flops_;
+    double flops_enter_;
+
+    TimedRegion *insert_after(const char *name);
+    TimedRegion *insert_before(const char *name);
+  public:
+    TimedRegion(const char *name);
+    ~TimedRegion();
+    const char *name() const { return name_; }
+    TimedRegion *findinsubregion(const char *);
+    void cpu_enter(double);
+    void wall_enter(double);
+    void flops_enter(double);
+    void cpu_exit(double);
+    void wall_exit(double);
+    void flops_exit(double);
+    void cpu_add(double t) { cpu_time_ += t; }
+    void wall_add(double t) { wall_time_ += t; }
+    void flops_add(double t) { flops_ += t; }
+    TimedRegion *up() const { return up_; }
+    TimedRegion *subregions() const { return subregions_; }
+    TimedRegion *next() const { return next_; }
+    TimedRegion *prev() const { return prev_; }
+
+    int nregion();
+    void get_region_names(const char *names[]);
+    void get_wall_times(double *);
+    void get_cpu_times(double *);
+    void get_flops(double *);
+    void get_depth(int *, int depth = 0);
+};
 
 /** The RegionTimer class is used to record the time spent in a section of
 code.  During the run of a code, enter and exit members are called to begin

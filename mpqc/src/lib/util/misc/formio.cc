@@ -1,5 +1,6 @@
 
 #include <util/misc/formio.h>
+#include <string.h>
 
 const char *SCFormIO::default_basename_ = 0;
 int  SCFormIO::ready_ = 0;

@@ -263,7 +263,7 @@ OneBodyIntOp::process_spec(SCMatrixRectBlock* b)
 
   int njdata = b->jend - b->jstart;
 
-  iter->redundant(0);
+  iter->set_redundant(0);
 
   for (iter->start(ishstart,jshstart,ishend,jshend);
        iter->ready(); iter->next()) {
@@ -297,7 +297,7 @@ OneBodyIntOp::process_spec(SCMatrixLTriBlock* b)
   int shstart = bs1->function_to_shell(fnstart);
   int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
 
-  iter->redundant(1);
+  iter->set_redundant(1);
 
   // loop over all needed shells
   for (iter->start(shstart,shstart,shend,shend); iter->ready(); iter->next()) {
@@ -375,7 +375,7 @@ OneBody3IntOp::process_spec(SCMatrixRectBlock* a,
 
   int njdata = b->jend - b->jstart;
 
-  iter->redundant(0);
+  iter->set_redundant(0);
 
   for (iter->start(ishstart,jshstart,ishend,jshend);
        iter->ready(); iter->next()) {

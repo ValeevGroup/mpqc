@@ -180,7 +180,8 @@ class OneBodyIntIter : public VRefCount {
 
     int ijshell() const { return ij; }
 
-    int redundant(int i) { int ret=redund; redund=i; return ret; }
+    int redundant() const { return redund; }
+    void set_redundant(int i) { redund=i; }
     
     virtual double scale() const;
 

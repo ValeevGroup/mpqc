@@ -130,7 +130,7 @@
 #endif
 
 #ifndef REF_ALWAYS_USE_LOCKS
-#  define REF_ALWAYS_USE_LOCKS 0
+#  define REF_ALWAYS_USE_LOCKS 1
 #endif
 
 #if REF_CHECK_STACK

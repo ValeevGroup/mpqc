@@ -91,6 +91,13 @@ main(int argc, char *argv[])
 
   pkv = ppkv = 0;
 
+  // get the basename for output files
+  int nfilebase = (int) (strrchr(input, '.') - input);
+  char *basename = new char[nfilebase + 1];
+  strncpy(basename, input, nfilebase);
+  basename[nfilebase] = '\0';
+  SCFormIO::set_default_basename(basename);
+
   // get the message group.  the commandline take precedence, then what is
   // in the input file.
   //RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
@@ -128,7 +135,7 @@ main(int argc, char *argv[])
     debugger->set_exec(argv[0]);
     debugger->set_prefix(grp->me());
     if (options.retrieve("d"))
-      debugger->debug("curt is a hog");
+      debugger->debug("Edwared The Seidl is a hog.");
   }
   
   // now check to see what matrix kit to use
@@ -149,7 +156,7 @@ main(int argc, char *argv[])
   // check for a molecular energy and optimizer
   char * molname = keyval->pcharvalue("filename");
   if (!molname)
-    molname = new_string("mpqc");
+    molname = new_string(basename);
   
   char * ckptfile = new char[strlen(molname)+6];
   sprintf(ckptfile,"%s.ckpt",molname);
@@ -157,7 +164,11 @@ main(int argc, char *argv[])
   int restart = 1;
   if (keyval->exists("restart"))
     restart = keyval->booleanvalue("restart");
-  
+
+  int checkpoint = keyval->booleanvalue("checkpoint");
+  if (keyval->error() != KeyVal::OK)
+    checkpoint=1;
+
   struct stat sb;
   RefMolecularEnergy mole;
   RefOptimize opt;
@@ -169,7 +180,7 @@ main(int argc, char *argv[])
   } else {
     mole = keyval->describedclassvalue("mole");
     opt = keyval->describedclassvalue("opt");
-    if (opt.nonnull()) {
+    if (checkpoint && opt.nonnull()) {
       opt->set_checkpoint();
       opt->set_checkpoint_file(ckptfile);
     }
@@ -209,20 +220,30 @@ main(int argc, char *argv[])
   if (keyval->error() != KeyVal::OK)
     do_opt=1;
   
+  int ready_for_freq = 1;
   if (mole.nonnull()) {
     if (do_opt && opt.nonnull() && mole->gradient_implemented()) {
-      opt->optimize();
+      int result = opt->optimize();
+      if (result) {
+        cout << node0 << indent
+             << "The optimization has converged." << endl;
+      } else {
+        cout << node0 << indent
+             << "The optimization has NOT converged." << endl;
+        ready_for_freq = 0;
+      }
     } else if (do_grad && mole->gradient_implemented()) {
       mole->gradient().print("gradient");
     } else if (do_energy && mole->value_implemented()) {
       cout << node0 << indent
-           << scprintf("value of mole is %20.15f\n\n", mole->energy());
+           << scprintf("value of mole is %20.15f\n", mole->energy())
+           << endl;
     }
   }
 
   tim->exit("calc");
 
-  if (molfreq.nonnull()) {
+  if (ready_for_freq && molfreq.nonnull()) {
     tim->enter("frequencies");
     molfreq->compute_displacements();
     cout << node0 << indent
@@ -259,8 +280,10 @@ main(int argc, char *argv[])
   ckptfile = new char[strlen(molname+5)];
   sprintf(ckptfile, "%s.wfn",molname);
   
-  StateOutBinXDR so(ckptfile);
-  mole.save_state(so);
+  if (checkpoint) {
+    StateOutBinXDR so(ckptfile);
+    mole.save_state(so);
+  }
   
   tim->print(cout);
 

@@ -25,11 +25,13 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+
 
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
@@ -48,12 +50,13 @@ using namespace std;
 #endif
 
 /* Set the maximum number of processors (including the host). */
-#define MAXPROCS 17
+//#define MAXPROCS 17
 
 /* NALIGN is the byte boundary that we align data on. */
 #define NALIGN 8
 #define ROUNDUPTOALIGN(n) (((n) + (NALIGN-1)) & ~(NALIGN-1))
 
+/*
 #define SHMCOMMBUFSIZE 1500000
 
 struct commbuf_struct {
@@ -71,87 +74,17 @@ struct msgbuf_struct {
 };
 typedef struct msgbuf_struct msgbuf_t;
 
-static commbuf_t *commbuf[MAXPROCS];
-static int shmid;
-static int semid;
-static int change_semid;
-static void* sharedmem;
+static commbuf_t *commbuf[MAXPROCS]; // used by ShmMessageGrp and static functions 
+static int shmid;  // Only used by ShmMessageGrp
+static int semid;  // Used in static functions and ShmMessageGrp
+static int change_semid; // Used in static functions and ShmMessageGrp
+static void* sharedmem;  // only in ShmMessageGrp
 
-static struct sembuf semdec;
-static struct sembuf seminc;
+static struct sembuf semdec;  // ShmMessageGrp and static functions
+static struct sembuf seminc;  // ShmMessageGrp and static functions
 
-static msgbuf_t *
-NEXT_MESSAGE(msgbuf_t *m)
-{
-  msgbuf_t *r;
-  if (m->size < 0) {
-      ExEnv::out() << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
-                       m->size,sizeof(msgbuf_t) + m->size + m->size%8);
-      //debug_start("m->size < 0");
-      ExEnv::err() << scprintf("messshm.cc: m->size < 0\n");
-      abort();
-    }
-  r = ((msgbuf_t*)(((char*)m) + ROUNDUPTOALIGN(sizeof(msgbuf_t) + m->size)));
-  return r;
-}
+*/
 
-static void
-get_change(int node)
-{
-  semdec.sem_num = node;
-  semop(change_semid,&semdec,1);
-  semdec.sem_num = 0;
-}
-
-static void
-put_change(int node)
-{
-  seminc.sem_num = node;
-  semop(change_semid,&seminc,1);
-  seminc.sem_num = 0;
-}
-
-// Obtain a lock for writing to the node's buffer.
-static void
-wait_for_write(int node)
-{
-  semdec.sem_num = node;
-  semop(semid,&semdec,1);
-  semdec.sem_num = 0;
-}
-
-// Release lock for writing to node's buffer.
-static void
-release_write(int node)
-{
-  seminc.sem_num = node;
-  semop(semid,&seminc,1);
-  seminc.sem_num = 0;
-}
-
-#ifdef DEBUG
-static void
-print_buffer(int node, int me)
-{
-  int i;
-  msgbuf_t *message;
-  message = (msgbuf_t*)commbuf[node]->buf;
-
-  ExEnv::out() << scprintf("Printing buffer for node %d on node %d\n",node,me);
-  for (i=0; i<commbuf[node]->nmsg; i++) {
-      ExEnv::out() <<
-          scprintf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
-                   me,
-                   node,
-                   message->size,
-                   message->type,
-                   message->from);
-      ExEnv::out().flush();
-      message = NEXT_MESSAGE(message);
-    }
-
-}
-#endif
 
 static ClassDesc ShmMessageGrp_cd(
   typeid(ShmMessageGrp),"ShmMessageGrp",1,"public intMessageGrp",
@@ -175,8 +108,7 @@ ShmMessageGrp::ShmMessageGrp(const Ref<KeyVal>& keyval):
   else initialize(nprocs);
 }
 
-void
-ShmMessageGrp::sync()
+void ShmMessageGrp::sync()
 {
   int i;
   for (i=0; i<n(); i++) {
@@ -197,7 +129,7 @@ ShmMessageGrp::sync()
       release_write(me());
       get_change(me());
       wait_for_write(me());
-    };
+    }
   commbuf[me()]->n_sync -= n()-1;
   while(commbuf[me()]->n_wait_for_change) {
       put_change(me());
@@ -219,7 +151,7 @@ ShmMessageGrp::~ShmMessageGrp()
           release_write(0);
           get_change(0);
           wait_for_write(0);
-        };
+        }
       release_write(0);
       shmdt((SHMTYPE)sharedmem);
       // release the memory
@@ -248,16 +180,14 @@ ShmMessageGrp::~ShmMessageGrp()
     }
 }
 
-void
-ShmMessageGrp::initialize()
+void ShmMessageGrp::initialize()
 {
   int nprocs = atoi(getenv("NUMPROC"));
   if (!nprocs) nprocs = 1;
   initialize(nprocs);
 }
 
-void
-ShmMessageGrp::initialize(int nprocs)
+void ShmMessageGrp::initialize(int nprocs)
 {
   int i;
   void* nextbuf;
@@ -337,8 +267,7 @@ ShmMessageGrp::initialize(int nprocs)
   intMessageGrp::initialize(mynodeid, nprocs, 30);
 }
 
-int
-ShmMessageGrp::basic_probe(int msgtype)
+int ShmMessageGrp::basic_probe(int msgtype)
 {
   int i;
   msgbuf_t *message;
@@ -362,8 +291,7 @@ ShmMessageGrp::basic_probe(int msgtype)
   return 0;
 }
 
-void
-ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
+void ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
 {
   int size;
   int i;
@@ -428,8 +356,7 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   release_write(me());
 }
 
-void
-ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
+void ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
 {
   int i;
   msgbuf_t *availmsg;
@@ -495,23 +422,87 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
   release_write(dest);
 }
 
-int
-ShmMessageGrp::last_source()
+int ShmMessageGrp::last_source()
 {
   return last_source_;
 }
 
-int
-ShmMessageGrp::last_size()
+int ShmMessageGrp::last_size()
 {
   return last_size_;
 }
 
-int
-ShmMessageGrp::last_type()
+int ShmMessageGrp::last_type()
 {
   return msgtype_typ(last_type_);
 }
+
+msgbuf_t * ShmMessageGrp::NEXT_MESSAGE(msgbuf_t *m)
+{
+  msgbuf_t *r;
+  if (m->size < 0) {
+      ExEnv::out() << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
+                       m->size,sizeof(msgbuf_t) + m->size + m->size%8);
+      //debug_start("m->size < 0");
+      ExEnv::err() << scprintf("messshm.cc: m->size < 0\n");
+      abort();
+    }
+  r = ((msgbuf_t*)(((char*)m) + ROUNDUPTOALIGN(sizeof(msgbuf_t) + m->size)));
+  return r;
+}
+
+void ShmMessageGrp::get_change(int node)
+{
+  semdec.sem_num = node;
+  semop(change_semid,&semdec,1);
+  semdec.sem_num = 0;
+}
+
+void ShmMessageGrp::put_change(int node)
+{
+  seminc.sem_num = node;
+  semop(change_semid,&seminc,1);
+  seminc.sem_num = 0;
+}
+
+// Obtain a lock for writing to the node's buffer.
+void ShmMessageGrp::wait_for_write(int node)
+{
+  semdec.sem_num = node;
+  semop(semid,&semdec,1);
+  semdec.sem_num = 0;
+}
+
+// Release lock for writing to node's buffer.
+void ShmMessageGrp::release_write(int node)
+{
+  seminc.sem_num = node;
+  semop(semid,&seminc,1);
+  seminc.sem_num = 0;
+}
+
+#ifdef DEBUG
+void ShmMessageGrp::print_buffer(int node, int me)
+{
+  int i;
+  msgbuf_t *message;
+  message = (msgbuf_t*)commbuf[node]->buf;
+
+  ExEnv::out() << scprintf("Printing buffer for node %d on node %d\n",node,me);
+  for (i=0; i<commbuf[node]->nmsg; i++) {
+      ExEnv::out() <<
+          scprintf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
+                   me,
+                   node,
+                   message->size,
+                   message->type,
+                   message->from);
+      ExEnv::out().flush();
+      message = NEXT_MESSAGE(message);
+    }
+
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

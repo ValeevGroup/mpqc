@@ -9,18 +9,6 @@ shmmessage<ShmMessageGrp>: (
 mpimessage<MPIMessageGrp>: (
   )
 
-pvmmessage<PVMMessageGrp>: (
-  n = 4
-  master_is_node = yes
-  executable = "messtest" % pvmd must be able to find this
-  %hosts = [ "munin" % the first host should be the machine we start on
-  %                  % if master_is_node is true
-  %          "modigliani"
-  %          "enoch0"
-  %          "jutland"
-  %          ]
-  )
-
 message = $:shmmessage
 
 debug<Debugger>: (

@@ -42,10 +42,6 @@ using namespace std;
 #   include <util/group/messshm.h>
     static ForceLink<ShmMessageGrp> fl0;
 #endif
-# ifdef HAVE_PVM
-#   include <util/group/messpvm.h>
-    static ForceLink<PVMMessageGrp> fl2;
-# endif
 # ifdef HAVE_MPI
 #   include <util/group/messmpi.h>
     static ForceLink<MPIMessageGrp> fl2;

@@ -28,7 +28,14 @@
 #ifndef _util_group_messshm_h
 #define _util_group_messshm_h
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
+
 #include <util/group/message.h>
+
 
 /** The ShmMessageGrp class is an implementation of MessageGrp that
 allows multiple process to be started that communicate with shared memory.
@@ -45,6 +52,27 @@ message<ShmMessageGrp>: n = 4
 </pre>
 
 */
+#define SHMCOMMBUFSIZE 1500000
+
+/* Set the maximum number of processors (including the host). */
+#define MAXPROCS 17
+
+
+struct commbuf_struct {
+    int nmsg;
+    int n_wait_for_change;
+    int n_sync;
+    char buf[SHMCOMMBUFSIZE];
+};
+typedef struct commbuf_struct commbuf_t;
+
+struct msgbuf_struct {
+    int type;
+    int from;
+    int size;
+};
+typedef struct msgbuf_struct msgbuf_t;
+
 class ShmMessageGrp: public intMessageGrp {
   protected:
     void basic_send(int target, int type, void* data, int nbyte);
@@ -58,6 +86,25 @@ class ShmMessageGrp: public intMessageGrp {
     int last_source_;
     int last_size_; // the size in bytes
 
+    // previously static variables
+    commbuf_t *commbuf[MAXPROCS];
+    int shmid;
+    int semid;
+    int change_semid;
+    void* sharedmem;
+    struct sembuf semdec;
+    struct sembuf seminc;
+
+    // previously static functions for semephore operations
+    msgbuf_t *NEXT_MESSAGE(msgbuf_t *m);
+    void get_change(int node);
+    void put_change(int node);
+    void wait_for_write(int node);
+    void release_write(int node);
+#ifdef DEBUG
+    void print_buffer(int node, int me);
+#endif
+    
     void set_last_type(int a) { last_type_ = a; }
     void set_last_source(int a) { last_source_ = a; }
     void set_last_size(int a) { last_size_ = a; }
@@ -72,7 +119,7 @@ class ShmMessageGrp: public intMessageGrp {
     int last_size();
     int last_type();
 };
-
+     
 #endif
 
 // Local Variables:

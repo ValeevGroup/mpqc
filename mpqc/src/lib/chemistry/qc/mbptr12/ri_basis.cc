@@ -282,7 +282,7 @@ R12IntEvalInfo::abs_spans_obs_()
 			 so_matrixkit,
 			 ref_->lindep_tol(),
 			 0);
-    int nlindep_ri = orthog.nlindep();
+    nlindep_ri = orthog.nlindep();
     ExEnv::out0() << decindent;
 
     ri_basis = 0;

@@ -4,7 +4,7 @@
 default::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE) $(JOBS)); \
+	    (cd $${dir} && $(MAKE) $(JOBS)) || exit 1; \
 	  done
 
 ifndef DODEPEND
@@ -14,35 +14,35 @@ endif
 interface::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) interface); \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) interface) || exit 1; \
 	  done
 
 doc::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) doc); \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) doc) || exit 1; \
 	  done
 
 clean::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) clean); \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) clean) || exit 1; \
 	  done
 
 oclean::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) oclean); \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) oclean) || exit 1; \
 	  done
 
 dclean::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) dclean); \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) dclean) || exit 1; \
 	  done
 
 distclean::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) distclean); \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) distclean) || exit 1; \
 	  done

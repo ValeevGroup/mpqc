@@ -66,7 +66,7 @@ memtest: memtest.o \
 	libstate.a \
 	libclass.a \
 	libcontainer.a \
-	libmisc.a
+	libref.a
 	$(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS)
 
 pooltest: pooltest.o libgroup.a
@@ -81,10 +81,11 @@ messtest.o: messtest.cc
 messtest: messtest.o \
 	libgroup.a \
 	libkeyval.a \
+	libmisc.a \
 	libstate.a \
 	libclass.a \
 	libcontainer.a \
-	libmisc.a
+	libref.a
 	$(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

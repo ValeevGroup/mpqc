@@ -4,7 +4,7 @@
 #endif
 
 #include <chemistry/qc/wfn/hcore.h>
-#include <chemistry/qc/intv2/integralv2.h>
+#include <chemistry/qc/basis/obint.h>
 
 #define CLASSNAME AccumHCore
 #define PARENTS public AccumDIH

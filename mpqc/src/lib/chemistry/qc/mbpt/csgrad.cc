@@ -182,6 +182,10 @@ MBPT2::compute_cs_grad()
   double **gradient, *gradient_dat;  // The MP2 gradient
   double **ginter;    // Intermediates for the MP2 gradient
 
+  // this controls how often mem->catchup is called
+  int catchup_ctr;
+  const int catchup_mask = 3;
+
   if (molecule()->point_group().char_table().order() != 1) {
     // need to reorder the eigenvalues and possibly fix some bugs
     cout << indent
@@ -491,6 +495,8 @@ MBPT2::compute_cs_grad()
               tbint_->compute_shell(P,Q,R,S);
               tim_exit("erep");
 
+              mem->catchup();
+
               tim_enter("1. q.t.");
               // Begin first quarter transformation;
               // generate (iq|rs) for i active
@@ -515,8 +521,6 @@ MBPT2::compute_cs_grad()
 
                       if (s < r) {
                         pqrs_ptr++;
-                        iprs_ptr++;
-                        iqrs_ptr++;
                         continue; // skip to next bf4 value
                         }
 
@@ -536,8 +540,6 @@ MBPT2::compute_cs_grad()
                         }   // endif
 
                       pqrs_ptr++;
-                      iprs_ptr++;
-                      iqrs_ptr++;
                       } // exit bf4 loop
                     }   // exit bf3 loop
                   }     // exit bf2 loop
@@ -574,6 +576,7 @@ MBPT2::compute_cs_grad()
               bzerofast(iqjs_contrib, nbasis*nfuncmax);
               bzerofast(iqjr_contrib, nbasis*nfuncmax);
 
+              catchup_ctr = 0;
               for (bf1=0; bf1<ns; bf1++) {
                 s = s_offset + bf1;
                 c_sj = &scf_vector[s][j];
@@ -592,6 +595,8 @@ MBPT2::compute_cs_grad()
                     iqjr_ptr++;
                     iqrs_ptr += ns;
                     } // exit q loop
+                  // every so often process outstanding messages
+                  if (catchup_ctr++ & catchup_mask == 0) mem->catchup();
                   }   // exit bf2 loop
                 }     // exit bf1 loop
 

@@ -101,6 +101,7 @@ MBPT2::init_cs_gmat()
   tbint_ = integral()->electron_repulsion();
   tbint_->set_redundant(0);
   intbuf_ = tbint_->buffer();
+  return 1;
 }
 
 void

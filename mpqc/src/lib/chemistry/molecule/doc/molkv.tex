@@ -605,8 +605,17 @@ frequencies and compute thermodynamic information for a molecule.
     \keywd{molecule} must be given.
 
   \item[\keywd{molecule}] A \clsnmref{Molecule}
-    \htmlref{object}{pkvobject}.  If this is not given than \keywd{mole}
+    \htmlref{object}{pkvobject}.  If this is not given then \keywd{mole}
     must be given.
+
+  \item[\keywd{point\_group}] A \clsnmref{PointGroup}
+    \htmlref{object}{pkvobject}.  This is the point group used to compute
+    the finite displacements.  Since some \clsnm{MolecularEnergy} objects
+    cannot handle changes in the molecule's point group, the molecule must
+    be given $C_1$ symmetry for frequency calculations.  In this case, the
+    \keywd{point\_group} keyword can be given to reduce number of the
+    displacements needed to compute the frequencies.  If this is not given
+    then the point group of the molecule is used.
 
   \item[\keywd{debug}] An integer which, if nonzero, will cause extra
     output.

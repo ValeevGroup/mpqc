@@ -64,9 +64,7 @@ extern "C" {
  void scf_done_bounds();
 }
 
-static int messagebuf[2];
 static int nocc, nvir, nbasis;
-static int send_offset;
 static int nfuncmax;
 static int nij;        // number of i,j pairs on a node (for e.g., mo_int)
 static double *mo_int; // MO integrals of type (ov|ov)
@@ -74,10 +72,10 @@ static double *mo_int; // MO integrals of type (ov|ov)
                        // orbital energy denominators)
 static double *integral_iqjs;
 static double *iqjs_buf;
-static double *gamma_iqjs;
 
 #define PRINT1Q 0
 
+#if PRINT_CONTRIB
 static void
 sw(int&i,int&j)
 {
@@ -112,6 +110,7 @@ print_contrib(double tmpval, int num, int onum,
   printf("z(%d)(%d %d %d %d)(%d %d %d %d) contrib = % 6.4f\n",
          onum, P, Q, R, S, p, q, r, s, -tmpval);
 }
+#endif
 
 static int
 mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
@@ -124,15 +123,14 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
   int_initialize_offsets2(centers,centers,centers,centers);
 
-  int i, j, k, l, m;
+  int i, j, k;
   int y;
   int isize, jsize;
-  int s1, s2;
   int a, b, c;
   int nshell;
-  int offset, offset2;
+  int offset;
   int ik_offset;
-  int i_offset, j_offset; 
+  int i_offset; 
   int npass, pass;
   long tmpint;
   int np, nq, nr, ns; 
@@ -140,56 +138,41 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   int p, q, r, s;
   int bf1, bf2, bf3, bf4;
   int index;
-  int compute_index;
   int flags;
   int me;
   int nproc;
   int rest;
-  int node;
   int p_offset, q_offset, r_offset, s_offset;
-  int sum;
-  int nfunc;
-                        //  not split 
+
   int aoint_computed = 0; 
   int aointder_computed = 0; 
   int derset, xyz;
   int natom = centers->n;     // the number of atoms
   int int_index;
-  int mem_static, mem_dyn;    // static and dynamic memory in bytes
-  int mem_used;
+  int mem_static;    // static memory in bytes
   int qp, sr;
   int factor_pqrs;
-  int factor_pq, factor_rs;
   int ij_proc;          // the processor which has ij pair
   int ij_index;         // of the ij pairs on a proc, this ij pair is number ij_index
                         // (i.e., ij_index < nij)
   int ik_proc;          // the processor which has ik pair
   int ik_index;
-  int sendbuf[2];
   int ij_offset;
   int jloop, kloop;
   int ntri;
 
   long ni;
 
-  double A, B, C;             // variables used to compute ni
-  double  maxdyn, maxdyntmp;  // variables used to compute ni
   double *evals = _evals->d;  // scf eigenvalues (passed in)
   double *intbuf;             // 2-electron AO integral buffer
-  double *iqrs, *iprs;
-  double *iars_ptr;
-  double iars;
-  double iajr;
-  double *iajr_ptr;
   double *iajb_ptr, *ibja_ptr, *iakb_ptr, *ibka_ptr;
   double *iajc_ptr, *ibjc_ptr, *icjb_ptr, *icja_ptr;
-  double *ijkb_ptr, *ijkr_ptr, *ibkr_ptr, *ibkj_ptr;
-  double *ibac_ptr, *icab_ptr, *ibar_ptr;
+  double *ijkb_ptr, *ibkj_ptr;
   double pqrs;
-  double *c_sa, c_qj, c_pj, c_rj;
-  double *c_qk, *c_rb, *c_rk, *c_sk, *c_pi, *c_qi, *c_sj;
-  double *c_qa, *c_rc, *c_sb, *c_pa, *c_pq, *c_sy;
-  double delta_ijab, delta_ikab, delta_ijbc, delta_ijac;
+  double *c_sa, c_rj;
+  double *c_qk, *c_pi, *c_qi, *c_sj;
+  double *c_qa, *c_sb, *c_pa, *c_pq, *c_sy;
+  double delta_ijab, delta_ijbc, delta_ijac;
   double ecorr_mp2 = 0.0;
   double escf;
   double emp2;
@@ -202,32 +185,27 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
                               // correction to MP2 density matrix
   double *Laj;                // MP2 Lagrangian
   double *Lpi;                // contrib to MP2 Lagrangian partially in AO basis
-  double *pkj_ptr, pjk, *pab_ptr, *pbc_ptr, pcb;
+  double *pkj_ptr, *pab_ptr;
   double *wkj_ptr, *wjk_ptr, *wab_ptr, *wba_ptr, *waj_ptr;
   double *laj_ptr, *lpi_ptr, *lqi_ptr;
   double *gamma_iajs, *gamma_iajs_tmp, *gamma_iqrs; 
                               // partially back-transformed non-sep 2PDM's
   double *gamma_iqjs_tmp;
   double *gamma_pqrs;
-  double *gamma_ipqs, *gamma_iqps;
   double *gamma_iajs_ptr;
-  double *gamma_ipqr_ptr, *gamma_iqpr_ptr;
-  double *gamma_ipjs_ptr, *gamma_iqjs_ptr, *gamma_irjq_ptr;
+  double *gamma_iqjs_ptr, *gamma_irjq_ptr;
   double *gamma_iqrs_ptr, *gamma_iprs_ptr;
   double *gamma_iqsr_ptr;
   double *gamma_pqrs_ptr;
   double *gammabuf;           // buffer used for sending elements of gamma_iqjs
   double *mo_intbuf;          // buffer used for sending mo integrals
   double *grad_ptr1, *grad_ptr2;
-  double tmpval, tmpval1, tmpval2;
+  double tmpval;
   double *Dmat;
-  double *dmat_ptr;
   double *P2AO, *W2AO;
   double *p2ao_ptr, *w2ao_ptr;
-  double *p2ao_pq, *p2ao_ps;
   double *PHF, *WHF;
   double *phf_ptr, *whf_ptr;
-  double *phf_pq, *phf_rs, *phf_ps, *phf_qr;
   double *PMP2, *WMP2;
   double *pmp2_ptr, *wmp2_ptr;
 
@@ -239,9 +217,9 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   double *integral_ikja; // mo integrals
   double *iqjs_contrib;  // local contributions to integral_iqjs
   double *iqjr_contrib;  // local contributions to integral_iqjr
-  double *integral_iqjs_ptr, *integral_iqjr_ptr;
+  double *integral_iqjs_ptr;
   double *iajy_ptr;
-  double *iajk_ptr, *ikja_ptr;
+  double *ikja_ptr;
   double *iajs_ptr, *ikjs_ptr;
   double *iqrs_ptr, *iprs_ptr;
   double *iqjs_ptr, *iqjr_ptr;
@@ -1261,7 +1239,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     // The quarter back-transformed elements gamma_iajs have now been
     // overwritten by the half back-transformed elements gamma_iqjs, so rename
-    gamma_iqjs = (double*) membuf.readonly_on_node(0, nij*nbasis*nbasis);
 
     delete[] gamma_iqjs_tmp;
 
@@ -1426,8 +1403,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
                             continue; // skip to next bf4 value
                             }
 
-                          factor_rs = (r==s ? 0:1);
-
                           gamma_iqrs_ptr = &gamma_iqrs[bf4 + ns*(q + nbasis*bf3)];
                           gamma_iprs_ptr = &gamma_iqrs[bf4 + ns*(p + nbasis*bf3)];
                           pqrs = intbuf[int_index];
@@ -1521,16 +1496,12 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
                       p = bf1 + centers->func_num[P];
                       for (bf2=0; bf2<nq; bf2++) {
                         q = bf2 + centers->func_num[Q];
-                        if (p == q) factor_pq = 0;
-                        else factor_pq = 1;
                         qp = q*(q+1)/2 + p;
                         for (bf3=0; bf3<nr; bf3++) {
                           r = bf3 + centers->func_num[R];
                           gamma_pqrs_ptr = &gamma_pqrs[ns*(bf2 + nq*(bf3 + nr*bf1))];
                           for (bf4=0; bf4<ns; bf4++) {
                             s = bf4 + centers->func_num[S];
-                            if (r == s) factor_rs = 0;
-                            else factor_rs = 1;
                             sr = s*(s+1)/2 + r;
                             if (q == s && p == r) factor_pqrs = 1;
                             else factor_pqrs = 2;
@@ -1577,9 +1548,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     delete[] gamma_iqrs;
     delete[] gamma_pqrs;
-
-    gamma_iqjs = 0;
-    membuf.release();
 
     }           // exit loop over i-batches (pass)
 
@@ -2058,17 +2026,15 @@ hcore_grad(centers_t *centers, double *PMP2, double_matrix_t *ginter,
 
   int i, j, k, l, m;
   int jj, kk;
-  int jj_index, kk_index;
   int jsize, ksize;
   int j_offset, k_offset;
   int jk_index;
   int index;
   int nshell;
   int nbasis;
-  int natom;
 
   double *oneebuf; // 1-electron buffer
-  double tmpval1, tmpval2;
+  double tmpval1;
   double gxyz[3];
 
   // Initialize 1e routines
@@ -2077,7 +2043,6 @@ hcore_grad(centers_t *centers, double *PMP2, double_matrix_t *ginter,
 
   nshell = centers->nshell;
   nbasis = centers->nfunc;
-  natom  = centers->n;
 
   ///////////////////////////////////////////////////////////
   // Compute the kinetic energy contribution to the gradient
@@ -2152,7 +2117,6 @@ overlap_grad(centers_t *centers, double *WMP2, double_matrix_t *ginter,
   int index;
   int nshell;
   int nbasis;
-  int natom;
 
   double *oneebuf; // 1-electron buffer
   double tmpval1, tmpval2;
@@ -2164,7 +2128,6 @@ overlap_grad(centers_t *centers, double *WMP2, double_matrix_t *ginter,
 
   nshell = centers->nshell;
   nbasis = centers->nfunc;
-  natom  = centers->n;
 
   for (i=0; i<centers->n; i++) {
     jk_index = 0;
@@ -2234,7 +2197,7 @@ s2pdm_contrib(double *intbuf, centers_t *centers, double *PHF, double *P2AO,
 
   int P, Q, R, S;
   int QP, SR;
-  int p, q, r, s;
+  int p, q, r;
   int np, nq, nr, ns;
   int p_offset, q_offset, r_offset, s_offset;
   int bf1, bf2, bf3, bf4;
@@ -2243,7 +2206,6 @@ s2pdm_contrib(double *intbuf, centers_t *centers, double *PHF, double *P2AO,
   int derset;
   int nshell = centers->nshell;
   int nbasis = centers->nfunc;
-  int natom  = centers->n;
   int flags;
 
   double *grad_ptr1, *grad_ptr2;
@@ -2329,7 +2291,6 @@ s2pdm_contrib(double *intbuf, centers_t *centers, double *PHF, double *P2AO,
                   p2ao_rs = &P2AO[r*nbasis + s_offset];
 
                   for (bf4=0; bf4<ns; bf4++) {
-                    s = s_offset + bf4;
 
                     *gammasym_ptr++ = gamma_factor*(
                                           4**phf_pq*(*phf_rs + *p2ao_rs)
@@ -2519,7 +2480,6 @@ mbpt_mp2_gradient(scf_struct_t &scf_info,
   dmt_matrix SC;
   dmt_matrix EVECS;
   dmt_matrix SCR;
-  double_vector_t occ_num;
   double_vector_t evals;
   dmt_matrix SCR1,SCR2,SCR3;
   // this got free'ed somewhere

@@ -22,7 +22,6 @@ mbpt_opt2(centers_t &centers, scf_struct_t &scf_info, sym_struct_t &sym_info,
   dmt_matrix SC;
   dmt_matrix EVECS;
   dmt_matrix SCR;
-  double_vector_t occ_num;
   double_vector_t evals;
   dmt_matrix SCR1,SCR2,SCR3;
   // this got free'ed somewhere
@@ -111,4 +110,5 @@ mbpt_opt2(centers_t &centers, scf_struct_t &scf_info, sym_struct_t &sym_info,
     free_double_vector(&evals);
 
     tim_exit("opt2");
+    return 0;
     }

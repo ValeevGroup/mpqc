@@ -45,7 +45,6 @@ mbpt_cphf(centers_t *centers, scf_struct_t *scf_info, FILE *outfile,
 
   int i, j, k, l, a;
   int niter;
-  int index=0;
   int dimP = nocc*nvir;
 
   RefSCDimension nbasis_dim(new LocalSCDimension(nbasis));
@@ -356,7 +355,7 @@ compute_alpha(int dim, double **AP, double **alpha,
   // where C is RefSCMatrix and X and B are RefSCVector
   // Put result (X) into array alpha
   //////////////////////////////////////////////////////
-  int i, j, k, a;
+  int i, j, k;
   int vect_dim = nocc*nvir;
 
   double tmp1, tmp2;

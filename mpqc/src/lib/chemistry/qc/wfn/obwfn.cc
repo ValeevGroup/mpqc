@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <math/symmetry/corrtab.h>
 #include <math/scmat/local.h>
 #include <math/scmat/blocked.h>
 
@@ -556,6 +557,29 @@ OneBodyWavefunction::symmetry_changed()
   // for now, delete old eigenvectors...later we'll transform to new
   // pointgroup
   eigenvectors_.result_noupdate() = 0;
+}
+
+int
+OneBodyWavefunction::form_occupations(int *&newocc, const int *oldocc)
+{
+  delete[] newocc;
+  newocc = 0;
+
+  CorrelationTable corrtab;
+  if (corrtab.initialize_table(initial_pg_, molecule()->point_group()))
+    return 0;
+
+  newocc = new int[corrtab.subn()];
+  memset(newocc,0,sizeof(int)*corrtab.subn());
+
+  for (int i=0; i<corrtab.n(); i++) {
+      for (int j=0; j<corrtab.ngamma(i); j++) {
+          int gam = corrtab.gamma(i,j);
+          newocc[gam] += (corrtab.subdegen(gam)*oldocc[i])/corrtab.degen(i);
+        }
+    }
+
+  return 1;
 }
   
 /////////////////////////////////////////////////////////////////////////////

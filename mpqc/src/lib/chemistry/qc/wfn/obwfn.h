@@ -51,6 +51,12 @@ class OneBodyWavefunction: public Wavefunction {
 
     void init_sym_info();
 
+    // oldocc is converted to newocc using the correlation
+    // table between initial_pg_ and the current point group
+    // returns 1 if successful and 0 otherwise.  newocc is
+    // delete[]'ed and new'ed.
+    int form_occupations(int *&newocc, const int *oldocc);
+
  public:
     OneBodyWavefunction(StateIn&);
     OneBodyWavefunction(const RefKeyVal&);

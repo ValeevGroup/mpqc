@@ -5,9 +5,11 @@
 #include <util/keyval/keyval.h>
 #include <new.h>
 #include "mpqc.h"
+#include <chemistry/molecule/coor.h>
 
-// Force MPSCF linkage:
-const ClassDesc &tmp = MPSCF::class_desc_;
+// Force linkages:
+const ClassDesc &fl0 = MPSCF::class_desc_;
+const ClassDesc &fl1 = IntMolecularCoor::class_desc_;
 
 void die()
 {

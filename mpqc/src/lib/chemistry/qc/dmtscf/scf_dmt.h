@@ -45,15 +45,13 @@ extern "C" {
 #include <chemistry/qc/dmtscf/scf_proj.gbl>
 #include <chemistry/qc/dmtscf/scf_vect.gbl>
 
-int scf_init_scf(centers_t*, scf_struct_t*, sym_struct_t*, char*);
-int scf_init_scf_struct(centers_t*, scf_struct_t*, char*);
-
 #ifdef __cplusplus
 }
 
 /* The preferred input reader for C++ programs. */
-int scf_init_scf_struct_kv(KeyVal&, centers_t&, scf_struct_t&);
-int scf_init_scf_kv(KeyVal&, centers_t&, scf_struct_t&, sym_struct_t&);
+int scf_init_scf_struct(KeyVal&, centers_t&, scf_struct_t&);
+int scf_init_scf(KeyVal&, centers_t&, scf_struct_t&, sym_struct_t&);
+int scf_make_old_centers(KeyVal&, centers_t&, centers_t&);
 
 void scf_print_options(FILE*, scf_struct_t&);
 

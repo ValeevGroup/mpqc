@@ -302,6 +302,27 @@ esac
 )
 AC_SUBST(FOOTER_HTML)
 
+AC_ARG_ENABLE(components,
+[  --enable-components     Enable CCA components],
+[
+case $enableval in
+  yes)
+    components=yes
+  ;;
+  no)
+    components=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-components ($enableval)])
+  ;;
+esac
+],[
+    components=no
+]
+)
+ENABLECCA=$components
+AC_SUBST(ENABLECCA)
+
 BUILDID="sc_buildid"
 AC_ARG_WITH(build-id,
 [  --with-build-id         Gives an identifier for the build.],
@@ -443,6 +464,18 @@ LDFLAGS=$withval
 echo Using extra library directories: $withval
 )
 
+AC_ARG_WITH(cca-chem-config,
+[  --with-cca-chem-config  Specifies full pathname of cca-chem-config script.],
+[
+  CCA_CHEM_CONFIG=$withval
+  echo Using cca-chem-config: $withval
+],[
+  if test $components == "yes"; then
+    AC_PATH_PROG(CCA_CHEM_CONFIG,cca-chem-config,"not-found")
+  fi
+]
+)
+
 dnl --------- Want absolute path for srcdir, not relative. ---------
 
 if test X$ac_srcdir_defaulted = Xyes; then
@@ -458,6 +491,18 @@ dnl --------- Get the path to the compile dir. ---------
 
 compiledir=`pwd`
 AC_SUBST(compiledir)
+
+dnl --------- Need actual paths for substitution outside of a makefile. ---------
+
+if test $exec_prefix = "NONE"; then
+  bindir=$prefix/bin;
+  libdir=$prefix/lib;
+else
+  bindir=$exec_prefix/bin
+  libdir=$exec_prefix/lib
+fi
+AC_SUBST(bindir)
+AC_SUBST(libdir)
 
 dnl --------- Checks for programs. ---------
 AC_PROG_LN_S
@@ -1690,6 +1735,132 @@ fi
 
 ENABLESHARED=$enable_shared
 AC_SUBST(ENABLESHARED)
+
+dnl --------- CCA component configuration ---------
+
+if test $components == "yes"; then
+
+  if test $enable_shared == "no"; then
+    AC_MSG_ERROR([shared libraries (libtool) must be enabled for cca components])
+  fi
+
+  if test -z $CCA_CHEM_CONFIG && ! test -x $CCA_CHEM_CONFIG; then
+    AC_MSG_ERROR([cca-chem-config is required to build CCA component code])
+  fi
+
+  CCA_CHEM_INCLUDE=`$CCA_CHEM_CONFIG --includedir`
+  if test -z $CCA_CHEM_INCLUDE || ! test -e $CCA_CHEM_INCLUDE; then
+    AC_MSG_ERROR([invalid result from $CCA_CHEM_CONFIG --includedir])
+  fi
+
+  CCA_CHEM_LIB=`$CCA_CHEM_CONFIG --libdir`
+  if test -z $CCA_CHEM_LIB || ! test -e $CCA_CHEM_LIB; then
+    AC_MSG_ERROR([invalid result from $CCA_CHEM_CONFIG --libdir])
+  fi
+  AC_SUBST(CCA_CHEM_LIB)
+
+  CCA_CHEM_PREFIX=`$CCA_CHEM_CONFIG --prefix`
+  if test -z $CCA_CHEM_PREFIX || ! test -e $CCA_CHEM_PREFIX; then
+    AC_MSG_ERROR([invalid result from $CCA_CHEM_CONFIG --prefix])
+  fi
+  CCA_CHEM_REPO=$CCA_CHEM_PREFIX/repo
+  if ! test -e $CCA_CHEM_REPO; then
+    AC_MSG_ERROR([cca-chem repo ($CCA_CHEM_REPO) doesn't exist])
+  fi
+  AC_SUBST(CCA_CHEM_REPO)
+
+  CCA_SPEC_BABEL_CONFIG=`$CCA_CHEM_CONFIG --cca-spec-babel-config`
+  if test -z $CCA_SPEC_BABEL_CONFIG || ! test -x $CCA_SPEC_BABEL_CONFIG; then
+    AC_MSG_ERROR([invalid result from $CCA_CHEM_CONFIG --cca-spec-babel-config])
+  fi
+
+  CCA_SPEC_BABEL_INCLUDE=`$CCA_SPEC_BABEL_CONFIG --var CCASPEC_pkgincludedir`
+  if test -z $CCA_SPEC_BABEL_INCLUDE || ! test -e $CCA_SPEC_BABEL_INCLUDE; then
+    AC_MSG_ERROR(
+     [invalid result from $CCA_SPEC_BABEL_CONFIG --var CCASPEC_pkgincludedir])
+  fi
+
+  CCA_SPEC_BABEL_SHARE=`$CCA_SPEC_BABEL_CONFIG --var CCASPEC_pkgdatadir`
+  if test -z $CCA_SPEC_BABEL_SHARE || ! test -d $CCA_SPEC_BABEL_SHARE; then
+    AC_MSG_ERROR(
+     [invalid result from $CCA_SPEC_BABEL_CONFIG --var CCASPEC_pkgdatadir])
+  fi
+  AC_SUBST(CCA_SPEC_BABEL_SHARE)
+
+  CCA_SPEC_BABEL_LIB=`$CCA_SPEC_BABEL_CONFIG --var CCASPEC_pkglibdir`
+  if test -z $CCA_SPEC_BABEL_LIB || ! test -e $CCA_SPEC_BABEL_LIB; then
+    AC_MSG_ERROR(
+     [invalid result from $CCA_SPEC_BABEL_CONFIG --var CCASPEC_pkglibdir])
+  fi
+  LIBS="-L$CCA_SPEC_BABEL_LIB $LIBS"
+
+  BABEL_CONFIG=`$CCA_CHEM_CONFIG --babel-config`
+  if test -z $BABEL_CONFIG || ! test -x $BABEL_CONFIG; then
+    AC_MSG_ERROR([invalid result from $CCA_CHEM_CONFIG --babel-config])
+  fi
+
+  BABEL_EXEC=`$BABEL_CONFIG --exec-prefix`
+  if test -z $BABEL_EXEC || ! test -x $BABEL_EXEC/bin/babel; then
+    AC_MSG_ERROR([invalid results from $BABEL_CONIG --exec-prefix])
+  fi
+  AC_SUBST(BABEL_EXEC)
+
+  BABEL_PREFIX=`$BABEL_CONFIG --prefix`
+  if test -z $BABEL_PREFIX || ! test -e $BABEL_PREFIXl; then
+    AC_MSG_ERROR([invalid results from $BABEL_CONFIG --prefix])
+  fi
+  AC_SUBST(BABEL_PREFIX)
+
+  SIDL_INCLUDE=`$BABEL_CONFIG --includes | sed 's/^-I//'`
+  if test -z $SIDL_INCLUDE || ! test -e $SIDL_INCLUDE; then
+    AC_MSG_ERROR([invalid result from $BABEL_CONFIG --includes])
+  fi
+
+  CCAFE_CONFIG=`$CCA_CHEM_CONFIG --ccafe-config`
+  if test -z $CCAFE_CONFIG || ! test -x $CCAFE_CONFIG; then
+    AC_MSG_ERROR([invalid result from $CCA_CHEM_CONFIG --ccafe-config])
+  fi
+
+  CCAFE_INCLUDEDIR=`$CCAFE_CONFIG --var CCAFE_pkgincludedir`
+  if test -z $CCAFE_INCLUDEDIR || ! test -d $CCAFE_INCLUDEDIR; then
+    AC_MSG_ERROR([invalid result from $CCAFE_CONFIG --var CCAFE_includedir])
+  fi
+  AC_SUBST(CCAFE_INCLUDEDIR)
+
+  CCAFE_CLASSIC_CCA_CONFIG=`$CCAFE_CONFIG --var CCAFE_CLASSIC_CCA_CONFIG`
+  if test -z $CCAFE_CLASSIC_CCA_CONFIG ||
+   ! test -e $CCAFE_CLASSIC_CCA_CONFIG; then
+    AC_MSG_ERROR(
+      [invalid result from $CCAFE_CONFIG --var CCAFE_CLASSIC_CCA_CONFIG])
+  fi
+  AC_SUBST(CCAFE_CLASSIC_CCA_CONFIG)
+
+  CCA_CHEM_INCLUDE=-I$CCA_CHEM_INCLUDE
+  SIDL_INCLUDE=-I$SIDL_INCLUDE
+  CCA_SPEC_BABEL_INCLUDE=-I$CCA_SPEC_BABEL_INCLUDE
+  CCAFE_INCLUDE=-I$CCAFE_INCLUDEDIR
+  CPPFLAGS="$CPPFLAGS $SIDL_INCLUDE $CCA_SPEC_BABEL_INCLUDE $CCA_CHEM_INCLUDE $CCAFE_INCLUDE"
+  AC_CHECK_HEADER(sidl.h,
+    AC_DEFINE(HAVE_SIDL_HEADERS),
+    AC_MSG_ERROR([problem with sidl headers]) )
+  AC_CHECK_HEADER(gov_cca_IOR.h,
+    AC_DEFINE(HAVE_CCA_SPEC_BABEL_HEADERS),
+    AC_MSG_ERROR([problem with cca-spec-babel headers]) )
+  AC_CHECK_HEADER(Chemistry_IOR.h,
+    AC_DEFINE(HAVE_CCA_CHEM_HEADERS),
+    AC_MSG_ERROR([problem with cca-chem headers]) )
+
+  dnl why does this fail???
+  dnl AC_LANG_SAVE
+  dnl AC_LANG_CPLUSPLUS
+  dnl AC_CHECK_HEADER(Chemistry_QC.hh,
+  dnl   AC_DEFINE(HAVE_CCA_CHEM_HEADERS),
+  dnl   AC_MSG_ERROR([problem with cca-chem headers]) )
+  dnl AC_LANG_RESTORE
+
+else
+  EXCLUDED_DIRS="-x LIB_CCA -x SRC_LIB_CHEMISTRY_CCA -x SRC_LIB_CHEMISTRY_QC_INTCCA $EXCLUDED_DIRS"
+fi
 
 dnl --------- Find the list of all sc libraries. ---------
 

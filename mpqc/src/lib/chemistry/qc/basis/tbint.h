@@ -126,8 +126,8 @@ class TwoBodyInt : public RefCount {
     /** If redundant is true, then keep redundant integrals in the buffer.
         The default is true. */
     //@{
-    int redundant() const { return redundant_; }
-    void set_redundant(int i) { redundant_ = i; }
+    virtual int redundant() const { return redundant_; }
+    virtual void set_redundant(int i) { redundant_ = i; }
     //@}
 
     /// This storage is used to cache computed integrals.

@@ -263,3 +263,45 @@ endif
 ifeq ($(BIN_OR_LIB),BIN)
 	@echo BINOBJ=$(BINOBJ)
 endif
+
+#
+# rules for cca component code
+#
+
+$(GEN_SRCS): .babel-stamp
+	@if test -f $@; then \
+          touch $@; \
+        else \
+          rm -f .babel-stamp; \
+          $(MAKE) .babel-stamp; \
+        fi
+
+$(EXTRA_CXX_SRCS): .babel-stamp
+
+.babel-stamp:
+	@rm -f .babel-stamp .babel-temp; touch .babel-temp
+	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
+          do \
+            if test ! -e $${i}; then \
+              ln -s $(SRCDIR)/$${i}; \
+            fi; \
+          done
+	$(INSTALL) $(INSTALLDIROPT) $(REPO)
+	/bin/rm -f $(REPO)/MPQC* 
+	$(BABEL) -e'^sidl.*' -e'^gov.*' \
+          -R$(CCA_CHEM_REPO) -R$(CCA_SPEC_BABEL_SHARE)/xml \
+          --text=xml -o$(REPO) $(SIDL_FILES)
+	$(BABEL) $(BABEL_ARGS) $(BABEL_PACKAGES) $(BABEL_ENUMS) \
+          $(BABEL_CLASSES)
+	@mv -f .babel-temp $@
+
+clean-components: oclean targetclean dclean miscclean
+	rm -f $(IORHDRS) $(IORSRCS) $(STUBHDRS) $(STUBSRCS) \
+              $(SKELHDRS) $(SKELSRCS)
+	rm -f babel.make .babel-stamp
+	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
+          do \
+            if test -L $${i}; then \
+              /bin/rm $${i}; \
+            fi; \
+          done

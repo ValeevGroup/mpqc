@@ -70,7 +70,6 @@ FC = @F77@
 
 CCDEPEND = @CC@
 CXXDEPEND = @CXX@
-
 AR = @AR@
 ARFLAGS = @ARFLAGS@
 
@@ -132,3 +131,31 @@ HAVE_LIBR12 = @HAVE_LIBR12@
 HAVE_LIBDERIV = @HAVE_LIBDERIV@
 
 SYSLIBS = @LIBS@ @FLIBS@
+
+#
+# variables for CCA component code
+#
+
+ENABLECCA=@ENABLECCA@
+
+CCA_CHEM_REPO=@CCA_CHEM_REPO@
+
+# specs
+CCA_SPEC_BABEL_INCL=@CCA_SPEC_BABEL_INCL@
+CCA_SPEC_BABEL_LIB=@CCA_SPEC_BABEL_LIB@
+CCA_SPEC_BABEL_SHARE=@CCA_SPEC_BABEL_SHARE@
+
+# babel
+BABEL=@BABEL_EXEC@/bin/babel
+BABELLIB=@BABEL_EXEC@/lib
+BABELINC=@BABEL_PREFIX@/include
+
+# caffeine and classic for parameter ports
+#  -- can babel parameter ports do away with this?
+ifeq ($(ENABLECCA),yes)
+  include @CCAFE_CLASSIC_CCA_CONFIG@
+endif
+
+# cca-chem libs
+CCA_CHEM_LIB=@CCA_CHEM_LIB@
+

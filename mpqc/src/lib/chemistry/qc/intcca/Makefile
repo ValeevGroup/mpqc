@@ -32,36 +32,22 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libSCcints
+TARGET_TO_MAKE = libSCintcca
 BIN_OR_LIB = LIB
 
-#DEFINES += -DDMALLOC
+DEFINES += -DDMALLOC
 
-TESTCSRC = cintstest.cc
+CXXSRC = int1e.cc int2e.cc obintcca.cc tbintcca.cc intcca.cc
 
-CXXSRC = cints.cc obintcints.cc tbintcints.cc tform.cc int2e.cc eri.cc comp_eri.cc \
-        storage.cc grt.cc comp_grt.cc \
-	primpairs.cc shellpairs.cc permute2e.cc int1e.cc overlap.cc kinetic.cc nuclear.cc \
-	hcore.cc obosrr.cc edipole.cc equadrupole.cc
+INC = int1e.h int2e.h obintcca.h tbintcca.h intcca.h
 
-INC = cints.h obintcints.h tbintcints.h tform.h cartit.h macros.h primpairs.h shellpairs.h
+CPPFLAGS += -I../../cca
 
 LIBSRC = $(CXXSRC) $(CSRC) $(XCSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
 LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
 
-LTLINKLIBOPTS += $(LDFLAGS)
-ifeq ($(HAVE_LIBINT),yes)
-  LTLINKLIBOPTS += -lint
-endif
-ifeq ($(HAVE_LIBR12),yes)
-  LTLINKLIBOPTS += -lr12
-endif
-ifeq ($(HAVE_LIBDERIV),yes)
-  LTLINKLIBOPTS += -lderiv
-endif
-
-DISTFILES = $(TESTCSRC) $(INC) Makefile
+DISTFILES = $(INC) Makefile
 
 DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 
@@ -72,15 +58,7 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-cintstest: cintstest.$(OBJSUF) \
-	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LTLINK) $(CXX) $(LDFLAGS) -o cintstest $^ $(SYSLIBS) $(LTLINKBINOPTS)
-
-cintstest.$(OBJSUF): cintstest.cc
-	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
-
 targetclean::
-	-rm -f cintstest
 
 $(TESTOBJ:.$(OBJSUF)=.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
@@ -88,3 +66,10 @@ include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
 
 #############################################################
+
+# need babel headers generated
+ifneq ($(DODEPEND),no)
+include ../../cca/.babel-stamp
+endif
+../../cca/.babel-stamp:
+	cd ../../cca; $(MAKE) .babel-stamp

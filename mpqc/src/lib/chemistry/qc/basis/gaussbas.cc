@@ -720,7 +720,10 @@ GaussianBasisSet::get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const 
                       << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem with \"%s\":\n", keyword);
         throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- last_exps[i] must be smaller than first_exp[i]");
       }
-      beta = pow(alpha0/alphaN,1.0/nprim);
+      if (nprim > 1)
+        beta = pow(alpha0/alphaN,1.0/(nprim-1));
+      else
+        beta = 1.0;
     }
     else {
       sprintf(keyword,":basis:%s:%s:exp_ratio:%d", element, basisname, b);

@@ -86,6 +86,9 @@ install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) mpqcrun $(installroot)$(bindir)/mpqcrun
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(scdatadir)
+	$(INSTALL) $(INSTALLSCRIPTOPT) $(SRCDIR)/mpqcrunproc $(installroot)$(scdatadir)/mpqcrunproc
+
 
 install::
 	/bin/rm -f $(installroot)$(bindir)/chkmpqcout

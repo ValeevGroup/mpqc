@@ -5,6 +5,7 @@
 $prefix = '@prefix@';
 $exec_prefix = "@exec_prefix@";
 $bindir = "@bindir@";
+$scdatadir = "@scdatadir@";
 
 use POSIX;
 use threads;
@@ -154,7 +155,7 @@ if (!GetOptions("small!" => \$small,
 
 if ("$launch" eq '@' . 'LAUNCH@') {
     if ("$messagegrp" eq "mpi") {
-        $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%";
+        $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQCRUNPROC% %MPQC% [-o %OUTPUT%] %INPUT%";
     }
     else {
         $launch = "%MPQC% [-o %OUTPUT%] %INPUT%";
@@ -418,6 +419,27 @@ sub jobrunner {
         $cmd =~ s/%NPROC%/$nprocperjob/;
         $cmd =~ s/%INPUT%/$file/;
 
+	my $mpqcrunproc = "$scdatadir/mpqcrunproc $mpqc";
+        if (exists($ENV{MESSAGEGRP})) {
+           $mpqcrunproc = "$mpqcrunproc " . &isoencode("$ENV{MESSAGEGRP}");
+        }
+        else {
+           $mpqcrunproc = "$mpqcrunproc none";
+        }
+        if (exists($ENV{THREADGRP})) {
+           $mpqcrunproc = "$mpqcrunproc " . &isoencode("$ENV{THREADGRP}");
+        }
+        else {
+           $mpqcrunproc = "$mpqcrunproc none";
+        }
+        if (exists($ENV{MEMORYGRP})) {
+           $mpqcrunproc = "$mpqcrunproc " . &isoencode("$ENV{MEMORYGRP}");
+        }
+        else {
+           $mpqcrunproc = "$mpqcrunproc none";
+        }
+        $cmd =~ s|%MPQCRUNPROC%|$mpqcrunproc|;
+
         $cmd = substitute_optional_parameter($cmd, "%OUTPUT%", "$out");
         $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
         $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
@@ -559,3 +581,16 @@ sub substitute_optional_parameter {
     return $str;
 }
 
+sub isoencode {
+    my $str = shift;
+    $str =~ s/ /%20/g;
+    $str =~ s/\</%3c/g;
+    $str =~ s/\>/%3e/g;
+    $str =~ s/\[/%5b/g;
+    $str =~ s/\]/%5d/g;
+    $str =~ s/\$/%24/g;
+    $str =~ s/:/%38/g;
+    $str =~ s/\(/%28/g;
+    $str =~ s/\)/%29/g;
+    return $str;
+}

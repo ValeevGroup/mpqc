@@ -1,5 +1,7 @@
 
 #define SHELLS 125
+#define HSOS 0
+
 /* Calculates two-electron integrals on the fly and sticks them into the
  * appropriate part of the G matrix
  */
@@ -103,330 +105,455 @@ FILE *outfile;
 
   kindex=int_index=0;
   for (i=0; i<centers->nshell; i++) {
-    if(use_symmetry) if(!sym_info->p1[i]) continue;
+    if (use_symmetry && !sym_info->p1[i])
+      continue;
 
     for (j=0; j<=i; j++) {
       leavel=0;
       ij = ioff(i)+j;
-      if(use_symmetry) if(!sym_info->lamij[ij]) continue;
+
+      if (use_symmetry && !sym_info->lamij[ij])
+        continue;
+
       Qvecij=(int)scf_bnd_Qvec[ij];
-      if(scf_info->eliminate) pmaxij=maxp[ij];
+      if (scf_info->eliminate)
+        pmaxij=maxp[ij];
 
       for (k=0; k<=i; k++,kindex++) {
-#if 0
-        if((centers->nshell > SHELLS || use_symmetry) && kindex%nproc!=me) {
+        if (kindex%nproc!=me)
           continue;
-          }
-#else
-        if(kindex%nproc!=me) {
-          continue;
-          }
-#endif
 
         kl=ioff(k);
-        if(scf_info->eliminate) {
+        if (scf_info->eliminate) {
           pmaxijk=pmaxij;
-          if((pmaxik=maxp[(ioff(i)+k)]-2)>pmaxijk) pmaxijk=pmaxik;
-          if((pmaxjk=maxp[IOFF(j,k)]-2)>pmaxijk) pmaxijk=pmaxjk;
-          }
+          if ((pmaxik=maxp[(ioff(i)+k)]-2)>pmaxijk)
+            pmaxijk=pmaxik;
+          if ((pmaxjk=maxp[IOFF(j,k)]-2)>pmaxijk)
+            pmaxijk=pmaxjk;
+        }
 
         tim_enter("l loop");
         for (l=0; l<=(k==i?j:k); l++) {
-          if(use_symmetry) {
+          if (use_symmetry) {
             ijkl=ioff(ij)+kl;
             nijkl=leavel=0;
-            for(g=0; g < sym_info->g ; g++) {
+            for (g=0; g < sym_info->g ; g++) {
               gij=IOFF(sym_info->shell_map[i][g],sym_info->shell_map[j][g]);
               gkl=IOFF(sym_info->shell_map[k][g],sym_info->shell_map[l][g]);
               gijkl = IOFF(gij,gkl);
-              if(gijkl > ijkl) leavel=1;
-              if(gijkl == ijkl) nijkl++;
+              if (gijkl > ijkl) {
+                leavel=1;
+                break;
               }
-            if(leavel) {
-              kl++; continue;
-              }
-            qijkl = sym_info->g/nijkl;
+              if (gijkl == ijkl)
+                nijkl++;
             }
+            if (leavel) {
+              kl++;
+              continue;
+            }
+            qijkl = sym_info->g/nijkl;
+          }
 
           imax = (int) scf_bnd_Qvec[kl]+Qvecij;
 
-          if(scf_info->eliminate) {
+          if (scf_info->eliminate) {
             cpmax = (maxp[kl]>pmaxijk) ? maxp[kl] : pmaxijk;
-            if((tmax=maxp[(ioff(i)+l)]-2)>cpmax) cpmax=tmax;
-            if((tmax=maxp[IOFF(j,l)]-2)>cpmax) cpmax=tmax;
+            if ((tmax=maxp[(ioff(i)+l)]-2)>cpmax)
+              cpmax=tmax;
+            if ((tmax=maxp[IOFF(j,l)]-2)>cpmax)
+              cpmax=tmax;
 
-            if(cpmax+imax < inttol) {
+            if (cpmax+imax < inttol) {
               /* If we are trying to save integrals on this node, then
                * int_index must be incremented now. */
               if (scf_info->int_store) int_index++;
               kl++;
               continue;
-              }
             }
+          }
 
-#if 0
-          if(centers->nshell > SHELLS || use_symmetry || int_index%nproc==me) {
-#endif
-            tim_enter("ints");
-            s1 = i; s2 = j; s3 = k; s4 = l;
+          tim_enter("ints");
+          s1 = i; s2 = j; s3 = k; s4 = l;
 
-            tim_enter("gd_erep");
-            int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM,&s1,&s2,&s3,&s4);
-            tim_exit("gd_erep");
+          tim_enter("gd_erep");
+          int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM,&s1,&s2,&s3,&s4);
+          tim_exit("gd_erep");
 
-            n1 = shnfunc[s1];
-            n2 = shnfunc[s2];
-            n3 = shnfunc[s3];
-            n4 = shnfunc[s4];
+          n1 = shnfunc[s1];
+          n2 = shnfunc[s2];
+          n3 = shnfunc[s3];
+          n4 = shnfunc[s4];
 
-           /* Shell equivalency information. */
-            e12    = (s2==s1);
-            e13e24 = (s3==s1) && (s4==s2);
-            e34    = (s4==s3);
+         /* Shell equivalency information. */
+          e12    = (s2==s1);
+          e13e24 = (s3==s1) && (s4==s2);
+          e34    = (s4==s3);
 
-            index = 0;
+          index = 0;
 
-            e_any = (e12||e13e24||e34);
-            if(e_any) {
-              for (bf1=0; bf1<=INT_MAX1(n1) ; bf1++) {
-                i2 = centers->func_num[s1] + bf1;
+          e_any = (e12||e13e24||e34);
+          if (e_any) {
+            for (bf1=0; bf1<=INT_MAX1(n1) ; bf1++) {
+              i1 = centers->func_num[s1] + bf1;
 
-                for (bf2=0; bf2<=INT_MAX2(e12,bf1,n2) ; bf2++) {
-                  j2 = centers->func_num[s2] + bf2;
-                  if(i2>=j2) { i1=i2; j1=j2; }
-                  else { i1=j2; j1=i2; }
-                  ij1=ioff(i1)+j1;
+              for (bf2=0; bf2<=INT_MAX2(e12,bf1,n2) ; bf2++) {
+                j1 = centers->func_num[s2] + bf2;
+                ij1=ioff(i1)+j1;
 
-                  for (bf3=0; bf3<=INT_MAX3(e13e24,bf1,n3) ; bf3++) {
-                    k2 = centers->func_num[s3] + bf3;
+                for (bf3=0; bf3<=INT_MAX3(e13e24,bf1,n3) ; bf3++) {
+                  k1 = centers->func_num[s3] + bf3;
 
-                    for (bf4=0;bf4<=INT_MAX4(e13e24,e34,bf1,bf2,bf3,n4);bf4++){
-                      if (INT_NONZERO(mgdbuff[index])) {
-                        l2 = centers->func_num[s4] + bf4;
+                  for (bf4=0;bf4<=INT_MAX4(e13e24,e34,bf1,bf2,bf3,n4);bf4++){
+                    if (INT_NONZERO(mgdbuff[index])) {
+                      l1 = centers->func_num[s4] + bf4;
 
-                        if(k2>=l2) { k1=k2; l1=l2; }
-                        else { k1=l2; l1=k2; }
+                      if (ij1 >= ioff(k1)+l1) {
+                        ii = i1; jj = j1; kk = k1; ll = l1;
+                      } else {
+                        ii = k1; jj = l1; kk = i1; ll = j1;
+                      }
 
-                        if(ij1 >= ioff(k1)+l1) {
-                          ii = i1; jj = j1; kk = k1; ll = l1;
-                          }
-                        else {
-                          ii = k1; jj = l1; kk = i1; ll = j1;
-                          }
+                      pki_int = mgdbuff[index];
+                      if (qijkl > 1)
+                        pki_int *= qijkl;
 
-                        pki_int = (double) qijkl*mgdbuff[index];
-
-                        if (jj == kk) {
-                          if (ii == jj || kk == ll) {
-                            lij=ioff(ii)+jj;
-                            lkl=ioff(kk)+ll;
-                            value=(lij==lkl)? 0.25*pki_int: 0.5*pki_int;
-                            gtmp[lij] += ptmp[lkl]*value;
-                            gtmp[lkl] += ptmp[lij]*value;
-                            if(scf_info->hsos) {
-                              gtmpo[lij] += ptmpo[lkl]*value;
-                              gtmpo[lkl] += ptmpo[lij]*value;
-                              }
-                            }
-                          else {
-                            lij=ioff(ii)+jj;
-                            lkl=ioff(kk)+ll;
-                            value=(lij==lkl)? 0.375*pki_int: 0.75*pki_int;
-                            gtmp[lij] += ptmp[lkl]*value;
-                            gtmp[lkl] += ptmp[lij]*value;
-                            if(scf_info->hsos) {
-                              value *= 0.3333333333333333;
-                              gtmpo[lij] += ptmpo[lkl]*value;
-                              gtmpo[lkl] += ptmpo[lij]*value;
-                              }
-
-                            lij=ioff(ii)+ll;
-                            lkl=IOFF(kk,jj);
-                            value=(lij==lkl)? 0.25*pki_int: 0.5*pki_int;
-                            gtmp[lij] -= ptmp[lkl]*value;
-                            gtmp[lkl] -= ptmp[lij]*value;
-                            if(scf_info->hsos) {
-                              gtmpo[lij] += ptmpo[lkl]*value;
-                              gtmpo[lkl] += ptmpo[lij]*value;
-                              }
-                            }
-                          }
-                        else if (ii == kk || jj == ll) {
+                      if (jj == kk) {
+                        /*
+                         * if i=j=k or j=k=l, then this integral contributes
+                         * to J, K1, and K2 of G(ij), so
+                         * value = (ijkl) - 0.25 * ((ikjl)-(ilkj))
+                         *       = 0.5 * (ijkl)
+                         */
+                        if (ii == jj || kk == ll) {
                           lij=ioff(ii)+jj;
                           lkl=ioff(kk)+ll;
-                          value=(lij==lkl)? 0.375*pki_int: 0.75*pki_int;
+                          value = (lij==lkl) ? 0.25*pki_int: 0.5*pki_int;
                           gtmp[lij] += ptmp[lkl]*value;
                           gtmp[lkl] += ptmp[lij]*value;
-                          if(scf_info->hsos) {
+#if HSOS
+                          if (scf_info->hsos) {
+                            gtmpo[lij] += ptmpo[lkl]*value;
+                            gtmpo[lkl] += ptmpo[lij]*value;
+                          }
+#endif
+                        } else {
+                          /*
+                           * if j=k, then this integral contributes
+                           * to J and K1 of G(ij)
+                           *
+                           * value = (ijkl) - 0.25 * (ikjl)
+                           *       = 0.75 * (ijkl)
+                           */
+                          lij=ioff(ii)+jj;
+                          lkl=ioff(kk)+ll;
+                          value = (lij==lkl) ? 0.375*pki_int: 0.75*pki_int;
+
+                          gtmp[lij] += ptmp[lkl]*value;
+                          gtmp[lkl] += ptmp[lij]*value;
+#if HSOS
+                          if (scf_info->hsos) {
                             value *= 0.3333333333333333;
                             gtmpo[lij] += ptmpo[lkl]*value;
                             gtmpo[lkl] += ptmpo[lij]*value;
-                            }
+                          }
+#endif
 
-                          lij=ioff(ii)+kk;
-                          lkl=IOFF(jj,ll);
-                          value=(lij==lkl)? 0.25*pki_int : 0.5*pki_int;
+                          /*
+                           * this integral also contributes to K1 and K2 of
+                           * G(il)
+                           *
+                           * value = -0.25 * ((ijkl)+(ikjl))
+                           *       = -0.5 * (ijkl)
+                           */
+                          lij=ioff(ii)+ll;
+                          lkl=IOFF(kk,jj);
+                          value = (lij==lkl)? 0.25*pki_int: 0.5*pki_int;
+
                           gtmp[lij] -= ptmp[lkl]*value;
                           gtmp[lkl] -= ptmp[lij]*value;
-                          if(scf_info->hsos) {
+#if HSOS
+                          if (scf_info->hsos) {
                             gtmpo[lij] += ptmpo[lkl]*value;
                             gtmpo[lkl] += ptmpo[lij]*value;
-                            }
                           }
-                        else {
-                          lij=ioff(ii)+jj;
-                          lkl=ioff(kk)+ll;
-                          value=(lij==lkl)? 0.5*pki_int : pki_int;
-                          gtmp[lij] += ptmp[lkl]*value;
-                          gtmp[lkl] += ptmp[lij]*value;
-
-                          lij=ioff(ii)+kk;
-                          lkl=IOFF(jj,ll);
-                          value=(lij==lkl)? 0.125*pki_int: 0.25*pki_int;
-                          gtmp[lij] -= ptmp[lkl]*value;
-                          gtmp[lkl] -= ptmp[lij]*value;
-                          if(scf_info->hsos) {
-                            gtmpo[lij] += ptmpo[lkl]*value;
-                            gtmpo[lkl] += ptmpo[lij]*value;
-                            }
-
-                          if((ii != jj) && (kk != ll)) {
-                            lij=ioff(ii)+ll;
-                            lkl=IOFF(kk,jj);
-                            value=(lij==lkl)? 0.125*pki_int: 0.25*pki_int;
-                            gtmp[lij] -= ptmp[lkl]*value;
-                            gtmp[lkl] -= ptmp[lij]*value;
-                            if(scf_info->hsos) {
-                              gtmpo[lij] += ptmpo[lkl]*value;
-                              gtmpo[lkl] += ptmpo[lij]*value;
-                              }
-                            }
-                          }
+#endif
                         }
-                      index++;
+                      } else if (ii == kk || jj == ll) {
+                        /*
+                         * if i=k or j=l, then this integral contributes
+                         * to J and K2 of G(ij)
+                         *
+                         * value = (ijkl) - 0.25 * (ilkj)
+                         *       = 0.75 * (ijkl)
+                         */
+                        lij=ioff(ii)+jj;
+                        lkl=ioff(kk)+ll;
+                        value = (lij==lkl) ? 0.375*pki_int: 0.75*pki_int;
+                        gtmp[lij] += ptmp[lkl]*value;
+                        gtmp[lkl] += ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          value *= 0.3333333333333333;
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
+
+                        /*
+                         * this integral also contributes to K1 and K2 of
+                         * G(ik)
+                         *
+                         * value = -0.25 * ((ijkl)+(ilkj))
+                         *       = -0.5 * (ijkl)
+                         */
+                        lij=ioff(ii)+kk;
+                        lkl=IOFF(jj,ll);
+                        value = (lij==lkl) ? 0.25*pki_int : 0.5*pki_int;
+
+                        gtmp[lij] -= ptmp[lkl]*value;
+                        gtmp[lkl] -= ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
+                      } else {
+                        /*
+                         * This integral contributes to J of G(ij)
+                         *
+                         * value = (ijkl)
+                         */
+                        lij=ioff(ii)+jj;
+                        lkl=ioff(kk)+ll;
+                        value = (lij==lkl)? 0.5*pki_int : pki_int;
+
+                        gtmp[lij] += ptmp[lkl]*value;
+                        gtmp[lkl] += ptmp[lij]*value;
+
+                        /*
+                         * and to K1 of G(ik)
+                         *
+                         * value = -0.25 * (ijkl)
+                         */
+                        lij=ioff(ii)+kk;
+                        lkl=IOFF(jj,ll);
+                        value = (lij==lkl) ? 0.125*pki_int : 0.25*pki_int;
+
+                        gtmp[lij] -= ptmp[lkl]*value;
+                        gtmp[lkl] -= ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
+
+                        if ((ii != jj) && (kk != ll)) {
+                          /*
+                           * if i!=j and k!=l, then this integral also
+                           * contributes to K2 of G(il)
+                           *
+                           * value = -0.25 * (ijkl)
+                           *
+                           * note: if we get here, then ik can't equal jl,
+                           * so value wasn't multiplied by 0.5 above.
+                           */
+                          lij=ioff(ii)+ll;
+                          lkl=IOFF(kk,jj);
+
+                          gtmp[lij] -= ptmp[lkl]*value;
+                          gtmp[lkl] -= ptmp[lij]*value;
+#if HSOS
+                          if (scf_info->hsos) {
+                            gtmpo[lij] += ptmpo[lkl]*value;
+                            gtmpo[lkl] += ptmpo[lij]*value;
+                          }
+#endif
+                        }
                       }
                     }
+                    index++;
                   }
                 }
               }
-            else {
-              for (bf1=0; bf1<n1 ; bf1++) {
-                i2 = centers->func_num[s1] + bf1;
+            }
+          } else {
+            for (i1=centers->func_num[s1], bf1=0; bf1<n1 ; bf1++, i1++) {
 
-                for (bf2=0; bf2<n2 ; bf2++) {
-                  j2 = centers->func_num[s2] + bf2;
-                  if(i2>=j2) { i1=i2; j1=j2; }
-                  else { i1=j2; j1=i2; }
-                  ij1=ioff(i1)+j1;
+              for (j1=centers->func_num[s2], bf2=0; bf2<n2 ; bf2++, j1++) {
+                ij1=ioff(i1)+j1;
 
-                  for (bf3=0; bf3<n3 ; bf3++) {
-                    k2 = centers->func_num[s3] + bf3;
+                for (k1=centers->func_num[s3], bf3=0; bf3<n3 ; bf3++, k1++) {
 
-                    for (bf4=0; bf4<n4; bf4++) {
-                      if (INT_NONZERO(mgdbuff[index])) {
-                        l2 = centers->func_num[s4] + bf4;
+                  for (l1=centers->func_num[s4], bf4=0; bf4<n4 ; bf4++, l1++) {
+                    if (INT_NONZERO(mgdbuff[index])) {
 
-                        if(k2>=l2) { k1=k2; l1=l2; }
-                        else { k1=l2; l1=k2; }
+                      if (ij1 >= ioff(k1)+l1) {
+                        ii = i1; jj = j1; kk = k1; ll = l1;
+                      } else {
+                        ii = k1; jj = l1; kk = i1; ll = j1;
+                      }
 
-                        if(ij1 >= ioff(k1)+l1) {
-                          ii = i1; jj = j1; kk = k1; ll = l1;
-                          }
-                        else {
-                          ii = k1; jj = l1; kk = i1; ll = j1;
-                          }
+                      pki_int = mgdbuff[index];
+                      if (qijkl > 1)
+                        pki_int *= qijkl;
 
-                        pki_int = (double) qijkl*mgdbuff[index];
+                      if (jj == kk) {
+                        /*
+                         * if j=k, then this integral contributes
+                         * to J and K1 of G(ij)
+                         *
+                         * value = (ijkl) - 0.25 * (ikjl)
+                         *       = 0.75 * (ijkl)
+                         */
+                        lij=ioff(ii)+jj;
+                        lkl=ioff(kk)+ll;
+                        value = 0.75*pki_int;
 
-                        if (jj == kk) {
-                          lij=ioff(ii)+jj;
-                          lkl=ioff(kk)+ll;
-                          value=0.75*pki_int;
-                          gtmp[lij] += ptmp[lkl]*value;
-                          gtmp[lkl] += ptmp[lij]*value;
-                          if(scf_info->hsos) {
-                            value *= 0.3333333333333333;
-                            gtmpo[lij] += ptmpo[lkl]*value;
-                            gtmpo[lkl] += ptmpo[lij]*value;
-                            }
-
-                          lij=ioff(ii)+ll;
-                          lkl=IOFF(kk,jj);
-                          value=0.5*pki_int;
-                          gtmp[lij] -= ptmp[lkl]*value;
-                          gtmp[lkl] -= ptmp[lij]*value;
-                          if(scf_info->hsos) {
-                            gtmpo[lij] += ptmpo[lkl]*value;
-                            gtmpo[lkl] += ptmpo[lij]*value;
-                            }
-                          }
-                        else if (ii == kk || jj == ll) {
-                          lij=ioff(ii)+jj;
-                          lkl=ioff(kk)+ll;
-                          value=0.75*pki_int;
-                          gtmp[lij] += ptmp[lkl]*value;
-                          gtmp[lkl] += ptmp[lij]*value;
-                          if(scf_info->hsos) {
-                            value *= 0.3333333333333333;
-                            gtmpo[lij] += ptmpo[lkl]*value;
-                            gtmpo[lkl] += ptmpo[lij]*value;
-                            }
-
-                          lij=ioff(ii)+kk;
-                          lkl=IOFF(jj,ll);
-                          value=0.5*pki_int;
-                          gtmp[lij] -= ptmp[lkl]*value;
-                          gtmp[lkl] -= ptmp[lij]*value;
-                          if(scf_info->hsos) {
-                            gtmpo[lij] += ptmpo[lkl]*value;
-                            gtmpo[lkl] += ptmpo[lij]*value;
-                            }
-                          }
-                        else {
-                          lij=ioff(ii)+jj;
-                          lkl=ioff(kk)+ll;
-                          value=pki_int;
-                          gtmp[lij] += ptmp[lkl]*value;
-                          gtmp[lkl] += ptmp[lij]*value;
-  
-                          lij=ioff(ii)+kk;
-                          lkl=IOFF(jj,ll);
-                          value*=0.25;
-                          gtmp[lij] -= ptmp[lkl]*value;
-                          gtmp[lkl] -= ptmp[lij]*value;
-                          if(scf_info->hsos) {
-                            gtmpo[lij] += ptmpo[lkl]*value;
-                            gtmpo[lkl] += ptmpo[lij]*value;
-                            }
-
-                          lij=ioff(ii)+ll;
-                          lkl=IOFF(kk,jj);
-                          gtmp[lij] -= ptmp[lkl]*value;
-                          gtmp[lkl] -= ptmp[lij]*value;
-                          if(scf_info->hsos) {
-                            gtmpo[lij] += ptmpo[lkl]*value;
-                            gtmpo[lkl] += ptmpo[lij]*value;
-                            }
-                          }
+                        gtmp[lij] += ptmp[lkl]*value;
+                        gtmp[lkl] += ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          value *= 0.3333333333333333;
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
                         }
-                      index++;
+#endif
+
+                        /*
+                         * this integral also contributes to K1 and K2 of
+                         * G(il)
+                         *
+                         * value = -0.25 * ((ijkl)+(ikjl))
+                         *       = -0.5 * (ijkl)
+                         */
+                        lij=ioff(ii)+ll;
+                        lkl=IOFF(kk,jj);
+#if HSOS
+                        value = 0.5*pki_int;
+#else
+                        value *= 0.666666666666666;
+#endif
+                        gtmp[lij] -= ptmp[lkl]*value;
+                        gtmp[lkl] -= ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
+                      } else if (ii == kk || jj == ll) {
+                        /*
+                         * if i=k or j=l, then this integral contributes
+                         * to J and K2 of G(ij)
+                         *
+                         * value = (ijkl) - 0.25 * (ilkj)
+                         *       = 0.75 * (ijkl)
+                         */
+                        lij=ioff(ii)+jj;
+                        lkl=ioff(kk)+ll;
+                        value = 0.75*pki_int;
+
+                        gtmp[lij] += ptmp[lkl]*value;
+                        gtmp[lkl] += ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          value *= 0.3333333333333333;
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
+
+                        /*
+                         * this integral also contributes to K1 and K2 of
+                         * G(ik)
+                         *
+                         * value = -0.25 * ((ijkl)+(ilkj))
+                         *       = -0.5 * (ijkl)
+                         */
+                        lij=ioff(ii)+kk;
+                        lkl=IOFF(jj,ll);
+#if HSOS
+                        value = 0.5*pki_int;
+#else
+                        value *= 0.666666666666666;
+#endif                        
+
+                        gtmp[lij] -= ptmp[lkl]*value;
+                        gtmp[lkl] -= ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
+                      } else {
+                        /*
+                         * This integral contributes to J of G(ij)
+                         *
+                         * value = (ijkl)
+                         */
+                        lij=ioff(ii)+jj;
+                        lkl=ioff(kk)+ll;
+                        value = pki_int;
+
+                        gtmp[lij] += ptmp[lkl]*value;
+                        gtmp[lkl] += ptmp[lij]*value;
+
+                        /*
+                         * and to K1 of G(ik)
+                         *
+                         * value = -0.25 * (ijkl)
+                         */
+                        lij=ioff(ii)+kk;
+                        lkl=IOFF(jj,ll);
+                        value *= 0.25;
+
+                        gtmp[lij] -= ptmp[lkl]*value;
+                        gtmp[lkl] -= ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
+
+                        /*
+                         * and to K2 of G(il)
+                         *
+                         * value = -0.25 * (ijkl)
+                         */
+                        lij=ioff(ii)+ll;
+                        lkl=IOFF(kk,jj);
+
+                        gtmp[lij] -= ptmp[lkl]*value;
+                        gtmp[lkl] -= ptmp[lij]*value;
+#if HSOS
+                        if (scf_info->hsos) {
+                          gtmpo[lij] += ptmpo[lkl]*value;
+                          gtmpo[lkl] += ptmpo[lij]*value;
+                        }
+#endif
                       }
                     }
+                    index++;
                   }
                 }
               }
-            tnint += (double) (n1*n2*n3*n4);
-            tim_exit("ints");
-#if 0
             }
-#endif
+          }
+          tnint += (double) (n1*n2*n3*n4);
+          tim_exit("ints");
+
           kl++;
           int_index++;
-          }
-        tim_exit("l loop");
         }
+        tim_exit("l loop");
       }
     }
+  }
 
   if (scf_info->print_flg & 4) {
     gsum0(&tnint,1,5,mtype_get(),0);

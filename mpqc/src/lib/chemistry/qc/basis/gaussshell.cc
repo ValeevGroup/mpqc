@@ -323,6 +323,77 @@ void GaussianShell::normalize_shell()
 
 }
 
+static int
+comp_relative_overlap(int i1, int j1, int k1, int i2, int j2, int k2)
+{
+  int result = 0;
+
+  if (i1) {
+      if (i1>1) result += (i1-1)*comp_relative_overlap(i1-2,j1,k1,i2,j2,k2);
+      if (i2>0) result += i2*comp_relative_overlap(i1-1,j1,k1,i2-1,j2,k2);
+      return result;      
+    }                   
+  if (j1) {             
+      if (j1>1) result += (j1-1)*comp_relative_overlap(i1,j1-2,k1,i2,j2,k2);
+      if (j2>0) result += j2*comp_relative_overlap(i1,j1-1,k1,i2,j2-1,k2);
+      return result;
+    }
+  if (k1) {
+      if (k1>1) result += (k1-1)*comp_relative_overlap(i1,j1,k1-2,i2,j2,k2);
+      if (k2>0) result += k2*comp_relative_overlap(i1,j1,k1-1,i2,j2,k2-1);
+      return result;
+    }
+  
+  if (i2) {
+      if (i2>1) result += (i2-1)*comp_relative_overlap(i1,j1,k1,i2-2,j2,k2);
+      if (i1>0) result += i1*comp_relative_overlap(i1-1,j1,k1,i2-1,j2,k2);
+      return result;
+    }
+  if (j2) {
+      if (j2>1) result += (j2-1)*comp_relative_overlap(i1,j1,k1,i2,j2-2,k2);
+      if (j1>0) result += j1*comp_relative_overlap(i1,j1-1,k1,i2,j2-1,k2);
+      return result;
+    }
+  if (k2) {
+      if (k2>1) result += (k2-1)*comp_relative_overlap(i1,j1,k1,i2,j2,k2-2);
+      if (k1>0) result += k1*comp_relative_overlap(i1,j1,k1-1,i2,j2,k2-1);
+      return result;
+    }
+
+  return 1;
+}
+
+double
+GaussianShell::relative_overlap(int con,
+                                int a1, int b1, int c1,
+                                int a2, int b2, int c2) const
+{
+  int result = comp_relative_overlap(a1,b1,c1,a2,b2,c2);
+  return (double) result;
+}
+
+double
+GaussianShell::relative_overlap(int con, int func1, int func2) const
+{
+  if (puream[con]) {
+      // depends on how intv2 currently normalizes things
+      fprintf(stderr,"GaussianShell::relative_overlap:"
+              " only implemented for Cartesians\n");
+      abort();
+    }
+
+  CartesianIter i1(l[con]);
+  CartesianIter i2(l[con]);
+
+  int i;
+  for (i1.start(), i=0; i<func1; i1.next(), i++);
+  for (i2.start(), i=0; i<func2; i2.next(), i++);
+
+  return relative_overlap(con,
+                          i1.a(), i1.b(), i1.c(),
+                          i2.a(), i2.b(), i2.c());
+}
+
 void GaussianShell::print(FILE* fp) const
 {
   int i,j;

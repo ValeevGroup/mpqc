@@ -166,6 +166,14 @@ class GaussianShell: public SavableState
                     double* g_values,
                     double* basis_values=0) const;
 
+    // returns the intra-generalized-contraction overlap
+    // matrix element <con func1|con func2> within an arbitrary
+    // constant for the shell
+    double relative_overlap(int con, int func1, int func2) const;
+    double relative_overlap(int con,
+                            int a1, int b1, int c1,
+                            int a2, int b2, int c2) const;
+
     void print(FILE*fp=stdout) const;
 };
 

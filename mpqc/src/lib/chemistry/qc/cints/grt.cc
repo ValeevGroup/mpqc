@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
 #include <util/misc/formio.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/cints/grt.h>
@@ -65,10 +66,9 @@ GRTCints::GRTCints(Integral *integral,
   int l3 = bs3_->max_angular_momentum();
   int l4 = bs4_->max_angular_momentum();
   int lmax = max(max(l1,l2),max(l3,l4));
-  if (lmax + 1 > LIBINT_MAX_AM) {
-    ExEnv::errn() << scprintf("libint: the maximum angular momentum of the basis\n");
-    ExEnv::errn() << scprintf("is too high - need to recompile libint\n");
-    fail();
+  if (lmax + 1 > LIBR12_MAX_AM) {
+    throw std::runtime_error("libr12: the maximum angular momentum of the basis"
+                             "is too high - need to recompile libint");
   }
 
   /*--- Initialize storage ---*/

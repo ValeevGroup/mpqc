@@ -125,7 +125,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     throw std::runtime_error("R12IntEval_abs_A::compute called when basis sets are identical");
   integral->set_basis(bs,bs,bs,bs_aux);
 
-  Ref<SCMatrixKit> kit = bs->matrixkit();
+  Ref<SCMatrixKit> matrixkit_aux = bs_aux->matrixkit();
+  Ref<SCMatrixKit> so_matrixkit_aux = bs_aux->so_matrixkit();
   Ref<MessageGrp> msg = r12info()->msg();
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
@@ -339,7 +340,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     Ref<OneBodyInt> ov_aux_engine = integral_aux->overlap();
 
     // form skeleton s matrix
-    RefSymmSCMatrix s(bs_aux->basisdim(), bs_aux->matrixkit());
+    RefSymmSCMatrix s(bs_aux->basisdim(), matrixkit_aux);
     Ref<SCElementOp> ov =
       new OneBodyIntOp(new SymmOneBodyIntIter(ov_aux_engine, pl_aux));
     
@@ -350,14 +351,14 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     
     // then symmetrize it
     RefSCDimension sodim_aux = pl_aux->SO_basisdim();
-    RefSymmSCMatrix overlap_aux(sodim_aux, bs_aux->so_matrixkit());
+    RefSymmSCMatrix overlap_aux(sodim_aux, so_matrixkit_aux);
     pl_aux->symmetrize(s,overlap_aux);
     
     // and clean up a bit
     ov_aux_engine = 0;
     s = 0;
     integral_aux = 0;
-    
+
     //
     // Compute canonical orthogonalizer
     //
@@ -413,39 +414,46 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     
     if (debug_)
       ExEnv::out0() << indent << "Removed " << nlindep << " linearly dependent functions from the auxiliary basis" << endl;
-    
+
     // make sure all nodes end up with exactly the same data
-    MessageGrp::get_default_messagegrp()->bcast(nfunctot);
-    MessageGrp::get_default_messagegrp()->bcast(nfunc, bm->nblocks());
-    MessageGrp::get_default_messagegrp()->bcast(pm_sqrt,nfunctot);
-    MessageGrp::get_default_messagegrp()->bcast(pm_isqrt,nfunctot);
-    MessageGrp::get_default_messagegrp()->bcast(pm_index,nfunctot);
-    
+    msg->bcast(nfunctot);
+    msg->bcast(nfunc, bm->nblocks());
+    msg->bcast(pm_sqrt,nfunctot);
+    msg->bcast(pm_isqrt,nfunctot);
+    msg->bcast(pm_index,nfunctot);
     osodim_aux = new SCDimension(nfunctot, bm->nblocks(),
 				 nfunc, "ortho aux SO (canonical)");
     for (int i=0; i<bm->nblocks(); i++) {
       osodim_aux->blocks()->set_subdim(i, new SCDimension(nfunc[i]));
     }
-    
-    overlap_aux_eigvec = bs_aux->so_matrixkit()->matrix(sodim_aux, osodim_aux);
+
+    overlap_aux_eigvec = so_matrixkit_aux->matrix(sodim_aux, osodim_aux);
     BlockedSCMatrix *bev
       = dynamic_cast<BlockedSCMatrix*>(overlap_aux_eigvec.pointer());
     BlockedSCMatrix *bU
       = dynamic_cast<BlockedSCMatrix*>(U.pointer());
+
     int ifunc = 0;
     for (int i=0; i<bev->nblocks(); i++) {
       if (bev->block(i).null()) continue;
+      RefSCMatrix bev_block = bev->block(i);
+      RefSCMatrix bU_block = bU->block(i);
       for (int j=0; j<nfunc[i]; j++) {
-	bev->block(i)->assign_column(
-				     bU->block(i)->get_column(pm_index[ifunc]),j
-				     );
+// For some reason this produces a bunch of temp objects which are never destroyed
+// and default_matrixkit is not detroyed at the end
+//	bev->block(i)->assign_column(
+//				     bU->block(i)->get_column(pm_index[ifunc]),j
+//				     );
+        int nk = bev_block->rowdim().n();
+        for (int k=0; k<nk; k++)
+          bev_block->set_element(k,j,bU_block->get_element(k,pm_index[ifunc]));
 	ifunc++;
       }
     }
-    
-    overlap_sqrt_eigval = bs_aux->so_matrixkit()->diagmatrix(osodim_aux);
+
+    overlap_sqrt_eigval = so_matrixkit_aux->diagmatrix(osodim_aux);
     overlap_sqrt_eigval->assign(pm_sqrt);
-    overlap_isqrt_eigval = bs_aux->so_matrixkit()->diagmatrix(osodim_aux);
+    overlap_isqrt_eigval = so_matrixkit_aux->diagmatrix(osodim_aux);
     overlap_isqrt_eigval->assign(pm_isqrt);
     
     delete[] nfunc;
@@ -483,6 +491,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
       symorb_irrep_aux[orbnum] = i;
     }
   }
+
 
   /////////////////////////////////////
   //  Begin MP2 loops
@@ -907,7 +916,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
             for(int o=0;o<nocc;o++) {
 	      double pfac_xy = 1.0;
               for(int x=0;x<noso_aux;x++) {
-                int ox_offset = o*nbasis_aux+x;
+                int ox_offset = o*noso_aux + x;
                 double ij_r12_ox = ijox_buf_r12[ox_offset];
                 double ji_r12_ox = jiox_buf_r12[ox_offset];
                 double kl_eri_ox = klox_buf_eri[ox_offset];

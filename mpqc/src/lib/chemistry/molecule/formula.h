@@ -39,8 +39,11 @@ class MolecularFormula {
   private:
     enum {nelem_ = 105};
     int count_[nelem_];
+    int natomtypes_;
+    int *Z_, *nZ_;
     char *form_;
 
+    void compute_atomtypes(const Molecule *m);
     void compute_form(const Molecule *m);
   public:
     //. Constructors.  The argument must be nonnull.
@@ -51,6 +54,12 @@ class MolecularFormula {
 
     //. Returns a null terminated string containing the molecular formula.
     const char * formula() const;
+    //. Returns the number of atomtypes
+    int natomtypes();
+    //. Returns atomic number of given atomtypeindex
+    int Z(int itype);
+    //. Returns number of atoms of given atomtypeindex
+    int nZ(int itype);
 };
 
 #endif

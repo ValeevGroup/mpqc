@@ -27,6 +27,7 @@
 #pragma implementation
 #endif
 
+#include <util/container/avlmap.h>
 #include <chemistry/molecule/formula.h>
 
 static const char * symbols[] = {
@@ -45,20 +46,21 @@ MolecularFormula::MolecularFormula(const RefMolecule&m):
   form_(0)
 {
   compute_form(m.pointer());
+  compute_atomtypes(m.pointer());
 }
 
 MolecularFormula::MolecularFormula(const Molecule *m):
   form_(0)
 {
   compute_form(m);
+  compute_atomtypes(m);
 }
 
 MolecularFormula::~MolecularFormula()
 {
-  if (form_) {
-    delete[] form_;
-    form_=0;
-  }
+  delete[] form_;
+  delete[] Z_;
+  delete[] nZ_;
 }
 
 void
@@ -109,8 +111,54 @@ MolecularFormula::compute_form(const Molecule *m)
   }
 }
 
+void
+MolecularFormula::compute_atomtypes(const Molecule *m)
+{
+  AVLMap<int, int> atomtypeinfo;
+  int natoms = m->natom();
+  int i, Z;
+
+  for (i=0; i< natoms; i++) {
+    if (m->charge(i) == 0.0) continue;
+    Z = m->Z(i);
+    if (atomtypeinfo.find(Z) != atomtypeinfo.end()) atomtypeinfo[Z]++;
+    else atomtypeinfo[Z] = 1;
+    }
+
+  natomtypes_ = atomtypeinfo.length();
+
+  Z_ = new int[natomtypes_];
+  nZ_ = new int[natomtypes_];
+
+  AVLMap<int, int>::iterator iter;
+
+  for (iter = atomtypeinfo.begin(), i=0; iter != atomtypeinfo.end(); iter++, i++) {
+    Z_[i] = iter.key();
+    nZ_[i] = iter.data();
+    }
+
+}
+
 const char *
 MolecularFormula::formula() const
 {
   return form_;
+}
+
+int
+MolecularFormula::natomtypes() 
+{
+  return(natomtypes_);
+}
+
+int
+MolecularFormula::Z(int itype) 
+{
+  return Z_[itype];
+}
+
+int
+MolecularFormula::nZ(int itype) 
+{
+  return nZ_[itype];
 }

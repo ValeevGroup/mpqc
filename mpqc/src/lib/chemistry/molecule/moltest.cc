@@ -38,6 +38,7 @@
 #include <util/render/object.h>
 #include <util/render/oogl.h>
 #include <util/misc/formio.h>
+#include <chemistry/molecule/formula.h>
 
 // force linkage 
 #include <chemistry/molecule/linkage.h>
@@ -129,6 +130,15 @@ main(int argc, char **argv)
   RefMolecule mol = kv->describedclassvalue("molecule");
   if (mol.nonnull()) {
       cout << "-------------- testing molecule --------------" << endl;
+
+      MolecularFormula formula(mol);
+      cout << "Molecular Formula" << endl << formula.formula() << endl;
+      cout << "Number of Atomtypes" << endl << formula.natomtypes() << endl;
+      cout << "Atomtype, Number of Atoms of This Type" << endl;
+      for(i=0; i<formula.natomtypes(); i++) {
+        cout << formula.Z(i) << "," << formula.nZ(i) << endl;
+        }
+
       mol->cleanup_molecule();
       cout << "Clean Molecule:\n";
       mol->print();
@@ -179,10 +189,10 @@ main(int argc, char **argv)
           gen->print();
         }
       cout << "simp before update:\n";
-      simp->print(mol);
+      simp->print_details(mol);
       simp->update_values(mol);
       cout << "simp:\n";
-      simp->print(mol);
+      simp->print_details(mol);
     }
 
   // compare the analytic bmatrix to the finite displacement bmatrix

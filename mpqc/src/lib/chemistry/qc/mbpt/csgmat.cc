@@ -122,7 +122,6 @@ MBPT2::form_max_dens(double *DPmat, signed char *maxp)
 int
 MBPT2::init_cs_gmat()
 {
-  integral()->set_storage(mem_alloc);
   tbint_ = integral()->electron_repulsion();
   tbint_->set_redundant(0);
   intbuf_ = tbint_->buffer();
@@ -132,7 +131,6 @@ MBPT2::init_cs_gmat()
 void
 MBPT2::done_cs_gmat()
 {
-  integral()->set_storage(0);
   tbint_ = 0;
   intbuf_ = 0;
 }

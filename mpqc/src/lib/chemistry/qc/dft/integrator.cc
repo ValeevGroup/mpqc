@@ -1279,7 +1279,6 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
 
       point_count=0;
       center = centers[icenter];
-      int r_done = 0;
 
       for (ir=0; ir < nr[icenter]; ir++) {
           // Mike Colvin's interpretation of Murray's radial grid
@@ -1326,22 +1325,11 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                   double multiplier = int_volume
                                     * theta_quad_weights[itheta]/nr[icenter]
                                     * 2.0 * M_PI / ((double)nphi);
-                  if (do_point(icenter, integration_point, denfunc,
-                               w, multiplier,
-                               nuclear_gradient, f_gradient, w_gradient)
-                      * multiplier < 1e2*DBL_EPSILON
-                      && multiplier > 1e2*DBL_EPSILON) {
-                      r_done=1;
-                      break;
-                    }
+                  do_point(icenter, integration_point, denfunc,
+                           w, multiplier,
+                           nuclear_gradient, f_gradient, w_gradient);
                 }
-
-              if (r_done)
-                  break;
             }
-
-          if (r_done)
-              break;
         }
       point_count_total+=point_count;
     }

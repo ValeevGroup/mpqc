@@ -198,17 +198,14 @@ class R12IntEval : virtual public SavableState {
 
 public:
   R12IntEval(StateIn&);
-  R12IntEval(const Ref<R12IntEvalInfo>&);
+  R12IntEval(const Ref<R12IntEvalInfo>&, bool gbc = true, bool ebc = true,
+             LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
+             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap);
   ~R12IntEval();
 
   void save_data_state(StateOut&);
   virtual void obsolete();
 
-  void set_gbc(const bool gbc);
-  void set_ebc(const bool ebc);
-  void set_absmethod(LinearR12::ABSMethod abs_method);
-  void set_stdapprox(LinearR12::StandardApproximation stdapprox);
-  void set_spinadapted(bool spinadapted);
   void include_mp1(bool include_mp1);
   void set_debug(int debug);
   void set_dynamic(bool dynamic);
@@ -236,9 +233,9 @@ public:
   RefSCMatrix X_aa();
   /// Returns alpha-alpha block of the B intermediate matrix.
   RefSCMatrix B_aa();
-  /// Returns alpha-alpha block of the A intermediate matrix.
+  /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
   RefSCMatrix A_aa();
-  /// Returns alpha-alpha block of the MP2 T2 matrix.
+  /// Returns alpha-alpha block of the MP2 T2 matrix. Returns 0 if EBC is assumed.
   RefSCMatrix T2_aa();
   /// Returns alpha-beta block of the V intermediate matrix.
   RefSCMatrix V_ab();
@@ -246,9 +243,9 @@ public:
   RefSCMatrix X_ab();
   /// Returns alpha-beta block of the B intermediate matrix.
   RefSCMatrix B_ab();
-  /// Returns alpha-beta block of the A intermediate matrix.
+  /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
   RefSCMatrix A_ab();
-  /// Returns alpha-beta block of the MP2 T2 matrix.
+  /// Returns alpha-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed
   RefSCMatrix T2_ab();
   /// Returns alpha-alpha MP2 pair energies.
   RefSCVector emp2_aa();

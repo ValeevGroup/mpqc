@@ -51,9 +51,11 @@ static ClassDesc R12IntEval_cd(
   typeid(R12IntEval),"R12IntEval",1,"virtual public SavableState",
   0, 0, 0);
 
-R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info) :
-  r12info_(r12info), gbc_(true), ebc_(true), abs_method_(LinearR12::ABS_CABSPlus),
-  stdapprox_(LinearR12::StdApprox_Ap), spinadapted_(true), include_mp1_(false), evaluated_(false),
+R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, bool gbc, bool ebc,
+                       LinearR12::ABSMethod abs_method,
+                       LinearR12::StandardApproximation stdapprox) :
+  r12info_(r12info), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
+  stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
   debug_(0)
 {
     int nocc_act = r12info_->nocc_act();
@@ -72,12 +74,14 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info) :
     Xab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
     Baa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
     Bab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
-    Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-    Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
-    T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-    T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
-    Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-    Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    if (ebc_ == false) {
+      Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+      Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+      T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+      T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+      Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+      Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    }
     emp2pair_aa_ = local_matrix_kit->vector(dim_ij_aa_);
     emp2pair_ab_ = local_matrix_kit->vector(dim_ij_ab_);
     
@@ -87,6 +91,11 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info) :
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
 {
+  int gbc; si.get(gbc); gbc_ = (bool) gbc;
+  int ebc; si.get(ebc); ebc_ = (bool) ebc;
+  int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
+  int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+
   r12info_ << SavableState::restore_state(si);
   dim_ij_aa_ << SavableState::restore_state(si);
   dim_ij_ab_ << SavableState::restore_state(si);
@@ -102,12 +111,14 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   Xab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
   Baa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
   Bab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
-  Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-  Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
-  T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-  T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
-  Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-  Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+  if (ebc_ == false) {
+    Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+    Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+    T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+    Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+  }
   emp2pair_aa_ = local_matrix_kit->vector(dim_ij_aa_);
   emp2pair_ab_ = local_matrix_kit->vector(dim_ij_ab_);
 
@@ -117,12 +128,14 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   Xab_.restore(si);
   Baa_.restore(si);
   Bab_.restore(si);
-  Aaa_.restore(si);
-  Aab_.restore(si);
-  T2aa_.restore(si);
-  T2ab_.restore(si);
-  Raa_.restore(si);
-  Rab_.restore(si);
+  if (ebc_ == false) {
+    Aaa_.restore(si);
+    Aab_.restore(si);
+    T2aa_.restore(si);
+    T2ab_.restore(si);
+    Raa_.restore(si);
+    Rab_.restore(si);
+  }
   emp2pair_aa_.restore(si);
   emp2pair_ab_.restore(si);
 
@@ -136,10 +149,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
     tform_map_[tform_name] = tform;
   }
 
-  int gbc; si.get(gbc); gbc_ = (bool) gbc;
-  int ebc; si.get(ebc); ebc_ = (bool) ebc;
-  int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
-  int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
   int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
   si.get(debug_);
@@ -161,6 +170,11 @@ R12IntEval::~R12IntEval()
 void
 R12IntEval::save_data_state(StateOut& so)
 {
+  so.put((int)gbc_);
+  so.put((int)ebc_);
+  so.put((int)abs_method_);
+  so.put((int)stdapprox_);
+
   SavableState::save_state(r12info_.pointer(),so);
   SavableState::save_state(dim_ij_aa_.pointer(),so);
   SavableState::save_state(dim_ij_ab_.pointer(),so);
@@ -175,12 +189,14 @@ R12IntEval::save_data_state(StateOut& so)
   Xab_.save(so);
   Baa_.save(so);
   Bab_.save(so);
-  Aaa_.save(so);
-  Aab_.save(so);
-  T2aa_.save(so);
-  T2ab_.save(so);
-  Raa_.save(so);
-  Rab_.save(so);
+  if (ebc_ == false) {
+    Aaa_.save(so);
+    Aab_.save(so);
+    T2aa_.save(so);
+    T2ab_.save(so);
+    Raa_.save(so);
+    Rab_.save(so);
+  }
   emp2pair_aa_.save(so);
   emp2pair_ab_.save(so);
 
@@ -193,10 +209,6 @@ R12IntEval::save_data_state(StateOut& so)
     SavableState::save_state((*t).second.pointer(),so);
   }
 
-  so.put((int)gbc_);
-  so.put((int)ebc_);
-  so.put((int)abs_method_);
-  so.put((int)stdapprox_);
   so.put((int)spinadapted_);
   so.put((int)evaluated_);
   so.put(debug_);
@@ -217,11 +229,6 @@ R12IntEval::obsolete()
   init_intermeds_();
 }
 
-void R12IntEval::set_gbc(const bool gbc) { gbc_ = gbc; };
-void R12IntEval::set_ebc(const bool ebc) { ebc_ = ebc; };
-void R12IntEval::set_absmethod(LinearR12::ABSMethod abs_method) { abs_method_ = abs_method; };
-void R12IntEval::set_stdapprox(LinearR12::StandardApproximation stdapprox) { stdapprox_ = stdapprox; };
-void R12IntEval::set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted; };
 void R12IntEval::include_mp1(bool include_mp1) { include_mp1_ = include_mp1; };
 void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
 void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
@@ -236,62 +243,78 @@ RefSCDimension R12IntEval::dim_oo_t() const { return dim_ij_t_; };
 RefSCDimension R12IntEval::dim_vv_aa() const { return dim_ab_aa_; };
 RefSCDimension R12IntEval::dim_vv_ab() const { return dim_ab_ab_; };
 
-RefSCMatrix R12IntEval::V_aa() {
+RefSCMatrix R12IntEval::V_aa()
+{
   compute();
   return Vaa_;
 }
 
-RefSCMatrix R12IntEval::X_aa() {
+RefSCMatrix R12IntEval::X_aa()
+{
   compute();
   return Xaa_;
 }
 
-RefSCMatrix R12IntEval::B_aa() {
+RefSCMatrix R12IntEval::B_aa()
+{
   compute();
   return Baa_;
 }
 
-RefSCMatrix R12IntEval::A_aa() {
-  compute();
+RefSCMatrix R12IntEval::A_aa()
+{
+  if (ebc_ == false)
+    compute();
   return Aaa_;
 }
 
-RefSCMatrix R12IntEval::T2_aa() {
-  compute();
+RefSCMatrix R12IntEval::T2_aa()
+{
+  if (ebc_ == false)
+    compute();
   return T2aa_;
 }
 
-RefSCMatrix R12IntEval::V_ab() {
+RefSCMatrix R12IntEval::V_ab()
+{
   compute();
   return Vab_;
 }
 
-RefSCMatrix R12IntEval::X_ab() {
+RefSCMatrix R12IntEval::X_ab()
+{
   compute();
   return Xab_;
 }
 
-RefSCMatrix R12IntEval::B_ab() {
+RefSCMatrix R12IntEval::B_ab()
+{
   compute();
   return Bab_;
 }
 
-RefSCMatrix R12IntEval::A_ab() {
-  compute();
+RefSCMatrix R12IntEval::A_ab()
+{
+  if (ebc_ == false)
+    compute();
   return Aab_;
 }
 
-RefSCMatrix R12IntEval::T2_ab() {
-  compute();
+RefSCMatrix R12IntEval::T2_ab()
+{
+  if (ebc_ == false)
+    compute();
   return T2ab_;
 }
 
-RefSCVector R12IntEval::emp2_aa() {
+RefSCVector R12IntEval::emp2_aa()
+{
   compute();
   return emp2pair_aa_;
 }
 
-RefSCVector R12IntEval::emp2_ab() {
+RefSCVector R12IntEval::emp2_ab()
+{
   compute();
   return emp2pair_ab_;
 }
@@ -401,12 +424,14 @@ R12IntEval::init_intermeds_()
     Baa_.assign(0.0);
     Bab_.assign(0.0);
   }
-  Aaa_.assign(0.0);
-  Aab_.assign(0.0);
-  T2aa_.assign(0.0);
-  T2ab_.assign(0.0);
-  Raa_.assign(0.0);
-  Rab_.assign(0.0);
+  if (ebc_ == false) {
+    Aaa_.assign(0.0);
+    Aab_.assign(0.0);
+    T2aa_.assign(0.0);
+    T2ab_.assign(0.0);
+    Raa_.assign(0.0);
+    Rab_.assign(0.0);
+  }
 
   Xaa_.assign(0.0);
   Xab_.assign(0.0);
@@ -859,14 +884,16 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
   globally_sum_scmatrix_(Baa_,to_all_tasks);
   globally_sum_scmatrix_(Bab_,to_all_tasks);
 
-  globally_sum_scmatrix_(Aaa_,to_all_tasks);
-  globally_sum_scmatrix_(Aab_,to_all_tasks);
-
-  globally_sum_scmatrix_(T2aa_,to_all_tasks);
-  globally_sum_scmatrix_(T2ab_,to_all_tasks);
-
-  globally_sum_scmatrix_(Raa_,to_all_tasks);
-  globally_sum_scmatrix_(Rab_,to_all_tasks);
+  if (ebc_ == false) {
+    globally_sum_scmatrix_(Aaa_,to_all_tasks);
+    globally_sum_scmatrix_(Aab_,to_all_tasks);
+    
+    globally_sum_scmatrix_(T2aa_,to_all_tasks);
+    globally_sum_scmatrix_(T2ab_,to_all_tasks);
+    
+    globally_sum_scmatrix_(Raa_,to_all_tasks);
+    globally_sum_scmatrix_(Rab_,to_all_tasks);
+  }
 
   globally_sum_scvector_(emp2pair_aa_,to_all_tasks);
   globally_sum_scvector_(emp2pair_ab_,to_all_tasks);

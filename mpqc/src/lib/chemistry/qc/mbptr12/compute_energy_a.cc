@@ -47,12 +47,7 @@ MBPT2_R12::compute_energy_a_()
     r12info->set_dynamic(dynamic_);
     r12info->set_print_percent(print_percent_);
     r12info->set_memory(mem_alloc);
-    r12eval_ = new R12IntEval(r12info);
-    // will adapt energies rather than the intermediates
-    r12eval_->set_spinadapted(false);
-    r12eval_->set_absmethod(abs_method_);
-    r12eval_->set_ebc(ebc_);
-    r12eval_->set_gbc(gbc_);
+    r12eval_ = new R12IntEval(r12info,gbc_,ebc_,abs_method_,stdapprox_);
     r12eval_->include_mp1(include_mp1_);
     r12eval_->set_debug(debug_);
   }

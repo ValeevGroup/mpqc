@@ -174,7 +174,6 @@ BatchElectronDensity::BatchElectronDensity(const Ref<BatchElectronDensity>&d,
       dmat_bound_ = d->dmat_bound_;
       linear_scaling_ = d->linear_scaling_;
       use_dmat_bound_ = d->use_dmat_bound_;
-      valdat_ = d->valdat_;
 
       init_scratch_data();
     }
@@ -209,7 +208,6 @@ BatchElectronDensity::clear()
       delete[] alpha_dmat_;
       delete[] beta_dmat_;
       delete[] dmat_bound_;
-      delete valdat_;
     }
 
   delete[] contrib_;
@@ -217,6 +215,7 @@ BatchElectronDensity::clear()
   delete[] bs_values_;
   delete[] bsg_values_;
   delete[] bsh_values_;
+  delete valdat_;
 
   zero_pointers();
 }
@@ -259,8 +258,6 @@ BatchElectronDensity::init_common_data(bool initialize_density_matrices)
       if (spin_polarized_) beta_ao_density = wfn_->beta_ao_density();
       set_densities(wfn_->alpha_ao_density(), beta_ao_density);
     }
-
-  valdat_ = new GaussianBasisSet::ValueData(basis_, wfn_->integral());
 }
 
 void
@@ -309,6 +306,7 @@ BatchElectronDensity::init_scratch_data()
   bs_values_ = new double[nbasis_];
   bsg_values_ = new double[3*nbasis_];
   bsh_values_ = new double[6*nbasis_];
+  valdat_ = new GaussianBasisSet::ValueData(basis_, wfn_->integral());
 }
 
 void
@@ -366,6 +364,7 @@ BatchElectronDensity::compute_basis_values(const SCVector3&r)
   for (int i=0; i<ncontrib_; i++) {
       basis_->hessian_shell_values(r,contrib_[i],valdat_,bsh,bsg,bsv);
       int shsize = basis_->shell(contrib_[i]).nfunction();
+
       if (bsh) bsh += 6 * shsize;
       if (bsg) bsg += 3 * shsize;
       if (bsv) bsv += shsize;

@@ -18,6 +18,7 @@ IPV2::ip_print_tree(FILE*fp,ip_keyword_tree_t*tree)
 {
   if (!fp) fp = stdout;
   if (!tree) tree = ip_tree;
+  if (!tree) return;
 
   ip_print_tree_(fp,tree,0);
   }

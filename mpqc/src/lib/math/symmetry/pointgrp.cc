@@ -108,8 +108,11 @@ PointGroup::PointGroup(const char *s, SymmetryOperation& so, Point& or)
 PointGroup::PointGroup(const RefKeyVal& kv)
   : symb(0)
 {
-  if (kv->exists("symmetry"))
-    symb = kv->pcharvalue("symmetry");
+  if (kv->exists("symmetry")) {
+    char *tmp = kv->pcharvalue("symmetry");
+    set_symbol(tmp);
+    delete[] tmp;
+  }
   else
     set_symbol("c1");
 

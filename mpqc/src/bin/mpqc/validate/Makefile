@@ -122,10 +122,13 @@ MBPTINPUTS := $(MBPTINPUTS:%=run/%)
 MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 
 METHODSINPUTS = \
-  clks_b88.in clks_lsdax.in clks_xa.in clks_blyp.in clks_b3lyp.in \
-  hsosks_b88.in hsosks_lsdax.in hsosks_xa.in hsosks_blyp.in hsosks_b3lyp.in \
-  uks_b88.in uks_lsdax.in uks_xa.in uks_blyp.in uks_b3lyp.in \
-  clhf.in hsoshf.in uhf.in osshf.in tchf.in
+clhf.in        hsosks_b3lyp.in       mp2r12ap_+gbc.in    tchf.in \
+clks_b3lyp.in  hsosks_b88.in         mp2r12ap_abs+.in    uhf.in \
+clks_b88.in    hsosks_blyp.in        mp2r12ap_abs.in     uks_b3lyp.in \
+clks_blyp.in   hsosks_lsdax.in       mp2r12ap_cabs+.in   uks_b88.in \
+clks_lsdax.in  hsosks_xa.in          mp2r12ap_cabs.in    uks_blyp.in \
+clks_xa.in     mp2r12ap_+ebc.in      mp2r12ap_nogebc.in  uks_lsdax.in \
+hsoshf.in      mp2r12ap_+gbc+ebc.in  osshf.in            uks_xa.in
 METHODSINPUTS := $(METHODSINPUTS:%=run/methods_%)
 
 INPUTINPUTS = \
@@ -491,7 +494,7 @@ $(RUN)/methods_%.in: methods/%.in
 	@mkdir -p $(RUN)
 	/bin/cp $< $@
 
-$(RUN)/methods_%.qci: methods/%.in
+$(RUN)/methods_%.qci: methods/%.qci
 	@mkdir -p $(RUN)
 	/bin/cp $< $@
 

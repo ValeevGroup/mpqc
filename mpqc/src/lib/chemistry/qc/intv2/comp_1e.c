@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.7  1995/03/17 01:49:26  cljanss
+ * Revision 1.8  1995/09/13 22:53:41  etseidl
+ * add int_accum_shell_kinetic
+ *
+ * Revision 1.7  1995/03/17  01:49:26  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -596,6 +599,40 @@ int jsh;
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
       norm2 = shell2->norm[gc2][cart2];
       buff[index] = norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      index++;
+      END_FOR_GCCART(cart2)
+    END_FOR_GCCART(cart1)
+  }
+
+GLOBAL_FUNCTION VOID
+int_accum_shell_kinetic(cs1,cs2,buff,ish,jsh)
+centers_t *cs1;
+centers_t *cs2;
+double *buff;
+int ish;
+int jsh;
+{
+  int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
+  int cart1,cart2;
+  int index;
+  double norm1,norm2;
+  int gc1,gc2;
+
+  c1 = cs1->center_num[ish];
+  c2 = cs2->center_num[jsh];
+  s1 = cs1->shell_num[ish];
+  s2 = cs2->shell_num[jsh];
+  A = cs1->center[c1].r;
+  B = cs2->center[c2].r;
+  shell1 = &(cs1->center[c1].basis.shell[s1]);
+  shell2 = &(cs2->center[c2].basis.shell[s2]);
+  index = 0;
+
+  FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
+    norm1 = shell1->norm[gc1][cart1];
+    FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
+      norm2 = shell2->norm[gc2][cart2];
+      buff[index] += norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)

@@ -60,18 +60,23 @@ VDWShape::VDWShape(const RefMolecule&mol)
 VDWShape::VDWShape(const RefKeyVal&keyval)
 {
   RefMolecule mol = keyval->describedclassvalue("molecule");
+  atominfo_ = keyval->describedclassvalue("atominfo");
   initialize(mol);
 }
 
 void
 VDWShape::initialize(const RefMolecule&mol)
 {
+  RefAtomInfo a;
+  if (atominfo_.null()) a = mol->atominfo();
+  else a = atominfo_;
+
   _shapes.clear();
   for (int i=0; i<mol->natom(); i++) {
       SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol->r(i,j);
       add_shape(
-          new SphereShape(r,mol->atominfo()->vdw_radius(mol->Z(i)))
+          new SphereShape(r,a->vdw_radius(mol->Z(i)))
           );
     }
 }
@@ -127,7 +132,7 @@ DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
   ArraysetRefSphereShape spheres;
 
   RefAtomInfo a;
-  if (atominfo_.null()) a = new AtomInfo();
+  if (atominfo_.null()) a = mol->atominfo();
   else a = atominfo_;
 
   int i;
@@ -243,7 +248,7 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
   sphere = new CS2Sphere[n_spheres];
 
   RefAtomInfo a;
-  if (atominfo_.null()) a = new AtomInfo();
+  if (atominfo_.null()) a = mol->atominfo();
   else a = atominfo_;
 
   for (int i=0; i<n_spheres; i++) {

@@ -46,6 +46,8 @@ class VDWShape: public UnionShape {
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
+ private:
+    RefAtomInfo atominfo_;
  public:
     VDWShape(const RefMolecule&);
     VDWShape(const RefKeyVal&);

@@ -187,6 +187,8 @@ sub parse_mpqc {
     my $state = "none";
     my $molecularenergy = "";
     my $s2norm = "";
+    my $to_angstrom = 0.52917706;
+    my $geometry_conversion = $to_angstrom;
     while (<$out>) {
         if ($state eq "read grad" && $wante) {
             if (/^\s*([0-9]+\s+[A-Za-z]+\s+)?([\-\.0-9]+)\s+([\-\.0-9]+)\s+([\-\.0-9]+)/) {
@@ -242,9 +244,17 @@ sub parse_mpqc {
                  && ! /^\s+\d+\s+(\w+)\s+\S+\s+$fltrx\s+$fltrx\s+$fltrx\s+/) {
                     last;
                 }
-                $molstr = "${molstr} $1 $2 $3 $4\n";
+                $molstr = sprintf "%s %s %16.14f %16.14f %16.14f\n",
+                    ${molstr}, $1, $2 * $to_angstrom,
+                    $3 * $to_angstrom, $4 * $to_angstrom;
             }
             $molecule = new Molecule($molstr);
+        }
+        elsif (/^\s*molecule<Molecule>:/) {
+            $geometry_conversion = $to_angstrom;
+        }
+        elsif (/^\s*unit = \"angstrom\"\s*/) { # "
+            $geometry_conversion = 1.0;
         }
         elsif ($optconverged
                && /n\s+atoms\s+(atom_labels\s+)?geometry/) {
@@ -255,7 +265,9 @@ sub parse_mpqc {
                  && ! /^\s+\d+\s+(\w+)\s+\"[^\"]*\"+\s+\[\s*$fltrx\s+$fltrx\s+$fltrx\s*\]/) { # " (unconfuse emacs)
                     last;
                 }
-                $molstr = "${molstr} $1 $2 $3 $4\n";
+                $molstr = sprintf "%s %s %16.14f %16.14f %16.14f\n",
+                    ${molstr}, $1, $2 * $geometry_conversion,
+                    $3 * $geometry_conversion, $4 * $geometry_conversion;
             }
             $molecule = new Molecule($molstr);
         }

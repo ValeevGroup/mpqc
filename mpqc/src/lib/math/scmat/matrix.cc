@@ -53,7 +53,7 @@ RefSCDimension::operator=(const RefSCDimension & c)
 }
 
 int
-RefSCDimension::n()
+RefSCDimension::n() const
 {
   int result;
   if (null()) result = 0;
@@ -61,7 +61,7 @@ RefSCDimension::n()
   return result;
 }
 
-RefSCDimension::operator int()
+RefSCDimension::operator int() const
 {
   if (null()) return 0;
   return pointer()->n();
@@ -295,20 +295,21 @@ RefSCMatrix::get_subblock(int br, int er, int bc, int ec)
 
 void
 RefSCMatrix::assign_subblock(const RefSCMatrix& sb,
-                             int br, int er, int bc, int ec)
+                             int br, int er, int bc, int ec, int sbr, int sbc)
 {
   require_nonnull();
   sb.require_nonnull();
-  pointer()->assign_subblock(sb.pointer(),br,er,bc,ec);
+  pointer()->assign_subblock(sb.pointer(),br,er,bc,ec,sbr,sbc);
 }
 
 void
 RefSCMatrix::accumulate_subblock(const RefSCMatrix& sb,
-                                 int br, int er, int bc, int ec)
+                                 int br, int er, int bc, int ec,
+                                 int sbr, int sbc)
 {
   require_nonnull();
   sb.require_nonnull();
-  pointer()->accumulate_subblock(sb.pointer(),br,er,bc,ec);
+  pointer()->accumulate_subblock(sb.pointer(),br,er,bc,ec,sbr,sbc);
 }
 
 RefSCVector

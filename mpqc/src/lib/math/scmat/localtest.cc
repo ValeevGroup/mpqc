@@ -7,6 +7,8 @@ void matrixtest(RefSCMatrixKit, RefKeyVal,
 
 main()
 {
+  int i;
+
   RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
   RefSCMatrixKit kit = new LocalSCMatrixKit;
 
@@ -22,8 +24,8 @@ main()
   RefSCDimension n(kit->dimension(keyval->intvalue("n2")));
   RefSCDimension p = ((m.n() < n.n()) ? m:n);
   RefSCMatrix A(m,n);
-  RefSCMatrix U(m,p);
-  RefSCMatrix V(n,p);
+  RefSCMatrix U(m,m);
+  RefSCMatrix V(n,n);
   RefDiagSCMatrix sigma(p);
 
   A.randomize();
@@ -31,9 +33,16 @@ main()
 
   A.print("A");
   U.print("U");
+  (U*U.t()).print("U*U.t()");
+  (U.t()*U).print("U.t()*U");
   sigma.print("sigma");
   V.print("V");
-  (U*sigma*V.t()).print("U*sigma*V.t()");
+  (V*V.t()).print("V*V.t()");
+  (V.t()*V).print("V.t()*V");
+  RefSCMatrix sigmamat(m,n);
+  sigmamat.assign(0.0);
+  for (i=0; i<p.n(); i++) sigmamat(i,i) = sigma(i);
+  (U*sigmamat*V.t()).print("U*sigmamat*V.t()");
 
   return 0;
 }

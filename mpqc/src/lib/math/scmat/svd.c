@@ -67,9 +67,9 @@ main(int argc, char**argv)
 
   int l = ((m<n)?m:n);
   
-  double *q = (double*)malloc(sizeof(double)*l*m);
+  double *q = (double*)malloc(sizeof(double)*m*m);
   double *s = (double*)malloc(sizeof(double)*n);
-  double *p = (double*)malloc(sizeof(double)*l*n);
+  double *p = (double*)malloc(sizeof(double)*n*n);
   double *a = (double*)malloc(sizeof(double)*n*m);
   double *w = (double*)malloc(sizeof(double)*3*m);
 
@@ -100,7 +100,7 @@ main(int argc, char**argv)
 
   printf("Q:\n");
   for (i=0; i<m; i++) {
-      for (j=0; j<l; j++) {
+      for (j=0; j<m; j++) {
           printf(" % 6.4f",q[j*m+i]);
         }
       printf("\n");
@@ -108,7 +108,7 @@ main(int argc, char**argv)
 
   printf("P:\n");
   for (i=0; i<n; i++) {
-      for (j=0; j<l; j++) {
+      for (j=0; j<n; j++) {
           printf(" % 6.4f",p[j*n+i]);
         }
       printf("\n");
@@ -126,7 +126,7 @@ main(int argc, char**argv)
       for (j=0; j<m; j++) {
           int k;
           double tmp = 0.0;
-          for (k=0; k<l; k++) {
+          for (k=0; k<m; k++) {
               tmp += q[k*m+i]*q[k*m+j];
             }
           printf(" % 6.4f",tmp);
@@ -135,8 +135,8 @@ main(int argc, char**argv)
     }
 
   printf("QtQ:\n");
-  for (i=0; i<l; i++) {
-      for (j=0; j<l; j++) {
+  for (i=0; i<m; i++) {
+      for (j=0; j<m; j++) {
           int k;
           double tmp = 0.0;
           for (k=0; k<m; k++) {
@@ -154,6 +154,19 @@ main(int argc, char**argv)
           double tmp = 0.0;
           for (k=0; k<l; k++) {
               tmp += p[k*n+i]*p[k*n+j];
+            }
+          printf(" % 6.4f",tmp);
+        }
+      printf("\n");
+    }
+
+  printf("PtP:\n");
+  for (i=0; i<n; i++) {
+      for (j=0; j<n; j++) {
+          int k;
+          double tmp = 0.0;
+          for (k=0; k<l; k++) {
+              tmp += p[i*n+k]*p[j*n+k];
             }
           printf(" % 6.4f",tmp);
         }

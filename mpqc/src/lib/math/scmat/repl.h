@@ -132,8 +132,8 @@ class ReplSCMatrix: public SCMatrix {
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     SCMatrix * get_subblock(int,int,int,int);
-    void assign_subblock(SCMatrix*, int,int,int,int);
-    void accumulate_subblock(SCMatrix*, int,int,int,int);
+    void assign_subblock(SCMatrix*, int,int,int,int,int=0,int=0);
+    void accumulate_subblock(SCMatrix*, int,int,int,int,int=0,int=0);
     SCVector * get_row(int i);
     SCVector * get_column(int i);
     void assign_row(SCVector *v, int i);

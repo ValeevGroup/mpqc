@@ -51,8 +51,8 @@ class RefSCDimension: public SSRefSCDimension {
     // dimension specific functions
   public:
     //texi Return the dimension.
-    operator int();
-    int n();
+    operator int() const;
+    int n() const;
 };
 
 class RefSCMatrix;
@@ -198,8 +198,10 @@ class RefSCMatrix: public RefSSSCMatrix {
     RefSCMatrix copy() const;
 
     RefSCMatrix get_subblock(int br, int er, int bc, int ec);
-    void assign_subblock(const RefSCMatrix&, int br, int er, int bc, int ec);
-    void accumulate_subblock(const RefSCMatrix&, int, int, int, int);
+    void assign_subblock(const RefSCMatrix&, int br, int er, int bc, int ec,
+                         int source_br = 0, int source_bc = 0);
+    void accumulate_subblock(const RefSCMatrix&, int, int, int, int,
+                             int source_br = 0, int source_bc = 0);
     RefSCVector get_row(int);
     RefSCVector get_column(int);
     void assign_row(const RefSCVector&, int);

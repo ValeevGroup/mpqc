@@ -170,7 +170,8 @@ LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
 }
 
 void
-LocalSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+LocalSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
+                               int source_br, int source_bc)
 {
   LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
                                       "LocalSCMatrix::assign_subblock");
@@ -186,11 +187,12 @@ LocalSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
   
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
-      rows[i+br][j+bc] = lsb->rows[i][j]; 
+      rows[i+br][j+bc] = lsb->rows[source_br + i][source_bc + j];
 }
 
 void
-LocalSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+LocalSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
+                                   int source_br, int source_bc)
 {
   LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
                                       "LocalSCMatrix::accumulate_subblock");
@@ -207,7 +209,7 @@ LocalSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
   
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
-      rows[i+br][j+bc] += lsb->rows[i][j]; 
+      rows[i+br][j+bc] += lsb->rows[source_br + i][source_bc + j]; 
 }
 
 SCVector *
@@ -559,17 +561,17 @@ LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
   int m = mdim.n();
   int n = ndim.n();
 
-  RefSCDimension pdim = ((m<n)?mdim:ndim);
-  if (m == n) {
-      // make sure I get the right dimension if m equals n
-      pdim = U->coldim();
-    }
+  RefSCDimension pdim;
+  if (m == n && m == sigma->dim().n()) pdim = sigma->dim();
+  else if (m<n) pdim = mdim;
+  else pdim = ndim;
+
   int p = pdim.n();
 
   if (   U->rowdim() != mdim
-      || U->coldim() != pdim
+      || U->coldim() != mdim
       || V->rowdim() != ndim
-      || V->coldim() != pdim
+      || V->coldim() != ndim
       || sigma->dim() != pdim) {
       fprintf(stderr,"LocalSCMatrix: svd_this: dimension mismatch\n");
       abort();
@@ -577,8 +579,8 @@ LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 
   // form a fortran style matrix for the SVD routines
   double *dA = new double[m*n];
-  double *dU = new double[m*p];
-  double *dV = new double[n*p];
+  double *dU = new double[m*m];
+  double *dV = new double[n*n];
   double *dsigma = new double[n];
   double *w = new double[(3*p-1>m)?(3*p-1):m];
 
@@ -594,14 +596,14 @@ LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
   sing_(dU, &m, &three, dsigma, dV, &n, &three, dA, &m, &m, &n, w);
 
   for (i=0; i<m; i++) {
-      for (j=0; j<p; j++) {
-          lU->block->data[i*p + j] = dU[i + j*m];
+      for (j=0; j<m; j++) {
+          lU->block->data[i*m + j] = dU[i + j*m];
         }
     }
 
   for (i=0; i<n; i++) {
-      for (j=0; j<p; j++) {
-          lV->block->data[i*p + j] = dV[i + j*n];
+      for (j=0; j<n; j++) {
+          lV->block->data[i*n + j] = dV[i + j*n];
         }
     }
 

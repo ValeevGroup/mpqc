@@ -178,7 +178,8 @@ ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
 }
 
 void
-ReplSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+ReplSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
+                              int source_br, int source_bc)
 {
   ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
                                       "ReplSCMatrix::assign_subblock");
@@ -194,11 +195,12 @@ ReplSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
   
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
-      rows[i+br][j+bc] = lsb->rows[i][j]; 
+      rows[i+br][j+bc] = lsb->rows[source_br + i][source_bc + j];
 }
 
 void
-ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
+                                  int source_br, int source_bc)
 {
   ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
                                       "ReplSCMatrix::accumulate_subblock");
@@ -215,7 +217,7 @@ ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
   
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
-      rows[i+br][j+bc] += lsb->rows[i][j]; 
+      rows[i+br][j+bc] += lsb->rows[source_br + i][source_bc + j];
 }
 
 SCVector *

@@ -184,10 +184,10 @@ class SCMatrix: public SavableState {
     virtual SCMatrix * get_subblock(int br, int er, int bc, int ec) =0;
 
     //texi Assign @code{m} to a subblock of @code{this}.
-    virtual void assign_subblock(SCMatrix *m, int, int, int, int) =0;
+    virtual void assign_subblock(SCMatrix *m, int, int, int, int, int=0, int=0) =0;
 
     //texi Sum @code{m} into a subblock of @code{this}.
-    virtual void accumulate_subblock(SCMatrix *m, int, int, int, int) =0;
+    virtual void accumulate_subblock(SCMatrix *m, int, int, int, int, int=0,int=0) =0;
     
     //texi Return a row or column of @code{this}.
     virtual SCVector * get_row(int i) =0;

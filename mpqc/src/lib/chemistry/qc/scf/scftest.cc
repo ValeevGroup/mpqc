@@ -16,6 +16,8 @@
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
 
+#include <math/optimize/opt.h>
+
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 

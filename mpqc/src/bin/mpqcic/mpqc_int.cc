@@ -64,25 +64,13 @@ RefLocalSCDimension di, dc;
 
 static int iter=1;
 
-static double gdiis_begin=1.0e-2;
-static int ngdiis=5;
-static int gdiis=1;
-static int bfgs=1;
-static int redundant=0;
-static int justa1=1;
-static int update_hess=1;
-static int recalc_hess=0;
-static int use_gdiis=1;
 static int print_hessian=0;
-static int recompute_internal=0;
 static int print_internal=0;
+static int cartesians=0;
 static double conv_crit=1.0e-6;
 static double conv_rmsf=1.0e-5;
 static double conv_maxf=4.0e-5;
-static int maxstep=50;
 static double maxstepsize=0.3;
-static int recalc_bmat=0;
-static int cartesians=0;
 
 static double cart_tol=1.0e-10;
 
@@ -120,72 +108,23 @@ get_input(const RefKeyVal& keyval)
     cartesians = keyval->booleanvalue("cartesians");
     }
 
-  if (keyval->exists("update_hessian")) {
-    update_hess = keyval->booleanvalue("update_hessian");
-    }
-
-  if (keyval->exists("maxstep")) {
-    maxstep = keyval->intvalue("maxstep");
-    }
-
-  if (keyval->exists("recalc_bmat")) {
-    recalc_bmat = keyval->booleanvalue("recalc_bmat");
-    }
-
-  if (keyval->exists("recalc_hessian")) {
-    recalc_hess = keyval->booleanvalue("recalc_hessian");
-    }
-
-  if (keyval->exists("ngdiis")) {
-    ngdiis = keyval->intvalue("ngdiis");
-    }
-
-  if (keyval->exists("use_gdiis")) {
-    use_gdiis = keyval->booleanvalue("use_gdiis");
-    }
-
   if (keyval->exists("print_hessian")) {
     print_hessian = keyval->booleanvalue("print_hessian");
-    }
-
-  if (keyval->exists("recompute_internal")) {
-    recompute_internal = keyval->booleanvalue("recompute_internal");
     }
 
   if (keyval->exists("print_internal")) {
     print_internal = keyval->booleanvalue("print_internal");
     }
 
-  if (keyval->exists("gdiis_begin")) {
-    int tmp = keyval->intvalue("gdiis_begin");
-    gdiis_begin = pow(10.0,(double)-tmp);
-    }
-
-  if (keyval->exists("cartesian_tolerance")) {
-    int tmp = keyval->intvalue("cartesian_tolerance");
-    cart_tol = pow(10.0,(double)-tmp);
-    }
-
-  redundant = keyval->booleanvalue("redundant");
-  if (redundant > 0) justa1=0;
-
-  fprintf(outfp,"\n  intco:use_gdiis           = %d\n",use_gdiis);
-  fprintf(outfp,"  intco:recompute_internal  = %d\n",recompute_internal);
   fprintf(outfp,"  intco:print_hessian       = %d\n",print_hessian);
   fprintf(outfp,"  intco:print_internal      = %d\n",print_internal);
-  fprintf(outfp,"  intco:redundant           = %d\n",redundant);
   fprintf(outfp,"  intco:cartesians          = %d\n",cartesians);
-  fprintf(outfp,"  intco:update_hessian      = %d\n",update_hess);
-  fprintf(outfp,"  intco:recalc_hessian      = %d\n",recalc_hess);
-  fprintf(outfp,"  intco:recalc_bmat         = %d\n",recalc_bmat);
-  fprintf(outfp,"  intco:ngdiis              = %d\n",ngdiis);
-  fprintf(outfp,"  intco:maxstep             = %d\n",maxstep);
   fprintf(outfp,"  intco:maxstepsize         = %g\n",maxstepsize);
   fprintf(outfp,"  intco:cartesian_tolerance = %g\n",cart_tol);
   fprintf(outfp,"  intco:convergence         = %g\n",conv_crit);
   fprintf(outfp,"  intco:max_force           = %g\n",conv_maxf);
   fprintf(outfp,"  intco:rms_force           = %g\n",conv_rmsf);
-  fprintf(outfp,"  intco:gdiis_begin         = %g\n\n",gdiis_begin);
+  fprintf(outfp,"\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -323,24 +262,31 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
     }
   rmsforce = sqrt(rmsforce/(grad->n1*grad->n2));
 
+  // transform cartesian coordinates to internal coordinates 
   coor->to_internal(xn);
   xn.print("internal coordinates");
 
+  // transform cartesian gradient to internal coordinates
   coor->to_internal(gn,cart_grad);
   gn.print("internal coordinate gradients");
-  
+
+  // update the inverse hessian
   RefNLP2 nlp = 0;
   update->update(hessian,nlp,xn,gn);
 
+  // take the Newton-Raphson step
   RefSCVector xdisp = -1.0*(hessian * gn);
   xdisp.print("internal coordinate displacements");
 
+  // calculate max and rms stepsize
   maxdisp = xdisp.maxabs();
   rmsdisp = 0;
   for (i=0; i < xdisp->n(); i++)
     rmsdisp += xdisp(i) * xdisp(i);
   rmsdisp = sqrt(rmsdisp/xdisp->n());
 
+  // pulay's convergance criterion
+  //
   // this should probably be done with element ops, but I'm too lazy to
   // do that now
   double iconv=0;
@@ -371,7 +317,8 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
     tot *= scal;
   }
   fprintf(outfp,"\n taking step of size %f\n",tot);
-  
+
+  // displace internal coordinates
   xn.accumulate(xdisp);
   xn.print("new internal coordinates");
   
@@ -381,11 +328,13 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   fprintf(outfp," max disp                = %15.10g\n",maxdisp);
   fprintf(outfp," rms disp                = %15.10g\n",rmsdisp);
 
+  // no transform new internal coords back to cartesian coordinates
   coor->to_cartesian(xn);
 
   printf("\nnew molecular coordinates\n");
   mol->print();
 
+  // checkpoint
   STATEOUT so("geom.dat","w+");
   iter++;
   so.put(iter);

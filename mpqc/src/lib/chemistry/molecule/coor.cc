@@ -907,6 +907,42 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
             }
         }
     }
+
+  // check for groups of atoms bound to nothing
+  if (m.natom() > 0) {
+    Setint atoms;
+    Setint newatoms, nextnewatoms;
+    newatoms.add(0);
+    Pix iatom;
+    while (newatoms.length() > 0) {
+      for (iatom=newatoms.first(); iatom; newatoms.next(iatom)) {
+        atoms.add(newatoms(iatom));
+        }
+      nextnewatoms.clear();
+      for (iatom=newatoms.first(); iatom; newatoms.next(iatom)) {
+        int atom = newatoms(iatom);
+        for (i=0; i<m.natom(); i++) {
+          if (bonds(i,atom) && !atoms.contains(i)) {
+            nextnewatoms.add(i);
+            }
+          }
+        }
+      newatoms.clear();
+      for (iatom=nextnewatoms.first(); iatom; nextnewatoms.next(iatom)) {
+        newatoms.add(nextnewatoms(iatom));
+        }
+      }
+    if (atoms.length() != m.natom()) {
+      cerr << node0 << "ERROR: there are two unbound groups of atoms" << endl
+           << "You must add an entry to extra_bonds." << endl
+           << "One of the groups consists of atoms:";
+      for (iatom=atoms.first(); iatom; atoms.next(iatom)) {
+        cerr << node0 << " " << atoms(iatom);
+        }
+      cerr << node0 << endl;
+      abort();
+      }
+    }
       
   // compute the simple internal coordinates by type
   add_bonds(sic,bonds,m);

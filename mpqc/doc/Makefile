@@ -18,9 +18,25 @@ DOC =  SC.texi class.texi idxcon.texi keyval.texi scmat.texi \
 # These are the files generated from keyval.h
 KEYVALDOC = KeyVal.texi KeyVal.pub.texi KeyVal.pro.texi
 
+# from math/scmat/matrix.h:
+MATRIXDOC = RefSCMatrix.texi RefSCMatrix.pub.texi \
+            RefSymmSCMatrix.texi RefSymmSCMatrix.pub.texi \
+            RefLocalSCMatrix.texi RefLocalSCMatrix.pub.texi \
+            RefSCVector.texi RefSCVector.pub.texi \
+            RefSCDimension.texi RefSCDimension.pub.texi \
+            RefSCMatrixKit.texi RefSCMatrixKit.pub.texi
+
+# from math/scmat/abstract.h:
+ABSTRACTDOC = SCMatrix.texi SCMatrix.pub.texi \
+              SymmSCMatrix.texi SymmSCMatrix.pub.texi \
+              LocalSCMatrix.texi LocalSCMatrix.pub.texi \
+              SCVector.texi SCVector.pub.texi \
+              SCDimension.texi SCDimension.pub.texi \
+              SCMatrixKit.texi SCMatrixKit.pub.texi
+
 # These are all of texi files used to generate the documentation.
 # The top level document, SC.texi, must be first in the list.
-ALLDOC = $(DOC) $(KEYVALDOC)
+ALLDOC = $(DOC) $(KEYVALDOC) $(MATRIXDOC) $(ABSTRACTDOC)
 
 TEXIDIRS = $(SRCDIR)
 EXTRATEXINPUT = $(shell /bin/sh -f $(SRCDIR)/addcolon.sh $(TEXIDIRS))
@@ -34,7 +50,8 @@ info: $(ALLDOC)
 	makeinfo $(INCLUDEDIRS) $<
 
 html: $(ALLDOC)
-	TEXINPUTS=$(EXTRATEXINPUT):$$TEXINPUTS & perl $(T2H) -verbose -deepsplit -menu $<
+	#TEXINPUTS=$(EXTRATEXINPUT):$$TEXINPUTS & perl $(T2H) -verbose -deepsplit -menu $<
+	TEXINPUTS=$(EXTRATEXINPUT):$$TEXINPUTS & perl $(T2H) -verbose -split_chapter -split_node -menu $<
 
 SC.dvi: $(ALLDOC)
 	TEXINPUTS=$(EXTRATEXINPUT):$$TEXINPUTS & texi2dvi $<
@@ -59,4 +76,10 @@ clean distclean::
 	/bin/rm -f SC.*.bak
 
 $(KEYVALDOC): $(SRCLIBDIR)/util/keyval/keyval.h
+	$(C2T) $<
+
+$(MATRIXDOC): $(SRCLIBDIR)/math/scmat/matrix.h
+	$(C2T) $<
+
+$(ABSTRACTDOC): $(SRCLIBDIR)/math/scmat/abstract.h
 	$(C2T) $<

@@ -485,7 +485,7 @@ after the keyword naming the data.  The object must be of a type that
 inherits of @code{DescribedClass} and it must have a @code{KeyVal&}
 constructor.
 
-A pointer to a single object can be read with free multiple keywords by
+A pointer to a single object can be read with multiple keywords by
 using value substitution (@pxref{ParsedKeyVal Value Substitution}).
 This is accomplished by holding references to all objects once they are
 read in.  This means that the user must let the @code{Ref} smart pointer

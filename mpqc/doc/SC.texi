@@ -25,7 +25,7 @@ Copyright @copyright{} 1994 Sandia Corporation
 @c set up a macro index
 @defindex mc
 
-@node Top, The Ref Library, (dir), (dir)
+@node Top,  , (dir), (dir)
 
 @ifinfo
 This document describes the Scientific Computing Toolkit.

@@ -201,6 +201,7 @@ class Molecule: public SavableState
     int unique(int iuniq) const { return equiv_[iuniq][0]; }
     int nequivalent(int iuniq) const { return nequiv_[iuniq]; }
     int equivalent(int iuniq, int j) const { return equiv_[iuniq][j]; }
+    //. Converts an atom number to the number of its generating unique atom.
     int atom_to_unique(int iatom) const { return atom_to_uniq_[iatom]; }
 
     //. Return the number of core electrons.

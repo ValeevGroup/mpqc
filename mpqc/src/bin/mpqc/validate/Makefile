@@ -104,7 +104,7 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) \
-            $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSINPUTS)
+            $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 ##############################################################################

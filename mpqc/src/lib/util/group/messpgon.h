@@ -66,8 +66,8 @@ class ParagonMessageGrp: public intMessageGrp {
 
     void raw_bcast(void* data, int nbyte, int from);
 
-    void raw_collect(void *whole, const int *lengths,
-                     const void *part, int bytes_per_datum=1);
+    void raw_collect(const void *part, const int *lengths,
+                     void *whole, int bytes_per_datum=1);
 };
 
 #endif

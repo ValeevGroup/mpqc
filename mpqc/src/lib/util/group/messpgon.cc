@@ -305,11 +305,11 @@ ParagonMessageGrp::raw_collect(const void *part, const int *lengths, void *whole
   if (bytes_per_datum != 1) {
       int *newlengths = new int[n()];
       for (int i=0; i<n(); i++) newlengths[i] = lengths[i] * bytes_per_datum;
-      gcolx(part,newlengths,whole);
+      gcolx((void*)part,(long*)newlengths,whole);
       delete[] newlengths;
     }
   else {
-      gcolx(part,lengths,whole);
+      gcolx((void*)part,(long*)lengths,whole);
     }
 }
 

@@ -77,8 +77,14 @@ PsiWfn::compute()
 
   if (!psi_in.test()){
       write_input((int)-log10(energy_acc));
-      system("inputth");
-      system("psi");
+      if (system("inputth")) {
+          cout << "PsiWfn: inputth failed" << endl;
+          abort();
+        }
+      if (system("psi")) {
+          cout << "PsiWfn: psi failed" << endl;
+          abort();
+        }
     }
 
   // read output
@@ -251,7 +257,10 @@ PsiCCSD::read_energy()
   FILE *in;
   remove("psitmp.energy");
   if(!psi_in.test()){
-      system("grep \"CCSD \" energy.dat > psitmp.energy");
+      if (system("grep \"CCSD \" energy.dat > psitmp.energy")) {
+          cout << "PsiWfn: could not find CCSD energy in output file" << endl;
+          abort();
+        }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
@@ -334,7 +343,11 @@ PsiCCSD_T::read_energy()
   FILE *in;
   remove("psitmp.energy");
   if(!psi_in.test()){
-      system("grep \"CCT \" energy.dat > psitmp.energy");
+      if (system("grep \"CCT \" energy.dat > psitmp.energy")) {
+          cout << "PsiWfn: could not find CCSD(T) energy in output file"
+               << endl;
+          abort();
+        }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
@@ -417,7 +430,11 @@ PsiCCSDT::read_energy()
   FILE *in;
   remove("psitmp.energy");
   if(!psi_in.test()){
-      system("grep \"FSDT \" energy.dat > psitmp.energy");
+      if (system("grep \"FSDT \" energy.dat > psitmp.energy")) {
+          cout << "PsiWfn: could not find CCSDT energy in output file"
+               << endl;
+          abort();
+        }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
@@ -496,7 +513,11 @@ PsiCI::read_energy()
   FILE *in;
   remove("psitmp.energy");
   if(!psi_in.test()){
-      system("grep \"1 ECI \" output.dat > psitmp.energy");
+      if (system("grep \"1 ECI \" output.dat > psitmp.energy")) {
+          cout << "PsiWfn: could not find CI energy in output file"
+               << endl;
+          abort();
+        }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {
@@ -568,7 +589,11 @@ PsiHF::read_energy()
   FILE *in;
   remove("psitmp.energy");
   if(!psi_in.test()){
-      system("grep \"total energy *=\" output.dat > psitmp.energy");
+      if (system("grep \"total energy *=\" output.dat > psitmp.energy")) {
+          cout << "PsiWfn: could not find Hartree-Fock energy in output file"
+               << endl;
+          abort();
+        }
     }
   in = fopen("psitmp.energy","r");
   if (!in) {

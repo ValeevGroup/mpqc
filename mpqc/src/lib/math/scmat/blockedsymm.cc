@@ -82,7 +82,7 @@ BlockedSymmSCMatrix::~BlockedSymmSCMatrix()
 }
 
 double
-BlockedSymmSCMatrix::get_element(int i,int j)
+BlockedSymmSCMatrix::get_element(int i,int j) const
 {
   int block_i, block_j;
   int elem_i, elem_j;
@@ -344,10 +344,10 @@ BlockedSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 }
 
 void
-BlockedSymmSCMatrix::accumulate(SymmSCMatrix*a)
+BlockedSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_castdown(a,
+  const BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_castdown(a,
                                    "BlockedSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -590,7 +590,7 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
+BlockedSymmSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];
@@ -607,7 +607,7 @@ BlockedSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
 }
 
 RefSCDimension
-BlockedSymmSCMatrix::dim(int i)
+BlockedSymmSCMatrix::dim(int i) const
 {
   return d->blocks()->subdim(i);
 }

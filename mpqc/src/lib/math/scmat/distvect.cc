@@ -58,13 +58,13 @@ DistSCVector::DistSCVector(const RefSCDimension&a, DistSCMatrixKit*k):
 }
 
 int
-DistSCVector::block_to_node(int i)
+DistSCVector::block_to_node(int i) const
 {
   return (i)%messagegrp()->n();
 }
 
 RefSCMatrixBlock
-DistSCVector::block_to_block(int i)
+DistSCVector::block_to_block(int i) const
 {
   int offset = i;
   int nproc = messagegrp()->n();
@@ -83,7 +83,7 @@ DistSCVector::block_to_block(int i)
 }
 
 double *
-DistSCVector::find_element(int i)
+DistSCVector::find_element(int i) const
 {
   int bi, oi;
   d->blocks()->elem_to_block(i, bi, oi);
@@ -98,7 +98,7 @@ DistSCVector::find_element(int i)
 }
 
 int
-DistSCVector::element_to_node(int i)
+DistSCVector::element_to_node(int i) const
 {
   int bi, oi;
   d->blocks()->elem_to_block(i, bi, oi);
@@ -128,7 +128,7 @@ DistSCVector::~DistSCVector()
 }
 
 double
-DistSCVector::get_element(int i)
+DistSCVector::get_element(int i) const
 {
   double res;
   double *e = find_element(i);
@@ -161,10 +161,10 @@ DistSCVector::accumulate_element(int i,double a)
 }
 
 void
-DistSCVector::accumulate(SCVector*a)
+DistSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
-  DistSCVector* la
+  const DistSCVector* la
     = DistSCVector::require_castdown(a,"DistSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -193,10 +193,10 @@ DistSCVector::accumulate(SCVector*a)
 }
 
 void
-DistSCVector::accumulate(SCMatrix*a)
+DistSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  DistSCMatrix* la
+  const DistSCMatrix* la
     = DistSCMatrix::require_castdown(a,"DistSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -426,12 +426,12 @@ DistSCVector::accumulate_product_rv(SCMatrix *pa, SCVector *pb)
 }
 
 void
-DistSCVector::convert(double *res)
+DistSCVector::convert(double *res) const
 {
   int n = dim()->n();
   for (int i=0; i<n; i++) res[i] = 0.0;
 
-  RefSCMatrixSubblockIter I = local_blocks(SCMatrixSubblockIter::Accum);
+  RefSCMatrixSubblockIter I = ((DistSCVector*)this)->local_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       RefSCVectorSimpleBlock blk
           = SCVectorSimpleBlock::castdown(I->block());
@@ -465,7 +465,7 @@ DistSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 }
 
 void
-DistSCVector::vprint(const char *title, ostream& os, int prec)
+DistSCVector::vprint(const char *title, ostream& os, int prec) const
 {
   double *data = new double[dim()->n()];
   convert(data);

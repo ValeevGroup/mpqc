@@ -128,7 +128,7 @@ ReplSymmSCMatrix::~ReplSymmSCMatrix()
 }
 
 int
-ReplSymmSCMatrix::compute_offset(int i,int j)
+ReplSymmSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d->n() || j>=d->n()) {
       cerr << indent << "ReplSymmSCMatrix: index out of bounds\n";
@@ -138,7 +138,7 @@ ReplSymmSCMatrix::compute_offset(int i,int j)
 }
 
 double
-ReplSymmSCMatrix::get_element(int i,int j)
+ReplSymmSCMatrix::get_element(int i,int j) const
 {
   return matrix[compute_offset(i,j)];
 }
@@ -408,10 +408,10 @@ ReplSymmSCMatrix::scale(double s)
 }
 
 void
-ReplSymmSCMatrix::accumulate(SymmSCMatrix*a)
+ReplSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  ReplSymmSCMatrix* la
+  const ReplSymmSCMatrix* la
     = ReplSymmSCMatrix::require_castdown(a,"ReplSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -1024,7 +1024,7 @@ ReplSymmSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-ReplSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
+ReplSymmSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int ii,jj,kk,nn;
   int i,j;

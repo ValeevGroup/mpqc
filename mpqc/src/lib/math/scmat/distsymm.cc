@@ -59,7 +59,7 @@ DistSymmSCMatrix::DistSymmSCMatrix(const RefSCDimension&a,DistSCMatrixKit*k):
 }
 
 int
-DistSymmSCMatrix::block_to_node(int i, int j)
+DistSymmSCMatrix::block_to_node(int i, int j) const
 {
   if (j>i) {
       cerr << indent << "DistSymmSCMatrix::block_to_node: j>i" << endl;
@@ -70,7 +70,7 @@ DistSymmSCMatrix::block_to_node(int i, int j)
 }
 
 RefSCMatrixBlock
-DistSymmSCMatrix::block_to_block(int i, int j)
+DistSymmSCMatrix::block_to_block(int i, int j) const
 {
   if (j>i) {
       cerr << indent << "DistSymmSCMatrix::block_to_block: j>i" << endl;
@@ -94,7 +94,7 @@ DistSymmSCMatrix::block_to_block(int i, int j)
 }
 
 double *
-DistSymmSCMatrix::find_element(int i, int j)
+DistSymmSCMatrix::find_element(int i, int j) const
 {
   if (j>i) {
       int tmp = i; i=j; j=tmp;
@@ -125,7 +125,7 @@ DistSymmSCMatrix::find_element(int i, int j)
 }
 
 int
-DistSymmSCMatrix::element_to_node(int i, int j)
+DistSymmSCMatrix::element_to_node(int i, int j) const
 {
   if (j>i) {
       int tmp = i; i=j; j=tmp;
@@ -175,7 +175,7 @@ DistSymmSCMatrix::~DistSymmSCMatrix()
 }
 
 double
-DistSymmSCMatrix::get_element(int i,int j)
+DistSymmSCMatrix::get_element(int i,int j) const
 {
   double res;
   double *e = find_element(i,j);
@@ -265,10 +265,10 @@ DistSymmSCMatrix::accumulate_row(SCVector *v, int i)
 }
 
 void
-DistSymmSCMatrix::accumulate(SymmSCMatrix*a)
+DistSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  DistSymmSCMatrix* la
+  const DistSymmSCMatrix* la
     = DistSymmSCMatrix::require_castdown(a,"DistSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match

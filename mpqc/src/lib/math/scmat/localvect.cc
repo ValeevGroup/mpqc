@@ -71,7 +71,7 @@ LocalSCVector::get_data()
 }
 
 double
-LocalSCVector::get_element(int i)
+LocalSCVector::get_element(int i) const
 {
   int size = block->iend - block->istart;
   if (i < 0 || i >= size) {
@@ -161,10 +161,10 @@ LocalSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 }
 
 void
-LocalSCVector::accumulate(SCVector*a)
+LocalSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
-  LocalSCVector* la
+  const LocalSCVector* la
     = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -180,10 +180,10 @@ LocalSCVector::accumulate(SCVector*a)
 }
 
 void
-LocalSCVector::accumulate(SCMatrix*a)
+LocalSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  LocalSCMatrix* la
+  const LocalSCMatrix* la
     = LocalSCMatrix::require_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -294,7 +294,7 @@ LocalSCVector::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-LocalSCVector::vprint(const char *title, ostream& os, int prec)
+LocalSCVector::vprint(const char *title, ostream& os, int prec) const
 {
   int i;
   int lwidth;

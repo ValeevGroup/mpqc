@@ -117,9 +117,9 @@ class SCVector: public DescribedClass {
 
     virtual ~SCVector();
     //. Return the length of the vector.
-    int n() { return d->n(); }
+    int n() const { return d->n(); }
     //. Return the maximum absolute value element of this vector.
-    virtual double maxabs();
+    virtual double maxabs() const;
     //. Normalize this.
     virtual void normalize();
     //. Assign each element to a random number between -1 and 1
@@ -136,7 +136,7 @@ class SCVector: public DescribedClass {
     virtual void assign_p(const double* v);
     virtual void assign_v(SCVector *v);
     //. Assign \vrbl{v[i]} to element \vrbl{i} for all \vrbl{i}.
-    virtual void convert(double* v);
+    virtual void convert(double* v) const;
     //. Convert an \clsnmref{SCVector} of a different specialization
     //. to this specialization and possibly accumulate the data.
     virtual void convert(SCVector*);
@@ -151,7 +151,7 @@ class SCVector: public DescribedClass {
     //. Add \vrbl{val} to element \vrbl{i}.
     virtual void accumulate_element(int,double) = 0;
     //. Return the value of element \vrbl{i}.
-    virtual double get_element(int i) = 0;
+    virtual double get_element(int i) const = 0;
     //. Sum the result of \vrbl{m} times \vrbl{v} into \srccd{this}.
     void accumulate_product(SymmSCMatrix* m, SCVector* v)
         { accumulate_product_sv(m,v); }
@@ -160,9 +160,9 @@ class SCVector: public DescribedClass {
     virtual void accumulate_product_sv(SymmSCMatrix* m, SCVector* v);
     virtual void accumulate_product_rv(SCMatrix* m, SCVector* v) = 0;
     //. Sum \vrbl{v} into this.
-    virtual void accumulate(SCVector*v) = 0;
+    virtual void accumulate(const SCVector*v) = 0;
     //. Sum \vrbl{m} into this.  One of \vrbl{m}'s dimensions must be 1.
-    virtual void accumulate(SCMatrix*m) = 0;
+    virtual void accumulate(const SCMatrix*m) = 0;
     //. Return the dot product.
     virtual double scalar_product(SCVector*) = 0;
     //. Perform the element operation \vrbl{op} on each element of this.
@@ -172,12 +172,12 @@ class SCVector: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SCVector*,SCVector*) = 0;
     //. Print out the vector.
-    void print(ostream&);
-    void print(const char* title=0,ostream& out=cout, int =10);
-    virtual void vprint(const char* title=0,ostream& out=cout, int =10) = 0;
+    void print(ostream&o=cout) const;
+    void print(const char* title=0,ostream& out=cout, int =10) const;
+    virtual void vprint(const char*title=0,ostream&out=cout,int =10) const = 0;
 
     //. Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp();
+    RefMessageGrp messagegrp() const;
     
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this vector.  Only one iterator is allowed
@@ -218,7 +218,7 @@ class SCMatrix: public DescribedClass {
     int nrow() const { return d1->n(); }
     int ncol() const { return d2->n(); }
     //. Return the maximum absolute value element.
-    virtual double maxabs();
+    virtual double maxabs() const;
     //. Assign each element to a random number between -1 and 1
     virtual void randomize();
     //. Set all elements to \vrbl{val}.
@@ -238,8 +238,8 @@ class SCMatrix: public DescribedClass {
     virtual void assign_r(SCMatrix* m);
     //. Like the \srccd{assign} members, but these write values
     //. to the arguments.
-    virtual void convert(double*);
-    virtual void convert(double**);
+    virtual void convert(double*) const;
+    virtual void convert(double**) const;
     //. Convert an \clsnmref{SCMatrix} of a different specialization
     //. to this specialization and possibly accumulate the data.
     virtual void convert(SCMatrix*);
@@ -262,7 +262,7 @@ class SCMatrix: public DescribedClass {
     RefSCDimension rowdim() const { return d1; }
     RefSCDimension coldim() const { return d2; }
     //. Return or modify an element.
-    virtual double get_element(int,int) = 0;
+    virtual double get_element(int,int) const = 0;
     virtual void set_element(int,int,double) = 0;
     virtual void accumulate_element(int,int,double) = 0;
     
@@ -290,10 +290,10 @@ class SCMatrix: public DescribedClass {
     virtual void accumulate_column(SCVector *v, int i) =0;
     
     //. Sum \vrbl{m} into this.
-    virtual void accumulate(SCMatrix* m) = 0;
-    virtual void accumulate(SymmSCMatrix* m) = 0;
-    virtual void accumulate(DiagSCMatrix* m) = 0;
-    virtual void accumulate(SCVector*) = 0;
+    virtual void accumulate(const SCMatrix* m) = 0;
+    virtual void accumulate(const SymmSCMatrix* m) = 0;
+    virtual void accumulate(const DiagSCMatrix* m) = 0;
+    virtual void accumulate(const SCVector*) = 0;
     //. Sum into \srccd{this} the products of various vectors or matrices.
     virtual void accumulate_outer_product(SCVector*,SCVector*) = 0;
     void accumulate_product(SCMatrix*m1,SCMatrix*m2)
@@ -340,12 +340,12 @@ class SCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SCMatrix*,SCMatrix*) = 0;
     //. Print out the matrix.
-    void print(ostream&);
-    void print(const char* title=0,ostream& out=cout, int =10);
-    virtual void vprint(const char* title=0,ostream& out=cout, int =10) = 0;
+    void print(ostream&o=cout) const;
+    void print(const char* title=0,ostream& out=cout, int =10) const;
+    virtual void vprint(const char*title=0,ostream&out=cout,int =10) const = 0;
 
     //. Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp();
+    RefMessageGrp messagegrp() const;
     
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this matrix.
@@ -374,7 +374,7 @@ class SymmSCMatrix: public DescribedClass {
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
     //. Return the maximum absolute value element of this vector.
-    virtual double maxabs();
+    virtual double maxabs() const;
     //. Assign each element to a random number between -1 and 1
     virtual void randomize();
     //. Set all elements to \vrbl{val}.
@@ -394,8 +394,8 @@ class SymmSCMatrix: public DescribedClass {
     virtual void assign_s(SymmSCMatrix* m);
     //. Like the \srccd{assign} members, but these write values
     //. to the arguments.
-    virtual void convert(double*);
-    virtual void convert(double**);
+    virtual void convert(double*) const;
+    virtual void convert(double**) const;
     //. Convert an \clsnmref{SCSymmSCMatrix} of a different specialization
     //. to this specialization and possibly accumulate the data.
     virtual void convert(SymmSCMatrix*);
@@ -409,7 +409,7 @@ class SymmSCMatrix: public DescribedClass {
     //. Make \srccd{this} equal to the unit matrix.
     virtual void unit();
     //. Return the dimension.
-    int n() { return d->n(); }
+    int n() const { return d->n(); }
     //. Return a matrix with the same dimension and same elements.
     virtual SymmSCMatrix* copy();
     //. Return a matrix with the same dimension but uninitialized memory.
@@ -419,7 +419,7 @@ class SymmSCMatrix: public DescribedClass {
     //. Return the dimension.
     RefSCDimension dim() const { return d; }
     //. Return or modify an element.
-    virtual double get_element(int,int) = 0;
+    virtual double get_element(int,int) const = 0;
     virtual void set_element(int,int,double) = 0;
     virtual void accumulate_element(int,int,double) = 0;
 
@@ -450,7 +450,7 @@ class SymmSCMatrix: public DescribedClass {
     //. and the eigenvectors in \vrbl{m}.
     virtual void diagonalize(DiagSCMatrix*d,SCMatrix*m) = 0;
     //. Sum \vrbl{m} into this.
-    virtual void accumulate(SymmSCMatrix* m) = 0;
+    virtual void accumulate(const SymmSCMatrix* m) = 0;
     //. Sum into \srccd{this} the products of various vectors or matrices.
     virtual void accumulate_symmetric_sum(SCMatrix*) = 0;
     virtual void accumulate_symmetric_product(SCMatrix*);
@@ -480,12 +480,12 @@ class SymmSCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SymmSCMatrix*,SymmSCMatrix*) = 0;
     //. Print out the matrix.
-    void print(ostream&);
-    void print(const char* title=0,ostream& out=cout, int =10);
-    virtual void vprint(const char* title=0,ostream& out=cout, int =10);
+    void print(ostream&o=cout) const;
+    void print(const char* title=0,ostream& out=cout, int =10) const;
+    virtual void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     //. Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp();
+    RefMessageGrp messagegrp() const;
     
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this matrix.
@@ -515,7 +515,7 @@ class DiagSCMatrix: public DescribedClass {
     virtual void restore(StateIn&);
 
     //. Return the maximum absolute value element of this vector.
-    virtual double maxabs();
+    virtual double maxabs() const;
     //. Assign each element to a random number between -1 and 1
     virtual void randomize();
     //. Set all elements to \vrbl{val}.
@@ -532,7 +532,7 @@ class DiagSCMatrix: public DescribedClass {
     virtual void assign_d(DiagSCMatrix*);
     //. Like the \srccd{assign} member, but this writes values
     //. to the argument.
-    virtual void convert(double*);
+    virtual void convert(double*) const;
     //. Convert an \clsnmref{SCDiagSCMatrix} of a different specialization
     //. to this specialization and possibly accumulate the data.
     virtual void convert(DiagSCMatrix*);
@@ -550,11 +550,11 @@ class DiagSCMatrix: public DescribedClass {
     //. Return the dimension.
     RefSCDimension dim() const { return d; }
     //. Return or modify an element.
-    virtual double get_element(int) = 0;
+    virtual double get_element(int) const = 0;
     virtual void set_element(int,double) = 0;
     virtual void accumulate_element(int,double) = 0;
     //. Sum \vrbl{m} into this.
-    virtual void accumulate(DiagSCMatrix* m) = 0;
+    virtual void accumulate(const DiagSCMatrix* m) = 0;
     //. Return the trace.
     virtual double trace() = 0;
     //. Return the determinant of \srccd{this}.  \srccd{this} is overwritten.
@@ -570,12 +570,12 @@ class DiagSCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             DiagSCMatrix*,DiagSCMatrix*) = 0;
     //. Print out the matrix.
-    void print(ostream&);
-    void print(const char* title=0,ostream& out=cout, int =10);
-    virtual void vprint(const char* title=0,ostream& out=cout, int =10);
+    void print(ostream&o=cout) const;
+    void print(const char* title=0,ostream& out=cout, int =10) const;
+    virtual void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     //. Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp();
+    RefMessageGrp messagegrp() const;
     
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this matrix.

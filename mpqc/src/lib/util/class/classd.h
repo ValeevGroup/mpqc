@@ -38,7 +38,9 @@
   public:
     void* _castdown(const ClassDesc*);
     static CLASSNAME* require_castdown(DescribedClass*p,const char*,...);
+    static const CLASSNAME* require_castdown(const DescribedClass*p,const char*,...);
     static CLASSNAME* castdown(DescribedClass*p);
+    static const CLASSNAME* castdown(const DescribedClass*p);
     static CLASSNAME* castdown(const RefDescribedClass&p);
     static const ClassDesc* static_class_desc();
     const ClassDesc* class_desc() const;

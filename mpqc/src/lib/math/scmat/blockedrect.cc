@@ -124,7 +124,7 @@ BlockedSCMatrix::assign_val(double v)
 }
 
 double
-BlockedSCMatrix::get_element(int i,int j)
+BlockedSCMatrix::get_element(int i,int j) const
 {
   int block_i, block_j;
   int elem_i, elem_j;
@@ -376,10 +376,10 @@ BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 }
 
 void
-BlockedSCMatrix::accumulate(SCMatrix*a)
+BlockedSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  BlockedSCMatrix* la
+  const BlockedSCMatrix* la
     = BlockedSCMatrix::require_castdown(a,"BlockedSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -395,10 +395,10 @@ BlockedSCMatrix::accumulate(SCMatrix*a)
 }
 
 void
-BlockedSCMatrix::accumulate(SymmSCMatrix*a)
+BlockedSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  BlockedSymmSCMatrix* la
+  const BlockedSymmSCMatrix* la
     = BlockedSymmSCMatrix::require_castdown(a,"BlockedSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -414,10 +414,10 @@ BlockedSCMatrix::accumulate(SymmSCMatrix*a)
 }
 
 void
-BlockedSCMatrix::accumulate(DiagSCMatrix*a)
+BlockedSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  BlockedDiagSCMatrix* la
+  const BlockedDiagSCMatrix* la
     = BlockedDiagSCMatrix::require_castdown(a,"BlockedSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -433,10 +433,10 @@ BlockedSCMatrix::accumulate(DiagSCMatrix*a)
 }
 
 void
-BlockedSCMatrix::accumulate(SCVector*a)
+BlockedSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the arguments is of the correct type
-  BlockedSCVector* la
+  const BlockedSCVector* la
     = BlockedSCVector::require_castdown(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -685,7 +685,7 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedSCMatrix::vprint(const char *title, ostream& os, int prec)
+BlockedSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];
@@ -702,13 +702,13 @@ BlockedSCMatrix::vprint(const char *title, ostream& os, int prec)
 }
 
 RefSCDimension
-BlockedSCMatrix::rowdim(int i)
+BlockedSCMatrix::rowdim(int i) const
 {
   return d1->blocks()->subdim(i);
 }
 
 RefSCDimension
-BlockedSCMatrix::coldim(int i)
+BlockedSCMatrix::coldim(int i) const
 {
   return d2->blocks()->subdim(i);
 }

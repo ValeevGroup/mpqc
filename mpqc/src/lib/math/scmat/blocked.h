@@ -86,15 +86,15 @@ class BlockedSCVector: public SCVector {
     void assign_v(SCVector*);
     void assign_p(const double*);
 
-    double get_element(int);
+    double get_element(int) const;
     void set_element(int,double);
     void accumulate_element(int,double);
 
     void accumulate_product_rv(SCMatrix*,SCVector*);
     void accumulate_product_sv(SymmSCMatrix*,SCVector*);
 
-    void accumulate(SCVector*);
-    void accumulate(SCMatrix*);
+    void accumulate(const SCVector*);
+    void accumulate(const SCMatrix*);
     double scalar_product(SCVector*);
 
     void element_op(const RefSCElementOp&);
@@ -102,11 +102,11 @@ class BlockedSCVector: public SCVector {
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // BlockedSCVector specific functions
-    RefSCDimension dim() { return d; }
-    RefSCDimension dim(int);
+    RefSCDimension dim() const { return d; }
+    RefSCDimension dim(int) const;
     int nblocks() const;
     RefSCVector block(int);
 
@@ -137,7 +137,7 @@ class BlockedSCMatrix: public SCMatrix {
     void restore(StateIn&);
 
     void assign_val(double);
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
 
@@ -156,10 +156,10 @@ class BlockedSCMatrix: public SCMatrix {
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
     void accumulate_product_rs(SCMatrix*,SymmSCMatrix*);
     void accumulate_product_rd(SCMatrix*,DiagSCMatrix*);
-    void accumulate(SCMatrix*);
-    void accumulate(SymmSCMatrix*);
-    void accumulate(DiagSCMatrix*);
-    void accumulate(SCVector*);
+    void accumulate(const SCMatrix*);
+    void accumulate(const SymmSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
+    void accumulate(const SCVector*);
 
     void transpose_this();
     double invert_this();
@@ -176,13 +176,13 @@ class BlockedSCMatrix: public SCMatrix {
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
 
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // BlockedSCMatrix specific functions
-    RefSCDimension rowdim() { return d1; }
-    RefSCDimension coldim() { return d2; }
-    RefSCDimension rowdim(int);
-    RefSCDimension coldim(int);
+    RefSCDimension rowdim() const { return d1; }
+    RefSCDimension coldim() const { return d2; }
+    RefSCDimension rowdim(int) const;
+    RefSCDimension coldim(int) const;
     int nblocks() const;
     RefSCMatrix block(int);
 
@@ -210,7 +210,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void save(StateOut&);
     void restore(StateIn&);
 
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     void scale(double);
@@ -236,7 +236,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
 
-    void accumulate(SymmSCMatrix*);
+    void accumulate(const SymmSCMatrix*);
     void accumulate_symmetric_outer_product(SCVector*);
     void accumulate_symmetric_product(SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
@@ -254,11 +254,11 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
 
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // BlockedSymmSCMatrix specific functions
-    RefSCDimension dim() { return d; }
-    RefSCDimension dim(int);
+    RefSCDimension dim() const { return d; }
+    RefSCDimension dim(int) const;
     int nblocks() const;
     RefSymmSCMatrix block(int);
 
@@ -286,10 +286,10 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     void save(StateOut&);
     void restore(StateIn&);
 
-    double get_element(int);
+    double get_element(int) const;
     void set_element(int,double);
     void accumulate_element(int,double);
-    void accumulate(DiagSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
 
     double invert_this();
     double determ_this();
@@ -301,11 +301,11 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
                     DiagSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // BlockedDiagSCMatrix specific functions
-    RefSCDimension dim() { return d; }
-    RefSCDimension dim(int);
+    RefSCDimension dim() const { return d; }
+    RefSCDimension dim(int) const;
     int nblocks() const;
     RefDiagSCMatrix block(int);
 

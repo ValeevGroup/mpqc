@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <util/container/avlset.h>
 #include <util/state/state.h>
+#include <util/state/stateio.h>
 
 class ResultInfo;
 class StateIn;

@@ -104,7 +104,7 @@ ReplSCVector::~ReplSCVector()
 }
 
 double
-ReplSCVector::get_element(int i)
+ReplSCVector::get_element(int i) const
 {
   return vector[i];
 }
@@ -178,10 +178,10 @@ ReplSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 }
 
 void
-ReplSCVector::accumulate(SCVector*a)
+ReplSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
-  ReplSCVector* la
+  const ReplSCVector* la
     = ReplSCVector::require_castdown(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -197,10 +197,10 @@ ReplSCVector::accumulate(SCVector*a)
 }
 
 void
-ReplSCVector::accumulate(SCMatrix*a)
+ReplSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  ReplSCMatrix *la
+  const ReplSCMatrix *la
     = ReplSCMatrix::require_castdown(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -341,7 +341,7 @@ ReplSCVector::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-ReplSCVector::vprint(const char *title, ostream& os, int prec)
+ReplSCVector::vprint(const char *title, ostream& os, int prec) const
 {
   int i;
   int lwidth;

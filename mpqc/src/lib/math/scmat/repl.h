@@ -88,18 +88,18 @@ class ReplSCVector: public SCVector {
 
     void set_element(int,double);
     void accumulate_element(int,double);
-    double get_element(int);
+    double get_element(int) const;
     void accumulate_product_sv(SymmSCMatrix*,SCVector*);
     void accumulate_product_rv(SCMatrix*,SCVector*);
-    void accumulate(SCVector*);
-    void accumulate(SCMatrix*);
+    void accumulate(const SCVector*);
+    void accumulate(const SCMatrix*);
     double scalar_product(SCVector*);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return vector; }
@@ -122,7 +122,7 @@ class ReplSCMatrix: public SCMatrix {
     double** rows;
   protected:
     // utility functions
-    int compute_offset(int,int);
+    int compute_offset(int,int) const;
     void init_blocklist();
 
     void before_elemop();
@@ -134,7 +134,7 @@ class ReplSCMatrix: public SCMatrix {
 
     // implementations and overrides of virtual functions
     void assign_val(double);
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     SCMatrix * get_subblock(int,int,int,int);
@@ -151,10 +151,10 @@ class ReplSCMatrix: public SCMatrix {
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
     void accumulate_product_rs(SCMatrix*,SymmSCMatrix*);
     void accumulate_product_rd(SCMatrix*,DiagSCMatrix*);
-    void accumulate(SCMatrix*);
-    void accumulate(SymmSCMatrix*);
-    void accumulate(DiagSCMatrix*);
-    void accumulate(SCVector*);
+    void accumulate(const SCMatrix*);
+    void accumulate(const SymmSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
+    void accumulate(const SCVector*);
     void transpose_this();
     double invert_this();
     void svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V);
@@ -167,7 +167,7 @@ class ReplSCMatrix: public SCMatrix {
                     SCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return matrix; }
@@ -191,7 +191,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     double** rows;
   protected:
     // utility functions
-    int compute_offset(int,int);
+    int compute_offset(int,int) const;
     void init_blocklist();
 
     void before_elemop();
@@ -205,7 +205,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void assign_s(SymmSCMatrix*);
     void assign_p(const double*);
     void assign_pp(const double**);
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     void scale(double);
@@ -221,7 +221,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void accumulate_row(SCVector *v, int i);
 
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
-    void accumulate(SymmSCMatrix*);
+    void accumulate(const SymmSCMatrix*);
     double invert_this();
     double solve_this(SCVector*);
     double trace();
@@ -243,7 +243,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
                     SymmSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return matrix; }
@@ -274,10 +274,10 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
 
     // implementations and overrides of virtual functions
     void assign_val(double);
-    double get_element(int);
+    double get_element(int) const;
     void set_element(int,double);
     void accumulate_element(int,double);
-    void accumulate(DiagSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
     double invert_this();
     double determ_this();
     double trace();
@@ -288,7 +288,7 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
                     DiagSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data() { return matrix; }

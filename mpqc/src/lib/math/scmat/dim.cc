@@ -261,7 +261,7 @@ SCBlockInfo::set_subdim(int i, const RefSCDimension &dim)
 }
 
 void
-SCBlockInfo::print(ostream&o)
+SCBlockInfo::print(ostream&o) const
 {
   indent(o); o << "nblocks = " << nblocks_ << endl;
   indent(o); o << "sizes =";
@@ -383,7 +383,7 @@ SCDimension::equiv(const SCDimension *a) const
 }
 
 void
-SCDimension::print(ostream&o)
+SCDimension::print(ostream&o) const
 {
   indent(o); o << "n = " << n_;
   if (name_) {
@@ -399,7 +399,7 @@ SCDimension::print(ostream&o)
 // RefSCDimension member functions
 
 void
-RefSCDimension::print(ostream&o)
+RefSCDimension::print(ostream&o) const
 {
   if (null()) { indent(o); o << "n = 0" << endl; }
   else pointer()->print(o);

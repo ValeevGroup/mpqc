@@ -76,7 +76,7 @@ LocalSCMatrix::~LocalSCMatrix()
 }
 
 int
-LocalSCMatrix::compute_offset(int i,int j)
+LocalSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d1->n() || j>=d2->n()) {
       cerr << indent << "LocalSCMatrix: index out of bounds\n";
@@ -106,7 +106,7 @@ LocalSCMatrix::get_rows()
 }
 
 double
-LocalSCMatrix::get_element(int i,int j)
+LocalSCMatrix::get_element(int i,int j) const
 {
   int off = compute_offset(i,j);
   return block->data[off];
@@ -479,10 +479,10 @@ LocalSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 }
 
 void
-LocalSCMatrix::accumulate(SCMatrix*a)
+LocalSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  LocalSCMatrix* la
+  const LocalSCMatrix* la
     = LocalSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -498,10 +498,10 @@ LocalSCMatrix::accumulate(SCMatrix*a)
 }
 
 void
-LocalSCMatrix::accumulate(SymmSCMatrix*a)
+LocalSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  LocalSymmSCMatrix* la
+  const LocalSymmSCMatrix* la
     = LocalSymmSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -526,10 +526,10 @@ LocalSCMatrix::accumulate(SymmSCMatrix*a)
 }
 
 void
-LocalSCMatrix::accumulate(DiagSCMatrix*a)
+LocalSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  LocalDiagSCMatrix* la
+  const LocalDiagSCMatrix* la
     = LocalDiagSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -548,10 +548,10 @@ LocalSCMatrix::accumulate(DiagSCMatrix*a)
 }
 
 void
-LocalSCMatrix::accumulate(SCVector*a)
+LocalSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the arguments is of the correct type
-  LocalSCVector* la
+  const LocalSCVector* la
     = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -771,7 +771,7 @@ LocalSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH
 void
-LocalSCMatrix::vprint(const char *title, ostream& os, int prec)
+LocalSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int ii,jj,kk,nn;
   int i,j;

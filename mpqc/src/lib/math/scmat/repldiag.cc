@@ -104,7 +104,7 @@ ReplDiagSCMatrix::~ReplDiagSCMatrix()
 }
 
 double
-ReplDiagSCMatrix::get_element(int i)
+ReplDiagSCMatrix::get_element(int i) const
 {
   return matrix[i];
 }
@@ -129,10 +129,10 @@ ReplDiagSCMatrix::assign_val(double val)
 }
 
 void
-ReplDiagSCMatrix::accumulate(DiagSCMatrix*a)
+ReplDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  ReplDiagSCMatrix* la
+  const ReplDiagSCMatrix* la
     = ReplDiagSCMatrix::require_castdown(a,"ReplDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -260,7 +260,7 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-ReplDiagSCMatrix::vprint(const char *title, ostream& os, int prec)
+ReplDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int i;
   int lwidth;

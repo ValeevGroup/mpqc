@@ -76,18 +76,18 @@ class LocalSCVector: public SCVector {
 
     void set_element(int,double);
     void accumulate_element(int,double);
-    double get_element(int);
+    double get_element(int) const;
     void accumulate_product_sv(SymmSCMatrix*,SCVector*);
     void accumulate_product_rv(SCMatrix*,SCVector*);
-    void accumulate(SCVector*);
-    void accumulate(SCMatrix*);
+    void accumulate(const SCVector*);
+    void accumulate(const SCMatrix*);
     double scalar_product(SCVector*);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data();
@@ -107,7 +107,7 @@ class LocalSCMatrix: public SCMatrix {
     double** rows;
   private:
     // utility functions
-    int compute_offset(int,int);
+    int compute_offset(int,int) const;
     void resize(int,int);
   public:
     LocalSCMatrix(const RefSCDimension&,const RefSCDimension&,
@@ -116,7 +116,7 @@ class LocalSCMatrix: public SCMatrix {
 
     // implementations and overrides of virtual functions
     void assign_val(double);
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     SCMatrix * get_subblock(int,int,int,int);
@@ -132,10 +132,10 @@ class LocalSCMatrix: public SCMatrix {
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
     void accumulate_product_rs(SCMatrix*,SymmSCMatrix*);
     void accumulate_product_rd(SCMatrix*,DiagSCMatrix*);
-    void accumulate(SCMatrix*);
-    void accumulate(SymmSCMatrix*);
-    void accumulate(DiagSCMatrix*);
-    void accumulate(SCVector*);
+    void accumulate(const SCMatrix*);
+    void accumulate(const SymmSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
+    void accumulate(const SCVector*);
     void transpose_this();
     double invert_this();
     void svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V);
@@ -148,7 +148,7 @@ class LocalSCMatrix: public SCMatrix {
                     SCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data();
@@ -169,14 +169,14 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     double** rows;
   private:
     // utility functions
-    int compute_offset(int,int);
+    int compute_offset(int,int) const;
     void resize(int n);
   public:
     LocalSymmSCMatrix(const RefSCDimension&, LocalSCMatrixKit*);
     ~LocalSymmSCMatrix();
 
     // implementations and overrides of virtual functions
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
 
@@ -191,7 +191,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate_row(SCVector *v, int i);
 
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
-    void accumulate(SymmSCMatrix*);
+    void accumulate(const SymmSCMatrix*);
     double invert_this();
     double solve_this(SCVector*);
     double trace();
@@ -213,7 +213,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
                     SymmSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data();
@@ -238,10 +238,10 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
 
     // implementations and overrides of virtual functions
     void save_data_state(StateOut&);
-    double get_element(int);
+    double get_element(int) const;
     void set_element(int,double);
     void accumulate_element(int,double);
-    void accumulate(DiagSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
     double invert_this();
     double determ_this();
     double trace();
@@ -252,7 +252,7 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
                     DiagSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     // return a pointer to the data for fast access
     double *get_data();

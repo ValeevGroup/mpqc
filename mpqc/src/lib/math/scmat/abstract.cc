@@ -182,11 +182,11 @@ SCMatrix::restore(StateIn& s)
 }
 
 double
-SCMatrix::maxabs()
+SCMatrix::maxabs() const
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
   RefSCElementOp abop = op;
-  this->element_op(abop);
+  ((SCMatrix *)this)->element_op(abop);
   return op->result();
 }
 
@@ -285,7 +285,7 @@ SCMatrix::convert_accumulate(SCMatrix*a)
 }
 
 void
-SCMatrix::convert(double*a)
+SCMatrix::convert(double*a) const
 {
   int i;
   int nr = nrow();
@@ -299,7 +299,7 @@ SCMatrix::convert(double*a)
 }
 
 void
-SCMatrix::convert(double**a)
+SCMatrix::convert(double**a) const
 {
   int i, j;
   int nr, nc;
@@ -341,13 +341,13 @@ SCMatrix::accumulate_product_dr(DiagSCMatrix*a,SCMatrix*b)
 }
 
 void
-SCMatrix::print(ostream&o)
+SCMatrix::print(ostream&o) const
 {
   vprint(0, o, 10);
 }
 
 void
-SCMatrix::print(const char *t, ostream&o, int i)
+SCMatrix::print(const char *t, ostream&o, int i) const
 {
   vprint(t, o, i);
 }
@@ -442,7 +442,7 @@ SCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 }
 
 RefMessageGrp
-SCMatrix::messagegrp()
+SCMatrix::messagegrp() const
 {
   return kit_->messagegrp();
 }
@@ -499,11 +499,11 @@ SymmSCMatrix::_castdown(const ClassDesc*cd)
 }
 
 double
-SymmSCMatrix::maxabs()
+SymmSCMatrix::maxabs() const
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
   RefSCElementOp abop = op;
-  this->element_op(abop);
+  ((SymmSCMatrix*)this)->element_op(abop);
   return op->result();
 }
 
@@ -567,7 +567,7 @@ SymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
 }
 
 void
-SymmSCMatrix::convert(double*a)
+SymmSCMatrix::convert(double*a) const
 {
   int i;
   int nr = n();
@@ -583,7 +583,7 @@ SymmSCMatrix::convert(double*a)
 }
 
 void
-SymmSCMatrix::convert(double**a)
+SymmSCMatrix::convert(double**a) const
 {
   int i;
   int j;
@@ -632,19 +632,19 @@ SymmSCMatrix::assign_s(SymmSCMatrix*a)
 }
 
 void
-SymmSCMatrix::print(ostream&o)
+SymmSCMatrix::print(ostream&o) const
 {
   vprint(0, o, 10);
 }
 
 void
-SymmSCMatrix::print(const char *t, ostream&o, int i)
+SymmSCMatrix::print(const char *t, ostream&o, int i) const
 {
   vprint(t, o, i);
 }
 
 void
-SymmSCMatrix::vprint(const char* title, ostream& out, int i)
+SymmSCMatrix::vprint(const char* title, ostream& out, int i) const
 {
   RefSCMatrix m = kit()->matrix(dim(),dim());
   m->assign(0.0);
@@ -801,7 +801,7 @@ SymmSCMatrix::scalar_product(SCVector *v)
 }
 
 RefMessageGrp
-SymmSCMatrix::messagegrp()
+SymmSCMatrix::messagegrp() const
 {
   return kit_->messagegrp();
 }
@@ -854,11 +854,11 @@ DiagSCMatrix::restore(StateIn& s)
 }
 
 double
-DiagSCMatrix::maxabs()
+DiagSCMatrix::maxabs() const
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
   RefSCElementOp abop = op;
-  this->element_op(abop);
+  ((DiagSCMatrix*)this)->element_op(abop);
   return op->result();
 }
 
@@ -901,7 +901,7 @@ DiagSCMatrix::convert_accumulate(DiagSCMatrix*a)
 }
 
 void
-DiagSCMatrix::convert(double*a)
+DiagSCMatrix::convert(double*a) const
 {
   int i;
   int nr = n();
@@ -925,19 +925,19 @@ DiagSCMatrix::assign_d(DiagSCMatrix*a)
 }
 
 void
-DiagSCMatrix::print(ostream&o)
+DiagSCMatrix::print(ostream&o) const
 {
   vprint(0, o, 10);
 }
 
 void
-DiagSCMatrix::print(const char *t, ostream&o, int i)
+DiagSCMatrix::print(const char *t, ostream&o, int i) const
 {
   vprint(t, o, i);
 }
 
 void
-DiagSCMatrix::vprint(const char* title, ostream& out, int i)
+DiagSCMatrix::vprint(const char* title, ostream& out, int i) const
 {
   RefSCMatrix m = kit()->matrix(dim(),dim());
   m->assign(0.0);
@@ -960,7 +960,7 @@ DiagSCMatrix::copy()
 }
 
 RefMessageGrp
-DiagSCMatrix::messagegrp()
+DiagSCMatrix::messagegrp() const
 {
   return kit_->messagegrp();
 }
@@ -1017,11 +1017,11 @@ SCVector::restore(StateIn& s)
 }
 
 double
-SCVector::maxabs()
+SCVector::maxabs() const
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
   RefSCElementOp abop = op;
-  this->element_op(abop);
+  ((SCVector*)this)->element_op(abop);
   return op->result();
 }
 
@@ -1064,7 +1064,7 @@ SCVector::convert_accumulate(SCVector*a)
 }
 
 void
-SCVector::convert(double*a)
+SCVector::convert(double*a) const
 {
   int i;
   int nr = n();
@@ -1088,13 +1088,13 @@ SCVector::assign_v(SCVector*a)
 }
 
 void
-SCVector::print(ostream&o)
+SCVector::print(ostream&o) const
 {
   vprint(0, o, 10);
 }
 
 void
-SCVector::print(const char *t, ostream&o, int i)
+SCVector::print(const char *t, ostream&o, int i) const
 {
   vprint(t, o, i);
 }
@@ -1136,7 +1136,7 @@ SCVector::accumulate_product_sv(SymmSCMatrix *m, SCVector *v)
 }
 
 RefMessageGrp
-SCVector::messagegrp()
+SCVector::messagegrp() const
 {
   return kit_->messagegrp();
 }

@@ -70,13 +70,13 @@ DistSCMatrix::DistSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
 }
 
 int
-DistSCMatrix::block_to_node(int i, int j)
+DistSCMatrix::block_to_node(int i, int j) const
 {
   return (i*d2->blocks()->nblock() + j)%messagegrp()->n();
 }
 
 RefSCMatrixBlock
-DistSCMatrix::block_to_block(int i, int j)
+DistSCMatrix::block_to_block(int i, int j) const
 {
   int offset = i*d2->blocks()->nblock() + j;
   int nproc = messagegrp()->n();
@@ -95,7 +95,7 @@ DistSCMatrix::block_to_block(int i, int j)
 }
 
 double *
-DistSCMatrix::find_element(int i, int j)
+DistSCMatrix::find_element(int i, int j) const
 {
   int bi, oi;
   d1->blocks()->elem_to_block(i, bi, oi);
@@ -114,7 +114,7 @@ DistSCMatrix::find_element(int i, int j)
 }
 
 int
-DistSCMatrix::element_to_node(int i, int j)
+DistSCMatrix::element_to_node(int i, int j) const
 {
   int bi, oi;
   d1->blocks()->elem_to_block(i, bi, oi);
@@ -152,7 +152,7 @@ DistSCMatrix::~DistSCMatrix()
 }
 
 double
-DistSCMatrix::get_element(int i,int j)
+DistSCMatrix::get_element(int i,int j) const
 {
   double res;
   double *e = find_element(i,j);
@@ -264,10 +264,10 @@ DistSCMatrix::accumulate_column(SCVector *v, int i)
 }
 
 void
-DistSCMatrix::accumulate(SCMatrix*a)
+DistSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  DistSCMatrix* la
+  const DistSCMatrix* la
     = DistSCMatrix::require_castdown(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -297,10 +297,10 @@ DistSCMatrix::accumulate(SCMatrix*a)
 }
 
 void
-DistSCMatrix::accumulate(SymmSCMatrix*a)
+DistSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  DistSymmSCMatrix* la
+  const DistSymmSCMatrix* la
     = DistSymmSCMatrix::require_castdown(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -310,7 +310,7 @@ DistSCMatrix::accumulate(SymmSCMatrix*a)
       abort();
     }
 
-  RefSCMatrixSubblockIter I = a->all_blocks(SCMatrixSubblockIter::Read);
+  RefSCMatrixSubblockIter I = ((SymmSCMatrix*)a)->all_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       RefSCMatrixBlock block = I->block();
       if (DEBUG)
@@ -365,10 +365,10 @@ DistSCMatrix::accumulate(SymmSCMatrix*a)
 }
 
 void
-DistSCMatrix::accumulate(DiagSCMatrix*a)
+DistSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  DistDiagSCMatrix* la
+  const DistDiagSCMatrix* la
     = DistDiagSCMatrix::require_castdown(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -378,7 +378,7 @@ DistSCMatrix::accumulate(DiagSCMatrix*a)
       abort();
     }
 
-  RefSCMatrixSubblockIter I = a->all_blocks(SCMatrixSubblockIter::Read);
+  RefSCMatrixSubblockIter I = ((DiagSCMatrix*)a)->all_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       RefSCMatrixBlock block = I->block();
       // see if i've got this block
@@ -396,10 +396,10 @@ DistSCMatrix::accumulate(DiagSCMatrix*a)
 }
 
 void
-DistSCMatrix::accumulate(SCVector*a)
+DistSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
-  DistSCVector* la
+  const DistSCVector* la
     = DistSCVector::require_castdown(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -853,6 +853,13 @@ DistSCMatrix::element_op(const RefSCElementOp3& op,
       op->process_base(i.block(), j.block(), k.block());
     }
   if (op->has_collect()) op->collect(messagegrp());
+}
+
+void
+DistSCMatrix::vprint(const char *title, ostream& os, int prec) const
+{
+  // cast so the non const vprint member can be called
+  ((DistSCMatrix*)this)->vprint(title,os,prec);
 }
 
 void

@@ -73,11 +73,35 @@ CLASSNAME::castdown(DescribedClass*p)
   if (!p) return 0;
   return (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
 }
+const CLASSNAME*
+CLASSNAME::castdown(const DescribedClass*p)
+{
+  if (!p) return 0;
+  return (const CLASSNAME*) ((DescribedClass*)p)->_castdown(CLASSNAME::static_class_desc());
+}
 CLASSNAME*
 CLASSNAME::require_castdown(DescribedClass*p,const char * errmsg,...)
 {
   if (!p) return 0;
   CLASSNAME* t = (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
+  if (!t) {
+      va_list args;
+      va_start(args,errmsg);
+      fprintf(stderr,"A required castdown failed in: ");
+      vfprintf(stderr,errmsg,args);
+      fprintf(stderr,"\nwanted type \"%s\" but got \"%s\"\n",
+              stringize(CLASSNAME),p?p->class_name():"(null)");
+      fflush(stderr);
+      va_end(args);
+      ::abort();
+  }
+  return t;
+}
+const CLASSNAME*
+CLASSNAME::require_castdown(const DescribedClass*p,const char * errmsg,...)
+{
+  if (!p) return 0;
+  const CLASSNAME* t = (const CLASSNAME*) ((DescribedClass*)p)->_castdown(CLASSNAME::static_class_desc());
   if (!t) {
       va_list args;
       va_start(args,errmsg);

@@ -82,7 +82,7 @@ BlockedDiagSCMatrix::~BlockedDiagSCMatrix()
 }
 
 double
-BlockedDiagSCMatrix::get_element(int i)
+BlockedDiagSCMatrix::get_element(int i) const
 {
   int bi, bo;
   d->blocks()->elem_to_block(i,bi,bo);
@@ -106,10 +106,10 @@ BlockedDiagSCMatrix::accumulate_element(int i,double a)
 }
 
 void
-BlockedDiagSCMatrix::accumulate(DiagSCMatrix*a)
+BlockedDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  BlockedDiagSCMatrix* la = BlockedDiagSCMatrix::require_castdown(a,
+  const BlockedDiagSCMatrix* la = BlockedDiagSCMatrix::require_castdown(a,
                                "BlockedDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -242,7 +242,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedDiagSCMatrix::vprint(const char *title, ostream& os, int prec)
+BlockedDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];
@@ -259,7 +259,7 @@ BlockedDiagSCMatrix::vprint(const char *title, ostream& os, int prec)
 }
 
 RefSCDimension
-BlockedDiagSCMatrix::dim(int i)
+BlockedDiagSCMatrix::dim(int i) const
 {
   return d->blocks()->subdim(i);
 }

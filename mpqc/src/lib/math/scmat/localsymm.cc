@@ -70,7 +70,7 @@ LocalSymmSCMatrix::~LocalSymmSCMatrix()
 }
 
 int
-LocalSymmSCMatrix::compute_offset(int i,int j)
+LocalSymmSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d->n() || j>=d->n()) {
       cerr << indent << "LocalSymmSCMatrix: index out of bounds\n";
@@ -99,7 +99,7 @@ LocalSymmSCMatrix::get_rows()
 }
 
 double
-LocalSymmSCMatrix::get_element(int i,int j)
+LocalSymmSCMatrix::get_element(int i,int j) const
 {
   return block->data[compute_offset(i,j)];
 }
@@ -333,10 +333,10 @@ LocalSymmSCMatrix::accumulate_row(SCVector *v, int i)
 }
 
 void
-LocalSymmSCMatrix::accumulate(SymmSCMatrix*a)
+LocalSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  LocalSymmSCMatrix* la
+  const LocalSymmSCMatrix* la
     = LocalSymmSCMatrix::require_castdown(a,"LocalSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -647,7 +647,7 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-LocalSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
+LocalSymmSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int ii,jj,kk,nn;
   int i,j;

@@ -65,24 +65,24 @@ class DistSCVector: public SCVector {
     RefSCMatrixBlockList blocklist;
 
     void init_blocklist();
-    double *find_element(int i);
-    int element_to_node(int i);
-    int block_to_node(int);
-    RefSCMatrixBlock block_to_block(int);
+    double *find_element(int i) const;
+    int element_to_node(int i) const;
+    int block_to_node(int) const;
+    RefSCMatrixBlock block_to_block(int) const;
     void error(const char *);
   public:
     DistSCVector(const RefSCDimension&, DistSCMatrixKit*);
     ~DistSCVector();
     void assign_p(const double*);
     void assign_v(SCVector*a);
-    void convert(double* v);
+    void convert(double* v) const;
     void convert(SCVector *);
 
     void set_element(int,double);
     void accumulate_element(int,double);
-    double get_element(int);
-    void accumulate(SCVector*);
-    void accumulate(SCMatrix*m);
+    double get_element(int) const;
+    void accumulate(const SCVector*);
+    void accumulate(const SCMatrix*m);
     double scalar_product(SCVector*);
     void accumulate_product_rv(SCMatrix *, SCVector *);
     void element_op(const RefSCElementOp&);
@@ -90,7 +90,7 @@ class DistSCVector: public SCVector {
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
@@ -114,12 +114,12 @@ class DistSCMatrix: public SCMatrix {
     // utility functions
     void init_blocklist();
     void error(const char *);
-    double *find_element(int i, int j);
-    int element_to_node(int i, int j);
-    int block_to_node(int,int);
-    RefSCMatrixBlock block_to_block(int, int);
-    RefSCBlockInfo rowblocks() { return d1->blocks(); }
-    RefSCBlockInfo colblocks() { return d2->blocks(); }
+    double *find_element(int i, int j) const;
+    int element_to_node(int i, int j) const;
+    int block_to_node(int,int) const;
+    RefSCMatrixBlock block_to_block(int, int) const;
+    RefSCBlockInfo rowblocks() const { return d1->blocks(); }
+    RefSCBlockInfo colblocks() const { return d2->blocks(); }
     
     enum VecOp {CopyFromVec, CopyToVec, AccumFromVec, AccumToVec};
     enum Form { Row, Col } form;
@@ -133,7 +133,7 @@ class DistSCMatrix: public SCMatrix {
     ~DistSCMatrix();
 
     // implementations and overrides of virtual functions
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     SCMatrix * get_subblock(int,int,int,int);
@@ -148,10 +148,10 @@ class DistSCMatrix: public SCMatrix {
 
     void accumulate_outer_product(SCVector*,SCVector*);
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
-    void accumulate(SCMatrix*);
-    void accumulate(SymmSCMatrix*);
-    void accumulate(DiagSCMatrix*);
-    void accumulate(SCVector*);
+    void accumulate(const SCMatrix*);
+    void accumulate(const SymmSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
+    void accumulate(const SCVector*);
     void transpose_this();
     double invert_this();
     double solve_this(SCVector*);
@@ -165,6 +165,7 @@ class DistSCMatrix: public SCMatrix {
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
     void vprint(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10) const;
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
@@ -183,10 +184,10 @@ class DistSymmSCMatrix: public SymmSCMatrix {
   protected:
     // utility functions
     void init_blocklist();
-    double *find_element(int i, int j);
-    int element_to_node(int i, int j);
-    int block_to_node(int,int);
-    RefSCMatrixBlock block_to_block(int, int);
+    double *find_element(int i, int j) const;
+    int element_to_node(int i, int j) const;
+    int block_to_node(int,int) const;
+    RefSCMatrixBlock block_to_block(int, int) const;
 
     void error(const char *msg);
   public:
@@ -194,7 +195,7 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     ~DistSymmSCMatrix();
 
     // implementations and overrides of virtual functions
-    double get_element(int,int);
+    double get_element(int,int) const;
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
 
@@ -209,7 +210,7 @@ class DistSymmSCMatrix: public SymmSCMatrix {
     void accumulate_row(SCVector *v, int i);
 
     void accumulate_product_rr(SCMatrix*,SCMatrix*);
-    void accumulate(SymmSCMatrix*);
+    void accumulate(const SymmSCMatrix*);
     double invert_this();
     double solve_this(SCVector*);
     double trace();
@@ -242,20 +243,20 @@ class DistDiagSCMatrix: public DiagSCMatrix {
     RefSCMatrixBlockList blocklist;
 
     void init_blocklist();
-    double *find_element(int i);
-    int element_to_node(int i);
-    int block_to_node(int);
-    RefSCMatrixBlock block_to_block(int);
+    double *find_element(int i) const;
+    int element_to_node(int i) const;
+    int block_to_node(int) const;
+    RefSCMatrixBlock block_to_block(int) const;
     void error(const char *msg);
   public:
     DistDiagSCMatrix(const RefSCDimension&, DistSCMatrixKit*);
     ~DistDiagSCMatrix();
 
     // implementations and overrides of virtual functions
-    double get_element(int);
+    double get_element(int) const;
     void set_element(int,double);
     void accumulate_element(int,double);
-    void accumulate(DiagSCMatrix*);
+    void accumulate(const DiagSCMatrix*);
     double invert_this();
     double determ_this();
     double trace();

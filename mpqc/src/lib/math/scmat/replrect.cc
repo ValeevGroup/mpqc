@@ -139,7 +139,7 @@ ReplSCMatrix::~ReplSCMatrix()
 }
 
 int
-ReplSCMatrix::compute_offset(int i,int j)
+ReplSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d1->n() || j>=d2->n()) {
       cerr << indent << "ReplSCMatrix: index out of bounds\n";
@@ -149,7 +149,7 @@ ReplSCMatrix::compute_offset(int i,int j)
 }
 
 double
-ReplSCMatrix::get_element(int i,int j)
+ReplSCMatrix::get_element(int i,int j) const
 {
   int off = compute_offset(i,j);
   return matrix[off];
@@ -572,10 +572,10 @@ ReplSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 }
 
 void
-ReplSCMatrix::accumulate(SCMatrix*a)
+ReplSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  ReplSCMatrix* la
+  const ReplSCMatrix* la
     = ReplSCMatrix::require_castdown(a,"ReplSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -591,10 +591,10 @@ ReplSCMatrix::accumulate(SCMatrix*a)
 }
 
 void
-ReplSCMatrix::accumulate(SymmSCMatrix*a)
+ReplSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  ReplSymmSCMatrix* la
+  const ReplSymmSCMatrix* la
     = ReplSymmSCMatrix::require_castdown(a,"ReplSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -619,10 +619,10 @@ ReplSCMatrix::accumulate(SymmSCMatrix*a)
 }
 
 void
-ReplSCMatrix::accumulate(DiagSCMatrix*a)
+ReplSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  ReplDiagSCMatrix* la
+  const ReplDiagSCMatrix* la
     = ReplDiagSCMatrix::require_castdown(a,"ReplSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -641,10 +641,10 @@ ReplSCMatrix::accumulate(DiagSCMatrix*a)
 }
 
 void
-ReplSCMatrix::accumulate(SCVector*a)
+ReplSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the arguments is of the correct type
-  ReplSCVector* la
+  const ReplSCVector* la
     = ReplSCVector::require_castdown(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -1010,7 +1010,7 @@ ReplSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH
 void
-ReplSCMatrix::vprint(const char *title, ostream& os, int prec)
+ReplSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int ii,jj,kk,nn;
   int i,j;

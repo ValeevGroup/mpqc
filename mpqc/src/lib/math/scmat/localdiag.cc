@@ -71,7 +71,7 @@ LocalDiagSCMatrix::get_data()
 }
 
 double
-LocalDiagSCMatrix::get_element(int i)
+LocalDiagSCMatrix::get_element(int i) const
 {
   return block->data[i];
 }
@@ -89,10 +89,10 @@ LocalDiagSCMatrix::accumulate_element(int i,double a)
 }
 
 void
-LocalDiagSCMatrix::accumulate(DiagSCMatrix*a)
+LocalDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  LocalDiagSCMatrix* la
+  const LocalDiagSCMatrix* la
     = LocalDiagSCMatrix::require_castdown(a,"LocalDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -195,7 +195,7 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-LocalDiagSCMatrix::vprint(const char *title, ostream& os, int prec)
+LocalDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
 {
   int i;
   int lwidth;

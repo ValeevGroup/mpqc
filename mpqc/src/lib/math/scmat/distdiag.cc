@@ -58,13 +58,13 @@ DistDiagSCMatrix::DistDiagSCMatrix(const RefSCDimension&a,DistSCMatrixKit*k):
 }
 
 int
-DistDiagSCMatrix::block_to_node(int i)
+DistDiagSCMatrix::block_to_node(int i) const
 {
   return (i)%messagegrp()->n();
 }
 
 RefSCMatrixBlock
-DistDiagSCMatrix::block_to_block(int i)
+DistDiagSCMatrix::block_to_block(int i) const
 {
   int offset = i;
   int nproc = messagegrp()->n();
@@ -84,7 +84,7 @@ DistDiagSCMatrix::block_to_block(int i)
 }
 
 double *
-DistDiagSCMatrix::find_element(int i)
+DistDiagSCMatrix::find_element(int i) const
 {
   int bi, oi;
   d->blocks()->elem_to_block(i, bi, oi);
@@ -114,7 +114,7 @@ DistDiagSCMatrix::find_element(int i)
 }
 
 int
-DistDiagSCMatrix::element_to_node(int i)
+DistDiagSCMatrix::element_to_node(int i) const
 {
   int bi, oi;
   d->blocks()->elem_to_block(i, bi, oi);
@@ -146,7 +146,7 @@ DistDiagSCMatrix::~DistDiagSCMatrix()
 }
 
 double
-DistDiagSCMatrix::get_element(int i)
+DistDiagSCMatrix::get_element(int i) const
 {
   double res;
   double *e = find_element(i);
@@ -179,10 +179,10 @@ DistDiagSCMatrix::accumulate_element(int i,double a)
 }
 
 void
-DistDiagSCMatrix::accumulate(DiagSCMatrix*a)
+DistDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  DistDiagSCMatrix* la
+  const DistDiagSCMatrix* la
     = DistDiagSCMatrix::require_castdown(a,"DistDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match

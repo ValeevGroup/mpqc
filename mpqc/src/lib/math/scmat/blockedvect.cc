@@ -121,7 +121,7 @@ BlockedSCVector::assign_p(const double*a)
 }
 
 double
-BlockedSCVector::get_element(int i)
+BlockedSCVector::get_element(int i) const
 {
   int size = d->n();
   if (i < 0 || i >= size) {
@@ -205,10 +205,10 @@ BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 }
 
 void
-BlockedSCVector::accumulate(SCVector*a)
+BlockedSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
-  BlockedSCVector* la
+  const BlockedSCVector* la
     = BlockedSCVector::require_castdown(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -224,10 +224,10 @@ BlockedSCVector::accumulate(SCVector*a)
 }
 
 void
-BlockedSCVector::accumulate(SCMatrix*a)
+BlockedSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  BlockedSCMatrix* la
+  const BlockedSCMatrix* la
     = BlockedSCMatrix::require_castdown(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
@@ -341,7 +341,7 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedSCVector::vprint(const char *title, ostream& os, int prec)
+BlockedSCVector::vprint(const char *title, ostream& os, int prec) const
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];
@@ -358,7 +358,7 @@ BlockedSCVector::vprint(const char *title, ostream& os, int prec)
 }
 
 RefSCDimension
-BlockedSCVector::dim(int i)
+BlockedSCVector::dim(int i) const
 {
   return d->blocks()->subdim(i);
 }

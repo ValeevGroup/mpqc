@@ -6,8 +6,11 @@
 
 /* Here's the RCS junk */
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:48  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/27 00:02:57  etseidl
+ * fix some warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:49  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.6  1992/06/17  22:37:37  jannsen
  * clean up for saber-c
@@ -37,13 +40,13 @@
  * Revision 1.1  91/02/27  22:08:59  colvin
  * Initial revision
  *  */
-static char rcsid[]="$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
+#include <util/misc/libmisc.h>
 #include <comm/picl/picl.h>
 
 #ifndef OLDCLOCK

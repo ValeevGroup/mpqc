@@ -1165,6 +1165,8 @@ UnionShape::add_shape(RefShape s)
   _shapes.add(s);
 }
 
+// NOTE: this underestimates the distance to the surface when
+//inside the surface
 double
 UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 {
@@ -1173,7 +1175,12 @@ UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
   int imin = 0;
   for (int i=1; i<_shapes.length(); i++) {
       double d = _shapes[i]->distance_to_surface(p);
-      if (fabs(min) > fabs(d)) { min = d; imin = i; }
+      if (min <= 0.0) {
+          if (d < 0.0 && d > min) { min = d; imin = i; }
+        }
+      else {
+          if (min > d) { min = d; imin = i; }
+        }
     }
 
   if (grad) {

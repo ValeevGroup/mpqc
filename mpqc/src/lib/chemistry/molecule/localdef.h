@@ -5,6 +5,7 @@
 #define _localdef_h
 
 #include <math.h>
+#include <math/topology/point.h>
 
 static const double pi=3.14159265358979323846;
 static const double pih=1.57079632679489661923;
@@ -20,7 +21,7 @@ delta(Point& u, Point& a, Point& b)
   u[0]=a[0]-b[0];
   u[1]=a[1]-b[1];
   u[2]=a[2]-b[2];
-  }
+}
 
 static inline void
 delta(double u[], const double a[], const double b[])
@@ -28,7 +29,7 @@ delta(double u[], const double a[], const double b[])
   u[0]=a[0]-b[0];
   u[1]=a[1]-b[1];
   u[2]=a[2]-b[2];
-  }
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -54,7 +55,7 @@ static inline double
 s2(double x)
 {
   return (sqrt(1.0-x*x));
-  }
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -66,7 +67,7 @@ scalar(Point& a, Point& b)
   double x1 = a[1]*b[1];
   x += a[2]*b[2];
   return x+x1;
-  }
+}
 
 static inline double
 scalar(const double a[], const double b[])
@@ -75,7 +76,7 @@ scalar(const double a[], const double b[])
   double x1 = a[1]*b[1];
   x += a[2]*b[2];
   return x+x1;
-  }
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -87,7 +88,7 @@ norm(Point& u, Point& a, Point& b)
   delta(u,a,b);
   double x = 1.0/sqrt(scalar(u,u));
   u[0] *= x; u[1] *= x; u[2] *= x;
-  }
+}
 
 static inline void
 norm(double u[], const double a[], const double b[])
@@ -95,7 +96,7 @@ norm(double u[], const double a[], const double b[])
   delta(u,a,b);
   double x = 1.0/sqrt(scalar(u,u));
   u[0] *= x; u[1] *= x; u[2] *= x;
-  }
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -108,7 +109,7 @@ normal(Point& a, Point& b, Point& w)
   w[2] = a[0]*b[1]-a[1]*b[0];
   double x = 1.0/sqrt(scalar(w,w));
   w[0] *= x; w[1] *= x; w[2] *= x;
-  }
+}
 
 static inline void
 normal(const double a[], const double b[], double w[])
@@ -118,6 +119,6 @@ normal(const double a[], const double b[], double w[])
   w[2] = a[0]*b[1]-a[1]*b[0];
   double x = 1.0/sqrt(scalar(w,w));
   w[0] *= x; w[1] *= x; w[2] *= x;
-  }
+}
 
 #endif

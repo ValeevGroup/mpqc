@@ -44,6 +44,11 @@ name.  If the input file name is not given, it will default to
   <dt><tt>-threadgrp</tt><dd>A ParsedKeyVal specification of a ThreadGrp
                 object.  The default depends on how MPQC was compiled.
 
+  <dt><tt>-integral</tt><dd>A ParsedKeyVal specification of an Integral
+                object. The default is IntegralV3. Note that some
+                MolecularEnergy specializations require specific choices
+                of Integral specializations and may not work with IntegralV3.
+
   <dt><tt>-l</tt><dd>Sets a limit on the number of basis functions.  The
                 default is zero, which means an unlimited number of basis
                 functions.
@@ -78,10 +83,11 @@ mpqc-mpi.
 
 \section mpqcenv Environmental Variables
 
-MPQC looks at four environmental variables to set up
-communication and find library files.  Machine specific libraries
+MPQC looks at five environmental variables to set up
+communication, find library files, and specify the default Integral
+object.  Machine specific libraries
 and utilities to run programs in parallel might look
-at other environment variables as well.  The four that
+at other environment variables as well.  The five that
 apply on all platforms are:
 
 <dl>
@@ -101,6 +107,11 @@ apply on all platforms are:
 
   <dt><tt>THREADGRP</tt><dd>A ParsedKeyVal specification of a ThreadGrp
                      object.  The default depends on how MPQC was compiled.
+
+  <dt><tt>INTEGRAL</tt><dd>A ParsedKeyVal specification of an Integral
+                object. The default is IntegralV3. Note that some
+                MolecularEnergy specializations require specific choices
+                of Integral specializations and may not work with IntegralV3.
 
 </dl>
 
@@ -255,5 +266,55 @@ setenv THREADGRP "<PthreadThreadGrp>:()"
 setenv MEMORYGRP "<MTMPIMemoryGrp>:()"
 mpqc input_file
 </pre>
+
+\section mpqcmp2r12 Special Notes for MP2-R12 energies
+
+<p>
+<b>Distributed Memory</b>
+
+The MP2-R12 energy algorithm is similar to the MP2 energy algorithm that uses
+MemoryGrp object to access distributed memory. Hence the MTMPIMemoryGrp is the
+recommended implementation of MemoryGrp for such computations (see \ref mpqcmp2).
+</p>
+
+<p>
+<b>Disk I/O</b>
+
+In contrast to the MP2 energy and gradient algorithms, the MP2-R12 energy algorithm
+may have to use disk to store transformed MO integrals if a single pass through
+the AO integrals is not possible due to insufficient memory. The best option in such case
+is to increase the total amount of memory available to the computation by either
+increasing the number of tasks or the amount of memory per task or both.
+
+When increasing memory further is not possible, the user has to specify which
+type of disk I/O should be used for the MP2-R12 energy algorithm. It is done through
+the <tt>r12ints</tt> keyword in input for the MBPT2_R12 object. The default choice
+is to use POSIX I/O on the node on which task 0 resides. This kind of disk I/O
+is guaranteed to work on all parallel machines, provided there's enough disk space
+on the node. However, this is hardly most efficient on machines with
+some sort of parallel I/O available.
+On machines which have an efficient implementation of MPI-IO
+the <tt>r12ints</tt> should be set instead to <tt>mpi-mem</tt>.
+This will force the MBPT2_R12
+object to use MPI-IO for disk I/O. It is user's responsibility to make sure
+that the MO integrals file resides on an MPI-IO-compatible file system.
+Hence the <tt>r12ints_file</tt> keyword, which specifies the name of the MO integrals
+file, should be set to a location which is guaranteed to work properly with MPI-IO.
+For example, on IBM SP and other IBM machines which have General Parallel File System
+(GPFS), the user should set <tt>r12ints = mpi-mem</tt> and <tt>r12ints_file</tt>
+to a file on a GPFS file system.
+</p>
+
+<p>
+<b>Integral object</b>
+
+At the moment, MBPT2_R12 objects require specific specialization of Integral,
+IntegralCints. Thus in order to compute MP2-R12 energies, your version of MPQC
+needs to be compiled with support for IntegralCints. A free, open-source
+library called <tt>libint</tt> is a prerequisite for IntegralCints (see \ref compile).
+In order to use IntegralCints as the default Integral object,
+add <tt>-integral "<IntegralCints>:()"</tt> to the command line,
+or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralCints>:()"</tt>.
+</p>
 
 */

@@ -52,10 +52,32 @@ class.
         giving the ThreadGrp in the environment or command line.  See the
         section on running MPQC for more information.
 
-<dt><tt>checkpoint</tt><dd> The value of this keyword is boolean.  If true,
-        then optimizations will be checkpointed after each iteration.  The
-        checkpoint file suffice is <tt>.ckpt</tt>.  The default is to
-        checkpoint.
+<dt><tt>checkpoint</tt> </dt> <dd> The value of this keyword is boolean.
+
+        <dl>
+
+        <dt><tt>true</tt> and optimization is to be performed </dt>
+        <dd>
+        <tt>opt</tt> object will be checkpointed after each iteration.
+        The checkpoint file suffix is <tt>.ckpt</tt>.
+        </dd>
+
+        <dt><tt>true</tt> and optimization is not performed </dt>
+        <dd>
+        <tt>mole</tt> object will be checkpointed. The manner in which
+        <tt>mole</tt> will be checkpointed depends on its particular type.
+        The checkpoint file suffix is <tt>.wfn.ckpt</tt>.
+        </dd>
+
+        </dl>
+
+        The default is to not checkpoint.
+        </dd>
+
+<dt><tt>checkpoint_freq</tt><dd> This specifies how often to checkpoint
+        certain MolecularEnergy specializations which compute iteratively.
+        Currently, mole objects of SCF type can use this keyword.
+        The default is 1, which means to checkpoint after every iteration.
 
 <dt><tt>savestate</tt><dd> The value of this keyword is boolean.  If true,
         then the states of the optimizer and wavefunction objects will be
@@ -270,6 +292,7 @@ of the samples inputs shown here can be found in the directory
 <ul>
   <li> \ref mpqcoosamphf
   <li> \ref mpqcoosampmp2
+  <li> \ref mpqcoosampmp2r12
   <li> \ref mpqcoosamphfopt
   <li> \ref mpqcoosamphessopt
   <li> \ref mpqcoosampoptnewt
@@ -348,6 +371,56 @@ mpqc: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000
+    )
+  )
+)
+</pre>
+
+\subsection mpqcoosampmp2r12 MP2-R12 energy
+
+The following will compute the MP2-R12 energy of water in standard approximation A'
+(MP2-R12/A').
+
+<pre>
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "cc-pVDZ"
+  molecule = $:molecule
+)
+% auxiliary basis set specification
+abasis<GaussianBasisSet>: (
+  name = "aug-cc-pVDZ"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  % method for computing the molecule's energy
+  mole<MBPT2_R12>: (
+    molecule = $:molecule
+    basis = $:basis
+    aux_basis = $:abasis
+    stdapprox = "A'"
+    nfzc = 1
+    memory = 16000000
+    integrals<IntegralCints>:()
+    % reference wavefunction
+    reference<CLHF>: (
+      molecule = $:molecule
+      basis = $:basis
+      memory = 16000000
+      integrals<IntegralCints>:()
     )
   )
 )

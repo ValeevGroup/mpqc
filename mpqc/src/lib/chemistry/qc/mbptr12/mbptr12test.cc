@@ -54,6 +54,7 @@
 #include <chemistry/qc/mbptr12/mbptr12.h>
 
 using namespace std;
+using namespace sc;
 
 // Force linkages:
 #ifndef __PIC__
@@ -103,7 +104,7 @@ init_mp(const Ref<KeyVal>& keyval)
   SCFormIO::init_mp(grp->me());
   //SCFormIO::set_debug(1);
 
-  SCFormIO::setindent(ExEnv::out(), 2);
+  SCFormIO::setindent(ExEnv::out0(), 2);
   SCFormIO::setindent(cerr, 2);
   
   return grp;
@@ -141,19 +142,19 @@ main(int argc, char**argv)
   tim->exit("input");
 
   if (mole.nonnull()) {
-    ExEnv::out() << node0 << indent << "energy: " << mole->energy() << endl;
+    ExEnv::out0() << indent << "energy: " << mole->energy() << endl;
     if (mole->value_implemented()) {
-      ExEnv::out() << node0 << indent
+      ExEnv::out0() << indent
 		   << scprintf("value of mole is %20.15f\n\n", mole->energy());
     }
 
-    mole->print(ExEnv::out());
+    mole->print(ExEnv::out0());
   }
 
   StateOutBin so("mbptr12test.wfn");
   SavableState::save_state(mole.pointer(),so);
   
-  tim->print(ExEnv::out());
+  tim->print(ExEnv::out0());
 
   return 0;
 }

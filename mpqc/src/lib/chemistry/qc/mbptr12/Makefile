@@ -60,7 +60,7 @@ endif
 
 LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-mbptr12test:: mbptr12test.$(OBJSUF) $(LIBS) libdft.$(LIBSUF)
+mbptr12test:: mbptr12test.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o mbptr12test $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 mbptr12test.$(OBJSUF): mbptr12test.cc

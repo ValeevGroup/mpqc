@@ -1,22 +1,20 @@
 
-typedef int dmt_matrix;
-
-#include <stdlib.h>
+#include <iostream.h>
 #include <math.h>
 
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
-#include <util/class/class.h>
-#include <util/state/state.h>
 #include <util/group/message.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 
+static void iqs(int *item,int *index,int left,int right);
+static void iquicksort(int *item,int *index,int n);
+
 void
-MBPT2::compute_hsos_v1()
+MBPT2::compute_hsos_v2()
 {
   int i, j, k;
   int s1, s2;
@@ -25,50 +23,57 @@ MBPT2::compute_hsos_v1()
   int nfuncmax = basis()->max_nfunction_in_shell();
   int nbasis = basis()->nbasis();
   int nvir;
-  int nocc=0;
-  int ndocc=0,nsocc=0;
+  int nshell;
+  int nocc=0,ndocc=0,nsocc=0;
   int i_offset; 
   int npass, pass;
-  int ni;             /* batch size */
+  int ni;
   int np, nq, nr, ns; 
   int P, Q, R, S;
   int p, q, r, s;
   int bf1, bf2, bf3, bf4;
   int index;
+  int compute_index;
   int col_index;
+  int tmp_index;
+  int dim_ij;
   int docc_index, socc_index, vir_index;
   int me;
   int nproc;
   int rest;
-  int a_rest;
-  int a_number;              /* number of a-values processed by each node */
-  int a_offset;
-  int *a_vector;           /* each node's # of iajb integrals for one i,j */
-  int shell_index;
-  int compute_index;
-  int tmp_index;
-  int dim_ij;
-  int aoint_computed = 0;
-  int nshell;
-  double A, B, C, ni_top, max, ni_double; /* Variables used to compute ni  */
+  int r_offset;
+  int sum;
+  int min;
+  int iproc;
+  int nRshell;
+  int imyshell;
+  int *myshells;       /* the R indices processed by node me */
+  int *shellsize;      /* size of each shell                 */
+  int *sorted_shells;  /* sorted shell indices: large shells->small shells */
+  int *nbf;            /* number of basis functions processed by each node */
+  int *proc;           /* element k: processor which will process shell k  */
+  int aoint_computed = 0; 
+  double A, B, C, ni_top, max, ni_double; /* variables used to compute ni  */
   double *evals_open;    /* reordered scf eigenvalues                      */
   const double *intbuf;  /* 2-electron AO integral buffer                  */
   double *trans_int1;    /* partially transformed integrals                */
   double *trans_int2;    /* partially transformed integrals                */
   double *trans_int3;    /* partially transformed integrals                */
-  double *trans_int4_node;/* each node's subset of fully transf. integrals */
   double *trans_int4;    /* fully transformed integrals                    */
+  double *trans_int4_tmp; /* scratch array                                 */ 
   double *mo_int_do_so_vir; /*mo integral (is|sa); i:d.o.,s:s.o.,a:vir     */
   double *mo_int_tmp;    /* scratch array used in global summations        */
   double *socc_sum;      /* sum of 2-el integrals involving only s.o.'s    */
+  double *socc_sum_tmp;  /* scratch array                                  */ 
   double *iqrs, *iprs;
-  double *iars_ptr, *iajs_ptr, *iajr_ptr;
-  double iajr;
+  double *iars_ptr;
   double iars;
+  double iajr;
+  double *iajr_ptr;
   double *iajb;
   double pqrs;
   double *c_qa;
-  double *c_rb, *c_rj, *c_sj, *c_pi, *c_qi;
+  double *c_rb, *c_pi, *c_qi, *c_sj;
   double delta_ijab;
   double delta;
   double contrib1, contrib2;
@@ -77,11 +82,17 @@ MBPT2::compute_hsos_v1()
   double ecorr_opt2_contrib=0, ecorr_zapt2_contrib=0;
   double escf;
   double eopt2,eopt1,ezapt2;
-  double tol;     /* log2 of the erep tolerance (erep < 2^tol => discard) */
+  double tol;          /* log2 of the erep tolerance (erep < 2^tol => discard) */
+
+  if (molecule()->point_group().char_table().order() != 1) {
+    // need to reorder the eigenvalues and possibly fix some bugs
+    cout << "MP2 closed shell gradients only works for C1 symmetry" << endl;
+    abort();
+    }
 
   me = msg_->me();
-  
-  cout << node0 << "Just entered OPT2 program (opt2_v1)" << endl;
+
+  cout << node0 << "Just entered OPT2 program (opt2_v2)" << endl;
 
   tbint_ = integral()->electron_repulsion();
   intbuf = tbint_->buffer();
@@ -124,99 +135,135 @@ MBPT2::compute_hsos_v1()
   nvir  = nbasis - ndocc - nfzc - nfzv; 
   /* nocc = # of d.o. orb. + # of s.o. orb - # of frozen d.o. orb. */
   nocc  = ndocc + nsocc;
+  nshell = basis()->nshell();
+
+  /* allocate storage for some arrays used for keeping track of which R   *
+   * indices are processed by each node                                   */
+  shellsize = (int*) malloc(nshell*sizeof(int));
+  sorted_shells = (int*) malloc(nshell*sizeof(int));
+  nbf = (int*) malloc(nproc*sizeof(int));
+  proc = (int*) malloc(nshell*sizeof(int));
 
 
-  /* compute number of a-values (a_number) processed by each node */
+  /******************************************************
+  * Begin distributing R shells between nodes so each   *
+  * node gets ca. the same number of r basis functions  *
+  ******************************************************/
 
-  a_number = nvir/nproc; 
-  a_rest = nvir%nproc;
-  if (me < a_rest) a_number++;
-
-  if (a_number < nsocc) { 
-    cerr << "not enough memory allocated" << endl;
-    /* must have all socc's on node 0 for computation of socc_sum*/
-    abort();
+  /* compute size of each shell */
+  for (i=0; i<nshell; i++) {
+    shellsize[i] = basis()->shell(i).nfunction();
     }
 
-  if (me < a_rest) a_offset = me*a_number; /* a_offset for each node */
-  else a_offset = a_rest*(a_number + 1) + (me - a_rest)*a_number;
+  /* do an index sort (large -> small) of shellsize to form sorted_shells */
+  iquicksort(shellsize,sorted_shells,nshell);
 
-  /* fill in elements of a_vector for gcollect */
+  /* initialize nbf */
+  for (i=0; i<nproc; i++) nbf[i] = 0;
 
-  a_vector = (int*) malloc(nproc*sizeof(int));
-  if (!a_vector) {
-    cerr << "could not allocate storage for a_vector" << endl;
-    abort();
+  for (i=0; i<nshell; i++) {
+    min = nbf[0];
+    iproc = 0;
+    for (j=1; j<nproc; j++) {
+      if (nbf[j] < min) {
+        iproc = j;
+        min = nbf[j];
+        }
+      }
+    proc[sorted_shells[i]] = iproc;
+    nbf[iproc] += shellsize[sorted_shells[i]];
     }
-  for (i=0; i<nproc; i++) {
-    a_vector[i] = nvir*(nvir/nproc)*sizeof(double);
-    }
-  for (i=0; i<a_rest; i++) {
-    a_vector[i] += nvir*sizeof(double); /* first a_rest nodes hold an extra a */
-    }
-
-
-  /* compute batch size ni for opt2 loops                                 *
-   * need to store the following arrays: trans_int1-4, trans_int4_node,   *
-   * scf_vector, evals_open, socc_sum, mo_int_do_so_vir, mo_int_tmp and   *
-   * a_vector;                                                            *
-   * since a_number is not the same on all nodes, use node 0's a_number   *
-   * (which is >= all other a_numbers) and broadcast ni afterwords        */
-
   if (me == 0) {
-//    ni = (mem_alloc - sizeof(double)*(nvir*nvir + nbasis*(nvir+nocc)
-//                                     + (nocc+nvir) + nsocc 
-//                                     + 2*ndocc*nsocc*(nvir-nsocc) 
-//                                     + nvir*a_number)
-//                    - sizeof(int)*nproc)/
-//          (sizeof(double)*(2*nfuncmax*nfuncmax*nbasis + nbasis*a_number*nocc));
-    A = -0.5*sizeof(double)*nbasis*a_number;
-    B = sizeof(double)*(2*nfuncmax*nfuncmax + (nocc+0.5)*a_number)*nbasis;
-    C = sizeof(double)*(nvir*nvir + (nbasis+1)*(nocc+nvir) + nsocc 
-                        + 2*ndocc*nsocc*(nvir-nsocc) + nvir*a_number)
-        + sizeof(int)*nproc;
-    ni_top = -B/(2*A);  /* ni value for which memory requirement is max. */
-    max = A*ni_top*ni_top + B*ni_top + C;
+    cout << "Distribution of basis functions between nodes:" << endl;
+    for (i=0; i<nproc; i++) {
+      cout << scprintf(" %4i",nbf[i]);
+      if ((i+1)%12 == 0) cout << endl;
+      }
+    cout << endl;
+    }
+
+  /* determine which shells are to be processed by node me */
+  nRshell = 0;
+  for (i=0; i<nshell; i++) {
+    if (proc[i] == me) nRshell++;
+    }
+  myshells = (int*) malloc(nRshell*sizeof(int));
+  imyshell = 0;
+  for (i=0; i<nshell; i++) {
+    if (proc[i] == me) {
+      myshells[imyshell] = i;
+      imyshell++;
+      }
+    }
+
+  /************************************************
+  * End of distribution of R shells between nodes *
+  ************************************************/
+
+
+  /* compute batch size ni for opt2 loops;                                *
+   * need to store the following arrays of type double : trans_int1-4,    *
+   * trans_int4_tmp, scf_vector, evals_open, socc_sum, socc_sum_tmp,      *
+   * mo_int_do_so_vir, mo_int_tmp,                                        *
+   * and the following arrays of type int: myshells, shellsize,           *
+   * sorted_shells, nbf, and proc                                         */
+//  ni = (mem_alloc 
+//        - sizeof(double)*(2*nvir*nvir + nbasis*(nvir+nocc) + (nocc+nvir) 
+//                         + 2*nsocc + 2*ndocc*nsocc*(nvir-nsocc))
+//        - sizeof(int)*(3*nshell + nproc + nRshell)) /
+//        (sizeof(double)*(nfuncmax*nfuncmax*nbasis + nvir + nbf[me]*nvir*nocc));
+    A = -0.5*sizeof(double)*nbf[me]*nvir;
+    B = sizeof(double)*(nfuncmax*nfuncmax*nbasis + nvir + nocc*nbf[me]*nvir
+                        + nbf[me]*nvir*0.5);
+    C = sizeof(double)*(2*nvir*nvir + (nbasis+1)*(nvir+nocc) + 2*nsocc
+                        + 2*ndocc*nsocc*(nvir-nsocc))
+        + sizeof(int)*(3*nshell + nproc + nRshell);
+    ni_top = -B/(2*A);
+    max = A*ni_top*ni_top + B*ni_top +C;
     if (max <= mem_alloc) {
       ni = nocc;
-      npass = 1;
-      rest = 0;
       }
     else {
       ni_double = (-B + sqrt((double)(B*B - 4*A*(C-mem_alloc))))/(2*A);
       ni = (int) ni_double;
       if (ni > nocc) ni = nocc;
-      rest = nocc%ni;
-      npass = (nocc - rest)/ni + 1;
-      if (rest == 0) npass--;
       }
-    }
+
+  /* set ni equal to the smallest batch size for any node */
+  msg_->min(ni);
   msg_->bcast(ni);
-  msg_->bcast(npass);
-  msg_->bcast(rest);
 
   if (ni < nsocc) {
-    cerr << "Not enough memory allocated" << endl;
+    cerr << node0 << "Not enough memory allocated" << endl;
     abort();
     }
 
   if (ni < 1) {     /* this applies only to a closed shell case */
-    cerr << "Not enough memory allocated" << endl;
+    cerr << node0 << "Not enough memory allocated" << endl;
     abort();
     }
 
-  cout << node0 << "computed batchsize: " << ni << endl;
+  cout << node0 << "Computed batchsize: " << ni << endl;
 
-  nshell = basis()->nshell();
-  if (me == 0) {
-    cout << " npass  rest  nbasis  nshell  nfuncmax"
-         << "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
-    cout << scprintf("   %-4i   %-3i   %-5i   %-4i     %-3i"
-                     "     %-3i     %-3i   %-3i    %-3i   %-3i",
-                     npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv)
-         << endl;
-    cout << scprintf("Using %i bytes of memory", mem_alloc) << endl;
+  if (nocc == ni) {
+    npass = 1;
+    rest = 0;
     }
+  else {
+    rest = nocc%ni;
+    npass = (nocc - rest)/ni + 1;
+    if (rest == 0) npass--;
+    }
+
+  if (me == 0) {
+    cout << node0 << " npass  rest  nbasis  nshell  nfuncmax"
+                     "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
+    cout << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i"
+                     "     %-3i    %-3i    %-3i    %-3i   %-3i\n",
+            npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
+    cout << scprintf("Using %i bytes of memory",mem_alloc) << endl;
+    }
+
 
   /* the scf vector might be distributed between the nodes, but for OPT2 *
    * each node needs its own copy of the vector;                         *
@@ -229,10 +276,6 @@ MBPT2::compute_hsos_v1()
    * socc_sum comment below)                                             */
 
   evals_open = (double*) malloc((nbasis+nsocc-nfzc-nfzv)*sizeof(double));
-  if (!evals_open) {
-    cerr << "could not allocate storage for evals_open" << endl;
-    abort();
-    }
 
   RefDiagSCMatrix evals;
   RefSCMatrix Scf_Vec;
@@ -272,7 +315,6 @@ MBPT2::compute_hsos_v1()
       ivir++;
       }
     }
-
   // need the transpose of the vector
   double **scf_vector = new double*[nbasis];
   double *scf_vector_dat = new double[(nocc+nvir)*nbasis];
@@ -285,70 +327,58 @@ MBPT2::compute_hsos_v1()
   delete[] scf_vectort;
   delete[] scf_vectort_dat;
 
-  if (debug_) {
-    cout << "Final eigenvalues and vectors" << endl;
-    for (i=0; i<nocc+nvir; i++) {
-      cout << evals_open[i];
-        for (j=0; j<nbasis; j++) {
-          cout << " " << scf_vector[j][i];
-          }
-      cout << endl;
-      }
-    cout << endl;
-    }
+  /* allocate storage for various arrays */
 
-  /* allocate storage for integral arrays */
-
-  dim_ij = nocc*ni - ni*(ni-1)/2;
+  dim_ij = nocc*ni - ni*(ni - 1)/2;
 
   trans_int1 = (double*) malloc(nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
-  trans_int2 = (double*) malloc(nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
-  trans_int3 = (double*) malloc(nbasis*a_number*dim_ij*sizeof(double));
-  trans_int4_node= (double*) malloc(nvir*a_number*sizeof(double));
+  trans_int2 = (double*) malloc(nvir*ni*sizeof(double));
+  trans_int3 = (double*) malloc(nbf[me]*nvir*dim_ij*sizeof(double));
   trans_int4 = (double*) malloc(nvir*nvir*sizeof(double));
-  if (!(trans_int1 && trans_int2 && trans_int3 && trans_int4_node && trans_int4)){
-    fprintf(stderr,"could not allocate storage for integral arrays\n");
-    abort();
-    }
-  if (nsocc) socc_sum  = (double*) malloc(nsocc*sizeof(double));
+  trans_int4_tmp = (double*) malloc(nvir*nvir*sizeof(double));
+  if (nsocc) socc_sum = (double*) malloc(nsocc*sizeof(double));
+  if (nsocc) socc_sum_tmp = (double*) malloc(nsocc*sizeof(double));
   if (nsocc) mo_int_do_so_vir = 
-                   (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
+                     (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
   if (nsocc) mo_int_tmp = 
-                   (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
+                     (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
 
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
+
 /**************************************************************************
-*    begin opt2 loops                                                     *
-***************************************************************************/
+ *   begin opt2 loops                                                     *
+ **************************************************************************/
+
 
   for (pass=0; pass<npass; pass++) {
-    i_offset= pass*ni;  
+    i_offset = pass*ni;  
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
-    bzerofast(trans_int3,nbasis*a_number*dim_ij);
 
-    shell_index = 0;
+    r_offset = 0;
+    bzerofast(trans_int3,nbf[me]*nvir*dim_ij);
 
     tim_enter("RS loop");
-    for (R = 0; R < basis()->nshell(); R++) {
+
+    for (imyshell=0; imyshell<nRshell; imyshell++) {
+
+      R = myshells[imyshell];
       nr = basis()->shell(R).nfunction();
 
-      for (S = 0; S <= R; S++) {
+      for (S = 0; S < nshell; S++) {
         ns = basis()->shell(S).nfunction();
         tim_enter("bzerofast trans_int1");
         bzerofast(trans_int1,nfuncmax*nfuncmax*nbasis*ni);
         tim_exit("bzerofast trans_int1");
 
         tim_enter("PQ loop");
-        for (P = 0; P < basis()->nshell(); P++) {
+
+        for (P = 0; P < nshell; P++) {
           np = basis()->shell(P).nfunction();
 
           for (Q = 0; Q <= P; Q++) {
-            shell_index++;
-            if (shell_index%nproc != me) continue; 
-
             if (tbint_->log2_shell_bound(P,Q,R,S) < tol) {
-              continue;                           /* skip ereps less than tol */
+              continue;                          /* skip ereps less than tol */
               }
 
             aoint_computed++;
@@ -359,7 +389,7 @@ MBPT2::compute_hsos_v1()
             tbint_->compute_shell(P,Q,R,S);
             tim_exit("erep");
 
-            tim_enter("1. quart. tr."); 
+            tim_enter("1. quart. tr.");
 
             index = 0;
 
@@ -379,19 +409,14 @@ MBPT2::compute_hsos_v1()
                 for (bf3 = 0; bf3 < nr; bf3++) {
 
                   for (bf4 = 0; bf4 < ns; bf4++,index++) {
-                    if (R==S && bf4>bf3) {
-                      index = ((bf1*nq + bf2)*nr + (bf3+1))*ns;
-                      break; 
-                      }
 
-                    if (fabs(intbuf[index])>1.0e-15) {
+                    if (fabs(intbuf[index]) > 1.0e-15) {
                       pqrs = intbuf[index];
 
                       iqrs = &trans_int1[((bf4*nr + bf3)*nbasis + q)*ni];
                       iprs = &trans_int1[((bf4*nr + bf3)*nbasis + p)*ni];
                     
                       if (p == q) pqrs *= 0.5;
-
                       col_index = i_offset;
                       c_pi = &scf_vector[p][col_index];
                       c_qi = &scf_vector[q][col_index];
@@ -408,32 +433,28 @@ MBPT2::compute_hsos_v1()
             tim_exit("1. quart. tr.");
             }           /* exit Q loop */
           }             /* exit P loop */
-
         tim_exit("PQ loop");
 
-        tim_enter("sum int");
-        msg_->sum(trans_int1,nr*ns*nbasis*ni,trans_int2);
-        tim_exit("sum int");
-
-        /* begin second quarter transformation */
-
-        tim_enter("bzerofast trans_int2");
-        bzerofast(trans_int2,nfuncmax*nfuncmax*nbasis*ni);
-        tim_exit("bzerofast trans_int2");
-
-        tim_enter("2. quart. tr.");
+        /* begin second and third quarter transformations */
 
         for (bf3 = 0; bf3 < nr; bf3++) {
+          r = r_offset + bf3;
 
           for (bf4 = 0; bf4 < ns; bf4++) {
-            if (R == S && bf4 > bf3) continue;
+            s = basis()->shell_to_function(S) + bf4;
+
+            tim_enter("bzerofast trans_int2");
+            bzerofast(trans_int2,nvir*ni);
+            tim_exit("bzerofast trans_int2");
+
+            tim_enter("2. quart. tr.");
 
             for (q = 0; q < nbasis; q++) {
-              c_qa = &scf_vector[q][nocc + a_offset];
+              iars_ptr = trans_int2;
               iqrs = &trans_int1[((bf4*nr + bf3)*nbasis + q)*ni];
-              iars_ptr = &trans_int2[((bf4*nr + bf3)*a_number)*ni];
+              c_qa = &scf_vector[q][nocc];
 
-              for (a = 0; a < a_number; a++) {
+              for (a = 0; a < nvir; a++) {
 
                 for (i=ni; i; i--) {
                   *iars_ptr++ += *c_qa * *iqrs++;
@@ -442,44 +463,36 @@ MBPT2::compute_hsos_v1()
                 iqrs -= ni;
                 c_qa++;
                 }
-              }
-            }
-          }
-        tim_exit("2. quart. tr.");
+              }             /* exit q loop */
+            tim_exit("2. quart. tr.");
 
-        /* begin third quarter transformation */
-        tim_enter("3. quart. tr.");
+            /* begin third quarter transformation */
 
-
-        for (bf3 = 0; bf3<nr; bf3++) {
-          r = basis()->shell_to_function(R) + bf3;
-
-          for (bf4 = 0; bf4 <= (R == S ? bf3:(ns-1)); bf4++) {
-            s = basis()->shell_to_function(S) + bf4;
+            tim_enter("3. quart. tr.");
 
             for (i=0; i<ni; i++) {
               tmp_index = i*(i+1)/2 + i*i_offset;
 
-              for (a=0; a<a_number; a++) {
-                iars = trans_int2[((bf4*nr + bf3)*a_number + a)*ni + i];
-                if (r == s) iars *= 0.5;
-                iajs_ptr = &trans_int3[tmp_index + dim_ij*(a + a_number*s)];
-                iajr_ptr = &trans_int3[tmp_index + dim_ij*(a + a_number*r)];
-                c_rj = scf_vector[r];
+              for (a=0; a<nvir; a++) {
+                iars = trans_int2[a*ni + i];
                 c_sj = scf_vector[s];
+                iajr_ptr = &trans_int3[tmp_index + dim_ij*(a + nvir*r)];
 
                 for (j=0; j<=i+i_offset; j++) {
-                  *iajs_ptr++ += *c_rj++ * iars;
                   *iajr_ptr++ += *c_sj++ * iars;
                   }
                 }
-              }
-            }     /* exit bf4 loop */
-          }       /* exit bf3 loop */
-        tim_exit("3. quart. tr.");
+              }   /* exit i loop */
+            tim_exit("3. quart. tr.");
+
+            } /* exit bf4 loop */
+          }   /* exit bf3 loop */
+
         }         /* exit S loop */
+      r_offset += nr;
       }           /* exit R loop */
     tim_exit("RS loop");
+
 
     /* begin fourth quarter transformation;                                *
      * first tansform integrals with only s.o. indices;                    *
@@ -491,27 +504,41 @@ MBPT2::compute_hsos_v1()
      * (isocc, asocc = s.o. and the sum over asocc runs over all s.o.'s)   *
      * the individual integrals are not saved here, only the sums are kept */
 
-    tim_enter("4. quart. tr.");
-    if (pass == 0 && me == 0) {
+
+    if (pass == 0) {
+      tim_enter("4. quart. tr.");
       if (nsocc) bzerofast(socc_sum,nsocc);
       for (isocc=0; isocc<nsocc; isocc++) {
 
-        for (r=0; r<nbasis; r++) {
+        for (index=0; index<nbf[me]; index++) {
+          i = 0;
+          sum = basis()->shell(myshells[i]).nfunction();
+          while (sum <= index) {
+            i++;
+            sum += basis()->shell(myshells[i]).nfunction();
+            }
+          sum -= basis()->shell(myshells[i]).nfunction();
+          r = basis()->shell_to_function(myshells[i]) + index - sum;
 
           for (asocc=0; asocc<nsocc; asocc++) {
             socc_sum[isocc] += scf_vector[r][nocc+asocc]*
-                                trans_int3[isocc*(isocc+1)/2 + isocc*i_offset 
-                                          + isocc + dim_ij*(asocc + a_number*r)];
+                           trans_int3[isocc*(isocc+1)/2 + isocc*i_offset
+                                     + isocc + dim_ij*(asocc + nvir*index)];
             }
           }
+        }       /* exit isocc loop */
+
+      tim_exit("4. quart. tr.");
+
+      /* sum socc_sum contributions from each node (only if nsocc > 0 *
+       * since gop1 will fail if nsocc = 0)                           */
+      if (nsocc > 0) {
+        tim_enter("global sum socc_sum");
+        msg_->sum(socc_sum,nsocc,socc_sum_tmp);
+        tim_exit("global sum socc_sum");
         }
-      }
 
-    tim_enter("bcast0 socc_sum");
-    if (nsocc) msg_->bcast(socc_sum,nsocc);
-    tim_exit("bcast0 socc_sum");
-
-    tim_exit("4. quart. tr.");
+      } 
 
     /* now we have all the sums of integrals involving s.o.'s (socc_sum);   *
      * begin fourth quarter transformation for all integrals (including     *
@@ -524,16 +551,24 @@ MBPT2::compute_hsos_v1()
 
       for (j=0; j <= (i_offset+i); j++) {
 
-       tim_enter("4. quart. tr.");
+        tim_enter("4. quart. tr.");
 
-        bzerofast(trans_int4_node,nvir*a_number);
+        bzerofast(trans_int4,nvir*nvir);
 
-        for (r=0; r<nbasis; r++) {
+        for (index=0; index<nbf[me]; index++) {
+          k = 0;
+          sum = basis()->shell(myshells[k]).nfunction();
+          while (sum <= index) {
+            k++;
+            sum += basis()->shell(myshells[k]).nfunction();
+            }
+          sum -= basis()->shell(myshells[k]).nfunction();
+          r = basis()->shell_to_function(myshells[k]) + index - sum;
 
-          for (a=0; a<a_number; a++) {
-            iajb = &trans_int4_node[a*nvir];
+          for (a=0; a<nvir; a++) {
+            iajb = &trans_int4[a*nvir];
+            iajr = trans_int3[i*(i+1)/2 + i*i_offset + j + dim_ij*(a+nvir*index)];
             c_rb = &scf_vector[r][nocc];
-            iajr = trans_int3[i*(i+1)/2 + i*i_offset + j + dim_ij*(a+a_number*r)];
 
             for (b=0; b<nvir; b++) {
               *iajb++ += *c_rb++ * iajr;
@@ -543,11 +578,9 @@ MBPT2::compute_hsos_v1()
 
         tim_exit("4. quart. tr.");
 
-        /* collect each node's part of fully transf. int. into trans_int4 */
-        tim_enter("collect");
-        msg_->collect(trans_int4_node,a_vector,trans_int4);
-        tim_exit("collect");
-
+        tim_enter("global sum trans_int4");
+        msg_->sum(trans_int4,nvir*nvir,trans_int4_tmp);
+        tim_exit("global sum trans_int4");
 
         /* we now have the fully transformed integrals (ia|jb)      *
          * for one i, one j (j <= i_offset+i), and all a and b;     *
@@ -624,9 +657,9 @@ MBPT2::compute_hsos_v1()
             else if (docc_index == 1 && socc_index == 2 && vir_index == 1) {
               contrib1 = trans_int4[b*nvir+a]*trans_int4[b*nvir+a];
               if (j == b) {
-                /* to compute the total energy contribution from an integral  *
-                 * of the type (is1|s1a) (i=d.o., s1=s.o., a=unocc.), we need *
-                 * the (is|sa) integrals for all s=s.o.; these integrals are  *
+                /* to compute the energy contribution from an integral of the *
+                 * type (is1|s1a) (i=d.o., s1=s.o., a=unocc.), we need the    *
+                 * (is|sa) integrals for all s=s.o.; these integrals are      *
                  * therefore stored here in the array mo_int_do_so_vir, and   *
                  * the energy contribution is computed after exiting the loop *
                  * over i-batches (pass)                                      */
@@ -636,8 +669,8 @@ MBPT2::compute_hsos_v1()
                 ecorr_opt2_contrib += 1.5*contrib1/delta_ijab;
                 ecorr_opt1         += 1.5*contrib1/delta_ijab;
                 ecorr_zapt2_contrib += contrib1/
-                               (delta_ijab - 0.5*(socc_sum[j]+socc_sum[b]))
-                            + 0.5*contrib1/delta_ijab;
+                                (delta_ijab - 0.5*(socc_sum[j]+socc_sum[b]))
+                           + 0.5*contrib1/delta_ijab;
                 }
               else {
                 ecorr_opt2 += contrib1/
@@ -667,20 +700,20 @@ MBPT2::compute_hsos_v1()
       }         /* exit i loop */
     }           /* exit loop over i-batches (pass) */
 
-  // don't need the AO integrals anymore
-  tbint_ = 0;
+
 
   /* compute contribution from excitations of the type is1 -> s1a where   *
    * i=d.o., s1=s.o. and a=unocc; single excitations of the type i -> a,  *
    * where i and a have the same spin, contribute to this term;           *
-   * (Brillouin's theorem not satisfied for ROHF wave functions);         */
+   * (Brillouin's theorem not satisfied for ROHF wave functions);         *
+   * do this only if nsocc > 0 since gop1 will fail otherwise             */
 
   tim_enter("compute ecorr");
 
   if (nsocc > 0) {
-    tim_enter("sum mo_int_do_so_vir");
+    tim_enter("global sum mo_int_do_so_vir");
     msg_->sum(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc),mo_int_tmp);
-    tim_exit("sum mo_int_do_so_vir");
+    tim_exit("global sum mo_int_do_so_vir");
     }
 
   /* add extra contribution for triplet and higher spin multiplicities *
@@ -724,17 +757,22 @@ MBPT2::compute_hsos_v1()
     /* print out various energies etc.*/
 
     cout << scprintf("Number of shell quartets for which AO integrals would\n"
-                     "have been computed without bounds checking: %i\n",
-                     npass*nshell*nshell*(nshell+1)*(nshell+1)/4);
+            "have been computed without bounds checking: %i\n",
+             npass*nshell*nshell*(nshell+1)*(nshell+1)/2);
     cout << scprintf("Number of shell quartets for which AO integrals\n"
-                     "were computed: %i\n",aoint_computed);
+            "were computed: %i\n",aoint_computed);
+            
     cout << scprintf("ROHF energy [au]:                  %13.8lf\n", escf);
     cout << scprintf("OPT1 energy [au]:                  %13.8lf\n", eopt1);
-    cout << scprintf("OPT2 second order correction [au]: %13.8lf\n", ecorr_opt2);
+    cout << scprintf("OPT2 second order correction [au]: %13.8lf\n",
+                     ecorr_opt2);
     cout << scprintf("OPT2 energy [au]:                  %13.8lf\n", eopt2);
-    cout << scprintf("ZAPT2 correlation energy [au]:     %13.8lf\n", ecorr_zapt2);
+    cout << scprintf("ZAPT2 correlation energy [au]:     %13.8lf\n",
+                     ecorr_zapt2);
     cout << scprintf("ZAPT2 energy [au]:                 %13.8lf\n", ezapt2);
+    cout.flush();
     }
+
   msg_->bcast(eopt1);
   msg_->bcast(eopt2);
   msg_->bcast(ezapt2);
@@ -756,16 +794,65 @@ MBPT2::compute_hsos_v1()
   free(trans_int1);
   free(trans_int2);
   free(trans_int3);
-  free(trans_int4_node);
   free(trans_int4);
-  free(a_vector);
+  free(trans_int4_tmp);
   if (nsocc) free(socc_sum);
+  if (nsocc) free(socc_sum_tmp);
   if (nsocc) free(mo_int_do_so_vir);
   if (nsocc) free(mo_int_tmp);
   free(evals_open);
+  free(myshells);
+  free(shellsize);
+  free(sorted_shells);
+  free(nbf);
+  free(proc);
 
   delete[] scf_vector;
   delete[] scf_vector_dat;
+
+  }
+
+
+/* Do a quick sort (larger -> smaller) of the integer data in item *
+ * by the integer indices in index;                                *
+ * data in item remain unchanged                                  */
+
+static void
+iquicksort(int *item,int *index,int n)
+{
+  int i;
+  if (n<=0) return;
+  for (i=0; i<n; i++) {
+    index[i] = i;
+    }
+  iqs(item,index,0,n-1);
+  }
+
+static void
+iqs(int *item,int *index,int left,int right)
+{
+  register int i,j;
+  int x,y;
+ 
+  i=left; j=right;
+  x=item[index[(left+right)/2]];
+ 
+  do {
+    while(item[index[i]]>x && i<right) i++;
+    while(x>item[index[j]] && j>left) j--;
+ 
+    if (i<=j) {
+      if (item[index[i]] != item[index[j]]) {
+        y=index[i];
+        index[i]=index[j];
+        index[j]=y;
+        }
+      i++; j--;
+      }
+    } while(i<=j);
+       
+  if (left<j) iqs(item,index,left,j);
+  if (i<right) iqs(item,index,i,right);
   }
 
 // Local Variables:

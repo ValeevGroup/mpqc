@@ -51,7 +51,7 @@ class MBPT2: public Wavefunction {
     void compute_hsos_v1();
 
     // calculate the opt2 energy using algorithm v2
-    //void compute_hsos_v2();
+    void compute_hsos_v2();
 
     // calculate the opt2 energy using the load balanced version of v2
     //void compute_hsos_v2_lb();

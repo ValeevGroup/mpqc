@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.2  1994/02/23 02:14:34  cljanss
+% Revision 1.3  1994/05/18 22:04:48  etseidl
+% use distributed bounds initialization
+%
+% Revision 1.2  1994/02/23  02:14:34  cljanss
 % Changed from spiderweb to cweb format.
 %
 % Revision 1.1.1.1  1993/12/29  12:53:00  etseidl
@@ -537,7 +540,7 @@ be computed.
                              |(bounds?0:INT_NODERB),
                              1,centers,centers,centers,centers);
   if (bounds) {
-#define OLDBOUNDSINIT
+#undef OLDBOUNDSINIT
 #ifdef OLDBOUNDSINIT
     /* Intialize all bounds locally. */
     int_init_bounds_1der();

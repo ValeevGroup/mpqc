@@ -36,7 +36,7 @@ IntCoor::_castdown(const ClassDesc*cd)
 }
 
 IntCoor::IntCoor(const char *re):
-  value_(0.0), label_(0)
+  label_(0), value_(0.0)
 {
   if (!re) re = "noname";
   label_=new char[strlen(re)+1]; strcpy(label_,re);

@@ -42,7 +42,7 @@ DISTFILES = Makefile $(CXXSRC) $(INC) ipv2_parse.yy ipv2_scan.ll LIBS.h
 default:: $(DEPENDINCLUDE)
 default:: libkeyval.a
 
-keyvaltest: keyvaltest.o ../container/libcontainer.a ../class/libclass.a libkeyval.a
+keyvaltest: keyvaltest.o libkeyval.a ../container/libcontainer.a ../class/libclass.a
 	$(CXX) $(CXXFLAGS) -o keyvaltest $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

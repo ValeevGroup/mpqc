@@ -26,6 +26,7 @@ IPV2::set_uppercase(int uc)
 void
 IPV2::ip_initialize(FILE*in,FILE*out)
 {
+  ip_initialized = 1;
   
   if (in)  ip_in = in;
   else     ip_in = stdin;

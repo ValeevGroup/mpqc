@@ -15,6 +15,8 @@ extern "C" {
 ////////////////////////////////////////////////////////////////////////
 // KeyVal
 
+REF_def(KeyVal);
+
 KeyVal::KeyVal() :
   errcod(OK)
 {
@@ -414,3 +416,61 @@ void KeyVal::dump(FILE*fp,int n)
 {
   offset(fp,n); fprintf(fp,"KeyVal: error: \"%s\"\n",errormsg());
 }
+
+// here are some inline candidates that are here for now because
+// they were making executables big
+void   KeyVal::seterror(KeyValError err) { errcod = err; }
+int    KeyVal::exists(int i) { return exists((const char*)0,i); };
+int    KeyVal::count(int i) { return count((const char*)0,i); };
+int    KeyVal::booleanvalue(int i)
+{
+  return booleanvalue((const char*)0,i);
+};
+double KeyVal::doublevalue(int i) { return doublevalue((const char*)0,i); };
+float  KeyVal::floatvalue(int i) { return floatvalue((const char*)0,i); };
+char   KeyVal::charvalue(int i) { return charvalue((const char*)0,i); };
+int    KeyVal::intvalue(int i) { return intvalue((const char*)0,i); };
+char*  KeyVal::pcharvalue(int i) { return pcharvalue((const char*)0,i); };
+RefDescribedClass KeyVal::describedclassvalue(int i)
+{
+  return describedclassvalue((const char*)0,i);
+};
+int    KeyVal::exists(int i,int j) { return exists((const char*)0,i,j); };
+int    KeyVal::count(int i,int j) { return count((const char*)0,i,j); };
+int    KeyVal::booleanvalue(int i,int j)
+{
+  return booleanvalue((const char*)0,i,j);
+};
+double KeyVal::doublevalue(int i,int j)
+{
+  return doublevalue((const char*)0,i,j);
+};
+float  KeyVal::floatvalue(int i,int j)
+{
+  return floatvalue((const char*)0,i,j);
+};
+char   KeyVal::charvalue(int i,int j)
+{
+  return charvalue((const char*)0,i,j);
+};
+int    KeyVal::intvalue(int i,int j)
+{
+  return intvalue((const char*)0,i,j);
+};
+char*  KeyVal::pcharvalue(int i,int j)
+{
+  return pcharvalue((const char*)0,i,j);
+};
+RefDescribedClass KeyVal::describedclassvalue(int i,int j)
+{
+  return describedclassvalue((const char*)0,i,j);
+};
+double KeyVal::Defaultdouble() { return 0.0; };
+int    KeyVal::Defaultint() { return 0; };
+float  KeyVal::Defaultfloat() { return 0.0; };
+char   KeyVal::Defaultchar() { return 0; };
+char*  KeyVal::Defaultpchar() { return 0; };
+int    KeyVal::Defaultboolean() { return 0; };
+RefDescribedClass KeyVal::DefaultRefDescribedClass() { return 0; };
+KeyVal::KeyValError KeyVal::error() { return errcod; }
+char*  KeyVal::errormsg() { return errormsg(errcod); }

@@ -10,6 +10,14 @@ extern "C" {
 
 REF_def(KeyValValue)
 
+KeyValValue::KeyValValue()
+{
+}
+
+KeyValValue::KeyValValue(KeyValValue&)
+{
+}
+
 KeyValValue::~KeyValValue()
 {
 }
@@ -67,6 +75,13 @@ KeyValValuedouble::KeyValValuedouble(double val):
   _val(val)
 {
 }
+KeyValValuedouble::KeyValValuedouble(const KeyValValuedouble&val):
+  _val(val._val)
+{
+}
+KeyValValuedouble::~KeyValValuedouble()
+{
+}
 
 KeyVal::KeyValError
 KeyValValuedouble::value(double&val)
@@ -77,6 +92,13 @@ KeyValValuedouble::value(double&val)
 
 KeyValValueboolean::KeyValValueboolean(int val):
   _val(val)
+{
+}
+KeyValValueboolean::KeyValValueboolean(const KeyValValueboolean&val):
+  _val(val._val)
+{
+}
+KeyValValueboolean::~KeyValValueboolean()
 {
 }
 
@@ -91,6 +113,13 @@ KeyValValuefloat::KeyValValuefloat(float val):
   _val(val)
 {
 }
+KeyValValuefloat::KeyValValuefloat(const KeyValValuefloat&val):
+  _val(val._val)
+{
+}
+KeyValValuefloat::~KeyValValuefloat()
+{
+}
 
 KeyVal::KeyValError
 KeyValValuefloat::value(float&val)
@@ -101,6 +130,13 @@ KeyValValuefloat::value(float&val)
 
 KeyValValuechar::KeyValValuechar(char val):
   _val(val)
+{
+}
+KeyValValuechar::KeyValValuechar(const KeyValValuechar&val):
+  _val(val._val)
+{
+}
+KeyValValuechar::~KeyValValuechar()
 {
 }
 
@@ -115,6 +151,13 @@ KeyValValueint::KeyValValueint(int val):
   _val(val)
 {
 }
+KeyValValueint::KeyValValueint(const KeyValValueint&val):
+  _val(val._val)
+{
+}
+KeyValValueint::~KeyValValueint()
+{
+}
 
 KeyVal::KeyValError
 KeyValValueint::value(int&val)
@@ -125,6 +168,10 @@ KeyValValueint::value(int&val)
 
 KeyValValuepchar::KeyValValuepchar(const char* val):
   _val(strcpy(new char[strlen(val)+1],val))
+{
+}
+KeyValValuepchar::KeyValValuepchar(const KeyValValuepchar&val):
+  _val(strcpy(new char[strlen(val._val)+1],val._val))
 {
 }
 KeyValValuepchar::~KeyValValuepchar()
@@ -143,6 +190,15 @@ KeyValValueRefDescribedClass::
   _val(val)
 {
 }
+KeyValValueRefDescribedClass::
+  KeyValValueRefDescribedClass(KeyValValueRefDescribedClass& val):
+  _val(val._val)
+{
+}
+KeyValValueRefDescribedClass::
+  ~KeyValValueRefDescribedClass()
+{
+}
 KeyVal::KeyValError
 KeyValValueRefDescribedClass::value(RefDescribedClass&val)
 {
@@ -152,6 +208,13 @@ KeyValValueRefDescribedClass::value(RefDescribedClass&val)
 
 KeyValValueString::KeyValValueString(const char* val):
   _val(val)
+{
+}
+KeyValValueString::KeyValValueString(const KeyValValueString&val):
+  _val(val._val)
+{
+}
+KeyValValueString::~KeyValValueString()
 {
 }
 KeyVal::KeyValError

@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 #include <util/class/class.h>
+#include <util/container/ref.h>
 
 class KeyValKeyword {
   private:
@@ -28,16 +29,19 @@ class KeyValKeyword {
 
 class RefKeyValValue;
 
-class KeyVal {
+class KeyVal: public VRefCount {
   public:
     enum {MaxKeywordLength = 256};
     enum KeyValError { OK, HasNoValue, WrongType,
                        UnknownKeyword, OperationFailed };
   private:
     KeyValError errcod;
+    // do not allow a copy constructor or assignment
+    KeyVal(const KeyVal&);
+    operator=(const KeyVal&);
   protected:
     KeyVal();
-    inline void seterror(KeyValError err) { errcod = err; }
+    void seterror(KeyValError err);
 
     void offset(FILE* fp,int n); // Put n ' ' into fp.
     enum {OffsetDelta=4};
@@ -81,19 +85,15 @@ class KeyVal {
     char*  pcharvalue(const char* key,int);
     RefDescribedClass describedclassvalue(const char* key,int);
 
-    inline int    exists(int i) { return exists((const char*)0,i); };
-    inline int    count(int i) { return count((const char*)0,i); };
-    inline int    booleanvalue(int i) {
-        return booleanvalue((const char*)0,i);
-      };
-    inline double doublevalue(int i) { return doublevalue((const char*)0,i); };
-    inline float  floatvalue(int i) { return floatvalue((const char*)0,i); };
-    inline char   charvalue(int i) { return charvalue((const char*)0,i); };
-    inline int    intvalue(int i) { return intvalue((const char*)0,i); };
-    inline char*  pcharvalue(int i) { return pcharvalue((const char*)0,i); };
-    inline RefDescribedClass describedclassvalue(int i) {
-        return describedclassvalue((const char*)0,i);
-      };
+    int    exists(int i);
+    int    count(int i);
+    int    booleanvalue(int i);
+    double doublevalue(int i);
+    float  floatvalue(int i);
+    char   charvalue(int i);
+    int    intvalue(int i);
+    char*  pcharvalue(int i);
+    RefDescribedClass describedclassvalue(int i);
 
     // For arrays:
     int    exists(const char*,int,int);
@@ -106,29 +106,15 @@ class KeyVal {
     char*  pcharvalue(const char* key,int,int);
     RefDescribedClass describedclassvalue(const char* key,int,int);
 
-    inline int    exists(int i,int j) { return exists((const char*)0,i,j); };
-    inline int    count(int i,int j) { return count((const char*)0,i,j); };
-    inline int    booleanvalue(int i,int j) {
-        return booleanvalue((const char*)0,i,j);
-      };
-    inline double doublevalue(int i,int j) {
-        return doublevalue((const char*)0,i,j);
-      };
-    inline float  floatvalue(int i,int j) {
-        return floatvalue((const char*)0,i,j);
-      };
-    inline char   charvalue(int i,int j) {
-        return charvalue((const char*)0,i,j);
-      };
-    inline int    intvalue(int i,int j) {
-        return intvalue((const char*)0,i,j);
-      };
-    inline char*  pcharvalue(int i,int j) {
-        return pcharvalue((const char*)0,i,j);
-      };
-    inline RefDescribedClass describedclassvalue(int i,int j) {
-        return describedclassvalue((const char*)0,i,j);
-      };
+    int    exists(int i,int j);
+    int    count(int i,int j);
+    int    booleanvalue(int i,int j);
+    double doublevalue(int i,int j);
+    float  floatvalue(int i,int j);
+    char   charvalue(int i,int j);
+    int    intvalue(int i,int j);
+    char*  pcharvalue(int i,int j);
+    RefDescribedClass describedclassvalue(int i,int j);
 
     // For all else:
     int    Va_exists(const char*,int,...);
@@ -142,22 +128,27 @@ class KeyVal {
     RefDescribedClass Va_describedclassvalue(const char* key,int,...);
 
     // default values
-    inline static double Defaultdouble() { return 0.0; };
-    inline static int    Defaultint() { return 0; };
-    inline static float  Defaultfloat() { return 0.0; };
-    inline static char   Defaultchar() { return 0; };
-    inline static char*  Defaultpchar() { return 0; };
-    inline static int    Defaultboolean() { return 0; };
-    inline static RefDescribedClass DefaultRefDescribedClass() { return 0; };
+    static double Defaultdouble();
+    static int    Defaultint();
+    static float  Defaultfloat();
+    static char   Defaultchar();
+    static char*  Defaultpchar();
+    static int    Defaultboolean();
+    static RefDescribedClass DefaultRefDescribedClass();
 
-    inline KeyValError error() { return errcod; }
+    KeyValError error();
     char*  errormsg(KeyValError);
-    inline char*  errormsg() { return errormsg(errcod); }
+    char*  errormsg();
     virtual void errortrace(FILE*fp=stderr,int offset = 0);
     virtual void dump(FILE*fp=stderr,int offset = 0);
 };
 
+REF_dec(KeyVal);
+
 class KeyValValue: public VRefCount {
+  protected:
+    KeyValValue();
+    KeyValValue(KeyValValue&);
   public:
     virtual ~KeyValValue();
     virtual KeyVal::KeyValError value(double&);
@@ -176,6 +167,8 @@ class KeyValValuedouble: public KeyValValue {
     double _val;
   public:
     KeyValValuedouble(double);
+    KeyValValuedouble(const KeyValValuedouble&);
+    ~KeyValValuedouble();
     KeyVal::KeyValError value(double&);
 };
 
@@ -184,6 +177,8 @@ class KeyValValueboolean: public KeyValValue {
     int _val;
   public:
     KeyValValueboolean(int);
+    KeyValValueboolean(const KeyValValueboolean&);
+    ~KeyValValueboolean();
     KeyVal::KeyValError booleanvalue(int&);
 };
 
@@ -192,6 +187,8 @@ class KeyValValuefloat: public KeyValValue {
     float _val;
   public:
     KeyValValuefloat(float);
+    KeyValValuefloat(const KeyValValuefloat&);
+    ~KeyValValuefloat();
     KeyVal::KeyValError value(float&);
 };
 
@@ -200,6 +197,8 @@ class KeyValValuechar: public KeyValValue {
     char _val;
   public:
     KeyValValuechar(char);
+    KeyValValuechar(const KeyValValuechar&);
+    ~KeyValValuechar();
     KeyVal::KeyValError value(char&);
 };
 
@@ -208,6 +207,8 @@ class KeyValValueint: public KeyValValue {
     int _val;
   public:
     KeyValValueint(int);
+    KeyValValueint(const KeyValValueint&);
+    ~KeyValValueint();
     KeyVal::KeyValError value(int&);
 };
 
@@ -216,6 +217,7 @@ class KeyValValuepchar: public KeyValValue {
     char* _val;
   public:
     KeyValValuepchar(const char*);
+    KeyValValuepchar(const KeyValValuepchar&);
     ~KeyValValuepchar();
     KeyVal::KeyValError value(char*&);
 };
@@ -225,6 +227,8 @@ class KeyValValueRefDescribedClass: public KeyValValue {
     RefDescribedClass _val;
   public:
     KeyValValueRefDescribedClass(RefDescribedClass&);
+    KeyValValueRefDescribedClass(KeyValValueRefDescribedClass&);
+    ~KeyValValueRefDescribedClass();
     KeyVal::KeyValError value(RefDescribedClass&);
 };
 
@@ -233,6 +237,8 @@ class KeyValValueString: public KeyValValue {
     const char* _val;
   public:
     KeyValValueString(const char*);
+    KeyValValueString(const KeyValValueString&);
+    ~KeyValValueString();
     KeyVal::KeyValError value(double&);
     KeyVal::KeyValError booleanvalue(int&);
     KeyVal::KeyValError value(float&);
@@ -247,6 +253,9 @@ class KeyValKeywordRefKeyValValueMap;
 class AssignedKeyVal: public KeyVal {
   private:
     KeyValKeywordRefKeyValValueMap* _map;
+    // do not allow a copy constructor or assignment
+    AssignedKeyVal(const AssignedKeyVal&);
+    operator=(const AssignedKeyVal&);
   public:
     AssignedKeyVal();
     ~AssignedKeyVal();
@@ -268,7 +277,10 @@ class StringKeyVal: public KeyVal {
     // once a described class is found it is kept here so
     // multiple references to it return the same instance
     KeyValKeywordRefKeyValValueMap* _map;
-protected:
+    // do not allow a copy constructor or assignment
+    StringKeyVal(const StringKeyVal&);
+    operator=(const StringKeyVal&);
+  protected:
     StringKeyVal();
   public:
     virtual ~StringKeyVal();
@@ -289,8 +301,11 @@ protected:
 class AggregateKeyVal : public KeyVal {
   private:
     enum { MaxKeyVal = 4 };
-    KeyVal* kv[MaxKeyVal];
-    KeyVal* getkeyval(const char*key);
+    RefKeyVal kv[MaxKeyVal];
+    RefKeyVal getkeyval(const char*key);
+    // do not allow a copy constructor or assignment
+    AggregateKeyVal(const AggregateKeyVal&);
+    operator=(const AggregateKeyVal&);
   public:
     AggregateKeyVal(KeyVal&);
     AggregateKeyVal(KeyVal&,KeyVal&);
@@ -307,9 +322,12 @@ class PrefixKeyVal : public KeyVal {
   private:
     int nprefix;
     char** prefices;
-    KeyVal* keyval;
+    RefKeyVal keyval;
     void setup(const char*,int,int,int,int,int);
     int getnewprefixkey(const char*key,char*newkey);
+    // do not allow a copy constructor or assignment
+    PrefixKeyVal(const PrefixKeyVal&);
+    operator=(const PrefixKeyVal&);
   public:
     PrefixKeyVal(const char*,KeyVal&);
     PrefixKeyVal(const char*,KeyVal&,int);
@@ -330,10 +348,19 @@ class ParsedKeyVal : public StringKeyVal {
     char**file;
     int nfp;
     IPV2* ipv2;
+    // do not allow a copy constructor or assignment
+    ParsedKeyVal(const ParsedKeyVal&);
+    operator=(const ParsedKeyVal&);
   public:
     ParsedKeyVal();
     ParsedKeyVal(const char*);
     ParsedKeyVal(FILE*);
+    // This ctor is given a string which is used to form keywords
+    // that are sought in the keyval argument.  The associated values
+    // are used to construct file names that are used to initialize
+    // the parsedkeyval.  The keywords sought are string'dir' for the
+    // directory prefix and string'files' for an array of file names.
+    ParsedKeyVal(const char*,KeyVal&);
     ~ParsedKeyVal();
     const char* stringvalue(const char*);
     virtual const char* classname(const char*);

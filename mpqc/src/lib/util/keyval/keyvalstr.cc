@@ -74,7 +74,16 @@ StringKeyVal::key_value(const char* key)
           // create a new instance of this datum
           PrefixKeyVal pkv(tkw,*this);
           const ClassDesc* cd = ClassDesc::name_to_class_desc(classn);
+          if (!cd) {
+              fprintf(stderr,"StringKeyVal: couldn't find a class named \"%s\""
+                      " to create\n",
+                      classn);
+              abort();
+            }
+          // the original error status must be saved
+          KeyValError original_error = error();
           RefDescribedClass newdc(cd->create(pkv));
+          seterror(original_error);
           if (newdc.null()) {
               fprintf(stderr,"StringKeyVal::value: create failed for:\n");
               fprintf(stderr," keyword = \"%s\" class = \"%s\"\n",

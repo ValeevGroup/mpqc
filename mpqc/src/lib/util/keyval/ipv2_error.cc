@@ -49,7 +49,8 @@ void
 IPV2::warn(const char *msg,...)
 {
   va_list args;
-  char *newmsg,*poskey;
+  char *newmsg;
+  const char *poskey;
   
   /* If msg has a %k in it, then substitute in the last keyword. */
 #if defined(NCUBE)||defined(DEC)||defined(I860)

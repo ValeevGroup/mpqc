@@ -127,6 +127,7 @@ int PrefixKeyVal::getnewprefixkey(const char*key,char*newkey)
   int result;
 
   if (key[0] == ':') {
+    strcpy(newkey,key);
     result = keyval->exists(key);
     seterror(keyval->error());
     }

@@ -27,7 +27,11 @@ test: (
       )
     d = 14
     a = $:test:object_b
-    b = $:test:object_b
+    %b = $:test:object_b
+    b<B>: (
+        A: a = 911
+        b = 921
+       )   
     )
   object = $object_d
   )

@@ -230,6 +230,8 @@ main()
   show( pkv.intvalue("x") );  show (pkv.errormsg() ); cout << '\n';
   show( pkv.intvalue(":z") );  show (pkv.errormsg() ); cout << '\n';
 
+  show ( pkv.exists("test:object_d") ); show(pkv.errormsg()); cout << '\n';
+
   RefDescribedClass rdc = pkv.describedclassvalue("test:object");
   show (pkv.errormsg() ); cout << '\n';
   show( rdc.pointer() ); cout << '\n';

@@ -45,7 +45,7 @@ AggregateKeyVal::~AggregateKeyVal()
 {
 }
 
-KeyVal*
+RefKeyVal
 AggregateKeyVal::getkeyval(const char* keyword)
 {
   for (int i=0; i<MaxKeyVal && kv[i]; i++) {

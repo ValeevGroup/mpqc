@@ -26,6 +26,47 @@ file(0)
   read(fp);
 }
 
+ParsedKeyVal::ParsedKeyVal(const char* keyprefix, KeyVal& keyval):
+nfp(0),
+nfile(0),
+file(0)
+{
+  ipv2 = new IPV2;
+
+  char* filespec = new char[strlen(keyprefix)+6];
+  strcpy(filespec,keyprefix);
+  strcat(filespec,"files");
+
+  char* dirspec = new char[strlen(keyprefix)+6];
+  strcpy(dirspec,keyprefix);
+  strcat(dirspec,"dir");
+
+  int nfiles = keyval.count(filespec);
+  for (int i=0; i<nfiles; i++) {
+      char* directory = keyval.pcharvalue(dirspec);
+      char* filename = keyval.pcharvalue(filespec,i);
+      char* fullname;
+      if (directory) {
+          fullname = new char[strlen(directory)+strlen(filename)+1];
+          strcpy(fullname,directory);
+          strcat(fullname,filename);
+        }
+      else {
+          fullname = filename;
+        }
+      read(fullname);
+      if (directory) {
+          delete[] directory;
+          delete[] filename;
+        }
+      delete[] fullname;
+    }
+
+  delete[] dirspec;
+  delete[] filespec;
+
+}
+
 void
 ParsedKeyVal::read(const char* name)
 {

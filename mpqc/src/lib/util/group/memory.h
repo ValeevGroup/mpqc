@@ -111,8 +111,8 @@ typedef long distssize_t;
 inline size_t distsize_to_size(const distsize_t &a) {return a;}
 #endif
 
-//. The \clsnm{MemoryGrp} abstract class provides the appearance of global
-//. shared memory in a parallel machine.
+/** The MemoryGrp abstract class provides the appearance of global
+    shared memory in a parallel machine. */
 class MemoryGrp: public DescribedClass {
 #define CLASSNAME MemoryGrp
 #include <util/class/classda.h>
@@ -136,41 +136,41 @@ class MemoryGrp: public DescribedClass {
     MemoryGrp(const RefKeyVal&);
     virtual ~MemoryGrp();
     
-    //. Returns who I am and how many nodes there are.
+    /// Returns who I am.
     int me() const { return me_; }
+    /// Returns how many nodes there are.
     int n() const { return n_; }
 
-    //. Set the size of locally held memory.
-    //. When memory is accessed using a global offset counting
-    //. starts at node 0 and proceeds up to node \srccd{n()} - 1.
+    /** Set the size of locally held memory.
+        When memory is accessed using a global offset counting
+        starts at node 0 and proceeds up to node n() - 1. */
     virtual void set_localsize(int) = 0;
-    //. Returns the amount of memory residing locally on \srccd{me()};
+    /// Returns the amount of memory residing locally on me().
     int localsize() { return distsize_to_size(offsets_[me_+1]-offsets_[me_]); }
-    //. Returns a pointer to the local data.
+    /// Returns a pointer to the local data.
     virtual void *localdata() = 0;
-    //. Returns the global offset to this node's memory.
+    /// Returns the global offset to this node's memory.
     distsize_t localoffset() { return offsets_[me_]; }
-    //. Returns the amount of memory residing on \vrbl{node}.
+    /// Returns the amount of memory residing on node.
     int size(int node)
         { return distsize_to_size(offsets_[node+1] - offsets_[node]); }
-    //. Returns the global offset to \vrbl{node}'s memory.
+    /// Returns the global offset to node's memory.
     distsize_t offset(int node) { return offsets_[node]; }
-    //. Returns the sum of all memory allocated on all nodes.
+    /// Returns the sum of all memory allocated on all nodes.
     distsize_t totalsize() { return offsets_[n_]; }
 
-    //. Activate is called before the memory is to be used and
-    //. deactivate is called afterwards.  (Necessary to avoid
-    //. problems with broken message passing routines.)
+    /// Activate is called before the memory is to be used.
     virtual void activate();
+    /// Deactivate is called after the memory has been used.
     virtual void deactivate();
 
-    //. Locking of memory regions can be turned off if the application
-    //. can be sure that only one node has write access to a region
-    //. at time.  This might improve performance a bit.  lock must
-    //. be called with the same argument on all nodes.
+    /** Locking of memory regions can be turned on if the application
+        can be sure that only one node has write access to a region
+        at time.  This might improve performance a bit.  lock must
+        be called with the same argument on all nodes. The default is
+        to not lock.  Not all specializations support locking. */
     virtual void lock(int truefalse);
 
-    //. These are should only used by MemoryGrpBuf objects.
     virtual void *obtain_writeonly(distsize_t offset, int size);
     virtual void *obtain_readwrite(distsize_t offset, int size) = 0;
     virtual void *obtain_readonly(distsize_t offset, int size) = 0;
@@ -181,37 +181,36 @@ class MemoryGrp: public DescribedClass {
     virtual void sum_reduction_on_node(double *data, int doffset, int dsize,
                                        int node = -1);
 
-    //. Synchronizes all the nodes.  Consider using this when the way you
-    //. you access memory changes.
+    /** Synchronizes all the nodes.  Consider using this when the way you
+        you access memory changes. */
     virtual void sync() = 0;
 
-    //. Some memory group implementations don't have access to
-    //. real shared memory or even active messages.  Instead, requests
-    //. are processed whenever certain memory group routines are called.
-    //. This can cause large latencies and buffer overflows.  If this
-    //. is a problem, then the catchup member can be called to
-    //. process all outstanding requests.
+    /** Processes outstanding requests. Some memory group implementations
+        don't have access to real shared memory or even active messages.
+        Instead, requests are processed whenever certain memory group
+        routines are called.  This can cause large latencies and buffer
+        overflows.  If this is a problem, then the catchup member can be
+        called to process all outstanding requests. */
     virtual void catchup();
 
-    //. Prints out information about the object.
+    /// Prints out information about the object.
     virtual void print(ostream &o = cout) const;
 
-    //. Create a memory group.  This routine looks for a -memorygrp
-    //argument, then the environmental variable MEMORYGRP, and, finally,
-    //the default \clsnmref{MessageGrp} object to decide which
-    //specialization of \clsnm{MemoryGrp} would be appropriate.  The
-    //argument to -memorygrp should be either string for a
-    //\clsnmref{ParsedKeyVal} constructor or a classname.
+    /** Create a memory group.  This routine looks for a -memorygrp
+        argument, then the environmental variable MEMORYGRP, and, finally,
+        the default MessageGrp object to decide which specialization of
+        MemoryGrp would be appropriate.  The argument to -memorygrp should
+        be either string for a ParsedKeyVal constructor or a classname. */
     static MemoryGrp* initial_memorygrp(int &argc, char** argv);
     static MemoryGrp* initial_memorygrp();
 };
 DescribedClass_REF_dec(MemoryGrp);
 
-//. The \clsnm{MemoryGrpBug} class provides access to pieces of the
-//. global shared memory that have been obtained with \clsnmref{MemoryGrp}.
-//. \clsnm{MemoryGrpBug} is a template class that is parameterized on
-//. \srccd{data\_t}.  All lengths and offsets of given in terms
-//. of \srccd{sizeof(data\_t)}.
+/** The MemoryGrpBug class provides access to pieces of the
+    global shared memory that have been obtained with MemoryGrp.
+    MemoryGrpBug is a template class that is parameterized on
+    data_t.  All lengths and offsets of given in terms
+    of sizeof(data_t). */
 template <class data_t>
 class MemoryGrpBuf {
     RefMemoryGrp grp_;
@@ -221,38 +220,36 @@ class MemoryGrpBuf {
     distsize_t offset_;
     int length_;
   public:
-    //. Creates a new \clsnm{MemoryGrpBuf} given a \clsnmref{MemoryGrp}
-    //. reference.  This is a template class parameterized on
-    //. \srccd{data\_t}.
+    /** Creates a new MemoryGrpBuf given a MemoryGrp
+        reference.  This is a template class parameterized on
+        data_t. */
     MemoryGrpBuf(const RefMemoryGrp &);
-    //. Request write only access to global memory at the global address
-    //. \vrbl{offset} and with size \vrbl{length}.  Writing the same
-    //. bit of memory twice without an intervening sync of the MemoryGrp
-    //. will have undefined results.
+    /** Request write only access to global memory at the global address
+        offset and with size length.  Writing the same bit of memory twice
+        without an intervening sync of the MemoryGrp will have undefined
+        results. */
     data_t *writeonly(distsize_t offset, int length);
-    //. Request read write access to global memory at the global address
-    //. \vrbl{offset} and with size \vrbl{length}.  This will lock the
-    //. memory it uses until release is called unless locking has been
-    //. turned off in the MemoryGrp object.
+    /** Request read write access to global memory at the global address
+        offset and with size length.  This will lock the memory it uses
+        until release is called unless locking has been turned off in the
+        MemoryGrp object. */
     data_t *readwrite(distsize_t offset, int length);
-    //. Request read only access to global memory at the global address
-    //. \vrbl{offset} and with size \vrbl{length}.  Writing to the
-    //. specified region without an intervening sync of the MemoryGrp
-    //. will have undefined results.
+    /** Request read only access to global memory at the global address
+        offset and with size length.  Writing to the
+        specified region without an intervening sync of the MemoryGrp
+        will have undefined results. */
     const data_t *readonly(distsize_t offset, int length);
-    //. These behave like \srccd{writeonly}, \srccd{readwrite}, and
-    //. \srccd{readonly}, except the \vrbl{offset} is local to the
-    //. node specified by \vrbl{node}.  If \vrbl{node} = -1, then
-    //. the local node is used.
+    /** These behave like writeonly, readwrite, and readonly, except the
+        offset is local to the node specified by node.  If node = -1, then
+        the local node is used. */
     data_t *writeonly_on_node(int offset, int length, int node = -1);
     data_t *readwrite_on_node(int offset, int length, int node = -1);
     const data_t *readonly_on_node(int offset, int length, int node = -1);
-    //. Release the access to the chunk of global memory that was
-    //. obtained with \srccd{writeonly}, \srccd{readwrite},
-    //. \srccd{readonly}, \srccd{writeonly\_on\_node},
-    //. \srccd{readwrite\_on\_node}, and \srccd{readonly\_on\_node}.
+    /** Release the access to the chunk of global memory that was obtained
+        with writeonly, readwrite, readonly, writeonly_on_node,
+        readwrite_on_node, and readonly_on_node. */
     void release();
-    //. The length of the current bit of memory.
+    /// The length of the current bit of memory.
     int length() const { return length_; }
 };
 

@@ -37,8 +37,9 @@
 #include <util/state/stateout.h>
 #include <util/group/message.h>
 
-//. The \clsnm{MsgStateSend} is an abstract base class that sends objects
-//to nodes in a \clsnmref{MessageGrp}.
+/** The MsgStateSend is an abstract base class that sends objects
+    to nodes in a MessageGrp.
+*/
 class MsgStateSend: public StateOut {
   private:
     // do not allow copy constructor or assignment
@@ -58,15 +59,15 @@ class MsgStateSend: public StateOut {
     MsgStateSend(const RefMessageGrp&);
     virtual ~MsgStateSend();
 
-    //. Specializations must implement \srccd{flush()}.
+    /// Specializations must implement flush().
     virtual void flush() = 0;
 
-    //. The buffer size of statein and stateout objects that communicate
-    //with each other must match.
+    /** The buffer size of statein and stateout objects that communicate
+        with each other must match. */
     void set_buffer_size(int);
 
-    //. I only need to override \srccd{put(const ClassDesc*)} but C++ will
-    //hide all of the other put's so I must override everything.
+    /** I only need to override put(const ClassDesc*) but C++ will
+        hide all of the other put's so I must override everything. */
     int put(const ClassDesc*);
     int put(char r);
     int put(unsigned int r);
@@ -80,8 +81,9 @@ class MsgStateSend: public StateOut {
     int put(const double*,int);
 };
 
-//. The \clsnm{MsgStateBufRecv} is an abstract base class that
-//buffers objects sent through a \clsnm{MessageGrp}.
+/** The MsgStateBufRecv is an abstract base class that
+    buffers objects sent through a MessageGrp.
+*/
 class MsgStateBufRecv: public StateIn {
 #   define CLASSNAME MsgStateBufRecv
 #   include <util/class/classda.h>
@@ -101,42 +103,41 @@ class MsgStateBufRecv: public StateIn {
 
     int get_array_void(void*,int);
 
-    //. Specializations must implement \srccd{next\_buffer()}.
+    /// Specializations must implement next_buffer().
     virtual void next_buffer() = 0;
   public:
-    //. \clsnm{MsgStateBufRecv} can be initialized with a
-    //\clsnmref{MessageGrp}.
+    /// MsgStateBufRecv can be initialized with a MessageGrp.
     MsgStateBufRecv(const RefMessageGrp&);
-    //. \clsnm{MsgStateBufRecv} will use the default \clsnmref{MessageGrp}.
+    /// Use the default MessageGrp.
     MsgStateBufRecv();
 
     virtual ~MsgStateBufRecv();
 
-    //. The buffer size of statein and stateout objects that communicate
-    //with each other must match.
+    /** The buffer size of statein and stateout objects that communicate
+        with each other must match. */
     void set_buffer_size(int);
 };
 
-//. The \clsnm{MsgStateRecv} is an abstract base class that receives
-//objects from nodes in a \clsnmref{MessageGrp}.
+/** The MsgStateRecv is an abstract base class that receives
+    objects from nodes in a MessageGrp. */
 class MsgStateRecv: public MsgStateBufRecv {
   private:
     // do not allow copy constructor or assignment
     MsgStateRecv(const MsgStateRecv&);
     void operator=(const MsgStateRecv&);
   public:
-    //. \clsnm{MsgStateRecv} must be initialized with a \clsnmref{MessageGrp}.
+    /// MsgStateRecv must be initialized with a MessageGrp.
     MsgStateRecv(const RefMessageGrp&);
 
     virtual ~MsgStateRecv();
 
-    //. Returns the version of the ClassDesc.  This assumes that
-    // the version of the remote class is the same as that of
-    // the local class.
+    /** Returns the version of the ClassDesc.  This assumes that
+        the version of the remote class is the same as that of
+        the local class. */
     int version(const ClassDesc*);
 
-    //. I only need to override \srccd{get(ClassDesc**)} but C++ will hide
-    //all of the other put's so I must override everything.
+    /** I only need to override get(ClassDesc**) but C++ will hide
+        all of the other get's so I must override everything. */
     int get(const ClassDesc**);
     int get(char&r, const char *key = 0);
     int get(unsigned int&r, const char *key = 0);
@@ -150,9 +151,9 @@ class MsgStateRecv: public MsgStateBufRecv {
     int get(double*&);
 };
 
-//. \clsnm{StateSend} is a concrete specialization of
-//\clsnmref{MsgStateSend} that does the send part of point to
-//point communication in a \clsnmref{MessageGrp}.
+/** StateSend is a concrete specialization of
+    MsgStateSend that does the send part of point to
+    point communication in a MessageGrp. */
 class StateSend: public MsgStateSend {
   private:
     // do not allow copy constructor or assignment
@@ -161,19 +162,19 @@ class StateSend: public MsgStateSend {
   private:
     int target_;
   public:
-    //. Create a \clsnm{StateSend} given a \clsnmref{MessageGrp}.
+    /// Create a StateSend given a MessageGrp.
     StateSend(const RefMessageGrp&);
 
     ~StateSend();
-    //. Specify the target node.
+    /// Specify the target node.
     void target(int);
-    //. Flush the buffer.
+    /// Flush the buffer.
     void flush();
 };
 
-//. \clsnm{StateRecv} is a concrete specialization of
-//\clsnmref{MsgStateRecv} that does the receive part of point to
-//point communication in a \clsnmref{MessageGrp}.
+/** StateRecv is a concrete specialization of
+    MsgStateRecv that does the receive part of point to
+    point communication in a MessageGrp. */
 class StateRecv: public MsgStateRecv {
   private:
     // do not allow copy constructor or assignment
@@ -184,32 +185,32 @@ class StateRecv: public MsgStateRecv {
   protected:
     void next_buffer();
   public:
-    //. Create a \clsnm{StateRecv} given a \clsnmref{MessageGrp}.
+    /// Create a StateRecv given a MessageGrp.
     StateRecv(const RefMessageGrp&);
-    //. Specify the source node.
+    /// Specify the source node.
     void source(int);
 };
 
-//.  \clsnm{BcastStateSend} does the send part of a broadcast of an object
-//to all nodes.  Only one node uses a \clsnm{BcastStateSend} and the rest
-//must use a \clsnmref{BcastStateRecv}.
+/** BcastStateSend does the send part of a broadcast of an object
+    to all nodes.  Only one node uses a BcastStateSend and the rest
+    must use a BcastStateRecv. */
 class BcastStateSend: public MsgStateSend {
   private:
     // do not allow copy constructor or assignment
     BcastStateSend(const BcastStateSend&);
     void operator=(const BcastStateSend&);
   public:
-    //. Create the \clsnm{BcastStateSend}.
+    /// Create the BcastStateSend.
     BcastStateSend(const RefMessageGrp&);
 
     ~BcastStateSend();
-    //. Flush the data remaining in the buffer.
+    /// Flush the data remaining in the buffer.
     void flush();
 };
 
-//.  \clsnm{BcastStateRecv} does the receive part of a broadcast of an
-//object to all nodes.  Only one node uses a \clsnmref{BcastStateSend} and
-//the rest must use a \clsnm{BcastStateRecv}.
+/** BcastStateRecv does the receive part of a broadcast of an
+    object to all nodes.  Only one node uses a BcastStateSend and
+    the rest must use a BcastStateRecv. */
 class BcastStateRecv: public MsgStateRecv {
   private:
     // do not allow copy constructor or assignment
@@ -219,52 +220,49 @@ class BcastStateRecv: public MsgStateRecv {
     int source_;
     void next_buffer();
   public:
-    //. Create the \clsnm{BcastStateRecv}.
+    /// Create the BcastStateRecv.
     BcastStateRecv(const RefMessageGrp&, int source = 0);
-    //. Set the source node.
+    /// Set the source node.
     void source(int s);
 };
 
-//. This creates and forwards/retrieves data from either
-// a \clsnmref{BcastStateRecv} or a \clsnmref{BcastStateSend}
-// depending on the value of the \vrbl{source} argument to
-// constructor.
+/** This creates and forwards/retrieves data from either a BcastStateRecv
+    or a BcastStateSend depending on the value of the argument to
+    constructor. */
 class BcastState {
   private:
     BcastStateRecv *recv_;
     BcastStateSend *send_;
   public:
-    //. Create a \clsnm{BcastState} object.  The default
-    // source is node 0.
+    /// Create a BcastState object.  The default source is node 0.
     BcastState(const RefMessageGrp &, int source = 0);
 
     ~BcastState();
 
-    //. Broadcast data to all nodes.  After these are called
-    // for a group of data the \srccd{flush} member must be called
-    // to force the source node to actually write the data.
+    /** Broadcast data to all nodes.  After these are called
+        for a group of data the flush member must be called
+        to force the source node to actually write the data. */
     void bcast(int &);
     void bcast(double &);
     void bcast(int *&, int);
     void bcast(double *&, int);
     void bcast(SSRefBase &);
 
-    //. Force data to be written.  Data is not otherwise written
-    // until the buffer is full.
+    /** Force data to be written.  Data is not otherwise written
+        until the buffer is full. */
     void flush();
 
-    //. Call the \clsnmref{StateOut} or \clsnmref{StateIn}
-    // \srccd{forget\_references} member.
+    /** Call the StateOut or StateIn
+        forget_references member. */
     void forget_references();
 
-    //. Controls the amount of data that is buffered before it is
-    // sent.
+    /// Controls the amount of data that is buffered before it is sent.
     void set_buffer_size(int);
 };
 
-//.  \clsnm{BcastStateBin} reads a file in written by
-//StateInBin on node 0 and broadcasts it to all nodes
-//so state can be simultaneously restored on all nodes.
+/** BcastStateBin reads a file in written by
+    StateInBin on node 0 and broadcasts it to all nodes
+    so state can be simultaneously restored on all nodes. */
 class BcastStateInBin: public MsgStateBufRecv {
 #   define CLASSNAME BcastStateInBin
 #   define HAVE_KEYVAL_CTOR
@@ -281,10 +279,9 @@ class BcastStateInBin: public MsgStateBufRecv {
     void next_buffer();
     int get_array_void(void*, int);
   public:
-    //. Create the \clsnm{BcastStateRecv} using the default
-    //\clsnmref{MessageGrp}.
+    /// Create the BcastStateRecv using the default MessageGrp.
     BcastStateInBin(const RefKeyVal &);
-    //. Create the \clsnm{BcastStateRecv}.
+    /// Create the BcastStateRecv.
     BcastStateInBin(const RefMessageGrp&, const char *filename);
 
     ~BcastStateInBin();

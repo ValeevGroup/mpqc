@@ -35,8 +35,8 @@
 #include <pthread.h>
 #include <util/group/thread.h>
 
-//. The \clsnm{PthreadThreadGrp} class privides a concrete thread group
-//. appropriate for an environment where pthreads is available
+/** The PthreadThreadGrp class privides a concrete thread group
+    appropriate for an environment where pthreads is available. */
 class PthreadThreadGrp: public ThreadGrp {
 #define CLASSNAME PthreadThreadGrp
 #define HAVE_KEYVAL_CTOR

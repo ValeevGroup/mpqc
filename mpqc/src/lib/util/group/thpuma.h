@@ -35,8 +35,9 @@
 #include <pthread.h>
 #include <util/group/thread.h>
 
-//. The \clsnm{PumaThreadGrp} class privides a concrete thread group
-//. appropriate for the intel teraflops machine
+/** The PumaThreadGrp class privides a concrete thread group
+    appropriate for the intel teraflops machine.
+*/
 class PumaThreadGrp: public ThreadGrp {
 #define CLASSNAME PumaThreadGrp
 #define HAVE_KEYVAL_CTOR

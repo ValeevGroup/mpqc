@@ -39,10 +39,10 @@
 #include <util/group/memamsg.h>
 #include <util/group/thread.h>
 
-//. This MemoryGrp class requires a MT-safe MPI implementation.
-//The default MessageGrp must be a MPIMessageGrp.  MPI must
-//be safe with respect to the default ThreadGrp.  Alternately,
-//a MessageGrp and a ThreadGrp can be passed to the constructor.
+/** This MemoryGrp class requires a MT-safe MPI implementation.  The
+default MessageGrp must be a MPIMessageGrp.  MPI must be safe with respect
+to the default ThreadGrp.  Alternately, a MessageGrp and a ThreadGrp can be
+passed to the constructor.  */
 class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
 #define CLASSNAME MTMPIMemoryGrp
 #define HAVE_KEYVAL_CTOR

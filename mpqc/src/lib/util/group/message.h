@@ -99,9 +99,9 @@ class GrpFunctionReduce: public GrpReduce<T> {
 
 DescribedClass_REF_fwddec(MessageGrp);
 
-//. The \clsnm{MessageGrp} abstract class provides
-//. a mechanism for moving data and objects between
-//. nodes in a parallel machine.
+/** The MessageGrp abstract class provides
+    a mechanism for moving data and objects between
+    nodes in a parallel machine. */
 class MessageGrp: public DescribedClass {
 #define CLASSNAME MessageGrp
 #include <util/class/classda.h>
@@ -114,42 +114,43 @@ class MessageGrp: public DescribedClass {
     AVLMap<ClassDescP,int> classdesc_to_index_;
     ClassDescP *index_to_classdesc_;
   protected:
-    //. The classdesc\_to\_index\_ and index\_to\_classdesc\_ arrays
-    //. cannot be initialized by the MessageGrp CTOR, because
-    //. the MessageGrp specialization has not yet been initialized
-    //. and communication is not available.  CTOR's of specializations
-    //. of MessageGrp must call the initialize member in their body
-    //. to complete the initialization process.
+    /** The classdesc_to_index_ and index_to_classdesc_ arrays
+        cannot be initialized by the MessageGrp CTOR, because
+        the MessageGrp specialization has not yet been initialized
+        and communication is not available.  CTOR's of specializations
+        of MessageGrp must call the initialize member in their body
+        to complete the initialization process. */
     void initialize(int me, int n);
 
     RefMachineTopology topology_;
 
     int debug_;
   public:
-    //. Constructors and destructors.
     MessageGrp();
     MessageGrp(const RefKeyVal&);
     virtual ~MessageGrp();
     
-    //. Returns the number of processors.
+    /// Returns the number of processors.
     int n() { return n_; }
-    //. Returns my processor number.  In the range [0,n()).
+    /// Returns my processor number.  In the range [0,n()).
     int me() { return me_; }
 
-    //. The default message group contains the primary message group to
-    //. be used by an application.
+    /** The default message group contains the primary message group to
+        be used by an application. */
     static void set_default_messagegrp(const RefMessageGrp&);
+    /// Returns the default message group.
     static MessageGrp* get_default_messagegrp();
 
-    //. Create a message group.  This routine looks for a -messagegrp
-    //argument, then the environmental variable MESSAGEGRP to decide which
-    //specialization of \clsnm{MessageGrp} would be appropriate.  The
-    //argument to -messagegrp should be either string for a
-    //\clsnmref{ParsedKeyVal} constructor or a classname.  If this returns
-    //null, it is up to the programmer to create a \clsnm{MessageGrp}.
+    /** Create a message group.  This routine looks for a -messagegrp
+        argument, then the environmental variable MESSAGEGRP to decide which
+        specialization of MessageGrp would be appropriate.  The
+        argument to -messagegrp should be either string for a
+        ParsedKeyVal constructor or a classname.  If this returns
+        null, it is up to the programmer to create a MessageGrp. */
     static MessageGrp* initial_messagegrp(int &argc, char** argv);
 
-    //. Send messages sequentially to the target processor.
+    /** Send messages sequentially to the target processor.
+        Similar members exist for each of the basic types. */
     virtual void send(int target, double* data, int ndata);
     virtual void send(int target, unsigned int* data, int ndata);
     virtual void send(int target, int* data, int ndata);
@@ -163,7 +164,8 @@ class MessageGrp: public DescribedClass {
     void send(int target, int data) { send(target,&data,1); }
     virtual void raw_send(int target, void* data, int nbyte) = 0;
 
-    //. Send typed messages to the target processor.
+    /** Send typed messages to the target processor.
+        Similar members exist for each of the basic types. */
     virtual void sendt(int target, int type, double* data, int ndata);
     virtual void sendt(int target, int type, unsigned int* data, int ndata);
     virtual void sendt(int target, int type, int* data, int ndata);
@@ -177,7 +179,8 @@ class MessageGrp: public DescribedClass {
     void sendt(int target, int type, int data) {sendt(target,type&data,1);}
     virtual void raw_sendt(int target, int type, void* data, int nbyte) = 0;
 
-    //. Receive messages sent sequentually from the sender.
+    /** Receive messages sent sequentually from the sender.
+        Similar members exist for each of the basic types. */
     virtual void recv(int sender, double* data, int ndata);
     virtual void recv(int sender, unsigned int* data, int ndata);
     virtual void recv(int sender, int* data, int ndata);
@@ -191,7 +194,8 @@ class MessageGrp: public DescribedClass {
     void recv(int sender, int data) { recv(sender,&data,1); }
     virtual void raw_recv(int sender, void* data, int nbyte) = 0;
 
-    //. Receive messages sent by type.
+    /** Receive messages sent by type.
+        Similar members exist for each of the basic types. */
     virtual void recvt(int type, double* data, int ndata);
     virtual void recvt(int type, unsigned int* data, int ndata);
     virtual void recvt(int type, int* data, int ndata);
@@ -205,10 +209,11 @@ class MessageGrp: public DescribedClass {
     void recvt(int type, int data) { recvt(type,&data,1); }
     virtual void raw_recvt(int type, void* data, int nbyte) = 0;
 
-    //. Ask if a given typed message has been received.
+    /// Ask if a given typed message has been received.
     virtual int probet(int type) = 0;
 
-    //. Do broadcasts of various types of data.
+    /** Do broadcasts of various types of data.
+        Similar members exist for each of the basic types. */
     virtual void bcast(double* data, int ndata, int from = 0);
     virtual void bcast(unsigned int* data, int ndata, int from = 0);
     virtual void bcast(int* data, int ndata, int from = 0);
@@ -222,13 +227,14 @@ class MessageGrp: public DescribedClass {
     void bcast(double& data, int from = 0) { bcast(&data, 1, from); }
     void bcast(int& data, int from = 0) { bcast(&data, 1, from); }
 
-    //. Collect data distributed on the nodes to a big array replicated
-    // on each node.
+    /** Collect data distributed on the nodes to a big array replicated
+        on each node. */
     virtual void raw_collect(const void *part, const int *lengths,
                              void *whole, int bytes_per_datum=1);
     void collect(const double *part, const int *lengths, double *whole);
 
-    //. Do various global reduction operations.
+    /** Global sum reduction.
+        Similar members exist for each of the basic types. */
     virtual void sum(double* data, int n, double* = 0, int target = -1);
     virtual void sum(unsigned int* data, int n, unsigned int* = 0, int target = -1);
     virtual void sum(int* data, int n, int* = 0, int target = -1);
@@ -239,6 +245,8 @@ class MessageGrp: public DescribedClass {
                      signed char* = 0, int target = -1);
     void sum(double& data) { sum(&data, 1); }
     void sum(int& data) { sum(&data, 1); }
+    /** Global maximization.
+        Similar members exist for each of the basic types. */
     virtual void max(double* data, int n, double* = 0, int target = -1);
     virtual void max(int* data, int n, int* = 0, int target = -1);
     virtual void max(unsigned int* data, int n, unsigned int* = 0, int target = -1);
@@ -249,6 +257,8 @@ class MessageGrp: public DescribedClass {
                      signed char* = 0, int target = -1);
     void max(double& data) { max(&data, 1); }
     void max(int& data) { max(&data, 1); }
+    /** Global minimization.
+        Similar members exist for each of the basic types. */
     virtual void min(double* data, int n, double* = 0, int target = -1);
     virtual void min(int* data, int n, int* = 0, int target = -1);
     virtual void min(unsigned int* data, int n, unsigned int* = 0, int target = -1);
@@ -259,6 +269,8 @@ class MessageGrp: public DescribedClass {
                      signed char* = 0, int target = -1);
     void min(double& data) { min(&data, 1); }
     void min(int& data) { min(&data, 1); }
+    /** Global generic reduction.
+        Similar members exist for each of the basic types. */
     virtual void reduce(double*, int n, GrpReduce<double>&,
                         double*scratch = 0, int target = -1);
     virtual void reduce(int*, int n, GrpReduce<int>&,
@@ -280,27 +292,27 @@ class MessageGrp: public DescribedClass {
     void reduce(double& data, GrpReduce<double>& r) { reduce(&data, 1, r); }
     void reduce(int& data, GrpReduce<int>& r) { reduce(&data, 1, r); }
 
-    //. Synchronize all of the processors.
+    /// Synchronize all of the processors.
     virtual void sync();
 
-    //. Returns information about the last message received or probed.
+    /// Returns information about the last message received or probed.
     virtual int last_source() = 0;
     virtual int last_size() = 0;
     virtual int last_type() = 0;
 
-    //. Each message group maintains an association of ClassDesc with
-    //. a global index so SavableState information can be sent between
-    //. nodes without needing to send the classname and look up the
-    //. ClassDesc with each transfer.  These routines return information
-    //. about that mapping.
+    /** Each message group maintains an association of ClassDesc with
+        a global index so SavableState information can be sent between
+        nodes without needing to send the classname and look up the
+        ClassDesc with each transfer.  These routines return information
+        about that mapping. */
     int classdesc_to_index(const ClassDesc*);
     const ClassDesc* index_to_classdesc(int);
     int nclass() const { return nclass_; }
 };
 DescribedClass_REF_dec(MessageGrp);
 
-//. \clsnm{ProcMessageGrp} provides a concrete specialization
-//. of \clsnmref{MessageGrp} that supports only one node.
+/** ProcMessageGrp provides a concrete specialization
+    of MessageGrp that supports only one node. */
 class ProcMessageGrp: public MessageGrp {
 #define CLASSNAME ProcMessageGrp
 #define HAVE_KEYVAL_CTOR
@@ -331,12 +343,10 @@ class ProcMessageGrp: public MessageGrp {
     int last_type();
 };
 
-//. The \clsnm{intMessageGrp} is an abstract derived class of
-//. \clsnmref{MessageGrp}.
-//. It uses integer message types to send and receive messages.
-//. Message group specializations that use the MPI library
-//. and the Paragon NX can be conveniently implemented in terms
-//. of this.
+/** Uses integer message types to send and receive messages.
+    Message group specializations that use the MPI library
+    and the Paragon NX can be conveniently implemented in terms
+    of this. */
 class intMessageGrp: public MessageGrp {
 #define CLASSNAME intMessageGrp
 #include <util/class/classda.h>
@@ -367,9 +377,11 @@ class intMessageGrp: public MessageGrp {
     int *source_seq;
     int *target_seq;
     
-    //. These routines must be implemented by specializations.
+    /// Must be implemented by specializations.
     virtual void basic_send(int target, int type, void* data, int nbyte) = 0;
+    /// Must be implemented by specializations.
     virtual void basic_recv(int type, void* data, int nbyte) = 0;
+    /// Must be implemented by specializations.
     virtual int basic_probe(int type) = 0;
 
     intMessageGrp();

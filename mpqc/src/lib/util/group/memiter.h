@@ -1,6 +1,7 @@
 //
-// messshm.h
+// memiter.h
 //
+// derived from memasmg.cc
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@limitpt.com>
@@ -25,41 +26,47 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_group_messshm_h
-#define _util_group_messshm_h
+#ifdef __GNUC__
+#pragma interface
+#endif
 
-#include <util/group/message.h>
+#ifndef _util_group_memiter_h
+#define _util_group_memiter_h
 
-/// Uses SysV IPC for communications.
-class ShmMessageGrp: public intMessageGrp {
-#define CLASSNAME ShmMessageGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
-  protected:
-    void basic_send(int target, int type, void* data, int nbyte);
-    void basic_recv(int type, void* data, int nbyte);
-    int basic_probe(int type);
-    void initialize(int nprocs);
-    void initialize();
+#include <util/group/memory.h>
 
-    // Information about the last message received or probed.
-    int last_type_;
-    int last_source_;
-    int last_size_; // the size in bytes
+class MemoryIter {
+  private:
+    distsize_t *offsets_;
+    int n_;
 
-    void set_last_type(int a) { last_type_ = a; }
-    void set_last_source(int a) { last_source_ = a; }
-    void set_last_size(int a) { last_size_ = a; }
+    void *data_;
+
+    char *current_data_;
+    int current_size_;
+    int current_offset_;
+    int node_;
+
+    int ready_;
+
+    distsize_t offset_;
+    int size_;
   public:
-    ShmMessageGrp(); // read nprocs from environmental variable NUMPROC
-    ShmMessageGrp(const RefKeyVal&);
-    ShmMessageGrp(int nprocs);
-    ~ShmMessageGrp();
-    void sync();
- 
-    int last_source();
-    int last_size();
-    int last_type();
+    MemoryIter(void *data, distsize_t *offsets, int n);
+
+    // iteration control
+    void begin(distsize_t offset, int size);
+    int ready() { return ready_; }
+    void next();
+
+    // info about the current piece of data
+    void *data() { return (void*) current_data_; }
+    int node() { return node_; }
+    int offset() { return current_offset_; }
+    int size() { return current_size_; }
+
+    // returns true if all data is local to node
+    int local(distsize_t offset, int size, int node);
 };
 
 #endif

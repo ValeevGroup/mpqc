@@ -40,9 +40,10 @@
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>
 
-//. The \clsnm{AlphaMMapMessageGrp} class is an implementation of
-//. \clsnmref{MessageGrp} that allows multiple process to be
-//. started that communication with shared memory.
+/** The AlphaMMapMessageGrp class is an implementation of
+    MessageGrp that allows multiple process to be
+    started that communication with shared memory.
+*/
 class AlphaMMapMemoryGrp: public MsgMemoryGrp {
 #define CLASSNAME AlphaMMapMemoryGrp
 #define HAVE_KEYVAL_CTOR

@@ -90,7 +90,7 @@ MemoryGrp::_castdown(const ClassDesc*cd)
 
 MemoryGrp::MemoryGrp()
 {
-  use_locks_ = 1;
+  use_locks_ = 0;
   debug_ = 0;
 
   offsets_ = 0;
@@ -98,7 +98,7 @@ MemoryGrp::MemoryGrp()
 
 MemoryGrp::MemoryGrp(const RefKeyVal& keyval)
 {
-  use_locks_ = 1;
+  use_locks_ = 0;
   debug_ = keyval->intvalue("debug");
 
   offsets_ = 0;
@@ -245,6 +245,10 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 void
 MemoryGrp::lock(int b)
 {
+  if (b) {
+      cout << node0 << class_name() << ": locks not available" << endl;
+      abort();
+    }
   use_locks_ = b;
 }
 

@@ -34,22 +34,23 @@
 
 #include <util/class/class.h>
 
-//. The \clsnm{ThreadLock} abstract class provides mutex locks to be used in
-//. conjunction with \clsnm{ThreadGrp}'s
+/** The ThreadLock abstract class provides mutex locks to be used in
+    conjunction with ThreadGrp's.
+*/
 class ThreadLock : public VRefCount {
   public:
     ThreadLock();
     virtual ~ThreadLock();
 
-    //. Obtain the lock.
+    /// Obtain the lock.
     virtual void lock() =0;
-    //. Release the lock.
+    /// Release the lock.
     virtual void unlock() =0;
 };
 REF_dec(ThreadLock);
 
-//. The \clsnm{Thread} abstract class defines an interface which must be
-//. implemented by classes wishing to be run as threads.
+/** The Thread abstract class defines an interface which must be
+    implemented by classes wishing to be run as threads. */
 class Thread {
   public:
     Thread();
@@ -57,14 +58,14 @@ class Thread {
 
     static void *run_Thread_run(void*thread);
 
-    //. This is called with the Thread is run from a ThreadGrp.
+    /// This is called with the Thread is run from a ThreadGrp.
     virtual void run() =0;
 };
     
 DescribedClass_REF_fwddec(ThreadGrp);
 
-//. The \clsnm{ThreadGrp} abstract class provides a means to manage separate
-//. threads of control.
+/** The ThreadGrp abstract class provides a means to manage separate
+    threads of control. */
 class ThreadGrp: public DescribedClass {
 #define CLASSNAME ThreadGrp
 #include <util/class/classda.h>
@@ -78,26 +79,26 @@ class ThreadGrp: public DescribedClass {
     ThreadGrp(const ThreadGrp&, int nthread = -1);
     virtual ~ThreadGrp();
 
-    //. Assigns a Thread object to each thread.  If 0 is assigned to
-    //a thread, then that thread will be skipped.
+    /** Assigns a Thread object to each thread.  If 0 is assigned to
+        a thread, then that thread will be skipped. */
     void add_thread(int, Thread*);
-    //. The number of threads that will be run by start_thread.
+    /// The number of threads that will be run by start_thread.
     int nthread() const { return nthread_; }
 
-    //. Starts the threads running.  Thread 0 will be run by the
-    //thread that calls start_threads.
+    /** Starts the threads running.  Thread 0 will be run by the
+        thread that calls start_threads. */
     virtual int start_threads() =0;
-    //. Wait for all the threads to complete.  This must be called
-    //before start_threads is called again or the object is destroyed.
+    /** Wait for all the threads to complete.  This must be called
+        before start_threads is called again or the object is destroyed. */
     virtual int wait_threads() =0;
-    //. Return a local object.
+    /// Return a local object.
     virtual RefThreadLock new_lock() =0;
 
-    //. Create a ThreadGrp like the current one.  If
-    //nthread is given it will be the number of threads
-    //in the new group.  If nthread is -1, the number of
-    //threads in the current group will be used.  If cloning
-    //is not supported 0 will be returned.
+    /** Create a ThreadGrp like the current one.  If
+        nthread is given it will be the number of threads
+        in the new group.  If nthread is -1, the number of
+        threads in the current group will be used.  If cloning
+        is not supported 0 will be returned. */
     virtual ThreadGrp* clone(int nthread = -1);
 
     static void set_default_threadgrp(const RefThreadGrp&);
@@ -106,8 +107,9 @@ class ThreadGrp: public DescribedClass {
 };
 DescribedClass_REF_dec(ThreadGrp);
 
-//. The \clsnm{ProcThreadGrp} class privides a concrete thread group
-//. appropriate for an environment where there is only one thread.
+/** The ProcThreadGrp class privides a concrete thread group
+    appropriate for an environment where there is only one thread.
+*/
 class ProcThreadGrp: public ThreadGrp {
 #define CLASSNAME ProcThreadGrp
 #define HAVE_KEYVAL_CTOR

@@ -1,10 +1,11 @@
 //
-// memshm.h
+// memmpi2.h
 //
+// derived from code
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
-// Author: Curtis Janssen <cljanss@limitpt.com>
-// Maintainer: LPS
+// Author: Curtis Janssen <cljanss@sandia.gov>
+// Maintainer: SNL
 //
 // This file is part of the SC Toolkit.
 //
@@ -29,64 +30,51 @@
 #pragma interface
 #endif
 
-#ifndef _util_group_memshm_h
-#define _util_group_memshm_h
+#ifndef _util_group_memmpi2_h
+#define _util_group_memmpi2_h
 
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <iostream.h>
+#include <util/group/memamsg.h>
 
-#include <util/group/globcnt.h>
-#include <util/group/memmsg.h>
+#include <mpi.h>
 
-/** Uses SysV IPC to implement a memory group.
- */
-class ShmMemoryGrp: public MsgMemoryGrp {
-#define CLASSNAME ShmMemoryGrp
+class MPI2MemoryGrp: public MsgMemoryGrp {
+#define CLASSNAME MPI2MemoryGrp
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
-    int nregion_;
-    int *shmid_;
-    void **attach_address_;
-    GlobalCounter lock_;
-    GlobalCounter *update_;
+    MPI_Win rma_win_;
     void *data_;
-    void *memory_;
-    Pool *pool_;
-    RangeLock *rangelock_; // the locks_ member of the base class is ignored
+    
+    void retrieve_data(void *, int node, int offset, int size);
+    void replace_data(void *, int node, int offset, int size);
+    void sum_data(double *data, int node, int doffset, int dsize);
 
-    void clear_release_count();
-    void wait_for_release();
-    void note_release();
-    void obtain_lock();
-    void release_lock();
-
-    void cleanup();
-    int attach_memory(void *ataddress, int size);
-    void detach_memory();
   public:
-    ShmMemoryGrp(const RefMessageGrp& msg);
-    ShmMemoryGrp(const RefKeyVal&);
-    ~ShmMemoryGrp();
+    MPI2MemoryGrp(const RefMessageGrp& msg);
+    MPI2MemoryGrp(const RefKeyVal&);
+    ~MPI2MemoryGrp();
 
-    void set_localsize(int);
+    void activate();
+    void deactivate();
+
     void *localdata();
+    void set_localsize(int);
 
+    void *obtain_writeonly(distsize_t offset, int size);
     void *obtain_readwrite(distsize_t offset, int size);
     void *obtain_readonly(distsize_t offset, int size);
     void release_read(void *data, distsize_t offset, int size);
     void release_write(void *data, distsize_t offset, int size);
+    void sum_reduction(double *data, distsize_t doffset, int dsize);
+    void sum_reduction_on_node(double *data, int doffset, int dsize,
+                               int node = -1);
 
-    virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
-
-    void print(ostream &o = cout) const;
+    void sync();
 };
 
 #endif
 
 // Local Variables:
 // mode: c++
-// c-file-style: "CLJ"
+// c-file-style: "ETS"
 // End:

@@ -35,6 +35,7 @@
 #include <util/misc/formio.h>
 #include <util/group/pool.h>
 #include <util/group/memamsg.h>
+#include <util/group/memiter.h>
 
 #ifdef HAVE_HRECV
 #  define DISABLE do { masktrap(1); cout.flush(); } while(0)
@@ -168,111 +169,6 @@ MemoryDataRequestQueue::pop(MemoryDataRequest&r)
 }
 
 ///////////////////////////////////////////////////////////////////////
-// The ActiveMsgMemoryIter class
-
-class ActiveMsgMemoryIter {
-  private:
-    distsize_t *offsets_;
-    int n_;
-
-    void *data_;
-
-    char *current_data_;
-    int current_size_;
-    int current_offset_;
-    int node_;
-
-    int ready_;
-
-    distsize_t offset_;
-    int size_;
-  public:
-    ActiveMsgMemoryIter(void *data, distsize_t *offsets, int n);
-
-    // iteration control
-    void begin(distsize_t offset, int size);
-    int ready() { return ready_; }
-    void next();
-
-    // info about the current piece of data
-    void *data() { return (void*) current_data_; }
-    int node() { return node_; }
-    int offset() { return current_offset_; }
-    int size() { return current_size_; }
-
-    // returns true if all data is local to node
-    int local(distsize_t offset, int size, int node);
-};
-
-int
-ActiveMsgMemoryIter::local(distsize_t offset, int size, int node)
-{
-  if (offset >= offsets_[node] && offset + size <= offsets_[node+1])
-      return 1;
-  return 0;
-}
-
-ActiveMsgMemoryIter::ActiveMsgMemoryIter(void *data,
-                                         distsize_t *offsets,
-                                         int n):
-  offsets_(offsets),
-  n_(n),
-  data_(data),
-  ready_(0)
-{
-}
-
-void
-ActiveMsgMemoryIter::begin(distsize_t offset, int size)
-{
-  offset_ = offset;
-  size_ = size;
-
-  current_data_ = (char *) data_;
-
-  distsize_t fence = offset + size;
-
-  for (node_ = 0; node_ < n_; node_++) {
-      if (offset_ < offsets_[node_ + 1]) {
-          current_offset_ = distsize_to_size(offset_ - offsets_[node_]);
-          if (fence <= offsets_[node_ + 1]) {
-              current_size_ = size_;
-            }
-          else {
-              current_size_ = distsize_to_size(offsets_[node_ + 1] - offset_);
-            }
-          ready_ = 1;
-          return;
-        }
-    }
-
-  // couldn't find the requested data, this is probably from an
-  // invalid argument
-  ready_ = 0;
-}
-
-void
-ActiveMsgMemoryIter::next()
-{
-  distsize_t fence = offset_ + size_;
-
-  if (fence <= offsets_[node_ + 1]) {
-      ready_ = 0;
-    }
-  else {
-      node_++;
-      current_data_ += current_size_;
-      if (fence <= offsets_[node_ + 1]) {
-          current_size_ = size_ - distsize_to_size(offsets_[node_] - offset_);
-        }
-      else {
-          current_size_ = distsize_to_size(offsets_[node_+1]-offsets_[node_]);
-        }
-      current_offset_ = 0;
-    }
-}
-
-///////////////////////////////////////////////////////////////////////
 // Members for ActiveMsgMemoryGrp
 
 #define CLASSNAME ActiveMsgMemoryGrp
@@ -352,7 +248,7 @@ ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
       wait_for_lock();
     }
   void *data = (void *) new char[size];
-  ActiveMsgMemoryIter i(data, offsets_, n());
+  MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
           PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite: local copy\n"));
@@ -380,7 +276,7 @@ ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
   PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly:"
           "overall: offset = %d size = %d\n",
           me(), offset, size));
-  ActiveMsgMemoryIter i(data, offsets_, n());
+  MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly:working on:"
               "node = %d offset = %d size = %d\n",
@@ -411,7 +307,7 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
       send_lock_request(MemoryLockRequest::Reduce, offset, size);
       wait_for_lock();
     }
-  ActiveMsgMemoryIter i(data, offsets_, n());
+  MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
           int chunkdsize = i.size()/sizeof(double);
@@ -468,7 +364,7 @@ ActiveMsgMemoryGrp::release_write(void *data, distsize_t offset, int size)
   if (use_locks_) {
       send_lock_request(MemoryLockRequest::RelWrite, offset, size);
     }
-  ActiveMsgMemoryIter i(data, offsets_, n());
+  MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
           PRINTF(("ActiveMsgMemoryGrp::release_write: local\n"));

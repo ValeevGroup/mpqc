@@ -422,9 +422,38 @@ LocalSCMatrix::solve_this(SCVector*v)
 }
 
 void
-LocalSCMatrix::element_op(const RefSCRectElementOp& op)
+LocalSCMatrix::element_op(const RefSCElementOp& op)
 {
   op->process(block.pointer());
+}
+
+void
+LocalSCMatrix::element_op(const RefSCElementOp2& op,
+                          SCMatrix* m)
+{
+  LocalSCMatrix *lm
+      = LocalSCMatrix::require_castdown(m,"LocalSCMatrix::element_op");
+  if (!lm || d1 != lm->d1 || d2 != lm->d2) {
+      fprintf(stderr,"LocalSCMatrix: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer());
+}
+
+void
+LocalSCMatrix::element_op(const RefSCElementOp3& op,
+                          SCMatrix* m,SCMatrix* n)
+{
+  LocalSCMatrix *lm
+      = LocalSCMatrix::require_castdown(m,"LocalSCMatrix::element_op");
+  LocalSCMatrix *ln
+      = LocalSCMatrix::require_castdown(n,"LocalSCMatrix::element_op");
+  if (!lm || !ln
+      || d1 != lm->d1 || d2 != lm->d2 || d1 != ln->d1 || d2 != ln->d2) {
+      fprintf(stderr,"LocalSCMatrix: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH
@@ -687,9 +716,37 @@ LocalSCVector::scalar_product(SCVector*a)
 }
 
 void
-LocalSCVector::element_op(const RefSCVectorElementOp& op)
+LocalSCVector::element_op(const RefSCElementOp& op)
 {
   op->process(block.pointer());
+}
+
+void
+LocalSCVector::element_op(const RefSCElementOp2& op,
+                          SCVector* m)
+{
+  LocalSCVector *lm
+      = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
+  if (!lm || d != lm->d) {
+      fprintf(stderr,"LocalSCVector: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer());
+}
+
+void
+LocalSCVector::element_op(const RefSCElementOp3& op,
+                          SCVector* m,SCVector* n)
+{
+  LocalSCVector *lm
+      = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
+  LocalSCVector *ln
+      = LocalSCVector::require_castdown(n, "LocalSCVector::element_op");
+  if (!lm || !ln || d != lm->d || d != ln->d) {
+      fprintf(stderr,"LocalSCVector: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)

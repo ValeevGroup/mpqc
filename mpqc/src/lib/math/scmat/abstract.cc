@@ -46,10 +46,7 @@ SCDimension::~SCDimension()
 // SCElementScale members
 
 #define CLASSNAME SCElementScale
-#define PARENTS       virtual public SCDiagElementOp, \
-                      virtual public SCSymmElementOp, \
-                      virtual public SCRectElementOp, \
-                      virtual public SCVectorElementOp
+#define PARENTS       virtual public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -67,11 +64,8 @@ SCElementScale::save_data_state(StateOut&s)
 void *
 SCElementScale::_castdown(const ClassDesc*cd)
 {
-  void* casts[4];
-  casts[0] = SCDiagElementOp::_castdown(cd);
-  casts[1] = SCSymmElementOp::_castdown(cd);
-  casts[2] = SCRectElementOp::_castdown(cd);
-  casts[3] = SCVectorElementOp::_castdown(cd);
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementScale::~SCElementScale() {}
@@ -84,13 +78,44 @@ SCElementScale::process(SCMatrixBlockIter&i)
 }
 
 /////////////////////////////////////////////////////////////////////////
+// SCDestructiveElementProduct members
+
+#define CLASSNAME SCDestructiveElementProduct
+#define PARENTS       virtual public SCElementOp2
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+SCDestructiveElementProduct::SCDestructiveElementProduct() {}
+SCDestructiveElementProduct::SCDestructiveElementProduct(StateIn&s):
+  SavableState(s,SCDestructiveElementProduct::class_desc_)
+{
+}
+void
+SCDestructiveElementProduct::save_data_state(StateOut&s)
+{
+}
+void *
+SCDestructiveElementProduct::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp2::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+SCDestructiveElementProduct::~SCDestructiveElementProduct() {}
+void
+SCDestructiveElementProduct::process(SCMatrixBlockIter&i,
+                                     SCMatrixBlockIter&j)
+{
+  for (i.reset(),j.reset(); i; ++i,++j) {
+      i.set(i.get()*j.get());
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
 // SCElementInvert members
 
 #define CLASSNAME SCElementInvert
-#define PARENTS       virtual public SCDiagElementOp, \
-                      virtual public SCSymmElementOp, \
-                      virtual public SCRectElementOp, \
-                      virtual public SCVectorElementOp
+#define PARENTS       virtual public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -107,11 +132,8 @@ SCElementInvert::save_data_state(StateOut&s)
 void *
 SCElementInvert::_castdown(const ClassDesc*cd)
 {
-  void* casts[4];
-  casts[0] = SCDiagElementOp::_castdown(cd);
-  casts[1] = SCSymmElementOp::_castdown(cd);
-  casts[2] = SCRectElementOp::_castdown(cd);
-  casts[3] = SCVectorElementOp::_castdown(cd);
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementInvert::~SCElementInvert() {}
@@ -127,10 +149,7 @@ SCElementInvert::process(SCMatrixBlockIter&i)
 // SCElementSquareRoot members
 
 #define CLASSNAME SCElementSquareRoot
-#define PARENTS       virtual public SCDiagElementOp, \
-                      virtual public SCSymmElementOp, \
-                      virtual public SCRectElementOp, \
-                      virtual public SCVectorElementOp
+#define PARENTS       virtual public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -147,11 +166,8 @@ SCElementSquareRoot::save_data_state(StateOut&s)
 void *
 SCElementSquareRoot::_castdown(const ClassDesc*cd)
 {
-  void* casts[4];
-  casts[0] = SCDiagElementOp::_castdown(cd);
-  casts[1] = SCSymmElementOp::_castdown(cd);
-  casts[2] = SCRectElementOp::_castdown(cd);
-  casts[3] = SCVectorElementOp::_castdown(cd);
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementSquareRoot::~SCElementSquareRoot() {}
@@ -168,10 +184,7 @@ SCElementSquareRoot::process(SCMatrixBlockIter&i)
 
 SavableState_REF_def(SCElementMaxAbs);
 #define CLASSNAME SCElementMaxAbs
-#define PARENTS       virtual public SCDiagElementOp, \
-                      virtual public SCSymmElementOp, \
-                      virtual public SCRectElementOp, \
-                      virtual public SCVectorElementOp
+#define PARENTS       virtual public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -190,11 +203,8 @@ SCElementMaxAbs::save_data_state(StateOut&s)
 void *
 SCElementMaxAbs::_castdown(const ClassDesc*cd)
 {
-  void* casts[4];
-  casts[0] = SCDiagElementOp::_castdown(cd);
-  casts[1] = SCSymmElementOp::_castdown(cd);
-  casts[2] = SCRectElementOp::_castdown(cd);
-  casts[3] = SCVectorElementOp::_castdown(cd);
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementMaxAbs::~SCElementMaxAbs() {}
@@ -226,10 +236,7 @@ SCElementMaxAbs::collect(RefSCElementOp&op)
 // SCElementAssign members
 
 #define CLASSNAME SCElementAssign
-#define PARENTS       virtual public SCDiagElementOp, \
-                      virtual public SCSymmElementOp, \
-                      virtual public SCRectElementOp, \
-                      virtual public SCVectorElementOp
+#define PARENTS       virtual public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -247,11 +254,8 @@ SCElementAssign::save_data_state(StateOut&s)
 void *
 SCElementAssign::_castdown(const ClassDesc*cd)
 {
-  void* casts[4];
-  casts[0] = SCDiagElementOp::_castdown(cd);
-  casts[1] = SCSymmElementOp::_castdown(cd);
-  casts[2] = SCRectElementOp::_castdown(cd);
-  casts[3] = SCVectorElementOp::_castdown(cd);
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementAssign::~SCElementAssign() {}
@@ -267,10 +271,7 @@ SCElementAssign::process(SCMatrixBlockIter&i)
 // SCElementShiftDiagonal members
 
 #define CLASSNAME SCElementShiftDiagonal
-#define PARENTS       virtual public SCDiagElementOp, \
-                      virtual public SCSymmElementOp, \
-                      virtual public SCRectElementOp, \
-                      virtual public SCVectorElementOp
+#define PARENTS       virtual public SCDiagElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -288,11 +289,8 @@ SCElementShiftDiagonal::save_data_state(StateOut&s)
 void *
 SCElementShiftDiagonal::_castdown(const ClassDesc*cd)
 {
-  void* casts[4];
-  casts[0] = SCDiagElementOp::_castdown(cd);
-  casts[1] = SCSymmElementOp::_castdown(cd);
-  casts[2] = SCRectElementOp::_castdown(cd);
-  casts[3] = SCVectorElementOp::_castdown(cd);
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementShiftDiagonal::~SCElementShiftDiagonal() {}
@@ -341,20 +339,22 @@ SCMatrix::_castdown(const ClassDesc*cd)
 int
 SCMatrix::nrow()
 {
-  return rowdim()->n();
+  int result = rowdim()->n();
+  return result;
 }
 
 int
 SCMatrix::ncol()
 {
-  return coldim()->n();
+  int result = coldim()->n();
+  return result;
 }
 
 double
 SCMatrix::maxabs()
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCRectElementOp abop = op;
+  RefSCElementOp abop = op;
   this->element_op(abop);
   return op->result();
 }
@@ -362,21 +362,21 @@ SCMatrix::maxabs()
 void
 SCMatrix::assign(double a)
 {
-  RefSCRectElementOp op = new SCElementAssign(a);
+  RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
 }
 
 void
 SCMatrix::scale(double a)
 {
-  RefSCRectElementOp op = new SCElementScale(a);
+  RefSCElementOp op = new SCElementScale(a);
   this->element_op(op);
 }
 
 void
 SCMatrix::shift_diagonal(double a)
 {
-  RefSCRectElementOp op = new SCElementShiftDiagonal(a);
+  RefSCElementOp op = new SCElementShiftDiagonal(a);
   this->element_op(op);
 }
 
@@ -523,14 +523,15 @@ SymmSCMatrix::_castdown(const ClassDesc*cd)
 int
 SymmSCMatrix::n()
 {
-  return dim()->n();
+  int result = dim()->n();
+  return result;
 }
 
 double
 SymmSCMatrix::maxabs()
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCSymmElementOp abop = op;
+  RefSCElementOp abop = op;
   this->element_op(abop);
   return op->result();
 }
@@ -538,7 +539,7 @@ SymmSCMatrix::maxabs()
 void
 SymmSCMatrix::assign(double a)
 {
-  RefSCSymmElementOp op = new SCElementAssign(a);
+  RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
 }
 
@@ -596,14 +597,14 @@ SymmSCMatrix::convert(double**a)
 void
 SymmSCMatrix::scale(double a)
 {
-  RefSCSymmElementOp op = new SCElementScale(a);
+  RefSCElementOp op = new SCElementScale(a);
   this->element_op(op);
 }
 
 void
 SymmSCMatrix::shift_diagonal(double a)
 {
-  RefSCSymmElementOp op = new SCElementShiftDiagonal(a);
+  RefSCElementOp op = new SCElementShiftDiagonal(a);
   this->element_op(op);
 }
 
@@ -674,14 +675,15 @@ DiagSCMatrix::_castdown(const ClassDesc*cd)
 int
 DiagSCMatrix::n()
 {
-  return dim()->n();
+  int result = dim()->n();
+  return result;
 }
 
 double
 DiagSCMatrix::maxabs()
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCDiagElementOp abop = op;
+  RefSCElementOp abop = op;
   this->element_op(abop);
   return op->result();
 }
@@ -689,7 +691,7 @@ DiagSCMatrix::maxabs()
 void
 DiagSCMatrix::assign(double a)
 {
-  RefSCDiagElementOp op = new SCElementAssign(a);
+  RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
 }
 
@@ -714,7 +716,7 @@ DiagSCMatrix::convert(double*a)
 void
 DiagSCMatrix::scale(double a)
 {
-  RefSCDiagElementOp op = new SCElementScale(a);
+  RefSCElementOp op = new SCElementScale(a);
   this->element_op(op);
 }
 
@@ -783,14 +785,15 @@ SCVector::_castdown(const ClassDesc*cd)
 int
 SCVector::n()
 {
-  return dim()->n();
+  int result = dim()->n();
+  return result;
 }
 
 double
 SCVector::maxabs()
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCVectorElementOp abop = op;
+  RefSCElementOp abop = op;
   this->element_op(abop);
   return op->result();
 }
@@ -798,7 +801,7 @@ SCVector::maxabs()
 void
 SCVector::assign(double a)
 {
-  RefSCVectorElementOp op = new SCElementAssign(a);
+  RefSCElementOp op = new SCElementAssign(a);
   this->element_op(op);
 }
 
@@ -823,7 +826,7 @@ SCVector::convert(double*a)
 void
 SCVector::scale(double a)
 {
-  RefSCVectorElementOp op = new SCElementScale(a);
+  RefSCElementOp op = new SCElementScale(a);
   this->element_op(op);
 }
 

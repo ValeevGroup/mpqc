@@ -83,107 +83,180 @@ SCElementOp::process(SCVectorSimpleBlock* a)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// SCRectElementOp member functions
+// SCElementOp2 member functions
 
-#define CLASSNAME SCRectElementOp
-#define PARENTS virtual public SCElementOp
+SavableState_REF_def(SCElementOp2);
+
+#define CLASSNAME SCElementOp2
+#define PARENTS virtual public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
-SavableState_REF_def(SCRectElementOp);
+SCElementOp2::SCElementOp2()
+{
+}
 
 void *
-SCRectElementOp::_castdown(const ClassDesc*cd)
+SCElementOp2::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-SCRectElementOp::SCRectElementOp()
+SCElementOp2::~SCElementOp2()
 {
 }
 
-SCRectElementOp::~SCRectElementOp()
+int
+SCElementOp2::has_collect()
 {
+  return 0;
+}
+
+void
+SCElementOp2::collect(RefSCElementOp2&)
+{
+}
+
+// If specializations of SCElementOp2 do not handle a particle
+// block type, then these functions will be called and will
+// set up an appropiate block iterator which specializations
+// of SCElementOp2 must handle since it is pure virtual.
+
+void
+SCElementOp2::process(SCMatrixRectBlock* a,SCMatrixRectBlock* b)
+{
+  SCMatrixBlockIter*i = new SCMatrixRectBlockIter(a);
+  SCMatrixBlockIter*j = new SCMatrixRectBlockIter(b);
+  process(*i,*j);
+  // this causes a SCMatrixRectBlock::operator int() to be
+  // called with this = 0x0 using gcc 2.5.6
+  // process(*i,b);
+  delete i;
+  delete j;
+}
+void
+SCElementOp2::process(SCMatrixLTriBlock* a,SCMatrixLTriBlock* b)
+{
+  SCMatrixBlockIter*i = new SCMatrixLTriBlockIter(a);
+  SCMatrixBlockIter*j = new SCMatrixLTriBlockIter(b);
+  process(*i,*j);
+  delete i;
+  delete j;
+}
+void
+SCElementOp2::process(SCMatrixDiagBlock* a,SCMatrixDiagBlock* b)
+{
+  SCMatrixBlockIter*i = new SCMatrixDiagBlockIter(a);
+  SCMatrixBlockIter*j = new SCMatrixDiagBlockIter(b);
+  process(*i,*j);
+  delete i;
+  delete j;
+}
+void
+SCElementOp2::process(SCVectorSimpleBlock* a,SCVectorSimpleBlock* b)
+{
+  SCMatrixBlockIter*i = new SCVectorSimpleBlockIter(a);
+  SCMatrixBlockIter*j = new SCVectorSimpleBlockIter(b);
+  process(*i,*j);
+  delete i;
+  delete j;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// SCSymmElementOp member functions
+// SCElementOp3 member functions
 
-#define CLASSNAME SCSymmElementOp
-#define PARENTS virtual public SCElementOp
+SavableState_REF_def(SCElementOp3);
+
+#define CLASSNAME SCElementOp3
+#define PARENTS virtual public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
-SavableState_REF_def(SCSymmElementOp);
+SCElementOp3::SCElementOp3()
+{
+}
 
 void *
-SCSymmElementOp::_castdown(const ClassDesc*cd)
+SCElementOp3::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-SCSymmElementOp::SCSymmElementOp()
+SCElementOp3::~SCElementOp3()
 {
 }
 
-SCSymmElementOp::~SCSymmElementOp()
+int
+SCElementOp3::has_collect()
+{
+  return 0;
+}
+
+void
+SCElementOp3::collect(RefSCElementOp3&)
 {
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// SCDiagElementOp member functions
+// If specializations of SCElementOp3 do not handle a particle
+// block type, then these functions will be called and will
+// set up an appropiate block iterator which specializations
+// of SCElementOp3 must handle since it is pure virtual.
 
-#define CLASSNAME SCDiagElementOp
-#define PARENTS virtual public SCElementOp
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-SavableState_REF_def(SCDiagElementOp);
-
-void *
-SCDiagElementOp::_castdown(const ClassDesc*cd)
+void
+SCElementOp3::process(SCMatrixRectBlock* a,
+                      SCMatrixRectBlock* b,
+                      SCMatrixRectBlock* c)
 {
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
+  SCMatrixBlockIter*i = new SCMatrixRectBlockIter(a);
+  SCMatrixBlockIter*j = new SCMatrixRectBlockIter(b);
+  SCMatrixBlockIter*k = new SCMatrixRectBlockIter(c);
+  process(*i,*j,*k);
+  delete i;
+  delete j;
+  delete k;
 }
-
-SCDiagElementOp::SCDiagElementOp()
+void
+SCElementOp3::process(SCMatrixLTriBlock* a,
+                      SCMatrixLTriBlock* b,
+                      SCMatrixLTriBlock* c)
 {
+  SCMatrixBlockIter*i = new SCMatrixLTriBlockIter(a);
+  SCMatrixBlockIter*j = new SCMatrixLTriBlockIter(b);
+  SCMatrixBlockIter*k = new SCMatrixLTriBlockIter(c);
+  process(*i,*j,*k);
+  delete i;
+  delete j;
+  delete k;
 }
-
-SCDiagElementOp::~SCDiagElementOp()
+void
+SCElementOp3::process(SCMatrixDiagBlock* a,
+                      SCMatrixDiagBlock* b,
+                      SCMatrixDiagBlock* c)
 {
+  SCMatrixBlockIter*i = new SCMatrixDiagBlockIter(a);
+  SCMatrixBlockIter*j = new SCMatrixDiagBlockIter(b);
+  SCMatrixBlockIter*k = new SCMatrixDiagBlockIter(c);
+  process(*i,*j,*k);
+  delete i;
+  delete j;
+  delete k;
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// SCVectorElementOp member functions
-
-#define CLASSNAME SCVectorElementOp
-#define PARENTS virtual public SCElementOp
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-SavableState_REF_def(SCVectorElementOp);
-
-void *
-SCVectorElementOp::_castdown(const ClassDesc*cd)
+void
+SCElementOp3::process(SCVectorSimpleBlock* a,
+                      SCVectorSimpleBlock* b,
+                      SCVectorSimpleBlock* c)
 {
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-SCVectorElementOp::SCVectorElementOp()
-{
-}
-
-SCVectorElementOp::~SCVectorElementOp()
-{
+  SCMatrixBlockIter*i = new SCVectorSimpleBlockIter(a);
+  SCMatrixBlockIter*j = new SCVectorSimpleBlockIter(b);
+  SCMatrixBlockIter*k = new SCVectorSimpleBlockIter(c);
+  process(*i,*j,*k);
+  delete i;
+  delete j;
+  delete k;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -529,9 +602,24 @@ RefSCMatrix::accumulate(const RefSCMatrix&a) const
 }
 
 void
-RefSCMatrix::element_op(const RefSCRectElementOp&op) const
+RefSCMatrix::element_op(const RefSCElementOp&op) const
 {
   if (nonnull()) pointer()->element_op(op);
+}
+
+void
+RefSCMatrix::element_op(const RefSCElementOp2& op,
+                        const RefSCMatrix& m) const
+{
+  if (nonnull()) pointer()->element_op(op,m.pointer());
+}
+
+void
+RefSCMatrix::element_op(const RefSCElementOp3& op,
+                        const RefSCMatrix& m,
+                        const RefSCMatrix& n) const
+{
+  if (nonnull()) pointer()->element_op(op,m.pointer(),n.pointer());
 }
 
 void
@@ -897,9 +985,24 @@ RefSymmSCMatrix::accumulate(const RefSymmSCMatrix&a) const
 }
 
 void
-RefSymmSCMatrix::element_op(const RefSCSymmElementOp&op) const
+RefSymmSCMatrix::element_op(const RefSCElementOp&op) const
 {
   if (nonnull()) pointer()->element_op(op);
+}
+
+void
+RefSymmSCMatrix::element_op(const RefSCElementOp2&op,
+                            const RefSymmSCMatrix&m) const
+{
+  if (nonnull()) pointer()->element_op(op,m.pointer());
+}
+
+void
+RefSymmSCMatrix::element_op(const RefSCElementOp3&op,
+                            const RefSymmSCMatrix&m,
+                            const RefSymmSCMatrix&n) const
+{
+  if (nonnull()) pointer()->element_op(op,m.pointer(),n.pointer());
 }
 
 void
@@ -1183,9 +1286,24 @@ RefDiagSCMatrix::accumulate(const RefDiagSCMatrix&a) const
 }
 
 void
-RefDiagSCMatrix::element_op(const RefSCDiagElementOp&op) const
+RefDiagSCMatrix::element_op(const RefSCElementOp&op) const
 {
   if (nonnull()) pointer()->element_op(op);
+}
+
+void
+RefDiagSCMatrix::element_op(const RefSCElementOp2&op,
+                            const RefDiagSCMatrix&m) const
+{
+  if (nonnull()) pointer()->element_op(op,m.pointer());
+}
+
+void
+RefDiagSCMatrix::element_op(const RefSCElementOp3&op,
+                            const RefDiagSCMatrix&m,
+                            const RefDiagSCMatrix&n) const
+{
+  if (nonnull()) pointer()->element_op(op,m.pointer(),n.pointer());
 }
 
 double
@@ -1430,9 +1548,24 @@ RefSCVector::accumulate(const RefSCVector&a) const
 }
 
 void
-RefSCVector::element_op(const RefSCVectorElementOp&op) const
+RefSCVector::element_op(const RefSCElementOp&op) const
 {
   if (nonnull()) pointer()->element_op(op);
+}
+
+void
+RefSCVector::element_op(const RefSCElementOp2&op,
+                        const RefSCVector&v) const
+{
+  if (nonnull()) pointer()->element_op(op,v.pointer());
+}
+
+void
+RefSCVector::element_op(const RefSCElementOp3&op,
+                        const RefSCVector&v,
+                        const RefSCVector&w) const
+{
+  if (nonnull()) pointer()->element_op(op,v.pointer(),w.pointer());
 }
 
 void

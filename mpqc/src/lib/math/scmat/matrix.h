@@ -46,54 +46,76 @@ class SCElementOp: virtual public SavableState {
 DCRef_declare(SCElementOp);
 SSRef_declare(SCElementOp);
 
-class SCRectElementOp: virtual public SCElementOp {
-#   define CLASSNAME SCRectElementOp
+class SCElementOp2: virtual public SavableState {
+#   define CLASSNAME SCElementOp2
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
-    SCRectElementOp();
-    ~SCRectElementOp();
+    SCElementOp2();
+    virtual ~SCElementOp2();
+    // If duplicates of |SCElementOp2| are made then if |has_collect| returns
+    // true then collect is called in such a way that each duplicated
+    // |SCElementOp| is the argument of |collect| once.  The default
+    // return value of |has_collect| is 0 and |collect|'s default action
+    // is do nothing.
+    virtual int has_collect();
+    virtual void collect(RefSCElementOp2&);
+    virtual void process(SCMatrixBlockIter&,SCMatrixBlockIter&) = 0;
+    virtual void process(SCMatrixRectBlock*,SCMatrixRectBlock*);
+    virtual void process(SCMatrixLTriBlock*,SCMatrixLTriBlock*);
+    virtual void process(SCMatrixDiagBlock*,SCMatrixDiagBlock*);
+    virtual void process(SCVectorSimpleBlock*,SCVectorSimpleBlock*);
 };
-DCRef_declare(SCRectElementOp);
-SSRef_declare(SCRectElementOp);
+DCRef_declare(SCElementOp2);
+SSRef_declare(SCElementOp2);
 
-class SCDiagElementOp: virtual public SCElementOp {
-#   define CLASSNAME SCDiagElementOp
+class SCElementOp3: virtual public SavableState {
+#   define CLASSNAME SCElementOp3
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
-    SCDiagElementOp();
-    ~SCDiagElementOp();
+    SCElementOp3();
+    virtual ~SCElementOp3();
+    // If duplicates of |SCElementOp3| are made then if |has_collect| returns
+    // true then collect is called in such a way that each duplicated
+    // |SCElementOp| is the argument of |collect| once.  The default
+    // return value of |has_collect| is 0 and |collect|'s default action
+    // is do nothing.
+    virtual int has_collect();
+    virtual void collect(RefSCElementOp3&);
+    virtual void process(SCMatrixBlockIter&,
+                         SCMatrixBlockIter&,
+                         SCMatrixBlockIter&) = 0;
+    virtual void process(SCMatrixRectBlock*,
+                         SCMatrixRectBlock*,
+                         SCMatrixRectBlock*);
+    virtual void process(SCMatrixLTriBlock*,
+                         SCMatrixLTriBlock*,
+                         SCMatrixLTriBlock*);
+    virtual void process(SCMatrixDiagBlock*,
+                         SCMatrixDiagBlock*,
+                         SCMatrixDiagBlock*);
+    virtual void process(SCVectorSimpleBlock*,
+                         SCVectorSimpleBlock*,
+                         SCVectorSimpleBlock*);
 };
-DCRef_declare(SCDiagElementOp);
-SSRef_declare(SCDiagElementOp);
+DCRef_declare(SCElementOp3);
+SSRef_declare(SCElementOp3);
 
-class SCSymmElementOp: virtual public SCElementOp {
-#   define CLASSNAME SCSymmElementOp
+class SCDestructiveElementProduct: virtual public SCElementOp2 {
+#   define CLASSNAME SCDestructiveElementProduct
+#   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
-#   include <util/class/classda.h>
+#   include <util/class/classd.h>
   public:
-    SCSymmElementOp();
-    ~SCSymmElementOp();
+    SCDestructiveElementProduct();
+    SCDestructiveElementProduct(StateIn&);
+    ~SCDestructiveElementProduct();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
 };
-DCRef_declare(SCSymmElementOp);
-SSRef_declare(SCSymmElementOp);
 
-class SCVectorElementOp: virtual public SCElementOp {
-#   define CLASSNAME SCVectorElementOp
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
-  public:
-    SCVectorElementOp();
-    ~SCVectorElementOp();
-};
-DCRef_declare(SCVectorElementOp);
-SSRef_declare(SCVectorElementOp);
-
-class SCElementScale: virtual public SCDiagElementOp,
-                      virtual public SCSymmElementOp,
-                      virtual public SCRectElementOp,
-                      virtual public SCVectorElementOp {
+class SCElementScale: virtual public SCElementOp {
 #   define CLASSNAME SCElementScale
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -108,10 +130,7 @@ class SCElementScale: virtual public SCDiagElementOp,
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementAssign: virtual public SCDiagElementOp,
-                       virtual public SCSymmElementOp,
-                       virtual public SCRectElementOp,
-                       virtual public SCVectorElementOp {
+class SCElementAssign: virtual public SCElementOp {
 #   define CLASSNAME SCElementAssign
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -126,10 +145,7 @@ class SCElementAssign: virtual public SCDiagElementOp,
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementSquareRoot: virtual public SCDiagElementOp,
-                       virtual public SCSymmElementOp,
-                       virtual public SCRectElementOp,
-                       virtual public SCVectorElementOp {
+class SCElementSquareRoot: virtual public SCElementOp {
 #   define CLASSNAME SCElementSquareRoot
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -143,10 +159,7 @@ class SCElementSquareRoot: virtual public SCDiagElementOp,
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementInvert: virtual public SCDiagElementOp,
-                       virtual public SCSymmElementOp,
-                       virtual public SCRectElementOp,
-                       virtual public SCVectorElementOp {
+class SCElementInvert: virtual public SCElementOp {
 #   define CLASSNAME SCElementInvert
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -160,10 +173,7 @@ class SCElementInvert: virtual public SCDiagElementOp,
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementShiftDiagonal: virtual public SCDiagElementOp,
-                       virtual public SCSymmElementOp,
-                       virtual public SCRectElementOp,
-                       virtual public SCVectorElementOp {
+class SCElementShiftDiagonal: virtual public SCElementOp {
 #   define CLASSNAME SCElementShiftDiagonal
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -178,10 +188,7 @@ class SCElementShiftDiagonal: virtual public SCDiagElementOp,
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementMaxAbs: virtual public SCDiagElementOp,
-                       virtual public SCSymmElementOp,
-                       virtual public SCRectElementOp,
-                       virtual public SCVectorElementOp {
+class SCElementMaxAbs: virtual public SCElementOp {
 #   define CLASSNAME SCElementMaxAbs
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -264,7 +271,12 @@ class RefSCVector: public RefSSSCVector {
     void convert(double*) const;
     void scale(double) const;
     void accumulate(const RefSCVector&) const;
-    void element_op(const RefSCVectorElementOp&) const;
+    void element_op(const RefSCElementOp&) const;
+    void element_op(const RefSCElementOp2&,
+                    const RefSCVector&) const;
+    void element_op(const RefSCElementOp3&,
+                    const RefSCVector&,
+                    const RefSCVector&) const;
     void print(ostream&out) const;
     void print(const char*title=0, ostream&out=cout, int precision=10) const;
 };
@@ -315,7 +327,12 @@ class RefSCMatrix: public RefSSSCMatrix {
     void convert(double*) const;
     void convert(double**) const;
     void accumulate(const RefSCMatrix&) const;
-    void element_op(const RefSCRectElementOp&) const;
+    void element_op(const RefSCElementOp&) const;
+    void element_op(const RefSCElementOp2&,
+                    const RefSCMatrix&) const;
+    void element_op(const RefSCElementOp3&,
+                    const RefSCMatrix&,
+                    const RefSCMatrix&) const;
     int nrow() const;
     int ncol() const;
     double solve_lin(const RefSCVector&) const;
@@ -371,7 +388,12 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void convert(double*) const;
     void convert(double**) const;
     void accumulate(const RefSymmSCMatrix&) const;
-    void element_op(const RefSCSymmElementOp&) const;
+    void element_op(const RefSCElementOp&) const;
+    void element_op(const RefSCElementOp2&,
+                    const RefSymmSCMatrix&) const;
+    void element_op(const RefSCElementOp3&,
+                    const RefSymmSCMatrix&,
+                    const RefSymmSCMatrix&) const;
     double solve_lin(const RefSCVector&) const;
     double trace() const;
     double determ() const;
@@ -420,7 +442,12 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     void assign(const double*) const;
     void convert(double*) const;
     void accumulate(const RefDiagSCMatrix&) const;
-    void element_op(const RefSCDiagElementOp&) const;
+    void element_op(const RefSCElementOp&) const;
+    void element_op(const RefSCElementOp2&,
+                    const RefDiagSCMatrix&) const;
+    void element_op(const RefSCElementOp3&,
+                    const RefDiagSCMatrix&,
+                    const RefDiagSCMatrix&) const;
     int n() const;
     double trace() const;
     double determ() const;

@@ -17,17 +17,11 @@ class SCVector;
 class SSRefSCElementOp;
 typedef class SSRefSCElementOp RefSCElementOp;
 
-class SSRefSCRectElementOp;
-typedef class SSRefSCRectElementOp RefSCRectElementOp;
+class SSRefSCElementOp2;
+typedef class SSRefSCElementOp2 RefSCElementOp2;
 
-class SSRefSCSymmElementOp;
-typedef class SSRefSCSymmElementOp RefSCSymmElementOp;
-
-class SSRefSCDiagElementOp;
-typedef class SSRefSCDiagElementOp RefSCDiagElementOp;
-
-class SSRefSCVectorElementOp;
-typedef class SSRefSCVectorElementOp RefSCVectorElementOp;
+class SSRefSCElementOp3;
+typedef class SSRefSCElementOp3 RefSCElementOp3;
 
 class RefSCDimension;
 
@@ -76,7 +70,11 @@ class SCVector: virtual public SavableState {
     virtual void accumulate_product(SCMatrix*,SCVector*) = 0;
     virtual void accumulate(SCVector*) = 0;
     virtual double scalar_product(SCVector*) = 0;
-    virtual void element_op(const RefSCVectorElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp2&,
+                            SCVector*) = 0;
+    virtual void element_op(const RefSCElementOp3&,
+                            SCVector*,SCVector*) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
@@ -125,7 +123,11 @@ class SCMatrix: virtual public SavableState {
     virtual double determ_this() = 0;
     virtual double solve_this(SCVector*) = 0;
     virtual void gen_invert_this() = 0;
-    virtual void element_op(const RefSCRectElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp2&,
+                            SCMatrix*) = 0;
+    virtual void element_op(const RefSCElementOp3&,
+                            SCMatrix*,SCMatrix*) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
@@ -167,7 +169,11 @@ class SymmSCMatrix: virtual public SavableState {
     virtual double determ_this() = 0;
     virtual double solve_this(SCVector*) = 0;
     virtual void gen_invert_this() = 0;
-    virtual void element_op(const RefSCSymmElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp2&,
+                            SymmSCMatrix*) = 0;
+    virtual void element_op(const RefSCElementOp3&,
+                            SymmSCMatrix*,SymmSCMatrix*) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
     virtual void accumulate_symmetric_outer_product(SCVector*) = 0;
     virtual double scalar_product(SCVector*) = 0;
@@ -202,7 +208,11 @@ class DiagSCMatrix: virtual public SavableState {
     virtual double determ_this() = 0;
     virtual double invert_this() = 0;
     virtual void gen_invert_this() = 0;
-    virtual void element_op(const RefSCDiagElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp&) = 0;
+    virtual void element_op(const RefSCElementOp2&,
+                            DiagSCMatrix*) = 0;
+    virtual void element_op(const RefSCElementOp3&,
+                            DiagSCMatrix*,DiagSCMatrix*) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 

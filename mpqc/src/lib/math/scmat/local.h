@@ -65,7 +65,11 @@ class LocalSCVector: public SCVector {
     void accumulate_product(SCMatrix*,SCVector*);
     void accumulate(SCVector*);
     double scalar_product(SCVector*);
-    void element_op(const RefSCVectorElementOp&);
+    void element_op(const RefSCElementOp&);
+    void element_op(const RefSCElementOp2&,
+                    SCVector*);
+    void element_op(const RefSCElementOp3&,
+                    SCVector*,SCVector*);
     void print(const char* title=0,ostream& out=cout, int =10);
 };
 
@@ -112,7 +116,11 @@ class LocalSCMatrix: public SCMatrix {
     double determ_this();
     double trace();
     void gen_invert_this();
-    void element_op(const RefSCRectElementOp&);
+    void element_op(const RefSCElementOp&);
+    void element_op(const RefSCElementOp2&,
+                    SCMatrix*);
+    void element_op(const RefSCElementOp3&,
+                    SCMatrix*,SCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
 };
 
@@ -161,7 +169,11 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate_symmetric_sum(SCMatrix*);
     void accumulate_transform(SCMatrix*,SymmSCMatrix*);
     void accumulate_transform(SCMatrix*,DiagSCMatrix*);
-    void element_op(const RefSCSymmElementOp&);
+    void element_op(const RefSCElementOp&);
+    void element_op(const RefSCElementOp2&,
+                    SymmSCMatrix*);
+    void element_op(const RefSCElementOp3&,
+                    SymmSCMatrix*,SymmSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
 };
 
@@ -197,7 +209,11 @@ class LocalDiagSCMatrix: virtual public DiagSCMatrix {
     double trace();
     void gen_invert_this();
 
-    void element_op(const RefSCDiagElementOp&);
+    void element_op(const RefSCElementOp&);
+    void element_op(const RefSCElementOp2&,
+                    DiagSCMatrix*);
+    void element_op(const RefSCElementOp3&,
+                    DiagSCMatrix*,DiagSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
 };
 

@@ -624,6 +624,16 @@ GaussianBasisSet::set_integral(const RefIntegral &integral)
     }
 }
 
+int
+GaussianBasisSet::equiv(const RefGaussianBasisSet &b)
+{
+  if (nshell() != b->nshell()) return 0;
+  for (int i=0; i<nshell(); i++) {
+      if (!shell_[i]->equiv(b->shell_[i])) return 0;
+    }
+  return 1;
+}
+
 void
 GaussianBasisSet::print_brief(ostream& os) const
 {

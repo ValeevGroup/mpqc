@@ -42,6 +42,7 @@ SavableState_REF_fwddec(Integral)
 class CartesianIter;
 class SphericalTransformIter;
 
+/// A Gaussian orbital shell.
 class GaussianShell: public SavableState
 {
 #   define CLASSNAME GaussianShell
@@ -157,6 +158,9 @@ class GaussianShell: public SavableState
     double relative_overlap(int con,
                             int a1, int b1, int c1,
                             int a2, int b2, int c2) const;
+
+    /// Returns true if this and the argument are equivalent.
+    int equiv(const GaussianShell *s);
 
     void print(ostream& =cout) const;
 };

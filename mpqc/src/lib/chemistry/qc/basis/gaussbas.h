@@ -44,6 +44,7 @@ class GaussianShell;
 class RefKeyVal;
 class BasisFileSet;
 
+SavableState_REF_fwddec(GaussianBasisSet);
 SavableState_REF_fwddec(Integral)
 
 class CartesianIter;
@@ -336,6 +337,9 @@ class GaussianBasisSet: public SavableState
     // this must be called before the above two routines to initialize
     // iterators that know the basis function order
     void set_integral(const RefIntegral&);
+
+    /// Returns true if this and the argument are equivalent.
+    int equiv(const RefGaussianBasisSet &b);
 
     void print_brief(ostream& =cout) const;
     void print(ostream& =cout) const;

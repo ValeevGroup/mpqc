@@ -514,6 +514,22 @@ GaussianShell::nfunction(int con) const
            (((l[con]+2)*(l[con]+1))>>1);
 }
 
+int
+GaussianShell::equiv(const GaussianShell *s)
+{
+  if (nprim != s->nprim) return 0;
+  if (ncon != s->ncon) return 0;
+  for (int i=0; i<ncon; i++) {
+      if (l[i] != s->l[i]) return 0;
+      if (puream[i] != s->puream[i]) return 0;
+      if (exp[i] != s->exp[i]) return 0;
+      for (int j=0; j<nprim; j++) {
+          if (coef[i][j] != s->coef[i][j]) return 0;
+        }
+    }
+  return 1;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

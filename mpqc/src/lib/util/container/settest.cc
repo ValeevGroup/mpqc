@@ -69,7 +69,8 @@ main()
 
   ArraysetRefIntg as;
 
-  for (int i=0; i<2; i++) {
+  int i;
+  for (i=0; i<2; i++) {
       as.add(new Intg(i));
     }
   as[1] = ii;

@@ -382,7 +382,6 @@ class intMessageGrp: public MessageGrp {
     intMessageGrp();
     intMessageGrp(const Ref<KeyVal>&);
 
-    virtual Ref<MessageGrp> clone(void) { } ;
     void initialize(int me, int n, int nbits);
   public:
     ~intMessageGrp();

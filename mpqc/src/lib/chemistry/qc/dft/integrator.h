@@ -36,6 +36,7 @@
 #include <chemistry/qc/dft/functional.h>
 #include <chemistry/qc/basis/extent.h>
 
+/** An abstract base class for integrating the electron density. */
 class DenIntegrator: virtual public SavableState {
 #   define CLASSNAME DenIntegrator
 #   include <util/state/stated.h>
@@ -84,21 +85,31 @@ class DenIntegrator: virtual public SavableState {
                     double weight, double multiplier, double *nuclear_gradient,
                     double *f_gradient, double *w_gradient);
   public:
+    /// Construct a new DenIntegrator.
     DenIntegrator();
+    /// Construct a new DenIntegrator given the KeyVal input.
     DenIntegrator(const RefKeyVal &);
+    /// Construct a new DenIntegrator given the StateIn data.
     DenIntegrator(StateIn &);
     ~DenIntegrator();
     void save_data_state(StateOut &);
 
+    /// Returns the wavefunction used for the integration.
     RefWavefunction wavefunction() const { return wfn_; }
+    /// Returns the result of the integration.
     double value() const { return value_; }
 
+    /// Sets the accuracy to use in the integration.
     void set_accuracy(double a) { accuracy_ = a; }
 
-    // Call with non zero if the potential integrals are to be computed.
-    // They can be returned with the vmat() member.
+    /** Call with non zero if the potential integrals are to be computed.
+        They can be returned with the vmat() member. */
     void set_compute_potential_integrals(int);
+    /** Returns the alpha potential integrals. Stored as
+        the lower triangular, row-major format. */
     const double *alpha_vmat() const { return alpha_vmat_; }
+    /** Returns the beta potential integrals. Stored as
+        the lower triangular, row-major format. */
     const double *beta_vmat() const { return beta_vmat_; }
 
     /** Called before integrate.  Does not need to be called again
@@ -106,6 +117,9 @@ class DenIntegrator: virtual public SavableState {
     virtual void init(const RefWavefunction &);
     /// Must be called between calls to init.
     virtual void done();
+    /** Performs the integration of the given functional using the given
+        alpha and beta density matrices.  The nuclear derivative
+        contribution is placed in nuclear_grad, if it is non-null. */
     virtual void integrate(const RefDenFunctional &,
                            const RefSymmSCMatrix& densa =0,
                            const RefSymmSCMatrix& densb =0,
@@ -113,6 +127,7 @@ class DenIntegrator: virtual public SavableState {
 };
 SavableState_REF_dec(DenIntegrator);
 
+/** An abstract base class for computing grid weights. */
 class IntegrationWeight: virtual public SavableState {
 #   define CLASSNAME IntegrationWeight
 #   include <util/state/stated.h>
@@ -135,12 +150,19 @@ class IntegrationWeight: virtual public SavableState {
     void test(int icenter, SCVector3 &point);
     void test();
 
+    /// Initialize the integration weight object.
     virtual void init(const RefMolecule &, double tolerance);
+    /// Called when finished with the integration weight object.
     virtual void done();
+    /** Computes the weight for a given center at a given point in space.
+        Derivatives of the weigth with respect to nuclear coordinates are
+        optionally returned in grad_w.  This must be called after init, but
+        before done. */
     virtual double w(int center, SCVector3 &point, double *grad_w = 0) = 0;
 };
 SavableState_REF_dec(IntegrationWeight);
 
+/** Implements Becke's integration weight scheme. */
 class BeckeIntegrationWeight: public IntegrationWeight {
 #   define CLASSNAME BeckeIntegrationWeight
 #   define HAVE_KEYVAL_CTOR
@@ -174,7 +196,8 @@ class BeckeIntegrationWeight: public IntegrationWeight {
     double w(int center, SCVector3 &point, double *grad_w = 0);
 };
 
-class RadialIntegrator: virtual public SavableState{
+/** An abstract base class for radial integrators. */
+class RadialIntegrator: virtual public SavableState {
 #   define CLASSNAME RadialIntegrator
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
@@ -199,6 +222,7 @@ class RadialIntegrator: virtual public SavableState{
 };
 SavableState_REF_dec(RadialIntegrator);
 
+/** An abstract base class for angular integrators. */
 class AngularIntegrator: virtual public SavableState{
 #   define CLASSNAME AngularIntegrator
 #   include <util/state/stated.h>
@@ -219,6 +243,8 @@ class AngularIntegrator: virtual public SavableState{
 };
 SavableState_REF_dec(AngularIntegrator);
 
+/** An implementation of a radial integrator using the Euler-Maclaurin
+    weights and grid points. */
 class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
 #   define CLASSNAME EulerMaclaurinRadialIntegrator
 #   define HAVE_KEYVAL_CTOR
@@ -243,6 +269,8 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     void set_dr_dqr2(double i);
 };
 
+/** An implementation of a angular integrator using the Lebedev
+    weights and grid points. */
 class LebedevAngularIntegrator: public AngularIntegrator {
 #   define CLASSNAME LebedevAngularIntegrator
 #   define HAVE_KEYVAL_CTOR
@@ -285,6 +313,8 @@ class LebedevAngularIntegrator: public AngularIntegrator {
     void print(ostream & =cout) const;
 };
 
+/** An implementation of an angular integrator using the Gauss-Legendre
+    weights and grid points. */
 class GaussLegendreAngularIntegrator: public AngularIntegrator {
 #   define CLASSNAME GaussLegendreAngularIntegrator
 #   define HAVE_KEYVAL_CTOR
@@ -328,6 +358,8 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     void print(ostream & =cout) const;
 };
 
+/** An implementation of an integrator using any combination of
+    a RadianIntegrator and an AngularIntegrator. */
 class RadialAngularIntegrator: public DenIntegrator {
 #   define CLASSNAME RadialAngularIntegrator
 #   define HAVE_KEYVAL_CTOR
@@ -353,7 +385,8 @@ class RadialAngularIntegrator: public DenIntegrator {
     void print(ostream & =cout) const;
 };
     
-// Based on C.W. Murray, et al. Mol. Phys. 78, No. 4, 997-1014, 1993
+/** An implementation of an integrator based on C.W. Murray, et
+    al. Mol. Phys. 78, No. 4, 997-1014, 1993. */
 class Murray93Integrator: public DenIntegrator {
 #   define CLASSNAME Murray93Integrator
 #   define HAVE_KEYVAL_CTOR

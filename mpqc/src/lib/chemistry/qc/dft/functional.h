@@ -36,6 +36,7 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/qc/wfn/wfn.h>
 
+/** Contains data needed at each point by a DenFunctional. */
 struct PointInputData {
     enum {X=0, Y=1, Z=2};
     enum {XX=0, YX=1, YY=2, ZX=3, ZY=4, ZZ=5};
@@ -66,6 +67,7 @@ struct PointInputData {
     PointInputData(const SCVector3& r_): r(r_) {}
 };
 
+/** Contains data generated at each point by a DenFunctional. */
 struct PointOutputData {
     // energy at r
     double energy;
@@ -83,6 +85,7 @@ struct PointOutputData {
 
 };
 
+/** An abstract base class for density functionals. */
 class DenFunctional: virtual public SavableState {
 #   define CLASSNAME DenFunctional
 #   include <util/state/stated.h>
@@ -201,8 +204,7 @@ class StdDenFunctional: public SumDenFunctional {
     void print(ostream& =cout) const;
 };
 
-// The LSDACFunctional computes energies and densities
-//    using the designated local correlation functional.
+/** An abstract base class for local correlation functionals. */
 class LSDACFunctional: public DenFunctional {
 #   define CLASSNAME LSDACFunctional
 #   include <util/state/stated.h>
@@ -223,9 +225,14 @@ class LSDACFunctional: public DenFunctional {
 };
 SavableState_REF_dec(LSDACFunctional);
 
-// The Perdew-Burke-Ernzerhof (PBE) Correlation Functional
-// computes energies and densities using the designated
-// local correlation functional.
+/** Implements the Perdew-Burke-Ernzerhof (PBE) correlation functional.
+
+    John P. Perdew, Kieron Burke, and Yue Wang, Phys. Rev. B, 54(23),
+    pp. 16533-16539, 1996.
+
+    John P. Perdew, Kieron Burke, and Matthias Ernzerhof, Phys. Rev. Lett.,
+    77(18), pp. 3865-3868, 1996.
+*/
 class PBECFunctional: public DenFunctional {
 #   define CLASSNAME PBECFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -252,10 +259,16 @@ class PBECFunctional: public DenFunctional {
   
 };
 
-// The Perdew-Wang 1991 Correlation Functional computes energies and densities
-//    using the designated local correlation functional.
-// J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
-// and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.
+/** The Perdew-Wang 1991 correlation functional computes energies and
+    densities using the designated local correlation functional.
+
+    J. P. Perdew, Proceedings of the 75. WE-Heraeus-Seminar and 21st Annual
+    International Symposium on Electronic Structure of Solids held in
+    Gaussig (Germany), March 11-15, 1991, P. Ziesche and H. Eschrig, eds.,
+    pp. 11-20.
+
+    J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
+    and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.  */
 class PW91CFunctional: public DenFunctional {
 #   define CLASSNAME PW91CFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -289,8 +302,12 @@ class PW91CFunctional: public DenFunctional {
   
 };
 
-// The Perdew 1986 (P86) Correlation Functional computes energies and densities
-//    using the designated local correlation functional.
+/** Implements the Perdew 1986 (P86) correlation functional.
+
+    J. P. Perdew, Phys. Rev. B, 33(12), pp. 8822-8824.
+
+    J. P. Perdew, Phys. Rev. B. 34(10), pp. 7406.
+ */
 class P86CFunctional: public DenFunctional {
 #   define CLASSNAME P86CFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -317,8 +334,7 @@ class P86CFunctional: public DenFunctional {
   
 };
 
-// The SlaterXFunctional computes energies and densities
-// using the Slater exchange term. 
+// Implements the Slater exchange functional.
 class SlaterXFunctional: public DenFunctional {
 #   define CLASSNAME SlaterXFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -336,9 +352,13 @@ class SlaterXFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-/** The VWNLCFunctional class from which the various VWN
-    (Vosko, Wilk and Nusair) local correlation functionals
-    (1, 2, 3, 4, 5) are derived. */
+/** An abstract base class from which the various VWN (Vosko, Wilk and
+    Nusair) local correlation functional (1, 2, 3, 4, 5) classes are
+    derived.
+
+    S. H. Vosko, L. Wilk, and M. Nusair, Can. J. Phys., 58, pp. 1200-1211,
+    1980.
+*/
 class VWNLCFunctional: public LSDACFunctional {
 #   define CLASSNAME VWNLCFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -480,10 +500,9 @@ class VWN5LCFunctional: public VWNLCFunctional {
     void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
-//    The PW92LCFunctional computes energies and densities using the
-//    PW92 local (LSDA) correlation term from J. P. Perdew and Y. Wang.
-//    Phys. Rev. B, 45, 13244, 1992 
-//    This local correlation functional is used in PW91 and PBE.
+/** Implements the PW92 local (LSDA) correlation term from J. P. Perdew and
+    Y. Wang.  Phys. Rev. B, 45, 13244, 1992.  This local correlation
+    functional is used in PW91 and PBE.  */
 class PW92LCFunctional: public LSDACFunctional {
 #   define CLASSNAME PW92LCFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -505,10 +524,11 @@ class PW92LCFunctional: public LSDACFunctional {
     void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
-//    The PZ81LCFunctional computes energies and densities using the
-//    PZ81 local (LSDA) correlation term from
-//    J. P. Perdew and A. Zunger, Phys. Rev. B, 23, 5048, 1981.
-//    This local correlation functional is used in P86.
+/* Implements the PZ81 local (LSDA) correlation functional.  This local
+   correlation functional is used in P86.
+
+   J. P. Perdew and A. Zunger, Phys. Rev. B, 23, pp. 5048-5079, 1981.
+*/
 class PZ81LCFunctional: public LSDACFunctional {
 #   define CLASSNAME PZ81LCFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -532,8 +552,7 @@ class PZ81LCFunctional: public LSDACFunctional {
     void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
-/** The XalphaFunctional computes energies and densities
-    using the Xalpha method. */
+/** Implements the Xalpha exchange functional */
 class XalphaFunctional: public DenFunctional {
 #   define CLASSNAME XalphaFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -555,8 +574,10 @@ class XalphaFunctional: public DenFunctional {
     void print(ostream& =cout) const;
 };
 
-/** The Becke88XFunctional computes energies and densities
-    Becke's 1988 exchange functional. */
+/** Implements Becke's 1988 exchange functional.
+
+    A. D. Becke, Phys. Rev. A, 38(6), pp. 3098-3100, 1988.
+ */
 class Becke88XFunctional: public DenFunctional {
 #   define CLASSNAME Becke88XFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -580,8 +601,14 @@ class Becke88XFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-/** The LYPCFunctional computes energies and densities
-    using the Lee, Yang, and Parr functional. */
+/** Implements theLee, Yang, and Parr functional.
+
+    B. Miehlich, A. Savin, H. Stoll and H. Preuss, Chem. Phys. Lett.,
+    157(3), pp. 200-206, 1989.
+
+    C. Lee, W. Yang, and R. G. Parr, Phys. Rev. B, 37(2), pp 785-789,
+    1988.
+ */
 class LYPCFunctional: public DenFunctional {
 #   define CLASSNAME LYPCFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -605,7 +632,10 @@ class LYPCFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-// The Perdew-Wang 1986 (PW86) Exchange functional
+/** Implements the Perdew-Wang 1986 (PW86) Exchange functional.
+
+    J. P. Perdew and Y. Wang, Phys. Rev. B, 33(12), pp 8800-8802, 1986.
+*/
 class PW86XFunctional: public DenFunctional {
 #   define CLASSNAME PW86XFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -629,6 +659,21 @@ class PW86XFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
+/** Implements the Perdew-Burke-Ernzerhof (PBE) exchange functional.
+
+    John P. Perdew, Kieron Burke, and Yue Wang, Phys. Rev. B, 54(23),
+    pp. 16533-16539, 1996.
+
+    John P. Perdew, Kieron Burke, and Matthias Ernzerhof, Phys. Rev. Lett.,
+    77(18), pp. 3865-3868 1996.
+
+    See also the comment and reply discussing the revPBE modification which
+    adjusts the value of kappa:
+
+    Yingkai Zhang and Weitao Yang, Phys. Rev. Lett., 80(4), pp. 890, 1998.
+
+    John P. Perdew, Kieron Burke, and Matthias Ernzerhof, Phys. Rev. Lett.,
+    80(4), pp. 891, 1998.  */
 class PBEXFunctional: public DenFunctional {
 #   define CLASSNAME PBEXFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -653,7 +698,16 @@ class PBEXFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-// The Perdew-Wang 1991 (PW91) Exchange functional
+/** The Perdew-Wang 1991 exchange functional computes energies and densities
+    using the designated local correlation functional.
+
+    J. P. Perdew, Proceedings of the 75. WE-Heraeus-Seminar and 21st Annual
+    International Symposium on Electronic Structure of Solids held in
+    Gaussig (Germany), March 11-15, 1991, P. Ziesche and H. Eschrig, eds.,
+    pp. 11-20.
+
+    J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
+    and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.  */
 class PW91XFunctional: public DenFunctional {
 #   define CLASSNAME PW91XFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -681,8 +735,10 @@ class PW91XFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-// The modified 1991 Perdew-Wang Exchange functional.  See C. Adamo
-// and V. Barone, JCP, 108(2), 1998, p664.
+/** Implements a modified 1991 Perdew-Wang exchange functional.
+
+    C. Adamo and V. Barone, J. Chem. Phys., 108(2), pp. 664-674, 1998.
+*/
 class mPW91XFunctional: public DenFunctional {
 #   define CLASSNAME mPW91XFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -716,7 +772,10 @@ class mPW91XFunctional: public DenFunctional {
     void init_constants(Func);
 };
 
-// The Gill 1996 (G96) exchange functional
+/** Implements the Gill 1996 (G96) exchange functional.
+
+    P. M. W. Gill, Mol. Phys., 89(2), pp. 433-445, 1996.
+*/
 class G96XFunctional: public DenFunctional {
 #   define CLASSNAME G96XFunctional
 #   define HAVE_KEYVAL_CTOR

@@ -3700,6 +3700,9 @@ PBEXFunctional::PBEXFunctional(const RefKeyVal& keyval):
   init_constants();
   mu = keyval->doublevalue("mu", KeyValValuedouble(mu));
   kappa = keyval->doublevalue("kappa", KeyValValuedouble(kappa));
+  if (keyval->booleanvalue("revPBE")) {
+      kappa = 1.245;
+    }
 }
 
 PBEXFunctional::~PBEXFunctional()

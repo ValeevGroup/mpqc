@@ -379,7 +379,7 @@ main()
   StateOutType soa("statetest.a.out");
   ra = new A(PrefixKeyVal("test:object_a",pkv));
   ra->save_object_state(soa);
-  soa.forget();
+  soa.forget_references();
   ra->save_object_state(soa);
   soa.flush();
   ra = A::castdown(rdc);

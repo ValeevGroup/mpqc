@@ -156,6 +156,11 @@ StateOut::~StateOut()
   if(ps_) delete ps_; ps_=0;
 }
 
+void
+StateOut::flush()
+{
+}
+
 int StateOut::put_array_char(const char*p,int size)
     { return put_array_void((const void*)p,size*sizeof(char)); }
 int StateOut::put_array_int(const int*p,int size)
@@ -221,14 +226,36 @@ int StateIn::get(double&r) { return get_array_double(&r,1); }
 
 // This deletes all references to objects, so if they are output
 // again, they will be written in their entirety.
-void StateOut::forget()
+void StateOut::forget_references()
 {
-  ps_->clear();
+  if (ps_) ps_->clear();
 }
 
-void StateIn::forget()
+void StateIn::forget_references()
 {
-  ps_->clear();
+  if (ps_) ps_->clear();
+}
+
+// This deletes all references to objects, so if they are output
+// again, they will be written in their entirety.  These also
+// cause all future reference information to be ignored.  All
+// referenced objects will be copied.
+void StateOut::copy_references()
+{
+  if (ps_) {
+      ps_->clear();
+      delete ps_;
+    }
+  ps_ = 0;
+}
+
+void StateIn::copy_references()
+{
+  if (ps_) {
+      ps_->clear();
+      delete ps_;
+    }
+  ps_ = 0;
 }
 
 /////////////////////////////////////////////////////////////////

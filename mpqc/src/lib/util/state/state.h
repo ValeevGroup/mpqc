@@ -188,7 +188,10 @@ class StateOut: virtual public DescribedClass {
     virtual int put_array_double(const double*p,int size);
     //virtual int put(SavableState&ss);
     //virtual int put(SavableState*);
-    void forget();
+    void forget_references();
+    void copy_references();
+
+    virtual void flush();
   };
 DescribedClass_REF_dec(StateOut);
 
@@ -232,7 +235,8 @@ class StateIn: virtual public DescribedClass {
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
     //virtual int get(SavableState&ss);
-    void forget();
+    void forget_references();
+    void copy_references();
   };
 DescribedClass_REF_dec(StateIn);
 

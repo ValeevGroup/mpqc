@@ -34,7 +34,7 @@ void StateOutFile::close()
   opened_=0; fp_=0;
 
   _classidmap->clear(); _nextclassid=0;
-  forget();
+  forget_references();
 }
 
 void StateOutFile::rewind() { if(fp_) fseek(fp_,0,0); }
@@ -82,7 +82,7 @@ void StateInFile::close()
   opened_=0; fp_=0;
 
   _cd.clear();
-  forget();
+  forget_references();
 }
 void StateInFile::rewind() { if(fp_) fseek(fp_,0,0); }
 

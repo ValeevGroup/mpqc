@@ -341,9 +341,9 @@ int StateOutText::putpointer(void*p)
       return 0;
     }
   StateDataPtr dp(p);
-  Pix ind = ps_->seek(dp);
+  Pix ind = (ps_?ps_->seek(dp):0);
   if (ind == 0) {
-      ind = ps_->add(dp);
+      ind = (ps_?ps_->add(dp):1);
       fprintf(fp_,"writing object %d\n",int(ind));
       fflush(fp_);
       return 1;
@@ -370,7 +370,6 @@ int StateInText::getpointer(void**p)
       int refnum;
       sscanf(line,"writing object %d\n",&refnum);
       StateDataNum num(refnum);
-      Pix ind = ps_->seek(num);
       *p = 0;
       return refnum;
     }

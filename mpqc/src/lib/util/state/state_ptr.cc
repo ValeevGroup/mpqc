@@ -20,7 +20,7 @@ int StateIn::getpointer(void**p)
     return 0;
     }
   StateDataNum num(refnum);
-  Pix ind = ps_->seek(num);
+  Pix ind = (ps_?ps_->seek(num):0);
   //printf("StateOut::getpointer: looking for %d and got %d\n",refnum,(int)ind);
   if (ind == 0) {
     *p = 0;
@@ -49,7 +49,7 @@ void StateIn::havepointer(void*p)
 void StateIn::havepointer(int objnum,void*p)
 {
   StateDataNum num(objnum,p);
-  ps_->add(num);
+  if (ps_) ps_->add(num);
 }
 
 // Returns 0 if the object has already been written.
@@ -61,10 +61,10 @@ int StateOut::putpointer(void*p)
     return 0;
     }
   StateDataPtr dp(p);
-  Pix ind = ps_->seek(dp);
+  Pix ind = (ps_?ps_->seek(dp):0);
   //printf("StateOut::putpointer: ind = %d for 0x%x\n",(int)ind,p);
   if (ind == 0) {
-    ind = ps_->add(dp);
+    ind = (ps_?ps_->add(dp):1);
     put(int(ind));
     return 1;
     }

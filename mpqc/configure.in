@@ -281,7 +281,7 @@ dnl -- does machine use elf format --
 changequote(<<, >>)dnl
 if test X$SHARED_LIBS = Xyes; then
   case $target in
-    mips*-sgi-irix[5-6]* | r8000-sgi-irix*)
+    mips*-sgi-irix[5-6]* | r*-sgi-irix6*)
       ELF=yes
       LIBSUF=so
       if test X$GXX = Xyes; then
@@ -342,7 +342,7 @@ case $target in
     fi
     AC_MSG_RESULT("mips-sgi-irix5")
   ;;
-  mips4-sgi-irix* | r8000-sgi-irix*)
+  mips4-sgi-irix* | r8000-sgi-irix* | r10000-sgi-irix*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O2 \
         -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
@@ -352,7 +352,7 @@ case $target in
         -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
       AC_DEFINE(NO_VIRTUAL_BASES)
     fi
-    AC_MSG_RESULT("mips4-sgi-irix or r8000-sgi-irix")
+    AC_MSG_RESULT("mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
   ;;
   changequote(<<, >>)dnl
   i[56]86-*)
@@ -395,10 +395,11 @@ changequote([, ])dnl
   mips4-*)
     if test X$GCC = Xyes; then
       COPTIONS_MISC="$COPTIONS_MISC -mips4"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4 -ptused"
     else
+      LDFLAGS="$LDFLAGS -64"
       COPTIONS_MISC="$COPTIONS_MISC -64 -mips4"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -ptused"
     fi
     AC_MSG_RESULT(mips4)
   ;;
@@ -407,10 +408,22 @@ changequote([, ])dnl
       COPTIONS_MISC="$COPTIONS_MISC -mips4 -mcpu=r8000"
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4 -mcpu=r8000"
     else
+      LDFLAGS="$LDFLAGS -64"
       COPTIONS_MISC="$COPTIONS_MISC -64 -mips4 -TARG:processor=r8000"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -TARG:processor=r8000"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -TARG:processor=r8000 -ptused"
     fi
     AC_MSG_RESULT(r8000)
+  ;;
+  r10000-*)
+    if test X$GCC = Xyes; then
+      COPTIONS_MISC="$COPTIONS_MISC -mips4 -mcpu=r8000"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4 -mcpu=r8000"
+    else
+      LDFLAGS="$LDFLAGS -64"
+      COPTIONS_MISC="$COPTIONS_MISC -64 -mips4 -r10000"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -r10000 -ptused"
+    fi
+    AC_MSG_RESULT(r10000)
   ;;
   rs6000-*)
     if test X$GCC != Xyes; then
@@ -828,18 +841,6 @@ case $target in
   i860-intel-osf*)
     LDFLAGS="$LDFLAGS -mnx -mnoieee"
     AC_MSG_RESULT(osf paragon)
-  ;;
-  mips4-*)
-    if test X$CXX = XCC; then
-      CXX="\$(SRCTOPDIR)/bin/CCfix"
-    fi
-    AC_MSG_RESULT(mips4)
-  ;;
-  r8000-*)
-    if test X$CXX = XCC; then
-      CXX="\$(SRCTOPDIR)/bin/CCfix"
-    fi
-    AC_MSG_RESULT(r8000)
   ;;
   rs6000-*)
     if test X$CXX = XmpCC; then

@@ -156,7 +156,7 @@ case $basic_machine in
 	      | pn-* | np1-* | xps100-* | clipper-* | orion-* | sparclite-* \
 	      | pdp11-* | sh-* | powerpc-* | powerpcle-* | sparc64-* | mips64-* | mipsel-* \
 	      | mips64el-* | mips64orion-* | mips64orionel-* \
-              | r8000-* | mips[1234]-* )
+              | r8000-* | r10000-* | mips[1234]-* )
 		;;
 	# Recognize the various machine names and aliases which stand
 	# for a CPU type and a company and sometimes even an OS.

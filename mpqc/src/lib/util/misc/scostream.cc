@@ -44,7 +44,7 @@ SCfilebuf::SCfilebuf(int fd):
 }
 
 SCfilebuf::SCfilebuf(filebuf * fb):
-#if defined(SGI) && !defined(__GNUC__)
+#if (defined(AIX) || defined(SGI)) && !defined(__GNUC__)
   filebuf(fb->fd()),
 #else  
   filebuf(*fb),

@@ -59,7 +59,7 @@ struct UsedData {
 
 class PoolData {
   public:
-    const int magic = 0x1f1d1e1c;
+    enum {magic = 0x1f1d1e1c};
     int magic_;
     size_t size_;
     unsigned int free_:1;
@@ -235,7 +235,7 @@ PoolData::set_magic(int magic)
 
 class Pool {
   protected:
-    const int freelist_size = sizeof(size_t)*8;
+    enum { freelist_size = sizeof(size_t)*8 };
     PoolData* freelist_[freelist_size];
 
     size_t size_;

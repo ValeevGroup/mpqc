@@ -21,7 +21,7 @@
 #endif
 #endif
 
-#if !defined(SHMAT_TYPE) && (defined(L486) || defined(OSF))
+#if !defined(SHMAT_TYPE) && (defined(L486) || defined(OSF) || defined(AIX))
 #  define SHMAT_TYPE char *
 #endif
 

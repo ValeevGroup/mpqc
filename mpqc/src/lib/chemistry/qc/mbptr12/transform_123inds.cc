@@ -38,6 +38,12 @@
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/basis/distshpair.h>
+extern "C" {
+#include <chemistry/qc/mbptr12/f77sym.h>
+extern void F77_DGEMM(const char*, const char*, const int*,
+const int*, const int*, const double*, const double*, const int*,
+const double*, const int*, const double*, const double*, const int*);
+}
 #include <chemistry/qc/mbptr12/transform_123inds.h>
 
 using namespace std;
@@ -90,6 +96,7 @@ TwoBodyMOIntsTransform_123Inds::run()
 {
   Ref<MemoryGrp> mem = tform_->mem();
   Ref<MessageGrp> msg = tform_->msg();
+  Ref<R12IntsAcc> ints_acc = tform_->ints_acc();
   int me = msg->me();
   int nproc = msg->n();
   Ref<MOIndexSpace> space1 = tform_->space1();
@@ -111,6 +118,10 @@ TwoBodyMOIntsTransform_123Inds::run()
   bool dynamic = tform_->dynamic();
   double print_percent = tform_->print_percent();
 
+  int rank1 = space1->rank();
+  int rank2 = space2->rank();
+  int rank3 = space3->rank();
+  int rank4 = space4->rank();
   int nfuncmax1 = bs1->max_nfunction_in_shell();
   int nfuncmax2 = bs2->max_nfunction_in_shell();
   int nfuncmax3 = bs3->max_nfunction_in_shell();
@@ -125,15 +136,28 @@ TwoBodyMOIntsTransform_123Inds::run()
   int nbasis4 = bs4->nbasis();
   double dtol = pow(2.0,tol_);
 
+  double** vector1 = new double*[nbasis1];
+  double** vector2 = new double*[nbasis2];
+  double** vector3 = new double*[nbasis3];
+  vector1[0] = new double[rank1*nbasis1];
+  vector2[0] = new double[rank2*nbasis2];
+  vector3[0] = new double[rank3*nbasis3];
+  for(int i=1; i<nbasis1; i++) vector1[i] = vector1[i-1] + rank1;
+  for(int i=1; i<nbasis2; i++) vector2[i] = vector2[i-1] + rank2;
+  for(int i=1; i<nbasis3; i++) vector3[i] = vector3[i-1] + rank3;
+  space1->coefs().convert(vector1);
+  space2->coefs().convert(vector2);
+  space3->coefs().convert(vector3);
+
   /*-------------------------------------------------------------
     Find integrals buffers to 1/r12, r12, and [r12,T1] integrals
    -------------------------------------------------------------*/
   int num_te_types = tform_->num_te_types();
   enum te_types {eri=0, r12=1, r12t1=2};
   const double *intbuf[num_te_types];
-  intbuf[eri] = tbint->buffer(TwoBodyInt::eri);
-  intbuf[r12] = tbint->buffer(TwoBodyInt::r12);
-  intbuf[r12t1] = tbint->buffer(TwoBodyInt::r12t1);
+  intbuf[eri] = tbint_->buffer(TwoBodyInt::eri);
+  intbuf[r12] = tbint_->buffer(TwoBodyInt::r12);
+  intbuf[r12t1] = tbint_->buffer(TwoBodyInt::r12t1);
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals
@@ -149,19 +173,19 @@ TwoBodyMOIntsTransform_123Inds::run()
     else
       ijxr_contrib[te_type]  = NULL;
     rsiq_ints[te_type] = new double[ni_*nbasis2*nfuncmax3*nfuncmax4];
-    rsix_ints[te_type] = new double[ni_*nrank2*nfuncmax3*nfuncmax4];
+    rsix_ints[te_type] = new double[ni_*rank2*nfuncmax3*nfuncmax4];
   }
 
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock_,bs3,bs4,dynamic_);
-  shellpairs.set_debug(debug);
+  sc::exp::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs3,bs4,dynamic);
+  shellpairs.set_debug(debug_);
   if (debug_) shellpairs.set_print_percent(print_percent/10.0);
   else shellpairs.set_print_percent(print_percent);
   int work_per_thread = bs3_eq_bs4 ? 
-    ((nsh3*(nsh3+1))/2)/(nproc*nthread) :
-    (nsh3*nsh4)/(nproc*nthread) ;
+    ((nsh3*(nsh3+1))/2)/(nproc*nthread_) :
+    (nsh3*nsh4)/(nproc*nthread_) ;
   int print_interval = work_per_thread/100;
   int time_interval = work_per_thread/10;
   int print_index = 0;
@@ -169,9 +193,9 @@ TwoBodyMOIntsTransform_123Inds::run()
   if (time_interval == 0) time_interval = 1;
   if (work_per_thread == 0) work_per_thread = 1;
 
-  if (debug) {
+  if (debug_) {
     lock_->lock();
-    ExEnv::outn() << scprintf("%d:%d: starting get_task loop",me,mythread) << endl;
+    ExEnv::outn() << scprintf("%d:%d: starting get_task loop",me,mythread_) << endl;
     lock_->unlock();
   }
 
@@ -202,16 +226,16 @@ TwoBodyMOIntsTransform_123Inds::run()
     
     int nrs = nr*ns;
 
-    if (debug > 1 && (print_index++)%print_interval == 0) {
+    if (debug_ > 1 && (print_index++)%print_interval == 0) {
       lock_->lock();
       ExEnv::outn() << scprintf("%d:%d: (PQ|%d %d) %d%%",
-			       me,mythread,R,S,(100*print_index)/work_per_thread)
+			       me,mythread_,R,S,(100*print_index)/work_per_thread)
 		   << endl;
       lock_->unlock();
     }
-    if (debug > 1 && (print_index)%time_interval == 0) {
+    if (debug_ > 1 && (print_index)%time_interval == 0) {
       lock_->lock();
-      ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread) << endl;
+      ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread_) << endl;
       timer_->print();
       lock_->unlock();
     }
@@ -236,14 +260,14 @@ TwoBodyMOIntsTransform_123Inds::run()
 	  continue;
 	double symfac = (double) deg;
 
-        if (tbint->log2_shell_bound(P,Q,R,S) < tol_) {
+        if (tbint_->log2_shell_bound(P,Q,R,S) < tol_) {
           continue;  // skip shell quartets less than tol
 	}
 
-        aoint_computed++;
+        aoint_computed_++;
 
         timer_->enter("AO integrals");
-        tbint->compute_shell(P,Q,R,S);
+        tbint_->compute_shell(P,Q,R,S);
         timer_->exit("AO integrals");
 
         timer_->enter("1. q.t.");
@@ -266,18 +290,18 @@ TwoBodyMOIntsTransform_123Inds::run()
                 int smin = (bs3_eq_bs4 && R == S) ? 0 : nr;
                 pqrs_ptr += smin;
 
-		for (int bf4 = smin; bf4 <nq; bf4++) {
+		for (int bf4 = smin; bf4 <ns; bf4++) {
 
                   // Only transform integrals larger than the threshold
 		  if (fabs(*pqrs_ptr) > dtol) {
 
-		    const double* rsiq_ptr = &rsiq_ints[te_type][bf2 + ni_*(bs4 + nq*bf3)];
+		    double* rsiq_ptr = &rsiq_ints[te_type][bf2 + ni_*(bf4 + ns*bf3)];
 		    const double* c_pi = vector1[p] + i_offset_;
 
-                    const double* rsip_ptr;
+                    double* rsip_ptr;
 		    const double* c_qi;
                     if (bs1_eq_bs2) {
-		      rsip_ptr = &rsiq_ints[te_type][bf1 + ni_*(bs4 + nq*bf3)];
+		      rsip_ptr = &rsiq_ints[te_type][bf1 + ni_*(bf4 + ns*bf3)];
 		      c_qi = vector1[q] + i_offset_;
                     }
                     
@@ -292,14 +316,14 @@ TwoBodyMOIntsTransform_123Inds::run()
                       rsip_int_contrib = -1.0*rsiq_int_contrib;
 
                       if (p == q) {
-                        for (i=0; i<ni_; i++) {
+                        for (int i=0; i<ni_; i++) {
                           *rsiq_ptr += *c_pi++ * rsiq_int_contrib;
                           rsiq_ptr += nbasis2;
                         }
                       }
                       else {
                         // p != q
-                        for (i=0; i<ni_; i++) {
+                        for (int i=0; i<ni_; i++) {
                           *rsip_ptr += *c_qi++ * rsip_int_contrib;
                           rsip_ptr += nbasis2;
                           *rsiq_ptr += *c_pi++ * rsiq_int_contrib;
@@ -310,7 +334,7 @@ TwoBodyMOIntsTransform_123Inds::run()
                     }
                     else {
 
-                      for (i=0; i<ni_; i++) {
+                      for (int i=0; i<ni_; i++) {
                         *rsiq_ptr += *c_pi++ * rsiq_int_contrib;
                         rsiq_ptr += nbasis2;
                       }
@@ -383,9 +407,9 @@ TwoBodyMOIntsTransform_123Inds::run()
       for (int bf3 = 0; bf3 < nr; bf3++) {
         int smin = (bs3_eq_bs4 && R == S) ? 0 : nr;
         rsiq_ptr += smin*ni_*nbasis2;
-        rsix_ptr += smin*ni_*nrank2;
+        rsix_ptr += smin*ni_*rank2;
 
-        for (int bf4 = smin; bf4 <nq; bf4++) {
+        for (int bf4 = smin; bf4 <ns; bf4++) {
 
           // second quarter transform
           // ix = iq * qx
@@ -396,7 +420,7 @@ TwoBodyMOIntsTransform_123Inds::run()
                     rsiq_ptr,&nbasis2,&zero,rsix_ptr,&rank2);
 
           rsiq_ptr += ni_*nbasis2;
-          rsix_ptr += ni_*nrank2;
+          rsix_ptr += ni_*rank2;
 
         }
       }
@@ -426,39 +450,41 @@ TwoBodyMOIntsTransform_123Inds::run()
           if (bs3_eq_bs4) {
 
             for (int bf3 = 0; bf3 < nr; bf3++) {
+              int r = r_offset + bf3;
               int smin = (bs3_eq_bs4 && R == S) ? 0 : nr;
-              rsix_ptr += smin*ni_*nrank2;
+              rsix_ptr += smin*ni_*rank2;
 
-              for (int bf4 = smin; bf4 <nq; bf4++) {
+              for (int bf4 = smin; bf4 <ns; bf4++) {
+                int s = s_offset + bf4;
 
                 // third quarter transform
                 // rs = js
                 // rs = jr
                 
-                const double* ijxs_ptr = ijxs_contrib[te_type] + bf4;
-                const double* ijxr_ptr = ijxr_contrib[te_type] + bf3;
-                const double* i_ptr = rsix_ptr + i*nrank2;
+                double* ijxs_ptr = ijxs_contrib[te_type] + bf4;
+                double* ijxr_ptr = ijxr_contrib[te_type] + bf3;
+                const double* i_ptr = rsix_ptr + i*rank2;
 
                 const double c_rj = vector3[r][j];
                 const double c_sj = vector3[s][j];
 
                 if (r != s) {
-                  for (x=0; x<rank2; x++) {
+                  for (int x=0; x<rank2; x++) {
 
                     double value = *i_ptr++;
                     *ijxs_ptr += c_rj * value;
-                    ijxs += ns;
+                    ijxs_ptr += ns;
                     *ijxr_ptr += c_sj * value;
-                    ijxr += nr;
+                    ijxr_ptr += nr;
 
                   }
                 }
                 else {
-                  for (x=0; x<rank2; x++) {
+                  for (int x=0; x<rank2; x++) {
 
                     double value = *i_ptr++;
                     *ijxs_ptr += c_rj * value;
-                    ijxs += ns;
+                    ijxs_ptr += ns;
 
                   }
                 }
@@ -468,20 +494,21 @@ TwoBodyMOIntsTransform_123Inds::run()
           else {
 
             for (int bf3 = 0; bf3 < nr; bf3++) {
-              for (int bf4 = 0; bf4 <nq; bf4++) {
+              int r= r_offset + bf3;
+              for (int bf4 = 0; bf4 <ns; bf4++) {
 
                 // third quarter transform
                 // rs = js
-                const double* ijxs_ptr = ijxs_contrib[te_type] + bf4;
-                const double* i_ptr = rsix_ptr + i*nrank2;
+                double* ijxs_ptr = ijxs_contrib[te_type] + bf4;
+                const double* i_ptr = rsix_ptr + i*rank2;
 
                 const double c_rj = vector3[r][j];
 
-                for (x=0; x<rank2; x++) {
+                for (int x=0; x<rank2; x++) {
 
                   double value = *i_ptr++;
                   *ijxs_ptr += c_rj * value;
-                  ijxs += ns;
+                  ijxs_ptr += ns;
                 }
               }
             }
@@ -493,7 +520,7 @@ TwoBodyMOIntsTransform_123Inds::run()
 #endif // !FAST_BUT_WRONG
 
           // Sum the ijxs_contrib to the appropriate place
-          size_t ij_offset = (size_t)rank2*s_offset + ijxq_start[te_type];
+          size_t ij_offset = (size_t)rank2*s_offset + ijxq_start;
           mem->sum_reduction_on_node(ijxs_contrib[te_type],
                                      ij_offset, ns*rank2, ij_proc);
 
@@ -503,17 +530,17 @@ TwoBodyMOIntsTransform_123Inds::run()
                                        ij_offset, nr*rank2, ij_proc);
           }
 
-        }
-      }
-    }
+        } // endif j
+      } // endif i
+    }  // endif te_type
     timer_->exit("3. q.t.");
           
 	  
   }         // exit while get_task
 
-  if (debug) {
+  if (debug_) {
     lock_->lock();
-    ExEnv::outn() << scprintf("%d:%d: done with get_task loop",me,mythread) << endl;
+    ExEnv::outn() << scprintf("%d:%d: done with get_task loop",me,mythread_) << endl;
     lock_->unlock();
   }
 

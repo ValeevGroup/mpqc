@@ -66,7 +66,7 @@ class TwoBodyMOIntsTransform_123Inds: public Thread {
     ~TwoBodyMOIntsTransform_123Inds();
 
     void set_i_offset(const int ioff) { i_offset_ = ioff; }
-    void set_ni(const int nivalue) { ni = nivalue; }
+    void set_ni(const int nivalue) { ni_ = nivalue; }
 
     void run();
 };

@@ -502,6 +502,7 @@ int iter;
     dmt_mult(Fock,Scf_Vec,Scr1);
     dmt_mult(Scf_Vec,Scr1,Scr2);
     dmt_copy(Scr2,Fock);
+    level_shift(scf_info,Fock,occ_num);
   }
 
  /* now diagonalize the MO Fock matrix */
@@ -513,9 +514,7 @@ int iter;
 
  /* un-level shift eigenvalues */
 
-  if (scf_info->iopen) {
-    un_level_shift(scf_info,Fock,occ_num,evals);
-  }
+  un_level_shift(scf_info,Fock,occ_num,evals);
 
   if (scf_info->print_flg & 2) {
     sync0();
@@ -600,6 +599,38 @@ double *evals;
     } else if (occi) {
       evals[i] += 0.5*scf_info->lvl_shift;
       fdiag[i] += 0.5*scf_info->lvl_shift;
+    }
+  }
+  dmt_set_diagonal(Fock,fdiag);
+  
+  free(fdiag);
+}
+
+LOCAL_FUNCTION VOID
+level_shift(scf_info,Fock,occ_num)
+scf_struct_t *scf_info;
+dmt_matrix Fock;
+double *occ_num;
+{
+  int i;
+  double *fdiag;
+  double occi;
+  double occ0 = occ_num[0];
+
+  fdiag = (double *) malloc(sizeof(double)*scf_info->nbfao);
+  if (!fdiag) {
+    fprintf(stderr,"level_shift:  could not malloc fdiag\n");
+    exit(1);
+  }
+
+  dmt_get_diagonal(Fock,fdiag);
+       
+  for (i=0; i < scf_info->nbfao; i++) {
+    occi = occ_num[i];
+    if (occi==occ0 && occi) {
+      fdiag[i] -= scf_info->lvl_shift;
+    } else if (occi) {
+      fdiag[i] -= 0.5*scf_info->lvl_shift;
     }
   }
   dmt_set_diagonal(Fock,fdiag);

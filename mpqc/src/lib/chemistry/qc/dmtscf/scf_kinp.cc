@@ -350,13 +350,9 @@ scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
   }
 
  // level shifting, of course
-  if (scf_info.iopen) {
-    scf_info.lvl_shift = keyval->doublevalue("levelshift");
-    if (keyval->error() != KeyVal::OK)
-      scf_info.lvl_shift = 1.0;
-  } else {
-    scf_info.lvl_shift = 0.0;
-  }
+  scf_info.lvl_shift = keyval->doublevalue("levelshift");
+  if (keyval->error() != KeyVal::OK)
+    scf_info.lvl_shift = (scf_info.iopen) ? 1.0 : 0.0;
 
  //
  // find the nuclear charge

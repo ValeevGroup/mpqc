@@ -342,7 +342,7 @@ RefSCMatrix::assign_column(const RefSCVector& v, int i)
 {
   require_nonnull();
   v.require_nonnull();
-  pointer()->assign_row(v.pointer(),i);
+  pointer()->assign_column(v.pointer(),i);
 }
 
 void
@@ -358,7 +358,7 @@ RefSCMatrix::accumulate_column(const RefSCVector& v, int i)
 {
   require_nonnull();
   v.require_nonnull();
-  pointer()->accumulate_row(v.pointer(),i);
+  pointer()->accumulate_column(v.pointer(),i);
 }
 
 void

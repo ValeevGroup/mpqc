@@ -39,6 +39,9 @@
 /* Define if you have the ios::fmtflags.  */
 #undef HAVE_IOS_FMTFLAGS
 
+/* Define if you have the long long type extension.  */
+#undef HAVE_LONG_LONG
+
 /* Define if you have streambuf::pubseekoff (you should).  */
 #undef HAVE_PUBSEEKOFF
 
@@ -114,6 +117,12 @@
 
 /* Define if you have the <pthread.h> header file and the pthread library.  */
 #undef HAVE_PTHREAD
+
+/* Define if you can have the pthread_attr_setstacksize function.  */
+#undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+
+/* Define if you can have the pthread_attr_getstacksize function.  */
+#undef HAVE_PTHREAD_ATTR_GETSTACKSIZE
 
 /* Define if you have the <nx.h> header file and -lnx (Intel Paragon).  */
 #undef HAVE_NX

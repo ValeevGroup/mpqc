@@ -706,6 +706,8 @@ fi
 if test X$HAVE_PTHREAD = Xyes; then
   AC_DEFINE(HAVE_PTHREAD)
   EXTRADEFINES="-D_REENTRANT $EXTRADEFINES"
+  AC_CHECK_FUNC(pthread_attr_getstacksize)
+  AC_CHECK_FUNC(pthread_attr_setstacksize)
 fi
 
 AC_CHECK_LIB(dl,exit)
@@ -824,6 +826,19 @@ HAVE_IOS_FMTFLAGS=no
 ])
 AC_LANG_RESTORE
 AC_SUBST(HAVE_IOS_FMTFLAGS)
+
+dnl --------- check for long long  ---------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING(long long)
+AC_TRY_COMPILE([],[
+long long i;
+],[AC_DEFINE(HAVE_LONG_LONG)
+AC_MSG_RESULT(yes)],[
+AC_MSG_RESULT(no)
+])
+AC_LANG_RESTORE
 
 dnl --------- Check for pubseekoff. ---------
 

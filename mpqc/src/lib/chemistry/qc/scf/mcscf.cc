@@ -325,7 +325,7 @@ MCSCF::compute()
 void
 MCSCF::do_vector(double& eelec, double& nucrep)
 {
-  int i;
+  int i, j;
 
   _gr_vector = _eigenvectors.result_noupdate();
   
@@ -449,7 +449,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
       mob.accumulate_transform(_gr_vector.t(),foob);
       mob.scale(2.0*ci2*ci2);
 
-      for (int j=0; j < _ndocc; j++) {
+      for (j=0; j < _ndocc; j++) {
         mof.set_element(aorb,j,mo2.get_element(aorb,j)+
                                moa.get_element(aorb,j)
                                );
@@ -458,7 +458,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
                                );
       }
 
-      for (int j=borb+1; j < nbasis; j++) {
+      for (j=borb+1; j < nbasis; j++) {
         mof.set_element(j,aorb,mo1.get_element(j,aorb)-
                                moa.get_element(j,aorb)
                                );
@@ -478,7 +478,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
       kob.accumulate_transform(_gr_vector.t(),_kb);
       kob.scale(2*ci1*ci3);
     
-      for (int j=0; j < _ndocc; j++) {
+      for (j=0; j < _ndocc; j++) {
         mof.set_element(aorb,j,mo2.get_element(aorb,j)-
                                kob.get_element(aorb,j)
                                );
@@ -487,7 +487,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
                                );
       }
 
-      for (int j=borb+1; j < nbasis; j++) {
+      for (j=borb+1; j < nbasis; j++) {
         mof.set_element(j,aorb,mo1.get_element(j,aorb)+
                                kob.get_element(j,aorb)
                                );
@@ -507,7 +507,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
       gab.scale(2*sqrt(2.0)*(ci1*ci2+ci3*ci2));
 
       for (i=borb+1; i < nbasis; i++) {
-        for (int j=0; j < _ndocc; j++) {
+        for (j=0; j < _ndocc; j++) {
           mof.accumulate_element(i,j,gab.get_element(i,j));
         }
       }

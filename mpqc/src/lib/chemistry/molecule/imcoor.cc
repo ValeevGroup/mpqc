@@ -46,7 +46,7 @@
 // members of IntMolecularCoor
 
 #define CLASSNAME IntMolecularCoor
-#define VERSION 3
+#define VERSION 4
 #define PARENTS public MolecularCoor
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -74,7 +74,10 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   max_update_disp_(0.5),
   given_fixed_values_(0),
   decouple_bonds_(0),
-  decouple_bends_(0)
+  decouple_bends_(0),
+  form_print_simples_(0),
+  form_print_variable_(1),
+  form_print_constant_(1)
 {
   new_coords();
   generator_ = new IntCoorGen(mol);
@@ -124,6 +127,16 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
     max_update_steps_ = 100;
     max_update_disp_ = 0.5;
     given_fixed_values_ = 0;
+  }
+  
+  if (s.version(static_class_desc()) >= 4) {
+    s.get(form_print_simples_);
+    s.get(form_print_variable_);
+    s.get(form_print_constant_);
+  } else {
+    form_print_simples_ = 0;
+    form_print_variable_ = 1;
+    form_print_constant_ = 1;
   }
 
   dim_.restore_state(s);
@@ -237,6 +250,13 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   if (keyval->error() == KeyVal::OK) coordinate_tolerance_ = tmp;
   tmp = keyval->doublevalue("cartesian_tolerance");
   if (keyval->error() == KeyVal::OK) cartesian_tolerance_ = tmp;
+
+  form_print_simples_ = keyval->booleanvalue("form:print_simple");
+  if (keyval->error() != KeyVal::OK) form_print_simples_ = 0;
+  form_print_variable_ = keyval->booleanvalue("form:print_variable");
+  if (keyval->error() != KeyVal::OK) form_print_variable_ = 1;
+  form_print_constant_ = keyval->booleanvalue("form:print_constant");
+  if (keyval->error() != KeyVal::OK) form_print_constant_ = 1;
 }
 
 void
@@ -379,16 +399,24 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
                const RefSCMatrixKit& matrixkit,
                RefSCMatrix& projection,
                RefSCVector& totally_symmetric,
-               RefSCMatrix& K)
+               RefSCMatrix& K,int debug)
 {
+  if (debug) {
+      cout << node0 << indent << "form_partial_K:" << endl;
+      cout << incindent;
+    }
+
   // Compute the B matrix for the coordinates
   RefSCDimension dcoor = new SCDimension(coor->n());
   RefSCMatrix B(dcoor, dnatom3,matrixkit);
   coor->bmat(molecule, B);
 
+  if (debug) B.print("B");
+
   // Project out the previously discovered internal coordinates
   if (projection.nonnull()) {
       B = B * projection;
+      if (debug) B.print("Projected B");
     }
 
   // Compute the singular value decomposition of B
@@ -407,6 +435,10 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
       if (sigma(i) > epsilon) rank++;
     }
 
+  if (debug)
+      cout << node0 << indent << "rank(" << epsilon << ",B) = " << rank
+           << endl;
+
   RefSCMatrix SIGMA(dcoor, dnatom3,matrixkit);
   SIGMA.assign(0.0);
   for (i=0; i<nmin; i++) {
@@ -414,7 +446,10 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
     }
 
   // return if there are no new coordinates
-  if (rank==0) return 0;
+  if (rank==0) {
+      if (debug) cout << decindent;
+      return 0;
+    }
 
   // Find an orthogonal matrix that spans the range of B
   RefSCMatrix Ur;
@@ -461,6 +496,12 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
       // totally_symmetric will be nonzero for totally symmetric coordinates
       totally_symmetric = Ur.t() * B * geom;
 
+      if (debug) {
+          Ur.print("Ur");
+          geom.print("geom");
+          totally_symmetric.print("totally_symmetric = Ur.t()*B*geom");
+        }
+
       int ntotally_symmetric = count_nonzero(totally_symmetric,0.001);
       if (matrixkit->messagegrp()->me()==0)
           cout << node0 << indent << "found " << ntotally_symmetric
@@ -476,6 +517,8 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
 
   // give Ur to caller
   K = Ur;
+
+  if (debug) cout << decindent;
 
   return proj_nullspace_B_perp;
 }
@@ -509,12 +552,14 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   // this keeps track of the total projection for the b matrices
   RefSCMatrix projection;
   if (dfixed.n()) {
+      cout << node0 << indent
+           << "Forming fixed optimization coordinates:" << endl;
       RefSCMatrix Ktmp;
       RefSCVector totally_symmetric_fixed;
       RefSymmSCMatrix null_bfixed_perp
           = form_partial_K(fixed_, molecule_, geom, 0.001, dnatom3_,
                            matrixkit_, projection, totally_symmetric_fixed,
-                           Ktmp);
+                           Ktmp,debug_);
       // require that the epsilon rank equal the number of fixed coordinates
       if (Ktmp.nrow() != dfixed.n()) {
           cerr << node0 << indent
@@ -537,6 +582,8 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
       Kfixed = B * null_bfixed_perp;
     }
 
+  cout << node0 << indent << "Forming optimization coordinates:" << endl;
+
 #define DECOUPLE 1
 #if DECOUPLE
   int n_total = 0;
@@ -546,7 +593,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   if (decouple_bonds_) {
       cout << node0 << indent << "looking for bonds" << endl;
       form_partial_K(bonds_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
-                     projection, totally_symmetric_bond, Kbond);
+                     projection, totally_symmetric_bond, Kbond, debug_);
       if (Kbond.nonnull()) n_total += Kbond.ncol();
     }
 
@@ -555,7 +602,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   if (decouple_bends_) {
       cout << node0 << indent << "looking for bends" << endl;
       form_partial_K(bends_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
-                     projection, totally_symmetric_bend, Kbend);
+                     projection, totally_symmetric_bend, Kbend, debug_);
       if (Kbend.nonnull()) n_total += Kbend.ncol();
     }
 
@@ -566,7 +613,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   RefSCMatrix Kall;
   // I hope the IntCoorSet keeps the ordering
   form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
-                 projection, totally_symmetric_all, Kall);
+                 projection, totally_symmetric_all, Kall, debug_);
   int n_totally_symmetric_all = count_nonzero(totally_symmetric_all, ts_eps);
   if (Kall.nonnull()) n_total += Kall.ncol();
 
@@ -614,7 +661,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 #else
   RefSCVector totally_symmetric_all;
   form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
-                 projection, totally_symmetric_all, K);
+                 projection, totally_symmetric_all, K, debug_);
   int n_totally_symmetric_all = count_nonzero(totally_symmetric_all, ts_eps);
 
   is_totally_symmetric = new int[K.ncol()];
@@ -817,6 +864,10 @@ IntMolecularCoor::save_data_state(StateOut&s)
   s.put(max_update_steps_);
   s.put(max_update_disp_);
   s.put(given_fixed_values_);
+
+  s.put(form_print_simples_);
+  s.put(form_print_variable_);
+  s.put(form_print_constant_);
 
   dim_.save_state(s);
   dvc_.save_state(s);
@@ -1139,13 +1190,13 @@ IntMolecularCoor::print(ostream& os)
   os << node0 << endl;
 
   print_simples(os);
+  os << node0 << endl;
 
-  os << node0 << endl << indent << "Variables:\n" << incindent;
-  variable_->print(molecule_,os);
+  print_variable(os);
+  os << node0 << endl;
 
-  os << node0 << decindent << endl << indent << "Constants:\n" << incindent;
-  constant_->print(molecule_,os);
-  os << node0 << decindent << endl;
+  print_constant(os);
+  os << node0 << endl;
 }
 
 void
@@ -1188,6 +1239,28 @@ IntMolecularCoor::print_simples(ostream& os)
       os << node0 << decindent;
     }
   }
+}
+
+void
+IntMolecularCoor::print_variable(ostream& os)
+{
+  if (variable_->n() == 0) return;
+  os << node0 << indent
+     << "Variable Coordinates:" << endl;
+  os << incindent;
+  variable_->print(molecule_,os);
+  os << decindent;
+}
+
+void
+IntMolecularCoor::print_constant(ostream& os)
+{
+  if (constant_->n() == 0) return;
+  os << node0 << indent
+     << "Constant Coordinates:" << endl;
+  os << incindent;
+  constant_->print(molecule_,os);
+  os << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

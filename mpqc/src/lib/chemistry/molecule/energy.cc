@@ -44,6 +44,7 @@ SavableState_REF_def(MolecularEnergy);
 
 #define CLASSNAME MolecularEnergy
 #define PARENTS public Function
+#define VERSION 2
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *
@@ -57,6 +58,7 @@ MolecularEnergy::_castdown(const ClassDesc*cd)
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   Function(mole)
 {
+  print_molecule_when_changed_ = mole.print_molecule_when_changed_;
   mc_ = mole.mc_;
   moldim_ = mole.moldim_;
   mol_ = mole.mol_;
@@ -74,6 +76,10 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
   if (!keyval->exists("hessian_accuracy")) {
       hessian_.set_desired_accuracy(1.0e-4);
     }
+
+  print_molecule_when_changed_
+      = keyval->booleanvalue("print_molecule_when_changed");
+  if (keyval->error() != KeyVal::OK) print_molecule_when_changed_ = 1;
 
   mol_ = keyval->describedclassvalue("molecule");
 
@@ -121,6 +127,8 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   mc_.restore_state(s);
   moldim_.restore_state(s);
   mol_.restore_state(s);
+  if (s.version(static_class_desc()) >= 2) s.get(print_molecule_when_changed_);
+  else print_molecule_when_changed_ = 1;
 }
 
 MolecularEnergy&
@@ -130,6 +138,7 @@ MolecularEnergy::operator=(const MolecularEnergy& mole)
   mc_ = mole.mc_;
   moldim_ = mole.moldim_;
   mol_ = mole.mol_;
+  print_molecule_when_changed_ = mole.print_molecule_when_changed_;
   return *this;
 }
 
@@ -140,6 +149,7 @@ MolecularEnergy::save_data_state(StateOut&s)
   mc_.save_state(s);
   moldim_.save_state(s);
   mol_.save_state(s);
+  s.put(print_molecule_when_changed_);
 }
 
 void
@@ -226,6 +236,11 @@ MolecularEnergy::set_x(const RefSCVector&v)
 {
   Function::set_x(v);
   x_to_molecule();
+  if (print_molecule_when_changed_) {
+      cout << node0 << indent << class_name()
+           << ": changing atomic coordinates:" << endl;
+      molecule()->print();
+    }
 }
 
 RefSCVector

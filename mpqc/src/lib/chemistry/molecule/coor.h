@@ -293,6 +293,8 @@ class MolecularCoor: public SavableState
     RefMolecule molecule_;
     RefSCDimension dnatom3_; // the number of atoms x 3
     RefSCMatrixKit matrixkit_; // used to construct matrices
+
+    int debug_;
   public:
     MolecularCoor(RefMolecule&);
     MolecularCoor(StateIn&);
@@ -448,6 +450,11 @@ class IntMolecularCoor: public MolecularCoor
     virtual void new_coords();
     //. Reads the \clsnmref{KeyVal} input.
     virtual void read_keyval(const RefKeyVal&);
+
+    // control whether or not to print coordinates when they are formed
+    int form_print_simples_;
+    int form_print_variable_;
+    int form_print_constant_;
   public:
     IntMolecularCoor(StateIn&);
     IntMolecularCoor(RefMolecule&mol);
@@ -479,6 +486,8 @@ class IntMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
     virtual void print(ostream& =cout);
     virtual void print_simples(ostream& =cout);
+    virtual void print_variable(ostream& =cout);
+    virtual void print_constant(ostream& =cout);
     int nconstrained();
 };
 

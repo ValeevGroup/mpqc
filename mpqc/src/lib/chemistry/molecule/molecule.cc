@@ -299,7 +299,7 @@ Molecule::atom_label_to_index(const char *label) const
 {
   int i;
   for (i=0; i<natom(); i++) {
-      if (!strcmp(label,atom(i).label())) return i;
+      if (atom(i).label() && !strcmp(label,atom(i).label())) return i;
     }
   return -1;
 }

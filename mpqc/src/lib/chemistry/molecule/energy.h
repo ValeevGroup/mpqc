@@ -63,6 +63,7 @@ class MolecularEnergy: public Function {
     void x_to_molecule();
     void molecule_to_x();
 
+    int print_molecule_when_changed_;
   public:
     MolecularEnergy(const MolecularEnergy&);
     MolecularEnergy(const RefKeyVal&);

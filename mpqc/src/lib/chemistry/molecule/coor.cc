@@ -642,7 +642,7 @@ MolecularCoor::_castdown(const ClassDesc*cd)
 MolecularCoor::MolecularCoor(RefMolecule&mol):
   molecule_(mol)
 {
-
+  debug_ = 0;
   matrixkit_ = SCMatrixKit::default_matrixkit();
   dnatom3_ = new SCDimension(3*molecule_->natom());
 }
@@ -656,6 +656,8 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
            << "MolecularCoor(const RefKeyVal&keyval): molecule not found\n";
       abort();
     }
+
+  debug_ = keyval->intvalue("debug");
 
   matrixkit_ = keyval->describedclassvalue("matrixkit");
   dnatom3_ = keyval->describedclassvalue("natom3");
@@ -672,6 +674,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 MolecularCoor::MolecularCoor(StateIn&s):
   SavableState(s)
 {
+  debug_ = 0;
   matrixkit_ = SCMatrixKit::default_matrixkit();
   molecule_.restore_state(s);
   dnatom3_.restore_state(s);

@@ -203,15 +203,6 @@ CLSCF::print(ostream&o)
 void
 CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
-  if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
-    ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp()->sync();
-  } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
-    DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp()->sync();
-  } else {
-    fprintf(stderr,"curt is a hog\n");
-    abort();
-  }
-
   if (user_occupations_)
     return;
   

@@ -191,9 +191,6 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   if (nocc_act <= 0)
     throw std::runtime_error("There are no active occupied orbitals; program exiting");
 
-  if (nvir-nfzv <= 0)
-    throw std::runtime_error("There are no active virtual orbitals; program exiting");
-  
   if (restart_orbital_) {
     ExEnv::out0() << indent
 		  << scprintf("Restarting at orbital %d",

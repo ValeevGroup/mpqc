@@ -141,6 +141,7 @@ TwoBodyMOIntsTransform_123Inds::run()
   double *ijxs_contrib[num_te_types];  // local contributions to integral_ijxs
   double *ijxr_contrib[num_te_types];  // local contributions to integral_ijxr
   double *rsiq_ints[num_te_types];     // quarter-transformed integrals for each RS pair
+  double *rsix_ints[num_te_types];     // 2 quarter-transformed integrals for each RS pair
   for(int te_type=0;te_type<num_te_types;te_type++) {
     ijxs_contrib[te_type]  = mem->malloc_local_double(nbasis2*nfuncmax4);
     if (bs3_eq_bs4)
@@ -148,12 +149,13 @@ TwoBodyMOIntsTransform_123Inds::run()
     else
       ijxr_contrib[te_type]  = NULL;
     rsiq_ints[te_type] = new double[ni_*nbasis2*nfuncmax3*nfuncmax4];
+    rsix_ints[te_type] = new double[ni_*nrank2*nfuncmax3*nfuncmax4];
   }
 
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,bs3,bs4,dynamic_);
+  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock_,bs3,bs4,dynamic_);
   shellpairs.set_debug(debug);
   if (debug_) shellpairs.set_print_percent(print_percent/10.0);
   else shellpairs.set_print_percent(print_percent);
@@ -168,9 +170,9 @@ TwoBodyMOIntsTransform_123Inds::run()
   if (work_per_thread == 0) work_per_thread = 1;
 
   if (debug) {
-    lock->lock();
+    lock_->lock();
     ExEnv::outn() << scprintf("%d:%d: starting get_task loop",me,mythread) << endl;
-    lock->unlock();
+    lock_->unlock();
   }
 
   // Assuming all basis sets are the same (bs1_eq_bs2 and bs3_eq_bs4)
@@ -201,22 +203,23 @@ TwoBodyMOIntsTransform_123Inds::run()
     int nrs = nr*ns;
 
     if (debug > 1 && (print_index++)%print_interval == 0) {
-      lock->lock();
+      lock_->lock();
       ExEnv::outn() << scprintf("%d:%d: (PQ|%d %d) %d%%",
 			       me,mythread,R,S,(100*print_index)/work_per_thread)
 		   << endl;
-      lock->unlock();
+      lock_->unlock();
     }
     if (debug > 1 && (print_index)%time_interval == 0) {
-      lock->lock();
+      lock_->lock();
       ExEnv::outn() << scprintf("timer for %d:%d:",me,mythread) << endl;
-      timer->print();
-      lock->unlock();
+      timer_->print();
+      lock_->unlock();
     }
 
 #if !FAST_BUT_WRONG
+    // Zero out 1 q.t. storage
     for(int te_type=0;te_type<num_te_types;te_type++)
-      bzerofast(rsiq[te_type], ni_*nbasis2*nrs);
+      bzerofast(rsiq_ints[te_type], nrs*ni_*nbasis2);
 
     for (int P=0; P<nsh1; P++) {
       int np = bs1->shell(P).nfunction();
@@ -239,11 +242,11 @@ TwoBodyMOIntsTransform_123Inds::run()
 
         aoint_computed++;
 
-        timer->enter("AO integrals");
+        timer_->enter("AO integrals");
         tbint->compute_shell(P,Q,R,S);
-        timer->exit("AO integrals");
+        timer_->exit("AO integrals");
 
-        timer->enter("1. q.t.");
+        timer_->enter("1. q.t.");
 
         // Begin first quarter transformation;
         // generate (iq|rs) for i active
@@ -274,57 +277,44 @@ TwoBodyMOIntsTransform_123Inds::run()
                     const double* rsip_ptr;
 		    const double* c_qi;
                     if (bs1_eq_bs2) {
-		      rsip_ptr = &integral_iqrs[te_type][bf1 + ni_*(bs4 + nq*bf3)];
+		      rsip_ptr = &rsiq_ints[te_type][bf1 + ni_*(bs4 + nq*bf3)];
 		      c_qi = vector1[q] + i_offset_;
                     }
-
-		    tmpval = *pqrs_ptr;
+                    
+		    double rsiq_int_contrib = *pqrs_ptr;
 		    // multiply each integral by its symmetry degeneracy factor
-		    tmpval *= symfac;
+		    rsiq_int_contrib *= symfac;
                     
                     if (bs1_eq_bs2) {
 
-                      double rsip_perm_pfac = 1.0;
+                      double rsip_int_contrib = rsiq_int_contrib;
                       if (te_type == r12t1)
-                      rsip_perm_pfac = -1.0;
+                      rsip_int_contrib = -1.0*rsiq_int_contrib;
 
-		        if (p == q) {
-                          // p == q
-                          for (i=0; i<ni_; i++) {
-                            *rsiq_ptr += *c_qi++*tmpval;
-                            rsiq_ptr += offset;
-                          }
+                      if (p == q) {
+                        for (i=0; i<ni_; i++) {
+                          *rsiq_ptr += *c_pi++ * rsiq_int_contrib;
+                          rsiq_ptr += nbasis2;
                         }
-                        else {
-                          // p != q
-                          for (i=0; i<ni_; i++) {
-                            *rsip_ptr += rsip_perm_pfac * *c_qi++ * tmpval;
-                            rsip_ptr += offset;
-                            *rsiq_ptr += *c_pi++*tmpval;
-                            rsiq_ptr += offset;
-                          }
-                        }
-                        
                       }
                       else {
-                        // bs1_eq_bs2
-		        if (p == q) {
-                          // te_type == 2, p == q
-                          for (i=0; i<ni_; i++) {
-                            *iprs_ptr -= *c_qi++*tmpval;
-                            iprs_ptr += offset;
-                          }
+                        // p != q
+                        for (i=0; i<ni_; i++) {
+                          *rsip_ptr += *c_qi++ * rsip_int_contrib;
+                          rsip_ptr += nbasis2;
+                          *rsiq_ptr += *c_pi++ * rsiq_int_contrib;
+                          rsiq_ptr += nbasis2;
                         }
-                        else {
-                          // te_type == 2, p != q
-                          for (i=0; i<ni_; i++) {
-                            *iprs_ptr -= *c_qi++*tmpval;
-                            iprs_ptr += offset;
-                            *iqrs_ptr += *c_pi++*tmpval;
-                            iqrs_ptr += offset;
-                          }
-                        }
-                      }  // endif te_type == 2
+                      }
+                        
+                    }
+                    else {
+
+                      for (i=0; i<ni_; i++) {
+                        *rsiq_ptr += *c_pi++ * rsiq_int_contrib;
+                        rsiq_ptr += nbasis2;
+                      }
+
                     } // endif bs1_eq_bs2
                   }   // endif dtol
 
@@ -336,7 +326,7 @@ TwoBodyMOIntsTransform_123Inds::run()
           }       // exit bf1 loop
 	  // end of first quarter transformation
 	}
-	timer->exit("1. q.t.");
+	timer_->exit("1. q.t.");
 
         }           // exit P loop
       }             // exit Q loop
@@ -344,27 +334,27 @@ TwoBodyMOIntsTransform_123Inds::run()
 
 #if PRINT1Q
       {
-      lock->lock();
-      for(te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
-	double *tmp = integral_iqrs[te_type];
-	for (int i = 0; i<ni_; i++) {
-	  for (int r = 0; r<nr; r++) {
-	    for (int q = 0; q<nbasis2; q++) {
-	      for (int s = 0; s<ns; s++) {
+      lock_->lock();
+      for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+	double *tmp = rsiq_ints[te_type];
+        for (int r = 0; r<nr; r++) {
+          for (int s = 0; s<ns; s++) {
+            for (int i = 0; i<ni_; i++) {
+              for (int q = 0; q<nbasis2; q++) {
 		printf("1Q: (%d %d|%d %d) = %12.8f\n",
-		       i+i_offset,q,r+r_offset,s+s_offset,*tmp);
+		       i+i_offset_, q, bf3+r_offset, bf4+s_offset, *tmp);
 		tmp++;
               }
             }
           }
         }
       }
-      lock->unlock();
+      lock_->unlock();
       }
 #endif
 #if PRINT_BIGGEST_INTS
       {
-      lock->lock();
+      lock_->lock();
       for(te_type=0; te_type<PRINT_BIGGEST_INTS_NUM_TE_TYPES; te_type++) {
 	double *tmp = integral_iqrs[te_type];
 	for (int i = 0; i<ni_; i++) {
@@ -378,113 +368,164 @@ TwoBodyMOIntsTransform_123Inds::run()
           }
         }
       }
-      lock->unlock();
+      lock_->unlock();
       }
 #endif
 
-    timer->enter("2. q.t.");
+    timer_->enter("2. q.t.");
     // Begin second quarter transformation;
-    // generate (iq|jr) for i active and j active or frozen
-    for (i=0; i<ni_; i++) {
-      for (j=0; j<nocc_act; j++) {
-	int j_offset = nocc - nocc_act;
-	int ij_proc =  (i*nocc_act + j)%nproc;
-	int ij_index = (i*nocc_act + j)/nproc;
-	int ijsq_start[num_te_types];
-	ijsq_start[0] = num_te_types*nbasis2*nbasis4*ij_index;
+    // generate (ix|rs) stored as rsix
 
-	for(te_type=0; te_type<num_te_types; te_type++) {
-	  if (te_type)
-	    ijsq_start[te_type] = ijsq_start[te_type-1] + nbasis2*nbasis4;
+    for(int te_type=0; te_type<num_te_types; te_type++) {
+      const double *rsiq_ptr = rsiq_ints[te_type];
+      const double *rsix_ptr = rsix_ints[te_type];
+
+      for (int bf3 = 0; bf3 < nr; bf3++) {
+        int smin = (bs3_eq_bs4 && R == S) ? 0 : nr;
+        rsiq_ptr += smin*ni_*nbasis2;
+        rsix_ptr += smin*ni_*nrank2;
+
+        for (int bf4 = smin; bf4 <nq; bf4++) {
+
+          // second quarter transform
+          // ix = iq * qx
+          const char notransp = 'n';
+          const double one = 1.0;
+          const double zero = 0.0;
+          F77_DGEMM(&notransp,&notransp,&rank2,&ni_,&nbasis2,&one,vector2[0],&nbasis2,
+                    rsiq_ptr,&nbasis2,&zero,rsix_ptr,&rank2);
+
+          rsiq_ptr += ni_*nbasis2;
+          rsix_ptr += ni_*nrank2;
+
+        }
+      }
+    }
+    timer_->exit("2. q.t.");
+
+    
+    timer_->enter("3. q.t.");
+    // Begin third quarter transformation;
+    // generate (ix|js) stored as ijxs (also generate (ix|jr, if needed)
+
+    for(int te_type=0; te_type<num_te_types; te_type++) {
+      const double *rsix_ptr = rsix_ints[te_type];
+
+      for (int i=0; i<ni_; i++) {
+        for (int j=0; j<rank3; j++) {
 
 #if !FAST_BUT_WRONG
-	  bzerofast(iqjs_contrib[te_type], nbasis2*ns);
-	  // bs3_eq_bs4
-	  bzerofast(iqjr_contrib[te_type], nbasis2*nr);
-// 	  bzerofast(iqjs_contrib[te_type], nbasis2*nfuncmax4);
-// 	  // bs3_eq_bs4
-// 	  bzerofast(iqjr_contrib[te_type], nbasis2*nfuncmax4);
+          bzerofast(ijxs_contrib[te_type], rank2*ns);
+          if (bs3_eq_bs4)
+            bzerofast(ijxr_contrib[te_type], rank2*nr);
 
-	  for (bf1=0; bf1<ns; bf1++) {
-	    s = s_offset + bf1;
-	    double *c_sj = &scf_vector[s][j+j_offset];
-	    // bs3_eq_bs4
-	    double *iqjr_ptr = iqjr_contrib[te_type];
-	    for (bf2=0; bf2<nr; bf2++) {
-	      r = r_offset + bf2;
-	      // bs3_eq_bs4
-	      if (r > s) {
-		break; // skip to next bf1 value
+          int ij_proc =  (i*rank3 + j)%nproc;
+          int ij_index = (i*rank3 + j)/nproc;
+          const size_t ijxq_start = (size_t)(num_te_types*ij_index + te_type) * ints_acc->blocksize();
+            
+          if (bs3_eq_bs4) {
+
+            for (int bf3 = 0; bf3 < nr; bf3++) {
+              int smin = (bs3_eq_bs4 && R == S) ? 0 : nr;
+              rsix_ptr += smin*ni_*nrank2;
+
+              for (int bf4 = smin; bf4 <nq; bf4++) {
+
+                // third quarter transform
+                // rs = js
+                // rs = jr
+                
+                const double* ijxs_ptr = ijxs_contrib[te_type] + bf4;
+                const double* ijxr_ptr = ijxr_contrib[te_type] + bf3;
+                const double* i_ptr = rsix_ptr + i*nrank2;
+
+                const double c_rj = vector3[r][j];
+                const double c_sj = vector3[s][j];
+
+                if (r != s) {
+                  for (x=0; x<rank2; x++) {
+
+                    double value = *i_ptr++;
+                    *ijxs_ptr += c_rj * value;
+                    ijxs += ns;
+                    *ijxr_ptr += c_sj * value;
+                    ijxr += nr;
+
+                  }
+                }
+                else {
+                  for (x=0; x<rank2; x++) {
+
+                    double value = *i_ptr++;
+                    *ijxs_ptr += c_rj * value;
+                    ijxs += ns;
+
+                  }
+                }
               }
-	      // bs3_eq_bs4
-	      double c_rj = scf_vector[r][j+j_offset];
-	      iqjs_ptr = &iqjs_contrib[te_type][bf1*nbasis2];
-	      iqrs_ptr = &integral_iqrs[te_type][bf1 + ns*nbasis2*(bf2 + nr*i)];
-#if 1 // this code has conditionals in the inner loop (apparently can be faster)
-	      for (q=0; q<nbasis2; q++) {
-		*iqjs_ptr++ += c_rj * *iqrs_ptr;
-		// bs3_eq_bs4
-		if (r != s) *iqjr_ptr += *c_sj * *iqrs_ptr;
-		iqjr_ptr++;
-		iqrs_ptr += ns;
-              } // exit q loop
-#else // this code has conditionals removed from the inner loop
-              // bs3_eq_bs4
-              if (r == s) {
-                for (q=0; q<nbasis2; q++) {
-                  *iqjs_ptr++ += c_rj * *iqrs_ptr;
-                  iqrs_ptr += ns;
-                  }
-                }
-              else {
-                double c_sj_val = *c_sj;
-                for (q=0; q<nbasis2; q++) {
-                  double iqrs_val = *iqrs_ptr;
-                  *iqjs_ptr++ += c_rj * iqrs_val;
-                  *iqjr_ptr += c_sj_val * iqrs_val;
-                  iqjr_ptr++;
-                  iqrs_ptr += ns;
-                  }
-                }
-#endif
-            }   // exit bf2 loop
-          }     // exit bf1 loop
-#endif // !FAST_BUT_WRONG
-	  
-	  // We now have contributions to iqjs and iqjr for one pair i,j,
-	  // all q, r in R and s in S; send iqjs and iqjr to the node
-	  // (ij_proc) which is going to have this ij pair
+            }
+          }
+          else {
 
-	  // Sum the iqjs_contrib to the appropriate place
-	  int ij_offset = nbasis2*s_offset + ijsq_start[te_type];
-	  mem->sum_reduction_on_node(iqjs_contrib[te_type],
-				     ij_offset, ns*nbasis2, ij_proc);
+            for (int bf3 = 0; bf3 < nr; bf3++) {
+              for (int bf4 = 0; bf4 <nq; bf4++) {
+
+                // third quarter transform
+                // rs = js
+                const double* ijxs_ptr = ijxs_contrib[te_type] + bf4;
+                const double* i_ptr = rsix_ptr + i*nrank2;
+
+                const double c_rj = vector3[r][j];
+
+                for (x=0; x<rank2; x++) {
+
+                  double value = *i_ptr++;
+                  *ijxs_ptr += c_rj * value;
+                  ijxs += ns;
+                }
+              }
+            }
+          }
+
+          // We now have contributions to ijxs (and ijxr) for one pair i,j,
+          // all x, and s in S (r in R); send ijxs (and ijxr) to the node
+          // (ij_proc) which is going to have this ij pair
+#endif // !FAST_BUT_WRONG
+
+          // Sum the ijxs_contrib to the appropriate place
+          size_t ij_offset = (size_t)rank2*s_offset + ijxq_start[te_type];
+          mem->sum_reduction_on_node(ijxs_contrib[te_type],
+                                     ij_offset, ns*rank2, ij_proc);
+
+          if (bs3_eq_bs4) {
+            size_t ij_offset = (size_t)rank2*r_offset + ijxq_start;
+            mem->sum_reduction_on_node(ijxr_contrib[te_type],
+                                       ij_offset, nr*rank2, ij_proc);
+          }
+
+        }
+      }
+    }
+    timer_->exit("3. q.t.");
+          
 	  
-	  // bs3_eq_bs4
-	  ij_offset = nbasis2*r_offset + ijsq_start[te_type];
-	  mem->sum_reduction_on_node(iqjr_contrib[te_type],
-				     ij_offset, nr*nbasis2, ij_proc);
-	  
-	}
-      }     // exit j loop
-    }       // exit i loop
-    // end of second quarter transformation
-    timer->exit("2. q.t.");
   }         // exit while get_task
 
   if (debug) {
-    lock->lock();
+    lock_->lock();
     ExEnv::outn() << scprintf("%d:%d: done with get_task loop",me,mythread) << endl;
-    lock->unlock();
+    lock_->unlock();
   }
 
-  //  lock->lock();
-  for(te_type=0; te_type<num_te_types; te_type++) {
-    delete[] integral_iqrs[te_type];
-    mem->free_local_double(iqjs_contrib[te_type]);
-    mem->free_local_double(iqjr_contrib[te_type]);
+  //  lock_->lock();
+  for(int te_type=0; te_type<num_te_types; te_type++) {
+    delete[] rsiq_ints[te_type];
+    delete[] rsix_ints[te_type];
+    mem->free_local_double(ijxs_contrib[te_type]);
+    if (bs3_eq_bs4)
+      mem->free_local_double(ijxr_contrib[te_type]);
   }
-  //  lock->unlock();
+  //  lock_->unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -47,6 +47,20 @@ parallel computers (IBM SP, Intel Paragon).
    @memo SC and MPQC can be downloaded from the internet.
  */
 
+  //@Include: compiling.dxx
+
+  //@Include: binary.dxx
+
+  //@Include: devel.dxx
+
+/**@name Library Documentation
+  @memo Additional documentation for selected libraries.
+  */
+
+//@{
+  //@Include: library.dxx
+//@}
+
 /**@name Source Structure
 
 \begin{description}
@@ -116,9 +130,6 @@ parallel computers (IBM SP, Intel Paragon).
   to perform optimizations and base classes for objects that compute a
   scalar quantity as a function of several coordinates.
 
-\item[{\tt src/lib/math/topology}] These utility classes will be replaced
-  in a future release of SC.
-
 \item[{\tt src/lib/math/isosurf}] This library can be used to compute a
   triangulated approximation to an isosurface.
 
@@ -152,7 +163,7 @@ parallel computers (IBM SP, Intel Paragon).
   self-consistent-field energies and gradients.  Specializations for
   Hartree-Fock theory are provided.
 
-\item[{\tt src/lib/chemistry/qc/scf}] The dft library provides
+\item[{\tt src/lib/chemistry/qc/dft}] The dft library provides
   implementations of density functional theory energies and gradients.
 
 \item[{\tt src/lib/chemistry/qc/mbpt}] This library computes second-order
@@ -176,24 +187,6 @@ parallel computers (IBM SP, Intel Paragon).
 
  @memo A brief description of each of the directories in the distribution.
  */
-
-  //@Include: compiling.dxx
-
-/**@name Binary Documentation
-  @memo Additional documentation for accompanying executables.
-  */
-
-//@{
-  //@Include: binary.dxx
-//@}
-
-/**@name Library Documentation
-  @memo Additional documentation for selected libraries.
-  */
-
-//@{
-  //@Include: library.dxx
-//@}
 
 /**@name Include Files
   @memo A listing, by directory, of documented include files.

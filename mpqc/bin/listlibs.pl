@@ -6,7 +6,7 @@
 
 $debug = 0;
 
-push @includes, ".";
+$includes[++$#includes] = ".";
 $filename = "";
 
 foreach $arg (@ARGV) {
@@ -14,14 +14,14 @@ foreach $arg (@ARGV) {
         $debug = 1;
     }
     elsif ($arg =~ /^-D(.*)$/) {
-        my $def = $1;
-        my $symbol = $1;
+        local($def) = $1;
+        local($symbol) = $1;
         $def =~ s/^.*=//;
         $symbol =~ s/=.*$//;
         $defines{$symbol} = $def;
     }
     elsif ($arg =~ /^-I(.*)$/) {
-        push @includes, $1;
+        $includes[++$#includes] = $1;
     }
     else {
         $filename = $arg;
@@ -29,20 +29,22 @@ foreach $arg (@ARGV) {
 }
 
 if ($filename eq "") {
-    die "listlibs requires a filename";
+    print STDERR "listlibs.pl: require a filename\n";
+    exit 1;
 }
 
-process_file($filename);
+&process_file($filename);
 
 %current_includes = ();
 @libraries = ();
 %known_libs = ();
 %known_includes = ();
-find_libraries($filename);
+&find_libraries($filename);
+@libraries = reverse(@libraries);
 
 print "got $#libraries of them\n" if ($debug);
 
-substitute_defines();
+&substitute_defines();
 
 foreach $i (0..$#libraries) {
     printf "%s", $libraries[$i];
@@ -53,13 +55,13 @@ printf "\n";
 ###########################################################################
 
 sub process_file {
-    my $filename = shift;
+    local($filename) = shift;
     if ($debug) {
         printf "process_file: filename: %s\n", $filename;
     }
 
     # find the file
-    my $ifile = "";
+    local($ifile) = "";
     if ($filename =~ /^\//) {
         $ifile = $filename;
     }
@@ -73,11 +75,12 @@ sub process_file {
         }
     }
     if ($ifile eq "" || ! -f $ifile) {
-        die "couldn't find file $file";
+        print STDERR "listlibs.pl: couldn't find file $file\n";
+        exit 1;
     }
 
     # read the file
-    my $filecontents = "";
+    local($filecontents) = "";
     open(IFILE,"<$ifile");
     while (<IFILE>) {
         if (/^\s*$/) { next; }
@@ -85,53 +88,58 @@ sub process_file {
     }
     close(IFILE);
     $read_files{$filename} = $filecontents;
+    # an empty file will look like a new file below so put in a newline
+    if ($read_files{$filename} eq "") {
+        $read_files{$filename} = "\n"
+    }
 
     # read in other files referenced by this file
-    foreach $line (get_lines($filecontents)) {
+    foreach $line (&get_lines($filecontents)) {
         if ($line =~ /^\#\s*include\s*<(.+)>/) {
-            my $newfile = $1;
-            if (!exists($read_files{$newfile})) {
-                process_file($newfile);
+            local($newfile) = $1;
+            if ($read_files{$newfile} eq "") {
+                &process_file($newfile);
             }
         }
     }
 }
 
 sub get_lines {
-    my $filecontents = shift;
-    my @lines = ();
+    local($filecontents) = shift;
+    local(@lines) = ();
     while ($filecontents ne "") {
         $filecontents =~ s/^(.*)\n//;
-        push @lines, $1;
+        $lines[++$#lines] = $1;
     }
     return @lines;
 }
 
 sub find_libraries {
-    my $filename = shift;
-    if (exists($current_includes{$filename})) {
-        die "recursive included detected for $filename";
+    local($filename) = shift;
+    if ($current_includes{$filename} == 1) {
+        print STDERR "listlibs.pl: recursive include detected for $filename\n";
+        exit 1;
     }
     $current_includes{$filename} = 1;
     foreach $line (reverse(get_lines($read_files{$filename}))) {
         if ($line =~ /^\#\s*include\s*<(.+)>/) {
-            my $newfile = $1;
-            if (!exists($known_includes{$newfile})) {
+            local($newfile) = $1;
+            if ($known_includes{$newfile} != 1) {
                 $known_includes{$newfile} = 1;
-                find_libraries($newfile);
+                &find_libraries($newfile);
             }
         }
-        elsif (!exists($known_libs{$line})) {
+        elsif ($known_libs{$line} != 1) {
             $known_libs{$line} = 1;
-            unshift @libraries, $line;
+            $libraries[++$#libraries] = $line;
         }
     }
     delete $current_includes{$filename};
 }
 
 sub substitute_defines {
-    my $i;
-    my $symbol;
+    local($i);
+    local($symbol);
     foreach $i (0..$#libraries) {
         foreach $symbol (keys(%defines)) {
             $libraries[$i] =~ s/$symbol/$defines{$symbol}/g;

@@ -1,6 +1,5 @@
 libintv2.LIBSUF
 #include <chemistry/molecule/LIBS.h>
-libbasis.LIBSUF
 #include <math/array/LIBS.h>
 #include <util/keyval/LIBS.h>
 #include <util/sgen/LIBS.h>

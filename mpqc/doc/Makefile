@@ -13,7 +13,7 @@ SRCLIBDIR := $(shell $(RMDOTDOT) $(SRCDIR)/$(TOPDIR)/src.lib)
 
 # The are the hand written texi files.
 DOC =  SC.texi class.texi idxcon.texi keyval.texi scmat.texi \
-       idxcls.texi idxmac.texi ref.texi state.texi
+       idxcls.texi idxmac.texi ref.texi state.texi symmetry.texi
 
 # These are the files generated from keyval.h
 KEYVALDOC = KeyVal.texi KeyVal.pub.texi KeyVal.pro.texi
@@ -21,6 +21,7 @@ KEYVALDOC = KeyVal.texi KeyVal.pub.texi KeyVal.pro.texi
 # from math/scmat/matrix.h:
 MATRIXDOC = RefSCMatrix.texi RefSCMatrix.pub.texi \
             RefSymmSCMatrix.texi RefSymmSCMatrix.pub.texi \
+            RefDiagSCMatrix.texi RefDiagSCMatrix.pub.texi \
             RefLocalSCMatrix.texi RefLocalSCMatrix.pub.texi \
             RefSCVector.texi RefSCVector.pub.texi \
             RefSCDimension.texi RefSCDimension.pub.texi \
@@ -29,14 +30,24 @@ MATRIXDOC = RefSCMatrix.texi RefSCMatrix.pub.texi \
 # from math/scmat/abstract.h:
 ABSTRACTDOC = SCMatrix.texi SCMatrix.pub.texi \
               SymmSCMatrix.texi SymmSCMatrix.pub.texi \
+              DiagSCMatrix.texi DiagSCMatrix.pub.texi \
               LocalSCMatrix.texi LocalSCMatrix.pub.texi \
               SCVector.texi SCVector.pub.texi \
               SCDimension.texi SCDimension.pub.texi \
               SCMatrixKit.texi SCMatrixKit.pub.texi
 
+# from math/symmetry/pointgroup.h
+SYMMETRYDOC = SymmetryOperation.texi SymmetryOperation.pub.texi \
+              IrreducibleRepresentation.texi \
+              IrreducibleRepresentation.pub.texi \
+              IrreducibleRepresentation.pri.texi \
+              CharacterTable.texi CharacterTable.pub.texi \
+              CharacterTable.pri.texi \
+              PointGroup.texi PointGroup.pub.texi
+
 # These are all of texi files used to generate the documentation.
 # The top level document, SC.texi, must be first in the list.
-ALLDOC = $(DOC) $(KEYVALDOC) $(MATRIXDOC) $(ABSTRACTDOC)
+ALLDOC = $(DOC) $(KEYVALDOC) $(MATRIXDOC) $(ABSTRACTDOC) $(SYMMETRYDOC)
 
 TEXIDIRS = $(SRCDIR)
 EXTRATEXINPUT = $(shell /bin/sh -f $(SRCDIR)/addcolon.sh $(TEXIDIRS))
@@ -71,14 +82,19 @@ echo:
 
 clean distclean::
 	/bin/rm -f *.info* *.html
-	/bin/rm -f SC.{aux,cl,cls,cp,cps,dvi,fn,ky,log,mc,mcs}
-	/bin/rm -f SC.{pg,toc,tp,vr,ps}
+	/bin/rm -f SC.aux SC.cl SC.cls SC.cp SC.cps SC.dvi SC.fn SC.ky SC.log
+	/bin/rm -f SC.mc SC.mcs
+	/bin/rm -f SC.pg SC.toc SC.tp SC.vr SC.ps
 	/bin/rm -f SC.*.bak
+	/bin/rm -f $(KEYVALDOC) $(MATRIXDOC) $(SYMMETRYDOC) $(ABSTRACTDOC)
 
 $(KEYVALDOC): $(SRCLIBDIR)/util/keyval/keyval.h
 	$(C2T) $<
 
 $(MATRIXDOC): $(SRCLIBDIR)/math/scmat/matrix.h
+	$(C2T) $<
+
+$(SYMMETRYDOC): $(SRCLIBDIR)/math/symmetry/pointgrp.h
 	$(C2T) $<
 
 $(ABSTRACTDOC): $(SRCLIBDIR)/math/scmat/abstract.h

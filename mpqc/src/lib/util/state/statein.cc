@@ -196,6 +196,15 @@ StateIn::get(int&r, const char *keyword)
 }
 
 int
+StateIn::get(bool&r, const char *keyword)
+{
+  int b;
+  int n = get(b,keyword);
+  r = b;
+  return n;
+}
+
+int
 StateIn::get(float&r, const char *keyword)
 {
   int n = get_array_float(&r,1);

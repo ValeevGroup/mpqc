@@ -143,6 +143,7 @@ StateOut::put_array_double(const double*p,int size)
 
 int StateOut::put(char r) { return put_array_char(&r,1); }
 int StateOut::put(unsigned int r) { return put_array_uint(&r,1); }
+int StateOut::put(bool r) { return put(int(r)); }
 int StateOut::put(int r) { return put_array_int(&r,1); }
 int StateOut::put(float r) { return put_array_float(&r,1); }
 int StateOut::put(double r) { return put_array_double(&r,1); }

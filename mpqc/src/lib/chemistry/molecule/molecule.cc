@@ -47,7 +47,7 @@ using namespace sc;
 // Molecule
 
 static ClassDesc Molecule_cd(
-  typeid(Molecule),"Molecule",5,"public SavableState",
+  typeid(Molecule),"Molecule",6,"public SavableState",
   create<Molecule>, create<Molecule>, create<Molecule>);
 
 Molecule::Molecule():
@@ -60,6 +60,8 @@ Molecule::Molecule():
   equiv_ = 0;
   nequiv_ = 0;
   atom_to_uniq_ = 0;
+  q_Z_ = atominfo_->string_to_Z("Q");
+  include_qq_ = false;
   init_symmetry_info();
 }
 
@@ -111,8 +113,11 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   nequiv_ = 0;
   atom_to_uniq_ = 0;
 
+  include_qq_ = input->booleanvalue("include_qq");
+
   atominfo_ << input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
+  q_Z_ = atominfo_->string_to_Z("Q");
   if (input->exists("pdb_file")) {
       geometry_units_ = new Units("angstrom");
       char* filename = input->pcharvalue("pdb_file");
@@ -214,6 +219,11 @@ Molecule::operator=(const Molecule& mol)
   pg_ = new PointGroup(*(mol.pg_.pointer()));
   atominfo_ = mol.atominfo_;
   geometry_units_ = new Units(mol.geometry_units_->string_rep());
+
+  q_Z_ = mol.q_Z_;
+  include_qq_ = mol.include_qq_;
+  q_atoms_ = mol.q_atoms_;
+  non_q_atoms_ = mol.non_q_atoms_;
 
   natoms_ = mol.natoms_;
 
@@ -338,6 +348,13 @@ Molecule::add_atom(int Z,double x,double y,double z,
     }
   else if (charges_) {
       charges_[natoms_] = Z;
+    }
+
+  if (Z == q_Z_) {
+      q_atoms_.push_back(natoms_);
+    }
+  else {
+      non_q_atoms_.push_back(natoms_);
     }
 
   natoms_++;
@@ -473,6 +490,7 @@ Molecule::nuclear_charge() const
 
 void Molecule::save_data_state(StateOut& so)
 {
+  so.put(include_qq_);
   so.put(natoms_);
   SavableState::save_state(pg_.pointer(),so);
   SavableState::save_state(geometry_units_.pointer(),so);
@@ -508,6 +526,12 @@ Molecule::Molecule(StateIn& si):
       ExEnv::errn() << "Molecule: cannot restore from old molecules" << endl;
       abort();
     }
+  if (si.version(::class_desc<Molecule>()) < 6) {
+    include_qq_ = false;
+    }
+  else {
+    si.get(include_qq_);
+  }
   si.get(natoms_);
   pg_ << SavableState::restore_state(si);
   geometry_units_ << SavableState::restore_state(si);
@@ -538,6 +562,15 @@ Molecule::Molecule(StateIn& si):
       labels_ = new char*[natoms_];
       for (int i=0; i<natoms_; i++) {
           si.getstring(labels_[i]);
+        }
+    }
+
+  for (int i=0; i<natoms_; i++) {
+      if (Z_[i] == q_Z_) {
+          q_atoms_.push_back(i);
+        }
+      else {
+          non_q_atoms_.push_back(i);
         }
     }
 
@@ -611,17 +644,47 @@ Molecule::center_of_mass() const
 double
 Molecule::nuclear_repulsion_energy()
 {
-  int i, j;
   double e=0.0;
 
-  for (i=1; i < natoms_; i++) {
-    SCVector3 ai(r(i));
-    double Zi = charge(i);
+  // non_q non_q terms
+  for (int ii=1; ii < non_q_atoms_.size(); ii++) {
+      int i = non_q_atoms_[ii];
+      SCVector3 ai(r(i));
+      double Zi = charge(i);
     
-    for (j=0; j < i; j++) {
-        SCVector3 aj(r(j));
-        e += Zi * charge(j) / ai.dist(aj);
-      }
+      for (int jj=0; jj < ii; jj++) {
+          int j = non_q_atoms_[jj];
+          SCVector3 aj(r(j));
+          e += Zi * charge(j) / ai.dist(aj);
+        }
+    }
+
+  // non_q q terms
+  for (int ii=0; ii < q_atoms_.size(); ii++) {
+      int i = q_atoms_[ii];
+      SCVector3 ai(r(i));
+      double Zi = charge(i);
+    
+      for (int jj=0; jj < non_q_atoms_.size(); jj++) {
+          int j = non_q_atoms_[jj];
+          SCVector3 aj(r(j));
+          e += Zi * charge(j) / ai.dist(aj);
+        }
+    }
+
+  if (include_qq_) {
+      // q q terms
+      for (int ii=1; ii < q_atoms_.size(); ii++) {
+          int i = q_atoms_[ii];
+          SCVector3 ai(r(i));
+          double Zi = charge(i);
+    
+          for (int jj=0; jj < ii; jj++) {
+              int j = q_atoms_[jj];
+              SCVector3 aj(r(j));
+              e += Zi * charge(j) / ai.dist(aj);
+            }
+        }
     }
 
   return e;
@@ -637,28 +700,44 @@ Molecule::nuclear_repulsion_1der(int center, double xyz[3])
   xyz[0] = 0.0;
   xyz[1] = 0.0;
   xyz[2] = 0.0;
-  for (i=0; i < natoms_; i++) {
-      SCVector3 ai(r(i));
-      double Zi = charge(i);
 
-      for (j=0; j < i; j++) {
-          if (center==i || center==j) {
-              SCVector3 aj(r(j));
+  SCVector3 r_center(r(center));
+  double Z_center = charge(center);
+  bool center_is_Q = (atom_symbol(center) == "Q");
 
-              r2 = 0.0;
-              for (k=0; k < 3; k++) {
-                  rd[k] = ai[k] - aj[k];
-                  r2 += rd[k]*rd[k];
-                }
-        
-              factor = - Zi * charge(j) * pow(r2,-1.5);
-              if (center==j) factor = -factor;
-              for (k=0; k<3; k++) {
-                  xyz[k] += factor * rd[k];
-                }
-            }
-        }
+  // this handles center = Q or non_Q and atom = non_Q
+  for (int ii=0; ii < non_q_atoms_.size(); ii++) {
+    int i = non_q_atoms_[ii];
+    if (i == center) continue;
+    SCVector3 r_i(r(i));
+
+    r2 = 0.0;
+    for (k=0; k < 3; k++) {
+      rd[k] = r_center[k] - r_i[k];
+      r2 += rd[k]*rd[k];
     }
+    factor = - Z_center * charge(i) * pow(r2,-1.5);
+    for (k=0; k<3; k++) {
+      xyz[k] += factor * rd[k];
+    }
+  }
+
+  // this handles center = Q or non_Q and atom = Q
+  for (int ii=0; ii < q_atoms_.size(); ii++) {
+    int i = q_atoms_[ii];
+    if (i == center || (!include_qq_ && center_is_Q)) continue;
+    SCVector3 r_i(r(i));
+
+    r2 = 0.0;
+    for (k=0; k < 3; k++) {
+      rd[k] = r_center[k] - r_i[k];
+      r2 += rd[k]*rd[k];
+    }
+    factor = - Z_center * charge(i) * pow(r2,-1.5);
+    for (k=0; k<3; k++) {
+      xyz[k] += factor * rd[k];
+    }
+  }
 }
 
 void

@@ -119,6 +119,18 @@ class Molecule: public SavableState
     double *mass_;
     char **labels_;
 
+    // The Z that represents a "Q" type atom.
+    int q_Z_;
+
+    // If true, include the coupling between q-q pairs when
+    // computing nuclear repulsion energy and gradients.
+    bool include_qq_;
+
+    // These vectors contain the atom indices of atoms that are not type
+    // "Q" and those that are.
+    std::vector<int> q_atoms_;
+    std::vector<int> non_q_atoms_;
+
     void clear();
   public:
     Molecule();

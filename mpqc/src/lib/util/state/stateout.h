@@ -111,6 +111,7 @@ class StateOut: public DescribedClass {
     virtual int put(char r);
     virtual int put(unsigned int r);
     virtual int put(int r);
+    virtual int put(bool r);
     virtual int put(unsigned long r);
     virtual int put(float r);
     virtual int put(double r);

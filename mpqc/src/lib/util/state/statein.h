@@ -154,6 +154,7 @@ class StateIn:  public DescribedClass {
     virtual int get(char&r, const char *keyword = 0);
     virtual int get(unsigned int&r, const char *keyword = 0);
     virtual int get(int&r, const char *keyword = 0);
+    virtual int get(bool&r, const char *keyword = 0);
     virtual int get(float&r, const char *keyword = 0);
     virtual int get(double&r, const char *keyword = 0);
     /** These restore data saved with StateOut's put.

@@ -28,6 +28,7 @@
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/petite.h>
 
 #include <chemistry/qc/wfn/wfn.h>
 
@@ -53,7 +54,8 @@ double Wavefunction::density(const SCVector3&r)
   // it is more efficient to force the computation of the natural
   // orbitals now and use them.
   // get the natural orbitals and density
-  RefSCMatrix nos = natural_orbitals();
+  RefSCMatrix nos
+      = integral()->petite_list()->evecs_to_AO_basis(natural_orbitals());
   RefDiagSCMatrix nd = natural_density();
   
   // loop over natural orbitals adding contributions to elec_density
@@ -89,7 +91,8 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
   //          << scprintf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);
 
   // get the natural orbitals and density
-  RefSCMatrix nos = natural_orbitals();
+  RefSCMatrix nos
+      = integral()->petite_list()->evecs_to_AO_basis(natural_orbitals());
   RefDiagSCMatrix nd = natural_density();
     
   // loop over natural orbitals adding contributions to elec_density
@@ -100,8 +103,14 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
       int j;
       for (j=0; j<nbasis; j++) {
           tmp += nos.get_element(j,i)*bs_values[j];
+          std::cout << scprintf("%d %d: %12.8f %12.8f",
+                                i, j, nos.get_element(j,i), bs_values[j])
+                    << std::endl;
         }
       elec_density += nd.get_element(i)*tmp*tmp;
+      std::cout << scprintf("%d: %12.8f %12.8f %12.8f",
+                            i, nd.get_element(i), tmp, tmp)
+                << std::endl;
       double tmpg[3];
       tmpg[0] = tmpg[1] = tmpg[2] = 0.0;
       for (j=0; j<nbasis; j++) {

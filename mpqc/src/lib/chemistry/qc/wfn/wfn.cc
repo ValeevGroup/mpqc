@@ -263,7 +263,7 @@ Wavefunction::natural_orbitals()
 
       RefSymmSCMatrix densortho(oso_dimension(), basis_matrixkit());
       densortho.assign(0.0);
-      densortho.accumulate_transform(so_to_orthog_so(),dens);
+      densortho.accumulate_transform(so_to_orthog_so_inverse().t(),dens);
 
       RefSCMatrix natorb(oso_dimension(), oso_dimension(),
                          basis_matrixkit());

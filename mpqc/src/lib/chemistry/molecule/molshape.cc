@@ -42,7 +42,7 @@ VDWShape::initialize(const RefMolecule&mol)
       SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
       add_shape(
-          new SphereShape(r,mol->operator[](i).element().atomic_radius())
+          new SphereShape(r,mol->operator[](i).element().vdw_radius())
           );
     }
 }
@@ -79,6 +79,27 @@ ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
   initialize(mol,probe_radius);
 }
 
+static const char* atom_type[] = {"H","C","N","O","S","F","Cl","Br","I",
+                                  "Si","Fe","Cu","Ca","Zn","Na","P","Gd","Xx"};
+   // the atom sizes used by msurf (before scaling by 1.1):
+static const double atom_size[] = {
+    1.0800,      1.5400,      1.4800,      1.3600,      1.7000,
+    1.3000,      1.6500,      1.8000,      2.0000,      2.1000,
+    1.1650,      1.1700,      1.7400,      1.2500,      1.5700,
+    1.8000,      1.6100,      1.0000};
+
+static double
+find_atom_size(ChemicalElement&element)
+{
+  const char** type = atom_type;
+  const double* size = atom_size;
+  while(strcmp(*type, element.symbol()) && strcmp(*type,"Xx")) {
+      type++;
+      size++;
+    }
+  return *size * 1.1 * ANGSTROMS_TO_AU;
+}
+
 void
 ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 {
@@ -89,11 +110,14 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
       for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
       RefSphereShape
         sphere(
-            new SphereShape(r,mol->operator[](i).element().atomic_radius())
+            new SphereShape(r,find_atom_size(mol->operator[](i).element()))
             );
       add_shape(sphere.pointer());
       spheres.add(sphere);
     }
+
+  ////////////////////// Leave out the other shapes
+  //return;
 
   for (i=0; i<spheres.length(); i++) {
       for (int j=0; j<i; j++) {
@@ -103,6 +127,10 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
                                               *(spheres[j].pointer()));
           if (th.null()) continue;
           add_shape(th);
+
+          ////////////////////// Leave out the three sphere shapes
+          //continue;
+          
           // now check for excluding volume for groups of three spheres
           for (int k=0; k<j; k++) {
               RefShape e =

@@ -38,6 +38,7 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/moindexspace.h>
 
 namespace sc {
 
@@ -91,6 +92,10 @@ private:
   RefSCMatrix orthog_ri_so_;
   int nlindep_ri_;
   RefSymmSCMatrix overlap_ri_;
+  
+  Ref<MOIndexSpace> obs_space_;
+  Ref<MOIndexSpace> abs_space_;
+  Ref<MOIndexSpace> ribs_space_;
 
   // construct the RI basis based on abs_method
   void construct_ri_basis_(bool safe);
@@ -106,8 +111,10 @@ private:
   void construct_ortho_comp_svd_();
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
-  // Construct eigenvector and eigenvalues sorted by energy
+  // OBSOLETE: Construct eigenvector and eigenvalues sorted by energy
   void eigen_(RefDiagSCMatrix& evals, RefSCMatrix& scf_vec, RefDiagSCMatrix& occs, int*& orbsym);
+  // Construct eigenvector and eigenvalues sorted by energy
+  void eigen2_(RefDiagSCMatrix& evals, RefSCMatrix& scf_vec, int*& orbsym);
   // Construct orthog_aux_
   void construct_orthog_aux_();
   // Construct orthog_ri_

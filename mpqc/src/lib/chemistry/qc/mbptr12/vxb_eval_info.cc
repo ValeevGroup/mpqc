@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/ref/ref.h>
@@ -36,6 +37,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/moindexspace.h>
 
 using namespace std;
 using namespace sc;
@@ -84,7 +86,8 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   ints_file_ = mbptr12->r12ints_file();
 
   orbsym_ = 0;
-  eigen_(evals_,scf_vec_,occs_,orbsym_);
+  //eigen_(evals_,scf_vec_,occs_,orbsym_);
+  eigen2_(evals_,scf_vec_,orbsym_);
 
   abs_method_ = mbptr12->abs_method();
   construct_ri_basis_(false);
@@ -127,7 +130,8 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   }
 
   orbsym_ = 0;
-  eigen_(evals_,scf_vec_,occs_,orbsym_);
+  //eigen_(evals_,scf_vec_,occs_,orbsym_);
+  eigen2_(evals_,scf_vec_,orbsym_);
 }
 
 R12IntEvalInfo::~R12IntEvalInfo()
@@ -232,7 +236,7 @@ dquicksort(double *item,int *index,int n)
 }
 
 
-
+// This function is obsoleve and will disappear soon
 void R12IntEvalInfo::eigen_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs, int*& orbsym)
 {
   Ref<Molecule> molecule = bs_->molecule();
@@ -368,6 +372,53 @@ void R12IntEvalInfo::eigen_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCM
     }
   }
   if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_ done" << endl;
+}
+
+
+void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orbsym)
+{
+  Ref<Molecule> molecule = bs_->molecule();
+  Ref<SCMatrixKit> so_matrixkit = bs_->so_matrixkit();
+  Ref<PetiteList> plist = ref_->integral()->petite_list();
+  RefSCDimension oso_dim = plist->SO_basisdim();
+
+  if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_" << endl;
+  if (debug_) ExEnv::out0() << indent << "getting fock matrix" << endl;
+  // get the closed shell AO fock matrices -- this is where SCF is computed
+  RefSymmSCMatrix fock_c_so = ref_->fock(0);
+  ExEnv::out0() << endl;
+  
+  // transform the AO fock matrices to the MO basis
+  RefSymmSCMatrix fock_c_mo1 = so_matrixkit->symmmatrix(oso_dim);
+  RefSCMatrix vecs_so_mo1 = ref_->eigenvectors();
+  
+  fock_c_mo1.assign(0.0);
+  fock_c_mo1.accumulate_transform(vecs_so_mo1.t(), fock_c_so);
+  fock_c_so = 0;
+  
+  if (debug_) ExEnv::out0() << indent << "diagonalizing" << endl;
+  // diagonalize the fock matrix
+  vals = fock_c_mo1.eigvals();
+  
+  // compute the AO to new MO scf vector
+  if (debug_) ExEnv::out0() << indent << "AO to MO" << endl;
+  RefSCMatrix so_ao = plist->sotoao();
+  vecs = so_ao.t() * vecs_so_mo1;
+
+  obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
+
+  vecs = obs_space_->coefs().t();
+  vals = obs_space_->evals();
+  vector<int> mosym = obs_space_->mosym();
+  int nmo = mosym.size();
+  if (nmo != noso_)
+    throw std::runtime_error("R12IntEvalInfo::eigen2_() -- logic error in MOIndexSpace");
+  if (orbsym == 0)
+    orbsym = new int[nmo];
+  for(int i=0; i<nmo; i++)
+    orbsym[i] = mosym[i];
+
+  if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen2_ done" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

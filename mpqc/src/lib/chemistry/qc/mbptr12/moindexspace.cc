@@ -47,23 +47,59 @@ static ClassDesc MOIndexSpace_cd(
   typeid(MOIndexSpace),"MOIndexSpace",1,"virtual public SavableState",
   0, 0, create<MOIndexSpace>);
 
-MOIndexSpace::MOIndexSpace(const RefSCMatrix& coefs, const Ref<GaussianBasisSet> basis, const vector<int>& offsets) :
-  coefs_(coefs), basis_(basis), offsets_(offsets)
+MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
+                           const vector<int>& offsets, const vector<int>& nmopi, IndexOrder moorder,
+                           const RefDiagSCMatrix& evals) :
+  name_(name), basis_(basis), offsets_(offsets), nmo_(nmopi), full_rank_(full_coefs.coldim().n()),
+  moorder_(moorder)
 {
-  // Compute MO syms array
+  full_coefs_to_coefs(full_coefs, evals);
   
   init();
 }
 
-MOIndexSpace::MOIndexSpace(const RefSCMatrix& coefs, const Ref<GaussianBasisSet> basis, const vector<int>& offsets,
-                           const vector<int>& mosym, IndexOrder moorder) :
-  coefs_(coefs), basis_(basis), offsets_(offsets), mosym_(mosym)
+MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
+                           const RefDiagSCMatrix& evals, int nfzc, int nfzv) :
+  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(energy)
 {
-  check_mosym();
-  moorder_ = moorder;
+  if (evals.null())
+    throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- null eigenvalues matrix");
+  if (nfzc < 0 || nfzc >= full_coefs.coldim().n())
+    throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- invalid nfzc");
+  if (nfzc + nfzv >= full_coefs.coldim().n())
+    throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- invalid nfzc+nfzv");
+  frozen_to_blockinfo(nfzc,nfzv,evals);
+  full_coefs_to_coefs(full_coefs, evals);
   
   init();
 }
+
+MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis) :
+  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(symmetry)
+{
+  Ref<SCBlockInfo> modim_blocks = full_coefs.coldim()->blocks();
+  int nb = modim_blocks->nblock();
+  offsets_.resize(nb);
+  nmo_.resize(nb);
+  for(int i=0; i<nb; i++) {
+    offsets_[i] = 0;
+    nmo_[i] = modim_blocks->size(i);
+  }
+  
+  full_coefs_to_coefs(full_coefs, 0);
+  
+  init();
+}
+
+/*MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& coefs, const Ref<GaussianBasisSet> basis,
+                           IndexOrder moorder, const vector<int>& mosym, const RefDiagSCMatrix& evals) :
+  name_(name), coefs_(coefs), evals_(evals), basis_(basis), mosym_(mosym), full_rank_(coefs_.coldim().n()),
+  rank_(full_rank_), moorder_(moorder)
+{
+  check_mosym();
+  
+  init();
+}*/
 
 MOIndexSpace::MOIndexSpace(StateIn& si) : SavableState(si)
 {
@@ -94,12 +130,17 @@ MOIndexSpace::save_data_state(StateOut& so)
   so.put((int)moorder_);
 }
 
+const std::string
+MOIndexSpace::name() const { return name_; }
 
 Ref<GaussianBasisSet>
 MOIndexSpace::basis() const { return basis_; }
 
 RefSCMatrix
 MOIndexSpace::coefs() const { return coefs_; }
+
+RefDiagSCMatrix
+MOIndexSpace::evals() const { return evals_; }
 
 vector<int>
 MOIndexSpace::mosym() const { return mosym_; }
@@ -115,9 +156,6 @@ MOIndexSpace::full_rank() const { return full_rank_; }
 
 int
 MOIndexSpace::nblocks() const { return nblocks_; }
-
-vector<int>
-MOIndexSpace::first_mo() const { return first_mo_; }
 
 vector<int>
 MOIndexSpace::nmo() const { return nmo_; }
@@ -136,11 +174,228 @@ MOIndexSpace::check_mosym() const
   }
 }
 
+
+void
+MOIndexSpace::frozen_to_blockinfo(const int nfzc, const int nfzv, const RefDiagSCMatrix& evals)
+{
+  int rank = evals.dim().n();
+
+  int nb = evals.dim()->blocks()->nblock();
+  nmo_.resize(nb);
+  offsets_.resize(nb);
+  for(int b=0; b<nb; b++) {
+    nmo_[b] = evals.dim()->blocks()->size(b);
+    offsets_[b] = 0;
+  }
+  
+  // Get the energies of the orbitals in this space
+  double* energy = new double[rank];
+  int* index_map = new int[rank];
+  vector<int> blocked_index_to_irrep(rank);
+  int ii = 0;     // blocked index to this space
+  int offset = 0;
+  for(int b=0; b<nb; b++) {
+    for(int i=0; i<nmo_[b]; i++, ii++) {
+      energy[ii] = evals.get_element(i+offset);
+      blocked_index_to_irrep[ii] = b;
+    }
+    offset += nmo_[b];
+  }
+    
+  // Do the sort
+  dquicksort(energy,index_map,rank);
+  delete[] energy;
+  
+  // Get rid of nfzc lowest orbitals
+  for(int i=0; i<nfzc; i++) {
+    int b = blocked_index_to_irrep[index_map[i]];
+    ++offsets_[b];
+    --nmo_[b];
+  }
+
+  // Get rid of nfzv highest orbitals
+  for(int i=rank-nfzv; i<rank; i++) {
+    int b = blocked_index_to_irrep[index_map[i]];
+    --nmo_[b];
+  }
+  
+  delete[] index_map;
+}
+
+void
+MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSCMatrix& evals)
+{
+  // compute the rank of this
+  rank_ = 0;
+  for(vector<int>::const_iterator p=nmo_.begin(); p != nmo_.end(); ++p) {
+    rank_ += *p;
+  }
+
+  mosym_.resize(rank_);
+  RefSCDimension modim = full_coefs.coldim();  // the dimension of the full space
+  
+  // In general vectors are ordered differently from the original
+  int* index_map = new int[rank_];                      // maps index in this (sorted) space to this (blocked) space
+  vector<int> blocked_subindex_to_full_index(rank_);    // maps index from this space(in blocked form) into the full space
+  vector<int> blocked_subindex_to_irrep(rank_);         // maps index from this space(in blocked form) to the irrep
+  if (moorder_ == symmetry) {
+    // coefs_ has the same number of blocks as full_coefs_
+    int nb = modim->blocks()->nblock();
+    int* nfunc_per_block = new int[nb];
+    for(int i=0; i<nb; i++)
+      nfunc_per_block[i] = nmo_[i];
+    modim_ = new SCDimension(rank_, nb, nfunc_per_block, ("MO(" + name_ + ")").c_str());
+    for(int i=0; i<nb; i++)
+      modim_->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
+    delete[] nfunc_per_block;
+  
+    // The sorted->blocked reordering array is trivial when no resorting is done
+    for(int i=0; i<rank_; i++) {
+      index_map[i] = i;
+    }
+    
+    int ii = 0;     // blocked index to this space
+    int offset = 0;
+    for(int b=0; b<nb; b++) {
+      for(int i=0; i<nmo_[b]; i++, ii++) {
+        blocked_subindex_to_full_index[ii] = i+offsets_[b]+offset;
+        blocked_subindex_to_irrep[ii] = b;
+      }
+      offset += modim->blocks()->size(b);
+    }    
+  }
+  else if (moorder_ == energy) {
+    //
+    // Sort vectors by their energy
+    //
+    
+    // Get the energies of the orbitals in this space
+    double* energy = new double[rank_];
+    int nb = nmo_.size();
+    int ii = 0;     // blocked index to this space
+    int offset = 0;
+    for(int b=0; b<nb; b++) {
+      for(int i=0; i<nmo_[b]; i++, ii++) {
+        energy[ii] = evals.get_element(i+offsets_[b]+offset);
+        blocked_subindex_to_full_index[ii] = i+offsets_[b]+offset;
+        blocked_subindex_to_irrep[ii] = b;
+      }
+      offset += modim->blocks()->size(b);
+    }
+    
+    // Do the sort
+    dquicksort(energy,index_map,rank_);
+    
+    // coefs_ has 1 block
+    int* nfunc_per_block = new int[1];
+    nfunc_per_block[0] = rank_;
+    modim_ = new SCDimension(rank_, 1, nfunc_per_block, ("MO(" + name_ + ")").c_str());
+    modim_->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
+    
+    // Recompute offsets_ and nmo_ to conform the energy ordering
+    offset = 0;
+    for(vector<int>::const_iterator p=offsets_.begin(); p != offsets_.end(); ++p) {
+      offset += *p;
+    }
+    offsets_.resize(1);
+    offsets_[0] = offset;
+    nmo_.resize(1);
+    nmo_[0] = rank_;
+    
+    delete[] energy;
+    delete[] nfunc_per_block;
+  }
+  else
+    throw std::runtime_error("MOIndexSpace::full_coefs_to_coefs() -- moorder should be either energy or symmetry");
+  
+  // Copy required columns of full_coefs_ into coefs_
+  RefSCDimension aodim = full_coefs.rowdim();
+  Ref<SCMatrixKit> so_matrixkit = basis_->so_matrixkit();
+  coefs_ = so_matrixkit->matrix(aodim, modim_);
+  evals_ = so_matrixkit->diagmatrix(modim_);
+  for (int i=0; i<rank_; i++) {
+    int ii = blocked_subindex_to_full_index[index_map[i]];
+    mosym_[i] = blocked_subindex_to_irrep[index_map[i]];
+    for (int j=0; j<aodim.n(); j++) {
+      coefs_(j,i) = full_coefs(j,ii);
+    }
+  }
+  if (evals.nonnull())
+    for (int i=0; i<rank_; i++) {
+      int ii = blocked_subindex_to_full_index[index_map[i]];
+      evals_(i) = evals(ii);
+    }
+  else
+    evals_.assign(0.0);
+
+  nblocks_ = modim_->blocks()->nblock();
+
+  delete[] index_map;  
+}
+
 void
 MOIndexSpace::init()
 {
-
 }
+
+
+void
+MOIndexSpace::print(ostream&o) const
+{
+  o << indent << "MOIndexSpace \"" << name_ << "\":" << endl;
+  o << incindent;
+  o << indent << "Basis Set:" << endl;
+  o << incindent; basis_->print(o); o << decindent << endl;
+  o << decindent;
+}
+
+/////////////////////////////////////////////////////////////////
+// Function dquicksort performs a quick sort (smaller -> larger) 
+// of the double data in item by the integer indices in index;
+// data in item remain unchanged
+//
+// Both functions borrowed from lib/chemistry/qc/mbpt/mbpt.cc
+//
+/////////////////////////////////////////////////////////////////
+void
+MOIndexSpace::dqs(double *item,int *index,int left,int right)
+{
+  int i,j;
+  double x;
+  int y;
+  
+  i=left; j=right;
+  x=item[index[(left+right)/2]];
+  
+  do {
+    while(item[index[i]]<x && i<right) i++;
+    while(x<item[index[j]] && j>left) j--;
+    
+    if (i<=j) {
+      if (item[index[i]] != item[index[j]]) {
+        y=index[i];
+        index[i]=index[j];
+        index[j]=y;
+      }
+      i++; j--;
+    }
+  } while(i<=j);
+  
+  if (left<j) dqs(item,index,left,j);
+  if (i<right) dqs(item,index,i,right);
+}
+
+void
+MOIndexSpace::dquicksort(double *item,int *index,int n)
+{
+  int i;
+  if (n<=0) return;
+  for (i=0; i<n; i++) {
+    index[i] = i;
+  }
+  dqs(item,index,0,n-1);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

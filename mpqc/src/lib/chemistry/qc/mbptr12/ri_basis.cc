@@ -169,6 +169,8 @@ R12IntEvalInfo::construct_orthog_aux_()
     overlap_ri_ = overlap_aux_;
   }
   orthog_aux_so = 0;
+  
+  abs_space_ = new MOIndexSpace("ABS",orthog_aux_,bs_aux_);
 }
 
 void
@@ -229,6 +231,8 @@ R12IntEvalInfo::construct_orthog_ri_()
   orthog_ri_so = 0;
   overlap_ri_ = overlap_ri;
   ExEnv::out0() << decindent;
+  
+  ribs_space_ = new MOIndexSpace("RI-BS",orthog_ri_,bs_ri_);
 }
 
 bool

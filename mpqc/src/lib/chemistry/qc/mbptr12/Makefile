@@ -36,13 +36,14 @@ TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
 
 CXXSRCS = mbptr12.cc trans12_grt.cc \
-	  trans123_r12a_abs.cc r12ia.cc r12ia_memgrp.cc \
-	  r12ia_node0file.cc vxb_eval.cc vxb_eval_info.cc \
-	  vxb_eval_sbs_a.cc compute_sbs_a.cc \
-	  vxb_eval_abs_a.cc compute_abs_a.cc \
-          vxb_eval_b.cc compute_all_b.cc \
-	  compute_energy_a.cc mp2r12_energy.cc \
-	  multipole_ints.cc ri_basis.cc
+  trans123_r12a_abs.cc r12ia.cc r12ia_memgrp.cc \
+  r12ia_node0file.cc vxb_eval.cc vxb_eval_info.cc \
+  vxb_eval_sbs_a.cc compute_sbs_a.cc \
+  vxb_eval_abs_a.cc compute_abs_a.cc \
+  vxb_eval_b.cc compute_all_b.cc \
+  compute_energy_a.cc mp2r12_energy.cc \
+  multipole_ints.cc ri_basis.cc \
+  moindexspace.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

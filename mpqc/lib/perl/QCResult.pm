@@ -446,8 +446,7 @@ sub parse_mpqc {
             }
             $molecule = new Molecule($molstr);
         }
-        elsif (/^\s+Total (MP2 )?[Gg]radient/
-               || /^\s*Gradient of the MolecularEnergy:/) {
+        elsif (/^\s+Total (MP2 )?[Gg]radient/) {
             $state = "read grad";
             $grad = [];
             $ngrad = 0;

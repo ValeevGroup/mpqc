@@ -67,6 +67,12 @@ IntegralLink::operator new(size_t size, int intsize)
 }
 
 void
+IntegralLink::operator delete(void* ptr,int)
+{
+  free(ptr);
+}
+
+void
 IntegralLink::operator delete(void* ptr)
 {
   free(ptr);

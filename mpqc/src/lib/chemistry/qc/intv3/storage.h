@@ -118,6 +118,7 @@ class IntegralLink {
     // the integrals are squirreled away after this
     double* buffer() { return (double*)&this[1]; }
     void* operator new(size_t, int);
+    void operator delete(void*, int);
     void operator delete(void*);
 };
 

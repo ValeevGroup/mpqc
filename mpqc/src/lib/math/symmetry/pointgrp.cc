@@ -139,7 +139,7 @@ CharacterTable& CharacterTable::operator=(const CharacterTable& ct)
   if (gamma_) delete[] gamma_; gamma_=0;
   if (ct.gamma_) {
     gamma_ = new IrreducibleRepresentation[nirrep_];
-    for (int i=0; i < g; i++) {
+    for (int i=0; i < nirrep_; i++) {
       gamma_[i].init();
       gamma_[i] = ct.gamma_[i];
     }
@@ -171,6 +171,50 @@ void CharacterTable::print(FILE *fp, const char *off)
   for(i=0; i < g; i++) symop[i].print();
 }
 
+static void
+sim_transform(SymmetryOperation& so, SymmetryOperation& frame)
+  return foo;
+{
+  SymmetryOperation foo;
+
+  for (int i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      double t=0;
+      for (int k=0; k < 3; k++) t += frame(i,k)*so(k,j);
+      foo(i,j) = t;
+    }
+  }
+  for (i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      double t=0;
+      for (int k=0; k < 3; k++) t += foo(i,k)*frame(j,k);
+      so(i,j) = t;
+    }
+  }
+}
+
+CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symb(0), symop(0)
+{
+  // first parse the point group symbol, this will give us the order of the
+  // point group(g), the type of point group (pg), the order of the principle
+  // rotation axis (nt), and the number of irreps (nirrep_)
+
+  if (!cpg)
+    err_quit("CharacterTable::CharacterTable: null point group");
+
+  symb = new char[strlen(cpg)+1];
+  for (int i=0; i < strlen(cpg); i++) symb[i] = tolower(cpg[i]);
+  symb[i] = '\0';
+
+  if (parse_symbol() < 0)
+    err_quit("CharacterTable::CharacterTable: invalid point group %s",cpg);
+
+  if (make_table() < 0)
+    err_quit("CharacterTable::CharacterTable: could not make table");
+
+  for (i=0; i < g; i++) sim_transform(symop[i],frame);
+}
 
 CharacterTable::CharacterTable(const char *cpg)
   : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symb(0), symop(0)
@@ -349,39 +393,76 @@ PointGroup::_castdown(const ClassDesc*cd)
 }
 
 PointGroup::PointGroup()
+  : symb(0)
 {
-    symb = new char[3]; strcpy(symb,"c1");
+  set_symbol("c1");
+  frame(0,0) = frame(1,1) = frame(2,2) = 1;
+  origin_[0] = origin_[1] = origin_[2] =0;
 }
 
 PointGroup::PointGroup(const char *s)
   : symb(0)
 {
-  if (s) { symb = new char[strlen(s)+1]; strcpy(symb,s); }
-  else {
-    symb = new char[3];
-    strcpy(symb,"c1");
-  }
+  set_symbol(s);
+  frame(0,0) = frame(1,1) = frame(2,2) = 1;
+  origin_[0] = origin_[1] = origin_[2] =0;
 }
 
-PointGroup::PointGroup(KeyVal& kv) : symb(0)
+PointGroup::PointGroup(const char *s, SymmetryOperation& so)
+  : symb(0)
+{
+  set_symbol(s);
+  frame = so;
+  origin_[0] = origin_[1] = origin_[2] =0;
+}
+
+PointGroup::PointGroup(const char *s, SymmetryOperation& so, Point& or)
+  : symb(0)
+{
+  set_symbol(s);
+  frame = so;
+  origin_ = or;
+}
+
+PointGroup::PointGroup(KeyVal& kv)
+  : symb(0)
 {
   if (kv.exists("symmetry"))
     symb = kv.pcharvalue("symmetry");
-  else {
-    symb = new char[3];
-    strcpy(symb,"c1");
+  else
+    set_symbol("c1");
+
+  if (kv.exists("symmetry_frame")) {
+    for (int i=0; i < 3; i++)
+      for (int j=0; j < 3; j++) 
+        frame(i,j) = kv.doublevalue("symmetry_frame",i,j);
+  } else {
+    frame(0,0) = frame(1,1) = frame(2,2) = 1;
+  }
+
+  if (kv.exists("origin")) {
+    for (int i=0; i < 3; i++)
+      origin_[i] = kv.doublevalue("origin",i);
+  } else {
+    origin_[0] = origin_[1] = origin_[2] =0;
   }
 }
 
-PointGroup::PointGroup(StateIn& si) : symb(0), SavableState(si,class_desc_)
+PointGroup::PointGroup(StateIn& si) :
+  symb(0),
+  SavableState(si,class_desc_),
+  origin_(si)
 {
-  si.get(symb);
+  si.getstring(symb);
+  for (int i=0; i < 3; i++)
+    for (int j=0; j < 3; j++)
+      si.get(frame(i,j));
 }
 
 PointGroup::PointGroup(PointGroup& pg)
   : symb(0)
 {
-  if (pg.symb) { symb = new char[strlen(pg.symb)+1]; strcpy(symb,pg.symb); }
+  *this = pg;
 }
 
 PointGroup::~PointGroup()
@@ -391,17 +472,46 @@ PointGroup::~PointGroup()
 
 PointGroup& PointGroup::operator=(PointGroup& pg)
 {
-  if (symb) { delete[] symb; symb=0; }
-  if (pg.symb) { symb = new char[strlen(pg.symb)+1]; strcpy(symb,pg.symb); }
+  set_symbol(pg.symb);
+  frame = pg.frame;
+  origin_ = pg.origin_;
   return *this;
+}
+
+void PointGroup::set_symbol(const char *sym)
+{
+  if (sym) {
+    if (symb) delete[] symb;
+    symb = new char[strlen(sym)+1];
+    strcpy(symb,sym);
+  } else {
+    set_symbol("c1");
+  }
 }
 
 void PointGroup::save_data_state(StateOut& so)
 {
+  origin_.save_object_state(so);
   so.putstring(symb);
+
+  for (int i=0; i < 3; i++)
+    for (int j=0; j < 3; j++)
+      so.put(frame(i,j));
 }
 
 void PointGroup::restore_data_state(int version, StateIn& si)
 {
+  Point p(si); 
+  origin_=p;
+
   si.getstring(symb);
+  for (int i=0; i < 3; i++)
+    for (int j=0; j < 3; j++)
+      si.get(frame(i,j));
+}
+
+CharacterTable PointGroup::char_table() const
+{
+  CharacterTable ret(symb,frame);
+  return ret;
 }

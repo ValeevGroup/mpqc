@@ -25,10 +25,10 @@
 #include <stdio.h>
 #include <iostream.h>
 
-#include <math/scmat/local.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
+#include <math/topology/point.h>
 
 
 class CharacterTable;
@@ -103,6 +103,7 @@ class CharacterTable {
   public:
     CharacterTable();
     CharacterTable(const char*);
+    CharacterTable(const char*,const SymmetryOperation&);
     CharacterTable(const CharacterTable&);
     ~CharacterTable();
 
@@ -131,10 +132,14 @@ class PointGroup
 #   include <util/class/classd.h>
   private:
     char *symb;
+    SymmetryOperation frame;
+    Point origin_;
 
   public:
     PointGroup();
     PointGroup(const char*);
+    PointGroup(const char*,SymmetryOperation&);
+    PointGroup(const char*,SymmetryOperation&,Point&);
     PointGroup(KeyVal&);
     PointGroup(StateIn&);
     PointGroup(PointGroup&);
@@ -142,8 +147,12 @@ class PointGroup
 
     PointGroup& operator=(PointGroup&);
     
-    inline CharacterTable char_table() const { return CharacterTable(symb); }
+    CharacterTable char_table() const;
     inline const char * symbol() const { return symb; }
+    inline SymmetryOperation& symm_frame() { return frame; }
+    inline Point& origin() { return origin_; }
+
+    void set_symbol(const char*);
 
     void save_data_state(StateOut& so);
     void restore_data_state(int, StateIn& si);

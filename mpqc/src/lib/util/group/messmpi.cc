@@ -118,6 +118,17 @@ MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
 #endif
 
   init();
+
+  if (keyval->booleanvalue("errors_return")) {
+      if (me()==0)
+          cout << indent << "MPIMessageGrp: errors_return is true" << endl;
+      MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    }
+
+  SCFormIO::init_mp(me());
+  if (debug_) {
+      cerr << indent << "MPIMessageGrp: KeyVal CTOR: done" << endl;
+    }
 }
 
 #if HAVE_P4

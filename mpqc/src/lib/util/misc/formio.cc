@@ -90,6 +90,7 @@ SCFormIO::set_debug(int n)
 void
 SCFormIO::init_mp(int me)
 {
+  if (!ready_) init();
   me_ = me;
   parallel_=1;
 }

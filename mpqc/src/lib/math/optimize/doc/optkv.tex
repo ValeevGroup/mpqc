@@ -257,4 +257,14 @@ and provides DIIS extrapolation.  The following keywords are recognized.
   \item[\keywd{damping\_factor}] This nonnegative floating point number is
      used to dampen the DIIS extrapolation.  The default is 0.0.
 
+  \item[\keywd{ngroup}] The number of iterations in a DIIS group.  DIIS
+     extrapolation is only used for the first \keywd{ngroupdiis} of these
+     interations.  The default is 1.  If \keywd{ngroup} is 1 and
+     \keywd{ngroupdiis} is greater than 0, then DIIS will be used on all
+     iterations after and including the \keywd{start} iteration.
+
+  \item[\keywd{ngroupdiis}] The number of DIIS extrapolations to do at the
+     beginning of an iteration group.  See the documentation for
+     \keywd{ngroup}.
+
 \end{description}

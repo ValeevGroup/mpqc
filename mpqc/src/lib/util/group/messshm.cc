@@ -234,6 +234,12 @@ void ShmMessageGrp::initialize(int nprocs)
   intMessageGrp::initialize(mynodeid, nprocs, 30);
 }
 
+Ref<MessageGrp> ShmMessageGrp::clone(void)
+{
+  Ref<MessageGrp> smgrp = new ShmMessageGrp;
+  return smgrp;
+}
+
 int ShmMessageGrp::basic_probe(int msgtype)
 {
   int i;
@@ -407,7 +413,8 @@ void ShmMessageGrp::put_change(int node)
 {
   seminc.sem_num = node;
   semop(change_semid,&seminc,1);
-  seminc.sem_num = 0;
+  seminc.sem_num = 0;  
+
 }
 
 // Obtain a lock for writing to the node's buffer.

@@ -51,6 +51,12 @@ ProcMessageGrp::~ProcMessageGrp()
 {
 }
 
+Ref<MessageGrp> ProcMessageGrp::clone(void)
+{
+  Ref<MessageGrp> pmg = new ProcMessageGrp;
+  return pmg;
+}
+
 void ProcMessageGrp::sendit(message_t *& messages, int dest, int msgtype, void* buf,
                             int bytes)
 {

@@ -29,6 +29,9 @@
 #define _util_group_messmpi_h
 
 #include <util/group/message.h>
+#include <util/group/thread.h>
+
+#include <mpi.h>
 
 /** The MPIMessageGrp class is an concrete implementation of MessageGrp
 that uses the MPI 1 library.  */
@@ -41,6 +44,15 @@ class MPIMessageGrp: public MessageGrp {
     int rtag;
     int rlen;
 
+    /// Number of MPIMessageGrp's currently in use.
+    static int nmpi_grps;
+    /// lock to access nmpi_grps variable
+    static Ref<ThreadLock> grplock;
+
+    Ref<ThreadGrp> threadgrp;
+    /// Currently each commgrp is a dup of MPI_COMM_WORLD
+    MPI_Comm commgrp;
+    
 #if HAVE_P4
     int nlocal;     // the number of processes on the master cluster
     int nremote;    // the number of remote clusters
@@ -54,13 +66,16 @@ class MPIMessageGrp: public MessageGrp {
 
     struct p4_cluster * my_node_info(const char[], int&);
 #endif
-    
+    /// Not thread-safe due to race condition on nmpi_grps variable.
     void init(int argc=-1, char **argv=0);
   public:
     MPIMessageGrp();
     MPIMessageGrp(const Ref<KeyVal>&);
     ~MPIMessageGrp();
 
+    /// Clones (dups) an MPIMessageGrp from MPI_COMM_WORLD 
+    Ref<MessageGrp> clone(void);
+    
     void raw_send(int target, void* data, int nbyte);
     void raw_recv(int sender, void* data, int nbyte);
     void raw_sendt(int target, int type, void* data, int nbyte);

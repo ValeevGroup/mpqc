@@ -131,9 +131,7 @@ class MessageGrp: public DescribedClass {
     /// Returns my processor number.  In the range [0,n()).
     int me() { return me_; }
 
-    // MLL added functions
-    //MessageGrp(const MessageGrp&);
-    //MessageGrp* clone(Ref<MessageGrp>&)=0;
+    virtual Ref<MessageGrp> clone(void)=0;
     
     /** The default message group contains the primary message group to
         be used by an application. */
@@ -330,6 +328,9 @@ class ProcMessageGrp: public MessageGrp {
     ProcMessageGrp();
     ProcMessageGrp(const Ref<KeyVal>&);
     ~ProcMessageGrp();
+
+    Ref<MessageGrp> clone(void);
+    
     void raw_send(int target, void* data, int nbyte);
     void raw_sendt(int target, int type, void* data, int nbyte);
     void raw_recv(int sender, void* data, int nbyte);
@@ -380,6 +381,8 @@ class intMessageGrp: public MessageGrp {
 
     intMessageGrp();
     intMessageGrp(const Ref<KeyVal>&);
+
+    virtual Ref<MessageGrp> clone(void) { } ;
     void initialize(int me, int n, int nbits);
   public:
     ~intMessageGrp();

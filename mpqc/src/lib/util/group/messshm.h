@@ -105,6 +105,8 @@ class ShmMessageGrp: public intMessageGrp {
     ShmMessageGrp(int nprocs);
     ~ShmMessageGrp();
     void sync();
+
+    Ref<MessageGrp> clone(void);
 };
      
 #endif

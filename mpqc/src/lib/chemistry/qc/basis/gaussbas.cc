@@ -38,6 +38,24 @@ GaussianBasisSet::GaussianBasisSet(KeyVal&topkeyval)
   ParsedKeyVal libkeyval("basis",topkeyval); libkeyval.unmanage();
   AggregateKeyVal keyval(topkeyval,libkeyval); keyval.unmanage();
 
+  // check to see if there are extra basis files to read 
+  if (keyval.exists("basisfiles")) {
+    char path[512], *bdir = "./";
+
+    if (keyval.exists("basisdir"))
+      bdir = keyval.pcharvalue("basisdir");
+
+    for (int i=0; i < keyval.count("basisfiles"); i++) {
+      char *name = keyval.pcharvalue("basisfiles",i);
+      sprintf(path,"%s%s",bdir,name);
+      libkeyval.read(path);
+      delete[] name;
+    }
+
+    if (keyval.exists("basisdir"))
+      delete[] bdir;
+  }
+
   init(molecule,keyval,basisname,1,pure);
 
   delete[] basisname;

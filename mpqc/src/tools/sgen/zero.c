@@ -2,8 +2,11 @@
  * routine zero_x will zero out arrays in x */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:58  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/14 18:28:32  etseidl
+ * replace bzero with memset
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:59  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/07/20  18:37:46  seidl
  * add support for string arrays
@@ -198,7 +201,7 @@ char *range;
 
   if (basic_type(member->type) && !member->pointer) {
     if(array_type) {
-      fprintf(output,"%s  bzero(%s%s,sizeof(%s)*%s);\n",
+      fprintf(output,"%s  memset(%s%s,'\0',sizeof(%s)*%s);\n",
         spaces,member_name(structname,member),indices,member->type,range);
       }
     }

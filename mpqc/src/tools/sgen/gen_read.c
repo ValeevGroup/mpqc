@@ -5,8 +5,11 @@
  * code. */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/14 18:28:28  etseidl
+ * replace bzero with memset
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.5  1993/04/29  00:38:22  jannsen
  * fixed potential overwrite and cleaned up generated code
@@ -252,7 +255,7 @@ char *structname;
       stars[strlen(stars)-1]='\0';
       fprintf(output," %s)*%s);\n",stars,
                                  index_dimension(structname,&I->index));
-      fprintf(output,"%s  bzero(%s%s,sizeof(%s",spaces,
+      fprintf(output,"%s  memset(%s%s,'\0',sizeof(%s",spaces,
         member_name(structname,member),
         indices,member->type);
       fprintf(output," %s)*%s);\n",stars,
@@ -265,7 +268,7 @@ char *structname;
       stars[strlen(stars)-1]='\0';
       fprintf(output," %s)*%s);\n",stars,
                                  index_dimension(structname,&I->index));
-      fprintf(output,"%s  bzero(%s%s,sizeof(%s_t",spaces,
+      fprintf(output,"%s  memset(%s%s,'\0',sizeof(%s_t",spaces,
         member_name(structname,member),
         indices,member->type);
       fprintf(output," %s)*%s);\n",stars,

@@ -65,9 +65,8 @@ DenFunctional::DenFunctional()
 
 DenFunctional::DenFunctional(const RefKeyVal& keyval)
 {
-  // a0 is usually zero, except for ACM functionals.  Let those functionals
-  // worry about reading it in
-  a0_ = 0;
+  // a0 is usually zero, except for ACM functionals. 
+  a0_ = keyval->doublevalue("a0");
   spin_polarized_ = 0;
   compute_potential_ = 0;
 }
@@ -142,6 +141,7 @@ void
 NElFunctional::point(const PointInputData &id,
                      PointOutputData &od)
 {
+  od.zero();
   od.energy = id.a.rho + id.b.rho;
 }
 
@@ -263,9 +263,7 @@ void
 SumDenFunctional::point(const PointInputData &id,
                         PointOutputData &od)
 {
-  od.energy = 0.0;
-  od.df_drho_a = od.df_drho_b = 0.0;
-  od.df_dgamma_aa = od.df_dgamma_bb = od.df_dgamma_ab = 0.0;
+  od.zero();
   PointOutputData tmpod;
   for (int i=0; i < n_; i++) {
       funcs_[i]->point(id, tmpod);
@@ -297,61 +295,60 @@ SumDenFunctional::print(ostream& o) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// LSDAXFunctional
+// SlaterXFunctional
 
-#define CLASSNAME LSDAXFunctional
+#define CLASSNAME SlaterXFunctional
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #define PARENTS public DenFunctional
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
-LSDAXFunctional::_castdown(const ClassDesc*cd)
+SlaterXFunctional::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = DenFunctional::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-LSDAXFunctional::LSDAXFunctional(StateIn& s):
+SlaterXFunctional::SlaterXFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
 }
 
-LSDAXFunctional::LSDAXFunctional()
+SlaterXFunctional::SlaterXFunctional()
 {
 }
 
-LSDAXFunctional::LSDAXFunctional(const RefKeyVal& keyval):
+SlaterXFunctional::SlaterXFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
 }
 
-LSDAXFunctional::~LSDAXFunctional()
+SlaterXFunctional::~SlaterXFunctional()
 {
 }
 
 void
-LSDAXFunctional::save_data_state(StateOut& s)
+SlaterXFunctional::save_data_state(StateOut& s)
 {
   DenFunctional::save_data_state(s);
 }
 
 void
-LSDAXFunctional::point(const PointInputData &id,
+SlaterXFunctional::point(const PointInputData &id,
                        PointOutputData &od)
 {
   const double mcx2rthird = -0.9305257363491; // -1.5*(3/4pi)^1/3
   const double dmcx2rthird = -1.2407009817988; // 2*(3/4pi)^1/3
-
+  od.zero();
   if (!spin_polarized_) {
       od.energy = mcx2rthird * 2.0 * id.a.rho * id.a.rho_13;
       if (compute_potential_) {
           od.df_drho_a = dmcx2rthird * id.a.rho_13;
           od.df_drho_b = od.df_drho_a;
-          od.df_dgamma_aa = od.df_dgamma_bb = od.df_dgamma_ab = 0.0;
-        }
+          }
     }
   else {
       od.energy = mcx2rthird
@@ -359,57 +356,55 @@ LSDAXFunctional::point(const PointInputData &id,
       if (compute_potential_) {
           od.df_drho_a = dmcx2rthird * id.a.rho_13;
           od.df_drho_b = dmcx2rthird * id.b.rho_13;
-          od.df_dgamma_aa = od.df_dgamma_bb = od.df_dgamma_ab = 0.0;
-        }
+          }
     }
 }
 
-#if 1
 /////////////////////////////////////////////////////////////////////////////
-// LSDACFunctional
+// VWN5CFunctional
 
-#define CLASSNAME LSDACFunctional
+#define CLASSNAME VWN5CFunctional
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #define PARENTS public DenFunctional
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
-LSDACFunctional::_castdown(const ClassDesc*cd)
+VWN5CFunctional::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = DenFunctional::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-LSDACFunctional::LSDACFunctional(StateIn& s):
+VWN5CFunctional::VWN5CFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
 }
 
-LSDACFunctional::LSDACFunctional()
+VWN5CFunctional::VWN5CFunctional()
 {
 }
 
-LSDACFunctional::LSDACFunctional(const RefKeyVal& keyval):
+VWN5CFunctional::VWN5CFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
 }
 
-LSDACFunctional::~LSDACFunctional()
+VWN5CFunctional::~VWN5CFunctional()
 {
 }
 
 void
-LSDACFunctional::save_data_state(StateOut& s)
+VWN5CFunctional::save_data_state(StateOut& s)
 {
-  cout << "LSDACFunctional: cannot save state" << endl;
+  cout << "VWN5CFunctional: cannot save state" << endl;
   abort();
 }
 
 double
-LSDACFunctional::F(double x, double A, double x0, double b, double c)
+VWN5CFunctional::F(double x, double A, double x0, double b, double c)
 {
   double x2 = x*x;
   double x02 = x0*x0;
@@ -425,7 +420,7 @@ LSDACFunctional::F(double x, double A, double x0, double b, double c)
 }
 
 double
-LSDACFunctional::dFdr_s(double x, double A, double x0, double b, double c)
+VWN5CFunctional::dFdr_s(double x, double A, double x0, double b, double c)
 {
   double x2 = x*x;
   double x02 = x0*x0;
@@ -440,10 +435,13 @@ LSDACFunctional::dFdr_s(double x, double A, double x0, double b, double c)
 }
 
 // based on the equations given on a NIST WWW site
+// based on the VWN5 functional in Vosko, Wilk, and Nusair, Can. J. Phys.
+// 58, 1200, (1980). and Perdew and Wang, Phys. Rev. B, 45, 13244, (1992).
 void
-LSDACFunctional::point(const PointInputData &id,
+VWN5CFunctional::point(const PointInputData &id,
                        PointOutputData &od)
 {
+  od.zero();
   const double fpp0 = 4./9. * 1./(pow(2., (1./3.)) - 1.);
   const double sixth = 1./6.;
   const double four_thirds = 4./3.;
@@ -457,8 +455,7 @@ LSDACFunctional::point(const PointInputData &id,
   double epc    = F(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
   double efc    = F(x, 0.01554535,         -0.32500,    7.06042, 18.0578);
   double alphac = F(x, -1./(6.*M_PI*M_PI), -0.00475840, 1.13107, 13.0045);
-
-  //  double f = 1.125*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.); 
+     
   double f = 9./8.*fpp0*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.);
   double zeta2 = zeta*zeta;
   double zeta4 = zeta2*zeta2;
@@ -469,6 +466,12 @@ LSDACFunctional::point(const PointInputData &id,
   od.energy = ec * rho;
 
   if (compute_potential_) {
+    if (!spin_polarized_) {
+      double depc_dr_s0 = dFdr_s(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
+      double dec_dr_s = depc_dr_s0;
+      od.df_drho_a = od.df_drho_b = ec - (x/3.)*dec_dr_s;
+    }
+    else {
       double zeta3 = zeta2*zeta;
       double depc_dr_s0 = dFdr_s(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
       double defc_dr_s1 = dFdr_s(x, 0.01554535,         -0.32500,    7.06042, 18.0578);
@@ -476,14 +479,164 @@ LSDACFunctional::point(const PointInputData &id,
       double dec_dr_s = depc_dr_s0*(1 - f*zeta4) + defc_dr_s1 * f * zeta4
                         + dalphac_dr_s * f / fpp0 * (1 - zeta4);
       double fp = two_thirds * (pow((1+zeta),one_third) 
-              - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
+            - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
       double dec_dzeta = 4.* zeta3 * f * (efc - epc - (alphac/fpp0))
               + fp * (zeta4 * (efc - epc) + (1-zeta4)*(alphac/fpp0));
       od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
       od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      } 
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// VWN3CFunctional
+
+#define CLASSNAME VWN3CFunctional
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public DenFunctional
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+VWN3CFunctional::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+VWN3CFunctional::VWN3CFunctional(StateIn& s):
+  SavableState(s),
+  DenFunctional(s)
+{
+}
+
+VWN3CFunctional::VWN3CFunctional()
+{
+}
+
+VWN3CFunctional::VWN3CFunctional(const RefKeyVal& keyval):
+  DenFunctional(keyval)
+{
+}
+
+VWN3CFunctional::~VWN3CFunctional()
+{
+}
+
+void
+VWN3CFunctional::save_data_state(StateOut& s)
+{
+  cout << "VWN3CFunctional: cannot save state" << endl;
+  abort();
+}
+
+double
+VWN3CFunctional::F(double x, double A, double x0, double b, double c)
+{
+  double x2 = x*x;
+  double x02 = x0*x0;
+  double Xx = x2 + b*x + c;
+  double Xx0 = x02 + b*x0 + c;
+  double Q = sqrt(4.*c-b*b);
+  double res
+      = A * ( log(x2/Xx)
+              + 2.*b/Q * atan(Q/(2.*x+b))
+              - b*x0/Xx0 * ( log((x-x0)*(x-x0)/Xx)
+                           + 2.*(b+2.*x0)/Q * atan(Q/(2.*x+b)) ) );
+  return res;
+}
+
+double
+VWN3CFunctional::dFdr_s(double x, double A, double x0, double b, double c)
+{
+  double x2 = x*x;
+  double x02 = x0*x0;
+  double Xx = x2 + b*x +c;
+  double Xx0 = x02 + b*x0 + c;
+  double Q = sqrt(4.*c-b*b);
+  double res
+      = A * ( 1./x2 - 1./Xx - b/(2.*Xx*x)
+          + ((x0*(2.*x0+b))/Xx0 - 1) * (2.*b)/(x*(Q*Q+(2.*x+b)*(2.*x+b)))
+          - (b*x0)/(x*(x-x0)*Xx0) + (b*x0*(1+(b/(2.*x))))/(Xx0*Xx) );
+  return res;
+}
+
+// based on the equations given on a NIST WWW site
+void
+VWN3CFunctional::point(const PointInputData &id,
+                       PointOutputData &od)
+{
+  od.zero();
+  const double fpp0 = 4./9. * 1./(pow(2., (1./3.)) - 1.);
+  const double sixth = 1./6.;
+  const double four_thirds = 4./3.;
+  const double one_third = 1./3.;
+  const double two_thirds = 2./3.;
+
+  double rho = id.a.rho + id.b.rho;
+  double zeta = (id.a.rho - id.b.rho)/rho;
+  double x = pow(3./(4.*M_PI*rho), sixth);
+ 
+  // Monte Carlo fitting parameters 
+  double epc_mc    = F(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
+  double efc_mc    = F(x, 0.01554535,         -0.32500,    7.06042, 18.0578);
+  double alphac_mc = F(x, -1./(6.*M_PI*M_PI), -0.00475840, 1.13107, 13.0045);
+  // RPA fitting parameters
+   double epc_rpa    = F(x, 0.0310907,          -0.409286,  13.0720,  42.7198);
+   double efc_rpa    = F(x, 0.01554535,         -0.743294,  20.1231, 101.578);
+   double alphac_rpa = F(x, -1./(6.*M_PI*M_PI), -0.228344,   1.06835, 11.4813);
+
+  double f = 9./8.*fpp0*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.);
+  double zeta2 = zeta*zeta;
+  double zeta4 = zeta2*zeta2;
+  double delta_e_rpa = efc_rpa - epc_rpa;
+  double delta_e_mc  = efc_mc - epc_mc;
+  double beta = fpp0 * delta_e_rpa / alphac_rpa - 1.;
+  double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
+  double delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
+  double ec = epc_rpa + delta_ec;
+
+  od.energy = ec * rho;
+
+  if (compute_potential_) {
+      double zeta3 = zeta2*zeta;
+      // Monte Carlo fitting parameters
+      double depc_dr_s0_mc = dFdr_s(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
+      double defc_dr_s1_mc = dFdr_s(x, 0.01554535,         -0.32500,    7.06042, 18.0578);
+      double dalphac_dr_s_mc = dFdr_s(x, -1./(6.*M_PI*M_PI), -0.00475840, 1.13107, 13.0045);
+      // RPA fitting parameters
+      double depc_dr_s0_rpa = dFdr_s(x, 0.0310907,          -0.409286,  13.0720,  42.7198);
+      double defc_dr_s1_rpa = dFdr_s(x, 0.01554535,         -0.743294,  20.1231, 101.578);
+      double dalphac_dr_s_rpa = dFdr_s(x, -1./(6.*M_PI*M_PI), -0.228344, 1.06835, 11.4813 );
+    
+      double fp = two_thirds * (pow((1+zeta),one_third)
+             - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
+      
+      // RPA fitting parameters
+      double ddelta_e_rpa = defc_dr_s1_rpa - depc_dr_s0_rpa;
+      double ddeltae_rpa_dr_s = f / fpp0 * (1 - zeta4)* dalphac_dr_s_rpa 
+                    + f * zeta4 * ddelta_e_rpa;
+      double ddeltae_rpa_dzeta = dalphac_dr_s_rpa / fpp0 * 
+        ( fp * (1.-zeta4) - 4.* f * zeta*zeta2) 
+        + delta_e_rpa * ( fp*zeta4 + 4.*f*zeta*zeta2);
+              
+      // Monte Carlo fitting parameters
+      double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
+      // double dec_dr_s_mc = depc_dr_s0*(1 - f*zeta4) + defc_dr_s1 * f * zeta4
+      //                   + dalphac_dr_s * f / fpp0 * (1 - zeta4);
+      // double dec_dzeta_mc = 4.* zeta3 * f * (efc_mc - epc_mc - (alphac_mc/fpp0))
+      //        + fp * (zeta4 * (efc_mc - epc_mc) + (1-zeta4)*(alphac_mc/fpp0));
+      
+      double dec_dr_s = depc_dr_s0_rpa + delta_erpa_rszeta/delta_e_rpa * ddelta_e_mc
+        + delta_e_mc/delta_e_rpa * ddeltae_rpa_dr_s 
+        - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)* ddelta_e_rpa;
+      double dec_dzeta = delta_e_mc / delta_e_rpa * ddeltae_rpa_dzeta;      
+ 
+      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
     }
 }
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // XalphaFunctional
@@ -536,6 +689,7 @@ void
 XalphaFunctional::point(const PointInputData &id,
                         PointOutputData &od)
 {
+  od.zero();
   const double four_thirds = 4./3.;
   
   if (!spin_polarized_) {
@@ -543,8 +697,7 @@ XalphaFunctional::point(const PointInputData &id,
       if (compute_potential_) {
           od.df_drho_a = -four_thirds * factor_ * id.a.rho_13;
           od.df_drho_b = od.df_drho_a;
-          od.df_dgamma_aa = od.df_dgamma_ab = od.df_dgamma_bb = 0;
-        }
+              }
     }
   else {
       double rhoa43 = id.a.rho * id.a.rho_13;
@@ -553,8 +706,7 @@ XalphaFunctional::point(const PointInputData &id,
       if (compute_potential_) {
           od.df_drho_a = -four_thirds * factor_ * id.a.rho_13;
           od.df_drho_b = -four_thirds * factor_ * id.b.rho_13;
-          od.df_dgamma_aa = od.df_dgamma_ab = od.df_dgamma_bb = 0;
-        }
+              }
     }
 }
 
@@ -618,66 +770,51 @@ Becke88Functional::need_density_gradient()
 // From:  C.W. Murray et al.  Mol. Phys. Vol 78  pp 997-1014 (1993)
 // originally coded by Mike Colvin
 void
-Becke88Functional::point(const PointInputData &id,
+ Becke88Functional::point(const PointInputData &id,
                          PointOutputData &od)
 {
+  od.zero();
   // Preset terms from Murray's paper
   const double beta=0.0042;
   const double beta6=0.0252;
   const double beta26=0.00010584; 
+  const double beta2=0.00001764;
 
   // Use simplified formula
-  double rho_a_43 = id.a.rho*id.a.rho_13;
+  double rho_a_13 = pow(id.a.rho,(1./3.));
+  double rho_a_43 = id.a.rho*rho_a_13;
   double xa = id.a.gamma/rho_a_43;
   double xa2 = xa*xa;
   double ga_denom = 1/(1.+beta6*xa*asinh(xa));
-  double ga = -beta*xa2*ga_denom;
-  double ex = rho_a_43*ga;
+  double ga_denom2 = ga_denom*ga_denom;
+  double Fa = sqrt(1.+xa2);
+  double Ha = 1. - 6.*beta*xa2/Fa;
+  double ex = -rho_a_43*beta*xa2*ga_denom;
 
   if (compute_potential_) {
-    //   double gap = xa/sqrt(1.+xa2) + asinh(xa);
-    //  od.df_drho_a = beta*id.a.rho_13*xa2*ga_denom*(4./3. - 8.*beta*xa*ga_denom*gap);
-    //  od.df_dgamma_aa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
-    //  double gap = beta*xa2/sqrt(1.+xa2) + beta*xa*asinh(xa) + 1./3.;
-    //  od.df_drho_a = beta*id.a.rho_13*xa2*ga_denom*(-4./3. - 8.*ga_denom*gap);
-    //  od.df_dgamma_aa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
-      double gap_denom = ga_denom*ga_denom;
-      double gap = beta26*xa2*(xa/sqrt(xa2+1) - asinh(xa)) - 2*beta*xa;
-      gap *= gap_denom;
-      od.df_drho_a = 4./3. * id.a.rho_13 * (ga - xa*gap);
-      od.df_dgamma_aa = 0.5*gap/id.a.gamma;
-    //  double gap = (beta*id.a.rho_13*xa2*ga_denom)*(4./3. -
-    //          8.*beta*xa2*ga_denom/sqrt(1.+xa2) - 8.*beta*xa*asinh(xa)*ga_denom);
-    //  od.df_dgamma_aa = beta26*xa2*denom*denom*(xa/sqrt(1.+xa2) + asinh(xa))
-    //                 - 2.*beta*xa*denom; 
-      if (isnan(od.df_dgamma_aa)) od.df_dgamma_aa=0.;
-
+      od.df_drho_a = 4./3. * beta * rho_a_13 * xa2 * ga_denom2 * Ha;
+      od.df_dgamma_aa = -beta * ga_denom / (2.*rho_a_43) * (1. + ga_denom*Ha);
       od.df_drho_b=od.df_drho_a;
       od.df_dgamma_bb=od.df_dgamma_aa;
-      od.df_dgamma_ab=0.;
-    }
+         }
 
   if (spin_polarized_) {
-      double rho_b_43 = id.b.rho*id.b.rho_13;
+      double rho_b_13 = pow(id.b.rho,(1./3.));
+      double rho_b_43 = id.b.rho*rho_b_13;
       double xb = id.b.gamma/rho_b_43;
       double xb2 = xb*xb;
       double gb_denom = 1./(1.+beta6*xb*asinh(xb));
-      double gb = -beta*xb2*gb_denom;
-      ex += rho_b_43*gb;
+      double gb_denom2 = gb_denom*gb_denom;
+      double Fb = sqrt(1.+xb2);
+      double Hb = 1. - 6.*beta*xb2/Fb;   
+      ex += -rho_b_43*beta*xb2*gb_denom;
 
       if (compute_potential_) {
-        //double gbp = xb/sqrt(1.+xb2) + asinh(xb);
-        //od.df_drho_b = beta*id.b.rho_13*xb2*gb_denom*(4./3. - 8.*beta*xb*gb_denom*gbp);
-        //od.df_dgamma_bb = -2.*beta*xb*gb_denom*(1.-3.*beta*xb*gb_denom*gbp);
-           double gbp_denom = gb_denom*gb_denom;
-           double gbp = beta26*xb2*(xb/sqrt(xb2+1) - asinh(xb)) - 2.*beta*xb;
-           gbp *= gbp_denom;
-           od.df_drho_b = 4./3. * id.b.rho_13 * (gb - xb*gbp);
-           od.df_dgamma_bb = 0.5*gbp/id.b.gamma;
-          if (isnan(od.df_dgamma_bb)) od.df_dgamma_bb=0.;
-        }
+        od.df_drho_b = 4./3. * beta * rho_b_13 * xb2 * gb_denom2 * Hb;
+        od.df_dgamma_bb = -beta / (2.*rho_b_43) * (gb_denom + gb_denom2*Hb);        
+      }
     }
-  else
+  else 
       ex += ex;
 
   od.energy = ex;
@@ -736,63 +873,95 @@ LYPFunctional::need_density_gradient()
 // From: Burkhard Miehlich, et al.  Chem Phys. Lett. Vol. 157 pp200-206 (1989)
 // Original LYP paper Phys. Rev. B Vol. 37 pp785-789 (1988)
 // originally coded by Mike Colvin
+// potential terms added by Matt Leininger
 void
-LYPFunctional::point(const PointInputData &id,
+ LYPFunctional::point(const PointInputData &id,
                      PointOutputData &od)
 {
+  od.zero();
   double ec;
 
   // Precalculate terms for efficiency
   double dens=id.a.rho+id.b.rho;
   double dens2=dens*dens;
-  double grad=id.a.gamma+id.b.gamma;
-  double grad2=grad*grad;
+  // double grad=id.a.gamma+id.b.gamma;
+  // double grad=sqrt( pow(id.a.del_rho[0]+id.b.del_rho[0],2.) 
+  //                + pow(id.a.del_rho[1]+id.b.del_rho[1],2.) 
+  //                  + pow(id.a.del_rho[2]+id.b.del_rho[2],2.) );
+  // double grad2=grad*grad;
   double dens1_3=pow(dens,-1./3.);
 
   // Precalculate terms defined in Miehlich's paper
-  double a=0.04918;
+  double a=0.04918; 
   double b=0.132;
   double c=0.2533;
-  double d=0.347;
+  double d=0.349;
   double omega=exp(-c*dens1_3)/(1.+d*dens1_3)*pow(dens,-11./3.);
   double delta=c*dens1_3+d*dens1_3/(1.+d*dens1_3);
-  double cf=0.3*pow(3.*M_PI*M_PI,2./3.);
+  double cf=0.3*pow(3.* M_PI*M_PI,2./3.);
+  double denom = 1.+d*dens1_3;
+  
+  double dens_a2=id.a.rho*id.a.rho;
+  double dens_b2=id.b.rho*id.b.rho;
+  double dens_ab=id.a.rho*id.b.rho;
+  double grad_a2=id.a.gamma*id.a.gamma;
+  double grad_b2=id.b.gamma*id.b.gamma;
+  double grad_ab=id.a.del_rho[0]*id.b.del_rho[0] + id.a.del_rho[1]*id.b.del_rho[1] 
+                   + id.a.del_rho[2]*id.b.del_rho[2];
 
-  // Choose between energy functionals based on whether this
-  // is a closed shell system or not
-  if (!spin_polarized_) {
-      // Use simplified formula
-      ec= -(a*dens/(1. + d*dens1_3)) +
-          a*b*omega*dens2*((3. + 7.*delta)*grad2-
-                           72.*cf*pow(dens,8./3.))/72;
-    }
-  else {
-      // Use Miehlich's original formula
-      double dens_a2=id.a.rho*id.a.rho;
-      double dens_b2=id.b.rho*id.b.rho;
-      double grad_a2=id.a.gamma*id.a.gamma;
-      double grad_b2=id.b.gamma*id.b.gamma;
-        
-      ec= -4*a*id.a.rho*id.b.rho/
-          ((1. + d*dens1_3)*dens) - a*b*omega*
-          (-2.*grad2*dens2/3. +
-           grad_b2*(2.*dens2/3. - dens_a2) +
-           grad_a2*(2.*dens2/3. - dens_b2) +
-           id.a.rho*id.b.rho*
-           ((47./18. - 7.*delta/18.)*grad2 -
-            (5./2. - delta/18.)*(grad_a2 + grad_b2) -
-            (-11. + delta)*(grad_a2*id.a.rho/dens
-                            + grad_b2*id.b.rho/dens)/9. +
-            pow(2.,11./3.)*cf*(pow(id.a.rho,8./3.)
-                               + pow(id.b.rho,8./3.))));
-    }
-
-  if (compute_potential_) {
-      cout << class_name() << ": cannot compute potential" << endl;
-      abort();
-    }
-
+  double eflyp_1 = -4.*a*dens_ab/(dens*denom);
+  double intermediate_1 = pow(2.,2./3.)*144.*cf*(pow(id.a.rho,8./3.)+pow(id.b.rho,8./3.))
+           + (47.-7.*delta)*(grad_a2+grad_b2+2.*grad_ab)-(45.-delta)*(grad_a2+grad_b2)
+           + 2.*(11.-delta)/dens*(id.a.rho*grad_a2+id.b.rho*grad_b2); 
+  double intermediate_2 = -4./3.*dens2*grad_ab - (dens_a2*grad_b2+dens_b2*grad_a2);
+  double intermediate_3 = dens_ab/18.* intermediate_1 + intermediate_2;  
+  double eflyp_2 = -omega*a*b*intermediate_3; 
+  ec = eflyp_1 + eflyp_2;
   od.energy = ec;
+ 
+    if (compute_potential_) {
+       double dens4_3 = pow(dens,-4./3.);
+       double expo = exp(-c*dens1_3);
+       double ddelta_drho_a = -dens4_3/3.*( c + d/(denom*denom)); 
+       double domega_drho_a = expo/(3.*denom*pow(dens,15./3.) ) *
+                             ( c + d/denom - 11.*pow(dens,1./3.) );
+       double df1_drho_a = -4.*a*id.b.rho/(dens*denom)
+                * (1.-(id.a.rho*(1.+2./3.*d*dens1_3))/(dens*denom)); 
+       double  df2_drho_a = -domega_drho_a*a*b*intermediate_3 
+                - omega*a*b*( id.b.rho/18.* intermediate_1
+                + dens_ab/18.*(144.*pow(2.,2./3.)*cf*8./3.*pow(id.a.rho,5./3.)
+                +  2.*(11.-delta)*grad_a2/dens 
+                - 2./dens*ddelta_drho_a*(id.a.rho*grad_a2 + id.b.rho*grad_b2) 
+                - 2.*(11.-delta)/dens2*(id.a.rho*grad_a2 + id.b.rho*grad_b2) 
+                - 7.*ddelta_drho_a*(grad_a2+grad_b2+2.*grad_ab)
+                + ddelta_drho_a*(grad_a2+grad_b2) )  
+                - 8./3.*dens*grad_ab - 2.*id.a.rho*grad_b2 );
+       od.df_drho_a = df1_drho_a + df2_drho_a;
+       od.df_dgamma_aa = -omega*a*b  
+                * (dens_ab/9.*(1.-3.*delta + id.a.rho*(11.-delta)/dens) - dens_b2);
+       od.df_dgamma_ab = -omega*a*b*(dens_ab/9.*(47.-7.*delta) - 4./3.*dens2);
+       od.df_drho_b = od.df_drho_a;
+       od.df_dgamma_bb = od.df_dgamma_aa;
+       if (spin_polarized_) {
+          double ddelta_drho_b = ddelta_drho_a;
+          double domega_drho_b = domega_drho_b;
+          double df1_drho_b = -4.*id.a.rho/(dens*denom)
+                   * (1.-(id.b.rho*(1.+2./3.*d*dens1_3))/(dens*denom));
+          double df2_drho_b = -domega_drho_b*a*b*intermediate_3 
+                  - omega*a*b*( id.a.rho/18.* intermediate_1 
+                  + dens_ab/18.*(144.*pow(2.,2./3.)*cf*8./3.*pow(id.b.rho,5./3.)
+                  +  2.*(11.-delta)*grad_b2/dens
+                  - 2./dens*ddelta_drho_b*(id.a.rho*grad_a2 + id.b.rho*grad_b2)
+                  - 2.*(11.-delta)/dens2*(id.a.rho*grad_a2 + id.b.rho*grad_b2)
+                  - 7.*ddelta_drho_b*(grad_a2+grad_b2+2.*grad_ab)
+                  + ddelta_drho_b*(grad_a2+grad_b2) )
+                  - 8./3.*dens*grad_ab - 2.*id.b.rho*grad_a2 );
+          od.df_drho_b = df1_drho_b + df2_drho_b;
+          od.df_dgamma_bb = -omega*a*b
+                   * (dens_ab/9.*(1.-3.*delta + id.b.rho*(11.-delta)/dens) - dens_a2);
+       }
+    }
+
 }
 
 #if 0
@@ -851,6 +1020,7 @@ void
 PW91Functional::point(const PointInputData &id,
                       PointOutputData &od)
 {
+  od.zero();
   double EC, VCUP, VCDN, ECRS, ECZET, ALFC;
   double H, DVCUP, DVCDN;
 

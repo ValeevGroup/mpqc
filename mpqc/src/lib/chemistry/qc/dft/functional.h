@@ -76,6 +76,9 @@ struct PointOutputData {
     double df_dgamma_aa;
     double df_dgamma_bb;
     double df_dgamma_ab;
+ 
+  void zero(){energy=df_drho_a=df_drho_b=df_dgamma_aa=df_dgamma_bb=df_dgamma_ab=0.0;}
+
 };
 
 class DenFunctional: virtual public SavableState {
@@ -157,47 +160,70 @@ class SumDenFunctional: public DenFunctional {
     void print(ostream& =cout) const;
 };
 
-/** The LSDAXFunctional computes energies and densities
-    using the LSDA exchange term. */
-class LSDAXFunctional: public DenFunctional {
-#   define CLASSNAME LSDAXFunctional
+/** The SlaterXFunctional computes energies and densities
+    using the Slater exchange term. */
+class SlaterXFunctional: public DenFunctional {
+#   define CLASSNAME SlaterXFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
   public:
-    LSDAXFunctional();
-    LSDAXFunctional(const RefKeyVal &);
-    LSDAXFunctional(StateIn &);
-    ~LSDAXFunctional();
+    SlaterXFunctional();
+    SlaterXFunctional(const RefKeyVal &);
+    SlaterXFunctional(StateIn &);
+    ~SlaterXFunctional();
     void save_data_state(StateOut &);
 
     void point(const PointInputData&, PointOutputData&);
 };
 
-#if 1
-/** The LSDACFunctional computes energies and densities using the
-    LSDA correlation term (from Vosko, Wilk, and Nusair). */
-class LSDACFunctional: public DenFunctional {
-#   define CLASSNAME LSDACFunctional
+/** The VWN5CFunctional computes energies and densities using the
+    VWN5 (LSDA) correlation term (from Vosko, Wilk, and Nusair). */
+class VWN5CFunctional: public DenFunctional {
+#   define CLASSNAME VWN5CFunctional
 #   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
+ #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    int vwn_; 
+    double A_, x0_, b_, c_;
     double F(double x, double A, double x0, double b, double c);
     double dFdr_s(double x, double A, double x0, double b, double c);
   public:
-    LSDACFunctional();
-    LSDACFunctional(const RefKeyVal &);
-    LSDACFunctional(StateIn &);
-    ~LSDACFunctional();
+    VWN5CFunctional();
+    VWN5CFunctional(const RefKeyVal &);
+    VWN5CFunctional(StateIn &);
+    ~VWN5CFunctional();
     void save_data_state(StateOut &);
 
     void point(const PointInputData&, PointOutputData&);
 };
-#endif
+
+/** The VWN3CFunctional computes energies and densities using the
+    VWN3 (LSDA) correlation term (from Vosko, Wilk, and Nusair). */
+class VWN3CFunctional: public DenFunctional {
+#   define CLASSNAME VWN3CFunctional
+#   define HAVE_KEYVAL_CTOR
+ #   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    int vwn_; 
+    double A_, x0_, b_, c_;
+    double F(double x, double A, double x0, double b, double c);
+    double dFdr_s(double x, double A, double x0, double b, double c);
+  public:
+    VWN3CFunctional();
+    VWN3CFunctional(const RefKeyVal &);
+    VWN3CFunctional(StateIn &);
+    ~VWN3CFunctional();
+    void save_data_state(StateOut &);
+
+    void point(const PointInputData&, PointOutputData&);
+};
 
 /** The XalphaFunctional computes energies and densities
     using the Xalpha method. */

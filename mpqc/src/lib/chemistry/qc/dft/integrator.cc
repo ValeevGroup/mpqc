@@ -121,6 +121,8 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   func->set_compute_potential(compute_potential_integrals_);
 
   need_gradient_ = func->need_density_gradient();
+  need_hessian_ = 0;
+  if (need_hessian_) need_gradient_ = 1;
 
   spin_polarized_ = wfn_->spin_polarized();
   func->set_spin_polarized(spin_polarized_);
@@ -133,10 +135,9 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   delete[] bsh_values_;
   bsg_values_=0;
   bsh_values_=0;
-  if (need_gradient_) {
-      bsg_values_ = new double[3*nbasis_];
-      bsh_values_ = new double[6*nbasis_];
-    }
+  if (need_gradient_) bsg_values_ = new double[3*nbasis_];
+  if (need_hessian_)  bsh_values_ = new double[6*nbasis_];
+   
 
   delete[] alpha_dmat_;
   RefSymmSCMatrix adens = densa;
@@ -229,38 +230,41 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
           bvix = bsg_values_[i*3+X];
           bviy = bsg_values_[i*3+Y];
           bviz = bsg_values_[i*3+Z];
-          bvixx = bsh_values_[i*6+XX];
-          bviyx = bsh_values_[i*6+YX];
-          bviyy = bsh_values_[i*6+YY];
-          bvizx = bsh_values_[i*6+ZX];
-          bvizy = bsh_values_[i*6+ZY];
-          bvizz = bsh_values_[i*6+ZZ];
-
+          if (need_hessian_) {
+            bvixx = bsh_values_[i*6+XX];
+            bviyx = bsh_values_[i*6+YX];
+            bviyy = bsh_values_[i*6+YY];
+            bvizx = bsh_values_[i*6+ZX];
+            bvizy = bsh_values_[i*6+ZY];
+            bvizz = bsh_values_[i*6+ZZ];
+          }
           for (j=0; j < i; j++,ij++) {
               densij = dmat[ij];
               double bvj = bs_values_[j];
               double bvjx = bsg_values_[j*3+X];
               double bvjy = bsg_values_[j*3+Y];
               double bvjz = bsg_values_[j*3+Z];
-              double bvjxx = bsh_values_[j*6+XX];
-              double bvjyx = bsh_values_[j*6+YX];
-              double bvjyy = bsh_values_[j*6+YY];
-              double bvjzx = bsh_values_[j*6+ZX];
-              double bvjzy = bsh_values_[j*6+ZY];
-              double bvjzz = bsh_values_[j*6+ZZ];
 
               tmp += 2.0*densij*bvi*bvj;
 
               grad[X] += densij*(bvi*bvjx + bvj*bvix);
               grad[Y] += densij*(bvi*bvjy + bvj*bviy);
               grad[Z] += densij*(bvi*bvjz + bvj*bviz);
+              if (need_hessian_) {             
+                double bvjxx = bsh_values_[j*6+XX];
+                double bvjyx = bsh_values_[j*6+YX];
+                double bvjyy = bsh_values_[j*6+YY];
+                double bvjzx = bsh_values_[j*6+ZX];
+                double bvjzy = bsh_values_[j*6+ZY];
+                double bvjzz = bsh_values_[j*6+ZZ];
 
-              hess[XX] += densij*(bvi*bvjxx +bvix*bvjx +bvjx*bvix +bvixx*bvj);
-              hess[YX] += densij*(bvi*bvjyx +bviy*bvjx +bvjy*bvix +bviyx*bvj);
-              hess[YY] += densij*(bvi*bvjyy +bviy*bvjy +bvjy*bviy +bviyy*bvj);
-              hess[ZX] += densij*(bvi*bvjzx +bviz*bvjx +bvjz*bvix +bvizx*bvj);
-              hess[ZY] += densij*(bvi*bvjzy +bviz*bvjy +bvjz*bviy +bvizy*bvj);
-              hess[ZZ] += densij*(bvi*bvjzz +bviz*bvjz +bvjz*bviz +bvizz*bvj);
+                hess[XX] += densij*(bvi*bvjxx +bvix*bvjx +bvjx*bvix +bvixx*bvj);
+                hess[YX] += densij*(bvi*bvjyx +bviy*bvjx +bvjy*bvix +bviyx*bvj);
+                hess[YY] += densij*(bvi*bvjyy +bviy*bvjy +bvjy*bviy +bviyy*bvj);
+                hess[ZX] += densij*(bvi*bvjzx +bviz*bvjx +bvjz*bvix +bvizx*bvj);
+                hess[ZY] += densij*(bvi*bvjzy +bviz*bvjy +bvjz*bviy +bvizy*bvj);
+                hess[ZZ] += densij*(bvi*bvjzz +bviz*bvjz +bvjz*bviz +bvizz*bvj);
+              }
             }
 
           densij = dmat[ij]*bvi;
@@ -268,13 +272,14 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
           grad[X] += densij*bvix;
           grad[Y] += densij*bviy;
           grad[Z] += densij*bviz;
-          hess[XX] += densij*bvixx;
-          hess[YX] += densij*bviyx;
-          hess[YY] += densij*bviyy;
-          hess[ZX] += densij*bvizx;
-          hess[ZY] += densij*bvizy;
-          hess[ZZ] += densij*bvizz;
-
+          if (need_hessian_) {
+            hess[XX] += densij*bvixx;
+            hess[YX] += densij*bviyx;
+            hess[YY] += densij*bviyy;
+            hess[ZX] += densij*bvizx;
+            hess[ZY] += densij*bvizy;
+            hess[ZZ] += densij*bvizz;
+          }
           ij++;
         }
 
@@ -334,9 +339,12 @@ DenIntegrator::do_point(const SCVector3 &r,
   int i,j,k;
 
   // compute the basis set values
-  if (need_gradient_) {
+  if (need_hessian_) {
       wfn_->basis()->hessian_values(r,bsh_values_,bsg_values_,bs_values_);
     }
+  else if (need_gradient_) {
+      wfn_->basis()->grad_values(r,bsg_values_,bs_values_);
+  }
   else {
       wfn_->basis()->values(r,bs_values_);
     }

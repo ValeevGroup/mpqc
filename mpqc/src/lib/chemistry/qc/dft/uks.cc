@@ -67,7 +67,7 @@ UKS::UKS(StateIn& s) :
 {
   exc_=0;
   integrator_ = new Murray93Integrator();
-  functional_ = new LSDAXFunctional();
+  functional_ = new SlaterXFunctional();
 }
 
 UKS::UKS(const RefKeyVal& keyval) :
@@ -78,7 +78,7 @@ UKS::UKS(const RefKeyVal& keyval) :
   if (integrator_.null()) integrator_ = new Murray93Integrator();
 
   functional_ = keyval->describedclassvalue("functional");
-  if (functional_.null()) functional_ = new LSDAXFunctional();
+  if (functional_.null()) functional_ = new SlaterXFunctional();
 }
 
 UKS::~UKS()

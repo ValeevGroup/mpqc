@@ -59,6 +59,7 @@ class DenIntegrator: virtual public SavableState {
     int compute_potential_integrals_; // 1 if potential integrals are needed
 
     int need_gradient_;
+    int need_hessian_;
 
     void get_density(double *dmat, PointInputData::SpinData &d);
     void init_integration(const RefDenFunctional &func,

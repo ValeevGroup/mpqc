@@ -39,13 +39,14 @@
 const ClassDesc &dft_force_link_a_ = Murray93Integrator::class_desc_;
 const ClassDesc &dft_force_link_b_ = NElFunctional::class_desc_;
 const ClassDesc &dft_force_link_c_ = XalphaFunctional::class_desc_;
-const ClassDesc &dft_force_link_d_ = LSDAXFunctional::class_desc_;
+const ClassDesc &dft_force_link_d_ = SlaterXFunctional::class_desc_;
 const ClassDesc &dft_force_link_e_ = Becke88Functional::class_desc_;
 const ClassDesc &dft_force_link_f_ = LYPFunctional::class_desc_;
 const ClassDesc &dft_force_link_g_ = HFACM::class_desc_;
 const ClassDesc &dft_force_link_h_ = CLKS::class_desc_;
 const ClassDesc &dft_force_link_i_ = UKS::class_desc_;
-const ClassDesc &dft_force_link_j_ = LSDACFunctional::class_desc_;
+const ClassDesc &dft_force_link_j_ = VWN5CFunctional::class_desc_;
+const ClassDesc &dft_force_link_k_ = VWN3CFunctional::class_desc_;
 
 #endif /* __PIC__ */
 

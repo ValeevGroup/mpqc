@@ -422,7 +422,15 @@ MolEnergyConvergence::get_grad(const RefFunction &f)
 {
   RefMolecularEnergy m(f);
   if (m.nonnull() && cartesian_) {
-      grad_ = m->get_cartesian_gradient();
+      RefSCVector cartesian_grad = m->get_cartesian_gradient()->copy();
+      if (m->molecularcoor()->nconstrained()) {
+          // convert the gradient to internal coordinates and back
+          // this will project out the fixed coordinates
+          RefSCVector internal_grad(m->dimension(), m->matrixkit());
+          m->molecularcoor()->to_internal(internal_grad,cartesian_grad);
+          m->molecularcoor()->to_cartesian(cartesian_grad,internal_grad);
+        }
+      grad_ = cartesian_grad;
     }
   else {
       grad_ = f->gradient();

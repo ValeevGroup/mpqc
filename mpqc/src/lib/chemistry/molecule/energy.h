@@ -88,6 +88,8 @@ class MolecularEnergy: public Function {
     RefSCVector get_cartesian_x();
     RefSCVector get_cartesian_gradient();
 
+    RefMolecularCoor molecularcoor() { return mc_; }
+
     virtual void print(ostream& = cout);
 };
 SavableState_REF_dec(MolecularEnergy);

@@ -76,8 +76,8 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   decouple_bonds_(0),
   decouple_bends_(0),
   form_print_simples_(0),
-  form_print_variable_(1),
-  form_print_constant_(1)
+  form_print_variable_(0),
+  form_print_constant_(0)
 {
   new_coords();
   generator_ = new IntCoorGen(mol);
@@ -135,8 +135,8 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
     s.get(form_print_constant_);
   } else {
     form_print_simples_ = 0;
-    form_print_variable_ = 1;
-    form_print_constant_ = 1;
+    form_print_variable_ = 0;
+    form_print_constant_ = 0;
   }
 
   dim_.restore_state(s);
@@ -254,9 +254,9 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   form_print_simples_ = keyval->booleanvalue("form:print_simple");
   if (keyval->error() != KeyVal::OK) form_print_simples_ = 0;
   form_print_variable_ = keyval->booleanvalue("form:print_variable");
-  if (keyval->error() != KeyVal::OK) form_print_variable_ = 1;
+  if (keyval->error() != KeyVal::OK) form_print_variable_ = 0;
   form_print_constant_ = keyval->booleanvalue("form:print_constant");
-  if (keyval->error() != KeyVal::OK) form_print_constant_ = 1;
+  if (keyval->error() != KeyVal::OK) form_print_constant_ = 0;
 }
 
 void
@@ -500,12 +500,11 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
           Ur.print("Ur");
           geom.print("geom");
           totally_symmetric.print("totally_symmetric = Ur.t()*B*geom");
-        }
 
-      int ntotally_symmetric = count_nonzero(totally_symmetric,0.001);
-      if (matrixkit->messagegrp()->me()==0)
+          int ntotally_symmetric = count_nonzero(totally_symmetric,0.001);
           cout << node0 << indent << "found " << ntotally_symmetric
                << " totally symmetric coordinates\n";
+        }
 
       // compute the cumulative projection
       if (projection.null()) {
@@ -568,13 +567,13 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
           abort();
         }
       // check that fixed coordinates be totally symmetric
-      if (Ktmp.nrow() != count_nonzero(totally_symmetric_fixed, ts_eps)) {
-          cerr << node0 << indent
-               << scprintf("WARNING: only %d of %d fixed coordinates are"
-                           " totally symmetric\n",
-                           count_nonzero(totally_symmetric_fixed, ts_eps),
-                           dfixed.n());
-        }
+      //if (Ktmp.nrow() != count_nonzero(totally_symmetric_fixed, ts_eps)) {
+      //    cerr << node0 << indent
+      //         << scprintf("WARNING: only %d of %d fixed coordinates are"
+      //                     " totally symmetric\n",
+      //                     count_nonzero(totally_symmetric_fixed, ts_eps),
+      //                     dfixed.n());
+      //  }
 
       // Compute Kfixed
       RefSCMatrix B(dcoor, dnatom3_, matrixkit_);
@@ -1192,11 +1191,15 @@ IntMolecularCoor::print(ostream& os)
   print_simples(os);
   os << node0 << endl;
 
-  print_variable(os);
-  os << node0 << endl;
+  if (form_print_variable_) {
+      print_variable(os);
+      os << node0 << endl;
+    }
 
-  print_constant(os);
-  os << node0 << endl;
+  if (form_print_constant_) {
+      print_constant(os);
+      os << node0 << endl;
+    }
 }
 
 void

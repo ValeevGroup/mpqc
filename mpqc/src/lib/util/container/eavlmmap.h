@@ -324,7 +324,7 @@ EAVLMMap<K,T>::check()
 
 template <class K, class T>
 void
-EAVLMMap<K,T>::next(T*& node) const
+EAVLMMap<K,T>::next(const T*& node) const
 {
   T* r;
   if (r = rlink(node)) {
@@ -345,7 +345,7 @@ EAVLMMap<K,T>::next(T*& node) const
 #ifndef __GNUC__
 template <class K, class T>
 void
-EAVLMMap<K,T>::next(const T*& node) const
+EAVLMMap<K,T>::next(T*& node) const
 {
   T* r;
   if (r = rlink(node)) {

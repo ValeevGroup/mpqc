@@ -25,7 +25,7 @@
 # The U.S. Government is granted a limited license as per AL 91-7.
 #
 
-TOPDIR = ../../../..
+TOPDIR = ../../../../..
 ifndef SRCDIR
   SRCDIR=.
 endif

@@ -23,15 +23,187 @@
 \maketitle
 
 \begin{abstract}
-The Scientific Computing library (SC) provides C++ class libraries
-to assist in scientific computing.
 
-SC can be used on Unix compatible workstations (Intel/Linux, R8000,
-RS/6000), symmetric multi-processors (SGI Power Challenge), and
-massively parallel computers (IBM SP2, Intel Paragon).
+The Scientific Computing (SC) toolkit provides C++ class libraries of use
+in scientific computation.  Included are classes for managing memory,
+saving and restoring the state of objects, reading objects from an input
+file, parallel communication, matrix algebra, among others.
+
+SC runs on Unix compatible workstations (Intel/Linux,
+IBM RS/6000), symmetric multi-processors (Intel/Linux),
+and massively parallel computers (IBM SP2, Intel Paragon).
+
 \end{abstract}
 
 \tableofcontents
+
+\part{Overview}
+
+\chapter{Introduction}
+
+The Scientific Computing (SC) toolkit provides C++ class libraries for
+scientific computation.  Included are classes for managing memory, saving
+and restoring the state of objects, reading objects from an input file,
+parallel communication, matrix algebra, among others.
+
+SC runs on Unix compatible workstations (Intel/Linux,
+IBM RS/6000), symmetric multi-processors (Intel/Linux),
+and massively parallel computers (IBM SP2, Intel Paragon).
+
+The SC toolkit is a work-in-progress.  Thus, this manual is incomplete.
+Furthermore, some of the classes in the distribution may be on the verge of
+obsolescence and others may be unfinished work that are intended to provide
+new functionality in later releases.
+
+The development of SC has been driven by the development of the Massively
+Parallel Quantum Chemistry (MPQC) program.  While, currently, MPQC nad SC
+are distributed together, the toolkit code is independent of the quantum
+chemistry code.  The classes provided in src/lib/util do not require those
+in src/lib/math or src/lib/chemistry and the src/lib/math classes do not
+require src/lib/chemistry.  To compile SC on your machine refer to the
+MPQC User Manual.
+
+\chapter{The Source Distribution}
+
+\begin{description}
+\item[\filnm{bin}]  This directory mainly contains commands that
+  are used to help with the compilation of SC.
+
+\item[\filnm{include/libg++-stub}]  This provides a few include
+  files taken from GNU libg++.
+
+\item[\filnm{lib/basis}] The Gaussian basis set data files are in this
+  directory.
+
+\item[\filnm{lib/elisp}] If you are an emacs user, some useful
+  modes and C++ programming style specifications can be found
+  here.
+
+\item[\filnm{lib/perl}] Perl modules that are used by the MPQC
+  validation suite are found here.
+
+\item[\filnm{lib/texinputs}] A style file for the SC documenation
+  is located in this directory.
+
+\item[\filnm{src/tools/listlibs}] This is a utility program that determines
+  library interdependencies so that libraries can be linked together to
+  make executables.
+  
+\item[\filnm{src/tools/mkclasses}]  This is intended to generate a
+  database for dynamic class library loading, but currently isn't used.
+
+\item[\filnm{src/lib/util/options}]
+  This contains the GetLongOpt command line argument parsing facility
+  written by S. Manoharan, with some modifications.
+
+\item[\filnm{src/lib/util/ref}]
+  This library provides memory management for objects.
+
+\item[\filnm{src/lib/util/container}] This library provides container
+  classes.  Some of these classes are not very efficient and it is likely
+  that they will be replaced by the C++ Standard Template Library when it
+  is supported fully by more compilers.
+
+\item[\filnm{src/lib/util/misc}] This contains a variety of independent
+  classes that don't belong anywhere else.  Classes to assist with
+  debugging, provide information about hte execution environment, help make
+  the output prettier, maintain detailed timing information, etc. are
+  provided.
+
+\item[\filnm{src/lib/util/class}] This library provides base classes for
+  classes that require a common interface for obtaining meta-information
+  about the class.  This meta-information includes the class name,
+  meta-information about the parent class and derived classes that have
+  been linked into the executable, pointers to functions that can create
+  instances of the class, and so on.
+
+\item[\filnm{src/lib/util/keyval}] This library provides classes that read
+  keyword/value pairs from an input file.
+
+\item[\filnm{src/lib/util/state}] The state library provides a base class
+  for persistent objects and classes to read and write these objects to a
+  stream.
+
+\item[\filnm{src/lib/util/group}] This group library provides classes to
+  communicate between nodes of a parallel machine.  Message passing,
+  distributed shared memory, and multi-threaded models are supported.
+
+\item[\filnm{src/lib/util/render}] This library provides an abstract
+  interface to rendering packages.  This code is not currently used and
+  will likely change quite a bit in the future.
+
+\item[\filnm{src/lib/math/linpackd}] This library contains double precision
+  C versions of some of the linpack routines.
+
+\item[\filnm{src/lib/math/scmat}] This library defines an abstract matrix
+  class and supplies concrete implementations of parallel replicated and
+  distributed matrices.
+
+\item[\filnm{src/lib/math/optimize}] The optimize library provides classes
+  to perform optimizations and base classes for objects that compute a
+  scalar quantity as a function of several coordinates.
+
+\item[\filnm{src/lib/math/topology}] These utility classes will be replaced
+  in a future release of SC.
+
+\item[\filnm{src/lib/math/isosurf}] This library can be used to compute a
+  triangulated approximation to an isosurface.
+
+\item[\filnm{src/lib/math/symmetry}] The symmetry library contains classes
+  useful for describing point group symmetry.
+
+\item[\filnm{src/lib/chemistry/molecule}] This library has classes to
+  describe molecules and internal molecular coordinate systems. A base
+  class for classes that map the molecular coordinates to an energy is
+  provided to permit the optimization of the molecular coordinates.
+  The internals of many of these classes will be revised in the
+  next release.
+
+\item[\filnm{src/lib/chemistry/solvent}]  This code can be used to
+  describe solvated molecules.  It is still in its infancy and
+  is not yet used by any other part of SC.
+
+\item[\filnm{src/lib/chemistry/qc/basis}] The basis library has classes
+  that describe Gaussian basis sets and base classes for libraries that
+  compute integrals involving these functions.
+
+\item[\filnm{src/lib/chemistry/qc/oint3}] This library is comprised of
+  machine generated code that is only used by the intv3 library.
+
+\item[\filnm{src/lib/chemistry/qc/intv3}] The intv3 library computes
+  integrals involving Gaussian basis functions.
+
+\item[\filnm{src/lib/chemistry/qc/wfn}] The wfn library contains base
+  classes for classes that, given a molecule and a basis set, compute the
+  energy and other properties of the molecule.
+
+\item[\filnm{src/lib/chemistry/qc/scf}] The scf library is used to compute
+  Hartree-Fock energies and gradients.
+
+\item[\filnm{src/lib/chemistry/qc/mbpt}] This library computes second-order
+  perturbation theory energies and gradients.
+
+\item[\filnm{src/lib/chemistry/qc/psi}] This provides an example of
+  interfacing MPQC to an external quantum chemistry package.  It
+  is not compiled by default.
+
+\item[\filnm{src/lib/chemistry/qc/g92}] This is another example of
+  interfacing MPQC to an external quantum chemistry package.  It
+  is not compiled by default and is out-of-date.  The psi library
+  provides a better example.
+
+\item[\filnm{src/bin/mpqc}]
+  The Massively Parallel Quantum Chemistry program is in this directory.
+
+\item[\filnm{src/bin/molrender}]
+  This is a (probably nonfunctional) example of the use of the render
+  library.
+
+\item[\filnm{src/bin/orbixme}]
+  An example of using Corba and SC.  This hasn't been used in quite
+  some time and probably won't compile.
+
+\end{description}
 
 \part{Utility Libraries}
 

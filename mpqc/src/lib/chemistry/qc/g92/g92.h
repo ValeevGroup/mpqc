@@ -78,10 +78,13 @@ public:
   
   void save_data_state(StateOut&);
 
-  void print(SCostream& =SCostream::cout);
+  void print(ostream& =cout);
   
   RefSCMatrix eigenvectors();
   int do_eigenvectors(int);
+
+  RefDiagSCMatrix eigenvalues();
+  double occupation(int irrep, int vectornum);
 
   RefSCMatrix normal_modes();
   RefSCVector frequencies();

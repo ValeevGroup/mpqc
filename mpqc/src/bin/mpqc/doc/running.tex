@@ -3,12 +3,15 @@
 \label{running mpqc}
 \index{running MPQC}
 
-MPQC runs on Linux workstations, Silicon Graphics computers,
-and more.
+This chapter explains how to run mpqc in a variety of environments.
 
 \section{Command Line Options}
 
-  MPQC recognizes the following command line options:
+  MPQC recognizes the following command line options:\footnote{
+Some MPI environments do not pass the command line to slave programs, but
+supply it when MPI\_Init is called.  To make MPQC call MPI\_Init on start-up,
+instead of when an MPIMessageGrp is created, name the executable
+\exenm{mpqc-mpi}.}
 
 \begin{description}
 \item[{\ttfamily -f}] The name of the input file.  The default is

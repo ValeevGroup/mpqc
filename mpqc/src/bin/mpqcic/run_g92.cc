@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <strings.h>
+#include <string.h>
 
 #include <util/keyval/keyval.h>
 #include <math/scmat/matrix.h>

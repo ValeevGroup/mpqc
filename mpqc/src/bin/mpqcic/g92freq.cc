@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <strings.h>
+#include <string.h>
 
 #include <util/keyval/keyval.h>
 #include <math/scmat/matrix.h>
@@ -280,13 +280,15 @@ parse_g92_freq(char *prefix,char *parse_string, RefMolecule mole,
     int count1=0, count2=0, total_count=0;
 
     // Now read in natoms lines of forces
-    for (int i=0; i<nsets; i++)
+    int i;
+    for (i=0; i<nsets; i++)
     {
         int nrows=(i==nsets-1 && (nmodes%5))?nmodes%5:5;
 
         fgets(line,120,fp_g92_output);
         word = strtok(line," ");
-        for (int j=0;j<nrows;j++)
+        int j;
+        for (j=0;j<nrows;j++)
         {
             count1++;
             if (strtol(word, NULL, 10) != count1)
@@ -366,7 +368,7 @@ parse_g92_freq(char *prefix,char *parse_string, RefMolecule mole,
     for (int ii=1; ii<natoms*3;ii++)
         ioff[ii]=ioff[ii-1]+3*natoms-ii+1;
 
-    nsets=3.*natoms/5;
+    nsets=(int)(3.*natoms/5);
     if (nmodes%5) nsets++;
     for (i=0; i<nsets; i++)
     {

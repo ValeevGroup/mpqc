@@ -118,7 +118,7 @@ main(int argc, char *argv[])
   if (make_pdb)
     Geom_write_pdb(keyval,mol,"initial geometry");
 
-  gradient = mol->dim_natom3()->create_vector();
+  gradient = Geom_dim_natom3()->create_vector();
   
   RefKeyVal g92kv = new PrefixKeyVal(":g92 :default",keyval);
 
@@ -180,7 +180,7 @@ main(int argc, char *argv[])
     double energy;
     int nmodes, nimag;
 
-    RefSCDimension dim1 = mol->dim_natom3();
+    RefSCDimension dim1 = Geom_dim_natom3();
     RefSCDimension dim2 = new LocalSCDimension(dim1->n()-6);
     RefSCDimension dim3 = new LocalSCDimension(dim1->n() * dim2->n());
     RefSCVector normals = dim3->create_vector();

@@ -451,38 +451,13 @@ int DescribedClass::class_version() const
     return class_desc()->version();
 }
 
-RefDescribedClassBase::RefDescribedClassBase()
+void RefDescribedClassBase::require_nonnull() const
 {
-}
-RefDescribedClassBase::~RefDescribedClassBase()
-{
-}
-int RefDescribedClassBase::operator==( const RefDescribedClassBase &a) const {
-  return parentpointer() == a.parentpointer();
-};
-int RefDescribedClassBase::operator!=( const RefDescribedClassBase &a) const {
-  return parentpointer() != a.parentpointer();
-};
-int RefDescribedClassBase::operator>=( const RefDescribedClassBase &a) const {
-  return parentpointer() >= a.parentpointer();
-};
-int RefDescribedClassBase::operator<=( const RefDescribedClassBase &a) const {
-  return parentpointer() <= a.parentpointer();
-};
-int RefDescribedClassBase::operator>( const RefDescribedClassBase &a) const {
-  return parentpointer() > a.parentpointer();
-};
-int RefDescribedClassBase::operator<( const RefDescribedClassBase &a) const {
-  return parentpointer() < a.parentpointer();
-};
-
-RefDescribedClassBase::RefDescribedClassBase(const RefDescribedClassBase&)
-{
-}
-RefDescribedClassBase&
-RefDescribedClassBase::operator=(const RefDescribedClassBase&)
-{
-  return *this;
+  if (parentpointer() == 0) {
+      fprintf(stderr,"RefDescribedClass: needed a nonnull pointer but got"
+              "null\n");
+      abort();
+    }
 }
 
 DescribedClass_REF_def(DescribedClass);

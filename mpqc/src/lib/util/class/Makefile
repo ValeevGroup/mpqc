@@ -21,7 +21,8 @@ GENSRC = $(GENCXXSRC)
 
 INC = class.h
 GENINC = classMap.h classImplMap.h classkeySet.h classkeyImplSet.h \
-         classRAVLMap.h classkeyAVLSet.h
+         classRAVLMap.h classkeyAVLSet.h \
+         clasmacr.h
 # classSLStack.h classStack.h classlSLList.h classSLList.h
 
 
@@ -35,6 +36,11 @@ DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
 default:: $(DEPENDINCLUDE)
 default:: libclass.a
+
+interface:: $(DEPENDINCLUDE)
+
+clasmacr.h: clastmpl.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > clasmacr.h
 
 # a test program
 classtest: classtest.cc libclass.a ../container/libcontainer.a

@@ -138,158 +138,32 @@ class DescribedClass : public VRefCount {
     int class_version() const;
   };
 
-class  RefDescribedClassBase {
+class  RefDescribedClassBase: private RefBase {
   public:
-    RefDescribedClassBase();
-    RefDescribedClassBase(const RefDescribedClassBase&);
-    RefDescribedClassBase& operator=(const RefDescribedClassBase&);
+    RefDescribedClassBase() {}
     virtual DescribedClass* parentpointer() const = 0;
-    virtual ~RefDescribedClassBase ();
-    int operator==( const RefDescribedClassBase &a) const;
-    int operator!=( const RefDescribedClassBase &a) const;
-    int operator>=( const RefDescribedClassBase &a) const;
-    int operator<=( const RefDescribedClassBase &a) const;
-    int operator>( const RefDescribedClassBase &a) const;
-    int operator<( const RefDescribedClassBase &a) const;
+    virtual ~RefDescribedClassBase () {}
+    void warn ( const char * msg) const { RefBase::warn(msg); }
+    void warn_ref_to_stack() const { RefBase::warn_ref_to_stack(); }
+    void warn_skip_stack_delete() const { RefBase::warn_skip_stack_delete(); }
+    void warn_bad_ref_count() const { RefBase::warn_bad_ref_count(); }
+    void ref_info(VRefCount*p,FILE*fp) const { RefBase::ref_info(p,fp); }
+    void require_nonnull() const;
 };
 
-#ifdef TYPE_CONV_BUG
-#  define DCREF_TYPE_CAST_DEC(refname,T)
-#  define DCREF_TYPE_CAST_DEF(refname,T)
-#else
-#  define DCREF_TYPE_CAST_DEC(refname,T) operator T*() const
-#  define DCREF_TYPE_CAST_DEF(refname,T) \
-    refname :: operator T*() const { return p; }
-#endif
+// These files declare template and macro smart pointer classes for
+// DescribedClass objects.  They use macros from util/container/ref.h.
+#include <util/class/clastmpl.h>
+#include <util/class/clasmacr.h>
 
-
-// this uses macros from util/container/ref.h
-#define DescribedClass_named_REF_dec(refname,T)				      \
-class  refname : public RefDescribedClassBase  {			      \
-  private:								      \
-    T* p;								      \
-  public:								      \
-    DescribedClass* parentpointer() const;			      \
-    T* operator->() const;					      \
-    T* pointer() const;						      \
-    DCREF_TYPE_CAST_DEC(refname,T);			\
-    T& operator *() const;					      \
-    refname ();								      \
-    refname (T*a);							      \
-    refname (const refname &a);						      \
-    refname (const RefDescribedClassBase &);				      \
-    ~refname ();							      \
-    int null() const;							      \
-    int nonnull() const;						      \
-    void require_nonnull() const;					      \
-    refname& operator=(T* cr);						      \
-    refname& operator=(const RefDescribedClassBase & c);		      \
-    refname& operator=(const refname & c);				      \
-    void assign_pointer(T* cr);						      \
-    void ref_info(FILE*fp=stdout) const;				      \
-    void warn(const char *) const;					      \
-    void clear();							      \
-    void check_pointer() const;						      \
-}
-#define DescribedClass_named_REF_def(refname,T)				      \
-T* refname :: operator->() const { return p; };			      \
-T* refname :: pointer() const { return p; };			      \
-DCREF_TYPE_CAST_DEF(refname,T);				\
-T& refname :: operator *() const { return *p; };			      \
-int refname :: null() const { return p == 0; };				      \
-int refname :: nonnull() const { return p != 0; };			      \
-void refname :: require_nonnull() const					      \
-{									      \
-  if (p == 0) {								      \
-      fprintf(stderr,#refname": have null reference where nonnull needed\n"); \
-      abort();								      \
-    }									      \
-};									      \
-DescribedClass* refname :: parentpointer() const { return p; }	      \
-refname :: refname (): p(0) {}						      \
-refname :: refname (T*a): p(a)						      \
-{									      \
-  if (DO_REF_CHECK_STACK(p)) {						      \
-      warn("Ref" # T ": creating a reference to stack data");		      \
-    }									      \
-  if (p) p->reference();						      \
-}									      \
-refname :: refname (const refname &a): p(a.p)				      \
-{									      \
-  if (p) p->reference();						      \
-}									      \
-refname :: refname (const RefDescribedClassBase &a)			      \
-{									      \
-  p = T::castdown((DescribedClass*)a.parentpointer());		              \
-  if (p) p->reference();						      \
-}									      \
-refname :: ~refname ()							      \
-{									      \
-  clear();								      \
-}									      \
-void									      \
-refname :: clear()							      \
-{									      \
-  if (p && p->dereference()<=0) {					      \
-      if (DO_REF_CHECK_STACK(p)) {					      \
-          warn("Ref" # T ": skipping delete of object on the stack");	      \
-        }								      \
-      else {								      \
-           delete p;							      \
-         }								      \
-    }									      \
-  p = 0;								      \
-}									      \
-void									      \
-refname :: warn ( const char * msg) const				      \
-{									      \
-  fprintf(stderr,"WARNING: %s\n",msg);					      \
-}									      \
-refname& refname :: operator=(const refname & c)			      \
-{									      \
-  if (c.p) c.p->reference();						      \
-  clear();								      \
-  p=c.p;								      \
-  return *this;								      \
-}									      \
-refname& refname :: operator=(T* cr)					      \
-{									      \
-  if (cr) cr->reference();						      \
-  clear();								      \
-  p = cr;								      \
-  return *this;								      \
-}									      \
-refname& refname :: operator=(const RefDescribedClassBase & c)		      \
-{									      \
-  T* cr = T::castdown((DescribedClass*)c.parentpointer());		      \
-  if (cr) cr->reference();						      \
-  clear();								      \
-  p = cr;								      \
-  return *this;								      \
-}									      \
-void refname :: assign_pointer(T* cr)					      \
-{									      \
-  if (cr) cr->reference();						      \
-  clear();								      \
-  p = cr;								      \
-}									      \
-void refname :: check_pointer() const					      \
-{									      \
-  if (p && p->nreference() <= 0) {					      \
-      warn("Ref" # T ": bad reference count in referenced object\n");	      \
-    }									      \
-}									      \
-void refname :: ref_info(FILE*fp) const					      \
-{									      \
-  if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
-  else fprintf(fp,"reference is null\n");				      \
-}
+#define DescribedClass_named_REF_dec(name,T) DCRef_declare(T); \
+                                             typedef class DCRef ## T name;
+#define DescribedClass_named_REF_def(name,T)
 
 // These macros choose a default name for the reference class formed from
 // "Ref" followed by the type name.
-#define DescribedClass_REF_dec(T) DescribedClass_named_REF_dec(Ref ## T, T)
-#define DescribedClass_REF_def(T) DescribedClass_named_REF_def(Ref ## T, T)
-
+#define DescribedClass_REF_dec(T) DescribedClass_named_REF_dec(Ref ## T,T)
+#define DescribedClass_REF_def(T) DescribedClass_named_REF_def(Ref ## T,T)
 
 DescribedClass_REF_dec(DescribedClass);
 ARRAY_dec(RefDescribedClass);

@@ -285,7 +285,7 @@ void R12IntEvalInfo::eigen2_()
   RefSCMatrix so_ao = plist->sotoao();
   RefSCMatrix vecs = so_ao.t() * vecs_so_mo1;
 
-  mo_space_ = new MOIndexSpace("symmetry-blocked MOs", vecs, bs_);
+  mo_space_ = new MOIndexSpace("symmetry-blocked MOs", vecs, bs_, vals, 0, 0, MOIndexSpace::symmetry);
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
   occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, noso_ - nocc_);
   if (nfzc_ == 0)

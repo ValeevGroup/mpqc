@@ -73,7 +73,7 @@ private:
   int full_rank_;     // Rank of the full space, i.e. number of MOs
   int nblocks_;       // Number of blocks
   vector<int> nmo_;        // Number of MOs in each block
-  vector<int> offsets_;    // Full-space index of the first MO in each block
+  vector<int> offsets_;    // Index of the first MO in each block relative to the first MO of that block in full space
   vector<int> map_to_full_space_;  // Full-space index
 
   IndexOrder moorder_;
@@ -111,7 +111,7 @@ public:
       basis set, "eigenvalues" and the number of orbitals with lowest (nfzc) and highest (nfzv) eigenvalues
       to be dropped. The orbitals in the constructed space are ordered by energy. */
   MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
-               const RefDiagSCMatrix& evals, int nfzc, int nfzv);
+               const RefDiagSCMatrix& evals, int nfzc, int nfzv, IndexOrder moorder = energy);
   /** This constructor should be used when the MOIndexSpace object is the full orbital space.
       The orbitals will be symmetry-blocked. */
   MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis);

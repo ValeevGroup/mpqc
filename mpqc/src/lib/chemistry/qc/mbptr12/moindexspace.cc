@@ -59,8 +59,8 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
 }
 
 MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
-                           const RefDiagSCMatrix& evals, int nfzc, int nfzv) :
-  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(energy)
+                           const RefDiagSCMatrix& evals, int nfzc, int nfzv, IndexOrder moorder) :
+  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(moorder)
 {
   if (evals.null())
     throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- null eigenvalues matrix");

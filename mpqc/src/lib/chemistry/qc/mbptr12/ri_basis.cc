@@ -162,6 +162,7 @@ R12IntEvalInfo::abs_spans_obs_()
 void
 R12IntEvalInfo::construct_ortho_comp_svd_()
 {
+   construct_orthog_aux_();
    construct_orthog_ri_();
 
    ExEnv::out0() << indent << "SVD-projecting out OBS from " << ribs_space_->name()
@@ -272,12 +273,12 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
 
       C12_b.svd(U,Sigma,V);
 
-      // Transform V into AO(RI) basis and transpose so that vectors are in rows
+      // Transform V into AO basis and transpose so that vectors are in rows
       RefSCMatrix orthog2_b = orthog2.block(b);
       V = (orthog2_b*V).t();
 
-      // Figure out how many sigmas are too small, i.e. how many vectors from RI overlap
-      // only weakly with OBS.
+      // Figure out how many sigmas are too small, i.e. how many vectors from space2 overlap
+      // only weakly with space1.
       // NOTE: Sigma values returned by svd() are in descending order
       int nzeros = 0;
       for(int s=0; s<nsigmas; s++) {
@@ -355,7 +356,7 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] vecs;
   delete[] nvec_per_block;
 
-  Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(name,orthog2,bs_ri_);
+  Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(name,orthog2,space2->basis());
   
   return orthog_comp_space;
 }

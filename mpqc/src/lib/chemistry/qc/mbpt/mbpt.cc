@@ -204,7 +204,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
   restart_orbital_memgrp_ = keyval->intvalue("restart_orbital_memgrp");
 
   KeyValValueint default_dynamic(0);
-  dynamic_ = keyval->intvalue("dynamic", default_dynamic);
+  dynamic_ = keyval->booleanvalue("dynamic", default_dynamic);
 
   cphf_epsilon_ = keyval->doublevalue("cphf_epsilon",KeyValValuedouble(1.e-8));
 

@@ -115,9 +115,13 @@ class Wavefunction: public MolecularEnergy {
         computes the two electron integrals.  The default is a IntegralV3
         object.
 
-        <dt><tt>symm_orthog</tt><dd> If true, symmetric orthogonalization
-        is used; otherwise canonical orthogonalization is used.  The
-        default is true.
+        <dt><tt>orthog_method</tt><dd> This is a string that specifies the
+        orthogonalization method to be used.  It can be one one canonical,
+        gramschmidt, or symmetric.  The default is symmetric.
+
+        <dt><tt>lindep_tol</tt><dd> The tolerance used to detect linearly
+        dependent basis functions.  The precise meaning depends on the
+        orthogonalization method.  The default value is 1e-8.
 
         <dt><tt>print_nao</tt><dd> This specifies a boolean value.  If true
         the natural atomic orbitals will be printed.  Not all wavefunction

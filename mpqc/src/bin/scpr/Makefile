@@ -33,8 +33,8 @@ scpr: $(BINOBJ) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: scpr
-	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
+	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 
 clean::
 	/bin/rm -f scpr

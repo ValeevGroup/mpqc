@@ -364,6 +364,24 @@ CPPFLAGS=$withval
 echo Using extra include directories: $withval
 )
 
+if test $prefix = $ac_default_prefix -o $prefix = NONE; then
+  scincludedir=$includedir
+else
+  scincludedir=$includedir/mpqc/$SC_VERSION
+fi
+AC_ARG_WITH(sc-includedir,
+[  --with-sc-includedir       Specifies include file install subdir.],
+scincludedir=$withval
+)
+AC_SUBST(scincludedir)
+
+AC_ARG_WITH(include,
+[  --with-include          Specifies include directories (-Idir1 -Idir2).],
+EXTRAINCLUDE=$withval
+CPPFLAGS=$withval
+echo Using extra include directories: $withval
+)
+
 AC_ARG_WITH(libs,
 [  --with-libs             Specifies libraries (-llib1 -llib2).],
 LIBS=$withval
@@ -456,7 +474,7 @@ dnl --------- This is at the top since its likely to cause problems. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_TRY_COMPILE([#include <FlexLexer.h>],[],[echo -n
-],AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include]))
+],AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include; also make sure you are using the patched flex]))
 AC_LANG_RESTORE
 
 dnl -------- Checks for cross compiling. ----------

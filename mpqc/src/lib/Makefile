@@ -10,17 +10,17 @@ SUBDIRS = util math chemistry
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 
 install::
-	$(LIBTOOL) --finish $(libdir)
+	$(LIBTOOL) --finish $(installroot)$(libdir)
 
 install_inc::
-	$(INSTALL) $(INSTALLDIROPT) $(includedir)
-	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(includedir)
-	-$(INSTALL) $(INSTALLLIBOPT) *.h $(includedir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(installroot)$(includedir)
+	-$(INSTALL) $(INSTALLLIBOPT) *.h $(installroot)$(includedir)
 
 install_devel::
-	$(INSTALL) $(INSTALLDIROPT) $(includedir)
-	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(includedir)
-	-$(INSTALL) $(INSTALLLIBOPT) *.h $(includedir)
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(includedir)
+	-$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.h $(installroot)$(includedir)
+	-$(INSTALL) $(INSTALLLIBOPT) *.h $(installroot)$(includedir)
 
 distclean::
 	/bin/rm -f scconfig.h

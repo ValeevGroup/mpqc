@@ -8,7 +8,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install::
-	$(INSTALL) $(INSTALLDIROPT) $(scdatadir)/basis
-	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.kv $(scdatadir)/basis
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(scdatadir)/basis
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.kv $(installroot)$(scdatadir)/basis
 
 install_devel::

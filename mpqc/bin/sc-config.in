@@ -3,7 +3,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
-includedir=@includedir@
+includedir=@scincludedir@
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
 libs="@LIBDIRS@ @LIBS@ @FLIBS@"

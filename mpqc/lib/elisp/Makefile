@@ -8,5 +8,5 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 install::
-	$(INSTALL) $(INSTALLDIROPT) $(scdatadir)/elisp
-	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.el $(scdatadir)/elisp
+	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(scdatadir)/elisp
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.el $(installroot)$(scdatadir)/elisp

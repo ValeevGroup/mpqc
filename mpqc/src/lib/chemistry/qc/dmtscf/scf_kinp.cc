@@ -213,7 +213,7 @@ scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
       scf_info.nxyz = 0;
       scf_info.charge = (double*) malloc(sizeof(double)*scf_info.ncharge);
       scf_info.chargex = (double**) malloc(sizeof(double*)*scf_info.ncharge);
-      for (int i=0; i<scf_info.ncharge; i++) {
+      for (i=0; i<scf_info.ncharge; i++) {
           scf_info.chargex[i] = (double*) malloc(sizeof(double)*3);
           scf_info.charge[i] = keyval->doublevalue("charges:q",i);
           for (int j=0; j<3; j++) {

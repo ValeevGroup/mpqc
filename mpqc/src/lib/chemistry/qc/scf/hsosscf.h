@@ -43,10 +43,13 @@ class HSOSSCF: public SCF {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
+    RefPointGroup most_recent_pg_;
     int user_occupations_;
     int tndocc_;
     int tnsocc_;
     int nirrep_;
+    int *initial_ndocc_;
+    int *initial_nsocc_;
     int *ndocc_;
     int *nsocc_;
 

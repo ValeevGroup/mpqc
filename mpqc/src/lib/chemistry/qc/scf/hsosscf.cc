@@ -51,6 +51,7 @@
 ///////////////////////////////////////////////////////////////////////////
 // HSOSSCF
 
+#define VERSION 2
 #define CLASSNAME HSOSSCF
 #define PARENTS public SCF
 #include <util/class/classia.h>
@@ -84,6 +85,16 @@ HSOSSCF::HSOSSCF(StateIn& s) :
   s.get(nirrep_);
   s.get(ndocc_);
   s.get(nsocc_);
+  if (s.version(static_class_desc()) >= 2) {
+    s.get(initial_ndocc_);
+    s.get(initial_nsocc_);
+    most_recent_pg_.restore_state(s);
+  } else {
+    initial_ndocc_ = new int[nirrep_];
+    memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
+    initial_nsocc_ = new int[nirrep_];
+    memcpy(initial_nsocc_, nsocc_, sizeof(int)*nirrep_);
+  }
 
   // now take care of memory stuff
   init_mem(4);
@@ -153,9 +164,15 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
       ndocc_[i] = keyval->intvalue("docc",i);
       nsocc_[i] = keyval->intvalue("socc",i);
     }
+    initial_ndocc_ = new int[nirrep_];
+    memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
+    initial_nsocc_ = new int[nirrep_];
+    memcpy(initial_nsocc_, nsocc_, sizeof(int)*nirrep_);
   } else {
     ndocc_=0;
     nsocc_=0;
+    initial_ndocc_=0;
+    initial_nsocc_=0;
     user_occupations_=0;
     set_occupations(0);
   }
@@ -191,6 +208,8 @@ HSOSSCF::~HSOSSCF()
     delete[] nsocc_;
     nsocc_=0;
   }
+  delete[] initial_ndocc_;
+  delete[] initial_nsocc_;
 }
 
 void
@@ -210,6 +229,9 @@ HSOSSCF::save_data_state(StateOut& s)
   s.put(nirrep_);
   s.put(ndocc_,nirrep_);
   s.put(nsocc_,nirrep_);
+  s.put(initial_ndocc_,nirrep_);
+  s.put(initial_nsocc_,nirrep_);
+  most_recent_pg_.save_state(s);
 }
 
 double
@@ -289,18 +311,36 @@ HSOSSCF::print(ostream&o)
 void
 HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
-  if (user_occupations_)
-    return;
+  if (user_occupations_ || (initial_ndocc_ && initial_nsocc_ && ev.null())) {
+    if (form_occupations(ndocc_, initial_ndocc_)
+        &&form_occupations(nsocc_, initial_nsocc_)) {
+      most_recent_pg_ = new PointGroup(molecule()->point_group());
+      return;
+    }
+    delete[] ndocc_; ndocc_ = 0;
+    delete[] nsocc_; nsocc_ = 0;
+    cout << node0 << indent
+         << "HSOSSCF: WARNING: reforming occupation vectors from scratch"
+         << endl;
+  }
   
   if (nirrep_==1) {
-    if (!ndocc_) {
-      ndocc_=new int[1];
-      ndocc_[0] = tndocc_;
+    delete[] ndocc_;
+    ndocc_=new int[1];
+    ndocc_[0]=tndocc_;
+    if (!initial_ndocc_) {
+      initial_ndocc_=new int[1];
+      initial_ndocc_[0]=tndocc_;
     }
-    if (!nsocc_) {
-      nsocc_=new int[1];
-      nsocc_[0] = tnsocc_;
+
+    delete[] nsocc_;
+    nsocc_=new int[1];
+    nsocc_[0]=tnsocc_;
+    if (!initial_nsocc_) {
+      initial_nsocc_=new int[1];
+      initial_nsocc_[0]=tnsocc_;
     }
+
     return;
   }
   
@@ -391,7 +431,8 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
   if (!ndocc_) {
     ndocc_=newdocc;
     nsocc_=newsocc;
-  } else {
+  } else if (most_recent_pg_.nonnull()
+             && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
       if (ndocc_[i] != newdocc[i]) {
@@ -417,6 +458,22 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
     delete[] newdocc;
     delete[] newsocc;
   }
+
+  if (!initial_ndocc_
+      || initial_pg_->equiv(molecule()->point_group())) {
+    delete[] initial_ndocc_;
+    initial_ndocc_ = new int[nirrep_];
+    memcpy(initial_ndocc_,ndocc_,sizeof(int)*nirrep_);
+  }
+
+  if (!initial_nsocc_
+      || initial_pg_->equiv(molecule()->point_group())) {
+    delete[] initial_nsocc_;
+    initial_nsocc_ = new int[nirrep_];
+    memcpy(initial_nsocc_,nsocc_,sizeof(int)*nirrep_);
+  }
+
+  most_recent_pg_ = new PointGroup(molecule()->point_group());
 }
 
 void

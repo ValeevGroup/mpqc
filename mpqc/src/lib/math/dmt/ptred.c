@@ -1,6 +1,19 @@
 
+#include <stdio.h>
+#include <util/misc/libmisc.h>
 #include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 
+static void ptred_single();
+static void ptred_parallel();
+
+extern void dcopy_();
+extern void dscal_();
+extern void daxpy_();
+
+/*******************************************************************/
+
+void
 ptred2_(a, lda, n, m, p, id, d, e, z, work)
 int    *lda,*n,*m,*p,*id;
 double *a,*d,*e,*work,*z;
@@ -27,14 +40,15 @@ double *a,*d,*e,*work,*z;
 /*    matrix a will be destroyed                            */
 /* -------------------------------------------------------- */
 
+static void
 ptred_single(a,lda,n,m,p,id,d,e,z,work)
 int    *lda,*n,*m,*p,*id;
 double *a,*d,*e,*work,*z;
 {
    double  alpha, beta, gamma, dnrm2_(), ddot_(), alpha2; 
-   double oobeta,atemp;
-   int     i,j,k,l,ld,r,dpsize=sizeof(double);
-   int     nproc, slda, sn, sm, sp, sid, q, inc=1;
+   double  oobeta;
+   int     i,j,k,l,ld,r;
+   int     slda, sn, sm, sp, sid, q, inc=1;
 
    /* extract parameters and get  cube information */
 
@@ -177,6 +191,7 @@ double *a,*d,*e,*work,*z;
  *        eigenvector matrix until the next Householder vector is sent.
  */
 
+static void
 ptred_parallel(a, lda, n, m, p, id, d, e, z, work)
 int *lda, *n, *m, *p, *id;
 double *a, *d, *e, *work, *z;

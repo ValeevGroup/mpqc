@@ -16,44 +16,52 @@
 /*    ind[n]  - scratch space (integer)                     */
 /* -------------------------------------------------------- */
 
+#include <stdio.h>
+#include <math.h>
+
+#include <tmpl.h>
+#include <util/misc/libmisc.h>
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 
-#ifdef __STDC__
-static void update(double *z,int m,double c,double s);
-static double absol(double x);
-#else
-static void update();
 static double absol();
-#endif
+static double epslon ();
+static void update();
+static void pimtql2_ ();
+static void pflip();
+
+extern void ptred2_();
+extern void dcopy_();
+extern void dswap_();
 
  
+void
 diagonal_(tci,tn,tm,a,d,e,sigma,z,v,w,ind)
 int      *tci, *tn, *tm, *ind;
 double   *a, *d, *e, *sigma, *z, *v, *w;
 {
-   int m,n,id,i,info,dim,one=1;
-   int nproc,host;
+  int m,n,id,i,info,one=1;
+  int nproc,host;
 
-   who0(&nproc,&id,&host);
+  who0(&nproc,&id,&host);
 
-   n = *tn;
-   m = *tm;
+  n = *tn;
+  m = *tm;
 
-   /* reduce A to tridiagonal matrix using Householder transformation */
+ /* reduce A to tridiagonal matrix using Householder transformation */
 
-   ptred2_(&a[0],&n,&n,&m,&nproc,&id,&d[0],&e[0],&z[0],&w[0]);
+  ptred2_(&a[0],&n,&n,&m,&nproc,&id,&d[0],&e[0],&z[0],&w[0]);
 
-   /* diagonalize tridiagonal matrix using implicit QL method */
+ /* diagonalize tridiagonal matrix using implicit QL method */
 
-   pimtql2_(d,e,&n,z,&m,&info);
-   if (info != 0) message0("Nonzero ierr from psytqr");
+  pimtql2_(d,e,&n,z,&m,&info);
+  if (info != 0) message0("Nonzero ierr from psytqr");
 
-   /* rearrange the eigenvectors by transposition */
+ /* rearrange the eigenvectors by transposition */
 
-   i = m * n;
-   dcopy_(&i,&z[0],&one,&a[0],&one);
-   pflip(id,n,m,nproc,&a[0],&v[0],&w[0]);
+  i = m * n;
+  dcopy_(&i,&z[0],&one,&a[0],&one);
+  pflip(id,n,m,nproc,&a[0],&v[0],&w[0]);
 }
 
 /* ******************************************************** */
@@ -75,12 +83,13 @@ double   *a, *d, *e, *sigma, *z, *v, *w;
 /*              if nonzero, results may be inaccurate       */
 /* -------------------------------------------------------- */
 
+static void
 pimtql2_ (d,e,sn,z,sm,info)
 int    *sm,*sn,*info;
 double *d,*e,*z;
 {
-   double  c,s,t,q,u,p,h,sqrt(),epslon(),macheps;
-   int     n,m,i,j,k,ia,im,its,maxit=30,one=1;
+   double  c,s,t,q,u,p,h,macheps;
+   int     n,m,i,j,k,im,its,maxit=30,one=1;
 
    /* extract parameters */
 
@@ -173,51 +182,55 @@ static double
 absol(x)
 double x;
 {
-   if (x > 0.0) return(x);
-   else return(-x);
+ if (x > 0.0)
+   return(x);
+ else
+   return(-x);
 }
 
 /* ******************************************************** */
 /* Function : transpose matrix                              */
 /* -------------------------------------------------------- */
 
+static void
 pflip(id,n,m,p,ar,ac,w)
 int    id,n,m,p;
 double *ar,*ac,*w;
 {
-   int i,k,r,dpsize=sizeof(double),one=1;
+  int i,k,r,dpsize=sizeof(double),one=1;
 
-   i = 0;
-   for (k=0; k<n; k++) {
-      r = k % p;
-      if (id == r) {
-         dcopy_(&n,&ar[i],&m,&w[0],&one);
-         i++;
-      }
-      bcast0 (&w[0], n*dpsize, mtype_get(), r);
-      dcopy_(&m,&w[id],&p,&ac[k],&n);
-   }
+  i = 0;
+  for (k=0; k<n; k++) {
+    r = k % p;
+    if (id == r) {
+      dcopy_(&n,&ar[i],&m,&w[0],&one);
+      i++;
+    }
+    bcast0 (&w[0], n*dpsize, mtype_get(), r);
+    dcopy_(&m,&w[id],&p,&ac[k],&n);
+  }
 }
 
 /* ******************************************************** */
 /* Function : calculate machine epslon                      */
 /* -------------------------------------------------------- */
 
-double epslon (x) 
+static double
+epslon (x) 
 double x; 
 {
-   double a,b,c,eps; 
+  double a,b,c,eps; 
 
-   a = 4.0/3.0;
-   eps = 0.0;
-   while (eps == 0.0) {
-      b = a - 1.0; 
-      c = 3.0 * b; 
-      eps = c-1.0; 
-      if (eps < 0.0) eps = - eps;
-   }
-   if (x < 0.0) a = - x;
-   return(eps*a); 
+  a = 4.0/3.0;
+  eps = 0.0;
+  while (eps == 0.0) {
+    b = a - 1.0; 
+    c = 3.0 * b; 
+    eps = c-1.0; 
+    if (eps < 0.0) eps = - eps;
+  }
+  if (x < 0.0) a = - x;
+  return(eps*a); 
 }
 
 static void
@@ -229,12 +242,10 @@ double s;
 {
   register int i;
   register double p;
-  double *zm;
 
   for (i=0; i < m; i++) {
     p = z[i+m];
     z[m+i] = s * z[i] + c * p;
     z[i]   = c * z[i] - s * p;
-    }
   }
-
+}

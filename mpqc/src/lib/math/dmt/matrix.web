@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.5  1994/08/16 19:53:15  etseidl
+% Revision 1.6  1994/08/26 21:03:14  etseidl
+% fix some warnings
+%
+% Revision 1.5  1994/08/16  19:53:15  etseidl
 % fix small bug with null costvec
 %
 % Revision 1.4  1994/05/17  15:33:14  etseidl
@@ -1909,7 +1912,7 @@ The public entry points simply call the |private| routine
 
 @<Public I/O routines.@>=
 
-GLOBAL_FUNCTION dmt_write (fname, mat)
+GLOBAL_FUNCTION VOID dmt_write (fname, mat)
 char *fname;			/* Target file name. */
 mdescr mat;			/* The matrix to write. */
 {
@@ -1943,7 +1946,7 @@ is printed to |stdout|.
 
 
 @<Private support...@>=
-write_matrix (fname, m, binp)
+void write_matrix (fname, m, binp)
 char *fname; 			/* The name of the file to be written. */
 mdescr m;   			/* The matrix to write. */
 bool binp; 			/* Binary? 0/1 $\rightarrow$ text/binary. */
@@ -2070,6 +2073,10 @@ typedef long off_t;
 #ifdef UNICOS
 #include <sys/unistd.h>
 #define GOTONE
+#endif
+
+#ifdef linux
+#include <unistd.h>
 #endif
 
 #ifndef GOTONE
@@ -2879,6 +2886,7 @@ held columns of the matrix in the new distribution.
          nbasis / nproc + 1 : nbasis / nproc);
     int *indary = (int *) Malloc(nbasis * sizeof (int));
     int *ilocal = (int *) Malloc ((nlocal+1) * sizeof (int));
+    extern void diagonal_();
 
 @ Free the integer vector when we're done.
 @<Deallocate temporary storage...@>=

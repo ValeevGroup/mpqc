@@ -26,14 +26,14 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-UnixSignalSet::UnixSignalSet() :
-  save_sigset(0)
+UnixSignalSet::UnixSignalSet()
 {
   sigemptyset(&sigset);
+  sigemptyset(&save_sigset);
 }
 
 UnixSignalSet::UnixSignalSet(const sigset_t& s) :
-  sigset(s), save_sigset(0)
+  sigset(s)
 {
   sigprocmask(SIG_SETMASK,&sigset,&save_sigset);
   }

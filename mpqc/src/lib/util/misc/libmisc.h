@@ -11,7 +11,6 @@
 #include <util/misc/assert.h>
 #include <util/misc/memory.h>
 #include <util/misc/timer.h>
-#include <util/misc/machtype.gbl>
 #include <util/misc/ieee.h>
 
 #ifdef __cplusplus

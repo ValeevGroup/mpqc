@@ -41,6 +41,7 @@ MessageGrp::MessageGrp():
   classdesc_to_index_(-1),
   index_to_classdesc_(0)
 {
+  gop_max_ = 320000;
 }
 
 MessageGrp::~MessageGrp()

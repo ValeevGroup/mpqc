@@ -114,6 +114,9 @@
 /* Define if you have the ieee_get_fp_control function.  */
 #undef HAVE_IEEE_GET_FP_CONTROL
 
+/* Define if you have the setrlimit function.  */
+#undef HAVE_SETRLIMIT
+
 /* Define if you have functioning SYSV IPC.  */
 #undef HAVE_SYSV_IPC
 

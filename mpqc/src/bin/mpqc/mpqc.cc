@@ -41,6 +41,12 @@
 #include <sys/stat.h>
 #include <fstream.h>
 #include <strstream.h>
+#ifdef HAVE_SYS_RESOURCE_H
+#  include <sys/resource.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+#endif
 
 #include <util/options/GetLongOpt.h>
 #include <util/misc/newstring.h>
@@ -178,6 +184,13 @@ main(int argc, char *argv[])
 
 #if defined(HAVE_IEEE_SET_FP_CONTROL) && defined(HAVE_IEEE_GET_FP_CONTROL)
   signal(SIGFPE,sigfpe_handler);
+#endif
+
+#if defined(HAVE_SETRLIMIT)
+  struct rlimit rlim;
+  rlim.rlim_cur = 0;
+  rlim.rlim_max = 0;
+  setrlimit(RLIMIT_CORE,&rlim);
 #endif
 
   ExEnv::init(argc, argv);

@@ -322,3 +322,151 @@ TwoBodyIntIter::current_quartet()
 
   return sqi;
 }
+
+///////////////////////////////////////////////////////////////////////
+
+TwoBodyDerivInt::TwoBodyDerivInt(const RefGaussianBasisSet&b) :
+  bs1(b), bs2(b), bs3(b), bs4(b)
+{
+  // allocate a buffer
+  int biggest_shell = b->max_nfunction_in_shell();
+  biggest_shell *= biggest_shell;
+  biggest_shell *= biggest_shell;
+  biggest_shell *= 12;
+
+  if (biggest_shell) {
+    buffer_ = new double[biggest_shell];
+  } else {
+    buffer_ = 0;
+  }
+
+  store1_=store2_=1;
+  int_store_=0;
+}
+
+TwoBodyDerivInt::TwoBodyDerivInt(const RefGaussianBasisSet&b1,
+                                 const RefGaussianBasisSet&b2,
+                                 const RefGaussianBasisSet&b3,
+                                 const RefGaussianBasisSet&b4) :
+  bs1(b1), bs2(b2), bs3(b3), bs4(b4)
+{
+  // allocate a buffer
+  int biggest_shell = b1->max_nfunction_in_shell() *
+                      b2->max_nfunction_in_shell() *
+                      b3->max_nfunction_in_shell() *
+                      b4->max_nfunction_in_shell() * 12;
+    
+  if (biggest_shell) {
+    buffer_ = new double[biggest_shell];
+  } else {
+    buffer_ = 0;
+  }
+
+  store1_=store2_=1;
+  int_store_=0;
+}
+
+TwoBodyDerivInt::~TwoBodyDerivInt()
+{
+  if (buffer_) {
+    delete[] buffer_;
+    buffer_=0;
+  }
+}
+
+int
+TwoBodyDerivInt::nbasis() const
+{
+  return bs1->nbasis();
+}
+
+int
+TwoBodyDerivInt::nbasis1() const
+{
+  return bs1->nbasis();
+}
+
+int
+TwoBodyDerivInt::nbasis2() const
+{
+  return bs2->nbasis();
+}
+
+int
+TwoBodyDerivInt::nbasis3() const
+{
+  return bs3->nbasis();
+}
+
+int
+TwoBodyDerivInt::nbasis4() const
+{
+  return bs4->nbasis();
+}
+
+int
+TwoBodyDerivInt::nshell() const
+{
+  return bs1->nshell();
+}
+
+int
+TwoBodyDerivInt::nshell1() const
+{
+  return bs1->nshell();
+}
+
+int
+TwoBodyDerivInt::nshell2() const
+{
+  return bs2->nshell();
+}
+
+int
+TwoBodyDerivInt::nshell3() const
+{
+  return bs3->nshell();
+}
+
+int
+TwoBodyDerivInt::nshell4() const
+{
+  return bs4->nshell();
+}
+
+RefGaussianBasisSet
+TwoBodyDerivInt::basis()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+TwoBodyDerivInt::basis1()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+TwoBodyDerivInt::basis2()
+{
+  return bs2;
+}
+
+RefGaussianBasisSet
+TwoBodyDerivInt::basis3()
+{
+  return bs3;
+}
+
+RefGaussianBasisSet
+TwoBodyDerivInt::basis4()
+{
+  return bs4;
+}
+
+const double *
+TwoBodyDerivInt::buffer() const
+{
+  return buffer_;
+}
+

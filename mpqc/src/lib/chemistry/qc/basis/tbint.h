@@ -152,4 +152,52 @@ class TwoBodyIntIter {
     ShellQuartetIter& current_quartet();
 };
 
+////////////////////////////////////////////////////////////////////////////
+
+class TwoBodyDerivInt : public VRefCount {
+  protected:
+    int store1_;
+    int store2_;
+    int int_store_;
+    
+    RefGaussianBasisSet bs1;
+    RefGaussianBasisSet bs2;
+    RefGaussianBasisSet bs3;
+    RefGaussianBasisSet bs4;
+
+    double *buffer_;
+
+  public:
+    TwoBodyDerivInt(const RefGaussianBasisSet&b);
+    TwoBodyDerivInt(const RefGaussianBasisSet&b1,
+                    const RefGaussianBasisSet&b2,
+                    const RefGaussianBasisSet&b3,
+                    const RefGaussianBasisSet&b4);
+    virtual ~TwoBodyDerivInt();
+  
+    int nbasis() const;
+    int nbasis1() const;
+    int nbasis2() const;
+    int nbasis3() const;
+    int nbasis4() const;
+
+    int nshell() const;
+    int nshell1() const;
+    int nshell2() const;
+    int nshell3() const;
+    int nshell4() const;
+
+    RefGaussianBasisSet basis();
+    RefGaussianBasisSet basis1();
+    RefGaussianBasisSet basis2();
+    RefGaussianBasisSet basis3();
+    RefGaussianBasisSet basis4();
+
+    const double * buffer() const;
+    
+    virtual void compute_shell(int,int,int,int) = 0;
+};
+
+REF_dec(TwoBodyDerivInt);
+
 #endif

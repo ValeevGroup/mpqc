@@ -191,4 +191,39 @@ class OneBody3IntOp: public SCElementOp3 {
 
 };
 
+////////////////////////////////////////////////////////////////////////////
+
+class OneBodyDerivInt : public VRefCount {
+  protected:
+    RefGaussianBasisSet bs1;
+    RefGaussianBasisSet bs2;
+
+    double *buffer_;
+
+  public:
+    OneBodyDerivInt(const RefGaussianBasisSet&b);
+    OneBodyDerivInt(const RefGaussianBasisSet&b1,
+                    const RefGaussianBasisSet&b2);
+    virtual ~OneBodyDerivInt();
+  
+    int nbasis() const;
+    int nbasis1() const;
+    int nbasis2() const;
+
+    int nshell() const;
+    int nshell1() const;
+    int nshell2() const;
+
+    RefGaussianBasisSet basis();
+    RefGaussianBasisSet basis1();
+    RefGaussianBasisSet basis2();
+
+    const double * buffer() const;
+    
+    virtual void compute_hcore_shell(int center, int ish, int jsh) = 0;
+    virtual void compute_overlap_shell(int center, int ish, int jsh) = 0;
+};
+
+REF_dec(OneBodyDerivInt);
+
 #endif

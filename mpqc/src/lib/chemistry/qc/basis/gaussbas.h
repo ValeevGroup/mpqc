@@ -63,8 +63,11 @@ class GaussianBasisSet: public SavableState
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();
+
     void save_data_state(StateOut&);
+
     const char* name() const;
+
     RefMolecule molecule() const { return molecule_; }
     RefSCMatrixKit matrixkit() { return matrixkit_; }
     RefSCDimension basisdim() { return basisdim_; }

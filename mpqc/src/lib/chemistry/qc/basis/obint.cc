@@ -486,3 +486,102 @@ OneBody3IntOp::has_side_effects_in_arg2()
 {
   return 1;
 }
+
+///////////////////////////////////////////////////////////////////////
+
+OneBodyDerivInt::OneBodyDerivInt(const RefGaussianBasisSet&b) :
+  bs1(b), bs2(b)
+{
+  // allocate a buffer
+  int biggest_shell = b->max_nfunction_in_shell();
+  biggest_shell *= biggest_shell * 3;
+
+  if (biggest_shell) {
+    buffer_ = new double[biggest_shell];
+  } else {
+    buffer_ = 0;
+  }
+}
+
+OneBodyDerivInt::OneBodyDerivInt(const RefGaussianBasisSet&b1,
+                                 const RefGaussianBasisSet&b2) :
+  bs1(b1), bs2(b2)
+{
+  // allocate a buffer
+  int biggest_shell = 3 * b1->max_nfunction_in_shell() *
+                          b2->max_nfunction_in_shell();
+    
+  if (biggest_shell) {
+    buffer_ = new double[biggest_shell];
+  } else {
+    buffer_ = 0;
+  }
+}
+
+OneBodyDerivInt::~OneBodyDerivInt()
+{
+  if (buffer_) {
+    delete[] buffer_;
+    buffer_=0;
+  }
+}
+
+int
+OneBodyDerivInt::nbasis() const
+{
+  return bs1->nbasis();
+}
+
+int
+OneBodyDerivInt::nbasis1() const
+{
+  return bs1->nbasis();
+}
+
+int
+OneBodyDerivInt::nbasis2() const
+{
+  return bs2->nbasis();
+}
+
+int
+OneBodyDerivInt::nshell() const
+{
+  return bs1->nshell();
+}
+
+int
+OneBodyDerivInt::nshell1() const
+{
+  return bs1->nshell();
+}
+
+int
+OneBodyDerivInt::nshell2() const
+{
+  return bs2->nshell();
+}
+
+RefGaussianBasisSet
+OneBodyDerivInt::basis()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+OneBodyDerivInt::basis1()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+OneBodyDerivInt::basis2()
+{
+  return bs2;
+}
+
+const double *
+OneBodyDerivInt::buffer() const
+{
+  return buffer_;
+}

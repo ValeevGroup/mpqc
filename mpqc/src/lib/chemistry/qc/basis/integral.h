@@ -12,7 +12,9 @@ class SymmetryOperation;
 class RefPetiteList;
 class RefOneBodyInt;
 class RefOneBodyIntIter;
+class RefOneBodyDerivInt;
 class RefTwoBodyInt;
+class RefTwoBodyDerivInt;
 class RefSymmSCMatrix;
 class ShellRotation;
 class CartesianIter;
@@ -90,11 +92,21 @@ class Integral : public SavableState {
                                      const RefGaussianBasisSet&,
                                      double *origin = 0) =0;
 
+    virtual RefOneBodyDerivInt deriv_int(const RefGaussianBasisSet&) =0;
+    virtual RefOneBodyDerivInt deriv_int(const RefGaussianBasisSet&,
+                                         const RefGaussianBasisSet&) =0;
+    
     virtual RefTwoBodyInt two_body_int(const RefGaussianBasisSet&) =0;
     virtual RefTwoBodyInt two_body_int(const RefGaussianBasisSet&,
                                        const RefGaussianBasisSet&,
                                        const RefGaussianBasisSet&,
                                        const RefGaussianBasisSet&) =0;
+    
+    virtual RefTwoBodyDerivInt two_body_deriv_int(const RefGaussianBasisSet&) =0;
+    virtual RefTwoBodyDerivInt two_body_deriv_int(const RefGaussianBasisSet&,
+                                                  const RefGaussianBasisSet&,
+                                                  const RefGaussianBasisSet&,
+                                                  const RefGaussianBasisSet&) =0;
 };
 SavableState_REF_dec(Integral);
 

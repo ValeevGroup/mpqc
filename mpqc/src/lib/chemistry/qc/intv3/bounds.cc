@@ -43,7 +43,9 @@ find_max(double *int_buffer,int nint)
   int i;
   double max = 0.0;
   for (i=0; i<nint; i++) {
-    if (fabs(int_buffer[i]) > max) max = fabs(int_buffer[i]);
+    double val = int_buffer[i];
+    if (val<0) val = -val;
+    if (val > max) max = val;
     }
   return max;
   }

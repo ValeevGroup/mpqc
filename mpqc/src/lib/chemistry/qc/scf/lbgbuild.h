@@ -174,11 +174,11 @@ class LocalLBGBuild : public GBuild<T> {
                   int lend = (e34 ? ((e13e24)&&(K==I) ? J : K)
                               : ((e13e24)&&(K==I)) ? J : nl-1);
                   for (L=0, ll=fl; L <= lend; L++, ll++, index++) {
+                    double pki_int = intbuf[index];
 
-                    if (fabs(intbuf[index]) < 1.0e-15)
+                    if ((pki_int>0?pki_int:-pki_int) < 1.0e-15)
                       continue;
 
-                    double pki_int = intbuf[index];
                     if (qijkl > 1)
                       pki_int *= qijkl;
 

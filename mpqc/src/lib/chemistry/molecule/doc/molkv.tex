@@ -124,10 +124,14 @@ terms of internal coordinates.
     that can be varied. If this is not given, the variable coordinates will
     be generated.
 
-  \item[\keywd{followed}] Gives a \clsnmref{SetIntCoor}
-    \htmlref{object}{pkvobject} that specifies coordinates to include in
-    the variable coordinate list.  The remaining coordinates will be
-    automatically generated.  The default is no followed coordinates.
+  \item[\keywd{followed}] Gives a \clsnmref{IntCoor}
+    \htmlref{object}{pkvobject} that specifies a coordinate to used as the
+    first coordinate in the variable coordinate list.  The remaining
+    coordinates will be automatically generated.  The default is no
+    followed coordinate.  This option is usually used to set the initial
+    search direction for a transition state optimization, where it is used
+    in conjunction with the \keywd{mode\_following} keyword read by the
+    \clsnmref{EFCOpt} class.
 
   \item[\keywd{fixed}] Gives a \clsnmref{SetIntCoor}
     \htmlref{object}{pkvobject} that specifies the internal coordinates

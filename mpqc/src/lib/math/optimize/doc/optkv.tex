@@ -158,7 +158,10 @@ eigenvector following as described by Baker in J. Comput. Chem., Vol 7, No
   \item[\keywd{transition\_state}] If this is true than a transition
      state search will be performed. The default is false.
 
-  \item[\keywd{mode\_following}] The default is false.
+  \item[\keywd{mode\_following}] If this is true, then the initial search
+     direction for a transition state search will be choosen to similar to
+     the first coordinate of the \clsnmref{Function}.  The default is
+     false.
 
   \item[\keywd{hessian}] By default, the guess hessian is obtained from the
      \clsnmref{Function} \htmlref{object}{pkvobject}.  This keyword

@@ -16,7 +16,7 @@ L2HFLAGS=-dir mpqcuser \
          -index_in_navigation -contents_in_navigation -bottom_navigation
 
 SAMPLEINPUTS = scf.in.tex scfopt.in.tex mp2.in.tex scffreq.in.tex \
-               hbondopt.in.tex mancoor.in.tex
+               hbondopt.in.tex mancoor.in.tex fixed.in.tex ts.in.tex
 
 default:: mpqc.see
 

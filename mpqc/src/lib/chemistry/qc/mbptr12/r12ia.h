@@ -41,9 +41,24 @@
 namespace sc {
 
 /////////////////////////////////////////////////////////////////
-// R12IntsAcc accumulates transformed integrals of (og|og) type
-//   o = active occupied MO
-//   g = general MO
+/** R12IntsAcc accumulates transformed (MO) integrals of (ix|jy) type
+   where i and j are in the active occupied MO space O and x and y are in any
+   spaces X and Y, respectively. Transformed integrals are usually computed
+   using a parallel MO integrals transformation procedure. In general, such
+   transformations will require multiple passes through AO integrals. Each pass
+   produces a batch of transformed integrals. A batch is a set of integrals {(ix|jy)}
+   in which i indices are in a finite subrange of O
+   and x, j, and y take any of their allowed values. For example, if batch I contains
+   all integrals (ix|jy) with i greater than or equal m but less than n, then batch I+1
+   contains integrals (ix|jy) with i greater than n. Integrals in batch 0 have indices
+   i greater than or equal to 0.
+   
+   After each pass the MO integrals are contained in a MemoryGrp object. The object is
+   "stored" in accumulator using <tt>store_memorygrp(Ref<MemoryGrp>& mem, int ni)</tt>.
+   After all batches have been stored, the content of R12IntsAcc needs to be "committed"
+   using <tt>commit()</tt>. After that blocks of MO integrals can be accessed using
+   <tt>retrieve_pair_block</tt>.
+    */
 
 class R12IntsAcc: virtual public SavableState {
 
@@ -55,7 +70,12 @@ class R12IntsAcc: virtual public SavableState {
     size_t nbasis__2_;  // nbasis1_ * nbasis2_  - the size of a block of integrals of one type
     size_t blksize_;    // the same in bytes
     size_t blocksize_;  // hence the size of the block of num_te_types of integrals is nbasis__2_ * num_te_types
+    
+    int next_orbital_;  // The first index of the next batch to be stored
     bool committed_;    // Whether all data has been written out and ready to be read
+
+    /// The index of the first orbital in the next integrals batch to be stored
+    void inc_next_orbital(int ni);
 
   public:
     R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc);
@@ -69,6 +89,8 @@ class R12IntsAcc: virtual public SavableState {
 
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };
+    /// The index of the first orbital in the next integrals batch to be stored
+    int next_orbital() const;
 
     /// Stores all pair block of integrals held in mem
     /// in a layout assumed throughout MBPT2_R12

@@ -54,7 +54,6 @@ namespace sc {
 class R12IntsAcc_Node0File: public R12IntsAcc {
 
     Ref<MemoryGrp> mem_; // The MemoryGrp associated with this accumulator
-    int icounter_;      // the number of i's for which blocks have been written to 
     char *filename_;
     int datafile_;
 

@@ -113,7 +113,6 @@ R12IntsAcc_Node0File::init(bool restart)
     }
 
   // See if can open/create the file
-  icounter_ = 0;
   if (restart)
     datafile_ = open(filename_,O_WRONLY|O_APPEND,0644);
   else
@@ -162,9 +161,9 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
       "ni > R12IntsAcc_Node0File::nocc_act_" << endl;
     abort();
   }
-  else if (icounter_ + ni > nocc_act_) {
+  else if (next_orbital() + ni > nocc_act_) {
     ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+icounter_ > R12IntsAcc_Node0File::nocc_act_" << endl;
+      "ni+next_orbital() > R12IntsAcc_Node0File::nocc_act_" << endl;
     abort();
   }
   else {
@@ -195,8 +194,9 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
       }
     // Close the file and update the i counter
     close(datafile_);
-    icounter_ += ni;
   }
+
+  inc_next_orbital(ni);
 }
 
 void

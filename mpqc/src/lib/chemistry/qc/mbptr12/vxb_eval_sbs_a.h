@@ -34,6 +34,7 @@
 
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/r12ia.h>
 
 namespace sc {
 
@@ -48,9 +49,10 @@ class R12IntEval_sbs_A : virtual public SavableState {
   // Calculation information (number of basis functions, R12 approximation, etc.)
   Ref<R12IntEvalInfo> r12info_;
 
+  // Transformed integrals storage
+  Ref<R12IntsAcc> r12intsacc_;
+
   bool evaluated_;
-  int current_orbital_;
-  int restart_orbital_;
 
   /* utility functions */
   int compute_transform_batchsize_(size_t mem_alloc, size_t mem_static, int nocc_act, const int num_te_types);

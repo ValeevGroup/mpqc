@@ -108,7 +108,6 @@ R12IntsAcc_MPIIOFile::init(bool restart)
     }
 
   // Try opening/creating the file
-  icounter_ = 0;
   int amode;
   if (!restart)
     amode = MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE | MPI_MODE_WRONLY;
@@ -232,9 +231,9 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
       "ni > R12IntsAcc_MPIIOFile_Ind::nocc_act_" << endl;
     abort();
   }
-  else if (icounter_ + ni > nocc_act_) {
+  else if (next_orbital() + ni > nocc_act_) {
     ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called with invalid argument:" << endl <<
-      "ni+icounter_ > R12IntsAcc_MPIIOFile_Ind::nocc_act_" << endl;
+      "ni+next_orbital() > R12IntsAcc_MPIIOFile_Ind::nocc_act_" << endl;
     abort();
   }
   else {
@@ -256,7 +255,7 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
 	int local_ij_index = ij/nproc;
         double *data = (double *) mem->localdata() + nbasis__2_*num_te_types()*local_ij_index;
         
-        int IJ = ij_index(i+icounter_,j);
+        int IJ = ij_index(i+next_orbital(),j);
         int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_, MPI_SEEK_SET);
         check_error_code_(errcod);
         MPI_Status status;
@@ -266,8 +265,9 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
     // Close the file and update the i counter
     errcod = MPI_File_close(&datafile_);
     check_error_code_(errcod);
-    icounter_ += ni;
   }
+  
+  inc_next_orbital(ni);
 }
 
 double *

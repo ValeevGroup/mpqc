@@ -167,6 +167,8 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   int nfzv = r12info()->nfzv();
   int noso = r12info()->noso();
   int nvir  = noso - nocc;
+  
+  int restart_orbital = r12intsacc_.null() ? 0 : r12intsacc_->next_orbital();
 
   double pfac_xy_1, pfac_xy_2;
   if (two_basis_form &&
@@ -191,10 +193,10 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   if (nocc_act <= 0)
     throw std::runtime_error("There are no active occupied orbitals; program exiting");
 
-  if (restart_orbital_) {
+  if (restart_orbital) {
     ExEnv::out0() << indent
 		  << scprintf("Restarting at orbital %d",
-			      restart_orbital_)
+			      restart_orbital)
 		  << endl;
   }
 
@@ -216,10 +218,10 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     mem_static *= sizeof(double);
     int nthreads = thr->nthread();
     mem_static += nthreads * integral->storage_required_grt(bs); // integral evaluators
-    ni = compute_transform_batchsize_(mem_alloc, mem_static, nocc_act-restart_orbital_, num_te_types); 
+    ni = compute_transform_batchsize_(mem_alloc, mem_static, nocc_act-restart_orbital, num_te_types); 
   }
 
-  int max_norb = nocc_act - restart_orbital_;
+  int max_norb = nocc_act - restart_orbital;
   if (ni > max_norb)
     ni = max_norb;
 
@@ -268,13 +270,13 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   int npass = 0;
   int rest = 0;
-  if (ni == nocc_act-restart_orbital_) {
+  if (ni == nocc_act-restart_orbital) {
     npass = 1;
     rest = 0;
   }
   else {
-    rest = (nocc_act-restart_orbital_)%ni;
-    npass = (nocc_act-restart_orbital_ - rest)/ni + 1;
+    rest = (nocc_act-restart_orbital)%ni;
+    npass = (nocc_act-restart_orbital - rest)/ni + 1;
     if (rest == 0) npass--;
   }
 
@@ -378,56 +380,57 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   
   ///////////////////////////////////////////////////////////
-  // Figure out which integrals accumulator should be used
+  // If this is not a restart figure out which integrals accumulator should be used
   ///////////////////////////////////////////////////////////
 
-  Ref<R12IntsAcc> r12intsacc;
-  R12IntEvalInfo::StoreMethod ints_method = r12info()->ints_method();
-  char *r12ints_file = r12info()->ints_file();
-  bool restart = (restart_orbital_ > 0);
+  bool restart = (restart_orbital > 0);
 
-  switch (ints_method) {
+  if (!restart) {
+    R12IntEvalInfo::StoreMethod ints_method = r12info()->ints_method();
+    char *r12ints_file = r12info()->ints_file();
 
-  case R12IntEvalInfo::mem_only:
-    if (restart)
-      throw std::runtime_error("R12IntEval_sbs_A::compute -- cannot use MemoryGrp-based accumulator when restarting");
-    ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
-    r12intsacc = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
-    break;
+    switch (ints_method) {
 
-  case R12IntEvalInfo::mem_posix:
-    if (npass == 1) {
+    case R12IntEvalInfo::mem_only:
+      if (restart)
+        throw std::runtime_error("R12IntEval_sbs_A::compute -- cannot use MemoryGrp-based accumulator when restarting");
       ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
-      r12intsacc = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
+      r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
       break;
-    }
-    // else use the next case
+
+    case R12IntEvalInfo::mem_posix:
+      if (npass == 1) {
+        ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
+        r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
+        break;
+      }
+      // else use the next case
       
-  case R12IntEvalInfo::posix:
-    ExEnv::out0() << indent << "Will use POSIX I/O on node 0 to handle transformed integrals" << endl;
-    r12intsacc = new R12IntsAcc_Node0File(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc,nfzc,restart);
-    break;
-
-#if HAVE_MPIIO
-  case R12IntEvalInfo::mem_mpi:
-    if (npass == 1) {
-      ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
-      r12intsacc = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
+    case R12IntEvalInfo::posix:
+      ExEnv::out0() << indent << "Will use POSIX I/O on node 0 to handle transformed integrals" << endl;
+      r12intsacc_ = new R12IntsAcc_Node0File(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc,nfzc,restart);
       break;
-    }
-    // else use the next case
 
-  case R12IntEvalInfo::mpi:
-    ExEnv::out0() << indent << "Will use MPI-IO (individual I/O) to handle transformed integrals" << endl;
-    r12intsacc = new R12IntsAcc_MPIIOFile_Ind(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc,nfzc,restart);
-    break;
+    #if HAVE_MPIIO
+    case R12IntEvalInfo::mem_mpi:
+      if (npass == 1) {
+        ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
+        r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
+        break;
+      }
+      // else use the next case
+
+    case R12IntEvalInfo::mpi:
+      ExEnv::out0() << indent << "Will use MPI-IO (individual I/O) to handle transformed integrals" << endl;
+      r12intsacc_ = new R12IntsAcc_MPIIOFile_Ind(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc,nfzc,restart);
+      break;
 #endif
   
-  default:
-    throw std::runtime_error("R12IntEval_sbs_A::compute -- invalid integrals store method");
+    default:
+      throw std::runtime_error("R12IntEval_sbs_A::compute -- invalid integrals store method");
+    }
+    free(r12ints_file);
   }
-  free(r12ints_file);
-
 
   /////////////////////////////////////////////////
   // zero out data arrays prior to the FIRST pass
@@ -444,7 +447,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
    -----------------------------------*/
   tim_enter("mp2-r12/a passes");
-  if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
+  if (me == 0 && wfn->if_to_checkpoint() && r12intsacc_->can_restart()) {
     StateOutBin stateout(wfn->checkpoint_file());
     SavableState::save_state(wfn,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -454,7 +457,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
     ExEnv::out0() << indent << "Beginning pass " << pass+1 << endl;
 
-    int i_offset = restart_orbital_ + pass*ni + nfzc;
+    int i_offset = restart_orbital + pass*ni + nfzc;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     // Compute number of of i,j pairs on each node during current pass for
@@ -813,12 +816,11 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     // Push locally stored integrals to an accumulator
     // This could involve storing the data to disk or simply remembering the pointer
     tim_enter("MO ints store");
-    r12intsacc->store_memorygrp(mem,ni);
+    r12intsacc_->store_memorygrp(mem,ni);
     tim_exit("MO ints store");
     mem->sync();
 
-    if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
-      current_orbital_ += ni;
+    if (me == 0 && wfn->if_to_checkpoint() && r12intsacc_->can_restart()) {
       StateOutBin stateout(wfn->checkpoint_file());
       SavableState::save_state(wfn,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -831,7 +833,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   // Done storing integrals - commit the content
   // WARNING: it is not safe to use mem until deactivate has been called on the accumulator
   //          After that deactivate the size of mem will be 0 [mem->set_localsize(0)]
-  r12intsacc->commit();
+  r12intsacc_->commit();
 
 
   /*-----------------------------------------------
@@ -878,11 +880,11 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   // and split the work among them
   int nproc_with_ints = 0;
   for(int proc=0;proc<nproc;proc++)
-    if (r12intsacc->has_access(proc)) nproc_with_ints++;
+    if (r12intsacc_->has_access(proc)) nproc_with_ints++;
   int *proc_with_ints = new int[nproc];
   int count = 0;
   for(int proc=0;proc<nproc;proc++)
-    if (r12intsacc->has_access(proc)) {
+    if (r12intsacc_->has_access(proc)) {
       proc_with_ints[proc] = count;
       count++;
     }
@@ -910,7 +912,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   //
   /////////////////////////////////////////////////////////////////////////////////
 
-  if (r12intsacc->has_access(me)) {
+  if (r12intsacc_->has_access(me)) {
     int nij = nocc_act*(nocc_act+1)/2;
     int kl = 0;
     for(int k=0;k<nocc_act;k++)
@@ -928,10 +930,10 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
 	// Get (|1/r12|), (|r12|), and (|[r12,T1]|) integrals
         tim_enter("MO ints retrieve");
-        double *klyx_buf_eri = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::eri);
-        double *klyx_buf_r12 = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-        double *klyx_buf_r12t1 = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
-	double *lkyx_buf_r12t1 = r12intsacc->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
+        double *klyx_buf_eri = r12intsacc_->retrieve_pair_block(k,l,R12IntsAcc::eri);
+        double *klyx_buf_r12 = r12intsacc_->retrieve_pair_block(k,l,R12IntsAcc::r12);
+        double *klyx_buf_r12t1 = r12intsacc_->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
+	double *lkyx_buf_r12t1 = r12intsacc_->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
         tim_exit("MO ints retrieve");
 
 	if (debug_)
@@ -951,7 +953,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
               ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
             
             tim_enter("MO ints retrieve");
-            double *ijyx_buf_r12 = r12intsacc->retrieve_pair_block(i,j,R12IntsAcc::r12);
+            double *ijyx_buf_r12 = r12intsacc_->retrieve_pair_block(i,j,R12IntsAcc::r12);
             tim_exit("MO ints retrieve");
 
             if (debug_)
@@ -1112,12 +1114,12 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	    if (i != j && k != l)
 	      printf("Tab[%d][%d] = %lf\n",ji_ab,lk_ab,Tab_ji[lk_ab]);
 #endif
-            r12intsacc->release_pair_block(i,j,R12IntsAcc::r12);
+            r12intsacc_->release_pair_block(i,j,R12IntsAcc::r12);
           }
-        r12intsacc->release_pair_block(k,l,R12IntsAcc::eri);
-        r12intsacc->release_pair_block(k,l,R12IntsAcc::r12);
-        r12intsacc->release_pair_block(k,l,R12IntsAcc::r12t1);
-	r12intsacc->release_pair_block(l,k,R12IntsAcc::r12t1);
+        r12intsacc_->release_pair_block(k,l,R12IntsAcc::eri);
+        r12intsacc_->release_pair_block(k,l,R12IntsAcc::r12);
+        r12intsacc_->release_pair_block(k,l,R12IntsAcc::r12t1);
+	r12intsacc_->release_pair_block(l,k,R12IntsAcc::r12t1);
       }
   }
   // Tasks that don't do any work here still need to create these timers
@@ -1129,7 +1131,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   delete[] proc_with_ints;
   tim_exit("mp2-r12a intermeds");
   ExEnv::out0() << indent << "End of computation of intermediates" << endl;
-  r12intsacc->deactivate();
+  r12intsacc_->deactivate();
 
   
   // If running in distributed environment use Message group to collect intermediates and pair energies on node 0

@@ -130,6 +130,8 @@ R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
 	  double *integral_ij_offset = (double *)mem_->localdata() + nbasis__2_*num_te_types()*local_ij_index;
 	  store_pair_block(i,j,integral_ij_offset);
 	}
+
+  inc_next_orbital(ni);
 }
 
 void

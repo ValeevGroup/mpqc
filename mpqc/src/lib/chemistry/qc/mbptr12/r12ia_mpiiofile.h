@@ -54,7 +54,6 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     Ref<MemoryGrp> mem_; // The MemoryGrp associated with this accumulator
     int nproc_;
     size_t nints_per_block_;  // number of integrals per block = num_te_types*nbasis__2_
-    int icounter_;      // the number of i's for which blocks have been written to 
     char *filename_;
     MPI_File datafile_;
 

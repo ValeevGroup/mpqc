@@ -176,6 +176,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   int noso = r12info()->noso();
   int nvir  = noso - nocc;
 
+  int restart_orbital = r12intsacc_.null() ? 0 : r12intsacc_->next_orbital();
+
   ExEnv::out0() << endl << indent
 	       << "Entered ABS A intermediates evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
@@ -187,10 +189,10 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   if (nocc_act <= 0)
     throw std::runtime_error("There are no active occupied orbitals; program exiting");
 
-  if (restart_orbital_) {
+  if (restart_orbital) {
     ExEnv::out0() << indent
 		  << scprintf("Restarting at orbital %d",
-			      restart_orbital_)
+			      restart_orbital)
 		  << endl;
   }
 
@@ -212,10 +214,10 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     mem_static *= sizeof(double);
     int nthreads = thr->nthread();
     mem_static += nthreads * integral->storage_required_grt(bs,bs,bs,bs_aux); // integral evaluators
-    ni = compute_transform_batchsize_(mem_alloc, mem_static, nocc_act-restart_orbital_, num_te_types); 
+    ni = compute_transform_batchsize_(mem_alloc, mem_static, nocc_act-restart_orbital, num_te_types); 
   }
 
-  int max_norb = nocc_act - restart_orbital_;
+  int max_norb = nocc_act - restart_orbital;
   if (ni > max_norb)
     ni = max_norb;
 
@@ -263,13 +265,13 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   int npass = 0;
   int rest = 0;
-  if (ni == nocc_act-restart_orbital_) {
+  if (ni == nocc_act-restart_orbital) {
     npass = 1;
     rest = 0;
   }
   else {
-    rest = (nocc_act-restart_orbital_)%ni;
-    npass = (nocc_act-restart_orbital_ - rest)/ni + 1;
+    rest = (nocc_act-restart_orbital)%ni;
+    npass = (nocc_act-restart_orbital - rest)/ni + 1;
     if (rest == 0) npass--;
   }
 
@@ -398,7 +400,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   Ref<R12IntsAcc> r12intsacc;
   R12IntEvalInfo::StoreMethod ints_method = r12info()->ints_method();
   char *r12ints_file = r12info()->ints_file();
-  bool restart = (restart_orbital_ > 0);
+  bool restart = (restart_orbital > 0);
 
   switch (ints_method) {
 
@@ -459,7 +461,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
     ExEnv::out0() << indent << "Beginning pass " << pass+1 << endl;
 
-    int i_offset = restart_orbital_ + pass*ni + nfzc;
+    int i_offset = restart_orbital + pass*ni + nfzc;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     // Compute number of of i,j pairs on each node during current pass for
@@ -658,7 +660,6 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     mem->sync();
 
     if (me == 0 && wfn->if_to_checkpoint() && r12intsacc->can_restart()) {
-      current_orbital_ += ni;
       StateOutBin stateout(wfn->checkpoint_file());
       SavableState::save_state(wfn,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;

@@ -52,6 +52,7 @@ R12IntsAcc::R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc, int
   blksize_ = nbasis__2_*sizeof(double);
   blocksize_ = blksize_*num_te_types_;
   committed_ = false;
+  next_orbital_ = 0;
 }
 
 R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si)
@@ -62,6 +63,7 @@ R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si)
   si.get(nocc_);
   si.get(nfzc_);
   int committed; si.get(committed); committed_ = (bool) committed;
+  si.get(next_orbital_);
 
   nocc_act_ = nocc_ - nfzc_;
   nbasis__2_ = nbasis1_*nbasis2_;
@@ -81,8 +83,18 @@ void R12IntsAcc::save_data_state(StateOut& so)
   so.put(nocc_);
   so.put(nfzc_);
   so.put((int)committed_);
+  so.put(next_orbital_);
 }
 
+int R12IntsAcc::next_orbital() const
+{
+  return next_orbital_;
+}
+
+void R12IntsAcc::inc_next_orbital(int ni)
+{
+  next_orbital_ += ni;
+}
 
 ///////////////////////////////////////////////////////////////
 

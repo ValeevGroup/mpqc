@@ -51,7 +51,7 @@ class MsgStateSend: public StateOutBinXDR {
     int nheader; // nbuf + nheader = the number of bytes in send_buffer to send
     int* nbuf_buffer; // the pointer to the nbuf stored in the buffer
 
-    put_array_void(const void*, int);
+    int put_array_void(const void*, int);
   public:
     MsgStateSend(const RefMessageGrp&);
     virtual ~MsgStateSend();
@@ -93,7 +93,7 @@ class MsgStateRecv: public StateInBinXDR {
     int nheader; // nbuf + nheader = the number of bytes in send_buffer to send
     int* nbuf_buffer; // the pointer to the nbuf stored in the buffer
 
-    get_array_void(void*,int);
+    int get_array_void(void*,int);
 
     //. Specializations must implement \srccd{next\_buffer()}.
     virtual void next_buffer() = 0;

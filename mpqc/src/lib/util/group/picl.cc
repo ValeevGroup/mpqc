@@ -11,20 +11,27 @@
 #elif defined(OLDCLOCK)
 #else
 #  include <sys/types.h>
-#  include <sys/time.h>
-#  include <sys/resource.h>
-#  if defined(sun) || defined(AIX)
-#  include <unistd.h>
+#  ifdef HAVE_SYS_TIME_H
+#    include <sys/time.h>
+#  endif
+#  ifdef HAVE_SYS_TIMES_H
+#    include <sys/times.h>
+#  endif
+#  ifdef HAVE_SYS_RESOURCE_H
+#    include <sys/resource.h>
+#  endif
+#  ifdef HAVE_UNISTD_H
+#    include <unistd.h>
 #  endif
 #endif
 
-#if defined(AIX)
+// AIX 3.2 has broken include files
+#if defined(_AIX32)
 extern "C" {
 int getrusage (
   int Who,
   struct rusage *RUsage); }
 #endif
-
 
 static RefMessageGrp global_messagegrp;
 

@@ -30,6 +30,12 @@
 /* Define if you have <termios.h>.  */
 #undef HAVE_TERMIOS_H
 
+/* Define if you have <sys/times.h>.  */
+#undef HAVE_SYS_TIMES_H
+
+/* Define if you have <sys/resource.h>.  */
+#undef HAVE_SYS_RESOURCE_H
+
 /* Define if you have the vprintf function.  */
 #undef HAVE_VPRINTF
 

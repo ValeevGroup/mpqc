@@ -64,6 +64,7 @@ class SafeUInt {
     int operator < (const SafeUInt& i) const { return i_<i.i_; }
     int operator <= (const SafeUInt& i) const { return i_<=i.i_; }
     int operator == (const SafeUInt& i) const { return i_==i.i_; }
+    int operator == (int i) const { return i_==i; }
     int operator != (const SafeUInt& i) const { return i_!=i.i_; }
     SafeUInt operator / (const SafeUInt& i) const { return SafeUInt(i_/i.i_); }
     SafeUInt operator % (const SafeUInt& i) const { return SafeUInt(i_%i.i_); }
@@ -94,7 +95,7 @@ static inline int icart(int a, int b, int c)
 }
 static inline int ipure(int l, int m) { return m<0?2*-m:(m==0?0:2*m-1); }
 
-static inline int abs(int i) { return i<0? -i:i; }
+static inline int local_abs(int i) { return i<0? -i:i; }
 
 SafeUInt
 binomial(int n, int c1)
@@ -102,10 +103,11 @@ binomial(int n, int c1)
   SafeUInt num = 1;
   SafeUInt den = 1;
   int c2 = n - c1;
-  for (int i=c2+1; i<=n; i++) {
+  int i;
+  for (i=c2+1; i<=n; i++) {
       num *= i;
     }
-  for (int i=2; i<=c1; i++) {
+  for (i=2; i<=c1; i++) {
       den *= i;
     }
   return num/den;
@@ -249,7 +251,7 @@ solidharm(int l, int m, int r2, RefSCMatrix coefmat)
   int pureindex = ipure(l,m);
   for (int i=1; i<=r2; i++) pureindex += npure(l+2*i);
   
-  int absm = abs(m);
+  int absm = local_abs(m);
 
   // the original norm2num and norm2den computation overflows 32bits for l=7
   //SafeUInt norm2num = factoverfact(l+absm,l-absm);

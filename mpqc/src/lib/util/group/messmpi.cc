@@ -199,6 +199,8 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
   MPI_Comm_dup(comm, &commgrp);
   global_commgrp = commgrp;
 
+  MPI_Errhandler_set(commgrp, MPI_ERRORS_ARE_FATAL);
+
    if (!nmpi_grps) {
       threadgrp = ThreadGrp::get_default_threadgrp();
       grplock = threadgrp->new_lock();

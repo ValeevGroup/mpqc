@@ -304,12 +304,14 @@ void R12IntEval::compute()
   ExEnv::out0() << indent << indent
 		<< "Tr(B) for alpha-beta pairs:" << indent <<
     scprintf("%10.6lf",traceB_ab) << endl;
-  ExEnv::out0() << indent << indent
-		<< "-Tr(V)/Tr(B) for alpha-alpha pairs:" << indent <<
-    scprintf("%10.6lf",(-1.0)*traceV_aa/traceB_aa) << endl;
-  ExEnv::out0() << indent << indent
-		<< "-Tr(V)/Tr(B) for alpha-beta pairs:" << indent <<
-    scprintf("%10.6lf",(-1.0)*traceV_ab/traceB_ab) << endl;
+  if (traceB_aa)
+    ExEnv::out0() << indent << indent
+                  << "-Tr(V)/Tr(B) for alpha-alpha pairs:" << indent <<
+                  scprintf("%10.6lf",(-1.0)*traceV_aa/traceB_aa) << endl;
+  if (traceB_ab)
+    ExEnv::out0() << indent << indent
+                  << "-Tr(V)/Tr(B) for alpha-beta pairs:" << indent <<
+                  scprintf("%10.6lf",(-1.0)*traceV_ab/traceB_ab) << endl;
 
   evaluated_ = true;
 

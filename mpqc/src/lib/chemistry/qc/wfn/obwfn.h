@@ -21,6 +21,7 @@ class OneBodyWavefunction: public Wavefunction
   double orbital(cart_point& r, int iorb);
   double orbital_density(cart_point& r, int iorb, double* orbval = 0);
 
+  double density(cart_point&);
   const SymmetricMatrix& density();
 };
 

@@ -34,6 +34,10 @@ void OneBodyWavefunction::x_changed()
   _have_density = 0;
 }
 
+double OneBodyWavefunction::density(cart_point&c)
+{
+  return Wavefunction::density(c);
+}
 
 const SymmetricMatrix& OneBodyWavefunction::density()
 {

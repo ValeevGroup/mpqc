@@ -25,13 +25,16 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/group/message.h>
 #include <util/group/message.cc>
 
 /////////////////////////////////////////////////////////////////////////
 // instantiate templates
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class GrpReduce<double>;
 template class GrpReduce<int>;
 template class GrpReduce<long>;
@@ -530,7 +533,7 @@ MessageGrp::reduce(long* data, int n, GrpReduce<long>& red,
   if (!passed_scratch) delete[] scratch;
 }
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 #define INSTANTIATE_DO_X(func,type) \
     template void func(MessageGrp*, type *, int, type *, int)
 

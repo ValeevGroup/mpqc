@@ -29,10 +29,13 @@
 #pragma implementation
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <math/scmat/result.h>
 #include <util/state/state.h>
 
-#ifdef __GNUC__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class AccResult<RefSCMatrix>;
 template class AccResult<RefSymmSCMatrix>;
 template class AccResult<RefDiagSCMatrix>;

@@ -25,10 +25,13 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <math/isosurf/shape.h>
 #include <math/isosurf/triangle.h>
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 // Vertex
 template class EAVLMMapNode<RefVertex, AVLMapNode<RefVertex, int> >;
 template class EAVLMMap<RefVertex, AVLMapNode<RefVertex, int> >;

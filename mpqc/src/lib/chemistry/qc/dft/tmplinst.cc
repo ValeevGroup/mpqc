@@ -1,5 +1,9 @@
 
-#ifdef __GNUC__
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
+
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
 #include <util/misc/formio.h>
 #include <chemistry/qc/basis/basis.h>

@@ -25,6 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/keyval/keyval.h>
 
 AssignedKeyVal::AssignedKeyVal()
@@ -112,7 +115,7 @@ AssignedKeyVal::clear()
   _map.clear();
 }
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class EAVLMMapNode<KeyValKeyword, AVLMapNode<KeyValKeyword,RefKeyValValue> >;
 template class EAVLMMap<KeyValKeyword, AVLMapNode<KeyValKeyword,RefKeyValValue> >;
 template class AVLMapNode<KeyValKeyword,RefKeyValValue>;

@@ -29,6 +29,9 @@
 #include <math.h>
 #include <stdlib.h>
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/container/eavlmmap.h>
 #include <util/container/avlmap.h>
 #include <util/container/avlset.h>
@@ -450,7 +453,7 @@ main()
   return 0;
 }
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class AVLMapNode<int, char>;
 template class EAVLMMap<int,AVLMapNode<int, char> >;
 template class AVLMapNode<int, int>;

@@ -29,6 +29,7 @@
 #include <scconfig.h>
 #endif
 
+#include <scconfig.h>
 #include <util/misc/formio.h>
 #include <util/group/memory.h>
 #include <util/group/memory.cc>
@@ -66,7 +67,7 @@
 //////////////////////////////////////////////////////////////////////
 // MemoryGrpBuf template instantiations
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class MemoryGrpBuf<double>;
 template class MemoryGrpBuf<int>;
 template class MemoryGrpBuf<char>;

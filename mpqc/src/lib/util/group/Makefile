@@ -33,7 +33,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 REQUIREDCXXSRC = mstate.cc \
          message.cc messagei.cc messproc.cc messint.cc \
-         reduce.cc topology.cc hcube.cc picl.cc \
+         reduce.cc topology.cc hcube.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc memoryi.cc \
          memamsg.cc memproc.cc memmid.cc \
          pregtime.cc thread.cc
@@ -75,7 +75,7 @@ ifeq ($(HAVE_PTHREAD),yes)
   CXXSRC += thpthd.cc
 endif
 
-INC = pool.h message.h mstate.h topology.h picl.h \
+INC = pool.h message.h mstate.h topology.h \
       messshm.h messpvm.h messmpi.h \
       rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
       memmpl.h memmpi.h mempuma.h pregtime.h

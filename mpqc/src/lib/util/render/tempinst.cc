@@ -25,13 +25,16 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/render/material.h>
 #include <util/render/appearance.h>
 #include <util/render/transform.h>
 #include <util/render/stack.h>
 #include <util/render/parameter.h>
 
-#ifdef __GNUC__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Stack<DCRefMaterial>;
 template class Stack<DCRefAppearance>;
 template class Stack<DCRefTransform>;

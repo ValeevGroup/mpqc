@@ -26,9 +26,12 @@
 //
 
 #include <iomanip.h>
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/misc/compute.h>
 
-#ifdef __GNUC__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class NCResult<int>;
 #endif
 

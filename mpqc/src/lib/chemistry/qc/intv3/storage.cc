@@ -30,6 +30,9 @@
 #endif
 
 #include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/flags.h>
@@ -39,7 +42,7 @@
 
 #define PRINT_STORED 0
 
-#ifdef __GNUC__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 // instantiate the templates needed for integral storage
 template class EAVLMMap<IntegralKey,IntegralLink>;
 template class EAVLMMap<int,IntegralLink>;

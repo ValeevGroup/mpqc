@@ -760,7 +760,7 @@ operator <<(ostream&o, const DCRefBase &ref)
 
 DescribedClass_REF_def(DescribedClass);
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
 template class EAVLMMapNode<ClassKey,AVLMapNode<ClassKey,ClassDescP> >;
 template class EAVLMMap<ClassKey,AVLMapNode<ClassKey,ClassDescP> >;

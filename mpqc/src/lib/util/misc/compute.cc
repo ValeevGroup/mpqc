@@ -30,12 +30,15 @@
 #endif
 
 #include <float.h>
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/misc/formio.h>
 #include <util/misc/compute.h>
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
-#ifdef __GNUC__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Result<int>;
 template class Result<double>;
 template class NCAccResult<double>;
@@ -241,7 +244,7 @@ AccResultInfo::update() {
     }
 }
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class EAVLMMap<ResultInfoP, AVLMapNode<ResultInfoP, int> >;
 template class AVLMapNode<ResultInfoP, int>;
 #endif

@@ -26,11 +26,14 @@
 //
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/container/avlmap.h>
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
 template class EAVLMMapNode<int, AVLMapNode<int, StateInData> >;
 template class EAVLMMap<int, AVLMapNode<int, StateInData> >;

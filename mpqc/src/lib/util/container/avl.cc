@@ -25,9 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/container/avlset.h>
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 #define INST_COMP(T) \
   template int compare(const T &, const T &)
 

@@ -191,6 +191,9 @@
 /* The target architecture. */
 #undef TARGET_ARCH
 
+/* Define if template should be explicitly instantiated.  */
+#undef EXPLICIT_TEMPLATE_INSTANTIATION
+
 #endif /* _CONFIG_H */
 
 /* 

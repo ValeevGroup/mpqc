@@ -26,10 +26,13 @@
 //
 
 #include <iostream.h>
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
 #include <util/container/array.h>
 #include <util/state/state.h>
 
-#ifdef __GNUG__
+#ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Array<int>;
 template class SSBArray<int>;
 template class Array2<int>;

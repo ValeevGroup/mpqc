@@ -219,6 +219,8 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
     void scale(double);
+    void assign(double);
+    void assign(SymmSCMatrix*m);
 
     SCMatrix * get_subblock(int,int,int,int);
     SymmSCMatrix * get_subblock(int,int);

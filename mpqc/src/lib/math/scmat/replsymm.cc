@@ -379,19 +379,28 @@ ReplSymmSCMatrix::assign(double val)
 void
 ReplSymmSCMatrix::assign(SymmSCMatrix*m)
 {
-  SymmSCMatrix::assign(m);
+  ReplSymmSCMatrix* lm = ReplSymmSCMatrix::castdown(m);
+  if (lm && dim()->equiv(lm->dim())) {
+      int d = i_offset(n());
+      memcpy(matrix, lm->matrix, sizeof(double)*d);
+    }
+  else
+      SymmSCMatrix::assign(m);
 }
 
 void
 ReplSymmSCMatrix::assign(const double*m)
 {
-  SymmSCMatrix::assign(m);
+  int d = i_offset(n());
+  memcpy(matrix, m, sizeof(double)*d);
 }
 
 void
 ReplSymmSCMatrix::assign(const double**m)
 {
-  SymmSCMatrix::assign(m);
+  for (int i=0; i < n(); i++)
+      for (int j=0; j <= i; j++)
+          rows[i][j] = m[i][j];
 }
 
 void

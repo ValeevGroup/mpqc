@@ -419,6 +419,7 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
       abort();
     }
 
+#if 0
   cmat_transpose_matrix(lb->rows, la->ncol(), this->ncol());
   double** btrans;
   btrans = new double*[this->ncol()];
@@ -430,6 +431,63 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
 
   cmat_transpose_matrix(btrans,this->ncol(),la->ncol());
   delete[] btrans;
+#else
+  int i,j,k;
+  int ii,jj,kk;
+
+  int nr = la->nrow();
+  int nc = lb->ncol();
+  int ncc = la->ncol();
+
+  int nproc = messagegrp()->n();
+  int me = messagegrp()->me();
+  int mod = nr%nproc;
+  int nirow = nr/nproc + ((mod <= me) ? 0 : 1);
+  int istart = (nr/nproc)*me + ((mod <= me) ? mod : me);
+  int iend = istart+nirow;
+
+  double ** ablock = cmat_new_square_matrix(D1);
+  double ** bblock = cmat_new_square_matrix(D1);
+  double ** cblock = cmat_new_square_matrix(D1);
+
+  for (i=istart; i < iend; i += D1) {
+    int ni = iend-i;
+    if (ni > D1) ni = D1;
+    
+    for (j=0; j < nc; j += D1) {
+      int nj = nc-j;
+      if (nj > D1) nj = D1;
+
+      memset(cblock[0], 0, sizeof(double)*D1*D1);
+
+      for (k=0; k < ncc; k += D1) {
+        int nk = ncc-k;
+        if (nk > D1) nk = D1;
+
+        copy_block(ablock, la->rows, i, ni, k, nk);
+        copy_trans_block(bblock, lb->rows, j, nj, k, nk);
+        mult_block(ablock, bblock, cblock, ni, nj, nk);
+      }
+
+      for (ii=0; ii < ni; ii++)
+        for (jj=0; jj < nj; jj++)
+          rows[i+ii][j+jj] += cblock[ii][jj];
+    }
+  }
+
+  for (i=0; i < nproc; i++) {
+    nirow = nr/nproc + ((mod <= i) ? 0 : 1);
+    istart = (nr/nproc)*i + ((mod <= i) ? mod : i);
+    if (!nirow)
+      break;
+    messagegrp()->bcast(rows[istart], nirow*nc, i);
+  }
+
+  cmat_delete_matrix(ablock);
+  cmat_delete_matrix(bblock);
+  cmat_delete_matrix(cblock);
+        
+#endif  
 }
 
 // does the outer product a x b.  this must have rowdim() == a->dim() and

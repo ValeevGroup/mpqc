@@ -258,6 +258,33 @@ BlockedSymmSCMatrix::solve_this(SCVector*v)
 }
 
 void
+BlockedSymmSCMatrix::assign(double s)
+{
+  for (int i=0; i < d->blocks()->nblock(); i++)
+    if (mats_[i].nonnull())
+      mats_[i]->assign(s);
+}
+
+void
+BlockedSymmSCMatrix::assign(SymmSCMatrix*a)
+{
+  // make sure that the arguments is of the correct type
+  BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_castdown(a,
+                                   "BlockedSymmSCMatrix::assign");
+
+  // make sure that the dimensions match
+  if (!dim()->equiv(la->dim())) {
+    cerr << indent << "BlockedSymmSCMatrix::assign(SymmSCMatrix*a): "
+         << "dimensions don't match\n";
+    abort();
+  }
+
+  for (int i=0; i < d->blocks()->nblock(); i++)
+    if (mats_[i].nonnull())
+      mats_[i]->assign(la->mats_[i].pointer());
+}
+
+void
 BlockedSymmSCMatrix::scale(double s)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
@@ -324,7 +351,7 @@ BlockedSymmSCMatrix::accumulate(SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    cerr << indent << "BlockedSymmSCMatrix::accumulate(SCMatrix*a): "
+    cerr << indent << "BlockedSymmSCMatrix::accumulate(SymmSCMatrix*a): "
          << "dimensions don't match\n";
     abort();
   }

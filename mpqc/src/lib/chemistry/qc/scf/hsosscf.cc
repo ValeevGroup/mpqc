@@ -323,8 +323,10 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
   
   RefDiagSCMatrix evals;
   
-  if (ev.null())
-    evals = core_hamiltonian().eigvals();
+  if (ev.null()) {
+    initial_vector(0);
+    evals = eigenvalues_.result_noupdate();
+  }
   else
     evals = ev;
 
@@ -467,16 +469,16 @@ HSOSSCF::init_vector()
   op_gmat_ = cl_gmat_.clone();
   op_gmat_.assign(0.0);
 
-  // test to see if we need a guess vector.
-  if (eigenvectors_.result_noupdate().null()) {
-    initial_vector();
-    
+  if (cl_fock_.result_noupdate().null()) {
     cl_fock_ = cl_hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
     op_fock_ = cl_hcore_.clone();
     op_fock_.result_noupdate().assign(0.0);
   }
 
+  // set up trial vector
+  initial_vector(1);
+    
   scf_vector_ = eigenvectors_.result_noupdate();
 }
 

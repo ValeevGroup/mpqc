@@ -359,8 +359,10 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
   
   RefDiagSCMatrix evals;
   
-  if (ev.null())
-    evals = core_hamiltonian().eigvals();
+  if (ev.null()) {
+    initial_vector(0);
+    evals = eigenvalues_.result_noupdate();
+  }
   else
     evals = ev;
 
@@ -530,9 +532,7 @@ TCSCF::init_vector()
   ao_kb_.assign(0.0);
 
   // test to see if we need a guess vector
-  if (eigenvectors_.result_noupdate().null()) {
-    initial_vector();
-
+  if (focka_.result_noupdate().null()) {
     focka_ = cl_hcore_.clone();
     focka_.result_noupdate().assign(0.0);
     fockb_ = cl_hcore_.clone();
@@ -542,6 +542,9 @@ TCSCF::init_vector()
     kb_ = cl_hcore_.clone();
     kb_.result_noupdate().assign(0.0);
   }
+
+  // set up trial vector
+  initial_vector(1);
 
   scf_vector_ = eigenvectors_.result_noupdate();
 }

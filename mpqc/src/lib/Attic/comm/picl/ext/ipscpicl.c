@@ -5,8 +5,11 @@
         Sandia National Laboratory
         Livermore CA 94551                         */
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:47  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 23:54:19  etseidl
+ * remove rcs ids and fix a warning
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:48  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.6  1992/06/24  14:40:26  seidl
  * use intel functions rather than picl
@@ -57,7 +60,6 @@
  * Revision 1.1  1991/03/04  23:47:29  colvin
  * Initial revision
  * */
-static char rcsid[]="$Id$";
 
 #include <comm/picl/picl.h>
 #include "piclext.h"

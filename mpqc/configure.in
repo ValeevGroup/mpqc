@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
 define([AC_CACHE_SAVE], )dnl for debugging configure.in
 AC_INIT(src/lib/util/ref/ref.h)
-AC_PREREQ(2.8)
+AC_PREREQ(2.13)
 AC_CONFIG_HEADER(src/lib/scconfig.h)
 AC_CONFIG_AUX_DIR(bin)
 

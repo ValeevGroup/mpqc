@@ -4,43 +4,43 @@
 #include "keyval.h"
 
 ParsedKeyVal::ParsedKeyVal(IPV2*i):
-nfp(0),
 nfile(0),
-file(0)
+file(0),
+nfp(0)
 {
   ipv2 = i;
 }
 
 ParsedKeyVal::ParsedKeyVal():
-nfp(0),
 nfile(0),
-file(0)
+file(0),
+nfp(0)
 {
   ipv2 = new IPV2;
 }
 
 ParsedKeyVal::ParsedKeyVal(const char* name):
-nfp(0),
 nfile(0),
-file(0)
+file(0),
+nfp(0)
 {
   ipv2 = new IPV2;
   read(name);
 }
 
 ParsedKeyVal::ParsedKeyVal(FILE* fp):
-nfp(0),
 nfile(0),
-file(0)
+file(0),
+nfp(0)
 {
   ipv2 = new IPV2;
   read(fp);
 }
 
 ParsedKeyVal::ParsedKeyVal(const char* keyprefix, KeyVal& keyval):
-nfp(0),
 nfile(0),
-file(0)
+file(0),
+nfp(0)
 {
   ipv2 = new IPV2;
 

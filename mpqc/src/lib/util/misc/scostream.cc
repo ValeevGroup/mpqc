@@ -70,27 +70,27 @@ SCfilebuf::get_column()
 }
 
 SCostream::SCostream():
+  nskip(0),
   indentation(0),
   indentation_increment(2),
-  indentation_maximum(20),
-  nskip(0)
+  indentation_maximum(20)
 {
 }
 
 SCostream::SCostream(FILE*fp):
+  nskip(0),
   indentation(0),
   indentation_increment(2),
-  indentation_maximum(20),
-  nskip(0)
+  indentation_maximum(20)
 {
   init(new stdiobuf(fp));
 }
 
 SCostream::SCostream(int fd):
+  nskip(0),
   indentation(0),
   indentation_increment(2),
-  indentation_maximum(20),
-  nskip(0)
+  indentation_maximum(20)
 {
   init(new SCfilebuf(fd));
 }

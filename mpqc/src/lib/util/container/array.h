@@ -102,13 +102,13 @@ class Array2 ## Type							      \
 #define ARRAY_def(Type)							      \
   int Array ## Type::length() const { return _length; };		      \
   void Array ## Type::clear() { set_length(0); }			      \
-  Array ## Type::Array ## Type():_array(0),_length(0) {}		      \
-  Array ## Type::Array ## Type(const Array ## Type&a):_array(0),_length(0) {  \
+  Array ## Type::Array ## Type():_length(0),_array(0) {}		      \
+  Array ## Type::Array ## Type(const Array ## Type&a):_length(0),_array(0) {  \
     operator=(a);							      \
     }									      \
   Array ## Type::Array ## Type(Type* data,int size):			      \
-   _array(data),_length(size),_managed(0){}				      \
-  Array ## Type::Array ## Type(int size):_array(0),_length(0)		      \
+   _length(size),_managed(0),_array(data){}				      \
+  Array ## Type::Array ## Type(int size):_length(0),_array(0)		      \
   { set_length(size); }							      \
   Array ## Type::~Array ## Type() { clear(); }				      \
   void Array ## Type::set_length(int size)				      \
@@ -174,16 +174,16 @@ class Array2 ## Type							      \
   int Array2 ## Type::length0() const { return _length0; };		      \
   int Array2 ## Type::length1() const { return _length1; };		      \
   void Array2 ## Type::clear() { set_lengths(0,0); }			      \
-  Array2 ## Type::Array2 ## Type():_array(0),_length0(0),_length1(0) {}	      \
+  Array2 ## Type::Array2 ## Type():_length0(0),_length1(0),_array(0) {}	      \
   Array2 ## Type::Array2 ## Type(const Array2 ## Type &a):		      \
-    _array(0),_length0(0),_length1(0)					      \
+    _length0(0),_length1(0),_array(0)					      \
     {									      \
       operator=(a);							      \
     }									      \
   Array2 ## Type::Array2 ## Type(Type* data,int size0,int size1):	      \
-  _array(data),_length0(size0),_length1(size1),_managed(0) {}		      \
+  _length0(size0),_length1(size1),_managed(0),_array(data) {}		      \
   Array2 ## Type::Array2 ## Type(int size0,int size1):			      \
-  _array(0),_length0(0),_length1(0)					      \
+  _length0(0),_length1(0),_array(0)					      \
   { set_lengths(size0,size1); }						      \
   Array2 ## Type::~Array2 ## Type() { clear(); }			      \
   void Array2 ## Type::set_lengths(int size0,int size1)			      \

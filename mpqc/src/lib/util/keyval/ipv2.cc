@@ -11,20 +11,20 @@
 IPV2* IPV2::global_ = 0;
 
 IPV2::IPV2():
+table_keywords(0),
+current_table_keyword(0),
+table_sub_tree(0),
+table_array_depth(0),
+karray_indices(0),
+sub_tree(0),
+cwkstack(0),
+ip_initialized(0),
 ip_in(0),
 ip_out(0),
 ip_tree(0),
 ip_cwk(0),
 ip_uppercase(0),
-ip_keyword(0),
-table_keywords(0),
-current_table_keyword(0),
-table_sub_tree(0),
-karray_indices(0),
-sub_tree(0),
-ip_initialized(0),
-cwkstack(0),
-table_array_depth(0)
+ip_keyword(0)
 {
   lastkeyword[0] = '\0';
 }

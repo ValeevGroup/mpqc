@@ -11,7 +11,7 @@
 
 INLINE
 Result::Result(Compute*c):
-  _c(c),_compute(0),_computed(0)
+  _compute(0),_computed(0),_c(c)
 {
   c->add(this);
 }

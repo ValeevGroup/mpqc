@@ -1119,10 +1119,18 @@ Int2eV3::blockbuildprim(int minam1,int maxam12,int minam3,int maxam34)
   // compute (a,b,m) integrals
   for (m=maxam12-1; m>=0; m--) {
     for (b=0; b<=maxam34; b++) {
-      int amin = minam1-m;
-      if (amin<1) amin=1;
+// This is how the code was for a long while,
+// but at some point it started giving the wrong
+// answers and seems wrong from inspection.  Valgrind
+// flags that uninitialized I10i integrals are being
+// used, which results from amin > 1.  I have switched
+// to the correctly behaving amin = 1.
+//       int amin = minam1-m;
+//       if (amin<1) amin=1;
+//       int amax = maxam12-m;
+//       blockbuildprim_1(amin,amax,b,m);
       int amax = maxam12-m;
-      blockbuildprim_1(amin,amax,b,m);
+      blockbuildprim_1(1,amax,b,m);
       }
     }
 }

@@ -35,7 +35,8 @@ class NLP0: virtual public SavableState, public Compute {
     int do_value();
 
     virtual void set_x(const RefSCVector&);
-    virtual RefSCVector get_x();
+    RefSCVector get_x() const;
+    const RefSCVector& get_x_no_copy() const;
 
     virtual void set_desired_value_accuracy(double);
     virtual double actual_value_accuracy();
@@ -44,6 +45,18 @@ class NLP0: virtual public SavableState, public Compute {
     virtual void print(SCostream& =SCostream::cout);
 };
 SavableState_REF_dec(NLP0);
+
+inline RefSCVector
+NLP0::get_x() const
+{
+  return _x.copy();
+}
+
+inline const RefSCVector&
+NLP0::get_x_no_copy() const
+{
+  return _x;
+}
 
 //------------------------------------------------------------------------
 // Derived Classes from NonLinear Programming Problem

@@ -100,12 +100,6 @@ NLP0::set_x(const RefSCVector&v)
   obsolete();
 }
 
-RefSCVector
-NLP0::get_x()
-{
-  return _x.copy();
-}
-
 void
 NLP0::set_value(double e)
 {

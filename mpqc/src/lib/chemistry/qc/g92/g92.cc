@@ -137,6 +137,7 @@ Gaussian92::compute()
 
   // print the geometry every iteration
   printf("\n  molecular geometry in Gaussian92::compute()\n");
+  fflush(stdout);
   _mol->print();
 
   // Adjust the value accuracy if gradients are needed and set up
@@ -222,6 +223,7 @@ Gaussian92::parse_g92_energy()
 
   energy = atof(tok);
   printf("\n  Gaussian92 energy = %20.10f\n",energy);
+  fflush(stdout);
   
   set_energy(energy);
   _energy.set_actual_accuracy(_energy.desired_accuracy());
@@ -282,6 +284,7 @@ Gaussian92::parse_g92_gradient()
     gradient.set_element(i*3+2,z);
     printf("%5d %14.10f %14.10f %14.10f\n",i+1,x,y,z);
   }
+  fflush(stdout);
 
   fclose(g92log);
   set_gradient(gradient);
@@ -342,6 +345,8 @@ Gaussian92::parse_g92_hessian()
   fclose(g92log);
 
   hessian.print("  G92 force constants");
+  fflush(stdout);
+  cout.flush();
   set_hessian(hessian);
   _hessian.set_actual_accuracy(desired_hessian_accuracy());
   
@@ -369,7 +374,7 @@ Gaussian92::run_g92(const char *method)
   // Write out required headers
   fprintf(g92com,"%%chk=%s\n",name_);
   fprintf(g92com,"%%mem=%d\n",memory_);
-  fprintf(g92com,"#p FChk=all units=au %s\n",method);
+  fprintf(g92com,"#p FChk=all units=au nosymm %s\n",method);
   
   if (basis_)
     fprintf(g92com,"%s\n",basis_);

@@ -9,7 +9,6 @@
 void
 PoolData::check(void* lower_bound, void* upper_bound)
 {
-  PoolData*tmp = this;
   if ((void*)this < lower_bound || (void*)this >= upper_bound) {
       fprintf(stderr,"PoolData::check: this out of bounds\n");
       abort();
@@ -23,7 +22,7 @@ PoolData::check(void* lower_bound, void* upper_bound)
           fprintf(stderr,"PoolData::check: next pd doesn't point back\n");
           abort();
         }
-      if ((void*)next_ != ((void*)this) + size_ + PoolData_aligned_size) {
+      if ((char*)next_ != (char*)this + size_ + PoolData_aligned_size) {
           fprintf(stderr,"PoolData::check: next_ not consistent with size\n");
           abort();
         }
@@ -79,16 +78,16 @@ Pool::Pool(size_t size):
 {
 
   // Initialize the first and last members of the data list.
-  firstdatum_ = (PoolData*)align_pool_data(((void*)this) + sizeof(Pool));
+  firstdatum_ = (PoolData*)align_pool_data((void*)((char*)this+sizeof(Pool)));
 
-  if (((void*)this) + size <= (void*) firstdatum_) {
+  if ((char*)this + size <= (char*) firstdatum_) {
       fprintf(stderr,"Pool::Pool: not given enough space\n");
       abort();
     }
   
   size_t firstdatum_size = align_pool_data_downward((size_t)
-                                                    ((((void*)this)+size)
-                                                    - (void*)firstdatum_));
+                                                    (((char*)this+size)
+                                                    - (char*)firstdatum_));
   new(firstdatum_) PoolData(firstdatum_size);
 
   firstdatum_->prev_next(0,0);
@@ -156,7 +155,7 @@ Pool::allocate(size_t size)
               freelist_del(j);
               // Maybe need to break this chunk into two pieces.
               if (j->size_ > size + PoolData_aligned_size) {
-                  PoolData* freechunk = (PoolData*)(((void*)j)
+                  PoolData* freechunk = (PoolData*)((char*)j
                                                     + PoolData_aligned_size
                                                     + size);
                   new(freechunk) PoolData(j->size_ - size);
@@ -240,18 +239,21 @@ void
 Pool::check()
 {
   // The bit lost at the beginning to Pool and alignment.
-  size_t start = (size_t) (align_pool_data(((void*)this) + sizeof(Pool))
-                           - (void*)this);
+  size_t start = (size_t)
+                 ((char*)align_pool_data((void*)((char*)this + sizeof(Pool)))
+                  - (char*)this);
 
   // The bit lost at the end to alignment.
-  size_t end =  (size_t)(((void*)this) + size_
-                         - align_pool_data_downward((size_t)((void*)this)
-                                                    +size_));
+  size_t end = (size_t)
+               ((char*)this + size_
+                - (char*) align_pool_data_downward((size_t)((void*)this)
+                                                   +size_));
 
   size_t size = start + end;
 
-  for (PoolData*j=firstdatum_; j; j = j->next()) {
-      j->check(this,((void*)this)+size_);
+  PoolData *j;
+  for (j=firstdatum_; j; j = j->next()) {
+      j->check(this,(void*)((char*)this+size_));
       size += PoolData_aligned_size + j->size_;
     }
   

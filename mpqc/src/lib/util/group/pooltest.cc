@@ -77,8 +77,9 @@ Double::~Double()
 void
 Double::zap()
 {
+  int i;
   int* x = (int*)d;
-  for (int i=0; i<size*2; i++) {
+  for (i=0; i<size*2; i++) {
       if (x[i] == PoolData::magic) {
           fprintf(stderr,"Double::zap: tried to zap a magic number\n");
           abort();
@@ -186,13 +187,15 @@ test1(Pool*pool)
 void
 test2(Pool*pool)
 {
+  int i, ii;
+
   const int npass = 200;
   const int nd = 4096;
   Double* d[nd];
 
-  for (int i=0; i<nd; i++) d[i] = 0;
-
-  for (int ii=0; ii<npass; ii++) {
+  for (i=0; i<nd; i++) d[i] = 0;
+       
+  for (ii=0; ii<npass; ii++) {
       for (i=0; i<nd;) {
           if (mrand48() > 0) {
               // allocate data

@@ -6,8 +6,6 @@
 #ifndef _util_group_pool_h
 #define _util_group_pool_h
 
-#define virtual tried_virtual_but_this_is_very_bad_if_pool_is_in_shared_memory
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <new.h>
@@ -26,7 +24,7 @@ align_pool_data(size_t size)
 inline void*
 align_pool_data(void* ptr)
 {
-  return (void*)( (unsigned long) (ptr + pool_data_alignment - 1)
+  return (void*)( (unsigned long) ((char*)ptr + pool_data_alignment - 1)
                  & (~ (pool_data_alignment - 1)));
 }
 inline size_t
@@ -105,7 +103,7 @@ const int PoolData_aligned_size = (sizeof(PoolData) + pool_data_alignment - 1)
     & (~ (pool_data_alignment - 1));
 inline void* PoolData::data()
 {
-  return ((void*)this) + PoolData_aligned_size;
+  return (void*)(((char*)this) + PoolData_aligned_size);
 }
 
 inline PoolData*
@@ -233,28 +231,6 @@ PoolData::set_magic(int magic)
   magic_ = magic;
 }
 
-// inline void*
-// operator new(size_t size, void* placement)
-// {
-//   return placement;
-// }
-
-//////////////////////////////////////////////////////////////////////////////
-
-// class Pool;
-// class Handle {
-//     friend Pool;
-//   private:
-//     PoolData* handle_;
-
-//     // Don't allow those nasty little default copy or assignment operators.
-//     Handle(const Handle&) {};
-//     void operator=(const Handle&) {};
-//   public:
-// //     void* operator new(size_t size, void* placement) { return placement; }
-
-// };
-
 //////////////////////////////////////////////////////////////////////////////
 
 class Pool {
@@ -292,7 +268,7 @@ class Pool {
 inline PoolData*
 Pool::voidptr_to_pd(void*d)
 {
-  return (PoolData*)(d - PoolData_aligned_size);
+  return (PoolData*)((char*)d - PoolData_aligned_size);
 }
 
 inline double*
@@ -316,8 +292,6 @@ Pool::release(int*d)
 {
   release((void*)d);
 }
-
-#undef virtual
 
 #endif
 

@@ -230,10 +230,15 @@ ShmMessageGrp::initialize(int nprocs)
   // Attach the shared segment.
   nextbuf = sharedmem = shmat(shmid,NULL,0);
 
+#ifdef SEMCTL_REQUIRES_SEMUN
   semun semzero;
   semzero.val = 0;
   semun semone;
   semone.val = 1;
+#else
+  int semzero = 0;
+  int semone = 1;
+#endif
 
   // This is used for node synchronization.
   sync_semid = semget(IPC_PRIVATE,1,IPC_CREAT | SEM_R | SEM_A );
@@ -241,7 +246,7 @@ ShmMessageGrp::initialize(int nprocs)
       perror("semget");
       exit(-1);
     }
-  if (semctl(sync_semid,0,SETVAL,semzero.val) == -1) {
+  if (semctl(sync_semid,0,SETVAL,semzero) == -1) {
       perror("semctl");
       exit(-1);
     }
@@ -250,7 +255,7 @@ ShmMessageGrp::initialize(int nprocs)
       perror("semget");
       exit(-1);
     }
-  if (semctl(sync2_semid,0,SETVAL,semzero.val) == -1) {
+  if (semctl(sync2_semid,0,SETVAL,semzero) == -1) {
       perror("semctl");
       exit(-1);
     }
@@ -277,17 +282,17 @@ ShmMessageGrp::initialize(int nprocs)
   for (i=0; i<nprocs; i++) {
 
       // Mark all of the segments as available for writing.
-      if (semctl(semid,i,SETVAL,semone.val) == -1) {
+      if (semctl(semid,i,SETVAL,semone) == -1) {
           perror("semctl");
           exit(-1);
         }
 
-      if (semctl(recv_semid,i,SETVAL,semzero.val) == -1) {
+      if (semctl(recv_semid,i,SETVAL,semzero) == -1) {
           perror("semctl");
           exit(-1);
         }
 
-      if (semctl(send_semid,i,SETVAL,semzero.val) == -1) {
+      if (semctl(send_semid,i,SETVAL,semzero) == -1) {
           perror("semctl");
           exit(-1);
         }
@@ -315,9 +320,13 @@ ShmMessageGrp::initialize(int nprocs)
 
 static void reset_recv(int node)
 {
+#ifdef SEMCTL_REQUIRES_SEMUN
   semun semzero;
   semzero.val = 0;
-  semctl(recv_semid,node,SETVAL,semzero.val);
+#else
+  int semzero = 0;
+#endif
+  semctl(recv_semid,node,SETVAL,semzero);
 }
 
 static void get_recv(int node)
@@ -336,9 +345,13 @@ static void put_recv(int node)
 
 static void reset_send(int node)
 {
+#ifdef SEMCTL_REQUIRES_SEMUN
   semun semzero;
   semzero.val = 0;
-  semctl(send_semid,node,SETVAL,semzero.val);
+#else
+  int semzero = 0;
+#endif
+  semctl(send_semid,node,SETVAL,semzero);
 }
 
 static void get_send(int node)

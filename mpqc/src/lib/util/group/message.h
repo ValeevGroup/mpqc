@@ -200,7 +200,7 @@ class MessageGrp: public DescribedClass {
     virtual void bcast(short* data, int ndata, int from = 0);
     virtual void bcast(long* data, int ndata, int from = 0);
     virtual void bcast(float* data, int ndata, int from = 0);
-    virtual void raw_bcast(void* data, int nbyte, int from);
+    virtual void raw_bcast(void* data, int nbyte, int from = 0);
 
     // global reduction operations
     virtual void sum(double* data, int n, double* = 0, int target = -1);

@@ -164,6 +164,15 @@ rclean::
 	$(CXX) -M $(CXXFLAGS) $< | sed 's/$*.o/$*.o $*.d/g' > $(@F)
 
 #
+# sometimes it's nice to get assembler source
+#
+%.s: %.c
+	$(CC) $(CFLAGS) -S $<
+
+%.s: %.cc
+	$(CXX) $(CXXFLAGS) -S $<
+
+#
 # remote stuff
 #
 FILES = $(TRUESRC) $(TRUEINCLUDES) Makefile $(OTHERFILES) $(SGENFILE)

@@ -168,6 +168,8 @@ QNewtonOpt::update()
       // compute the required accuracy
       accuracy_ = maxabs_gradient * maxabs_gradient_to_desired_accuracy;
 
+      if (accuracy_ < DBL_EPSILON) accuracy_ = DBL_EPSILON;
+
       // The roundoff_error_factor is thrown in to allow for round off making
       // the current gcurrent.maxabs() a bit smaller than the previous,
       // which would make the current required accuracy less than the

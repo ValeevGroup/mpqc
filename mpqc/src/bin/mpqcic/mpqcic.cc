@@ -12,6 +12,7 @@ extern "C" {
 #include <math/array/math_lib.h>
 }
 
+#include <util/misc/formio.h>
 #include <util/group/picl.h>
 #include <util/group/message.h>
 #include <util/group/memory.h>
@@ -183,15 +184,13 @@ main(int argc, char *argv[])
 
   int nfilebase = (int) (strrchr(filename, '.') - filename);
 
-  char *geomfile = new char[nfilebase + 6];
-  strncpy(geomfile, filename, nfilebase);
-  geomfile[nfilebase] = '\0';
-  strcat(geomfile, ".geom");
+  char *basename = new char[nfilebase + 1];
+  strncpy(basename, filename, nfilebase);
+  basename[nfilebase] = '\0';
+  SCFormIO::set_default_basename(basename);
 
-  char *pdbfile = new char[nfilebase + 5];
-  strncpy(pdbfile, filename, nfilebase);
-  pdbfile[nfilebase] = '\0';
-  strcat(pdbfile, ".pdb");
+  char *geomfile = SCFormIO::fileext_to_filename(".geom");
+  char *pdbfile = SCFormIO::fileext_to_filename(".pdb");
 
   RefDebugger debugger;
 

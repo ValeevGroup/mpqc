@@ -23,6 +23,7 @@ class SCFormIO {
 
     static void set_default_basename(const char *);
     static const char *default_basename();
+    static char *fileext_to_filename(const char *extension);
 };
 
 ios& indent(ios&);

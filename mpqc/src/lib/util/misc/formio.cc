@@ -8,9 +8,26 @@ long SCFormIO::nindent_ = 0;
 long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
 
+char *
+SCFormIO::fileext_to_filename(const char *ext)
+{
+  const char *basename;
+
+  if (default_basename_) basename = default_basename_;
+  else basename = "SC";
+
+  char * res = new char[strlen(basename) + strlen(ext) + 1];
+  strcpy(res, basename);
+  strcat(res, ext);
+
+  return res;
+}
+
 void
 SCFormIO::set_default_basename(const char *basename)
 {
+  if (default_basename_) delete[] default_basename_;
+
   if (basename)
       default_basename_ = strcpy(new char[strlen(basename)+1], basename);
   else

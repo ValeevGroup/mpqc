@@ -51,7 +51,7 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
 $(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
 	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)
 
-default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).la
+default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).$(LIBSUF)
 
 ifneq ($(ENABLESHARED),yes)
 

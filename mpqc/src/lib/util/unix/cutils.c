@@ -32,11 +32,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include  <errno.h>    /* for definition of errno */
 #include  <stdarg.h>    /* ANSI C header file */
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include  "cct_cprot.h"
 

@@ -124,6 +124,20 @@ main(int argc, char *argv[])
   else
     grp = MessageGrp::get_default_messagegrp();
 
+  // get the thread group.  first try the commandline and environment
+  RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
+  
+  // if we still don't have a group, try reading the thread group
+  // from the input
+  if (thread.null()) {
+    thread = keyval->describedclassvalue("thread");
+  }
+
+  if (thread.nonnull())
+    ThreadGrp::set_default_threadgrp(thread);
+  else
+    thread = ThreadGrp::get_default_threadgrp();
+
   // set up output classes
   SCFormIO::setindent(cout, 2);
   SCFormIO::setindent(cerr, 2);
@@ -200,6 +214,10 @@ main(int argc, char *argv[])
   int checkpoint = keyval->booleanvalue("checkpoint");
   if (keyval->error() != KeyVal::OK)
     checkpoint=1;
+
+  int savestate = keyval->booleanvalue("savestate");
+  if (keyval->error() != KeyVal::OK)
+    savestate=1;
 
   struct stat sb;
   RefMolecularEnergy mole;
@@ -330,12 +348,28 @@ main(int argc, char *argv[])
          << endl;
   }
 
-  ckptfile = new char[strlen(molname)+5];
-  sprintf(ckptfile, "%s.wfn",molname);
+  if (savestate) {
+    if (opt.nonnull()) {
+      ckptfile = new char[strlen(molname)+6];
+      sprintf(ckptfile,"%s.ckpt",molname);
+
+      StateOutBinXDR so(ckptfile);
+      opt.save_state(so);
+      so.close();
+
+      delete[] ckptfile;
+    }
+
+    if (mole.nonnull()) {
+      ckptfile = new char[strlen(molname)+5];
+      sprintf(ckptfile, "%s.wfn",molname);
   
-  if (checkpoint) {
-    StateOutBinXDR so(ckptfile);
-    mole.save_state(so);
+      StateOutBinXDR so(ckptfile);
+      mole.save_state(so);
+      so.close();
+
+      delete[] ckptfile;
+    }
   }
   
   tim->print(cout);

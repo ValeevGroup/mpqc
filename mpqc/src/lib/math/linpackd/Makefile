@@ -33,8 +33,11 @@ default:: linpackd.a
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d):
+DFILES := $(LIBSRC:%.f=)
+DFILES := $(DFILES:.c=.d)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+ifneq ($(DFILES),)
+include $(DFILES)
+endif
 endif
 

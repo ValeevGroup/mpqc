@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:59  etseidl
+ * Revision 1.3  1994/05/27 18:13:51  cljanss
+ * Fixed a bug that could lead to SEGV, etc, when assigning shells.
+ *
+ * Revision 1.2  1993/12/30  13:32:59  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.3  1992/06/17  22:04:56  jannsen
@@ -92,7 +95,7 @@ shell_t *_shell_2;
 
 /* here is the hand coded part for norm */
 
-  if(_shell_2->ncon!=0) {
+  if(_shell_2->norm && _shell_2->ncon!=0) {
     if ((_shell_2->norm != NULL)) {
       _shell_1->norm = (double **) malloc(sizeof(double *)*_shell_2->ncon);
       if(_shell_1->norm==NULL) return(-1);
@@ -111,6 +114,7 @@ shell_t *_shell_2;
       }
     else _shell_1->coef = NULL;
     }
+  else _shell_1->norm = NULL;
 
   return 0;
   }

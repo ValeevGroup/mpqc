@@ -136,6 +136,7 @@ class GaussianBasisSet: public SavableState
     int nshell_;
     int nbasis_;
     int nprim_;
+    bool has_pure_;
 
     void recursively_get_shell(int&,Ref<KeyVal>&,
                                const char*,const char*,BasisFileSet&,
@@ -312,6 +313,8 @@ class GaussianBasisSet: public SavableState
     int nbasis_on_center(int icenter) const;
     /// Return the number of primitive Gaussians.
     int nprimitive() const { return nprim_; }
+    /// Return true if basis contains solid harmonics Gaussians
+    int has_pure() const { return has_pure_; }
 
     /// Return the maximum number of functions that any shell has.
     int max_nfunction_in_shell() const;

@@ -34,9 +34,11 @@
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
+#include <util/misc/timer.h>
 
 SavableState_REF_def(Optimize);
 #define CLASSNAME Optimize
+#define VERSION 2
 #define PARENTS virtual_base public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -70,6 +72,9 @@ Optimize::Optimize(StateIn&s):
   s.getstring(ckpt_file);
   s.get(max_iterations_);
   s.get(max_stepsize_);
+  if (s.version(static_class_desc()) > 1) {
+      s.get(print_timings_);
+    }
   n_iterations_ = 0;
   conv_.restore_state(s);
   function_.restore_state(s);
@@ -77,6 +82,8 @@ Optimize::Optimize(StateIn&s):
 
 Optimize::Optimize(const RefKeyVal&keyval)
 {
+  print_timings_ = keyval->booleanvalue("print_timings");
+  if (keyval->error() != KeyVal::OK) print_timings_ = 0;
   ckpt_ = keyval->booleanvalue("checkpoint");
   if (keyval->error() != KeyVal::OK) ckpt_ = 0;
   ckpt_file = keyval->pcharvalue("checkpoint_file");
@@ -122,6 +129,7 @@ Optimize::save_data_state(StateOut&s)
   s.putstring(ckpt_file);
   s.put(max_iterations_);
   s.put(max_stepsize_);
+  s.put(print_timings_);
   conv_.save_state(s);
   function_.save_state(s);
 }
@@ -170,6 +178,9 @@ Optimize::optimize()
         OPTSTATEOUT so(ckpt_file);
         this->save_state(so);
       }
+      if (print_timings_) {
+          tim_print(0);
+        }
     }
   return result;
 }

@@ -50,6 +50,7 @@ class Optimize: virtual_base public SavableState {
     int max_iterations_;
     int n_iterations_;
     int ckpt_;
+    int print_timings_;
     double max_stepsize_;
     char *ckpt_file;
     RefFunction function_;

@@ -209,7 +209,8 @@ PointGroup::equiv(const RefPointGroup &grp, double tol) const
   if (strcmp(symb,grp->symb)) return 0;
 
   for (int i=0; i < 3; i++) {
-    if (fabs(origin_[i] - grp->origin_[i]) > tol) return 0;
+    // origin isn't realy used, so don't check
+    //if (fabs(origin_[i] - grp->origin_[i]) > tol) return 0;
     for (int j=0; j < 3; j++) {
       if (fabs(frame(i,j) - grp->frame(i,j)) > tol) return 0;
     }
@@ -253,7 +254,7 @@ PointGroup::print(ostream &o) const
   if (!zero_origin) {
     cout << node0 << indent << "origin = [";
     for (i=0; i<3; i++) {
-      cout << node0 << scprintf(" % 18.16f", origin_[j]);
+      cout << node0 << scprintf(" % 18.16f", origin_[i]);
     }
     cout << node0 << endl;
   }

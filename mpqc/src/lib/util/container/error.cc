@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <builtin.h>
 #include <iostream.h>
 #include <stdlib.h>
 
@@ -33,11 +34,13 @@
 // using libg++
 //
 
-#ifndef __GNUC__
-extern "C" void lib_error_handler(const char *kind, const char* msg)
+#ifdef USING_LIBGPLUSPLUS_STUB
+static void
+the_lib_error_handler(const char *kind, const char* msg)
 {
   cerr << kind << endl << "Error: " << msg << endl;
   exit(1);
 }
+two_arg_error_handler_t lib_error_handler = the_lib_error_handler;
 #endif
 

@@ -28,6 +28,8 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #define _builtin_h 1
 
+#define USING_LIBGPLUSPLUS_STUB
+
 #include <stddef.h>
 /*#include <std.h>*/
 #include <math.h>
@@ -38,125 +40,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #define _VOLATILE_VOID void
 #endif
 
-typedef void (*one_arg_error_handler_t)(const char*);
 typedef void (*two_arg_error_handler_t)(const char*, const char*);
-
-extern _VOLATILE_VOID default_one_arg_error_handler(const char*);
-extern _VOLATILE_VOID default_two_arg_error_handler(const char*, const char*);
-
 extern two_arg_error_handler_t lib_error_handler;
 
-extern two_arg_error_handler_t 
-       set_lib_error_handler(two_arg_error_handler_t f);
-
-#if 0
-
-long         gcd(long, long);
-long         lg(unsigned long); 
-double       pow(double, long);
-long         pow(long, long);
-
-extern "C" double       start_timer();
-extern "C" double       return_elapsed_time(double last_time = 0.0);
-
-char*        dtoa(double x, char cvt = 'g', int width = 0, int prec = 6);
-
-unsigned int hashpjw(const char*);
-unsigned int multiplicativehash(int);
-unsigned int foldhash(double);
-
-
-double abs(double arg);
-float abs(float arg);
-short abs(short arg);
-long abs(long arg);
-int sign(long arg);
-int sign(double arg);
-long sqr(long arg);
-double sqr(double arg);
-int even(long arg);
-int odd(long arg);
-long lcm(long x, long y);
-void (setbit)(long& x, long b);
-void clearbit(long& x, long b);
-int testbit(long x, long b);
-
-#if !defined(IV)
-
-#if ! _G_MATH_H_INLINES /* hpux and SCO define this in math.h */
-inline double abs(double arg) 
-{
-  return (arg < 0.0)? -arg : arg;
-}
-#endif
-
-inline float abs(float arg) 
-{
-  return (arg < 0.0)? -arg : arg;
-}
-
-inline short abs(short arg) 
-{
-  return (arg < 0)? -arg : arg;
-}
-
-inline long abs(long arg) 
-{
-  return (arg < 0)? -arg : arg;
-}
-
-inline int sign(long arg)
-{
-  return (arg == 0) ? 0 : ( (arg > 0) ? 1 : -1 );
-}
-
-inline int sign(double arg)
-{
-  return (arg == 0.0) ? 0 : ( (arg > 0.0) ? 1 : -1 );
-}
-
-inline long sqr(long arg)
-{
-  return arg * arg;
-}
-
-#if ! _G_MATH_H_INLINES /* hpux and SCO define this in math.h */
-inline double sqr(double arg)
-{
-  return arg * arg;
-}
-#endif
-
-inline int even(long arg)
-{
-  return !(arg & 1);
-}
-
-inline int odd(long arg)
-{
-  return (arg & 1);
-}
-
-inline long lcm(long x, long y)
-{
-  return x / gcd(x, y) * y;
-}
-
-inline void (setbit)(long& x, long b)
-{
-  x |= (1 << b);
-}
-
-inline void clearbit(long& x, long b)
-{
-  x &= ~(1 << b);
-}
-
-inline int testbit(long x, long b)
-{
-  return ((x & (1 << b)) != 0);
-}
-
-#endif
-#endif
 #endif

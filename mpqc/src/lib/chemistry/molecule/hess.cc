@@ -360,24 +360,24 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
           abort();
         }
       in.getline(linebuf,nline);
-      cout << "READ: should be atoms: " << linebuf << endl;
+      //cout << "READ: should be atoms: " << linebuf << endl;
       for (i=0; i<mol->natom(); i++) {
           int Z;
           double x, y, z;
           in >> Z >> x >> y >> z;
-          cout << "READ: " << Z << " " << x << " " << y << " " << z << endl;
+          //cout << "READ: " << Z << " " << x << " " << y << " " << z << endl;
         }
       for (i=0; i<ntri; i++) {
           in >> hessv[i];
-          cout << "READ: hess[" << i << "] = " << hessv[i] << endl;
+          //cout << "READ: hess[" << i << "] = " << hessv[i] << endl;
         }
       in.getline(linebuf, nline);
-      cout << "READ: last line = " << linebuf << endl;
+      //cout << "READ: last line = " << linebuf << endl;
       if (strcmp(linebuf,"End Hessian")) {
           // try once more since there could be a left over new line
           in.getline(linebuf, nline);
           if (strcmp(linebuf,"End Hessian")) {
-              cout << "READ: last line = " << linebuf << endl;
+              //cout << "READ: last line = " << linebuf << endl;
               cout << "MolecularHessian: hessian file seems to be truncated"
                    << endl;
               abort();

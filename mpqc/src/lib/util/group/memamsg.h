@@ -78,6 +78,9 @@ class MemoryDataRequest {
     int size() const { return data_[3]; }
     int serial_number() const { return data_[4]; }
 
+    // Sync messages only define one datum besides type and node
+    int reactivate() const { return data_[2]; }
+
     void operator =(const MemoryDataRequest &r);
 
     void print(const char* msg = 0);

@@ -29,6 +29,7 @@ Let's take a walk through the usage.
 #include <iostream>
 #include <stdlib.h>
 
+using namespace std;
 using namespace sc;
 
 int debug_index = 0;

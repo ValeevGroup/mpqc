@@ -35,6 +35,7 @@
 
 #include <util/group/linkage.h>
 
+using namespace std;
 using namespace sc;
 
 void matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,

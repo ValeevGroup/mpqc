@@ -172,7 +172,7 @@ sub beautify_member {
         $item = "$item $qualifiers";
     }
     if ($typename ne 'void') {
-        $item = "$item \@b{@result{}} $typename";
+        $item = "$item \@b{\@result{}} $typename";
     }
 
     return "$item;";

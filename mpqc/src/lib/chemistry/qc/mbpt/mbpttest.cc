@@ -52,15 +52,15 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 
-#include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/hsosscf.h>
+#include <chemistry/qc/scf/clhf.h>
+#include <chemistry/qc/scf/hsoshf.h>
 
 #include <chemistry/qc/mbpt/mbpt.h>
 
 // Force linkages:
 #ifndef __PIC__
-const ClassDesc &fl0a = CLSCF::class_desc_;
-const ClassDesc &fl0b = HSOSSCF::class_desc_;
+const ClassDesc &fl0a = CLHF::class_desc_;
+const ClassDesc &fl0b = HSOSHF::class_desc_;
 
 const ClassDesc &fl0e = MBPT2::class_desc_;
 

@@ -68,7 +68,7 @@ mole<MBPT2>: (
 %
 %
 
-hsosscf_reference<HSOSSCF>: (
+hsosscf_reference<HSOSHF>: (
   matrixkit = $:localmatrixkit
   memory=32000000
   value_accuracy = 1e-9
@@ -89,7 +89,7 @@ hsosscf_reference<HSOSSCF>: (
   %guess_wavefunction = $:hsosscf_guess
 )
 
-hsosscf_guess<HSOSSCF>: (
+hsosscf_guess<HSOSHF>: (
   integral_storage=32000000
   value_accuracy = 1e-7
   molecule = $:molecule
@@ -98,7 +98,7 @@ hsosscf_guess<HSOSSCF>: (
   basis = $:basis
 )
 
-clscf_reference<CLSCF>: (
+clscf_reference<CLHF>: (
   matrixkit = $:localmatrixkit
   memory=32000000
   value_accuracy = 1e-9
@@ -119,7 +119,7 @@ clscf_reference<CLSCF>: (
   %guess_wavefunction = $:guess
 )
 
-clscf_guess<CLSCF>: (
+clscf_guess<CLHF>: (
   integral_storage=32000000
   value_accuracy = 1e-7
   molecule = $:molecule

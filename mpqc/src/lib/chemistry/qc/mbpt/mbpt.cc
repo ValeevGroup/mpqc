@@ -186,6 +186,12 @@ MBPT2::print(ostream&o)
 
 //////////////////////////////////////////////////////////////////////////////
 
+int
+MBPT2::spin_polarized()
+{
+  return reference_->spin_polarized();
+}
+
 RefSymmSCMatrix
 MBPT2::density()
 {

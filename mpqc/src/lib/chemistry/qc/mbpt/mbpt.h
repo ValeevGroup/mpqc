@@ -115,6 +115,7 @@ class MBPT2: public Wavefunction {
     void save_data_state(StateOut&);
 
     RefSymmSCMatrix density();
+    int spin_polarized();
 
     int gradient_implemented();
     int value_implemented();

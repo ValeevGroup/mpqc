@@ -67,7 +67,8 @@ Rotation::init(int a, SymmetryOperation&so)
       for (k=0; k < _am; k++) {
         for (iI=0; lI[iI]==0; iI++);
         lI[iI]--;
-        tmp *= so(iI,J.axis(k));
+        //tmp *= so(iI,J.axis(k));
+        tmp *= so(J.axis(k),iI);
       }
 
       r[I.bfn()][J.bfn()] += tmp;
@@ -135,7 +136,8 @@ Rotation::init_pure(int a, SymmetryOperation&so)
               for (m=0; m < _am; m++) {
                   for (iI=0; lI[iI]==0; iI++);
                   lI[iI]--;
-                  tmp2 *= so(iI,K.axis(m));
+                  //tmp2 *= so(iI,K.axis(m));
+                  tmp2 *= so(K.axis(m),iI);
                   //printf(" * so(%d,%d) [=%4.2f]",
                   //       iI,K.axis(m),so(iI,K.axis(m)));
                 }

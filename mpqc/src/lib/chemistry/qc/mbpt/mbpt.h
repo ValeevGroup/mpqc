@@ -61,6 +61,10 @@ class MBPT2: public Wavefunction {
     RefMessageGrp msg_;
     int nvir, nocc, nsocc;
 
+    // the irreps of the orbitals and the offset within the irrep
+    int *symorb_irrep_;
+    int *symorb_num_;
+
     char *method_;
     char *algorithm_;
 

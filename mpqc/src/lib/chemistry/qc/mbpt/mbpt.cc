@@ -105,6 +105,9 @@ MBPT2::MBPT2(StateIn& s):
   s.getstring(algorithm_);
   s.get(debug_);
 
+  symorb_irrep_ = 0;
+  symorb_num_ = 0;
+
   eliminate_in_gmat_ = 1;
 
   mem = MemoryGrp::initial_memorygrp();
@@ -151,6 +154,9 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   if (keyval->error() == KeyVal::WrongType)
       debug_ = keyval->intvalue("debug");
 
+  symorb_irrep_ = 0;
+  symorb_num_ = 0;
+
   eliminate_in_gmat_ = 1;
 }
 
@@ -158,6 +164,8 @@ MBPT2::~MBPT2()
 {
   delete[] method_;
   delete[] algorithm_;
+  delete[] symorb_irrep_;
+  delete[] symorb_num_;
 }
 
 void
@@ -272,7 +280,7 @@ MBPT2::value_implemented()
 void
 MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
 {
-  int i;
+  int i, j;
   if (nsocc) {
       if (reference_->n_fock_matrices() != 2) {
           cerr << "MBPT2: given open reference with"
@@ -324,7 +332,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       fock_eff_mo1.assign(fock_c_mo1);
       for (i=0; i<nbasis; i++) {
           double occi = reference_->occupation(i);
-          for (int j=0; j<=i; j++) {
+          for (j=0; j<=i; j++) {
               double occj = reference_->occupation(j);
               if (occi == 2.0 && occj == 1.0
                   || occi == 1.0 && occj == 2.0) {
@@ -374,6 +382,9 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   for (i=0; i<nbasis; i++) {
       occs(i) = reference_->occupation(i);
     }
+  // allocate storage for symmetry information
+  if (!symorb_irrep_) symorb_irrep_ = new int[nbasis];
+  if (!symorb_num_) symorb_num_ = new int[nbasis];
   // sort the eigenvectors and values if symmetry is not c1
   if (molecule()->point_group()->char_table().order() != 1) {
       int n = vals.n();
@@ -390,14 +401,41 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       for (i=0; i<n; i++) {
           newvals(i) = vals(indices[i]);
           newoccs(i) = occs(indices[i]);
-          for (int j=0; j<n; j++) {
+          for (j=0; j<n; j++) {
               newvecs(i,j) = vecs(indices[i],j);
             }
         }
       occs = newoccs;
       vecs = newvecs;
       vals = newvals;
+
+      // compute orbital symmetry information
+      RefPetiteList pl = reference_->integral()->petite_list(basis());
+      CharacterTable ct = molecule()->point_group()->char_table();
+      int orbnum = 0;
+      int *tmp_irrep = new int[n];
+      int *tmp_num = new int[n];
+      for (i=0; i<pl->nirrep(); i++) {
+          for (j=0; j<pl->nfunction(i); j++, orbnum++) {
+              tmp_irrep[orbnum] = i;
+              tmp_num[orbnum] = j;
+            }
+        }
+      for (i=0; i<n; i++) {
+          symorb_irrep_[i] = tmp_irrep[indices[i]];
+          symorb_num_[i] = tmp_num[indices[i]];
+        }
+      delete[] tmp_irrep;
+      delete[] tmp_num;
+
       delete[] indices;
+    }
+  else {
+      // compute orbital symmetry information for c1
+      for (i=0; i<nbasis; i++) {
+          symorb_irrep_[i] = 0;
+          symorb_num_[i] = i;
+        }
     }
   // check the splitting between frozen and nonfrozen orbitals
   if (nfzc && nfzc < nbasis) {

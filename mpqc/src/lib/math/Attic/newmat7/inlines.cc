@@ -1,11 +1,12 @@
 
+#define WANT_MATH
+
 #include "newmat.h"
 #include "except.h"
 #include "newmatap.h"
 #include "newmatrm.h"
 #include "newmatrc.h"
 #include "precisio.h"
-#include <float.h>
 
 // These functions were orginally inlined in newmat.h.
 

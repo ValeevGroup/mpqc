@@ -222,18 +222,7 @@ RefDiagSCMatrix
 Wavefunction::natural_density()
 {
   if (!natural_density_.computed()) {
-      RefSymmSCMatrix dens = density();
-
-      RefSCMatrix natorb(basis_dimension(), basis_dimension(),
-                         basis_matrixkit());
-      RefDiagSCMatrix natden(basis_dimension(), basis_matrixkit());
-      natural_orbitals_ = natorb;
-      natural_density_ = natden;
-
-      dens.diagonalize(natural_density_,natural_orbitals_);
-
-      natural_orbitals_.computed() = 1;
-      natural_density_.computed() = 1;
+      natural_orbitals();
     }
 
   return natural_density_.result_noupdate();

@@ -145,16 +145,14 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   
   // now we do _p1 and _lamij
   for (i=0; i < _nshell; i++) {
-    int leave=0;
+    int g;
 
-    // we want the lowest numbered shell in a group of equivalent shells
-    for (int g=0; g < _ng; g++)
-      if (_shell_map[i][g] < i) {
-        leave=1;
+    // we want the highest numbered shell in a group of equivalent shells
+    for (g=0; g < _ng; g++)
+      if (_shell_map[i][g] > i)
         break;
-      }
     
-    if (leave)
+    if (g < _ng)
       continue;
     
     // i is in the group P1
@@ -168,20 +166,18 @@ PetiteList::init(const RefGaussianBasisSet &gb)
       // equal to the number of equivalent shell pairs.  This number is
       // just the order of the group divided by the number of times ij is
       // mapped into itself
-      leave=0;
-      for (int gg=0; gg < _ng; gg++) {
+      int gg;
+      for (gg=0; gg < _ng; gg++) {
         int gi = _shell_map[i][gg];
         int gj = _shell_map[j][gg];
         int gij = ioff(gi,gj);
-        if (gij < ij) {
-          leave=1;
+        if (gij > ij)
           break;
-        }
         else if (gij == ij)
           nij++;
       }
 
-      if (leave)
+      if (gg < _ng)
         continue;
 
       _lamij[ij] = (char) (_ng/nij);
@@ -215,6 +211,8 @@ PetiteList::init(const RefGaussianBasisSet &gb)
     }
   }
 
+  // and then use projection operators to figure out how many SO's of each
+  // symmetry type there will be
   _nbf_in_ir = new int[_nirrep];
   for (i=0; i < _nirrep; i++) {
     double t=0;
@@ -227,6 +225,8 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   delete[] red_rep;
 }
 
+// forms the basis function rotation matrix for the g'th symmetry operation
+// in the point group
 RefSCMatrix
 PetiteList::r(int g)
 {
@@ -237,6 +237,7 @@ PetiteList::r(int g)
   RefSCMatrix ret = gbs.basisdim()->create_matrix(gbs.basisdim());
   ret.assign(0.0);
   
+  // this should be replaced with an element op at some point
   for (int i=0; i < _natom; i++) {
     int j = _atom_map[i][g];
 
@@ -253,7 +254,7 @@ PetiteList::r(int g)
           Rotation rr(am,so,gbs(i,s).is_pure(c));
           for (int ii=0; ii < rr.dim(); ii++)
             for (int jj=0; jj < rr.dim(); jj++)
-              ret.set_element(func_j+jj,func_i+ii,rr(jj,ii));
+              ret.set_element(func_j+jj,func_i+ii,rr(ii,jj));
         }
 
         func_i += gbs(i,s).nfunction(c);
@@ -374,12 +375,13 @@ PetiteList::aotoso()
   CharacterTable ct = mol.point_group().char_table();
   SymmetryOperation so;
 
-  ct.print();
-  
+  // ncomp is the number of symmetry blocks we have
   int ncomp=0;
   for (i=0; i < _nirrep; i++)
     ncomp += ct[i].degeneracy();
   
+  // fao is the first SO in a block, saoelem is the current SO in a block,
+  // and maxsao is the last SO in a block
   int *fao = new int[ncomp];
   int *saoelem = new int[ncomp];
   int *maxsao = new int[ncomp];
@@ -388,101 +390,6 @@ PetiteList::aotoso()
   maxsao[0]=_nbf_in_ir[0];
   fao[0]=0;
   
-  {
-    // how do x,y transform?
-    printf("  x  x");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(1,so,0);
-      printf(" %8.5f",r(2,2));
-    }
-    printf("\n");
-    printf("  x  y");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(1,so,0);
-      printf(" %8.5f",r(2,0));
-    }
-    printf("\n");
-    printf("  y  x");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(1,so,0);
-      printf(" %8.5f",r(0,2));
-    }
-    printf("\n");
-    printf("  y  y");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(1,so,0);
-      printf(" %8.5f",r(0,0));
-    }
-    printf("\n");
-    printf("\n");
-    
-    // how does yz,xz transform?
-    printf(" xz xz");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(4,4));
-    }
-    printf("\n");
-    printf(" xz yz");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(4,1));
-    }
-    printf("\n");
-    printf(" yz xz");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(1,4));
-    }
-    printf("\n");
-    printf(" yz yz");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(1,1));
-    }
-    printf("\n");
-    printf("\n");
-
-    // how does xy,(x^2-y^2) transform?
-    printf(" xy xy");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(3,3));
-    }
-    printf("\n");
-    printf(" xy xx");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(3,5)-r(3,0));
-    }
-    printf("\n");
-    printf(" xx xy");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(5,3));
-    }
-    printf("\n");
-    printf(" xx xx");
-    for (g=0; g < _ng; g++) {
-      so = ct.symm_operation(g);
-      Rotation r(2,so,0);
-      printf(" %8.5f",r(5,5)-r(5,0));
-    }
-    printf("\n");
-    printf("\n");
-  }
-    
   ii=1;
   for (i=1; i < _nirrep; i++) {
     for (d=0; d < ct[i].degeneracy(); d++,ii++) {
@@ -491,7 +398,7 @@ PetiteList::aotoso()
       fao[ii] = saoelem[ii];
     }
   }
-
+    
   double *blc = new double[gbs.nbasis()];
 
   // loop over all unique shells
@@ -532,19 +439,12 @@ PetiteList::aotoso()
           func_i += gbs(i,s).nfunction(c);
           func_j += gbs(i,s).nfunction(c);
         }
-#if 1
-        lcg.print();
-#endif
       }
 
+      // now operate on the linear combinations with the projection operators
+      // for each irrep to form the SO's
       int irnum=0;
       for (ir=0; ir < ct.nirrep(); ir++) {
-
-#define DOIRREP 1
-#if DOIRREP
-        printf("irrep %s\n",ct[ir].symbol());
-#endif
-        
         for (fn=0; fn < gbs(i,s).nfunction(); fn++) {
           for (d=0; d < ct[ir].nproj(); d++) {
 
@@ -564,12 +464,6 @@ PetiteList::aotoso()
             for (ii=0; ii < gbs.nbasis(); ii++)
               c1 += blc[ii]*blc[ii];
 
-#if 1
-            printf(" %2d",lc[0]->bfnum(fn));
-            for (ii=0; ii < gbs.nbasis(); ii++)
-              printf(" %10.7f",blc[ii]);
-            printf("\n");
-#endif
             if (c1 > 1.0e-3) {
               c1 = 1.0/sqrt(c1);
               for (ii=0; ii < gbs.nbasis(); ii++)
@@ -594,13 +488,6 @@ PetiteList::aotoso()
 
             if (saw_so)
               continue;
-
-#if DOIRREP
-            printf(" %2d",lc[0]->bfnum(fn));
-            for (ii=0; ii < gbs.nbasis(); ii++)
-              printf(" %10.7f",blc[ii]);
-            printf("\n");
-#endif
 
             int tir = saoelem[irnum+comp];
             if (tir >= maxsao[irnum+comp])

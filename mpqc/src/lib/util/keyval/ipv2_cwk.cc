@@ -160,6 +160,52 @@ IPV2::ip_cwk_descend_tree(const char* keyword)
   return kt;
   }
 
+////////////////////////////////////////////////////////////////////////
+// IPV2StrTok provides strtok functionality, but allows multiple strings
+// to be processed at a time.
+
+class IPV2StrTok {
+  private:
+    char* str;
+    const char* delim;
+    int ndelim;
+  public:
+    IPV2StrTok(char* s, const char*d): str(s), delim(d), ndelim(strlen(d)) {}
+    char* tok();
+    int is_white(char c);
+};
+
+int
+IPV2StrTok::is_white(char c)
+{
+  for (int i=0; i<ndelim; i++) {
+      if (c == delim[i]) {
+          return 1;
+        }
+    }
+  return 0;
+}
+
+char*
+IPV2StrTok::tok()
+{
+  // move str past the white space
+  while (*str && is_white(*str)) str++;
+  char *ret = str;
+
+  // put 0 at the end of the string and advance str
+  while (*str && !is_white(*str)) str++;
+  if (*str) {
+      *str = '\0';
+      str++;
+    }
+
+  if (*ret) return ret;
+  else return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 /* Descend the given keyword tree using the info in the passed string.
  * The new keyword tree or NULL, if it is not found, will be returned. */
 ip_keyword_tree_t *
@@ -185,7 +231,8 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
     }
 
   r = kt;
-  token = strtok(ch,": \t");
+  IPV2StrTok tok(ch, ": \t");
+  token = tok.tok();
   while ((r != NULL) && (token != NULL)) {
     /* Transverse the circular list. */
     found = 0;
@@ -193,14 +240,14 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
     do {
       if (!strcmp(token,"..")) {
         r = I->up;
-        token = strtok(NULL,": \t");
+        token = tok.tok();
         if (token == NULL) return I;
         found = 1;
         break;
         }
       else if (!strcmp(token,I->keyword)) {
         if (I->variable) I = ip_descend_tree(I,I->variable);
-        token = strtok(NULL,": \t");
+        token = tok.tok();
         if (token == NULL) return I;
         r = I->down;
         if (!r) {

@@ -190,8 +190,8 @@ class MessageGrp: public DescribedClass {
     virtual void recv(int sender, short* data, int ndata);
     virtual void recv(int sender, long* data, int ndata);
     virtual void recv(int sender, float* data, int ndata);
-    void recv(int sender, double data) { recv(sender,&data,1); }
-    void recv(int sender, int data) { recv(sender,&data,1); }
+    void recv(int sender, double& data) { recv(sender,&data,1); }
+    void recv(int sender, int& data) { recv(sender,&data,1); }
     virtual void raw_recv(int sender, void* data, int nbyte) = 0;
 
     /** Receive messages sent by type.
@@ -205,8 +205,8 @@ class MessageGrp: public DescribedClass {
     virtual void recvt(int type, short* data, int ndata);
     virtual void recvt(int type, long* data, int ndata);
     virtual void recvt(int type, float* data, int ndata);
-    void recvt(int type, double data) { recvt(type,&data,1); }
-    void recvt(int type, int data) { recvt(type,&data,1); }
+    void recvt(int type, double& data) { recvt(type,&data,1); }
+    void recvt(int type, int& data) { recvt(type,&data,1); }
     virtual void raw_recvt(int type, void* data, int nbyte) = 0;
 
     /// Ask if a given typed message has been received.

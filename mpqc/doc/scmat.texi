@@ -1,5 +1,5 @@
 @c -*-texinfo-*-
-@node The Matrix Library
+@node The Matrix Library, Concept Index, The KeyVal Library, Top
 @chapter The Matrix Library
 @cindex matrix operations
 
@@ -337,7 +337,7 @@ The public interface to @code{SCMatrix} is
 
 @c ===========================================================================
 
-@node The Block Classes, The SCMatrixDiagBlock Class, The Matrix Classes, The Matrix Library
+@node The Block Classes, The Block Iterator Classes, The Matrix Classes, The Matrix Library
 @section The Block Classes
 
 @menu
@@ -409,10 +409,11 @@ user should not change or @code{delete} this pointer.
 
 @c ---------------------------------------------------------------------------
 
-@node The SCMatrixLTriBlock Class,  , The SCMatrixRectBlock Class, The Block Classes
+@node The SCMatrixLTriBlock Class, The SCMatrixDiagBlock Class, The SCMatrixRectBlock Class, The Block Classes
 @subsection The SCMatrixLTriBlock Class
 @clindex SCMatrixLTriBlock
 @clindex RefSCMatrixLTriBlock
+
 This class hold a lower triangular block of a matrix.  Symmetric matrices
 can be implemented using these.
 This class inherits from @code{SCMatrixBlock}
@@ -449,8 +450,8 @@ user should not change or @code{delete} this pointer.
 
 @c ---------------------------------------------------------------------------
 
-@node The SCMatrixDiagBlock Class, The SCVectorSimpleBlock Class, The Block Classes, The Matrix Library
-@section The SCMatrixDiagBlock Class
+@node The SCMatrixDiagBlock Class, The SCVectorSimpleBlock Class, The SCMatrixLTriBlock Class, The Block Classes
+@subsection The SCMatrixDiagBlock Class
 @clindex SCMatrixDiagBlock
 @clindex RefSCMatrixDiagBlock
 This class holds a block of elements from a diagonal matrix.
@@ -486,8 +487,8 @@ user should not change or @code{delete} this pointer.
 
 @c ---------------------------------------------------------------------------
 
-@node The SCVectorSimpleBlock Class, The Block Iterator Classes, The SCMatrixDiagBlock Class, The Matrix Library
-@section The SCVectorSimpleBlock Class
+@node The SCVectorSimpleBlock Class,  , The SCMatrixDiagBlock Class, The Block Classes
+@subsection The SCVectorSimpleBlock Class
 @clindex SCVectorSimpleBlock
 @clindex RefSCVectorSimpleBlock
 This class holds a contiguous elements of a vector.
@@ -523,7 +524,7 @@ user should not change or @code{delete} this pointer.
 
 @c ===========================================================================
 
-@node The Block Iterator Classes, The Element Operation Classes, The SCVectorSimpleBlock Class, The Matrix Library
+@node The Block Iterator Classes, The Element Operation Classes, The Block Classes, The Matrix Library
 @section The Block Iterator Classes
 
 Block iterators can be used to determine which matrix elements

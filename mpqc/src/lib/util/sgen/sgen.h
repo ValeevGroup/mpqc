@@ -32,53 +32,7 @@ void sgen_bcast_print( ARGS4(int,int,int,int) );
 void bcast0_sync( ARGS0 );
 void sgen_reset_bcast0( ARGS0 );
 
-void bread_boolean( ARGS4(int,int*,int*,int) );
-void bread_char( ARGS4(int,char*,int*,int) );
-void bread_double( ARGS4(int,double*,int*,int) );
-void bread_float( ARGS4(int,float*,int*,int) );
-void bread_int( ARGS4(int,int*,int*,int) );
-void bread_long( ARGS4(int,long*,int*,int) );
-void bread_pointer( ARGS4(int,void*,int*,int) );
-int * bread_test_pointer( ARGS3(int,int*,int) );
-void bread_string( ARGS4(int,char**,int*,int) );
-
-void bwrite_boolean( ARGS4(int,int*,int*,int) );
-void bwrite_char( ARGS4(int,char*,int*,int) );
-void bwrite_double( ARGS4(int,double*,int*,int) );
-void bwrite_float( ARGS4(int,float*,int*,int) );
-void bwrite_int( ARGS4(int,int*,int*,int) );
-void bwrite_long( ARGS4(int,long*,int*,int) );
-void bwrite_pointer( ARGS4(int,void*,int*,int) );
-void bwrite_string( ARGS4(int,char**,int*,int) );
-
 void sgen_chkmalloc( ARGS1(void*) );
-
-void fread_boolean( ARGS4(FILE*,int*,int*,int) );
-void fread_char( ARGS4(FILE*,char*,int*,int) );
-void fread_double( ARGS4(FILE*,double*,int*,int) );
-void fread_float( ARGS4(FILE*,float*,int*,int) );
-void fread_int( ARGS4(FILE*,int*,int*,int) );
-void fread_long( ARGS4(FILE*,long*,int*,int) );
-void fread_pointer( ARGS4(FILE*,void*,int*,int) );
-int * fread_test_pointer( ARGS3(FILE*,int*,int) );
-void fread_string( ARGS4(FILE*,char**,int*,int) );
-
-void fwrite_boolean( ARGS4(FILE*,int*,int*,int) );
-void fwrite_char( ARGS4(FILE*,char*,int*,int) );
-void fwrite_double( ARGS4(FILE*,double*,int*,int) );
-void fwrite_float( ARGS4(FILE*,float*,int*,int) );
-void fwrite_int( ARGS4(FILE*,int*,int*,int) );
-void fwrite_long( ARGS4(FILE*,long*,int*,int) );
-void fwrite_pointer( ARGS4(FILE*,void*,int*,int) );
-void fwrite_string( ARGS4(FILE*,char**,int*,int) );
-
-void ip_read_boolean( ARGS4(char*,int*,int,int*) );
-void ip_read_char( ARGS4(char*,char*,int,int*) );
-void ip_read_double( ARGS4(char*,double*,int,int*) );
-void ip_read_float( ARGS4(char*,float*,int,int*) );
-void ip_read_int( ARGS4(char*,int*,int,int*) );
-void ip_read_long( ARGS4(char*,long*,int,int*) );
-void ip_read_string( ARGS4(char*,char**,int,int*) );
 
 void print_boolean( ARGS2(FILE*,int*) );
 void print_char( ARGS2(FILE*,char*) );

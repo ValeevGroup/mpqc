@@ -70,7 +70,7 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-inttest: inttest.o libintv2.a \
+inttest: inttest.o \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS)
 

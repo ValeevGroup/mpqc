@@ -341,7 +341,8 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
       for (int j=0; j<nfreq_[i]; j++) {
           if (freq_[i][j] > 0.0) {
               tmpvar = hartree_to_hertz*h*freq_[i][j]/(k*T);
-              S_vib += tmpvar/(exp(tmpvar)-1) - log(1-exp(-tmpvar));
+              double expval = exp(-tmpvar);
+              S_vib += tmpvar*expval/(1.0-expval) - log(1.0-expval);
               }
           }
       }
@@ -373,9 +374,11 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   double EvibT = 0.0;
   for (i=0; i<nirrep_; i++) {
       for (int j=0; j<nfreq_[i]; j++) {
-          if (freq_[i][j] > 0.0)
+          if (freq_[i][j] > 0.0) {
+              double expval = exp(-freq_[i][j]*hartree_to_joule/(k*T));
               EvibT += freq_[i][j] * hartree_to_joule_per_mol
-                      /(exp(freq_[i][j]*hartree_to_joule/k*T-1));
+                     * expval/(1.0-expval);
+            }
         }
     }
 

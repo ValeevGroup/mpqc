@@ -233,6 +233,9 @@ CLKS::ao_fock()
   vxa->assign((double*)integrator_->alpha_vmat());
   vxa = pl->to_SO_basis(vxa);
   vxc_ = vxa;
+  // must unset the wavefunction so we don't have a circular list that
+  // will not be freed with the reference counting memory manager
+  integrator_->set_wavefunction(0);
   tim_exit("integrate");
 
   tim_enter("symm");

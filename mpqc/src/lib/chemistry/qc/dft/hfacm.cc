@@ -140,6 +140,7 @@ HFACM::compute_energy()
   tim_enter("integrate");
   integrator_->integrate(functional_);
   tim_exit("integrate");
+  integrator_->set_wavefunction(0);
 
   cout << node0
        << indent

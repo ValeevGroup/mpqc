@@ -42,11 +42,17 @@ This chapter explains how to run mpqc in a variety of environments.
 
 /**@name Command Line Options
 
-  MPQC recognizes the following command line options:
+  MPQC can be given options following by an optional simple input file
+name.  The following command line options are recognized:
 
 \begin{description}
-\item[{\tt -f}] The name of the input file.  The default is
-                     {\tt mpqc.in}.
+\item[{\tt -o}] Gives the name of the output file.  The default is the
+                console.
+\item[{\tt -i}] Convert a simple input file to an object oriented input file
+                and write the result to the ouput.  No calculations are done.
+\item[{\tt -f}] The name of an object-oriented input file.  The default is
+                {\tt mpqc.in}.  This cannot be used if a simple file is
+                specified.
 \item[{\tt -messagegrp}] A \Ref{ParsedKeyVal} specification of a
                       \Ref{MessageGrp} object.
                       The default depends on how MPQC was compiled.
@@ -105,11 +111,11 @@ apply on all platforms are:
                       The default depends on how MPQC was compiled.
 \end{description}
 
-By default, MPQC tries to find basis set library files in
-the source code distribution.  If the executable or source
-code is moved, MPQC can be notified with the environmental
-variable #SCLIBDIR#.  In the source code distribution
-this directory is #SC/lib#.
+By default, MPQC tries to find library files first in the installation
+directory and then in the source code distribution directory.  If the
+library files cannot be found, MPQC must be notified of the new location
+with the environmental variable #SCLIBDIR#.  In the source code
+distribution this directory is #SC/lib#.
 
 For example if you need to run MPQC on a machine that doesn't
 have the source code distribution in the same place as it was
@@ -271,6 +277,130 @@ mpqc -f input_file
 
 /**@name MPQC Input
 
+   MPQC supports two input formats.  The primary input is
+an object oriented format which gives users access to all
+of MPQC's options.  The second format allows access to a
+subset of MPQC's capabilities, but is more intuitive and
+easier to learn.  New users are advised to start with the
+simplified format.  MPQC can be used to convert the simplified
+format to the full object-oriented format.
+
+*/
+
+//@{
+
+/**@name Simple Input
+
+The simple input format consists of keywords followed by a ":" followed by
+a value.  The values might be modified by options found in parenthesis.
+For example, the following input performs an optimization of water using
+density functional theory with the B3LYP exchange-correlation functional:
+
+\begin{verbatim}
+% B3LYP optimization of water
+optimize: yes
+method: KS (xc = B3LYP)
+basis: 3-21G*
+molecule:
+    O    0.172   0.000   0.000
+    H    0.745   0.000   0.754
+    H    0.745   0.000  -0.754
+\end{verbatim}
+
+Comments begin with a #%# and continue to the end of the line.
+Basis set names containing a special characters, such as a space
+or parentheses, can be quoted inside a pair of double quotes.
+The accepted keywords are:
+
+\begin{description}
+\item[molecule] Gives the atoms types and coordinates.  The following options
+  can be used
+  \begin{description}
+     \item[bohr] The coordinates are given in Bohr.
+     \item[angstrom]  The coordinates are given in Angstroms.
+     \item[charge]  This option can be given after an "element x y z"
+                  quadruple.  This will override the charge on the
+                  atom.  For example, #(charge = 0)# can be given
+                  for the ghost atoms in a counterpoise correction
+                  calculation.
+  \end{description}
+\item[multiplicity] Gives the multiplicity of the molecule.  The
+  default is #1#.
+\item[optimize] If #yes#, then an optimization will be performed.  The
+  default is #no#.  The following options can be given.
+  \begin{description}
+     \item[cartesian] Use Cartesian coordinates.
+     \item[internal] Use internal coordinates.
+     \item[redundant] Use redundant internal coordinates.
+  \end{description}
+\item[gradient] If #yes#, then a gradient calculation will be performed.  The
+  default is #no#.
+\item[frequencies] If #yes#, then the frequencies will be obtained.
+  The default is #no#.
+\item[charge] Specificies the charge on the molecule.  The default is #0#.
+\item[method] Specifices the method.  There is no default and the possible
+   values are:
+   \begin{description}
+     \item[HF] Hartree-Fock.  Unrestricted HF is used if #multiplicity# > 1
+     \item[RHF] Restricted Hartree-Fock.
+     \item[UHF] Unestricted Hartree-Fock.
+     \item[KS] Kohn-Sham.  Unrestricted KS is used if #multiplicity# > 1
+     \item[RKS] Restricted Kohn-Sham.
+     \item[UKS] Unestricted Kohn-Sham.
+     \item[MP2] Second order Moeller-Plesset perturbation theory.
+                Only available for #multiplicity# = 1.
+     \item[ZAPT2]  Z-averaged perturbation theory.
+                Only available for #multiplicity# > 1.  No gradient,
+                optimization, or frequencies are possible.
+   \end{description}
+   The following options are valid with the #KS#, #RKS#, and #UKS# methods:
+   \begin{description}
+     \item[grid] Specifies the grid to be used for numerical integrations.
+        The following values can be given:
+        \begin{description}
+           \item[xcoarse]
+           \item[coarse]
+           \item[medium]
+           \item[fine]
+           \item[xfine]
+        \end{description}
+     \item[xc] Specifies the exchange-correlation functional.  There is
+        no default.  See the \Ref{StdDenFunctional} class documentation
+        for the possible values.
+   \end{description}
+\item[basis]  Specifies the basis set.  There is no default.
+      See the \Ref{GaussianBasisSet} class documentation for the
+      available basis sets.
+\item[restart]  Set to #yes# to restart an optimization.  The default is #no#.
+\item[checkpoint]  Set to #no# to not save checkpoint files during an
+   optimization.  The default is #yes#.
+\item[symmetry] Specifices the Schoenflies symbol of the point group of the
+   molecule.  The default is #auto#, which will cause to program to find
+   the highest order Abelian subgroup of the molecule.
+\item[docc] Gives the number of doubly occupied orbitals in each each
+   irreducible representation in a parenthesized list.  The symmetry must
+   be specified and not be #auto#.  The method must be restricted.
+\item[socc] Gives the number of single occupied orbitals in each each
+   irreducible representation in a parenthesized list.  The symmetry must
+   be specified and not be #auto#.  The method must be restricted.
+\item[alpha] Gives the number of alpha occupied orbitals in each each
+   irreducible representation in a parenthesized list.  The symmetry must
+   be specified and not be #auto#.  The method must be unrestricted.
+\item[beta] Gives the number of beta occupied orbitals in each each
+   irreducible representation in a parenthesized list.  The symmetry must
+   be specified and not be #auto#.  The method must be unrestricted.
+\item[frozen_docc]  Gives the number of frozen core orbitals.  Can be each
+   a single integer or a parenthesized list giving the frozen core
+   orbitals in each irreducible representation.
+\item[frozen_uocc]  Gives the number of frozen virtual orbitals.  Can be each
+   a single integer or a parenthesized list giving the frozen virtual
+   orbitals in each irreducible representation.
+\end{description}
+
+*/
+
+/**@name Object-Oriented Input
+
 MPQC is an object-oriented program that directly allows the user to
 specify objects that MPQC then manipulates to obtain energies,
 properties, etc.  This makes the input very flexible, but very complex.
@@ -371,7 +501,7 @@ details about how to do the calculation:
 
 //@{
 
-/**@name A Walk-Through of an Input File
+/**@name A Walk-Through of an Object-Oriented Input File
 
 This example input does a Hartree-Fock calculation on water.
 Following is the entire input, followed by a breakdown with
@@ -520,7 +650,7 @@ Now we close off the parentheses we opened above and we are finished.
 
   */
 
-/**@name Sample Input Files
+/**@name Sample Object-Oriented Input Files
 
 The easiest way to get started with mpqc is to start with
 one of sample inputs that most nearly matches your problem.  All
@@ -1247,6 +1377,8 @@ mpqc: (
 
 //@}
 
+//@}
+
 /**@name Validating MPQC
 
  After you compile MPQC, you should run it through the validation suite.
@@ -1273,10 +1405,15 @@ input files are divided into several categories:
   \item[#symm2#] More point group symmetry tests.  These use basis
         sets with higher angular momentum than #symm1#.
 
+  \item[#symm3#] Tests automatic point group determination.
+
   \item[#basis1#] A variety of basis sets are tested for first row
         atoms along with hydrogen and helium.
 
   \item[#basis2#] Basis sets test for second row atoms.
+
+  \item[#methods#] Tests the self-consistent-field methods and the
+                  density functional theory functionals.
 
 \end{description}
 

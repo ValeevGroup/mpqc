@@ -107,7 +107,7 @@ class AtomInfo: public SavableState {
     static const char *symbol(int Z) { return names_[Z].symbol; }
 
     /// This converts a name or symbol to the atomic number.
-    static int string_to_Z(const char *);
+    static int string_to_Z(const char *, int allow_exceptions = 1);
 };
 SavableState_REF_dec(AtomInfo);
 

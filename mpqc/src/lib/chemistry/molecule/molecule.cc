@@ -352,21 +352,16 @@ Molecule::add_atom(int Z,double x,double y,double z,
 }
 
 void
-Molecule::print(ostream& os) const
+Molecule::print_parsedkeyval(ostream& os,
+                             int print_pg,
+                             int print_unit) const
 {
   int i;
 
   double conv = geometry_units_->from_atomic_units();
 
-  MolecularFormula *mf = new MolecularFormula(this);
-  os << node0 << indent
-     << "Molecular formula: " << mf->formula() << endl;
-  delete mf;
-
-  os << node0 << indent << "molecule<Molecule>: (" << endl;
-  os << incindent;
-  pg_->print(os);
-  if (geometry_units_->string_rep()) {
+  if (print_pg) pg_->print(os);
+  if (print_unit && geometry_units_->string_rep()) {
       os << node0 << indent
          << "unit = \"" << geometry_units_->string_rep() << "\""
          << endl;
@@ -379,10 +374,10 @@ Molecule::print(ostream& os) const
   if (charges_) {
       for (i=0;i<natom();i++) if (charges_[i]!=(int)charges_[i]) int_charges=0;
       if (int_charges) {
-          os << node0 << scprintf(" %7s", "charges");
+          os << node0 << scprintf(" %7s", "charge");
         }
       else {
-          os << node0 << scprintf(" %17s", "charges");
+          os << node0 << scprintf(" %17s", "charge");
         }
     }
   os << node0
@@ -416,6 +411,21 @@ Molecule::print(ostream& os) const
          << endl;
     }
   os << node0 << indent << "}" << endl;
+}
+
+void
+Molecule::print(ostream& os) const
+{
+  int i;
+
+  MolecularFormula *mf = new MolecularFormula(this);
+  os << node0 << indent
+     << "Molecular formula: " << mf->formula() << endl;
+  delete mf;
+
+  os << node0 << indent << "molecule<Molecule>: (" << endl;
+  os << incindent;
+  print_parsedkeyval(os);
   os << decindent;
   os << node0 << indent << ")" << endl;
 

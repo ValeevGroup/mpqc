@@ -114,6 +114,11 @@ METHODSINPUTS = \
   clhf.in hsoshf.in uhf.in osshf.in tchf.in
 METHODSINPUTS := $(METHODSINPUTS:%=run/methods_%)
 
+INPUTINPUTS = \
+rksch2.in uksch2.in uhfch2opt.in rhfch2opt.in hfch2opt.in \
+hfh2ofreq.in ksh2oco.in ksh2o.in hfh2oopt.in
+INPUTINPUTS := $(INPUTINPUTS:%=run/input_%)
+
 ##############################################################################
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
@@ -121,7 +126,8 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) \
-            $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS)
+            $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
+            $(INPUTINPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 ##############################################################################
@@ -135,7 +141,7 @@ default::
 
 .PHONY: inputs
 inputs:: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf
+inputs:: methods clscf uscf hsosscf input
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -184,6 +190,9 @@ mbpt: $(MBPTINPUTS) $(MBPTINPUTS:%.in=%.qci)
 
 .PHONY: methods
 methods: $(METHODSINPUTS) $(METHODSINPUTS:%.in=%.qci)
+
+.PHONY: input
+input: $(INPUTINPUTS) $(INPUTINPUTS:%.in=%.qci)
 
 stamp-h2o: $(RUN) $(H2OMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OMASTER)
@@ -432,9 +441,21 @@ $(RUN)/methods_%.in: methods/%.in
 	@mkdir -p $(RUN)
 	/bin/cp $< $@
 
-$(RUN)/methods_%.qci: methods/%.qci
+$(RUN)/methods_%.qci: methods/%.in
 	@mkdir -p $(RUN)
 	/bin/cp $< $@
+
+$(RUN)/input_%.in: input/%.in
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/input_%opt.qci:
+	@mkdir -p $(RUN)
+	(echo "method: generic"; echo "optimize: yes") > $@
+
+$(RUN)/input_%.qci:
+	@mkdir -p $(RUN)
+	(echo "method: generic"; echo "optimize: no") > $@
 
 $(RUN)/%.out: $(RUN)/%.in
 	(cd $(RUN); $(MPQC) -f `basename $<` >& `basename $@`)

@@ -144,6 +144,9 @@ class Molecule: public SavableState
 
     /// Print information about the molecule.
     virtual void print(ostream& =ExEnv::out()) const;
+    virtual void print_parsedkeyval(ostream& =ExEnv::out(),
+                                    int print_pg = 1,
+                                    int print_unit = 1) const;
 
     /// Returns the number of atoms in the molcule.
     int natom() const { return natoms_; }

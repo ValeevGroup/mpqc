@@ -433,7 +433,7 @@ AtomInfo::add_overridden_value(const char *assignment)
 }
 
 int
-AtomInfo::string_to_Z(const char *name)
+AtomInfo::string_to_Z(const char *name, int allow_exceptions)
 {
   unsigned int i,j;
   int Z;
@@ -481,8 +481,12 @@ AtomInfo::string_to_Z(const char *name)
   // check to see if z value is OK, if not then the name must have been
   // invalid
   if (Z < 1 || Z > MaxZ) {
-      ExEnv::err() << node0 << sprintf("AtomInfo: invalid name: %s\n",name);
-      exit(1);
+      if (allow_exceptions) {
+          ExEnv::err() << node0
+                       << sprintf("AtomInfo: invalid name: %s\n",name);
+          abort();
+        }
+      else return 0;
     }
 
   return Z;

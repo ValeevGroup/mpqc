@@ -88,6 +88,8 @@
 #include <mpi.h>
 #endif
 
+#include "mpqcin.h"
+
 //////////////////////////////////////////////////////////////////////////
 
 static void
@@ -209,8 +211,9 @@ main(int argc, char *argv[])
   // parse commandline options
   GetLongOpt options;
 
+  options.usage("[options] [filename]");
   options.enroll("f", GetLongOpt::MandatoryValue,
-                 "the name of the input file", "mpqc.in");
+                 "the name of the object format input file", 0);
   options.enroll("o", GetLongOpt::MandatoryValue,
                  "the name of the output file", 0);
   options.enroll("messagegrp", GetLongOpt::MandatoryValue,
@@ -227,10 +230,11 @@ main(int argc, char *argv[])
   options.enroll("w", GetLongOpt::NoValue, "print the warranty", 0);
   options.enroll("L", GetLongOpt::NoValue, "print the license", 0);
   options.enroll("k", GetLongOpt::NoValue, "print key/value assignments", 0);
+  options.enroll("i", GetLongOpt::NoValue, "convert simple to OO input", 0);
   options.enroll("d", GetLongOpt::NoValue, "debug", 0);
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
 
-  options.parse(argc, argv);
+  int optind = options.parse(argc, argv);
 
   const char *output = options.retrieve("o");
   ostream *outstream = 0;
@@ -286,34 +290,71 @@ main(int argc, char *argv[])
     grp = MessageGrp::get_default_messagegrp();
 
   // initialize keyval input
-  const char *input = options.retrieve("f");
-  RefParsedKeyVal parsedkv;
-  if (grp->n() == 1) {
-    parsedkv = new ParsedKeyVal(input);
+  const char *object_input = options.retrieve("f");
+  const char *simple_input;
+  if (argc - optind == 0) {
+    simple_input = 0;
+  }
+  else if (argc - optind == 1) {
+    simple_input = argv[optind];
   }
   else {
-    // read the input file on only node 0
-    parsedkv = new ParsedKeyVal();
-    char *in_char_array;
-    if (grp->me() == 0) {
-      ifstream is(input);
-      ostrstream ostrs;
-      is >> ostrs.rdbuf();
-      ostrs << ends;
-      in_char_array = ostrs.str();
-      int n = ostrs.pcount();
-      grp->bcast(n);
-      grp->bcast(in_char_array, n);
-    }
-    else {
-      int n;
-      grp->bcast(n);
-      in_char_array = new char[n];
-      grp->bcast(in_char_array, n);
-    }
-    parsedkv->parse_string(in_char_array);
-    delete[] in_char_array;
+    ExEnv::out() << ExEnv::program_name()
+                 << ": extra arguments given"
+                 << endl;
+    options.usage();
+    abort();
   }
+  if (object_input == 0 && simple_input == 0) {
+    object_input = "mpqc.in";
+    }
+  else if (object_input && simple_input) {
+    ExEnv::out() << ExEnv::program_name()
+                 << ": only one of -f and a file argument can be given" <<endl;
+    abort();
+    }
+
+  const char *input;
+  if (object_input) input = object_input;
+  if (simple_input) input = simple_input;
+
+  RefParsedKeyVal parsedkv;
+  // read the input file on only node 0
+  char *in_char_array;
+  if (grp->me() == 0) {
+    ifstream is(input);
+    ostrstream ostrs;
+    is >> ostrs.rdbuf();
+    ostrs << ends;
+    in_char_array = ostrs.str();
+    int n = ostrs.pcount();
+    grp->bcast(n);
+    grp->bcast(in_char_array, n);
+    }
+  else {
+    int n;
+    grp->bcast(n);
+    in_char_array = new char[n];
+    grp->bcast(in_char_array, n);
+    }
+  if (simple_input) {
+    MPQCIn mpqcin;
+    char *simple_input_text = mpqcin.parse_string(in_char_array);
+    if (options.retrieve("i")) {
+      ExEnv::out() << "Generated object-oriented input file:" << endl
+                   << simple_input_text
+                   << endl;
+      exit(0);
+    }
+    parsedkv = new ParsedKeyVal();
+    parsedkv->parse_string(simple_input_text);
+    delete[] simple_input_text;
+    }
+  else {
+    parsedkv = new ParsedKeyVal();
+    parsedkv->parse_string(in_char_array);
+    }
+  delete[] in_char_array;
 
   if (options.retrieve("k")) parsedkv->verbose(1);
   RefKeyVal keyval = new PrefixKeyVal("mpqc",parsedkv.pointer());

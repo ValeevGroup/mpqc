@@ -184,7 +184,8 @@ MBPT2::compute_cs_grad()
 
   if (molecule()->point_group().char_table().order() != 1) {
     // need to reorder the eigenvalues and possibly fix some bugs
-    cout << "MP2 closed shell gradients only works for C1 symmetry" << endl;
+    cout << indent
+         << "MP2 closed shell gradients only works for C1 symmetry" << endl;
     abort();
     }
 
@@ -197,11 +198,12 @@ MBPT2::compute_cs_grad()
   me = msg_->me();
 
   if (me == 0) {
-    cout << "Entered MP2 program (mp2grad)" << endl;
+    cout << indent
+         << "Entered MP2 program (mp2grad)" << endl;
     }
   
   nproc = msg_->n();
-  if (me == 0) cout << scprintf("nproc = %i", nproc) << endl;
+  if (me == 0) cout << indent << scprintf("nproc = %i", nproc) << endl;
 
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
   dtol = 1.0e-10;
@@ -262,12 +264,16 @@ MBPT2::compute_cs_grad()
     }
 
   if (me == 0) {
-    cout << scprintf(" npass  rest  nbasis  nshell  nfuncmax") << endl;
-    cout << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i",
+    cout << indent
+         << scprintf(" npass  rest  nbasis  nshell  nfuncmax") << endl;
+    cout << indent
+         << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i",
                      npass,rest,nbasis,nshell,nfuncmax)
          << endl;
-    cout << scprintf(" nocc   nvir   nfzc   nfzv") << endl;
-    cout << scprintf("  %-4i   %-4i   %-4i   %-4i",
+    cout << indent
+         << scprintf(" nocc   nvir   nfzc   nfzv") << endl;
+    cout << indent
+         << scprintf("  %-4i   %-4i   %-4i   %-4i",
                      nocc,nvir,nfzc,nfzv)
          << endl;
     }
@@ -365,7 +371,8 @@ MBPT2::compute_cs_grad()
 
   // debug print
   if (debug_ && me == 0) {
-    cout << scprintf("node %i, begin loop over i-batches",me) << endl;
+    cout << indent
+         << scprintf("node %i, begin loop over i-batches",me) << endl;
     }
   // end of debug print
 
@@ -387,6 +394,11 @@ MBPT2::compute_cs_grad()
   intbuf = tbint_->buffer();
   tbintder_ = integral()->electron_repulsion_deriv();
   intderbuf = tbintder_->buffer();
+
+  if (mem.null()) {
+      cerr << "MBPT2: memory group not initialized" << endl;
+      abort();
+    }
 
   mem->set_localsize(nijmax*nbasis*nbasis*sizeof(double));
 
@@ -411,7 +423,7 @@ MBPT2::compute_cs_grad()
       }
 
     // debug print
-    if (debug_) cout << scprintf("node %i, nij = %i", me, nij) << endl;
+    if (debug_) cout << indent << scprintf("node %i, nij = %i", me, nij)<<endl;
     // end of debug print
 
     mem->sync(); // This must be here or gamma non-sep will be wrong when running
@@ -442,7 +454,8 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << scprintf("Begin loop over shells (erep, 1.+2. qt)") << endl;
+      cout << indent
+           << scprintf("Begin loop over shells (erep, 1.+2. qt)") << endl;
       }
     // end of debug print
 
@@ -607,7 +620,7 @@ MBPT2::compute_cs_grad()
       }         // exit S loop
     // debug print
     if (debug_ && me == 0) {
-      cout << "End of loop over shells" << endl;
+      cout << indent << "End of loop over shells" << endl;
       }
     // end of debug print
 
@@ -655,7 +668,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "Begin 3. qt" << endl;
+      cout << indent << "Begin 3. qt" << endl;
       }
     // end of debug print
 
@@ -698,7 +711,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "End of 3. qt" << endl;
+      cout << indent << "End of 3. qt" << endl;
       }
     // end of debug print
 
@@ -716,7 +729,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "Begin 4. qt" << endl;
+      cout << indent << "Begin 4. qt" << endl;
       }
     // end of debug print
 
@@ -782,7 +795,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "End of 4. qt" << endl;
+      cout << indent << "End of 4. qt" << endl;
       }
     // end of debug print
 
@@ -856,7 +869,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "End of ecorr" << endl;
+      cout << indent << "End of ecorr" << endl;
       }
     // end of debug print
 
@@ -917,7 +930,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "End of Pkj and Wkj" << endl;
+      cout << indent << "End of Pkj and Wkj" << endl;
       }
     // end of debug print
 
@@ -987,7 +1000,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "End of Pab and Wab" << endl;
+      cout << indent << "End of Pab and Wab" << endl;
       }
     // end of debug print
 
@@ -1062,7 +1075,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "End of Paj and Waj" << endl;
+      cout << indent << "End of Paj and Waj" << endl;
       }
     // end of debug print
 
@@ -1075,12 +1088,12 @@ MBPT2::compute_cs_grad()
 
     gamma_iajs_tmp = new double[nbasis*nvir_act];
     if (!gamma_iajs_tmp) {
-      cout << "Could not allocate gamma_iajs_tmp" << endl;
+      cout << indent << "Could not allocate gamma_iajs_tmp" << endl;
       }
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "Begin 1+2qbt\n" << endl;
+      cout << indent << "Begin 1+2qbt\n" << endl;
       }
     // end of debug print
 
@@ -1135,7 +1148,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << "End 1+2 qbt" << endl;
+      cout << indent << "End 1+2 qbt" << endl;
       }
     // end of debug print
 
@@ -1524,7 +1537,7 @@ MBPT2::compute_cs_grad()
 
   // debug print
   if (debug_ && me == 0) {
-    cout << "Exited loop over i-batches" << endl;
+    cout << indent << "Exited loop over i-batches" << endl;
     }
   // end of debug print
 
@@ -1538,9 +1551,11 @@ MBPT2::compute_cs_grad()
 
   // Print out contribution to the gradient from non-sep. 2PDM
   if (me == 0) {
-    cout << "Contribution to MP2 gradient from non-separable 2PDM [au]:" << endl;
+    cout << indent
+         << "Contribution to MP2 gradient from non-separable 2PDM [au]:"
+         << endl;
     for (i=0; i<natom; i++) {
-      cout << scprintf("%15.10lf  %15.10lf  %15.10lf",
+      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf",
                        ginter[i][0], ginter[i][1], ginter[i][2])
            << endl;
       }
@@ -1560,22 +1575,29 @@ MBPT2::compute_cs_grad()
 
     // Print out various energies etc.
 
-    cout<<scprintf("Number of shell quartets for which AO integrals \n"
+    cout<<indent
+        <<scprintf("Number of shell quartets for which AO integrals \n"
                    "(or integral derivatives) would have been computed\n"
                    "without bounds checking: %i\n",
                    npass*nshell*nshell*(nshell+1)*(nshell+1)/2);
-    cout<<scprintf("Number of shell quartets for which AO integrals\n"
+    cout<<indent
+        <<scprintf("Number of shell quartets for which AO integrals\n"
                    "were computed: %i\n",aoint_computed);
-    cout<<scprintf("Number of shell quartets for which AO integral derivatives\n"
+    cout<<indent
+        <<scprintf("Number of shell quartets for which AO integral derivatives\n"
                    "were computed: %i\n",aointder_computed);
 
-    cout<<scprintf("RHF energy [au]:                   %13.8lf\n", escf);
-    cout<<scprintf("MP2 correlation energy [au]:       %13.8lf\n", ecorr_mp2);
-    cout<<scprintf("MP2 energy [au]:                   %13.8lf\n", emp2);
+    cout<<indent
+        <<scprintf("RHF energy [au]:                   %13.8lf\n", escf);
+    cout<<indent
+        <<scprintf("MP2 correlation energy [au]:       %13.8lf\n", ecorr_mp2);
+    cout<<indent
+        <<scprintf("MP2 energy [au]:                   %13.8lf\n", emp2);
     cout.flush();
     }
   if (method_ && !strcmp(method_,"mp")) {
-    cout << "MBPT2: bad method for closed shell case: " << method_
+    cout << indent
+         << "MBPT2: bad method for closed shell case: " << method_
          << ", using mp" << endl;
     }
   set_energy(emp2);
@@ -1905,10 +1927,11 @@ MBPT2::compute_cs_grad()
     }
   // Print out the contribution to the gradient from sep. 2PDM
   if (me == 0) {
-    cout << "Contribution from separable 2PDM to MP2 gradient [au]:" << endl;
+    cout <<indent
+         << "Contribution from separable 2PDM to MP2 gradient [au]:" << endl;
     for (i=0; i<natom; i++) {
-      cout << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                       ginter[i][0], ginter[i][1], ginter[i][2]);
+      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
+                                 ginter[i][0], ginter[i][1], ginter[i][2]);
       }
     }
 
@@ -1932,10 +1955,10 @@ MBPT2::compute_cs_grad()
     }
   // Print out the contribution to the gradient from hcore
   if (me == 0) {
-    cout << "Contribution to MP2 gradient from hcore [au]:" << endl;
+    cout << indent << "Contribution to MP2 gradient from hcore [au]:" << endl;
     for (i=0; i<natom; i++) {
-      cout << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                       ginter[i][0], ginter[i][1], ginter[i][2]);
+      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
+                                 ginter[i][0], ginter[i][1], ginter[i][2]);
       }
     }
 
@@ -1951,10 +1974,10 @@ MBPT2::compute_cs_grad()
     }
   // Print out the overlap contribution to the gradient
   if (me == 0) {
-    cout << "Overlap contribution to MP2 gradient [au]:" << endl;
+    cout << indent << "Overlap contribution to MP2 gradient [au]:" << endl;
     for (i=0; i<natom; i++) {
-      cout << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                       ginter[i][0], ginter[i][1], ginter[i][2]);
+      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
+                                 ginter[i][0], ginter[i][1], ginter[i][2]);
       }
     }
 
@@ -1970,10 +1993,11 @@ MBPT2::compute_cs_grad()
     accum_gradients(gradient, ginter, natom, 3);
 
     // Print out the nuclear contribution to the gradient
-    cout << scprintf("Nuclear contribution to MP2 gradient [au]:") << endl;
+    cout << indent
+         << scprintf("Nuclear contribution to MP2 gradient [au]:") << endl;
     for (i=0; i<natom; i++) {
-      cout << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
-                       ginter[i][0], ginter[i][1], ginter[i][2]);
+      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
+                                 ginter[i][0], ginter[i][1], ginter[i][2]);
       }
     }
 
@@ -1983,9 +2007,10 @@ MBPT2::compute_cs_grad()
   // print out the gradient
   ////////////////////////////////////////////////////////
   if (me == 0) {
-    cout << "Total MP2 gradient [au]:" << endl;
+    cout << indent << "Total MP2 gradient [au]:" << endl;
     for (i=0; i<natom; i++) {
-      cout << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
+      cout << indent
+           << scprintf("%15.10lf  %15.10lf  %15.10lf\n",
                        gradient[i][0], gradient[i][1], gradient[i][2]);
       }
     cout.flush();
@@ -2456,10 +2481,14 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
     }
   if (ni > nocc_act) ni = nocc_act;
 
-  cout << scprintf("Memory available per node:   %i Bytes\n",mem_alloc);
-  cout << scprintf("Static memory used per node: %i Bytes\n",mem_static);
-  cout << scprintf("Total memory used per node:  %i Bytes\n",dyn_used+mem_static);
-  cout << scprintf("Batch size:                  %i\n", ni);
+  cout << indent
+       << scprintf("Memory available per node:   %i Bytes\n",mem_alloc);
+  cout << indent
+       << scprintf("Static memory used per node: %i Bytes\n",mem_static);
+  cout << indent
+       << scprintf("Total memory used per node:  %i Bytes\n",dyn_used+mem_static);
+  cout << indent
+       << scprintf("Batch size:                  %i\n", ni);
 
   return ni;
 }

@@ -20,6 +20,8 @@ class Optimize: virtual_base public SavableState {
   protected:
     int max_iterations_;
     int n_iterations_;
+    int ckpt_;
+    char *ckpt_file;
   public:
     Optimize();
     Optimize(StateIn&);
@@ -29,6 +31,10 @@ class Optimize: virtual_base public SavableState {
 
     virtual int optimize();
 
+    void set_checkpoint();
+    void set_checkpoint_file(const char*);
+    void set_max_iterations(int);
+  
     // initialize the optimizer
     virtual void init();
     // take a step

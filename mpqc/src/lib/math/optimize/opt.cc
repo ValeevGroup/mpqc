@@ -33,19 +33,29 @@ Optimize::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-Optimize::Optimize()
+Optimize::Optimize() :
+  ckpt_(0), ckpt_file(0)
 {
 }
 
 Optimize::Optimize(StateIn&s):
   SavableState(s)
 {
+  s.get(ckpt_);
+  s.getstring(ckpt_file);
   s.get(max_iterations_);
   n_iterations_ = 0;
 }
 
 Optimize::Optimize(const RefKeyVal&keyval)
 {
+  ckpt_ = keyval->booleanvalue("checkpoint");
+  if (keyval->error() != KeyVal::OK) ckpt_ = 0;
+  ckpt_file = keyval->pcharvalue("checkpoint_file");
+  if (keyval->error() != KeyVal::OK) {
+    ckpt_file = new char[13];
+    strcat(ckpt_file,"opt_ckpt.dat");
+  }
   max_iterations_ = keyval->intvalue("max_iterations");
   if (keyval->error() != KeyVal::OK) max_iterations_ = 10;
   n_iterations_ = 0;
@@ -53,11 +63,15 @@ Optimize::Optimize(const RefKeyVal&keyval)
 
 Optimize::~Optimize()
 {
+  if (ckpt_file) delete[] ckpt_file;
+  ckpt_file=0;
 }
 
 void
 Optimize::save_data_state(StateOut&s)
 {
+  s.put(ckpt_);
+  s.putstring(ckpt_file);
   s.put(max_iterations_);
 }
 
@@ -67,12 +81,41 @@ Optimize::init()
   n_iterations_ = 0;
 }
 
+void
+Optimize::set_checkpoint()
+{
+  ckpt_=1;
+}
+
+void
+Optimize::set_max_iterations(int mi)
+{
+  max_iterations_ = mi;
+}
+
+void
+Optimize::set_checkpoint_file(const char *path)
+{
+  if (ckpt_file) delete[] ckpt_file;
+  if (path) {
+    ckpt_file = new char[strlen(path)+1];
+    strcpy(ckpt_file,path);
+  } else
+    ckpt_file=0;
+}
+  
+
 int
 Optimize::optimize()
 {
   int result;
-  while((!(result = update())) && (n_iterations_ < max_iterations_))
+  while((n_iterations_ < max_iterations_) && (!(result = update()))) {
       n_iterations_++;
+      if (ckpt_) {
+        StateOutText so(ckpt_file);
+        this->save_state(so);
+      }
+    }
   return result;
 }
 

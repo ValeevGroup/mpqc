@@ -20,16 +20,14 @@ of the input file.  It is basically a free format input that
 associates keywords and logical groupings of keywords with
 values.  The values can be scalars, arrays, or objects.
 
-The keywords recognized by \exenm{mpqc} begin with either an
-\keywd{mpqc}
-or \keywd{default} prefix.  That is, they
-must be nested between an \keywd{mpqc:(} and a \keywd{)}.
-Alternately, each keyword can be prefixed by \keywd{mpqc:}.
-The primary keywords are given below.  Some of the keywords
-specify objects, in which case the object will require more
-\clsnmref{KeyVal} input.  These objects are created from the
-input by using their \clsnmref{KeyVal} constructors, which
-are documented in
+The keywords recognized by \exenm{mpqc} begin with either an \keywd{mpqc}
+or \keywd{default} prefix.  That is, they must be nested between an
+\keywd{mpqc:(} and a \keywd{)}.  Alternately, each keyword can be prefixed
+by \keywd{mpqc:}.  The primary keywords are given below.  Some of the
+keywords specify \htmlref{objects}{pkvobject}, in which case the object
+will require more \clsnmref{KeyVal} input.  These objects are created from
+the input by using their \clsnmref{KeyVal} constructors, which are
+documented in
 \begin{latexonly}
 Chapters~\ref{firstclasschapt} through~\ref{lastclasschapt}.
 \end{latexonly}
@@ -38,21 +36,31 @@ several chapters that follow.
 \end{htmlonly}
 
 \begin{description}
-\item[\keywd{mole}] This is the most important keyword for
-        \exenm{mpqc}.  It specifies the \clsnmref{MolecularEnergy} object.
-        This is an object that knows how to compute the energy of a
-        molecule.  The specializations of \clsnmref{MolecularEnergy} that
-        are most commonly used here are \clsnmref{CLSCF},
-        \clsnmref{HSOSSCF}, and \clsnmref{MBPT2}.
-\item[\keywd{opt}] This keyword must be specified for optimizations.
-        It specifies an \clsnmref{Optimize} object.  Usually,
-        \clsnmref{QNewtonOpt} is best for finding minima and
+\item[\keywd{mole}] This is the most important keyword for \exenm{mpqc}.
+        It specifies the \clsnmref{MolecularEnergy}
+        \htmlref{object}{pkvobject}.  This is an object that knows how to
+        compute the energy of a molecule.  The specializations of
+        \clsnmref{MolecularEnergy} that are most commonly used here are
+        \clsnmref{CLSCF}, \clsnmref{HSOSSCF}, and \clsnmref{MBPT2}.
+\item[\keywd{opt}] This keyword must be specified for optimizations.  It
+        specifies an \clsnmref{Optimize} \htmlref{object}{pkvobject}.
+        Usually, \clsnmref{QNewtonOpt} is best for finding minima and
         \clsnmref{EFCOpt} is best for transition states.
 \item[\keywd{freq}] This keyword must be specified to compute frequencies.
-        It specifies an \clsnmref{MolecularFrequencies} object.
-\item[\keywd{checkpoint}] The value of this keyword is boolean.  If
-        true the calculation will be checkpointed.  The default is to
-        checkpoint.
+        It specifies an \clsnmref{MolecularFrequencies}
+        \htmlref{object}{pkvobject}.
+\item[\keywd{thread}] This specifies an \htmlref{object}{pkvobject} of type
+        \clsnmref{ThreadGrp} that can be used to advantage on shared-memory
+        multiprocessor machines for certain types of calculations.  This
+        keyword can be overridden by giving the \clsnmref{ThreadGrp} in the
+        environment or command line.
+\item[\keywd{checkpoint}] The value of this keyword is boolean.  If true,
+        then optimizations will be checkpointed after each iteraction.  The
+        default is to checkpoint.
+\item[\keywd{savestate}] The value of this keyword is boolean.  If true,
+        then the states of the optimizer and wavefunction objects will be
+        saved after the calculation completes.  The default is to save
+        state.
 \item[\keywd{restart}] The value of this keyword is boolean.  If true
         \exenm{mpqc} will attempt to restart the calculation.  If the
         checkpoint file is not found, the calculation will continue as if
@@ -78,22 +86,9 @@ several chapters that follow.
 There also some utility keywords that tell mpqc some technical
 details about how to do the calculation:
 \begin{description}
-\item[\keywd{message}]
-        This optional keyword gives a \clsnmref{MessageGrp} object
-        that sets up MPQC for parallel processing.  The default
-        is a \clsnmref{ProcMessageGrp} that runs MPQC on a single
-        processor.  If another \clsnmref{MessageGrp} is used because
-        of command line options or due to the environment in which MPQC
-        is run, then this keyword may be ignored.
-        See \hyperref{the chapter on running mpqc}
-                     {Chapter~}
-                     {}
-                     {running mpqc}
-        for other ways to specify the \clsnmref{MessageGrp} object.
-\item[\keywd{debug}]
-        This optional keyword gives a \clsnmref{Debugger} object
-        which can used to help find the problem if MPQC encounters
-        a catastrophic error.
+\item[\keywd{debug}] This optional keyword gives a \clsnmref{Debugger}
+        \htmlref{object}{pkvojbect} which can used to help find the problem
+        if MPQC encounters a catastrophic error.
 \item[\keywd{matrixkit}]
         This optional keyword gives a \clsnmref{SCMatrixKit} specialization
         which is used to produce matrices of the desired type.

@@ -1,5 +1,6 @@
 
-\documentclass[letterpaper]{report}
+\documentclass[letterpaper%,twoside
+              ]{report}
 
 \tolerance=1500
 \hbadness=1500
@@ -11,6 +12,8 @@
 \usepackage{scdoc}
 \usepackage{longtable}
 \setlongtables
+\pagestyle{headings}
+%\markboth{\chapter}{\section}
 
 \setcounter{tocdepth}{1}
 
@@ -48,6 +51,7 @@ massively parallel computers (IBM SP2, Intel Paragon).
 \end{abstract}
 
 \tableofcontents
+\listoftables
 
 \chapter{Introduction}
 The Massively Parallel Quantum Chemistry program (MPQC) computes

@@ -25,7 +25,7 @@ found at any GNU software ftp repository.
     \item GNU libg++: Mainly genclass and the prototype classes are needed.
           It isn't necessary to link with libg++.
     \item GNU flex (version 2.5.2 or greater): This is a lexical analyzer
-          generator used generator code to read input files. Make sure that
+          generator used to generate code to read input files. Make sure that
           FlexLexer.h from flex is in your include path. You may need to
           give that path to configure with an argument that looks something
           like: \type{--with-include=-I/usr/local/include}
@@ -99,7 +99,7 @@ target directory and run make.
  After you compile \exenm{listlibs} move it into your path and
 rerun \exenm{configure} so it will find the new executable.  Alternately,
 you can modify \filnm{lib/LocalMakefile} in your target directory.
-Change the line beginning with \type{LIBSLIBS=} appropiately.
+Change the line beginning with \type{LISTLIBS=} appropiately.
 
 \section{Compiling MPQC}
 

@@ -13,9 +13,12 @@ and more.
 \begin{description}
 \item[{\ttfamily -f}] The name of the input file.  The default is
                      {\ttfamily mpqc.in}.
-\item[{\ttfamily -messagegrp}] A \clsnm{ParsedKeyVal} specification
-                      of a message group object.  The default depends
-                      on how MPQC was compiled.
+\item[{\ttfamily -messagegrp}] A \clsnmref{ParsedKeyVal} specification of a
+                      \clsnmref{MessageGrp} \htmlref{object}{pkvobject}.
+                      The default depends on how MPQC was compiled.
+\item[{\ttfamily -threadgrp}] A \clsnmref{ParsedKeyVal} specification of a
+                      \clsnmref{ThreadGrp} \htmlref{object}{pkvobject}.
+                      The default depends on how MPQC was compiled.
 \item[{\ttfamily -l}] Sets a limit on the number of basis functions.
                      The default is zero, which means an unlimited number
                      of basis functions.
@@ -32,6 +35,31 @@ and more.
 \end{description}
 
 \section{Environmental Variables}
+
+MPQC looks at four environmental variables to set up
+communication and find library files.  Other libraries
+and utilities to run programs in parallel might look
+at other environment variables as well.  The four that
+apply on all platforms are:
+
+\begin{description}
+\item[{\ttfamily SCLIBDIR}] The name of the library directory.  The default
+                      is the directory in the source distribution.  See the
+                      \clsnmref{GaussianBasisSet} class documentation and
+                      look below for more information.
+\item[{\ttfamily MESSAGEGRP}] A \clsnmref{ParsedKeyVal} specification of a
+                      \clsnmref{MessageGrp} \htmlref{object}{pkvobject}.
+                      The default depends on how MPQC was compiled.  See
+                      the \clsnmref{MessageGrp} class documentation for
+                      more information.
+\item[{\ttfamily MEMORYGRP}] A \clsnmref{ParsedKeyVal} specification of a
+                      \clsnmref{MemoryGrp} \htmlref{object}{pkvobject}.
+                      The default depends on how MPQC was compiled and the
+                      \clsnmref{MessageGrp} in use.
+\item[{\ttfamily THREADGRP}] A \clsnmref{ParsedKeyVal} specification of a
+                      \clsnmref{ThreadGrp} \htmlref{object}{pkvobject}.
+                      The default depends on how MPQC was compiled.
+\end{description}
 
 By default, MPQC tries to find basis set library files in
 the source code distribution.  If the executable or source
@@ -62,31 +90,31 @@ setenv SCLIBDIR ~/sclib
 The setenv command is specific to the C-shell.  You will need to
 do what is appropriate for your shell.
 
-Now MPQC should be ready to run.
+The other three keywords specify objects.  This is done by
+giving a mini \clsnmref{ParsedKeyVal} input in a string.  The
+object is anonymous, that is, no keyword is associated with it.
+Here is an example:
+
+\begin{alltt}
+setenv MESSAGEGRP "<\clsnmref{ShmMessageGrp}>:(n = 4)"
+\end{alltt}
 
 \section{Running MPQC on a Shared Memory Multiprocessor}
 \index{computers!shared memory}
 \index{shared memory}
 
-By default, MPQC will run on only one CPU.  To specify more, associate a
-\clsnmref{ShmMessageGrp} object with the \keywd{message} keyword.  For
-example, putting the following at the top of your input file would run MPQC
-on four processors:
-
-\begin{alltt}
-message<\clsnmref{ShmMessageGrp}>:(n = 4)
-\end{alltt}
-
-
-To run MPQC, type:
-\begin{alltt}
-\exenm{mpqc} {\ttfamily -f} {\itshape input_file}
-\end{alltt}
-
-  Alternately, you can give the \clsnm{MessageGrp} object on
-the command line instead of in the input file:
+By default, MPQC will run on only one CPU.  To specify more, you can give a
+\clsnmref{ShmMessageGrp} \htmlref{object}{pkvobject} on the command line.
+This would run mpqc in four processes:
 \begin{alltt}
 \exenm{mpqc} {\ttfamily -messagegrp "<\clsnmref{ShmMessageGrp}>:(n = 4)" -f} {\itshape input_file}
+\end{alltt}
+
+Alternately, the \clsnmref{ShmMessageGrp} \htmlref{object}{pkvobject} can
+be given as an environmental variable:
+\begin{alltt}
+{\ttfamily setenv MESSAGEGRP "<\clsnmref{ShmMessageGrp}>:(n = 4)"}
+\exenm{mpqc} {\ttfamily -f} {\itshape input_file}
 \end{alltt}
 
 If MPQC should unexpectedly die, shared memory segments and
@@ -155,7 +183,7 @@ of processors that will be used.
 
 The program is run with the command:
 \begin{alltt}
-poe {\itshape executable} {\itshape inputfile} -messagegrp MPIMessageGrp
+poe {\itshape executable} -f {\itshape inputfile}
 \end{alltt}
 
 \subsection{Using Load Leveler}
@@ -188,7 +216,7 @@ MPQC:
 \end{alltt}
 
 To make the above useful, the italicized variables must be replaced.
-Table~\ref{running:spvariables} explains the meaning of the variables:
+Table~\ref{runningspvariables} explains the meaning of the variables:
 
 \begin{table}
 \caption{Variables Meanings for Sample IBM SP2 Loadleveler Script.}
@@ -207,7 +235,7 @@ Table~\ref{running:spvariables} explains the meaning of the variables:
   INPUTFILE & the input file name & mpqc.in \\
 \end{tabular}
 \end{center}
-\label{running:spvariables}
+\label{runningspvariables}
 \end{table}
 
 The modified script is submitted with the following command:

@@ -52,11 +52,34 @@
 GlobalCounter::GlobalCounter()
 {
   semid_ = -1;
+  controls_release_ = 0;
+}
+
+void
+GlobalCounter::cleanup()
+{
+  if (semid_ != -1 && controls_release_) {
+      int ret;
+#ifdef SEMCTL_REQUIRES_SEMUN
+      semun junk;
+      junk.val = 0;
+#else
+      int junk = 0;
+#endif
+      ret = semctl(semid_, 0, IPC_RMID, junk);
+      if (ret == -1) {
+          perror("semctl (IPC_RMID)");
+          abort();
+        }
+
+      semid_ = -1;
+    }
 }
 
 void
 GlobalCounter::initialize()
 {
+  cleanup();
   semid_ = semget(IPC_PRIVATE, 1, IPC_CREAT | SEM_R | SEM_A );
   if (semid_ == -1) {
       perror("semget");
@@ -75,20 +98,7 @@ GlobalCounter::initialize(const char *stringrep)
 
 GlobalCounter::~GlobalCounter()
 {
-  if (semid_ != -1 && controls_release_) {
-      int ret;
-#ifdef SEMCTL_REQUIRES_SEMUN
-      semun junk;
-      junk.val = 0;
-#else
-      int junk = 0;
-#endif
-      ret = semctl(semid_, 0, IPC_RMID, junk);
-      if (ret == -1) {
-          perror("semctl (IPC_RMID)");
-          abort();
-        }
-    }
+  cleanup();
 }
 
 void

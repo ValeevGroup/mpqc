@@ -42,6 +42,9 @@ class GlobalCounter {
   private:
     int semid_;
     int controls_release_;
+
+    void cleanup();
+    
   public:
     GlobalCounter();
     void initialize();

@@ -21,7 +21,7 @@ DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: mpqc
 
-LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 ifeq ($(ARCH),I860)
   DEFINES += -DLINPACKD=-lkmath

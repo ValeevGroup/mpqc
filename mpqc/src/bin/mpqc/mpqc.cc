@@ -63,6 +63,9 @@
 #include <chemistry/qc/mbpt/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
+#ifdef HAVE_CHEMISTRY_QC_CC
+#  include <chemistry/qc/cc/linkage.h>
+#endif
 
 #ifdef HAVE_MPI
 #include <mpi.h>

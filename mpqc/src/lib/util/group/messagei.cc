@@ -22,12 +22,14 @@ MessageGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-MessageGrp::MessageGrp(const RefKeyVal&):
+MessageGrp::MessageGrp(const RefKeyVal& keyval):
   me_(-1),
   n_(-1),
   classdesc_to_index_(-1),
   index_to_classdesc_(0)
 {
+  gop_max_ = keyval->intvalue("gop_max");
+  if (keyval->error() != KeyVal::OK) gop_max_ = 320000;
 }
 
 MessageGrp::MessageGrp():
@@ -457,13 +459,24 @@ MessageGrp::index_to_classdesc(int index)
 void
 MessageGrp::raw_bcast(void* data, int nbyte, int from)
 {
-  RefGlobalMsgIter i(topology_->global_msg_iter(this, from));
-  for (i->forwards(); !i->done(); i->next()) {
-      if (i->send()) {
-          raw_send(i->sendto(), data, nbyte);
-        }
-      if (i->recv()) {
-          raw_recv(i->recvfrom(), data, nbyte);
+  int nbyte_actual = nbyte;
+  int tgop_max = nbyte;
+  if (gop_max_ != 0) {
+      tgop_max = gop_max_;
+      gop_max_ = 0;
+      bcast(nbyte_actual,from);
+      gop_max_ = tgop_max;
+    }
+  for (int idat=0; idat<nbyte_actual; idat+=tgop_max) {
+      int ndat = (idat+tgop_max>nbyte_actual)?(nbyte_actual-idat):tgop_max;
+      RefGlobalMsgIter i(topology_->global_msg_iter(this, from));
+      for (i->forwards(); !i->done(); i->next()) {
+          if (i->send()) {
+              raw_send(i->sendto(), &((char*)data)[idat], ndat);
+            }
+          if (i->recv()) {
+              raw_recv(i->recvfrom(), &((char*)data)[idat], ndat);
+            }
         }
     }
 }

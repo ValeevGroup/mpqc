@@ -81,6 +81,7 @@ class MessageGrp: public DescribedClass {
     int me_;
     int n_;
     int nclass_;
+    int gop_max_;
     ClassDescPintRAVLMap classdesc_to_index_;
     ClassDescP *index_to_classdesc_;
   protected:

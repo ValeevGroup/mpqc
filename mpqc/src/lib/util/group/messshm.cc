@@ -5,6 +5,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
+#include <util/misc/bug.h>
 #include <util/group/messshm.h>
 
 #if defined(OSF) || defined(SUNMOS) || defined(AIX)
@@ -53,6 +54,7 @@ union semun {
 struct commbuf_struct {
     int nmsg;
     int n_wait_for_change;
+    int n_sync;
     char buf[SHMCOMMBUFSIZE];
 };
 typedef struct commbuf_struct commbuf_t;
@@ -66,15 +68,12 @@ typedef struct msgbuf_struct msgbuf_t;
 
 static commbuf_t *commbuf[MAXPROCS];
 static int shmid;
-static int sync_semid;
-static int sync2_semid;
 static int semid;
 static int change_semid;
 static void* sharedmem;
 
 static struct sembuf semdec;
 static struct sembuf seminc;
-static struct sembuf semread;
 
 static msgbuf_t *
 NEXT_MESSAGE(msgbuf_t *m)
@@ -90,6 +89,63 @@ NEXT_MESSAGE(msgbuf_t *m)
   r = ((msgbuf_t*)(((char*)m) + ROUNDUPTOALIGN(sizeof(msgbuf_t) + m->size)));
   return r;
 }
+
+static void
+get_change(int node)
+{
+  semdec.sem_num = node;
+  semop(change_semid,&semdec,1);
+  semdec.sem_num = 0;
+}
+
+static void
+put_change(int node)
+{
+  seminc.sem_num = node;
+  semop(change_semid,&seminc,1);
+  seminc.sem_num = 0;
+}
+
+// Obtain a lock for writing to the node's buffer.
+static void
+wait_for_write(int node)
+{
+  semdec.sem_num = node;
+  semop(semid,&semdec,1);
+  semdec.sem_num = 0;
+}
+
+// Release lock for writing to node's buffer.
+static void
+release_write(int node)
+{
+  seminc.sem_num = node;
+  semop(semid,&seminc,1);
+  seminc.sem_num = 0;
+}
+
+#ifdef DEBUG
+static void
+print_buffer(int node, int me)
+{
+  int i;
+  msgbuf_t *message;
+  message = (msgbuf_t*)commbuf[node]->buf;
+
+  printf("Printing buffer for node %d on node %d\n",node,me);
+  for (i=0; i<commbuf[node]->nmsg; i++) {
+      printf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
+             me,
+             node,
+             message->size,
+             message->type,
+             message->from);
+      fflush(stdout);
+      message = NEXT_MESSAGE(message);
+    }
+
+}
+#endif
 
 #define CLASSNAME ShmMessageGrp
 #define PARENTS public intMessageGrp
@@ -121,79 +177,90 @@ ShmMessageGrp::ShmMessageGrp(const RefKeyVal& keyval):
   else initialize(nprocs);
 }
 
-// sync_semid must have semval = 0 on entry.
 void
 ShmMessageGrp::sync()
 {
-  static struct sembuf semndec;
-  if (n() == 1) return;
-  semndec.sem_num = 0;
-  semndec.sem_op = -n() + 1;
-  semndec.sem_flg = 0;
-  if (me()==0) {
-      semop(sync_semid,&semndec,1);
-      semop(sync2_semid,&semndec,1);
+  int i;
+  for (i=0; i<n(); i++) {
+      if (me() == i) continue;
+      wait_for_write(i);
+      commbuf[i]->n_sync++;
+      if (commbuf[i]->n_sync >= n()-1) {
+          while(commbuf[i]->n_wait_for_change) {
+              put_change(i);
+              commbuf[i]->n_wait_for_change--;
+            }
+        }
+      release_write(i);
     }
-  else {
-      semop(sync_semid,&seminc,1);
-      semop(sync_semid,&semread,1);
-      semop(sync2_semid,&seminc,1);
-      semop(sync2_semid,&semread,1);
+  wait_for_write(me());
+  while (commbuf[me()]->n_sync < n()-1) {
+      commbuf[me()]->n_wait_for_change++;
+      release_write(me());
+      get_change(me());
+      wait_for_write(me());
+    };
+  commbuf[me()]->n_sync -= n()-1;
+  while(commbuf[me()]->n_wait_for_change) {
+      put_change(me());
+      commbuf[me()]->n_wait_for_change--;
     }
+  release_write(me());
 }
 
 ShmMessageGrp::~ShmMessageGrp()
 {
-  static struct sembuf semndec;
-
-#ifdef SHMDT_CHAR
-  shmdt((char*)sharedmem);
-#else
-  shmdt(sharedmem);
-#endif
-
   // sync the nodes
   sync();
 
-  // Make sure node zero is last to touch the semaphores.
-  if (n() > 1) {
-      semndec.sem_num = 0;
-      semndec.sem_op = -n() + 1;
-      semndec.sem_flg = 0;
-      if (me()==0) {
-          semop(sync_semid,&semndec,1);
-        }
-      else {
-          semop(sync_semid,&seminc,1);
-        }
-    }
-
-  // Release resources.
+  // make sure node zero is last to touch the shared memory
   if (me() == 0) {
+      wait_for_write(0);
+      while (commbuf[0]->n_sync < n()-1) {
+          commbuf[0]->n_wait_for_change++;
+          release_write(0);
+          get_change(0);
+          wait_for_write(0);
+        };
+      release_write(0);
+#ifdef SHMDT_CHAR
+      shmdt((char*)sharedmem);
+#else
+      shmdt(sharedmem);
+#endif
+      // release the memory
 #ifdef SHMCTL_REQUIRES_SHMID
       shmctl(shmid,IPC_RMID,0);
 #else
       shmctl(shmid,IPC_RMID);
 #endif
+
+      for (int i=0; i<n(); i++) {
 #ifdef SEMCTL_REQUIRES_SEMUN
-      semun junk;
-      junk.val = 0;
-      semctl(sync_semid,0,IPC_RMID,junk);
-      semctl(sync2_semid,0,IPC_RMID,junk);
+          semun junk;
+          junk.val = 0;
+          semctl(semid,i,IPC_RMID,junk);
+          semctl(change_semid,i,IPC_RMID,junk);
 #else
-      semctl(sync_semid,0,IPC_RMID);
-      semctl(sync2_semid,0,IPC_RMID);
+          semctl(semid,i,IPC_RMID);
+          semctl(change_semid,i,IPC_RMID);
 #endif
+        }
     }
-#ifdef SEMCTL_REQUIRES_SEMUN
-  semun junk;
-  junk.val = 0;
-  semctl(semid,me(),IPC_RMID,junk);
-  semctl(change_semid,me(),IPC_RMID,junk);
+  else {
+      wait_for_write(0);
+      commbuf[0]->n_sync++;
+      while(commbuf[0]->n_wait_for_change) {
+          put_change(0);
+          commbuf[0]->n_wait_for_change--;
+        }
+#ifdef SHMDT_CHAR
+      shmdt((char*)sharedmem);
 #else
-  semctl(semid,me(),IPC_RMID);
-  semctl(change_semid,me(),IPC_RMID);
+      shmdt(sharedmem);
 #endif
+      release_write(0);
+    }
 }
 
 void
@@ -216,9 +283,6 @@ ShmMessageGrp::initialize(int nprocs)
   seminc.sem_num = 0;
   seminc.sem_op =  1;
   seminc.sem_flg = 0;
-  semread.sem_num = 0;
-  semread.sem_op =  0;
-  semread.sem_flg = 0;
 
   // Each node gets a buffer for incoming data.
   shmid = shmget(IPC_PRIVATE,
@@ -237,26 +301,6 @@ ShmMessageGrp::initialize(int nprocs)
   int semzero = 0;
   int semone = 1;
 #endif
-
-  // This is used for node synchronization.
-  sync_semid = semget(IPC_PRIVATE,1,IPC_CREAT | SEM_R | SEM_A );
-  if (sync_semid == -1) {
-      perror("semget");
-      exit(-1);
-    }
-  if (semctl(sync_semid,0,SETVAL,semzero) == -1) {
-      perror("semctl");
-      exit(-1);
-    }
-  sync2_semid = semget(IPC_PRIVATE,1,IPC_CREAT | SEM_R | SEM_A );
-  if (sync_semid == -1) {
-      perror("semget");
-      exit(-1);
-    }
-  if (semctl(sync2_semid,0,SETVAL,semzero) == -1) {
-      perror("semctl");
-      exit(-1);
-    }
 
   // Each shared memory segment gets a semaphore to synchronize access.
   semid = semget(IPC_PRIVATE,nprocs,IPC_CREAT | SEM_R | SEM_A );
@@ -290,6 +334,7 @@ ShmMessageGrp::initialize(int nprocs)
       commbuf[i]->nmsg = 0;
       // and no outstanding waits
       commbuf[i]->n_wait_for_change = 0;
+      commbuf[i]->n_sync = 0;
       nextbuf = (void*)(((char*)nextbuf) + sizeof(commbuf_t));
     }
 
@@ -306,58 +351,6 @@ ShmMessageGrp::initialize(int nprocs)
   // Initialize the base class.
   intMessageGrp::initialize(mynodeid, nprocs, 30);
 }
-
-static void get_change(int node)
-{
-  semdec.sem_num = node;
-  semop(change_semid,&semdec,1);
-  semdec.sem_num = 0;
-}
-
-static void put_change(int node)
-{
-  seminc.sem_num = node;
-  semop(change_semid,&seminc,1);
-  seminc.sem_num = 0;
-}
-
-// Obtain a lock for writing to the node's buffer.
-static void wait_for_write(int node)
-{
-  semdec.sem_num = node;
-  semop(semid,&semdec,1);
-  semdec.sem_num = 0;
-}
-
-// Release lock for writing to node's buffer.
-static void release_write(int node)
-{
-  seminc.sem_num = node;
-  semop(semid,&seminc,1);
-  seminc.sem_num = 0;
-}
-
-#ifdef DEBUG
-static void print_buffer(int node, int me)
-{
-  int i;
-  msgbuf_t *message;
-  message = (msgbuf_t*)commbuf[node]->buf;
-
-  printf("Printing buffer for node %d on node %d\n",node,me);
-  for (i=0; i<commbuf[node]->nmsg; i++) {
-      printf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
-             me,
-             node,
-             message->size,
-             message->type,
-             message->from);
-      fflush(stdout);
-      message = NEXT_MESSAGE(message);
-    }
-
-}
-#endif
 
 int
 ShmMessageGrp::basic_probe(int msgtype)

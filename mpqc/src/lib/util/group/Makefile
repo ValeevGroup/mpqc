@@ -70,10 +70,10 @@ memtest: memtest.o \
 	$(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS)
 
 pooltest: pooltest.o libgroup.a
-	$(CXX) $(CXXFLAGS) -o pooltest $^
+	$(CXX) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS)
 
 rnglocktest: rnglocktest.o libgroup.a
-	$(CXX) $(CXXFLAGS) -o rnglocktest $^
+	$(CXX) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS)
 
 messtest.o: messtest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<

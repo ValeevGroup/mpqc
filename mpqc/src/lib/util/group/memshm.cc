@@ -9,6 +9,10 @@
 #include <util/group/pool.h>
 #include <util/group/memshm.h>
 
+#ifndef SIMPLE_LOCK
+#define SIMPLE_LOCK 1
+#endif
+
 #if defined(L486) || defined(PARAGON)
 #ifndef SHMCTL_REQUIRES_SHMID
 #  define SHMCTL_REQUIRES_SHMID
@@ -181,6 +185,9 @@ ShmMemoryGrp::obtain_readwrite(int offset, int size)
     }
 
   if (use_locks_) {
+#if SIMPLE_LOCK
+      obtain_lock();
+#else // SIMPLE_LOCK
 #ifdef DEBUG
       printf("%d: clear_release_count\n", me());
       fflush(stdout);
@@ -212,6 +219,7 @@ ShmMemoryGrp::obtain_readwrite(int offset, int size)
       //rangelock_->print();
 #endif // DEBUG
       release_lock();
+#endif // SIMPLE_LOCK
     }
 
   return &((char*)data_)[offset];
@@ -226,6 +234,9 @@ ShmMemoryGrp::obtain_readonly(int offset, int size)
     }
 
   if (use_locks_) {
+#if SIMPLE_LOCK
+      obtain_lock();
+#else // SIMPLE_LOCK
       clear_release_count();
       obtain_lock();
       while (!rangelock_->checkgr(offset, offset + size, -1)) {
@@ -245,6 +256,7 @@ ShmMemoryGrp::obtain_readonly(int offset, int size)
       //rangelock_->print();
 #endif // DEBUG
       release_lock();
+#endif // SIMPLE_LOCK
     }
 
   return &((char*)data_)[offset];
@@ -254,6 +266,9 @@ void
 ShmMemoryGrp::release_read(void *data, int offset, int size)
 {
   if (use_locks_) {
+#if SIMPLE_LOCK
+      release_lock();
+#else // SIMPLE_LOCK
       obtain_lock();
       rangelock_->decrement(offset, offset + size);
       note_release();
@@ -263,6 +278,7 @@ ShmMemoryGrp::release_read(void *data, int offset, int size)
       fflush(stdout);
 #endif // DEBUG
       release_lock();
+#endif // SIMPLE_LOCK
     }
 }
 
@@ -270,6 +286,9 @@ void
 ShmMemoryGrp::release_write(void *data, int offset, int size)
 {
   if (use_locks_) {
+#if SIMPLE_LOCK
+      release_lock();
+#else // SIMPLE_LOCK
       obtain_lock();
       rangelock_->increment(offset, offset + size);
       note_release();
@@ -279,6 +298,7 @@ ShmMemoryGrp::release_write(void *data, int offset, int size)
       fflush(stdout);
 #endif // DEBUG
       release_lock();
+#endif // SIMPLE_LOCK
     }
 }
 

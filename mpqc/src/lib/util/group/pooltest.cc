@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <ostream.h>
+#include <iostream.h>
 #include <util/group/pool.h>
 
 class Double {

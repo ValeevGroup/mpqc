@@ -72,6 +72,8 @@ class OSSSCF: public SCF {
     RefSymmSCMatrix alpha_density();
     RefSymmSCMatrix beta_density();
 
+    void symmetry_changed();
+    
     int spin_polarized();
 
   protected:

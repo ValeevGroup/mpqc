@@ -478,6 +478,18 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
   }
 }
 
+void
+TCSCF::symmetry_changed()
+{
+  SCF::symmetry_changed();
+  focka_.result_noupdate()=0;
+  fockb_.result_noupdate()=0;
+  ka_.result_noupdate()=0;
+  kb_.result_noupdate()=0;
+  nirrep_ = molecule()->point_group()->char_table().ncomp();
+  set_occupations(0);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // scf things

@@ -70,6 +70,8 @@ class HSOSSCF: public SCF {
     RefSymmSCMatrix fock(int);
     RefSymmSCMatrix effective_fock();
 
+    void symmetry_changed();
+    
     // returns 1
     int spin_polarized();
     RefSymmSCMatrix density();

@@ -310,11 +310,6 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// scf things
-//
-
 void
 CLSCF::symmetry_changed()
 {
@@ -323,6 +318,11 @@ CLSCF::symmetry_changed()
   nirrep_ = molecule()->point_group()->char_table().ncomp();
   set_occupations(0);
 }
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// scf things
+//
 
 void
 CLSCF::init_vector()

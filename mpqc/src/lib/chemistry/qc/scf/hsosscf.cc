@@ -419,6 +419,16 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
   }
 }
 
+void
+HSOSSCF::symmetry_changed()
+{
+  SCF::symmetry_changed();
+  cl_fock_.result_noupdate()=0;
+  op_fock_.result_noupdate()=0;
+  nirrep_ = molecule()->point_group()->char_table().ncomp();
+  set_occupations(0);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // scf things

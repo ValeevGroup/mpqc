@@ -174,7 +174,7 @@ class MessageGrp: public DescribedClass {
     virtual void sendt(int target, int type, long* data, int ndata);
     virtual void sendt(int target, int type, float* data, int ndata);
     void sendt(int target, int type, double data) {sendt(target,type,&data,1);}
-    void sendt(int target, int type, int data) {sendt(target,type&data,1);}
+    void sendt(int target, int type, int data) {sendt(target,type,&data,1);}
     virtual void raw_sendt(int target, int type, void* data, int nbyte) = 0;
 
     /** Receive messages sent sequentually from the sender.

@@ -54,6 +54,9 @@ CWEAVE = cweave
 # The object code suffix
 OBJSUF = o
 
+# The class maker from libg++
+GENCLASS = genclass
+
 # The library suffix
 LIBSUF = a
 

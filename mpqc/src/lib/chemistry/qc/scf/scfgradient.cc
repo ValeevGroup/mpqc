@@ -1,5 +1,6 @@
 
 #include <math/scmat/offset.h>
+#include <math/scmat/local.h>
 
 #include <chemistry/qc/basis/obint.h>
 
@@ -24,8 +25,14 @@ nuc_repulsion(double * g, const RefMolecule& m)
 
 static void
 ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
-            const RefSymmSCMatrix& density, const RefGaussianBasisSet& gbs_)
+            const RefSymmSCMatrix& density, const RefGaussianBasisSet& gbs_,
+            const RefMessageGrp& grp)
 {
+  int me=grp->me();
+  int nproc=grp->n();
+  int local = (LocalSymmSCMatrix::castdown(density) != 0);
+  int gsh=0;
+  
   GaussianBasisSet& gbs = *gbs_.pointer();
   Molecule& mol = *gbs_->molecule().pointer();
   
@@ -60,7 +67,13 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
       int ist = gbs.shell_to_function(ish);
       int ien = ist + gsi.nfunction();
 
-      for (int jsh=jshstart; jsh <= (tri ? ish : jshend-1); jsh++) {
+      for (int jsh=jshstart; jsh <= (tri ? ish : jshend-1); jsh++, gsh++) {
+        // make sure that if we're running on multiple processors, but
+        // the data blocks aren't distributed, we only calculate a part of
+        // the gradient on each node
+        if (local && (gsh%nproc != me))
+          continue;
+        
         GaussianShell& gsj = gbs(jsh);
 
         int jst = gbs.shell_to_function(jsh);
@@ -125,14 +138,16 @@ SCF::compute_gradient(const RefSCVector& gradient)
   // form overlap contribution
   RefSymmSCMatrix dens = lagrangian();
   RefOneBodyDerivInt derint = integral()->overlap_deriv();
-  ob_gradient(derint, o, dens, basis());
+  ob_gradient(derint, o, dens, basis(), scf_grp_);
   
   // other one electron contributions
   dens = gradient_density();
   derint = integral()->hcore_deriv();
-  ob_gradient(derint, o, dens, basis());
+  ob_gradient(derint, o, dens, basis(), scf_grp_);
 
-  scf_grp_->sum(o, n3);
+  if (scf_grp_->n() > 1)
+    scf_grp_->sum(o, n3);
+
   for (i=0; i < n3; i++) g[i] += o[i];
   
   dens=0;

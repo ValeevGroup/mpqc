@@ -282,6 +282,8 @@ CLSCF::init_vector()
     eigenvectors_ = hcore_guess();
 
   scf_vector_ = eigenvectors_.result_noupdate();
+
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -308,94 +310,93 @@ CLSCF::reset_density()
   cl_dens_diff_.assign(cl_dens_);
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
+class CLDensity : public BlockedSCElementOp {
+  private:
+    BlockedSCMatrix *vec;
+    CLSCF *scf_;
+
+  public:
+    CLDensity(CLSCF* s, const RefSCMatrix&v) : scf_(s) {
+      vec = BlockedSCMatrix::require_castdown(v,"CLDensity");
+    }
+    ~CLDensity() {}
+
+    int has_side_effects() { return 1; }
+
+    void process(SCMatrixBlockIter& bi) {
+      int ir=current_block();
+
+      RefSCMatrix vir = vec->block(ir);
+      int nbasis=vir.ncol();
+
+      if (!nbasis)
+        return;
+      
+      double *ck = new double[nbasis];
+
+      // loop over columns of the scf vector
+      for (int k=0;  k < scf_->ndocc_[ir]; k++) {
+        RefSCVector rck = vir.get_column(k);
+        rck->convert(ck);
+
+        for (bi.reset(); bi; bi++) {
+          bi.set(bi.get() + ck[bi.i()]*ck[bi.j()]);
+        }
+      }
+
+      delete[] ck;
+    }
+};
+
 double
 CLSCF::new_density()
 {
-  BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(
-    scf_vector_, "CLSCF::new_density: scf_vector");
-
-  BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_, "CLSCF::new_density: density");
-
-  BlockedSymmSCMatrix *ddensp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_diff_, "CLSCF::new_density: density diff");
-
-  RefPetiteList pl = integral()->petite_list(basis());
+  // copy current density into density diff and scale by -1.  later we'll
+  // add the new density to this to get the density difference.
+  cl_dens_diff_.assign(cl_dens_);
+  cl_dens_diff_.scale(-1.0);
   
-  int ij=0;
-  double delta=0;
-  int istart, iend, jstart, jend, tri;
-  double *ddata;
+  cl_dens_.assign(0.0);
+  RefSCElementOp op = new CLDensity(this, scf_vector_);
+  cl_dens_.element_op(op);
+  cl_dens_.scale(2.0);
 
-  for (int ir=0; ir < vecp->nblocks(); ir++) {
-    int nbasis = pl->nfunction(ir);
-    if (!nbasis)
-      continue;
+  cl_dens_diff_.accumulate(cl_dens_);
+  
+  RefSCElementScalarProduct sp(new SCElementScalarProduct);
+  cl_dens_diff_.element_op(sp, cl_dens_diff_);
+  
+  double delta = sp->result();
+  delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
 
-    RefSCMatrix vir = vecp->block(ir);
-    RefSymmSCMatrix dir = densp->block(ir);
-    RefSymmSCMatrix ddir = ddensp->block(ir);
-
-    // copy current density into density diff and scale by -1.  later we'll
-    // add the new density to this to get the density difference.
-    ddir.assign(dir);
-    ddir.scale(-1.0);
-    dir.assign(0.0);
-    
-    RefSCMatrixSubblockIter diter =
-      dir->local_blocks(SCMatrixSubblockIter::Write);
-
-    double *ck = new double[nbasis];
-
-    // loop over columns of the scf vector
-    for (int k=0;  k < ndocc_[ir]; k++) {
-      RefSCVector rck = vir.get_column(k);
-      rck->convert(ck);
-
-      // now loop over blocks of the density matrix and fill them in
-      for (diter->begin(); diter->ready(); diter->next()) {
-        SCMatrixBlock *dblk = diter->block();
-
-        ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-        if (!ddata) {
-          fprintf(stderr,"CLSCF::new_density: oops...can't get data\n");
-          abort();
-        }
-
-        int dij=0;
-        for (int i=istart; i < iend; i++)
-          for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++)
-            ddata[dij] += ck[i]*ck[j];
-      }
-    }
-    
-    delete[] ck;
-
-    dir.scale(2.0);
-    ddir.accumulate(dir);
-    
-    // now calculate rms delta d
-    diter = ddir->local_blocks(SCMatrixSubblockIter::Read);
-
-    for (diter->begin(); diter->ready(); diter->next()) {
-      SCMatrixBlock *dblk = diter->block();
-
-      ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-      if (!ddata) {
-        fprintf(stderr,"CLSCF::new_density: oops...can't get diff data\n");
-        abort();
-      }
-
-      int dij=0;
-      for (int i=istart; i < iend; i++)
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++, ij++)
-          delta += ddata[dij]*ddata[dij];
-    }
-  }
-
-  delta = sqrt(delta/ij);
   return delta;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CLEnergy : public SCElementOp2 {
+  private:
+    double eelec;
+    int deferred_;
+    
+  public:
+    CLEnergy() : eelec(0), deferred_(0) {}
+    ~CLEnergy() {}
+
+    int has_collect() { return 1; }
+    void defer_collect(int h) { deferred_=h; }
+    void collect(const RefMessageGrp&grp) { if (!deferred_) grp->sum(eelec); }
+    double result() { return eelec; }
+
+    void process(SCMatrixBlockIter&i, SCMatrixBlockIter&j) {
+      for (i.reset(), j.reset(); i && j; i++, j++) {
+        int ii=i.i(); int jj=j.j();
+        eelec += (ii==jj) ? 0.5*j.get()*i.get() : i.get()*j.get();
+      }
+    }
+};
 
 double
 CLSCF::scf_energy()
@@ -403,61 +404,29 @@ CLSCF::scf_energy()
   RefSymmSCMatrix t = cl_fock_.copy();
   t.accumulate(cl_hcore_);
 
-  BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_, "CLSCF::scf_energy: density");
+  CLEnergy *eop = new CLEnergy;
+  eop->reference();
+  RefSCElementOp2 op = eop;
+  t.element_op(op,cl_dens_);
+  op=0;
+  eop->dereference();
 
-  BlockedSymmSCMatrix *fockp = BlockedSymmSCMatrix::require_castdown(
-    t, "CLSCF::scf_energy: H+F");
+  double eelec = eop->result();
 
-  double eelec=0;
-  for (int ir=0; ir < fockp->nblocks(); ir++) {
-    RefSymmSCMatrix dir = densp->block(ir);
-    RefSymmSCMatrix fhir = fockp->block(ir);
-
-    if (!dir.n())
-      continue;
-    
-    RefSCMatrixSubblockIter diter =
-      dir->local_blocks(SCMatrixSubblockIter::Read);
-    RefSCMatrixSubblockIter fiter =
-      fhir->local_blocks(SCMatrixSubblockIter::Read);
-
-    SCMatrixJointSubblockIter subi(diter,fiter);
-
-    for (subi.begin(); subi.ready(); subi.next()) {
-      SCMatrixBlock *dblk=subi.block(0);
-      SCMatrixBlock *fblk=subi.block(1);
-
-      int istart, iend, jstart, jend, tri;
-
-      double *ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-      double *fdata = get_tri_block(fblk, istart, iend, jstart, jend, tri);
-
-      if (!ddata || !fdata) {
-        fprintf(stderr,"CLSCF::scf_energy: oops...can't get data\n");
-        abort();
-      }
-
-      int ij=0;
-      for (int i=istart; i < iend; i++) {
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
-          eelec += (i==j) ? 0.5*ddata[ij]*fdata[ij] :
-                                ddata[ij]*fdata[ij];
-        }
-      }
-    }
-  }
-
+  delete eop;
+  
   return eelec;
 }
 
-char *
-CLSCF::init_pmax(double *pmat_data)
+//////////////////////////////////////////////////////////////////////////////
+
+static char *
+init_pmax(const RefGaussianBasisSet& gbs_, double *pmat_data)
 {
   double l2inv = 1.0/log(2.0);
   double tol = pow(2.0,-126.0);
   
-  GaussianBasisSet& gbs = *basis().pointer();
+  GaussianBasisSet& gbs = *gbs_.pointer();
   
   char * pmax = new char[i_offset(gbs.nshell())];
 
@@ -501,43 +470,31 @@ CLSCF::ao_fock()
   cl_dens_diff_->scale(2.0);
   cl_dens_diff_->scale_diagonal(0.5);
 
-  
   // now try to figure out the matrix specialization we're dealing with
-  // if we're using Local matrices, then there's just one subblock
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
-    // create block iterators for the G and P matrices
-    RefSCMatrixSubblockIter giter =
-      cl_gmat_->local_blocks(SCMatrixSubblockIter::Write);
-    giter->begin();
-    SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
-
-    RefSCMatrixSubblockIter piter =
-      cl_dens_diff_->local_blocks(SCMatrixSubblockIter::Read);
-    piter->begin();
-    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
-
-    double *gmat_data = gblock->data;
-    double *pmat_data = pblock->data;
-    char * pmax = init_pmax(pmat_data);
-  
-    LocalCLContribution lclc(gmat_data, pmat_data);
-    LocalGBuild<LocalCLContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
-
-    delete[] pmax;
-  }
-
+  // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
-  else if (basis()->nbasis() < 700) {
-    RefSCMatrixKit lkit = new LocalSCMatrixKit();
-    RefSCDimension ldim = new SCDimension(basis()->nbasis());
-    RefSymmSCMatrix gtmp = lkit->symmmatrix(ldim);
-    RefSymmSCMatrix ptmp = lkit->symmmatrix(ldim);
+  if (local_ || basis()->nbasis() < 700) {
+    RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
+    RefSCDimension ldim = basis()->basisdim();
 
-    gtmp->assign(0.0);
-    ptmp->convert(cl_dens_diff_);
+    RefSymmSCMatrix gtmp = cl_gmat_;
+    RefSymmSCMatrix ptmp = cl_dens_diff_;
+
+    // if these aren't local matrices, then make a copy of the density matrix
+    if (!local_) {
+      lkit = new LocalSCMatrixKit;
+
+      ptmp = lkit->symmmatrix(ldim);
+      ptmp->convert(cl_dens_diff_);
+    }
     
+    // if we're not dealing with local matrices, or we're running on
+    // multiple processors, then make a copy of the G matrix
+    if (!local_ || scf_grp_->n() > 1) {
+      gtmp = lkit->symmmatrix(ldim);
+      gtmp->assign(0.0);
+    }
+
     // create block iterators for the G and P matrices
     RefSCMatrixSubblockIter giter =
       gtmp->local_blocks(SCMatrixSubblockIter::Write);
@@ -551,17 +508,23 @@ CLSCF::ao_fock()
 
     double *gmat_data = gblock->data;
     double *pmat_data = pblock->data;
-    char * pmax = init_pmax(pmat_data);
+    char * pmax = init_pmax(basis(), pmat_data);
   
     LocalCLContribution lclc(gmat_data, pmat_data);
     LocalGBuild<LocalCLContribution>
       gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
     gb.build_gmat(desired_value_accuracy()/100.0);
 
-    scf_grp_->sum(gmat_data, i_offset(basis()->nbasis()));
-    cl_gmat_->convert_accumulate(gtmp);
-    
     delete[] pmax;
+
+    // if we're running on multiple processors, then sum the G matrix
+    if (scf_grp_->n() > 1)
+      scf_grp_->sum(gmat_data, i_offset(basis()->nbasis()));
+
+    // if we're running on multiple processors, or we don't have local
+    // matrices, then accumulate gtmp back into G
+    if (!local_ || scf_grp_->n() > 1)
+      cl_gmat_->convert_accumulate(gtmp);
   }
 
   // for now quit
@@ -582,6 +545,8 @@ CLSCF::ao_fock()
   cl_fock_.assign(cl_hcore_);
   cl_fock_.accumulate(dd);
 }
+
+//////////////////////////////////////////////////////////////////////////////
 
 RefSCExtrapData
 CLSCF::extrap_data()
@@ -609,6 +574,8 @@ CLSCF::init_gradient()
   // presumably the eigenvectors have already been computed by the time
   // we get here
   scf_vector_ = eigenvectors_.result_noupdate();
+
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -623,33 +590,42 @@ CLSCF::done_gradient()
   scf_vector_ = 0;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+class CLLag : public BlockedSCElementOp {
+  private:
+    CLSCF *scf_;
+
+  public:
+    CLLag(CLSCF* s) : scf_(s) {}
+    ~CLLag() {}
+
+    int has_side_effects() { return 1; }
+
+    void process(SCMatrixBlockIter& bi) {
+      int ir=current_block();
+
+      for (bi.reset(); bi; bi++) {
+        double occi = scf_->occupation(ir,bi.i());
+
+        if (occi==0.0)
+          bi.set(0.0);
+      }
+    }
+};
+
 RefSymmSCMatrix
 CLSCF::lagrangian()
 {
   // the MO lagrangian is just the eigenvalues of the occupied MO's
   RefSymmSCMatrix mofock = effective_fock();
-  RefDiagSCMatrix evals = mofock.eigvals();
-
-  BlockedDiagSCMatrix *ev = BlockedDiagSCMatrix::castdown(evals);
-  for (int b=0; b < ev->nblocks(); b++) {
-    RefDiagSCMatrix evb = ev->block(b);
-    if (!evb.n())
-      continue;
-    
-    double *ev = new double[evb.n()];
-    evb->convert(ev);
-    
-    for (int i=ndocc_[b]; i < evb.n(); i++)
-      ev[i]=0.0;
-
-    evb->assign(ev);
-    delete[] ev;
-  }
+  RefSCElementOp op = new CLLag(this);
+  mofock.element_op(op);
   
   // transform MO lagrangian to SO basis
   RefSymmSCMatrix so_lag(basis_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
-  so_lag.accumulate_transform(scf_vector_, evals);
+  so_lag.accumulate_transform(scf_vector_, mofock);
   
   // and then from SO to AO
   RefPetiteList pl = integral()->petite_list();
@@ -665,93 +641,44 @@ CLSCF::gradient_density()
   cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
   cl_dens_.assign(0.0);
   
-  BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(
-    scf_vector_, "CLSCF::gradient_density: scf_vector");
-
-  BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_, "CLSCF::gradient_density: density");
-
+  RefSCElementOp op = new CLDensity(this, scf_vector_);
+  cl_dens_.element_op(op);
+  cl_dens_.scale(2.0);
+  
   RefPetiteList pl = integral()->petite_list(basis());
   
-  for (int ir=0; ir < vecp->nblocks(); ir++) {
-    int nbasis = pl->nfunction(ir);
-
-    if (!nbasis)
-      continue;
-
-    RefSCMatrix vir = vecp->block(ir);
-    RefSymmSCMatrix dir = densp->block(ir);
-  
-    RefSCMatrixSubblockIter diter =
-      dir->local_blocks(SCMatrixSubblockIter::Write);
-
-    double *ck = new double[nbasis];
-
-    // loop over columns of the scf vector
-    for (int k=0;  k < ndocc_[ir]; k++) {
-      RefSCVector rck = vir.get_column(k);
-      rck->convert(ck);
-
-      // now loop over blocks of the density matrix and fill them in
-      for (diter->begin(); diter->ready(); diter->next()) {
-        SCMatrixBlock *dblk = diter->block();
-
-        int istart, iend, jstart, jend, tri;
-  
-        double *ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
-        if (!ddata) {
-          fprintf(stderr,"CLSCF::gradient_density: oops...can't get data\n");
-          abort();
-        }
-
-        int dij=0;
-        for (int i=istart; i < iend; i++)
-          for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++)
-            ddata[dij] += ck[i]*ck[j];
-      }
-    }
-
-    delete[] ck;
-    
-    dir.scale(2.0);
-  }
-  
   cl_dens_ = pl->to_AO_basis(cl_dens_);
+  cl_dens_.scale(1.0);
 
   return cl_dens_;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
 void
 CLSCF::two_body_deriv(double * tbgrad)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs();
+  RefSCElementMaxAbs m = new SCElementMaxAbs;
   cl_dens_.element_op(m);
   double pmax = m->result();
   m=0;
 
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
-    // create block iterators for the G and P matrices
-    RefSCMatrixSubblockIter piter =
-      cl_dens_->local_blocks(SCMatrixSubblockIter::Read);
-    piter->begin();
-    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+  // now try to figure out the matrix specialization we're dealing with.
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert P to a local matrix
+  if (local_ || basis()->nbasis() < 700) {
+    RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
+    RefSCDimension ldim = basis()->basisdim();
+    RefSymmSCMatrix ptmp = cl_dens_;
 
-    double *pmat_data = pblock->data;
+    // if these aren't local matrices, then make copies of the density
+    // matrices
+    if (!local_) {
+      lkit = new LocalSCMatrixKit;
 
-    LocalCLGradContribution l(pmat_data);
-    LocalTBGrad<LocalCLGradContribution> tb(l, integral(), basis(), scf_grp_);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
-  }
-
-  // see if we can convert G and P to local matrices
-  else if (basis()->nbasis() < 700) {
-    RefSCMatrixKit lkit = new LocalSCMatrixKit();
-    RefSCDimension ldim = new SCDimension(basis()->nbasis());
-    RefSymmSCMatrix ptmp = lkit->symmmatrix(ldim);
-
-    ptmp->convert(cl_dens_);
-    
-    RefMessageGrp grp = scf_grp_;
+      ptmp = lkit->symmmatrix(ldim);
+      ptmp->convert(cl_dens_);
+    }
     
     // create block iterators for the G and P matrices
     RefSCMatrixSubblockIter piter =

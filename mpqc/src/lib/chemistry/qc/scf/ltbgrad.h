@@ -151,7 +151,8 @@ class LocalTBGrad : public TBGrad<T> {
         }
       }
       
-      grp_->sum(tbint, mol.natom()*3);
+      if (nproc > 1)
+        grp_->sum(tbint, mol.natom()*3);
       
       CharacterTable ct = mol.point_group().char_table();
       SymmetryOperation so;

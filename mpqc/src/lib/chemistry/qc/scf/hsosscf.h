@@ -23,6 +23,7 @@ class HSOSSCF: public SCF {
     int nirrep_;
     int *ndocc_;
     int *nsocc_;
+    int local_;
 
   public:
     HSOSSCF(StateIn&);

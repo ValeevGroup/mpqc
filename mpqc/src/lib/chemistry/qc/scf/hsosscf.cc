@@ -357,6 +357,8 @@ HSOSSCF::init_vector()
     eigenvectors_ = hcore_guess();
 
   scf_vector_ = eigenvectors_.result_noupdate();
+
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -465,6 +467,8 @@ HSOSSCF::new_density()
             ddata[dij] += ck[i]*ck[j];
       }
     }
+    // force ReplSCMatrices to do the sum
+    diter=0;
 
     dir.scale(2.0);
 
@@ -491,6 +495,9 @@ HSOSSCF::new_density()
       }
     }
 
+    // force ReplSCMatrices to do the sum
+    diter=0;
+
     delete[] ck;
     
     dir.accumulate(odir);
@@ -514,6 +521,11 @@ HSOSSCF::new_density()
         for (int j=jstart; j <= (tri ? i : jend-1); j++, dij++, ij++)
           delta += ddata[dij]*ddata[dij];
     }
+  }
+
+  if (!local_ && scf_grp_->n() > 1) {
+    scf_grp_->sum(&delta, 1);
+    scf_grp_->sum(&ij, 1);
   }
 
   delta = sqrt(delta/ij);
@@ -591,6 +603,9 @@ HSOSSCF::scf_energy()
     }
   }
 
+  if (!local_ && (scf_grp_->n() > 1))
+    scf_grp_->sum(&eelec, 1);
+
   return eelec;
 }
 
@@ -650,68 +665,40 @@ HSOSSCF::ao_fock()
   op_dens_diff_->scale_diagonal(0.5);
   
   // now try to figure out the matrix specialization we're dealing with
-  // if we're using Local matrices, then there's just one subblock
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
-    // create block iterators for the G and P matrices
-    RefSCMatrixSubblockIter giter =
-      cl_gmat_->local_blocks(SCMatrixSubblockIter::Write);
-    giter->begin();
-    SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
-
-    RefSCMatrixSubblockIter piter =
-      cl_dens_diff_->local_blocks(SCMatrixSubblockIter::Read);
-    piter->begin();
-    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
-
-    RefSCMatrixSubblockIter goiter =
-      op_gmat_->local_blocks(SCMatrixSubblockIter::Write);
-    goiter->begin();
-    SCMatrixLTriBlock *goblock = SCMatrixLTriBlock::castdown(goiter->block());
-
-    RefSCMatrixSubblockIter poiter =
-      op_dens_diff_->local_blocks(SCMatrixSubblockIter::Read);
-    poiter->begin();
-    SCMatrixLTriBlock *poblock = SCMatrixLTriBlock::castdown(poiter->block());
-
-    double *gmat_data = gblock->data;
-    double *pmat_data = pblock->data;
-    double *gmato_data = goblock->data;
-    double *pmato_data = poblock->data;
-    char * pmax = init_pmax(pmat_data);
-  
-    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
-    LocalHSOSContribution lclc(gmat_data, pmat_data, gmato_data, pmato_data);
-    LocalGBuild<LocalHSOSContribution>
-      gb(lclc, tbi_, integral(), basis(), grp, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
-
-    delete[] pmax;
-  }
-
+  // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
-  else if (basis()->nbasis() < 700) {
-    RefSCMatrixKit lkit = new LocalSCMatrixKit();
-    RefSCDimension ldim = new SCDimension(basis()->nbasis());
-    RefSymmSCMatrix gtmp = lkit->symmmatrix(ldim);
-    RefSymmSCMatrix ptmp = lkit->symmmatrix(ldim);
-    RefSymmSCMatrix gotmp = lkit->symmmatrix(ldim);
-    RefSymmSCMatrix potmp = lkit->symmmatrix(ldim);
+  if (local_ || basis()->nbasis() < 700) {
+    RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
+    RefSCDimension ldim = basis()->basisdim();
 
-    gtmp->assign(0.0);
-    gotmp->assign(0.0);
-    ptmp->convert(cl_dens_diff_);
-    potmp->convert(op_dens_diff_);
-    
-    RefMessageGrp grp;
-    if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else {
-      fprintf(stderr,"don't know the matrix kit\n");
-      abort();
+    RefSymmSCMatrix ptmp = cl_dens_diff_;
+    RefSymmSCMatrix potmp = op_dens_diff_;
+
+    RefSymmSCMatrix gtmp = cl_gmat_;
+    RefSymmSCMatrix gotmp = op_gmat_;
+
+    // if these aren't local matrices, then make copies of the density
+    // matrices
+    if (!local_) {
+      lkit = new LocalSCMatrixKit;
+
+      ptmp = lkit->symmmatrix(ldim);
+      ptmp->convert(cl_dens_diff_);
+
+      potmp = lkit->symmmatrix(ldim);
+      potmp->convert(op_dens_diff_);
     }
-    
+
+    // if we're not dealing with local matrices, or we're running on
+    // multiple processors, then make a copy of the G matrices
+    if (!local_ || scf_grp_->n() > 1) {
+      gtmp = lkit->symmmatrix(ldim);
+      gotmp = lkit->symmmatrix(ldim);
+
+      gtmp->assign(0.0);
+      gotmp->assign(0.0);
+    }
+
     // create block iterators for the G and P matrices
     RefSCMatrixSubblockIter giter =
       gtmp->local_blocks(SCMatrixSubblockIter::Write);
@@ -741,16 +728,23 @@ HSOSSCF::ao_fock()
   
     LocalHSOSContribution lclc(gmat_data, pmat_data, gmato_data, pmato_data);
     LocalGBuild<LocalHSOSContribution>
-      gb(lclc, tbi_, integral(), basis(), grp, pmax);
+      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
     gb.build_gmat(desired_value_accuracy()/100.0);
 
-    grp->sum(gmat_data, i_offset(basis()->nbasis()));
-    cl_gmat_->convert_accumulate(gtmp);
-    
-    grp->sum(gmato_data, i_offset(basis()->nbasis()));
-    op_gmat_->convert_accumulate(gotmp);
-
     delete[] pmax;
+
+    // if we're running on multiple processors, then sum the G matrices
+    if (scf_grp_->n() > 1) {
+      scf_grp_->sum(gmat_data, i_offset(basis()->nbasis()));
+      scf_grp_->sum(gmato_data, i_offset(basis()->nbasis()));
+    }
+    
+    // if we're running on multiple processors, or we don't have local
+    // matrices, then accumulate gtmp back into G
+    if (!local_ || scf_grp_->n() > 1) {
+      cl_gmat_->convert_accumulate(gtmp);
+      op_gmat_->convert_accumulate(gotmp);
+    }
   }
 
   // for now quit
@@ -790,6 +784,34 @@ HSOSSCF::extrap_data()
   return data;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+class HSOSEffFock : public BlockedSCElementOp2 {
+  private:
+    HSOSSCF *scf_;
+
+  public:
+    HSOSEffFock(HSOSSCF* s) : scf_(s) {}
+    ~HSOSEffFock() {}
+
+    int has_side_effects() { return 1; }
+
+    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2) {
+      int ir=current_block();
+
+      for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
+        double occi = scf_->occupation(ir,bi1.i());
+        double occj = scf_->occupation(ir,bi1.j());
+
+        if (occi==1.0 && occj==2.0)
+          bi1.set(2.0*bi1.get()-bi2.get());
+        else if (occi==0.0 && occj==1.0)
+          bi1.set(bi2.get());
+      
+      }
+    }
+};
+    
 RefSymmSCMatrix
 HSOSSCF::effective_fock()
 {
@@ -801,55 +823,8 @@ HSOSSCF::effective_fock()
   mofocko.assign(0.0);
   mofocko.accumulate_transform(scf_vector_.t(), op_fock_);
 
-  BlockedSymmSCMatrix *mofp = BlockedSymmSCMatrix::require_castdown(
-    mofock,"HSOSSCF::effective_fock: mofock");
-
-  BlockedSymmSCMatrix *mofop = BlockedSymmSCMatrix::require_castdown(
-    mofocko,"HSOSSCF::effective_fock: mofocko");
-
-  for (int ir=0; ir < mofp->nblocks(); ir++) {
-    RefSymmSCMatrix mof = mofp->block(ir);
-    RefSymmSCMatrix mofo = mofop->block(ir);
-    
-    if (!mof.n())
-      continue;
-    
-    RefSCMatrixSubblockIter fiter =
-      mof->local_blocks(SCMatrixSubblockIter::Write);
-    RefSCMatrixSubblockIter foiter =
-      mofo->local_blocks(SCMatrixSubblockIter::Read);
-
-    SCMatrixJointSubblockIter subi(fiter,foiter);
-
-    for (subi.begin(); subi.ready(); subi.next()) {
-      SCMatrixBlock *fblk=subi.block(0);
-      SCMatrixBlock *foblk=subi.block(1);
-
-      int istart, iend, jstart, jend, tri;
-
-      double *fdata = get_tri_block(fblk, istart, iend, jstart, jend, tri);
-      double *fodata = get_tri_block(foblk, istart, iend, jstart, jend, tri);
-
-      if (!fdata || !fodata) {
-        fprintf(stderr,"HSOSSCF::effective_fock: oops...can't get data\n");
-        abort();
-      }
-
-      int ij=0;
-      for (int i=istart; i < iend; i++) {
-        double occi = occupation(ir,i);
-
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
-          double occj = occupation(ir,j);
-
-          if (occi==1.0 && occj==2.0)
-            fdata[ij] += fdata[ij]-fodata[ij];
-          else if (occi==0.0 && occj==1.0)
-            fdata[ij] = fodata[ij];
-        }
-      }
-    }
-  }
+  RefSCElementOp2 op = new HSOSEffFock(this);
+  mofock.element_op(op, mofocko);
 
   return mofock;
 }
@@ -862,6 +837,8 @@ HSOSSCF::init_gradient()
   // presumably the eigenvectors have already been computed by the time
   // we get here
   scf_vector_ = eigenvectors_.result_noupdate();
+
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
 }
 
 void
@@ -877,17 +854,44 @@ HSOSSCF::done_gradient()
   scf_vector_ = 0;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+// MO lagrangian
+//       c    o   v
+//  c  |2*FC|2*FC|0|
+//     -------------
+//  o  |2*FC| FO |0|
+//     -------------
+//  v  | 0  |  0 |0|
+//
+class HSOSLag : public BlockedSCElementOp2 {
+  private:
+    HSOSSCF *scf_;
+
+  public:
+    HSOSLag(HSOSSCF* s) : scf_(s) {}
+    ~HSOSLag() {}
+
+    int has_side_effects() { return 1; }
+
+    void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2) {
+      int ir=current_block();
+
+      for (bi1.reset(), bi2.reset(); bi1 && bi2; bi1++, bi2++) {
+        double occi = scf_->occupation(ir,bi1.i());
+        double occj = scf_->occupation(ir,bi1.j());
+
+        if (occi==1.0 && occj==1.0)
+          bi1.set(bi2.get());
+        else if (occi==0.0)
+          bi1.set(0.0);
+      }
+    }
+};
+
 RefSymmSCMatrix
 HSOSSCF::lagrangian()
 {
-  // MO lagrangian
-  //       c    o   v
-  //  c  |2*FC|2*FC|0|
-  //     -------------
-  //  o  |2*FC| FO |0|
-  //     -------------
-  //  v  | 0  |  0 |0|
-  //
   RefSymmSCMatrix mofock = cl_fock_.clone();
   mofock.assign(0.0);
   mofock.accumulate_transform(scf_vector_.t(), cl_fock_);
@@ -896,57 +900,10 @@ HSOSSCF::lagrangian()
   mofocko.assign(0.0);
   mofocko.accumulate_transform(scf_vector_.t(), op_fock_);
 
-  BlockedSymmSCMatrix *mofp = BlockedSymmSCMatrix::require_castdown(
-    mofock,"HSOSSCF::extrap_error: mofock");
-
-  BlockedSymmSCMatrix *mofop = BlockedSymmSCMatrix::require_castdown(
-    mofocko,"HSOSSCF::extrap_error: mofocko");
-
   mofock.scale(2.0);
   
-  for (int ir=0; ir < mofp->nblocks(); ir++) {
-    RefSymmSCMatrix mof = mofp->block(ir);
-    RefSymmSCMatrix mofo = mofop->block(ir);
-    
-    if (!mof.n())
-      continue;
-    
-    RefSCMatrixSubblockIter fiter =
-      mof->local_blocks(SCMatrixSubblockIter::Write);
-    RefSCMatrixSubblockIter foiter =
-      mofo->local_blocks(SCMatrixSubblockIter::Read);
-
-    SCMatrixJointSubblockIter subi(fiter,foiter);
-
-    for (subi.begin(); subi.ready(); subi.next()) {
-      SCMatrixBlock *fblk=subi.block(0);
-      SCMatrixBlock *foblk=subi.block(1);
-
-      int istart, iend, jstart, jend, tri;
-
-      double *fdata = get_tri_block(fblk, istart, iend, jstart, jend, tri);
-      double *fodata = get_tri_block(foblk, istart, iend, jstart, jend, tri);
-
-      if (!fdata || !fodata) {
-        fprintf(stderr,"HSOSSCF::effective_fock: oops...can't get data\n");
-        abort();
-      }
-
-      int ij=0;
-      for (int i=istart; i < iend; i++) {
-        double occi = occupation(ir,i);
-
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
-          double occj = occupation(ir,j);
-
-          if (occi==1.0 && occj==1.0)
-            fdata[ij] = fodata[ij];
-          else if (occi==0.0)
-            fdata[ij] = 0.0;
-        }
-      }
-    }
-  }
+  RefSCElementOp2 op = new HSOSLag(this);
+  mofock.element_op(op, mofocko);
   mofocko=0;
 
   // transform MO lagrangian to SO basis
@@ -1026,6 +983,9 @@ HSOSSCF::gradient_density()
       }
     }
 
+    // force repl matrices to do the sum
+    diter=0;
+
     dir.scale(2.0);
 
     diter = odir->local_blocks(SCMatrixSubblockIter::Write);
@@ -1066,53 +1026,37 @@ HSOSSCF::gradient_density()
   return tdens;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
 void
 HSOSSCF::two_body_deriv(double * tbgrad)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs();
+  RefSCElementMaxAbs m = new SCElementMaxAbs;
   cl_dens_.element_op(m);
   double pmax = m->result();
   m=0;
 
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
-    // create block iterators for the G and P matrices
-    RefSCMatrixSubblockIter piter =
-      cl_dens_->local_blocks(SCMatrixSubblockIter::Read);
-    piter->begin();
-    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+  // now try to figure out the matrix specialization we're dealing with.
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert P to local matrices
+  RefSCMatrixKit lkit = LocalSCMatrixKit::castdown(basis()->matrixkit());
+  int local = lkit.nonnull();
 
-    RefSCMatrixSubblockIter poiter =
-      op_dens_->local_blocks(SCMatrixSubblockIter::Read);
-    poiter->begin();
-    SCMatrixLTriBlock *poblock = SCMatrixLTriBlock::castdown(poiter->block());
+  if (local || basis()->nbasis() < 700) {
+    RefSCDimension ldim = basis()->basisdim();
+    RefSymmSCMatrix ptmp = cl_dens_;
+    RefSymmSCMatrix potmp = op_dens_;
 
-    double *pmat_data = pblock->data;
-    double *pmato_data = poblock->data;
-  
-    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
-    LocalHSOSGradContribution lclc(pmat_data,pmato_data);
-    LocalTBGrad<LocalHSOSGradContribution> tb(lclc, integral(), basis(), grp);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
-  }
+    // if these aren't local matrices, then make copies of the density
+    // matrices
+    if (!local) {
+      lkit = new LocalSCMatrixKit;
 
-  // see if we can convert G and P to local matrices
-  else if (basis()->nbasis() < 700) {
-    RefSCMatrixKit lkit = new LocalSCMatrixKit();
-    RefSCDimension ldim = new SCDimension(basis()->nbasis());
-    RefSymmSCMatrix ptmp = lkit->symmmatrix(ldim);
-    RefSymmSCMatrix potmp = lkit->symmmatrix(ldim);
+      ptmp = lkit->symmmatrix(ldim);
+      ptmp->convert(cl_dens_);
 
-    ptmp->convert(cl_dens_);
-    potmp->convert(op_dens_);
-    
-    RefMessageGrp grp;
-    if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
-      grp = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
-    } else {
-      fprintf(stderr,"don't know the matrix kit\n");
-      abort();
+      potmp = lkit->symmmatrix(ldim);
+      potmp->convert(op_dens_);
     }
     
     // create block iterators for the G and P matrices
@@ -1129,9 +1073,15 @@ HSOSSCF::two_body_deriv(double * tbgrad)
     double *pmat_data = pblock->data;
     double *pmato_data = poblock->data;
   
-    LocalHSOSGradContribution lclc(pmat_data,pmato_data);
-    LocalTBGrad<LocalHSOSGradContribution> tb(lclc, integral(), basis(), grp);
+    LocalHSOSGradContribution l(pmat_data,pmato_data);
+    LocalTBGrad<LocalHSOSGradContribution> tb(l, integral(), basis(),scf_grp_);
     tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+  }
+
+  // for now quit
+  else {
+    fprintf(stderr,"can't do gradient yet\n");
+    abort();
   }
 }
 

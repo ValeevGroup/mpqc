@@ -6,7 +6,7 @@
 % can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
 %
 
-mole<HSOSSCF>: (
+mole<CLSCF>: (
   root = 2
   integral_storage=32000000
 
@@ -26,7 +26,7 @@ mole<HSOSSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
-  %maxiter=10
+  %maxiter=3
 
   extrap<DIIS>: (
     start = 5
@@ -35,10 +35,9 @@ mole<HSOSSCF>: (
   )
 )
 
-molecule = $:ch2
+molecule = $:sileth
 
 coor = $:symcoor
-message = $:message1
 
 xopt<QNewtonOpt>: (
   convergence = 1.0e-6
@@ -56,14 +55,14 @@ xopt<QNewtonOpt>: (
 gbasis<GaussianBasisSet>: (
   molecule = $:molecule
   %name = "6-311G**"
-  %name = "6-31G*"
+  name = "6-31G*"
   %name = "6-31G"
-  name = "STO-3G"
+  %name = "STO-3G"
   %name = "aug-cc-pVTZ"
   %puream=yes
-  %matrixkit<ReplSCMatrixKit>: (
-  %  messagegrp = $:message
-  %)
+  xmatrixkit<ReplSCMatrixKit>: (
+    messagegrp = $:message
+  )
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -74,6 +73,7 @@ gbasis<GaussianBasisSet>: (
 xdebug<Debugger>: (
 )
 
+message = $:messageShm
 message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (

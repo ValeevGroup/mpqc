@@ -2,6 +2,8 @@
 #include <util/misc/timer.h>
 
 #include <math/scmat/offset.h>
+#include <math/scmat/blocked.h>
+
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 
@@ -81,52 +83,42 @@ SCF::compute_vector(double& eelec)
   extrap = 0;
 }
 
+////////////////////////////////////////////////////////////////////////////
+
+class ExtrapErrorOp : public BlockedSCElementOp {
+  private:
+    SCF *scf_;
+
+  public:
+    ExtrapErrorOp(SCF *s) : scf_(s) {}
+    ~ExtrapErrorOp() {}
+
+    int has_side_effects() { return 1; }
+
+    void process(SCMatrixBlockIter& bi) {
+      int ir=current_block();
+      
+      for (bi.reset(); bi; bi++) {
+        int i=bi.i();
+        int j=bi.j();
+        if (scf_->occupation(ir,i) == scf_->occupation(ir,j))
+          bi.set(0.0);
+      }
+    }
+};
 
 RefSCExtrapError
 SCF::extrap_error()
 {
   RefSymmSCMatrix mofock = effective_fock();
   
-  BlockedSymmSCMatrix *moerror = BlockedSymmSCMatrix::require_castdown(
-    mofock,"SCF::extrap_error: moerror");
-
-  for (int ir=0; ir < moerror->nblocks(); ir++) {
-    RefSymmSCMatrix moeir = moerror->block(ir);
-
-    if (!moeir.n())
-      continue;
-    
-    RefSCMatrixSubblockIter eiter =
-      moeir->local_blocks(SCMatrixSubblockIter::Write);
-
-    for (eiter->begin(); eiter->ready(); eiter->next()) {
-      SCMatrixBlock *eblk = eiter->block();
-
-      int istart, iend, jstart, jend, tri;
-      double *edata = get_tri_block(eblk, istart, iend, jstart, jend, tri);
-
-      if (!edata) {
-        fprintf(stderr,"SCF::extrap_error: can't get data\n");
-        abort();
-      }
-    
-      int ij=0;
-      for (int i=istart; i < iend; i++) {
-        double occi = occupation(ir,i);
-
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
-          double occj = occupation(ir,j);
-          if (occi==occj)
-            edata[ij] = 0.0;
-        }
-      }
-    }
-  }
-
+  RefSCElementOp op = new ExtrapErrorOp(this);
+  mofock.element_op(op);
+  
   RefSymmSCMatrix aoerror = mofock.clone();
   aoerror.assign(0.0);
   aoerror.accumulate_transform(scf_vector_,mofock);
-  moerror=0;
+  mofock=0;
 
   RefSCExtrapError error = new SymmSCMatrixSCExtrapError(aoerror);
   aoerror=0;

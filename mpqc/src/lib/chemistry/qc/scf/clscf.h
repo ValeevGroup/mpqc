@@ -11,6 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 class CLSCF: public SCF {
+    friend class CLDensity;
 #   define CLASSNAME CLSCF
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
@@ -21,6 +22,7 @@ class CLSCF: public SCF {
     int tndocc_;
     int nirrep_;
     int *ndocc_;
+    int local_;
 
   public:
     CLSCF(StateIn&);
@@ -47,8 +49,6 @@ class CLSCF: public SCF {
     RefSymmSCMatrix cl_gmat_;
     RefSymmSCMatrix cl_hcore_;
 
-    char *init_pmax(double*);
-    
     void set_occupations(const RefDiagSCMatrix& evals);
 
     // scf things

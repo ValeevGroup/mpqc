@@ -1,3 +1,29 @@
+//
+// messtest.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -73,14 +99,14 @@ A::A(const RefKeyVal&keyval):
 A::A(StateIn&s):
   SavableState(s)
 {
-  printf("getting d\n"); fflush(stdout);
+  cout << "getting d" << endl;
   s.get(d);
-  printf("getting ia\n"); fflush(stdout);
+  cout << "getting ia" << endl;
   s.get(ia);
-  printf("getting array\n"); fflush(stdout);
+  cout << "getting array" << endl;
   s.get(n);
   s.get(array);
-  printf("got everything\n"); fflush(stdout);
+  cout << "got everything" << endl;
 }
 A::~A()
 {
@@ -89,14 +115,14 @@ A::~A()
 void
 A::save_data_state(StateOut&s)
 {
-  printf("putting d\n"); fflush(stdout);
+  cout << "putting d" << endl;
   s.put(d);
-  printf("putting ia\n"); fflush(stdout);
+  cout << "putting ia" << endl;
   s.put(ia);
-  printf("putting array\n"); fflush(stdout);
+  cout << "putting array" << endl;
   s.put(n);
   s.put(array,n);
-  printf("put everything\n"); fflush(stdout);
+  cout << "put everything" << endl;
 }
 
 #define CLASSNAME A
@@ -189,7 +215,7 @@ main(int argc, char**argv)
 
   double testdsum = 1.0;
   grp->sum(&testdsum,1);
-  printf("on %d testdsum = %4.1f\n", grp->me(), testdsum);
+  cout << scprintf("on %d testdsum = %4.1f\n", grp->me(), testdsum);
 
   grp->sync();
   grp = 0;
@@ -214,19 +240,19 @@ test_hcube(int nproc, int root, int fwd)
         }
     }
   while (!gmi[0]->done()) {
-      printf("------ step %d of %d ------\n", iter, gmi[0]->n());
+      cout << scprintf("------ step %d of %d ------\n", iter, gmi[0]->n());
       for (j=0; j<nproc; j++) {
           if (gmi[j]->send()) {
               if (0 <= gmi[j]->sendto() && gmi[j]->sendto() < nproc) {
                   if (gmi[gmi[j]->sendto()]->recvfrom() == j) {
-                      printf(" %d -> %d\n", j, gmi[j]->sendto());
+                      cout << scprintf(" %d -> %d\n", j, gmi[j]->sendto());
                     }
                   else {
-                      printf(" %d -> (%d)\n", j, gmi[j]->sendto());
+                      cout << scprintf(" %d -> (%d)\n", j, gmi[j]->sendto());
                     }
                 }
               else {
-                  printf(" %d -> %d?\n", j, gmi[j]->sendto());
+                  cout << scprintf(" %d -> %d?\n", j, gmi[j]->sendto());
                 }
             }
           else if (gmi[j]->recv()) {
@@ -235,18 +261,18 @@ test_hcube(int nproc, int root, int fwd)
                       // to be printed by sender
                     }
                   else {
-                      printf(" (%d) -> %d\n", gmi[j]->recvfrom(), j);
+                      cout << scprintf(" (%d) -> %d\n", gmi[j]->recvfrom(), j);
                     }
                 }
               else {
-                  printf(" %d? -> %d\n", gmi[j]->recvfrom(), j);
+                  cout << scprintf(" %d? -> %d\n", gmi[j]->recvfrom(), j);
                 }
             }
         }
       for (j=0; j<nproc; j++) gmi[j]->next();
       iter++;
     }
-  fflush(stdout);
+  cout.flush();
 }
 
 void
@@ -277,14 +303,14 @@ test(const RefMessageGrp& grp, int source, int target)
     }
 
   if (grp->me() == target) {
-      printf("target:\n");
+      cout << "target:" << endl;
       b->print();
     }
 
   grp->sync();
 
   if (grp->me() == source) {
-      printf("source:\n");
+      cout << "source:" << endl;
       a->print();
     }
 
@@ -306,9 +332,16 @@ test(const RefMessageGrp& grp, int source, int target)
         }
 
       if (grp->me() == target) {
-          printf("bcast target:\n");
+          cout << "bcast target:" << endl;
           b->print();
         }
     }
 
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

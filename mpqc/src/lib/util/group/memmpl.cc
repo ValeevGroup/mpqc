@@ -1,3 +1,29 @@
+//
+// memmpl.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifndef _util_group_memmpl_cc
 #define _util_group_memmpl_cc
@@ -119,7 +145,8 @@ MPLMemoryGrp::wait(long mid1, long mid2)
   if (mid2 == -1) imid = (int)mid1;
   else imid = DONTCARE;
   size_t count;
-  if (debug_) printf("MPLMemoryGrp: waiting on %d\n", imid);
+  if (debug_)
+      cout << scprintf("MPLMemoryGrp: waiting on %d\n", imid);
   if (mpc_wait(&imid,&count)) {
       cerr << scprintf("MPLMemoryGrp: mpc_wait failed\n");
       sleep(1);
@@ -134,7 +161,8 @@ MPLMemoryGrp::wait(long mid1, long mid2)
 MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
   MIDMemoryGrp(msg)
 {
-  if (debug_) printf("MPLMemoryGrp entered\n");
+  if (debug_) 
+      cout << scprintf("MPLMemoryGrp entered\n");
   if (global_mpl_mem) {
       cerr << scprintf("MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
@@ -146,15 +174,18 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
 
-  if (debug_) printf("MPLMemoryGrp activating\n");
+  if (debug_) 
+      cout << scprintf("MPLMemoryGrp activating\n");
   activate();
-  if (debug_) printf("MPLMemoryGrp done\n");
+  if (debug_) 
+      cout << scprintf("MPLMemoryGrp done\n");
 }
 
 MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
   MIDMemoryGrp(keyval)
 {
-  if (debug_) printf("MPLMemoryGrp KeyVal entered\n");
+  if (debug_) 
+      cout << scprintf("MPLMemoryGrp KeyVal entered\n");
   if (global_mpl_mem) {
       cerr << scprintf("MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
@@ -163,14 +194,17 @@ MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
 
   global_mpl_mem = this;
 
-  if (debug_) printf("MPLMemoryGrp activating\n");
+  if (debug_) 
+      cout << scprintf("MPLMemoryGrp activating\n");
   activate();
-  if (debug_) printf("MPLMemoryGrp done\n");
+  if (debug_) 
+      cout << scprintf("MPLMemoryGrp done\n");
 }
 
 MPLMemoryGrp::~MPLMemoryGrp()
 {
-  if (debug_) printf("MPLMemoryGrp: in DTOR\n");
+  if (debug_) 
+      cout << scprintf("MPLMemoryGrp: in DTOR\n");
   deactivate();
 
   int oldlock = lockcomm();
@@ -186,3 +220,10 @@ MPLMemoryGrp::deactivate()
 }
 
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

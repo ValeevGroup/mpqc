@@ -1,3 +1,29 @@
+//
+// memtest.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <math.h>
 #include <util/misc/formio.h>
@@ -33,8 +59,8 @@ extern "C" {
 #endif // HAVE_NX
 
 #ifdef HAVE_HRECV
-#  define DISABLE do { masktrap(1); fflush(stdout); } while(0)
-#  define ENABLE do { fflush(stdout); masktrap(0); } while(0)
+#  define DISABLE do { masktrap(1); cout.flush(); } while(0)
+#  define ENABLE do { cout.flush(); masktrap(0); } while(0)
    extern "C" {
        long masktrap(long state);
      }
@@ -44,8 +70,8 @@ extern "C" {
 #endif
 
 #define PRINTF(args) do { DISABLE; \
-                          printf args; \
-                          fflush(stdout); \
+                          cout << scprintf args; \
+                          cout.flush(); \
                           ENABLE; \
                          } while(0)
 
@@ -98,7 +124,7 @@ do_simple_tests(const RefMessageGrp&msg,
 {
   mem->set_localsize(8);
 
-  printf("Using memory group \"%s\".\n", mem->class_name());
+  cout << scprintf("Using memory group \"%s\".\n", mem->class_name());
 
   mem->sync();
   mem->set_localsize(0);
@@ -112,27 +138,27 @@ do_int_tests(const RefMessageGrp&msg,
 
   mem->set_localsize(intbufsize*sizeof(int));
 
-  printf("Using memory group \"%s\".\n", mem->class_name());
+  cout << scprintf("Using memory group \"%s\".\n", mem->class_name());
 
   //sleep(1);
-  fflush(stdout);
-  printf("111111111111111111111111111111111\n");
-  fflush(stdout);
+  cout.flush();
+  cout << scprintf("111111111111111111111111111111111\n");
+  cout.flush();
   //sleep(1);
 
   mem->sync();
 
   //sleep(1);
-  fflush(stdout);
-  printf("222222222222222222222222222222222\n");
-  fflush(stdout);
+  cout.flush();
+  cout << scprintf("222222222222222222222222222222222\n");
+  cout.flush();
   //sleep(1);
 
   //mem->deactivate();
   //sleep(1);
-  fflush(stdout);
-  printf("333333333333333333333333333333333\n");
-  fflush(stdout);
+  cout.flush();
+  cout << scprintf("333333333333333333333333333333333\n");
+  cout.flush();
   //sleep(1);
   //mem = 0;
   //return;
@@ -160,7 +186,7 @@ do_int_tests(const RefMessageGrp&msg,
 //   if (mem->me() == 0) {
 //       cdata = buf.readonly(0, intbufsize);
 //       for (i=0; i<intbufsize; i++) {
-//           printf("data[%3d] = %4d\n", i, cdata[i]);
+//           cout << scprintf("data[%3d] = %4d\n", i, cdata[i]);
 //         }
 //       buf.release();
 //     }
@@ -250,7 +276,7 @@ do_double_tests(const RefMessageGrp&msg,
 
   mem->set_localsize(doublebufsize*sizeof(double));
 
-  printf("Using memory group \"%s\".\n", mem->class_name());
+  cout << scprintf("Using memory group \"%s\".\n", mem->class_name());
 
   mem->sync();
   mem->lock(0);
@@ -340,7 +366,7 @@ do_double2_tests(const RefMessageGrp&msg,
 
   const int doublebufsize = 4;
   mem->set_localsize(doublebufsize*sizeof(double));
-  printf("Using memory group \"%s\".\n", mem->class_name());
+  cout << scprintf("Using memory group \"%s\".\n", mem->class_name());
 
   mem->sync();
   mem->lock(0);
@@ -397,3 +423,10 @@ do_double2_tests(const RefMessageGrp&msg,
 
   mem->set_localsize(0);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

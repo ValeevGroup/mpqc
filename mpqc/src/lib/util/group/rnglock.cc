@@ -1,3 +1,29 @@
+//
+// rnglock.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma implementation
@@ -134,8 +160,8 @@ RangeLock::check()
           bad = 1;
         }
 #if VERBOSE
-      printf("i = 0x%08x, n = 0x%08x, p = 0x%08x, [%3d, %3d), %5d\n",
-             i, i->next, i->prev, i->start, i->fence, i->value);
+      cout << scprintf("i = 0x%08x, n = 0x%08x, p = 0x%08x, [%3d, %3d), %5d\n",
+                       i, i->next, i->prev, i->start, i->fence, i->value);
 #endif
       if (bad) abort();
     }
@@ -304,3 +330,9 @@ RangeLock::print(ostream &o)
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

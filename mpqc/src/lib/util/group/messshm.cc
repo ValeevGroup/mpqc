@@ -1,3 +1,29 @@
+//
+// messshm.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -57,8 +83,8 @@ NEXT_MESSAGE(msgbuf_t *m)
 {
   msgbuf_t *r;
   if (m->size < 0) {
-      printf("NEXT_MESSAGE: m->size = %d (real %d)\n",
-             m->size,sizeof(msgbuf_t) + m->size + m->size%8);
+      cout << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
+                       m->size,sizeof(msgbuf_t) + m->size + m->size%8);
       //debug_start("m->size < 0");
       cerr << scprintf("messshm.cc: m->size < 0\n");
       abort();
@@ -109,15 +135,16 @@ print_buffer(int node, int me)
   msgbuf_t *message;
   message = (msgbuf_t*)commbuf[node]->buf;
 
-  printf("Printing buffer for node %d on node %d\n",node,me);
+  cout << scprintf("Printing buffer for node %d on node %d\n",node,me);
   for (i=0; i<commbuf[node]->nmsg; i++) {
-      printf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
-             me,
-             node,
-             message->size,
-             message->type,
-             message->from);
-      fflush(stdout);
+      cout <<
+          scprintf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
+                   me,
+                   node,
+                   message->size,
+                   message->type,
+                   message->from);
+      cout.flush();
       message = NEXT_MESSAGE(message);
     }
 
@@ -442,11 +469,11 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
       if (me() == dest) {
           // sending a message to myself and the buffer is full
           // --cannot recover
-          printf("commbuf size exceeded on %d\n",me());
-          printf(" availmsg = 0x%x\n",availmsg);
-          printf(" commbuf[%d] + sizeof(commbuf_t) = 0x%x\n",
-                 dest,((char*)commbuf[dest]) + sizeof(commbuf_t));
-          printf(" size = %d\n",bytes);
+          cerr << scprintf("commbuf size exceeded on %d\n",me());
+          cerr << scprintf(" availmsg = 0x%x\n",availmsg);
+          cerr << scprintf(" commbuf[%d] + sizeof(commbuf_t) = 0x%x\n",
+                           dest,((char*)commbuf[dest]) + sizeof(commbuf_t));
+          cerr << scprintf(" size = %d\n",bytes);
           abort();
         }
       else {
@@ -491,3 +518,10 @@ ShmMessageGrp::last_type()
 {
   return msgtype_typ(last_type_);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

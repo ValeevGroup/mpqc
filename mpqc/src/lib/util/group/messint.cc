@@ -1,3 +1,29 @@
+//
+// messint.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <util/misc/formio.h>
 #include <util/group/message.h>
@@ -55,7 +81,7 @@ intMessageGrp::initialize(int me, int n, int nbits)
   // The remaining bits are for sequence information.
   seq_nbit = nbits - ctl_nbit - src_nbit;
   if (seq_nbit < 8) {
-      cerr << scprintf("intMessageGrp: not enough bits in underlying msgtype\n");
+      cerr << "intMessageGrp: not enough bits in underlying msgtype" << endl;
       abort();
     }
 
@@ -102,8 +128,8 @@ intMessageGrp::raw_send(int target, void* data, int nbyte)
   int& seq = target_seq[target];
   int msgtype = seq_msgtype(me(),seq);
 #ifdef DEBUG
-  printf("node %d sending to %d(%d) msgtype = %d\n",
-         me(),target,seq,msgtype);
+  cout << scprintf("node %d sending to %d(%d) msgtype = %d\n",
+                   me(),target,seq,msgtype);
 #endif
   basic_send(target, msgtype, data, nbyte);
   if (seq >= seq_mask) seq = 0;
@@ -116,12 +142,12 @@ intMessageGrp::raw_recv(int sender, void* data, int nbyte)
   int& seq = source_seq[sender];
   int msgtype = seq_msgtype(sender,seq);
 #ifdef DEBUG
-  printf("node %d receiving from %d(%d) msgtype = %d\n",
-         me(),sender,seq,msgtype);
+  cout << scprintf("node %d receiving from %d(%d) msgtype = %d\n",
+                   me(),sender,seq,msgtype);
 #endif
   basic_recv(msgtype, data, nbyte);
 #ifdef DEBUG
-  printf("node %d received %d\n",me(),msgtype);
+  cout << scprintf("node %d received %d\n",me(),msgtype);
 #endif
   if (seq >= seq_mask) seq = 0;
   else seq++;
@@ -144,3 +170,10 @@ intMessageGrp::probet(int type)
 {
   return basic_probe(typ_msgtype(type));
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -1,5 +1,33 @@
+//
+// messagei.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <string.h>
+
+#include <util/misc/formio.h>
 
 #include <util/group/message.h>
 
@@ -194,19 +222,19 @@ MessageGrp::initialize(int me, int n)
                   classdesc_to_index_[classes.contents(J)] = iclass;
                   iclass++;
 #ifdef DEBUG
-                  printf("node %d adding class %d = \"%s\"\n",
-                         me, iclass, classes.contents(J)->name());
+                  cout << scprintf("node %d adding class %d = \"%s\"\n",
+                                   me, iclass, classes.contents(J)->name());
 #endif
                   strcpy(currentbuffer,classes.contents(J)->name());
                   currentbuffer += strlen(classes.contents(J)->name()) + 1;
                 }
             }
 #ifdef DEBUG
-          printf("node %d bcast n_new_class = %d\n",me,n_new_class);
+          cout << scprintf("node %d bcast n_new_class = %d\n",me,n_new_class);
 #endif
           bcast(&n_new_class,1,i);
 #ifdef DEBUG
-          printf("node %d finished bcast\n",me);
+          cout << scprintf("node %d finished bcast\n",me);
 #endif
           if (n_new_class) {
               bcast(&buffer_size,1,i);
@@ -219,11 +247,12 @@ MessageGrp::initialize(int me, int n)
           // Get new classnames and indices from node i.
           int n_new_class;
 #ifdef DEBUG
-          printf("node %d begin recv bcast\n",me);
+          cout << scprintf("node %d begin recv bcast\n",me);
 #endif
           bcast(&n_new_class,1,i);
 #ifdef DEBUG
-          printf("node %d recv bcast n_new_class = %d\n",me,n_new_class);
+          cout << scprintf("node %d recv bcast n_new_class = %d\n",
+                           me,n_new_class);
 #endif
           if (n_new_class) {
               int buffer_size;
@@ -235,14 +264,15 @@ MessageGrp::initialize(int me, int n)
                   ClassDescP cd = ClassDesc::name_to_class_desc(currentbuffer);
                   if (cd) {
 #ifdef DEBUG
-                      printf("node %d adding \"%s\"\n", me, currentbuffer);
+                      cout << scprintf("node %d adding \"%s\"\n",
+                                       me, currentbuffer);
 #endif
                       classdesc_to_index_[cd] = iclass;
                     }
 #ifdef DEBUG
                   else {
-                      printf("node %d failed to add \"%s\"\n",
-                             me, currentbuffer);
+                      cout << scprintf("node %d failed to add \"%s\"\n",
+                                       me, currentbuffer);
                     }
 #endif
                   iclass++;
@@ -556,3 +586,10 @@ MessageGrp::raw_collect(const void *part, const int *lengths, void *whole,
       offset += nbytes;
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -1,5 +1,30 @@
+//
+// pooltest.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -58,8 +83,9 @@ Double::Double(size_t s):
     }
   d = pool_->allocate_double(size);
   if (!d) {
-      //fprintf(stdout,"\nDouble::Double allocation of size %d failed\n",size);
-      fprintf(stdout,"F", size); fflush(stdout);
+      //cout << scprintf("\nDouble::Double allocation of size %d failed\n",
+      //                 size);
+      cout << "F" << endl;
       size = 0;
     }
   next = list;
@@ -113,9 +139,9 @@ main()
 
   srand48(100);
 
-  printf("test1:\n");
+  cout << "test1:" << endl;
   test1(pool);
-  printf("test2:\n");
+  cout << "test2:" << endl;
   test2(pool);
 
   return 0;
@@ -128,7 +154,7 @@ test1(Pool*pool)
   pool->check();
 
   pool->print();
-  printf("\n");
+  cout << endl;
 
   Double t1(10);
 
@@ -137,7 +163,7 @@ test1(Pool*pool)
   pool->check();
 
   pool->print();
-  printf("\n");
+  cout << endl;
 
   Double t2(10000);
 
@@ -152,28 +178,28 @@ test1(Pool*pool)
   pool->check();
   
   pool->print();
-  printf("\n");
+  cout << endl;
 
   Double::zapall();
 
   pool->check();
   
   pool->print();
-  printf("\n");
+  cout << endl;
 
   t2.clear();
 
   pool->check();
   
   pool->print();
-  printf("\n");
+  cout << endl;
 
   Double t4(100);
 
   pool->check();
 
   pool->print();
-  printf("\n");
+  cout << endl;
 
   t1.clear();
   t4.clear();
@@ -182,7 +208,7 @@ test1(Pool*pool)
   pool->check();
 
   pool->print();
-  printf("\n");
+  cout << endl;
 
 }
 
@@ -203,7 +229,8 @@ test2(Pool*pool)
               // allocate data
               size_t size = lrand48() & 0x03ff;
               d[i] = new Double(size);
-              fflush(stderr); printf("a"); fflush(stdout);
+              cerr.flush();
+              cout << "a" << flush;
               i++;
             }
           else {
@@ -212,7 +239,8 @@ test2(Pool*pool)
               if (loc >= nd) loc = nd-1;
               if (loc < 0) loc = 0;
               if (d[loc]) {
-                  fflush(stderr); printf("d"); fflush(stdout);
+                  cerr.flush();
+                  cout << "d" << flush;
                   delete d[loc];
                   d[loc] = 0;
                 }
@@ -223,14 +251,22 @@ test2(Pool*pool)
         }
       for (i=0; i<nd; i++) {
           if (d[i]) {
-              fflush(stderr); printf("d"); fflush(stdout);
+              cerr.flush();
+              cout << "d" << flush;
               delete d[i];
               d[i] = 0;
             }
         }
-      printf("\n");
+      cout << endl;
       pool->print();
       //pool->check();
       //Double::zapall();
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

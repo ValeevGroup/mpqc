@@ -1,3 +1,29 @@
+//
+// memamsg.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifndef _util_group_memamsg_cc
 #define _util_group_memamsg_cc
@@ -11,19 +37,19 @@
 #include <util/group/memamsg.h>
 
 #ifdef HAVE_HRECV
-#  define DISABLE do { masktrap(1); fflush(stdout); } while(0)
-#  define ENABLE do { fflush(stdout); masktrap(0); } while(0)
+#  define DISABLE do { masktrap(1); cout.flush(); } while(0)
+#  define ENABLE do { cout.flush(); masktrap(0); } while(0)
    extern "C" {
        long masktrap(long state);
      }
 #else
-#  define DISABLE fflush(stdout)
-#  define ENABLE fflush(stdout)
+#  define DISABLE cout.flush()
+#  define ENABLE cout.flush()
 #endif
 
 #define PRINTF(args) do { DISABLE; \
-                          printf args; \
-                          fflush(stdout); \
+                          cout << scprintf args ; \
+                          cout.flush(); \
                           ENABLE; \
                          } while(0)
 
@@ -95,17 +121,17 @@ MemoryDataRequest::print(const char *msg)
 {
   if (msg == 0) msg = "";
 
-  fflush(stdout);
+  cout.flush();
   if (request() == Sync) {
-      printf("%s \"%s\" %d-%d\n",
+      cout << scprintf("%s \"%s\" %d-%d\n",
               msg, request_string(), node(), serial_number());
     }
   else {
-      printf("%s \"%s\" offset = %5d, %5d bytes, %d-%d\n",
+      cout << scprintf("%s \"%s\" offset = %5d, %5d bytes, %d-%d\n",
               msg, request_string(),
               offset(), size(), node(), serial_number());
     }
-  fflush(stdout);
+  cout.flush();
 }
 
 void
@@ -447,3 +473,10 @@ ActiveMsgMemoryGrp::wait_for_lock()
 }
 
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -1,3 +1,29 @@
+//
+// pool.h
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma interface
@@ -124,7 +150,7 @@ PoolData::next(PoolData*p)
   next_ = p;
 #ifdef DEBUG_POOL
   if (next_ && prev_ && (next_ < prev_)) {
-      fprintf(stderr,"PoolData::next(PoolData*): next < prev\n");
+      cerr << "PoolData::next(PoolData*): next < prev" << endl;
       abort();
     }
 #endif
@@ -136,7 +162,7 @@ PoolData::prev(PoolData*p)
   prev_ = p;
 #ifdef DEBUG_POOL
   if (next_ && prev_ && (next_ < prev_)) {
-      fprintf(stderr,"PoolData::prev(PoolData*): next < prev\n");
+      cerr << "PoolData::prev(PoolData*): next < prev" << endl;
       abort();
     }
 #endif
@@ -149,7 +175,7 @@ PoolData::prev_next(PoolData*p,PoolData*n)
   next_ = n;
 #ifdef DEBUG_POOL
   if (next_ && prev_ && (next_ < prev_)) {
-      fprintf(stderr,"PoolData::prev_next: next < prev\n");
+      cerr << "PoolData::prev_next: next < prev" << endl;
       abort();
     }
 #endif
@@ -162,7 +188,7 @@ PoolData::next_free()
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      fprintf(stderr,"PoolData::next_free(): datum is not free\n");
+      cerr << "PoolData::next_free(): datum is not free" << endl;
       abort();
     }
 #endif
@@ -174,7 +200,7 @@ PoolData::prev_free()
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      fprintf(stderr,"PoolData::prev_free(): datum is not free\n");
+      cerr << "PoolData::prev_free(): datum is not free" << endl;
       abort();
     }
 #endif
@@ -186,7 +212,7 @@ PoolData::next_free(PoolData*p)
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      fprintf(stderr,"PoolData::next_free(PoolData*): datum is not free\n");
+      cerr << "PoolData::next_free(PoolData*): datum is not free" << endl;
       abort();
     }
 #endif
@@ -198,7 +224,7 @@ PoolData::prev_free(PoolData*p)
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      fprintf(stderr,"PoolData::prev_free(PoolData*): datum is not free\n");
+      cerr << "PoolData::prev_free(PoolData*): datum is not free" << endl;
       abort();
     }
 #endif
@@ -210,7 +236,7 @@ PoolData::prev_next_free(PoolData*p,PoolData*n)
 {
 #ifdef DEBUG_POOL
   if (!free_) {
-      fprintf(stderr,"PoolData::prev_next_free: datum is not free\n");
+      cerr << "PoolData::prev_next_free: datum is not free" << endl;
       abort();
     }
 #endif
@@ -295,3 +321,8 @@ Pool::release(int*d)
 
 #endif
 
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

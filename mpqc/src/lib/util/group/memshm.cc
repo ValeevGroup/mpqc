@@ -1,3 +1,29 @@
+//
+// memshm.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifndef _util_group_memshm_cc
 #define _util_group_memshm_cc
@@ -94,9 +120,9 @@ ShmMemoryGrp::set_localsize(int localsize)
       msg_->bcast(&length, 1);
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      printf("%d: sent initialize string of \"%s\" (%d)\n",
-             me(), stringrep, length);
-      fflush(stdout);
+      cout << scprintf("%d: sent initialize string of \"%s\" (%d)\n",
+                       me(), stringrep, length);
+      cout.flush();
 #endif // DEBUG
       delete[] stringrep;
       for (int i=0; i<n(); i++) {
@@ -106,9 +132,9 @@ ShmMemoryGrp::set_localsize(int localsize)
           msg_->bcast(&length, 1);
           msg_->bcast(stringrep, length);
 #ifdef DEBUG
-          printf("%d: sent initialize string of \"%s\" (%d) for %d\n",
-                 me(), stringrep, length, i);
-          fflush(stdout);
+          cout << scprintf("%d: sent initialize string of \"%s\" (%d) for %d\n",
+                           me(), stringrep, length, i);
+          cout.flush();
 #endif // DEBUG
           delete[] stringrep;
         }
@@ -119,9 +145,9 @@ ShmMemoryGrp::set_localsize(int localsize)
       char * stringrep = new char[length];
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      printf("%d: got initialize string of \"%s\" (%d)\n",
-             me(), stringrep, length);
-      fflush(stdout);
+      cout << scprintf("%d: got initialize string of \"%s\" (%d)\n",
+                       me(), stringrep, length);
+      cout.flush();
 #endif // DEBUG
       lock_.initialize(stringrep);
       delete[] stringrep;
@@ -130,9 +156,9 @@ ShmMemoryGrp::set_localsize(int localsize)
           stringrep = new char[length];
           msg_->bcast(stringrep, length);
 #ifdef DEBUG
-          printf("%d: got initialize string of \"%s\" (%d) for %d\n",
-                 me(), stringrep, length, i);
-          fflush(stdout);
+          cout << scprintf("%d: got initialize string of \"%s\" (%d) for %d\n",
+                           me(), stringrep, length, i);
+          cout.flush();
 #endif // DEBUG
           update_[i].initialize(stringrep);
           delete[] stringrep;
@@ -188,8 +214,8 @@ ShmMemoryGrp::~ShmMemoryGrp()
   cleanup();
 
 #ifdef DEBUG
-  printf("msg_->nreference() = %d\n", msg_->nreference());
-  fflush(stdout);
+  cout << scprintf("msg_->nreference() = %d\n", msg_->nreference());
+  cout.flush();
 #endif // DEBUG
   msg_ = 0;
 }
@@ -207,23 +233,23 @@ ShmMemoryGrp::obtain_readwrite(int offset, int size)
       obtain_lock();
 #else // SIMPLE_LOCK
 #ifdef DEBUG
-      printf("%d: clear_release_count\n", me());
-      fflush(stdout);
+      cout << scprintf("%d: clear_release_count\n", me());
+      cout.flush();
 #endif // DEBUG
       clear_release_count();
 #ifdef DEBUG
-      printf("%d: obtain_lock\n", me());
-      fflush(stdout);
+      cout << scprintf("%d: obtain_lock\n", me());
+      cout.flush();
 #endif // DEBUG
       obtain_lock();
 #ifdef DEBUG
-      printf("%d: checkeq\n", me());
-      fflush(stdout);
+      cout << scprintf("%d: checkeq\n", me());
+      cout.flush();
 #endif
       while (!rangelock_->checkeq(offset, offset + size, 0)) {
 #ifdef DEBUG
-          printf("%d: range not zero -- waiting for release\n", me());
-          fflush(stdout);
+          cout << scprintf("%d: range not zero -- waiting for release\n", me());
+          cout.flush();
 #endif // DEBUG
           //rangelock_->print();
           release_lock();
@@ -232,8 +258,8 @@ ShmMemoryGrp::obtain_readwrite(int offset, int size)
         }
       rangelock_->decrement(offset, offset + size);
 #ifdef DEBUG
-      printf("%d: after obtain write\n", me());
-      fflush(stdout);
+      cout << scprintf("%d: after obtain write\n", me());
+      cout.flush();
       //rangelock_->print();
 #endif // DEBUG
       release_lock();
@@ -259,8 +285,8 @@ ShmMemoryGrp::obtain_readonly(int offset, int size)
       obtain_lock();
       while (!rangelock_->checkgr(offset, offset + size, -1)) {
 #ifdef DEBUG
-          printf("%d: range is -1 -- waiting for release\n", me());
-          fflush(stdout);
+          cout << scprintf("%d: range is -1 -- waiting for release\n", me());
+          cout.flush();
           //rangelock_->print();
 #endif // DEBUG
           release_lock();
@@ -269,8 +295,8 @@ ShmMemoryGrp::obtain_readonly(int offset, int size)
         }
       rangelock_->increment(offset, offset + size);
 #ifdef DEBUG
-      printf("%d: after obtain read\n", me());
-      fflush(stdout);
+      cout << scprintf("%d: after obtain read\n", me());
+      cout.flush();
       //rangelock_->print();
 #endif // DEBUG
       release_lock();
@@ -291,9 +317,9 @@ ShmMemoryGrp::release_read(void *data, int offset, int size)
       rangelock_->decrement(offset, offset + size);
       note_release();
 #ifdef DEBUG
-      printf("%d: after release read\n", me());
+      cout << scprintf("%d: after release read\n", me());
       //rangelock_->print();
-      fflush(stdout);
+      cout.flush();
 #endif // DEBUG
       release_lock();
 #endif // SIMPLE_LOCK
@@ -311,9 +337,9 @@ ShmMemoryGrp::release_write(void *data, int offset, int size)
       rangelock_->increment(offset, offset + size);
       note_release();
 #ifdef DEBUG
-      printf("%d: after release write\n", me());
+      cout << scprintf("%d: after release write\n", me());
       //rangelock_->print();
-      fflush(stdout);
+      cout.flush();
 #endif // DEBUG
       release_lock();
 #endif // SIMPLE_LOCK
@@ -324,13 +350,13 @@ void
 ShmMemoryGrp::obtain_lock()
 {
 #ifdef DEBUG
-  printf("%d: lock val = %d\n", me(), lock_.val());
-  fflush(stdout);
+  cout << scprintf("%d: lock val = %d\n", me(), lock_.val());
+  cout.flush();
 #endif // DEBUG
   lock_--;
 #ifdef DEBUG
-  printf("%d: lock decremented\n", me());
-  fflush(stdout);
+  cout << scprintf("%d: lock decremented\n", me());
+  cout.flush();
 #endif // DEBUG
 }
 
@@ -339,8 +365,8 @@ ShmMemoryGrp::release_lock()
 {
   lock_++;
 #ifdef DEBUG
-  printf("%d: incremented lock\n", me());
-  fflush(stdout);
+  cout << scprintf("%d: incremented lock\n", me());
+  cout.flush();
 #endif // DEBUG
 }
 
@@ -351,8 +377,8 @@ ShmMemoryGrp::note_release()
       update_[i]++;
     }
 #ifdef DEBUG
-  printf("%d: incremented release flags\n", me());
-  fflush(stdout);
+  cout << scprintf("%d: incremented release flags\n", me());
+  cout.flush();
 #endif // DEBUG
 }
 
@@ -360,13 +386,13 @@ void
 ShmMemoryGrp::wait_for_release()
 {
 #ifdef DEBUG
-  printf("%d: decrementing release flag\n", me());
-  fflush(stdout);
+  cout << scprintf("%d: decrementing release flag\n", me());
+  cout.flush();
 #endif // DEBUG
   update_[me()]--;
 #ifdef DEBUG
-  printf("%d: decremented release flag\n", me());
-  fflush(stdout);
+  cout << scprintf("%d: decremented release flag\n", me());
+  cout.flush();
 #endif // DEBUG
 }
 
@@ -375,8 +401,8 @@ ShmMemoryGrp::clear_release_count()
 {
   update_[me()] = 0;
 #ifdef DEBUG
-  printf("%d: clearing release count\n", me());
-  fflush(stdout);
+  cout << scprintf("%d: clearing release count\n", me());
+  cout.flush();
 #endif // DEBUG
 }
 
@@ -414,3 +440,10 @@ ShmMemoryGrp::sum_reduction(double *data, int doffset, int dlength)
 }
 
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

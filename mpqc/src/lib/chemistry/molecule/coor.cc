@@ -706,46 +706,48 @@ IntCoorGen::_castdown(const ClassDesc*cd)
 IntCoorGen::IntCoorGen(const RefMolecule& mol,
                        int nextra_bonds, int *extra_bonds)
 {
+  init_constants();
+
   molecule_ = mol;
   nextra_bonds_ = nextra_bonds;
   extra_bonds_ = extra_bonds;
-  radius_scale_factor_ = 1.1;
-  linear_bend_thres_ = cos(5.0*M_PI/360.0);
-  linear_tors_thres_ = cos(5.0*M_PI/360.0);
-  linear_bends_ = 0;
-  linear_lbends_ = 1;
-  linear_tors_ = 0;
-  linear_stors_ = 1;
 }
 
 IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
 {
+  init_constants();
+
   molecule_ = keyval->describedclassvalue("molecule");
 
-  radius_scale_factor_ = keyval->doublevalue("radius_scale_factor");
-  if (keyval->error() != KeyVal::OK) radius_scale_factor_ = 1.1;
+  radius_scale_factor_
+    = keyval->doublevalue("radius_scale_factor",
+                          KeyValValuedouble(radius_scale_factor_));
 
   // degrees
-  linear_bend_thres_ = keyval->doublevalue("linear_bend_threshold");
-  if (keyval->error() != KeyVal::OK)
-      linear_bend_thres_ = 5.0;
+  linear_bend_thres_
+    = keyval->doublevalue("linear_bend_threshold",
+                          KeyValValuedouble(linear_bend_thres_));
 
   // entered in degrees; stored as cos(theta)
-  linear_tors_thres_ = keyval->doublevalue("linear_tors_threshold");
-  if (keyval->error() != KeyVal::OK)
-      linear_tors_thres_ = 5.0;
+  linear_tors_thres_
+    = keyval->doublevalue("linear_tors_threshold",
+                          KeyValValuedouble(linear_tors_thres_));
 
-  linear_bends_ = keyval->booleanvalue("linear_bend");
-  if (keyval->error() != KeyVal::OK) linear_bends_ = 0;
+  linear_bends_
+    = keyval->booleanvalue("linear_bend",
+                           KeyValValueboolean(linear_bends_));
 
-  linear_lbends_ = keyval->booleanvalue("linear_lbend");
-  if (keyval->error() != KeyVal::OK) linear_lbends_ = 1;
+  linear_lbends_
+    = keyval->booleanvalue("linear_lbend",
+                           KeyValValueboolean(linear_lbends_));
 
-  linear_tors_ = keyval->booleanvalue("linear_tors");
-  if (keyval->error() != KeyVal::OK) linear_tors_ = 0;
+  linear_tors_
+    = keyval->booleanvalue("linear_tors",
+                           KeyValValueboolean(linear_tors_));
 
-  linear_stors_ = keyval->booleanvalue("linear_stors");
-  if (keyval->error() != KeyVal::OK) linear_stors_ = 1;
+  linear_stors_
+    = keyval->booleanvalue("linear_stors",
+                           KeyValValueboolean(linear_stors_));
 
   // the extra_bonds list is given as a vector of atom numbers
   // (atom numbering starts at 1)
@@ -783,6 +785,20 @@ IntCoorGen::IntCoorGen(StateIn& s):
   s.get(nextra_bonds_);
   s.get(extra_bonds_);
   s.get(radius_scale_factor_);
+}
+
+void
+IntCoorGen::init_constants()
+{
+  nextra_bonds_ = 0;
+  extra_bonds_ = 0;
+  radius_scale_factor_ = 1.1;
+  linear_bend_thres_ = 1.0;
+  linear_tors_thres_ = 1.0;
+  linear_bends_ = 0;
+  linear_lbends_ = 1;
+  linear_tors_ = 0;
+  linear_stors_ = 1;
 }
 
 IntCoorGen::~IntCoorGen()

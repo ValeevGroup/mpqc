@@ -280,6 +280,8 @@ class IntCoorGen: public SavableState
     double linear_tors_thres_;
     double radius_scale_factor_;
 
+    void init_constants();
+
     double cos_ijk(Molecule& m, int i, int j, int k);
     int hterminal(Molecule& m, BitArrayLTri& bonds, int i);
     int nearest_contact(int i, Molecule& m);
@@ -306,13 +308,13 @@ class IntCoorGen: public SavableState
 
         <dt><tt>linear_bend_threshold</tt><dd> A bend angle in degress
         greater than 180 minus this keyword's floating point value is
-        considered a linear bend. The default is 5.0.
+        considered a linear bend. The default is 1.0.
 
         <dt><tt>linear_tors_threshold</tt><dd> The angles formed by atoms
         a-b-c and b-c-d are checked for near linearity.  If an angle in
         degrees is greater than 180 minus this keyword's floating point
         value, then the torsion is classified as a linear torsion. The
-        default is 5.0.
+        default is 1.0.
 
         <dt><tt>linear_bend</tt><dd> Generate BendSimpleCo objects to
         describe linear bends.  The default is false.

@@ -4,9 +4,9 @@
 #endif
 
 #include <math.h>
-#include <stdio.h>
 #include <float.h>
 #include <string.h>
+
 #include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
@@ -325,11 +325,15 @@ Function::actual_hessian_accuracy()
 void
 Function::print(ostream&o)
 {
-  o << indent << "value_accuracy = " << desired_value_accuracy() << endl;
-  o << indent << "gradient.accuracy = "
-              << desired_gradient_accuracy()
-              << endl;
-  o << indent << "hessian_accuracy = " << desired_hessian_accuracy() << endl;
+  if (matrixkit_->messagegrp()->me()==0) {
+    o << indent << "Function Parameters:\n" << incindent;
+    o << indent << "value_accuracy = " << desired_value_accuracy() << endl;
+    o << indent << "gradient.accuracy = "
+      << desired_gradient_accuracy()
+      << endl;
+    o << indent << "hessian_accuracy = " << desired_hessian_accuracy() << endl;
+    o << decindent << endl;
+  }
 }
 
 void

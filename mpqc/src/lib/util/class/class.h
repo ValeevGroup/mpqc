@@ -298,7 +298,7 @@ require_dynamic_cast(DescribedClass*p,const char * errmsg,...)
       fprintf(stderr,"A required dynamic_cast failed in: ");
       vfprintf(stderr,errmsg,args);
       fprintf(stderr,"\nwanted type \"%s\" but got \"%s\"\n",
-              typeid(T).name(),typeid(p).name());
+              typeid(T).name(),p->class_desc()->name());
       fflush(stderr);
       va_end(args);
       abort();
@@ -319,7 +319,7 @@ require_dynamic_cast(const DescribedClass*p,const char * errmsg,...)
       fprintf(stderr,"A required dynamic_cast failed in: ");
       vfprintf(stderr,errmsg,args);
       fprintf(stderr,"\nwanted type \"%s\" but got \"%s\"\n",
-              typeid(T).name(),typeid(p).name());
+              typeid(T).name(),p->class_desc()->name());
       fflush(stderr);
       va_end(args);
       abort();

@@ -217,6 +217,7 @@ void MP2R12Energy::compute()
   // 2) int MP2-R12/A' the B matrix is pair-specific
   RefSCMatrix Baa_inv = Baa.clone();
   if (stdapprox_ == LinearR12::StdApprox_A) {
+    Baa_inv->assign(Baa);
     Baa_inv->gen_invert_this();
     if (debug_ > 1)
       Baa_inv.print("Inverse alpha-alpha MP2-R12/A B matrix");

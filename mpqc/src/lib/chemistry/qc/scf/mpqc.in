@@ -24,7 +24,7 @@ water<Molecule>: (
 )
 
 molecule = $:ch2
-mole = $:tcmole
+mole = $:opbmole
 
 clmole<CLSCF>: (
   % NLP... input
@@ -87,7 +87,7 @@ opmole<HSOSSCF>: (
 opbmole<OSSSCF>: (
   % NLP... input
   value_accuracy = 1e-14
-  gradient_accuracy = 1e-4
+  gradient_accuracy = 1e-10
 
   % MolecularEnergy input
   molecule = $:molecule

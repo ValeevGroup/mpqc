@@ -7,7 +7,6 @@
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/scf/hsosscf.h>
 
-#if 0
 static void
 set_scale(double& coulombscale, double& exchangescale,
           int i, int j, int k, int l)
@@ -21,7 +20,7 @@ set_scale(double& coulombscale, double& exchangescale,
     scale *= 2.0;
 
   coulombscale = 0.5*scale;
-  exchangescale = -0.25*scale;
+  exchangescale = 0.25*scale;
 
   if (k!=l)
     coulombscale *= 2.0;
@@ -31,8 +30,9 @@ set_scale(double& coulombscale, double& exchangescale,
 }
 
 static void
-gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens, int ndocc,
-           double& pmax)
+gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens,
+           const RefSymmSCMatrix& opdens,
+           int ndocc, int nsocc, double& pmax)
 {
   pmax=0.0;
 
@@ -42,45 +42,78 @@ gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens, int ndocc,
       for (int k=0; k < ndocc; k++)
         pt += vec->get_element(i,k)*vec->get_element(j,k);
       
+      double po=0;
+      for (int k=ndocc; k < ndocc+nsocc; k++)
+        po += vec->get_element(i,k)*vec->get_element(j,k);
+      
       dens->set_element(i,j,pt);
+      opdens->set_element(i,j,po);
+
       if (fabs(pt)>pmax)
         pmax=fabs(pt);
     }
   }
   dens->scale(2.0);
+  opdens->scale(2.0);
 }
-
-static void
-ew_density(const RefSCMatrix& vec, const RefDiagSCMatrix& evals,
-           const RefSymmSCMatrix& ewdens, int ndocc)
-{
-  for (int i=0; i < vec->nrow(); i++) {
-    for (int j=0; j <= i; j++) {
-      double pt=0;
-      for (int k=0; k < ndocc; k++)
-        pt += vec->get_element(i,k)*vec->get_element(j,k)*
-          evals->get_element(k);
-      
-      ewdens->set_element(i,j,pt);
-    }
-  }
-  ewdens->scale(-2.0);
-}
-#endif
 
 void
 HSOSSCF::do_gradient(const RefSCVector& gradient)
 {
-#if 0
+  double alpha[3][3], beta[3][3];
+
+  memset(alpha,0,sizeof(double)*9);
+
+  alpha[0][0] = 1.0;
+  alpha[1][0] = alpha[0][1] = 0.5;
+  alpha[1][1] = 0.25;
+
+  memset(beta,0,sizeof(double)*9);
+
+  beta[0][0] = -1.0;
+  beta[1][0] = beta[0][1] = beta[1][1] = -0.5;
+  
   // grab a reference to the scf_vector, presumably it is current
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
   _gr_dens = _fock.clone();
+  _gr_op_dens = _fock.clone();
   
   // form energy weighted density
-  ew_density(_gr_vector,_fock_evals,_gr_dens,_ndocc);
+  // first form MO fock matrices
+  RefSymmSCMatrix mofock = _fock.clone();
+  mofock.assign(0.0);
+  mofock.accumulate_transform(_gr_vector.t(),_fock);
   
+  RefSymmSCMatrix moofock = _op_fock.clone();
+  moofock.assign(0.0);
+  moofock.accumulate_transform(_gr_vector.t(),_op_fock);
+
+  // now form the MO lagrangian
+  //       c    o   v
+  //  c  |2*FC|2*FC|0|
+  //     -------------
+  //  o  |2*FC| FO |0|
+  //     -------------
+  //  v  | 0  |  0 |0|
+  //
+
+  mofock.scale(2.0);
+
+  for (int i=_ndocc; i < _ndocc+_nsocc; i++)
+    for (int j=_ndocc; j <= i; j++)
+      mofock.set_element(i,j,moofock.get_element(i,j));
+
+  for (int i=_ndocc+_nsocc; i < basis()->nbasis(); i++)
+    for (int j=0; j <= i; j++)
+      mofock.set_element(i,j,0.0);
+
+  moofock.assign(0.0);
+  moofock.accumulate_transform(_gr_vector,mofock);
+  moofock.scale(-1.0);
+
+  // zero out gradient
   gradient.assign(0.0);
 
   // grab the centers struct
@@ -100,7 +133,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
       gradient.accumulate_element(iatom*3+xyz,dv.d[xyz]);
   }
   
-  //gradient->print("nuclear repulsion terms");
+  // gradient->print("nuclear repulsion terms");
   
   // now do the overlap contribution
   int_initialize_offsets1(centers,centers);
@@ -126,7 +159,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
         for (int i=istart; i < iend; i++) {
           for (int j=jstart; j < jend; j++) {
             for (int k=0; k < 3; k++) {
-              dv.d[k] += oneebuff[index] * _gr_dens.get_element(i,j);
+              dv.d[k] += oneebuff[index] * moofock.get_element(i,j);
               index++;
             }
           }
@@ -142,17 +175,23 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
     }
   }
     
-  //ovlp.print("overlap contribution");
+  moofock=0;
+  // ovlp.print("overlap contribution");
   gradient.accumulate(ovlp);
   
   // and now the one-electron contributions
   RefSCVector oneelec = ovlp;
+  ovlp=0;
   oneelec.assign(0.0);
 
   // form density
   double pmax;
-  gr_density(_gr_vector,_gr_dens,_ndocc,pmax);
+  gr_density(_gr_vector,_gr_dens,_gr_op_dens,_ndocc,_nsocc,pmax);
 
+  mofock.assign(_gr_op_dens);
+  mofock.scale(0.5);
+  mofock.accumulate(_gr_dens);
+  
   for (int x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
       int istart = centers->func_num[ish];
@@ -174,7 +213,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
         for (int i=istart; i < iend; i++) {
           for (int j=jstart; j < jend; j++) {
             for (int k=0; k < 3; k++) {
-              dv.d[k] += oneebuff[index] * _gr_dens.get_element(i,j);
+              dv.d[k] += oneebuff[index] * mofock.get_element(i,j);
               index++;
             }
           }
@@ -189,10 +228,11 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
       }
     }
   }
+  mofock=0;
 
-  //oneelec.print("one electron contribution");
+  // oneelec.print("one electron contribution");
   gradient.accumulate(oneelec);
-  //gradient.print("gradient sans two electron contribution");
+  // gradient.print("gradient sans two electron contribution");
   
   // done with the one-electron stuff
   int_done_offsets1(centers,centers);
@@ -214,6 +254,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
 #endif
   
   RefSCVector twoelec = oneelec;
+  oneelec=0;
   twoelec.assign(0.0);
   
   double tnint=0;
@@ -263,29 +304,54 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
                         continue;
                       }
 
-                      double contrib;
+                      double contrib,contmp;
 
-                      contrib = coulombscale*ints[indexijkl]*
-                                             _gr_dens.get_element(io,jo)*
-                                             _gr_dens.get_element(ko,lo);
+                      contrib=0;
+                      contmp = coulombscale*ints[indexijkl];
+                      contrib = alpha[0][0] * _gr_dens.get_element(io,jo)*
+                                              _gr_dens.get_element(ko,lo)
+                              + alpha[1][0] * _gr_op_dens.get_element(io,jo)*
+                                              _gr_dens.get_element(ko,lo)
+                              + alpha[0][1] * _gr_dens.get_element(io,jo)*
+                                              _gr_op_dens.get_element(ko,lo)
+                              + alpha[1][1] * _gr_op_dens.get_element(io,jo)*
+                                              _gr_op_dens.get_element(ko,lo);
+                      contrib *= contmp;
 
                       twoelec.accumulate_element(xyz+dercenters.num[derset]*3,
                                                  contrib);
                       twoelec.accumulate_element(xyz+dercenters.onum*3,
                                                  -contrib);
                       
-                      contrib = exchangescale*ints[indexijkl]*
-                                              _gr_dens.get_element(io,ko)*
-                                              _gr_dens.get_element(jo,lo);
+                      contrib=0;
+                      contmp = exchangescale*ints[indexijkl];
+                      contrib = beta[0][0] * _gr_dens.get_element(io,ko)*
+                                             _gr_dens.get_element(jo,lo)
+                              + beta[1][0] * _gr_op_dens.get_element(io,ko)*
+                                             _gr_dens.get_element(jo,lo)
+                              + beta[0][1] * _gr_dens.get_element(io,ko)*
+                                             _gr_op_dens.get_element(jo,lo)
+                              + beta[1][1] * _gr_op_dens.get_element(io,ko)*
+                                             _gr_op_dens.get_element(jo,lo);
+                      contrib *= contmp;
+
                       twoelec.accumulate_element(xyz+dercenters.num[derset]*3,
                                                  contrib);
                       twoelec.accumulate_element(xyz+dercenters.onum*3,
                                                  -contrib);
 
                       if (i!=j && k!=l) {
-                        contrib = exchangescale*ints[indexijkl]*
-                                              _gr_dens.get_element(io,lo)*
-                                              _gr_dens.get_element(jo,ko);
+                        contrib=0;
+                        contrib = beta[0][0] * _gr_dens.get_element(io,lo)*
+                                               _gr_dens.get_element(jo,ko)
+                                + beta[1][0] * _gr_op_dens.get_element(io,lo)*
+                                               _gr_dens.get_element(jo,ko)
+                                + beta[0][1] * _gr_dens.get_element(io,lo)*
+                                               _gr_op_dens.get_element(jo,ko)
+                                + beta[1][1] * _gr_op_dens.get_element(io,lo)*
+                                               _gr_op_dens.get_element(jo,ko);
+                        contrib *= contmp;
+
                         twoelec.accumulate_element(
                                                  xyz+dercenters.num[derset]*3,
                                                  contrib);
@@ -305,7 +371,7 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
     }
   }
 
-  //twoelec.print("two electron contribution");
+  // twoelec.print("two electron contribution");
   gradient.accumulate(twoelec);
   //gradient.print("cartesian gradient");
 
@@ -319,9 +385,10 @@ HSOSSCF::do_gradient(const RefSCVector& gradient)
   
   // clean up some things
   _gr_dens = 0;
+  _gr_op_dens = 0;
+  _gr_vector = 0;
 
   free_double_vector(&dv);
   free_centers(centers);
   free(centers);
-#endif
 }

@@ -192,7 +192,7 @@ HSOSSCF::value_implemented()
 int
 HSOSSCF::gradient_implemented()
 {
-  return 0;
+  return 1;
 }
 
 int

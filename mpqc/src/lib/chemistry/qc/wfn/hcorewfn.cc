@@ -264,8 +264,19 @@ HCoreWfn::compute()
   if (debug_ > 1) p_oso.print("OSO Density");
   if (debug_ > 1) h_oso.print("OSO Hamiltonian");
   double e = (h_oso*p_oso).trace();
-  if (debug_ > 0)
-    ExEnv::out() << node0 << indent << "HCoreWfn: e = " << e << endl;
+  if (debug_ > 0) {
+    ExEnv::out() << node0 << indent << "HCoreWfn: e(OSO) = " << e << endl;
+    RefSymmSCMatrix h_so(core_hamiltonian());
+    RefSymmSCMatrix p_so(density());
+    RefSymmSCMatrix s_so(overlap());
+    double e2 = (s_so.gi()*h_so*s_so.gi()*p_so).trace();
+    ExEnv::out() << node0 << indent << "HCoreWfn: e(SO)  = " << e2 << endl;
+    RefSymmSCMatrix h_ao(integral()->petite_list()->to_AO_basis(h_so));
+    RefSymmSCMatrix p_ao(integral()->petite_list()->to_AO_basis(p_so));
+    RefSymmSCMatrix s_ao(integral()->petite_list()->to_AO_basis(s_so));
+    double e3 = (s_ao.gi()*h_ao*s_ao.gi()*p_ao).trace();
+    ExEnv::out() << node0 << indent << "HCoreWfn: e(AO)  = " << e3 << endl;
+  }
   set_energy(e);
   set_actual_value_accuracy(desired_value_accuracy());
   return;

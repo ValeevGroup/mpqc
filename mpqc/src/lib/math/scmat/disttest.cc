@@ -30,8 +30,11 @@ main(int argc, char** argv)
 
   MessageGrp::set_default_messagegrp(msg);
 
-  RefDebugger d = new Debugger(argv[0]);
-  //d->handle_defaults();
+  RefDebugger d = keyval->describedclassvalue("debugger");
+  if (d.nonnull()) {
+      d->set_prefix(msg->me());
+      d->set_exec(argv[0]);
+    }
 
   // test the blocklist send and receive
   if (msg->n() > 1) {

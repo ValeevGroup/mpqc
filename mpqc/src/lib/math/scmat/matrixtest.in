@@ -1,5 +1,7 @@
 % Emacs should use -*- KeyVal -*- mode.
 
+debugger<Debugger>: ()
+
 messagegrp<ShmMessageGrp>: (
   n = 2
   )

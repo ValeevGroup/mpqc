@@ -37,7 +37,9 @@
 namespace sc {
 
 /** The ThreadLock abstract class provides mutex locks to be used in
-    conjunction with ThreadGrp's.
+    conjunction with ThreadGrp's.  ThreadLock objects should be
+    locked and unlocked with ThreadLockHolder objects to provide
+    exception safety.
 */
 class ThreadLock : public RefCount {
   public:
@@ -50,6 +52,17 @@ class ThreadLock : public RefCount {
     virtual void unlock() =0;
 };
 
+
+/** Acquire a lock on creation and release it on destruction.
+    This should be used to lock and unlock ThreadLock objects
+    to provide exception safety.
+ */
+class ThreadLockHolder {
+    Ref<ThreadLock> lock_;
+  public:
+    ThreadLockHolder(const Ref<ThreadLock> &l): lock_(l) { lock_->lock(); }
+    ~ThreadLockHolder() { lock_->unlock(); }
+};
 
 /** The Thread abstract class defines an interface which must be
     implemented by classes wishing to be run as threads. */

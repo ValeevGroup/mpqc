@@ -63,6 +63,7 @@
 #include <mpi.h>
 #endif
 
+#include "version.h"
 #include "disclaimer.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -197,20 +198,20 @@ main(int argc, char *argv[])
 
   if (options.retrieve("h")) {
     cout << node0 << endl
-         << indent << "MPQC version 1.0" << endl << endl;
+         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
     options.usage(cout);
     exit(0);
   }
   
   if (options.retrieve("v")) {
     cout << node0 << endl
-         << indent << "MPQC version 1.0" << endl << endl;
+         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
     exit(0);
   }
   
   if (options.retrieve("w")) {
     cout << node0 << endl
-         << indent << "MPQC version 1.0" << endl << endl;
+         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
     print_disclaimer(cout);
     exit(0);
   }
@@ -237,7 +238,9 @@ main(int argc, char *argv[])
   
   // announce ourselves
   cout << node0 << endl
-       << indent << "       MPQC: Massively Parallel Quantum Chemistry\n\n\n"
+       << indent << "       MPQC: Massively Parallel Quantum Chemistry" << endl
+       << indent << "                      Version " << MPQC_VERSION << endl
+       << endl
        << indent
        << scprintf("Running on a %s with %d nodes.", TARGET_ARCH, grp->n())
        << endl << endl;

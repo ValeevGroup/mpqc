@@ -42,6 +42,8 @@
 #  include <util/group/messmpi.h>
 #endif
 
+#define DEFAULT_GOP_MAX 320000
+
 using namespace std;
 using namespace sc;
 
@@ -55,7 +57,7 @@ MessageGrp::MessageGrp(const Ref<KeyVal>& keyval):
   index_to_classdesc_(0)
 {
   gop_max_ = keyval->intvalue("gop_max");
-  if (keyval->error() != KeyVal::OK) gop_max_ = 320000;
+  if (keyval->error() != KeyVal::OK) gop_max_ = DEFAULT_GOP_MAX;
   debug_ = keyval->booleanvalue("debug");
 }
 
@@ -64,7 +66,7 @@ MessageGrp::MessageGrp():
   n_(-1),
   index_to_classdesc_(0)
 {
-  gop_max_ = 320000;
+  gop_max_ = DEFAULT_GOP_MAX;
   debug_ = 0;
 }
 

@@ -215,6 +215,11 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
   buf = 0;
   //buf = (void*) new char[bufsize];
   //MPI_Buffer_attach(buf,bufsize);
+
+  if (getenv("MPIMESSAGEGRP_MESSAGEGRP_COLLECTIVES"))
+      use_messagegrp_collectives_ = true;
+  else
+      use_messagegrp_collectives_ = false;
   
   initialize(me, nproc);
 
@@ -420,6 +425,11 @@ void \
 MPIMessageGrp::reduce(type*d, int n, GrpReduce<type>&r, \
                       type*scratch, int target) \
 { \
+  if (use_messagegrp_collectives_) { \
+      MessageGrp::reduce(d,n,r,scratch,target); \
+      return; \
+    } \
+ \
   name ## reduceobject = &r; \
  \
   MPI_Op op; \
@@ -492,6 +502,10 @@ MPIMessageGrp::reduce(signed char* d, int n, GrpReduce<signed char>& r,
 void \
 MPIMessageGrp::sum(type*d, int n, type*scratch, int target) \
 { \
+  if (use_messagegrp_collectives_) { \
+      MessageGrp::sum(d,n,scratch,target); \
+      return; \
+    } \
  \
   type *work; \
   if (!scratch) work = new type[n]; \
@@ -541,6 +555,11 @@ void
 MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)
 {
   if (n() == 1) return;
+
+  if (use_messagegrp_collectives_) {
+      MessageGrp::raw_bcast(data,nbyte,from);
+      return;
+    }
 
   if (debug_) {
       ExEnv::outn() << scprintf("%3d: MPI_Bcast("

@@ -46,6 +46,9 @@ class MPIMessageGrp: public MessageGrp {
     int rtag;
     int rlen;
 
+    /// If true use the generic collective routines in the base class
+    bool use_messagegrp_collectives_;
+
     /// Number of MPIMessageGrp's currently in use.
     static int nmpi_grps;
     /// lock to access nmpi_grps variable

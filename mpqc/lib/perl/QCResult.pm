@@ -63,7 +63,7 @@ sub initialize {
                 last;
             }
         }
-        close(<OUTFILE>);
+        close(OUTFILE);
     }
 }
 

@@ -2,6 +2,7 @@
 eval 'exec perl $0 $*'
     if 0;
 
+use POSIX; # for acos
 require QCParse;
 
 ##########################################################################
@@ -306,6 +307,76 @@ sub geometry {
         }
     }
     $geom;
+}
+
+sub atom_xyz {
+    my $self = shift;
+    my $i = shift;
+    my $geom = [];
+    my $ngeom = 0;
+    foreach $xyz (0..2) {
+        $geom->[$ngeom] = $self->{"position"}[$i][$xyz];
+        $ngeom = $ngeom + 1;
+    }
+    $geom;
+}
+
+sub dot {
+    my $v1 = shift;
+    my $v2 = shift;
+    my $d = 0.0;
+    foreach $xyz (0..2) {
+        $d = $d + $v1->[$xyz] * $v2->[$xyz];
+    }
+    $d;
+}
+
+sub diff {
+    my $v1 = shift;
+    my $v2 = shift;
+    my $diff = [];
+    foreach $xyz (0..2) {
+        $diff->[$xyz] = $v1->[$xyz] - $v2->[$xyz];
+    }
+    $diff;
+}
+
+sub vecstr {
+    my $v = shift;
+    sprintf "%12.8f %12.8f %12.8f", $v->[0], $v->[1], $v->[2];
+}
+
+# numbering starts at 1 for bond
+sub bond {
+    my $self = shift;
+    my $a1 = shift() - 1;
+    my $a2 = shift() - 1;
+    my $d = diff($self->atom_xyz($a1),$self->atom_xyz($a2));
+    #printf "v1 = %s\n", vecstr($self->atom_xyz($a1));
+    #printf "v2 = %s\n", vecstr($self->atom_xyz($a2));
+    #printf "diff = %s\n", vecstr($d);
+    sqrt(dot($d,$d));
+}
+
+# numbering starts at 1 for bend
+sub bend {
+    my $self = shift;
+    my $a1 = shift() - 1;
+    my $a2 = shift() - 1;
+    my $a3 = shift() - 1;
+    my $diff12 = diff($self->atom_xyz($a1), $self->atom_xyz($a2));
+    my $diff32 = diff($self->atom_xyz($a3), $self->atom_xyz($a2));
+    POSIX::acos(dot($diff12,$diff32)/sqrt(dot($diff12,$diff12)*dot($diff32,$diff32))) * 180.0 / 3.14159265358979323846;
+}
+
+# numbering starts at 1 for tors
+sub tors {
+    my $self = shift;
+    my $a1 = shift() - 1;
+    my $a2 = shift() - 1;
+    my $a3 = shift() - 1;
+    my $a4 = shift() - 1;
+    die "Molecule::tors not available";
 }
 
 1;

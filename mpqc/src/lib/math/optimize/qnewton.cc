@@ -50,6 +50,12 @@ static ClassDesc QNewtonOpt_cd(
 QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval)
 {
+
+  if (function_.null()) {
+      ExEnv::err0() << "QNewtonOpt requires a function keyword" << endl;
+      abort();
+  }
+
   init();
 
   update_ << keyval->describedclassvalue("update");
@@ -63,7 +69,11 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   linear_ = keyval->booleanvalue("linear");
   if (keyval->error() != KeyVal::OK) linear_ = 0;
   restrict_ = keyval->booleanvalue("restrict");
-  if  (keyval->error() != KeyVal::OK) restrict_ = 1;
+  if (keyval->error() != KeyVal::OK) restrict_ = 1;
+  dynamic_grad_acc_ = keyval->booleanvalue("dynamic_grad_acc");
+  if (keyval->error() != KeyVal::OK) dynamic_grad_acc_ = 1;
+  force_search_ = keyval->booleanvalue("force_search");
+  if (keyval->error() != KeyVal::OK) force_search_ = 0;
 
   RefSymmSCMatrix hessian(dimension(),matrixkit());
   // get a guess hessian from the function
@@ -132,6 +142,8 @@ QNewtonOpt::init()
   Optimize::init();
   take_newton_step_ = 1;
   maxabs_gradient = -1.0;
+  n_value_search_ = 0;
+  n_gradient_search_ = 0;
 }
 
 int
@@ -141,71 +153,68 @@ QNewtonOpt::update()
   const double maxabs_gradient_to_desired_accuracy = 0.05;
   const double maxabs_gradient_to_next_desired_accuracy = 0.005;
   const double roundoff_error_factor = 1.1;
-
+  
   // the gradient convergence criterion.
   double old_maxabs_gradient = maxabs_gradient;
   RefSCVector xcurrent;
   RefSCVector gcurrent;
 
-  // get the next gradient at the required level of accuracy.
-  // usually only one pass is needed, unless we happen to find
-  // that the accuracy was set too low.
-  int accurate_enough;
-  do {
-      // compute the current point
-      function()->set_desired_gradient_accuracy(accuracy_);
+  if( dynamic_grad_acc_ ) {
+    // get the next gradient at the required level of accuracy.
+    // usually only one pass is needed, unless we happen to find
+    // that the accuracy was set too low.
+    int accurate_enough;
+    do {
+        // compute the current point
+        function()->set_desired_gradient_accuracy(accuracy_);
 
-      xcurrent = function()->get_x();
-      gcurrent = function()->gradient().copy();
+        xcurrent = function()->get_x();
+        gcurrent = function()->gradient().copy();
 
-      // compute the gradient convergence criterion now so i can see if
-      // the accuracy needs to be tighter
-      maxabs_gradient = gcurrent.maxabs();
-      // compute the required accuracy
-      accuracy_ = maxabs_gradient * maxabs_gradient_to_desired_accuracy;
+        // compute the gradient convergence criterion now so i can see if
+        // the accuracy needs to be tighter
+        maxabs_gradient = gcurrent.maxabs();
+        // compute the required accuracy
+        accuracy_ = maxabs_gradient * maxabs_gradient_to_desired_accuracy;
 
-      if (accuracy_ < DBL_EPSILON) accuracy_ = DBL_EPSILON;
+        if (accuracy_ < DBL_EPSILON) accuracy_ = DBL_EPSILON;
 
-      // The roundoff_error_factor is thrown in to allow for round off making
-      // the current gcurrent.maxabs() a bit smaller than the previous,
-      // which would make the current required accuracy less than the
-      // gradient's actual accuracy and cause everything to be recomputed.
-      accurate_enough = (
-          function()->actual_gradient_accuracy()
-          <= accuracy_*roundoff_error_factor);
+        // The roundoff_error_factor is thrown in to allow for round off making
+        // the current gcurrent.maxabs() a bit smaller than the previous,
+        // which would make the current required accuracy less than the
+        // gradient's actual accuracy and cause everything to be recomputed.
+        accurate_enough = (
+            function()->actual_gradient_accuracy()
+            <= accuracy_*roundoff_error_factor);
 
-      if (!accurate_enough) {
-        ExEnv::out0().unsetf(ios::fixed);
-        ExEnv::out0() << indent
-             << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
-             << indent
-             << scprintf(
-               "        function()->actual_gradient_accuracy() = %15.8e",
-               function()->actual_gradient_accuracy()) << endl << indent
-             << scprintf(
-               "                                     accuracy_ = %15.8e",
-               accuracy_) << endl;
-      }
-    } while(!accurate_enough);
+        if (!accurate_enough) {
+          ExEnv::out0().unsetf(ios::fixed);
+          ExEnv::out0() << indent
+               << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
+               << indent
+               << scprintf(
+                 "        function()->actual_gradient_accuracy() = %15.8e",
+                 function()->actual_gradient_accuracy()) << endl << indent
+               << scprintf(
+                 "                                     accuracy_ = %15.8e",
+                 accuracy_) << endl;
+        }
+     } while(!accurate_enough);
+  }
+  else {
+    xcurrent = function()->get_x();
+    gcurrent = function()->gradient().copy();
+  }
 
   if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient) {
     ExEnv::out0() << indent
-         << scprintf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e",
+	 << scprintf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e",
                      old_maxabs_gradient, maxabs_gradient) << endl;
   }
 
-  if (!take_newton_step_ && lineopt_.nonnull()) {
-      // see if the line min step is really needed
-//       if (line min really needed) {
-//           take_newton_step_ = (lineopt_->update() == 1);
-//           // maybe check for convergence and return here
-//         }
-    }
-
   // update the hessian
-  if (update_.nonnull()) {
-      update_->update(ihessian_,function(),xcurrent,gcurrent);
-    }
+  if(update_.nonnull())
+    update_->update(ihessian_,function(),xcurrent,gcurrent);
 
   if (print_hessian_) {
     RefSymmSCMatrix hessian = ihessian_.gi();
@@ -241,57 +250,92 @@ QNewtonOpt::update()
 
   // compute the quadratic step
   RefSCVector xdisp = -1.0*(ihessian_ * gcurrent);
-
-  if( linear_ ) {
-    // compute overlap of quadratic and linear steps
-    // negative overlap is very bad, just take linear step
-    double overlap = xdisp.scalar_product(-1.0 * gcurrent);
-    if( overlap < 0.0 ) xdisp = -1.0 * gcurrent;
-  }
-
-  // scale the displacement vector if it's too large
-  double tot = sqrt(xdisp.scalar_product(xdisp));
-  if ( tot > max_stepsize_ ) {
-    if( restrict_ ) {
-      double scal = max_stepsize_/tot;
-      ExEnv::out0() << endl << indent
-           << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
-           << endl;
-      xdisp.scale(scal);
-      tot *= scal;
-    }
-    else {
-      ExEnv::out0() << endl << indent
-           << scprintf("stepsize of %f is too big, but scaling is disabled",tot)
-           << endl;
-    }
-  }
-
   RefSCVector xnext = xcurrent + xdisp;
 
+  // check for convergence
   conv_->reset();
   conv_->get_grad(function());
   conv_->get_x(function());
   conv_->set_nextx(xnext);
-
-  // check for convergence before resetting the geometry
   int converged = conv_->converged();
-  if (converged)
+  if (converged) {
+    ExEnv::out0() << indent << n_iterations_ + 1 << 
+      " optimization iterations performed: " << incindent << indent <<
+      n_iterations_ + n_value_search_ + 1 << " function evaluations" << 
+      endl << indent <<
+      n_iterations_ + n_gradient_search_ + 1 << " gradient evaluations" << 
+      endl << decindent;
     return converged;
+  }
 
-  ExEnv::out0() << endl << indent
-       << scprintf("taking step of size %f", tot) << endl;
-  
-  function()->set_x(xnext);
-  Ref<NonlinearTransform> t = function()->change_coordinates();
-  apply_transform(t);
+  // either do a lineopt or check stepsize
+  double tot;
+  if(lineopt_.nonnull()) {
 
-  // do a line min step next time
-  if (lineopt_.nonnull()) take_newton_step_ = 0;
+    double factor;
+    if( n_iterations_ == 0 && force_search_ ) 
+      factor = lineopt_->set_decrease_factor(1.0);
+
+    lineopt_->init(xdisp,function());
+    lineopt_->update();
+    xnext = function()->get_x();
+    xdisp = xnext - xcurrent;
+    tot = sqrt(xdisp.scalar_product(xdisp));
+
+    if( n_iterations_ == 0 && force_search_ )
+      lineopt_->set_decrease_factor( factor );
+
+    // mess here is needed to keep account of total 
+    // value/gradient evaluations
+    n_value_search_ += lineopt_->n_values();
+    n_gradient_search_ += lineopt_->n_gradients();
+    // if quantity !needed, then line search has precomputed it
+    int previous = function()->do_value(1);
+    if( !function()->value_needed() ) --n_value_search_;
+    function()->do_value(previous);
+    previous = function_->do_gradient(1);
+    if( !function()->gradient_needed() ) --n_gradient_search_;
+    function_->do_gradient(previous);
+
+  }
+  else {
+
+    tot = sqrt(xdisp.scalar_product(xdisp));
+
+    if ( tot > max_stepsize_ ) {
+      if( restrict_ ) {
+	double scal = max_stepsize_/tot;
+	ExEnv::out0() << endl << indent <<
+	  scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
+	  << endl;
+	xdisp.scale(scal);
+	tot *= scal;
+      }
+      else {
+	ExEnv::out0() << endl << indent <<
+	  scprintf("stepsize of %f is too big, but scaling is disabled",tot)
+	  << endl;
+      }
+    }
+  }
+  ExEnv::out0() << indent
+		<< scprintf("taking step of size %f", tot) << endl;
+  ExEnv::out0() << indent << "Optimization iteration " 
+		<< n_iterations_ + 1 << " complete" << endl;
+  ExEnv::out0() << indent
+    << "//////////////////////////////////////////////////////////////////////"
+    << endl;
+
+  if( lineopt_.null() ) {
+    function()->set_x(xnext);
+    Ref<NonlinearTransform> t = function()->change_coordinates();
+    apply_transform(t);
+  }
 
   // make the next gradient computed more accurate, since it will
   // be smaller
-  accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
+  if( dynamic_grad_acc_ ) 
+    accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
   
   return converged;
 }

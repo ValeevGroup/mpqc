@@ -48,6 +48,9 @@ class Optimize: virtual public SavableState {
   protected:
     int max_iterations_;
     int n_iterations_;
+    int n_values_;
+    int n_gradients_;
+    int n_hessians_;
     int ckpt_;
     int print_timings_;
     double max_stepsize_;
@@ -114,24 +117,59 @@ class Optimize: virtual public SavableState {
     Ref<Function> function() const { return function_; }
     Ref<SCMatrixKit> matrixkit() const { return function_->matrixkit(); }
     RefSCDimension dimension() const { return function_->dimension(); }
+
+    int n_iterations() { return n_iterations_; }
+    int n_values() { return n_values_; }
+    int n_gradients() { return n_gradients_; }
+    int n_hessians() { return n_hessians_; }
+
 };
 
 
 /** The LineOpt abstract class is used to perform one dimensional
 optimizations.*/
 class LineOpt: public Optimize {
+
   protected:
+
+    double decrease_factor_;
+    RefSCVector initial_x_;
+    double initial_value_;
+    RefSCVector initial_grad_;
     RefSCVector search_direction_;
+    Ref<Function> function_;
+    
+    int sufficient_decrease(RefSCVector& step);
+
   public:
+
     LineOpt();
     LineOpt(StateIn&);
     LineOpt(const Ref<KeyVal>&);
     ~LineOpt();
     void save_data_state(StateOut&);
 
-    void apply_tranform(const Ref<NonlinearTransform>&);
+    void init(RefSCVector& direction);
+    void init(RefSCVector& direction, Ref<Function> function);
+    void apply_transform(const Ref<NonlinearTransform>&);
+  
+    /// Returns decrease factor for sufficient decrease test
+    double decrease_factor() { return decrease_factor_; }
+    /// Sets decrease factor for sufficient decrease test
+    double set_decrease_factor( double factor ) 
+    { double temp = decrease_factor_; decrease_factor_ = factor; return temp; }
+};
 
-    void set_search_direction(RefSCVector&);
+class Backtrack: public LineOpt {
+
+ protected:
+   double backtrack_factor_;
+
+ public:
+   Backtrack(const Ref<KeyVal>&);
+   ~Backtrack(){}
+   int update();
+
 };
 
 }

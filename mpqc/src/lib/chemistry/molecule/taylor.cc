@@ -71,18 +71,31 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
 
   e0_ = keyval->doublevalue("e0");
 
+  // count the number of force constants
+  int i;
+  int n_fc1 = keyval->count("force_constants_1");
   int n_fc = keyval->count("force_constants");
-  force_constant_index_.set_length(n_fc);
-  force_constant_value_.set_length(n_fc);
+  force_constant_index_.set_length(n_fc1+n_fc);
+  force_constant_value_.set_length(n_fc1+n_fc);
   maxorder_ = 0;
-  for (int i=0; i<n_fc; i++) {
+  if (n_fc1 > 0) maxorder_ = 1;
+
+  // first read in the short hand notation for first derivatives
+  for (i=0; i<n_fc1; i++) {
+      force_constant_value_[i] = keyval->doublevalue("force_constants_1", i);
+      force_constant_index_[i].set_length(1);
+      force_constant_index_[i][0] = i;
+    }
+
+  // read in the general force constants
+  for (i=0; i<n_fc; i++) {
       int order = keyval->count("force_constants", i) - 1;
-      force_constant_value_[i] = keyval->doublevalue("force_constants",
-                                                     i,order);
-      force_constant_index_[i].set_length(order);
+      force_constant_value_[n_fc1+i] = keyval->doublevalue("force_constants",
+                                                           i,order);
+      force_constant_index_[n_fc1+i].set_length(order);
       if (maxorder_ < order) maxorder_ = order;
       for (int j=0; j<order; j++) {
-          force_constant_index_[i][j]
+          force_constant_index_[n_fc1+i][j]
               = keyval->intvalue("force_constants",i,j) - 1;
         }
     }

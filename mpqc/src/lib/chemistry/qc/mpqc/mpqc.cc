@@ -83,6 +83,9 @@ MPSCF::MPSCF(KeyVal&keyval):
     exit(1);
   }
 
+  _ndocc = scf_info.nclosed;
+  _nsocc = scf_info.nopen;
+
  // override the default thresholds
   if (!keyval.exists("value_accuracy")) {
     set_desired_value_accuracy(1.0e-10);
@@ -401,7 +404,8 @@ MPSCF::eigenvectors()
 double
 MPSCF::occupation(int i)
 {
-  if (i<_nocc) return 2.0;
+  if (i < _ndocc) return 2.0;
+  else if (i < _ndocc+_nsocc) return 1.0;
   else return 0.0;
 }
 

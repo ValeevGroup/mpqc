@@ -43,7 +43,8 @@ class MPSCF: public OneBodyWavefunction
     RefSCDimension _basisdim;
     Resultdouble _exchange_energy;
     ResultRefSCMatrix _eigenvectors;
-    int _nocc;
+    int _ndocc;
+    int _nsocc;
     void compute();
     void init();
   public:

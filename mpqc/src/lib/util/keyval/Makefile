@@ -34,7 +34,10 @@ DISTFILES = Makefile $(CXXSRC) $(INC) ipv2_parse.yy ipv2_scan.ll LIBS.h
 
 default:: $(DEPENDINCLUDE)
 
-keyvaltest: keyvaltest.o libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF) libstate.$(LIBSUF) libgroup.$(LIBSUF) libmisc.$(LIBSUF)
+keyvaltest: keyvaltest.o libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) \
+            libmisc.$(LIBSUF) libgroup.$(LIBSUF) \
+            libclass.$(LIBSUF) libstate.$(LIBSUF) \
+            libref.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o keyvaltest $^ $(SYSLIBS)
 
 keyvaltest.o: keyvaltest.cc

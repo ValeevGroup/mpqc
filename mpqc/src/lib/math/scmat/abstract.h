@@ -19,7 +19,7 @@ class SCDimension: virtual public SavableState {
 };
 
 class SCVector: virtual public SavableState {
-#   define CLASSNAME SCMatrix
+#   define CLASSNAME SCVector
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
@@ -36,6 +36,7 @@ class SCVector: virtual public SavableState {
     virtual void copy(SCVector*);
     virtual void print(ostream&);
 
+    virtual RefSCDimension dim() = 0;
     virtual void set_element(int,double) = 0;
     virtual double get_element(int) = 0;
     virtual void accumulate_product(SCMatrix*,SCVector*) = 0;
@@ -45,9 +46,6 @@ class SCVector: virtual public SavableState {
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
-
-@ This is the base class for all matrices.
-@<|SCMatrix| declaration@>=
 class RefSCElementOp;
 class SCMatrix: virtual public SavableState {
 #   define CLASSNAME SCMatrix
@@ -90,6 +88,7 @@ class SymmSCMatrix: virtual public SavableState {
   public:
     SymmSCMatrix();
     SymmSCMatrix(StateIn&);
+    void save_data_state(StateOut&);
     virtual double maxabs(); // maximum absolute value of the elements
     virtual void assign(double);
     virtual void scale(double);
@@ -97,6 +96,7 @@ class SymmSCMatrix: virtual public SavableState {
     virtual void unit();
     virtual void copy(SymmSCMatrix*);
     virtual void print(ostream&);
+    virtual int n();
 
     // pure virtual functions
     virtual RefSCDimension dim() = 0;
@@ -118,24 +118,23 @@ class DiagSCMatrix: virtual public SavableState {
   public:
     DiagSCMatrix();
     DiagSCMatrix(StateIn&);
+    void save_data_state(StateOut&);
 
     virtual double maxabs(); // maximum absolute value of the elements
     virtual void assign(double);
     virtual void scale(double);
     virtual void copy(DiagSCMatrix*);
     virtual void print(ostream&);
+    virtual int n();
 
     // pure virtual functions
     virtual RefSCDimension dim() = 0;
-    virtual double get_element(int,int) = 0;
-    virtual void set_element(int,int,double) = 0;
+    virtual double get_element(int) = 0;
+    virtual void set_element(int,double) = 0;
     virtual void accumulate(DiagSCMatrix*) = 0;
     virtual double invert_this() = 0;
     virtual void element_op(RefSCDiagElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
-
-    // implementations of parent routines
-    void save_data_state(StateOut&);
 };
 
 #endif

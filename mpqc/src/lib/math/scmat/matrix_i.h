@@ -13,7 +13,7 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
-// SCdouble inline candidates
+// SCMatrixdouble inline candidates
 
 INLINE
 SCMatrixdouble::SCMatrixdouble(SCMatrix*a,int b,int c):
@@ -42,35 +42,91 @@ SCMatrixdouble::val()
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// RefSCMatrix inline candidates
-// 
-// INLINE RefSCMatrix :: RefSCMatrix() {}
-// INLINE RefSCMatrix :: RefSCMatrix (RefSCMatrix & o):
-//   RefSSSCMatrix (o)
-// {}
-// INLINE RefSCMatrix :: RefSCMatrix (SCMatrix * o):
-//   RefSSSCMatrix (o)
-// {}
-// INLINE RefSCMatrix :: RefSCMatrix (RefDescribedClassBase&o):
-//   RefSSSCMatrix (o)
-// {}
-// INLINE RefSCMatrix :: ~RefSCMatrix () {}
-// INLINE RefSCMatrix& RefSCMatrix :: operator=(SCMatrix* cr)
-// {
-//   RefDCSCMatrix::operator=(cr);
-//   return *this;
-// }
-// INLINE RefSCMatrix& RefSCMatrix :: operator=( RefDescribedClassBase & c)
-// {
-//   RefDCSCMatrix::operator=(c);
-//   return *this;
-// }
-// INLINE RefSCMatrix& RefSCMatrix :: operator=( RefSCMatrix & c)
-// {
-//   RefDCSCMatrix::operator=(c);
-//   return *this;
-// }
+// SymmSCMatrixdouble inline candidates
 
+INLINE
+SymmSCMatrixdouble::SymmSCMatrixdouble(SymmSCMatrix*a,int b,int c):
+  matrix(a),i(b),j(c)
+{
+}
+INLINE
+SymmSCMatrixdouble::~SymmSCMatrixdouble()
+{
+}
+INLINE double
+SymmSCMatrixdouble::operator=(double a)
+{
+  matrix.set_element(i,j,a);
+  return a;
+}
+INLINE
+SymmSCMatrixdouble::operator double()
+{
+  return matrix.get_element(i,j);
+}
+INLINE double
+SymmSCMatrixdouble::val()
+{
+  return matrix.get_element(i,j);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// DiagSCMatrixdouble inline candidates
+
+INLINE
+DiagSCMatrixdouble::DiagSCMatrixdouble(DiagSCMatrix*a,int b,int c):
+  matrix(a),i(b),j(c)
+{
+}
+INLINE
+DiagSCMatrixdouble::~DiagSCMatrixdouble()
+{
+}
+INLINE double
+DiagSCMatrixdouble::operator=(double a)
+{
+  matrix.set_element(i,a);
+  return a;
+}
+INLINE
+DiagSCMatrixdouble::operator double()
+{
+  return matrix.get_element(i);
+}
+INLINE double
+DiagSCMatrixdouble::val()
+{
+  return matrix.get_element(i);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// SCVectordouble inline candidates
+
+INLINE
+SCVectordouble::SCVectordouble(SCVector*a,int b):
+  vector(a),i(b)
+{
+}
+INLINE
+SCVectordouble::~SCVectordouble()
+{
+}
+INLINE double
+SCVectordouble::operator=(double a)
+{
+  vector.set_element(i,a);
+  return a;
+}
+INLINE
+SCVectordouble::operator double()
+{
+  return vector.get_element(i);
+}
+INLINE double
+SCVectordouble::val()
+{
+  return vector.get_element(i);
+}
 
 #undef INLINE
 

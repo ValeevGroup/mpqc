@@ -50,30 +50,30 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 #	  else (/bin/mv abstract.h.out abstract.h; echo abstract.h updated;) \
 #	  fi
 
-scmat.ps: scmat.dvi
-	dvips -o $@ $^
+#scmat.ps: scmat.dvi
+#	dvips -o $@ $^
 
-see: scmat.dvi
-	xdvi -s 4 -geometry 600x440 $^
+#see: scmat.dvi
+#	xdvi -s 4 -geometry 600x440 $^
 
-scmat.dvi: scmat.tex
-	tex $^ < /dev/null
+#scmat.dvi: scmat.tex
+#	tex $^ < /dev/null
 
-scmat.tex: scmat.w $(WEBSRC) 
-	CWEBINPUTS=$(SRCDIR); export CWEBINPUTS; \
-	cweave $< < /dev/null
+#scmat.tex: scmat.w $(WEBSRC) 
+#	CWEBINPUTS=$(SRCDIR); export CWEBINPUTS; \
+#	cweave $< < /dev/null
 
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libscmat
 
-TESTSRC = localtest.cc
-TESTOBJ = $(TESTSRC:%.cc=%.o)
+TESTSRC = localtest.cc matrixtest.cc
+TESTOBJ = matrixtest.o
 TESTFILES = # localtest.in
 
 DISTFILES = $(CXXSRC) $(INC) scmat.h $(WEBSRC) Makefile LIBS.h \
             $(TESTSRC) $(TESTFILES)
 
-localtest: $(TESTOBJ) libscmat.a \
+localtest: localtest.o $(TESTOBJ) libscmat.a \
 	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(CXXFLAGS) -o localtest $^ $(SYSLIBS) 
 
@@ -84,6 +84,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:%.o=%.d)
+include $(LIBOBJ:.o=.d) $(TESTSRC:%.cc=%.d)
 endif
 

@@ -264,9 +264,9 @@ LocalSCMatrix::invert_this()
 }
 
 void
-LocalSCMatrix::element_op(RefSCElementOp& op)
+LocalSCMatrix::element_op(RefSCRectElementOp& op)
 {
-  op->process(block,matrixtype());
+  op->process(block);
 }
 
 // from Ed Seidl at the NIH
@@ -359,7 +359,7 @@ LocalSymmSCMatrix::LocalSymmSCMatrix(KeyVal&keyval)
   d.require_nonnull();
   block = new SCMatrixLTriBlock(0,d->n());
   rows = init_symm_rows(block->data,d->n());
-  for (int i=0; i<nrow(); i++) {
+  for (int i=0; i<n(); i++) {
       for (int j=0; j<=i; j++) {
           set_element(i,j,keyval.doublevalue("data",i,j));
         }
@@ -425,15 +425,7 @@ LocalSymmSCMatrix::set_element(int i,int j,double a)
 }
 
 void
-LocalSymmSCMatrix::accumulate_product(SCMatrix*,SCMatrix*)
-{
-   fprintf(stderr,"LocalSymmSCMatrix::accumulate_product(SCMatrix*,SCMatrix*):"
-           " not implemented");
-   abort();
-}
-
-void
-LocalSymmSCMatrix::accumulate(SCMatrix*a)
+LocalSymmSCMatrix::accumulate(SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   LocalSymmSCMatrix* la
@@ -447,14 +439,14 @@ LocalSymmSCMatrix::accumulate(SCMatrix*a)
       abort();
     }
 
-  int nelem = (this->ncol() * (this->ncol() + 1))/2;
+  int nelem = (this->n() * (this->n() + 1))/2;
   for (int i=0; i<nelem; i++) block->data[i] += la->block->data[i];
 }
 
 double
 LocalSymmSCMatrix::invert_this()
 {
-  return cmat_invert(rows,1,nrow());
+  return cmat_invert(rows,1,n());
 }
 
 void
@@ -475,20 +467,20 @@ LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   double *eigvals;
   double **eigvecs;
   if (!la) {
-      eigvals = new double[nrow()];
+      eigvals = new double[n()];
     }
   else {
       eigvals = la->block->data;
     }
 
   if (!lb) {
-      eigvecs = cmat_new_square_matrix(nrow());
+      eigvecs = cmat_new_square_matrix(n());
     }
   else {
       eigvecs = lb->rows;
     }
 
-  cmat_diag(rows,eigvals,eigvecs,nrow(),1,1.0e-15);
+  cmat_diag(rows,eigvals,eigvecs,n(),1,1.0e-15);
 
   if (!la) delete[] eigvals;
   if (!lb) cmat_delete_matrix(eigvecs);
@@ -499,8 +491,8 @@ void
 LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  LocalSymmSCMatrix* la
-    = LocalSymmSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
+  LocalSCMatrix* la
+    = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
                                           "accumulate_symmetric_product");
 
   if (la->rowdim() != dim()) {
@@ -509,7 +501,7 @@ LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
       abort();
     }
 
-  cmat_symmetric_mxm(rows,nrow(),la->rows,la->ncol(),1);
+  cmat_symmetric_mxm(rows,n(),la->rows,la->ncol(),1);
 }
 
 // this += a * b * transpose(a)
@@ -524,18 +516,18 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
                                           class_name());
 
   // check the dimensions
-  if (nrow() != lb->nrow() || lb->nrow() != lb->ncol()) {
+  if (n() != la->nrow() || la->ncol() != lb->n()) {
       fprintf(stderr,"LocalSymmSCMatrix::accumulate_transform: bad dim\n");
       abort();
     }
 
-  cmat_transform_symmetric_matrix(rows,ncol(),lb->rows,lb->ncol(),la->rows,1);
+  cmat_transform_symmetric_matrix(rows,n(),lb->rows,lb->n(),la->rows,1);
 }
 
 void
-LocalSymmSCMatrix::element_op(RefSCElementOp& op)
+LocalSymmSCMatrix::element_op(RefSCSymmElementOp& op)
 {
-  op->process(block,matrixtype());
+  op->process(block);
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
@@ -558,11 +550,11 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
   if(title) os << "\n" << title << "\n";
   else os << "\n";
 
-  if(nrow()==0 || ncol()==0) { os << " empty matrix\n"; return; }
+  if(n()==0) { os << " empty matrix\n"; return; }
 
   for(ii=jj=0;;) {
     ii++; jj++; kk=width*jj;
-    nn=(ncol()>kk)?kk:ncol();
+    nn=(n()>kk)?kk:n();
     ll=2*(nn-ii+1)+1;
 
  // print column indices
@@ -570,14 +562,14 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
     os << "\n";
 
  // print the rows
-    for(i=0; i < nrow() ; i++) {
+    for(i=0; i < n() ; i++) {
       os.width(5); os << i+1;
       for(j=ii-1; j<nn && j<=i; j++) { os.width(lwidth); os << rows[i][j]; }
       os << "\n";
       }
     os << "\n";
 
-    if(ncol()<=kk) { os.flush(); return; }
+    if(n()<=kk) { os.flush(); return; }
     ii=kk;
     }
 }
@@ -616,8 +608,8 @@ LocalDiagSCMatrix::LocalDiagSCMatrix(KeyVal&keyval)
   d = keyval.describedclassvalue("dim");
   d.require_nonnull();
   block = new SCMatrixDiagBlock(0,d->n());
-  for (int i=0; i<nrow(); i++) {
-      set_element(i,i,keyval.doublevalue("data",i,i));
+  for (int i=0; i<n(); i++) {
+      set_element(i,keyval.doublevalue("data",i));
     }
 }
 
@@ -653,32 +645,19 @@ LocalDiagSCMatrix::dim()
 }
 
 double
-LocalDiagSCMatrix::get_element(int i,int j)
+LocalDiagSCMatrix::get_element(int i)
 {
-  if (i != j) return 0.0;
   return block->data[i];
 }
 
 void
-LocalDiagSCMatrix::set_element(int i,int j,double a)
+LocalDiagSCMatrix::set_element(int i,double a)
 {
-  if (i != j && a != 0.0) {
-      fprintf(stderr,"LocalDiagSCMatrix::set_element: offdiagonal element\n");
-      abort();
-    }
   block->data[i] = a;
 }
 
 void
-LocalDiagSCMatrix::accumulate_product(SCMatrix*,SCMatrix*)
-{
-   fprintf(stderr,"LocalDiagSCMatrix::accumulate_product(SCMatrix*,SCMatrix*):"
-           " not implemented");
-   abort();
-}
-
-void
-LocalDiagSCMatrix::accumulate(SCMatrix*a)
+LocalDiagSCMatrix::accumulate(DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   LocalDiagSCMatrix* la
@@ -692,7 +671,7 @@ LocalDiagSCMatrix::accumulate(SCMatrix*a)
       abort();
     }
 
-  int nelem = nrow();
+  int nelem = n();
   for (int i=0; i<nelem; i++) block->data[i] += la->block->data[i];
 }
 
@@ -700,7 +679,7 @@ double
 LocalDiagSCMatrix::invert_this()
 {
   double det = 1.0;
-  int nelem = nrow();
+  int nelem = n();
   double*data = block->data;
   for (int i=0; i<nelem; i++) {
       data[i] = 1.0/data[i];
@@ -710,9 +689,9 @@ LocalDiagSCMatrix::invert_this()
 }
 
 void
-LocalDiagSCMatrix::element_op(RefSCElementOp& op)
+LocalDiagSCMatrix::element_op(RefSCDiagElementOp& op)
 {
-  op->process(block,matrixtype());
+  op->process(block);
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
@@ -734,10 +713,10 @@ LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
   if(title) os << "\n" << title << "\n";
   else os << "\n";
 
-  if(nrow()==0 || ncol()==0) { os << " empty matrix\n"; return; }
+  if(n()==0) { os << " empty matrix\n"; return; }
 
-  for (i=0; i<nrow(); i++) {
-      os.width(5); os << i+1; os << i+1;
+  for (i=0; i<n(); i++) {
+      os.width(5); os << i+1;
       os.width(lwidth); os << block->data[i];
       os << "\n";
     }
@@ -779,10 +758,16 @@ LocalSCVector::LocalSCVector(KeyVal&keyval)
 {
   d = keyval.describedclassvalue("dim");
   d.require_nonnull();
-  block = new SCMatrixDiagBlock(0,d->n());
-  for (int i=0; i<nrow(); i++) {
-      set_element(i,i,keyval.doublevalue("data",i,i));
+  block = new SCVectorSimpleBlock(0,d->n());
+  for (int i=0; i<n(); i++) {
+      set_element(i,keyval.doublevalue("data",i,i));
     }
+}
+
+void
+LocalSCVector::resize(int n)
+{
+  block = new SCVectorSimpleBlock(0,n);
 }
 
 void
@@ -804,12 +789,6 @@ LocalSCVector::~LocalSCVector()
 {
 }
 
-void
-LocalSCVector::resize(int n)
-{
-  block = new SCSimpleVectorBlock(0,n);
-}
-
 RefSCDimension
 LocalSCVector::dim()
 {
@@ -826,4 +805,105 @@ void
 LocalSCVector::set_element(int i,double a)
 {
   block->data[i] = a;
+}
+
+void
+LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
+{
+  const char* name = "LocalSCVector::accumulate_product";
+  // make sure that the arguments are of the correct type
+  LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
+  LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
+
+  // make sure that the dimensions match
+  if (this->dim() != a->rowdim()
+      || a->coldim() != b->dim()) {
+      fprintf(stderr,"LocalSCVector::"
+              "accumulate_product(SCMatrix*a,SCVector*b):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  cmat_mxm(la->rows, 0,
+           &(lb->block->data), 0,
+           &(block->data), 0,
+           n(), la->ncol(), 1,
+           1);
+}
+
+void
+LocalSCVector::accumulate(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  LocalSCVector* la
+    = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (this->dim() != la->dim()) {
+      fprintf(stderr,"LocalSCVector::"
+              "accumulate(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = n();
+  for (int i=0; i<nelem; i++) block->data[i] += la->block->data[i];
+}
+
+double
+LocalSCVector::scalar_product(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  LocalSCVector* la
+    = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
+
+  // make sure that the dimensions match
+  if (this->dim() != la->dim()) {
+      fprintf(stderr,"LocalSCVector::"
+              "scale_product(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = n();
+  double result = 0.0;
+  for (int i=0; i<nelem; i++) result += block->data[i] * la->block->data[i];
+  return result;
+}
+
+void
+LocalSCVector::element_op(RefSCVectorElementOp& op)
+{
+  op->process(block);
+}
+
+// from Ed Seidl at the NIH (with a bit of hacking)
+void
+LocalSCVector::print(const char *title, ostream& os, int prec)
+{
+  int i;
+  int lwidth,width;
+  double max=this->maxabs();
+
+  max=(max==0.0)?1.0:log10(max);
+  if(max < 0.0) max=1.0;
+
+  lwidth = prec+5+(int) max; width = 75/lwidth;
+
+  os.setf(ios::fixed,ios::floatfield); os.precision(prec);
+  os.setf(ios::right,ios::adjustfield);
+
+  if(title) os << "\n" << title << "\n";
+  else os << "\n";
+
+  if(n()==0) { os << " empty vector\n"; return; }
+
+  for (i=0; i<n(); i++) {
+      os.width(5); os << i+1;
+      os.width(lwidth); os << block->data[i];
+      os << "\n";
+    }
+  os << "\n";
+
+  os.flush();
 }

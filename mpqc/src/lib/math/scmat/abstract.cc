@@ -7,6 +7,30 @@
 // These member are used by the abstract SCMatrix classes.
 /////////////////////////////////////////////////////////////////////////
 
+
+/////////////////////////////////////////////////////////////////////////
+// SCDimension members
+
+#define CLASSNAME SCDimension
+#define PARENTS virtual public SavableState
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+
+SCDimension::SCDimension()
+{
+}
+
+void *
+SCDimension::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SavableState::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
+SCDimension::~SCDimension()
+{
+}
+
 /////////////////////////////////////////////////////////////////////////
 // SCElementScale members
 
@@ -51,7 +75,6 @@ SCElementScale::process(SCMatrixBlockIter&i)
 /////////////////////////////////////////////////////////////////////////
 // SCElementMaxAbs members
 
-SavableState_REF_dec(SCElementMaxAbs);
 SavableState_REF_def(SCElementMaxAbs);
 #define CLASSNAME SCElementMaxAbs
 #define PARENTS       virtual public SCDiagElementOp, \
@@ -61,6 +84,7 @@ SavableState_REF_def(SCElementMaxAbs);
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
+
 SCElementMaxAbs::SCElementMaxAbs(double a):r(0.0) {}
 SCElementMaxAbs::SCElementMaxAbs(StateIn&s):
   SavableState(s,class_desc_)
@@ -190,29 +214,6 @@ SCElementShiftDiagonal::process(SCMatrixBlockIter&i)
 }
 
 /////////////////////////////////////////////////////////////////////////
-// SCDimension members
-
-#define CLASSNAME SCDimension
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-SCDimension::SCDimension()
-{
-}
-
-void *
-SCDimension::_castdown(const ClassDesc*cd)
-{
-  void* casts[] =  { SavableState::_castdown(cd) };
-  return do_castdowns(casts,cd);
-}
-
-SCDimension::~SCDimension()
-{
-}
-
-/////////////////////////////////////////////////////////////////////////
 // SCMatrix members
 
 #define CLASSNAME SCMatrix
@@ -336,6 +337,12 @@ SymmSCMatrix::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+int
+SymmSCMatrix::n()
+{
+  return dim()->n();
+}
+
 double
 SymmSCMatrix::maxabs()
 {
@@ -413,6 +420,21 @@ DiagSCMatrix::_castdown(const ClassDesc*cd)
 {
   void* casts[] =  { SavableState::_castdown(cd) };
   return do_castdowns(casts,cd);
+}
+
+int
+DiagSCMatrix::n()
+{
+  return dim()->n();
+}
+
+double
+DiagSCMatrix::maxabs()
+{
+  RefSCElementMaxAbs op = new SCElementMaxAbs();
+  RefSCDiagElementOp abop = op;
+  this->element_op(abop);
+  return op->result();
 }
 
 void

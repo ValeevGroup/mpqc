@@ -198,13 +198,6 @@ SCVectorSimpleBlock::SCVectorSimpleBlock(int s, int e):
   data = new double[e-s];
 }
 
-SCVectorSimpleBlock::SCVectorSimpleBlock(int is, int ie):
-  istart(is),
-  iend(ie)
-{
-  data = new double[ie-is];
-}
-
 SCVectorSimpleBlock::SCVectorSimpleBlock(StateIn&s):
   SavableState(s,class_desc_)
 {
@@ -321,17 +314,158 @@ SCElementOp::process(SCVectorSimpleBlock* a)
 /////////////////////////////////////////////////////////////////////////////
 // SCRectElementOp member functions
 
-/////////////////////////////////////////////////////////////////////////////
-// SCDimension reference member functions
+#define CLASSNAME SCRectElementOp
+#define PARENTS virtual public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classia.h>
 
-SavableState_REF_def(SCDimension);
+SavableState_REF_def(SCRectElementOp);
+
+void *
+SCRectElementOp::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SCElementOp::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
+SCRectElementOp::SCRectElementOp()
+{
+}
+
+SCRectElementOp::~SCRectElementOp()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCSymmElementOp member functions
+
+#define CLASSNAME SCSymmElementOp
+#define PARENTS virtual public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+
+SavableState_REF_def(SCSymmElementOp);
+
+void *
+SCSymmElementOp::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SCElementOp::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
+SCSymmElementOp::SCSymmElementOp()
+{
+}
+
+SCSymmElementOp::~SCSymmElementOp()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCDiagElementOp member functions
+
+#define CLASSNAME SCDiagElementOp
+#define PARENTS virtual public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+
+SavableState_REF_def(SCDiagElementOp);
+
+void *
+SCDiagElementOp::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SCElementOp::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
+SCDiagElementOp::SCDiagElementOp()
+{
+}
+
+SCDiagElementOp::~SCDiagElementOp()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCVectorElementOp member functions
+
+#define CLASSNAME SCVectorElementOp
+#define PARENTS virtual public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+
+SavableState_REF_def(SCVectorElementOp);
+
+void *
+SCVectorElementOp::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SCElementOp::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
+SCVectorElementOp::SCVectorElementOp()
+{
+}
+
+SCVectorElementOp::~SCVectorElementOp()
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrix reference base class member functions
 
+SavableState_named_REF_def(RefSSSCDimension,SCDimension);
+SavableState_named_REF_def(RefSSSCVector,SCVector);
 SavableState_named_REF_def(RefSSSCMatrix,SCMatrix);
 SavableState_named_REF_def(RefSSSymmSCMatrix,SymmSCMatrix);
 SavableState_named_REF_def(RefSSDiagSCMatrix,DiagSCMatrix);
+
+/////////////////////////////////////////////////////////////////////////////
+// SCDimension reference member functions
+
+RefSCDimension::RefSCDimension() {}
+             
+RefSCDimension::RefSCDimension (RefSCDimension & o): RefSSSCDimension (o) {}
+             
+RefSCDimension::RefSCDimension (SCDimension * o): RefSSSCDimension (o) {}
+             
+RefSCDimension::RefSCDimension (RefDescribedClassBase&o): RefSSSCDimension (o) {}
+
+RefSCDimension::~RefSCDimension () {}
+
+RefSCDimension&
+RefSCDimension::operator=(SCDimension* cr)
+{
+  RefSSSCDimension::operator=(cr);
+  return *this;
+}
+
+RefSCDimension&
+RefSCDimension::operator=( RefDescribedClassBase & c)
+{
+  RefSSSCDimension::operator=(c);
+  return *this;
+}
+
+RefSCDimension&
+RefSCDimension::operator=( RefSCDimension & c)
+{
+  RefSSSCDimension::operator=(c);
+  return *this;
+}
+
+int
+RefSCDimension::n()
+{
+  if (null()) return 0;
+  return pointer()->n();
+}
+
+RefSCDimension::operator int()
+{
+  if (null()) return 0;
+  return pointer()->n();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrix reference member functions
@@ -663,10 +797,10 @@ RefSymmSCMatrix::dim()
   else return pointer()->dim();
 }
 
-SCMatrixdouble
+SymmSCMatrixdouble
 RefSymmSCMatrix::operator()(int i,int j)
 {
-  return SCMatrixdouble(pointer(),i,j);
+  return SymmSCMatrixdouble(pointer(),i,j);
 }
 
 RefSymmSCMatrix
@@ -801,14 +935,14 @@ void
 RefDiagSCMatrix::set_element(int i, double a)
 {
   require_nonnull();
-  pointer()->set_element(i,i,a);
+  pointer()->set_element(i,a);
 }
 
 double
 RefDiagSCMatrix::get_element(int i)
 {
   require_nonnull();
-  return pointer()->get_element(i,i);
+  return pointer()->get_element(i);
 }
 
 RefDiagSCMatrix
@@ -866,16 +1000,10 @@ RefDiagSCMatrix::dim()
   else return pointer()->dim();
 }
 
-SCMatrixdouble
+DiagSCMatrixdouble
 RefDiagSCMatrix::operator()(int i)
 {
-  return SCMatrixdouble(pointer(),i,i);
-}
-
-SCMatrixdouble
-RefDiagSCMatrix::operator()(int i,int j)
-{
-  return SCMatrixdouble(pointer(),i,j);
+  return DiagSCMatrixdouble(pointer(),i,i);
 }
 
 RefDiagSCMatrix
@@ -921,6 +1049,170 @@ RefDiagSCMatrix::print(ostream& out)
 
 void
 RefDiagSCMatrix::print(const char*title,ostream&out, int precision)
+{
+  require_nonnull();
+  pointer()->print(title,out,precision);
+}
+
+///////////////////////////////////////////////////////////////////
+// RefSCVector members
+
+RefSCVector::RefSCVector()
+{
+}
+             
+RefSCVector::RefSCVector (RefSCVector & o):
+  RefSSSCVector (o)
+{
+}
+             
+RefSCVector::RefSCVector (SCVector * o):
+  RefSSSCVector (o)
+{
+}
+
+RefSCVector::RefSCVector (RefDescribedClassBase&o):
+  RefSSSCVector (o)
+{
+}
+
+RefSCVector::~RefSCVector ()
+{
+}
+
+RefSCVector&
+RefSCVector::operator=(SCVector* cr)
+{
+  RefSSSCVector::operator=(cr);
+  return *this;
+}
+
+RefSCVector&
+RefSCVector::operator=( RefDescribedClassBase & c)
+{
+  RefSSSCVector::operator=(c);
+  return *this;
+}
+
+RefSCVector&
+RefSCVector::operator=( RefSCVector & c)
+{
+  RefSSSCVector::operator=(c);
+  return *this;
+}
+
+RefSCVector::RefSCVector(RefSCDimension&a)
+{
+  a.require_nonnull();
+  assign_pointer(a->create_vector());
+}
+
+void
+RefSCVector::set_element(int i, double a)
+{
+  require_nonnull();
+  pointer()->set_element(i,a);
+}
+
+double
+RefSCVector::get_element(int i)
+{
+  require_nonnull();
+  return pointer()->get_element(i);
+}
+
+RefSCVector
+RefSCVector::operator+(RefSCVector&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCVector ret(dim());
+  
+  ret->copy(pointer());
+  ret->accumulate(a.pointer());
+
+  return ret;
+}
+
+RefSCVector
+RefSCVector::operator-(RefSCVector&a)
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCVector ret(dim());
+  
+  ret->copy(a.pointer());
+  ret->scale(-1.0);
+  ret->accumulate(pointer());
+
+  return ret;
+}
+
+int
+RefSCVector::n()
+{
+  if (null()) return 0;
+  else return pointer()->dim()->n();
+}
+
+RefSCDimension
+RefSCVector::dim()
+{
+  if (null()) return 0;
+  else return pointer()->dim();
+}
+
+SCVectordouble
+RefSCVector::operator()(int i)
+{
+  return SCVectordouble(pointer(),i);
+}
+
+RefSCVector
+RefSCVector::clone()
+{
+  RefSCVector r = dim()->create_vector();
+  return r;
+}
+
+void
+RefSCVector::copy(RefSCVector&a)
+{
+  require_nonnull();
+  pointer()->copy(a.pointer());
+}
+
+void
+RefSCVector::scale(double a)
+{
+  require_nonnull();
+  pointer()->scale(a);
+}
+
+void
+RefSCVector::assign(double a)
+{
+  require_nonnull();
+  pointer()->assign(a);
+}
+
+void
+RefSCVector::accumulate(RefSCVector&a)
+{
+  require_nonnull();
+  pointer()->accumulate(a.pointer());
+}
+
+void
+RefSCVector::print(ostream& out)
+{
+  print(0,out);
+}
+
+void
+RefSCVector::print(const char*title,ostream&out, int precision)
 {
   require_nonnull();
   pointer()->print(title,out,precision);

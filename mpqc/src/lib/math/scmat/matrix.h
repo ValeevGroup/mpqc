@@ -5,25 +5,16 @@
 #include <util/state/state.h>
 
 class SCDimension;
-SavableState_REF_dec(SCDimension);
-
-class SCVectorSimpleBlock: public SCMatrixBlock {
-#   define CLASSNAME SCVectorSimpleBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    SCVectorSimpleBlock(int istart,int iend);
-    SCVectorSimpleBlock(int istart,int iend);
-    SCVectorSimpleBlock(StateIn&);
-    virtual ~SCVectorSimpleBlock();
-    void save_data_state(StateOut&);
-    int istart;
-    int iend;
-    double* data;
-};
-
-SavableState_REF_dec(SCVectorSimpleBlock);
+class SCVector;
+class SCMatrix;
+class SymmSCMatrix;
+class DiagSCMatrix;
+class RefDiagSCMatrix;
+class SCVectordouble;
+class SCMatrixdouble;
+class SymmSCMatrixdouble;
+class DiagSCMatrixdouble;
+class RefSCElementOp;
 
 class SCMatrixBlock: virtual public SavableState {
 #   define CLASSNAME SCMatrixBlock
@@ -35,6 +26,23 @@ class SCMatrixBlock: virtual public SavableState {
 };
 
 SavableState_REF_dec(SCMatrixBlock);
+
+class SCVectorSimpleBlock: public SCMatrixBlock {
+#   define CLASSNAME SCVectorSimpleBlock
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    SCVectorSimpleBlock(int istart,int iend);
+    SCVectorSimpleBlock(StateIn&);
+    virtual ~SCVectorSimpleBlock();
+    void save_data_state(StateOut&);
+    int istart;
+    int iend;
+    double* data;
+};
+
+SavableState_REF_dec(SCVectorSimpleBlock);
 
 class SCMatrixRectBlock: public SCMatrixBlock {
 #   define CLASSNAME SCMatrixRectBlock
@@ -88,25 +96,6 @@ class SCMatrixDiagBlock: public SCMatrixBlock {
 };
 SavableState_REF_dec(SCMatrixDiagBlock);
 
-class SCVector;
-class SCVectordouble;
-SavableState_named_REF_dec(RefSSSCVector,SCVector);
-class RefSCVector: public RefSSSCVector {
-    // standard overrides
-  public:
-    RefSCVector();
-    RefSCVector(RefSCVector&);
-    RefSCVector(SCVector *);
-    RefSCVector(RefDescribedClassBase&);
-    ~RefSCVector();
-    RefSCVector& operator=(SCVector* cr);
-    RefSCVector& operator=( RefDescribedClassBase & c);
-    RefSCVector& operator=( RefSCVector & c);
-
-    // vector specific members
-  public:
-}
-
 class SCMatrixBlockIter {
   public:
     SCMatrixBlockIter();
@@ -120,7 +109,6 @@ class SCMatrixBlockIter {
     virtual void reset() = 0;
 };
 
-class RefSCElementOp;
 class SCElementOp: virtual public SavableState {
 #   define CLASSNAME SCElementOp
 #   include <util/state/stated.h>
@@ -139,22 +127,47 @@ class SCElementOp: virtual public SavableState {
     virtual void process(SCMatrixRectBlock*);
     virtual void process(SCMatrixLTriBlock*);
     virtual void process(SCMatrixDiagBlock*);
+    virtual void process(SCVectorSimpleBlock*);
 };
 SavableState_REF_dec(SCElementOp);
 
 class SCRectElementOp: virtual public SCElementOp {
+#   define CLASSNAME SCRectElementOp
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  public:
+    SCRectElementOp();
+    ~SCRectElementOp();
 };
 SavableState_REF_dec(SCRectElementOp);
 
 class SCDiagElementOp: virtual public SCElementOp {
+#   define CLASSNAME SCDiagElementOp
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  public:
+    SCDiagElementOp();
+    ~SCDiagElementOp();
 };
 SavableState_REF_dec(SCDiagElementOp);
 
 class SCSymmElementOp: virtual public SCElementOp {
+#   define CLASSNAME SCSymmElementOp
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  public:
+    SCSymmElementOp();
+    ~SCSymmElementOp();
 };
 SavableState_REF_dec(SCSymmElementOp);
 
 class SCVectorElementOp: virtual public SCElementOp {
+#   define CLASSNAME SCVectorElementOp
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  public:
+    SCVectorElementOp();
+    ~SCVectorElementOp();
 };
 SavableState_REF_dec(SCVectorElementOp);
 
@@ -212,8 +225,79 @@ class SCElementShiftDiagonal: virtual public SCDiagElementOp,
     void process(SCMatrixBlockIter&);
 };
 
-class SCMatrix;
-class SCMatrixdouble;
+class SCElementMaxAbs: virtual public SCDiagElementOp,
+                       virtual public SCSymmElementOp,
+                       virtual public SCRectElementOp,
+                       virtual public SCVectorElementOp {
+#   define CLASSNAME SCElementMaxAbs
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    double r;
+  public:
+    SCElementMaxAbs(double a);
+    SCElementMaxAbs(StateIn&);
+    ~SCElementMaxAbs();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+    int has_collect();
+    void collect(RefSCElementOp&);
+    double result();
+};
+SavableState_REF_dec(SCElementMaxAbs);
+
+SavableState_named_REF_dec(RefSSSCDimension,SCDimension);
+class RefSCDimension: public RefSSSCDimension {
+    // standard overrides
+  public:
+    RefSCDimension();
+    RefSCDimension(RefSCDimension&);
+    RefSCDimension(SCDimension *);
+    RefSCDimension(RefDescribedClassBase&);
+    ~RefSCDimension();
+    RefSCDimension& operator=(SCDimension* cr);
+    RefSCDimension& operator=( RefDescribedClassBase & c);
+    RefSCDimension& operator=( RefSCDimension & c);
+    operator int();
+
+    // dimension specific functions
+  public:
+    int n();
+};
+
+SavableState_named_REF_dec(RefSSSCVector,SCVector);
+class RefSCVector: public RefSSSCVector {
+    // standard overrides
+  public:
+    RefSCVector();
+    RefSCVector(RefSCDimension&);
+    RefSCVector(RefSCVector&);
+    RefSCVector(SCVector *);
+    RefSCVector(RefDescribedClassBase&);
+    ~RefSCVector();
+    RefSCVector& operator=(SCVector* cr);
+    RefSCVector& operator=( RefDescribedClassBase & c);
+    RefSCVector& operator=( RefSCVector & c);
+
+    // vector specific members
+  public:
+    void set_element(int,double);
+    double get_element(int);
+    int n();
+    RefSCDimension dim();
+    SCVectordouble operator()(int);
+    RefSCVector clone();
+    RefSCVector operator+(RefSCVector&a);
+    RefSCVector operator-(RefSCVector&a);
+    void copy(RefSCVector&);
+    void scale(double);
+    void assign(double);
+    void accumulate(RefSCVector&);
+    void print(ostream&out);
+    void print(const char*title=0, ostream&out=cout, int precision=10);
+};
+
 SavableState_named_REF_dec(RefSSSCMatrix,SCMatrix);
 class RefSCMatrix: public RefSSSCMatrix {
     // standard overrides
@@ -252,8 +336,6 @@ class RefSCMatrix: public RefSSSCMatrix {
     void print(const char*title=0,ostream&out=cout, int =10);
 };
 
-class SymmSCMatrix;
-class RefDiagSCMatrix;
 SavableState_named_REF_dec(RefSSSymmSCMatrix,SymmSCMatrix);
 class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     // standard overrides
@@ -286,12 +368,11 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void diagonalize(RefDiagSCMatrix& eigvals,RefSCMatrix& eigvecs);
     int n();
     RefSCDimension dim();
-    SCMatrixdouble operator()(int i,int j);
+    SymmSCMatrixdouble operator()(int i,int j);
     void print(ostream&);
     void print(const char*title=0,ostream&out=cout, int =10);
 };
 
-class DiagSCMatrix;
 SavableState_named_REF_dec(RefSSDiagSCMatrix,DiagSCMatrix);
 class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     // standard overrides
@@ -320,21 +401,18 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     void accumulate(RefDiagSCMatrix&);
     int n();
     RefSCDimension dim();
-    SCMatrixdouble operator()(int i);
-    SCMatrixdouble operator()(int i,int j);
+    DiagSCMatrixdouble operator()(int i);
     void print(ostream&);
     void print(const char*title=0,ostream&out=cout, int =10);
 };
 
 class SCVectordouble {
    friend class RefSCVector;
-   friend class RefSymmSCVector;
-   friend class RefDiagSCVector;
   private:
     RefSCVector vector;
     int i;
     
-    SCVectordouble(SCVector*,int,int);
+    SCVectordouble(SCVector*,int);
   public:
     SCVectordouble(SCVectordouble&);
     ~SCVectordouble();
@@ -345,8 +423,6 @@ class SCVectordouble {
 
 class SCMatrixdouble {
    friend class RefSCMatrix;
-   friend class RefSymmSCMatrix;
-   friend class RefDiagSCMatrix;
   private:
     RefSCMatrix matrix;
     int i;
@@ -356,6 +432,38 @@ class SCMatrixdouble {
   public:
     SCMatrixdouble(SCMatrixdouble&);
     ~SCMatrixdouble();
+    double operator=(double a);
+    operator double();
+    double val();
+};
+
+class SymmSCMatrixdouble {
+   friend class RefSymmSCMatrix;
+  private:
+    RefSymmSCMatrix matrix;
+    int i;
+    int j;
+    
+    SymmSCMatrixdouble(SymmSCMatrix*,int,int);
+  public:
+    SymmSCMatrixdouble(SCMatrixdouble&);
+    ~SymmSCMatrixdouble();
+    double operator=(double a);
+    operator double();
+    double val();
+};
+
+class DiagSCMatrixdouble {
+   friend class RefDiagSCMatrix;
+  private:
+    RefDiagSCMatrix matrix;
+    int i;
+    int j;
+    
+    DiagSCMatrixdouble(DiagSCMatrix*,int,int);
+  public:
+    DiagSCMatrixdouble(SCMatrixdouble&);
+    ~DiagSCMatrixdouble();
     double operator=(double a);
     operator double();
     double val();

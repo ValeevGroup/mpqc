@@ -1928,7 +1928,6 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   s.get(prune_grid_);
   s.get(gridtype_);
   s.get(npruned_partitions_);
-  s.get(user_defined_grids_);
   s.get(dynamic_grids_);
 
 //  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
@@ -1936,7 +1935,6 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
 //  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
 //  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
 //  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
-//  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
 //  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
 
@@ -1952,14 +1950,8 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
                                        double(0));
   s.get_array_double(Alpha_coeffs_[0], natomic_rows_*(npruned_partitions_-1));
 
-  if (user_defined_grids_) {
-      radial_user_.restore_state(s);
-      angular_user_.restore_state(s);
-    }
-  else {
-      radial_user_ = new EulerMaclaurinRadialIntegrator;
-      angular_user_ = new LebedevLaikovIntegrator;
-    }
+  radial_user_.restore_state(s);
+  angular_user_.restore_state(s);
 
   init_default_grids();    
   set_grids();
@@ -1969,9 +1961,6 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
 RadialAngularIntegrator::RadialAngularIntegrator()
 {
   weight_  = new BeckeIntegrationWeight;
-//  ExEnv::out() << "In Default Constructor" << endl;
-  radial_user_ = new EulerMaclaurinRadialIntegrator;
-  angular_user_ = new LebedevLaikovIntegrator;
   
   init_parameters();
   init_default_grids();
@@ -1985,10 +1974,6 @@ RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
   
   radial_user_ = keyval->describedclassvalue("radial");
   angular_user_ = keyval->describedclassvalue("angular");
-  if ( !(radial_user_.null()) && !(angular_user_.null()) ) user_defined_grids_ = 1;
-  else user_defined_grids_ = 0;
-  if (radial_user_.null()) radial_user_ = new EulerMaclaurinRadialIntegrator;
-  if (angular_user_.null()) angular_user_ = new LebedevLaikovIntegrator;
 
   weight_ = keyval->describedclassvalue("weight");
   if (weight_.null()) weight_ = new BeckeIntegrationWeight;
@@ -2021,7 +2006,6 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
 //  s.put(nr_points_[0], natomic_rows_*max_gridtype_);
 //  s.put(xcoarse_l_, natomic_rows_);
   s.put(npruned_partitions_);
-  s.put(user_defined_grids_);
   s.put(dynamic_grids_);
   s.put_array_double(Alpha_coeffs_[0],natomic_rows_*(npruned_partitions_-1));
   
@@ -2030,13 +2014,10 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
 //  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
 //  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
 //  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
-//  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
 //  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
-  if (user_defined_grids_) {
-      radial_user_.save_state(s);
-      angular_user_.save_state(s);
-    }
+  radial_user_.save_state(s);
+  angular_user_.save_state(s);
 }
 
 void
@@ -2045,7 +2026,6 @@ RadialAngularIntegrator::init_parameters(void)
 
   prune_grid_ = 1;
   gridtype_ = 3;
-  user_defined_grids_ = 0;
   npruned_partitions_ = 5;
   dynamic_grids_ = 1;
   max_gridtype_ = 6;
@@ -2316,7 +2296,7 @@ RadialAngularIntegrator::angular_grid_offset(int gridtype)
 RadialIntegrator *
 RadialAngularIntegrator::get_radial_grid(int charge)
 {
-  if (!user_defined_grids_) {
+  if (radial_user_.null()) {
 
       int select_grid;
       
@@ -2386,10 +2366,9 @@ RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
   else select_grid = gridtype_;
 
   //ExEnv::out << "RAI::get_angular_grid -> select_grid = " << select_grid;
-  //ExEnv::out << " prune_grid_ = " << prune_grid_
-  //     << "  user_defined_grids_ = " << user_defined_grids_ << endl;
+  //ExEnv::out << " prune_grid_ = " << prune_grid_ << endl;
   atomic_row = get_atomic_row(Z);
-  if (!user_defined_grids_) {
+  if (angular_user_.null()) {
       // Seleted Alpha's
       double *Alpha = Alpha_coeffs_[atomic_row];
       // gridtype_ will need to be adjusted for dynamic grids  
@@ -2401,7 +2380,6 @@ RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
       return angular_grid_[atomic_row][npruned_partitions_-1][select_grid]
           .pointer();
     }
-
   else {
       return angular_user_.pointer();
     }
@@ -2497,7 +2475,19 @@ RadialAngularIntegrator::print(ostream &o) const
 {
   o << node0 << indent << class_name() << ":" << endl;
   o << incindent;
-  if (!user_defined_grids_) {
+  if (radial_user_.nonnull()) {
+      cout << node0 << indent << "User defined radial grid:" << endl;
+      o << incindent;
+      radial_user_->print(o);
+      o << decindent;
+    }
+  if (angular_user_.nonnull()) {
+      cout << node0 << indent << "User defined angular grid:" << endl;
+      o << incindent;
+      angular_user_->print(o);
+      o << decindent;
+    }
+  if (angular_user_.null() || radial_user_.null()) {
       if (prune_grid_) o << node0 << indent << "Pruned ";
       switch (gridtype_) {
       case 0: o << node0 << "xcoarse"; break;
@@ -2509,10 +2499,6 @@ RadialAngularIntegrator::print(ostream &o) const
       default: o << node0 << "unknown"; break;
         }
       o << node0 << " grid employed" << endl;
-    }
-  else {
-      radial_user_->print(o);
-      angular_user_->print(o);
     }
   
   o << decindent;

@@ -388,7 +388,6 @@ class RadialAngularIntegrator: public DenIntegrator {
     int gridtype_;
     int **nr_points_, *xcoarse_l_;
     int npruned_partitions_;
-    int user_defined_grids_;
     double *grid_accuracy_;
     int dynamic_grids_;
     int natomic_rows_;

@@ -54,7 +54,7 @@ using namespace sc;
 
 #define SINGLE_THREAD_E123   0
 #define PRINT3Q 0
-#define PRINT4Q 0
+#define PRINT4Q 1
 #define PRINT_NUM_TE_TYPES 1
 #define WRITE_DOUBLES 0
 
@@ -322,7 +322,31 @@ TwoBodyMOIntsTransform_ixjy::compute()
     tim_exit("4. q.t.");    
 
     integral_ijsx = 0;
-    const double* integral_ijxy = (const double*) mem_->localdata();
+    double* integral_ijxy = (double*) mem_->localdata();
+
+    // Zero out nonsymmetric integrals -- Pitzer theorem in action
+    {
+      for (int i = 0; i<ni; i++) {
+        for (int j = 0; j<rank3; j++) {
+          int ij = i*rank3+j;
+          int ij_local = ij/nproc;
+          if (ij%nproc == me) {
+            const int ij_sym = mosym1[i+restart_orbital] ^ mosym3[j];
+            double* ijxy_ptr = integral_ijxy + ij_local*num_te_types_*ints_acc_->blocksize();
+            for(int te_type=0; te_type<num_te_types_; te_type++) {
+              for (int x = 0; x<rank2; x++) {
+                const int ijx_sym = ij_sym ^ mosym2[x];
+                for (int y = 0; y<rank4; y++, ijxy_ptr++) {
+                  if (ijx_sym ^ mosym4[y])
+                    *ijxy_ptr = 0.0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }    
+
 #if PRINT4Q
     {
       for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
@@ -345,7 +369,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
       }
     }
 #endif
-    
+
     // Push locally stored integrals to an accumulator
     // This could involve storing the data to disk or simply remembering the pointer
     tim_enter("MO ints store");

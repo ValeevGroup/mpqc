@@ -703,6 +703,9 @@ if test X$PARALLEL = Xyes; then
   AC_CHECK_LIB(mpi,p4_initenv)
   AC_CHECK_LIB(mpi,MPI2_RMA_init)
   AC_CHECK_LIB(pvm,exit)
+  if test ! X$ac_cv_lib_mpi_exit = Xyes ; then
+    AC_CHECK_LIB(mpich,exit)
+  fi
 
   AC_CHECK_LIB(nx,hrecv,[
     HAVE_HRECV=yes
@@ -750,6 +753,10 @@ fi
 AC_SUBST(HAVE_PERF)
 
 if test X$ac_cv_lib_mpi_exit = Xyes -a X$ac_cv_header_mpi_h = Xyes; then
+  HAVE_MPI=yes
+  AC_DEFINE(HAVE_MPI)
+fi
+if test X$ac_cv_lib_mpich_exit = Xyes -a X$ac_cv_header_mpi_h = Xyes; then
   HAVE_MPI=yes
   AC_DEFINE(HAVE_MPI)
 fi

@@ -105,9 +105,11 @@ Molecule::Molecule(const RefKeyVal&input) :
       int aangstroms = input->booleanvalue("angstrom");
       if (input->error() != KeyVal::OK) {
         aangstroms = input->booleanvalue("aangstrom");
-      } else if (input->error() != KeyVal::OK) {
+      }
+      if (input->error() != KeyVal::OK) {
         aangstroms = input->booleanvalue("angstroms");
-      } else if (input->error() != KeyVal::OK) {
+      }
+      if (input->error() != KeyVal::OK) {
         aangstroms = input->booleanvalue("aangstroms");
       }
         
@@ -138,8 +140,8 @@ Molecule::Molecule(const RefKeyVal&input) :
                           input->doublevalue("geometry",i,2)*conv,
                           labels = input->pcharvalue("atom_labels",i)
                           );
-          delete[] name;
-          delete[] labels;
+          if (name) delete[] name;
+          if (labels) delete[] labels;
           add_atom(i,ac);
         }
     }

@@ -2,6 +2,10 @@
 #ifndef _chemistry_qc_mpqc_h
 #define _chemistry_qc_mpqc_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 extern "C" {
 #include <stdio.h>
 #include <math/dmt/libdmt.h>

@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include "obwfn.h"
 
 #define CLASSNAME OneBodyWavefunction

@@ -2,6 +2,10 @@
 #ifndef _chemistry_qc_wfn_wfn_h
 #define _chemistry_qc_wfn_wfn_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <stdio.h>
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>

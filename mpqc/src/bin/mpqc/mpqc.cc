@@ -29,6 +29,8 @@
 #include <scconfig.h>
 #endif
 
+#include <scdirlist.h>
+
 #include <new.h>
 #include <string.h>
 #include <unistd.h>
@@ -64,10 +66,10 @@
 #include <chemistry/qc/mbpt/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
-#ifdef HAVE_CHEMISTRY_QC_CC
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC
 #  include <chemistry/qc/cc/linkage.h>
 #endif
-#ifdef HAVE_CHEMISTRY_QC_PSI
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
 #  include <chemistry/qc/psi/linkage.h>
 #endif
 

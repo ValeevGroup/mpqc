@@ -31,12 +31,13 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+include $(TOPDIR)/lib/Makedirlist
 
 SUBDIRS = basis oint3 intv3 wfn scf dft mbpt
-ifeq ($(HAVE_CHEMISTRY_QC_PSI),yes)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
 SUBDIRS := $(SUBDIRS) psi
 endif
-ifeq ($(HAVE_CHEMISTRY_QC_CC),yes)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
 SUBDIRS := $(SUBDIRS) cc
 endif
 

@@ -72,7 +72,7 @@ class MPSCF: public OneBodyWavefunction
     RefSCMatrix eigenvectors();
     double exchange_energy();
 
-    double occupation(int vectornum);
+    double occupation(int ir, int vectornum);
 
     int value_implemented();
     int gradient_implemented();

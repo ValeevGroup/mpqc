@@ -681,7 +681,7 @@ MPSCF::eigenvectors()
 }
 
 double
-MPSCF::occupation(int i)
+MPSCF::occupation(int ir, int i)
 {
   if (i < _ndocc) return 2.0;
   else if (i < _ndocc+_nsocc) return 1.0;

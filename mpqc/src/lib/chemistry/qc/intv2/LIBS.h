@@ -5,3 +5,4 @@ libintv2.LIBSUF
 #include <util/sgen/LIBS.h>
 #include <chemistry/qc/basis/LIBS.h>
 #include <chemistry/qc/oint2/LIBS.h>
+#include <chemistry/qc/intv3/LIBS.h>

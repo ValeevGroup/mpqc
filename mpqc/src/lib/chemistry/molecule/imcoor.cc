@@ -12,6 +12,10 @@ extern "C" {
 
 #include <math/topology/bitarray.h>
 
+#define DEFAULT_SIMPLE_TOLERANCE 1.0e-3
+
+#define USE_SVD 1
+
 static void add_bonds(RefSetIntCoor&, BitArray&, Molecule&);
 static void add_bends(RefSetIntCoor&, BitArray&, Molecule&);
 static void add_tors(RefSetIntCoor&, BitArray&, Molecule&);
@@ -20,7 +24,6 @@ static void add_out(RefSetIntCoor&, BitArray&, Molecule&);
 static int linear(Molecule&,int,int,int);
 static int hterminal(Molecule&, BitArray&, int);
 static int nearest_contact(int,Molecule&);
-
 
 ///////////////////////////////////////////////////////////////////////////
 // members of IntMolecularCoor
@@ -43,7 +46,7 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   update_bmat_(0),
   only_totally_symmetric_(1),
   symmetry_tolerance_(1.0e-5),
-  simple_tolerance_(1.0e-3),
+  simple_tolerance_(DEFAULT_SIMPLE_TOLERANCE),
   coordinate_tolerance_(1.0e-7),
   cartesian_tolerance_(1.0e-12),
   scale_bonds_(1.0),
@@ -64,7 +67,7 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
   update_bmat_(0),
   only_totally_symmetric_(1),
   symmetry_tolerance_(1.0e-5),
-  simple_tolerance_(1.0e-3),
+  simple_tolerance_(DEFAULT_SIMPLE_TOLERANCE),
   coordinate_tolerance_(1.0e-7),
   cartesian_tolerance_(1.0e-12),
   scale_bonds_(1.0),
@@ -267,7 +270,7 @@ IntMolecularCoor::init()
       double maxabs = given_fixed_coords.maxabs();
       int nstep = int(maxabs/max_update_disp_) + 1;
       given_fixed_coords.scale(1.0/nstep);
-      printf("IntMolecularCoor: displacing fixed coorindates to the"
+      printf("IntMolecularCoor: displacing fixed coordinates to the"
              " requested values in %d steps\n", nstep);
       for (int istep=1; istep<=nstep; istep++) {
           form_coordinates();
@@ -300,7 +303,188 @@ IntMolecularCoor::init()
                                "Nvar+Nconst");
 }
 
+static int
+count_nonzero(const RefSCVector &vec, double eps)
+{
+  int nz=0, i, n=vec.n();
+  for (i=0; i<n; i++) {
+      if (fabs(vec(i)) > eps) nz++;
+    }
+  return nz;
+}
+
+#if USE_SVD
+static RefSymmSCMatrix
+form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
+               const RefSCVector& geom,
+               double epsilon,
+               const RefSCDimension& dnatom3,
+               const RefSCMatrixKit& matrixkit,
+               RefSCMatrix& projection,
+               RefSCVector& totally_symmetric,
+               RefSCMatrix& K)
+{
+  // Compute the B matrix for the coordinates
+  RefSCDimension dcoor = matrixkit->dimension(coor->n());
+  RefSCMatrix B(dcoor, dnatom3);
+  coor->bmat(molecule, B);
+
+  // Project out the previously discovered internal coordinates
+  if (projection.nonnull()) {
+      B = B * projection;
+    }
+
+  // Compute the singular value decomposition of B
+  RefSCMatrix U(dcoor,dcoor);
+  RefSCMatrix V(dnatom3,dnatom3);
+  RefSCDimension min;
+  if (dnatom3.n()<dcoor.n()) min = dnatom3;
+  else min = dcoor;
+  int nmin = min.n();
+  RefDiagSCMatrix sigma(min);
+  B.svd(U,sigma,V);
+
+  // Compute the epsilon rank of B
+  int i, rank = 0;
+  for (i=0; i<nmin; i++) {
+      if (sigma(i) > epsilon) rank++;
+    }
+
+  RefSCMatrix SIGMA(dcoor, dnatom3);
+  SIGMA.assign(0.0);
+  for (i=0; i<nmin; i++) {
+      SIGMA(i,i) = sigma(i);
+    }
+
+  // return if there are no new coordinates
+  if (rank==0) return 0;
+
+  // Find an orthogonal matrix that spans the range of B
+  RefSCMatrix Ur;
+  RefSCDimension drank = matrixkit->dimension(rank);
+  if (rank) {
+      Ur = matrixkit->matrix(dcoor,drank);
+      Ur.assign_subblock(U,0, dcoor.n()-1, 0, drank.n()-1, 0, 0);
+    }
+
+  // Find an orthogonal matrix that spans the null space of B
+  int rank_tilde = dnatom3.n() - rank;
+  RefSCMatrix Vr_tilde;
+  RefSCDimension drank_tilde = matrixkit->dimension(rank_tilde);
+  if (rank_tilde) {
+      Vr_tilde = matrixkit->matrix(dnatom3,drank_tilde);
+      Vr_tilde.assign_subblock(V,0, dnatom3.n()-1, 0, drank_tilde.n()-1,
+                               0, drank.n());
+    }
+
+  // Find an orthogonal matrix that spans the null(B) perp
+  RefSCMatrix Vr;
+  if (rank) {
+      Vr = matrixkit->matrix(dnatom3,drank);
+      Vr.assign_subblock(V,0, dnatom3.n()-1, 0, drank.n()-1, 0, 0);
+    }
+
+  // compute the projection into the null space of B
+  RefSymmSCMatrix proj_nullspace_B;
+  if (rank_tilde) {
+      proj_nullspace_B = matrixkit->symmmatrix(dnatom3);
+      proj_nullspace_B.assign(0.0);
+      proj_nullspace_B.accumulate_symmetric_product(Vr_tilde);
+    }
+
+  // compute the projection into the null(B) perp
+  RefSymmSCMatrix proj_nullspace_B_perp;
+  if (rank) {
+      proj_nullspace_B_perp = matrixkit->symmmatrix(dnatom3);
+      proj_nullspace_B_perp.assign(0.0);
+      proj_nullspace_B_perp.accumulate_symmetric_product(Vr);
+    }
+
+  if (Ur.nonnull()) {
+      // totally_symmetric will be nonzero for totally symmetric coordinates
+      totally_symmetric = Ur.t() * B * geom;
+
+      int ntotally_symmetric = count_nonzero(totally_symmetric,0.001);
+      printf("found %d totally symmetric coordinates\n", ntotally_symmetric);
+
+      // compute the cumulative projection
+      if (projection.null()) {
+          projection = matrixkit->matrix(dnatom3,dnatom3);
+          projection->unit();
+        }
+      projection = projection * proj_nullspace_B;
+    }
+
+  // give Ur to caller
+  K = Ur;
+
+  return proj_nullspace_B_perp;
+}
+#endif // USE_SVD
+
 // this allocates storage for and computes K, Kfixed, and is_totally_symmetric
+#if USE_SVD
+void
+IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
+                                   RefSCDimension& dfixed,
+                                   RefSCMatrix& K,
+                                   RefSCMatrix& Kfixed,
+                                   int*& is_totally_symmetric)
+{
+  int i;
+
+  // The cutoff for whether or not a coordinate is considered totally symmetric
+  double ts_eps = 0.0001;
+
+  // The geometry will be needed to check for totally symmetric
+  // coordinates
+  RefSCVector geom(dnatom3_);
+  for(i=0; i < geom.n()/3; i++) {
+      geom(3*i) = molecule_->operator[](i).point()[0];
+      geom(3*i+1) = molecule_->operator[](i).point()[1];
+      geom(3*i+2) = molecule_->operator[](i).point()[2];
+    }
+
+  // this keeps track of the total projection for the b matrices
+  RefSCMatrix projection;
+  if (dfixed.n()) {
+      RefSCMatrix Ktmp;
+      RefSCVector totally_symmetric_fixed;
+      RefSymmSCMatrix null_bfixed_perp
+          = form_partial_K(fixed_, molecule_, geom, 0.001, dnatom3_,
+                           matrixkit_, projection, totally_symmetric_fixed,
+                           Ktmp);
+      // require that the epsilon rank equal the number of fixed coordinates
+      if (Ktmp.nrow() != dfixed.n()) {
+          fprintf(stderr, "ERROR: IntMolecularCoor: nfixed = %d rank = %d\n",
+                  dfixed.n(), Ktmp.ncol());
+          abort();
+        }
+      // check that fixed coordinates be totally symmetric
+      if (Ktmp.nrow() != count_nonzero(totally_symmetric_fixed, ts_eps)) {
+          fprintf(stderr, "WARNING: only %d of %d fixed coordinates are"
+                  "totally symmetric\n",
+                  count_nonzero(totally_symmetric_fixed, ts_eps), dfixed.n());
+        }
+
+      // Compute Kfixed
+      RefSCDimension dcoor = matrixkit_->dimension(all_->n());
+      RefSCMatrix B(dcoor, dnatom3_);
+      all_->bmat(molecule_, B);
+      Kfixed = B * null_bfixed_perp;
+    }
+
+  RefSCVector totally_symmetric_all;
+  form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
+                 projection, totally_symmetric_all, K);
+  int n_totally_symmetric_all = count_nonzero(totally_symmetric_all, ts_eps);
+  is_totally_symmetric = new int[K.ncol()];
+  for (i=0; i<K.ncol(); i++) {
+      if (fabs(totally_symmetric_all(i)) > ts_eps) is_totally_symmetric[i] = 1;
+      else is_totally_symmetric[i] = 0;
+    }
+}
+#else // USE_SVD
 void
 IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
                                    RefSCDimension& dfixed,
@@ -473,6 +657,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
         }
     }
 }
+#endif // USE_SVD
 
 IntMolecularCoor::~IntMolecularCoor()
 {
@@ -540,14 +725,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
 
   all_to_internal(old_internal);
 
-  // form the set of all coordinates
-  RefSetIntCoor variable_and_constant = new SetIntCoor();
-  variable_and_constant->add(variable_);
-  variable_and_constant->add(constant_);
-
-  RefSCMatrix bmat(dvc_,dnatom3_);
-  RefSymmSCMatrix bmbt(dvc_);
-  RefSymmSCMatrix bmbt_i;
+  RefSCMatrix internal_to_cart_disp;
   for (int step = 0; step < max_update_steps_; step++) {
       // compute the old internal coordinates
       all_to_internal(old_internal);
@@ -558,20 +736,68 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       RefSCElementOp op = maxabs;
       displacement.element_op(op);
       if (maxabs->result() < cartesian_tolerance_) {
+
+          constant_->update_values(molecule_);
+          variable_->update_values(molecule_);
+
           return 0;
         }
 
-      if ((update_bmat_ && (maxabs->result()>update_tolerance)) || step == 0) {
+      if ((update_bmat_ && (maxabs->result()>update_tolerance))
+          || internal_to_cart_disp.null()) {
+          int i;
+          RefSCMatrix bmat(dvc_,dnatom3_);
+
+          // form the set of all coordinates
+          RefSetIntCoor variable_and_constant = new SetIntCoor();
+          variable_and_constant->add(variable_);
+          variable_and_constant->add(constant_);
+
           // form the bmatrix
           variable_and_constant->bmat(molecule_,bmat);
+
+          // Compute the singular value decomposition of B
+          RefSCMatrix U(dvc_,dvc_);
+          RefSCMatrix V(dnatom3_,dnatom3_);
+          RefSCDimension min;
+          if (dnatom3_.n()<dvc_.n()) min = dnatom3_;
+          else min = dvc_;
+          int nmin = min.n();
+          RefDiagSCMatrix sigma(min);
+          bmat.svd(U,sigma,V);
+
+          // compute the epsilon rank of B
+          int rank = 0;
+          for (i=0; i<nmin; i++) {
+              if (fabs(sigma(i)) > 0.0001) rank++;
+            }
+
+          RefSCDimension drank = matrixkit_->dimension(rank);
+          RefDiagSCMatrix sigma_i(drank);
+          for (i=0; i<rank; i++) {
+              sigma_i(i) = 1.0/sigma(i);
+            }
+          RefSCMatrix Ur(dvc_, drank);
+          RefSCMatrix Vr(dnatom3_, drank);
+          Ur.assign_subblock(U,0, dvc_.n()-1, 0, drank.n()-1, 0, 0);
+          Vr.assign_subblock(V,0, dnatom3_.n()-1, 0, drank.n()-1, 0, 0);
+          internal_to_cart_disp = Vr * sigma_i * Ur.t();
+
+#if !USE_SVD
+          RefSymmSCMatrix bmbt(dvc_);
+          RefSymmSCMatrix bmbt_i;
+
           // form the initial inverse of bmatrix * bmatrix_t
           bmbt.assign(0.0);
           bmbt.accumulate_symmetric_product(bmat);
           bmbt_i = bmbt.gi();
+
+          internal_to_cart_disp = bmat.t() * bmbt_i;
+#endif // !USE_SVD
         }
 
       // compute the cartesian displacements
-      RefSCVector cartesian_displacement = bmat.t() * bmbt_i * displacement;
+      RefSCVector cartesian_displacement = internal_to_cart_disp*displacement;
       // update the geometry
       for (int i=0; i < dnatom3_.n(); i++) {
 #if OLD_BMAT
@@ -605,72 +831,16 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
 int
 IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 {
-  // get a reference to Molecule for convenience
-  Molecule& molecule = *(molecule_.pointer());
+  RefSCVector all_internal(dvc_);
 
-  // don't bother updating the bmatrix when the error is less than this
-  const double update_tolerance = 1.0e-6;
+  int i,j;
 
-  // compute the internal coordinate displacements
-  RefSCVector old_internal(dim_);
-
-  to_internal(old_internal);
-
-  // form the set of all coordinates
-  RefSetIntCoor variable_and_constant = new SetIntCoor();
-  variable_and_constant->add(variable_);
-  variable_and_constant->add(constant_);
-
-  RefSCMatrix bmat(dvc_,dnatom3_);
-  RefSymmSCMatrix bmbt(dvc_);
-  RefSymmSCMatrix bmbt_i;
-  for (int step = 0; step < max_update_steps_; step++) {
-      // compute the old internal coordinates
-      to_internal(old_internal);
-
-      // the displacements
-      RefSCVector displacement = new_internal - old_internal;
-      RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
-      RefSCElementOp op = maxabs;
-      displacement.element_op(op);
-      if (maxabs->result() < cartesian_tolerance_) {
-          return 0;
-        }
-
-      if ((update_bmat_ && (maxabs->result()>update_tolerance)) || step == 0) {
-          // form the bmatrix
-          variable_and_constant->bmat(molecule_,bmat);
-          // form the initial inverse of bmatrix * bmatrix_t
-          bmbt.assign(0.0);
-          bmbt.accumulate_symmetric_product(bmat);
-          bmbt_i = bmbt.gi();
-        }
-
-      // convert displacement to a displacement over all coordinates
-      RefSCVector vc_displacement(dvc_);
-      vc_displacement.assign(0.0);
-      int i;
-      for (i=0; i<variable_->n(); i++) {
-          vc_displacement(i) = displacement(i);
-        }
-
-      // compute the cartesian displacements
-      RefSCVector cartesian_displacement = bmat.t() * bmbt_i * vc_displacement;
-      // update the geometry
-      for (i=0; i < dnatom3_.n(); i++) {
-#if OLD_BMAT
-          molecule[i/3][i%3] += cartesian_displacement(i) * 1.88972666;
-#else        
-          molecule[i/3][i%3] += cartesian_displacement(i);
-#endif          
-        }
+  for (i=0; i<variable_->n(); i++) all_internal(i) = new_internal(i);
+  for (j=0; j<constant_->n(); i++,j++) {
+      all_internal(i) = constant_->coor(j)->value();
     }
 
-  fprintf(stderr,"WARNING: IntMolecularCoor"
-          "::to_cartesian(RefSCVector&new_internal):"
-          " too many iterations in geometry update\n");
-
-  return -1;
+  return all_to_cartesian(all_internal);
 }
 
 int
@@ -775,6 +945,12 @@ IntMolecularCoor::to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart)
   internal.assign(0.0);
   internal.accumulate_transform(bmbt*bmat,cart);
   return 0;
+}
+
+int
+IntMolecularCoor::nconstrained()
+{
+  return fixed_->n();
 }
 
 ///////////////////////////////////////////////////////////////////////////

@@ -60,7 +60,7 @@ class SavableState: public DescribedClass {
 
     //// save functions
 
-    // Save an object with unkown exact type.  Duplicated save_states
+    // Save an object with unknown exact type.  Duplicated save_states
     // for an object result in a single object being restored.
     void save_state(StateOut&);
 

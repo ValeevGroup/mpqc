@@ -78,10 +78,14 @@ static int update_hess=1;
 static int recalc_hess=0;
 static int use_gdiis=1;
 static double conv_crit=1.0e-6;
+static double conv_rmsf=1.0e-5;
+static double conv_maxf=4.0e-5;
 static int maxstep=50;
 static double maxstepsize=0.3;
 static int recalc_bmat=0;
 static int cartesians=0;
+
+static double cart_tol=1.0e-10;
 
 static double maxforce=0;
 static double rmsforce=0;
@@ -247,6 +251,16 @@ Geom_done_mpqc(RefKeyVal keyval)
 static void
 get_input(RefKeyVal keyval)
 {
+  if (keyval->exists("rms_force")) {
+    int conv = keyval->intvalue("rms_force");
+    conv_rmsf = pow(10.0,(double)-conv);
+    }
+
+  if (keyval->exists("max_force")) {
+    int conv = keyval->intvalue("max_force");
+    conv_maxf = pow(10.0,(double)-conv);
+    }
+
   if (keyval->exists("convergence")) {
     int conv = keyval->intvalue("convergence");
     conv_crit = pow(10.0,(double)-conv);
@@ -289,20 +303,28 @@ get_input(RefKeyVal keyval)
     gdiis_begin = pow(10.0,(double)-tmp);
     }
 
+  if (keyval->exists("cartesian_tolerance")) {
+    int tmp = keyval->intvalue("cartesian_tolerance");
+    cart_tol = pow(10.0,(double)-tmp);
+    }
+
   redundant = keyval->booleanvalue("redundant");
   if (redundant > 0) justa1=0;
 
-  fprintf(outfp,"\n  intco:use_gdiis      = %d\n",use_gdiis);
-  fprintf(outfp,"  intco:redundant      = %d\n",redundant);
-  fprintf(outfp,"  intco:cartesians     = %d\n",cartesians);
-  fprintf(outfp,"  intco:update_hessian = %d\n",update_hess);
-  fprintf(outfp,"  intco:recalc_hessian = %d\n",recalc_hess);
-  fprintf(outfp,"  intco:recalc_bmat    = %d\n",recalc_bmat);
-  fprintf(outfp,"  intco:ngdiis         = %d\n",ngdiis);
-  fprintf(outfp,"  intco:maxstep        = %d\n",maxstep);
-  fprintf(outfp,"  intco:maxstepsize    = %g\n",maxstepsize);
-  fprintf(outfp,"  intco:convergence    = %g\n",conv_crit);
-  fprintf(outfp,"  intco:gdiis_begin    = %g\n\n",gdiis_begin);
+  fprintf(outfp,"\n  intco:use_gdiis           = %d\n",use_gdiis);
+  fprintf(outfp,"  intco:redundant           = %d\n",redundant);
+  fprintf(outfp,"  intco:cartesians          = %d\n",cartesians);
+  fprintf(outfp,"  intco:update_hessian      = %d\n",update_hess);
+  fprintf(outfp,"  intco:recalc_hessian      = %d\n",recalc_hess);
+  fprintf(outfp,"  intco:recalc_bmat         = %d\n",recalc_bmat);
+  fprintf(outfp,"  intco:ngdiis              = %d\n",ngdiis);
+  fprintf(outfp,"  intco:maxstep             = %d\n",maxstep);
+  fprintf(outfp,"  intco:maxstepsize         = %g\n",maxstepsize);
+  fprintf(outfp,"  intco:cartesian_tolerance = %g\n",cart_tol);
+  fprintf(outfp,"  intco:convergence         = %g\n",conv_crit);
+  fprintf(outfp,"  intco:max_force           = %g\n",conv_maxf);
+  fprintf(outfp,"  intco:rms_force           = %g\n",conv_rmsf);
+  fprintf(outfp,"  intco:gdiis_begin         = %g\n\n",gdiis_begin);
 }
 
 static int
@@ -457,6 +479,25 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
     idisp = -1*(hessian * iforce);
     }
 
+  // test the size of the displacement, and the other convergence criteria
+  // return if converged without changing the geometry...that's just plain
+  // stupid, ed
+  if (((idisp * iforce).maxval()/2) < conv_crit &&
+      rmsforce < conv_rmsf &&
+      maxforce < conv_maxf) {
+
+    fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",
+			      (idisp * iforce).maxval()/2);
+    fprintf(outfp," max force               = %15.10g\n",maxforce);
+    fprintf(outfp," rms force               = %15.10g\n",rmsforce);
+    fprintf(outfp,"\n the geometry is converged\n");
+
+    fprintf(outfp,"\n converged geometry\n");
+    mol.print(outfp);
+
+    return GEOM_DONE;
+    }
+
  // scale the displacement vector if too large
   {
      double tot=0,scal=1.0;
@@ -527,10 +568,7 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
     centers->center[i].r[2] = mol[i][2];
     }
 
-  if (((idisp * iforce).maxval()/2) < conv_crit)
-    return GEOM_DONE;
-  else
-    return GEOM_COMPUTE_GRADIENT;
+  return GEOM_COMPUTE_GRADIENT;
   }
 
 
@@ -634,7 +672,7 @@ Foo:
       tv1[i] = p->value();
       }
 
-    if(tv2.maxval() < 1.0e-10) break;
+    if(tv2.maxval() < cart_tol) break;
 
     step++;
 

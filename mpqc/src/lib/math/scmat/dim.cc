@@ -262,6 +262,9 @@ SCBlockInfo::print(ostream&o)
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
+
+
+
 SCDimension::SCDimension(const char* name):
   n_(0)
 {
@@ -275,6 +278,13 @@ SCDimension::SCDimension(int n, const char* name):
   if (name) name_ = strcpy(new char[strlen(name)+1], name);
   else name_ = 0;
   blocks_ = new SCBlockInfo(n, 1);
+}
+
+SCDimension::SCDimension(const RefSCBlockInfo& b, const char* name):
+  n_(b->nelem()), blocks_(b)
+{
+  if (name) name_ = strcpy(new char[strlen(name)+1], name);
+  else name_ = 0;
 }
 
 SCDimension::SCDimension(int n,

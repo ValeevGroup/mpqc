@@ -50,7 +50,7 @@ main(int argc, char *argv[])
   Ref<KeyVal> kv(new ParsedKeyVal(infile));
 
   const char *keyword = argc>2?argv[2]:"molecule";
-  Ref<Molecule> mol = kv->describedclassvalue(keyword);
+  Ref<Molecule> mol; mol << kv->describedclassvalue(keyword);
 
   const char *ctol = argc>3?argv[3]:"1.0e-4";
   double tol = atof(ctol);

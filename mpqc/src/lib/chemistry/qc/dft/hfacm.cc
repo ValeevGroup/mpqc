@@ -141,13 +141,20 @@ HFACM::compute_energy()
   integrator_->integrate(functional_);
   tim_exit("integrate");
 
-  cout << node0 << indent
+  cout << node0
+       << indent
        << scprintf("E1           = % 14.10f", e1) << endl
+       << indent
        << scprintf("Enn          = % 14.10f", enn) << endl
+       << indent
        << scprintf("Ec           = % 14.10f", ec) << endl
+       << indent
        << scprintf("Ex           = % 14.10f", ex) << endl
+       << indent
        << scprintf("E(rho)       = % 14.10f", integrator_->value()) << endl
+       << indent
        << scprintf("E1+Enn+Ec+Ex = % 14.10f", e1+enn+ec+ex) << endl
+       << indent
        << scprintf("Escf         = % 14.10f", escf) << endl;
 
   return e1 + enn + ec + a0_*ex + integrator_->value();
@@ -193,6 +200,28 @@ int
 HFACM::nelectron()
 {
   return scf_->nelectron();
+}
+
+void
+HFACM::print(ostream&o) const
+{
+  o << node0 << indent << "HFACM Parameters:" << endl;
+  o << incindent;
+  o << node0 << indent << scprintf("a0 = %12.8f", a0_) << endl;
+  Wavefunction::print(o);
+  o << node0 << indent << "Functional:" << endl;
+  o << incindent;
+  functional_->print(o);
+  o << decindent;
+  o << node0 << indent << "Integrator:" << endl;
+  o << incindent;
+  integrator_->print(o);
+  o << decindent;
+  o << node0 << indent << "SCF:" << endl;
+  o << incindent;
+  scf_->print(o);
+  o << decindent;
+  o << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

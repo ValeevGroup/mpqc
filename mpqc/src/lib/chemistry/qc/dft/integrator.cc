@@ -675,7 +675,8 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
       point_count_total+=point_count;
     }
 
-    cout << " Total integration points = " << point_count_total << endl;
+     cout << node0 << indent
+          << "Total integration points = " << point_count_total << endl;
     //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
 
     delete[] theta_quad_points;
@@ -691,6 +692,18 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
     delete[] oorab[0];
     delete[] oorab;
     oorab=0;
+}
+
+void
+Murray93Integrator::print(ostream &o) const
+{
+  o << node0 << indent << "Murray93Integrator Parameters:" << endl;
+  o << incindent;
+  o << node0 << indent << scprintf("nr     = %5d", nr_) << endl;
+  o << node0 << indent << scprintf("ntheta = %5d", ntheta_) << endl;
+  o << node0 << indent << scprintf("nphi   = %5d", nphi_) << endl;
+  o << node0 << indent << scprintf("Ktheta = %5d", Ktheta_) << endl;
+  o << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

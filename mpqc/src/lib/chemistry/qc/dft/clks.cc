@@ -106,7 +106,18 @@ CLKS::gradient_implemented() const
 void
 CLKS::print(ostream&o) const
 {
+  o << node0 << indent << "Closed Shell Kohn-Sham (CLKS) Parameters:" << endl;
+  o << incindent;
   CLSCF::print(o);
+  o << node0 << indent << "Functional:" << endl;
+  o << incindent;
+  functional_->print(o);
+  o << decindent;
+  o << node0 << indent << "Integrator:" << endl;
+  o << incindent;
+  integrator_->print(o);
+  o << decindent;
+  o << decindent;
 }
 
 RefSymmSCMatrix

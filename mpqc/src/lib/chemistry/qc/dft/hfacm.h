@@ -68,6 +68,8 @@ class HFACM: public Wavefunction {
 
     int value_implemented() const;
     int gradient_implemented() const;
+
+    void print(ostream&o=cout) const; 
 };
 
 #endif

@@ -111,6 +111,8 @@ class Murray93Integrator: public DenIntegrator {
     void integrate(const RefDenFunctional &,
                    const RefSymmSCMatrix& densa =0,
                    const RefSymmSCMatrix& densb =0);
+
+    void print(ostream & =cout) const;
 };
 
 #endif

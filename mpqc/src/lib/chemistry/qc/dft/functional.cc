@@ -281,6 +281,21 @@ SumDenFunctional::point(const PointInputData &id,
     }
 }
 
+void
+SumDenFunctional::print(ostream& o) const
+{
+  o << node0
+    << indent << "Sum of Functionals:" << endl;
+  o << incindent;
+  for (int i=0; i<n_; i++) {
+      o << node0 << indent << scprintf("%+18.16f",coefs_[i]) << endl;
+      o << incindent;
+      funcs_[i]->print(o);
+      o << decindent;
+    }
+  o << decindent;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // LSDAXFunctional
 
@@ -467,16 +482,14 @@ XalphaFunctional::XalphaFunctional(StateIn& s):
 
 XalphaFunctional::XalphaFunctional()
 {
-  alpha_ = 0.75;
+  alpha_ = 0.70;
   factor_ = alpha_ * 2.25 * pow(3.0/(4.*M_PI), 1.0/3.0);
 }
 
 XalphaFunctional::XalphaFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
-  alpha_ = keyval->doublevalue("alpha");
-  if (keyval->error() != KeyVal::OK)
-      alpha_ = 0.75;
+  alpha_ = keyval->doublevalue("alpha", KeyValValuedouble(0.70));
   factor_ = alpha_ * 2.25 * pow(3.0/(4.*M_PI), 1.0/3.0);
 }
 
@@ -515,6 +528,13 @@ XalphaFunctional::point(const PointInputData &id,
           od.df_dgamaa = od.df_dgamab = od.df_dgambb = 0;
         }
     }
+}
+
+void
+XalphaFunctional::print(ostream& o) const
+{
+  o << node0
+    << indent << scprintf("XalphaFunctional: alpha = %12.8f", alpha_) << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

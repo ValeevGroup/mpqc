@@ -145,6 +145,8 @@ class SumDenFunctional: public DenFunctional {
     int need_density_gradient();
 
     void point(const PointInputData&, PointOutputData&);
+
+    void print(ostream& =cout) const;
 };
 
 /** The LSDAXFunctional computes energies and densities
@@ -207,6 +209,8 @@ class XalphaFunctional: public DenFunctional {
     void save_data_state(StateOut &);
 
     void point(const PointInputData&, PointOutputData&);
+
+    void print(ostream& =cout) const;
 };
 
 /** The Becke88Functional computes energies and densities

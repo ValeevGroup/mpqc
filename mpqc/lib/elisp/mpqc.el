@@ -26,40 +26,79 @@
   (toggle-read-only 1)
   )
 
+(defvar mpqc-classtype-face 'mpqc-classtype-face
+  "Face for names of classes in MPQC output.")
+(make-face mpqc-classtype-face)
+(set-face-foreground mpqc-classtype-face "Green")
+
+(defvar mpqc-key-face 'mpqc-key-face
+  "Face for keys in MPQC output.")
+(make-face mpqc-key-face)
+(make-face-bold mpqc-key-face)
+(set-face-foreground mpqc-key-face "Cyan")
+
 (defvar mpqc-success-face 'mpqc-success-face
   "Face for usable mpqc output.")
 (make-face mpqc-success-face)
-(make-face-bold mpqc-success-face)
-(set-face-foreground mpqc-success-face "Cyan")
+(set-face-foreground mpqc-success-face "Green")
+
+(defvar mpqc-coor-face 'mpqc-coor-face
+  "Face for names of simple internal coordinates in MPQC output.")
+(make-face mpqc-coor-face)
+(make-face-bold mpqc-coor-face)
+(set-face-foreground mpqc-coor-face "Green")
 
 (defvar mpqc-info-face 'mpqc-info-face
-  "Face for informational mpqc output.")
+  "Face for informational messages in MPQC output.")
 (make-face mpqc-info-face)
-(make-face-bold mpqc-info-face)
-(set-face-foreground mpqc-info-face "Green")
+(set-face-foreground mpqc-info-face "Orange")
 
 (defvar mpqc-warning-face 'mpqc-warning-face
   "Face for warnings in MPQC output.")
 (make-face mpqc-warning-face)
-(set-face-foreground mpqc-warning-face "Orange")
-(set-face-underline-p mpqc-warning-face t)
+(set-face-foreground mpqc-warning-face "Red")
+
+(defvar mpqc-error-face 'mpqc-error-face
+  "Face for errors in MPQC output.")
+(make-face mpqc-error-face)
+(make-face-bold mpqc-error-face)
+(set-face-foreground mpqc-error-face "Red")
+
+(defvar mpqc-plain-face 'mpqc-plain-face
+  "Face for plain MPQC output.")
+(make-face mpqc-plain-face)
+(set-face-foreground mpqc-plain-face "White")
 
 (defvar mpqc-font-lock-keywords
-  '(("converged scf energy.*" . mpqc-success-face)
-    ("Converged.*Internal Coordinates" . mpqc-success-face)
-    ("Nonconverged.*Internal Coordinates" . mpqc-warning-face)
-    ("Fixed.*Internal Coordinates" . mpqc-warning-face)
-    ("Initial.*Internal Coordinates" . mpqc-info-face)
-    ("Updated.*Internal Coordinates" . mpqc-info-face)
-    ("internal coordinates" . mpqc-info-face)
-    ("max of 1/2 idisp.*" . mpqc-info-face)
+  '(
+    (".*have been met.*" . mpqc-success-face)
+    (".*iter.*$" . mpqc-plain-face)
+    ("<.*>" . mpqc-classtype-face)
+    ("\"[^\"\n]+\"" . font-lock-string-face)
+    ("\\(.*::.*\\) *=\\(.*\\)" (1 mpqc-info-face) (2 mpqc-success-face))
+    ("\\(total scf energy\\) = \\(.*\\)"
+     (1 mpqc-info-face) (2 mpqc-success-face))
+    ("\\(nuclear repulsion energy\\) = \\(.*\\)"
+     (1 mpqc-info-face) (2 mpqc-success-face))
+    ("\\(taking step of size\\) \\(.*\\)"
+     (1 mpqc-info-face) (2 mpqc-success-face))
+    ("\\(Value of the .*\\): \\(.*\\)"
+     (1 mpqc-info-face) (2 mpqc-success-face))
+    ("\\(\\(HOMO\\|LUMO\\) is\\) \\(.*\\) = \\(.*\\)"
+     (1 mpqc-info-face) (3 mpqc-key-face) (4 mpqc-success-face))
+    ("\\(\\(Max\\|RMS\\) .*\\):" (1 mpqc-info-face))
+    ("{ *\\([A-Za-z0-9_\.*+-/ ]*\\>\\) *} *=" (1 mpqc-key-face))
+    ("\\([A-Za-z0-9_\.*+-/]*\\>\\) *=" (1 mpqc-key-face))
+    (" no$" . mpqc-warning-face)
+    (" yes$" . mpqc-success-face)
+    (".*has converged.*" . mpqc-success-face)
+    (".*has NOT converged.*" . mpqc-error-face)
     ("DEBUG.*" . mpqc-warning-face)
     ("WARNING.*" . mpqc-warning-face)
     ("NOTICE.*" . mpqc-warning-face)
-    ("Too many geometry.*" . mpqc-warning-face)
-    ("TORS" . mpqc-info-face)
-    ("BEND" . mpqc-info-face)
-    ("STRE" . mpqc-info-face)
-    ("OUTP" . mpqc-info-face)
+    ("TORS" . mpqc-coor-face)
+    ("BEND" . mpqc-coor-face)
+    ("STRE" . mpqc-coor-face)
+    ("OUTP" . mpqc-coor-face)
     )
   "Default expressions to highlight in MPQC mode.")

@@ -1,5 +1,35 @@
+//
+// surfst.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
+#include <stdio.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
+
 #include <math/scmat/matrix.h>
 #include <math/isosurf/surf.h>
 #include <math/isosurf/triRAVLMap.h>
@@ -41,8 +71,8 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
   int ntriangle = _triangles.length();
 
   if (_verbose) {
-      printf("TriangulatedSurface::remove_slender_triangles:\n");
-      printf("initial: ");
+      cout << "TriangulatedSurface::remove_slender_triangles:" << endl
+           << "initial: ";
       topology_info();
     }
 
@@ -86,8 +116,9 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
           for (j=0; j<3; j++) {
               l[j] = tri->edge(j)->straight_length();
               if (l[j] <= 0.0) {
-                  fprintf(stderr,"TriangulatedSurface::"
-                          "remove_slender_triangles: bad edge length\n");
+                  cerr << "TriangulatedSurface::"
+                       << "remove_slender_triangles: bad edge length"
+                       << endl;
                   abort();
                 }
               l2[j] = l[j]*l[j];
@@ -320,10 +351,10 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
                              pix_to_index[(Pix)t->vertex(2).pointer()]);
             }
           if (_verbose) {
-              printf("PASS = %04d: ", pass);
+              cout << scprintf("PASS = %04d: ", pass);
             }
           else {
-              printf("PASS = %04d\n", pass);
+              cout << scprintf("PASS = %04d\n", pass);
             }
           render->render(poly);
           pass++;
@@ -339,7 +370,7 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
       _vertices |= new_vertices;
 
       if (_verbose) {
-          printf("intermediate: ");
+          cout << "intermediate: ";
           topology_info();
         }
 
@@ -381,8 +412,15 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
     }
 
   if (_verbose) {
-      printf("final: ");
+      cout << "final: ";
       topology_info();
     }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

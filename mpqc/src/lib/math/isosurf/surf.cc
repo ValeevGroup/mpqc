@@ -1,3 +1,29 @@
+//
+// surf.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma implementation
@@ -359,7 +385,7 @@ TriangulatedSurface::add_vertex(const RefVertex&t)
       _vertex_to_index[ix] = i;
     }
   if (_index_to_vertex.length() != _vertex_to_index.length()) {
-      fprintf(stderr,"TriangulatedSurface::add_vertex: length mismatch\n");
+      cerr << "TriangulatedSurface::add_vertex: length mismatch" << endl;
       abort();
     }
 }
@@ -375,7 +401,7 @@ TriangulatedSurface::add_edge(const RefEdge&t)
       _edge_to_index[ix] = i;
     }
   if (_index_to_edge.length() != _edge_to_index.length()) {
-      fprintf(stderr,"TriangulatedSurface::add_edge: length mismatch\n");
+      cerr << "TriangulatedSurface::add_edge: length mismatch" << endl;
       abort();
     }
 }
@@ -760,8 +786,8 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval):
 {
   vol_ = keyval->describedclassvalue("volume");
   if (keyval->error() != KeyVal::OK) {
-      fprintf(stderr,"TriangulatedImplicitSurface(const RefKeyVal&keyval): "
-              "requires \"volume\"\n");
+      cerr << "TriangulatedImplicitSurface(const RefKeyVal&keyval): "
+           << "requires \"volume\"" << endl;
       abort();
     }
 
@@ -822,3 +848,10 @@ TriangulatedImplicitSurface::init()
 TriangulatedImplicitSurface::~TriangulatedImplicitSurface()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -1,8 +1,35 @@
+//
+// triangle.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/isosurf/triangle.h>
 #include <math/scmat/vector3.h>
@@ -93,7 +120,7 @@ Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
        || e[1]->vertex(1-_orientation1) != e[2]->vertex(_orientation2)
        || e[2]->vertex(1-_orientation2) != e[0]->vertex(_orientation0))
     {
-      fprintf(stderr,"Triangle: given edges that don't form a triangle\n");
+      cerr << "Triangle: given edges that don't form a triangle" << endl;
       abort();
     }
 
@@ -215,8 +242,8 @@ void
 Triangle::set_order(int order, const RefVolume&vol, double isovalue)
 {
   if (order > max_order) {
-      fprintf(stderr,"Triangle::set_order: max_order = %d but order = %d\n",
-              max_order, order);
+      cerr << scprintf("Triangle::set_order: max_order = %d but order = %d\n",
+                       max_order, order);
       abort();
     }
 
@@ -225,7 +252,7 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
   if (edge(0)->order() != order
       ||edge(1)->order() != order
       ||edge(2)->order() != order) {
-      fprintf(stderr,"Triangle::set_order: edge order doesn't match\n");
+      cerr << "Triangle::set_order: edge order doesn't match" << endl;
       abort();
     }
 
@@ -390,7 +417,7 @@ GaussTriangleIntegrator::_castdown(const ClassDesc*cd)
 GaussTriangleIntegrator::GaussTriangleIntegrator(const RefKeyVal& keyval):
   TriangleIntegrator(keyval)
 {
-  printf("Created a GaussTriangleIntegrator with n = %d\n", n());
+  cout << "Created a GaussTriangleIntegrator with n = " << n() << endl;
   init_rw(n());
   init_coef();
 }
@@ -487,7 +514,7 @@ GaussTriangleIntegrator::init_rw(int order)
       set_w(6, w(4));
     }
   else {
-      fprintf(stderr,"GaussTriangleIntegrator: invalid order %d\n",order);
+      cerr << "GaussTriangleIntegrator: invalid order " << order << endl;
       abort();
     }
 
@@ -500,3 +527,10 @@ GaussTriangleIntegrator::init_rw(int order)
 GaussTriangleIntegrator::~GaussTriangleIntegrator()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

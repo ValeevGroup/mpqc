@@ -1,11 +1,38 @@
+//
+// shape.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma implementation
 #endif
 
 extern "C" {
+# include <stdio.h>
 # include <math.h>
-  }
+}
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -75,7 +102,7 @@ Shape::compute()
   get_x(r);
   if (do_gradient()) {
       if (!gradient_implemented()) {
-          fprintf(stderr,"Shape::compute: gradient not implemented\n");
+          cerr << "Shape::compute: gradient not implemented" << endl;
           abort();
         }
       SCVector3 v;
@@ -84,7 +111,7 @@ Shape::compute()
     }
   else if (do_value()) set_value(distance_to_surface(r));
   if (do_hessian()) {
-      fprintf(stderr,"Shape::compute(): can't do hessian yet\n");
+      cerr << "Shape::compute(): can't do hessian yet" << endl;
       abort();
     }
 }
@@ -366,9 +393,9 @@ UncappedTorusHoleShape::in_plane_sphere(
     }
 
   U_perp.normalize();
-  //printf("A: "); A.print();
-  //printf("U_perp: "); U_perp.print();
-  //printf("R_AB: "); R_AB.print();
+  //cout << "A: "; A.print();
+  //cout << "U_perp: "; U_perp.print();
+  //cout << "R_AB: "; R_AB.print();
 
   double r_AB = sqrt(R_AB.dot(R_AB));
   double r_A = _s1.radius();
@@ -379,12 +406,12 @@ UncappedTorusHoleShape::in_plane_sphere(
   double a = ((r_Ar*r_Ar - r_Br*r_Br)/(2.0*r_AB*r_AB)) + 0.5;
   double b = sqrt(r_Ar*r_Ar - a*a*r_AB*r_AB);
 
-  //printf("r_Ar = %f, r_AB = %f\n",r_Ar,r_AB);
-  //printf("a = %f, b = %f\n",a,b);
+  //cout << scprintf("r_Ar = %f, r_AB = %f\n",r_Ar,r_AB);
+  //cout << scprintf("a = %f, b = %f\n",a,b);
 
   P = A + a * R_AB + b * U_perp;
-  //printf("a*R_AB: "); (a*R_AB).print();
-  //printf("b*U_perp: "); (b*U_perp).print();
+  //cout << "a*R_AB: "; (a*R_AB).print();
+  //cout << "b*U_perp: "; (b*U_perp).print();
 }
 
 void
@@ -500,7 +527,7 @@ ReentrantUncappedTorusHoleShape::ReentrantUncappedTorusHoleShape(double r,
       sb2m4ac = 0.0;
     }
   else {
-      fprintf(stderr,"ReentrantUncappedTorusHoleShape:: imaginary point\n");
+      cerr << "ReentrantUncappedTorusHoleShape:: imaginary point" << endl;
       abort();
     }
   double zA = (minus_b - sb2m4ac)/(2.0*a);
@@ -724,13 +751,13 @@ Uncapped5SphereExclusionShape::
   double h = sqrt(h2);
   if (h<r()) {
       _reentrant = 1;
-      //printf("WARNING: throwing out reentrant shape\n");
+      //cout << "WARNING: throwing out reentrant shape" << endl;
       //_solution_exists = 0;
       //return;
     }
   else {
       _reentrant = 0;
-      //printf("WARNING: throwing out nonreentrant shape\n");
+      //cout << "WARNING: throwing out nonreentrant shape" << endl;
       //_solution_exists = 0;
       //return;
     }
@@ -766,7 +793,7 @@ Uncapped5SphereExclusionShape::
     }
   else _folded = 0;
   
-  //printf("r = %14.8f, h = %14.8f\n",r(),h);
+  //cout << scprintf("r = %14.8f, h = %14.8f\n",r(),h);
   //M.print();
   //D[0].print();
   //D[1].print();
@@ -869,7 +896,7 @@ Uncapped5SphereExclusionShape::
     }
 
 #if 0 // test code
-  printf("Uncapped5SphereExclusionShape: running some tests\n");
+  cout << "Uncapped5SphereExclusionShape: running some tests" << endl;
   verbose = 1;
 
   FILE* testout = fopen("testout.vect", "w");
@@ -901,14 +928,14 @@ Uncapped5SphereExclusionShape::
   for (ii = 0; ii<nvert; ii++) {
       SCVector3 position = (D[0] - middle) * scalefactor + middle;
       double d = distance_to_surface(position);
-      printf("d = %f\n", d);
+      cout << scprintf("d = %f\n", d);
       if (d<0.0) fprintf(testout,"1.0 0.0 0.0 0.5\n");
       else fprintf(testout,"0.0 0.0 1.0 0.5\n");
       scalefactor += scalefactor_inc;
     }
 
   fclose(testout);
-  printf("testout.vect written\n");
+  cout << "testout.vect written" << endl;
 
   verbose = 0;
 #endif // test code
@@ -919,7 +946,7 @@ Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
 {
   SCVector3 Xv(X);
 
-  if (verbose) printf("point %14.8f %14.8f %14.8f\n",X(0),X(1),X(2));
+  if (verbose) cout << scprintf("point %14.8f %14.8f %14.8f\n",X(0),X(1),X(2));
 
   // The folded case isn't handled correctly here, so use
   // the less efficient distance_to_surface routine.
@@ -939,7 +966,7 @@ Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
       if (w <= 0.0) return 1;
     }
 
-  if (verbose) printf("is_inside\n");
+  if (verbose) cout << "is_inside" << endl;
 
   return 0;
 }
@@ -973,26 +1000,25 @@ Uncapped5SphereExclusionShape::
   else side = 0;
 
   if (verbose) {
-      printf("distance_to_surface: folded = %d,"
-             " side = %d\n",
-             _folded, side);
-      printf("XM = "); XM.print();
-      printf("MD[0] = "); MD[0].print();
-      printf("MD[0].dot(XM) = %f\n",MD[0].dot(XM));
+      cout << scprintf("distance_to_surface: folded = %d, side = %d\n",
+                       _folded, side);
+      cout << "XM = "; XM.print();
+      cout << "MD[0] = "; MD[0].print();
+      cout << "MD[0].dot(XM) = " << MD[0].dot(XM) << endl;
     }
 
   SCVector3 XD = Xv - D[side];
   double u = BDxCD[side].dot(XD)/BDxCDdotAD[side];
-  if (verbose) printf("u = %14.8f\n", u);
+  if (verbose) cout << scprintf("u = %14.8f\n", u);
   if (u <= 0.0) return infinity;
   double v = CDxAD[side].dot(XD)/CDxADdotBD[side];
-  if (verbose) printf("v = %14.8f\n", v);
+  if (verbose) cout << scprintf("v = %14.8f\n", v);
   if (v <= 0.0) return infinity;
   double w = ADxBD[side].dot(XD)/ADxBDdotCD[side];
-  if (verbose) printf("w = %14.8f\n", w);
+  if (verbose) cout << scprintf("w = %14.8f\n", w);
   if (w <= 0.0) return infinity;
   double rXD = XD.norm();
-  if (verbose) printf("r() - rXD = %14.8f\n", r() - rXD);
+  if (verbose) cout << scprintf("r() - rXD = %14.8f\n", r() - rXD);
   if (rXD <= r()) {
       if (!_reentrant) return r() - rXD;
       // this shape is reentrant
@@ -1013,10 +1039,10 @@ Uncapped5SphereExclusionShape::
                                                   MD[side],
                                                   IABD[side][0],
                                                   IABD[side][1])) {
-              //printf("XD: "); XD.print();
-              //printf("MD[%d]: ",i); MD[i].print();
-              //printf("IABD[%d][0]: ",i); IABD[i][0].print();
-              //printf("IABD[%d][1]: ",i); IABD[i][1].print();
+              //cout << scprintf("XD: "); XD.print();
+              //cout << scprintf("MD[%d]: ",i); MD[i].print();
+              //cout << scprintf("IABD[%d][0]: ",i); IABD[i][0].print();
+              //cout << scprintf("IABD[%d][1]: ",i); IABD[i][1].print();
               return closest_distance(XD,(SCVector3*)IABD[side],2,grad);
             }
           if (_intersects_BC
@@ -1073,7 +1099,7 @@ Uncapped5SphereExclusionShape::
         }
     }
 
-  if (verbose) printf("returning -1.0\n");
+  if (verbose) cout << "returning -1.0" << endl;
   return -1.0;
 }
 
@@ -1199,3 +1225,10 @@ UnionShape::gradient_implemented()
     }
   return 1;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

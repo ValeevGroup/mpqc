@@ -1,3 +1,31 @@
+//
+// surfse.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
+
+#include <util/misc/formio.h>
 
 #include <math/scmat/matrix.h>
 #include <math/isosurf/surf.h>
@@ -30,8 +58,8 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
   int ntriangle = _triangles.length();
 
   if (_verbose) {
-      printf("TriangulatedSurface::remove_short_edges:\n");
-      printf("initial: ");
+      cout << "TriangulatedSurface::remove_short_edges:" << endl
+           << "initial: ";
       topology_info();
     }
 
@@ -206,12 +234,12 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
                   RefEdge e2 = new_edge_map[v0];
                   RefEdge e3 = new_edge_map[v1];
                   if (e1.null() || e2.null() || e3.null()) {
-                      fprintf(stderr,
-                              "TriangulatedSurface::remove_short_edges: "
-                              "building new triangle but edges are null:\n");
-                      if (e1.null()) fprintf(stderr,"  e1\n");
-                      if (e2.null()) fprintf(stderr,"  e2\n");
-                      if (e3.null()) fprintf(stderr,"  e3\n");
+                      cerr << "TriangulatedSurface::remove_short_edges: "
+                           << "building new triangle but edges are null:"
+                           << endl;
+                      if (e1.null()) cerr << "  e1" << endl;
+                      if (e2.null()) cerr << "  e2" << endl;
+                      if (e3.null()) cerr << "  e3" << endl;
                       abort();
                     }
                   // Compute the correct orientation of e1 within the new
@@ -230,7 +258,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
                   RefTriangle newtri(newTriangle(e1,e2,e3,orientation));
                   new_triangles.add(newtri);
                 }
-              //printf("WARNING: only one short edge removed\n");
+              //cout << "WARNING: only one short edge removed" << endl;
               //break;
             }
         }
@@ -248,7 +276,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
         }
 
       deleted_edges_length = deleted_edges.length();
-      //printf("WARNING: one pass short edge removal\n");
+      //cout << "WARNING: one pass short edge removal" << endl;
       //deleted_edges_length = 0; // do one pass
     } while(deleted_edges_length != 0);
 
@@ -262,7 +290,14 @@ TriangulatedSurface::remove_short_edges(double length_cutoff)
     }
 
   if (_verbose) {
-      printf("final: ");
+      cout << "final: ";
       topology_info();
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -58,6 +58,8 @@ static RefMolecule mol;
 static RefMolecularCoor coor;
 static RefHessianUpdate update;
 
+static RefSCMatrixKit matrixkit;
+
 static RefSymmSCMatrix hessian;
 static RefSCVector xn;
 static RefSCVector gn;
@@ -174,6 +176,8 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval,
 {
   int i;
 
+  matrixkit = SCMatrixKit::default_matrixkit();
+
  // create a new keyval which adds :intco to the search list 
   RefKeyVal keyval = new AggregateKeyVal(
       new PrefixKeyVal(":intco",topkeyval),
@@ -211,13 +215,13 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval,
     di = coor->dim();
 
    // create the inverted hessian 
-    hessian = di->create_symmmatrix();
+    hessian = matrixkit->symmmatrix(di);
     coor->guess_hessian(hessian);
     if (!efc) hessian = hessian.gi();
 
-    xn = di->create_vector();
-    gn = di->create_vector();
-    cart_grad = dc->create_vector();
+    xn = matrixkit->vector(di);
+    gn = matrixkit->vector(di);
+    cart_grad = matrixkit->vector(dc);
 
     coor->to_internal(xn);
     gn->assign(0.0);
@@ -232,10 +236,10 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval,
         update.save_state(so);
         dc.save_state(so);
         di.save_state(so);
-        xn.save_state(so);
-        gn.save_state(so);
-        cart_grad.save_state(so);
-        hessian.save_state(so);
+        xn.save(so);
+        gn.save(so);
+        cart_grad.save(so);
+        hessian.save(so);
       }
   }  else {
     STATEIN si(geomfile,"r+");
@@ -246,10 +250,14 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval,
     update.restore_state(si);
     dc.restore_state(si);
     di.restore_state(si);
-    xn.restore_state(si);
-    gn.restore_state(si);
-    cart_grad.restore_state(si);
-    hessian.restore_state(si);
+    xn = matrixkit->vector(di);
+    xn.restore(si);
+    gn = matrixkit->vector(di);
+    gn.restore(si);
+    cart_grad = matrixkit->vector(dc);
+    cart_grad.restore(si);
+    hessian = matrixkit->symmmatrix(di);
+    hessian.restore(si);
 
    // make sure molecule and mol refer to the same object
     molecule = mol;
@@ -349,7 +357,7 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval,
   rmsforce = sqrt(rmsforce/conv_grad.n());
 
   // update the inverse hessian
-  RefNLP2 nlp = 0;
+  RefFunction nlp = 0;
   update->update(hessian,nlp,xn,gn);
 
   // possibly transform to a new coordinate system
@@ -377,7 +385,7 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval,
   hessian.print("hessian after");
 #endif
 
-  RefSCVector xdisp(hessian.dim());
+  RefSCVector xdisp(hessian.dim(),matrixkit);
   
   if (!efc) {
     // take the Newton-Raphson step
@@ -385,8 +393,8 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval,
   } else {
     // begin efc junk
     // first diagonalize hessian
-    RefSCMatrix evecs(hessian.dim(),hessian.dim());
-    RefDiagSCMatrix evals(hessian.dim());
+    RefSCMatrix evecs(hessian.dim(),hessian.dim(),matrixkit);
+    RefDiagSCMatrix evals(hessian.dim(),matrixkit);
 
     hessian.diagonalize(evals,evecs);
     //evals.print("hessian eigenvalues");
@@ -562,10 +570,10 @@ Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval,
       update.save_state(so);
       dc.save_state(so);
       di.save_state(so);
-      xn.save_state(so);
-      gn.save_state(so);
-      cart_grad.save_state(so);
-      hessian.save_state(so);
+      xn.save(so);
+      gn.save(so);
+      cart_grad.save(so);
+      hessian.save(so);
     }
 
   return GEOM_COMPUTE_GRADIENT;

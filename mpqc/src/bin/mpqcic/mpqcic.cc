@@ -604,7 +604,7 @@ main(int argc, char *argv[])
         if (mynode0()==0) {
           fprintf(outfile,"\n");
 
-          RefSCVector gradv(Geom_dim_natom3());
+          RefSCVector gradv(Geom_dim_natom3(), gbs->matrixkit());
           
           int i,j,ij;
           for (j=ij=0; j < gradient.n2; j++) {

@@ -537,7 +537,10 @@ main(int argc, char *argv[])
       RefSCVector gradv = mole->get_cartesian_gradient();
       molfreq->set_gradient(i, gradv);
 
-      StateOutBin so(freqfile);
+      const char *freqckptfile = freqfile;
+      if (grp->me() > 0) freqckptfile = devnull;
+
+      StateOutBin so(freqckptfile);
       molfreq->checkpoint_displacements(so);
     }
     molfreq->original_geometry();

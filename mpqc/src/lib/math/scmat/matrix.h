@@ -131,6 +131,7 @@ class SCElementSquareRoot: virtual public SCDiagElementOp,
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   public:
+    SCElementSquareRoot();
     SCElementSquareRoot(double a);
     SCElementSquareRoot(StateIn&);
     ~SCElementSquareRoot();
@@ -147,6 +148,7 @@ class SCElementInvert: virtual public SCDiagElementOp,
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   public:
+    SCElementInvert();
     SCElementInvert(double a);
     SCElementInvert(StateIn&);
     ~SCElementInvert();

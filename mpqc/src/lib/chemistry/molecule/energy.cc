@@ -42,7 +42,7 @@ ugly_CTOR_hack_get_keyval(const RefKeyVal&keyval)
       RefSCDimension dim;
       if (!keyval->exists("coor")) {
           RefMolecule mol = keyval->describedclassvalue("molecule");
-          dim = new LocalSCDimension(mol->natom()*3);
+          dim = mol->dim_natom3();
         }
       else {
           RefMolecularCoor coor = keyval->describedclassvalue("coor");

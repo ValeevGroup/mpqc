@@ -439,7 +439,7 @@ RedundantCartesianIter::next()
 {
   int i;
   for (i=0; i<l_; i++) {
-      if (axis_[i] == 2) axis_[i] == 0;
+      if (axis_[i] == 2) axis_[i] = 0;
       else {
           axis_[i]++;
           return;

@@ -15,7 +15,6 @@ class PetiteList {
     int _nshell;
     int _ng;
 
-    RefMolecule _molecule;
     RefGaussianBasisSet _gbs;
     
     char *_p1;        // p1[n] is 1 if shell n is in the group P1
@@ -23,7 +22,6 @@ class PetiteList {
                      // into
     int **_shell_map; // shell_map[n][g] is the shell that symop g maps shell n
                      // into
-    int **_function_map;
     char *_lamij;     // see Dupuis & King, IJQC 11,613,(1977)
 
     inline int ioff(int i) const { return i*(i+1)>>1; }
@@ -32,10 +30,10 @@ class PetiteList {
     
   public:
     PetiteList();
-    PetiteList(const RefMolecule&, const RefGaussianBasisSet&);
+    PetiteList(const RefGaussianBasisSet&);
     ~PetiteList();
 
-    void init(const RefMolecule&, const RefGaussianBasisSet&);
+    void init(const RefGaussianBasisSet&);
 
     int in_p1(int n) const { return (int) _p1[n]; }
     int atom_map(int n, int g) const { return _atom_map[n][g]; }

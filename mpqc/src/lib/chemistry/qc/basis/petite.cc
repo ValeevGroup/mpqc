@@ -8,80 +8,12 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/petite.h>
-
-////////////////////////////////////////////////////////////////////////////
-
-class Bfn {
-  private:
-    int _num;
-    Point a;
-
-  public:
-    int& num() { return _num; }
-    double& operator[](int i) { return a[i]; }
-    Point transform(const SymmetryOperation& so) const;
-    void print() { printf("%5d ",_num); a.print(); }
-};
-    
-inline Point
-Bfn::transform(const SymmetryOperation& so) const
-{
-  Point ret;
-  for (int ii=0; ii < 3; ii++) {
-    ret[ii] = 0;
-    for (int jj=0; jj < 3; jj++)
-      ret[ii] += so(ii,jj) * a[jj];
-  }
-
-  return ret;
-}
-
-class Shell {
-  private:
-    int _num;
-    int _am;
-    int _nbf;
-    Bfn *bfns;
-  public:
-    Shell(int m, int a, int n) : _num(m), _am(a), _nbf(n) { bfns = new Bfn[_nbf]; }
-    ~Shell() { delete[] bfns; }
-
-    int am() const { return _am; }
-    int nbf() const { return _nbf; }
-    int num() const { return _num; }
-    Bfn& operator[](int i) { return bfns[i]; }
-    void print() {
-      printf("  %5d am = %d:\n",_num,_am);
-      for (int i=0; i < _nbf; i++) {
-        printf("    ");
-        bfns[i].print();
-      }
-    }
-};
-    
-class Atom {
-  private:
-    int _nsh;
-    Shell **_shells;
-  public:
-    Atom(int n) : _nsh(n) { _shells = new Shell*[_nsh]; }
-
-    int nsh() { return _nsh; }
-    Shell& operator[](int i) { return *_shells[i]; }
-    Shell*& operator()(int i) { return _shells[i]; }
-
-    void print() {
-      for (int i=0; i < _nsh; i++)
-        _shells[i]->print();
-    }
-};
-    
+#include <chemistry/qc/basis/rot.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
 PetiteList::PetiteList()
 {
-  _molecule=0;
   _gbs=0;
   _natom=0;
   _nshell=0;
@@ -92,9 +24,9 @@ PetiteList::PetiteList()
   _lamij=0;
 }
 
-PetiteList::PetiteList(const RefMolecule& mol, const RefGaussianBasisSet &gbs)
+PetiteList::PetiteList(const RefGaussianBasisSet &gbs)
 {
-  init(mol,gbs);
+  init(gbs);
 }
 
 PetiteList::~PetiteList()
@@ -117,7 +49,6 @@ PetiteList::~PetiteList()
     delete[] _shell_map;
   }
 
-  _molecule=0;
   _gbs=0;
   _natom=0;
   _nshell=0;
@@ -139,20 +70,23 @@ atom_num(Point& p, Molecule& mol)
 }
 
 void
-PetiteList::init(const RefMolecule& _mol, const RefGaussianBasisSet &_gb)
+PetiteList::init(const RefGaussianBasisSet &gb)
 {
-  _molecule = _mol;
-  _gbs = _gb;
+  _gbs = gb;
     
-  CharacterTable ct = _molecule->point_group().char_table();
-  Molecule& mol = *_molecule.pointer();
+  // grab references to the Molecule and BasisSet for convenience
   GaussianBasisSet& gbs = *_gbs.pointer();
+  Molecule& mol = *gbs.molecule().pointer();
+
+  // create the character table for the point group
+  CharacterTable ct = mol.point_group().char_table();
   
+  // initialize private members
   _ng = ct.order();
-  
   _natom = mol.natom();
   _nshell = gbs.nshell();
 
+  // allocate storage for arrays
   _p1 = new char[_nshell];
   _lamij = new char[ioff(_nshell)];
 
@@ -205,18 +139,25 @@ PetiteList::init(const RefMolecule& _mol, const RefGaussianBasisSet &_gb)
 
     // we want the highest numbered shell in a group of equivalent shells
     for (int g=0; g < _ng; g++)
-      if (_shell_map[i][g] > i)
+      if (_shell_map[i][g] > i) {
         leave=1;
+        break;
+      }
     
     if (leave)
       continue;
     
+    // i is in the group P1
     _p1[i] = 1;
 
     for (int j=0; j <= i; j++) {
       int ij = ioff(i)+j;
       int nij = 0;
 
+      // test to see if IJ is in the group P2, if it is, then set lambda(ij)
+      // equal to the number of equivalent shell pairs.  This number is
+      // just the order of the group divided by the number of times ij is
+      // mapped into itself
       leave=0;
       for (int g=0; g < _ng; g++) {
         int gi = _shell_map[i][g];
@@ -237,71 +178,39 @@ PetiteList::init(const RefMolecule& _mol, const RefGaussianBasisSet &_gb)
     }
   }
 
-  _function_map = new int*[gbs.nbasis()];
-  for (int i=0; i < gbs.nbasis(); i++)
-    _function_map[i] = new int[_ng];
-  
-  for (int i=0; i < mol.natom(); i++) {
-    for (int si=0; si < gbs.nshell_on_center(i); si++) {
-      int shell_i = gbs.shell_on_center(i,si);
-      
-      for (int fi=0; fi < gbs(i,si).nfunction(); fi++) {
-        int func_i = gbs.shell_to_function(shell_i)+fi;
-
-        for (int g=0; g < _ng; g++) {
-          int j=_atom_map[i][g];
-          _function_map[func_i][g] =
-            gbs.shell_to_function(gbs.shell_on_center(j,si))+fi;
-        }
-      }
-    }
-  }
-
-  // try to see how functions will transform under symops
-  Atom **atoms = new Atom*[_natom];
-  
-  int gns=0;
   for (int i=0; i < _natom; i++) {
-    int ns=0;
-    for (int si=0; si < gbs.nshell_on_center(i); si++)
-      ns += gbs(i,si).ncontraction();
+    for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+        int am=gbs(i,s).am(c);
 
-    atoms[i] = new Atom(ns);
-    Atom& ati = *atoms[i];
-
-    ns=0;
-    for (int si=0; si < gbs.nshell_on_center(i); si++) {
-      int shell_i = gbs.shell_on_center(i,si);
-      GaussianShell& gsi = gbs(i,si);
-      int func_i = gbs.shell_to_function(shell_i);
-      
-      int nf=0;
-      for (int nc=0; nc < gsi.ncontraction(); nc++) {
-        int amc = gsi.am(nc);
-        CartesianIter j(amc);
-        
-        ati(ns) = new Shell(shell_i,amc,gsi.nfunction(nc));
-                                  
-        Shell& sh = ati[ns];
-        
-        int f=0;
-        for (j.start(); j; j.next()) {
-          sh[f].num() = func_i+nf;
-          sh[f][0] = (double) j.a();
-          sh[f][1] = (double) j.b();
-          sh[f][2] = (double) j.c();
-          f++;
-          nf++;
-        }
-        ns++;
-        gns++;
+        Rotation r(am,so);
       }
     }
-
-    printf("atom %d:\n",i+1);
-    atoms[i]->print();
   }
-  printf("\n");
+
+  for (int g=0; g < _ng; g++) {
+    so = ct.symm_operation(g);
+    
+    printf("gamma(%d)\n",g+1);
+    printf("  p rotation\n");
+    Rotation rp(1,so);
+    rp.print(); 
+    printf("  d rotation\n");
+    Rotation rd(2,so);
+    rd.print(); 
+    printf("  f rotation\n");
+    Rotation rf(3,so);
+    rf.print(); 
+    printf("  g rotation\n");
+    Rotation rg(4,so);
+    rg.print(); 
+    printf("  h rotation\n");
+    Rotation rh(5,so);
+    rh.print(); 
+    printf("  i rotation\n");
+    Rotation ri(6,so);
+    ri.print(); 
+  }
 }
 
 void
@@ -327,15 +236,6 @@ PetiteList::print(FILE *o)
     fprintf(o,"    ");
     for (int g=0; g < _ng; g++)
       fprintf(o,"%5d ",_shell_map[i][g]);
-    fprintf(o,"\n");
-  }
-
-  fprintf(o,"\n");
-  fprintf(o,"  _function_map = \n");
-  for (int i=0; i < _gbs->nbasis(); i++) {
-    fprintf(o,"    ");
-    for (int g=0; g < _ng; g++)
-      fprintf(o,"%5d ",_function_map[i][g]);
     fprintf(o,"\n");
   }
 

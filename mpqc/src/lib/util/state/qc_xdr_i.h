@@ -1,8 +1,6 @@
 
-#ifndef PRAGMA_IMPLEMENTATION_BUG
 #ifdef __GNUC__
 #pragma interface
-#endif
 #endif
 
 #ifdef USE_INLINE
@@ -61,7 +59,7 @@ INLINE float QCXDR::byte_swap(float f)
 // and an 8 byte double
 INLINE double QCXDR::byte_swap(double d)
 {
-  union foo {
+  union food {
     double d;
     unsigned long l[2];
   } din,dout;

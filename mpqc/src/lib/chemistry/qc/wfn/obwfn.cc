@@ -53,12 +53,12 @@ OneBodyWavefunction::density()
 
   if (!_density.computed()) {
       RefSCMatrix vec = eigenvectors();
-      RefSCMatrix ortho(dimension(),dimension());
-      RefSCMatrix orthoi(dimension(),dimension());
+      RefSCMatrix ortho(basis_dimension(),basis_dimension());
+      RefSCMatrix orthoi(basis_dimension(),basis_dimension());
       basis()->ortho(ortho,orthoi);
       int nbasis = basis()->nbasis();
 
-      RefSymmSCMatrix newdensity(dimension());
+      RefSymmSCMatrix newdensity(basis_dimension());
       _density = newdensity;
       newdensity.assign(0.0);
       for (int k=0; k<nbasis; k++) {
@@ -68,7 +68,7 @@ OneBodyWavefunction::density()
               for (int j=0; j<=i; j++) {
                   newdensity.set_element(i,j,
                              newdensity.get_element(i,j)
-                             + occ*vec.get_element(i,k)*vec.get_element(j,k));
+                             + occ*vec.get_element(k,i)*vec.get_element(k,j));
                 }
             }
         }

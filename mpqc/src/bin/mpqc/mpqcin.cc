@@ -338,6 +338,9 @@ MPQCIn::parse_string(const char *s)
   SCFormIO::init_ostream(ostrs);
   ostrs << decindent;
   if (mol_.null()) error("no molecule given");
+  if (symmetry_.set() && strcmp(symmetry_.val(),"auto") != 0) {
+      mol_->symmetrize(new PointGroup(symmetry_.val()));
+    }
   ostrs << indent << "molecule<Molecule>: (" << endl;
   ostrs << incindent;
   ostrs << indent << "symmetry = "

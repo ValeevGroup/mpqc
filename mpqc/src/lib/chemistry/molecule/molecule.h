@@ -235,6 +235,9 @@ class Molecule: public SavableState
         abort will be called. */
     void symmetrize(double tol = 0.5);
 
+    /// Set the point group and then symmetrize.
+    void symmetrize(const RefPointGroup &pg, double tol = 0.5);
+
     /** This will try to carefully correct symmetry errors
         in molecules.  If any atom is out of place by more then
         tol, abort will be called. */

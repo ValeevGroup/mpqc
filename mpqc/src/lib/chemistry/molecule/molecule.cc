@@ -713,6 +713,22 @@ Molecule::atom_at_position(double *v, double tol) const
   return -1;
 }
 
+void
+Molecule::symmetrize(const RefPointGroup &pg, double tol)
+{
+  pg_ = new PointGroup(pg);
+
+  // translate to the origin of the symmetry frame
+  double r[3];
+  for (int i=0; i<3; i++) {
+      r[i] = -pg_->origin()[i];
+      pg_->origin()[i] = 0;
+    }
+  translate(r);
+
+  symmetrize(tol);
+}
+
 // We are given a molecule which may or may not have just the symmetry
 // distinct atoms in it.  We have to go through the existing set of atoms,
 // perform each symmetry operation in the point group on each of them, and

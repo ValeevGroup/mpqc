@@ -394,5 +394,12 @@ static SavableState * att_hack_job(StateIn&si)
 }
 #endif
 
+// Now that StateIn and StateOut are complete, some savable arrays of
+// basic types can be declared.
+
+SSB_ARRAY_dec(int);
+SSB_ARRAY2_dec(int);
+SSB_ARRAY_dec(double);
+SSB_ARRAY2_dec(double);
 
 #endif

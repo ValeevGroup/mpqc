@@ -1676,6 +1676,9 @@ LebedevAngularIntegrator::LebedevAngularIntegrator(const RefKeyVal& keyval)
   else if (npoints == 302) {
       set_N1(6); set_N2(2); set_N3(2);
     }
+  else if (npoints == 266) {
+      set_N1(5); set_N2(1); set_N3(2);
+    }
   else if (npoints == 194) {
       set_N1(4); set_N2(1); set_N3(1);
     }
@@ -1795,6 +1798,10 @@ LebedevAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 &point
   integration_point.x() = r*x_[iangular];
   integration_point.y() = r*y_[iangular];
   integration_point.z() = r*z_[iangular];
+
+  //point.theta() = acos(z_[iangular]);
+  //if (sin(point.theta()) < DBL_EPSILON) point.phi() = 0.0;
+  //else point.phi() = asin( y_[iangular]/sin(point.theta()) );
   return ( 4.0 * M_PI * lebedev_weights_[iangular] );
 }
 
@@ -1873,7 +1880,6 @@ LebedevAngularIntegrator::build_grid(void)
   else if (norder == 53 && npoints == 974) {
       for (i=0; i<6; i++) { if(i!=1) gen_point[i] = 1; }
       A1 = 0.1438294190e-3; A2 = 0.0; A3 = 0.1125772288e-2;
-
       l[0]  = 0.4292963545e-1; m[0]  = 0.9981553450e+0; B[0]  = 0.4948029342e-3;
       l[1]  = 0.1051426854e+0; m[1]  = 0.9888832243e+0; B[1]  = 0.7357990108e-3;
       l[2]  = 0.1750024867e+0; m[2]  = 0.9688902204e+0; B[2]  = 0.8889132771e-3;
@@ -1972,6 +1978,20 @@ LebedevAngularIntegrator::build_grid(void)
 
       u[0] = 0.251003475177; v[0] = 0.800072749407; w[0] = 0.544867737258; D[0] = 0.357154055427e-2;
       u[1] = 0.902442529533; v[1] = 0.412772408317; w[1] = 0.123354853258; D[1] = 0.339231220501e-2;
+    }
+  else if (norder == 27 && npoints == 266) {
+      for (i=0; i<6; i++) gen_point[i] = 1;
+      A1 = -1.31376912733e-3; A2 = -2.52272870489e-3; A3 = 4.18685388170e-3;
+      l[0] = 0.703937339159; m[0] = 0.0945750764036; B[0] = 5.31516797782e-3;
+      l[1] = 0.662033866370; m[1] = 0.351315128565;  B[1] = 4.25613135143e-3;
+      l[2] = 0.464744872642; m[2] = 0.753673939251;  B[2] = 4.11248239441e-3;
+      l[3] = 0.327742065497; m[3] = 0.886098344997;  B[3] = 3.59558489976e-3;
+      l[4] = 0.101252624857; m[4] = 0.9896948074629; B[4] = 4.04714237709e-3;
+
+      q[0] = 0.525731112119; r[0] = 0.850650808352; C[0] = 4.22958270065e-3;
+
+      u[0] = 0.819343388819; v[0] = 0.524493924092; w[0] = 0.231479015871; D[0] = 4.07146759383e-3;
+      u[1] = 0.939227929750; v[1] = 0.323348454269; w[1] = 0.115311196765; D[1] = 4.08091422578e-3;
     }
   else if (norder == 23 && npoints == 194) {
       for (i=0; i<6; i++) gen_point[i] = 1;
@@ -2089,13 +2109,13 @@ LebedevAngularIntegrator::generate_points(double weights[], int N, int nsets,
       switch(i) {
       case 0: p1 = u; p2 = v; p3 = w;
           break;
-      case 1: p1 = u; p2 = w; p3 = v;
+      case 1: p1 = w; p2 = u; p3 = v;
           break;
-      case 2: p1 = v; p2 = u; p3 = w;
+      case 2: p1 = v; p2 = w; p3 = u;
           break;
-      case 3: p1 = v; p2 = w; p3 = u;
+      case 3: p1 = v; p2 = u; p3 = w;
           break;
-      case 4: p1 = w; p2 = u; p3 = v;
+      case 4: p1 = u; p2 = w; p3 = v;
           break;
       case 5: p1 = w; p2 = v; p3 = u;
           break;
@@ -2119,6 +2139,9 @@ LebedevAngularIntegrator::expand(double array[], int offset, double weight)
       y_[point_count] = array[1];
       z_[point_count] = array[2];
       lebedev_weights_[point_count] = weight;
+      //cout << "(" << scprintf("%lf,%lf,%lf) w = %lf",
+      //     x_[point_count], y_[point_count], z_[point_count], lebedev_weights_[point_count])
+      //     << endl;
       set_point_count(point_count+1);
       return;
     }
@@ -2488,6 +2511,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       center = centers[icenter];
       int r_done = 0;
       for (ir=0; ir < nr[icenter]; ir++) {
+//      for (ir=nr[icenter]-1; ir >= 0; ir--) {
           double r = RadInt_->radial_value(ir, nr[icenter], bragg_radius[icenter]);
           point.r() = r;
           //dr_dqr2 = RadInt_->get_dr_dqr2();

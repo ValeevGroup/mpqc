@@ -35,9 +35,10 @@ comptest: comptest.cc $(TOPDIR)/lib/libmisc.a $(TOPDIR)/lib/libstate.a
 tregtime: tregtime.cc $(TOPDIR)/lib/libmisc.a $(TOPDIR)/lib/libref.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o tregtime
 
-bugtest: bugtest.cc $(TOPDIR)/lib/libmisc.a \
+bugtest: bugtest.cc \
 	$(TOPDIR)/lib/libkeyval.a $(TOPDIR)/lib/libstate.a \
-	$(TOPDIR)/lib/libclass.a \
+	$(TOPDIR)/lib/libclass.a $(TOPDIR)/lib/libmisc.a \
+        $(TOPDIR)/lib/libgroup.a \
 	$(TOPDIR)/lib/libcontainer.a $(TOPDIR)/lib/libref.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest
 

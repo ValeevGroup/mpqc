@@ -65,7 +65,7 @@ class CLKS: public CLSCF {
 
     RefSymmSCMatrix density();
   protected:
-    void ao_fock();
+    void ao_fock(double accuracy);
     double exc_;
     double scf_energy();
     RefSCExtrapData extrap_data();

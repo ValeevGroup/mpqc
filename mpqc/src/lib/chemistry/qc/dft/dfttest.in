@@ -1,5 +1,7 @@
 % -*- KeyVal -*-
 
+trap_fpes = 0
+
 h<Molecule>: (
   symmetry = d2h
   unit = angstrom
@@ -107,8 +109,11 @@ b3lyp<SumDenFunctional>: (
 )
 
 pbex<PBEXFunctional>: ()
+pbexo<PBEXFunctionalOld>: ()
 
 pbec<PBECFunctional>: ()
+
+pbeco<PBECFunctionalOld>: ()
 
 pbe<SumDenFunctional>: (
   coefs = [ 1.0 1.0 ]
@@ -118,8 +123,21 @@ pbe<SumDenFunctional>: (
     ]
 )
 
+mpw91_pw91x<mPW91XFunctional>: ( constants = "PW91" )
+mpw91_b88x<mPW91XFunctional>: ( constants = "B88" )
 pw91x<PW91XFunctional>: ()
 pw91c<PW91CFunctional>: ()
+pw91co<PW91CFunctionalOld>: ()
+b88x<SumDenFunctional>: (
+  coefs = [ 1.0 1.0 ]
+  funcs: [
+     <SlaterXFunctional>: ()
+     <Becke88XFunctional>: ()
+    ]
+)
+
+
+pw92lc<PW92LCFunctional>: ()
 
 pw91<SumDenFunctional>: (
   coefs = [ 1.0 1.0 ]
@@ -137,7 +155,7 @@ pbecnl<SumDenFunctional>: (
     ]
 )
 
-valtest = [ $:pbe $:pw91 $:pw91x $:pw91c]
+valtest = [ $:pbex  $:pbec ] %$:pw91c $:pw91co $:pw92lc $:pw91 $:b88x $:mpw91_b88x $:pbe $:pw91c]
 
 basis<GaussianBasisSet>: (
   %name = test

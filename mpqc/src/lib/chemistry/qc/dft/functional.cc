@@ -35,6 +35,12 @@
 #include <util/state/stateio.h>
 #include <chemistry/qc/dft/functional.h>
 
+#define MIN_DENSITY 1.e-14
+#define MIN_GAMMA 1.e-24
+#define MIN_SQRTGAMMA 1.e-12
+#define MAX_ZETA 1.-1.e-12
+#define MIN_ZETA -(1.-1.e-12)
+
 ///////////////////////////////////////////////////////////////////////////
 // PointInputData
 
@@ -260,7 +266,7 @@ DenFunctional::do_fd_point(PointInputData&id,
                            double&in,double&out,
                            double lower_bound, double upper_bound)
 {
-  double delta = 0.00000001;
+  double delta = 0.0000000001;
   PointOutputData tod;
   double insave = in;
 
@@ -308,7 +314,7 @@ DenFunctional::do_fd_point(PointInputData&id,
     }
   else {
       // the derivative is not well defined for this case
-      out = 0.0;
+      out = -135711.;
     }
   in = insave;
   id.compute_derived(1);
@@ -325,7 +331,7 @@ DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
   // fill in the energy at the initial density values
   point(id,od);
 
-  cout << scprintf("ra= %6.4f rb= %6.4f gaa= %6.4f gbb= %6.4f gab= % 6.4f",
+  cout << scprintf("ra=%7.5f rb=%7.5f gaa=%7.5f gbb=%7.5f gab= % 9.7f",
                    id.a.rho, id.b.rho, id.a.gamma, id.b.gamma, id.gamma_ab)
        << endl;
 
@@ -355,35 +361,43 @@ DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
   do_fd_point(tid, tid.gamma_ab, od.df_dgamma_ab, g_ab_lbound, g_ab_ubound);
 }
 
-static void
-check(const char *name, double fd, double an)
+static int
+check(const char *name, double fd, double an, const char *class_name)
 {
+  // -135711. flags an undefined FD
+  if (fd == -135711.) return 0;
+
   double err = fabs(fd - an);
   cout << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
        << endl;
   if ((fabs(an) > 0.03 && err/fabs(an) > 0.03)
       || ((fabs(an) <= 0.03) && err > 0.03)
       || isnan(an)) {
-      cout << scprintf("Error: %20s: fd = % 12.8f an = % 12.8f", name, fd, an)
+      cout << scprintf("Error: %12s: fd = % 12.8f an = % 12.8f (%s)",
+                       name, fd, an, class_name)
            << endl;
+      return 1;
     }
+  return 0;
 }
 
-void
+int
 DenFunctional::test(const PointInputData &id)
 {
   PointOutputData fd_od;
   fd_point(id,fd_od);
   PointOutputData an_od;
   point(id,an_od);
-  check("df_drho_a", fd_od.df_drho_a, an_od.df_drho_a);
-  check("df_drho_b", fd_od.df_drho_b, an_od.df_drho_b);
-  check("df_dgamma_aa", fd_od.df_dgamma_aa, an_od.df_dgamma_aa);
-  check("df_dgamma_ab", fd_od.df_dgamma_ab, an_od.df_dgamma_ab);
-  check("df_dgamma_bb", fd_od.df_dgamma_bb, an_od.df_dgamma_bb);
+  int r = 0;
+  r+=check("df_drho_a", fd_od.df_drho_a, an_od.df_drho_a, class_name());
+  r+=check("df_drho_b", fd_od.df_drho_b, an_od.df_drho_b, class_name());
+  r+=check("df_dgamma_aa",fd_od.df_dgamma_aa,an_od.df_dgamma_aa,class_name());
+  r+=check("df_dgamma_ab",fd_od.df_dgamma_ab,an_od.df_dgamma_ab,class_name());
+  r+=check("df_dgamma_bb",fd_od.df_dgamma_bb,an_od.df_dgamma_bb,class_name());
+  return r;
 }
 
-void
+int
 DenFunctional::test()
 {
   int i, j, k, l, m;
@@ -399,17 +413,20 @@ DenFunctional::test()
   for (i=0; i<3; i++) id.a.del_rho[i] = id.b.del_rho[i] = 0.0;
 
   double testrho[] = { 0.0, 0.001, 0.5, -1 };
-  double testgamma[] = { 0.0, 0.0001, 0.001, 0.5, -1 };
+  double testgamma[] = { 0.0, 0.001, 0.5, -1 };
   double testgammaab[] = { -0.5, 0.0, 0.5, -1 };
+
+  int ret = 0;
 
   cout << "Testing with rho_a == rho_b" << endl;
   for (i=0; testrho[i] != -1.0; i++) {
       if (testrho[i] == 0.0) continue;
       id.a.rho=testrho[i];
       for (j=0; testgamma[j] != -1.0; j++) {
+          if (testgamma[j] > testrho[i]) continue;
           id.a.gamma = testgamma[j];
           id.compute_derived(0);
-          test(id);
+          ret += test(id);
         }
     }
 
@@ -421,9 +438,11 @@ DenFunctional::test()
           id.b.rho=testrho[j];
           if (testrho[i]+testrho[j] == 0.0) continue;
           for (k=0; testgamma[k] != -1.0; k++) {
+              if (testgamma[k] > testrho[i]) continue;
               id.a.gamma = testgamma[k];
               double sqrt_gamma_a = sqrt(id.a.gamma);
               for (l=0; testgamma[l] != -1.0; l++) {
+                  if (testgamma[l] > testrho[j]) continue;
                   id.b.gamma = testgamma[l];
                   double sqrt_gamma_b = sqrt(id.b.gamma);
                   for (m=0; testgammaab[m] != -1.0; m++) {
@@ -440,12 +459,13 @@ DenFunctional::test()
                           id.gamma_ab = -sqrt_gamma_a*sqrt_gamma_b;
                         }
                       id.compute_derived(1);
-                      test(id);
+                      ret += test(id);
                     }
                 }
             }
         }
     }
+  return ret;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -713,6 +733,24 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[1] = new Becke88XFunctional;
           funcs_[2] = new LYPCFunctional;
         }
+      else if (!strcmp(name_,"SPZ81")) {
+          init_arrays(3);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[2] = new PZ81LCFunctional;
+        }
+      else if (!strcmp(name_,"BPW91")) {
+          init_arrays(3);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new PW91CFunctional;
+        }
+      else if (!strcmp(name_,"BP86")) {
+          init_arrays(4);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new P86CFunctional;
+          funcs_[3] = new PZ81LCFunctional;
+        }
       else if (!strcmp(name_,"B3LYP")) {
           init_arrays(4);
           a0_ = 0.2;
@@ -737,6 +775,18 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[2] = new PW91CFunctional;
           funcs_[3] = new PW92LCFunctional;
         }
+      else if (!strcmp(name_,"B3P86")) {
+          init_arrays(4);
+          a0_ = 0.2;
+          coefs_[0] = 0.8;
+          coefs_[1] = 0.72;
+          coefs_[2] = 0.81;
+          coefs_[3] = 1.0;
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new P86CFunctional;
+          funcs_[3] = new VWN3LCFunctional;
+        }
       else if (!strcmp(name_,"PBE")) {
           init_arrays(2);
           funcs_[0] = new PBEXFunctional;
@@ -745,6 +795,16 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
       else if (!strcmp(name_,"PW91")) {
           init_arrays(2);
           funcs_[0] = new PW91XFunctional;
+          funcs_[1] = new PW91CFunctional;
+        }
+      else if (!strcmp(name_,"mPW(PW91)PW91")) {
+          init_arrays(2);
+          funcs_[0] = new mPW91XFunctional(mPW91XFunctional::PW91);
+          funcs_[1] = new PW91CFunctional;
+        }
+      else if (!strcmp(name_,"mPWPW91")) {
+          init_arrays(2);
+          funcs_[0] = new mPW91XFunctional(mPW91XFunctional::mPW91);
           funcs_[1] = new PW91CFunctional;
         }
       else {
@@ -776,7 +836,7 @@ StdDenFunctional::print(ostream& o) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// LSDACFunctional: All local correlation functional inherit from this class.
+// LSDACFunctional: All local correlation functionals inherit from this class.
 // Coded by Matt Leininger
 #define CLASSNAME LSDACFunctional
 #define PARENTS public DenFunctional
@@ -2590,11 +2650,7 @@ P86CFunctional::point(const PointInputData &id,
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Perdew-Burke-Ernzerhof (PBE) Correlation Functional
-// J. P. Perdew, K. Burke, M. Ernzerhof, Phys. Rev. Lett., 77, 3865, 1996.
-// J. P. Perdew, K. Burke, Y. Wang, Phys. Rev. B, 54, 16533, 1996.
-// 
-// Coded by Matt Leininger
+// PBECFunctional
 
 #define CLASSNAME PBECFunctional
 #define HAVE_KEYVAL_CTOR
@@ -2618,10 +2674,10 @@ PBECFunctional::PBECFunctional(StateIn& s):
 
 PBECFunctional::PBECFunctional()
 {
-  gamma_ = 0.03109069086965489503494086371273;
-  beta_ = 0.06672455060314922;
   local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
+
+  init_constants();
 }
 
 PBECFunctional::PBECFunctional(const RefKeyVal& keyval):
@@ -2630,12 +2686,21 @@ PBECFunctional::PBECFunctional(const RefKeyVal& keyval):
   local_ = keyval->describedclassvalue("local");
   if (local_.null()) local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
+
+  init_constants();
+  gamma = keyval->doublevalue("gamma", KeyValValuedouble(gamma));
+  beta  = keyval->doublevalue("beta", KeyValValuedouble(beta));
+}
+
+void
+PBECFunctional::init_constants()
+{
   // in paper
-  //gamma_ = keyval->doublevalue("gamma", KeyValValuedouble(0.031091));
-  //beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.066725));
-  // in PBE.f
-  gamma_ = keyval->doublevalue("gamma", KeyValValuedouble(0.03109069086965489503494086371273));
-  beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.06672455060314922));
+  // gamma = 0.031091
+  // beta  = 0.066725
+  // in PBE.f:
+  gamma = 0.03109069086965489503494086371273;
+  beta  = 0.06672455060314922;
 }
 
 PBECFunctional::~PBECFunctional()
@@ -2662,138 +2727,235 @@ PBECFunctional::set_spin_polarized(int a)
   local_->set_spin_polarized(a);
 }
 
+double
+PBECFunctional::rho_deriv(double rho_a, double rho_b, double mdr,
+                          double ec_local, double ec_local_dra)
+{
+  if (mdr < MIN_SQRTGAMMA) {
+      return 0;
+    }
+
+  if (rho_b < MIN_DENSITY) {
+#define Log(x) log(x)
+#define Power(x,y) pow(x,y)
+#define Pi M_PI
+#define E M_E
+      double ec = ec_local;
+      double decdrhoa = ec_local_dra;
+      double rhoa = rho_a;
+      double rhob = rho_b;
+      double result =
+   (gamma*((-2*beta*Power(mdr,2)*Power(Pi,0.3333333333333333)*rhoa*
+           (Power(beta,2)*decdrhoa*Power(E,(4*ec)/gamma)*Power(mdr,4)*
+              Power(Pi,0.6666666666666666)*
+              (Power(6,0.6666666666666666)*beta*Power(E,(2*ec)/gamma)*
+                 Power(mdr,2)*Power(Pi,0.3333333333333333) - 
+                96*(-1 + Power(E,(2*ec)/gamma))*gamma*
+                 Power(rhoa,2.3333333333333335)) + 
+             896*Power(6,0.3333333333333333)*
+              Power(-1 + Power(E,(2*ec)/gamma),3)*Power(gamma,3)*
+              Power(rhoa,3.6666666666666665)*
+              (-(beta*Power(E,(2*ec)/gamma)*Power(mdr,2)*
+                   Power(Pi,0.3333333333333333)) + 
+                4*Power(6,0.3333333333333333)*(-1 + Power(E,(2*ec)/gamma))*
+                 gamma*Power(rhoa,2.3333333333333335))))/
+         (gamma*(Power(6,0.3333333333333333)*Power(beta,2)*
+              Power(E,(2*ec)/gamma)*Power(mdr,4)*Power(Pi,0.6666666666666666)\
+              - 8*Power(6,0.6666666666666666)*beta*
+              (-1 + Power(E,(2*ec)/gamma))*gamma*Power(mdr,2)*
+              Power(Pi,0.3333333333333333)*Power(rhoa,2.3333333333333335) + 
+             384*Power(-1 + Power(E,(2*ec)/gamma),2)*Power(gamma,2)*
+              Power(rhoa,4.666666666666667))*
+           (Power(6,0.3333333333333333)*Power(beta,2)*Power(E,(4*ec)/gamma)*
+              Power(mdr,4)*Power(Pi,0.6666666666666666) - 
+             8*Power(6,0.6666666666666666)*beta*Power(E,(2*ec)/gamma)*
+              (-1 + Power(E,(2*ec)/gamma))*gamma*Power(mdr,2)*
+              Power(Pi,0.3333333333333333)*Power(rhoa,2.3333333333333335) + 
+             384*Power(-1 + Power(E,(2*ec)/gamma),2)*Power(gamma,2)*
+              Power(rhoa,4.666666666666667))) + 
+        Log(1 + (beta*(-1 + Power(E,(2*ec)/gamma))*Power(mdr,2)*
+             Power(Pi/6.,0.3333333333333333)*
+             (Power(6,0.6666666666666666)*beta*Power(E,(2*ec)/gamma)*
+                Power(mdr,2)*Power(Pi,0.3333333333333333) - 
+               48*(-1 + Power(E,(2*ec)/gamma))*gamma*
+                Power(rhoa,2.3333333333333335)))/
+           (-(Power(6,0.3333333333333333)*Power(beta,2)*Power(E,(4*ec)/gamma)*
+                Power(mdr,4)*Power(Pi,0.6666666666666666)) + 
+             8*Power(6,0.6666666666666666)*beta*Power(E,(2*ec)/gamma)*
+              (-1 + Power(E,(2*ec)/gamma))*gamma*Power(mdr,2)*
+              Power(Pi,0.3333333333333333)*Power(rhoa,2.3333333333333335) - 
+             384*Power(-1 + Power(E,(2*ec)/gamma),2)*Power(gamma,2)*
+            Power(rhoa,4.666666666666667)))))/2.;
+      return result;
+    }
+  if (rho_a < MIN_DENSITY) {
+      // df_drho_a diverges for this case
+      return 0.0;
+    }
+
+  double ra0,ra1,ra2,ra3,ra4,ra5,ra6,ra7,ra8,ra9,ra10,ra11,ra12,ra13,ra14,
+      ra15,ra16,ra17,ra18,ra19,ra20,ra21,ra22,ra23,ra24,ra25,ra26,ra27,ra28,
+      ra29,ra30,ra31,ra32,ra33,ra34,ra35;
+  double dpbec_drho_a;
+
+  ra0 = rho_b+rho_a;
+  ra1 = -(1.0*rho_b)+rho_a;
+  ra2 = 1/pow(ra0,2.0);
+  ra3 = 1/pow(ra0,1.0);
+  ra4 = -(1.0*ra1*ra3)+1.0;
+  ra5 = ra1*ra3+1.0;
+  ra6 = (0.66666666666666663*(ra3-(1.0*ra1*ra2)))/pow(ra5,
+   0.33333333333333331)+(0.66666666666666663*(-(1.0*ra3)+ra1*ra2
+   ))/pow(ra4,0.33333333333333331);
+  ra7 = pow(ra5,0.66666666666666663)+pow(ra4,0.66666666666666663);
+  ra8 = pow(ra7,2.0);
+  ra9 = pow(mdr,2.0);
+  ra10 = 1/pow(ra0,2.3333333333333335);
+  ra11 = 1/ra8;
+  ra12 = pow(ra7,3.0);
+  ra13 = 1/ra12;
+  ra14 = ec_local;
+  ra15 = 1/pow(gamma,1.0);
+  ra16 = 1/exp(8.0*ra13*ra14*ra15);
+  ra17 = ra16-1.0;
+  ra18 = 1/pow(ra17,1.0);
+  ra19 = 0.25387282439081477*beta*ra9*ra10*ra11*ra18*ra15;
+  ra20 = ra19+1.0;
+  ra21 = pow(beta,2.0);
+  ra22 = pow(mdr,4.0);
+  ra23 = 1/pow(ra0,4.666666666666667);
+  ra24 = 1/pow(ra7,4.0);
+  ra25 = 1/pow(ra17,2.0);
+  ra26 = 1/pow(gamma,2.0);
+  ra27 = ra19+0.064451410964169495*ra21*ra22*ra23*ra24*ra25*ra26+
+   1.0;
+  ra28 = 1/pow(ra27,1.0);
+  ra29 = 0.25387282439081477*beta*ra9*ra10*ra11*ra20*ra28*ra15+1.0
+   ;
+  ra30 = log(ra29);
+  ra31 = 1/pow(ra0,3.3333333333333335);
+  ra32 = -(0.50774564878162953*beta*ra9*ra10*ra6*ra13*ra18*ra15);
+  ra33 = -(0.59236992357856788*beta*ra9*ra31*ra11*ra18*ra15);
+  ra34 = -(8.0*ra13*ec_local_dra*ra15)+24.0*ra6*
+   ra24*ra14*ra15;
+  ra35 = -(0.25387282439081477*beta*ra9*ra10*ra11*ra25*ra16*ra34*
+   ra15);
+  dpbec_drho_a = (0.125*ra0*ra12*(-((0.25387282439081477*beta*ra9*
+   ra10*ra11*ra20*(ra35+ra33+ra32-((0.12890282192833899*ra21*ra22*
+   ra23*ra24*ra16*ra34*ra26)/pow(ra17,3.0))-((0.30077325116612436*
+   ra21*ra22*ra24*ra25*ra26)/pow(ra0,5.666666666666667))-((
+   0.25780564385667798*ra21*ra22*ra23*ra6*ra25*ra26)/pow(ra7,5.0))
+   )*ra15)/pow(ra27,2.0))+0.25387282439081477*beta*ra9*ra10*ra11*
+   ra28*(ra35+ra33+ra32)*ra15-(0.59236992357856788*beta*ra9*ra31*
+   ra11*ra20*ra28*ra15)-(0.50774564878162953*beta*ra9*ra10*ra6*ra13*
+   ra20*ra28*ra15))*gamma)/pow(ra29,1.0)+0.125*ra12*ra30*gamma+
+   0.375*ra0*ra6*ra8*ra30*gamma;
+
+  return dpbec_drho_a;
+}
+
+double
+PBECFunctional::gab_deriv(double rho, double phi, double mdr, double ec_local)
+{
+  if (rho < MIN_DENSITY) return 0;
+
+  if (mdr < MIN_SQRTGAMMA) {
+      double result
+          = (beta*phi*pow(M_PI/3.,1./3.))/(8.*pow(rho,4./3.));
+      return result;
+    }
+
+  double g0,g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16;
+  double dpbec_dmdr;
+  g0 = pow(phi,3.0);
+  g1 = pow(beta,2.0);
+  g2 = pow(mdr,3.0);
+  g3 = 1/pow(phi,4.0);
+  g4 = 1/pow(rho,4.666666666666667);
+  g5 = 1/pow(gamma,1.0);
+  g6 = 1/exp(1.0*1.0/g0*ec_local*g5)-1.0;
+  g7 = 1/pow(g6,1.0);
+  g8 = 1/pow(g6,2.0);
+  g9 = 1/pow(gamma,2.0);
+  g10 = pow(mdr,2.0);
+  g11 = 1/pow(phi,2.0);
+  g12 = 1/pow(rho,2.3333333333333335);
+  g13 = 0.063468206097703692*beta*g10*g11*g12*g7*g5;
+  g14 = g13+0.0040282131852605934*g1*pow(mdr,4.0)*g3*g4*g8*g9+
+   1.0;
+  g15 = 1/pow(g14,1.0);
+  g16 = g13+1.0;
+  dpbec_dmdr = (g0*rho*(0.12693641219540738*beta*mdr*g11*g12*g16*g15
+   *g5-((0.063468206097703692*beta*g10*g11*g12*(
+   0.12693641219540738*beta*mdr*g11*g12*g7*g5+0.016112852741042374
+   *g1*g2*g3*g4*g8*g9)*g16*g5)/pow(g14,2.0))+0.0080564263705211869
+   *g1*g2*g3*g4*g7*g15*g9)*gamma)/pow(0.063468206097703692*beta*g10*
+   g11*g12*g16*g15*g5+1.0,1.0);
+
+  return dpbec_dmdr/mdr;
+}
+
 void
 PBECFunctional::point(const PointInputData &id,
                          PointOutputData &od)
 {
   double ec_local, dec_local_rs, dec_local_zeta;
   local_->point_lc(id, od, ec_local, dec_local_rs, dec_local_zeta); 
-
-   // Precalculate terms for efficiency
-  double rho = id.a.rho + id.b.rho;
-  double rs = pow( (3./(4.*M_PI*rho)), (1./3.));
+  double rho = id.a.rho+id.b.rho;
+  double rho_13 = pow(rho, 1./3.);
+  double rho_43 = rho*rho_13;
   double zeta = (id.a.rho - id.b.rho)/rho;
-  double phi = 0.5*( pow((1.+zeta),(2./3.)) + pow((1.-zeta),(2./3.)) );
-  double phi2 = phi*phi;
-  double phi3 = phi2*phi;
-  double phi4 = phi3*phi;
-  double kf = pow( (3.*M_PI*M_PI*rho), (1./3.) );
-  double ks = pow( (4.*kf/M_PI), (1./2.) );
-  double gamma_aa = id.a.gamma;
-  double gamma_bb = id.b.gamma;
-  double gamma_ab = id.gamma_ab;
-  double gamma_total = sqrt(gamma_aa + gamma_bb + 2.*gamma_ab);
-  double t = gamma_total/(2.*ks*phi*rho);
-  double t2 = t*t;
-  double t3 = t2*t;
-  double t4 = t2*t2;
-        
-  // Compute alpha energy
-  double ratio = beta_/gamma_;
-  double A = ratio / (exp(-ec_local/(gamma_*phi3)) - 1.);
-  double A2 = A*A;
-  double q1 = 1.+A*t2;
-  double q2 = q1 + A2*t4;
-  double X = 1. + ratio*t2*q1/q2;
-  double Hpbe = gamma_*phi3*log(X);
-  if (gamma_total < MIN_DENSITY) Hpbe = 0.;
-  double ec = rho * Hpbe;
-  od.energy += ec;
+  double phi = 0.5*(pow(1+zeta, 2./3.)+pow(1-zeta, 2./3.));
+  double mdr = sqrt(id.a.gamma + id.b.gamma + 2*id.gamma_ab);
+
+  double pbec;
+
+  double e0,e1,e2,e3,e4,e5,e6;
+  e0 = pow(phi,3.0);
+  e1 = pow(mdr,2.0);
+  e2 = 1/pow(phi,2.0);
+  e3 = 1/pow(rho,2.3333333333333335);
+  e4 = 1/pow(gamma,1.0);
+  e5 = 1/exp(1.0*1.0/e0*ec_local*e4)-1.0;
+  e6 = (0.063468206097703692*beta*e1*e2*e3*e4)/pow(e5,1.0);
+  pbec = e0*rho*log((0.063468206097703692*beta*e1*e2*e3*(e6+1.0)*
+     e4)/pow(e6+(0.0040282131852605934*pow(beta,2.0)*pow(mdr,4.0))
+     /pow(phi,4.0)/pow(rho,4.666666666666667)/pow(e5,2.0)/pow(
+     gamma,2.0)+1.0,1.0)+1.0)*gamma;
 
   if (compute_potential_) {
-      // d_drhoa part
-      double dzeta_drhoa = 1./rho * (1. - zeta);
-      double drs_drhoa = -rs/(3.*rho);
-      double dec_local_drhoa = dec_local_rs*drs_drhoa + dec_local_zeta*dzeta_drhoa;
-      double q3 = pow( (1.+zeta), -1./3.);
-      double q3p = pow( (1.-zeta), -1./3.);
-      // double dphi_drhoa = 1./3. * dzeta_drhoa * (q3 - q3p);
-      double dphi_drhoa = 1./(3.*rho) * ( (1.-zeta)*q3 - pow( (1.-zeta), (2./3.) ) );
-      double dphi3_drhoa = 3.*phi2*dphi_drhoa;
-      double dt_drhoa = -t*(dphi_drhoa/phi + 7./6.*1./rho);
-      double dt2_drhoa = 2.*t*dt_drhoa;
-      double dt4_drhoa = 4.*t3*dt_drhoa;
-      double dexp_drhoa = exp(-ec_local/(gamma_*phi3)) *
-                          (-dec_local_drhoa/(gamma_*phi3)
-                           + 3.*ec_local*dphi_drhoa/(gamma_*phi4));
-      double dA_drhoa = -A2/ratio*dexp_drhoa;
-      double dA2_drhoa = 2. * A * dA_drhoa;
-      double dX_drhoa = ratio*dt2_drhoa*q1/q2 + ratio*t2 *
-                        ( (dA_drhoa*t2 + A*dt2_drhoa)/q2 -
-                          q1/(q2*q2)*(dA_drhoa*t2+A*dt2_drhoa+dA2_drhoa*t4
-                                      + A2*dt4_drhoa) );
-      double dHpbe_drhoa = 3.*phi2*gamma_*dphi_drhoa*log(X) + gamma_*phi3/X*dX_drhoa;
-      if (gamma_total < MIN_DENSITY) dHpbe_drhoa = 0.;
-      double dfpbe_drhoa = Hpbe + rho*dHpbe_drhoa;
-      if (id.a.rho < MIN_DENSITY) dfpbe_drhoa = 0.;
-      od.df_drho_a += dfpbe_drhoa;
-      
-      // d_drhob part
-      double dzeta_drhob = 1./rho * (-1. - zeta);
-      double drs_drhob = drs_drhoa;
-      double dec_local_drhob = dec_local_rs*drs_drhob + dec_local_zeta*dzeta_drhob;
-      // double dphi_drhob = 1./3. * dzeta_drhob * (q3 - q3p);
-      double dphi_drhob = -1./(3.*rho) * ( pow( (1.+zeta), (2./3.)) - (1.+zeta)/q3p );
-      double dphi3_drhob = 3.*phi2*dphi_drhob;
-      double dt_drhob = -t*(dphi_drhob/phi + 7./6.*1./rho);
-      double dt2_drhob = 2.*t*dt_drhob;
-      double dt4_drhob = 4.*t3*dt_drhob;
-      double dexp_drhob = exp(-ec_local/(gamma_*phi3)) *
-                          (-dec_local_drhob/(gamma_*phi3)
-                           + 3.*ec_local*dphi_drhob/(gamma_*phi4));
-      double dA_drhob = -A2/ratio*dexp_drhob;
-      double dA2_drhob = 2.*A*dA_drhob;
-      double dX_drhob = ratio*dt2_drhob*q1/q2 + ratio*t2 *
-                        ( (dA_drhob*t2 + A*dt2_drhob)/q2 -
-                          q1/(q2*q2)*(dA_drhob*t2+A*dt2_drhob+dA2_drhob*t4
-                                      + A2*dt4_drhob) );
-      double dHpbe_drhob = 3.*phi2*gamma_*dphi_drhob*log(X) + gamma_*phi3/X*dX_drhob;
-      if (gamma_total < MIN_DENSITY) dHpbe_drhob = 0.;
-      double dfpbe_drhob = Hpbe + rho*dHpbe_drhob;
-      if (id.b.rho < MIN_DENSITY) dfpbe_drhob = 0.;
-      od.df_drho_b += dfpbe_drhob;
-      
-      // d_dgamma_aa part
-      double tdt_dgamma_aa = 0.5/( (2.*ks*phi*rho)*(2.*ks*phi*rho) );
-      // double dt_dgamma_aa = 0.5*t/(gamma_total*gamma_total);
-      // double dt2_dgamma_aa = 2.*t*dt_dgamma_aa;
-      // double dt4_dgamma_aa = 4.*t3*dt_dgamma_aa;
-      // double dX_tmp =2.*t*ratio*q1/q2 *(1.+ A*t2*(1./q1 - (1.+2.*A*t2)/q2)); 
-      // double dX_dgamma_aa = dX_tmp*dt_dgamma_aa;
-      // double dX_dgamma_aa = pow( (1./(2.*ks*phi*rho)), 2.)*ratio*q1/q2
-      //                      *(1.+ A*t2*(1./q1 - (1.+2.*A*t2)/q2));
-      double dX_dgamma_aa = 2.*ratio*tdt_dgamma_aa*q1/q2
-                          + ratio*t2*tdt_dgamma_aa*
-                            (2.*A/q2 - (2.*A + 4.*A2*t2)*q1/(q2*q2));
-      double dHpbe_dgamma_aa = gamma_*phi3/X * dX_dgamma_aa;
-      double dfpbe_dgamma_aa = rho*dHpbe_dgamma_aa;
-      od.df_dgamma_aa = dfpbe_dgamma_aa;
-      
-      // d_dgamma_bb part is equal to the aa part for closed and open shell.
-      od.df_dgamma_bb = od.df_dgamma_aa;
-      
-      // d_dgamma_ab part
-      double tdt_dgamma_ab = 1./( (2.*ks*phi*rho)*(2.*ks*phi*rho) );
-      // double dt_dgamma_ab = t/(gamma_total*gamma_total);
-      // double dX_dgamma_ab = dX_tmp*dt_dgamma_ab;
-      // double dX_dgamma_ab = 2.*pow( (1./(2.*ks*phi*rho)), 2.)*ratio*q1/q2
-      //                      *(1.+ A*t2*(1./q1 - (1.+2.*A*t2)/q2));
-      double dX_dgamma_ab = 2.*ratio*tdt_dgamma_ab*q1/q2
-                          + ratio*t2*tdt_dgamma_ab*
-                            (2.*A/q2 - (2.*A + 4.*A2*t2)*q1/(q2*q2));
-      double dHpbe_dgamma_ab = gamma_*phi3/X*dX_dgamma_ab;
-      double dfpbe_dgamma_ab = rho*dHpbe_dgamma_ab;
-      od.df_dgamma_ab = dfpbe_dgamma_ab;
+      double drs_drho_a = -0.20678349696646667/rho_43; // == drs_drho_b
+      double dzeta_drho_a = 0.;
+      if (zeta < MAX_ZETA) dzeta_drho_a = 1./rho * ( 1. - zeta);
+      double dzeta_drho_b = 0.;
+      if (zeta > MIN_ZETA) dzeta_drho_b = 1./rho * (-1. - zeta);
 
-   }   
+      //double ec_local_dra = od.df_drho_a;
+      //double ec_local_drb = od.df_drho_b;
+      double ec_local_dra
+          = dec_local_rs*drs_drho_a + dec_local_zeta*dzeta_drho_a;
+      double ec_local_drb
+          = dec_local_rs*drs_drho_a + dec_local_zeta*dzeta_drho_b;
+
+      double df_drho_a = rho_deriv(id.a.rho, id.b.rho, mdr,
+                                   ec_local, ec_local_dra);
+      double df_drho_b = rho_deriv(id.b.rho, id.a.rho, mdr,
+                                   ec_local, ec_local_drb);
+
+      double df_dgab = gab_deriv(rho, phi, mdr, ec_local);
+
+      od.df_drho_a += df_drho_a;
+      od.df_drho_b += df_drho_b;
+      od.df_dgamma_aa += 0.5*df_dgab;
+      od.df_dgamma_bb += 0.5*df_dgab;
+      od.df_dgamma_ab += df_dgab;
+    }
+
+  od.energy += pbec;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Perdew-Wang (PW91) Correlation Functional
-// J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
-// and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.
-// 
-// Coded by Matt Leininger
+// PW91CFunctional
 
 #define CLASSNAME PW91CFunctional
 #define HAVE_KEYVAL_CTOR
@@ -2817,8 +2979,9 @@ PW91CFunctional::PW91CFunctional(StateIn& s):
 
 PW91CFunctional::PW91CFunctional()
 {
- local_ = new PW92LCFunctional;
- local_->set_compute_potential(1);
+  local_ = new PW92LCFunctional;
+  local_->set_compute_potential(1);
+  init_constants();
 }
 
 PW91CFunctional::PW91CFunctional(const RefKeyVal& keyval):
@@ -2827,6 +2990,21 @@ PW91CFunctional::PW91CFunctional(const RefKeyVal& keyval):
   local_ = keyval->describedclassvalue("local");
   if (local_.null()) local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
+  init_constants();
+}
+
+void
+PW91CFunctional::init_constants()
+{
+  a = 23.266;
+  b = 7.389e-3;
+  c = 8.723;
+  d = 0.472;
+  alpha = 0.09;
+  c_c0 = 0.004235;
+  // c_x = -0.001667 in  Phys Rev B 46, p 6671, Perdew, et. al.
+  // c_x as in PBE.f:
+  c_x = -0.001667212;
 }
 
 PW91CFunctional::~PW91CFunctional()
@@ -2854,364 +3032,446 @@ PW91CFunctional::set_spin_polarized(int a)
 }
 
 double
-PW91CFunctional::Cxc(double rs)
+PW91CFunctional::limit_df_drhoa(double rhoa, double mdr,
+                                double ec, double decdrhoa)
 {
-  double a = 23.266;
-  double b = 7.389e-3;
-  double c = 8.723;
-  double d = 0.472;
-  double a1 = 2.568;
-  double factor = 1e-3;
-  double rs2 = rs*rs;
+  double result;
+  // blame mathematica
+  double v = 15.755920349483144;
+  double cx = c_x;
+  double cc0 = c_c0;
+  double beta = v * cc0;
+  double e2ec = Power(E,(2*alpha*ec)/Power(beta,2));
+  double e4ec = e2ec * e2ec;
+  double e8ec = e4ec * e4ec;
+  double e25mdr2 = Power(E,-(25*Power(mdr,2))/
+         (Power(6,0.6666666666666666)*Power(Pi,1.3333333333333333)*
+          Power(rhoa,2.6666666666666665)));
+  result =
+   (Power(mdr,2)*Power(Pi/6.,0.3333333333333333)*
+       (1750*Power(6,0.3333333333333333)*a*Power(Pi,0.6666666666666666) - 
+         1750000*Power(6,0.3333333333333333)*c*cc0*
+          Power(Pi,0.6666666666666666) - 
+         2500000*Power(6,0.3333333333333333)*c*cx*
+          Power(Pi,0.6666666666666666) + 
+         (8988*Pi)/Power(1/rhoa,0.3333333333333333) - 
+         (3500000*cc0*Pi)/Power(1/rhoa,0.3333333333333333) - 
+         (5000000*cx*Pi)/Power(1/rhoa,0.3333333333333333) + 
+         875*Power(6,0.6666666666666666)*b*Power(Pi,0.3333333333333333)*
+          Power(1/rhoa,0.3333333333333333) - 
+         875000*Power(6,0.6666666666666666)*cc0*d*
+          Power(Pi,0.3333333333333333)*Power(1/rhoa,0.3333333333333333) - 
+         1250000*Power(6,0.6666666666666666)*cx*d*
+          Power(Pi,0.3333333333333333)*Power(1/rhoa,0.3333333333333333) - 
+         26250000*b*cc0*Power(1/rhoa,0.6666666666666666) - 
+         37500000*b*cx*Power(1/rhoa,0.6666666666666666))*v)
+     *e25mdr2/(1.4e7*
+       (2*Power(6,0.3333333333333333)*c*Power(Pi,0.6666666666666666) + 
+         (4*Pi)/Power(1/rhoa,0.3333333333333333) + 
+         Power(6,0.6666666666666666)*d*Power(Pi,0.3333333333333333)*
+          Power(1/rhoa,0.3333333333333333) + 
+         30*b*Power(1/rhoa,0.6666666666666666))*Power(rhoa,2.3333333333333335)
+         );
+  result +=
+          rhoa*((Power(beta,2)*
+          ((-2*alpha*(-(alpha*e4ec*Power(mdr,4)*
+                     Power(Pi/6.,0.6666666666666666))/
+                  (32.*beta*(-1 + e4ec)*Power(rhoa,4.666666666666667)) + 
+                 (Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+                  (8.*Power(rhoa,2.3333333333333335)))*
+               ((-7*Power(alpha,2)*e8ec*Power(mdr,4)*
+                    Power(Pi/6.,0.6666666666666666))/
+                  (24.*beta*Power(-1 + e4ec,2)*Power(rhoa,5.666666666666667))\
+                  - (Power(alpha,3)*decdrhoa*e8ec*Power(mdr,4)*
+                    Power(Pi/6.,0.6666666666666666))/
+                  (2.*Power(beta,3)*Power(-1 + e4ec,3)*
+                    Power(rhoa,4.666666666666667)) + 
+                 (7*alpha*e4ec*Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+                  (12.*(-1 + e4ec)*Power(rhoa,3.3333333333333335)) + 
+                 (Power(alpha,2)*decdrhoa*e4ec*Power(mdr,2)*
+                    Power(Pi/6.,0.3333333333333333))/
+                  (Power(beta,2)*Power(-1 + e4ec,2)*
+                    Power(rhoa,2.3333333333333335))))/
+             Power(beta + (Power(alpha,2)*e8ec*Power(mdr,4)*
+                  Power(Pi/6.,0.6666666666666666))/
+                (16.*beta*Power(-1 + e4ec,2)*Power(rhoa,4.666666666666667)) - 
+               (alpha*e4ec*Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+                (4.*(-1 + e4ec)*Power(rhoa,2.3333333333333335)),2) + 
+            (2*alpha*((7*alpha*e4ec*Power(mdr,4)*
+                    Power(Pi/6.,0.6666666666666666))/
+                  (48.*beta*(-1 + e4ec)*Power(rhoa,5.666666666666667)) + 
+                 (Power(alpha,2)*decdrhoa*e4ec*Power(mdr,4)*
+                    Power(Pi/6.,0.6666666666666666))/
+                  (8.*Power(beta,3)*Power(-1 + e4ec,2)*
+                    Power(rhoa,4.666666666666667)) - 
+                 (7*Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+                  (24.*Power(rhoa,3.3333333333333335))))/
+             (beta + (Power(alpha,2)*e8ec*Power(mdr,4)*
+                  Power(Pi/6.,0.6666666666666666))/
+                (16.*beta*Power(-1 + e4ec,2)*Power(rhoa,4.666666666666667)) - 
+               (alpha*e4ec*Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+                (4.*(-1 + e4ec)*Power(rhoa,2.3333333333333335)))))/
+        (4.*alpha*(1 + (2*alpha*
+               (-(alpha*e4ec*Power(mdr,4)*Power(Pi/6.,0.6666666666666666))/
+                  (32.*beta*(-1 + e4ec)*Power(rhoa,4.666666666666667)) + 
+                 (Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+                  (8.*Power(rhoa,2.3333333333333335))))/
+             (beta + (Power(alpha,2)*e8ec*Power(mdr,4)*
+                  Power(Pi/6.,0.6666666666666666))/
+                (16.*beta*Power(-1 + e4ec,2)*Power(rhoa,4.666666666666667)) - 
+               (alpha*e4ec*Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+                (4.*(-1 + e4ec)*Power(rhoa,2.3333333333333335))))) + 
+       (Power(mdr,4)*(1750*Power(6,0.3333333333333333)*a*
+             Power(Pi,0.6666666666666666) - 
+            1750000*Power(6,0.3333333333333333)*c*cc0*
+             Power(Pi,0.6666666666666666) - 
+            2500000*Power(6,0.3333333333333333)*c*cx*
+             Power(Pi,0.6666666666666666) + 
+            (8988*Pi)/Power(1/rhoa,0.3333333333333333) - 
+            (3500000*cc0*Pi)/Power(1/rhoa,0.3333333333333333) - 
+            (5000000*cx*Pi)/Power(1/rhoa,0.3333333333333333) + 
+            875*Power(6,0.6666666666666666)*b*Power(Pi,0.3333333333333333)*
+             Power(1/rhoa,0.3333333333333333) - 
+            875000*Power(6,0.6666666666666666)*cc0*d*
+             Power(Pi,0.3333333333333333)*Power(1/rhoa,0.3333333333333333) - 
+            1250000*Power(6,0.6666666666666666)*cx*d*
+             Power(Pi,0.3333333333333333)*Power(1/rhoa,0.3333333333333333) - 
+            26250000*b*cc0*Power(1/rhoa,0.6666666666666666) - 
+            37500000*b*cx*Power(1/rhoa,0.6666666666666666))*v)
+        *e25mdr2/(1.26e6*Pi*
+          (2*Power(6,0.3333333333333333)*c*Power(Pi,0.6666666666666666) + 
+            (4*Pi)/Power(1/rhoa,0.3333333333333333) + 
+            Power(6,0.6666666666666666)*d*Power(Pi,0.3333333333333333)*
+             Power(1/rhoa,0.3333333333333333) + 
+            30*b*Power(1/rhoa,0.6666666666666666))*Power(rhoa,6)) - 
+       (Power(mdr,2)*Power(Pi/6.,0.3333333333333333)*
+          (1750*Power(6,0.3333333333333333)*a*Power(Pi,0.6666666666666666) - 
+            1750000*Power(6,0.3333333333333333)*c*cc0*
+             Power(Pi,0.6666666666666666) - 
+            2500000*Power(6,0.3333333333333333)*c*cx*
+             Power(Pi,0.6666666666666666) + 
+            (8988*Pi)/Power(1/rhoa,0.3333333333333333) - 
+            (3500000*cc0*Pi)/Power(1/rhoa,0.3333333333333333) - 
+            (5000000*cx*Pi)/Power(1/rhoa,0.3333333333333333) + 
+            875*Power(6,0.6666666666666666)*b*Power(Pi,0.3333333333333333)*
+             Power(1/rhoa,0.3333333333333333) - 
+            875000*Power(6,0.6666666666666666)*cc0*d*
+             Power(Pi,0.3333333333333333)*Power(1/rhoa,0.3333333333333333) - 
+            1250000*Power(6,0.6666666666666666)*cx*d*
+             Power(Pi,0.3333333333333333)*Power(1/rhoa,0.3333333333333333) - 
+            26250000*b*cc0*Power(1/rhoa,0.6666666666666666) - 
+            37500000*b*cx*Power(1/rhoa,0.6666666666666666))*v)*e25mdr2/
+        (6.e6*
+          (2*Power(6,0.3333333333333333)*c*Power(Pi,0.6666666666666666) + 
+            (4*Pi)/Power(1/rhoa,0.3333333333333333) + 
+            Power(6,0.6666666666666666)*d*Power(Pi,0.3333333333333333)*
+             Power(1/rhoa,0.3333333333333333) + 
+            30*b*Power(1/rhoa,0.6666666666666666))*
+          Power(rhoa,3.3333333333333335)) + 
+       (Power(mdr,2)*Power(Pi/6.,0.3333333333333333)*
+          (1875*Power(6,0.6666666666666666)*Power(b,2)*
+             Power(Pi,0.3333333333333333) - 
+            (500*Power(6,0.3333333333333333)*a*Power(Pi,1.6666666666666667))/
+             Power(1/rhoa,1.3333333333333333) + 
+            (1284*Power(6,0.3333333333333333)*c*Power(Pi,1.6666666666666667))/
+             Power(1/rhoa,1.3333333333333333) + 
+            (57780*b*Pi)/Power(1/rhoa,0.6666666666666666) - 
+            (750*b*c*Pi)/Power(1/rhoa,0.6666666666666666) + 
+            (750*a*d*Pi)/Power(1/rhoa,0.6666666666666666) + 
+            (7500*Power(6,0.3333333333333333)*a*b*
+               Power(Pi,0.6666666666666666))/Power(1/rhoa,0.3333333333333333)\
+             - 500*Power(6,0.6666666666666666)*b*Power(Pi,1.3333333333333333)*
+             rhoa + 1284*Power(6,0.6666666666666666)*d*
+             Power(Pi,1.3333333333333333)*rhoa)*v)*e25mdr2/
+        (3.e6*
+          Power(2*Power(6,0.3333333333333333)*c*
+             Power(Pi,0.6666666666666666) + 
+            (4*Pi)/Power(1/rhoa,0.3333333333333333) + 
+            Power(6,0.6666666666666666)*d*Power(Pi,0.3333333333333333)*
+             Power(1/rhoa,0.3333333333333333) + 
+            30*b*Power(1/rhoa,0.6666666666666666),2)*
+          Power(rhoa,4.333333333333333))) + 
+    (Power(beta,2)*Log(1 + (2*alpha*
+            (-(alpha*e4ec*Power(mdr,4)*Power(Pi/6.,0.6666666666666666))/
+               (32.*beta*(-1 + e4ec)*Power(rhoa,4.666666666666667)) + 
+              (Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+               (8.*Power(rhoa,2.3333333333333335))))/
+          (beta + (Power(alpha,2)*e8ec*Power(mdr,4)*
+               Power(Pi/6.,0.6666666666666666))/
+             (16.*beta*Power(-1 + e4ec,2)*Power(rhoa,4.666666666666667)) - 
+            (alpha*e4ec*Power(mdr,2)*Power(Pi/6.,0.3333333333333333))/
+             (4.*(-1 + e4ec)*Power(rhoa,2.3333333333333335)))))/(4.*alpha)
+          ;
 
-  double res = factor * (a1 + a*rs + b*rs2)/(1. + c*rs + d*rs2 + 10.*b*rs*rs2);
-  return res;
-  
-}
-
-double
-PW91CFunctional::dCxc_drho(double rs, double drs_drho)
-{
-  double a = 23.266;
-  double b = 7.389e-3;
-  double c = 8.723;
-  double d = 0.472;
-  double a1 = 2.568;
-  double factor = 1e-3;
-  double rs2 = rs*rs;
-  double rs3 = rs2*rs;
-  double numer = a1 + a*rs + b*rs2;
-  double denom = 1. + c*rs + d*rs2 + 10.*b*rs3;
-
-  double res = factor * drs_drho/denom *
-               ( a + 2.*b*rs - numer/denom * (c + 2.*d*rs + 30.*b*rs2) );
-  return res;
+  return result;
 }
 
 void
-PW91CFunctional::point(const PointInputData &id,
-                         PointOutputData &od)
+PW91CFunctional::point(const PointInputData &id, PointOutputData &od)
 {
   double ec_local, dec_local_rs, dec_local_zeta;
   local_->point_lc(id, od, ec_local, dec_local_rs, dec_local_zeta); 
+  double rho = id.a.rho+id.b.rho;
+  double rho_13 = pow(rho, 1./3.);
+  double rho_43 = rho*rho_13;
+  double rs = 0.62035049089940009/rho_13;
+  double z = (id.a.rho - id.b.rho)/rho;
+  double gamma = sqrt(id.a.gamma + id.b.gamma + 2*id.gamma_ab);
 
-   // Precalculate terms for efficiency
-  double rho = id.a.rho + id.b.rho;
-  double rs = pow( (3./(4.*M_PI*rho)), (1./3.) );
-  double zeta = (id.a.rho - id.b.rho)/rho;
-  double g = 0.5*( pow((1.+zeta),(2./3.)) + pow((1.-zeta),(2./3.)) );
-  double g2 = g*g;
-  double g3 = g2*g;
-  double g4 = g3*g;
-  double kf = pow( (3.*M_PI*M_PI*rho), (1./3.) );
-  double ks = sqrt(4.*kf/M_PI);
-  double gamma_total = sqrt(id.a.gamma + id.b.gamma + 2.*id.gamma_ab);
-  double t = gamma_total/(2.*ks*g*rho);
-  if (rho < MIN_DENSITY) t = 0.;
-  double t2 = t*t;
-  double t3 = t2*t;
-  double t4 = t2*t2;
-  double alpha = 0.09;
-  double Cc0 = 0.004235;
-  double Cx = -0.001667212;
-  double nu = 16./M_PI * pow( (3.*M_PI*M_PI), (1./3.) );
-  double beta = nu*Cc0;
-  double beta2 = beta*beta;
-  double A_factor = 2.*alpha/beta;
-  double ks2 = ks*ks;
-  double kf2 = kf*kf;
-  
-  // Compute alpha energy
-  double Aexp = exp(-A_factor*ec_local/(beta*g3));
-  double A = A_factor / (Aexp - 1.);
-  double A2 = A*A;
-  double A3 = A2*A;
-  double A4 = A3*A;
-  double q1 = t2 + A*t4;
-  double q2 = 1. + A*t2 + A2*t4;
-  double X = q1/q2;
-  double W = 1. + A_factor*X;
-  double H0pw91 = beta/A_factor*g3*log(W);
-  double Cxcrs = Cxc(rs);
-  double Ccrs = Cxcrs - Cx;
-  double Z = 100.*g4*ks2/kf2*t2;
-  double expH1 = exp(-Z);
-  if (rho < MIN_DENSITY) expH1 = 0.;
-  double Y = nu * (Ccrs - Cc0 - 3.*Cx/7.); 
-  double H1pw91 = Y*g3*t2*expH1;
-  double Hpw91 = H0pw91 + H1pw91;
-  //double Hpw91 = kf;
-  double ec = rho * Hpw91;
+  double pwc, dpwc_drs, dpwc_dz, dpwc_dg;
 
-  od.energy += ec;
+  if (rho < MIN_DENSITY) return;
+  if (gamma < MIN_SQRTGAMMA) {
+      if (!compute_potential_) return;
 
-  double rs2 = rs*rs;
-  double rs3 = rs2*rs;
-  double rs4 = rs3*rs;
+      double limit_dpwc_dgaa, limit_dpwc_dgab;
 
-  if (compute_potential_) {
-      // d_drhoa part
-      double dzeta_drhoa = 1./rho * (1. - zeta);
-      double drs_drhoa = -rs/(3.*rho);
-      double dec_local_drhoa = dec_local_rs*drs_drhoa + dec_local_zeta*dzeta_drhoa;
-      double q3 = pow( (1.+zeta), -1./3.);
-      double q3p = pow( (1.-zeta), -1./3.);
-      double dg_drhoa = 1./3. * dzeta_drhoa * (q3 - q3p);
-      double dg3_drhoa = 3.*g2*dg_drhoa;
-      double dkf_drhoa = pow( M_PI/kf, 2.);
-      //double dkf_drhoa = -9.*M_PI/4. * drs_drhoa/rs2;
-      double dks_drhoa = 2./(M_PI*ks)*dkf_drhoa;
-      double dt_drhoa = -t/(2.*g*ks*rho)
-                      * (2.*dg_drhoa*ks*rho + 2.*g*dks_drhoa*rho + 2.*g*ks);
-      double dt2_drhoa = 2.*t*dt_drhoa;
-      double dt4_drhoa = 4.*t3*dt_drhoa;
-      double dks2_drhoa = 2.*ks*dks_drhoa;
-      double dkf2_drhoa = 2.*kf*dkf_drhoa;
-      double dAexp_drhoa = -A_factor/beta*Aexp
-                         * (dec_local_drhoa/g3 - 3.*ec_local*dg_drhoa/g4);
-      double dA_drhoa = -A/(Aexp - 1.) * dAexp_drhoa;
-      double dA2_drhoa = 2. * A * dA_drhoa;
-      double dX_drhoa = (2.*t*dt_drhoa + dA_drhoa*t4 + 4.*A*t3*dt_drhoa)/q2
-         - X/q2 * (dA_drhoa*t2 + 2.*A*t*dt_drhoa
-                   + 2.*A*t4*dA_drhoa + 4.*A2*t3*dt_drhoa);
-      double dH0pw91_drhoa = 3.*g2*dg_drhoa*beta/A_factor*log(1.+A_factor*X) +
-                             g3*beta*dX_drhoa/(1.+A_factor*X);
+      double ga0;
+      ga0 = 6.2337093539550051e7*b*c_x*pow(rs,7.0)+(6233709.3539550053
+       *c_x*d-(4363.596547768504*b))*pow(rs,6.0)+(6233709.3539550053
+       *c*c_x-(4363.596547768504*a))*pow(rs,5.0)+(6233709.3539550053
+       *c_x-11205.715934669519)*pow(rs,4.0);
+      limit_dpwc_dgaa = -((1.0*(1.4645918875615231*ga0*pow(z+1.0,
+       0.66666666666666663)+1.4645918875615231*ga0*pow(-(1.0*z)+
+       1.0,0.66666666666666663)))/pow(1.8929525610284735e7*b*pow(rs,
+       3.0)+1892952.5610284733*d*pow(rs,2.0)+1892952.5610284733*c*
+       rs+1892952.5610284733,1.0));
 
-      double dCcrs_drhoa = dCxc_drho(rs, drs_drhoa);
-      double dZ_drhoa = 100.*g4*ks2/kf2
-                      * (4./g*t2*dg_drhoa+2./ks*t2*dks_drhoa
-                         -2./kf*t2*dkf_drhoa+2.*t*dt_drhoa);
-      double dexpH1_drhoa = -dZ_drhoa*expH1;
-      double dY_drhoa = nu * dCcrs_drhoa;
-      double dH1pw91_drhoa = dY_drhoa*g3*t2*expH1 + Y *
-                             (3.*g2*dg_drhoa*t2*expH1 + 2.*g3*t*dt_drhoa*expH1
-                              + g3*t2*dexpH1_drhoa);
+      double gab0;
+      gab0 = 6.2337093539550051e7*b*c_x*pow(rs,7.0)+(
+       6233709.3539550053*c_x*d-(4363.596547768504*b))*pow(rs,6.0)+(
+       6233709.3539550053*c*c_x-(4363.596547768504*a))*pow(rs,5.0)+(
+       6233709.3539550053*c_x-11205.715934669519)*pow(rs,4.0);
+      limit_dpwc_dgab = -((1.0*(1.4645918875615231*gab0*pow(z+1.0,
+       0.66666666666666663)+1.4645918875615231*gab0*pow(-(1.0*z)+
+       1.0,0.66666666666666663)))/pow(9464762.8051423673*b*pow(rs,
+       3.0)+946476.28051423666*d*pow(rs,2.0)+946476.28051423666*c*
+       rs+946476.28051423666,1.0));
 
-      //double dHpw91_drhoa = dkf_drhoa; 
-      double dHpw91_drhoa = dH0pw91_drhoa + dH1pw91_drhoa;
-      double dfpw91_drhoa = Hpw91 + rho*dHpw91_drhoa;
-      if (gamma_total < MIN_DENSITY || id.a.rho < MIN_DENSITY) dfpw91_drhoa = 0.;
-      od.df_drho_a += dfpw91_drhoa;
-          
-      if (spin_polarized_) {
-        // d_drhob part
-        double dzeta_drhob = 1./rho * (-1. - zeta);
-        double drs_drhob = -rs/(3.*rho);
-        double dec_local_drhob = dec_local_rs*drs_drhob + dec_local_zeta*dzeta_drhob;
-        double q3 = pow( (1.+zeta), -1./3.);
-        double q3p = pow( (1.-zeta), -1./3.);
-        double dg_drhob = 1./3. * dzeta_drhob * (q3 - q3p);
-        double dg3_drhob = 3.*g2*dg_drhob;
-        double dkf_drhob = pow( M_PI/kf, 2.);
-        double dks_drhob = 2./(M_PI*ks)*dkf_drhob;
-        double dt_drhob = -t/(2.*g*ks*rho) *
-                          (2.*dg_drhob*ks*rho + 2.*g*dks_drhob*rho + 2.*g*ks);
-        double dt2_drhob = 2.*t*dt_drhob;
-        double dt4_drhob = 4.*t3*dt_drhob;
-        double dks2_drhob = 2.*ks*dks_drhob;
-        double dkf2_drhob = 2.*kf*dkf_drhob;
-        double dAexp_drhob = Aexp * A_factor * ( -dec_local_drhob/(g3*beta)
-                                    + ec_local/(g3*g3*beta2*beta)
-                                                 * 3.*g2*beta2*dg_drhob );
-        double dA_drhob = -A/(Aexp - 1.) * dAexp_drhob;
-        double dA2_drhob = 2. * A * dA_drhob;
-        double dX_drhob = (2.*t*dt_drhob + dA_drhob*t4 + 4.*A*t3*dt_drhob)/q2
-           - X/q2 * (dA_drhob*t2 + 2.*A*t*dt_drhob + 2.*A*t4*dA_drhob
-                     + 4.*A2*t3*dt_drhob);
-        double dH0pw91_drhob = 3.*g2*dg_drhob*beta/A_factor*log(1.+A_factor*X) +
-                               g3*beta*dX_drhob/(1.+A_factor*X);
-        double dCcrs_drhob = dCxc_drho(rs, drs_drhob);
-        double dZ_drhob = 100.*g4*ks2/kf2
-                      * (4./g*t2*dg_drhob+2./ks*t2*dks_drhob
-                         -2./kf*t2*dkf_drhob+2.*t*dt_drhob);
-        double dexpH1_drhob = -dZ_drhob*expH1;
-        double dY_drhob = nu*dCcrs_drhob;
-        double dH1pw91_drhob = dY_drhob*g3*t2*expH1 + Y *
-                             (3.*g2*dg_drhob*t2*expH1 + 2.*g3*t*dt_drhob*expH1
-                              + g3*t2*dexpH1_drhob);
-        double dHpw91_drhob = dH0pw91_drhob + dH1pw91_drhob;
-        double dfpw91_drhob = Hpw91 + rho*dHpw91_drhob;
-        if (gamma_total < MIN_DENSITY || id.b.rho < MIN_DENSITY) dfpw91_drhob = 0.;
-        od.df_drho_b += dfpw91_drhob;
-        }      
-      else od.df_drho_b = od.df_drho_a;
-      
-      // d_dgamma_aa part
-      double dt_dgamma_aa = 0.5*t/(gamma_total*gamma_total);
-      double tdt_dgamma_aa = 0.5/pow( (2.*g*ks*rho), 2.);
-      double dt2_dgamma_aa = 2.*tdt_dgamma_aa;
-      double dt4_dgamma_aa = 4.*t2*tdt_dgamma_aa;
-      double dX_tmp = (1.-A*X)/q2 * (2.*t + 4.*A*t3);
-      double dX_tmpp = (1.-A*X)/q2 * (2. + 4.*A*t2);
-      double dX_dgamma_aa = dX_tmpp*tdt_dgamma_aa;
-      double dH0pw91_dgamma_aa = g3*beta/(1.+A_factor*X) * dX_dgamma_aa;
-      double dZ_dgamma_aa = 200.*g4*ks2/kf2*tdt_dgamma_aa;
-      double dexpH1_dgamma_aa = -dZ_dgamma_aa* expH1;
-      double dH1pw91_dgamma_aa = Y * (g3*2.*tdt_dgamma_aa*expH1
-                                      + g3*t2*dexpH1_dgamma_aa);
-      double dHpw91_dgamma_aa = dH0pw91_dgamma_aa + dH1pw91_dgamma_aa;
-      double dfpw91_dgamma_aa = rho*dHpw91_dgamma_aa;
-      od.df_dgamma_aa = dfpw91_dgamma_aa;
-      // d_dgamma_bb part is equal to the aa part for closed and open shell.
-      od.df_dgamma_bb = od.df_dgamma_aa;
-      
-      // d_dgamma_ab part
-      double dt_dgamma_ab = t/(gamma_total*gamma_total);
-      double tdt_dgamma_ab = pow( (2.*g*ks*rho), -2.);
-      double dX_dgamma_ab = dX_tmpp*tdt_dgamma_ab;
-      double dH0pw91_dgamma_ab = g3*beta/(1.+A_factor*X) * dX_dgamma_ab;
-      double dZ_dgamma_ab = 200.*g4*ks2/kf2*tdt_dgamma_ab;
-      double dexpH1_dgamma_ab = -dZ_dgamma_ab * expH1;
-      double dH1pw91_dgamma_ab = Y *(g3*2.*tdt_dgamma_ab*expH1
-                                     + g3*t2*dexpH1_dgamma_ab);
-      double dHpw91_dgamma_ab = dH0pw91_dgamma_ab + dH1pw91_dgamma_ab;
-      double dfpw91_dgamma_ab = rho*dHpw91_dgamma_ab;
-      od.df_dgamma_ab = dfpw91_dgamma_ab;
+      od.df_dgamma_aa += limit_dpwc_dgaa;
+      od.df_dgamma_bb += limit_dpwc_dgaa;
+      od.df_dgamma_ab += limit_dpwc_dgab;
 
-   }   
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Perdew-Burke-Ernzerhof (PBE) Exchange Functional
-// J. P. Perdew, K. Burke, M. Ernzerhof, Phys. Rev. Lett., 77, 3865, 1996.
-// J. P. Perdew, K. Burke, Y. Wang, Phys. Rev. B, 54, 16533, 1996.
-// 
-// Coded by Matt Leininger
-
-#define CLASSNAME PBEXFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PBEXFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-PBEXFunctional::PBEXFunctional(StateIn& s):
-  SavableState(s),
-  DenFunctional(s)
-{
-}
-
-PBEXFunctional::PBEXFunctional()
-{
-  mu_ = 0.2195149727645171;
-  kappa_ = 0.804;
-}
-
-PBEXFunctional::PBEXFunctional(const RefKeyVal& keyval):
-  DenFunctional(keyval)
-{
-  // in PBE.f
-  mu_ = keyval->doublevalue("mu", KeyValValuedouble(0.2195149727645171));
-  // in paper
-  //mu_ = keyval->doublevalue("mu", KeyValValuedouble(0.21951));
-  kappa_ = keyval->doublevalue("kappa", KeyValValuedouble(0.804));
-  int revPBEX = keyval->intvalue("revPBEX", KeyValValueint(0));
-  if (revPBEX) kappa_ = 1.245;
-}
-
-PBEXFunctional::~PBEXFunctional()
-{
-}
-
-void
-PBEXFunctional::save_data_state(StateOut& s)
-{
-  cout << "PBEXFunctional: cannot save state" << endl;
-  abort();
-}
-
-int
-PBEXFunctional::need_density_gradient()
-{
-  return 1;
-}
-
-void
- PBEXFunctional::point(const PointInputData &id,
-                         PointOutputData &od)
-{
-  od.zero();
-
-  double rhoa = 2. * id.a.rho;
-  double k_Fa = pow( (3.*M_PI*M_PI*rhoa), (1./3.) );
-  double e_xa_unif = -3. * k_Fa / (4.*M_PI);
-  double gamma_aa = 2.*sqrt(id.a.gamma);
-  double sa = gamma_aa/(2. * k_Fa * rhoa);
-  if (rhoa < MIN_DENSITY) sa = 0.;
-  double sa2 = sa*sa;
-
-  double f_xa = 1. + kappa_ - kappa_ / ( 1. + (mu_*sa2/kappa_) );
-  double ex;
-  if (rhoa > MIN_DENSITY) ex = 0.5 * rhoa * e_xa_unif * f_xa;
-  else ex = 0.;
-  
-  if (compute_potential_) {
-    double dex_unif_drhoa = e_xa_unif / (3.*id.a.rho);
-    double dsa_drhoa = -4./3. * sa / id.a.rho;
-    double dFs_drhoa = kappa_ / pow( ( 1. + (mu_*sa2/kappa_)), 2.) *
-                       mu_/kappa_ * 2.*sa*dsa_drhoa;
-    double dEx_drhoa = 2.*e_xa_unif*f_xa + rhoa*f_xa*dex_unif_drhoa
-                     + rhoa*e_xa_unif*dFs_drhoa;
-
-    if (rhoa > MIN_DENSITY) {
-      od.df_drho_a = 0.5 * dEx_drhoa;
-      //od.df_dgamma_aa = 0.5 * rhoa * e_xa_unif * mu_ * sa2 / id.a.gamma * 
-      //                  pow( (1. + mu_*sa2/kappa_), -2.);
-      od.df_dgamma_aa = 0.5 * rhoa * e_xa_unif * mu_ * 4./pow((2.*k_Fa*rhoa),2.) *
-                        pow( (1. + mu_*sa2/kappa_), -2.);
-      od.df_drho_b = od.df_drho_a;
-      od.df_dgamma_bb = od.df_dgamma_aa;
-      }
-    else od.df_drho_a = od.df_dgamma_aa = od.df_dgamma_bb = od.df_drho_b = 0.;
-    od.df_dgamma_ab = 0.;
-
-  }
-
-  if (spin_polarized_) {
-    double rhob = 2. * id.b.rho;
-    double k_Fb = pow( (3.*M_PI*M_PI*rhob), (1./3.) );
-    double e_xb_unif = -3.*k_Fb/(4.*M_PI);
-    double gamma_bb = 2.*sqrt(id.b.gamma);
-    double sb = gamma_bb/(2.*k_Fb*rhob);
-    if (rhob < MIN_DENSITY) sb = 0.;
-    double sb2 = sb*sb;
-    double f_xb = 1. + kappa_ - kappa_ /( 1. + (mu_*sb2/kappa_) );
-    if (rhob > MIN_DENSITY) ex += 0.5 * rhob * e_xb_unif * f_xb;
-     
-    if (compute_potential_) {
-      double dex_unif_drhob = e_xb_unif / (3.*id.b.rho);
-      double dsb_drhob = -4./3. * sb/id.b.rho;
-      double dFs_drhob = kappa_ / pow( ( 1. + (mu_*sb2/kappa_)), 2.) *
-                       mu_/kappa_ * 2.*sb*dsb_drhob;
-      double dEx_drhob = 2.*e_xb_unif*f_xb + rhob*f_xb*dex_unif_drhob
-                     + rhob*e_xb_unif*dFs_drhob;
-      if (rhob > MIN_DENSITY) {
-        od.df_drho_b = 0.5 * dEx_drhob;
-        od.df_dgamma_bb = 0.5 * rhob * e_xb_unif * mu_ * 4./pow((2.*k_Fb*rhob),2.) *
-                pow( (1. + mu_*sb2/kappa_), -2.);
-        }
-      else od.df_drho_b = od.df_dgamma_bb = 0.;
+      return;
     }
-  }
-  else ex += ex;
 
-  od.energy = ex;
-  
+  double e0,e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12,e13,e14,e15;
+  e2 = rs*rs; // pow(rs,2.0);
+  e0 = e2*rs; // pow(rs,3.0);
+  e1 = e0*e0*rs; // pow(rs,7.0);
+  e3 = pow(z+1.0,2./3.)+pow(-z+1.0, 2./3.);
+  e4 = gamma*gamma; // pow(gamma,2.0);
+  e5 = e3*e3; // pow(e3,2.0);
+  e6 = c_c0*c_c0; // pow(c_c0,2.0);
+  e7 = e3*e3*e3; // pow(e3,3.0);
+  e8 = 1./c_c0; // 1/pow(c_c0,1.0);
+  e9 = 1/e5;
+  e10 = 1/e6;
+  e11 = exp(-0.064451410964169495*alpha*e10*ec_local/e7)-1.0;
+  e12 = 1./e11; // 1/pow(e11,1.0);
+  e13 = e1*e1; // pow(rs,14.0);
+  e14 = 1/(e7*e3); // pow(e3,4.0);
+  e15 = e4*e4; // pow(gamma,4.0);
+  pwc = (0.238732414637843*((15.515564128703568*e6*e7*log((
+     0.12693641219540738*alpha*e8*(6.5448368524534253*alpha*e8*e13*
+     e14*e12*e15+7.18052672676657*e1*e9*e4))/((
+     0.83077810845472067*alpha*alpha*e10*e13*e14*e15)/(e11*e11)
+     +0.91147030036898102*alpha*e8*e1*e9*e12*e4+1.0)+
+     1.0))/alpha+(14.141975896783627*e1*((0.001*(b*e2+a
+     *rs+2.568))/(10.0*b*e0+d*e2+c*rs+1.0)-(
+     1.4285714285714286*c_x)-(1.0*c_c0))*e3*e4)*exp(-
+     29.773894288156065*e1*rs*e5*e4)))/e0;
+
+  if (compute_potential_) {
+
+      double drs_drhoa = -0.20678349696646667/rho_43;
+      double drs_drhob = drs_drhoa;
+
+      double r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18
+          ,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31,r32,r33,t0;
+
+      r0 = pow(rs,3.0);
+      r1 = 1/pow(alpha,1.0);
+      r2 = pow(c_c0,2.0);
+      r3 = pow(z+1.0,0.66666666666666663)+pow(-(1.0*z)+1.0,
+                                                  0.66666666666666663);
+      r4 = pow(r3,3.0);
+      r5 = 1/pow(c_c0,1.0);
+      r6 = pow(rs,7.0);
+      r7 = pow(r3,2.0);
+      r8 = 1/r7;
+      r9 = 1/r2;
+      r10 = exp(-0.064451410964169495*alpha*r9*ec_local*1.0/r4);
+      r11 = r10-1.0;
+      r12 = 1/pow(r11,1.0);
+      r13 = pow(gamma,2.0);
+      r14 = pow(alpha,2.0);
+      r15 = pow(rs,14.0);
+      r16 = 1/pow(r3,4.0);
+      r17 = 1/pow(r11,2.0);
+      r18 = pow(gamma,4.0);
+      r19 = 0.83077810845472067*r14*r9*r15*r16*r17*r18+
+            0.91147030036898102*alpha*r5*r6*r8*r12*r13+1.0;
+      r20 = 1/pow(r19,1.0);
+      r21 = 6.5448368524534253*alpha*r5*r15*r16*r12*r18+
+            7.18052672676657*r6*r8*r13;
+      r22 = 0.12693641219540738*alpha*r5*r20*r21+1.0;
+      r23 = pow(rs,6.0);
+      r24 = 1/pow(c_c0,3.0);
+      r25 = dec_local_rs;
+      r26 = pow(rs,13.0);
+      r27 = 1/pow(r3,7.0);
+      r28 = pow(rs,2.0);
+      r29 = b*r28+a*rs+2.568;
+      r30 = 10.0*b*r0+d*r28+c*rs+1.0;
+      r31 = 1/pow(r30,1.0);
+      r32 = exp(-29.773894288156065*pow(rs,8.0)*r7*r13);
+      r33 = 0.001*r29*r31-(1.4285714285714286*c_x)-(1.0*c_c0);
+      t0 = -((0.71619724391352901*(15.515564128703568*r1*r2*r4*log
+         (r22)+14.141975896783627*r6*r33*r3*r13*r32))/pow(rs,4.0));
+      dpwc_drs = t0+(0.238732414637843*(-(3368.493563011893*r15*
+         r33*r4*r18*r32)+98.993831277485398*r23*r33*r3*r13*r32+
+         14.141975896783627*r6*(0.001*(2.0*b*rs+a)*r31-((0.001*
+         r29*(30.0*b*r28+2.0*d*rs+c))/pow(r30,2.0)))*r3*r13*r32+(
+         15.515564128703568*r1*r2*r4*(0.12693641219540738*alpha*r5*
+         r20*(0.42182396967091729*r14*r24*r25*r15*r27*r17*r10*r18+
+         91.627715934347961*alpha*r5*r26*r16*r12*r18+
+         50.263687087365994*r23*r8*r13)-((0.12693641219540738*alpha*
+         r5*r21*((0.10708964257610123*pow(alpha,3.0)*r25*r15*r27*r10
+         *r18)/pow(c_c0,4.0)/pow(r11,3.0)+11.630893518366092*r14*
+         r9*r26*r16*r17*r18+(0.058745546910716179*r14*r24*r25*r6*r17*
+         r10*r13)/pow(r3,5.0)+6.3802921025828665*alpha*r5*r23*r8*r12
+         *r13))/pow(r19,2.0))))/pow(r22,1.0)))/r0;
+
+      if (id.a.rho > MIN_DENSITY && id.b.rho > MIN_DENSITY) {
+          double dpwc_dz;
+
+          double z0,z1,z2,z3,z4,z5,z6,z7,z8,z9,z10,z11,z12,z13,z14,z15,z16,z17
+              ,z18 ,z19,z20,z21,z22,z23,z24,z25,z26,z27,z28,z29,z30,z31;
+          z0 = pow(rs,3.0);
+          z1 = 1/pow(alpha,1.0);
+          z2 = pow(c_c0,2.0);
+          z3 = -(1.0*z)+1.0;
+          z4 = z+1.0;
+          z5 = pow(z4,0.66666666666666663)+pow(z3,0.66666666666666663);
+          z6 = pow(z5,3.0);
+          z7 = 1/pow(c_c0,1.0);
+          z8 = pow(rs,7.0);
+          z9 = pow(z5,2.0);
+          z10 = 1/z9;
+          z11 = 1/z2;
+          z12 = 1/z6;
+          z13 = exp(-0.064451410964169495*alpha*z11*ec_local*z12);
+          z14 = z13-1.0;
+          z15 = 1/pow(z14,1.0);
+          z16 = pow(gamma,2.0);
+          z17 = pow(alpha,2.0);
+          z18 = pow(rs,14.0);
+          z19 = 1/pow(z5,4.0);
+          z20 = 1/pow(z14,2.0);
+          z21 = pow(gamma,4.0);
+          z22 = 0.83077810845472067*z17*z11*z18*z19*z20*z21+
+                0.91147030036898102*alpha*z7*z8*z10*z15*z16+1.0;
+          z23 = 1/pow(z22,1.0);
+          z24 = 6.5448368524534253*alpha*z7*z18*z19*z15*z21+
+                7.18052672676657*z8*z10*z16;
+          z25 = 0.12693641219540738*alpha*z7*z23*z24+1.0;
+          z26 = 0.66666666666666663/pow(z4,0.33333333333333331)-(
+              0.66666666666666663/pow(z3,0.33333333333333331));
+          z27 = -(0.064451410964169495*alpha*z11*dec_local_zeta*z12)
+               +0.19335423289250847*alpha*z11*ec_local*z26*z19;
+          z28 = 1/pow(z5,5.0);
+          z29 = pow(rs,2.0);
+          z30 = (0.001*(b*z29+a*rs+2.5680000000000001))/pow(10.0*b*z0+d*
+              z29+c*rs+1.0,1.0)-(1.4285714285714286*c_x)-(1.0*c_c0);
+          z31 = exp(-29.773894288156065*pow(rs,8.0)*z9*z16);
+          dpwc_dz = (0.238732414637843*(46.546692386110699*z1*z2*z26*z9*
+           log(z25)-(842.12339075297325*pow(rs,15.0)*z30*z26*z9*z21*z31)+
+           14.141975896783627*z8*z30*z26*z16*z31+(15.515564128703568*z1*z2
+           *z6*(0.12693641219540738*alpha*z7*z23*(-(6.5448368524534253*
+           alpha*z7*z18*z19*z27*z20*z13*z21)-(26.179347409813701*alpha*z7*
+           z18*z26*z28*z15*z21)-(14.36105345353314*z8*z26*z12*z16))-((
+           0.12693641219540738*alpha*z7*z24*(-((1.6615562169094413*z17*z11
+           *z18*z19*z27*z13*z21)/pow(z14,3.0))-(3.3231124338188827*z17*z11
+           *z18*z26*z28*z20*z21)-(0.91147030036898102*alpha*z7*z8*z10*z27*
+           z20*z13*z16)-(1.822940600737962*alpha*z7*z8*z26*z12*z15*z16)))/
+           pow(z22,2.0))))/pow(z25,1.0)))/z0;
+
+          double dz_drhoa = ( 1. - (id.a.rho-id.b.rho)/rho)/rho;
+          double dz_drhob = (-1. - (id.a.rho-id.b.rho)/rho)/rho;
+
+          od.df_drho_a += dpwc_drs * drs_drhoa + dpwc_dz * dz_drhoa;
+          od.df_drho_b += dpwc_drs * drs_drhob + dpwc_dz * dz_drhob;
+        }
+      else if (id.a.rho > MIN_DENSITY) {
+          // df_drho_b diverges
+          double dzeta_drhoa = 1./rho * (1. - z);
+          double drs_drhoa = -rs/(3.*rho);
+          double dec_local_drhoa = dec_local_rs*drs_drhoa
+                                 + dec_local_zeta*dzeta_drhoa;
+          od.df_drho_a += limit_df_drhoa(id.a.rho, gamma,
+                                         ec_local, dec_local_drhoa);
+        }
+      else if (id.b.rho > MIN_DENSITY) {
+          // df_drho_a diverges
+          double dzeta_drhob = 1./rho * (-1. - z);
+          double drs_drhob = -rs/(3.*rho);
+          double dec_local_drhob = dec_local_rs*drs_drhob
+                                 + dec_local_zeta*dzeta_drhob;
+          od.df_drho_b += limit_df_drhoa(id.b.rho, gamma,
+                                         ec_local, dec_local_drhob);
+        }
+
+      double g0,g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16,g17,g18
+          ,g19,g20,g21,g22,g23;
+      g0 = pow(rs,3.0);
+      g1 = pow(c_c0,2.0);
+      g2 = pow(z+1.0,0.66666666666666663)+pow(-(1.0*z)+1.0,
+                                              0.66666666666666663);
+      g3 = pow(g2,3.0);
+      g4 = 1/pow(c_c0,1.0);
+      g5 = pow(rs,7.0);
+      g6 = pow(g2,2.0);
+      g7 = 1/g6;
+      g8 = pow(rs,14.0);
+      g9 = 1/pow(g2,4.0);
+      g10 = 1/g1;
+      g11 = exp(-0.064451410964169495*alpha*g10*ec_local*1.0/g3)-
+            1.0;
+      g12 = 1/pow(g11,1.0);
+      g13 = pow(gamma,3.0);
+      g14 = pow(gamma,2.0);
+      g15 = pow(alpha,2.0);
+      g16 = 1/pow(g11,2.0);
+      g17 = pow(gamma,4.0);
+      g18 = 0.83077810845472067*g15*g10*g8*g9*g16*g17+
+            0.91147030036898102*alpha*g4*g5*g7*g12*g14+1.0;
+      g19 = 1/pow(g18,1.0);
+      g20 = 6.5448368524534253*alpha*g4*g8*g9*g12*g17+7.18052672676657
+           *g5*g7*g14;
+      g21 = pow(rs,2.0);
+      g22 = (0.001*(b*g21+a*rs+2.5680000000000001))/pow(10.0*b*g0+d*
+            g21+c*rs+1.0,1.0)-(1.4285714285714286*c_x)-(1.0*c_c0);
+      g23 = exp(-29.773894288156065*pow(rs,8.0)*g6*g14);
+      dpwc_dg = (0.238732414637843*(-(842.12339075297325*pow(rs,15.0
+       )*g22*g3*g13*g23)+28.283951793567255*g5*g22*g2*gamma*g23+(
+       15.515564128703568*g1*g3*(-((0.12693641219540738*alpha*g4*(
+       3.3231124338188827*g15*g10*g8*g9*g16*g13+1.822940600737962*
+       alpha*g4*g5*g7*g12*gamma)*g20)/pow(g18,2.0))+
+       0.12693641219540738*alpha*g4*(26.179347409813701*alpha*g4*g8*g9
+       *g12*g13+14.36105345353314*g5*g7*gamma)*g19))/pow(alpha,1.0)/
+       pow(0.12693641219540738*alpha*g4*g19*g20+1.0,1.0)))/g0;
+
+      od.df_dgamma_aa += dpwc_dg / (2 * gamma);
+      od.df_dgamma_bb += dpwc_dg / (2 * gamma);
+      od.df_dgamma_ab += dpwc_dg / gamma;
+    }
+
+  od.energy += pwc;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Perdew-Wang (PW91) Exchange Functional
-// J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
-// and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.
-// 
-// Coded by Matt Leininger
+// PW91XFunctional
 
 #define CLASSNAME PW91XFunctional
 #define HAVE_KEYVAL_CTOR
@@ -3235,27 +3495,36 @@ PW91XFunctional::PW91XFunctional(StateIn& s):
 
 PW91XFunctional::PW91XFunctional()
 {
-  a1_ = 0.19645;
-  a2_ = 7.7956;
-  a3_ = 0.2743;
-  a4_ = -0.15084;
-  a5_ = 0.004;
-  b_ = 100.;
+  init_constants();
 }
 
 PW91XFunctional::PW91XFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
-  a1_ = keyval->doublevalue("a1", KeyValValuedouble(0.19645));
-  a2_ = keyval->doublevalue("a2", KeyValValuedouble(7.7956));
-  a3_ = keyval->doublevalue("a3", KeyValValuedouble(0.2743));
-  a4_ = keyval->doublevalue("a4", KeyValValuedouble(-0.15084));
-  a5_ = keyval->doublevalue("a5", KeyValValuedouble(0.004));
-  b_  = keyval->doublevalue("b", KeyValValuedouble(100.));
+  init_constants();
+  a_x = keyval->doublevalue("a_x", KeyValValuedouble(a_x));
+  a = keyval->doublevalue("a", KeyValValuedouble(a));
+  b = keyval->doublevalue("b", KeyValValuedouble(b));
+  c = keyval->doublevalue("c", KeyValValuedouble(c));
+  d = keyval->doublevalue("d", KeyValValuedouble(d));
 }
 
 PW91XFunctional::~PW91XFunctional()
 {
+}
+
+void
+PW91XFunctional::init_constants()
+{
+  a = 0.19645;
+  b = 7.7956;
+  c = 0.2743;
+  // the PW91 paper had d = 0.1508
+  // PBE.f has the following
+  d = 0.15084;
+  // a_x -(3/4)*(3/pi)^(1/3)
+  // the following rounded a_x appears in PBE.f
+  a_x = -0.7385588;
 }
 
 void
@@ -3272,115 +3541,481 @@ PW91XFunctional::need_density_gradient()
 }
 
 void
- PW91XFunctional::point(const PointInputData &id,
+PW91XFunctional::spin_contrib(const PointInputData::SpinData &i,
+                               double &pw, double &dpw_dr, double &dpw_dg)
+{
+  double rho = i.rho;
+  double gamma = i.gamma;
+  const double pi = M_PI;
+
+  if (rho < MIN_DENSITY) {
+      pw = 0.;
+      dpw_dr = 0.;
+      dpw_dg = 0.; // really -inf
+      return;
+    }
+  if (gamma < MIN_GAMMA) {
+      double rho_43 = rho * i.rho_13; // rho^(4/3)
+      // 2^(1/3) * a_x * rho^(4/3)
+      pw = 1.2599210498948732 * a_x * rho_43;
+      // (4/3) 2^(1/3) a_x rho^(1/3)
+      dpw_dr = 1.6798947331931642 * a_x * i.rho_13;
+      // (6^(2/3) a_x / (24 3^(1/3) pi^4/3)) (d - c) / rho^(4/3)
+      dpw_dg = - 0.020732388737701564 * a_x * (d - c) / rho_43;
+      return;
+    }
+
+  // this has been generated by macsyma and modified
+  double t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
+  t0 = 1.8171205928321397; // pow(6,1.0/3.0);
+  t1 = rho * i.rho_13; // pow(rho,4.0/3.0);
+  t2 = 1/t0;
+  t3 = 0.46619407703541166; // 1/pow(pi,2.0/3.0);
+  t4 = 1/t1;
+  t5 = sqrt(gamma);
+  t6 = (t2*a*t3*t4*asinh((t2*b*t3*t4*t5)/2.0)*t5)/2.0;
+  t7 = 0.30285343213868998; // 1/pow(6,2.0/3.0);
+  t8 = 0.21733691746289932; // 1/pow(pi,4.0/3.0);
+  t9 = t4*t4; // 1/pow(rho,8.0/3.0);
+  pw = (t0*a_x*t1*((t7*t8*t9*gamma*(-(d*exp(-25.0*t7*t8*t9*gamma))+c)
+     )/4.0+t6+1))/pow(3,1.0/3.0)/((t2*pow(gamma,2.0))/24000.0/pow(pi,8.0
+     /3.0)/pow(rho,16.0/3.0)+t6+1);
+  if (compute_potential_) {
+      double r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18
+          ,r19,r20,r21,r22;
+      r0 = 0.69336127435063466; // 1/pow(3,1.0/3.0);
+      r1 = t0; // pow(6,1.0/3.0);
+      r2 = t1; // pow(rho,4.0/3.0);
+      r3 = 1/r1;
+      r4 = t3; // 1/pow(pi,2.0/3.0);
+      r5 = 1/r2;
+      r6 = t5; // sqrt(gamma);
+      r7 = asinh((r3*b*r4*r5*r6)/2.0);
+      r8 = (r3*a*r4*r5*r7*r6)/2.0;
+      r9 = 1/pow(pi,8.0/3.0);
+      r10 = gamma*gamma; // pow(gamma,2.0);
+      r11 = (r3*r9*r10)/24000.0/pow(rho,16.0/3.0)+r8+1;
+      r12 = 1/r11;
+      r13 = -((2.0/3.0*r3*a*r4*r7*r6)/pow(rho,7.0/3.0));
+      r14 = 1/pow(6,2.0/3.0);
+      r15 = 1/pow(pi,4.0/3.0);
+      r16 = 1/pow(rho,11.0/3.0);
+      r17 = 1/pow(rho,8.0/3.0);
+      r18 = -((1.0/3.0*r14*a*b*r15*r16*gamma)/sqrt((r14*pow(b,2.0)*r15*r17
+                                                    *gamma)/4.0+1));
+      r19 = 1/pow(rho,19.0/3.0);
+      r20 = exp(-25.0*r14*r15*r17*gamma);
+      r21 = -(d*r20)+c;
+      r22 = (r14*r15*r17*gamma*r21)/4.0+r8+1;
+      dpw_dr = -((r0*r1*a_x*r2*(r18-(1.0/4500.0*r3*r9*r19*r10)+r13)*r22)/
+      pow(r11,2.0))+4.0/3.0*r0*r1*a_x*pow(rho,1.0/3.0)*r12*r22+r0*r1*a_x*
+       r2*r12*(-(2.0/3.0*r14*r15*r16*gamma*r21)-(25.0/9.0*r3*d*r9*r19*r10*
+       r20)+r18+r13);
+      double g0,g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16,g17,g18;
+      g0 = 1/pow(3,1.0/3.0);
+      g1 = pow(6,1.0/3.0);
+      g2 = pow(rho,4.0/3.0);
+      g3 = 1/g1;
+      g4 = 1/pow(pi,2.0/3.0);
+      g5 = 1/g2;
+      g6 = sqrt(gamma);
+      g7 = asinh((g3*b*g4*g5*g6)/2.0);
+      g8 = (g3*a*g4*g5*g7*g6)/2.0;
+      g9 = 1/pow(pi,8.0/3.0);
+      g10 = 1/pow(rho,16.0/3.0);
+      g11 = (g3*g9*g10*pow(gamma,2.0))/24000.0+g8+1;
+      g12 = (g3*a*g4*g5*g7)/4.0/g6;
+      g13 = 1/pow(6,2.0/3.0);
+      g14 = 1/pow(pi,4.0/3.0);
+      g15 = 1/pow(rho,8.0/3.0);
+      g16 = (g13*a*b*g14*g15)/8.0/sqrt((g13*pow(b,2.0)*g14*g15*gamma)/4.0+
+                                       1);
+      g17 = exp(-25.0*g13*g14*g15*gamma);
+      g18 = -(d*g17)+c;
+      dpw_dg = -((g0*g1*a_x*g2*(g16+(g3*g9*g10*gamma)/12000.0+g12)*((g13*
+       g14*g15*gamma*g18)/4.0+g8+1))/pow(g11,2.0))+(g0*g1*a_x*g2*((g13*g14
+       *g15*g18)/4.0+25.0/24.0*g3*d*g9*g10*gamma*g17+g16+g12))/g11;
+    }
+}
+
+void
+PW91XFunctional::point(const PointInputData &id,
                          PointOutputData &od)
 {
   od.zero();
 
-  double rhoa = 2. * id.a.rho;
-  double one_third = 1./3.;
-  double k_fa = pow( (3.*M_PI*M_PI*rhoa), one_third );
-  double e_xa_unif = -3. * k_fa / (4.*M_PI);
-  double gamma_aa = 2. * sqrt(id.a.gamma);
-  double sa = gamma_aa/(2. * k_fa * rhoa);
-  if (rhoa < MIN_DENSITY) sa = 0.;
-  double sa2 = sa*sa;
-  double sa3 = sa2*sa;
-  double sa4 = sa2*sa2;
-  double sinha = asinh(a2_*sa);
-  double asinha = a1_*sa*sinha;
-  double expa = exp(-b_*sa2);
-  double numera = 1. + asinha + (a3_ + a4_*expa)*sa2;
-  double denoma = 1. + asinha + a5_*sa4;
-  double Fxa = numera/denoma;
-  double fpw91xa = rhoa * e_xa_unif * Fxa;
-  double ex = 0.5 * fpw91xa;
+  double mpw, dmpw_dr, dmpw_dg;
 
-  if (compute_potential_) {
-    double dsa_drhoa = -4.*2.*sa/(3.*rhoa);
-    if (rhoa < MIN_DENSITY) dsa_drhoa = 0.;
-    double dsinha_drhoa = a2_*dsa_drhoa/sqrt(1.+a2_*a2_*sa2);
-    double dexpa_drhoa = -2.*b_*sa*dsa_drhoa*expa;
-    double dFxa_drhoa = ( a1_*dsa_drhoa*sinha + a1_*sa*dsinha_drhoa
-                          + 2.*sa*dsa_drhoa* (a3_ + a4_*expa)
-                          + a4_*sa2*dexpa_drhoa ) / denoma
-                      - Fxa/denoma * (a1_*dsa_drhoa*sinha + a1_*sa*dsinha_drhoa
-                                     + 4.*a5_*sa3*dsa_drhoa);
-    double dfpw91xa_drhoa = 2.*e_xa_unif* (4./3.*Fxa + rhoa/2.*dFxa_drhoa);
-    od.df_drho_a = 0.5 * dfpw91xa_drhoa; 
+  // alpha
+  spin_contrib(id.a, mpw, dmpw_dr, dmpw_dg);
+  od.energy = mpw;
+  od.df_drho_a = dmpw_dr;
+  od.df_dgamma_aa = dmpw_dg;
 
-    double dsa_dgamma_aa = 2./(2.*k_fa*rhoa*gamma_aa);
-    if (gamma_aa < MIN_DENSITY || rhoa < MIN_DENSITY) dsa_dgamma_aa = 0.;
-    double dsinha_dgamma_aa = a2_*dsa_dgamma_aa/sqrt(1.+a2_*a2_*sa2);
-    double dexpa_dgamma_aa = -2.*b_*sa*dsa_dgamma_aa*expa;
-    double dFxa_dgamma_aa = ( a1_*dsa_dgamma_aa*sinha + a1_*sa*dsinha_dgamma_aa
-                              + 2.*sa*dsa_dgamma_aa*(a3_ + a4_*expa)
-                              + a4_*sa2*dexpa_dgamma_aa)/denoma
-                          - Fxa/denoma*( a1_*dsa_dgamma_aa*sinha
-                                         + a1_*sa*dsinha_dgamma_aa
-                                        + 4.*a5_*sa3*dsa_dgamma_aa );
-    double dfpw91xa_dgamma_aa = rhoa*e_xa_unif*dFxa_dgamma_aa;
-    od.df_dgamma_aa = 0.5 * dfpw91xa_dgamma_aa;
-
+  // beta
+  if (spin_polarized_) {
+      spin_contrib(id.b, mpw, dmpw_dr, dmpw_dg);
+      od.energy += mpw;
+      od.df_drho_b = dmpw_dr;
+      od.df_dgamma_bb = dmpw_dg;
+    }
+  else {
+      od.energy += mpw;
       od.df_drho_b = od.df_drho_a;
       od.df_dgamma_bb = od.df_dgamma_aa;
-      od.df_dgamma_ab = 0.;
     }
+}
 
-  if (spin_polarized_) {
-      double rhob = 2. * id.b.rho;
-      double r_sb = pow( (3./(4.*M_PI*rhob)), (1./3.) );
-      double r_sb2 = r_sb*r_sb;
-      double k_fb = pow( (3.*M_PI*M_PI*rhob), one_third );
-      double e_xb_unif = -3.*k_fb/(4.*M_PI);
-      double gamma_bb = 2.*sqrt(id.b.gamma);
-      double sb = gamma_bb/(2.*k_fb*rhob);
-      if (rhob < MIN_DENSITY) sb = 0.;
-      double sb2 = sb*sb;
-      double sb3 = sb2*sb;
-      double sb4 = sb2*sb2;
-      double sinhb = asinh(a2_*sb);
-      double asinhb = a1_*sb*sinhb;
-      double expb = exp(-b_*sb2);
-      double numerb = 1. + asinhb + (a3_ + a4_*expb)*sb2;
-      double denomb = 1. + asinhb + a5_*sb4;
-      double Fxb = numerb/denomb;
-      double fpw91xb = rhob * e_xb_unif * Fxb;
+/////////////////////////////////////////////////////////////////////////////
+// PBEXFunctional
 
-      ex += 0.5 * fpw91xb;
+#define CLASSNAME PBEXFunctional
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public DenFunctional
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+PBEXFunctional::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
 
+PBEXFunctional::PBEXFunctional(StateIn& s):
+  SavableState(s),
+  DenFunctional(s)
+{
+}
+
+PBEXFunctional::PBEXFunctional()
+{
+  init_constants();
+}
+
+PBEXFunctional::PBEXFunctional(const RefKeyVal& keyval):
+  DenFunctional(keyval)
+{
+  init_constants();
+  mu = keyval->doublevalue("mu", KeyValValuedouble(mu));
+  kappa = keyval->doublevalue("kappa", KeyValValuedouble(kappa));
+}
+
+PBEXFunctional::~PBEXFunctional()
+{
+}
+
+void
+PBEXFunctional::init_constants()
+{
+  // in paper:
+  mu = 0.21951;
+  // in PBE.F
+  mu = 0.2195149727645171;
+  kappa = 0.804;
+}
+
+void
+PBEXFunctional::save_data_state(StateOut& s)
+{
+  cout << "PBEXFunctional: cannot save state" << endl;
+  abort();
+}
+
+int
+PBEXFunctional::need_density_gradient()
+{
+  return 1;
+}
+
+void
+PBEXFunctional::spin_contrib(const PointInputData::SpinData &i,
+                             double &pbex,
+                             double &dpbex_drhoa, double &dpbex_dgaa)
+{
+  double rhoa = i.rho;
+  double rhoa_13 = i.rho_13;
+  double rhoa_43 = rhoa*rhoa_13;
+  double gaa = i.gamma;
+
+  if (rhoa < MIN_DENSITY) {
+      pbex = 0;
       if (compute_potential_) {
-        double dsb_drhob = -4.*2.*sb/(3.*rhob);
-        if (rhob < MIN_DENSITY) dsb_drhob = 0.;
-        double dsinhb_drhob = a2_*dsb_drhob/sqrt(1.+a2_*a2_*sb2);
-        double dexpb_drhob = -2.*b_*sb*dsb_drhob*expb;
-        double dFxb_drhob = ( a1_*dsb_drhob*sinhb + a1_*sb*dsinhb_drhob
-                              + 2.*sb*dsb_drhob* (a3_ + a4_*expb)
-                              + a4_*sb2*dexpb_drhob) / denomb
-                      - Fxb/denomb * (a1_*dsb_drhob*sinhb + a1_*sb*dsinhb_drhob
-                                     + 4.*a5_*sb3*dsb_drhob);
-        double dfpw91xb_drhob = 2.*e_xb_unif* (4./3.*Fxb + rhob/2.*dFxb_drhob);
-        od.df_drho_b = 0.5 * dfpw91xb_drhob; 
-
-        double dsb_dgamma_bb = 2./(2.*k_fb*rhob*gamma_bb);
-        if (rhob < MIN_DENSITY || gamma_bb < MIN_DENSITY) dsb_dgamma_bb = 0.;
-        double dsinhb_dgamma_bb = a2_*dsb_dgamma_bb/sqrt(1.+a2_*a2_*sb2);
-        double dexpb_dgamma_bb = -2.*b_*sb*dsb_dgamma_bb*expb;
-        double dFxb_dgamma_bb = ( a1_*dsb_dgamma_bb*sinhb + a1_*sb*dsinhb_dgamma_bb
-                                  + 2.*sb*dsb_dgamma_bb*(a3_ + a4_*expb)
-                                  + a4_*sb2*dexpb_dgamma_bb ) / denomb
-                              - Fxb/denomb*( a1_*dsb_dgamma_bb*sinhb
-                                             + a1_*sb*dsinhb_dgamma_bb
-                                             + 4.*a5_*sb3*dsb_dgamma_bb);
-        double dfpw91xb_dgamma_bb = rhob*e_xb_unif*dFxb_dgamma_bb;
-        od.df_dgamma_bb = 0.5 * dfpw91xb_dgamma_bb;
-
-       }
+          dpbex_drhoa = 0.0;
+          dpbex_dgaa = 0.0; // really -inf
+        }
+      return;
     }
-  else ex += ex;
-// #endif
-//   ex += ex;
-  od.energy = ex;
+
+  if (gaa < MIN_GAMMA) {
+      pbex = - 0.93052573634910019 * rhoa_43;
+      if (compute_potential_) {
+          dpbex_drhoa = -(1.2407009817988002*rhoa_13);
+          dpbex_dgaa = -((0.015312087450269402*mu)/rhoa_43);
+        }
+      return;
+    }
+
+  double rhoa_83 = rhoa_43*rhoa_43;
+
+  pbex = -(0.93052573634910007*(-(kappa/((
+      0.016455307846020562*gaa*mu)/kappa/rhoa_83+1.0))+kappa+1.0)*rhoa_43);
+
+  if (compute_potential_) {
+      double rhoa_73 = rhoa_43*rhoa;
+      double r0, r1;
+      r0 = (0.016455307846020562*gaa*mu)/kappa/rhoa_83+1.0;
+      dpbex_drhoa = -(1.2407009817988002*(-(kappa/r0)
+       +kappa+1.0)*rhoa_13)+(0.040832233200718403*gaa*mu)/(r0*r0)/rhoa_73;
+      dpbex_dgaa = -((0.015312087450269402*mu)/(r0*r0)/rhoa_43);
+    }
+}
+
+void
+PBEXFunctional::point(const PointInputData &id,
+                         PointOutputData &od)
+{
+  od.zero();
+
+  double pbex, dpbex_dr, dpbex_dg;
+
+  // alpha
+  spin_contrib(id.a, pbex, dpbex_dr, dpbex_dg);
+  od.energy = pbex;
+  if (compute_potential_) {
+      od.df_drho_a = dpbex_dr;
+      od.df_dgamma_aa = dpbex_dg;
+    }
+
+  // beta
+  if (spin_polarized_) {
+      spin_contrib(id.b, pbex, dpbex_dr, dpbex_dg);
+      od.energy += pbex;
+      if (compute_potential_) {
+          od.df_drho_b = dpbex_dr;
+          od.df_dgamma_bb = dpbex_dg;
+        }
+    }
+  else {
+      od.energy += pbex;
+      if (compute_potential_) {
+          od.df_drho_b = od.df_drho_a;
+          od.df_dgamma_bb = od.df_dgamma_aa;
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// mPW91XFunctional
+
+#define CLASSNAME mPW91XFunctional
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public DenFunctional
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+mPW91XFunctional::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+mPW91XFunctional::mPW91XFunctional(StateIn& s):
+  SavableState(s),
+  DenFunctional(s)
+{
+}
+
+mPW91XFunctional::mPW91XFunctional()
+{
+  init_constants(mPW91);
+}
+
+mPW91XFunctional::mPW91XFunctional(mPW91XFunctional::Func f)
+{
+  init_constants(f);
+}
+
+mPW91XFunctional::mPW91XFunctional(const RefKeyVal& keyval):
+  DenFunctional(keyval)
+{
+  char *t = keyval->pcharvalue("constants");
+  if (t) {
+      if (!strcmp(t,"B88")) {
+          init_constants(B88);
+        }
+      else if (!strcmp(t,"PW91")) {
+          init_constants(PW91);
+        }
+      else if (!strcmp(t,"mPW91")) {
+          init_constants(mPW91);
+        }
+      else {
+          cout << "mPW91XFunctional: bad \"constants\": " << t << endl;
+          abort();
+        }
+      delete[] t;
+    }
+  else {
+      init_constants(mPW91);
+    }
+  b = keyval->doublevalue("b", KeyValValuedouble(b));
+  beta = keyval->doublevalue("beta", KeyValValuedouble(beta));
+  c = keyval->doublevalue("c", KeyValValuedouble(c));
+  d = keyval->doublevalue("d", KeyValValuedouble(d));
+  x_d_coef = keyval->doublevalue("x_d_coef", KeyValValuedouble(x_d_coef));
+}
+
+mPW91XFunctional::~mPW91XFunctional()
+{
+}
+
+void
+mPW91XFunctional::init_constants(Func f)
+{
+  a_x = -1.5*pow(3./(4.*M_PI), 1./3.);
+  if (f == B88) {
+      b = 0.0042;
+      beta = 0.0042;
+      c = 0.;
+      d = 1.;
+      x_d_coef = 0.;
+    }
+  else if (f == PW91) {
+      b = 0.0042;
+      beta = 5.*pow(36.*M_PI,-5./3.);
+      c = 1.6455;
+      d = 4.;
+      x_d_coef = 1.e-6;
+    }
+  else {
+      b = 0.0046;
+      beta = 5.*pow(36.*M_PI,-5./3.);
+      c = 1.6455;
+      d = 3.73;
+      x_d_coef = 1.e-6;
+    }
+}
+
+void
+mPW91XFunctional::save_data_state(StateOut& s)
+{
+  cout << "PW91XFunctional: cannot save state" << endl;
+  abort();
+}
+
+int
+mPW91XFunctional::need_density_gradient()
+{
+  return 1;
+}
+
+void
+mPW91XFunctional::spin_contrib(const PointInputData::SpinData &i,
+                               double &mpw, double &dmpw_dr, double &dmpw_dg)
+{
+  // this has been generated by macsyma
+  double rho = i.rho;
+  double gamma = i.gamma;
+
+  if (rho < MIN_DENSITY) {
+      mpw = 0.;
+      dmpw_dr = 0.;
+      dmpw_dg = 0.; // division by zero
+      return;
+    }
+  if (gamma < MIN_GAMMA) {
+      double rho_43 = rho * i.rho_13; // rho^(4/3)
+      // 2^(1/3) * a_x * rho^(4/3)
+      mpw = a_x * rho_43;
+      // (4/3) a_x rho^(1/3)
+      dmpw_dr = (4./3.) * a_x * i.rho_13;
+      dmpw_dg = -beta/rho_43;
+      return;
+    }
+
+  double t0,t1,t2,t3,t4,t5;
+  t0 = pow(rho,4.0/3.0);
+  t1 = 1/t0;
+  t2 = sqrt(gamma);
+  t3 = 1/pow(rho,4.0/3.0*d);
+  t4 = pow(gamma,d/2.0);
+  t5 = 1/pow(rho,8.0/3.0);
+  mpw = t0*(-((-(((-beta+b)*t5*gamma)*exp(-c*t5*gamma))-(t3*x_d_coef*t4
+     )+b*t5*gamma)/(-((t3*x_d_coef*t4)/a_x)+6*b*t1*asinh(t1*t2)*t2+1))+
+     a_x);
+  if (compute_potential_) {
+      double r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14;
+      r0 = pow(rho,4.0/3.0);
+      r1 = 1/r0;
+      r2 = sqrt(gamma);
+      r3 = asinh(r1*r2);
+      r4 = 1/a_x;
+      r5 = 1/pow(rho,4.0/3.0*d);
+      r6 = pow(gamma,d/2.0);
+      r7 = -(r4*r5*x_d_coef*r6)+6*b*r1*r3*r2+1;
+      r8 = 1/r7;
+      r9 = 1/pow(rho,8.0/3.0);
+      r10 = -beta+b;
+      r11 = exp(-c*r9*gamma);
+      r12 = -(r10*r9*gamma*r11)-(r5*x_d_coef*r6)+b*r9*gamma;
+      r13 = 1/pow(rho,11.0/3.0);
+      r14 = pow(rho,-(4.0/3.0*d)-1);
+      dmpw_dr = r0*(-(r8*(-((8.0/3.0*r10*c*pow(gamma,2.0)*r11)/pow(rho,
+       19.0/3.0))+8.0/3.0*r10*r13*gamma*r11+4.0/3.0*d*r14*x_d_coef*r6-(8.0
+       /3.0*b*r13*gamma)))+((4.0/3.0*r4*d*r14*x_d_coef*r6-((8*b*r13*gamma)
+       /sqrt(r9*gamma+1))-((8*b*r3*r2)/pow(rho,7.0/3.0)))*r12)/pow(r7,2.0)
+       )+4.0/3.0*pow(rho,1.0/3.0)*(-(r8*r12)+a_x);
+      double g0,g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12;
+      g0 = pow(rho,4.0/3.0);
+      g1 = 1/g0;
+      g2 = sqrt(gamma);
+      g3 = asinh(g1*g2);
+      g4 = 1/a_x;
+      g5 = 1/pow(rho,4.0/3.0*d);
+      g6 = d/2.0;
+      g7 = pow(gamma,g6);
+      g8 = -(g4*g5*x_d_coef*g7)+6*b*g1*g3*g2+1;
+      g9 = 1/pow(rho,8.0/3.0);
+      g10 = pow(gamma,g6-1);
+      g11 = -beta+b;
+      g12 = exp(-c*g9*gamma);
+      dmpw_dg = g0*(((-(1.0/2.0*g4*d*g5*x_d_coef*g10)+(3*b*g9)/sqrt(g9*
+       gamma+1)+(3*b*g1*g3)/g2)*(-(g11*g9*gamma*g12)-(g5*x_d_coef*g7)+b*g9
+       *gamma))/pow(g8,2.0)-(((g11*c*gamma*g12)/pow(rho,16.0/3.0)-(g11*g9*
+       g12)-(1.0/2.0*d*g5*x_d_coef*g10)+b*g9)/g8));
+    }
+}
+
+void
+mPW91XFunctional::point(const PointInputData &id,
+                         PointOutputData &od)
+{
+  od.zero();
+
+  double mpw, dmpw_dr, dmpw_dg;
+
+  // alpha
+  spin_contrib(id.a, mpw, dmpw_dr, dmpw_dg);
+  od.energy = mpw;
+  od.df_drho_a = dmpw_dr;
+  od.df_dgamma_aa = dmpw_dg;
+
+  // beta
+  if (spin_polarized_) {
+      spin_contrib(id.b, mpw, dmpw_dr, dmpw_dg);
+      od.energy += mpw;
+      od.df_drho_b = dmpw_dr;
+      od.df_dgamma_bb = dmpw_dg;
+    }
+  else {
+      od.energy += mpw;
+      od.df_drho_b = od.df_drho_a;
+      od.df_dgamma_bb = od.df_dgamma_aa;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3455,8 +4090,9 @@ void
   double rhoa13 = pow(rhoa, (1./3.));
   double Ax = -3./4.*pow( (3./M_PI), (1./3.) );
   double gamma_aa = 2. * sqrt(id.a.gamma);
-  double sa = gamma_aa/(2. * k_fa * rhoa);
+  double sa;
   if (rhoa < MIN_DENSITY) sa = 0.;
+  else sa = gamma_aa/(2. * k_fa * rhoa);
   double sa2 = sa*sa;
   double sa3 = sa2*sa;
   double sa4 = sa2*sa2;
@@ -3468,15 +4104,18 @@ void
   double ex = 0.5 * fpw86xa;
 
   if (compute_potential_) {
-    double dsa_drhoa = -4.*2.*sa/(3.*rhoa);
+    double dsa_drhoa;
     if (rhoa < MIN_DENSITY) dsa_drhoa = 0.;
+    else dsa_drhoa = -4.*2.*sa/(3.*rhoa);
     double dFxa_drhoa = m_ * pow(F1a, (m_-1.)) * ( 2.*a_*sa + 4.*b_*sa3 + 6.*c_*sa5) * dsa_drhoa;
     double dfpw86xa_drhoa = Ax * ( 2.*4./3.*rhoa13*Fxa + rhoa43 * dFxa_drhoa );
     od.df_drho_a = 0.5 * dfpw86xa_drhoa; 
 
-    double dsa_dgamma_aa = 2./(2.*k_fa*rhoa*gamma_aa);
-    double sa_dsa_dgamma_aa = 2./pow( (2.*k_fa*rhoa), 2.);
+    double sa_dsa_dgamma_aa;
     if (rhoa < MIN_DENSITY) sa_dsa_dgamma_aa = 0.;
+    else {
+        sa_dsa_dgamma_aa = 2./pow( (2.*k_fa*rhoa), 2.);
+      }
     double dFxa_dgamma_aa = m_ * pow(F1a, (m_-1.)) *
                     ( 2.*a_ + 4.*b_*sa2 + 6.*c_*sa4 ) * sa_dsa_dgamma_aa ;
     double dfpw86xa_dgamma_aa = Ax * rhoa43 * dFxa_dgamma_aa;
@@ -3493,8 +4132,9 @@ void
       double rhob43 = pow(rhob, (4./3.));
       double rhob13 = pow(rhob, (1./3.));
       double gamma_bb = 2.*sqrt(id.b.gamma);
-      double sb = gamma_bb/(2.*k_fb*rhob);
+      double sb;
       if (rhob < MIN_DENSITY) sb = 0.;
+      else sb = gamma_bb/(2.*k_fb*rhob);
       double sb2 = sb*sb;
       double sb3 = sb2*sb;
       double sb4 = sb3*sb;
@@ -3506,16 +4146,19 @@ void
       ex += 0.5 * fpw86xb;
       
       if (compute_potential_) {
-          double dsb_drhob = -4.*2.*sb/(3.*rhob);
+          double dsb_drhob;
           if (rhob < MIN_DENSITY) dsb_drhob = 0.;
+          else dsb_drhob = -4.*2.*sb/(3.*rhob);
           double dFxb_drhob = m_ * pow(F1b, (m_-1.))
                              * (2.*a_*sb + 4.*b_*sb3 + 6.*c_*sb5) * dsb_drhob;
           double dfpw86xb = Ax * ( 2.*4./3.*rhob13*Fxb + rhob43 * dFxb_drhob );
           od.df_drho_b = 0.5 * dfpw86xb;
 
-          double dsb_dgamma_bb = 2./(2.*k_fb*rhob*gamma_bb);
-          double sb_dsb_dgamma_bb = 2./pow( (2.*k_fb*rhob), 2.);
-          if (rhob < MIN_DENSITY) dsb_dgamma_bb = sb_dsb_dgamma_bb = 0.;
+          double sb_dsb_dgamma_bb;
+          if (rhob < MIN_DENSITY) sb_dsb_dgamma_bb = 0.;
+          else {
+              sb_dsb_dgamma_bb = 2./pow( (2.*k_fb*rhob), 2.);
+            }
           double dFxb_dgamma_bb = m_ * pow(F1b, (m_-1.)) *
                     ( 2.*a_ + 4.*b_*sb2 + 6.*c_*sb4) * sb_dsb_dgamma_bb;
           double dfpw86xb_dgamma_bb = Ax * rhob43 * dFxb_dgamma_bb;
@@ -3582,8 +4225,8 @@ G96XFunctional::need_density_gradient()
 }
 
 void
- G96XFunctional::point(const PointInputData &id,
-                         PointOutputData &od)
+G96XFunctional::point(const PointInputData &id,
+                      PointOutputData &od)
 {
   od.zero();
 
@@ -3593,27 +4236,37 @@ void
   double gamma_aa = sqrt(id.a.gamma);
   double gamma_aa32 = pow(gamma_aa, 1.5);
   double alpha = -1.5 * pow( (3./(4.*M_PI)), (1./3.) );
-  double gg96a = alpha - b_*gamma_aa32/(rhoa*rhoa);
-  double fxg96a = rhoa43 * gg96a;
-  if (rhoa < MIN_DENSITY) fxg96a = 0.;
+  double gg96a;
+  double fxg96a;
+  if (rhoa < MIN_DENSITY) gg96a = fxg96a = 0.;
+  else {
+      gg96a = alpha - b_*gamma_aa32/(rhoa*rhoa);
+      fxg96a = rhoa43 * gg96a;
+    }
   double ex = fxg96a;
 
   if (compute_potential_) {
 
-      double dgg96a_drhoa = 2.*b_*gamma_aa32/(rhoa*rhoa*rhoa);
-      double dfxg96a_drhoa = 4./3.*rhoa13*gg96a + rhoa43*dgg96a_drhoa;
+      double dfxg96a_drhoa;
       if (rhoa < MIN_DENSITY) dfxg96a_drhoa = 0.;
+      else {
+          double dgg96a_drhoa = 2.*b_*gamma_aa32/(rhoa*rhoa*rhoa);
+          dfxg96a_drhoa = 4./3.*rhoa13*gg96a + rhoa43*dgg96a_drhoa;
+        }
       od.df_drho_a = dfxg96a_drhoa;
       od.df_drho_b = od.df_drho_a;
       
-      double dgg96a_dgamma_aa = -3.*b_ / ( 4.*rhoa*rhoa*sqrt(gamma_aa) );
-      double dfxg96a_dgamma_aa = rhoa43 * dgg96a_dgamma_aa;
+      double dfxg96a_dgamma_aa;
       // The derivative of the G96X functional with respect to gamma_aa or bb
       // as implemented should go to infinity as gamma goes to zero.
       // However, the derivative gamma terms are eventually contracted with quantities
       // that have a sqrt(gamma) in the numerator and therefore the overall limit
       // is zero.
-      if (gamma_aa < MIN_DENSITY || rhoa < MIN_DENSITY ) dfxg96a_dgamma_aa = 0.;
+      if (gamma_aa < MIN_GAMMA || rhoa < MIN_DENSITY ) dfxg96a_dgamma_aa = 0.;
+      else {
+          double dgg96a_dgamma_aa = -3.*b_ / ( 4.*rhoa*rhoa*sqrt(gamma_aa) );
+          dfxg96a_dgamma_aa = rhoa43 * dgg96a_dgamma_aa;
+        }
       od.df_dgamma_aa = dfxg96a_dgamma_aa;
       od.df_dgamma_bb = od.df_dgamma_aa;
       od.df_dgamma_ab = 0.;
@@ -3625,21 +4278,31 @@ void
       double rhob13 = pow(rhob, (1./3.));
       double gamma_bb = sqrt(id.b.gamma);
       double gamma_bb32 = pow(gamma_bb, 1.5);
-      double gg96b = alpha - b_*gamma_bb32/(rhob*rhob);
-      double fxg96b = rhob43 * gg96b;
-      if (rhob < MIN_DENSITY) fxg96b = 0.;
+      double gg96b;
+      double fxg96b;
+      if (rhob < MIN_DENSITY) gg96b = fxg96b = 0.;
+      else {
+          gg96b = alpha - b_*gamma_bb32/(rhob*rhob);
+          fxg96b = rhob43 * gg96b;
+        }
       ex += fxg96b;
     
       if (compute_potential_) {
-          double dgg96b_drhob = 2.*b_*gamma_bb32/(rhob*rhob*rhob);
-          double dfxg96b_drhob = 4./3.*rhob13*gg96b + rhob43*dgg96b_drhob;
+          double dfxg96b_drhob;
           if (rhob < MIN_DENSITY) dfxg96b_drhob = 0.;
+          else {
+              double dgg96b_drhob = 2.*b_*gamma_bb32/(rhob*rhob*rhob);
+              dfxg96b_drhob = 4./3.*rhob13*gg96b + rhob43*dgg96b_drhob;
+            }
           od.df_drho_b = dfxg96b_drhob;
 
-          double dgg96b_dgamma_bb = -3.*b_ / ( 4.*rhob*rhob*sqrt(gamma_bb) );
-          double dfxg96b_dgamma_bb = rhob43 * dgg96b_dgamma_bb;
+          double dfxg96b_dgamma_bb;
           // See comment above with regard to correct limits.
-          if (gamma_bb < MIN_DENSITY || rhob < MIN_DENSITY ) dfxg96b_dgamma_bb = 0.;
+          if (gamma_bb < MIN_GAMMA || rhob < MIN_DENSITY) dfxg96b_dgamma_bb=0.;
+          else {
+              double dgg96b_dgamma_bb = -3.*b_ / (4.*rhob*rhob*sqrt(gamma_bb));
+              dfxg96b_dgamma_bb = rhob43 * dgg96b_dgamma_bb;
+            }
           od.df_dgamma_bb = dfxg96b_dgamma_bb;
         }
       }

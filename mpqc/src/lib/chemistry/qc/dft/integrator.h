@@ -45,6 +45,7 @@ class DenIntegrator: virtual public SavableState {
     RefShellExtent extent_;
 
     double value_;
+    double accuracy_;
 
     int spin_polarized_;
 
@@ -91,6 +92,8 @@ class DenIntegrator: virtual public SavableState {
 
     RefWavefunction wavefunction() const { return wfn_; }
     double value() const { return value_; }
+
+    void set_accuracy(double a) { accuracy_ = a; }
 
     // Call with non zero if the potential integrals are to be computed.
     // They can be returned with the vmat() member.

@@ -4,18 +4,29 @@ eval 'exec perl $0 $*'
 
 require QCResult;
 
-my $file1 = shift;
-my $file2 = shift;
-
 my $log10 = log(10.0);
 
-# for AIX, which isn't processing the {,} in the argument
-if ($file1 =~ /(.*){(.*),(.*)}(.*)/) {
-    $file1 = "$1$2$4";
-    $file2 = "$1$3$4";
+if ($ARGV[0] eq "-r") {
+    shift;
+    foreach $file1 (@ARGV) {
+        $file2 = $file1;
+        $file1 =~ s/run\//ref\//;
+        check($file1, $file2);
+    }
 }
+else {
+    my $file1 = shift;
+    my $file2 = shift;
 
-check($file1, $file2);
+
+# for AIX, which isn't processing the {,} in the argument
+    if ($file1 =~ /(.*){(.*),(.*)}(.*)/) {
+        $file1 = "$1$2$4";
+        $file2 = "$1$3$4";
+    }
+
+    check($file1, $file2);
+}
 
 # Takes the name of the output file as the first argument.  It must end in
 # a .out. The QCInput file must be in the same directory and must end in a
@@ -263,8 +274,8 @@ sub compare_vecs {
     my $nv1 = @v1;
     my $nv2 = @v2;
     if ($nv1 != $nv2) {
-        printf "compare_vecs: vecs not of equal length\n";
-        exit 1;
+        printf "<compare_vecs: vecs not of equal length>";
+        return -$maxerror;
     }
     while (($e1 = shift @v1)
            &&($e2 = shift @v2)) {
@@ -291,8 +302,8 @@ sub compare_vecs_magnitude {
     my $nv1 = @v1;
     my $nv2 = @v2;
     if ($nv1 != $nv2) {
-        printf "compare_vecs_magnitude: vecs not of equal length\n";
-        exit 1;
+        printf "<compare_vecs_magnitude: vecs not of equal length>";
+        return -$maxerror;
     }
     while (($e1 = shift @v1)
            &&($e2 = shift @v2)) {
@@ -319,7 +330,8 @@ sub compare_vecvecs {
     my $nv1 = @v1;
     my $nv2 = @v2;
     if ($nv1 != $nv2) {
-        die "compare_vecvecs: vecs not of equal length\n";
+        printf "<compare_vecvecs: vecs not of equal length>";
+        return -$maxerror;
     }
     while (($e1 = shift @v1)
            &&($e2 = shift @v2)) {
@@ -341,8 +353,8 @@ sub compare_string_vecs {
     my $nv1 = @v1;
     my $nv2 = @v2;
     if ($nv1 != $nv2) {
-        printf "compare_vecs: vecs not of equal length\n";
-        exit 1;
+        printf "<compare_vecs: vecs not of equal length>";
+        return 0;
     }
     my $e1, $e2;
     my $i = 0;

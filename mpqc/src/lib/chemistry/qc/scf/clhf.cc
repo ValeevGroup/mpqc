@@ -126,7 +126,7 @@ CLHF::done_vector()
 }
 
 void
-CLHF::ao_fock()
+CLHF::ao_fock(double accuracy)
 {
   int i;
   int nthread = threadgrp_->nthread();

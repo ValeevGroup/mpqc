@@ -73,6 +73,7 @@ DenIntegrator::DenIntegrator()
   alpha_vmat_ = 0;
   beta_vmat_ = 0;
   compute_potential_integrals_ = 0;
+  accuracy_ = DBL_EPSILON;
   linear_scaling_ = 1;
   use_dmat_bound_ = 1;
 }
@@ -90,6 +91,7 @@ DenIntegrator::DenIntegrator(const RefKeyVal& keyval)
   alpha_vmat_ = 0;
   beta_vmat_ = 0;
   compute_potential_integrals_ = 0;
+  accuracy_ = DBL_EPSILON;
 
   linear_scaling_ = keyval->booleanvalue("linear_scaling",
                                          KeyValValueboolean(1));
@@ -470,7 +472,7 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
           for (j=0; j<cs.size(); j++) {
               int jsh = cs[j].shell;
               int ijsh = (ish>jsh)?((ish*(ish+1))/2+jsh):((jsh*(jsh+1))/2+ish);
-              if (cs[i].bound*cs[j].bound*dmat_bound_[ijsh] > DBL_EPSILON) {
+              if (cs[i].bound*cs[j].bound*dmat_bound_[ijsh] > accuracy_) {
                   contrib = 1;
                   break;
                 }

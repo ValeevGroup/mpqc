@@ -203,7 +203,7 @@ class SCF: public OneBodyWavefunction {
     virtual RefSCExtrapData extrap_data() =0;
     
     // form the AO basis fock matrices
-    virtual void ao_fock() =0;
+    virtual void ao_fock(double accuracy) =0;
 
     // //////////////////////////////////////////////////////////////////////
     // do setup for gradient calculation

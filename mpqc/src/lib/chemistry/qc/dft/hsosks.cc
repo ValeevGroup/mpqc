@@ -213,7 +213,7 @@ HSOSKS::extrap_data()
 //////////////////////////////////////////////////////////////////////////////
 
 void
-HSOSKS::ao_fock()
+HSOSKS::ao_fock(double accuracy)
 {
   RefPetiteList pl = integral()->petite_list(basis());
   
@@ -273,6 +273,7 @@ HSOSKS::ao_fock()
   RefSymmSCMatrix dens_a = alpha_ao_density();
   RefSymmSCMatrix dens_b = beta_ao_density();
   integrator_->set_compute_potential_integrals(1);
+  integrator_->set_accuracy(0.00001*accuracy);
   integrator_->integrate(functional_, dens_a, dens_b);
   exc_ = integrator_->value();
   vxc_a_ = dens_a.clone();
@@ -392,6 +393,7 @@ HSOSKS::two_body_deriv(double * tbgrad)
   RefSymmSCMatrix dens_b = beta_ao_density();
   integrator_->init(this);
   integrator_->set_compute_potential_integrals(0);
+  integrator_->set_accuracy(0.00001*desired_gradient_accuracy());
   integrator_->integrate(functional_, dens_a, dens_b, dftgrad);
   // must unset the wavefunction so we don't have a circular list that
   // will not be freed with the reference counting memory manager

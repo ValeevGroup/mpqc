@@ -67,7 +67,7 @@ class UKS: public UnrestrictedSCF {
   protected:
     double exc_;
     
-    void ao_fock();
+    void ao_fock(double accuracy);
     double scf_energy();
     RefSCExtrapData extrap_data();
     void two_body_deriv(double*);

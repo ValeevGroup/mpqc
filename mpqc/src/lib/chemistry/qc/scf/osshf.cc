@@ -101,7 +101,7 @@ OSSHF::print(ostream&o) const
 //////////////////////////////////////////////////////////////////////////////
 
 void
-OSSHF::ao_fock()
+OSSHF::ao_fock(double accuracy)
 {
   RefPetiteList pl = integral()->petite_list(basis());
   

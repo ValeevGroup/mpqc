@@ -926,7 +926,9 @@ UnrestrictedSCF::compute_vector(double& eelec)
       
     // form the AO basis fock matrix
     tim_enter("fock");
-    ao_fock();
+    double accuracy = 0.01 * delta;
+    if (accuracy > 0.0001) accuracy = 0.0001;
+    ao_fock(accuracy);
     tim_exit("fock");
 
     // calculate the electronic energy

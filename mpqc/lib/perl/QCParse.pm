@@ -821,7 +821,8 @@ sub input_string() {
     $mole = "$mole\n    basis = \$:basis";
     $mole = "$mole\n    coor = \$..:coor";
     $mole = "$mole\n    memory = $memory";
-    if ($inputmethod eq "SCF" || $inputmethod eq "UHF") {
+    if ($inputmethod eq "SCF" || $inputmethod eq "UHF"
+        || $method eq "CLKS" || $method eq "UKS" || $method eq "HSOSKS") {
         $mole = "$mole\n    total_charge = $charge";
         $mole = "$mole\n    multiplicity = $mult";
         $mole = "$mole\n    print_npa = yes";

@@ -328,6 +328,12 @@ check:
 	    ($(CHECKOUT) $(REF)/$${file} $(RUN)/$${file} ); \
 	  done
 
+# much faster than above, but create a very long command line
+.PHONY: fastcheck
+fastcheck:
+	@echo Comparing outputs in run and ref directories:
+	$(CHECKOUT) -r $(ALLOUTPUTS)
+
 .PHONY: diff
 diff:
 	-diff -ur $(REF) $(RUN)

@@ -69,7 +69,7 @@ class HSOSKS: public HSOSSCF {
     int gradient_implemented() const;
 
   protected:
-    void ao_fock();
+    void ao_fock(double accuracy);
     double exc_;
     double scf_energy();
     RefSCExtrapData extrap_data();

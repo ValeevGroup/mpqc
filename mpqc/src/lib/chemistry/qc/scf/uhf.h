@@ -57,7 +57,7 @@ class UHF: public UnrestrictedSCF {
     int gradient_implemented() const;
 
   protected:
-    void ao_fock();
+    void ao_fock(double accuracy);
     void two_body_deriv(double*);
 };
 

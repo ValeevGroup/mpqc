@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <signal.h>
+
 #include <util/misc/formio.h>
 #include <util/group/pregtime.h>
 #include <chemistry/qc/dft/functional.h>
@@ -468,15 +470,14 @@ do_valtest(const RefDenFunctional &valtest)
     }
 }
 
+void sigfpe_handler(int)
+{
+  cout << "SIGFPE" << endl;
+}
+
 int
 main(int argc, char**argv)
 {
-
-//#if defined(__i386__) && defined(__GNUC__)
-//  make floating point errors cause an exception (except for denormalized
-//  operands, since small numbers are denormalized)
-//  asm("fldcw %0" : : "o" (0x372));
-//#endif
 
   int i;
   char *input = (argc > 1)? argv[1] : SRCDIR "/dfttest.in";
@@ -484,10 +485,18 @@ main(int argc, char**argv)
   // open keyval input
   RefKeyVal keyval(new ParsedKeyVal(input));
 
+#if defined(__i386__) && defined(__GNUC__)
+  //make floating point errors cause an exception (except for denormalized
+  //operands, since small numbers are denormalized)
+  if (keyval->booleanvalue("trap_fpes")) asm("fldcw %0" : : "o" (0x372));
+  //signal(SIGFPE,sigfpe_handler);
+#endif
+
   cout << "=========== Value f Tests ===========" << endl;
   int nvaltest = keyval->count("valtest");
   for (i=0; i<nvaltest; i++) {
     RefDenFunctional valtest = keyval->describedclassvalue("valtest", i);
+    if (valtest.nonnull()) valtest->print();
     do_valtest(valtest);
     }
 
@@ -499,7 +508,14 @@ main(int argc, char**argv)
 
   cout << "=========== FD df/drho Tests ===========" << endl;
   RefDenFunctional funcs[] = {
+    new PBECFunctional,
     new PW91CFunctional,
+    new PW91XFunctional,
+    new PBEXFunctional,
+    new PW92LCFunctional,
+    new mPW91XFunctional(mPW91XFunctional::B88),
+    new mPW91XFunctional(mPW91XFunctional::PW91),
+    new mPW91XFunctional(mPW91XFunctional::mPW91),
     new SlaterXFunctional,
     new Becke88XFunctional,
     new VWN1LCFunctional,
@@ -508,24 +524,30 @@ main(int argc, char**argv)
     new VWN4LCFunctional,
     new VWN5LCFunctional,
     new VWNTestLCFunctional,
-    new PW92LCFunctional,
     new PZ81LCFunctional,
-    new PBECFunctional,
     new P86CFunctional,
     new XalphaFunctional,
     new LYPCFunctional,
     new PW86XFunctional,
-    new PW91XFunctional,
-    new PBEXFunctional,
     new G96XFunctional,
     0
   };
+  const int maxerr = 1000;
+  int errcount[maxerr];
   for (i=0; funcs[i]; i++) {
     cout << "-----------------"
          << funcs[i]->class_name()
          << "-----------------"
          << endl;
-    funcs[i]->test();
+    int nerr = funcs[i]->test();
+    if (i<maxerr) errcount[i] = nerr;
+    else { cout << "dfttest: maxerr exceeded" << endl; abort(); }
+    }
+  cout << "-------------- ERROR RESULTS --------------" << endl;
+  for (int i=0; funcs[i]; i++) {
+    cout << funcs[i]->class_name() << ": " << errcount[i];
+    if (errcount[i] == 0) cout << " (OK)";
+    cout << endl;
     }
 
   RefMolecule mol = keyval->describedclassvalue("molecule");

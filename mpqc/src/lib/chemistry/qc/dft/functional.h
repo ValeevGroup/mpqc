@@ -36,8 +36,6 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/qc/wfn/wfn.h>
 
-#define MIN_DENSITY 10.*DBL_EPSILON
-
 struct PointInputData {
     enum {X=0, Y=1, Z=2};
     enum {XX=0, YX=1, YY=2, ZX=3, ZY=4, ZZ=5};
@@ -127,8 +125,8 @@ class DenFunctional: virtual public SavableState {
     double a0() const { return a0_; }
 
     void fd_point(const PointInputData&, PointOutputData&);
-    void test(const PointInputData &);
-    void test();
+    int test(const PointInputData &);
+    int test();
 };
 SavableState_REF_dec(DenFunctional);
 
@@ -236,8 +234,12 @@ class PBECFunctional: public DenFunctional {
 #   include <util/class/classd.h>  
   protected:
     RefLSDACFunctional local_;
-    double gamma_;
-    double beta_;
+    double gamma;
+    double beta;
+    void init_constants();
+    double rho_deriv(double rho_a, double rho_b, double mdr,
+                     double ec_local, double ec_local_dra);
+    double gab_deriv(double rho, double phi, double mdr, double ec_local);
   public:
     PBECFunctional();
     PBECFunctional(const RefKeyVal &);
@@ -252,6 +254,8 @@ class PBECFunctional: public DenFunctional {
 
 // The Perdew-Wang 1991 Correlation Functional computes energies and densities
 //    using the designated local correlation functional.
+// J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
+// and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.
 class PW91CFunctional: public DenFunctional {
 #   define CLASSNAME PW91CFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -260,6 +264,18 @@ class PW91CFunctional: public DenFunctional {
 #   include <util/class/classd.h>  
   protected:
     RefLSDACFunctional local_;
+    double a;
+    double b;
+    double c;
+    double d;
+    double alpha;
+    double c_c0;
+    double c_x;
+    double nu;
+    void init_constants();
+    double limit_df_drhoa(double rhoa, double gamma,
+                          double ec, double decdrhoa);
+
   public:
     PW91CFunctional();
     PW91CFunctional(const RefKeyVal &);
@@ -267,8 +283,6 @@ class PW91CFunctional: public DenFunctional {
     ~PW91CFunctional();
     void save_data_state(StateOut &);
     int need_density_gradient();
-    double Cxc(double rs);
-    double dCxc_drho(double rs, double drs_drho);
 
     void point(const PointInputData&, PointOutputData&);
     void set_spin_polarized(int);
@@ -615,6 +629,30 @@ class PW86XFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
+class PBEXFunctional: public DenFunctional {
+#   define CLASSNAME PBEXFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double mu;
+    double kappa;
+    void spin_contrib(const PointInputData::SpinData &,
+                      double &mpw, double &dmpw_dr, double &dmpw_dg);
+    void init_constants();
+  public:
+    PBEXFunctional();
+    PBEXFunctional(const RefKeyVal &);
+    PBEXFunctional(StateIn &);
+    ~PBEXFunctional();
+    void save_data_state(StateOut &);
+
+    int need_density_gradient();
+
+    void point(const PointInputData&, PointOutputData&);
+};
+
 // The Perdew-Wang 1991 (PW91) Exchange functional
 class PW91XFunctional: public DenFunctional {
 #   define CLASSNAME PW91XFunctional
@@ -623,12 +661,14 @@ class PW91XFunctional: public DenFunctional {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    double a1_;
-    double a2_;
-    double a3_;
-    double a4_;
-    double a5_;
-    double b_;
+    double a;
+    double b;
+    double c;
+    double d;
+    double a_x;
+    void spin_contrib(const PointInputData::SpinData &,
+                      double &mpw, double &dmpw_dr, double &dmpw_dg);
+    void init_constants();
   public:
     PW91XFunctional();
     PW91XFunctional(const RefKeyVal &);
@@ -641,26 +681,39 @@ class PW91XFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-// The Perdew-Burke-Ernzerhof 1996 (PBE) exchange functional
-class PBEXFunctional: public DenFunctional {
-#   define CLASSNAME PBEXFunctional
+// The modified 1991 Perdew-Wang Exchange functional.  See C. Adamo
+// and V. Barone, JCP, 108(2), 1998, p664.
+class mPW91XFunctional: public DenFunctional {
+#   define CLASSNAME mPW91XFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    double mu_;
-    double kappa_;     
+    double b;
+    double beta;
+    double c;
+    double d;
+    double a_x;
+    double x_d_coef;
+
+    void spin_contrib(const PointInputData::SpinData &,
+                      double &mpw, double &dmpw_dr, double &dmpw_dg);
   public:
-    PBEXFunctional();
-    PBEXFunctional(const RefKeyVal &);
-    PBEXFunctional(StateIn &);
-    ~PBEXFunctional();
+    enum Func { B88, PW91, mPW91 };
+
+    mPW91XFunctional();
+    mPW91XFunctional(Func);
+    mPW91XFunctional(const RefKeyVal &);
+    mPW91XFunctional(StateIn &);
+    ~mPW91XFunctional();
     void save_data_state(StateOut &);
 
     int need_density_gradient();
 
     void point(const PointInputData&, PointOutputData&);
+
+    void init_constants(Func);
 };
 
 // The Gill 1996 (G96) exchange functional

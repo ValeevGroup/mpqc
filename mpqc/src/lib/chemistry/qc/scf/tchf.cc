@@ -101,7 +101,7 @@ TCHF::print(ostream&o) const
 //////////////////////////////////////////////////////////////////////////////
 
 void
-TCHF::ao_fock()
+TCHF::ao_fock(double accuracy)
 {
   RefPetiteList pl = integral()->petite_list(basis());
   

@@ -150,7 +150,7 @@ HSOSHF::two_body_energy(double &ec, double &ex)
 //////////////////////////////////////////////////////////////////////////////
 
 void
-HSOSHF::ao_fock()
+HSOSHF::ao_fock(double accuracy)
 {
   RefPetiteList pl = integral()->petite_list(basis());
   

@@ -148,7 +148,7 @@ UHF::two_body_energy(double &ec, double &ex)
 //////////////////////////////////////////////////////////////////////////////
 
 void
-UHF::ao_fock()
+UHF::ao_fock(double accuracy)
 {
   RefPetiteList pl = integral()->petite_list(basis());
   

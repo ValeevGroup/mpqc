@@ -50,6 +50,12 @@ const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
 #   include <util/group/thpthd.h>
     const ClassDesc &group_force_link_c_ = PthreadThreadGrp::class_desc_;
 # endif
+
+#if defined(HAVE_PUMA_MPI2)
+#   include <util/group/thpuma.h>
+    const ClassDesc &group_force_link_d_ = PumaThreadGrp::class_desc_;
+#endif
+
 #endif /* __PIC__ */
 
 

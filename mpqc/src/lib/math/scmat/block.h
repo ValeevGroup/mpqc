@@ -29,7 +29,7 @@ SavableState_REF_dec(SCMatrixBlock);
 
 class SCMatrixBlockListLink {
   private:
-    operator = (const SCMatrixBlockListLink&) {}  // disallowed
+    void operator = (const SCMatrixBlockListLink&) {}  // disallowed
     SCMatrixBlock* _block;
     SCMatrixBlockListLink* _next;
   public:
@@ -47,7 +47,7 @@ class SCMatrixBlockListIter {
   public:
     SCMatrixBlockListIter(): link(0) {}
     SCMatrixBlockListIter(SCMatrixBlockListLink*l): link(l) {}
-    bool operator !=(const SCMatrixBlockListIter p) const {
+    int operator !=(const SCMatrixBlockListIter p) const {
         return link != p.link;
       }
     void operator ++() { link = link->next(); }

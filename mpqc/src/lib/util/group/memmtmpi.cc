@@ -33,6 +33,9 @@
 #pragma implementation
 #endif
 
+#include <assert.h>
+
+#include <util/misc/formio.h>
 #include <util/group/messmpi.h>
 #include <util/group/memmtmpi.h>
 
@@ -71,31 +74,38 @@ MTMPIThread::run()
   while (1) {
       MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
                mem_->req_type_,MPI_COMM_WORLD,&status);
+      if (mem_->debug_) {
+          mem_->print_lock_->lock();
+          req.print("RECV",mem_->hout);
+          mem_->print_lock_->unlock();
+        }
+      assert(req.size() >= 0);
+      assert(req.offset()+req.size() <= mem_->localsize());
       switch (req.request()) {
       case MemoryDataRequest::Deactivate:
           return;
       case MemoryDataRequest::Retrieve:
           MPI_Send(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
-                   req.node(),mem_->dat_type_,MPI_COMM_WORLD);
+                   req.node(),mem_->fr_type_,MPI_COMM_WORLD);
           break;
       case MemoryDataRequest::Replace:
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->dat_type_,MPI_COMM_WORLD);
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
           MPI_Recv(&mem_->data_[req.offset()],req.size(),MPI_BYTE,
-                   req.node(),mem_->dat_type_,MPI_COMM_WORLD,&status);
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->dat_type_,MPI_COMM_WORLD);
+                   req.node(),mem_->to_type_,MPI_COMM_WORLD,&status);
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
           break;
       case MemoryDataRequest::DoubleSum:
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->dat_type_,MPI_COMM_WORLD);
-          dsize = req.size();
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
+          dsize = req.size()/sizeof(double);
           dremain = dsize;
-          doffset = req.offset();
+          doffset = req.offset()/sizeof(double);
           l = mem_->lockcomm();
           while(dremain>0) {
               int dchunksize = dbufsize;
               if (dremain < dchunksize) dchunksize = dremain;
               MPI_Recv(chunk,dchunksize,MPI_DOUBLE,
-                       req.node(),mem_->dat_type_,MPI_COMM_WORLD,&status);
-              double *source_data = (double*) &mem_->data_[doffset];
+                       req.node(),mem_->to_type_,MPI_COMM_WORLD,&status);
+              double *source_data = &((double*)mem_->data_)[doffset];
               for (i=0; i<dchunksize; i++) {
                   source_data[i] += chunk[i];
                 }
@@ -103,10 +113,12 @@ MTMPIThread::run()
               doffset += dchunksize;
             }
           mem_->unlockcomm(l);
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->dat_type_,MPI_COMM_WORLD);
+          MPI_Send(&junk,1,MPI_BYTE,req.node(),mem_->fr_type_,MPI_COMM_WORLD);
           break;
       default:
+          mem_->print_lock_->lock();
           cout << "MTMPIThread: bad memory data request" << endl;
+          mem_->print_lock_->unlock();
           abort();
         }
     }
@@ -152,6 +164,11 @@ MTMPIMemoryGrp::~MTMPIMemoryGrp()
 {
   // send a shutdown message
   MemoryDataRequest req(MemoryDataRequest::Deactivate);
+  if (debug_) {
+      print_lock_->lock();
+      req.print("SEND",mout);
+      print_lock_->unlock();
+    }
   MPI_Send(req.data(),req.nbytes(),MPI_BYTE,me(),req_type_,MPI_COMM_WORLD);
 
   // wait on the thread to shutdown
@@ -168,14 +185,25 @@ MTMPIMemoryGrp::init_mtmpimg()
       cout << "MTMPIMemoryGrp didn't get the right number of threads" << endl;
       abort();
     }
+
+  if (debug_) {
+      char name[256];
+      sprintf(name, "mpqc.hand.%d", me());
+      hout.open(name);
+      sprintf(name, "mpqc.main.%d", me());
+      mout.open(name);
+    }
+
+  req_type_ = 9125;
+  to_type_ = 9126;
+  fr_type_ = 9127;
+
   thread_ = new MTMPIThread(this);
   mem_lock_ = th_->new_lock();
+  print_lock_ = th_->new_lock();
   th_->add_thread(0,0);
   th_->add_thread(1,thread_);
   th_->start_threads();
-
-  req_type_ = 9125;
-  dat_type_ = 9126;
 }
 
 long
@@ -197,11 +225,16 @@ MTMPIMemoryGrp::retrieve_data(void *data, int node, int offset, int size)
   MemoryDataRequest req(MemoryDataRequest::Retrieve,me(),offset,size);
 
   // send the request
+  if (debug_) {
+      print_lock_->lock();
+      req.print("SEND",mout);
+      print_lock_->unlock();
+    }
   MPI_Send(req.data(),req.nbytes(),MPI_BYTE,node,req_type_,MPI_COMM_WORLD);
 
   // receive the data
   MPI_Status status;
-  MPI_Recv(data,size,MPI_BYTE,node,dat_type_,MPI_COMM_WORLD,&status);
+  MPI_Recv(data,size,MPI_BYTE,node,fr_type_,MPI_COMM_WORLD,&status);
 }
 
 void
@@ -209,33 +242,44 @@ MTMPIMemoryGrp::replace_data(void *data, int node, int offset, int size)
 {
   MemoryDataRequest req(MemoryDataRequest::Replace,me(),offset,size);
 
-  MPI_Send(req.data(),req.nbytes(),MPI_BYTE,node,req_type_,MPI_COMM_WORLD);
+  if (debug_) {
+      print_lock_->lock();
+      req.print("SEND",mout);
+      print_lock_->unlock();
+    }
+  MPI_Send(req.data(),req.nbytes(),MPI_BYTE,node,to_type_,MPI_COMM_WORLD);
 
   // wait for the go ahead message
   MPI_Status status;
   char junk;
-  MPI_Recv(&junk,1,MPI_BYTE,node,dat_type_,MPI_COMM_WORLD,&status);
+  MPI_Recv(&junk,1,MPI_BYTE,node,fr_type_,MPI_COMM_WORLD,&status);
 
   // send the data
-  MPI_Send(data,size,MPI_BYTE,node,dat_type_,MPI_COMM_WORLD);
+  MPI_Send(data,size,MPI_BYTE,node,to_type_,MPI_COMM_WORLD);
 
   // wait for the ack message
-  MPI_Recv(&junk,1,MPI_BYTE,node,dat_type_,MPI_COMM_WORLD,&status);
+  MPI_Recv(&junk,1,MPI_BYTE,node,fr_type_,MPI_COMM_WORLD,&status);
 }
 
 void
-MTMPIMemoryGrp::sum_data(double *data, int node, int doffset, int dsize)
+MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
 {
-  MemoryDataRequest req(MemoryDataRequest::DoubleSum,me(),doffset,dsize);
+  MemoryDataRequest req(MemoryDataRequest::DoubleSum,me(),offset,size);
 
   // send the request
+  if (debug_) {
+      print_lock_->lock();
+      req.print("SEND",mout);
+      print_lock_->unlock();
+    }
   MPI_Send(req.data(),req.nbytes(),MPI_BYTE,node,req_type_,MPI_COMM_WORLD);
 
   // wait for the go ahead message
   MPI_Status status;
   char junk;
-  MPI_Recv(&junk,1,MPI_BYTE,node,dat_type_,MPI_COMM_WORLD,&status);
+  MPI_Recv(&junk,1,MPI_BYTE,node,fr_type_,MPI_COMM_WORLD,&status);
 
+  int dsize = size/sizeof(double);
   int dremain = dsize;
   int dcurrent = 0;
   while(dremain>0) {
@@ -243,13 +287,13 @@ MTMPIMemoryGrp::sum_data(double *data, int node, int doffset, int dsize)
       if (dremain < dchunksize) dchunksize = dremain;
       // send the data
       MPI_Send(&data[dcurrent],dchunksize,MPI_DOUBLE,
-               node,dat_type_,MPI_COMM_WORLD);
+               node,to_type_,MPI_COMM_WORLD);
       dcurrent += dchunksize;
       dremain -= dchunksize;
     }
 
   // wait for the ack message
-  MPI_Recv(&junk,1,MPI_BYTE,node,dat_type_,MPI_COMM_WORLD,&status);
+  MPI_Recv(&junk,1,MPI_BYTE,node,fr_type_,MPI_COMM_WORLD,&status);
 }
 
 #endif

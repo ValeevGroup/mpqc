@@ -33,6 +33,8 @@
 #ifndef _util_group_memmtmpi_h
 #define _util_group_memmtmpi_h
 
+#include <fstream.h>
+
 #include <util/group/message.h>
 #include <util/group/memamsg.h>
 #include <util/group/thread.h>
@@ -49,10 +51,14 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     RefThreadGrp th_;
 
     int req_type_;
-    int dat_type_;
+    int to_type_;
+    int fr_type_;
 
     Thread *thread_;
     RefThreadLock mem_lock_;
+    RefThreadLock print_lock_; // needed for debugging only
+    ofstream hout; // handler out
+    ofstream mout; // main thread out
 
     void init_mtmpimg();
 

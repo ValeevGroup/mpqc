@@ -208,7 +208,7 @@ MBPT2::compute_cs_grad()
   double **gradient, *gradient_dat;  // The MP2 gradient
   double **ginter;    // Intermediates for the MP2 gradient
 
-  BiggestContribs biggest_coefs(4,10);
+  BiggestContribs biggest_coefs(5,10);
   CharacterTable ct = molecule()->point_group()->char_table();
 
   int dograd = do_gradient();
@@ -971,8 +971,17 @@ MBPT2::compute_cs_grad()
               ibja_ptr = &mo_int[b+nocc + nbasis*(nocc + nbasis*ij_index)];
               for (a=0; a<nvir_act; a++) {
                 delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
-                if (i>=j && a>=b)
-                  biggest_coefs.insert(*iajb_ptr - *ibja_ptr,i,j,a,b);
+                // only include determinants with unique coefficients
+                if (a>=b && i_offset+i>=j) {
+                  // aaaa or bbbb
+                  if (a>b && i_offset+i>j) {
+                    biggest_coefs.insert(*iajb_ptr - *ibja_ptr,
+                                         i_offset+i,j,a,b,1111);
+                    }
+                  // abab or baba or abba or baab
+                  biggest_coefs.insert(*iajb_ptr,i_offset+i,j,a,b,1212);
+                  }
+
                 ecorr_mp2 += *iajb_ptr*(2**iajb_ptr - *ibja_ptr)*delta_ijab;
                 iajb_ptr++;
                 ibja_ptr += nbasis;;
@@ -1729,15 +1738,18 @@ MBPT2::compute_cs_grad()
     emp2 = escf + ecorr_mp2;
 
     if (biggest_coefs.ncontrib()) {
-      cout << endl << indent << "Largest first order coefficients:" << endl;
+      cout << endl << indent
+           << "Largest first order coefficients (unique determinants):"
+           << endl;
       }
     for (i=0; i<biggest_coefs.ncontrib(); i++) {
       int i0 = orbital_map[biggest_coefs.indices(i)[0]];
       int i1 = orbital_map[biggest_coefs.indices(i)[1]];
       int i2 = orbital_map[biggest_coefs.indices(i)[2] + nocc];
       int i3 = orbital_map[biggest_coefs.indices(i)[3] + nocc];
+      int spincase = biggest_coefs.indices(i)[4];
       cout << indent
-           << scprintf("  %2d %12.8f %2d %3s %2d %3s -> %2d %3s %2d %3s",
+           << scprintf("  %2d %12.8f %2d %3s %2d %3s -> %2d %3s %2d %3s (%s)",
                        i+1, biggest_coefs.val(i),
                        symorb_num_[i0]+1,
                        ct.gamma(symorb_irrep_[i0]).symbol(),
@@ -1746,7 +1758,8 @@ MBPT2::compute_cs_grad()
                        symorb_num_[i2]+1,
                        ct.gamma(symorb_irrep_[i2]).symbol(),
                        symorb_num_[i3]+1,
-                       ct.gamma(symorb_irrep_[i3]).symbol()
+                       ct.gamma(symorb_irrep_[i3]).symbol(),
+                       (spincase==1111?"++++":"+-+-")
              )
            << endl;
       }
@@ -1836,10 +1849,10 @@ MBPT2::compute_cs_grad()
     BiggestContribs biggest_s2(2,10);
     // compute the S2 norm
     double s2norm = 0.0;
-    laj_ptr = Laj;
-    for (j=0; j<nocc; j++) {
-      for (a=0; a<nvir; a++) {
-        tmpval = *laj_ptr++/(evals[a+nocc]-evals[j]);
+    for (j=nfzc; j<nocc; j++) {
+      laj_ptr = &Laj[j*nvir];
+      for (a=0; a<nvir_act; a++) {
+        tmpval = 0.5**laj_ptr++/(evals[a+nocc]-evals[j]);
         biggest_s2.insert(tmpval,j,a);
         s2norm += tmpval*tmpval;
         }
@@ -1847,7 +1860,7 @@ MBPT2::compute_cs_grad()
     s2norm = sqrt(s2norm/(2*nocc_act));
     cout << indent << "S2 norm = " << s2norm << endl;
     if (biggest_s2.ncontrib()) {
-      cout << endl << indent << "Largest S2 values:" << endl;
+      cout << endl << indent << "Largest S2 values (unique determinants):" << endl;
       }
     for (i=0; i<biggest_s2.ncontrib(); i++) {
       int i0 = orbital_map[biggest_s2.indices(i)[0]];

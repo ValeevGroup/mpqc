@@ -72,6 +72,18 @@ BiggestContribs::insert(double val, int i0, int i1, int i2, int i3)
 }
 
 void
+BiggestContribs::insert(double val, int i0, int i1, int i2, int i3, int i4)
+{
+  int i[5];
+  i[0] = i0;
+  i[1] = i1;
+  i[2] = i2;
+  i[3] = i3;
+  i[4] = i4;
+  insert(val,i);
+}
+
+void
 BiggestContribs::insert(double val, const int *ii)
 {
   if (maxcontrib_ == 0) return;

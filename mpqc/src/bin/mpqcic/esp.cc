@@ -281,7 +281,7 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
             avsfil.put(zp);
             avsfil.flush();
             }
-          gsync();
+          sync0();
 #endif
           npoints++;
           }

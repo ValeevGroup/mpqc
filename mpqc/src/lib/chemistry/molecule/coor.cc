@@ -380,7 +380,7 @@ SetIntCoor::print(RefMolecule mol, ostream& os)
 }
 
 void
-SetIntCoor::update_values(RefMolecule&mol)
+SetIntCoor::update_values(const RefMolecule&mol)
 {
   for (int i=0; i<coor_.length(); i++) {
       coor_[i]->update_value(mol);
@@ -592,7 +592,7 @@ SumIntCoor::force_constant(RefMolecule&molecule)
 }
 
 void
-SumIntCoor::update_value(RefMolecule&molecule)
+SumIntCoor::update_value(const RefMolecule&molecule)
 {
   int i, l = n();
 

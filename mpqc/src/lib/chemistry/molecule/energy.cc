@@ -176,8 +176,7 @@ MolecularEnergy::molecule_to_x()
     }
     Function::set_x(cartesian);
   } else {
-    mc_->to_internal(get_x_no_copy());
-    obsolete();
+    mc_->to_internal(get_x_reference());
   }
 }
 

@@ -4,6 +4,8 @@
 
 #include <util/group/message.h>
 
+//. \clsnm{ShmMessageGrp} is a concrete implementation of
+//. \clsnmref{intMessageGrp}.
 class ShmMessageGrp: public intMessageGrp {
 #define CLASSNAME ShmMessageGrp
 #define HAVE_KEYVAL_CTOR

@@ -32,26 +32,26 @@ class KeyValKeyword {
 
 class RefKeyValValue;
 
-//texi
-// The @code{KeyVal} class is designed to simplify the process of allowing
+//.
+// The \clsnm{KeyVal} class is designed to simplify the process of allowing
 // a user to specify keyword/value associations to a C++ program.  A
 // flexible input style and ease of use for the programmer is achieved with
 // this method.  Keywords are represented by null terminated character arrays.
 // The keywords are organized hierarchially, in a manner similar to the way
 // that many file systems are organized.  One character is special,
-// '@code{:}', which is used to separate the various hierarchial labels,
+// '\srccd{:}', which is used to separate the various hierarchial labels,
 // which are referred to as ``segments'', in the keyword.
 //
-// A convention for specifying arrays is provided by @code{KeyVal}.  Each
+// A convention for specifying arrays is provided by \clsnm{KeyVal}.  Each
 // index of the array is given by appending a segment containing the
-// character representation of the index.  Thus, @code{array:3:4} would be
+// character representation of the index.  Thus, \srccd{array:3:4} would be
 // a the keyword corresponding to third row and fourth column of
-// @code{array}.
+// \srccd{array}.
 //
-// To allow the @code{KeyVal} class to have associations that can represent
+// To allow the \clsnm{KeyVal} class to have associations that can represent
 // data for classes, the keyword can be associated with a class as well as
 // a value.  This permits polymorphic data to be unambiguously represented
-// by keyword/value associations.  Most use of @code{KeyVal} need not be
+// by keyword/value associations.  Most use of \clsnm{KeyVal} need not be
 // concerned with this.
 class KeyVal: public VRefCount {
   public:
@@ -66,31 +66,31 @@ class KeyVal: public VRefCount {
   protected:
     KeyVal();
 
-    //texi Set the current error condition.
+    //. Set the current error condition.
     void seterror(KeyValError err);
 
     void offset(ostream& fp,int n); // Put n ' ' into fp.
     enum {OffsetDelta=4};
 
-    //texi Ultimately called by @code{exists}.
+    //. Ultimately called by \srccd{exists}.
     virtual int    key_exists(const char*) = 0;
-    //texi Ultimately called by @code{count}.
+    //. Ultimately called by \srccd{count}.
     virtual int    key_count(const char* =0);
-    //texi Ultimately called by @code{value}.
+    //. Ultimately called by \srccd{value}.
     virtual RefKeyValValue key_value(const char*) = 0;
-    //texi Ultimately called by @code{booleavalue}.
+    //. Ultimately called by \srccd{booleavalue}.
     virtual int    key_booleanvalue(const char*);
-    //texi Ultimately called by @code{doublevalue}.
+    //. Ultimately called by \srccd{doublevalue}.
     virtual double key_doublevalue(const char* key);
-    //texi Ultimately called by @code{floatvalue}.
+    //. Ultimately called by \srccd{floatvalue}.
     virtual float  key_floatvalue(const char* key);
-    //texi Ultimately called by @code{charvalue}.
+    //. Ultimately called by \srccd{charvalue}.
     virtual char   key_charvalue(const char* key);
-    //texi Ultimately called by @code{intvalue}.
+    //. Ultimately called by \srccd{intvalue}.
     virtual int    key_intvalue(const char* key);
-    //texi Ultimately called by @code{pcharvalue}.
+    //. Ultimately called by \srccd{pcharvalue}.
     virtual char*  key_pcharvalue(const char* key);
-    //texi Ultimately called by @code{describedclassvalue}.
+    //. Ultimately called by \srccd{describedclassvalue}.
     virtual RefDescribedClass key_describedclassvalue(const char* key);
 
   public:
@@ -100,30 +100,30 @@ class KeyVal: public VRefCount {
     // then the overloaded functions will be hidden.  The key_... functions
     // should be overridden instead.
 
-    //texi This takes as its only argument a keyword.
+    //. This takes as its only argument a keyword.
     // Returns 1 if the keyword has a value and 0 otherwise.
     int    exists(const char*);
-    //texi If the value of a keyword is an array, then return its length.
+    //. If the value of a keyword is an array, then return its length.
     // If no arguments are given then the top level will be checked to
     // see if it is an array and, if so, the number of elements will be
     // counted.
     int    count(const char* =0);
-    //texi Return the value associated with the keyword.
+    //. Return the value associated with the keyword.
     RefKeyValValue value(const char*);
-    //texi Returns the boolean value (0 = false, 1 = true) of @var{key}.
+    //. Returns the boolean value (0 = false, 1 = true) of \vrbl{key}.
     int    booleanvalue(const char* key);
-    //texi Returns the double value of @var{key}.
+    //. Returns the double value of \vrbl{key}.
     double doublevalue(const char* key);
-    //texi Returns the float value of @var{key}.
+    //. Returns the float value of \vrbl{key}.
     float  floatvalue(const char* key);
-    //texi Returns the char value of @var{key}.
+    //. Returns the char value of \vrbl{key}.
     char   charvalue(const char* key);
-    //texi Returns the int value of @var{key}.
+    //. Returns the int value of \vrbl{key}.
     int    intvalue(const char* key);
-    //texi Returns a copy of the string representation of the @var{key}'s
+    //. Returns a copy of the string representation of the \vrbl{key}'s
     // value. Storage for the copy is obtained with new.
     char*  pcharvalue(const char* key);
-    //texi Returns a reference to an object of type DescribedClass
+    //. Returns a reference to an object of type DescribedClass
     // (@pxref{The DescribedClass Class}).
     RefDescribedClass describedclassvalue(const char* key);
 
@@ -189,12 +189,12 @@ class KeyVal: public VRefCount {
     static int    Defaultboolean();
     static RefDescribedClass DefaultRefDescribedClass();
 
-    //texi Return the current error condition.
+    //. Return the current error condition.
     KeyValError error();
-    //texi Return a textual representation of @var{err}.  The current error
+    //. Return a textual representation of \vrbl{err}.  The current error
     // condition will be used if the argument is omitted.
     char*  errormsg(KeyValError err);
-    //texi Return a textual representation of the current error.
+    //. Return a textual representation of the current error.
     char*  errormsg();
 
     virtual void errortrace(ostream&fp=cerr,int offset = 0);

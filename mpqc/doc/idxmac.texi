@@ -1,4 +1,0 @@
-@node    Macro Index, , Class Index, Top
-@unnumbered Macro Index
-
-@printindex mc

@@ -1,0 +1,176 @@
+
+\chapter{The Matrix Library}
+
+The scientific computing matrix library (SCMAT) is designed around a set
+of matrix abstractions that permit very general matrix implementations.
+This flexibility is needed to support diverse computing environments.
+For example, this library must support, at a minimum: simple matrices
+that provide efficient matrix computations in a uniprocessor
+environment, clusters of processors with enough memory to store all
+matrices connected by a relatively slow network (workstations on an
+LAN), clusters of processors with enough memory to store all matrices
+and a fast interconnect network (a massively parallel machine such as
+the Intel Paragon), and clusters of machines that don't have enough
+memory to hold entire matrices.
+
+The design of SCMAT differs from other object-oriented matrix packages
+in two important ways.  First, the matrix classes are abstract base
+classes.  No storage layout is defined and virtual function calls must
+be used to access individual matrix elements.  This would have a
+negative performance impact if users needed to frequently access matrix
+elements.  The interface to the matrix classes is hopefully rich enough
+to avoid individual matrix element access for any computationally
+significant task.  The second major difference is that symmetric
+matrices do not inherit from matrices, etc.  The SCMAT user must know
+whether a matrix is symmetric at all places it is used if any
+performance gain, by virtue of symmetry, is expected.
+
+Dimension information is contained objects of the \clsnmref{SCDimension}
+type.  In addition to the simple integer dimension, application specific
+blocking information can be provided.  For example, in a quantum chemistry
+application, the dimension corresponding to the atomic orbital basis set
+will have block sizes that correspond to the shells.  Dimensions are used
+to create new matrix or vector objects.
+
+The primary abstract classes are \clsnmref{SCMatrix},
+\clsnmref{SymmSCMatrix}, \clsnmref{DiagSCMatrix}, and \clsnmref{SCVector}.
+These represent matrices, symmetric matrices, diagonal matrices, and
+vectors, respectively.  These abstract classes are specialized into groups
+of classes.  For example, the locally stored matrix implementation
+specializes the abstract classes to \clsnmref{LocalSCMatrix},
+\clsnmref{LocalSymmSCMatrix}, \clsnmref{LocalDiagSCMatrix},
+\clsnmref{LocalSCVector}, \clsnmref{LocalSCDimension}, and
+\clsnmref{LocalSCMatrixKit}.  These specializations are all designed to
+work with each other.  However, they are incompatible with other matrix
+specializations.  An attempt to multiply a local matrix by a distributed
+matrix would generate an error at runtime.
+
+Since the different groups of classes do not interoperate, some mechanism
+of creating consistent specializations is needed.  This is done with
+\clsnmref{SCMatrixKit} objects.  \clsnmref{SCMatrixKit} is an abstract base
+type which has specializations that correspond to each group of the matrix
+specializations.  It is used to create matrices and vectors from that
+group.  For example, the \clsnmref{DistSCMatrixKit} is used to create
+objects of type \clsnmref{DistSCMatrix}, \clsnmref{DistSymmSCMatrix},
+\clsnmref{DistDiagSCMatrix}, and \clsnmref{DistSCVector}.
+
+The abstract matrix classes and their derivations are usually not directly
+used by SCMAT users.  The most convenient classes to use are the smart
+pointer classes \clsnmref{RefSCMatrix}, \clsnmref{RefSymmSCMatrix},
+\clsnmref{RefDiagSCMatrix}, \clsnmref{RefSCDimension}, and
+\clsnmref{RefSCMatrixKit}.  These automatically delete matrix objects when
+they are no longer needed.  This is through a reference count mechanism
+that is supported by the \clsnmref{VRefCount} base class.  The smart
+pointer classes also have matrix operations such as \clsnmref{operator
+*()}, \clsnmref{operator -()}, and \clsnmref{operator +()} defined as
+members for convenience.  These forward the operations to the contained
+matrix object.  The smart pointer classes also simplify creation of
+matrices by providing constructors that take as arguments one or more
+\clsnmref{RefSCDimension}'s and a \clsnmref{RefSCMatrixKit}.  These
+initialize the smart pointer to contain a new matrix with a specialization
+corresponding to that of the \clsnmref{RefSCMatrixKit}.  Matrix operations
+not provided by the smart pointer classes but present as member in the
+abstract classes can be accessed with \clsnmref{operator->()}.
+
+If a needed matrix operation is missing, mechanisms exist to add more
+general operations.  Operations which only depend on individual elements of
+matrices can be provided by user provided specializations of the
+\clsnmref{SCElementOp} class.  Sometimes we need operations on matrices
+with identical dimensions that examine each element in one matrix along
+with the corresponding element from the other matrix.  This is accomplished
+with \clsnmref{SCElementOp2} for two matrices and with
+\clsnmref{SCElementOp3} for three.
+
+Other features of SCMAT include run-time type facilities and persistence.
+Castdown operations (type conversions from less to more derived objects)
+and other run-time type information are provided by the
+\clsnmref{DescribedClass} base class.  Persistence is not provided by
+inheriting from \clsnmref{SavableState} base clase as is the case with many
+other classes, because it is necessary to save objects in an implementation
+independent manner.  If a calculation checkpoints a matrix on a single
+processor machine and later is restarted on a multiprocessor machine the
+matrix would need to be restored as a different matrix abstraction.  This
+is handled by saving and restoring matrices' and vectors' data without
+reference to the specialization.
+
+The following include files are provided by the matrix library:
+
+\begin{itemize}
+\item[\filnm{matrix.h}]
+Usually, this is the only include file needed by users of matrices.  It
+declares reference counting pointers to matrix implementations.
+
+If kit for a matrix must be created, or a member specific to an
+implementation is needed, then that implementation's header file must be
+included.
+
+\item[\filnm{elemop.h}]
+This is the next most useful include file.  It defines useful
+\clsnmref{SCElementOp}, \clsnmref{SCElementOp2}, and \clsnmref{SCElementOp3}
+specializations.
+
+\item[\filnm{abstract.h}]
+This include file contains the declarations for abstract classes that
+users do not usually need to see.  These include \clsnmref{SCDimension},
+\clsnmref{SCMatrix}, \clsnmref{SymmSCMatrix}, \clsnmref{DiagSCMatrix},
+\clsnmref{SCMatrixKit}.  This file is currently include by \filnm{matrix.h}
+however this may change.
+
+\item[\filnm{block.h}]
+This file declares \clsnmref{SCMatrixBlock} and specializations.  It
+only need be include by users implementing new \clsnmref{SCElementOp}
+specializations.
+
+\item[\filnm{blkiter.h}]
+This include file declares the implementations of
+\clsnmref{SCMatrixBlockIter}.  It only need be include by users implementing
+new \clsnmref{SCElementOp} specializations.
+
+\item[\filnm{vector3.h}]
+This declares \clsnmref{SCVector3} a fast vector of length three.
+
+\item[\filnm{matrix3.h}]
+This declares \clsnmref{SCMatrix3}, a fast matrix of dimension three by
+three.  It includes \filnm{vector3.h}.
+
+\item[\filnm{local.h}]
+This include file is the matrix implementation for locally stored
+matrices.  These are suitable for use in a uniprocessor environment.
+The \clsnmref{LocalSCMatrixKit} is the default matrix implementation
+returned by the static member \clsnmref{SCMatrixKit::default\_matrixkit}.
+This file usually doesn't need to be included.
+
+\item[\filnm{dist.h}]
+This include file is the matrix implementation for distributed matrices.
+These are suitable for use in a distributed memory multiprocessor which
+does not have enough memory to hold all of the matrix elements on each
+processor.  This file usually doesn't need to be included.
+
+\item[\filnm{repl.h}]
+This include file is the matrix implementation for replicated matrices.
+These are suitable for use in a distributed memory multiprocessor which
+does have enough memory to hold all of the matrix elements on each
+processor.  This file usually doesn't need to be included.
+
+\item[\filnm{blocked.h}]
+This include file is the matrix implementation for blocked matrices.
+Blocked matrices store a matrix as subblocks that are matrices from
+another matrix specialization.  These are used to implement point group
+symmetry in the quantum chemistry applications.
+
+\end{itemize}
+
+
+\input{math/scmat/doc/RefSCDimension.cls.tex}
+\input{math/scmat/doc/RefSCVector.cls.tex}
+\input{math/scmat/doc/RefSCMatrix.cls.tex}
+\input{math/scmat/doc/RefSymmSCMatrix.cls.tex}
+\input{math/scmat/doc/RefDiagSCMatrix.cls.tex}
+
+\input{math/scmat/doc/SCDimension.cls.tex}
+
+\input{math/scmat/doc/SCMatrixKit.cls.tex}
+\input{math/scmat/doc/SCVector.cls.tex}
+\input{math/scmat/doc/SCMatrix.cls.tex}
+\input{math/scmat/doc/SymmSCMatrix.cls.tex}
+\input{math/scmat/doc/DiagSCMatrix.cls.tex}

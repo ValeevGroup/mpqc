@@ -3,6 +3,10 @@
 #pragma interface
 #endif
 
+//. \clsnm{SSRef} is similar to the \clsnmref{DCRef} class
+//. template, however it provides members to save and restore
+//. the state of contained objects.  Null references are
+//. saved and restored correctly as well.
 template <class T>
 class SSRef: public DCRef<T>, public SSRefBase {
   public:
@@ -19,6 +23,7 @@ class SSRef: public DCRef<T>, public SSRefBase {
         DCRef<T>::operator=(c); return *this; }
     SSRef (StateIn&s) { restore_state(s); }
     SavableState *sspointer() { return p; }
+    //. Restore the state of the reference.
     void restore_state(StateIn&si) {
         SavableState* ss = restore_ss(si);
         T* t = T::castdown(ss);

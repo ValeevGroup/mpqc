@@ -13,6 +13,8 @@
 
 ////////////////////////////////////////////////////////////////////////
 
+//. The \clsnm{Optimize} class is an abstract base class for classes
+//that find the extreme points of \clsnmref{Function}'s.
 class Optimize: virtual_base public SavableState {
 #   define CLASSNAME Optimize
 #   include <util/state/stated.h>
@@ -24,25 +26,31 @@ class Optimize: virtual_base public SavableState {
     char *ckpt_file;
     RefFunction function_;
   public:
+    //. Standard constructors and destructor.
     Optimize();
     Optimize(StateIn&);
     Optimize(const RefKeyVal&);
     virtual ~Optimize();
+
     void save_data_state(StateOut&);
 
+    //. Do the optimization.
     virtual int optimize();
 
+    //. Set up for checkpointing.
     void set_checkpoint();
     void set_checkpoint_file(const char*);
+
+    //. Set the iteration limit.
     void set_max_iterations(int);
   
-    // initialize the optimizer
+    //. Initialize the optimizer.
     virtual void init();
-    // take a step
-    // returns 1 if the optimization has converged, otherwise 0
+    //. Take a step.  Returns 1 if the optimization has converged,
+    //otherwise 0.
     virtual int update() = 0;
 
-    // returns the problem being optimized
+    //. Returns information about the \clsnmref{Function} being optimized.
     RefFunction function() const { return function_; }
     RefSCMatrixKit matrixkit() const { return function_->matrixkit(); }
     RefSCMatrixKit dimension() const { return function_->dimension(); }

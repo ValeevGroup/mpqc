@@ -25,49 +25,48 @@ class SCVectorSimpleBlock;
 class RefSCMatrix;
 class RefSymmSCMatrix;
 DescribedClass_named_REF_dec(RefDCSCVector,SCVector);
-//texi
-//  The @code{RefSCVector} class is a smart pointer to an @code{SCVector}
-//  specialization.  Valid indices range from @code{0} to @code{n-1}.
+//. The \clsnm{RefSCVector} class is a smart pointer to an \clsnmref{SCVector}
+//. specialization.  Valid indices range from \srccd{0} to \srccd{n-1}.
 class RefSCVector: public RefDCSCVector {
     // standard overrides
   public:
-    //texi Initializes the vector pointer to @code{0}.  The reference must
-    // be initialized before it is used.
+    //. Initializes the vector pointer to \srccd{0}.  The reference must
+    //. be initialized before it is used.
     RefSCVector();
-    //texi Make this and @var{v} refer to the same @code{SCVector}.
+    //. Make this and \vrbl{v} refer to the same \clsnmref{SCVector}.
     RefSCVector(const RefSCVector& v);
-    //texi Make this refer to @var{v}.
+    //. Make this refer to \vrbl{v}.
     RefSCVector(SCVector *v);
     // don't allow automatic conversion from any reference to a
     // described class
     ~RefSCVector();
-    //texi Make this refer to @var{v}.
+    //. Make this refer to \vrbl{v}.
     RefSCVector& operator=(SCVector* v);
-    //texi Make this and @var{v} refer to the same @code{SCVector}.
+    //. Make this and \vrbl{v} refer to the same \clsnmref{SCVector}.
     RefSCVector& operator=(const RefSCVector& v);
 
     // vector specific members
   public:
-    //texi Create a vector with dimension @var{dim}.  The data values
-    // are undefined.
+    //. Create a vector with dimension \vrbl{dim}.  The data values
+    //. are undefined.
     RefSCVector(const RefSCDimension& dim,const RefSCMatrixKit&);
 
-    //texi Return an l-value that can be used to assign or retrieve an element.
+    //. Return an l-value that can be used to assign or retrieve an element.
     SCVectordouble operator()(int) const;
     SCVectordouble operator[](int) const;
-    //texi Add two vectors.
+    //. Add two vectors.
     RefSCVector operator+(const RefSCVector&a) const;
-    //texi Subtract two vectors.
+    //. Subtract two vectors.
     RefSCVector operator-(const RefSCVector&a) const;
-    //texi Scale a vector.
+    //. Scale a vector.
     RefSCVector operator*(double) const;
-    //texi Return the outer product between this and @var{v}.
+    //. Return the outer product between this and \vrbl{v}.
     RefSCMatrix outer_product(const RefSCVector& v) const;
-    //texi The outer product of this with itself is a symmetric matrix.
+    //. The outer product of this with itself is a symmetric matrix.
     RefSymmSCMatrix symmetric_outer_product() const;
 
-    //texi These call the @code{SCMatrix} members of the same name
-    // after checking for references to @code{0}.
+    //. These call the \clsnmref{SCMatrix} members of the same name
+    //. after checking for references to \srccd{0}.
     void set_element(int i,double val) const;
     void accumulate_element(int i,double val) const;
     double get_element(int) const;
@@ -107,56 +106,55 @@ SET_dec(RefSCVector);
 class RefSymmSCMatrix;
 class RefDiagSCMatrix;
 DescribedClass_named_REF_dec(RefDCSCMatrix,SCMatrix);
-//texi
-//  The @code{RefSCMatrix} class is a smart pointer to an @code{SCMatrix}
-//  specialization.
+//. The \clsnm{RefSCMatrix} class is a smart pointer to an \clsnmref{SCMatrix}
+//. specialization.
 class RefSCMatrix: public RefDCSCMatrix {
     // standard overrides
   public:
-    //texi Initializes the matrix pointer to @var{0}.  The reference must
-    // be initialized before it is used.
+    //. Initializes the matrix pointer to \vrbl{0}.  The reference must
+    //. be initialized before it is used.
     RefSCMatrix();
-    //texi Make this and @var{m} refer to the same @code{SCMatrix}.
+    //. Make this and \srccd{m} refer to the same \srccd{SCMatrix}.
     RefSCMatrix(const RefSCMatrix& m);
-    //texi Make this refer to @var{m}.
+    //. Make this refer to \srccd{m}.
      RefSCMatrix(SCMatrix* m);
     ~RefSCMatrix();
-    //texi Make this refer to @var{m}.
+    //. Make this refer to \srccd{m}.
     RefSCMatrix& operator=(SCMatrix* m);
-    //texi Make this and @var{m} refer to the same matrix.
+    //. Make this and \srccd{m} refer to the same matrix.
     RefSCMatrix& operator=(const RefSCMatrix& m);
 
     // matrix specific members
   public:
-    //texi Create a vector with dimension @var{d1} by @var{d2}.
-    // The data values are undefined.
+    //. Create a vector with dimension \vrbl{d1} by \vrbl{d2}.
+    //. The data values are undefined.
     RefSCMatrix(const RefSCDimension& d1,const RefSCDimension& d2,
                 const RefSCMatrixKit&);
 
-    //texi Multiply this by a vector and return a vector.
+    //. Multiply this by a vector and return a vector.
     RefSCVector operator*(const RefSCVector&) const;
 
-    //texi Multiply this by a matrix and return a matrix.
+    //. Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     RefSCMatrix operator*(const RefSymmSCMatrix&) const;
     RefSCMatrix operator*(const RefDiagSCMatrix&) const;
 
-    //texi Multiply this by a scalar and return the result.
+    //. Multiply this by a scalar and return the result.
     RefSCMatrix operator*(double) const;
 
-    //texi Matrix addition and subtraction.
+    //. Matrix addition and subtraction.
     RefSCMatrix operator+(const RefSCMatrix&) const;
     RefSCMatrix operator-(const RefSCMatrix&) const;
 
-    //texi Return the transpose of this.
+    //. Return the transpose of this.
     RefSCMatrix t() const;
-    //texi Return the inverse of this.
+    //. Return the inverse of this.
     RefSCMatrix i() const;
-    //texi Return the generalized inverse of this.
+    //. Return the generalized inverse of this.
     RefSCMatrix gi() const;
 
-    //texi These call the @code{SCMatrix} members of the same name
-    // after checking for references to @code{0}.
+    //. These call the \clsnmref{SCMatrix} members of the same name
+    //. after checking for references to \srccd{0}.
     RefSCMatrix clone() const;
     RefSCMatrix copy() const;
 
@@ -203,64 +201,63 @@ class RefSCMatrix: public RefDCSCMatrix {
     void save(StateOut&);
     void restore(StateIn&);
 
-    //texi Compute the singular value decomposition.
-    // @code{this} = @var{U} @var{sigma} @var{V}@code{.t()}.
-    // The dimension of @var{sigma} is the smallest dimension of
-    // @code{this}.  @var{U}, @var{V}, and @var{sigma} must already
-    // have the correct dimensions and are overwritten.
+    //. Compute the singular value decomposition.
+    //. \srccd{this} = \vrbl{U} \vrbl{sigma} \vrbl{V}\srccd{.t()}.
+    //. The dimension of \vrbl{sigma} is the smallest dimension of
+    //. \srccd{this}.  \vrbl{U}, \vrbl{V}, and \vrbl{sigma} must already
+    //. have the correct dimensions and are overwritten.
     void svd(const RefSCMatrix &U,
              const RefDiagSCMatrix &sigma,
              const RefSCMatrix &V);
-    //texi Solves @code{this} @var{x} = @var{v}.  Overwrites
-    // @var{v} with @var{x}.
+    //. Solves \srccd{this} \vrbl{x} = \vrbl{v}.  Overwrites
+    //. \vrbl{v} with \vrbl{x}.
     double solve_lin(const RefSCVector& v) const;
-    //texi Returns the determinant of the referenced matrix.
+    //. Returns the determinant of the referenced matrix.
     double determ() const;
-    //texi Assign and examine matrix elements.
+    //. Assign and examine matrix elements.
     SCMatrixdouble operator()(int i,int j) const;
 };
-//texi Allow multiplication with a scalar on the left.
+//. Allow multiplication with a scalar on the left.
 RefSCMatrix operator*(double,const RefSCMatrix&);
 
 DescribedClass_named_REF_dec(RefDCSymmSCMatrix,SymmSCMatrix);
-//texi
-//  The @code{RefSymmSCMatrix} class is a smart pointer to an
-//   @code{SCSymmSCMatrix} specialization.
+//. The \clsnmref{RefSymmSCMatrix} class is a smart pointer to an
+//. \clsnmref{SCSymmSCMatrix} specialization.
 class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     // standard overrides
   public:
-    //texi Initializes the matrix pointer to @var{0}.  The reference must
-    // be initialized before it is used.
+    //. Initializes the matrix pointer to \vrbl{0}.  The reference must
+    //. be initialized before it is used.
     RefSymmSCMatrix();
-    //texi Make this and @var{m} refer to the same @code{SCMatrix}.
+    //. Make this and \vrbl{m} refer to the same \clsnmref{SCMatrix}.
     RefSymmSCMatrix(const RefSymmSCMatrix& m);
-    //texi Make this refer to @var{m}.
+    //. Make this refer to \vrbl{m}.
     RefSymmSCMatrix(SymmSCMatrix *m);
     ~RefSymmSCMatrix();
-    //texi Make this refer to @var{m}.
+    //. Make this refer to \vrbl{m}.
     RefSymmSCMatrix& operator=(SymmSCMatrix* m);
-    //texi Make this and @var{m} refer to the same matrix.
+    //. Make this and \vrbl{m} refer to the same matrix.
     RefSymmSCMatrix& operator=(const RefSymmSCMatrix& m);
 
     // matrix specific members
   public:
-    //texi Create a vector with dimension @var{d} by @var{d}.
-    // The data values are undefined.
+    //. Create a vector with dimension \vrbl{d} by \vrbl{d}.
+    //. The data values are undefined.
     RefSymmSCMatrix(const RefSCDimension& d,const RefSCMatrixKit&);
-    //texi Multiply this by a matrix and return a matrix.
+    //. Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
-    //texi Multiply this by a vector and return a vector.
+    //. Multiply this by a vector and return a vector.
     RefSCVector operator*(const RefSCVector&a) const;
     RefSymmSCMatrix operator*(double) const;
-    //texi Matrix addition and subtraction.
+    //. Matrix addition and subtraction.
     RefSymmSCMatrix operator+(const RefSymmSCMatrix&) const;
     RefSymmSCMatrix operator-(const RefSymmSCMatrix&) const;
-    //texi Return the inverse of this.
+    //. Return the inverse of this.
     RefSymmSCMatrix i() const;
-    //texi Return the generalized inverse of this.
+    //. Return the generalized inverse of this.
     RefSymmSCMatrix gi() const;
-    //texi These call the @code{SCMatrix} members of the same name
-    // after checking for references to @code{0}.
+    //. These call the \clsnmref{SCMatrix} members of the same name
+    //. after checking for references to \srccd{0}.
     RefSymmSCMatrix clone() const;
     RefSymmSCMatrix copy() const;
     void set_element(int,int,double) const;
@@ -308,62 +305,61 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     void save(StateOut&);
     void restore(StateIn&);
 
-    //texi Solves @code{this} @var{x} = @var{v}.  Overwrites
-    // @var{v} with @var{x}.
+    //. Solves \srccd{this} \vrbl{x} = \vrbl{v}.  Overwrites
+    //. \vrbl{v} with \vrbl{x}.
     double solve_lin(const RefSCVector&) const;
-    //texi Returns the determinant of the referenced matrix.
+    //. Returns the determinant of the referenced matrix.
     double determ() const;
-    //texi Returns the eigenvalues of the reference matrix.
+    //. Returns the eigenvalues of the reference matrix.
     RefDiagSCMatrix eigvals() const;
-    //texi Returns the eigenvectors of the reference matrix.
+    //. Returns the eigenvectors of the reference matrix.
     RefSCMatrix eigvecs() const;
-    //texi Sets @var{eigvals} to the eigenvalues and @var{eigvecs}
-    // to the eigenvalues and eigenvectors of the referenced matrix.
+    //. Sets \vrbl{eigvals} to the eigenvalues and \vrbl{eigvecs}
+    //. to the eigenvalues and eigenvectors of the referenced matrix.
     void diagonalize(const RefDiagSCMatrix& eigvals,
                      const RefSCMatrix& eigvecs) const;
-    //texi Assign and examine matrix elements.
+    //. Assign and examine matrix elements.
     SymmSCMatrixdouble operator()(int i,int j) const;
 };
-//texi Allow multiplication with a scalar on the left.
+//. Allow multiplication with a scalar on the left.
 RefSymmSCMatrix operator*(double,const RefSymmSCMatrix&);
 
 DescribedClass_named_REF_dec(RefDCDiagSCMatrix,DiagSCMatrix);
-//texi
-//  The @code{RefDiagSCMatrix} class is a smart pointer to an
-//  @code{DiagSCMatrix} specialization.
+//. The \clsnmref{RefDiagSCMatrix} class is a smart pointer to an
+//. \clsnmref{DiagSCMatrix} specialization.
 class RefDiagSCMatrix: public RefDCDiagSCMatrix {
     // standard overrides
   public:
-    //texi Initializes the matrix pointer to @var{0}.  The reference must
-    // be initialized before it is used.
+    //. Initializes the matrix pointer to \vrbl{0}.  The reference must
+    //. be initialized before it is used.
     RefDiagSCMatrix();
-    //texi Make this and @var{m} refer to the same @code{SCMatrix}.
+    //. Make this and \vrbl{m} refer to the same \clsnmref{SCMatrix}.
     RefDiagSCMatrix(const RefDiagSCMatrix& m);
-    //texi Make this refer to @var{m}.
+    //. Make this refer to \vrbl{m}.
     RefDiagSCMatrix(DiagSCMatrix *m);
     ~RefDiagSCMatrix();
-    //texi Make this refer to @var{m}.
+    //. Make this refer to \vrbl{m}.
     RefDiagSCMatrix& operator=(DiagSCMatrix* m);
-    //texi Make this and @var{m} refer to the same matrix.
+    //. Make this and \vrbl{m} refer to the same matrix.
     RefDiagSCMatrix& operator=(const RefDiagSCMatrix & m);
 
     // matrix specific members
   public:
-    //texi Create a vector with dimension @var{d} by @var{d}.
-    // The data values are undefined.
+    //. Create a vector with dimension \vrbl{d} by \vrbl{d}.
+    //. The data values are undefined.
     RefDiagSCMatrix(const RefSCDimension&,const RefSCMatrixKit&);
-    //texi Multiply this by a matrix and return a matrix.
+    //. Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     RefDiagSCMatrix operator*(double) const;
-    //texi Matrix addition and subtraction.
+    //. Matrix addition and subtraction.
     RefDiagSCMatrix operator+(const RefDiagSCMatrix&) const;
     RefDiagSCMatrix operator-(const RefDiagSCMatrix&) const;
-    //texi Return the inverse of this.
+    //. Return the inverse of this.
     RefDiagSCMatrix i() const;
-    //texi Return the generalized inverse of this.
+    //. Return the generalized inverse of this.
     RefDiagSCMatrix gi() const;
-    //texi These call the @code{SCMatrix} members of the same name
-    // after checking for references to @code{0}.
+    //. These call the \clsnmref{SCMatrix} members of the same name
+    //. after checking for references to \srccd{0}.
     RefDiagSCMatrix clone() const;
     RefDiagSCMatrix copy() const;
     void set_element(int,double) const;
@@ -390,12 +386,12 @@ class RefDiagSCMatrix: public RefDCDiagSCMatrix {
     void print(const char*title=0,ostream&out=cout, int =10) const;
     void save(StateOut&);
     void restore(StateIn&);
-    //texi Returns the determinant of the referenced matrix.
+    //. Returns the determinant of the referenced matrix.
     double determ() const;
-    //texi Assign and examine matrix elements.
+    //. Assign and examine matrix elements.
     DiagSCMatrixdouble operator()(int i) const;
 };
-//texi Allow multiplication with a scalar on the left.
+//. Allow multiplication with a scalar on the left.
 RefDiagSCMatrix operator*(double,const RefDiagSCMatrix&);
 
 class SCVectordouble {

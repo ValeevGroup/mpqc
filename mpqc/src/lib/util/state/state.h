@@ -41,6 +41,8 @@ class StateOut;
 #  define maybe_SavableState(s) ,SavableState(s)
 #endif
 
+//. \clsnm{SavableState} give objects of derivative classes the
+//. ability to save and restore their state or to send their state.
 class SavableState: public DescribedClass {
 #   define CLASSNAME SavableState
 #   include <util/class/classda.h>
@@ -56,45 +58,60 @@ class SavableState: public DescribedClass {
 
     //// save functions
 
-    // Save an object with unknown exact type.  Duplicated save_states
-    // for an object result in a single object being restored.
+    //. Save the state of the object as specified by the
+    //. \clsnmref{StateOut} object.  This routine saves the state
+    //. of the object (which includes the nonvirtual bases),
+    //. the virtual bases, and type information.  The default
+    //. implementation should be adequate.
     void save_state(StateOut&);
 
-    // Save an object with known exact type.
-    // This is non virtual and checks to make sure that
-    // the exact type == object type.  Each derived class should provide
-    // its own version.
+    //. This can be used for saving state when the exact type of
+    //. the object is known for both the save and the restore.  To
+    //. restore objects saved in this way the user must directly
+    //. invoke the object's \srccd{\clsnmref{StateIn}\&} constructor.
     void save_object_state(StateOut&);
 
-    // Save the virtual bases for the object.
-    // This must be done in the same order that the ctor
-    // initializes the virtual bases.  This does not include
-    // the DescribedClass and SavableState virtual base classes.
-    // This must be implemented by the user if the class has other virtual
-    // bases.  (These virtual bases must come after SavableState.)
+    //. Save the virtual bases for the object.
+    //. This must be done in the same order that the ctor
+    //. initializes the virtual bases.  This does not include
+    //. the DescribedClass and SavableState virtual base classes.
+    //. This must be implemented by the user if the class has other
+    //. virtual bases.  (These virtual bases must come after
+    //. \clsnm{SavableState}, if \clsnm{SavableState} is virtual.)
     virtual void save_vbase_state(StateOut&);
 
-    // Save the base classes (with save_data_state) and the members
-    // in the same order that the StateIn CTOR initializes them.
-    // This must be implemented by the derived class if the class has
-    // data.
+    //. Save the base classes (with \srccd{save\_data\_state})
+    //. and the members
+    //. in the same order that the \clsnmref{StateIn} CTOR
+    //. initializes them.  This must be implemented by the derived
+    //. class if the class has data.
     virtual void save_data_state(StateOut&);
 
     //// restore functions
 
-    // This restores objects with unknown exact type.
-    static SavableState* restore_state(StateIn&);
+    //. This restores objects saved with \srccd{save\_state}.  The
+    //. exact type of the next object in \srccd{si} can be any
+    //. type publically derived from the \clsnm{SavableState}.
+    //. Derived classes implement a similar static function that
+    //. returns a pointer to the derived class.
+    static SavableState* restore_state(StateIn& si);
 
-    // Each derived class version of this CTOR handles the restore
-    // corresponding to save_object_state, save_vbase_state, and
-    // save_data_state listed above.  All derived class StateIn&
-    // constructors must invoke the SavableState(StateIn&) constructor.
   protected:
+
+    //. Each derived class \clsnmref{StateIn} CTOR handles the
+    //. restore corresponding to calling \srccd{save\_object\_state},
+    //. \srccd{save\_vbase\_state}, and \srccd{save\_data\_state}
+    //. listed above.  All derived class
+    //. \srccd{\clsnmref{StateIn}\&} constructors must invoke the
+    //. \srccd{\clsnm{SavableState}(\srccd{StateIn}\&)}
+    //. constructor.
     SavableState(StateIn&);
   };
 
 ////////////////////////////////////////////////////////////////////
 
+//. \clsnm{SSRefBase} provides a few utility routines common to all
+//. \clsnmref{SSRef} template instantiations.
 class SSRefBase {
   protected:
     void check_castdown_result(void*, SavableState *);
@@ -102,8 +119,9 @@ class SSRefBase {
     virtual SavableState *sspointer() = 0;
     virtual void restore_state(StateIn&) = 0;
     void save_data_state(StateOut&);
-    void save_state(StateOut&);
     SavableState *restore_ss(StateIn&);
+    //. Save the state of the reference.
+    void save_state(StateOut&);
 };
 
 // Include the smart pointer to SavableState templates and macros.
@@ -116,6 +134,12 @@ class StateDataPtrSet;
 class StateDataNumSet;
 class ClassDescPintMap;
 
+
+//. The \clsnm{StateOut} class serializes objects of types
+//. that derive from \clsnmref{SavableState}.  It keeps track
+//. of pointers to data so that two references to the same
+//. piece of data do not result in that data being sent to the
+//. output device two times.
 class StateOut: public DescribedClass {
 #   define CLASSNAME StateOut
 #   include <util/class/classda.h>
@@ -134,12 +158,40 @@ class StateOut: public DescribedClass {
   public:
     StateOut();
     virtual ~StateOut();
-    virtual int putpointer(void*);
-    virtual int putstring(char*);
-    virtual int put_version(const ClassDesc*);
+
     void have_classdesc() { have_cd_ = 1; }
     int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return tmp; }
+
+    //. This will prepare \clsnm{StateOut} to output a pointer to
+    //. data.  It first checks to see if the data has already been
+    //. saved.  If it has, then a reference to this data is saved
+    //. and 1 is returned.  Otherwise, 0 is returned and the class
+    //. must continue with the save of the data referenced by this
+    //. pointer.
+    virtual int putpointer(void*);
+
+    //. This is like \srccd{put} except the length of the \srccd{char}
+    //. array is determined by interpreting the character array as
+    //. a character string.
+    virtual int putstring(char*);
+
+    //. Write the version of the given \clsnmref{ClassDesc}, if
+    //. it has not already been written.
+    //. It shouldn't be necessary to call this member.
+    virtual int put_version(const ClassDesc*);
+
+    //. Write out information about the given \clsnmref{ClassDesc}.
+    //. It shouldn't be necessary to call this member.
     virtual int put(const ClassDesc*);
+
+    //. Write the given data.
+    //. The member functions taking both a pointer and integer
+    //. argument save a vector of the specified integer length of
+    //. the appropiate type.  Additionally, the address of the
+    //. data is kept in a table, so additional references to the
+    //. data will not result in duplicated data being saved.
+    //. Also, the restored object will contain the duplicated
+    //. references as they appeared in the original.
     virtual int put(char r);
     virtual int put(int r);
     virtual int put(float r);
@@ -152,15 +204,22 @@ class StateOut: public DescribedClass {
     virtual int put_array_int(const int*p,int size);
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);
-    //virtual int put(SavableState&ss);
-    //virtual int put(SavableState*);
+
+    //. Don't keep track of pointers to objects.  Calling this
+    //. causes duplicated references to objects to be copied.
     void forget_references();
+    //. If a reference to an object that has already been written
+    //. is encountered, copy it instead of generating a reference
+    //. to the first object.
     void copy_references();
 
+    //. Flush out any remaining data.
     virtual void flush();
   };
 DescribedClass_REF_dec(StateOut);
 
+//. Objects of a type derived from \clsnmref{SavableState} can be
+//. restored from a \clsnm{StateIn} object.
 class StateIn: public DescribedClass {
 #   define CLASSNAME StateIn
 #   include <util/class/classda.h>
@@ -178,24 +237,57 @@ class StateIn: public DescribedClass {
   public:
     StateIn();
     virtual ~StateIn();
+
+    //. This is used to restore a pointer.  It is called with the
+    //. pointer to the pointer being restored.  If the data being
+    //. restored has previously been restored, then the pointer
+    //. being restored is set to a reference to the previously
+    //. restored object and 0 is returned.  If the return value is
+    //. nonzero then storage must be allocated for the data and
+    //. the pointer to the new data along with the return value
+    //. from \srccd{getpointer} must be given as arguments to the
+    //. \srccd{havepointer} routine.  Note that \srccd{getpointer}
+    //. and \srccd{havepointer} are automatically called for all
+    //. of the above data types and need not be used, except for
+    //. two dimensional arrays and other special situations.
     virtual int  getpointer(void**);
+
+    //. When storage has been allocated during object restoration,
+    //. this routine is called with the object reference number
+    //. and the pointer to the new storage so \srccd{getpointer}
+    //. can find the data if it is referenced again.
     virtual void havepointer(int,void*);
 
-    // a call to nextobject followed by havepointer(int) is equiv
-    // to havepointer(int,void**);
+    //. A call to nextobject followed by havepointer(int) is equiv
+    //. to havepointer(int,void**);
     virtual void nextobject(int);
     virtual void havepointer(void*);
 
     void have_classdesc() { have_cd_ = 1; }
     int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return tmp; }
 
-    // returns the version of the ClassDesc in the persistent object
-    // or -1 if info on the ClassDesc doesn't exist
+    //. Returns the version of the ClassDesc in the persistent object
+    //. or -1 if info on the ClassDesc doesn't exist
     int version(const ClassDesc*);
     
+    //. This restores strings saved with
+    //. \srccd{\clsnmref{StateOut}::putstring}.
     virtual int getstring(char*&);
+
+    //. If the version of the ClassDesc in the persistent object
+    //. has been read in yet, read it in.
+    //. It shouldn't be necessary to call this member.
     virtual int get_version(const ClassDesc*);
+
+    //. This restores \srccd{ClassDesc}'s.  It will set the
+    //. pointer to the address of the static \srccd{ClassDesc} for
+    //. the class which has the same name as the class that had
+    //. the \clsnm{ClassDesc} that was saved by \srccd{put(const
+    //. \clsnmref{ClassDesc}*)}.  It is not necessary for the user
+    //. call this member.
     virtual int get(const ClassDesc**);
+
+    //. These restore data saved with \srccd{\clsnmref{StateOut}::put}.
     virtual int get(char&r);
     virtual int get(int&r);
     virtual int get(float&r);
@@ -208,8 +300,13 @@ class StateIn: public DescribedClass {
     virtual int get_array_int(int*p,int size);
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
-    //virtual int get(SavableState&ss);
+
+    //. Don't keep track of pointers to objects.  Calling this
+    //. causes duplicated references to objects to be copied.
     void forget_references();
+    //. If a reference to an object that has already been written
+    //. is encountered, copy it instead of generating a reference
+    //. to the first object.
     void copy_references();
   };
 DescribedClass_REF_dec(StateIn);
@@ -218,6 +315,14 @@ SavableState_REF_dec(SavableState);
 
 ////////////////////////////////////////////////////////////////////
 
+//. The \clsnmref{StateOutFile} provides a \clsnmref{StateOut}
+//. which writes to files.  It is still abstract---one of its
+//. derived classes, \clsnmref{StateOutFileText} or
+//. \clsnmref{StateOutFileBin}, must be used to obtain a
+//. \clsnmref{StateOut} object.  The
+//. \clsnmref{StateOutFileText} class writes in a text format
+//. and the \clsnmref{StateOutFileBin} writes in a binary
+//. format.
 class StateOutFile: public StateOut {
   private:
     // do not allow copy constructor or assignment
@@ -227,17 +332,30 @@ class StateOutFile: public StateOut {
     int opened_;
     FILE* fp_;
   public:
+    //. State information will be written to \srccd{stdout}.
     StateOutFile();
-    StateOutFile(FILE*);
-    StateOutFile(const char *, const char * = "w");
+    //. State information will be written to \vrbl{fp}.
+    StateOutFile(FILE*fp);
+    //. State information will be written to \filnm{name}.
+    StateOutFile(const char *name, const char *access = "w");
+
     ~StateOutFile();
 
+    //. State information will be written to \filnm{name}.
+    virtual int open(const char *name, const char *access = "w");
+    //. Miscellaneous file operations.
     virtual void flush();
     virtual void close();
     virtual void rewind();
-    virtual int open(const char *, const char * = "w");
   };
 
+//. The \clsnm{StateInFile} provides a \clsnmref{StateIn} which
+//. reads from files.  It is still abstract---one of its
+//. derived classes, \clsnmref{StateInFileText} or
+//. \clsnmref{StateInFileBin}, must be used to obtain a
+//. \clsnmref{StateIn} object.  The \clsnmref{StateInFileText} class
+//. reads with a text format and the \clsnmref{StateInFileBin}
+//. reads with a binary format.
 class StateInFile: public StateIn {
   private:
     // do not allow copy constructor or assignment
@@ -247,19 +365,29 @@ class StateInFile: public StateIn {
     int opened_;
     FILE* fp_;
   public:
+    //. State information will be obtained from \srccd{stdin}.
     StateInFile();
-    StateInFile(FILE*);
-    StateInFile(const char *, const char * ="r");
+    //. State information will be obtained from \vrbl{fp}.
+    StateInFile(FILE*fp);
+    //. State information will be obtained from \filnm{name}.
+    StateInFile(const char *name, const char *access = "r");
+
     ~StateInFile();
 
+    //. State information will be obtained from \filnm{name}.
+    virtual int open(const char *name, const char *access = "r");
+    //. Miscellaneous file operations.
     virtual void flush();
     virtual void close();
     virtual void rewind();
-    virtual int open(const char *, const char * = "r");
   };
 
 ////////////////////////////////////////////////////////////////////
 
+//. \clsnm{StateOutText} writes out state information in an
+//. almost human readable format.  It is intended for debugging
+//. only.  The state information can read in again with
+//. \clsnmref{StateInText}.
 class StateOutText: public StateOutFile {
   private:
     // do not allow copy constructor or assignment
@@ -293,6 +421,8 @@ class StateOutText: public StateOutFile {
     int put(double*,int);
   };
 
+//. \clsnm{StateInText} reads state information written
+//. with \clsnm{StateOutText}.
 class StateInText: public StateInFile {
   private:
     // do not allow copy constructor or assignment
@@ -335,6 +465,7 @@ class StateInText: public StateInFile {
 
 ////////////////////////////////////////////////////////////////////
 
+//. \clsnm{StateOutBin} is used to write binary files.
 class StateOutBin: public StateOutFile {
   private:
     // do not allow copy constructor or assignment
@@ -349,6 +480,8 @@ class StateOutBin: public StateOutFile {
     ~StateOutBin();
   };
 
+//. \clsnm{StateInBin} is used to read objects written with
+//. \clsnm{StateOutBin}.
 class StateInBin: public StateInFile {
   private:
     // do not allow copy constructor or assignment
@@ -365,6 +498,8 @@ class StateInBin: public StateInFile {
 
 ////////////////////////////////////////////////////////////////////
 
+//. \clsnm{StateOutBinXDR} is used to write binary files that
+//. can be moved between machines with different endianess.
 class StateOutBinXDR : public StateOutBin, public QCXDR
 {
   private:
@@ -385,6 +520,8 @@ class StateOutBinXDR : public StateOutBin, public QCXDR
     int put_array_double(const double*,int);
 };
 
+//. \clsnm{StateInBinXDR} is used to read objects written with
+//. \clsnm{StateOutBinXDR}.
 class StateInBinXDR : public StateInBin, public QCXDR
 {
   private:

@@ -7,6 +7,10 @@ $type = 'notype';
 $class = 'noclass';
 $macroize = 0;
 while (<>) {
+    # skip whole line comment and blank lines
+    next if (/^\s*(\/\/.*)?$/);
+    # strip comments
+    s/\/\/.*//;
     if (/^template *< *class +([_A-Za-z][_A-Za-z0-9]*) *>/) { #the template dec
         $type = $1;
     } elsif (/^class +([_A-Za-z][_A-Za-z0-9]*)/) { # the class dec

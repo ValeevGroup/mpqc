@@ -1,4 +1,0 @@
-@node    Class Index, Macro Index, Concept Index, Top
-@unnumbered Class Index
-
-@printindex cl

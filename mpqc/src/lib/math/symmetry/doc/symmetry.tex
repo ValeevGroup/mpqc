@@ -1,0 +1,26 @@
+
+\chapter{The Symmetry Library}
+\index{symmetry}
+
+The symmetry library implements a few basic ideas in group theory.  Namely
+it provides a character table for a given point group.  Currently it does
+not support the cubic point groups (e.g. $T_d$ or $I_h$).  The only classes
+intended for public consumption are the \clsnmref{CharacterTable} and
+\clsnmref{PointGroup} classes.  \clsnmref{PointGroup} stores the
+Schoenflies symbol for a point group, and can generate a
+\clsnmref{CharacterTable} on the fly.  A \clsnmref{CharacterTable} contains
+\clsnmref{IrreducibleRepresentation}'s and \clsnmref{SymmetryOperation}'s.
+
+The following include files are provided by the symmetry library:
+
+\begin{description}
+\item[\filnm{pointgroup.h}]
+This is the only include file for the symmetry library.  It provides
+definitions for all of the symmetry-related classes.
+\end{description}
+
+\input{math/symmetry/doc/SymmetryOperation.cls.tex}
+\input{math/symmetry/doc/SymRep.cls.tex}
+\input{math/symmetry/doc/IrreducibleRepresentation.cls.tex}
+\input{math/symmetry/doc/CharacterTable.cls.tex}
+\input{math/symmetry/doc/PointGroup.cls.tex}

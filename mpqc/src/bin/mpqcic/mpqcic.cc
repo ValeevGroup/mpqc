@@ -192,7 +192,7 @@ main(int argc, char *argv[])
 
   int nfzc, nfzv, mem_alloc;
 
-  if (mynode0() == 0) {
+  if (grp->me() == 0) {
     fprintf(outfile,
         "\n       MPQC: Massively Parallel Quantum Chemistry\n\n\n");
 

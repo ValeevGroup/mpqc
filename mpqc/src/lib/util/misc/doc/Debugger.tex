@@ -1,0 +1,51 @@
+
+\clssection{Debugger}
+\index{Debugger}
+
+The \clsnm{Debugger} class describes what should be done when
+a catastrophic error causes unexpected program termination.
+It can try things such as run start a debugger running where
+the program died or it can attempt to produce a stack traceback
+showing roughly where the program died.  These attempts could
+just complicate matters more if the program has gotten into
+a peculiar enough state.
+
+Table~\ref{debugger:keyval} shows the \clsnm{KeyVal} input parameters
+for \clsnm{Debugger}.
+
+\begin{table}
+\caption{\clsnmref{KeyVal} Input for \clsnm{Debugger}}
+\begin{center}
+\begin{tabular}{lp{2.5in}p{1in}}
+  \multicolumn{1}{c}{Keyword}
+     & \multicolumn{1}{c}{Meaning}
+     & \multicolumn{1}{c}{Default} \\
+ \verb|debug|
+        & Try to start a debugger when an error occurs.  Doesn't
+        work on all machines.
+        & \verb|yes|, if possible \\
+ \verb|traceback|
+        & Try to print out a traceback extracting return addresses
+        from the call stack.  Doesn't work on most machines.
+        & \verb|yes|, if possible \\
+ \verb|exit|
+        & Exit on errors.
+        & \verb|yes| \\
+ \verb|wait_for_debugger|
+        & When starting a debugger go into an infinite loop
+        to give the debugger a change to attach to the process.
+        & \verb|yes| \\
+ \verb|handle_defaults|
+        & Handle a standard set of signals such as SIGBUS, SIGSEGV, etc.
+        & \verb|yes| \\
+ \verb|prefix|
+        & Gives a string that is printed before each line
+        that is printed by \clsnm{Debugger}.
+        & empty \\
+ \verb|cmd|
+        & Gives a command to be executed to start the debugger.
+        & varies with machine
+\end{tabular}
+\end{center}
+\label{debugger:keyval}
+\end{table}

@@ -14,6 +14,9 @@
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>
 
+//. The \clsnm{ShmMessageGrp} class is an implementation of
+//. \clsnmref{MessageGrp} that allows multiple process to be
+//. started that communication with shared memory.
 class ShmMemoryGrp: public MsgMemoryGrp {
 #define CLASSNAME ShmMemoryGrp
 #include <util/class/classd.h>

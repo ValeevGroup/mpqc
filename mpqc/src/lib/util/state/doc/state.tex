@@ -1,0 +1,277 @@
+
+\chapter{The State Library}
+\index{persistence}
+
+The state library provides means for objects to save and restore their
+state.  Features include:
+
+\begin{itemize}
+\item
+  Pointers to base types can be saved and restored.
+  The exact types of the saved and restored objects will match.
+\item
+  If the pointer to an object is saved twice, only one copy of the
+  object is saved.  When these two pointers are restored they will
+  point to the same object.
+\item
+  If the pointer to an array of a basic type is saved twice,
+  only one copy of then
+  array is saved.  When these two pointers are restored they will
+  point to the same array.  (This feature causes insurmountable
+  problems and will be phased out.  Another technique for providing this
+  functionality will be provided.)
+\item
+  Virtual base classes are dealt with in a manner consistent with
+  the way C++ treats virtual base classes.
+\item
+  The library is portable.  Information about object layout for
+  particular compiler implementations is not needed.
+\end{itemize}
+
+For objects of a class to be savable with this library the class must
+inherit \clsnmref{SavableState} which in turn inherits
+\clsnmref{DescribedClass}.  Also, a constructor taking a
+\srccd{StateIn}\srccd{\&} argument and a
+\srccd{save\_data\_state(\clsnmref{StateOut}\&)} member must be provided.  If
+the class has virtual base classes, then a
+\srccd{save\_vbase\_state(\clsnmref{StateOut}\&)} member must also be
+provided.
+
+\input{util/state/doc/SavableState.cls.tex}
+
+\subsection{Simple Example}
+
+Here is a simple example of the specification of a client, \clsnm{C},
+of \clsnmref{SavableState}:
+\begin{alltt}
+class C: virtual public \clsnmref{SavableState} \{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int i;
+  public:
+    C(\clsnmref{StateIn}&);
+    void save_data_state(\clsnmref{StateOut}&);
+  \};
+\end{alltt}
+
+Here is the implementation for the above:
+\begin{alltt}
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(\clsnmref{ClassDesc}*cd)
+  \{
+  void* casts[0];
+  return do_castdowns(casts);
+  \}
+void C::save_data_state(\clsnmref{StateOut}&so) \{
+  so.put(i);
+  \}
+C::C(\clsnmref{StateIn}&si): \clsnmref{SavableState}(si,C::class_desc_) \{
+  si.get(i);
+  \}
+\end{alltt}
+
+
+\subsection{Example with Inheritance}
+
+Here is an example of the specification of \clsnm{C},
+where \clsnm{C} nonvirtually inherits from another
+\clsnm{SavableState} derivative:
+\begin{alltt}
+class C: public B \{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  \};
+\end{alltt}
+
+Here is the implementation for the above:
+\begin{alltt}
+#define CLASSNAME C
+#define PARENTS public B
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  \{
+  void* casts[] = \{ B::_castdown(cd) \};
+  return do_castdowns(casts);
+  \}
+void C::save_data_state(StateOut&so) \{
+  B::save_data_state(so);
+  so.put(i);
+  \}
+C::C(StateIn&si): SavableState(si,C::class_desc_), B(si)  \{
+  si.get(i);
+  \}
+\end{alltt}
+
+\subsection{Example with Virtual and Nonvirtual Inheritance}
+
+Here is an example of the specification of \clsnm{C},
+where \clsnm{C} nonvirtually inherits from another client of
+\clsnm{SavableState} as well as virtually inherits from a client
+of \clsnm{SavableState}:
+\begin{alltt}
+class C: public B,
+         virtual public E \{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  \};
+\end{alltt}
+
+Here is the implementation for the above:
+\begin{alltt}
+#define CLASSNAME C
+#define PARENTS public B, virtual public E
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  \{
+  void* casts[] = \{B::_castdown(cd),E::_castdown(cd)\};
+  return do_castdowns(casts);
+  \}
+void C::save_vbase_state(StateOut&sio) \{
+  E::save_data_state(sio);
+  \}
+void C::save_data_state(StateOut&so) \{
+  B::save_parent_state(so);
+  so.put(i);
+  \}
+C::C(StateIn&si): SavableState(si,C::class_desc_), B(si), E(si) \{
+  si.get(i);
+  \}
+\end{alltt}
+
+\subsection{Example with Pointers to SavableStates}
+
+Here is an example where \clsnm{C} has data members which are
+pointers to derivatives of \clsnm{SavableState}:
+\begin{alltt}
+class C: \{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    A* ap; // A is also a SavableState
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  \};
+\end{alltt}
+
+Here is the implementation for the above:
+\begin{alltt}
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  \{
+  void* casts[0];
+  return do_castdowns(casts);
+  \}
+void C::save_data_state(StateOut&so) \{
+  so.put(ap);
+  \}
+C::C(StateIn&si): SavableState(si,C::class_desc_) \{
+  ap = A::restore_state(si);
+  \}
+\end{alltt}
+
+\subsection{Example with Pointers to Data}
+
+Here is an example where \clsnm{C} has data members which are
+pointers to data:
+\begin{alltt}
+class C: virtual public SavableState \{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int vecsize;
+    double *vec;
+    int n1;
+    int n2;
+    double **array;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  \};
+\end{alltt}
+
+Here is the implementation for the above:
+\begin{alltt}
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  \{
+  void* casts[0];
+  return do_castdowns(casts);
+  \}
+void C::save_data_state(StateOut&so) \{
+  so.put(vecsize);
+  so.put(vec,vecsize);
+
+  so.put(n1);
+  so.put(n2);
+  if (so.putpointer(array)) \{
+    for (int i=0; i<n1; i++) \{
+      so.put(array[i],n2);
+      \}
+    \}
+  \}
+C::C(StateIn&si): SavableState(si,C::class_desc_) \{
+  si.get(vecsize);
+  si.get(vec);
+
+  si.get(n1);
+  si.get(n2);
+
+  int refnum;
+  if (refnum = so.getpointer(array)) \{
+    array = new double*[n1];
+    so.havepointer(refnum,array);
+    for (int i=0; i<n1; i++) \{
+      si.get(array[i]);
+      \}
+    \}
+  \}
+\end{alltt}
+
+\input{util/state/doc/SSRefBase.cls.tex}
+\input{util/state/doc/SSRef.cls.tex}
+
+\input{util/state/doc/StateIn.cls.tex}
+\input{util/state/doc/StateInFile.cls.tex}
+\input{util/state/doc/StateInBin.cls.tex}
+\input{util/state/doc/StateInText.cls.tex}
+\input{util/state/doc/StateOut.cls.tex}
+\input{util/state/doc/StateOutFile.cls.tex}
+\input{util/state/doc/StateOutBin.cls.tex}
+\input{util/state/doc/StateOutText.cls.tex}
+\input{util/state/doc/QCXDR.cls.tex}
+

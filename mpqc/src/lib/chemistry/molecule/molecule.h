@@ -23,13 +23,10 @@
 
 class PointBag_double;
 
-//#include "atomcentXPlex.h"
-
-//texi
-// The @code{Molecule} class provides information about the groups of atoms
-// we chemists like to call molecules.  @code{Molecule} is a
-// @code{SavableState} and has a @code{StateIn} constructor.  @code{Molecule}
-// also has a @code{KeyVal} constructor (@ref{The Molecule KeyVal Constructor}).
+//.  The \clsnm{Molecule} class provides information about the groups of
+//atoms we chemists like to call molecules.  \clsnm{Molecule} is a
+//\clsnmref{SavableState} and has a \clsnmref{StateIn} constructor.
+//\clsnm{Molecule} also has a \clsnmref{KeyVal} constructor.
 class Molecule: public SavableState
 {
 #   define CLASSNAME Molecule
@@ -42,76 +39,75 @@ class Molecule: public SavableState
     PointGroup pg;
     AtomicCenter* atoms;
     int natoms;
-    //texi Returns the i'th @code{AtomicCenter} in the @code{atoms} array.
-    AtomicCenter& get_atom(int);
-    //texi @code{const} version of the above.
+    //. Returns the \vrbl{i}'th \clsnmref{AtomicCenter}.
+    AtomicCenter& get_atom(int i);
+    //. \srccd{const} version of the above.
     const AtomicCenter& get_atom(int) const;
   public:
     Molecule();
     Molecule(Molecule&);
     Molecule(StateIn&);
-    //texi The @code{KeyVal} constructor (@ref{The Molecule KeyVal
-    // Constructor}).
+    //. The \clsnmref{KeyVal} constructor.
     Molecule(const RefKeyVal&input);
 
     virtual ~Molecule();
 
     Molecule& operator=(Molecule&);
 
-    //texi Add an @code{AtomicCenter} to the @code{Molecule}.  The first
+    //. Add an \clsnmref{AtomicCenter} to the \clsnm{Molecule}.  The first
     // argument is the index of the atom.  You should add atoms sequentially
     // starting from zero.
     void add_atom(int,AtomicCenter&);
 
-    //texi Print information about the molecule.
+    //. Print information about the molecule.
     virtual void print(ostream& =cout);
     virtual void print(FILE*);
-    //texi Returns the number of atoms in the molcule.
+    //. Returns the number of atoms in the molcule.
     int natom() const;
 
-    //texi Returns `1' if @code{i} is a valid @code{Pix} for this molecule.
+    //. Returns `1' if \vrbl{i} is a valid \clsnm{Pix} for this molecule.
     // Returns `0' otherwise.
     int owns(Pix i);
-    //texi Returns the @code{Pix} for the first atom.
+    //. Returns the \clsnm{Pix} for the first atom.
     Pix first();
-    //texi Sets @code{i} to point to the next atom.  @code{i} is null if there
+    //. Sets \vrbl{i} to point to the next atom.  \vrbl{i} is null if there
     // are no more atoms.
     void next(Pix& i);
 
-    //texi Returns the @code{AtomicCenter} pointed to by @code{i}.
+    //. Returns the \clsnmref{AtomicCenter} pointed to by \vrbl{i}.
     AtomicCenter& operator()(Pix i);
-    //texi @code{const} version of the above.
+    //. \srccd{const} version of the above.
     const AtomicCenter& operator()(Pix) const;
-    //texi Returns the i'th @code{AtomicCenter}.
+    //. Returns the i'th \clsnmref{AtomicCenter}.
     AtomicCenter& operator[](int i);
-    //texi @code{const} version of the above.
+    //. \srccd{const} version of the above.
     const AtomicCenter& operator[](int) const;
-    //texi Returns the i'th @code{AtomicCenter}.
+    //. Returns the i'th \clsnmref{AtomicCenter}.
     AtomicCenter& atom(int i);
-    //texi @code{const} version of the above.
+    //. \srccd{const} version of the above.
     const AtomicCenter& atom(int) const;
 
-    //texi Returns the index of the atom with the given @var{label}.
-    // If the label cannot be found @code{-1} is returned.
+    //. Returns the index of the atom with the given \vrbl{label}.
+    // If the label cannot be found \srccd{-1} is returned.
     int atom_label_to_index(const char *label) const;
 
-    //texi Returns a @code{PointBag_double*} containing the nuclear charges
-    // of the atoms.
+    //. Returns a \srccd{\clsnm{PointBag\_double}*} containing the nuclear
+    //charges of the atoms.
     PointBag_double* charges() const;
 
-    //texi Returns the point group of the molecule (@ref{The PointGroup Class}).
+    //. Returns the \clsnmref{PointGroup} of the molecule.
     PointGroup& point_group();
-    //texi @code{const} version of the above.
+    //. \srccd{const} version of the above.
     const PointGroup& point_group() const;
 
-    //texi Returns a @code{RefPoint} containing the cartesian coordinates of
+    //. Returns a \clsnm{RefPoint} containing the cartesian coordinates of
     // the center of mass for the molecule
     RefPoint center_of_mass();
 
-    //texi Returns the nuclear repulsion energy for the molecule
+    //. Returns the nuclear repulsion energy for the molecule
     double nuclear_repulsion_energy();
     
-    //texi If the molecule contains only symmetry unique atoms, this function
+    //. If the molecule contains only symmetry unique atoms, this function
     // will generate the other, redundant atoms.
     void symmetrize();
 

@@ -48,6 +48,10 @@ extern "C" {
 #define BIGENDIAN 0
 #endif
 
+//. \clsnm{QCXDR} is used to convert data to and from QCXDR format.
+//. Real XDR is not used---standard floating point and integer
+//. data formats must be used.  This only gets around endianness
+//. differences.
 class QCXDR 
 {
   private:
@@ -56,9 +60,9 @@ class QCXDR
     operator=(const QCXDR&);
   public:
     QCXDR();
-   // these perform the translation to/from xdr format
-   // single element translations...the value of the passed variable is not
-   // changed
+    //. These perform the translation to/from xdr format
+    //. single element translations---the value of the passed variable is not
+    //. changed.
     char   translate(char);
     short  translate(unsigned short);
     int    translate(unsigned int);
@@ -67,7 +71,7 @@ class QCXDR
     void   translate(double*);
     void*  translate(void*); // for pointers
 
-   // array transformations...the elements of the array are changed
+    //. Array transformations---the elements of the array are changed.
     void   translate(char*,int);
     void   translate(unsigned short*,int);
     void   translate(unsigned int*,int);
@@ -75,7 +79,7 @@ class QCXDR
     void   translate(float*,int);
     void   translate(double*,int);
 
-   // functions for actually performing byte swapping
+    //. Functions for actually performing byte swapping.
     char   byte_swap(char);
     short  byte_swap(unsigned short);
     int    byte_swap(unsigned int);

@@ -1,10 +1,26 @@
 
 #include <util/misc/formio.h>
 
+const char *SCFormIO::default_basename_ = 0;
 int  SCFormIO::ready_ = 0;
 long SCFormIO::nindent_ = 0;
 long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
+
+void
+SCFormIO::set_default_basename(const char *basename)
+{
+  if (basename)
+      default_basename_ = strcpy(new char[strlen(basename)+1], basename);
+  else
+      default_basename_ = 0;
+}
+
+const char *
+SCFormIO::default_basename()
+{
+  return default_basename_;
+}
 
 void
 SCFormIO::init()

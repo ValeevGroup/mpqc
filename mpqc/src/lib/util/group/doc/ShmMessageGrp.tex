@@ -1,0 +1,19 @@
+
+\clssection{ShmMessageGrp}
+\index{ShmMessageGrp}
+\index{MessageGrp!ShmMessageGrp}
+
+The \clsnm{ShmMessageGrp} class is an implementation of
+\clsnmref{MessageGrp} that allows multiple process to be
+started that communication with shared memory.  This
+only provides improved performance if you have multiple
+CPU's in a symmetric multiprocessor configuration.  Nonetheless,
+it is quite useful on a single CPU for tracking down bugs.
+
+The \clsnm{ShmMessageGrp} \clsnmref{KeyVal} constructor takes
+a single argument that specifies the number of processors.
+Here is an example of a \clsnmref{ParsedKeyVal} input that
+creates a \clsnm{ShmMessageGrp} that runs on four processors.
+\begin{alltt}
+message<\clsnm{ShmMessageGrp}>: n = 4
+\end{alltt}

@@ -1,0 +1,56 @@
+
+\chapter{MPQC Input}
+\index{input}
+
+MPQC starts off by creating a
+\hyperref{\clsnm{ParsedKeyVal}}
+         {\clsnm{ParsedKeyVal} (see Section~}
+         {)}
+         {ParsedKeyVal}
+object that parses the input file specified on the command line.
+Since MPQC is still written in a hybrid of C and C++ the format
+is a mixture of keyword value pairs and object specifications.
+
+The following keywords are recognized at the top level of the
+input:
+\begin{itemize}
+\item[{\ttfamily message}]
+        This optional keyword gives a \clsnmref{MessageGrp} object
+        that sets up MPQC for parallel processing.  The default
+        is a \clsnmref{ProcMessageGrp} that runs MPQC on a single
+        processor.  If another \clsnmref{MessageGrp} is used because
+        of command line options or due to environment in which MPQC
+        is run, then this keyword may be ignored.
+\item[{\ttfamily debug}]
+        This optional keyword gives a \clsnmref{Debugger} object
+        which is used to help find the problem if MPQC encounters
+        a catastrophic error.
+\end{itemize}
+
+Several other sections are required \ldots documentation is on the way.
+
+\input{util/keyval/doc/ParsedKeyVal.doc.tex}
+
+\section{Sample Input}
+
+The following input computes the energy of the water molecule
+using four processors on a shared memory machine:
+\begin{alltt}
+message<\clsnmref{ShmMessageGrp}>: n = 4
+
+mpqc: (
+  molecule<\clsnmref{Molecule}>:(
+    symmetry=c2v
+    angstrom=yes
+    { atoms geometry } = {
+       O [0.0 0.0  0.0]
+       H [0.8 0.0 -0.6]
+     }
+    )
+
+  basis<\clsnmref{GaussianBasisSet}>: (
+    molecule = $..:molecule
+    name = "STO-3G"
+    )
+  )
+\end{alltt}

@@ -951,7 +951,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
 }
 
 int
-IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
+IntMolecularCoor::to_cartesian(const RefSCVector&new_internal)
 {
   if (new_internal.dim().n() != dim_.n()
       || dvc_.n() != variable_->n() + constant_->n()

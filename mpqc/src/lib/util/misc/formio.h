@@ -6,6 +6,7 @@
 
 class SCFormIO {
   private:
+    static const char *default_basename_;
     static int  ready_;
     static long nindent_;
     static long indent_size_;
@@ -19,6 +20,9 @@ class SCFormIO {
 
     static void setindent(ios&o, long column);
     static long getindent(ios&o);
+
+    static void set_default_basename(const char *);
+    static const char *default_basename();
 };
 
 ios& indent(ios&);

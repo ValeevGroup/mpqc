@@ -16,6 +16,12 @@ interface::
 	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) interface); \
 	  done
 
+doc::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) doc); \
+	  done
+
 clean::
 	for dir in $(SUBDIRS); \
 	  do \

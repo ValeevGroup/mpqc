@@ -75,7 +75,7 @@ CartMolecularCoor::dim()
 // presumably this will actually be passed the new cartesian coords in
 // new_internal, so do almost nothing
 int
-CartMolecularCoor::to_cartesian(RefSCVector&new_internal)
+CartMolecularCoor::to_cartesian(const RefSCVector&new_internal)
 {
   // get a reference to Molecule for convenience
   Molecule& molecule = *(molecule_.pointer());

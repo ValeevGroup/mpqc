@@ -1,0 +1,57 @@
+
+\documentclass{report}
+
+\usepackage{html}
+\usepackage{verbatim}
+\usepackage{alltt}
+\usepackage{makeidx}
+\input{scdoc.tex}
+
+\setcounter{tocdepth}{1}
+
+\makeindex
+
+\begin{document}
+
+\title{The SC Programmer's Manual}
+
+\author{Curtis L. Janssen \and Edward T. Seidl \and Ida M. B. Nielsen
+        \and Michael E. Colvin}
+
+\date{\today}
+
+\maketitle
+
+\begin{abstract}
+The Scientific Computing library (SC) provides C++ class libraries
+to assist in scientific computing.
+
+SC can be used on Unix compatible workstations (Intel/Linux, R8000,
+RS/6000), symmetric multi-processors (SGI Power Challenge), and
+massively parallel computers (IBM SP2, Intel Paragon).
+\end{abstract}
+
+\tableofcontents
+
+\part{Utility Libraries}
+
+\input{util/ref/doc/refdoc.tex}
+\input{util/class/doc/class.tex}
+\input{util/state/doc/state.tex}
+\input{util/misc/doc/misc.tex}
+\input{util/group/doc/group.tex}
+\input{util/keyval/doc/keyvaldoc.tex}
+
+\part{Math Libraries}
+
+\input{math/scmat/doc/scmat.tex}
+\input{math/optimize/doc/opt.tex}
+\input{math/symmetry/doc/symmetry.tex}
+
+\part{Chemistry Libraries}
+
+\input{chemistry/molecule/doc/moldoc.tex}
+
+\printindex
+
+\end{document}

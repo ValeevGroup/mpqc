@@ -24,14 +24,14 @@
 							      
 #define ANGSTROMS_TO_AU 1.0/0.52917706;
 
-//texi
-// The @code{ChemicalElement} class provides information about individual
-// elements.  Internally, a @code{ChemicalElement} only stores the atomic
-// number.  From this, a table lookup can be done to return various properties,
-// such as atomic masses, boiling points, etc.
+//.  The \clsnm{ChemicalElement} class provides information about
+//individual elements.  Internally, a \clsnmref{ChemicalElement} only stores
+//the atomic number.  From this, a table lookup can be done to return
+//various properties, such as atomic masses, boiling points, etc.
 //
-// @code{ChemicalElement} is a @code{SavableState} so it has a @code{StateIn}
-// constructor.  There is no @code{KeyVal} constructor.
+//  \clsnm{ChemicalElement} is a \clsnmref{SavableState} so it has a
+//\clsnmref{StateIn} constructor.  There is no \clsnmref{KeyVal}
+//constructor.
 class ChemicalElement: public SavableState
 {
 #   define CLASSNAME ChemicalElement
@@ -66,9 +66,9 @@ class ChemicalElement: public SavableState
     static atom_info_type atom_info[];
 
   public:
-    //texi This constructor takes the atomic number as its argument.
+    //. This constructor takes the atomic number as its argument.
     ChemicalElement(int Z=1);
-    //texi This constructor can take a string containing the atomic number
+    //. This constructor can take a string containing the atomic number
     // of the element, a string containing the full name of the element (can
     // be upper or lower case), or a string containing the atomic symbol (again
     // can be upper or lower case).
@@ -84,41 +84,41 @@ class ChemicalElement: public SavableState
     void save_data_state(StateOut&);
 
     // Here are all of the query functions for the properties
-    //texi Returns full name of the element (all lower case).
+    //. Returns full name of the element (all lower case).
     const char * name() const;
-    //texi Returns the atomic symbol for the element (mixed upper and lower case).
+    //. Returns the atomic symbol for the element (mixed upper and lower case).
     const char * symbol() const;
-    //texi Returns the atomic number for the element.
+    //. Returns the atomic number for the element.
     const int number() const;
-    //texi Returns the mass of the most abundant isotope in AMU.
+    //. Returns the mass of the most abundant isotope in AMU.
     const double mass() const;
-    //texi Returns a number indicating which column of the periodic table the
+    //. Returns a number indicating which column of the periodic table the
     // element belongs to.  This will be 1 for the group IA or alkali metals,
     // up to 18 for Noble gases.
     const int family() const;
-    //texi Returns the row of the periodic table the element belongs to.
+    //. Returns the row of the periodic table the element belongs to.
     const int row() const;
-    //texi Returns the number of electrons in the valence orbitals.
+    //. Returns the number of electrons in the valence orbitals.
     const int valence() const;
-    //texi Returns the melting point in degrees Celsius.
+    //. Returns the melting point in degrees Celsius.
     const int melting_pt() const;
-    //texi Returns the boiling point in degrees Celsius.
+    //. Returns the boiling point in degrees Celsius.
     const int boiling_pt() const;
-    //texi Returns the first ionization potential in kcal/mol.
+    //. Returns the first ionization potential in kcal/mol.
     const int first_ion_pt() const;
-    //texi Returns some number Curt needs.
+    //. Returns some number Curt needs.
     const double bragg_radius() const;
-    //texi Returns the electronegativity value for the element.
+    //. Returns the electronegativity value for the element.
     const double electronegativity() const;
-    //texi Returns the specific head of the element.
+    //. Returns the specific head of the element.
     const double specific_heat() const;
-    //texi No clue.
+    //. No clue.
     const double density() const;
-    //texi Returns the atomic radius in bohr.
+    //. Returns the atomic radius in bohr.
     const double atomic_radius() const;
-    //texi Returns the van der Waals radius in bohr.
+    //. Returns the van der Waals radius in bohr.
     const double vdw_radius() const;
-    //texi Returns the nuclear charge.
+    //. Returns the nuclear charge.
     double charge() const;
 };
 DescribedClass_REF_dec(ChemicalElement);

@@ -52,7 +52,7 @@ class BlockedSCVector: public SCVector {
     BlockedSCVector(const RefSCDimension&, BlockedSCMatrixKit*);
     ~BlockedSCVector();
 
-    //texi Save and restore this in an implementation independent way.
+    // Save and restore this in an implementation independent way.
     void save(StateOut&);
     void restore(StateIn&);
 
@@ -106,7 +106,7 @@ class BlockedSCMatrix: public SCMatrix {
                     BlockedSCMatrixKit*);
     ~BlockedSCMatrix();
 
-    //texi Save and restore this in an implementation independent way.
+    // Save and restore this in an implementation independent way.
     void save(StateOut&);
     void restore(StateIn&);
 
@@ -180,7 +180,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     BlockedSymmSCMatrix(const RefSCDimension&,BlockedSCMatrixKit*);
     ~BlockedSymmSCMatrix();
 
-    //texi Save and restore this in an implementation independent way.
+    // Save and restore this in an implementation independent way.
     void save(StateOut&);
     void restore(StateIn&);
 
@@ -249,7 +249,7 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     BlockedDiagSCMatrix(const RefSCDimension&,BlockedSCMatrixKit*);
     ~BlockedDiagSCMatrix();
 
-    //texi Save and restore this in an implementation independent way.
+    // Save and restore this in an implementation independent way.
     void save(StateOut&);
     void restore(StateIn&);
 

@@ -6,18 +6,7 @@
 #pragma interface
 #endif
 
-// Identifier's are used to distinguish and order objects.  On
-// many architectures a pointer to the object will suffice, but
-// the C++ standard only guarantees that this works for two pointers
-// pointing within the same structure or array.  Classes need to
-// inherit from Identity to use this mechanism.  Identity,
-// Identifier, and the shorthand boolean operations may have to
-// be modified for some different architectures.
 
-// Normally Identity must be inherited from virtually if multiple
-// inheritance is to be used.  This breaks certain compilers so
-// NO_VIRTUAL_BASES must be defined in these cases.  Not everything
-// will work under these circumstances.
 #ifdef NO_VIRTUAL_BASES
 #  define virtual_base
 #else
@@ -25,31 +14,53 @@
 #endif
 
 class Identity;
+
+//. Identifier's are used to distinguish and order objects.  On
+//. many architectures a pointer to the object will suffice, but
+//. the C++ standard only guarantees that this works for two pointers
+//. pointing within the same structure or array.  Classes need to
+//. inherit from Identity to use this mechanism.  Identity,
+//. Identifier, and the shorthand boolean operations may have to
+//. be modified for some different architectures.
 class Identifier {
   private:
     const void* id;
   public:
+    //. Create an \clsnm{Identifier} for a null object.
     Identifier(): id(0) {}
+    //. Create an \clsnm{Identifier} for the given object.
     Identifier(const Identity* i): id((void*)i) {}
     Identifier(const Identifier& i): id(i.id) {}
-    void operator = (const Identifier& i) { id = i.id; }
+    //. The destructor does nothing.
     ~Identifier() {}
-    
-    operator < (const Identifier&i) const { return id < i.id; }
-    operator > (const Identifier&i) const { return id > i.id; }
-    operator == (const Identifier&i) const { return id == i.id; }
-    operator <= (const Identifier&i) const { return id <= i.id; }
-    operator >= (const Identifier&i) const { return id >= i.id; }
-    operator != (const Identifier&i) const { return id != i.id; }
+
+    //. Assign to the given \clsnm{Identifier}.
+    void operator = (const Identifier& i) { id = i.id; }
+
+    //. Ordering relationships for objects.
+    int operator < (const Identifier&i) const { return id < i.id; }
+    int operator > (const Identifier&i) const { return id > i.id; }
+    int operator == (const Identifier&i) const { return id == i.id; }
+    int operator <= (const Identifier&i) const { return id <= i.id; }
+    int operator >= (const Identifier&i) const { return id >= i.id; }
+    int operator != (const Identifier&i) const { return id != i.id; }
 };
 
+//. \clsnm{Identity} gives derivative objects the ability to have
+//. a unique identity and ordering relationship to all other
+//. objects.
+//. Normally \clsnm{Identity} must be inherited from virtually if multiple
+//. inheritance is to be used.  This breaks certain compilers so
+//. \srccd{NO\_VIRTUAL\_BASES} must be defined in these cases.  Not
+//. everything will work under these circumstances.
 class Identity {
   public:
     virtual ~Identity();
+    //. Return the \clsnmref{Identifier} for this argument.
+    //. Usually this is just the pointer to the object.
     Identifier identifier() { return this; }
 };
-
-// shorthand boolean operation for pointer arguments
+//. Shorthand boolean operation for pointer arguments
 inline int lt(const Identity*i, const Identity*j) { return i < j; }
 inline int gt(const Identity*i, const Identity*j) { return i > j; }
 inline int le(const Identity*i, const Identity*j) { return i <= j; }

@@ -199,7 +199,7 @@ SimpleCo::bmat(RefMolecule&mol,RefSCVector&bmat,double coef)
 }
 
 void
-SimpleCo::update_value(RefMolecule&mol)
+SimpleCo::update_value(const RefMolecule&mol)
 {
   calc_intco(*mol);
 }

@@ -1,0 +1,291 @@
+
+\section{The \clsnm{ParsedKeyVal} Input Format}
+\label{ParsedKeyVal}
+\label{KeyVal}
+\index{ParsedKeyVal}
+\index{KeyVal}
+
+The \clsnm{KeyVal} class provides a means for users to associate keywords
+with values.  \clsnm{ParsedKeyVal} is a specialization of \clsnm{KeyVal}
+that permits keyword/value associations in text such as an input file or a
+command line string.
+
+The package is flexible enough to allow complex structures and arrays as
+well as objects to be read from an input file.
+
+\subsection{Assignment}
+
+As an example of the use of \clsnmref{ParsedKeyVal}, consider the following
+input:
+\begin{verbatim}
+x_coordinate = 1.0
+y_coordinate = 2.0
+x_coordinate = 3.0
+\end{verbatim}
+Two assignements will be made.  The keyword \verb|x_coordinate| will be
+associated with the value \verb|1.0| and the keyword \verb|y_coordinate|
+will be assigned to \verb|2.0|.  The third line in the above input
+will have no effect since \verb|x_coordinate| was assigned previously.
+
+\subsection{Keyword Grouping}
+
+Lets imagine that we have a program which needs to read in the
+characteristics of animals.  There are lots of animals so it might be
+nice to catagorize them by their family.  Here is a sample format for
+such an input file:
+\begin{verbatim}
+reptile: (
+  alligator: (
+    legs = 4
+    extinct = no
+    )
+  python: (
+    legs = 0
+    extinct = no
+    )
+  )
+bird: (
+  owl: (
+    flys = yes
+    extinct = no
+    )
+  )
+\end{verbatim}
+
+This sample illustrates the use of \vrbl{keyword} \verb|=| \vrbl{value}
+assignments and the keyword grouping operators \verb|(| and \verb|)|.
+The keywords in this example are
+\begin{verbatim}
+reptile:alligator:legs
+reptile:alligator:extinct
+reptile:alligator:legs
+reptile:python:size
+reptile:python:extinct
+bird:owl:flys
+bird:owl:extinct
+\end{verbatim}
+
+The \verb|:|'s occuring in these keywords break the keywords into
+smaller logical units called keyword segments.  The sole purpose of this
+is to allow persons writing input files to group the input into easy to
+read sections.  In the above example there are two main sections, the
+reptile section and the bird section.  The reptile section takes the
+form \verb|reptile| \verb|:| \verb|(| \vrbl{keyword} \verb|=| \vrbl{value}
+assignments \verb|)|.  Each of the keywords found between the
+parentheses has the \verb|reptile:| prefix attached to it.  Within each
+of these sections further keyword groupings can be used, as many and as
+deeply nested as the user wants.
+
+Keyword grouping is also useful when you need many different programs to
+read from the same input file.  Each program can be assigned its own
+unique section.
+
+\subsection{Array Construction}
+
+A method of specifying arrays of data would be useful.  One way to
+do this would be as follows:
+\begin{verbatim}
+array: (
+  0 = 5.4
+  1 = 8.9
+  2 = 3.7
+  )
+\end{verbatim}
+The numbers \verb|0|, \verb|1|, and \verb|2| in this example are keyword
+segments which serve as indices of \verb|array|.  However, this syntax
+is somewhat awkward and array construction operators have been provided
+to simplify the input for this case.  The following input is equivalent
+to the above input:
+\begin{verbatim}
+array = [ 5.4 8.9 3.7 ]
+\end{verbatim}
+
+More complex arrays than this can be imagined.  Suppose an array of
+complex numbers is needed.  For example the input
+\begin{verbatim}
+carray: (
+  0: ( r = 1.0  i = 0.0 )
+  1: ( r = 0.0  i = 1.0 )
+  )
+\end{verbatim}
+could be written as
+\begin{verbatim}
+carray: [
+  (r = 1.0 i = 0.0)
+  (r = 0.0 i = 1.0)
+  ]
+\end{verbatim}
+which looks a bit nicer than the example without array construction
+operators.
+
+Furthermore, the array construction operators can be nested in about
+every imaginable way.  This allows multidimensional arrays of
+complicated data to be represented.
+
+It would be nice to just extend an array that is already defined.  This
+feature has not been implemented; however, user demand for it might
+result in its implementation.  The operators reserved for this purpose
+are \verb|+[| and \verb|]|.
+
+\subsection{Table Construction}
+
+Although the array contstruction operators will suit most requirements
+for enumerated lists of data, in some cases the input can still look
+ugly.  This can, in some cases, be fixed with the table construction
+operators, \verb|{| and \verb|}|.
+
+Suppose a few long vectors of the same length are needed and the data in
+the \verb|i|th element of each array is related or somehow belong
+together.  If the arrays are so long that the width of a page is
+exceeded, then data that should be seen next to each other are no longer
+adjacent.  The way this problem can be fixed is to arrange the data
+vertically side by side rather than horizontally.  The table
+construction operators allows the user to achieve this in a very simple
+manner.
+\begin{verbatim}
+balls: (
+  color    = [  red      blue     red   ]
+  diameter = [   12       14       11   ]
+  material = [  rubber  vinyl   plastic ]
+  bouces   = [  yes      no       no    ]
+  coordinate = [[ 0.0  0.0  0.0]
+                [ 1.0  2.0 -1.0]
+                [ 1.0 -1.0  1.0]]
+  )
+\end{verbatim}
+can be written
+\begin{verbatim}
+balls: (
+  { color diameter material bounces     coordinate}
+                  
+  {  red     12    rubber    yes     [ 0.0  0.0  0.0]
+     blue    14    vinyl     no      [ 1.0  2.0 -1.0]
+     red     11    plastic   no      [ 1.0 -1.0  1.0] }
+  )
+\end{verbatim}
+The length and width of the table can be anything the user desires.
+
+\subsection{Value Substitution}
+\label{ParsedKeyVal:valsub}
+
+Occasionally, a user may need to repeat some value several times in an
+input file.  If the value must be changed, it would be nice to only
+change the value in one place.  The value substitution feature of
+\clsnmref{ParsedKeyVal} always the user to do this.  Any place a value can
+occur the user can place a \verb|$|.  Following this a keyword must be
+given.  This keyword must have been assigned before the attempt is made
+to use its value in a value substitution.
+
+Here is an example illustrating most of the variable substition
+features:
+\begin{verbatim}
+default:linewidth = 130
+testsub: (
+  ke: (
+    ke_1 = 1
+    ke_2 = 2
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    )
+  kx = $ke
+  r1 = 3.0
+  r2 = $r1
+  linewidth = $:default:linewidth
+  )
+\end{verbatim}
+is the same as specifying
+\begin{verbatim}
+testsub: (
+  ke: (
+    ke_1 = 1
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    ke_2 = 2
+    )
+  linewidth = 130
+  r2 = 3.0
+  r1 = 3.0
+  kx: (
+    ke_1 = 1
+    ke_2 = 2
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    )
+  )
+\end{verbatim}
+It can be seen from this that value substitution can result in entire
+keyword segment hierarchies being copied, as well as simple
+substitutions.
+
+
+\subsection{Expression Evaluation}
+
+It is nice to be able to multiply numbers together directly in the input
+file.  For example, you may need to change the units on a number and
+want to see where exactly the number is coming from.  This motivated the
+development of an expression evaluation facility in the
+\clsnmref{ParsedKeyVal} package.  This facility is still under development,
+but some primitive expressions can be evaluated in the current release.
+
+Suppose your program requires several parameters \verb|x1|, \verb|x2|,
+and \verb|x3|.  Furthermore, suppose that their ratios remain fixed for
+all the runs of the program that you desire.  It would be best to
+specify some scale factor in the input that would be the only thing that
+has to be changed from run to run.  If you don't want to or cannot
+modify the program, then this can be done directly with
+\clsnmref{ParsedKeyVal} as follows
+\begin{verbatim}
+scale = 1.234
+x1 = ( $:scale *  1.2 )
+x2 = ( $:scale *  9.2 )
+x3 = ( $:scale * -2.0 )
+\end{verbatim}
+So we see that to the right of the ``\verb|=|'' the characters
+``\verb|(|'' and ``\verb|)|'' are the expression construction operators.
+This is in contrast to their function when they are to the left of the
+``\verb|=|'', where they are the keyword grouping operators.
+
+Currently, the expression must be binary and the data is all converted
+to double.  If you use the expression construction operators to produce
+data that the program expects to be integer, you will certainly get the
+wrong answers (unless the desired value happens to be zero).
+
+\subsection{Objects}
+
+An instance of an object can be can be specified by surrounding it's
+classname with the ``\verb|<|'' and ``\verb|>|'' operators immediately
+after the keyword naming the data.
+
+A pointer to a single object can be associated with multiple keywords by
+using
+\hyperref{value substitution}
+         {value substitution (see Section~}
+         {)}
+         {ParsedKeyVal:valsub}.
+This is accomplished by holding references to all objects once they are
+read in.
+
+Consider the following input for a linked list, where \clsnm{A}
+\begin{verbatim}
+a1<A>: (
+    next<A>: (
+        next<B>: (
+            bdata = 4
+            next<A>:()
+            )
+        )
+    )
+a2 = $:a
+\end{verbatim}
+
+The \verb|a1| list would contain two \verb|A| objects followed by a
+\verb|B| object followed by another \verb|A| object.  The \verb|a2| list
+refers to exactly the same object as \verb|a1| (not a copy of
+\verb|a1|).
+

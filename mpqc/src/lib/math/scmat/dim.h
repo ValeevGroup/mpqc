@@ -43,8 +43,8 @@ class SCBlockInfo: public SavableState {
 };
 SavableState_REF_dec(SCBlockInfo);
 
-//texi The @code{SCDimension} class is used to determine the size and
-// blocking of matrices.
+//. The \srccd{SCDimension} class is used to determine the size and
+//. blocking of matrices.
 class SCDimension: public SavableState {
 #   define CLASSNAME SCDimension
 #   define HAVE_KEYVAL_CTOR
@@ -57,8 +57,8 @@ class SCDimension: public SavableState {
     RefSCBlockInfo blocks_;
     SCDimension(const char* name = 0);
   public:
-    //texi Create a dimension with an optional name.  The
-    // name is a copy of the @code{'\0'} terminated string @var{name}.
+    //. Create a dimension with an optional name.  The
+    //. name is a copy of the \srccd{'0'} terminated string @var{name}.
     SCDimension(int n, const char* name = 0);
     SCDimension(const RefSCBlockInfo&, const char *name = 0);
     SCDimension(int n, int nblocks, const int *blocksizes = 0,
@@ -68,13 +68,13 @@ class SCDimension: public SavableState {
     ~SCDimension();
     void save_data_state(StateOut&);
 
-    //texi Test to see if two dimensions are equivalent.
+    //. Test to see if two dimensions are equivalent.
     int equiv(const SCDimension*) const;
     
-    //texi Return the dimension.
+    //. Return the dimension.
     int n() const { return n_; }
-    //texi Return the name of the dimension.  If no name was given
-    // to the constructor, then return @code{0}.
+    //. Return the name of the dimension.  If no name was given
+    //. to the constructor, then return \srccd{0}.
     const char* name() const { return name_; }
 
     RefSCBlockInfo blocks() { return blocks_; }
@@ -85,32 +85,31 @@ class SCDimension: public SavableState {
 DCRef_declare(SCDimension);
 SSRef_declare(SCDimension);
 
-//texi
-//  The @code{RefSCDimension} class is a smart pointer to an
-//   @code{SCDimension} specialization.
+//. The \clsnm{RefSCDimension} class is a smart pointer to an
+//. \clsnm{SCDimension} specialization.
 class RefSCDimension: public SSRefSCDimension {
     // standard overrides
   public:
-    //texi Initializes the dimension pointer to @code{0}.  The
-    // reference must be initialized before it is used.
+    //. Initializes the dimension pointer to \srccd{0}.  The
+    //. reference must be initialized before it is used.
     RefSCDimension();
-    //texi Make this and @var{d} refer to the same @code{SCDimension}.
+    //. Make this and @var{d} refer to the same \clsnmref{SCDimension}.
     RefSCDimension(const RefSCDimension& d);
-    //texi Make this refer to @var{d}.
+    //. Make this refer to @var{d}.
     RefSCDimension(SCDimension *d);
 
     RefSCDimension(const DCRefBase&);
     ~RefSCDimension();
-    //texi Make this refer to @var{d}.
+    //. Make this refer to \vrbl{d}.
     RefSCDimension& operator=(SCDimension* d);
 
     RefSCDimension& operator=(const DCRefBase & c);
-    //texi Make this and @var{d} refer to the same @code{SCDimension}.
+    //. Make this and \vrbl{d} refer to the same \clsnmref{SCDimension}.
     RefSCDimension& operator=(const RefSCDimension & d);
 
     // dimension specific functions
   public:
-    //texi Return the dimension.
+    //. Return the dimension.
     operator int() const;
     int n() const;
 

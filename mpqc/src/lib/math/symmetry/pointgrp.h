@@ -15,9 +15,8 @@
 
 ////////////////////////////////////////////////////////////////////
 
-//texi
-// The @code{SymmetryOperation} class provides a 3 x 3 matrix representation
-// of a symmetry operation, such as a rotation or reflection.
+//.  The \clsnm{SymmetryOperation} class provides a 3 by 3 matrix
+//representation of a symmetry operation, such as a rotation or reflection.
 class SymmetryOperation {
   private:
     double d[3][3];
@@ -26,70 +25,70 @@ class SymmetryOperation {
     SymmetryOperation();
     ~SymmetryOperation();
 
-    //texi returns the trace of the transformation matrix
+    //. returns the trace of the transformation matrix
     double trace() const { return d[0][0]+d[1][1]+d[2][2]; }
 
-    //texi returns the i'th row of the transformation matrix
+    //. returns the i'th row of the transformation matrix
     double* operator[](int i) { return d[i]; }
 
-    //texi const version of the above
+    //. const version of the above
     const double* operator[](int i) const { return d[i]; }
 
-    //texi returns a reference to the (i,j)th element of the transformation
+    //. returns a reference to the (i,j)th element of the transformation
     // matrix
     double& operator()(int i, int j) { return d[i][j]; }
 
-    //texi const version of the above
+    //. const version of the above
     const double operator()(int i, int j) const { return d[i][j]; }
 
-    //texi zero out the symop
+    //. zero out the symop
     void zero() { memset(d,0,sizeof(double)*9); }
 
-    //texi This operates on @code{this} with r (i.e. return r * @code{this}).
+    //. This operates on \srccd{this} with r (i.e. return r * \srccd{this}).
     SymmetryOperation operate(const SymmetryOperation& r) const;
 
-    //texi This performs the transform r * @code{this} * r~
+    //. This performs the transform r * \srccd{this} * r~
     SymmetryOperation sim_transform(const SymmetryOperation& r) const;
     
-    //texi Set equal to a unit matrix
+    //. Set equal to a unit matrix
     void unit() { zero(); d[0][0] = d[1][1] = d[2][2] = 1.0; }
 
-    //texi Set equal to E
+    //. Set equal to E
     void E() { unit(); }
     
-    //texi Set equal to an inversion
+    //. Set equal to an inversion
     void i() { zero(); d[0][0] = d[1][1] = d[2][2] = -1.0; }
 
-    //texi Set equal to reflection in xy plane
+    //. Set equal to reflection in xy plane
     void sigma_h() { unit(); d[2][2] = -1.0; }
 
-    //texi Set equal to reflection in xz plane
+    //. Set equal to reflection in xz plane
     void sigma_xz() { unit(); d[1][1] = -1.0; }
 
-    //texi Set equal to reflection in yz plane
+    //. Set equal to reflection in yz plane
     void sigma_yz() { unit(); d[0][0] = -1.0; }
 
-    //texi Set equal to a clockwise rotation by 2pi/n
+    //. Set equal to a clockwise rotation by 2pi/n
     void rotation(int n);
     void rotation(double theta);
     
-    //texi Set equal to C2 about the x axis
+    //. Set equal to C2 about the x axis
     void c2_x() { i(); d[0][0] = 1.0; }
 
-    //texi Set equal to C2 about the x axis
+    //. Set equal to C2 about the x axis
     void c2_y() { i(); d[1][1] = 1.0; }
 
-    //texi print the matrix 
+    //. print the matrix 
     void print(FILE* =stdout) const;
 };
 
 ////////////////////////////////////////////////////////////////////
 
-//texi
-// The @code{SymRep} class provides an n dimensional matrix representation
-// of a symmetry operation, such as a rotation or reflection.  The trace
-// of a @code{SymRep} can be used as the character for that symmetry operation.
-// d is hardwired to 5x5 since the H irrep in Ih is 5 dimensional.
+//.  The \clsnm{SymRep} class provides an n dimensional matrix
+//representation of a symmetry operation, such as a rotation or reflection.
+//The trace of a \clsnm{SymRep} can be used as the character for that
+//symmetry operation.  d is hardwired to 5x5 since the H irrep in Ih is 5
+//dimensional.
 class SymRep {
   private:
     int n;
@@ -100,66 +99,66 @@ class SymRep {
     SymRep(const SymmetryOperation&);
     ~SymRep();
 
-    //texi Cast to a SymmetryOperation.
+    //. Cast to a SymmetryOperation.
     operator SymmetryOperation() const;
     
-    //texi returns the trace of the transformation matrix
+    //. returns the trace of the transformation matrix
     inline double trace() const;
 
-    //texi set the dimension of d
+    //. set the dimension of d
     void set_dim(int i) { n=i; }
     
-    //texi returns the i'th row of the transformation matrix
+    //. returns the i'th row of the transformation matrix
     double* operator[](int i) { return d[i]; }
-    //texi const version of the above
+    //. const version of the above
     const double* operator[](int i) const { return d[i]; }
 
-    //texi returns a reference to the (i,j)th element of the transformation
+    //. returns a reference to the (i,j)th element of the transformation
     // matrix
     double& operator()(int i, int j) { return d[i][j]; }
-    //texi const version of the above
+    //. const version of the above
     const double operator()(int i, int j) const { return d[i][j]; }
 
-    //texi zero out the symop
+    //. zero out the symop
     void zero() { memset(d,0,sizeof(double)*25); }
 
-    //texi This operates on @code{this} with r (i.e. return r * @code{this}).
+    //. This operates on \srccd{this} with r (i.e. return r * \srccd{this}).
     SymRep operate(const SymRep& r) const;
 
-    //texi This performs the transform r * @code{this} * r~
+    //. This performs the transform r * \srccd{this} * r~
     SymRep sim_transform(const SymRep& r) const;
     
-    //texi Set equal to a unit matrix
+    //. Set equal to a unit matrix
     void unit() {
       zero(); d[0][0] = d[1][1] = d[2][2] = d[3][3] = d[4][4] = 1.0;
     }
     
-    //texi Set equal to the identity
+    //. Set equal to the identity
     void E() { unit(); }
     
-    //texi Set equal to an inversion
+    //. Set equal to an inversion
     void i() { zero(); d[0][0] = d[1][1] = d[2][2] = d[3][3] = d[4][4] = -1.0;}
 
-    //texi Set equal to reflection in xy plane
+    //. Set equal to reflection in xy plane
     void sigma_h();
 
-    //texi Set equal to reflection in xz plane
+    //. Set equal to reflection in xz plane
     void sigma_xz();
 
-    //texi Set equal to reflection in yz plane
+    //. Set equal to reflection in yz plane
     void sigma_yz();
 
-    //texi Set equal to a clockwise rotation by 2pi/n
+    //. Set equal to a clockwise rotation by 2pi/n
     void rotation(int n);
     void rotation(double theta);
     
-    //texi Set equal to C2 about the x axis
+    //. Set equal to C2 about the x axis
     void c2_x();
 
-    //texi Set equal to C2 about the x axis
+    //. Set equal to C2 about the x axis
     void c2_y();
 
-    //texi print the matrix 
+    //. print the matrix 
     void print(FILE* =stdout) const;
 };
 
@@ -177,13 +176,12 @@ SymRep::trace() const
 
 class CharacterTable;
 
-//texi
-// The @code{IrreducibleRepresentation} class provides information associated
-// with a particular irreducible representation of a point group.  This
-// includes the Mulliken symbol for the irrep, the degeneracy of the irrep,
-// the characters which represent the irrep, and the number of translations
-// and rotations in the irrep.  The order of the point group is also provided
-// (this is equal to the number of characters in an irrep). 
+//.  The \clsnm{IrreducibleRepresentation} class provides information
+//associated with a particular irreducible representation of a point group.
+//This includes the Mulliken symbol for the irrep, the degeneracy of the
+//irrep, the characters which represent the irrep, and the number of
+//translations and rotations in the irrep.  The order of the point group is
+//also provided (this is equal to the number of characters in an irrep).
 class IrreducibleRepresentation {
   friend class CharacterTable;
 
@@ -200,7 +198,7 @@ class IrreducibleRepresentation {
   public:
     IrreducibleRepresentation();
     IrreducibleRepresentation(const IrreducibleRepresentation&);
-    //texi This constructor takes as arguments the order of the point group,
+    //. This constructor takes as arguments the order of the point group,
     // the degeneracy of the irrep, and the Mulliken symbol of the irrep.
     // The Mulliken symbol is copied internally.
     IrreducibleRepresentation(int,int,const char*);
@@ -209,42 +207,42 @@ class IrreducibleRepresentation {
 
     IrreducibleRepresentation& operator=(const IrreducibleRepresentation&);
 
-    //texi Initialize the order, degeneracy, and Mulliken symbol of the irrep.
+    //. Initialize the order, degeneracy, and Mulliken symbol of the irrep.
     void init(int =0, int =0, const char* =0);
     
-    //texi Returns the order of the group.
+    //. Returns the order of the group.
     int order() const { return g; }
 
-    //texi Returns the degeneracy of the irrep.
+    //. Returns the degeneracy of the irrep.
     int degeneracy() const { return degen; }
 
-    //texi Returns the value of complex_.
+    //. Returns the value of \srccd{complex\_}.
     int complex() const { return complex_; }
 
-    //texi Returns the number of projection operators for the irrep.
+    //. Returns the number of projection operators for the irrep.
     int nproj() const { return degen*degen; }
 
-    //texi Returns the number of rotations associated with the irrep.
+    //. Returns the number of rotations associated with the irrep.
     int nrot() const { return nrot_; }
 
-    //texi Returns the number of translations associated with the irrep.
+    //. Returns the number of translations associated with the irrep.
     int ntrans() const { return ntrans_; }
 
-    //texi Returns the Mulliken symbol for the irrep.
+    //. Returns the Mulliken symbol for the irrep.
     const char * symbol() const { return symb; }
 
-    //texi
+    //.
     // Returns the character for the i'th symmetry operation of the point
     // group.
     double character(int i) const {
       return complex_ ? 0.5*rep[i].trace() : rep[i].trace();
     }
 
-    //texi
+    //.
     // Returns the element (x1,x2) of the i'th representation matrix.
     double p(int x1, int x2, int i) const { return rep[i](x1,x2); }
     
-    //texi
+    //.
     // Returns the character for the d'th contribution to the i'th 
     // representation matrix.
     double p(int d, int i) const {
@@ -252,15 +250,15 @@ class IrreducibleRepresentation {
       return rep[i](dr,dc);
     }
 
-    //texi
+    //.
     // This prints the irrep to the given file, or stdout if none is given.
     // The second argument is an optional string of spaces to offset by.
     void print(FILE* =stdout, const char * =" ");
 };
 
 /////////////////////////////////////////////////////////////
-//texi
-// The @code{CharacterTable} class provides a workable character table for
+//.
+// The \clsnm{CharacterTable} class provides a workable character table for
 // all of the non-cubic point groups.  While I have tried to match the
 // ordering in Cotton's book, I don't guarantee that it is always followed.
 // It shouldn't matter anyway.  Also note that I don't lump symmetry operations
@@ -283,9 +281,9 @@ class CharacterTable {
     int *_inv;                           // index of the inverse symop
     char *symb;                          // the Schoenflies symbol for the pg
 
-    //texi this determines what type of point group we're dealing with
+    //. this determines what type of point group we're dealing with
     int parse_symbol();
-    //texi this fills in the irrep and symop arrays.
+    //. this fills in the irrep and symop arrays.
     int make_table();
 
     // these create the character tables for the cubic groups
@@ -299,30 +297,30 @@ class CharacterTable {
 
   public:
     CharacterTable();
-    //texi This constructor takes the Schoenflies symbol of a point group as
+    //. This constructor takes the Schoenflies symbol of a point group as
     // input.
     CharacterTable(const char*);
-    //texi This is like the above, but it also takes a reference to a
-    // @code{SymmetryOperation} which is the frame of reference.  All symmetry
-    // operations are transformed to this frame of reference.
+    //. This is like the above, but it also takes a reference to a
+    //\clsnmref{SymmetryOperation} which is the frame of reference.  All
+    //symmetry operations are transformed to this frame of reference.
     CharacterTable(const char*,const SymmetryOperation&);
     CharacterTable(const CharacterTable&);
     ~CharacterTable();
 
     CharacterTable& operator=(const CharacterTable&);
 
-    //texi Returns the number of irreps.
+    //. Returns the number of irreps.
     int nirrep() const { return nirrep_; }
-    //texi Returns the order of the point group
+    //. Returns the order of the point group
     int order() const { return g; }
-    //texi Returns the Schoenflies symbol for the point group
+    //. Returns the Schoenflies symbol for the point group
     const char * symbol() const { return symb; }
-    //texi Returns the i'th irrep.
+    //. Returns the i'th irrep.
     IrreducibleRepresentation& gamma(int i) { return gamma_[i]; }
-    //texi Returns the i'th symmetry operation.
+    //. Returns the i'th symmetry operation.
     SymmetryOperation& symm_operation(int i) { return symop[i]; }
 
-    //texi Cn, Cnh, Sn, T, and Th point groups have complex representations.
+    //. Cn, Cnh, Sn, T, and Th point groups have complex representations.
     // This function returns 1 if the point group has a complex representation,
     // 0 otherwise.
     int complex() const {
@@ -331,10 +329,10 @@ class CharacterTable {
       return 0;
     }
 
-    //texi Returns the index of the symop which is the inverse of symop[i].
+    //. Returns the index of the symop which is the inverse of symop[i].
     int inverse(int i) const { return _inv[i]; }
     
-    //texi Returns sum_ir degen(ir);
+    //. Returns sum\_ir degen(ir);
     int ncomp() const {
       int ret=0;
       for (int i=0; i < nirrep_; i++) {
@@ -344,7 +342,7 @@ class CharacterTable {
       return ret;
     }
 
-    //texi Returns the irrep component i belongs to.
+    //. Returns the irrep component i belongs to.
     int which_irrep(int i) {
       for (int ir=0, cn=0; ir < nirrep_; ir++) {
         int nc = (gamma_[ir].complex()) ? 1 : gamma_[ir].degen;
@@ -355,7 +353,7 @@ class CharacterTable {
       return -1;
     }
 
-    //texi Returns the which compenent i is.
+    //. Returns the which compenent i is.
     int which_comp(int i) {
       for (int ir=0, cn=0; ir < nirrep_; ir++) {
         int nc = (gamma_[ir].complex()) ? 1 : gamma_[ir].degen;
@@ -366,7 +364,7 @@ class CharacterTable {
       return -1;
     }
     
-    //texi 
+    //. 
     // This prints the irrep to the given file, or stdout if none is given.
     // The second argument is an optional string of spaces to offset by.
     void print(FILE* =stdout, const char * =" ");
@@ -374,16 +372,16 @@ class CharacterTable {
 
 /////////////////////////////////////////////////////////////
 
-//texi
-// The @code{PointGroup} class is really a place holder for a
-// @code{CharacterTable}.  It contains a string representation of the
+//.
+// The \clsnm{PointGroup} class is really a place holder for a
+// \clsnmref{CharacterTable}.  It contains a string representation of the
 // Schoenflies symbol of a point group, a frame of reference for the
 // symmetry operation transformation matrices, and a point of origin.
 // The origin may one day disappear...I once thought it would be useful.
 // Maybe I'll remember why some day.
 //
-// @code{PointGroup} is the only class in libsymmetry which is a
-// @code{SavableState}.  I did this to save space...it takes less than a
+// \clsnm{PointGroup} is the only class in libsymmetry which is a
+// \clsnmref{SavableState}.  I did this to save space...it takes less than a
 // second to generate a character table from the Schoenflies symbol, but
 // the character table for Ih will occupy a great deal of memory.  Best to
 // free up that memory when it's not needed.
@@ -401,16 +399,16 @@ class PointGroup: public SavableState {
 
   public:
     PointGroup();
-    //texi This constructor takes a string containing the Schoenflies symbol
+    //. This constructor takes a string containing the Schoenflies symbol
     // of the point group as its only argument.
     PointGroup(const char*);
-    //texi Like the above, but this constructor also takes a frame of reference
+    //. Like the above, but this constructor also takes a frame of reference
     // as an argument.
     PointGroup(const char*,SymmetryOperation&);
-    //texi Like the above, but this constructor also takes a point of origin
+    //. Like the above, but this constructor also takes a point of origin
     // as an argument.
     PointGroup(const char*,SymmetryOperation&,Point&);
-    //texi The KeyVal constructor (@ref{The PointGroup KeyVal Constructor}).
+    //. The \clsnmref{KeyVal} constructor.
     PointGroup(const RefKeyVal&);
 
     PointGroup(StateIn&);
@@ -419,20 +417,20 @@ class PointGroup: public SavableState {
 
     PointGroup& operator=(PointGroup&);
 
-    //texi Returns the @code{CharacterTable} for this point group.
+    //. Returns the \clsnmref{CharacterTable} for this point group.
     CharacterTable char_table() const;
-    //texi Returns the Schoenflies symbol for this point group.
+    //. Returns the Schoenflies symbol for this point group.
     const char * symbol() const { return symb; }
-    //texi Returns the frame of reference for this point group.
+    //. Returns the frame of reference for this point group.
     SymmetryOperation& symm_frame() { return frame; }
-    //texi A const version of the above
+    //. A const version of the above
     const SymmetryOperation& symm_frame() const { return frame; }
-    //texi Returns the origin of the symmetry frame.
+    //. Returns the origin of the symmetry frame.
     Point& origin() { return origin_; }
-    //texi A const version of the above.
+    //. A const version of the above.
     const Point& origin() const { return origin_; }
 
-    //texi Sets (or resets) the Schoenflies symbol.
+    //. Sets (or resets) the Schoenflies symbol.
     void set_symbol(const char*);
 
     void save_data_state(StateOut& so);

@@ -118,6 +118,32 @@ extern "C" void * sbrk(int);
 
 typedef unsigned long refcount_t;
 
+//. \srccd{VRefCount} is the base class for all reference counted
+//. objects.  If multiple inheritance is used, \srccd{VRefCount}
+//. must be virtually inherited from, otherwise references to
+//. invalid memory will likely result.
+//.
+//. Reference counting information is usually maintained by smart
+//. pointer classes (\clsnm{Ref}), however this mechanism can be
+//. supplemented or replaced by directly using the public
+//. interface to \srccd{VRefCount}.
+//.
+//. The \srccd{unmanage()} member is only needed for special cases where
+//. memory management must be turned off.  For example, if a reference
+//. counted object is created on the stack, memory management
+//. mechanisms based on reference counting must be prohibited from deleting it.
+//. The \srccd{unmanage()} member accomplishes this, but a better solution
+//. would be to allocate the object on the heap with \srccd{new} and let
+//. a class declared using the \srccd{REF\_dec} macro manage the memory for
+//. the object.
+//. 
+//. When using a debugger to look at reference counted objects the
+//. count is maintained in the \srccd{\_reference\_count\_} member.
+//. However, this member is encoded so that memory overwrites can be
+//. sometimes detected.  Thus, interpretation of
+//. \srccd{\_reference\_count\_} is not straightforward and will change
+//. as the implementation of \srccd{VRefCount} becomes more
+//. sophisticated.
 class VRefCount: public Identity {
   private:
 #if REF_CHECKSUM
@@ -174,6 +200,7 @@ class VRefCount: public Identity {
   public:
     virtual ~VRefCount();
 
+    //. Return the reference count.
     refcount_t nreference() const {
 #       if REF_MANAGE
         if (!managed()) return 1;
@@ -184,6 +211,7 @@ class VRefCount: public Identity {
         return _reference_count_;
       }
 
+    //. Increment the reference count and return the new count.
     refcount_t reference() {
 #       if REF_MANAGE
         if (!managed()) return 1;
@@ -201,6 +229,7 @@ class VRefCount: public Identity {
         return _reference_count_;
       }
 
+    //. Decrement the reference count and return the new count.
     refcount_t dereference() {
 #       if REF_MANAGE
         if (!managed()) return 1;
@@ -219,13 +248,17 @@ class VRefCount: public Identity {
       }
 
 #if REF_MANAGE
-    // unmanaged objects always return nonzero for reference counts
     int managed() const {
 #       if REF_CHECKSUM
         check_checksum();
 #       endif // REF_CHECKSUM
         return _reference_count_ != REF_MANAGED_CODE;
       }
+    //. Turn off the reference counting mechanism for this object.
+    //. The value returned by \srccd{nreference()} will always be
+    //. 1 after this is called.  The ability to \srccd{unmanage()}
+    //. objects must be turned on at compile time by defining
+    //. \srccd{REF\_MANAGE}.  There is a slight performance penalty.
     void unmanage() {
         _reference_count_ = REF_MANAGED_CODE;
 #       if REF_CHECKSUM
@@ -233,12 +266,16 @@ class VRefCount: public Identity {
 #       endif // REF_CHECKSUM
       }
 #else // REF_MANAGE
+    //. Return 1 if the object is managed.  Otherwise return 0.
     int managed() const { return 1; }
 #endif // REF_MANAGE
 };
 
+//. \clsnm{RefBase} provide a few utility routines common to all
+//. \clsnmref{Ref} template instantiations.
 class RefBase {
   public:
+    //. Reference utility routines.
     void warn ( const char * msg) const;
     void warn_ref_to_stack() const;
     void warn_skip_stack_delete() const;

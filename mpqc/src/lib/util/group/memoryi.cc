@@ -84,12 +84,16 @@ MemoryGrp::MemoryGrp()
 {
   use_locks_ = 1;
   debug_ = 0;
+
+  offsets_ = 0;
 }
 
 MemoryGrp::MemoryGrp(const RefKeyVal& keyval)
 {
   use_locks_ = 1;
   debug_ = keyval->intvalue("debug");
+
+  offsets_ = 0;
 }
 
 MemoryGrp::~MemoryGrp()

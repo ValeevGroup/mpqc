@@ -50,8 +50,6 @@ MsgMemoryGrp::MsgMemoryGrp(const RefMessageGrp &msg)
   msg_ = msg;
   n_ = msg->n();
   me_ = msg->me();
-
-  offsets_ = 0;
 }
 
 MsgMemoryGrp::MsgMemoryGrp(const RefKeyVal &keyval):
@@ -70,13 +68,10 @@ MsgMemoryGrp::MsgMemoryGrp(const RefKeyVal &keyval):
   msg_ = msg;
   n_ = msg->n();
   me_ = msg->me();
-
-  offsets_ = 0;
 }
 
 MsgMemoryGrp::~MsgMemoryGrp()
 {
-  delete[] offsets_;
 }
 
 void

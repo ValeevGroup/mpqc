@@ -1076,7 +1076,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
 AC_CHECK_FUNCS(gethostname time ctime ieee_set_fp_control ieee_get_fp_control)
-AC_CHECK_FUNCS(setrlimit)
+AC_CHECK_FUNCS(setrlimit setenv)
 
 dnl --------- Checks for a C++ linkable fchdir. ---------
 AC_LANG_SAVE

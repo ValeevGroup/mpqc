@@ -125,11 +125,20 @@ MBPT2::compute()
       compute_cs_grad();
     }
   else {
-      if (!algorithm_ || !strcmp(algorithm_,"v2")) {
-          compute_hsos_v2();
+      if (nsocc && algorithm_ && !strcmp(algorithm_,"memgrp")) {
+          cerr << "MBPT2: memgrp algorithm cannot compute open shell energy"
+               << endl;
+          abort();
         }
-      else if (!strcmp(algorithm_,"v1")) {
+      if (!nsocc && (!algorithm_ || !strcmp(algorithm_,"memgrp"))) {
+          compute_cs_grad();
+        }
+      else if ((!algorithm_ && msg_->n() <= 32)
+               || (algorithm_ && !strcmp(algorithm_,"v1"))) {
           compute_hsos_v1();
+        }
+      else if (!algorithm_ || !strcmp(algorithm_,"v2")) {
+          compute_hsos_v2();
         }
       else if (!strcmp(algorithm_,"v2lb")) {
           compute_hsos_v2_lb();

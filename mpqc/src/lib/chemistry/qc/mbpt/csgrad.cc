@@ -182,9 +182,13 @@ MBPT2::compute_cs_grad()
   double **gradient, *gradient_dat;  // The MP2 gradient
   double **ginter;    // Intermediates for the MP2 gradient
 
+  int dograd = do_gradient();
+
   // this controls how often mem->catchup is called
   int catchup_ctr;
   const int catchup_mask = 3;
+
+  tim_enter("mp2-mem");
 
   if (molecule()->point_group().char_table().order() != 1) {
     // need to reorder the eigenvalues and possibly fix some bugs
@@ -203,7 +207,7 @@ MBPT2::compute_cs_grad()
 
   if (me == 0) {
     cout << indent
-         << "Entered MP2 program (mp2grad)" << endl;
+         << "Entered memgrp based MP2 routine" << endl;
     }
   
   nproc = msg_->n();
@@ -320,41 +324,55 @@ MBPT2::compute_cs_grad()
   evalmat = 0;
 
   //////////////////////////////////////////////////////////////
-  // Allocate storage for various arrays
+  // Allocate storage for various arrays needed for gradients
   // (Pkj and Pab are symmetric, so store only lower triangle)
   //////////////////////////////////////////////////////////////
 
-  Pkj            = (double*) malloc((nocc*(nocc+1)/2)*sizeof(double));
-  Pab            = (double*) malloc((nvir*(nvir+1)/2)*sizeof(double));
-  Wkj            = (double*) malloc(nocc*nocc*sizeof(double));
-  Wab            = (double*) malloc(nvir*nvir*sizeof(double));
-  Waj            = (double*) malloc(nvir*nocc*sizeof(double));
-  Laj            = (double*) malloc(nvir*nocc*sizeof(double));
+  if (dograd) {
+    Pkj            = (double*) malloc((nocc*(nocc+1)/2)*sizeof(double));
+    Pab            = (double*) malloc((nvir*(nvir+1)/2)*sizeof(double));
+    Wkj            = (double*) malloc(nocc*nocc*sizeof(double));
+    Wab            = (double*) malloc(nvir*nvir*sizeof(double));
+    Waj            = (double*) malloc(nvir*nocc*sizeof(double));
+    Laj            = (double*) malloc(nvir*nocc*sizeof(double));
 
-  gradient_dat = new double[natom*3];
-  gradient = new double*[natom];
-  for (i=0; i<natom; i++) {
-    gradient[i] = &gradient_dat[i*3];
+    gradient_dat = new double[natom*3];
+    gradient = new double*[natom];
+    for (i=0; i<natom; i++) {
+      gradient[i] = &gradient_dat[i*3];
+      }
+
+    ginter = new double*[natom];
+    for (i=0; i<natom; i++) {
+      ginter[i] = new double[3];
+      for (xyz=0; xyz<3; xyz++) ginter[i][xyz] = 0;
+      }
+
+    //////////////////////////////
+    // Initialize various arrays
+    //////////////////////////////
+
+    bzerofast(Pkj,nocc*(nocc+1)/2);
+    bzerofast(Wkj,nocc*nocc);
+    bzerofast(Pab,nvir*(nvir+1)/2);
+    bzerofast(Wab,nvir*nvir);
+    bzerofast(Waj,nvir*nocc);
+    bzerofast(Laj,nvir*nocc);
+
+    if (me == 0) zero_gradients(gradient, natom, 3);
     }
+  else {
+    Pkj = 0;
+    Pab = 0;
+    Wkj = 0;
+    Wab = 0;
+    Waj = 0;
+    Laj = 0;
 
-  ginter = new double*[natom];
-  for (i=0; i<natom; i++) {
-    ginter[i] = new double[3];
-    for (xyz=0; xyz<3; xyz++) ginter[i][xyz] = 0;
+    gradient_dat = 0;
+    gradient = 0;
+    ginter = 0;
     }
-
-  //////////////////////////////
-  // Initialize various arrays
-  //////////////////////////////
-
-  bzerofast(Pkj,nocc*(nocc+1)/2);
-  bzerofast(Wkj,nocc*nocc);
-  bzerofast(Pab,nvir*(nvir+1)/2);
-  bzerofast(Wab,nvir*nvir);
-  bzerofast(Waj,nvir*nocc);
-  bzerofast(Laj,nvir*nocc);
-
-  if (me == 0) zero_gradients(gradient, natom, 3);
 
   if (me == 0) {
     for (j=0; j<nbasis; j++) {
@@ -806,7 +824,8 @@ MBPT2::compute_cs_grad()
               } // exit y loop
             }   // exit a loop
 
-          if (j >= nfzc) {
+          // this is only needed for gradients
+          if (dograd && j >= nfzc) {
             for (k=0; k<nocc; k++) {
               bzerofast(integral_ikja, nvir_act);
               ikjs_ptr = &integral_ixjs[k + nbasis*nbasis*ij_index];
@@ -915,6 +934,9 @@ MBPT2::compute_cs_grad()
       cout << indent << "End of ecorr" << endl;
       }
     // end of debug print
+
+    // don't go beyond this point if only the energy is needed
+    if (!dograd) continue;
 
     integral_iqjs = 0;
     membuf.release();
@@ -1608,31 +1630,13 @@ MBPT2::compute_cs_grad()
 
   mem->set_localsize(0);
 
+  if (nproc > 1) delete[] iqjs_buf;
+
   // debug print
   if (debug_ && me == 0) {
     cout << indent << "Exited loop over i-batches" << endl;
     }
   // end of debug print
-
-  if (nproc > 1) delete[] iqjs_buf;
-
-  // Accumulate intermediate gradients on node 0
-  sum_gradients(msg_, ginter, natom, 3);
-
-  // Add intermediate gradients to the gradient on node 0
-  accum_gradients(gradient, ginter, natom, 3);
-
-  // Print out contribution to the gradient from non-sep. 2PDM
-  if (me == 0) {
-    cout << indent
-         << "Contribution to MP2 gradient from non-separable 2PDM [au]:"
-         << endl;
-    for (i=0; i<natom; i++) {
-      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf",
-                       ginter[i][0], ginter[i][1], ginter[i][2])
-           << endl;
-      }
-    }
 
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each
@@ -1655,9 +1659,11 @@ MBPT2::compute_cs_grad()
     cout<<indent
         <<scprintf("Number of shell quartets for which AO integrals\n"
                    "were computed: %i\n",aoint_computed);
-    cout<<indent
-        <<scprintf("Number of shell quartets for which AO integral derivatives\n"
-                   "were computed: %i\n",aointder_computed);
+    if (dograd) {
+      cout<<indent
+          <<scprintf("Number of shell quartets for which AO integral derivatives\n"
+                     "were computed: %i\n",aointder_computed);
+      }
 
     cout<<indent
         <<scprintf("RHF energy [au]:                   %13.8lf\n", escf);
@@ -1673,6 +1679,33 @@ MBPT2::compute_cs_grad()
          << ", using mp" << endl;
     }
   set_energy(emp2);
+
+  // quit here if only the energy is needed
+  if (!dograd) {
+    delete[] scf_vector;
+    delete[] scf_vector_dat;
+    delete[] evals;
+    tim_exit("mp2-mem");
+    return;
+    }
+
+  // Accumulate intermediate gradients on node 0
+  sum_gradients(msg_, ginter, natom, 3);
+
+  // Add intermediate gradients to the gradient on node 0
+  accum_gradients(gradient, ginter, natom, 3);
+
+  // Print out contribution to the gradient from non-sep. 2PDM
+  if (me == 0) {
+    cout << indent
+         << "Contribution to MP2 gradient from non-separable 2PDM [au]:"
+         << endl;
+    for (i=0; i<natom; i++) {
+      cout << indent << scprintf("%15.10lf  %15.10lf  %15.10lf",
+                       ginter[i][0], ginter[i][1], ginter[i][2])
+           << endl;
+      }
+    }
 
   ////////////////////////////////////////////////////////
   // Add contributions from all nodes to various matrices
@@ -2105,6 +2138,7 @@ MBPT2::compute_cs_grad()
   delete[] scf_vector_dat;
   delete[] evals;
 
+  tim_exit("mp2-mem");
   }
 
 ///////////////////////////////////////////////////////////

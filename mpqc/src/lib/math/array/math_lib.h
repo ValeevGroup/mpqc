@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1994/08/26 17:57:42  etseidl
+ * Revision 1.3  1994/08/26 18:04:44  etseidl
+ * eliminate binary and formatted io modules
+ *
+ * Revision 1.2  1994/08/26  17:57:42  etseidl
  * get rid of rcs id's and fix a few warnings
  *
  * Revision 1.1.1.1  1993/12/29  12:53:30  etseidl
@@ -48,11 +51,7 @@
 #include <math/array/matrixbc0.h>
 #include <math/array/matrixrbc0.h>
 #include <math/array/matrixsbc0.h>
-#include <math/array/matrixbwr.h>
-#include <math/array/matrixbrd.h>
 #include <math/array/matrixfree.h>
-#include <math/array/matrixfrd.h>
-#include <math/array/matrixfwr.h>
 #include <math/array/matrixallc.h>
 #include <math/array/matrixinit.h>
 #include <math/array/matrixprnt.h>

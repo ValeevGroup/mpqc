@@ -1,6 +1,9 @@
 
 // $Log$
-// Revision 1.3  1994/08/26 17:57:43  etseidl
+// Revision 1.4  1994/08/26 18:04:45  etseidl
+// eliminate binary and formatted io modules
+//
+// Revision 1.3  1994/08/26  17:57:43  etseidl
 // get rid of rcs id's and fix a few warnings
 //
 // Revision 1.2  1994/06/08  01:16:15  cljanss
@@ -38,8 +41,8 @@
 // Initial revision
 //
 
-default_modules(free alloc bread bwrite print init bcast0 rbcast0
-                sbcast0 fread fwrite iseq assign zero send0 recv0);
+default_modules(free alloc print init bcast0 rbcast0
+                sbcast0 iseq assign zero send0 recv0);
 
 doublep_array4 {
   int n1;

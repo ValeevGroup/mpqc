@@ -18,8 +18,8 @@ CSRC = diag.c flin.c matrix_utl.c mxmm.c mxmv.c print.c
 
 SGENFILE = matrix.sgen
 
-SGENSRC = matrixbc0.c matrixrbc0.c matrixsbc0.c matrixbwr.c matrixbrd.c \
-          matrixfree.c matrixfrd.c matrixfwr.c matrixallc.c matrixinit.c \
+SGENSRC = matrixbc0.c matrixrbc0.c matrixsbc0.c \
+          matrixfree.c matrixallc.c matrixinit.c \
           matrixprnt.c matrixiseq.c matrixasgn.c matrixsnd0.c \
           matrixrcv0.c matrixzero.c
 

@@ -25,13 +25,16 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <util/misc/string.h>
 #include <ctype.h>
 #include <sys/stat.h>
 
+#include <sstream>
+#include <stdexcept>
+
 #include <util/misc/units.h>
+#include <util/misc/autovec.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/group/message.h>
@@ -43,116 +46,126 @@ using namespace sc;
 ////////////////////////////////////////////////////////////////////////
 // AtomInfo
 
-struct AtomInfo::atomname
-AtomInfo::names_[MaxZ] = 
-  {{"",           ""}, // 0
-   {"hydrogen",   "H"}, // 1
-   {"helium",     "He"}, // 2
-   {"lithium",    "Li"}, // 3
-   {"beryllium",  "Be"}, // 4
-   {"boron",      "B"}, // 5
-   {"carbon",     "C"}, // 6
-   {"nitrogen",   "N"}, // 7
-   {"oxygen",     "O"}, // 8
-   {"fluorine",   "F"}, // 9
-   {"neon",       "Ne"}, // 10
-   {"sodium",     "Na"}, // 11
-   {"magnesium",  "Mg"}, // 12
-   {"aluminum",   "Al"}, // 13
-   {"silicon",    "Si"}, // 14
-   {"phosphorus" ,"P"}, // 15
-   {"sulfur",     "S"}, // 16
-   {"chlorine",   "Cl"}, // 17
-   {"argon",      "Ar"}, // 18
-   {"potassium",  "K"}, // 19
-   {"calcium",    "Ca"}, // 20
-   {"scandium",   "Sc"}, // 21
-   {"titanium",   "Ti"}, // 22
-   {"vanadium",   "V"}, // 23
-   {"chromium",   "Cr"}, // 24
-   {"manganese",  "Mn"}, // 25
-   {"iron",       "Fe"}, // 26
-   {"cobalt",     "Co"}, // 27
-   {"nickel",     "Ni"}, // 28
-   {"copper",     "Cu"}, // 29
-   {"zinc",       "Zn"}, // 30
-   {"gallium",    "Ga"}, // 31
-   {"germanium",  "Ge"}, // 32
-   {"arsenic",    "As"}, // 33
-   {"selenium",   "Se"}, // 34
-   {"bromine",    "Br"}, // 35
-   {"krypton",    "Kr"}, // 36
-   {"rubidium",     "Rb"}, // 37
-   {"strontium",    "Sr"}, // 38
-   {"yttrium",      "Y"}, // 39
-   {"zirconium",    "Zr"}, // 40
-   {"niobium",      "Nb"}, // 41
-   {"molybdenum",   "Mo"}, // 42
-   {"technetium",   "Tc"}, // 43
-   {"ruthenium",    "Ru"}, // 44
-   {"rhodium",      "Rh"}, // 45
-   {"palladium",    "Pd"}, // 46
-   {"silver",       "Ag"}, // 47
-   {"cadminium",    "Cd"}, // 48
-   {"indium",       "In"}, // 49
-   {"tin",          "Sn"}, // 50
-   {"antimony",     "Sb"}, // 51
-   {"tellurium",    "Te"}, // 52
-   {"iodine",       "I"}, // 53
-   {"xenon",        "Xe"}, // 54
-   {"cesium",       "Cs"}, // 55
-   {"barium",       "Ba"}, // 56
-   {"lanthanium",   "La"}, // 57
-   {"cerium",       "Ce"}, // 58
-   {"praseodymium", "Pr"}, // 59
-   {"neodymium",    "Nd"}, // 60
-   {"promethium",   "Pm"}, // 61
-   {"samarium",     "Sm"}, // 62
-   {"europium",     "Eu"}, // 63
-   {"gadolinium",   "Gd"}, // 64
-   {"terbium",      "Tb"}, // 65
-   {"dysprosium",   "Dy"}, // 66
-   {"holmium",      "Ho"}, // 67
-   {"erbium",       "Er"}, // 68
-   {"thulium",      "Tm"}, // 69
-   {"ytterbium",    "Yb"}, // 70
-   {"lutetium",     "Lu"}, // 71
-   {"hafnium",      "Hf"}, // 72
-   {"tantalum",     "Ta"}, // 73
-   {"tungsten",     "W"}, // 74
-   {"rhenium",      "Re"}, // 75
-   {"osmium",       "Os"}, // 76
-   {"iridium",      "Ir"}, // 77
-   {"platinum",     "Pt"}, // 78
-   {"gold",         "Au"}, // 79
-   {"mercury",      "Hg"}, // 80
-   {"thallium",     "Tl"}, // 81
-   {"lead",         "Pb"}, // 82
-   {"bismuth",      "Bi"}, // 83
-   {"polonium",     "Po"}, // 84
-   {"astatine",     "At"}, // 85
-   {"radon",        "Rn"}, // 86
-   {"francium",     "Fr"}, // 87
-   {"radium",       "Ra"}, // 88
-   {"actinium",     "Ac"}, // 89
-   {"thorium",      "Th"}, // 90
-   {"protactinium", "Pa"}, // 91
-   {"uranium",      "U"}, // 92
-   {"neptunium",    "Np"}, // 93
-   {"plutonium",    "Pu"}, // 94
-   {"americium",    "Am"}, // 95
-   {"curium",       "Cm"}, // 96
-   {"berkelium",    "Bk"}, // 97
-   {"californium",  "Cf"}, // 98
-   {"einsteinum",   "Es"}, // 99
-   {"fermium",      "Fm"}, // 100
-   {"mendelevium",  "Md"}, // 101
-   {"nobelium",     "No"}, // 102
-   {"lawrencium",   "Lr"}, // 103
-   {"rutherfordium","Rf"}, // 104
-   {"hahnium",      "Ha"}, // 105
-   {"Unnamed",      "Un"}, // 106
-   {"Unnamed",      "Un"} // 107
+struct AtomInfo::atom
+AtomInfo::elements_[Nelement] = 
+  {{1, "hydrogen",   "H"},
+   {2, "helium",     "He"},
+   {3, "lithium",    "Li"},
+   {4, "beryllium",  "Be"},
+   {5, "boron",      "B"},
+   {6, "carbon",     "C"},
+   {7, "nitrogen",   "N"},
+   {8, "oxygen",     "O"},
+   {9, "fluorine",   "F"},
+   {10, "neon",       "Ne"},
+   {11, "sodium",     "Na"},
+   {12, "magnesium",  "Mg"},
+   {13, "aluminum",   "Al"},
+   {14, "silicon",    "Si"},
+   {15, "phosphorus" ,"P"},
+   {16, "sulfur",     "S"},
+   {17, "chlorine",   "Cl"},
+   {18, "argon",      "Ar"},
+   {19, "potassium",  "K"},
+   {20, "calcium",    "Ca"},
+   {21, "scandium",   "Sc"},
+   {22, "titanium",   "Ti"},
+   {23, "vanadium",   "V"},
+   {24, "chromium",   "Cr"},
+   {25, "manganese",  "Mn"},
+   {26, "iron",       "Fe"},
+   {27, "cobalt",     "Co"},
+   {28, "nickel",     "Ni"},
+   {29, "copper",     "Cu"},
+   {30, "zinc",       "Zn"},
+   {31, "gallium",    "Ga"},
+   {32, "germanium",  "Ge"},
+   {33, "arsenic",    "As"},
+   {34, "selenium",   "Se"},
+   {35, "bromine",    "Br"},
+   {36, "krypton",    "Kr"},
+   {37, "rubidium",     "Rb"},
+   {38, "strontium",    "Sr"},
+   {39, "yttrium",      "Y"},
+   {40, "zirconium",    "Zr"},
+   {41, "niobium",      "Nb"},
+   {42, "molybdenum",   "Mo"},
+   {43, "technetium",   "Tc"},
+   {44, "ruthenium",    "Ru"},
+   {45, "rhodium",      "Rh"},
+   {46, "palladium",    "Pd"},
+   {47, "silver",       "Ag"},
+   {48, "cadminium",    "Cd"},
+   {49, "indium",       "In"},
+   {50, "tin",          "Sn"},
+   {51, "antimony",     "Sb"},
+   {52, "tellurium",    "Te"},
+   {53, "iodine",       "I"},
+   {54, "xenon",        "Xe"},
+   {55, "cesium",       "Cs"},
+   {56, "barium",       "Ba"},
+   {57, "lanthanium",   "La"},
+   {58, "cerium",       "Ce"},
+   {59, "praseodymium", "Pr"},
+   {60, "neodymium",    "Nd"},
+   {61, "promethium",   "Pm"},
+   {62, "samarium",     "Sm"},
+   {63, "europium",     "Eu"},
+   {64, "gadolinium",   "Gd"},
+   {65, "terbium",      "Tb"},
+   {66, "dysprosium",   "Dy"},
+   {67, "holmium",      "Ho"},
+   {68, "erbium",       "Er"},
+   {69, "thulium",      "Tm"},
+   {70, "ytterbium",    "Yb"},
+   {71, "lutetium",     "Lu"},
+   {72, "hafnium",      "Hf"},
+   {73, "tantalum",     "Ta"},
+   {74, "tungsten",     "W"},
+   {75, "rhenium",      "Re"},
+   {76, "osmium",       "Os"},
+   {77, "iridium",      "Ir"},
+   {78, "platinum",     "Pt"},
+   {79, "gold",         "Au"},
+   {80, "mercury",      "Hg"},
+   {81, "thallium",     "Tl"},
+   {82, "lead",         "Pb"},
+   {83, "bismuth",      "Bi"},
+   {84, "polonium",     "Po"},
+   {85, "astatine",     "At"},
+   {86, "radon",        "Rn"},
+   {87, "francium",     "Fr"},
+   {88, "radium",       "Ra"},
+   {89, "actinium",     "Ac"},
+   {90, "thorium",      "Th"},
+   {91, "protactinium", "Pa"},
+   {92, "uranium",      "U"},
+   {93, "neptunium",    "Np"},
+   {94, "plutonium",    "Pu"},
+   {95, "americium",    "Am"},
+   {96, "curium",       "Cm"},
+   {97, "berkelium",    "Bk"},
+   {98, "californium",  "Cf"},
+   {99, "einsteinum",   "Es"},
+   {100, "fermium",      "Fm"},
+   {101, "mendelevium",  "Md"},
+   {102, "nobelium",     "No"},
+   {103, "lawrencium",   "Lr"},
+   {104, "rutherfordium","Rf"},
+   {105, "hahnium",      "Ha"},
+   {106, "seaborgium",   "Sg"},
+   {107, "bohrium",      "Bh"},
+   {108, "hassium",      "Hs"},
+   {109, "meitnerium",   "Mt"},
+   {110, "darmstadtium", "Ds"},
+   {111, "roentgenium",  "Rg"},
+   {112, "ununbium",     "Uub"},
+   {113, "ununtrium",    "Uut"},
+   {114, "ununquadium",  "Uuq"},
+   {115, "ununpentium",  "Uup"},
+   {116, "ununhexium",   "Uuh"},
+   {117, "ununseptium",  "Uus"},
+   {118, "ununoctium",   "Uuo"}
   };
 
 static ClassDesc AtomInfo_cd(
@@ -161,12 +174,14 @@ static ClassDesc AtomInfo_cd(
 
 AtomInfo::AtomInfo()
 {
+  initialize_names();
   overridden_values_ = 0;
   load_library_values();
 }
 
 AtomInfo::AtomInfo(const Ref<KeyVal>& keyval)
 {
+  initialize_names();
   overridden_values_ = 0;
   load_library_values();
   override_library_values(keyval);
@@ -175,29 +190,16 @@ AtomInfo::AtomInfo(const Ref<KeyVal>& keyval)
 AtomInfo::AtomInfo(StateIn& s):
   SavableState(s)
 {
-  if (s.node_to_node()) {
-      s.get_array_double(mass_,MaxZ);
-      s.get_array_double(atomic_radius_,MaxZ);
-      s.get_array_double(vdw_radius_,MaxZ);
-      s.get_array_double(bragg_radius_,MaxZ);
-      s.get_array_double(maxprob_radius_,MaxZ);
-      for (int i=0; i<MaxZ; i++) s.get_array_double(rgb_[i],3);
-      s.getstring(overridden_values_);
-      if (s.version(::class_desc<AtomInfo>()) >= 3) {
-          s.get_array_double(ip_,MaxZ);
-        }
-    }
-  else {
-      overridden_values_ = 0;
-      load_library_values();
-      char *overrides;
-      s.getstring(overrides);
-      if (overrides) {
-          Ref<ParsedKeyVal> keyval = new ParsedKeyVal;
-          keyval->parse_string(overrides);
-          override_library_values(keyval.pointer());
-          delete[] overrides;
-        }
+  initialize_names();
+  overridden_values_ = 0;
+  load_library_values();
+  char *overrides;
+  s.getstring(overrides);
+  if (overrides) {
+      Ref<ParsedKeyVal> keyval = new ParsedKeyVal;
+      keyval->parse_string(overrides);
+      override_library_values(keyval.pointer());
+      delete[] overrides;
     }
   if (s.version(::class_desc<AtomInfo>()) < 2) {
       atomic_radius_scale_ = 1.0;
@@ -221,19 +223,7 @@ AtomInfo::~AtomInfo()
 void
 AtomInfo::save_data_state(StateOut& s)
 {
-  if (s.node_to_node()) {
-      s.put_array_double(mass_,MaxZ);
-      s.put_array_double(atomic_radius_,MaxZ);
-      s.put_array_double(vdw_radius_,MaxZ);
-      s.put_array_double(bragg_radius_,MaxZ);
-      s.put_array_double(maxprob_radius_,MaxZ);
-      for (int i=0; i<MaxZ; i++) s.put_array_double(rgb_[i],3);
-      s.put_array_double(ip_,MaxZ);
-      s.putstring(overridden_values_);
-    }
-  else {
-      s.putstring(overridden_values_);
-    }
+  s.putstring(overridden_values_);
   s.put(atomic_radius_scale_);
   s.put(vdw_radius_scale_);
   s.put(bragg_radius_scale_);
@@ -241,21 +231,45 @@ AtomInfo::save_data_state(StateOut& s)
 }
 
 void
+AtomInfo::initialize_names()
+{
+  for (int i=0; i<Nelement; i++) {
+      symbol_to_Z_[elements_[i].symbol] = elements_[i].Z;
+      name_to_Z_[elements_[i].name] = elements_[i].Z;
+    }
+
+  // Z == DefaultZ is reserved for default values
+  symbol_to_Z_["Def"] = DefaultZ;
+  name_to_Z_["default"] = DefaultZ;
+
+  // Z == 1000 is reserved for point charges
+  name_to_Z_["charge"] = 1000;
+  symbol_to_Z_["Q"] = 1000;
+
+  for (std::map<std::string,int>::iterator i = symbol_to_Z_.begin();
+       i != symbol_to_Z_.end(); i++) {
+      Z_to_symbols_[i->second] = i->first;
+    }
+
+  for (std::map<std::string,int>::iterator i = name_to_Z_.begin();
+       i != name_to_Z_.end(); i++) {
+      Z_to_names_[i->second] = i->first;
+    }
+}
+
+void
 AtomInfo::load_library_values()
 {
   Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
+  sc::auto_vec<char> in_char_array;
   if (grp->me() == 0) {
       const char* libdir;
-      Ref<KeyVal> keyval;
+      std::string filename;
       if ((libdir = getenv("SCLIBDIR")) != 0) {
           const char* atominfo = "/atominfo.kv";
           const char *eq = ::strchr(libdir,'=');
           if (eq) libdir = eq + 1;
-          char *filename = new char[strlen(libdir) + strlen(atominfo) + 1];
-          strcpy(filename, libdir);
-          strcat(filename, atominfo);
-          keyval = new ParsedKeyVal(filename);
-          delete[] filename;
+          filename = std::string(libdir) + atominfo;
         }
       else {
           struct stat sb;
@@ -265,23 +279,28 @@ AtomInfo::load_library_values()
               ainfo = SRC_SCLIBDIR "/atominfo.kv";
             }
 #endif
-          ExEnv::out0() << indent << "Reading file " << ainfo << "." << endl;
-          keyval = new ParsedKeyVal(ainfo);
+          filename = ainfo;
         }
-      Ref<KeyVal> pkeyval = new PrefixKeyVal(keyval, "atominfo");
-      load_values(pkeyval,0);
+      ExEnv::out0() << indent << "Reading file " << filename << "." << endl;
+      ifstream is(filename.c_str());
+      ostringstream ostrs;
+      is >> ostrs.rdbuf();
+      int n = 1 + strlen(ostrs.str().c_str());
+      in_char_array.reset(strcpy(new char[n],ostrs.str().c_str()));
+      grp->bcast(n);
+      grp->bcast(in_char_array.get(), n);
     }
-  grp->bcast(mass_,MaxZ);
-  grp->bcast(atomic_radius_,MaxZ);
-  grp->bcast(vdw_radius_,MaxZ);
-  grp->bcast(bragg_radius_,MaxZ);
-  grp->bcast(maxprob_radius_,MaxZ);
-  grp->bcast(atomic_radius_scale_);
-  grp->bcast(vdw_radius_scale_);
-  grp->bcast(bragg_radius_scale_);
-  grp->bcast(maxprob_radius_scale_);
-  for (int i=0; i<MaxZ; i++) grp->bcast(rgb_[i],3);
-  grp->bcast(ip_,MaxZ);
+  else {
+      int n;
+      grp->bcast(n);
+      in_char_array.reset(new char[n]);
+      grp->bcast(in_char_array.get(), n);
+    }
+
+  Ref<ParsedKeyVal> keyval = new ParsedKeyVal();
+  keyval->parse_string(in_char_array.get());
+  Ref<KeyVal> pkeyval = new PrefixKeyVal(keyval.pointer(), "atominfo");
+  load_values(pkeyval,0);
 }
 
 void
@@ -297,21 +316,22 @@ AtomInfo::load_values(const Ref<KeyVal>& keyval, int override)
   Ref<Units> bohr = new Units("bohr");
   Ref<Units> hartree = new Units("hartree");
 
-  load_values(mass_, 0, "mass", keyval, override, amu);
-  load_values(atomic_radius_, &atomic_radius_scale_, "atomic_radius",
+  load_values(Z_to_mass_, 0, "mass", keyval, override, amu);
+  load_values(Z_to_atomic_radius_, &atomic_radius_scale_, "atomic_radius",
               keyval, override, bohr);
-  load_values(vdw_radius_, &vdw_radius_scale_, "vdw_radius",
+  load_values(Z_to_vdw_radius_, &vdw_radius_scale_, "vdw_radius",
               keyval, override, bohr);
-  load_values(bragg_radius_, &bragg_radius_scale_,
+  load_values(Z_to_bragg_radius_, &bragg_radius_scale_,
               "bragg_radius", keyval, override, bohr);
-  load_values(maxprob_radius_, &maxprob_radius_scale_,
+  load_values(Z_to_maxprob_radius_, &maxprob_radius_scale_,
               "maxprob_radius", keyval, override, bohr);
-  load_values(rgb_, "rgb", keyval, override);
-  load_values(ip_, 0, "ip", keyval, override, hartree);
+  load_values(Z_to_rgb_, "rgb", keyval, override);
+  load_values(Z_to_ip_, 0, "ip", keyval, override, hartree);
 }
 
 void
-AtomInfo::load_values(double *array, double *scale, const char *keyword,
+AtomInfo::load_values(std::map<int,double>&values,
+                      double *scale, const char *keyword,
                       const Ref<KeyVal> &keyval, int override,
                       const Ref<Units> &units)
 {
@@ -324,17 +344,17 @@ AtomInfo::load_values(double *array, double *scale, const char *keyword,
   double def = 0.0;
   if (!override) {
       def = pkeyval->doublevalue("default");
-      array[0] = def;
+      values[DefaultZ] = def;
     }
   int have_overridden = 0;
-  int i;
-  for (i=1; i<MaxZ; i++) {
-      double val = f * pkeyval->doublevalue(names_[i].symbol);
+  for (int elem=0; elem<Nelement; elem++) {
+      int Z = elements_[elem].Z;
+      double val = f * pkeyval->doublevalue(elements_[elem].symbol);
       if (pkeyval->error() != KeyVal::OK) {
-          if (!override) array[i] = def;
+          if (!override) values[Z] = def;
         }
       else {
-          array[i] = val;
+          values[Z] = val;
           if (override) {
               const char *prefix = " ";
               if (!have_overridden) {
@@ -350,9 +370,10 @@ AtomInfo::load_values(double *array, double *scale, const char *keyword,
                     }
                   have_overridden = 1;
                 }
-              char *strval = pkeyval->pcharvalue(names_[i].symbol);
+              char *strval = pkeyval->pcharvalue(elements_[elem].symbol);
               char assignment[256];
-              sprintf(assignment,"%s%s=%s", prefix, names_[i].symbol, strval);
+              sprintf(assignment,"%s%s=%s", prefix,
+                      elements_[elem].symbol, strval);
               delete[] strval;
               add_overridden_value(assignment);
             }
@@ -384,28 +405,31 @@ AtomInfo::load_values(double *array, double *scale, const char *keyword,
 }
 
 void
-AtomInfo::load_values(double array[][3], const char *keyword,
+AtomInfo::load_values(std::map<int,std::vector<double> >&values,
+                      const char *keyword,
                       const Ref<KeyVal> &keyval, int override)
 {
-  int i,j;
   Ref<KeyVal> pkeyval = new PrefixKeyVal(keyval,keyword);
   double def[3];
   if (!override) {
-      for (i=0; i<3; i++) {
+      values[DefaultZ].resize(3);
+      for (int i=0; i<3; i++) {
           def[i] = pkeyval->doublevalue("default",i);
-          array[0][i] = def[i];
+          values[DefaultZ][i] = def[i];
         }
     }
   int have_overridden = 0;
-  for (i=1; i<MaxZ; i++) {
+  for (int elem=0; elem<Nelement; elem++) {
       double val;
-      for (j=0; j<3; j++) {
-          val = pkeyval->doublevalue(names_[i].symbol,j);
+      int Z = elements_[elem].Z;
+      values[Z].resize(3);
+      for (int j=0; j<3; j++) {
+          val = pkeyval->doublevalue(elements_[Z].symbol,j);
           if (pkeyval->error() != KeyVal::OK) {
-              if (!override) array[i][j] = def[j];
+              if (!override) values[Z][j] = def[j];
             }
           else {
-              array[i][j] = val;
+              values[Z][j] = val;
               if (override) {
                   const char *prefix = " ";
                   if (!have_overridden) {
@@ -414,10 +438,10 @@ AtomInfo::load_values(double array[][3], const char *keyword,
                       prefix = "";
                       have_overridden = 1;
                     }
-                  char *strval = pkeyval->pcharvalue(names_[i].symbol,j);
+                  char *strval = pkeyval->pcharvalue(elements_[Z].symbol,j);
                   char assignment[256];
                   sprintf(assignment,"%s%s:%d=%s",
-                          prefix, names_[i].symbol, j, strval);
+                          prefix, elements_[Z].symbol, j, strval);
                   delete[] strval;
                   add_overridden_value(assignment);
                 }
@@ -443,63 +467,142 @@ AtomInfo::add_overridden_value(const char *assignment)
 }
 
 int
-AtomInfo::string_to_Z(const char *name, int allow_exceptions)
+AtomInfo::string_to_Z(const std::string &name, int allow_exceptions)
 {
-  unsigned int i,j;
   int Z;
 
   // see if the name is a atomic number
-  Z = atoi(name);
+  Z = atoi(name.c_str());
 
   // name is not an atomic number--must be a symbol or atom name
   if (!Z) {
-
       // convert the name to lower case
-      char* tmpname = strdup(name);
-      for (j=0; j<strlen(tmpname); j++) {
+      std::string tmpname(name);
+      for (int j=0; j<tmpname.size(); j++) {
 	  if (isupper(tmpname[j])) tmpname[j] = tolower(tmpname[j]);
 	}
 
-      // loop thru the elements, looking for a match
-      for (i=0; i<MaxZ; i++) {
+      std::map<std::string,int>::const_iterator iname
+          = name_to_Z_.find(tmpname);
+      if (iname != name_to_Z_.end()) return iname->second;
 
-          // see if an atom name matches
-          // if we find a match we are done looping
-	  if (!strcmp(names_[i].name,tmpname)) {
-	      Z = i;
-	      break;
-	    }
-
-          // see if an atomic symbol (converted to lower case) matches
-          char* tmpsymbol = strdup(names_[i].symbol);
-          for (j=0; j<strlen(tmpsymbol); j++) {
-	      if (isupper(tmpsymbol[j])) tmpsymbol[j] = tolower(tmpsymbol[j]);
-            }
-          // if we find a match we are done looping
-	  if (!strcmp(tmpsymbol,tmpname)) {
-	      Z = i;
-              free(tmpsymbol);
-	      break;
-	    }
-          free(tmpsymbol);
-	}
-
-      // free the lowercase version of the name
-      free(tmpname);
-    }  
-
-  // check to see if z value is OK, if not then the name must have been
-  // invalid
-  if (Z < 1 || Z > MaxZ) {
-      if (allow_exceptions) {
-          ExEnv::err0()
-                       << sprintf("AtomInfo: invalid name: %s\n",name);
-          abort();
+      if (tmpname.size() > 0) {
+          if (islower(tmpname[0])) tmpname[0] = toupper(tmpname[0]);
         }
-      else return 0;
+
+      iname = symbol_to_Z_.find(tmpname);
+      if (iname != symbol_to_Z_.end()) return iname->second;
     }
 
-  return Z;
+  if (allow_exceptions) {
+      ExEnv::err0() << sprintf("AtomInfo: invalid name: %s\n",name.c_str());
+      throw std::runtime_error("invalid atom name");
+    }
+
+  return 0;
+}
+
+double
+AtomInfo::lookup_value(const std::map<int,double>& values, int Z) const
+{
+  std::map<int,double>::const_iterator found = values.find(Z);
+  if (found == values.end()) {
+      found = values.find(DefaultZ);
+    }
+  return found->second;
+}
+
+double
+AtomInfo::lookup_array_value(const std::map<int,std::vector<double> >& values,
+                             int Z, int i) const
+{
+  std::map<int,std::vector<double> >::const_iterator found = values.find(Z);
+  if (found == values.end()) {
+      found = values.find(DefaultZ);
+    }
+  return found->second[i];
+}
+
+double
+AtomInfo::vdw_radius(int Z) const
+{
+  return lookup_value(Z_to_vdw_radius_,Z)*vdw_radius_scale_;
+}
+
+double
+AtomInfo::bragg_radius(int Z) const
+{
+  return lookup_value(Z_to_bragg_radius_,Z)*bragg_radius_scale_;
+}
+
+double
+AtomInfo::atomic_radius(int Z) const
+{
+  return lookup_value(Z_to_atomic_radius_,Z)*atomic_radius_scale_;
+}
+
+double
+AtomInfo::maxprob_radius(int Z) const
+{
+  return lookup_value(Z_to_maxprob_radius_,Z)*maxprob_radius_scale_;
+}
+
+double
+AtomInfo::ip(int Z) const
+{
+  return lookup_value(Z_to_ip_,Z);
+}
+
+double
+AtomInfo::rgb(int Z, int color) const
+{
+  return lookup_array_value(Z_to_rgb_,Z,color);
+}
+
+double
+AtomInfo::red(int Z) const
+{
+  return lookup_array_value(Z_to_rgb_,Z,0);
+}
+
+double
+AtomInfo::green(int Z) const
+{
+  return lookup_array_value(Z_to_rgb_,Z,1);
+}
+
+double
+AtomInfo::blue(int Z) const
+{
+  return lookup_array_value(Z_to_rgb_,Z,2);
+}
+
+double
+AtomInfo::mass(int Z) const
+{
+  return lookup_value(Z_to_mass_,Z);
+}
+
+std::string
+AtomInfo::name(int Z)
+{
+  std::map<int,std::string>::const_iterator found = Z_to_names_.find(Z);
+  if (found == Z_to_names_.end()) {
+      ExEnv::err0() << scprintf("AtomInfo: invalid Z: %d\n",Z);
+      throw std::runtime_error("invalid Z");
+    }
+  return found->second;
+}
+
+std::string
+AtomInfo::symbol(int Z)
+{
+  std::map<int,std::string>::const_iterator found = Z_to_symbols_.find(Z);
+  if (found == Z_to_symbols_.end()) {
+      ExEnv::err0() << scprintf("AtomInfo: invalid Z: %d\n",Z);
+      throw std::runtime_error("invalid Z");
+    }
+  return found->second;
 }
 
 /////////////////////////////////////////////////////////////////////////////

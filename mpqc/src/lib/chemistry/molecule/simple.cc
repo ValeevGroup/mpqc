@@ -216,7 +216,7 @@ SimpleCo::print_details(const Ref<Molecule> &mol, ostream& os) const
           os << "   ";
         }
       for (i=0; i<natoms(); i++) {
-          os << separator << AtomInfo::symbol(mol->Z(atoms[i]-1));
+          os << separator << mol->atom_symbol(atoms[i]-1);
           separator = "-";
         }
     }

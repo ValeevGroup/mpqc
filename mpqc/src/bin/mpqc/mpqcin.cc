@@ -136,7 +136,7 @@ MPQCIn::end_molecule()
 void
 MPQCIn::add_atom(char *sym, char *xs, char *ys, char *zs)
 {
-  int Z = AtomInfo::string_to_Z(sym, 0);
+  int Z = mol_->atominfo()->string_to_Z(sym, 0);
   if (Z == 0) yerror2("bad element", sym);
   free(sym);
 

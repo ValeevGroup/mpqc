@@ -59,6 +59,15 @@ static ClassDesc GaussianBasisSet_cd(
   typeid(GaussianBasisSet),"GaussianBasisSet",3,"public SavableState",
   0, create<GaussianBasisSet>, create<GaussianBasisSet>);
 
+static bool
+skip_atom(bool skip_ghosts, const Ref<Molecule> &mol, int iatom)
+{
+  if (skip_ghosts && mol->charge(iatom) == 0.0) return true;
+  // charges do not have basis functions
+  if (mol->atom_symbol(iatom) == "Q") return true;
+  return false;
+}
+
 GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
 {
   molecule_ << topkeyval->describedclassvalue("molecule");
@@ -360,7 +369,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   ncenter_ = molecule->natom();
   int iatom;
   for (iatom=0; iatom < ncenter_; iatom++) {
-      if (skip_ghosts && molecule->charge(iatom) == 0.0) continue;
+      if (skip_atom(skip_ghosts,molecule,iatom)) continue;
       int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
@@ -371,7 +380,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
           int i;
           for (i=0; i<nelement; i++) {
               char *tmpelementname = keyval->pcharvalue("element", i);
-              int tmpZ = AtomInfo::string_to_Z(tmpelementname);
+              int tmpZ = molecule->atominfo()->string_to_Z(tmpelementname);
               if (tmpZ == Z) {
                   sbasisname = keyval->pcharvalue("basis", i);
                   break;
@@ -381,14 +390,18 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       if (!sbasisname) {
           if (!name_) {
-              ExEnv::err0() << indent << "GaussianBasisSet: "
-                   << scprintf("no basis name for atom %d (%s)\n",
-                               iatom, AtomInfo::name(Z));
+              ExEnv::err0()
+                  << indent << "GaussianBasisSet: no basis name for atom "
+                  << iatom
+                  << " (Z=" <<molecule->atominfo()->name(Z) << ")"
+                  << std::endl;
               abort();
             }
           sbasisname = strcpy(new char[strlen(name_)+1],name_);
         }
-      ishell += count_shells_(keyval, AtomInfo::name(Z), sbasisname, bases, havepure, pure);
+      std::string name(molecule->atominfo()->name(Z));
+      ishell += count_shells_(keyval, name.c_str(),
+                              sbasisname, bases, havepure, pure);
       delete[] sbasisname;
     }
   nshell_ = ishell;
@@ -396,7 +409,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   ishell = 0;
   center_to_nshell_.resize(ncenter_);
   for (iatom=0; iatom<ncenter_; iatom++) {
-      if (skip_ghosts && molecule->charge(iatom) == 0.0) {
+      if (skip_atom(skip_ghosts,molecule,iatom)) {
           center_to_nshell_[iatom] = 0;
           continue;
         }
@@ -410,7 +423,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
           int i;
           for (i=0; i<nelement; i++) {
               char *tmpelementname = keyval->pcharvalue("element", i);
-              int tmpZ = AtomInfo::string_to_Z(tmpelementname);
+              int tmpZ = molecule->atominfo()->string_to_Z(tmpelementname);
               if (tmpZ == Z) {
                   sbasisname = keyval->pcharvalue("basis", i);
                   break;
@@ -420,16 +433,20 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       if (!sbasisname) {
           if (!name_) {
-              ExEnv::err0() << indent << "GaussianBasisSet: "
-                   << scprintf("no basis name for atom %d (%s)\n",
-                               iatom, AtomInfo::name(Z));
+              ExEnv::err0()
+                  << indent << "GaussianBasisSet: no basis name for atom "
+                  << iatom
+                  << " (Z=" <<molecule->atominfo()->name(Z) << ")"
+                  << std::endl;
               abort();
             }
           sbasisname = strcpy(new char[strlen(name_)+1],name_);
         }
 
       int ishell_old = ishell;
-      get_shells_(ishell, keyval, AtomInfo::name(Z), sbasisname, bases, havepure, pure);
+      std::string name(molecule->atominfo()->name(Z));
+      get_shells_(ishell, keyval, name.c_str(),
+                  sbasisname, bases, havepure, pure);
 
       center_to_nshell_[iatom] = ishell - ishell_old;
 
@@ -462,7 +479,7 @@ GaussianBasisSet::init2(int skip_ghosts)
   center_to_nbasis_.resize(ncenter_);
   int ishell = 0;
   for (int icenter=0; icenter<ncenter_; icenter++) {
-      if (skip_ghosts && molecule()->charge(icenter) == 0.0) {
+      if (skip_atom(skip_ghosts,molecule(),icenter)) {
           center_to_shell_[icenter] = -1;
           center_to_nbasis_[icenter] = 0;
           continue;

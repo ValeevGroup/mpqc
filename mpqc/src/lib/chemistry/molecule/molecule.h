@@ -275,6 +275,12 @@ class Molecule: public SavableState
     /// Return the molecules AtomInfo object.
     Ref<AtomInfo> atominfo() const { return atominfo_; }
 
+    /// Returns the element name of the atom.
+    std::string atom_name(int iatom) const;
+
+    /// Returns the element symbol of the atom.
+    std::string atom_symbol(int iatom) const;
+
     void save_data_state(StateOut&);
 };
 

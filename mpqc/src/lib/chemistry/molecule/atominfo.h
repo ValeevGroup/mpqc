@@ -28,6 +28,10 @@
 #ifndef _chemistry_molecule_atominfo_h
 #define _chemistry_molecule_atominfo_h
 
+#include <string>
+#include <map>
+#include <vector>
+
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
@@ -40,22 +44,28 @@ class Units;
     information can be overridden by the user. */
 class AtomInfo: public SavableState {
   private:
-    enum { MaxZ = 107+1 };
+    enum { Nelement = 118, DefaultZ = 0 };
 
-    struct atomname
+    struct atom
     {
+      int Z;
       char *name;
       char *symbol;
     };
 
-    static struct atomname names_[MaxZ];
-    double  mass_[MaxZ];
-    double  atomic_radius_[MaxZ];
-    double  vdw_radius_[MaxZ];
-    double  bragg_radius_[MaxZ];
-    double  maxprob_radius_[MaxZ];
-    double  rgb_[MaxZ][3];
-    double  ip_[MaxZ];
+    static struct atom elements_[Nelement];
+
+    std::map<std::string,int> name_to_Z_;
+    std::map<std::string,int> symbol_to_Z_;
+    std::map<int,std::string> Z_to_names_;
+    std::map<int,std::string> Z_to_symbols_;
+    std::map<int,double> Z_to_mass_;
+    std::map<int,double> Z_to_atomic_radius_;
+    std::map<int,double> Z_to_vdw_radius_;
+    std::map<int,double> Z_to_bragg_radius_;
+    std::map<int,double> Z_to_maxprob_radius_;
+    std::map<int,std::vector<double> > Z_to_rgb_;
+    std::map<int,double> Z_to_ip_;
     double  atomic_radius_scale_;
     double  vdw_radius_scale_;
     double  bragg_radius_scale_;
@@ -66,12 +76,18 @@ class AtomInfo: public SavableState {
     void load_library_values();
     void override_library_values(const Ref<KeyVal> &keyval);
     void load_values(const Ref<KeyVal>& keyval, int override);
-    void load_values(double *array, double *scale, const char *keyword,
+    void load_values(std::map<int,double>&,
+                     double *scale, const char *keyword,
                      const Ref<KeyVal> &keyval, int override,
                      const Ref<Units> &);
-    void load_values(double array[][3], const char *keyword,
+    void load_values(std::map<int,std::vector<double> >&,
+                     const char *keyword,
                      const Ref<KeyVal> &keyval, int override);
     void add_overridden_value(const char *assignment);
+    void initialize_names();
+    double lookup_value(const std::map<int,double>& values, int Z) const;
+    double lookup_array_value(const std::map<int,std::vector<double> >& values,
+                              int Z, int i) const;
   public:
     AtomInfo();
     AtomInfo(const Ref<KeyVal>&);
@@ -80,13 +96,13 @@ class AtomInfo: public SavableState {
     void save_data_state(StateOut& s);
 
     /// These return various measures of the atom's radius.
-    double vdw_radius(int Z) const { return vdw_radius_[Z]*vdw_radius_scale_; }
-    double bragg_radius(int Z) const { return bragg_radius_[Z]*bragg_radius_scale_; }
-    double atomic_radius(int Z) const { return atomic_radius_[Z]*atomic_radius_scale_; }
-    double maxprob_radius(int Z) const { return maxprob_radius_[Z]*maxprob_radius_scale_; }
+    double vdw_radius(int Z) const;
+    double bragg_radius(int Z) const;
+    double atomic_radius(int Z) const;
+    double maxprob_radius(int Z) const;
 
     /// Returns the atomization potential for atomic number Z.
-    double ip(int Z) const { return ip_[Z]; }
+    double ip(int Z) const;
 
     /// Return the scale factor for the VdW radii.
     double vdw_radius_scale() const { return vdw_radius_scale_; }
@@ -99,21 +115,21 @@ class AtomInfo: public SavableState {
 
     /** These return information about the color of the atom
         for visualization programs. */
-    double rgb(int Z, int color) const { return rgb_[Z][color]; }
-    double red(int Z) const { return rgb_[Z][0]; }
-    double green(int Z) const { return rgb_[Z][1]; }
-    double blue(int Z) const { return rgb_[Z][2]; }
+    double rgb(int Z, int color) const;
+    double red(int Z) const;
+    double green(int Z) const;
+    double blue(int Z) const;
 
     /// This returns the mass of the most abundant isotope.
-    double mass(int Z) const { return mass_[Z]; }
+    double mass(int Z) const;
 
     /// This returns the full name of the element.
-    static const char *name(int Z) { return names_[Z].name; }
+    std::string name(int Z);
     /// This returns the symbol for the element.
-    static const char *symbol(int Z) { return names_[Z].symbol; }
+    std::string symbol(int Z);
 
     /// This converts a name or symbol to the atomic number.
-    static int string_to_Z(const char *, int allow_exceptions = 1);
+    int string_to_Z(const std::string &, int allow_exceptions = 1);
 };
 
 }

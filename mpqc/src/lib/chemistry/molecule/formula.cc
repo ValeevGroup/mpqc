@@ -27,22 +27,11 @@
 #pragma implementation
 #endif
 
+#include <sstream>
 #include <map>
 #include <chemistry/molecule/formula.h>
 
 using namespace sc;
-
-static const char * symbols[] = {
-  "C", "H", "Ac", "Ag", "Al", "Am", "Ar", "As", "At", "Au", "B", "Ba", "Be",
-  "Bi", "Bk", "Br", "Ca", "Cd", "Ce", "Cf", "Cl", "Cm", "Co", "Cr", "Cs", "Cu",
-  "Dy", "Er", "Es", "Eu", "F", "Fe", "Fm", "Fr", "Ga", "Gd", "Ge", "Ha", "He",
-  "Hf", "Hg", "Ho", "I", "In", "Ir", "K", "Kr", "La", "Li", "Lr", "Lu", "Md",
-  "Mg", "Mn", "Mo", "N", "Na", "Nb", "Nd", "Ne", "Ni", "No", "Np", "O", "Os",
-  "P", "Pa", "Pb", "Pd", "Pm", "Po", "Pr", "Pt", "Pu", "Ra", "Rb", "Re", "Rf",
-  "Rh", "Rn", "Ru", "S", "Sb", "Sc", "Se", "Si", "Sm", "Sn", "Sr", "Ta", "Tb",
-  "Tc", "Te", "Th", "Ti", "Tl", "Tm", "U", "V", "W", "Xe", "Y", "Yb", "Zn",
-  "Zr", 0
-};
 
 MolecularFormula::MolecularFormula(const Ref<Molecule>&m):
   form_(0)
@@ -70,47 +59,36 @@ MolecularFormula::compute_form(const Molecule *m)
 {
   const Molecule& mol = *m;
 
-  memset(count_, 0, sizeof(count_));
+  std::map<std::string, int> count;
 
-  int ntype=0;
-  int maxcount=0;
-  unsigned int maxsym=0;
   for (int a=0; a < mol.natom(); a++) {
-    int i=0;
-    while(symbols[i]) {
-      if (!strcmp(AtomInfo::symbol(mol.Z(a)), symbols[i])) {
-        count_[i]++;
-
-        maxcount = (count_[i] > maxcount) ? count_[i] : maxcount;
-        maxsym = (strlen(symbols[i]) > maxsym) ? strlen(symbols[i]) : maxsym;
-        
-        if (count_[i]==1)
-          ntype++;
-        
-        break;
-      }
-      i++;
-    }
+    std::string symbol(mol.atom_symbol(a));
+    if (count.find(symbol) == count.end()) count[symbol] = 0;
+    count[symbol]++;
   }
 
-  // allocate storage for formula
-  int ndigits = ((int) (log((double)maxcount)/log(10.0))) + 1;
-  form_ = new char[(ndigits+maxsym)*ntype+1];
-  form_[0] = 0;
-  
-  int c;
-  for (int i=0; i < nelem_; i++) {
-    if ((c=count_[i])) {
-      char *temp = new char[ndigits+maxsym+1];
-      if (c > 1)
-        sprintf(temp, "%s%d", symbols[i], count_[i]);
-      else 
-        sprintf(temp, "%s", symbols[i]);
-
-      strcat(form_, temp);
-      delete[] temp;
+  std::ostringstream sstr;
+  if (count.find("Q") != count.end()) {
+      sstr << "Q";
+      if (count["Q"] > 1) sstr << count["Q"];
+      count.erase("Q");
     }
-  }
+  if (count.find("C") != count.end()) {
+      sstr << "C";
+      if (count["C"] > 1) sstr << count["C"];
+      count.erase("C");
+    }
+  if (count.find("H") != count.end()) {
+      sstr << "H";
+      if (count["H"] > 1) sstr << count["H"];
+      count.erase("H");
+    }
+  for (std::map<std::string,int>::iterator i = count.begin();
+       i != count.end(); i++) {
+      sstr << i->first;
+      if (i->second > 1) sstr << i->second;
+    }
+  form_ = strcpy(new char[sstr.str().size()+1],sstr.str().c_str());
 }
 
 void
@@ -121,7 +99,9 @@ MolecularFormula::compute_atomtypes(const Molecule *m)
   int i, Z;
 
   for (i=0; i< natoms; i++) {
+    // don't include ghost functions or point charges
     if (m->charge(i) == 0.0) continue;
+    if (m->atom_symbol(i) == "Q") continue;
     Z = m->Z(i);
     if (atomtypeinfo.find(Z) != atomtypeinfo.end()) atomtypeinfo[Z]++;
     else atomtypeinfo[Z] = 1;

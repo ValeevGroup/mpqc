@@ -489,9 +489,10 @@ MolecularEnergy::print_natom_3(const RefSCVector &v,
     o << incindent;
   }
   for (int i=0,ii=0; i<n; i++) {
+    std::string symbol(molecule()->atom_symbol(i));
     o << indent
       << scprintf("%4d %3s",
-                  i+1,AtomInfo::symbol(molecule()->Z(i)));
+                  i+1,symbol.c_str());
     for (int j=0; j<3; j++,ii++) {
       o << scprintf(" % *.*f", lwidth,precision,double(v(ii)));
     }
@@ -515,9 +516,10 @@ MolecularEnergy::print_natom_3(double **vn3,
     o << incindent;
   }
   for (int i=0; i<n; i++) {
+    std::string symbol(molecule()->atom_symbol(i));
     o << indent
       << scprintf("%4d %3s",
-                  i+1,AtomInfo::symbol(molecule()->Z(i)));
+                  i+1,symbol.c_str());
     for (int j=0; j<3; j++) {
       o << scprintf(" % *.*f", lwidth,precision,double(vn3[i][j]));
     }
@@ -541,9 +543,10 @@ MolecularEnergy::print_natom_3(double *vn3,
     o << incindent;
   }
   for (int i=0; i<n; i++) {
+    std::string symbol(molecule()->atom_symbol(i));
     o << indent
       << scprintf("%4d %3s",
-                  i+1,AtomInfo::symbol(molecule()->Z(i)));
+                  i+1,symbol.c_str());
     for (int j=0; j<3; j++) {
       o << scprintf(" % *.*f", lwidth,precision,double(vn3[3*i+j]));
     }

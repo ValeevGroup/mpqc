@@ -852,9 +852,10 @@ Wavefunction::nao(double *atom_charges)
                 }
             }
         }
+      std::string symbol(molecule()->atom_symbol(i));
       ExEnv::out0() << indent
            << scprintf("%3d   %2s   % 8.6f",i + 1,
-                       AtomInfo::symbol(molecule()->Z(i)),
+                       symbol.c_str(),
                        double(molecule()->Z(i)) - e);
       if (atom_charges) {
           atom_charges[i] = molecule()->Z(i) - e;

@@ -166,7 +166,7 @@ PsiInput::write_geom(const Ref<Molecule>& mol)
   for (int i=0; i < mol->natom(); i++) {
     write_string("  (");
     char *s;
-    file_ << AtomInfo::symbol(mol->Z(i)) <<
+    file_ << mol->atom_symbol(i) <<
 	scprintf(" %14.12lf %14.12lf %14.12lf",mol->r(i,0),mol->r(i,1),mol->r(i,2))
 	  << ")" << endl;
   } 
@@ -211,7 +211,7 @@ PsiInput::write_basis_sets(const Ref<GaussianBasisSet>& basis)
 
   for(int uatom=0; uatom<nunique; uatom++) {
     int atom = molecule->unique(uatom);
-    const char *atomname = atominfo->name(molecule->Z(atom));
+    std::string atomname = atominfo->name(molecule->Z(atom));
 
     // Replace all spaces with underscores in order for Psi libipv1 to parse properly
     char *name = strdup(basis->name());
@@ -220,8 +220,8 @@ PsiInput::write_basis_sets(const Ref<GaussianBasisSet>& basis)
       if (name[i] == ' ')
 	name[i] = '_';
 
-    char *psibasisname = new char[strlen(atomname) + strlen(basis->name()) + ((int)ceil(log10((long double)uatom+2))) + 9];
-    sprintf(psibasisname,"%s:\"%s%d\" = (\n",atomname,name,uatom);
+    char *psibasisname = new char[atomname.size() + strlen(basis->name()) + ((int)ceil(log10((long double)uatom+2))) + 9];
+    sprintf(psibasisname,"%s:\"%s%d\" = (\n",atomname.c_str(),name,uatom);
     write_string(psibasisname);
     delete[] name;
     incindent(2);

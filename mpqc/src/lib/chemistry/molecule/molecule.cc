@@ -158,7 +158,7 @@ Molecule::Molecule(const Ref<KeyVal>&input):
               have_charge = 1;
               charge = 0.0;
             }
-          add_atom(AtomInfo::string_to_Z(name = input->pcharvalue("atoms",i)),
+          add_atom(atominfo_->string_to_Z(name = input->pcharvalue("atoms",i)),
                    input->doublevalue("geometry",i,0)*conv,
                    input->doublevalue("geometry",i,1)*conv,
                    input->doublevalue("geometry",i,2)*conv,
@@ -380,7 +380,8 @@ Molecule::print_parsedkeyval(ostream& os,
   for (i=0; i<natom(); i++) {
       os << indent;
       if (number_atoms) os << scprintf(" %3d", i+1);
-      os << scprintf(" %5s", AtomInfo::symbol(Z_[i]));
+      std::string symbol(atom_symbol(i));
+      os << scprintf(" %5s", symbol.c_str());
       if (labels_) {
           const char *lab = labels_[i];
           if (lab == 0) lab = "";
@@ -1177,7 +1178,7 @@ Molecule::read_pdb(const char *filename)
               element[1] = '\0';
             }
 
-          int Z = AtomInfo::string_to_Z(element);
+          int Z = atominfo_->string_to_Z(element);
 
           char field[9];
           strncpy(field,&line[30],8); field[8] = '\0';
@@ -1214,7 +1215,8 @@ Molecule::print_pdb(ostream& os, char *title) const
   int i;
   for (i=0; i < natom(); i++) {
     char symb[4];
-    sprintf(symb,"%s1",AtomInfo::symbol(Z_[i]));
+    std::string symbol(atom_symbol(i));
+    sprintf(symb,"%s1",symbol.c_str());
 
     os << scprintf(
         "HETATM%5d  %-3s UNK %5d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
@@ -1259,6 +1261,18 @@ Molecule::label(int atom) const
 {
   if (!labels_) return 0;
   return labels_[atom];
+}
+
+std::string
+Molecule::atom_name(int iatom) const
+{
+  return atominfo_->name(Z_[iatom]);
+}
+
+std::string
+Molecule::atom_symbol(int iatom) const
+{
+  return atominfo_->symbol(Z_[iatom]);
 }
 
 /////////////////////////////////////////////////////////////////////////////

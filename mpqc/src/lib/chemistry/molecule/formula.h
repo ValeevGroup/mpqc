@@ -39,8 +39,6 @@ namespace sc {
  takes Ref<Molecule> as input. */
 class MolecularFormula {
   private:
-    enum {nelem_ = 105};
-    int count_[nelem_];
     int natomtypes_;
     int *Z_, *nZ_;
     char *form_;

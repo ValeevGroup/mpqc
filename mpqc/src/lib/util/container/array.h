@@ -29,7 +29,7 @@ class StateOut;
 #define ARRAY_dec(Type)							      \
 class Array ## Type							      \
 {									      \
-    ARRAY_dec_standard(Type);						      \
+    ARRAY_dec_standard(Type) 						      \
 }
 
 // These are simple arrays that have StateIn CTORS and save_object_state,
@@ -79,7 +79,7 @@ class TMPArray ## Type							      \
 #define SSB_ARRAY2_dec(Type)						      \
 class Array2 ## Type							      \
 {									      \
-    ARRAY2_dec_standard(Type);						      \
+    ARRAY2_dec_standard(Type) 						      \
   public:								      \
     Array2 ## Type(StateIn&);						      \
     void save_object_state(StateOut&);					      \
@@ -88,7 +88,7 @@ class Array2 ## Type							      \
 #define ARRAY2_dec(Type)						      \
 class Array2 ## Type							      \
 {									      \
-    ARRAY2_dec_standard(Type);						      \
+    ARRAY2_dec_standard(Type) 						      \
 }
 
 #define ARRAY_def(Type)							      \

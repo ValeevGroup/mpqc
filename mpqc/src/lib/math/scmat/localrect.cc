@@ -531,7 +531,7 @@ LocalSCMatrix::accumulate(DiagSCMatrix*a)
 
   int n = this->ncol();
   double *dat = la->block->data;
-  int i, j;
+  int i;
   for (i=0; i<n; i++) {
       block->data[i*n+i] += *dat++;
     }
@@ -554,7 +554,7 @@ LocalSCMatrix::accumulate(SCVector*a)
 
   int n = this->ncol();
   double *dat = la->block->data;
-  int i, j;
+  int i;
   for (i=0; i<n; i++) {
       block->data[i*n+i] += *dat++;
     }

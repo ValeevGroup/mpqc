@@ -260,6 +260,7 @@ BlockedSCDimension::block(int i) const
   for (int j=0; j < nblocks_; j++)
     if (i < last_[j])
       return j;
+  return -1;
 }
 
 RefSCDimension

@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include <ostream.h>
+#include <iostream.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/block.h>
 

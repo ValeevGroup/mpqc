@@ -544,7 +544,7 @@ ReplSCMatrix::accumulate(DiagSCMatrix*a)
 
   int n = this->ncol();
   double *dat = la->matrix;
-  int i, j;
+  int i;
   for (i=0; i<n; i++) {
       matrix[i*n+i] += *dat++;
     }

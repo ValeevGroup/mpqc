@@ -401,7 +401,7 @@ UKS::two_body_deriv(double * tbgrad)
   double *hfgrad = new double[natom3];
   memset(hfgrad,0,sizeof(double)*natom3);
   two_body_deriv_hf(hfgrad,functional_->a0());
-  print_natom_3(hfgrad, "Two-body contribution to DFT gradient");
+  //print_natom_3(hfgrad, "Two-body contribution to DFT gradient");
   tim_exit("two-body");
 
   double *dftgrad = new double[natom3];
@@ -413,7 +413,7 @@ UKS::two_body_deriv(double * tbgrad)
   integrator_->set_accuracy(desired_gradient_accuracy());
   integrator_->integrate(functional_, ao_dens_a, ao_dens_b, dftgrad);
   integrator_->done();
-  print_natom_3(dftgrad, "E-X contribution to DFT gradient");
+  //print_natom_3(dftgrad, "E-X contribution to DFT gradient");
 
   for (int i=0; i<natom3; i++) tbgrad[i] += dftgrad[i] + hfgrad[i];
   delete[] dftgrad;

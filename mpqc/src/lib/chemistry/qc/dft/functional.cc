@@ -342,8 +342,8 @@ void
 LSDAXFunctional::point(const PointInputData &id,
                        PointOutputData &od)
 {
-  const double mcx2rthird = -0.9305257363491; // 1.5*(3/4pi)^1/3
-  const double dmcx2rthird = -1.2407009817988; // 2*(3/4pi)^1/3
+  const double mcx2rthird = -1.5*(3./(pow((4.*M_PI),(1./3.))));
+  const double dmcx2rthird = -2.*(pow((3./(4.*M_PI)),(1./3.)));
 
   if (!spin_polarized_) {
       od.energy = mcx2rthird * 2.0 * id.rho_a * id.rho_a_13;
@@ -424,14 +424,31 @@ LSDACFunctional::F(double x, double A, double x0, double b, double c)
   return res;
 }
 
+double
+LSDACFunctional::dFdr_s(double x, double A, double x0, double b, double c)
+{
+  double x2 = x*x;
+  double x02 = x0*x0;
+  double Xx = x2 + b*x +c;
+  double Xx0 = x02 + b*x0 + c;
+  double Q = sqrt(4.*c-b*b);
+  double res
+      = A * ( 1./x2 - 1./Xx - b/(2.*Xx*x) 
+          + ((x0*(2.*x0+b))/Xx0 - 1) * (2.*b)/(x*(Q*Q+(2.*x+b)*(2.*x+b))) 
+          - (b*x0)/(x*(x-x0)*Xx0) + (b*x0*(1+(b/(2.*x))))/(Xx0*Xx) );
+  return res;
+}
+
 // based on the equations given on a NIST WWW site
 void
 LSDACFunctional::point(const PointInputData &id,
                        PointOutputData &od)
 {
-  const double fpp0 = 1.709920934161365; // 4/9(2^1/3-1)
+  const double fpp0 = 4./9. * 1./(pow(2., (1./3.)) - 1.);
   const double sixth = 1./6.;
   const double four_thirds = 4./3.;
+  const double one_third = 1./3.;
+  const double two_thirds = 2./3.;
 
   double rho = id.rho_a + id.rho_b;
   double zeta = (id.rho_a - id.rho_b)/rho;
@@ -441,18 +458,29 @@ LSDACFunctional::point(const PointInputData &id,
   double efc    = F(x, 0.01554535,         -0.32500,    7.06042, 18.0578);
   double alphac = F(x, -1./(6.*M_PI*M_PI), -0.00475840, 1.13107, 13.0045);
 
-  double f = 1.125*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.);
+  //  double f = 1.125*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.); 
+  double f = 9./8.*fpp0*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.);
   double zeta2 = zeta*zeta;
   double zeta4 = zeta2*zeta2;
   double beta = fpp0 * (efc - epc) / alphac - 1.;
-  double delta_ec = alphac * f * (1. + beta * zeta4);
+  double delta_ec = alphac * f / fpp0 * (1. + beta * zeta4);
   double ec = epc + delta_ec;
 
   od.energy = ec * rho;
 
   if (compute_potential_) {
-      cout << class_name() << ": cannot compute potential" << endl;
-      abort();
+      double zeta3 = zeta2*zeta;
+      double depc_dr_s0 = dFdr_s(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
+      double defc_dr_s1 = dFdr_s(x, 0.01554535,         -0.32500,    7.06042, 18.0578);
+      double dalphac_dr_s = dFdr_s(x, -1./(6.*M_PI*M_PI), -0.00475840, 1.13107, 13.0045);
+      double dec_dr_s = depc_dr_s0*(1 - f*zeta4) + defc_dr_s1 * f * zeta4
+                        + dalphac_dr_s * f / fpp0 * (1 - zeta4);
+      double fp = two_thirds * (pow((1+zeta),one_third) 
+              - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
+      double dec_dzeta = 4.* zeta3 * f * (efc - epc - (alphac/fpp0))
+              + fp * (zeta4 * (efc - epc) + (1-zeta4)*(alphac/fpp0));
+      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
     }
 }
 #endif
@@ -596,7 +624,7 @@ Becke88Functional::point(const PointInputData &id,
   // Preset terms from Murray's paper
   const double beta=0.0042;
   const double beta6=0.0252;
-  const double beta26=0.00010584;
+  const double beta26=0.00010584; 
 
   // Use simplified formula
   double rho_a_43 = id.rho_a*id.rho_a_13;
@@ -607,33 +635,46 @@ Becke88Functional::point(const PointInputData &id,
   double ex = rho_a_43*ga;
 
   if (compute_potential_) {
+    //   double gap = xa/sqrt(1.+xa2) + asinh(xa);
+    //  od.df_drho_a = beta*id.rho_a_13*xa2*ga_denom*(4./3. - 8.*beta*xa*ga_denom*gap);
+    //  od.df_dgamaa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
+    //  double gap = beta*xa2/sqrt(1.+xa2) + beta*xa*asinh(xa) + 1./3.;
+    //  od.df_drho_a = beta*id.rho_a_13*xa2*ga_denom*(-4./3. - 8.*ga_denom*gap);
+    //  od.df_dgamaa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
       double gap_denom = ga_denom*ga_denom;
       double gap = beta26*xa2*(xa/sqrt(xa2+1) - asinh(xa)) - 2*beta*xa;
       gap *= gap_denom;
       od.df_drho_a = 4./3. * id.rho_a_13 * (ga - xa*gap);
       od.df_dgamaa = 0.5*gap/id.gamma_aa;
-      if (isnan(od.df_dgamaa)) od.df_dgamaa=0;
+    //  double gap = (beta*id.rho_a_13*xa2*ga_denom)*(4./3. -
+    //          8.*beta*xa2*ga_denom/sqrt(1.+xa2) - 8.*beta*xa*asinh(xa)*ga_denom);
+    //  od.df_dgamaa = beta26*xa2*denom*denom*(xa/sqrt(1.+xa2) + asinh(xa))
+    //                 - 2.*beta*xa*denom; 
+      if (isnan(od.df_dgamaa)) od.df_dgamaa=0.;
 
       od.df_drho_b=od.df_drho_a;
       od.df_dgambb=od.df_dgamaa;
-      od.df_dgamab=0;
+      od.df_dgamab=0.;
     }
 
   if (spin_polarized_) {
       double rho_b_43 = id.rho_b*id.rho_b_13;
       double xb = id.gamma_bb/rho_b_43;
       double xb2 = xb*xb;
-      double gb_denom = 1/(1.+beta6*xb*asinh(xb));
+      double gb_denom = 1./(1.+beta6*xb*asinh(xb));
       double gb = -beta*xb2*gb_denom;
       ex += rho_b_43*gb;
 
       if (compute_potential_) {
-          double gbp_denom = gb_denom*gb_denom;
-          double gbp = beta26*xb2*(xb/sqrt(xb2+1) - asinh(xb)) - 2*beta*xb;
-          gbp *= gbp_denom;
-          od.df_drho_b = 4./3. * id.rho_b_13 * (gb - xb*gbp);
-          od.df_dgambb = 0.5*gbp/id.gamma_bb;
-          if (isnan(od.df_dgambb)) od.df_dgambb=0;
+        //double gbp = xb/sqrt(1.+xb2) + asinh(xb);
+        //od.df_drho_b = beta*id.rho_b_13*xb2*gb_denom*(4./3. - 8.*beta*xb*gb_denom*gbp);
+        //od.df_dgambb = -2.*beta*xb*gb_denom*(1.-3.*beta*xb*gb_denom*gbp);
+           double gbp_denom = gb_denom*gb_denom;
+           double gbp = beta26*xb2*(xb/sqrt(xb2+1) - asinh(xb)) - 2.*beta*xb;
+           gbp *= gbp_denom;
+           od.df_drho_b = 4./3. * id.rho_b_13 * (gb - xb*gbp);
+           od.df_dgambb = 0.5*gbp/id.gamma_bb;
+          if (isnan(od.df_dgambb)) od.df_dgambb=0.;
         }
     }
   else
@@ -693,6 +734,7 @@ LYPFunctional::need_density_gradient()
 
 // Lee-Yang-Parr correlation
 // From: Burkhard Miehlich, et al.  Chem Phys. Lett. Vol. 157 pp200-206 (1989)
+// Original LYP paper Phys. Rev. B Vol. 37 pp785-789 (1988)
 // originally coded by Mike Colvin
 void
 LYPFunctional::point(const PointInputData &id,

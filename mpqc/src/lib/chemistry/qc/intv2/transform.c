@@ -553,7 +553,7 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
 #endif
 
   copy_to_source(integrals, nsource1*nsource2*nsource3*nsource4);
-  memset(integrals, 0, sizeof(double)*ntarget1*ntarget2*ntarget3*ntarget4);
+  memset(target, 0, sizeof(double)*ntarget1*ntarget2*ntarget3*ntarget4);
 
   ogccart[0] = 0;
   ogcfunc[0] = 0;

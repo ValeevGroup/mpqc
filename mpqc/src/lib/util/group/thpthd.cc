@@ -141,12 +141,14 @@ int
 PthreadThreadGrp::start_threads()
 {
   for (int i=1; i < nthread_; i++) {
-    int res = pthread_create(&pthreads_[i], attr_,
-                             Thread::run_Thread_run,
-                             (void*) threads_[i]);
-    if (res) {
-      cerr << indent << "thread death " << res << endl;
-      return -1;
+    if (threads_[i]) {
+      int res = pthread_create(&pthreads_[i], attr_,
+                               Thread::run_Thread_run,
+                               (void*) threads_[i]);
+      if (res) {
+        cerr << indent << "thread death " << res << endl;
+        return -1;
+      }
     }
   }
   if (threads_[0]) threads_[0]->run();

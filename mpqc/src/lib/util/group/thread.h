@@ -85,6 +85,8 @@ class ThreadGrp: public DescribedClass {
     /// The number of threads that will be run by start_thread.
     int nthread() const { return nthread_; }
 
+    void delete_threads();
+
     /** Starts the threads running.  Thread 0 will be run by the
         thread that calls start_threads. */
     virtual int start_threads() =0;

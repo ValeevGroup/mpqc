@@ -95,6 +95,7 @@ ThreadGrp::ThreadGrp(const RefKeyVal& keyval)
   nthread_ = keyval->intvalue("num_threads",num);
 
   threads_ = new Thread*[nthread_];
+  for (int i=0; i<nthread_; i++) threads_[i] = 0;
 }
 
 ThreadGrp::~ThreadGrp()
@@ -103,6 +104,15 @@ ThreadGrp::~ThreadGrp()
     delete[] threads_;
     nthread_=0;
     threads_=0;
+  }
+}
+
+void
+ThreadGrp::delete_threads()
+{
+  for (int i=0; i<nthread_; i++) {
+    delete threads_[i];
+    threads_[i] = 0;
   }
 }
 

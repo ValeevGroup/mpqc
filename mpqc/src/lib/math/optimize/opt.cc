@@ -105,6 +105,10 @@ Optimize::set_checkpoint_file(const char *path)
 }
   
 
+#ifndef OPTSTATEOUT
+#define OPTSTATEOUT StateOutBinXDR
+#endif
+
 int
 Optimize::optimize()
 {
@@ -112,7 +116,7 @@ Optimize::optimize()
   while((n_iterations_ < max_iterations_) && (!(result = update()))) {
       n_iterations_++;
       if (ckpt_) {
-        StateOutText so(ckpt_file);
+        OPTSTATEOUT so(ckpt_file);
         this->save_state(so);
       }
     }

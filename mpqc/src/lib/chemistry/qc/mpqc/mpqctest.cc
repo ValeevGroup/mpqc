@@ -1,12 +1,11 @@
 
 #include <string.h>
 
-#include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 #include <new.h>
 #include "mpqc.h"
 #include <chemistry/molecule/coor.h>
-#include <math/optimize/opt.h>
+#include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
 #include <math/optimize/efc.h>
 
@@ -34,7 +33,8 @@ main(int argc, char**argv)
   debug_init(argv[0]);
 #endif
 
-#if ((defined(SGI) || defined(SUN4)) && (!defined(SABER))) && defined(USE_DEBUG)
+#if ((defined(SGI) || defined(SUN4)) && \
+     (!defined(SABER))) && defined(USE_DEBUG)
   malloc_debug_on_error();
 #endif
 
@@ -45,35 +45,27 @@ main(int argc, char**argv)
 
   // open keyval input
   RefKeyVal rpkv(new ParsedKeyVal(input));
-  int nmole = rpkv->count("mole");
-  int nopt = rpkv->count("opt");
 
-  for (int i=0; i < nmole; i++) {
-      RefMolecularEnergy mole = rpkv->describedclassvalue("mole",i);
+  RefMolecularEnergy mole = rpkv->describedclassvalue("mole");
      
-      if (mole.nonnull()) {
-          mole->print(o);
+  if (mole.nonnull()) {
+    mole->print(o);
 
-          o << "energy = " << mole->energy() << endl;
-          o << "gradient:\n";
-          o++; mole->gradient().print(o); o--;
-        }
-      else {
-          o << "mole[" << i << "] is null\n";
-        }
-    }
+    o << "energy = " << mole->energy() << endl;
+    o << "gradient:\n";
+    o++; mole->gradient().print(o); o--;
+  } else {
+    o << "mole is null\n";
+  }
 
-  for (i=0; i < nopt; i++) {
-      RefOptimize opt = rpkv->describedclassvalue("opt",i);
+  RefOptimize opt = rpkv->describedclassvalue("opt");
 
-      if (opt.nonnull()) {
-          //opt->print(o);
+  if (opt.nonnull()) {
+    //opt->print(o);
+    opt->optimize();
+  } else {
+    o << "opt is null\n";
+  }
 
-          opt->optimize();
-        }
-      else {
-          o << "opt[" << i << "] is null\n";
-        }
-    }
   return 0;
 }

@@ -1,6 +1,5 @@
 
-mole: [
-  <MPSCF>: (
+mole<MPSCF>: (
     % NLP... input
     value_accuracy = 1e-5
     gradient_accuracy = 1e-4
@@ -9,13 +8,14 @@ mole: [
         % pdb_file = "input.pdb" % use this to get info from a pdb file
         symmetry=c2v
         {atoms geometry} = {
-          H  [   1.5  0.0  -0.3 ]
-          O  [   0.0  0.0   1.0 ]
+          H  [   1.5  0.0   1.0 ]
+          O  [   0.0  0.0   0.0 ]
          }
       )
     coor<IntMolecularCoor>: (
         molecule = $..:molecule
-        scale_bonds = 2.0
+        %scale_bonds = 2.0
+        followed<BendSimpleCo> = [ "a(HOH)" 1 2 3 ]
       )
     % Wavefunction input
     basis<GaussianBasisSet>: (
@@ -33,24 +33,15 @@ mole: [
         molecule = $..:molecule
         name = sto3g
       )
-    )
-  ]
+  )
 
-opt: [
-  <QNewtonOpt>: (
-     convergence = 1.0e-5
-     max_iterations = 20
-     function = $:mole:0
-     update<BFGSUpdate>:()
-     )
-%  <GDIISOpt>: (
-%     convergence = 1.0e-5
-%     max_iterations = 20
-%     function = $:mole:0
-%     update<BFGSUpdate>:()
-%     )
-  ]
-
+opt<EFCOpt>: (
+    convergence = 1.0e-5
+    max_iterations = 20
+    function = $:mole
+    transition_state=yes
+    update<PowellUpdate>:()
+  )
 
 basis:(
   hydrogen: sto3g: [

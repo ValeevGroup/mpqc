@@ -602,6 +602,32 @@ LocalSCVector::accumulate(SCVector*a)
   for (int i=0; i<nelem; i++) block->data[i] += la->block->data[i];
 }
 
+void
+LocalSCVector::assign(double a)
+{
+  int nelem = n();
+  for (int i=0; i<nelem; i++) block->data[i] += a;
+}
+
+void
+LocalSCVector::assign(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  LocalSCVector* la
+    = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!(this->dim() == la->dim())) {
+      fprintf(stderr,"LocalSCVector::"
+              "accumulate(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = n();
+  for (int i=0; i<nelem; i++) block->data[i] = la->block->data[i];
+}
+
 double
 LocalSCVector::scalar_product(SCVector*a)
 {

@@ -333,7 +333,7 @@ MBPT2::cs_cphf(double **scf_vector,
     for (l=0; l<dimP; l++) {
       tmp_val1 += P[niter][l]*P[niter][l];
       }
-    tmp_val1 = sqrt(tmp_val1);
+    tmp_val1 = sqrt(tmp_val1/dimP);
     if (debug_)
       ExEnv::out0() << indent
            << scprintf("norm(P[niter]) = %12.10lf", tmp_val1) << endl;

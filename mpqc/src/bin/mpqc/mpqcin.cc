@@ -326,7 +326,7 @@ MPQCIn::parse_string(const char *s)
   ostrs << incindent;
   ostrs << indent << "do_gradient = " << gradient_.val() << endl;
   ostrs << indent << "optimize = " << optimize_.val() << endl;
-  ostrs << indent << "restart = " << optimize_.val() << endl;
+  ostrs << indent << "restart = " << restart_.val() << endl;
   ostrs << indent << "checkpoint = " << checkpoint_.val() << endl;
   ostrs << indent << "savestate = " << checkpoint_.val() << endl;
   write_energy_object(ostrs, "mole", method_.val(), 0, optimize_.val());

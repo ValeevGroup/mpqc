@@ -3,9 +3,7 @@ test_basis: cc-pVDZ cc-pVTZ cc-pVQZ
 test_method: scf
 gradient: yes
 test_molecule:          c2h2 c2h2 c2h2 c2h2 c2h2 c2h2
-                        cub  cub  cub  cub  cub  cub
 test_molecule_symmetry: d2h  c2v  cs   c2   ci   c1  
-                        d2h  c2v  cs   c2   ci   c1  
 
 checkpoint: no
 
@@ -16,21 +14,3 @@ c2h2:
   C  0.00 0.00  0.58
   C  0.00 0.00 -0.58
   H  0.00 0.00 -1.65
-
-cub:
-  H   1.404   1.404   1.404
-  H  -1.404  -1.404   1.404
-  H   1.404  -1.404  -1.404
-  H  -1.404   1.404  -1.404
-  H  -1.404  -1.404  -1.404
-  H   1.404   1.404  -1.404
-  H  -1.404   1.404   1.404
-  H   1.404  -1.404   1.404
-  C   0.776   0.776   0.776
-  C  -0.776  -0.776   0.776
-  C   0.776  -0.776  -0.776
-  C  -0.776   0.776  -0.776
-  C  -0.776  -0.776  -0.776
-  C   0.776   0.776  -0.776
-  C  -0.776   0.776   0.776
-  C   0.776  -0.776   0.776

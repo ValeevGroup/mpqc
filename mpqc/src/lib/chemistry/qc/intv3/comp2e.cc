@@ -898,6 +898,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
   int c1,c2,c3,c4;
   int i[4],j[4],k[4],am[4];
   int index;
+  int size1,size2,size3,size4,size1234;
   int sizem234,sizem34,sizem2,sizem3,sizem4;
   int sizep234,sizep34,sizep2,sizep3,sizep4;
   GaussianShell *shell1,*shell2,*shell3,*shell4;
@@ -912,6 +913,18 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
     cerr << scprintf("illegal derivative center -- must be 0, 1, 2, or 3\n");
     fail();
     }
+
+  /* Offsets for the intermediates with original angular momentum. */
+  for (ii=size1=0; ii<shell1->ncontraction(); ii++)
+    size1 += INT_NCART(shell1->am(ii));
+  for (ii=size2=0; ii<shell2->ncontraction(); ii++)
+    size2 += INT_NCART(shell2->am(ii));
+  for (ii=size3=0; ii<shell3->ncontraction(); ii++)
+    size3 += INT_NCART(shell3->am(ii));
+  for (ii=size4=0; ii<shell4->ncontraction(); ii++)
+    size4 += INT_NCART(shell4->am(ii));
+
+  size1234 = size1*size2*size3*size4;
 
 #define DCTEST(n) ((dercenter==n)?1:0)
   /* Offsets for the intermediates with angular momentum decremented. */
@@ -971,46 +984,387 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
         END_DERLOOP(1,2,sign)\
       END_DERLOOP(0,1,sign)
 
-   /* Place the contributions into the user integral buffer. */
-   index = 0;
-   /* The d/dx integrals */
-  ALLDERLOOPS
-    if (i[dercenter]>0) {
-      buffer[index] -= i[dercenter] * int_buffer[
-        (oc1 + INT_CARTINDEX(am[0]-DCTEST(0),i[0]-DCTEST(0),j[0])) * sizem234
-       +(oc2 + INT_CARTINDEX(am[1]-DCTEST(1),i[1]-DCTEST(1),j[1])) * sizem34
-       +(oc3 + INT_CARTINDEX(am[2]-DCTEST(2),i[2]-DCTEST(2),j[2])) * sizem4
-       +(oc4 + INT_CARTINDEX(am[3]-DCTEST(3),i[3]-DCTEST(3),j[3]))
-       ];
-      }
-    index++;
-    END_ALLDERLOOPS(-)
+  /* Place the contributions into the user integral buffer. */
+  index = 0;
 
-   /* The d/dy integrals */
-  ALLDERLOOPS
-    if (j[dercenter]>0) {
-    buffer[index] -= j[dercenter] * int_buffer[
-         (oc1 + INT_CARTINDEX(am[0]-DCTEST(0),i[0],j[0]-DCTEST(0))) * sizem234
-        +(oc2 + INT_CARTINDEX(am[1]-DCTEST(1),i[1],j[1]-DCTEST(1))) * sizem34
-        +(oc3 + INT_CARTINDEX(am[2]-DCTEST(2),i[2],j[2]-DCTEST(2))) * sizem4
-        +(oc4 + INT_CARTINDEX(am[3]-DCTEST(3),i[3],j[3]-DCTEST(3)))
-        ];
-      }
-    index++;
-  END_ALLDERLOOPS(-)
+  if (dercenter==0) {
+    int ogc1,ogc1m,gc1,i1,k1,f234,size234;
+    size234=size2*size3*size4;
 
-   /* The d/dz integrals */
-  ALLDERLOOPS
-    if (k[dercenter]>0) {
-    buffer[index] -= k[dercenter] * int_buffer[
-         (oc1 + INT_CARTINDEX(am[0]-DCTEST(0),i[0],j[0])) * sizem234
-        +(oc2 + INT_CARTINDEX(am[1]-DCTEST(1),i[1],j[1])) * sizem34
-        +(oc3 + INT_CARTINDEX(am[2]-DCTEST(2),i[2],j[2])) * sizem4
-        +(oc4 + INT_CARTINDEX(am[3]-DCTEST(3),i[3],j[3]))
-        ];
+    /* The center 0 d/dx integrals */
+    ogc1 = 0;
+    ogc1m = 0;
+    for (gc1=0; gc1<shell1->ncontraction(); gc1++) {
+      int am1 = shell1->am(gc1);
+      // only integrals with x^n n>0 on center 0 contribute
+      // so skip over n==0
+      index += (am1+1)*size234;
+      int c1 = am1+1;
+      for (i1=1; i1<=am1; i1++) {
+        double factor = -i1;
+        for (k1=0; k1<=am1-i1; k1++) {
+          int c1xm1 = c1-am1-1;//=INT_CARTINDEX(am1-1,i1-1,j1)
+          double *tmp_buffer=&buffer[index];
+          double *tmp_int_buffer=&int_buffer[(ogc1m+c1xm1)*size234];
+          for (f234=0; f234<size234; f234++) {
+            tmp_buffer[f234] += factor * tmp_int_buffer[f234];
+            }
+          index+=size234;
+          c1++;
+          }
+        }
+      ogc1 += c1;
+      ogc1m += INT_NCART(am1-1);
       }
-    index++;
-  END_ALLDERLOOPS(-)
+
+    /* The center 0 d/dy integrals */
+    ogc1 = 0;
+    ogc1m = 0;
+    for (gc1=0; gc1<shell1->ncontraction(); gc1++) {
+      int am1 = shell1->am(gc1);
+      // only integrals with y^n n>0 on center 0 contribute
+      // so skip over n==0 (by making i1+k1<am1)
+      int c1 = 0;
+      for (i1=0; i1<=am1; i1++) {
+        for (k1=0; k1<=am1-i1-1; k1++) {
+          double factor = -(am1-i1-k1);
+          int c1ym1 = c1-i1;//=INT_CARTINDEX(am1-1,i1,j1-1)
+          double *tmp_buffer=&buffer[index];
+          double *tmp_int_buffer=&int_buffer[(ogc1m+c1ym1)*size234];
+          for (f234=0; f234<size234; f234++) {
+            tmp_buffer[f234] += factor * tmp_int_buffer[f234];
+            }
+          index+=size234;
+          c1++;
+          }
+        // account for the y^n n==0 case by an extra increment
+        c1++;
+        index+=size234;
+        }
+      ogc1 += c1;
+      ogc1m += INT_NCART(am1-1);
+      }
+
+    /* The center 0 d/dz integrals */
+    ogc1 = 0;
+    ogc1m = 0;
+    for (gc1=0; gc1<shell1->ncontraction(); gc1++) {
+      int am1 = shell1->am(gc1);
+      int c1 = 0;
+      for (i1=0; i1<=am1; i1++) {
+        // only integrals with z^n n>0 on center 0 contribute
+        // so skip over n==0
+        c1++;
+        index+=size234;
+        for (k1=1; k1<=am1-i1; k1++) {
+          double factor = -k1;
+          int c1zm1 = c1-i1-1;//=INT_CARTINDEX(am1-1,i1,j1)
+          double *tmp_buffer=&buffer[index];
+          double *tmp_int_buffer=&int_buffer[(ogc1m+c1zm1)*size234];
+          for (f234=0; f234<size234; f234++) {
+            tmp_buffer[f234] += factor * tmp_int_buffer[f234];
+            }
+          index+=size234;
+          c1++;
+          }
+        }
+      ogc1 += c1;
+      ogc1m += INT_NCART(am1-1);
+      }
+    }
+  else if (dercenter == 1) {
+    int ogc2,ogc2m,gc2,i2,k2,f1,f34,size34,size234;
+    size34 = size3*size4;
+    size234 = size2*size3*size4;
+
+    /* The center 1 d/dx integrals */
+    ogc2 = 0;
+    ogc2m = 0;
+    for (gc2=0; gc2<shell2->ncontraction(); gc2++) {
+      int am2 = shell2->am(gc2);
+      // only integrals with x^n n>0 on center 1 contribute
+      // so skip over n==0
+      int c2 = am2+1;
+      for (i2=1; i2<=am2; i2++) {
+        double factor = -i2;
+        for (k2=0; k2<=am2-i2; k2++) {
+          int c2xm1 = c2-am2-1;//=INT_CARTINDEX(am2-1,i2-1,j2)
+          int buffer_index = (ogc2+c2)*size34;
+          int int_buffer_index = (ogc2m+c2xm1)*size34;
+          for (f1=0; f1<size1; f1++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f34=0; f34<size34; f34++) {
+                tmp_buffer[f34] += factor * tmp_int_buffer[f34];
+              }
+            buffer_index += size234;
+            int_buffer_index += sizem234;
+            }
+          c2++;
+          }
+        }
+      ogc2 += c2;
+      ogc2m += INT_NCART(am2-1);
+      }
+    index += size1234;
+
+     /* The center 1 d/dy integrals */
+    ogc2 = 0;
+    ogc2m = 0;
+    for (gc2=0; gc2<shell2->ncontraction(); gc2++) {
+      int am2 = shell2->am(gc2);
+      // only integrals with y^n n>0 on center 1 contribute
+      // so skip over n==0
+      int c2 = 0;
+      for (i2=0; i2<=am2; i2++) {
+        for (k2=0; k2<=am2-i2-1; k2++) {
+          double factor = -(am2-k2-i2);
+          int c2ym1 = c2-i2;//=INT_CARTINDEX(am2-1,i2,j2-1)
+          int buffer_index = size1234 + (ogc2+c2)*size34;
+          int int_buffer_index = (ogc2m+c2ym1)*size34;
+          for (f1=0; f1<size1; f1++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f34=0; f34<size34; f34++) {
+                tmp_buffer[f34] += factor * tmp_int_buffer[f34];
+              }
+            buffer_index += size234;
+            int_buffer_index += sizem234;
+            }
+          c2++;
+          }
+        // account for the y^n n==0 case by an extra increment
+        c2++;
+        }
+      ogc2 += c2;
+      ogc2m += INT_NCART(am2-1);
+      }
+    index += size1234;
+
+     /* The center 1 d/dz integrals */
+    ogc2 = 0;
+    ogc2m = 0;
+    for (gc2=0; gc2<shell2->ncontraction(); gc2++) {
+      int am2 = shell2->am(gc2);
+      // only integrals with z^n n>0 on center 1 contribute
+      // so skip over n==0
+      int c2 = 0;
+      for (i2=0; i2<=am2; i2++) {
+        // account for the z^n n==0 case by an extra increment
+        c2++;
+        for (k2=1; k2<=am2-i2; k2++) {
+          double factor = -k2;
+          int c2zm1 = c2-i2-1;//=INT_CARTINDEX(am2-1,i2,j2-1)
+          int buffer_index = size1234+size1234+(ogc2+c2)*size34;
+          int int_buffer_index = (ogc2m+c2zm1)*size34;
+          for (f1=0; f1<size1; f1++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f34=0; f34<size34; f34++) {
+                tmp_buffer[f34] += factor * tmp_int_buffer[f34];
+              }
+            buffer_index += size234;
+            int_buffer_index += sizem234;
+            }
+          c2++;
+          }
+        }
+      ogc2 += c2;
+      ogc2m += INT_NCART(am2-1);
+      }
+    index += size1234;
+    }
+  else if (dercenter == 2) {
+    int ogc3,ogc3m,gc3,i3,k3,f12,f4,size12,size34;
+    size12 = size1*size2;
+    size34 = size3*size4;
+
+    /* The center 2 d/dx integrals */
+    ogc3 = 0;
+    ogc3m = 0;
+    for (gc3=0; gc3<shell3->ncontraction(); gc3++) {
+      int am3 = shell3->am(gc3);
+      // only integrals with x^n n>0 on center 2 contribute
+      // so skip over n==0
+      int c3 = am3+1;
+      for (i3=1; i3<=am3; i3++) {
+        double factor = -i3;
+        for (k3=0; k3<=am3-i3; k3++) {
+          int c3xm1 = c3-am3-1;//=INT_CARTINDEX(am3-1,i3-1,j3)
+          int buffer_index = (ogc3+c3)*size4;
+          int int_buffer_index = (ogc3m+c3xm1)*size4;
+          for (f12=0; f12<size12; f12++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f4=0; f4<size4; f4++) {
+                tmp_buffer[f4] += factor * tmp_int_buffer[f4];
+              }
+            buffer_index += size34;
+            int_buffer_index += sizem34;
+            }
+          c3++;
+          }
+        }
+      ogc3 += c3;
+      ogc3m += INT_NCART(am3-1);
+      }
+    index += size1234;
+
+     /* The center 2 d/dy integrals */
+    ogc3 = 0;
+    ogc3m = 0;
+    for (gc3=0; gc3<shell3->ncontraction(); gc3++) {
+      int am3 = shell3->am(gc3);
+      // only integrals with y^n n>0 on center 2 contribute
+      // so skip over n==0
+      int c3 = 0;
+      for (i3=0; i3<=am3; i3++) {
+        for (k3=0; k3<=am3-i3-1; k3++) {
+          double factor = -(am3-k3-i3);
+          int c3ym1 = c3-i3;//=INT_CARTINDEX(am3-1,i3,j3-1)
+          int buffer_index = size1234 + (ogc3+c3)*size4;
+          int int_buffer_index = (ogc3m+c3ym1)*size4;
+          for (f12=0; f12<size12; f12++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f4=0; f4<size4; f4++) {
+                tmp_buffer[f4] += factor * tmp_int_buffer[f4];
+              }
+            buffer_index += size34;
+            int_buffer_index += sizem34;
+            }
+          c3++;
+          }
+        // account for the y^n n==0 case by an extra increment
+        c3++;
+        }
+      ogc3 += c3;
+      ogc3m += INT_NCART(am3-1);
+      }
+    index += size1234;
+
+     /* The center 2 d/dz integrals */
+    ogc3 = 0;
+    ogc3m = 0;
+    for (gc3=0; gc3<shell3->ncontraction(); gc3++) {
+      int am3 = shell3->am(gc3);
+      // only integrals with z^n n>0 on center 2 contribute
+      // so skip over n==0
+      int c3 = 0;
+      for (i3=0; i3<=am3; i3++) {
+        // account for the z^n n==0 case by an extra increment
+        c3++;
+        for (k3=1; k3<=am3-i3; k3++) {
+          double factor = -k3;
+          int c3zm1 = c3-i3-1;//=INT_CARTINDEX(am3-1,i3,j3)
+          int buffer_index = size1234+size1234+(ogc3+c3)*size4;
+          int int_buffer_index = (ogc3m+c3zm1)*size4;
+          for (f12=0; f12<size12; f12++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f4=0; f4<size4; f4++) {
+                tmp_buffer[f4] += factor * tmp_int_buffer[f4];
+              }
+            buffer_index += size34;
+            int_buffer_index += sizem34;
+            }
+          c3++;
+          }
+        }
+      ogc3 += c3;
+      ogc3m += INT_NCART(am3-1);
+      }
+    index += size1234;
+    }
+  else if (dercenter == 3) {
+    int ogc4,ogc4m,gc4,i4,k4,f123,size123;
+    size123 = size1*size2*size3;
+
+    /* The center 2 d/dx integrals */
+    ogc4 = 0;
+    ogc4m = 0;
+    for (gc4=0; gc4<shell4->ncontraction(); gc4++) {
+      int am4 = shell4->am(gc4);
+      // only integrals with x^n n>0 on center 3 contribute
+      // so skip over n==0
+      int c4 = am4+1;
+      for (i4=1; i4<=am4; i4++) {
+        double factor = -i4;
+        for (k4=0; k4<=am4-i4; k4++) {
+          int c4xm1 = c4-am4-1;//=INT_CARTINDEX(am4-1,i4-1,j4)
+          int buffer_index = ogc4+c4;
+          int int_buffer_index = ogc4m+c4xm1;
+          for (f123=0; f123<size123; f123++) {
+            buffer[buffer_index] += factor * int_buffer[int_buffer_index];
+            buffer_index += size4;
+            int_buffer_index += sizem4;
+            }
+          c4++;
+          }
+        }
+      ogc4 += c4;
+      ogc4m += INT_NCART(am4-1);
+      }
+    index += size1234;
+
+     /* The center 2 d/dy integrals */
+    ogc4 = 0;
+    ogc4m = 0;
+    for (gc4=0; gc4<shell4->ncontraction(); gc4++) {
+      int am4 = shell4->am(gc4);
+      // only integrals with y^n n>0 on center 3 contribute
+      // so skip over n==0
+      int c4 = 0;
+      for (i4=0; i4<=am4; i4++) {
+        for (k4=0; k4<=am4-i4-1; k4++) {
+          double factor = -(am4-k4-i4);
+          int c4ym1 = c4-i4;//=INT_CARTINDEX(am4-1,i4,j4-1)
+          int buffer_index = size1234 + ogc4+c4;
+          int int_buffer_index = ogc4m+c4ym1;
+          for (f123=0; f123<size123; f123++) {
+            buffer[buffer_index] += factor * int_buffer[int_buffer_index];
+            buffer_index += size4;
+            int_buffer_index += sizem4;
+            }
+          c4++;
+          }
+        // account for the y^n n==0 case by an extra increment
+        c4++;
+        }
+      ogc4 += c4;
+      ogc4m += INT_NCART(am4-1);
+      }
+    index += size1234;
+
+    /* The center 3 d/dz integrals */
+    ogc4 = 0;
+    ogc4m = 0;
+    for (gc4=0; gc4<shell4->ncontraction(); gc4++) {
+      int am4 = shell4->am(gc4);
+      // only integrals with z^n n>0 on center 3 contribute
+      // so skip over n==0
+      int c4 = 0;
+      for (i4=0; i4<=am4; i4++) {
+        // account for the z^n n==0 case by an extra increment
+        c4++;
+        for (k4=1; k4<=am4-i4; k4++) {
+          double factor = -k4;
+          int c4zm1 = c4-i4-1;//=INT_CARTINDEX(am4-1,i4,j4-1)
+          int buffer_index = size1234+size1234+ogc4+c4;
+          int int_buffer_index = ogc4m+c4zm1;
+          for (f123=0; f123<size123; f123++) {
+            buffer[buffer_index] += factor * int_buffer[int_buffer_index];
+            buffer_index += size4;
+            int_buffer_index += sizem4;
+            }
+          c4++;
+          }
+        }
+      ogc4 += c4;
+      ogc4m += INT_NCART(am4-1);
+      }
+    index += size1234;
+    }
 
   /* Compute the next contribution to the integrals. */
   /* Tell the build routine that we need an exponent weighted contraction
@@ -1039,63 +1393,330 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
 
   /* Place the contributions into the user integral buffer. */
   index = 0;
-  /* The d/dx integrals */
-  ALLDERLOOPS
-#if 0
-    tmp =int_buffer[
-             (oc1+INT_CARTINDEX(am[0]+DCTEST(0),i[0]+DCTEST(0),j[0]))*sizep234
-            +(oc2+INT_CARTINDEX(am[1]+DCTEST(1),i[1]+DCTEST(1),j[1]))*sizep34
-            +(oc3+INT_CARTINDEX(am[2]+DCTEST(2),i[2]+DCTEST(2),j[2]))*sizep4
-            +(oc4+INT_CARTINDEX(am[3]+DCTEST(3),i[3]+DCTEST(3),j[3]))
-            ];
-    if (1 || INT_NONZERO(tmp)) {
-      cout << scprintf("x: ((%d%d%d)(%d%d%d)(%d%d%d)(%d%d%d)) += ((%d%d%d)(%d%d%d)(%d%d%d)(%d%d%d)) (%f) (from %5d)\n",
-             i[0],j[0],k[0],
-             i[1],j[1],k[1],
-             i[2],j[2],k[2],
-             i[3],j[3],k[3],
-             i[0]+DCTEST(0),j[0],k[0],
-             i[1]+DCTEST(1),j[1],k[1],
-             i[2]+DCTEST(2),j[2],k[2],
-             i[3]+DCTEST(3),j[3],k[3],
-             tmp,
-             (oc1+INT_CARTINDEX(am[0]+DCTEST(0),i[0]+DCTEST(0),j[0]))*sizep234
-            +(oc2+INT_CARTINDEX(am[1]+DCTEST(1),i[1]+DCTEST(1),j[1]))*sizep34
-            +(oc3+INT_CARTINDEX(am[2]+DCTEST(2),i[2]+DCTEST(2),j[2]))*sizep4
-            +(oc4+INT_CARTINDEX(am[3]+DCTEST(3),i[3]+DCTEST(3),j[3]))
-             );
-       }
-#endif
-          buffer[index] += int_buffer[
-             (oc1+INT_CARTINDEX(am[0]+DCTEST(0),i[0]+DCTEST(0),j[0]))*sizep234
-            +(oc2+INT_CARTINDEX(am[1]+DCTEST(1),i[1]+DCTEST(1),j[1]))*sizep34
-            +(oc3+INT_CARTINDEX(am[2]+DCTEST(2),i[2]+DCTEST(2),j[2]))*sizep4
-            +(oc4+INT_CARTINDEX(am[3]+DCTEST(3),i[3]+DCTEST(3),j[3]))
-            ];
-    index++;
-    END_ALLDERLOOPS(+)
+  if (dercenter==0) {
+    int ogc1,ogc1p,gc1,i1,k1,f234,size234;
+    size234=size2*size3*size4;
 
-  /* The d/dy integrals */
-  ALLDERLOOPS
-          buffer[index] += int_buffer[
-             (oc1+INT_CARTINDEX(am[0]+DCTEST(0),i[0],j[0]+DCTEST(0)))*sizep234
-            +(oc2+INT_CARTINDEX(am[1]+DCTEST(1),i[1],j[1]+DCTEST(1)))*sizep34
-            +(oc3+INT_CARTINDEX(am[2]+DCTEST(2),i[2],j[2]+DCTEST(2)))*sizep4
-            +(oc4+INT_CARTINDEX(am[3]+DCTEST(3),i[3],j[3]+DCTEST(3)))
-            ];
-          index++;
-    END_ALLDERLOOPS(+)
+    /* The center 0 d/dx integrals */
+    ogc1 = 0;
+    ogc1p = 0;
+    for (gc1=0; gc1<shell1->ncontraction(); gc1++) {
+      int am1 = shell1->am(gc1);
+      int c1 = 0;
+      for (i1=0; i1<=am1; i1++) {
+        for (k1=0; k1<=am1-i1; k1++) {
+          int c1xp1 = c1+am1+2;//=INT_CARTINDEX(am1+1,i1+1,j1)
+          double *tmp_buffer=&buffer[index];
+          double *tmp_int_buffer=&int_buffer[(ogc1p+c1xp1)*size234];
+          for (f234=0; f234<size234; f234++) {
+            tmp_buffer[f234] += tmp_int_buffer[f234];
+            }
+          index+=size234;
+          c1++;
+          }
+        }
+      ogc1 += c1;
+      ogc1p += INT_NCART(am1+1);
+      }
 
-  /* The d/dz integrals */
-  ALLDERLOOPS
-          buffer[index] += int_buffer[
-               (oc1 + INT_CARTINDEX(am[0]+DCTEST(0),i[0],j[0])) * sizep234
-              +(oc2 + INT_CARTINDEX(am[1]+DCTEST(1),i[1],j[1])) * sizep34
-              +(oc3 + INT_CARTINDEX(am[2]+DCTEST(2),i[2],j[2])) * sizep4
-              +(oc4 + INT_CARTINDEX(am[3]+DCTEST(3),i[3],j[3]))
-              ];
-          index++;
-    END_ALLDERLOOPS(+)
+    /* The center 0 d/dy integrals */
+    ogc1 = 0;
+    ogc1p = 0;
+    for (gc1=0; gc1<shell1->ncontraction(); gc1++) {
+      int am1 = shell1->am(gc1);
+      int c1 = 0;
+      for (i1=0; i1<=am1; i1++) {
+        for (k1=0; k1<=am1-i1; k1++) {
+          int c1yp1 = c1+i1;//=INT_CARTINDEX(am1+1,i1,j1+1)
+          double *tmp_buffer=&buffer[index];
+          double *tmp_int_buffer=&int_buffer[(ogc1p+c1yp1)*size234];
+          for (f234=0; f234<size234; f234++) {
+            tmp_buffer[f234] += tmp_int_buffer[f234];
+            }
+          index+=size234;
+          c1++;
+          }
+        }
+      ogc1 += c1;
+      ogc1p += INT_NCART(am1+1);
+      }
+
+    /* The center 0 d/dz integrals */
+    ogc1 = 0;
+    ogc1p = 0;
+    for (gc1=0; gc1<shell1->ncontraction(); gc1++) {
+      int am1 = shell1->am(gc1);
+      int c1 = 0;
+      for (i1=0; i1<=am1; i1++) {
+        for (k1=0; k1<=am1-i1; k1++) {
+          int c1zp1 = c1+i1+1;//=INT_CARTINDEX(am1+1,i1,j1)
+          double *tmp_buffer=&buffer[index];
+          double *tmp_int_buffer=&int_buffer[(ogc1p+c1zp1)*size234];
+          for (f234=0; f234<size234; f234++) {
+            tmp_buffer[f234] += tmp_int_buffer[f234];
+            }
+          index+=size234;
+          c1++;
+          }
+        }
+      ogc1 += c1;
+      ogc1p += INT_NCART(am1+1);
+      }
+    }
+  else if (dercenter == 1) {
+    int ogc2,ogc2p,gc2,i2,k2,f1,f34,size34,size234;
+    size34 = size3*size4;
+    size234 = size2*size3*size4;
+
+    /* The center 1 d/dx integrals */
+    ogc2 = 0;
+    ogc2p = 0;
+    for (gc2=0; gc2<shell2->ncontraction(); gc2++) {
+      int am2 = shell2->am(gc2);
+      int c2=0;
+      for (i2=0; i2<=am2; i2++) {
+        for (k2=0; k2<=am2-i2; k2++) {
+          int c2xp1 = c2+am2+2;//=INT_CARTINDEX(am2+1,i2+1,j2)
+          int buffer_index = (ogc2+c2)*size34;
+          int int_buffer_index = (ogc2p+c2xp1)*size34;
+          for (f1=0; f1<size1; f1++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f34=0; f34<size34; f34++) {
+                tmp_buffer[f34] += tmp_int_buffer[f34];
+              }
+            buffer_index += size234;
+            int_buffer_index += sizep234;
+            }
+          c2++;
+          }
+        }
+      ogc2 += c2;
+      ogc2p += INT_NCART(am2+1);
+      }
+    index += size1234;
+
+     /* The center 1 d/dy integrals */
+    ogc2 = 0;
+    ogc2p = 0;
+    for (gc2=0; gc2<shell2->ncontraction(); gc2++) {
+      int am2 = shell2->am(gc2);
+      int c2 = 0;
+      for (i2=0; i2<=am2; i2++) {
+        for (k2=0; k2<=am2-i2; k2++) {
+          int c2yp1 = c2+i2;//=INT_CARTINDEX(am2+1,i2,j2+1)
+          int buffer_index = size1234 + (ogc2+c2)*size34;
+          int int_buffer_index = (ogc2p+c2yp1)*size34;
+          for (f1=0; f1<size1; f1++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f34=0; f34<size34; f34++) {
+                tmp_buffer[f34] += tmp_int_buffer[f34];
+              }
+            buffer_index += size234;
+            int_buffer_index += sizep234;
+            }
+          c2++;
+          }
+        }
+      ogc2 += c2;
+      ogc2p += INT_NCART(am2+1);
+      }
+    index += size1234;
+
+    /* The center 1 d/dz integrals */
+    ogc2 = 0;
+    ogc2p = 0;
+    for (gc2=0; gc2<shell2->ncontraction(); gc2++) {
+      int am2 = shell2->am(gc2);
+      int c2 = 0;
+      for (i2=0; i2<=am2; i2++) {
+        for (k2=0; k2<=am2-i2; k2++) {
+          int c2zp1 = c2+i2+1;//=INT_CARTINDEX(am2+1,i2,j2+1)
+          int buffer_index = size1234+size1234+(ogc2+c2)*size34;
+          int int_buffer_index = (ogc2p+c2zp1)*size34;
+          for (f1=0; f1<size1; f1++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f34=0; f34<size34; f34++) {
+                tmp_buffer[f34] += tmp_int_buffer[f34];
+              }
+            buffer_index += size234;
+            int_buffer_index += sizep234;
+            }
+          c2++;
+          }
+        }
+      ogc2 += c2;
+      ogc2p += INT_NCART(am2+1);
+      }
+    index += size1234;
+    }
+  else if (dercenter == 2) {
+    int ogc3,ogc3p,gc3,i3,k3,f12,f4,size12,size34;
+    size12 = size1*size2;
+    size34 = size3*size4;
+
+    /* The center 2 d/dx integrals */
+    ogc3 = 0;
+    ogc3p = 0;
+    for (gc3=0; gc3<shell3->ncontraction(); gc3++) {
+      int am3 = shell3->am(gc3);
+      int c3 = 0;
+      for (i3=0; i3<=am3; i3++) {
+        for (k3=0; k3<=am3-i3; k3++) {
+          int c3xp1 = c3+am3+2;//=INT_CARTINDEX(am3+1,i3+1,j3)
+          int buffer_index = (ogc3+c3)*size4;
+          int int_buffer_index = (ogc3p+c3xp1)*size4;
+          for (f12=0; f12<size12; f12++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f4=0; f4<size4; f4++) {
+                tmp_buffer[f4] += tmp_int_buffer[f4];
+              }
+            buffer_index += size34;
+            int_buffer_index += sizep34;
+            }
+          c3++;
+          }
+        }
+      ogc3 += c3;
+      ogc3p += INT_NCART(am3+1);
+      }
+    index += size1234;
+
+     /* The center 2 d/dy integrals */
+    ogc3 = 0;
+    ogc3p = 0;
+    for (gc3=0; gc3<shell3->ncontraction(); gc3++) {
+      int am3 = shell3->am(gc3);
+      int c3 = 0;
+      for (i3=0; i3<=am3; i3++) {
+        for (k3=0; k3<=am3-i3; k3++) {
+          int c3yp1 = c3+i3;//=INT_CARTINDEX(am3+1,i3,j3+1)
+          int buffer_index = size1234 + (ogc3+c3)*size4;
+          int int_buffer_index = (ogc3p+c3yp1)*size4;
+          for (f12=0; f12<size12; f12++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f4=0; f4<size4; f4++) {
+                tmp_buffer[f4] += tmp_int_buffer[f4];
+              }
+            buffer_index += size34;
+            int_buffer_index += sizep34;
+            }
+          c3++;
+          }
+        }
+      ogc3 += c3;
+      ogc3p += INT_NCART(am3+1);
+      }
+    index += size1234;
+
+     /* The center 2 d/dz integrals */
+    ogc3 = 0;
+    ogc3p = 0;
+    for (gc3=0; gc3<shell3->ncontraction(); gc3++) {
+      int am3 = shell3->am(gc3);
+      int c3 = 0;
+      for (i3=0; i3<=am3; i3++) {
+        for (k3=0; k3<=am3-i3; k3++) {
+          int c3zp1 = c3+i3+1;//=INT_CARTINDEX(am3+1,i3,j3)
+          int buffer_index = size1234+size1234+(ogc3+c3)*size4;
+          int int_buffer_index = (ogc3p+c3zp1)*size4;
+          for (f12=0; f12<size12; f12++) {
+            double *tmp_buffer=&buffer[buffer_index];
+            double *tmp_int_buffer=&int_buffer[int_buffer_index];
+            for (f4=0; f4<size4; f4++) {
+                tmp_buffer[f4] += tmp_int_buffer[f4];
+              }
+            buffer_index += size34;
+            int_buffer_index += sizep34;
+            }
+          c3++;
+          }
+        }
+      ogc3 += c3;
+      ogc3p += INT_NCART(am3+1);
+      }
+    index += size1234;
+    }
+  else if (dercenter == 3) {
+    int ogc4,ogc4p,gc4,i4,k4,f123,size123;
+    size123 = size1*size2*size3;
+
+    /* The center 2 d/dx integrals */
+    ogc4 = 0;
+    ogc4p = 0;
+    for (gc4=0; gc4<shell4->ncontraction(); gc4++) {
+      int am4 = shell4->am(gc4);
+      int c4 = 0;
+      for (i4=0; i4<=am4; i4++) {
+        for (k4=0; k4<=am4-i4; k4++) {
+          int c4xp1 = c4+am4+2;//=INT_CARTINDEX(am4+1,i4+1,j4)
+          int buffer_index = ogc4+c4;
+          int int_buffer_index = ogc4p+c4xp1;
+          for (f123=0; f123<size123; f123++) {
+            buffer[buffer_index] += int_buffer[int_buffer_index];
+            buffer_index += size4;
+            int_buffer_index += sizep4;
+            }
+          c4++;
+          }
+        }
+      ogc4 += c4;
+      ogc4p += INT_NCART(am4+1);
+      }
+    index += size1234;
+
+     /* The center 2 d/dy integrals */
+    ogc4 = 0;
+    ogc4p = 0;
+    for (gc4=0; gc4<shell4->ncontraction(); gc4++) {
+      int am4 = shell4->am(gc4);
+      int c4 = 0;
+      for (i4=0; i4<=am4; i4++) {
+        for (k4=0; k4<=am4-i4; k4++) {
+          int c4yp1 = c4+i4;//=INT_CARTINDEX(am4+1,i4,j4+1)
+          int buffer_index = size1234 + ogc4+c4;
+          int int_buffer_index = ogc4p+c4yp1;
+          for (f123=0; f123<size123; f123++) {
+            buffer[buffer_index] += int_buffer[int_buffer_index];
+            buffer_index += size4;
+            int_buffer_index += sizep4;
+            }
+          c4++;
+          }
+        }
+      ogc4 += c4;
+      ogc4p += INT_NCART(am4+1);
+      }
+    index += size1234;
+
+    /* The center 3 d/dz integrals */
+    ogc4 = 0;
+    ogc4p = 0;
+    for (gc4=0; gc4<shell4->ncontraction(); gc4++) {
+      int am4 = shell4->am(gc4);
+      int c4 = 0;
+      for (i4=0; i4<=am4; i4++) {
+        for (k4=0; k4<=am4-i4; k4++) {
+          int c4zp1 = c4+i4+1;//=INT_CARTINDEX(am4+1,i4,j4)
+          int buffer_index = size1234+size1234+ogc4+c4;
+          int int_buffer_index = ogc4p+c4zp1;
+          for (f123=0; f123<size123; f123++) {
+            buffer[buffer_index] += int_buffer[int_buffer_index];
+            buffer_index += size4;
+            int_buffer_index += sizep4;
+            }
+          c4++;
+          }
+        }
+      ogc4 += c4;
+      ogc4p += INT_NCART(am4+1);
+      }
+    index += size1234;
+    }
   }
 
 void

@@ -44,11 +44,17 @@ class BEMSolvent: public DescribedClass {
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
+    int debug_;
+
     RefMolecule solute_;
     double dielectric_constant_;
     RefSCMatrixKit matrixkit_;
     RefSCMatrix system_matrix_i_;
     double f_;
+
+    double area_;
+    double volume_;
+    double computed_enclosed_charge_;
 
     RefTriangulatedImplicitSurface surf_;
 
@@ -112,6 +118,15 @@ class BEMSolvent: public DescribedClass {
     
     // Given the charges, return the total polarization charge on the surface.
     double polarization_charge(double* charge);
+
+    // Return the area (available after compute_charges called).
+    double area() const { return area_; }
+    // Return the volume (available after compute_charges called).
+    double volume() const { return volume_; }
+    // Return the enclosed charge (available after compute_charges called).
+    double computed_enclosed_charge() const {
+      return computed_enclosed_charge_;
+    }
 
     // this never needs to be called explicitly, but is here now for debugging
     void init_system_matrix();

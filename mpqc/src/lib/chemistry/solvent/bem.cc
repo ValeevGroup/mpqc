@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <math/scmat/local.h>
@@ -50,6 +51,8 @@ BEMSolvent::BEMSolvent(const RefKeyVal& keyval)
   vertex_area_ = 0;
 
   matrixkit_ = new LocalSCMatrixKit;
+  
+  debug_ = keyval->intvalue("debug");
   
   solute_ = keyval->describedclassvalue("solute");
 
@@ -180,6 +183,9 @@ BEMSolvent::polarization_charge(double *charges)
   return charge;
 }
 
+// the passed enclosed_charge is determined by the called and
+// might different from the enclosed charge computed by Gauss's
+// law, which is stored as computed_enclosed_charge_
 void
 BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
 {
@@ -222,10 +228,16 @@ BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
       charges[j2] += s * dA * charge_correction;
     }
 
-  printf("BEMSolvent:normalize_charge:\n");
-  printf("  integrated surface charge = %20.15f\n", charge);
-  printf("  expected surface charge = %20.15f\n", expected_charge);
-  printf("  surface area = %20.15f\n", area);
+  if (debug_) {
+      cout << node0 << indent
+           << "BEMSolvent:normalize_charge:"
+           << endl << indent
+           << scprintf("  integrated surface charge = %20.15f", charge)
+           << endl << indent
+           << scprintf("  expected surface charge = %20.15f", expected_charge)
+           << endl << indent
+           << scprintf("  surface area = %20.15f", area) << endl;
+    }
 }
 
 void
@@ -270,7 +282,7 @@ BEMSolvent::init_system_matrix()
               // The self term must not be included here.  This
               // case shouldn't occur for the usual integrators
               // so abort.
-              fprintf(stderr, "BEMSolvent: integrator gave the self term\n");
+              cerr << "BEMSolvent: integrator gave the self term" << endl;
               abort();
             }
           double denom = diff2*sqrt(diff2);
@@ -285,8 +297,12 @@ BEMSolvent::init_system_matrix()
         }
     }
 
-  printf("BEMSolvent: Surface Area = %20.15f\n", A);
-  printf("BEMSolvent: Volume       = %20.15f\n", V);
+  area_ = A;
+  volume_ = V;
+
+  cout << node0 << indent
+       << scprintf("Solvent Accessible Surface: Area = %15.10f ", A)
+       << scprintf("Volume = %15.10f", V) << endl;
 
   // Add I to the system matrix.
   system_matrix->shift_diagonal(1.0);
@@ -305,8 +321,8 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
       init_system_matrix();
     }
 
-  // BEGIN DEBUG
-
+  // **this surface integral is only needed for computed_enclosed_charge_
+  // **perhaps it should be avoided
   // integrate over the surface
   double A = 0.0;
   double efield_dot_normal = 0.0;
@@ -328,11 +344,22 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
 
       
     }
-  double q = efield_dot_normal/(4.0*M_PI);
 
-  printf("BEMSolvent:compute_charges: Surface Area = %20.15f\n", A);
-  printf("BEMSolvent:compute_charges: enclosed nuc + elec q = %20.15f\n", q);
-  // END DEBUG
+  computed_enclosed_charge_ = efield_dot_normal/(4.0*M_PI);
+
+  if (debug_) {
+      double computed_expected_charge = computed_enclosed_charge_
+                                      * (1.0/dielectric_constant_ - 1.0);
+
+      cout << node0 << indent
+         << scprintf("BEMSolvent:compute_charges: Surface Area = %20.15f", A)
+         << endl << indent
+         << scprintf("BEMSolvent:compute_charges: encl nuc + elec q = %20.15f",
+                     computed_enclosed_charge_)
+         << endl << indent
+         << scprintf("BEMSolvent:compute_charges: exp surface q = %20.15f",
+                     computed_expected_charge) << endl;
+    }
 
   RefSCVector edotn(system_matrix_i_.coldim(),matrixkit());
   edotn.assign(efield_dot_normals);

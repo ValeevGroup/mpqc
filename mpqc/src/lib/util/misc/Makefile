@@ -20,7 +20,7 @@ CXXSRC = compute.cc compute_i.cc error.cc scostream.cc
 
 TESTSRC = comptest.cc scotest.cc
 
-INC = assert.h libmisc.h memory.h timer.h compute.h scostream.h
+INC = assert.h libmisc.h memory.h timer.h compute.h scostream.h ieee.h
 GENINC = machtype.gbl timer.gbl assert.gbl
 
 DISTFILES = $(WEBFILES) $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h

@@ -33,6 +33,49 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 
+/////////////////////////////////////////////////////////////////
+// Function dquicksort performs a quick sort (smaller -> larger) 
+// of the double data in item by the integer indices in index;
+// data in item remain unchanged
+/////////////////////////////////////////////////////////////////
+static void
+dqs(double *item,int *index,int left,int right)
+{
+  register int i,j;
+  double x;
+  int y;
+ 
+  i=left; j=right;
+  x=item[index[(left+right)/2]];
+ 
+  do {
+    while(item[index[i]]<x && i<right) i++;
+    while(x<item[index[j]] && j>left) j--;
+ 
+    if (i<=j) {
+      if (item[index[i]] != item[index[j]]) {
+        y=index[i];
+        index[i]=index[j];
+        index[j]=y;
+        }
+      i++; j--;
+      }
+    } while(i<=j);
+       
+  if (left<j) dqs(item,index,left,j);
+  if (i<right) dqs(item,index,i,right);
+}
+static void
+dquicksort(double *item,int *index,int n)
+{
+  int i;
+  if (n<=0) return;
+  for (i=0; i<n; i++) {
+    index[i] = i;
+    }
+  dqs(item,index,0,n-1);
+  }
+
 ///////////////////////////////////////////////////////////////////////////
 // MBPT2
 
@@ -207,8 +250,9 @@ MBPT2::value_implemented()
 //////////////////////////////////////////////////////////////////////////////
 
 void
-MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs)
+MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
 {
+  int i;
   if (nsocc) {
       if (reference_->n_fock_matrices() != 2) {
           cerr << "MBPT2: given open reference with"
@@ -258,7 +302,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs)
       */
       RefSymmSCMatrix fock_eff_mo1 = fock_c_mo1.clone();
       fock_eff_mo1.assign(fock_c_mo1);
-      for (int i=0; i<nbasis; i++) {
+      for (i=0; i<nbasis; i++) {
           double occi = reference_->occupation(i);
           for (int j=0; j<=i; j++) {
               double occj = reference_->occupation(j);
@@ -304,6 +348,36 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs)
       // compute the AO to new MO scf vector
       RefSCMatrix so_ao = reference_->integral()->petite_list()->sotoao();
       vecs = vecs_so_mo1.t() * so_ao;
+    }
+  // fill in the occupations
+  occs = matrixkit()->diagmatrix(vals.dim());
+  for (i=0; i<nbasis; i++) {
+      occs(i) = reference_->occupation(i);
+    }
+  // sort the eigenvectors and values if symmetry is not c1
+  if (molecule()->point_group().char_table().order() != 1) {
+      int n = vals.n();
+      double *evals = new double[n];
+      vals->convert(evals);
+      int *indices = new int[n];
+      dquicksort(evals,indices,n);
+      delete[] evals;
+      // make sure all nodes see the same indices and evals
+      msg_->bcast(indices,n);
+      RefSCMatrix newvecs(vecs.rowdim(), vecs.coldim(), matrixkit());
+      RefDiagSCMatrix newvals(vals.dim(), matrixkit());
+      RefDiagSCMatrix newoccs(vals.dim(), matrixkit());
+      for (i=0; i<n; i++) {
+          newvals(i) = vals(indices[i]);
+          newoccs(i) = occs(indices[i]);
+          for (int j=0; j<n; j++) {
+              newvecs(i,j) = vecs(indices[i],j);
+            }
+        }
+      occs = newoccs;
+      vecs = newvecs;
+      vals = newvals;
+      delete[] indices;
     }
 }
 

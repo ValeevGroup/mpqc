@@ -72,7 +72,8 @@ class MBPT2: public Wavefunction {
 
     // Fill in the eigenvectors and eigenvalues (Guest & Saunders general
     // form is used for the Fock matrix in the open shell case).
-    void eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs);
+    void eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs,
+               RefDiagSCMatrix &occs);
 
     // calculate the opt2 energy using algorithm v1
     void compute_hsos_v1();

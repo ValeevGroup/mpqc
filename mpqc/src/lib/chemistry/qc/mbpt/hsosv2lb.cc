@@ -399,9 +399,10 @@ MBPT2::compute_hsos_v2_lb()
   /////////////////////////////////////////////////////////
   evals_open = (double*) malloc((nbasis+nsocc-nfzc-nfzv)*sizeof(double));
 
+  RefDiagSCMatrix occ;
   RefDiagSCMatrix evals;
   RefSCMatrix Scf_Vec;
-  eigen(evals, Scf_Vec);
+  eigen(evals, Scf_Vec, occ);
 
   if (debug_) {
     evals.print("eigenvalues");
@@ -415,21 +416,21 @@ MBPT2::compute_hsos_v2_lb()
 
   int idoc = 0, ivir = 0, isoc = 0;
   for (i=0; i<nbasis; i++) {
-    if (reference_->occupation(i) == 2.0) {
+    if (occ(i) == 2.0) {
       if (idoc >= nfzc) {
         evals_open[idoc-nfzc+nsocc] = evals(i);
         scf_vectort[idoc-nfzc+nsocc] = &scf_vectort_dat[i*nbasis];
         }
       idoc++;
       }
-    else if (reference_->occupation(i) == 1.0) {
+    else if (occ(i) == 1.0) {
       evals_open[isoc] = evals(i);
       scf_vectort[isoc] = &scf_vectort_dat[i*nbasis];
       evals_open[isoc+nocc] = evals(i);
       scf_vectort[isoc+nocc] = &scf_vectort_dat[i*nbasis];
       isoc++;
       }
-    else if (reference_->occupation(i) == 0.0) {
+    else if (occ(i) == 0.0) {
       if (ivir < nvir) {
         evals_open[ivir+nocc+nsocc] = evals(i);
         scf_vectort[ivir+nocc+nsocc] = &scf_vectort_dat[i*nbasis];
@@ -949,9 +950,6 @@ iquicksort(int *item,int *index,int n)
   iqs(item,index,0,n-1);
   }
 
-// Local Variables:
-// mode: c++
-// eval: (c-set-style "CLJ-CONDENSED")
 static void
 iqs(int *item,int *index,int left,int right)
 {

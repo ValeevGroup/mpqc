@@ -216,13 +216,6 @@ MBPT2::compute_cs_grad()
 
   tim_enter("mp2-mem");
 
-  if (molecule()->point_group().char_table().order() != 1) {
-    // need to reorder the eigenvalues and possibly fix some bugs
-    cout << indent
-         << "MP2 closed shell gradients only works for C1 symmetry" << endl;
-    abort();
-    }
-
   nfuncmax = basis()->max_nfunction_in_shell();
 
   DerivCenters der_centers;
@@ -358,9 +351,10 @@ MBPT2::compute_cs_grad()
 
   escf = reference_->energy();
 
+  RefDiagSCMatrix occ;
   RefSCMatrix Scf_Vec;
   RefDiagSCMatrix evalmat;
-  eigen(evalmat, Scf_Vec);
+  eigen(evalmat, Scf_Vec, occ);
 
   if (debug_) {
     evalmat.print("eigenvalues");
@@ -374,7 +368,7 @@ MBPT2::compute_cs_grad()
   double** scf_vector = new double*[nbasis];
   int idoc=0, ivir=0;
   for (i=0; i<nbasis; i++) {
-    if (reference_->occupation(i) == 2.0) {
+    if (occ(i) == 2.0) {
       evals[idoc] = evalmat(i);
       scf_vector[idoc] = &scf_vector_dat[i*nbasis];
       idoc++;

@@ -260,9 +260,10 @@ MBPT2::compute_hsos_v1()
     abort();
     }
 
+  RefDiagSCMatrix occ;
   RefDiagSCMatrix evals;
   RefSCMatrix Scf_Vec;
-  eigen(evals, Scf_Vec);
+  eigen(evals, Scf_Vec, occ);
 
   if (debug_) {
     evals.print("eigenvalues");
@@ -276,14 +277,14 @@ MBPT2::compute_hsos_v1()
 
   int idoc = 0, ivir = 0, isoc = 0;
   for (i=0; i<nbasis; i++) {
-    if (reference_->occupation(i) == 2.0) {
+    if (occ(i) == 2.0) {
       if (idoc >= nfzc) {
         evals_open[idoc-nfzc+nsocc] = evals(i);
         scf_vectort[idoc-nfzc+nsocc] = &scf_vectort_dat[i*nbasis];
         }
       idoc++;
       }
-    else if (reference_->occupation(i) == 1.0) {
+    else if (occ(i) == 1.0) {
       evals_open[isoc] = evals(i);
       scf_vectort[isoc] = &scf_vectort_dat[i*nbasis];
       evals_open[isoc+nocc] = evals(i);

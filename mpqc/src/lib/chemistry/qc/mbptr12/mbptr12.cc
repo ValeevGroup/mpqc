@@ -140,7 +140,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
   delete[] abs_method_str;
 
-  // Default method is MBPT2-R12/A
+  // Default method is MBPT2-R12/A'
   char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A'"));
   if ( !strcmp(sa_string,"A") ||
        !strcmp(sa_string,"a") ) {

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:44  etseidl
+ * Revision 1.3  1994/05/18 22:05:22  etseidl
+ * fix bug zeroing out int_Qvec and int_Rvec
+ *
+ * Revision 1.2  1993/12/30  13:32:44  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.3  1992/06/17  22:04:25  jannsen
@@ -101,7 +104,7 @@ int_init_bounds_1der_nocomp()
 
   int_Q = -126;
   int_R = -126;
-  for (i=0; i<nshell; i++) int_Qvec[i] = int_Rvec[i] = 0;
+  for (i=0; i<nsht; i++) int_Qvec[i] = int_Rvec[i] = 0;
   }
 
 GLOBAL_FUNCTION VOID

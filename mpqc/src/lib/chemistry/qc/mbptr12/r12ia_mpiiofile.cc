@@ -68,7 +68,15 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* file
   icounter_ = 0;
   filename_ = strdup(filename);
   if (!restart) {
-    MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &datafile_);
+    int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE,
+                               MPI_INFO_NULL, &datafile_);
+    if (errcod != MPI_SUCCESS) {
+      char* errstr;
+      int errstrlen;
+      MPI_Error_string(errcod, errstr, &errstrlen);
+      ExEnv::out0() << "R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error: " << errstr << endl;
+      throw std::runtime_error("R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- could not open MPI-I/O file");
+    }
     MPI_File_close(&datafile_);
   }
 }

@@ -51,7 +51,7 @@
 #define CLASSNAME CLKS
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
-#define PARENTS public SCF
+#define PARENTS public CLSCF
 #include <util/class/classi.h>
 void *
 CLKS::_castdown(const ClassDesc*cd)

@@ -430,7 +430,7 @@ class VWN1LCFunctional: public VWNLCFunctional {
     double x0p_, bp_, cp_, x0f_, bf_, cf_;
   public:
     VWN1LCFunctional();
-    VWN1LCFunctional(int i);
+    VWN1LCFunctional(int use_rpa);
     VWN1LCFunctional(const RefKeyVal &);
     VWN1LCFunctional(StateIn &);
     ~VWN1LCFunctional();

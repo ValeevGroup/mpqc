@@ -54,7 +54,7 @@
 #define CLASSNAME HSOSKS
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
-#define PARENTS public SCF
+#define PARENTS public HSOSSCF
 #include <util/class/classi.h>
 void *
 HSOSKS::_castdown(const ClassDesc*cd)

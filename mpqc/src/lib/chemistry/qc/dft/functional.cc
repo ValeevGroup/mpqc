@@ -881,6 +881,7 @@ StdDenFunctional::print(ostream& o) const
 
   o << node0
     << indent << "Standard Density Functional: " << n << endl;
+  SumDenFunctional::print(o);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1527,9 +1528,9 @@ VWN1LCFunctional::VWN1LCFunctional()
   cf_  = cf_mc_;
 }
 
-VWN1LCFunctional::VWN1LCFunctional(int i)
+VWN1LCFunctional::VWN1LCFunctional(int use_rpa)
 {
-  if (i) {
+  if (use_rpa) {
       x0p_ = x0p_rpa_;
       bp_  = bp_rpa_;
       cp_  = cp_rpa_;

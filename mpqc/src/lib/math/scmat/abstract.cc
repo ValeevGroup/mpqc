@@ -710,6 +710,15 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, DiagSCMatrix *b)
 }
 
 void
+SymmSCMatrix::accumulate_transform(SymmSCMatrix *a, SymmSCMatrix *b)
+{
+  RefSCMatrix m = a->dim()->create_matrix(a->dim());
+  m->assign(0.0);
+  m->accumulate(a);
+  accumulate_transform(m.pointer(),b);
+}
+
+void
 SymmSCMatrix::accumulate_symmetric_outer_product(SCVector *v)
 {
   RefSCMatrix m = dim()->create_matrix(dim());

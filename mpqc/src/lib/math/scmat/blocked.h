@@ -278,6 +278,7 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void accumulate_symmetric_sum(SCMatrix*);
     void accumulate_transform(SCMatrix*,SymmSCMatrix*);
     void accumulate_transform(SCMatrix*,DiagSCMatrix*);
+    //void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
 
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,

@@ -362,6 +362,7 @@ class SymmSCMatrix: public SavableState {
     virtual void accumulate_symmetric_product(SCMatrix*);
     virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*);
     virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*);
+    virtual void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
     virtual void accumulate_symmetric_outer_product(SCVector*);
     //texi Return the scalar obtained by multiplying @code{this} on the
     // left and right by @var{v}.

@@ -703,6 +703,14 @@ RefSymmSCMatrix::accumulate_transform(const RefSCMatrix& a,
   pointer()->accumulate_transform(a.pointer(),b.pointer());
 }
 
+void
+RefSymmSCMatrix::accumulate_transform(const RefSymmSCMatrix& a,
+                                      const RefSymmSCMatrix&b) const
+{
+  require_nonnull();
+  pointer()->accumulate_transform(a.pointer(),b.pointer());
+}
+
 RefSymmSCMatrix
 RefSymmSCMatrix::operator+(const RefSymmSCMatrix&a) const
 {

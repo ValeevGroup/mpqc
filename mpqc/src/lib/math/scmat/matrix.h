@@ -315,6 +315,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void accumulate_symmetric_sum(const RefSCMatrix&) const;
     void accumulate_transform(const RefSCMatrix&,const RefSymmSCMatrix&) const;
     void accumulate_transform(const RefSCMatrix&,const RefDiagSCMatrix&) const;
+    void accumulate_transform(const RefSymmSCMatrix&,const RefSymmSCMatrix&) const;
     void randomize() const;
     void assign(const RefSymmSCMatrix&) const;
     void scale(double) const;

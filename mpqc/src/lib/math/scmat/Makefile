@@ -9,7 +9,7 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 default:: $(DEPENDINCLUDE)
 default:: libscmat.a
 
-CXXSRC = abstract.cc   local.cc      matrix.cc \
+CXXSRC = abstract.cc   local.cc      local2.cc  matrix.cc \
          blkiter.cc    matrix_i.cc   result.cc \
          vector3.cc    vector3_i.cc  block.cc
 

@@ -98,18 +98,19 @@ testmap(EAVLMMap<int, Data>& map, Data** data, int n)
 void
 rantest(EAVLMMap<int, Data>&map1, Data** data, int n)
 {
-  for (int i=0; i<n; i++) {
+  int i;
+  for (i=0; i<n; i++) {
       Data* d = data[i];
       d->change1(random());
       map1.insert(d);
       Ni++;
     }
   map1.check();
-  for (int i=0; i<n; i++) {
+  for (i=0; i<n; i++) {
       map1.find(i);
       Nf++;
     }
-  for (int i=0; i<n; i++) {
+  for (i=0; i<n; i++) {
       Data* d = data[i];
       map1.remove(d);
       Nr++;
@@ -121,11 +122,12 @@ rantest(EAVLMMap<int, Data>&map1, Data** data, int n)
 int
 main()
 {
+  int i;
   const int maxkey = 9;
   EAVLMMap<int,Data> map1(&Data::map1);
   Data* data[maxkey][maxkey];
   Data* currentdata[maxkey];
-  for (int i=0; i<maxkey; i++) {
+  for (i=0; i<maxkey; i++) {
       for (int j=0; j<maxkey; j++) {
           data[i][j] = new Data(j);
         }
@@ -136,30 +138,30 @@ main()
 
   cout << "emmap:" << endl;
   EAVLMMap<int,Data> emap(&Data::map1);
-  for (int i=0; i<maxkey; i++) {
+  for (i=0; i<maxkey; i++) {
       emap.insert(new Data(i/2,i));
       emap.check();
     }
-  for (EAVLMMap<int,Data>::iterator i=emap.begin(); i!=emap.end(); i++) {
-      cout << " " << i.key() << " " << i->map2.key << endl;
+  for (EAVLMMap<int,Data>::iterator im=emap.begin(); im!=emap.end(); im++) {
+      cout << " " << im.key() << " " << im->map2.key << endl;
     }
 
   cout << "map:" << endl;
   AVLMap<int, char> icmap;
-  for (int i=0; i<maxkey; i++) {
+  for (i=0; i<maxkey; i++) {
       int d = random();
       icmap.insert(d, i+'a');
       icmap.insert(d, i+'a');
       icmap.check();
     }
   icmap.print();
-  for (AVLMap<int,char>::iterator i=icmap.begin(); i!=icmap.end(); i++) {
-      cout << " " << i.key() << " " << i.data() << endl;
+  for (AVLMap<int,char>::iterator ic=icmap.begin(); ic!=icmap.end(); ic++) {
+      cout << " " << ic.key() << " " << ic.data() << endl;
     }
 
   cout << "set:" << endl;
   AVLSet<int> iset;
-  for (int i=0; i<10; i++) {
+  for (i=0; i<10; i++) {
       iset.insert(i);
     }
   if (iset.length() != 10) abort();
@@ -169,26 +171,26 @@ main()
   iset.remove(3);
   if (iset.contains(3)) abort();
   if (iset.length() != 9) abort();
-  for (int i=0; i<10; i++) iset.remove(i);
+  for (i=0; i<10; i++) iset.remove(i);
   if (iset.length() != 0) abort();
   if (iset.contains(3)) abort();
   if (iset.length() != 0) abort();
   iset.clear();
-  for (int i=0; i<maxkey; i++) {
+  for (i=0; i<maxkey; i++) {
       int d = random();
       iset.insert(d);
       iset.insert(d);
       iset.check();
     }
   iset.print();
-  for (AVLSet<int>::iterator i=iset.begin(); i!=iset.end(); i++) {
-      cout << " " << i.key() << endl;
+  for (AVLSet<int>::iterator is=iset.begin(); is!=iset.end(); is++) {
+      cout << " " << is.key() << endl;
     }
 
 #if TEST1
   cout << "=================================================" << endl;
   max = 1;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
 
       testmap(map1, currentdata, max);
@@ -198,7 +200,7 @@ main()
 #if TEST2
   cout << "=================================================" << endl;
   max = 2;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -211,7 +213,7 @@ main()
 #if TEST3
   cout << "=================================================" << endl;
   max = 3;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -229,7 +231,7 @@ main()
 #if TEST4
   cout << "=================================================" << endl;
   max = 4;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -251,7 +253,7 @@ main()
 #if TEST5
   cout << "=================================================" << endl;
   max = 5;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -277,7 +279,7 @@ main()
 #if TEST6
   cout << "=================================================" << endl;
   max = 6;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -309,7 +311,7 @@ main()
 #if TEST7
   cout << "=================================================" << endl;
   max = 7;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -345,7 +347,7 @@ main()
 #if TEST8
   cout << "=================================================" << endl;
   max = 8;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -386,7 +388,7 @@ main()
 #if TEST9
   cout << "=================================================" << endl;
   max = 9;
-  for (int i=0; i<max; i++) {
+  for (i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
@@ -432,14 +434,14 @@ main()
 
   const int maxdat2 = 2000;
   Data * data2[maxdat2];
-  for (int i=0; i<maxdat2; i++) {
+  for (i=0; i<maxdat2; i++) {
       data2[i] = new Data(i);
     }
-  for (int i=0; i<maxdat2; i++) {
+  for (i=0; i<maxdat2; i++) {
       if (i%100 == 0) cout << "-";
     }
   cout << endl;
-  for (int i=0; i<maxdat2; i++) {
+  for (i=0; i<maxdat2; i++) {
       if (i%100 == 0) {
           cout << ".";
         }

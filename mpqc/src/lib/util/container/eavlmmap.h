@@ -109,6 +109,9 @@ class EAVLMMap {
 
     T* start() const { return start_; }
     void next(const T*&) const;
+#ifndef __GNUC__
+    void next(T*&) const;
+#endif
 
     iterator begin() { return iterator(this,start()); }
     iterator end() { return iterator(this,0); }
@@ -321,6 +324,27 @@ EAVLMMap<K,T>::check()
 
 template <class K, class T>
 void
+EAVLMMap<K,T>::next(T*& node) const
+{
+  T* r;
+  if (r = rlink(node)) {
+      node = r;
+      while (r = llink(node)) node = r;
+      return;
+    }
+  while (r = uplink(node)) {
+      if (node == llink(r)) {
+          node = r;
+          return;
+        }
+      node = r;
+    }
+  node = 0;
+}
+
+#ifndef __GNUC__
+template <class K, class T>
+void
 EAVLMMap<K,T>::next(const T*& node) const
 {
   T* r;
@@ -338,6 +362,7 @@ EAVLMMap<K,T>::next(const T*& node) const
     }
   node = 0;
 }
+#endif
 
 template <class K, class T>
 void

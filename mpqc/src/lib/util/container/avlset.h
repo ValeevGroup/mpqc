@@ -56,7 +56,7 @@ class AVLSet {
             { map_ = i.map_; node = i.node; }
         const K &key() const { return node->node.key; }
         const K &operator *() const { return node->node.key; }
-        const K *operator ->() const { return &node->node.key; }
+        //const K *operator ->() const { return &node->node.key; }
     };
   public:
     AVLSet() {};

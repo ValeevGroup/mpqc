@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <math.h>
 #include <float.h>
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>

@@ -33,6 +33,7 @@
 #  include <scconfig.h>
 #endif
 
+#include <math.h>
 #include <iostream.h>
 #include <iomanip.h>
 

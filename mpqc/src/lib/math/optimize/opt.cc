@@ -274,7 +274,7 @@ Backtrack::Backtrack(const Ref<KeyVal>& keyval)
   backtrack_factor_ = keyval->doublevalue("backtrack_factor");
   if (keyval->error() != KeyVal::OK) backtrack_factor_ = 0.25;
   max_iterations_ = keyval->intvalue("max_iterations");
-  if (keyval->error() != KeyVal::OK) max_iterations_ = (int) 1.0/backtrack_factor_;
+  if (keyval->error() != KeyVal::OK) max_iterations_ = int(1.0/backtrack_factor_);
 }
 
 int

@@ -32,6 +32,8 @@
 #include <util/render/object.h>
 #include <util/render/sphere.h>
 
+#include <util/render/linkage.h>
+
 using namespace std;
 
 int

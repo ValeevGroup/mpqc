@@ -1,6 +1,6 @@
 % Test -*- KeyVal -*- input for the integrals package.
 
-molecule = $:longmol
+molecule = $:h2o
 basisset = $:currentbas
 
 ne2<Molecule>: (

@@ -12,10 +12,10 @@ vpath %.so $(TOPDIR)/lib
 vpath %.la $(TOPDIR)/lib
 
 # SRCTOPDIR is the top of the source directory
-SRCTOPDIR = $(shell $(SRCDIR)/$(TOPDIR)/bin/rmdotdot $(SRCDIR)/$(TOPDIR))
+SRCTOPDIR = $(shell $(PERL) $(SRCDIR)/$(TOPDIR)/bin/rmdotdot $(SRCDIR)/$(TOPDIR))
 
 # LIBDIR is the full path to where the libraries are
-LIBDIR = $(shell $(SRCTOPDIR)/bin/rmdotdot `pwd`/$(TOPDIR)/lib)
+LIBDIR = $(shell $(PERL) $(SRCTOPDIR)/bin/rmdotdot `pwd`/$(TOPDIR)/lib)
 
 # SRCLIBDIR is the full path to the lib subdirectory of the source dir
 SRCLIBDIR = $(SRCTOPDIR)/lib/

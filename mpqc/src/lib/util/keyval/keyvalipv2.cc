@@ -105,11 +105,13 @@ nfp(0)
       else {
           struct stat sb;
           const char *dir = INSTALLED_SCLIBDIR;
+#ifdef SRC_SCLIBDIR
           if (stat(dir, &sb) != 0) {
               ExEnv::out() << node0 << indent << "WARNING: could not find "
                    << dir << endl;
               dir = SRC_SCLIBDIR;
             }
+#endif
           directory = strcpy(new char[strlen(dir)+1], dir);
         }
     }
@@ -165,11 +167,13 @@ ParsedKeyVal::cat_files(const char* keyprefix, const Ref<KeyVal>& keyval,
       else {
           struct stat sb;
           const char *dir = INSTALLED_SCLIBDIR;
+#ifdef SRC_SCLIBDIR
           if (stat(dir, &sb) != 0) {
               ExEnv::out() << node0 << indent << "WARNING: could not find "
                    << dir << endl;
               dir = SRC_SCLIBDIR;
             }
+#endif
           directory = strcpy(new char[strlen(dir)+1], dir);
         }
     }

@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include <float.h>
 
 #include <chemistry/qc/intv3/fjt.h>
 #include <util/misc/formio.h>

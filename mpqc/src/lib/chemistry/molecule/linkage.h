@@ -35,6 +35,7 @@
 #include <chemistry/molecule/molfreq.h>
 #include <chemistry/molecule/molrender.h>
 #include <chemistry/molecule/molshape.h>
+#include <chemistry/molecule/fdhess.h>
 
 #include <util/render/linkage.h>
 #include <math/scmat/linkage.h>
@@ -51,6 +52,7 @@ static ForceLink<RenderedMolecularSurface> molecule_force_link_h_;
 static ForceLink<VDWShape> molecule_force_link_i_;
 static ForceLink<DiscreteConnollyShape> molecule_force_link_j_;
 static ForceLink<ConnollyShape> molecule_force_link_k_;
+static ForceLink<FinDispMolecularHessian> molecule_force_link_l_;
 
 #endif /* __PIC__ */
 

@@ -39,7 +39,8 @@ main()
 
   Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/bemtest.in");
 
-  Ref<BEMSolvent> solvent = keyval->describedclassvalue("solvent");
+  Ref<BEMSolvent> solvent;
+  solvent << keyval->describedclassvalue("solvent");
 
   solvent->init();
   solvent->init_system_matrix();

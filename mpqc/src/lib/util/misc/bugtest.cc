@@ -58,7 +58,7 @@ main(int argc, char **argv)
 
   Ref<Debugger> d;
 
-  d = keyval->describedclassvalue("debug");
+  d << keyval->describedclassvalue("debug");
   if (d.null()) {
       d = new Debugger();
       d->handle_defaults();
@@ -74,11 +74,11 @@ main(int argc, char **argv)
   x(d);
 
   StateOutText o("state.dat");
-  d.save_state(o);
+  SavableState::save_state(d.pointer(),o);
   o.flush();
 
   StateInText i("state.dat");
-  d.restore_state(i);
+  d << SavableState::restore_state(i);
 
   d = 0;
   cout << indent << "bugtest: done" << endl;

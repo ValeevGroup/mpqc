@@ -62,9 +62,11 @@ BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
   else {
       struct stat sb;
       const char *bdir = INSTALLED_SCLIBDIR "/basis";
+#ifdef SRC_SCLIBDIR
       if (stat(bdir, &sb) != 0) {
           bdir = SRC_SCLIBDIR "/basis";
         }
+#endif
       dir_[1] = strcpy(new char[strlen(bdir)+1], bdir);
     }
 }

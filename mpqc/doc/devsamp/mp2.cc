@@ -78,6 +78,7 @@ RefSymmSCMatrix
 MP2::density(void) {
   ExEnv::out() << "No density yet" << endl;
   abort();
+  return 0;
 }
 
 int

@@ -127,11 +127,9 @@ main(int argc, char *argv[])
         }
     }
 
-  const char *SCPR_VERSION = "1.0";
-
   if (help || nobject == 0 || nfile == 0) {
       cout << node0
-           << indent << "scpr version " << SCPR_VERSION << endl
+           << indent << "scpr version " << SC_VERSION << endl
            << SCFormIO::copyright << endl
            << indent << "usage: " << argv[0] << " [options] file ..." << endl
            << indent << "where options are chosen from:" << endl
@@ -157,14 +155,14 @@ main(int argc, char *argv[])
   
   if (version) {
     cout << node0
-         << indent << "scpr version " << SCPR_VERSION << endl
+         << indent << "scpr version " << SC_VERSION << endl
          << SCFormIO::copyright;
     exit(0);
   }
   
   if (warranty) {
     cout << node0
-         << indent << "scpr version " << SCPR_VERSION << endl
+         << indent << "scpr version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
     exit(0);
@@ -172,7 +170,7 @@ main(int argc, char *argv[])
   
   if (license) {
     cout << node0
-         << indent << "scpr version " << SCPR_VERSION << endl
+         << indent << "scpr version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
     exit(0);
@@ -220,7 +218,7 @@ main(int argc, char *argv[])
             }
           Ref<SavableState> o;
           o << SavableState::dir_restore_state(s,objects[j]);
-          cout << node0 << o;
+          o->print(cout << node0);
           if (nobject > 1) cout << decindent;
         }
       if (nfile > 1) cout << decindent;

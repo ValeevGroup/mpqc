@@ -60,6 +60,7 @@
 #include <util/keyval/keyval.h>
 #include <util/state/state_bin.h>
 #include <util/group/message.h>
+#include <util/group/memory.h>
 #include <util/group/mstate.h>
 #include <util/group/thread.h>
 #include <util/group/pregtime.h>

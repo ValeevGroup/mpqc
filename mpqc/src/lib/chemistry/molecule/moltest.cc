@@ -116,19 +116,11 @@ main(int argc, char **argv)
       cout << node0<< "-------------- testing atominfo --------------" << endl;
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
       cout << node0 << "saving/restoring atominfo" << endl;
-#ifdef HAVE_SSTREAM
-      ostringstream ostrs;
-#else
-      ostrstream ostrs;
-#endif
-      StateOutBin so(ostrs);
+      StateOutBin so("moltest.1.ckpt");
       SavableState::save_state(atominfo.pointer(), so);
       atominfo = 0;
       so.close();
-      ostrs.flush();
-      istream istrs(ostrs.rdbuf());
-      StateInBin si(istrs);
-      istrs.rdbuf(0);
+      StateInBin si("moltest.1.ckpt");
       atominfo << SavableState::restore_state(si);
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
       if (grp->n() > 1) {
@@ -170,19 +162,12 @@ main(int argc, char **argv)
 
       cout << "---------- testing molecule save/restore ----------" << endl;
 
-#if HAVE_SSTREAM
-      ostringstream ostrs;
-#else
-      ostrstream ostrs;
-#endif
-      StateOutBin so(ostrs);
+      StateOutBin so("moltest.2.ckpt");
       cout << "saveing ..." << endl;
       SavableState::save_state(mol.pointer(),so);
       mol = 0;
       so.close();
-      ostrs.flush();
-      istream istrs(ostrs.rdbuf());
-      StateInBin si(istrs);
+      StateInBin si("moltest.2.ckpt");
       cout << "restoring ..." << endl;
       mol << SavableState::restore_state(si);
       cout << "printing restored molecule:" << endl;

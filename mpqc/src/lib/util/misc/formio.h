@@ -42,6 +42,7 @@ class SCFormIO {
     static long indent_size_;
     static long skip_indent_;
     static long verbose_;
+    static long initialized_;
     static int node_to_print_;
     static int debug_;
     static int parallel_;

@@ -34,6 +34,8 @@
 #include <math/scmat/elemop.h>
 #include <math/scmat/offset.h>
 
+#include <math/scmat/mops.h>
+
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -519,33 +521,115 @@ LocalSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
 // this += a * b * transpose(a)
 void
 LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
-                                        SCMatrix::Transform t)
+                                       SCMatrix::Transform t)
 {
+  int i,j,k;
+  int ii,jj;
+  int nc, nr;
+
   // do the necessary castdowns
   LocalSCMatrix*la
     = require_dynamic_cast<LocalSCMatrix*>(a,"%s::accumulate_transform",
                                       class_name());
-  LocalSymmSCMatrix*lb
-      = require_dynamic_cast<LocalSymmSCMatrix*>(
-          b,"%s::accumulate_transform", class_name());
+  LocalSymmSCMatrix*lb = require_dynamic_cast<LocalSymmSCMatrix*>(
+      b,"%s::accumulate_transform", class_name());
 
   // check the dimensions
-  if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-      ExEnv::err() << indent
-           << "LocalSymmSCMatrix::accumulate_transform: bad dim" << endl;
-      ExEnv::err() << indent << "this dimension:" << endl << incindent;
-      dim()->print(ExEnv::err());
-      ExEnv::err() << decindent << indent
-           << "a row and col dimension:" << endl << incindent;
-      a->rowdim()->print(ExEnv::err());
-      a->coldim()->print(ExEnv::err());
-      ExEnv::err() << decindent << indent << "b dimension:" << endl << incindent;
-      b->dim()->print(ExEnv::err());
-      ExEnv::err() << decindent;
+  if (t == SCMatrix::NormalTransform) {
+    if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
+      ExEnv::err() << indent << "LocalSymmSCMatrix::accumulate_transform: bad dim\n";
       abort();
     }
 
-  cmat_transform_symmetric_matrix(rows,n(),lb->rows,lb->n(),la->rows,1);
+    nc = lb->n();
+    nr = la->nrow();
+  } else {
+    if (!dim()->equiv(la->coldim()) || !lb->dim()->equiv(la->rowdim())) {
+      ExEnv::err() << indent << "LocalSymmSCMatrix::accumulate_transform: bad dim\n";
+      abort();
+    }
+
+    nc = lb->n();
+    nr = la->ncol();
+  }
+
+  if (nr==0 || nc==0)
+    return;
+  
+  int nproc = messagegrp()->n();
+
+  double **ablock = cmat_new_square_matrix(D1);
+  double **bblock = cmat_new_square_matrix(D1);
+  double **cblock = cmat_new_square_matrix(D1);
+
+  double **temp = cmat_new_rect_matrix(D1,nc);
+
+  for (i=0; i < nr; i += D1) {
+      int ni = nr-i;
+      if (ni > D1) ni = D1;
+
+      memset(temp[0], 0, sizeof(double)*D1*nc);
+
+      for (j=0; j < nc; j+= D1) {
+          int nj = nc-j;
+          if (nj > D1) nj = D1;
+
+          for (k=0; k < nc; k += D1) {
+        
+              int nk = nc-k;
+              if (nk > D1) nk = D1;
+
+              if (t == SCMatrix::NormalTransform)
+                  copy_block(ablock, la->rows, i, ni, k, nk);
+              else
+                  copy_trans_block(ablock, la->rows, i, ni, k, nk);
+          
+              copy_sym_block(bblock, lb->rows, j, nj, k, nk);
+              copy_block(cblock, temp, 0, ni, j, nj);
+              mult_block(ablock, bblock, cblock, ni, nj, nk);
+              return_block(temp, cblock, 0, ni, j, nj);
+            }
+        }
+
+      // now do ab * a~
+      for (j=0; j <= i; j+= D1) {
+          int nj = nr-j;
+          if (nj > D1) nj = D1;
+
+          memset(cblock[0], 0, sizeof(double)*D1*D1);
+      
+          for (k=0; k < nc; k += D1) {
+        
+              int nk = nc-k;
+              if (nk > D1) nk = D1;
+
+              copy_block(ablock, temp, 0, ni, k, nk);
+              if (t == SCMatrix::NormalTransform)
+                  copy_block(bblock, la->rows, j, nj, k, nk);
+              else
+                  copy_trans_block(bblock, la->rows, j, nj, k, nk);
+          
+              mult_block(ablock, bblock, cblock, ni, nj, nk);
+            }
+
+          // copy cblock(i,j) into result
+          if (j==i) {
+              for (ii=0; ii < ni; ii++)
+                  for (jj=0; jj <= ii; jj++)
+                      rows[i+ii][j+jj] += cblock[ii][jj];
+            } else {
+                for (ii=0; ii < ni; ii++)
+                    for (jj=0; jj < nj; jj++)
+                        rows[i+ii][j+jj] += cblock[ii][jj];
+              }
+        }
+    }
+
+  cmat_delete_matrix(temp);
+
+  cmat_delete_matrix(ablock);
+  cmat_delete_matrix(bblock);
+  cmat_delete_matrix(cblock);
 }
 
 // this += a * b * transpose(a)

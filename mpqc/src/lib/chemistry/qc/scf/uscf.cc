@@ -1085,8 +1085,8 @@ UnrestrictedSCF::lagrangian()
 {
   RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
 
-  RefDiagSCMatrix ea = alpha_eigenvalues().copy();
-  RefDiagSCMatrix eb = beta_eigenvalues().copy();
+  RefDiagSCMatrix ea = eigenvalues_.result_noupdate().copy();
+  RefDiagSCMatrix eb = eigenvalues_beta_.result_noupdate().copy();
   
   BlockedDiagSCMatrix *eab = dynamic_cast<BlockedDiagSCMatrix*>(ea.pointer());
   BlockedDiagSCMatrix *ebb = dynamic_cast<BlockedDiagSCMatrix*>(eb.pointer());

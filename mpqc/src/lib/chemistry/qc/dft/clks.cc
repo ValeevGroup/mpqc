@@ -108,17 +108,17 @@ void
 CLKS::print(ostream&o) const
 {
   o << node0 << indent << "Closed Shell Kohn-Sham (CLKS) Parameters:" << endl;
-  o << incindent;
-  CLSCF::print(o);
+  o << node0 << incindent;
+  CLSCF::print(o << node0);
   o << node0 << indent << "Functional:" << endl;
-  o << incindent;
-  functional_->print(o);
-  o << decindent;
+  o << node0 << incindent;
+  functional_->print(o << node0);
+  o << node0 << decindent;
   o << node0 << indent << "Integrator:" << endl;
-  o << incindent;
-  integrator_->print(o);
-  o << decindent;
-  o << decindent;
+  o << node0 << incindent;
+  integrator_->print(o << node0);
+  o << node0 << decindent;
+  o << node0 << decindent;
 }
 
 RefSymmSCMatrix

@@ -12,6 +12,12 @@ target_os = @target_os@
 
 SC_VERSION = @SC_VERSION@
 
+# The template repository
+TMPLREPO = @TMPLREPO@
+
+# "yes", if the contents of TMPLREPO should be put into libraries
+TMPLINLIB = @TMPLINLIB@
+
 # The object code suffix
 OBJSUF = @OBJSUF@
 

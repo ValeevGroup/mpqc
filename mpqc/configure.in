@@ -77,6 +77,22 @@ case $enableval in
 esac
 ])
 
+enableproduction=no
+AC_ARG_ENABLE(production,
+[  --enable-production     Prepare for a production install.],
+[
+case $enableval in
+  yes)
+    enableproduction=yes
+  ;;
+  no)
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-production ($enableval)])
+  ;;
+esac
+])
+
 AC_ARG_ENABLE(parallel,
 [  --disable-parallel      Compile for serial execution.],
 [
@@ -1136,6 +1152,12 @@ AC_CHECK_FUNC($F77_DGEMM,HAVE_BLAS=yes,[
     AC_CHECK_LIB(blas,$F77_DGEMM,[HAVE_BLAS=yes;LIBBLAS="-lblas"])
   )]
 )
+if test X$HAVE_BLAS != Xyes; then
+  LIBSSAV2="$LIBS"
+  LIBS="-latlas $LIBS"
+  AC_CHECK_LIB(f77blas,$F77_DGEMM,[HAVE_BLAS=yes;LIBBLAS="-lf77blas -latlas"],
+               LIBS="$LIBSSAV2")
+fi
 AC_SUBST(HAVE_BLAS)
 if test X$HAVE_BLAS != Xyes; then
   echo "WARNING: Could not link to the BLAS library.  It can be obtained at"
@@ -1208,18 +1230,20 @@ AC_LANG_RESTORE
 dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])
+TMPLREPO=
+TMPLINLIB=no
 case $target in
   alpha*)
     if test ! X$GXX = Xyes; then
-      CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
-      LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      TMPLREPO=cxx_repository
+      TMPLINLIB=yes
       AC_MSG_RESULT("alpha* non-GNU C++")
     fi
   ;;
   *-dec-osf*)
     if test ! X$GXX = Xyes; then
-      CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
-      LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      TMPLREPO=cxx_repository
+      TMPLINLIB=yes
       AC_MSG_RESULT("*-dec-osf* non-GNU C++")
     fi
   ;;
@@ -1250,6 +1274,8 @@ case $target in
     AC_MSG_RESULT(none)
   ;;
 esac
+AC_SUBST(TMPLREPO)
+AC_SUBST(TMPLINLIB)
 
 dnl --------- Shared library configuration. ---------
 
@@ -1268,7 +1294,7 @@ libtool_flags=
 test "$enableshared" = no && libtool_flags="$libtool_flags --disable-shared"
 test "$enablestatic" = no && libtool_flags="$libtool_flags --disable-static"
 
-test ! -d bin || mkdir bin
+test -d bin || mkdir bin
 
 CC="$CXX" CFLAGS="$CXXFLAGS" CPPFLAGS="$CPPFLAGS" \
 LD="$LD" LDFLAGS="$LDFLAGS" LIBS="$LIBS $FLIBS" \
@@ -1298,7 +1324,9 @@ AC_SUBST(SCLIBS)
 
 dnl --------- Defined the library directory macros. ---------
 
+if test "$enableproduction" = "no"; then
 AC_DEFINE_UNQUOTED(SRC_SCLIBDIR, "$srcdir/lib")
+fi
 AC_DEFINE_UNQUOTED(INSTALLED_SCLIBDIR, "$prefix/lib")
 
 dnl --------- Create the stub Makefiles. ---------

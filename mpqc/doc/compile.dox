@@ -17,39 +17,32 @@ at any GNU software FTP repository.
          the BLAS libraries, however, you can turn off the use of a FORTRAN
          compiler by giving <tt>--without-f77</tt> as an option to the
          configure script, however, this will cause problems unless you
-         only want the utility libraries.  The following compilers are
-         likely to work:
+         only want the utility libraries.  The compilers listed below are
+         known to work.  Other ISO C++ compilers should work as well.
 
        <ul>
 
-           <li> EGCS 1.1.2, available from <a
-                href="http://gcc.gnu.org">http://gcc.gnu.org</a> for
-                Linux/IA32.  However, there seems to be problems with the C
-                and/or math library in RedHat 6.0, so use either Redhat
-                5.2, or 6.1 or later.  GCC 2.95.x and prereleases of GCC
-                2.96 are known to have problems compiling MPQC.
+           <li> GCC 2.96 and later, available from <a
+                href="http://gcc.gnu.org">http://gcc.gnu.org</a>.  However,
+                the 3.0 and 3.0.1 releases of GCC are not recommended.
 
-           <li> IBM xlC 3.1.4 and later.  Use the versions of the
-                compilers with the "_r" appended to the name, since SC
-                uses multi-threading.
+           <li> IBM xlC 5.0.2 and later work with both 32 and 64 bit modes
+                Use the versions of the compilers with the "_r" appended to
+                the name, since SC uses multi-threading.  You must also
+                specify that RTTI is used: <tt>--with-cxx='xlC_r
+                -qrtti'</tt>.
 
-           <li> SGI/IRIX C, C++, and FORTRAN version 7.2.1 work using the
-                N32 object format.  Older versions of the SGI compilers,
-                in particular 6.0.1, are known to fail.
+           <li> Compaq/Alpha/Linux with Compaq C++ 6.3.6.8 and later work.
+                Special configure options are needed: <tt>--with-cxx='cxx
+                -D__USE_STD_IOSTREAM'</tt>
 
-           <li> SGI/IRIX C, C++, and FORTRAN version 7.2.1 work using the
-                64 bit object format.  The <tt>configure</tt> script must
-                be given the following options to build 64 bit executables:
-                <tt>--with-cc="cc -64" --with-cxx="CC -64" --with-f77="f77
-                -64"</tt>
+           <li> The Intel 5.0.1 Linux compilers for IA-32 work.  Version
+                5.0.1 for IA-64 will not work.
 
-           <li> Compaq/Alpha/Linux with Compaq C++.
-
-           <li> Compaq/Alpha/Tru64 V4.0 with C++ V6.2-024.
-
-           <li> Sun/Solaris 2.7 with Workshop 5.0.  There are still
-                bugs in this environment, but Hartree-Fock optimizations
-                seem to work.
+           <li> The KAI version 4.0e1 compiler works.  Special configure
+                options are needed: <tt>--with-cxx='KCC
+                --one_instantiation_per_object' --with-ar=KCC
+                --with-ar-flags=-o</tt>
 
        </ul>
 
@@ -67,11 +60,13 @@ at any GNU software FTP repository.
          the default library search path, then configure must be given
          --with-libs, --with-libdirs, or both.
 
-    <li> GNU flex (version 2.5.2 or greater): This is a lexical analyzer
-         generator used to generate code to read input files. Make sure
-         that <tt>FlexLexer.h</tt> from flex is in your include path. You
-         may need to give the path to <tt>FlexLexer.h</tt> to configure
-         with an argument that looks something like:
+    <li> GNU flex, version 2.5.4a, patched: This is a lexical analyzer
+         generator used to generate code to read input files. A patch is
+         needed to support ISO C++: <a
+         href="http://aros.ca.sandia.gov/~cljanss/mpqc/distrib/patch-flex-2.5.4a-snl.gz">patch-flex-2.5.4a-snl.gz</a>.
+         Make sure that <tt>FlexLexer.h</tt> from flex is in your include
+         path. You may need to give the path to <tt>FlexLexer.h</tt> to
+         configure with an argument that looks something like:
          <tt>--with-include=-I/usr/local/include</tt>
 
     <li> GNU bison (version 1.24 or greater): This is a parser generator used

@@ -34,10 +34,6 @@ endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
 
-ifeq ($(ARCH),I860)
-  DEFINES += -DLINPACKD=-lkmath
-endif
-
 #################################################################
 
 default:: $(DEPENDINCLUDE)
@@ -52,6 +48,9 @@ $(TOPDIR)/lib/libmpqc.a: $(BINOBJ)
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
+$(TOPDIR)/lib/libmpqc.la: $(BINOBJ)
+	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)
+
 install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)
 	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(libdir)
@@ -59,6 +58,13 @@ install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
 install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
+
+install::
+	/bin/rm -f $(bindir)/chkmpqcout
+	sed "s+exec perl+exec perl -I$(prefix)/lib/perl+" \
+		< $(SRCDIR)/validate/checkout.pl \
+		> $(bindir)/chkmpqcout
+	chmod 555 $(bindir)/chkmpqcout
 
 distclean::
 	/bin/rm -f mpqc

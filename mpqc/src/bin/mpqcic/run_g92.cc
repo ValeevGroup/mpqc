@@ -60,6 +60,10 @@ run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
     if (g92_keyval->exists("g92_dir"))
         g92_dir=g92_keyval->pcharvalue("g92_dir");
 
+    char *extra_junk = g92_keyval->pcharvalue("extra_commands");
+    if (g92_keyval->error() != KeyVal::OK)
+      extra_junk=0;
+    
     // Make sure we have a legitimate run name
     char *name;
     if (!name_in)
@@ -105,7 +109,7 @@ run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
         
     // Run g92 calculations and then parse the output 
     run_g92_calc(name, runtype, basis, memory,
-                 use_checkpoint_guess, scratch_dir, g92_dir, mole,
+                 use_checkpoint_guess, scratch_dir, g92_dir, extra_junk, mole,
                  charge, multiplicity);
 
     if (parse_g92(name, g92_calc[runtype].parse_string, mole->natom(),
@@ -136,7 +140,8 @@ run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
 
 int
 run_g92_calc(char *prefix, int runtype, char *basis, int memory,
-             int chk_guess, char *scratch, char *g92_dir, RefMolecule &mole,
+             int chk_guess, char *scratch, char *g92_dir, char *extra_junk,
+             RefMolecule &mole,
              int charge, int multiplicity)
 {
     FILE *fp_g92_input;
@@ -182,6 +187,29 @@ run_g92_calc(char *prefix, int runtype, char *basis, int memory,
                 mole->atom(i).operator[](0), mole->atom(i).operator[](1),
                 mole->atom(i).operator[](2));
     fprintf(fp_g92_input,"\n");
+    
+    if (extra_junk) {
+      char *new_junk= new char[strlen(extra_junk)+1];
+      int ii=0;
+      for (int i=0; i < strlen(extra_junk); i++) {
+        if (extra_junk[i]=='\\') {
+          if (extra_junk[i+1]=='n') {
+            new_junk[ii] = '\n';
+            ii++;
+          } else if (extra_junk[i+1]=='t') {
+            new_junk[ii] = '\t';
+            ii++;
+          }
+          i++;
+        } else {
+         new_junk[ii]=extra_junk[i];
+         ii++;
+        }
+      }           
+      vfprintf(fp_g92_input,new_junk,0);
+      fprintf(fp_g92_input,"\n");
+    }
+    
     fclose(fp_g92_input);
 
     // Set environmental variable necessary for g92 run

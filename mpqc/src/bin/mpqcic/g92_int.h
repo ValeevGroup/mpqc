@@ -29,7 +29,8 @@ int run_g92(char *name_in, const RefKeyVal &, RefMolecule&,
             double &energy, RefSCVector& gradient);
 
 int run_g92_calc(char *prefix, int runtype, char *basis, int memory,
-                 int chk_guess, char *scratch, char *g92_dir, RefMolecule &,
+                 int chk_guess, char *scratch, char *g92_dir, char *extra_inp,
+                 RefMolecule &,
                  int charge, int multiplicity);
 
 int parse_g92(char *prefix, char *parse_string, int natoms, double & energy,

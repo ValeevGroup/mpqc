@@ -433,25 +433,25 @@ PointGroup::PointGroup(const char *s, SymmetryOperation& so, Point& or)
   origin_ = or;
 }
 
-PointGroup::PointGroup(KeyVal& kv)
+PointGroup::PointGroup(const RefKeyVal& kv)
   : symb(0)
 {
-  if (kv.exists("symmetry"))
-    symb = kv.pcharvalue("symmetry");
+  if (kv->exists("symmetry"))
+    symb = kv->pcharvalue("symmetry");
   else
     set_symbol("c1");
 
-  if (kv.exists("symmetry_frame")) {
+  if (kv->exists("symmetry_frame")) {
     for (int i=0; i < 3; i++)
       for (int j=0; j < 3; j++) 
-        frame(i,j) = kv.doublevalue("symmetry_frame",i,j);
+        frame(i,j) = kv->doublevalue("symmetry_frame",i,j);
   } else {
     frame(0,0) = frame(1,1) = frame(2,2) = 1;
   }
 
-  if (kv.exists("origin")) {
+  if (kv->exists("origin")) {
     for (int i=0; i < 3; i++)
-      origin_[i] = kv.doublevalue("origin",i);
+      origin_[i] = kv->doublevalue("origin",i);
   } else {
     origin_[0] = origin_[1] = origin_[2] =0;
   }

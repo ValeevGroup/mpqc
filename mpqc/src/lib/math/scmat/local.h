@@ -20,7 +20,7 @@ class LocalSCDimension: public SCDimension {
     int n_;
   public:
     LocalSCDimension(int n);
-    LocalSCDimension(KeyVal&);
+    LocalSCDimension(const RefKeyVal&);
     LocalSCDimension(StateIn&);
     ~LocalSCDimension();
     void save_data_state(StateOut&);
@@ -50,7 +50,7 @@ class LocalSCVector: public SCVector {
   public:
     LocalSCVector();
     LocalSCVector(LocalSCDimension*);
-    LocalSCVector(KeyVal&);
+    LocalSCVector(const RefKeyVal&);
     LocalSCVector(StateIn&);
     ~LocalSCVector();
     void save_data_state(StateOut&);
@@ -87,7 +87,7 @@ class LocalSCMatrix: public SCMatrix {
     void resize(int,int);
   public:
     LocalSCMatrix();
-    LocalSCMatrix(KeyVal&);
+    LocalSCMatrix(const RefKeyVal&);
     LocalSCMatrix(StateIn&);
     LocalSCMatrix(LocalSCDimension*,LocalSCDimension*);
     ~LocalSCMatrix();
@@ -129,7 +129,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void resize(int n);
   public:
     LocalSymmSCMatrix();
-    LocalSymmSCMatrix(KeyVal&);
+    LocalSymmSCMatrix(const RefKeyVal&);
     LocalSymmSCMatrix(StateIn&);
     LocalSymmSCMatrix(LocalSCDimension*);
     ~LocalSymmSCMatrix();
@@ -169,7 +169,7 @@ class LocalDiagSCMatrix: virtual public DiagSCMatrix {
     void resize(int n);
   public:
     LocalDiagSCMatrix();
-    LocalDiagSCMatrix(KeyVal&);
+    LocalDiagSCMatrix(const RefKeyVal&);
     LocalDiagSCMatrix(StateIn&);
     LocalDiagSCMatrix(LocalSCDimension*);
     ~LocalDiagSCMatrix();

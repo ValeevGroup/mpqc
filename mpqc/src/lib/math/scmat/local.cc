@@ -61,9 +61,9 @@ LocalSCDimension::LocalSCDimension(StateIn&s):
   s.get(n_);
 }
 
-LocalSCDimension::LocalSCDimension(KeyVal&keyval)
+LocalSCDimension::LocalSCDimension(const RefKeyVal&keyval)
 {
-  n_ = keyval.intvalue("n");
+  n_ = keyval->intvalue("n");
 }
 
 void
@@ -147,17 +147,17 @@ LocalSCMatrix::LocalSCMatrix(StateIn&s):
   rows = init_rect_rows(block->data,d1->n(),d2->n());
 }
 
-LocalSCMatrix::LocalSCMatrix(KeyVal&keyval)
+LocalSCMatrix::LocalSCMatrix(const RefKeyVal&keyval)
 {
-  d1 = keyval.describedclassvalue("rowdim");
-  d2 = keyval.describedclassvalue("coldim");
+  d1 = keyval->describedclassvalue("rowdim");
+  d2 = keyval->describedclassvalue("coldim");
   d1.require_nonnull();
   d2.require_nonnull();
   block = new SCMatrixRectBlock(0,d1->n(),0,d2->n());
   rows = init_rect_rows(block->data,d1->n(),d2->n());
   for (int i=0; i<nrow(); i++) {
       for (int j=0; j<ncol(); j++) {
-          set_element(i,j,keyval.doublevalue("data",i,j));
+          set_element(i,j,keyval->doublevalue("data",i,j));
         }
     }
 }
@@ -472,15 +472,15 @@ LocalSymmSCMatrix::LocalSymmSCMatrix(StateIn&s):
   rows = init_symm_rows(block->data,d->n());
 }
 
-LocalSymmSCMatrix::LocalSymmSCMatrix(KeyVal&keyval)
+LocalSymmSCMatrix::LocalSymmSCMatrix(const RefKeyVal&keyval)
 {
-  d = keyval.describedclassvalue("dim");
+  d = keyval->describedclassvalue("dim");
   d.require_nonnull();
   block = new SCMatrixLTriBlock(0,d->n());
   rows = init_symm_rows(block->data,d->n());
   for (int i=0; i<n(); i++) {
       for (int j=0; j<=i; j++) {
-          set_element(i,j,keyval.doublevalue("data",i,j));
+          set_element(i,j,keyval->doublevalue("data",i,j));
         }
     }
 }
@@ -790,13 +790,13 @@ LocalDiagSCMatrix::LocalDiagSCMatrix(StateIn&s):
   block.restore_state(s);
 }
 
-LocalDiagSCMatrix::LocalDiagSCMatrix(KeyVal&keyval)
+LocalDiagSCMatrix::LocalDiagSCMatrix(const RefKeyVal&keyval)
 {
-  d = keyval.describedclassvalue("dim");
+  d = keyval->describedclassvalue("dim");
   d.require_nonnull();
   block = new SCMatrixDiagBlock(0,d->n());
   for (int i=0; i<n(); i++) {
-      set_element(i,keyval.doublevalue("data",i));
+      set_element(i,keyval->doublevalue("data",i));
     }
 }
 
@@ -934,13 +934,13 @@ LocalSCVector::LocalSCVector(StateIn&s):
   block.restore_state(s);
 }
 
-LocalSCVector::LocalSCVector(KeyVal&keyval)
+LocalSCVector::LocalSCVector(const RefKeyVal&keyval)
 {
-  d = keyval.describedclassvalue("dim");
+  d = keyval->describedclassvalue("dim");
   d.require_nonnull();
   block = new SCVectorSimpleBlock(0,d->n());
   for (int i=0; i<n(); i++) {
-      set_element(i,keyval.doublevalue("data",i,i));
+      set_element(i,keyval->doublevalue("data",i,i));
     }
 }
 

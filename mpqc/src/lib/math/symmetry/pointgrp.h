@@ -146,7 +146,7 @@ class PointGroup
     PointGroup(const char*);
     PointGroup(const char*,SymmetryOperation&);
     PointGroup(const char*,SymmetryOperation&,Point&);
-    PointGroup(KeyVal&);
+    PointGroup(const RefKeyVal&);
     PointGroup(StateIn&);
     PointGroup(PointGroup&);
     ~PointGroup();

@@ -1054,7 +1054,7 @@ if test X$HAVE_PTHREAD = Xyes; then
 fi
 
 AC_CHECK_LIB(dl,main)
-AC_CHECK_LIB(sun,main)
+dnl AC_CHECK_LIB(sun,main)
 AC_CHECK_LIB(m,main)
 AC_CHECK_LIB(fl,main)
 AC_CHECK_HEADER(perf.h,[
@@ -1274,7 +1274,10 @@ AC_LANG_RESTORE
 
 dnl --------- Checks for rand functions ---------
 
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(drand48)
+AC_LANG_RESTORE
 
 dnl --------- Checks for SYSV IPC. ---------
 

@@ -35,15 +35,12 @@ molecule = $:water
 solvent<BEMSolvent>: (
     solute = $:molecule
     surface<TriangulatedImplicitSurface>: (
-        surface<TriangulatedSurface10>: (
-            verbose = yes
-            integrator<GaussTriangleIntegrator>: (
-                n = 7
-              )
-            % These are for TriangulatedSurface10:
-            volume = $..:volume
-            value = 0.0
+        % TriangulatedSurface
+        verbose = yes
+        integrator<GaussTriangleIntegrator>: (
+             n = 7
           )
+        % TriangulatedImplicitSurface
         volume<ConnollyShape>: (
             molecule = $:molecule
             probe_radius = 2.6456173
@@ -54,6 +51,7 @@ solvent<BEMSolvent>: (
         %remove_slender_triangles = 1
         short_edge_factor = 0.4
         slender_triangle_factor = 0.2
+        order = 2
       )
     dielectric_constant = 78.0
   )

@@ -31,6 +31,11 @@ vpath %.so $(TOPDIR)/lib
 LIBDIR = $(shell $(SRCDIR)/$(TOPDIR)/bin/rmdotdot `pwd`/$(TOPDIR)/lib)
 
 #
+# SRCLIBDIR is the full path to the lib subdirectory of the source dir
+#
+SRCLIBDIR = $(shell $(SRCDIR)/$(TOPDIR)/bin/rmdotdot $(SRCDIR)/$(TOPDIR)/lib/)
+
+#
 # THISDIR is the name of the current directory relative to TOPDIR/src.lib/
 #
 THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src.lib/,,$(shell pwd))

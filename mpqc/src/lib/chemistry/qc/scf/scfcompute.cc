@@ -76,7 +76,7 @@ SCF::compute_vector(double& eelec)
   
   init_vector();
   
-  tbi = integral()->two_body_int(basis());
+  tbi = integral()->electron_repulsion();
 
   // initialize some junk
   double nucrep = molecule()->nuclear_repulsion_energy();
@@ -404,7 +404,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
   RefSymmSCMatrix lag = lagrangian();
   RefSymmSCMatrix dens = gradient_density();
 
-  RefOneBodyDerivInt obints = integral()->deriv_int(basis());
+  RefOneBodyDerivInt obints = integral()->deriv();
   for (int x=0; x < molecule()->natom(); x++) {
     for (int ish=0; ish < gbs.nshell(); ish++) {
       GaussianShell& gsi = gbs(ish);
@@ -467,7 +467,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
   
   gradient.print("one electron contribution");
 
-  RefTwoBodyDerivInt tbints = integral()->two_body_deriv_int(basis());
+  RefTwoBodyDerivInt tbints = integral()->electron_repulsion_deriv();
   
   // now the two electron part
   for (int i=0; i < gbs.nshell(); i++) {

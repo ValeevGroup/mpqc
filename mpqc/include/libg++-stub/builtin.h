@@ -29,7 +29,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #define _builtin_h 1
 
 #include <stddef.h>
-#include <std.h>
+/*#include <std.h>*/
 #include <math.h>
 
 #ifdef __GNUG__
@@ -40,6 +40,16 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 typedef void (*one_arg_error_handler_t)(const char*);
 typedef void (*two_arg_error_handler_t)(const char*, const char*);
+
+extern _VOLATILE_VOID default_one_arg_error_handler(const char*);
+extern _VOLATILE_VOID default_two_arg_error_handler(const char*, const char*);
+
+extern two_arg_error_handler_t lib_error_handler;
+
+extern two_arg_error_handler_t 
+       set_lib_error_handler(two_arg_error_handler_t f);
+
+#if 0
 
 long         gcd(long, long);
 long         lg(unsigned long); 
@@ -54,14 +64,6 @@ char*        dtoa(double x, char cvt = 'g', int width = 0, int prec = 6);
 unsigned int hashpjw(const char*);
 unsigned int multiplicativehash(int);
 unsigned int foldhash(double);
-
-extern _VOLATILE_VOID default_one_arg_error_handler(const char*);
-extern _VOLATILE_VOID default_two_arg_error_handler(const char*, const char*);
-
-extern two_arg_error_handler_t lib_error_handler;
-
-extern two_arg_error_handler_t 
-       set_lib_error_handler(two_arg_error_handler_t f);
 
 
 double abs(double arg);
@@ -155,5 +157,6 @@ inline int testbit(long x, long b)
   return ((x & (1 << b)) != 0);
 }
 
+#endif
 #endif
 #endif

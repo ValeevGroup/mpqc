@@ -29,12 +29,14 @@ static Debugger *signals[NSIG];
 //////////////////////////////////////////////////////////////////////
 // static routines
 
+extern "C" {
 #ifdef SIGHASELLIP
 // required for CC -64 on IRIX 6.0.1 and for gcc on IRIX 5.3
 typedef RETSIGTYPE (*handler_type)(...);
 #else
 typedef RETSIGTYPE (*handler_type)(int);
 #endif
+}
 
 static void
 handler(int sig)

@@ -1,8 +1,11 @@
 %{
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:59  etseidl
- * Initial revision
+ * Revision 1.2  1996/05/02 23:17:04  cljanss
+ * SP2 update
+ *
+ * Revision 1.1.1.1  1993/12/29 12:54:00  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/03/30  23:13:09  seidl
  * merge in sandia changes
@@ -128,3 +131,9 @@ arg        (({ws}{identifier}{ws}",")|({ws}{identifier}{ws}")")|({ws}")"))
 "\n"						;
 %%
 
+
+int
+yywrap()
+{
+  return 1;
+}

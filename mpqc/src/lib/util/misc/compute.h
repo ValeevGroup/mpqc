@@ -95,8 +95,8 @@ class AccResultInfo: public ResultInfo
 
 #include <util/misc/comptmpl.h>
 
-typedef Result<int> Resultint;
-typedef Result<double> Resultdouble;
+typedef NCResult<int> Resultint;
+typedef NCResult<double> Resultdouble;
 typedef NCAccResult<double> AccResultdouble;
 
 #endif

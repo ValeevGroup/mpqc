@@ -56,6 +56,7 @@ SCMatrixBlock::deepcopy() const
   cerr << "SCMatrixBlock of type " << class_name()
        << " cannot be deep copied" << endl;
   abort();
+  return 0;
 }
 
 double *
@@ -64,6 +65,7 @@ SCMatrixBlock::dat()
   cerr << "SCMatrixBlock of type " << class_name()
        << " cannot provide internal data" << endl;
   abort();
+  return 0;
 }
 
 int
@@ -72,6 +74,7 @@ SCMatrixBlock::ndat() const
   cerr << "SCMatrixBlock of type " << class_name()
        << " cannot provide size of internal data" << endl;
   abort();
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -973,7 +976,7 @@ SCMatrixListSubblockIter::begin()
 int
 SCMatrixListSubblockIter::ready()
 {
-  iter_ != list_->end();
+  return iter_ != list_->end();
 }
 
 void
@@ -1161,10 +1164,10 @@ SCMatrixJointSubblockIter::ready()
     return 1;
   else if (!nready)
     return 0;
-  else {
-      cerr << "SCMatrixJointSubblockIter: incompatible iterators" << endl;
-      abort();
-    }
+
+  cerr << "SCMatrixJointSubblockIter: incompatible iterators" << endl;
+  abort();
+  return 0;
 }
 
 void

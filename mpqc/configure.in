@@ -91,6 +91,11 @@ AC_ARG_WITH(ar,
 AR=$withval
 )
 
+AC_ARG_WITH(ld,
+[  --with-ld               Names the object linker.],
+LD=$withval
+)
+
 AC_ARG_WITH(include,
 [  --with-include          Specifies include directories (-Idir1 -Idir2).],
 EXTRAINCLUDE=$withval
@@ -150,9 +155,9 @@ dnl -------- Checks for cross compiling. ----------
 
 AC_C_CROSS
 
-if test X$cross_compiling = Xyes -a X$target = X$host; then
-  AC_MSG_ERROR([Cross compiling, but target is host (use --host).])
-fi
+#if test X$cross_compiling = Xyes -a X$target = X$host; then
+#  AC_MSG_ERROR([Cross compiling, but target is host (use --host).])
+#fi
 
 dnl -------- Checks for compiler/linker options. ----------
 
@@ -172,6 +177,10 @@ CXXOPTIONS_MISC=
 
 OBJSUF=o
 LIBSUF=a
+CCDEPENDSUF=none
+CXXDEPENDSUF=none
+CCDEPENDFLAGS=-M
+CXXDEPENDFLAGS=-M
 
 LDFLAGS=
 SH_LD=ld
@@ -227,11 +236,22 @@ fi
 
 dnl -- special optimization options --
 
+AC_MSG_CHECKING([for special optimization options])
 case $target in
+  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.*)
+    if test X$GCC != Xyes; then
+      COPTIONS_OPT="-O3"
+    fi
+    if test X$GXX != Xyes; then
+      CXXOPTIONS_OPT="-O3"
+    fi
+    AC_MSG_RESULT("rs6000")
+  ;;
   mips*-sgi-irix5*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O -Olimit 2000"
     fi
+    AC_MSG_RESULT("mips-sgi-irix5")
   ;;
   mips4-sgi-irix* | r8000-sgi-irix*)
     if test X$GCC != Xyes; then
@@ -243,6 +263,7 @@ case $target in
         -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
       AC_DEFINE(NO_VIRTUAL_BASES)
     fi
+    AC_MSG_RESULT("mips4-sgi-irix or r8000-sgi-irix")
   ;;
   changequote(<<, >>)dnl
   i[56]86-*)
@@ -252,12 +273,17 @@ case $target in
     if test X$GXX = Xyes; then
       CXXOPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
     fi
+    AC_MSG_RESULT("i586 or i686")
   ;;
   changequote([, ])dnl
   i860-intel-*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O3 -Knoieee"
     fi
+    AC_MSG_RESULT("i860")
+  ;;
+  *)
+    AC_MSG_RESULT("none")
   ;;
 esac
 
@@ -284,7 +310,6 @@ changequote([, ])dnl
     else
       COPTIONS_MISC="$COPTIONS_MISC -64 -mips4"
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4"
-      CXX="\$(SRCTOPDIR)/bin/CCfix"
     fi
     AC_MSG_RESULT(mips4)
   ;;
@@ -295,9 +320,28 @@ changequote([, ])dnl
     else
       COPTIONS_MISC="$COPTIONS_MISC -64 -mips4 -TARG:processor=r8000"
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -TARG:processor=r8000"
-      CXX="\$(SRCTOPDIR)/bin/CCfix"
     fi
     AC_MSG_RESULT(r8000)
+  ;;
+  rs6000-*)
+    if test X$GCC != Xyes; then
+      LDFLAGS="$LDFLAGS -bmaxdata:0x40000000"
+    fi
+    if test X$CC = XxlC; then
+      CCDEPENDSUF=u
+    fi
+    if test X$CXX = XxlC; then
+      CXXDEPENDSUF=u
+      CXXDEPENDFLAGS="-M -E"
+    fi
+    if test X$CC = Xmpcc; then
+      CCDEPENDSUF=u
+    fi
+    if test X$CXX = XmpCC; then
+      CXXDEPENDSUF=u
+      CXXDEPENDFLAGS="-M -E"
+    fi
+    AC_MSG_RESULT(rs6000)
   ;;
 changequote(<<, >>)dnl
   i[456]86-*)
@@ -383,6 +427,10 @@ AC_SUBST(SH_LDFLAGS)
 
 AC_SUBST(OBJSUF)
 AC_SUBST(LIBSUF)
+AC_SUBST(CCDEPENDSUF)
+AC_SUBST(CXXDEPENDSUF)
+AC_SUBST(CCDEPENDFLAGS)
+AC_SUBST(CXXDEPENDFLAGS)
 
 dnl -------- Checks for architecture specific features. --------
 dnl (Doesn't work for cross compilation.)
@@ -391,7 +439,7 @@ dnl AC_CHECK_SIZEOF(void*)
 dnl This version works on more machines without the need to run
 dnl a test program.
 AC_DEFUN(SC_C_BIGENDIAN,
-[AC_CHECK_HEADERS(fp.h endian.h machine/endian.h sys/endian.h)
+[AC_CHECK_HEADERS(fp.h endian.h machine/endian.h sys/endian.h sys/machine.h)
 AC_CACHE_CHECK(whether byte ordering is bigendian, sc_cv_c_bigendian,
 [sc_cv_c_bigendian=unknown
 # See if sys/param.h defines the BYTE_ORDER macro.
@@ -407,6 +455,9 @@ AC_TRY_COMPILE([#include "confdefs.h"
 #endif
 #ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
+#endif
+#ifdef HAVE_SYS_MACHINE_H
+#include <sys/machine.h>
 #endif
 #include <sys/types.h>
 #include <sys/param.h>], [
@@ -453,7 +504,7 @@ AC_CHECK_LIB(m,exit)
 AC_CHECK_LIB(fl,exit)
 
 AC_CHECK_LIB(mpi,exit)
-AC_CHECK_LIB(mpl,exit)
+AC_CHECK_LIB(mpi,mpc_rcvncall)
 AC_CHECK_LIB(pvm,exit)
 
 AC_CHECK_LIB(nx,hrecv,[
@@ -476,7 +527,7 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h limits.h sys/ioctl.h sys/time.h syslog.h unistd.h)
 AC_CHECK_HEADERS(termios.h sys/stat.h sys/types.h dlfcn.h)
-AC_CHECK_HEADERS(cube.h nx.h mpi.h mpl.h pvm.h)
+AC_CHECK_HEADERS(cube.h nx.h mpi.h pvm.h)
 
 dnl ---------- Make sure we got everything needed. -----------
 
@@ -486,7 +537,7 @@ if test X$ac_cv_lib_mpi_exit = Xyes -a X$ac_cv_header_mpi_h = Xyes; then
 fi
 AC_SUBST(HAVE_MPI)
 
-if test X$ac_cv_lib_mpl_exit = Xyes -a X$ac_cv_header_mpl_h = Xyes; then
+if test X$ac_cv_lib_mpi_mpc_rcvncall = Xyes; then
   HAVE_MPL=yes
   AC_DEFINE(HAVE_MPL)
 fi
@@ -520,16 +571,19 @@ dnl --------- Check for signal handler argument lists. ---------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_MSG_CHECKING([signal handler arguments])
+AC_MSG_CHECKING([signal handler needs ellipsis])
 AC_TRY_LINK([
 #include <signal.h>
+extern "C" {
+  typedef void (*signal_handler)(...);
+  void handler(int);
+}
+void handler(int) {}
 ],[
-  extern void (*signal (int sig, void (*func)(...)))(...);
+  signal(SIGINT, (signal_handler)handler);
 ],
-SIGHASELLIP=yes,
-SIGHASELLLIP=no)
-AC_MSG_RESULT($SIGHASELLIP)
-AC_DEFINE_UNQUOTED(SIGHASELLIP,$SIGHASELLIP)
+AC_DEFINE(SIGHASELLIP) AC_MSG_RESULT(yes),
+AC_MSG_RESULT(no))
 AC_LANG_RESTORE
 
 dnl --------- Checks for SYSV IPC. ---------
@@ -576,6 +630,27 @@ case $target in
   i860-intel-osf*)
     LDFLAGS="$LDFLAGS -mnx -mnoieee"
     AC_MSG_RESULT(osf paragon)
+  ;;
+  mips4-*)
+    if test X$CXX = XCC; then
+      CXX="\$(SRCTOPDIR)/bin/CCfix"
+    fi
+    AC_MSG_RESULT(mips4)
+  ;;
+  r8000-*)
+    if test X$CXX = XCC; then
+      CXX="\$(SRCTOPDIR)/bin/CCfix"
+    fi
+    AC_MSG_RESULT(r8000)
+  ;;
+  rs6000-*)
+    if test X$CXX = XmpCC; then
+      CXX="\$(SRCTOPDIR)/bin/mpCCfix"
+    fi
+    if test X$CXX = XxlC; then
+      CXX="\$(SRCTOPDIR)/bin/xlCfix"
+    fi
+    AC_MSG_RESULT(rs6000)
   ;;
   *)
     AC_MSG_RESULT(none)

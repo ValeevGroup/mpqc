@@ -9,4 +9,4 @@ foreach i ($*)
     endif
   end
 
-xlC $options
+mpCC $options

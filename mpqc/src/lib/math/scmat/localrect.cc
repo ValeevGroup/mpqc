@@ -669,7 +669,7 @@ LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 void
 LocalSCMatrix::element_op(const RefSCElementOp& op)
 {
-  op->process(block.pointer());
+  op->process_spec(block.pointer());
 }
 
 void
@@ -683,7 +683,7 @@ LocalSCMatrix::element_op(const RefSCElementOp2& op,
       fprintf(stderr,"LocalSCMatrix: bad element_op\n");
       abort();
     }
-  op->process(block.pointer(), lm->block.pointer());
+  op->process_spec(block.pointer(), lm->block.pointer());
 }
 
 void
@@ -700,7 +700,7 @@ LocalSCMatrix::element_op(const RefSCElementOp3& op,
       fprintf(stderr,"LocalSCMatrix: bad element_op\n");
       abort();
     }
-  op->process(block.pointer(), lm->block.pointer(), ln->block.pointer());
+  op->process_spec(block.pointer(), lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH

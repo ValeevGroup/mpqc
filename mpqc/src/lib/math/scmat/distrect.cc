@@ -758,7 +758,7 @@ DistSCMatrix::element_op(const RefSCElementOp& op)
   for (i = blocklist->begin(); i != blocklist->end(); i++) {
 //       cout << "rect elemop processing a block of type "
 //            << i.block()->class_name() << endl;
-      op->process(i.block());
+      op->process_base(i.block());
     }
 }
 
@@ -777,7 +777,7 @@ DistSCMatrix::element_op(const RefSCElementOp2& op,
   for (i = blocklist->begin(), j = lm->blocklist->begin();
        i != blocklist->end();
        i++, j++) {
-      op->process(i.block(), j.block());
+      op->process_base(i.block(), j.block());
     }
 }
 
@@ -801,7 +801,7 @@ DistSCMatrix::element_op(const RefSCElementOp3& op,
            k = ln->blocklist->begin();
        i != blocklist->end();
        i++, j++, k++) {
-      op->process(i.block(), j.block(), k.block());
+      op->process_base(i.block(), j.block(), k.block());
     }
 }
 

@@ -46,11 +46,11 @@ class SCElementOp: public SavableState {
     virtual int has_side_effects();
     virtual void collect(RefSCElementOp&);
     virtual void process(SCMatrixBlockIter&) = 0;
-    void process(SCMatrixBlock*);
-    virtual void process(SCMatrixRectBlock*);
-    virtual void process(SCMatrixLTriBlock*);
-    virtual void process(SCMatrixDiagBlock*);
-    virtual void process(SCVectorSimpleBlock*);
+    void process_base(SCMatrixBlock*);
+    virtual void process_spec(SCMatrixRectBlock*);
+    virtual void process_spec(SCMatrixLTriBlock*);
+    virtual void process_spec(SCMatrixDiagBlock*);
+    virtual void process_spec(SCVectorSimpleBlock*);
 };
 DCRef_declare(SCElementOp);
 SSRef_declare(SCElementOp);
@@ -73,11 +73,11 @@ class SCElementOp2: public SavableState {
     virtual int has_side_effects_in_arg();
     virtual void collect(RefSCElementOp2&);
     virtual void process(SCMatrixBlockIter&,SCMatrixBlockIter&) = 0;
-    void process(SCMatrixBlock*,SCMatrixBlock*);
-    virtual void process(SCMatrixRectBlock*,SCMatrixRectBlock*);
-    virtual void process(SCMatrixLTriBlock*,SCMatrixLTriBlock*);
-    virtual void process(SCMatrixDiagBlock*,SCMatrixDiagBlock*);
-    virtual void process(SCVectorSimpleBlock*,SCVectorSimpleBlock*);
+    void process_base(SCMatrixBlock*,SCMatrixBlock*);
+    virtual void process_spec(SCMatrixRectBlock*,SCMatrixRectBlock*);
+    virtual void process_spec(SCMatrixLTriBlock*,SCMatrixLTriBlock*);
+    virtual void process_spec(SCMatrixDiagBlock*,SCMatrixDiagBlock*);
+    virtual void process_spec(SCVectorSimpleBlock*,SCVectorSimpleBlock*);
 };
 DCRef_declare(SCElementOp2);
 SSRef_declare(SCElementOp2);
@@ -103,19 +103,19 @@ class SCElementOp3: public SavableState {
     virtual void process(SCMatrixBlockIter&,
                          SCMatrixBlockIter&,
                          SCMatrixBlockIter&) = 0;
-    void process(SCMatrixBlock*,SCMatrixBlock*,SCMatrixBlock*);
-    virtual void process(SCMatrixRectBlock*,
-                         SCMatrixRectBlock*,
-                         SCMatrixRectBlock*);
-    virtual void process(SCMatrixLTriBlock*,
-                         SCMatrixLTriBlock*,
-                         SCMatrixLTriBlock*);
-    virtual void process(SCMatrixDiagBlock*,
-                         SCMatrixDiagBlock*,
-                         SCMatrixDiagBlock*);
-    virtual void process(SCVectorSimpleBlock*,
-                         SCVectorSimpleBlock*,
-                         SCVectorSimpleBlock*);
+    void process_base(SCMatrixBlock*,SCMatrixBlock*,SCMatrixBlock*);
+    virtual void process_spec(SCMatrixRectBlock*,
+                              SCMatrixRectBlock*,
+                              SCMatrixRectBlock*);
+    virtual void process_spec(SCMatrixLTriBlock*,
+                              SCMatrixLTriBlock*,
+                              SCMatrixLTriBlock*);
+    virtual void process_spec(SCMatrixDiagBlock*,
+                              SCMatrixDiagBlock*,
+                              SCMatrixDiagBlock*);
+    virtual void process_spec(SCVectorSimpleBlock*,
+                              SCVectorSimpleBlock*,
+                              SCVectorSimpleBlock*);
 };
 DCRef_declare(SCElementOp3);
 SSRef_declare(SCElementOp3);
@@ -134,7 +134,7 @@ class SCElementScalarProduct: public SCElementOp2 {
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
     int has_collect();
-    void collect(RefSCElementOp&);
+    void collect(RefSCElementOp2&);
     double result();
     void init() { product = 0.0; }
 };

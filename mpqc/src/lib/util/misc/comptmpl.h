@@ -8,14 +8,31 @@ class Result: public ResultInfo {
     Result(const Result<T> &r, Compute*c):ResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
-    operator T() { update(); return _result; };
     T* operator ->() { update(); return &_result; };
     T& result() { update(); return _result; };
     T& result_noupdate() { return _result; };
     const T& result_noupdate() const { return _result; };
     void operator=(const T& a) { _result = a; }
     void operator=(const Result<T> &r)
-       { Result::operator=(r); _result = r._result; };
+       { ResultInfo::operator=(r); _result = r._result; };
+};
+
+// Result with non-class type
+template <class T>
+class NCResult: public ResultInfo {
+  private:
+    T _result;
+  public:
+    NCResult(Compute*c):ResultInfo(c) {};
+    NCResult(const NCResult<T> &r, Compute*c):ResultInfo(c)
+    { _result=r._result; }
+    operator T&() { update(); return _result; };
+    T& result() { update(); return _result; };
+    T& result_noupdate() { return _result; };
+    const T& result_noupdate() const { return _result; };
+    void operator=(const T& a) { _result = a; }
+    void operator=(const NCResult<T> &r)
+       { ResultInfo::operator=(r); _result = r._result; };
 };
 
 // Accuracy result with any type.  The result datum is not saved
@@ -29,7 +46,6 @@ class AccResult: public AccResultInfo {
     AccResult(const AccResult<T> &r, Compute*c):AccResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
-    operator T() { update(); return _result; };
     T* operator ->() { update(); return &_result; };
     T& result() { update(); return _result; };
     T& result_noupdate() { return _result; };
@@ -54,7 +70,6 @@ class SSAccResult: public AccResultInfo {
     SSAccResult(const SSAccResult<T> &r, Compute*c):AccResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
-    operator T() { update(); return _result; };
     T* operator ->() { update(); return &_result; };
     T& result() { update(); return _result; };
     T& result_noupdate() { return _result; };
@@ -80,8 +95,6 @@ class NCAccResult: public AccResultInfo {
     NCAccResult(const NCAccResult<T> &r, Compute*c):AccResultInfo(c)
     { _result=r._result; }
     operator T&() { update(); return _result; };
-    operator T() { update(); return _result; };
-    T* operator ->() { update(); return &_result; };
     T& result() { update(); return _result; };
     T& result_noupdate() { return _result; };
     const T& result_noupdate() const { return _result; };

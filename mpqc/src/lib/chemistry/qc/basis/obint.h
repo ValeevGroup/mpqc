@@ -72,7 +72,7 @@ class ShellPairIter {
     ~ShellPairIter();
 
     void init(const double * buffer, int ishell, int jshell,
-              int ioff, int joff, int nfunci, int nfunci, int redund=0,
+              int ioff, int joff, int nfunci, int nfuncj, int redund=0,
               double scale=1.0);
 
     void start() { icur=jcur=index=0; }

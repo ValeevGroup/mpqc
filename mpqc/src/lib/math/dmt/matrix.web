@@ -1,5 +1,8 @@
 %
 % $Log$
+% Revision 1.14  1996/05/02 23:16:35  cljanss
+% SP2 update
+%
 % Revision 1.13  1996/03/23 02:38:12  cljanss
 % Everything can now be configured with autoconf.
 %
@@ -1996,19 +1999,10 @@ booln binp; 			/* Binary? 0/1 $\rightarrow$ text/binary. */
 @ Get definitions of |O_CREAT|, {\it etc.}
 
 @<Include files.@> =
-#ifdef NCUBE
+#include <config.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#else /* NCUBE */
-#ifdef RS6000
-#include <fcntl.h>
-#define O_RDONLY 00000000
-#define O_WRONLY 00000001
-#define O_CREAT 00000400
-#define O_TRUNC 00001000
-#else /* RS6000 */
-#include <sys/fcntl.h>
-#endif /* RS6000 */
-#endif /* NCUBE */
+#endif
 
 @ In writing out the column, we first examine |binp| to determine
 whether we do a |lseek| and a |write|, or a |fprintf| to write out

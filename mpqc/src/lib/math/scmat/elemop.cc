@@ -55,7 +55,7 @@ SCElementOp::collect(RefSCElementOp&)
 }
 
 void
-SCElementOp::process(SCMatrixBlock* a)
+SCElementOp::process_base(SCMatrixBlock* a)
 {
   a->process(this);
 }
@@ -66,7 +66,7 @@ SCElementOp::process(SCMatrixBlock* a)
 // of SCElementOp must handle since it is pure virtual.
 
 void
-SCElementOp::process(SCMatrixRectBlock* a)
+SCElementOp::process_spec(SCMatrixRectBlock* a)
 {
   SCMatrixBlockIter*i = new SCMatrixRectBlockIter(a);
   SCMatrixBlockIter&r=*i;
@@ -77,21 +77,21 @@ SCElementOp::process(SCMatrixRectBlock* a)
   delete i;
 }
 void
-SCElementOp::process(SCMatrixLTriBlock* a)
+SCElementOp::process_spec(SCMatrixLTriBlock* a)
 {
   SCMatrixBlockIter*i = new SCMatrixLTriBlockIter(a);
   process(*i);
   delete i;
 }
 void
-SCElementOp::process(SCMatrixDiagBlock* a)
+SCElementOp::process_spec(SCMatrixDiagBlock* a)
 {
   SCMatrixBlockIter*i = new SCMatrixDiagBlockIter(a);
   process(*i);
   delete i;
 }
 void
-SCElementOp::process(SCVectorSimpleBlock* a)
+SCElementOp::process_spec(SCVectorSimpleBlock* a)
 {
   SCMatrixBlockIter*i = new SCVectorSimpleBlockIter(a);
   process(*i);
@@ -148,7 +148,7 @@ SCElementOp2::collect(RefSCElementOp2&)
 }
 
 void
-SCElementOp2::process(SCMatrixBlock* a, SCMatrixBlock* b)
+SCElementOp2::process_base(SCMatrixBlock* a, SCMatrixBlock* b)
 {
   a->process(this, b);
 }
@@ -159,7 +159,7 @@ SCElementOp2::process(SCMatrixBlock* a, SCMatrixBlock* b)
 // of SCElementOp2 must handle since it is pure virtual.
 
 void
-SCElementOp2::process(SCMatrixRectBlock* a,SCMatrixRectBlock* b)
+SCElementOp2::process_spec(SCMatrixRectBlock* a,SCMatrixRectBlock* b)
 {
   SCMatrixBlockIter*i = new SCMatrixRectBlockIter(a);
   SCMatrixBlockIter*j = new SCMatrixRectBlockIter(b);
@@ -171,7 +171,7 @@ SCElementOp2::process(SCMatrixRectBlock* a,SCMatrixRectBlock* b)
   delete j;
 }
 void
-SCElementOp2::process(SCMatrixLTriBlock* a,SCMatrixLTriBlock* b)
+SCElementOp2::process_spec(SCMatrixLTriBlock* a,SCMatrixLTriBlock* b)
 {
   SCMatrixBlockIter*i = new SCMatrixLTriBlockIter(a);
   SCMatrixBlockIter*j = new SCMatrixLTriBlockIter(b);
@@ -180,7 +180,7 @@ SCElementOp2::process(SCMatrixLTriBlock* a,SCMatrixLTriBlock* b)
   delete j;
 }
 void
-SCElementOp2::process(SCMatrixDiagBlock* a,SCMatrixDiagBlock* b)
+SCElementOp2::process_spec(SCMatrixDiagBlock* a,SCMatrixDiagBlock* b)
 {
   SCMatrixBlockIter*i = new SCMatrixDiagBlockIter(a);
   SCMatrixBlockIter*j = new SCMatrixDiagBlockIter(b);
@@ -189,7 +189,7 @@ SCElementOp2::process(SCMatrixDiagBlock* a,SCMatrixDiagBlock* b)
   delete j;
 }
 void
-SCElementOp2::process(SCVectorSimpleBlock* a,SCVectorSimpleBlock* b)
+SCElementOp2::process_spec(SCVectorSimpleBlock* a,SCVectorSimpleBlock* b)
 {
   SCMatrixBlockIter*i = new SCVectorSimpleBlockIter(a);
   SCMatrixBlockIter*j = new SCVectorSimpleBlockIter(b);
@@ -254,9 +254,9 @@ SCElementOp3::collect(RefSCElementOp3&)
 }
 
 void
-SCElementOp3::process(SCMatrixBlock* a,
-                      SCMatrixBlock* b,
-                      SCMatrixBlock* c)
+SCElementOp3::process_base(SCMatrixBlock* a,
+                           SCMatrixBlock* b,
+                           SCMatrixBlock* c)
 {
   a->process(this, b, c);
 }
@@ -267,9 +267,9 @@ SCElementOp3::process(SCMatrixBlock* a,
 // of SCElementOp3 must handle since it is pure virtual.
 
 void
-SCElementOp3::process(SCMatrixRectBlock* a,
-                      SCMatrixRectBlock* b,
-                      SCMatrixRectBlock* c)
+SCElementOp3::process_spec(SCMatrixRectBlock* a,
+                           SCMatrixRectBlock* b,
+                           SCMatrixRectBlock* c)
 {
   SCMatrixBlockIter*i = new SCMatrixRectBlockIter(a);
   SCMatrixBlockIter*j = new SCMatrixRectBlockIter(b);
@@ -280,9 +280,9 @@ SCElementOp3::process(SCMatrixRectBlock* a,
   delete k;
 }
 void
-SCElementOp3::process(SCMatrixLTriBlock* a,
-                      SCMatrixLTriBlock* b,
-                      SCMatrixLTriBlock* c)
+SCElementOp3::process_spec(SCMatrixLTriBlock* a,
+                           SCMatrixLTriBlock* b,
+                           SCMatrixLTriBlock* c)
 {
   SCMatrixBlockIter*i = new SCMatrixLTriBlockIter(a);
   SCMatrixBlockIter*j = new SCMatrixLTriBlockIter(b);
@@ -293,9 +293,9 @@ SCElementOp3::process(SCMatrixLTriBlock* a,
   delete k;
 }
 void
-SCElementOp3::process(SCMatrixDiagBlock* a,
-                      SCMatrixDiagBlock* b,
-                      SCMatrixDiagBlock* c)
+SCElementOp3::process_spec(SCMatrixDiagBlock* a,
+                           SCMatrixDiagBlock* b,
+                           SCMatrixDiagBlock* c)
 {
   SCMatrixBlockIter*i = new SCMatrixDiagBlockIter(a);
   SCMatrixBlockIter*j = new SCMatrixDiagBlockIter(b);
@@ -306,9 +306,9 @@ SCElementOp3::process(SCMatrixDiagBlock* a,
   delete k;
 }
 void
-SCElementOp3::process(SCVectorSimpleBlock* a,
-                      SCVectorSimpleBlock* b,
-                      SCVectorSimpleBlock* c)
+SCElementOp3::process_spec(SCVectorSimpleBlock* a,
+                           SCVectorSimpleBlock* b,
+                           SCVectorSimpleBlock* c)
 {
   SCMatrixBlockIter*i = new SCVectorSimpleBlockIter(a);
   SCMatrixBlockIter*j = new SCVectorSimpleBlockIter(b);
@@ -413,7 +413,7 @@ SCElementScalarProduct::has_collect()
 }
 
 void
-SCElementScalarProduct::collect(RefSCElementOp&op)
+SCElementScalarProduct::collect(RefSCElementOp2&op)
 {
   RefSCElementScalarProduct ma(op);
   product += ma->product;

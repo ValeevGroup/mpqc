@@ -19,6 +19,7 @@ class RangeLockItem {
     int value;
     RangeLockItem(RangeLockItem *p, RangeLockItem *n, int s, int f, int v):
       prev(p), next(n), start(s), fence(f), value(v) {}
+    ~RangeLockItem() {};
 
     void *operator new(size_t, Pool *);
 };

@@ -450,7 +450,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp& op)
 {
   SCMatrixBlockListIter i;
   for (i = blocklist->begin(); i != blocklist->end(); i++) {
-      op->process(i.block());
+      op->process_base(i.block());
     }
 }
 
@@ -469,7 +469,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp2& op,
   for (i = blocklist->begin(), j = lm->blocklist->begin();
        i != blocklist->end();
        i++, j++) {
-      op->process(i.block(), j.block());
+      op->process_base(i.block(), j.block());
     }
 }
 
@@ -492,7 +492,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp3& op,
            k = ln->blocklist->begin();
        i != blocklist->end();
        i++, j++, k++) {
-      op->process(i.block(), j.block(), k.block());
+      op->process_base(i.block(), j.block(), k.block());
     }
 }
 

@@ -6,6 +6,8 @@
 int
 main(int argc, char *argv[])
 {
+  int i;
+
   char *infile = (argv[1]) ? argv[1] : "mpqc.in";
   RefKeyVal kv(new ParsedKeyVal(infile));
 
@@ -35,7 +37,7 @@ main(int argc, char *argv[])
   int * unique_atoms = mol_find_unique_atoms(mol);
 
   printf("\nnunique=%d: ",nunique);
-  for (int i=0; i < nunique; i++) printf(" %d",unique_atoms[i]+1);
+  for (i=0; i < nunique; i++) printf(" %d",unique_atoms[i]+1);
   printf("\n");
 
   RefMolecule unique = new Molecule;

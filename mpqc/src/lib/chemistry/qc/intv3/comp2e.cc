@@ -410,18 +410,22 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   for (i=0; i<int_shell1->ncontraction(); i++) {
     tam1 = int_shell1->am(i) + dam1;
     if (tam1 < 0) continue;
+    int tsize1 = INT_NCART(tam1);
     ogc2 = 0;
     for (j=0; j<int_shell2->ncontraction(); j++) {
       tam2 = int_shell2->am(j) + dam2;
       if (tam2 < 0) continue;
+      int tsize2 = INT_NCART(tam2);
       ogc3 = 0;
       for (k=0; k<int_shell3->ncontraction(); k++) {
         tam3 = int_shell3->am(k) + dam3;
         if (tam3 < 0) continue;
+        int tsize3 = INT_NCART(tam3);
         ogc4 = 0;
         for (l=0; l<int_shell4->ncontraction(); l++) {
           tam4 = int_shell4->am(l) + dam4;
           if (tam4 < 0) continue;
+          int tsize4 = INT_NCART(tam4);
 
   /* Shift angular momentum from 1 to 2 and from 3 to 4. */
   double *shiftbuffer = int_shiftgcam(i,j,k,l,tam1,tam2,tam3,tam4, eAB);
@@ -470,43 +474,65 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     psize34 = psize4 * psize3;
     psize234 = psize34 * psize2;
     redundant_index = 0;
-    int ci1=0;
-    FOR_CART(i1,j1,k1,tam1)
-      int ci2=0;
-      FOR_CART(i2,j2,k2,tam2)
-        int ci3=0;
-        FOR_CART(i3,j3,k3,tam3)
-          int ci4=0;
-          FOR_CART(i4,j4,k4,tam4)
-            int pci1=ci1;
-            int pci2=ci2;
-            int pci3=ci3;
-            int pci4=ci4;
-            if (p13p24) {
-              iswtch(&pci1,&pci3);
-              iswtch(&pci2,&pci4);
+    int newindexoffset = pogc1*psize234 + pogc2*psize34 + pogc3*psize4 + pogc4;
+    if (p13p24||p34) {
+      int stride1=psize234;
+      int stride2=psize34;
+      int stride3=psize4;
+      int stride4=1;
+      int tmp;
+      if (p12) {
+        tmp=stride1; stride1=stride2; stride2=tmp;
+        }
+      if (p34) {
+        tmp=stride3; stride3=stride4; stride4=tmp;
+        }
+      if (p13p24) {
+        tmp=stride1; stride1=stride3; stride3=tmp;
+        tmp=stride2; stride2=stride4; stride4=tmp;
+        }
+      int newindex1 = newindexoffset;
+      for (int ci1=0; ci1<tsize1; ci1++) {
+        int newindex12 = newindex1;
+        for (int ci2=0; ci2<tsize2; ci2++) {
+          int newindex123 = newindex12;
+          for (int ci3=0; ci3<tsize3; ci3++) {
+            double *tmp_shiftbuffer = &shiftbuffer[redundant_index];
+            int newindex1234 = newindex123;
+            for (int ci4=0; ci4<tsize4; ci4++) {
+              int_buffer[newindex1234] = tmp_shiftbuffer[ci4];
+              newindex1234 += stride4;
               }
-            if (p34) {
-              iswtch(&pci3,&pci4);
+            redundant_index+=tsize4;
+            newindex123 += stride3;
+            }
+          newindex12 += stride2;
+          }
+        newindex1 += stride1;
+        }
+      }
+    else {
+      // this is the p12 only case
+      for (int ci1=0; ci1<tsize1; ci1++) {
+        for (int ci2=0; ci2<tsize2; ci2++) {
+          int pci1=ci1;
+          int pci2=ci2;
+          if (p12) {
+            int tmp=pci1; pci1=pci2; pci2=tmp;
+            }
+          int newindex123 = newindexoffset + pci1*psize234 + pci2*psize34;
+          for (int ci3=0; ci3<tsize3; ci3++) {
+            double *tmp_int_buffer = &int_buffer[newindex123];
+            double *tmp_shiftbuffer = &shiftbuffer[redundant_index];
+            for (int ci4=0; ci4<tsize4; ci4++) {
+              tmp_int_buffer[ci4] = tmp_shiftbuffer[ci4];
               }
-            if (p12) {
-              iswtch(&pci1,&pci2);
-              }
-            newindex =  (pogc1 + pci1) * psize234
-                      + (pogc2 + pci2) * psize34
-                      + (pogc3 + pci3) * psize4
-                      + (pogc4 + pci4);
-            int_buffer[newindex]
-              = shiftbuffer[redundant_index];
-            redundant_index++;
-            ci4++;
-            END_FOR_CART
-          ci3++;
-          END_FOR_CART
-        ci2++;
-        END_FOR_CART
-      ci1++;
-      END_FOR_CART
+            redundant_index += tsize4;
+            newindex123 += psize4;
+            }
+          }
+        }
+      }
     }
   else {
     int newindex;
@@ -514,20 +540,24 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     int size234 = size2 * size34;
     double* redund_ints = shiftbuffer;
     redundant_index = 0;
-    FOR_CART(i1,j1,k1,tam1)
-      FOR_CART(i2,j2,k2,tam2)
-        FOR_CART(i3,j3,k3,tam3)
-          FOR_CART(i4,j4,k4,tam4)
-            newindex =  (ogc1 + INT_CARTINDEX(tam1,i1,j1)) * size234
-                      + (ogc2 + INT_CARTINDEX(tam2,i2,j2)) * size34
-                      + (ogc3 + INT_CARTINDEX(tam3,i3,j3)) * size4
-                      + (ogc4 + INT_CARTINDEX(tam4,i4,j4));
-            int_buffer[newindex] = redund_ints[redundant_index];
-            redundant_index++;
-            END_FOR_CART
-          END_FOR_CART
-        END_FOR_CART
-      END_FOR_CART
+    int newindex1 = ogc1*size234 + ogc2*size34 + ogc3*size4 + ogc4;
+    for (int ci1=0; ci1<tsize1; ci1++) {
+      int newindex12 = newindex1;
+      for (int ci2=0; ci2<tsize2; ci2++) {
+        int newindex123 = newindex12;
+        for (int ci3=0; ci3<tsize3; ci3++) {
+          double *tmp_int_buffer = &int_buffer[newindex123];
+          double *tmp_redund_ints = &redund_ints[redundant_index];
+          for (int ci4=0; ci4<tsize4; ci4++) {
+            tmp_int_buffer[ci4] = tmp_redund_ints[ci4];
+            }
+          redundant_index += tsize4;
+          newindex123 += size4;
+          }
+        newindex12 += size34;
+        }
+      newindex1 += size234;
+      }
     }
 
     /* End loop over generalized contractions. */

@@ -620,11 +620,12 @@ MBPT2::compute_cs_grad()
                         iqrs_ptr = &integral_iqrs[bf4 + ns*(q + nbasis*bf3)];
                         c_qi = &scf_vector[q][i_offset];
                         c_pi = &scf_vector[p][i_offset];
+                        tmpval = *pqrs_ptr;
                         for (i=0; i<ni; i++) {
-                          *iprs_ptr += *c_qi++**pqrs_ptr;
+                          *iprs_ptr += *c_qi++*tmpval;
                           iprs_ptr += offset;
                           if (p != q) {
-                            *iqrs_ptr += *c_pi++**pqrs_ptr;
+                            *iqrs_ptr += *c_pi++*tmpval;
                             iqrs_ptr += offset;
                             }
                           } // exit i loop
@@ -784,8 +785,9 @@ MBPT2::compute_cs_grad()
               integral_iqjs_ptr = &integral_iqjs[q + nbasis*(s + nbasis*ij_index)];
               ixjs_ptr = ixjs_tmp;
               c_qx = scf_vector[q];
+              tmpval = *integral_iqjs_ptr;
               for (x=0; x<nbasis; x++) {
-                *ixjs_ptr++ += *c_qx++ * *integral_iqjs_ptr;
+                *ixjs_ptr++ += *c_qx++ * tmpval;
                 }
               }   // exit q loop
 
@@ -844,8 +846,9 @@ MBPT2::compute_cs_grad()
             for (s=0; s<nbasis; s++) {
               c_sy = scf_vector[s];
               iajy_ptr = integral_iajy;
+              tmpval = *iajs_ptr;
               for (y=0; y<nbasis; y++) {
-                *iajy_ptr++ += *c_sy++ * *iajs_ptr;
+                *iajy_ptr++ += *c_sy++ * tmpval;
                 } // exit y loop
               iajs_ptr += nbasis;
               }   // exit s loop
@@ -867,8 +870,9 @@ MBPT2::compute_cs_grad()
               for (s=0; s<nbasis; s++) {
                 c_sa = &scf_vector[s][nocc];
                 ikja_ptr = integral_ikja;
+                tmpval = *ikjs_ptr;
                 for (a=0; a<nvir_act; a++) {
-                  *ikja_ptr++ += *c_sa++ * *ikjs_ptr;
+                  *ikja_ptr++ += *c_sa++ * tmpval;
                   } // exit a loop 
                 ikjs_ptr += nbasis;
                 }   // exit s loop 
@@ -1222,10 +1226,12 @@ MBPT2::compute_cs_grad()
                 ibja_ptr = &mo_int[a*nbasis + offset];
                 iajb_ptr = &mo_int[a + offset];
 
+                tmpval = 0.0;
                 for (b=0; b<nvir_act; b++) {
-                  *gamma_iajs_ptr += 2**c_sb++ * (2**iajb_ptr - *ibja_ptr++);
+                  tmpval += 2**c_sb++ * (2**iajb_ptr - *ibja_ptr++);
                   iajb_ptr += nbasis;
                   } // exit b loop
+                *gamma_iajs_ptr += tmpval;
                 }   // exit s loop
               }     // exit a loop
             // Put gamma_iajs_tmp into mo_int for one i,j
@@ -1292,9 +1298,11 @@ MBPT2::compute_cs_grad()
                 gamma_iajs_ptr = &gamma_iajs[nocc + s*nbasis + offset];
                 c_qa = &scf_vector[q][nocc];
 
+                tmpval = 0.0;
                 for (a=0; a<nvir_act; a++) {
-                  *gamma_iqjs_ptr += *c_qa++ * *gamma_iajs_ptr++;
+                  tmpval += *c_qa++ * *gamma_iajs_ptr++;
                   } // exit a loop
+                *gamma_iqjs_ptr += tmpval;
                 }   // exit q loop
               // Put gamma_iqjs_tmp into gamma_iajs for one i,j,s
               // while overwriting gamma_iajs
@@ -1550,14 +1558,16 @@ MBPT2::compute_cs_grad()
                         c_qi = &scf_vector[q][i_offset];
                         gamma_iqrs_ptr = &gamma_iqrs[bf4 + ns*(q + nbasis*bf2)];
                         gamma_iprs_ptr = &gamma_iqrs[bf4 + ns*(p + nbasis*bf2)];
+                        tmpval = 0.0;
                         for (i=0; i<ni; i++) {
-                          *gamma_pqrs_ptr += *c_pi * *gamma_iqrs_ptr;
-                          if (p!=q) *gamma_pqrs_ptr += *c_qi * *gamma_iprs_ptr;
+                          tmpval += *c_pi * *gamma_iqrs_ptr;
+                          if (p!=q) tmpval += *c_qi * *gamma_iprs_ptr;
                           c_pi++;
                           c_qi++;
                           gamma_iqrs_ptr += offset;
                           gamma_iprs_ptr += offset;
                           } // exit i loop
+                        *gamma_pqrs_ptr += tmpval;
                         gamma_pqrs_ptr++;
                         }   // exit bf4 loop
                       }     // exit bf3 loop

@@ -1606,7 +1606,7 @@ VWN3LCFunctional::VWN3LCFunctional(StateIn& s):
 
 VWN3LCFunctional::VWN3LCFunctional()
 {
-  Gaussian_ = 1;
+  monte_carlo_prefactor_ = 0;
   
   Ap_ = 0.0310907;
   Af_ = 0.01554535;
@@ -1639,7 +1639,7 @@ VWN3LCFunctional::VWN3LCFunctional()
 VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
   LSDACFunctional(keyval)
 {
-    Gaussian_ = keyval->intvalue("Gaussian", KeyValValueint(1));
+    monte_carlo_prefactor_ = keyval->intvalue("monte_carlo_prefactor", KeyValValueint(0));
     Ap_  = keyval->doublevalue("Ap", KeyValValuedouble(0.0310907));
     Af_  = keyval->doublevalue("Af", KeyValValuedouble(0.01554535));
     A_alpha_  = keyval->doublevalue("A_alpha", KeyValValuedouble(-1./(6.*M_PI*M_PI)));
@@ -1744,7 +1744,7 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double beta = fpp0 * delta_e_rpa / alphac_rpa - 1.;
   double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
   double delta_ec;
-  if (Gaussian_) delta_ec = delta_erpa_rszeta;
+  if (!monte_carlo_prefactor_) delta_ec = delta_erpa_rszeta;
   else delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
   double ec = epc0_rpa + delta_ec;
   
@@ -1781,7 +1781,7 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       //        + fp * (zeta4 * (efc_mc - epc_mc) + (1-zeta4)*(alphac_mc/fpp0));
       
       double dec_dzeta, dec_dr_s;
-      if (Gaussian_) {
+      if (!monte_carlo_prefactor_) {
         dec_dzeta = ddeltae_rpa_dzeta;
         dec_dr_s = depc_dr_s0_rpa + ddeltae_rpa_dr_s;
         }

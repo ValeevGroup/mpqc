@@ -403,7 +403,7 @@ class VWN3LCFunctional: public LSDACFunctional {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int Gaussian_;
+    int monte_carlo_prefactor_;
     double Ap_, Af_, A_alpha_;
     double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
     double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;

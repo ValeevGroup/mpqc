@@ -2693,82 +2693,82 @@ Int1eV3::comp_shell_dipole(double* dipole,
         }
       ss =   pow(3.141592653589793/(exp1+exp2),1.5)
            * exp(- oozeta * exp1 * exp2 * AmB2);
-      sMus = ss * PmC[mu];
+      for (mu=0; mu<3; mu++) sMus[mu] = ss * PmC[mu];
       tmp     =  gshell1->coefficient_unnorm(gc1,i)
                * gshell2->coefficient_unnorm(gc2,j);
       if (exponent_weighted == 0) tmp *= exp1;
       else if (exponent_weighted == 1) tmp *= exp2;
-      dipole[0] += tmp * comp_prim_dipole(1,0,0,i1,j1,k1,i2,j2,k2);
-      dipole[1] += tmp * comp_prim_dipole(0,1,0,i1,j1,k1,i2,j2,k2);
-      dipole[2] += tmp * comp_prim_dipole(0,0,1,i1,j1,k1,i2,j2,k2);
+      dipole[0] += tmp * comp_prim_dipole(0,i1,j1,k1,i2,j2,k2);
+      dipole[1] += tmp * comp_prim_dipole(1,i1,j1,k1,i2,j2,k2);
+      dipole[2] += tmp * comp_prim_dipole(2,i1,j1,k1,i2,j2,k2);
       }
     }
 
   }
 
 double
-Int1eV3::comp_prim_dipole(int im, int jm, int km,
+Int1eV3::comp_prim_dipole(int axis,
                           int i1, int j1, int k1,
                           int i2, int j2, int k2)
 {
   double result;
 
   if (i1) {
-    result = PmA[0] * comp_prim_dipole(im,jm,km,i1-1,j1,k1,i2,j2,k2);
+    result = PmA[0] * comp_prim_dipole(axis,i1-1,j1,k1,i2,j2,k2);
     if (i2) 
-      result += oo2zeta*i2*comp_prim_dipole(im,jm,km,i1-1,j1,k1,i2-1,j2,k2);
+      result += oo2zeta*i2*comp_prim_dipole(axis,i1-1,j1,k1,i2-1,j2,k2);
     if (i1>1)
-      result += oo2zeta*(i1-1)*comp_prim_dipole(im,jm,km,i1-2,j1,k1,i2,j2,k2);
-    if(im) result += oo2zeta*comp_prim_overlap(i1-1,j1,k1,i2,j2,k2);
+      result += oo2zeta*(i1-1)*comp_prim_dipole(axis,i1-2,j1,k1,i2,j2,k2);
+    if(axis==0) result += oo2zeta*comp_prim_overlap(i1-1,j1,k1,i2,j2,k2);
     return result;
     }
   if (j1) {
-    result = PmA[1] * comp_prim_dipole(im,jm,km,i1,j1-1,k1,i2,j2,k2);
+    result = PmA[1] * comp_prim_dipole(axis,i1,j1-1,k1,i2,j2,k2);
     if (j2) 
-      result += oo2zeta*j2*comp_prim_dipole(im,jm,km,i1,j1-1,k1,i2,j2-1,k2);
+      result += oo2zeta*j2*comp_prim_dipole(axis,i1,j1-1,k1,i2,j2-1,k2);
     if (j1>1) 
-      result += oo2zeta*(j1-1)*comp_prim_dipole(im,jm,km,i1,j1-2,k1,i2,j2,k2);
-    if(jm) result += oo2zeta*comp_prim_overlap(i1,j1-1,k1,i2,j2,k2);
+      result += oo2zeta*(j1-1)*comp_prim_dipole(axis,i1,j1-2,k1,i2,j2,k2);
+    if(axis==1) result += oo2zeta*comp_prim_overlap(i1,j1-1,k1,i2,j2,k2);
     return result;
     }
   if (k1) {
-    result = PmA[2] * comp_prim_dipole(im,jm,km,i1,j1,k1-1,i2,j2,k2);
+    result = PmA[2] * comp_prim_dipole(axis,i1,j1,k1-1,i2,j2,k2);
     if (k2) 
-      result += oo2zeta*k2*comp_prim_dipole(im,jm,km,i1,j1,k1-1,i2,j2,k2-1);
+      result += oo2zeta*k2*comp_prim_dipole(axis,i1,j1,k1-1,i2,j2,k2-1);
     if (k1>1) 
-      result += oo2zeta*(k1-1)*comp_prim_dipole(im,jm,km,i1,j1,k1-2,i2,j2,k2);
-    if(km) result += oo2zeta*comp_prim_overlap(i1,j1,k1-1,i2,j2,k2);
+      result += oo2zeta*(k1-1)*comp_prim_dipole(axis,i1,j1,k1-2,i2,j2,k2);
+    if(axis==2) result += oo2zeta*comp_prim_overlap(i1,j1,k1-1,i2,j2,k2);
     return result;
     }
   if (i2) {
-    result = PmB[0] * comp_prim_dipole(im,jm,km,i1,j1,k1,i2-1,j2,k2);
+    result = PmB[0] * comp_prim_dipole(axis,i1,j1,k1,i2-1,j2,k2);
     if (i1) 
-      result += oo2zeta*i1*comp_prim_dipole(im,jm,km,i1-1,j1,k1,i2-1,j2,k2);
+      result += oo2zeta*i1*comp_prim_dipole(axis,i1-1,j1,k1,i2-1,j2,k2);
     if (i2>1) 
-      result += oo2zeta*(i2-1)*comp_prim_dipole(im,jm,km,i1,j1,k1,i2-2,j2,k2);
-    if(im) result += oo2zeta*comp_prim_overlap(i1,j1,k1,i2-1,j2,k2);
+      result += oo2zeta*(i2-1)*comp_prim_dipole(axis,i1,j1,k1,i2-2,j2,k2);
+    if(axis==0) result += oo2zeta*comp_prim_overlap(i1,j1,k1,i2-1,j2,k2);
     return result;
     }
   if (j2) {
-    result = PmB[1] * comp_prim_dipole(im,jm,km,i1,j1,k1,i2,j2-1,k2);
+    result = PmB[1] * comp_prim_dipole(axis,i1,j1,k1,i2,j2-1,k2);
     if (j1) 
-      result += oo2zeta*i1*comp_prim_dipole(im,jm,km,i1,j1-1,k1,i2,j2-1,k2);
+      result += oo2zeta*i1*comp_prim_dipole(axis,i1,j1-1,k1,i2,j2-1,k2);
     if (j2>1) 
-      result += oo2zeta*(j2-1)*comp_prim_dipole(im,jm,km,i1,j1,k1,i2,j2-2,k2);
-    if(jm) result += oo2zeta*comp_prim_overlap(i1,j1,k1,i2,j2-1,k2);
+      result += oo2zeta*(j2-1)*comp_prim_dipole(axis,i1,j1,k1,i2,j2-2,k2);
+    if(axis==1) result += oo2zeta*comp_prim_overlap(i1,j1,k1,i2,j2-1,k2);
     return result;
     }
   if (k2) {
-    result = PmB[2] * comp_prim_dipole(im,jm,km,i1,j1,k1,i2,j2,k2-1);
+    result = PmB[2] * comp_prim_dipole(axis,i1,j1,k1,i2,j2,k2-1);
     if (k1) 
-      result += oo2zeta*i1*comp_prim_dipole(im,jm,km,i1,j1,k1-1,i2,j2,k2-1);
+      result += oo2zeta*i1*comp_prim_dipole(axis,i1,j1,k1-1,i2,j2,k2-1);
     if (k2>1) 
-      result += oo2zeta*(k2-1)*comp_prim_dipole(im,jm,km,i1,j1,k1,i2,j2,k2-2);
-    if(km) result += oo2zeta*comp_prim_overlap(i1,j1,k1,i2,j2,k2-1);
+      result += oo2zeta*(k2-1)*comp_prim_dipole(axis,i1,j1,k1,i2,j2,k2-2);
+    if(axis==2) result += oo2zeta*comp_prim_overlap(i1,j1,k1,i2,j2,k2-1);
     return result;
     }
 
-  return sMus;
+  return sMus[axis];
   }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -129,6 +129,8 @@ DipoleIntV3::DipoleIntV3(Integral *integral,
   OneBodyInt(integral,bs1,bs2),
   data_(dat)
 {
+  int1ev3_ = new Int1eV3(integral,bs1,bs2,0);
+  buffer_ = int1ev3_->buffer();
   if (data_.null()) {
       data_ = new DipoleData;
     }

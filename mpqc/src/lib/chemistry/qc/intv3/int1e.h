@@ -61,7 +61,7 @@ class Int1eV3: public RefCount {
   protected:
     double oo2zeta_a;
     double oo2zeta_b;
-    double sMus;
+    double sMus[3];
     double sTs;
     double xi;
     double A[3];
@@ -127,7 +127,7 @@ class Int1eV3: public RefCount {
     void comp_shell_dipole(double* dipole,
                            int gc1, int i1, int j1, int k1,
                            int gc2, int i2, int j2, int k2);
-    double comp_prim_dipole(int im, int jm, int km,
+    double comp_prim_dipole(int axis,
                             int i1, int j1, int k1,
                             int i2, int j2, int k2);
     void comp_shell_block_nuclear(int gc1, int a, int gc2, int b,

@@ -38,7 +38,7 @@
 
 using namespace std;
 using namespace sc;
-using namespace mysc;
+using namespace sc::exp;
 
 /////////////////////////////////////////////////////////////////
 // Function iquicksort performs a quick sort (larger -> smaller) 
@@ -293,7 +293,7 @@ DistShellPair::get_task(int &S, int &R)
 }
 
 void
-DistShellPair::set_print_percent(int pi)
+DistShellPair::set_print_percent(double pi)
 {
   print_percent_ = pi;
   double print_interval = (double) print_percent_ * ntask_ / 100;

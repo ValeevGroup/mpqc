@@ -41,7 +41,8 @@
 
 using namespace sc;
 
-namespace mysc {
+namespace sc {
+  namespace exp {
 
 /// Distributes shell pairs either statically or dynamically.
 class DistShellPair {
@@ -55,7 +56,7 @@ class DistShellPair {
     bool dynamic_;
     int debug_;
     // How often updates are printed (i.e. every 10% of total work)
-    int print_percent_;
+    double print_percent_;
 
     // Number of tasks handled by thread 0 in task 0:
     // if dynamic == true : it will distribute all of them
@@ -92,7 +93,7 @@ class DistShellPair {
     /// How much stuff to print out.
     void set_debug(int d) { debug_ = d; }
     /// How often to print status from node 0.
-    void set_print_percent(int p);
+    void set_print_percent(double p);
     /** Puts the current PQ shell pair into P and Q and returns 1.
         When there are no more shell pairs to be processed by this processor,
         0 is returned.  Once we start doing get_tasks, we have to go to the
@@ -103,6 +104,7 @@ class DistShellPair {
     int get_task(int &P, int &Q);
 };
 
+}
 }
 
 #endif

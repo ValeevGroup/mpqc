@@ -517,6 +517,220 @@ DenIntegrator::do_point(const SCVector3 &r,
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// IntegrationWeight
+
+#define CLASSNAME IntegrationWeight
+#define PARENTS public SavableState
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+IntegrationWeight::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+IntegrationWeight::IntegrationWeight(StateIn& s):
+  SavableState(s)
+{
+}
+
+IntegrationWeight::IntegrationWeight()
+{
+}
+
+IntegrationWeight::IntegrationWeight(const RefKeyVal& keyval)
+{
+}
+
+IntegrationWeight::~IntegrationWeight()
+{
+}
+
+void
+IntegrationWeight::save_data_state(StateOut& s)
+{
+  cout << class_name() << ": cannot save state" << endl;
+  abort();
+}
+
+///////////////////////////////////////////////////////////////////////////
+// BeckeIntegrationWeight
+
+// utility functions
+
+inline static double
+calc_s(double m)
+{
+  double m1 = 1.5*m - 0.5*m*m*m;
+  double m2 = 1.5*m1 - 0.5*m1*m1*m1;
+  double m3 = 1.5*m2 - 0.5*m2*m2*m2;
+  return 0.5*(1.0-m3);
+}
+
+#define CLASSNAME BeckeIntegrationWeight
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public IntegrationWeight
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+BeckeIntegrationWeight::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = IntegrationWeight::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+BeckeIntegrationWeight::BeckeIntegrationWeight(StateIn& s):
+  SavableState(s),
+  IntegrationWeight(s)
+{
+  bragg_radius = 0;
+  a_mat = 0;
+  oorab = 0;
+
+  abort();
+}
+
+BeckeIntegrationWeight::BeckeIntegrationWeight()
+{
+  centers = 0;
+  bragg_radius = 0;
+  a_mat = 0;
+  oorab = 0;
+}
+
+BeckeIntegrationWeight::BeckeIntegrationWeight(const RefKeyVal& keyval):
+  IntegrationWeight(keyval)
+{
+  centers = 0;
+  bragg_radius = 0;
+  a_mat = 0;
+  oorab = 0;
+}
+
+BeckeIntegrationWeight::~BeckeIntegrationWeight()
+{
+  done();
+}
+
+void
+BeckeIntegrationWeight::save_data_state(StateOut& s)
+{
+  cout << ": cannot save state" << endl;
+  abort();
+}
+
+void
+BeckeIntegrationWeight::init(const RefMolecule &mol, double tolerance)
+{
+  done();
+
+  ncenters = mol->natom();
+
+  double *bragg_radius = new double[ncenters];
+  int icenter;
+  for (icenter=0; icenter<ncenters; icenter++) {
+      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
+    }
+  
+  centers = new SCVector3[ncenters];
+  for (icenter=0; icenter<ncenters; icenter++) {
+      centers[icenter].x() = mol->r(icenter,0);
+      centers[icenter].y() = mol->r(icenter,1);
+      centers[icenter].z() = mol->r(icenter,2);
+    }
+
+  a_mat = new double*[ncenters];
+  a_mat[0] = new double[ncenters*ncenters];
+  oorab = new double*[ncenters];
+  oorab[0] = new double[ncenters*ncenters];
+
+  for (icenter=0; icenter < ncenters; icenter++) {
+      if (icenter) {
+          a_mat[icenter] = &a_mat[icenter-1][ncenters];
+          oorab[icenter] = &oorab[icenter-1][ncenters];
+        }
+
+      double bragg_radius_a = bragg_radius[icenter];
+      
+      for (int jcenter=0; jcenter < ncenters; jcenter++) {
+          double chi=bragg_radius_a/bragg_radius[jcenter];
+          double uab=(chi-1.)/(chi+1.);
+          a_mat[icenter][jcenter] = uab/(uab*uab-1.);
+          if (icenter!=jcenter) {
+              oorab[icenter][jcenter]
+                  = 1./centers[icenter].dist(centers[jcenter]);
+            }
+          else {
+              oorab[icenter][jcenter] = 0.0;
+            }
+        }
+    }
+
+}
+
+void
+BeckeIntegrationWeight::done()
+{
+  delete[] bragg_radius;
+  bragg_radius = 0;
+
+  delete[] centers;
+  centers = 0;
+
+  if (a_mat) {
+      delete[] a_mat[0];
+      delete[] a_mat;
+      a_mat = 0;
+    }
+
+  if (oorab) {
+      delete[] oorab[0];
+      delete[] oorab;
+      oorab = 0;
+    }
+}
+
+double
+BeckeIntegrationWeight::w(int this_center, SCVector3 &point, double *grad_w)
+{
+  int icenter, jcenter;
+  double p_sum=0.0, p_point=0.0, p_tmp;
+    
+  for (icenter=0; icenter<ncenters; icenter++) {
+      double ra = point.dist(centers[icenter]);
+      double *ooraba = oorab[icenter];
+      double *aa = a_mat[icenter];
+
+      p_tmp = 1.0;
+      for (jcenter=0; jcenter < ncenters; jcenter++) {
+	if (icenter != jcenter) {
+            double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
+
+            if (mu < -1.)
+                continue; // s(-1) == 1.0
+            else if (mu > 1.) {
+                p_tmp = 0; // s(1) == 0.0
+                break;
+              }
+            else
+                p_tmp *= calc_s(mu + aa[jcenter]*(1.-mu*mu));
+          }
+      }
+
+      if (icenter==this_center)
+          p_point=p_tmp; 
+
+      p_sum += p_tmp;
+    }
+
+  return p_point/p_sum;
+}
+
+///////////////////////////////////////////////////////////////////////////
 // Murray93Integrator
 
 // utility functions
@@ -552,66 +766,6 @@ gauleg(double x1, double x2, double x[], double w[], int n)
     }
 }
 
-static double
-calc_s(double m)
-{
-#if 0
-  double value, value2;
-  double a= -969969./262144.;
-  double m2=m*m;
-  value2= -3.814697265625e-06*m*(m2*(m2*(m2*(m2*(m2*(m2*(m2*(m2*(m2*(46189.*m2-510510.)+2567565.)-7759752.)+15668730.)-22221108.)+22632610.)-16628040.)+8729721.)-3233230.)+969969.);
-
-  value = 0.5*(1.+value2);
-    
-  return value;
-#else
-  double m1 = 1.5*m - 0.5*m*m*m;
-  double m2 = 1.5*m1 - 0.5*m1*m1*m1;
-  double m3 = 1.5*m2 - 0.5*m2*m2*m2;
-  return 0.5*(1.0-m3);
-#endif  
-}
-
-static double **a_mat;
-static double **oorab;
-
-static double
-calc_w(int this_center, SCVector3 &point, int ncenters,
-       SCVector3 *centers, double *bragg_radius)
-{
-  int icenter, jcenter;
-  double p_sum=0.0, p_point=0.0, p_tmp;
-    
-  for (icenter=0; icenter<ncenters; icenter++) {
-      double ra = point.dist(centers[icenter]);
-      double *ooraba = oorab[icenter];
-      double *aa = a_mat[icenter];
-
-      p_tmp = 1.0;
-      for (jcenter=0; jcenter < ncenters; jcenter++) {
-	if (icenter != jcenter) {
-            double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
-
-            if (mu < -1.)
-                continue; // s(-1) == 1.0
-            else if (mu > 1.) {
-                p_tmp = 0; // s(1) == 0.0
-                break;
-              }
-            else
-                p_tmp *= calc_s(mu + aa[jcenter]*(1.-mu*mu));
-          }
-      }
-
-      if (icenter==this_center)
-          p_point=p_tmp; 
-
-      p_sum += p_tmp;
-    }
-
-  return p_point/p_sum;
-}
-
 #define CLASSNAME Murray93Integrator
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -639,6 +793,7 @@ Murray93Integrator::Murray93Integrator()
   ntheta_ = 16;
   nphi_ = 32;
   Ktheta_ = 5;
+  weight_ = new BeckeIntegrationWeight;
 }
 
 Murray93Integrator::Murray93Integrator(const RefKeyVal& keyval):
@@ -653,6 +808,7 @@ Murray93Integrator::Murray93Integrator(const RefKeyVal& keyval):
   Ktheta_ = keyval->intvalue("Ktheta");
   if (keyval->error() != KeyVal::OK)
       Ktheta_ = 5;
+  weight_ = new BeckeIntegrationWeight;
 }
 
 Murray93Integrator::~Murray93Integrator()
@@ -677,6 +833,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
   init_integration(denfunc, densa, densb, nuclear_gradient);
 
   RefMolecule mol = wavefunction()->molecule();
+  weight_->init(mol, DBL_EPSILON);
 
   int ncenters=mol->natom();   // number of centers
   int icenter;                 // Loop index over centers
@@ -691,48 +848,6 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
       centers[icenter].x() = mol->r(icenter,0);
       centers[icenter].y() = mol->r(icenter,1);
       centers[icenter].z() = mol->r(icenter,2);
-    }
-
-  double *bragg_radius = new double[ncenters];
-  for (icenter=0; icenter<ncenters; icenter++) {
-      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
-    }
-
-  if (a_mat) {
-      delete[] a_mat[0];
-      delete[] a_mat;
-    }
-
-  if (oorab) {
-      delete[] oorab[0];
-      delete[] oorab;
-    }
-  
-  a_mat = new double*[ncenters];
-  a_mat[0] = new double[ncenters*ncenters];
-  oorab = new double*[ncenters];
-  oorab[0] = new double[ncenters*ncenters];
-
-  for (icenter=0; icenter < ncenters; icenter++) {
-      if (icenter) {
-          a_mat[icenter] = &a_mat[icenter-1][ncenters];
-          oorab[icenter] = &oorab[icenter-1][ncenters];
-        }
-
-      double bragg_radius_a = bragg_radius[icenter];
-      
-      for (int jcenter=0; jcenter < ncenters; jcenter++) {
-          double chi=bragg_radius_a/bragg_radius[jcenter];
-          double uab=(chi-1.)/(chi+1.);
-          a_mat[icenter][jcenter] = uab/(uab*uab-1.);
-          if (icenter!=jcenter) {
-              oorab[icenter][jcenter]
-                  = 1./centers[icenter].dist(centers[jcenter]);
-            }
-          else {
-              oorab[icenter][jcenter] = 0.0;
-            }
-        }
     }
 
   int ir, itheta, iphi;       // Loop indices for diff. integration dim
@@ -761,6 +876,11 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
   int nproc = msg->n();
   int me = msg->me();
   int parallel_counter = 0;
+
+  double *bragg_radius = new double[ncenters];
+  for (icenter=0; icenter<ncenters; icenter++) {
+      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
+    }
 
   for (icenter=0; icenter < ncenters; icenter++) {
       if (! (parallel_counter++%nproc == me)) continue;
@@ -808,8 +928,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                   integration_point += center;
 
                   // calculate weighting factor
-                  w=calc_w(icenter, integration_point, ncenters,
-                           centers, bragg_radius);
+                  w=weight_->w(icenter, integration_point);
                     
                   // Update center point count
                   point_count++;
@@ -840,24 +959,19 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
 
   msg->sum(point_count_total);
   done_integration();
+  weight_->done();
 
      cout << node0 << indent
           << "Total integration points = " << point_count_total << endl;
     //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
 
     delete[] theta_quad_points;
+    delete[] bragg_radius;
     delete[] theta_quad_weights;
     delete[] r_values;
     delete[] dr_dq;
-    delete[] bragg_radius;
     delete[] nr;
     delete[] centers;
-    delete[] a_mat[0];
-    delete[] a_mat;
-    a_mat=0;
-    delete[] oorab[0];
-    delete[] oorab;
-    oorab=0;
 }
 
 void

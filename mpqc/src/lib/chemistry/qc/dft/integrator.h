@@ -93,6 +93,48 @@ class DenIntegrator: virtual public SavableState {
 };
 SavableState_REF_dec(DenIntegrator);
 
+class IntegrationWeight: virtual public SavableState {
+#   define CLASSNAME IntegrationWeight
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  public:
+    IntegrationWeight();
+    IntegrationWeight(const RefKeyVal &);
+    IntegrationWeight(StateIn &);
+    ~IntegrationWeight();
+    void save_data_state(StateOut &);
+
+    virtual void init(const RefMolecule &, double tolerance) = 0;
+    virtual void done() = 0;
+    virtual double w(int center, SCVector3 &point, double *grad_w = 0) = 0;
+};
+SavableState_REF_dec(IntegrationWeight);
+
+class BeckeIntegrationWeight: public IntegrationWeight {
+#   define CLASSNAME BeckeIntegrationWeight
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+
+    int ncenters;
+    SCVector3 *centers;
+    double *bragg_radius;
+
+    double **a_mat;
+    double **oorab;
+  public:
+    BeckeIntegrationWeight();
+    BeckeIntegrationWeight(const RefKeyVal &);
+    BeckeIntegrationWeight(StateIn &);
+    ~BeckeIntegrationWeight();
+    void save_data_state(StateOut &);
+
+    void init(const RefMolecule &, double tolerance);
+    void done();
+    double w(int center, SCVector3 &point, double *grad_w = 0);
+};
+
 // Based on C.W. Murray, et al. Mol. Phys. 78, No. 4, 997-1014, 1993
 class Murray93Integrator: public DenIntegrator {
 #   define CLASSNAME Murray93Integrator
@@ -105,6 +147,8 @@ class Murray93Integrator: public DenIntegrator {
     int ntheta_;
     int nphi_;
     int Ktheta_;
+
+    RefIntegrationWeight weight_;
     
   public:
     Murray93Integrator();

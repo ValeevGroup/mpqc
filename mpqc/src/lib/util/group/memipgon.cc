@@ -50,6 +50,7 @@ IParagonMemoryGrp::~IParagonMemoryGrp()
 long
 IParagonMemoryGrp::lock()
 {
+  return 0;
 }
 
 void
@@ -87,6 +88,7 @@ IParagonMemoryGrp::postrecv(void *data, int nbytes, int type)
   fprintf(stderr, "IParagonMemoryGrp::postrecv: not implemented\n");
   sleep(1);
   abort();
+  return 0;
 }
 
 long

@@ -47,7 +47,7 @@
 BiggestContribs biggest_ints_1(4,40);
 #endif
 
-#define WRITE_DOUBLES 0
+#define WRITE_DOUBLES 1
 
 static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
 static void zero_gradients(double **f, int n1, int n2);
@@ -298,6 +298,14 @@ MBPT2::compute_cs_grad()
     ni = compute_cs_batchsize(mem_static, nocc_act); 
     }
 
+  if (max_norb_ > 0 && ni > max_norb_) {
+      cout << node0 << indent
+           << "\"max_norb\" set: could have done "
+           << ni << " orbitals per pass otherwise."
+           << endl;
+      ni = max_norb_;
+    }
+
   // Send value of ni and mem_static to other nodes
   msg_->bcast(ni);
   msg_->bcast(mem_static);
@@ -532,16 +540,11 @@ MBPT2::compute_cs_grad()
     }
 
   mem->set_localsize(nijmax*nbasis*nbasis*sizeof(double));
-  if (debug_) {
-    cout << node0 << indent << "localsize = " << mem->localsize() << endl;
-    cout << node0 << indent << "totalsize = " << mem->totalsize() << endl;
-    }
-  if (mem->totalsize() > INT_MAX) {
-    cout << node0 << indent
-         << "WARNING: possible bug in MBPT2: totalsize = "
-         << mem->totalsize()
-         << endl;
-    }
+  cout << node0 << indent
+       << "Size of global distributed array:       "
+       << mem->totalsize()
+       << " Bytes"
+       << endl;
 
   mem->lock(0);
 
@@ -850,13 +853,13 @@ MBPT2::compute_cs_grad()
           ij_index = nocc*i + j;
           iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
           fwrite(iajb_ptr, sizeof(double), nvir_act, dout);
-//           for (a=0; a<nvir_act; a++) {
-//             if (fabs(iajb_ptr[a])>1.0e-8) {
-//               cout << scprintf(" (%2d %2d|%2d %2d) = %12.8f",
-//                                j+1-nfzc,b+1,i+1,a+1,iajb_ptr[a])
-//                    << endl;
-//               }
-//             }
+          for (a=0; a<nvir_act; a++) {
+            if (fabs(iajb_ptr[a])>1.0e-8) {
+              cout << scprintf(" Djbia(%2d %2d %2d %2d) = %12.8f",
+                               j+1-nfzc,b+1,i+1,a+1,iajb_ptr[a])
+                   << endl;
+              }
+            }
           }
         }
       }

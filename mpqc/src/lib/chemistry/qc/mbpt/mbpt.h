@@ -72,6 +72,9 @@ class MBPT2: public Wavefunction {
     // memorygrp needs catchup to work)
     int dynamic_;
 
+    // The maximum number of orbitals in a pass.
+    int max_norb_;
+
     // the irreps of the orbitals and the offset within the irrep
     int *symorb_irrep_;
     int *symorb_num_;

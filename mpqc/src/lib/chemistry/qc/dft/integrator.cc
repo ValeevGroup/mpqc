@@ -1287,10 +1287,8 @@ EulerMaclaurinRadialIntegrator::get_dr_dqr2(void) const
 void
 EulerMaclaurinRadialIntegrator::print(ostream &o) const
 {
-  o << node0 << indent << class_name() << ":" << endl;
-  o << incindent;
-  o << node0 << indent << scprintf("nr       = %5d", nr()) << endl;
-  o << decindent;
+  o << node0 << indent
+    << scprintf("%s: nr = %d", class_name(), nr()) << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1404,7 +1402,8 @@ LebedevLaikovIntegrator
 void
 LebedevLaikovIntegrator::print(ostream &o) const
 {
-  o << node0 << indent << scprintf("  npoint   =  %5d", npoint_) << endl;
+  o << node0 << indent
+    << scprintf("%s:  n = %d", class_name(), npoint_) << endl;
 }
 
 /////////////////////////////////
@@ -1635,9 +1634,12 @@ GaussLegendreAngularIntegrator
 void
 GaussLegendreAngularIntegrator::print(ostream &o) const
 {
+  o << node0 << indent << class_name() << ":" << endl;
+  o << incindent;
   o << node0 << indent << scprintf("ntheta   = %5d", get_ntheta()) << endl;
   o << node0 << indent << scprintf("nphi     = %5d", get_nphi()) << endl;
   o << node0 << indent << scprintf("Ktheta   = %5d", get_Ktheta()) << endl;
+  o << decindent;
 }
 
 //////////////////////////////////////////////
@@ -1854,7 +1856,7 @@ RadialAngularIntegrator::set_grids(void)
   int i, j, k;
 
   radial_grid_ = new_c_array2(natomic_rows_,gridtype_+1,
-                                                   RefRadialIntegrator());
+                              RefRadialIntegrator());
   angular_grid_ = new_c_array3(natomic_rows_, npruned_partitions_,
                                gridtype_+1, RefAngularIntegrator());
   
@@ -2249,18 +2251,19 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
 void
 RadialAngularIntegrator::print(ostream &o) const
 {
-  o << node0 << indent << class_name() << " Parameters:" << endl;
+  o << node0 << indent << class_name() << ":" << endl;
   o << incindent;
-  if (prune_grid_) o << indent << " Pruned ";
   if (!user_defined_grids_) {
+      if (prune_grid_) o << node0 << indent << "Pruned ";
       switch (gridtype_) {
-      case 0: o << "xcoarse "; break;
-      case 1: o << "xcoarse "; break;
-      case 2: o << "medium  "; break;
-      case 3: o << "fine    "; break;
-      case 4: o << "xfine   "; break;
+      case 0: o << node0 << "xcoarse"; break;
+      case 1: o << node0 << "coarse"; break;
+      case 2: o << node0 << "medium"; break;
+      case 3: o << node0 << "fine"; break;
+      case 4: o << node0 << "xfine"; break;
+      default: o << node0 << "unknown"; break;
         }
-      o << "grid employed" << endl;
+      o << node0 << " grid employed" << endl;
     }
   else {
       radial_user_->print(o);

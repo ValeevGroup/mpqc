@@ -26,7 +26,12 @@ cmat_new_square_matrix(int n)
   double **r;
   if (n == 0) return 0;
   mat = (double*) malloc(sizeof(double)*n*n);
+  if (!mat) return 0;
   r = (double**) malloc(sizeof(double*)*n);
+  if (!r) {
+    free(mat);
+    return 0;
+  }
   cmat_matrix_pointers(r,mat,n,n);
   return r;
 }
@@ -38,7 +43,12 @@ cmat_new_rect_matrix(int n,int m)
   double **r;
   if (n == 0 || m == 0) return 0;
   mat = (double*) malloc(sizeof(double)*n*m);
+  if (!mat) return 0;
   r = (double**) malloc(sizeof(double*)*n);
+  if (!r) {
+    free(mat);
+    return 0;
+  }
   cmat_matrix_pointers(r,mat,n,m);
   return r;
 }
@@ -93,6 +103,10 @@ cmat_transpose_matrix(double**a, int nr, int nc)
     };
 
   tmp = (double*) malloc(sizeof(double)*nr*nc);
+  if (!tmp) {
+    fprintf(stderr,"cmat_transpose_matrix: malloc failed\n");
+    abort();
+  }
 
   tmpp = tmp;
   for (i=0; i<nc; i++) {
@@ -425,6 +439,10 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
       if (nr > nl) {
           old_a = a;
           a = (double**) malloc(nr*sizeof(double*));
+          if (!a) {
+            fprintf(stderr,"cmat_mxm: malloc a failed\n");
+            abort();
+          }
           a[0] = old_a[0];
         }
       cmat_matrix_pointers(a,a[0],nr,nl);
@@ -434,6 +452,10 @@ cmat_mxm(double** a, int ta, double** b, int tb, double** c, int tc,
       if (nc > nl) {
           old_b = b;
           b = (double**) malloc(nc*sizeof(double*));
+          if (!b) {
+            fprintf(stderr,"cmat_mxm: malloc b failed\n");
+            abort();
+          }
           b[0] = old_b[0];
         }
       cmat_matrix_pointers(b,b[0],nc,nl);
@@ -609,6 +631,10 @@ cmat_transform_symmetric_matrix(double**a,int na, /* a is (na,na) */
 
   /* t = transpose(b * transpose(c)) */
   brow = (double*) malloc(sizeof(double)*nb);
+  if (!brow) {
+    fprintf(stderr,"cmat_transform_symmetric_matrix: malloc brow failed\n");
+    abort();
+  }
   for (i=0; i<nb; i++) {
       for (k=0; k<=i; k++) brow[k] = b[i][k];
       for (   ; k<nb; k++) brow[k] = b[k][i];
@@ -706,6 +732,10 @@ cmat_diag(double**a, double*evals, double**evecs, int n,
     }
 
   fv1 = (double*) malloc(sizeof(double)*n);
+  if (!fv1) {
+    fprintf(stderr,"cmat_diag: malloc fv1 failed\n");
+    abort();
+  }
 
   for(i=0; i < n; i++) {
       for(j=0; j <= i; j++) {

@@ -34,6 +34,7 @@
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/compute.h>
 #include <util/state/state.h>
@@ -242,9 +243,10 @@ AccResultInfo::update() {
           abort();
         }
       if (_actual_accuracy > _desired_accuracy) {
-          ExEnv::out0() << indent
-               << "WARNING: AccResultInfo::update: desired accuracy not achieved"
-               << endl;
+          throw ToleranceExceeded("AccResultInfo::update(): "
+                                  "desired accuracy not achieved",
+                                  __FILE__, __LINE__,
+                                  _desired_accuracy, _actual_accuracy);
         }
     }
 }

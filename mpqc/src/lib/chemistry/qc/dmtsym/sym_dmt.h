@@ -33,9 +33,11 @@ extern "C" {
 #ifdef __cplusplus
 }
 
-class PointGroup;
-class RefKeyVal;
+#include <util/keyval/keyval.h>
+#include <math/symmetry/pointgrp.h>
+#include <chemistry/qc/basis/gaussbas.h>
 
+int sym_struct_from_gbs(const RefGaussianBasisSet&, sym_struct_t&);
 int sym_struct_from_pg(const PointGroup&, centers_t&, sym_struct_t&);
 int sym_init_centers(const RefKeyVal&, centers_t&, sym_struct_t&);
 

@@ -111,19 +111,19 @@ endif
 endif
 
 parse.cc: parse.yy
-	@echo The file $@ is out of date.
+	@echo WARNING: The file $@ is out of date.
 	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
-	@exit 1
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
 
 parse.h: parse.yy
-	@echo The file $@ is out of date.
+	@echo WARNING: The file $@ is out of date.
 	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
-	@exit 1
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
 
 scan.cc: scan.ll
-	@echo The file $@ is out of date.
+	@echo WARNING: The file $@ is out of date.
 	@echo It can be built by running \"make scanner DODEPEND=no\" in the source directory.
-	@exit 1
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
 
 #################################################################
 

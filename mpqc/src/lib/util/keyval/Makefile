@@ -97,19 +97,19 @@ endif
 endif
 
 ipv2_parse.cc: ipv2_parse.yy
-	@echo The file $@ is out of date.
+	@echo WARNING: The file $@ is out of date.
 	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
-	@exit 1
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
 
 ipv2_parse.h: ipv2_parse.yy
-	@echo The file $@ is out of date.
+	@echo WARNING: The file $@ is out of date.
 	@echo It can be built by running \"make parser DODEPEND=no\" in the source directory.
-	@exit 1
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
 
 ipv2_scan.cc: ipv2_scan.ll
-	@echo The file $@ is out of date.
+	@echo WARNING: The file $@ is out of date.
 	@echo It can be built by running \"make scanner DODEPEND=no\" in the source directory.
-	@exit 1
+	@echo You may also get the message on files checked out of CVS, in which case you can touch $@ to stop getting this message.
 
 endif
 

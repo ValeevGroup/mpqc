@@ -17,7 +17,10 @@ class OneBodyWavefunction: public Wavefunction {
  protected:
     ResultRefSymmSCMatrix density_;
     AccResultRefSCMatrix eigenvectors_;
+    int nirrep_;
+    int *nvecperirrep_;
 
+    void init_sym_info();
  public:
     OneBodyWavefunction(StateIn&);
     OneBodyWavefunction(const RefKeyVal&);
@@ -27,6 +30,7 @@ class OneBodyWavefunction: public Wavefunction {
 
     virtual RefSCMatrix eigenvectors() = 0;
     virtual double occupation(int irrep, int vectornum) = 0;
+    double occupation(int vectornum);
 
     virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&);
     virtual RefSCMatrix hcore_guess();

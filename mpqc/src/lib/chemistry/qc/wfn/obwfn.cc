@@ -33,7 +33,9 @@ OneBodyWavefunction::_castdown(const ClassDesc*cd)
 OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   Wavefunction(keyval),
   eigenvectors_(this),
-  density_(this)
+  density_(this),
+  nirrep_(0),
+  nvecperirrep_(0)
 {
   eigenvectors_.set_desired_accuracy(
     keyval->doublevalue("eigenvector_accuracy"));
@@ -48,7 +50,9 @@ OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
 OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   Wavefunction(s),
   eigenvectors_(this),
-  density_(this)
+  density_(this),
+  nirrep_(0),
+  nvecperirrep_(0)
   maybe_SavableState(s)
 {
   eigenvectors_.result_noupdate() =
@@ -64,6 +68,7 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
 
 OneBodyWavefunction::~OneBodyWavefunction()
 {
+  delete[] nvecperirrep_;
 }
 
 void
@@ -321,6 +326,31 @@ void
 OneBodyWavefunction::print(ostream&o)
 {
   Wavefunction::print(o);
+}
+
+void
+OneBodyWavefunction::init_sym_info()
+{
+  RefPetiteList pl = integral()->petite_list();
+
+  nirrep_ = pl->nirrep();
+  nvecperirrep_ = new int[nirrep_];
+  for (int i=0; i<nirrep_; i++) {
+    nvecperirrep_[i] = pl->nfunction(i);
+  }
+}
+
+double
+OneBodyWavefunction::occupation(int vectornum)
+{
+  if (!nirrep_) init_sym_info();
+  int svecnum = vectornum;
+  int i;
+  for (i=0; vectornum >= 0 && i<nirrep_; i++) {
+    svecnum = vectornum;
+    vectornum -= nvecperirrep_[i];
+  }
+  return occupation(i-1, svecnum);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,48 @@
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = CS
+  { atoms geometry } = {
+    H [  3.045436 -0.697438 -1.596748 ]
+    H [  3.045436 -0.697438  1.596748 ]
+    N [  2.098157 -0.482779 -0.000000 ]
+    C [ -0.582616 -0.151798  0.000000 ]
+    H [ -1.171620  1.822306  0.000000 ]
+    H [ -1.417337 -1.042238 -1.647529 ]
+    H [ -1.417337 -1.042238  1.647529 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "4-31G*"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  % molecular coordinates for optimization
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+    followed<OutSimpleCo> = [ "N-inversion" 4 3 2 1 ]
+  )  
+  % method for computing the molecule's energy
+  mole<CLSCF>: (
+    molecule = $:molecule
+    basis = $:basis
+    coor = $..:coor
+    memory = 10000000
+  )
+  % optimizer object for the molecular geometry
+  opt<EFCOpt>: (
+    transition_state = yes
+    mode_following = yes
+    max_iterations = 20
+    function = $..:mole
+    update<PowellUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+    )
+  )
+)

@@ -35,10 +35,6 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libstate
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libstate.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libstate.so
-endif
 
 interface:: $(DEPENDINCLUDE)
 

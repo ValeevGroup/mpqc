@@ -27,10 +27,6 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libref
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libref.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libref.so
-endif
 
 interface:: $(DEPENDINCLUDE)
 

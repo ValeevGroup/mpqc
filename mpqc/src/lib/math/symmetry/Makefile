@@ -20,10 +20,6 @@ TARGET_TO_MAKE = libsymmetry
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libsymmetry.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libsymmetry.so
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

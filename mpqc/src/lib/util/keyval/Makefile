@@ -33,10 +33,6 @@ TARGET_TO_MAKE = libkeyval
 DISTFILES = Makefile $(CXXSRC) $(INC) ipv2_parse.yy ipv2_scan.ll LIBS.h
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libkeyval.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libkeyval.so
-endif
 
 keyvaltest: keyvaltest.o libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF) libstate.$(LIBSUF) libgroup.$(LIBSUF) libmisc.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o keyvaltest $^ $(SYSLIBS)

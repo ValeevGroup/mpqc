@@ -43,11 +43,6 @@ TESTFILES = moltest.in
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/libmolecule.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libmolecule.so
-endif
 
 interface:: $(DEPENDINCLUDE)
 

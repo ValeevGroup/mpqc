@@ -54,9 +54,10 @@ ifneq ($(CLASSES),none)
 #dlinfo:: # $(TOPDIR)/lib/$(TARGET_TO_MAKE).dep
 #	$(MKCLASSES) $(TOPDIR)/lib/classes $(TARGET_TO_MAKE).so $(CLASSES)
 
-default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
+else
+default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).a
 endif
 
 #$(TOPDIR)/lib/$(TARGET_TO_MAKE).dep: LIBS.h

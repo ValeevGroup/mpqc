@@ -19,10 +19,6 @@ CSRCS = opt2_fock.c bzerofast.c gcollect.c
 LIBOBJ= $(CXXSRCS:%.cc=%.$(OBJSUF)) $(CSRCS:%.c=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libmbpt.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libmbpt.so
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

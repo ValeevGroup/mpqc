@@ -32,11 +32,6 @@ TESTFILES =
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/librender.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/librender.so
-endif
 
 interface:: $(DEPENDINCLUDE)
 

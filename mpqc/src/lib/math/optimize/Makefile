@@ -29,11 +29,6 @@ TARGET_TO_MAKE = liboptimize
 DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/liboptimize.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/liboptimize.so
-endif
 
 opttest: opttest.o optimize.a util/options/liboptions.a \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)

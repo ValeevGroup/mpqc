@@ -37,11 +37,6 @@ TARGET_TO_MAKE = libisosurf
 DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/libisosurf.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libisosurf.so
-endif
 
 isotest.o: isotest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<

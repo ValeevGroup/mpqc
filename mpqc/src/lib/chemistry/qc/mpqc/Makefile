@@ -17,11 +17,6 @@ TESTSRCS = mpqctest.cc
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/libmpqc.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libmpqc.so
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -30,10 +30,6 @@ DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 LIBOBJ= $(CXXSRC:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libbasis.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libbasis.so
-endif
 
 btest: $(TESTOBJ) libintv3.a liboint3.a libintv2.a liboint2.a \
                   libarray.a libsgen.a \

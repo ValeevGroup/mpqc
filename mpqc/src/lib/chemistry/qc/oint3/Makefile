@@ -133,11 +133,6 @@ endif
 
 LIBOBJ = $(LIBSRC:%.cc=%.$(OBJSUF))
 
-default:: $(TOPDIR)/lib/liboint3.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/liboint3.so
-endif
-
 DISTFILES = Makefile build.h $(LIBSRC1) $(LIBSRC2) $(LIBSRC3)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

@@ -17,10 +17,6 @@ SRCS = nucrep.cc integraljf.cc ovlp.cc kei.cc pei.cc \
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libcints.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libcints.so
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

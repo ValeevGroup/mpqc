@@ -34,12 +34,6 @@ DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 #############################################################
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libintv3.a
-interface:: $(DEPENDINCLUDE)
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libintv3.so
-endif
-
 interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

@@ -17,11 +17,7 @@ LIBOBJ = $(SRCS:%.cc=%.$(OBJSUF))
 LIBOBJ += $(CSRCS:%.c=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).a
 interface:: $(DEPENDINCLUDE)
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -16,11 +16,6 @@ CLASSES = ElectronDensity OneBodyWavefunction Wavefunction
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/libwfn.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libwfn.so
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

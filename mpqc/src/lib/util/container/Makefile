@@ -37,10 +37,6 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libcontainer
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libcontainer.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libcontainer.so
-endif
 
 interface:: $(DEPENDINCLUDE)
 

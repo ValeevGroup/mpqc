@@ -38,10 +38,6 @@ DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
 default:: $(DEPENDINCLUDE)
 default:: dlinfo
-default:: $(TOPDIR)/lib/libclass.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libclass.so
-endif
 
 interface:: $(DEPENDINCLUDE)
 

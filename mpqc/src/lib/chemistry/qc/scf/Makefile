@@ -16,11 +16,6 @@ CLASSES = SCF CLSCF HSOSSCF
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/libscf.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libscf.so
-endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

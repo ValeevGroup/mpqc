@@ -52,10 +52,6 @@ DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
 DEPENDINCLUDE =
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/libgroup.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libgroup.so
-endif
 
 memtest.o: memtest.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<

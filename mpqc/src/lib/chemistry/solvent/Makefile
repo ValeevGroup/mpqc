@@ -26,11 +26,6 @@ TESTFILES = bemtest.in
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)
-default:: dlinfo
-default:: $(TOPDIR)/lib/libsolvent.a
-ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/libsolvent.so
-endif
 
 interface:: $(DEPENDINCLUDE)
 

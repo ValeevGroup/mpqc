@@ -183,6 +183,39 @@ AOSO_Transformation::process(SCMatrixRectBlock* blk)
 
 ////////////////////////////////////////////////////////////////////////////
 
+AOSO_Unit::AOSO_Unit(const RefBlockedSCDimension& rd1,
+                     const RefBlockedSCDimension& rd2)
+  : d1(rd1), d2(rd2)
+{
+}
+
+void
+AOSO_Unit::process(SCMatrixBlockIter&)
+{
+  fprintf(stderr,"AOSO_Unit::process(SCMatrixBlockIter&):"
+          " can only handle RectBlocks\n");
+  abort();
+}
+
+void
+AOSO_Unit::process(SCMatrixRectBlock* blk)
+{
+  int fi = (d1->nblocks()==1) ? d1->first(0) : d1->first(current_block());
+  int fj = (d2->nblocks()==1) ? d2->first(0) : d2->first(current_block());
+
+  int isize = blk->iend - blk->istart;
+  int jsize = blk->jend - blk->jstart;
+  
+  memset(blk->data,0,isize*jsize*sizeof(double));
+
+  for (int i=blk->istart; i < blk->iend; i++)
+    for (int j=blk->jstart; j < blk->jend; j++)
+      if (i+fi==j+fj)
+        blk->data[(i-blk->istart)*jsize+j-blk->jstart]=1;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 struct lin_comb {
     int ns;
     int f0;
@@ -219,6 +252,61 @@ struct lin_comb {
         printf("%2d",f0+i);
         for (int j=0; j < ns; j++)
           printf(" %10.7f",c[i][j]);
+        printf("\n");
+      }
+    }
+};
+
+struct shell_overlap {
+    int nf;
+    double **c;
+
+    void init(GaussianShell& gs) {
+      int i,j;
+
+      if (c) {
+        for (i=0; i < nf; i++)
+          if (c[i]) delete[] c[i];
+        delete[] c;
+      }
+
+      nf = gs.nfunction();
+      c = new double*[nf];
+      for (i=0; i < nf; i++) {
+        c[i] = new double[nf];
+        memset(c[i],0,sizeof(double)*nf);
+      }
+
+      i=j=0;
+      for (int n=0; n < gs.ncontraction(); n++) {
+        for (int fi=0; fi < gs.nfunction(n); fi++)
+          for (int fj=0; fj < gs.nfunction(n); fj++)
+            c[i+fi][j+fj] = gs.relative_overlap(n,fi,fj);
+        i += gs.nfunction(n);
+        j += gs.nfunction(n);
+      }
+    }
+
+    shell_overlap() : nf(0), c(0) {}
+
+    shell_overlap(GaussianShell& gs) : nf(0), c(0) {
+      init(gs);
+    }
+
+    ~shell_overlap() {
+      if (c) {
+        for (int i=0; i < nf; i++)
+          if (c[i]) delete[] c[i];
+        delete[] c;
+        c=0;
+      }
+    }
+
+    void print() const {
+      for (int fi=0; fi < nf; fi++) {
+        printf(" %2d ",fi+1);
+        for (int fj=0; fj < nf; fj++)
+          printf(" %10.7f",c[fi][fj]);
         printf("\n");
       }
     }
@@ -269,6 +357,8 @@ PetiteList::aotoso()
   double *blc = new double[gbs.nbasis()];
   lin_comb **lc = new lin_comb*[ng_];
 
+  shell_overlap sov;
+
   // loop over all unique shells
   for (i=0; i < natom_; i++) {
     for (s=0; s < gbs.nshell_on_center(i); s++) {
@@ -289,6 +379,25 @@ PetiteList::aotoso()
       // function in this shell is mapped to by symmetry operation g
       // is stored in lc[g]
       
+      // test to see if there are any high am cartesian functions in this
+      // shell
+      int cartfunc=0;
+      for (c=0; c < gbs(i,s).ncontraction(); c++) {
+        if (gbs(i,s).am(c) > 1 && gbs(i,s).is_cartesian(c)) {
+          cartfunc=1;
+          sov.init(gbs(i,s));
+          break;
+        }
+      }
+
+      // for now don't allow symmetry with cartesian functions...I just can't
+      // seem to get them working.
+      if (cartfunc) {
+        fprintf(stderr,"PetiteList::aotoso:  cannot yet handle symmetry for"
+                " angular momentum >= 2\n");
+        abort();
+      }
+
       for (g=0; g < ng_; g++) {
         so = ct.symm_operation(g);
         int j = atom_map_[i][g];
@@ -319,16 +428,17 @@ PetiteList::aotoso()
         }
       }
 
-      
       // now operate on the linear combinations with the projection operators
       // for each irrep to form the SO's
       int irnum=0;
       for (ir=0; ir < ct.nirrep(); ir++) {
+        int cmplx = (ct.complex() && ct.gamma(ir).complex());
+        
         for (fn=0; fn < gbs(i,s).nfunction(); fn++) {
           for (d=0; d < ct.gamma(ir).degeneracy(); d++) {
             // if this is a point group with a complex E representation,
             // then only do the first set of projections for E
-            if (d && ct.complex() && ct.gamma(ir).complex())
+            if (d && cmplx)
               break;
             
             for (int comp=0; comp < ct.gamma(ir).degeneracy(); comp++) {

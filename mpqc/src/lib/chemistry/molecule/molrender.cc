@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -55,9 +59,7 @@ RenderedMolecule::RenderedMolecule(const RefKeyVal& keyval):
   mol_(keyval->describedclassvalue("molecule"))
 {
   if (atominfo_.null()) {
-      cerr << node0 << indent
-           << "RenderedMolecule: no \"atominfo\" in keyval\n";
-      abort();
+      atominfo_ = new AtomInfo();
     }
 
   if (mol_.null()) {
@@ -256,10 +258,126 @@ RenderedMolecularSurface::RenderedMolecularSurface(const RefKeyVal& keyval):
   RenderedMolecule(keyval)
 {
   surf_ = keyval->describedclassvalue("surface");
+  colorizer_ = keyval->describedclassvalue("colorizer");
+  if (colorizer_.null())
+      colorizer_ = new AtomProximityColorizer(mol_,atominfo_);
   init();
 }
 
 RenderedMolecularSurface::~RenderedMolecularSurface()
+{
+}
+
+void
+RenderedMolecularSurface::init()
+{
+  int i, ij, j;
+  surf_->init();
+  int nvertex = surf_->nvertex();
+  int ntriangle = surf_->ntriangle();
+  int natom = mol_->natom();
+
+  RefRenderedPolygons o = new RenderedPolygons;
+
+  o->initialize(nvertex, ntriangle, RenderedPolygons::Vertex);
+
+  // extract the atomic positions and colors into an array for rapid access
+  double *axyz = new double[3*natom];
+  double *argb = new double[3*natom];
+  double *arad = new double[natom];
+  ij = 0;
+  for (i=0; i<natom; i++) {
+      ChemicalElement& element = mol_->atom(i).element();
+      arad[i] = atominfo_->radius(element);
+      for (j=0; j<3; j++,ij++) {
+          axyz[ij] = mol_->atom(i)[j];
+          argb[ij] = atominfo_->rgb(element, j);
+        }
+    }
+
+  for (i=0; i<nvertex; i++) {
+      const SCVector3& v = surf_->vertex(i)->point();
+      double x = v[0];
+      double y = v[1];
+      double z = v[2];
+      o->set_vertex(i, x, y, z);
+    }
+  colorizer_->colorize(o);
+
+  delete[] axyz;
+  delete[] argb;
+  delete[] arad;
+
+  for (i=0; i<ntriangle; i++) {
+      o->set_face(i,
+                  surf_->triangle_vertex(i,0),
+                  surf_->triangle_vertex(i,1),
+                  surf_->triangle_vertex(i,2));
+    }
+
+  object_ = o.pointer();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// MoleculeColorizer
+
+#define CLASSNAME MoleculeColorizer
+#define PARENTS public DescribedClass
+#include <util/class/classia.h>
+void *
+MoleculeColorizer::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+MoleculeColorizer::MoleculeColorizer(const RefMolecule&mol)
+{
+  mol_ = mol;
+}
+
+MoleculeColorizer::MoleculeColorizer(const RefKeyVal&keyval)
+{
+  mol_ = keyval->describedclassvalue("molecule");
+}
+
+MoleculeColorizer::~MoleculeColorizer()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// AtomProximityColorizer
+
+#define CLASSNAME AtomProximityColorizer
+#define PARENTS public MoleculeColorizer
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+AtomProximityColorizer::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = MoleculeColorizer::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+AtomProximityColorizer::AtomProximityColorizer(const RefMolecule &mol,
+                                               const RefAtomInfo &ai):
+  MoleculeColorizer(mol)
+{
+  atominfo_ = ai;
+}
+
+AtomProximityColorizer::AtomProximityColorizer(const RefKeyVal&keyval):
+  MoleculeColorizer(keyval)
+{
+  atominfo_ = keyval->describedclassvalue("atominfo");
+  if (atominfo_.null()) {
+      atominfo_ = new AtomInfo();
+    }
+}
+
+AtomProximityColorizer::~AtomProximityColorizer()
 {
 }
 
@@ -328,17 +446,12 @@ compute_color(int n, double* axyz, double* argb, double* arad,
 }
 
 void
-RenderedMolecularSurface::init()
+AtomProximityColorizer::colorize(const RefRenderedPolygons &poly)
 {
-  int i, ij, j;
-  int nvertex = surf_->nvertex();
-  int ntriangle = surf_->ntriangle();
   int natom = mol_->natom();
+  int nvertex = poly->nvertex();
 
-  RefRenderedPolygons o = new RenderedPolygons;
-
-  o->initialize(nvertex, ntriangle, RenderedPolygons::Vertex);
-
+  int i,j,ij;
   // extract the atomic positions and colors into an array for rapid access
   double *axyz = new double[3*natom];
   double *argb = new double[3*natom];
@@ -354,28 +467,18 @@ RenderedMolecularSurface::init()
     }
 
   for (i=0; i<nvertex; i++) {
-      const SCVector3& v = surf_->vertex(i)->point();
+      const double *v = poly->vertex(i);
       double x = v[0];
       double y = v[1];
       double z = v[2];
-      o->set_vertex(i, x, y, z);
       Color c;
       compute_color(natom, axyz, argb, arad, x, y, z, c);
-      o->set_vertex_color(i, c);
+      poly->set_vertex_color(i, c);
     }
 
   delete[] axyz;
   delete[] argb;
   delete[] arad;
-
-  for (i=0; i<ntriangle; i++) {
-      o->set_face(i,
-                  surf_->triangle_vertex(i,0),
-                  surf_->triangle_vertex(i,1),
-                  surf_->triangle_vertex(i,2));
-    }
-
-  object_ = o.pointer();
 }
 
 /////////////////////////////////////////////////////////////////////////////

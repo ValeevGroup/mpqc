@@ -32,7 +32,9 @@
 #include <math.h>
 #include <util/misc/formio.h>
 #include <math/scmat/local.h>
+#include <math/scmat/blocked.h>
 #include <chemistry/molecule/molfreq.h>
+#include <chemistry/molecule/molrender.h>
 
 #define CLASSNAME MolecularFrequencies
 #define VERSION 2
@@ -65,6 +67,9 @@ MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
       d3natom_ = mole_->moldim();
     }
   if (d3natom_.null()) d3natom_ = new SCDimension(3*mol_->natom());
+  bd3natom_ = new SCDimension(3*mol_->natom());
+  bd3natom_->blocks()->set_subdim(0,d3natom_);
+  symkit_ = new BlockedSCMatrixKit(kit_);
 
   displacement_point_group_ = keyval->describedclassvalue("point_group");
   if (displacement_point_group_.null()) {
@@ -117,6 +122,9 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
       d3natom_ = mole_->moldim();
     }
   if (d3natom_.null()) d3natom_ = new SCDimension(3*mol_->natom());
+  bd3natom_ = new SCDimension(3*mol_->natom());
+  bd3natom_->blocks()->set_subdim(0,d3natom_);
+  symkit_ = new BlockedSCMatrixKit(kit_);
 
   si.get(disp_);
   si.get(ndisp_);
@@ -251,6 +259,8 @@ MolecularFrequencies::compute_displacements()
         }
     }
 
+  int *dims = new int[nirrep_];
+
   // Project the cartesian displacements into each irrep
   SymmetryOperation so;
   for (i=0; i<nirrep_; i++) {
@@ -306,6 +316,7 @@ MolecularFrequencies::compute_displacements()
       int ndisp = 0;
       for (j=0; j<irrep.degeneracy(); j++) ndisp += components[j].ncol();
 
+      dims[i] = ndisp;
       RefSCDimension ddisp = new SCDimension(ndisp);
       displacements_[i] = matrixkit()->matrix(d3natom_,ddisp);
       int offset = 0;
@@ -319,6 +330,17 @@ MolecularFrequencies::compute_displacements()
         }
       delete[] components;
     }
+
+  int total = 0;
+  for (i=0; i<nirrep_; i++) {
+      total += dims[i];
+    }
+  RefSCBlockInfo bi = new SCBlockInfo(total, nirrep_, dims);
+  delete[] dims;
+  for (i=0; i<nirrep_; i++) {
+      bi->set_subdim(i, displacements_[i]->coldim());
+    }
+  disym_ = new SCDimension(bi);
 
   for (i=0; i<natom; i++) delete[] atom_map[i];
   delete[] atom_map;
@@ -383,7 +405,8 @@ MolecularFrequencies::displace(int disp)
   for (int i=0, coor=0; i<mol_->natom(); i++) {
       for (int j=0; j<3; j++, coor++) {
           mol_->atom(i)[j] = original_geometry_(coor)
-                           + coef * disp_ * displacements_[irrep](coor,index);
+                           + coef * disp_
+                            * displacements_[irrep]->get_element(coor,index);
         }
     }
 
@@ -431,11 +454,15 @@ MolecularFrequencies::compute_frequencies_from_gradients()
 {
   int i, coor;
 
-  cout << node0 << indent << "Frequencies (cm-1; negative is imaginary):";
+  cout << node0 << endl
+       << indent << "Frequencies (cm-1; negative is imaginary):";
 
-  // initial the frequency tables
+  // initialize the frequency tables
   nfreq_ = new int[nirrep_];
   freq_ = new double*[nirrep_];
+
+  // initialize normal cooridinate matrix
+  normco_ = symmatrixkit()->matrix(bd3natom_, disym_);
 
   // find the inverse sqrt mass matrix
   RefDiagSCMatrix m(d3natom_, matrixkit());
@@ -498,15 +525,22 @@ MolecularFrequencies::compute_frequencies_from_gradients()
       mxhessian.assign(0.0);
       mxhessian.accumulate_transform(mrect,xhessian);
       mxhessian.print("mass weighted cartesian hessian");
-      RefDiagSCMatrix freqs = mxhessian.eigvals();
+      RefDiagSCMatrix freqs(d3natom_, matrixkit());
+      RefSCMatrix eigvec(d3natom_, d3natom_, matrixkit());
+      mxhessian.diagonalize(freqs,eigvec);
       // convert the eigvals to frequencies in wavenumbers
       for (i=0; i<freqs.n(); i++) {
           if (freqs(i) >=0.0) freqs(i) = sqrt(freqs(i));
           else freqs(i) = -sqrt(-freqs(i));
-          freqs(i) = freqs(i) * 219474.63;
+          freqs(i) = freqs->get_element(i) * 219474.63;
         }
       freqs.print("Frequencies from cartesian hessian");
+
+      eigvec.print("Mass weighted cartesian hessian eigenvectors.");
+
+      normco_.print("Normal Coordinates");
     }
+
 }
 
 void
@@ -551,15 +585,24 @@ MolecularFrequencies::do_freq_for_irrep(int irrep,
       mdhessian.print("mass weighted dhessian");
     }
   // diagonalize the hessian
-  RefDiagSCMatrix freqs = mdhessian.eigvals();
+  RefDiagSCMatrix freqs(ddim,matrixkit());
+  RefSCMatrix eigvecs(ddim,ddim,matrixkit());
+  mdhessian.diagonalize(freqs,eigvecs);
   // convert the eigvals to frequencies in wavenumbers
   for (i=0; i<freqs.n(); i++) {
       if (freqs(i) >=0.0) freqs(i) = sqrt(freqs(i));
       else freqs(i) = -sqrt(-freqs(i));
       freq_[irrep][i] = freqs(i);
-      freqs(i) = freqs(i) * 219474.63;
+      freqs(i) = freqs->get_element(i) * 219474.63;
     }
   freqs.print(displacement_point_group_->char_table().gamma(irrep).symbol());
+  if (debug_) {
+      eigvecs.print("eigenvectors");
+      ncbasis.print("ncbasis");
+      (ncbasis*eigvecs).print("ncbasis*eigvecs");
+    }
+  BlockedSCMatrix::castdown(
+      normco_.pointer())->block(irrep).assign(ncbasis*eigvecs);
 }
 
 void
@@ -802,6 +845,95 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   cout << node0 << "Electronic degeneracy: " << degeneracy << endl;
   cout << node0 << endl;
 }
+
+void
+MolecularFrequencies::animate(const RefRender& render,
+                              const RefMolFreqAnimate& anim)
+{
+  int i,j;
+  for (i=0; i<nirrep_; i++) {
+      for (j=0; j<disym_->blocks()->size(i); j++) {
+          char name[128];
+          sprintf(name,"%s.%02d",
+                displacement_point_group_->char_table().gamma(i).symbol(), j);
+          anim->set_name(name);
+          anim->set_mode(i,j);
+          render->animate(anim);
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// MolFreqAnimate
+
+#define CLASSNAME MolFreqAnimate
+#define PARENTS public AnimatedObject
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+MolFreqAnimate::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = AnimatedObject::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+MolFreqAnimate::MolFreqAnimate(const RefKeyVal &keyval):
+  AnimatedObject(keyval)
+{
+  renmol_ = keyval->describedclassvalue("rendered");
+  molfreq_ = keyval->describedclassvalue("freq");
+  dependent_mole_ = keyval->describedclassvalue("dependent_mole");
+  irrep_ = keyval->intvalue("irrep");
+  mode_ = keyval->intvalue("mode");
+  nframe_ = keyval->intvalue("nframe");
+  if (keyval->error() != KeyVal::OK) {
+      nframe_ = 10;
+    }
+}
+
+MolFreqAnimate::~MolFreqAnimate()
+{
+}
+
+int
+MolFreqAnimate::nobject()
+{
+  return nframe_;
+}
+
+RefRenderedObject
+MolFreqAnimate::object(int iobject)
+{
+  BlockedSCMatrix *normco
+      = BlockedSCMatrix::castdown(molfreq_->normal_coordinates());
+  RefMolecule mol = renmol_->molecule();
+
+  double scale = 0.2 * cos(M_PI*(iobject+0.5)/(double)nframe_);
+
+  molfreq_->original_geometry();
+
+  RefSCMatrix irrepblock = normco->block(irrep_);
+  int ixyz, iatom, icoor=0;
+  for (iatom=0; iatom<mol->natom(); iatom++) {
+      for (ixyz=0; ixyz<3; ixyz++, icoor++) {
+          mol->atom(iatom)[ixyz] += scale
+                                   * irrepblock->get_element(icoor,mode_);
+        }
+    }
+
+  if (dependent_mole_.nonnull()) dependent_mole_->obsolete();
+  renmol_->init();
+
+  char name[64];
+  sprintf(name,"%02d",iobject);
+  renmol_->set_name(name);
+
+  molfreq_->original_geometry();
+
+  return renmol_;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

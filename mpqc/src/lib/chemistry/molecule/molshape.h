@@ -38,6 +38,9 @@
 #include <chemistry/molecule/molinfo.h>
 #include <chemistry/molecule/molecule.h>
 
+//. The \clsnm{VDWShape} class describes the surface of a
+//molecule as the union of atom centered spheres, each the
+//van der Waals radius of the atom.
 class VDWShape: public UnionShape {
 #   define CLASSNAME VDWShape
 #   define HAVE_KEYVAL_CTOR
@@ -50,21 +53,25 @@ class VDWShape: public UnionShape {
     void initialize(const RefMolecule&);
 };  
 
-class ConnollyShape: public UnionShape {
-#   define CLASSNAME ConnollyShape
+//. \clsnm{DiscreteConnollyShape} and \clsnmref{ConnollyShape}
+//should produce the same result.  The discrete version is
+//a shape union of discrete subshapes and is slower.  These classes
+//describe the solvent accessible surface of a molecule.
+class DiscreteConnollyShape: public UnionShape {
+#   define CLASSNAME DiscreteConnollyShape
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
     RefAtomInfo atominfo_;
  public:
-    ConnollyShape(const RefKeyVal&);
-    ~ConnollyShape();
+    DiscreteConnollyShape(const RefKeyVal&);
+    ~DiscreteConnollyShape();
     void initialize(const RefMolecule&,double probe_radius);
 };
 
-#ifndef COUNT_CONNOLLY2
-# define COUNT_CONNOLLY2 1
+#ifndef COUNT_CONNOLLY
+# define COUNT_CONNOLLY 1
 #endif
 
 // This is a utility class needed by ConnollyShape2
@@ -74,7 +81,7 @@ class CS2Sphere
     double _radius;
 
   public:
-#if COUNT_CONNOLLY2
+#if COUNT_CONNOLLY
     static int n_no_spheres_;
     static int n_probe_enclosed_by_a_sphere_;
     static int n_probe_center_not_enclosed_;
@@ -135,9 +142,13 @@ class CS2Sphere
     static void print_counts(ostream& = cout);
 };
 
-#define CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM 10
-class ConnollyShape2: public Shape {
-#   define CLASSNAME ConnollyShape2
+#define CONNOLLYSHAPE_N_WITH_NSPHERE_DIM 10
+//. \clsnmref{DiscreteConnollyShape} and \clsnm{ConnollyShape}
+//should produce the same result.  The discrete version is
+//a shape union of discrete subshapes and is slower.  These classes
+//describe the solvent accessible surface of a molecule.
+class ConnollyShape: public Shape {
+#   define CLASSNAME ConnollyShape
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
@@ -147,15 +158,15 @@ class ConnollyShape2: public Shape {
     int n_spheres;
     RefAtomInfo atominfo_;
 
-#if COUNT_CONNOLLY2
+#if COUNT_CONNOLLY
     static int n_total_;
     static int n_inside_vdw_;
-    static int n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM];
+    static int n_with_nsphere_[CONNOLLYSHAPE_N_WITH_NSPHERE_DIM];
 #endif
 
   public:
-    ConnollyShape2(const RefKeyVal&);
-    ~ConnollyShape2();
+    ConnollyShape(const RefKeyVal&);
+    ~ConnollyShape();
     void initialize(const RefMolecule&,double probe_radius);
     double distance_to_surface(const SCVector3&r,
                                SCVector3*grad=0) const;

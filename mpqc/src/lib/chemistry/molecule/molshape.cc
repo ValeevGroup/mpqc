@@ -81,7 +81,7 @@ VDWShape::~VDWShape()
 }
 
 ////////////////////////////////////////////////////////////////////////
-// static functions for ConnollyShape and ConnollyShape2
+// static functions for DiscreteConnollyShape and ConnollyShape
 
 static double
 find_atom_size(const RefAtomInfo& a, ChemicalElement&element)
@@ -90,22 +90,22 @@ find_atom_size(const RefAtomInfo& a, ChemicalElement&element)
 }
 
 ////////////////////////////////////////////////////////////////////////
-// ConnollyShape
+// DiscreteConnollyShape
 
-#define CLASSNAME ConnollyShape
+#define CLASSNAME DiscreteConnollyShape
 #define PARENTS public UnionShape
 #define HAVE_KEYVAL_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
-ConnollyShape::_castdown(const ClassDesc*cd)
+DiscreteConnollyShape::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = UnionShape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
+DiscreteConnollyShape::DiscreteConnollyShape(const RefKeyVal&keyval)
 {
   RefMolecule mol = keyval->describedclassvalue("molecule");
   double probe_radius = keyval->doublevalue("probe_radius");
@@ -117,17 +117,22 @@ ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
 }
 
 void
-ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
+DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 {
   _shapes.clear();
   ArraysetRefSphereShape spheres;
+
+  RefAtomInfo a;
+  if (atominfo_.null()) a = new AtomInfo();
+  else a = atominfo_;
+
   int i;
   for (i=0; i<mol->natom(); i++) {
       SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
       RefSphereShape
         sphere(
-            new SphereShape(r,find_atom_size(atominfo_,
+            new SphereShape(r,find_atom_size(a,
                                              mol->operator[](i).element()))
             );
       add_shape(sphere.pointer());
@@ -163,27 +168,27 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
     }
 }
 
-ConnollyShape::~ConnollyShape()
+DiscreteConnollyShape::~DiscreteConnollyShape()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// ConnollyShape2
+// ConnollyShape
 
-#define CLASSNAME ConnollyShape2
+#define CLASSNAME ConnollyShape
 #define PARENTS public Shape
 #define HAVE_KEYVAL_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
-ConnollyShape2::_castdown(const ClassDesc*cd)
+ConnollyShape::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = Shape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-ConnollyShape2::ConnollyShape2(const RefKeyVal&keyval)
+ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
 {
   sphere = 0;
   RefMolecule mol = keyval->describedclassvalue("molecule");
@@ -195,28 +200,28 @@ ConnollyShape2::ConnollyShape2(const RefKeyVal&keyval)
   initialize(mol,probe_r);
 }
 
-#if COUNT_CONNOLLY2
-int ConnollyShape2::n_total_ = 0;
-int ConnollyShape2::n_inside_vdw_ = 0;
-int ConnollyShape2::n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM];
+#if COUNT_CONNOLLY
+int ConnollyShape::n_total_ = 0;
+int ConnollyShape::n_inside_vdw_ = 0;
+int ConnollyShape::n_with_nsphere_[CONNOLLYSHAPE_N_WITH_NSPHERE_DIM];
 #endif
 
 void
-ConnollyShape2::print_counts(ostream& os)
+ConnollyShape::print_counts(ostream& os)
 {
-  os << node0 << indent << "ConnollyShape2::print_counts():\n" << incindent;
-#if COUNT_CONNOLLY2
+  os << node0 << indent << "ConnollyShape::print_counts():\n" << incindent;
+#if COUNT_CONNOLLY
   os << node0
      << indent << "n_total = " << n_total_ << endl
      << indent << "n_inside_vdw = " << n_inside_vdw_ << endl;
-  for (int i=0; i<CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1; i++) {
+  for (int i=0; i<CONNOLLYSHAPE_N_WITH_NSPHERE_DIM-1; i++) {
       os << node0 << indent
          << scprintf("n with nsphere = %2d: %d\n", i, n_with_nsphere_[i]);
     }
   os << node0 << indent
      << scprintf("n with nsphere >= %d: %d\n",
-                 CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1,
-                 n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1])
+                 CONNOLLYSHAPE_N_WITH_NSPHERE_DIM-1,
+                 n_with_nsphere_[CONNOLLYSHAPE_N_WITH_NSPHERE_DIM-1])
      << decindent;
 #else
   os << node0 << indent << "No count information is available.\n" << decindent;
@@ -224,30 +229,34 @@ ConnollyShape2::print_counts(ostream& os)
 }
 
 void
-ConnollyShape2::initialize(const RefMolecule&mol,double probe_radius)
+ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 {
   if (sphere) delete[] sphere;
   n_spheres = mol->natom();
   sphere = new CS2Sphere[n_spheres];
 
+  RefAtomInfo a;
+  if (atominfo_.null()) a = new AtomInfo();
+  else a = atominfo_;
+
   for (int i=0; i<n_spheres; i++) {
       SCVector3 r;
       for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
-      sphere[i].initialize(r,find_atom_size(atominfo_,
+      sphere[i].initialize(r,find_atom_size(a,
                                             mol->operator[](i).element())
                               + probe_r);
     }
 }
 
-ConnollyShape2::~ConnollyShape2()
+ConnollyShape::~ConnollyShape()
 {
   if (sphere) delete[] sphere;
 }
 
 double
-ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
+ConnollyShape::distance_to_surface(const SCVector3&r, SCVector3*grad) const
 {
-#if COUNT_CONNOLLY2
+#if COUNT_CONNOLLY
   n_total_++;
 #endif
   
@@ -270,7 +279,7 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
       double distance = sphere[i].distance(probe_centers);
       double r_i = sphere[i].radius();
       if (distance < r_i - probe_r) {
-#if COUNT_CONNOLLY2
+#if COUNT_CONNOLLY
           n_inside_vdw_++;
 #endif
           return inside;
@@ -278,7 +287,7 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
       else if (distance < r_i + probe_r) {
           if (n_local_spheres == max_local_spheres) {
               cerr << node0 << indent
-                   << "ConnollyShape2::distance_to_surface:"
+                   << "ConnollyShape::distance_to_surface:"
                    << " max_local_spheres exceeded\n";
               abort();
             }
@@ -287,9 +296,9 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
         }
     }
 
-#if COUNT_CONNOLLY2
-  if (n_local_spheres >= CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM) {
-      n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1]++;
+#if COUNT_CONNOLLY
+  if (n_local_spheres >= CONNOLLYSHAPE_N_WITH_NSPHERE_DIM) {
+      n_with_nsphere_[CONNOLLYSHAPE_N_WITH_NSPHERE_DIM-1]++;
     }
   else {
       n_with_nsphere_[n_local_spheres]++;
@@ -302,14 +311,14 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
 }
 
 void
-ConnollyShape2::boundingbox(double valuemin,
+ConnollyShape::boundingbox(double valuemin,
                             double valuemax,
                             SCVector3& p1, SCVector3& p2)
 {
   int i,j;
   if (valuemin < -1.0 || valuemax > 1.0) {
       cerr << node0 << indent
-           << "ConnollyShape2::boundingbox: value out of range\n";
+           << "ConnollyShape::boundingbox: value out of range\n";
       abort();
     }
 
@@ -520,7 +529,7 @@ class interval
 ////////////////////////////////////////////////////////////////////////
 // CS2Sphere
 
-#if COUNT_CONNOLLY2
+#if COUNT_CONNOLLY
 int CS2Sphere::n_no_spheres_ = 0;
 int CS2Sphere::n_probe_enclosed_by_a_sphere_ = 0;
 int CS2Sphere::n_probe_center_not_enclosed_ = 0;
@@ -534,7 +543,7 @@ void
 CS2Sphere::print_counts(ostream& os)
 {
   os << node0 << indent << "CS2Sphere::print_counts():\n" << incindent;
-#if COUNT_CONNOLLY2
+#if COUNT_CONNOLLY
   os << node0
      << indent << "n_no_spheres = " << n_no_spheres_ << endl
      << indent << "n_probe_enclosed_by_a_sphere = "

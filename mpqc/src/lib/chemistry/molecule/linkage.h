@@ -49,8 +49,8 @@ const ClassDesc &molecule_force_link_f_ = RenderedStickMolecule::class_desc_;
 const ClassDesc &molecule_force_link_g_ = RenderedBallMolecule::class_desc_;
 const ClassDesc &molecule_force_link_h_ =RenderedMolecularSurface::class_desc_;
 const ClassDesc &molecule_force_link_i_ = VDWShape::class_desc_;
-const ClassDesc &molecule_force_link_j_ = ConnollyShape::class_desc_;
-const ClassDesc &molecule_force_link_k_ = ConnollyShape2::class_desc_;
+const ClassDesc &molecule_force_link_j_ = DiscreteConnollyShape::class_desc_;
+const ClassDesc &molecule_force_link_k_ = ConnollyShape::class_desc_;
 
 #endif /* __PIC__ */
 

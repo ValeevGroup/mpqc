@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #ifndef _chemistry_molecule_molrender_h
 #define _chemistry_molecule_molrender_h
 
@@ -42,23 +46,29 @@ class RenderedMolecule: public RenderedObject {
     RefMolecule mol_;
     RefAtomInfo atominfo_;
 
-    virtual void init() = 0;
   public:
     RenderedMolecule(const RefKeyVal& keyval);
     ~RenderedMolecule();
 
+    RefMolecule molecule() { return mol_; }
+
+    // init must be called if the molecule changes
+    virtual void init() = 0;
+
     void render(const RefRender&);
 };
+DescribedClass_REF_dec(RenderedMolecule);
 
 class RenderedStickMolecule: public RenderedMolecule {
 #   define CLASSNAME RenderedStickMolecule
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
   protected:
-    void init();
   public:
     RenderedStickMolecule(const RefKeyVal& keyval);
     ~RenderedStickMolecule();
+
+    void init();
 };
 
 class RenderedBallMolecule: public RenderedMolecule {
@@ -66,10 +76,39 @@ class RenderedBallMolecule: public RenderedMolecule {
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
   protected:
-    void init();
   public:
     RenderedBallMolecule(const RefKeyVal& keyval);
     ~RenderedBallMolecule();
+
+    void init();
+};
+
+class MoleculeColorizer: public DescribedClass {
+#   define CLASSNAME MoleculeColorizer
+#   include <util/class/classda.h>
+  protected:
+    RefMolecule mol_;
+  public:
+    MoleculeColorizer(const RefMolecule &);
+    MoleculeColorizer(const RefKeyVal&);
+    ~MoleculeColorizer();
+
+    virtual void colorize(const RefRenderedPolygons &) = 0;
+};
+DescribedClass_REF_dec(MoleculeColorizer);
+
+class AtomProximityColorizer: public MoleculeColorizer {
+#   define CLASSNAME AtomProximityColorizer
+#   define HAVE_KEYVAL_CTOR
+#   include <util/class/classd.h>
+  protected:
+    RefAtomInfo atominfo_;
+  public:
+    AtomProximityColorizer(const RefMolecule&, const RefAtomInfo &);
+    AtomProximityColorizer(const RefKeyVal &);
+    ~AtomProximityColorizer();
+
+    void colorize(const RefRenderedPolygons &);
 };
 
 class RenderedMolecularSurface: public RenderedMolecule {
@@ -78,10 +117,12 @@ class RenderedMolecularSurface: public RenderedMolecule {
 #   include <util/class/classd.h>
   protected:
     RefTriangulatedImplicitSurface surf_;
-    void init();
+    RefMoleculeColorizer colorizer_;
   public:
     RenderedMolecularSurface(const RefKeyVal& keyval);
     ~RenderedMolecularSurface();
+
+    void init();
 };
 
 #endif

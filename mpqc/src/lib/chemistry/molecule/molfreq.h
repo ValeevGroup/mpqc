@@ -34,7 +34,13 @@
 
 #include <iostream.h>
 #include <math/scmat/matrix.h>
+#include <util/render/animate.h>
 #include <chemistry/molecule/energy.h>
+#include <chemistry/molecule/molrender.h>
+
+DescribedClass_REF_fwddec(RenderedObject);
+DescribedClass_REF_fwddec(RenderedMolecule);
+DescribedClass_REF_fwddec(MolFreqAnimate);
 
 class MolecularFrequencies: public SavableState {
 #   define CLASSNAME MolecularFrequencies
@@ -45,6 +51,7 @@ class MolecularFrequencies: public SavableState {
   private:
     RefMolecularEnergy mole_;
     RefSCMatrixKit kit_;
+    RefSCMatrixKit symkit_;
     RefMolecule mol_;
     // In case molecule must be given in lower symmetry, its actual
     // symmetry and the symmetry used to compute displacements is this
@@ -66,8 +73,15 @@ class MolecularFrequencies: public SavableState {
     int *nfreq_;
     // the frequencies for each irrep
     double **freq_;
-
+    // the symmetry blocked dimension for internal motions
+    RefSCDimension disym_;
+    // the normal coordinates
+    RefSCMatrix normco_;
+    // the cartesian dimension
     RefSCDimension d3natom_;
+    // the blocked cartesian dimension
+    RefSCDimension bd3natom_;
+
     void get_disp(int disp, int &irrep, int &index, double &coef);
     void do_freq_for_irrep(int irrep,
                            const RefDiagSCMatrix &m,
@@ -89,11 +103,37 @@ class MolecularFrequencies: public SavableState {
 
     void thermochemistry(int degeneracy, double temp=298.15, double pres=1.0);
 
+    void animate(const RefRender&, const RefMolFreqAnimate&);
+
+    RefSCMatrix normal_coordinates() { return normco_; }
+
     RefSCMatrixKit matrixkit() { return kit_; }
+    RefSCMatrixKit symmatrixkit() { return symkit_; }
     RefSCDimension d3natom() { return d3natom_; }
 };
 
 SavableState_REF_dec(MolecularFrequencies);
+
+class MolFreqAnimate: public AnimatedObject {
+#   define CLASSNAME MolFreqAnimate
+#   define HAVE_KEYVAL_CTOR
+#   include <util/class/classd.h>
+  private:
+    RefRenderedMolecule renmol_;
+    RefMolecularFrequencies molfreq_;
+    RefMolecularEnergy dependent_mole_;
+    int irrep_;
+    int mode_;
+    int nframe_;
+  public:
+    MolFreqAnimate(const RefKeyVal &);
+    virtual ~MolFreqAnimate();
+
+    int set_mode(int i, int j) { irrep_ = i; mode_ = j; }
+    int nobject();
+    RefRenderedObject object(int iobject);
+};
+DescribedClass_REF_dec(MolFreqAnimate);
 
 #endif
 

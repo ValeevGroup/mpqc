@@ -332,6 +332,20 @@ sub checkpoint {
     $bval;
 }
 
+sub restart {
+    my $self = shift;
+    my $bval = $self->{"parser"}->boolean_value("restart");
+    my $val = $self->{"parser"}->value("restart");
+    if ($val ne "" && $bval eq "") {
+        $self->error("Bad value for restart: $val");
+        $bval = "0";
+    }
+    elsif ($val eq "") {
+        $bval = "1";
+    }
+    $bval;
+}
+
 sub label {
     my $self = shift;
     $self->{"parser"}->value("label");
@@ -789,6 +803,8 @@ sub input_string() {
                              bool_to_yesno($qcinput->checkpoint()));
     $mpqcstart = sprintf ("%s  savestate = %s\n",
                           $mpqcstart,bool_to_yesno($qcinput->checkpoint()));
+    $mpqcstart = sprintf ("%s  restart = %s\n",
+                          $mpqcstart,bool_to_yesno($qcinput->restart()));
     my $mpqcstop = ")\n";
     my $emacs = "% Emacs should use -*- KeyVal -*- mode\n";
     my $warn = "% this file was automatically generated\n";

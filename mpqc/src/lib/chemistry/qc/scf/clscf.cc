@@ -451,11 +451,6 @@ CLSCF::scf_energy()
   RefSymmSCMatrix t = cl_fock_.result_noupdate().copy();
   t.accumulate(hcore_);
 
-  if (debug_>1) {
-    t.print("Fock+Hcore");
-    cl_dens_.print("Closed Shell Density");
-  }
-
   SCFEnergy *eop = new SCFEnergy;
   eop->reference();
   Ref<SCElementOp2> op = eop;

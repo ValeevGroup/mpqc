@@ -257,7 +257,9 @@ SCF::compute_vector(double& eelec)
       set_occupations(evals);
 
     if (debug_>1) {
-      oso_scf_vector_.print("orthogonalized SO basis scf vector");
+      oso_scf_vector_.print("OSO basis scf vector");
+      (oso_scf_vector_.t()*oso_scf_vector_).print(
+        "vOSO.t()*vOSO",ExEnv::out(),14);
     }
   }
       

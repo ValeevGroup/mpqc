@@ -16,17 +16,18 @@ REALCXXSRC = array.cc set.cc ref.cc ref_i.cc voidptr.cc
 GENSRC = $(GENCXXSRC)
 
 CXXSRC = $(GENCXXSRC) $(REALCXXSRC)
+TESTCXX = settest.cc settestt.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
       set.h array.h ref.h ref_i.h
 
-GENINC = $(GENCXXSRC:%.cc=%.h)
+GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
-DISTFILES = Makefile $(INC) LIBS.h settest.cc $(REALCXXSRC)
+DISTFILES = Makefile $(INC) LIBS.h $(REALCXXSRC) $(TESTCXX)
 
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libcontainer
@@ -34,20 +35,32 @@ TARGET_TO_MAKE = libcontainer
 default:: $(DEPENDINCLUDE)
 default:: libcontainer.a
 
+setmacr.h: settmpl.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > setmacr.h
+
+asetmacr.h: asettmpl.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > asetmacr.h
+
 settest: settest.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o settest $^
+
+settestt: settestt.o libcontainer.a
+	$(CXX) $(CXXFLAGS) -o settestt $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 iclean::
 	-rm -f foo.h
 
+distclean::
+	-/bin/rm -f $(GENINC)
+
 install_inc:: $(INC) $(GENINC)
 	$(INCINSTALL) $^ $(INCDIR)/SC/util/container
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) settest.d
+include $(LIBOBJ:.o=.d)
 endif
 
 pixvpMap.cc pixvpMap.h:

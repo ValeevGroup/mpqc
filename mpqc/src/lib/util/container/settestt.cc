@@ -22,15 +22,6 @@ void Intg::print() { printf("%d\n",_int); }
 REF_dec(Intg);
 REF_def(Intg);
 
-ARRAY_dec(RefIntg);
-ARRAY_def(RefIntg);
-
-SET_dec(RefIntg);
-SET_def(RefIntg);
-
-ARRAYSET_dec(RefIntg);
-ARRAYSET_def(RefIntg);
-
 class A: public VRefCount {
     int a;
   public:
@@ -67,7 +58,7 @@ main()
 
   RefIntg ii = new Intg(100);
 
-  ArraysetRefIntg as;
+  Arrayset<RefIntg> as;
 
   for (int i=0; i<2; i++) {
       as.add(new Intg(i));

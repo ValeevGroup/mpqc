@@ -84,6 +84,8 @@ class Integral : public SavableState {
     // charges from the atom on the first center are used
     virtual RefOneBodyInt nuclear() = 0;
 
+    virtual RefOneBodyInt hcore() = 0;
+
     virtual RefOneBodyInt efield_dot_vector(const RefEfieldDotVectorData&) =0;
 
     virtual RefOneBodyInt dipole(const RefDipoleData&) =0;

@@ -42,6 +42,7 @@ long SCFormIO::nindent_ = 0;
 long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
 long SCFormIO::verbose_ = 0;
+long SCFormIO::initialized_ = 0;
 int SCFormIO::node_to_print_ = 0;
 int SCFormIO::debug_ = 0;
 int SCFormIO::parallel_ = 0;
@@ -111,12 +112,16 @@ SCFormIO::init_ostream(ostream &o)
       indent_size_ = ios::xalloc();
       skip_indent_ = ios::xalloc();
       verbose_ = ios::xalloc();
+      initialized_ = ios::xalloc();
     }
+
+  if (o.iword(initialized_)) return;
 
   o.iword(skip_indent_) = 0;
   o.iword(indent_size_) = 0;
   o.iword(nindent_) = 2;
   o.iword(verbose_) = 0;
+  o.iword(initialized_) = 1;
 }
 
 void

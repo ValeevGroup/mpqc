@@ -111,11 +111,9 @@ main(int argc, char *argv[])
         }
     }
 
-  const char *SCLS_VERSION = "1.0";
-
   if (help) {
       cout << node0
-           << indent << "scls version " << SCLS_VERSION << endl
+           << indent << "scls version " << SC_VERSION << endl
            << SCFormIO::copyright << endl
            << indent << "-memorygrp <$val> (which memory group to use)" << endl
            << indent << "-threadgrp <$val> (which thread group to use)" << endl
@@ -132,14 +130,14 @@ main(int argc, char *argv[])
   
   if (version) {
     cout << node0
-         << indent << "scls version " << SCLS_VERSION << endl
+         << indent << "scls version " << SC_VERSION << endl
          << SCFormIO::copyright;
     exit(0);
   }
   
   if (warranty) {
     cout << node0
-         << indent << "scls version " << SCLS_VERSION << endl
+         << indent << "scls version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
     exit(0);
@@ -147,7 +145,7 @@ main(int argc, char *argv[])
   
   if (license) {
     cout << node0
-         << indent << "scls version " << SCLS_VERSION << endl
+         << indent << "scls version " << SC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
     exit(0);

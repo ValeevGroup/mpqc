@@ -3,11 +3,9 @@ ifndef SRCDIR
   SRCDIR=.
 endif
 
-BIN_OR_LIB = BIN
-
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
-
-LD = $(CXX)
+INCLUDE += -I. -I$(SRCDIR)
+CXXINCLUDE += -I. -I$(SRCDIR)
 
 TARGET_TO_MAKE = molrender
 
@@ -28,7 +26,10 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 main.o: main.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+molrender: $(BINOBJ) $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
 $(BINOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

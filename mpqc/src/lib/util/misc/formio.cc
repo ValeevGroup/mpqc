@@ -1,7 +1,7 @@
 
 #include <util/misc/formio.h>
 
-bool SCFormIO::ready_ = false;
+int  SCFormIO::ready_ = 0;
 long SCFormIO::nindent_ = 0;
 long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
@@ -9,7 +9,7 @@ long SCFormIO::skip_indent_ = 0;
 void
 SCFormIO::init()
 {
-  ready_ = true;
+  ready_ = 1;
   nindent_ = ios::xalloc();
   indent_size_ = ios::xalloc();
   skip_indent_ = ios::xalloc();
@@ -38,6 +38,7 @@ SCFormIO::incindent(ios&o)
   if (size == 0) size = 2;
   else if (size < 0) size = 0;
   n += size;
+  return o;
 }
 
 ios&
@@ -50,6 +51,7 @@ SCFormIO::decindent(ios&o)
   else if (size < 0) size = 0;
   n -= size;
   if (n<0) n=0;
+  return o;
 }
 
 long

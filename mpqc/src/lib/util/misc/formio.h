@@ -6,7 +6,7 @@
 
 class SCFormIO {
   private:
-    static bool ready_;
+    static int  ready_;
     static long nindent_;
     static long indent_size_;
     static long skip_indent_;

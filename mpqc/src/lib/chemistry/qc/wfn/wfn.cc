@@ -77,10 +77,9 @@ Wavefunction::natural_orbitals()
       RefSymmSCMatrix dens = density();
 
       // transform the density into an orthogonal basis
-      const GaussianBasisSet& gbs = *basis();
       RefSCMatrix ortho;
       RefSCMatrix orthoi;
-      gbs.ortho(ortho,orthoi);
+      basis()->ortho(ortho,orthoi);
 
       RefSymmSCMatrix densortho(_basisdim);
       densortho.assign(0.0);

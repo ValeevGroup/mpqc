@@ -123,6 +123,12 @@ class PetiteList : public VRefCount {
 
     // this returns a non-blocked AO basis matrix.
     RefSymmSCMatrix to_AO_basis(const RefSymmSCMatrix&);
+
+    // these two are just for eigenvectors
+    // returns non-blocked AO basis eigenvectors
+    RefSCMatrix evecs_to_AO_basis(const RefSCMatrix&);
+    // returns blocked SO basis eigenvectors
+    RefSCMatrix evecs_to_SO_basis(const RefSCMatrix&);
 };
 
 inline int

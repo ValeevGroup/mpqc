@@ -574,6 +574,38 @@ PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
   return aom;
 }
 
+RefSCMatrix
+PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
+{
+  fprintf(stderr,"PetiteList::evecs_to_SO_basis: don't work yet\n");
+  abort();
+  
+  RefSCMatrix aoevecs = BlockedSCMatrix::castdown(aoev);
+  if (aoevecs.null) {
+    aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), AO_basisdim());
+    aoevecs->convert(aoev);
+  }
+
+  RefSCMatrix soev =  aotoso().t() * aoevecs;
+  soev.print("soev");
+
+  RefSCMatrix soevecs(SO_basisdim(), SO_basisdim(), gbs_->so_matrixkit());
+  soevecs->convert(soev);
+
+  return soevecs;
+}
+
+RefSCMatrix
+PetiteList::evecs_to_AO_basis(const RefSCMatrix& soevecs)
+{
+  RefSCMatrix aoev = aotoso() * soevecs;
+
+  RefSCMatrix aoevecs(gbs_->basisdim(), gbs_->basisdim(), gbs_->matrixkit());
+  aoevecs->convert(aoev);
+
+  return aoevecs;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 static void

@@ -606,7 +606,7 @@ void
 LocalSCVector::assign(double a)
 {
   int nelem = n();
-  for (int i=0; i<nelem; i++) block->data[i] += a;
+  for (int i=0; i<nelem; i++) block->data[i] = a;
 }
 
 void

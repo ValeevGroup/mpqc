@@ -1,9 +1,5 @@
 
-\addtocounter{clsheadingnum}{1}
-\addtocounter{clssubheadingnum}{1}
-
 \chapter{The Matrix Library}
-%\doheading{2}{Introduction}
 
 The scientific computing matrix library (SCMAT) is designed around a set
 of matrix abstractions that permit very general matrix implementations.
@@ -167,7 +163,6 @@ group symmetry.
 \end{description}
 
 \section{Matrix Dimensions}
-%\doheading{2}{Matrix Dimensions}
 
 In addition to the simple integer dimension, objects of the
 \clsnmref{SCDimension} class contain application specific blocking
@@ -178,7 +173,6 @@ information.  This information is held in an object of class
 \input{math/scmat/doc/SCBlockInfo.cls.tex}
 
 \section{Matrix Reference Classes}\label{matrixrefclass}
-%\doheading{2}{Matrix Reference Classes}\label{matrixrefclass}
 
 The easiest way to use SCMAT is through the smart pointer classes
 \clsnmref{RefSCMatrix}, \clsnmref{RefSymmSCMatrix},
@@ -197,7 +191,6 @@ it unnecessary to also use the sometimes awkward syntax of
 \input{math/scmat/doc/RefDiagSCMatrix.cls.tex}
 
 \section{Abstract Matrix Classes}
-%\doheading{2}{Abstract Matrix Classes}
 
 This section documents the primary abstract classes: \clsnmref{SCMatrix},
 \clsnmref{SymmSCMatrix}, \clsnmref{DiagSCMatrix}, and \clsnmref{SCVector},
@@ -216,7 +209,6 @@ in \htmlref{the matrix reference classes}{matrixrefclass}.
 \input{math/scmat/doc/DiagSCMatrix.cls.tex}
 
 \section{Matrix Storage}
-%\doheading{2}{Matrix Storage}
 
 All elements of matrices and vectors are kept in blocks.  The
 choice of blocks and where they are keep is left up to each
@@ -233,7 +225,6 @@ matrix specialization.
 \input{math/scmat/doc/SCVectorSimpleSubBlock.cls.tex}
 
 \section{Manipulating Matrix Elements with Element Operations}
-%\doheading{2}{Manipulating Matrix Elements with Element Operations}
 
 \input{math/scmat/doc/SCElementOp.cls.tex}
 \input{math/scmat/doc/SCElementOp2.cls.tex}
@@ -241,7 +232,6 @@ matrix specialization.
 \input{math/scmat/doc/SCMatrixBlockIter.cls.tex}
 
 \section{\clsnm{SCElementOp} Specializations}
-%\doheading{2}{\clsnm{SCElementOp} Specializations}
 
 Several commonly needed element operations are already coded
 up and available by including \filnm{math/scmat/elemop.h}.
@@ -289,37 +279,29 @@ it.
 \end{description}
 
 \section{Manipulating Matrix Elements with Block Iterators}
-%\doheading{2}{Manipulating Matrix Elements with Block Iterators}
 
 \input{math/scmat/doc/SCMatrixSubblockIter.cls.tex}
 
 \subsection{Local Matrices}
-%\doheading{3}{Local Matrices}
 
 Local matrices do no communication.  All elements reside on each node
 and all computations are duplicated on each node.
 
 \subsection{Replicated Matrices}
-%\doheading{3}{Replicated Matrices}
 
 Replicated matrices hold all of the elements on each node, however
 do some communications in order to reduce computation time.
 
 \subsection{Distributed Matrices}
-%\doheading{3}{Distributed Matrices}
 
 Distributed matrices spread the elements across all the nodes and
 thus require less storage than local matrices however these use
-more communications that replicated matrices.
+more communications than replicated matrices.
 
 \subsection{Blocked Matrices}
-%\doheading{3}{Blocked Matrices}
 
 Blocked matrices are used to implement point group symmetry.  Another
 matrix specialization is used to hold the diagonal subblocks of a
 matrix.  The offdiagonal subblocks are known to be zero and not stored.
 This results in considerable savings in storage and computation for
 those cases where it applies.
-
-\addtocounter{clsheadingnum}{-1}
-\addtocounter{clssubheadingnum}{-1}

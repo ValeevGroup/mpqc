@@ -31,6 +31,7 @@ RedundMolecularCoor::_castdown(const ClassDesc*cd)
 RedundMolecularCoor::RedundMolecularCoor(RefMolecule&mol):
   IntMolecularCoor(mol)
 {
+  init();
 }
 
 RedundMolecularCoor::RedundMolecularCoor(const RefKeyVal& keyval):

@@ -165,7 +165,7 @@ class IntMolecularCoor: public MolecularCoor
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
-#   include <util/class/classd.h>
+#   include <util/class/classda.h>
   protected:
     void form_K_matrices(RefSCDimension& dredundant,
                          RefSCDimension& dfixed,
@@ -210,13 +210,17 @@ class IntMolecularCoor: public MolecularCoor
     int* extra_bonds_;
 
     virtual void init();
+    virtual void new_coords();
+    virtual void read_keyval(const RefKeyVal&);
   public:
     IntMolecularCoor(RefMolecule&mol);
     IntMolecularCoor(const RefKeyVal&);
     IntMolecularCoor(StateIn&);
     virtual ~IntMolecularCoor();
     void save_data_state(StateOut&);
-    virtual void form_coordinates();
+  
+    virtual void form_coordinates() =0;
+    
     virtual RefSCDimension dim();
     virtual int to_cartesian(RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
@@ -226,6 +230,25 @@ class IntMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
     virtual void print(SCostream& =SCostream::cout);
     virtual void print_simples(SCostream& =SCostream::cout);
+};
+
+/////////////////////////////////////////////////////////////////////////
+
+class SymmMolecularCoor: public IntMolecularCoor
+{
+#   define CLASSNAME SymmMolecularCoor
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+
+  public:
+    SymmMolecularCoor(RefMolecule&mol);
+    SymmMolecularCoor(const RefKeyVal&);
+    SymmMolecularCoor(StateIn&);
+    virtual ~SymmMolecularCoor();
+    void save_data_state(StateOut&);
+    void form_coordinates();
     void guess_hessian(RefSymmSCMatrix&hessian);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };

@@ -147,7 +147,7 @@ CartMolecularCoor::print_simples(SCostream& os)
 void
 CartMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
-  IntMolecularCoor imcoor(molecule_);
+  SymmMolecularCoor imcoor(molecule_);
   RefSymmSCMatrix ihessian(imcoor.dim());
   imcoor.guess_hessian(ihessian);
   imcoor.to_cartesian(hessian,ihessian);

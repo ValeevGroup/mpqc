@@ -1293,7 +1293,7 @@ libtool_flags=
 test "$enableshared" = no && libtool_flags="$libtool_flags --disable-shared"
 test "$enablestatic" = no && libtool_flags="$libtool_flags --disable-static"
 
-test ! -d bin || mkdir bin
+test -d bin || mkdir bin
 
 CC="$CXX" CFLAGS="$CXXFLAGS" CPPFLAGS="$CPPFLAGS" \
 LD="$LD" LDFLAGS="$LDFLAGS" LIBS="$LIBS $FLIBS" \

@@ -35,6 +35,12 @@
 #include <chemistry/qc/intv3/utils.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+#ifdef __i386__
+#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
+#else
+#define FIX_STACK
+#endif
+
   /* MG is the maximum angular momentum for which we will use
    * the generated build routines. It is defined in oint3/build.h */
 #define MINA(x) (((x)<MG)?(x):MG)
@@ -531,6 +537,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              int minam1, int minam3, int maxam12, int maxam34,
                              int dam1, int dam2, int dam3, int dam4, int eAB)
 {
+  FIX_STACK;
   int have_all_ints;
   int i,j,k,l,m,n;
   int ci,cj,ck,cl;
@@ -737,6 +744,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
                          int minam1, int minam3, int maxam12, int maxam34,
                          int dam1, int dam2, int dam3, int dam4, int eAB)
 {
+  FIX_STACK;
   int have_all_ints;
   int i,j,k,l,m,n;
   int ci,cj,ck,cl;
@@ -922,6 +930,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
 void
 Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
 {
+  FIX_STACK;
   int i;
   double T;
   double pmq,pmq2;
@@ -1039,6 +1048,7 @@ void
 Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
                                           int am, double norm)
 {
+  FIX_STACK;
   int i;
   double T;
   double pmq,pmq2;
@@ -1153,6 +1163,7 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
 void
 Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 {
+  FIX_STACK;
   if (int_store1 && !int_unit2 && !int_unit4) {
     build.int_v_r10 = int_shell_r(osh1,0);
     build.int_v_r11 = int_shell_r(osh1,1);
@@ -1201,6 +1212,7 @@ Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 double *
 Int2eV3::buildprim(int am12, int am34, int m)
 {
+  FIX_STACK;
   double *buffer;
 
   /* Is this no integral? */
@@ -1233,6 +1245,7 @@ Int2eV3::buildprim(int am12, int am34, int m)
 void
 Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
 {
+  FIX_STACK;
   double *I10; /* = [a0|c0](m) */
   double *I11; /* = [a0|c0](m+1) */
   double *I20; /* = [a-1 0|c0](m) */
@@ -1472,6 +1485,7 @@ Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
 void
 Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
 {
+  FIX_STACK;
   double *I10; /* = [a0|c0](m) */
   double *I11; /* = [a0|c0](m+1) */
   double *I20; /* = [a0|c-1 0](m) */

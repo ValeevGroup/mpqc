@@ -354,7 +354,8 @@ Molecule::add_atom(int Z,double x,double y,double z,
 void
 Molecule::print_parsedkeyval(ostream& os,
                              int print_pg,
-                             int print_unit) const
+                             int print_unit,
+                             int number_atoms) const
 {
   int i;
 
@@ -362,33 +363,32 @@ Molecule::print_parsedkeyval(ostream& os,
 
   if (print_pg) pg_->print(os);
   if (print_unit && geometry_units_->string_rep()) {
-      os << node0 << indent
+      os << indent
          << "unit = \"" << geometry_units_->string_rep() << "\""
          << endl;
     }
-  os << node0 << indent
-     << scprintf("{%3s", "n")
-     << scprintf(" %5s", "atoms");
-  if (labels_) os << node0 << scprintf(" %11s", "atom_labels");
+  os << indent << "{";
+  if (number_atoms) os << scprintf("%3s", "n");
+  os << scprintf(" %5s", "atoms");
+  if (labels_) os << scprintf(" %11s", "atom_labels");
   int int_charges = 1;
   if (charges_) {
       for (i=0;i<natom();i++) if (charges_[i]!=(int)charges_[i]) int_charges=0;
       if (int_charges) {
-          os << node0 << scprintf(" %7s", "charge");
+          os << scprintf(" %7s", "charge");
         }
       else {
-          os << node0 << scprintf(" %17s", "charge");
+          os << scprintf(" %17s", "charge");
         }
     }
-  os << node0
-     << scprintf("  %16s", "")
+  os << scprintf("  %16s", "")
      << scprintf(" %16s", "geometry   ")
      << scprintf(" %16s ", "");
-  os << node0 << "}={" << endl;
+  os << "}={" << endl;
   for (i=0; i<natom(); i++) {
-      os << node0 << indent
-         << scprintf(" %3d", i+1)
-         << scprintf(" %5s", AtomInfo::symbol(Z_[i]));
+      os << indent;
+      if (number_atoms) os << scprintf(" %3d", i+1);
+      os << scprintf(" %5s", AtomInfo::symbol(Z_[i]));
       if (labels_) {
           const char *lab = labels_[i];
           if (lab == 0) lab = "";
@@ -396,21 +396,19 @@ Molecule::print_parsedkeyval(ostream& os,
           strcpy(qlab,"\"");
           strcat(qlab,lab);
           strcat(qlab,"\"");
-          os << node0
-             << scprintf(" %11s",qlab);
+          os << scprintf(" %11s",qlab);
           delete[] qlab;
         }
       if (charges_) {
-          if (int_charges) os << node0 << scprintf(" %7.4f", charges_[i]);
-          else os << node0 << scprintf(" %17.15f", charges_[i]);
+          if (int_charges) os << scprintf(" %7.4f", charges_[i]);
+          else os << scprintf(" %17.15f", charges_[i]);
         }
-      os << node0
-         << scprintf(" [% 16.10f", conv * r(i,0))
+      os << scprintf(" [% 16.10f", conv * r(i,0))
          << scprintf(" % 16.10f", conv * r(i,1))
          << scprintf(" % 16.10f]", conv * r(i,2))
          << endl;
     }
-  os << node0 << indent << "}" << endl;
+  os << indent << "}" << endl;
 }
 
 void
@@ -425,7 +423,7 @@ Molecule::print(ostream& os) const
 
   os << node0 << indent << "molecule<Molecule>: (" << endl;
   os << incindent;
-  print_parsedkeyval(os);
+  print_parsedkeyval(os << node0);
   os << decindent;
   os << node0 << indent << ")" << endl;
 

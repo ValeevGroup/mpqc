@@ -338,16 +338,16 @@ MPQCIn::parse_string(const char *s)
   SCFormIO::init_ostream(ostrs);
   ostrs << decindent;
   if (mol_.null()) error("no molecule given");
-  ostrs << node0 << indent << "molecule<Molecule>: (" << endl;
+  ostrs << indent << "molecule<Molecule>: (" << endl;
   ostrs << incindent;
   ostrs << indent << "symmetry = "
         << (symmetry_.set()?symmetry_.val():"auto") << endl;
   ostrs << indent << "unit = \""
         << (molecule_bohr_.val()?"bohr":"angstrom")
         << "\"" << endl;
-  mol_->print_parsedkeyval(ostrs, 0, 0);
+  mol_->print_parsedkeyval(ostrs, 0, 0, 0);
   ostrs << decindent;
-  ostrs << node0 << indent << ")" << endl;
+  ostrs << indent << ")" << endl;
   write_basis_object(ostrs, "basis", basis_.val());
   ostrs << indent << "mpqc: (" << endl;
   ostrs << incindent;

@@ -340,13 +340,14 @@ main(int argc, char *argv[])
     }
 
   int use_simple_input;
-  if (generic_input) {
+  if (generic_input && grp->me() == 0) {
     MPQCIn mpqcin;
     use_simple_input = mpqcin.check_string(in_char_array);
   }
   else {
     use_simple_input = 0;
   }
+  grp->bcast(use_simple_input);
 
   if (use_simple_input) {
     MPQCIn mpqcin;

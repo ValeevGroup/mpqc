@@ -119,6 +119,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 
 R12IntEvalInfo::~R12IntEvalInfo()
 {
+  free(ints_file_);
   delete[] orbsym_;
 }
 

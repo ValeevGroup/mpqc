@@ -90,10 +90,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     aux_basis_ = basis();
 
   // Default is to assume GBC and EBC
-  if (keyval->exists("gebc"))
-    gebc_ = keyval->booleanvalue("gebc");
-  else
-    gebc_ = true;
+  gebc_ = keyval->booleanvalue("gebc",KeyValValueboolean((int)true));
   if (gebc_ == false)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12: gebc=false has not been implemented yet");
 
@@ -117,8 +114,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
 
   // Default is to use spin-adapted algorithm
-  spinadapted_ = true;
-  spinadapted_ = keyval->booleanvalue("spinadapted");
+  spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
 
   // Determine how to store MO integrals
   char* r12ints_str = 0;

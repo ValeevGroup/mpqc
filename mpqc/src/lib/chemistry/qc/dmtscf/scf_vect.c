@@ -200,6 +200,15 @@ FILE *outfile;
     return -1;
   }
 
+  if (scf_info->print_flg & 1024) {
+    if (mynode0()==0)
+      fprintf(outfile,"Overlap Integrals\n");
+    dmt_print(S);
+    if (mynode0()==0)
+      fprintf(outfile,"Hcore\n");
+    dmt_print(Hcore);
+  }
+  
  /* we don't need the T and V matrices any longer, so free up the memory */
   dmt_free(T);
   dmt_free(V);
@@ -260,6 +269,15 @@ FILE *outfile;
       return -1;
     }
 
+    if (scf_info->print_flg & 1024 && mynode0()==0) {
+      if (mynode0()==0)
+        fprintf(outfile,"Sahalf\n");
+      dmt_print(Sahalf);
+
+      if (mynode0()==0)
+        fprintf(outfile,"Hcore Guess\n");
+      dmt_print(Scf_Vec);
+    }
     dmt_free(Sahalf);
   }
 

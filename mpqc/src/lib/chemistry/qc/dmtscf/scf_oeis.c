@@ -85,6 +85,15 @@ FILE *outfile;
       }
   }
 
+  if (scf_info->print_flg&1024) {
+    if (mynode0()==0)
+      printf("V integrals\n");
+    dmt_print(V);
+    if (mynode0()==0)
+      printf("T integrals\n");
+    dmt_print(T);
+  }
+
   dmt_copy(V,H);
   dmt_sum(T,H);
 

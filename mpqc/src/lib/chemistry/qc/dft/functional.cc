@@ -361,6 +361,128 @@ SlaterXFunctional::point(const PointInputData &id,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// PW92LCFunctional
+
+#define CLASSNAME PW92LCFunctional
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public DenFunctional
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+PW92LCFunctional::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+PW92LCFunctional::PW92LCFunctional(StateIn& s):
+  SavableState(s),
+  DenFunctional(s)
+{
+}
+
+PW92LCFunctional::PW92LCFunctional()
+{
+}
+
+PW92LCFunctional::PW92LCFunctional(const RefKeyVal& keyval):
+  DenFunctional(keyval)
+{
+}
+
+PW92LCFunctional::~PW92LCFunctional()
+{
+}
+
+void
+PW92LCFunctional::save_data_state(StateOut& s)
+{
+  cout << "PW92LCFunctional: cannot save state" << endl;
+  abort();
+}
+
+double
+PW92LCFunctional::F(double x, double A, double alpha_1, double beta_1, double beta_2,
+                    double beta_3, double beta_4, double p)
+{
+  double x2 = x*x; // r_s
+  double denom = 2.*A*( beta_1 * x + beta_2 * x2 + beta_3 * x2*x + beta_4 * pow(x2,p+1.));
+  double res = -2.*A*(1. + alpha_1*x2)*log(1.+ 1./denom);
+
+  return res;
+}
+
+double
+PW92LCFunctional::dFdr_s(double x, double A, double alpha_1, double beta_1, double beta_2,
+                    double beta_3, double beta_4, double p)
+{
+  double x2 = x*x; // r_s
+  double Q_0 = -2.*A*(1. + alpha_1*x2);
+  double Q_1 =  2.*A*(beta_1 * x + beta_2 * x2 + beta_3*x*x2 + beta_4 * pow(x2,p));
+  double Q_1prime = A * 
+           ( beta_1 * 1./x + 2.*beta_2 + 3.*beta_3*x + 2.*(p+1.)*beta_4*pow(x2,p));
+  double res = -2.*A*alpha_1*log(1. + 1./Q_1) - Q_0*Q_1prime/(Q_1*Q_1 + Q_1);
+
+  return res;
+}
+
+void
+PW92LCFunctional::point(const PointInputData &id,
+                       PointOutputData &od)
+{
+  od.zero();
+  const double fpp0 = 4./9. * 1./(pow(2., (1./3.)) - 1.);
+  const double sixth = 1./6.;
+  const double four_thirds = 4./3.;
+  const double one_third = 1./3.;
+  const double two_thirds = 2./3.;
+
+  double rho = id.a.rho + id.b.rho;
+  double zeta = (id.a.rho - id.b.rho)/rho;
+  double x = pow(3./(4.*M_PI*rho), sixth);
+
+  double epc    = F(x, 0.0310907,  0.21370, 7.5957,  3.5876, 1.6382,  0.49294, 1.00);
+  double efc    = F(x, 0.01554535, 0.20548, 14.1189, 6.1977, 3.3662,  0.62517, 1.00);
+  double alphac = F(x, 0.0168869, 0.11125, 10.357,  3.6231, 0.88026, 0.49671, 1.00);
+     
+  double f = 9./8.*fpp0*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.);
+  double zeta2 = zeta*zeta;
+  double zeta4 = zeta2*zeta2;
+  double delta_ec = -alphac * f / fpp0 * (1. - zeta4) + (efc - epc) * f * zeta4;
+  double ec = epc + delta_ec;
+
+  od.energy = ec * rho;
+
+  if (compute_potential_) {
+    if (!spin_polarized_) {
+      double depc_dr_s0 = 
+             dFdr_s(x, 0.0310907, 0.21370, 7.5957, 3.5876, 1.6382, 0.49294, 1.00);
+      double dec_dr_s = depc_dr_s0;
+      od.df_drho_a = od.df_drho_b = ec - (x/3.)*dec_dr_s;
+    }
+    else {
+      double zeta3 = zeta2*zeta;
+      double depc_dr_s0 = dFdr_s(x, 0.0310907, 0.21370, 7.5957,  
+                                    3.5876, 1.6382,  0.49294, 1.00);
+      double defc_dr_s1 = dFdr_s(x, 0.01554535, 0.20548, 14.1189, 
+                                    6.1977, 3.3662,  0.62517, 1.00);
+      double dalphac_dr_s = dFdr_s(x, 0.0168869, 0.11125, 10.357,  
+                                    3.6231, 0.88026, 0.49671, 1.00);
+      double dec_dr_s = depc_dr_s0*(1 - f*zeta4) + defc_dr_s1 * f * zeta4
+                        + -dalphac_dr_s * f / fpp0 * (1 - zeta4);
+      double fp = two_thirds * (pow((1+zeta),one_third) 
+            - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
+      double dec_dzeta = 4.* zeta3 * f * (efc - epc - (-alphac/fpp0))
+              + fp * (zeta4 * (efc - epc) + (1-zeta4)*(-alphac/fpp0));
+      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      } 
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // VWN5CFunctional
 
 #define CLASSNAME VWN5CFunctional
@@ -583,9 +705,9 @@ VWN3CFunctional::point(const PointInputData &id,
   double efc_mc    = F(x, 0.01554535,         -0.32500,    7.06042, 18.0578);
   double alphac_mc = F(x, -1./(6.*M_PI*M_PI), -0.00475840, 1.13107, 13.0045);
   // RPA fitting parameters
-   double epc_rpa    = F(x, 0.0310907,          -0.409286,  13.0720,  42.7198);
-   double efc_rpa    = F(x, 0.01554535,         -0.743294,  20.1231, 101.578);
-   double alphac_rpa = F(x, -1./(6.*M_PI*M_PI), -0.228344,   1.06835, 11.4813);
+  double epc_rpa    = F(x, 0.0310907,          -0.409286,  13.0720,  42.7198);
+  double efc_rpa    = F(x, 0.01554535,         -0.743294,  20.1231, 101.578);
+  double alphac_rpa = F(x, -1./(6.*M_PI*M_PI), -0.228344,   1.06835, 11.4813);
 
   double f = 9./8.*fpp0*(pow(1.+zeta, four_thirds)+pow(1.-zeta, four_thirds)-2.);
   double zeta2 = zeta*zeta;
@@ -718,50 +840,54 @@ XalphaFunctional::print(ostream& o) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Becke88Functional
+// Becke88XFunctional
 
-#define CLASSNAME Becke88Functional
+#define CLASSNAME Becke88XFunctional
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #define PARENTS public DenFunctional
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
-Becke88Functional::_castdown(const ClassDesc*cd)
+Becke88XFunctional::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = DenFunctional::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-Becke88Functional::Becke88Functional(StateIn& s):
+Becke88XFunctional::Becke88XFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
 }
 
-Becke88Functional::Becke88Functional()
+Becke88XFunctional::Becke88XFunctional()
 {
 }
 
-Becke88Functional::Becke88Functional(const RefKeyVal& keyval):
+Becke88XFunctional::Becke88XFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
+  beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.0042));
+  beta6_ = 6. * beta_;
+  beta26_ = beta6_ * beta_;
+  beta2_ = beta_ * beta_;
 }
 
-Becke88Functional::~Becke88Functional()
+Becke88XFunctional::~Becke88XFunctional()
 {
 }
 
 void
-Becke88Functional::save_data_state(StateOut& s)
+Becke88XFunctional::save_data_state(StateOut& s)
 {
-  cout << "Becke88Functional: cannot save state" << endl;
+  cout << "Becke88XFunctional: cannot save state" << endl;
   abort();
 }
 
 int
-Becke88Functional::need_density_gradient()
+Becke88XFunctional::need_density_gradient()
 {
   return 1;
 }
@@ -770,15 +896,19 @@ Becke88Functional::need_density_gradient()
 // From:  C.W. Murray et al.  Mol. Phys. Vol 78  pp 997-1014 (1993)
 // originally coded by Mike Colvin
 void
- Becke88Functional::point(const PointInputData &id,
+ Becke88XFunctional::point(const PointInputData &id,
                          PointOutputData &od)
 {
   od.zero();
   // Preset terms from Murray's paper
-  const double beta=0.0042;
-  const double beta6=0.0252;
-  const double beta26=0.00010584; 
-  const double beta2=0.00001764;
+  const double beta = beta_;
+  const double beta6 = beta6_;
+  const double beta26 = beta26_;
+  const double beta2 = beta2_;
+
+  // const double beta6=0.0252;
+  // const double beta26=0.00010584; 
+  // const double beta2=0.00001764;
 
   // Use simplified formula
   double rho_a_13 = pow(id.a.rho,(1./3.));
@@ -820,51 +950,56 @@ void
   od.energy = ex;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// LYPFunctional
 
-#define CLASSNAME LYPFunctional
+/////////////////////////////////////////////////////////////////////////////
+// LYPCFunctional
+
+#define CLASSNAME LYPCFunctional
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #define PARENTS public DenFunctional
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
-LYPFunctional::_castdown(const ClassDesc*cd)
+LYPCFunctional::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = DenFunctional::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-LYPFunctional::LYPFunctional(StateIn& s):
+LYPCFunctional::LYPCFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
 }
 
-LYPFunctional::LYPFunctional()
+LYPCFunctional::LYPCFunctional()
 {
 }
 
-LYPFunctional::LYPFunctional(const RefKeyVal& keyval):
+LYPCFunctional::LYPCFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
+  a_ = keyval->doublevalue("a", KeyValValuedouble(0.04918));
+  b_ = keyval->doublevalue("b", KeyValValuedouble(0.132));
+  c_ = keyval->doublevalue("c", KeyValValuedouble(0.2533));
+  d_ = keyval->doublevalue("d", KeyValValuedouble(0.349));
 }
 
-LYPFunctional::~LYPFunctional()
+LYPCFunctional::~LYPCFunctional()
 {
 }
 
 void
-LYPFunctional::save_data_state(StateOut& s)
+LYPCFunctional::save_data_state(StateOut& s)
 {
   cout << "LYPFunctional: cannot save state" << endl;
   abort();
 }
 
 int
-LYPFunctional::need_density_gradient()
+LYPCFunctional::need_density_gradient()
 {
   return 1;
 }
@@ -875,7 +1010,7 @@ LYPFunctional::need_density_gradient()
 // originally coded by Mike Colvin
 // potential terms added by Matt Leininger
 void
- LYPFunctional::point(const PointInputData &id,
+ LYPCFunctional::point(const PointInputData &id,
                      PointOutputData &od)
 {
   od.zero();
@@ -892,10 +1027,10 @@ void
   double dens1_3=pow(dens,-1./3.);
 
   // Precalculate terms defined in Miehlich's paper
-  double a=0.04918; 
-  double b=0.132;
-  double c=0.2533;
-  double d=0.349;
+  const double a = a_;
+  const double b = b_;
+  const double c = c_;
+  const double d = d_;
   double omega=exp(-c*dens1_3)/(1.+d*dens1_3)*pow(dens,-11./3.);
   double delta=c*dens1_3+d*dens1_3/(1.+d*dens1_3);
   double cf=0.3*pow(3.* M_PI*M_PI,2./3.);
@@ -966,50 +1101,50 @@ void
 
 #if 0
 /////////////////////////////////////////////////////////////////////////////
-// PW91Functional
+// PW91CFunctional
 
-#define CLASSNAME PW91Functional
+#define CLASSNAME PW91CFunctional
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #define PARENTS public DenFunctional
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 void *
-PW91Functional::_castdown(const ClassDesc*cd)
+PW91CFunctional::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = DenFunctional::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-PW91Functional::PW91Functional(StateIn& s):
+PW91CFunctional::PW91CFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
 }
 
-PW91Functional::PW91Functional()
+PW91CFunctional::PW91CFunctional()
 {
 }
 
-PW91Functional::PW91Functional(const RefKeyVal& keyval):
+PW91CFunctional::PW91CFunctional(const RefKeyVal& keyval):
   DenFunctional(keyval)
 {
 }
 
-PW91Functional::~PW91Functional()
+PW91CFunctional::~PW91CFunctional()
 {
 }
 
 void
-PW91Functional::save_data_state(StateOut& s)
+PW91CFunctional::save_data_state(StateOut& s)
 {
-  cout << "PW91Functional: cannot save state" << endl;
+  cout << "PW91CFunctional: cannot save state" << endl;
   abort();
 }
 
 int
-PW91Functional::need_density_gradient()
+PW91CFunctional::need_density_gradient()
 {
   return 1;
 }
@@ -1017,7 +1152,7 @@ PW91Functional::need_density_gradient()
 // Wang, Perdew, Phys. Rev. B 45, 13244, 1992
 // from correspondence from Perdew found on WWW
 void
-PW91Functional::point(const PointInputData &id,
+PW91CFunctional::point(const PointInputData &id,
                       PointOutputData &od)
 {
   od.zero();
@@ -1062,7 +1197,7 @@ PW91Functional::point(const PointInputData &id,
 //     POTENTIALS (VCUP,VCDN), DERIVATIVES OF EC WRT RS (ECRS) & ZET (ECZET)
 //  OUTPUT: CORRELATION CONTRIBUTION (ALFC) TO THE SPIN STIFFNESS
 void
-PW91Functional::CORLSD(double RS,double ZET,
+PW91CFunctional::CORLSD(double RS,double ZET,
                        double &EC,
                        double &VCUP,double &VCDN,
                        double &ECRS,double &ECZET,
@@ -1098,7 +1233,7 @@ PW91Functional::CORLSD(double RS,double ZET,
 
 //  CALLED BY SUBROUTINE CORLSD
 void
-PW91Functional::GCOR(double A,double A1,
+PW91CFunctional::GCOR(double A,double A1,
                      double B1, double B2, double B3, double B4,
                      double P, double RS, double &GG, double &GGRS)
 {
@@ -1124,7 +1259,7 @@ PW91Functional::GCOR(double A,double A1,
 //  OUTPUT H: NONLOCAL PART OF CORRELATION ENERGY PER ELECTRON
 //  OUTPUT DVCUP,DVCDN:  NONLOCAL PARTS OF CORRELATION POTENTIALS
 void
-PW91Functional::CORPW91(double RS, double ZET, double G, double T,
+PW91CFunctional::CORPW91(double RS, double ZET, double G, double T,
                         double UU, double VV, double WW,
                         double EC, double ECRS, double ECZET,
                         double& H, double& DVCUP, double& DVCDN)
@@ -1166,6 +1301,111 @@ PW91Functional::CORPW91(double RS, double ZET, double G, double T,
   H = H0+H1;
 }
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+// Perdew-Burke-Ernzerhof (PBE) Exchange Functional
+// J. P. Perdew, K. Burke, M. Ernzerhof, Phys. Rev. Lett., 77, 3865, 1996.
+// J. P. Perdew, K. Burke, Y. Wang, Phys. Rev. B, 54, 16533, 1996.
+// 
+// Codes by Matt Leininger
+
+#define CLASSNAME PBEXFunctional
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public DenFunctional
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+PBEXFunctional::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+PBEXFunctional::PBEXFunctional(StateIn& s):
+  SavableState(s),
+  DenFunctional(s)
+{
+}
+
+PBEXFunctional::PBEXFunctional()
+{
+  mu_ = 0.21951;
+  kappa_ = 0.804;
+}
+
+PBEXFunctional::PBEXFunctional(const RefKeyVal& keyval):
+  DenFunctional(keyval)
+{
+  mu_ = keyval->doublevalue("mu", KeyValValuedouble(0.21951));
+  kappa_ = keyval->doublevalue("kappa", KeyValValuedouble(0.804));
+  int revPBEX = keyval->intvalue("revPBEX", KeyValValueint(0));
+  if (revPBEX) kappa_ = 1.245;
+}
+
+PBEXFunctional::~PBEXFunctional()
+{
+}
+
+void
+PBEXFunctional::save_data_state(StateOut& s)
+{
+  cout << "PBEXFunctional: cannot save state" << endl;
+  abort();
+}
+
+int
+PBEXFunctional::need_density_gradient()
+{
+  return 1;
+}
+
+void
+ PBEXFunctional::point(const PointInputData &id,
+                         PointOutputData &od)
+{
+  od.zero();
+
+  double rhoa = 2. * id.a.rho;
+  double k_Fa = pow( (3.*M_PI*M_PI*rhoa), (1./3.) );
+  double e_xa_unif = -3. * k_Fa / (4.*M_PI);
+  double gamma_aa = 2. * id.a.gamma;
+  double sa = id.a.gamma/(2. * k_Fa * rhoa);
+  double sa2 = sa*sa;
+
+  double f_xa = 1. + kappa_ - kappa_ / ( 1. + (mu_*sa2/kappa_) );
+  double ex = 0.5 * rhoa * e_xa_unif * f_xa;
+  if (compute_potential_) {
+    od.df_drho_a = 0.5 * 4./3. * e_xa_unif * 
+         ( f_xa - 2. * mu_ * sa2 * pow((1. + (mu_*sa2)/kappa_),-2.));
+    od.df_dgamma_aa = -0.5 * rhoa * e_xa_unif * mu_ * sa2 / (id.a.gamma*id.a.gamma) * 
+                      pow( (1. + mu_*sa2/kappa_), -2.);
+    od.df_drho_b = od.df_drho_a;
+    od.df_dgamma_bb = od.df_dgamma_aa;
+    od.df_dgamma_ab = 0.;
+  }
+
+  if (spin_polarized_) {
+    double rhob = 2. * id.b.rho;
+    double k_Fb = pow( (3.*M_PI*M_PI*rhob), (1./3.) );
+    double e_xb_unif = -3.*k_Fb/(4.*M_PI);
+    double gamma_bb = 2.*id.b.gamma;
+    double sb = id.b.gamma/(2.*k_Fb*rhob);
+    double sb2 = sb*sb;
+    double f_xb = 1. + kappa_ - kappa_ /( 1. + (mu_*sb2/kappa_) );
+    ex += 0.5 * rhob * e_xb_unif * f_xb;
+    if (compute_potential_) {
+      od.df_drho_b = 0.5 * 4./3. * e_xb_unif * 
+              ( f_xb - 2.*mu_*sb2 * pow((1. + (mu_*sb2)/kappa_),-2.));
+      od.df_dgamma_bb = -0.5 * rhob * e_xb_unif * mu_ * sb2 / (id.b.gamma*id.b.gamma) *
+              pow( (1. + mu_*sb2/kappa_), -2.);
+    }
+  }
+  else ex += ex;
+
+  od.energy = ex;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

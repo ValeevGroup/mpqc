@@ -225,6 +225,30 @@ class VWN3CFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
+//    The PW91LCFunctional computes energies and densities using the
+//    PW91 local (LSDA) correlation term from J. P. Perdew and Y. Wang.
+//    Phys. Rev. B, 45, 13244, 1992 
+class PW92LCFunctional: public DenFunctional {
+#   define CLASSNAME PW92LCFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double F(double x, double A, double alpha_1, double beta_1, double beta_2, 
+             double beta_3, double beta_4, double p);
+    double dFdr_s(double x, double A, double alpha_1, double beta_1, double beta_2, 
+             double beta_3, double beta_4, double p);
+  public:
+    PW92LCFunctional();
+    PW92LCFunctional(const RefKeyVal &);
+    PW92LCFunctional(StateIn &);
+    ~PW92LCFunctional();
+    void save_data_state(StateOut &);
+
+    void point(const PointInputData&, PointOutputData&);
+};
+
 /** The XalphaFunctional computes energies and densities
     using the Xalpha method. */
 class XalphaFunctional: public DenFunctional {
@@ -248,20 +272,24 @@ class XalphaFunctional: public DenFunctional {
     void print(ostream& =cout) const;
 };
 
-/** The Becke88Functional computes energies and densities
+/** The Becke88XFunctional computes energies and densities
     Becke's 1988 exchange functional. */
-class Becke88Functional: public DenFunctional {
-#   define CLASSNAME Becke88Functional
+class Becke88XFunctional: public DenFunctional {
+#   define CLASSNAME Becke88XFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    double beta_;
+    double beta6_;
+    double beta26_;
+    double beta2_;
   public:
-    Becke88Functional();
-    Becke88Functional(const RefKeyVal &);
-    Becke88Functional(StateIn &);
-    ~Becke88Functional();
+    Becke88XFunctional();
+    Becke88XFunctional(const RefKeyVal &);
+    Becke88XFunctional(StateIn &);
+    ~Becke88XFunctional();
     void save_data_state(StateOut &);
 
     int need_density_gradient();
@@ -269,20 +297,46 @@ class Becke88Functional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-/** The LYPFunctional computes energies and densities
+/** The LYPCFunctional computes energies and densities
     using the Lee, Yang, and Parr functional. */
-class LYPFunctional: public DenFunctional {
-#   define CLASSNAME LYPFunctional
+class LYPCFunctional: public DenFunctional {
+#   define CLASSNAME LYPCFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    double a_;
+    double b_;
+    double c_;
+    double d_;
   public:
-    LYPFunctional();
-    LYPFunctional(const RefKeyVal &);
-    LYPFunctional(StateIn &);
-    ~LYPFunctional();
+    LYPCFunctional();
+    LYPCFunctional(const RefKeyVal &);
+    LYPCFunctional(StateIn &);
+    ~LYPCFunctional();
+    void save_data_state(StateOut &);
+
+    int need_density_gradient();
+
+    void point(const PointInputData&, PointOutputData&);
+};
+
+// The Perdue-Burke-Ernzerhof 1996 (PBE) exchange functional
+class PBEXFunctional: public DenFunctional {
+#   define CLASSNAME PBEXFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double mu_;
+    double kappa_;     
+  public:
+    PBEXFunctional();
+    PBEXFunctional(const RefKeyVal &);
+    PBEXFunctional(StateIn &);
+    ~PBEXFunctional();
     void save_data_state(StateOut &);
 
     int need_density_gradient();
@@ -291,10 +345,13 @@ class LYPFunctional: public DenFunctional {
 };
 
 #if 0
-/** The PW91Functional computes energies and densities
-    using the Lee, Yang, and Parr functional. */
-class PW91Functional: public DenFunctional {
-#   define CLASSNAME PW91Functional
+// The PW91 Correlation Functional computes energies and densities
+//    using the Lee, Yang, and Parr functional.
+// - MLL - What in the heck does LYP have to do with this? 
+// The uses the PW91 correlation functional with local correlation
+// functional of PW92.
+class PW91CFunctional: public DenFunctional {
+#   define CLASSNAME PW91CFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -313,10 +370,10 @@ class PW91Functional: public DenFunctional {
               double B1, double B2, double B3, double B4,
               double P, double RS, double &GG, double &GGRS);
   public:
-    PW91Functional();
-    PW91Functional(const RefKeyVal &);
-    PW91Functional(StateIn &);
-    ~PW91Functional();
+    PW91CFunctional();
+    PW91CFunctional(const RefKeyVal &);
+    PW91CFunctional(StateIn &);
+    ~PW91CFunctional();
     void save_data_state(StateOut &);
 
     int need_density_gradient();

@@ -40,13 +40,18 @@ const ClassDesc &dft_force_link_a_ = Murray93Integrator::class_desc_;
 const ClassDesc &dft_force_link_b_ = NElFunctional::class_desc_;
 const ClassDesc &dft_force_link_c_ = XalphaFunctional::class_desc_;
 const ClassDesc &dft_force_link_d_ = SlaterXFunctional::class_desc_;
-const ClassDesc &dft_force_link_e_ = Becke88Functional::class_desc_;
-const ClassDesc &dft_force_link_f_ = LYPFunctional::class_desc_;
+const ClassDesc &dft_force_link_e_ = Becke88XFunctional::class_desc_;
+const ClassDesc &dft_force_link_f_ = LYPCFunctional::class_desc_;
 const ClassDesc &dft_force_link_g_ = HFACM::class_desc_;
 const ClassDesc &dft_force_link_h_ = CLKS::class_desc_;
 const ClassDesc &dft_force_link_i_ = UKS::class_desc_;
 const ClassDesc &dft_force_link_j_ = VWN5CFunctional::class_desc_;
 const ClassDesc &dft_force_link_k_ = VWN3CFunctional::class_desc_;
+const ClassDesc &dft_force_link_l_ = PW92LCFunctional::class_desc_;
+const ClassDesc &dft_force_link_m_ = PBEXFunctional::class_desc_;
+// const ClassDesc &dft_force_link_n_ = PBECFunctional::class_desc_;
+// const ClassDesc &dft_force_link_o_ = PW91CFunctional::class_desc_;
+// const ClassDesc &dft_force_link_p_ = PW91XFunctional::class_desc_;
 
 #endif /* __PIC__ */
 

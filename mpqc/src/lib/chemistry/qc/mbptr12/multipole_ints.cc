@@ -55,7 +55,7 @@ R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Re
   localints->set_basis(bs1,bs2);
 
   Ref<OneBodyInt> m1_ints = localints->dipole(0);
-  Ref<OneBodyInt> m2_ints = integral_->quadrupole(0);
+  Ref<OneBodyInt> m2_ints = localints->quadrupole(0);
 
   // form AO moment matrices
   RefSCDimension aodim1 = vec1t.coldim();

@@ -94,23 +94,19 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
       abort();
   }
 
-  ccaffeine::AbstractFramework &framework_ = *CCAEnv::get_framework(); 
-
-  // framework setup
-  type_map_ = framework_.createTypeMap();
-  services_ = framework_.getServices("uber","UberComponent",type_map_);
-  my_id_    = services_.getComponentID();
-  services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
-  bs_ = services_.getPort("bs");
+  gov::cca::Services &services = *CCAEnv::get_services();
+  gov::cca::ports::BuilderService &bs = *CCAEnv::get_builder_service();
+  gov::cca::TypeMap &type_map = *CCAEnv::get_type_map();
+  gov::cca::ComponentID &my_id = *CCAEnv::get_component_id();
 
   // get eval factory
-  fac_id_ = bs_.createInstance("evaluator_factory",factory_type_,type_map_);
-  services_.registerUsesPort("IntegralEvaluatorFactory",
-                             "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",
-                             type_map_);
-  fac_con_ = bs_.connect(my_id_,"IntegralEvaluatorFactory",
+  fac_id_ = bs.createInstance("evaluator_factory",factory_type_,type_map);
+  services.registerUsesPort("IntegralEvaluatorFactory",
+                            "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",
+                            type_map);
+  fac_con_ = bs.connect(my_id,"IntegralEvaluatorFactory",
                         fac_id_,"IntegralEvaluatorFactory");
-  eval_factory_ = services_.getPort("IntegralEvaluatorFactory");
+  eval_factory_ = services.getPort("IntegralEvaluatorFactory");
 
   // set molecule on factory
   molecule_ = Chemistry::Chemistry_Molecule::_create();

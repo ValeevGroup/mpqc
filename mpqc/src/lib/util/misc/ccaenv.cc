@@ -31,23 +31,45 @@ using namespace sc;
 
 int CCAEnv::initialized_ = 0;
 ccaffeine::AbstractFramework CCAEnv::fw_;
+gov::cca::Services CCAEnv::services_;
+gov::cca::ports::BuilderService CCAEnv::bs_;
+gov::cca::TypeMap CCAEnv::type_map_;
+gov::cca::ComponentID CCAEnv::my_id_;
 
 void 
 CCAEnv::init(std::string &args)
 { 
   fw_ = ccaffeine::AbstractFramework::_create();
   fw_.initialize(args); 
+  type_map_ = fw_.createTypeMap();
+  services_ = fw_.getServices("uber","UberComponent",type_map_);
+  my_id_    = services_.getComponentID();
+  services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
+  bs_ = services_.getPort("bs");
   initialized_=1; 
 }
+
 int
 CCAEnv::initialized() 
-{ 
-  return initialized_; 
-}
+{ return initialized_; }
 
-ccaffeine::AbstractFramework*
+ccaffeine::AbstractFramework* 
 CCAEnv::get_framework() 
-{ 
-  return &fw_; 
-}
+{ return &fw_; }
+
+gov::cca::Services* 
+CCAEnv::get_services()
+{ return &services_; }
+
+gov::cca::ports::BuilderService* 
+CCAEnv::get_builder_service()
+{ return &bs_; }
+
+gov::cca::TypeMap* 
+CCAEnv::get_type_map()
+{ return &type_map_; }
+
+gov::cca::ComponentID* 
+CCAEnv::get_component_id()
+{ return &my_id_; }
 

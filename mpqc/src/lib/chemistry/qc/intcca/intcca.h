@@ -30,7 +30,6 @@
 #ifndef _chemistry_qc_intcca_intcca_h
 #define _chemistry_qc_intcca_intcca_h
 
-#include <ccaffeine_AbstractFramework.hh>
 #include <gov_cca.hh>
 #include <chemistry/qc/basis/integral.h>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
@@ -54,11 +53,7 @@ class IntegralCCA : public Integral {
   private:
     int maxl_;
     bool use_opaque_;
-    gov::cca::Services services_;
-    gov::cca::TypeMap type_map_;
-    gov::cca::ComponentID my_id_;
     gov::cca::ComponentID fac_id_;
-    gov::cca::ports::BuilderService bs_;
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;

@@ -33,23 +33,35 @@
 #define _util_misc_ccaenv_h
 
 #include <ccaffeine_AbstractFramework.hh>
+#include <gov_cca.hh>
 
 namespace sc {
 
 /** The CCAEnv class handles embedded CCA frameworks. */
 class CCAEnv {
-  protected:
+  private:
     static int initialized_;
     static ccaffeine::AbstractFramework fw_;
+    static gov::cca::Services services_;
+    static gov::cca::ports::BuilderService bs_;
+    static gov::cca::TypeMap type_map_;
+    static gov::cca::ComponentID my_id_;
 
   public:
     /// Initialize the framework
     static void init(std::string &args);
     /// Return nonzero if CCAEnv has been initialized.
     static int initialized();
-    /// Returns reference to framework
+    /// Returns pointer to framework
     static ccaffeine::AbstractFramework* get_framework();
-    /// Returns
+    /// Returns pointer to Services object
+    static gov::cca::Services* get_services();
+    /// Returns pointer to BuilderService object
+    static gov::cca::ports::BuilderService* get_builder_service();
+    /// Returns pointer to type map
+    static gov::cca::TypeMap* get_type_map(); 
+    /// Returns pointer to "uber" component's ComponentID
+    static gov::cca::ComponentID* get_component_id();
 };
 
 }

@@ -383,17 +383,17 @@ checksymm3:
 	  echo $${o}: expected $${expect} got $${actual}; \
 	); done
 
+# check all outputs in the ref directory with outputs in the run directory
 .PHONY: check
 check:
 	@echo Comparing outputs in run and ref directories:
-	for file in $(ALLOUTPUTS:$(RUN)/%=%); \
-	  do \
-	    ($(CHECKOUT) $(REF)/$${file} $(RUN)/$${file} ); \
-	  done
+	$(CHECKOUT) -d ref
 
-# much faster than above, but create a very long command line
+# Check all outputs files defined in this makefile in the ref directory
+# with those in the run directory.  This will break on some platforms
+# since a very long argument list is used.
 .PHONY: fastcheck
-fastcheck:
+checkall:
 	@echo Comparing outputs in run and ref directories:
 	$(CHECKOUT) -r $(ALLOUTPUTS)
 

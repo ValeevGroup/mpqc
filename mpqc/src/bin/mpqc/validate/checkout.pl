@@ -14,6 +14,21 @@ if ($ARGV[0] eq "-r") {
         check($file1, $file2);
     }
 }
+elsif ($ARGV[0] eq "-d") {
+    shift;
+    my $dir = $ARGV[0];
+    shift;
+    opendir(DIR,"$dir");
+    my @files = sort(readdir(DIR));
+    closedir(DIR);
+    foreach $file1 (@files) {
+        if ($file1 =~ /.out$/) {
+            $file2 = $file1;
+            $file1 =~ s/run\//ref\//;
+            check("$dir/$file1", "$dir/$file2");
+        }
+    }
+}
 else {
     my $file1 = shift;
     my $file2 = shift;

@@ -324,6 +324,8 @@ PetiteList::SO_basisdim()
       sprintf(lab,"irrep %s comp %d", ct.gamma(i).symbol(), j);
       ret->blocks()->set_subdim(ii, new SCDimension(nbas, np, subblksize));
     }
+
+    delete[] subblksize;
   }
 
   return ret;

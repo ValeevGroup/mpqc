@@ -619,6 +619,8 @@ PetiteList::aotoso()
     }
   }
   
+  delete[] sos;
+  
   return aoso;
 }
 
@@ -857,6 +859,8 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
       }
     }
   }
+
+  delete[] sos;
 }
 
 void

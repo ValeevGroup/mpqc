@@ -253,7 +253,7 @@ Function::desired_gradient_accuracy()
 RefSymmSCMatrix
 Function::hessian()
 {
-  return hessian_;
+  return hessian_.result();
 }
 
 int

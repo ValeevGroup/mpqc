@@ -456,7 +456,7 @@ main(int argc, char *argv[])
         cout << node0 << indent
              << "The optimization has converged." << endl << endl;
         cout << node0 << indent
-             << scprintf("Value of the MolecularEnergy: %20.15f",
+             << scprintf("Value of the MolecularEnergy: %15.10f",
                          mole->energy())
              << endl << endl;
       } else {
@@ -467,13 +467,13 @@ main(int argc, char *argv[])
     } else if (do_grad && mole->gradient_implemented()) {
       mole->do_gradient(1);
       cout << node0 << endl << indent
-           << scprintf("Value of the MolecularEnergy: %20.15f",
+           << scprintf("Value of the MolecularEnergy: %15.10f",
                        mole->energy())
            << endl << endl;
       mole->gradient().print("Gradient of the MolecularEnergy:");
     } else if (do_energy && mole->value_implemented()) {
       cout << node0 << endl << indent
-           << scprintf("Value of the MolecularEnergy: %20.15f",
+           << scprintf("Value of the MolecularEnergy: %15.10f",
                        mole->energy())
            << endl << endl;
     }
@@ -521,35 +521,20 @@ main(int argc, char *argv[])
   
   if (ready_for_freq && molfreq.nonnull()) {
     tim->enter("frequencies");
+
     if (!molfreq->displacements_computed())
       molfreq->compute_displacements();
+
     cout << node0 << indent
          << "Computing molecular frequencies from "
          << molfreq->ndisplace() << " displacements:" << endl
          << indent << "Starting at displacement: "
          << molfreq->ndisplacements_done() << endl;
 
-    for (i=molfreq->ndisplacements_done(); i<molfreq->ndisplace(); i++) {
-      // This produces side-effects in mol and may even change
-      // its symmetry.
-      cout << node0 << endl << indent
-           << "Beginning displacement " << i << ":" << endl;
-      molfreq->displace(i);
-
-      mole->obsolete();
-      RefSCVector gradv = mole->get_cartesian_gradient();
-      molfreq->set_gradient(i, gradv);
-
-      const char *freqckptfile = freqfile;
-      if (grp->me() > 0) freqckptfile = devnull;
-
-      StateOutBin so(freqckptfile);
-      molfreq->checkpoint_displacements(so);
-    }
-    molfreq->original_geometry();
+    molfreq->compute_gradients(freqfile);
     molfreq->compute_frequencies_from_gradients();
-    //molfreq->thermochemistry(scf_info.nopen+1);
     molfreq->thermochemistry(1);
+
     tim->exit("frequencies");
   }
 

@@ -387,6 +387,7 @@ int StateInText::getpointer(void**p)
       abort();
     }
 
+  return -1;
 }
 
 void
@@ -587,7 +588,7 @@ int StateOutText::put_array_float(const float*d,int size)
 int StateInText::get_array_float(float*d,int size)
 {
   start_array();
-  int nread,tnread;
+  int nread,tnread=0;
   for (int i=0; i<size; i++) {
       nread=read(d[i]);
       tnread += nread;

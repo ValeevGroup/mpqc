@@ -95,11 +95,30 @@ PointGroup::PointGroup(const char *s)
   origin_[0] = origin_[1] = origin_[2] =0;
 }
 
+static void
+check_frame(SymmetryOperation& so)
+{
+  int i,j;
+  int bad = 0;
+  for (i=0; i<3; i++) { if (fabs(so(i,i)-1.0) > DBL_EPSILON) bad = 1; }
+  for (i=0; i<3; i++) {
+    for (j=0; j<3; j++) {
+      if (i!=j && fabs(so(i,j)) > DBL_EPSILON) bad = 1;
+    }
+  }
+  if (bad) {
+    cout << "PointGroup: This version cannot handle arbitrary symmetry frames"
+         << endl;
+    abort();
+  }
+}
+
 PointGroup::PointGroup(const char *s, SymmetryOperation& so)
   : symb(0)
 {
   set_symbol(s);
   frame = so;
+  check_frame(so);
   origin_[0] = origin_[1] = origin_[2] =0;
 }
 
@@ -109,6 +128,7 @@ PointGroup::PointGroup(const char *s, SymmetryOperation& so,
 {
   set_symbol(s);
   frame = so;
+  check_frame(so);
   origin_ = or;
 }
 

@@ -32,64 +32,64 @@ Function::_castdown(const ClassDesc*cd)
 }
 
 Function::Function():
-  _value(this),
-  _gradient(this),
-  _hessian(this)
+  value_(this),
+  gradient_(this),
+  hessian_(this)
 {
-  _matrixkit = SCMatrixKit::default_matrixkit();
-  _value.set_desired_accuracy(DBL_EPSILON);
-  _gradient.set_desired_accuracy(DBL_EPSILON);
-  _hessian.set_desired_accuracy(DBL_EPSILON);
+  matrixkit_ = SCMatrixKit::default_matrixkit();
+  value_.set_desired_accuracy(DBL_EPSILON);
+  gradient_.set_desired_accuracy(DBL_EPSILON);
+  hessian_.set_desired_accuracy(DBL_EPSILON);
 }
 
 Function::Function(const Function& func):
-  _value(func._value,this),
-  _gradient(func._gradient,this),
-  _hessian(func._hessian,this)
+  value_(func.value_,this),
+  gradient_(func.gradient_,this),
+  hessian_(func.hessian_,this)
 {
-  _matrixkit = func._matrixkit;
-  _dim = func._dim;
-  _x = func._x;
+  matrixkit_ = func.matrixkit_;
+  dim_ = func.dim_;
+  x_ = func.x_;
 }
 
 Function::Function(const RefKeyVal&kv):
-  _value(this),
-  _gradient(this),
-  _hessian(this)
+  value_(this),
+  gradient_(this),
+  hessian_(this)
 {
-  _matrixkit = kv->describedclassvalue("matrixkit");
+  matrixkit_ = kv->describedclassvalue("matrixkit");
 
-  if (_matrixkit.null()) _matrixkit = SCMatrixKit::default_matrixkit();
+  if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
 
-  _value.set_desired_accuracy(kv->doublevalue("value_accuracy"));
-  if (_value.desired_accuracy() < DBL_EPSILON)
-    _value.set_desired_accuracy(DBL_EPSILON);
+  value_.set_desired_accuracy(kv->doublevalue("value_accuracy"));
+  if (value_.desired_accuracy() < DBL_EPSILON)
+    value_.set_desired_accuracy(DBL_EPSILON);
 
-  _gradient.set_desired_accuracy(kv->doublevalue("gradient_accuracy"));
-  if (_gradient.desired_accuracy() < DBL_EPSILON)
-    _gradient.set_desired_accuracy(DBL_EPSILON);
+  gradient_.set_desired_accuracy(kv->doublevalue("gradient_accuracy"));
+  if (gradient_.desired_accuracy() < DBL_EPSILON)
+    gradient_.set_desired_accuracy(DBL_EPSILON);
 
-  _hessian.set_desired_accuracy(kv->doublevalue("hessian_accuracy"));
-  if (_hessian.desired_accuracy() < DBL_EPSILON)
-    _hessian.set_desired_accuracy(DBL_EPSILON);
+  hessian_.set_desired_accuracy(kv->doublevalue("hessian_accuracy"));
+  if (hessian_.desired_accuracy() < DBL_EPSILON)
+    hessian_.set_desired_accuracy(DBL_EPSILON);
 }
 
 Function::Function(StateIn&s):
   SavableState(s),
-  _value(s,this),
-  _gradient(s,this),
-  _hessian(s,this)
+  value_(s,this),
+  gradient_(s,this),
+  hessian_(s,this)
 {
-  _matrixkit = SCMatrixKit::default_matrixkit();
-  _dim.restore_state(s);
-  _x = _matrixkit->vector(_dim);
-  _x.restore(s);
+  matrixkit_ = SCMatrixKit::default_matrixkit();
+  dim_.restore_state(s);
+  x_ = matrixkit_->vector(dim_);
+  x_.restore(s);
 
-  _gradient.result_noupdate() = matrixkit()->vector(_dim);
-  _gradient.result_noupdate()->restore(s);
+  gradient_.result_noupdate() = matrixkit()->vector(dim_);
+  gradient_.result_noupdate()->restore(s);
 
-  _hessian.result_noupdate() = matrixkit()->symmmatrix(_dim);
-  _hessian.result_noupdate()->restore(s);
+  hessian_.result_noupdate() = matrixkit()->symmmatrix(dim_);
+  hessian_.result_noupdate()->restore(s);
 }
 
 Function::~Function()
@@ -99,156 +99,186 @@ Function::~Function()
 Function &
 Function::operator=(const Function& func)
 {
-  _matrixkit = func._matrixkit;
-  _dim = func._dim;
-  _x = func._x;
-  _value = func._value;
-  _gradient = func._gradient;
-  _hessian = func._hessian;
+  matrixkit_ = func.matrixkit_;
+  dim_ = func.dim_;
+  x_ = func.x_;
+  value_ = func.value_;
+  gradient_ = func.gradient_;
+  hessian_ = func.hessian_;
   return *this;
 }
 
 void
 Function::save_data_state(StateOut&s)
 {
-  _value.save_data_state(s);
-  _dim.save_state(s);
-  _x.save(s);
-  _gradient.save_data_state(s);
-  _gradient.result_noupdate()->save(s);
-  _hessian.save_data_state(s);
-  _hessian.result_noupdate()->save(s);
+  value_.save_data_state(s);
+  dim_.save_state(s);
+  x_.save(s);
+  gradient_.save_data_state(s);
+  gradient_.result_noupdate()->save(s);
+  hessian_.save_data_state(s);
+  hessian_.result_noupdate()->save(s);
 }
 
 RefSCMatrixKit
 Function::matrixkit()
 {
-  return _matrixkit;
+  return matrixkit_;
 }
 
 RefSCDimension
 Function::dimension()
 {
-  return _dim;
+  return dim_;
 }
 
 void
 Function::set_x(const RefSCVector&v)
 {
-  _x.assign(v);
+  x_.assign(v);
   obsolete();
 }
 
 double
 Function::value()
 {
-  return _value;
+  return value_;
+}
+
+int
+Function::value_needed()
+{
+  return value_.needed();
 }
 
 int
 Function::do_value()
 {
-  return _value.compute();
+  return value_.compute();
 }
 
 int
 Function::do_value(int f)
 {
-  return _value.compute(f);
+  return value_.compute(f);
 }
 
 void
 Function::set_value(double e)
 {
-  _value.result_noupdate() = e;
-  _value.computed() = 1;
+  value_.result_noupdate() = e;
+  value_.computed() = 1;
 }
 
 void
 Function::set_desired_value_accuracy(double a)
 {
-  _value.set_desired_accuracy(a);
+  value_.set_desired_accuracy(a);
+}
+
+void
+Function::set_actual_value_accuracy(double a)
+{
+  value_.set_actual_accuracy(a);
 }
 
 double
 Function::desired_value_accuracy()
 {
-  return _value.desired_accuracy();
+  return value_.desired_accuracy();
 }
 
 double
 Function::actual_value_accuracy()
 {
-  return _value.actual_accuracy();
+  return value_.actual_accuracy();
 }
 
 RefSCVector
 Function::gradient()
 {
-  RefSCVector ret = _gradient.result();
+  RefSCVector ret = gradient_.result();
   return ret;
+}
+
+int
+Function::gradient_needed()
+{
+  return gradient_.needed();
 }
 
 int
 Function::do_gradient()
 {
-  return _gradient.compute();
+  return gradient_.compute();
 }
 
 int
 Function::do_gradient(int f)
 {
-  return _gradient.compute(f);
+  return gradient_.compute(f);
 }
 
 void
 Function::set_gradient(RefSCVector&g)
 {
-  _gradient.result_noupdate() = g;
-  _gradient.computed() = 1;
+  gradient_.result_noupdate() = g;
+  gradient_.computed() = 1;
 }
 
 void
 Function::set_desired_gradient_accuracy(double a)
 {
-  _gradient.set_desired_accuracy(a);
+  gradient_.set_desired_accuracy(a);
+}
+
+void
+Function::set_actual_gradient_accuracy(double a)
+{
+  gradient_.set_actual_accuracy(a);
 }
 
 double
 Function::actual_gradient_accuracy()
 {
-  return _gradient.actual_accuracy();
+  return gradient_.actual_accuracy();
 }
 
 double
 Function::desired_gradient_accuracy()
 {
-  return _gradient.desired_accuracy();
+  return gradient_.desired_accuracy();
 }
 
 RefSymmSCMatrix
 Function::hessian()
 {
-  return _hessian;
+  return hessian_;
+}
+
+int
+Function::hessian_needed()
+{
+  return hessian_.needed();
 }
 
 int
 Function::do_hessian()
 {
-  return _hessian.compute();
+  return hessian_.compute();
 }
 
 int
 Function::do_hessian(int f)
 {
-  return _hessian.compute(f);
+  return hessian_.compute(f);
 }
 
 void
 Function::set_hessian(RefSymmSCMatrix&h)
 {
-  _hessian.result_noupdate() = h;
-  _hessian.computed() = 1;
+  hessian_.result_noupdate() = h;
+  hessian_.computed() = 1;
 }
 
 // the default guess hessian is the unit diagonal
@@ -269,19 +299,25 @@ Function::inverse_hessian(RefSymmSCMatrix&hessian)
 void
 Function::set_desired_hessian_accuracy(double a)
 {
-  _hessian.set_desired_accuracy(a);
+  hessian_.set_desired_accuracy(a);
+}
+
+void
+Function::set_actual_hessian_accuracy(double a)
+{
+  hessian_.set_actual_accuracy(a);
 }
 
 double
 Function::desired_hessian_accuracy()
 {
-  return _hessian.desired_accuracy();
+  return hessian_.desired_accuracy();
 }
 
 double
 Function::actual_hessian_accuracy()
 {
-  return _hessian.actual_accuracy();
+  return hessian_.actual_accuracy();
 }
 
 void
@@ -297,16 +333,16 @@ Function::print(ostream&o)
 void
 Function::set_matrixkit(const RefSCMatrixKit& kit)
 {
-  _matrixkit = kit;
+  matrixkit_ = kit;
 }
 
 void
 Function::set_dimension(const RefSCDimension& dim)
 {
-  _dim = dim;
-  _x = _matrixkit->vector(dim);
-  _gradient = matrixkit()->vector(dim);
-  _hessian = matrixkit()->symmmatrix(dim);
+  dim_ = dim;
+  x_ = matrixkit_->vector(dim);
+  gradient_ = matrixkit()->vector(dim);
+  hessian_ = matrixkit()->symmmatrix(dim);
 }
 
 int

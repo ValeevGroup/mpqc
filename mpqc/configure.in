@@ -457,25 +457,11 @@ AC_PROG_CPP
 AC_PROG_CXXCPP
 AC_CHECK_PROG(AR,ar,ar)
 AC_CHECK_PROG(PERL,perl,perl)
-AC_CHECK_PROG(BISON,bison,bison)
-AC_CHECK_PROG(FLEX,flex,flex)
 AC_CHECK_PROG(WISH,wish,/usr/bin/wish)
 
 dnl The lack of certain tools is a show stopper
 
 changequote(<<, >>)dnl
-
-if [ X$BISON = X ]; then
-  echo "Could not find the program bison.  It can be obtained at"
-  echo "ftp://prep.ai.mit.edu/pub/gnu"
-  exit 1
-fi
-
-if [ X$FLEX = X ]; then
-  echo "Could not find the program flex.  It can be obtained at"
-  echo "ftp://prep.ai.mit.edu/pub/gnu"
-  exit 1
-fi
 
 if [ X$PERL = X ]; then
   echo "Could not find the program perl.  It can be obtained at"
@@ -498,14 +484,6 @@ else
 fi
 AC_SUBST(DOT_PATH)
 AC_SUBST(HAVE_DOT)
-
-dnl --------- This is at the top since its likely to cause problems. ---------
-
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
-AC_TRY_COMPILE([#include <FlexLexer.h>],[],[echo -n
-],AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include; also make sure you are using the patched flex]))
-AC_LANG_RESTORE
 
 dnl -------- Checks for cross compiling. ----------
 

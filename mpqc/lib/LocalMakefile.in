@@ -88,8 +88,6 @@ datadir=@datadir@
 scdatadir=@scdatadir@
 
 WISH = @WISH@
-FLEX = @FLEX@
-BISON = @BISON@
 RANLIB = @RANLIB@
 PERL = @PERL@
 NIAMACFG = @NIAMACFG@

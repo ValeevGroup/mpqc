@@ -78,6 +78,7 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <util/ref/identity.h>
 

@@ -236,8 +236,7 @@ class AngularIntegrator: virtual public SavableState{
     void save_data_state(StateOut &);
 
     virtual int num_angular_points(double r_value, int ir) = 0;
-    virtual void angular_weights(void) = 0;
-    virtual double angular_point_cartesian(int iangular, SCVector3 &point,
+    virtual double angular_point_cartesian(int iangular, double r,
         SCVector3 &integration_point) const = 0;
     virtual void print(ostream & =cout) const = 0;
 };
@@ -269,47 +268,68 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     void set_dr_dqr2(double i);
 };
 
-/** An implementation of a angular integrator using the Lebedev
-    weights and grid points. */
-class LebedevAngularIntegrator: public AngularIntegrator {
-#   define CLASSNAME LebedevAngularIntegrator
+/** An implementation of a Lebedev angular integrator.  It uses code
+    written by Dr. Dmitri N. Laikov.
+
+    This can generate grids with the following numbers of points:
+       6,  14,  26,  38,  50,  74,  86, 110, 146, 170, 194, 230, 266, 302,
+     350, 386, 434, 482, 530, 590, 650, 698, 770, 830, 890, 974,1046,1118,1202,
+    1274,1358,1454,1538,1622,1730,1814,1910,2030,2126,2222,2354,2450,2558,2702,
+    2810,2930,3074,3182,3314,3470,3590,3722,3890,4010,4154,4334,4466,4610,4802,
+    4934,5090,5294,5438,5606, and 5810.
+
+    V.I. Lebedev, and D.N. Laikov
+    "A quadrature formula for the sphere of the 131st
+     algebraic order of accuracy"
+    Doklady Mathematics, Vol. 59, No. 3, 1999, pp. 477-481.
+   
+    V.I. Lebedev
+    "A quadrature formula for the sphere of 59th algebraic
+     order of accuracy"
+    Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
+   
+    V.I. Lebedev, and A.L. Skorokhodov
+    "Quadrature formulas of orders 41, 47, and 53 for the sphere"
+    Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
+   
+    V.I. Lebedev
+    "Spherical quadrature formulas exact to orders 25-29"
+    Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
+   
+    V.I. Lebedev
+    "Quadratures on a sphere"
+    Computational Mathematics and Mathematical Physics, Vol. 16,
+    1976, pp. 10-24.
+   
+    V.I. Lebedev
+    "Values of the nodes and weights of ninth to seventeenth
+     order Gauss-Markov quadrature formulae invariant under the
+     octahedron group with inversion"
+    Computational Mathematics and Mathematical Physics, Vol. 15,
+       1975, pp. 44-51.
+
+ */
+class LebedevLaikovIntegrator: public AngularIntegrator {
+#   define CLASSNAME LebedevLaikovIntegrator
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int norder_;
     int npoints_;
-    int N1_, N2_, N3_;
-    double *x_, *y_, *z_;
-    double *lebedev_weights_;
-    int point_count_;
+    double *x_, *y_, *z_, *w_;
+    
+    void init(int n);
   public:
-    LebedevAngularIntegrator();
-    LebedevAngularIntegrator(const RefKeyVal &);
-    LebedevAngularIntegrator(StateIn &);
-    ~LebedevAngularIntegrator();
+    LebedevLaikovIntegrator();
+    LebedevLaikovIntegrator(const RefKeyVal &);
+    LebedevLaikovIntegrator(StateIn &);
+    ~LebedevLaikovIntegrator();
     void save_data_state(StateOut &);
 
-    int get_norder(void) const;
-    void set_norder(int i);
-    int get_npoints(void) const;
-    void set_npoints(int i);
-    int get_N1(void) const;
-    void set_N1(int i);
-    int get_N2(void) const;
-    void set_N2(int i);
-    int get_N3(void) const;
-    void set_N3(int i);
-    int get_point_count(void) const;
-    void set_point_count(int i);
-    double angular_point_cartesian(int iangular, SCVector3 &point,
-                                   SCVector3 &integration_point) const;
     int num_angular_points(double r_value, int ir);
-    void angular_weights(void);
-    void build_grid(void);
-    void generate_points(double weights[], int N, int nsets, double  u[], double v[], double w[]);
-    void expand(double array[], int offset, double weight);
+    double angular_point_cartesian(int iangular, double r,
+                                   SCVector3 &integration_point) const;
     void print(ostream & =cout) const;
 };
 
@@ -350,8 +370,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     int get_Ktheta_r(void) const;
     void set_Ktheta_r(int i);
     int num_angular_points(double r_value, int ir);
-    void angular_weights(void);
-    double angular_point_cartesian(int iangular, SCVector3 &point,
+    double angular_point_cartesian(int iangular, double r,
         SCVector3 &integration_point) const;
     double sin_theta(SCVector3 &point) const;
     void gauleg(double x1, double x2, int n);    

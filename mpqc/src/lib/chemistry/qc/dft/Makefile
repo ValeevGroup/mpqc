@@ -35,10 +35,11 @@ TARGET_TO_MAKE = libdft
 BIN_OR_LIB = LIB
 
 SRCS = functional.cc integrator.cc hfacm.cc \
-       clks.cc uks.cc hsosks.cc \
+       clks.cc uks.cc hsosks.cc lebedev.c \
        tmplinst.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
+LIBOBJ:= $(LIBOBJ:%.c=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
 
@@ -51,6 +52,9 @@ dfttest:: dfttest.o $(LIBS)
 
 dfttest.o: dfttest.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+lebedev: lebedev.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -DDEFINE_MAIN -o $@ $<
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

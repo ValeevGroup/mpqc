@@ -1393,6 +1393,11 @@ enable_shared=no
 
 fi
 
+if test "$enable_shared" = "no"; then
+  OBJSUF=o
+  LIBSUF=a
+fi
+
 ENABLESHARED=$enable_shared
 AC_SUBST(ENABLESHARED)
 

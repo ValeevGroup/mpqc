@@ -4,10 +4,13 @@
 #endif
 
 #include <math/scmat/local.h>
+#include <math/scmat/blocked.h>
 
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/obint.h>
+#include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/obwfn.h>
+
 
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 1.0e-15
@@ -99,77 +102,114 @@ form_m_half(RefSymmSCMatrix& M)
 RefSCMatrix
 OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
 {
-  // find out how many occupied orbitals there should be
-  int nocc = 0;
-  while (occupation(nocc)) nocc++;
-  
-  // first we need the old eigenvectors
-  RefSCMatrix ovec = owfn->eigenvectors().get_subblock(
-                                         0,owfn->basis()->nbasis()-1,0,nocc-1);
-  //ovec.print("old wavefunction");
-  
-  // now form the overlap between the old basis and the new one
+  // first let's calculate the overlap between the new and old basis set
   integral()->set_basis(basis(), owfn->basis());
-  RefSCMatrix s2(basis_dimension(), ovec.rowdim(), basis_matrixkit());
+  RefSCMatrix s2(basis()->basisdim(), owfn->basis()->basisdim(),
+                 basis()->matrixkit());
+
   RefSCElementOp op = new OneBodyIntOp(integral()->overlap());
   s2.assign(0.0);
   s2.element_op(op);
   op = 0;
+
   integral()->set_basis(basis());
 
+  // now transform the AO s2 to the SO basis. this probably doesn't really
+  // work.
+  RefPetiteList pl = integral()->petite_list();
+  RefPetiteList plo = integral()->petite_list(owfn->basis());
+  RefSCMatrix s2b(pl->AO_basisdim(), plo->AO_basisdim(),
+                  basis()->so_matrixkit());
+  s2b->convert(s2);
+  s2 = pl->aotoso().t() * s2b * plo->aotoso();
+
   //s2.print("overlap between new basis and old");
-  
-  // form C' = S2 * Cold
-  RefSCMatrix cprime(s2.rowdim(),ovec.coldim(),basis_matrixkit());
-  cprime.assign(0.0);
-  cprime.accumulate_product(s2,ovec);
-  //cprime.print("C' matrix");
-  
-  // we're done with s2 and ovec, free up some memory
-  s2=0;
-  ovec=0;
-  
-  // we'll need the inverse of S eventually
-  RefSymmSCMatrix s = overlap().copy();
-  s->invert_this();
-  //s.print("s inverse");
+  s2b=0;
 
-  // now we need a matrix D = S^-1 * C' 
-  RefSCMatrix D = cprime.clone();
-  D = s * cprime;
-  //D.print("D matrix");
+  BlockedSCMatrix *s2p = BlockedSCMatrix::require_castdown(s2.pointer(),
+    "OneBodyWavefunction::projected_eigenvectors: s2p"
+    );
   
-  // we also need X = C'~ * S^-1 * C'
-  RefSymmSCMatrix X(cprime.coldim(),basis_matrixkit());
-  X.assign(0.0);
-  X.accumulate_transform(cprime.t(),s);
-  //X.print("X matrix");
-  
-  // we're done with cprime, free up some memory
-  cprime=0;
-
-  // now form X^-1/2
-  form_m_half(X);
-  //X.print("X^-1/2 matrix");
-
-  // and form C'' = D * X^-1/2
-  RefSCMatrix Cpp = D * X;
-  //Cpp.print("new vector (occupied bits)");
-  
-  // we're done with X, free up some memory
-  X=0;
-  D=0;
-  
-  // now form core guess in the present basis, and then stuff in the
-  // projected bit
+  // now get the old eigenvectors and the new core hamiltonian guess
+  RefSCMatrix ovec = owfn->eigenvectors();
+  BlockedSCMatrix *ovecp = BlockedSCMatrix::require_castdown(ovec.pointer(),
+    "OneBodyWavefunction::projected_eigenvectors: ovec"
+    );
+  //ovec.print("old wavefunction");
+    
   RefSCMatrix vec = hcore_guess();
-  vec.assign_subblock(Cpp,0,Cpp.nrow()-1,0,nocc-1);
-  //vec.print("new vector");
+  BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(vec.pointer(),
+    "OneBodyWavefunction::projected_eigenvectors: vec"
+    );
+  //vec.print("hcore guess wavefunction");
 
-  vec->schmidt_orthog(overlap().pointer(),vec.ncol());
+  // we'll need the inverse of S eventually
+  RefSymmSCMatrix s = overlap();
+  BlockedSymmSCMatrix *sp = BlockedSymmSCMatrix::require_castdown(
+    s.pointer(),
+    "OneBodyWavefunction::projected_eigenvectors: s"
+    );
+
+  RefSymmSCMatrix sinv = s.i();
+  BlockedSymmSCMatrix *sinvp = BlockedSymmSCMatrix::require_castdown(
+    sinv.pointer(),
+    "OneBodyWavefunction::projected_eigenvectors: sinv"
+    );
+  //sinv.print("Sinv");
+
+  for (int irrep=0; irrep < vecp->nblocks(); irrep++) {
+    // find out how many occupied orbitals there should be
+    int nocc = 0;
+    while (occupation(irrep,nocc) && nocc < plo->nfunction(irrep)) nocc++;
   
-  Cpp=0;
+    if (!nocc)
+      continue;
+    
+    // get subblock of old vector
+    RefSCMatrix ovecsb = ovecp->block(irrep).get_subblock(
+      0, plo->nfunction(irrep)-1, 0, nocc-1);
+    //ovecsb.print("old vec subblock");
   
+    // form C' = S2 * Cold
+    RefSCMatrix cprime = s2p->block(irrep) * ovecsb;
+    //cprime.print("C' matrix");
+  
+    // we're done with ovecsb, free up some memory
+    ovecsb=0;
+  
+    // now we need a matrix D = S^-1 * C' 
+    RefSCMatrix D = sinvp->block(irrep) * cprime;
+    //D.print("D matrix");
+  
+    // we also need X = C'~ * S^-1 * C'
+    RefSymmSCMatrix X(cprime.coldim(),basis()->matrixkit());
+    X.assign(0.0);
+    X.accumulate_transform(cprime.t(),sinvp->block(irrep));
+    //X.print("X matrix");
+  
+    // we're done with cprime, free up some memory
+    cprime=0;
+
+    // now form X^-1/2
+    form_m_half(X);
+    //X.print("X^-1/2 matrix");
+
+    // and form C'' = D * X^-1/2
+    RefSCMatrix Cpp = D * X;
+    //Cpp.print("new vector (occupied bits)");
+  
+    // we're done with X, free up some memory
+    X=0;
+    D=0;
+  
+    // stuff the projected bit into guess vector
+    vecp->block(irrep).assign_subblock(Cpp,0,Cpp.nrow()-1,0,nocc-1);
+    vecp->block(irrep)->schmidt_orthog(sp->block(irrep).pointer(),
+                                       pl->nfunction(irrep));
+
+    Cpp=0;
+  }
+
   return vec;
 }
 
@@ -195,6 +235,7 @@ OneBodyWavefunction::density(const SCVector3 &c)
 RefSymmSCMatrix
 OneBodyWavefunction::density()
 {
+#if 0
   if (!density_.computed()) {
     RefSCMatrix vec = eigenvectors();
     RefSymmSCMatrix newdensity(basis_dimension(), basis_matrixkit());
@@ -253,6 +294,7 @@ OneBodyWavefunction::density()
   }
 
   return density_.result_noupdate();
+#endif
 }
 
 // Function for returning an orbital value at a point

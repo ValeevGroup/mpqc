@@ -13,6 +13,7 @@ extern "C" {
 
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/basis/obint.h>
+#include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
 
 #include <chemistry/qc/wfn/wfn.h>
@@ -62,8 +63,11 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   if (integral_.null())
     integral_ = new IntegralV3(gbs_);
   
-  basisdim_ = gbs_->basisdim();
-  basiskit_ = gbs_->matrixkit();
+  integral_->set_basis(gbs_);
+  RefPetiteList pl = integral_->petite_list();
+
+  basisdim_ = pl->SO_basisdim();
+  basiskit_ = gbs_->so_matrixkit();
 }
 
 Wavefunction::Wavefunction(StateIn&s):
@@ -89,8 +93,11 @@ Wavefunction::Wavefunction(StateIn&s):
   gbs_.restore_state(s);
   integral_.restore_state(s);
 
-  basisdim_ = gbs_->basisdim();
-  basiskit_ = gbs_->matrixkit();
+  integral_->set_basis(gbs_);
+  RefPetiteList pl = integral_->petite_list();
+
+  basisdim_ = pl->SO_basisdim();
+  basiskit_ = gbs_->so_matrixkit();
 }
 
 Wavefunction::~Wavefunction()
@@ -175,14 +182,23 @@ RefSymmSCMatrix
 Wavefunction::overlap()
 {
   if (!overlap_.computed()) {
-    RefSymmSCMatrix s(basis_dimension(), basis_matrixkit());
     integral()->set_basis(gbs_);
-    RefSCElementOp ov = new OneBodyIntOp(integral()->overlap());
+    RefPetiteList pl = integral()->petite_list();
+
+    // first form skeleton s matrix
+    RefSymmSCMatrix s(basis()->basisdim(), basis()->matrixkit());
+    RefSCElementOp ov =
+      new OneBodyIntOp(new SymmOneBodyIntIter(integral()->overlap(), pl));
+
     s.assign(0.0);
     s.element_op(ov);
     ov=0;
 
-    overlap_ = s;
+    // then symmetrize it
+    RefSymmSCMatrix sb(basis_dimension(), basis_matrixkit());
+    pl->symmetrize(s,sb);
+
+    overlap_ = sb;
     overlap_.computed() = 1;
   }
 
@@ -193,7 +209,7 @@ RefSymmSCMatrix
 Wavefunction::core_hamiltonian()
 {
   if (!hcore_.computed()) {
-    RefAccumHCore hc = new AccumHCore();
+    RefAccumDIH hc = new SymmAccumHCore();
     hc->init(basis(), integral());
 
     RefSymmSCMatrix h(basis_dimension(), basis_matrixkit());

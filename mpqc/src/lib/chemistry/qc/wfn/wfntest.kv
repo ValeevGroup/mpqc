@@ -2,6 +2,8 @@
 molecule = $:water
 
 wavefunction<HCoreWfn>: (
+  docc = [ 3 0 1 1 ]
+
   % Function
   value_accuracy = 1e-9
   gradient_accuracy = 1e-7
@@ -19,6 +21,8 @@ wavefunction<HCoreWfn>: (
 )
 
 pwavefunction<HCoreWfn>: (
+  docc = [ 3 0 1 1 ]
+
   % Function
   value_accuracy = 1e-9
   gradient_accuracy = 1e-7

@@ -1,18 +1,7 @@
 
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/basis/integral.h>
-
-/////////////////////////////////////////////////////////////////////////
-
-static void
-occ(PointBag_double *z, int &nd, int &ns)
-{
-  int Z=0;
-  for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
-
-  nd = Z/2;
-  ns = Z%2;
-}
+#include <chemistry/qc/basis/petite.h>
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -37,19 +26,44 @@ HCoreWfn::HCoreWfn(StateIn& s) :
   accumh(s)
   maybe_SavableState(s)
 {
-  occ(molecule()->charges(),ndocc,nsocc);
+  s.get(nirrep_);
+  s.get(docc);
+  s.get(socc);
 }
 
 HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
   OneBodyWavefunction(keyval)
 {
-  occ(molecule()->charges(),ndocc,nsocc);
   accumh = new AccumHCore;
   accumh->init(basis(),integral());
+
+  const CharacterTable& ct = molecule()->point_group().char_table();
+
+  nirrep_ = ct.ncomp();
+  docc = new int[nirrep_];
+  socc = new int[nirrep_];
+
+  for (int i=0; i < nirrep_; i++) {
+    docc[i]=0;
+    socc[i]=0;
+
+    if (keyval->exists("docc",i))
+      docc[i] = keyval->intvalue("docc",i);
+    if (keyval->exists("socc",i))
+      socc[i] = keyval->intvalue("socc",i);
+  }
 }
 
 HCoreWfn::~HCoreWfn()
 {
+  if (docc) {
+    delete[] docc;
+    docc=0;
+  }
+  if (socc) {
+    delete[] socc;
+    socc=0;
+  }
 }
 
 void
@@ -57,26 +71,16 @@ HCoreWfn::save_data_state(StateOut&s)
 {
   OneBodyWavefunction::save_data_state(s);
   accumh.save_state(s);
+  s.put(nirrep_);
+  s.put(docc,nirrep_);
+  s.put(socc,nirrep_);
 }
 
 RefSCMatrix
 HCoreWfn::eigenvectors()
 {
   if (!eigenvectors_.computed()) {
-
-    // create the core Hamiltonian Hcore
-    RefSymmSCMatrix h(basis_dimension(), basis_matrixkit());
-    accumh->accum(h);
-  
-    // diagonalize Hcore, and transform to S^-1/2 basis
-    RefSCMatrix vec(basis_dimension(), basis_dimension(), basis_matrixkit());
-    RefDiagSCMatrix val(basis_dimension(), basis_matrixkit());
-    h.diagonalize(val,vec);
-  
-    vec = ao_to_orthog_ao()*vec;
-
-    eigenvectors_=vec;
-
+    eigenvectors_=hcore_guess();
     eigenvectors_.computed() = 1;
   }
   
@@ -84,12 +88,11 @@ HCoreWfn::eigenvectors()
 }
 
 double
-HCoreWfn::occupation(int i)
+HCoreWfn::occupation(int ir, int i)
 {
-
-  if (i < ndocc)
+  if (i < docc[ir])
     return 2.0;
-  else if (i < ndocc+nsocc)
+  else if (i < docc[ir]+socc[ir])
     return 1.0;
   else
     return 0.0;

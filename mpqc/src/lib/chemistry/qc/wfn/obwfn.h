@@ -26,7 +26,7 @@ class OneBodyWavefunction: public Wavefunction {
     void save_data_state(StateOut&);
 
     virtual RefSCMatrix eigenvectors() = 0;
-    virtual double occupation(int vectornum) = 0;
+    virtual double occupation(int irrep, int vectornum) = 0;
 
     virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&);
     virtual RefSCMatrix hcore_guess();
@@ -48,10 +48,11 @@ class HCoreWfn: public OneBodyWavefunction {
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
   private:
-    int ndocc;
-    int nsocc;
-    
     RefAccumHCore accumh;
+
+    int nirrep_;
+    int *docc;
+    int *socc;
     
     void compute();
 
@@ -62,7 +63,7 @@ class HCoreWfn: public OneBodyWavefunction {
 
     void save_data_state(StateOut&);
 
-    double occupation(int vectornum);
+    double occupation(int irrep, int vectornum);
 
     RefSCMatrix eigenvectors();
 };

@@ -25,8 +25,8 @@ main(int argc, char *argv[])
   wfn->core_hamiltonian()->print("Hcore");
   wfn->hcore_guess()->print("guess vector");
 
-  wfn->print(o);
-  o << endl;
+  //wfn->print(o);
+  //o << endl;
 
   RefOneBodyWavefunction oldwfn = rpkv->describedclassvalue("pwavefunction");
   

@@ -280,7 +280,7 @@ GaussianBasisSet::init2()
   for (int icenter=0; icenter<ncenter_; icenter++) {
       center_to_shell_[icenter] = ishell;
       ishell += center_to_nshell_[icenter];
-      for (int j = center_to_shell_[icenter]; j<icenter; j++) {
+      for (int j = center_to_shell_[icenter]; j<ishell; j++) {
 	  shell_to_center_[j] = icenter;
 	}
      }
@@ -416,6 +416,11 @@ int
 GaussianBasisSet::shell_on_center(int icenter, int ishell) const
 {
   return center_to_shell_(icenter) + ishell;
+}
+int
+GaussianBasisSet::shell_to_center(int ishell) const
+{
+  return shell_to_center_(ishell);
 }
 
 const GaussianShell&

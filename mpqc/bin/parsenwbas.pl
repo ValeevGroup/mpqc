@@ -119,8 +119,14 @@ $name{"Lr"}="lawrencium";
 $atom = none;
 $retrieve = 0;
 $pure = 0;
+$pured = 0; # if $pure or $pured d's are pure
+$puref = 1; # if $pure or $puref f's are pure; by default all f's are pure
 # make sure puream is 1 for correlation consistent and ano basis sets
-if ($basisname =~ /cc-p/ || $basisname =~ /ano/) {
+# and 6-311g and sto-ng
+if ($basisname =~ /cc-p/ || $basisname =~ /ano/
+    || $basisname =~ /^6-311g/
+    || $basisname =~ /^sto-[1-9]g/
+    ) {
     $pure = 1;
 }
 printf "Reading NWChem basis from %s.nw\n", $basisname;
@@ -234,7 +240,10 @@ sub start_shell {
       if ($icoef != 0) {
         printf MPQCBASIS " ";
       }
-      if ($amlower eq "s" || $amlower eq "p" || !$pure) {
+      if ((($amlower eq "d") && $pured) || (($amlower eq "f") && $puref)) {
+        printf MPQCBASIS "(am = %s puream = 1)", $amlower;
+      }
+      elsif ($amlower eq "s" || $amlower eq "p" || !$pure) {
         printf MPQCBASIS "am = %s", $amlower;
       }
       else {

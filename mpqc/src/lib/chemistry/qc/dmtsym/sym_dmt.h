@@ -13,7 +13,6 @@
 #include <chemistry/qc/dmtsym/symmbrd.h>
 #include <chemistry/qc/dmtsym/symmbwr.h>
 #include <chemistry/qc/dmtsym/symmfree.h>
-#include <chemistry/qc/dmtsym/symmip.h>
 #include <chemistry/qc/dmtsym/symmprnt.h>
 #include <chemistry/qc/dmtsym/symmfrd.h>
 #include <chemistry/qc/dmtsym/symmfwr.h>

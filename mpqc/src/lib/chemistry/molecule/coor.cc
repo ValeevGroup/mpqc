@@ -833,14 +833,22 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
               break;
             }
         }
-      if (!bound) {
+      if (m.natom() > 1 && !bound) {
           int j = nearest_contact(i,m);
-          cerr << node0 << endl << indent
-               << "Warning!:  atom " << i+1 << "is not bound to anything.\n"
-               << "           You may wish to add an entry to extra_bonds.\n"
-               << "           Atom " << j+1 << " is only "
-               << bohr*dist(m[i].point(),m[j].point())
-               << " angstroms away...\n\n";
+          // the distance to the nearest contact in angstroms
+          double d = bohr*dist(m[i].point(),m[j].point());
+          // as a last resort add the nearest contact
+          if (d > 0.5 && d < 5.0) {
+              bonds.set(i,j);
+            }
+          else {
+              cerr << node0 << endl << indent
+                 << "Warning!:  atom " << i+1 << " is not bound to anything.\n"
+                 << "           You may wish to add an entry to extra_bonds.\n"
+                 << "           Atom " << j+1 << " is only "
+                 << d
+                 << " angstroms away...\n\n";
+            }
         }
     }
       

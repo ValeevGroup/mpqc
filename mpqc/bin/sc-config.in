@@ -11,8 +11,10 @@ cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CXXFLAGS@"
 cppflags="@CPPFLAGS@"
 cflags="@CFLAGS@"
+f77flags="@FFLAGS@"
 cxx="@CXX@"
 cc="@CC@"
+f77="@F77@"
 version="@SC_VERSION@"
 
 sclibs=""
@@ -24,7 +26,7 @@ for i in $all_sclibs; do
 done
 
 usage="\
-Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags]"
+Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
 
 if test $# -eq 0; then
       echo "${usage}" 1>&2
@@ -72,6 +74,12 @@ while test $# -gt 0; do
       ;;
     --cc)
       echo $cc
+      ;;
+    --f77flags)
+      echo $f77flags
+      ;;
+    --f77)
+      echo $f77
       ;;
     --cxx)
       echo $cxx

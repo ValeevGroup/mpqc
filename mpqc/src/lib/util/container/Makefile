@@ -35,6 +35,8 @@ TARGET_TO_MAKE = libcontainer
 default:: $(DEPENDINCLUDE)
 default:: libcontainer.a
 
+interface:: $(DEPENDINCLUDE)
+
 setmacr.h: settmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > setmacr.h
 

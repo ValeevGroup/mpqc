@@ -475,6 +475,14 @@ scf_print_options(FILE* outfile, scf_struct_t& scf_info)
  * return 0 on success, -1 on failure
  */
 
+static void
+input_errors(const char* msg)
+{
+  int errcod = -1;
+  bcast0(&errcod,sizeof(int),mtype_get(),0);
+  if (msg) fprintf(stderr,"%s\n",msg);
+}
+
 int
 scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
                                         centers_t& oldcenters)
@@ -490,15 +498,15 @@ scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
    // read the value of oldbasis.
     char *oldbasis = keyval.pcharvalue("oldbasis");
     if (keyval.error() != KeyVal::OK) {
-      fprintf(stderr,"scf_make_old_centers: there is no oldbasis\n");
-      goto the_place_where_errors_go;
+      input_errors("scf_make_old_centers: there is no oldbasis");
+      return -1;
     }
 
    // now allocate memory for oldcenters
     errcod=allocbn_centers(&oldcenters,"n",centers.n);
     if (errcod != 0) {
-      fprintf(stderr,"scf_make_old_centers: could not allocate oldcenters\n");
-      goto the_place_where_errors_go;
+      input_errors("scf_make_old_centers: could not allocate oldcenters");
+      return -1;
     }
 
   // and then copy much of centers into oldcenters, but hold off on the
@@ -511,7 +519,8 @@ scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
                               centers.center[i].charge);
       if (errcod!=0) {
         fprintf(stderr,"scf_make_old_centers: could not alloc center %d\n",i);
-        goto the_place_where_errors_go;
+        input_errors(0);
+        return -1;
       }
 
       center->r[0]=centers.center[i].r[0];
@@ -521,7 +530,8 @@ scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
       if (int_read_basis(keyval,sym_to_atom(center->atom),
                                         oldbasis,center->basis) < 0) {
         fprintf(stderr,"scf_make_old_centers: could not read basis %d\n",i);
-        goto the_place_where_errors_go;
+        input_errors(0);
+        return -1;
       }
     }
 
@@ -537,11 +547,6 @@ scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
    /* if we get here all is done */
 
     return 0;
-
-   /* if we get here something went wrong */
-the_place_where_errors_go:
-    errcod=-1;
-    bcast0(&errcod,sizeof(int),mtype_get(),0);
 
  /* the other nodes just sit around and wait to see what happened */
   } else {

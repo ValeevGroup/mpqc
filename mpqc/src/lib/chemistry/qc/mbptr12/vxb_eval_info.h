@@ -199,27 +199,32 @@ public:
   Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
   
   /// Compute subspace of space2 which is orthogonal complement to space1
-  Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                const std::string& name, double lindep_tol) const;
-  /// Compute span of bs and create corresponding mospace referred to by name. Number
-  /// linear dependencies is returned in nlindep
-  Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
+  static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                                const std::string& name, double lindep_tol);
+  /** Compute span of bs and create corresponding mospace referred to by name. Number
+      linear dependencies is returned in nlindep */
+  static Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
                                   OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
-                                  int& nlindep) const;
+                                  int& nlindep);
 
+  /** Project space1 on space2. This routine computes X2 such that C1.S12.X2 = I,
+      where I is identity matrix and X2 spans subspace of space2. X2 is returned. */
+  static Ref<MOIndexSpace> gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                                       const std::string& name, double lindep_tol);
+                                       
   /// Compute overlap matrices in the basis of space1 and space2
-  void compute_overlap_ints(const Ref<MOIndexSpace>& space1,
+  static void compute_overlap_ints(const Ref<MOIndexSpace>& space1,
                             const Ref<MOIndexSpace>& space2,
-                            RefSCMatrix& S) const;
+                            RefSCMatrix& S);
   /// Compute electric dipole and quadrupole moment matrices in the basis of space1 and space2
-  void compute_multipole_ints(const Ref<MOIndexSpace>& space1,
+  static void compute_multipole_ints(const Ref<MOIndexSpace>& space1,
                               const Ref<MOIndexSpace>& space2,
                               RefSCMatrix& MX,
                               RefSCMatrix& MY,
                               RefSCMatrix& MZ,
                               RefSCMatrix& MXX,
                               RefSCMatrix& MYY,
-                              RefSCMatrix& MZZ) const;
+                              RefSCMatrix& MZZ);
 			      
 };
 

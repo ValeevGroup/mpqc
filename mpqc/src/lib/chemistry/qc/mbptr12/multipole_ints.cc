@@ -40,7 +40,7 @@ using namespace sc;
 void
 R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                        RefSCMatrix& MX, RefSCMatrix& MY, RefSCMatrix& MZ,
-				       RefSCMatrix& MXX, RefSCMatrix& MYY, RefSCMatrix& MZZ) const
+				       RefSCMatrix& MXX, RefSCMatrix& MYY, RefSCMatrix& MZZ)
 {
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
@@ -51,7 +51,7 @@ R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Re
   RefSCMatrix vec1t = space1->coefs().t();
   RefSCMatrix vec2 = space2->coefs();
 
-  Ref<Integral> localints = integral_->clone();
+  Ref<Integral> localints = Integral::get_default_integral()->clone();
   localints->set_basis(bs1,bs2);
 
   Ref<OneBodyInt> m1_ints = localints->dipole(0);
@@ -159,20 +159,20 @@ R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Re
   myy = 0;
   mzz = 0;
 
-  if (debug_ > 1) {
-    MX.print("mu(X)");
-    MY.print("mu(Y)");
-    MZ.print("mu(Z)");
-    MXX.print("mu(XX)");
-    MYY.print("mu(YY)");
-    MZZ.print("mu(ZZ)");
-  }
+  //if (debug_ > 1) {
+  //  MX.print("mu(X)");
+  //  MY.print("mu(Y)");
+  //  MZ.print("mu(Z)");
+  //  MXX.print("mu(XX)");
+  //  MYY.print("mu(YY)");
+  //  MZZ.print("mu(ZZ)");
+  //}
 }
 
 
 void
 R12IntEvalInfo::compute_overlap_ints(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                     RefSCMatrix& S) const
+                                     RefSCMatrix& S)
 {
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
@@ -183,7 +183,7 @@ R12IntEvalInfo::compute_overlap_ints(const Ref<MOIndexSpace>& space1, const Ref<
   RefSCMatrix vec1t = space1->coefs().t();
   RefSCMatrix vec2 = space2->coefs();
 
-  Ref<Integral> localints = integral_->clone();
+  Ref<Integral> localints = Integral::get_default_integral()->clone();
   localints->set_basis(bs1,bs2);
 
   Ref<OneBodyInt> ov_ints = localints->overlap();
@@ -252,9 +252,9 @@ R12IntEvalInfo::compute_overlap_ints(const Ref<MOIndexSpace>& space1, const Ref<
     // and clean up a bit
     s = 0;
 
-    if (debug_ > 1) {
-      S.print("Overlap");
-    }
+    //if (debug_ > 1) {
+    //  S.print("Overlap");
+    //}
 }
 
 ///////////////////////////////////////////////////////////////

@@ -220,10 +220,10 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
 Ref<MOIndexSpace>
 R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
                               OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
-                              int& nlindep) const
+                              int& nlindep)
 {
   // Make an Integral and initialize with bs_aux
-  Ref<Integral> integral = integral_->clone();
+  Ref<Integral> integral = Integral::get_default_integral()->clone();
   integral->set_basis(bs);
   Ref<PetiteList> plist = integral->petite_list();
   Ref<OneBodyInt> ov_engine = integral->overlap();
@@ -237,10 +237,10 @@ R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSe
   s.assign(0.0);
   s.element_op(ov);
   ov=0;
-  if (debug_ > 1) {
-    std::string s_label = "AO skeleton overlap (" + name + "/" + name + ")";
-    s.print(s_label.c_str());
-  }
+  //if (debug_ > 1) {
+  //  std::string s_label = "AO skeleton overlap (" + name + "/" + name + ")";
+  //  s.print(s_label.c_str());
+  //}
 
   // then symmetrize it
   RefSCDimension sodim = plist->SO_basisdim();
@@ -276,7 +276,7 @@ R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSe
 
 Ref<MOIndexSpace>
 R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                            const std::string& name, double lindep_tol) const
+                            const std::string& name, double lindep_tol)
 {
   // Both spaces must be ordered in the same way
   if (space1->moorder() != space2->moorder())
@@ -328,9 +328,9 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
       // C12_b.svd(U,Sigma,V);
       exp::lapack_svd(C12_b,U,Sigma,V);
 
-      // Transform V into AO basis and transpose so that vectors are in rows
+      // Transform V into AO basis. Vectors are in rows
       RefSCMatrix orthog2_b = orthog2.block(b);
-      V = (orthog2_b*V).t();
+      V = V * orthog2_b.t();
 
       // Figure out how many sigmas are too small, i.e. how many vectors from space2 overlap
       // only weakly with space1.
@@ -416,6 +416,164 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   return orthog_comp_space;
 }
 
+
+Ref<MOIndexSpace>
+R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                            const std::string& name, double lindep_tol)
+{
+  //
+  // Projection works as follows:
+  // 1) Compute overlap matrix between orthonormal spaces 1 and 2: C12 = C1 * S12 * C2
+  // 2) SVDecompose C12 = U Sigma V^t, throw out (near)singular triplets
+  // 3) Projected vectors (in AO basis) are X2 = C2 * V * Sigma^{-1} * U^t, where Sigma^{-1} is the generalized inverse
+  //
+
+
+  
+  // Both spaces must be ordered in the same way
+  if (space1->moorder() != space2->moorder())
+    throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 are ordered differently ");
+
+  ExEnv::out0() << indent
+                << "Projecting " << space1->name() << " onto " << space2->name()
+                << " exactly to obtain space " << name << endl << incindent;
+
+  // C12 = C1 * S12 * C2
+  RefSCMatrix C12;
+  compute_overlap_ints(space1,space2,C12);
+  C12.print("C12 matrix");
+
+  // Check dimensions of C12 to make sure that projection makes sense
+  
+  
+  Ref<SCMatrixKit> ao_matrixkit = space1->basis()->matrixkit();
+  Ref<SCMatrixKit> so_matrixkit = space1->basis()->so_matrixkit();
+  int nblocks = C12.nblock();
+  const double toler = lindep_tol;
+  double min_sigma = 1.0;
+  double max_sigma = 0.0;
+  int* nvec_per_block = new int[nblocks];
+
+  // projected vectors are a matrix of nvecs by nbasis2
+  // we don't know nvecs yet, so use rank1
+  RefSCMatrix C1 = space1->coefs();
+  RefSCMatrix C2 = space2->coefs();
+  int rank1 = space1->coefs()->ncol();
+  int nbasis2 = C2->nrow();
+  double* vecs = new double[rank1 * nbasis2];
+  int nweakovlp = 0;
+
+  int v_offset = 0;
+  for(int b=0; b<nblocks; b++) {
+
+    RefSCDimension rowd = C12.rowdim()->blocks()->subdim(b);
+    RefSCDimension cold = C12.coldim()->blocks()->subdim(b);
+    int nrow = rowd.n();
+    int ncol = cold.n();
+    
+    // Cannot project if rank of the target space is smaller than the rank of the source space
+    if (nrow > ncol)
+      throw std::runtime_error("R12IntEvalInfo::svd_project() -- rank of the target space is smaller than the rank of the source space");
+    
+    if (nrow && ncol) {
+
+      RefSCMatrix C12_b = C12.block(b);
+      RefSCDimension sigd = rowd;
+      int nsigmas = sigd.n();
+
+      RefSCMatrix U(rowd, rowd, ao_matrixkit);
+      RefSCMatrix V(cold, cold, ao_matrixkit);
+      RefDiagSCMatrix Sigma(sigd, ao_matrixkit);
+      
+      //
+      // Compute C12 = U * Sigma * V
+      //
+      /* C12_b.svd(U,Sigma,V); */
+      exp::lapack_svd(C12_b,U,Sigma,V);
+
+      // Figure out how many sigmas are too small, i.e. how many vectors from space2 overlap
+      // only weakly with space1.
+      // NOTE: Sigma values returned by svd() are in descending order
+      int nzeros = 0;
+      for(int s=0; s<nsigmas; s++) {
+        double sigma = Sigma(s);
+        if (sigma < toler)
+          nzeros++;
+        if (sigma < min_sigma)
+          min_sigma = sigma;
+        if (sigma > max_sigma)
+          max_sigma = sigma;
+      }
+
+      // number of vectors that span the projected space
+      nvec_per_block[b] = nsigmas - nzeros;
+      if (nvec_per_block[b] < nrow)
+        throw std::runtime_error("R12IntEvalInfo::gen_project() -- space 1 is not fully spanned by space 2");
+      nweakovlp += nzeros + ncol - nrow;
+
+      if (nvec_per_block[b]) {
+        int s_first = 0;
+        int s_last = nvec_per_block[b]-1;
+        RefSCMatrix vtmp = V.get_subblock(s_first,s_last,0,ncol-1);
+        RefSCDimension rowdim = vtmp.rowdim();
+        RefDiagSCMatrix stmp = vtmp.kit()->diagmatrix(rowdim);
+        for(int i=0; i<nvec_per_block[b]; i++)
+          stmp(i) = 1.0/(Sigma(i));
+        RefSCMatrix utmp = U.get_subblock(0,nrow-1,s_first,s_last);
+        RefSCMatrix C12_inv_t = (utmp * stmp) * vtmp;
+        
+        (C12_b * C12_inv_t.t()).print("C12 * C12^{-1}");
+        (C12_inv_t * C12_b.t()).print("C12^{-1} * C12");
+        
+        // Transform V into AO basis and transpose so that vectors are in rows
+        RefSCMatrix C2_b = C2.block(b);
+        RefSCMatrix X2_t = C12_inv_t * C2_b.t();
+        double* x2t_ptr = vecs + v_offset*nbasis2;
+        X2_t.convert(x2t_ptr);
+      }
+    }
+    else {
+      nvec_per_block[b] = 0;
+    }
+
+    
+    v_offset += nvec_per_block[b];
+  }
+
+  // convert vecs into proj
+  RefSCMatrix proj(C1.coldim(),C2.rowdim(),so_matrixkit);
+  proj.assign(vecs);
+  proj = proj.t();
+
+  ExEnv::out0() << indent
+    << nweakovlp << " basis function"
+    << (nweakovlp>1?"s":"")
+    << " in " << space2->name() << " did not overlap significantly with "
+    << space1->name() << "." << endl;
+  ExEnv::out0() << indent
+    << "n(basis):        ";
+  for (int i=0; i<proj.coldim()->blocks()->nblock(); i++) {
+    ExEnv::out0() << scprintf(" %5d", proj.coldim()->blocks()->size(i));
+  }
+  ExEnv::out0() << endl;
+  ExEnv::out0() << indent
+    << "Maximum singular value = "
+    << max_sigma << endl
+    << indent
+    << "Minimum singular value = "
+    << min_sigma << endl;
+  ExEnv::out0() << decindent;
+
+  delete[] vecs;
+  delete[] nvec_per_block;
+
+  Ref<MOIndexSpace> proj_space = new MOIndexSpace(name,proj,space2->basis());
+
+  RefSCMatrix S12;  compute_overlap_ints(space1,proj_space,S12);
+  S12.print("Check: overlap between space1 and projected space");
+  
+  return proj_space;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

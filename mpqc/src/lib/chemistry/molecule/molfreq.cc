@@ -37,6 +37,8 @@
 #include <chemistry/molecule/molfreq.h>
 #include <chemistry/molecule/molrender.h>
 
+#undef DEBUG
+
 #define CLASSNAME MolecularFrequencies
 #define VERSION 2
 #define PARENTS public SavableState
@@ -518,6 +520,24 @@ MolecularFrequencies::displace(int disp)
           mol_->set_point_group(newpg);
         }
     }
+
+#ifdef DEBUG
+  cout << node0 << indent
+       << "Displacement point group: " << endl
+       << incindent << displacement_point_group_ << decindent;
+  cout << node0 << indent
+       << "Molecular point group: " << endl
+       << incindent << mol_->point_group() << decindent;
+#endif
+
+  cout << node0 << indent
+       << "Displacement is "
+       << displacement_point_group_->char_table().gamma(irrep).symbol()
+       << " in " << displacement_point_group_->symbol()
+       << ".  Using point group "
+       << mol_->point_group()->symbol()
+       << " for displaced molecule."
+       << endl;
 }
 
 void

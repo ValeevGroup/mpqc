@@ -267,14 +267,26 @@ main(int argc, char *argv[])
   RefMolecularEnergy mole;
   RefOptimize opt;
 
-  if (restart && stat(ckptfile,&sb)==0 && sb.st_size) {
-    StateInBinXDR si(ckptfile);
-    opt.restore_state(si);
+  int statresult;
+  if (restart) {
+    if (grp->me() == 0) {
+      statresult = stat(ckptfile,&sb);
+    }
+    grp->bcast(statresult);
+  }
+  if (restart && statresult==0 && sb.st_size) {
+    if (grp->me() == 0) {
+      StateInBinXDR si(ckptfile);
+      opt.restore_state(si);
+    }
+    BcastState bcast(grp);
+    bcast.bcast(opt);
+    bcast.flush();
     mole = opt->function();
   } else {
     mole = keyval->describedclassvalue("mole");
     opt = keyval->describedclassvalue("opt");
-    if (checkpoint && opt.nonnull()) {
+    if (checkpoint && opt.nonnull() && grp->me() == 0) {
       opt->set_checkpoint();
       opt->set_checkpoint_file(ckptfile);
     }
@@ -382,7 +394,7 @@ main(int argc, char *argv[])
     if (print_mole)
       mole->print(cout);
 
-    if (do_pdb) {
+    if (do_pdb && grp->me() == 0) {
       ckptfile = new char[strlen(molname)+5];
       sprintf(ckptfile, "%s.pdb", molname);
       ofstream pdbfile(ckptfile);
@@ -397,7 +409,7 @@ main(int argc, char *argv[])
          << endl;
   }
 
-  if (savestate) {
+  if (savestate && grp->me() == 0) {
     if (opt.nonnull()) {
       ckptfile = new char[strlen(molname)+6];
       sprintf(ckptfile,"%s.ckpt",molname);

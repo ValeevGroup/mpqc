@@ -130,13 +130,20 @@ user provided classes.
 \section scexcept Exception Handling in SC
 
 The development of SC began before exception handling was available in C++.
-A retrofit of the code to properly use exceptions is in progress.  All new
-code should use exceptions instead of exit or abort and allocate resources
-in such a way that, if an exception occurs, all resources such as memory or
-locks are released.  A hierarchy of exception classes has been created that
-maps better to scientific computing than the standard exceptions.  See
-documentation for the SCException class and its derivatives for more
-information.
+A retrofit of the code to use exceptions is in progress.  It is difficult
+to retrofit a code, especially a parallel code, to do exception handling.
+There will be some limitations: exception handling will not work well for
+parallel jobs, objects whose members throw might be left in a questionable
+state, etc.  However, it is intended that SC objects will be usable in an
+interactive environment.  It is also planned that exceptions be used
+internally to facilitate recover from certain problems.
+
+All new code should use exceptions instead of exit or abort and allocate
+resources in such a way that, if an exception occurs, all resources such as
+memory or locks are released.  A hierarchy of exception classes has been
+created that maps better to scientific computing than the standard
+exceptions.  See documentation for the SCException class and its
+derivatives for more information.
 
 \subsection scexceptmem Exceptions and Memory Allocation
 

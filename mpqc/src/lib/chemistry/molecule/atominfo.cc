@@ -188,6 +188,7 @@ AtomInfo::AtomInfo(StateIn& s):
       s.get_array_double(atomic_radius_,MaxZ);
       s.get_array_double(vdw_radius_,MaxZ);
       s.get_array_double(bragg_radius_,MaxZ);
+      s.get_array_double(maxprob_radius_,MaxZ);
       for (int i=0; i<MaxZ; i++) s.get_array_double(rgb_[i],3);
       s.getstring(overridden_values_);
     }
@@ -207,11 +208,13 @@ AtomInfo::AtomInfo(StateIn& s):
       atomic_radius_scale_ = 1.0;
       vdw_radius_scale_ = 1.0;
       bragg_radius_scale_ = 1.0;
+      maxprob_radius_scale_ = 1.0;
     }
   else {
       s.get(atomic_radius_scale_);
       s.get(vdw_radius_scale_);
       s.get(bragg_radius_scale_);
+      s.get(maxprob_radius_scale_);
     }
 }
 
@@ -228,6 +231,7 @@ AtomInfo::save_data_state(StateOut& s)
       s.put_array_double(atomic_radius_,MaxZ);
       s.put_array_double(vdw_radius_,MaxZ);
       s.put_array_double(bragg_radius_,MaxZ);
+      s.put_array_double(maxprob_radius_,MaxZ);
       for (int i=0; i<MaxZ; i++) s.put_array_double(rgb_[i],3);
       s.putstring(overridden_values_);
     }
@@ -237,6 +241,7 @@ AtomInfo::save_data_state(StateOut& s)
   s.put(atomic_radius_scale_);
   s.put(vdw_radius_scale_);
   s.put(bragg_radius_scale_);
+  s.put(maxprob_radius_scale_);
 }
 
 void
@@ -272,9 +277,11 @@ AtomInfo::load_library_values()
   grp->bcast(atomic_radius_,MaxZ);
   grp->bcast(vdw_radius_,MaxZ);
   grp->bcast(bragg_radius_,MaxZ);
+  grp->bcast(maxprob_radius_,MaxZ);
   grp->bcast(atomic_radius_scale_);
   grp->bcast(vdw_radius_scale_);
   grp->bcast(bragg_radius_scale_);
+  grp->bcast(maxprob_radius_scale_);
   for (int i=0; i<MaxZ; i++) grp->bcast(rgb_[i],3);
 }
 
@@ -297,6 +304,8 @@ AtomInfo::load_values(const RefKeyVal& keyval, int override)
               keyval, override, bohr);
   load_values(bragg_radius_, &bragg_radius_scale_,
               "bragg_radius", keyval, override, bohr);
+  load_values(maxprob_radius_, &maxprob_radius_scale_,
+              "maxprob_radius", keyval, override, bohr);
   load_values(rgb_, "rgb", keyval, override);
 }
 

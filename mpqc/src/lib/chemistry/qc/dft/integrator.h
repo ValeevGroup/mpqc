@@ -174,7 +174,7 @@ class BeckeIntegrationWeight: public IntegrationWeight {
 
     int ncenters;
     SCVector3 *centers;
-    double *bragg_radius;
+    double *atomic_radius;
 
     double **a_mat;
     double **oorab;
@@ -421,7 +421,7 @@ class RadialAngularIntegrator: public DenIntegrator {
                    const RefSymmSCMatrix& densb =0,
                    double *nuclear_gradient = 0);
     void print(ostream & =ExEnv::out()) const;
-    RefAngularIntegrator get_angular_grid(double radius, double bragg_radius,
+    RefAngularIntegrator get_angular_grid(double radius, double atomic_radius,
                                           int charge);
     RefRadialIntegrator get_radial_grid(int charge);
     void init_default_grids(void);

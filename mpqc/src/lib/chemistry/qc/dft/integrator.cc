@@ -834,7 +834,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight(StateIn& s):
   SavableState(s),
   IntegrationWeight(s)
 {
-  bragg_radius = 0;
+  atomic_radius = 0;
   a_mat = 0;
   oorab = 0;
   centers = 0;
@@ -843,7 +843,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight(StateIn& s):
 BeckeIntegrationWeight::BeckeIntegrationWeight()
 {
   centers = 0;
-  bragg_radius = 0;
+  atomic_radius = 0;
   a_mat = 0;
   oorab = 0;
 }
@@ -852,7 +852,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight(const RefKeyVal& keyval):
   IntegrationWeight(keyval)
 {
   centers = 0;
-  bragg_radius = 0;
+  atomic_radius = 0;
   a_mat = 0;
   oorab = 0;
 }
@@ -876,10 +876,11 @@ BeckeIntegrationWeight::init(const RefMolecule &mol, double tolerance)
 
   ncenters = mol->natom();
 
-  double *bragg_radius = new double[ncenters];
+  double *atomic_radius = new double[ncenters];
   int icenter;
   for (icenter=0; icenter<ncenters; icenter++) {
-      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
+      // atomic_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
+      atomic_radius[icenter] = mol->atominfo()->maxprob_radius(mol->Z(icenter));
     }
   
   centers = new SCVector3[ncenters];
@@ -900,10 +901,10 @@ BeckeIntegrationWeight::init(const RefMolecule &mol, double tolerance)
           oorab[icenter] = &oorab[icenter-1][ncenters];
         }
 
-      double bragg_radius_a = bragg_radius[icenter];
+      double atomic_radius_a = atomic_radius[icenter];
       
       for (int jcenter=0; jcenter < ncenters; jcenter++) {
-          double chi=bragg_radius_a/bragg_radius[jcenter];
+          double chi=atomic_radius_a/atomic_radius[jcenter];
           double uab=(chi-1.)/(chi+1.);
           a_mat[icenter][jcenter] = uab/(uab*uab-1.);
           if (icenter!=jcenter) {
@@ -921,8 +922,8 @@ BeckeIntegrationWeight::init(const RefMolecule &mol, double tolerance)
 void
 BeckeIntegrationWeight::done()
 {
-  delete[] bragg_radius;
-  bragg_radius = 0;
+  delete[] atomic_radius;
+  atomic_radius = 0;
 
   delete[] centers;
   centers = 0;
@@ -1784,7 +1785,7 @@ RadialAngularIntegrator::init_parameters(void)
 {
 
   prune_grid_ = 1;
-  gridtype_ = 3;
+  gridtype_ = 2;
   user_defined_grids_ = 0;
   npruned_partitions_ = 5;
   dynamic_grids_ = 1;
@@ -1832,7 +1833,7 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
 
     }
   else {
-      gridtype_ = 3;
+      gridtype_ = 2;
     }
 
 
@@ -2108,7 +2109,7 @@ RadialAngularIntegrator::get_atomic_row(int i)
 }
 
 RefAngularIntegrator
-RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
+RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
                                           int Z)
 {
   int atomic_row, i;
@@ -2126,7 +2127,7 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
       double *Alpha = Alpha_coeffs_[atomic_row];
       // gridtype_ will need to be adjusted for dynamic grids  
       for (i=0; i<npruned_partitions_-1; i++) {
-          if (radius/bragg_radius < Alpha[i]) {
+          if (radius/atomic_radius < Alpha[i]) {
               return angular_grid_[atomic_row][i][select_grid];
             }
         }
@@ -2189,9 +2190,10 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   int me = msg->me();
   int parallel_counter = 0;
 
-  double *bragg_radius = new double[ncenters];
+  double *atomic_radius = new double[ncenters];
   for (icenter=0; icenter<ncenters; icenter++) {
-      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
+      // atomic_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
+      atomic_radius[icenter] = mol->atominfo()->maxprob_radius(mol->Z(icenter));
     }
 
   for (icenter=0; icenter < ncenters; icenter++) {
@@ -2206,15 +2208,15 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
           //point_count=0;
           if (! (parallel_counter++%nproc == me)) continue;
           double r = radial_->radial_value(ir, radial_->nr(),
-                                           bragg_radius[icenter]);
+                                           atomic_radius[icenter]);
           radial_multiplier = radial_->radial_multiplier(radial_->nr());
           // determine angular grid here
           // returns which lebedev grid to use for this radial point
-          angular_ = get_angular_grid(r, bragg_radius[icenter], mol->Z(icenter));
+          angular_ = get_angular_grid(r, atomic_radius[icenter], mol->Z(icenter));
           // ExEnv::out() << " Angular grid = " << angular_->nw() << " points for charge "
           //       << mol->Z(icenter) << endl;
-          nangular = angular_->num_angular_points(r/bragg_radius[icenter],ir);
-          for (iangular=0; iangular<nangular; iangular++) {
+          nangular = angular_->num_angular_points(r/atomic_radius[icenter],ir);
+           for (iangular=0; iangular<nangular; iangular++) {
               angular_multiplier =
                    angular_->angular_point_cartesian(iangular,r,integration_point);
               integration_point += center;
@@ -2245,7 +2247,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
 
   delete[] f_gradient;
   delete[] w_gradient;
-  delete[] bragg_radius;
+  delete[] atomic_radius;
   delete[] nr;
   delete[] centers;
 

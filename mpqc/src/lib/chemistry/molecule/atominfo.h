@@ -56,10 +56,12 @@ class AtomInfo: public SavableState {
     double  atomic_radius_[MaxZ];
     double  vdw_radius_[MaxZ];
     double  bragg_radius_[MaxZ];
+    double  maxprob_radius_[MaxZ];
     double  rgb_[MaxZ][3];
     double  atomic_radius_scale_;
     double  vdw_radius_scale_;
     double  bragg_radius_scale_;
+    double  maxprob_radius_scale_;
 
     char *overridden_values_;
 
@@ -83,6 +85,7 @@ class AtomInfo: public SavableState {
     double vdw_radius(int Z) const { return vdw_radius_[Z]*vdw_radius_scale_; }
     double bragg_radius(int Z) const { return bragg_radius_[Z]*bragg_radius_scale_; }
     double atomic_radius(int Z) const { return atomic_radius_[Z]*atomic_radius_scale_; }
+    double maxprob_radius(int Z) const { return maxprob_radius_[Z]*maxprob_radius_scale_; }
 
     /// Return the scale factor for the VdW radii.
     double vdw_radius_scale() const { return vdw_radius_scale_; }
@@ -90,6 +93,8 @@ class AtomInfo: public SavableState {
     double bragg_radius_scale() const { return bragg_radius_scale_; }
     /// Return the scale factor for the atomic radii.
     double atomic_radius_scale() const { return atomic_radius_scale_; }
+    /// Return the scale factor for the maximum probability radii.
+    double maxprob_radius_scale() const { return maxprob_radius_scale_; }
 
     /** These return information about the color of the atom
         for visualization programs. */

@@ -6,6 +6,9 @@ shmmessage<ShmMessageGrp>: (
   n = 4
   )
 
+mpimessage<MPIMessageGrp>: (
+  )
+
 pvmmessage<PVMMessageGrp>: (
   n = 4
   master_is_node = yes
@@ -18,4 +21,4 @@ pvmmessage<PVMMessageGrp>: (
   %          ]
   )
 
-message = $:procmessage
+message = $:mpimessage

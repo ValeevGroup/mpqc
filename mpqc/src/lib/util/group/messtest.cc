@@ -10,7 +10,7 @@
 #include <util/group/hcube.h>
 
 // Force linkages:
-#ifndef __PIC__
+//#ifndef __PIC__
 #ifndef PUMAGON
 #   include <util/group/messshm.h>
     const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
@@ -19,7 +19,11 @@
 #   include <util/group/messpvm.h>
     const ClassDesc &fl2 = PVMMessageGrp::class_desc_;
 # endif
-#endif
+# ifdef HAVE_MPI
+#   include <util/group/messmpi.h>
+    const ClassDesc &fl2 = MPIMessageGrp::class_desc_;
+# endif
+//#endif
 
 #define A_parents virtual_base public SavableState
 class A: A_parents {

@@ -166,6 +166,8 @@ void
 RefCount::error(const char * w) const
 {
   ExEnv::errn() << "RefCount: ERROR: " << w << endl;
+  ExEnv::errn() << "The type name is " << typeid(*this).name()
+                << std::endl;
   abort();
 }
 

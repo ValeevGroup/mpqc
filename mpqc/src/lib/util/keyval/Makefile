@@ -104,3 +104,5 @@ ipv2_scan.cc: ipv2_scan.ll
 	                | sed "s/static int yyinput/int yyinput/" \
 	                >> ipv2_scan.cc
 
+ipv2_scan.d: ipv2_parse.h
+

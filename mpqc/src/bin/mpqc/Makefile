@@ -87,6 +87,8 @@ scan.cc: scan.ll
 			| sed "s/yylval/MPQCInylval/g" \
 	                >> scan.cc
 
+scan.d: parse.h
+
 #################################################################
 
 $(BINOBJ:.o=.d): $(DEPENDINCLUDE)

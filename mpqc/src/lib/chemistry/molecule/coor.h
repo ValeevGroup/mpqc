@@ -134,12 +134,15 @@ class MolecularCoor: public SavableState
 #   include <util/class/classda.h>
   protected:
     RefMolecule molecule_;
+    RefSCDimension dnatom3_; // the number of atoms x 3
+    RefSCMatrixKit matrixkit_; // used to construct matrices
   public:
     MolecularCoor(RefMolecule&);
     MolecularCoor(const RefKeyVal&);
     MolecularCoor(StateIn&);
     virtual ~MolecularCoor();
     void save_data_state(StateOut&);
+    RefSCDimension dim_natom3() { return dnatom3_; }
     virtual void print(SCostream& =SCostream::cout) = 0;
     virtual void print_simples(SCostream& =SCostream::cout) = 0;
     virtual RefSCDimension dim() = 0;
@@ -172,8 +175,8 @@ class IntMolecularCoor: public MolecularCoor
                          RefSCMatrix& K,
                          RefSCMatrix& Kfixed,
                          int*& is_totally_symmetric);
+
     RefSCDimension dim_; // corresponds to the number of variable coordinates
-    RefSCDimension dnatom3_; // the number of atoms x 3
     RefSCDimension dvc_; // the number of variable + constant coordinates
 
     RefSetIntCoor variable_; // the variable internal coordinates

@@ -4,7 +4,6 @@ extern "C" {
 };
 
 #include <math/scmat/matrix.h>
-#include <math/scmat/local.h>
 #include <chemistry/molecule/localdef.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
@@ -90,8 +89,8 @@ SymmMolecularCoor::form_coordinates()
       abort();
     }
 
-  RefSCDimension dredundant = new LocalSCDimension(nredundant);
-  RefSCDimension dfixed = new LocalSCDimension(nfixed);
+  RefSCDimension dredundant = matrixkit_->dimension(nredundant, "Nredund");
+  RefSCDimension dfixed = matrixkit_->dimension(nfixed, "Nfixed");
   RefSCMatrix K; // nredundant x nnonzero
   RefSCMatrix Kfixed; // nfixed x nnonzero
   int* is_totally_symmetric; // nnonzero; if 1 coor has tot. symm. component
@@ -181,18 +180,18 @@ void
 SymmMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
   // first form diagonal hessian in redundant internal coordinates
-  RefSCDimension rdim = new LocalSCDimension(all_->n());
+  RefSCDimension rdim = matrixkit_->dimension(all_->n(), "Nall");
   RefSymmSCMatrix rhessian(rdim);
   rhessian.assign(0.0);
   all_->guess_hessian(molecule_,rhessian);
 
   // create redundant coordinate bmat
-  RefSCDimension dn3 = molecule_->dim_natom3();
+  RefSCDimension dn3 = dnatom3_;
   RefSCMatrix bmatr(rdim,dn3);
   all_->bmat(molecule_,bmatr);
 
   // then form the variable coordinate bmat
-  RefSCDimension dredundant = new LocalSCDimension(variable_->n());
+  RefSCDimension dredundant = matrixkit_->dimension(variable_->n(), "Nvar");
   RefSCMatrix bmat(dredundant,dn3);
   variable_->bmat(molecule_,bmat);
 

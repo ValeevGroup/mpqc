@@ -105,7 +105,7 @@ RedundMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
   RefSCDimension dredun = hessian.dim();
   
   // form bmat for variable coordinates (ie all the simples)
-  RefSCMatrix bmat(dredun,molecule_->dim_natom3());
+  RefSCMatrix bmat(dredun,dnatom3_);
   variable_->bmat(molecule_,bmat);
   
   // and form G = (B*B+)

@@ -27,81 +27,34 @@ MolecularEnergy::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-static RefKeyVal ugly_CTOR_hack_keyval(0);
-static RefKeyVal
-ugly_CTOR_hack_get_keyval(const RefKeyVal&keyval)
-{
-  if (ugly_CTOR_hack_keyval.nonnull()) {
-      fprintf(stderr,"MolecularEnergy KeyVal CTOR recursively called:"
-              " this is not yet supported--aborting.\n");
-      abort();
-    }
-
-  if (!keyval->exists("dimension")) {
-      // put the correct dimension in the input
-      RefSCDimension dim;
-      if (!keyval->exists("coor")) {
-          RefMolecule mol = keyval->describedclassvalue("molecule");
-          dim = mol->dim_natom3();
-        }
-      else {
-          RefMolecularCoor coor = keyval->describedclassvalue("coor");
-          dim = coor->dim();
-        }
-      RefAssignedKeyVal assignedkeyval = new AssignedKeyVal;
-      RefDescribedClass dc = dim;
-      assignedkeyval->assign("dimension",dc);
-      RefKeyVal akeyval(assignedkeyval.pointer());
-      ugly_CTOR_hack_keyval = new AggregateKeyVal(akeyval, keyval);
-
-      return ugly_CTOR_hack_keyval;
-    }
-  else {
-      return keyval;
-    }
-}
 MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
-  NLP2(ugly_CTOR_hack_get_keyval(keyval)),
+  NLP2(keyval),
   _energy(_value)
 {
-  ugly_CTOR_hack_keyval = 0;
-
-  _mc  = keyval->describedclassvalue("coor");
-
   _mol = keyval->describedclassvalue("molecule");
 
-  _moldim = _mol->dim_natom3();
-  
-  _energy.compute() = 1;
-  _gradient.compute() = 0;
-  _hessian.compute() = 0;
+  _moldim = matrixkit()->dimension(3 * _mol->natom(), "3Natom");
 
-  molecule_to_x();
-}
+  // the molecule coordinate object needs _moldim
+  // so constract a keyval that has it
+  RefAssignedKeyVal assignedkeyval = new AssignedKeyVal;
+  RefDescribedClass dc = _moldim;
+  assignedkeyval->assign("natom3", dc);
+  dc = matrixkit();
+  assignedkeyval->assign("matrixkit", dc);
+  RefKeyVal asskeyval(assignedkeyval.pointer());
+  RefKeyVal aggkeyval = new AggregateKeyVal(asskeyval, keyval);
+  _mc  = aggkeyval->describedclassvalue("coor");
 
-MolecularEnergy::MolecularEnergy(RefMolecule&mol):
-  NLP2(mol->dim_natom3()),
-  _mc(0),
-  _energy(_value),
-  _mol(mol)
-{
-  _moldim = mol->dim_natom3();
-  
-  _energy.compute() = 1;
-  _gradient.compute() = 0;
-  _hessian.compute() = 0;
+  RefSCDimension dim;
+  if (_mc.null()) {
+      dim = _moldim;
+    }
+  else {
+      dim = _mc->dim();
+    }
+  set_dimension(dim);
 
-  molecule_to_x();
-}
-
-MolecularEnergy::MolecularEnergy(RefMolecule&mol,RefMolecularCoor&mc):
-  NLP2(mc->dim()),
-  _mc(mc),
-  _energy(_value),
-  _mol(mol)
-{
-  _moldim = new LocalSCDimension(mol->natom()*3);
-  
   _energy.compute() = 1;
   _gradient.compute() = 0;
   _hessian.compute() = 0;

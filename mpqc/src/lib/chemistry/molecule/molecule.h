@@ -41,15 +41,12 @@ class Molecule: public SavableState
     int natoms;
     AtomicCenter& get_atom(int);
     const AtomicCenter& get_atom(int) const;
-    RefSCDimension dnatom3_; // number of atoms times 3
   public:
     Molecule();
     Molecule(Molecule&);
     Molecule(StateIn&);
     Molecule(const RefKeyVal&input);
     virtual ~Molecule();
-
-    RefSCDimension dim_natom3(); // return natom3_;
 
     Molecule& operator=(Molecule&);
 

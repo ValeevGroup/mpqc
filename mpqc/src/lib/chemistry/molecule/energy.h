@@ -40,8 +40,6 @@ class MolecularEnergy: public NLP2 {
   public:
     MolecularEnergy(const RefKeyVal&);
     MolecularEnergy(StateIn&);
-    MolecularEnergy(RefMolecule&);
-    MolecularEnergy(RefMolecule&,RefMolecularCoor&);
     ~MolecularEnergy();
     void save_data_state(StateOut&);
 

@@ -4,7 +4,6 @@ extern "C" {
 };
 
 #include <math/scmat/matrix.h>
-#include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/simple.h>
@@ -50,7 +49,7 @@ CartMolecularCoor::init()
   Molecule& m = *molecule_.pointer();
 
   // compute needed dimensions
-  dim_ = m.dim_natom3();
+  dim_ = dnatom3_;
 }
 
 CartMolecularCoor::~CartMolecularCoor()

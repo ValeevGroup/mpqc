@@ -5,7 +5,6 @@ extern "C" {
 
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
-#include <math/scmat/local.h>
 #include <chemistry/molecule/localdef.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
@@ -100,7 +99,6 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
     }
 
   dim_.restore_state(s);
-  dnatom3_.restore_state(s);
   dvc_.restore_state(s);
 
   all_.restore_state(s);
@@ -209,9 +207,6 @@ IntMolecularCoor::init()
 {
   Molecule& m = *molecule_.pointer();
 
-  // compute needed dimensions
-  dnatom3_ = m.dim_natom3();
-
   // let's go through the geometry and find all the close contacts
   // bonds is a lower triangle matrix of 1's and 0's indicating whether
   // there is a bond between atoms i and j
@@ -262,7 +257,8 @@ IntMolecularCoor::init()
 
   if (given_fixed_values_) {
       // save the given coordinate values
-      RefSCDimension original_dfixed = new LocalSCDimension(fixed_->n());
+      RefSCDimension original_dfixed
+          = matrixkit_->dimension(fixed_->n(),"Nfix");
       RefSCVector given_fixed_coords(original_dfixed);
       for (i=0; i<original_dfixed.n(); i++) {
           given_fixed_coords(i) = fixed_->coor(i)->value();
@@ -277,8 +273,9 @@ IntMolecularCoor::init()
       for (int istep=1; istep<=nstep; istep++) {
           form_coordinates();
 
-          dim_ = new LocalSCDimension(variable_->n());
-          dvc_ = new LocalSCDimension(variable_->n()+constant_->n());
+          dim_ = matrixkit_->dimension(variable_->n(), "Nvar");
+          dvc_ = matrixkit_->dimension(variable_->n()+constant_->n(),
+                                       "Nvar+Nconst");
 
           RefSCVector new_internal_coordinates(dvc_);
           for (i=0; i<variable_->n(); i++) {
@@ -299,8 +296,9 @@ IntMolecularCoor::init()
 
   form_coordinates();
 
-  dim_ = new LocalSCDimension(variable_->n());
-  dvc_ = new LocalSCDimension(variable_->n()+constant_->n());
+  dim_ = matrixkit_->dimension(variable_->n(), "Nvar");
+  dvc_ = matrixkit_->dimension(variable_->n()+constant_->n(),
+                               "Nvar+Nconst");
 }
 
 // this allocates storage for and computes K, Kfixed, and is_totally_symmetric
@@ -439,7 +437,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
     }
 
   // size K and Kfixed
-  RefSCDimension dnonzero = new LocalSCDimension(nonzero);
+  RefSCDimension dnonzero = matrixkit_->dimension(nonzero, "Nnonzero");
   K = dredundant->create_matrix(dnonzero); // nredundant x nonzero
   K.assign(0.0);
   Kfixed = dfixed->create_matrix(dnonzero); // nfixed x nonzero
@@ -495,7 +493,6 @@ IntMolecularCoor::save_data_state(StateOut&s)
   s.put(given_fixed_values_);
 
   dim_.save_state(s);
-  dnatom3_.save_state(s);
   dvc_.save_state(s);
 
   all_.save_state(s);

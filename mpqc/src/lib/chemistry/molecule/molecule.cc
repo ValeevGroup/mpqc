@@ -8,7 +8,6 @@
 
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/localdef.h>
-#include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
 
 SavableState_REF_def(Molecule);
@@ -150,20 +149,6 @@ Molecule::Molecule(const RefKeyVal&input) :
   // told otherwise
   if (!input->booleanvalue("redundant_atoms"))
     symmetrize();
-}
-
-RefSCDimension
-Molecule::dim_natom3()
-{
-  if (dnatom3_.nonnull()) {
-      if (dnatom3_.n() != natoms*3) {
-          dnatom3_ = new LocalSCDimension(natoms*3);
-        }
-    }
-  else {
-      dnatom3_ = new LocalSCDimension(natoms*3);
-    }
-  return dnatom3_;
 }
 
 Molecule& Molecule::operator=(Molecule& mol)
@@ -335,8 +320,6 @@ void Molecule::save_data_state(StateOut& so)
   for (int i=0; i < natoms; i++) {
       get_atom(i).save_object_state(so);
     }
-  // call dim_natom3() to make sure dnatom3_ is initialized
-  dim_natom3().save_state(so);
 }
 
 Molecule::Molecule(StateIn& si):
@@ -353,7 +336,6 @@ Molecule::Molecule(StateIn& si):
       AtomicCenter ac(si);
       add_atom(i,ac);
     }
-  dnatom3_.restore_state(si);
 }
 
 PointGroup& Molecule::point_group()

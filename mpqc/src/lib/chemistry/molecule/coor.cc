@@ -8,7 +8,6 @@ extern "C" {
 };
 
 #include <math/scmat/matrix.h>
-#include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/simple.h>
@@ -608,17 +607,33 @@ MolecularCoor::_castdown(const ClassDesc*cd)
 MolecularCoor::MolecularCoor(RefMolecule&mol):
   molecule_(mol)
 {
+
+  matrixkit_ = SCMatrixKit::default_matrixkit();
+  dnatom3_ = matrixkit_->dimension(3*molecule_->natom());
 }
 
 MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 {
   molecule_ = keyval->describedclassvalue("molecule");
+
+  matrixkit_ = keyval->describedclassvalue("matrixkit");
+  dnatom3_ = keyval->describedclassvalue("natom3");
+
+  if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
+
+  if (dnatom3_.null()) dnatom3_ = matrixkit_->dimension(3*molecule_->natom());
+  else if (dnatom3_->n() != 3 * molecule_->natom()) {
+      fprintf(stderr, "MolecularCoor(KeyVal): bad dnatom3 value");
+      abort();
+    }
 }
 
 MolecularCoor::MolecularCoor(StateIn&s):
   SavableState(s)
 {
   molecule_.restore_state(s);
+  matrixkit_.restore_state(s);
+  dnatom3_.restore_state(s);
 }
 
 MolecularCoor::~MolecularCoor()
@@ -629,4 +644,6 @@ void
 MolecularCoor::save_data_state(StateOut&s)
 {
   molecule_.save_state(s);
+  matrixkit_.save_state(s);
+  dnatom3_.save_state(s);
 }

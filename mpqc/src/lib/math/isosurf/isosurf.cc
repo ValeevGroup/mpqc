@@ -5,6 +5,7 @@
 
 #include <math/isosurf/isosurf.h>
 #include <math/isosurf/implicit.h>
+#include <math/isosurf/vtsRAVLMap.h>
 
 ////////////////////////////////////////////////////////////////////////////
 // IsosurfaceGen members
@@ -91,6 +92,35 @@ ImplicitSurfacePolygonizer::isosurface(double value,
 
   // finish the surface
   surf.complete_surface();
+
+  // compute normals if they weren't computed from the gradients
+  if (!_volume->gradient_implemented()) {
+      int i;
+      Pix I;
+      // make a list of what triangles are connected to each vertex
+      RefTriangleAVLSet empty;
+      RefVertexRefTriangleAVLSetRAVLMap vertex_to_triangles(empty);
+      for (i=0; i<surf.ntriangle(); i++) {
+          RefTriangle t = surf.triangle(i);
+          vertex_to_triangles[t->vertex(0)].add(t);
+          vertex_to_triangles[t->vertex(1)].add(t);
+          vertex_to_triangles[t->vertex(2)].add(t);
+        }
+      for (i=0; i<surf.nvertex(); i++) {
+          RefVertex v = surf.vertex(i);
+          RefTriangleAVLSet triangles;
+          triangles |= vertex_to_triangles[v];
+          RefSCVector norm(_volume->dimension());
+          RefSCVector tmp(_volume->dimension());
+          norm.assign(0.0);
+          for (Pix J = triangles.first(); J; triangles.next(J)) {
+              triangles(J)->normal(0.5, 0.5, tmp);
+              norm = norm + tmp;
+            }
+          norm.normalize();
+          v->set_normal(norm);
+        }
+    }
 }
 
 double
@@ -112,8 +142,12 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
       newpoint[1] = v.ptr[i].position.y;
       newpoint[2] = v.ptr[i].position.z;
       current->_volume->set_x(newpoint);
-      RefSCVector gradient = current->_volume->gradient();
-      current->_tmp_vertices.add(new Vertex(newpoint, gradient));
+      RefSCVector normal;
+      if (current->_volume->gradient_implemented()) {
+          normal = current->_volume->gradient().copy();
+          normal->normalize();
+        }
+      current->_tmp_vertices.add(new Vertex(newpoint, normal));
     }
 
   RefVertex v1 = current->_tmp_vertices[i1];

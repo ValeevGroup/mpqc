@@ -20,14 +20,15 @@ extern "C" {
 class Vertex: public VRefCount {
   private:
     RefSCVector _point;
-    RefSCVector _gradient;
+    RefSCVector _normal;
   public:
     Vertex();
-    Vertex(RefSCVector&point,RefSCVector&gradient);
+    Vertex(RefSCVector&point,RefSCVector&normal);
     ~Vertex();
-    RefSCVector gradient();
-    RefSCVector point();
-    void set_point(RefSCVector&p);
+    RefSCVector normal() { return _normal; }
+    RefSCVector point() { return _point; }
+    void set_point(const RefSCVector&p);
+    void set_normal(const RefSCVector&p);
     operator RefSCVector();
     RefSCDimension dimension();
 

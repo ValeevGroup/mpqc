@@ -79,7 +79,7 @@ Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
   else {
       n = 1.0/n;
       for (int i=0; i<3; i++) {
-          _norm[i] = N[i]*n;
+          _norm[i] = - N[i]*n;
         }
     }
 };
@@ -155,10 +155,9 @@ Triangle::interpolate(double r,double s,RefVertex&result)
   double L2 = r;
   double L3 = s;
 
-  // Interpolate the gradient
-  result->gradient() = L1 * p1->gradient()
-    + L2 * p2->gradient()
-    + L3 * p3->gradient();
+  if (result->normal().nonnull()) {
+      result->normal().assign(_norm);
+    }
 
   // Interpolate the point
   RefSCVector x1(p1->point());
@@ -290,20 +289,23 @@ Triangle10::Triangle10(const RefEdge4& v1,
   RefSCVector trialp9(p9.dim());
   trialp9.assign(p9);
 
-  //// find the approximate gradient at the midvertex of the triangle
+  //// find the approximate normal at the midvertex of the triangle
 
-  RefSCVector grad0 = _vertices[0]->gradient();
-  RefSCVector grad3 = _vertices[3]->gradient();
-  RefSCVector grad8 = _vertices[8]->gradient();
-  RefSCVector grad9 = (1.0/3.0)*(grad0 + grad3 + grad8);
+  RefSCVector norm0 = _vertices[0]->normal();
+  RefSCVector norm3 = _vertices[3]->normal();
+  RefSCVector norm8 = _vertices[8]->normal();
+  RefSCVector norm9 = (1.0/3.0)*(norm0 + norm3 + norm8);
 
   //// put the midvertex on the surface defined by vol(p9) = isovalue
 
-  RefSCVector newpoint = vol->solve(trialp9,grad9,isovalue);
-  // compute the true gradient
+  RefSCVector newpoint = vol->solve(trialp9,norm9,isovalue);
+  // compute the true normal
   vol->set_x(newpoint);
-  grad9 = vol->gradient().copy();
-  _vertices[9] = new Vertex(newpoint,grad9);
+  if (vol->gradient_implemented()) {
+      norm9 = vol->gradient().copy();
+      norm9.normalize();
+    }
+  _vertices[9] = new Vertex(newpoint,norm9);
 };
 
 double Triangle10::area()
@@ -320,7 +322,7 @@ Triangle10::interpolate(double r,double s,RefVertex&result)
 
   RefSCDimension dim = _vertices[0]->point().dim();
 
-  if (!(result->point().dim() == dim) || !(result->gradient().dim() == dim)) {
+  if (!(result->point().dim() == dim) || !(result->normal().dim() == dim)) {
       fprintf(stderr,"Triangle10::interpolate(): need to allocate vertex\n");
       abort();
     }
@@ -399,10 +401,10 @@ Triangle10::interpolate(double r,double s,RefVertex&result)
   Ns[8] = 0.5*(L3s*L3_31*L3_32 + L3*L3_31s*L3_32 + L3*L3_31*L3_32s);
   Ns[9] = 27 *(L1s*L2*L3 + L1*L2s*L3 + L1*L2*L3s);
 
-  // Interpolate the gradient
-  result->gradient().assign(0.0);
+  // Interpolate the normal
+  result->normal().assign(0.0);
   for (i=0; i<10; i++)
-    result->gradient() = result->gradient() + N[i] * _vertices[i]->gradient();
+    result->normal() = result->normal() + N[i] * _vertices[i]->normal();
 
   // Interpolate the point
   RefSCVector x[10];
@@ -526,6 +528,7 @@ GaussTriangleIntegrator::_castdown(const ClassDesc*cd)
 GaussTriangleIntegrator::GaussTriangleIntegrator(const RefKeyVal& keyval):
   TriangleIntegrator(keyval)
 {
+  printf("Created a GaussTriangleIntegrator with n = %d\n", n());
   init_rw(n());
 }
 

@@ -72,6 +72,10 @@ Shape::compute()
   r[1] = cv.get_element(1);
   r[2] = cv.get_element(2);
   if (do_gradient()) {
+      if (!gradient_implemented()) {
+          fprintf(stderr,"Shape::compute: gradient not implemented\n");
+          abort();
+        }
       double v[3];
       set_value(distance_to_surface(r,v));
       RefSCVector vv(dimension());
@@ -159,6 +163,11 @@ Shape::interpolate(RefSCVector& p1,RefSCVector& p2,double val)
   return result;
 }
 
+int
+Shape::value_implemented()
+{
+  return 1;
+}
 
 //////////////////////////////////////////////////////////////////////
 // SphereShape
@@ -207,7 +216,6 @@ SphereShape::distance_to_surface(const SCVector3&p,double*grad) const
     }
   double r = sqrt(r2);
   double d = r - _radius;
-  if (d < 0.0) return -1.0;
   if (grad) {
       SCVector3 pv(p);
       SCVector3 o(_origin);
@@ -236,6 +244,12 @@ SphereShape::boundingbox(double valuemin, double valuemax,
       p1[i] = _origin[i] - _radius - valuemax;
       p2[i] = _origin[i] + _radius + valuemax;
     }
+}
+
+int
+SphereShape::gradient_implemented()
+{
+  return 1;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -397,6 +411,12 @@ UncappedTorusHoleShape::boundingbox(double valuemin, double valuemax,
     }
 }
 
+int
+UncappedTorusHoleShape::gradient_implemented()
+{
+  return 1;
+}
+
 /////////////////////////////////////////////////////////////////////
 // is in triangle
 
@@ -534,6 +554,12 @@ ReentrantUncappedTorusHoleShape::
   return closest_distance(Xv,(SCVector3*)I,2,grad);
 }
 
+int
+ReentrantUncappedTorusHoleShape::gradient_implemented()
+{
+  return 1;
+}
+
 /////////////////////////////////////////////////////////////////////
 // NonreentrantUncappedTorusHoleShape
 
@@ -599,6 +625,12 @@ double NonreentrantUncappedTorusHoleShape::
     }
 
   return -1;
+}
+
+int
+NonreentrantUncappedTorusHoleShape::gradient_implemented()
+{
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -1056,6 +1088,12 @@ Uncapped5SphereExclusionShape::boundingbox(double valuemin, double valuemax,
     }
 }
 
+int
+Uncapped5SphereExclusionShape::gradient_implemented()
+{
+  return 1;
+}
+
 /////////////////////////////////////////////////////////////////////
 // Unionshape
 
@@ -1091,11 +1129,9 @@ UnionShape::distance_to_surface(const SCVector3&p,double* grad) const
   if (_shapes.length() == 0) return 0.0;
   double min = _shapes[0]->distance_to_surface(p);
   int imin = 0;
-  if (min < 0.0) return -1.0;
   for (int i=1; i<_shapes.length(); i++) {
       double d = _shapes[i]->distance_to_surface(p);
-      if (d < 0.0) return -1.0;
-      if (min > d) { min = d; imin = i; }
+      if (fabs(min) > fabs(d)) { min = d; imin = i; }
     }
 
   if (grad) {
@@ -1137,4 +1173,13 @@ UnionShape::boundingbox(double valuemin, double valuemax,
           if (pt2[i] > p2[i]) p2[i] = pt2[i];
         }
     }
+}
+
+int
+UnionShape::gradient_implemented()
+{
+  for (int j=1; j<_shapes.length(); j++) {
+      if (!_shapes[j]->gradient_implemented()) return 0;
+    }
+  return 1;
 }

@@ -54,12 +54,12 @@ Edge4::Edge4(RefVertex p1,RefVertex p2,const RefVolume&vol,double isovalue):
   p[0] = p1;
   p[1] = p2;
   RefSCVector pv[2];
-  RefSCVector grad[2];
+  RefSCVector norm[2];
 
   int i;
   for (i=0; i<2; i++) {
       pv[i] = p[i]->point();
-      grad[i] = p[i]->gradient();
+      norm[i] = p[i]->normal();
     }
 
   for (i=0; i<2; i++) {
@@ -67,12 +67,15 @@ Edge4::Edge4(RefVertex p1,RefVertex p2,const RefVolume&vol,double isovalue):
       interpv = ((2.0*pv[i])+pv[(i==1)?0:1])*(1.0/3.0);
       RefSCVector start(interpv.dim());
       start.assign(interpv);
-      RefSCVector interpgrad;
-      interpgrad = ((2.0*grad[i])+grad[(i==1)?0:1])*(1.0/3.0);
-      RefSCVector newpoint = vol->solve(start,interpgrad,isovalue);
+      RefSCVector interpnorm;
+      interpnorm = ((2.0*norm[i])+norm[(i==1)?0:1])*(1.0/3.0);
+      RefSCVector newpoint = vol->solve(start,interpnorm,isovalue);
       vol->set_x(newpoint);
-      interpgrad = vol->gradient().copy();
-      _interiorvertices[i] = new Vertex(newpoint,interpgrad);
+      if (vol->gradient_implemented()) {
+          interpnorm = vol->gradient().copy();
+          interpnorm.normalize();
+        }
+      _interiorvertices[i] = new Vertex(newpoint,interpnorm);
     }
 
 }

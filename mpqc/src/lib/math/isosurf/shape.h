@@ -26,6 +26,8 @@ class Shape: public Volume {
     virtual ~Shape();
     void compute();
     RefSCVector interpolate(RefSCVector& p1,RefSCVector& p2,double val);
+
+    int value_implemented();
 };
 
 SavableState_REF_dec(Shape);
@@ -54,6 +56,8 @@ class SphereShape: public Shape {
     // these are used to update the parameters describing the sphere
     double radius(double r);
     const SCVector3& origin(const SCVector3& o);
+
+    int gradient_implemented();
 };
 
 inline double
@@ -101,6 +105,8 @@ class UncappedTorusHoleShape: public Shape
     void print(FILE*fp=stdout) const;
     void boundingbox(double valuemin, double valuemax,
                      RefSCVector& p1, RefSCVector&p2);
+
+    int gradient_implemented();
 };
 
 class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
@@ -118,6 +124,8 @@ class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
                                        const SphereShape&);
     ~NonreentrantUncappedTorusHoleShape();
     double distance_to_surface(const SCVector3&r,double*grad=0) const;
+
+    int gradient_implemented();
 };
 
 class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
@@ -137,6 +145,8 @@ class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
     ~ReentrantUncappedTorusHoleShape();
     int is_outside(const SCVector3&r) const;
     double distance_to_surface(const SCVector3&r,double*grad=0) const;
+
+    int gradient_implemented();
 };
 
 class Uncapped5SphereExclusionShape: public Shape
@@ -202,6 +212,8 @@ class Uncapped5SphereExclusionShape: public Shape
     int is_outside(const SCVector3&) const;
     void boundingbox(double valuemin, double valuemax,
                      RefSCVector& p1, RefSCVector&p2);
+
+    int gradient_implemented();
 };
 
 class UnionShape: public Shape {
@@ -218,6 +230,8 @@ class UnionShape: public Shape {
     int is_outside(const SCVector3&r) const;
     void boundingbox(double valuemin, double valuemax,
                      RefSCVector& p1, RefSCVector& p2);
+
+    int gradient_implemented();
 };
 
 #endif

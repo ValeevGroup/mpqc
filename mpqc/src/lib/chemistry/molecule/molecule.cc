@@ -211,6 +211,9 @@ Molecule::Molecule(const RefKeyVal&input):
         }
       else {
           symmetrize();
+          // In case we were given redundant atoms, clean up
+          // the geometry so the symmetry is exact.
+          cleanup_molecule(symtol);
         }
     }
   delete[] symmetry;

@@ -119,7 +119,6 @@ QNewtonOpt::update()
 
       xcurrent = nlp_->get_x().copy();
       gcurrent = nlp_->gradient().copy();
-      nlp_->value();
 
       // compute the gradient convergence criterion now so i can see if
       // the accuracy needs to be tighter

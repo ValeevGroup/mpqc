@@ -349,7 +349,7 @@ MTMPIMemoryGrp::sync()
   // so msg_->sync() complete before all remote memory operations
   // have at least begun.  Otherwise, I could deactivate before
   // all messages arrive.
-  msg_->sync();
+  MPI_Barrier(comm_);
   if (active_) {
       deactivate();
       // At this point all memory operations are complete;

@@ -129,7 +129,7 @@ Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
 
   _vertices[TriInterpCoef::ijk_to_index(_order, 0, 0)] = vertex(0);
   _vertices[TriInterpCoef::ijk_to_index(0, 0, _order)] = vertex(1);
-  _vertices[TriInterpCoef::ijk_to_index(0, 0, _order)] = vertex(2);
+  _vertices[TriInterpCoef::ijk_to_index(0, _order, 0)] = vertex(2);
 }
 
 Triangle::~Triangle()

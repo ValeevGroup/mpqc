@@ -199,6 +199,8 @@ void
 TriangulatedSurface::complete_ref_arrays()
 {
   _tmp_edges.clear();
+  _index_to_edge.clear();
+  _edge_to_index.clear();
 
   int i;
   int ntri = ntriangle();
@@ -211,6 +213,8 @@ TriangulatedSurface::complete_ref_arrays()
     }
   int ne = nedge();
   _vertices.clear();
+  _index_to_vertex.clear();
+  _vertex_to_index.clear();
   for (i=0; i<ne; i++) {
       RefEdge e = edge(i);
       add_vertex(e->vertex(0));

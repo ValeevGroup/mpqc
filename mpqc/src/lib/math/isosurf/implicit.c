@@ -742,6 +742,7 @@ int edge, face;
 static void makecubetable ()
 {
     int i, e, c, done[12], pos[8];
+    memset(cubetable, 0, sizeof(cubetable));
     for (i = 0; i < 256; i++) {
 	for (e = 0; e < 12; e++) done[e] = 0;
 	for (c = 0; c < 8; c++) pos[c] = BIT(i, c);

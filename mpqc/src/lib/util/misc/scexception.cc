@@ -196,6 +196,29 @@ ProgrammingError::~ProgrammingError() throw()
 }
 
 ////////////////////////////////////////////////////////////////////////
+// FeatureNotImplemented
+
+FeatureNotImplemented::FeatureNotImplemented(
+    const char *description,
+    const char *file,
+    int line,
+    const ClassDesc *class_desc,
+    const char *exception_type) throw():
+  ProgrammingError(description, file, line, class_desc, exception_type)
+{
+}
+  
+FeatureNotImplemented::FeatureNotImplemented(const FeatureNotImplemented& ref)
+    throw():
+  ProgrammingError(ref)
+{
+}
+
+FeatureNotImplemented::~FeatureNotImplemented() throw()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
 // SystemException
 
 SystemException::SystemException(

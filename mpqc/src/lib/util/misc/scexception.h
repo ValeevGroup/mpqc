@@ -96,6 +96,22 @@ class ProgrammingError: public SCException {
     ~ProgrammingError() throw();
 };
 
+/** This is thrown when an attempt is made to use a feature that
+    is not yet implemented.
+ */
+class FeatureNotImplemented: public ProgrammingError {
+
+  public:
+    FeatureNotImplemented(const char *description = 0,
+                          const char *file = 0,
+                          int line = 0,
+                          const ClassDesc *class_desc = 0,
+                          const char *exception_type = "FeatureNotImplemented")
+        throw();
+    FeatureNotImplemented(const FeatureNotImplemented&) throw();
+    ~FeatureNotImplemented() throw();
+};
+
 // ///////////////////////////////////////////////////////////////////////
 // Input Error Exceptions
 

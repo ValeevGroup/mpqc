@@ -147,6 +147,14 @@ o()
 }
 
 void
+p()
+{
+  throw FeatureNotImplemented("p() not implemented",
+                              __FILE__,
+                              __LINE__);
+}
+
+void
 ex_on_stack()
 {
   ProgrammingError ex("programming error in ex_on_stack()",
@@ -255,6 +263,15 @@ main()
     }
   catch (SCException &e) {
       std::cout << "EXPECTED: got an o() exception" << std::endl;
+      std::cout << e.what() << std::endl;
+    }
+
+  try {
+      p();
+      std::cout << "ERROR: p() ran OK" << std::endl;
+    }
+  catch (SCException &e) {
+      std::cout << "EXPECTED: got an p() exception" << std::endl;
       std::cout << e.what() << std::endl;
     }
 

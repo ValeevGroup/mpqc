@@ -664,7 +664,9 @@ void
 SCElementSquareRoot::process(SCMatrixBlockIter&i)
 {
   for (i.reset(); i; ++i) {
-      i.set(sqrt(i.get()));
+      double val = i.get();
+      if (val > 0.0) i.set(sqrt(i.get()));
+      else i.set(0.0);
     }
 }
 

@@ -261,3 +261,4 @@ SimpleCo::equivalent(RefIntCoor&c)
 // Local Variables:
 // mode: c++
 // eval: (c-set-style "CLJ")
+// End:

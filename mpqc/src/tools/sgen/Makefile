@@ -63,6 +63,7 @@ DEPENDCSRC = $(SRC)
 BINOBJ = $(SRC:%.c=%.o)
 
 DEPENDINCLUDE =  parse.h \
+scan.gbl scan.lcl \
 alloc.gbl alloc.lcl \
 assign.gbl assign.lcl \
 bcast0.gbl bcast0.lcl \

@@ -33,16 +33,16 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
 
   e0_ = keyval->doublevalue("e0");
 
-  int n_fc = keyval->count("force_constant_index");
+  int n_fc = keyval->count("force_constants");
   force_constant_index_.set_length(n_fc);
   force_constant_value_.set_length(n_fc);
   for (int i=0; i<n_fc; i++) {
-      force_constant_value_[i] = keyval->doublevalue("force_constant_value",i);
-      int order = keyval->intvalue("force_constant_index",i);
+      int order = keyval->count("force_constants", i) - 1;
+      force_constant_value_[i] = keyval->doublevalue("force_constants",order);
       force_constant_index_[i].set_length(order);
       for (int j=0; j<order; j++) {
           force_constant_index_[i][j]
-              = keyval->intvalue("force_constant_index",i,j) - 1;
+              = keyval->intvalue("force_constants",i,j) - 1;
         }
     }
 }
@@ -69,7 +69,15 @@ void
 TaylorMolecularEnergy::print(ostream&o)
 {
   MolecularEnergy::print(o);
-  abort();
+  coordinates_->print(molecule(), o);
+  int nfc = force_constant_index_.length();
+  for (int i=0; i<nfc; i++) {
+      int order = force_constant_index_[i].length();
+      for (int j=0; j<order; j++) {
+          o << " " << force_constant_index_[i][j];
+        }
+      o << " " << force_constant_value_[i] << endl;
+    }
 }
 
 void

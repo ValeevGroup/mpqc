@@ -45,6 +45,10 @@ extern "C" {
 #   include <util/group/messpvm.h>
     const ClassDesc &fl2 = PVMMessageGrp::class_desc_;
 # endif
+# ifdef HAVE_MPI
+#   include <util/group/messmpi.h>
+    const ClassDesc &fl3 = MPIMessageGrp::class_desc_;
+# endif
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -66,13 +70,13 @@ clean_and_exit(RefMessageGrp& grp)
 }
 
 static RefMessageGrp
-init_mp(const char *inputfile)
+init_mp(const char *inputfile, int argc, char** argv)
 {
   int nproc,me,host;
   int top,ord,dir;
   RefMessageGrp grp;
 
-  grp = MessageGrp::initial_messagegrp();
+  grp = MessageGrp::initial_messagegrp(argc, argv);
   if (grp.null()) {
       RefKeyVal keyval = new ParsedKeyVal(inputfile);
       grp = keyval->describedclassvalue("message");
@@ -140,7 +144,7 @@ main(int argc, char *argv[])
 {
   int errcod, geom_code=-1;
   
-  int do_scf, do_grad, do_mp2, do_opt2_v1, do_opt2_v2;
+  int do_scf, do_grad, do_mp2, do_opt2_v1, do_opt2_v2, do_opt2v2lb;
   int read_geom, opt_geom, nopt, proper;
   int save_fock, save_vector, print_geometry, make_pdb=0;
   int localp, throttle, sync_loop, node_timings;
@@ -166,7 +170,7 @@ main(int argc, char *argv[])
   char *filename = (argv[1]) ? argv[1] : "mpqc.in";
 
  // initialize the picl routines
-  RefMessageGrp grp = init_mp(filename);
+  RefMessageGrp grp = init_mp(filename, argc, argv);
 
  // initialize timing for mpqc
 
@@ -260,6 +264,10 @@ main(int argc, char *argv[])
     if (keyval->exists("opt2_v2"))
       do_opt2_v2 = keyval->booleanvalue("opt2_v2");
 
+    do_opt2v2lb = 0;
+    if (keyval->exists("opt2v2lb"))
+      do_opt2v2lb = keyval->booleanvalue("opt2v2lb");
+
     read_geom = 0;
     if (keyval->exists("read_geometry"))
       read_geom = keyval->booleanvalue("read_geometry");
@@ -316,6 +324,7 @@ main(int argc, char *argv[])
     fprintf(outfile,"    mp2                = %s\n\n", (do_mp2)?"YES":"NO");
     fprintf(outfile,"    opt2_v1            = %s\n\n", (do_opt2_v1)?"YES":"NO");
     fprintf(outfile,"    opt2_v2            = %s\n\n", (do_opt2_v2)?"YES":"NO");
+    fprintf(outfile,"    opt2v2lb           = %s\n\n", (do_opt2v2lb)?"YES":"NO");
 
     if (save_vector) {
       fprintf(outfile,"  scf vector will be written to file %s.scfvec\n",
@@ -371,6 +380,7 @@ main(int argc, char *argv[])
   bcast0(&do_mp2,sizeof(int),mtype_get(),0);
   bcast0(&do_opt2_v1,sizeof(int),mtype_get(),0);
   bcast0(&do_opt2_v2,sizeof(int),mtype_get(),0);
+  bcast0(&do_opt2v2lb,sizeof(int),mtype_get(),0);
   bcast0(&dens,sizeof(double),mtype_get(),0);
   bcast0(&nfzc,sizeof(int),mtype_get(),0);
   bcast0(&nfzv,sizeof(int),mtype_get(),0);
@@ -658,7 +668,7 @@ main(int argc, char *argv[])
   }
 #endif
 
-  if (do_opt2_v1 || do_opt2_v2) {
+  if (do_opt2_v1 || do_opt2_v2 || do_opt2v2lb) {
     dmt_matrix S = dmt_create("libscfv3 overlap matrix",scf_info.nbfao,SCATTERED);
     dmt_matrix SAHALF;
     dmt_matrix SC;
@@ -742,6 +752,14 @@ main(int argc, char *argv[])
                     outfile);
         tim_exit("opt2_v2");
       }
+    if (do_opt2v2lb) {
+        sync0();
+        tim_enter("opt2v2lb");
+        opt2v2lb(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,
+                    outfile);
+        tim_exit("opt2v2lb");
+      }
+
     free_double_vector(&evals);
 
     tim_exit("opt2");

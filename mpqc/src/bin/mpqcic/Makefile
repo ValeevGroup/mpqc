@@ -7,12 +7,10 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 INCLUDE += -I. -I$(SRCDIR)
 CXXINCLUDE += -I. -I$(SRCDIR)
 
-LD = $(CXX)
-
 TARGET_TO_MAKE = mpqcic
 
-CXXSRC = mpqcic.cc mpqc_int.cc opt2_v1.cc opt2_v2.cc
-CSRC = scf_ffo.c opt2_fock.c gcollect.c
+CXXSRC = mpqcic.cc mpqc_int.cc opt2_v1.cc opt2_v2.cc opt2v2lb.cc
+CSRC = scf_ffo.c opt2_fock.c gcollect.c 
 INC = mpqc_int.h opt2.h g92_int.h
 
 DEPENDINCLUDE = $(INC) \

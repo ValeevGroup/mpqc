@@ -61,6 +61,12 @@ ShiftIntermediates::ShiftIntermediates()
 
 ShiftIntermediates::~ShiftIntermediates()
 {
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "ShiftIntermediates: DTOR: wasted "
+       << ndata_ - maxused_
+       << " of " << ndata_
+       << endl;
+#endif
   delete[] data_;
 }
 
@@ -111,12 +117,10 @@ void
 ShiftIntermediates::set_l(int l1,int l2,int l3,int l4)
 {
 #if CHECK_INTEGRAL_ALGORITHM
-  if (ndata_ && (maxused_ != ndata_)) {
-    cout << "ShiftIntermediates: wasted "
-         << ndata_ - maxused_
-         << " of " << ndata_
-         << endl;
-    }
+  cout << "ShiftIntermediates: set_l: wasted "
+       << ndata_ - maxused_
+       << " of " << ndata_
+       << endl;
 #endif
 
   l1_ = l1;
@@ -128,27 +132,30 @@ ShiftIntermediates::set_l(int l1,int l2,int l3,int l4)
   delete[] data_;
   ndata_ = 0;
   nused_ = 0;
+  maxused_ = 0;
   int i;
-  for (i=0; i<=l1+l2; i++) {
+  for (i=l1; i<=l1+l2; i++) {
     int szi = INT_NCART(i);
-    for (int k=0; k<=l3+l4; k++) {
+    for (int k=l3; k<=l3+l4; k++) {
       int szk = INT_NCART(k);
-      for (int l=0; l<=k && l+k<=l3+l4 && l<=l4; l++) {
+      for (int l=1; l<=k && l+k<=l3+l4 && l<=l4; l++) {
         int szl = INT_NCART(l);
         ndata_ += szi*szk*szl;
         }
       }
     }
   int szkl = INT_NCART(l3)*INT_NCART(l4);
-  for (i=0; i<=l1+l2; i++) {
+  for (i=l1; i<=l1+l2; i++) {
     int szi = INT_NCART(i);
-    for (int j=0; j<=i && i+j<=l1+l2 && j<=l2; j++) {
+    for (int j=1; j<=i && i+j<=l1+l2 && j<=l2; j++) {
       int szj = INT_NCART(j);
       ndata_ += szi*szj*szkl;
       }
     }
   data_ = new double[ndata_];
-  //cout << "ShiftIntermediates: allocated: " << ndata_ << endl;
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "ShiftIntermediates: allocated: " << ndata_ << endl;
+#endif
 }
 
 int

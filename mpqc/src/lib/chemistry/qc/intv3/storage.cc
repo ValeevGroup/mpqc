@@ -16,6 +16,8 @@
 // instantiate the templates needed for integral storage
 template class EAVLList<IntegralLink,IntegralKey>;
 template class EAVLList<IntegralLink,int>;
+template class EAVLNode<IntegralLink, IntegralKey>;
+template class EAVLNode<IntegralLink, int>;
 #endif
 
 /////////////////////////////////////////////////////////////////////////

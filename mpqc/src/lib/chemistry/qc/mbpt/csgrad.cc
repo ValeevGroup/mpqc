@@ -394,21 +394,21 @@ MBPT2::compute_cs_grad()
   int mem_remaining = mem_alloc - (dyn_mem + mem_static);
   if (mem_remaining < 0) mem_remaining = 0;
 
-  cout << indent
+  cout << indent << node0
        << scprintf("Memory available per node:      %i Bytes",mem_alloc)
        << endl;
-  cout << indent
+  cout << indent << node0
        << scprintf("Static memory used per node:    %i Bytes",mem_static)
        << endl;
-  cout << indent
+  cout << indent << node0
        << scprintf("Total memory used per node:     %i Bytes",
                    dyn_mem+mem_static)
        << endl;
-  cout << indent
+  cout << indent << node0
        << scprintf("Memory required for one pass:   %i Bytes",
                    compute_cs_dynamic_memory(nocc_act,nocc_act)+mem_static)
        << endl;
-  cout << indent
+  cout << indent << node0
        << scprintf("Batch size:                     %i", ni)
        << endl;
 
@@ -424,11 +424,11 @@ MBPT2::compute_cs_grad()
   if (mem_integral_storage<0) mem_integral_storage = 0;
   tbint_->set_integral_storage(mem_integral_storage);
 
-  cout << indent
+  cout << indent << node0
        << scprintf("Memory used for integral intermediates: %i Bytes",
                    mem_integral_intermediates)
        << endl;
-  cout << indent
+  cout << indent << node0
        << scprintf("Memory used for integral storage:       %i Bytes",
                    mem_integral_storage)
        << endl;

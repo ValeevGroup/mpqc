@@ -35,7 +35,7 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/simple.h>
 
-#include <math/topology/bitarray.h>
+#include <util/container/bitarray.h>
 
 #define DEFAULT_SIMPLE_TOLERANCE 1.0e-3
 

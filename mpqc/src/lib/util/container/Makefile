@@ -35,12 +35,10 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 SETIMPL = AVL
 MAPIMPL = RAVL
 
-GENCXXSRC = pixvpMap.cc pixvp$(MAPIMPL)Map.cc \
-            voidptrSet.cc voidptr$(SETIMPL)Set.cc \
-            pixintMap.cc pixint$(MAPIMPL)Map.cc \
+GENCXXSRC = pixintMap.cc pixint$(MAPIMPL)Map.cc \
             intpixMap.cc intpix$(MAPIMPL)Map.cc
 
-REALCXXSRC = array.cc set.cc voidptr.cc gnuavlse.cc avl.cc error.cc
+REALCXXSRC = array.cc set.cc gnuavlse.cc avl.cc error.cc
 
 GENSRC = $(GENCXXSRC)
 
@@ -49,7 +47,7 @@ TESTCXX = settest.cc settestt.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
-INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
+INC = pixmap.h pixvpdefs.h ptrset.h \
       set.h array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
       gnuset.h gnuavlse.h pixintdefs.h avl.h refset.h
 
@@ -123,20 +121,6 @@ intpixMap.cc intpixMap.h:
 	egrep -v "#include <intpixh>|#include \"intpixdefs.h\"" < tmp.intpixMap.h > intpixMap.h
 	/bin/rm tmp.intpixMap.h
 
-pixvpMap.cc pixvpMap.h:
-	$(GENCLASS) -2 Pix val VoidPtr val Map pixvp
-	$(PREPEND_HEADER) pixvpMap.h "#include <Pix.h>"
-	$(PREPEND_HEADER) pixvpMap.h "#include <util/container/voidptr.h>"
-	$(PREPEND_HEADER) pixvpMap.h "#include <util/container/pixvpdefs.h>"
-	/bin/mv pixvpMap.h tmp.pixvpMap.h
-	egrep -v "#include <pixvph>|#include \"pixvpdefs.h\"" < tmp.pixvpMap.h > pixvpMap.h
-	/bin/rm tmp.pixvpMap.h
-
-pixvp$(MAPIMPL)Map.cc pixvp$(MAPIMPL)Map.h:
-	$(GENCLASS) -2 Pix val VoidPtr val $(MAPIMPL)Map pixvp
-	$(PREPEND_HEADER) pixvp$(MAPIMPL)Map.h "#include <Pix.h>"
-	$(PREPEND_HEADER) pixvp$(MAPIMPL)Map.h "#include <util/container/voidptr.h>"
-
 pixint$(MAPIMPL)Map.cc pixint$(MAPIMPL)Map.h:
 	$(GENCLASS) -2 Pix val int val $(MAPIMPL)Map pixint
 	$(PREPEND_HEADER) pixint$(MAPIMPL)Map.h "#include <Pix.h>"
@@ -144,14 +128,3 @@ pixint$(MAPIMPL)Map.cc pixint$(MAPIMPL)Map.h:
 intpix$(MAPIMPL)Map.cc intpix$(MAPIMPL)Map.h:
 	$(GENCLASS) -2 int val Pix val $(MAPIMPL)Map intpix
 	$(PREPEND_HEADER) intpix$(MAPIMPL)Map.h "#include <Pix.h>"
-
-voidptrSet.cc voidptrSet.h:
-	$(GENCLASS) VoidPtr val Set voidptr
-	$(PREPEND_HEADER) voidptrSet.h "#include <util/container/voidptr.h>"
-	mv voidptrSet.h foo.h
-	cat foo.h | sed 's/\"voidptrdefs.h\"/<util\/container\/voidptrdefs.h>/g' > voidptrSet.h
-	/bin/rm foo.h
-
-voidptr$(SETIMPL)Set.cc voidptr$(SETIMPL)Set.h:
-	$(GENCLASS) VoidPtr val $(SETIMPL)Set voidptr
-	$(PREPEND_HEADER) voidptr$(SETIMPL)Set.h "#include <util/container/voidptr.h>"

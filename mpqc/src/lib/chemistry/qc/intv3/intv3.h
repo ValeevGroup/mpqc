@@ -30,7 +30,6 @@
 #ifndef _chemistry_qc_intv3_intv3_h
 #define _chemistry_qc_intv3_intv3_h
 
-#include <math/topology/pointbag.h>
 #include <chemistry/qc/basis/integral.h>
 
 class SphericalTransformV3;

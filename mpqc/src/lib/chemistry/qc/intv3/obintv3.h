@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_intv3_obintv3_h
 #define _chemistry_qc_intv3_obintv3_h
 
-#include <math/topology/pointbag.h>
-
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/intv3/int1e.h>
 

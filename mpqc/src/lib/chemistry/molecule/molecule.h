@@ -46,8 +46,6 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 
-class PointBag_double;
-
 //.  The \clsnm{Molecule} class provides information about the groups of
 //atoms we chemists like to call molecules.  \clsnm{Molecule} is a
 //\clsnmref{SavableState} and has a \clsnmref{StateIn} constructor.

@@ -32,11 +32,11 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXSRC = point.cc pointbag.cc pntbag_i.cc
+CXXSRC = point.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
-INC =  point.h pointbag.h pointset.h pntbag_i.h
+INC =  point.h
 
 DEPENDINCLUDE = $(INC)
 

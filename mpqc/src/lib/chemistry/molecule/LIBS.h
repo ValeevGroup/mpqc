@@ -1,6 +1,5 @@
 libmolecule.LIBSUF
 #include <math/scmat/LIBS.h>
-#include <math/topology/LIBS.h>
 #include <math/optimize/LIBS.h>
 #include <math/isosurf/LIBS.h>
 #include <math/symmetry/LIBS.h>

@@ -34,7 +34,7 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
-#include <math/topology/bitarray.h>
+#include <util/container/bitarray.h>
 
 //////////////////////////////////////////////////////////////////////
 

@@ -78,6 +78,9 @@ class auto_vec {
     /** Returns the pointer. */
     T* get() const throw() { return d_; }
 
+    /** Returns the i'th element. */
+    T &operator[](size_t i) throw() { return d_[i]; }
+
     /** Release ownership. */
     T* release() throw() {
       T *r = d_;

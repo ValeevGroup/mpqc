@@ -48,12 +48,22 @@ default:: $(TOPDIR)/lib/libmolecule.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libmolecule.so
 endif
+default:: libs
 
 interface:: $(DEPENDINCLUDE)
 
-moltest: $(TESTOBJ) libmolecule.a \
-	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS = $(shell cat libs)
+
+libs:
+	 $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+
+LD = $(CXX)
+
+moltest: $(TESTOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o moltest $^ $(SYSLIBS)
+
+symmetrize: symmetrize.o $(LIBS)
+	$(LD) $(LDFLAGS) -o symmetrize $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -41,7 +41,7 @@ Molecule::Molecule(Molecule& mol) :
 
 Molecule::~Molecule()
 {
-  if(atoms) delete[] atoms;
+  if (atoms) delete[] atoms;
   atoms=0;
   natoms=0;
 }
@@ -104,8 +104,13 @@ Molecule::Molecule(const RefKeyVal&input) :
     // first let's see if the input is in bohr or angstrom units
       int aangstroms = input->booleanvalue("angstrom");
       if (input->error() != KeyVal::OK) {
-          aangstroms = input->booleanvalue("aangstrom");
-        }
+        aangstroms = input->booleanvalue("aangstrom");
+      } else if (input->error() != KeyVal::OK) {
+        aangstroms = input->booleanvalue("angstroms");
+      } else if (input->error() != KeyVal::OK) {
+        aangstroms = input->booleanvalue("aangstroms");
+      }
+        
       double conv = 1.0;
       if (aangstroms) {
           conv = ang_to_bohr;
@@ -139,10 +144,10 @@ Molecule::Molecule(const RefKeyVal&input) :
         }
     }
     
- // we'll assume that only unique atoms are given in the input unless
- // told otherwise
+  // we'll assume that only unique atoms are given in the input unless
+  // told otherwise
   if (!input->booleanvalue("redundant_atoms"))
-    mol_symmetrize_molecule(*this);
+    symmetrize();
 }
 
 RefSCDimension
@@ -399,10 +404,10 @@ RefPoint Molecule::center_of_mass()
 
 // pass in natoms if you don't want to search through the entire molecule
 static int
-is_unique(Point& p, Molecule& mol, int natoms)
+is_unique(Point& p, Molecule *mol, int natoms)
 {
   for (int i=natoms-1; i >= 0; i--) {
-    if (dist(p,mol.atom(i).point()) < 0.1) {
+    if (dist(p,mol->atom(i).point()) < 0.5) {
       return 0;
     }
   }
@@ -410,10 +415,10 @@ is_unique(Point& p, Molecule& mol, int natoms)
 }
 
 static int
-is_unique(Point& p, Molecule& mol)
+is_unique(Point& p, Molecule *mol)
 {
-  for (int i=0; i < mol.natom(); i++) {
-    if (dist(p,mol.atom(i).point()) < 0.1) {
+  for (int i=0; i < mol->natom(); i++) {
+    if (dist(p,mol->atom(i).point()) < 0.5) {
       return 0;
     }
   }
@@ -427,24 +432,27 @@ is_unique(Point& p, Molecule& mol)
 // then add the new atom if it isn't in the list already
 
 void
-mol_symmetrize_molecule(Molecule& mol)
+Molecule::symmetrize()
 {
-
- // if molecule is c1, don't do anything
-  if (!strcmp(mol.point_group().symbol(),"c1")) {
+  // if molecule is c1, don't do anything
+  if (!strcmp(this->point_group().symbol(),"c1")) {
     return;
   }
 
-  CharacterTable ct = mol.point_group().char_table();
-  //ct.print();
+  Molecule *newmol = new Molecule;
+  newmol->pg = this->pg;
+  
+  CharacterTable ct = this->point_group().char_table();
 
   Point np;
   SymmetryOperation so;
-  int natom=mol.natom();
-  int range=natom;
+  int nnew=0;
 
-  for (int i=0; i < range; i++) {
-    AtomicCenter ac = mol.atom(i);
+  newmol->add_atom(nnew,this->atom(0));
+  nnew++;
+  
+  for (int i=0; i < this->natom(); i++) {
+    AtomicCenter ac = this->atom(i);
 
     for (int g=0; g < ct.order(); g++) {
       so = ct.symm_operation(g);
@@ -453,40 +461,43 @@ mol_symmetrize_molecule(Molecule& mol)
         for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
       }
 
-      if (is_unique(np,mol)) {
+      if (is_unique(np,newmol)) {
         AtomicCenter nac(ac.element().symbol(),np[0],np[1],np[2],ac.label());
-        mol.add_atom(natom,nac);
-        natom++;
+        newmol->add_atom(nnew,nac);
+        nnew++;
       }
     }
   }
+  
+  *this = *newmol;
+  delete newmol;
 }
 
 // move the molecule to the center of mass
 void
-mol_move_to_com(Molecule& mol)
+mol_move_to_com(RefMolecule& mol)
 {
-  RefPoint com = mol.center_of_mass();
+  RefPoint com = mol->center_of_mass();
 
   double X = com->operator[](0);
   double Y = com->operator[](1);
   double Z = com->operator[](2);
 
-  for (int i=0; i < mol.natom(); i++) {
-    mol.atom(i)[0] -= X;
-    mol.atom(i)[1] -= Y;
-    mol.atom(i)[2] -= Z;
+  for (int i=0; i < mol->natom(); i++) {
+    mol->atom(i)[0] -= X;
+    mol->atom(i)[1] -= Y;
+    mol->atom(i)[2] -= Z;
   }
 }
 
 // find the 3 principal coordinate axes, and rotate the molecule to be 
 // aligned along them.  also rotate the symmetry frame contained in point_group
 void
-mol_transform_to_principal_axes(Molecule& mol)
+mol_transform_to_principal_axes(RefMolecule& mol, int trans_frame)
 {
   const double au_to_angs = 0.2800283608302436;
 
-  mol_move_to_com(mol);
+  // mol_move_to_com(mol);
 
   double *inert[3], *evecs[3];
   double evals[3];
@@ -499,8 +510,8 @@ mol_transform_to_principal_axes(Molecule& mol)
   }
 
   AtomicCenter ac;
-  for (i=0; i < mol.natom(); i++) {
-    ac = mol.atom(i);
+  for (i=0; i < mol->natom(); i++) {
+    ac = mol->atom(i);
     double m=au_to_angs*ac.element().mass();
     inert[0][0] += m * (ac[1]*ac[1] + ac[2]*ac[2]);
     inert[1][0] -= m * ac[0]*ac[1];
@@ -535,57 +546,64 @@ mol_transform_to_principal_axes(Molecule& mol)
   }
 
   double x,y,z;
-  for (i=0; i < mol.natom(); i++) {
-    x = mol.atom(i)[0]; y = mol.atom(i)[1]; z = mol.atom(i)[2];
+  for (i=0; i < mol->natom(); i++) {
+    x = mol->atom(i)[0]; y = mol->atom(i)[1]; z = mol->atom(i)[2];
 
-    mol.atom(i)[0] = evecs[0][0]*x + evecs[1][0]*y + evecs[2][0]*z;
-    mol.atom(i)[1] = evecs[0][1]*x + evecs[1][1]*y + evecs[2][1]*z;
-    mol.atom(i)[2] = evecs[0][2]*x + evecs[1][2]*y + evecs[2][2]*z;
+    mol->atom(i)[0] = evecs[0][0]*x + evecs[1][0]*y + evecs[2][0]*z;
+    mol->atom(i)[1] = evecs[0][1]*x + evecs[1][1]*y + evecs[2][1]*z;
+    mol->atom(i)[2] = evecs[0][2]*x + evecs[1][2]*y + evecs[2][2]*z;
   }
 
-  SymmetryOperation tso=mol.point_group().symm_frame();
+  if (!trans_frame) return;
+  
+  SymmetryOperation tso=mol->point_group().symm_frame();
 
   for (i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
       double t=0;
       for (int k=0; k < 3; k++) t += tso[i][k]*evecs[k][j];
-      mol.point_group().symm_frame()[i][j] = t;
+      if (fabs(t) < 0.5)
+        t = 0;
+      else if (fabs(t) >= .5)
+        t = 1;
+      
+      mol->point_group().symm_frame()[i][j] = t;
     }
   }
 }
 
 // returns an array containing indices of the unique atoms
 int *
-mol_find_unique_atoms(Molecule& inmol)
+mol_find_unique_atoms(const RefMolecule& inmol)
 {
-
- // if this is a c1 molecule, then return all indices
-  if (!strcmp(inmol.point_group().symbol(),"c1")) {
-    int * ret = new int[inmol.natom()];
-    for (int i=0; i < inmol.natom(); i++) ret[i]=i;
+  // if this is a c1 molecule, then return all indices
+  if (!strcmp(inmol->point_group().symbol(),"c1")) {
+    int * ret = new int[inmol->natom()];
+    for (int i=0; i < inmol->natom(); i++) ret[i]=i;
     return ret;
   }
 
   int nuniq = mol_num_unique_atoms(inmol);
   int * ret = new int[nuniq];
 
- // so that we don't have side effects, copy inmol to mol
-  Molecule mol=inmol;
+  // so that we don't have side effects, copy inmol to mol
+  RefMolecule mol=new Molecule(*inmol.pointer());
 
   // the first atom is always unique
   ret[0]=0;
 
-  mol_transform_to_principal_axes(mol);
+//   mol_transform_to_principal_axes(mol,0);
+//   mol->symmetrize();
 
-  CharacterTable ct = mol.point_group().char_table();
+  CharacterTable ct = mol->point_group().char_table();
 
   AtomicCenter ac;
   SymmetryOperation so;
   Point np;
 
   int nu=1;
-  for (int i=1; i < mol.natom(); i++) {
-    ac = mol.atom(i);
+  for (int i=1; i < mol->natom(); i++) {
+    ac = mol->atom(i);
     int i_is_unique=1;
 
     // subject i to all symmetry ops...if one of these maps into an atom
@@ -597,7 +615,7 @@ mol_find_unique_atoms(Molecule& inmol)
         for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
       }
 
-      if (!is_unique(np,mol,i)) {
+      if (!is_unique(np,mol.pointer(),i)) {
         i_is_unique=0;
         break;
       }
@@ -613,7 +631,7 @@ mol_find_unique_atoms(Molecule& inmol)
  // change the coordinate number if so
   double tol=1.0e-5;
   for (i=0; i < nuniq; i++) {
-    ac = mol.atom(ret[i]);
+    ac = mol->atom(ret[i]);
     if (fabs(ac[0]) < tol || fabs(ac[1]) < tol || fabs(ac[2]) < tol)
       continue;
 
@@ -627,8 +645,8 @@ mol_find_unique_atoms(Molecule& inmol)
 
      // if np has a zero coordinate then find it in atoms
       if (fabs(np[0]) < tol || fabs(np[1]) < tol || fabs(np[2]) < tol) {
-        for (int j=0; j < mol.natom(); j++) {
-          if (dist(np,mol.atom(j).point()) < 0.1) {
+        for (int j=0; j < mol->natom(); j++) {
+          if (dist(np,mol->atom(j).point()) < 0.1) {
             ret[i] = j;
             breakg=1;
             break;
@@ -643,26 +661,28 @@ mol_find_unique_atoms(Molecule& inmol)
 }
 
 int
-mol_num_unique_atoms(Molecule& inmol)
+mol_num_unique_atoms(const RefMolecule& inmol)
 {
  // if this is a c1 molecule, then return natom
-  if (!strcmp(inmol.point_group().symbol(),"c1")) return inmol.natom();
+  if (!strcmp(inmol->point_group().symbol(),"c1"))
+    return inmol->natom();
 
  // so that we don't have side effects, copy inmol to mol
-  Molecule mol=inmol;
+  RefMolecule mol = new Molecule(*inmol.pointer());
 
-  mol_transform_to_principal_axes(mol);
+//   mol_transform_to_principal_axes(mol,0);
+//   mol->symmetrize();
 
   AtomicCenter ac;
   SymmetryOperation so;
   Point np;
 
-  CharacterTable ct = mol.point_group().char_table();
+  CharacterTable ct = mol->point_group().char_table();
 
   int nu=1;
 
-  for (int i=1; i < mol.natom(); i++) {
-    ac = mol.atom(i);
+  for (int i=1; i < mol->natom(); i++) {
+    ac = mol->atom(i);
     int i_is_unique=1;
 
     // subject i to all symmetry ops...if one of these maps into an atom
@@ -674,7 +694,7 @@ mol_num_unique_atoms(Molecule& inmol)
         for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
       }
 
-      if (!is_unique(np,mol,i)) {
+      if (!is_unique(np,mol.pointer(),i)) {
         i_is_unique=0;
         break;
       }
@@ -690,11 +710,11 @@ mol_num_unique_atoms(Molecule& inmol)
 // and set these to zero.  this is cheating, but who cares
 
 static void
-get_rid_of_annoying_numbers(Molecule& mol)
+get_rid_of_annoying_numbers(RefMolecule& mol)
 {
-  for (int i=0; i < mol.natom(); i++) {
+  for (int i=0; i < mol->natom(); i++) {
     for (int j=0; j < 3; j++) {
-      if (fabs(mol.atom(i)[j]) < 1.0e-5) mol.atom(i).point()[j]=0;
+      if (fabs(mol->atom(i)[j]) < 5.0e-2) mol->atom(i).point()[j]=0;
     }
   }
 }
@@ -703,28 +723,29 @@ get_rid_of_annoying_numbers(Molecule& mol)
 // that really map into each other
 
 void
-mol_cleanup_molecule(Molecule& mol)
+mol_cleanup_molecule(RefMolecule& mol)
 {
- // this may have already been done, but let's first move to the principal
- // axes
-  mol_transform_to_principal_axes(mol);
+  // this may have already been done, but let's first move to the principal
+  // axes
+//   mol_transform_to_principal_axes(mol,0);
+//   mol->symmetrize();
 
- // if symmetry is c1, do nothing else
-  if (!strcmp(mol.point_group().symbol(),"c1")) return;
+  // if symmetry is c1, do nothing else
+  if (!strcmp(mol->point_group().symbol(),"c1")) return;
 
   get_rid_of_annoying_numbers(mol);
 
- // now let's find out how many unique atoms there are and who they are
+  // now let's find out how many unique atoms there are and who they are
   int nuniq = mol_num_unique_atoms(mol);
   int *uniq = mol_find_unique_atoms(mol);
 
   Point up,np;
   SymmetryOperation so;
-  CharacterTable ct = mol.point_group().char_table();
+  CharacterTable ct = mol->point_group().char_table();
 
- // grab the coordinates of each unique atom and stuff into up
+  // grab the coordinates of each unique atom and stuff into up
   for (int i=0; i < nuniq; i++) {
-    up = mol.atom(uniq[i]).point();
+    up = mol->atom(uniq[i]).point();
 
    // subject up to all symmetry ops...find the atom this maps to and
    // reset it's coordinates. skip E.
@@ -735,14 +756,14 @@ mol_cleanup_molecule(Molecule& mol)
         for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * up[jj];
       }
 
-      for (int j=0; j < mol.natom(); j++) {
-        if (dist(np,mol.atom(j).point()) < 0.1) {
+      for (int j=0; j < mol->natom(); j++) {
+        if (dist(np,mol->atom(j).point()) < 0.1) {
           //printf("gamma(%d)*atom(%d)(%f,%f,%f) = atom(%d)(%f,%f,%f)\n",
           //                  g,uniq[i],up[0],up[1],up[2],j,np[0],np[1],np[2]);
 
-          mol.atom(j)[0] = np[0];
-          mol.atom(j)[1] = np[1];
-          mol.atom(j)[2] = np[2];
+          mol->atom(j)[0] = np[0];
+          mol->atom(j)[1] = np[1];
+          mol->atom(j)[2] = np[2];
           break;
         }
       }

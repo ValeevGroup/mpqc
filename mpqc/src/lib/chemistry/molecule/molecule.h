@@ -75,6 +75,7 @@ class Molecule: public SavableState
     PointGroup& point_group();
     const PointGroup& point_group() const;
     RefPoint center_of_mass();
+    void symmetrize();
 
     void save_data_state(StateOut&);
 };
@@ -82,16 +83,11 @@ SavableState_REF_dec(Molecule);
 
 /////////////////////////////////////////////////////////////////////
 
-// this may or may not increase the number of atoms
-void mol_symmetrize_molecule(Molecule&);
+void mol_move_to_com(RefMolecule&);
+void mol_transform_to_principal_axes(RefMolecule&, int trans_frame=1);
+void mol_cleanup_molecule(RefMolecule&);
 
-// these change the coordinates of the molecule
-void mol_move_to_com(Molecule&);
-void mol_transform_to_principal_axes(Molecule&);
-void mol_cleanup_molecule(Molecule&);
-
-// these have no side effects
-int mol_num_unique_atoms(Molecule&);
-int * mol_find_unique_atoms(Molecule&);  // returns new'd array
+int mol_num_unique_atoms(const RefMolecule&);
+int * mol_find_unique_atoms(const RefMolecule&);  // returns new'd array
 
 #endif

@@ -32,6 +32,7 @@
 #include <util/misc/exenv.h>
 #include <util/container/compare.h>
 #include <unistd.h> // for size_t on solaris
+#include <stdlib.h>
 
 template <class K, class T>
 class EAVLMMapNode {

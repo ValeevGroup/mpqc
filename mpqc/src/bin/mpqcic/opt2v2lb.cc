@@ -49,6 +49,7 @@ static void findshellmax(int *myshellsizes, int nRshell, int *shellmax,
 static void expandintarray(int *&a, int dim);
 
 #include "opt2.h"
+#include "bzerofast.h"
 
 int
 opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
@@ -199,6 +200,7 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   nbf = (int*) malloc(nproc*sizeof(int));
   proc = (int*) malloc(nshell*sizeof(int));
 
+
   ///////////////////////////////////////////////////////
   // Begin distributing R shells between nodes so all
   // nodes get ca. the same number of r basis functions
@@ -324,6 +326,7 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     fprintf(outfile,"\n");
     }
 
+
   //////////////////////////////////////////////////////////
   // End of distribution of R shells and r basis functions
   //////////////////////////////////////////////////////////
@@ -380,12 +383,26 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
   if (me == 0) {
     fprintf(outfile," npass  rest  nbasis  nshell  nfuncmax"
-                    "  ndocc  nsocc  nvir  nfzc  nfcv\n");
+                    "  ndocc  nsocc  nvir  nfzc  nfzv\n");
     fprintf(outfile,"  %-4i   %-3i   %-5i    %-4i     %-3i"
                     "     %-3i    %-3i    %-3i    %-3i   %-3i\n",
             npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
     fprintf(outfile,"Using %i bytes of memory\n",mem_alloc);
     }
+
+  //////////////////////
+  // Test that ni is OK
+  //////////////////////
+  if (me == 0) {
+    fprintf(outfile,"Memory allocated: %i\n", mem_alloc);
+    fprintf(outfile,"Memory used     : %lf\n", A*ni*ni+B*ni+C);
+    if (A*ni*ni + B*ni +C > mem_alloc) {
+      fprintf(outfile,"Problems with memory allocation: 
+                       Using more memory than allocated\n");
+      abort();
+      }
+    }
+
 
   /////////////////////////////////////////////////////////
   // Rearrange scf eigenvalues as [socc docc socc unocc]
@@ -398,6 +415,7 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   for (i=0; i < nsocc; i++) evals_open[i] = evals[i+nfzc+ndocc];
   for (i=nsocc; i < nocc; i++) evals_open[i] = evals[i-nsocc+nfzc];
   for (i=nocc; i < nvir+nocc; i++) evals_open[i] = evals[i+nfzc-nsocc];
+
 
   //////////////////////////////////////////////////////////////////
   // The scf vector is distributed between the nodes, but for OPT2
@@ -454,19 +472,20 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   if (nsocc) mo_int_tmp = 
                      (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
 
-  if (nsocc) memset(mo_int_do_so_vir,0,ndocc*nsocc*(nvir-nsocc)*sizeof(double));
+  if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
 
  /////////////////////////////////////
  //  Begin opt2 loops
  /////////////////////////////////////
 
+
   for (pass=0; pass<npass; pass++) {
     i_offset = pass*ni;  
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     r_offset = 0;
-    memset(trans_int3,0,nbf[me]*nvir*dim_ij*sizeof(double));
+    bzerofast(trans_int3,nbf[me]*nvir*dim_ij);
 
     tim_enter("RS loop");
 
@@ -477,9 +496,9 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
       for (S = 0; S < nshell; S++) {
         ns = INT_SH_NFUNC((centers),S);
-        tim_enter("memset trans_int1");
-        memset(trans_int1,0,nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
-        tim_exit("memset trans_int1");
+        tim_enter("bzerofast trans_int1");
+        bzerofast(trans_int1,nfuncmax*nfuncmax*nbasis*ni);
+        tim_exit("bzerofast trans_int1");
 
         tim_enter("PQ loop");
 
@@ -555,9 +574,9 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
           for (bf4 = 0; bf4 < ns; bf4++) {
             s = centers->func_num[S] + bf4;
 
-            tim_enter("memset trans_int2");
-            memset(trans_int2,0,nvir*ni*sizeof(double));
-            tim_exit("memset trans_int2");
+            tim_enter("bzerofast trans_int2");
+            bzerofast(trans_int2,nvir*ni);
+            tim_exit("bzerofast trans_int2");
 
             tim_enter("2. quart. tr.");
 
@@ -617,7 +636,7 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     if (pass == 0) {
       tim_enter("4. quart. tr.");
-      if (nsocc) memset(socc_sum,0,nsocc*sizeof(double));
+      if (nsocc) bzerofast(socc_sum,nsocc);
       for (isocc=0; isocc<nsocc; isocc++) {
 
         index = 0;
@@ -661,7 +680,7 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
         tim_enter("4. quart. tr.");
 
-        memset(trans_int4,0,nvir*nvir*sizeof(double));
+        bzerofast(trans_int4,nvir*nvir);
 
         index = 0;
         for (k=0; k<nRshell; k++) {

@@ -10,9 +10,7 @@ typedef int dmt_matrix;
 
 #include <tmpl.h>
 
-extern "C" {
 #include <util/group/picl.h>
-}
 
 #include <util/class/class.h>
 #include <util/state/state.h>

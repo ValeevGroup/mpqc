@@ -41,6 +41,7 @@ extern "C" {
 }
 
 #include "opt2.h"
+#include "bzerofast.h"
 
 int
 opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
@@ -252,7 +253,7 @@ opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   nshell = centers->nshell;
   if (me == 0) {
     fprintf(outfile," npass  rest  nbasis  nshell  nfuncmax"
-                    "  ndocc  nsocc  nvir  nfzc  nfcv\n");
+                    "  ndocc  nsocc  nvir  nfzc  nfzv\n");
     fprintf(outfile,"   %-4i   %-3i   %-5i   %-4i     %-3i"
                     "     %-3i     %-3i   %-3i    %-3i   %-3i\n",
             npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
@@ -328,7 +329,7 @@ opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   if (nsocc) mo_int_tmp = 
                    (double*) malloc(ndocc*nsocc*(nvir-nsocc)*sizeof(double));
 
-  if (nsocc) memset(mo_int_do_so_vir,0,ndocc*nsocc*(nvir-nsocc)*sizeof(double));
+  if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
 /**************************************************************************
 *    begin opt2 loops                                                     *
@@ -337,7 +338,7 @@ opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   for (pass=0; pass<npass; pass++) {
     i_offset= pass*ni;  
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
-    memset(trans_int3,0,nbasis*a_number*dim_ij*sizeof(double));
+    bzerofast(trans_int3,nbasis*a_number*dim_ij);
 
     shell_index = 0;
 
@@ -347,9 +348,9 @@ opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
       for (S = 0; S <= R; S++) {
         ns = INT_SH_NFUNC((centers),S);
-        tim_enter("memset trans_int1");
-        memset(trans_int1,0,nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
-        tim_exit("memset trans_int1");
+        tim_enter("bzerofast trans_int1");
+        bzerofast(trans_int1,nfuncmax*nfuncmax*nbasis*ni);
+        tim_exit("bzerofast trans_int1");
 
         tim_enter("PQ loop");
         for (P = 0; P < centers->nshell; P++) {
@@ -429,9 +430,9 @@ opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
         /* begin second quarter transformation */
 
-        tim_enter("memset trans_int2");
-        memset(trans_int2,0,nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
-        tim_exit("memset trans_int2");
+        tim_enter("bzerofast trans_int2");
+        bzerofast(trans_int2,nfuncmax*nfuncmax*nbasis*ni);
+        tim_exit("bzerofast trans_int2");
 
         tim_enter("2. quart. tr.");
 
@@ -505,7 +506,7 @@ opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     tim_enter("4. quart. tr.");
     if (pass == 0 && me == 0) {
-      if (nsocc) memset(socc_sum,0,nsocc*sizeof(double));
+      if (nsocc) bzerofast(socc_sum,nsocc);
       for (isocc=0; isocc<nsocc; isocc++) {
 
         for (r=0; r<nbasis; r++) {
@@ -538,7 +539,7 @@ opt2_v1(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
        tim_enter("4. quart. tr.");
 
-        memset(trans_int4_node,0,nvir*a_number*sizeof(double));
+        bzerofast(trans_int4_node,nvir*a_number);
 
         for (r=0; r<nbasis; r++) {
 

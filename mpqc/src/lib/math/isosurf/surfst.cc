@@ -8,7 +8,15 @@
 #include <math/isosurf/edgeRAVLMap.h>
 #include <math/isosurf/vertexAVLSet.h>
 
-#define VERBOSE 0
+#ifndef WRITE_OOGL // this is useful for debugging this routine
+#define WRITE_OOGL 0
+#endif
+
+#if WRITE_OOGL
+#include <util/container/pixintRAVLMap.h>
+#include <util/render/oogl.h>
+#include <util/render/polygons.h>
+#endif
 
 void
 TriangulatedSurface::remove_slender_triangles(double height_cutoff)
@@ -32,7 +40,7 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
   int nedge = _edges.length();
   int ntriangle = _triangles.length();
 
-  if (VERBOSE) {
+  if (_verbose) {
       printf("TriangulatedSurface::remove_slender_triangles:\n");
       printf("initial: ");
       topology_info();
@@ -123,9 +131,7 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
                     }
                 }
               if (skip) continue;
-              
-              deleted_triangles |= connected_triangles;
-              deleted_vertices.add(vertex);
+
               // find all of the edges contained in the connected triangles
               RefEdgeAVLSet all_edges;
               for (J = connected_triangles.first();
@@ -140,12 +146,48 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
               // (including the short edge)
               RefEdgeAVLSet connected_edges;
               connected_edges |= connected_edge_map[vertex];
-              deleted_edges |= connected_edges;
               // find the edges forming the perimeter of the deleted triangles
               // (these are used to form the new triangles)
               RefEdgeAVLSet perimeter_edges;
               perimeter_edges |= all_edges;
               perimeter_edges -= connected_edges;
+
+              // If deleting this point causes a flattened piece of
+              // surface, reject it.  This is tested by checking for
+              // triangles that have all vertices contained in the set
+              // of vertices connected to the deleted vertex.
+              RefVertexAVLSet connected_vertices;
+              for (J = perimeter_edges.first(); J; perimeter_edges.next(J)) {
+                  RefEdge e = perimeter_edges(J);
+                  connected_vertices.add(e->vertex(0));
+                  connected_vertices.add(e->vertex(1));
+                }
+              RefTriangleAVLSet triangles_connected_to_perimeter;
+              for (J = connected_vertices.first();
+                   J;
+                   connected_vertices.next(J)) {
+                  triangles_connected_to_perimeter
+                      |= connected_triangle_map[connected_vertices(J)];
+                }
+              for (J = triangles_connected_to_perimeter.first();
+                   J;
+                   triangles_connected_to_perimeter.next(J)) {
+                  RefTriangle t = triangles_connected_to_perimeter(J);
+                  if (connected_vertices.seek(t->vertex(0))
+                      &&connected_vertices.seek(t->vertex(1))
+                      &&connected_vertices.seek(t->vertex(2))) {
+                      skip = 1;
+                      break;
+                    }
+                }
+              if (skip) {
+                  continue;
+                }
+
+              deleted_triangles |= connected_triangles;
+              deleted_vertices.add(vertex);
+              deleted_edges |= connected_edges;
+
               // find a new point that replaces the deleted vertex
               // (for now use one of the original, since it must lie on the
               // analytic surface)
@@ -232,6 +274,51 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
             }
         }
 
+#if WRITE_OOGL
+        {
+          char filename[100];
+          static int pass = 0;
+          sprintf(filename, "surfst%04d.oogl", pass);
+          RefRender render = new OOGLRender(filename);
+          RefRenderedPolygons poly = new RenderedPolygons;
+          poly->initialize(_vertices.length(), _triangles.length(),
+                           RenderedPolygons::Vertex);
+          Pix I;
+          PixintRAVLMap pix_to_index(0);
+          int i = 0;
+          for (I = _vertices.first(); I; _vertices.next(I), i++) {
+              RefVertex v = _vertices(I);
+              pix_to_index[(Pix)v.pointer()] = i;
+              poly->set_vertex(i,
+                               v->point()->get_element(0),
+                               v->point()->get_element(1),
+                               v->point()->get_element(2));
+              if (deleted_vertices.seek(v)) {
+                  poly->set_vertex_rgb(i, 1.0, 0.0, 0.0);
+                }
+              else {
+                  poly->set_vertex_rgb(i, 0.3, 0.3, 0.3);
+                }
+            }
+          i = 0;
+          for (I = _triangles.first(); I; _triangles.next(I), i++) {
+              RefTriangle t = _triangles(I);
+              poly->set_face(i,
+                             pix_to_index[(Pix)t->vertex(0).pointer()],
+                             pix_to_index[(Pix)t->vertex(1).pointer()],
+                             pix_to_index[(Pix)t->vertex(2).pointer()]);
+            }
+          if (_verbose) {
+              printf("PASS = %04d: ", pass);
+            }
+          else {
+              printf("PASS = %04d\n", pass);
+            }
+          render->render(poly);
+          pass++;
+        }
+#endif
+
       _triangles -= deleted_triangles;
       _edges -= deleted_edges;
       _vertices -= deleted_vertices;
@@ -240,9 +327,12 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
       _edges |= new_edges;
       _vertices |= new_vertices;
 
+      if (_verbose) {
+          printf("intermediate: ");
+          topology_info();
+        }
+
       deleted_edges_length = deleted_edges.length();
-      //printf("WARNING: one pass short edge removal\n");
-      //deleted_edges_length = 0; // do one pass
     } while(deleted_edges_length != 0);
 
   // fix the index maps
@@ -279,7 +369,7 @@ TriangulatedSurface::remove_slender_triangles(double height_cutoff)
       _completed_surface = 1;
     }
 
-  if (VERBOSE) {
+  if (_verbose) {
       printf("final: ");
       topology_info();
     }

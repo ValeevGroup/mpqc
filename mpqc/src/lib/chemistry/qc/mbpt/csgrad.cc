@@ -206,6 +206,13 @@ MBPT2::compute_cs_grad()
   BiggestContribs biggest_coefs(5,10);
   CharacterTable ct = molecule()->point_group()->char_table();
 
+#define PRINT_BIGGEST_INTS 1
+#if PRINT_BIGGEST_INTS
+  BiggestContribs biggest_ints_2(4,40);
+  BiggestContribs biggest_ints_3a(4,40);
+  BiggestContribs biggest_ints_3(4,40);
+#endif
+
   int dograd = gradient_needed();
 
   // this controls how often mem->catchup is called
@@ -645,6 +652,9 @@ MBPT2::compute_cs_grad()
               ixjs_ptr = ixjs_tmp;
               c_qx = scf_vector[q];
               tmpval = *integral_iqjs_ptr;
+#if PRINT_BIGGEST_INTS
+              biggest_ints_2.insert(tmpval,i+i_offset,j,s,q);
+#endif
               for (x=0; x<nbasis; x++) {
                 *ixjs_ptr++ += *c_qx++ * tmpval;
                 }
@@ -656,6 +666,9 @@ MBPT2::compute_cs_grad()
             integral_iqjs_ptr = &integral_iqjs[nbasis*(s + nbasis*ij_index)];
             ixjs_ptr = ixjs_tmp;
             for (x=0; x<nbasis; x++) {
+#if PRINT_BIGGEST_INTS
+              biggest_ints_3a.insert(*ixjs_ptr,i+i_offset,j,s,x);
+#endif
               *integral_iqjs_ptr++ = *ixjs_ptr++;
               }
             }   // exit s loop
@@ -706,6 +719,9 @@ MBPT2::compute_cs_grad()
               c_sy = scf_vector[s];
               iajy_ptr = integral_iajy;
               tmpval = *iajs_ptr;
+#if PRINT_BIGGEST_INTS
+              biggest_ints_3.insert(tmpval,i+i_offset,j,a,s);
+#endif
               for (y=0; y<nbasis; y++) {
                 *iajy_ptr++ += *c_sy++ * tmpval;
                 } // exit y loop
@@ -1608,9 +1624,50 @@ MBPT2::compute_cs_grad()
   msg_->sum(aointder_computed);
 
   biggest_coefs.combine(msg_);
+#if PRINT_BIGGEST_INTS
+  biggest_ints_2.combine(msg_);
+  biggest_ints_3a.combine(msg_);
+  biggest_ints_3.combine(msg_);
+#endif
 
   if (me == 0) {
     emp2 = escf + ecorr_mp2;
+
+#if PRINT_BIGGEST_INTS
+    cout << "biggest 2/4 transformed ints" << endl;
+    for (i=0; i<biggest_ints_2.ncontrib(); i++) {
+      cout << scprintf("%3d %3d %3d %3d %16.12f",
+                       biggest_ints_2.indices(i)[0],
+                       biggest_ints_2.indices(i)[1],
+                       biggest_ints_2.indices(i)[2],
+                       biggest_ints_2.indices(i)[3],
+                       biggest_ints_2.val(i)
+                       )
+           << endl;
+      }
+    cout << "biggest 3/4 transformed ints (in 3.)" << endl;
+    for (i=0; i<biggest_ints_3a.ncontrib(); i++) {
+      cout << scprintf("%3d %3d %3d %3d %16.12f",
+                       biggest_ints_3a.indices(i)[0],
+                       biggest_ints_3a.indices(i)[1],
+                       biggest_ints_3a.indices(i)[2],
+                       biggest_ints_3a.indices(i)[3],
+                       biggest_ints_3a.val(i)
+                       )
+           << endl;
+      }
+    cout << "biggest 3/4 transformed ints (in 4.)" << endl;
+    for (i=0; i<biggest_ints_3.ncontrib(); i++) {
+      cout << scprintf("%3d %3d %3d %3d %16.12f",
+                       biggest_ints_3.indices(i)[0],
+                       biggest_ints_3.indices(i)[1],
+                       biggest_ints_3.indices(i)[2],
+                       biggest_ints_3.indices(i)[3],
+                       biggest_ints_3.val(i)
+                       )
+           << endl;
+      }
+#endif
 
     if (biggest_coefs.ncontrib()) {
       cout << endl << indent

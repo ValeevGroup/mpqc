@@ -47,9 +47,4 @@ SCMatrix3 rotation_mat(const SCVector3&, double theta);
 SCMatrix3 reflection_mat(const SCVector3&);
 inline int delta(int i, int j) { return i==j; }
 
-#ifdef INLINE_FUNCTIONS
-#include "matrix3_i.h"
-#endif
-
-
 #endif

@@ -357,6 +357,7 @@ MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
 MolEnergyConvergence::MolEnergyConvergence(const RefKeyVal&keyval)
 {
   cartesian_ = keyval->booleanvalue("cartesian");
+  if (keyval->error() != KeyVal::OK) cartesian_ = 1;
 
   use_max_disp_ = keyval->exists("max_disp");
   use_max_grad_ = keyval->exists("max_grad");

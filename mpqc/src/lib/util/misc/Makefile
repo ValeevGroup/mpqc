@@ -44,6 +44,8 @@ CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc
 
+TESTPROGS = comptest formiot bugtest tregtime unittest
+
 INC = timer.h compute.h ieee.h bug.h exenv.h
 
 DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h

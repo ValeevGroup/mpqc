@@ -56,6 +56,8 @@ DISTFILES = $(TESTCSRC) $(INC) atoms.sgen Makefile LIBS.h
 
 DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 
+TESTPROGS = inttest fjttest
+
 #############################################################
 
 default:: $(DEPENDINCLUDE)
@@ -73,9 +75,6 @@ inttest: inttest.$(OBJSUF) \
 
 inttest.$(OBJSUF): inttest.cc
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
-
-targetclean::
-	-rm -f inttest fjttest
 
 $(TESTOBJ:.$(OBJSUF)=.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

@@ -49,6 +49,8 @@ DEPENDINCLUDE = $(INC)
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCisosurf
 
+TESTPROGS = isotest
+
 DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
@@ -64,9 +66,6 @@ isotest: isotest.$(OBJSUF) \
 	$(LTLINK) $(LD) $(LDFLAGS) -o isotest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
-distclean::
-	/bin/rm -f isotest
 
 $(LIBOBJ:.$(OBJSUF)=.d) isotest.d: $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

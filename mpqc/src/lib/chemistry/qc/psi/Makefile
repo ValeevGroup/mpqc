@@ -13,6 +13,8 @@ CSRCS =
 
 TESTSRCS = psitest.cc
 
+TESTPROGS = psitest
+
 LIBOBJ = $(SRCS:%.cc=%.$(OBJSUF))
 LIBOBJ += $(CSRCS:%.c=%.$(OBJSUF))
 

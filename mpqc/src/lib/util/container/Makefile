@@ -36,6 +36,8 @@ CXXSRC = array.cc avl.cc bitarray.cc carray.cc
 
 TESTCXX = avltest.cc artest.cc
 
+TESTPROGS = avltest artest
+
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
@@ -76,9 +78,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 miscclean::
 	-rm -f foo.h
-
-distclean::
-	/bin/rm -rf avltest
 
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

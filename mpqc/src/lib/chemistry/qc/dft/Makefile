@@ -34,6 +34,8 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libSCdft
 BIN_OR_LIB = LIB
 
+TESTPROGS = dfttest lebedev
+
 SRCS = functional.cc integrator.cc \
        clks.cc uks.cc hsosks.cc lebedev.c \
        tmplinst.cc

@@ -51,6 +51,8 @@ TESTSRC = rentest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = 
 
+TESTPROGS = rentest
+
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)

@@ -49,6 +49,8 @@ TESTSRC = bemtest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = bemtest.in
 
+TESTPROGS = bemtest
+
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)
@@ -61,9 +63,6 @@ bemtest: $(TESTOBJ) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -o bemtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
-distclean::
-	/bin/rm -f bemtest
 
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

@@ -72,6 +72,8 @@ TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc thrtest.cc
 DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
             Makefile LIBS.h $(TESTCXXSRC)
 
+TESTPROGS = pooltest messtest rnglocktest memtest
+
 DEPENDINCLUDE =
 
 default:: $(DEPENDINCLUDE)
@@ -134,6 +136,3 @@ $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d)
 endif
-
-targetclean::
-	/bin/rm -f memtest rnglocktest messtest thrtest

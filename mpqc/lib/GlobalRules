@@ -41,6 +41,18 @@ install::
 
 install_devel::
 
+.PHONY: testbuild testrun
+
+testbuild: $(TESTPROGS)
+
+testrun: $(TESTPROGS)
+ifneq ($(TESTPROGS),)
+	for prog in $(TESTPROGS); \
+	  do \
+	    ./$${prog} || exit 1; \
+	  done
+endif
+
 ifeq ($(BIN_OR_LIB),LIB)
 
 ifeq ($(TMPLINLIB),yes)
@@ -173,6 +185,9 @@ ifdef TARGET_TO_MAKE
 	-rm -f $(TARGET_TO_MAKE).a
   endif
 endif
+
+targetclean::
+	-rm -f $(TESTPROGS)
 
 #
 # dependencies

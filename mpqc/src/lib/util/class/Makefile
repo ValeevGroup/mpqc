@@ -45,6 +45,8 @@ TARGET_TO_MAKE = libSCclass
 TESTCXXSRC = classtest.cc
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
+TESTPROGS = classtest
+
 default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)
@@ -58,9 +60,6 @@ bug: bug.cc
 	$(LTLINK) $(CXX) $(CXXFLAGS) -o bug $^ $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
-distclean::
-	/bin/rm -f classtest
 
 $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

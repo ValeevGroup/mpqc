@@ -40,6 +40,8 @@ GENSRC = $(GENCXXSRC)
 CXXSRC = $(GENCXXSRC) $(REALCXXSRC)
 TESTCXX = reftest.cc reftestx.cc
 
+TESTPROGS = reftest
+
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = ref.h reftestx.h identity.h
@@ -62,9 +64,6 @@ reftest: reftest.$(OBJSUF) reftestx.$(OBJSUF) \
 	$(LTLINK) $(CXX) $(LDFLAGS) -o reftest $^ $(LTLINKBINOPTS) $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
-targetclean::
-	-rm -f reftest
 
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

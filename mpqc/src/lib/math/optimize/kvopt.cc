@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <fstream>
+
 #include <util/misc/formio.h>
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
@@ -41,8 +43,8 @@ main(int argc, char** argv)
   char* inputfile = argv[1];
   char* keyword = argv[2];
 
-  FILE*fp = fopen(inputfile,"r");
-  if (!fp) {
+  std::ifstream fp(inputfile);
+  if (fp.bad()) {
       ExEnv::errn() << scprintf("%s: error opening input file \"%s\"\n",
                        argv[0], inputfile);
       perror("fopen");
@@ -72,7 +74,8 @@ main(int argc, char** argv)
       exit(1);
     }
 
-  Ref<Optimize> opt = dc;
+  Ref<Optimize> opt;
+  opt << dc;
 
   if (opt.null()) {
       ExEnv::errn() << scprintf("%s: keyword \"%s\" in file \"%s\" could not be"

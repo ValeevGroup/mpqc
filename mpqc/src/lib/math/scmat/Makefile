@@ -50,6 +50,8 @@ CXXSRC = dim.cc \
 
 TESTSRC = disttest.cc localtest.cc repltest.cc blockedtest.cc
 
+TESTPROGS = disttest localtest repltest blockedtest
+
 CSRC = cmatrix.c svd.c
 
 FSRC = pdsteqr.f

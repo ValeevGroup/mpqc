@@ -40,6 +40,8 @@ CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
 
 GENCXXSRC =ipv2_parse.cc ipv2_scan.cc
 
+TESTPROGS = keyvaltest
+
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
 GENSRC = $(GENCXXSRC)
 

@@ -55,6 +55,8 @@ TESTSRC = moltest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = moltest.in
 
+TESTPROGS = moltest symmetrize
+
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)
@@ -72,9 +74,6 @@ symmetrize: symmetrize.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -o symmetrize $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
-distclean::
-	/bin/rm -f symmetrize moltest
 
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

@@ -52,6 +52,8 @@ TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = btest.kv
 
+TESTPROGS = btest
+
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 LIBOBJ= $(CXXSRC:%.cc=%.$(OBJSUF))

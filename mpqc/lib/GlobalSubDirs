@@ -35,6 +35,18 @@ install_target::
 	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) install_target) || exit 1; \
 	  done
 
+testbuild::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) testbuild) || exit 1; \
+	  done
+
+testrun::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) testrun) || exit 1; \
+	  done
+
 doc::
 	for dir in $(SUBDIRS); \
 	  do \

@@ -36,6 +36,8 @@ CXXSRC = state.cc statein.cc stateout.cc state_bin.cc proxy.cc \
          state_text.cc state_file.cc translate.cc \
          tmplinst.cc array.cc
 
+TESTPROGS = statetest
+
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC =  LIBS.h state.h statein.h stateout.h \
@@ -64,7 +66,7 @@ statetest: statetest.$(OBJSUF) libSCkeyval.$(LIBSUF) libSCmisc.$(LIBSUF) \
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
-	/bin/rm -f statetest statetest.a.out statetest.out
+	/bin/rm -f statetest.a.out statetest.out
 
 statetest.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

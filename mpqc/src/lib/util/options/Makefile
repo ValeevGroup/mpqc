@@ -9,6 +9,8 @@ TARGET_TO_MAKE = libSCoptions
 
 LIBOBJ = GetLongOpt.$(OBJSUF)
 
+TESTPROGS = sample
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 sample: README.$(OBJSUF) libSCoptions.$(LIBSUF)

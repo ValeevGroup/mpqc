@@ -247,37 +247,37 @@ PsiCLHF::write_input(int convergence)
 
 //////////////////////////////////////////////////////////////////////////
 
-static ClassDesc PsiROHF_cd(
-  typeid(PsiROHF),"PsiROHF",1,"public PsiSCF",
-  0, create<PsiROHF>, create<PsiROHF>);
+static ClassDesc PsiHSOSHF_cd(
+  typeid(PsiHSOSHF),"PsiHSOSHF",1,"public PsiSCF",
+  0, create<PsiHSOSHF>, create<PsiHSOSHF>);
 
-PsiROHF::PsiROHF(const Ref<KeyVal>&keyval):
+PsiHSOSHF::PsiHSOSHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
   if (!docc_) {
     ExEnv::err0() << indent
-		  << "ERROR: PsiROHF: did not find docc array" << endl;
+		  << "ERROR: PsiHSOSHF: did not find docc array" << endl;
     abort();
   }
   if (!socc_) {
     ExEnv::err0() << indent
-		  << "ERROR: PsiROHF: did not find socc array" << endl;
+		  << "ERROR: PsiHSOSHF: did not find socc array" << endl;
     abort();
   }
 }
 
-PsiROHF::~PsiROHF()
+PsiHSOSHF::~PsiHSOSHF()
 {
 }
 
-PsiROHF::PsiROHF(StateIn&s):
+PsiHSOSHF::PsiHSOSHF(StateIn&s):
   PsiSCF(s)
 {
   abort();
 }
 
 void
-PsiROHF::write_basic_input(int convergence)
+PsiHSOSHF::write_basic_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
   input->write_keyword("default:reference","rohf");
@@ -288,7 +288,7 @@ PsiROHF::write_basic_input(int convergence)
 }
 
 void
-PsiROHF::write_input(int convergence)
+PsiHSOSHF::write_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
   input->open();
@@ -384,7 +384,7 @@ PsiCCSD::gradient_implemented() const
 {
   int impl = 0;
   PsiSCF::RefType reftype = reference_->reftype();
-  if (reftype == PsiSCF::rhf || reftype == PsiSCF::rohf)
+  if (reftype == PsiSCF::rhf || reftype == PsiSCF::hsoshf)
     impl = 1;
   return impl;
 }
@@ -432,8 +432,8 @@ PsiCCSD_T::PsiCCSD_T(const Ref<KeyVal>&keyval):
   }
 
   PsiSCF::RefType reftype = reference_->reftype();
-  if (reftype == PsiSCF::rohf) {
-    ExEnv::err0() << "PsiCCSD_T::PsiCCSD_T: ROHF-based CCSD(T) has not been implemented yet" << endl;
+  if (reftype == PsiSCF::hsoshf) {
+    ExEnv::err0() << "PsiCCSD_T::PsiCCSD_T: HSOSHF-based CCSD(T) has not been implemented yet" << endl;
     abort();
   }
 }

@@ -34,7 +34,7 @@
 #include <math/optimize/qnewton.h>
 
 static ForceLink<PsiCLHF> psi_force_link_a_;
-static ForceLink<PsiROHF> psi_force_link_b_;
+static ForceLink<PsiHSOSHF> psi_force_link_b_;
 static ForceLink<PsiUHF> psi_force_link_c_;
 static ForceLink<PsiCCSD> psi_force_link_d_;
 static ForceLink<PsiCCSD_T> psi_force_link_e_;

@@ -64,7 +64,7 @@ class KeyVal: public VRefCount {
     virtual RefDescribedClass key_describedclassvalue(const char* key);
 
     // For nonindexed things.   If a subclass defines one of these,
-    // then the overloaded functions will be hidden.  The key_... functionss
+    // then the overloaded functions will be hidden.  The key_... functions
     // should be overridden instead.
     int    exists(const char*);
     int    count(const char* =0);

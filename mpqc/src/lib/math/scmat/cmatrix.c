@@ -22,8 +22,11 @@ static void eigsort(int dim,double*,double**);
 double**
 cmat_new_square_matrix(int n)
 {
-  double* mat = (double*) malloc(sizeof(double)*n*n);
-  double** r = (double**) malloc(sizeof(double*)*n);
+  double *mat;
+  double **r;
+  if (n == 0) return 0;
+  mat = (double*) malloc(sizeof(double)*n*n);
+  r = (double**) malloc(sizeof(double*)*n);
   cmat_matrix_pointers(r,mat,n,n);
   return r;
 }
@@ -31,8 +34,11 @@ cmat_new_square_matrix(int n)
 double**
 cmat_new_rect_matrix(int n,int m)
 {
-  double* mat = (double*) malloc(sizeof(double)*n*m);
-  double** r = (double**) malloc(sizeof(double*)*n);
+  double *mat;
+  double **r;
+  if (n == 0 || m == 0) return 0;
+  mat = (double*) malloc(sizeof(double)*n*m);
+  r = (double**) malloc(sizeof(double*)*n);
   cmat_matrix_pointers(r,mat,n,m);
   return r;
 }
@@ -41,8 +47,10 @@ cmat_new_rect_matrix(int n,int m)
 void
 cmat_delete_matrix(double**m)
 {
-  free(m[0]);
-  free(m);
+  if (m) {
+      free(m[0]);
+      free(m);
+    }
 }
 
 void

@@ -379,6 +379,8 @@ LocalSymmSCMatrix::solve_this(SCVector*v)
 void
 LocalSymmSCMatrix::gen_invert_this()
 {
+  if (n() == 0) return;
+
   double *evals = new double[n()];
   double **evecs = cmat_new_square_matrix(n());
   
@@ -400,6 +402,8 @@ LocalSymmSCMatrix::gen_invert_this()
 void
 LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 {
+  if (n() == 0) return;
+
   const char* name = "LocalSymmSCMatrix::diagonalize";
   // make sure that the arguments is of the correct type
   LocalDiagSCMatrix* la = LocalDiagSCMatrix::require_castdown(a,name);

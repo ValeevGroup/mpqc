@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.5  1994/08/26 23:21:22  etseidl
+% Revision 1.6  1994/11/07 19:39:16  etseidl
+% only call ipv2 init functions on node 0
+%
+% Revision 1.5  1994/08/26  23:21:22  etseidl
 % fix a few warnings
 %
 % Revision 1.4  1994/06/08  01:15:26  cljanss
@@ -295,14 +298,14 @@ void* keyval;
 FILE *initfp;
 {
   fp = initfp;
-  if (!keyval) {
+  if (!keyval && mynode0()==0) {
       ip_cwk_push();
       ip_cwk_clear();
       ip_cwk_add(":default");
       ip_cwk_add(":force");
     }
   @<Read and broadcast the input options.@> @;@/
-  if (!keyval) {
+  if (!keyval && mynode0()==0) {
       ip_cwk_pop();
     }
   init_called = 1;

@@ -109,7 +109,7 @@ class LocalSCMatrix: public SCMatrix {
     void transpose_this();
     double invert_this();
     double solve_this(SCVector*);
-    double determ();
+    double determ_this();
     double trace();
     void gen_invert_this();
     void element_op(const RefSCRectElementOp&);
@@ -151,7 +151,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     double invert_this();
     double solve_this(SCVector*);
     double trace();
-    double determ();
+    double determ_this();
     void gen_invert_this();
 
     double scalar_product(SCVector*);
@@ -193,7 +193,7 @@ class LocalDiagSCMatrix: virtual public DiagSCMatrix {
     void set_element(int,double);
     void accumulate(DiagSCMatrix*);
     double invert_this();
-    double determ();
+    double determ_this();
     double trace();
     void gen_invert_this();
 

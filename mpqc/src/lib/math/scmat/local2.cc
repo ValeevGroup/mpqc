@@ -151,7 +151,7 @@ LocalSymmSCMatrix::invert_this()
 }
 
 double
-LocalSymmSCMatrix::determ()
+LocalSymmSCMatrix::determ_this()
 {
   return cmat_determ(rows,1,n());
 }
@@ -530,7 +530,7 @@ LocalDiagSCMatrix::invert_this()
 }
 
 double
-LocalDiagSCMatrix::determ()
+LocalDiagSCMatrix::determ_this()
 {
   double det = 1.0;
   int nelem = n();

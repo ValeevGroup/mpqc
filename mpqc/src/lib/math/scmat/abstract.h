@@ -122,7 +122,7 @@ class SCMatrix: virtual public SavableState {
     virtual void transpose_this() = 0;
     virtual double trace() =0;
     virtual double invert_this() = 0;
-    virtual double determ() = 0;
+    virtual double determ_this() = 0;
     virtual double solve_this(SCVector*) = 0;
     virtual void gen_invert_this() = 0;
     virtual void element_op(const RefSCRectElementOp&) = 0;
@@ -164,7 +164,7 @@ class SymmSCMatrix: virtual public SavableState {
     virtual void accumulate(SymmSCMatrix*) = 0;
     virtual double trace() = 0;
     virtual double invert_this() = 0;
-    virtual double determ() = 0;
+    virtual double determ_this() = 0;
     virtual double solve_this(SCVector*) = 0;
     virtual void gen_invert_this() = 0;
     virtual void element_op(const RefSCSymmElementOp&) = 0;
@@ -199,7 +199,7 @@ class DiagSCMatrix: virtual public SavableState {
     virtual void set_element(int,double) = 0;
     virtual void accumulate(DiagSCMatrix*) = 0;
     virtual double trace() = 0;
-    virtual double determ() = 0;
+    virtual double determ_this() = 0;
     virtual double invert_this() = 0;
     virtual void gen_invert_this() = 0;
     virtual void element_op(const RefSCDiagElementOp&) = 0;

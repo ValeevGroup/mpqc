@@ -570,7 +570,7 @@ RefSCMatrix::determ() const
   require_nonnull();
   RefSCMatrix c = clone();
   c->assign(pointer());
-  return c->determ();
+  return c->determ_this();
 }
 
 double
@@ -813,7 +813,7 @@ RefSymmSCMatrix::determ() const
   
   RefSymmSCMatrix ret = clone();
   ret->assign(pointer());
-  return ret->determ();
+  return ret->determ_this();
 }
 
 double
@@ -1191,7 +1191,7 @@ RefDiagSCMatrix::element_op(const RefSCDiagElementOp&op) const
 double
 RefDiagSCMatrix::determ() const
 {
-  return pointer()->determ();
+  return pointer()->determ_this();
 }
 
 double

@@ -383,10 +383,10 @@ LocalSCMatrix::gen_invert_this()
 }
 
 double
-LocalSCMatrix::determ()
+LocalSCMatrix::determ_this()
 {
   if (nrow() != ncol()) {
-    fprintf(stderr,"LocalSCMatrix::determ: matrix is not square\n");
+    fprintf(stderr,"LocalSCMatrix::determ_this: matrix is not square\n");
     abort();
   }
   return cmat_determ(rows,0,nrow());

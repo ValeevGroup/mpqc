@@ -11,7 +11,7 @@ MAPIMPL = RAVL
 GENCXXSRC = pixvpMap.cc pixvp$(MAPIMPL)Map.cc \
             voidptrSet.cc voidptr$(SETIMPL)Set.cc
 
-REALCXXSRC = array.cc set.cc ref.cc
+REALCXXSRC = array.cc set.cc ref.cc ref_i.cc voidptr.cc
 
 GENSRC = $(GENCXXSRC)
 
@@ -20,13 +20,13 @@ CXXSRC = $(GENCXXSRC) $(REALCXXSRC)
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
-      set.h array.h
+      set.h array.h ref.h ref_i.h
 
 GENINC = $(GENCXXSRC:%.cc=%.h)
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
-DISTFILES = Makefile $(INC) LIBS.h settest.h $(REALCXXSRC)
+DISTFILES = Makefile $(INC) LIBS.h settest.cc $(REALCXXSRC)
 
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libcontainer
@@ -47,7 +47,7 @@ install_inc:: $(INC) $(GENINC)
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.o=.d) settest.d
 endif
 
 pixvpMap.cc pixvpMap.h:

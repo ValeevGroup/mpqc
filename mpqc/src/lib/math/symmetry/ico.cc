@@ -3,213 +3,321 @@
 #include <string.h>
 
 #include <math/symmetry/pointgrp.h>
-#include <math/symmetry/tform.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-// returns r1xr2
-static SymmetryOperation
-operate(SymmetryOperation& r1, SymmetryOperation& r2)
-{
-  SymmetryOperation ret;
-
-  for (int i=0; i < 3; i++) {
-    for (int j=0; j < 3; j++) {
-      double t=0;
-      for (int k=0; k < 3; k++)
-        t += r1[i][k] * r2[k][j];
-      ret[i][j] = t;
-    }
-  }
-  
-  return ret;
-}
-
-// given matrix R in so and E in frame, perform similarity transform
-// R' = ~E * R * E
-static SymmetryOperation
-sim_transform(SymmetryOperation& so, const SymmetryOperation& frame)
-{
-  int i,j,k;
-  SymmetryOperation foo,ret;
-
-  // foo = ~E*R 
-  for (i=0; i < 3; i++) {
-    for (j=0; j < 3; j++) {
-      double t=0;
-      for (k=0; k < 3; k++) t += frame(i,k)*so(k,j);
-      foo(i,j) = t;
-    }
-  }
-
-  // R' = ~E*R*E = foo*E
-  for (i=0; i < 3; i++) {
-    for (j=0; j < 3; j++) {
-      double t=0;
-      for (k=0; k < 3; k++) t += foo(i,k)*frame(j,k);
-      ret(i,j) = t;
-    }
-  }
-
-  return ret;
-}
-
 // these are the operations which make up T
 static void
-i_ops(SymmetryOperation *symop, SymmetryOperation *rep)
+i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
 {
+#if 0
   int i;
   
   // identity
-  symop[0][0][0] = symop[0][1][1] = symop[0][2][2] = 1.0;
-  rep[0] = symop[0];
-
+  for (i=0; i < 3; i++) {
+    t1rep[0][i][i] = 1.0;
+    t2rep[0][i][i] = 1.0;
+    grep[0][i][i] = 1.0;
+    hrep[0][i][i] = 1.0;
+  }
+  grep[0][3][3] = 1.0;
+  hrep[0][3][3] = 1.0;
+  hrep[0][4][4] = 1.0;
+    
   //
   // 12 C5's
   //
   // first the 2 C5's about the z axis
-  symop[1][0][0] =  cos(2.0*M_PI/5.0);
-  symop[1][0][1] =  sin(2.0*M_PI/5.0);
-  symop[1][1][0] = -sin(2.0*M_PI/5.0);
-  symop[1][1][1] =  cos(2.0*M_PI/5.0);
-  symop[1][2][2] =  1.0;
-  
-  symop[2][0][0] =  cos(2.0*M_PI/5.0);
-  symop[2][0][1] = -sin(2.0*M_PI/5.0);
-  symop[2][1][0] =  sin(2.0*M_PI/5.0);
-  symop[2][1][1] =  cos(2.0*M_PI/5.0);
-  symop[2][2][2] =  1.0;
-  
-  rep[1] = operate(symop[1],symop[1]);
-  rep[2] = operate(symop[2],symop[2]);
-  rep[13] = symop[2];
-  rep[14] = symop[1];
+  double c2p5 = cos(2.0*M_PI/5.0);
+  double s2p5 = sin(2.0*M_PI/5.0);
+  double c4p5 = cos(4.0*M_PI/5.0);
+  double s4p5 = sin(4.0*M_PI/5.0);
 
-  // now rotate the first C5's by 2pi/3 degrees about the zx axis (sort of)
-  SymmetryOperation so;
+  t1rep[1][0][0] =  c2p5;
+  t1rep[1][0][1] =  s2p5;
+  t1rep[1][1][0] = -s2p5;
+  t1rep[1][1][1] =  c2p5;
+  t1rep[1][2][2] =  1.0;
+  
+  t1rep[2][0][0] =  c2p5;
+  t1rep[2][0][1] = -s2p5;
+  t1rep[2][1][0] =  s2p5;
+  t1rep[2][1][1] =  c2p5;
+  t1rep[2][2][2] =  1.0;
+  
+  t2rep[1] = t1rep[1].operate(t1rep[1]);
+  t2rep[2] = t1rep[2].operate(t1rep[2]);
 
-  double cosd = sin(2.0*M_PI/5.0)/((1-cos(2.0*M_PI/5.0))*sqrt(3.0));
+  grep[1][0][0] =  c2p5;
+  grep[1][0][1] =  s2p5;
+  grep[1][1][0] = -s2p5;
+  grep[1][1][1] =  c2p5;
+  grep[1][2][2] =  c4p5;
+  grep[1][2][3] = -s4p5;
+  grep[1][3][2] =  s4p5;
+  grep[1][3][3] =  c4p5;
+  
+  grep[2][0][0] =  c2p5;
+  grep[2][0][1] = -s2p5;
+  grep[2][1][0] =  s2p5;
+  grep[2][1][1] =  c2p5;
+  grep[2][2][2] =  c4p5;
+  grep[2][2][3] =  s4p5;
+  grep[2][3][2] = -s4p5;
+  grep[2][3][3] =  c4p5;
+  
+  hrep[1][0][0] = 1.0;
+  hrep[1][1][1] =  c4p5;
+  hrep[1][1][2] =  s4p5;
+  hrep[1][2][1] = -s4p5;
+  hrep[1][2][2] =  c4p5;
+  hrep[1][3][3] =  c2p5;
+  hrep[1][3][4] = -s2p5;
+  hrep[1][4][3] =  s2p5;
+  hrep[1][4][4] =  c2p5;
+  
+  hrep[2][0][0] = 1.0;
+  hrep[2][1][1] =  c4p5;
+  hrep[2][1][2] = -s4p5;
+  hrep[2][2][1] =  s4p5;
+  hrep[2][2][2] =  c4p5;
+  hrep[2][3][3] =  c2p5;
+  hrep[2][3][4] =  s2p5;
+  hrep[2][4][3] = -s2p5;
+  hrep[2][4][4] =  c2p5;
+  
+  // form rotation matrices for the C3 axis about the zx axis (these were
+  // taken from turbomole version 2, which claims they were sort of inherited
+  // from hondo
+  Rep t1so(3);
+  Rep gso(4);
+  Rep hso(5);
+
+  double cosd = s2p5/((1.0-c2p5)*sqrt(3.0));
   double cosd2 = cosd*cosd;
-  double sind2 = 1 - cosd2;
+  double sind2 = 1.0 - cosd2;
   double sind = sqrt(sind2);
 
-  so.zero();
-  so[0][0] =  1 - 1.5*cosd2;
-  so[1][0] =  0.5*sqrt(3.0)*cosd;
-  so[2][0] =  1.5*cosd*sind;
-  so[0][1] = -0.5*sqrt(3.0)*cosd;
-  so[1][1] = -0.5;
-  so[2][1] =  0.5*sqrt(3.0)*sind;
-  so[0][2] =  1.5*cosd*sind;
-  so[1][2] = -0.5*sqrt(3.0)*sind;
-  so[2][2] =  1 - 1.5*sind2;
+  t1so[0][0] =  1.0 - 1.5*cosd2;
+  t1so[1][0] =  0.5*sqrt(3.0)*cosd;
+  t1so[2][0] =  1.5*cosd*sind;
+  t1so[0][1] = -0.5*sqrt(3.0)*cosd;
+  t1so[1][1] = -0.5;
+  t1so[2][1] =  0.5*sqrt(3.0)*sind;
+  t1so[0][2] =  1.5*cosd*sind;
+  t1so[1][2] = -0.5*sqrt(3.0)*sind;
+  t1so[2][2] =  1.0 - 1.5*sind2;
+
+  gso[0][0] = (3.0*sqrt(5.0)+5.0)/20.0;
+  gso[0][1] = cosd*sqrt(3.0)*(sqrt(5.0)-1.0)/4.0;
+  gso[0][2] = 3.0*sqrt(5.0)/10.0;
+  gso[0][3] = -sqrt(5.0-2.0*sqrt(5.0))*sqrt(5.0)/10.0;
+  gso[1][0] = -gso[0][1];
+  gso[1][1] = (1-sqrt(5))/4.0;
+  gso[1][2] = cosd*sqrt(3)/2.0;
+  gso[1][3] = cosd*sqrt(5-2*sqrt(5))*sqrt(3)/2.0;
+  gso[2][0] = gso[0][2];
+  gso[2][1] = -gso[1][2];
+  gso[2][2] = (5-3*sqrt(5))/20.0;
+  gso[2][3] = sqrt(5-2*sqrt(5))*(sqrt(5)+5)/20;
+  gso[3][0] = -gso[0][3];
+  gso[3][1] = gso[1][3];
+  gso[3][2] = -gso[2][3];
+  gso[3][3] = (sqrt(5)+1)/4.0;
+
+  hso[0][0] = -1.0/5.0;
+  hso[0][4] = sqrt(3)*(sqrt(5)+1)/10.0;
+  hso[0][3] = 3.0*cosd*(3.0*sqrt(5.0)-5.0)/10.0;
+  hso[0][2] = 3.0*cosd*(5.0-sqrt(5.0))/10.0;
+  hso[0][1] = sqrt(3.0)*(sqrt(5.0)-1.0)/10.0;
+  hso[4][0] = hso[0][4];
+  hso[4][4] = (2.0*sqrt(5.0)+1.0)/10.0;
+  hso[4][3] = sqrt(3.0)*cosd*(5.0-2.0*sqrt(5.0))/10.0;
+  hso[4][2] = sqrt(3.0)*cosd*(5.0-3.0*sqrt(5.0))/5.0;
+  hso[4][1] = 2.0/5.0;
+  hso[3][0] = -hso[0][3];
+  hso[3][4] = -hso[4][3];
+  hso[3][3] = -1.0/2.0;
+  hso[3][2] = 0.0;
+  hso[3][1] = sqrt(3.0)*cosd*(5.0-sqrt(5.0))/5.0;
+  hso[2][0] = -hso[0][2];
+  hso[2][4] = -hso[4][2];
+  hso[2][3] = 0.0;
+  hso[2][2] = -1.0/2.0;
+  hso[2][1] = -sqrt(3.0)*sqrt(5.0)*cosd/10.0;
+  hso[1][0] = hso[0][1];
+  hso[1][4] = hso[4][1];
+  hso[1][3] = -hso[3][1];
+  hso[1][2] = -hso[2][1];
+  hso[1][1] = (1.0-2.0*sqrt(5.0))/10.0;
   
-  symop[3] = sim_transform(symop[1],so);
-  symop[4] = sim_transform(symop[2],so);
+  // now rotate the first C5's by 2pi/3 degrees about the zx axis (sort of)
+  t1rep[3] = t1rep[1].sim_transform(t1so);
+  t1rep[4] = t1rep[2].sim_transform(t1so);
+
+  grep[3] = grep[1].sim_transform(gso);
+  grep[4] = grep[2].sim_transform(gso);
+
+  hrep[3] = hrep[1].sim_transform(hso);
+  hrep[4] = hrep[2].sim_transform(hso);
 
   // rotate twice to get the first one aligned along the x axis
-  symop[3] = sim_transform(symop[3],symop[1]);
-  symop[3] = sim_transform(symop[3],symop[1]);
-  symop[4] = sim_transform(symop[4],symop[1]);
-  symop[4] = sim_transform(symop[4],symop[1]);
+  t1rep[3] = t1rep[3].sim_transform(t1rep[1]).sim_transform(t1rep[1]);
+  t1rep[4] = t1rep[4].sim_transform(t1rep[1]).sim_transform(t1rep[1]);
 
-  rep[3] = operate(symop[4],symop[4]);
-  rep[4] = operate(symop[3],symop[3]);
-  rep[15] = symop[3];
-  rep[16] = symop[4];
+  grep[3] = grep[3].sim_transform(grep[1]).sim_transform(grep[1]);
+  grep[4] = grep[4].sim_transform(grep[1]).sim_transform(grep[1]);
+
+  hrep[3] = hrep[3].sim_transform(hrep[1]).sim_transform(hrep[1]);
+  hrep[4] = hrep[4].sim_transform(hrep[1]).sim_transform(hrep[1]);
+
+  t2rep[3] = t1rep[4].operate(t1rep[4]);
+  t2rep[4] = t1rep[3].operate(t1rep[3]);
+
+  t2rep[13] = t1rep[2];
+  t2rep[14] = t1rep[1];
+
+  t2rep[15] = t1rep[3];
+  t2rep[16] = t1rep[4];
   
   // and then rotate those by 2pi/5 about the z axis 4 times
   for (i=5; i < 13; i++) {
-    symop[i] = sim_transform(symop[i-2], symop[1]);
-    rep[i] = sim_transform(rep[i-2], rep[1]);
-    rep[i+12] = sim_transform(rep[i+10], rep[1]);
+    t1rep[i] = t1rep[i-2].sim_transform(t1rep[1]);
+    grep[i] = grep[i-2].sim_transform(grep[1]);
+    hrep[i] = hrep[i-2].sim_transform(hrep[1]);
+
+    t2rep[i] = t2rep[i-2].sim_transform(t2rep[1]);
+    t2rep[i+12] = t2rep[i+10].sim_transform(t2rep[1]);
   }
 
   //
   // 12 C5^2's
   //
   // get these from operating on each of the C5's with itself
-  for (i=13; i < 25; i++)
-    symop[i] = operate(symop[i-12],symop[i-12]);
+  for (i=13; i < 25; i++) {
+    t1rep[i] = t1rep[i-12].operate(t1rep[i-12]);
+    grep[i] = grep[i-12].operate(grep[i-12]);
+    hrep[i] = hrep[i-12].operate(hrep[i-12]);
+  }
 
   //
   // 20 C3's
   //
   // first we have 2 C3's about the zx axis
-  symop[25] = so;
-  symop[26] = operate(so,so);
+  t1rep[25] = t1so;
+  t1rep[26] = t1so.operate(t1so);
+  
+  grep[25] = gso;
+  grep[26] = gso.operate(gso);
+  
+  hrep[25] = hso;
+  hrep[26] = hso.operate(hso);
   
   // and then rotate those by 2pi/5 about the z axis 4 times
-  for (i=27; i < 35; i++)
-    symop[i] = sim_transform(symop[i-2], symop[1]);
+  for (i=27; i < 35; i++) {
+    t1rep[i] = t1rep[i-2].sim_transform(t1rep[1]);
+    grep[i] = grep[i-2].sim_transform(grep[1]);
+    hrep[i] = hrep[i-2].sim_transform(hrep[1]);
+  }
 
   // now rotate one of the above C3's by 2pi/3 about the zx axis
-  symop[35] = sim_transform(symop[27],so);
-  symop[36] = sim_transform(symop[28],so);
+  t1rep[35] = t1rep[27].sim_transform(t1so);
+  t1rep[36] = t1rep[28].sim_transform(t1so);
+
+  grep[35] = grep[27].sim_transform(gso);
+  grep[36] = grep[28].sim_transform(gso);
+
+  hrep[35] = hrep[27].sim_transform(hso);
+  hrep[36] = hrep[28].sim_transform(hso);
 
   // and then rotate those by 2pi/5 about the z axis 4 times
-  for (i=37; i < 45; i++)
-    symop[i] = sim_transform(symop[i-2], symop[1]);
+  for (i=37; i < 45; i++) {
+    t1rep[i] = t1rep[i-2].sim_transform(t1rep[1]);
+    grep[i] = grep[i-2].sim_transform(grep[1]);
+    hrep[i] = hrep[i-2].sim_transform(hrep[1]);
+  }
 
-  rep[25] = symop[35];
-  rep[26] = symop[36];
+  t2rep[25] = t1rep[35];
+  t2rep[26] = t1rep[36];
   
   for (i=27; i < 35; i++)
-    rep[i] = sim_transform(rep[i-2],rep[1]);
+    t2rep[i] = t2rep[i-2].sim_transform(t2rep[1]);
   
-  rep[35] = symop[26];
-  rep[36] = symop[25];
+  t2rep[35] = t1rep[26];
+  t2rep[36] = t1rep[25];
   
   for (i=37; i < 45; i++)
-    rep[i] = sim_transform(rep[i-2],rep[1]);
+    t2rep[i] = t2rep[i-2].sim_transform(t2rep[1]);
 
   //
   // 15 C2's
   //
   // first we have a C2 about the y axis
-  symop[45][0][0] = -1.0;
-  symop[45][1][1] =  1.0;
-  symop[45][2][2] = -1.0;
+  t1rep[45][0][0] = -1.0;
+  t1rep[45][1][1] =  1.0;
+  t1rep[45][2][2] = -1.0;
 
-  rep[45] = symop[45];
+  t2rep[45] = t1rep[45];
+  
+  grep[45][0][0] = -1.0;
+  grep[45][1][1] =  1.0;
+  grep[45][2][2] = -1.0;
+  grep[45][3][3] =  1.0;
+  
+  hrep[45][0][0] =  1.0;
+  hrep[45][1][1] =  1.0;
+  hrep[45][2][2] = -1.0;
+  hrep[45][3][3] = -1.0;
+  hrep[45][4][4] =  1.0;
   
   // and rotate that by 2pi/5 about the z axis 4 times
   for (i=46; i < 50; i++) {
-    symop[i] = sim_transform(symop[i-1], symop[1]);
-    rep[i] = sim_transform(rep[i-1],rep[1]);
+    t1rep[i] = t1rep[i-1].sim_transform(t1rep[1]);
+    t2rep[i] = t2rep[i-1].sim_transform(t2rep[1]);
+    grep[i] = grep[i-1].sim_transform(grep[1]);
+    hrep[i] = hrep[i-1].sim_transform(hrep[1]);
   }
 
   // now take the C2 about the y axis and rotate it by 2pi/3 about the zx axis
-  symop[50] = symop[45];
-  symop[50] = sim_transform(symop[50],so);
+  t1rep[50] = t1rep[45].sim_transform(t1so);
+  grep[50] = grep[45].sim_transform(gso);
+  hrep[50] = hrep[45].sim_transform(hso);
 
   // align this c2 along the x axis
-  symop[50] = sim_transform(symop[50],symop[2]);
-  symop[50] = sim_transform(symop[50],symop[2]);
+  t1rep[50] = t1rep[50].sim_transform(t1rep[2]).sim_transform(t1rep[2]);
+  grep[50] = grep[50].sim_transform(grep[2]).sim_transform(grep[2]);
+  hrep[50] = hrep[50].sim_transform(hrep[2]).sim_transform(hrep[2]);
 
   // and rotate that by 2pi/5 about the z axis 4 times
-  for (i=51; i < 55; i++)
-    symop[i] = sim_transform(symop[i-1], symop[1]);
+  for (i=51; i < 55; i++) {
+    t1rep[i] = t1rep[i-1].sim_transform(t1rep[1]);
+    grep[i] = grep[i-1].sim_transform(grep[1]);
+    hrep[i] = hrep[i-1].sim_transform(hrep[1]);
+  }
 
   // finally, take a C2 about the y axis, and rotate it by 2pi/3 about the
-  // xz axis
-  symop[55] = symop[45];
-  symop[55] = sim_transform(symop[55],symop[35]);
-  symop[55] = sim_transform(symop[55],symop[1]);
+  // xz axis, and align it along the x axis
+  t1rep[55] = t1rep[45].sim_transform(t1rep[35]).sim_transform(t1rep[1]);
+  grep[55] = grep[45].sim_transform(grep[35]).sim_transform(grep[1]);
+  hrep[55] = hrep[45].sim_transform(hrep[35]).sim_transform(hrep[1]);
 
   // and then rotate that by 2pi/5 about the z axis 4 times
-  for (i=56; i < 60; i++)
-    symop[i] = sim_transform(symop[i-1], symop[1]);
+  for (i=56; i < 60; i++) {
+    t1rep[i] = t1rep[i-1].sim_transform(t1rep[1]);
+    grep[i] = grep[i-1].sim_transform(grep[1]);
+    hrep[i] = hrep[i-1].sim_transform(hrep[1]);
+  }
 
-  rep[50] = symop[55];
-  rep[55] = symop[50];
+  t2rep[50] = t1rep[55];
+  t2rep[55] = t1rep[50];
   
   for (i=51; i < 55; i++) {
-    rep[i] = sim_transform(rep[i-1], rep[1]);
-    rep[i+5] = sim_transform(rep[i+4], rep[1]);
+    t2rep[i] = t2rep[i-1].sim_transform(t2rep[1]);
+    t2rep[i+5] = t2rep[i+4].sim_transform(t2rep[1]);
   }
+#endif
 }
 
 // this gives us the operations in Ih which come from ixI (ie, the inverse
@@ -227,78 +335,76 @@ ih_ops(SymmetryOperation *symop)
 
 void CharacterTable::i()
 {
-  SymmetryOperation *t2rep = new SymmetryOperation[60];
-  
-  // t_ops gives us all the symmetry operations we need
-  i_ops(symop,t2rep);
-
+#if 0
   int i,j,k;
 
-  {
-    IrreducibleRepresentation ir(g,1,"A");
-    for (i=0; i < g; i++) {
-      ir.rep[i] = 1;
-      ir.proj[0][i] = 1;
-    }
-
-    gamma_[0] = ir;
+  Rep *t1rep = new Rep[60];
+  Rep *t2rep = new Rep[60];
+  Rep *grep = new Rep[60];
+  Rep *hrep = new Rep[60];
+  
+  for (i=0; i < 60; i++) {
+    t1rep[i].set_dim(3);
+    t2rep[i].set_dim(3);
+    grep[i].set_dim(4);
+    hrep[i].set_dim(5);
   }
+  
+  // i_ops gives us all the symmetry operations we need
+  i_ops(t1rep,t2rep,grep,hrep);
 
-  // the symmetry operation matrices give us a basis for irrep T1.
-  {
-    IrreducibleRepresentation ir1(g,3,"T1");
-    IrreducibleRepresentation ir2(g,3,"T2");
-    IrreducibleRepresentation irg(g,4,"G");
+  IrreducibleRepresentation ira(g,1,"A");
+  IrreducibleRepresentation ir1(g,3,"T1");
+  IrreducibleRepresentation ir2(g,3,"T2");
+  IrreducibleRepresentation irg(g,4,"G");
+  IrreducibleRepresentation irh(g,5,"H");
     
-    ir1.nrot_ = 1;
-    ir1.ntrans_ = 1;
+  ir1.nrot_ = 1;
+  ir1.ntrans_ = 1;
 
-    for (i=0; i < g; i++) {
-      //SymRotation r(3,symop[i],1);
-      SymRotation r(2,symop[i],1);
-      
-      ir1.rep[i]=symop[i].trace();
-      ir2.rep[i]=t2rep[i].trace();
-      //irg.rep[i]=r.trace()-t2rep[i].trace();
-      irg.rep[i]=r.trace()-r[0][0];
+  for (i=0; i < g; i++) {
+    ira.rep[i] = ira.proj[0][i] = 1;
 
-      for (j=0; j < 3; j++) {
-        for (k=0; k < 3; k++) {
-          ir1.proj[3*j+k][i] = symop[i][k][j];
-          ir2.proj[3*j+k][i] = t2rep[i][k][j];
-        }
+    ir1.rep[i] = t1rep[i].trace();
+    ir2.rep[i] = t2rep[i].trace();
+    irg.rep[i] = grep[i].trace();
+    irh.rep[i] = hrep[i].trace();
+
+    for (j=0; j < 3; j++) {
+      for (k=0; k < 3; k++) {
+        ir1.proj[3*j+k][i] = t1rep[i][k][j];
+        ir2.proj[3*j+k][i] = t2rep[i][k][j];
       }
     }
 
-    gamma_[1] = ir1;
-    gamma_[2] = ir2;
-    gamma_[3] = irg;
+    for (j=0; j < 4; j++)
+      for (k=0; k < 4; k++)
+        irg.proj[4*j+k][i] = grep[i][k][j];
+
+    for (j=0; j < 5; j++)
+      for (k=0; k < 5; k++)
+        irh.proj[5*j+k][i] = hrep[i][k][j];
+
+    symop[i] = t1rep[i];
   }
 
-  // the pure d rotation matrices give us a basis for H
-  {
-    IrreducibleRepresentation ir(g,5,"H");
+  gamma_[0] = ira;
+  gamma_[1] = ir1;
+  gamma_[2] = ir2;
+  gamma_[3] = irg;
+  gamma_[4] = irh;
 
-    for (i=0; i < g; i++) {
-      SymRotation r(2,symop[i],1);
-      
-      ir.rep[i]=r.trace();
-      
-      for (j=0; j < 5; j++) {
-        for (k=0; k < 5; k++) {
-          ir.proj[5*j+k][i] = r[k][j];
-        }
-      }
-    }
-    
-    gamma_[4] = ir;
-  }
-    
+  delete[] t1rep;
+  delete[] t2rep;
+  delete[] grep;
+  delete[] hrep;
+#endif
 }
 
 
 void CharacterTable::ih()
 {
+#if 0
   // first get the ExT operations, then the ixT operations
   //i_ops(symop);
   ih_ops(&symop[60]);
@@ -370,4 +476,5 @@ void CharacterTable::ih()
     gamma_[4] = ir1;
     gamma_[9] = ir2;
   }
+#endif
 }

@@ -1,24 +1,4 @@
 
-/* pointgrp.h -- definition of the point group classes
- *
- *      THIS SOFTWARE FITS THE DESCRIPTION IN THE U.S. COPYRIGHT ACT OF A
- *      "UNITED STATES GOVERNMENT WORK".  IT WAS WRITTEN AS A PART OF THE
- *      AUTHOR'S OFFICIAL DUTIES AS A GOVERNMENT EMPLOYEE.  THIS MEANS IT
- *      CANNOT BE COPYRIGHTED.  THIS SOFTWARE IS FREELY AVAILABLE TO THE
- *      PUBLIC FOR USE WITHOUT A COPYRIGHT NOTICE, AND THERE ARE NO
- *      RESTRICTIONS ON ITS USE, NOW OR SUBSEQUENTLY.
- *
- *  Author:
- *      E. T. Seidl
- *      Bldg. 12A, Rm. 2033
- *      Computer Systems Laboratory
- *      Division of Computer Research and Technology
- *      National Institutes of Health
- *      Bethesda, Maryland 20892
- *      Internet: seidl@alw.nih.gov
- *      June, 1993
- */
-
 #ifdef __GNUC__
 #pragma interface
 #endif
@@ -27,12 +7,129 @@
 #define _math_symmetry_pointgrp_h
 
 #include <stdio.h>
-#include <iostream.h>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <math/topology/point.h>
+
+////////////////////////////////////////////////////////////////////
+
+//texi
+// The @code{SymmetryOperation} class provides a 3 x 3 matrix representation
+// of a symmetry operation, such as a rotation or reflection.
+class SymmetryOperation {
+  private:
+    double d[3][3];
+
+  public:
+    SymmetryOperation();
+    ~SymmetryOperation();
+
+    //texi returns the trace of the transformation matrix
+    double trace() const { return d[0][0]+d[1][1]+d[2][2]; }
+
+    //texi returns the i'th row of the transformation matrix
+    double* operator[](int i) { return d[i]; }
+
+    //texi const version of the above
+    const double* operator[](int i) const { return d[i]; }
+
+    //texi returns a reference to the (i,j)th element of the transformation
+    // matrix
+    double& operator()(int i, int j) { return d[i][j]; }
+
+    //texi const version of the above
+    const double operator()(int i, int j) const { return d[i][j]; }
+
+    //texi zero out the symop
+    void zero() { memset(d,0,sizeof(double)*9); }
+
+    //texi This operates on @code{this} with r (i.e. return r * @code{this}).
+    SymmetryOperation operate(const SymmetryOperation& r) const;
+
+    //texi This performs the transform r * @code{this} * r~
+    SymmetryOperation sim_transform(const SymmetryOperation& r) const;
+    
+    //texi Set equal to a unit matrix
+    void unit() { d[0][0] = d[1][1] = d[2][2] = 1.0; }
+
+    //texi Set equal to a clockwise rotation by 2pi/n
+    void rotation(int n);
+    void rotation(double theta);
+    
+    //texi print the matrix 
+    void print(FILE* =stdout) const;
+};
+
+////////////////////////////////////////////////////////////////////
+
+//texi
+// The @code{SymRep} class provides an n dimensional matrix representation
+// of a symmetry operation, such as a rotation or reflection.  The trace
+// of a @code{SymRep} can be used as the character for that symmetry operation.
+// d is hardwired to 5x5 since the H irrep in Ih is 5 dimensional.
+class SymRep {
+  private:
+    int n;
+    double d[5][5];
+
+  public:
+    SymRep(int =0);
+    SymRep(const SymmetryOperation&);
+    ~SymRep();
+
+    //texi Cast to a SymmetryOperation.
+    operator SymmetryOperation() const;
+    
+    //texi returns the trace of the transformation matrix
+    inline double trace() const;
+
+    //texi set the dimension of d
+    void set_dim(int i) { n=i; }
+    
+    //texi returns the i'th row of the transformation matrix
+    double* operator[](int i) { return d[i]; }
+    //texi const version of the above
+    const double* operator[](int i) const { return d[i]; }
+
+    //texi returns a reference to the (i,j)th element of the transformation
+    // matrix
+    double& operator()(int i, int j) { return d[i][j]; }
+    //texi const version of the above
+    const double operator()(int i, int j) const { return d[i][j]; }
+
+    //texi zero out the symop
+    void zero() { memset(d,0,sizeof(double)*25); }
+
+    //texi This operates on @code{this} with r (i.e. return r * @code{this}).
+    SymRep operate(const SymRep& r) const;
+
+    //texi This performs the transform r * @code{this} * r~
+    SymRep sim_transform(const SymRep& r) const;
+    
+    //texi Set equal to a unit matrix
+    void unit() { d[0][0] = d[1][1] = d[2][2] = d[3][3] = d[4][4] = 1.0; }
+    
+    //texi Set equal to a clockwise rotation by 2pi/n
+    void rotation(int n);
+    void rotation(double theta);
+    
+    //texi print the matrix 
+    void print(FILE* =stdout) const;
+};
+
+inline double
+SymRep::trace() const
+{
+  double r=0;
+  for (int i=0; i < n; i++)
+    r += d[i][i];
+  return r;
+}
+
+////////////////////////////////////////////////////////////////////
+
 
 class CharacterTable;
 
@@ -51,14 +148,10 @@ class IrreducibleRepresentation {
     int degen;     // the degeneracy of the irrep
     int nrot_;     // the number of rotations in this irrep
     int ntrans_;   // the number of translations in this irrep
+    int complex_;  // true if this irrep has a complex representation
     char *symb;    // mulliken symbol for this irrep
-    double *rep;   // the characters for this irrep
-    double **proj; // elements of the projection operator
 
-    //texi Sets all data members to zero.
-    void init();
-    void new_rep();
-    void free_rep();
+    SymRep *rep;   // representation matrices for the symops
 
   public:
     IrreducibleRepresentation();
@@ -72,29 +165,46 @@ class IrreducibleRepresentation {
 
     IrreducibleRepresentation& operator=(const IrreducibleRepresentation&);
 
+    //texi Initialize the order, degeneracy, and Mulliken symbol of the irrep.
+    void init(int =0, int =0, const char* =0);
+    
     //texi Returns the order of the group.
     int order() const { return g; }
+
     //texi Returns the degeneracy of the irrep.
     int degeneracy() const { return degen; }
+
     //texi Returns the number of projection operators for the irrep.
     int nproj() const { return degen*degen; }
+
     //texi Returns the number of rotations associated with the irrep.
     int nrot() const { return nrot_; }
+
     //texi Returns the number of translations associated with the irrep.
     int ntrans() const { return ntrans_; }
+
     //texi Returns the Mulliken symbol for the irrep.
     const char * symbol() const { return symb; }
+
     //texi
     // Returns the character for the i'th symmetry operation of the point
     // group.
-    double character(int i) const { return rep[i]; }
+    double character(int i) const {
+      return complex_ ? 0.5*rep[i].trace() : rep[i].trace();
+    }
+
     //texi This is equivalent to the @b{character} member.
-    double operator[](int i) const { return rep[i]; }
+    double operator[](int i) const { return character(i); }
+
     //texi
     // Returns the character for the d'th contribution to the i'th symmetry
     // operation of the point group.
-    double p(int d, int i) const { return proj[d][i]; }
-    double operator()(int d, int i) const { return proj[d][i]; }
+    double p(int d, int i) const {
+      int dc=d/degen; int dr=d%degen;
+      return rep[i](dr,dc);
+    }
+
+    double operator()(int d, int i) const { return p(d,i); }
 
     //texi
     // This prints the irrep to the given file, or stdout if none is given.
@@ -103,37 +213,6 @@ class IrreducibleRepresentation {
 };
 
 /////////////////////////////////////////////////////////////
-
-//texi
-// The @code{SymmetryOperation} class provides a 3 x 3 matrix representation
-// of a symmetry operation, such as a rotation or reflection.
-class SymmetryOperation {
-  private:
-    double d[3][3];
-
-  public:
-    SymmetryOperation();
-    ~SymmetryOperation();
-
-    //texi returns the trace of the transformation matrix
-    double trace() const { return d[0][0]+d[1][1]+d[2][2]; }
-    //texi returns the i'th row of the transformation matrix
-    double* operator[](int i) { return d[i]; }
-    //texi const version of the above
-    const double* operator[](int i) const { return d[i]; }
-    //texi returns a reference to the (i,j)th element of the transformation
-    // matrix
-    double& operator()(int i, int j) { return d[i][j]; }
-    //texi const version of the above
-    const double operator()(int i, int j) const { return d[i][j]; }
-
-    //texi zero out the symop
-    void zero() { memset(d,0,sizeof(double)*9); }
-
-    //texi print the matrix 
-    void print(FILE* =stdout) const;
-};
-
 //texi
 // The @code{CharacterTable} class provides a workable character table for
 // all of the non-cubic point groups.  While I have tried to match the

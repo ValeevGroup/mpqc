@@ -28,6 +28,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+
 /*
  * This function will generate a character table for the point group.
  * This character table is in the order that symmetry operations are
@@ -45,10 +46,9 @@ int CharacterTable::make_table()
 
   gamma_ = new IrreducibleRepresentation[nirrep_];
 
-  for (i=0; i < nirrep_; i++)
-    gamma_[i].init();
-
+  
   symop = new SymmetryOperation[g];
+  SymmetryOperation so;
 
   // this array forms a reducible representation for rotations about x,y,z
   double *rot = new double[g];
@@ -62,78 +62,51 @@ int CharacterTable::make_table()
   double theta = (nt) ? 2.0*M_PI/nt : 2.0*M_PI;
 
   switch (pg) {
-  case C1: // no symmetry
-    {
-      IrreducibleRepresentation ir(1,1,"A");
-      ir.nrot_ = 3;
-      ir.ntrans_ = 3;
-      ir.rep[0] = 1;
-      ir.proj[0][0] = 1;
 
-      gamma_[0] = ir;
-    }
+  case C1:
+    // no symmetry case
+    gamma_[0].init(1,1,"A");
+    gamma_[0].nrot_ = 3;
+    gamma_[0].ntrans_ = 3;
+    gamma_[0].rep[0][0][0] = 1.0;
 
-    symop[0](0,0) = symop[0](1,1) = symop[0](2,2) = 1;
+    symop[0].unit();
+
     break;
 
-  case CI:  // equivalent to S2 about the z axis
-    {
-      IrreducibleRepresentation ir(2,1,"Ag");
-      ir.rep[0] = 1;
-      ir.rep[1] = 1;
-      ir.proj[0][0] = 1;
-      ir.proj[0][1] = 1;
-      ir.nrot_=3;
+  case CI:
+    // equivalent to S2 about the z axis
+    gamma_[0].init(2,1,"Ag");
+    gamma_[0].rep[0][0][0] = 1.0;
+    gamma_[0].rep[1][0][0] = 1.0;
+    gamma_[0].nrot_=3;
 
-      gamma_[0] = ir;
-    }
+    gamma_[1].init(2,1,"Au");
+    gamma_[1].rep[0][0][0] =  1.0;
+    gamma_[1].rep[1][0][0] = -1.0;
+    gamma_[1].ntrans_=3;
 
-    symop[0](0,0) = symop[0](1,1) = symop[0](2,2) = 1;
-
-    {
-      IrreducibleRepresentation ir(2,1,"Au");
-      ir.rep[0] = 1;
-      ir.rep[1] = -1;
-      ir.proj[0][0] = 1;
-      ir.proj[0][1] = -1;
-      ir.ntrans_=3;
-
-      gamma_[1] = ir;
-    }
-
-    symop[1](0,0) = symop[1](1,1) = symop[1](2,2) = -1;
+    symop[0].unit();
+    symop[1][0][0] = symop[1][1][1] = symop[1][2][2] = -1;
 
     break;
 
   case CS: // reflection through the xy plane
-    {
-      IrreducibleRepresentation ir(2,1,"A'");
-      ir.rep[0] = 1;
-      ir.rep[1] = 1;
-      ir.proj[0][0] = 1;
-      ir.proj[0][1] = 1;
-      ir.nrot_=1;
-      ir.ntrans_=2;
+    gamma_[0].init(2,1,"A'");
+    gamma_[0].rep[0][0][0] = 1.0;
+    gamma_[0].rep[1][0][0] = 1.0;
+    gamma_[0].nrot_=1;
+    gamma_[0].ntrans_=2;
 
-      gamma_[0] = ir;
-    }
+    gamma_[1].init(2,1,"A\"");
+    gamma_[1].rep[0][0][0] =  1.0;
+    gamma_[1].rep[1][0][0] = -1.0;
+    gamma_[1].nrot_=2;
+    gamma_[1].ntrans_=1;
 
-    symop[0](0,0) = symop[0](1,1) = symop[0](2,2) = 1;
-
-    {
-      IrreducibleRepresentation ir(2,1,"A\"");
-      ir.rep[0] = 1;
-      ir.rep[1] = -1;
-      ir.proj[0][0] = 1;
-      ir.proj[0][1] = -1;
-      ir.nrot_=2;
-      ir.ntrans_=1;
-
-      gamma_[1] = ir;
-    }
-
-    symop[1](0,0) = symop[1](1,1) = 1;
-    symop[1](2,2) = -1;
+    symop[0].unit();
+    symop[1].unit();
+    symop[1][2][2] = -1;
 
     break;
 
@@ -143,23 +116,17 @@ int CharacterTable::make_table()
     // for odd n, the irreps are A and E1...E(nir-1)
     // for even n, the irreps are A, B, and E1...E(nir-2)
     //
-    {
-      IrreducibleRepresentation ir(g,1,"A");
-      for (gi=0; gi < g; gi++) {
-        ir.rep[gi] = ir.proj[0][gi] = 1;
-      }
+    gamma_[0].init(g,1,"A");
+    for (gi=0; gi < g; gi++)
+      gamma_[0].rep[gi][0][0] = 1.0;
 
-      gamma_[0] = ir;
-    }
     i=1;
 
     if (!(nt%2)) {
-      IrreducibleRepresentation ir(g,1,"B");
-      for (gi=0; gi < g; gi++) {
-        ir.rep[gi] = ir.proj[0][gi] = (gi%2) ? -1.0 : 1.0;
-      }
+      gamma_[1].init(g,1,"B");
+      for (gi=0; gi < g; gi++)
+        gamma_[1].rep[gi][0][0] = (gi%2) ? -1.0 : 1.0;
 
-      gamma_[i] = ir;
       i++;
     }
 
@@ -170,40 +137,40 @@ int CharacterTable::make_table()
     //      yy = cos(m*theta*i)
 
     ei=1;
-    itheta = theta;
-    for (; i < nirrep_; i++, ei++, itheta += theta) {
+    for (; i < nirrep_; i++, ei++) {
+      IrreducibleRepresentation& ir = gamma_[i];
+
       if (nt==3 || nt==4)
         sprintf(label,"E");
       else
         sprintf(label,"E%d",ei);
 
-      IrreducibleRepresentation ir(g,2,label);
+      ir.init(g,2,label);
+      ir.complex_=1;
 
-      jitheta = 0;
-      for (j=0; j < g; j++, jitheta += itheta) {
-        ctheta = cos(jitheta);
-        stheta = sin(jitheta);
-        
-        ir.rep[j] = ctheta;
+      // identity
+      ir.rep[0].unit();
 
-        ir.proj[0][j] = ctheta;
-        ir.proj[1][j] = -stheta;
-        ir.proj[2][j] = stheta;
-        ir.proj[3][j] = ctheta;
-      }
+      // Cn
+      ir.rep[1].rotation(ei*theta);
 
-      gamma_[i] = ir;
+      // the other n-1 Cn's
+      for (j=2; j < g; j++)
+        ir.rep[j] = ir.rep[j-1].operate(ir.rep[1]);
     }
 
-    itheta=0;
-    for (i=0; i < nt ; i++, itheta += theta) {
-      symop[i][0][0] = symop[i][1][1] = cos(itheta);
-      symop[i][0][1] = sin(itheta);
-      symop[i][1][0] = -sin(itheta);
-      symop[i][2][2] = 1.0;
+    // identity
+    symop[0].unit();
 
+    // Cn
+    symop[1].rotation(theta);
+    
+    // the other n-2 Cn's
+    for (i=2; i < nt; i++)
+      symop[i] = symop[i-1].operate(symop[1]);
+    
+    for (i=0; i < nt ; i++)
       rot[i] = trans[i] = symop[i].trace();
-    }
 
     break;
 
@@ -214,43 +181,39 @@ int CharacterTable::make_table()
     // for odd n, the irreps are A1, A2, and E1...E(nir-2)
     // for even n, the irreps are A1, A2, B1, B2, and E1...E(nir-4)
     //
-    {
-      IrreducibleRepresentation ir1(g,1,"A1");
-      IrreducibleRepresentation ir2(g,1,"A2");
-      for (gi=0; gi < nt; gi++) {
-        // Cn's
-        ir1.rep[gi] = ir1.proj[0][gi] = 1;
-        ir2.rep[gi] = ir2.proj[0][gi] = 1;
 
-        // sigma's
-        ir1.rep[gi+nt] = ir1.proj[0][gi+nt] = 1;
-        ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = -1;
-      }
+    gamma_[0].init(g,1,"A1");
+    gamma_[1].init(g,1,"A2");
 
-      gamma_[0] = ir1;
-      gamma_[1] = ir2;
+    for (gi=0; gi < nt; gi++) {
+      // Cn's
+      gamma_[0].rep[gi][0][0] = 1.0;
+      gamma_[1].rep[gi][0][0] = 1.0;
+
+      // sigma's
+      gamma_[0].rep[gi+nt][0][0] =  1.0;
+      gamma_[1].rep[gi+nt][0][0] = -1.0;
     }
+
     i=2;
 
     if (!(nt%2)) {
-      IrreducibleRepresentation ir1(g,1,"B1");
-      IrreducibleRepresentation ir2(g,1,"B2");
+      gamma_[2].init(g,1,"B1");
+      gamma_[3].init(g,1,"B2");
+
       for (gi=0; gi < nt ; gi++) {
         double ci = (gi%2) ? -1.0 : 1.0;
         
         // Cn's
-        ir1.rep[gi] = ir1.proj[0][gi] = ci;
-        ir2.rep[gi] = ir2.proj[0][gi] = ci;
+        gamma_[2].rep[gi][0][0] = ci;
+        gamma_[3].rep[gi][0][0] = ci;
 
         // sigma's
-        ir1.rep[gi+nt] = ir1.proj[0][gi+nt] = ci;
-        ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = -ci;
+        gamma_[2].rep[gi+nt][0][0] =  ci;
+        gamma_[3].rep[gi+nt][0][0] = -ci;
       }
 
-      gamma_[i] = ir1;
-      i++;
-      gamma_[i] = ir2;
-      i++;
+      i=4;
     }
     
     // for the E irreps, the projection operators are:
@@ -266,61 +229,67 @@ int CharacterTable::make_table()
     //      yx = sin(m*theta*i)
     //      yy = -cos(m*theta*i)
     ei=1;
-    itheta=theta;
-    for (; i < nirrep_; i++, ei++, itheta += theta) {
+    for (; i < nirrep_; i++, ei++) {
+      IrreducibleRepresentation& ir = gamma_[i];
+
       char lab[4];
       if (nt==3 || nt==4)
         sprintf(lab,"E");
       else
         sprintf(lab,"E%d",ei);
 
-      IrreducibleRepresentation ir(g,2,lab);
+      ir.init(g,2,lab);
 
-      jitheta = 0;
-      for (j=0; j < nt; j++, jitheta += itheta) {
-        ctheta = cos(jitheta);
-        stheta = sin(jitheta);
-          
-        // Cn's
-        ir.rep[j] = 2.0*ctheta;
+      // identity
+      ir.rep[0].unit();
 
-        ir.proj[0][j] = ctheta;
-        ir.proj[1][j] = -stheta;
-        ir.proj[2][j] = stheta;
-        ir.proj[3][j] = ctheta;
+      // Cn
+      ir.rep[1].rotation(ei*theta);
 
-        // sigma's
-        ir.rep[j+nt] = 0;
+      // the other n-2 Cn's
+      for (j=2; j < nt; j++)
+        ir.rep[j] = ir.rep[j-1].operate(ir.rep[1]);
+      
+      // sigma xz
+      ir.rep[nt][0][0] =  1.0;
+      ir.rep[nt][1][1] = -1.0;
 
-        ir.proj[0][j+nt] = ctheta;
-        ir.proj[1][j+nt] = stheta;
-        ir.proj[2][j+nt] = stheta;
-        ir.proj[3][j+nt] = -ctheta;
-      }
-
-      gamma_[i] = ir;
+      SymRep sr(2);
+      sr.rotation(ei*theta/2.0);
+      
+      // the other n-1 sigma's
+      for (j=nt+1; j < g; j++)
+        ir.rep[j] = ir.rep[j-1].sim_transform(sr);
     }
 
-    itheta = 0;
-    for (i=0, j=nt; i < nt ; i++, j++, itheta += theta) {
-      // Cn's
-      symop[i][0][0] = symop[i][1][1] = cos(itheta);
-      symop[i][0][1] = sin(itheta);
-      symop[i][1][0] = -sin(itheta);
-      symop[i][2][2] = 1.0;
+    // identity
+    symop[0].unit();
+    
+    // Cn
+    symop[1].rotation(theta);
+    
+    // the other n-2 Cn's
+    for (i=2; i < nt; i++)
+      symop[i] = symop[i-1].operate(symop[1]);
+    
+    // sigma xz
+    symop[nt][0][0] =  1.0;
+    symop[nt][1][1] = -1.0;
+    symop[nt][2][2] =  1.0;
 
+    so.rotation(theta/2.0);
+
+    // the other n-1 sigma's
+    for (j=nt+1; j < g; j++)
+      symop[j] = symop[j-1].sim_transform(so);
+
+    for (i=0; i < nt ; i++) {
       rot[i] = trans[i] = symop[i].trace();
 
-      // sigma's
-      symop[j][0][0] = cos(itheta);
-      symop[j][1][1] = -cos(itheta);
-      symop[j][1][0] = symop[i+nt][0][1] = sin(itheta);
-      symop[j][2][2] = 1.0;
-
-      trans[j] = symop[j].trace();
-      rot[j] = -trans[j];
+      rot[i+nt] = -symop[i+nt].trace();
+      trans[i+nt] = symop[i+nt].trace();
     }
-
+    
     break;
 
   case CNH:
@@ -332,44 +301,40 @@ int CharacterTable::make_table()
     // for even n, the irreps are Ag, Bg, Au, Bu,
     //                            E1g...E(nir/2-1)g, E1u...E(nir/2-1)u
     //
-    {
-      IrreducibleRepresentation ir1(g,1, (nt%2) ? "A'" : "Ag");
-      IrreducibleRepresentation ir2(g,1, (nt%2) ? "A\"" : "Au");
-      for (gi=0; gi < nt; gi++) {
-        // Cn's
-        ir1.rep[gi] = ir1.proj[0][gi] = 1;
-        ir2.rep[gi] = ir2.proj[0][gi] = 1;
+    gamma_[0].init(g,1, (nt%2) ? "A'" : "Ag");
+    gamma_[nirrep_/2].init(g,1, (nt%2) ? "A\"" : "Au");
 
-        // Sn's
-        ir1.rep[gi+nt] = ir1.proj[0][gi+nt] = 1;
-        ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = -1;
-      }
+    for (gi=0; gi < nt; gi++) {
+      // Cn's
+      gamma_[0].rep[gi][0][0] = 1.0;
+      gamma_[nirrep_/2].rep[gi][0][0] = 1.0;
 
-      gamma_[0] = ir1;
-      gamma_[nirrep_/2] = ir2;
+      // Sn's
+      gamma_[0].rep[gi+nt][0][0] = 1.0;
+      gamma_[nirrep_/2].rep[gi+nt][0][0] = -1.0;
     }
+
     i=1;
 
     if (!(nt%2)) {
       double ineg = ((nt/2)%2) ? -1.0 : 1.0;
       
-      IrreducibleRepresentation ir1(g,1,"Bg");
-      IrreducibleRepresentation ir2(g,1,"Bu");
+      gamma_[1].init(g,1,"Bg");
+      gamma_[1+nirrep_/2].init(g,1,"Bu");
+
       for (gi=0; gi < nt; gi++) {
         double ci = (gi%2) ? -1.0 : 1.0;
 
         // Cn's
-        ir1.rep[gi] = ir1.proj[0][gi] = ci;
-        ir2.rep[gi] = ir2.proj[0][gi] = ci;
+        gamma_[1].rep[gi][0][0] = ci;
+        gamma_[1+nirrep_/2].rep[gi][0][0] = ci;
       
         // Sn's
-        ir1.rep[gi+nt] = ir1.proj[0][gi+nt] = ci*ineg;
-        ir2.rep[gi+nt] = ir2.proj[0][gi+nt] = -ci*ineg;
+        gamma_[1].rep[gi+nt][0][0] =  ci*ineg;
+        gamma_[1+nirrep_/2].rep[gi+nt][0][0] = -ci*ineg;
       }
 
-      gamma_[i] = ir1;
-      gamma_[i+nirrep_/2] = ir2;
-      i++;
+      i=2;
     }
 
     // for the E irreps, the projection operators are:
@@ -385,70 +350,65 @@ int CharacterTable::make_table()
     //      yx = sin(m*theta*i)
     //      yy = cos(m*theta*i)
     ei=1;
-    itheta=theta;
-    for (; i < nirrep_/2 ; i++, ei++, itheta += theta) {
+    for (; i < nirrep_/2 ; i++, ei++) {
+      IrreducibleRepresentation& ir1 = gamma_[i];
+      IrreducibleRepresentation& ir2 = gamma_[i+nirrep_/2];
+
       if (nt==3 || nt==4)
         sprintf(label,(nt%2) ? "E'" : "Eg");
       else
         sprintf(label,"E%d%s", ei, (nt%2) ? "'" : "g");
 
-      IrreducibleRepresentation ir1(g,2,label);
+      ir1.init(g,2,label);
 
       if (nt==3 || nt==4)
         sprintf(label,(nt%2) ? "E\"" : "Eu");
       else
         sprintf(label,"E%d%s", ei, (nt%2) ? "\"" : "u");
 
-      IrreducibleRepresentation ir2(g,2,label);
+      ir2.init(g,2,label);
 
-      jitheta = 0;
-      double ineg = (nt%2) ? 1.0 : pow(-1.0,(double)ei);
+      ir1.complex_=1;
+      ir2.complex_=1;
 
-      for (j=0; j < nt; j++, jitheta += itheta) {
-        ctheta = cos(jitheta);
-        stheta = sin(jitheta);
-        
-        ir1.rep[j] = ir2.rep[j] = ctheta;
-        
-        // Cn's
-        ir1.proj[0][j] = ctheta;
-        ir1.proj[1][j] = -stheta;
-        ir1.proj[2][j] = stheta;
-        ir1.proj[3][j] = ctheta;
+      // identity
+      ir1.rep[0].unit();
+      ir2.rep[0].unit();
 
-        ir2.proj[0][j] = ctheta;
-        ir2.proj[1][j] = -stheta;
-        ir2.proj[2][j] = stheta;
-        ir2.proj[3][j] = ctheta;
+      // Cn
+      ir1.rep[1].rotation(ei*theta);
+      ir2.rep[1].rotation(ei*theta);
 
-        // Sn's
-        ir1.rep[j+nt] = ineg*ctheta;
-        ir2.rep[j+nt] = -ineg*ctheta;
-        
-        ir1.proj[0][j+nt] = ineg*ctheta;
-        ir1.proj[1][j+nt] = -ineg*stheta;
-        ir1.proj[2][j+nt] = ineg*stheta;
-        ir1.proj[3][j+nt] = ineg*ctheta;
-
-        ir2.proj[0][j+nt] = -ineg*ctheta;
-        ir2.proj[1][j+nt] = ineg*stheta;
-        ir2.proj[2][j+nt] = -ineg*stheta;
-        ir2.proj[3][j+nt] = -ineg*ctheta;
+      for (j=2; j < nt; j++) {
+        ir1.rep[j] = ir1.rep[j-1].operate(ir1.rep[1]);
+        ir2.rep[j] = ir2.rep[j-1].operate(ir2.rep[1]);
       }
-        
-      gamma_[i] = ir1;
-      gamma_[i+nirrep_/2] = ir2;
+
+      double ineg = (nt%2) ? 1.0 : pow(-1.0,(double)ei);
+      for (j=nt; j < g; j++) {
+        for (int ri=0; ri < 2; ri++) {
+          for (int rj=0; rj < 2; rj++) {
+            ir1.rep[j][ri][rj] =  ineg*ir1.rep[j-nt][ri][rj];
+            ir2.rep[j][ri][rj] = -ineg*ir2.rep[j-nt][ri][rj];
+          }
+        }
+      }
     }
 
-    itheta = 0;
-    for (i=0; i < nt ; i++, itheta += theta) {
-      symop[i][0][0] = symop[i][1][1] =
-        symop[i+nt][0][0] = symop[i+nt][1][1] = cos(itheta);
-      symop[i][0][1] = symop[i+nt][0][1] = sin(itheta);
-      symop[i][1][0] = symop[i+nt][1][0] = -sin(itheta);
-      symop[i][2][2] = 1.0;
-      symop[i+nt][2][2] = -1.0;
+    // identity
+    symop[0].unit();
 
+    // Cn
+    symop[1].rotation(theta);
+    
+    // the other n-2 Cn's
+    for (i=2; i < nt; i++)
+      symop[i] = symop[i-1].operate(symop[1]);
+
+    for (i=0; i < nt ; i++) {
+      symop[i+nt] = symop[i];
+      symop[i+nt][2][2] = -1.0;
+      
       rot[i] = trans[i] = symop[i].trace();
       trans[i+nt] = symop[i+nt].trace();
       rot[i+nt] = -trans[i+nt];
@@ -456,6 +416,7 @@ int CharacterTable::make_table()
 
     break;
 
+#if 0
   case SN:
     // clockwise rotation-reflection by theta*i radians about z axis
     //
@@ -1229,6 +1190,7 @@ int CharacterTable::make_table()
     ih();
     break;
 
+#endif
   default:
     return -1;
 
@@ -1241,12 +1203,13 @@ int CharacterTable::make_table()
 
   if (pg != C1 && pg != CI && pg != CS && pg != T && pg != TD && pg != TH &&
       pg != O && pg != OH && pg != I && pg != IH) {
+
     for (i=0; i < nirrep_; i++) {
       double nr=0; double nt=0;
 
       for (j=0; j < gamma_[i].g; j++) {
-        nr += rot[j]*gamma_[i].rep[j];
-        nt += trans[j]*gamma_[i].rep[j];
+        nr += rot[j]*gamma_[i].character(j);
+        nt += trans[j]*gamma_[i].character(j);
       }
 
       gamma_[i].nrot_ = (int) ((nr+0.5)/gamma_[i].g);

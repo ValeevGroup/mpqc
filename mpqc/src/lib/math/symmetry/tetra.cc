@@ -173,6 +173,7 @@ o_ops(SymmetryOperation *symop)
 
 void CharacterTable::t()
 {
+#if 0
   // t_ops gives us all the symmetry operations we need
   t_ops(symop);
 
@@ -250,11 +251,13 @@ void CharacterTable::t()
     gamma_[2] = ir;
   }
 
+#endif
 }
 
 
 void CharacterTable::th()
 {
+#if 0
   // first get the ExT operations, then the ixT operations
   t_ops(symop);
   th_ops(&symop[12]);
@@ -363,10 +366,12 @@ void CharacterTable::th()
     gamma_[4] = ir1;
     gamma_[5] = ir2;
   }
+#endif
 }
 
 void CharacterTable::td()
 {
+#if 0
   // first get the T operations, then the Td operations
   t_ops(symop);
   td_ops(&symop[12]);
@@ -521,10 +526,12 @@ void CharacterTable::td()
     gamma_[3] = ir1;
     gamma_[4] = ir2;
   }
+#endif
 }
 
 void CharacterTable::o()
 {
+#if 0
   // first get the T operations, then the O operations
   t_ops(symop);
   o_ops(&symop[12]);
@@ -679,10 +686,12 @@ void CharacterTable::o()
     gamma_[3] = ir2;
     gamma_[4] = ir1;
   }
+#endif
 }
 
 void CharacterTable::oh()
 {
+#if 0
   // first get the T operations, then the O operations, then the Th
   // operations, then the Td operations
   t_ops(symop);
@@ -903,4 +912,5 @@ void CharacterTable::oh()
     gamma_[8] = ir3;
     gamma_[9] = ir4;
   }
+#endif
 }

@@ -18,7 +18,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #ifndef _util_container_gnuavlse_h
-#ifndef __GNUG__
+#ifdef __GNUG__
 #pragma interface
 #endif
 

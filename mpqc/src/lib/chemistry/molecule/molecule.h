@@ -218,6 +218,11 @@ class Molecule: public SavableState
 
     /// Compute the electric field due to the nuclei at the given point.
     void nuclear_efield(const double *position, double* efield);
+
+    /** Compute the electric field due to the given charges at the
+        positions of the nuclei at the given point. */
+    void nuclear_charge_efield(const double *charges,
+                               const double *position, double* efield);
     
     /** If the molecule contains only symmetry unique atoms, this function
         will generate the other, redundant atoms.  The redundant atom

@@ -648,6 +648,30 @@ Molecule::nuclear_repulsion_1der(int center, double xyz[3])
 }
 
 void
+Molecule::nuclear_charge_efield(const double *charges,
+                                const double *position, double *efield)
+{
+  int i,j;
+  double tmp;
+  double rd[3];
+
+  for (i=0; i<3; i++) efield[i] = 0.0;
+
+  for (i=0; i<natoms_; i++) {
+      SCVector3 a(r(i));
+      tmp = 0.0;
+      for (j=0; j<3; j++) {
+          rd[j] = position[j] - a[j];
+          tmp += rd[j]*rd[j];
+        }
+      tmp = charges[i]/(tmp*sqrt(tmp));
+      for (j=0; j<3; j++) {
+          efield[j] +=  rd[j] * tmp;
+        }
+    }
+}
+
+void
 Molecule::nuclear_efield(const double *position, double *efield)
 {
   int i,j;

@@ -4,7 +4,8 @@
 
 #define CLASSNAME SymmSCMatrixSCExtrapData
 #define PARENTS public SCExtrapData
-#include <util/class/classia.h>
+#define HAVE_STATEIN_CTOR
+#include <util/class/classi.h>
 void *
 SymmSCMatrixSCExtrapData::_castdown(const ClassDesc*cd)
 {
@@ -13,9 +14,22 @@ SymmSCMatrixSCExtrapData::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+SymmSCMatrixSCExtrapData::SymmSCMatrixSCExtrapData(StateIn& s) :
+  SCExtrapData(s)
+{
+  m.restore_state(s);
+}
+
 SymmSCMatrixSCExtrapData::SymmSCMatrixSCExtrapData(const RefSymmSCMatrix& mat)
 {
   m = mat;
+}
+
+void
+SymmSCMatrixSCExtrapData::save_data_state(StateOut& s)
+{
+  SCExtrapData::save_data_state(s);
+  m.save_state(s);
 }
 
 void
@@ -43,9 +57,12 @@ SymmSCMatrixSCExtrapData::accumulate_scaled(double scale,
   m.accumulate(am);
 }
 
+///////////////////////////////////////////////////////////////////////////
+
 #define CLASSNAME SymmSCMatrix2SCExtrapData
 #define PARENTS public SCExtrapData
-#include <util/class/classia.h>
+#define HAVE_STATEIN_CTOR
+#include <util/class/classi.h>
 void *
 SymmSCMatrix2SCExtrapData::_castdown(const ClassDesc*cd)
 {
@@ -54,12 +71,27 @@ SymmSCMatrix2SCExtrapData::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+SymmSCMatrix2SCExtrapData::SymmSCMatrix2SCExtrapData(StateIn&s) :
+  SCExtrapData(s)
+{
+  m1.restore_state(s);
+  m2.restore_state(s);
+}
+
 SymmSCMatrix2SCExtrapData::SymmSCMatrix2SCExtrapData(
     const RefSymmSCMatrix& mat1,
     const RefSymmSCMatrix& mat2)
 {
   m1 = mat1;
   m2 = mat2;
+}
+
+void
+SymmSCMatrix2SCExtrapData::save_data_state(StateOut& s)
+{
+  SCExtrapData::save_data_state(s);
+  m1.save_state(s);
+  m2.save_state(s);
 }
 
 void
@@ -93,9 +125,12 @@ SymmSCMatrix2SCExtrapData::accumulate_scaled(double scale,
   m2.accumulate(am);
 }
 
+///////////////////////////////////////////////////////////////////////////
+
 #define CLASSNAME SymmSCMatrixSCExtrapError
 #define PARENTS public SCExtrapError
-#include <util/class/classia.h>
+#define HAVE_STATEIN_CTOR
+#include <util/class/classi.h>
 void *
 SymmSCMatrixSCExtrapError::_castdown(const ClassDesc*cd)
 {
@@ -104,10 +139,23 @@ SymmSCMatrixSCExtrapError::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+SymmSCMatrixSCExtrapError::SymmSCMatrixSCExtrapError(StateIn& s) :
+  SCExtrapError(s)
+{
+  m.restore_state(s);
+}
+
 SymmSCMatrixSCExtrapError::SymmSCMatrixSCExtrapError(
     const RefSymmSCMatrix& mat)
 {
   m = mat;
+}
+
+void
+SymmSCMatrixSCExtrapError::save_data_state(StateOut& s)
+{
+  SCExtrapError::save_data_state(s);
+  m.save_state(s);
 }
 
 double

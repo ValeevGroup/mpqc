@@ -7,6 +7,7 @@
 
 #define CLASSNAME DIIS
 #define PARENTS public SelfConsistentExtrapolation
+#define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classi.h>
 void *
@@ -17,12 +18,67 @@ DIIS::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+void
+DIIS::init()
+{
+  int i;
+  int dim = ndiis+1;
+
+  iter = 0;
+
+  if ((allocbn_double_matrix(&bmat,"n1 n2",dim,dim) != 0) ||
+      (allocbn_double_matrix(&bold,"n1 n2",ndiis,ndiis) != 0) ||
+      (allocbn_double_vector(&btemp,"n",dim) != 0)) {
+    fprintf(stderr,"DIIS::init:  alloc of bmat, bold, and btemp failed\n");
+    abort();
+  }
+
+  diism_data = new RefSCExtrapData[ndiis];
+  diism_error = new RefSCExtrapError[ndiis];
+}
+
 DIIS::DIIS()
 {
   ndiis = 5;
   start = 1;
 
   init();
+}
+
+DIIS::DIIS(StateIn& s) :
+  SelfConsistentExtrapolation(s)
+{
+  s.get(start);
+  s.get(ndiis);
+  s.get(iter);
+  s.get(damping_factor);
+
+  // hack for old sgen stuff...this will go away soon
+  s.get(btemp.n);
+  allocbn_double_vector(&btemp,"n",btemp.n);
+  for (int i=0; i < btemp.n; i++)
+    s.get(btemp.d[i]);
+
+  s.get(bold.n1);
+  s.get(bold.n2);
+  allocbn_double_matrix(&bold,"n1 n2", bold.n1, bold.n2);
+  for (int i=0; i < bold.n1; i++)
+    for (int j=0; j < bold.n2; j++)
+      s.get(bold.d[i][j]);
+  
+  s.get(bmat.n1);
+  s.get(bmat.n2);
+  allocbn_double_matrix(&bmat,"n1 n2", bmat.n1, bmat.n2);
+  for (int i=0; i < bmat.n1; i++)
+    for (int j=0; j < bmat.n2; j++)
+      s.get(bmat.d[i][j]);
+  
+  diism_data = new RefSCExtrapData[ndiis];
+  diism_error = new RefSCExtrapError[ndiis];
+  for (int i=0; i < ndiis; i++) {
+    diism_data[i].restore_state(s);
+    diism_error[i].restore_state(s);
+  }
 }
 
 DIIS::DIIS(const RefKeyVal& keyval):
@@ -53,22 +109,35 @@ DIIS::~DIIS()
 }
 
 void
-DIIS::init()
+DIIS::save_data_state(StateOut& s)
 {
-  int i;
-  int dim = ndiis+1;
+  SelfConsistentExtrapolation::save_data_state(s);
+  s.put(start);
+  s.put(ndiis);
+  s.put(iter);
+  s.put(damping_factor);
 
-  iter = 0;
+  // hack for old sgen stuff...this will go away soon
+  s.put(btemp.n);
+  for (int i=0; i < btemp.n; i++)
+    s.put(btemp.d[i]);
 
-  if ((allocbn_double_matrix(&bmat,"n1 n2",dim,dim) != 0) ||
-      (allocbn_double_matrix(&bold,"n1 n2",ndiis,ndiis) != 0) ||
-      (allocbn_double_vector(&btemp,"n",dim) != 0)) {
-    fprintf(stderr,"DIIS::init:  alloc of bmat, bold, and btemp failed\n");
-    abort();
+  s.put(bold.n1);
+  s.put(bold.n2);
+  for (int i=0; i < bold.n1; i++)
+    for (int j=0; j < bold.n2; j++)
+      s.put(bold.d[i][j]);
+  
+  s.put(bmat.n1);
+  s.put(bmat.n2);
+  for (int i=0; i < bmat.n1; i++)
+    for (int j=0; j < bmat.n2; j++)
+      s.put(bmat.d[i][j]);
+  
+  for (int i=0; i < ndiis; i++) {
+    diism_data[i].save_state(s);
+    diism_error[i].save_state(s);
   }
-
-  diism_data = new RefSCExtrapData[ndiis];
-  diism_error = new RefSCExtrapError[ndiis];
 }
 
 int

@@ -54,8 +54,19 @@ main()
 
       extrap->extrapolate(data, error);
 
+      datamat.print("Extrap Datamat");
+
       i++;
     }
 
+  StateOutText s("scextest.ckpt");
+  extrap.save_state(s);
+  s.close();
+
+  StateInText si("scextest.ckpt");
+  RefSelfConsistentExtrapolation e2(si);
+  
+  si.close();
+  
   return 0;
 }

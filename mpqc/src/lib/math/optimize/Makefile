@@ -41,7 +41,7 @@ opttest: opttest.o optimize.a util/options/liboptions.a \
 opttest.o: opttest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-scextest: scextest.o optimize.a \
+scextest: scextest.o liboptimize.a \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o scextest $^ $(SYSLIBS)
 

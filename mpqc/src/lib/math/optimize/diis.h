@@ -12,7 +12,9 @@
 
 class DIIS: public SelfConsistentExtrapolation {
 #   define CLASSNAME DIIS
+#   define HAVE_STATEIN_CTOR
 #   define HAVE_KEYVAL_CTOR
+#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
     int start;
@@ -35,9 +37,12 @@ class DIIS: public SelfConsistentExtrapolation {
     void init();
   public:
     DIIS();
+    DIIS(StateIn&);
     DIIS(const RefKeyVal&);
     ~DIIS();
 
+    void save_data_state(StateOut&);
+    
     int extrapolate(const RefSCExtrapData& data,
                     const RefSCExtrapError& error);
 };

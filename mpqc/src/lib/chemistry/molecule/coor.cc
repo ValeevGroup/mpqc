@@ -908,7 +908,7 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
   add_tors(sic,bonds,m);
   add_out(sic,bonds,m);
 
-  cout << node0 << indent
+  cout << node0 << endl << indent
        << "IntCoorGen: generated " << sic->n() << " coordinates." << endl;
 }
 

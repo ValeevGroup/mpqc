@@ -490,10 +490,10 @@ void
 do_gpetite_test(const Ref<GaussianBasisSet> &b1,
                 const Ref<GaussianBasisSet> &b2)
 {
-  canonical_aaab c4(b1,b1,b1,b2);
-  Ref<GPetite4<canonical_aaab> > p4
-      = new GPetite4<canonical_aaab>(b1,b1,b1,b2,c4);
-  cout << "tesing GPetite4<canonical_aaab>" << endl;
+  canonical_aabc c4(b1,b1,b1,b2);
+  Ref<GPetite4<canonical_aabc> > p4
+      = new GPetite4<canonical_aabc>(b1,b1,b1,b2,c4);
+  cout << "tesing GPetite4<canonical_aabc>" << endl;
   for (int i=0; i<b1->nshell(); i++) {
       for (int j=0; j<=i; j++) {
           for (int k=0; k<b1->nshell(); k++) {

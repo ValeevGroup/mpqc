@@ -9,37 +9,77 @@
 #define INLINE
 #endif
 
+inline void byte_swap2(void*data, void*result)
+{
+  char*d = (char*) data;
+  char*r = (char*) result;
+  r[1] = d[0];
+  r[0] = d[1];
+}
+
+inline void byte_swap4(void*data, void*result)
+{
+  char*d = (char*) data;
+  char*r = (char*) result;
+  r[3] = d[0];
+  r[2] = d[1];
+  r[1] = d[2];
+  r[0] = d[3];
+}
+
+inline void byte_swap8(void*data, void*result)
+{
+  char*d = (char*) data;
+  char*r = (char*) result;
+  r[7] = d[0];
+  r[6] = d[1];
+  r[5] = d[2];
+  r[4] = d[3];
+  r[3] = d[4];
+  r[2] = d[5];
+  r[1] = d[6];
+  r[0] = d[7];
+}
+
+inline void byte_swap16(void*data, void*result)
+{
+  char*d = (char*) data;
+  char*r = (char*) result;
+  byte_swap8(d,&r[4]);
+  byte_swap8(&d[4],r);
+}
+
 INLINE QCXDR::QCXDR() {}
 
 INLINE char QCXDR::byte_swap(char c) { return c; }
 
-#if (USHRT_MAX == 0xffff)
 INLINE short QCXDR::byte_swap(unsigned short s)
 {
-  unsigned short r = s << 8;
-  r |= (s & 0xff00) >> 8;
+  unsigned short r;
+  if (sizeof(unsigned short) == 2) byte_swap2(&s, &r);
+  else if (sizeof(unsigned short) == 4) byte_swap4(&s, &r);
+  else if (sizeof(unsigned short) == 8) byte_swap8(&s, &r);
+  else if (sizeof(unsigned short) == 16) byte_swap16(&s, &r);
   return r;
 }
-#endif
 
-#if (UINT_MAX == 0xffffffff) /* 4 byte words */
 INLINE int QCXDR::byte_swap(unsigned int i)
 {
-  unsigned int r = i << 24;
-  r |= (i & 0xff00) << 8;
-  r |= (i & 0xff0000) >> 8;
-  r |= (i & 0xff000000) >> 24;
+  unsigned int r;
+  if (sizeof(unsigned int) == 2) byte_swap2(&i, &r);
+  else if (sizeof(unsigned int) == 4) byte_swap4(&i, &r);
+  else if (sizeof(unsigned int) == 8) byte_swap8(&i, &r);
+  else if (sizeof(unsigned int) == 16) byte_swap16(&i, &r);
   return r;
 }
-#endif
 
-#if (ULONG_MAX == 0xffffffff)
 INLINE long QCXDR::byte_swap(unsigned long l)
 {
-  unsigned long r = l << 24;
-  r |= (l & 0xff00) << 8;
-  r |= (l & 0xff0000) >> 8;
-  r |= (l & 0xff000000) >> 24;
+  unsigned long r;
+  if (sizeof(unsigned long) == 2) byte_swap2(&l, &r);
+  else if (sizeof(unsigned long) == 4) byte_swap4(&l, &r);
+  else if (sizeof(unsigned long) == 8) byte_swap8(&l, &r);
+  else if (sizeof(unsigned long) == 16) byte_swap16(&l, &r);
   return r;
 }
 
@@ -47,28 +87,23 @@ INLINE long QCXDR::byte_swap(unsigned long l)
 
 INLINE float QCXDR::byte_swap(float f)
 {
-  union foo {
-    unsigned long l;
-    float f;
-    } fu;
-  fu.f=f;
-  fu.l=byte_swap(fu.l);
-  return fu.f;
+  double r;
+  if (sizeof(float) == 2) byte_swap2(&f, &r);
+  else if (sizeof(float) == 4) byte_swap4(&f, &r);
+  else if (sizeof(float) == 8) byte_swap8(&f, &r);
+  else if (sizeof(float) == 16) byte_swap16(&f, &r);
+  return r;
 }
 
 // and an 8 byte double
 INLINE double QCXDR::byte_swap(double d)
 {
-  union food {
-    double d;
-    unsigned long l[2];
-  } din,dout;
-
-  din.d=d;
-  dout.l[0]=byte_swap(din.l[1]);
-  dout.l[1]=byte_swap(din.l[0]);
-
-  return dout.d;
+  double r;
+  if (sizeof(double) == 2) byte_swap2(&d, &r);
+  else if (sizeof(double) == 4) byte_swap4(&d, &r);
+  else if (sizeof(double) == 8) byte_swap8(&d, &r);
+  else if (sizeof(double) == 16) byte_swap16(&d, &r);
+  return r;
 }
 
 // I'll also assume pointers are the same length as longs
@@ -78,8 +113,6 @@ INLINE void * QCXDR::byte_swap(void *p)
   return (void*) byte_swap((unsigned long) p);
 }
   
-#endif /* 4byte words */
-
 
 #if BIGENDIAN
 

@@ -103,7 +103,7 @@ cmat_transpose_matrix(double**a, int nr, int nc)
     };
 
   tmp = (double*) malloc(sizeof(double)*nr*nc);
-  if (!tmp) {
+  if (!tmp && nr && nc) {
     fprintf(stderr,"cmat_transpose_matrix: malloc failed\n");
     abort();
   }
@@ -118,7 +118,7 @@ cmat_transpose_matrix(double**a, int nr, int nc)
 
   memcpy(a[0],tmp,sizeof(double)*nr*nc);
 
-  free(tmp);
+  if (tmp) free(tmp);
 }
 
 /* a is symmetric if sym is true */

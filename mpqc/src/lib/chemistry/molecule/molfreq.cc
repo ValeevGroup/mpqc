@@ -500,10 +500,10 @@ MolFreqAnimate::MolFreqAnimate(const Ref<KeyVal> &keyval):
   dependent_mole_ << keyval->describedclassvalue("dependent_mole");
   irrep_ = keyval->intvalue("irrep");
   mode_ = keyval->intvalue("mode");
-  nframe_ = keyval->intvalue("nframe");
-  if (keyval->error() != KeyVal::OK) {
-      nframe_ = 10;
-    }
+  KeyValValueint default_nframe(10);
+  nframe_ = keyval->intvalue("nframe",default_nframe);
+  KeyValValuedouble default_disp(0.2);
+  disp_ = keyval->doublevalue("displacement", default_disp);
 }
 
 MolFreqAnimate::~MolFreqAnimate()
@@ -524,7 +524,7 @@ MolFreqAnimate::object(int iobject)
   Ref<Molecule> mol = renmol_->molecule();
   Ref<Molecule> molcopy = new Molecule(*mol.pointer());
 
-  double scale = 0.2 * cos(M_PI*(iobject+0.5)/(double)nframe_);
+  double scale = disp_ * cos(M_PI*(iobject+0.5)/(double)nframe_);
 
   RefSCMatrix irrepblock = normco->block(irrep_);
   int ixyz, iatom, icoor=0;

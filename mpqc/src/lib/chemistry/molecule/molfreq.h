@@ -143,6 +143,7 @@ class MolFreqAnimate: public AnimatedObject {
     int irrep_;
     int mode_;
     int nframe_;
+    double disp_;
   public:
     MolFreqAnimate(const Ref<KeyVal> &);
     virtual ~MolFreqAnimate();

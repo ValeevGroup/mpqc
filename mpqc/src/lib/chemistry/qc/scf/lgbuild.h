@@ -122,7 +122,7 @@ class LocalGBuild : public GBuild<T> {
               
 
 #if SCF_CHECK_BOUNDS
-              contribution.set_bound(pow(2.0,double(tbi.log2_shell_bound(i,j,k,l)+pmaxijkl)));
+              GBuild<T>::contribution.set_bound(pow(2.0,double(tbi.log2_shell_bound(i,j,k,l)+pmaxijkl)));
 #else
               if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
                 continue;
@@ -183,7 +183,7 @@ class LocalGBuild : public GBuild<T> {
             kl = i_offset(kk)+ll;
             val = (ij==kl) ? 0.5*pki_int : pki_int;
 
-            contribution.cont5(ij,kl,val);
+            GBuild<T>::contribution.cont5(ij,kl,val);
 
           } else {
             /*
@@ -197,7 +197,7 @@ class LocalGBuild : public GBuild<T> {
             kl = i_offset(kk)+ll;
             val = (ij==kl) ? 0.5*pki_int : pki_int;
             
-            contribution.cont4(ij,kl,val);
+            GBuild<T>::contribution.cont4(ij,kl,val);
 
             /*
              * this integral also contributes to K1 and K2 of
@@ -210,7 +210,7 @@ class LocalGBuild : public GBuild<T> {
             kl = ij_offset(kk,jj);
             val = (ij==kl) ? 0.5*pki_int : pki_int;
             
-            contribution.cont3(ij,kl,val);
+            GBuild<T>::contribution.cont3(ij,kl,val);
           }
         } else if (ii == kk || jj == ll) {
           /*
@@ -224,7 +224,7 @@ class LocalGBuild : public GBuild<T> {
           kl = i_offset(kk)+ll;
           val = (ij==kl) ? 0.5*pki_int : pki_int;
 
-          contribution.cont4(ij,kl,val);
+          GBuild<T>::contribution.cont4(ij,kl,val);
 
           /*
            * this integral also contributes to K1 and K2 of
@@ -237,7 +237,7 @@ class LocalGBuild : public GBuild<T> {
           kl = ij_offset(jj,ll);
           val = (ij==kl) ? 0.5*pki_int : pki_int;
 
-          contribution.cont3(ij,kl,val);
+          GBuild<T>::contribution.cont3(ij,kl,val);
 
         } else {
           /*
@@ -249,7 +249,7 @@ class LocalGBuild : public GBuild<T> {
           kl = i_offset(kk)+ll;
           val = (ij==kl) ? 0.5*pki_int : pki_int;
 
-          contribution.cont1(ij,kl,val);
+          GBuild<T>::contribution.cont1(ij,kl,val);
 
           /*
            * and to K1 of G(ik)
@@ -260,7 +260,7 @@ class LocalGBuild : public GBuild<T> {
           kl = ij_offset(jj,ll);
           val = (ij==kl) ? 0.5*pki_int : pki_int;
 
-          contribution.cont2(ij,kl,val);
+          GBuild<T>::contribution.cont2(ij,kl,val);
 
           if ((ii != jj) && (kk != ll)) {
             /*
@@ -275,7 +275,7 @@ class LocalGBuild : public GBuild<T> {
             ij = ij_offset(ii,ll);
             kl = ij_offset(kk,jj);
 
-            contribution.cont2(ij,kl,val);
+            GBuild<T>::contribution.cont2(ij,kl,val);
           }
         }
       } else { // !e_any
@@ -287,7 +287,7 @@ class LocalGBuild : public GBuild<T> {
            * pkval = (ijkl) - 0.25 * (ikjl)
            *       = 0.75 * (ijkl)
            */
-          contribution.cont4(i_offset(ii)+jj,i_offset(kk)+ll,pki_int);
+          GBuild<T>::contribution.cont4(i_offset(ii)+jj,i_offset(kk)+ll,pki_int);
 
           /*
            * this integral also contributes to K1 and K2 of
@@ -296,7 +296,7 @@ class LocalGBuild : public GBuild<T> {
            * pkval = -0.25 * ((ijkl)+(ikjl))
            *       = -0.5 * (ijkl)
            */
-          contribution.cont3(ij_offset(ii,ll),ij_offset(kk,jj),pki_int);
+          GBuild<T>::contribution.cont3(ij_offset(ii,ll),ij_offset(kk,jj),pki_int);
 
         } else if (ii == kk || jj == ll) {
           /*
@@ -306,7 +306,7 @@ class LocalGBuild : public GBuild<T> {
            * pkval = (ijkl) - 0.25 * (ilkj)
            *       = 0.75 * (ijkl)
            */
-          contribution.cont4(i_offset(ii)+jj,i_offset(kk)+ll,pki_int);
+          GBuild<T>::contribution.cont4(i_offset(ii)+jj,i_offset(kk)+ll,pki_int);
 
           /*
            * this integral also contributes to K1 and K2 of
@@ -315,7 +315,7 @@ class LocalGBuild : public GBuild<T> {
            * pkval = -0.25 * ((ijkl)+(ilkj))
            *       = -0.5 * (ijkl)
            */
-          contribution.cont3(ij_offset(ii,kk),ij_offset(jj,ll),pki_int);
+          GBuild<T>::contribution.cont3(ij_offset(ii,kk),ij_offset(jj,ll),pki_int);
 
         } else {
           /*
@@ -323,21 +323,21 @@ class LocalGBuild : public GBuild<T> {
            *
            * pkval = (ijkl)
            */
-          contribution.cont1(i_offset(ii)+jj,i_offset(kk)+ll,pki_int);
+          GBuild<T>::contribution.cont1(i_offset(ii)+jj,i_offset(kk)+ll,pki_int);
 
           /*
            * and to K1 of G(ik)
            *
            * pkval = -0.25 * (ijkl)
            */
-          contribution.cont2(ij_offset(ii,kk),ij_offset(jj,ll),pki_int);
+          GBuild<T>::contribution.cont2(ij_offset(ii,kk),ij_offset(jj,ll),pki_int);
 
           /*
            * and to K2 of G(il)
            *
            * pkval = -0.25 * (ijkl)
            */
-          contribution.cont2(ij_offset(ii,ll),ij_offset(kk,jj),pki_int);
+          GBuild<T>::contribution.cont2(ij_offset(ii,ll),ij_offset(kk,jj),pki_int);
         }
       }
                     }

@@ -12,7 +12,7 @@
 #include <math/scmat/f77sym.h>
 
 extern "C" {
-  void pdsteqr_(int *n, double *d, double *e,
+  void F77_PDSTEQR(int *n, double *d, double *e,
                 double *z, int *ldz, int *nz, double *work,
                 int *info);
 }

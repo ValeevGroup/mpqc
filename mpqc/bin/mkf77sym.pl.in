@@ -11,17 +11,17 @@ open(OUT,">$out");
 while(<IN>) {
     if (/\# *define F77_([A-Z]+)/) {
         $f77name = $1;
-        if ($method == "symbol_") {
+        if ($method eq "symbol_") {
             $cname = lc($f77name);
             $cname = "${cname}_";
         }
-        elsif ($method == "symbol") {
+        elsif ($method eq "symbol") {
             $cname = lc($f77name);
         }
-        elsif ($method == "SYMBOL") {
+        elsif ($method eq "SYMBOL") {
             $cname = uc($f77name);
         }
-        elsif ($method == "SYMBOL_") {
+        elsif ($method eq "SYMBOL_") {
             $cname = uc($f77name);
             $cname = "${cname}_";
         }

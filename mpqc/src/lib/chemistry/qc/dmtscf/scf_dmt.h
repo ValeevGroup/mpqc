@@ -7,6 +7,8 @@ class KeyVal;
 extern "C" {
 #endif /* __cplusplus */
 
+#include <chemistry/qc/dmtsym/sym_dmt.h>
+
 #include <chemistry/qc/dmtscf/scf.h>
 #include <chemistry/qc/dmtscf/scfallc.h>
 #include <chemistry/qc/dmtscf/scffree.h>

@@ -63,7 +63,7 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
       }
     }
   }
-  ihessian_ = hessian.i();
+  ihessian_ = hessian.gi();
 
   dim_ = nlp_->dimension();
   coords_ = new RefSCVector[nsave];
@@ -276,7 +276,7 @@ GDIISOpt::update()
 
     ntry++;
 
-  } while ((determ=fabs(A.solve_this(coeff))) < 1.0e-12);
+  } while ((determ=fabs(A.solve_lin(coeff))) < 1.0e-12);
 
   RefSCVector xstar = xcurrent.dim()->create_vector();
   RefSCVector delstar = gcurrent.dim()->create_vector();

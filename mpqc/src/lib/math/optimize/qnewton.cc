@@ -56,7 +56,7 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
             }
         }
     }
-  ihessian_ = hessian.i();
+  ihessian_ = hessian.gi();
 }
 
 QNewtonOpt::QNewtonOpt(StateIn&s):

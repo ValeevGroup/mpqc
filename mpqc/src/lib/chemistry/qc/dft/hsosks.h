@@ -50,6 +50,9 @@ class HSOSKS: public HSOSSCF {
     RefDenFunctional functional_;
     RefSymmSCMatrix vxc_a_;
     RefSymmSCMatrix vxc_b_;
+
+    RefSymmSCMatrix cl_vxc();
+    RefSymmSCMatrix op_vxc();
     
   public:
     HSOSKS(StateIn&);
@@ -73,6 +76,8 @@ class HSOSKS: public HSOSSCF {
     RefSymmSCMatrix effective_fock();
     
     void two_body_deriv(double*);
+
+    RefSymmSCMatrix lagrangian();
 };
 
 #endif

@@ -44,6 +44,7 @@
 #include <chemistry/qc/scf/lgbuild.h>
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/effh.h>
+#include <chemistry/qc/scf/scfops.h>
 
 #include <chemistry/qc/dft/hsoskstmpl.h>
 
@@ -126,29 +127,7 @@ HSOSKS::print(ostream&o) const
 double
 HSOSKS::scf_energy()
 {
-  RefSymmSCMatrix total_vxc = vxc_a_ + vxc_b_;
-  total_vxc.scale(-1.0);
-  cl_fock_.result_noupdate().accumulate(total_vxc);
-  op_fock_.result_noupdate().accumulate(total_vxc);
-
   double ehf = HSOSSCF::scf_energy();
-
-  hcore_.print("Hcore");
-  alpha_ao_density().print("Da AO");
-  beta_ao_density().print("Db AO");
-  alpha_density().print("Da");
-  beta_density().print("Db");
-  vxc_a_.print("VAXC");
-  vxc_b_.print("VBXC");
-  cl_fock_.result_noupdate().print("Cl Fock");
-  op_fock_.result_noupdate().print("Op Fock");
-  cout << indent << scprintf("E(HSOSSCF) = %12.8f", ehf) << endl;
-  cout << indent << scprintf("E(X-C)     = %12.8f", exc_) << endl;
-  cout << indent << scprintf("E(TOTAL)   = %12.8f", ehf+exc_) << endl;
-
-  total_vxc.scale(-1.0);
-  cl_fock_.result_noupdate().accumulate(total_vxc);
-  op_fock_.result_noupdate().accumulate(total_vxc);
 
   return ehf+exc_;
 }
@@ -164,17 +143,17 @@ HSOSKS::effective_fock()
 
   // use eigenvectors if oso_scf_vector_ is null
   if (oso_scf_vector_.null()) {
-    mofock.accumulate_transform(eigenvectors(), fock(0),
+    mofock.accumulate_transform(eigenvectors(), fock(0)+cl_vxc(),
                                 SCMatrix::TransposeTransform);
-    mofocko.accumulate_transform(eigenvectors(), fock(1),
+    mofocko.accumulate_transform(eigenvectors(), fock(1)+op_vxc(),
                                  SCMatrix::TransposeTransform);
   } else {
     RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
     mofock.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
-                                fock(0),
+                                fock(0)+cl_vxc(),
                                 SCMatrix::TransposeTransform);
     mofocko.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
-                                 fock(1),
+                                 fock(1)+op_vxc(),
                                  SCMatrix::TransposeTransform);
   }
 
@@ -182,6 +161,43 @@ HSOSKS::effective_fock()
   mofock.element_op(op, mofocko);
 
   return mofock;
+}
+
+RefSymmSCMatrix
+HSOSKS::lagrangian()
+{
+  RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
+
+  RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
+  mofock.assign(0.0);
+  mofock.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
+                              cl_fock_.result_noupdate()+cl_vxc(),
+                              SCMatrix::TransposeTransform);
+
+  RefSymmSCMatrix mofocko(oso_dimension(), basis_matrixkit());
+  mofocko.assign(0.0);
+  mofocko.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
+                               op_fock_.result_noupdate()+op_vxc(),
+                               SCMatrix::TransposeTransform);
+
+  mofock.scale(2.0);
+  
+  RefSCElementOp2 op = new MOLagrangian(this);
+  mofock.element_op(op, mofocko);
+  mofocko=0;
+
+  // transform MO lagrangian to SO basis
+  RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
+  so_lag.assign(0.0);
+  so_lag.accumulate_transform(so_to_oso_tr * oso_scf_vector_, mofock);
+  
+  // and then from SO to AO
+  RefPetiteList pl = integral()->petite_list();
+  RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
+
+  ao_lag.scale(-1.0);
+
+  return ao_lag;
 }
 
 RefSCExtrapData
@@ -261,7 +277,6 @@ HSOSKS::ao_fock()
   integrator_->set_compute_potential_integrals(1);
   integrator_->integrate(functional_, dens_a, dens_b);
   exc_ = integrator_->value();
-  cout << indent << scprintf("E(X-C) = %12.8f", exc_) << endl;
   vxc_a_ = dens_a.clone();
   vxc_a_->assign((double*)integrator_->alpha_vmat());
   vxc_a_ = pl->to_SO_basis(vxc_a_);
@@ -292,9 +307,6 @@ HSOSKS::ao_fock()
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
   cl_fock_.result_noupdate().accumulate(dd);
-
-  cl_fock_.result_noupdate().accumulate(vxc_a_);
-  cl_fock_.result_noupdate().accumulate(vxc_b_);
 
   // Fo = H+G-Go
   op_fock_.result_noupdate().assign(cl_fock_.result_noupdate());
@@ -383,7 +395,6 @@ HSOSKS::two_body_deriv(double * tbgrad)
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
   tim_enter("integration");
-  RefPetiteList pl = integral()->petite_list(basis());
   RefSymmSCMatrix dens_a = alpha_ao_density();
   RefSymmSCMatrix dens_b = beta_ao_density();
   integrator_->set_wavefunction(this);
@@ -400,6 +411,21 @@ HSOSKS::two_body_deriv(double * tbgrad)
   delete[] hfgrad;
 
   tim_exit("grad");
+}
+
+RefSymmSCMatrix
+HSOSKS::cl_vxc()
+{
+  RefSymmSCMatrix r = vxc_a_+vxc_b_;
+  r.scale(0.5);
+  return r;
+}
+
+RefSymmSCMatrix
+HSOSKS::op_vxc()
+{
+  RefSymmSCMatrix r = vxc_a_.copy();
+  return r;
 }
 
 /////////////////////////////////////////////////////////////////////////////

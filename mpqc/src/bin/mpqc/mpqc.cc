@@ -484,7 +484,7 @@ try_main(int argc, char *argv[])
     cca_path = keyval->stringvalue("cca-path",emptystring);
   if(cca_load.size()==0)
     cca_load = keyval->stringvalue("cca-load",emptystring);
-  if( (cca_load.size()+cca_path.size()) > 0 ) {
+  if( cca_load.size() > 0 && cca_path.size() > 0 ) {
     string cca_args = "--path " + cca_path + " --load " + cca_load;
     ExEnv::out0() << endl << indent << "Initializing CCA framework with args: "
                   << endl << indent << cca_args << endl;

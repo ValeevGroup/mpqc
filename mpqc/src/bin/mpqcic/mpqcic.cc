@@ -697,6 +697,12 @@ read_geometry(centers_t& centers, RefKeyVal keyval, FILE *outfp)
   symm_coords = SymmCoList::restore_state(si);
   symm_coords = 0;
 
+  si.get(iter);
+  if (iter) {
+    symm_coords = SymmCoList::restore_state(si);
+    symm_coords = 0;
+  }
+
   Molecule mol(si);
 
   for(int i=0; i < centers.n; i++) {

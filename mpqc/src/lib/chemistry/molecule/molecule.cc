@@ -67,15 +67,15 @@ Molecule::Molecule(const RefKeyVal&input) :
           if (!strncmp(line,"HETA",4) || !strncmp(line,"ATOM",4)) {
               char atomsym[3];
               // find the atomic symbol
-              if (line[12] == ' ') {
-                  atomsym[0] = line[13];
-                  atomsym[1] = '\0';
+              int symletter=0, offset;
+              for (offset=12; offset<16 && symletter<2; offset++) {
+                  if (line[offset] != ' '
+                      && (line[offset] < '0' || line[offset] > '9')) {
+                      atomsym[symletter] = line[offset];
+                      symletter++;
+                    }
                 }
-              else {
-                  atomsym[0] = line[12];
-                  atomsym[1] = line[13];
-                  atomsym[2] = '\0';
-                }
+              atomsym[symletter] = '\0';
               // skip dummy atoms
               if (!strcmp(atomsym,"Q")) continue;
               char position[9];

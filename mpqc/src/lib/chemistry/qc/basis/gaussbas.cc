@@ -3,7 +3,10 @@
 #pragma implementation
 #endif
 
+#include <stdio.h>
+
 #include <util/keyval/keyval.h>
+#include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
@@ -33,7 +36,7 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
 {
   molecule_ = topkeyval->describedclassvalue("molecule");
   if (molecule_.null()) {
-      fprintf(stderr, "GaussianBasisSet: no \"molecule\"\n");
+      cerr << node0 << indent << "GaussianBasisSet: no \"molecule\"\n";
       abort();
     }
 
@@ -172,7 +175,8 @@ GaussianBasisSet::init(RefMolecule&molecule,
       have_custom = 0;
       nelement = 0;
       if (!name_) {
-          fprintf(stderr,"GaussianBasisSet: No name given for basis set\n");
+          cerr << node0 << indent
+               << "GaussianBasisSet: No name given for basis set\n";
           abort();
         }
     }
@@ -204,9 +208,9 @@ GaussianBasisSet::init(RefMolecule&molecule,
         }
       if (!sbasisname) {
           if (!name_) {
-              fprintf(stderr,
-                      "GaussianBasisSet: no basis name for atom %d (%s)\n",
-                      iatom, currentelement.name());
+              cerr << node0 << indent << "GaussianBasisSet: "
+                   << scprintf("no basis name for atom %d (%s)\n",
+                               iatom, currentelement.name());
               abort();
             }
           sbasisname = strcpy(new char[strlen(name_)+1],name_);
@@ -241,9 +245,9 @@ GaussianBasisSet::init(RefMolecule&molecule,
         }
       if (!sbasisname) {
           if (!name_) {
-              fprintf(stderr,
-                      "GaussianBasisSet: no basis name for atom %d (%s)\n",
-                      iatom, currentelement.name());
+              cerr << node0 << indent << "GaussianBasisSet: "
+                   << scprintf("no basis name for atom %d (%s)\n",
+                               iatom, currentelement.name());
               abort();
             }
           sbasisname = strcpy(new char[strlen(name_)+1],name_);
@@ -351,8 +355,8 @@ GaussianBasisSet::
     }
   count = keyval->count(keyword);
   if (keyval->error() != KeyVal::OK) {
-      fprintf(stderr,"GaussianBasisSet:: couldn't find \"%s\":\n",
-	      keyword);
+      cerr << node0 << indent
+           << scprintf("GaussianBasisSet:: couldn't find \"%s\":\n", keyword);
       keyval->errortrace(cerr);
       exit(1);
     }
@@ -364,8 +368,8 @@ GaussianBasisSet::
       if (prefixkeyval->exists("get")) {
           char* newbasis = prefixkeyval->pcharvalue("get");
           if (!newbasis) {
-	      fprintf(stderr,"GaussianBasisSet: error processing get for \"%s\"\n",
-		      prefix);
+	      cerr << node0 << indent << "GaussianBasisSet: "
+                   << scprintf("error processing get for \"%s\"\n", prefix);
               keyval->errortrace(cerr);
 	      exit(1);
 	    }
@@ -458,27 +462,43 @@ GaussianBasisSet::operator()(int icenter,int ishell)
   return *shell_[center_to_shell_(icenter) + ishell];
 }
 
-void GaussianBasisSet::print(FILE*fp) const
+void
+GaussianBasisSet::print(ostream& os) const
 {
-  fprintf(fp,"GaussianBasisSet: nshell = %d, nbasis = %d\n",nshell_,nbasis_);
+  os << node0 << indent
+     << "GaussianBasisSet:" << endl << incindent
+     << indent << "nshell = " << nshell_ << endl
+     << indent << "nbasis = " << nbasis_ << endl;
 
   // Loop over centers
   int icenter = 0;
   int ioshell = 0;
   for (icenter=0; icenter < ncenter_; icenter++) {
-      fprintf(fp,"center %d: %12.8f %12.8f %12.8f, nshell = %d, shellnum = %d\n",
-	      icenter,
-	      r(icenter,0),
-	      r(icenter,1),
-	      r(icenter,2),
-	      center_to_nshell_[icenter],
-	      center_to_shell_[icenter]);
+      os << node0 << endl << indent
+         << scprintf(
+             "center %d: %12.8f %12.8f %12.8f, nshell = %d, shellnum = %d\n",
+             icenter,
+             r(icenter,0),
+             r(icenter,1),
+             r(icenter,2),
+             center_to_nshell_[icenter],
+             center_to_shell_[icenter]);
       for (int ishell=0; ishell < center_to_nshell_[icenter]; ishell++) {
-	  fprintf(fp,"Shell %d: functionnum = %d\n",
-		  ishell,shell_to_function_[ioshell]);
-	  operator()(icenter,ishell).print(fp);
+	  os << node0 << indent
+             << scprintf("Shell %d: functionnum = %d\n",
+                         ishell,shell_to_function_[ioshell]);
+          os << node0 << incindent;
+	  operator()(icenter,ishell).print(os);
+          os << node0 << decindent;
           ioshell++;
 	}
     }
 
+  os << node0 << decindent;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

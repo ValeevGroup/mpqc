@@ -3,8 +3,6 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
-
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/tbint.h>
@@ -434,3 +432,9 @@ TwoBodyDerivInt::buffer() const
 {
   return buffer_;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

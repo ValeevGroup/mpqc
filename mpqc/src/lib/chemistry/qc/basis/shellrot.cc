@@ -3,6 +3,8 @@
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
+
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/cartiter.h>
@@ -196,8 +198,9 @@ ShellRotation
 ShellRotation::operate(const ShellRotation& rot) const
 {
   if (n_ != rot.n_) {
-    fprintf(stderr,"ShellRotation::operate(): dimensions don't match\n");
-    fprintf(stderr,"  %d != %d\n",rot.n_,n_);
+    cerr << node0 << indent
+         << "ShellRotation::operate(): dimensions don't match" << endl
+         << indent << scprintf("  %d != %d\n",rot.n_,n_);
     abort();
   }
   
@@ -222,8 +225,9 @@ ShellRotation::sim_transform(const ShellRotation& rot) const
   int i,j,k;
 
   if (rot.n_ != n_) {
-    fprintf(stderr,"ShellRotation::sim_transform(): dimensions don't match\n");
-    fprintf(stderr,"  %d != %d\n",rot.n_,n_);
+    cerr << node0 << indent
+         << "ShellRotation::sim_transform(): dimensions don't match" << endl
+         << indent << scprintf("%d != %d\n",rot.n_,n_);
     abort();
   }
   
@@ -265,10 +269,16 @@ void
 ShellRotation::print() const
 {
   for (int i=0; i < n_; i++) {
-    printf("%5d ",i+1);
+    cout << node0 << indent << scprintf("%5d ",i+1);
     for (int j=0; j < n_; j++) {
-      printf(" %10.7f",r[i][j]);
+      cout << node0 << scprintf(" %10.7f",r[i][j]);
     }
-    printf("\n");
+    cout << node0 << endl;
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -82,3 +82,9 @@ SymmTwoBodyIntIter::scale() const
   return (double)
     pl->in_p4(i_offset(icur)+jcur, i_offset(kcur)+lcur,icur,jcur,kcur,lcur);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

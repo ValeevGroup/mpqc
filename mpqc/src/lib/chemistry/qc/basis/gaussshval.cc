@@ -1,8 +1,8 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 #include <math/topology/point.h>
@@ -35,9 +35,12 @@ GaussianShell::grad_values(const RefIntegral& ints,
 
   // check limitations
   if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
-      fprintf(stderr,"GaussianShell::grad_values: limit exceeded:\n");
-      fprintf(stderr,"  ncon = %d (%d max) nprim = %d (%d max) maxam = %d (%d max)\n",
-              ncon,MAX_NCON,nprim,MAX_NPRIM,maxam,MAX_AM-1);
+      cerr << node0 << indent
+           << "GaussianShell::grad_values: limit exceeded:\n"
+           << indent
+           << scprintf(
+               "ncon = %d (%d max) nprim = %d (%d max) maxam = %d (%d max)\n",
+               ncon,MAX_NCON,nprim,MAX_NPRIM,maxam,MAX_AM-1);
       abort();
     }
 
@@ -166,3 +169,9 @@ GaussianShell::grad_values(const RefIntegral& ints,
 
   return i_basis;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

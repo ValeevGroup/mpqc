@@ -16,3 +16,7 @@ class BasisFileSet {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

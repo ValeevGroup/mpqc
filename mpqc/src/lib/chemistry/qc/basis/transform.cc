@@ -3,11 +3,11 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/basis/transform.h>
 
 SphericalTransform::SphericalTransform()
@@ -107,7 +107,8 @@ SphericalTransform::init()
     add(1,3,0, -1.0 * sqrt(8.75), i);
 
   } else {
-    fprintf(stderr, "SphericalTransform: cannot handle l = %d\n", l_);
+    cerr << node0 << indent
+         << "SphericalTransform: cannot handle l = " << l_ << endl;
     abort();
   }
 }
@@ -238,7 +239,8 @@ ISphericalTransform::init()
     add(1,3,0, -sqrt(1.0/35.0), i);
 
   } else {
-    fprintf(stderr, "ISphericalTransform: cannot handle l = %d\n", l_);
+    cerr << node0 << indent
+         << "ISphericalTransform: cannot handle l = " << l_ << endl;
     abort();
   }
 }
@@ -254,3 +256,9 @@ SphericalTransformIter::SphericalTransformIter(SphericalTransform*t)
 {
   transform_ = t;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -103,3 +103,7 @@ class Integral : public SavableState {
 SavableState_REF_dec(Integral);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

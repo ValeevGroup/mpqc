@@ -45,3 +45,9 @@ DerivCenters::add_omitted(int center, const RefGaussianBasisSet &b, int shell)
 {
   add_omitted(center, b->shell_to_center(shell));
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

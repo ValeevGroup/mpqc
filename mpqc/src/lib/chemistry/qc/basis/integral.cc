@@ -92,3 +92,9 @@ Integral::set_basis(const RefGaussianBasisSet &b1,
   if (bs3_.null()) bs3_ = bs2_;
   if (bs4_.null()) bs4_ = bs3_;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

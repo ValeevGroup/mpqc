@@ -6,7 +6,8 @@
 #pragma interface
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
+
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
@@ -114,7 +115,7 @@ class GaussianBasisSet: public SavableState
     void ortho(const RefIntegral&,
                const RefSCMatrix&ortho, const RefSCMatrix&ortho_inverse);
 
-    void print(FILE*fp=stdout) const;
+    void print(ostream& =cout) const;
 };
 
 SavableState_REF_dec(GaussianBasisSet);
@@ -124,3 +125,7 @@ SavableState_REF_dec(GaussianBasisSet);
 #endif
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

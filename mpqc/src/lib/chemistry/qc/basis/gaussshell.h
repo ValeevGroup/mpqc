@@ -6,7 +6,7 @@
 #pragma interface
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 
@@ -110,7 +110,7 @@ class GaussianShell: public SavableState
                             int a1, int b1, int c1,
                             int a2, int b2, int c2) const;
 
-    void print(FILE*fp=stdout) const;
+    void print(ostream& =cout) const;
 };
 
 SavableState_REF_dec(GaussianShell);
@@ -120,3 +120,7 @@ SavableState_REF_dec(GaussianShell);
 #endif
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

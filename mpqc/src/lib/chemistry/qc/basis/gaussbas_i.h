@@ -62,3 +62,9 @@ GaussianBasisSet::operator[](int i)
 {
   return *shell_[i];
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

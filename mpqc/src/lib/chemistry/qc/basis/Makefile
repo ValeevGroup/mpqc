@@ -36,6 +36,7 @@ default:: $(TOPDIR)/lib/libbasis.so
 endif
 
 btest: $(TESTOBJ) libintv3.a liboint3.a libintv2.a liboint2.a \
+                  libarray.a libsgen.a \
                   $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
 

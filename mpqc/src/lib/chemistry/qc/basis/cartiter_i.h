@@ -169,3 +169,9 @@ RedundantCartesianSubIter::axis(int i)
 {
   return axis_[i];
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

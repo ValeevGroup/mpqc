@@ -3,6 +3,9 @@
 #pragma implementation
 #endif
 
+#include <stdio.h>
+
+#include <util/misc/formio.h>
 #include <chemistry/molecule/localdef.h>
 
 #include <chemistry/qc/basis/basis.h>
@@ -291,61 +294,62 @@ PetiteList::SO_basisdim()
 }
 
 void
-PetiteList::print(FILE *o, int verbose)
+PetiteList::print(ostream& o, int verbose)
 {
   int i;
 
-  fprintf(o,"PetiteList:\n");
+  o << node0 << indent << "PetiteList:" << endl << incindent;
 
   if (c1_) {
-    fprintf(o,"  is c1\n");
+    o << node0 << indent << "is c1\n" << decindent;
     return;
   }
   
   if (verbose) {
-    fprintf(o,"  natom_ = %d\n",natom_);
-    fprintf(o,"  nshell_ = %d\n",nshell_);
-    fprintf(o,"  ng_ = %d\n",ng_);
-    fprintf(o,"  nirrep_ = %d\n",nirrep_);
-
-    fprintf(o,"\n");
-    fprintf(o,"  atom_map_ = \n");
+    o << node0
+      << indent << "natom_ = " << natom_ << endl
+      << indent << "nshell_ = " << nshell_ << endl
+      << indent << "ng_ = " << ng_ << endl
+      << indent << "nirrep_ = " << nirrep_ << endl << endl
+      << indent << "atom_map_ =" << endl << incindent;
 
     for (i=0; i < natom_; i++) {
-      fprintf(o,"    ");
+      o << node0 << indent;
       for (int g=0; g < ng_; g++)
-        fprintf(o,"%5d ",atom_map_[i][g]);
-      fprintf(o,"\n");
+        o << node0 << scprintf("%5d ",atom_map_[i][g]);
+      o << node0 << endl;
     }
 
-    fprintf(o,"\n");
-    fprintf(o,"  shell_map_ = \n");
+    o << node0 << endl << decindent
+      << indent << "shell_map_ =" << endl << incindent;
     for (i=0; i < nshell_; i++) {
-      fprintf(o,"    ");
+      o << node0 << indent;
       for (int g=0; g < ng_; g++)
-      fprintf(o,"%5d ",shell_map_[i][g]);
-      fprintf(o,"\n");
+        o << node0 << scprintf("%5d ",shell_map_[i][g]);
+      o << node0 << endl;
     }
 
-    fprintf(o,"\n");
-    fprintf(o,"  p1_ = \n");
+    o << node0 << endl << decindent
+      << indent << "p1_ =" << endl << incindent;
     for (i=0; i < nshell_; i++)
-      fprintf(o,"    %5d\n",p1_[i]);
+      o << node0 << indent << scprintf("%5d\n",p1_[i]);
 
-    fprintf(o,"  lamij_ = \n");
+    o << node0 << decindent
+      << indent << "lamij_ =" << endl << incindent;
     for (i=0; i < nshell_; i++) {
-      fprintf(o,"    ");
+      o << node0 << indent;
       for (int j=0; j <= i; j++)
-        fprintf(o,"%5d ",lamij_[i_offset(i)+j]);
-      fprintf(o,"\n");
+        o << node0 << scprintf("%5d ",lamij_[i_offset(i)+j]);
+      o << node0 << endl;
     }
-    fprintf(o,"\n");
+    o << node0 << endl << decindent;
   }
 
   CharacterTable ct = gbs_->molecule()->point_group().char_table();
   for (i=0; i < nirrep_; i++)
-    fprintf(o,"  %5d functions of %s symmetry\n",
-            nbf_in_ir_[i], ct.gamma(i).symbol());
+    o << node0 << indent 
+      << scprintf("%5d functions of %s symmetry\n",
+                  nbf_in_ir_[i], ct.gamma(i).symbol());
 }
 
 // forms the basis function rotation matrix for the g'th symmetry operation
@@ -396,3 +400,9 @@ PetiteList::r(int g)
   }
   return ret;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

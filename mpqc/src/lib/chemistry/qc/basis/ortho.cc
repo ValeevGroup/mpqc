@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 #include <chemistry/qc/basis/basis.h>
@@ -16,7 +17,8 @@ ortho(const RefIntegral& ints, const RefGaussianBasisSet&t,
       dim = orinv.coldim();
     }
   if (dim.n() != n) {
-      fprintf(stderr,"chemistry/qc/integral/ortho:ortho: dim.n() != n\n");
+      cerr << node0 << indent
+           << "chemistry/qc/integral/ortho:ortho: dim.n() != n\n";
       abort();
     }
 
@@ -59,3 +61,9 @@ GaussianBasisSet::ortho(const RefIntegral& ints, const RefSCMatrix& or,
 {
   ::ortho(ints,this,or,orinv);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -142,15 +142,19 @@ main(int, char *argv[])
 
       test_eigvals(gbs,intgrl);
 
-      fflush(stdout);
-      cout.flush();
-
       StateOutText out("btest.out");
       gbs.save_state(out);
       StateInText in("btest.out");
       gbs.restore_state(in);
       gbs->print();
+      intgrl->petite_list()->print();
     }
 
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

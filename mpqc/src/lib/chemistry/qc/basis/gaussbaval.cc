@@ -1,8 +1,8 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 #include <math/topology/point.h>
@@ -45,8 +45,10 @@ GaussianBasisSet::grad_values(const RefIntegral& ints,
 	if (iflag)
 	{
 	    iflag--;
-	    printf("Center %d, (%lf,%lf,%lf)\n",icenter,r_center(center,0),
-		   r_center(center,1),r_center(center,2));
+	    cout << node0 << indent
+                 << scprintf("Center %d, (%lf,%lf,%lf)\n",
+                             icenter,r_center(center,0),
+                             r_center(center,1),r_center(center,2));
 	}
 #endif
 
@@ -75,3 +77,9 @@ GaussianBasisSet::grad_values(const RefIntegral& ints,
 
     return ibasis;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

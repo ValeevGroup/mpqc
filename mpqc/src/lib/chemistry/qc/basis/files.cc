@@ -105,3 +105,9 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
 
   return newkeyval;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -42,5 +42,8 @@ class ShellRotation {
     void print() const;
 };
 
-
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

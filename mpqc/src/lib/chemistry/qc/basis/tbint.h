@@ -204,3 +204,7 @@ class TwoBodyDerivInt : public VRefCount {
 REF_dec(TwoBodyDerivInt);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

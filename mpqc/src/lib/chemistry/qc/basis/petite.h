@@ -6,6 +6,8 @@
 #pragma interface
 #endif
 
+#include <iostream.h>
+
 #include <util/ref/ref.h>
 #include <util/container/array.h>
 #include <math/scmat/blocked.h>
@@ -104,7 +106,7 @@ class PetiteList : public VRefCount {
 
     int nblocks() const { return nblocks_; }
 
-    void print(FILE* =stdout, int verbose=1);
+    void print(ostream& =cout, int verbose=1);
 
     // these return blocked dimensions
     RefSCDimension AO_basisdim();
@@ -161,4 +163,7 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
 REF_dec(PetiteList);
 
 #endif
-    
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

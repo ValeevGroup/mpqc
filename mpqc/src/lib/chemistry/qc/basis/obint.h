@@ -273,3 +273,7 @@ class OneBodyDerivInt : public VRefCount {
 REF_dec(OneBodyDerivInt);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

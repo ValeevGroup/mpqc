@@ -3,10 +3,10 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/basis/cartiter.h>
 
 ////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,8 @@ void
 RedundantCartesianSubIter::start(int a, int b, int c)
 {
   if (l_ != a + b + c) {
-    fprintf(stderr, "RedundantCartesianSubIter::start: bad args\n");
+    cerr << node0 << indent
+         << "RedundantCartesianSubIter::start: bad args\n";
     abort();
   }
 
@@ -120,3 +121,9 @@ RedundantCartesianSubIter::valid()
 
   return t[0] == e_[0] && t[1] == e_[1] && t[2] == e_[2];
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

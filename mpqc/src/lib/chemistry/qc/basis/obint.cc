@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
+#include <util/misc/formio.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
@@ -242,7 +242,8 @@ OneBodyIntOp::~OneBodyIntOp()
 void
 OneBodyIntOp::process(SCMatrixBlockIter& b)
 {
-  fprintf(stderr,"OneBodyIntOp::process: cannot handle generic case\n");
+  cerr << node0 << indent
+       << "OneBodyIntOp::process: cannot handle generic case\n";
   abort();
 }
 
@@ -436,8 +437,9 @@ OneBody3IntOp::process(SCMatrixBlockIter&,
                        SCMatrixBlockIter&,
                        SCMatrixBlockIter&)
 {
-  fprintf(stderr,"OneBody3IntOp::process(SCMatrixBlockIter&):"
-          " cannot handle generic case\n");
+  cerr << node0 << indent
+       << "OneBody3IntOp::process(SCMatrixBlockIter&): "
+       << "cannot handle generic case\n";
   abort();
 }
 
@@ -663,3 +665,9 @@ OneBodyDerivInt::buffer() const
 {
   return buffer_;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -1,4 +1,6 @@
 
+#include <util/misc/formio.h>
+
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
@@ -168,15 +170,15 @@ void
 SO_block::print(const char *title)
 {
   int i,j;
-  printf("SO block %s\n",title);
+  cout << node0 << indent << "SO block " << title << endl;
   for (i=0; i < len; i++) {
-    printf("SO %d\n",i+1);
+    cout << node0 << indent << "SO " << i+1 << endl << indent;
     for (j=0; j < so[i].length; j++)
-      printf(" %10d",so[i].cont[j].bfn);
-    printf("\n");
+      cout << node0 << scprintf(" %10d",so[i].cont[j].bfn);
+    cout << node0 << endl << indent;
     for (j=0; j < so[i].length; j++)
-      printf(" %10.7f",so[i].cont[j].coef);
-    printf("\n");
+      cout << node0 << scprintf(" %10.7f",so[i].cont[j].coef);
+    cout << node0 << endl;
   }
 }
 
@@ -189,10 +191,10 @@ soblock_length(SO_block *sob, int nb)
     for (int i=0; i < sob[b].len; i++) {
       lb += sizeof(contribution)*sob[b].so[i].len;
     }
-    printf("sizeof block %3d = %12d\n",b+1,lb);
+    cout << node0 << indent << scprintf("sizeof block %3d = %12d\n",b+1,lb);
     lt += lb;
   }
-  printf("total size = %12d\n",lt);
+  cout << node0 << indent << scprintf("total size = %12d\n",lt);
   return lt;
 }
 
@@ -226,15 +228,16 @@ struct lin_comb {
 
     void print() const {
       int i;
+      cout << node0 << indent;
       for (i=0; i < ns; i++)
-        printf(" %10d",mapf0+i);
-      printf("\n");
+        cout << node0 << scprintf(" %10d",mapf0+i);
+      cout << node0 << endl;
       
       for (i=0; i < ns; i++) {
-        printf("%2d",f0+i);
+        cout << node0 << indent << scprintf("%2d",f0+i);
         for (int j=0; j < ns; j++)
-          printf(" %10.7f",c[i][j]);
-        printf("\n");
+          cout << node0 << scprintf(" %10.7f",c[i][j]);
+        cout << node0 << endl;
       }
     }
 };
@@ -330,8 +333,9 @@ PetiteList::aotoso_info()
       // for now don't allow symmetry with cartesian functions...I just can't
       // seem to get them working.
       if (cartfunc && ng_ != nirrep_) {
-        fprintf(stderr,"PetiteList::aotoso:  cannot yet handle symmetry for"
-                " angular momentum >= 2\n");
+        cerr << node0 << indent
+             << "PetiteList::aotoso: cannot yet handle symmetry for "
+             << " angular momentum >= 2\n";
         abort();
       }
 
@@ -455,22 +459,25 @@ PetiteList::aotoso_info()
     if (saoelem[i] < nbf_in_ir_[ir]/scal) {
       // if we found too few, there are big problems
       
-      fprintf(stderr,"trouble making SO's for irrep %s\n",
-              ct.gamma(ir).symbol());
-      fprintf(stderr,"  only found %d out of %d SO's\n",
-              saoelem[i], nbf_in_ir_[ir]/scal);
+      cerr << node0 << indent
+           << scprintf("trouble making SO's for irrep %s\n",
+                       ct.gamma(ir).symbol());
+      cerr << node0 << indent
+           << scprintf("  only found %d out of %d SO's\n",
+                       saoelem[i], nbf_in_ir_[ir]/scal);
       SOs[i].print("");
-
       abort();
 
     } else if (saoelem[i] > nbf_in_ir_[ir]/scal) {
       // there are some redundant so's left...need to do something to get
       // the elements we want
       
-      fprintf(stderr,"trouble making SO's for irrep %s\n",
-              ct.gamma(ir).symbol());
-      fprintf(stderr,"  found %d SO's, but there should only be %d\n",
-              saoelem[i], nbf_in_ir_[ir]/scal);
+      cerr << node0 << indent
+           << scprintf("trouble making SO's for irrep %s\n",
+                       ct.gamma(ir).symbol());
+      cerr << node0 << indent
+           << scprintf("  found %d SO's, but there should only be %d\n",
+                       saoelem[i], nbf_in_ir_[ir]/scal);
       SOs[i].print("");
       abort();
     }
@@ -633,7 +640,8 @@ PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
 RefSCMatrix
 PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
 {
-  fprintf(stderr,"PetiteList::evecs_to_SO_basis: don't work yet\n");
+  cerr << node0 << indent
+       << "PetiteList::evecs_to_SO_basis: don't work yet\n";
   abort();
   
   RefSCMatrix aoevecs = BlockedSCMatrix::castdown(aoev.pointer());
@@ -687,9 +695,6 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
     skel->all_blocks(SCMatrixSubblockIter::Read);
   RefSCMatrixSubblockIter symiter;
 
-  //printf("\n sizeof sos:\n");
-  //soblock_length(sos, lsym->nblocks());
-  
   SO_block *SU = new SO_block[lsym->nblocks()];
   
   for (skliter->begin(); skliter->ready(); skliter->next()) {
@@ -753,9 +758,6 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
       }
     }
   }
-
-  //printf("\n sizeof SU:\n");
-  //soblock_length(SU, lsym->nblocks());
 
   // now form Sym = U~ * SU
   for (b=0; b < lsym->nblocks(); b++) {
@@ -900,3 +902,9 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
     }
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

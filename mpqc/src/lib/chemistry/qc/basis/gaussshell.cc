@@ -3,10 +3,10 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 #include <chemistry/qc/basis/gaussshell.h>
@@ -155,13 +155,15 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
 {
   ncon = keyval->count("type");
   if (keyval->error() != KeyVal::OK) {
-      fprintf(stderr,"GaussianShell couldn't find the \"type\" array:\n");
+      cerr << node0 << indent
+           << "GaussianShell couldn't find the \"type\" array:\n";
       keyval->dump(cerr);
       abort();
     }
   nprim = keyval->count("exp");
   if (keyval->error() != KeyVal::OK) {
-      fprintf(stderr,"GaussianShell couldn't find the \"exp\" array:\n");
+      cerr << node0 << indent
+           << "GaussianShell couldn't find the \"exp\" array:\n";
       keyval->dump(cerr);
       abort();
     }
@@ -177,8 +179,9 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
   for (i=0; i<nprim; i++) {
       exp[i] = keyval->doublevalue("exp",i);
       if (keyval->error() != KeyVal::OK) {
-          fprintf(stderr,"GaussianShell: error reading exp:%d: %s\n",
-                  i,keyval->errormsg());
+          cerr << node0 << indent
+               << scprintf("GaussianShell: error reading exp:%d: %s\n",
+                           i,keyval->errormsg());
           keyval->errortrace(cerr);
           exit(1);
         }
@@ -188,8 +191,9 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
       coef[i] = new double[nprim];
       char* am = prefixkeyval->pcharvalue("am");
       if (prefixkeyval->error() != KeyVal::OK) {
-          fprintf(stderr,"GaussianShell: error reading am: \"%s\"\n",
-                  prefixkeyval->errormsg());
+          cerr << node0 << indent
+               << scprintf("GaussianShell: error reading am: \"%s\"\n",
+                           prefixkeyval->errormsg());
           prefixkeyval->errortrace(cerr);
           exit(1);
         }
@@ -198,7 +202,9 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
 	  if (amtypes[li] == am[0] || AMTYPES[li] == am[0]) { l[i] = li; break; }
 	}
       if (l[i] == -1 || strlen(am) != 1) {
-          fprintf(stderr,"GaussianShell: bad angular momentum: \"%s\"\n", am);
+          cerr << node0 << indent
+               << scprintf("GaussianShell: bad angular momentum: \"%s\"\n",
+                           am);
           prefixkeyval->errortrace(cerr);
           exit(1);
 	}
@@ -210,16 +216,18 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
           puream[i] = prefixkeyval->booleanvalue("puream");
           if (prefixkeyval->error() != KeyVal::OK) {
               puream[i] = 0;
-              //fprintf(stderr,"GaussianShell: error reading puream: \"%s\"\n",
-              //        prefixkeyval->errormsg());
+              //cerr << node0 << indent
+              //     << scprintf("GaussianShell: error reading puream: \"%s\"\n",
+              //                 prefixkeyval->errormsg());
               //exit(1);
             }
         }
       for (j=0; j<nprim; j++) {
         coef[i][j] = keyval->doublevalue("coef",i,j);
         if (keyval->error() != KeyVal::OK) {
-            fprintf(stderr,"GaussianShell: error reading coef:%d:%d: %s\n",
-                    i,j,keyval->errormsg());
+            cerr << node0 << indent
+                 << scprintf("GaussianShell: error reading coef:%d:%d: %s\n",
+                             i,j,keyval->errormsg());
             keyval->errortrace(cerr);
             exit(1);
             }
@@ -390,8 +398,9 @@ GaussianShell::relative_overlap(const RefIntegral& ints,
 {
   if (puream[con]) {
       // depends on how intv2 currently normalizes things
-      fprintf(stderr,"GaussianShell::relative_overlap:"
-              " only implemented for Cartesians\n");
+      cerr << node0 << indent
+           << "GaussianShell::relative_overlap "
+           << "only implemented for Cartesians\n";
       abort();
     }
 
@@ -414,30 +423,36 @@ GaussianShell::relative_overlap(const RefIntegral& ints,
   return ret;
 }
 
-void GaussianShell::print(FILE* fp) const
+void
+GaussianShell::print(ostream& os) const
 {
   int i,j;
 
-  fprintf(fp,"GaussianShell:\n");
-  fprintf(fp,"  ncontraction = %d, nprimitive = %d\n",ncon,nprim);
+  os << node0 << indent << "GaussianShell:\n" << incindent
+     << indent << "ncontraction = " << ncon << endl
+     << indent << "nprimitive = " << nprim << endl << indent
+     << "exponents:";
 
-  fprintf(fp,"  exponents:");
-  for (i=0; i<nprim; i++) fprintf(fp," %f",exp[i]);
-  fprintf(fp,"\n");
+  for (i=0; i<nprim; i++)
+      os << node0 << scprintf(" %f",exp[i]);
 
-  fprintf(fp,"  l:");
-  for (i=0; i<ncon; i++) fprintf(fp," %d", l[i]);
-  fprintf(fp,"\n");
+  os << node0 << endl << indent << "l:";
+  for (i=0; i<ncon; i++)
+      os << node0 << scprintf(" %d", l[i]);
 
-  fprintf(fp,"  type:");
-  for (i=0; i<ncon; i++) fprintf(fp," %s", puream[i]?"pure":"cart");
-  fprintf(fp,"\n");
+  os << node0 << endl << indent << "type:";
+  for (i=0; i<ncon; i++)
+      os << node0 << scprintf(" %s", puream[i]?"pure":"cart");
+  os << node0 << endl;
 
   for (i=0; i<ncon; i++) {
-      fprintf(fp,"  coef[%d]:",i);
-      for (j=0; j<nprim; j++) fprintf(fp," %f",coef[i][j]);
-      fprintf(fp,"\n");
+      os << node0 << indent << scprintf("coef[%d]:",i);
+      for (j=0; j<nprim; j++)
+          os << node0 << scprintf(" %f",coef[i][j]);
+      os << node0 << endl;
     }
+
+  os << node0 << decindent;
 }
 
 GaussianShell::~GaussianShell()
@@ -452,3 +467,9 @@ GaussianShell::~GaussianShell()
 
   delete[] coef;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

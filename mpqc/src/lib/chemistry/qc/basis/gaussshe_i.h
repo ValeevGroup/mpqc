@@ -62,3 +62,9 @@ GaussianShell::exponent(int iprim) const
 {
   return exp[iprim];
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

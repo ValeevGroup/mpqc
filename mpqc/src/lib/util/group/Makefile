@@ -15,7 +15,9 @@ OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
 
 CXXSRC := $(REQUIREDCXXSRC)
 ifneq ($(ARCH),SUNMOS)
+ifneq ($(ARCH),PARAGON)
   CXXSRC += messshm.cc memshm.cc
+endif
 endif
 ifeq ($(ARCH),PARAGON)
   CXXSRC += messpgon.cc mempgon.cc memipgon.cc

@@ -112,13 +112,15 @@ DenIntegrator::set_compute_potential_integrals(int i)
 void
 DenIntegrator::init_integration(const RefDenFunctional &func,
                                 const RefSymmSCMatrix& densa,
-                                const RefSymmSCMatrix& densb)
+                                const RefSymmSCMatrix& densb,
+                                double *nuclear_gradient)
 {
   value_ = 0.0;
 
   wfn_->basis()->set_integral(wfn_->integral());
 
-  func->set_compute_potential(compute_potential_integrals_);
+  func->set_compute_potential(
+      compute_potential_integrals_ || nuclear_gradient != 0);
 
   need_gradient_ = func->need_density_gradient();
   need_hessian_ = 0;
@@ -135,8 +137,9 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   delete[] bsh_values_;
   bsg_values_=0;
   bsh_values_=0;
-  if (need_gradient_) bsg_values_ = new double[3*nbasis_];
-  if (need_hessian_)  bsh_values_ = new double[6*nbasis_];
+  if (need_gradient_ || nuclear_gradient) bsg_values_ = new double[3*nbasis_];
+  if (need_hessian_ || (need_gradient_ && nuclear_gradient))
+      bsh_values_ = new double[6*nbasis_];
    
 
   delete[] alpha_dmat_;
@@ -334,15 +337,16 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
 double
 DenIntegrator::do_point(const SCVector3 &r,
                         const RefDenFunctional &func,
-                        double weight)
+                        double weight,
+                        double *nuclear_gradient)
 {
   int i,j,k;
 
   // compute the basis set values
-  if (need_hessian_) {
+  if (need_hessian_ || (need_gradient_ && nuclear_gradient != 0)) {
       wfn_->basis()->hessian_values(r,bsh_values_,bsg_values_,bs_values_);
     }
-  else if (need_gradient_) {
+  else if (need_gradient_ || nuclear_gradient != 0) {
       wfn_->basis()->grad_values(r,bsg_values_,bs_values_);
   }
   else {
@@ -432,6 +436,46 @@ DenIntegrator::do_point(const SCVector3 &r,
                   alpha_vmat_[jk] += dfa_phi_m * bs_values_[k];
                   if (spin_polarized_)
                       beta_vmat_[jk] += dfb_phi_m * bs_values_[k];
+                }
+            }
+        }
+    }
+
+  if (nuclear_gradient != 0) {
+      // the contribution to the potential integrals
+      if (need_gradient_) {
+          cout << "no grad grad" << endl;
+          abort();
+        }
+      else {
+          RefGaussianBasisSet basis = wavefunction()->basis();
+          int jk=0;
+          double drhoa = weight*od.df_drho_a;
+          double drhob = weight*od.df_drho_b;
+          double coef;
+          if (spin_polarized_) coef = 2.0;
+          else coef = 4.0;
+          for (int nu=0; nu < nbasis_; nu++) {
+              double dfa_phi_nu = drhoa * bs_values_[nu];
+              double dfb_phi_nu = drhob * bs_values_[nu];
+              for (int mu=0; mu<nbasis_; mu++) {
+                  int atom3
+                      = 3*basis->shell_to_center(basis->function_to_shell(mu));
+                  int numu = (nu>mu?((nu*(nu+1))/2+mu):((mu*(mu+1))/2+nu));
+                  double rho_a = alpha_dmat_[numu];
+                  for (int ixyz=0; ixyz<3; ixyz++) {
+                      nuclear_gradient[atom3+ixyz]
+                          -= coef * rho_a * dfa_phi_nu
+                          * bsg_values_[mu*3+ixyz];
+                    }
+                  if (spin_polarized_) {
+                      double rho_b = beta_dmat_[numu];
+                      for (int ixyz=0; ixyz<3; ixyz++) {
+                          nuclear_gradient[atom3+ixyz]
+                              -= coef * rho_b * dfb_phi_nu
+                              * bsg_values_[mu*3+ixyz];
+                        }
+                    }
                 }
             }
         }
@@ -595,9 +639,10 @@ Murray93Integrator::save_data_state(StateOut& s)
 void
 Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                               const RefSymmSCMatrix& densa,
-                              const RefSymmSCMatrix& densb)
+                              const RefSymmSCMatrix& densb,
+                              double *nuclear_gradient)
 {
-  init_integration(denfunc, densa, densb);
+  init_integration(denfunc, densa, densb, nuclear_gradient);
 
   RefMolecule mol = wavefunction()->molecule();
 
@@ -742,7 +787,8 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                                     * theta_quad_weights[itheta]/nr[icenter]
                                     * 2.0 * M_PI / ((double)nphi);
 
-                  if (do_point(integration_point, denfunc, multiplier)
+                  if (do_point(integration_point, denfunc, multiplier,
+                               nuclear_gradient)
                       * int_volume < 1e2*DBL_EPSILON
                       && int_volume > 1e2*DBL_EPSILON) {
                       r_done=1;

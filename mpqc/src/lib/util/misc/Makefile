@@ -37,7 +37,7 @@ BIN_OR_LIB = LIB
 
 CSRC = ieee.c checkalloc.c mtype.c
 
-CXXSRC = compute.cc error.cc formio.cc bug.cc regtime.cc
+CXXSRC = compute.cc formio.cc bug.cc regtime.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc
 

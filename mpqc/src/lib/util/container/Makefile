@@ -40,7 +40,7 @@ GENCXXSRC = pixvpMap.cc pixvp$(MAPIMPL)Map.cc \
             pixintMap.cc pixint$(MAPIMPL)Map.cc \
             intpixMap.cc intpix$(MAPIMPL)Map.cc
 
-REALCXXSRC = array.cc set.cc voidptr.cc gnuavlse.cc avl.cc
+REALCXXSRC = array.cc set.cc voidptr.cc gnuavlse.cc avl.cc error.cc
 
 GENSRC = $(GENCXXSRC)
 

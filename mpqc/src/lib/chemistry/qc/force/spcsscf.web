@@ -52,7 +52,7 @@ provided by law, up to and including nothing.
 @ The macro GradientFormat is a string giving the format in which all
 gradients will be printed out.
 
-@d GradientFormat = "  %3d  % 14.10f % 14.10f % 14.10f\n"
+@d GradientFormat "  %3d  % 14.10f % 14.10f % 14.10f\n"
 
 @ Include files for the C library.
 @<Include files.@>=

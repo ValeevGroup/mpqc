@@ -1,7 +1,10 @@
 %
 % $Log$
-% Revision 1.1  1993/12/29 12:52:59  etseidl
-% Initial revision
+% Revision 1.2  1994/02/23 02:14:34  cljanss
+% Changed from spiderweb to cweb format.
+%
+% Revision 1.1.1.1  1993/12/29  12:53:00  etseidl
+% SC source tree 0.1
 %
 % Revision 1.9  1993/04/28  00:17:42  jannsen
 % added the sparse option
@@ -176,12 +179,12 @@ static char rcsid[]="$Id$";
 @ The macro GradientFormat is a string giving the format in which all
 gradients will be printed out.
 
-@d GradientFormat = "  %3d  % 14.10f % 14.10f % 14.10f\n"
+@d GradientFormat "  %3d  % 14.10f % 14.10f % 14.10f\n"
 
 @ The macro IOFF(i,j) computes the location of point m(i,j) in the
 array holding the lower triangle of matrix m.
 
-@d IOFF(i,j) = ((i)>(j))?(((i)*((i)+1))>>1)+(j):(((j)*((j)+1))>>1)+(i)
+@d IOFF(i,j) ((i)>(j))?(((i)*((i)+1))>>1)+(j):(((j)*((j)+1))>>1)+(i)
 
 @ Include files for the C library.
 @<Include files.@>=

@@ -30,6 +30,7 @@ class Set ## Type							      \
   Set ## Type & operator += (const Set ## Type&s);			      \
   Pix seek( Type &item);						      \
   int contains( Type &item);						      \
+  void del( Type &item);						      \
   int owns(Pix i);							      \
   Pix first();								      \
   void next(Pix&i);							      \
@@ -87,6 +88,20 @@ Pix Set ## Type :: add( Type & e)					      \
   element[nelement] = e;						      \
   nelement++;								      \
   return index_to_pix(nelement-1);					      \
+}									      \
+void Set ## Type :: del( Type & e)					      \
+{									      \
+  int i;								      \
+  for (i=0; i<nelement; i++) {						      \
+      if (e == element[i]) {						      \
+          nelement--;							      \
+          for (int j=i; j<nelement; j++) {				      \
+              element[j] = element[j+1];				      \
+            }								      \
+          element[j] = 0;						      \
+          break;							      \
+        }								      \
+    }									      \
 }									      \
 Type & Set ## Type :: operator()(Pix i) const				      \
 {									      \

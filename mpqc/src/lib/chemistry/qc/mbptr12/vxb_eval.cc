@@ -182,8 +182,19 @@ void R12IntEval::compute(RefSCMatrix& Vaa,
   emp2pair_ab_.assign(0.0);
 
   eval_sbs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
-  if (r12info_->basis() != r12info_->basis_aux())
+
+  if (r12info_->basis() != r12info_->basis_aux()) {
+    if (me == 0 && debug_ > 1) {
+      Vaa_.print("Alpha-alpha SBS V matrix");
+      Baa_.print("Alpha-alpha SBS B matrix");
+      Xaa_.print("Alpha-alpha SBS X matrix");
+      Vab_.print("Alpha-beta SBS V matrix");
+      Bab_.print("Alpha-beta SBS B matrix");
+      Xab_.print("Alpha-beta SBS X matrix");
+    }
+
     eval_abs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_);
+  }
 
   if (me == 0 && debug_) {
     Vaa_.print("Alpha-alpha V matrix");

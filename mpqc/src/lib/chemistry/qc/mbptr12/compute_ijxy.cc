@@ -388,8 +388,8 @@ TwoBodyMOIntsTransform_ijxy::compute()
     // Begin fourth quarter transformation;
     // generate (ix|jy) stored as ijxy
 
-    double* ijxy_ints = new double[rank2*rank4];
-    const size_t xy_size = rank2*rank4*sizeof(double);
+    double* ijxy_ints = new double[rank3*rank4];
+    const size_t xy_size = rank3*rank4*sizeof(double);
     for(int te_type=0; te_type<num_te_types_; te_type++) {
 
       for (int i = 0; i<ni; i++) {

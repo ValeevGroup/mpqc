@@ -62,7 +62,7 @@ using namespace std;
 // UnrestrictedSCF
 
 static ClassDesc UnrestrictedSCF_cd(
-  typeid(UnrestrictedSCF),"UnrestrictedSCF",1,"public SCF",
+  typeid(UnrestrictedSCF),"UnrestrictedSCF",2,"public SCF",
   0, 0, 0);
 
 UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
@@ -102,6 +102,17 @@ UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
   s.get(nirrep_);
   s.get(nalpha_);
   s.get(nbeta_);
+
+  if (s.version(::class_desc<UnrestrictedSCF>()) >= 2) {
+    s.get(initial_nalpha_);
+    s.get(initial_nbeta_);
+    most_recent_pg_ << SavableState::restore_state(s);
+  } else {
+    initial_nalpha_ = new int[nirrep_];
+    memcpy(initial_nalpha_, nalpha_, sizeof(int)*nirrep_);
+    initial_nbeta_ = new int[nirrep_];
+    memcpy(initial_nbeta_, nbeta_, sizeof(int)*nirrep_);
+  }
 
   init_mem(4);
 }
@@ -186,6 +197,10 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
       tnalpha_ += nalpha_[i];
       tnbeta_ += nbeta_[i];
     }
+    initial_nalpha_ = new int[nirrep_];
+    memcpy(initial_nalpha_, nalpha_, sizeof(int)*nirrep_);
+    initial_nbeta_ = new int[nirrep_];
+    memcpy(initial_nbeta_, nbeta_, sizeof(int)*nirrep_);
   }
   else if (nalpha_ && !nbeta_ || !nalpha_ && nbeta_) {
     ExEnv::out() << "ERROR: USCF: only one of alpha and beta specified: "
@@ -193,6 +208,8 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
     abort();
   }
   else {
+    initial_nalpha_=0;
+    initial_nbeta_=0;
     nalpha_=0;
     nbeta_=0;
     user_occupations_=0;
@@ -230,6 +247,8 @@ UnrestrictedSCF::~UnrestrictedSCF()
     delete[] nbeta_;
     nbeta_=0;
   }
+  delete[] initial_nalpha_;
+  delete[] initial_nbeta_;
 }
 
 void
@@ -251,6 +270,10 @@ UnrestrictedSCF::save_data_state(StateOut& s)
   s.put(nirrep_);
   s.put(nalpha_, nirrep_);
   s.put(nbeta_, nirrep_);
+
+  s.put(initial_nalpha_,initial_pg_->char_table().ncomp());
+  s.put(initial_nbeta_,initial_pg_->char_table().ncomp());
+  SavableState::save_state(most_recent_pg_.pointer(),s);
 }
 
 double
@@ -462,17 +485,30 @@ void
 UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
                                  const RefDiagSCMatrix& evb)
 {
-  if (user_occupations_)
-    return;
+  if (user_occupations_ || (initial_nalpha_ && eva.null())) {
+    if (form_occupations(nalpha_, initial_nalpha_)) {
+      form_occupations(nbeta_, initial_nbeta_);
+      most_recent_pg_ = new PointGroup(molecule()->point_group());
+      return;
+    }
+    ExEnv::out() << node0 << indent
+         << "UnrestrictedSCF: WARNING: reforming occupation vector from scratch" << endl;
+  }
   
   if (nirrep_==1) {
-    if (!nalpha_) {
-      nalpha_=new int[1];
-      nalpha_[0] = tnalpha_;
+    delete[] nalpha_;
+    nalpha_=new int[1];
+    nalpha_[0] = tnalpha_;
+    delete[] nbeta_;
+    nbeta_=new int[1];
+    nbeta_[0] = tnbeta_;
+    if (!initial_nalpha_ && initial_pg_->equiv(molecule()->point_group())) {
+      initial_nalpha_=new int[1];
+      initial_nalpha_[0] = tnalpha_;
     }
-    if (!nbeta_) {
-      nbeta_=new int[1];
-      nbeta_[0] = tnbeta_;
+    if (!initial_nbeta_ && initial_pg_->equiv(molecule()->point_group())) {
+      initial_nbeta_=new int[1];
+      initial_nbeta_[0] = tnbeta_;
     }
     return;
   }
@@ -602,6 +638,19 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     delete[] newalpha;
     delete[] newbeta;
   }
+
+  if (initial_pg_->equiv(molecule()->point_group())) {
+    delete[] initial_nalpha_;
+    initial_nalpha_ = new int[nirrep_];
+    memcpy(initial_nalpha_,nalpha_,sizeof(int)*nirrep_);
+  }
+
+  if (initial_pg_->equiv(molecule()->point_group())) {
+    delete[] initial_nbeta_;
+    initial_nbeta_ = new int[nirrep_];
+    memcpy(initial_nbeta_,nbeta_,sizeof(int)*nirrep_);
+  }
+
   most_recent_pg_ = new PointGroup(molecule()->point_group());
 }
 

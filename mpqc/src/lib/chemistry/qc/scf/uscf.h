@@ -46,6 +46,8 @@ class UnrestrictedSCF: public SCF {
     int nirrep_;
     int *nalpha_;
     int *nbeta_;
+    int *initial_nalpha_;
+    int *initial_nbeta_;
 
     AccResultRefSCMatrix oso_eigenvectors_beta_;
     AccResultRefDiagSCMatrix eigenvalues_beta_;

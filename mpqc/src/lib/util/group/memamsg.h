@@ -136,6 +136,8 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     void release_write(void *data, distsize_t offset, int size);
 
     void sum_reduction(double *data, distsize_t doffset, int dsize);
+    void sum_reduction_on_node(double *data, int doffset, int dsize,
+                               int node = -1);
 
     void print(ostream &o = cout) const;
 };

@@ -429,6 +429,25 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 }
 
 void
+ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, int doffset,
+                                          int dlength, int node)
+{
+  if (node == -1) node = me();
+
+  if (node == me()) {
+      double *localdata = (double*) &data_[sizeof(double)*doffset];
+      long oldlock = lockcomm();
+      for (int j=0; j<dlength; j++) {
+          *localdata++ += *data++;
+        }
+      unlockcomm(oldlock);
+    }
+  else {
+      sum_data(data, node, sizeof(double)*doffset, sizeof(double)*dlength);
+    }
+}
+
+void
 ActiveMsgMemoryGrp::release_read(void *data, distsize_t offset, int size)
 {
   if (use_locks_) {

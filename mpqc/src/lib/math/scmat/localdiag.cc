@@ -1,7 +1,4 @@
 
-#include <iostream.h>
-#include <iomanip.h>
-
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -182,22 +179,20 @@ LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
 
   lwidth = prec + 5 + (int) max;
 
-  os.setf(ios::fixed,ios::floatfield); os.precision(prec);
-  os.setf(ios::right,ios::adjustfield);
-
   if (title)
-    os << endl << indent << title << endl;
+    os << node0 << endl << indent << title << endl;
   else
-    os << endl;
+    os << node0 << endl;
 
   if (n()==0) {
-    os << indent << "empty matrix\n";
+    os << node0 << indent << "empty matrix\n";
     return;
   }
 
   for (i=0; i<n(); i++)
-    os << indent << setw(5) << i+1 << setw(lwidth) << block->data[i] << endl;
-  os << endl;
+    os << node0 << indent
+       << scprintf("%5d %*.*f\n",i+1,lwidth,prec,block->data[i]);
+  os << node0 << endl;
 
   os.flush();
 }

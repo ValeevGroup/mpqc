@@ -1,7 +1,4 @@
 
-#include <iostream.h>
-#include <iomanip.h>
-
 #include <math.h>
 
 #include <util/misc/formio.h>
@@ -628,16 +625,13 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
   lwidth = prec + 5 + (int) max;
   width = 75/(lwidth+SCFormIO::getindent(os));
 
-  os.setf(ios::fixed,ios::floatfield); os.precision(prec);
-  os.setf(ios::right,ios::adjustfield);
-
   if (title)
-    os << endl << indent << title << endl;
+    os << node0 << endl << indent << title << endl;
   else
-    os << endl;
+    os << node0 << endl;
 
   if (n()==0) {
-    os << indent << "empty matrix\n";
+    os << node0 << indent << "empty matrix\n";
     return;
   }
 
@@ -647,19 +641,19 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
     nn = (n() > kk) ? kk : n();
 
     // print column indices
-    os << indent;
+    os << node0 << indent;
     for (i=ii; i <= nn; i++)
-      os << setw(lwidth) << i;
-    os << endl;
+      os << node0 << scprintf("%*d",lwidth,i);
+    os << node0 << endl;
 
     // print the rows
     for (i=ii-1; i < n() ; i++) {
-      os << indent << setw(5) << i+1;
+      os << node0 << indent << scprintf("%5d",i+1);
       for (j=ii-1; j<nn && j<=i; j++)
-        os << setw(lwidth) << rows[i][j];
-      os << endl;
+        os << node0 << scprintf("%*.*f",lwidth,prec,rows[i][j]);
+      os << node0 << endl;
     }
-    os << endl;
+    os << node0 << endl;
 
     if (n() <= kk) {
       os.flush();

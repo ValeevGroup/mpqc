@@ -150,6 +150,8 @@ MPIMessageGrp::init(int argc,char **argv)
   MPI_Buffer_attach(buf,bufsize);
   initialize(me, nproc);
 
+  //MPIL_Trace_on();
+
   if (debug_) {
       cerr << me << ": MPIMessageGrp::init: done" << endl;
     }
@@ -157,6 +159,7 @@ MPIMessageGrp::init(int argc,char **argv)
 
 MPIMessageGrp::~MPIMessageGrp()
 {
+  //MPIL_Trace_off();
   MPI_Buffer_detach(&buf, &bufsize);
   delete[] (char*) buf;
   MPI_Finalize();

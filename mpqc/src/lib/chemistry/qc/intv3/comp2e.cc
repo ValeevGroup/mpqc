@@ -203,13 +203,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   tim_enter("setup");
 #endif
 
-#if 0
-  cout << scprintf("on entry: (%d,%d,%d,%d) am=(%d,%d,%d,%d) perm = %d\n",
-                   *psh1, *psh2, *psh3, *psh4,
-                   am1,am2,am3,am4,
-                   !(INT_NOPERM&flags));
-#endif
-
   /* Convert the integral to the most efficient form. */
   p12 = 0;
   p34 = 0;
@@ -291,11 +284,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     eAB = 0;
     }
 
-#if 0
-  cout << scprintf("perm info: p12 = %d, p34 = %d, p13p24 = %d, eAB = %d\n",
-                   p12,p34,p13p24,eAB);
-#endif
-
   /* If the centers were permuted, then the int_expweighted variable may
    * need to be changed. */
   if (p12) {
@@ -336,9 +324,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     }
 
   /* Buildam up on center 1 and 3. */
-#if 0
-  cout << scprintf("C:");
-#endif
 #ifdef EREP_TIMING
   tim_change("build");
 #endif
@@ -515,9 +500,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       }
     ogc1 += tsize1;
     }
-#if 0
-  cout << scprintf("\n");
-#endif
 
   if (   !int_unit2
       && !int_unit4
@@ -534,10 +516,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
 #ifdef EREP_TIMING
   tim_change("post");
-#endif
-
-#if 0
-  cout << scprintf("before unpermute: am=(%d,%d,%d,%d)\n",am1,am2,am3,am4);
 #endif
 
   /* Unpermute all of the permuted quantities. */
@@ -608,10 +586,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 #ifdef EREP_TIMING
   tim_exit("post");
   tim_exit(section);
-#endif
-
-#if 0
-  cout << scprintf("on exit: am=(%d,%d,%d,%d)\n",am1,am2,am3,am4);
 #endif
   }
 
@@ -1768,7 +1742,6 @@ Int2eV3::erep_all1der(int *shells, int  *sizes,
     }
   }
 
-
 void
 Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
 {
@@ -1967,7 +1940,7 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
        ];
       }
     index++;
-    END_ALLDERLOOPS(+)
+    END_ALLDERLOOPS(-)
 
    /* The d/dy integrals */
   ALLDERLOOPS
@@ -1980,7 +1953,7 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
         ];
       }
     index++;
-  END_ALLDERLOOPS(+)
+  END_ALLDERLOOPS(-)
 
    /* The d/dz integrals */
   ALLDERLOOPS
@@ -1993,11 +1966,7 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
         ];
       }
     index++;
-  END_ALLDERLOOPS(+)
-
-#if 0
-  cout << scprintf("after -DCT1 buffer[5] is %12.8f\n",buffer[5]);
-#endif
+  END_ALLDERLOOPS(-)
 
   /* Compute the next contribution to the integrals. */
   /* Tell the build routine that we need an exponent weighted contraction
@@ -2053,10 +2022,6 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
               ];
           index++;
     END_ALLDERLOOPS(+)
-
-#if 0
-  cout << scprintf("after +DCT1 buffer[5] is %12.8f\n",buffer[5]);
-#endif
 
   /* END_DERLOOP must be redefined here because it previously depended
    * on the DCT1 macro */
@@ -2131,10 +2096,6 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
        }
     index++;
     END_ALLDERLOOPS(+)
-
-#if 0
-  cout << scprintf("after +DCT2 buffer[5] is %12.8f\n",buffer[5]);
-#endif
   }
 
 /////////////////////////////////////////////////////////////////////////////

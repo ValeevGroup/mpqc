@@ -164,6 +164,7 @@ BatchElectronDensity::BatchElectronDensity(const Ref<BatchElectronDensity>&d,
       dmat_bound_ = d->dmat_bound_;
       linear_scaling_ = d->linear_scaling_;
       use_dmat_bound_ = d->use_dmat_bound_;
+      valdat_ = d->valdat_;
 
       init_scratch_data();
     }
@@ -193,12 +194,14 @@ BatchElectronDensity::zero_pointers()
 void
 BatchElectronDensity::clear()
 {
-  delete valdat_;
-  delete extent_;
+  if (!using_shared_data_) {
+      delete extent_;
+      delete[] alpha_dmat_;
+      delete[] beta_dmat_;
+      delete[] dmat_bound_;
+      delete valdat_;
+    }
 
-  delete[] alpha_dmat_;
-  delete[] beta_dmat_;
-  delete[] dmat_bound_;
   delete[] contrib_;
   delete[] contrib_bf_;
   delete[] bs_values_;
@@ -249,15 +252,22 @@ BatchElectronDensity::init_common_data(bool initialize_density_matrices)
       set_densities(wfn_->alpha_ao_density(),
                     (spin_polarized_?wfn_->beta_ao_density():0));
     }
+
+  valdat_ = new GaussianBasisSet::ValueData(basis_, wfn_->integral());
 }
 
 void
 BatchElectronDensity::set_densities(const RefSymmSCMatrix &aden,
                                     const RefSymmSCMatrix &bden)
 {
+  RefSymmSCMatrix ad = aden;
+  RefSymmSCMatrix bd = bden;
+  if (ad.null()) ad = wfn_->alpha_ao_density();
+  if (bd.null()) bd = wfn_->beta_ao_density();
 
-  aden->convert(alpha_dmat_);
-  if (spin_polarized_) bden->convert(beta_dmat_);
+  ad->convert(alpha_dmat_);
+  if (spin_polarized_) bd->convert(beta_dmat_);
+
   int ij = 0;
   for (int i=0; i<nshell_; i++) {
       int ni = wfn_->basis()->shell(i).nfunction();
@@ -292,8 +302,6 @@ BatchElectronDensity::init_scratch_data()
   bs_values_ = new double[nbasis_];
   bsg_values_ = new double[3*nbasis_];
   bsh_values_ = new double[6*nbasis_];
-
-  valdat_ = new GaussianBasisSet::ValueData(basis_, wfn_->integral());
 }
 
 void
@@ -477,6 +485,8 @@ BatchElectronDensity::compute_density(const SCVector3 &r,
                                       double *bgrad,
                                       double *bhess)
 {
+  if (alpha_dmat_ == 0) init();
+
   need_gradient_ = (agrad!=0) || (bgrad!=0);
   need_hessian_ = (ahess!=0) || (bhess!=0);
 
@@ -520,12 +530,8 @@ BatchElectronDensity::compute_density(const SCVector3 &r,
 void
 BatchElectronDensity::compute()
 {
-  if (alpha_dmat_ == 0) init();
-
   SCVector3 r;
   get_x(r);
-
-  compute_basis_values(r);
 
   double val;
   double grad[3];
@@ -570,10 +576,33 @@ BatchElectronDensity::boundingbox(double valuemin,
                              double valuemax,
                              SCVector3& p1, SCVector3& p2)
 {
-  if (alpha_dmat_ == 0) init();
+#if 0
   // this is a very conservative bounding box
+  // also, this code is not correct since extent is not
+  // necessarily initialized
+  if (alpha_dmat_ == 0) init();
   for (int i=0; i<3; i++) p1[i] = extent_->lower(i);
   for (int i=0; i<3; i++) p2[i] = extent_->upper(i);
+#else
+  Molecule& mol = *wfn_->molecule();
+
+  if (mol.natom() == 0) {
+      for (int i=0; i<3; i++) p1[i] = p2[i] = 0.0;
+    }
+
+  int i;
+  for (i=0; i<3; i++) p1[i] = p2[i] = mol.r(0,i);
+  for (i=1; i<mol.natom(); i++) {
+      for (int j=0; j<3; j++) {
+          if (mol.r(i,j) < p1[j]) p1[j] = mol.r(i,j);
+          if (mol.r(i,j) > p2[j]) p2[j] = mol.r(i,j);
+        }
+    }
+  for (i=0; i<3; i++) {
+      p1[i] = p1[i] - 3.0;
+      p2[i] = p2[i] + 3.0;
+    }
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////

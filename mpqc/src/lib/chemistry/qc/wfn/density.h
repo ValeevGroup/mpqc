@@ -116,7 +116,11 @@ class BatchElectronDensity: public Volume {
         and shell extent, are referenced rather than copied.  In this case,
         the original object that allocated this items must be valid while
         copied objects are used to compute densities.  Also d must have
-        already been intialized. */
+        already been intialized and the resulting copy is already initialized
+        (and cannot be reinitialized).
+
+        If reference_parent_data is false, then init must be called on this
+        object before it is used.  */
     BatchElectronDensity(const Ref<BatchElectronDensity>& d,
                          bool reference_parent_data=false);
     ~BatchElectronDensity();

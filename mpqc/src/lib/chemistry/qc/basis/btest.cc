@@ -86,6 +86,13 @@ main(int, char *argv[])
       
         //us = us-s;
         //us.print("us - s");
+      } else {
+        SymmGaussianBasisSet *sgbs = new SymmGaussianBasisSet(*gbs.pointer());
+
+        CharacterTable ct = gbs->molecule()->point_group().char_table();
+        PetiteList& pl = sgbs->petite_list();
+
+        pl.print(stdout,0);
       }
       
       //gbs->print();

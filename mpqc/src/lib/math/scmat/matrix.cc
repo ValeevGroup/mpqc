@@ -5,7 +5,7 @@
 
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
-#include <math/scmat/abstract.h>
+#include <math/scmat/matrix.h>
 
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp member functions
@@ -201,33 +201,33 @@ SavableState_named_REF_def(RefSSDiagSCMatrix,DiagSCMatrix);
 RefSCDimension::RefSCDimension() {}
              
 RefSCDimension::RefSCDimension (const RefSCDimension & o):
-  RefSSSCDimension (o) {}
+  SSRefSCDimension (o) {}
              
-RefSCDimension::RefSCDimension (SCDimension * o): RefSSSCDimension (o) {}
+RefSCDimension::RefSCDimension (SCDimension * o): SSRefSCDimension (o) {}
              
 RefSCDimension::RefSCDimension (const RefDescribedClassBase&o):
-  RefSSSCDimension (o) {}
+  SSRefSCDimension (o) {}
 
 RefSCDimension::~RefSCDimension () {}
 
 RefSCDimension&
 RefSCDimension::operator=(SCDimension* cr)
 {
-  RefSSSCDimension::operator=(cr);
+  SSRefSCDimension::operator=(cr);
   return *this;
 }
 
 RefSCDimension&
 RefSCDimension::operator=(const RefDescribedClassBase & c)
 {
-  RefSSSCDimension::operator=(c);
+  SSRefSCDimension::operator=(c);
   return *this;
 }
 
 RefSCDimension&
 RefSCDimension::operator=(const RefSCDimension & c)
 {
-  RefSSSCDimension::operator=(c);
+  SSRefSCDimension::operator=(c);
   return *this;
 }
 

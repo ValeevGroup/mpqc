@@ -4,7 +4,7 @@
 #endif
 
 #include <math.h>
-#include <math/scmat/abstract.h>
+#include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 
 /////////////////////////////////////////////////////////////////////////

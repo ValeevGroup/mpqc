@@ -6,7 +6,30 @@
 #pragma interface
 #endif
 
-#include <math/scmat/matrix.h>
+#include <util/state/state.h>
+#include <iostream.h>
+
+class SCMatrix;
+class SymmSCMatrix;
+class DiagSCMatrix;
+class SCVector;
+
+class SSRefSCElementOp;
+typedef class SSRefSCElementOp RefSCElementOp;
+
+class SSRefSCRectElementOp;
+typedef class SSRefSCRectElementOp RefSCRectElementOp;
+
+class SSRefSCSymmElementOp;
+typedef class SSRefSCSymmElementOp RefSCSymmElementOp;
+
+class SSRefSCDiagElementOp;
+typedef class SSRefSCDiagElementOp RefSCDiagElementOp;
+
+class SSRefSCVectorElementOp;
+typedef class SSRefSCVectorElementOp RefSCVectorElementOp;
+
+class RefSCDimension;
 
 class SCDimension: virtual public SavableState {
 #   define CLASSNAME SCDimension
@@ -57,7 +80,6 @@ class SCVector: virtual public SavableState {
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
-class RefSCElementOp;
 class SCMatrix: virtual public SavableState {
 #   define CLASSNAME SCMatrix
 #   include <util/state/stated.h>

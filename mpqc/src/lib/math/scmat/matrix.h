@@ -10,17 +10,13 @@
 #include <util/container/set.h>
 #include <util/state/state.h>
 
-class SCDimension;
-class SCVector;
-class SCMatrix;
-class SymmSCMatrix;
-class DiagSCMatrix;
-class RefDiagSCMatrix;
+#include <math/scmat/abstract.h>
+
 class SCVectordouble;
 class SCMatrixdouble;
 class SymmSCMatrixdouble;
 class DiagSCMatrixdouble;
-class RefSCElementOp;
+
 class SCMatrixBlockIter;
 class SCMatrixRectBlock;
 class SCMatrixLTriBlock;
@@ -47,7 +43,8 @@ class SCElementOp: virtual public SavableState {
     virtual void process(SCMatrixDiagBlock*);
     virtual void process(SCVectorSimpleBlock*);
 };
-SavableState_REF_dec(SCElementOp);
+DCRef_declare(SCElementOp);
+SSRef_declare(SCElementOp);
 
 class SCRectElementOp: virtual public SCElementOp {
 #   define CLASSNAME SCRectElementOp
@@ -57,7 +54,8 @@ class SCRectElementOp: virtual public SCElementOp {
     SCRectElementOp();
     ~SCRectElementOp();
 };
-SavableState_REF_dec(SCRectElementOp);
+DCRef_declare(SCRectElementOp);
+SSRef_declare(SCRectElementOp);
 
 class SCDiagElementOp: virtual public SCElementOp {
 #   define CLASSNAME SCDiagElementOp
@@ -67,7 +65,8 @@ class SCDiagElementOp: virtual public SCElementOp {
     SCDiagElementOp();
     ~SCDiagElementOp();
 };
-SavableState_REF_dec(SCDiagElementOp);
+DCRef_declare(SCDiagElementOp);
+SSRef_declare(SCDiagElementOp);
 
 class SCSymmElementOp: virtual public SCElementOp {
 #   define CLASSNAME SCSymmElementOp
@@ -77,7 +76,8 @@ class SCSymmElementOp: virtual public SCElementOp {
     SCSymmElementOp();
     ~SCSymmElementOp();
 };
-SavableState_REF_dec(SCSymmElementOp);
+DCRef_declare(SCSymmElementOp);
+SSRef_declare(SCSymmElementOp);
 
 class SCVectorElementOp: virtual public SCElementOp {
 #   define CLASSNAME SCVectorElementOp
@@ -87,7 +87,8 @@ class SCVectorElementOp: virtual public SCElementOp {
     SCVectorElementOp();
     ~SCVectorElementOp();
 };
-SavableState_REF_dec(SCVectorElementOp);
+DCRef_declare(SCVectorElementOp);
+SSRef_declare(SCVectorElementOp);
 
 class SCElementScale: virtual public SCDiagElementOp,
                       virtual public SCSymmElementOp,
@@ -199,8 +200,9 @@ class SCElementMaxAbs: virtual public SCDiagElementOp,
 };
 SavableState_REF_dec(SCElementMaxAbs);
 
-SavableState_named_REF_dec(RefSSSCDimension,SCDimension);
-class RefSCDimension: public RefSSSCDimension {
+DCRef_declare(SCDimension);
+SSRef_declare(SCDimension);
+class RefSCDimension: public SSRefSCDimension {
     // standard overrides
   public:
     RefSCDimension();

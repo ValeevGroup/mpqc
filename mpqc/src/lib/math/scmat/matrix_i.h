@@ -5,7 +5,7 @@
 #pragma interface
 #endif
 
-#include <math/scmat/abstract.h>
+#include <math/scmat/matrix.h>
 
 // These are the inline candidates for the members defined in matrix.h.
 

@@ -1,0 +1,56 @@
+
+/**@name The scpr Program
+
+\begin{center}
+{\bf License}
+\end{center}
+
+scpr is open-source software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your option)
+any later version.
+
+\begin{center}
+{\bf Warranty}
+\end{center}
+
+scpr is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+  @memo This program prints objects contained in files created by \Ref{The State Library}.
+
+*/
+
+//@{
+
+/**@name Compiling scpr
+ scpr is distributed with the SC Toolkit.  scpr will automatically
+be compiled when SC is compiled.  See the \Ref{Compiling}
+for more information.
+*/
+
+/**@name Running scpr
+
+scpr takes the following command line options followed by a list of files.
+
+\begin{description}
+
+\item[{\tt -o <val>}] Print the object with the name val.  Object names
+           take the form "<classname>:<ordinal_number>".  At least one file
+           and object name must be given.
+\item[{\tt -memorygrp <val>}] Which memory group to use.
+\item[{\tt -threadgrp <val>}] Which thread group to use.
+\item[{\tt -messagegrp <val>}] Which message group to use.
+\item[{\tt -W <val>}] Set the working directory.
+\item[{\tt -d}] Turn on debugging.
+\item[{\tt -v}] Print the version.
+\item[{\tt -w}] Print the warranty.
+\item[{\tt -L}] Print the license.
+\item[{\tt -h}] Print this help.
+\end{description}
+
+*/
+
+//@}

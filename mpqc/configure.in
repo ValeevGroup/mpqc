@@ -84,7 +84,7 @@ case $enableval in
   ;;
 esac
 ],[
-    THREADS=no
+    THREADS=yes
 ]
 )
 

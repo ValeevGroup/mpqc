@@ -1,5 +1,5 @@
 
-/**@name The Massively Parallel Quantum Chemistry Program (MPQC)
+/**@name The MPQC Program
 
 The Massively Parallel Quantum Chemistry program (MPQC) computes
 the properties of molecules, {\it ab initio}, on a wide variety
@@ -43,14 +43,16 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 
+   @memo The Massively Parallel Quantum Chemistry Program.
+
 */
 
 //@{
 
 /**@name Compiling MPQC
  MPQC is distributed with the SC Toolkit.  MPQC will automatically
-be compiled when SC is compiled.  See the compilation instructions
-for SC for more information.
+be compiled when SC is compiled.  See the \Ref{Compiling}
+for more information.
 */
 
 /**@name Running MPQC

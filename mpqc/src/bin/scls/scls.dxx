@@ -1,0 +1,53 @@
+
+/**@name The scls Program
+
+\begin{center}
+{\bf License}
+\end{center}
+
+scls is open-source software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your option)
+any later version.
+
+\begin{center}
+{\bf Warranty}
+\end{center}
+
+scls is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+   @memo This program lists the contents of files created by \Ref{The State Library}.
+
+*/
+
+//@{
+
+/**@name Compiling scls
+ scls is distributed with the SC Toolkit.  scls will automatically
+be compiled when SC is compiled.  See the \Ref{Compiling}
+for more information.
+*/
+
+/**@name Running scls
+
+scls takes the following command line options followed by a list of files.
+
+\begin{description}
+\item[{\tt -memorygrp <val>}] Which memory group to use.
+\item[{\tt -threadgrp <val>}] Which thread group to use.
+\item[{\tt -messagegrp <val>}] Which message group to use.
+\item[{\tt -W <val>}] Set the working directory.
+\item[{\tt -d}] Turn on debugging.
+\item[{\tt -v}] Print the version.
+\item[{\tt -w}] Print the warranty.
+\item[{\tt -l}] Detailed list of objects.
+\item[{\tt -L}] Print the license.
+\item[{\tt -h}] Print this help.
+\end{description}
+
+*/
+
+//@}

@@ -1,54 +1,56 @@
 
-/**@name The Scientific Computing Toolkit
+/**@name The Massively Parallel Quantum Chemistry Program (MPQC) and the Scientific Computing Toolkit (SC)
 
-The Scientific Computing (SC) toolkit provides C++ class libraries of use
-in scientific computation.  Included are classes for managing memory,
-saving and restoring the state of objects, reading objects from an input
-file, parallel communication, matrix algebra, among others.
-
-High level routines for supporting quantum chemistry applications are
-provided with the full distribution of SC.
-
-SC runs on Unix compatible workstations (Intel/Linux, SGI/IRIX
-IBM RS/6000), symmetric multi-processors (Intel/Linux, SGI/IRIX),
-and massively parallel computers (IBM SP2, Intel Paragon).
-
-@memo A C++ Library and Programs for Scientific Computing and Quantum Chemistry
+@memo Libraries and Programs for Quantum Chemistry and Scientific Programming.
 */
 
 //@{
 
 /**@name Introduction
-The Scientific Computing (SC) toolkit provides C++ class libraries for
+
+The Scientific Computing toolkit (SC) provides C++ class libraries for
 scientific computation.  Included are classes for managing memory, saving
 and restoring the state of objects, reading objects from an input file,
 parallel communication, matrix algebra, among others.
 
-SC runs on Unix compatible workstations (Intel/Linux, SGI/IRIX
-IBM RS/6000), symmetric multi-processors (Intel/Linux, SGI/IRIX),
-and massively parallel computers (IBM SP2, Intel Paragon).
+Class libraries supporting quantum chemistry applications are provided with
+the full distribution of SC.  Also included is the Massively Parallel
+Quantum Chemistry program (MPQC) which is built upon these libraries.
 
-The SC toolkit is a work-in-progress.  Thus, this manual is incomplete.
-Furthermore, some of the classes in the distribution may be on the verge of
-obsolescence and others may be unfinished work that are intended to provide
-new functionality in later releases.
+MPQC and SC are works-in-progress.  They are experimental codes that are
+used to apply new computational approaches to problems in scientific
+programming in general and, in particular, to quantum chemistry.  Thus,
+this manual is incomplete.  Furthermore, some of the classes in the
+distribution may be on the verge of obsolescence and others may be
+unfinished work that are intended to provide new functionality in later
+releases.
 
 The development of SC has been driven by the development of the Massively
-Parallel Quantum Chemistry (MPQC) program.  While, currently, MPQC nad SC
-are distributed together, the toolkit code is independent of the quantum
-chemistry code.  The classes provided in src/lib/util do not require those
-in src/lib/math or src/lib/chemistry and the src/lib/math classes do not
-require src/lib/chemistry.
+Parallel Quantum Chemistry (MPQC) program.  While, currently, MPQC and SC
+are distributed together, the SC code is problem-domain independent.  For
+example, the utility classes provided in src/lib/util do not require the
+code in src/lib/math or src/lib/chemistry and the src/lib/math classes do
+not require src/lib/chemistry.
+
+MPQC and SC run on Unix compatible workstations (Intel/Linux, SGI/IRIX IBM
+RS/6000), symmetric multi-processors (Intel/Linux, SGI/IRIX), and massively
+parallel computers (IBM SP, Intel Paragon).
+
  */
 
-/**@name The Source Distribution
+/**@name Obtaining SC and MPQC
+
+   The latest version of the source code is available from
+   \URL{http://aros.ca.sandia.gov/~cljanss/mpqc}
+
+   @memo SC and MPQC can be downloaded from the internet.
+ */
+
+/**@name Source Structure
 
 \begin{description}
 \item[{\tt bin}]  This directory mainly contains commands that
   are used to help with the compilation of SC.
-
-\item[{\tt include/libg++-stub}]  This provides a few include
-  files taken from GNU libg++.
 
 \item[{\tt lib/basis}] The Gaussian basis set data files are in this
   directory.
@@ -60,18 +62,13 @@ require src/lib/chemistry.
 \item[{\tt lib/perl}] Perl modules that are used by the MPQC
   validation suite are found here.
 
-\item[{\tt lib/texinputs}] A style file for the SC documenation
-  is located in this directory.
-  
-\item[{\tt src/tools/mkclasses}]  This is intended to generate a
-  database for dynamic class library loading, but currently isn't used.
-
 \item[{\tt src/lib/util/options}]
   This contains the GetLongOpt command line argument parsing facility
   written by S. Manoharan, with some modifications.
 
 \item[{\tt src/lib/util/ref}]
   This library provides memory management for objects.
+  See \Ref{The Reference Library} for more information.
 
 \item[{\tt src/lib/util/container}] This library provides container
   classes.  Some of these classes are not very efficient and it is likely
@@ -79,39 +76,40 @@ require src/lib/chemistry.
   is supported fully by more compilers.
 
 \item[{\tt src/lib/util/misc}] This contains a variety of independent
-  classes that don't belong anywhere else.  Classes to assist with
-  debugging, provide information about hte execution environment, help make
-  the output prettier, maintain detailed timing information, etc. are
-  provided.
+  classes that don't belong anywhere else.  Here one can find classes to
+  assist with debugging, provide information about hte execution
+  environment, help make the output prettier, maintain detailed timing
+  information, etc.
 
 \item[{\tt src/lib/util/class}] This library provides base classes for
-  classes that require a common interface for obtaining meta-information
-  about the class.  This meta-information includes the class name,
-  meta-information about the parent class and derived classes that have
-  been linked into the executable, pointers to functions that can create
-  instances of the class, and so on.
+  classes that require meta-information about the class.  This
+  meta-information includes the class name, meta-information about the
+  parent class and derived classes, pointers to functions that can create
+  instances of the class, and so on.  See \Ref{The Described Class Library}
+  for more information.
 
 \item[{\tt src/lib/util/keyval}] This library provides classes that read
-  keyword/value pairs from an input file.
+  keyword/value pairs from an input file.  See \Ref{The KeyVal Library}
+  for more information.
 
 \item[{\tt src/lib/util/state}] The state library provides a base class
   for persistent objects and classes to read and write these objects to a
-  stream.
+  stream.  See \Ref{The State Library} for more information.
 
 \item[{\tt src/lib/util/group}] This group library provides classes to
-  communicate between nodes of a parallel machine.  Message passing,
+  utilize multiple processors of a parallel machine.  Message passing,
   distributed shared memory, and multi-threaded models are supported.
+  See \Ref{The Group Library} for more information.
 
-\item[{\tt src/lib/util/render}] This library provides an abstract
-  interface to rendering packages.  This code is not currently used and
-  will likely change quite a bit in the future.
+\item[{\tt src/lib/util/render}] This library provides a standard
+  interface to rendering packages.
 
 \item[{\tt src/lib/math/linpackd}] This library contains double precision
   C versions of some of the linpack routines.
 
 \item[{\tt src/lib/math/scmat}] This library defines an abstract matrix
   class and supplies concrete implementations of parallel replicated and
-  distributed matrices.
+  distributed matrices.  See \Ref{The Matrix Library} for more information.
 
 \item[{\tt src/lib/math/optimize}] The optimize library provides classes
   to perform optimizations and base classes for objects that compute a
@@ -124,18 +122,16 @@ require src/lib/chemistry.
   triangulated approximation to an isosurface.
 
 \item[{\tt src/lib/math/symmetry}] The symmetry library contains classes
-  useful for describing point group symmetry.
+  useful for describing point group symmetry.  See \Ref{The Symmetry Library}
+  for more information.
 
 \item[{\tt src/lib/chemistry/molecule}] This library has classes to
-  describe molecules and internal molecular coordinate systems. A base
-  class for classes that map the molecular coordinates to an energy is
-  provided to permit the optimization of the molecular coordinates.
-  The internals of many of these classes will be revised in the
-  next release.
+  describe molecules and internal molecular coordinates. A base class for
+  classes that map the molecular coordinates to an energy is provided to
+  permit the optimization of the molecular coordinates.
 
 \item[{\tt src/lib/chemistry/solvent}]  This code can be used to
-  describe solvated molecules.  It is still in its infancy and
-  is not yet used by any other part of SC.
+  describe solvated molecules.
 
 \item[{\tt src/lib/chemistry/qc/basis}] The basis library has classes
   that describe Gaussian basis sets and base classes for libraries that
@@ -152,41 +148,38 @@ require src/lib/chemistry.
   energy and other properties of the molecule.
 
 \item[{\tt src/lib/chemistry/qc/scf}] The scf library is used to compute
-  Hartree-Fock energies and gradients.
+  self-consistent-field energies and gradients.  Specializations for
+  Hartree-Fock theory are provided.
 
 \item[{\tt src/lib/chemistry/qc/mbpt}] This library computes second-order
   perturbation theory energies and gradients.
 
 \item[{\tt src/lib/chemistry/qc/psi}] This provides an example of
-  interfacing MPQC to an external quantum chemistry package.  It
-  is not compiled by default.
+  interfacing MPQC to an external quantum chemistry package.
 
-\item[{\tt src/lib/chemistry/qc/g92}] This is another example of
-  interfacing MPQC to an external quantum chemistry package.  It
-  is not compiled by default and is out-of-date.  The psi library
-  provides a better example.
+\item[{\tt src/bin/mpqc}] The Massively Parallel Quantum Chemistry program
+  is in this directory.  See \Ref{The MPQC Program} for more information.
 
-\item[{\tt src/bin/mpqc}]
-  The Massively Parallel Quantum Chemistry program is in this directory.
+\item[{\tt src/bin/scls}] This program lists the contents of files created
+  by \Ref{The State Library}.  See \Ref{The scls Program} for more
+  information.
 
-\item[{\tt src/bin/molrender}]
-  This is a (probably nonfunctional) example of the use of the render
-  library.
-
-\item[{\tt src/bin/orbixme}]
-  An example of using Corba and SC.  This hasn't been used in quite
-  some time and probably won't compile.
+\item[{\tt src/bin/scpr}] This program prints objects contained in files
+  created by \Ref{The State Library}.  See \Ref{The scpr Program} for more
+  information.
 
 \end{description}
 
  */
 
-/**@name Compiling
-  @memo Instructions for compiling SC.
+  //@Include: compiling.dxx
+
+/**@name Binary Documentation
+  @memo Additional documentation for accompanying executables.
   */
 
 //@{
-  //@Include: compiling.dxx
+  //@Include: binary.dxx
 //@}
 
 /**@name Library Documentation
@@ -195,14 +188,6 @@ require src/lib/chemistry.
 
 //@{
   //@Include: library.dxx
-//@}
-
-/**@name Binary Documentation
-  @memo Additional documentation for accompanying executables.
-  */
-
-//@{
-  //@Include: binary.dxx
 //@}
 
 /**@name Include Files

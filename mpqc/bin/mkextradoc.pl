@@ -49,7 +49,7 @@ sub dodir {
         }
         elsif ("$file" =~ /\.dxx$/) {
             $havedxx = 1;
-            printf DXX "//\@Include: $dir/$file\n";
+            printf DXX "  //\@Include: $dir/$file\n";
         }
     }
 }

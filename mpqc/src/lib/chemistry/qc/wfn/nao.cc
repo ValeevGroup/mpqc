@@ -298,69 +298,21 @@ Wavefunction::nao()
 {
 
   RefGaussianBasisSet b = basis();
+  RefPetiteList pl = integral()->petite_list();
 
   // sym is 1 if not C1 symmetry, 0 otherwise
   int sym = (molecule()->point_group().char_table().nirrep()==1?0:1);
 
-  // so_ao is the so to ao basis transform
-  RefSCMatrix so_ao;
-  if (sym) {
-      so_ao = integral()->petite_list()->sotoao();
-#     ifdef DEBUG
-      so_ao.print("so_ao");
-#     endif
-    }
-
   // compute S, the ao basis overlap
-  RefSymmSCMatrix S;
-  if (sym) {
-      RefSymmSCMatrix S_so = overlap();
-#     ifdef DEBUG
-      S_so.print("S_so");
-#     endif
-
-      // compute S, the ao basis overlap
-      S = S_so.kit()->symmmatrix(so_ao.coldim());
-      S.assign(0.0);
-      // (assuming so_ao is unitary)
-      S.accumulate_transform(so_ao.t(), S_so);
-    }
-  else {
-      S = overlap();
-    }
-  double *Svec = new double[(S.dim().n() * (S.dim().n() + 1))/2];
-  S.convert(Svec);
-  S = matrixkit()->symmmatrix(S.dim());
-  S.assign(Svec);
-  delete[] Svec;
+  RefSymmSCMatrix S =
+    BlockedSymmSCMatrix::castdown(pl->to_AO_basis(overlap()))->block(0);
 # ifdef DEBUG
   S.print("S");
 # endif
 
   // compute P, the ao basis density
-  RefSymmSCMatrix P;
-  if (sym) {
-      // P_so is the so basis density matrix
-      RefSymmSCMatrix P_so = density();
-#     ifdef DEBUG
-      P_so.print("P_so");
-#     endif
+  RefSymmSCMatrix P = BlockedSymmSCMatrix::castdown(ao_density())->block(0);
 
-      // compute P, the ao basis density
-      P = P_so.kit()->symmmatrix(so_ao.coldim());
-      P.assign(0.0);
-      // (assuming so_ao is unitary)
-      P.accumulate_transform(so_ao.t(), P_so);
-    }
-  else {
-      P = density();
-    }
-  // convert between matrix specializations
-  double *Pvec = new double[(P.dim().n() * (P.dim().n() + 1))/2];
-  P.convert(Pvec);
-  P = matrixkit()->symmmatrix(P.dim());
-  P.assign(Pvec);
-  delete[] Pvec;
   // why?  good question.
   RefSymmSCMatrix Ptmp = P->clone();
   Ptmp.assign(0.0);

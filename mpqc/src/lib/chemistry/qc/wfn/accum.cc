@@ -33,161 +33,180 @@
 #include <chemistry/qc/basis/integral.h>
 
 ///////////////////////////////////////////////////////////////////////////
-// AccumDIH
+// AccumH
 
-#define CLASSNAME AccumDIH
+#define CLASSNAME AccumH
 #define PARENTS public SavableState
 #include <util/class/classia.h>
 
 void *
-AccumDIH::_castdown(const ClassDesc*cd)
+AccumH::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-AccumDIH::AccumDIH()
+AccumH::AccumH()
 {
 }
 
-AccumDIH::AccumDIH(StateIn&s) :
+AccumH::AccumH(StateIn&s) :
   SavableState(s)
 {
-  basis_set_.restore_state(s);
-  integral_.restore_state(s);
+  wfn_.restore_state(s);
 }
 
-// for now I'm assuming that the specializations of AccumDIH will call
-// init() so we won't read in the integral or basis set here
-AccumDIH::AccumDIH(const RefKeyVal&)
+AccumH::AccumH(const RefKeyVal& keyval)
 {
+  wfn_ = keyval->describedclassvalue("wavefunction");
 }
 
-AccumDIH::~AccumDIH()
+AccumH::~AccumH()
 {
 }
 
 void
-AccumDIH::save_data_state(StateOut& s)
+AccumH::save_data_state(StateOut& s)
 {
-  basis_set_.save_state(s);
-  integral_.save_state(s);
+  wfn_.save_state(s);
 }
 
 void
-AccumDIH::init(const RefGaussianBasisSet& b, const RefIntegral& i)
+AccumH::init(const RefWavefunction& w)
 {
-  basis_set_ = b;
-  integral_ = i;
+  wfn_ = w;
 }
 
 void
-AccumDIH::done()
+AccumH::done()
 {
+  wfn_ = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// AccumDDH
+// AccumHNull
 
-#define CLASSNAME AccumDDH
-#define PARENTS public SavableState
-#include <util/class/classia.h>
-void *
-AccumDDH::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-AccumDDH::AccumDDH()
-{
-}
-
-AccumDDH::AccumDDH(StateIn& s) :
-  SavableState(s)
-{
-  basis_set_.restore_state(s);
-  integral_.restore_state(s);
-}
-
-// for now I'm assuming that the specializations of AccumDDH will call
-// init() so we won't read in the integral or basis set here
-AccumDDH::AccumDDH(const RefKeyVal&)
-{
-}
-
-AccumDDH::~AccumDDH()
-{
-}
-
-void
-AccumDDH::save_data_state(StateOut& s)
-{
-  basis_set_.save_state(s);
-  integral_.save_state(s);
-}
-
-void
-AccumDDH::init(const RefGaussianBasisSet& b, const RefIntegral& i)
-{
-  basis_set_ = b;
-  integral_ = i;
-}
-
-void
-AccumDDH::done()
-{
-}
-
-///////////////////////////////////////////////////////////////////////////
-// AccumDDH
-
-#define CLASSNAME AccumNullDDH
-#define PARENTS public AccumDDH
+#define CLASSNAME AccumHNull
+#define PARENTS public AccumH
 #define HAVE_CTOR
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classi.h>
 
 void *
-AccumNullDDH::_castdown(const ClassDesc*cd)
+AccumHNull::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = AccumDDH::_castdown(cd);
+  casts[0] = AccumH::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-AccumNullDDH::AccumNullDDH()
+AccumHNull::AccumHNull()
 {
 }
 
-AccumNullDDH::AccumNullDDH(StateIn&s) :
-  AccumDDH(s)
+AccumHNull::AccumHNull(StateIn&s) :
+  AccumH(s)
+  maybe_SavableState(s)
 {
 }
 
-AccumNullDDH::AccumNullDDH(const RefKeyVal& keyval) :
-  AccumDDH(keyval)
+AccumHNull::AccumHNull(const RefKeyVal& keyval) :
+  AccumH(keyval)
 {
 }
 
-AccumNullDDH::~AccumNullDDH()
+AccumHNull::~AccumHNull()
 {
 }
 
 void
-AccumNullDDH::save_data_state(StateOut& s)
+AccumHNull::save_data_state(StateOut& s)
 {
-  AccumDDH::save_data_state(s);
+  AccumH::save_data_state(s);
 }
 
 void
-AccumNullDDH::accum(const RefSymmSCMatrix& h, const RefSymmSCMatrix& h_open)
+AccumHNull::accum(const RefSymmSCMatrix& h)
 {
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// SumAccumH
+
+#define CLASSNAME SumAccumH
+#define PARENTS public AccumH
+#define HAVE_STATEIN_CTOR
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+
+void *
+SumAccumH::_castdown(const ClassDesc* cd)
+{
+  void *casts[1];
+  casts[0] = AccumH::_castdown(cd);
+  return do_castdowns(casts, cd);
+}
+
+SumAccumH::SumAccumH(StateIn& s) :
+  AccumH(s)
+  maybe_SavableState(s)
+{
+  s.get(n_);
+  accums_ = new RefAccumH[n_];
+  for (int i=0; i < n_; i++)
+    accums_[i].restore_state(s);
+}
+
+SumAccumH::SumAccumH(const RefKeyVal& keyval) :
+  AccumH(keyval)
+{
+  n_ = keyval->count("accums");
+  accums_ = new RefAccumH[n_];
+  for (int i=0; i < n_; i++)
+    accums_[i] = keyval->describedclassvalue("accums", i);
+}
+
+SumAccumH::~SumAccumH()
+{
+  if (accums_) {
+    delete[] accums_;
+    accums_=0;
+  }
+  n_=0;
+}
+
+void
+SumAccumH::save_data_state(StateOut& s)
+{
+  AccumH::save_data_state(s);
+  s.put(n_);
+  for (int i=0; i < n_; i++)
+    accums_[i].save_state(s);
+}
+
+void
+SumAccumH::init(const RefWavefunction& w)
+{
+  for (int i=0; i < n_; i++)
+    accums_[i]->init(w);
+}
+
+void
+SumAccumH::accum(const RefSymmSCMatrix& h)
+{
+  for (int i=0; i < n_; i++)
+    accums_[i]->accum(h);
+}
+
+void
+SumAccumH::done()
+{
+  for (int i=0; i < n_; i++)
+    accums_[i]->done();
+}
+  
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

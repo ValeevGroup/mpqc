@@ -88,9 +88,9 @@ class Wavefunction: public MolecularEnergy {
     virtual RefSCMatrix natural_orbitals();
     virtual RefDiagSCMatrix natural_density();
 
-    
     // Return 1 if the alpha density is not equal to the beta density.
-    virtual int spin_polarized();
+    virtual int spin_polarized() = 0;
+
     // Return alpha and beta electron densities
     virtual RefSymmSCMatrix alpha_density();
     virtual RefSymmSCMatrix beta_density();

@@ -33,7 +33,6 @@
 #endif
 
 #include <chemistry/qc/wfn/wfn.h>
-#include <chemistry/qc/wfn/hcore.h>
 
 SavableState_REF_fwddec(OneBodyWavefunction);
 class OneBodyWavefunction: public Wavefunction {
@@ -46,8 +45,12 @@ class OneBodyWavefunction: public Wavefunction {
     AccResultRefDiagSCMatrix eigenvalues_;
     int nirrep_;
     int *nvecperirrep_;
+    double *occupations_;
+    double *alpha_occupations_;
+    double *beta_occupations_;
 
     void init_sym_info();
+
  public:
     OneBodyWavefunction(StateIn&);
     OneBodyWavefunction(const RefKeyVal&);
@@ -61,15 +64,29 @@ class OneBodyWavefunction: public Wavefunction {
     virtual double occupation(int irrep, int vectornum) = 0;
     double occupation(int vectornum);
 
-    virtual RefDiagSCMatrix projected_eigenvalues(const RefOneBodyWavefunction&);
-    virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&);
+    // Return 1 if the alpha orbitals are not equal to the beta orbitals.
+    virtual int spin_unrestricted() = 0;
+
+    // return alpha and beta occupations
+    virtual double alpha_occupation(int irrep, int vectornum);
+    virtual double beta_occupation(int irrep, int vectornum);
+    double alpha_occupation(int vectornum);
+    double beta_occupation(int vectornum);
+    
+    // Return alpha and beta electron densities
+    virtual RefSCMatrix alpha_eigenvectors();
+    virtual RefSCMatrix beta_eigenvectors();
+    virtual RefDiagSCMatrix alpha_eigenvalues();
+    virtual RefDiagSCMatrix beta_eigenvalues();
+
+    virtual RefDiagSCMatrix
+      projected_eigenvalues(const RefOneBodyWavefunction&, int alp=1);
+    virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&,
+                                               int alp=1);
     virtual RefSCMatrix hcore_guess();
 
     double orbital(const SCVector3& r, int iorb);
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
-
-    double density(const SCVector3&);
-    RefSymmSCMatrix density();
 
     void print(ostream&o=cout);
 };
@@ -82,8 +99,6 @@ class HCoreWfn: public OneBodyWavefunction {
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
   private:
-    RefAccumHCore accumh;
-
     int nirrep_;
     int *docc;
     int *socc;
@@ -101,6 +116,9 @@ class HCoreWfn: public OneBodyWavefunction {
 
     RefSCMatrix eigenvectors();
     RefDiagSCMatrix eigenvalues();
+    RefSymmSCMatrix density();
+    int spin_polarized();
+    int spin_unrestricted();
 };
 SavableState_REF_dec(HCoreWfn);
 

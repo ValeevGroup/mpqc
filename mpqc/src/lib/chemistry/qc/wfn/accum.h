@@ -32,83 +32,71 @@
 #pragma interface
 #endif
 
-#include <math/scmat/elemop.h>
-#include <math/scmat/block.h>
-#include <math/scmat/blkiter.h>
-#include <chemistry/molecule/molecule.h>
-#include <chemistry/qc/basis/gaussbas.h>
-#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/wfn/wfn.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
-// computes the density independent part of H
-class AccumDIH: public SavableState {
-#   define CLASSNAME AccumDIH
+// computes additions to H
+class AccumH: virtual_base public SavableState {
+#   define CLASSNAME AccumH
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
-    RefGaussianBasisSet basis_set_;
-    RefIntegral integral_;
+    RefWavefunction wfn_;
 
   public:
-    AccumDIH();
-    AccumDIH(StateIn&);
-    AccumDIH(const RefKeyVal&);
-    virtual ~AccumDIH();
+    AccumH();
+    AccumH(StateIn&);
+    AccumH(const RefKeyVal&);
+    virtual ~AccumH();
 
     void save_data_state(StateOut&);
     
-    virtual void init(const RefGaussianBasisSet&, const RefIntegral&);
+    virtual void init(const RefWavefunction&);
     virtual void accum(const RefSymmSCMatrix& h) =0;
     virtual void done();
 };
-SavableState_REF_dec(AccumDIH);
+SavableState_REF_dec(AccumH);
 
-////////////////////////////////////////////////////////////////////////////
-
-// computes the density dependent part of H
-class AccumDDH: public SavableState {
-#   define CLASSNAME AccumDDH
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
-  protected:
-    RefGaussianBasisSet basis_set_;
-    RefIntegral integral_;
-    
-  public:
-    AccumDDH();
-    AccumDDH(StateIn&);
-    AccumDDH(const RefKeyVal&);
-    virtual ~AccumDDH();
-
-    void save_data_state(StateOut&);
-    
-    virtual void init(const RefGaussianBasisSet&, const RefIntegral&);
-    virtual void accum(const RefSymmSCMatrix& h,
-                       const RefSymmSCMatrix& h_open) = 0;
-    virtual void done();
-};
-SavableState_REF_dec(AccumDDH);
-
-class AccumNullDDH: public AccumDDH {
-#   define CLASSNAME AccumNullDDH
+class AccumHNull: public AccumH {
+#   define CLASSNAME AccumHNull
 #   define HAVE_CTOR
 #   define HAVE_STATEIN_CTOR
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   public:
-    AccumNullDDH();
-    AccumNullDDH(StateIn&);
-    AccumNullDDH(const RefKeyVal&);
-    ~AccumNullDDH();
+    AccumHNull();
+    AccumHNull(StateIn&);
+    AccumHNull(const RefKeyVal&);
+    ~AccumHNull();
 
     void save_data_state(StateOut&);
     
-    void accum(const RefSymmSCMatrix& h, const RefSymmSCMatrix& h_open);
+    void accum(const RefSymmSCMatrix& h);
 };
 
-SavableState_REF_dec(AccumNullDDH);
+class SumAccumH: public AccumH {
+#   define CLASSNAME SumAccumH
+#   define HAVE_STATEIN_CTOR
+#   define HAVE_KEYVAL_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    int n_;
+    RefAccumH *accums_;
+
+  public:
+    SumAccumH(StateIn&);
+    SumAccumH(const RefKeyVal&);
+    ~SumAccumH();
+
+    void save_data_state(StateOut&);
+
+    void init(const RefWavefunction&);
+    void accum(const RefSymmSCMatrix& h);
+    void done();
+};
 
 #endif
 

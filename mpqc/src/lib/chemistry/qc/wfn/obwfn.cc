@@ -62,7 +62,10 @@ OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   eigenvalues_(this),
   density_(this),
   nirrep_(0),
-  nvecperirrep_(0)
+  nvecperirrep_(0),
+  occupations_(0),
+  alpha_occupations_(0),
+  beta_occupations_(0)
 {
   double acc = keyval->doublevalue("eigenvector_accuracy");
   if (keyval->error() != KeyVal::OK)
@@ -83,7 +86,10 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   eigenvalues_(this),
   density_(this),
   nirrep_(0),
-  nvecperirrep_(0)
+  nvecperirrep_(0),
+  occupations_(0),
+  alpha_occupations_(0),
+  beta_occupations_(0)
   maybe_SavableState(s)
 {
   eigenvectors_.result_noupdate() =
@@ -104,7 +110,17 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
 
 OneBodyWavefunction::~OneBodyWavefunction()
 {
-  delete[] nvecperirrep_;
+  if (nvecperirrep_) {
+    delete[] nvecperirrep_;
+    delete[] occupations_;
+    delete[] alpha_occupations_;
+    delete[] beta_occupations_;
+  }
+  nirrep_=0;
+  nvecperirrep_=0;
+  occupations_=0;
+  alpha_occupations_=0;
+  beta_occupations_=0;
 }
 
 void
@@ -146,7 +162,8 @@ form_m_half(RefSymmSCMatrix& M)
 }
 
 RefSCMatrix
-OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
+OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
+                                            int alp)
 {
   // first let's calculate the overlap between the new and old basis set
   integral()->set_basis(basis(), owfn->basis());
@@ -177,7 +194,16 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
     );
   
   // now get the old eigenvectors and the new core hamiltonian guess
-  RefSCMatrix ovec = owfn->eigenvectors();
+  RefSCMatrix ovec;
+  if (owfn->spin_unrestricted()) {
+    if (alp)
+      ovec = owfn->alpha_eigenvectors();
+    else
+      ovec = owfn->beta_eigenvectors();
+  }
+  else
+    ovec = owfn->eigenvectors();
+    
   BlockedSCMatrix *ovecp = BlockedSCMatrix::require_castdown(ovec.pointer(),
     "OneBodyWavefunction::projected_eigenvectors: ovec"
     );
@@ -206,7 +232,16 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   for (int irrep=0; irrep < vecp->nblocks(); irrep++) {
     // find out how many occupied orbitals there should be
     int nocc = 0;
-    while (owfn->occupation(irrep,nocc) && nocc < plo->nfunction(irrep)) nocc++;
+    if (owfn->spin_unrestricted()) {
+      if (alp)
+        while (owfn->alpha_occupation(irrep,nocc) &&
+               nocc < plo->nfunction(irrep)) nocc++;
+      else
+        while (owfn->beta_occupation(irrep,nocc) &&
+               nocc < plo->nfunction(irrep)) nocc++;
+    } else
+      while (owfn->occupation(irrep,nocc) &&
+             nocc < plo->nfunction(irrep)) nocc++;
   
     if (!nocc)
       continue;
@@ -265,10 +300,19 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
 // set all others to 99.
 
 RefDiagSCMatrix
-OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn)
+OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
+                                           int alp)
 {
   // get the old eigenvalues and the new core hamiltonian evals
-  RefDiagSCMatrix oval = owfn->eigenvalues();
+  RefDiagSCMatrix oval;
+  if (owfn->spin_unrestricted()) {
+    if (alp)
+      oval = owfn->alpha_eigenvalues();
+    else
+      oval = owfn->beta_eigenvalues();
+  } else
+    oval = owfn->eigenvalues();
+
   BlockedDiagSCMatrix *ovalp =
     BlockedDiagSCMatrix::require_castdown(oval.pointer(),
       "OneBodyWavefunction::projected_eigenvalues: oval"
@@ -286,7 +330,16 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn)
   for (int irrep=0; irrep < valp->nblocks(); irrep++) {
     // find out how many occupied orbitals there should be
     int nocc = 0;
-    while (owfn->occupation(irrep,nocc) && nocc < plo->nfunction(irrep)) nocc++;
+    if (owfn->spin_unrestricted()) {
+      if (alp)
+        while (owfn->alpha_occupation(irrep,nocc) &&
+               nocc < plo->nfunction(irrep)) nocc++;
+      else
+        while (owfn->beta_occupation(irrep,nocc) &&
+               nocc < plo->nfunction(irrep)) nocc++;
+    } else
+      while (owfn->occupation(irrep,nocc) &&
+             nocc < plo->nfunction(irrep)) nocc++;
   
     int nf = pl->nfunction(irrep);
     int nfo = plo->nfunction(irrep);
@@ -332,39 +385,6 @@ OneBodyWavefunction::hcore_guess()
   return vec;
 }
 
-double
-OneBodyWavefunction::density(const SCVector3 &c)
-{
-  return Wavefunction::density(c);
-}
-
-RefSymmSCMatrix
-OneBodyWavefunction::density()
-{
-  if (!density_.computed()) {
-    RefSCMatrix vec = eigenvectors().t();
-    RefSymmSCMatrix newdensity(basis_dimension(), basis_matrixkit());
-
-    int nbasis = basis()->nbasis();
-  
-    for (int i=0; i < nbasis; i++) {
-      for (int j=0; j <= i; j++) {
-        int k;
-        double pt=0;
-        for (k=0; k < nbasis; k++)
-          pt += occupation(k)*vec.get_element(k,i)*vec.get_element(k,j);
-
-        newdensity.set_element(i,j,pt);
-      }
-    }
-
-    density_ = newdensity;
-    density_.computed() = 1;
-  }
-
-  return density_.result_noupdate();
-}
-
 // Function for returning an orbital value at a point
 double
 OneBodyWavefunction::orbital(const SCVector3& r, int iorb)
@@ -394,8 +414,21 @@ OneBodyWavefunction::init_sym_info()
 
   nirrep_ = pl->nirrep();
   nvecperirrep_ = new int[nirrep_];
-  for (int i=0; i<nirrep_; i++) {
+  occupations_ = new double[basis()->nbasis()];
+  alpha_occupations_ = new double[basis()->nbasis()];
+  beta_occupations_ = new double[basis()->nbasis()];
+
+  int ij=0;
+  for (int i=0; i < nirrep_; i++) {
     nvecperirrep_[i] = pl->nfunction(i);
+
+    // this is wrong...we should reorder the occupations so that this
+    // vector represents the AO occupations...one day
+    for (int j=0; j < nvecperirrep_[i]; j++, ij++) {
+      occupations_[ij] = occupation(i,j);
+      alpha_occupations_[ij] = alpha_occupation(i,j);
+      beta_occupations_[ij] = beta_occupation(i,j);
+    }
   }
 }
 
@@ -403,13 +436,87 @@ double
 OneBodyWavefunction::occupation(int vectornum)
 {
   if (!nirrep_) init_sym_info();
-  int svecnum = vectornum;
-  int i;
-  for (i=0; vectornum >= 0 && i<nirrep_; i++) {
-    svecnum = vectornum;
-    vectornum -= nvecperirrep_[i];
-  }
-  return occupation(i-1, svecnum);
+  return occupations_[vectornum];
+}
+
+double
+OneBodyWavefunction::alpha_occupation(int vectornum)
+{
+  if (!nirrep_) init_sym_info();
+  return alpha_occupations_[vectornum];
+}
+
+double
+OneBodyWavefunction::beta_occupation(int vectornum)
+{
+  if (!nirrep_) init_sym_info();
+  return beta_occupations_[vectornum];
+}
+
+double
+OneBodyWavefunction::alpha_occupation(int irrep, int vectornum)
+{
+  if (!spin_polarized())
+    return 0.5*occupation(irrep, vectornum);
+  
+  cerr << class_name() << "::alpha_occupation not implemented" << endl;
+  abort();
+  return 0;
+}
+
+double
+OneBodyWavefunction::beta_occupation(int irrep, int vectornum)
+{
+  if (!spin_polarized())
+    return 0.5*occupation(irrep, vectornum);
+  
+  cerr << class_name() << "::beta_occupation not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefSCMatrix
+OneBodyWavefunction::alpha_eigenvectors()
+{
+  if (!spin_unrestricted())
+    return eigenvectors().copy();
+
+  cerr << class_name() << "::alpha_eigenvectors not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefSCMatrix
+OneBodyWavefunction::beta_eigenvectors()
+{
+  if (!spin_unrestricted())
+    return eigenvectors().copy();
+
+  cerr << class_name() << "::beta_eigenvectors not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefDiagSCMatrix
+OneBodyWavefunction::alpha_eigenvalues()
+{
+  if (!spin_unrestricted())
+    return eigenvalues().copy();
+
+  cerr << class_name() << "::alpha_eigenvalues not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefDiagSCMatrix
+OneBodyWavefunction::beta_eigenvalues()
+{
+  if (!spin_unrestricted())
+    return eigenvalues().copy();
+
+  cerr << class_name() << "::beta_eigenvalues not implemented" << endl;
+  abort();
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

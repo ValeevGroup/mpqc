@@ -50,8 +50,7 @@ HCoreWfn::_castdown(const ClassDesc*cd)
 }
 
 HCoreWfn::HCoreWfn(StateIn& s) :
-  OneBodyWavefunction(s),
-  accumh(s)
+  OneBodyWavefunction(s)
   maybe_SavableState(s)
 {
   s.get(nirrep_);
@@ -62,9 +61,6 @@ HCoreWfn::HCoreWfn(StateIn& s) :
 HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
   OneBodyWavefunction(keyval)
 {
-  accumh = new AccumHCore;
-  accumh->init(basis(),integral());
-
   CharacterTable ct = molecule()->point_group().char_table();
 
   nirrep_ = ct.ncomp();
@@ -98,7 +94,6 @@ void
 HCoreWfn::save_data_state(StateOut&s)
 {
   OneBodyWavefunction::save_data_state(s);
-  accumh.save_state(s);
   s.put(nirrep_);
   s.put(docc,nirrep_);
   s.put(socc,nirrep_);
@@ -126,6 +121,38 @@ HCoreWfn::eigenvalues()
   return eigenvalues_.result_noupdate();
 }
 
+RefSymmSCMatrix
+HCoreWfn::density()
+{
+  if (!density_.computed()) {
+    RefDiagSCMatrix mo_density(basis_dimension(), basis_matrixkit());
+    BlockedDiagSCMatrix *modens = BlockedDiagSCMatrix::castdown(mo_density);
+    if (!modens) {
+      cerr << node0 << indent << "HCoreWfn::density: basis weirdness" << endl;
+      abort();
+    }
+
+    modens->assign(0.0);
+    for (int iblock=0; iblock < modens->nblocks(); iblock++) {
+      RefDiagSCMatrix modens_ib = modens->block(iblock);
+      int i;
+      for (i=0; i < docc[iblock]; i++)
+        modens_ib->set_element(i, 2.0);
+      for ( ; i < docc[iblock]+socc[iblock]; i++)
+        modens_ib->set_element(i, 1.0);
+    }
+
+    RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+    dens->assign(0.0);
+    dens->accumulate_transform(eigenvectors(), mo_density);
+
+    density_ = dens;
+    density_.computed() = 1;
+  }
+      
+  return density_.result_noupdate();   
+}
+
 double
 HCoreWfn::occupation(int ir, int i)
 {
@@ -137,11 +164,25 @@ HCoreWfn::occupation(int ir, int i)
     return 0.0;
 }
 
+int
+HCoreWfn::spin_polarized()
+{
+  return 0;
+}
+
+int
+HCoreWfn::spin_unrestricted()
+{
+  return 0;
+}
+
 void
 HCoreWfn::compute()
 {
-  cerr << node0 << indent << "HCoreWfn::compute(): don't call me\n";
-  abort();
+  eigenvectors();
+  set_energy(0.0);
+  set_actual_value_accuracy(desired_value_accuracy());
+  return;
 }
 
 /////////////////////////////////////////////////////////////////////////////

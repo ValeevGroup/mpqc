@@ -41,7 +41,6 @@
 #include <chemistry/qc/intv3/intv3.h>
 
 #include <chemistry/qc/wfn/wfn.h>
-#include <chemistry/qc/wfn/hcore.h>
 
 SavableState_REF_def(Wavefunction);
 
@@ -175,24 +174,10 @@ RefSCMatrix
 Wavefunction::natural_orbitals()
 {
   if (!natural_orbitals_.computed()) {
-      RefSymmSCMatrix dens = ao_density();
-
-      // convert dens between matrix specializations
-      double *dvec = new double[(dens.dim().n() * (dens.dim().n() + 1))/2];
-      dens.convert(dvec);
-      dens = basis_matrixkit()->symmmatrix(basis_dimension());
-      dens.assign(dvec);
-      delete[] dvec;
+      RefSymmSCMatrix dens = density();
 
       // transform the density into an orthogonal basis
       RefSymmSCMatrix ortho = ao_to_orthog_ao();
-
-      // convert ortho between matrix specializations
-      double *ovec = new double[(ortho.dim().n() * (ortho.dim().n() + 1))/2];
-      ortho.convert(ovec);
-      ortho = basis_matrixkit()->symmmatrix(basis_dimension());
-      ortho.assign(ovec);
-      delete[] ovec;
 
       RefSymmSCMatrix densortho(basis_dimension(), basis_matrixkit());
       densortho.assign(0.0);
@@ -259,12 +244,27 @@ RefSymmSCMatrix
 Wavefunction::core_hamiltonian()
 {
   if (!hcore_.computed()) {
-    RefAccumDIH hc = new SymmAccumHCore();
-    hc->init(basis(), integral());
+    integral()->set_basis(gbs_);
+    RefPetiteList pl = integral()->petite_list();
 
-    RefSymmSCMatrix h(basis_dimension(), basis_matrixkit());
-    hc->accum(h);
+    // form skeleton Hcore in AO basis
+    RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
+    hao.assign(0.0);
+
+    RefSCElementOp hc =
+      new OneBodyIntOp(new SymmOneBodyIntIter(integral_->kinetic(), pl));
+    hao.element_op(hc);
     hc=0;
+
+    RefOneBodyInt nuc = integral_->nuclear();
+    nuc->reinitialize();
+    hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
+    hao.element_op(hc);
+    hc=0;
+
+    // now symmetrize Hao
+    RefSymmSCMatrix h(basis_dimension(), basis_matrixkit());
+    pl->symmetrize(hao,h);
 
     hcore_ = h;
     hcore_.computed() = 1;
@@ -347,14 +347,6 @@ Wavefunction::print(ostream&o)
   }
 }
     
-int
-Wavefunction::spin_polarized()
-{
-  cerr << class_name() << "::spin_polarized not implemented" << endl;
-  abort();
-  return 0;
-}
-
 RefSymmSCMatrix
 Wavefunction::alpha_density()
 {

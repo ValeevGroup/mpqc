@@ -50,6 +50,9 @@ main(int argc, char *argv[])
   wfn->overlap()->print("overlap");
   wfn->core_hamiltonian()->print("Hcore");
   wfn->hcore_guess()->print("guess vector");
+  wfn->density()->print("density");
+  wfn->natural_orbitals()->print("natural orbitals");
+  wfn->natural_density()->print("natural density");
 
   //wfn->print(o);
   //o << endl;

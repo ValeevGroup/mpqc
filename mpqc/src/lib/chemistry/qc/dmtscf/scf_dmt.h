@@ -1,13 +1,13 @@
 
 #ifndef _scf_dmt_h
-#define _scf_dmt_
+#define _scf_dmt_h
+
+#include <chemistry/qc/dmtsym/sym_dmt.h>
 
 #ifdef __cplusplus
 class KeyVal;
 extern "C" {
 #endif /* __cplusplus */
-
-#include <chemistry/qc/dmtsym/sym_dmt.h>
 
 #include <chemistry/qc/dmtscf/scf.h>
 #include <chemistry/qc/dmtscf/scfallc.h>

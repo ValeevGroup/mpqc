@@ -514,6 +514,16 @@ ReplSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
       ExEnv::err() << indent
            << "ReplSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b): "
            << "dimensions don't match\n";
+      ExEnv::err() << node0 << indent << "rowdim():" << endl;
+      rowdim().print();
+      ExEnv::err() << node0 << indent << "coldim():" << endl;
+      coldim().print();
+      ExEnv::err() << node0 << indent << "la->rowdim():" << endl;
+      la->rowdim().print();
+      ExEnv::err() << node0 << indent << "la->coldim():" << endl;
+      la->coldim().print();
+      ExEnv::err() << node0 << indent << "lb->dim():" << endl;
+      lb->dim().print();
       abort();
     }
 

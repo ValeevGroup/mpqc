@@ -115,8 +115,8 @@ class IPV2
   char lastkeyword[KEYWORD_LENGTH];
   
   // These are needed always:
-  istream* ip_in;
-  ostream* ip_out;
+  std::istream* ip_in;
+  std::ostream* ip_out;
   ip_keyword_tree_t* ip_tree;
   ip_keyword_tree_list_t* ip_cwk;
   int ip_keyword;
@@ -158,12 +158,12 @@ class IPV2
   void ip_cwk_karray_add(int,...);
   ip_keyword_tree_t* ip_karray_descend_v(ip_keyword_tree_t*,int,int*);
   ip_keyword_tree_t* ip_karray_descend(ip_keyword_tree_t*,int,...);
-  void print_tree_(ostream&,ip_keyword_tree_t*);
+  void print_tree_(std::ostream&,ip_keyword_tree_t*);
   int ip_special_characters(char*);
   char* ip_append_keystrings(char*,char*);
   void ip_pop_karray();
-  void ip_initialize(istream&,ostream&);
-  void ip_append(istream&,ostream&);
+  void ip_initialize(std::istream&,std::ostream&);
+  void ip_append(std::istream&,std::ostream&);
   char* get_truename(ip_keyword_tree_t*kt);
 
   void showpos();
@@ -181,8 +181,8 @@ class IPV2
   static void set_global(IPV2*);
   static IPV2* global();
   // calls either ip_append or ip_initialize based on ip_initialized
-  void read(istream&,ostream&,const char *filename=0);
-  void append_from_input(const char*,ostream&);
+  void read(std::istream&,std::ostream&,const char *filename=0);
+  void append_from_input(const char*,std::ostream&);
   void done();
   const char* error_message(IPV2::Status);
   void error(const char*);
@@ -218,9 +218,9 @@ class IPV2
   IPV2::Status count_v(const char*,int*,int,int*);
 
   // some routines for debugging
-  void print_keyword(ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
-  void print_tree(ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
-  void print_unseen(ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
+  void print_keyword(std::ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
+  void print_tree(std::ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
+  void print_unseen(std::ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
   int have_unseen(ip_keyword_tree_t*k=0);
 };
 

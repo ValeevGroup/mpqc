@@ -65,10 +65,19 @@ void
 TwoBodyIntV2::init()
 {
   int_initialize_offsets2(c1,c2,c3,c4);
-  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+
+  //int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
+  int flags = INT_EREP|INT_NOSTRB;
+
+  //if (!store1_)
+    //flags |= INT_NOSTR1;
+
+  //if (!store2_)
+    //flags |= INT_NOSTR2;
 
   intbuf = int_initialize_erep(flags,0,c1,c2,c3,c4);
-  int_storage(0);
+
+  int_storage(1000000);
   int_init_bounds();
 }
 

@@ -70,7 +70,7 @@ SCF::SCF(StateIn& s) :
   need_vec_ = 1;
   compute_guess_ = 0;
 
-  s.get(maxiter_);
+  s.get(maxiter_,"maxiter");
   s.get(dens_reset_freq_);
   s.get(reset_occ_);
   s.get(local_dens_);

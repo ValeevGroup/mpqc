@@ -97,7 +97,7 @@ MCSCF::MCSCF(StateIn& s) :
 
   s.get(_ndocc);
   s.get(_density_reset_freq);
-  s.get(_maxiter);
+  s.get(_maxiter,"maxiter");
   s.get(_eliminate);
 
   s.getstring(ckptdir);

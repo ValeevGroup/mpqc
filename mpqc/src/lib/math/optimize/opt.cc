@@ -79,7 +79,7 @@ Optimize::Optimize(StateIn&s):
     }
   n_iterations_ = 0;
   conv_.restore_state(s);
-  function_.restore_state(s);
+  function_.key_restore_state(s,"function");
 }
 
 Optimize::Optimize(const RefKeyVal&keyval)

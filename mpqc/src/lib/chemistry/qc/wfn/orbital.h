@@ -1,7 +1,7 @@
 //
-// density.h
+// orbital.h
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1997 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
@@ -25,66 +25,33 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_wfn_density_h
-#define _chemistry_qc_wfn_density_h
+#ifndef _chemistry_qc_wfn_orbital_h
+#define _chemistry_qc_wfn_orbital_h
 
 #ifdef __GNUC__
 #pragma interface
 #endif
 
 #include <math/isosurf/volume.h>
-#include <chemistry/qc/wfn/wfn.h>
-#include <chemistry/molecule/molrender.h>
+#include <chemistry/qc/wfn/obwfn.h>
 
-class ElectronDensity: public Volume {
-#   define CLASSNAME ElectronDensity
+class Orbital: public Volume {
+#   define CLASSNAME Orbital
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    RefWavefunction wfn_;
+    RefOneBodyWavefunction wfn_;
+    int orbital_;
+
     virtual void compute();
   public:
-    ElectronDensity(const RefKeyVal&);
-    ElectronDensity(const RefWavefunction&);
-    ~ElectronDensity();
+    Orbital(const RefKeyVal&);
+    Orbital(const RefOneBodyWavefunction&, int orbital);
+    ~Orbital();
     virtual void boundingbox(double valuemin,
                              double valuemax,
                              SCVector3& p1, SCVector3& p2);
-};
-
-class DensityColorizer: public MoleculeColorizer {
-#   define CLASSNAME DensityColorizer
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
-  protected:
-    RefWavefunction wfn_;
-    double scale_;
-    double reference_;
-    int have_scale_;
-    int have_reference_;
-  public:
-    DensityColorizer(const RefKeyVal&);
-    ~DensityColorizer();
-
-    void colorize(const RefRenderedPolygons &);
-};
-
-class GradDensityColorizer: public MoleculeColorizer {
-#   define CLASSNAME GradDensityColorizer
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
-  protected:
-    RefWavefunction wfn_;
-    double scale_;
-    double reference_;
-    int have_scale_;
-    int have_reference_;
-  public:
-    GradDensityColorizer(const RefKeyVal&);
-    ~GradDensityColorizer();
-
-    void colorize(const RefRenderedPolygons &);
 };
 
 #endif

@@ -47,17 +47,19 @@ OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
 
 OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   Wavefunction(s),
-  eigenvectors_(s,this),
-  density_(s,this)
+  eigenvectors_(this),
+  density_(this)
   maybe_SavableState(s)
 {
   eigenvectors_.result_noupdate() =
     basis_matrixkit()->matrix(basis_dimension(), basis_dimension());
-  eigenvectors_.result_noupdate()->restore(s);
+  eigenvectors_.restore_state(s);
+  eigenvectors_.result_noupdate().restore(s);
 
   density_.result_noupdate() =
     basis_matrixkit()->symmmatrix(basis_dimension());
-  density_.result_noupdate()->restore(s);
+  density_.restore_state(s);
+  density_.result_noupdate().restore(s);
 }
 
 OneBodyWavefunction::~OneBodyWavefunction()
@@ -70,10 +72,10 @@ OneBodyWavefunction::save_data_state(StateOut&s)
   Wavefunction::save_data_state(s);
 
   eigenvectors_.save_data_state(s);
-  eigenvectors_.result_noupdate()->save(s);
+  eigenvectors_.result_noupdate().save(s);
 
   density_.save_data_state(s);
-  density_.result_noupdate()->save(s);
+  density_.result_noupdate().save(s);
 }
 
 // at some point this will have to check for zero eigenvalues and not

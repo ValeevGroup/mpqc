@@ -72,10 +72,10 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 
 Wavefunction::Wavefunction(StateIn&s):
   MolecularEnergy(s),
-  overlap_(s,this),
-  hcore_(s,this),
-  natural_orbitals_(s,this),
-  natural_density_(s,this),
+  overlap_(this),
+  hcore_(this),
+  natural_orbitals_(this),
+  natural_density_(this),
   bs_values(0),
   bsg_values(0)
   maybe_SavableState(s)

@@ -34,7 +34,9 @@
 #define _util_group_memrdma_h
 
 #include <iostream>
+#include <vector>
 
+#include <util/group/pool.h>
 #include <util/group/memmsg.h>
 
 namespace sc {
@@ -50,12 +52,19 @@ class RDMAMemoryGrp : public MsgMemoryGrp {
     virtual void replace_data(void *, int node, int offset, int size,
                               int unlock) = 0;
     virtual void sum_data(double *data, int node, int doffset, int dsize) = 0;
+
+    std::vector<Pool*> pools_;
+    size_t default_pool_size_;
+    void* malloc_region(size_t nbyte);
+    void free_region(void*);
   public:
     RDMAMemoryGrp(const Ref<MessageGrp>& msg);
     RDMAMemoryGrp(const Ref<KeyVal>&);
     ~RDMAMemoryGrp();
 
     void *localdata();
+
+    void set_localsize(size_t localsize);
 
     void *obtain_writeonly(distsize_t offset, int size);
     void *obtain_readwrite(distsize_t offset, int size);

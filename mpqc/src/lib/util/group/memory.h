@@ -236,9 +236,11 @@ class MemoryGrp: public DescribedClass {
         for data that will be used for global operation can improve
         efficiency.  Data allocated in this way must be freed with
         free_local_double.  */
+    virtual void* malloc_local(size_t nbyte);
     virtual double* malloc_local_double(size_t ndouble);
 
     /** Free data that was allocated with malloc_local_double. */
+    virtual void free_local(void *data);
     virtual void free_local_double(double *data);
 
     /** Processes outstanding requests. Some memory group implementations

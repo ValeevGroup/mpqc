@@ -242,16 +242,28 @@ MemoryGrp::sum_reduction_on_node(double *data, size_t doffset, int dlength,
                 dlength);
 }
 
+void*
+MemoryGrp::malloc_local(size_t nbyte)
+{
+  return new char[nbyte];
+}
+
+void
+MemoryGrp::free_local(void *data)
+{
+  delete[] reinterpret_cast<char*>(data);
+}
+
 double*
 MemoryGrp::malloc_local_double(size_t ndouble)
 {
-  return new double[ndouble];
+  return reinterpret_cast<double*>(malloc_local(ndouble*sizeof(double)));
 }
 
 void
 MemoryGrp::free_local_double(double *data)
 {
-  delete[] data;
+  free_local(data);
 }
 
 void

@@ -79,7 +79,7 @@ ARMCIMemoryGrp::set_localsize(size_t localsize)
   ARMCI_AllFence();
 
   // this will initialize the offsets_ array
-  MsgMemoryGrp::set_localsize(localsize);
+  RDMAMemoryGrp::set_localsize(localsize);
 
   if (all_data_) {
       ARMCI_Free(data_);
@@ -180,14 +180,14 @@ ARMCIMemoryGrp::deactivate()
   ARMCI_AllFence();
 }
 
-double*
-ARMCIMemoryGrp::malloc_local_double(size_t ndouble)
+void*
+ARMCIMemoryGrp::malloc_local(size_t nbyte)
 {
-  return reinterpret_cast<double*>(ARMCI_Malloc_local(ndouble*sizeof(double)));
+  return ARMCI_Malloc_local(nbyte);
 }
 
 void
-ARMCIMemoryGrp::free_local_double(double *data)
+ARMCIMemoryGrp::free_local(void *data)
 {
   ARMCI_Free_local(data);
 }

@@ -37,6 +37,7 @@
 #include <util/group/pool.h>
 #include <util/group/memrdma.h>
 #include <util/group/memiter.h>
+#include <stdexcept>
 
 using namespace std;
 using namespace sc;
@@ -72,12 +73,57 @@ RDMAMemoryGrp::RDMAMemoryGrp(const Ref<MessageGrp>& msg):
   MsgMemoryGrp(msg)
 {
   data_ = 0;
+  default_pool_size_ = 1000000;
 }
 
 RDMAMemoryGrp::RDMAMemoryGrp(const Ref<KeyVal>& keyval):
   MsgMemoryGrp(keyval)
 {
   data_ = 0;
+  default_pool_size_ = 1000000;
+}
+
+void*
+RDMAMemoryGrp::malloc_region(size_t nbyte)
+{
+  void *data = 0;
+  for (int i=0; data==0 && i<pools_.size(); i++) {
+      data = pools_[i]->allocate(nbyte);
+    }
+  if (data == 0) {
+      if (default_pool_size_ < nbyte) default_pool_size_ = nbyte * 2;
+      else if (pools_.size() > 4) default_pool_size_ *= 2;
+      void *pooldata = malloc_local(default_pool_size_);
+      Pool *pool = new(pooldata) Pool(default_pool_size_);
+      pools_.push_back(pool);
+      data = pool->allocate(nbyte);
+    }
+  return data;
+}
+
+void
+RDMAMemoryGrp::free_region(void*data)
+{
+  char *cdata = reinterpret_cast<char*>(data);
+  for (int i=0; i<pools_.size(); i++) {
+      char *pstart = reinterpret_cast<char*>(pools_[i]);
+      if (cdata > pstart && cdata < &pstart[pools_[i]->size()]) {
+          pools_[i]->release(data);
+          return;
+        }
+    }
+  throw std::runtime_error("could not find data to release in a Pool");
+}
+
+void
+RDMAMemoryGrp::set_localsize(size_t localsize)
+{
+  for (int i=0; i<pools_.size(); i++) {
+      free_local(pools_[i]);
+    }
+  pools_.resize(0);
+
+  MsgMemoryGrp::set_localsize(localsize);
 }
 
 void *
@@ -95,7 +141,7 @@ RDMAMemoryGrp::~RDMAMemoryGrp()
 void *
 RDMAMemoryGrp::obtain_writeonly(distsize_t offset, int size)
 {
-  void *data = (void *) new char[size];
+  void *data = malloc_region(size);
   return data;
 }
 
@@ -103,7 +149,7 @@ void *
 RDMAMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   PRINTF(("RDMAMemoryGrp::obtain_readwrite entered\n"));
-  void *data = (void *) new char[size];
+  void *data = malloc_region(size);
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       PRINTF(("RDMAMemoryGrp::obtain_readwrite: node = %d, "
@@ -118,7 +164,7 @@ RDMAMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 void *
 RDMAMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
-  void *data = (void *) new char[size];
+  void *data = malloc_region(size);
   PRINTF(("%d: RDMAMemoryGrp::obtain_readonly:"
           "overall: offset = %d size = %d\n",
           me(), offset, size));
@@ -158,7 +204,7 @@ RDMAMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
 void
 RDMAMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
 {
-  delete[] (char*) data;
+  free_region(data);
 }
 
 void
@@ -171,7 +217,7 @@ RDMAMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
               i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
       replace_data(i.data(), i.node(), i.offset(), i.size(), 0);
     }
-  delete[] (char*) data;
+  free_region(data);
 }
 
 void
@@ -181,7 +227,7 @@ RDMAMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
   for (i.begin(offset, size); i.ready(); i.next()) {
       replace_data(i.data(), i.node(), i.offset(), i.size(), 1);
     }
-  delete[] (char*) data;
+  free_region(data);
 }
 
 void

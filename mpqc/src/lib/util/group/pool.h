@@ -285,6 +285,8 @@ class Pool {
 //     Handle& allocate_handle(size_t size, int priority = 0);
 //     void release(Handle&);
 
+    size_t size() { return size_; }
+
     void* allocate(size_t size);
     void release(void*d);
     double* allocate_double(size_t n);

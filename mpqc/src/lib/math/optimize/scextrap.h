@@ -74,6 +74,8 @@ class SelfConsistentExtrapolation: public SavableState {
     // be given to extrapolate if error could be changed.
     virtual int extrapolate(const RefSCExtrapData& data,
                             const RefSCExtrapError& error) = 0;
+
+    virtual void reinitialize() =0;
 };
 SavableState_REF_dec(SelfConsistentExtrapolation);
 

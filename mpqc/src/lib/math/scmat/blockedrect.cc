@@ -751,7 +751,10 @@ BlockedSCMatrix::nblocks() const
 RefSCMatrix
 BlockedSCMatrix::block(int i)
 {
-  return mats_[i];
+  if (mats_)
+      return mats_[i];
+  else
+      return (SCMatrix*)0;
 }
 
 RefSCMatrixSubblockIter

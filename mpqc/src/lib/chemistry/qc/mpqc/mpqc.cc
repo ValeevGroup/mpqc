@@ -143,13 +143,13 @@ MPSCF::MPSCF(KeyVal&keyval):
 
   // override the default thresholds
   if (!keyval.exists("value_accuracy")) {
-      set_value_accuracy(1.0e-10);
+      set_desired_value_accuracy(1.0e-10);
     }
   if (!keyval.exists("gradient_accuracy")) {
-      set_gradient_accuracy(1.0e-9);
+      set_desired_gradient_accuracy(1.0e-9);
     }
   if (!keyval.exists("hessian_accuracy")) {
-      set_hessian_accuracy(1.0e-8);
+      set_desired_hessian_accuracy(1.0e-8);
     }
 
   // make sure only one MPSCF object exists
@@ -423,11 +423,12 @@ MPSCF::compute()
 
   // Adjust the value accuracy if gradients are needed and set up
   // minimal accuracies.
-  if (value_accuracy() > 1.0e-4) set_value_accuracy(1.0e-4);
+  if (desired_value_accuracy() > 1.0e-4) set_desired_value_accuracy(1.0e-4);
   if (_gradient.compute()) {
-      if (gradient_accuracy() > 1.0e-4) set_gradient_accuracy(1.0e-4);
-      if (value_accuracy() > 0.1 * gradient_accuracy()) {
-          set_value_accuracy(0.1 * gradient_accuracy());
+      if (desired_gradient_accuracy() > 1.0e-4)
+        set_desired_gradient_accuracy(1.0e-4);
+      if (desired_value_accuracy() > 0.1 * desired_gradient_accuracy()) {
+          set_desired_value_accuracy(0.1 * desired_gradient_accuracy());
         }
     }
 
@@ -453,7 +454,7 @@ MPSCF::compute()
   if (_scf.needed() || _energy.needed()) {
       tim_enter("scf_vect");
 
-      scf_info.convergence = ((int) -log10(value_accuracy())) + 1;
+      scf_info.convergence = ((int) -log10(_energy.desired_accuracy())) + 1;
       scf_info.intcut = scf_info.convergence + 1;
       fprintf(outfile,"MPSCF: computing energy with integral cutoff 10^-%d"
               " and convergence 10^-%d\n",
@@ -470,6 +471,7 @@ MPSCF::compute()
       scf_info.restart=1;
       _scf.computed() = 1;
       set_energy(scf_info.nuc_rep+scf_info.e_elec);
+      _energy.set_actual_accuracy(_energy.desired_accuracy());
 
       tim_exit("scf_vect");
     }
@@ -482,7 +484,7 @@ MPSCF::compute()
   double_matrix_t grad;
   allocbn_double_matrix(&grad,"n1 n2",3,centers.n);
   if(_gradient.needed()) {
-      int cutoff = ((int) -log10(gradient_accuracy())) + 1;
+      int cutoff = ((int) -log10(desired_gradient_accuracy())) + 1;
       fprintf(outfile,"MPSCF: computing gradient with cutoff 10^-%d\n",cutoff);
       if(!scf_info.iopen) {
           dmt_force_csscf_threshold_10(cutoff);
@@ -504,6 +506,7 @@ MPSCF::compute()
         }
       // update the gradient, converting to internal coordinates if needed
       set_gradient(g);
+      _gradient.set_actual_accuracy(desired_gradient_accuracy());
     }
 
   // compute the hessian if needed

@@ -16,7 +16,8 @@ SCMatrixBlock::SCMatrixBlock()
 void *
 SCMatrixBlock::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -67,7 +68,8 @@ SCMatrixRectBlock::save_data_state(StateOut&s)
 void *
 SCMatrixRectBlock::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -113,7 +115,8 @@ SCMatrixLTriBlock::save_data_state(StateOut&s)
 void *
 SCMatrixLTriBlock::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -170,7 +173,8 @@ SCMatrixDiagBlock::save_data_state(StateOut&s)
 void *
 SCMatrixDiagBlock::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -216,7 +220,8 @@ SCVectorSimpleBlock::save_data_state(StateOut&s)
 void *
 SCVectorSimpleBlock::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

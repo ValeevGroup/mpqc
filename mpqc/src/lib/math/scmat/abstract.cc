@@ -23,7 +23,8 @@ SCDimension::SCDimension()
 void *
 SCDimension::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -56,11 +57,11 @@ SCElementScale::save_data_state(StateOut&s)
 void *
 SCElementScale::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCDiagElementOp::_castdown(cd),
-                     SCSymmElementOp::_castdown(cd),
-                     SCRectElementOp::_castdown(cd),
-                     SCVectorElementOp::_castdown(cd)
-                   };
+  void* casts[4];
+  casts[0] = SCDiagElementOp::_castdown(cd);
+  casts[1] = SCSymmElementOp::_castdown(cd);
+  casts[2] = SCRectElementOp::_castdown(cd);
+  casts[3] = SCVectorElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementScale::~SCElementScale() {}
@@ -83,6 +84,7 @@ SCElementScale::process(SCMatrixBlockIter&i)
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
+SCElementInvert::SCElementInvert() {}
 SCElementInvert::SCElementInvert(double a) {}
 SCElementInvert::SCElementInvert(StateIn&s):
   SavableState(s,class_desc_)
@@ -95,11 +97,11 @@ SCElementInvert::save_data_state(StateOut&s)
 void *
 SCElementInvert::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCDiagElementOp::_castdown(cd),
-                     SCSymmElementOp::_castdown(cd),
-                     SCRectElementOp::_castdown(cd),
-                     SCVectorElementOp::_castdown(cd)
-                   };
+  void* casts[4];
+  casts[0] = SCDiagElementOp::_castdown(cd);
+  casts[1] = SCSymmElementOp::_castdown(cd);
+  casts[2] = SCRectElementOp::_castdown(cd);
+  casts[3] = SCVectorElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementInvert::~SCElementInvert() {}
@@ -122,6 +124,7 @@ SCElementInvert::process(SCMatrixBlockIter&i)
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
+SCElementSquareRoot::SCElementSquareRoot() {}
 SCElementSquareRoot::SCElementSquareRoot(double a) {}
 SCElementSquareRoot::SCElementSquareRoot(StateIn&s):
   SavableState(s,class_desc_)
@@ -134,11 +137,11 @@ SCElementSquareRoot::save_data_state(StateOut&s)
 void *
 SCElementSquareRoot::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCDiagElementOp::_castdown(cd),
-                     SCSymmElementOp::_castdown(cd),
-                     SCRectElementOp::_castdown(cd),
-                     SCVectorElementOp::_castdown(cd)
-                   };
+  void* casts[4];
+  casts[0] = SCDiagElementOp::_castdown(cd);
+  casts[1] = SCSymmElementOp::_castdown(cd);
+  casts[2] = SCRectElementOp::_castdown(cd);
+  casts[3] = SCVectorElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementSquareRoot::~SCElementSquareRoot() {}
@@ -177,11 +180,11 @@ SCElementMaxAbs::save_data_state(StateOut&s)
 void *
 SCElementMaxAbs::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCDiagElementOp::_castdown(cd),
-                     SCSymmElementOp::_castdown(cd),
-                     SCRectElementOp::_castdown(cd),
-                     SCVectorElementOp::_castdown(cd)
-                   };
+  void* casts[4];
+  casts[0] = SCDiagElementOp::_castdown(cd);
+  casts[1] = SCSymmElementOp::_castdown(cd);
+  casts[2] = SCRectElementOp::_castdown(cd);
+  casts[3] = SCVectorElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementMaxAbs::~SCElementMaxAbs() {}
@@ -234,11 +237,11 @@ SCElementAssign::save_data_state(StateOut&s)
 void *
 SCElementAssign::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCDiagElementOp::_castdown(cd),
-                     SCSymmElementOp::_castdown(cd),
-                     SCRectElementOp::_castdown(cd),
-                     SCVectorElementOp::_castdown(cd)
-                   };
+  void* casts[4];
+  casts[0] = SCDiagElementOp::_castdown(cd);
+  casts[1] = SCSymmElementOp::_castdown(cd);
+  casts[2] = SCRectElementOp::_castdown(cd);
+  casts[3] = SCVectorElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementAssign::~SCElementAssign() {}
@@ -275,11 +278,11 @@ SCElementShiftDiagonal::save_data_state(StateOut&s)
 void *
 SCElementShiftDiagonal::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCDiagElementOp::_castdown(cd),
-                     SCSymmElementOp::_castdown(cd),
-                     SCRectElementOp::_castdown(cd),
-                     SCVectorElementOp::_castdown(cd)
-                   };
+  void* casts[4];
+  casts[0] = SCDiagElementOp::_castdown(cd);
+  casts[1] = SCSymmElementOp::_castdown(cd);
+  casts[2] = SCRectElementOp::_castdown(cd);
+  casts[3] = SCVectorElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SCElementShiftDiagonal::~SCElementShiftDiagonal() {}
@@ -320,7 +323,8 @@ SCMatrix::save_data_state(StateOut&s)
 void *
 SCMatrix::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -500,7 +504,8 @@ SymmSCMatrix::save_data_state(StateOut&s)
 void *
 SymmSCMatrix::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -649,7 +654,8 @@ DiagSCMatrix::save_data_state(StateOut&s)
 void *
 DiagSCMatrix::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -757,7 +763,8 @@ SCVector::save_data_state(StateOut&s)
 void *
 SCVector::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

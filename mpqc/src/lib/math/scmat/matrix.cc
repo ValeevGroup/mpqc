@@ -20,7 +20,8 @@ SCElementOp::SCElementOp()
 void *
 SCElementOp::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -90,7 +91,8 @@ SavableState_REF_def(SCRectElementOp);
 void *
 SCRectElementOp::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCElementOp::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -115,7 +117,8 @@ SavableState_REF_def(SCSymmElementOp);
 void *
 SCSymmElementOp::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCElementOp::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -140,7 +143,8 @@ SavableState_REF_def(SCDiagElementOp);
 void *
 SCDiagElementOp::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCElementOp::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -165,7 +169,8 @@ SavableState_REF_def(SCVectorElementOp);
 void *
 SCVectorElementOp::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCElementOp::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

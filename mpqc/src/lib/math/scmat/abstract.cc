@@ -843,8 +843,12 @@ SCVector::print(ostream&o)
 void
 SCVector::normalize()
 {
-  double norm = scalar_product(this);
-  norm = 1.0/sqrt(norm);
+  double norm = sqrt(scalar_product(this));
+  if (norm > 1.e-20) norm = 1.0/norm;
+  else {
+      fprintf(stderr,"SCVector::normalize: tried to normalize tiny vector\n");
+      abort();
+    }
   scale(norm);
 }
 

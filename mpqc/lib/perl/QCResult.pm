@@ -247,6 +247,55 @@ sub parse_mpqc {
         elsif ($wante && /S2 norm =\s+$fltrx/) {
             $s2norm = $1;
         }
+        elsif ($wante && /Largest S2 values.*:/) {
+            my $s2large_coef = [];
+            my $s2large_i = [];
+            my $s2large_a = [];
+            my $is2 = 0;
+            while (<$out>) {
+                if (/^\s*([0-9]+)\s+$fltrx\s+([0-9]+)\s+([A-Za-z0-9]+)\s+->\s+([0-9]+)\s+([A-Za-z0-9]+)\s*$/) {
+                    $s2large_coef->[$is2] = $2;
+                    $s2large_i->[$is2] = "$3$4";
+                    $s2large_a->[$is2] = "$5$6";
+                    $is2 = $is2 + 1;
+                }
+                else {
+                    last;
+                }
+            }
+            $self->{"s2large_coef"} = $s2large_coef;
+            $self->{"s2large_i"} = $s2large_i;
+            $self->{"s2large_a"} = $s2large_a;
+        }
+        elsif ($wante && /Largest first order coefficients.*:/) {
+            my $d1large_coef = [];
+            my $d1large_i = [];
+            my $d1large_j = [];
+            my $d1large_a = [];
+            my $d1large_b = [];
+            my $d1large_spin = [];
+            my $id1 = 0;
+            while (<$out>) {
+                if (/^\s*([0-9]+)\s+$fltrx\s+([0-9]+)\s+([A-Za-z0-9]+)\s+([0-9]+)\s+([A-Za-z0-9]+)\s+->\s+([0-9]+)\s+([A-Za-z0-9]+)\s+([0-9]+)\s+([A-Za-z0-9]+)\s+\((....)\)\s*$/) {
+                    $d1large_coef->[$id1] = $2;
+                    $d1large_i->[$id1] = "$3$4";
+                    $d1large_j->[$id1] = "$5$6";
+                    $d1large_a->[$id1] = "$7$8";
+                    $d1large_b->[$id1] = "$9$10";
+                    $d1large_spin->[$id1] = $11;
+                    $id1 = $id1 + 1;
+                }
+                else {
+                    last;
+                }
+            }
+            $self->{"d1large_coef"} = $d1large_coef;
+            $self->{"d1large_i"} = $d1large_i;
+            $self->{"d1large_j"} = $d1large_j;
+            $self->{"d1large_a"} = $d1large_a;
+            $self->{"d1large_b"} = $d1large_b;
+            $self->{"d1large_spin"} = $d1large_spin;
+        }
         elsif (/The optimization has converged/) {
             $optconverged = 1;
         }
@@ -439,6 +488,51 @@ sub gradient {
 sub frequencies {
     my $self = shift;
     $self->{"freq"}
+}
+
+sub d1large_coef {
+    my $self = shift;
+    $self->{"d1large_coef"}
+}
+
+sub d1large_i {
+    my $self = shift;
+    $self->{"d1large_i"}
+}
+
+sub d1large_j {
+    my $self = shift;
+    $self->{"d1large_j"}
+}
+
+sub d1large_a {
+    my $self = shift;
+    $self->{"d1large_a"}
+}
+
+sub d1large_b {
+    my $self = shift;
+    $self->{"d1large_b"}
+}
+
+sub d1large_spin {
+    my $self = shift;
+    $self->{"d1large_spin"}
+}
+
+sub s2large_coef {
+    my $self = shift;
+    $self->{"s2large_coef"}
+}
+
+sub s2large_i {
+    my $self = shift;
+    $self->{"s2large_i"}
+}
+
+sub s2large_a {
+    my $self = shift;
+    $self->{"s2large_a"}
 }
 
 1;

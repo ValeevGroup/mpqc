@@ -83,9 +83,12 @@ SymmMolecularCoor::form_coordinates()
   int nunique = n3 - 6; // need to detect linear
 
   if (nredundant < nunique) {
-      fprintf(stderr,"IntMolecularCoor::form_coordinates: "
+      fprintf(stderr,"SymmMolecularCoor::form_coordinates: "
               "found too few redundant coordinates\n");
+      fprintf(stderr,"nredundant = %d, 3n-6 = %d\n", nredundant, nunique);
       fprintf(stderr,"  (the geometry is probably bad)\n");
+      fprintf(stderr,"Molecule:\n");
+      molecule_->print();
       abort();
     }
 
@@ -155,7 +158,11 @@ SymmMolecularCoor::form_coordinates()
       coordinate->normalize();
 
       if (only_totally_symmetric_ && !is_totally_symmetric[i]) {
-          constant_->add(coordinate);
+          // Don't put nonsymmetric coordinates into the
+          // constant_ coordinate set.  This causes problems
+          // when coordinates with small coefficients are eliminated
+          // since they can then acquire symmetric components.
+          // constant_->add(coordinate);
         }
       else {
           variable_->add(coordinate);

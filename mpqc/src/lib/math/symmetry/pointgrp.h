@@ -278,6 +278,7 @@ class CharacterTable {
     int nirrep_;                         // the number of irreps in this pg
     IrreducibleRepresentation *gamma_;   // an array of irreps
     SymmetryOperation *symop;            // the matrices describing sym ops
+    int *_inv;                           // index of the inverse symop
     char *symb;                          // the Schoenflies symbol for the pg
 
     //texi this determines what type of point group we're dealing with
@@ -327,6 +328,9 @@ class CharacterTable {
     // 0 otherwise.
     int complex() const { if(pg==CN || pg==SN || pg==CNH) return 1; return 0; }
 
+    //texi Returns the index of the symop which is the inverse of symop[i].
+    int inverse(int i) const { return _inv[i]; }
+    
     //texi 
     // This prints the irrep to the given file, or stdout if none is given.
     // The second argument is an optional string of spaces to offset by.

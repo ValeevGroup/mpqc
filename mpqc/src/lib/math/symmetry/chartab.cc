@@ -6,12 +6,12 @@
 ////////////////////////////////////////////////////////////////////////
 
 CharacterTable::CharacterTable()
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
 {
 }
 
 CharacterTable::CharacterTable(const CharacterTable& ct)
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
 {
   *this = ct;
 }
@@ -21,6 +21,7 @@ CharacterTable::~CharacterTable()
   if (symb) delete[] symb; symb=0;
   if (gamma_) delete[] gamma_; gamma_=0;
   if (symop) delete[] symop; symop=0;
+  if (_inv) delete[] _inv; _inv=0;
   g=nt=nirrep_=0;
 }
 
@@ -54,6 +55,15 @@ CharacterTable::operator=(const CharacterTable& ct)
     }
   }
 
+  if (_inv)
+    delete[] _inv;
+  _inv=0;
+
+  if (ct._inv) {
+    _inv = new int[g];
+    memcpy(_inv,ct._inv,sizeof(int)*g);
+  }
+
   return *this;
 }
 
@@ -73,10 +83,15 @@ CharacterTable::print(FILE *fp, const char *off)
 
   for (i=0; i < g; i++)
     symop[i].print();
+
+  fprintf(fp,"\n");
+  for (i=0; i < g; i++)
+    symop[inverse(i)].print();
+  
 }
 
 CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
 {
   // first parse the point group symbol, this will give us the order of the
   // point group(g), the type of point group (pg), the order of the principle
@@ -101,7 +116,7 @@ CharacterTable::CharacterTable(const char *cpg, const SymmetryOperation& frame)
 }
 
 CharacterTable::CharacterTable(const char *cpg)
-  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symop(0), symb(0), _inv(0)
 {
   // first parse the point group symbol, this will give us the order of the
   // point group(g), the type of point group (pg), the order of the principle

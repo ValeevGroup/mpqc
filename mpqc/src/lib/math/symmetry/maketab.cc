@@ -48,6 +48,8 @@ int CharacterTable::make_table()
   symop = new SymmetryOperation[g];
   SymmetryOperation so;
 
+  _inv = new int[g];
+  
   // this array forms a reducible representation for rotations about x,y,z
   double *rot = new double[g];
   memset(rot,0,sizeof(double)*g);
@@ -1008,5 +1010,25 @@ int CharacterTable::make_table()
   delete[] rot;
   delete[] trans;
   
+  // now find the inverse of each symop
+  for (gi=0; gi < g; gi++) {
+    int gj;
+    for (gj=0; gj < g; gj++) {
+      so = symop[gi].operate(symop[gj]);
+
+      // is so a unit matrix?
+      if (fabs(1.0-so[0][0]) < 1.0e-8 &&
+          fabs(1.0-so[1][1]) < 1.0e-8 &&
+          fabs(1.0-so[2][2]) < 1.0e-8) break;
+    }
+
+    if (gj==g) {
+      fprintf(stderr,"make_table: uh oh, can't find inverse of %d\n",gi);
+      abort();
+    }
+
+    _inv[gi] = gj;
+  }
+    
   return 0;
 }

@@ -3,6 +3,10 @@
 #pragma implementation
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <chemistry/qc/mpqc/mpqc.h>
 
 extern "C" {
@@ -79,7 +83,7 @@ void MPSCF::init(int which)
       fprintf(outfile,
               "\n      MPSCF: Massively Parallel Quantum Chemistry\n\n\n");
       fprintf(outfile,"  Running on a %s with %d nodes.\n",
-              machine_type(),nproc);
+              TARGET_ARCH,nproc);
       fflush(outfile);
     }
     break;

@@ -36,6 +36,7 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/coor.h>
+#include <chemistry/molecule/localdef.h>
 
 #include "mpqc_int.h"
 
@@ -88,33 +89,33 @@ get_input(const RefKeyVal& keyval)
   if (keyval->exists("rms_force")) {
     int conv = keyval->intvalue("rms_force");
     conv_rmsf = pow(10.0,(double)-conv);
-    }
+  }
 
   if (keyval->exists("max_force")) {
     int conv = keyval->intvalue("max_force");
     conv_maxf = pow(10.0,(double)-conv);
-    }
+  }
 
   if (keyval->exists("convergence")) {
     int conv = keyval->intvalue("convergence");
     conv_crit = pow(10.0,(double)-conv);
-    }
+  }
 
   if (keyval->exists("maxstepsize")) {
     maxstepsize = keyval->doublevalue("maxstepsize");
-    }
+  }
 
   if (keyval->exists("cartesians")) {
     cartesians = keyval->booleanvalue("cartesians");
-    }
+  }
 
   if (keyval->exists("print_hessian")) {
     print_hessian = keyval->booleanvalue("print_hessian");
-    }
+  }
 
   if (keyval->exists("print_internal")) {
     print_internal = keyval->booleanvalue("print_internal");
-    }
+  }
 
   fprintf(outfp,"  intco:print_hessian       = %d\n",print_hessian);
   fprintf(outfp,"  intco:print_internal      = %d\n",print_internal);
@@ -356,4 +357,65 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   hessian.save_state(so);
 
   return GEOM_COMPUTE_GRADIENT;
+}
+
+void
+Geom_write_pdb(const RefKeyVal& keyval, RefMolecule& mol, char *title)
+{
+  double bohr = 0.52917706;
+
+  FILE *pdbf;
+
+  if (keyval->exists("filename")) {
+    char path[512];
+    char *fn = keyval->pcharvalue("filename");
+    sprintf(path,"%s.pdb",fn);
+    pdbf = fopen(path,"a+");
+    delete[] fn;
+  }  else
+    pdbf = fopen("mpqc.pdb","a+");
+
+  if (!pdbf) return;
+
+  if (keyval->exists("title")) {
+    char *title = keyval->pcharvalue("title");
+    fprintf(pdbf,"%-10s%-60s\n","COMPND",title);
+    delete[] title;
+  }  else {
+    fprintf(pdbf,"%-10s%-60s\n","COMPND","Title");
+  }
+
+  if (title)
+    fprintf(pdbf,"REMARK   %s\n",title);
+
+  for (int i=0; i < mol->natom(); i++) {
+    char symb[4];
+    sprintf(symb,"%s1",(*mol)[i].element().symbol());
+
+    fprintf(pdbf,
+            "HETATM%5d  %-3s UNK %5d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
+            i+1, symb, 0, (*mol)[i][0]*bohr, (*mol)[i][1]*bohr,
+            (*mol)[i][2]*bohr);
+  }
+
+  for (i=0; i < mol->natom(); i++) {
+    double at_rad_i = (*mol)[i].element().atomic_radius();
+
+    fprintf(pdbf,"CONECT%5d",i+1);
+
+    for (int j=0; j < mol->natom(); j++) {
+
+      if (j==i) continue;
+
+      double at_rad_j = (*mol)[j].element().atomic_radius();
+
+      if (dist((*mol)[i].point(),(*mol)[j].point()) < 1.1*(at_rad_i+at_rad_j))
+        fprintf(pdbf,"%5d",j+1);
+    }
+
+    fprintf(pdbf,"\n");
+  }
+
+  fprintf(pdbf,"END\n");
+  fclose(pdbf);
 }

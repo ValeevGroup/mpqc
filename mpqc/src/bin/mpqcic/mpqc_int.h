@@ -44,6 +44,7 @@ int Geom_init_mpqc(RefMolecule&, const RefKeyVal&);
 int Geom_update_mpqc(double_matrix_t*, const RefKeyVal&);
 
 void Geom_done_mpqc(const RefKeyVal&, int converged);
+void Geom_write_pdb(const RefKeyVal&, RefMolecule&, char * =0);
 
 int Scf_charges_from_esp(centers_t*,int,double_vector_t*,
                          double_vector_t*, expts_t*, double, int, FILE*,

@@ -114,7 +114,7 @@ main(int argc, char *argv[])
   
   int do_scf, do_grad, do_mp2, do_opt2_v1, do_opt2_v2;
   int read_geom, opt_geom, nopt, proper;
-  int save_fock, save_vector, print_geometry;
+  int save_fock, save_vector, print_geometry, make_pdb=0;
   int localp, throttle, sync_loop, node_timings;
   int geometry_converged;
 
@@ -218,6 +218,8 @@ main(int argc, char *argv[])
     if (keyval->exists("print_geometry"))
       print_geometry = keyval->booleanvalue("print_geometry");
 
+    make_pdb = keyval->booleanvalue("write_pdb");
+
     do_mp2 = 0;
     if (keyval->exists("mp2"))
       do_mp2 = keyval->booleanvalue("mp2");
@@ -302,8 +304,8 @@ main(int argc, char *argv[])
     scf_print_options(stdout, scf_info);
 
     if (print_geometry) {
-        mol->print();
-      }
+      mol->print();
+    }
     
    // initialize the geometry optimization stuff
     if (opt_geom) {
@@ -315,6 +317,10 @@ main(int argc, char *argv[])
 
    // we may have changed the geometry in mol, so reform centers
     reset_centers(centers,mol);
+
+   // write pdb file if requested
+    if (make_pdb)
+      Geom_write_pdb(keyval,mol,"initial geometry");
   }
 
   sgen_reset_bcast0();
@@ -501,8 +507,15 @@ main(int argc, char *argv[])
     }
   }
 
-  if (opt_geom && mynode0()==0)
+  if (opt_geom && mynode0()==0) {
     Geom_done_mpqc(keyval, geometry_converged);
+
+   // write pdb file if requested
+    if (make_pdb && geometry_converged)
+      Geom_write_pdb(keyval,mol,"final geometry");
+    else
+      Geom_write_pdb(keyval,mol,"converged geometry");
+  }
 
   if (do_grad) {
     if (scf_info.iopen)

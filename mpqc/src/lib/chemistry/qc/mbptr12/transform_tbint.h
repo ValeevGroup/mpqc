@@ -93,11 +93,16 @@ protected:
   void init_vars();
   // Re-construct the integrals accumulator object
   void reinit_acc();
+  // Allocate distributed memory
+  void alloc_mem(const size_t localmem);
+  // Deallocate distributed memory
+  void dealloc_mem();
 
   // Compute batchsize given the amount of used static memory and
   // the number of i-orbitals
   int compute_transform_batchsize_(size_t mem_static, int rank_i);
-  
+
+  // Compute the number of ij-pairs per this task
   static int compute_nij(const int rank_i, const int rank_j, const int nproc, const int me);
 
 public:

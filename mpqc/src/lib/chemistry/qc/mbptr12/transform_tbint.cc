@@ -220,6 +220,28 @@ TwoBodyMOIntsTransform::obsolete()
   reinit_acc();
 }
 
+void
+TwoBodyMOIntsTransform::alloc_mem(const size_t localmem)
+{
+  if (mem_.null())
+    throw std::runtime_error("TwoBodyMOIntsTransform::alloc_mem() -- memory group not initialized");
+  mem_->set_localsize(localmem);
+  if (debug_ >= 1) {
+    ExEnv::out0() << indent
+                  << "Size of global distributed array:       "
+                  << mem_->totalsize()
+                  << " Bytes" << endl;
+  }
+}
+
+void
+TwoBodyMOIntsTransform::dealloc_mem()
+{
+  if (mem_.null())
+    throw std::runtime_error("TwoBodyMOIntsTransform::dealloc_mem() -- memory group not initialized");
+  mem_->set_localsize(0);
+}
+
 int
 TwoBodyMOIntsTransform::compute_nij(const int rank_i, const int rank_j, const int nproc, const int me)
 {

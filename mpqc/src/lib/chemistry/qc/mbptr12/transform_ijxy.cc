@@ -119,15 +119,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     return;
 
   int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());
-  if (mem_.null())
-    throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- memory group not initialized");
-  mem_->set_localsize(num_te_types_*nij*space3_->rank()*space4_->rank()*sizeof(double));
-  if (debug_ >= 1) {
-    ExEnv::out0() << indent
-                  << "Size of global distributed array:       "
-                  << mem_->totalsize()
-                  << " Bytes" << endl;
-  }
+  alloc_mem((size_t)num_te_types_*nij*space3_->rank()*space4_->rank()*sizeof(double));
 
   // R12IntsAcc cannot work yet in cases when i and j are different spaces
   if (space1_ != space2_)

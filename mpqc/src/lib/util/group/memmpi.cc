@@ -251,6 +251,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
             }
         }
     }
+  return 0; // shouldn't get here
 }
 
 int

@@ -11,11 +11,13 @@ class StateOut;
 #define ARRAY_dec_standard(Type)					      \
  private:								      \
   int _length;								      \
+  int _managed;								      \
   Type * _array;							      \
  public:								      \
   Array ## Type();							      \
   Array ## Type(const Array ## Type &);					      \
   Array ## Type(int size);						      \
+  Array ## Type(Type*data, int size);					      \
   virtual ~Array ## Type();						      \
   void set_length(int size);						      \
   void reset_length(int size);						      \
@@ -61,11 +63,13 @@ class TMPArray ## Type							      \
  private:								      \
   int _length0;								      \
   int _length1;								      \
+  int _managed;								      \
   Type * _array;							      \
  public:								      \
   Array2 ## Type();							      \
   Array2 ## Type(const Array2 ## Type &);				      \
   Array2 ## Type(int,int);						      \
+  Array2 ## Type(Type*,int,int);					      \
   virtual ~Array2 ## Type();						      \
   void set_lengths(int,int);						      \
   Array2 ## Type & operator = (const Array2 ## Type & s);		      \
@@ -98,12 +102,15 @@ class Array2 ## Type							      \
   Array ## Type::Array ## Type(const Array ## Type&a):_array(0),_length(0) {  \
     operator=(a);							      \
     }									      \
+  Array ## Type::Array ## Type(Type* data,int size):			      \
+   _array(data),_length(size),_managed(0){}				      \
   Array ## Type::Array ## Type(int size):_array(0),_length(0)		      \
   { set_length(size); }							      \
   Array ## Type::~Array ## Type() { clear(); }				      \
   void Array ## Type::set_length(int size)				      \
   {									      \
-    if (_array) delete[] _array;					      \
+    if (_array && _managed) delete[] _array;				      \
+    _managed = 1;							      \
     if (size) _array = new Type [ size ];				      \
     else _array = 0;							      \
     _length = size;							      \
@@ -117,12 +124,14 @@ class Array2 ## Type							      \
     if (size < _length) maxi = size;					      \
     else maxi = _length;						      \
     for (int i=0; i<maxi; i++) _array[i] = tmp[i];			      \
-    if (tmp) delete[] tmp;						      \
+    if (_managed && tmp) delete[] tmp;					      \
+    _managed = 1;							      \
     _length = size;							      \
   }									      \
   Array ## Type& Array ## Type::operator = (const Array ## Type & s)	      \
   {									      \
-    if (_array) delete[] _array;					      \
+    if (_managed && _array) delete[] _array;				      \
+    _managed = 1;							      \
     _length = s._length;						      \
     if (_length) _array = new Type [ _length ];				      \
     else _array = 0;							      \
@@ -167,13 +176,16 @@ class Array2 ## Type							      \
     {									      \
       operator=(a);							      \
     }									      \
+  Array2 ## Type::Array2 ## Type(Type* data,int size0,int size1):	      \
+  _array(data),_length0(size0),_length1(size1),_managed(0) {}		      \
   Array2 ## Type::Array2 ## Type(int size0,int size1):			      \
   _array(0),_length0(0),_length1(0)					      \
   { set_lengths(size0,size1); }						      \
   Array2 ## Type::~Array2 ## Type() { clear(); }			      \
   void Array2 ## Type::set_lengths(int size0,int size1)			      \
   {									      \
-    if (_array) delete[] _array;					      \
+    if (_managed && _array) delete[] _array;				      \
+    _managed = 1;							      \
     if (size0*size1) _array = new Type [ size0*size1 ];			      \
     else _array = 0;							      \
     _length0 = size0;							      \
@@ -181,7 +193,8 @@ class Array2 ## Type							      \
   }									      \
   Array2 ## Type& Array2 ## Type::operator = (const Array2 ## Type & s)	      \
   {									      \
-    if (_array) delete[] _array;					      \
+    if (_managed && _array) delete[] _array;				      \
+    _managed = 1;							      \
     _length0 = s._length0;						      \
     _length1 = s._length1;						      \
     if (_length0*_length1) _array = new Type [ _length0*_length1 ];	      \

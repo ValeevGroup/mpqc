@@ -251,26 +251,26 @@ PointGroup::print(ostream &o) const
   }
 
   if (!unit_frame) {
-    ExEnv::out() << node0 << indent << "symmetry_frame = [";
-    ExEnv::out() << incindent;
+    o << node0 << indent << "symmetry_frame = [";
+    o << incindent;
     for (i=0; i<3; i++) {
-      ExEnv::out() << node0 << endl << indent;
-      ExEnv::out() << node0 << "[";
+      o << node0 << endl << indent;
+      o << node0 << "[";
       for (j=0; j<3; j++) {
-        ExEnv::out() << node0 << scprintf(" % 18.16f", frame(i,j));
+        o << node0 << scprintf(" % 18.16f", frame(i,j));
       }
-      ExEnv::out() << node0 << "]";
+      o << node0 << "]";
     }
-    ExEnv::out() << node0 << "]" << endl;
-    ExEnv::out() << decindent;
+    o << node0 << "]" << endl;
+    o << decindent;
   }
 
   if (!zero_origin) {
-    ExEnv::out() << node0 << indent << "origin = [";
+    o << node0 << indent << "origin = [";
     for (i=0; i<3; i++) {
-      ExEnv::out() << node0 << scprintf(" % 18.16f", origin_[i]);
+      o << node0 << scprintf(" % 18.16f", origin_[i]);
     }
-    ExEnv::out() << node0 << endl;
+    o << node0 << "]" << endl;
   }
 }
 

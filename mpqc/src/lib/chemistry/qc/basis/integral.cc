@@ -58,6 +58,12 @@ Integral::save_data_state(StateOut&o)
 }
 
 RefPetiteList
+Integral::petite_list()
+{
+  return new PetiteList(bs1_, this);
+}
+
+RefPetiteList
 Integral::petite_list(const RefGaussianBasisSet& gbs)
 {
   return new PetiteList(gbs, this);

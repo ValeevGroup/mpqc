@@ -56,6 +56,7 @@ class Integral : public SavableState {
 
     void set_storage(int i) { storage_=i; };
 
+    RefPetiteList petite_list();
     RefPetiteList petite_list(const RefGaussianBasisSet&);
     ShellRotation shell_rotation(int am, SymmetryOperation&, int pure=0);
 

@@ -103,8 +103,8 @@ ElectronDensity::boundingbox(double valuemin,
   for (i=0; i<3; i++) p1[i] = p2[i] = mol[0][i];
   for (i=1; i<mol.natom(); i++) {
       for (int j=0; j<3; j++) {
-          if (mol[i][j] < p1[i]) p1[i] = mol[i][j];
-          if (mol[i][j] > p2[i]) p2[i] = mol[i][j];
+          if (mol[i][j] < p1[j]) p1[j] = mol[i][j];
+          if (mol[i][j] > p2[j]) p2[j] = mol[i][j];
         }
     }
   for (i=0; i<3; i++) {

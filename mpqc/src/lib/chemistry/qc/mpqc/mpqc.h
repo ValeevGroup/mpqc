@@ -30,14 +30,14 @@ class MPSCF: public OneBodyWavefunction
     int save_vector;
     static int active;
     sym_struct_t sym_info;
-    scf_irreps_t irreps;
     scf_struct_t scf_info;
     int node_timings;
     centers_t centers;
-    dmt_matrix SCF_VEC;
+    centers_t oldcenters;
+    dmt_matrix Scf_Vec;
     Result _scf;
-    dmt_matrix FOCK;
-    dmt_matrix FOCKO;
+    dmt_matrix Fock;
+    dmt_matrix FockO;
     FILE* outfile;
 
     RefSCDimension _basisdim;

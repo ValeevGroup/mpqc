@@ -597,7 +597,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
             original_point_group_.symbol()[1] == '\0') {
       sigma = ct.order();  // group is T
       }
-  else sigma = 0.5*ct.order(); // group is not pure rot. group (CN, DN, or T)
+  else sigma = (int)(0.5*ct.order()); // group is not pure rot. group (CN, DN, or T)
 
   // compute S_trans
   double S_trans;

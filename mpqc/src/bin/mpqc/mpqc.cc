@@ -475,15 +475,15 @@ main(int argc, char *argv[])
       if (result) {
         cout << node0 << indent
              << "The optimization has converged." << endl << endl;
+        cout << node0 << indent
+             << scprintf("Value of the MolecularEnergy: %20.15f",
+                         mole->energy())
+             << endl << endl;
       } else {
         cout << node0 << indent
              << "The optimization has NOT converged." << endl << endl;
         ready_for_freq = 0;
       }
-      cout << node0 << indent
-           << scprintf("Value of the MolecularEnergy: %20.15f",
-                       mole->energy())
-           << endl << endl;
     } else if (do_grad && mole->gradient_implemented()) {
       mole->do_gradient(1);
       cout << node0 << endl << indent

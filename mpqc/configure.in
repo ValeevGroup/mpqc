@@ -542,9 +542,9 @@ else
   CPPFLAGS="$CPPFLAGS -I$srcdir/include/libg++-stub"
   case $target in
 changequote(<<, >>)dnl
-    *-sgi-irix6.[01]*)
+    *-sgi-irix6.0*)
 changequote([, ])dnl
-      AC_MSG_RESULT("old *-sgi-irix")
+      AC_MSG_RESULT("*-sgi-irix6.0*")
     ;;
     *-sgi-irix*)
       if test X$CXX = XCC; then

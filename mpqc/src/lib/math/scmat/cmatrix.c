@@ -97,6 +97,8 @@ cmat_transpose_matrix(double**a, int nr, int nc)
   double* tmpp;
   double* tmp;
 
+  if (nr == 0 || nc == 0) return;
+
   if (nr == nc) {
       cmat_transpose_square_matrix(a,nr);
       return;

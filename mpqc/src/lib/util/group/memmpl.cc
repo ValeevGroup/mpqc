@@ -16,13 +16,15 @@
 #define ENABLE do { fflush(stdout); } while(0)
 
 
+#define ACK 0
+
 #define DEBUG 0
+#define DEBREQ 0
 
 #if DEBUG
 #  undef PRINTF
 #  define PRINTF(args) do { DISABLE; \
                             printf args; \
-                            fflush(stdout); \
                             ENABLE; \
                            } while(0)
 #else
@@ -35,11 +37,18 @@
 
 static volatile int global_source, global_type, global_mid;
 static MPLMemoryGrp *global_mpl_mem = 0;
+static int ack_serial_number = 0;
 
 static void
-mpl_memory_handler(int*msgid_arg)
+mpl_memory_handler_(MemoryDataRequest& buffer, int*msgid_arg)
 {
-  global_mpl_mem->active_ = 0;
+  if (!global_mpl_mem) {
+      fprintf(stderr, "mpl_memory_handler: called while inactive\n");
+      sleep(1);
+      abort();
+    }
+
+  //global_mpl_mem->active_ = 0;
   int i;
   int mid;
   int type;
@@ -54,17 +63,19 @@ mpl_memory_handler(int*msgid_arg)
 
   if (msgid_arg) mpc_wait(msgid_arg, &count);
 
-  const char *request_name
-      = global_mpl_mem->data_request_buffer_.request_string();
-  MemoryDataRequest::Request request
-      = global_mpl_mem->data_request_buffer_.request();
-  int offset = global_mpl_mem->data_request_buffer_.offset();
-  int size = global_mpl_mem->data_request_buffer_.size();
-  int node = global_mpl_mem->data_request_buffer_.node();
+  const char *request_name = buffer.request_string();
+  MemoryDataRequest::Request request = buffer.request();
+  int offset = buffer.offset();
+  int size = buffer.size();
+  int node = buffer.node();
   int from_type = global_mpl_mem->data_type_from_handler_;
   int to_type = global_mpl_mem->data_type_to_handler_;
 
-  global_mpl_mem->data_request_buffer_.print("handler:");
+  const char *handlerstr;
+  if (msgid_arg) handlerstr = "====:";
+  else handlerstr = "----:";
+
+  if (DEBREQ) buffer.print(handlerstr);
 
   switch (request) {
   case MemoryDataRequest::Deactivate:
@@ -80,14 +91,14 @@ mpl_memory_handler(int*msgid_arg)
       //        &&(global_mpl_mem->nsync_ < 1))) {
       //    global_mpl_mem->activate();
       //  }
-      if (1||msgid_arg) global_mpl_mem->activate();
+      if (msgid_arg) global_mpl_mem->activate();
       break;
   case MemoryDataRequest::Retrieve:
       mpc_send(&global_mpl_mem->data_[offset], size, node, from_type, &mid);
       mpc_wait(&mid, &count);
-      PRINTF(("%d:: send %d bytes at byte offset %d (mid = %d)\n",
-              global_mpl_mem->me(), size, offset, mid));
-      if (1||msgid_arg) global_mpl_mem->activate();
+      PRINTF(("%s sent %d bytes at byte offset %d (mid = %d)\n",
+              handlerstr, size, offset, mid));
+      if (msgid_arg) global_mpl_mem->activate();
       break;
   case MemoryDataRequest::Replace:
       //PRINTF(("%d:: about to replace %d bytes at byte offset %d\n",
@@ -96,13 +107,16 @@ mpl_memory_handler(int*msgid_arg)
       type = to_type;
       mpc_recv(&global_mpl_mem->data_[offset], size, &source, &type, &mid);
       mpc_wait(&mid, &count);
-      PRINTF(("%d:: replaced %d bytes at byte offset %d (mid = %d)\n",
-              global_mpl_mem->me(), size, offset, mid));
+      PRINTF(("%s replaced %d bytes at byte offset %d (mid = %d)\n",
+              handlerstr, size, offset, mid));
+#if ACK
+      junk = (global_mpl_mem->me() & 0xff) + (ack_serial_number++ << 8);
       mpc_send(&junk, sizeof(junk), node, from_type, &mid);
       mpc_wait(&mid, &count);
-      PRINTF(("%d:: sent go ahead to %d (mid = %d)\n",
-              global_mpl_mem->me(), node, mid));
-      if (1||msgid_arg) global_mpl_mem->activate();
+      PRINTF(("%s sent ack %d:%d to %d\n",
+              handlerstr, junk&0xff, junk>>8, node));
+#endif
+      if (msgid_arg) global_mpl_mem->activate();
       break;
   case MemoryDataRequest::DoubleSum:
       dsize = size/sizeof(double);
@@ -111,24 +125,38 @@ mpl_memory_handler(int*msgid_arg)
       type = to_type;
       mpc_recv(data, size, &source, &type, &mid);
       mpc_wait(&mid, &count);
-      PRINTF(("%d:: summing %d bytes (%d doubles) (mid = %d)\n",
-              global_mpl_mem->me(), size, size/sizeof(double), mid));
+      if (count != size) {
+          fprintf(stderr, "MPLMessageGrp: handler: DoubleSum: wrong size\n");
+          sleep(1);
+          abort();
+        }
+      PRINTF(("%s summing %d bytes (%d doubles) (mid = %d)\n",
+              handlerstr, size, size/sizeof(double), mid));
       source_data = (double*) &global_mpl_mem->data_[offset];
       for (i=0; i<dsize; i++) {
           source_data[i] += data[i];
         }
       delete[] data;
+#if ACK
+      junk = (global_mpl_mem->me() & 0xff) + (ack_serial_number++ << 8);
       mpc_send(&junk, sizeof(junk), node, from_type, &mid);
       mpc_wait(&mid, &count);
-      PRINTF(("%d:: sent go ahead to %d (mid = %d)\n",
-              global_mpl_mem->me(), node, mid));
-      if (1||msgid_arg) global_mpl_mem->activate();
+      PRINTF(("%s sent ack %d:%d to %d\n",
+              handlerstr, junk&0xff, junk>>8, node));
+#endif
+      if (msgid_arg) global_mpl_mem->activate();
       break;
   default:
       fprintf(stderr, "mpl_memory_handler: bad request id\n");
       sleep(1);
       abort();
     }
+}
+
+static void
+mpl_memory_handler(int*msgid_arg)
+{
+  mpl_memory_handler_(global_mpl_mem->data_request_buffer_, msgid_arg);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -154,11 +182,11 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg,
       sleep(1);
       abort();
     }
-  data_request_type_ = 13;
-  data_type_to_handler_ = 14;
-  data_type_from_handler_ = 15;
+  data_request_type_ = 113;
+  data_type_to_handler_ = 114;
+  data_type_from_handler_ = 115;
   global_mpl_mem = this;
-  active_ = 0;
+  //active_ = 0;
   nsync_ = 0;
 
   activate();
@@ -169,7 +197,6 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg,
 MPLMemoryGrp::~MPLMemoryGrp()
 {
   PRINTF(("%d: ~MPLMemoryGrp\n", me()));
-  global_mpl_mem = 0;
   deactivate();
 }
 
@@ -177,7 +204,6 @@ void
 MPLMemoryGrp::print_memreq(MemoryDataRequest &req,
                            const char *msg, int target)
 {
-#if DEBUG
   if (msg == 0) msg = "";
 
   char newmsg[80];
@@ -188,31 +214,34 @@ MPLMemoryGrp::print_memreq(MemoryDataRequest &req,
       sprintf(newmsg, "%d->%d: %s", me(), target, msg);
     }
   req.print(newmsg);
-#endif
 }
 
 void
 MPLMemoryGrp::activate()
 {
-  if (!active_) {
+  //if (!active_) {
       global_type = data_request_type_;
       global_source = DONTCARE;
       mpc_rcvncall(data_request_buffer_.data(),
                    data_request_buffer_.nbytes(),
                    (int*)&global_source, (int*)&global_type, (int*)&global_mid,
                    mpl_memory_handler);
-      PRINTF(("%d: activate: type = %d, buf = 0x%x, mid = %d\n", me(),
-              data_request_type_, data_request_buffer_.data(),
+      //mpc_recv(data_request_buffer_.data(),
+      //         data_request_buffer_.nbytes(),
+      //         (int*)&global_source, (int*)&global_type, (int*)&global_mid);
+      PRINTF(("activated memory request handler (mid = %d)\n",
               global_mid));
-    }
-  active_ = 1;
-  reactivate_ = 1;
+  //  }
+  //active_ = 1;
+  //reactivate_ = 1;
 }
 
 void
 MPLMemoryGrp::deactivate()
 {
-  if (active_) {
+  if (!global_mpl_mem) return;
+
+  //if (active_) {
 #if 1
       reactivate_ = 0;
       sync();
@@ -238,177 +267,116 @@ MPLMemoryGrp::deactivate()
       mpc_wait(&mid, &count); // noncritical
       PRINTF(("%d: MPLMemoryGrp::deactivate complete\n", me()));
 #endif
-    }
-  active_ = 0;
+  //  }
+  //active_ = 0;
+
+  int oldlock;
+  mpc_lockrnc(1, &oldlock);
+
+  global_mpl_mem = 0;
+
+  mpc_lockrnc(oldlock, &oldlock);
 }
 
 void
 MPLMemoryGrp::retrieve_data(void *data, int node, int offset, int size)
 {
-  int needs_activation = 0;
+  MemoryDataRequestQueue q;
 
   int oldlock;
   mpc_lockrnc(1, &oldlock);
 
-  int tmpmid;
-
-  PRINTF(("%d: retrieve_data: int offset = %d int size = %d\n",
-          me(), offset/sizeof(int), size/sizeof(int)));
-
   MemoryDataRequest buf(MemoryDataRequest::Retrieve,
                          me(), offset, size);
-  print_memreq(buf, "retrieve:", node);
-  PRINTF(("%d: sent request to %d\n", me(), node));
+  if (DEBREQ) print_memreq(buf, "retrieve:", node);
   int mid;
-  size_t count;
   mpc_send(buf.data(), buf.nbytes(), node, data_request_type_, &mid);
-  do {
-      tmpmid = DONTCARE;
-      mpc_wait(&tmpmid, &count); // critical
-      PRINTF(("retrieve_data: get tmpmid %d (global = %d, mid = %d)\n",
-              tmpmid, global_mid, mid));
-      if (tmpmid == global_mid) {
-          mpl_memory_handler(0);
-          needs_activation = 1;
-        }
-      else if (tmpmid != mid) {
-          printf("MPLMemoryGrp: retrieve_data: stray message\n");
-          sleep(1);
-          abort();
-        }
-    } while(tmpmid != mid);
+  do_wait("retrieve: send req", mid, q, buf.nbytes());
 
-  PRINTF(("%d: waiting for data from %d\n", me(), node));
   int source = node;
   int type = data_type_from_handler_;
   mpc_recv(data, size, &source, &type, &mid);
-  mpc_wait(&mid, &count); // noncritical
-  PRINTF(("%d: got data from %d\n", me(), node));
+  do_wait("retrieve: recv dat", mid, q, size);
+
+  flush_queue(q);
 
   mpc_lockrnc(oldlock, &oldlock);
-
-  if (0&&needs_activation) activate();
 }
 
 void
 MPLMemoryGrp::replace_data(void *data, int node, int offset, int size)
 {
-  int needs_activation = 0;
+  MemoryDataRequestQueue q;
 
   int oldlock;
   mpc_lockrnc(1, &oldlock);
 
-  int tmpmid;
-
-  PRINTF(("%d: replace_data: int offset = %d int size = %d\n",
-          me(), offset/sizeof(int), size/sizeof(int)));
-
   MemoryDataRequest buf(MemoryDataRequest::Replace,
                         me(), offset, size);
-  print_memreq(buf, "replace:", node);
+  if (DEBREQ) print_memreq(buf, "replace:", node);
   int mid;
-  size_t count;
   mpc_send(buf.data(), buf.nbytes(), node, data_request_type_, &mid);
-  do {
-      tmpmid = DONTCARE;
-      mpc_wait(&tmpmid, &count); // critical
-      PRINTF(("replace_data: get tmpmid %d (global = %d, mid = %d)\n",
-              tmpmid, global_mid, mid));
-      if (tmpmid == global_mid) {
-          mpl_memory_handler(0);
-          needs_activation = 1;
-        }
-      else if (tmpmid != mid) {
-          printf("MPLMemoryGrp: replace_data: stray message\n");
-          sleep(1);
-          abort();
-        }
-    } while(tmpmid != mid);
+  do_wait("replace: send req", mid, q, buf.nbytes());
 
   mpc_send(data, size, node, data_type_to_handler_, &mid);
-  mpc_wait(&mid, &count); // noncritical
+  do_wait("replace: send dat", mid, q, size);
 
+#if ACK
   int junk;
   int source = node;
   int type = data_type_from_handler_;
   mpc_recv(&junk, sizeof(junk), &source, &type, &mid);
-  mpc_wait(&mid, &count); // noncritical
+  do_wait("replace: recv ack", mid, q, sizeof(junk));
+  PRINTF(("replace: got ack %d:%d\n", junk&0xff, junk>>8));
+#endif
+
+  flush_queue(q);
 
   mpc_lockrnc(oldlock, &oldlock);
-
-  if (0&&needs_activation) activate();
 }
 
 void
 MPLMemoryGrp::sum_data(double *data, int node, int offset, int size)
 {
-  int needs_activation = 0;
+  MemoryDataRequestQueue q;
 
   int oldlock;
   mpc_lockrnc(1, &oldlock);
 
-  int tmpmid;
   int doffset = offset/sizeof(double);
   int dsize = size/sizeof(double);
 
-  PRINTF(("%d: sum_data: doffset = %d dsize = %d node = %d\n",
-          me(), doffset, dsize, node));
-
   MemoryDataRequest buf(MemoryDataRequest::DoubleSum,
                         me(), offset, size);
-  print_memreq(buf, "sum:", node);
+  if (DEBREQ) print_memreq(buf, "sum:", node);
   int mid;
-  size_t count;
   mpc_send(buf.data(), buf.nbytes(), node, data_request_type_, &mid);
-  PRINTF(("MPLMemoryGrp: sum_data: mid = %d global_mid = %d\n",
-          mid, global_mid));
-  do {
-      tmpmid = DONTCARE;
-      mpc_wait(&tmpmid, &count); // critical
-      PRINTF(("sum_data: get tmpmid %d (global = %d, mid = %d)\n",
-              tmpmid, global_mid, mid));
-      if (tmpmid == global_mid) {
-          mpl_memory_handler(0);
-          needs_activation = 1;
-        }
-      else if (tmpmid != mid) {
-          printf("MPLMemoryGrp: sum_data: stray message id = %d size = %d\n",
-                 tmpmid, count);
-          sleep(1);
-          abort();
-        }
-    } while (tmpmid != mid);
-
-  PRINTF(("%d: sum_data: sent request, sending data\n", me()));
+  do_wait("sum: send req", mid, q, buf.nbytes());
 
   mpc_send(data, size, node, data_type_to_handler_, &mid);
-  mpc_wait(&mid, &count); // noncritical
-  
+  do_wait("sum: send dat", mid, q, size);
 
-  PRINTF(("%d: sum_data: sent data, waiting for ack\n", me()));
-
+#if ACK
   int junk;
   int source = node;
   int type = data_type_from_handler_;
   mpc_recv(&junk, sizeof(junk), &source, &type, &mid);
-  mpc_wait(&mid, &count); // noncritical
+  do_wait("sum: recv ack", mid, q, sizeof(junk));
+  PRINTF(("sum: got ack %d:%d\n", junk&0xff, junk>>8));
+#endif
 
-  PRINTF(("%d: sum_data: got ack, done\n", me()));
+  flush_queue(q);
 
   mpc_lockrnc(oldlock, &oldlock);
-
-  if (0&&needs_activation) activate();
 }
 
 void
 MPLMemoryGrp::sync()
 {
-  if (!active_) {
-      msg_->sync();
-      return;
-    }
-
-  int needs_activation = 0;
+  //if (!active_) {
+  //    msg_->sync();
+  //    return;
+  //  }
 
   int i;
   int mid;
@@ -434,7 +402,7 @@ MPLMemoryGrp::sync()
           PRINTF(("got mid = %d (global_mid = %d)\n", mid, global_mid));
           if (mid == global_mid) {
               mpl_memory_handler(0);
-              needs_activation = 1;
+              activate();
             }
           else {
               printf("WARNING: MPLMemoryGrp::sync: stray message\n");
@@ -444,9 +412,9 @@ MPLMemoryGrp::sync()
 
       PRINTF(("notifying nodes that sync is complete\n"));
       // tell all nodes that they can proceed
-      MemoryDataRequest buf(MemoryDataRequest::Sync);
+      MemoryDataRequest buf(MemoryDataRequest::Sync, me());
       for (i=1; i<n(); i++) {
-          print_memreq(buf, "sync:", i);
+          if (DEBREQ) print_memreq(buf, "sync:", i);
           mpc_send(buf.data(), buf.nbytes(), i, data_request_type_, &mid);
           PRINTF(("node %d can proceed (mid = %d)\n", i, mid));
           mpc_wait(&mid, &count); // noncritical
@@ -455,11 +423,28 @@ MPLMemoryGrp::sync()
     }
   else {
       // let node 0 know that i'm done
-      MemoryDataRequest buf(MemoryDataRequest::Sync);
-      print_memreq(buf, "sync:", 0);
+      MemoryDataRequest buf(MemoryDataRequest::Sync, me());
+      if (DEBREQ) print_memreq(buf, "sync:", 0);
       mpc_send(buf.data(), buf.nbytes(), 0, data_request_type_, &mid);
       PRINTF(("sending sync (mid = %d)\n", mid));
-      mpc_wait(&mid, &count); // critical
+      int tmpmid;
+      do {
+          tmpmid = DONTCARE;
+          mpc_wait(&tmpmid, &count);
+          if (tmpmid == global_mid) {
+              PRINTF(("sync: wait: handling request %d-%d\n",
+                      data_request_buffer_.node(),
+                      data_request_buffer_.serial_number()));
+              mpl_memory_handler(0);
+              activate();
+            }
+          else if (tmpmid != mid) {
+              printf("MPLMemoryGrp: sync: stray message id = %d size = %d\n",
+                     tmpmid, count);
+              sleep(1);
+              abort();
+            }
+        } while (tmpmid != mid);
       // watch for the done message from 0 or request messages
       while (!nsync_) {
           mid = DONTCARE;
@@ -468,7 +453,7 @@ MPLMemoryGrp::sync()
           PRINTF(("in sync got mid = %d\n", mid));
           if (mid == global_mid) {
               mpl_memory_handler(0);
-              needs_activation = 1;
+              activate();
             }
           else {
               printf("WARNING: MPLMemoryGrp::sync: stray message\n");
@@ -480,10 +465,73 @@ MPLMemoryGrp::sync()
   PRINTF(("MPLMemoryGrp::sync() done\n"));
 
   mpc_lockrnc(oldlock, &oldlock);
+}
 
-  //sleep(1);
+void
+MPLMemoryGrp::do_wait(const char *msg, int mid,
+                      MemoryDataRequestQueue &q, size_t expectedsize)
+{
+  int oldlock;
+  mpc_lockrnc(1, &oldlock);
 
-  if (0&&needs_activation) activate();
+  int tmpmid;
+  size_t count;
+  do {
+      tmpmid = DONTCARE;
+      PRINTF(("%s: wait: waiting\n", msg));
+      mpc_wait(&tmpmid, &count);
+      if (tmpmid == global_mid) {
+          if (me() < data_request_buffer_.node()) {
+              PRINTF(("%s: wait: queueing request %d-%d\n",
+                      msg,
+                      data_request_buffer_.node(),
+                      data_request_buffer_.serial_number()));
+              q.push(data_request_buffer_);
+            }
+          else {
+              PRINTF(("%s: wait: handling request %d-%d\n",
+                      msg,
+                      data_request_buffer_.node(),
+                      data_request_buffer_.serial_number()));
+              mpl_memory_handler(0);
+            }
+          activate();
+        }
+      else if (tmpmid != mid) {
+          printf("MPLMemoryGrp: %s: stray message id = %d size = %d\n",
+                 msg, tmpmid, count);
+          sleep(1);
+          abort();
+        }
+      else {
+          PRINTF(("%s: wait: wait complete\n", msg));
+          if (count != expectedsize) {
+              printf("MPLMemoryGrp: %s: got wrong size %d, expected %d\n",
+                     msg, count, expectedsize);
+              sleep(1);
+              abort();
+            }
+        }
+    } while (tmpmid != mid);
+
+  mpc_lockrnc(oldlock, &oldlock);
+}
+
+void
+MPLMemoryGrp::flush_queue(MemoryDataRequestQueue &q)
+{
+  int oldlock;
+  mpc_lockrnc(1, &oldlock);
+
+  for (int i=0; i<q.n(); i++) {
+      PRINTF(("processing queued request %d-%d\n",
+              data_request_buffer_.node(),
+              data_request_buffer_.serial_number()));
+      mpl_memory_handler_(q[i], 0);
+    }
+  q.clear();
+
+  mpc_lockrnc(oldlock, &oldlock);
 }
 
 #endif

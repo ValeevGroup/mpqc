@@ -54,8 +54,10 @@ long masktrap(long state);
                           ENABLE; \
                          } while(0)
 
+void do_simple_tests();
 void do_int_tests();
 void do_double_tests();
+void do_double2_tests();
 
 int
 main(int argc, char**argv)
@@ -83,11 +85,22 @@ main(int argc, char**argv)
 
   MessageGrp::set_default_messagegrp(msg);
 
-  do_double_tests();
+  //do_simple_tests();
 
-  do_int_tests();
+  //do_double_tests();
+  do_double2_tests();
+
+  //do_int_tests();
 
   return 0;
+}
+
+void
+do_simple_tests()
+{
+  RefMemoryGrp mem = MemoryGrp::create_memorygrp(8);
+  mem->sync();
+  mem = 0;
 }
 
 void
@@ -217,7 +230,7 @@ do_int_tests()
   PRINTF(("==========================================================\n"));
   mem->sync();
 
-  mem->deactivate();
+  //mem->deactivate();
   mem = 0;
 }
 
@@ -307,5 +320,72 @@ do_double_tests()
   PRINTF(("==========================================================\n"));
   mem->sync();
 
-  mem->deactivate();
+  //mem->deactivate();
+}
+
+void
+do_double2_tests()
+{
+  PRINTF(("double2 tests entered\n"));
+
+  int i,j;
+
+  RefMemoryGrp mem;
+
+  const int doublebufsize = 4;
+  mem = MemoryGrp::create_memorygrp(doublebufsize*sizeof(double));
+  mem->sync();
+  mem->lock(0);
+
+  MemoryGrpBuf<double> dbuf(mem);
+
+  double *data = dbuf.writeonly_on_node(0, doublebufsize);
+  for (i=0; i<doublebufsize; i++) {
+      data[i] = 0.0;
+    }
+  dbuf.release();
+
+  int target = (mem->me() + 1)%mem->n();
+
+  double contrib[doublebufsize];
+  for (i=0; i<doublebufsize; i++) {
+      contrib[i] = mem->me()/200.0;
+    }
+
+  mem->sync();
+  PRINTF(("---------------------------------------------------------\n"));
+  mem->sync();
+
+  PRINTF(("%d: starting sum reduction\n", mem->me()));
+
+  mem->lock(1);
+  for (i=0; i<200; i++) {
+      mem->sum_reduction_on_node(contrib, 0,
+                                 doublebufsize,
+                                 target);
+    }
+  mem->lock(0);
+
+  PRINTF(("%d: done with sum reduction\n", mem->me()));
+
+  mem->sync();
+  PRINTF(("---------------------------------------------------------\n"));
+  mem->sync();
+
+  for (i=0; i<mem->n(); i++) {
+      mem->sync();
+      if (i==mem->me()) {
+          const double *cdata = dbuf.readonly(0, doublebufsize*mem->n());
+          for (j=0; j<doublebufsize*mem->n(); j++) {
+              PRINTF(("%2d: data[%2d] = %12.1f\n", i, j, cdata[j]));
+            }
+          dbuf.release();
+        }
+    }
+
+  mem->sync();
+  PRINTF(("==========================================================\n"));
+  mem->sync();
+
+  //mem->deactivate();
 }

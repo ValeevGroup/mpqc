@@ -94,16 +94,50 @@ MemoryDataRequest::print(const char *msg)
 {
   if (msg == 0) msg = "";
 
+  fflush(stdout);
   if (request() == Sync) {
-      printf("%s request = \"%s\" serial = %d\n",
-              msg, request_string(), serial_number());
+      printf("%s \"%s\" %d-%d\n",
+              msg, request_string(), node(), serial_number());
     }
   else {
-      printf("%s request = \"%s\" byte offset = %d, "
-              "byte size = %d, node = %d, serial = %d\n",
+      printf("%s \"%s\" offset = %5d, %5d bytes, %d-%d\n",
               msg, request_string(),
               offset(), size(), node(), serial_number());
     }
+  fflush(stdout);
+}
+
+void
+MemoryDataRequest::operator =(const MemoryDataRequest &r)
+{
+  for (int i=0; i<NData; i++) {
+      data_[i] = r.data_[i];
+    }
+}
+
+///////////////////////////////////////////////////////////////////////
+// The MemoryDataRequestQueue class
+
+void
+MemoryDataRequestQueue::push(MemoryDataRequest&r)
+{
+  if (n_ == MaxDepth) {
+      fprintf(stderr, "MemoryDataRequestQueue: MaxDepth exceeded\n");
+      abort();
+    }
+  q_[n_] = r;
+  n_++;
+}
+
+void
+MemoryDataRequestQueue::pop(MemoryDataRequest&r)
+{
+  if (n_ == 0) {
+      fprintf(stderr, "MemoryDataRequestQueue: nothing to pop\n");
+      abort();
+    }
+  n_--;
+  r = q_[n_];
 }
 
 ///////////////////////////////////////////////////////////////////////

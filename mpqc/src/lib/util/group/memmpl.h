@@ -14,6 +14,7 @@ class MPLMemoryGrp: public ActiveMsgMemoryGrp {
 #include <util/class/classd.h>
   private:
     friend static void mpl_memory_handler(int *mid);
+    friend static void mpl_memory_handler_(MemoryDataRequest&, int *mid);
     
     void retrieve_data(void *, int node, int offset, int size);
     void replace_data(void *, int node, int offset, int size);
@@ -31,6 +32,10 @@ class MPLMemoryGrp: public ActiveMsgMemoryGrp {
 
     void print_memreq(MemoryDataRequest &req,
                       const char * = 0, int target = -1);
+
+    void do_wait(const char *msg, int mid,
+                 MemoryDataRequestQueue &q, size_t expectedsize);
+    void flush_queue(MemoryDataRequestQueue &q);
   public:
     MPLMemoryGrp(const RefMessageGrp& msg, int localsize);
     ~MPLMemoryGrp();

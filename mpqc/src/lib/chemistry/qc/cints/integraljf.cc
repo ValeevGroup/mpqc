@@ -3,45 +3,6 @@
 #include <chemistry/qc/cints/cints.h>
 #include <chemistry/qc/cints/integraljf.h>
 
-static double
-int_pow(double a, int p)
-{
-  switch (p) {
-  case 0:
-    return 1.0;
-    break;
-
-  case 1:
-    return a;
-    break;
-
-  case 2:
-    return a*a;
-    break;
-
-  case 3:
-    return a*a*a;
-    break;
-
-  case 4:
-    return a*a*a*a;
-    break;
-
-  case 5:
-    return a*a*a*a*a;
-    break;
-
-  default:
-    {
-      register int i;
-      double b = 1.0;
-    
-      for(i=0; i<p; i++) b = b*a;
-      return b;
-    }
-  }
-}
-
 ////////////////////////////////////////////////////////////////////////////
 // OneBodyIntJF
 
@@ -130,73 +91,57 @@ OneBodyIntJF::~OneBodyIntJF()
 }
 
 double
-OneBodyIntJF::overlap_int(
-  double a1, int l1, int m1, int n1, double norm1,
-  double a2, int l2, int m2, int n2, double norm2,
-  double ab2, double gam,
-  Point& PA, Point& PB, int am)
+OneBodyIntJF::overlap_int(int l1, int m1, int n1, int l2, int m2, int n2,
+                          double PA[3], double PB[3],
+                          double gam)
 {
-  double Ix, Iy, Iz;
-  double I;
-  int i, j, k, l;
-  int imax, jmax, kmax;
-  double tval, tval1, tval2 ;
-  double norm_fact ;
+  int i, i2, ii, jj, imax, itmp;
+  double Ix, I=1.0;
+  double oo2gam = 0.5/gam;
+  double gtmp;
 
-  norm_fact = norm1*norm2; 
+  int al1[] = { l1, m1, n1 };
+  int al2[] = { l2, m2, n2 };
 
-  tval1 = 2*gam;
-  imax = (l1+l2)/2;
-  Ix = 0.0;
-  for (i=0; i <= imax; i++) {
-    tval = f_n(i*2, l1, l2, PA[0], PB[0]);
-    tval2 = int_pow(tval1, i);
-    //tval2 = pow(tval1, (double) i);
-    Ix += tval*(num_ser[i])/(tval2);
-  }
+  for (int x=0; x < 3; x++) {
+    int l1x = al1[x];
+    int l2x = al2[x];
 
-  jmax = (m1+m2)/2;
-  Iy = 0.0;
-  for (j=0; j <= jmax; j++) {
-    tval = f_n(j*2, m1, m2, PA[1], PB[1]);
-    tval2 = int_pow(tval1, j);
-    //tval2 = pow(tval1, (double) j);
-    Iy += tval*num_ser[j]/(tval2);
-  }
+    int *lcip1 = lci + (l1x*(l1x+1)>>1);
+    int *lcip2 = lci + (l2x*(l2x+1)>>1);
 
-  kmax = (n1+n2)/2;
-  Iz = 0.0;
-  for (k=0; k <= kmax; k++) {
-    tval = f_n(k*2, n1, n2, PA[2], PB[2]);
-    tval2 = int_pow(tval1, k);
-    //tval2 = pow(tval1, (double) k);
-    Iz += tval*num_ser[k]/(tval2);
-  }
- 
-  I = exp(-1*a1*a2*ab2/gam)*Ix*Iy*Iz*sqrt(M_PI/gam)*(M_PI/gam);
-
-  return I*norm_fact;
-}
-
-double
-OneBodyIntJF::f_n(int k, int l1, int l2, double A, double B)
-{
-  double sum = 0.0;
-  int i, j, itmp;
-
-  int* iol1 = lci + ioff(l1);
-  int* iol2 = lci + ioff(l2);
+    double da = PA[x];
+    double db = PB[x];
   
-  for (i=0; i <= l1; i++) {
-    j = k-i;
-    if (j > l2)
-      continue;
+    Ix = 0.0;
+    gtmp=1.0;
+    imax = (l1x+l2x)>>1;
+
+    for (i=0,i2=0; i <= imax; i++, gtmp *= oo2gam, i2 += 2) {
+      double sum = 0.0;
+
+      for (ii=0; ii <= l1x; ii++) {
+        jj = i2-ii;
+        if (jj < 0)
+          break;
+        else if (jj > l2x)
+          continue;
     
-    itmp = iol1[i] * iol2[j];
-    sum += itmp * int_pow(A, (l1-i)) * int_pow(B, (l2-j));
+        itmp = lcip1[ii] * lcip2[jj];
+        if (!itmp)
+          continue;
+    
+        sum += itmp * pow(da, (long int)(l1x-ii)) *
+                      pow(db, (long int)(l2x-jj));
+      }
+
+      Ix += sum * num_ser[i] * gtmp;
+    }
+
+    I *= Ix;
   }
 
-  return sum;
+  return I;
 }
 
 #if 0

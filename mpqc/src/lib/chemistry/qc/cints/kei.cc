@@ -47,20 +47,24 @@ GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
     for (int pj=0; pj < gsj.nprimitive(); pj++) {
       double a2 = gsj.exponent(pj);
       double gam = a1+a2;
+      double oogam = 1.0/gam;
 
-      Point P, PA, PB;
+      double prefact = exp(-a1*a2*ab2*oogam)*pow(M_PI*oogam,1.5);
 
-      P[0] = (ai[0]*a1 + aj[0]*a2)/gam;
-      P[1] = (ai[1]*a1 + aj[1]*a2)/gam;
-      P[2] = (ai[2]*a1 + aj[2]*a2)/gam;
+      double Px, Py, Pz;
+      Px = (ai[0]*a1 + aj[0]*a2)*oogam;
+      Py = (ai[1]*a1 + aj[1]*a2)*oogam;
+      Pz = (ai[2]*a1 + aj[2]*a2)*oogam;
 
-      PA[0] = P[0] - ai[0];
-      PA[1] = P[1] - ai[1];
-      PA[2] = P[2] - ai[2];
+      double PA[3], PB[3];
 
-      PB[0] = P[0] - aj[0];
-      PB[1] = P[1] - aj[1];
-      PB[2] = P[2] - aj[2];
+      PA[0] = Px - ai[0];
+      PA[1] = Py - ai[1];
+      PA[2] = Pz - ai[2];
+
+      PB[0] = Px - aj[0];
+      PB[1] = Py - aj[1];
+      PB[2] = Pz - aj[2];
 
       // loop over general contractions
       int ioffset=0;
@@ -73,6 +77,8 @@ GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
           double jnorm = gsj.coefficient_unnorm(cj,pj);
           int amj = gsj.am(cj);
 
+          double norm_prefact = inorm*jnorm*prefact;
+          
           int ij=ioffset;
           for (int ii=0; ii <= ami; ii++) {
             int l1 = ami-ii;
@@ -89,11 +95,8 @@ GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
                   int m2 = kk-ll;
                   int n2 = ll;
 
-                  int am = l1+m1+n1+l2+m2+n2;
-
-                  buf[ijkl] += ke_int(a1, l1, m1, n1, inorm,
-                                      a2, l2, m2, n2, jnorm,
-                                      ab2, gam, PA, PB, am);
+                  buf[ijkl] += norm_prefact*ke_int(l1, m1, n1, l2, m2, n2,
+                                                   PA, PB, gam, a1, a2);
                 }
               }
             }
@@ -107,56 +110,33 @@ GaussianKineticIntJF::compute_shell(int i, int j, double * buf)
 }
 
 double
-GaussianKineticIntJF::ke_int(double a1, int l1, int m1, int n1, double norm1,
-                             double a2, int l2, int m2, int n2, double norm2,
-                             double ab2, double gam,
-                             Point& PA, Point& PB, int am)
+GaussianKineticIntJF::ke_int(int l1, int m1, int n1, int l2, int m2, int n2,
+                             double PA[3], double PB[3],
+                             double gam, double a1, double a2)
 {
   double Ix, Iy, Iz;
-  double I1 = 0.0, I2 = 0.0, I3 = 0.0, I4 = 0.0 ;
+  double I1, I2, I3, I4;
 
-  I2 = overlap_int(a1, l1+1, m1, n1, norm1, a2, l2+1, m2, n2, norm2, 
-                   ab2, gam, PA, PB, am+2);
-  I1 = overlap_int(a1, l1-1, m1, n1, norm1, a2, l2-1, m2, n2, norm2, 
-                   ab2, gam, PA, PB, am-2);
-  I3 = overlap_int(a1, l1+1, m1, n1, norm1, a2, l2-1, m2, n2, norm2, 
-                   ab2, gam, PA, PB, am);
-  I4 = overlap_int(a1, l1-1, m1, n1, norm1, a2, l2+1, m2, n2, norm2, 
-                   ab2, gam, PA, PB, am);
+  I2 = overlap_int(l1+1, m1, n1, l2+1, m2, n2, PA, PB, gam);
+  I3 = overlap_int(l1+1, m1, n1, l2-1, m2, n2, PA, PB, gam);
+  I1 = overlap_int(l1-1, m1, n1, l2-1, m2, n2, PA, PB, gam);
+  I4 = overlap_int(l1-1, m1, n1, l2+1, m2, n2, PA, PB, gam);
  
-  Ix = (l1*l2*I1/2.0 + 2*a1*a2*I2 - a1*l2*I3 - a2*l1*I4);
+  Ix = (0.5*l1*l2*I1 + 2*a1*a2*I2 - a1*l2*I3 - a2*l1*I4);
 
-  I1 = 0.0;
-  I2 = 0.0;
-  I3 = 0.0;
-  I4 = 0.0;
-
-  I2 = overlap_int(a1, l1, m1+1, n1, norm1, a2, l2, m2+1, n2, norm2, 
-                   ab2, gam, PA, PB, am+2);
-  I1 = overlap_int(a1, l1, m1-1, n1, norm1, a2, l2, m2-1, n2, norm2, 
-                   ab2, gam, PA, PB, am-2);
-  I3 = overlap_int(a1, l1, m1+1, n1, norm1, a2, l2, m2-1, n2, norm2, 
-                   ab2, gam, PA, PB, am);
-  I4 = overlap_int(a1, l1, m1-1, n1, norm1, a2, l2, m2+1, n2, norm2, 
-                   ab2, gam, PA, PB, am);
+  I2 = overlap_int(l1, m1+1, n1, l2, m2+1, n2, PA, PB, gam);
+  I3 = overlap_int(l1, m1+1, n1, l2, m2-1, n2, PA, PB, gam);
+  I1 = overlap_int(l1, m1-1, n1, l2, m2-1, n2, PA, PB, gam);
+  I4 = overlap_int(l1, m1-1, n1, l2, m2+1, n2, PA, PB, gam);
   
-  Iy = (m1*m2*I1/2.0 + 2*a1*a2*I2 - a1*m2*I3 - a2*m1*I4);
+  Iy = (0.5*m1*m2*I1 + 2*a1*a2*I2 - a1*m2*I3 - a2*m1*I4);
 
-  I1 = 0.0;
-  I2 = 0.0;
-  I3 = 0.0;
-  I4 = 0.0;
-
-  I2 = overlap_int(a1, l1, m1, n1+1, norm1, a2, l2, m2, n2+1, norm2, 
-                   ab2, gam, PA, PB, am+2);
-  I1 = overlap_int(a1, l1, m1, n1-1, norm1, a2, l2, m2, n2-1, norm2, 
-                   ab2, gam, PA, PB, am-2);
-  I3 = overlap_int(a1, l1, m1, n1+1, norm1, a2, l2, m2, n2-1, norm2, 
-                   ab2, gam, PA, PB, am);
-  I4 = overlap_int(a1, l1, m1, n1-1, norm1, a2, l2, m2, n2+1, norm2, 
-                   ab2, gam, PA, PB, am);
+  I2 = overlap_int(l1, m1, n1+1, l2, m2, n2+1, PA, PB, gam);
+  I3 = overlap_int(l1, m1, n1+1, l2, m2, n2-1, PA, PB, gam);
+  I1 = overlap_int(l1, m1, n1-1, l2, m2, n2-1, PA, PB, gam);
+  I4 = overlap_int(l1, m1, n1-1, l2, m2, n2+1, PA, PB, gam);
   
-  Iz = (n1*n2*I1/2.0 + 2*a1*a2*I2 - a1*n2*I3 - a2*n1*I4);
+  Iz = (0.5*n1*n2*I1 + 2*a1*a2*I2 - a1*n2*I3 - a2*n1*I4);
 
-  return((Ix+Iy+Iz));
+  return (Ix+Iy+Iz);
 }

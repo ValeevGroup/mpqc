@@ -19,10 +19,8 @@ class OneBodyIntJF : public OneBodyInt
     double *df;
     
     void init();
-    double f_n(int, int, int, double, double);
-    double overlap_int(double, int, int, int, double,
-                       double, int, int, int, double,
-                       double, double, Point&, Point&, int);
+    double overlap_int(int, int, int, int, int, int,
+                       double[3], double[3], double);
 
   public:
     OneBodyIntJF(const RefGaussianBasisSet&, OneBodyIntIter* =0);
@@ -45,9 +43,9 @@ class GaussianOverlapIntJF : public OneBodyIntJF
 class GaussianKineticIntJF : public OneBodyIntJF
 {
   protected:
-    double ke_int(double, int, int, int, double,
-                  double, int, int, int, double,
-                  double, double, Point&, Point&, int);
+    double ke_int(int, int, int, int, int, int, double[3], double[3],
+                  double, double, double);
+
   public:
     GaussianKineticIntJF(const RefGaussianBasisSet&, OneBodyIntIter* =0);
     GaussianKineticIntJF(const RefGaussianBasisSet&,

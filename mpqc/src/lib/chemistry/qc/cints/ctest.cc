@@ -13,7 +13,7 @@
 const ClassDesc &fl0  = SymmGaussianBasisSet::class_desc_;
 
 int
-main(int, char *argv[])
+main(int argc, char *argv[])
 {
   char *filename = (argv[1]) ? argv[1] : SRCDIR "/ctest.kv";
   
@@ -40,7 +40,8 @@ main(int, char *argv[])
   op=0;
   tim_exit("intv2 overlap");
 
-  //s.print("overlap integrals v2");
+  if (argc > 1)
+    s.print("overlap integrals v2");
 
   s.assign(0.0);
 
@@ -50,7 +51,8 @@ main(int, char *argv[])
   op=0;
   tim_exit("jf overlap");
 
-  //s.print("overlap integrals jf");
+  if (argc > 1)
+    s.print("overlap integrals jf");
 
   tim_print(0);
 
@@ -64,7 +66,8 @@ main(int, char *argv[])
   op=0;
   tim_exit("intv2 ke");
 
-  //s.print("ke integrals v2");
+  if (argc > 1)
+    s.print("ke integrals v2");
 
   s.assign(0.0);
 
@@ -74,7 +77,9 @@ main(int, char *argv[])
   op=0;
   tim_exit("jf ke");
 
-  //s.print("ke integrals jf");
+  if (argc > 1)
+    s.print("ke integrals jf");
+
   tim_print(0);
   
   return 0;

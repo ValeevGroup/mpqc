@@ -47,20 +47,24 @@ GaussianOverlapIntJF::compute_shell(int i, int j, double * buf)
     for (int pj=0; pj < gsj.nprimitive(); pj++) {
       double a2 = gsj.exponent(pj);
       double gam = a1+a2;
+      double oogam = 1.0/gam;
 
-      Point P, PA, PB;
+      double prefact = exp(-a1*a2*ab2*oogam)*pow(M_PI*oogam,1.5);
+      
+      double PA[3], PB[3];
 
-      P[0] = (ai[0]*a1 + aj[0]*a2)/gam;
-      P[1] = (ai[1]*a1 + aj[1]*a2)/gam;
-      P[2] = (ai[2]*a1 + aj[2]*a2)/gam;
+      double px, py, pz;
+      px = (ai[0]*a1 + aj[0]*a2)*oogam;
+      py = (ai[1]*a1 + aj[1]*a2)*oogam;
+      pz = (ai[2]*a1 + aj[2]*a2)*oogam;
 
-      PA[0] = P[0] - ai[0];
-      PA[1] = P[1] - ai[1];
-      PA[2] = P[2] - ai[2];
+      PA[0] = px - ai[0];
+      PA[1] = py - ai[1];
+      PA[2] = pz - ai[2];
 
-      PB[0] = P[0] - aj[0];
-      PB[1] = P[1] - aj[1];
-      PB[2] = P[2] - aj[2];
+      PB[0] = px - aj[0];
+      PB[1] = py - aj[1];
+      PB[2] = pz - aj[2];
 
       // loop over general contractions
       int ioffset=0;
@@ -73,6 +77,8 @@ GaussianOverlapIntJF::compute_shell(int i, int j, double * buf)
           double jnorm = gsj.coefficient_unnorm(cj,pj);
           int amj = gsj.am(cj);
 
+          double norm_prefact = inorm*jnorm*prefact;
+          
           int ij=ioffset;
           for (int ii=0; ii <= ami; ii++) {
             int l1 = ami-ii;
@@ -89,11 +95,8 @@ GaussianOverlapIntJF::compute_shell(int i, int j, double * buf)
                   int m2 = kk-ll;
                   int n2 = ll;
 
-                  int am = l1+m1+n1+l2+m2+n2;
-
-                  buf[ijkl] += overlap_int(a1, l1, m1, n1, inorm,
-                                           a2, l2, m2, n2, jnorm,
-                                           ab2, gam, PA, PB, am);
+                  buf[ijkl] += norm_prefact*overlap_int(l1, m1, n1, l2, m2, n2,
+                                                        PA, PB, gam);
                 }
               }
             }

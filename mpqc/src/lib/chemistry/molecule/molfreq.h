@@ -29,6 +29,15 @@ class MolecularFrequencies: public SavableState {
     int nirrep_;
     RefSCMatrix *displacements_;
     RefSCVector *gradients_;
+
+    // the number of external degrees of freedom
+    int nexternal_;
+
+    // the number of frequencies per irrep
+    int *nfreq_;
+    // the frequencies for each irrep
+    double **freq_;
+
     RefSCDimension d3natom_;
     void get_disp(int disp, int &irrep, int &index, double &coef);
     void do_freq_for_irrep(int irrep,
@@ -41,11 +50,15 @@ class MolecularFrequencies: public SavableState {
     MolecularFrequencies(StateIn &);
     ~MolecularFrequencies();
     void save_data_state(StateOut&);
+
     void compute_displacements();
     void compute_frequencies_from_gradients();
     int ndisplace() const;
     void displace(int disp);
     void set_gradient(int disp, const RefSCVector &grad);
+
+    void thermochemistry(int degeneracy, double temp=298.15, double pres=1.0);
+
     RefSCMatrixKit matrixkit() { return kit_; }
     RefSCDimension d3natom() { return d3natom_; }
 };

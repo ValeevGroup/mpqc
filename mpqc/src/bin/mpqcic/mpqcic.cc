@@ -887,6 +887,7 @@ main(int argc, char *argv[])
           molfreq->set_gradient(i, gradv);
         }
       molfreq->compute_frequencies_from_gradients();
+      molfreq->thermochemistry(scf_info.nopen+1);
       tim->exit("frequencies");
     }
 

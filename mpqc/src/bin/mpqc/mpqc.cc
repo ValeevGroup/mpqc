@@ -154,7 +154,7 @@ extern "C" {
 };
 void sigfpe_handler(int)
 {
-  long fp_control = ieee_get_fp_control();
+  unsigned long fp_control = ieee_get_fp_control();
   int fatal = 0;
   if (fp_control & IEEE_STATUS_INV) {
       ExEnv::out() << "SGIFPE: invalid operation" << endl;;

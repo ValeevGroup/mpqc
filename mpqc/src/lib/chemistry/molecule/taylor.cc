@@ -80,6 +80,7 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
   if (coordinates_.null() && n_fc == 0) {
       use_guess_hessian = 1;
       n_fc = (moldim().n()*(moldim().n()+1))/2;
+      maxorder_ = 2;
     }
 
   force_constant_index_.set_length(n_fc1+n_fc);

@@ -2252,7 +2252,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
               total_density =
                        do_point(icenter, integration_point, denfunc,
                        w, multiplier,
-                       nuclear_gradient, f_gradient, w_gradient)
+                       nuclear_gradient, f_gradient, w_gradient);
                   }
         }
       point_count_total+=point_count;

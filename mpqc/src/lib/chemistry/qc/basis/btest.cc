@@ -45,6 +45,7 @@
 #include <chemistry/qc/basis/sobasis.h>
 #include <chemistry/qc/basis/sointegral.h>
 #include <chemistry/qc/basis/extent.h>
+#include <chemistry/qc/basis/orthog.h>
 
 using namespace std;
 using namespace sc;
@@ -206,6 +207,36 @@ test_overlap(const Ref<GaussianBasisSet>& gbs, const Ref<GaussianBasisSet>& gbs2
 
   RefSCMatrix syms2 = pl2->aotoso().t() * ssqb * pl->aotoso();
   syms2.print("symm S2");
+}
+
+static void
+test_aoorthog(const Ref<GaussianBasisSet>& gbs,
+             const Ref<Integral>& intgrl)
+{
+  cout << "Beginning AO Orthog test" << endl;
+
+  intgrl->set_basis(gbs);
+
+  // first form AO basis overlap
+  RefSymmSCMatrix s(gbs->basisdim(), gbs->matrixkit());
+  Ref<SCElementOp> ov
+      = new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap()));
+  s.assign(0.0);
+  s.element_op(ov);
+  ov=0;
+
+  Ref<OverlapOrthog> orthog;
+  orthog = new OverlapOrthog(OverlapOrthog::Symmetric,
+                             s,
+                             s.kit(),
+                             0.0001,
+                             1);
+  orthog->basis_to_orthog_basis().print("basis to orthog basis");
+
+  s = 0;
+  orthog = 0;
+
+  cout << "Ending AO Orthog test" << endl;
 }
 
 static void
@@ -480,6 +511,7 @@ main(int, char *argv[])
   int dopetite = keyval->booleanvalue("petite");
   int dovalues = keyval->booleanvalue("values");
   int doextent = keyval->booleanvalue("extent");
+  int doaoorthog = keyval->booleanvalue("aoorthog");
 
   for (i=0; i<keyval->count("test"); i++) {
       Ref<GaussianBasisSet> gbs;
@@ -488,6 +520,8 @@ main(int, char *argv[])
       gbs2 << keyval->describedclassvalue("test2", i);
 
       if (dooverlap) test_overlap(gbs,gbs2,intgrl);
+
+      if (doaoorthog) test_aoorthog(gbs,intgrl);
 
       if (doeigvals) test_eigvals(gbs,intgrl);
 

@@ -40,17 +40,13 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/orthog.h>
 
 namespace sc {
 
 /** A Wavefunction is a MolecularEnergy that utilizies a GaussianBasisSet. */
 class Wavefunction: public MolecularEnergy {
-  public:
 
-    /// An enum for the types of orthogonalization.
-    enum OrthogMethod { Symmetric=1, Canonical=2, GramSchmidt=3 };
-
-  private:
     RefSCDimension aodim_;
     RefSCDimension sodim_;
     Ref<SCMatrixKit> basiskit_;
@@ -66,41 +62,21 @@ class Wavefunction: public MolecularEnergy {
     Ref<GaussianBasisSet> gbs_;
     Ref<Integral> integral_;
 
-    // The tolerance for linearly independent basis functions.
-    // The intepretation depends on the orthogonalization method.
     double lindep_tol_;
-    // The orthogonalization method
-    OrthogMethod orthog_method_;
-    // The dimension in the orthogonalized SO basis
-    RefSCDimension osodim_;
-    // The orthogonalization matrices
-    RefSCMatrix orthog_trans_;
-    RefSCMatrix orthog_trans_inverse_;
-    // The maximum and minimum residuals from the orthogonalization
-    // procedure.  The interpretation depends on the method used.
-    // For symmetry and canonical, these are the min and max overlap
-    // eigenvalues.  These are the residuals for the basis functions
-    // that actually end up being used.
-    double min_orthog_res_;
-    double max_orthog_res_;
+    OverlapOrthog::OrthogMethod orthog_method_;
+    Ref<OverlapOrthog> orthog_;
 
     int print_nao_;
     int print_npa_;
 
-    void compute_overlap_eig(RefSCMatrix& overlap_eigvec,
-                             RefDiagSCMatrix& overlap_isqrt_eigval,
-                             RefDiagSCMatrix& overlap_sqrt_eigval);
-    void compute_symmetric_orthog();
-    void compute_canonical_orthog();
-    void compute_gs_orthog();
-    void compute_orthog_trans();
+    void init_orthog();
 
   protected:
 
     int debug_;
 
-    double min_orthog_res() const { return min_orthog_res_; }
-    double max_orthog_res() const { return max_orthog_res_; }
+    double min_orthog_res();
+    double max_orthog_res();
 
     void copy_orthog_info(const Ref<Wavefunction> &);
     
@@ -218,10 +194,10 @@ class Wavefunction: public MolecularEnergy {
     RefSCMatrix so_to_orthog_so_inverse();
 
     /// Returns the orthogonalization method
-    OrthogMethod orthog_method() const { return orthog_method_; }
+    OverlapOrthog::OrthogMethod orthog_method() const;
 
     /// Returns the tolerance for linear dependencies.
-    double lindep_tol() const { return lindep_tol_; }
+    double lindep_tol() const;
 
     void obsolete();
 

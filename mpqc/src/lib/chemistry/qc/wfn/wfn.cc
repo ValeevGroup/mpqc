@@ -84,25 +84,25 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
                    << "WARNING: using obsolete \"symm_orthog\" keyword"
                    << endl;
       if (keyval->booleanvalue("symm_orthog")) {
-        orthog_method_ = Symmetric;
+        orthog_method_ = OverlapOrthog::Symmetric;
       }
       else {
-        orthog_method_ = Canonical;
+        orthog_method_ = OverlapOrthog::Canonical;
       }
   }
   else {
     char *orthog_name = keyval->pcharvalue("orthog_method");
     if (!orthog_name) {
-      orthog_method_ = Symmetric;
+      orthog_method_ = OverlapOrthog::Symmetric;
     }
     else if (::strcmp(orthog_name, "canonical") == 0) {
-      orthog_method_ = Canonical;
+      orthog_method_ = OverlapOrthog::Canonical;
     }
     else if (::strcmp(orthog_name, "symmetric") == 0) {
-      orthog_method_ = Symmetric;
+      orthog_method_ = OverlapOrthog::Symmetric;
     }
     else if (::strcmp(orthog_name, "gramschmidt") == 0) {
-      orthog_method_ = GramSchmidt;
+      orthog_method_ = OverlapOrthog::GramSchmidt;
     }
     else {
       ExEnv::errn() << "ERROR: bad orthog_method: \""
@@ -165,16 +165,16 @@ Wavefunction::Wavefunction(StateIn&s):
   if (s.version(::class_desc<Wavefunction>()) >= 5) {
     int orthog_enum;
     s.get(orthog_enum);
-    orthog_method_ = (OrthogMethod) orthog_enum;
+    orthog_method_ = (OverlapOrthog::OrthogMethod) orthog_enum;
   }
   else if (s.version(::class_desc<Wavefunction>()) >= 3) {
     int symm_orthog;
     s.get(symm_orthog);
-    if (symm_orthog) orthog_method_ = Symmetric;
-    else orthog_method_ = Canonical;
+    if (symm_orthog) orthog_method_ = OverlapOrthog::Symmetric;
+    else orthog_method_ = OverlapOrthog::Canonical;
   }
   else {
-    orthog_method_ = Symmetric;
+    orthog_method_ = OverlapOrthog::Symmetric;
   }
 
   if (s.version(::class_desc<Wavefunction>()) >= 4) {
@@ -203,11 +203,10 @@ Wavefunction::symmetry_changed()
   Ref<PetiteList> pl = integral_->petite_list();
   sodim_ = pl->SO_basisdim();
   aodim_ = pl->AO_basisdim();
-  osodim_ = 0;
   overlap_.result_noupdate() = 0;
-  orthog_trans_ = 0;
-  orthog_trans_inverse_ = 0;
   basiskit_ = gbs_->so_matrixkit();
+
+  orthog_ = 0;
 }
 
 Wavefunction::~Wavefunction()
@@ -458,353 +457,19 @@ Wavefunction::core_hamiltonian()
   return hcore_.result_noupdate();
 }
 
-// computes intermediates needed to form orthogonalization matrices
-// and their inverses.
-void
-Wavefunction::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
-                    RefDiagSCMatrix& overlap_isqrt_eigval,
-                    RefDiagSCMatrix& overlap_sqrt_eigval)
-{
-  // first calculate S
-  RefSymmSCMatrix M = overlap().copy();
-
-  // Diagonalize M to get m and U
-  RefSCMatrix U(M.dim(), M.dim(), M.kit());
-  RefDiagSCMatrix m(M.dim(), M.kit());
-  M.diagonalize(m,U);
-  M = 0;
-
-  Ref<SCElementMaxAbs> maxabsop = new SCElementMaxAbs;
-  m.element_op(maxabsop.pointer());
-  double maxabs = maxabsop->result();
-  double s_tol = lindep_tol_ * maxabs;
-
-  double minabs = maxabs;
-  BlockedDiagSCMatrix *bm = dynamic_cast<BlockedDiagSCMatrix*>(m.pointer());
-  if (bm == 0) {
-      ExEnv::out0() << "Wfn: orthog: expected blocked overlap" << endl;
-    }
-  int i, j;
-  double *pm_sqrt = new double[bm->dim()->n()];
-  double *pm_isqrt = new double[bm->dim()->n()];
-  int *pm_index = new int[bm->dim()->n()];
-  int *nfunc = new int[bm->nblocks()];
-  int nfunctot = 0;
-  int nlindep = 0;
-  for (i=0; i<bm->nblocks(); i++) {
-      nfunc[i] = 0;
-      if (bm->block(i).null()) continue;
-      int n = bm->block(i)->dim()->n();
-      double *pm = new double[n];
-      bm->block(i)->convert(pm);
-      for (j=0; j<n; j++) {
-          if (pm[j] > s_tol) {
-              if (pm[j] < minabs) { minabs = pm[j]; }
-              pm_sqrt[nfunctot] = sqrt(pm[j]);
-              pm_isqrt[nfunctot] = 1.0/pm_sqrt[nfunctot];
-              pm_index[nfunctot] = j;
-              nfunc[i]++;
-              nfunctot++;
-            }
-          else if (orthog_method_ == Symmetric) {
-              pm_sqrt[nfunctot] = 0.0;
-              pm_isqrt[nfunctot] = 0.0;
-              pm_index[nfunctot] = j;
-              nfunc[i]++;
-              nfunctot++;
-              nlindep++;
-            }
-          else {
-              nlindep++;
-            }
-        }
-      delete[] pm;
-    }
-
-  if (nlindep > 0 && orthog_method_ == Symmetric) {
-    ExEnv::out0() << indent
-                 << "WARNING: " << nlindep
-                 << " basis function"
-                 << (sodim_.n()-osodim_.n()>1?"s":"")
-                 << " ignored in symmetric orthogonalization."
-                 << endl;
-  }
-
-  // make sure all nodes end up with exactly the same data
-  MessageGrp::get_default_messagegrp()->bcast(nfunctot);
-  MessageGrp::get_default_messagegrp()->bcast(nfunc, bm->nblocks());
-  MessageGrp::get_default_messagegrp()->bcast(pm_sqrt,nfunctot);
-  MessageGrp::get_default_messagegrp()->bcast(pm_isqrt,nfunctot);
-  MessageGrp::get_default_messagegrp()->bcast(pm_index,nfunctot);
-
-  if (orthog_method_ == Symmetric) {
-      osodim_ = new SCDimension(bm->dim()->blocks(),
-                                "ortho SO (symmetric)");
-    }
-  else {
-      osodim_ = new SCDimension(nfunctot, bm->nblocks(),
-                                nfunc, "ortho SO (canonical)");
-      for (i=0; i<bm->nblocks(); i++) {
-        osodim_->blocks()->set_subdim(i, new SCDimension(nfunc[i]));
-      }
-    }
-
-  overlap_eigvec = basis_matrixkit()->matrix(sodim_, osodim_);
-  if (orthog_method_ == Symmetric) {
-      overlap_eigvec.assign(U);
-    }
-  else {
-      BlockedSCMatrix *bev
-          = dynamic_cast<BlockedSCMatrix*>(overlap_eigvec.pointer());
-      BlockedSCMatrix *bU
-          = dynamic_cast<BlockedSCMatrix*>(U.pointer());
-      int ifunc = 0;
-      for (i=0; i<bev->nblocks(); i++) {
-          if (bev->block(i).null()) continue;
-          for (j=0; j<nfunc[i]; j++) {
-              bev->block(i)->assign_column(
-                  bU->block(i)->get_column(pm_index[ifunc]),j
-                  );
-              ifunc++;
-            }
-        }
-    }
-
-  overlap_sqrt_eigval = basis_matrixkit()->diagmatrix(osodim_);
-  overlap_sqrt_eigval->assign(pm_sqrt);
-  overlap_isqrt_eigval = basis_matrixkit()->diagmatrix(osodim_);
-  overlap_isqrt_eigval->assign(pm_isqrt);
-
-  delete[] nfunc;
-  delete[] pm_sqrt;
-  delete[] pm_isqrt;
-  delete[] pm_index;
-  
-  max_orthog_res_ = maxabs;
-  min_orthog_res_ = minabs;
-
-  if (debug_ > 1) {
-    overlap().print("S");
-    overlap_eigvec.print("S eigvec");
-    overlap_isqrt_eigval.print("s^(-1/2) eigval");
-    overlap_sqrt_eigval.print("s^(1/2) eigval");
-  }
-}
-
-void
-Wavefunction::compute_symmetric_orthog()
-{
-  RefSCMatrix overlap_eigvec;
-  RefDiagSCMatrix overlap_isqrt_eigval;
-  RefDiagSCMatrix overlap_sqrt_eigval;
-  compute_overlap_eig(overlap_eigvec,
-                      overlap_isqrt_eigval,
-                      overlap_sqrt_eigval);
-
-  orthog_trans_ = overlap_eigvec
-    * overlap_isqrt_eigval
-    * overlap_eigvec.t();
-  orthog_trans_inverse_ = overlap_eigvec
-    * overlap_sqrt_eigval
-    * overlap_eigvec.t();
-}
-
-void
-Wavefunction::compute_canonical_orthog()
-{
-  RefSCMatrix overlap_eigvec;
-  RefDiagSCMatrix overlap_isqrt_eigval;
-  RefDiagSCMatrix overlap_sqrt_eigval;
-  compute_overlap_eig(overlap_eigvec,
-                      overlap_isqrt_eigval,
-                      overlap_sqrt_eigval);
-
-  orthog_trans_ = overlap_isqrt_eigval * overlap_eigvec.t();
-  orthog_trans_inverse_ = overlap_eigvec * overlap_sqrt_eigval;
-}
-
-void
-Wavefunction::compute_gs_orthog()
-{
-  // Orthogonalize each subblock of the overlap.
-  max_orthog_res_ = 1.0;
-  min_orthog_res_ = 1.0;
-  BlockedSymmSCMatrix *S
-    = dynamic_cast<BlockedSymmSCMatrix *>(overlap().pointer());
-  int nblock = S->nblocks();
-  Ref<BlockedSCMatrixKit> kit
-    = dynamic_cast<BlockedSCMatrixKit*>(S->kit().pointer());
-  Ref<SCMatrixKit> subkit = kit->subkit();
-  RefSCMatrix *blockorthogs = new RefSCMatrix[nblock];
-  int *nblockorthogs = new int[nblock];
-  int northog = 0;
-  for (int i=0; i<nblock; i++) {
-    RefSymmSCMatrix Sblock = S->block(i);
-    if (Sblock.null()) {
-      blockorthogs[i] = 0;
-      nblockorthogs[i] = 0;
-      continue;
-      }
-    RefSCDimension dim = Sblock->dim();
-    RefSCMatrix blockorthog(dim,dim,subkit);
-    blockorthog->unit();
-    double res;
-    int nblockorthog = blockorthog->schmidt_orthog_tol(Sblock, lindep_tol_,
-                                                       &res);
-    if (res < min_orthog_res_) min_orthog_res_ = res;
-    blockorthogs[i] = blockorthog;
-    nblockorthogs[i] = nblockorthog;
-    northog += nblockorthog;
-  }
-
-  // Construct the orthog SO basis SCDimension object.
-  Ref<SCBlockInfo> blockinfo
-    = new SCBlockInfo(northog, nblock, nblockorthogs);
-  for (int i=0; i<nblock; i++) {
-    blockinfo->set_subdim(i, new SCDimension(nblockorthogs[i]));
-  }
-  osodim_ = new SCDimension(blockinfo, "ortho SO (Gram-Schmidt)");
-
-  // Replace each blockorthog by a matrix with only linear independent columns
-  for (int i=0; i<nblock; i++) {
-    if (nblockorthogs[i] == 0) continue;
-    RefSCMatrix old_blockorthog = blockorthogs[i];
-    blockorthogs[i] = subkit->matrix(sodim_->blocks()->subdim(i),
-                                     osodim_->blocks()->subdim(i));
-    blockorthogs[i].assign_subblock(old_blockorthog,
-                                    0, sodim_->blocks()->subdim(i).n()-1,
-                                    0, osodim_->blocks()->subdim(i).n()-1);
-  }
-
-  // Compute the inverse of each orthogonalization block.
-  RefSCMatrix *inverse_blockorthogs = new RefSCMatrix[nblock];
-  for (int i=0; i<nblock; i++) {
-    if (nblockorthogs[i] == 0) {
-      inverse_blockorthogs[i] = 0;
-      }
-    else {
-      inverse_blockorthogs[i] = blockorthogs[i].gi();
-      }
-  }
-
-  // Construct the complete transformation matrices
-  orthog_trans_ = basis_matrixkit()->matrix(sodim_, osodim_);
-  orthog_trans_inverse_ = basis_matrixkit()->matrix(osodim_, sodim_);
-  orthog_trans_.assign(0.0);
-  orthog_trans_inverse_.assign(0.0);
-  BlockedSCMatrix *X
-    = dynamic_cast<BlockedSCMatrix*>(orthog_trans_.pointer());
-  BlockedSCMatrix *Xi
-    = dynamic_cast<BlockedSCMatrix*>(orthog_trans_inverse_.pointer());
-  for (int i=0; i<nblock; i++) {
-    if (nblockorthogs[i] == 0) continue;
-    int nrow = blockorthogs[i].rowdim().n();
-    int ncol = blockorthogs[i].coldim().n();
-    X->block(i).assign_subblock(blockorthogs[i],
-                                0, nrow-1, 0, ncol-1,
-                                0, 0);
-    Xi->block(i).assign_subblock(inverse_blockorthogs[i],
-                                 0, ncol-1, 0, nrow-1,
-                                 0, 0);
-  }
-  orthog_trans_ = orthog_trans_.t();
-  orthog_trans_inverse_ = orthog_trans_inverse_.t();
-
-  delete[] blockorthogs;
-  delete[] inverse_blockorthogs;
-  delete[] nblockorthogs;
-}
-
-void
-Wavefunction::compute_orthog_trans()
-{
-  switch(orthog_method_) {
-  case GramSchmidt:
-    ExEnv::out0() << indent
-                 << "Using Gram-Schmidt orthogonalization."
-                 << endl;
-    compute_gs_orthog();
-    break;
-  case Symmetric:
-    compute_symmetric_orthog();
-    ExEnv::out0() << indent
-                 << "Using symmetric orthogonalization."
-                 << endl;
-    break;
-  case Canonical:
-    compute_canonical_orthog();
-    ExEnv::out0() << indent
-                 << "Using canonical orthogonalization."
-                 << endl;
-    break;
-  default:
-    ExEnv::outn() << "Wavefunction::compute_orthog_trans(): bad orthog method"
-                 << endl;
-    abort();
-  }
-
-  ExEnv::out0() << indent
-               << "n(SO):        ";
-  for (int i=0; i<sodim_->blocks()->nblock(); i++) {
-    ExEnv::out0() << scprintf(" %5d", sodim_->blocks()->size(i));
-  }
-  ExEnv::out0() << endl;
-
-  if (sodim_.n() != osodim_.n()) {
-    ExEnv::out0() << indent
-                 << "n(orthog SO): ";
-    for (int i=0; i<osodim_->blocks()->nblock(); i++) {
-      ExEnv::out0() << scprintf(" %5d", osodim_->blocks()->size(i));
-      }
-    ExEnv::out0() << endl;
-
-    ExEnv::out0() << indent
-                 << "WARNING: " << sodim_.n() - osodim_.n()
-                 << " basis function"
-                 << (sodim_.n()-osodim_.n()>1?"s":"")
-                 << " discarded."
-                 << endl;
-    }
-  ExEnv::out0() << indent
-               << "Maximum orthogonalization residual = "
-               << max_orthog_res_ << endl
-               << indent
-               << "Minimum orthogonalization residual = "
-               << min_orthog_res_ << endl;
-
-  if (debug_ > 0) {
-    osodim_.print();
-    if (debug_ > 1) {
-      orthog_trans_.print("SO to OSO");
-      orthog_trans_inverse_.print("SO to OSO inverse");
-      (orthog_trans_*overlap()
-       *orthog_trans_.t()).print("X*S*X'",ExEnv::out0(),14);
-      (orthog_trans_inverse_.t()*overlap().gi()
-       *orthog_trans_inverse_).print("X'^(-1)*S^(-1)*X^(-1)",
-                                     ExEnv::out0(),14);
-      (orthog_trans_
-       *orthog_trans_inverse_).print("X*X^(-1)",ExEnv::out0(),14);
-    }
-  }
-}
-
 // returns the orthogonalization matrix
 RefSCMatrix
 Wavefunction::so_to_orthog_so()
 {
-  if (orthog_trans_.null()) {
-    compute_orthog_trans();
-  }
-  return orthog_trans_;
+  if (orthog_.null()) init_orthog();
+  return orthog_->basis_to_orthog_basis();
 }
 
 RefSCMatrix
 Wavefunction::so_to_orthog_so_inverse()
 {
-  if (orthog_trans_inverse_.null()) {
-    compute_orthog_trans();
-  }
-  return orthog_trans_inverse_;
+  if (orthog_.null()) init_orthog();
+  return orthog_->basis_to_orthog_basis_inverse();
 }
 
 Ref<GaussianBasisSet>
@@ -834,8 +499,8 @@ Wavefunction::ao_dimension()
 RefSCDimension
 Wavefunction::oso_dimension()
 {
-  if (osodim_.null()) compute_orthog_trans();
-  return osodim_;
+  if (orthog_.null()) init_orthog();
+  return orthog_->orthog_dim();
 }
 
 Ref<SCMatrixKit>
@@ -899,9 +564,7 @@ Wavefunction::beta_ao_density()
 void
 Wavefunction::obsolete()
 {
-  osodim_ = 0;
-  orthog_trans_ = 0;
-  orthog_trans_inverse_ = 0;
+  orthog_ = 0;
 
   MolecularEnergy::obsolete();
 }
@@ -909,17 +572,48 @@ Wavefunction::obsolete()
 void
 Wavefunction::copy_orthog_info(const Ref<Wavefunction>&wfn)
 {
-  if (orthog_trans_.nonnull() || orthog_trans_inverse_.nonnull()) {
+  if (orthog_.nonnull()) {
     ExEnv::errn() << "WARNING: Wavefunction: orthogonalization info changing"
                  << endl;
   }
-  orthog_trans_ = wfn->so_to_orthog_so().copy();
-  orthog_trans_inverse_ = wfn->so_to_orthog_so_inverse().copy();
-  lindep_tol_ = wfn->lindep_tol_;
-  orthog_method_ = wfn->orthog_method_;
-  osodim_ = wfn->osodim_;
-  min_orthog_res_ = wfn->min_orthog_res_;
-  max_orthog_res_ = wfn->max_orthog_res_;
+  orthog_ = wfn->orthog_->copy();
+}
+
+void
+Wavefunction::init_orthog()
+{
+  orthog_ = new OverlapOrthog(
+    orthog_method_,
+    overlap(),
+    basis_matrixkit(),
+    lindep_tol_,
+    debug_
+    );
+}
+
+double
+Wavefunction::min_orthog_res()
+{
+  return orthog_->min_orthog_res();
+}
+
+double
+Wavefunction::max_orthog_res()
+{
+  if (orthog_.null()) init_orthog();
+  return orthog_->max_orthog_res();
+}
+
+OverlapOrthog::OrthogMethod
+Wavefunction::orthog_method() const
+{
+  return orthog_method_;
+}
+
+double
+Wavefunction::lindep_tol() const
+{
+  return lindep_tol_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -5,6 +5,19 @@ $class = '';
 $classdoc = '';
 %item = ();
 while(<>) {
+
+    while(/^[ \t]*\/\//) {
+        if (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]+(.*)/) {
+            do get_doc($1);
+        }
+        elsif (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]*$/) {
+            do get_doc('');
+        }
+        else {
+            last;
+        }
+    }
+
     if (/^[ \t]*class[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/) {
         do new_class($1,'');
     }
@@ -17,13 +30,6 @@ while(<>) {
     elsif (/^[ \t]*protected[ \t]*:/) {
         $interface = 'pro';
     }
-    elsif (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]+(.*)/) {
-        do get_doc($1);
-    }
-    elsif (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]*$/) {
-        do get_doc('');
-    }
-
 }
 
 do write_doc();
@@ -63,25 +69,165 @@ sub write_doc {
     $classdoc = '';
 }
 
+sub beautify_member {
+    $m = $_[0];
+
+    $_ = $m;
+
+    $virtual = 0;
+    $static = 0;
+    $constreturn = 0;
+    # check for a constructor
+    if (/^[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*\(/) {
+        $typename = 'void';
+    }
+    else {
+        # parse the virtual and static qualifiers
+        if (/^[ \t]*virtual(.*)/) {
+            $virtual = 1;
+            $_ = $1;
+        }
+        elsif (/^[ \t]*static(.*)/) {
+            $static = 1;
+            $_ = $1;
+        }
+
+        # parse the const qualifier
+        if (/^[ \t]*const(.*)/) {
+            $constreturn = 1;
+            $_ = $1;
+        }
+
+        # parse the type name
+        /^[ \t]*([A-Za-z_][A-Za-z_0-9]*)(.*)/;
+        $typename = $1;
+        $_ = $2;
+
+        # parse the reference and pointer and const qualifiers
+        while (/^[ \t]*(&)(.*)/ || /^[ \t]*(\*)(.*)/ || /^[ \t]*(const)(.*)/) {
+            $typename = "$typename $1";
+            $_ = $2;
+        }
+
+        $typename = "const $typename" if ($constreturn);
+    }
+
+    # parse the member name
+    /^[ \t]*([A-Za-z_][A-Za-z0-9_]*)(.*)/;
+    $membername = $1;
+    $_ = $2;
+    if ($membername eq 'operator') {
+        # operator () is a special case
+        if (/^[ \t]*\([ \t]*\)(.*)/) {
+            $membername = "$membername ()";
+            $_ = $1;
+        }
+        else {
+            /^[ \t]*(.*)[ \t]*(\(.*)/;
+            $membername = "$membername $1";
+            $_ = $2;
+        }
+    }
+
+    # parse the arglist
+    /\((.*)\)(.*)/;
+    $arglist = $1;
+    $_ = $2;
+
+    # parse the constness of calling object
+    $constobject = 0;
+    if (/^[ \t]*const(.*)/) {
+        $constobject = 1;
+        $_ = $1;
+    }
+
+    # parse the pure virtual qualifier
+    $pure = 0;
+    if (/[ \t]*=[ \t]*0(.*)/) {
+        $pure = 1;
+        $_ = $1;
+    }
+
+    # construct the table entry
+
+    $qualifiers = '';
+    if ($constobject) {
+        $qualifiers = "$qualifiers const";
+    }
+    if ($pure) {
+        $qualifiers = "$qualifiers pure";
+    }
+    elsif ($virtual) {
+        $qualifiers = "$qualifiers virtual";
+    }
+    elsif ($static) {
+        $qualifiers = "$qualifiers static";
+    }
+    $_ = $qualifiers;
+    /[ \t]*(.*)[ \t]*/;
+    $qualifiers = $1;
+
+    $item = "\@b{$membername}($arglist)";
+    if ($qualifiers ne '') {
+        $item = "$item $qualifiers";
+    }
+    if ($typename ne 'void') {
+        $item = "$item \@b{@result{}} $typename";
+    }
+
+    return "$item;";
+}
+
 sub get_doc {
     $doc = $_[0];
+    $members = '';
+    $indoc = 1;
     while (<>) {
-        if (/^[ \t]*\/\/([Tt][Ee][Xx][Ii])?[ \t]*(.*)/) {
+        if ($indoc && /^[ \t]*\/\/([Tt][Ee][Xx][Ii])?[ \t]*(.*)/) {
             $doc = "$doc\n$2";
         }
         elsif (/^[ \t]*class[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/) {
             do new_class($1,$doc);
             last;
         }
-        elsif (/[ \t]*(.*);[ \t]*/) {
+        elsif (/^[ \t]*([A-Za-z_].*),[ \t]*$/) {
+            $indoc = 0;
             $member = $1;
-            $item{$interface} = "$item{$interface}\@item $member\n$doc\n";
-            $doc = '';
-            last;
+            while (<>) {
+                if (/^[ \t]*(.*,)[ \t]*$/) {
+                    $member = "$member$1";
+                }
+                elsif (/^[ \t]*(.*){[ \t]*/) {
+                    $member = "$member$1";
+                    last;
+                }
+                elsif (/^[ \t]*(.*);[ \t]*/) {
+                    $member = "$member$1";
+                    last;
+                }
+                elsif (/};/) {
+                    last;
+                }
+                else {
+                    printf "BAD MEMBER CONTINUATION: $_\n";
+                }
+            }
+            $member = &beautify_member($member);
+            $members = "$members\@item $member\n";
+        }
+        elsif (/^[ \t]*([A-Za-z_].*)[ \t]*{/) {
+            $indoc = 0;
+            $member = &beautify_member($1);
+            $members = "$members\@item $member\n";
+        }
+        elsif (/^[ \t]*([A-Za-z_].*);[ \t]*/) {
+            $indoc = 0;
+            $member = &beautify_member($1);
+            $members = "$members\@item $member\n";
         }
         else {
-            print "Line: $_\n";
-            die "Could not parse line after documentation.";
+            $item{$interface} = "$item{$interface}$members\n$doc\n";
+            last;
         }
     }
 }

@@ -12,12 +12,6 @@
 /* Define if you want to optimize the reference counting code.  */
 #undef REF_OPTIMIZE
 
-/* Define if you want to use macros instead of templates for ref's.  */
-#undef USE_REF_MACROS
-
-/* Define if you don't have vprintf but do have _doprnt.  */
-#undef HAVE_DOPRNT
-
 /* Define if you have <stdint.h>.  */
 #undef HAVE_STDINT_H
 
@@ -58,7 +52,9 @@
 #undef HAVE_IOS_FMTFLAGS
 
 /* Define if you have the long long type extension.  */
+#ifndef HAVE_LONG_LONG
 #undef HAVE_LONG_LONG
+#endif
 
 /* Define if you have streambuf::pubseekoff (you should).  */
 #undef HAVE_PUBSEEKOFF

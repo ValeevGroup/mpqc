@@ -33,6 +33,7 @@
 #define _math_optimize_function_h
 
 #include <math.h>
+#include <float.h>
 
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>

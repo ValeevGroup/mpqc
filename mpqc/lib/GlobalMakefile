@@ -22,7 +22,8 @@ endif
 #
 # this vpath works with listlibs to find the libraries
 #
-vpath %.a $(TOPDIR)/src.lib
+vpath %.a $(TOPDIR)/src.lib:$(TOPDIR)/lib
+vpath %.so $(TOPDIR)/lib
 
 #
 # THISDIR is the name of the current directory relative to TOPDIR/src.lib/
@@ -70,7 +71,7 @@ INCINSTALL=$(SRCDIR)/$(TOPDIR)/bin/incinstall
 
 # The library locator
 #LISTLIBS=$(SRCDIR)/$(TOPDIR)/bin/listlibs.sh
-LISTLIBS=listlibs
+LISTLIBS=listlibs -DLIBSUF=$(LIBSUF)
 
 # The object directory maker
 OBJECTDIR=$(SRCDIR)/$(TOPDIR)/bin/objectdir
@@ -134,6 +135,16 @@ LEX = flex
 # yacc or bison?
 #
 YACC=bison
+
+#
+# elf shared libraries
+#
+SH_LD =
+SH_LDFLAGS =
+SH_LIBS =
+ELF = no
+ELF_MAJOR = 1
+ELF_MINOR = 0.1
 
 ############
 

@@ -42,10 +42,22 @@ default::
 
 ifeq ($(BIN_OR_LIB),LIB)
 
-$(TARGET_TO_MAKE).$(LIBSUF): $(LIBOBJ)
-	/bin/rm -f $(@F)
-	$(AR) $(ARFLAGS) $(@F) $^
-	$(RANLIB) $(@F)
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
+	/bin/rm -f $@
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
+
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).so: $(LIBOBJ)
+	$(SH_LD) $(SH_LDFLAGS) \
+          -o $(TOPDIR)/lib/$(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) $^
+	rm -f $(TOPDIR)/lib/$(TARGET_TO_MAKE).so.$(ELF_MAJOR)
+	ln -s \
+          $(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) \
+          $(TOPDIR)/lib/$(TARGET_TO_MAKE).so.$(ELF_MAJOR)
+	rm -f $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
+	ln -s \
+          $(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) \
+          $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
 
 install: install_inc install_target
 

@@ -255,3 +255,5 @@
   (insert comment-cont " the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n")
   (insert comment-end "\n")
 )
+
+(define-key c-mode-map "\C-ci" 'insert-copyleft)

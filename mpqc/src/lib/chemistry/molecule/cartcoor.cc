@@ -149,12 +149,12 @@ void
 CartMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
   SymmMolecularCoor imcoor(molecule_);
-  RefSymmSCMatrix ihessian(imcoor.dim());
+  RefSymmSCMatrix ihessian(imcoor.dim(),matrixkit_);
   imcoor.guess_hessian(ihessian);
   imcoor.to_cartesian(hessian,ihessian);
 
-  RefSCMatrix evecs(hessian.dim(),hessian.dim());
-  RefDiagSCMatrix evals(hessian.dim());
+  RefSCMatrix evecs(hessian.dim(),hessian.dim(),matrixkit_);
+  RefDiagSCMatrix evals(hessian.dim(),matrixkit_);
 
   hessian.diagonalize(evals,evecs);
   hessian.assign(0.0);

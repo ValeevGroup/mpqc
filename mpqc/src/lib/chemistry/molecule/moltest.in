@@ -251,7 +251,7 @@ simp = $:generated_simp
 
 bmat_test = $:simp
 
-renderer<OOGLRender>: (
+xrenderer<OOGLRender>: (
     filename = "moltest.oogl"
   )
 

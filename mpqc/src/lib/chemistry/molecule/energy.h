@@ -10,11 +10,11 @@ extern "C" {
 #include <stdio.h>
 }
 
-#include <math/optimize/nlp.h>
+#include <math/optimize/function.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 
-class MolecularEnergy: public NLP2 {
+class MolecularEnergy: public Function {
 #   define CLASSNAME MolecularEnergy
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

@@ -259,8 +259,8 @@ IntMolecularCoor::init()
   if (given_fixed_values_) {
       // save the given coordinate values
       RefSCDimension original_dfixed
-          = matrixkit_->dimension(fixed_->n(),"Nfix");
-      RefSCVector given_fixed_coords(original_dfixed);
+          = new SCDimension(fixed_->n(),"Nfix");
+      RefSCVector given_fixed_coords(original_dfixed,matrixkit_);
       for (i=0; i<original_dfixed.n(); i++) {
           given_fixed_coords(i) = fixed_->coor(i)->value();
         }
@@ -274,11 +274,11 @@ IntMolecularCoor::init()
       for (int istep=1; istep<=nstep; istep++) {
           form_coordinates();
 
-          dim_ = matrixkit_->dimension(variable_->n(), "Nvar");
-          dvc_ = matrixkit_->dimension(variable_->n()+constant_->n(),
-                                       "Nvar+Nconst");
+          dim_ = new SCDimension(variable_->n(), "Nvar");
+          dvc_ = new SCDimension(variable_->n()+constant_->n(),
+                             "Nvar+Nconst");
 
-          RefSCVector new_internal_coordinates(dvc_);
+          RefSCVector new_internal_coordinates(dvc_,matrixkit_);
           for (i=0; i<variable_->n(); i++) {
               new_internal_coordinates(i) = variable_->coor(i)->value();
             }
@@ -297,25 +297,25 @@ IntMolecularCoor::init()
 
   form_coordinates();
 
-  dim_ = matrixkit_->dimension(variable_->n(), "Nvar");
-  dvc_ = matrixkit_->dimension(variable_->n()+constant_->n(),
-                               "Nvar+Nconst");
+  dim_ = new SCDimension(variable_->n(), "Nvar");
+  dvc_ = new SCDimension(variable_->n()+constant_->n(),
+                         "Nvar+Nconst");
 #if 1
     {
       const double epsilon = 0.001;
 
       // compute the condition number
-      RefSCMatrix B(dim_, dnatom3_);
+      RefSCMatrix B(dim_, dnatom3_,matrixkit_);
       variable_->bmat(molecule_, B);
 
       // Compute the singular value decomposition of B
-      RefSCMatrix U(dim_,dim_);
-      RefSCMatrix V(dnatom3_,dnatom3_);
+      RefSCMatrix U(dim_,dim_,matrixkit_);
+      RefSCMatrix V(dnatom3_,dnatom3_,matrixkit_);
       RefSCDimension min;
       if (dnatom3_.n()<dim_.n()) min = dnatom3_;
       else min = dim_;
       int nmin = min.n();
-      RefDiagSCMatrix sigma(min);
+      RefDiagSCMatrix sigma(min,matrixkit_);
       B.svd(U,sigma,V);
 
       // Compute the epsilon rank of B
@@ -357,8 +357,8 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
                RefSCMatrix& K)
 {
   // Compute the B matrix for the coordinates
-  RefSCDimension dcoor = matrixkit->dimension(coor->n());
-  RefSCMatrix B(dcoor, dnatom3);
+  RefSCDimension dcoor = new SCDimension(coor->n());
+  RefSCMatrix B(dcoor, dnatom3,matrixkit);
   coor->bmat(molecule, B);
 
   // Project out the previously discovered internal coordinates
@@ -367,13 +367,13 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
     }
 
   // Compute the singular value decomposition of B
-  RefSCMatrix U(dcoor,dcoor);
-  RefSCMatrix V(dnatom3,dnatom3);
+  RefSCMatrix U(dcoor,dcoor,matrixkit);
+  RefSCMatrix V(dnatom3,dnatom3,matrixkit);
   RefSCDimension min;
   if (dnatom3.n()<dcoor.n()) min = dnatom3;
   else min = dcoor;
   int nmin = min.n();
-  RefDiagSCMatrix sigma(min);
+  RefDiagSCMatrix sigma(min,matrixkit);
   B.svd(U,sigma,V);
 
   // Compute the epsilon rank of B
@@ -382,7 +382,7 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
       if (sigma(i) > epsilon) rank++;
     }
 
-  RefSCMatrix SIGMA(dcoor, dnatom3);
+  RefSCMatrix SIGMA(dcoor, dnatom3,matrixkit);
   SIGMA.assign(0.0);
   for (i=0; i<nmin; i++) {
       SIGMA(i,i) = sigma(i);
@@ -393,7 +393,7 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
 
   // Find an orthogonal matrix that spans the range of B
   RefSCMatrix Ur;
-  RefSCDimension drank = matrixkit->dimension(rank);
+  RefSCDimension drank = new SCDimension(rank);
   if (rank) {
       Ur = matrixkit->matrix(dcoor,drank);
       Ur.assign_subblock(U,0, dcoor.n()-1, 0, drank.n()-1, 0, 0);
@@ -402,7 +402,7 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
   // Find an orthogonal matrix that spans the null space of B
   int rank_tilde = dnatom3.n() - rank;
   RefSCMatrix Vr_tilde;
-  RefSCDimension drank_tilde = matrixkit->dimension(rank_tilde);
+  RefSCDimension drank_tilde = new SCDimension(rank_tilde);
   if (rank_tilde) {
       Vr_tilde = matrixkit->matrix(dnatom3,drank_tilde);
       Vr_tilde.assign_subblock(V,0, dnatom3.n()-1, 0, drank_tilde.n()-1,
@@ -458,10 +458,10 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
 #if USE_SVD
 void
 IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
-                                   RefSCDimension& dfixed,
-                                   RefSCMatrix& K,
-                                   RefSCMatrix& Kfixed,
-                                   int*& is_totally_symmetric)
+                                  RefSCDimension& dfixed,
+                                  RefSCMatrix& K,
+                                  RefSCMatrix& Kfixed,
+                                  int*& is_totally_symmetric)
 {
   int i,j;
 
@@ -470,14 +470,14 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 
   // The geometry will be needed to check for totally symmetric
   // coordinates
-  RefSCVector geom(dnatom3_);
+  RefSCVector geom(dnatom3_,matrixkit_);
   for(i=0; i < geom.n()/3; i++) {
       geom(3*i) = molecule_->operator[](i).point()[0];
       geom(3*i+1) = molecule_->operator[](i).point()[1];
       geom(3*i+2) = molecule_->operator[](i).point()[2];
     }
 
-  RefSCDimension dcoor = matrixkit_->dimension(all_->n());
+  RefSCDimension dcoor = new SCDimension(all_->n());
 
   // this keeps track of the total projection for the b matrices
   RefSCMatrix projection;
@@ -502,7 +502,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
         }
 
       // Compute Kfixed
-      RefSCMatrix B(dcoor, dnatom3_);
+      RefSCMatrix B(dcoor, dnatom3_, matrixkit_);
       all_->bmat(molecule_, B);
       Kfixed = B * null_bfixed_perp;
     }
@@ -542,7 +542,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 
   // This requires that all_ coordinates is made up of first bonds,
   // bends, and finally the rest of the coordinates.
-  RefSCDimension dtot = matrixkit_->dimension(n_total);
+  RefSCDimension dtot = new SCDimension(n_total);
   K = matrixkit_->matrix(dcoor, dtot);
   K.assign(0.0);
   if (Kbond.nonnull()) {
@@ -597,16 +597,16 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 #else // USE_SVD
 void
 IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
-                                   RefSCDimension& dfixed,
-                                   RefSCMatrix& K,
-                                   RefSCMatrix& Kfixed,
-                                   int*& is_totally_symmetric)
+                                  RefSCDimension& dfixed,
+                                  RefSCMatrix& K,
+                                  RefSCMatrix& Kfixed,
+                                  int*& is_totally_symmetric)
 {
   int i,j;
   int natom3 = dnatom3_.n();
 
   // form bmat for the set of redundant coordinates
-  RefSCMatrix bmat(dredundant,dnatom3_);
+  RefSCMatrix bmat(dredundant,dnatom3_,matrixkit_);
   all_->bmat(molecule_,bmat);
   int nredundant = dredundant.n();
 
@@ -662,17 +662,17 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
     }
 
   // and form b*b~
-  RefSymmSCMatrix bmbt(dredundant);
+  RefSymmSCMatrix bmbt(dredundant,matrixkit_);
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);
 
   // form the fixed part of the b matrix
-  RefSCMatrix bmat_fixed(dfixed,dnatom3_);
+  RefSCMatrix bmat_fixed(dfixed,dnatom3_,matrixkit_);
   fixed_->bmat(molecule_,bmat_fixed);
   int nfixed = dfixed.n();
 
   // and form the fixed b*b~
-  RefSymmSCMatrix bmbt_fixed(dfixed);
+  RefSymmSCMatrix bmbt_fixed(dfixed,matrixkit_);
   bmbt_fixed.assign(0.0);
   bmbt_fixed.accumulate_symmetric_product(bmat_fixed);
 
@@ -681,7 +681,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   if (nfixed != 0) bmbt_fix_red = bmat_fixed * bmat.t();
 
   // orthogonalize the redundant coordinates to the fixed coordinates
-  RefSCMatrix redundant_ortho(dfixed,dredundant);
+  RefSCMatrix redundant_ortho(dfixed,dredundant,matrixkit_);
   for (i=0; i<nredundant; i++) {
       for (j=0; j<nfixed; j++) {
           redundant_ortho(j,i) = - (bmbt_fix_red(j,i)/bmbt_fixed(j,j));
@@ -700,8 +700,8 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 
   // now diagonalize bmbt, this should give you the 3n-6(5) symmetrized
   // internal coordinates
-  RefSCMatrix vecs(dredundant,dredundant);
-  RefDiagSCMatrix vals(dredundant);
+  RefSCMatrix vecs(dredundant,dredundant,matrixkit_);
+  RefDiagSCMatrix vals(dredundant,matrixkit_);
 
   bmbt.diagonalize(vals,vecs);
 
@@ -730,7 +730,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
     }
 
   // size K and Kfixed
-  RefSCDimension dnonzero = matrixkit_->dimension(nonzero, "Nnonzero");
+  RefSCDimension dnonzero = new SCDimension(nonzero, "Nnonzero");
   K = dredundant->create_matrix(dnonzero); // nredundant x nonzero
   K.assign(0.0);
   Kfixed = dfixed->create_matrix(dnonzero); // nfixed x nonzero
@@ -832,7 +832,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
   const double update_tolerance = 1.0e-6;
 
   // compute the internal coordinate displacements
-  RefSCVector old_internal(dvc_);
+  RefSCVector old_internal(dvc_,matrixkit_);
 
   RefSCMatrix internal_to_cart_disp;
   double maxabs_cart_diff = 0.0;
@@ -855,7 +855,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
 #endif
 
           int i;
-          RefSCMatrix bmat(dvc_,dnatom3_);
+          RefSCMatrix bmat(dvc_,dnatom3_,matrixkit_);
 
           // form the set of all coordinates
           RefSetIntCoor variable_and_constant = new SetIntCoor();
@@ -866,13 +866,13 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
           variable_and_constant->bmat(molecule_,bmat);
 
           // Compute the singular value decomposition of B
-          RefSCMatrix U(dvc_,dvc_);
-          RefSCMatrix V(dnatom3_,dnatom3_);
+          RefSCMatrix U(dvc_,dvc_,matrixkit_);
+          RefSCMatrix V(dnatom3_,dnatom3_,matrixkit_);
           RefSCDimension min;
           if (dnatom3_.n()<dvc_.n()) min = dnatom3_;
           else min = dvc_;
           int nmin = min.n();
-          RefDiagSCMatrix sigma(min);
+          RefDiagSCMatrix sigma(min,matrixkit_);
           bmat.svd(U,sigma,V);
 
           // compute the epsilon rank of B
@@ -881,19 +881,19 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
               if (fabs(sigma(i)) > 0.0001) rank++;
             }
 
-          RefSCDimension drank = matrixkit_->dimension(rank);
-          RefDiagSCMatrix sigma_i(drank);
+          RefSCDimension drank = new SCDimension(rank);
+          RefDiagSCMatrix sigma_i(drank,matrixkit_);
           for (i=0; i<rank; i++) {
               sigma_i(i) = 1.0/sigma(i);
             }
-          RefSCMatrix Ur(dvc_, drank);
-          RefSCMatrix Vr(dnatom3_, drank);
+          RefSCMatrix Ur(dvc_, drank, matrixkit_);
+          RefSCMatrix Vr(dnatom3_, drank, matrixkit_);
           Ur.assign_subblock(U,0, dvc_.n()-1, 0, drank.n()-1, 0, 0);
           Vr.assign_subblock(V,0, dnatom3_.n()-1, 0, drank.n()-1, 0, 0);
           internal_to_cart_disp = Vr * sigma_i * Ur.t();
 
 #if !USE_SVD
-          RefSymmSCMatrix bmbt(dvc_);
+          RefSymmSCMatrix bmbt(dvc_,matrixkit_);
           RefSymmSCMatrix bmbt_i;
 
           // form the initial inverse of bmatrix * bmatrix_t
@@ -960,7 +960,7 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
       abort();
     }
 
-  RefSCVector all_internal(dvc_);
+  RefSCVector all_internal(dvc_,matrixkit_);
 
   int i,j;
 
@@ -1020,7 +1020,7 @@ IntMolecularCoor::to_internal(RefSCVector&internal)
 int
 IntMolecularCoor::to_cartesian(RefSCVector&gradient,RefSCVector&internal)
 {
-  RefSCMatrix bmat(dim_,gradient.dim());
+  RefSCMatrix bmat(dim_,gradient.dim(),matrixkit_);
   variable_->bmat(molecule_,bmat);
 
   gradient = bmat.t() * internal;
@@ -1032,8 +1032,8 @@ IntMolecularCoor::to_cartesian(RefSCVector&gradient,RefSCVector&internal)
 int
 IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
 {
-  RefSCMatrix bmat(dvc_,gradient.dim());
-  RefSymmSCMatrix bmbt(dvc_);
+  RefSCMatrix bmat(dvc_,gradient.dim(),matrixkit_);
+  RefSymmSCMatrix bmbt(dvc_,matrixkit_);
 
   RefSetIntCoor variable_and_constant = new SetIntCoor();
   variable_and_constant->add(variable_);
@@ -1066,7 +1066,7 @@ int
 IntMolecularCoor::to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal)
 {
   cart.assign(0.0);
-  RefSCMatrix bmat(dim_,cart.dim());
+  RefSCMatrix bmat(dim_,cart.dim(),matrixkit_);
   variable_->bmat(molecule_,bmat);
   cart.accumulate_transform(bmat.t(),internal);
   return 0;
@@ -1076,10 +1076,10 @@ int
 IntMolecularCoor::to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart)
 {
   // form bmat
-  RefSCMatrix bmat(dim_,cart.dim());
+  RefSCMatrix bmat(dim_,cart.dim(),matrixkit_);
   variable_->bmat(molecule_,bmat);
   // and (B*B+)^-1
-  RefSymmSCMatrix bmbt(dim_);
+  RefSymmSCMatrix bmbt(dim_,matrixkit_);
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);
   bmbt = bmbt.gi();

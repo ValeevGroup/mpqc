@@ -26,8 +26,8 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
   MolecularEnergy(keyval)
 {
   coordinates_ = keyval->describedclassvalue("coordinates");
-  dim_ = new LocalSCDimension(coordinates_->n());
-  expansion_point_ = dim_->create_vector();
+  dim_ = new SCDimension(coordinates_->n());
+  expansion_point_ = matrixkit()->vector(dim_);
   coordinates_->update_values(_mol);
   coordinates_->values_to_vector(expansion_point_);
 

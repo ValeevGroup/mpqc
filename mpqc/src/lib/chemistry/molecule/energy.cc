@@ -17,19 +17,19 @@ extern "C" {
 SavableState_REF_def(MolecularEnergy);
 
 #define CLASSNAME MolecularEnergy
-#define PARENTS public NLP2
+#define PARENTS public Function
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *
 MolecularEnergy::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = NLP2::_castdown(cd);
+  casts[0] = Function::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
-  NLP2(mole),
+  Function(mole),
   _energy(_value)
 {
   _mc = mole._mc;
@@ -38,12 +38,12 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
 }
 
 MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
-  NLP2(keyval),
+  Function(keyval),
   _energy(_value)
 {
   _mol = keyval->describedclassvalue("molecule");
 
-  _moldim = matrixkit()->dimension(3 * _mol->natom(), "3Natom");
+  _moldim = new SCDimension(3 * _mol->natom(), "3Natom");
 
   // the molecule coordinate object needs _moldim
   // so constract a keyval that has it
@@ -77,7 +77,7 @@ MolecularEnergy::~MolecularEnergy()
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
-  NLP2(s),
+  Function(s),
   _energy(_value)
   maybe_SavableState(s)
 {
@@ -89,7 +89,7 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
 MolecularEnergy&
 MolecularEnergy::operator=(const MolecularEnergy& mole)
 {
-  NLP2::operator=(mole);
+  Function::operator=(mole);
   _mc = mole._mc;
   _moldim = mole._moldim;
   _mol = mole._mol;
@@ -99,7 +99,7 @@ MolecularEnergy::operator=(const MolecularEnergy& mole)
 void
 MolecularEnergy::save_data_state(StateOut&s)
 {
-  NLP2::save_data_state(s);
+  Function::save_data_state(s);
   _mc.save_state(s);
   _moldim.save_state(s);
   _mol.save_state(s);
@@ -170,7 +170,7 @@ void
 MolecularEnergy::molecule_to_x()
 {
   if (_mc.null()) {
-      RefSCVector cartesian(_moldim);
+      RefSCVector cartesian(_moldim,matrixkit());
       int c = 0;
       for (int i=0; i<_mol->natom(); i++) {
           cartesian(c) = _mol->operator[](i)[0]; c++;
@@ -189,7 +189,7 @@ MolecularEnergy::molecule_to_x()
 void
 MolecularEnergy::set_x(const RefSCVector&v)
 {
-  NLP0::set_x(v);
+  Function::set_x(v);
   x_to_molecule();
 }
 
@@ -206,7 +206,7 @@ MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
       _mc->guess_hessian(hessian);
     }
   else {
-      NLP2::guess_hessian(hessian);
+      Function::guess_hessian(hessian);
     }
 }
 
@@ -217,14 +217,14 @@ MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
       return _mc->inverse_hessian(hessian);
     }
   else {
-      return NLP2::inverse_hessian(hessian);
+      return Function::inverse_hessian(hessian);
     }
 }
 
 void
 MolecularEnergy::print(ostream&o)
 {
-  NLP2::print(o);
+  Function::print(o);
   if (_mc.nonnull()) {
       o << indent << "Molecular Coordinates:\n";
       o << incindent;

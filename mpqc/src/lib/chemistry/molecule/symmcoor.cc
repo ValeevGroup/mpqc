@@ -56,6 +56,8 @@ SymmCoorTransform::SymmCoorTransform(const RefMolecule& molecule,
 void
 SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
 {
+  RefSCMatrixKit kit = new_internal.kit();
+
   // get a reference to Molecule for convenience
   Molecule& molecule = *(molecule_.pointer());
 
@@ -66,7 +68,7 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
   const double cartesian_tolerance = 1.0e-8;
 
   // compute the internal coordinate displacements
-  RefSCVector old_internal(new_internal.dim());
+  RefSCVector old_internal(new_internal.dim(),kit);
 
   RefSCMatrix internal_to_cart_disp;
   double maxabs_cart_diff = 0.0;
@@ -82,19 +84,19 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
           || internal_to_cart_disp.null()) {
 
           int i;
-          RefSCMatrix bmat(dim,dnatom3_);
+          RefSCMatrix bmat(dim,dnatom3_,kit);
 
           // form the bmatrix
           oldintcoor_->bmat(molecule_,bmat);
 
           // Compute the singular value decomposition of B
-          RefSCMatrix U(dim,dim);
-          RefSCMatrix V(dnatom3_,dnatom3_);
+          RefSCMatrix U(dim,dim,kit);
+          RefSCMatrix V(dnatom3_,dnatom3_,kit);
           RefSCDimension min;
           if (dnatom3_.n()<dim.n()) min = dnatom3_;
           else min = dim;
           int nmin = min.n();
-          RefDiagSCMatrix sigma(min);
+          RefDiagSCMatrix sigma(min,kit);
           bmat.svd(U,sigma,V);
 
           // compute the epsilon rank of B
@@ -103,13 +105,13 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
               if (fabs(sigma(i)) > 0.0001) rank++;
             }
 
-          RefSCDimension drank = matrixkit_->dimension(rank);
-          RefDiagSCMatrix sigma_i(drank);
+          RefSCDimension drank = new SCDimension(rank);
+          RefDiagSCMatrix sigma_i(drank,kit);
           for (i=0; i<rank; i++) {
               sigma_i(i) = 1.0/sigma(i);
             }
-          RefSCMatrix Ur(dim, drank);
-          RefSCMatrix Vr(dnatom3_, drank);
+          RefSCMatrix Ur(dim, drank, kit);
+          RefSCMatrix Vr(dnatom3_, drank, kit);
           Ur.assign_subblock(U,0, dim.n()-1, 0, drank.n()-1, 0, 0);
           Vr.assign_subblock(V,0, dnatom3_.n()-1, 0, drank.n()-1, 0, 0);
           internal_to_cart_disp = Vr * sigma_i * Ur.t();
@@ -151,6 +153,7 @@ SymmCoorTransform::transform_coordinates(const RefSCVector& x)
 {
   if (x.null()) return;
 
+  RefSCMatrixKit kit = x.kit();
   RefSCDimension dim = x.dim();
 
   // using the old coordinates update molecule
@@ -163,16 +166,16 @@ SymmCoorTransform::transform_coordinates(const RefSCVector& x)
   // compute the linear transformation information
 
   // the old B matrix
-  RefSCMatrix B(dim, dnatom3_);
+  RefSCMatrix B(dim, dnatom3_, kit);
   oldintcoor_->bmat(molecule_, B);
 
   // get the B matrix for the new coordinates
-  RefSCMatrix Bnew(dim, dnatom3_);
+  RefSCMatrix Bnew(dim, dnatom3_, kit);
   newintcoor_->update_values(molecule_);
   newintcoor_->bmat(molecule_, Bnew);
 
   // the transform from cartesian to new internal coordinates
-  RefSymmSCMatrix bmbt(dim);
+  RefSymmSCMatrix bmbt(dim,kit);
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(Bnew);
   RefSCMatrix cart_to_new_internal = bmbt.gi() * Bnew;
@@ -299,8 +302,8 @@ SymmMolecularCoor::form_coordinates()
       abort();
     }
 
-  RefSCDimension dredundant = matrixkit_->dimension(nredundant, "Nredund");
-  RefSCDimension dfixed = matrixkit_->dimension(nfixed, "Nfixed");
+  RefSCDimension dredundant = new SCDimension(nredundant, "Nredund");
+  RefSCDimension dfixed = new SCDimension(nfixed, "Nfixed");
   RefSCMatrix K; // nredundant x nnonzero
   RefSCMatrix Kfixed; // nfixed x nnonzero
   int* is_totally_symmetric; // nnonzero; if 1 coor has tot. symm. component
@@ -394,23 +397,23 @@ void
 SymmMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
   // first form diagonal hessian in redundant internal coordinates
-  RefSCDimension rdim = matrixkit_->dimension(all_->n(), "Nall");
-  RefSymmSCMatrix rhessian(rdim);
+  RefSCDimension rdim = new SCDimension(all_->n(), "Nall");
+  RefSymmSCMatrix rhessian(rdim,matrixkit_);
   rhessian.assign(0.0);
   all_->guess_hessian(molecule_,rhessian);
 
   // create redundant coordinate bmat
   RefSCDimension dn3 = dnatom3_;
-  RefSCMatrix bmatr(rdim,dn3);
+  RefSCMatrix bmatr(rdim,dn3,matrixkit_);
   all_->bmat(molecule_,bmatr);
 
   // then form the variable coordinate bmat
-  RefSCDimension dredundant = matrixkit_->dimension(variable_->n(), "Nvar");
-  RefSCMatrix bmat(dredundant,dn3);
+  RefSCDimension dredundant = new SCDimension(variable_->n(), "Nvar");
+  RefSCMatrix bmat(dredundant,dn3,matrixkit_);
   variable_->bmat(molecule_,bmat);
 
   // and (B*B+)^-1
-  RefSymmSCMatrix bmbt(dredundant);
+  RefSymmSCMatrix bmbt(dredundant,matrixkit_);
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);
   bmbt = bmbt.gi();
@@ -442,17 +445,17 @@ SymmMolecularCoor::change_coordinates()
 
   // compute the condition number of the old coordinate system at the
   // current point
-  RefSCMatrix B(dim_, dnatom3_);
+  RefSCMatrix B(dim_, dnatom3_, matrixkit_);
   variable_->bmat(molecule_, B);
 
   // Compute the singular value decomposition of B
-  RefSCMatrix U(dim_,dim_);
-  RefSCMatrix V(dnatom3_,dnatom3_);
+  RefSCMatrix U(dim_,dim_,matrixkit_);
+  RefSCMatrix V(dnatom3_,dnatom3_,matrixkit_);
   RefSCDimension min;
   if (dnatom3_.n()<dim_.n()) min = dnatom3_;
   else min = dim_;
   int nmin = min.n();
-  RefDiagSCMatrix sigma(min);
+  RefDiagSCMatrix sigma(min,matrixkit_);
   B.svd(U,sigma,V);
 
   // Compute the epsilon rank of B

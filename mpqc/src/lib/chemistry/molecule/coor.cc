@@ -286,6 +286,8 @@ SetIntCoor::coor(int i) const
 void
 SetIntCoor::fd_bmat(RefMolecule& mol,RefSCMatrix& fd_bmatrix)
 {
+  RefSCMatrixKit kit = fd_bmatrix.kit();
+
   fd_bmatrix.assign(0.0);
   
   int i;
@@ -297,9 +299,9 @@ SetIntCoor::fd_bmat(RefMolecule& mol,RefSCMatrix& fd_bmatrix)
   RefSCDimension dnc(fd_bmatrix.rowdim());
   int n3 = dn3.n();
   int nc = dnc.n();
-  RefSCVector internal(dnc);
-  RefSCVector internal_p(dnc);
-  RefSCVector internal_m(dnc);
+  RefSCVector internal(dnc,kit);
+  RefSCVector internal_p(dnc,kit);
+  RefSCVector internal_m(dnc,kit);
 
   // the internal coordinates
   update_values(mol);
@@ -339,7 +341,7 @@ SetIntCoor::bmat(RefMolecule& mol, RefSCMatrix& bmat)
 
   int i, ncoor = n(), ncart = bmat.coldim().n();
 
-  RefSCVector bmatrow(bmat.coldim());
+  RefSCVector bmatrow(bmat.coldim(),bmat.kit());
   // send the rows of the b matrix to each of the coordinates
   for (i=0; i<ncoor; i++) {
       bmatrow.assign(0.0);
@@ -634,7 +636,7 @@ MolecularCoor::MolecularCoor(RefMolecule&mol):
 {
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
-  dnatom3_ = matrixkit_->dimension(3*molecule_->natom());
+  dnatom3_ = new SCDimension(3*molecule_->natom());
 }
 
 MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
@@ -652,7 +654,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 
   if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
 
-  if (dnatom3_.null()) dnatom3_ = matrixkit_->dimension(3*molecule_->natom());
+  if (dnatom3_.null()) dnatom3_ = new SCDimension(3*molecule_->natom());
   else if (dnatom3_->n() != 3 * molecule_->natom()) {
       fprintf(stderr, "MolecularCoor(KeyVal): bad dnatom3 value");
       abort();
@@ -663,7 +665,6 @@ MolecularCoor::MolecularCoor(StateIn&s):
   SavableState(s)
 {
   molecule_.restore_state(s);
-  matrixkit_.restore_state(s);
   dnatom3_.restore_state(s);
 }
 
@@ -675,7 +676,6 @@ void
 MolecularCoor::save_data_state(StateOut&s)
 {
   molecule_.save_state(s);
-  matrixkit_.save_state(s);
   dnatom3_.save_state(s);
 }
 

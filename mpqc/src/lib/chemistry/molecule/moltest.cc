@@ -70,10 +70,11 @@ main(int argc, char **argv)
 
   // compare the analytic bmatrix to the finite displacement bmatrix
   RefSetIntCoor bmat_test = kv->describedclassvalue("bmat_test");
-  RefSCDimension dnc(new LocalSCDimension(bmat_test->n()));
-  RefSCDimension dn3(new LocalSCDimension(mol->natom()*3));
-  RefSCMatrix bmatrix(dnc,dn3);
-  RefSCMatrix fd_bmatrix(dnc,dn3);
+  RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+  RefSCDimension dnc(new SCDimension(bmat_test->n()));
+  RefSCDimension dn3(new SCDimension(mol->natom()*3));
+  RefSCMatrix bmatrix(dnc,dn3,kit);
+  RefSCMatrix fd_bmatrix(dnc,dn3,kit);
   printf("testing bmat with:\n");
   bmat_test->update_values(mol);
   bmat_test->print();
@@ -111,7 +112,7 @@ main(int argc, char **argv)
       // do_displacement(mc,2);
       // do_displacement(mc,3);
 
-      RefSymmSCMatrix hessian(mc->dim());
+      RefSymmSCMatrix hessian(mc->dim(),kit);
       mc->guess_hessian(hessian);
 
       // cout << "The guess hessian:\n";
@@ -132,7 +133,7 @@ do_displacement(RefMolecularCoor&mc,int i)
 {
   if (i>=mc->dim().n()) return;
   // now try to displace the geometry
-  RefSCVector internal(mc->dim());
+  RefSCVector internal(mc->dim(),mc->matrixkit());
   mc->to_internal(internal);
   cout << "The initial internal coordinates:\n";
   internal.print();

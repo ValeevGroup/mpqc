@@ -341,6 +341,8 @@ class MolecularCoor: public SavableState
     // The default action is
     // to not change anything and return an @code{IdentityTransform}.
     virtual RefNonlinearTransform change_coordinates();
+
+    RefSCMatrixKit matrixkit() { return matrixkit_; }
 };
 SavableState_REF_dec(MolecularCoor);
 

@@ -284,12 +284,14 @@ MPIMemoryGrp::deactivate()
       sync();
       if (debug_) cout << ">>>> MPI_Cancel for " << data_request_mid_ << endl;
       int ret;
+#ifndef __PUMAGON__
       if ((ret = MPI_Cancel(&handles_[data_request_mid_])) != MPI_SUCCESS) {
           cerr << me()
                << ": MPIMemoryGrp::deactivate(): MPI_Cancel: mpi error"
                << endl;
           print_error_and_abort(me(), ret);
         }
+#endif
       free_mid(data_request_mid_);
       active_ = 0;
     }

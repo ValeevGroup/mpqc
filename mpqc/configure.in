@@ -1350,7 +1350,7 @@ AC_SUBST(SCLIBS)
 
 dnl --------- Defined the library directory macros. ---------
 
-if test "$enableproduction" == "no"; then
+if test "$enableproduction" = "no"; then
 AC_DEFINE_UNQUOTED(SRC_SCLIBDIR, "$srcdir/lib")
 fi
 AC_DEFINE_UNQUOTED(INSTALLED_SCLIBDIR, "$prefix/lib")

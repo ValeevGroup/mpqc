@@ -121,6 +121,7 @@ class SCMatrix: virtual public SavableState {
     virtual void accumulate(SCMatrix*) = 0;
     virtual void transpose_this() = 0;
     virtual double invert_this() = 0;
+    virtual double solve_this(SCVector*) = 0;
     virtual void element_op(const RefSCRectElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
@@ -158,6 +159,7 @@ class SymmSCMatrix: virtual public SavableState {
     virtual void set_element(int,int,double) = 0;
     virtual void accumulate(SymmSCMatrix*) = 0;
     virtual double invert_this() = 0;
+    virtual double solve_this(SCVector*) = 0;
     virtual void element_op(const RefSCSymmElementOp&) = 0;
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
     virtual void accumulate_symmetric_outer_product(SCVector*) = 0;

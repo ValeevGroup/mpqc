@@ -317,6 +317,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     void element_op(const RefSCRectElementOp&) const;
     int nrow() const;
     int ncol() const;
+    double solve_this(const RefSCVector&) const;
     RefSCDimension rowdim() const;
     RefSCDimension coldim() const;
     SCMatrixdouble operator()(int i,int j) const;
@@ -366,6 +367,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void convert(double**) const;
     void accumulate(const RefSymmSCMatrix&) const;
     void element_op(const RefSCSymmElementOp&) const;
+    double solve_this(const RefSCVector&) const;
     RefDiagSCMatrix eigvals() const;
     RefSCMatrix eigvecs() const;
     void diagonalize(const RefDiagSCMatrix& eigvals,

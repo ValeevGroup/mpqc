@@ -150,6 +150,22 @@ LocalSymmSCMatrix::invert_this()
   return cmat_invert(rows,1,n());
 }
 
+double
+LocalSymmSCMatrix::solve_this(SCVector*v)
+{
+  LocalSCVector* lv =
+    LocalSCVector::require_castdown(v,"LocalSymmSCMatrix::solve_this");
+  
+  // make sure that the dimensions match
+  if (!(this->dim() == v->dim())) {
+      fprintf(stderr,"LocalSymmSCMatrix::solve_this(SCVector*v):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  return cmat_solve_lin(rows,1,lv->block->data,n());
+}
+
 void
 LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 {

@@ -375,6 +375,22 @@ LocalSCMatrix::invert_this()
   return cmat_invert(rows,0,nrow());
 }
 
+double
+LocalSCMatrix::solve_this(SCVector*v)
+{
+  LocalSCVector* lv =
+    LocalSCVector::require_castdown(v,"LocalSCMatrix::solve_this");
+  
+  // make sure that the dimensions match
+  if (!(this->rowdim() == v->dim())) {
+      fprintf(stderr,"LocalSCMatrix::solve_this(SCVector*v):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  return cmat_solve_lin(rows,0,lv->block->data,nrow());
+}
+
 void
 LocalSCMatrix::element_op(const RefSCRectElementOp& op)
 {

@@ -541,6 +541,13 @@ RefSCMatrix::operator *(double a) const
   return r;
 }
 
+double
+RefSCMatrix::solve_this(const RefSCVector& v) const
+{
+  require_nonnull();
+  return pointer()->solve_this(v.pointer());
+}
+
 RefSCMatrix
 operator *(double a, RefSCMatrix& v)
 {
@@ -735,6 +742,13 @@ RefSymmSCMatrix::eigvecs() const
   RefSCMatrix vecs = dim()->create_matrix(dim());
   diagonalize(vals,vecs);
   return vecs;
+}
+
+double
+RefSymmSCMatrix::solve_this(const RefSCVector& v) const
+{
+  require_nonnull();
+  return pointer()->solve_this(v.pointer());
 }
 
 void

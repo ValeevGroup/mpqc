@@ -105,6 +105,7 @@ class LocalSCMatrix: public SCMatrix {
     void accumulate(SCMatrix*);
     void transpose_this();
     double invert_this();
+    double solve_this(SCVector*);
     void element_op(const RefSCRectElementOp&);
     void print(const char* title=0,ostream& out=cout, int =10);
 };
@@ -142,6 +143,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate_product(SCMatrix*,SCMatrix*);
     void accumulate(SymmSCMatrix*);
     double invert_this();
+    double solve_this(SCVector*);
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);

@@ -14,7 +14,16 @@ static void
 t_ops(SymmetryOperation *symop)
 {
   // identity
-  symop[0][0][0] = symop[0][1][1] = symop[0][2][2] = 1.0;
+  symop[0].E();
+
+  // C2(x)
+  symop[9].c2_x();
+
+  // C2(y)
+  symop[10].c2_y();
+
+  // C2(z)
+  symop[11].rotation(M_PI);
 
   // a = ( 1, 1, 1)
   // b = (-1,-1, 1)
@@ -26,19 +35,13 @@ t_ops(SymmetryOperation *symop)
   symop[1][2][1] =  1.0;
 
   // C3 (b)
-  symop[2][0][2] = -1.0;
-  symop[2][1][0] =  1.0;
-  symop[2][2][1] = -1.0;
+  symop[2] = symop[1].sim_transform(symop[11]);
 
   // C3 (c)
-  symop[3][0][2] = -1.0;
-  symop[3][1][0] = -1.0;
-  symop[3][2][1] =  1.0;
+  symop[3] = symop[1].sim_transform(symop[9]);
 
   // C3 (d)
-  symop[4][0][2] =  1.0;
-  symop[4][1][0] = -1.0;
-  symop[4][2][1] = -1.0;
+  symop[4] = symop[1].sim_transform(symop[10]);
 
   // C3^2 (a)
   symop[5][0][1] =  1.0;
@@ -46,47 +49,13 @@ t_ops(SymmetryOperation *symop)
   symop[5][2][0] =  1.0;
 
   // C3^2 (b)
-  symop[6][0][1] =  1.0;
-  symop[6][1][2] = -1.0;
-  symop[6][2][0] = -1.0;
+  symop[6] = symop[5].sim_transform(symop[11]);
 
   // C3^2 (c)
-  symop[7][0][1] = -1.0;
-  symop[7][1][2] =  1.0;
-  symop[7][2][0] = -1.0;
+  symop[7] = symop[5].sim_transform(symop[9]);
 
   // C3^2 (d)
-  symop[8][0][1] = -1.0;
-  symop[8][1][2] = -1.0;
-  symop[8][2][0] =  1.0;
-
-  // C2(x)
-  symop[9][0][0] =  1.0;
-  symop[9][1][1] = -1.0;
-  symop[9][2][2] = -1.0;
-
-  // C2(y)
-  symop[10][0][0] = -1.0;
-  symop[10][1][1] =  1.0;
-  symop[10][2][2] = -1.0;
-
-  // C2(z)
-  symop[11][0][0] = -1.0;
-  symop[11][1][1] = -1.0;
-  symop[11][2][2] =  1.0;
-}
-
-// this gives us the operations in Th which come from ixT (ie, the inverse
-// operating on all the symmetry operations from T).
-static void
-th_ops(SymmetryOperation *symop)
-{
-  t_ops(symop);
-
-  for (int i=0; i < 12; i++)
-    for (int j=0; j < 3; j++)
-      for (int k=0; k < 3; k++)
-        symop[i][j][k] *= -1.0;
+  symop[8] = symop[5].sim_transform(symop[10]);
 }
 
 // this gives us the operations in Td which aren't in T.
@@ -158,759 +127,414 @@ td_ops(SymmetryOperation *symop)
   symop[11][2][2] =  1.0;
 }
 
-// this gives us the operations in O which aren't in T.  They are much
-// like the Td operations, except they are inverted
-static void
-o_ops(SymmetryOperation *symop)
-{
-  td_ops(symop);
+////////////////////////////////////////////////////////////////////////////
 
-  for (int i=0; i < 12; i++)
-    for (int j=0; j < 3; j++)
-      for (int k=0; k < 3; k++)
-        symop[i][j][k] *= -1.0;
-}
-
-void CharacterTable::t()
+void
+CharacterTable::t()
 {
-#if 0
   // t_ops gives us all the symmetry operations we need
   t_ops(symop);
 
   int i,j,k;
 
-  {
-    IrreducibleRepresentation ir(g,1,"A");
-    for (i=0; i < g; i++) {
-      ir.rep[i] = 1;
-      ir.proj[0][i] = 1;
-    }
+  gamma_[0].init(g,1,"A");
+  for (i=0; i < g; i++)
+    gamma_[0].rep[i][0][0] = 1.0;
 
-    gamma_[0] = ir;
-  }
+  IrreducibleRepresentation& ire = gamma_[1];
+  ire.init(g,2,"E");
+  ire.complex_=1;
 
-  {
-    IrreducibleRepresentation ir(g,2,"E");
-
-    // identity
-    ir.rep[0] = 1.0;
-    ir.proj[0][0] = 1.0;
-    ir.proj[1][0] = 0.0;
-    ir.proj[2][0] = 0.0;
-    ir.proj[3][0] = 1.0;
-
-    // 4 C3's
-    for (j=1; j < 5; j++) {
-      ir.rep[j] = -0.5;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -sqrt(3.0)*0.5;
-      ir.proj[2][j] =  sqrt(3.0)*0.5;
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 4 C3^2's
-    for (j=5; j < 9; j++) {
-      ir.rep[j] = -0.5;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  sqrt(3.0)*0.5;
-      ir.proj[2][j] = -sqrt(3.0)*0.5;
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 3 C2's
-    for (j=9; j < 12; j++) {
-      ir.rep[j] = 1.0;
-      ir.proj[0][j] = 1.0;
-      ir.proj[1][j] = 0.0;
-      ir.proj[2][j] = 0.0;
-      ir.proj[3][j] = 1.0;
-    }
-
-    gamma_[1] = ir;
-  }
+  IrreducibleRepresentation& irt = gamma_[2];
+  irt.init(g,3,"T");
+  irt.nrot_ = 1;
+  irt.ntrans_ = 1;
 
   // the symmetry operation matrices give us a basis for irrep T
-  {
-    IrreducibleRepresentation ir(g,3,"T");
-    
-    ir.nrot_ = 1;
-    ir.ntrans_ = 1;
+  for (i=0; i < g; i++)
+    irt.rep[i] = symop[i];
 
-    for (i=0; i < g; i++) {
-      ir.rep[i]=0;
-      
-      for (j=0; j < 3; j++) {
-        for (k=0; k < 3; k++)
-          ir.proj[3*j+k][i] = symop[i][k][j];
-        ir.rep[i] += ir.proj[3*j+j][i];
-      }
-    }
+  // identity
+  ire.rep[0].E();
 
-    gamma_[2] = ir;
-  }
+  // 4 C3's
+  ire.rep[1].rotation(2.0*M_PI/3.0);
+  ire.rep[2] = ire.rep[1];
+  ire.rep[3] = ire.rep[1];
+  ire.rep[4] = ire.rep[1];
 
-#endif
+  ire.rep[5] = ire.rep[1].operate(ire.rep[1]);
+  ire.rep[6] = ire.rep[5];
+  ire.rep[7] = ire.rep[5];
+  ire.rep[8] = ire.rep[5];
+  
+  // 3 C2's
+  ire.rep[9].unit();
+  ire.rep[10].unit();
+  ire.rep[11].unit();
+
 }
 
-
-void CharacterTable::th()
+void
+CharacterTable::th()
 {
-#if 0
-  // first get the ExT operations, then the ixT operations
-  t_ops(symop);
-  th_ops(&symop[12]);
-  
   int i,j,k;
-  {
-    IrreducibleRepresentation ir1(g,1,"Ag");
-    IrreducibleRepresentation ir2(g,1,"Au");
-    for (i=0; i < 12; i++) {
-      ir1.rep[i] = ir1.proj[0][i] = 1;
-      ir2.rep[i] = ir2.proj[0][i] = 1;
 
-      ir1.rep[i+12] = ir1.proj[0][i+12] = 1;
-      ir2.rep[i+12] = ir2.proj[0][i+12] = -1;
-    }
+  SymmetryOperation so;
+  so.i();
+  
+  t_ops(symop);
+  for (i=0; i < 12; i++)
+    symop[i+12] = symop[i].operate(so);
+  
+  gamma_[0].init(g,1,"Ag");
+  gamma_[1].init(g,1,"Au");
 
-    gamma_[0] = ir1;
-    gamma_[1] = ir2;
+  for (i=0; i < 12; i++) {
+    gamma_[0].rep[i][0][0] = 1.0;
+    gamma_[1].rep[i][0][0] = 1.0;
+
+    gamma_[0].rep[i+12][0][0] =  1.0;
+    gamma_[1].rep[i+12][0][0] = -1.0;
   }
 
-  {
-    IrreducibleRepresentation ir1(g,2,"Eg");
-    IrreducibleRepresentation ir2(g,2,"Eu");
+  IrreducibleRepresentation& ireg = gamma_[2];
+  IrreducibleRepresentation& ireu = gamma_[3];
 
-    // identity
-    ir1.rep[0] = 1.0;
-    ir1.proj[0][0] = 1.0;
-    ir1.proj[1][0] = 0.0;
-    ir1.proj[2][0] = 0.0;
-    ir1.proj[3][0] = 1.0;
+  IrreducibleRepresentation& irtg = gamma_[4];
+  IrreducibleRepresentation& irtu = gamma_[5];
 
-    // 4 C3's
-    for (j=1; j < 5; j++) {
-      ir1.rep[j] = -0.5;
+  ireg.init(g,2,"Eg");
+  ireu.init(g,2,"Eu");
+  ireg.complex_=1;
+  ireu.complex_=1;
 
-      ir1.proj[0][j] = -0.5;
-      ir1.proj[1][j] = -sqrt(3.0)*0.5;
-      ir1.proj[2][j] =  sqrt(3.0)*0.5;
-      ir1.proj[3][j] = -0.5;
-    }
-
-    // 4 C3^2's
-    for (j=5; j < 9; j++) {
-      ir1.rep[j] = -0.5;
-
-      ir1.proj[0][j] = -0.5;
-      ir1.proj[1][j] =  sqrt(3.0)*0.5;
-      ir1.proj[2][j] = -sqrt(3.0)*0.5;
-      ir1.proj[3][j] = -0.5;
-    }
-
-    // 3 C2's
-    for (j=9; j < 12; j++) {
-      ir1.rep[j] = 1.0;
-      ir1.proj[0][j] = 1.0;
-      ir1.proj[1][j] = 0.0;
-      ir1.proj[2][j] = 0.0;
-      ir1.proj[3][j] = 1.0;
-    }
-
-    for (j=0; j < 12; j++) {
-      ir2.rep[j] = ir1.rep[j];
-      ir1.rep[j+12] = ir1.rep[j];
-      ir2.rep[j+12] = -ir1.rep[j];
-
-      for (k=0; k < 4; k++) {
-        ir2.proj[k][j] = ir1.proj[k][j];
-        ir1.proj[k][j+12] = ir1.proj[k][j];
-        ir2.proj[k][j+12] = -ir1.proj[k][j];
-      }
-    }
-
-    gamma_[2] = ir1;
-    gamma_[3] = ir2;
-  }
+  irtg.init(g,3,"Tg");
+  irtu.init(g,3,"Tu");
+  irtg.nrot_=1;
+  irtu.ntrans_=1;
 
   // the symmetry operation matrices form a basis for Tu.  Tg(g)=Tu(g) for
   // the proper rotations, and = -Tu(g) for the improper ones
-  {
-    IrreducibleRepresentation ir1(g,3,"Tg");
-    IrreducibleRepresentation ir2(g,3,"Tu");
+  for (i=0; i < 12; i++) {
+    irtg.rep[i] = symop[i];
+    irtu.rep[i] = symop[i];
 
-    ir1.nrot_ = 1;
-    ir2.ntrans_ = 1;
-
-    for (i=0; i < g; i++) {
-      ir2.rep[i]=0;
-      
-      for (j=0; j < 3; j++) {
-        for (k=0; k < 3; k++)
-          ir2.proj[3*j+k][i] = symop[i][k][j];
-        ir2.rep[i] += ir2.proj[3*j+j][i];
-      }
-    }
-
-    for (i=0; i < g/2; i++) {
-      ir1.rep[i] = ir2.rep[i];
-      ir1.rep[i+12] = -ir2.rep[i+12];
-      
-      for (j=0; j < 9; j++) {
-        ir1.proj[j][i] = ir2.proj[j][i];
-        ir1.proj[j][i+12] = -ir2.proj[j][i+12];
-      }
-    }
-
-    gamma_[4] = ir1;
-    gamma_[5] = ir2;
+    irtg.rep[i+12] = symop[i];
+    irtu.rep[i+12] = symop[i+12];
   }
-#endif
+    
+  // identity
+  ireg.rep[0].E();
+  
+  // 4 C3's
+  ireg.rep[1].rotation(2.0*M_PI/3.0);
+  ireg.rep[2] = ireg.rep[1];
+  ireg.rep[3] = ireg.rep[1];
+  ireg.rep[4] = ireg.rep[1];
+
+  // 4 C3^2's
+  ireg.rep[5] = ireg.rep[1].operate(ireg.rep[1]);
+  ireg.rep[6] = ireg.rep[5];
+  ireg.rep[7] = ireg.rep[5];
+  ireg.rep[8] = ireg.rep[5];
+
+  // 3 C2's
+  ireg.rep[9].unit();
+  ireg.rep[10].unit();
+  ireg.rep[11].unit();
+
+  SymRep sr(2);
+  sr.i();
+  
+  for (j=0; j < 12; j++) {
+    ireu.rep[j] = ireg.rep[j];
+    ireg.rep[j+12] = ireg.rep[j];
+    ireu.rep[j+12] = ireg.rep[j].operate(sr);
+  }
 }
 
-void CharacterTable::td()
+void
+CharacterTable::td()
 {
-#if 0
   // first get the T operations, then the Td operations
   t_ops(symop);
   td_ops(&symop[12]);
   
   int i,j,k;
   
-  {
-    IrreducibleRepresentation ir1(g,1,"A1");
-    IrreducibleRepresentation ir2(g,1,"A2");
-    for (i=0; i < 12; i++) {
-      ir1.rep[i] = ir1.proj[0][i] = 1;
-      ir2.rep[i] = ir2.proj[0][i] = 1;
+  gamma_[0].init(g,1,"A1");
+  gamma_[1].init(g,1,"A2");
 
-      ir1.rep[i+12] = ir1.proj[0][i+12] = 1;
-      ir2.rep[i+12] = ir2.proj[0][i+12] = -1;
-    }
+  for (i=0; i < 12; i++) {
+    gamma_[0].rep[i][0][0] = 1.0;
+    gamma_[1].rep[i][0][0] = 1.0;
 
-    gamma_[0] = ir1;
-    gamma_[1] = ir2;
+    gamma_[0].rep[i+12][0][0] =  1.0;
+    gamma_[1].rep[i+12][0][0] = -1.0;
   }
 
-  {
-    IrreducibleRepresentation ir(g,2,"E");
+  IrreducibleRepresentation& ire = gamma_[2];
+  ire.init(g,2,"E");
 
-    // identity
-    ir.rep[0] = 2.0;
+  IrreducibleRepresentation& irt1 = gamma_[3];
+  IrreducibleRepresentation& irt2 = gamma_[4];
 
-    ir.proj[0][0] = 1.0;
-    ir.proj[1][0] = 0.0;
-    ir.proj[2][0] = 0.0;
-    ir.proj[3][0] = 1.0;
-
-    // 4 C3's
-    for (j=1; j < 5; j++) {
-      ir.rep[j] = -1.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 4 C3^2's
-    for (j=5; j < 9; j++) {
-      ir.rep[j] = -1.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 3 C2's
-    for (j=9; j < 12; j++) {
-      ir.rep[j] = 2.0;
-
-      ir.proj[0][j] = 1.0;
-      ir.proj[1][j] = 0.0;
-      ir.proj[2][j] = 0.0;
-      ir.proj[3][j] = 1.0;
-    }
-
-    // 6 S4's
-    for (j=12; j < 14; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] =  1.0;
-      ir.proj[1][j] =  0.0;
-      ir.proj[2][j] =  0.0;
-      ir.proj[3][j] = -1.0;
-    }
-
-    for (j=14; j < 16; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    for (j=16; j < 18; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    // 6 sigmas
-    for (j=18; j < 20; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] =  1.0;
-      ir.proj[1][j] =  0.0;
-      ir.proj[2][j] =  0.0;
-      ir.proj[3][j] = -1.0;
-    }
-
-    for (j=20; j < 22; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    for (j=22; j < 24; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-
-    gamma_[2] = ir;
-  }
+  irt1.init(g,3,"T1");
+  irt2.init(g,3,"T2");
+  irt1.nrot_ = 1;
+  irt2.ntrans_ = 1;
 
   // the symmetry operation matrices form a basis for T2.  T1(g)=T2(g) for
   // the proper rotations, and = -T2(g) for the improper ones
-  {
-    IrreducibleRepresentation ir1(g,3,"T1");
-    IrreducibleRepresentation ir2(g,3,"T2");
-
-    ir1.nrot_ = 1;
-    ir2.ntrans_ = 1;
-
-    for (i=0; i < g; i++) {
-      ir2.rep[i]=0;
-      
-      for (j=0; j < 3; j++) {
-        for (k=0; k < 3; k++)
-          ir2.proj[3*j+k][i] = symop[i][k][j];
-        ir2.rep[i] += ir2.proj[3*j+j][i];
-      }
-    }
-
-    for (i=0; i < g/2; i++) {
-      ir1.rep[i] = ir2.rep[i];
-      ir1.rep[i+12] = -ir2.rep[i+12];
-      
-      for (j=0; j < 9; j++) {
-        ir1.proj[j][i] = ir2.proj[j][i];
-        ir1.proj[j][i+12] = -ir2.proj[j][i+12];
-      }
-    }
-
-    gamma_[3] = ir1;
-    gamma_[4] = ir2;
+  SymmetryOperation so;
+  so.i();
+  
+  for (i=0; i < 12; i++) {
+    irt1.rep[i] = symop[i];
+    irt2.rep[i] = symop[i];
+    irt1.rep[i+12] = symop[i+12].operate(so);
+    irt2.rep[i+12] = symop[i+12];
   }
-#endif
+  
+  // identity
+  ire.rep[0].E();
+
+  // 4 C3's
+  ire.rep[1].rotation(2.0*M_PI/3.0);
+  ire.rep[2] = ire.rep[1];
+  ire.rep[3] = ire.rep[1];
+  ire.rep[4] = ire.rep[1];
+
+  // 4 C3^2's
+  ire.rep[5] = ire.rep[1].operate(ire.rep[1]);
+  ire.rep[6] = ire.rep[5];
+  ire.rep[7] = ire.rep[5];
+  ire.rep[8] = ire.rep[5];
+
+  // 3 C2's
+  ire.rep[9].unit();
+  ire.rep[10].unit();
+  ire.rep[11].unit();
+
+  // 6 S4's
+  ire.rep[12].c2_x();
+  ire.rep[13].c2_x();
+
+  ire.rep[14] = ire.rep[12].operate(ire.rep[1]);
+  ire.rep[15] = ire.rep[14];
+  
+  ire.rep[16] = ire.rep[14].operate(ire.rep[1]);
+  ire.rep[17] = ire.rep[16];
+
+  for (i=18; i < 24; i++)
+    ire.rep[i] = ire.rep[i-6];
 }
 
-void CharacterTable::o()
+void
+CharacterTable::o()
 {
-#if 0
-  // first get the T operations, then the O operations
-  t_ops(symop);
-  o_ops(&symop[12]);
-  
   int i,j,k;
   
-  {
-    IrreducibleRepresentation ir1(g,1,"A1");
-    IrreducibleRepresentation ir2(g,1,"A2");
-    for (i=0; i < 12; i++) {
-      ir1.rep[i] = ir1.proj[0][i] = 1;
-      ir2.rep[i] = ir2.proj[0][i] = 1;
+  // first get the T operations, then the O operations
+  t_ops(symop);
+  td_ops(&symop[12]);
+  
+  SymmetryOperation so;
+  so.i();
 
-      ir1.rep[i+12] = ir1.proj[0][i+12] = 1;
-      ir2.rep[i+12] = ir2.proj[0][i+12] = -1;
-    }
+  for (i=12; i < 24; i++)
+    symop[i] = symop[i].operate(so);
+  
+  gamma_[0].init(g,1,"A1");
+  gamma_[1].init(g,1,"A2");
 
-    gamma_[0] = ir1;
-    gamma_[1] = ir2;
+  for (i=0; i < 12; i++) {
+    gamma_[0].rep[i][0][0] = 1.0;
+    gamma_[0].rep[i][0][0] = 1.0;
+
+    gamma_[0].rep[i+12][0][0] =  1.0;
+    gamma_[0].rep[i+12][0][0] = -1.0;
   }
 
-  {
-    IrreducibleRepresentation ir(g,2,"E");
+  IrreducibleRepresentation& ire = gamma_[2];
+  ire.init(g,2,"E");
 
-    // identity
-    ir.rep[0] = 2.0;
+  IrreducibleRepresentation& irt1 = gamma_[3];
+  IrreducibleRepresentation& irt2 = gamma_[4];
 
-    ir.proj[0][0] = 1.0;
-    ir.proj[1][0] = 0.0;
-    ir.proj[2][0] = 0.0;
-    ir.proj[3][0] = 1.0;
-
-    // 4 C3's
-    for (j=1; j < 5; j++) {
-      ir.rep[j] = -1.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 4 C3^2's
-    for (j=5; j < 9; j++) {
-      ir.rep[j] = -1.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 3 C2's
-    for (j=9; j < 12; j++) {
-      ir.rep[j] = 2.0;
-
-      ir.proj[0][j] = 1.0;
-      ir.proj[1][j] = 0.0;
-      ir.proj[2][j] = 0.0;
-      ir.proj[3][j] = 1.0;
-    }
-
-    // 6 C4's
-    for (j=12; j < 14; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] =  1.0;
-      ir.proj[1][j] =  0.0;
-      ir.proj[2][j] =  0.0;
-      ir.proj[3][j] = -1.0;
-    }
-
-    for (j=14; j < 16; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    for (j=16; j < 18; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    // 6 C2's
-    for (j=18; j < 20; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] =  1.0;
-      ir.proj[1][j] =  0.0;
-      ir.proj[2][j] =  0.0;
-      ir.proj[3][j] = -1.0;
-    }
-
-    for (j=20; j < 22; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    for (j=22; j < 24; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-
-    gamma_[2] = ir;
-  }
+  irt1.init(g,3,"T1");
+  irt2.init(g,3,"T2");
+  irt1.nrot_ = 1;
+  irt1.ntrans_ = 1;
 
   // the symmetry operation matrices form a basis for T1.  T2(g)=T1(g) for
   // the proper rotations, and = -T1(g) for the improper ones
-  {
-    IrreducibleRepresentation ir2(g,3,"T1");
-    IrreducibleRepresentation ir1(g,3,"T2");
-
-    ir2.nrot_ = 1;
-    ir2.ntrans_ = 1;
-
-    for (i=0; i < g; i++) {
-      ir2.rep[i]=0;
-      
-      for (j=0; j < 3; j++) {
-        for (k=0; k < 3; k++)
-          ir2.proj[3*j+k][i] = symop[i][k][j];
-        ir2.rep[i] += ir2.proj[3*j+j][i];
-      }
-    }
-
-    for (i=0; i < g/2; i++) {
-      ir1.rep[i] = ir2.rep[i];
-      ir1.rep[i+12] = -ir2.rep[i+12];
-      
-      for (j=0; j < 9; j++) {
-        ir1.proj[j][i] = ir2.proj[j][i];
-        ir1.proj[j][i+12] = -ir2.proj[j][i+12];
-      }
-    }
-
-    gamma_[3] = ir2;
-    gamma_[4] = ir1;
+  
+  for (i=0; i < 12; i++) {
+    irt1.rep[i] = symop[i];
+    irt2.rep[i] = symop[i];
+    irt1.rep[i+12] = symop[i+12];
+    irt2.rep[i+12] = symop[i+12].operate(so);
   }
-#endif
+  
+  // identity
+  ire.rep[0].E();
+
+  // 4 C3's
+  ire.rep[1].rotation(2.0*M_PI/3.0);
+  ire.rep[2] = ire.rep[1];
+  ire.rep[3] = ire.rep[1];
+  ire.rep[4] = ire.rep[1];
+
+  // 4 C3^2's
+  ire.rep[5] = ire.rep[1].operate(ire.rep[1]);
+  ire.rep[6] = ire.rep[5];
+  ire.rep[7] = ire.rep[5];
+  ire.rep[8] = ire.rep[5];
+
+  // 3 C2's
+  ire.rep[9].unit();
+  ire.rep[10].unit();
+  ire.rep[11].unit();
+
+  // 6 C4's
+  ire.rep[12].c2_x();
+  ire.rep[13].c2_x();
+
+  ire.rep[14] = ire.rep[12].operate(ire.rep[1]);
+  ire.rep[15] = ire.rep[14];
+  
+  // 6 C2's
+  ire.rep[16] = ire.rep[14].operate(ire.rep[1]);
+  ire.rep[17] = ire.rep[16];
+
+  for (i=18; i < 24; i++)
+    ire.rep[i] = ire.rep[i-6];
 }
 
 void CharacterTable::oh()
 {
-#if 0
+  int i,j,k;
+  
+  SymmetryOperation so;
+  so.i();
+  
   // first get the T operations, then the O operations, then the Th
   // operations, then the Td operations
   t_ops(symop);
-  o_ops(&symop[12]);
-  th_ops(&symop[24]);
   td_ops(&symop[36]);
 
-  int i,j,k;
-  
-  {
-    IrreducibleRepresentation ir1(g,1,"A1g");
-    IrreducibleRepresentation ir2(g,1,"A2g");
-    IrreducibleRepresentation ir3(g,1,"A1u");
-    IrreducibleRepresentation ir4(g,1,"A2u");
-
-    for (i=0; i < 12; i++) {
-      ir1.rep[i] = ir1.proj[0][i] = 1;
-      ir2.rep[i] = ir2.proj[0][i] = 1;
-      ir3.rep[i] = ir3.proj[0][i] = 1;
-      ir4.rep[i] = ir4.proj[0][i] = 1;
-
-      ir1.rep[i+12] = ir1.proj[0][i+12] = 1;
-      ir2.rep[i+12] = ir2.proj[0][i+12] = -1;
-      ir3.rep[i+12] = ir3.proj[0][i+12] = 1;
-      ir4.rep[i+12] = ir4.proj[0][i+12] = -1;
-
-      ir1.rep[i+24] = ir1.proj[0][i+24] = 1;
-      ir2.rep[i+24] = ir2.proj[0][i+24] = 1;
-      ir3.rep[i+24] = ir3.proj[0][i+24] = -1;
-      ir4.rep[i+24] = ir4.proj[0][i+24] = -1;
-
-      ir1.rep[i+36] = ir1.proj[0][i+36] = 1;
-      ir2.rep[i+36] = ir2.proj[0][i+36] = -1;
-      ir3.rep[i+36] = ir3.proj[0][i+36] = -1;
-      ir4.rep[i+36] = ir4.proj[0][i+36] = 1;
-    }
-
-    gamma_[0] = ir1;
-    gamma_[1] = ir2;
-    gamma_[5] = ir3;
-    gamma_[6] = ir4;
+  for (i=0; i < 12; i++) {
+    symop[i+24] = symop[i].operate(so);
+    symop[i+12] = symop[i+36].operate(so);
   }
+  
+  gamma_[0].init(g,1,"A1g");
+  gamma_[1].init(g,1,"A2g");
+  gamma_[5].init(g,1,"A1u");
+  gamma_[6].init(g,1,"A2u");
 
-  {
-    IrreducibleRepresentation ir(g,2,"Eg");
-    IrreducibleRepresentation ir2(g,2,"Eu");
+  for (i=0; i < 12; i++) {
+    gamma_[0].rep[i][0][0] = 1.0;
+    gamma_[1].rep[i][0][0] = 1.0;
+    gamma_[5].rep[i][0][0] = 1.0;
+    gamma_[6].rep[i][0][0] = 1.0;
 
-    // identity
-    ir.rep[0] = 2.0;
+    gamma_[0].rep[i+12][0][0] =  1.0;
+    gamma_[1].rep[i+12][0][0] = -1.0;
+    gamma_[5].rep[i+12][0][0] =  1.0;
+    gamma_[6].rep[i+12][0][0] = -1.0;
 
-    ir.proj[0][0] = 1.0;
-    ir.proj[1][0] = 0.0;
-    ir.proj[2][0] = 0.0;
-    ir.proj[3][0] = 1.0;
+    gamma_[0].rep[i+24][0][0] =  1.0;
+    gamma_[1].rep[i+24][0][0] =  1.0;
+    gamma_[5].rep[i+24][0][0] = -1.0;
+    gamma_[6].rep[i+24][0][0] = -1.0;
 
-    // 4 C3's
-    for (j=1; j < 5; j++) {
-      ir.rep[j] = -1.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 4 C3^2's
-    for (j=5; j < 9; j++) {
-      ir.rep[j] = -1.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] = -0.5;
-    }
-
-    // 3 C2's
-    for (j=9; j < 12; j++) {
-      ir.rep[j] = 2.0;
-
-      ir.proj[0][j] = 1.0;
-      ir.proj[1][j] = 0.0;
-      ir.proj[2][j] = 0.0;
-      ir.proj[3][j] = 1.0;
-    }
-
-    // 6 C4's
-    for (j=12; j < 14; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] =  1.0;
-      ir.proj[1][j] =  0.0;
-      ir.proj[2][j] =  0.0;
-      ir.proj[3][j] = -1.0;
-    }
-
-    for (j=14; j < 16; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    for (j=16; j < 18; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    // 6 C2's
-    for (j=18; j < 20; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] =  1.0;
-      ir.proj[1][j] =  0.0;
-      ir.proj[2][j] =  0.0;
-      ir.proj[3][j] = -1.0;
-    }
-
-    for (j=20; j < 22; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] = -0.5*sqrt(3.0);
-      ir.proj[2][j] = -0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-    for (j=22; j < 24; j++) {
-      ir.rep[j] = 0.0;
-
-      ir.proj[0][j] = -0.5;
-      ir.proj[1][j] =  0.5*sqrt(3.0);
-      ir.proj[2][j] =  0.5*sqrt(3.0);
-      ir.proj[3][j] =  0.5;
-    }
-
-
-    for (j=0; j < 24; j++) {
-      ir.rep[j+24] = ir.rep[j];
-      ir2.rep[j] = ir.rep[j];
-      ir2.rep[j+24] = -ir.rep[j];
-
-      for (k=0; k < 4; k++) {
-        ir2.proj[k][j] = ir.proj[k][j];
-        ir.proj[k][j+24] = ir.proj[k][j];
-        ir2.proj[k][j+24] = -ir.proj[k][j];
-      }
-    }
-    
-    gamma_[2] = ir;
-    gamma_[7] = ir2;
+    gamma_[0].rep[i+36][0][0] =  1.0;
+    gamma_[1].rep[i+36][0][0] = -1.0;
+    gamma_[5].rep[i+36][0][0] = -1.0;
+    gamma_[6].rep[i+36][0][0] =  1.0;
   }
 
   // the symmetry operation matrices form a basis for T1u.  T2u(g)=T1u(g) for
   // the proper rotations, and = -T1(g) for the improper ones.
   // T1g(g)=T1u(g) for the O part, and = -T1u(g) for the ixO part.
   // T2g(g)=T1g(g) for proper rotations and =-T1g(g) for improper
-  {
-    IrreducibleRepresentation ir1(g,3,"T1g");
-    IrreducibleRepresentation ir2(g,3,"T2g");
-    IrreducibleRepresentation ir3(g,3,"T1u");
-    IrreducibleRepresentation ir4(g,3,"T2u");
 
-    ir1.nrot_ = 1;
-    ir3.ntrans_ = 1;
+  gamma_[3].init(g,3,"T1g");
+  gamma_[4].init(g,3,"T2g");
+  gamma_[8].init(g,3,"T1u");
+  gamma_[9].init(g,3,"T2u");
 
-    for (i=0; i < g; i++) {
-      ir3.rep[i]=0;
-      
-      for (j=0; j < 3; j++) {
-        for (k=0; k < 3; k++)
-          ir3.proj[3*j+k][i] = symop[i][k][j];
-        ir3.rep[i] += ir3.proj[3*j+j][i];
-      }
-    }
-
-    for (i=0; i < g/4; i++) {
-      ir4.rep[i] = ir3.rep[i];
-      ir4.rep[i+12] = -ir3.rep[i+12];
-      ir4.rep[i+24] =  ir3.rep[i+24];
-      ir4.rep[i+36] = -ir3.rep[i+36];
-
-      ir1.rep[i] = ir3.rep[i];
-      ir1.rep[i+12] =  ir3.rep[i+12];
-      ir1.rep[i+24] = -ir3.rep[i+24];
-      ir1.rep[i+36] = -ir3.rep[i+36];
-      
-      ir2.rep[i] = ir3.rep[i];
-      ir2.rep[i+12] = -ir3.rep[i+12];
-      ir2.rep[i+24] = -ir3.rep[i+24];
-      ir2.rep[i+36] =  ir3.rep[i+36];
-      
-      for (j=0; j < 9; j++) {
-        ir4.proj[j][i] = ir3.proj[j][i];
-        ir4.proj[j][i+12] = -ir3.proj[j][i+12];
-        ir4.proj[j][i+24] =  ir3.proj[j][i+24];
-        ir4.proj[j][i+36] = -ir3.proj[j][i+36];
-
-        ir1.proj[j][i] = ir3.proj[j][i];
-        ir1.proj[j][i+12] =  ir3.proj[j][i+12];
-        ir1.proj[j][i+24] = -ir3.proj[j][i+24];
-        ir1.proj[j][i+36] = -ir3.proj[j][i+36];
-
-        ir2.proj[j][i] = ir3.proj[j][i];
-        ir2.proj[j][i+12] = -ir3.proj[j][i+12];
-        ir2.proj[j][i+24] = -ir3.proj[j][i+24];
-        ir2.proj[j][i+36] =  ir3.proj[j][i+36];
-      }
-    }
-
-    gamma_[3] = ir1;
-    gamma_[4] = ir2;
-    gamma_[8] = ir3;
-    gamma_[9] = ir4;
+  gamma_[3].nrot_=1;
+  gamma_[8].ntrans_=1;
+  
+  for (i=0; i < 12; i++) {
+    gamma_[3].rep[i] = symop[i];
+    gamma_[4].rep[i] = symop[i];
+    gamma_[8].rep[i] = symop[i];
+    gamma_[9].rep[i] = symop[i];
+    
+    gamma_[3].rep[i+12] = symop[i+12];
+    gamma_[4].rep[i+12] = symop[i+12].operate(so);
+    gamma_[8].rep[i+12] = symop[i+12];
+    gamma_[9].rep[i+12] = symop[i+12].operate(so);
+    
+    gamma_[3].rep[i+24] = symop[i+24].operate(so);
+    gamma_[4].rep[i+24] = symop[i+24].operate(so);
+    gamma_[8].rep[i+24] = symop[i+24];
+    gamma_[9].rep[i+24] = symop[i+24];
+    
+    gamma_[3].rep[i+36] = symop[i+36].operate(so);
+    gamma_[4].rep[i+36] = symop[i+36];
+    gamma_[8].rep[i+36] = symop[i+36];
+    gamma_[9].rep[i+36] = symop[i+36].operate(so);
   }
-#endif
+
+  IrreducibleRepresentation& ireg = gamma_[2];
+  IrreducibleRepresentation& ireu = gamma_[7];
+
+  ireg.init(g,2,"Eg");
+  ireu.init(g,2,"Eu");
+    
+  // identity
+  ireg.rep[0].E();
+  
+  // 4 C3's
+  ireg.rep[1].rotation(2.0*M_PI/3.0);
+  ireg.rep[2] = ireg.rep[1];
+  ireg.rep[3] = ireg.rep[1];
+  ireg.rep[4] = ireg.rep[1];
+
+  // 4 C3^2's
+  ireg.rep[5] = ireg.rep[1].operate(ireg.rep[1]);
+  ireg.rep[6] = ireg.rep[5];
+  ireg.rep[7] = ireg.rep[5];
+  ireg.rep[8] = ireg.rep[5];
+
+  // 3 C2's
+  ireg.rep[9].unit();
+  ireg.rep[10].unit();
+  ireg.rep[11].unit();
+
+  // 6 C4's
+  ireg.rep[12].c2_x();
+  ireg.rep[13].c2_x();
+
+  ireg.rep[14] = ireg.rep[12].operate(ireg.rep[1]);
+  ireg.rep[15] = ireg.rep[14];
+  
+  // 6 C2's
+  ireg.rep[16] = ireg.rep[14].operate(ireg.rep[1]);
+  ireg.rep[17] = ireg.rep[16];
+
+  SymRep sr(2);
+  sr.i();
+  
+  for (j=0; j < 24; j++) {
+    ireu.rep[j] = ireg.rep[j];
+    ireg.rep[j+24] = ireg.rep[j];
+    ireu.rep[j+24] = ireg.rep[j].operate(sr);
+  }
 }

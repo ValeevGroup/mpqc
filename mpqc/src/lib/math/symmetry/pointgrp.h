@@ -52,12 +52,33 @@ class SymmetryOperation {
     SymmetryOperation sim_transform(const SymmetryOperation& r) const;
     
     //texi Set equal to a unit matrix
-    void unit() { d[0][0] = d[1][1] = d[2][2] = 1.0; }
+    void unit() { zero(); d[0][0] = d[1][1] = d[2][2] = 1.0; }
+
+    //texi Set equal to E
+    void E() { unit(); }
+    
+    //texi Set equal to an inversion
+    void i() { zero(); d[0][0] = d[1][1] = d[2][2] = -1.0; }
+
+    //texi Set equal to reflection in xy plane
+    void sigma_h() { unit(); d[2][2] = -1.0; }
+
+    //texi Set equal to reflection in xz plane
+    void sigma_xz() { unit(); d[1][1] = -1.0; }
+
+    //texi Set equal to reflection in yz plane
+    void sigma_yz() { unit(); d[0][0] = -1.0; }
 
     //texi Set equal to a clockwise rotation by 2pi/n
     void rotation(int n);
     void rotation(double theta);
     
+    //texi Set equal to C2 about the x axis
+    void c2_x() { i(); d[0][0] = 1.0; }
+
+    //texi Set equal to C2 about the x axis
+    void c2_y() { i(); d[1][1] = 1.0; }
+
     //texi print the matrix 
     void print(FILE* =stdout) const;
 };
@@ -109,12 +130,35 @@ class SymRep {
     SymRep sim_transform(const SymRep& r) const;
     
     //texi Set equal to a unit matrix
-    void unit() { d[0][0] = d[1][1] = d[2][2] = d[3][3] = d[4][4] = 1.0; }
+    void unit() {
+      zero(); d[0][0] = d[1][1] = d[2][2] = d[3][3] = d[4][4] = 1.0;
+    }
     
+    //texi Set equal to the identity
+    void E() { unit(); }
+    
+    //texi Set equal to an inversion
+    void i() { zero(); d[0][0] = d[1][1] = d[2][2] = d[3][3] = d[4][4] = -1.0;}
+
+    //texi Set equal to reflection in xy plane
+    void sigma_h();
+
+    //texi Set equal to reflection in xz plane
+    void sigma_xz();
+
+    //texi Set equal to reflection in yz plane
+    void sigma_yz();
+
     //texi Set equal to a clockwise rotation by 2pi/n
     void rotation(int n);
     void rotation(double theta);
     
+    //texi Set equal to C2 about the x axis
+    void c2_x();
+
+    //texi Set equal to C2 about the x axis
+    void c2_y();
+
     //texi print the matrix 
     void print(FILE* =stdout) const;
 };

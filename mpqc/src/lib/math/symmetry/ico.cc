@@ -12,89 +12,39 @@
 static void
 i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
 {
-#if 0
   int i;
   
   // identity
-  for (i=0; i < 3; i++) {
-    t1rep[0][i][i] = 1.0;
-    t2rep[0][i][i] = 1.0;
-    grep[0][i][i] = 1.0;
-    hrep[0][i][i] = 1.0;
-  }
-  grep[0][3][3] = 1.0;
-  hrep[0][3][3] = 1.0;
-  hrep[0][4][4] = 1.0;
+  t1rep[0].E();
+  t2rep[0].E();
+  grep[0].E();
+  hrep[0].E();
     
   //
   // 12 C5's
   //
   // first the 2 C5's about the z axis
-  double c2p5 = cos(2.0*M_PI/5.0);
-  double s2p5 = sin(2.0*M_PI/5.0);
-  double c4p5 = cos(4.0*M_PI/5.0);
-  double s4p5 = sin(4.0*M_PI/5.0);
-
-  t1rep[1][0][0] =  c2p5;
-  t1rep[1][0][1] =  s2p5;
-  t1rep[1][1][0] = -s2p5;
-  t1rep[1][1][1] =  c2p5;
-  t1rep[1][2][2] =  1.0;
-  
-  t1rep[2][0][0] =  c2p5;
-  t1rep[2][0][1] = -s2p5;
-  t1rep[2][1][0] =  s2p5;
-  t1rep[2][1][1] =  c2p5;
-  t1rep[2][2][2] =  1.0;
+  t1rep[1].rotation(2.0*M_PI/5.0);
+  t1rep[2].rotation(8.0*M_PI/5.0);
   
   t2rep[1] = t1rep[1].operate(t1rep[1]);
   t2rep[2] = t1rep[2].operate(t1rep[2]);
 
-  grep[1][0][0] =  c2p5;
-  grep[1][0][1] =  s2p5;
-  grep[1][1][0] = -s2p5;
-  grep[1][1][1] =  c2p5;
-  grep[1][2][2] =  c4p5;
-  grep[1][2][3] = -s4p5;
-  grep[1][3][2] =  s4p5;
-  grep[1][3][3] =  c4p5;
+  grep[1].rotation(2.0*M_PI/5.0);
+  grep[2].rotation(8.0*M_PI/5.0);
   
-  grep[2][0][0] =  c2p5;
-  grep[2][0][1] = -s2p5;
-  grep[2][1][0] =  s2p5;
-  grep[2][1][1] =  c2p5;
-  grep[2][2][2] =  c4p5;
-  grep[2][2][3] =  s4p5;
-  grep[2][3][2] = -s4p5;
-  grep[2][3][3] =  c4p5;
-  
-  hrep[1][0][0] = 1.0;
-  hrep[1][1][1] =  c4p5;
-  hrep[1][1][2] =  s4p5;
-  hrep[1][2][1] = -s4p5;
-  hrep[1][2][2] =  c4p5;
-  hrep[1][3][3] =  c2p5;
-  hrep[1][3][4] = -s2p5;
-  hrep[1][4][3] =  s2p5;
-  hrep[1][4][4] =  c2p5;
-  
-  hrep[2][0][0] = 1.0;
-  hrep[2][1][1] =  c4p5;
-  hrep[2][1][2] = -s4p5;
-  hrep[2][2][1] =  s4p5;
-  hrep[2][2][2] =  c4p5;
-  hrep[2][3][3] =  c2p5;
-  hrep[2][3][4] =  s2p5;
-  hrep[2][4][3] = -s2p5;
-  hrep[2][4][4] =  c2p5;
-  
+  hrep[1].rotation(2.0*M_PI/5.0);
+  hrep[2].rotation(8.0*M_PI/5.0);
+   
   // form rotation matrices for the C3 axis about the zx axis (these were
   // taken from turbomole version 2, which claims they were sort of inherited
   // from hondo
-  Rep t1so(3);
-  Rep gso(4);
-  Rep hso(5);
+  SymRep t1so(3);
+  SymRep gso(4);
+  SymRep hso(5);
 
+  double c2p5 = cos(2.0*M_PI/5.0);
+  double s2p5 = sin(2.0*M_PI/5.0);
   double cosd = s2p5/((1.0-c2p5)*sqrt(3.0));
   double cosd2 = cosd*cosd;
   double sind2 = 1.0 - cosd2;
@@ -317,7 +267,6 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
     t2rep[i] = t2rep[i-1].sim_transform(t2rep[1]);
     t2rep[i+5] = t2rep[i+4].sim_transform(t2rep[1]);
   }
-#endif
 }
 
 // this gives us the operations in Ih which come from ixI (ie, the inverse
@@ -333,148 +282,98 @@ ih_ops(SymmetryOperation *symop)
         symop[i][j][k] *= -1.0;
 }
 
-void CharacterTable::i()
+void
+CharacterTable::i()
 {
-#if 0
   int i,j,k;
 
-  Rep *t1rep = new Rep[60];
-  Rep *t2rep = new Rep[60];
-  Rep *grep = new Rep[60];
-  Rep *hrep = new Rep[60];
-  
-  for (i=0; i < 60; i++) {
-    t1rep[i].set_dim(3);
-    t2rep[i].set_dim(3);
-    grep[i].set_dim(4);
-    hrep[i].set_dim(5);
-  }
-  
-  // i_ops gives us all the symmetry operations we need
-  i_ops(t1rep,t2rep,grep,hrep);
+  IrreducibleRepresentation& ira = gamma_[0];
+  IrreducibleRepresentation& ir1 = gamma_[1];
+  IrreducibleRepresentation& ir2 = gamma_[2];
+  IrreducibleRepresentation& irg = gamma_[3];
+  IrreducibleRepresentation& irh = gamma_[4];
 
-  IrreducibleRepresentation ira(g,1,"A");
-  IrreducibleRepresentation ir1(g,3,"T1");
-  IrreducibleRepresentation ir2(g,3,"T2");
-  IrreducibleRepresentation irg(g,4,"G");
-  IrreducibleRepresentation irh(g,5,"H");
+  ira.init(g,1,"A");
+  ir1.init(g,3,"T1");
+  ir2.init(g,3,"T2");
+  irg.init(g,4,"G");
+  irh.init(g,5,"H");
+
+  // i_ops gives us all the symmetry operations we need
+  i_ops(ir1.rep, ir2.rep, irg.rep, irh.rep);
     
   ir1.nrot_ = 1;
   ir1.ntrans_ = 1;
 
   for (i=0; i < g; i++) {
-    ira.rep[i] = ira.proj[0][i] = 1;
-
-    ir1.rep[i] = t1rep[i].trace();
-    ir2.rep[i] = t2rep[i].trace();
-    irg.rep[i] = grep[i].trace();
-    irh.rep[i] = hrep[i].trace();
-
-    for (j=0; j < 3; j++) {
-      for (k=0; k < 3; k++) {
-        ir1.proj[3*j+k][i] = t1rep[i][k][j];
-        ir2.proj[3*j+k][i] = t2rep[i][k][j];
-      }
-    }
-
-    for (j=0; j < 4; j++)
-      for (k=0; k < 4; k++)
-        irg.proj[4*j+k][i] = grep[i][k][j];
-
-    for (j=0; j < 5; j++)
-      for (k=0; k < 5; k++)
-        irh.proj[5*j+k][i] = hrep[i][k][j];
-
-    symop[i] = t1rep[i];
+    ira.rep[i][0][0] = 1.0;
+    symop[i] = ir1.rep[i];
   }
-
-  gamma_[0] = ira;
-  gamma_[1] = ir1;
-  gamma_[2] = ir2;
-  gamma_[3] = irg;
-  gamma_[4] = irh;
-
-  delete[] t1rep;
-  delete[] t2rep;
-  delete[] grep;
-  delete[] hrep;
-#endif
 }
 
 
 void CharacterTable::ih()
 {
-#if 0
-  // first get the ExT operations, then the ixT operations
-  //i_ops(symop);
-  ih_ops(&symop[60]);
-  
   int i,j,k;
-  {
-    IrreducibleRepresentation ir1(g,1,"Ag");
-    IrreducibleRepresentation ir2(g,1,"Au");
-    for (i=0; i < 60; i++) {
-      ir1.rep[i] = ir1.proj[0][i] = 1;
-      ir2.rep[i] = ir2.proj[0][i] = 1;
 
-      ir1.rep[i+60] = ir1.proj[0][i+60] = 1;
-      ir2.rep[i+60] = ir2.proj[0][i+60] = -1;
-    }
+  IrreducibleRepresentation& irag = gamma_[0];
+  IrreducibleRepresentation& ir1g = gamma_[1];
+  IrreducibleRepresentation& ir2g = gamma_[2];
+  IrreducibleRepresentation& irgg = gamma_[3];
+  IrreducibleRepresentation& irhg = gamma_[4];
 
-    gamma_[0] = ir1;
-    gamma_[5] = ir2;
+  IrreducibleRepresentation& irau = gamma_[5];
+  IrreducibleRepresentation& ir1u = gamma_[6];
+  IrreducibleRepresentation& ir2u = gamma_[7];
+  IrreducibleRepresentation& irgu = gamma_[8];
+  IrreducibleRepresentation& irhu = gamma_[9];
+
+  irag.init(g,1,"Ag");
+  ir1g.init(g,3,"T1g");
+  ir2g.init(g,3,"T2g");
+  irgg.init(g,4,"Gg");
+  irhg.init(g,5,"Hg");
+
+  irau.init(g,1,"Au");
+  ir1u.init(g,3,"T1u");
+  ir2u.init(g,3,"T2u");
+  irgu.init(g,4,"Gu");
+  irhu.init(g,5,"Hu");
+
+  // i_ops gives us all the symmetry operations we need
+  i_ops(ir1g.rep, ir2g.rep, irgg.rep, irhg.rep);
+    
+  ir1g.nrot_ = 1;
+  ir1u.ntrans_ = 1;
+
+  SymRep ti(3), gi(4), hi(5);
+  ti.i();
+  gi.i();
+  hi.i();
+  
+  for (i=0; i < g/2; i++) {
+    irag.rep[i][0][0] = 1.0;
+    irau.rep[i][0][0] = 1.0;
+
+    irag.rep[i+60][0][0] =  1.0;
+    irau.rep[i+60][0][0] = -1.0;
+
+    ir1g.rep[i+60] = ir1g.rep[i];
+    ir2g.rep[i+60] = ir2g.rep[i];
+    irgg.rep[i+60] = irgg.rep[i];
+    irhg.rep[i+60] = irhg.rep[i];
+    
+    ir1u.rep[i] = ir1g.rep[i];
+    ir2u.rep[i] = ir2g.rep[i];
+    irgu.rep[i] = irgg.rep[i];
+    irhu.rep[i] = irhg.rep[i];
+    
+    ir1u.rep[i+60] = ir1g.rep[i].operate(ti);
+    ir2u.rep[i+60] = ir2g.rep[i].operate(ti);
+    irgu.rep[i+60] = irgg.rep[i].operate(gi);
+    irhu.rep[i+60] = irhg.rep[i].operate(hi);
+    
+    symop[i] = ir1u.rep[i];
+    symop[i+60] = ir1u.rep[i+60];
   }
-
-  // the symmetry operation matrices form a basis for T1u.
-  {
-    IrreducibleRepresentation ir1(g,3,"T1g");
-    IrreducibleRepresentation ir2(g,3,"T2g");
-    IrreducibleRepresentation ir3(g,3,"T1u");
-    IrreducibleRepresentation ir4(g,3,"T2u");
-
-    ir1.nrot_ = 1;
-    ir3.ntrans_ = 1;
-
-    for (i=0; i < g; i++) {
-      ir3.rep[i]=0;
-      
-      for (j=0; j < 3; j++) {
-        for (k=0; k < 3; k++)
-          ir3.proj[3*j+k][i] = symop[i][k][j];
-        ir3.rep[i] += ir3.proj[3*j+j][i];
-      }
-    }
-
-    for (i=0; i < g/2; i++) {
-      ir1.rep[i] = ir3.rep[i];
-      ir1.rep[i+60] = -ir3.rep[i+60];
-      
-      for (j=0; j < 9; j++) {
-        ir1.proj[j][i] = ir3.proj[j][i];
-        ir1.proj[j][i+60] = -ir3.proj[j][i+60];
-      }
-    }
-
-    gamma_[1] = ir1;
-    gamma_[2] = ir2;
-    gamma_[6] = ir3;
-    gamma_[7] = ir4;
-  }
-
-  {
-    IrreducibleRepresentation ir1(g,4,"Gg");
-    IrreducibleRepresentation ir2(g,4,"Gu");
-
-    gamma_[3] = ir1;
-    gamma_[8] = ir2;
-  }
-
-  {
-    IrreducibleRepresentation ir1(g,5,"Hg");
-    IrreducibleRepresentation ir2(g,5,"Hu");
-
-    gamma_[4] = ir1;
-    gamma_[9] = ir2;
-  }
-#endif
 }

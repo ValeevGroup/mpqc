@@ -104,6 +104,46 @@ SymRep::sim_transform(const SymRep& r) const
 
   return ret;
 }
+
+void
+SymRep::sigma_h()
+{
+  unit();
+
+  if (n==3) {
+    d[2][2] = -1.0;
+  } else if (n==5) {
+    d[3][3] = d[4][4] = -1.0;
+  }
+}
+  
+void
+SymRep::sigma_xz()
+{
+  unit();
+
+  if (n==2 || n==3 || n==4) {
+    d[1][1] = -1.0;
+    if (n==4)
+      d[2][2] = -1.0;
+  } else if (n==5) {
+    d[2][2] = d[4][4] = -1.0;
+  }
+}
+
+void
+SymRep::sigma_yz()
+{
+  unit();
+
+  if (n==2 || n==3 || n==4) {
+    d[0][0] = -1.0;
+    if (n==4)
+      d[3][3] = -1.0;
+  } else if (n==5) {
+    d[2][2] = d[3][3] = -1.0;
+  }
+}
   
 void
 SymRep::rotation(int nt)
@@ -128,8 +168,12 @@ SymRep::rotation(double theta)
     break;
     
   case 3:
+    d[0][0] = ctheta;
+    d[0][1] = stheta;
+    d[1][0] = -stheta;
+    d[1][1] = ctheta;
     d[2][2] = 1.0;
-    // deliberately fall through
+    break;
 
   case 4:
   case 2:
@@ -165,6 +209,35 @@ SymRep::rotation(double theta)
   }
   
 }
+
+void
+SymRep::c2_x()
+{
+  i();
+
+  if (n==2 || n==3 || n==4) {
+    d[0][0] = 1.0;
+    if (n==4)
+      d[3][3] = 1.0;
+  } else if (n==5) {
+    d[0][0] = d[1][1] = d[4][4] = 1.0;
+  }
+}
+  
+void
+SymRep::c2_y()
+{
+  i();
+
+  if (n==2 || n==3 || n==4) {
+    d[1][1] = 1.0;
+    if (n==4)
+      d[2][2] = 1.0;
+  } else if (n==5) {
+    d[0][0] = d[1][1] = d[3][3] = 1.0;
+  }
+}
+  
 
 void
 SymRep::print(FILE* outfile) const

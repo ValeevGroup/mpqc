@@ -81,6 +81,7 @@ class GaussianShell: public SavableState
     int nprimitive() const;
     int ncontraction() const;
     int nfunction() const;
+    int max_angular_momentum() const;
     int am(int con) const;
     int max_am() const;
     char amchar(int con) const;

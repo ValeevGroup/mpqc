@@ -12,14 +12,15 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-PetiteList::PetiteList(const RefGaussianBasisSet &gbs, Integral& ints) :
+PetiteList::PetiteList(const RefGaussianBasisSet &gbs,
+                       const RefIntegral& ints) :
   gbs_(*gbs.pointer()),
   ints_(ints)
 {
   init();
 }
 
-PetiteList::PetiteList(GaussianBasisSet &gbs, Integral& ints) :
+PetiteList::PetiteList(GaussianBasisSet &gbs, const RefIntegral& ints) :
   gbs_(gbs),
   ints_(ints)
 {

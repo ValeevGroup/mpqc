@@ -18,12 +18,12 @@ class ShellRotation {
     void done();
 
   public:
-    void init(int a, SymmetryOperation&, Integral&);
-    void init_pure(int a, SymmetryOperation&, Integral&);
+    void init(int a, SymmetryOperation&, const RefIntegral&);
+    void init_pure(int a, SymmetryOperation&, const RefIntegral&);
     
     ShellRotation(int n);
     ShellRotation(const ShellRotation&);
-    ShellRotation(int a, SymmetryOperation&, Integral&, int pure =0);
+    ShellRotation(int a, SymmetryOperation&, const RefIntegral&, int pure =0);
     virtual ~ShellRotation();
 
     ShellRotation& operator=(const ShellRotation&);

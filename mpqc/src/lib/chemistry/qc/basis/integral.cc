@@ -22,8 +22,13 @@ Integral::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-Integral::Integral()
+Integral::Integral(const RefGaussianBasisSet &b1,
+                   const RefGaussianBasisSet &b2,
+                   const RefGaussianBasisSet &b3,
+                   const RefGaussianBasisSet &b4)
 {
+  grp_ = MessageGrp::get_default_messagegrp();
+  set_basis(b1,b2,b3,b4);
 }
 
 Integral::Integral(StateIn& s) :
@@ -34,10 +39,12 @@ Integral::Integral(StateIn& s) :
   bs3_.restore_state(s);
   bs4_.restore_state(s);
   s.get(storage_);
+  grp_ = MessageGrp::get_default_messagegrp();
 }
 
 Integral::Integral(const RefKeyVal&)
 {
+  grp_ = MessageGrp::get_default_messagegrp();
 }
 
 void
@@ -53,13 +60,15 @@ Integral::save_data_state(StateOut&o)
 RefPetiteList
 Integral::petite_list(const RefGaussianBasisSet& gbs)
 {
-  return new PetiteList(gbs, *this);
+  return new PetiteList(gbs, this);
 }
 
 ShellRotation
 Integral::shell_rotation(int am, SymmetryOperation& so, int pure)
 {
-  ShellRotation r(am, so, *this, pure);
+  this->reference();
+  ShellRotation r(am, so, this, pure);
+  this->dereference();
   return r;
 }
 

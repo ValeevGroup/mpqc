@@ -44,23 +44,11 @@ OneBodyInt::OneBodyInt(const RefGaussianBasisSet&bs1,
                        const RefGaussianBasisSet&bs2) :
   bs1_(bs1), bs2_(bs2)
 {
-  // allocate a buffer
-  int biggest_shell = bs1_->max_nfunction_in_shell() *
-                      bs2_->max_nfunction_in_shell();
-    
-  if (biggest_shell) {
-    buffer_ = new double[biggest_shell];
-  } else {
-    buffer_ = 0;
-  }
+  buffer_ = 0;
 }
 
 OneBodyInt::~OneBodyInt()
 {
-  if (buffer_) {
-    delete[] buffer_;
-    buffer_=0;
-  }
 }
 
 int
@@ -526,23 +514,11 @@ OneBodyDerivInt::OneBodyDerivInt(const RefGaussianBasisSet&b1,
                                  const RefGaussianBasisSet&b2) :
   bs1(b1), bs2(b2)
 {
-  // allocate a buffer
-  int biggest_shell = 3 * b1->max_nfunction_in_shell() *
-                          b2->max_nfunction_in_shell();
-    
-  if (biggest_shell) {
-    buffer_ = new double[biggest_shell];
-  } else {
-    buffer_ = 0;
-  }
+  buffer_ = 0;
 }
 
 OneBodyDerivInt::~OneBodyDerivInt()
 {
-  if (buffer_) {
-    delete[] buffer_;
-    buffer_=0;
-  }
 }
 
 int

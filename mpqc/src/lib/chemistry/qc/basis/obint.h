@@ -12,6 +12,7 @@
 #include <math/scmat/elemop.h>
 
 #include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/dercent.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -262,8 +263,7 @@ class OneBodyDerivInt : public VRefCount {
 
     const double * buffer() const;
     
-    virtual void compute_hcore_shell(int center, int ish, int jsh) = 0;
-    virtual void compute_overlap_shell(int center, int ish, int jsh) = 0;
+    virtual void compute_shell(int ish, int jsh, DerivCenters&) = 0;
 };
 
 REF_dec(OneBodyDerivInt);

@@ -27,7 +27,7 @@ class GaussianBasisSet: public SavableState
 #   include <util/class/classd.h>
   private:
     char* name_;
-    GaussianShell** shell;
+    GaussianShell** shell_;
     Arrayint shell_to_function_;
     Arrayint function_to_shell_;
 
@@ -81,6 +81,7 @@ class GaussianBasisSet: public SavableState
     int nprimitive() const;
 
     int max_nfunction_in_shell() const;
+    int max_angular_momentum() const;
 
     int shell_to_function(int i) const;
     int function_to_shell(int i) const;
@@ -90,6 +91,8 @@ class GaussianBasisSet: public SavableState
     GaussianShell& operator()(int i);
     const GaussianShell& operator[](int i) const;
     GaussianShell& operator[](int i);
+    const GaussianShell& shell(int i) const { return operator()(i); }
+    GaussianShell& shell(int i) { return operator()(i); }
 
     // access to shells thru center number and relative shell number
     const GaussianShell& operator()(int icenter,int ishell) const;

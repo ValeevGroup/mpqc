@@ -7,7 +7,9 @@
 #endif
 
 #include <util/ref/ref.h>
+#include <util/group/message.h>
 #include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/dercent.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -21,10 +23,9 @@ class TwoBodyInt : public VRefCount {
     double *buffer_;
 
     TwoBodyInt(const RefGaussianBasisSet&bs1,
-               const RefGaussianBasisSet&bs2 = 0,
-               const RefGaussianBasisSet&bs3 = 0,
-               const RefGaussianBasisSet&bs4 = 0);
-
+               const RefGaussianBasisSet&bs2,
+               const RefGaussianBasisSet&bs3,
+               const RefGaussianBasisSet&bs4);
   public:
     virtual ~TwoBodyInt();
   
@@ -49,6 +50,9 @@ class TwoBodyInt : public VRefCount {
     const double * buffer() const;
     
     virtual void compute_shell(int,int,int,int) = 0;
+
+    // an index of -1 for any shell indicates any shell
+    virtual int log2_shell_bound(int,int,int,int) = 0;
 };
 
 REF_dec(TwoBodyInt);
@@ -148,23 +152,18 @@ class TwoBodyIntIter {
 
 class TwoBodyDerivInt : public VRefCount {
   protected:
-    int store1_;
-    int store2_;
-    int int_store_;
-    
-    RefGaussianBasisSet bs1;
-    RefGaussianBasisSet bs2;
-    RefGaussianBasisSet bs3;
-    RefGaussianBasisSet bs4;
+    RefGaussianBasisSet bs1_;
+    RefGaussianBasisSet bs2_;
+    RefGaussianBasisSet bs3_;
+    RefGaussianBasisSet bs4_;
 
     double *buffer_;
 
-  public:
-    TwoBodyDerivInt(const RefGaussianBasisSet&b);
     TwoBodyDerivInt(const RefGaussianBasisSet&b1,
                     const RefGaussianBasisSet&b2,
                     const RefGaussianBasisSet&b3,
                     const RefGaussianBasisSet&b4);
+  public:
     virtual ~TwoBodyDerivInt();
   
     int nbasis() const;
@@ -187,7 +186,10 @@ class TwoBodyDerivInt : public VRefCount {
 
     const double * buffer() const;
     
-    virtual void compute_shell(int,int,int,int) = 0;
+    virtual void compute_shell(int,int,int,int,DerivCenters&) = 0;
+
+    // an index of -1 for any shell indicates any shell
+    virtual int log2_shell_bound(int,int,int,int) = 0;
 };
 
 REF_dec(TwoBodyDerivInt);

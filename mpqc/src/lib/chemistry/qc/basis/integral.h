@@ -7,6 +7,7 @@
 #endif
 
 #include <util/state/state.h>
+#include <util/group/message.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
@@ -21,9 +22,8 @@ class RedundantCartesianSubIter;
 class SphericalTransformIter;
 class PointBag_double;
 
-SavableState_REF_fwddec(SCElementOp)
-SavableState_REF_fwddec(SCElementOp3)
-
+SavableState_REF_fwddec(SCElementOp);
+SavableState_REF_fwddec(SCElementOp3);
 
 // some useful things to have that depend on the underlying integrals
 // package
@@ -33,7 +33,10 @@ class Integral : public SavableState {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
-    Integral();
+    Integral(const RefGaussianBasisSet &b1,
+             const RefGaussianBasisSet &b2,
+             const RefGaussianBasisSet &b3,
+             const RefGaussianBasisSet &b4);
     RefGaussianBasisSet bs1_;
     RefGaussianBasisSet bs2_;
     RefGaussianBasisSet bs3_;
@@ -42,6 +45,8 @@ class Integral : public SavableState {
     // the maximum number of bytes that should be used for
     // storing intermediates
     int storage_;
+
+    RefMessageGrp grp_;
 
   public:
     Integral(StateIn&);
@@ -82,8 +87,14 @@ class Integral : public SavableState {
 
     virtual RefOneBodyInt dipole(const RefDipoleData&) =0;
 
-    virtual RefOneBodyDerivInt deriv() =0;
-    
+    virtual RefOneBodyDerivInt overlap_deriv() =0;
+                                             
+    virtual RefOneBodyDerivInt kinetic_deriv() =0;
+                                             
+    virtual RefOneBodyDerivInt nuclear_deriv() =0;
+                                     
+    virtual RefOneBodyDerivInt hcore_deriv() =0;
+                                             
     virtual RefTwoBodyInt electron_repulsion() =0;
     
     virtual RefTwoBodyDerivInt electron_repulsion_deriv() =0;

@@ -17,7 +17,7 @@ extern "C" {
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <chemistry/qc/intv2/integralv2.h>
+#include <chemistry/qc/intv3/intv3.h>
 
 extern "C" {
 #include <chemistry/qc/dmtsym/symm_mac.h>
@@ -134,12 +134,12 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
     }
   }
 
-  // dmtsym always uses intv2
-  IntegralV2 ints;
+  // dmtsym always uses intv3
+  RefIntegral ints = new IntegralV3(gbs);
                                                                       
   PointGroup& pg = gbs->molecule()->point_group();
   CharacterTable ct = pg.char_table();
-  RefPetiteList rpl = ints.petite_list(gbs);
+  RefPetiteList rpl = ints->petite_list(gbs);
   PetiteList& pl = *rpl.pointer();
   
   char *point_group = strdup(pg.symbol());

@@ -13,7 +13,7 @@ extern "C" {
 
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/basis/obint.h>
-#include <chemistry/qc/intv2/integralv2.h>
+#include <chemistry/qc/intv3/intv3.h>
 
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/wfn/hcore.h>
@@ -60,7 +60,7 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 
   integral_ = keyval->describedclassvalue("integrals");
   if (integral_.null())
-    integral_ = new IntegralV2;
+    integral_ = new IntegralV3(gbs_);
   
   basisdim_ = gbs_->basisdim();
   basiskit_ = gbs_->matrixkit();

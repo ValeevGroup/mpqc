@@ -42,23 +42,23 @@ GaussianBasisSet::shell_to_function(int i) const
 INLINE const GaussianShell&
 GaussianBasisSet::operator()(int i) const
 {
-  return *shell[i];
+  return *shell_[i];
 }
 
 INLINE const GaussianShell&
 GaussianBasisSet::operator[](int i) const
 {
-  return *shell[i];
+  return *shell_[i];
 }
 
 INLINE GaussianShell&
 GaussianBasisSet::operator()(int i)
 {
-  return *shell[i];
+  return *shell_[i];
 }
 
 INLINE GaussianShell&
 GaussianBasisSet::operator[](int i)
 {
-  return *shell[i];
+  return *shell_[i];
 }

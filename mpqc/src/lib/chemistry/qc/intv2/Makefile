@@ -32,7 +32,7 @@ CSRC = bounds.c buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
        offsets.c int_fjt.c  init2e.c  atominfo.c  basis.c  comp_erep.c  \
        shiftgc.c int_print.c utils.c comp_erep23.c
 
-CXXSRC = basisk.cc storage.cc tformv2.cc integralv2.cc obintv2.cc tbintv2.cc
+CXXSRC = basisk.cc storage.cc tformv2.cc #integralv2.cc obintv2.cc tbintv2.cc
 
 XCSRC = shellprnt.c  shellrbc0.c  shellrcv0.c  shellsbc0.c  shellsnd0.c  \
         shellasgn.c  shellzero.c
@@ -47,7 +47,7 @@ SGENSRC = \
 
 INC = bounds.h buildinter.h fjttable.h genbuild.h tformv2.h \
       storage.h int_flags.h int_libv2.h int_macros.h int_types.h inter.h \
-      integralv2.h
+
 SGENINC = $(SGENSRC:%.c=%.h)
 GENINC = MG.h $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)
 

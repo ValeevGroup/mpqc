@@ -56,16 +56,16 @@ htest: (
 centers = $:htest
 
 test: (
-   print_centers = yes
-   overlap = yes
+   print_centers = no
+   overlap = no
    kinetic = no
    hcore = no
    nuclear = no
    3 = no
    bounds = no
-   4 = no
+   4 = yes
    4der = no
-   print = yes
+   print = no
    niter = 1
    permute = yes
    %quartet = [0 0 0 1]

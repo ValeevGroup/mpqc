@@ -12,6 +12,7 @@
 #include <math/scmat/offset.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/integral.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +60,6 @@ struct SO_block {
 ////////////////////////////////////////////////////////////////////////////
 // this should only be used from within a SymmGaussianBasisSet
 
-class Integral;
 class PetiteList : public VRefCount {
   private:
     int natom_;
@@ -69,7 +69,7 @@ class PetiteList : public VRefCount {
     int nblocks_;
 
     GaussianBasisSet& gbs_;
-    Integral& ints_;
+    RefIntegral ints_;
     
     char *p1_;        // p1[n] is 1 if shell n is in the group P1
     int **atom_map_;  // atom_map[n][g] is the atom that symop g maps atom n
@@ -83,8 +83,8 @@ class PetiteList : public VRefCount {
     void init();
 
   public:
-    PetiteList(GaussianBasisSet&, Integral&);
-    PetiteList(const RefGaussianBasisSet&, Integral&);
+    PetiteList(GaussianBasisSet&, const RefIntegral&);
+    PetiteList(const RefGaussianBasisSet&, const RefIntegral&);
     ~PetiteList();
 
     int order() const { return ng_; }

@@ -29,8 +29,8 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
-#include <chemistry/qc/intv2/integralv2.h>
-#include <chemistry/qc/intv2/obintv2.h>
+#include <chemistry/qc/intv3/intv3.h>
+#include <chemistry/qc/intv3/obintv3.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -451,7 +451,7 @@ MPSCF::compute()
             RefSymmSCMatrix DAO = density();
             RefSymmSCMatrix efieldAO(DAO.dim(),solvent_->matrixkit());
 
-            RefIntegral integ = new IntegralV2;
+            RefIntegral integ = new IntegralV3;
             integ->set_basis(basis());
             RefEfieldDotVectorData edotvdat = new EfieldDotVectorData;
             RefOneBodyInt edotnv2 = integ->efield_dot_vector(edotvdat);

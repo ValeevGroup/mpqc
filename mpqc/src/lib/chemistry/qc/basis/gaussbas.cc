@@ -74,7 +74,7 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
   for (i=0; i < ncenter_; i++)
       center_to_nshell_(i) = gbs.center_to_nshell_(i);
   
-  shell = new GaussianShell*[nshell_];
+  shell_ = new GaussianShell*[nshell_];
   for (i=0; i<nshell_; i++) {
       const GaussianShell& gsi = gbs(i);
 
@@ -97,7 +97,7 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
       for (j=0; j < np; j++)
           exps[j] = gsi.exponent(j);
       
-      shell[i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
+      shell_[i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
                                    GaussianShell::Unnormalized);
     }
 
@@ -122,9 +122,9 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
       nshell_ += center_to_nshell_(i);
     }
   
-  shell = new GaussianShell*[nshell_];
+  shell_ = new GaussianShell*[nshell_];
   for (i=0; i<nshell_; i++) {
-      shell[i] = new GaussianShell(s);
+      shell_[i] = new GaussianShell(s);
     }
 
   init2();
@@ -140,7 +140,7 @@ GaussianBasisSet::save_data_state(StateOut&s)
   
   s.putstring(name_);
   for (int i=0; i<nshell_; i++) {
-      shell[i]->save_object_state(s);
+      shell_[i]->save_object_state(s);
     }
 }
 
@@ -216,7 +216,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
       delete[] sbasisname;
     }
   nshell_ = ishell;
-  shell = new GaussianShell*[nshell_];
+  shell_ = new GaussianShell*[nshell_];
   ishell = 0;
   center_to_nshell_.set_length(ncenter_);
   for (iatom=0; iatom<ncenter_; iatom++) {
@@ -290,8 +290,8 @@ GaussianBasisSet::init2()
   nprim_ = 0;
   for (ishell=0; ishell<nshell_; ishell++) {
       shell_to_function_[ishell] = nbasis_;
-      nbasis_ += shell[ishell]->nfunction();
-      nprim_ += shell[ishell]->nprimitive();
+      nbasis_ += shell_[ishell]->nfunction();
+      nprim_ += shell_[ishell]->nprimitive();
     }
 
   // would like to do this in function_to_shell(), but it is const
@@ -363,8 +363,8 @@ GaussianBasisSet::
 	}
       else {
           if (get) {
-	      if (havepure) shell[ishell] = new GaussianShell(prefixkeyval,pure);
-	      else shell[ishell] = new GaussianShell(prefixkeyval);
+	      if (havepure) shell_[ishell] = new GaussianShell(prefixkeyval,pure);
+	      else shell_[ishell] = new GaussianShell(prefixkeyval);
 	    }
 	  ishell++;
 	}
@@ -377,9 +377,9 @@ GaussianBasisSet::~GaussianBasisSet()
 
   int ii;
   for (ii=0; ii<nshell_; ii++) {
-      delete shell[ii];
+      delete shell_[ii];
     }
-  delete[] shell;
+  delete[] shell_;
 }
 
 int
@@ -388,7 +388,19 @@ GaussianBasisSet::max_nfunction_in_shell() const
   int i;
   int max = 0;
   for (i=0; i<nshell_; i++) {
-      if (max < shell[i]->nfunction()) max = shell[i]->nfunction();
+      if (max < shell_[i]->nfunction()) max = shell_[i]->nfunction();
+    }
+  return max;
+}
+
+int
+GaussianBasisSet::max_angular_momentum() const
+{
+  int i;
+  int max = 0;
+  for (i=0; i<nshell_; i++) {
+      int maxshi = shell_[i]->max_angular_momentum();
+      if (max < maxshi) max = maxshi;
     }
   return max;
 }
@@ -425,13 +437,13 @@ GaussianBasisSet::shell_to_center(int ishell) const
 const GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell) const
 {
-  return *shell[center_to_shell_(icenter) + ishell];
+  return *shell_[center_to_shell_(icenter) + ishell];
 }
 
 GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell)
 {
-  return *shell[center_to_shell_(icenter) + ishell];
+  return *shell_[center_to_shell_(icenter) + ishell];
 }
 
 void GaussianBasisSet::print(FILE*fp) const

@@ -231,6 +231,16 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
   else return Unnormalized;
 }
 
+int GaussianShell::max_angular_momentum() const
+{
+  int max = 0;
+  for (int i=0; i<ncontraction(); i++) {
+      int maxi = l[i];
+      if (max < maxi) max = maxi;
+    }
+  return max;
+}
+
 int GaussianShell::nfunction(int con) const
 {
   return puream[con]?

@@ -397,7 +397,7 @@ PetiteList::aotoso()
             lcg.c[fi][fi] = 1.0;
           } else {
             ShellRotation rr =
-              ints_.shell_rotation(am,so,gbs_(i,s).is_pure(c));
+              ints_->shell_rotation(am,so,gbs_(i,s).is_pure(c));
             for (ii=0; ii < rr.dim(); ii++) {
               for (jj=0; jj < rr.dim(); jj++)
                 lcg.c[fi+ii][fi+jj] = rr(ii,jj);

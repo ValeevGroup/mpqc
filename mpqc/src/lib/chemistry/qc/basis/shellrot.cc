@@ -40,7 +40,8 @@ ShellRotation::ShellRotation(const ShellRotation& rot) :
   *this = rot;
 }
 
-ShellRotation::ShellRotation(int a, SymmetryOperation& so, Integral& ints,
+ShellRotation::ShellRotation(int a, SymmetryOperation& so,
+                             const RefIntegral& ints,
                              int pure) :
   am_(0),
   n_(0),
@@ -81,14 +82,14 @@ ShellRotation::operator=(const ShellRotation& rot)
 // matrix outer product, keeping only the unique terms.
 // Written by clj...blame him
 void
-ShellRotation::init(int a, SymmetryOperation& so, Integral& ints)
+ShellRotation::init(int a, SymmetryOperation& so, const RefIntegral& ints)
 {
   done();
 
   am_=a;
   
-  CartesianIter *ip = ints.new_cartesian_iter(am_);
-  RedundantCartesianIter *jp = ints.new_redundant_cartesian_iter(am_);
+  CartesianIter *ip = ints->new_cartesian_iter(am_);
+  RedundantCartesianIter *jp = ints->new_redundant_cartesian_iter(am_);
   
   CartesianIter& I = *ip;
   RedundantCartesianIter& J = *jp;
@@ -129,7 +130,7 @@ ShellRotation::init(int a, SymmetryOperation& so, Integral& ints)
 // using the P (xyz) transformation matrix.  This is done as a
 // matrix outer product, keeping only the unique terms.
 void
-ShellRotation::init_pure(int a, SymmetryOperation&so, Integral& ints)
+ShellRotation::init_pure(int a, SymmetryOperation&so, const RefIntegral& ints)
 {
   if (a < 2) {
     init(a,so,ints);
@@ -140,9 +141,9 @@ ShellRotation::init_pure(int a, SymmetryOperation&so, Integral& ints)
 
   am_=a;
   
-  SphericalTransformIter *ip = ints.new_spherical_transform_iter(am_);
-  SphericalTransformIter *jp = ints.new_spherical_transform_iter(am_, 1);
-  RedundantCartesianSubIter *kp = ints.new_redundant_cartesian_sub_iter(am_);
+  SphericalTransformIter *ip = ints->new_spherical_transform_iter(am_);
+  SphericalTransformIter *jp = ints->new_spherical_transform_iter(am_, 1);
+  RedundantCartesianSubIter *kp = ints->new_redundant_cartesian_sub_iter(am_);
   
   SphericalTransformIter& I = *ip;
   SphericalTransformIter& J = *jp;

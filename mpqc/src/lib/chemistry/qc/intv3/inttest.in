@@ -1,0 +1,157 @@
+% Test -*- KeyVal -*- input for the integrals package.
+
+ne2sto3g: (
+   { atoms    geometry } = {
+      Ne  [ 0.0 0.0 -1.0 ]
+      Ne  [ 0.0 0.0  1.0 ]
+   }
+   basis = sto3g
+ )
+
+h2o: (
+  molecule<Molecule>: (
+    symmetry=c1
+    { atoms geometry} = {
+      H  [   1.5  0.0  -0.3 ]
+      H  [  -1.5  0.0  -0.3 ]
+      O  [   0.0  0.0   1.0 ]
+     }
+  )
+  basis<GaussianBasisSet>: (
+    molecule = $..:molecule
+    name = "6-31G*"
+    puream = yes
+   )
+)
+
+heh: (
+  molecule<Molecule>: (
+    symmetry=c1
+    { atoms geometry} = {
+      He  [  -1.0  0.0  0.0 ]
+      H   [   1.0  0.0  0.0 ]
+     }
+  )
+  basis<GaussianBasisSet>: (
+    molecule = $..:molecule
+    name = test2
+    %name = sto3gd
+    puream = yes
+   )
+)
+
+htest: (
+   molecule<Molecule>: (
+       { atoms    geometry } = {
+          H  [ 0.0 0.0 0.0 ]
+       }
+    )
+   basis<GaussianBasisSet>: (
+       puream = yes
+       name = test
+       molecule = $..:molecule
+    )
+ )
+
+centers = $:htest
+
+test: (
+   storage = 1000000
+   print_centers = no
+   overlap = no
+   kinetic = no
+   hcore = no
+   nuclear = no
+   3 = no
+   bounds = yes
+   4 = no
+   4der = no
+   print = no
+   printbounds = no
+   niter = 1
+   permute = no
+   %quartet = [0 0 0 1]
+   %storage = 10000
+ )
+
+% a few basis sets for convenience
+basis:(
+  hydrogen: sto3gd: [ get = sto3g ]
+
+  oxygen: sto3gd: [ 
+    (get = sto3g)
+    (get = dfunc)
+    %(get = ffunc)
+    ]
+
+  oxygen: dfunc: [
+     (type: [(am = d)]
+            { exp           coef:0 } = {
+             1.0             1.0
+             }
+       )
+    ]
+
+  oxygen: ffunc: [
+     (type: [(am = f)]
+            { exp           coef:0 } = {
+             3.0         1.0
+             }
+       )
+    ]
+
+  hydrogen: test: [
+    (type: [am = s]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+    (type: [am = p]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+    (type: [(am = d)]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+    (type: [(am = f)]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+    (type: [(am = g)]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+   ]
+  hydrogen: testd: [
+    (type: [(am = s)]
+          { exp           coef:0 } = {
+            3.0           1.0
+            }
+     )
+    (type: [(am = p)]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+    (type: [(am = d puream = yes)]
+          { exp           coef:0 } = {
+            1.0           1.0
+            }
+     )
+   ]
+  hydrogen: test2: [
+     (type: [(am = d)]
+       { exp           coef:0 } = {
+         1.0           1.0
+       }
+     )
+    ]
+  helium: test2: [
+     (get = STO-3G)
+    ]
+)

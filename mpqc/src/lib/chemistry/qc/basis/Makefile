@@ -15,11 +15,11 @@ BIN_OR_LIB = LIB
 CXXSRC = gaussbas.cc gaussbas_i.cc gaussshell.cc gaussshe_i.cc files.cc \
          gaussbaval.cc gaussshval.cc cartiter.cc cartiter_i.cc \
          transform.cc shellrot.cc integral.cc obint.cc petite.cc aotoso.cc \
-         symmint.cc ortho.cc tbint.cc
+         symmint.cc ortho.cc tbint.cc dercent.cc
 
 INC = basis.h gaussbas.h guassshell.h gaussbas_i.h gaussshe_i.h files.h \
       cartiter.h cartiter_i.h transform.h shellrot.h \
-      integral.h obint.h petite.h symmint.h tbint.h
+      integral.h obint.h petite.h symmint.h tbint.h dercent.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.o)

@@ -72,10 +72,27 @@ class SCElementOp: public SavableState {
     virtual int has_collect();
     virtual void defer_collect(int);
     virtual void collect(const Ref<MessageGrp>&);
+    /** Multithreaded use of cloneable SCElementOp objects requires that
+        data from cloned objects be collected.  The default implementation
+        will throw an exception. */
+    virtual void collect(const Ref<SCElementOp>&);
     /** By default this returns nonzero.  If the ElementOp specialization
         will change any elements of the matrix, then this must be
         overridden to return nonzero. */
     virtual int has_side_effects();
+
+    /** Returns true if this SCElementOp is threadsafe. The default
+     * implementation returns false. */
+    virtual bool threadsafe();
+
+    /** Returns true if this SCElementOp supports the cloneable member. The
+     * default implmentation returns false. */
+    virtual bool cloneable();
+
+    /** Returns a clone of this object.  This is needed for multithreaded
+        use of SCElementOp objects that are not thread safe. The default
+        implemenation throws an exception. */
+    virtual Ref<SCElementOp> clone();
 
     /** This is the fallback routine to process blocks and is called
         by process_spec members that are not overridden. */

@@ -38,6 +38,7 @@
 #include <math/scmat/disthql.h>
 #include <math/scmat/offset.h>
 #include <math/scmat/mops.h>
+#include <math/scmat/util.h>
 
 using namespace std;
 using namespace sc;
@@ -955,10 +956,7 @@ void
 ReplSymmSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   if (op->has_side_effects()) before_elemop();
-  SCMatrixBlockListIter i;
-  for (i = blocklist->begin(); i != blocklist->end(); i++) {
-      op->process_base(i.block());
-    }
+  scmat_perform_op_on_blocks(op, blocklist);
   if (op->has_side_effects()) after_elemop();
   if (op->has_collect()) op->collect(messagegrp());
 }

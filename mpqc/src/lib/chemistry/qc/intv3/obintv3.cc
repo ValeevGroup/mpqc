@@ -53,6 +53,18 @@ OneBodyIntV3::compute_shell(int i, int j)
   (int1ev3_.pointer()->*intfunc_)(i, j);
 }
 
+bool
+OneBodyIntV3::cloneable()
+{
+  return true;
+}
+
+Ref<OneBodyInt>
+OneBodyIntV3::clone()
+{
+  return new OneBodyIntV3(integral_, bs1_, bs2_, intfunc_);
+}
+
 ////////////////////////////////////////////////////////////////////////////
 // PointChargeIntV3
 

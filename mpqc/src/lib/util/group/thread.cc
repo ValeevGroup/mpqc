@@ -34,6 +34,10 @@
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 
+// debug includes
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <scconfig.h>
 #ifdef HAVE_PTHREAD
 #  include <util/group/thpthd.h>
@@ -87,6 +91,7 @@ static ClassDesc ThreadGrp_cd(typeid(ThreadGrp),"ThreadGrp",1,
 ThreadGrp::ThreadGrp() : threads_(0),  nthread_(1)
 {
   threads_ = new Thread*[nthread_];
+  for (int i = 0; i<nthread_; i++) threads_[i] = 0;
 }
 
 ThreadGrp::ThreadGrp(const ThreadGrp &tg, int nthread)
@@ -94,6 +99,7 @@ ThreadGrp::ThreadGrp(const ThreadGrp &tg, int nthread)
   if (nthread == -1) nthread_ = tg.nthread_;
   else nthread_ = nthread;
   threads_ = new Thread*[nthread_];
+  for (int i = 0; i<nthread_; i++) threads_[i] = 0;
 }
 
 ThreadGrp::ThreadGrp(const Ref<KeyVal>& keyval)

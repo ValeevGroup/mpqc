@@ -53,6 +53,9 @@ class SymmOneBodyIntIter : public OneBodyIntIter {
     void next();
 
     double scale() const;
+
+    bool cloneable();
+    Ref<OneBodyIntIter> clone();
 };
 
 class SymmTwoBodyIntIter : public TwoBodyIntIter {

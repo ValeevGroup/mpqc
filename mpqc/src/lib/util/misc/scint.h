@@ -10,6 +10,8 @@
 #ifndef util_misc_scint_h
 #define util_misc_scint_h
 
+#include <scconfig.h>
+
 #ifdef HAVE_STDINT_H
 
 #include <stdint.h>

@@ -73,6 +73,9 @@ comptest: comptest.$(OBJSUF) $(LIBS)
 tregtime: tregtime.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) $^ -o tregtime $(SYSLIBS) $(LTLINKBINOPTS)
 
+scinttest: scinttest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) $^ -o scinttest $(SYSLIBS) $(LTLINKBINOPTS)
+
 bugtest: bugtest.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest $(LTLINKBINOPTS)
 

@@ -68,6 +68,18 @@ SymmOneBodyIntIter::scale() const
   return (double) pl->lambda(icur,jcur) / (double) pl->order();
 }
 
+bool
+SymmOneBodyIntIter::cloneable()
+{
+  return obi->cloneable();
+}
+
+Ref<OneBodyIntIter>
+SymmOneBodyIntIter::clone()
+{
+  return new SymmOneBodyIntIter(obi->clone(), pl->clone());
+}
+
 ////////////////////////////////////////////////////////////////////////////
 // SymmTwoBodyIntIter
 

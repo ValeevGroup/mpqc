@@ -81,6 +81,27 @@ OneBodyIntCints::compute_shell(int i, int j)
   (int1ecints_.pointer()->*intfunc_)(i, j);
 }
 
+bool
+OneBodyIntCints::cloneable()
+{
+  return true;
+}
+
+Ref<OneBodyInt>
+OneBodyIntCints::clone()
+{
+  Ref<OneBodyIntCints> obcints
+      = new OneBodyIntCints(integral_, bs1_, bs2_, intfunc_);
+
+  // make sure the full state of this object gets set up
+  // in the clone
+  obcints->set_multipole_origin(int1ecints_->multipole_origin());
+  obcints->set_EdotV_origin(int1ecints_->EdotV_origin());
+  obcints->set_Q_origin(int1ecints_->Q_origin());
+
+  return obcints.pointer();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -142,6 +142,24 @@ void Int1eCints::set_Q_origin(const Ref<PointChargeData>& origin)
   Q_origin_ = origin;
 }
 
+Ref<DipoleData>
+Int1eCints::multipole_origin()
+{
+  return multipole_origin_;
+}
+
+Ref<EfieldDotVectorData>
+Int1eCints::EdotV_origin()
+{
+  return EdotV_origin_;
+}
+
+Ref<PointChargeData>
+Int1eCints::Q_origin()
+{
+  return Q_origin_;
+}
+
 void Int1eCints::zero_buffers_()
 {
   double *buf1 = cart_ints_;

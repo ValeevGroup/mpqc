@@ -136,6 +136,9 @@ class Int1eCints: public RefCount {
     void set_multipole_origin(const Ref<DipoleData>&);
     void set_EdotV_origin(const Ref<EfieldDotVectorData>&);
     void set_Q_origin(const Ref<PointChargeData>&);
+    Ref<DipoleData> multipole_origin();
+    Ref<EfieldDotVectorData> EdotV_origin();
+    Ref<PointChargeData> Q_origin();
 
     double *buffer() { return target_ints_buffer_; }
     Ref<GaussianBasisSet> basis() { if (bs1_==bs2_) return bs1_; return 0; }

@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
+
 #include <stdlib.h>
 #include <math.h>
 
@@ -76,6 +78,31 @@ SCElementOp::has_side_effects()
 void
 SCElementOp::collect(const Ref<MessageGrp>&)
 {
+}
+
+bool
+SCElementOp::threadsafe()
+{
+  return false;
+}
+
+bool
+SCElementOp::cloneable()
+{
+  return false;
+}
+
+Ref<SCElementOp>
+SCElementOp::clone()
+{
+  throw std::runtime_error("SCElementOp::clone: not implemented");
+}
+
+void
+SCElementOp::collect(const Ref<SCElementOp> &)
+{
+  throw std::runtime_error("SCElementOp::collect(const Ref<SCElementOp> &): "
+                           "not implemented");
 }
 
 void

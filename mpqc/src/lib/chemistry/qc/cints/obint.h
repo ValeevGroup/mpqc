@@ -51,6 +51,9 @@ class OneBodyIntCints : public OneBodyInt {
     void set_Q_origin(const Ref<PointChargeData>&);
 
     void compute_shell(int,int);
+
+    bool cloneable();
+    Ref<OneBodyInt> clone();
 };
 
 }

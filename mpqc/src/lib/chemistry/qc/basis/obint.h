@@ -148,6 +148,14 @@ class OneBodyInt : public RefCount {
         them know that the data they reference has changed. */
     virtual void reinitialize();
 
+    /** Return true if the clone member can be called.  The default
+     * implementation returns false. */
+    virtual bool cloneable();
+
+    /** Returns a clone of this.  The default implementation throws an
+     * exception. */
+    virtual Ref<OneBodyInt> clone();
+
     Integral *integral() const { return integral_; }
 };
 
@@ -251,6 +259,9 @@ class OneBodyIntIter : public RefCount {
     Ref<OneBodyInt> one_body_int() { return obi; }
 
     ShellPairIter& current_pair();
+
+    virtual bool cloneable();
+    virtual Ref<OneBodyIntIter> clone();
 };
 
 
@@ -271,6 +282,9 @@ class OneBodyIntOp: public SCElementOp {
     void process_spec_ltri(SCMatrixLTriBlock*);
     void process_spec_rectsub(SCMatrixRectSubBlock*);
     void process_spec_ltrisub(SCMatrixLTriSubBlock*);
+
+    bool cloneable();
+    Ref<SCElementOp> clone();
 
     int has_side_effects();
 };

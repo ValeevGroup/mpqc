@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
+
 #include <util/misc/formio.h>
 
 #include <math/scmat/block.h>
@@ -188,6 +190,18 @@ OneBodyInt::reinitialize()
 {
 }
 
+bool
+OneBodyInt::cloneable()
+{
+  return false;
+}
+
+Ref<OneBodyInt>
+OneBodyInt::clone()
+{
+  throw std::runtime_error("OneBodyInt::clone() not implemented");
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 ShellPairIter::ShellPairIter()
@@ -293,6 +307,18 @@ OneBodyIntIter::current_pair()
   return spi;
 }
 
+bool
+OneBodyIntIter::cloneable()
+{
+  return obi->cloneable();
+}
+
+Ref<OneBodyIntIter>
+OneBodyIntIter::clone()
+{
+  return new OneBodyIntIter(obi->clone());
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 OneBodyIntOp::OneBodyIntOp(const Ref<OneBodyInt>& it)
@@ -307,6 +333,18 @@ OneBodyIntOp::OneBodyIntOp(const Ref<OneBodyIntIter>& it) :
 
 OneBodyIntOp::~OneBodyIntOp()
 {
+}
+
+bool
+OneBodyIntOp::cloneable()
+{
+  return iter->cloneable();
+}
+
+Ref<SCElementOp>
+OneBodyIntOp::clone()
+{
+  return new OneBodyIntOp(iter->clone());
 }
 
 void

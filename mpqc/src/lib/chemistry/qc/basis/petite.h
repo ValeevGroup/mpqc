@@ -143,6 +143,10 @@ class PetiteList : public RefCount {
     PetiteList(const Ref<GaussianBasisSet>&, const Ref<Integral>&);
     ~PetiteList();
 
+    Ref<GaussianBasisSet> basis() { return gbs_; }
+    Ref<Integral> integral() { return ints_; }
+    Ref<PetiteList> clone() { return new PetiteList(gbs_, ints_); }
+
     int nirrep() const { return nirrep_; }
     int order() const { return ng_; }
     int atom_map(int n, int g) const { return (c1_) ? n : atom_map_[n][g]; }

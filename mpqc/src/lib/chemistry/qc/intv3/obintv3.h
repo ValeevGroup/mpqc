@@ -49,6 +49,8 @@ class OneBodyIntV3 : public OneBodyInt {
                  IntegralFunction);
     ~OneBodyIntV3();
     void compute_shell(int,int);
+    bool cloneable();
+    Ref<OneBodyInt> clone();
 };
 
 class PointChargeIntV3 : public OneBodyInt

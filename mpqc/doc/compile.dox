@@ -100,6 +100,20 @@ at any GNU software FTP repository.
 
   </ul>
 
+\section compilepreopt Optional packages
+
+The following packages are not necessary to compile MPQC, but may provide additional
+features.
+
+<dl>
+
+<dt> Libint (version 1.1.0 or higher): This is a machine-generated library that
+can be used for evaluation of certain molecular integrals. IntegralCints and MBPT2_R12
+classes depend on this library. The library is freely available under GNU Public License (GPL)
+from <a href="http://www.ccmst.gatech.edu/evaleev/libint/">www.ccmst.gatech.edu/evaleev/libint/</a>.
+
+</dl>
+
 \section compileconf Configuration
 
  You can build MPQC in the source code directory or you can make a
@@ -171,6 +185,10 @@ Useful options to configure include:
   versions of GCC are not compatible.  Installations with multiple C++
   compilers that use shared libraries should use --with-build-id to avoid
   accidentally dynamically linking with the wrong libraries.
+
+<dt><tt>--with-default-memory</tt><dd>This specifies the default
+memory allocation, which is used in absense of the memory> keyword in user's input.
+The default is 32 million bytes (roughly, 32 MB).
 
 <dt><tt>--with-cc</tt><dd>Gives the name of the C compiler.
 

@@ -77,6 +77,8 @@ main(int argc, char *argv[])
   options.enroll("messagegrp", GetLongOpt::MandatoryValue,
                  "which message group to use", 0);
   options.enroll("l", GetLongOpt::MandatoryValue, "basis set limit", "0");
+  options.enroll("W", GetLongOpt::MandatoryValue,
+                 "set the working directory", ".");
   options.enroll("c", GetLongOpt::NoValue, "check input then exit", 0);
   options.enroll("v", GetLongOpt::NoValue, "print the version number", 0);
   options.enroll("w", GetLongOpt::NoValue, "print the warranty", 0);
@@ -85,6 +87,10 @@ main(int argc, char *argv[])
 
   options.parse(argc, argv);
 
+  // set the working dir
+  if (strcmp(options.retrieve("W"),"."))
+    chdir(options.retrieve("W"));
+  
   // open keyval input
   const char *input = options.retrieve("f");
   RefKeyVal pkv(new ParsedKeyVal(input));

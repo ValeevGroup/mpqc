@@ -1246,11 +1246,11 @@ Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
   int i34, j34, k34;
 
   /* Construct the needed intermediate integrals. */
-  I10 = buildprim(am12 - 1, am34, m);
-  I11 = buildprim(am12 - 1, am34, m + 1);
-  I20 = buildprim(am12 - 2, am34, m);
-  I21 = buildprim(am12 - 2, am34, m + 1);
-  I31 = buildprim(am12 - 1, am34 - 1, m + 1);
+  I10 = (am12?buildprim(am12 - 1, am34, m):0);
+  I11 = (am12?buildprim(am12 - 1, am34, m + 1):0);
+  I20 = ((am12>1)?buildprim(am12 - 2, am34, m):0);
+  I21 = ((am12>1)?buildprim(am12 - 2, am34, m + 1):0);
+  I31 = ((am12&&am34)?buildprim(am12 - 1, am34 - 1, m + 1):0);
 
   /* The size of the am34 group of primitives. */
   size34 = INT_NCART(am34);
@@ -1478,9 +1478,8 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
   double *I21; /* = [a0|c-1 0](m+1) */
   double *I31; /* = [a-1 0|c0](m+1) */
   int cartindex12;
-  int cartindex34;
-  int cartindex1234;
-  int size34m1,size34m2;
+  int ci34m1,ci34m2;
+  int size34,size34m1,size34m2;
   int i12, j12, k12;
   int i34, j34, k34;
 
@@ -1488,13 +1487,14 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
   double *I10o,*I11o,*I20o,*I21o;
 
   /* Construct the needed intermediate integrals. */
-  I10 = buildprim(am12, am34 - 1, m);
-  I11 = buildprim(am12, am34 - 1, m + 1);
-  I20 = buildprim(am12, am34 - 2, m);
-  I21 = buildprim(am12, am34 - 2, m + 1);
-  I31 = buildprim(am12 - 1, am34 - 1, m + 1);
+  I10 = (am34?buildprim(am12, am34 - 1, m):0);
+  I11 = (am34?buildprim(am12, am34 - 1, m + 1):0);
+  I20 = ((am34>1)?buildprim(am12, am34 - 2, m):0);
+  I21 = ((am34>1)?buildprim(am12, am34 - 2, m + 1):0);
+  I31 = ((am34&&am12)?buildprim(am12 - 1, am34 - 1, m + 1):0);
 
   /* The size of the group of primitives with ang. mom. = am34 - 1 */
+  size34 = INT_NCART(am34);
   size34m1 = INT_NCART(am34-1);
   size34m2 = INT_NCART(am34-2);
 
@@ -1511,7 +1511,7 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
 
   /* Construct the new integrals. */
   cartindex12 = 0;
-  cartindex1234 = 0;
+  double *I00o = I00; // points the current target integral
   for (i12=0; i12<=am12; i12++) {
     for (k12=0; k12<=am12-i12; k12++) {
       j12 = am12 - i12 - k12;
@@ -1519,82 +1519,96 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
       I11o = &I11[cartindex12*size34m1];
       if (I20) I20o = &I20[cartindex12*size34m2];
       if (I21) I21o = &I21[cartindex12*size34m2];
-      cartindex34 = 0;
-      for (i34=0; i34<=am34; i34++) {
-        for (k34=0; k34<=am34-i34; k34++) {
-          j34 = am34 - i34 - k34;
-
-          /* I10 I11 I20 I21 and I31 contrib */
-
-          /* ------------------ Build from the x position. */
-          if (i34) {
-            //note: cartindex34 - am34 - 1 = INT_CARTINDEX(am34-1,i34-1,j34)
-            int ci34 = cartindex34 - am34 - 1;
-            /* I10 and I11 */
-            I00[cartindex1234]
-              = I10o[ci34] * p340_m_r30 + I11o[ci34] * W0_m_p340;
-            if (i34 > 1) {
-              //note: cartindex34-(am34+am34+1)=INT_CARTINDEX(am34-2,i34-2,j34)
-              int ci34b = cartindex34-(am34+am34+1);
-              //int ci34b = INT_CARTINDEX(am34-2,i34-2,j34);
-              /* I20 and I21 */
-              I00[cartindex1234]
-               +=  (i34 - 1) * oo2zeta34 * (I20o[ci34b]
-                                            - I21o[ci34b] * zeta12_ooze);
-              }
-            if (i12) {
-              int ci12c = cartindex12-am12-1; // = CARTINDEX(am12-1,i12-1,j12);
-              /* I31 */
-              I00[cartindex1234]
-               +=  i12 * half_ooze * I31[ci12c*size34m1 + ci34];
-              }
-            }
-          /* ------------------ Build from the y position. */
-          else if (j34) {
-            int ci34 = cartindex34 - i34;//=INT_CARTINDEX(am34-1,i34,j34-1)
-            /* I10 and I11 */
-            I00[cartindex1234]
-              = I10o[ci34] * p341_m_r31 + I11o[ci34] * W1_m_p341;
-            if (j34 > 1) {
-              int ci34b = cartindex34-i34-i34;//=CARTINDEX(am34-2,i34,j34-2)
-              /* I20 and I21 */
-              I00[cartindex1234]
-               +=  (j34 - 1) * oo2zeta34 * (I20o[ci34b]
-                                            - I21o[ci34b] * zeta12_ooze);
-              }
-            if (j12) {
-              int ci12c = cartindex12-i12;//=INT_CARTINDEX(am12-1,i12,j12-1)
-              /* I31 */
-              I00[cartindex1234]
-               +=  j12 * half_ooze * I31[ci12c*size34m1 + ci34];
-              }
-            }
-          /* ------------------ Build from the z position. */
-          else if (k34) {
-            int ci34 = cartindex34 - i34 - 1;//=INT_CARTINDEX(am34-1,i34,j34)
-            /* I10 and I11 */
-            I00[cartindex1234]
-              = I10o[ci34] * p342_m_r32 + I11o[ci34] * W2_m_p342;
-            if (k34 > 1) {
-              int ci34b = cartindex34-i34-i34-2;//=CARTINDEX(am34-2,i34,j34)
-              /* I20 and I21 */
-              I00[cartindex1234]
-               +=  (k34 - 1) * oo2zeta34 * (I20o[ci34b]
-                                            - I21o[ci34b] * zeta12_ooze);
-              }
-            if (k12) {
-              int ci12c = cartindex12-i12-1;//=INT_CARTINDEX(am12-1,i12,j12)
-              /* I31 */
-              I00[cartindex1234]
-               +=  k12 * half_ooze * I31[ci12c*size34m1 + ci34];
-              }
-            }
-
-          /* cartindex34 == INT_CARTINDEX(am34,i34,j34) */
-          cartindex34++;
-          cartindex1234++;
+      //int cartindex34 = 0;
+      // i34 == 0, k34 == 0, j34 = am34
+      /* ------------------ Build from the y position. */
+      /* I10 I11 and I21 */
+      *I00o = *I10o * p341_m_r31 + *I11o * W1_m_p341;
+      if (am34>1) {
+        *I00o += (am34 - 1) * oo2zeta34 * (*I20o
+                                           - *I21o * zeta12_ooze);
+        }
+      if (j12) {
+        int ci12c = cartindex12-i12;//=INT_CARTINDEX(am12-1,i12,j12-1)
+        /* I31 */
+        *I00o +=  j12 * half_ooze * I31[ci12c*size34m1];
+        }
+      //cartindex34++;
+      // i34 == 0, k34 >= 1
+      // loop over a portion of the l=am34-1 integrals
+      I00o = &I00o[1];
+      for (ci34m1=0; ci34m1<am34; ci34m1++) {
+        /* ------------------ Build from the z position. */
+        //note: ci34m1 = cartindex34 - i34 - 1;//=INT_CARTINDEX(am34-1,i34,j34)
+        /* I10 and I11 */
+        I00o[ci34m1] = I10o[ci34m1] * p342_m_r32 + I11o[ci34m1] * W2_m_p342;
+        }
+      if (k12) {
+        int ci12c = cartindex12-i12-1;//=INT_CARTINDEX(am12-1,i12,j12)
+        double k12_half_ooze = k12 * half_ooze;
+        double *I31o = &I31[ci12c*size34m1];
+        for (ci34m1=0; ci34m1<am34; ci34m1++) {
+          /* I31 */
+          I00o[ci34m1] +=  k12_half_ooze * I31o[ci34m1];
           }
         }
+      // skip over i34 == 0, k34 == 1
+      //cartindex34++;
+      // i34 == 0, k34 > 1
+      I00o = &I00o[1];
+      // loop over a portion of the l=am34-2 integrals
+      double k34m1_oo2zeta34 = oo2zeta34;
+      for (ci34m2=0; ci34m2<am34-1; ci34m2++) {
+        //note: k34 = 2+ci34m2
+        /* ------------------ Build from the z position. */
+        /* I20 and I21 */
+        I00o[ci34m2]
+          +=  k34m1_oo2zeta34 * (I20o[ci34m2] - I21o[ci34m2] * zeta12_ooze);
+        k34m1_oo2zeta34 += oo2zeta34;
+        }
+      //cartindex34+=am34-1;
+      // i34 >= 1
+      I00o = &I00o[am34-1];
+      //note: ci34m1 = INT_CARTINDEX(am34-1,i34-1,j34)
+      for (ci34m1=0; ci34m1<size34m1; ci34m1++) {
+          /* I10 and I11 contrib */
+          /* ------------------ Build from the x position. */
+          I00o[ci34m1] = I10o[ci34m1] * p340_m_r30 + I11o[ci34m1] * W0_m_p340;
+        }
+      // skip past i34 == 1
+      //cartindex34 += am34;
+      // i34 > 1
+      I00o = &I00o[am34];
+      //note: ci34m2=INT_CARTINDEX(am34-2,i34-2,j34)
+      ci34m2=0;
+      double i34m1_oo2zeta34 = oo2zeta34;
+      for (i34=2; i34<=am34; i34++) {
+        for (k34=0; k34<=am34-i34; k34++) {
+          /* I20 and I21 contrib */
+          /* ------------------ Build from the x position. */
+          I00o[ci34m2]
+            +=  i34m1_oo2zeta34 * (I20o[ci34m2] - I21o[ci34m2] * zeta12_ooze);
+          ci34m2++;
+          }
+        i34m1_oo2zeta34 += oo2zeta34;
+        }
+      //cartindex34 += size34m2;
+
+      if (i12) {
+        // start at i34 == 1
+        int start34 = am34+1;
+        double *I00tmp = &I00[cartindex12*size34 + start34];
+        int ci12c = cartindex12-am12-1; // = CARTINDEX(am12-1,i12-1,j12);
+        double *I31o = &I31[ci12c*size34m1];
+        double i12_half_ooze = i12*half_ooze;
+        for (ci34m1=0; ci34m1<size34m1; ci34m1++) {
+            /* I31 */
+            I00tmp[ci34m1] +=  i12_half_ooze * I31o[ci34m1];
+          }
+        }
+
+      I00o = &I00o[size34m2];
+
       /* cartindex12 == INT_CARTINDEX(am12,i12,j12) */
       cartindex12++;
       }

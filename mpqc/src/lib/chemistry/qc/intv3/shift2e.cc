@@ -356,13 +356,12 @@ Int2eV3::choose_shift(int am1, int am2, int am3, int am4)
 void
 Int2eV3::shiftam_12(double *I0100, int am1, int am2, int am3, int am4)
 {
+  int i;
   double *I1000;
   double *I0000;
   int i1,j1,k1;
   int i2,j2,k2;
-  int cartindex34;
-  int cartindex1234;
-  int size2m134, size34;
+  int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM
   cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
@@ -377,57 +376,52 @@ Int2eV3::shiftam_12(double *I0100, int am1, int am2, int am3, int am4)
 
   size2m134 = INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
   size34    = INT_NCART(am3)*INT_NCART(am4);
+  size2     = INT_NCART(am2);
+
+  int size_zcontrib = am2*size34;
+  int size_xcontrib = (size2-(am2+1))*size34;
 
   double AmB0 = AmB[0];
   double AmB1 = AmB[1];
   double AmB2 = AmB[2];
 
   /* Loop over the target integrals. */
-  cartindex1234 = 0;
+  double *I0100i=I0100;
+  int cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
       j1 = am1 - i1 - k1;
-      int ci1x1 = INT_CARTINDEX(am1+1,i1+1,j1) * size2m134;
-      int ci1y1 = INT_CARTINDEX(am1+1,i1,j1+1) * size2m134;
-      int ci1z1 = INT_CARTINDEX(am1+1,i1,j1) * size2m134;
-      int ci1 = INT_CARTINDEX(am1,i1,j1) * size2m134;
-      for (i2=0; i2<=am2; i2++) {
-        for (k2=0; k2<=am2-i2; k2++) {
-          j2 = am2 - i2 - k2;
-          int ci2x1 = INT_CARTINDEX(am2-1,i2-1,j2) * size34;
-          int ci2y1 = INT_CARTINDEX(am2-1,i2,j2-1) * size34;
-          int ci2z1 = INT_CARTINDEX(am2-1,i2,j2) * size34;
-
-          double *I0100i=&I0100[cartindex1234];
-
-          if (i2) {
-            double *I1000i=&I1000[ci1x1+ci2x1];
-            double *I0000i=&I0000[ci1+ci2x1];
-            for (cartindex34=0; cartindex34<size34; cartindex34++) {
-              I0100i[cartindex34]
-                = I1000i[cartindex34] + I0000i[cartindex34] * AmB0;
-              }
-            }
-          else if (j2) {
-            double *I1000i=&I1000[ci1y1+ci2y1];
-            double *I0000i=&I0000[ci1+ci2y1];
-            for (cartindex34=0; cartindex34<size34; cartindex34++) {
-              I0100i[cartindex34]
-                = I1000i[cartindex34] + I0000i[cartindex34] * AmB1;
-              }
-            }
-          else {
-            double *I1000i=&I1000[ci1z1+ci2z1];
-            double *I0000i=&I0000[ci1+ci2z1];
-            for (cartindex34=0; cartindex34<size34; cartindex34++) {
-              I0100i[cartindex34]
-                = I1000i[cartindex34] + I0000i[cartindex34] * AmB2;
-              }
-            }
-
-          cartindex1234+=size34;
-          }
+      int ci1x1 = (cartindex1 + am1 + 2) * size2m134;
+      int ci1y1 = (cartindex1 + i1) * size2m134;
+      int ci1z1 = (cartindex1 + i1 + 1)  * size2m134;
+      //note:
+      //ci1x1 = INT_CARTINDEX(am1+1,i1+1,j1) * size2m134;
+      //ci1y1 = INT_CARTINDEX(am1+1,i1,j1+1) * size2m134;
+      //ci1z1 = INT_CARTINDEX(am1+1,i1,j1) * size2m134;
+      int ci1 = cartindex1 * size2m134;
+      // i2 == 0, k2 == 0, j2 == am2 (>0)
+      double *I1000i=&I1000[ci1y1];
+      double *I0000i=&I0000[ci1];
+      for (i=0; i<size34; i++) {
+        I0100i[i] = I1000i[i] + I0000i[i] * AmB1;
         }
+      I0100i=&I0100i[size34];
+      // i2 == 0, k2 > 0
+      I1000i=&I1000[ci1z1];
+      I0000i=&I0000[ci1];
+      for (i=0; i<size_zcontrib; i++) {
+        I0100i[i] = I1000i[i] + I0000i[i] * AmB2;
+        }
+      I0100i=&I0100i[size_zcontrib];
+      // i2 >= 1
+      I1000i=&I1000[ci1x1];
+      I0000i=&I0000[ci1];
+      for (i=0; i<size_xcontrib; i++) {
+        I0100i[i] = I1000i[i] + I0000i[i] * AmB0;
+        }
+      I0100i=&I0100i[size_xcontrib];
+
+      cartindex1++;
       }
     }
   }
@@ -441,17 +435,17 @@ Int2eV3::shiftam_12(double *I0100, int am1, int am2, int am3, int am4)
 void
 Int2eV3::shiftam_12eAB(double *I0100, int am1, int am2, int am3, int am4)
 {
+  int i;
   double *I1000;
   int i1,j1,k1;
   int i2,j2,k2;
-  int cartindex34;
-  int cartindex1234;
-  int size2m134, size34;
+  int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM
   cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << " <- "
        << "(" << am1+1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
+       << "(" << am1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
        << endl;
 #endif
 
@@ -459,40 +453,49 @@ Int2eV3::shiftam_12eAB(double *I0100, int am1, int am2, int am3, int am4)
 
   size2m134 = INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
   size34    = INT_NCART(am3)*INT_NCART(am4);
+  size2     = INT_NCART(am2);
+
+  int size_zcontrib = am2*size34;
+  int size_xcontrib = (size2-(am2+1))*size34;
+
+  double AmB0 = AmB[0];
+  double AmB1 = AmB[1];
+  double AmB2 = AmB[2];
 
   /* Loop over the target integrals. */
-  cartindex1234 = 0;
+  double *I0100i=I0100;
+  int cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
       j1 = am1 - i1 - k1;
-      for (i2=0; i2<=am2; i2++) {
-        for (k2=0; k2<=am2-i2; k2++) {
-          j2 = am2 - i2 - k2;
-          for (cartindex34=0; cartindex34<size34; cartindex34++) {
-
-            if (i2) {
-              I0100[cartindex1234]
-               =   I1000[  INT_CARTINDEX(am1+1,i1+1,j1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2-1,j2) * size34
-                         + cartindex34 ];
-              }
-            else if (j2) {
-              I0100[cartindex1234]
-               =   I1000[  INT_CARTINDEX(am1+1,i1,j1+1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2,j2-1) * size34
-                         + cartindex34 ];
-              }
-            else {
-              I0100[cartindex1234]
-               =   I1000[  INT_CARTINDEX(am1+1,i1,j1) * size2m134
-                         + INT_CARTINDEX(am2-1,i2,j2) * size34
-                         + cartindex34 ];
-              }
-
-            cartindex1234++;
-            }
-          }
+      int ci1x1 = (cartindex1 + am1 + 2) * size2m134;
+      int ci1y1 = (cartindex1 + i1) * size2m134;
+      int ci1z1 = (cartindex1 + i1 + 1)  * size2m134;
+      //note:
+      //ci1x1 = INT_CARTINDEX(am1+1,i1+1,j1) * size2m134;
+      //ci1y1 = INT_CARTINDEX(am1+1,i1,j1+1) * size2m134;
+      //ci1z1 = INT_CARTINDEX(am1+1,i1,j1) * size2m134;
+      int ci1 = cartindex1 * size2m134;
+      // i2 == 0, k2 == 0, j2 == am2 (>0)
+      double *I1000i=&I1000[ci1y1];
+      for (i=0; i<size34; i++) {
+        I0100i[i] = I1000i[i];
         }
+      I0100i=&I0100i[size34];
+      // i2 == 0, k2 > 0
+      I1000i=&I1000[ci1z1];
+      for (i=0; i<size_zcontrib; i++) {
+        I0100i[i] = I1000i[i];
+        }
+      I0100i=&I0100i[size_zcontrib];
+      // i2 >= 1
+      I1000i=&I1000[ci1x1];
+      for (i=0; i<size_xcontrib; i++) {
+        I0100i[i] = I1000i[i];
+        }
+      I0100i=&I0100i[size_xcontrib];
+
+      cartindex1++;
       }
     }
   }

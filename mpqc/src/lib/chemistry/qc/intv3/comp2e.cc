@@ -35,6 +35,11 @@
 #include <chemistry/qc/intv3/utils.h>
 #include <chemistry/qc/intv3/tformv3.h>
 
+#undef TIMING
+#ifdef TIMING
+#  include <util/misc/timer.h>
+#endif
+
 static inline void
 swtch(RefGaussianBasisSet &i,RefGaussianBasisSet &j)
 {
@@ -195,8 +200,9 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     }
 
 #ifdef TIMING
-  sprintf(section,"erep am=%d",am12+am34);
+  sprintf(section,"erep am=%02d",am12+am34);
   tim_enter(section);
+  tim_enter("setup");
 #endif
 
 #if 0
@@ -386,24 +392,34 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   size = size1*size2*size3*size4;
 
   if (int_integral_storage) {
+#ifdef TIMING
+      tim_change("check storage");
+#endif
     if (dam1 || dam2 || dam3 || dam4) {
       cerr << scprintf("cannot use integral storage and dam\n");
       fail();
       }
     if (    !int_unit2
          && !int_unit4
-         && int_have_stored_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24))
+         && int_have_stored_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24)) {
       goto post_computation;
+      }
     }
 
   /* Buildam up on center 1 and 3. */
 #if 0
   cout << scprintf("C:");
 #endif
+#ifdef TIMING
+  tim_change("build");
+#endif
   int_buildgcam(minam1,minam2,minam3,minam4,
                 am1,am2,am3,am4,
                 dam1,dam2,dam3,dam4,
                 sh1,sh2,sh3,sh4, eAB);
+#ifdef TIMING
+  tim_change("cleanup");
+#endif
 
   /* Begin loop over generalized contractions. */
   ogc1 = 0;
@@ -427,8 +443,14 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
           if (tam4 < 0) continue;
           int tsize4 = INT_NCART(tam4);
 
+#ifdef TIMING
+  tim_change("shift");
+#endif
   /* Shift angular momentum from 1 to 2 and from 3 to 4. */
   double *shiftbuffer = int_shiftgcam(i,j,k,l,tam1,tam2,tam3,tam4, eAB);
+#ifdef TIMING
+  tim_change("cleanup");
+#endif
 
   /* Place the integrals in the integral buffer. */
   /* If permute_ is not set, then repack the integrals while copying. */
@@ -576,12 +598,19 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   if (   !int_unit2
       && !int_unit4
       && int_integral_storage) {
+#ifdef TIMING
+      tim_change("maybe store");
+#endif
       int_store_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24,size);
     }
 
   /* We branch here if an integral was precomputed and the int_buffer
    * has been already filled. */
   post_computation:
+
+#ifdef TIMING
+  tim_change("post");
+#endif
 
 #if 0
   cout << scprintf("before unpermute: am=(%d,%d,%d,%d)\n",am1,am2,am3,am4);
@@ -642,16 +671,19 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
               && ((int_unit2 && int_unit4)
                   || ((int_unit2||int_unit4)?0:(osh2 == osh4))));
     e34 = (int_unit4?0:(osh3 == osh4));
-    nonredundant_erep(int_buffer,e12,e34,e13e24,
-                           int_shell1->nfunction(),
-                           int_shell2->nfunction(),
-                           int_shell3->nfunction(),
-                           int_shell4->nfunction(),
-                           &redundant_offset,
-                           &nonredundant_offset);
+    if (e12||e34||e13e24) {
+      nonredundant_erep(int_buffer,e12,e34,e13e24,
+                        int_shell1->nfunction(),
+                        int_shell2->nfunction(),
+                        int_shell3->nfunction(),
+                        int_shell4->nfunction(),
+                        &redundant_offset,
+                        &nonredundant_offset);
+      }
     }
     
 #ifdef TIMING
+  tim_exit("post");
   tim_exit(section);
 #endif
 
@@ -862,15 +894,17 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
     e12 = (osh[0] == osh[1]);
     e13e24 = ((osh[0] == osh[2]) && (osh[1] == osh[3]));
     e34 = (osh[2] == osh[3]);
-    /* Repack x, y, and z integrals. */
-    for (i=0; i<3*der_centers->n; i++) {
-      nonredundant_erep(current_buffer,e12,e34,e13e24,
-                             shell1->nfunction(),
-                             shell2->nfunction(),
-                             shell3->nfunction(),
-                             shell4->nfunction(),
-                             &redundant_offset,
-                             &nonredundant_offset);
+    if (e12||e13e24||e34) {
+      /* Repack x, y, and z integrals. */
+      for (i=0; i<3*der_centers->n; i++) {
+        nonredundant_erep(current_buffer,e12,e34,e13e24,
+                          shell1->nfunction(),
+                          shell2->nfunction(),
+                          shell3->nfunction(),
+                          shell4->nfunction(),
+                          &redundant_offset,
+                          &nonredundant_offset);
+        }
       }
     }
 
@@ -1728,25 +1762,25 @@ Int2eV3::nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
   int nonredundant_index;
   int i,j,k,l;
 
-#ifdef I860
-  if(mynode0() == -1 ) { cout << scprintf("junk\n");}
-#endif
   redundant_index = *red_off;
   nonredundant_index = *nonred_off;
+  int n34 = n3*n4;
   for (i=0; i<n1; i++) {
-    for (j=0; j<n2; j++) {
-      for (k=0; k<n3; k++) {
-        for (l=0; l<n4; l++) {
-          if (  (j<=INT_MAX2(e12,i,n2))
-              &&(k<=INT_MAX3(e13e24,i,n3))
-              &&(l<=INT_MAX4(e13e24,e34,i,j,k,n4))) {
-            buffer[nonredundant_index] = buffer[redundant_index];
-            nonredundant_index++;
-            }
+    int jmax = INT_MAX2(e12,i,n2);
+    for (j=0; j<=jmax; j++) {
+      int kmax = INT_MAX3(e13e24,i,n3);
+      for (k=0; k<=kmax; k++) {
+        int lmax = INT_MAX4(e13e24,e34,i,j,k,n4);
+        for (l=0; l<=lmax; l++) {
+          buffer[nonredundant_index] = buffer[redundant_index];
+          nonredundant_index++;
           redundant_index++;
           }
+        redundant_index += n4-(lmax+1);
         }
+      redundant_index += (n3-(kmax+1))*n4;
       }
+    redundant_index += (n2-(jmax+1))*n34;
     }
   *red_off = redundant_index;
   *nonred_off = nonredundant_index;

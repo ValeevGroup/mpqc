@@ -332,8 +332,10 @@ MBPT2::compute_hsos_v1()
   trans_int3 = (double*) malloc(nbasis*a_number*dim_ij*sizeof(double));
   trans_int4_node= (double*) malloc(nvir*a_number*sizeof(double));
   trans_int4 = (double*) malloc(nvir*nvir*sizeof(double));
-  if (!(trans_int1 && trans_int2 && trans_int3 && trans_int4_node && trans_int4)){
-    fprintf(stderr,"could not allocate storage for integral arrays\n");
+  if (!(trans_int1 && trans_int2
+        && (!a_number || trans_int3)
+        && (!a_number || trans_int4_node) && trans_int4)){
+    cerr << "could not allocate storage for integral arrays" << endl;
     abort();
     }
   if (nsocc) socc_sum  = (double*) malloc(nsocc*sizeof(double));

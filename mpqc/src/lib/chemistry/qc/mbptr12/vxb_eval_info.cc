@@ -210,54 +210,6 @@ R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)
 }
 
 
-/////////////////////////////////////////////////////////////////
-// Function dquicksort performs a quick sort (smaller -> larger) 
-// of the double data in item by the integer indices in index;
-// data in item remain unchanged
-//
-// Both functions borrowed from lib/chemistry/qc/mbpt/mbpt.cc
-//
-/////////////////////////////////////////////////////////////////
-static void
-dqs(double *item,int *index,int left,int right)
-{
-  int i,j;
-  double x;
-  int y;
-  
-  i=left; j=right;
-  x=item[index[(left+right)/2]];
-  
-  do {
-    while(item[index[i]]<x && i<right) i++;
-    while(x<item[index[j]] && j>left) j--;
-    
-    if (i<=j) {
-      if (item[index[i]] != item[index[j]]) {
-        y=index[i];
-        index[i]=index[j];
-        index[j]=y;
-      }
-      i++; j--;
-    }
-  } while(i<=j);
-  
-  if (left<j) dqs(item,index,left,j);
-  if (i<right) dqs(item,index,i,right);
-}
-
-static void
-dquicksort(double *item,int *index,int n)
-{
-  int i;
-  if (n<=0) return;
-  for (i=0; i<n; i++) {
-    index[i] = i;
-  }
-  dqs(item,index,0,n-1);
-}
-
-
 void R12IntEvalInfo::eigen2_()
 {
   Ref<Molecule> molecule = bs_->molecule();

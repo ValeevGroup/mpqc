@@ -1732,7 +1732,7 @@ MBPT2::compute_cs_grad()
       int i0 = biggest_t1.indices(i)[0];
       int i1 = biggest_t1.indices(i)[1] + nocc;
       ExEnv::out0()
-           << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
+           << indent << scprintf("  %2d %12.8f  %3d %3s -> %4d %3s",
                                  i+1, biggest_t1.val(i),
                                  symorb_num_[i0]+1,
                                  ct.gamma(symorb_irrep_[i0]).symbol(),

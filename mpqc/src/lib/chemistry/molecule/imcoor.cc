@@ -511,25 +511,21 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 #if DECOUPLE
   int n_total = 0;
 
-  int n_totally_symmetric_bond = 0;
   RefSCVector totally_symmetric_bond;
   RefSCMatrix Kbond;
   if (decouple_bonds_) {
       cout << "looking for bonds" << endl;
       form_partial_K(bonds_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
                      projection, totally_symmetric_bond, Kbond);
-      n_totally_symmetric_bond = count_nonzero(totally_symmetric_bond, ts_eps);
       if (Kbond.nonnull()) n_total += Kbond.ncol();
     }
 
-  int n_totally_symmetric_bend = 0;
   RefSCVector totally_symmetric_bend;
   RefSCMatrix Kbend;
   if (decouple_bends_) {
       cout << "looking for bends" << endl;
       form_partial_K(bends_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
                      projection, totally_symmetric_bend, Kbend);
-      n_totally_symmetric_bend = count_nonzero(totally_symmetric_bend, ts_eps);
       if (Kbend.nonnull()) n_total += Kbend.ncol();
     }
 

@@ -251,7 +251,6 @@ GDIISOpt::update()
   // and form the A matrix
   RefSCMatrix A;
   RefSCVector coeff;
-  double determ;
   int ntry=0;
 
   do {
@@ -279,7 +278,7 @@ GDIISOpt::update()
 
     ntry++;
 
-  } while ((determ=fabs(A.solve_lin(coeff))) < 1.0e-12);
+  } while (fabs(A.solve_lin(coeff)) < 1.0e-12);
 
   RefSCVector xstar = xcurrent.dim()->create_vector();
   RefSCVector delstar = gcurrent.dim()->create_vector();

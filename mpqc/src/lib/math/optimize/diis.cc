@@ -21,7 +21,6 @@ DIIS::_castdown(const ClassDesc*cd)
 void
 DIIS::init()
 {
-  int i;
   int dim = ndiis+1;
 
   iter = 0;
@@ -152,7 +151,7 @@ int
 DIIS::extrapolate(const RefSCExtrapData& data,
                   const RefSCExtrapError& error)
 {
-  int i, j, k, kk;
+  int i, j, k;
   int last = iter;
   int trial = 0;
   int col = iter + 2;

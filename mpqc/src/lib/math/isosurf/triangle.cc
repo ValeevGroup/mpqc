@@ -170,9 +170,9 @@ Triangle::interpolate(const RefTriInterpCoef& coef,
 {
   int i, j, k;
 
-  double L1 = 1 - r - s;
-  double L2 = r;
-  double L3 = s;
+  //double L1 = 1 - r - s;
+  //double L2 = r;
+  //double L3 = s;
 
   SCVector3 tmp(0.0);
   SCVector3 x_s(0.0);

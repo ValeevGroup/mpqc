@@ -39,38 +39,45 @@
 void IrreducibleRepresentation::init()
 {
   g=degen=nrot_=ntrans_=0;
-  symb=0; rep=0;
+  symb=0; rep=0; proj=0;
 }
 
 void
 IrreducibleRepresentation::new_rep()
 {
   free_rep();
-  rep = new double*[degen];
-  for (int i=0; i < degen; i++)
-    rep[i] = new double[g];
+  rep = new double[g];
+
+  proj = new double*[nproj()];
+  for (int i=0; i < nproj(); i++)
+    proj[i] = new double[g];
 }
 
 void
 IrreducibleRepresentation::free_rep()
 {
-  if (rep) {
-    for (int i=0; i < degen; i++)
-      if (rep[i])
-        delete[] rep[i];
-    delete[] rep;
+  if (proj) {
+    for (int i=0; i < nproj(); i++)
+      if (proj[i])
+        delete[] proj[i];
+    delete[] proj;
   }
+  proj=0;
+
+  if (rep)
+    delete[] rep;
+
   rep=0;
 }
 
 IrreducibleRepresentation::IrreducibleRepresentation() :
-  g(0), degen(0), nrot_(0), ntrans_(0), symb(0), rep(0)
+  g(0), degen(0), nrot_(0), ntrans_(0), symb(0), rep(0), proj(0)
 {
 }
 
 IrreducibleRepresentation::IrreducibleRepresentation(
                                              int g_, int d, const char *lab)
-  : g(g_), degen(d), nrot_(0), ntrans_(0), symb(0), rep(0)
+  : g(g_), degen(d), nrot_(0), ntrans_(0), symb(0), rep(0), proj(0)
 {
   if (lab) {
     symb = new char[strlen(lab)+1];
@@ -83,7 +90,7 @@ IrreducibleRepresentation::IrreducibleRepresentation(
 
 IrreducibleRepresentation::IrreducibleRepresentation(
                                        const IrreducibleRepresentation& ir)
-  : g(0), degen(0), nrot_(0), ntrans_(0), symb(0), rep(0)
+  : g(0), degen(0), nrot_(0), ntrans_(0), symb(0), rep(0), proj(0)
 {
   *this = ir;
 }
@@ -115,10 +122,13 @@ IrreducibleRepresentation::operator=(const IrreducibleRepresentation& ir)
   }
 
   new_rep();
-  for (int d=0; d < degen; d++)
+  for (int d=0; d < nproj(); d++)
     for (int i=0; i < g; i++)
-      rep[d][i] = ir.rep[d][i];
+      proj[d][i] = ir.proj[d][i];
 
+  for (int i=0; i < g; i++)
+    rep[i]=ir.rep[i];
+  
   return *this;
 }
 
@@ -129,15 +139,14 @@ void IrreducibleRepresentation::print(FILE *fp, const char *off)
 
   fprintf(fp,"%s%-5s",off,symb);
   for (int i=0; i < g; i++)
-    fprintf(fp," %6.3f",rep[0][i]);
+    fprintf(fp," %6.3f",rep[i]);
   fprintf(fp," | %d t, %d R\n",ntrans_,nrot_);
-  if (degen>1) {
-    for (int d=1; d < degen; d++) {
-      fprintf(fp,"%s     ",off);
-      for (int i=0; i < g; i++)
-        fprintf(fp," %6.3f",rep[d][i]);
-      fprintf(fp,"\n");
-    }
+
+  for (int d=0; d < nproj(); d++) {
+    fprintf(fp,"%s     ",off);
+    for (int i=0; i < g; i++)
+      fprintf(fp," %6.3f",proj[d][i]);
+    fprintf(fp,"\n");
   }
 }
 
@@ -198,7 +207,10 @@ CharacterTable& CharacterTable::operator=(const CharacterTable& ct)
     }
   }
 
-  if (symop) delete[] symop; symop=0;
+  if (symop)
+    delete[] symop;
+  symop=0;
+
   if (ct.symop) {
     symop = new SymmetryOperation[g];
     for (int i=0; i < g; i++) {
@@ -222,7 +234,8 @@ void CharacterTable::print(FILE *fp, const char *off)
   for (i=0; i < nirrep_; i++)
     gamma_[i].print(fp,myoff);
 
-  for(i=0; i < g; i++) symop[i].print();
+  for (i=0; i < g; i++)
+    symop[i].print();
 }
 
 // given matrix R in so and E in frame, perform similarity transform

@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXSRC = pointgrp.cc maketab.cc
+CXXSRC = pointgrp.cc maketab.cc tetra.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 

@@ -47,12 +47,13 @@ class IrreducibleRepresentation {
   friend class CharacterTable;
 
   private:
-    int g;        // the order of the group
-    int degen;    // the degeneracy of the irrep
-    int nrot_;    // the number of rotations in this irrep
-    int ntrans_;  // the number of translations in this irrep
-    char *symb;   // mulliken symbol for this irrep
-    double **rep;  // the characters for this irrep
+    int g;         // the order of the group
+    int degen;     // the degeneracy of the irrep
+    int nrot_;     // the number of rotations in this irrep
+    int ntrans_;   // the number of translations in this irrep
+    char *symb;    // mulliken symbol for this irrep
+    double *rep;   // the characters for this irrep
+    double **proj; // elements of the projection operator
 
     //texi Sets all data members to zero.
     void init();
@@ -75,6 +76,8 @@ class IrreducibleRepresentation {
     int order() const { return g; }
     //texi Returns the degeneracy of the irrep.
     int degeneracy() const { return degen; }
+    //texi Returns the number of projection operators for the irrep.
+    int nproj() const { return degen*degen; }
     //texi Returns the number of rotations associated with the irrep.
     int nrot() const { return nrot_; }
     //texi Returns the number of translations associated with the irrep.
@@ -84,14 +87,14 @@ class IrreducibleRepresentation {
     //texi
     // Returns the character for the i'th symmetry operation of the point
     // group.
-    double character(int i) const { return rep[0][i]; }
+    double character(int i) const { return rep[i]; }
     //texi This is equivalent to the @b{character} member.
-    double operator[](int i) const { return rep[0][i]; }
+    double operator[](int i) const { return rep[i]; }
     //texi
     // Returns the character for the d'th contribution to the i'th symmetry
     // operation of the point group.
-    double character(int d, int i) const { return rep[d][i]; }
-    double operator()(int d, int i) const { return rep[d][i]; }
+    double p(int d, int i) const { return proj[d][i]; }
+    double operator()(int d, int i) const { return proj[d][i]; }
 
     //texi
     // This prints the irrep to the given file, or stdout if none is given.
@@ -155,6 +158,15 @@ class CharacterTable {
     int parse_symbol();
     //texi this fills in the irrep and symop arrays.
     int make_table();
+
+    // these create the character tables for the cubic groups
+    void t();
+    void th();
+    void td();
+    void o();
+    void oh();
+    void i();
+    void ih();
 
   public:
     CharacterTable();

@@ -98,7 +98,7 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
     }
 
   /* A noncritical limitation for now. */
-  if ((cs1 != cs2) || (cs2 != cs3) || (cs3 != cs4)) {
+  if ((cs1.operator!=(cs2))||(cs2.operator!=(cs3))||(cs3.operator!=(cs4))) {
     ExEnv::errn() << scprintf("libint: because the int_compute_erep routine\n");
     ExEnv::errn() << scprintf("might permute centers around, different centers\n");
     ExEnv::errn() << scprintf("cannot be given (but this can be easily fixed)\n");
@@ -216,36 +216,38 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
   /* Set up the one shell intermediates, block by block. */
   if (int_store1) {
     compute_shell_1(cs1, bs1_shell_offset_, bs1_prim_offset_);
-    if (cs2 != cs1)
+    if (cs2.operator!=(cs1))
         compute_shell_1(cs2, bs2_shell_offset_, bs2_prim_offset_);
-    if (cs3 != cs2 && cs3 != cs1)
+    if (cs3.operator!=(cs2) && cs3.operator!=(cs1))
         compute_shell_1(cs3, bs3_shell_offset_, bs3_prim_offset_);
-    if (cs4 != cs3 && cs4 != cs2 && cs4 != cs1)
+    if (cs4.operator!=(cs3) && cs4.operator!=(cs2)&& cs4.operator!=(cs1))
         compute_shell_1(cs4, bs4_shell_offset_, bs4_prim_offset_);
   
     /* Set up the one primitive intermediates, block by block. */
     compute_prim_1(cs1);
-    if (cs2 != cs1) compute_prim_1(cs2);
-    if (cs3 != cs2 && cs3 != cs1) compute_prim_1(cs3);
-    if (cs4 != cs3 && cs4 != cs2 && cs4 != cs1) compute_prim_1(cs4);
+    if (cs2.operator!=(cs1)) compute_prim_1(cs2);
+    if (cs3.operator!=(cs2) && cs3.operator!=(cs1)) compute_prim_1(cs3);
+    if (cs4.operator!=(cs3)
+        && cs4.operator!=(cs2)
+        && cs4.operator!=(cs1)) compute_prim_1(cs4);
     }
 
   /* Compute the two shell intermediates, block by block. */
   if (int_store2) {
     compute_shell_2(cs1,cs1);
-    if (cs2 != cs1) {
+    if (cs2.operator!=(cs1)) {
       compute_shell_2(cs1,cs2);
       compute_shell_2(cs2,cs1);
       compute_shell_2(cs2,cs2);
       }
-    if (cs3 != cs2 && cs3 != cs1) {
+    if (cs3.operator!=(cs2) && cs3.operator!=(cs1)) {
       compute_shell_2(cs1,cs3);
       compute_shell_2(cs3,cs1);
       compute_shell_2(cs2,cs3);
       compute_shell_2(cs3,cs2);
       compute_shell_2(cs3,cs3);
       }
-    if (cs4 != cs3 && cs4 != cs2 && cs4 != cs1) {
+    if (cs4.operator!=(cs3) && cs4.operator!=(cs2) && cs4.operator!=(cs1)) {
       compute_shell_2(cs1,cs4);
       compute_shell_2(cs4,cs1);
       compute_shell_2(cs2,cs4);
@@ -257,19 +259,19 @@ Int2eV3::int_initialize_erep(size_t storage, int order,
   
     /* Compute the two primitive intermediates, block by block. */
     compute_prim_2(cs1,cs1);
-    if (cs2 != cs1) {
+    if (cs2.operator!=(cs1)) {
       compute_prim_2(cs1,cs2);
       compute_prim_2(cs2,cs1);
       compute_prim_2(cs2,cs2);
       }
-    if (cs3 != cs2 && cs3 != cs1) {
+    if (cs3.operator!=(cs2) && cs3.operator!=(cs1)) {
       compute_prim_2(cs1,cs3);
       compute_prim_2(cs3,cs1);
       compute_prim_2(cs2,cs3);
       compute_prim_2(cs3,cs2);
       compute_prim_2(cs3,cs3);
       }
-    if (cs4 != cs3 && cs4 != cs2 && cs4 != cs1) {
+    if (cs4.operator!=(cs3) && cs4.operator!=(cs2) && cs4.operator!=(cs1)) {
       compute_prim_2(cs1,cs4);
       compute_prim_2(cs4,cs1);
       compute_prim_2(cs2,cs4);

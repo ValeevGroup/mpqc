@@ -47,6 +47,114 @@ fail()
   abort();
   }
 
+ShiftIntermediates::ShiftIntermediates()
+{
+  data_ = 0;
+  ndata_ = 0;
+  nused_ = 0;
+  l1_ = 0;
+  l2_ = 0;
+  l3_ = 0;
+  l4_ = 0;
+}
+
+ShiftIntermediates::~ShiftIntermediates()
+{
+  delete[] data_;
+}
+
+void
+ShiftIntermediates::out_of_memory(int i,int j,int k,int l)
+{
+  int size = INT_NCART(i)*INT_NCART(j)*INT_NCART(k)*INT_NCART(l);
+  cerr << "ShiftIntermediates: didn't preallocate enough memory" << endl;
+  cerr << "  nused_ = " << nused_ << " size = " << size << endl;
+  cerr << "  ndata_ = " << ndata_ << endl;
+  abort();
+}
+
+void
+ShiftIntermediates::clear()
+{
+  nused_ = 0;
+  for (int i=0; i<=l1_+l2_; i++) {
+    for (int j=0; j<=l2_; j++) {
+      for (int k=0; k<=l3_+l4_; k++) {
+        for (int l=0; l<=l4_; l++) {
+          shell_(i,j,k,l) = 0;
+          }
+        }
+      }
+    }
+}
+
+double *
+ShiftIntermediates::allocate(int i,int j,int k,int l)
+{
+  int size = INT_NCART(i)*INT_NCART(j)*INT_NCART(k)*INT_NCART(l);
+  //cout << "ShiftIntermediates::allocate:"
+  //     << " size = " << size
+  //     << " nused_ = " << nused_
+  //     << " ndata_ = " << ndata_
+  //     << " data_ = " << (void*)data_
+  //     << endl;
+  double *data = &data_[nused_];
+  shell_(i,j,k,l) = data;
+  if (nused_ + size > ndata_) out_of_memory(i,j,k,l);
+  nused_ += size;
+  return data;
+}
+
+void
+ShiftIntermediates::set_l(int l1,int l2,int l3,int l4)
+{
+#if CHECK_INTEGRAL_ALGORITHM
+  if (ndata_ && (nused_ != ndata_)) {
+    cout << "ShiftIntermediates: wasted "
+         << ndata_ - nused_
+         << " of " << ndata_
+         << endl;
+    }
+#endif
+
+  l1_ = l1;
+  l2_ = l2;
+  l3_ = l3;
+  l4_ = l4;
+  shell_.set_dim(l1+l2+1,l2+1,l3+l4+1,l4+1);
+
+  delete[] data_;
+  ndata_ = 0;
+  nused_ = 0;
+  int i;
+  for (i=0; i<=l1+l2; i++) {
+    int szi = INT_NCART(i);
+    for (int k=0; k<=l3+l4; k++) {
+      int szk = INT_NCART(k);
+      for (int l=0; l<=k && l+k<=l3+l4 && l<=l4; l++) {
+        int szl = INT_NCART(l);
+        ndata_ += szi*szk*szl;
+        }
+      }
+    }
+  int szkl = INT_NCART(l3)*INT_NCART(l4);
+  for (i=0; i<=l1+l2; i++) {
+    int szi = INT_NCART(i);
+    for (int j=0; j<=i && i+j<=l1+l2 && j<=l2; j++) {
+      int szj = INT_NCART(j);
+      ndata_ += szi*szj*szkl;
+      }
+    }
+  data_ = new double[ndata_];
+  //cout << "ShiftIntermediates: allocated: " << ndata_ << endl;
+}
+
+int
+ShiftIntermediates::nbyte()
+{
+  return ndata_ * sizeof(double) + shell_.nbyte();
+}
+
 /* This initializes the shift routines.  It is called by int_initialize_erep.
  * It is passed the maximum am to be found on each center.
  */
@@ -55,6 +163,8 @@ Int2eV3::int_init_shiftgc(int order, int am1, int am2, int am3, int am4)
 {
   /* The intermediate integral arrays are allocated by the
    * build initialization routine. */
+
+  used_storage_shift_ = 0;
 
   /* Convert the am1-4 to their canonical ordering. */
   if (am2>am1) {
@@ -77,39 +187,29 @@ Int2eV3::int_init_shiftgc(int order, int am1, int am2, int am3, int am4)
   /* For derivative integral bounds am3 will need to be larger. */
   if (order==1 && int_derivative_bounds) am3++;
 
-  /* Allocate the array giving what has already been computed. */
-  shiftinthave.set_dim(am1+am2+1,am2+1,am3+am4+1,am4+1);
+  // Set up the intermediate array.
+  shiftinter_.set_l(am1,am2,am3,am4);
+  used_storage_shift_ += shiftinter_.nbyte();
+
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "shiftinter: " << shiftinter_.nbyte() << endl;
+#endif
+
+  used_storage_ += used_storage_shift_;
   }
 
 void
 Int2eV3::int_done_shiftgc()
 {
-  }
-
-void
-Int2eV3::init_shiftinthave(int am1, int am2, int am3, int am4)
-{
-  int i,j,k,l;
-
-  for (i=0; i<=am1+am2; i++) {
-    for (j=0; j<=am2; j++) {
-      for (k=0; k<=am3+am4; k++) {
-        for (l=0; l<=am4; l++) {
-          /* The integrals for j==0 and l==0 have been precomputed
-           * by the build routine. */
-          if ((j==0) && (l==0)) shiftinthave(i,j,k,l) = 1;
-          else                  shiftinthave(i,j,k,l) = 0;
-          }
-        }
-      }
-    }
+  used_storage_ -= used_storage_shift_;
+  shiftinter_.set_l(0,0,0,0);
   }
 
 /* This is the principle entry point for the am shifting routines.
  * tam1-4 is the target angular momentum on centers 1-4
  * sh1-4 are the shell numbers on centers 1-4
  */
-void
+double *
 Int2eV3::int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
                        int tam1, int tam2, int tam3, int tam4, int peAB)
 {
@@ -139,11 +239,16 @@ Int2eV3::int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
   CmD[2] =  build.int_v_r32 - build.int_v_r42;
 
   /* Mark all of the intermediates as being noncomputed. */
-  init_shiftinthave(am1,am2,am3,am4);
+  shiftinter_.clear();
+
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "generating ("
+       << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
+       << ":" << endl;
+#endif
 
   /* Construct the target integrals. */
-  shiftint(am1,am2,am3,am4);
-
+  return shiftint(am1,am2,am3,am4);
   }
 
 double *
@@ -159,12 +264,21 @@ Int2eV3::shiftint(int am1, int am2, int am3, int am4)
          am4,g4);
 #endif
 
+  if (am2==0 && am4==0) {
+    return e0f0_con_ints_array[g1][g2][g3][g4](am1,am3);
+    }
+  
   /* If the integral is known, then return the pointer to its buffer. */
-  if (shiftinthave(am1,am2,am3,am4))
-    return int_con_ints_array[g1][g2][g3][g4](am1,am2,am3,am4);
+  if (buffer = shiftinter_(am1,am2,am3,am4)) return buffer;
 
   /* Find the preallocated storage for the target integrals. */
-  buffer = int_con_ints_array[g1][g2][g3][g4](am1,am2,am3,am4);
+  buffer = shiftinter_.allocate(am1,am2,am3,am4);
+
+  if (!buffer) {
+    cerr << "Int2eV3::shift2e: internal error: "
+         << "storage not allocated for target" << endl;
+    abort();
+    }
 
   /* Should we shift to 2 or to 4? */
   if (choose_shift(am1,am2,am3,am4) == 2) {
@@ -174,9 +288,6 @@ Int2eV3::shiftint(int am1, int am2, int am3, int am4)
   else {
     shiftam_34(buffer,am1,am2,am3,am4);
     }
-
-  /* Put the integrals in the list of precomputed integrals. */
-  shiftinthave(am1,am2,am3,am4) = 1;
 
   return buffer;
   }
@@ -188,9 +299,6 @@ Int2eV3::shiftint(int am1, int am2, int am3, int am4)
 int
 Int2eV3::choose_shift(int am1, int am2, int am3, int am4)
 {
-  int nneed2 = 0;
-  int nneed4 = 0;
-
   if (am2 == 0) {
     if (am4 == 0) {
       cerr << scprintf("shift: build routines missed (%d,0,%d,0)\n",am1,am3);
@@ -200,20 +308,28 @@ Int2eV3::choose_shift(int am1, int am2, int am3, int am4)
     }
   if (am4 == 0) return 2;
 
-  if (!shiftinthave(am1+1,am2-1,am3,am4)) {
+#if 1
+  // always build on one electron first since the storage allocation
+  // now computes an upper bound for intermediate storage based on this
+  return 2;
+#else
+  int nneed2 = 0;
+  int nneed4 = 0;
+  if (!shiftinter_(am1+1,am2-1,am3,am4)) {
     nneed2 += INT_NCART(am1+1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
     }
-  if (!shiftinthave(am1,am2-1,am3,am4)) {
+  if (!shiftinter_(am1,am2-1,am3,am4)) {
     nneed2 += INT_NCART(am1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
     }
-  if (!shiftinthave(am1,am2,am3+1,am4-1)) {
+  if (!shiftinter_(am1,am2,am3+1,am4-1)) {
     nneed4 += INT_NCART(am1)*INT_NCART(am2)*INT_NCART(am3+1)*INT_NCART(am4-1);
     }
-  if (!shiftinthave(am1,am2-1,am3,am4-1)) {
-    nneed4 += INT_NCART(am1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4-1);
+  if (!shiftinter_(am1,am2,am3,am4-1)) {
+    nneed4 += INT_NCART(am1)*INT_NCART(am2)*INT_NCART(am3)*INT_NCART(am4-1);
     }
   if (nneed2 <= nneed4) return 2;
   return 4;
+#endif
   }
 
 /* Shift angular momentum from center 1 to center 2.
@@ -230,6 +346,14 @@ Int2eV3::shiftam_12(double *I0100, int am1, int am2, int am3, int am4)
   int cartindex34;
   int cartindex1234;
   int size2m134, size34;
+
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
+       << " <- "
+       << "(" << am1+1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
+       << "(" << am1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
+       << endl;
+#endif
 
   I1000 = shiftint(am1+1,am2-1,am3,am4);
   I0000 = shiftint(am1,am2-1,am3,am4);
@@ -302,6 +426,13 @@ Int2eV3::shiftam_12eAB(double *I0100, int am1, int am2, int am3, int am4)
   int cartindex1234;
   int size2m134, size34;
 
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
+       << " <- "
+       << "(" << am1+1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
+       << endl;
+#endif
+
   I1000 = shiftint(am1+1,am2-1,am3,am4);
 
   size2m134 = INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
@@ -355,6 +486,14 @@ Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
   int i4,j4,k4,cartindex4;
   int cartindex1234;
   int size23p14m1,size3p14m1,size4m1,size234m1,size34m1;
+
+#if CHECK_INTEGRAL_ALGORITHM
+  cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
+       << " <- "
+       << "(" << am1 << "," << am2 << "," << am3+1 << "," << am4-1 << ")"
+       << "(" << am1 << "," << am2 << "," << am3 << "," << am4-1 << ")"
+       << endl;
+#endif
 
   I0010 = shiftint(am1,am2,am3+1,am4-1);
   I0000 = shiftint(am1,am2,am3,am4-1);

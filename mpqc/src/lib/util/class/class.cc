@@ -96,8 +96,8 @@ char* ClassKey::name() const
 
 ParentClass::ParentClass(ClassDesc*classdesc,Access access,int is_virtual):
   _access(access),
-  _classdesc(classdesc),
-  _is_virtual(is_virtual)
+  _is_virtual(is_virtual),
+  _classdesc(classdesc)
 {
 }
 
@@ -255,11 +255,11 @@ ClassDesc::ClassDesc(char* name, int version,
                      ):
   classname_(0),
   version_(version),
+  parents_(parents),
   children_(0),
   ctor_(ctor),
   keyvalctor_(keyvalctor),
-  stateinctor_(stateinctor),
-  parents_(parents)
+  stateinctor_(stateinctor)
 {
 
   classname_ = ::strcpy(new char[strlen(name)+1],name);

@@ -37,7 +37,7 @@
 
 class TimedRegion;
 
-class RefRegionTimer;
+REF_fwddec(RegionTimer);
 
 class RegionTimer: public VRefCount {
   protected:

@@ -45,14 +45,14 @@ class AVLSet {
         iterator(const EAVLMMap<K,AVLMapNode<K,int> > *m,
                  const AVLMapNode<K,int> *n)
           :map_(m), node(n) {}
-        iterator(const typename AVLSet<K>::iterator &i):map_(i.map_),node(i.node) {}
+        iterator(const eavl_typename AVLSet<K>::iterator &i):map_(i.map_),node(i.node) {}
         void operator++() { map_->next(node); }
         void operator++(int) { operator++(); }
-        int operator == (const typename AVLSet<K>::iterator &i) const
+        int operator == (const eavl_typename AVLSet<K>::iterator &i) const
             { return map_ == i.map_ && node == i.node; }
-        int operator != (const typename AVLSet<K>::iterator &i) const
+        int operator != (const eavl_typename AVLSet<K>::iterator &i) const
             { return !(map_ == i.map_ && node == i.node); }
-        void operator = (const typename AVLSet<K>::iterator &i)
+        void operator = (const eavl_typename AVLSet<K>::iterator &i)
             { map_ = i.map_; node = i.node; }
         const K &key() const { return node->node.key; }
         const K &operator *() const { return node->node.key; }

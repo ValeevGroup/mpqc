@@ -37,6 +37,13 @@
 #include <unistd.h> // for size_t on solaris
 #include <stdlib.h>
 
+#ifdef __GNUC__
+// gcc typename seems to be broken in some cases
+#  define eavl_typename
+#else
+#  define eavl_typename typename
+#endif
+
 template <class K, class T>
 class EAVLMMapNode {
   public:
@@ -89,14 +96,14 @@ class EAVLMMap {
         T *node;
       public:
         iterator(EAVLMMap<K,T> *m, T *n):map_(m),node(n){}
-        iterator(const typename EAVLMMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
+        iterator(const eavl_typename EAVLMMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
         void operator++() { map_->next(node); }
         void operator++(int) { operator++(); }
-        int operator == (const typename EAVLMMap<K,T>::iterator &i) const
+        int operator == (const eavl_typename EAVLMMap<K,T>::iterator &i) const
             { return map_ == i.map_ && node == i.node; }
-        int operator != (const typename EAVLMMap<K,T>::iterator &i) const
+        int operator != (const eavl_typename EAVLMMap<K,T>::iterator &i) const
             { return !operator == (i); }
-        void operator = (const typename EAVLMMap<K,T>::iterator &i)
+        void operator = (const eavl_typename EAVLMMap<K,T>::iterator &i)
             { map_ = i.map_; node = i.node; }
         const K &key() const { return map_->key(node); }
         T & operator *() { return *node; }

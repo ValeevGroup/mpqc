@@ -1,13 +1,20 @@
 
+# JOBS can be set to "-j n" to do parallel makes in subdirectories
 default::
 	for dir in $(SUBDIRS); \
 	  do \
-	    (cd $${dir}; $(MAKE)); \
+	    (cd $${dir}; $(MAKE) $(JOBS)); \
 	  done
 
 ifndef DODEPEND
 DODEPENDOPT = "DODEPEND=no"
 endif
+
+interface::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir}; $(MAKE) $(DODEPENDOPT) interface); \
+	  done
 
 clean::
 	for dir in $(SUBDIRS); \

@@ -65,11 +65,8 @@ reftest: reftest.o reftestx.o libref.$(LIBSUF)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-iclean::
-	-rm -f foo.h
-
-distclean::
-	-/bin/rm -f $(GENINC)
+targetclean::
+	-rm -f reftest
 
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

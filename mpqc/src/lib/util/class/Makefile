@@ -35,10 +35,10 @@ SETIMPL = AVL
 MAPIMPL = RAVL
 STACKIMPL = SL
 
-CXXSRC = class.cc
+CXXSRC = class.cc proxy.cc
 
 GENCXXSRC = classMap.cc class$(MAPIMPL)Map.cc classkeySet.cc \
-            classkey$(SETIMPL)Set.cc proxy.cc
+            classkey$(SETIMPL)Set.cc
 # classStack.cc
 #            class$(STACKIMPL)Stack.cc class$(STACKIMPL)List.cc \
 #            classl$(STACKIMPL)List.cc

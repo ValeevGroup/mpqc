@@ -28,7 +28,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <tmpl.h>
 
 #include <util/misc/timer.h>
 #include <math/scmat/matrix.h>

@@ -34,14 +34,14 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 LD=$(CXX)
 
-GENCXXSRC = edgeSet.cc edgeAVLSet.cc \
+GENSRC = edgeSet.cc edgeAVLSet.cc \
             edgeMap.cc edgeRAVLMap.cc \
             vertexSet.cc vertexAVLSet.cc \
             veMap.cc veRAVLMap.cc \
             vtsMap.cc vtsRAVLMap.cc \
             triSet.cc triAVLSet.cc \
             triMap.cc triRAVLMap.cc
-GENINC = $(GENCXXSRC:%.cc=%.h)
+GENINC = $(GENSRC:%.cc=%.h)
 CXXSRC = volume.cc shape.cc volume_i.cc \
          surf.cc surfse.cc surfor.cc surfst.cc \
          vertex.cc edge.cc triangle.cc isosurf.cc \
@@ -52,7 +52,7 @@ CLASSES = Volume Shape UnionShape SphereShape \
           UncappedTorusHoleShape NonreentrantUncappedTorusHoleShape \
           ReentrantUncappedTorusHoleShape Uncapped5SphereExclusionShape
 
-LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) $(GENCXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) $(GENSRC:%.cc=%.o)
 
 INC = volume.h shape.h volume_i.h implicit.h tricoef.h
 

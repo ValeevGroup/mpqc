@@ -3,7 +3,6 @@
 
 #include <math.h>
 
-#include <tmpl.h>
 #include <util/misc/libmisc.h>
 #include <util/group/message.h>
 

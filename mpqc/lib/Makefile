@@ -1,14 +1,12 @@
-TOPDIR=.
+TOPDIR=..
 ifndef SRCDIR
   SRCDIR=.
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = lib src
-
-include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-miscclean::
-	-rm -f config.log
+distclean::
+	/bin/rm -f lib*.a
+	/bin/rm -f lib*.so*

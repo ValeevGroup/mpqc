@@ -1,10 +1,10 @@
-TOPDIR=..
+TOPDIR=../..
 ifndef SRCDIR
   SRCDIR=.
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = lib bin
+SUBDIRS = mpqc
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs

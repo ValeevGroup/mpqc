@@ -128,12 +128,12 @@ endif
 #
 # cleans
 #
-clean:: oclean targetclean
+clean:: oclean targetclean miscclean
 
-distclean:: iclean oclean targetclean dclean genclean rclean
+distclean:: oclean targetclean dclean genclean miscclean
 
-iclean::
-	-rm -f *.gbl *.lcl
+miscclean::
+	-rm -f *~
 
 oclean::
 	-rm -f *.o
@@ -158,9 +158,6 @@ ifdef TARGET_TO_MAKE
 	-rm -f $(TARGET_TO_MAKE).a
   endif
 endif
-
-rclean::
-	-/bin/rm -f REMOTE/$(HOST).* $(REMOTEDIR)/$(HOST)/$(TARGET_TO_MAKE).tar*
 
 #
 # If a makefile generates include files, these should be targets of interface.

@@ -99,11 +99,8 @@ settestt: settestt.o libcontainer.$(LIBSUF)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-iclean::
+miscclean::
 	-rm -f foo.h
-
-distclean::
-	-/bin/rm -f $(GENINC)
 
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

@@ -66,7 +66,7 @@ qstring \"[^"\n]+\"
                   }
 [ \t]+          ; 
 %.*$            ;
-"\n"            ;
+[\n\r\f]        ;
 "("             { return(T_KEYWORD_LEFT); }
 ")"             { return(T_KEYWORD_RIGHT); }
 "["             { return(T_ARRAY_LEFT); }

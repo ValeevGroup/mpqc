@@ -124,9 +124,6 @@ MBPT2::compute_hsos_v2_lb()
  
   cout << node0 << indent << "Just entered OPT2 program (opt2v2lb)" << endl;
 
-  tbint_ = integral()->electron_repulsion();
-  intbuf = tbint_->buffer();
-
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
 
   nproc = msg_->n();
@@ -334,7 +331,10 @@ MBPT2::compute_hsos_v2_lb()
       ni_double = (-B + sqrt((double)(B*B - 4*A*(C-mem_alloc))))/(2*A);
       ni = (int) ni_double;
       if (ni > nocc) ni = nocc;
+      max = mem_alloc;
       }
+
+  distsize_t mem_remaining = mem_alloc - (distsize_t)max;
 
   // Set ni equal to the smallest batch size for any node
   msg_->min(ni);
@@ -470,6 +470,10 @@ MBPT2::compute_hsos_v2_lb()
 
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
+  // create the integrals object
+  integral()->set_storage((int)mem_remaining);
+  tbint_ = integral()->electron_repulsion();
+  intbuf = tbint_->buffer();
 
  /////////////////////////////////////
  //  Begin opt2 loops

@@ -310,11 +310,11 @@ ReplSCVector::element_op(const RefSCElementOp3& op,
 void
 ReplSCVector::print(const char *title, ostream& os, int prec)
 {
-  if (messagegrp()->me() != 0) return;
-
   int i;
   int lwidth;
   double max=this->maxabs();
+
+  if (messagegrp()->me() != 0) return;
 
   max=(max==0.0)?1.0:log10(max);
   if(max < 0.0) max=1.0;

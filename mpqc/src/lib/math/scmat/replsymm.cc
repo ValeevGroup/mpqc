@@ -649,12 +649,12 @@ ReplSymmSCMatrix::element_op(const RefSCElementOp3& op,
 void
 ReplSymmSCMatrix::print(const char *title, ostream& os, int prec)
 {
-  if (messagegrp()->me() != 0) return;
-
   int ii,jj,kk,nn;
   int i,j;
   int lwidth,width;
   double max=this->maxabs();
+
+  if (messagegrp()->me() != 0) return;
 
   max=(max==0.0)?1.0:log10(max);
   if(max < 0.0) max=1.0;

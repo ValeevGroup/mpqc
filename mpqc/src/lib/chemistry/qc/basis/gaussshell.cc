@@ -113,7 +113,7 @@ GaussianShell::GaussianShell(StateIn&s):
   s.get(puream);
   s.get(exp);
   coef = new double*[ncon];
-  norm = new double*[nfunc];
+  norm = new double*[ncon];
   for (int i=0; i<ncon; i++) {
       s.get(coef[i]);
       s.get(norm[i]);
@@ -131,7 +131,7 @@ GaussianShell::save_data_state(StateOut&s)
   s.put(exp,nprim);
   for (int i=0; i<ncon; i++) {
       s.put(coef[i],nprim);
-      s.put(norm[i],nfunc);
+      s.put(norm[i],ncartesian(i));
     }
 }
 
@@ -203,9 +203,12 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
           prefixkeyval->errortrace(cerr);
           exit(1);
 	}
-      if (havepure) puream[i] = pure;
+      if (l[i] <= 1) puream[i] = 0;
+      else if (havepure) {
+          puream[i] = pure;
+        }
       else {
-          puream[i] = prefixkeyval->intvalue("puream");
+          puream[i] = prefixkeyval->booleanvalue("puream");
           if (prefixkeyval->error() != KeyVal::OK) {
               puream[i] = 0;
               //fprintf(stderr,"GaussianShell: error reading puream: \"%s\"\n",
@@ -232,8 +235,13 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
 int GaussianShell::nfunction(int con) const
 {
   return puream[con]?
-           (l[con]<<1+1):
+           ((l[con]<<1)+1):
            (((l[con]+2)*(l[con]+1))>>1);
+}
+
+int GaussianShell::ncartesian(int con) const
+{
+  return ((l[con]+2)*(l[con]+1))>>1;
 }
 
 void GaussianShell::compute_nfunc()
@@ -315,11 +323,6 @@ GaussianShell::shell_normalization(int gc)
   int i,j;
   double result,c,ss;
 
-  if (puream[gc]) {
-    fprintf(stderr,"int_shell_normalization: cannot handle puream:\n");
-    exit(1);
-    }
-
   result = 0.0;
   for (i=0; i<nprim; i++) {
     for (j=0; j<nprim; j++) {
@@ -341,7 +344,7 @@ void GaussianShell::normalize_shell()
   // basis functions
   norm = new double* [ncontraction()];
   for (i=0; i<ncontraction(); i++) {
-      norm[i] = new double [nfunction(i)];
+      norm[i] = new double [ncartesian(i)];
     }
 
   for (gc=0; gc<ncon; gc++) {
@@ -388,7 +391,7 @@ void GaussianShell::print(FILE* fp) const
 
   for (i=0; i<ncon; i++) {
       fprintf(fp,"  norm[%d]:",i);
-      for (j=0; j<nfunction(i); j++) fprintf(fp," %f",norm[i][j]);
+      for (j=0; j<ncartesian(i); j++) fprintf(fp," %f",norm[i][j]);
       fprintf(fp,"\n");
     }
 }

@@ -104,6 +104,7 @@ class GaussianShell: public SavableState
     int max_am() const;
     char amchar(int con) const;
     int nfunction(int con) const;
+    int ncartesian(int con) const;
     int is_cartesian(int con) const;
     int is_pure(int con) const;
     // returns the con coef for unnormalized primitives

@@ -98,19 +98,13 @@ main(int argc, char *argv[])
   basename[nfilebase] = '\0';
   SCFormIO::set_default_basename(basename);
 
-  // get the message group.  the commandline take precedence, then what is
-  // in the input file.
-  //RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
-  RefMessageGrp grp;
+  // get the message group.  first try the commandline and environment
+  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
   
-  // if we are on a paragon then use a ParagonMessageGrp
-  // otherwise read the message group from the input file
+  // if we still don't have a group, try reading the message group
+  // from the input
   if (grp.null()) {
-#ifdef HAVE_NX_H
-    grp = new ParagonMessageGrp;
-#else
     grp = keyval->describedclassvalue("message");
-#endif
   }
 
   if (grp.nonnull())
@@ -191,8 +185,8 @@ main(int argc, char *argv[])
   int check = (int) options.retrieve("c");
   int limit = atoi(options.retrieve("l"));
   if (limit) {
-    Wavefunction *wfn = Wavefunction::castdown(mole);
-    if (wfn && wfn->basis_dimension()->n() > limit) {
+    RefWavefunction wfn(mole);
+    if (wfn.nonnull() && wfn->basis_dimension()->n() > limit) {
       cerr << node0 << endl << indent
            << "The limit of " << limit << " basis functions has been exceeded."
            << endl;

@@ -336,10 +336,10 @@ IntMolecularCoor::form_coordinates()
   variable_->update_values(molecule_);
 
   fflush(stdout);
-  cout << "IntMolecularCoor::form_variable_coordinates()\n"
-    << " expected " << nunique << " coordinates\n"
-    << " found " << variable_->n() << " variable coordinates\n"
-    << " found " << constant_->n() << " constant coordinates\n";
+  cout << "  IntMolecularCoor::form_variable_coordinates()\n"
+    << "    expected " << nunique << " coordinates\n"
+    << "    found " << variable_->n() << " variable coordinates\n"
+    << "    found " << constant_->n() << " constant coordinates\n";
   cout.flush();
 
 

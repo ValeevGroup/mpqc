@@ -77,7 +77,6 @@ MTMPIThread::run()
   long l;
   MemoryDataRequest req;
   MPI_Status status;
-  char junk;
   while (1) {
       MPI_Recv(req.data(),req.nbytes(),MPI_BYTE,MPI_ANY_SOURCE,
                req_tag_,mem_->comm_,&status);
@@ -112,7 +111,6 @@ MTMPIThread::run()
                    req.node(),tag_,mem_->comm_,&status);
           if (req.lock())
               mem_->release_local_lock(req.offset(), req.offset()+req.size());
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),rtag,mem_->comm_);
           break;
       case MemoryDataRequest::DoubleSum:
           MPI_Send(&tag_,1,MPI_INTEGER,req.node(),rtag,mem_->comm_);
@@ -133,7 +131,6 @@ MTMPIThread::run()
               doffset += dchunksize;
             }
           mem_->release_local_lock(req.offset(), req.offset()+req.size());
-          MPI_Send(&junk,1,MPI_BYTE,req.node(),rtag,mem_->comm_);
           break;
       default:
           mem_->print_lock_->lock();
@@ -277,10 +274,6 @@ MTMPIMemoryGrp::replace_data(void *data, int node, int offset, int size,
 
   // send the data
   MPI_Send(data,size,MPI_BYTE,node,rtag,comm_);
-
-  // wait for the ack message
-  char junk;
-  MPI_Recv(&junk,1,MPI_BYTE,node,tag,comm_,&status);
 }
 
 void
@@ -315,10 +308,6 @@ MTMPIMemoryGrp::sum_data(double *data, int node, int offset, int size)
       dcurrent += dchunksize;
       dremain -= dchunksize;
     }
-
-  // wait for the ack message
-  char junk;
-  MPI_Recv(&junk,1,MPI_BYTE,node,tag,comm_,&status);
 }
 
 void
@@ -349,6 +338,24 @@ MTMPIMemoryGrp::deactivate()
 
   // wait on the thread to shutdown
   th_->wait_threads();
+}
+
+void
+MTMPIMemoryGrp::sync()
+{
+  // This method for sync eliminates the need for an "all done"
+  // message after a memory operation completes.  However, a
+  // handshake at the beginning of memory transactions are needed
+  // so msg_->sync() complete before all remote memory operations
+  // have at least begun.  Otherwise, I could deactivate before
+  // all messages arrive.
+  msg_->sync();
+  if (active_) {
+      deactivate();
+      // At this point all memory operations are complete;
+      // start up for the next phase.
+      activate();
+    }
 }
 
 #endif

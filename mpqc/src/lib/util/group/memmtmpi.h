@@ -78,6 +78,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
 
     void activate();
     void deactivate();
+
+    void sync();
 };
 
 #endif

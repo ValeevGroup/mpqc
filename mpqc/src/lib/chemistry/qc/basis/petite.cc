@@ -1,3 +1,29 @@
+//
+// petite.cc --- implementation of the PetiteList class
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Edward Seidl <seidl@janed.com>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma implementation
@@ -229,9 +255,8 @@ PetiteList::init()
 RefSCDimension
 PetiteList::AO_basisdim()
 {
-  // return basis dimension if C1 symmetry
   if (c1_)
-    return gbs_->basisdim();
+    return SO_basisdim();
   
   RefSCDimension dim = new SCDimension(gbs_->nbasis(),1);
   dim->blocks()->set_subdim(0, gbs_->basisdim());
@@ -241,10 +266,6 @@ PetiteList::AO_basisdim()
 RefSCDimension
 PetiteList::SO_basisdim()
 {
-  // return basis dimension if C1 symmetry
-  if (c1_)
-    return gbs_->basisdim();
-
   int i, j, ii;
   
   // grab a reference to the basis set
@@ -260,10 +281,14 @@ PetiteList::SO_basisdim()
   int *nao = new int [ncomp];
   memset(nao,0,sizeof(int)*ncomp);
 
-  for (i=ii=0; i < nirrep_; i++) {
-    int je = ct.gamma(i).complex() ? 1 : ct.gamma(i).degeneracy();
-    for (j=0; j < je; j++,ii++)
-      nao[ii] = nbf_in_ir_[i];
+  if (c1_)
+    nao[0] = gbs.nbasis();
+  else {
+    for (i=ii=0; i < nirrep_; i++) {
+      int je = ct.gamma(i).complex() ? 1 : ct.gamma(i).degeneracy();
+      for (j=0; j < je; j++,ii++)
+        nao[ii] = nbf_in_ir_[i];
+    }
   }
 
   RefSCDimension ret = new SCDimension(gbs.nbasis(),ncomp,nao);
@@ -271,10 +296,9 @@ PetiteList::SO_basisdim()
 
   for (i=ii=0; i < nirrep_; i++) {
     RefMessageGrp grp = MessageGrp::get_default_messagegrp();
-    int me=grp->me();
     int np=grp->n();
     int *subblksize = new int[np];
-    int nbas=nbf_in_ir_[i];
+    int nbas=(c1_) ? gbs.nbasis() : nbf_in_ir_[i];
     for (j=0; j < np; j++) {
       if (j < nbas%np)
         subblksize[j] = nbas/np + 1;
@@ -406,3 +430,4 @@ PetiteList::r(int g)
 // Local Variables:
 // mode: c++
 // eval: (c-set-style "ETS")
+// End:

@@ -1,3 +1,29 @@
+//
+// aotoso.cc --- more symmetry stuff
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Edward Seidl <seidl@janed.com>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <util/misc/formio.h>
 
@@ -608,16 +634,17 @@ PetiteList::sotoao()
 RefSymmSCMatrix
 PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
 {
-  // if C1, then do nothing
-  if (c1_)
-    return a;
-  
+  // SO basis is always blocked, so first make sure a is blocked
   RefSymmSCMatrix aomatrix = BlockedSymmSCMatrix::castdown(a.pointer());
   if (aomatrix.null()) {
     aomatrix = gbs_->so_matrixkit()->symmmatrix(AO_basisdim());
     aomatrix->convert(a);
   }
 
+  // if C1, then do nothing
+  if (c1_)
+    return aomatrix.copy();
+  
   RefSymmSCMatrix somatrix(SO_basisdim(), gbs_->so_matrixkit());
   somatrix.assign(0.0);
   somatrix->accumulate_transform(aotoso().t(), aomatrix);
@@ -630,7 +657,7 @@ PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
 {
   // if C1, then do nothing
   if (c1_)
-    return somatrix;
+    return somatrix.copy();
   
   RefSymmSCMatrix aomatrix(AO_basisdim(), gbs_->so_matrixkit());
   aomatrix.assign(0.0);
@@ -669,7 +696,7 @@ PetiteList::evecs_to_AO_basis(const RefSCMatrix& soevecs)
 {
   // if C1, then do nothing
   if (c1_)
-    return soevecs;
+    return soevecs.copy();
   
   RefSCMatrix aoev = aotoso() * soevecs;
 
@@ -828,24 +855,26 @@ void
 PetiteList::symmetrize(const RefSymmSCMatrix& skel,
                        const RefSymmSCMatrix& sym)
 {
-  // if C1, then do nothing
-  if (c1_) {
-    sym->convert(skel);
-    return;
-  }
-  
-  int b,c;
-
   GaussianBasisSet& gbs = *gbs_.pointer();
-  CharacterTable ct = gbs.molecule()->point_group().char_table();
 
-#if 1
+  // SO basis is always blocked, so first make sure skel is blocked
   RefSymmSCMatrix bskel = BlockedSymmSCMatrix::castdown(skel.pointer());
   if (bskel.null()) {
     bskel = gbs.so_matrixkit()->symmmatrix(AO_basisdim());
     bskel->convert(skel);
   }
   
+  // if C1, then do nothing
+  if (c1_) {
+    sym.assign(bskel);
+    return;
+  }
+  
+  int b,c;
+
+  CharacterTable ct = gbs.molecule()->point_group().char_table();
+
+#if 1
   RefSCMatrix aoso = aotoso().t();
   BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aoso.pointer());
 
@@ -913,3 +942,4 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
 // Local Variables:
 // mode: c++
 // eval: (c-set-style "ETS")
+// End:

@@ -27,6 +27,7 @@ void bzero(void*,int);
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/force/libforce.h>
+#include <chemistry/qc/dmtscf/scf_dmt.h>
 
 #define ioff(i) ((i)*((i)+1)/2)
 #define IOFF(i,j) ((i)>(j)) ? ioff((i))+(j) : ioff((j))+(i)
@@ -47,7 +48,8 @@ int MPSCF::active = 0;
 void *
 MPSCF::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { OneBodyWavefunction::_castdown(cd) };
+  void* casts[1];
+  casts[0] = OneBodyWavefunction::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

@@ -135,9 +135,17 @@ SCF::compute_vector(double& eelec)
 
     tim_exit("evals");
 
+    if (debug_>0 && level_shift_ != 0.0) {
+      evals.print("level shifted scf eigenvalues");
+    }
+
     // now un-level shift eigenvalues
     level_shift->set_shift(-level_shift_);
     evals.element_op(level_shift);
+
+    if (debug_>0) {
+      evals.print("scf eigenvalues");
+    }
     
     if (reset_occ_)
       set_occupations(evals);
@@ -145,7 +153,7 @@ SCF::compute_vector(double& eelec)
     eff=0;
     
     if (debug_>1) {
-      oso_scf_vector_.print("orthogonalized AO basis scf vector");
+      oso_scf_vector_.print("orthogonalized SO basis scf vector");
     }
   }
       
@@ -158,14 +166,13 @@ SCF::compute_vector(double& eelec)
   BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
                                                  "SCF::compute_vector");
   
-  RefPetiteList pl = integral()->petite_list(basis());
   CharacterTable ct = molecule()->point_group()->char_table();
   
   int homo_ir=0, lumo_ir=0;
   int homo_mo = -1, lumo_mo = -1;
   double homo=-1e99, lumo=1e99;
-  for (i=0; i < pl->nirrep(); i++) {
-    int nf=pl->nfunction(i);
+  for (i=0; i < oso_dimension()->blocks()->nblock(); i++) {
+    int nf=oso_dimension()->blocks()->size(i);
     if (nf) {
       double *vals = new double[nf];
       evalsb->block(i)->convert(vals);

@@ -131,7 +131,7 @@ MBPT2::compute_hsos_v2_lb()
 
   ndocc = nsocc = 0;
   const double epsilon = 1.0e-4;
-  for (i=0; i<nbasis; i++) {
+  for (i=0; i<oso_dimension()->n(); i++) {
     if      (reference_->occupation(i) >= 2.0 - epsilon) ndocc++;
     else if (reference_->occupation(i) >= 1.0 - epsilon) nsocc++;
     }

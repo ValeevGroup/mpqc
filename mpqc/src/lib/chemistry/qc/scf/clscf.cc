@@ -269,11 +269,9 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
   BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
                                                  "CLSCF::set_occupations");
   
-  RefPetiteList pl = integral()->petite_list(basis());
-  
   double **vals = new double*[nirrep_];
   for (i=0; i < nirrep_; i++) {
-    int nf=pl->nfunction(i);
+    int nf=oso_dimension()->blocks()->size(i);
     if (nf) {
       vals[i] = new double[nf];
       evalsb->block(i)->convert(vals[i]);
@@ -293,7 +291,7 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
-      int nf=pl->nfunction(ir);
+      int nf=oso_dimension()->blocks()->size(ir);
       if (!nf)
         continue;
       for (j=0; j < nf; j++) {
@@ -497,6 +495,10 @@ CLSCF::effective_fock()
   // case this is called from someplace outside SCF::compute_vector()
   RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
   mofock.assign(0.0);
+
+  if (debug_ > 1) {
+    fock(0).print("CL Fock matrix in SO basis");
+  }
 
   // use eigenvectors if scf_vector_ is null
   if (oso_scf_vector_.null())

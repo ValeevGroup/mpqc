@@ -253,7 +253,7 @@ MBPT2::compute_cs_grad()
   dtol = 1.0e-10;
 
   nocc = 0;
-  for (i=0; i<nbasis; i++) {
+  for (i=0; i<oso_dimension()->n(); i++) {
     if (reference_->occupation(i) == 2.0) nocc++;
     }
 

@@ -84,14 +84,13 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   RefOneBodyWavefunction obwfn = keyval->describedclassvalue("obwfn");
   const double epsilon = 0.001;
   RefPetiteList pl;
-  if (obwfn.nonnull()) pl = obwfn->integral()->petite_list(obwfn->basis());
 
   n = keyval->count("docc");
   if (keyval->error() != KeyVal::OK || n != nirrep) {
       if (obwfn.nonnull()) {
           for (i=0; i<nirrep; i++) {
               docc[i] = 0;
-              for (int j=0; j<pl->nfunction(i); j++) {
+              for (int j=0; j<obwfn->oso_dimension()->blocks()->size(i); j++) {
                   if (obwfn->occupation(i,j) > 2.0-epsilon) docc[i]++;
                 }
             }
@@ -112,7 +111,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
       if (obwfn.nonnull()) {
           for (i=0; i<nirrep; i++) {
               socc[i] = 0;
-              for (int j=0; j<pl->nfunction(i); j++) {
+              for (int j=0; j<obwfn->oso_dimension()->blocks()->size(i); j++) {
                   if (obwfn->occupation(i,j) > 1.0-epsilon
                       && obwfn->occupation(i,j) < 1.0+epsilon) socc[i]++;
                 }
@@ -149,7 +148,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
                 while (nfzc) {
                     double smallest = 0.0;
                     int smallesti=0;
-                    for (i=0; i<obwfn->basis()->nbasis(); i++) {
+                    for (i=0; i<obwfn->oso_dimension()->n(); i++) {
                         if (smallest > eigvals(i)) {
                             smallest = eigvals(i);
                             smallesti = i;
@@ -158,7 +157,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
                     eigvals(smallesti) = 0.0;
                     int orbnum = 0;
                     for (i=0; i<nirrep; i++) {
-                        orbnum += pl->nfunction(i);
+                        orbnum += obwfn->oso_dimension()->blocks()->size(i);
                         if (smallesti < orbnum) {
                             frozen_docc[i]++;
                             break;

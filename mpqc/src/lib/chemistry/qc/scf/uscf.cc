@@ -496,12 +496,10 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
   BlockedDiagSCMatrix *bevalsb = BlockedDiagSCMatrix::require_castdown(evalsb,
                                 "UnrestrictedSCF::set_occupations");
   
-  RefPetiteList pl = integral()->petite_list(basis());
-  
   double **valsa = new double*[nirrep_];
   double **valsb = new double*[nirrep_];
   for (i=0; i < nirrep_; i++) {
-    int nf=pl->nfunction(i);
+    int nf=oso_dimension()->blocks()->size(i);
     if (nf) {
       valsa[i] = new double[nf];
       valsb[i] = new double[nf];
@@ -524,7 +522,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
-      int nf=pl->nfunction(ir);
+      int nf=oso_dimension()->blocks()->size(ir);
       if (!nf)
         continue;
       for (j=0; j < nf; j++) {
@@ -548,7 +546,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
-      int nf=pl->nfunction(ir);
+      int nf=oso_dimension()->blocks()->size(ir);
       if (!nf)
         continue;
       for (j=0; j < nf; j++) {
@@ -1102,9 +1100,9 @@ UnrestrictedSCF::lagrangian()
       continue;
 
     int i;
-    for (i=nalpha_[ir]; i < pl->nfunction(ir); i++)
+    for (i=nalpha_[ir]; i < eair.dim().n(); i++)
       eair.set_element(i,0.0);
-    for (i=nbeta_[ir]; i < pl->nfunction(ir); i++)
+    for (i=nbeta_[ir]; i < ebir.dim().n(); i++)
       ebir.set_element(i,0.0);
   }
   

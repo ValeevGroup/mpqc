@@ -481,9 +481,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   RefSCMatrix vector = so_to_orthog_so().t() * oso_vector;
   oso_vector = 0;
 
-  if (debug_ > 1) oso_vector.print("SO vector");
-  
-  RefPetiteList pl = integral()->petite_list(basis());
+  if (debug_ > 1) vector.print("SO vector");
   
   BlockedSCMatrix *bvec = BlockedSCMatrix::require_castdown(
     vector, "SCF::so_density: blocked vector");
@@ -491,18 +489,19 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   BlockedSymmSCMatrix *bd = BlockedSymmSCMatrix::require_castdown(
     d, "SCF::so_density: blocked density");
   
-  for (int ir=0; ir < pl->nirrep(); ir++) {
+  for (int ir=0; ir < oso_dimension()->blocks()->nblock(); ir++) {
     RefSCMatrix vir = bvec->block(ir);
     RefSymmSCMatrix dir = bd->block(ir);
     
     if (vir.null() || vir.ncol()==0)
       continue;
     
-    int nbasis = vir.ncol();
+    int n_orthoSO = oso_dimension()->blocks()->size(ir);
+    int n_SO = so_dimension()->blocks()->size(ir);
     
     // figure out which columns of the scf vector we'll need
     int col0 = -1, coln = -1;
-    for (i=0; i < nbasis; i++) {
+    for (i=0; i < n_orthoSO; i++) {
       double occi;
       if (!uhf)
         occi = occupation(ir, i);
@@ -525,7 +524,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
       continue;
 
     if (coln == -1)
-      coln = nbasis-1;
+      coln = n_orthoSO-1;
     
     if (local_ || local_dens_) {
       RefSymmSCMatrix ldir = dir;
@@ -537,14 +536,14 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
         RefSCMatrixKit rk = new ReplSCMatrixKit;
         RefSCMatrix lvir = rk->matrix(vir.rowdim(), vir.coldim());
         lvir->convert(vir);
-        occbits = lvir->get_subblock(0, nbasis-1, col0, coln);
+        occbits = lvir->get_subblock(0, n_SO-1, col0, coln);
         lvir = 0;
 
         ldir = rk->symmmatrix(dir.dim());
         ldir->convert(dir);
 
       } else {
-        occbits = vir->get_subblock(0, nbasis-1, col0, coln);
+        occbits = vir->get_subblock(0, n_SO-1, col0, coln);
       }
     
       double **c;
@@ -565,7 +564,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
         abort();
 
       int ij=0;
-      for (i=0; i < nbasis; i++) {
+      for (i=0; i < n_SO; i++) {
         for (j=0; j <= i; j++, ij++) {
           if (ij%nproc != me)
             continue;
@@ -581,7 +580,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
       }
 
       if (nproc > 1)
-        scf_grp_->sum(dens, i_offset(nbasis));
+        scf_grp_->sum(dens, i_offset(n_SO));
 
       if (!local_) {
         dir->convert(ldir);
@@ -597,8 +596,28 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
     }
   }
 
-  if (debug_ > 1) {
-    d.print("density");
+  if (debug_ > 0) {
+    cout << node0 << indent
+         << "Nelectron = " << 2.0 * (d * overlap()).trace() << endl;
+  }
+
+  if (debug_ > 1) d.print("density");
+
+  if (debug_ > 2) {
+    // double check the density with this simpler, slower way to compute
+    // the density matrix
+    RefSymmSCMatrix occ(oso_dimension(), basis_matrixkit());
+    occ.assign(0.0);
+    for (i=0; i<oso_dimension()->n(); i++) {
+      occ(i,i) = occupation(i);
+    }
+    occ.scale(0.5);
+    RefSymmSCMatrix d2(so_dimension(), basis_matrixkit());
+    d2.assign(0.0);
+    d2.accumulate_transform(vector, occ);
+    d2.print("d2 density");
+    cout << node0 << indent
+         << "d2 Nelectron = " << 2.0 * (d2 * overlap()).trace() << endl;
   }
 }
 

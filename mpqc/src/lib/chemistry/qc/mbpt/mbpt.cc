@@ -332,7 +332,7 @@ MBPT2::obsolete()
 int
 MBPT2::gradient_implemented() const
 {
-  int nb = basis()->nbasis();
+  int nb = reference_->oso_dimension()->n();
   int n = 0;
 
   for (int i=0; i<nb; i++) {
@@ -406,7 +406,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       */
       RefSymmSCMatrix fock_eff_mo1 = fock_c_mo1.clone();
       fock_eff_mo1.assign(fock_c_mo1);
-      for (i=0; i<nbasis; i++) {
+      for (i=0; i<oso_dimension()->n(); i++) {
           double occi = reference_->occupation(i);
           for (j=0; j<=i; j++) {
               double occj = reference_->occupation(j);
@@ -458,7 +458,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
     }
   // fill in the occupations
   occs = matrixkit()->diagmatrix(vals.dim());
-  for (i=0; i<nbasis; i++) {
+  for (i=0; i<oso_dimension()->n(); i++) {
       occs(i) = reference_->occupation(i);
     }
   // allocate storage for symmetry information
@@ -490,13 +490,12 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       vals = newvals;
 
       // compute orbital symmetry information
-      RefPetiteList pl = reference_->integral()->petite_list(basis());
       CharacterTable ct = molecule()->point_group()->char_table();
       int orbnum = 0;
       int *tmp_irrep = new int[n];
       int *tmp_num = new int[n];
-      for (i=0; i<pl->nirrep(); i++) {
-          for (j=0; j<pl->nfunction(i); j++, orbnum++) {
+      for (i=0; i<oso_dimension()->blocks()->nblock(); i++) {
+          for (j=0; j<oso_dimension()->blocks()->size(i); j++, orbnum++) {
               tmp_irrep[orbnum] = i;
               tmp_num[orbnum] = j;
             }
@@ -544,9 +543,14 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
 void
 MBPT2::init_variables()
 {
-  nbasis = basis()->nbasis();
+  nbasis = so_dimension()->n();
+  int noso = oso_dimension()->n();
+  if (nbasis != noso) {
+      cout << "MBPT2: Noso != Nbasis: MBPT2 not checked for this case" << endl;
+      abort();
+    }
   nocc = nvir = nsocc = 0;
-  for (int i=0; i<nbasis; i++) {
+  for (int i=0; i<noso; i++) {
     if (reference_->occupation(i) == 2.0) nocc++;
     else if (reference_->occupation(i) == 1.0) nsocc++;
     else nvir++;

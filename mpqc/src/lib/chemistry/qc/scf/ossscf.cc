@@ -316,11 +316,9 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
   BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
                                                  "OSSSCF::set_occupations");
   
-  RefPetiteList pl = integral()->petite_list(basis());
-  
   double **vals = new double*[nirrep_];
   for (i=0; i < nirrep_; i++) {
-    int nf=pl->nfunction(i);
+    int nf=oso_dimension()->blocks()->size(i);
     if (nf) {
       vals[i] = new double[nf];
       evalsb->block(i)->convert(vals[i]);
@@ -340,7 +338,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
-      int nf=pl->nfunction(ir);
+      int nf=oso_dimension()->blocks()->size(ir);
       if (!nf)
         continue;
       for (j=0; j < nf; j++) {
@@ -363,7 +361,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
     double lowest=999999999;
 
     for (int ir=0; ir < nirrep_; ir++) {
-      int nf=pl->nfunction(ir);
+      int nf=oso_dimension()->blocks()->size(ir);
       if (!nf)
         continue;
       for (j=0; j < nf; j++) {

@@ -274,41 +274,42 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
       "OneBodyWavefunction::projected_eigenvalues: val"
       );
 
-  RefPetiteList pl = integral()->petite_list(basis());
-  RefPetiteList plo = integral()->petite_list(owfn->basis());
+  RefSCDimension oso = oso_dimension();
+  RefSCDimension ooso = owfn->oso_dimension();
 
   for (int irrep=0; irrep < valp->nblocks(); irrep++) {
     // find out how many occupied orbitals there should be
+
+    int nf = oso->blocks()->size(irrep);
+    int nfo = ooso->blocks()->size(irrep);
+
     int nocc = 0;
     if (owfn->spin_unrestricted()) {
       if (alp)
         while (owfn->alpha_occupation(irrep,nocc) &&
-               nocc < plo->nfunction(irrep)) nocc++;
+               nocc < nfo) nocc++;
       else
         while (owfn->beta_occupation(irrep,nocc) &&
-               nocc < plo->nfunction(irrep)) nocc++;
+               nocc < nfo) nocc++;
     } else
       while (owfn->occupation(irrep,nocc) &&
-             nocc < plo->nfunction(irrep)) nocc++;
-  
-    int nf = pl->nfunction(irrep);
-    int nfo = plo->nfunction(irrep);
+             nocc < nfo) nocc++;
 
     if (!nf)
       continue;
     
-    double *vals = new double[pl->nfunction(irrep)];
+    double *vals = new double[nf];
     valp->block(irrep)->convert(vals);
 
     int i;
     if (nfo) {
-      double *ovals = new double[plo->nfunction(irrep)];
+      double *ovals = new double[nfo];
       ovalp->block(irrep)->convert(ovals);
       for (i=0; i < nocc; i++) vals[i] = ovals[i];
       delete[] ovals;
     }
     
-    for (i=nocc; i < pl->nfunction(irrep); i++)
+    for (i=nocc; i < nf; i++)
       vals[i] = 99.0;
 
     valp->block(irrep)->assign(vals);
@@ -358,7 +359,16 @@ OneBodyWavefunction::hcore_guess(RefDiagSCMatrix &val)
     hcore_oso->assign(0.0);
     hcore_oso->accumulate_transform(so_to_orthog_so(), core_hamiltonian());
 
+    if (debug_ > 1) {
+      hcore_oso.print("hcore in ortho SO basis");
+    }
+
     hcore_oso.diagonalize(val,vec);
+
+    if (debug_ > 1) {
+      val.print("hcore eigenvalues in ortho SO basis");
+      vec.print("hcore eigenvectors in ortho SO basis");
+    }
   }
 
   return vec;
@@ -389,20 +399,17 @@ OneBodyWavefunction::print(ostream&o) const
 void
 OneBodyWavefunction::init_sym_info()
 {
-  RefPetiteList pl = integral()->petite_list();
-
-  nirrep_ = pl->nirrep();
+  RefSCDimension d = oso_dimension();
+  nirrep_ = d->blocks()->nblock();
   nvecperirrep_ = new int[nirrep_];
-  occupations_ = new double[basis()->nbasis()];
-  alpha_occupations_ = new double[basis()->nbasis()];
-  beta_occupations_ = new double[basis()->nbasis()];
+  occupations_ = new double[d->n()];
+  alpha_occupations_ = new double[d->n()];
+  beta_occupations_ = new double[d->n()];
 
   int ij=0;
   for (int i=0; i < nirrep_; i++) {
-    nvecperirrep_[i] = pl->nfunction(i);
+    nvecperirrep_[i] = d->blocks()->size(i);
 
-    // this is wrong...we should reorder the occupations so that this
-    // vector represents the AO occupations...one day
     for (int j=0; j < nvecperirrep_[i]; j++, ij++) {
       occupations_[ij] = occupation(i,j);
       alpha_occupations_[ij] = alpha_occupation(i,j);
@@ -523,15 +530,15 @@ OneBodyWavefunction::beta_eigenvalues()
 int
 OneBodyWavefunction::nelectron()
 {
-  int nbasis = basis()->nbasis();
+  int noso = oso_dimension()->n();
   double tocc = 0.0;
   if (!spin_polarized()) {
-    for (int i=0; i<nbasis; i++) {
+    for (int i=0; i<noso; i++) {
       tocc += occupation(i);
     }
   }
   else {
-    for (int i=0; i<nbasis; i++) {
+    for (int i=0; i<noso; i++) {
       tocc += alpha_occupation(i) + beta_occupation(i);
     }
   }

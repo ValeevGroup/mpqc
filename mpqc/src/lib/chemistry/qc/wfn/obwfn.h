@@ -89,7 +89,8 @@ class OneBodyWavefunction: public Wavefunction {
     /** Returns the occupation.  The irreducible representation and the
         vector number within that representation are given as arguments. */
     virtual double occupation(int irrep, int vectornum) = 0;
-    /** Returns the occupation. The vector number is given as an argument. */
+    /** Returns the occupation. The vector number in the MO basis is given
+        as an argument. */
     double occupation(int vectornum);
 
     /// Return 1 if the alpha orbitals are not equal to the beta orbitals.
@@ -101,11 +102,11 @@ class OneBodyWavefunction: public Wavefunction {
     /** Returns the beta occupation.  The irreducible representation and the
         vector number within that representation are given as arguments. */
     virtual double beta_occupation(int irrep, int vectornum);
-    /** Returns the alpha occupation. The vector number is given as an
-        argument. */
+    /** Returns the alpha occupation. The vector number in the MO basis is
+        given as an argument. */
     double alpha_occupation(int vectornum);
-    /** Returns the beta occupation. The vector number is given as an
-        argument. */
+    /** Returns the beta occupation. The vector number in the MO basis is
+        given as an argument. */
     double beta_occupation(int vectornum);
     
     // Return alpha and beta electron densities

@@ -155,6 +155,7 @@ BABELINC=@BABEL_PREFIX@/include
 ifeq ($(ENABLECCA),yes)
   include @CCAFE_CLASSIC_CCA_CONFIG@
 endif
+CCAFE_LIB=@CCAFE_LIBDIR@
 
 # cca-chem libs
 CCA_CHEM_LIB=@CCA_CHEM_LIB@

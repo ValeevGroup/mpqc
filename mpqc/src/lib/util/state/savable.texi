@@ -2,6 +2,7 @@
 @node The SavableState Class, , The State Library, The State Library
 @section The SavableState Class
 @clindex SavableState
+@c texi2html: do not split
 
 Classes gain access to @code{SavableState}'s save and restore mechanisms
 through inheritance.  Virtual inheritance is recommended, since other classes

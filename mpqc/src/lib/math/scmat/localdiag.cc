@@ -231,8 +231,8 @@ LocalDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
       cerr << indent
            << "LocalDiagSCMatrix::local_blocks: not valid for local matrices"
            << endl;
+      abort();
     }
-  abort();
   RefSCMatrixSubblockIter iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;

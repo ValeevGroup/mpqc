@@ -60,6 +60,7 @@ install:: mpqc
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 
 install::
+	/bin/rm -f $(bindir)/chkmpqcout
 	sed "s+exec perl+exec perl -I$(prefix)/lib/perl+" \
 		< $(SRCDIR)/validate/checkout.pl \
 		> $(bindir)/chkmpqcout

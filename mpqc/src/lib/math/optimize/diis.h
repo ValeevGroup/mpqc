@@ -6,8 +6,6 @@
 #pragma interface
 #endif
 
-#include <stdio.h>
-#include <math/array/math_lib.h>
 #include <math/optimize/scextrap.h>
 
 class DIIS: public SelfConsistentExtrapolation {
@@ -22,9 +20,9 @@ class DIIS: public SelfConsistentExtrapolation {
     int iter;
     double damping_factor;
 
-    double_vector_t btemp;
-    double_matrix_t bold;
-    double_matrix_t bmat;
+    double * btemp;
+    double ** bold;
+    double ** bmat;
 
     RefSCExtrapData dtemp_data;
     RefSCExtrapError dtemp_error;
@@ -45,6 +43,8 @@ class DIIS: public SelfConsistentExtrapolation {
     
     int extrapolate(const RefSCExtrapData& data,
                     const RefSCExtrapError& error);
+
+    void reinitialize();
 };
 
 #endif

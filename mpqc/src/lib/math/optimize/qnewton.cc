@@ -3,12 +3,12 @@
 #pragma implementation
 #endif
 
-extern "C" {
-#  include <math.h>
-}
+#include <math.h>
 
 #include <math/optimize/qnewton.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/formio.h>
+#include <iomanip.h>
 
 #define CLASSNAME QNewtonOpt
 #define PARENTS public Optimize
@@ -101,6 +101,8 @@ QNewtonOpt::init()
 int
 QNewtonOpt::update()
 {
+  int me=matrixkit()->messagegrp()->me();
+  
   // these are good candidates to be input options
   const double maxabs_gradient_to_desired_accuracy = 0.05;
   const double maxabs_gradient_to_next_desired_accuracy = 0.001;
@@ -138,20 +140,28 @@ QNewtonOpt::update()
           function()->actual_gradient_accuracy()
           <= accuracy_*roundoff_error_factor);
 
-      if (!accurate_enough) {
-          printf("NOTICE: func->actual_gradient_accuracy() > accuracy_:\n");
-          printf("  func->actual_gradient_accuracy() = %15.8f\n",
-                 function()->actual_gradient_accuracy());
-          printf("  accuracy_ = %15.8f\n", accuracy_);
-          fflush(stdout);
-        }
+      if (!accurate_enough && me==0) {
+        cout.unsetf(ios::fixed);
+        cout << indent
+             << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
+             << indent
+             << "        function()->actual_gradient_accuracy() = "
+             << setw(15) << setprecision(8)
+             << function()->actual_gradient_accuracy() << endl << indent
+             << "                                     accuracy_ = "
+             << setw(15) << setprecision(8) << accuracy_ << endl;
+      }
     } while(!accurate_enough);
 
-  if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient) {
-      printf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e\n",
-             old_maxabs_gradient, maxabs_gradient);
-      fflush(stdout);
-    }
+  if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient
+      && me==0) {
+    cout.unsetf(ios::fixed);
+    cout << indent
+         << "NOTICE: maxabs_gradient increased from "
+         << setw(8) << setprecision(4) << old_maxabs_gradient
+         << " to " << setw(8) << setprecision(4) << maxabs_gradient
+         << endl;
+  }
 
   // make the next gradient computed more accurate, since it will
   // be smaller
@@ -177,12 +187,21 @@ QNewtonOpt::update()
   double maxstepsize=0.6;
   if (tot > maxstepsize) {
     double scal = maxstepsize/tot;
-    printf("\n stepsize of %f is too big, scaling by %f\n",tot,scal);
+    if (me==0) {
+      cout.setf(ios::fixed);
+      cout << endl << indent << "stepsize of "
+           << setw(8) << setprecision(5) << tot << " is too big, scaling by "
+           << setw(8) << setprecision(5) << scal << endl;
+    }
     xdisp.scale(scal);
     tot *= scal;
   }
-  printf("\n taking step of size %f\n",tot);
-  fflush(stdout);
+
+  if (me==0) {
+    cout.setf(ios::fixed);
+    cout << endl << indent << "taking step of size "
+         << setw(8) << setprecision(5) << tot << endl;
+  }
   
   RefSCVector xnext = xcurrent + xdisp;
   function()->set_x(xnext);

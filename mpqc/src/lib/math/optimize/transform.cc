@@ -4,6 +4,7 @@
 #endif
 
 #include <math/optimize/transform.h>
+#include <util/misc/formio.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -24,7 +25,9 @@ void
 NonlinearTransform::transform_hessian(const RefSymmSCMatrix& h)
 {
   if (h.null()) return;
-  printf("WARNING: NonlinearTransform::transform_hessian: using linear transform\n");
+  cout << indent
+       << "WARNING: NonlinearTransform::transform_hessian: "
+       << "using linear transform\n";
   RefSymmSCMatrix newh = h->clone();
   newh.assign(0.0);
   newh->accumulate_transform(linear_transform_.pointer(), h.pointer());

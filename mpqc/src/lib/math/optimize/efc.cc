@@ -3,13 +3,14 @@
 #pragma implementation
 #endif
 
-extern "C" {
-#  include <math.h>
-}
+#include <math.h>
 
 #include <math/optimize/efc.h>
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
+
+#include <iomanip.h>
 
 #define CLASSNAME EFCOpt
 #define PARENTS public Optimize
@@ -47,9 +48,10 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
   modef = keyval->booleanvalue("mode_following");
   if (keyval->error() != KeyVal::OK) modef = 0;
 
-  if (tstate) {
-    printf("\n  performing a transition state search\n\n");
-  }
+  int me=matrixkit()->messagegrp()->me();
+
+  if (tstate && me==0)
+    cout << endl << indent << "performing a transition state search\n\n";
   
   RefSymmSCMatrix hessian(dimension(),matrixkit());
   // get a guess hessian from function
@@ -115,6 +117,8 @@ EFCOpt::init()
 int
 EFCOpt::update()
 {
+  int me=matrixkit()->messagegrp()->me();
+
   int i,j;
   
   // these are good candidates to be input options
@@ -153,19 +157,27 @@ EFCOpt::update()
     accurate_enough = (function()->actual_gradient_accuracy() <=
                        accuracy_*roundoff_error_factor);
 
-    if (!accurate_enough) {
-      printf("NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n");
-      printf("  function()->actual_gradient_accuracy() = %15.8f\n",
-             function()->actual_gradient_accuracy());
-      printf("  accuracy_ = %15.8f\n", accuracy_);
-      fflush(stdout);
+    if (!accurate_enough && me==0) {
+      cout.unsetf(ios::fixed);
+      cout << indent
+           << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
+           << indent
+           << "        function()->actual_gradient_accuracy() = "
+           << setw(15) << setprecision(8)
+           << function()->actual_gradient_accuracy() << endl
+           << "        accuracy_ = "
+           << setw(15) << setprecision(8) << accuracy_ << endl;
     }
   } while(!accurate_enough);
 
-  if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient) {
-    printf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e\n",
-           old_maxabs_gradient, maxabs_gradient);
-    fflush(stdout);
+  if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient
+      && me==0) {
+    cout.unsetf(ios::fixed);
+    cout << indent
+         << "NOTICE: maxabs_gradient increased from "
+         << setw(8) << setprecision(4) << old_maxabs_gradient
+         << " to " << setw(8) << setprecision(4) << maxabs_gradient
+         << endl;
   }
 
   // make the next gradient computed more accurate, since it will
@@ -240,7 +252,8 @@ EFCOpt::update()
       for (i=0; i < ncoord; i++)
         last_mode_(i) = evecs(i,mode);
 
-      printf("\n following mode %d\n",mode);
+      if (me==0)
+        cout << endl << indent << "\n following mode " << mode << endl;
     }
     
     double bk = evals(mode);
@@ -260,8 +273,13 @@ EFCOpt::update()
       }
     } while(fabs(nlambda-lambda_n) > 1.0e-8);
 
-    printf("lambda_p = %g\n",lambda_p);
-    printf("lambda_n = %g\n",lambda_n);
+    if (me==0) {
+      cout.unsetf(ios::fixed);
+      cout << indent << "lambda_p = " << setw(8) << setprecision(5)
+           << lambda_p << endl;
+      cout << indent << "lambda_n = " << setw(8) << setprecision(5)
+           << lambda_n << endl;
+    }
 
     // form Xk
     double Fkobkl = F(mode)/(evals(mode)-lambda_p);
@@ -291,7 +309,12 @@ EFCOpt::update()
         nlambda += Fi*Fi / (lambda - evals.get_element(i));
       }
     } while(fabs(nlambda-lambda) > 1.0e-8);
-    printf("lambda = %g\n",lambda);
+
+    if (me==0) {
+      cout.unsetf(ios::fixed);
+      cout << indent << "lambda = " << setw(8) << setprecision(5)
+           << lambda << endl;
+    }
 
   // form displacement x = sum -Fi*Vi/(bi-lam)
     for (i=0; i < F.n(); i++) {
@@ -307,12 +330,21 @@ EFCOpt::update()
   double maxstepsize=0.6;
   if (tot > maxstepsize) {
     double scal = maxstepsize/tot;
-    printf("\n stepsize of %f is too big, scaling by %f\n",tot,scal);
+    if (me==0) {
+      cout.setf(ios::fixed);
+      cout << endl << indent << "stepsize of "
+           << setw(8) << setprecision(5) << tot << " is too big, scaling by "
+           << setw(8) << setprecision(5) << scal << endl;
+    }
     xdisp.scale(scal);
     tot *= scal;
   }
-  printf("\n taking step of size %f\n",tot);
-  fflush(stdout);
+
+  if (me==0) {
+    cout.setf(ios::fixed);
+    cout << endl << indent << "taking step of size "
+         << setw(8) << setprecision(5) << tot << endl;
+  }
                     
   xdisp.print("xdisp");
 

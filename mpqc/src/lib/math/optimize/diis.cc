@@ -3,6 +3,8 @@
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
+#include <math/scmat/cmatrix.h>
 #include <math/optimize/diis.h>
 
 #define CLASSNAME DIIS
@@ -25,18 +27,28 @@ DIIS::init()
 
   iter = 0;
 
-  if ((allocbn_double_matrix(&bmat,"n1 n2",dim,dim) != 0) ||
-      (allocbn_double_matrix(&bold,"n1 n2",ndiis,ndiis) != 0) ||
-      (allocbn_double_vector(&btemp,"n",dim) != 0)) {
-    fprintf(stderr,"DIIS::init:  alloc of bmat, bold, and btemp failed\n");
+  btemp = new double[dim];
+
+  bmat = new double*[dim];
+  bold = new double*[ndiis];
+  
+  if (!btemp || !bmat || !bold) {
+    cerr << "DIIS::init:  alloc of bmat, bold, and btemp failed\n";
     abort();
   }
-
+  
+  for (int i=0; i < dim; i++) {
+    bmat[i] = new double[dim];
+    if (i < dim-1)
+      bold[i] = new double[ndiis];
+  }
+  
   diism_data = new RefSCExtrapData[ndiis];
   diism_error = new RefSCExtrapError[ndiis];
 }
 
-DIIS::DIIS()
+DIIS::DIIS() :
+  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
   ndiis = 5;
   start = 1;
@@ -46,7 +58,8 @@ DIIS::DIIS()
 }
 
 DIIS::DIIS(StateIn& s) :
-  SelfConsistentExtrapolation(s)
+  SelfConsistentExtrapolation(s),
+  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
   int i, j;
 
@@ -55,25 +68,15 @@ DIIS::DIIS(StateIn& s) :
   s.get(iter);
   s.get(damping_factor);
 
-  // hack for old sgen stuff...this will go away soon
-  s.get(btemp.n);
-  allocbn_double_vector(&btemp,"n",btemp.n);
-  for (i=0; i < btemp.n; i++)
-    s.get(btemp.d[i]);
+  s.get(btemp);
 
-  s.get(bold.n1);
-  s.get(bold.n2);
-  allocbn_double_matrix(&bold,"n1 n2", bold.n1, bold.n2);
-  for (i=0; i < bold.n1; i++)
-    for (j=0; j < bold.n2; j++)
-      s.get(bold.d[i][j]);
+  bold = new double*[ndiis];
+  for (i=0; i < ndiis; i++)
+    s.get(bold[i]);
   
-  s.get(bmat.n1);
-  s.get(bmat.n2);
-  allocbn_double_matrix(&bmat,"n1 n2", bmat.n1, bmat.n2);
-  for (i=0; i < bmat.n1; i++)
-    for (j=0; j < bmat.n2; j++)
-      s.get(bmat.d[i][j]);
+  bmat = new double*[ndiis+1];
+  for (i=0; i <= ndiis; i++)
+    s.get(bmat[i]);
   
   diism_data = new RefSCExtrapData[ndiis];
   diism_error = new RefSCExtrapError[ndiis];
@@ -84,7 +87,8 @@ DIIS::DIIS(StateIn& s) :
 }
 
 DIIS::DIIS(const RefKeyVal& keyval):
-  SelfConsistentExtrapolation(keyval)
+  SelfConsistentExtrapolation(keyval),
+  btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
   ndiis = keyval->intvalue("n");
   if (keyval->error() != KeyVal::OK) ndiis = 5;
@@ -96,7 +100,7 @@ DIIS::DIIS(const RefKeyVal& keyval):
   if (keyval->error() != KeyVal::OK) damping_factor = 0;
   
   if (ndiis <= 0) {
-      fprintf(stderr, "DIIS::DIIS(const RefKeyVal& keyval): got ndiis = 0\n");
+      cerr <<  "DIIS::DIIS(const RefKeyVal& keyval): got ndiis = 0\n";
       abort();
     }
 
@@ -105,12 +109,38 @@ DIIS::DIIS(const RefKeyVal& keyval):
 
 DIIS::~DIIS()
 {
-  free_double_matrix(&bmat);
-  free_double_matrix(&bold);
-  free_double_vector(&btemp);
+  if (btemp) {
+    delete[] btemp;
+    btemp=0;
+  }
 
-  delete[] diism_data;
-  delete[] diism_error;
+  if (bold) {
+    for (int i=0; i < ndiis; i++) {
+      if (bold[i])
+        delete[] bold[i];
+    }
+    delete[] bold;
+    bold=0;
+  }
+    
+  if (bmat) {
+    for (int i=0; i <= ndiis; i++) {
+      if (bmat[i])
+        delete[] bmat[i];
+    }
+    delete[] bmat;
+    bmat=0;
+  }
+    
+  if (diism_data) {
+    delete[] diism_data;
+    diism_data=0;
+  }
+
+  if (diism_error) {
+    delete[] diism_error;
+    diism_error=0;
+  }
 }
 
 void
@@ -124,27 +154,24 @@ DIIS::save_data_state(StateOut& s)
   s.put(iter);
   s.put(damping_factor);
 
-  // hack for old sgen stuff...this will go away soon
-  s.put(btemp.n);
-  for (i=0; i < btemp.n; i++)
-    s.put(btemp.d[i]);
+  s.put(btemp, ndiis+1);
 
-  s.put(bold.n1);
-  s.put(bold.n2);
-  for (i=0; i < bold.n1; i++)
-    for (j=0; j < bold.n2; j++)
-      s.put(bold.d[i][j]);
+  for (i=0; i < ndiis; i++)
+    s.put(bold[i], ndiis);
   
-  s.put(bmat.n1);
-  s.put(bmat.n2);
-  for (i=0; i < bmat.n1; i++)
-    for (j=0; j < bmat.n2; j++)
-      s.put(bmat.d[i][j]);
+  for (i=0; i <= ndiis; i++)
+    s.put(bmat[i], ndiis+1);
   
   for (i=0; i < ndiis; i++) {
     diism_data[i].save_state(s);
     diism_error[i].save_state(s);
   }
+}
+
+void
+DIIS::reinitialize()
+{
+  iter=0;
 }
 
 int
@@ -186,32 +213,32 @@ DIIS::extrapolate(const RefSCExtrapData& data,
   if (iter > ndiis) {
       for (i=0; i < last ; i++) {
           for (j=0; j <= i ; j++) {
-              bold.d[i][j]=bold.d[j][i]=bold.d[i+1][j+1];
+              bold[i][j]=bold[j][i]=bold[i+1][j+1];
             }
         }
     }
 
   // and set the current rows of bold
   for (i=0; i <= last ; i++)
-      bold.d[i][last]=bold.d[last][i] = 
+      bold[i][last]=bold[last][i] = 
                       diism_error[i]->scalar_product(diism_error[last]);
 
-  bmat.d[0][0] = 0.0;
-  btemp.d[0] = -1.0;
+  bmat[0][0] = 0.0;
+  btemp[0] = -1.0;
 
-  if (bold.d[0][0] > 1.e-10) {
-      norm = 1.0/bold.d[0][0];
+  if (bold[0][0] > 1.e-10) {
+      norm = 1.0/bold[0][0];
     }
   else {
       norm = 1.0;
     }
 
   for (i=1; i <= last+1 ; i++) {
-      bmat.d[i][0]=bmat.d[0][i] = -1.0;
-      btemp.d[i] = 0.0;
+      bmat[i][0]=bmat[0][i] = -1.0;
+      btemp[i] = 0.0;
       for (j=1; j <= i ; j++) {
-          bmat.d[i][j]=bmat.d[j][i] = bold.d[i-1][j-1]*norm;
-          if (i==j) bmat.d[i][j] *= scale;
+          bmat[i][j]=bmat[j][i] = bold[i-1][j-1]*norm;
+          if (i==j) bmat[i][j] *= scale;
         }
     }
 
@@ -219,7 +246,7 @@ DIIS::extrapolate(const RefSCExtrapData& data,
   // and form the new fock matrix F= sum(i=1,n) ci*Fi
 
   if (iter-1) {
-      determ = math_lin(&bmat,&btemp,col,1);
+      determ = cmat_solve_lin(bmat,0,btemp,col);
 
       // test for poorly conditioned equations */
       while (fabs(determ) < 1.0e-19 && trial < last) {
@@ -227,30 +254,30 @@ DIIS::extrapolate(const RefSCExtrapData& data,
           trial++;
           col--;
 
-          bmat.d[0][0] = 0.0;
-          btemp.d[0] = -1.0;
+          bmat[0][0] = 0.0;
+          btemp[0] = -1.0;
 
-          if (bold.d[trial][trial] > 1.e-10) {
-              norm=1.0/bold.d[trial][trial];
+          if (bold[trial][trial] > 1.e-10) {
+              norm=1.0/bold[trial][trial];
             }
           else {
               norm = 1.0;
             }
 
           for (i=1; i <= ndiis-trial ; i++) {
-              bmat.d[i][0]=bmat.d[0][i] = -1.0;
+              bmat[i][0]=bmat[0][i] = -1.0;
               for (j=1; j <= i ; j++) {
-                  bmat.d[i][j]=bmat.d[j][i]=bold.d[i+trial-1][j+trial-1]*norm;
-                  if (i==j) bmat.d[i][j] *= scale;
+                  bmat[i][j]=bmat[j][i]=bold[i+trial-1][j+trial-1]*norm;
+                  if (i==j) bmat[i][j] *= scale;
                 }
-              btemp.d[i] = 0.0;
+              btemp[i] = 0.0;
             }
 
-          determ = math_lin(&bmat,&btemp,col,1);
+          determ = cmat_solve_lin(bmat,0,btemp,col);
         }
 
       if (fabs(determ) < 10.0e-20) {
-          fprintf(stderr,"DIIS::extrapolate:  trial %d no good\n",trial);
+          cerr << "DIIS::extrapolate:  trial " << trial << " no good\n";
           return -1;
         }
 
@@ -260,7 +287,7 @@ DIIS::extrapolate(const RefSCExtrapData& data,
           data->zero();
 
           for (k=trial; k < last+1 ; k++) {
-              data->accumulate_scaled(btemp.d[kk], diism_data[k]);
+              data->accumulate_scaled(btemp[kk], diism_data[k]);
               kk++;
             }
         }

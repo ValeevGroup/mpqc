@@ -2,7 +2,10 @@
 /* Some convenient functions are provided here. */
 
 /* $Log$
- * Revision 1.2  1994/10/18 23:04:04  etseidl
+ * Revision 1.3  1994/10/21 20:39:50  cljanss
+ * Work arounds for IRIX 6.0 IDO/C++ bugs.
+ *
+ * Revision 1.2  1994/10/18  23:04:04  etseidl
  * fix many warnings, use memset rather than bzero
  *
  * Revision 1.1.1.1  1993/12/29  12:53:59  etseidl
@@ -52,7 +55,7 @@
 GLOBAL_FUNCTION char *
 index_dimension(structname,index)
 char *structname;
-index_t *index;
+iindex_t *index;
 {
   static char dim[STRING_LENGTH];
 
@@ -366,7 +369,7 @@ GLOBAL_FUNCTION char *
 index_dimension2(structname,ind,index)
 char *structname;
 int ind;
-index_t *index;
+iindex_t *index;
 {
   static char dim[STRING_LENGTH];
 

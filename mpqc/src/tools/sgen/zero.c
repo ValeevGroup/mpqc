@@ -2,7 +2,10 @@
  * routine zero_x will zero out arrays in x */
 
 /* $Log$
- * Revision 1.3  1994/10/18 23:04:07  etseidl
+ * Revision 1.4  1994/10/21 20:39:52  cljanss
+ * Work arounds for IRIX 6.0 IDO/C++ bugs.
+ *
+ * Revision 1.3  1994/10/18  23:04:07  etseidl
  * fix many warnings, use memset rather than bzero
  *
  * Revision 1.2  1994/10/14  18:28:32  etseidl
@@ -203,7 +206,7 @@ char *range;
 
   if (basic_type(member->type) && !member->pointer) {
     if(array_type) {
-      fprintf(output,"%s  memset(%s%s,'\\0',sizeof(%s)*%s);\n",
+      fprintf(output,"%s  memset(%s%s,0,sizeof(%s)*%s);\n",
         spaces,member_name(structname,member),indices,member->type,range);
       }
     }

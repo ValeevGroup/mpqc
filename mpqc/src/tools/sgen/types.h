@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/10/21 20:39:51  cljanss
+ * Work arounds for IRIX 6.0 IDO/C++ bugs.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.1.1.1  1992/03/17  18:11:18  seidl
  * Struct GENerator 2.0
@@ -71,7 +74,7 @@ struct declaration_struct {
   struct declaration_struct *p;
   };
 
-typedef struct index_struct index_t;
+typedef struct index_struct iindex_t;
 typedef struct index_list_struct index_list_t;
 typedef struct member_struct member_t;
 typedef struct member_list_struct member_list_t;

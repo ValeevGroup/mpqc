@@ -5,7 +5,10 @@
  * code. */
 
 /* $Log$
- * Revision 1.3  1994/10/18 23:03:49  etseidl
+ * Revision 1.4  1994/10/21 20:39:49  cljanss
+ * Work arounds for IRIX 6.0 IDO/C++ bugs.
+ *
+ * Revision 1.3  1994/10/18  23:03:49  etseidl
  * fix many warnings, use memset rather than bzero
  *
  * Revision 1.2  1994/10/14  18:28:28  etseidl
@@ -257,7 +260,7 @@ char *structname;
       stars[strlen(stars)-1]='\0';
       fprintf(output," %s)*%s);\n",stars,
                                  index_dimension(structname,&I->index));
-      fprintf(output,"%s  memset(%s%s,'\\0',sizeof(%s",spaces,
+      fprintf(output,"%s  memset(%s%s,0,sizeof(%s",spaces,
         member_name(structname,member),
         indices,member->type);
       fprintf(output," %s)*%s);\n",stars,
@@ -270,7 +273,7 @@ char *structname;
       stars[strlen(stars)-1]='\0';
       fprintf(output," %s)*%s);\n",stars,
                                  index_dimension(structname,&I->index));
-      fprintf(output,"%s  memset(%s%s,'\\0',sizeof(%s_t",spaces,
+      fprintf(output,"%s  memset(%s%s,0,sizeof(%s_t",spaces,
         member_name(structname,member),
         indices,member->type);
       fprintf(output," %s)*%s);\n",stars,

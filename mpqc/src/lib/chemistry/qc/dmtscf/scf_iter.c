@@ -41,6 +41,55 @@ static dmt_matrix Gmat, GmatO;
 static dmt_matrix Scr1, Scr2, Scr3;
 static dmt_matrix SScr1, SScr2;
 
+/**********************************************************************
+ *
+ * no sense having all these tmp matrices around if you can't use them
+ * so here are some functione to grab pointers to them all
+ */
+
+GLOBAL_FUNCTION VOID
+scf_iter_get_col_tmps(S1, S2, S3)
+dmt_matrix *S1;
+dmt_matrix *S2;
+dmt_matrix *S3;
+{
+  *S1 = Scr1;
+  *S2 = Scr2;
+  *S3 = Scr3;
+}
+
+GLOBAL_FUNCTION VOID
+scf_iter_get_scat_tmps(S1, S2)
+dmt_matrix *S1;
+dmt_matrix *S2;
+{
+  *S1 = SScr1;
+  *S2 = SScr2;
+}
+
+GLOBAL_FUNCTION VOID
+scf_iter_get_pmats(S1, S2, S3, S4)
+dmt_matrix *S1;
+dmt_matrix *S2;
+dmt_matrix *S3;
+dmt_matrix *S4;
+{
+  *S1 = Pmat;
+  *S2 = DPmat;
+  *S3 = PmatO;
+  *S4 = DPmatO;
+}
+
+GLOBAL_FUNCTION VOID
+scf_iter_get_gmats(S1, S2)
+dmt_matrix *S1;
+dmt_matrix *S2;
+{
+  *S1 = Gmat;
+  *S2 = GmatO;
+}
+
+
 /*************************************************************************
  *
  * given the scf struct this initializes the matrices needed for scf
@@ -740,3 +789,21 @@ int iter;
     }
   }
 }
+
+GLOBAL_FUNCTION double
+scf_iter_elect_energy(scf_info,Fock,FockO)
+scf_struct_t *scf_info;
+dmt_matrix Fock;
+dmt_matrix FockO;
+{
+  return
+    scf_electronic_energy(scf_info,Hcore,Fock,Pmat,FockO,PmatO,SScr1,SScr2);
+}
+
+GLOBAL_FUNCTION double
+scf_iter_delta_density(scf_info)
+scf_struct_t *scf_info;
+{
+  return scf_rms_delta_density(scf_info,DPmat);
+}
+

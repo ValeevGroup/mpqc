@@ -209,6 +209,7 @@ class TriangulatedSurfaceIntegrator {
     inline double r() const { return _r; }
     inline double s() const { return _s; }
     inline double w() const { return _weight*_surface_element; }
+    double surface_element() const { return _surface_element; }
     double weight() const { return _weight; }
     const SCVector3& dA() const { return _dA; }
     RefVertex current();
@@ -227,6 +228,10 @@ class TriangulatedSurfaceIntegrator {
     inline void operator++(int) { operator++(); }
     // setting TSI = i sets TSI to begin at the triangle i
     int operator = (int);
+    int itri() const { return _itri; }
+    int irs() const { return _irs; }
+    // the number of points in the current triangle
+    int n_in_tri() const { return (_ts.pointer()->*_integrator)(_itri)->n(); }
     void distribute(const RefMessageGrp &);
     void use_fast_integrator();
     void use_accurate_integrator();

@@ -96,11 +96,11 @@ TriangulatedSurface::TriangulatedSurface(const RefKeyVal& keyval):
   _verbose = keyval->booleanvalue("verbose");
   _debug = keyval->booleanvalue("debug");
   set_integrator(keyval->describedclassvalue("integrator"));
-  set_fast_integrator(keyval->describedclassvalue("fast_integrator"));
-  set_accurate_integrator(keyval->describedclassvalue("accurate_integrator"));
   if (keyval->error() != KeyVal::OK) {
       set_integrator(new GaussTriangleIntegrator(1));
     }
+  set_fast_integrator(keyval->describedclassvalue("fast_integrator"));
+  set_accurate_integrator(keyval->describedclassvalue("accurate_integrator"));
   clear();
 }
 
@@ -794,7 +794,7 @@ TriangulatedSurfaceIntegrator::n()
   int result = 0;
   int ntri = _ts->ntriangle();
   for (int i=0; i<ntri; i++) {
-      result += _ts->integrator(i)->n();
+      result += (_ts.pointer()->*_integrator)(i)->n();
     }
   return result;
 }
@@ -812,6 +812,12 @@ TriangulatedSurfaceIntegrator::update()
   RefTriInterpCoef coef = i->coef(t->order(),_irs);
   t->interpolate(coef, _r, _s, _current, _dA);
   _surface_element = _dA.norm();
+  static double cum;
+  if (_irs == 0) cum = 0.0;
+  cum += _surface_element * _weight;
+  //cout << scprintf("%2d dA = %12.8f, w = %12.8f, Sum wdA = %12.8f",
+  //                 _irs, _surface_element, _weight, cum)
+  //     << endl;
 
   return (int) 1;
 }
@@ -820,7 +826,7 @@ void
 TriangulatedSurfaceIntegrator::
   operator ++()
 {
-  int n = _ts->integrator(_itri)->n();
+  int n = (_ts.pointer()->*_integrator)(_itri)->n();
   if (_irs == n-1) {
       _irs = 0;
       if (_grp.null()) _itri++;
